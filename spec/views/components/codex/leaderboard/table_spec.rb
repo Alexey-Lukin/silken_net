@@ -36,4 +36,10 @@ RSpec.describe Codex::Leaderboard::Table, type: :view_component do
     expect(html).not_to include("text-gray-")
     expect(html).to include("bg-gaia-surface")
   end
+
+  it "omits the realm prefix when realm is nil" do
+    html = render_table(realm: nil, nodes: [], limit: 10)
+    expect(html).to include("Top 10")
+    expect(html).not_to include("Realm:")
+  end
 end

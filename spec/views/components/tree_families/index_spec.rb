@@ -69,6 +69,12 @@ RSpec.describe TreeFamilies::Index do
       expect(html).to include("Quercus robur")
     end
 
+    it "omits the scientific name line when it is blank" do
+      fam = mock_family(scientific_name: nil)
+      rendered = render_component(families: [ fam ], pagy: mock_pagy(count: 1))
+      expect(rendered).to include(fam.name)
+    end
+
     it "renders baseline impedance with kΩ unit" do
       expect(html).to include("45 k")
     end

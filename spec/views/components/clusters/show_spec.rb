@@ -123,6 +123,21 @@ RSpec.describe Clusters::Show do
     it "includes Google Maps link" do
       expect(html).to include("google.com/maps")
     end
+
+    it "displays mapped=No when the cluster is not mapped" do
+      cl = mock_cluster
+      cl.define_singleton_method(:mapped?) { false }
+      out = render_component(cluster: cl, gateways: [], recent_alerts: [])
+      expect(out).to include("Mapped")
+      expect(out).not_to include("Yes")
+    end
+
+    it "omits the centroid and map link when geo_center is nil" do
+      cl = mock_cluster
+      cl.define_singleton_method(:geo_center) { nil }
+      out = render_component(cluster: cl, gateways: [], recent_alerts: [])
+      expect(out).not_to include("google.com/maps")
+    end
   end
 
   describe "environmental settings" do
@@ -230,6 +245,12 @@ RSpec.describe Clusters::Show do
       out = render_component(cluster: cluster, gateways: [], recent_alerts: [])
       # The wrapper div for the strip ships with `mt-3`; happy-path tests skip it.
       expect(out).to include('class="mt-3"')
+    end
+
+    it "skips the citation strip entirely when Codex::Citation is undefined" do
+      hide_const("Codex::Citation")
+      out = render_component(cluster: cluster, gateways: [], recent_alerts: [])
+      expect(out).not_to include("codex_citations_")
     end
   end
 end

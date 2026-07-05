@@ -189,6 +189,26 @@ RSpec.describe Solana::BatchPayoutService do
   end
 
   describe ".call — edge cases" do
+    it "is a no-op when the pending-wallet set is empty (threshold set, nothing matured)" do
+      # threshold > 0 (before-hook), але жоден гаманець не акумулював → wallet_ids порожній → return.
+      expect { described_class.call }.not_to change(BlockchainTransaction, :count)
+      expect(rpc[:sends]).to eq(0)
+    end
+
+    it "settles lamports but skips the event counter when the intent carries no events tag" do
+      # Per-event legacy intent (notes без «events:N») підхоплений batch-reconcile: settle_kredis
+      # decrement-ить lamports (amount>0 завжди), але count пропускає — events regex → 0.
+      seed_pending(wallet.id, 25_000, 2)
+      described_class.call
+      BlockchainTransaction.last.update_columns(notes: "Solana micro-reward: legacy per-event")
+
+      rpc[:sig] = "confirmed"
+      described_class.call
+
+      expect(pending_lamports(wallet.id)).to eq(0) # lamports settled
+      expect(Kredis.counter("solana_pending_payout_count:#{wallet.id}").value.to_i).to eq(2) # events NOT decremented
+    end
+
     it "does not pay when pending is below the threshold" do
       seed_pending(wallet.id, 5_000, 1)
       expect { described_class.call }.not_to change(BlockchainTransaction, :count)

@@ -84,6 +84,14 @@ RSpec.describe DashboardLayout do
       html = render_layout(current_path: "/api/v1/maintenance_records")
       expect(html).to include("Maintenance records")
     end
+
+    it "only styles the last of several path segments as muted (breadcrumb tail)" do
+      html = render_layout(current_path: "/api/v1/trees/42")
+      expect(html).to include("Trees")
+      expect(html).to include("42")
+      # Only the trailing segment ("42") gets the muted "last-crumb" class.
+      expect(html).to include('class="text-gaia-text-muted">42<')
+    end
   end
 
   describe "user avatar letter" do
@@ -185,6 +193,30 @@ RSpec.describe DashboardLayout do
 
       expect(Rails.logger).to have_received(:warn).with(/\[CodexOnboardingWizard\] render skipped.*wizard boom/)
       expect(html).to include("Layout Content Rendered")
+    end
+
+    it "skips the wizard when the user already has a codex_fraction" do
+      user = mock_user
+      user.organization_id = 42
+      user.codex_fraction = OpenStruct.new(id: 1)
+      expect(Codex::Fractions::OnboardingWizard).not_to receive(:new)
+
+      html = render_layout(user: user, content: content_stub)
+
+      expect(html).to include("Layout Content Rendered")
+    end
+
+    it "skips the wizard and renders top-bar fallbacks when current_user is nil" do
+      html = ApplicationController.renderer.render(
+        component_class.new(
+          title: "Dashboard", current_user: nil, current_path: "/api/v1/dashboard",
+          ews_alert_count: 0, content: content_stub
+        ),
+        layout: false
+      )
+
+      expect(html).to include("Layout Content Rendered")
+      expect(html).to include(">A<") # avatar fallback when first_name is unavailable
     end
   end
 end

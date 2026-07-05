@@ -34,6 +34,13 @@ module Codex
 
     private
 
+    # NB: both `@node.realm&.name_en` guards below (hero watermark, meta
+    # panel) are model-validation-dead, not real: `Node#realm` is a required
+    # belongs_to and `codex_realm_id` has no cascade/nullify path (plain FK,
+    # no `ON DELETE`; Realm also uses `dependent: :restrict_with_error` on
+    # its `has_many :nodes`) — a Realm can never be removed out from under a
+    # Node, so `.realm` is always present here. Left as `&.` for defensive
+    # style, not tested.
     def render_hero
       div(class: "relative p-8 border border-gaia-border bg-gaia-surface overflow-hidden") do
         div(class: "absolute top-0 right-0 p-4 text-[80px] font-bold text-gaia-primary opacity-5 select-none uppercase") do

@@ -62,6 +62,16 @@ RSpec.describe Codex::Fractions::Picker, type: :view_component do
     expect(html).to include("No pickable nodes")
   end
 
+  it "renders no realm tabs when realms is blank" do
+    html = render_picker(realms: [], active_realm: nil, nodes: [ node ])
+    expect(html).not_to include("<nav")
+  end
+
+  it "does not highlight any tab as active when active_realm is nil" do
+    html = render_picker(realms: [ realm ], active_realm: nil, nodes: [ node ])
+    expect(html).not_to include("border-gaia-primary")
+  end
+
   it "uses gaia-* tokens only" do
     html = render_picker(realms: [ realm ], active_realm: realm, nodes: [ node ])
     expect(html).not_to include("bg-white")

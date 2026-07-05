@@ -71,6 +71,11 @@ RSpec.describe Wallets::TransactionRow do
       html = render_component(tx: mock_tx(status: "failed"))
       expect(html).to include("text-red-500")
     end
+
+    it "renders an unrecognized status with the gray fallback" do
+      html = render_component(tx: mock_tx(status: "manual_review"))
+      expect(html).to include("text-gray-600")
+    end
   end
 
   describe "transaction hash display" do
@@ -87,6 +92,12 @@ RSpec.describe Wallets::TransactionRow do
     it "shows PENDING_BLOCK when hash is nil" do
       html = render_component(tx: mock_tx(tx_hash: nil))
       expect(html).to include("PENDING_BLOCK")
+    end
+
+    it "shows the full hash untruncated when it is 16 characters or fewer" do
+      html = render_component(tx: mock_tx(tx_hash: "0xshort123"))
+      expect(html).to include("0xshort123")
+      expect(html).not_to include("…")
     end
   end
 

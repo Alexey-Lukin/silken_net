@@ -75,6 +75,37 @@ RSpec.describe Actuators::Card do
     end
   end
 
+  describe "edge cases" do
+    it "renders without a gateway UID when the actuator has no gateway" do
+      actuator = mock_actuator
+      actuator.gateway = nil
+      html = render_component(actuator: actuator)
+      expect(html).to include(actuator.device_type)
+    end
+
+    it "renders the max duration row when max_active_duration_s is set" do
+      actuator = mock_actuator
+      actuator.max_active_duration_s = 30
+      html = render_component(actuator: actuator)
+      expect(html).to include("Max Duration")
+    end
+
+    it "renders the energy budget row when estimated_mj_per_action is set" do
+      actuator = mock_actuator
+      actuator.estimated_mj_per_action = 5.2
+      html = render_component(actuator: actuator)
+      expect(html).to include("Energy Budget")
+    end
+
+    it "renders the formatted timestamp when last_activated_at is set" do
+      actuator = mock_actuator
+      actuator.last_activated_at = Time.zone.parse("2025-03-15 10:30:00")
+      html = render_component(actuator: actuator)
+      expect(html).to include("15.03.25 10:30")
+      expect(html).not_to include("NEVER")
+    end
+  end
+
   describe "best practices compliance" do
     let(:html) { render_component(actuator: mock_actuator) }
 

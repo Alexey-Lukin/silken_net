@@ -34,6 +34,10 @@ module Codex
         h3(class: "text-mini uppercase tracking-[0.3em] text-gaia-text-muted") { t("codex.fractions.my_heading") }
         div(class: "flex items-start justify-between gap-4") do
           div(class: "space-y-1") do
+            # `node&.` is model-validation-dead, not real: `Fraction#node` is
+            # a required belongs_to and `codex_node_id` carries an
+            # `ON DELETE RESTRICT` FK — a Node can never be deleted while a
+            # Fraction points at it, so `.node` is always present here.
             p(class: "text-tiny text-gaia-text") { node&.title_en || @fraction.archetype_key }
             p(class: "text-mini text-gaia-text-muted font-mono uppercase tracking-widest") do
               @fraction.archetype_key

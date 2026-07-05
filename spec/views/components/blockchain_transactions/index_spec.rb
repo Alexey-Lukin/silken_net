@@ -189,6 +189,14 @@ RSpec.describe BlockchainTransactions::Index do
     end
   end
 
+  describe "blockchain_network fallback" do
+    it "shows a dash when blockchain_network is nil" do
+      txs = [ mock_transaction(blockchain_network: nil) ]
+      rendered = render_component(transactions: txs, pagy: pagy)
+      expect(rendered).to include("—")
+    end
+  end
+
   describe "pagination url_helper" do
     it "renders pagination links with correct path" do
       multi_pagy = mock_pagy(count: 50, page: 1, last: 3)

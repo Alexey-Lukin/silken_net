@@ -18,6 +18,10 @@ module Codex
           )
         ) do
           header(class: "flex items-center justify-between text-tiny font-mono text-gaia-text-muted") do
+            # `&.` is model-validation-dead, not real: `Comment#user` is a
+            # required belongs_to and `user_id` carries a plain FK (no
+            # `ON DELETE` cascade/nullify) — the referenced user can't be
+            # removed while the comment exists, so `.user` is always present.
             span { @comment.user&.full_name.to_s }
             time(datetime: @comment.created_at.iso8601) { @comment.created_at.utc.strftime("%Y-%m-%d %H:%M UTC") }
           end

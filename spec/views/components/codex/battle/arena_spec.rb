@@ -46,4 +46,10 @@ RSpec.describe Codex::Battle::Arena, type: :view_component do
     html = render_arena(left: left, right: right, pair_seed: "x" * 64, realm: realm)
     expect(html).not_to include('data-controller=')
   end
+
+  it "shows the realm_unknown fallback when realm is nil" do
+    html = render_arena(left: nil, right: nil, pair_seed: nil, realm: nil, error: "no realm configured")
+    expect(html).to include("Realm:")
+    expect(html).to include("—")
+  end
 end

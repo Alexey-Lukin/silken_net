@@ -150,5 +150,11 @@ RSpec.describe OracleVisions::ForecastCard do
       )
       expect(html).to include("border-emerald-900/50")
     end
+
+    it "renders without a citation strip when Codex::Citation is undefined" do
+      hide_const("Codex::Citation")
+      html = render_component(insight: mock_insight)
+      expect(html).not_to include("codex_citations_")
+    end
   end
 end

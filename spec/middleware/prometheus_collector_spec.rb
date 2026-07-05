@@ -147,8 +147,17 @@ RSpec.describe PrometheusCollector, type: :request do
     # -----------------------------------------------------------------------
     # SIDEKIQ GAUGE REFRESH
     # -----------------------------------------------------------------------
-    describe "Sidekiq gauge refresh" do
-      it "includes sidekiq queue size gauges in output" do
+    # Gauge refresh runs ONLY inside the job process (`if Sidekiq.server?`, §2.9 triple-target
+    # de-dup). RSpec is not a Sidekiq server → без цього стабу refresh_sidekiq_gauges НЕ бігає,
+    # і «Redis error» тест був би вакуумним (raise ніколи не стрілив би).
+    describe "Sidekiq gauge refresh (job-process scrape)" do
+      before { allow(Sidekiq).to receive(:server?).and_return(true) }
+
+      it "refreshes all nine strict-priority queue gauges on scrape" do
+        # Один Sidekiq::Queue.new на кожну з 9 черг (uplink…low) — не-вакуумний доказ, що
+        # refresh_sidekiq_gauges справді відпрацював, а не лише зареєстровані імена метрик.
+        expect(Sidekiq::Queue).to receive(:new).exactly(9).times.and_call_original
+
         get "/metrics", headers: { "REMOTE_ADDR" => "127.0.0.1" }
 
         expect(response).to have_http_status(:ok)
@@ -156,11 +165,23 @@ RSpec.describe PrometheusCollector, type: :request do
         expect(response.body).to include("silkennet_sidekiq_queue_latency_seconds")
       end
 
-      it "includes the DeadSet size gauge [ARCH.45]" do
+      it "refreshes the DeadSet size gauge [ARCH.45]" do
+        expect(Sidekiq::DeadSet).to receive(:new).and_call_original
+
         get "/metrics", headers: { "REMOTE_ADDR" => "127.0.0.1" }
 
         expect(response).to have_http_status(:ok)
         expect(response.body).to include("silkennet_sidekiq_dead_set_size")
+      end
+    end
+
+    describe "on-scrape gauges without a Sidekiq server (web/coap targets)" do
+      it "renders metrics but skips the Sidekiq refresh when not a server process" do
+        expect(Sidekiq::Queue).not_to receive(:new) # §2.9: тільки job-процес семплить черги
+        allow(Sidekiq).to receive(:server?).and_return(false)
+
+        get "/metrics", headers: { "REMOTE_ADDR" => "127.0.0.1" }
+        expect(response).to have_http_status(:ok)
       end
     end
 
@@ -171,9 +192,25 @@ RSpec.describe PrometheusCollector, type: :request do
       end
     end
 
+    context "when a public IP is checked and no custom allowlist is configured" do
+      around do |example|
+        original = ENV.delete("PROMETHEUS_ALLOWED_IPS") # force the extra_ips=nil else-branch
+        example.run
+      ensure
+        ENV["PROMETHEUS_ALLOWED_IPS"] = original if original
+      end
+
+      it "returns 403 Forbidden (allowlist absent → no fallback grant)" do
+        get "/metrics", headers: { "REMOTE_ADDR" => "8.8.8.8" }
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
     context "when Sidekiq/Redis is unavailable during gauge refresh" do
-      it "still returns metrics despite Sidekiq error" do
+      it "still returns metrics despite a Sidekiq error (rescue keeps the endpoint up)" do
+        allow(Sidekiq).to receive(:server?).and_return(true) # інакше refresh не бігав би — тест вакуумний
         allow(Sidekiq::Queue).to receive(:new).and_raise(Redis::CannotConnectError)
+
         get "/metrics", headers: { "REMOTE_ADDR" => "127.0.0.1" }
         expect(response).to have_http_status(:ok)
       end

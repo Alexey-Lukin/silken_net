@@ -77,6 +77,11 @@ RSpec.describe Trees::Chronicle do
       )
       expect(html_with_date).to include("07.03")
     end
+
+    it "renders a dash and no year when the entry has no date" do
+      html_no_date = render_component(tree: tree, entries: [ mock_entry(date: nil) ], pagy: pagy)
+      expect(html_no_date).to include("—")
+    end
   end
 
   describe "event types" do

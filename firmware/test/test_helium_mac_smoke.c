@@ -15,6 +15,23 @@
  *    JoinAccept у RX1-вікно → ПОВНИЙ цикл join+uplink на host; SOS-кадр
  *    звіряється сесійними ключами, що їх LNS вивів зі СВОГО боку.
  *
+ * Свідомо НЕ покрито (04_06 §B.4 — LEAVE, не забуте):
+ *  - LmHandlerCallbacks-вітейбл без логіки (GetBatteryLevel/GetTemperature/
+ *    OnRxData/OnClassChange/OnBeaconStatusChange/OnSysTimeUpdate/
+ *    OnTxPeriodicityChanged/OnTxFrameCtrlChanged/OnPingSlotPeriodicityChanged/
+ *    OnSystemReset/OnNvmDataChange/OnRestoreContextRequest/
+ *    OnStoreContextRequest/OnNetworkParametersChange) — самі лише required
+ *    function-pointers LmHandlerCallbacks_t; SOS-профіль їх не торкається
+ *    (без даунлінку, без Class B/C, без ClockSync/NVM-контексту).
+ *  - `Helium_Mac_SendSos` return-0 гілки на LmHandlerInit/Configure-фейл
+ *    та на LmHandlerSend-фейл — вендорні LmHandler/LoRaMac внутрішні стани
+ *    (package-registration clash, вичерпаний duty-cycle, MAC busy у
+ *    RX-вікні). Недосяжні під нашим фіксованим валідним EU868-конфігом
+ *    без fault-injection у vendored-стан; такий тест звіряв би поведінку
+ *    LmHandler/LoRaMac, не нашого adapter'а, і був би крихким під апгрейд
+ *    submodule (готча firmware-скіла #12 — вендорна версія міняє класифікацію
+ *    під ногами). Реальний тригер — bench/RF територія, не host-мок.
+ *
  * Build & run: make -C firmware/test helium_mac_smoke
  */
 

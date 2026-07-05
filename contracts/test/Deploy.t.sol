@@ -128,4 +128,17 @@ contract DeployWiringTest is Test {
         vm.expectRevert();
         d.protocolParams.grantRole(govRole, safe);
     }
+
+    // ─── [SEC.1] run()-entry mainnet-safety gate: refuse an EOA admin under REQUIRE_SAFE_ADMIN ──
+    // Pins the pre-broadcast guard (`_requireSafeOrWarn`) so a mainnet deploy cannot silently
+    // hand token/timelock admin to an EOA. An EOA `ADMIN_ADDRESS` (code.length == 0) with
+    // REQUIRE_SAFE_ADMIN=true must revert BEFORE any contract is deployed.
+    function testRevert_run_refusesEoaAdminWhenSafeRequired() public {
+        vm.setEnv("ADMIN_ADDRESS", vm.toString(makeAddr("eoaAdmin")));
+        vm.setEnv("REQUIRE_SAFE_ADMIN", "true");
+        vm.expectRevert(
+            bytes("SEC.1: ADMIN_ADDRESS must be a Gnosis Safe contract (unset REQUIRE_SAFE_ADMIN for testnet EOA)")
+        );
+        deploy.run();
+    }
 }

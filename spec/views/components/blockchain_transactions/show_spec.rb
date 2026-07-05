@@ -164,6 +164,34 @@ RSpec.describe BlockchainTransactions::Show do
       expect(html).to include("Nonce")
       expect(html).to include("42")
     end
+
+    it "shows a dash for blockchain network when nil" do
+      tx = mock_transaction(blockchain_network: nil)
+      rendered = render_component(transaction: tx)
+      expect(rendered).to include("Blockchain Network")
+      expect(rendered).to include("—")
+    end
+
+    it "shows a dash for gas price when nil" do
+      tx = mock_transaction(gas_price: nil)
+      rendered = render_component(transaction: tx)
+      expect(rendered).to include("Gas Price")
+      expect(rendered).not_to include(" wei")
+    end
+
+    it "shows a dash for sent_at when nil" do
+      tx = mock_transaction(sent_at: nil)
+      rendered = render_component(transaction: tx)
+      expect(rendered).to include("Sent At")
+      expect(rendered).to include("—")
+    end
+
+    it "shows a dash for confirmed_at when nil" do
+      tx = mock_transaction(confirmed_at: nil)
+      rendered = render_component(transaction: tx)
+      expect(rendered).to include("Confirmed At")
+      expect(rendered).to include("—")
+    end
   end
 
   describe "notes panel" do

@@ -261,6 +261,7 @@ TEST(test_extract_quoted_dnsgip) {
     ASSERT_FALSE(At_Extract_Quoted(l, 3, out, sizeof out));
     char tiny[4];
     ASSERT_FALSE(At_Extract_Quoted(l, 2, tiny, sizeof tiny));
+    ASSERT_FALSE(At_Extract_Quoted(l, 0, out, sizeof out)); /* n рахується з 1 — 0 поза контрактом */
 }
 
 TEST(test_int_after_colon) {
@@ -283,7 +284,8 @@ TEST(test_hex_roundtrip_and_rejects) {
     ASSERT_EQ(memcmp(back, src, 6), 0);
 
     ASSERT_FALSE(At_Hex_Decode(back, sizeof back, "ABC", &n));   /* непарна */
-    ASSERT_FALSE(At_Hex_Decode(back, sizeof back, "ZZ", &n));    /* не hex */
+    ASSERT_FALSE(At_Hex_Decode(back, sizeof back, "ZZ", &n));    /* не hex (старший нібл) */
+    ASSERT_FALSE(At_Hex_Decode(back, sizeof back, "AZ", &n));    /* не hex (молодший нібл) */
     ASSERT_FALSE(At_Hex_Decode(back, 2, "AABBCCDD", &n));        /* не влізло */
 }
 

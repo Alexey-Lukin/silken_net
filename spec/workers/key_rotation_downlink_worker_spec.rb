@@ -85,5 +85,13 @@ RSpec.describe KeyRotationDownlinkWorker, type: :worker do
         described_class.new.perform(tree.did, 3)
       }.to raise_error(/No eligible gateway/)
     end
+
+    it "logs and re-raises (for Sidekiq retry) when the CoAP PUT times out" do
+      allow(CoapClient).to receive(:put).and_raise(Timeout::Error)
+
+      expect {
+        described_class.new.perform(tree.did, 3)
+      }.to raise_error(Timeout::Error)
+    end
   end
 end

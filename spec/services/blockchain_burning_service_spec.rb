@@ -314,6 +314,25 @@ RSpec.describe BlockchainBurningService do
         expect(naas_contract.reload.status).to eq("breached")
       end
 
+      # [ARCH.48] LockTimeout на ОРАКУЛ-локу (не per-contract claim): intent уже створено (:pending),
+      # але transact НЕ виконувався → tx не в мемпулі → безпечно retry. rescue fail-ить intent
+      # (не in-flight), лишає контракт :active й re-raise-ить (Sidekiq re-slash-ить).
+      it "fails the :pending intent and re-raises on an ORACLE-lock timeout (transact never ran — ARCH.48)" do
+        allow(Kredis).to receive(:lock) do |key, **_kwargs, &blk|
+          raise Kredis::LockTimeout, "oracle busy" if key.to_s.start_with?("lock:web3:oracle:")
+
+          blk.call # per-contract claim yields normally
+        end
+
+        expect { described_class.call(organization.id, naas_contract.id, source_tree: tree) }
+          .to raise_error(Kredis::LockTimeout)
+
+        expect(mock_client).not_to have_received(:transact) # oracle-лок не взято → transact не запускався
+        intent = BlockchainTransaction.where(sourceable: naas_contract).last
+        expect(intent.status).to eq("failed") # :pending → :failed (не in-flight) → retry перепустить
+        expect(naas_contract.reload.status).to eq("active") # НЕ breached
+      end
+
       # [ARCH.48 / ARCH.45 case-2] If the crash happens AFTER a successful broadcast (audit already
       # :sent — e.g. the confirmation-worker enqueue or the breach-update fails), the slash WILL land,
       # so the contract MUST still breach (NOT escalate). The :sent guard then makes a retry idempotent.
@@ -432,6 +451,19 @@ RSpec.describe BlockchainBurningService do
 
         expect(result).to eq(:evaded)
         expect(mock_client).not_to have_received(:transact)
+      end
+
+      # Evasion БЕЗ source_tree → context-гілка «кластер», не «дерево» (330-else). Потрібен
+      # AiInsight, щоб damage_ratio був визначений (інакше freeze спрацював би до balanceOf).
+      it "escalates evasion with cluster context (not tree) when there is no source_tree" do
+        create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+               target_date: cluster.local_yesterday, stress_index: 1.0)
+        allow(mock_client).to receive(:call).and_return(0)
+
+        result = described_class.call(organization.id, naas_contract.id)
+
+        expect(result).to eq(:evaded)
+        expect(EwsAlert.where(alert_type: :field_audit).last.message).to include("кластер ##{cluster.id}")
       end
     end
   end
@@ -563,6 +595,15 @@ RSpec.describe BlockchainBurningService do
       it "returns the negligence baseline" do
         expect(service.send(:calculate_penalty_factor))
           .to eq(described_class::DEFAULT_PENALTY_FACTOR)
+      end
+
+      # `defined?`-memo (не ||=): false — легітимне закешоване значення, а не привід re-query.
+      it "memoizes cause_uplift_enabled? — false is cached, not re-read from SystemParameter" do
+        allow(SystemParameter).to receive(:current).and_call_original
+        expect(SystemParameter).to receive(:current)
+          .with(:slash_cause_uplift_enabled, default: false).once.and_return(false)
+
+        2.times { service.send(:cause_uplift_enabled?) }
       end
 
       it "stays inert even when a real cause signal is present" do

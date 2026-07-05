@@ -396,5 +396,12 @@ RSpec.describe Trees::Show do
                              recent_logs: recent_logs, maintenance_history: maintenance_history)
       expect(out).to include('class="mt-3"')
     end
+
+    it "renders without a citation strip when Codex::Citation is undefined" do
+      hide_const("Codex::Citation")
+      out = render_component(tree: tree, latest_log: latest_log,
+                             recent_logs: recent_logs, maintenance_history: maintenance_history)
+      expect(out).not_to include("codex_citations_")
+    end
   end
 end

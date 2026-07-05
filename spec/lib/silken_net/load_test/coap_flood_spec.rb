@@ -47,4 +47,27 @@ RSpec.describe SilkenNet::LoadTest::CoapFlood do
       expect(count.value).to be > 0
     end
   end
+
+  # Авторитетний drop-лічильник на Linux-CI (staging = Linux) — pure-парсер /proc/net/snmp,
+  # тестований прямо (на Darwin-хості kernel_udp_drops бере netstat-гілку, тож ця не виконалась би).
+  describe ".parse_linux_udp_rcvbuf_errors" do
+    it "extracts the RcvbufErrors column from a /proc/net/snmp Udp block" do
+      snmp = <<~SNMP
+        Udp: InDatagrams NoPorts InErrors OutDatagrams RcvbufErrors SndbufErrors InCsumErrors
+        Udp: 100000 5 0 90000 4242 0 0
+      SNMP
+      expect(described_class.parse_linux_udp_rcvbuf_errors(snmp)).to eq(4242)
+    end
+
+    it "returns nil for nil or a block without the Udp counters" do
+      expect(described_class.parse_linux_udp_rcvbuf_errors(nil)).to be_nil
+      expect(described_class.parse_linux_udp_rcvbuf_errors("Tcp: 1 2 3\n")).to be_nil
+    end
+  end
+
+  describe ".drops_delta" do
+    it "returns nil when the before-count was unavailable (platform without a counter)" do
+      expect(described_class.drops_delta(nil)).to be_nil
+    end
+  end
 end

@@ -113,6 +113,13 @@ RSpec.describe Gateways::Show do
       expect(rendered).to include("faulty")
       expect(rendered).to include("border-red-500")
     end
+
+    it "renders an unrecognized state with the neutral gray fallback" do
+      gw = mock_gateway(state: "quarantined")
+      rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
+      expect(rendered).to include("quarantined")
+      expect(rendered).to include("border-gray-800")
+    end
   end
 
   describe "technical matrix" do
@@ -210,6 +217,13 @@ RSpec.describe Gateways::Show do
 
     it "displays truncated firmware hash" do
       expect(html).to include("a1b2c3d4e5f67890")
+    end
+
+    it "shows a dash when firmware_hash is nil" do
+      gw = mock_gateway(firmware_hash: nil)
+      rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
+      expect(rendered).to include("Firmware Hash")
+      expect(rendered).not_to include("a1b2c3d4e5f67890")
     end
   end
 

@@ -48,6 +48,13 @@ RSpec.describe Users::Profile do
     it "renders the user avatar container" do
       expect(html).to include("h-32 w-32")
     end
+
+    it "falls back to the email's first character when first_name is nil" do
+      no_name_user = mock_user(first_name: nil)
+      no_name_user.email_address = "zed@example.org"
+      rendered = render_component(user: no_name_user)
+      expect(rendered).to include(">z<")
+    end
   end
 
   describe "full_name display" do
@@ -79,6 +86,29 @@ RSpec.describe Users::Profile do
     end
   end
 
+  describe "access privileges" do
+    it "shows the fallback none-label when the user has no organization" do
+      no_org_user = mock_user(organization_name: nil)
+      no_org_user.organization = nil
+      rendered = render_component(user: no_org_user)
+      expect(rendered).to include("None")
+    end
+
+    it "shows Limited command execution for a non-admin role" do
+      forester = mock_user(role: "forester")
+      rendered = render_component(user: forester)
+      expect(rendered).to include("Limited")
+    end
+  end
+
+  describe "activity stats" do
+    it "shows OFFLINE when the user has never been seen" do
+      never_seen = mock_user(last_seen_at: nil)
+      rendered = render_component(user: never_seen)
+      expect(rendered).to include("OFFLINE")
+    end
+  end
+
   describe "security status indicators" do
     it "renders Security Status heading" do
       expect(html).to include("Security Status")
@@ -104,6 +134,12 @@ RSpec.describe Users::Profile do
 
     it "shows Set when password is present" do
       expect(html).to include("Set")
+    end
+
+    it "shows Not Set when password_digest is nil" do
+      no_pwd = mock_user(password_digest: nil)
+      rendered = render_component(user: no_pwd)
+      expect(rendered).to include("Not Set")
     end
 
     it "renders Manage link to account security" do

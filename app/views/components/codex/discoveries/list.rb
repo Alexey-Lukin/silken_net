@@ -46,6 +46,12 @@ module Codex
         end
       end
 
+      # `node&.` / `unlocked_at&.` below are model-validation-dead, not real:
+      # `Discovery#node` is a required belongs_to and `codex_node_id` carries
+      # an `ON DELETE RESTRICT` FK (a Node can never be deleted while a
+      # Discovery cites it), and `unlocked_at` is `validates presence: true`
+      # with a `before_validation` default — both are always present for a
+      # persisted, valid Discovery.
       def render_card(discovery)
         node = discovery.node
         div(class: "border border-gaia-border bg-gaia-surface-sunken p-3 space-y-1") do

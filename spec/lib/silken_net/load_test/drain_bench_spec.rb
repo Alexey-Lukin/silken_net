@@ -59,5 +59,19 @@ RSpec.describe SilkenNet::LoadTest::DrainBench do
       expect(described_class.send(:diverging?, (1..12).to_a)).to be(true)
       expect(described_class.send(:diverging?, Array.new(12, 5))).to be(false)
     end
+
+    it "withholds a verdict on fewer than six samples (too short to judge a trend)" do
+      expect(described_class.send(:diverging?, [ 1, 2, 3, 4, 5 ])).to be(false)
+    end
+  end
+
+  # The drain/arrival LOOPS themselves need a live Sidekiq process (bin/coap_load vs a
+  # dev/staging stack) — integration-class, out of host-unit scope (04_06 §B.1.3). Only the
+  # pure input-guard is unit-checkable here.
+  describe "run_arrival input guard" do
+    it "rejects a non-positive arrival rate before enqueueing anything" do
+      expect { described_class.run_arrival(Object.new, batches: 1, lambda_per_s: 0) }
+        .to raise_error(ArgumentError, /lambda_per_s/)
+    end
   end
 end

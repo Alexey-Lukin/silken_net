@@ -132,6 +132,16 @@ RSpec.describe Views::Shared::UI::Pagination do
     end
   end
 
+  describe "with compact_mobile disabled" do
+    let(:pagy) { OpenStruct.new(page: 2, last: 5, previous: 1, next: 3) }
+    let(:html) { render_component(pagy: pagy, url_helper: url_helper, compact_mobile: false) }
+
+    it "renders only the full page indicator (no compact sr-only split)" do
+      expect(html).to include("Page 2 / 5")
+      expect(html).not_to include("sr-only")
+    end
+  end
+
   describe "with invalid pagy object" do
     it "raises ArgumentError when pagy does not respond to :page" do
       expect { render_component(pagy: "invalid", url_helper: url_helper) }

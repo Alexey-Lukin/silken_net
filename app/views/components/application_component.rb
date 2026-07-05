@@ -22,8 +22,12 @@ class ApplicationComponent < Phlex::HTML
 
   def t(key, **options)
     if key.to_s.start_with?(".")
+      # `self.class.ancestors` always contains a named class (at minimum
+      # Object/BasicObject), so this fallback chain can never yield nil —
+      # no `&.`/`|| ""` needed after it (verified empirically; dead-branch
+      # cleanup per 04_06 §B.4).
       klass_name = self.class.name || self.class.ancestors.lazy.filter_map(&:name).first
-      scope = klass_name&.underscore&.gsub("/", ".") || ""
+      scope = klass_name.underscore.gsub("/", ".")
       I18n.t("#{scope}#{key}", **options)
     else
       I18n.t(key, **options)

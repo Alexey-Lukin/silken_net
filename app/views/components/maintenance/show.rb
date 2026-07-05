@@ -212,7 +212,12 @@ module Maintenance
       return unless @record.maintainable_type == "Tree"
 
       tree = @record.maintainable
-      return unless tree&.latitude.present? && tree&.longitude.present?
+      # `tree.longitude` (no `&.`, unlike the first clause): dead-`&.` cleanup
+      # — reaching this clause already requires `tree&.latitude` to be
+      # truthy, which is only possible when `tree` is non-nil, so `tree` is
+      # provably present here too. The first clause keeps its `&.` — `tree`
+      # itself (a nullified FK on a deleted maintainable) can be nil.
+      return unless tree&.latitude.present? && tree.longitude.present?
 
       drift_m = SilkenNet::GeoUtils.haversine_distance_m(
         @record.latitude.to_f, @record.longitude.to_f,

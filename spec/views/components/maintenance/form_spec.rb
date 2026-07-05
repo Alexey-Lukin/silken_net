@@ -89,6 +89,12 @@ RSpec.describe Maintenance::Form do
     it "does not render hardware verified checkbox for new record" do
       expect(html).not_to include("Hardware Verified")
     end
+
+    it "shows PENDING when maintainable_type is not yet chosen (blank new record)" do
+      blank_record = MaintenanceRecord.new
+      rendered = render_component(record: blank_record)
+      expect(rendered).to include("PENDING")
+    end
   end
 
   describe "edit record form" do

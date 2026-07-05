@@ -57,6 +57,13 @@ RSpec.describe Users::Index do
       expect(html).to include("A")
     end
 
+    it "falls back to the email's first character when first_name is nil" do
+      user = mock_user(id: 5, first_name: nil, last_name: nil)
+      user.email_address = "zed@silken.net"
+      html = render_component(users: [ user ])
+      expect(html).to include(">z<")
+    end
+
     it "renders full name" do
       expect(html).to include("Ada Lovelace")
     end
@@ -74,6 +81,13 @@ RSpec.describe Users::Index do
     it "renders investor role with blue badge colors" do
       expect(html).to include("bg-blue-900/50")
       expect(html).to include("investor")
+    end
+
+    it "renders an unrecognized role with the zinc fallback" do
+      guest_user = mock_user(id: 4, first_name: "Gus", last_name: "Guest", role: "guest")
+      html = render_component(users: [ guest_user ])
+      expect(html).to include("bg-zinc-800")
+      expect(html).to include("guest")
     end
 
     it "renders VIEW_LOGS link" do

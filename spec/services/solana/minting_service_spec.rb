@@ -709,6 +709,104 @@ RSpec.describe Solana::MintingService do
     end
   end
 
+  # [ARCH.45] signature_status — on-chain reconcile primitive, що вирішує чи безпечно
+  # re-pay-ити. Reconcile-тести вище СТАБЛЯТЬ його; тут — прямий unit по кожній гілці
+  # getSignatureStatuses, бо саме він визначає double-pay-безпеку.
+  describe "#signature_status" do
+    let(:service) { described_class.new(create(:telemetry_log, :verified_telemetry, tree: tree)) }
+
+    it "returns :confirmed for a finalized signature" do
+      allow(service).to receive(:execute_rpc_call)
+        .and_return({ "result" => { "value" => [ { "confirmationStatus" => "finalized", "err" => nil } ] } })
+      expect(service.signature_status("sig")).to eq(:confirmed)
+    end
+
+    it "returns :processing for a not-yet-finalized signature" do
+      allow(service).to receive(:execute_rpc_call)
+        .and_return({ "result" => { "value" => [ { "confirmationStatus" => "processed", "err" => nil } ] } })
+      expect(service.signature_status("sig")).to eq(:processing)
+    end
+
+    it "returns :not_found when the signature is absent (nil status entry)" do
+      allow(service).to receive(:execute_rpc_call)
+        .and_return({ "result" => { "value" => [ nil ] } })
+      expect(service.signature_status("sig")).to eq(:not_found)
+    end
+
+    # [ARCH.45 money-safety] Виконано on-chain, але З помилкою → кошти НЕ пішли → безпечно re-pay.
+    it "returns :not_found when the tx executed on-chain WITH an error (safe re-pay)" do
+      allow(service).to receive(:execute_rpc_call)
+        .and_return({ "result" => { "value" => [ { "confirmationStatus" => "finalized", "err" => { "InstructionError" => [ 0, "Custom" ] } } ] } })
+      expect(service.signature_status("sig")).to eq(:not_found)
+    end
+
+    it "returns :not_found when the RPC envelope is nil (total RPC failure short-circuits the dig)" do
+      allow(service).to receive(:execute_rpc_call).and_return(nil)
+      expect(service.signature_status("sig")).to eq(:not_found)
+    end
+  end
+
+  describe "#mint_micro_reward! reconcile edge states [ARCH.51]" do
+    let(:log) { create(:telemetry_log, :verified_telemetry, tree: tree, growth_points: 10) }
+
+    before { wallet.update!(solana_public_address: recipient_solana_address) }
+
+    it "leaves an in-flight intent untouched when the signature is still :processing" do
+      described_class.new(log).mint_micro_reward!
+      tx = BlockchainTransaction.last
+
+      allow_any_instance_of(described_class).to receive(:signature_status).and_return(:processing)
+      expect_any_instance_of(described_class).not_to receive(:broadcast_prepared)
+
+      described_class.new(log).mint_micro_reward!
+      expect(tx.reload.status).to eq("sent") # ще в польоті — стан не чіпаємо, без re-pay
+    end
+
+    # [ARCH.51] Auto-heal: manual_review-intent, що ВСЕ Ж landed on-chain. confirm! пропускається
+    # (may_confirm? false на manual_review), але re-pay теж НЕ відбувається — жодного thrash.
+    it "does not thrash a manual_review intent that later confirms on-chain (may_confirm? false)" do
+      described_class.new(log).mint_micro_reward!
+      tx = BlockchainTransaction.last
+      tx.escalate_to_review!("prior RPC lag")
+
+      allow_any_instance_of(described_class).to receive(:signature_status).and_return(:confirmed)
+      expect_any_instance_of(described_class).not_to receive(:broadcast_prepared)
+
+      described_class.new(log).mint_micro_reward!
+      expect(tx.reload.status).to eq("manual_review")
+    end
+
+    # [ARCH.51] Повторний :not_found на вже-manual_review intent → escalate пропускається
+    # (may_escalate_to_review? false), без re-pay — double-spend guard тримається.
+    it "keeps a manual_review intent stable on a repeated :not_found (may_escalate? false)" do
+      described_class.new(log).mint_micro_reward!
+      tx = BlockchainTransaction.last
+      tx.escalate_to_review!("prior lag")
+
+      allow_any_instance_of(described_class).to receive(:signature_status).and_return(:not_found)
+      expect_any_instance_of(described_class).not_to receive(:broadcast_prepared)
+
+      described_class.new(log).mint_micro_reward!
+      expect(tx.reload.status).to eq("manual_review")
+    end
+
+    it "unsettled_event_tx returns nil without a chainlink_request_id (no dedup key)" do
+      # @telemetry_log nil (batch-конструктор) → `&.chainlink_request_id` blank → guard повертає nil.
+      service = described_class.new(nil, wallet: wallet)
+      expect(service.send(:unsettled_event_tx)).to be_nil
+    end
+  end
+
+  describe "#batch_payout! missing address [E.61]" do
+    it "raises when the wallet has no Solana address for a batch payout" do
+      wallet.update!(solana_public_address: nil)
+      allow(wallet).to receive(:organization).and_return(nil)
+
+      expect { described_class.new(nil, wallet: wallet).batch_payout!(25_000, 2) }
+        .to raise_error(RuntimeError, /Missing Solana address for batch payout/)
+    end
+  end
+
   private
 
   def stub_solana_rpc_success

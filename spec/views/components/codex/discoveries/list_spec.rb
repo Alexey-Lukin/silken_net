@@ -38,4 +38,9 @@ RSpec.describe Codex::Discoveries::List, type: :view_component do
     expect(html).not_to include("text-gray-")
     expect(html).to include("bg-gaia-surface")
   end
+
+  it "shows the total pagy.count instead of discoveries.size when paginated" do
+    html = render_list(discoveries: [], pagy: mock_pagy(count: 42))
+    expect(html).to include("Unlocked: 42")
+  end
 end

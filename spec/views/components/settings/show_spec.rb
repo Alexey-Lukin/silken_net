@@ -64,6 +64,12 @@ RSpec.describe Settings::Show do
     it "pre-fills the current billing email" do
       expect(html).to include("billing@org.org")
     end
+
+    it "renders the input without a pre-filled value when billing_email is nil" do
+      org = mock_org(billing_email: nil)
+      rendered = render_component(organization: org)
+      expect(rendered).to include('name="organization[billing_email]"')
+    end
   end
 
   describe "crypto address field" do

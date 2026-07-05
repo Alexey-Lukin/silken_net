@@ -37,6 +37,13 @@ module Codex
 
     private
 
+    # NB: every `@node.realm` / `@node.realm&.` guard below (render_cover,
+    # render_realm_pill, glyph_for_realm) is model-validation-dead, not real:
+    # `Node#realm` is a required belongs_to and `codex_realm_id` has no
+    # cascade/nullify path (plain FK, no `ON DELETE`; Realm also uses
+    # `dependent: :restrict_with_error` on its `has_many :nodes`) — a Realm
+    # can never be removed out from under a Node, so `.realm` is always
+    # present here. Left as `&.`/`unless` for defensive style, not tested.
     def card_classes
       "block group border border-gaia-border bg-gaia-surface " \
         "shadow-sm dark:shadow-none overflow-hidden " \

@@ -57,6 +57,13 @@ RSpec.describe Firmwares::Index do
     it "renders firmware rows with deploy button" do
       expect(html).to include("Order Evolution →")
     end
+
+    it "displays a truncated binary_sha256 when present" do
+      fw = mock_firmware(id: 3)
+      fw.binary_sha256 = "0123456789abcdef0123456789abcdef"
+      rendered = render_component(firmwares: [ fw ], inventory_stats: mock_inventory_stats, pagy: mock_pagy(count: 1, last: 1))
+      expect(rendered).to include("0123456789abcdef")
+    end
   end
 
   describe "inventory stats" do

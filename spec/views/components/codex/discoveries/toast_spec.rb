@@ -36,4 +36,15 @@ RSpec.describe Codex::Discoveries::Toast, type: :view_component do
       expect(html).to match(/Observed|Battle|Pact|Streak|Oracle|Granted/)
     end
   end
+
+  it "labels an unrecognized trigger_type with the default fallback" do
+    html = render_toast(node: node, trigger_type: "some_future_trigger", unlocked_at: Time.current)
+    expect(html).to include("Unlocked")
+  end
+
+  it "omits the unlocked timestamp from the meta line when unlocked_at is nil" do
+    html = render_toast(node: node, trigger_type: "match_milestone", unlocked_at: nil)
+    expect(html).to include(node.archetype_key)
+    expect(html).not_to include("UTC")
+  end
 end

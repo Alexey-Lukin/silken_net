@@ -152,6 +152,12 @@ RSpec.describe AccountSecurity::Show do
       html = render_component(user: user, identities: [ identity ])
       expect(html).not_to include("Link Google Oauth2")
     end
+
+    it "renders no available-providers section once every provider is linked" do
+      identities = Identity::SUPPORTED_PROVIDERS.map { |p| mock_identity(provider: p) }
+      html = render_component(user: user, identities: identities)
+      expect(html).not_to include("Available Providers")
+    end
   end
 
   describe "unlink button" do

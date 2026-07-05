@@ -96,6 +96,13 @@ RSpec.describe SystemHealth::Show do
     it "renders ACTIVE connection status when connected" do
       expect(html).to include("ACTIVE")
     end
+
+    it "renders DISCONNECTED status when the database is not connected" do
+      health = healthy_health
+      health[:database][:connected] = false
+      rendered = render_component(health: health)
+      expect(rendered).to include("DISCONNECTED")
+    end
   end
 
   describe "Sidekiq error display" do

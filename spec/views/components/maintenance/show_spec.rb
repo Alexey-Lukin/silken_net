@@ -313,6 +313,13 @@ RSpec.describe Maintenance::Show do
       rec = mock_record(latitude: 49.0, longitude: 32.0, maintainable_type: "Tree", maintainable: bare)
       render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
     end
+
+    it "skips the drift calc when the maintainable Tree record itself is gone (nullified FK)" do
+      expect(SilkenNet::GeoUtils).not_to receive(:haversine_distance_m)
+      rec = mock_record(latitude: 49.0, longitude: 32.0, maintainable_type: "Tree")
+      rec.maintainable = nil
+      render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
+    end
   end
 
   describe "action badge fallback" do

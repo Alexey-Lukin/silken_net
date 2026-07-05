@@ -502,5 +502,42 @@ RSpec.describe Tracker::Dashboard do
     it ".inbound_ref_violations returns [] when the tracker file is absent" do
       expect(described_class.inbound_ref_violations("/no/such/tracker/dir")).to eq([])
     end
+
+    it ".inbound_prose_ref_violations returns [] when the tracker file is absent" do
+      expect(described_class.inbound_prose_ref_violations("/no/such/tracker/dir")).to eq([])
+    end
+
+    it ".chem_note_ref_violations returns [] when the tracker file is absent" do
+      expect(described_class.chem_note_ref_violations("/no/such/tracker/dir")).to eq([])
+    end
+  end
+
+  # Parsing state-machine edges of the verdict-lead / meta-form guards that the
+  # happy-path fixtures don't reach — each is a real drift shape the linter must survive.
+  describe "guard parser edges" do
+    it ".verdict_lead_violations tolerates a blank line after the meta and a later fenced block" do
+      md = <<~MD
+        ## §05 Ledger
+        #### E.1 — item
+        - **P1** · 🤖 · 🟡 · → 05_01
+
+        - **Стан:** verdict leads correctly
+        ```ruby
+        example
+        ```
+      MD
+      # Blank-after-meta exercises the empty-skip; the fence toggles in-fence AFTER current is
+      # cleared. Стан leads → clean.
+      expect(described_class.verdict_lead_violations(md)).to be_empty
+    end
+
+    it ".meta_form_violations flags a meta-line that does not match the canonical form" do
+      md = <<~MD
+        ## §05 Ledger
+        #### E.2 — item
+        - **P0** malformed meta without the dot-separated canon shape
+      MD
+      expect(described_class.meta_form_violations(md)).to include(a_string_matching(/E\.2: malformed meta-line/))
+    end
   end
 end

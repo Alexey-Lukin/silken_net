@@ -164,6 +164,28 @@ static int test_mcu_time_follows_tick(void) {
     return 0;
 }
 
+static int test_systime_wall_clock_offset(void) {
+    /* SysTimeSet/Get — офсет годинника від DeviceTimeAns (SOS-маяк цим
+     * шляхом не ходить, systime.h; контракт лишається чесним для того, хто
+     * колись підключить ClockSync). Set фіксує offset = wall − mcu «зараз»;
+     * Get() відтоді = поточний mcu + той самий offset — прив'язка тримається
+     * крізь плин тіків, а не застигає на значенні з моменту синхронізації. */
+    g_tick = 5000u;                      /* mcu = 5.000 с у момент синхронізації */
+    SysTime_t wall = { 1000000u, 250 };  /* сервер каже: зараз 1000000.250 с     */
+    SysTimeSet( wall );
+
+    SysTime_t now = SysTimeGet( );       /* той самий тік — Get() = щойно заданий wall */
+    ASSERT_EQ( now.Seconds, wall.Seconds );
+    ASSERT_EQ( now.SubSeconds, wall.SubSeconds );
+
+    g_tick += 2500u;                     /* +2.500 с mcu-часу спливло             */
+    SysTime_t later = SysTimeGet( );
+    ASSERT_EQ( later.Seconds, wall.Seconds + 2u );
+    ASSERT_EQ( later.SubSeconds, 750 );  /* offset тримає прив'язку, не reset      */
+    printf("  test_systime_wall_clock_offset                             ✅\n");
+    return 0;
+}
+
 int main(void) {
     int fails = 0;
     printf("test_soft_timer — [ARCH.34] owned таймер + systime:\n");
@@ -175,6 +197,7 @@ int main(void) {
     fails += test_dispatch_cap_breaks_zero_period_loop();
     fails += test_systime_normalization();
     fails += test_mcu_time_follows_tick();
+    fails += test_systime_wall_clock_offset();
     if (fails) {
         fprintf(stderr, "❌ test_soft_timer: %d failed\n", fails);
         return 1;

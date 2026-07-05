@@ -108,6 +108,10 @@ module BlockchainTransactions
         if @tx.wallet.present?
           div do
             p(class: "text-mini text-gray-600 uppercase mb-1") { t(".wallet.tree_did") }
+            # `&.` is model-validation-dead, not real: Wallet#tree is a
+            # required belongs_to (no `optional: true`) and Tree has
+            # `has_one :wallet, dependent: :destroy` — a wallet can never
+            # outlive its tree, so `.tree` is always present here.
             p(class: "text-compact text-emerald-400 font-mono") { @tx.wallet.tree&.did || t(".wallet.not_available") }
           end
           div(class: "pt-3 border-t border-emerald-900/30") do

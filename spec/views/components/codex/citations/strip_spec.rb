@@ -32,4 +32,10 @@ RSpec.describe Codex::Citations::Strip, type: :view_component do
     expect(html).to include("text-gaia-text-muted").or include("italic")
     expect(html).not_to include("bg-white")
   end
+
+  it "falls back to the target's class name for the DOM id when Codex::Citation is undefined" do
+    hide_const("Codex::Citation")
+    html = render_strip(target: tree, citations: [])
+    expect(html).to include("codex_citations_tree_#{tree.id}")
+  end
 end
