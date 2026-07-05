@@ -98,10 +98,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
-      - name: '[L1 QATT] Init monocypher submodule (attest host-tests)'
-        # Тільки monocypher — CMSIS/mruby цьому job не потрібні (вони живуть
-        # у firmware_arm_build з recursive checkout); тримаємо 5-хв бюджет.
-        run: git submodule update --init firmware/extern/monocypher
+      - name: Init host-test submodules (monocypher + LoRaWAN MAC + radio.h)
+        # Вибірково — CMSIS/mruby цьому job не потрібні (вони живуть у
+        # firmware_arm_build з recursive checkout); тримаємо 5-хв бюджет.
+        # stm32-mw-lorawan + subghz-phy — для helium_mac_smoke (ARCH.34):
+        # справжній MAC-стек лінкується host'ом проти Semtech radio.h.
+        run: git submodule update --init firmware/extern/monocypher firmware/extern/stm32-mw-lorawan firmware/extern/subghz-phy
 
       - name: '[FW.25] Log-mel tables match the contract (stdlib, no conda)'
         # Drift gate: the committed firmware/common/logmel_*.h must equal a fresh
