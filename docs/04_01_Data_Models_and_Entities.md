@@ -1009,7 +1009,7 @@ active/draft ──cancel──► cancelled
 | Enum | Значення |
 |------|----------|
 | `status` | `active(0) / triggered(1) / paid(2) / expired(3)` |
-| `trigger_event` | `critical_fire(0) / extreme_drought(1) / insect_epidemic(2)` |
+| `trigger_event` | `critical_fire(0) / extreme_drought(1) / insect_epidemic(2)` — **[INS.1]** застрахований перил, `validates presence` при створенні (peril-honest маршрутизація [`05_05 §4`](05_05_Slashing_and_Risk_Policy) без нього сліпа); прод-шляху створення полісів ще немає (E.20-майбутнє) — валідація = структурна гарантія, що будь-який майбутній шлях перил проставить (зараз seeds/фабрики) |
 | `token_type` | `carbon_coin(0) / forest_coin(1)` |
 
 **AASM:** `trigger` (active→triggered), `pay` (triggered→paid), `expire` (active→expired).
