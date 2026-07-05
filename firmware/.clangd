@@ -18,9 +18,11 @@ CompileFlags:
 # predated hal_glue/ + the vendored WL HAL — everything resolves now), so for
 # these paths we drop the DB and mirror hal_check's include dirs + defines
 # (firmware/CMakeLists.txt; MRB_* One-Home: firmware/mruby/build_config.rb).
-# Change hal_check → sync this block. PathMatch is relative to this config's
-# directory (firmware/); relative -I resolve from the file's own directory —
-# every matched dir sits at depth firmware/*/. No ARM toolchain needed: clangd
+# Change hal_check / lorawan_mac_check → sync this block. PathMatch is relative
+# to this config's directory (firmware/); relative -I resolve from the file's
+# own directory — matched dirs sit at depth firmware/*/ AND firmware/queen/
+# lorawan_glue/ (ARCH.34), so every -I is doubled ../ and ../../ (clangd
+# silently ignores the non-existent variant). No ARM toolchain needed: clangd
 # parses with its own front-end, host-target, same as the host tests.
 If:
   PathMatch: (soldier|queen|hal_glue)/.*\.(c|h)
@@ -29,12 +31,34 @@ CompileFlags:
   Add:
     - -xc          # standalone .h інакше парситься як ObjC++
     - -std=c11
+    - -I.
+    - -I..
     - -I../hal_glue
+    - -I../../hal_glue
     - -I../common
+    - -I../../common
+    - -I../queen/lorawan_glue
+    - -I./lorawan_glue
     - -I../extern/subghz-phy/radio_driver
+    - -I../../extern/subghz-phy/radio_driver
+    - -I../extern/stm32-mw-lorawan/Mac
+    - -I../../extern/stm32-mw-lorawan/Mac
+    - -I../extern/stm32-mw-lorawan/Mac/Region
+    - -I../../extern/stm32-mw-lorawan/Mac/Region
+    - -I../extern/stm32-mw-lorawan/Crypto
+    - -I../../extern/stm32-mw-lorawan/Crypto
+    - -I../extern/stm32-mw-lorawan/LmHandler
+    - -I../../extern/stm32-mw-lorawan/LmHandler
+    - -I../extern/stm32-mw-lorawan/LmHandler/Packages
+    - -I../../extern/stm32-mw-lorawan/LmHandler/Packages
+    - -I../extern/stm32-mw-lorawan/Utilities
+    - -I../../extern/stm32-mw-lorawan/Utilities
     - -I../extern/cmsis-device-wl/Include
+    - -I../../extern/cmsis-device-wl/Include
     - -I../extern/stm32wlxx-hal-driver/Inc
+    - -I../../extern/stm32wlxx-hal-driver/Inc
     - -I../extern/CMSIS_6/CMSIS/Core/Include
+    - -I../../extern/CMSIS_6/CMSIS/Core/Include
     - -I../extern/mruby/include
     - -I../extern/mruby/build/arm-none-eabi/include
     - -I../extern/monocypher/src

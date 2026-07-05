@@ -692,7 +692,7 @@ if (Helium_Sos_Should_Fire(min_since_uplink_ok, min_since_last_sos,
 |-----------|------|
 | Концепт і архітектура (Queen-side LoRaWAN) | ✅ Визначено |
 | Owned-обв'язка: wire-pack (парність з бекендом) + тригер + hard-rule скелет `queen_helium_lorawan_uplink()` | ✅ 2026-07-04 (host-тести `test_helium_sos.c`; гейт `ARCH34_HELIUM_ENABLED 0`) |
-| LoRaWAN MAC-stack у Queen firmware | 🔴 submodule `stm32-mw-lorawan` + adapter `Helium_Mac_SendSos` (ARCH.34; ефір/OTAA = bench-ера) |
+| LoRaWAN MAC-stack у Queen firmware | 🟡 vendored @v2.6.2 + adapter ✅ 2026-07-05 (`queen/lorawan_glue/`: owned-конфіги + soft_timer/systime + `helium_mac.c`; host-smoke справжнього JoinRequest + DevNonce-монотонність; ARM compile-lane) — ефір/OTAA = bench; 🔴 vendored-UB SF11/12 RX-symb-time = bench-блокер ([`00_07` ARCH.34](00_07_Action_Plan_Tracker)) |
 | Rails endpoint `/api/v1/telemetry/helium` | ✅ Реалізовано (2026-07-03: `HeliumSosController` + `HeliumSosWorker` + `EwsAlert(queen_uplink_lost)`) |
 | Реєстрація Queen у Helium Console + заповнення `gateways.helium_dev_eui` | 🔴 Не виконано (👤) |
 | GatewayLoraWanCredentials model | 🟡 Відкладено до живої Console-інтеграції (зараз досить `helium_dev_eui`) |

@@ -148,6 +148,52 @@ if(CMAKE_CROSSCOMPILING)
       MRB_NO_STDIO MRB_CONSTRAINED_BASELINE_PROFILE MRB_NO_BOXING
       FW2_CCM_ENABLED=1)
     target_compile_options(hal_check_ccm PRIVATE -Wall -Wextra -Os)
+
+    # [ARCH.34] LoRaMac-node compile-lane: vendored MAC (EU868/ClassA профіль
+    # queen/lorawan_glue/lorawan_conf.h) + owned glue + adapter крос-компілюються
+    # проти ARM/WL-HAL. Link-фаза (radio.c + startup) = board-freeze; host-smoke
+    # цієї ж збірки — firmware/test helium_mac_smoke (справжній JoinRequest на
+    # стаб-радіо). ⚠️ Відомий vendored-UB RegionCommonComputeSymbolTimeLoRa (SF11/12 symbol-time
+    # overflow) — блокер bench-OTAA, дім 00_07 ARCH.34.
+    set(LORAWAN_MW ${SILKEN_EXTERN}/stm32-mw-lorawan)
+    add_library(lorawan_mac_check OBJECT
+      ${LORAWAN_MW}/Mac/LoRaMac.c
+      ${LORAWAN_MW}/Mac/LoRaMacAdr.c
+      ${LORAWAN_MW}/Mac/LoRaMacClassB.c
+      ${LORAWAN_MW}/Mac/LoRaMacCommands.c
+      ${LORAWAN_MW}/Mac/LoRaMacConfirmQueue.c
+      ${LORAWAN_MW}/Mac/LoRaMacCrypto.c
+      ${LORAWAN_MW}/Mac/LoRaMacParser.c
+      ${LORAWAN_MW}/Mac/LoRaMacSerializer.c
+      ${LORAWAN_MW}/Mac/Region/Region.c
+      ${LORAWAN_MW}/Mac/Region/RegionCommon.c
+      ${LORAWAN_MW}/Mac/Region/RegionEU868.c
+      ${LORAWAN_MW}/Crypto/soft-se.c
+      ${LORAWAN_MW}/Crypto/cmac.c
+      ${LORAWAN_MW}/Crypto/lorawan_aes.c
+      ${LORAWAN_MW}/LmHandler/LmHandler.c
+      ${LORAWAN_MW}/LmHandler/NvmDataMgmt.c
+      ${LORAWAN_MW}/LmHandler/Packages/LmhpCompliance.c
+      ${LORAWAN_MW}/LmHandler/Packages/LmhpPackagesRegistration.c
+      ${LORAWAN_MW}/Utilities/utilities.c
+      queen/lorawan_glue/soft_timer.c
+      queen/lorawan_glue/systime.c
+      queen/lorawan_glue/lora_info.c
+      queen/lorawan_glue/helium_mac.c
+      common/flash_kv.c)
+    target_include_directories(lorawan_mac_check PRIVATE
+      queen/lorawan_glue queen common
+      ${LORAWAN_MW}/Mac ${LORAWAN_MW}/Mac/Region ${LORAWAN_MW}/Crypto
+      ${LORAWAN_MW}/LmHandler ${LORAWAN_MW}/LmHandler/Packages
+      ${LORAWAN_MW}/Utilities
+      ${SILKEN_EXTERN}/subghz-phy/radio_driver
+      ${SILKEN_EXTERN}/cmsis-device-wl/Include
+      ${SILKEN_EXTERN}/stm32wlxx-hal-driver/Inc
+      ${CMSISCORE}/Include)
+    target_compile_definitions(lorawan_mac_check PRIVATE
+      STM32WLE5xx USE_HAL_DRIVER)
+    target_compile_options(lorawan_mac_check PRIVATE -Wall -Wextra -Os
+      -Wno-unused-parameter)
   endif()
 else()
   # Host build: FFT packing-parity harness (Phase 4) — proves the CMSIS RFFT

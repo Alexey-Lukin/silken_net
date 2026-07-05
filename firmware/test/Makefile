@@ -25,9 +25,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280 tdma helium cad coverage size-check asan clean
+.PHONY: all queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280 tdma helium soft_timer helium_mac_smoke cad coverage size-check asan clean
 
-all: queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280 tdma helium cad
+all: queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280 tdma helium soft_timer helium_mac_smoke cad
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -73,6 +73,15 @@ rx_route: $(BINDIR)/test_queen_rx_route
 # [ARCH.34] Helium SOS pure-половина: wire-парність з HeliumSosWorker + тригер.
 helium: $(BINDIR)/test_helium_sos
 	@./$(BINDIR)/test_helium_sos
+
+# [ARCH.34] owned таймер-движок + systime під vendored LoRaMac-node.
+soft_timer: $(BINDIR)/test_soft_timer
+	@./$(BINDIR)/test_soft_timer
+
+# [ARCH.34] host-smoke СПРАВЖНЬОГО LoRaMac-node на стаб-радіо: adapter-епізод
+# TX'ить криптографічно валідний JoinRequest (MHDR/23B/DevNonce-монотонність).
+helium_mac_smoke: $(BINDIR)/test_helium_mac_smoke
+	@./$(BINDIR)/test_helium_mac_smoke
 
 at_engine: $(BINDIR)/test_at_engine
 	@./$(BINDIR)/test_at_engine
@@ -209,6 +218,35 @@ $(BINDIR)/test_queen_rx_route: test_queen_rx_route.c ../queen/rx_route.h ../comm
 $(BINDIR)/test_helium_sos: test_helium_sos.c ../queen/helium_sos.h
 	$(CC) $(CFLAGS) -o $@ test_helium_sos.c
 
+$(BINDIR)/test_soft_timer: test_soft_timer.c ../queen/lorawan_glue/soft_timer.c ../queen/lorawan_glue/soft_timer.h ../queen/lorawan_glue/systime.c ../queen/lorawan_glue/systime.h
+	$(CC) $(CFLAGS) -o $@ test_soft_timer.c ../queen/lorawan_glue/soft_timer.c ../queen/lorawan_glue/systime.c
+
+# [ARCH.34] Vendored LoRaMac-node TU-и + owned glue (профіль lorawan_conf.h:
+# EU868/ClassA/soft-se). Той самий список піде в ARM hal-lane (CMake).
+LORAWAN_MW   = ../extern/stm32-mw-lorawan
+LORAWAN_INC  = -I../queen/lorawan_glue -I../queen -I../common \
+               -I$(LORAWAN_MW)/Mac -I$(LORAWAN_MW)/Mac/Region -I$(LORAWAN_MW)/Crypto \
+               -I$(LORAWAN_MW)/LmHandler -I$(LORAWAN_MW)/LmHandler/Packages \
+               -I$(LORAWAN_MW)/Utilities -I../extern/subghz-phy/radio_driver
+LORAWAN_SRCS = $(LORAWAN_MW)/Mac/LoRaMac.c $(LORAWAN_MW)/Mac/LoRaMacAdr.c \
+               $(LORAWAN_MW)/Mac/LoRaMacClassB.c $(LORAWAN_MW)/Mac/LoRaMacCommands.c \
+               $(LORAWAN_MW)/Mac/LoRaMacConfirmQueue.c $(LORAWAN_MW)/Mac/LoRaMacCrypto.c \
+               $(LORAWAN_MW)/Mac/LoRaMacParser.c $(LORAWAN_MW)/Mac/LoRaMacSerializer.c \
+               $(LORAWAN_MW)/Mac/Region/Region.c $(LORAWAN_MW)/Mac/Region/RegionCommon.c \
+               $(LORAWAN_MW)/Mac/Region/RegionEU868.c \
+               $(LORAWAN_MW)/Crypto/soft-se.c $(LORAWAN_MW)/Crypto/cmac.c \
+               $(LORAWAN_MW)/Crypto/lorawan_aes.c \
+               $(LORAWAN_MW)/LmHandler/LmHandler.c $(LORAWAN_MW)/LmHandler/NvmDataMgmt.c \
+               $(LORAWAN_MW)/LmHandler/Packages/LmhpCompliance.c \
+               $(LORAWAN_MW)/LmHandler/Packages/LmhpPackagesRegistration.c \
+               $(LORAWAN_MW)/Utilities/utilities.c \
+               ../queen/lorawan_glue/soft_timer.c ../queen/lorawan_glue/systime.c \
+               ../queen/lorawan_glue/lora_info.c ../queen/lorawan_glue/helium_mac.c \
+               ../common/flash_kv.c
+
+$(BINDIR)/test_helium_mac_smoke: test_helium_mac_smoke.c $(LORAWAN_SRCS) ../queen/helium_sos.h
+	$(CC) $(CFLAGS) -Wno-unused-parameter $(LORAWAN_INC) -o $@ test_helium_mac_smoke.c $(LORAWAN_SRCS)
+
 # [ARCH.42] On-target ECB/CBC self-test (ARCH.42 transitional paths) —
 # host verification via OpenSSL mock (HAL_MOCK_SYM_ENABLED).
 $(BINDIR)/test_sym_selftest: test_sym_selftest.c hal_mock.h ../common/sym_selftest.h ../common/sym_kat_vectors.h
@@ -220,6 +258,7 @@ clean:
 	      $(BINDIR)/test_seed_derivation $(BINDIR)/test_ccm $(BINDIR)/test_ccm_selftest \
 	      $(BINDIR)/test_sym_selftest $(BINDIR)/test_queen_attest \
 	      $(BINDIR)/test_queen_rx_route $(BINDIR)/test_helium_sos \
+	      $(BINDIR)/test_soft_timer $(BINDIR)/test_helium_mac_smoke \
 	      $(BINDIR)/test_at_engine $(BINDIR)/test_uart_rx_ring \
 	      $(BINDIR)/test_flash_kv $(BINDIR)/test_flash_ring $(BINDIR)/test_flash_ota \
 	      $(BINDIR)/test_key_ratchet $(BINDIR)/test_soldier_cmd_queue \
@@ -289,14 +328,19 @@ coverage:
 # кличуть OPENSSL_cleanup) → LSAN-«still reachable» = хибнопозитив, не buffer-баг;
 # критерій цілить overwrites/UAF/UB, які ASan+UBSan покривають (Monocypher heap
 # не алокує). macOS clang без LSAN → прапор no-op локально, дієвий на Linux CI.
+# signed-integer-overflow = recoverable: no-recover трапить ДО runtime-
+# suppression, і відомий vendored-UB (ubsan_vendored.supp) валив би смугу;
+# recoverable + halt_on_error=1 абортить на першому НЕприглушеному репорті —
+# власний overflow досі фейлить гейт, vendored RegionCommon.c:608 — ні.
 ASAN_CFLAGS = -Wall -Wextra -Wpedantic -std=c11 -I. -O1 -g \
-              -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer
+              -fsanitize=address,undefined -fno-sanitize-recover=all \
+              -fsanitize-recover=signed-integer-overflow -fno-omit-frame-pointer
 
 asan:
 	@$(MAKE) clean >/dev/null
 	@echo "[TEST.5] ASan+UBSan re-instrumented build + прогін усієї host-сюїти…"
 	@ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:detect_leaks=0 \
-	 UBSAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_stacktrace=1 \
+	 UBSAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_stacktrace=1:suppressions=./ubsan_vendored.supp \
 	 $(MAKE) all CFLAGS="$(ASAN_CFLAGS)"
 	@echo "✅ TEST.5: уся host-сюїта чиста під AddressSanitizer + UBSanitizer."
 	@$(MAKE) clean >/dev/null   # ASAN shadow/redzone роздуває .bss/.data → прибрати за собою, інакше наступний size-check міряє інструментовані бінарники й рве 50KB-бюджет
