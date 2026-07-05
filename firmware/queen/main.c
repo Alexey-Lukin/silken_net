@@ -725,7 +725,9 @@ static SoldierCmdQueue soldier_cmd_queue;
 // бачив її кожною збіркою (урок неіснуючого HAL_CRYPEx_AESCCM).
 #include "helium_sos.h"
 
-#define ARCH34_HELIUM_ENABLED  0   // 🟡 фліп після vendored LoRaMac-node + bench OTAA
+#ifndef ARCH34_HELIUM_ENABLED
+#define ARCH34_HELIUM_ENABLED  0   // 🟡 фліп після bench OTAA (compile-lane = hal_check_ccm)
+#endif
 
 static uint32_t g_last_uplink_ok_tick;   // останній ПІДТВЕРДЖЕНИЙ CoAP-flush
 static uint32_t g_last_helium_sos_tick;  // пауза SOS-ретрансміту
@@ -736,6 +738,57 @@ static uint32_t g_last_helium_sos_tick;  // пауза SOS-ретрансміт�
 // re-bind. Локальна в main() ховала б її від функції — Королева глухла б
 // до Солдатів після першого ж SOS (знахідка code-review).
 static RadioEvents_t radio_events;
+
+// [ARCH.34] DevNonce-персист SOS-епізоду: єдине, що LNS вимагає монотонним
+// МІЖ join'ами (ключовий простір Королеви 0x30+ — helium_mac.c). Flash-KV
+// на сторінках 122-123 — дзеркало Soldier'ового mount'а (ARCH.28); карта
+// Флешу Королеви не перетинається: 124 = ключі (0x0803E000), 127 = UID
+// (0x0803F800). Збірка при фліпі: + ../common/flash_kv.c (як test_flash_kv).
+#include "../common/flash_kv.h"
+
+#if ARCH34_HELIUM_ENABLED
+#define FLASH_KV_BASE_ADDR     0x0803D000UL
+#define FLASH_KV_FIRST_PAGE    122u
+#define FLASH_KV_PAGE_DWS      256u   // 2 КБ / 8 Б на dw-елемент
+
+static uint64_t Queen_KvReadDw(void *io, uint32_t byte_off)
+{
+    (void)io;
+    return *(const uint64_t *)(FLASH_KV_BASE_ADDR + byte_off);
+}
+
+static int Queen_KvProgramDw(void *io, uint32_t byte_off, uint64_t v)
+{
+    (void)io;
+    HAL_FLASH_Unlock();
+    HAL_StatusTypeDef st = HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD,
+                                             FLASH_KV_BASE_ADDR + byte_off, v);
+    HAL_FLASH_Lock();
+    return st == HAL_OK;
+}
+
+static int Queen_KvErasePage(void *io, uint8_t page)
+{
+    (void)io;
+    FLASH_EraseInitTypeDef erase = {0};
+    uint32_t page_error = 0;
+    erase.TypeErase = FLASH_TYPEERASE_PAGES;
+    erase.Page      = FLASH_KV_FIRST_PAGE + page;
+    erase.NbPages   = 1;
+    HAL_FLASH_Unlock();
+    HAL_StatusTypeDef st = HAL_FLASHEx_Erase(&erase, &page_error);
+    HAL_FLASH_Lock();
+    return st == HAL_OK;
+}
+
+static const FlashKvOps queen_kv_ops = {
+    Queen_KvReadDw, Queen_KvProgramDw, Queen_KvErasePage
+};
+static FlashKv queen_kv;
+// adapter-TU (lorawan_glue/helium_mac.c) у збірці лише разом із гейтом —
+// прототип тут, дзеркало test_helium_mac_smoke.c
+void Helium_Mac_Bind_Nvm(FlashKv *kv);
+#endif // ARCH34_HELIUM_ENABLED
 
 /* USER CODE END PV */
 
@@ -832,6 +885,15 @@ int main(void)
   // не смерть); телеметрію про це повезе Queen Sentinel health-байт.
   queen_ring_mounted = FlashRing_Mount(&queen_ring, &queen_ring_ops, NULL,
                                        FLASH_RING_W25Q32_SECTORS);
+#endif
+
+#if ARCH34_HELIUM_ENABLED
+  // [ARCH.34] KV під DevNonce ДО першого SOS-епізоду. Невдача (обидві
+  // сторінки биті) → adapter лишається без NVM і чесно деградує: перший
+  // join пройде, повторний після ребуту Helium може відкинути.
+  if (FlashKv_Mount(&queen_kv, &queen_kv_ops, NULL, FLASH_KV_PAGE_DWS)) {
+      Helium_Mac_Bind_Nvm(&queen_kv);
+  }
 #endif
 
   // 3. Ініціалізація модему SIM7070G

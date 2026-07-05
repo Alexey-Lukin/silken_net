@@ -165,6 +165,8 @@ static void devnonce_persist( void )
     ( void )FlashKv_Put32( g_kv, HELIUM_KV_KEY_DEVNONCE, nvm->Crypto.DevNonce );
 }
 
+/* Контракт: вказівник живе ДОВШЕ за всі майбутні епізоди — носій мусить
+ * бути static/file-scope (локальний = read-after-scope, ASan-знахідка). */
 void Helium_Mac_Bind_Nvm( FlashKv *kv )
 {
     g_kv = kv;
@@ -228,7 +230,13 @@ int Helium_Mac_SendSos( const uint8_t sos_frame[HELIUM_SOS_WIRE_LEN],
         .BufferSize = HELIUM_SOS_WIRE_LEN,
         .Buffer     = (uint8_t *)sos_frame,
     };
-    if ( LmHandlerSend( &app, LORAMAC_HANDLER_UNCONFIRMED_MSG, false )
+    /* allowDelayedTx=true: false вбивав би SOS миттєво, щойно duty-cycle
+     * попросить зачекати, хоч MAC ще міг би встигнути у вікно; владар часу —
+     * deadline_tick, не MAC. Host-звірено (мок-LNS, SF12-TOA): join+uplink
+     * влазять у 20-с бюджет — duty-credit'и епізоду СВІЖІ, бо контекст MAC
+     * ефемерний (fresh Init); ETSI-паузу МІЖ епізодами тримає SOS-тригер
+     * (helium_sos.h), не MAC — bench-звірка на ефірі → 00_07 ARCH.34. */
+    if ( LmHandlerSend( &app, LORAMAC_HANDLER_UNCONFIRMED_MSG, true )
          != LORAMAC_HANDLER_SUCCESS ) {
         devnonce_persist( );
         return 0;

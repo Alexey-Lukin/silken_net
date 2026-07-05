@@ -130,6 +130,8 @@ if(CMAKE_CROSSCOMPILING)
     # compile-lane) — саме так пережив рев'ю неіснуючий у WL
     # HAL_CRYPEx_AESCCM_Encrypt (знахідка 2026-07-03). Окремий таргет, щоб
     # [FW.26] RAM-гейт міряв БОЙОВИЙ hal_check (гейти 0), не фліпнутий.
+    # + ARCH34_HELIUM_ENABLED=1: Queen KV-mount/Bind_Nvm-обв'язка (гейтована
+    # гілка ARCH.34, HAL_FLASH_*) бачить WL-HAL цією ж лінзою.
     add_library(hal_check_ccm OBJECT
       hal_glue/soldier_hal_check.c
       hal_glue/queen_hal_check.c)
@@ -146,7 +148,8 @@ if(CMAKE_CROSSCOMPILING)
     target_compile_definitions(hal_check_ccm PRIVATE
       STM32WLE5xx USE_HAL_DRIVER
       MRB_NO_STDIO MRB_CONSTRAINED_BASELINE_PROFILE MRB_NO_BOXING
-      FW2_CCM_ENABLED=1)
+      FW2_CCM_ENABLED=1
+      ARCH34_HELIUM_ENABLED=1)
     target_compile_options(hal_check_ccm PRIVATE -Wall -Wextra -Os)
 
     # [ARCH.34] LoRaMac-node compile-lane: vendored MAC (EU868/ClassA профіль

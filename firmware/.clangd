@@ -68,3 +68,27 @@ CompileFlags:
     - -DMRB_NO_STDIO
     - -DMRB_CONSTRAINED_BASELINE_PROFILE
     - -DMRB_NO_BOXING
+
+---
+
+# test_helium_mac_smoke.c — Makefile-збірка (не CMake), тож build-host DB
+# його не знає. Дзеркало LORAWAN_INC + -DAES_DEC_PREKEYED з firmware/test/
+# Makefile (міняєш там → синкни тут). Решта test/*.c лишається на build-host.
+If:
+  PathMatch: test/test_helium_mac_smoke\.c
+CompileFlags:
+  CompilationDatabase: None
+  Add:
+    - -std=c11
+    - -I.
+    - -I../queen/lorawan_glue
+    - -I../queen
+    - -I../common
+    - -I../extern/stm32-mw-lorawan/Mac
+    - -I../extern/stm32-mw-lorawan/Mac/Region
+    - -I../extern/stm32-mw-lorawan/Crypto
+    - -I../extern/stm32-mw-lorawan/LmHandler
+    - -I../extern/stm32-mw-lorawan/LmHandler/Packages
+    - -I../extern/stm32-mw-lorawan/Utilities
+    - -I../extern/subghz-phy/radio_driver
+    - -DAES_DEC_PREKEYED
