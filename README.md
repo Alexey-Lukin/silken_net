@@ -36,7 +36,7 @@ L7  Polygon + DeFi    SCC/SFC мінтинг, Solana нагороди, Celo ReFi
 L6  Верифікація       peaq DID, IoTeX ZK-proofs, Streamr P2P, Filecoin/IPFS
 L5  Rails Backend     Rails 8.1 API, PostgreSQL, Sidekiq (50+ воркерів)
 L4  LoRa Мережа       868 МГц меш, CoAP/UDP, шлюзи Королеви, Starlink/LTE
-L3  Прошивка + AI     STM32WLE5JC, TinyML (CMSIS-NN), mruby Лоренц, AES-128-ECB/CCM
+L3  Прошивка + AI     STM32WLE5JC, TinyML (INT8 pure-C + CMSIS-DSP log-mel), mruby Лоренц, AES-128-ECB/CCM
 L2  Апаратна Капсула  BQ25570 MPPT, суперконденсатор 0.47Ф, Pogo Pin
 L1  Біофізика         Ti-6Al-4V гіроїдний анкер, EBFC Gen 2.0 (dgrFAD-GDH анод + Laccase/ZIF-nanozyme катод)
 ```
@@ -223,7 +223,7 @@ forge coverage --report summary  # Покриття (аналог SimpleCov)
 forge coverage --report lcov     # lcov.info (CI coverage-артефакт, ≥90% floor)
 ```
 
-Тестові файли: `contracts/test/*.t.sol` (6 контрактів × ~30-50 тестів кожен).
+Тестові файли: `contracts/test/*.t.sol` (6 контрактів; unit + Halmos symbolic + Medusa fuzz + Foundry invariant, ≥90% coverage-floor).
 
 ### 6. Розгортання (Kamal)
 

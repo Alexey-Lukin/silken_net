@@ -13,7 +13,6 @@ gem "csv"
 gem "ed25519"
 gem "eth"
 gem "google-cloud-storage", require: false   # Active Storage: Google Cloud Storage (mirror / disaster recovery)
-gem "groupdate"
 gem "httpx"
 gem "image_processing"
 gem "importmap-rails"

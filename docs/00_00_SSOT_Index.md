@@ -114,7 +114,7 @@ _Логіка STM32WLE5JC: STOP2 / DMA / TinyML / mruby Lorenz / апаратн�
 
 - [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) (Soldier цикл Phase 0-5, Watchdog, STOP2, RX-вікно, RTC reg-map)
 - [`03_02` — Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) (Queen LoRa RX → CIFO → CoAP flush)
-- [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) (CMSIS-NN: класифікація пилки/кавітації/тиші)
+- [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) (INT8 pure-C forward-pass + CMSIS-DSP log-mel: класифікація пилки/кавітації/тиші)
 - [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) (mruby VM атрактор хаосу — гомеостаз дерева; канон Lorenz-констант)
 - [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) (LoRa AES-128-CCM + CoAP AES-256-CBC + SE050 Secure Element + Flash Key + RDP + PQC roadmap)
 - [`03_06` — Factory Flashing and Key Provisioning](03_06_Factory_Flashing_and_Key_Provisioning) (фабричний флешинг Гілки A/B + HKDF per-device ключі + per-cluster K_ota/KEYB + Lorenz K_seed SEC.11 + OTA-HMAC FW.23 + factory-ops SEC.3)
