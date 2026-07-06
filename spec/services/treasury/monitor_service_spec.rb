@@ -193,6 +193,96 @@ RSpec.describe Treasury::MonitorService do
     end
   end
 
+  describe "ARCH.62 mint-volume anomaly detector" do
+    before do
+      allow(mock_evm_client).to receive(:get_balance).and_return(healthy_balance)
+      allow(ChainAuditService).to receive(:call).and_return(
+        ChainAuditService::Result.new(db_total: 0, chain_total: 0, delta: 0, critical: false, checked_at: Time.current)
+      )
+      allow(SystemParameter).to receive(:current).and_call_original
+    end
+
+    def arm(max_scc: 0, breaker: false)
+      allow(SystemParameter).to receive(:current)
+        .with(:mint_volume_hourly_max_scc, default: 0).and_return(max_scc)
+      allow(SystemParameter).to receive(:current)
+        .with(:mint_circuit_breaker_enabled, default: false).and_return(breaker)
+    end
+
+    it "sets the rolling-1h mint-volume gauge per token_type (partition-prune window)" do
+      wallet = create(:wallet)
+      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 40.0, created_at: 10.minutes.ago)
+      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :sent, amount: 25.0, created_at: 90.minutes.ago) # too old → excluded
+      arm(max_scc: 0)
+
+      described_class.call
+
+      expect(SilkenNet::Metrics::MINT_VOLUME_WINDOW_SCC.get(labels: { token_type: "carbon_coin" })).to eq(40.0)
+    end
+
+    it "is inert when the ceiling is off (0) — gauge still live, no alert" do
+      wallet = create(:wallet)
+      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, created_at: 5.minutes.ago)
+      arm(max_scc: 0)
+
+      expect { described_class.call }.not_to change(EwsAlert, :count)
+    end
+
+    it "raises a system_fault alert when volume breaches the configured ceiling" do
+      wallet = create(:wallet)
+      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, created_at: 5.minutes.ago)
+      arm(max_scc: 1_000)
+
+      expect { described_class.call }.to change { EwsAlert.where(alert_type: :system_fault).count }.by(1)
+    end
+
+    it "dedups the volume alert across cycles (no 15-min storm on a sustained breach)" do
+      wallet = create(:wallet)
+      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, created_at: 5.minutes.ago)
+      arm(max_scc: 1_000)
+
+      described_class.call # 1st cycle → creates the alert
+      expect { described_class.call }.not_to change { EwsAlert.where(alert_type: :system_fault).count }
+    end
+
+    it "trips a PER-TOKEN Kredis circuit flag ONLY when the breaker kill-switch is on" do
+      wallet = create(:wallet)
+      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, created_at: 5.minutes.ago)
+      arm(max_scc: 1_000, breaker: true)
+      flag = instance_double(Kredis::Types::Flag)
+      allow(Kredis).to receive(:flag).and_return(flag)
+      allow(flag).to receive(:mark)
+
+      described_class.call
+
+      expect(Kredis).to have_received(:flag).with("#{BlockchainMintingService::MINT_CIRCUIT_FLAG_PREFIX}carbon_coin")
+    end
+
+    it "trips INDEPENDENT per-token flags + alerts when both tokens breach (isolation)" do
+      wallet = create(:wallet)
+      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, created_at: 5.minutes.ago)
+      create(:blockchain_transaction, wallet: wallet, token_type: :forest_coin, status: :confirmed, amount: 5_000.0, created_at: 5.minutes.ago)
+      arm(max_scc: 1_000, breaker: true)
+      flag = instance_double(Kredis::Types::Flag)
+      allow(Kredis).to receive(:flag).and_return(flag)
+      allow(flag).to receive(:mark)
+
+      # Two distinct alerts (per-token dedup does NOT collapse them) + both per-token flags.
+      expect { described_class.call }.to change { EwsAlert.where(alert_type: :system_fault).count }.by(2)
+      expect(Kredis).to have_received(:flag).with("#{BlockchainMintingService::MINT_CIRCUIT_FLAG_PREFIX}carbon_coin")
+      expect(Kredis).to have_received(:flag).with("#{BlockchainMintingService::MINT_CIRCUIT_FLAG_PREFIX}forest_coin")
+    end
+
+    it "does NOT trip the circuit flag when the breaker is off (breach alerts only)" do
+      wallet = create(:wallet)
+      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, created_at: 5.minutes.ago)
+      arm(max_scc: 1_000, breaker: false)
+
+      expect(Kredis).not_to receive(:flag)
+      described_class.call
+    end
+  end
+
   describe "humanize_balance" do
     it "converts wei to MATIC correctly" do
       service = described_class.new

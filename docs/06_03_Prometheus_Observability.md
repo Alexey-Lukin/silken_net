@@ -313,7 +313,7 @@ end
 > При зміні реєстру в коді — **регенерувати ЛИШЕ цю таблицю** (команда в кінці).
 > Де інкрементується/оновлюється кожна — `grep -rn "SilkenNet::Metrics::<CONST>" app/`.
 >
-> **Разом: 65 метрик = 38 counters + 25 gauges + 2 histograms** (звірено регенерацією нижче).
+> **Разом: 66 метрик = 38 counters + 26 gauges + 2 histograms** (звірено регенерацією нижче).
 
 **Counters (38):**
 
@@ -358,7 +358,7 @@ end
 | `silkennet_treasury_check_errors_total` | `network`, `error_type` | Total treasury monitoring RPC errors |
 | `silkennet_w3bstream_signature_fallback_total` | `reason` | Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature |
 
-**Gauges (25):**
+**Gauges (26):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -372,6 +372,7 @@ end
 | `silkennet_db_pool_waiting` | `database` | Number of threads waiting for a database connection |
 | `silkennet_gateway_attest_lapsed` | — | Online QATT-capable gateways whose last Ed25519-attested batch is older than the lapse window |
 | `silkennet_gateways_faulty` | — | Current number of gateways in the faulty state (set on each staleness sweep) |
+| `silkennet_mint_volume_window_scc` | `token_type` | SCC/SFC minted in the trailing 1h window (ARCH.62 volume-anomaly detector input) |
 | `silkennet_oracle_balance` | `network` | Oracle wallet balance in native currency (wei/lamports) |
 | `silkennet_oracle_balance_ratio` | `network` | Oracle balance as ratio to minimum threshold (below 1.0 = critical) |
 | `silkennet_process_resident_memory_bytes` | — | Resident set size (RSS) of the scraped process in bytes (Linux /proc; 0 elsewhere) |
@@ -425,7 +426,7 @@ bin/rails runner 'SilkenNet::Metrics::REGISTRY.metrics.sort_by{|m|[m.type.to_s,m
 | 3 | ✅ **Process/runtime метрики** (2026-05-29) — 9 gauges (RSS · GC count/major/heap_live · ruby_threads · Puma running/max/pool_capacity/backlog), sampled on-scrape (`sample_process_runtime!`) + 13 specs | Закрило сліпоту до memory leak / GC pause / thread saturation. Pure stdlib (GC.stat / Thread / /proc / Puma.stats) | ✅ DONE |
 | 4 | ✅ **Cardinality budget** (2026-06-04) — `prometheus.relabel` `labeldrop` per-identity (`config.alloy`) | `cluster_id` (entropy) лишається (легітимна growth-вісь); per-DID labels (`did`/`tree_id`/`peaq_did`/`wallet_address`/`tx_hash`) дропаються до remote_write, щоб майбутня випадкова мітка не підірвала active-series біллінг (Grafana Cloud біллить за series / DPM) | ✅ DONE |
 | 5 | ✅ **`up` scrape-health alert** (IaC 2026-07-04) — `sn-alert-scrape-target-down`: `min by (process) (up{job="silken_net_scraper"})` per-process називає, КОТРИЙ з трьох таргетів мертвий; `NoData → Alerting` = сам Alloy впав. Лишається 👤 імпорт (S2.4) | ops |
-| 6 | 🟡 **SLO + error-budget** — mint-half ✅ (IaC 2026-07-04): `sn-alert-mint-slo-breach` <80%/1h (єдина канон-ціль — [`06_08 §2.4`](06_08_Resilience_and_Failover_Policy); PromQL-guard `and attempts>0`). Slash/payout/insurance ratios — пороги калібруються з перших live-вікон (00_07 S2.4), не вигадуються | ops |
+| 6 | 🟡 **SLO + error-budget** — mint-half ✅ (IaC 2026-07-04): `sn-alert-mint-slo-breach` <80%/1h (єдина канон-ціль — [`06_08 §2.4`](06_08_Resilience_and_Failover_Policy); PromQL-guard `and attempts>0`). Slash/payout/insurance ratios — пороги калібруються з перших live-вікон (00_07 S2.4), не вигадуються. **[ARCH.62]** `sn-alert-mint-volume-anomaly` (agg mint-volume ceiling ~MAX_SUPPLY, operator-калібрований) + per-token inert circuit-break | ops |
 | 7 | Dashboards + alerts **import** у Grafana Cloud (IaC у `deploy/grafana/`) | S2.2/S2.3 — IaC готовий; ✅ one-command `deploy/grafana/import.rb` (2026-06-11, auto-discovery UID + ідемпотентний upsert, `--dry-run` без credentials); лишається 👤 запуск із токеном + contact point + verify | ops |
 
 **#2 + #4 — імплементовано (2026-06-04) у `deploy/akash/config.alloy`:** pipeline `prometheus.scrape → prometheus.relabel.cardinality_budget → prometheus.remote_write` (queue_config + явний WAL). Значення живуть у `config.alloy` (SSOT) — тут не дублюються, щоб уникнути drift; rationale — рядки #2/#4 вище. Валідація: CI job `alloy_config_validate` (`grafana/alloy fmt`).

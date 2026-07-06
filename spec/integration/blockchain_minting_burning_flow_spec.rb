@@ -63,7 +63,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       allow(mock_client).to receive(:call).and_return(0)
       allow(Eth::Contract).to receive(:from_abi).and_return(double("contract"))
       allow(BlockchainConfirmationWorker).to receive(:perform_in)
-      Rails.cache.delete(BlockchainMintingService::TREASURY_CACHE_KEY)
+      Rails.cache.delete(BlockchainMintingService::TREASURY_BALANCE_CACHE_KEY)
     end
 
     it "mints a single carbon coin transaction" do

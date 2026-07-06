@@ -58,6 +58,8 @@ on-chain активи (SilkenCarbonCoin / SCC). Пайплайн складає�
 
 > **Чесна рамка** (verify-by-data 2026-06-28 → [`00_07`](00_07_Action_Plan_Tracker) ARCH.53). Мінт SCC **оптимістичний**: `growth_points` зараховуються при розпакуванні телеметрії (`credit!`), а pending-мінт створює tokenomics-шлях за порогом `balance ≥ EMISSION_THRESHOLD` (PATH 2, §DOC.7 нижче). IoTeX-ZK + Chainlink-DON — це **асинхронна anti-fraud-провенанс-перевірка** (Lorenz Z = anti-fraud-сигнал, не health/gate — E.63), а **НЕ** синхронний gate перед кожним мінтом. Enforcement проти фроду = **ex-post reconcile + clawback** (device-Merkle-корінь ↔ намінтоване → `slash()`; політика [`05_05 §3.3`](05_05_Slashing_and_Risk_Policy)) — **наразі не збудований** (energy-gated L2). Trust-origin per-packet — драбина **L0** (приймається беззастережно) / **L1** (Queen-attest = soft-marker, не gate) / **L2** (per-tree device-voice, North-Star).
 
+> **[ARCH.62] Interim defense-in-depth (поки clawback — North-Star).** Оскільки живий PATH 2 мінтить оптимістично, а ex-post clawback ще не збудований, агрегатний mint-volume detector (`Treasury::MonitorService` → gauge `silkennet_mint_volume_window_scc` + per-token inert circuit-break) обмежує blast-radius над-мінту **у вікні детекції**: per-tx guards + `MAX_SUPPLY` ловлять поодинокі аномалії, ARCH.62 — агрегатний сплеск обсягу (firmware/pipeline-баг чи зловжитий MINTER-ключ), який `chain_audit_delta` не бачить, коли DB↔chain згодні на аномальному числі. **Комплемент, не заміна** clawback (той лишається North-Star). Пороги inert-default → [`00_07` ARCH.62](00_07_Action_Plan_Tracker) + [`06_03 §2.8`](06_03_Prometheus_Observability).
+
 **Oracle-driven gate (PATH 1) — повний trustless-ланцюг, що діє ЛИШЕ на цьому шляху (з `telemetry_log`):**
 
 ```

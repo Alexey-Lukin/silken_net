@@ -93,7 +93,20 @@ system_params = [
   { key: "oracle_min_balance_celo", value: "0.05", value_type: "float", category: "minting",
     min_value: 0.001, max_value: 10.0, description: "Minimum CELO balance for Celo Oracle wallet" },
   { key: "oracle_min_balance_eth", value: "0.01", value_type: "float", category: "minting",
-    min_value: 0.001, max_value: 1.0, description: "Minimum ETH balance for Ethereum L1 anchoring" }
+    min_value: 0.001, max_value: 1.0, description: "Minimum ETH balance for Ethereum L1 anchoring" },
+
+  # --- Money-path aggregate safety (ARCH.62 / INS.2 — inert за замовчуванням) ---
+  # Усі пороги 0/false = вимкнено: механізм повний у коді, активація/калібрування = 👤 DAO
+  # (дзеркало slash_cause_uplift_enabled). LOCAL money-path safety — НЕ входять у on-chain
+  # ProtocolParameters-sync (GOV.1 9 economic keys), ParameterSyncWorker їх не тягне.
+  { key: "mint_volume_hourly_max_scc", value: "0", value_type: "integer", category: "minting",
+    min_value: 0, max_value: 10_000_000_000, description: "[ARCH.62] Rolling-1h minted SCC ceiling; >0 arms the volume-anomaly alert (0=off)" },
+  { key: "mint_circuit_breaker_enabled", value: "false", value_type: "boolean", category: "minting",
+    description: "[ARCH.62] When true, a volume-anomaly breach holds new mint batches of that token as :pending (re-runnable; auto-releases on the Kredis flag TTL ≤1h)" },
+  { key: "insurance_aggregate_payout_cap_scc", value: "0", value_type: "integer", category: "insurance",
+    min_value: 0, max_value: 10_000_000_000, description: "[INS.2] 24h correlated-event cap on Internal-mint insurance payouts (0=off)" },
+  { key: "insurance_reserve_adequacy_ratio", value: "0", value_type: "decimal", category: "insurance",
+    min_value: 0, max_value: 1000, description: "[INS.2] Max ratio of 30d Internal insurance-mint to DAO_TREASURY reserve (0=off)" }
 ]
 
 system_params.each do |attrs|

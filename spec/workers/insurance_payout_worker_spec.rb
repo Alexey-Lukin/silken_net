@@ -70,6 +70,39 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
       expect(BlockchainMintingService).to have_received(:call).with(kind_of(Integer))
     end
 
+    context "with the INS.2 reserve gate" do
+      it "holds the payout in manual_review WITHOUT minting when the reserve gate fails" do
+        allow(Insurance::ReserveGate).to receive(:call).and_return(
+          Insurance::ReserveGate::Result.new(ok: false, reason: :aggregate_cap, detail: "over cap")
+        )
+
+        expect { described_class.new.perform(insurance.id) }
+          .to change { EwsAlert.where(alert_type: :system_fault).count }.by(1)
+
+        expect(BlockchainMintingService).not_to have_received(:call)
+        expect(insurance.reload.blockchain_transaction.status).to eq("manual_review")
+      end
+
+      it "proceeds to mint when the reserve gate passes" do
+        allow(Insurance::ReserveGate).to receive(:call).and_return(
+          Insurance::ReserveGate::Result.new(ok: true, reason: :ok)
+        )
+
+        described_class.new.perform(insurance.id)
+
+        expect(BlockchainMintingService).to have_received(:call)
+      end
+
+      it "raises on a transient reserve-gate RPC error (Sidekiq retry, not permanent manual_review park)" do
+        allow(Insurance::ReserveGate).to receive(:call).and_return(
+          Insurance::ReserveGate::Result.new(ok: false, reason: :eval_error, detail: "RPC down")
+        )
+
+        expect { described_class.new.perform(insurance.id) }.to raise_error(/reserve-gate transient/)
+        expect(BlockchainMintingService).not_to have_received(:call)
+      end
+    end
+
     it "broadcasts insurance update via Turbo" do
       described_class.new.perform(insurance.id)
 

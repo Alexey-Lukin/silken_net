@@ -32,7 +32,7 @@ end
     allow(mock_client).to receive(:call).and_return(0)
     allow(Kredis).to receive(:lock).and_yield
     Web3::RpcConnectionPool.reset!
-    Rails.cache.delete(described_class::TREASURY_CACHE_KEY)
+    Rails.cache.delete(described_class::TREASURY_BALANCE_CACHE_KEY)
   end
 
   let(:fake_tx_hash) { "0x" + "f" * 64 }
@@ -48,6 +48,67 @@ end
         expect(mock_client).not_to receive(:transact)
 
         described_class.call(-1)
+      end
+    end
+
+    context "with the ARCH.62 mint circuit-breaker" do
+      let(:tx) do
+        tree = create(:tree)
+        wallet = tree.wallet
+        wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+        wallet.blockchain_transactions.create!(
+          amount: 10.0, token_type: :carbon_coin, status: :pending, to_address: "0x" + "b" * 40
+        )
+      end
+
+      it "holds the batch as :pending WITHOUT minting when the circuit flag is set (re-runnable)" do
+        allow(Kredis).to receive(:flag).and_return(instance_double(Kredis::Types::Flag, marked?: true))
+        expect(mock_client).not_to receive(:transact)
+
+        described_class.call(tx.id)
+
+        # HOLD leaves the tx :pending (auto-recovers next cycle when the flag clears) — NOT
+        # escalated to manual_review (that would orphan a clean, never-broadcast tx).
+        expect(tx.reload.status).to eq("pending")
+      end
+
+      it "mints normally when the circuit flag is clear (default)" do
+        allow(Kredis).to receive(:flag).and_return(instance_double(Kredis::Types::Flag, marked?: false))
+        allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
+
+        described_class.call(tx.id)
+
+        expect(tx.reload.status).to eq("sent")
+      end
+
+      it "fails OPEN (mint proceeds) when the circuit-flag read raises (Redis blip)" do
+        allow(Kredis).to receive(:flag).and_raise(StandardError, "redis down")
+        allow(Rails.logger).to receive(:error)
+        allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
+
+        described_class.call(tx.id)
+
+        expect(tx.reload.status).to eq("sent")
+      end
+
+      it "halts ONLY the tripped token, mints the other (per-token isolation)" do
+        tree_c = create(:tree)
+        tree_c.wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+        txc = tree_c.wallet.blockchain_transactions.create!(amount: 10.0, token_type: :carbon_coin, status: :pending, to_address: "0x" + "b" * 40)
+        tree_f = create(:tree)
+        tree_f.wallet.update!(crypto_public_address: "0x" + "c" * 40, hadron_kyc_status: "approved")
+        txf = tree_f.wallet.blockchain_transactions.create!(amount: 10.0, token_type: :forest_coin, status: :pending, to_address: "0x" + "c" * 40)
+
+        allow(Kredis).to receive(:flag).with("#{described_class::MINT_CIRCUIT_FLAG_PREFIX}carbon_coin")
+          .and_return(instance_double(Kredis::Types::Flag, marked?: true))
+        allow(Kredis).to receive(:flag).with("#{described_class::MINT_CIRCUIT_FLAG_PREFIX}forest_coin")
+          .and_return(instance_double(Kredis::Types::Flag, marked?: false))
+        allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
+
+        described_class.call_batch([ txc.id, txf.id ])
+
+        expect(txc.reload.status).to eq("pending") # carbon held
+        expect(txf.reload.status).to eq("sent")    # forest minted
       end
     end
 

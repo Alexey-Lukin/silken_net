@@ -139,6 +139,33 @@ class InsurancePayoutWorker
           return
         end
 
+        # [INS.2] Reserve-backing gate ПЕРЕД mint — Internal-mode мінтить новий SCC (інфляція),
+        # не забезпечений DAO_TREASURY-пулом. Gate капить сумарну емісію (aggregate correlated
+        # stop-loss + reserve-adequacy); обидва пороги inert-default → без калібрування gate
+        # завжди :ok (поведінка незмінна). Справжній breach → HOLD manual_review (людський
+        # reconcile регіональної події); transient RPC-збій → raise (Sidekiq-retry) нижче.
+        reserve_gate = Insurance::ReserveGate.call(insurance, current_tx_id: tx.id)
+        unless reserve_gate.ok?
+          # [INS.2] Transient RPC-збій (fail-closed :eval_error) → RAISE: лишаємо tx :pending,
+          # Sidekiq retry(10) підхопить після відновлення (recovery-крон тягне лише :triggered,
+          # ця вже :paid, тож БЕЗ raise вона застрягла б назавжди). Справжній breach
+          # (aggregate/reserve) → escalate manual_review (persistent, людський розгляд події).
+          raise "INS.2 reserve-gate transient RPC error: #{reserve_gate.detail}" if reserve_gate.reason == :eval_error
+
+          # tx гарантовано :pending (guard вище) → escalate завжди легальний (AASM from :pending),
+          # may-guard тут був би мертвою гілкою.
+          tx.escalate_to_review!("INS.2 reserve-gate hold (#{reserve_gate.reason}): #{reserve_gate.detail}")
+          EwsAlert.create(
+            alert_type: :system_fault,
+            severity: :critical,
+            message: "Insurance reserve-gate HOLD [INS.2] для ##{insurance.id} (#{reserve_gate.reason}): " \
+                     "#{reserve_gate.detail}. Internal-mint виплату зупинено — звір страхову експозицію / " \
+                     "поповнення DAO_TREASURY перед ручним resolve."
+          )
+          Rails.logger.warn "🛡️ [Insurance] ##{insurance.id}: reserve-gate HOLD (#{reserve_gate.reason}) → manual_review (без mint)."
+          return
+        end
+
         Rails.logger.info "🚀 [Insurance] Ініціація виплати #{tx.amount} SCC для #{organization.name}..."
         # [RATE LIMITED]: RPC виклик захищений глобальним лімітером.
         within_rpc_limit do

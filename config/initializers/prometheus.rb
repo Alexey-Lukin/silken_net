@@ -223,6 +223,18 @@ module SilkenNet
       docstring: "Absolute delta between DB SCC total (mints−burns) and on-chain totalSupply"
     )
 
+    # [ARCH.62] Rolling-1h заминчений обсяг SCC/SFC (money-path defense-in-depth). Per-tx
+    # guards + `MAX_SUPPLY`-стеля ловлять поодинокі аномалії, але АГРЕГАТНИЙ сплеск обсягу
+    # (firmware/pipeline-баг чи тихо-зловжитий MINTER-ключ) не ловить ніщо — `chain_audit_delta`
+    # мовчить, коли DB і chain згодні на аномальному числі. Семплить Treasury::MonitorService
+    # (15-хв money-path прохід). Детектор алертить лише коли SystemParameter-поріг увімкнено —
+    # gauge завжди живий для видимості обсягу. 05_02 §Модель довіри / 06_03 §2.8.
+    MINT_VOLUME_WINDOW_SCC = REGISTRY.gauge(
+      :silkennet_mint_volume_window_scc,
+      docstring: "SCC/SFC minted in the trailing 1h window (ARCH.62 volume-anomaly detector input)",
+      labels: [ :token_type ]
+    )
+
     # [ARCH.54 Шар 0] Dead-man switch Королеви (GatewayStalenessSweepWorker):
     # переходи offline→faulty (counter) + поточний стан флоту (gauges).
     GATEWAYS_OFFLINE_TOTAL = REGISTRY.counter(

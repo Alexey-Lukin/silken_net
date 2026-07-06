@@ -17,21 +17,16 @@ class BlockchainMintingService < ApplicationService
 
   WEI_MULTIPLIER = 10**18
 
-  # Мінімальний ABI для читання балансу ERC-20 (balanceOf).
-  BALANCE_OF_ABI = [
-    {
-      "inputs" => [ { "internalType" => "address", "name" => "account", "type" => "address" } ],
-      "name" => "balanceOf",
-      "outputs" => [ { "internalType" => "uint256", "name" => "", "type" => "uint256" } ],
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ].to_json
+  # [ARCH.62] One-Home Kredis-прапор money-path circuit-break, per-token (детекція per token_type
+  # → відповідь per token_type: SFC-сплеск не гальмує SCC). Treasury::MonitorService детектор
+  # ставить його при аномальному обсязі мінту (лише коли поріг + kill-switch увімкнено); цей
+  # сервіс читає його per token-group. Ключ живе тут (money-core), monitor його реферує.
+  MINT_CIRCUIT_FLAG_PREFIX = "mint:circuit_broken:"
 
-  # Кеш-ключ та TTL для on-chain запиту до DAO Treasury.
-  # 15 хвилин — оптимальний TTL: стан пулу змінюється рідко (лише при страхових виплатах),
-  # а максимальне навантаження на RPC = 4 запити/годину замість тисяч.
-  TREASURY_CACHE_KEY = "dao_treasury_needs_funding"
+  # Кеш-ключ та TTL для on-chain балансу DAO Treasury (balanceOf через Web3::Erc20Reader).
+  # 15 хв — стан пулу змінюється рідко (лише при страхових виплатах); RPC ≤ 4/год замість тисяч.
+  # [One-Home] той самий ключ читає Insurance::ReserveGate → один RPC на вікно на обидві фічі.
+  TREASURY_BALANCE_CACHE_KEY = "dao_treasury_balance_wei"
   TREASURY_CACHE_TTL = 15.minutes
   TREASURY_RPC_TIMEOUT = 10
 
@@ -148,7 +143,27 @@ class BlockchainMintingService < ApplicationService
 
   private
 
+  # [ARCH.62] Per-token circuit-прапор. Fail-OPEN на Redis-збої: circuit-break — optional
+  # stop-loss (default-off); блокувати легітимний mint через Redis-blip гірше за пропущену
+  # аномалію (money liveness > optional safety, дзеркало E.46).
+  def mint_circuit_broken?(token_type)
+    Kredis.flag("#{MINT_CIRCUIT_FLAG_PREFIX}#{token_type}").marked?
+  rescue StandardError => e
+    Rails.logger.error "🛑 [ARCH.62] circuit-flag read failed (fail-open, mint proceeds): #{e.message}"
+    false
+  end
+
   def process_token_group(client, oracle_key, token_type, txs)
+    # [ARCH.62] Circuit-break HOLD: лишаємо txs :pending (re-runnable наступним циклом, коли
+    # прапор спливе TTL) — НЕ escalate у manual_review. Той guard = ambiguous on-chain стан; тут
+    # txs ще не торкались chain → escalate осиротив би чисті :pending назавжди (auto-discovery
+    # сканує :pending, а may_escalate_to_review? з :manual_review = false → ручний toil).
+    if mint_circuit_broken?(token_type)
+      Rails.logger.warn "🛑 [ARCH.62] Mint circuit-breaker (#{token_type}) активний — " \
+                        "#{txs.size} tx лишаються :pending (mint відкладено до reset/TTL-expiry)."
+      return
+    end
+
     contract_address = case token_type
     when "carbon_coin" then ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
     when "forest_coin" then ENV.fetch("FOREST_COIN_CONTRACT_ADDRESS")
@@ -545,31 +560,21 @@ class BlockchainMintingService < ApplicationService
   # (постійний 2% податок на кожен mint при тривалому RPC outage). Пул поповниться при
   # наступному успішному виклику. Помилка логується для моніторингу (Sentry + Prometheus).
   def insurance_pool_requires_funding?
-    Rails.cache.fetch(TREASURY_CACHE_KEY, expires_in: TREASURY_CACHE_TTL) do
-      fetch_treasury_balance_wei < insurance_pool_threshold_wei
-    end
+    fetch_treasury_balance_wei < insurance_pool_threshold_wei
   rescue StandardError => e
     Rails.logger.error "🛑 [Web3] DAO Treasury balance check failed (RPC degraded): #{e.message}"
     # [E.46] Завжди false при RPC-збої — не штрафуємо мінтинг під час деградації мережі.
     false
   end
 
-  # Повертає баланс DAO Treasury у wei (Integer) для точного порівняння без Float.
+  # Баланс DAO Treasury у wei (Integer). [One-Home] через Web3::Erc20Reader зі спільним
+  # cache-ключем → Insurance::ReserveGate читає той самий баланс (один RPC на 15-хв вікно).
   def fetch_treasury_balance_wei
-    client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
-    contract = Eth::Contract.from_abi(
-      name: "SilkenCarbonCoin",
-      address: ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS"),
-      abi: BALANCE_OF_ABI
+    Web3::Erc20Reader.balance_of_wei(
+      contract_env_key: "CARBON_COIN_CONTRACT_ADDRESS",
+      holder: ENV.fetch("DAO_TREASURY_ADDRESS"),
+      cache_key: TREASURY_BALANCE_CACHE_KEY, ttl: TREASURY_CACHE_TTL, timeout: TREASURY_RPC_TIMEOUT
     )
-
-    treasury_address = ENV.fetch("DAO_TREASURY_ADDRESS")
-
-    raw = Timeout.timeout(TREASURY_RPC_TIMEOUT) do
-      client.call(contract, "balanceOf", treasury_address)
-    end
-
-    Integer(raw)
   end
 
   def broadcast_tx_update(transaction)
