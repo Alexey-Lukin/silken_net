@@ -575,31 +575,31 @@ RSpec.describe Solana::MintingService do
 
     it "raises when getLatestBlockhash returns a nil response body" do
       allow(service).to receive(:execute_rpc_call).and_return(nil)
-      expect { service.send(:fetch_latest_blockhash, "url") }
+      expect { service.send(:fetch_latest_blockhash) }
         .to raise_error(RuntimeError, /Failed to fetch blockhash/)
     end
 
     it "raises when getTokenAccountsByOwner returns a nil response body" do
       allow(service).to receive(:execute_rpc_call).and_return(nil)
-      expect { service.send(:resolve_dest_token_account, "url", "owner", "mint") }
+      expect { service.send(:resolve_dest_token_account, "owner", "mint") }
         .to raise_error(RuntimeError, /No USDC token account found/)
     end
 
     it "raises an unknown-error when sendTransaction returns a nil response body" do
       allow(service).to receive(:execute_rpc_call).and_return(nil)
-      expect { service.send(:broadcast_signed_transaction, "url", "sig", "msg") }
+      expect { service.send(:broadcast_signed_transaction, "sig", "msg") }
         .to raise_error(RuntimeError, /Unknown Solana RPC error/)
     end
 
     it "treats a nil getBalance response as zero and raises low-balance" do
       allow(service).to receive(:execute_rpc_call).and_return(nil)
-      expect { service.send(:verify_oracle_balance!, "url", "pubkey") }
+      expect { service.send(:verify_oracle_balance!, "pubkey") }
         .to raise_error(RuntimeError, /низький баланс/)
     end
 
     it "raises when the oracle balance is below the configured minimum" do
       allow(service).to receive(:execute_rpc_call).and_return({ "result" => { "value" => 1_000 } })
-      expect { service.send(:verify_oracle_balance!, "url", "pubkey") }
+      expect { service.send(:verify_oracle_balance!, "pubkey") }
         .to raise_error(RuntimeError, /низький баланс/)
     end
   end
@@ -743,6 +743,56 @@ RSpec.describe Solana::MintingService do
     it "returns :not_found when the RPC envelope is nil (total RPC failure short-circuits the dig)" do
       allow(service).to receive(:execute_rpc_call).and_return(nil)
       expect(service.signature_status("sig")).to eq(:not_found)
+    end
+  end
+
+  # [INF.22] RPC fallback cascade — Solana не-EVM, тож каскад живе в execute_rpc_call
+  # (не Web3::ResilientClient). Primary SOLANA_RPC_URL → SOLANA_RPC_URL_FALLBACK_* по черзі.
+  describe "#execute_rpc_call RPC fallback cascade [INF.22]" do
+    let(:service) { described_class.new(create(:telemetry_log, :verified_telemetry, tree: tree)) }
+    let(:payload) { { jsonrpc: "2.0", id: "x", method: "getBalance", params: [] } }
+
+    it "falls back to SOLANA_RPC_URL_FALLBACK_1 when the primary endpoint raises" do
+      ENV["SOLANA_RPC_URL"] = "https://primary.example"
+      ENV["SOLANA_RPC_URL_FALLBACK_1"] = "https://fallback1.example"
+
+      allow(Web3::HttpClient).to receive(:post) do |url, **_kwargs|
+        raise Web3::HttpClient::RequestError, "primary down" if url == "https://primary.example"
+
+        Web3::HttpClient::Response.new({ "result" => "ok" }.to_json)
+      end
+
+      expect(service.send(:execute_rpc_call, payload)).to eq({ "result" => "ok" })
+      expect(Web3::HttpClient).to have_received(:post).with("https://primary.example", any_args)
+      expect(Web3::HttpClient).to have_received(:post).with("https://fallback1.example", any_args)
+    ensure
+      ENV.delete("SOLANA_RPC_URL")
+      ENV.delete("SOLANA_RPC_URL_FALLBACK_1")
+    end
+
+    it "raises the last error when every endpoint in the cascade fails" do
+      ENV["SOLANA_RPC_URL"] = "https://primary.example"
+      ENV["SOLANA_RPC_URL_FALLBACK_1"] = "https://fallback1.example"
+
+      allow(Web3::HttpClient).to receive(:post).and_raise(Web3::HttpClient::RequestError, "all down")
+
+      expect { service.send(:execute_rpc_call, payload) }
+        .to raise_error(Web3::HttpClient::RequestError, /all down/)
+    ensure
+      ENV.delete("SOLANA_RPC_URL")
+      ENV.delete("SOLANA_RPC_URL_FALLBACK_1")
+    end
+
+    it "skip-clean: without any fallback ENV, uses exactly one endpoint" do
+      ENV["SOLANA_RPC_URL"] = "https://primary.example"
+      allow(Web3::HttpClient).to receive(:post)
+        .and_return(Web3::HttpClient::Response.new({ "result" => "ok" }.to_json))
+
+      service.send(:execute_rpc_call, payload)
+
+      expect(Web3::HttpClient).to have_received(:post).once
+    ensure
+      ENV.delete("SOLANA_RPC_URL")
     end
   end
 

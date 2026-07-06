@@ -122,7 +122,7 @@
 - [ ] `ALCHEMY_POLYGON_RPC_URL` — Alchemy/Infura RPC для Polygon (Primary). `Web3::ResilientClient` підтримує fallback cascade — також встанови `ALCHEMY_POLYGON_RPC_URL_FALLBACK_*` за потреби.
 - [ ] `POLYGON_RPC_URL` — **окремий** Polygon RPC для `PriceOracleService` (`Web3::RpcConnectionPool.client_for("POLYGON_RPC_URL")`, `ENV.fetch` без fallback → `KeyError` якщо відсутній). Може дорівнювати `ALCHEMY_POLYGON_RPC_URL` або public endpoint (`https://polygon-rpc.com`). ✅ заведено у Kamal env.secret + `.kamal/secrets` + обидва deploy-workflows (INF.12 machine-half).
 - [ ] `ALCHEMY_ETHEREUM_RPC_URL` — Alchemy RPC для Ethereum L1
-- [ ] `SOLANA_RPC_URL` — Solana RPC. ⚠️ **БЕЗ цього ENV дефолт = Solana Devnet** — мікро-винагороди USDC підуть на тестову мережу (`E.47` у [`00_07`](00_07_Action_Plan_Tracker))! Mainnet: Helius/QuickNode.
+- [ ] `SOLANA_RPC_URL` — Solana RPC. ⚠️ **БЕЗ цього ENV дефолт = Solana Devnet** — мікро-винагороди USDC підуть на тестову мережу (`E.47` у [`00_07`](00_07_Action_Plan_Tracker))! Mainnet: Helius/QuickNode. Опц. `SOLANA_RPC_URL_FALLBACK_1/2` — fallback-каскад (INF.22, `Solana::MintingService#execute_rpc_call`); порожні = single-RPC.
 - [ ] `CARBON_COIN_CONTRACT_ADDRESS` — адреса SCC контракту після deploy (`BlockchainMintingService`, `ENV.fetch` без default → `KeyError` на першому SCC mint)
 - [ ] `FOREST_COIN_CONTRACT_ADDRESS` — адреса SFC контракту після deploy (той самий `ENV.fetch`-патерн → `KeyError` на першому SFC mint). ✅ placeholder заведено у Kamal env.clear + Akash SDL (INF.12 machine-half; fill = post-`forge deploy`).
 - [ ] `KLIMA_RETIREMENT_CONTRACT` — адреса KlimaDAO Retirement Aggregator

@@ -23,6 +23,15 @@ module Solana
     # Solana Devnet RPC endpoint (перемикається на Mainnet через ENV)
     DEVNET_RPC_URL = "https://api.devnet.solana.com"
 
+    # [INF.22] RPC FALLBACK CASCADE для Solana (дзеркало Celo E.49). Solana — не-EVM,
+    # тож замість Web3::ResilientClient (обгортка Eth::Client) каскад живе в execute_rpc_call:
+    # при недоступності primary SOLANA_RPC_URL пробуємо ці endpoint'и по черзі. Skip-clean —
+    # жоден не заданий → рівно один RPC (як було). Порядок: primary → FALLBACK_1 → FALLBACK_2.
+    RPC_FALLBACK_ENV_KEYS = %w[
+      SOLANA_RPC_URL_FALLBACK_1
+      SOLANA_RPC_URL_FALLBACK_2
+    ].freeze
+
     # Мікро-винагорода за одиницю зростання біомаси (в USDC lamports, 1 USDC = 1_000_000 lamports)
     # 0.01 USDC = 10_000 lamports
     DEFAULT_MICRO_REWARD_LAMPORTS = 10_000
@@ -122,12 +131,11 @@ module Solana
     # [ARCH.45] On-chain статус Solana-підпису через getSignatureStatuses.
     # → :confirmed (виконано) · :processing (ще в мережі) · :not_found (не дійшло/помилка — безпечно re-pay).
     def signature_status(tx_signature)
-      rpc_url = ENV.fetch("SOLANA_RPC_URL", DEVNET_RPC_URL)
       payload = {
         jsonrpc: "2.0", id: SecureRandom.uuid, method: "getSignatureStatuses",
         params: [ [ tx_signature ], { searchTransactionHistory: true } ]
       }
-      info = execute_rpc_call(rpc_url, payload)&.dig("result", "value")&.first
+      info = execute_rpc_call(payload)&.dig("result", "value")&.first
       return :not_found if info.nil?            # підпис не знайдено → не дійшло
       return :not_found if info["err"].present? # виконано з помилкою → кошти не пішли, безпечно re-pay
 
@@ -182,13 +190,9 @@ module Solana
     # intent-marker з ним ДО мережі — на retry бачимо намір і не платимо наосліп (crash-window
     # double-pay). Solana дедуплікує повторний broadcast того ж підписаного tx у вікні blockhash.
     def prepare_transfer(recipient, amount_lamports, checked:)
-      if ENV["SOLANA_RPC_URL"].blank? && Rails.env.production?
-        raise "🛑 [Solana] SOLANA_RPC_URL is required in production — refusing Devnet fallback"
-      end
-      rpc_url = ENV.fetch("SOLANA_RPC_URL", DEVNET_RPC_URL)
-
       # [SECURITY]: SOLANA_WALLET_KEYPAIR обов'язковий для підпису транзакцій.
-      # Hex-encoded 32-byte seed (приватний ключ Ed25519).
+      # Hex-encoded 32-byte seed (приватний ключ Ed25519). (E.47 prod-guard живе у
+      # solana_rpc_urls — спрацьовує на першому RPC-виклику нижче.)
       keypair_hex = ENV["SOLANA_WALLET_KEYPAIR"]
       raise "🛑 [Solana] SOLANA_WALLET_KEYPAIR is required for transaction signing" if keypair_hex.blank?
 
@@ -196,17 +200,17 @@ module Solana
 
       # [BLOCKER-1 FIX]: Guard clause — перевірка балансу оракула перед відправкою транзакції.
       # Аналог BlockchainMintingService.
-      verify_oracle_balance!(rpc_url, fee_payer)
+      verify_oracle_balance!(fee_payer)
 
       source_token_account = ENV.fetch("SOLANA_FEE_PAYER_TOKEN_ACCOUNT") { raise "🛑 [Solana] SOLANA_FEE_PAYER_TOKEN_ACCOUNT is required" }
       dest_token_account = ENV.fetch("SOLANA_DEST_TOKEN_ACCOUNT", nil)
       usdc_mint = ENV.fetch("SOLANA_USDC_MINT_ADDRESS") { raise "🛑 [Solana] SOLANA_USDC_MINT_ADDRESS is required" }
 
       # Для динамічних отримувачів — деривація ATA через RPC lookup
-      dest_token_account = resolve_dest_token_account(rpc_url, recipient, usdc_mint) if dest_token_account.blank?
+      dest_token_account = resolve_dest_token_account(recipient, usdc_mint) if dest_token_account.blank?
 
       # Крок 1: Отримання свіжого blockhash (необхідний для валідності транзакції)
-      recent_blockhash = fetch_latest_blockhash(rpc_url)
+      recent_blockhash = fetch_latest_blockhash
 
       # Крок 2: Побудова бінарного повідомлення транзакції (Solana Message Format)
       message_bytes =
@@ -228,19 +232,19 @@ module Solana
 
       # [ARCH.45] tx_signature (base58 першого підпису) відомий ТУТ, до broadcast —
       # повертаємо все потрібне, broadcast виконує broadcast_prepared окремо.
-      { rpc_url:, signature_bytes:, message_bytes:, signature: encode_base58(signature_bytes) }
+      { signature_bytes:, message_bytes:, signature: encode_base58(signature_bytes) }
     end
 
     # [ARCH.45] Broadcast попередньо підготованої (підписаної) транзакції — спільний хвіст
     # для per-event (dispatch_transfer) і batch (batch_payout!) шляхів.
     def broadcast_prepared(prepared)
-      broadcast_signed_transaction(prepared[:rpc_url], prepared[:signature_bytes], prepared[:message_bytes])
+      broadcast_signed_transaction(prepared[:signature_bytes], prepared[:message_bytes])
     end
 
     # =========================================================================
     # RPC: getLatestBlockhash
     # =========================================================================
-    def fetch_latest_blockhash(rpc_url)
+    def fetch_latest_blockhash
       payload = {
         jsonrpc: "2.0",
         id: SecureRandom.uuid,
@@ -248,7 +252,7 @@ module Solana
         params: [ { commitment: "confirmed" } ]
       }
 
-      response = execute_rpc_call(rpc_url, payload)
+      response = execute_rpc_call(payload)
 
       blockhash = response&.dig("result", "value", "blockhash")
       raise "Solana RPC Error: Failed to fetch blockhash" if blockhash.blank?
@@ -259,7 +263,7 @@ module Solana
     # =========================================================================
     # RPC: getTokenAccountsByOwner (резолюція ATA для отримувача)
     # =========================================================================
-    def resolve_dest_token_account(rpc_url, owner_address, mint_address)
+    def resolve_dest_token_account(owner_address, mint_address)
       payload = {
         jsonrpc: "2.0",
         id: SecureRandom.uuid,
@@ -271,7 +275,7 @@ module Solana
         ]
       }
 
-      response = execute_rpc_call(rpc_url, payload)
+      response = execute_rpc_call(payload)
 
       accounts = response&.dig("result", "value")
       if accounts.is_a?(Array) && accounts.any?
@@ -410,7 +414,7 @@ module Solana
     # =========================================================================
     # Формує повну транзакцію (signature + message), кодує в Base64 і відправляє.
     # skipPreflight: false — Solana перевірить транзакцію перед включенням в блок.
-    def broadcast_signed_transaction(rpc_url, signature_bytes, message_bytes)
+    def broadcast_signed_transaction(signature_bytes, message_bytes)
       # Solana Transaction Format: [num_signatures (compact-u16)] [signatures] [message]
       transaction = String.new(encoding: Encoding::BINARY)
       transaction << encode_compact_u16(1)   # 1 signature
@@ -429,7 +433,7 @@ module Solana
         ]
       }
 
-      response = execute_rpc_call(rpc_url, payload)
+      response = execute_rpc_call(payload)
 
       # sendTransaction повертає tx_signature у полі "result"
       tx_signature = response&.dig("result")
@@ -445,15 +449,45 @@ module Solana
     # =========================================================================
     # HTTP TRANSPORT
     # =========================================================================
-    def execute_rpc_call(rpc_url, payload)
-      response = Web3::HttpClient.post(rpc_url,
-        body: payload,
-        open_timeout: 10,
-        read_timeout: 15,
-        service_name: "Solana"
-      )
+    # [INF.22] Єдина транспортна точка всіх Solana JSON-RPC викликів з fallback-каскадом.
+    # Пробуємо primary, тоді SOLANA_RPC_URL_FALLBACK_* по черзі; транспортний фейл одного
+    # endpoint'а (timeout / 429 / conn = RequestError) → наступний. Web3::HttpClient
+    # circuit-breaker ключується на "Solana" (per-service, не per-URL): успішний fallback
+    # скидає лічильник, повний провал каскаду лишає circuit відкритим для backoff. Money-path
+    # durable-захист (intent-marker + reconcile ARCH.45/51) означає, що вичерпаний каскад
+    # лише ЗАТРИМУЄ виплату, не губить кошти. URL у лог не пишемо (може нести API-ключ).
+    def execute_rpc_call(payload)
+      last_error = nil
 
-      response.parsed_body
+      solana_rpc_urls.each do |rpc_url|
+        return Web3::HttpClient.post(rpc_url,
+          body: payload,
+          open_timeout: 10,
+          read_timeout: 15,
+          service_name: "Solana"
+        ).parsed_body
+      rescue Web3::HttpClient::RequestError => e
+        last_error = e
+        Rails.logger.warn "🌊 [Solana] RPC endpoint недоступний (#{e.class}) — наступний у каскаді"
+      end
+
+      raise last_error
+    end
+
+    # [INF.22] Каскад RPC-endpoint'ів: primary SOLANA_RPC_URL + опційні
+    # SOLANA_RPC_URL_FALLBACK_*. E.47 guard на primary — у production відмова від тихого
+    # Devnet-fallback (єдиний дім guard'а, тож він тримається на КОЖНОМУ RPC-шляху, вкл.
+    # reconcile signature_status). Мемоізовано — ENV стабільний у межах життя сервісу.
+    def solana_rpc_urls
+      @solana_rpc_urls ||= begin
+        if ENV["SOLANA_RPC_URL"].blank? && Rails.env.production?
+          raise "🛑 [Solana] SOLANA_RPC_URL is required in production — refusing Devnet fallback"
+        end
+
+        urls = [ ENV.fetch("SOLANA_RPC_URL", DEVNET_RPC_URL) ]
+        RPC_FALLBACK_ENV_KEYS.each { |key| urls << ENV[key] if ENV[key].present? }
+        urls.uniq
+      end
     end
 
     # =========================================================================
@@ -518,7 +552,7 @@ module Solana
     # =========================================================================
     # Перевіряє баланс SOL на гаманці оракула перед відправкою транзакції.
     # [E.51] Threshold configurable через SystemParameter (governance-aware, 24h cache).
-    def verify_oracle_balance!(rpc_url, fee_payer_pubkey)
+    def verify_oracle_balance!(fee_payer_pubkey)
       min_balance_sol = (SystemParameter.current(:oracle_min_balance_sol, default: DEFAULT_MIN_ORACLE_BALANCE_SOL) || DEFAULT_MIN_ORACLE_BALANCE_SOL).to_f
       min_balance_lamports = (min_balance_sol * 1_000_000_000).to_i
 
@@ -529,7 +563,7 @@ module Solana
         params: [ fee_payer_pubkey, { commitment: "confirmed" } ]
       }
 
-      response = execute_rpc_call(rpc_url, payload)
+      response = execute_rpc_call(payload)
       balance = response&.dig("result", "value").to_i
 
       if balance < min_balance_lamports

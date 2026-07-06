@@ -727,7 +727,7 @@ Sidekiq::Limiter.window("web3_rpc", 50, :second, wait: 5)  # 50 RPC/sec global
 
 **Oracle Balance Guard:**
 ```ruby
-verify_oracle_balance!(rpc_url, fee_payer_pubkey)
+verify_oracle_balance!(fee_payer_pubkey)
 # raises при balance < MIN_ORACLE_BALANCE_LAMPORTS (0.05 SOL = 50M lamports)
 ```
 
