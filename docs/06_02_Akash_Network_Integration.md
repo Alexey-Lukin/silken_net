@@ -475,6 +475,21 @@ profiles:
 
 > Реальна ціна від провайдерів зазвичай у 10-100x менша від встановленого ліміту. Актуальні ціни: [stats.akash.network](https://stats.akash.network/)
 
+#### ⚠️ Географічне розміщення провайдера — residency-межа [SEC.19]
+
+Placement вище фільтрує лише `host: akash` + `signedBy` (аудит-довіра). **Географічного фільтра свідомо немає за замовчуванням** — і це несе residency-нюанс, який треба розуміти до EU-онбордингу:
+
+- **Data-at-rest** уже EU-пінований: Cloud SQL `europe-west1` + [`04_01`](04_01_Data_Models_and_Entities) `data_region`-шардинг (`eu-west`/`eu-central`) + PII-політики (SEC.18/ARCH.57).
+- **Data-in-use** — ні: Rails-моноліт тримає User/Org-PII у пам'яті процесу, а Akash-lease може сісти на провайдера будь-де у світі.
+
+**Важіль (off-by-default):** атрибут `region` у `placement.attributes`, керований tf-var `akash_region` (порожній → рядок омітиться; значення дзеркалять `data_region`, напр. `eu-west`). Активація звужує пул до провайдерів, що **заявили** цей регіон.
+
+**Чесна межа — це НЕ residency-гарантія.** Akash криптопідписує (аудує) лише `host` / `tier` / `organization`; `region`/`datacenter` — **self-reported без governance** (звірено з [akash-network/docs](https://github.com/akash-network/docs/blob/master/providers/akash-audited-attributes.md)). Тому `signedBy` географію НЕ підкріплює: провайдер може заявити `eu-west`, а крутитися деінде. Фільтр лише **знижує випадкове не-EU-розміщення**, не гарантує його. Плюс over-tight `region` × audited-`signedBy` може звузити пул до нуля bid'ів → деплой без пропозицій (тому off-by-default).
+
+**Справжній EU-residency-важіль для PII** = EU-пінований Ingress Anchor (GCP, data-in-use для coap/DB-шляху) + Cloud SQL at-rest — не Akash-тег. Akash несе цензуростійкі money/web за дизайном.
+
+**👤-рішення** (→ [`00_07`](00_07_Action_Plan_Tracker) SEC.19): активувати м'яку EU-преференцію зараз (ціна = вужчий пул) vs відкласти до EU-онбордингу (BIZ.3 Privacy Policy / ARCH.57 EU-PII-тригер).
+
 ---
 
 ### 1.4 Мережева Архітектура (Exposed Ports)

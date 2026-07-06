@@ -268,6 +268,8 @@ profiles:
     silken-dcloud:
       attributes:
         host: akash
+%{ if akash_region != "" }        region: ${akash_region}
+%{ endif ~}
       signedBy:
         anyOf:
           - ${akash_auditor}

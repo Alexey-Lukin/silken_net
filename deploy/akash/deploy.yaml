@@ -520,6 +520,11 @@ profiles:
       # and performance. This is the Akash equivalent of GCP's SLA guarantees.
       attributes:
         host: akash
+        # [SEC.19] region: eu-west — data-in-use residency preference, OFF by default.
+        # SELF-REPORTED, not audited (signedBy backs only host/tier/organization) → a
+        # soft pool-narrowing preference, NOT a residency guarantee. Values mirror
+        # 04_01 data_region (eu-west/eu-central). Rendered via tf-var akash_region
+        # (empty = omitted) in deploy.yaml.tpl. Tradeoff + 👤 policy → 06_02 §1.3.
       signedBy:
         anyOf:
           # Akash official auditor address — ensures the provider has been

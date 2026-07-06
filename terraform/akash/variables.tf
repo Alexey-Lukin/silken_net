@@ -31,6 +31,12 @@ variable "akash_auditor_address" {
   default     = "akash1365yvmc4s7awdyj3n2sav7xfx76axy6czqt24"
 }
 
+variable "akash_region" {
+  description = "Akash provider region placement-attribute (e.g. eu-west, eu-central — mirrors 04_01 data_region). Empty string OMITS the region filter (default: any provider). SELF-REPORTED by providers, NOT audited (signedBy backs only host/tier/organization) → a soft data-in-use residency preference, NOT a guarantee; narrows the provider pool / raises price. See docs/06_02 §1.3 [SEC.19]."
+  type        = string
+  default     = ""
+}
+
 # -----------------------------------------------------------------------------
 # Application — Docker Image & Secrets
 # -----------------------------------------------------------------------------

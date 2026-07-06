@@ -70,6 +70,7 @@ resource "local_file" "akash_sdl" {
     web_replicas       = var.web_replicas
     max_price_uakt     = var.max_price_uakt
     akash_auditor      = var.akash_auditor_address
+    akash_region       = var.akash_region
     web_concurrency    = var.web_concurrency
     rails_max_threads  = var.rails_max_threads
     # 🛑 BOOT-CRITICAL: Rails refuses to boot without this (master_key_strength_check.rb)
