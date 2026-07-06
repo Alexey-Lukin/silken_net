@@ -748,7 +748,7 @@ Outage цих мереж **не блокує** core flow:
 | Polygon | 🔴 Critical | Mitigated by `Web3::ResilientClient` cascade | Yes (RPC fallback + Sidekiq retry) | Multi-day outage → admin investigation |
 | Chainlink | ⚪ Unwired [ARCH.53] | — (local marker, без зовнішньої залежності) | — | PATH 1 замикання = DAO-рішення post-TRL-3 |
 | IoTeX | 🔴 Critical | Yes | Sidekiq retry | Multi-day → temporary minting freeze |
-| Solana | 🟠 Important | RPC fallback potencial | Yes | Catchup worker after restore |
+| Solana | 🟠 Important | Mitigated by `SOLANA_RPC_URL_FALLBACK` cascade [INF.22] | Yes (RPC fallback + Sidekiq retry) | Catchup worker after restore |
 | Hadron | 🟠 Important | Yes | No | Strict-mode override (emergency) |
 | peaq | 🟠 Important | No (local DID generation) | Yes | — |
 | Streamr | 🟢 Nice | No | Yes | — |

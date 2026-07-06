@@ -185,7 +185,7 @@ end
 | CoAP retry loop on Queen (`COAP_MAX_RETRIES`) | `firmware/queen/main.c`; host-tests `test_at_engine.c` (conversation-fail) + `test_fw51_*` (fail→retry→no-loss), FW.9 | ✅ Реалізовано |
 | Manual review terminal state | `BlockchainTransaction` AASM | ✅ Реалізовано |
 | Money-path crash-window idempotency (intent-marker + `in_flight` guard) | `BlockchainBurningService` / `Solana::BatchPayoutService` ([ARCH.45], [`04_02 §4/§10`](04_02_Business_Logic_and_Services)) | ✅ Реалізовано |
-| Backfill/buffer-list/gas-defer механізми матриці §2.2 (IoTeX backfill · Filecoin re-pin · streamr/celo buffer · anchor gas-gate · Solana RPC-каскад) | — | 🟡 target-пакет [`00_07` INF.22](00_07_Action_Plan_Tracker) |
+| Backfill/buffer-list/gas-defer механізми матриці §2.2 (IoTeX backfill · Filecoin re-pin · streamr/celo buffer · anchor gas-gate) | — | 🟡 target-пакет [`00_07` INF.22](00_07_Action_Plan_Tracker) (Solana RPC-каскад ✅ виніс — §2.2 крок 7) |
 | Stuck-`:sent` mint re-arm sweeper (EVM-scoped, cron 30 хв) | `StuckSentTransactionSweeperWorker` | ✅ SHIPPED (ARCH.55; дім — [`04_02 §4`](04_02_Business_Logic_and_Services)) |
 | Queen-to-Queen Backhaul Mesh | Concept у [`02_05`](02_05_Queen_Hardware_and_Starlink) | 🟡 Concept, planned Phase 2 |
 | Helium fallback emit (Queen-side LoRaWAN) | Queen firmware `queen_helium_lorawan_uplink()` | 🟡 ARCH.34: обв'язка+wire+тригер+MAC-adapter+повний host-цикл join+uplink (мок-LNS)+KV-mount ✅ 2026-07-05 (гейт `ARCH34_HELIUM_ENABLED 0`); лишився bench OTAA-ефір + Helium Console (👤); backend ✅; Soldier-side відкинуто — Soldier не несе LoRaWAN MAC stack |
