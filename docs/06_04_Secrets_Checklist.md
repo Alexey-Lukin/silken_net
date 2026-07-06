@@ -440,9 +440,21 @@ bin/rails runner "
 3. **Превентивні заходи:**
    - Увімкнути scheduled rotation (кожні 90 днів) — [`04_02 §S6.14`](04_02_Business_Logic_and_Services)
    - Налаштувати alerting на аномальні provisioning патерни
-   - Розглянути HSM/Vault для зберігання signing keys замість Rails credentials
+   - Money-mint-key custody: **GCP-KMS remote-signer** — custody-поріг вирішено (§5.5)
 
 > **Зв'язок:** Key Rotation Policy → [`04_02 §S6.14`](04_02_Business_Logic_and_Services)
+
+### 5.5. Money-mint-key custody — GCP-KMS remote-signer (SEC.17)
+
+**Рішення (2026-07-06):** приватники `ORACLE_MINTER_PRIVATE_KEY`/`ORACLE_SLASHER_PRIVATE_KEY` (та решта oracle-ключів) живуть **plaintext у deploy-ENV** — у момент mint'у за реальну вартість ENV-ключ мінтера/слешера = найбільша одинична точка катастрофи. Custody-поріг вирішено: **GCP Cloud KMS remote-signer** (asymmetric secp256k1) — ключ ніколи не покидає HSM, backend шле лише digest. Обрано над Fireblocks (enterprise-cost; забирає broadcast/nonce → перетин з `BlockchainConfirmationWorker`/ARCH.47-lock) і Safe-module-mint (on-chain роль + relayer = знову ключ; це admin-вектор SEC.1, не hot-mint): KMS = HSM-grade + дешево (~$0.06/ключ/міс) + автоматизований hot-path + GCP уже в стеку.
+
+**Impl-план (🤖, pre-mainnet — захищає ключ у момент mint реальної вартості; до prod-mint ENV-ключ теж нічого не мінтить, тож НЕ TRL-3-блокер):**
+
+1. **`Web3::OracleSigner` seam** — eth-gem `client.transact(sender_key:)` хардкодить локальний `Eth::Key` (KMS не має чим його повернути), тож потрібен інтерфейс `address` + `transact(...)` + `static_call(...)` навколо 7 signing-сервісів (minting/burning/celo/puro/klima/etherisc/anchor; 12 call-sites, minting сам 6). `LocalEnvSigner` (default) делегує as-is — behavior-preserving, дзеркало SEC.3 master-key DI.
+2. **`Web3::KmsSigner`** — залежність `google-cloud-kms`; `digest → asymmetric_sign(EC_SIGN_SECP256K1_SHA256) → DER-decode(r,s) → enforce low-s (EIP-2) → recovery-id (brute v=0/1 vs address)`. Crypto-шар offline-тестовний (локальний `Eth::Key` як фейк-KMS: sign→DER→decode→звірка recovered address); live round-trip = deploy-verify.
+3. **KMS keyring/key + IAM** — підписує лише **job**-процес (web/coap money-ключів не тримають — `web3_network_guard` `signer_process:`); ENV `ORACLE_MINTER_KMS_KEY`/`ORACLE_SLASHER_KMS_KEY` (KMS resource-path) активують KMS-backend, default = `LocalEnvSigner` (поточна ENV-поведінка).
+
+Cross-ref: [`00_07`](00_07_Action_Plan_Tracker) SEC.17 (стан/тригер), E.2 role-split [`05_03`](05_03_Tokenomics_SCC_and_SFC), SEC.3 master-key DI-патерн.
 
 ---
 
