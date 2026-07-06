@@ -356,12 +356,11 @@ resource "null_resource" "akash_deployment" {
 
 ---
 
-### 🟢 INFO: Відсутній офіційний Akash auditor address — потрібна актуалізація
+### 🟢 INFO: Akash community auditor address (виправлено — INF.24)
 
 **Статус:** Інформаційний.
 
-SDL вказує auditor address `akash1365yvmc4s7awdyj3n2sav7xfx76axy6czqt24`. Актуальний список аудиторів потрібно перевіряти на:
-[https://github.com/akash-network/community/blob/main/sig-providers/auditors.md](https://github.com/akash-network/community/blob/main/sig-providers/auditors.md)
+SDL пінить community-auditor `akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63` (валідна bech32; попереднє значення `…axy6czqt24` було корумпованим 43-символьним рядком, що провалював checksum — INF.24). Джерело правди — [akash-audited-attributes](https://github.com/akash-network/docs/blob/master/providers/akash-audited-attributes.md); яку адресу реально підписують живі провайдери — звірити on-chain при деплої (`akash query audit`).
 
 ---
 
@@ -450,7 +449,7 @@ profiles:
         host: akash
       signedBy:
         anyOf:
-          - akash1365yvmc4s7awdyj3n2sav7xfx76axy6czqt24
+          - akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63
       pricing:
         web:
           denom: uakt
@@ -461,7 +460,7 @@ profiles:
 |----------|---------|-----------|
 | **Назва placement** | `silken-dcloud` | Ідентифікатор стратегії розміщення |
 | **Атрибут `host`** | `akash` | Фільтр провайдерів — тільки офіційні Akash вузли |
-| **`signedBy.anyOf`** | `akash1365yvmc4s7awdyj3n2sav7xfx76axy6czqt24` | Адреса аудитора — провайдери, перевірені Akash community |
+| **`signedBy.anyOf`** | `akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63` | Адреса аудитора — провайдери, перевірені Akash community |
 | **Ціна** | `10000 uAKT / block` | Максимальна ціна за блок (~6 секунд). Провайдери пропонують меншу ціну — система обирає найдешевшого |
 | **Валюта** | `uAKT` (micro-AKT) | 1 AKT = 1,000,000 uAKT |
 
@@ -744,7 +743,7 @@ silken-net-terraform-state/ (GCS bucket)
 | `akash_key_name` | — (обов'язкова) | — | Назва ключа в `akash keys list` |
 | `akash_chain_id` | `akashnet-2` | — | Chain ID основної мережі Akash |
 | `akash_node` | `https://rpc.akashnet.net:443` | — | RPC endpoint Akash ноди |
-| `akash_auditor_address` | `akash1365yvmc4s7awdyj3n2sav7xfx76axy6czqt24` | — | Адреса аудитора для фільтрації провайдерів |
+| `akash_auditor_address` | `akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63` | — | Адреса аудитора для фільтрації провайдерів |
 
 **Ресурси обчислень:**
 

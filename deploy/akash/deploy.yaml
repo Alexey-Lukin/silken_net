@@ -527,10 +527,11 @@ profiles:
         # (empty = omitted) in deploy.yaml.tpl. Tradeoff + 👤 policy → 06_02 §1.3.
       signedBy:
         anyOf:
-          # Akash official auditor address — ensures the provider has been
-          # vetted for reliability. Update this address from:
-          # https://github.com/akash-network/community/blob/main/sig-providers/auditors.md
-          - akash1365yvmc4s7awdyj3n2sav7xfx76axy6czqt24
+          # Akash official community auditor address (validated bech32; the prior
+          # value was a corrupt 43-char string — INF.24). Confirm the live auditor
+          # on-chain at deploy (`akash query audit`); source of truth:
+          # https://github.com/akash-network/docs/blob/master/providers/akash-audited-attributes.md
+          - akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63
       pricing:
         web:
           # Maximum price per block (~6 seconds) in uAKT (micro-AKT).

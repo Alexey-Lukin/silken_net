@@ -1136,11 +1136,11 @@
 - [x] 🤖 off-by-default `region` placement-attribute (`akash_region` tf-var) у SDL+tpl+tfvars + tradeoff-нотатка — SHIPPED 2026-07-06
 - [ ] 👤 рішення: активувати м'яку EU-преференцію (`akash_region=eu-west`, ціна = вужчий пул) зараз vs відкласти до EU-онбордингу (BIZ.3/ARCH.57); справжня PII-residency = GCP-анкор, не Akash-тег
 
-#### INF.24 — Akash `signedBy` auditor-адреса розходиться з поточними Akash-docs (ротація → ризик нуль audited-bid'ів)
-- **P1** · 🤖+👤 · ⚪ · → [`06_02 §1.3`](06_02_Akash_Network_Integration)
-- **Стан:** Знайдено під час SEC.19-research (2026-07-06). Наш SDL/tf/канон скрізь пінять `signedBy.anyOf` на `akash1365yvmc4s7awdyj3n2sav7xfx76axy6czqt24`, а поточний akash-network/docs (`providers/akash-audited-attributes.md`, звірено байт-у-байт, 11 входжень) інструктує `akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63` — **інша адреса** (різна довжина хвоста = різний payload, не checksum-друкарка) → схоже на ротацію Akash community-auditor. Ризик: якщо стара адреса вже не підписує провайдерів, `signedBy` матчить нуль audited-bid'ів → перший деплой без пропозицій (той самий deploy-availability клас, що S1.1/S4.3). Доки не підтверджено on-chain (яка адреса реально підписує живих провайдерів) — це РИЗИК, не факт. Homes: `deploy/akash/deploy.yaml`, `deploy.yaml.tpl` (`${akash_auditor}`), `terraform/akash/variables.tf`+`tfvars.example`, канон [`06_02 §1.3`](06_02_Akash_Network_Integration) (×3).
-- [ ] 🤖 (за founder-go) safe-fix: `signedBy.anyOf` = ОБИДВІ адреси (стара + поточна-doc) — `anyOf` лише розширює accepted-set, провайдерів не втрачає
-- [ ] 👤 on-chain звірка (який auditor підписує живі провайдери) → лишити живу, стару на пенсію
+#### INF.24 — Akash `signedBy` auditor-адреса була бита (corrupt bech32 → нуль audited-bid'ів)
+- **P1** · 🤖+👤 · 🟢 · → [`06_02 §1.3`](06_02_Akash_Network_Integration)
+- **Стан:** Знайдено під час SEC.19-research (2026-07-06). Наш `signedBy.anyOf` скрізь пінив `…axy6czqt24` — **доведено бита адреса**: 43 символи (при обов'язкових 44) + провалює bech32-checksum (Ruby-валідатор), тобто на ланцюгу такої немає взагалі → перший деплой або відхиляв би SDL, або мав нуль audited-bid'ів (deploy-availability клас S1.1/S4.3). НЕ ротація (перша гіпотеза спростована) — корупція рядка при копіюванні колись. Поточний офіційний akash-network/docs (`providers/akash-audited-attributes.md`, звірено RAW-байтами, 11 входжень) інструктує `…adc6dnmlx63` — **валідна bech32** + community-auditor. **🤖-fix ✅ SHIPPED 2026-07-06 (founder-вибір «замінити»):** усі 7 входжень (`deploy/akash/deploy.yaml`, `variables.tf`, `tfvars.example`, канон [`06_02`](06_02_Akash_Network_Integration) ×4) → `…adc6dnmlx63`; заразом мертвий `community/sig-providers/auditors.md`-лінк (404) → верифікований audited-attributes-doc. 🔑 Урок: deploy-critical bech32 звіряй RAW-байтами + checksum, не через LLM-самарайзер. Audit-модуль недоступний через публічний LCD REST (3 ендпойнти = «Not Implemented») → on-chain-звірка живого аудитора = akash-CLI при деплої.
+- [x] 🤖 замінити биту `…axy6czqt24` → валідну community-auditor `…adc6dnmlx63` (7 входжень) + фікс мертвого auditors.md-лінку — SHIPPED 2026-07-06
+- [ ] 👤 on-chain звірка при деплої (`akash query audit` — який auditor підписує живі провайдери; LCD REST не віддає)
 
 #### INF.10 — Kamal-proxy healthcheck → `/ready` (readiness-gated cutover)
 - **P3** · 👤 · 🟢 · → `06_01`

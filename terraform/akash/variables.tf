@@ -28,7 +28,7 @@ variable "akash_node" {
 variable "akash_auditor_address" {
   description = "Akash auditor address for provider verification (ensures high-uptime providers)"
   type        = string
-  default     = "akash1365yvmc4s7awdyj3n2sav7xfx76axy6czqt24"
+  default     = "akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63"
 }
 
 variable "akash_region" {

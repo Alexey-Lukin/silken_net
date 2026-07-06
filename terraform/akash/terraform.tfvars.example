@@ -8,7 +8,7 @@
 akash_key_name        = "silken-deploy"
 akash_chain_id        = "akashnet-2"
 akash_node            = "https://rpc.akashnet.net:443"
-akash_auditor_address = "akash1365yvmc4s7awdyj3n2sav7xfx76axy6czqt24"
+akash_auditor_address = "akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63"
 # [SEC.19] Provider region filter — data-in-use residency preference (off by default).
 # Empty/absent = any provider. Values mirror 04_01 data_region (eu-west, eu-central).
 # ⚠️ SELF-REPORTED, not audited → a soft preference, NOT a residency guarantee; narrows
