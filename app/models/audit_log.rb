@@ -48,6 +48,10 @@ class AuditLog < ApplicationRecord
   # Hot-Path: масовий запис через insert_all (один INSERT замість N)
   # Chain hashes обчислюються послідовно per organization перед вставкою.
   # ---------------------------------------------------------------------------
+  # ⚠️ [INF.22] bulk_record! НЕ виставляє `archive_requested_at` outbox-маркер і НЕ enqueue'ить
+  # FilecoinArchiveWorker (обходить AuditLogWorker) → ці логи НЕ архівуються на IPFS і невидимі
+  # FilecoinReconcileWorker. 0 prod-callers сьогодні (лише specs); якщо зʼявиться money/MRV
+  # bulk-шлях, що потребує архівації — виставляти маркер тут + enqueue (або йти через record_async!).
   def self.bulk_record!(entries)
     return if entries.blank?
 

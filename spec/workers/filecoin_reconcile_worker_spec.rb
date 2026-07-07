@@ -63,18 +63,6 @@ RSpec.describe FilecoinReconcileWorker, type: :worker do
       described_class.new.perform
     end
 
-    it "samples the FULL pending_archive backlog into the depth gauge (incl. beyond-LOOKBACK + fresh)" do
-      archive_intent(archive_requested_at: 3.hours.ago)                       # in-window
-      archive_intent(archive_requested_at: 40.days.ago)                       # beyond LOOKBACK
-      archive_intent(archive_requested_at: 5.minutes.ago)                     # fresh
-      archive_intent(archive_requested_at: 3.hours.ago, ipfs_cid: "bafyarch") # archived — excluded
-      allow(FilecoinArchiveWorker).to receive(:perform_async)
-
-      described_class.new.perform
-
-      expect(SilkenNet::Metrics::FILECOIN_UNARCHIVED_DEPTH.get).to eq(3)
-    end
-
     it "is a no-op (no warn) when nothing is stuck" do
       archive_intent(archive_requested_at: 5.minutes.ago) # fresh only
       allow(Rails.logger).to receive(:warn)

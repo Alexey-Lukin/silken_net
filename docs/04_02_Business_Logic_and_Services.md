@@ -1494,7 +1494,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Тригер** | Sidekiq cron: `48 4 * * *` (щодня 04:48 UTC, за 8хв після verification_sweep) |
 | **Вхід** | — |
 | **Сервіси** | re-enqueue `FilecoinArchiveWorker` |
-| **Side Effects** | [INF.22 крок 11 — repair] Дренажить `AuditLog.pending_archive` (outbox-marked money/MRV без `ipfs_cid`; старші за `STALE_THRESHOLD=2h`, у вікні `LOOKBACK=30d`, oldest-first `BATCH_LIMIT=500`) → re-enqueue archive (ідемпотентно, БЕЗ reload-guard — нічого не пише сам). Семплить `FILECOIN_UNARCHIVED_DEPTH` (весь backlog) + `FILECOIN_REPIN_TOTAL`. Дзеркало ARCH.64/65. Канон: [`06_08 §2.2`](06_08_Resilience_and_Failover_Policy) крок 11. |
+| **Side Effects** | [INF.22 крок 11 — repair] Дренажить `AuditLog.pending_archive` (outbox-marked money/MRV без `ipfs_cid`; старші за `STALE_THRESHOLD=2h`, у вікні `LOOKBACK=30d`, oldest-first `BATCH_LIMIT=500`) → re-enqueue archive (ідемпотентно, БЕЗ reload-guard — нічого не пише сам). Інкрементить `FILECOIN_REPIN_TOTAL`; depth-gauge `FILECOIN_UNARCHIVED_DEPTH` семплить `Treasury::MonitorService` (15-хв — freshness проти restart-обнулення). Дзеркало ARCH.64/65. Канон: [`06_08 §2.2`](06_08_Resilience_and_Failover_Policy) крок 11. |
 
 #### `FilecoinVerificationSweepWorker`
 

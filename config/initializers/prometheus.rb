@@ -410,7 +410,8 @@ module SilkenNet
 
     # [INF.22 крок 11] Filecoin archive-outbox backlog + recovery видимість.
     # unarchived_depth = archive-requested AuditLog'и без ipfs_cid (money/MRV, які ще не на
-    # IPFS) — симетрія HADRON_KYC_PENDING_DEPTH; семплить FilecoinReconcileWorker (:48 щодня).
+    # IPFS) — семплить Treasury::MonitorService (15-хв, freshness проти restart-обнулення
+    # in-process gauge; daily-семпл reconcile'а давав би ~24h сліпе вікно).
     # exhausted = FilecoinArchiveWorker вичерпав retry (Pinata down) → архів у Dead Set, ipfs_cid
     # NULL до reconcile-re-pin (без цього тонув у generic DeadSet — self-masking клас ARCH.64/65).
     # repin = скільки reconcile re-enqueue'їв за прогін.

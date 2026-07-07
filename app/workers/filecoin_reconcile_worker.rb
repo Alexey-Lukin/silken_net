@@ -19,8 +19,9 @@
 # [MONEY-SAFE / ідемпотентно, БЕЗ reload-guard]: на відміну від CeloRewardReconcileWorker
 # (пише :manual_review → потребує reload-guard), тут нічого не пишемо самі — лише re-enqueue
 # вже-ідемпотентного FilecoinArchiveWorker (`archive!` early-returns на `ipfs_cid.present?`).
-# Гонка з живим archive'ом → повторний pin того ж content = той самий CID = no-op на IPFS
-# (найгірше — 1 зайвий Pinata-виклик, НЕ money-рух, НЕ подвійний chain_hash).
+# Гонка з живим archive'ом безпечна: найгірше — 1 зайвий Pinata-pin (payload несе `archived_at`
+# → інший IpfsHash, АЛЕ content-CID guard E.60 виключає `archived_at` з `CONTENT_DIGEST_KEYS`,
+# тож verify не ламається), НЕ money-рух, НЕ подвійний chain_hash.
 class FilecoinReconcileWorker
   include Sidekiq::Job
 
@@ -41,7 +42,11 @@ class FilecoinReconcileWorker
   LOOKBACK = 30.days
 
   # Стеля re-enqueue за прогін — backlog дренажиться послідовними cron'ами, не flood'ом проти
-  # щойно-оживаючого Pinata (дзеркало Celo/Hadron).
+  # щойно-оживаючого Pinata (дзеркало Celo/Hadron). [known-ceiling] При багатоденному Pinata-
+  # outage кожен re-enqueue знову вичерпує archive-retry:5 → Dead Set; DAILY-cadence (не hourly)
+  # тримає притік ≤BATCH_LIMIT/добу. Severity-inversion (P1 money-deadset alert від non-money
+  # archive-джоба) + scale-eviction money-трупів = pre-existing (global sidekiq_dead_set_size);
+  # реальний фікс (Pinata health-probe gate / label-filter) відкладено до live-трафіку.
   BATCH_LIMIT = 500
 
   def perform
@@ -54,20 +59,9 @@ class FilecoinReconcileWorker
     ids.each { |id| FilecoinArchiveWorker.perform_async(id) }
     SilkenNet::Metrics::FILECOIN_REPIN_TOTAL.increment(by: ids.size) if ids.any?
 
-    sample_unarchived_depth!
-
     return if ids.empty?
 
     Rails.logger.warn "📦 [INF.22] Re-enqueued #{ids.size} застряглих archive-requested AuditLog'ів → " \
                       "FilecoinArchiveWorker (Pinata-exhaustion recovery)."
-  end
-
-  private
-
-  # ВЕСЬ archive-backlog (не лише LOOKBACK-вікно) — симетрія HadronKycReverifyWorker#sample_pending_depth!.
-  # Логи, старші за LOOKBACK (reconcile їх уже не re-enqueue'їть), усе одно тримають плато на
-  # gauge → оператор бачить persistent-діру замість нуля.
-  def sample_unarchived_depth!
-    SilkenNet::Metrics::FILECOIN_UNARCHIVED_DEPTH.set(AuditLog.pending_archive.count)
   end
 end

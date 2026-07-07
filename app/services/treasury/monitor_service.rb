@@ -106,6 +106,13 @@ module Treasury
 
       # ChainAuditService кешується (5хв) — дешевий тут; critical=true теж читає gauge.
       SilkenNet::Metrics::CHAIN_AUDIT_DELTA.set(ChainAuditService.call.delta.to_f)
+
+      # [INF.22] Filecoin archive-backlog семплиться ТУТ (15-хв money-path прохід), НЕ у
+      # FilecoinReconcileWorker (repair — daily :48): in-process gauge обнуляється на restart
+      # job-контейнера (Akash-lease/deploy/OOM) → daily-семпл давав би ~24h сліпе вікно; 15-хв
+      # cadence робить `min_over_time[6h]`-alert осмисленим. ВЕСЬ pending_archive (не LOOKBACK-
+      # вікно) — post-LOOKBACK хвіст тримає плато, оператор бачить persistent-діру, не нуль.
+      SilkenNet::Metrics::FILECOIN_UNARCHIVED_DEPTH.set(AuditLog.pending_archive.count)
     rescue StandardError => e
       # Спостережуваність не сміє валити monitor-цикл (баланси важливіші).
       Rails.logger.error "🛑 [Treasury] update_money_path_metrics: #{e.message}"

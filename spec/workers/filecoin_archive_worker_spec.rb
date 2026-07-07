@@ -84,4 +84,20 @@ RSpec.describe FilecoinArchiveWorker, type: :worker do
       }.to raise_error(Errno::ECONNREFUSED)
     end
   end
+
+  # [INF.22 крок 11 — detect-half] Вичерпаний archive (Pinata down 5×) осідає у Dead Set;
+  # без цього hook `ipfs_cid` лишався NULL мовчки (sweep :archived-blind → self-masking).
+  describe "sidekiq_retries_exhausted" do
+    it "increments FILECOIN_ARCHIVE_EXHAUSTED_TOTAL and error-logs when archive lands in Dead Set" do
+      audit_log = create(:audit_log, action: "token_mint")
+      job = { "args" => [ audit_log.id ] }
+      before = SilkenNet::Metrics::FILECOIN_ARCHIVE_EXHAUSTED_TOTAL.get
+      allow(Rails.logger).to receive(:error)
+
+      described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new("Pinata down"))
+
+      expect(SilkenNet::Metrics::FILECOIN_ARCHIVE_EXHAUSTED_TOTAL.get).to eq(before + 1)
+      expect(Rails.logger).to have_received(:error).with(/вичерпав retry.*AuditLog ##{audit_log.id}/)
+    end
+  end
 end

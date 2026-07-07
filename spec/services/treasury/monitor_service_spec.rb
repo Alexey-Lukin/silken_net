@@ -78,7 +78,7 @@ RSpec.describe Treasury::MonitorService do
       end
 
       # [G1/G2] money-path limbo + drift видимість (той самий 15-хв прохід).
-      it "sets manual_review depth, limbo-locked, and chain-audit delta gauges" do
+      it "sets manual_review depth, limbo-locked, chain-audit delta, and filecoin-unarchived gauges" do
         allow(ChainAuditService).to receive(:call).and_return(
           ChainAuditService::Result.new(db_total: 100.0, chain_total: 97.5, delta: 2.5, critical: true, checked_at: Time.current)
         )
@@ -87,12 +87,18 @@ RSpec.describe Treasury::MonitorService do
         create(:blockchain_transaction, wallet: wallet, status: :sent, locked_points: 300, created_at: 2.hours.ago)
         create(:blockchain_transaction, wallet: wallet, status: :confirmed, locked_points: 999, created_at: 2.hours.ago) # excluded
         create(:blockchain_transaction, wallet: wallet, status: :sent, locked_points: 111, created_at: 5.minutes.ago)  # too fresh → excluded
+        # [INF.22] archive-outbox backlog — весь pending_archive, не reconcile-вікно
+        create(:audit_log, archive_requested_at: 1.hour.ago, ipfs_cid: nil)
+        create(:audit_log, archive_requested_at: 40.days.ago, ipfs_cid: nil) # поза reconcile LOOKBACK, але у depth-плато
+        create(:audit_log, archive_requested_at: 1.hour.ago, ipfs_cid: "bafyarch") # archived → excluded
+        create(:audit_log, archive_requested_at: nil, ipfs_cid: nil) # no outbox marker (codex/factory) → excluded
 
         described_class.call
 
         expect(SilkenNet::Metrics::BLOCKCHAIN_MANUAL_REVIEW_DEPTH.get).to eq(1)
         expect(SilkenNet::Metrics::BLOCKCHAIN_LIMBO_LOCKED_TOTAL.get).to eq(800) # 500 + 300 (aged sent/review only)
         expect(SilkenNet::Metrics::CHAIN_AUDIT_DELTA.get).to eq(2.5)
+        expect(SilkenNet::Metrics::FILECOIN_UNARCHIVED_DEPTH.get).to eq(2) # marker+no-cid, incl. beyond-LOOKBACK хвіст
       end
 
       it "does not let a money-path metrics failure break the monitor cycle (rescue)" do
