@@ -7,8 +7,13 @@
 #   • Telemetry endpoint spam (burst-tolerant per-gateway throttle)
 #   • Credential stuffing / vulnerability scanning (Fail2Ban on 401/404)
 #
-# Cache store: Rails.cache (Solid Cache in production, memory in dev/test)
-# so rate-limit counters are shared across all Akash/Kamal cloud nodes.
+# Cache store: RedisCacheStore (Upstash DB 2) in dev+prod, MemoryStore in test.
+# Redis is REQUIRED, not incidental. Puma runs clustered (WEB_CONCURRENCY=2-4
+# forked workers, even at replica count:1), so both the per-IP throttle counters
+# AND the fail2ban 401/404 `increment` must be shared + ATOMIC across processes.
+# An in-process MemoryStore would fragment both — throttle limits inflate ×N and
+# the fail2ban threshold is never reached (scanners never banned); SolidCache's
+# increment is not atomic either. Redis is the only correct store here.
 
 # ---------------------------------------------------------------------------
 # 1. CACHE STORE — distributed counters across all application nodes

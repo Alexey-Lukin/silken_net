@@ -216,6 +216,14 @@ module SilkenNet
       :silkennet_blockchain_limbo_locked_total,
       docstring: "Sum of locked_points on unsettled (:sent/:manual_review) tx older than 1h (funds in limbo)"
     )
+    # [ARCH.65] Hadron-KYC backlog видимість. `HadronKycVerificationWorker` exhaust →
+    # `hadron_kyc_status` "pending" назавжди → тихий mint-skip бенефіціара. Без gauge
+    # оператор не бачить, скільки KYC застрягло під час Hadron-простою. Семплить
+    # `HadronKycReverifyWorker` (:50 щогодини). 06_03 §2.8 money-path SLO.
+    HADRON_KYC_PENDING_DEPTH = REGISTRY.gauge(
+      :silkennet_hadron_kyc_pending_depth,
+      docstring: "Count of Wallet+Organization rows with hadron_kyc_status=pending (KYC backlog gating mint)"
+    )
     # [G2] db↔on-chain drift — ChainAuditService рахує |Σmints−Σburns − totalSupply|; без gauge
     # drift невидимий, поки хтось не відкриє сторінку аудиту.
     CHAIN_AUDIT_DELTA = REGISTRY.gauge(

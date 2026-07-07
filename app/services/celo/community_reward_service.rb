@@ -126,7 +126,8 @@ module Celo
           intent.tx_hash
         else
           # transact повернув порожній hash БЕЗ винятку (malformed ack) → intent лишається
-          # `:pending` (dedup блокує re-pay); reconcile / stale-escalate розрулить on-chain.
+          # `:pending` (dedup блокує re-pay); стале :pending підбирає ARCH.64
+          # CeloRewardReconcileWorker → :manual_review (людська звірка, не blind re-pay).
           Rails.logger.warn "⚠️ [Celo ReFi] Порожній tx_hash для кластера #{@cluster.name} — intent ##{intent.id} лишається :pending."
           nil
         end
@@ -216,12 +217,14 @@ module Celo
         nil
       elsif msg.match?(AMBIGUOUS_PATTERNS)
         # Tx із цим nonce вже подавався → попередня спроба МОГЛА broadcast → AMBIGUOUS.
-        # Лишаємо intent `:pending` (dedup блокує re-pay), reconcile/stale-escalate. НЕ re-raise.
+        # Лишаємо intent `:pending` (dedup блокує re-pay); стале :pending → ARCH.64
+        # CeloRewardReconcileWorker → :manual_review. НЕ re-raise.
         Rails.logger.warn "⚠️ [Celo ReFi] Ambiguous tx-стан (intent ##{intent.id} :pending — можливо-landed, без re-pay): #{error.message}"
         nil
       else
         # Справжній transient transport (timeout/connection) → intent `:pending` (dedup блокує
         # re-pay), re-raise → breaker рахує реальний transport + Sidekiq retry → dedup-skip.
+        # Стале :pending (retry не досяг :sent) підбирає ARCH.64 CeloRewardReconcileWorker → :manual_review.
         raise error
       end
     end

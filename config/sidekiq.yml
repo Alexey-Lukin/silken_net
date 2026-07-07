@@ -164,3 +164,21 @@
     gateway_staleness_sweep:
       cron: '*/5 * * * *'
       class: GatewayStalenessSweepWorker
+
+    # --- ЦИКЛ CELO-ВІДНОВЛЕННЯ (The Silent Underpay Net) [ARCH.64] ---
+    # Celo reward-intent, що застряг у :pending (transient RPC-timeout → dedup-skip
+    # на Sidekiq-retry, job "успішний"), не озброює жодного reconcile (CeloConfirmationWorker
+    # дивиться лише :sent; evm-sweeper'и Celo не бачать) → тиха недоплата cUSD. Цей sweep
+    # ескалює стале :pending → :manual_review (money-safe: tx_hash невідомий → людська звірка).
+    celo_reward_reconcile:
+      cron: '25,55 * * * *' # Кожні 30 хв (:25/:55, зміщено від stuck_sent :05/:35 та insurance :15/:45)
+      class: CeloRewardReconcileWorker
+
+    # --- ЦИКЛ HADRON-KYC ВІДНОВЛЕННЯ (The Stuck-KYC Net) [ARCH.65] ---
+    # HadronKycVerificationWorker enqueue'иться разово (after_commit на адресі) без
+    # exhausted-hook — API-простій усі 5 retry → KYC "pending" назавжди → mint-скіп
+    # тихо (WEB3_STRICT_MODE-гейт живий). Ця сітка періодично доверифіковує застряглі
+    # pending — auto-heal, коли Hadron оживе.
+    hadron_kyc_reverify:
+      cron: '50 * * * *' # Щогодини о :50
+      class: HadronKycReverifyWorker

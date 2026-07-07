@@ -686,6 +686,9 @@ raise "Security Breach: Chainlink Oracle consensus not fulfilled"  unless teleme
 # (Organization АБО Wallet) → after_commit → HadronKycVerificationWorker →
 # HadronComplianceService (dev/no-key = simulate-approve; prod strict = реальний API);
 # зміна адреси скидає статус у pending (KYC чіпляється до адреси, ре-верифікація).
+# [ARCH.65] after_commit-enqueue разовий + retry:5 без exhausted-hook → Hadron-простій усі
+# 5 = pending НАЗАВЖДИ (тихий mint-skip); HadronKycReverifyWorker cron (:50) доверифіковує
+# застряглі pending (auto-heal, дім 06_08 §2.2).
 ```
 
 **Oracle Balance Check:**
