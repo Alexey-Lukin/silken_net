@@ -329,7 +329,8 @@ CREATE TABLE public.audit_logs (
     user_agent character varying,
     chain_hash character varying,
     ipfs_cid character varying,
-    l1_anchor_tx_hash character varying
+    l1_anchor_tx_hash character varying,
+    archive_requested_at timestamp(6) without time zone
 );
 
 
@@ -4986,6 +4987,13 @@ CREATE INDEX index_audit_logs_on_user_id ON public.audit_logs USING btree (user_
 
 
 --
+-- Name: index_audit_logs_pending_archive; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_audit_logs_pending_archive ON public.audit_logs USING btree (archive_requested_at) WHERE ((archive_requested_at IS NOT NULL) AND (ipfs_cid IS NULL));
+
+
+--
 -- Name: index_bio_contract_firmwares_on_is_active; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8031,5 +8039,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('20260705090000');
+('20260705090000'),
+('20260707120000'),
+('20260707120001');
 

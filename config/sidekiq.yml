@@ -131,6 +131,14 @@
       cron: '40 4 * * *' # Щодня о 04:40 UTC, після нічних money-циклів
       class: FilecoinVerificationSweepWorker
 
+    # --- REPAIR-половина archive-outbox (INF.22 крок 11) ---
+    # Дренажить money/MRV AuditLog'и з виставленим archive_requested_at, застряглі без
+    # ipfs_cid (FilecoinArchiveWorker вичерпав retry → Dead Set). Detect→repair суміжність:
+    # за 8хв після verification_sweep, у тому ж нічному вікні. Дзеркало ARCH.64/65.
+    filecoin_reconcile:
+      cron: '48 4 * * *' # Щодня о 04:48 UTC, після sweep; :48 вільна (не колізить)
+      class: FilecoinReconcileWorker
+
     # --- ЦИКЛ ЕНТРОПІЇ (The Pre-Stress Sentinel) [S6.20] ---
     # Погодинний fan-out ClusterEntropyAnalyzerWorker на кожен кластер. Без нього
     # gauge silkennet_cluster_entropy_score мертвий і entropy_anomaly EWS-тривоги

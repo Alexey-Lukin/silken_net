@@ -1,0 +1,47 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+
+# [INF.22] Ловить «конфіг повний, шлях мертвий» для Grafana-алертів: alert-правило, що
+# посилається на метрику з typo в назві (або на прибрану з реєстру метрику), тихо НІКОЛИ
+# не спрацює — так само як web:80 віддавав job-метрики нулями (§06-нора). Цей spec звіряє
+# КОЖНУ silkennet_-метрику з усіх alert-expr проти Prometheus::Client реєстру, який будує
+# config/initializers/prometheus.rb.
+RSpec.describe "Grafana alert rules ↔ Prometheus registry consistency" do # rubocop:disable RSpec/DescribeClass
+  # Base-імена всіх зареєстрованих метрик (counter несе _total у назві; histogram — базове
+  # ім'я, expr додає _bucket/_sum/_count — нормалізуємо на боці referenced нижче).
+  let(:registered) { SilkenNet::Metrics::REGISTRY.metrics.map { |m| m.name.to_s }.to_set }
+
+  let(:alerts_file) { Rails.root.join("deploy/grafana/alerts/silkennet-alerts.yaml") }
+
+  let(:referenced) do
+    yaml = YAML.safe_load(File.read(alerts_file), aliases: true)
+    exprs = yaml.fetch("groups").flat_map do |group|
+      group.fetch("rules").flat_map do |rule|
+        rule.fetch("data").map { |datum| datum.dig("model", "expr") }
+      end
+    end
+    exprs.compact.join(" ").scan(/\bsilkennet_[a-z0-9_]+/).uniq
+  end
+
+  it "every silkennet_ metric referenced in an alert expr exists in the Prometheus registry" do
+    missing = referenced.reject do |name|
+      registered.include?(name) || registered.include?(name.sub(/_(bucket|sum|count)\z/, ""))
+    end
+
+    expect(missing).to be_empty,
+      "Alert-правила посилаються на НЕзареєстровані метрики (мертвий alert — ніколи не спрацює): " \
+      "#{missing.join(', ')}. Звір deploy/grafana/alerts/silkennet-alerts.yaml ↔ " \
+      "config/initializers/prometheus.rb."
+  end
+
+  it "the three INF.22 observability metrics are wired to an alert" do
+    %w[
+      silkennet_anchor_missed_weeks_total
+      silkennet_filecoin_unarchived_depth
+      silkennet_hadron_kyc_pending_depth
+    ].each do |name|
+      expect(referenced).to include(name), "#{name} втратив alert-правило (INF.22 регресія)"
+    end
+  end
+end

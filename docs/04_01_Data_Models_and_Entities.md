@@ -1135,6 +1135,7 @@ active/draft ──cancel──► cancelled
 | `chain_hash` | string | SHA-256 попереднього запису + payload (blockchain-ланцюг) |
 | `ipfs_cid` | string | IPFS CID при архівуванні |
 | `l1_anchor_tx_hash` | string | TX хеш на Ethereum L1 |
+| `archive_requested_at` | datetime | [INF.22] Outbox-маркер: money/MRV-лог, призначений для IPFS-архіву (виставляє `AuditLogWorker`; codex/factory прямий `create!` не ставить) |
 
 **Класові методи:**
 
@@ -1144,7 +1145,7 @@ active/draft ──cancel──► cancelled
 | `bulk_record!(entries)` | Bulk insert_all |
 | `verify_chain_integrity(org_id)` | Перевірка ланцюжка хешів |
 
-**Scopes:** `recent`, `archived` (ipfs_cid присутній), `not_archived`, `by_action`, `by_user`, `by_ip`, `for_period`.
+**Scopes:** `recent`, `archived` (ipfs_cid присутній), `not_archived`, `archivable` (archive_requested_at присутній — outbox-eligible), `pending_archive` (archivable ∧ not_archived — FilecoinReconcileWorker-скоуп), `by_action`, `by_user`, `by_ip`, `for_period`.
 
 ---
 

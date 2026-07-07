@@ -313,9 +313,9 @@ end
 > При зміні реєстру в коді — **регенерувати ЛИШЕ цю таблицю** (команда в кінці).
 > Де інкрементується/оновлюється кожна — `grep -rn "SilkenNet::Metrics::<CONST>" app/`.
 >
-> **Разом: 66 метрик = 38 counters + 26 gauges + 2 histograms** (звірено регенерацією нижче).
+> **Разом: 70 метрик = 40 counters + 28 gauges + 2 histograms** (звірено регенерацією нижче).
 
-**Counters (38):**
+**Counters (40):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -324,6 +324,8 @@ end
 | `silkennet_coap_packets_received_total` | `status` | Total CoAP UDP packets received by the telemetry daemon |
 | `silkennet_ews_alerts_total` | `alert_type` | Total EWS alerts dispatched (fire, drought, pest, storm) |
 | `silkennet_fauna_skip_reports_total` | — | FW.42 telemetry packets reporting a fauna session skipped on low Vcap (per-DID attribution in logs) |
+| `silkennet_filecoin_archive_exhausted_total` | — | FilecoinArchiveWorker jobs that exhausted all retries (archive landed in Dead Set) |
+| `silkennet_filecoin_repin_total` | — | AuditLog archive re-enqueues issued by FilecoinReconcileWorker |
 | `silkennet_filecoin_verification_failures_total` | `reason` | Filecoin archive integrity verification failures (E.60 sweep) |
 | `silkennet_fw2_fc_degraded_reports_total` | — | FW.2 telemetry packets reporting a lost FC high-water invariant (Flash refusing writes; per-DID attribution in logs) |
 | `silkennet_gateways_offline_total` | — | Total gateway offline transitions detected by the staleness sweeper (queen_offline alerts) |
@@ -358,7 +360,7 @@ end
 | `silkennet_treasury_check_errors_total` | `network`, `error_type` | Total treasury monitoring RPC errors |
 | `silkennet_w3bstream_signature_fallback_total` | `reason` | Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature |
 
-**Gauges (26):**
+**Gauges (28):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -370,8 +372,10 @@ end
 | `silkennet_db_pool_idle` | `database` | Number of idle database connections in the pool |
 | `silkennet_db_pool_size` | `database` | Maximum number of connections in the database pool |
 | `silkennet_db_pool_waiting` | `database` | Number of threads waiting for a database connection |
+| `silkennet_filecoin_unarchived_depth` | — | Count of archive-requested AuditLog rows still missing ipfs_cid (Filecoin archive backlog) |
 | `silkennet_gateway_attest_lapsed` | — | Online QATT-capable gateways whose last Ed25519-attested batch is older than the lapse window |
 | `silkennet_gateways_faulty` | — | Current number of gateways in the faulty state (set on each staleness sweep) |
+| `silkennet_hadron_kyc_pending_depth` | — | Count of Wallet+Organization rows with hadron_kyc_status=pending (KYC backlog gating mint) |
 | `silkennet_mint_volume_window_scc` | `token_type` | SCC/SFC minted in the trailing 1h window (ARCH.62 volume-anomaly detector input) |
 | `silkennet_oracle_balance` | `network` | Oracle wallet balance in native currency (wei/lamports) |
 | `silkennet_oracle_balance_ratio` | `network` | Oracle balance as ratio to minimum threshold (below 1.0 = critical) |

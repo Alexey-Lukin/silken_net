@@ -1465,7 +1465,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Тригер** | Різні контролери та сервіси (аудит фінансових дій) |
 | **Вхід** | `attrs` (Hash для `AuditLog.create!`) |
 | **Сервіси** | — |
-| **Side Effects** | `AuditLog.create!` → `FilecoinArchiveWorker.perform_async(log.id)`. |
+| **Side Effects** | `AuditLog.create!` (виставляє outbox-маркер `archive_requested_at` — INF.22 крок 11) → `FilecoinArchiveWorker.perform_async(log.id)`. Цей шлях — ЄДИНИЙ, що архівує на IPFS (прямий `create!` codex/factory маркер не ставить → навмисно поза периметром). |
 
 > **🔗 Chain Integrity Invariant (Concurrency Guard).** `chain_hash` будується як SHA-256(previous_chain_hash | chain_payload) — це створює сувору залежність від порядку. Без серіалізації паралельні Sidekiq-потоки можуть прочитати один і той самий `AuditLog.last` для організації і утворити форки ланцюга. **Mitigation у коді** (`app/models/audit_log.rb`, [auditable]):
 > 1. Single-row insert (`AuditLog.create!`): `before_create :compute_chain_hash` бере `pg_advisory_xact_lock(827549841, organization_id)` (transaction-scoped). Lock автоматично знімається при COMMIT/ROLLBACK — не потрібно `lock_release`. Паралельні організації не блокують одна одну (lock keyed на `organization_id`).
@@ -1483,6 +1483,18 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Тригер** | `AuditLogWorker` |
 | **Вхід** | `audit_log_id` (Integer) |
 | **Сервіси** | `Filecoin::ArchiveService.new(audit_log).archive!` |
+| **Side Effects** | [INF.22 крок 11] `sidekiq_retries_exhausted`-hook: вичерпаний archive (Pinata down 5×) інкрементить `FILECOIN_ARCHIVE_EXHAUSTED_TOTAL` — інакше тихо осідав у Dead Set → `ipfs_cid` NULL, sweep не бачить (self-masking клас ARCH.64/65). `FilecoinReconcileWorker` (:48) підбирає за outbox-маркером. |
+
+#### `FilecoinReconcileWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `low` |
+| **Retry** | 3 |
+| **Тригер** | Sidekiq cron: `48 4 * * *` (щодня 04:48 UTC, за 8хв після verification_sweep) |
+| **Вхід** | — |
+| **Сервіси** | re-enqueue `FilecoinArchiveWorker` |
+| **Side Effects** | [INF.22 крок 11 — repair] Дренажить `AuditLog.pending_archive` (outbox-marked money/MRV без `ipfs_cid`; старші за `STALE_THRESHOLD=2h`, у вікні `LOOKBACK=30d`, oldest-first `BATCH_LIMIT=500`) → re-enqueue archive (ідемпотентно, БЕЗ reload-guard — нічого не пише сам). Семплить `FILECOIN_UNARCHIVED_DEPTH` (весь backlog) + `FILECOIN_REPIN_TOTAL`. Дзеркало ARCH.64/65. Канон: [`06_08 §2.2`](06_08_Resilience_and_Failover_Policy) крок 11. |
 
 #### `FilecoinVerificationSweepWorker`
 

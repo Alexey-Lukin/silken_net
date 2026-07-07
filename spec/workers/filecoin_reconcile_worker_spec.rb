@@ -1,0 +1,87 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+
+RSpec.describe FilecoinReconcileWorker, type: :worker do
+  def archive_intent(archive_requested_at:, ipfs_cid: nil)
+    create(:audit_log, archive_requested_at: archive_requested_at, ipfs_cid: ipfs_cid)
+  end
+
+  describe "#perform" do
+    it "re-enqueues a stale archive-requested log still missing ipfs_cid" do
+      log = archive_intent(archive_requested_at: 3.hours.ago)
+
+      expect(FilecoinArchiveWorker).to receive(:perform_async).with(log.id)
+
+      described_class.new.perform
+    end
+
+    # GOLDEN LINCHPIN: a direct-create! log (codex/factory) has NO archive_requested_at →
+    # it was NEVER meant to be pinned. A naive `not_archived` scan would pin it (Pinata waste +
+    # security over-exposure of factory-provenance on public IPFS). Fails if scope regresses.
+    it "IGNORES a not-archived log with no outbox marker (codex/factory never pinned)" do
+      create(:audit_log, archive_requested_at: nil, ipfs_cid: nil)
+
+      expect(FilecoinArchiveWorker).not_to receive(:perform_async)
+
+      described_class.new.perform
+    end
+
+    it "ignores an already-archived log (ipfs_cid present — idempotency)" do
+      archive_intent(archive_requested_at: 3.hours.ago, ipfs_cid: "bafybeigdyrztest")
+
+      expect(FilecoinArchiveWorker).not_to receive(:perform_async)
+
+      described_class.new.perform
+    end
+
+    it "leaves a fresh archive request alone (still inside FilecoinArchiveWorker retry window)" do
+      archive_intent(archive_requested_at: 5.minutes.ago)
+
+      expect(FilecoinArchiveWorker).not_to receive(:perform_async)
+
+      described_class.new.perform
+    end
+
+    it "skips requests older than LOOKBACK (budget-starvation guard — forensic tail)" do
+      archive_intent(archive_requested_at: 40.days.ago)
+
+      expect(FilecoinArchiveWorker).not_to receive(:perform_async)
+
+      described_class.new.perform
+    end
+
+    it "caps re-enqueues at BATCH_LIMIT, oldest-first (backlog drains across crons)" do
+      stub_const("#{described_class}::BATCH_LIMIT", 2)
+      oldest = archive_intent(archive_requested_at: 5.hours.ago)
+      mid    = archive_intent(archive_requested_at: 4.hours.ago)
+      archive_intent(archive_requested_at: 3.hours.ago) # newest — skipped by cap
+
+      expect(FilecoinArchiveWorker).to receive(:perform_async).with(oldest.id)
+      expect(FilecoinArchiveWorker).to receive(:perform_async).with(mid.id)
+
+      described_class.new.perform
+    end
+
+    it "samples the FULL pending_archive backlog into the depth gauge (incl. beyond-LOOKBACK + fresh)" do
+      archive_intent(archive_requested_at: 3.hours.ago)                       # in-window
+      archive_intent(archive_requested_at: 40.days.ago)                       # beyond LOOKBACK
+      archive_intent(archive_requested_at: 5.minutes.ago)                     # fresh
+      archive_intent(archive_requested_at: 3.hours.ago, ipfs_cid: "bafyarch") # archived — excluded
+      allow(FilecoinArchiveWorker).to receive(:perform_async)
+
+      described_class.new.perform
+
+      expect(SilkenNet::Metrics::FILECOIN_UNARCHIVED_DEPTH.get).to eq(3)
+    end
+
+    it "is a no-op (no warn) when nothing is stuck" do
+      archive_intent(archive_requested_at: 5.minutes.ago) # fresh only
+      allow(Rails.logger).to receive(:warn)
+
+      described_class.new.perform
+
+      expect(Rails.logger).not_to have_received(:warn)
+    end
+  end
+end

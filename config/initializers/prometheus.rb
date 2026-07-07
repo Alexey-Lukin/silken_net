@@ -408,6 +408,25 @@ module SilkenNet
       labels: [ :reason ]
     )
 
+    # [INF.22 крок 11] Filecoin archive-outbox backlog + recovery видимість.
+    # unarchived_depth = archive-requested AuditLog'и без ipfs_cid (money/MRV, які ще не на
+    # IPFS) — симетрія HADRON_KYC_PENDING_DEPTH; семплить FilecoinReconcileWorker (:48 щодня).
+    # exhausted = FilecoinArchiveWorker вичерпав retry (Pinata down) → архів у Dead Set, ipfs_cid
+    # NULL до reconcile-re-pin (без цього тонув у generic DeadSet — self-masking клас ARCH.64/65).
+    # repin = скільки reconcile re-enqueue'їв за прогін.
+    FILECOIN_UNARCHIVED_DEPTH = REGISTRY.gauge(
+      :silkennet_filecoin_unarchived_depth,
+      docstring: "Count of archive-requested AuditLog rows still missing ipfs_cid (Filecoin archive backlog)"
+    )
+    FILECOIN_ARCHIVE_EXHAUSTED_TOTAL = REGISTRY.counter(
+      :silkennet_filecoin_archive_exhausted_total,
+      docstring: "FilecoinArchiveWorker jobs that exhausted all retries (archive landed in Dead Set)"
+    )
+    FILECOIN_REPIN_TOTAL = REGISTRY.counter(
+      :silkennet_filecoin_repin_total,
+      docstring: "AuditLog archive re-enqueues issued by FilecoinReconcileWorker"
+    )
+
     # [E.50]: Streamr broadcast failures counter — раніше помилки мовчки логувались без метрик.
     # Streamr — потік присутності (не фінансовий консенсус), але масові збої потребують alerting.
     STREAMR_BROADCAST_FAILURES_TOTAL = REGISTRY.counter(

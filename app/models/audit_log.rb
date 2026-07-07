@@ -29,6 +29,13 @@ class AuditLog < ApplicationRecord
   scope :for_period, ->(from, to) { where(created_at: from..to) if from.present? && to.present? }
   scope :archived, -> { where.not(ipfs_cid: nil) }
   scope :not_archived, -> { where(ipfs_cid: nil) }
+  # [INF.22 крок 11] Outbox-eligibility: archivable = money/MRV-лог, який AuditLogWorker
+  # явно позначив `archive_requested_at` у create-транзакції. Codex/factory прямий `create!`
+  # маркер НЕ ставлять → природно поза archive-периметром (без евристики по auditable_type).
+  # pending_archive = archivable, ще не запінене — саме це дренажить FilecoinReconcileWorker
+  # (partial index `index_audit_logs_pending_archive` дзеркалить цей предикат).
+  scope :archivable, -> { where.not(archive_requested_at: nil) }
+  scope :pending_archive, -> { archivable.not_archived }
 
   # ---------------------------------------------------------------------------
   # Hot-Path: асинхронний запис через Sidekiq (не блокує основну дію користувача)
