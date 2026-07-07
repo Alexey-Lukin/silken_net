@@ -1255,6 +1255,16 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Вхід** | — |
 | **Side Effects** | **[ARCH.55]** Re-arm `BlockchainConfirmationWorker` для tx, що застрягли в `:sent` довше 15 хв (`sent_at < 15.minutes.ago`) — клас, який ConfirmationWorker-`retries_exhausted` не ловить: OOM/евікшн ПІД ЧАС поллінгу (pending-discovery дивиться лише pending/processing; `MintingRollbackService` — тільки з `retries_exhausted`). **Скоуп = `blockchain_network: "evm"` only** — ConfirmationWorker Polygon-специфічний; Solana/Celo `:sent` без фільтра летіли б у чужий поллер (15-20 хв змарнованого RPC + хибний `manual_review`; Solana/Celo мають власні reconcile-шляхи). Ключ на `sent_at` (broadcast-момент), НЕ `created_at` (reset-to-pending тримає старий). Дедуп по tx_hash з earliest created_at (partition-prune); safety-cap `BATCH_LIMIT` re-arm'ів за прохід. Покриває mint/burn/insurance (спільний ConfirmationWorker). Ідемпотентність дубля з живим поллером = AASM `confirm` (одноразовий; дубль → `InvalidTransition` → retry → no-op). **[ARCH.45 :processing-orphan, 2026-07-05]** Другий прохід `escalate_stuck_processing!`: stale `:processing` (updated_at > 15 хв — created_at труїть reset-to-pending) → `escalate_to_review!` (`:manual_review`): крах між `transact("mint")` і `mark_as_sent` = ambiguous (мінт міг landed, tx_hash невідомий) → політика ARCH.48/M6, НІКОЛИ blind re-mint; double-mint і так неможливий (mint-шляхи фільтрують `:pending`), закрито observability/locked-balance хвіст. |
 
+#### `CeloRewardReconcileWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `web3` |
+| **Retry** | 3, unique_for: 25 хвилин (Enterprise-шим, зараз no-op) |
+| **Тригер** | Cron `25,55 * * * *` (кожні 30 хв) |
+| **Вхід** | — |
+| **Side Effects** | **[ARCH.64]** Escalate Celo reward-intent, що застряг у `:pending` (celo/cusd, `created_at ∈ [7д…30хв]ago`) → `escalate_to_review!` (`:manual_review`). Клас, який sibling'и не ловлять: transient RPC-timeout лишає intent `:pending` + re-raise → Sidekiq-retry бачить `:pending` у `reward_already_sent?` → dedup-skip, job "success" (**self-masking**, DeadSet мовчить); `CeloConfirmationWorker` reconcile озброюється лише для `:sent`, `StuckSentTransactionSweeperWorker`/`MintBatchCollectorService` = evm-only → Celo `:pending` без tx_hash був непокритий → тиха недоплата cUSD. **Money-safe**: tx_hash невідомий → on-chain-доля ambiguous → людська звірка на Celo explorer, НІКОЛИ blind re-pay (dedup через `reward_already_sent?`-включає-`:manual_review` тримає re-pay). Partition-pruned reload (`find_with_partition_pruning`); safety-cap `BATCH_LIMIT=500` (oldest-first). Видимість — `silkennet_blockchain_manual_review_depth` gauge + `sn-alert-manual-review-depth` (P1). |
+
 #### `MintCarbonCoinWorker`
 
 | Параметр | Значення |
@@ -1407,6 +1417,16 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Вхід** | `subject_type` ("Wallet"/"Organization" — whitelist), `subject_id` |
 | **Сервіси** | `Polygon::HadronComplianceService` → `verify_investor!` (wallet із власною адресою) / `verify_organization!` (custodial-бенефіціар) |
 | **Side Effects** | Пише `hadron_kyc_status` (approved/rejected) на суб'єкті; custodial-wallet без власної адреси — skip (успадковує org-статус через `Wallet#kyc_approved_for_minting?`). Dev/no-key = simulate-approve; prod strict = реальний Hadron API. Канон-гейт: [`05_02` — Крок E](05_02_Proof_of_Growth_Pipeline). |
+
+#### `HadronKycReverifyWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `web3_low` |
+| **Retry** | 3, unique_for: 55 хвилин (Enterprise-шим, зараз no-op) |
+| **Тригер** | Cron `50 * * * *` (щогодини) |
+| **Вхід** | — |
+| **Side Effects** | **[ARCH.65]** Re-enqueue `HadronKycVerificationWorker` для Wallet/Organization з `hadron_kyc_status="pending"` (з власною адресою, `updated_at > 1год`). Клас: `HadronKycVerificationWorker` (retry:5) НЕ має `sidekiq_retries_exhausted` + enqueue лише разово `after_commit` → Hadron API down усі 5 retry → Dead Set → KYC `"pending"` НАЗАВЖДИ → mint-gate `Wallet#kyc_approved_for_minting?` щоцикл тихо скіпає pending-tx бенефіціара. Idempotent auto-heal (повторний verify безпечний; скоуп лише `"pending"`, approved/rejected не чіпаємо); `BATCH_LIMIT=500` oldest-first проти thundering-herd на mass-recovery. Backlog-видимість — `silkennet_hadron_kyc_pending_depth` gauge. |
 
 #### `TreasuryMonitorWorker`
 
