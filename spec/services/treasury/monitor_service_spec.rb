@@ -78,7 +78,7 @@ RSpec.describe Treasury::MonitorService do
       end
 
       # [G1/G2] money-path limbo + drift видимість (той самий 15-хв прохід).
-      it "sets manual_review depth, limbo-locked, chain-audit delta, and filecoin-unarchived gauges" do
+      it "sets manual_review depth, limbo-locked, chain-audit delta, filecoin-unarchived, and anchor confirmation gauges" do
         allow(ChainAuditService).to receive(:call).and_return(
           ChainAuditService::Result.new(db_total: 100.0, chain_total: 97.5, delta: 2.5, critical: true, checked_at: Time.current)
         )
@@ -92,6 +92,10 @@ RSpec.describe Treasury::MonitorService do
         create(:audit_log, archive_requested_at: 40.days.ago, ipfs_cid: nil) # поза reconcile LOOKBACK, але у depth-плато
         create(:audit_log, archive_requested_at: 1.hour.ago, ipfs_cid: "bafyarch") # archived → excluded
         create(:audit_log, archive_requested_at: nil, ipfs_cid: nil) # no outbox marker (codex/factory) → excluded
+        # [ARCH.66] anchor confirmation-lifecycle backlog
+        create(:ethereum_anchor, :sent).update_column(:updated_at, 7.hours.ago) # stuck >6h → stuck_sent_depth
+        create(:ethereum_anchor, :sent).update_column(:status, EthereumAnchor.statuses[:manual_review]) # → manual_review_depth
+        create(:ethereum_anchor, :sent) # fresh :sent → NOT stuck (excluded)
 
         described_class.call
 
@@ -99,6 +103,8 @@ RSpec.describe Treasury::MonitorService do
         expect(SilkenNet::Metrics::BLOCKCHAIN_LIMBO_LOCKED_TOTAL.get).to eq(800) # 500 + 300 (aged sent/review only)
         expect(SilkenNet::Metrics::CHAIN_AUDIT_DELTA.get).to eq(2.5)
         expect(SilkenNet::Metrics::FILECOIN_UNARCHIVED_DEPTH.get).to eq(2) # marker+no-cid, incl. beyond-LOOKBACK хвіст
+        expect(SilkenNet::Metrics::ETHEREUM_ANCHOR_STUCK_SENT_DEPTH.get).to eq(1) # stuck :sent only (fresh excluded)
+        expect(SilkenNet::Metrics::ETHEREUM_ANCHOR_MANUAL_REVIEW_DEPTH.get).to eq(1)
       end
 
       it "does not let a money-path metrics failure break the monitor cycle (rescue)" do

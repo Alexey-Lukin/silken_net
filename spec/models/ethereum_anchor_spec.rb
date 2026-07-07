@@ -98,7 +98,7 @@ RSpec.describe EthereumAnchor, type: :model do
 
     it "supports all statuses" do
       expect(described_class.statuses).to include(
-        "pending" => 0, "sent" => 1, "confirmed" => 2, "failed" => 3
+        "pending" => 0, "sent" => 1, "confirmed" => 2, "failed" => 3, "manual_review" => 4
       )
     end
   end
@@ -198,6 +198,86 @@ RSpec.describe EthereumAnchor, type: :model do
       expect(in_flight).to include(pending_anchor, sent_anchor)
       expect(in_flight).not_to include(described_class.find_by(state_root: "a" * 64))
       expect(in_flight).not_to include(described_class.find_by(state_root: "b" * 64))
+    end
+  end
+
+  describe ".stuck_sent scope [ARCH.66]" do
+    it "returns :sent anchors older than the threshold, excludes fresh and terminal" do
+      stuck = create(:ethereum_anchor, :sent)
+      stuck.update_column(:updated_at, (described_class::STUCK_SENT_THRESHOLD + 1.hour).ago)
+      create(:ethereum_anchor, :sent) # fresh — within threshold → not stuck
+      terminal = create(:ethereum_anchor, :confirmed)
+      terminal.update_column(:updated_at, 1.day.ago) # terminal never counts
+
+      expect(described_class.stuck_sent).to contain_exactly(stuck)
+    end
+  end
+
+  describe "[ARCH.66] guarded lifecycle transitions" do
+    let(:sent_anchor) { create(:ethereum_anchor, :sent) }
+
+    describe "#confirm!" do
+      it "transitions :sent → :confirmed with block_number and gas_used" do
+        sent_anchor.confirm!(15_000_000, 47_000)
+
+        expect(sent_anchor.reload).to be_status_confirmed
+        expect(sent_anchor.block_number).to eq(15_000_000)
+        expect(sent_anchor.gas_used).to eq(47_000)
+      end
+
+      it "is idempotent — a second call on a non-:sent anchor is a no-op" do
+        sent_anchor.confirm!(15_000_000, 47_000)
+
+        expect(sent_anchor.confirm!(99, 99)).to be false
+        expect(sent_anchor.reload.block_number).to eq(15_000_000)
+      end
+
+      it "[MEDIUM-A1] confirms FROM :manual_review — operator resolution after etherscan check" do
+        sent_anchor.escalate_to_review!("stuck")
+        expect(sent_anchor.reload).to be_status_manual_review
+
+        expect(sent_anchor.confirm!(15_000_000, 47_000)).to be_truthy
+        expect(sent_anchor.reload).to be_status_confirmed
+      end
+    end
+
+    describe "#mark_failed!" do
+      it "transitions :sent → :failed and truncates the reason to 450 chars" do
+        sent_anchor.mark_failed!("x" * 600)
+
+        expect(sent_anchor.reload).to be_status_failed
+        expect(sent_anchor.error_message.length).to eq(450)
+      end
+
+      it "no-ops on a terminal anchor (already confirmed)" do
+        confirmed = create(:ethereum_anchor, :confirmed)
+
+        expect(confirmed.mark_failed!("revert")).to be false
+        expect(confirmed.reload).to be_status_confirmed
+      end
+
+      it "[MEDIUM-A1] fails FROM :manual_review — operator marks a dropped tx" do
+        sent_anchor.escalate_to_review!("stuck")
+
+        expect(sent_anchor.mark_failed!("operator: tx dropped")).to be_truthy
+        expect(sent_anchor.reload).to be_status_failed
+      end
+    end
+
+    describe "#escalate_to_review!" do
+      it "transitions :sent → :manual_review and leaves in_flight (unblocks next weekly seal)" do
+        sent_anchor.escalate_to_review!("polling exhausted")
+
+        expect(sent_anchor.reload).to be_status_manual_review
+        expect(described_class.in_flight).not_to include(sent_anchor)
+      end
+
+      it "no-ops on a non-:sent anchor" do
+        confirmed = create(:ethereum_anchor, :confirmed)
+
+        expect(confirmed.escalate_to_review!("x")).to be false
+        expect(confirmed.reload).to be_status_confirmed
+      end
     end
   end
 end

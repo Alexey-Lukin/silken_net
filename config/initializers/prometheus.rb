@@ -390,6 +390,30 @@ module SilkenNet
       docstring: "Total missed Ethereum L1 anchor weeks detected (gap > 8 days)"
     )
 
+    # [ARCH.66] Anchor confirmation-lifecycle видимість. stuck_sent_depth закриває сліпу пляму
+    # sn-alert-anchor-stalled (той бачить лише «чи БУВ спробуваний broadcast за 8д», НЕ «чи хоч
+    # один підтвердився»). Рахує stuck-предикат (EthereumAnchor.stuck_sent), НЕ весь :sent —
+    # інакше здоровий anchor у вікні підтвердження тримав би gauge>0 і пейджив щотижня.
+    # Семплить Treasury::MonitorService (15-хв — freshness проти restart-обнулення in-process
+    # gauge; sweeper-repair окремо hourly). reverted = storeStateRoot revert on-chain
+    # (детермінований contract-revert «фінальної печатки» = аномалія, інакше видима лише
+    # через 8-денний missed-weeks-лаг).
+    ETHEREUM_ANCHOR_STUCK_SENT_DEPTH = REGISTRY.gauge(
+      :silkennet_ethereum_anchor_stuck_sent_depth,
+      docstring: "Count of EthereumAnchor rows stuck in :sent past the confirmation-poll SLA (ARCH.66)"
+    )
+    # [ARCH.66] Anchor у :manual_review = «фінальна печатка» broadcast'нута, але не досягла
+    # :confirmed за poll-SLA (людська звірка на etherscan). Термінальний, поза sweeper/detect_missed
+    # → без цього gauge невидимий (лише 8-денний missed-weeks-лаг ловив би, і то з :confirmed-baseline).
+    ETHEREUM_ANCHOR_MANUAL_REVIEW_DEPTH = REGISTRY.gauge(
+      :silkennet_ethereum_anchor_manual_review_depth,
+      docstring: "Count of EthereumAnchor rows escalated to :manual_review (unconfirmed seal awaiting human check, ARCH.66)"
+    )
+    ETHEREUM_ANCHOR_REVERTED_TOTAL = REGISTRY.counter(
+      :silkennet_ethereum_anchor_reverted_total,
+      docstring: "EthereumAnchor storeStateRoot txs that reverted on-chain (ARCH.66)"
+    )
+
     # [GOV.1] Governance-параметр відхилено bounds-валідацією sync-воркера
     # (мис-скейл / нонсенс-голос). Ненульове = DAO проголосував значення поза
     # safety-межами → чинним лишилось попереднє, потрібен коригувальний голос.

@@ -74,7 +74,10 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 | sn-alert-tinyml-threshold-invalid | tinyml_threshold_invalid_reports rate(15m) > 0 (FW.18b) | warning | 5m |
 | sn-alert-mint-slo-breach | mint success/attempts < 0.8 за 1h (guard attempts>0) | warning | 10m |
 | sn-alert-mint-volume-anomaly | mint_volume_window_scc > operator-ceiling (ARCH.62 агрегатний сплеск) | warning | 10m |
-| sn-alert-anchor-stalled | anchor_missed_weeks increase[8d] > 0 (L1 state-root stalled; ARCH.66 — anchors never :confirmed) | warning | 1h |
+| sn-alert-anchor-stalled | anchor_missed_weeks increase[8d] > 0 (broadcast-liveness; 1 з 4 anchor-сигналів ARCH.66) | warning | 1h |
+| sn-alert-ethereum-anchor-stuck-sent | ethereum_anchor_stuck_sent_depth min_over_time[2h] > 0 (:sent не досяг :confirmed; ARCH.66) | warning | 1h |
+| sn-alert-ethereum-anchor-manual-review | ethereum_anchor_manual_review_depth > 0 (seal чекає людської звірки; ARCH.66) | warning | 1h |
+| sn-alert-ethereum-anchor-reverted | ethereum_anchor_reverted_total increase[1w] > 0 (storeStateRoot revert on-chain; ARCH.66) | info | 5m |
 | sn-alert-filecoin-verification-failed | filecoin_verification_failures increase[24h] > 0 (E.60 ex-post swap) | warning | 5m |
 | sn-alert-oracle-balance-warning | oracle_balance_ratio < 1.0 | info | 15m |
 | sn-alert-db-pool-saturation | db_pool_waiting > 5 | info | 2m |
@@ -83,7 +86,7 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 | sn-alert-filecoin-unarchived-backlog | filecoin_unarchived_depth sustained (Pinata-exhaustion backlog; INF.22 крок 11) | info | 1h |
 | sn-alert-hadron-kyc-backlog | hadron_kyc_pending_depth sustained[6h] (KYC backlog; ARCH.65, auto-heal) | info | 30m |
 
-> Повний SSOT правил (27) — сам `alerts/silkennet-alerts.yaml`; ця таблиця — людська шпаргалка, `import.rb` рахує з yaml.
+> Повний SSOT правил (30) — сам `alerts/silkennet-alerts.yaml`; ця таблиця — людська шпаргалка, `import.rb` рахує з yaml.
 
 ## Notification channel
 

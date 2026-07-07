@@ -119,6 +119,11 @@ RSpec.describe Ethereum::StateAnchorService do
 
       # [BLOCKER-4] Mock balance check — sufficient balance by default
       allow(mock_client).to receive(:get_balance).and_return(1 * (10**18))
+
+      # [ARCH.66] Не запускати реальний confirmation-поллер (happy-path enqueue після :sent /
+      # re-arm на resume-гілці).
+      allow(EthereumAnchorConfirmationWorker).to receive(:perform_in)
+      allow(EthereumAnchorConfirmationWorker).to receive(:perform_async)
     end
 
     it "returns an EthereumAnchor record on success (BLOCKER-2)" do
@@ -131,6 +136,14 @@ RSpec.describe Ethereum::StateAnchorService do
       expect(result).to be_persisted
       expect(result.tx_hash).to eq(expected_tx_hash)
       expect(result).to be_status_sent
+    end
+
+    it "[ARCH.66] schedules confirmation polling after a successful send" do
+      allow(mock_client).to receive(:transact).and_return("0x" + "fa" * 32)
+
+      result = described_class.new.anchor_to_l1!
+
+      expect(EthereumAnchorConfirmationWorker).to have_received(:perform_in).with(30.seconds, result.id)
     end
 
     it "persists state_root components for reproducibility (BLOCKER-6, E.53, E.54)" do
@@ -276,6 +289,8 @@ RSpec.describe Ethereum::StateAnchorService do
 
         expect(result).to eq(sent_anchor)
         expect(EthereumAnchor.count).to eq(1)
+        # [ARCH.66 INFO-7] resume-гілка re-arm'ить поллер (recovery якщо enqueue загубився / поллер помер)
+        expect(EthereumAnchorConfirmationWorker).to have_received(:perform_async).with(sent_anchor.id)
       end
 
       it "resumes a pending anchor instead of creating a new one" do

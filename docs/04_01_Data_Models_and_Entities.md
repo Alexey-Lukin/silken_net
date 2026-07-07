@@ -1191,7 +1191,7 @@ active/draft ──cancel──► cancelled
 
 ### `EthereumAnchor` — Аудит-Трейл L1 Anchoring
 
-**Призначення:** Персистентний журнал щотижневих операцій фіналізації стану SilkenNet в Ethereum Mainnet. Зберігає `state_root`, `tx_hash`, `block_number` та компоненти для незалежної верифікації (BLOCKER-2, BLOCKER-6).
+**Призначення:** Персистентний журнал щотижневих операцій фіналізації стану SilkenNet в Ethereum Mainnet. Зберігає `state_root`, `tx_hash`, компоненти для незалежної верифікації (BLOCKER-2, BLOCKER-6), а також `block_number`/`gas_used` **після підтвердження** ([ARCH.66] — поллер доводить `:sent`→`:confirmed`; до того обидва NULL).
 
 **Ключові поля:**
 
@@ -1206,7 +1206,7 @@ active/draft ──cancel──► cancelled
 | `tx_hash` | string(66) | Ethereum TX hash (`0x` + 64 hex chars, `UNIQUE WHERE NOT NULL`) |
 | `block_number` | bigint | Номер блоку підтвердження |
 | `gas_used` | bigint | Витрачений газ |
-| `status` | integer | Enum: `pending(0) / sent(1) / confirmed(2) / failed(3)` |
+| `status` | integer | Enum: `pending(0) / sent(1) / confirmed(2) / failed(3) / manual_review(4)` [ARCH.66] |
 | `error_message` | string(500) | Деталі помилки (якщо є) |
 
 **Enum `status`** (prefix: true)**:**
@@ -1214,9 +1214,10 @@ active/draft ──cancel──► cancelled
 | Значення | Int | Опис |
 |----------|-----|------|
 | `pending` | 0 | State root обчислено, TX ще не відправлена |
-| `sent` | 1 | TX відправлена в мемпул |
-| `confirmed` | 2 | TX підтверджена в L1 блоці |
-| `failed` | 3 | Помилка відправлення або підтвердження |
+| `sent` | 1 | TX відправлена в мемпул, поллер опитує receipt [ARCH.66] |
+| `confirmed` | 2 | TX підтверджена в L1 блоці (reorg-depth пройдено; `block_number`/`gas_used` заповнені) |
+| `failed` | 3 | storeStateRoot revert on-chain, або guard відправлення (balance) |
+| `manual_review` | 4 | [ARCH.66] broadcast, доля невідома після poll-SLA — людська звірка (виходить з `in_flight`) |
 
 **Валідації:**
 - `state_root` — presence, uniqueness, format `/\A[a-f0-9]{64}\z/`
@@ -1224,13 +1225,14 @@ active/draft ──cancel──► cancelled
 - `total_scc` — presence, `>= 0`
 - `chain_hash`, `anchored_at` — presence
 
-**Scopes:** `recent`, `successful` (confirmed), `latest_confirmed`.
+**Scopes:** `recent`, `successful` (confirmed), `latest_confirmed`, `stuck_sent` [ARCH.66] (`:sent` AND `updated_at < STUCK_SENT_THRESHOLD`=6год — One-Home предикат для reconcile-sweeper + gauge).
 
 **Методи:**
-- `verify_state_root` — незалежно відтворює хеш з `total_scc|total_sfc|active_tree_count|chain_hash|anchored_at.iso8601` та порівнює з `state_root` (для зовнішнього аудитора)
+- `verify_state_root` — незалежно відтворює хеш з `total_scc|total_sfc|active_tree_count|chain_hash|anchored_at.iso8601` та порівнює з `state_root` (для зовнішнього аудитора; працює на будь-якому статусі — компоненти заповнюються ще при `:pending`)
 - `etherscan_url` — повертає `https://etherscan.io/tx/#{tx_hash}` або `nil`
+- `confirm!(block_number, gas_used)` / `mark_failed!(reason)` / `escalate_to_review!(reason)` [ARCH.66] — гардовані переходи (`with_lock`, idempotent, plain enum): `confirm!`/`mark_failed!` з `:sent` **або** `:manual_review` (останнє = гардований операторський вихід із manual_review після etherscan-звірки, без raw `update_column`); `escalate!` лише з `:sent`
 
-**Використовується:** `Ethereum::StateAnchorService#anchor_to_l1!` (записує до TX), `EthereumAnchorWorker`.
+**Використовується:** `Ethereum::StateAnchorService#anchor_to_l1!` (записує до TX), `EthereumAnchorWorker`, `EthereumAnchorConfirmationWorker` (confirm/fail/escalate), `StuckSentAnchorSweeperWorker` (re-arm) [ARCH.66].
 
 ---
 

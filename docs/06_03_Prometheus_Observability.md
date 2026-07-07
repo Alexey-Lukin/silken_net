@@ -313,15 +313,16 @@ end
 > При зміні реєстру в коді — **регенерувати ЛИШЕ цю таблицю** (команда в кінці).
 > Де інкрементується/оновлюється кожна — `grep -rn "SilkenNet::Metrics::<CONST>" app/`.
 >
-> **Разом: 70 метрик = 40 counters + 28 gauges + 2 histograms** (звірено регенерацією нижче).
+> **Разом: 73 метрики = 41 counters + 30 gauges + 2 histograms** (звірено регенерацією нижче).
 
-**Counters (40):**
+**Counters (41):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
 | `silkennet_anchor_missed_weeks_total` | — | Total missed Ethereum L1 anchor weeks detected (gap > 8 days) |
 | `silkennet_circuit_breaker_rejections_total` | `service` | Web3 requests fast-failed because a provider circuit breaker was open |
 | `silkennet_coap_packets_received_total` | `status` | Total CoAP UDP packets received by the telemetry daemon |
+| `silkennet_ethereum_anchor_reverted_total` | — | EthereumAnchor storeStateRoot txs that reverted on-chain (ARCH.66) |
 | `silkennet_ews_alerts_total` | `alert_type` | Total EWS alerts dispatched (fire, drought, pest, storm) |
 | `silkennet_fauna_skip_reports_total` | — | FW.42 telemetry packets reporting a fauna session skipped on low Vcap (per-DID attribution in logs) |
 | `silkennet_filecoin_archive_exhausted_total` | — | FilecoinArchiveWorker jobs that exhausted all retries (archive landed in Dead Set) |
@@ -360,7 +361,7 @@ end
 | `silkennet_treasury_check_errors_total` | `network`, `error_type` | Total treasury monitoring RPC errors |
 | `silkennet_w3bstream_signature_fallback_total` | `reason` | Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature |
 
-**Gauges (28):**
+**Gauges (30):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -372,6 +373,8 @@ end
 | `silkennet_db_pool_idle` | `database` | Number of idle database connections in the pool |
 | `silkennet_db_pool_size` | `database` | Maximum number of connections in the database pool |
 | `silkennet_db_pool_waiting` | `database` | Number of threads waiting for a database connection |
+| `silkennet_ethereum_anchor_manual_review_depth` | — | Count of EthereumAnchor rows escalated to :manual_review (unconfirmed seal awaiting human check, ARCH.66) |
+| `silkennet_ethereum_anchor_stuck_sent_depth` | — | Count of EthereumAnchor rows stuck in :sent past the confirmation-poll SLA (ARCH.66) |
 | `silkennet_filecoin_unarchived_depth` | — | Count of archive-requested AuditLog rows still missing ipfs_cid (Filecoin archive backlog) |
 | `silkennet_gateway_attest_lapsed` | — | Online QATT-capable gateways whose last Ed25519-attested batch is older than the lapse window |
 | `silkennet_gateways_faulty` | — | Current number of gateways in the faulty state (set on each staleness sweep) |

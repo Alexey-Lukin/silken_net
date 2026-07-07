@@ -92,7 +92,8 @@ module ApplicationWeb3Worker
 
   # Хелпер для прямого доступу до Enterprise Rate Limiter.
   # Використовується воркерами, що не викликають with_web3_error_handling
-  # (MintCarbonCoinWorker, BlockchainConfirmationWorker, InsurancePayoutWorker).
+  # (MintCarbonCoinWorker, BlockchainConfirmationWorker, EthereumAnchorConfirmationWorker,
+  # InsurancePayoutWorker).
   #
   # @yield блок з RPC-операціями
   def within_rpc_limit(&block)

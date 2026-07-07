@@ -113,6 +113,13 @@ module Treasury
       # cadence робить `min_over_time[6h]`-alert осмисленим. ВЕСЬ pending_archive (не LOOKBACK-
       # вікно) — post-LOOKBACK хвіст тримає плато, оператор бачить persistent-діру, не нуль.
       SilkenNet::Metrics::FILECOIN_UNARCHIVED_DEPTH.set(AuditLog.pending_archive.count)
+
+      # [ARCH.66] Anchor stuck-:sent backlog — той самий 15-хв money-path прохід (freshness
+      # проти restart-обнулення in-process gauge; sweeper-repair окремо hourly). `stuck_sent`
+      # (scope: :sent AND updated_at > поріг) — здоровий anchor підтверджується за хвилини,
+      # тож 0 у нормі, >0 лише реально-завислий (рахувати весь :sent пейджив би щотижня).
+      SilkenNet::Metrics::ETHEREUM_ANCHOR_STUCK_SENT_DEPTH.set(EthereumAnchor.stuck_sent.count)
+      SilkenNet::Metrics::ETHEREUM_ANCHOR_MANUAL_REVIEW_DEPTH.set(EthereumAnchor.status_manual_review.count)
     rescue StandardError => e
       # Спостережуваність не сміє валити monitor-цикл (баланси важливіші).
       Rails.logger.error "🛑 [Treasury] update_money_path_metrics: #{e.message}"

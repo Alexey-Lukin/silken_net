@@ -605,7 +605,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 |---|---|
 | **Файл** | `app/services/ethereum/state_anchor_service.rb` |
 | **Вхід** | — (no args) |
-| **Що робить** | Тижневий SHA-256 state root → Ethereum L1 з повним аудит-трейлом. **[BLOCKER-2]** Перед TX створює `EthereumAnchor` запис (status: `pending`) для crash recovery. **[BLOCKER-3]** Gas management: `DEFAULT_GAS_LIMIT=100_000`, `DEFAULT_MAX_FEE_GWEI=100`, `DEFAULT_PRIORITY_FEE_GWEI=2` — всі перекриваються ENV. **[BLOCKER-4]** Inline guard: перевіряє ETH-баланс wallet (`DEFAULT_MIN_ANCHOR_BALANCE_ETH = 0.01 ETH`, governance-aware через `SystemParameter(:oracle_min_balance_eth)`) перед TX; при недостатньому балансі — `EthereumAnchor.status = failed` + raise. **[BLOCKER-6]** `generate_state_root` обгорнуто в `transaction(isolation: :repeatable_read)` (SNAPSHOT ISOLATION) і повертає `{ state_root, total_scc, total_sfc, active_tree_count, chain_hash, anchored_at }` — усі шість компонентів зберігаються в `EthereumAnchor` для незалежної верифікації через `EthereumAnchor#verify_state_root`. **[E.53/E.54]** Formula: `SHA256("#{total_scc}\|#{total_sfc}\|#{active_tree_count}\|#{chain_hash}\|#{anchored_at.iso8601}")`. `total_sfc` (sum of confirmed `forest_coin` `BlockchainTransaction.amount`) додано бо governance-токен впливає на quorum/voting power у DAO. `active_tree_count` (`Tree.active.count`) додано як метрика покриття екосистеми — різка зміна без audit events є сигналом маніпуляції. **[DOUBLE-ANCHOR GUARD]** Перед створенням нового state_root перевіряє `EthereumAnchor.in_flight` (status `:pending` або `:sent` за останній тиждень): якщо знайдено `:sent` — повертає його без re-send (TX може бути в мемпулі); якщо `:pending` — продовжує з тим самим state_root для crash-recovery. На `Net::ReadTimeout`/`Net::OpenTimeout`/`IOError` зберігає status `:pending` (TX may be in-flight) — наступний ретрай резюмує цей самий anchor. Після успішної TX — `anchor.update!(status: :sent, tx_hash:)`. |
+| **Що робить** | Тижневий SHA-256 state root → Ethereum L1 з повним аудит-трейлом. **[BLOCKER-2]** Перед TX створює `EthereumAnchor` запис (status: `pending`) для crash recovery. **[BLOCKER-3]** Gas management: `DEFAULT_GAS_LIMIT=100_000`, `DEFAULT_MAX_FEE_GWEI=100`, `DEFAULT_PRIORITY_FEE_GWEI=2` — всі перекриваються ENV. **[BLOCKER-4]** Inline guard: перевіряє ETH-баланс wallet (`DEFAULT_MIN_ANCHOR_BALANCE_ETH = 0.01 ETH`, governance-aware через `SystemParameter(:oracle_min_balance_eth)`) перед TX; при недостатньому балансі — `EthereumAnchor.status = failed` + raise. **[BLOCKER-6]** `generate_state_root` обгорнуто в `transaction(isolation: :repeatable_read)` (SNAPSHOT ISOLATION) і повертає `{ state_root, total_scc, total_sfc, active_tree_count, chain_hash, anchored_at }` — усі шість компонентів зберігаються в `EthereumAnchor` для незалежної верифікації через `EthereumAnchor#verify_state_root`. **[E.53/E.54]** Formula: `SHA256("#{total_scc}\|#{total_sfc}\|#{active_tree_count}\|#{chain_hash}\|#{anchored_at.iso8601}")`. `total_sfc` (sum of confirmed `forest_coin` `BlockchainTransaction.amount`) додано бо governance-токен впливає на quorum/voting power у DAO. `active_tree_count` (`Tree.active.count`) додано як метрика покриття екосистеми — різка зміна без audit events є сигналом маніпуляції. **[DOUBLE-ANCHOR GUARD]** Перед створенням нового state_root перевіряє `EthereumAnchor.in_flight` (status `:pending` або `:sent` за останній тиждень): якщо знайдено `:sent` — повертає його без re-send (TX може бути в мемпулі); якщо `:pending` — продовжує з тим самим state_root для crash-recovery. На `Net::ReadTimeout`/`Net::OpenTimeout`/`IOError` зберігає status `:pending` (TX may be in-flight) — наступний ретрай резюмує цей самий anchor. Після успішної TX — `anchor.update!(status: :sent, tx_hash:)` + enqueue `EthereumAnchorConfirmationWorker` (**[ARCH.66]** — поллер доводить `:sent`→`:confirmed`/`:failed`/`:manual_review`; дім lifecycle [`05_04 §5.1`](05_04_Ethereum_L1_State_Anchor)). |
 | **Зовнішні виклики** | Ethereum Mainnet RPC (`ALCHEMY_ETHEREUM_RPC_URL`), `StateRootAnchor` contract (`storeStateRoot(bytes32)`) |
 | **Вихід** | `EthereumAnchor` (AR instance). Raises при недостатньому балансі, timeout або connection error. |
 
@@ -1386,6 +1386,26 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Тригер** | Sidekiq cron: щопонеділка 03:00 UTC |
 | **Вхід** | — |
 | **Сервіси** | `Ethereum::StateAnchorService.new.anchor_to_l1!` |
+
+#### `EthereumAnchorConfirmationWorker` [ARCH.66]
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `web3_low` |
+| **Retry** | 60, фіксований `sidekiq_retry_in { 180 }` (~3год горизонт — L1 slow-inclusion), unique_for: 3 год |
+| **Тригер** | `perform_in(30s)` після `StateAnchorService` `:sent`; re-arm зі `StuckSentAnchorSweeperWorker` |
+| **Вхід** | `anchor_id` |
+| **Side Effects** | poll `eth_get_transaction_receipt` → `Web3::EvmReceiptClassifier` → `confirm!`/`mark_failed!`(+reverted-counter)/`:pending`-raise; **reorg-depth gate** (`ETHEREUM_ANCHOR_MIN_CONFIRMATIONS`=64). Exhausted → **фінальний receipt re-check** → confirm/fail, і лише все ще pending → `escalate_to_review!` (`:manual_review`; дзеркало `MintingRollbackService`). **Ніколи re-broadcast** (nonce не персиститься). Дім — [`05_04 §5.1`](05_04_Ethereum_L1_State_Anchor) |
+
+#### `StuckSentAnchorSweeperWorker` [ARCH.66]
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `web3_low` |
+| **Retry** | 3, unique_for: 55 хв |
+| **Тригер** | Sidekiq cron: щогодини :40 |
+| **Вхід** | — |
+| **Side Effects** | re-arm `EthereumAnchorConfirmationWorker` для `EthereumAnchor.stuck_sent` (`:sent` >6год; read-only re-poll, reload-guard, `BATCH_LIMIT`). Backstop для загиблого поллера (OOM) — сам поллер не встиг escalate |
 
 #### `KlimaRetirementWorker`
 

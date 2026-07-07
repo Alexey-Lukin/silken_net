@@ -26,12 +26,14 @@ class EthereumAnchorWorker
   private
 
   # [S6.6] Detects gaps in the weekly anchoring schedule.
-  # If the last successful (confirmed or sent) anchor is older than MISSED_ANCHOR_THRESHOLD,
-  # logs a warning and increments Prometheus metric for alerting.
-  # This enables Grafana alerting on `silkennet_anchor_missed_weeks_total` rate > 0.
+  # [ARCH.66] Counts only :confirmed (not :sent) as "success": with a live confirmation
+  # poller a :sent anchor is transient (resolves in hours), so a stuck :sent must NOT
+  # reset the gap — else a lost receipt would let a fresh weekly :sent mask a genuinely
+  # unconfirmed run forever. If the last CONFIRMED anchor is older than the threshold,
+  # logs a warning and increments the Prometheus metric. Grafana alerts on the rate > 0.
   def detect_missed_anchor_weeks!
     last_anchor = EthereumAnchor
-      .where(status: [ :sent, :confirmed ])
+      .status_confirmed
       .order(created_at: :desc)
       .first
 

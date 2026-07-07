@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — Механізм якорування повністю імплементовано.
+- **Поточний TRL:** TRL 8 — Механізм якорування повністю імплементовано (broadcast + confirmation-lifecycle → `:confirmed`/`:failed`/`:manual_review` + stuck-reconcile, [ARCH.66] §5.1).
 - **Цільовий TRL:** TRL 9 = mainnet deploy (контракт на Ethereum Mainnet + перший щотижневий anchor підтверджено), per [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond). Поточні gas-management + аудит-трейл у БД вже на рівні TRL 8.
 - **Відкрите:** Production gas-management tuning + Mainnet contract deploy → [`00_07`](00_07_Action_Plan_Tracker).
 
@@ -35,6 +35,7 @@
 - [3. Алгоритм Формування state_root](#3-алгоритм-формування-state_root)
 - [4. Відправка L1 Транзакції](#4-відправка-l1-транзакції)
 - [5. Обробка Помилок](#5-обробка-помилок)
+- [5.1 Підтвердження та Reconcile](#51-підтвердження-та-reconcile-arch66)
 - [6. Web3::RpcConnectionPool](#6-web3rpcconnectionpool)
 - [7. RSpec Покриття](#7-rspec-покриття)
 - [8. Місце в SilkenNet Pipeline](#8-місце-в-silkennet-pipeline)
@@ -62,6 +63,8 @@ Ethereum L1 State Anchor — це **фінальна печатка** всьог
 | Компонент | Файл | Статус |
 |-----------|------|--------|
 | `EthereumAnchorWorker` | `app/workers/ethereum_anchor_worker.rb` | ✅ Real |
+| `EthereumAnchorConfirmationWorker` [ARCH.66] | `app/workers/ethereum_anchor_confirmation_worker.rb` | ✅ Real |
+| `StuckSentAnchorSweeperWorker` [ARCH.66] | `app/workers/stuck_sent_anchor_sweeper_worker.rb` | ✅ Real |
 | `Ethereum::StateAnchorService` | `app/services/ethereum/state_anchor_service.rb` | ✅ Real |
 | `EthereumAnchor` | `app/models/ethereum_anchor.rb` | ✅ Real |
 | Міграція (base) | `db/migrate/20260415140000_create_ethereum_anchors.rb` | ✅ Applied |
@@ -70,6 +73,8 @@ Ethereum L1 State Anchor — це **фінальна печатка** всьог
 | `ApplicationWeb3Worker` | `app/workers/application_web3_worker.rb` | ✅ Real |
 | Cron-розклад | `config/sidekiq.yml` | ✅ Сконфігуровано |
 | RSpec (worker) | `spec/workers/ethereum_anchor_worker_spec.rb` | ✅ Покрито |
+| RSpec (confirmation) [ARCH.66] | `spec/workers/ethereum_anchor_confirmation_worker_spec.rb` | ✅ Покрито |
+| RSpec (sweeper) [ARCH.66] | `spec/workers/stuck_sent_anchor_sweeper_worker_spec.rb` | ✅ Покрито |
 | RSpec (service) | `spec/services/ethereum/state_anchor_service_spec.rb` | ✅ Покрито |
 | RSpec (model) | `spec/models/ethereum_anchor_spec.rb` | ✅ Покрито |
 | `StateRootAnchor.sol` | `contracts/StateRootAnchor.sol` | ✅ Real |
@@ -272,10 +277,13 @@ client.transact(contract, "storeStateRoot", root_bytes,
 anchor.update!(status: :sent, tx_hash:)
        │
        ▼
+EthereumAnchorConfirmationWorker.perform_in(30.seconds, anchor.id)   # [ARCH.66] довершити lifecycle
+       │
+       ▼
 Rails.logger.info "⚓ [Ethereum L1] State Root anchored: #{state_root} → TX: #{tx_hash}"
        │
        ▼
-return anchor   # EthereumAnchor instance
+return anchor   # EthereumAnchor (:sent → поллер доведе до :confirmed/:failed/:manual_review)
 ```
 
 ### ENV-змінні
@@ -332,22 +340,22 @@ return anchor   # EthereumAnchor instance
 
 ```ruby
 rescue Net::OpenTimeout, Net::ReadTimeout => e
-  anchor&.update!(status: :failed, error_message: e.message.truncate(500)) if anchor&.persisted?
-  Rails.logger.error "🛑 [Ethereum L1] Timeout: #{e.message}"
+  # [S6.7] НЕ маркуємо :failed — TX може бути в мемпулі; лишаємо :pending, щоб in_flight
+  # guard відновив цей anchor на retry (а не згенерував новий state_root = double-anchor).
+  anchor&.update!(error_message: "Timeout (TX may be in-flight): #{e.message.truncate(450)}") if anchor&.persisted?
   raise "Ethereum L1 Timeout: #{e.message}"
 
 rescue IOError => e
-  anchor&.update!(status: :failed, error_message: e.message.truncate(500)) if anchor&.persisted?
-  Rails.logger.error "🛑 [Ethereum L1] Connection error: #{e.message}"
+  anchor&.update!(error_message: "Connection error (TX may be in-flight): #{e.message.truncate(450)}") if anchor&.persisted?
   raise "Ethereum L1 Connection Error: #{e.message}"
 ```
 
 | Помилка | Джерело | Дія |
 |---------|---------|-----|
 | Insufficient balance | `balance < MIN_ANCHOR_BALANCE_WEI` | `anchor.update!(status: :failed)` + raise → retry |
-| `Net::OpenTimeout` | RPC endpoint недоступний | `anchor.update!(status: :failed)` + raise → retry |
-| `Net::ReadTimeout` | Відповідь від Alchemy перевищила таймаут | `anchor.update!(status: :failed)` + raise → retry |
-| `IOError` | TCP з'єднання розірвано | `anchor.update!(status: :failed)` + raise → retry |
+| `Net::OpenTimeout` | RPC endpoint недоступний | **keep `:pending`** (S6.7 — TX може бути в мемпулі) + raise → retry відновить |
+| `Net::ReadTimeout` | Відповідь від Alchemy перевищила таймаут | **keep `:pending`** (S6.7) + raise → retry відновить |
+| `IOError` | TCP з'єднання розірвано | **keep `:pending`** (S6.7) + raise → retry відновить |
 | `HTTPX::TimeoutError` | (від `ApplicationWeb3Worker`) | Prometheus counter + raise |
 | `HTTPX::ConnectionError` | (від `ApplicationWeb3Worker`) | Prometheus counter + raise |
 | `KeyError` | `ENV.fetch(...)` якщо не встановлено | Crash без retry |
@@ -365,6 +373,48 @@ rescue IOError => e
 | `:sent` | TX може бути в мемпулі — **повертає існуючий anchor без нової TX** |
 | `:pending` | Anchor створено, але TX не відправлена (crash recovery) — **перевикористовує існуючий anchor** і відправляє TX з його `state_root` |
 | Немає in-flight | Стандартний флоу: `generate_state_root()` → `EthereumAnchor.create!` → `client.transact()` |
+
+---
+
+## 5.1 Підтвердження та Reconcile [ARCH.66]
+
+**Проблема (до ARCH.66):** `anchor_to_l1!` ставив `:sent` і зупинявся — жоден воркер не опитував receipt, тож anchor **ніколи не досягав `:confirmed`**. Scopes `successful`/`latest_confirmed` вічно порожні; `block_number`/`gas_used` не заповнювались; double-anchor guard (`in_flight` = pending/sent AND `created_at > 1.week.ago`) деградував до 1-тижневого таймера — завислий `:sent` після 7 днів випадав із guard, і якщо старий tx колись приземлявся → ризик подвійного state_root.
+
+**Рішення** — поллер + backstop-cron (дзеркало `CeloConfirmationWorker`/ARCH.55, з L1-специфікою):
+
+### `EthereumAnchorConfirmationWorker(anchor_id)`
+
+Enqueue'иться `perform_in(30.seconds, anchor.id)` одразу після `update!(status: :sent)`. Опитує `eth_get_transaction_receipt` → `Web3::EvmReceiptClassifier`:
+
+| Класифікація | Дія |
+|--------------|-----|
+| `:confirmed` | **reorg-depth gate** (нижче) → `anchor.confirm!(block_number, gas_used)` |
+| `:reverted` | `anchor.mark_failed!` + `silkennet_ethereum_anchor_reverted_total` |
+| `:pending` | `raise` → Sidekiq retry (ще в мемпулі) |
+
+- **Черга/retry:** `web3_low`, фіксований `sidekiq_retry_in { 180 }` × `retry: 60` ≈ 3-год горизонт (НЕ exponential — 100-Gwei cap може стопорити включення на години; money-path 15-20хв дав би хибну ескалацію).
+- **Reorg-depth gate:** «фінальна печатка» не confirm'иться на першому receipt (на відміну від money-path). Чекає `latest_block − receipt.blockNumber >= ETHEREUM_ANCHOR_MIN_CONFIRMATIONS` (default **64** ≈ 2 епохи post-Merge finality; ENV-tunable, `0`=off для dev/testnet). Недостатньо глибоко → на нормальному поллі `raise` (чекати), на фінальному re-check → `escalate` (retries вичерпано, людська звірка) — **gate діє І на final**, «печатка» не осідає на sub-finality блоці (slow-inclusion міг замайнити tx в останні хвилини на глибині < 64).
+- **Exhausted** (~3год поллінгу вичерпано) → **фінальний receipt re-check** (дзеркало `MintingRollbackService`: tx міг замайнитись в останній ретрай — сліпий escalate записав би підтверджений-on-chain anchor у `:manual_review` назавжди): `:confirmed`+finalized→`confirm!`, `:reverted`→`mark_failed!`, а `:pending`/shallow/anomalous-no-block→`escalate_to_review!` (`:manual_review`, людська звірка на etherscan). RPC-глюк під час re-check → `rescue`→escalate (не `:sent`-limbo). **НІКОЛИ blind re-broadcast** (nonce не персиститься → re-send = double-anchor; контракт revert'нув би дубль однак). `:manual_review` виходить з `in_flight` → наступний тижневий seal не блокується.
+
+### `StuckSentAnchorSweeperWorker` (cron `:40`, hourly)
+
+Backstop, коли САМ поллер загинув до вичерпання ретраїв (container OOM під час поллінгу): anchor лишається `:sent`, retries не вичерпані → жоден escalate не спрацює. Cron re-arm'ить `EthereumAnchorConfirmationWorker` для будь-якого anchor у scope `EthereumAnchor.stuck_sent` (`:sent` AND `updated_at < STUCK_SENT_THRESHOLD` = 6год; ключ `updated_at`, бо `sent_at`-колонки немає, а `pending→sent` бампає `updated_at`). **Read-only re-poll, ніколи re-send.** reload-guard перед re-arm (живий поллер міг довершити).
+
+### Модель — plain enum, гардовані переходи
+
+`EthereumAnchor` = Rails `enum` (не AASM), тож idempotency тримає `with_lock` + status-гард — перехід рівно-раз проти конкурентного reconcile-re-arm / weekly-resume. `confirm!`/`mark_failed!` переходять з `:sent` **або** `:manual_review` (останнє = гардований операторський вихід із manual_review після etherscan-звірки — оператор робить `confirm!`/`mark_failed!` без raw `update_column` повз валідації/аудит); `escalate!` лише з `:sent` (не ре-ескалює вже-ескальоване). Термінальні `:confirmed`/`:failed` не відкочуються (глибокий reorg вже-`:confirmed` = P0-подія для людини). Новий статус `manual_review` (value 4).
+
+### `detect_missed_anchor_weeks!` звужено на `[:confirmed]`
+
+З реальним поллером `:sent` transient (розв'язується за години), тож `detect_missed` рахує успіхом лише `:confirmed` — інакше завислий `:sent` після наступного тижневого broadcast маскував би реально-непідтверджений gap назавжди.
+
+### Observability
+
+- `silkennet_ethereum_anchor_stuck_sent_depth` (gauge) — рахує scope `stuck_sent` (НЕ весь `:sent` — здоровий anchor у вікні підтвердження давав би хибний щотижневий page). Семплить `Treasury::MonitorService` (15-хв, freshness проти restart-обнулення in-process gauge). Alert `sn-alert-ethereum-anchor-stuck-sent` (P1, `min_over_time[2h] > 0`).
+- `silkennet_ethereum_anchor_manual_review_depth` (gauge) — anchor, ескальований у `:manual_review` (термінальний, поза sweeper/detect_missed → без gauge невидимий — лише 8-денний missed-weeks-лаг ловив би). Семплить `Treasury::MonitorService`. Alert `sn-alert-ethereum-anchor-manual-review` (P1).
+- `silkennet_ethereum_anchor_reverted_total` (counter) — детермінований contract-revert = аномалія. Alert `sn-alert-ethereum-anchor-reverted` (P2-info).
+
+> **Активація gated на деплой контракту** (SEC.1): `ETHEREUM_ANCHOR_CONTRACT`/`_PRIVATE_KEY` не задані → anchor-path структурно неактивний, тож `:sent` не досягається і обидва воркери natural-inert. Код pre-deploy готовий. Відкритий companion — nonce-persist проти F2a double-send ([`00_07`](00_07_Action_Plan_Tracker) ARCH.66).
 
 ---
 
@@ -423,8 +473,9 @@ Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
 | validations (presence, uniqueness, format) | state_root, tx_hash, total_scc, chain_hash |
 | `verify_state_root` | Відтворення хешу з компонентів (незалежна верифікація) |
 | `etherscan_url` | URL генерація для confirmed TX |
-| scopes: `recent`, `successful`, `latest_confirmed` | AR scopes |
-| enum status transitions | pending/sent/confirmed/failed |
+| scopes: `recent`, `successful`, `latest_confirmed`, `stuck_sent` [ARCH.66] | AR scopes |
+| enum status | pending/sent/confirmed/failed/**manual_review** [ARCH.66] |
+| `confirm!` / `mark_failed!` / `escalate_to_review!` [ARCH.66] | guarded lifecycle transitions (`with_lock`, idempotent from `:sent`) |
 
 ---
 

@@ -44,4 +44,14 @@ RSpec.describe "Grafana alert rules ↔ Prometheus registry consistency" do # ru
       expect(referenced).to include(name), "#{name} втратив alert-правило (INF.22 регресія)"
     end
   end
+
+  it "the ARCH.66 anchor-confirmation metrics are wired to an alert" do
+    %w[
+      silkennet_ethereum_anchor_stuck_sent_depth
+      silkennet_ethereum_anchor_manual_review_depth
+      silkennet_ethereum_anchor_reverted_total
+    ].each do |name|
+      expect(referenced).to include(name), "#{name} втратив alert-правило (ARCH.66 регресія)"
+    end
+  end
 end

@@ -190,3 +190,13 @@
     hadron_kyc_reverify:
       cron: '50 * * * *' # Щогодини о :50
       class: HadronKycReverifyWorker
+
+    # --- ЦИКЛ АНКОР-ВІДНОВЛЕННЯ (The L1 Confirmation Net) [ARCH.66] ---
+    # Backstop для EthereumAnchorConfirmationWorker: якщо поллер загинув до вичерпання
+    # ретраїв (OOM під час ~3год поллінгу), anchor лишається :sent без escalate → re-arm
+    # re-poll. Без цього double-anchor guard деградує до тижневого таймера. Anchor-обсяг
+    # мізерний (1/тиждень) → hourly достатньо; :40 вільна від інших hourly recovery-кронів
+    # (щодобовий filecoin_verification_sweep о 04:40 та */5-крони — інші класи/черги, без спільного lock).
+    ethereum_anchor_reconcile:
+      cron: '40 * * * *' # Щогодини о :40
+      class: StuckSentAnchorSweeperWorker

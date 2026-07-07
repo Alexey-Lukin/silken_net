@@ -114,6 +114,10 @@ module Ethereum
 
       if existing_anchor&.status_sent?
         # TX вже відправлена і може бути в мемпулі — не відправляємо дублікат.
+        # [ARCH.66] Re-arm поллер: якщо його попередній enqueue загубився (Redis-мигання на
+        # perform_in) або той поллер помер, weekly-resume дає швидше відновлення за 6-год
+        # sweeper-backstop. Дубль безпечний (confirm! with_lock + status_sent? = idempotent).
+        EthereumAnchorConfirmationWorker.perform_async(existing_anchor.id)
         Rails.logger.info "⚓ [Ethereum L1] In-flight anchor detected (status: sent, " \
                           "tx_hash: #{existing_anchor.tx_hash}). Skipping to avoid double-anchoring."
         return existing_anchor
@@ -183,6 +187,11 @@ module Ethereum
 
       # [BLOCKER-2] Оновлюємо запис з tx_hash
       anchor.update!(status: :sent, tx_hash: tx_hash)
+
+      # [ARCH.66] Довершуємо lifecycle: поллер receipt'а → :confirmed/:failed/:manual_review.
+      # Без цього anchor вічно :sent (fire-and-forget) → double-anchor guard деградує до
+      # тижневого таймера. perform_in(30s) — receipt рідко готовий миттєво (дзеркало money-path).
+      EthereumAnchorConfirmationWorker.perform_in(30.seconds, anchor.id)
 
       Rails.logger.info "⚓ [Ethereum L1] State Root anchored: #{state_root} → TX: #{tx_hash}"
 

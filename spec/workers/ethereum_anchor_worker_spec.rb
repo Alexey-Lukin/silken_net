@@ -99,19 +99,41 @@ RSpec.describe EthereumAnchorWorker, type: :worker do
       described_class.new.perform
     end
 
-    it "does not warn when last anchor is within 8 days" do
+    it "does not warn when last CONFIRMED anchor is within 8 days" do
       travel_to(6.days.ago) do
         EthereumAnchor.create!(
           state_root: "a" * 64,
           total_scc: 100.0,
           chain_hash: "recent_hash",
           anchored_at: Time.current,
-          status: :sent,
+          status: :confirmed,
           tx_hash: "0x#{"bb" * 32}"
         )
       end
 
       expect(Rails.logger).not_to receive(:warn).with(/Missed anchor week/)
+
+      described_class.new.perform
+    end
+
+    it "[ARCH.66] warns when the last CONFIRMED anchor is old even if a fresh :sent exists" do
+      # F3-fix: a stuck :sent must NOT mask a genuinely unconfirmed gap. The narrowed
+      # detect_missed counts only :confirmed, so a fresh weekly :sent no longer resets the gap.
+      travel_to(10.days.ago) do
+        EthereumAnchor.create!(
+          state_root: "a" * 64, total_scc: 100.0, chain_hash: "old_confirmed",
+          anchored_at: Time.current, status: :confirmed, tx_hash: "0x#{"bb" * 32}"
+        )
+      end
+      travel_to(1.day.ago) do
+        EthereumAnchor.create!(
+          state_root: "b" * 64, total_scc: 200.0, chain_hash: "fresh_sent",
+          anchored_at: Time.current, status: :sent, tx_hash: "0x#{"cc" * 32}"
+        )
+      end
+
+      expect(Rails.logger).to receive(:warn).with(/Missed anchor week detected/)
+      expect(SilkenNet::Metrics::ANCHOR_MISSED_WEEKS_TOTAL).to receive(:increment)
 
       described_class.new.perform
     end
@@ -151,7 +173,7 @@ RSpec.describe EthereumAnchorWorker, type: :worker do
     end
 
     it "does not block anchoring if detection itself fails" do
-      allow(EthereumAnchor).to receive(:where).and_raise(StandardError, "DB error")
+      allow(EthereumAnchor).to receive(:status_confirmed).and_raise(StandardError, "DB error")
 
       expect(Rails.logger).to receive(:warn).with(/Missed anchor detection failed/)
       allow(mock_service).to receive(:anchor_to_l1!).and_return("0x" + "dd" * 32)
