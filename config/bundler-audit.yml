@@ -2,4 +2,10 @@
 # CVEs that are not relevant to the application can be enumerated on the ignore list below.
 
 ignore:
-  - CVE-THAT-DOES-NOT-APPLY
+  # webrick 1.9.2 — CVE-2026-38969 / GHSA-h4w6-wx8r-p68v (WEBrick re-parses trailer).
+  # TRANSITIVE via ferrum → cuprite → capybara (group :test ONLY). NOT in the prod serving
+  # path: Puma serves production; webrick backs only the headless-Chrome system-test browser.
+  # 1.9.2 is the latest release (no patch as of 2026-07-06); the trailer-reparse surface is
+  # unreachable in test-only use. Review + drop this ignore when webrick >1.9.2 ships.
+  - CVE-2026-38969
+  - GHSA-h4w6-wx8r-p68v
