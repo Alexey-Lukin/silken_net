@@ -23,9 +23,16 @@ class EthereumAnchor < ApplicationRecord
   validates :tx_hash, uniqueness: true, allow_nil: true,
             format: { with: /\A0x[a-fA-F0-9]{64}\z/, message: "must be a valid Ethereum tx hash" },
             if: -> { tx_hash.present? }
-  validates :tx_hash, presence: true, if: -> { status_sent? || status_confirmed? || status_manual_review? }
+  # [ARCH.66 companion] manual_review НЕ вимагає tx_hash: resume-ambiguous escalate (нижче) створює
+  # `:manual_review` без hash (перший broadcast досяг мережі, tx_hash втрачено у crash-вікні —
+  # оператор шукає за address+nonce). Poller-шлях manual_review фактично несе tx_hash (успадкований
+  # з `:sent`). Дзеркало `04_01` §EthereumAnchor: presence лише для sent/confirmed.
+  validates :tx_hash, presence: true, if: -> { status_sent? || status_confirmed? }
   validates :block_number, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validates :gas_used, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
+  # [ARCH.66 companion] nonce broadcast'у — персиститься ДО transact, щоб resume ре-використав
+  # той самий слот (same-nonce, не N+1). Nil доти, доки anchor не дійшов до broadcast.
+  validates :nonce, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
   validates :error_message, length: { maximum: 500 }, allow_nil: true
 
   # --- СКОУПИ ---
@@ -93,6 +100,20 @@ class EthereumAnchor < ApplicationRecord
   def escalate_to_review!(reason)
     with_lock do
       return false unless status_sent?
+
+      update!(status: :manual_review, error_message: reason.to_s.truncate(450))
+    end
+  end
+
+  # [ARCH.66 companion] Resume-ambiguous escalate: re-broadcast застряглого `:pending` відхилено
+  # нодою на same-nonce (`nonce too low` = tx замайнено / `already known` = у мемпулі) → перший
+  # broadcast під цим nonce уже досяг мережі до crash, tx_hash втрачено у вікні. НЕ blind-retry
+  # (N+1 неможливий — той самий слот), а людська звірка: `:pending` → `:manual_review` (tx_hash NULL,
+  # оператор шукає на etherscan за address+nonce). Дзеркало money-path ambiguous-broadcast escalate.
+  # Окремий від `escalate_to_review!` (той — poller-exhausted з `:sent`; цей — resume-landed з `:pending`).
+  def escalate_pending_ambiguous!(reason)
+    with_lock do
+      return false unless status_pending?
 
       update!(status: :manual_review, error_message: reason.to_s.truncate(450))
     end

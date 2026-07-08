@@ -24,8 +24,9 @@
 #   • Reorg-depth gate (finality, не перший receipt) — І на фінальному re-check: «фінальна
 #     печатка» не запечатується на sub-finality блоці навіть коли retries вичерпано (slow-inclusion
 #     міг замайнити tx в останні хвилини на глибині < 64) → замість сліпого confirm → escalate.
-#   • Re-broadcast НІКОЛИ (nonce не персиститься → re-send = double-anchor; контракт revert'нув
-#     би дубль однак). Застряглий tx = людський gas-bump same-nonce.
+#   • Re-broadcast НІКОЛИ (поллер лише читає receipt): розштовхати застряглий tx = людський
+#     same-nonce gas-bump. nonce персиститься перед broadcast [ARCH.66 companion] → навіть
+#     resume-re-send іде на тому ж слоті (replace/nonce-too-low), не N+1 — але авто-re-send немає.
 class EthereumAnchorConfirmationWorker
   include ApplicationWeb3Worker
 

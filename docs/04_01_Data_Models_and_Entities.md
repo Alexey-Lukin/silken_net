@@ -1206,6 +1206,7 @@ active/draft ──cancel──► cancelled
 | `tx_hash` | string(66) | Ethereum TX hash (`0x` + 64 hex chars, `UNIQUE WHERE NOT NULL`) |
 | `block_number` | bigint | Номер блоку підтвердження |
 | `gas_used` | bigint | Витрачений газ |
+| `nonce` | bigint | EVM nonce broadcast'у — персиститься **перед** `transact` ([ARCH.66] companion: F2a same-nonce resume проти double-send; NULL доти, доки anchor не дійшов до broadcast) |
 | `status` | integer | Enum: `pending(0) / sent(1) / confirmed(2) / failed(3) / manual_review(4)` [ARCH.66] |
 | `error_message` | string(500) | Деталі помилки (якщо є) |
 

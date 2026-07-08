@@ -12,8 +12,9 @@
 # Fix: періодично re-arm EthereumAnchorConfirmationWorker для будь-якого anchor, що
 # завис у :sent довше за STUCK_SENT_THRESHOLD (модель, One-Home предикат `stuck_sent`).
 # Re-poll РОЗВ'ЯЗУЄ →:confirmed/:failed/:manual_review так само, як оригінальний поллінг
-# мав би. НІКОЛИ re-broadcast (немає persisted nonce → новий tx = double-anchor; контракт
-# revert'не дубль однак) — лише read-only re-poll.
+# мав би. НІКОЛИ re-broadcast (лише read-only re-poll): poll достатньо для :sent, а розштовхати
+# застряглий tx = операторський same-nonce gas-bump. nonce персиститься перед broadcast
+# [ARCH.66 companion] → навіть resume-re-send іде на тому ж слоті, не N+1 — але sweeper НЕ re-send'ить.
 #
 # [дзеркало ARCH.55 StuckSentTransactionSweeperWorker, L1-специфіка] EthereumAnchor
 # непартиційований → plain .reload (не find_with_partition_pruning), perform_async(id)

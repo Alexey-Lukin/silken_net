@@ -118,7 +118,9 @@ RSpec.describe Ethereum::StateAnchorService do
       allow(ENV).to receive(:fetch).with("ETHEREUM_GAS_LIMIT", anything).and_return(100_000)
 
       # [BLOCKER-4] Mock balance check — sufficient balance by default
-      allow(mock_client).to receive(:get_balance).and_return(1 * (10**18))
+
+      # [ARCH.66 companion] get_nonce кличеться для нового anchor (nonce nil) перед broadcast.
+      allow(mock_client).to receive_messages(get_balance: 1 * (10**18), get_nonce: 42)
 
       # [ARCH.66] Не запускати реальний confirmation-поллер (happy-path enqueue після :sent /
       # re-arm на resume-гілці).
@@ -215,6 +217,9 @@ RSpec.describe Ethereum::StateAnchorService do
       anchor = EthereumAnchor.last
       expect(anchor).to be_status_pending
       expect(anchor.error_message).to include("Timeout")
+      # [ARCH.66 companion regression-guard] nonce персиститься ПЕРЕД transact → присутній навіть коли
+      # broadcast timeout'ить (сам F2a crash-window); переміщення persist-after-transact = цей assert червоний.
+      expect(anchor.nonce).to eq(42)
     end
 
     it "rescues Net::ReadTimeout and keeps anchor as pending (S6.7 double-anchor guard)" do
@@ -350,6 +355,90 @@ RSpec.describe Ethereum::StateAnchorService do
         expect(result.state_root).not_to eq("f" * 64)
         expect(result).to be_status_sent
         expect(EthereumAnchor.count).to eq(2)
+      end
+    end
+
+    context "with nonce-persist (ARCH.66 F2a double-send guard)" do
+      it "persists the broadcast nonce before sending and passes it explicitly to transact" do
+        allow(mock_client).to receive_messages(get_nonce: 42, transact: "0x#{"ab" * 32}")
+
+        result = described_class.new.anchor_to_l1!
+
+        expect(result.nonce).to eq(42)
+        expect(mock_client).to have_received(:transact) do |_contract, _method, _root, **opts|
+          expect(opts[:nonce]).to eq(42)
+        end
+      end
+
+      it "reuses the persisted nonce on a pending resume instead of re-fetching (no N+1)" do
+        # crash між transact() і update!(:sent): anchor лишився :pending з уже-персистованим nonce.
+        pending_anchor = EthereumAnchor.create!(
+          state_root: "a" * 64, total_scc: 900.0, chain_hash: "resume_hash",
+          anchored_at: 20.minutes.ago, status: :pending, nonce: 7
+        )
+        allow(mock_client).to receive(:transact).and_return("0x#{"cc" * 32}")
+
+        result = described_class.new.anchor_to_l1!
+
+        expect(result.id).to eq(pending_anchor.id)
+        expect(result.nonce).to eq(7)
+        expect(mock_client).not_to have_received(:get_nonce)
+        expect(mock_client).to have_received(:transact) do |_contract, _method, _root, **opts|
+          expect(opts[:nonce]).to eq(7)
+        end
+      end
+
+      it "fetches a fresh nonce on resume when the crash landed before nonce was persisted" do
+        # crash між create!(:pending) і persist nonce → tx НЕ полетів → безпечно фетчити свіжий.
+        EthereumAnchor.create!(
+          state_root: "b" * 64, total_scc: 950.0, chain_hash: "no_nonce_hash",
+          anchored_at: 15.minutes.ago, status: :pending, nonce: nil
+        )
+        allow(mock_client).to receive_messages(get_nonce: 99, transact: "0x#{"dd" * 32}")
+
+        result = described_class.new.anchor_to_l1!
+
+        expect(mock_client).to have_received(:get_nonce)
+        expect(result.nonce).to eq(99)
+        expect(EthereumAnchor.count).to eq(1) # resume-гілка перевикористала pending, не створила новий
+      end
+    end
+
+    context "when a resume re-broadcast is rejected — nonce already landed → escalate (ARCH.66 companion)" do
+      let(:pending_resume) do
+        # F2a: crash між broadcast і update!(:sent) лишив :pending з персистованим nonce; на resume
+        # перший tx уже досяг мережі → same-nonce re-broadcast відхиляється нодою (RpcError < IOError).
+        EthereumAnchor.create!(
+          state_root: "a" * 64, total_scc: 900.0, chain_hash: "ambiguous_hash",
+          anchored_at: 20.minutes.ago, status: :pending, nonce: 7
+        )
+      end
+
+      it "escalates a pending resume to :manual_review on 'nonce too low' (tx already mined)" do
+        pending_resume
+        allow(mock_client).to receive(:transact).and_raise(Eth::Client::RpcError.new("nonce too low"))
+
+        result = described_class.new.anchor_to_l1!
+
+        expect(result.id).to eq(pending_resume.id)
+        expect(result.reload).to be_status_manual_review
+        expect(result.error_message).to include("nonce 7")
+        expect(result.tx_hash).to be_nil
+      end
+
+      it "escalates on 'already known' (tx still in mempool)" do
+        pending_resume
+        allow(mock_client).to receive(:transact).and_raise(Eth::Client::RpcError.new("already known"))
+
+        expect(described_class.new.anchor_to_l1!.reload).to be_status_manual_review
+      end
+
+      it "re-raises a NON-ambiguous RpcError (fresh insufficient-funds) without escalating" do
+        pending_resume
+        allow(mock_client).to receive(:transact).and_raise(Eth::Client::RpcError.new("insufficient funds for gas"))
+
+        expect { described_class.new.anchor_to_l1! }.to raise_error(/Ethereum L1 RPC Error/)
+        expect(pending_resume.reload).to be_status_pending # доля справді невідома → НЕ escalate
       end
     end
   end

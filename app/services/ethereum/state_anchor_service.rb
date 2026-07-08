@@ -54,6 +54,12 @@ module Ethereum
     # [E.51] Default value — fallback if SystemParameter not seeded yet.
     DEFAULT_MIN_ANCHOR_BALANCE_ETH = 0.01
 
+    # [ARCH.66 companion] Node-помилки, що доводять: tx під нашим nonce уже досяг мережі (mined
+    # або мемпул), тож same-nonce re-broadcast відхилено. На resume (`:pending` з персистованим
+    # nonce) → перший broadcast landed, tx_hash втрачено у crash → escalate людині, не blind-retry.
+    # Дзеркало money-path AMBIGUOUS-класу (celo `AMBIGUOUS_PATTERNS` / mint pre-broadcast whitelist).
+    AMBIGUOUS_ALREADY_LANDED = /nonce too low|already known|replacement transaction underpriced|already imported/i
+
     # Генерує State Root — SHA256 дайджест, що об'єднує:
     # 1. Сумарний scc_balance усіх гаманців (SCC supply)
     # 2. Сумарний SFC balance усіх гаманців (SFC supply) — [E.53]
@@ -176,9 +182,19 @@ module Ethereum
       priority_fee = ENV.fetch("ETHEREUM_PRIORITY_FEE_GWEI", DEFAULT_PRIORITY_FEE_GWEI).to_i * (10**9)
       gas_limit = ENV.fetch("ETHEREUM_GAS_LIMIT", DEFAULT_GAS_LIMIT).to_i
 
+      # [ARCH.66 companion — F2a double-send guard] Персистимо nonce ПЕРЕД broadcast. Crash між
+      # transact() і update!(:sent) лишає anchor :pending з уже-персистованим nonce → resume-гілка
+      # (нижче, existing_anchor&.status_pending?) ре-використає ТОЙ САМИЙ слот. Без цього resume
+      # кликав би авто-nonce: pending-count уже врахував завислий tx → nonce+1 = ДРУГИЙ незалежний
+      # on-chain запис (обидва майнились би; контракт revert'нув би дубль, але спалений gas +
+      # брехливий :failed). Новий anchor → get_nonce (pending-tag) + persist; resume → nonce уже є,
+      # get_nonce НЕ кликається → same-nonce re-broadcast (node: replace / already-known / nonce-too-low).
+      anchor.update!(nonce: client.get_nonce(anchor_key.address)) if anchor.nonce.nil?
+
       tx_hash = client.transact(
         contract, "storeStateRoot", root_bytes,
         sender_key: anchor_key,
+        nonce: anchor.nonce,
         legacy: false,
         gas_limit: gas_limit,
         max_fee_per_gas: max_fee,
@@ -208,6 +224,24 @@ module Ethereum
                           "(TX may be in mempool). Next retry will resume. Error: #{e.message}"
       end
       raise "Ethereum L1 Timeout: #{e.message}"
+    rescue Eth::Client::RpcError => e
+      # [ARCH.66 companion] RpcError < IOError → МУСИТЬ бути перед `rescue IOError` нижче. На resume
+      # (`:pending` з персистованим nonce) node-відмова `nonce too low`/`already known` доводить, що
+      # перший broadcast під цим nonce уже досяг мережі до crash (tx_hash втрачено у вікні) — N+1
+      # неможливий (той самий слот), тож escalate людині замість осідання у `:pending`-limbo (що
+      # rescue IOError нижче й робив би). Не-ambiguous RpcError (fresh send: revert/insufficient
+      # funds) → raise (Sidekiq retry / ConfirmationWorker вирішить долю). Дзеркало money-path.
+      if anchor&.persisted? && anchor.status_pending? && ambiguous_already_landed?(e.message)
+        anchor.escalate_pending_ambiguous!(
+          "Resume re-broadcast rejected (nonce #{anchor.nonce} already used: #{e.message.truncate(200)}) — " \
+          "перший broadcast досяг мережі, tx_hash втрачено у crash; звірити storeStateRoot на etherscan за " \
+          "адресою #{anchor_key.address} nonce #{anchor.nonce}."
+        )
+        Rails.logger.warn "⚓ [ARCH.66] Resume ambiguous ##{anchor.id} (nonce #{anchor.nonce} spent) → " \
+                          ":manual_review (tx_hash lost, оператор звіряє etherscan)."
+        return anchor
+      end
+      raise "Ethereum L1 RPC Error: #{e.message}"
     rescue IOError => e
       # [S6.7 DOUBLE-ANCHOR GUARD]: Same rationale as timeout — connection reset
       # after transact() means TX may have been broadcast before the socket closed.
@@ -218,6 +252,13 @@ module Ethereum
                           "(TX may be in mempool). Next retry will resume. Error: #{e.message}"
       end
       raise "Ethereum L1 Connection Error: #{e.message}"
+    end
+
+    private
+
+    # [ARCH.66 companion] Чи node-помилка = «tx під цим nonce уже досяг мережі» (див. AMBIGUOUS_ALREADY_LANDED).
+    def ambiguous_already_landed?(message)
+      AMBIGUOUS_ALREADY_LANDED.match?(message.to_s)
     end
   end
 end

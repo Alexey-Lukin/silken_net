@@ -89,6 +89,13 @@ RSpec.describe EthereumAnchor, type: :model do
       anchor.gas_used = -1
       expect(anchor).not_to be_valid
     end
+
+    it "validates nonce is a non-negative integer, allowing nil" do
+      anchor.nonce = -1
+      expect(anchor).not_to be_valid
+      anchor.nonce = nil
+      expect(anchor).to be_valid
+    end
   end
 
   describe "enum :status" do
@@ -277,6 +284,21 @@ RSpec.describe EthereumAnchor, type: :model do
 
         expect(confirmed.escalate_to_review!("x")).to be false
         expect(confirmed.reload).to be_status_confirmed
+      end
+    end
+
+    describe "#escalate_pending_ambiguous! [companion]" do
+      it "transitions :pending → :manual_review without tx_hash (resume-landed, hash lost in crash)" do
+        pending_anchor = create(:ethereum_anchor) # factory default = :pending, no tx_hash
+
+        expect(pending_anchor.escalate_pending_ambiguous!("nonce 7 already used")).to be_truthy
+        expect(pending_anchor.reload).to be_status_manual_review
+        expect(pending_anchor.tx_hash).to be_nil
+      end
+
+      it "no-ops on a non-:pending anchor (only the resume-ambiguous window escalates here)" do
+        expect(sent_anchor.escalate_pending_ambiguous!("x")).to be false
+        expect(sent_anchor.reload).to be_status_sent
       end
     end
   end

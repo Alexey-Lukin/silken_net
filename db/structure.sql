@@ -1328,7 +1328,8 @@ CREATE TABLE public.ethereum_anchors (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     total_sfc numeric(30,4) DEFAULT 0,
-    active_tree_count integer DEFAULT 0
+    active_tree_count integer DEFAULT 0,
+    nonce bigint
 );
 
 
@@ -8041,5 +8042,6 @@ SET search_path TO "$user", public;
 INSERT INTO "schema_migrations" (version) VALUES
 ('20260705090000'),
 ('20260707120000'),
-('20260707120001');
+('20260707120001'),
+('20260708120000');
 
