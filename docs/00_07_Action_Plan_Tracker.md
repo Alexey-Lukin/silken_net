@@ -679,6 +679,12 @@
 - [ ] 🤖 read `RCC_CSR` reset-cause на boot → encode (RTC-backup / QATT-flags spare / wire-байт) → clear; host-mock як існуючий патерн
 - [ ] 👤 bench: звірити reset-cause-репорт на кремнії (bench-day, як решта firmware)
 
+#### E.51 — Monte Carlo TTL-flood: math-обґрунтування PANIC_TTL/DEFAULT_TTL
+- **P2** · 🤖 · ⚪ · → [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA)
+- **Стан:** Не почато — `PANIC_TTL=5`/`DEFAULT_TTL=3` зашиті в `soldier/main.c` з коментарем «пакет повинен пробитися через mesh», але **без math-обґрунтування** (FW.20: «TTL≥3 — founder-airtime-рішення»). Monte Carlo TTL-flood рахує `P_delivery` за глибиною TTL при 20-30% одночасних відмов вузлів → ціль `P_delivery ≥ 0.99` дає цим двом константам обґрунтовану підлогу (+ math для seed deck). **🤖-half = вся задача (pure-Python, class-A benchless — не потребує заліза; підняте з беклогу, старий ярлик «Post-TRL 6» хибний — firmware вже TRL 6).** Партнер Порубльов unresponsive → self-own machine-half (патерн ARCH.25). Метод-дім mesh-percolation/`q_c` = [`06_08`](06_08_Resilience_and_Failover_Policy) (Порубльов); константи-споживач = firmware. Джерело — `08_02 §1B`.
+- [ ] 🤖 Monte Carlo модель mesh-delivery (node-failure 20-30%, sweep TTL 1..7) → `P_delivery`-крива + вердикт для TTL=5/3
+- [ ] 🤖 math-обґрунтування у seed-deck форму (Порубльов co-validation door open, не блокер)
+
 #### ARCH.43 — Mesh-relay повернення: wire-rev3 addressing (post-CCM star-only)
 - **P3** · 🤖+👤 · 🔗 · → [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA)
 - **Стан:** Звужено — FW.2 гейт (в) закрив uplink/demux-вісь двоключовою моделлю (session KEYL per-device + cluster KEYB, [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security)); лишається mesh-вісь. У CCM-еру Сценарій Б мертвий by construction (`#if !FW2_CCM_ENABLED`: air-кадр гине на RX-guard сусіда, TTL у ciphertext) → **star-only прийнято** (ухвала FW.2 (а)); стеля масштабу однієї Queen (TTL=3 · relay-буфер без агрегації · CIFO) + масштаб-відповідь «більше Queen» (ARCH.1/ARCH.10) = [`03_01 §1.9.1`](03_01_Firmware_Lifecycle_and_DMA). Повернення mesh = wire-rev3-клас: cleartext TTL/адресація (mesh-TTL rev2-рішення) + opaque pass-through relay без декрипту + `0x9E` DID-таргет (FW.17 gate (ii), [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)). Активація post-TRL 6, на масштаб-тригер.
@@ -1462,9 +1468,7 @@ _Наразі всі DOC-T resolved → §🗄️ нижче. Нову SSOT doc-
 
 | ID | Опис | Джерело | Note / Milestone |
 |----|------|---------|------------------|
-| E.19 | 8 магістерських — blocked by TRL 4 advancement | `08_03` | Post-TRL 4 |
 | E.26 | `health_trend` field для TelemetryLog — predictive degradation | Legacy | Post-TRL 6, потребує E.10 (Kalman) |
-| E.51 | **Monte Carlo TTL-flood симуляція** для обґрунтування `PANIC_TTL=5` та `DEFAULT_TTL=3`: цільовий P_delivery ≥ 0.99 при 20-30% одночасних відмов вузлів. Виходи: math-обґрунтування для seed deck | `08_02` §1B (Порубльов) | Post-TRL 6 (Порубльов, ЧНУ) |
 | ARCH.8 | **Event-Triggered Reporting** («тиша = здоров'я»): heartbeat 1/добу в нормі + continuous streaming на аномалії (~24× трафік-економія). Подієвий негайний panic-TX вже існує (chainsaw → `PANIC_TTL=5`, `03_01`) — ARCH.8 = систематична cadence-політика зверху; передумови ділить з ARCH.22 (рідкий Z послаблює DCI → challenge-sampling) + cadence чіпає `delta_t`→`m(delta_t)` GP-економіку (E.63) | [`00_08 §2.3`](00_08_Beyond_TRL9_Planetary_Roadmap) + `02_03` (зимовий режим) | Post-TRL 6 |
 | ARCH.29 | **RTOS Deadlock-Free верифікація через Petri Nets** — формальна PN-модель firmware tasks (Sensing/Compute/TX/OTA/WDT) на Soldier + reachability graph аналіз для доведення відсутності circular wait. Відрізняється від ARCH.20 (Petri Net Rails моноліт) тим що моделює embedded RTOS scheduling | `08_02` §1B (Ярмілко) | Post-TRL 6 (R&D — Ярмілко, ЧНУ) |
 | E.30 | InsightGenerator: кліматичні базлайни per region | `04_02` | Post-TRL 7 |
@@ -1482,10 +1486,9 @@ _Наразі всі DOC-T resolved → §🗄️ нижче. Нову SSOT doc-
 | ARCH.22 | Arithmetic compression для LoRa payload: lambda-exponent (2 байти) замість повного Z (16 байт). Потенційна економія ~34% TX часу (21→~14 bytes). Event-Triggered Reporting: "мовчання = здоров'я" — 24× зниження трафіку. **DCI-precondition (нот.6):** λ послаблює anti-fraud (λ many-to-one → device-λ vs server-λ слабший за точний Z-cross-check) → потребує full-Z challenge sampling / Z-sentinel перед вмиканням | `08_02`, `00_01`, `00_08 §2.3` | Post-TRL 7 |
 | ARCH.23 | Multi-Attribute Utility Function для автономного рішення TX на MCU: оцінка важливості поточного пакету (Vcap, delta_t, acoustic, bio_status) — відправляти лише якщо utility > threshold. Оцінка: 30-40% зниження TX | `08_02` | Post-TRL 7 (Ярмілко, ЧНУ) |
 | ARCH.30 | **Parallel CFD gyroid simulation на Akash GPU** — domain decomposition алгоритм для 3D TPMS-симуляцій на heterogeneous GPU вузлах Akash. Скорочує CFD lead-time з ~2 годин до real-time валідації геометрії перед DMLS order. Cross-ref ARCH.25 (gyroid validation scripts) | `08_02` §1B (Онищенко) | Post-TRL 7 (методологія + Akash GPU integration) |
-| ARCH.32 | **Shape Up 6-week cycle Petri Net formalization** — формальна верифікація фази Shape Up (betting table → build → cool-down) щоб довести: будь-яка фіча може бути завершена у межах cycle constraints. Цільова стаття Q1 *IEEE Transactions on Software Engineering* | `08_02`, `00_04` | Post-TRL 7 (методологія + R&D, Супруненко ЧНУ) |
 | E.31 | TinyML OTA: `.tflite` формат (INT8 quantization) + Python ML microservice | `03_03` | Post-TRL 8 |
 | E.33 | AlertNotification rate limits: FCM multicast (500 tokens/req), Twilio Notify | `04_02` | Post-TRL 8 |
-| E.36 | PostGIS Generated Column (geo_boundary) замість тригера | `04_01` | Post-TRL 8 |
+| E.36 | PostGIS Generated Column (geo_boundary) замість тригера — тригер `sync_cluster_geo_boundary()` працює, це чистий рефактор без стосунку до TRL | `04_01` | YAGNI (nice-to-have) |
 | ARCH.10 | Queen-to-Queen Backhaul Mesh: LoRa SF12 inter-Queen relay (Starlink fallback) | `00_01` | Post-TRL 8 |
 | ARCH.17 | Bonding Curves для dynamic SCC pricing | `05_03` | TRL 9+ |
 | ARCH.44 | **GaiaNexus multi-net vision page** (BIZ.16 level-3, founder-deferred) — опційний повний vision/manifesto планетарної федерації (Cryo/Abyssal/Litho/Myco + ноосферна економіка). Тонка far-horizon рамка вже є ([`00_08 §3`](00_08_Beyond_TRL9_Planetary_Roadmap)); повний 17-net каталог лишається в нотатках founder'а (no-premature-canon). Будувати лише на founder go | `00_08 §3`, `08_01 §2` | Post-TRL 9 (vision; founder-gated) |
@@ -1494,7 +1497,6 @@ _Наразі всі DOC-T resolved → §🗄️ нижче. Нову SSOT doc-
 | E.12 | Boolean minimization TX decision conditions (Karnaugh/Quine-McCluskey) | `08_02` | Потребує Любченко |
 | E.14 | Multi-source satellite + anchor data fusion (Sentinel-2 NDVI) | `08_02` | Потребує Любченко + Бушин |
 | E.15 | Reed-Solomon FEC або Hamming для LoRa error correction | `08_02` | Потребує Косенюк |
-| E.18 | 10 запланованих Q1 публікацій — blocked by lab data | `08_03` | Blocked by UNI.1-3 |
 | E.29 | Альтернативні EBFC медіатори (ferrocene, methylene blue) | `01_03` | R&D alternatives |
 | E.37 | TimescaleDB для telemetry_logs: hypertables + continuous aggregates (+ **[INS.1]** `ai_insights` — co-partition кандидат: `DailyHealthRouter` подвоює daily-read A+B) | `04_01` | >100M рядків/місяць |
 | E.40 | **Ignion Virtual Antenna™:** NN02-310 як альтернатива Yageo/Taoglas 868 МГц | `02_01` §5 | Evaluation kit + VSWR тест |
