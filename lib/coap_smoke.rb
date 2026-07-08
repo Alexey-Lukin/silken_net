@@ -29,6 +29,13 @@ module CoapSmoke
 
   Probe = Struct.new(:name, :datagram, :expect_hex, keyword_init: true)
 
+  # Мережеві коди «шлях не дав відповіді»: закритий порт на loopback віддає
+  # ICMP port-unreachable, який ядро кладе на сокет як async-помилку — і
+  # наступний recvfrom (після того, як IO.select показав сокет readable)
+  # спливає Errno::ECONNREFUSED замість тиші. Для зонда це те саме, що
+  # мовчання: ретрай і зрештою чесний «UDP-шлях мертвий», а не голий Errno.
+  UNREACHABLE = [ Errno::ECONNREFUSED, Errno::ENETUNREACH, Errno::EHOSTUNREACH ].freeze
+
   module_function
 
   def probes
@@ -51,11 +58,15 @@ module CoapSmoke
   end
 
   # Одна спроба: свіжий сокет → датаграма → відповідь або nil (тиша).
+  # ECONNREFUSED/недосяжність трактуємо як тишу (див. UNREACHABLE) — інші
+  # помилки сокета (напр. EMFILE при UDPSocket.new) спливають чесно.
   def shoot(host, port, datagram, timeout:)
     socket = UDPSocket.new
     socket.send(datagram, 0, host, port)
     reply, _sender = socket.recvfrom(MAX_REPLY) if IO.select([ socket ], nil, nil, timeout)
     reply
+  rescue *UNREACHABLE
+    nil
   ensure
     socket&.close
   end

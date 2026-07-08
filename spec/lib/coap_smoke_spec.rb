@@ -84,4 +84,17 @@ RSpec.describe CoapSmoke do
       described_class.shoot("127.0.0.1", 5683, "x".b, timeout: 0.1)
     }.to raise_error(Errno::EMFILE)
   end
+
+  it "трактує ECONNREFUSED як тишу — closed-port ICMP не спливає голим Errno" do
+    # [TEST.6] Закритий loopback-порт віддає ICMP port-unreachable: IO.select
+    # бачить сокет readable, а recvfrom кидає ECONNREFUSED. Без rescue воно
+    # спливало б крізь run_probe і валило зонд замість чесного «тиша». macOS
+    # цей ICMP на non-connected UDP не доставляє — тому flake був лише в CI.
+    socket = instance_double(UDPSocket, send: nil, close: nil)
+    allow(UDPSocket).to receive(:new).and_return(socket)
+    allow(IO).to receive(:select).and_return([ [ socket ], [], [] ])
+    allow(socket).to receive(:recvfrom).and_raise(Errno::ECONNREFUSED)
+
+    expect(described_class.shoot("127.0.0.1", 5683, "x".b, timeout: 0.1)).to be_nil
+  end
 end
