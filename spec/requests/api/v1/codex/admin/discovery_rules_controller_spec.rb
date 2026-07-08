@@ -104,6 +104,34 @@ RSpec.describe "Api::V1::Codex::Admin::DiscoveryRules", type: :request do
     end
   end
 
+  # A real HTTP `as: :json` request always wraps a nested Hash as
+  # `ActionController::Parameters` (`params[:params].is_a?(ActionController::Parameters)`
+  # is true), so `#rule_params`'s `if`-branch (`to_unsafe_h`) is what every request-spec
+  # above exercises. The `elsif ... is_a?(Hash)` fallback below only matters for a caller
+  # that hands `rule_params` an already-plain-Hash `:params` value directly.
+  describe "#rule_params plain-Hash fallback for :params" do
+    it "accepts a plain Hash for :params when it did not arrive as ActionController::Parameters" do
+      controller = Api::V1::Codex::Admin::DiscoveryRulesController.new
+      real_base_params = ActionController::Parameters.new(
+        name: "x", codex_node_id: node.id, condition_type: "match_count", threshold_value: 5
+      )
+      fake_params = double("params")
+      allow(fake_params).to receive(:permit)
+        .with(:name, :codex_node_id, :condition_type, :threshold_value, :active)
+        .and_return(real_base_params)
+      allow(fake_params).to receive(:[]).with(:params).and_return({ "realm_slug" => "mythos" })
+      allow(controller).to receive(:params).and_return(fake_params)
+
+      # `permitted[:params] = params[:params]` assigns INTO an
+      # ActionController::Parameters container, which re-wraps a Hash-valued
+      # assignment back into Parameters (Rails' own auto-wrap-on-write) — so
+      # `.to_unsafe_h` is needed to compare content regardless of which
+      # if/elsif branch produced it.
+      permitted = controller.send(:rule_params)
+      expect(permitted[:params].to_unsafe_h).to eq("realm_slug" => "mythos")
+    end
+  end
+
   describe "DELETE /api/v1/codex/admin/discovery_rules/:id" do
     it "204 for admin" do
       rule = create(:codex_discovery_rule, node: node, created_by_user: admin)

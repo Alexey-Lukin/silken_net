@@ -90,6 +90,19 @@ RSpec.describe StuckSentTransactionSweeperWorker, type: :worker do
 
         expect(tx.reload.status).to eq("processing")
       end
+
+      it "skips a :processing orphan a live poller advanced past :processing (reload-race guard)" do
+        tx = create(:blockchain_transaction, wallet: wallet, status: :processing)
+        tx.update_columns(updated_at: 20.minutes.ago)
+        # Stale in-memory :processing; reload reveals the poller's fresher non-:processing state.
+        allow_any_instance_of(BlockchainTransaction).to receive(:reload) do |inst|
+          inst.assign_attributes(status: "sent")
+          inst
+        end
+
+        expect_any_instance_of(BlockchainTransaction).not_to receive(:escalate_to_review!)
+        described_class.new.perform
+      end
     end
   end
 end

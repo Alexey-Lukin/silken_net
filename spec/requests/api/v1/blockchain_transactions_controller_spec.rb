@@ -72,6 +72,27 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
       get "/api/v1/blockchain_transactions/#{other_tx.id}", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
+
+    # =========================================================================
+    # PARTITION PRUNING: passing `created_at` scopes the query to a single
+    # partition instead of scanning all of them (see `find_transaction`).
+    # =========================================================================
+    it "finds the transaction when a matching created_at is supplied (partition pruning)" do
+      # `find_transaction` matches `created_at` by EXACT equality — round-trip
+      # with microsecond precision (iso8601(6)) or the default (whole-second)
+      # `iso8601` truncates the stored sub-second timestamp and matches nothing.
+      get "/api/v1/blockchain_transactions/#{own_tx.id}",
+          params: { created_at: own_tx.created_at.iso8601(6) }, headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["id"]).to eq(own_tx.id)
+    end
+
+    it "falls back to a full scan when created_at is not valid ISO 8601" do
+      get "/api/v1/blockchain_transactions/#{own_tx.id}",
+          params: { created_at: "not-a-date" }, headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["id"]).to eq(own_tx.id)
+    end
   end
 
   context "with format.html responses" do

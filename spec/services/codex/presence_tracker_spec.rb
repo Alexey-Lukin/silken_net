@@ -42,6 +42,7 @@ RSpec.describe Codex::PresenceTracker do
 
   it "noop on blank inputs" do
     expect(described_class.touch(user_id: nil, tree_id: tree.id)).to be(false)
+    expect(described_class.leave(user_id: nil, tree_id: tree.id)).to be(false)
     expect(described_class.observers_for_tree(nil)).to eq([])
   end
 end

@@ -94,7 +94,10 @@ module Api
                 title: "Error in Ritual",
                 component: Maintenance::Form.new(
                   record: @record,
-                  existing_photos: @record.persisted? ? @record.photos.limit(6).to_a : []
+                  # `@record` is freshly `.build`-ed above; a failed `save` never
+                  # persists anything (AR validation/callback failure = no DB write),
+                  # so it is never `persisted?` here — no photos can exist yet.
+                  existing_photos: []
                 )
               )
             end

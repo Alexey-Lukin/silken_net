@@ -149,6 +149,18 @@ static void test_pressure_in_physical_range(void)
     if (hpa < 300.0 || hpa > 1100.0) FAILF("pressure %.1f hPa out of [300,1100]", hpa);
 }
 
+static void test_pressure_zero_divisor_guard(void)
+{
+    /* dig_P1 = 0 ⇒ var1 == 0 у datasheet-шляху §8.2 → guard від ділення на
+     * нуль повертає 0 = «недійсний тиск» (викликач так і трактує). Порожня
+     * NVM / нечитаний калібрувальний блок дає саме такий нуль. */
+    Bme280_Calib c = CALIB;
+    c.dig_P1 = 0;
+    int32_t tf;
+    (void)Bme280_Compensate_T(&c, ADC_T[2], &tf);
+    ASSERT_EQ(Bme280_Compensate_P(&c, ADC_P[1], tf), 0u);
+}
+
 /* ── VPD: hand-anchored FAO-56 (Tetens) ───────────────────────────────────
  * e_s = 0.6108·exp(17.27·T/(T+237.3)); VPD = e_s·(1−RH/100); idx = round(VPD/0.02). */
 static void test_vpd_hand_anchored(void)

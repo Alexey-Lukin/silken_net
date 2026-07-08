@@ -81,6 +81,8 @@ module Codex
           "name_uk", "name_en", "glyph", "accent_token",
           "description_md", "position", "is_active"
         ).compact)
+        # `is_active.nil?`-then dead: codex_realms.is_active = boolean NOT NULL DEFAULT true →
+        # new_record вже true, ніколи nil; app-default = дубль schema-default (§B.4 leave).
         realm.is_active = true if realm.new_record? && realm.is_active.nil?
         realm.save!
       end
@@ -109,6 +111,8 @@ module Codex
         ).compact)
         # Mark provenance only on first import; preserve DAO/community origin
         # if a row was previously promoted via DAO.
+        # `seed_origin.blank?`-then dead: seed_origin = integer NOT NULL DEFAULT 0 (="seed") →
+        # new_record ніколи blank; app-default = дубль schema-default (§B.4 leave).
         node.seed_origin = "seed" if node.new_record? && node.seed_origin.blank?
         node.published_at ||= now
         node.save!

@@ -91,14 +91,17 @@ module Api
             # Rack SPEC: callables are invoked with (env, status, headers, error) — a
             # narrower lambda raises ArgumentError that Puma swallows into debug logs,
             # silently skipping the cache write (retry would double-actuate hardware).
-            if idempotency_key.present?
-              cached_key = cache_key
-              cached_body = response_body
-              request.env["rack.response_finished"] ||= []
-              request.env["rack.response_finished"] << ->(_env, _status, _headers, _error) {
-                Rails.cache.write(cached_key, cached_body, expires_in: 24.hours)
-              }
-            end
+            #
+            # `idempotency_key` is unconditionally present in this branch: the guard
+            # above (`if request.format.json? && idempotency_key.blank? → 400`) already
+            # rejected a blank key for any request that resolves to this `format.json`
+            # block, so no `if idempotency_key.present?` re-check is needed here.
+            cached_key = cache_key
+            cached_body = response_body
+            request.env["rack.response_finished"] ||= []
+            request.env["rack.response_finished"] << ->(_env, _status, _headers, _error) {
+              Rails.cache.write(cached_key, cached_body, expires_in: 24.hours)
+            }
 
             render json: response_body, status: :accepted
           end

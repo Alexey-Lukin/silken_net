@@ -137,5 +137,13 @@ RSpec.describe "Api::V1::Codex::Fractions", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("codex_fraction_picker")
     end
+
+    it "renders gracefully when no realms exist at all (active_realm is nil)" do
+      Codex::Node.delete_all
+      Codex::Realm.delete_all
+      get "/api/v1/codex/fractions/picker",
+          headers: { "Authorization" => "Bearer #{token}" }
+      expect(response).to have_http_status(:ok)
+    end
   end
 end

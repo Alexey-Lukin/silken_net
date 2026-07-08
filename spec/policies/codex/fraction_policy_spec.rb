@@ -15,6 +15,7 @@ RSpec.describe Codex::FractionPolicy, type: :policy do
       expect(described_class.new(user, fraction).index?).to be(true)
       expect(described_class.new(user, fraction).show?).to be(true)
       expect(described_class.new(nil, fraction).index?).to be(false)
+      expect(described_class.new(nil, fraction).show?).to be(false)
     end
 
     it "permits create for any authenticated user" do

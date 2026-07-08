@@ -55,6 +55,14 @@ RSpec.describe Codex::EloRecomputeWorker, type: :worker do
       }.not_to raise_error
     end
 
+    it "skips the probe when DiscoveryProbeWorker is undefined (forward-compat guard)" do
+      create(:codex_match, user: user, realm: realm, left: left, right: right)
+      hide_const("Codex::DiscoveryProbeWorker")
+
+      expect { described_class.new.perform(left.id, right.id, 8, -8) }.not_to raise_error
+      expect(left.reload.attunement_elo).to eq(1508) # Elo still applied before the probe guard
+    end
+
     it "swallows probe enqueue errors (Elo update is the contract)" do
       create(:codex_match, user: user, realm: realm, left: left, right: right)
       allow(Codex::DiscoveryProbeWorker).to receive(:perform_async).and_raise(Redis::CannotConnectError)

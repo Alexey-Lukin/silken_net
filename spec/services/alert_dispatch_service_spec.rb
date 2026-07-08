@@ -15,6 +15,30 @@ RSpec.describe AlertDispatchService, type: :service do
     allow(SilkenNet::Attractor).to receive(:homeostatic?).and_return(true)
   end
 
+  describe "defensive nil / defined?-guards" do
+    def base_log(**overrides)
+      instance_double(TelemetryLog, {
+        tree: tree, bio_status_vm_error?: false, voltage_mv: 3500, temperature_c: 25,
+        bio_status_anomaly?: false, panic?: false, bio_status_stress?: false,
+        acoustic_events: 10, z_value: 20.0
+      }.merge(overrides))
+    end
+
+    it "uses a zero temperature offset when the tree has no device_calibration" do
+      tree.device_calibration&.destroy
+      log = base_log(tree: tree.reload)
+
+      expect { described_class.analyze_and_trigger!(log) }.not_to raise_error
+    end
+
+    it "skips EmergencyResponseService when the constant is undefined (defined?-guard else)" do
+      hide_const("EmergencyResponseService")
+
+      expect { described_class.analyze_and_trigger!(base_log(bio_status_vm_error?: true)) }
+        .to change(EwsAlert, :count).by(1)
+    end
+  end
+
   # [SLASH-1 P0] Wire status=3 = BIO_STATUS_VM_ERROR (софт-збій), НЕ tamper:
   # firmware_fault (ops-тріаж), НІКОЛИ vandalism_breach (positive-A сигнал).
   describe "firmware fault vs low-voltage logic" do

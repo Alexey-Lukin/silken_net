@@ -236,6 +236,8 @@ class BlockchainTransaction < ApplicationRecord
     org_id = wallet&.organization_id
     # Навмисно повторюваний lookup у батч-циклах (по одному на перехід) —
     # Prosopite.pause за прецедентом AuditLog#compute_chain_hash.
+    # `defined?(Prosopite)`-else = прод-шлях (Prosopite лише group :development,:test);
+    # hide_const ламає глобальні Prosopite RSpec-хуки → лишаємо некритим (§B.4/§B.5 leave).
     actor_id = begin
       Prosopite.pause if defined?(Prosopite)
       User.oracle_executioner&.id

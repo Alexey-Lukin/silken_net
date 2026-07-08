@@ -25,6 +25,7 @@ RSpec.describe Codex::MatchPolicy, type: :policy do
   it "permits show only on own record" do
     expect(described_class.new(user, own_match).show?).to be(true)
     expect(described_class.new(user, other_match).show?).to be(false)
+    expect(described_class.new(nil, own_match).show?).to be(false)
   end
 
   describe "Scope" do

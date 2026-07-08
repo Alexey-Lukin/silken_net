@@ -53,7 +53,7 @@ SimpleCov.start "rails" do
   if ENV["FEATURE_TEST"] || ENV["COVERAGE"] == "0"
     minimum_coverage line: 0, branch: 0
   else
-    minimum_coverage line: 99, branch: 95
+    minimum_coverage line: 99, branch: 98
   end
   minimum_coverage_by_file 0
 end
@@ -67,14 +67,20 @@ unless ENV["FEATURE_TEST"] || ENV["COVERAGE"] == "0"
   SimpleCov.at_exit do
     SimpleCov.result.format!
 
-    # Per-group line + branch floors, set to floor(current coverage) so a
-    # regression in a single group trips even while the global average holds.
-    # Branch is the tighter signal (line is ~99.9 everywhere). Models branch (99)
-    # has the least churn margin — loosen by 1 if a seed-dependent run false-fails.
+    # Per-group line + branch floors — a RATCHET set to floor(current coverage).
+    # The gap between fact and floor IS permission to erode: every PR without a
+    # test slides down it until fact meets floor. Floors therefore track fact,
+    # kept ~0.5–1pp below it purely for seed-flake margin, NOT for drift-room.
+    # Branch is the tighter signal (line is ~99.8 everywhere).
+    # Services branch (99.06%, 13 leave-branches) → floor 98 not 99: at 99 a
+    # 2-branch seed-float would false-fail. Models (99.44) & Views (98.66) have
+    # the least margin — loosen by 1 if a seed-dependent run false-fails.
     minimums = {
-      "Services" => { line: 99.0, branch: 97.0 },
-      "Workers"  => { line: 99.0, branch: 96.0 },
-      "Models"   => { line: 99.0, branch: 99.0 }
+      "Services"    => { line: 99.0, branch: 98.0 },
+      "Workers"     => { line: 99.0, branch: 99.0 },
+      "Models"      => { line: 99.0, branch: 99.0 },
+      "Controllers" => { line: 99.0, branch: 99.0 },
+      "Views"       => { line: 99.0, branch: 98.0 }
     }
 
     failures = SimpleCov.result.groups.flat_map do |name, files|

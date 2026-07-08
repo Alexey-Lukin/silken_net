@@ -16,7 +16,10 @@ class ResetActuatorStateWorker
     end
 
     actuator = command.actuator
-    organization = actuator.gateway&.cluster&.organization
+    # gateway — обов'язковий (has_many :actuators dependent: :destroy → без сироти),
+    # gateway.cluster_id — NOT NULL → gateway.cluster non-nil. Термінальний .organization
+    # (як і в оригіналі) без guard'а: nil-org дає nil-broadcast-таргет, не NPE.
+    organization = actuator.gateway.cluster.organization
 
     # Перевіряємо, чи актуатор все ще активний
     if actuator.active?

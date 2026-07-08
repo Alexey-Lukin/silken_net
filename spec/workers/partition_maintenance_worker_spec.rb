@@ -91,6 +91,11 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
         expect { described_class.new.perform }.to raise_error(ActiveRecord::StatementInvalid)
         expect(counter.get).to eq(before + 1.0)
       end
+
+      it "still re-raises when Sentry is undefined (defined?-guard else)" do
+        hide_const("Sentry")
+        expect { described_class.new.perform }.to raise_error(ActiveRecord::StatementInvalid)
+      end
     end
 
     context "when race condition produces already exists error" do

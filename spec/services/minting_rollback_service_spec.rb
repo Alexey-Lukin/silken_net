@@ -10,6 +10,8 @@ RSpec.describe MintingRollbackService do
 
   before do
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+    # Wallet отримує #broadcast_update від Turbo::Broadcastable (авто-mixin у кожну AR-модель);
+    # без стабу воно рендерить неіснуючий wallets/_wallet партіал → MissingTemplate.
     allow_any_instance_of(Wallet).to receive(:broadcast_update)
   end
 
@@ -583,9 +585,8 @@ RSpec.describe MintingRollbackService do
                   tx_hash: nil, locked_points: 10_000)
 
       # Simulate a wallet whose underlying tree has gone (soft-deleted / missing).
-      # Production Wallet has no #broadcast_update method, so the rollback's
-      # `respond_to?(:broadcast_update)` guard naturally exercises its `else`
-      # branch here as well.
+      # (broadcast_update is Turbo::Broadcastable's — стабнуте глобально; його else-гілка
+      # мертва, бо respond_to? завжди true. Тут перевіряємо лише tree-nil → "DID: N/A".)
       allow_any_instance_of(Wallet).to receive(:tree).and_return(nil)
 
       described_class.call(transactions: BlockchainTransaction.where(id: tx.id))

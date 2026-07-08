@@ -40,9 +40,9 @@ RSpec.describe UserPolicy do
       expect(described_class.new(admin, other_org_user).show?).to be false
     end
 
-    it "denies viewing for users without an organization (super_admin has no org)" do
+    it "allows super_admin to view any user (show? mirrors Scope.all)" do
       other_org_user = create(:user, :forester, organization: other_org)
-      expect(described_class.new(super_admin, other_org_user).show?).to be false
+      expect(described_class.new(super_admin, other_org_user).show?).to be true
     end
 
     it "allows investor to view users in the same org" do

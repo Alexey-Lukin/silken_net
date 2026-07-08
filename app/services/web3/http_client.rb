@@ -183,6 +183,8 @@ module Web3
         return true unless circuit_open?(key)
 
         opened_at = @circuit_opened_at[key]
+        # circuit_open? true ⇒ @circuit_opened_at[key] сет (record_failure ставить обидва разом,
+        # record_success/cooldown видаляє обидва) ⇒ opened_at present; then (nil) dead — desync-захист (§B.4 leave).
         return true unless opened_at
 
         if Time.current - opened_at >= CIRCUIT_OPEN_DURATION

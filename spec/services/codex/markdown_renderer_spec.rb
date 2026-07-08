@@ -15,6 +15,11 @@ RSpec.describe Codex::MarkdownRenderer do
       expect(out).to include("<p>Hello world.</p>")
     end
 
+    it "drops empty blocks produced by leading/consecutive blank lines" do
+      out = described_class.render("\n\nHello world.")
+      expect(out).to include("<p>Hello world.</p>")
+    end
+
     it "renders headings of three levels" do
       out = described_class.render("# H1\n\n## H2\n\n### H3")
       expect(out).to include("<h2>H1</h2>")

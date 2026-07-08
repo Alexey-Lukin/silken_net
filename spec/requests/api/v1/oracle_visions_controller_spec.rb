@@ -151,6 +151,15 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       expect(response.parsed_body["job_id"]).to eq("job-123")
     end
 
+    it "starts a simulation for admin when variables is omitted entirely" do
+      post "/api/v1/oracle_visions/simulate",
+           params: { cluster_id: cluster.id },
+           headers: admin_headers, as: :json
+
+      expect(response).to have_http_status(:accepted)
+      expect(response.parsed_body["job_id"]).to eq("job-123")
+    end
+
     it "returns 403 for forester (simulate requires admin)" do
       post "/api/v1/oracle_visions/simulate",
            params: { cluster_id: cluster.id },

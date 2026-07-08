@@ -27,6 +27,15 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
   end
 
   describe "#perform" do
+    it "logs the gateway uid and re-raises a StandardError raised after the gateway is loaded" do
+      allow_any_instance_of(described_class).to receive(:check_system_health).and_raise(StandardError, "boom")
+
+      expect(Rails.logger).to receive(:error).with(a_string_including(gateway.uid))
+      expect {
+        described_class.new.perform(gateway.uid, valid_stats)
+      }.to raise_error(StandardError, "boom")
+    end
+
     it "creates a GatewayTelemetryLog pulse record" do
       expect {
         described_class.new.perform(gateway.uid, valid_stats)

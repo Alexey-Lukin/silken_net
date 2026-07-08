@@ -92,6 +92,32 @@ RSpec.describe "Api::V1::Codex::Admin::Nodes", type: :request do
     end
   end
 
+  # A real HTTP `as: :json` request always wraps a nested Hash — including each
+  # element of a nested Array — as `ActionController::Parameters`, so the `#node_params`
+  # per-element ternary always takes its `to_unsafe_h` branch in a genuine request-spec
+  # (verified: `arr.first.respond_to?(:to_unsafe_h)` is true for a JSON array of hashes
+  # here). The bare-`r` fallback only matters for a caller that hands `node_params` an
+  # already-plain-Hash element directly — exercised here via a stubbed `params`.
+  describe "#node_params external_refs per-element fallback" do
+    it "passes through an array element that is already a plain Hash (no #to_unsafe_h)" do
+      controller = Api::V1::Codex::Admin::NodesController.new
+      plain_ref = { "url" => "https://example.test" }
+      real_node_params = ActionController::Parameters.new(codex_uid: "CDX-ECO-9997")
+
+      fake_params = double("params")
+      allow(fake_params).to receive(:require).with(:node).and_return(real_node_params)
+      allow(fake_params).to receive(:[]).with(:node).and_return({ external_refs: [ plain_ref ] })
+      allow(controller).to receive(:params).and_return(fake_params)
+
+      # Assigning an Array of Hashes INTO an ActionController::Parameters
+      # container re-wraps each element back into Parameters (Rails' own
+      # auto-wrap-on-write) — `.to_unsafe_h` compares content regardless of
+      # which ternary branch (bare `r` vs `r.to_unsafe_h`) produced it.
+      permitted = controller.send(:node_params)
+      expect(permitted[:external_refs].map(&:to_unsafe_h)).to eq([ plain_ref ])
+    end
+  end
+
   describe "POST /api/v1/codex/admin/nodes" do
     let(:payload) do
       {

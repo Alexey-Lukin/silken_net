@@ -32,6 +32,14 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
     allow_any_instance_of(EwsAlert).to receive(:schedule_satellite_verification!)
   end
 
+  it "memoizes the kill-switch flag — SystemParameter is read once per worker instance" do
+    worker = described_class.new
+    expect(SystemParameter).to receive(:current)
+      .with(:parametric_insurance_oracle_enabled, default: false).once.and_return(true)
+
+    2.times { worker.send(:oracle_enabled?) } # 2nd call hits the `defined?(@oracle_enabled)` memo
+  end
+
   # [INS.1 kill-switch] Прапор OFF → money-path не виконується (кандидат тримається).
   it "is an inert no-op when the kill-switch flag is off (default)" do
     allow(SystemParameter).to receive(:current)

@@ -72,4 +72,16 @@ RSpec.describe CoapSmoke do
     # не-hex суфікс → ніколи не збіжиться з flashed Queen ("SNET-Q-[8 HEX]")
     expect(described_class::SMOKE_UID).not_to match(/\ASNET-Q-\h{8}\z/)
   end
+
+  it ".shoot пропускає оригінальну помилку сокета, а не NoMethodError на nil-сокеті" do
+    # UDPSocket.new падає ДО присвоєння — ensure все одно виконується
+    # (method-level ensure огортає весь shoot, включно з самим new). Guard
+    # `socket&.close` захищає рівно цей кейс: без нього тут була б замаскована
+    # NoMethodError замість справжньої мережевої помилки.
+    allow(UDPSocket).to receive(:new).and_raise(Errno::EMFILE.new("too many open files"))
+
+    expect {
+      described_class.shoot("127.0.0.1", 5683, "x".b, timeout: 0.1)
+    }.to raise_error(Errno::EMFILE)
+  end
 end

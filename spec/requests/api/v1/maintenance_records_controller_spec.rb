@@ -289,5 +289,43 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       }.not_to change(MaintenanceRecord, :count)
       expect(response).to have_http_status(:not_found)
     end
+
+    # =========================================================================
+    # [SEC IDOR] `maintainable_type` is client-supplied mass-assignment with no
+    # inclusion validation at the strong-params layer. A polymorphic type outside
+    # {Tree, Gateway} must default-deny (case/else in
+    # `verify_maintainable_within_organization!`), not just wrong-org Tree/Gateway.
+    # =========================================================================
+    it "rejects a maintainable_type outside {Tree, Gateway} (IDOR default-deny)" do
+      expect {
+        post "/api/v1/maintenance_records", headers: headers, as: :json, params: {
+          maintenance_record: {
+            maintainable_type: "User", maintainable_id: forester.id,
+            action_type: :inspection, performed_at: Time.current
+          }
+        }
+      }.not_to change(MaintenanceRecord, :count)
+      expect(response).to have_http_status(:not_found)
+    end
+
+    # =========================================================================
+    # [SEC IDOR] `ews_alert_id` is client-supplied mass-assignment too — a
+    # forester in org A must not be able to silence org B's ews alert by
+    # attaching it to a maintenance record on their OWN (org A) tree.
+    # =========================================================================
+    it "rejects an ews_alert_id belonging to another organization" do
+      foreign_alert = create(:ews_alert, cluster: other_cluster, tree: other_tree)
+
+      expect {
+        post "/api/v1/maintenance_records", headers: headers, as: :json, params: {
+          maintenance_record: {
+            maintainable_type: "Tree", maintainable_id: own_tree.id,
+            ews_alert_id: foreign_alert.id,
+            action_type: :inspection, performed_at: Time.current
+          }
+        }
+      }.not_to change(MaintenanceRecord, :count)
+      expect(response).to have_http_status(:not_found)
+    end
   end
 end

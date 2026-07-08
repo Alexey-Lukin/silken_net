@@ -29,6 +29,11 @@ RSpec.describe Cryptography::KeyRatchet do
       expect { described_class.next_key("short".b, did) }
         .to raise_error(described_class::InputError)
     end
+
+    it "відкидає nil-ключ (guard проти nil-receiver у `current_key&.bytesize`)" do
+      expect { described_class.next_key(nil, did) }
+        .to raise_error(described_class::InputError)
+    end
   end
 
   describe ".advance_hex (версійна дисципліна — дзеркало Key_Ratchet_Steps)" do

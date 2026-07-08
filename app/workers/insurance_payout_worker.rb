@@ -122,6 +122,8 @@ class InsurancePayoutWorker
           SilkenNet::Metrics::INSURANCE_PAYOUT_SUCCESS_TOTAL.increment
         end
 
+        # `.present?`-else = model-validation-dead: mark_as_sent! → :sent, а :sent-tx завжди
+        # має tx_hash (validates if status_sent?) → гілка недосяжна (§B.4 leave).
         BlockchainConfirmationWorker.perform_in(30.seconds, tx.tx_hash, tx.created_at.iso8601) if tx.tx_hash.present? # [ARCH.52] partition-prune
       else
         # [ARCH.51] Internal-mint double-mint guard. `BlockchainMintingService.initialize`

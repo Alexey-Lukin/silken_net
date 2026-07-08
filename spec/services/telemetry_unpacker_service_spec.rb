@@ -1501,6 +1501,18 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       expect(SilkenNet::Metrics::FW2_FC_DEGRADED_REPORTS_TOTAL).to have_received(:increment)
     end
 
+    it "annotates wire-saturation when the CCM diag threshold_invalid counter is 31" do
+      allow(SilkenNet::Metrics::TINYML_THRESHOLD_INVALID_REPORTS_TOTAL).to receive(:increment)
+      allow(Rails.logger).to receive(:warn).and_call_original
+
+      diag  = (31 << 3) # thr_invalid=31 (wire-сатурація), без fauna/fc бітів
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 52, diag: diag)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(Rails.logger).to have_received(:warn).with(/лічильник 31 \(wire-сатурація/)
+    end
+
     it "keeps the vpd column nil until HW.32 calibration defines the index scale" do
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
                               dt: 100, status: 0, ttl: 3, fc: 50, vpd_index: 77)

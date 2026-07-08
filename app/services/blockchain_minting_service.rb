@@ -113,6 +113,8 @@ class BlockchainMintingService < ApplicationService
     # revocation runbook, 06_04 §5.4) — a forged peaq signing key could mint for a
     # fake DID. SKIP (not raise) so one compromised tree never aborts the whole
     # batch; the rest mints normally. Org/cluster txs (no tree) are never flagged.
+    # `tx.wallet&.` else dead: wallet-nil txs уже вилучені вище (missing_wallet-фільтр) →
+    # тут wallet non-nil; `&.` = defensive-дубль (Wallet.tree теж NOT NULL) (§B.4 leave).
     compromised = @wallet_mapping.select { |_id, tx| tx.wallet&.tree&.peaq_did_compromised? }
     if compromised.any?
       Rails.logger.warn "🚫 [SEC.13] Mint skipped for #{compromised.size} peaq_did_compromised tree(s): " \

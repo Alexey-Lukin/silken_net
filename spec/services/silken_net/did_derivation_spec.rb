@@ -29,6 +29,14 @@ RSpec.describe SilkenNet::DidDerivation do
         .to eq(0xE203A561)
     end
 
+    it "мапить нульовий сирий DID у SEED (guard: DID ніколи не 0 — резерв Королеви-Сентінель)" do
+      # Сконструйований UID, де фінальний mix32-вхід = 0 (mix32(0)=0) → сирий DID = 0:
+      # w2 = h_prev, тож h_prev ^ w2 = 0. Guard мусить повернути SEED, дзеркало firmware.
+      h_after_w0 = described_class.mix32(described_class::SEED ^ 0)
+      h_prev     = described_class.mix32(h_after_w0 ^ 0)
+      expect(described_class.did_from_uid_words(0, 0, h_prev)).to eq(described_class::SEED)
+    end
+
     it "ніколи не нуль і детермінований на LCG-sweep (дзеркало C-sweep)" do
       lcg = 0x12345678
       1000.times do

@@ -163,6 +163,24 @@ TEST(test_full_page_rejects_put) {
     ASSERT_TRUE(FlashKv_NeedsCompact(&kv, 4));
 }
 
+TEST(test_remount_full_page_scans_to_end) {
+    /* Сторінка заповнена вщент (write_idx = page_dws) і ребут ДО Compact:
+     * mount-скан не знаходить жодного стертого dw → курсор чесно стає на
+     * кінець сторінки. Повна → Put відмовляє, але останнє значення живе. */
+    fresh_mount();
+    uint16_t free0 = FlashKv_FreeSlots(&kv);
+    for (uint16_t i = 0; i < free0; i++) ASSERT_TRUE(FlashKv_Put32(&kv, 0x50, i));
+    ASSERT_EQ(FlashKv_FreeSlots(&kv), 0);
+
+    FlashKv kv2;
+    ASSERT_TRUE(FlashKv_Mount(&kv2, &mock_ops, &flash, MOCK_PAGE_DWS));
+    ASSERT_EQ(FlashKv_FreeSlots(&kv2), 0);        /* курсор на кінці */
+    ASSERT_FALSE(FlashKv_Put32(&kv2, 0x50, 1u));  /* повна → Compact спершу */
+    uint32_t v = 0;
+    ASSERT_TRUE(FlashKv_Get32(&kv2, 0x50, &v));
+    ASSERT_EQ(v, (uint32_t)(free0 - 1));
+}
+
 TEST(test_compact_collapses_duplicates) {
     fresh_mount();
     for (uint32_t i = 0; i < 100; i++) ASSERT_TRUE(FlashKv_Put32(&kv, 0x60, i));
@@ -652,6 +670,7 @@ int main(void)
 
     printf("\n— Full + compact —\n");
     RUN(test_full_page_rejects_put);
+    RUN(test_remount_full_page_scans_to_end);
     RUN(test_compact_collapses_duplicates);
     RUN(test_compact_erases_old_generation);
 

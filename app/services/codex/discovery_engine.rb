@@ -111,6 +111,8 @@ module Codex
 
       attunement_streak_days: ->(user, rule, _payload) {
         days_back = rule.threshold_value.to_i
+        # `< 1`-then dead: threshold_value validates numericality greater_than_or_equal_to: 1
+        # (model) → days_back ≥ 1 завжди; guard захищає від невалідного rule (§B.4 leave).
         return false if days_back < 1
 
         # Distinct days in the last N days on which the user attuned

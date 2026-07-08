@@ -86,6 +86,8 @@ module SilkenNet
 
       # Нормалізація: H_norm = H / H_max, де H_max = log₂(NUM_BINS).
       # Це дає 1.0 при ідеально рівномірному розподілі по ВСІХ бінах.
+      # NUM_BINS=20 → max_entropy = log2(20) ≈ 4.32, ніколи 0; guard захищає ділення нижче
+      # від NUM_BINS=1 misconfig (div-by-zero) — dead за константою (§B.4 leave).
       max_entropy = Math.log2(NUM_BINS)
       return 0.0 if max_entropy.zero?
 

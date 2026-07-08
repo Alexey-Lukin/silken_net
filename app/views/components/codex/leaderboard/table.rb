@@ -45,14 +45,14 @@ module Codex
       end
 
       def render_table
-        table(class: "w-full text-tiny font-mono") do
+        table(class: "w-full text-tiny font-mono", role: "table") do
           thead(class: "text-mini uppercase tracking-[0.2em] text-gaia-text-muted") do
             tr do
-              th(class: "py-1 pr-2 text-left") { t("codex.leaderboard.columns.rank") }
-              th(class: "py-1 pr-2 text-left") { t("codex.leaderboard.columns.title") }
-              th(class: "py-1 pr-2 text-right") { t("codex.leaderboard.columns.elo") }
-              th(class: "py-1 pr-2 text-right") { t("codex.leaderboard.columns.matches") }
-              th(class: "py-1 text-right") { t("codex.leaderboard.columns.lifecycle") }
+              th(scope: "col", class: "py-1 pr-2 text-left") { t("codex.leaderboard.columns.rank") }
+              th(scope: "col", class: "py-1 pr-2 text-left") { t("codex.leaderboard.columns.title") }
+              th(scope: "col", class: "py-1 pr-2 text-right") { t("codex.leaderboard.columns.elo") }
+              th(scope: "col", class: "py-1 pr-2 text-right") { t("codex.leaderboard.columns.matches") }
+              th(scope: "col", class: "py-1 text-right") { t("codex.leaderboard.columns.lifecycle") }
             end
           end
           tbody do

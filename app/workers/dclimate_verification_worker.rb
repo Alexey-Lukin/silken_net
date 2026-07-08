@@ -42,7 +42,7 @@ class DclimateVerificationWorker
     result = Dclimate::VerificationService.new(alert).perform
 
     # [S2.4] Track EWS alert outcome for Prometheus monitoring
-    alert_type = alert.respond_to?(:alert_type) ? alert.alert_type.to_s : "unknown"
+    alert_type = alert.alert_type.to_s
     SilkenNet::Metrics::EWS_ALERTS_TOTAL.increment(labels: { alert_type: alert_type }) if result
   end
 end

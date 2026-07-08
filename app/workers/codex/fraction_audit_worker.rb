@@ -32,7 +32,7 @@ module Codex
           codex_node_id: fraction.codex_node_id,
           archetype_key: fraction.archetype_key,
           previous_node_id: previous_node_id,
-          changed_at: fraction.last_changed_at&.iso8601
+          changed_at: fraction.last_changed_at.iso8601 # NOT NULL — persisted fraction завжди має мітку
         }
       )
     end

@@ -93,7 +93,10 @@ module Api
             # Convert nested ActionController::Parameters back to plain Hash so the validator's
             # `r.is_a?(Hash)` check passes — otherwise JSON-shaped refs round-trip through strong
             # params as ACP and trip a 422 the caller can't predict.
-            if params[:node]&.key?(:external_refs)
+            # `params[:node]` is guaranteed present here: `params.require(:node)`
+            # two lines above already raised `ActionController::ParameterMissing`
+            # (→ 400 via BaseController) if it were absent.
+            if params[:node].key?(:external_refs)
               raw = params[:node][:external_refs]
               permitted[:external_refs] =
                 if raw.is_a?(Array)

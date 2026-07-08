@@ -98,7 +98,7 @@ module SilkenNet
       out = { n: samples.size, spearman_stress_vs_decline: round(spearman(stress, decline)) }
 
       first = samples.first
-      if first&.key?(:z_value) && first&.key?(:sap_flow)
+      if first&.key?(:z_value) && first.key?(:sap_flow)
         z = samples.map { |s| s[:z_value].to_f }
         sap = samples.map { |s| s[:sap_flow].to_f }
         z_rho = spearman(z, decline)

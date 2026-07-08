@@ -119,7 +119,9 @@ RSpec.describe Hil::QueenSimulator do
   end
 
   describe "#tick (wire mode — signed v2 heartbeat)" do
-    subject(:simulator) { described_class.new(gateway, mode: :wire, rng: Random.new(7)) }
+    # let, not subject: tests below stub methods on it directly
+    # (RSpec/SubjectStub) — it's a plain collaborator, never used via is_expected.
+    let(:simulator) { described_class.new(gateway, mode: :wire, rng: Random.new(7)) }
 
     before do
       stub_const("CoapClient", Class.new do
@@ -191,10 +193,25 @@ RSpec.describe Hil::QueenSimulator do
       seqs = CoapClient.calls.map { |c| c[:payload].byteslice(5, 4).unpack1("N") }
       expect(seqs).to eq([ 1, 2 ])
     end
+
+    it "lazily requires coap_client when the constant isn't already loaded" do
+      # The `before` above stub_const's CoapClient for every other example in
+      # this block; hide it here so dispatch_wire's `unless defined?(CoapClient)`
+      # sees a cold process and takes the require branch for real.
+      hide_const("CoapClient")
+      allow(simulator).to receive(:require).with("coap_client") {
+        stub_const("CoapClient", Class.new { def self.put(*, **) = true })
+      }
+
+      expect { simulator.tick(scenario: :healthy) }.not_to raise_error
+      expect(simulator).to have_received(:require).with("coap_client")
+    end
   end
 
   describe "#run!" do
-    subject(:simulator) { described_class.new(gateway, mode: :direct, rng: Random.new(3)) }
+    # let, not subject: the sleep-stub test below stubs a method on it
+    # directly (RSpec/SubjectStub) — plain collaborator, never is_expected.
+    let(:simulator) { described_class.new(gateway, mode: :direct, rng: Random.new(3)) }
 
     around do |example|
       Sidekiq::Testing.fake! { example.run }
@@ -211,6 +228,14 @@ RSpec.describe Hil::QueenSimulator do
     it "applies the same scenario across the run" do
       results = simulator.run!(scenario: :uplink_degraded, count: 3)
       expect(results.map { |s| s["coap_fail_count"] }.uniq).to eq([ 12 ])
+    end
+
+    it "sleeps between ticks when interval is positive, skipping the first tick" do
+      allow(simulator).to receive(:sleep)
+
+      simulator.run!(scenario: :healthy, count: 3, interval: 0.01)
+
+      expect(simulator).to have_received(:sleep).with(0.01).exactly(2).times
     end
   end
 end

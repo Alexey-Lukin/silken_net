@@ -55,4 +55,22 @@ RSpec.describe Codex::Fractions::OnboardingWizard, type: :view_component do
     expect(html).to include('role="region"')
     expect(html).to include('aria-label="Codex onboarding"')
   end
+
+  it "treats a whitespace-only first_name the same as blank (neutral greeting)" do
+    user = build_stubbed(:user, first_name: "   ", last_name: nil)
+    html = render_wizard(current_user: user)
+    expect(html).to include("Welcome to the Codex.")
+  end
+
+  it "wires focus-visible ring on both the primary and secondary CTA links" do
+    user = build_stubbed(:user, first_name: "Inna")
+    html = render_wizard(current_user: user)
+    expect(html.scan("focus-visible:ring-2").size).to be >= 2
+  end
+
+  it "renders the greeting as a semantic heading for screen-reader navigation" do
+    user = build_stubbed(:user, first_name: "Inna")
+    html = render_wizard(current_user: user)
+    expect(html).to include("<h2")
+  end
 end

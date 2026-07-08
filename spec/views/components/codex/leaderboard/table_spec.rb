@@ -42,4 +42,33 @@ RSpec.describe Codex::Leaderboard::Table, type: :view_component do
     expect(html).to include("Top 10")
     expect(html).not_to include("Realm:")
   end
+
+  it "renders the match_count and lifecycle_status columns for each row" do
+    n1 = create(:codex_node, :thriving, realm: realm, title_en: "Apex", attunement_elo: 1900, match_count: 50)
+    html = render_table(realm: realm, nodes: [ n1 ], limit: 25)
+    expect(html).to include("50")
+    expect(html).to include("thriving")
+  end
+
+  it "numbers rows starting at 1 and increments per row regardless of Elo" do
+    n1 = create(:codex_node, realm: realm, title_en: "Apex", attunement_elo: 1900, match_count: 50)
+    n2 = create(:codex_node, realm: realm, title_en: "Mid",  attunement_elo: 1600, match_count: 20)
+    n3 = create(:codex_node, realm: realm, title_en: "Low",  attunement_elo: 1200, match_count: 5)
+    html = render_table(realm: realm, nodes: [ n1, n2, n3 ], limit: 25)
+    expect(html).to include(">1<")
+    expect(html).to include(">2<")
+    expect(html).to include(">3<")
+  end
+
+  it "keeps a stable container DOM id regardless of node count" do
+    html = render_table(realm: realm, nodes: [], limit: 10)
+    expect(html).to include('id="codex_leaderboard"')
+  end
+
+  it "renders column headers with scope=col and the table with role=table for screen readers" do
+    n1 = create(:codex_node, realm: realm, title_en: "Apex", attunement_elo: 1900, match_count: 50)
+    html = render_table(realm: realm, nodes: [ n1 ], limit: 25)
+    expect(html).to include('role="table"')
+    expect(html).to include('scope="col"')
+  end
 end

@@ -55,6 +55,8 @@ module Codex
 
       left  = pick_anchor(pickable)
       right = pick_opponent(pickable, left)
+      # count≥2 (guard вище) ⇒ pick_opponent'ів fallback завжди знаходить суперника ⇒ right
+      # non-nil; guard захищає від майбутньої зміни pick-логіки, then dead (§B.4 leave).
       return invalid("could not find opponent") unless right
 
       seed = sign_pair(realm.id, left.id, right.id)

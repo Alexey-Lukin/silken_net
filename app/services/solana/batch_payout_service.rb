@@ -97,6 +97,8 @@ module Solana
     def settle_kredis(wallet_id, tx)
       lamports = (tx.amount.to_d * 1_000_000).to_i
       events   = tx.notes.to_s[/events:(\d+)/, 1].to_i
+      # lamports = amount×1e6; реальний payout = N лампортів / 1e6 (amount>0 validation) ⇒
+      # lamports ≥ 1 завжди; else (0) dead — dust-захист (§B.4 leave).
       pending_counter(wallet_id).decrement(by: lamports) if lamports.positive?
       count_counter(wallet_id).decrement(by: events) if events.positive?
       drain_set_if_empty(wallet_id)

@@ -48,6 +48,7 @@ RSpec.describe Codex::CommentPolicy do
 
     it "denies non-author non-admins" do
       expect(described_class.new(other, comment)).not_to be_update
+      expect(described_class.new(other, comment)).not_to be_destroy
     end
 
     it "permits admin+ regardless of grace window" do

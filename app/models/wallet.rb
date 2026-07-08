@@ -145,6 +145,9 @@ class Wallet < ApplicationRecord
       )
     end
 
+    # `unless tx`-then dead: transaction-блок завжди завершується create! (non-nil) або
+    # виходить з методу раніше (`return if tokens_to_mint.zero?` / raise) — tx тут non-nil;
+    # guard = financial-safety-defensive проти зміни семантики блоку (§B.4 leave).
     return unless tx
 
     # 5. ЛОГУВАННЯ ТА ОНОВЛЕННЯ UI

@@ -132,7 +132,11 @@ module Api
           end
         end
       rescue StandardError => e
-        Rails.logger.error "🚨 [Provisioning] Збій ініціації: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+        # `e.backtrace` is always populated here — `e` reached this rescue via an
+        # actual `raise`, and `Api::V1::BaseController#render_internal_server_error`
+        # (the same StandardError net, wider scope) already calls `.first(5).join`
+        # with no safe-nav — mirrored here for consistency.
+        Rails.logger.error "🚨 [Provisioning] Збій ініціації: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
         render json: { error: I18n.t("errors.api.internal") }, status: :internal_server_error
       end
 

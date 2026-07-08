@@ -42,6 +42,33 @@ RSpec.describe Codex::Attunements::Toggle do
       html = render_toggle(node: node, attuned: true, count: 1)
       expect(html).not_to include('data-controller=')
     end
+
+    it "renders the 'Attunement' section title" do
+      html = render_toggle(node: node, attuned: false, count: 3)
+      expect(html).to include(">Attunement<")
+    end
+  end
+
+  describe "edge cases" do
+    it "renders a zero count as '0' with no special-cased empty state" do
+      html = render_toggle(node: node, attuned: false, count: 0)
+      expect(html).to include(">0<")
+    end
+
+    it "treats a nil current_user_attuned the same as false (renders the Attune/POST button)" do
+      html = render_toggle(node: node, attuned: nil, count: 2)
+      expect(html).to include(">Attune<")
+      expect(html).to include('method="post"')
+      expect(html).not_to include("bg-status-success")
+    end
+  end
+
+  describe "accessibility" do
+    it "submits via a real <button type=\"submit\"> so the toggle works without JavaScript" do
+      html = render_toggle(node: node, attuned: false, count: 0)
+      expect(html).to include("<button")
+      expect(html).to include('type="submit"')
+    end
   end
 
   describe "design system compliance" do

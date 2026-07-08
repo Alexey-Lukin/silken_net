@@ -56,6 +56,12 @@ RSpec.describe DocsToc do
     end
   end
 
+  describe ".existing_descriptions" do
+    it "returns {} when the markdown has no TOC:AUTO markers to match" do
+      expect(described_class.existing_descriptions("# Title\nno markers here\n")).to eq({})
+    end
+  end
+
   describe ".regen" do
     let(:md) do
       <<~MD

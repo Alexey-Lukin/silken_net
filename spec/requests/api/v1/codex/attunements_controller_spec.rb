@@ -59,6 +59,13 @@ RSpec.describe "Api::V1::Codex::Attunements", type: :request do
            params: { attunement: {} }, headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
+
+    it "defaults intensity to 3 when the client omits it" do
+      post "/api/v1/codex/nodes/#{node.slug}/attunements",
+           params: { attunement: {} }, headers: headers, as: :json
+      expect(response).to have_http_status(:created)
+      expect(response.parsed_body.dig("data", "intensity")).to eq(3)
+    end
   end
 
   describe "DELETE /api/v1/codex/nodes/:slug/attunements/me" do
@@ -95,6 +102,27 @@ RSpec.describe "Api::V1::Codex::Attunements", type: :request do
            params: { attunement: { intensity: 4 } },
            headers: headers, as: :json
       expect(response).to have_http_status(:created)
+    end
+
+    # `Codex::DiscoveryProbeWorker` is defined today; `defined?` gates a
+    # forward-looking rollout (the worker existing at all is Phase 6-only).
+    # `hide_const` proves the attune still succeeds if the worker were absent.
+    it "still succeeds when Codex::DiscoveryProbeWorker is not defined" do
+      hide_const("Codex::DiscoveryProbeWorker")
+      post "/api/v1/codex/nodes/#{node.slug}/attunements",
+           params: { attunement: { intensity: 4 } },
+           headers: headers, as: :json
+      expect(response).to have_http_status(:created)
+    end
+
+    # Fail-open: a Sidekiq enqueue hiccup must never roll back the attune itself.
+    it "still succeeds (fail-open) when the probe enqueue raises" do
+      allow(Codex::DiscoveryProbeWorker).to receive(:perform_async).and_raise(StandardError, "redis down")
+      post "/api/v1/codex/nodes/#{node.slug}/attunements",
+           params: { attunement: { intensity: 4 } },
+           headers: headers, as: :json
+      expect(response).to have_http_status(:created)
+      expect(Codex::Attunement.exists?(user_id: user.id, codex_node_id: node.id)).to be(true)
     end
   end
 end

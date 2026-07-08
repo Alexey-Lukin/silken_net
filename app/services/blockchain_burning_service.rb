@@ -130,6 +130,8 @@ class BlockchainBurningService < ApplicationService
       if existing_slash.status_sent?
         # Re-arm confirmation worker — на випадок краху до його планування на
         # першій спробі (ConfirmationWorker сам дедуплікує за tx_hash через unique_for).
+        # `.present?`-else = model-validation-dead: :sent-tx завжди має tx_hash
+        # (validates :tx_hash, if: status_sent?) → гілка недосяжна (§B.4 leave).
         BlockchainConfirmationWorker.perform_in(30.seconds, existing_slash.tx_hash, existing_slash.created_at.iso8601) if existing_slash.tx_hash.present? # [ARCH.52] partition-prune
         return :slashed
       end
@@ -254,6 +256,8 @@ class BlockchainBurningService < ApplicationService
       # `return if status_breached?` глушив кожен retry → on-chain `slash()` ніколи не транслювався.
       # Тепер контракт лишається `:active`, intent → :failed (НЕ in-flight) → re-raise → Sidekiq retry re-slash-ить.
       # audit гарантовано створено (ПЕРЕД локом) і `:pending` (transact не виконувався).
+      # `audit&.` else dead: LockTimeout лише з Kredis.lock (після create_slash_intent!) →
+      # audit non-nil; `&.` = захист від reorder create-vs-lock (§B.4 leave).
       audit&.fail!("Slash lock-timeout: #{e.message}")
       handle_slashing_failure(e.message, total_minted_amount)
       raise e

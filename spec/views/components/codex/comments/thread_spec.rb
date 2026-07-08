@@ -79,4 +79,29 @@ RSpec.describe Codex::Comments::Thread do
     expect(html).not_to match(/text-gray-\d+/)
     expect(html).to include("text-gaia-text-muted")
   end
+
+  it "renders multiple comments in the given order" do
+    first = OpenStruct.new(
+      id: 1, body_md: "First!", hidden?: false, created_at: Time.utc(2026, 5, 10, 8, 0, 0),
+      user: OpenStruct.new(email_address: "a@example.com", full_name: "Ann")
+    )
+    second = OpenStruct.new(
+      id: 2, body_md: "Second!", hidden?: false, created_at: Time.utc(2026, 5, 10, 9, 0, 0),
+      user: OpenStruct.new(email_address: "b@example.com", full_name: "Bo")
+    )
+    html = render_thread(node: node, comments: [ first, second ], current_user: nil)
+    expect(html.index("First!")).to be < html.index("Second!")
+  end
+
+  it "derives the comment list DOM id from the node's id, not a hardcoded value" do
+    other_node = OpenStruct.new(id: 123, slug: "other-node").tap { |n| n.define_singleton_method(:to_param) { n.slug } }
+    html = render_thread(node: other_node, comments: [], current_user: nil)
+    expect(html).to include('id="codex_node_123_comments"')
+  end
+
+  it "renders the section heading as a semantic <h3> for screen-reader navigation" do
+    html = render_thread(node: node, comments: [], current_user: nil)
+    expect(html).to include("<h3")
+    expect(html).to include(">Discussion<")
+  end
 end

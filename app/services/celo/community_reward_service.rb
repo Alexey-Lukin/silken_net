@@ -212,6 +212,8 @@ module Celo
       if msg.match?(REJECTED_PATTERNS)
         # Node відхилив tx (НЕ в мемпулі) → fail intent (re-payable). НЕ re-raise: детермінований
         # RpcError (`< IOError`) інакше рахується shared-breaker'ом і відкриває його (#4).
+        # `if status_pending?` — intent тут завжди :pending (свіжо-створений перед transact;
+        # nil відсіяно вище); guard захищає fail! від нелегального AASM-переходу, else dead (§B.4 leave).
         intent.fail!("Celo rejected: #{error.message}".truncate(500)) if intent.status_pending?
         Rails.logger.error "🛑 [Celo ReFi] Tx відхилено мережею (intent ##{intent.id} → :failed, re-payable): #{error.message}"
         nil

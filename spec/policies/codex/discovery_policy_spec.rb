@@ -18,11 +18,13 @@ RSpec.describe Codex::DiscoveryPolicy, type: :policy do
   it "show only on own record" do
     expect(described_class.new(user, own).show?).to be(true)
     expect(described_class.new(user, foreign).show?).to be(false)
+    expect(described_class.new(nil, own).show?).to be(false)
   end
 
   it "create / manual restricted to admin+" do
     expect(described_class.new(user,  Codex::Discovery.new).create?).to be(false)
     expect(described_class.new(admin, Codex::Discovery.new).create?).to be(true)
+    expect(described_class.new(user,  Codex::Discovery.new).manual?).to be(false)
     expect(described_class.new(admin, Codex::Discovery.new).manual?).to be(true)
   end
 

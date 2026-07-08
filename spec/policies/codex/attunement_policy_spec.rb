@@ -15,6 +15,11 @@ RSpec.describe Codex::AttunementPolicy do
     expect(described_class.new(user, Codex::Attunement.new)).to be_create
   end
 
+  it "denies index/show for anonymous" do
+    expect(described_class.new(nil, own)).not_to be_index
+    expect(described_class.new(nil, own)).not_to be_show
+  end
+
   it "denies create for anonymous" do
     expect(described_class.new(nil, Codex::Attunement.new)).not_to be_create
   end

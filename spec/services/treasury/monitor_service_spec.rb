@@ -464,6 +464,19 @@ RSpec.describe Treasury::MonitorService do
     end
   end
 
+  describe "check_balance with a zero min-threshold (no-minimum config)" do
+    it "reports ratio 0.0 and healthy status when min_balance_wei is 0 (div-by-zero guard)" do
+      service = described_class.new
+      allow(service).to receive(:fetch_balance).and_return(healthy_balance)
+      config = { network: "polygon", currency: "MATIC", decimals: 18, min_balance_wei: 0 }
+
+      result = service.send(:check_balance, :polygon, config)
+
+      expect(result[:ratio]).to eq(0.0)
+      expect(result[:status]).to eq(:healthy) # balance >= 0
+    end
+  end
+
   describe "check_balance error handling" do
     it "returns error status with truncated message on failure" do
       allow(mock_evm_client).to receive(:get_balance).and_raise(

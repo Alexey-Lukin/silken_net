@@ -327,6 +327,42 @@ TEST(test_powercut_mid_consume_redelivers_not_loses) {
     ASSERT_REC(&r2, 0, 2);
 }
 
+TEST(test_powercut_on_new_sector_header_refuses) {
+    /* Свіжий сектор: erase успішний, але program ЗАГОЛОВКА гине (power-cut
+     * між erase і записом hdr) → Append чесно відмовляє, лічильник стоїть;
+     * після відновлення живлення retry лягає чисто. */
+    MockFlash m; mock_init(&m);
+    FlashRing r;
+    ASSERT_TRUE(FlashRing_Mount(&r, &mock_ops, &m, MOCK_SECTORS));
+    m.fail_program_after = 0; /* найперший program (заголовок нового сектора) гине */
+    uint8_t rec[FLASH_RING_RECORD_SIZE];
+    make_rec(rec, 1);
+    ASSERT_FALSE(FlashRing_Append(&r, rec));
+    ASSERT_EQ(FlashRing_Count(&r), 0);
+    m.fail_program_after = -1;
+    ASSERT_TRUE(FlashRing_Append(&r, rec));
+    ASSERT_EQ(FlashRing_Count(&r), 1);
+    ASSERT_REC(&r, 0, 1);
+}
+
+TEST(test_powercut_on_data_write_refuses) {
+    /* Посеред сектора (head_slot>0): probe-цілинність ок, але program самих
+     * ДАНИХ гине → Append відмовляє ще ДО used-біта (інваріант порядку 1):
+     * напівзаписаний слот лишається невидимим, старі записи цілі. */
+    MockFlash m; mock_init(&m);
+    FlashRing r;
+    ASSERT_TRUE(FlashRing_Mount(&r, &mock_ops, &m, MOCK_SECTORS));
+    uint8_t rec[FLASH_RING_RECORD_SIZE];
+    make_rec(rec, 1);
+    ASSERT_TRUE(FlashRing_Append(&r, rec)); /* slot 0 лягає, head_slot→1 */
+    m.fail_program_after = 0;               /* data-program 2-го запису гине */
+    make_rec(rec, 2);
+    ASSERT_FALSE(FlashRing_Append(&r, rec));
+    m.fail_program_after = -1;
+    ASSERT_EQ(FlashRing_Count(&r), 1);
+    ASSERT_REC(&r, 0, 1);
+}
+
 /* ════════════════════════════════════════════════════════════════════ */
 int main(void)
 {
@@ -353,6 +389,8 @@ int main(void)
     RUN(test_powercut_before_used_bit_hides_slot);
     RUN(test_erase_fail_refuses_append_state_intact);
     RUN(test_powercut_mid_consume_redelivers_not_loses);
+    RUN(test_powercut_on_new_sector_header_refuses);
+    RUN(test_powercut_on_data_write_refuses);
 
     printf("\n════════════════════════════════════════════════════════════════════\n");
     printf("Passed: %d, Failed: %d\n", tests_passed, tests_failed);

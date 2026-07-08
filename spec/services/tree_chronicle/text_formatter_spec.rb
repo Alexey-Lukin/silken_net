@@ -99,14 +99,15 @@ RSpec.describe TreeChronicle::TextFormatter do
 
   describe ".alert_icon" do
     {
-      "fire_detected"    => "🔥",
-      "severe_drought"   => "💧",
-      "insect_epidemic"  => "🐛",
-      "vandalism_breach" => "🚨",
-      "seismic_anomaly"  => "🌍",
-      "system_fault"     => "⚠",
-      "field_audit"      => "🔍",
-      "firmware_fault"   => "⚙"
+      "fire_detected"     => "🔥",
+      "chainsaw_detected" => "🪚",
+      "severe_drought"    => "💧",
+      "insect_epidemic"   => "🐛",
+      "vandalism_breach"  => "🚨",
+      "seismic_anomaly"   => "🌍",
+      "system_fault"      => "⚠",
+      "field_audit"       => "🔍",
+      "firmware_fault"    => "⚙"
     }.each do |alert_type, expected_icon|
       it "returns #{expected_icon} for #{alert_type}" do
         expect(described_class.alert_icon(alert_type)).to eq(expected_icon)
@@ -124,14 +125,15 @@ RSpec.describe TreeChronicle::TextFormatter do
 
   describe ".alert_title" do
     {
-      "fire_detected"    => "Fire Detected",
-      "severe_drought"   => "Severe Drought",
-      "insect_epidemic"  => "Insect Epidemic",
-      "vandalism_breach" => "Vandalism Breach",
-      "seismic_anomaly"  => "Seismic Anomaly",
-      "system_fault"     => "System Fault",
-      "field_audit"      => "Field Audit",
-      "firmware_fault"   => "Firmware Fault"
+      "fire_detected"     => "Fire Detected",
+      "chainsaw_detected" => "Chainsaw Detected",
+      "severe_drought"    => "Severe Drought",
+      "insect_epidemic"   => "Insect Epidemic",
+      "vandalism_breach"  => "Vandalism Breach",
+      "seismic_anomaly"   => "Seismic Anomaly",
+      "system_fault"      => "System Fault",
+      "field_audit"       => "Field Audit",
+      "firmware_fault"    => "Firmware Fault"
     }.each do |alert_type, expected_title|
       it "returns '#{expected_title}' for #{alert_type}" do
         alert = OpenStruct.new(alert_type: alert_type)

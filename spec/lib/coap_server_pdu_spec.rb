@@ -147,6 +147,18 @@ RSpec.describe CoapServerPdu do
       expect(described_class.parse_request(bin("4003BEEFB9AA"))).to be_nil
     end
 
+    it "відкидає PDU, де заявлений TKL перевищує розмір датаграми (обірваний токен)" do
+      # ver=1, type=CON, tkl=5 (0x45) — але датаграма закінчується рівно на
+      # 4-байтовому заголовку, самих 5 байтів токена в датаграмі нема.
+      expect(described_class.parse_request(bin("4503BEEF"))).to be_nil
+    end
+
+    it "відкидає обірваний 2-байтовий ext (нібл 14) delta/length опції" do
+      # Опційний байт 0xE0: delta-нібл 14 обіцяє 2 ext-БЕ-байти, яких нема
+      # (датаграма закінчується рівно на самому опційному байті).
+      expect(described_class.parse_request(bin("4003BEEFE0"))).to be_nil
+    end
+
     it "луною повертає токен у ACK (TKL > 0)" do
       pdu = bin("42031111") + "\xAB\xCD".b + bin(golden_put_hex)[4..]
       request = described_class.parse_request(pdu)
@@ -162,6 +174,15 @@ RSpec.describe CoapServerPdu do
       request = described_class.parse_request(bin("40031234") + option)
 
       expect(request.uri_path).to eq([ value ])
+    end
+
+    it "ігнорує опції поза Uri-Path (номер ≠ 11 — значення не пушиться, запит валідний)" do
+      # Опційний байт 0x10: delta=1 (option 1, If-Match), length=0 — валідна
+      # опція, яку сервер не розуміє й свідомо пропускає (не лише Uri-Path).
+      request = described_class.parse_request(bin("4003123410"))
+
+      expect(request).not_to be_nil
+      expect(request.uri_path).to eq([])
     end
   end
 end

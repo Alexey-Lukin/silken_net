@@ -95,6 +95,18 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
       expect(ActionCable.server).not_to have_received(:broadcast)
     end
 
+    it "parses a present target_date string and forwards the Date (ARCH.46 backfill)" do
+      described_class.new.perform(organization.id, naas_contract.id, tree.id, false, "2026-07-01")
+
+      expect(BlockchainBurningService).to have_received(:call).with(
+        organization.id,
+        naas_contract.id,
+        source_tree: tree,
+        contractual: false,
+        target_date: Date.new(2026, 7, 1)
+      )
+    end
+
     it "passes the contractual flag through to the service (early-exit forfeiture)" do
       described_class.new.perform(organization.id, naas_contract.id, nil, true)
 

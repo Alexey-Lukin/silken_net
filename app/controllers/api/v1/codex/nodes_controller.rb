@@ -62,8 +62,10 @@ module Api
                            .chronological
                            .includes(:user)
                            .last(50)
+              # `current_user` is guaranteed non-nil: this controller never skips
+              # the class-level `before_action :authenticate_user!` (BaseController).
               attuned = ::Codex::Attunement
-                          .exists?(user_id: current_user&.id, codex_node_id: @node.id)
+                          .exists?(user_id: current_user.id, codex_node_id: @node.id)
 
               render_dashboard(
                 title: "Codex · #{@node.title}",

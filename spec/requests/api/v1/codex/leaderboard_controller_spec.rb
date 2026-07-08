@@ -68,5 +68,13 @@ RSpec.describe "Api::V1::Codex::Leaderboard", type: :request do
       get "/api/v1/codex/leaderboard", params: { realm: realm.slug, format: :json }
       expect(response.parsed_body["data"].size).to eq(25)
     end
+
+    it "renders an empty board gracefully when no realm exists at all" do
+      Codex::Node.delete_all
+      Codex::Realm.delete_all
+      get "/api/v1/codex/leaderboard", params: { format: :json }
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["data"]).to eq([])
+    end
   end
 end

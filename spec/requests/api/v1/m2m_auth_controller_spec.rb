@@ -282,6 +282,22 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
       end
     end
 
+    # `User belongs_to :organization, optional: true` — a refresh caller without
+    # an organization (e.g. a bot/system account) must not 500 on the log line.
+    context "when current_user has no organization" do
+      it "still issues a new token" do
+        orgless_user = create(:user, organization: nil)
+        token = orgless_user.generate_token_for(:api_access)
+
+        post "/api/v1/auth/m2m_token/refresh",
+             headers: { "Authorization" => "Bearer #{token}" },
+             as: :json
+
+        expect(response).to have_http_status(:created)
+        expect(response.parsed_body["token"]).to be_present
+      end
+    end
+
     context "without Bearer token" do
       it "returns 401 unauthorized" do
         post "/api/v1/auth/m2m_token/refresh", as: :json

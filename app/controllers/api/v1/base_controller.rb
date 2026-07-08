@@ -29,6 +29,12 @@ module Api
       # Ми не даємо хакеру зрозуміти природу помилки, але даємо розробнику чіткий JSON
       # StandardError defined first, so it is checked last (Rails rescue_from: reverse order).
       # This lets specific handlers below (RecordNotFound, etc.) take priority.
+      # [coverage-leave, env-conditional]: `Rails.env` is fixed to "test" for the
+      # whole RSpec process, so the `development?` branch (no handler registered,
+      # full backtraces in-browser) structurally cannot fire within the suite —
+      # exercising it would require reloading this class under RAILS_ENV=development,
+      # which is out of scope for a unit/request run. Mirrors the `defined?(dev-gem)`
+      # env-conditional leave category (04_06 §B.4).
       rescue_from StandardError, with: :render_internal_server_error unless Rails.env.development?
       rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
       rescue_from ActionController::ParameterMissing, with: :render_parameter_missing
@@ -129,7 +135,10 @@ module Api
       # HTML клієнти бачать стилізовану Phlex-сторінку всередині AuthLayout
       # (узгоджено з docs/04_04_Phlex_UI_and_Tailwind.md — UI лише через Phlex).
       def ensure_organization!
-        return if current_user&.organization
+        # `current_user` is guaranteed non-nil here: the only caller (`DashboardController`)
+        # does not skip the class-level `before_action :authenticate_user!` above, which
+        # halts the chain (`render_unauthorized`) before `ensure_organization!` ever runs.
+        return if current_user.organization
 
         respond_to do |format|
           format.json do

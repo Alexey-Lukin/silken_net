@@ -173,6 +173,19 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
       end
     end
 
+    context "when both record and tree coordinates are nil" do
+      it "yields nil gps coordinates (tree fallback also absent)" do
+        tree = create(:tree, status: :deceased)
+        tree.update_columns(latitude: nil, longitude: nil)
+        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+        record.update_columns(latitude: nil, longitude: nil)
+
+        result = described_class.new.perform(record.id)
+        expect(result[:gps_coordinates][:latitude]).to be_nil
+        expect(result[:gps_coordinates][:longitude]).to be_nil
+      end
+    end
+
     context "when anchoring fails" do
       it "re-raises the error for Sidekiq retry" do
         tree = create(:tree, status: :deceased)

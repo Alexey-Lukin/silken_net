@@ -112,5 +112,11 @@ RSpec.describe DocsGraph do
       asets = fenced.transform_values { |t| described_class.anchor_set(t) }
       expect(described_class.dangling_anchors(fenced, asets)).to be_empty
     end
+
+    it "skips a cross-doc anchor link whose target doc isn't in the anchors set (dangling-link guard's job)" do
+      docs = { "01_01" => "## Real Heading\nsee [x](99_99_Ghost_Doc#some-anchor)\n" }
+      anchors = { "01_01" => described_class.anchor_set(docs["01_01"]) }
+      expect(described_class.dangling_anchors(docs, anchors)).to be_empty
+    end
   end
 end

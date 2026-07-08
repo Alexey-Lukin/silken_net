@@ -40,6 +40,19 @@ RSpec.describe EthereumAnchorConfirmationWorker, type: :worker do
     expect(anchor.gas_used).to eq(0xb798)
   end
 
+  it "confirms a flat receipt with already-integer block/gas (legacy/flat envelope)" do
+    # [LOW-1/LOW-3] receipt без "result"-обгортки + поля вже Integer (не hex-string):
+    # confirm_anchor! бере flat-гілку, hex_to_i повертає Integer as-is.
+    allow(mock_client).to receive(:eth_get_transaction_receipt)
+      .and_return("status" => "0x1", "blockNumber" => 15_000_000, "gasUsed" => 47_000)
+
+    described_class.new.perform(anchor.id)
+
+    expect(anchor.reload).to be_status_confirmed
+    expect(anchor.block_number).to eq(15_000_000)
+    expect(anchor.gas_used).to eq(47_000)
+  end
+
   it "confirms with a nil gasUsed (partial receipt — block present, gas absent)" do
     allow(mock_client).to receive(:eth_get_transaction_receipt).and_return(envelope("0x1", gas: nil))
 

@@ -73,4 +73,34 @@ RSpec.describe Codex::Fractions::Cooldown do
       expect(html).to include("Open")
     end
   end
+
+  describe "boundary formatting" do
+    it "formats exactly one day as '1d0h' (day-boundary rollover)" do
+      fraction = mock_fraction(
+        cooldown_active: true,
+        cooldown_until: Time.current + 1.day,
+        seconds_until_unlocked: 1.day.to_i
+      )
+      html = described_class.new(fraction: fraction).call
+      expect(html).to include("1d0h")
+    end
+  end
+
+  describe "design system compliance" do
+    it "uses status-* tokens only, never raw Tailwind colors, in either state" do
+      open_html = described_class.new(fraction: mock_fraction(cooldown_active: false)).call
+      locked_html = described_class.new(
+        fraction: mock_fraction(cooldown_active: true, cooldown_until: Time.current, seconds_until_unlocked: 100)
+      ).call
+      expect(open_html).not_to include("bg-green")
+      expect(locked_html).not_to include("bg-yellow")
+    end
+  end
+
+  describe "accessibility" do
+    it "does not render a title tooltip on the open pill (nothing to describe)" do
+      html = described_class.new(fraction: mock_fraction(cooldown_active: false)).call
+      expect(html).not_to include("title=")
+    end
+  end
 end

@@ -78,6 +78,14 @@ RSpec.describe KeyRotationDownlinkWorker, type: :worker do
       expect(CoapClient).not_to have_received(:put)
     end
 
+    it "no-ops when the gateway has no HardwareKey (nil key_record)" do
+      gateway_key.destroy!
+
+      described_class.new.perform(tree.did, 3)
+
+      expect(CoapClient).not_to have_received(:put)
+    end
+
     it "raises (for Sidekiq retry) when the cluster has no eligible gateway" do
       gateway.update!(state: :faulty)
 

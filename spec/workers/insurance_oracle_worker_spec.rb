@@ -58,6 +58,15 @@ RSpec.describe InsuranceOracleWorker, type: :worker do
       expect { described_class.new.perform(-1, target_date.to_s) }.not_to raise_error
     end
 
+    it "defaults target_date to cluster.local_yesterday when no date string is passed" do
+      create(:parametric_insurance, organization: org, cluster: cluster, status: :active)
+
+      expect_any_instance_of(ParametricInsurance)
+        .to receive(:evaluate_daily_health!).with(cluster.local_yesterday)
+
+      described_class.new.perform(cluster.id)
+    end
+
     it "isolates a per-insurance failure and continues without raising" do
       armable_insurance
       allow_any_instance_of(ParametricInsurance).to receive(:evaluate_daily_health!).and_raise(StandardError, "boom")

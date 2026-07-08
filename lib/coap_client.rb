@@ -39,7 +39,9 @@ class CoapClient
       Rails.logger.error "🛑 [CoapClient] Провал зв'язку: #{e.message}"
       raise e
     ensure
-      socket&.close
+      # `socket` завжди non-nil тут: begin починається ПІСЛЯ UDPSocket.new
+      # (рядок 23) — виняток при самому new пропускає begin/ensure взагалі.
+      socket.close
     end
   end
 

@@ -371,6 +371,17 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
 
       # The broadcast_balance_update call within the RPC failure rescue block is exercised
     end
+
+    it "safe-navigates a wallet-less tx in the batch (optional-wallet guard)" do
+      # process_pending_transactions підбирає ВСІ :pending tx — включно з wallet-less
+      # (напр. slash-intent); rescue-broadcast мусить пропустити його через `&.`.
+      create(:blockchain_transaction, wallet: wallet, status: :pending, tx_hash: nil)
+      create(:blockchain_transaction, wallet: nil, status: :pending, tx_hash: nil)
+
+      expect {
+        described_class.new.perform
+      }.to raise_error(StandardError, "RPC failure")
+    end
   end
 
   describe "retries_exhausted wallet nil branch" do

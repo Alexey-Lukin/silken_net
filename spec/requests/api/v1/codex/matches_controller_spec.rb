@@ -78,6 +78,15 @@ RSpec.describe "Api::V1::Codex::Matches", type: :request do
       expect(data["is_skip"]).to be(false)
     end
 
+    it "returns 422 for a winner_slug that matches neither node in the pair" do
+      seed = issue_seed
+      post "/api/v1/codex/matches",
+           params: { pair_seed: seed, winner_slug: "not-in-this-pair" },
+           headers: headers, as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["error"]).to eq("winner_not_in_pair")
+    end
+
     it "returns 403 on replay (seed already consumed)" do
       seed = issue_seed
       post "/api/v1/codex/matches",

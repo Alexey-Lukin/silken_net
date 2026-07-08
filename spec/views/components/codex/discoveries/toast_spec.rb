@@ -30,10 +30,18 @@ RSpec.describe Codex::Discoveries::Toast, type: :view_component do
     expect(html).to include("bg-gaia-surface")
   end
 
-  it "labels each trigger_type" do
-    %w[telemetry_observation match_milestone fraction_choice attunement_streak oracle_seasonal manual_unlock].each do |t|
-      html = render_toast(node: node, trigger_type: t, unlocked_at: Time.current)
-      expect(html).to match(/Observed|Battle|Pact|Streak|Oracle|Granted/)
+  it "renders the exact label for each recognized trigger_type" do
+    expected = {
+      "telemetry_observation" => "Observed",
+      "match_milestone"       => "Battle",
+      "fraction_choice"       => "Pact",
+      "attunement_streak"     => "Streak",
+      "oracle_seasonal"       => "Oracle",
+      "manual_unlock"         => "Granted"
+    }
+    expected.each do |trigger_type, label|
+      html = render_toast(node: node, trigger_type: trigger_type, unlocked_at: Time.current)
+      expect(html).to include(">#{label}<")
     end
   end
 
@@ -46,5 +54,24 @@ RSpec.describe Codex::Discoveries::Toast, type: :view_component do
     html = render_toast(node: node, trigger_type: "match_milestone", unlocked_at: nil)
     expect(html).to include(node.archetype_key)
     expect(html).not_to include("UTC")
+  end
+
+  it "wraps the trigger label in status-success accent pill tokens" do
+    html = render_toast(node: node, trigger_type: "match_milestone", unlocked_at: Time.current)
+    expect(html).to include("bg-status-success")
+    expect(html).to include("text-status-success-text")
+  end
+
+  it "wires focus-visible ring on the visit link for keyboard accessibility" do
+    html = render_toast(node: node, trigger_type: "match_milestone", unlocked_at: Time.current)
+    expect(html).to include("focus-visible:ring-2")
+    expect(html).to include("focus-visible:ring-gaia-primary")
+  end
+
+  it "omits the archetype segment from the meta line when archetype_key is blank" do
+    ghost_node = OpenStruct.new(title_en: "Ghost Node", archetype_key: nil, slug: "ghost-node")
+    html = render_toast(node: ghost_node, trigger_type: "match_milestone", unlocked_at: Time.utc(2026, 5, 9, 14, 30))
+    expect(html).to include("14:30 UTC")
+    expect(html).not_to include(" · 14:30 UTC")
   end
 end

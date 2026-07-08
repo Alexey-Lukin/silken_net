@@ -85,6 +85,14 @@ RSpec.describe Web3CircuitBreaker do
 
         expect(block_called).to be false
       end
+
+      it "still fail-fasts when the rejection metric constant is undefined (defined?-guard else)" do
+        hide_const("SilkenNet::Metrics::CIRCUIT_BREAKER_REJECTIONS")
+
+        expect {
+          instance.test_call(service_name) { "should not execute" }
+        }.to raise_error(Web3CircuitBreaker::CircuitOpenError)
+      end
     end
 
     context "when circuit transitions to half-open (after timeout)" do

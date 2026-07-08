@@ -99,6 +99,12 @@ RSpec.describe Codex::FractionChangeService, type: :service do
       result = described_class.call(user: user, node: node)
       expect(result.success?).to be true
     end
+
+    it "skips the probe when DiscoveryProbeWorker is undefined (forward-compat guard)" do
+      hide_const("Codex::DiscoveryProbeWorker")
+      result = described_class.call(user: user, node: node)
+      expect(result.success?).to be(true)
+    end
   end
 
   describe "guard rails" do

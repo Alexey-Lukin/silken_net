@@ -36,6 +36,12 @@ RSpec.describe SilkenNet::Attractor do
       expect(a).to eq(b)
     end
 
+    it "still computes when SilkenNet::Metrics is undefined (defined?-guarded observe)" do
+      hide_const("SilkenNet::Metrics")
+      result = described_class.calculate_z_from_state(0.1, 0.2, 0.3, 20.0, 5)
+      expect(result).to all(be_a(Float).and(be_finite))
+    end
+
     it "is sensitive to the initial state — different x₀ → different Z" do
       a = described_class.calculate_z_from_state(0.1, 0.2, 0.3, 20.0, 5)
       b = described_class.calculate_z_from_state(0.9, 0.2, 0.3, 20.0, 5)

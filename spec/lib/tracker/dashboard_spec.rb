@@ -40,6 +40,32 @@ RSpec.describe Tracker::Dashboard do
     expect(fw99.canon).to eq("03_05 §3.2")
   end
 
+  # [HW light-touch items] `.parse` also picks up executors from unchecked
+  # checkbox bullets (`- [ ] 🤖 …`), not just the `**P?**` meta-line.
+  describe ".parse — checkbox-bullet executor pickup" do
+    it "picks up an executor emoji from an unchecked checkbox bullet" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### FW.50 — light-touch item
+        - **P2** · 👤 · 🟡 · → `03_01`
+        - [ ] 🤖 also needs a machine pass
+      MD
+      item = described_class.parse(md).first
+      expect(item.executors).to contain_exactly(:owner, :machine)
+    end
+
+    it "ignores a checkbox bullet that carries no recognized executor emoji" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### FW.51 — light-touch item
+        - **P2** · 👤 · 🟡 · → `03_01`
+        - [ ] plain follow-up, no executor marker
+      MD
+      item = described_class.parse(md).first
+      expect(item.executors).to contain_exactly(:owner)
+    end
+  end
+
   it "flags a malformed item missing priority/executor/stage/canon (#3 conformance)" do
     expect(described_class.issues(items))
       .to include(a_string_matching(/FW\.98: missing priority, executor, stage, canon-ref/))
@@ -112,6 +138,12 @@ RSpec.describe Tracker::Dashboard do
       # only separator chars join consecutive § tokens; a word ("плюс") ends the run,
       # so the stale §9 is never (mis)attributed to 04_05 and falsely flagged.
       expect(described_class.file_section_dangling_refs("04_05 §1 плюс §9")).to be_empty
+    end
+
+    it "skips a §-ref to a doc-id that doesn't exist at all (not this guard's job)" do
+      # `anchors[doc]` is nil for an unknown doc-id — resolving THAT is the
+      # canon-ref existence guard's (`dangling_refs`) job, not this one's.
+      expect(described_class.file_section_dangling_refs("ref `99_99 §1` here")).to be_empty
     end
   end
 
@@ -288,6 +320,15 @@ RSpec.describe Tracker::Dashboard do
       expect(described_class.expand_chem("CHEM.6")).to eq(%w[CHEM.6])
     end
 
+    it "skips a line that isn't a CHEM-bearing bullet at all (blank line, plain prose)" do
+      md = <<~MD
+
+        just prose, no bullet or CHEM token here
+        - [ ] CHEM.30 — a real def, so the skip above isn't vacuous
+      MD
+      expect(described_class.chem_note_ids(md)).to eq(%w[CHEM.30])
+    end
+
     it "flags a doc CHEM ref with no matching note, passes defined ones (skips 00_07 itself)" do
       require "tmpdir"
       require "fileutils"
@@ -315,6 +356,15 @@ RSpec.describe Tracker::Dashboard do
       MD
       expect(described_class.chem_ambiguous_token_lines(md))
         .to contain_exactly(a_string_matching(/CHEM\.14.*no-em-dash/))
+    end
+
+    it "skips a non-checkbox line entirely (heading, prose) even if it mentions CHEM" do
+      md = <<~MD
+        ## §01 · In-silico (mentions CHEM.9 in a heading, not a checkbox bullet)
+        prose line about CHEM.9, still not a checkbox
+        - [x] CHEM.9 — the real, unambiguous em-dash def
+      MD
+      expect(described_class.chem_ambiguous_token_lines(md)).to be_empty
     end
   end
   end
@@ -413,6 +463,17 @@ RSpec.describe Tracker::Dashboard do
       expect(res).not_to include("S9.5")
     end
 
+    it "skips a line before the **P?** meta-line is even reached (not yet seen_meta)" do
+      md = <<~MD
+        ## §06 · Ops
+        #### S9.11 — intervening line before the meta-line
+        some stray line that is not the **P?** meta-line yet
+        - **P1** · 👤 · 🟡 · → `06_04`
+        - **Стан:** verdict leads correctly after the real meta-line.
+      MD
+      expect(described_class.verdict_lead_violations(md)).to be_empty
+    end
+
     it "checks ONLY the first body line (a later non-Стан line passes)" do
       md = <<~MD
         ## §06 · Ops
@@ -472,6 +533,16 @@ RSpec.describe Tracker::Dashboard do
         ## 📌 Backlog · Findings
         #### B9.2 — backlog with odd WHO
         - **P3** · 👤/🤖 · ⚪ · → `06_04`
+      MD
+      expect(described_class.meta_form_violations(md)).to be_empty
+    end
+
+    it "skips a line before the **P?** meta-line is reached (not yet seen_meta)" do
+      md = <<~MD
+        ## §06 · Ops
+        #### S9.12 — intervening line before the meta-line
+        a stray non-meta line first
+        - **P1** · 👤 · 🟡 · → `06_04`
       MD
       expect(described_class.meta_form_violations(md)).to be_empty
     end

@@ -29,4 +29,14 @@ RSpec.describe SilkenNet::MetricsExporter do
   ensure
     blocker&.close
   end
+
+  it "still returns nil (no NameError) when the Sentry constant is unavailable" do
+    hide_const("Sentry")
+    blocker = TCPServer.new("127.0.0.1", 0)
+    taken_port = blocker.addr[1]
+
+    expect(described_class.start(port: taken_port, host: "127.0.0.1")).to be_nil
+  ensure
+    blocker&.close
+  end
 end

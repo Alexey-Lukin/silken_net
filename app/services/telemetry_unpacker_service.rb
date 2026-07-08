@@ -864,7 +864,7 @@ class TelemetryUnpackerService < ApplicationService
     # [DIFF.2 FIX: carbon_sequestration_coefficient]:
     # Зважуємо бали росту за коефіцієнтом секвестрації породи дерева.
     # Дуб (Quercus) акумулює вуглець швидше за Сосну (Pinus) — справедливий розподіл SCC.
-    if growth_points&.positive?
+    if growth_points.positive?
       weighted_points = tree.tree_family&.weighted_growth_points(growth_points) || growth_points
       tree.wallet.credit!(weighted_points) if weighted_points.positive?
     end

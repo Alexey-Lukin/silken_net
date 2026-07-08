@@ -52,4 +52,31 @@ RSpec.describe Codex::Battle::Arena, type: :view_component do
     expect(html).to include("Realm:")
     expect(html).to include("—")
   end
+
+  it "renders the realm's name in the header when a realm is present" do
+    html = render_arena(left: left, right: right, pair_seed: "x" * 64, realm: realm)
+    expect(html).to include("Realm: #{realm.name_en}")
+  end
+
+  it "renders a skip form with pair_seed carried over and no winner_slug field" do
+    html = render_arena(left: left, right: right, pair_seed: "abc123", realm: realm)
+    expect(html).to include('name="skip"')
+    expect(html).to include('value="true"')
+    expect(html).to include('value="abc123"')
+    expect(html).to include(">Skip<")
+  end
+
+  it "renders the error state even when left/right nodes are present (error takes precedence)" do
+    html = render_arena(left: left, right: right, pair_seed: "x" * 64, realm: realm, error: "duplicate vote")
+    expect(html).to include("duplicate vote")
+    expect(html).to include("status-warning")
+    expect(html).not_to include("Elo: 1550")
+    expect(html).not_to include('name="winner_slug"')
+  end
+
+  it "wires focus-visible ring on the pick button for keyboard navigation" do
+    html = render_arena(left: left, right: right, pair_seed: "x" * 64, realm: realm)
+    expect(html).to include("focus-visible:ring-2")
+    expect(html).to include("focus-visible:ring-gaia-primary")
+  end
 end

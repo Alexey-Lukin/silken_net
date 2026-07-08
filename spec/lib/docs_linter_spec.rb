@@ -251,6 +251,11 @@ RSpec.describe DocsLinter do
       expect(described_class.telemetry_log_chain_hash_drift("AuditLog.chain_hash chains the audit log\n")).to be_empty
       expect(described_class.telemetry_log_chain_hash_drift("ethereum_anchors.chain_hash component of state_root\n")).to be_empty
     end
+
+    it "skips a table row even though its content would otherwise match" do
+      expect(described_class.telemetry_log_chain_hash_drift(
+        "| leaf | `TelemetryLog.chain_hash` | приклад |\n")).to be_empty
+    end
   end
 
   describe ".growth_points_clamp_drift" do
@@ -524,6 +529,11 @@ RSpec.describe DocsLinter do
 
     it "is clean when the front-matter names the current SE" do
       expect(described_class.superseded_term_in_frontmatter("03_05", doc.call("SE050"))).to be_empty
+    end
+
+    it "returns empty when the doc has no 🎯...🔗 front-matter block at all (index/appendix-shaped docs)" do
+      expect(described_class.superseded_term_in_frontmatter(
+        "00_00_SSOT_Index", "just prose mentioning ATECC608B, no ## headings here\n")).to be_empty
     end
   end
 
@@ -849,6 +859,12 @@ RSpec.describe DocsLinter do
       # 02_04 legacy breadboard: "рядок 10" = a physical breadboard row, not a source line
       expect(described_class.source_line_ref_drift("02_04", "Точка Магії (рядок 10) між R1 та R2\n")).to be_empty
     end
+
+    it "does not flag a ClassName:NNN ref inside 00_06/00_07 (they cite the bad forms as examples)" do
+      txt = "example of the bad form: `BlockchainMintingService:107`\n"
+      expect(described_class.source_line_ref_drift("00_06_SSOT_Documentation_Standard", txt)).to be_empty
+      expect(described_class.source_line_ref_drift("00_07_Action_Plan_Tracker", txt)).to be_empty
+    end
   end
 
   describe ".canonical_block_sha / .canonical_block_drift" do
@@ -879,6 +895,11 @@ RSpec.describe DocsLinter do
       sha, = described_class.canonical_block_sha(src, names)
       hits = described_class.canonical_block_drift("lorenz", "bio.rb", "BASE_RHO = 28.0\n", names, sha)
       expect(hits.first).to match(/pinned const\(s\) absent.*BASE_SIGMA, BASE_BETA/)
+    end
+
+    it "reports '(unpinned)' when expected_sha is blank (first-time pin, nothing recorded yet)" do
+      hits = described_class.canonical_block_drift("lorenz", "bio.rb", src, names, "")
+      expect(hits.first).to include("(unpinned)")
     end
   end
 end
