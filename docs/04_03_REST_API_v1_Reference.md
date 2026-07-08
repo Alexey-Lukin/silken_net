@@ -79,6 +79,7 @@ Authorization: Bearer <token>
 | `/api/v1/oracle_callbacks` | POST | Chainlink DON callback (HMAC-SHA256 валідація через `X-Chainlink-Signature`) |
 | `/api/v1/telemetry/helium` | POST | [ARCH.34 L3] Helium SOS webhook (HMAC-SHA256 через `X-Helium-Signature`, ENV `HELIUM_WEBHOOK_SECRET`; той самий SEC.5-патерн: dev-пропуск з warn, `WEB3_STRICT_MODE=true` → fail-fast) → `HeliumSosWorker` → `EwsAlert(queen_uplink_lost)`. Wire 12B — [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy) |
 | `/api/v1/auth/m2m_token` | POST | M2M автентифікація (Ed25519-підпис, без Bearer token) |
+| `/api/v1/locale` | POST | Переключення локалі сесії (`I18n.locale`, Thread-local) |
 | `/up` | GET | Liveness — Rails `rails/health#show` (процес живий, без перевірки залежностей) |
 | `/ready` | GET | Readiness — `ReadinessController` (root-level); DB + Redis (Sidekiq + Kredis) round-trip → 200 `ready` / 503 `not_ready` (ops/семантика: [`06_05`](06_05_Puma_Configuration)) |
 
@@ -190,7 +191,7 @@ POST /api/v1/auth/m2m_token
 | Роль | Опис | Доступ |
 |---|---|---|
 | `investor` | Інвестор (за замовчуванням для OAuth) | Читання фінансових даних своєї організації |
-| `forester` / `patrol` | Патрульний / Лісник | + Provisioning, Actuators, Maintenance Records, Oracle Visions. `patrol` є синонімом ролі `forester` (метод `forest_commander?` у моделі User охоплює обидві) |
+| `forester` | Лісник | + Provisioning, Actuators, Maintenance Records, Oracle Visions. Метод `forest_commander?` (User) охоплює `forester` + `admin` + `super_admin` |
 | `admin` | Адміністратор організації | + Firmwares, TreeFamilies, Settings, AuditLogs, SystemHealth, Users, Simulate |
 | `super_admin` | Суперадміністратор | + Organizations (глобальний доступ). `users#index` повертає **всіх** користувачів системи (`scope.all` через `UserPolicy::Scope`) — без фільтрації по org. |
 
@@ -246,6 +247,7 @@ POST /api/v1/auth/m2m_token
 | 36 | GET | `/api/v1/gateways/:id/telemetry` | `telemetry#gateway_history` | 🔑 Auth | **Читання** збереженої телеметрії Gateway (Dashboard) |
 | 37 | POST | `/api/v1/gateways/:id/telemetry` | `telemetry#gateway_uplink` | 🔑 Auth | **HTTP Uplink:** передати зашифрований батч телеметрії від Gateway |
 | 38 | GET | `/api/v1/telemetry/live` | `telemetry#live` | 🔑 Auth | Live-стрім телеметрії (HTML/Turbo) |
+| 38a | POST | `/api/v1/telemetry/helium` | `helium_sos#create` | 🌐 Public (HMAC) | **[ARCH.34 L3]** Helium SOS webhook (`X-Helium-Signature` HMAC-SHA256, ENV `HELIUM_WEBHOOK_SECRET`) → `HeliumSosWorker` → `EwsAlert(queen_uplink_lost)`. Wire 12B — [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy) |
 | **💎 Гаманці та Контракти** | | | | | |
 | 39 | GET | `/api/v1/wallets` | `wallets#index` | 🔑 Auth | Список гаманців організації |
 | 40 | GET | `/api/v1/wallets/:id` | `wallets#show` | 🔑 Auth | Деталі гаманця + транзакції |
@@ -331,6 +333,8 @@ POST /api/v1/auth/m2m_token
 | 108 | POST | `/api/v1/codex/admin/nodes` | `codex/admin/nodes#create` | 👑 Super Admin only | **Phase 6:** мінтить новий DAO Node з `seed_origin: :dao_proposal`. Атомарне створення; `archetype_key` має бути в `Codex::ARCHETYPES`, `codex_uid` має формат `CDX-(ECO\|TRE\|PRT\|MYT)-NNNN`. 201 / 403 (admin) / 422. |
 | 109 | PATCH/PUT | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#update` | 🛡️ Admin+ | **Phase 6:** часткове оновлення (publish toggle, geo correction, lore copy). Invalid `lifecycle_status` → 422 (Rails 8 enum ArgumentError ловиться). 200 / 403 / 422. |
 | 110 | DELETE | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#destroy` | 👑 Super Admin only | **Phase 6:** retire Node; cascades through `dependent: :destroy` на `citations`/`comments`/`attunements`/`discoveries`/`fractions`. 204 / 403 (admin). |
+| **🌐 Локалізація** | | | | | |
+| 111 | POST | `/api/v1/locale` | `locales#update` | 🌐 Public | Переключення локалі сесії (`I18n.locale`, Thread-local) — body `{ locale: uk\|en }`; редірект `back` |
 | **🩺 Health-проби (root-level, поза `/api/v1`)** | | | | | |
 | — | GET | `/up` | `rails/health#show` | 🌐 Public | **Liveness** — процес живий (без перевірки залежностей). Виключено з `force_ssl`/host-auth redirect + Rack::Attack throttle. |
 | — | GET | `/ready` | `readiness#show` | 🌐 Public | **Readiness** — DB + Redis (Sidekiq + Kredis) round-trip → 200 `ready` / 503 `not_ready` (ops: [`06_05`](06_05_Puma_Configuration)). Ті самі виключення, що `/up`. |

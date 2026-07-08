@@ -90,7 +90,8 @@ archetype_key` замість наслідування. Додавання 5-г�
 
 ### ADR-CDX-3 — Двомовність без i18n-гему
 
-`title_uk/_en`, `subtitle_uk/_en`, `body_md_uk/_en` — нативні колонки.
+`title_uk/_en`, `subtitle_uk/_en` — двомовні нативні колонки; лор-тіло
+(`context_md`, `cyber_meaning_md`, `lore_md`) монолінгвальне.
 Обґрунтування: українська + англійська — це SSOT-мови, додаткові локалі
 не заплановані, і ми економимо один JOIN + одну залежність від гему. Якщо
 з'явиться третя мова — мігрувати додаванням колонок; **не** ретрофітити `globalize`.
@@ -115,8 +116,8 @@ archetype_key` замість наслідування. Додавання 5-г�
 `*_md` колонки рендеряться на сервері через `Codex::MarkdownRenderer`
 (Rails `Rails::HTML5::SafeListSanitizer`) з allow-list:
 `p, h2, h3, h4, ul, ol, li, strong, em, blockquote, code, pre, a[href], br`.
-Жорсткі ліміти довжини в моделі: `body_md_*` ≤ 8 КіБ,
-`subtitle_*` ≤ 2 КіБ. Сирий HTML ніколи не потрапляє в DOM.
+Жорсткі ліміти довжини в моделі: `context_md`/`cyber_meaning_md` ≤ 8 КіБ,
+`lore_md` ≤ 16 КіБ, `subtitle_*` ≤ 200 символів. Сирий HTML ніколи не потрапляє в DOM.
 
 ### ADR-CDX-6 — Партиціювання тільки `codex_matches`
 

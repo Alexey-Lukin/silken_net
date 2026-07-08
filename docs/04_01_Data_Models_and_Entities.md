@@ -402,6 +402,7 @@ dormant ──reactivate──► active
 | `latest_voltage_mv` | integer | Денормалізована напруга |
 | `firmware_version` | string | Версія прошивки STM32 (SemVer) |
 | `altitude` | numeric | Висота над рівнем моря (м) |
+| `helium_dev_eui` | string | **[ARCH.54]** Helium SOS fallback dev EUI (`HeliumSosWorker` → `EwsAlert(queen_uplink_lost)`) |
 
 > **Примітка:** `firmware_hash` НЕ є полем Gateway і наразі не існує як колонка — UI-компонент
 > (`components/gateways/show.rb`) робить `try(:firmware_hash)` із safe fallback `"—"`. Хеші OTA-артефактів
@@ -414,6 +415,7 @@ idle ──wake──► active ──sleep──► idle
 idle/active ──begin_update──► updating ──finish_update──► idle
 idle/active/faulty ──enter_maintenance──► maintenance ──exit_maintenance──► idle
 any ──report_fault──► faulty
+faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper повертає шлюз у стрій
 ```
 
 **Ключові методи:**
@@ -1329,7 +1331,7 @@ Lore-шар SilkenNet — read-only бібліотека "архетипів" (�
 
 ### `Codex::Node` — Запис у Кодексі
 
-**Атрибути:** `codex_realm_id` (FK), `slug` (UNIQUE), `codex_uid` (`CDX-{ECO|TRE|PRT|MYT}-NNNN`, UNIQUE), bilingual `title_uk`/`title_en`/`subtitle_uk`/`subtitle_en`, `archetype_key` (з реєстру `Codex::ARCHETYPES`, 79 значень), markdown лор `context_md`, `cyber_meaning_md`, `lore_md` (рендериться через `Codex::MarkdownRenderer`), геопросторові `latitude`/`longitude`/`geo_point` (PostGIS GEOGRAPHY(POINT, 4326)) + `geo_region`, лічильники-каунтери (`attunement_count`, `comments_count`, `view_count`, `discovery_count`, `citation_count`, `match_count`), `attunement_elo` (battle rating, default 1500, range 0..4000), `lifecycle_status` enum (`mythical`/`extinct`/`endangered`/`thriving`/`destroyed`/`unknown`), `seed_origin` enum (`seed`/`dao_proposal`/`community_submission`), `external_refs` (JSONB `[{label, url}]`), `discoverable_after_minutes`, `published_at`. Active Storage: `cover_image`, `gallery`.
+**Атрибути:** `codex_realm_id` (FK), `slug` (UNIQUE), `codex_uid` (`CDX-{ECO|TRE|PRT|MYT}-NNNN`, UNIQUE), bilingual `title_uk`/`title_en`/`subtitle_uk`/`subtitle_en`, `archetype_key` (з реєстру `Codex::ARCHETYPES`), markdown лор `context_md`, `cyber_meaning_md`, `lore_md` (рендериться через `Codex::MarkdownRenderer`), геопросторові `latitude`/`longitude`/`geo_point` (PostGIS GEOGRAPHY(POINT, 4326)) + `geo_region`, лічильники-каунтери (`attunement_count`, `comments_count`, `view_count`, `discovery_count`, `citation_count`, `match_count`), `attunement_elo` (battle rating, default 1500, range 0..4000), `lifecycle_status` enum (`mythical`/`extinct`/`endangered`/`thriving`/`destroyed`/`unknown`), `seed_origin` enum (`seed`/`dao_proposal`/`community_submission`), `external_refs` (JSONB `[{label, url}]`), `discoverable_after_minutes`, `published_at`. Active Storage: `cover_image`, `gallery`.
 
 **Concerns:** `GeoLocatable`. **Sync:** `before_save :sync_geo_point` — оновлює PostGIS точку при зміні lat/lng.
 
@@ -1337,13 +1339,13 @@ Lore-шар SilkenNet — read-only бібліотека "архетипів" (�
 
 **Helpers:** `title(locale)`, `subtitle(locale)`, `to_param` → `slug`.
 
-**Партиціонування:** немає (79 базових записів + поступовий ріст; коли `codex_matches` досягне сотень тисяч у Phase 4 — партиціонується сам).
+**Партиціонування:** немає (~118 базових записів + поступовий ріст; коли `codex_matches` досягне сотень тисяч у Phase 4 — партиціонується сам).
 
 ### `Codex::Citation` — Полі-морфне Посилання
 
 **Атрибути:** `codex_node_id` (FK), `citable_type` + `citable_id` (поліморфне), `created_by_user_id`, `note`, `created_at`. Унікальний індекс `(codex_node_id, citable_type, citable_id)` запобігає дублюванню. Counter cache → `Codex::Node.citation_count`.
 
-**Призначення:** будь-яка доменна сутність (`Tree`, `Cluster`, `EwsAlert`, `OracleVision`, `BlockchainTransaction`) може отримати "пілюлю-посилання" на Codex-запис. Phase 6 додасть `CitationPill` UI-примітив.
+**Призначення:** доменна сутність з `Codex::Citation::ALLOWED_CITABLE_TYPES` (`Tree`, `Cluster`, `AiInsight`, `EwsAlert`, `OracleVision`, `NaasContract`) може отримати "пілюлю-посилання" на Codex-запис. Phase 6 додасть `CitationPill` UI-примітив.
 
 ### `Codex::Comment` — Коментар (Phase 2)
 
@@ -1466,7 +1468,7 @@ Cluster, User, Organization
 Сидиться **окремою idempotent rake-таскою** (НЕ через `db:seeds.rb`, бо `seeds.rb` не виконується на проді):
 
 ```bash
-bin/rails codex:seed              # UPSERT 4 realms + 79 nodes (за slug)
+bin/rails codex:seed              # UPSERT 4 realms + 118 nodes (за slug)
 bin/rails governance:seed_parameters  # UPSERT dynamic_tax_rate + insurance_pool_threshold
 ```
 
@@ -1552,7 +1554,7 @@ Polymorphic:
   BlockchainTransaction.sourceable → NaasContract | ParametricInsurance
   AuditLog.auditable → any model
   HardwareKey → Tree (via did) | Gateway (via uid)
-  Codex::Citation.citable → Tree | Cluster | EwsAlert | OracleVision | BlockchainTransaction | … (read-only outbound)
+  Codex::Citation.citable → Tree | Cluster | AiInsight | EwsAlert | OracleVision | NaasContract (read-only outbound)
 
 Codex (Lore — read-only):
   Codex::Realm

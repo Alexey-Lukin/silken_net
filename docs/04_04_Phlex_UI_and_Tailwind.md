@@ -725,8 +725,12 @@ START: Що це за компонент?
 | **clipboard** | `clipboard_controller.js` | `clipboard` | Копіювання в буфер обміну для Web3-адрес |
 | **map** | `map_controller.js` | `map` | Геопросторова карта дерев Leaflet.js |
 | **matrix-rain** | `matrix_rain_controller.js` | `matrix-rain` | Canvas-ефект Matrix digital rain |
+| **mobile-nav** | `mobile_nav_controller.js` | `mobile-nav` | Шим `<dialog>` мобільної навігації (backdrop-click + scroll-lock Safari) — § 15.2 |
+| **codex--comment** | `codex/comment_controller.js` | `codex--comment` | Codex thread — inline reply / broadcast (`Codex::Comments::Thread`) |
+| **codex--reveal** | `codex/reveal_controller.js` | `codex--reveal` | Codex discovery-toast reveal (`Codex::Discoveries::Toast`) |
+| **reveal** ⚠️ | `reveal_controller.js` | `reveal` | Appear-on-scroll (IntersectionObserver) — § 14.3. **Наразі 0 консюмерів** (`data-controller="reveal"` ніде): scaffold, який авто-реєструється |
 
-> **⚠️ Важливо:** Будь-який `*_controller.js` у директорії автоматично реєструється через `eagerLoadControllersFrom` — **не залишайте scaffold-файли в production**.
+> **⚠️ Важливо:** Будь-який `*_controller.js` у директорії автоматично реєструється через `eagerLoadControllersFrom` — **не залишайте scaffold-файли в production** (пор. `reveal` вище: авто-зареєстрований, але без жодного консюмера).
 
 ### 7.1 Контролер `theme`
 
@@ -1430,6 +1434,8 @@ CSS у `application.css`:
 
 ### 14.3 `reveal_controller` (appear-on-scroll)
 
+> **Наразі без консюмерів** — референс-патерн; жоден view не ставить `data-controller="reveal"` (§ 15.2).
+
 Stimulus controller, який скидає `opacity-0 translate-y-2` коли елемент
 вперше з'являється у viewport. One-shot (`unobserve` після першого спрацювання).
 
@@ -1483,7 +1489,7 @@ Stimulus controller, який скидає `opacity-0 translate-y-2` коли е
 |---|---|
 | `theme_controller` | Stateful: localStorage + system preference listener + View Transitions wrapper + icon swap target. Це класичний Stimulus use-case. |
 | `mobile_nav_controller` (тонкий шим) | Native `<dialog>` не закривається на backdrop-click + scroll-lock у Safari через `.showModal()` не завжди — лишаємо ~25 рядків шіма. |
-| `reveal_controller` | CSS `animation-timeline: view()` ще НЕ Baseline (Safari/Firefox в роботі) — IntersectionObserver лишається оптимальним до ~2027. |
+| `reveal_controller` ⚠️ | CSS `animation-timeline: view()` ще НЕ Baseline (Safari/Firefox в роботі) — IntersectionObserver лишається оптимальним до ~2027. **Наразі 0 консюмерів** (`data-controller="reveal"` ніде) — scaffold-патерн задокументовано (§ 14.3), але ще не застосовано (дзеркало Popover-чесності § 15.1). |
 | `clipboard_controller`, `map_controller`, `matrix_rain_controller`, `codex/*` | Інтеграція з 3rd-party / Canvas / складна логіка. |
 
 ### 15.3 Чек-ліст: коли можна **не** писати Stimulus controller
@@ -1676,7 +1682,7 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 - **Focus visible:** `focus-visible:ring-2 focus-visible:ring-gaia-primary` на всіх інтерактивних елементах (canon WCAG 2.4.7).
 - **Reduced motion:** глобальний `@media (prefers-reduced-motion: reduce)` у `application.css` — § 14.4.
 - **Semantic landmarks:** `<header role="banner">`, `<nav role="navigation">`, `<main role="main">`, `<aside>`, `<footer role="contentinfo">`.
-- **ARIA patterns:** офіційний APG (Authoring Practices Guide) для menu, dialog, disclosure. `LocaleSwitcher` використовує HTML Popover API — нативний disclosure, без ARIA-обвязки.
+- **ARIA patterns:** офіційний APG (Authoring Practices Guide) для menu, dialog, disclosure. `LocaleSwitcher` — нативний `<select>` з auto-submit (`onchange` → `requestSubmit`), sr-only `<label>` + `aria-label` (без Popover/Stimulus — § 12.5).
 - **Keyboard nav:** Escape, Tab order, focus-trap (для drawer — забезпечується нативним `<dialog>.showModal()`, § 13.1).
 - **Touch targets:** мінімум 24×24 CSS px (WCAG 2.5.8), цільовий 44×44 (Apple HIG) для primary actions.
 - **Responsive tables:** `data-label` per `<td>` + `gaia-responsive-table` CSS — § 17 — зберігає семантику для AT, доступний на mobile.
