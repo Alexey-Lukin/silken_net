@@ -13,6 +13,11 @@
 # Ignore all default key files.
 /config/master.key
 /config/credentials/*.key
+# The encrypted credentials vault: ciphertext, but do NOT ship it into the PUBLIC
+# GHCR image — a leaked RAILS_MASTER_KEY (plaintext in the Akash job env) would
+# then decrypt it. secret_key_base comes from SECRET_KEY_BASE env at runtime, so
+# the container never needs the .enc. Canon 06_04 §2.2.
+/config/credentials.yml.enc
 
 # Ignore all logfiles and tempfiles.
 /log/*
@@ -42,6 +47,12 @@
 # Ignore Kamal files.
 /config/deploy*.yml
 /.kamal
+
+# Ignore Terraform — never part of the Rails image, and a local `terraform apply`
+# renders terraform/akash/generated-deploy.yaml + *.tfvars with REAL secrets that a
+# local `docker build .` / `kamal deploy` from the same cwd would otherwise bake
+# into the PUBLIC image (structural gap; CI is fresh-checkout so not firing today).
+/terraform
 
 # Ignore development files
 /.devcontainer

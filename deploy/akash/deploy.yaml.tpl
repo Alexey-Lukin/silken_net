@@ -141,9 +141,9 @@ services:
       - SOLANA_FEE_PAYER_PUBKEY=${solana_fee_payer_pubkey}
       - SOLANA_FEE_PAYER_TOKEN_ACCOUNT=${solana_fee_payer_token_account}
       - SOLANA_USDC_MINT_ADDRESS=${solana_usdc_mint_address}
-      # --- Chainlink oracle-callback HMAC (dispatch secrets removed — ARCH.53) ---
-      - CHAINLINK_HMAC_SECRET=${chainlink_hmac_secret}
-      # Web3 fail-closed: Hadron KYC raises on missing creds + callback HMAC fail-fast (INF.11/SEC.5).
+      # CHAINLINK_HMAC_SECRET is WEB-ONLY (oracle_callbacks_controller ingress) —
+      # deliberately absent from job: zero worker/service consumers (verified).
+      # Web3 fail-closed: Hadron KYC raises on missing creds (INF.11/SEC.5).
       - WEB3_STRICT_MODE=true
       # --- Web3 contract addresses (post-`forge deploy`; fill before first mint) ---
       # Public on-chain addresses (not secrets) but unknown until contracts deploy, so

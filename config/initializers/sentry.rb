@@ -45,10 +45,26 @@ Sentry.init do |config|
     # and filter_parameters (request params only) both miss. Redact only the value AFTER a
     # labelled secret, so public hashes (tx / address) stay readable for debugging.
     secret_value = /\b(aes_key|wallet_private_key|private_key|secret_key|signing_key|api_key|secret|mnemonic|seed|keypair|passw(?:or)?d|token)(["']?\s*[=:]\s*["']?)([^\s"',;)]{2,})/i
-    redact = ->(str) { str.is_a?(String) ? str.gsub(secret_value) { "#{$1}#{$2}[FILTERED]" } : str }
+    # Inline URL credentials (rediss://user:PWD@host, postgres://user:PWD@host) and
+    # RPC keys embedded in a path carry NO label=, so the pattern above misses them —
+    # a PG/Redis connection error or an http_logger breadcrumb would leak them raw.
+    inline_url_cred = %r{(://[^:/@\s]+:)([^@\s/]{2,})(@)}
+    redact = lambda do |str|
+      next str unless str.is_a?(String)
+      str = str.gsub(secret_value) { "#{$1}#{$2}[FILTERED]" }
+      str.gsub(inline_url_cred) { "#{$1}[FILTERED]#{$3}" }
+    end
 
     event.try(:exception)&.values&.each { |ex| ex.value = redact.call(ex.value) }
     event.message = redact.call(event.message) if event.respond_to?(:message=) && event.message.present?
+    # Breadcrumbs (incl. the :http_logger RPC-URL crumb) were NOT scrubbed despite the
+    # comment above — apply the same redaction to each crumb's message + data values.
+    if event.respond_to?(:breadcrumbs) && event.breadcrumbs.respond_to?(:each)
+      event.breadcrumbs.each do |bc|
+        bc.message = redact.call(bc.message) if bc.respond_to?(:message=) && bc.message
+        bc.data = bc.data.transform_values { |v| redact.call(v) } if bc.respond_to?(:data=) && bc.data.is_a?(Hash)
+      end
+    end
 
     event
   }
@@ -90,6 +106,11 @@ Sentry.init do |config|
     "Net::ReadTimeout",
     "Errno::ECONNREFUSED",
     "Errno::ECONNRESET",
+    # DB/Redis connection blips: infra-domain (Grafana up-metric alerts), not app
+    # crashes — and their exception message carries the URL-with-inline-password
+    # (the redact backstop covers it, excluding here also kills the recurring noise).
+    "PG::ConnectionBad",
+    "RedisClient::CannotConnectError",
 
     # --- Sidekiq Enterprise rate limiting (auto-rescheduled) ---
     "Sidekiq::Limiter::OverLimit",
