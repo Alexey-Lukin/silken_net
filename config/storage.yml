@@ -28,8 +28,8 @@ local:
 # Recommended: separate bucket per environment, enable versioning + lifecycle rules
 amazon:
   service: S3
-  access_key_id: <%= Rails.application.credentials.dig(:aws, :access_key_id) %>
-  secret_access_key: <%= Rails.application.credentials.dig(:aws, :secret_access_key) %>
+  access_key_id: <%= ENV["AWS_ACCESS_KEY_ID"].presence || Rails.application.credentials.dig(:aws, :access_key_id) %>
+  secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"].presence || Rails.application.credentials.dig(:aws, :secret_access_key) %>
   region: <%= ENV.fetch("AWS_REGION", "eu-central-1") %>
   bucket: <%= ENV.fetch("AWS_BUCKET", "silken-net-#{Rails.env}") %>
   # Enable server-side encryption at rest
@@ -42,7 +42,7 @@ amazon:
 # Files are written to both S3 and GCS simultaneously
 google:
   service: GCS
-  credentials: <%= Rails.application.credentials.dig(:gcs) %>
+  credentials: <%= ENV["GCS_CREDENTIALS_JSON"].presence || Rails.application.credentials.dig(:gcs) %>
   project: <%= ENV.fetch("GCS_PROJECT", "silken-net") %>
   bucket: <%= ENV.fetch("GCS_BUCKET", "silken-net-#{Rails.env}") %>
 
