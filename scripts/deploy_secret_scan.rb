@@ -23,7 +23,7 @@ TPL    = "deploy/akash/deploy.yaml.tpl"
 # `_BASE64` catches GCP_SA_KEY_BASE64; `_RPC_URL`/`REDIS_URL` embed provider keys /
 # passwords in the URL; `_TOKEN`/`_API_KEY` cover Grafana/service tokens. All current
 # manifests keep these as REQUIRED_SECRET_NOT_SET / ${tpl}, so no false positives.
-SECRET_NAME = /(_PRIVATE_KEY|_KEYPAIR|MASTER_KEY|SECRET_KEY_BASE|_SECRET|_PASSWORD|_TOKEN|_BASE64|_API_KEY|_RPC_URL|REDIS_URL)\z/
+SECRET_NAME = /(_PRIVATE_KEY|_KEYPAIR|MASTER_KEY|SECRET_KEY_BASE|_SECRET|_PASSWORD|_TOKEN|_BASE64|_API_KEY|_RPC_URL|REDIS_URL|_PRIMARY_KEY|_DETERMINISTIC_KEY|_DERIVATION_SALT)\z/
 PLACEHOLDER = "REQUIRED_SECRET_NOT_SET"
 TPL_MARKER  = "TPLVAR" # what load_tpl replaces ${var} with
 

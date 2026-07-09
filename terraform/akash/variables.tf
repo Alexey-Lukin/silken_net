@@ -110,6 +110,42 @@ variable "provisioning_master_key" {
   }
 }
 
+# ActiveRecord Encryption keys [SEC.22] — decrypt hardware_keys + identities columns.
+# From ENV, never credentials.yml.enc. active_record_encryption_keys_check.rb raises at
+# boot without them (>=32 chars each). Generate all three: bin/rails db:encryption:init.
+variable "active_record_encryption_primary_key" {
+  description = "ActiveRecord Encryption primary key (hardware_keys + identities). From ENV, not the vault [SEC.22]."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.active_record_encryption_primary_key) >= 32
+    error_message = "ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY must be at least 32 chars."
+  }
+}
+
+variable "active_record_encryption_deterministic_key" {
+  description = "ActiveRecord Encryption deterministic key [SEC.22]. Generate: bin/rails db:encryption:init."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.active_record_encryption_deterministic_key) >= 32
+    error_message = "ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY must be at least 32 chars."
+  }
+}
+
+variable "active_record_encryption_key_derivation_salt" {
+  description = "ActiveRecord Encryption key-derivation salt [SEC.22]. Generate: bin/rails db:encryption:init."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.active_record_encryption_key_derivation_salt) >= 32
+    error_message = "ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT must be at least 32 chars."
+  }
+}
+
 # -----------------------------------------------------------------------------
 # Observability — Sentry
 # -----------------------------------------------------------------------------

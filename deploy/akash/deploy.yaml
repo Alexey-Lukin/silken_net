@@ -130,6 +130,14 @@ services:
       # Maps to: Kamal env.secret PROVISIONING_MASTER_KEY
       - PROVISIONING_MASTER_KEY=REQUIRED_SECRET_NOT_SET
 
+      # 🛑 BOOT-CRITICAL: active_record_encryption_keys_check.rb raises without these.
+      # ActiveRecord Encryption keys decrypt hardware_keys + identities columns [SEC.22];
+      # from ENV, never credentials.yml.enc. The 23-char placeholder is <32 chars, so the
+      # guard fails closed until real >=32-char values are injected (bin/rails db:encryption:init).
+      - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=REQUIRED_SECRET_NOT_SET
+      - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=REQUIRED_SECRET_NOT_SET
+      - ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=REQUIRED_SECRET_NOT_SET
+
       # ════════════════════════════════════════════════════════════════════════
       # Observability
       # ════════════════════════════════════════════════════════════════════════
@@ -295,6 +303,13 @@ services:
       # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb raises without this ---
       - PROVISIONING_MASTER_KEY=REQUIRED_SECRET_NOT_SET
 
+      # --- 🛑 BOOT-CRITICAL: active_record_encryption_keys_check.rb raises without these ---
+      # AR-Encryption keys (hardware_keys + identities columns) from ENV, not the vault [SEC.22].
+      # Placeholder is <32 chars → guard fails closed until real values injected.
+      - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=REQUIRED_SECRET_NOT_SET
+      - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=REQUIRED_SECRET_NOT_SET
+      - ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=REQUIRED_SECRET_NOT_SET
+
       # --- Observability ---
       - SENTRY_DSN=REQUIRED_SECRET_NOT_SET
       # RELEASE_VERSION omitted — present-but-empty kills Sentry autodetect [B1];
@@ -386,8 +401,16 @@ services:
       # Sidekiq enqueue target (UnpackTelemetryWorker.perform_async).
       - REDIS_URL=REQUIRED_SECRET_NOT_SET
       # KREDIS_REDIS_URL omitted — auto-derives from REDIS_URL (config/redis/shared.yml). [B1]
-      # 🛑 BOOT-CRITICAL: master_key_strength_check.rb raises without this.
+      # PROVISIONING_MASTER_KEY — the coap-guard now SKIPS master_key_strength_check for
+      # this process (coap only enqueues, never derives keys), so it is no longer
+      # boot-critical here. Carried for parity; can be omitted at deploy to keep the HKDF
+      # root off coap's plaintext /proc/environ [SEC.22 — 👤 verify $PROGRAM_NAME at first deploy].
       - PROVISIONING_MASTER_KEY=REQUIRED_SECRET_NOT_SET
+      # 🛑 BOOT-CRITICAL: active_record_encryption_keys_check.rb raises without these.
+      # AR-Encryption keys from ENV (SEC.22); placeholder <32 chars → guard fails closed.
+      - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=REQUIRED_SECRET_NOT_SET
+      - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=REQUIRED_SECRET_NOT_SET
+      - ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=REQUIRED_SECRET_NOT_SET
       # Crash reports for the daemon.
       - SENTRY_DSN=REQUIRED_SECRET_NOT_SET
       # RELEASE_VERSION omitted — present-but-empty kills Sentry autodetect [B1];

@@ -75,6 +75,10 @@ resource "local_file" "akash_sdl" {
     rails_max_threads  = var.rails_max_threads
     # 🛑 BOOT-CRITICAL: Rails refuses to boot without this (master_key_strength_check.rb)
     provisioning_master_key = var.provisioning_master_key
+    # 🛑 BOOT-CRITICAL: active_record_encryption_keys_check.rb (hardware_keys + identities)
+    active_record_encryption_primary_key         = var.active_record_encryption_primary_key
+    active_record_encryption_deterministic_key   = var.active_record_encryption_deterministic_key
+    active_record_encryption_key_derivation_salt = var.active_record_encryption_key_derivation_salt
     # Observability
     sentry_dsn = var.sentry_dsn
     # Web3 oracle keys (dual-key split, B-02; Celo dedicated signer — ARCH.50)

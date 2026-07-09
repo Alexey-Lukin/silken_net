@@ -71,6 +71,11 @@ prometheus_auth_password = "CHANGE_ME_metrics_password"
 # Generate: ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"
 provisioning_master_key = "CHANGE_ME_64_hex_chars_from_SecureRandom_hex_32"
 
+# ActiveRecord Encryption keys [SEC.22] — generate all three: bin/rails db:encryption:init
+active_record_encryption_primary_key         = "CHANGE_ME_32_plus_chars"
+active_record_encryption_deterministic_key   = "CHANGE_ME_32_plus_chars"
+active_record_encryption_key_derivation_salt = "CHANGE_ME_32_plus_chars"
+
 # =============================================================================
 # Observability — Sentry
 # =============================================================================

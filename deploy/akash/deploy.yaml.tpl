@@ -32,6 +32,10 @@ services:
 %{ endif ~}
       # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb ---
       - PROVISIONING_MASTER_KEY=${provisioning_master_key}
+      # --- 🛑 BOOT-CRITICAL: active_record_encryption_keys_check.rb ---
+      - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=${active_record_encryption_primary_key}
+      - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=${active_record_encryption_deterministic_key}
+      - ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=${active_record_encryption_key_derivation_salt}
       # --- Observability ---
       - SENTRY_DSN=${sentry_dsn}
       - PROMETHEUS_AUTH_USER=${prometheus_auth_user}
@@ -119,6 +123,10 @@ services:
 %{ endif ~}
       # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb ---
       - PROVISIONING_MASTER_KEY=${provisioning_master_key}
+      # --- 🛑 BOOT-CRITICAL: active_record_encryption_keys_check.rb ---
+      - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=${active_record_encryption_primary_key}
+      - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=${active_record_encryption_deterministic_key}
+      - ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=${active_record_encryption_key_derivation_salt}
       # --- Observability ---
       - SENTRY_DSN=${sentry_dsn}
       # --- Web3 oracle keys (BlockchainMintingService, BlockchainBurningService,
@@ -186,8 +194,13 @@ services:
       - GCP_SA_KEY_BASE64=${gcp_sa_key_base64}
       - REDIS_URL=${redis_url}
       # KREDIS_REDIS_URL omitted — auto-derives from REDIS_URL (config/redis/shared.yml). [B1]
-      # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb ---
+      # PROVISIONING_MASTER_KEY — coap-guard skips master_key_strength_check here (coap
+      # only enqueues); carried for parity, omittable at deploy [SEC.22].
       - PROVISIONING_MASTER_KEY=${provisioning_master_key}
+      # --- 🛑 BOOT-CRITICAL: active_record_encryption_keys_check.rb ---
+      - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=${active_record_encryption_primary_key}
+      - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=${active_record_encryption_deterministic_key}
+      - ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=${active_record_encryption_key_derivation_salt}
       # --- Observability ---
       - SENTRY_DSN=${sentry_dsn}
 %{ if release_version != "" }      - RELEASE_VERSION=${release_version}

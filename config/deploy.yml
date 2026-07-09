@@ -93,6 +93,10 @@ env:
     - SENTRY_DSN
     # --- Hardware provisioning gate (config/initializers/master_key_strength_check.rb) ---
     - PROVISIONING_MASTER_KEY
+    # --- AR-Encryption keys gate (active_record_encryption_keys_check.rb) — hardware_keys + identities [SEC.22] ---
+    - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY
+    - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY
+    - ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT
     # --- Web3 money/signing keys: JOB-ONLY (servers.job env.secret above) —
     #     deliberately NOT global so web/coap containers never carry them ---
     # --- RPC endpoints (SSOT names expected by Web3::RpcConnectionPool) ---
