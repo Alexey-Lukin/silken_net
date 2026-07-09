@@ -58,6 +58,18 @@ resource "google_sql_database_instance" "silken_db" {
       value = "on"
     }
 
+    # log_lock_waits/log_temp_files — prod observability (deadlock diagnosis +
+    # query-spill tuning); satisfy AVD-GCP-0020/0014, mirror the flags above.
+    database_flags {
+      name  = "log_lock_waits"
+      value = "on"
+    }
+
+    database_flags {
+      name  = "log_temp_files"
+      value = "0"
+    }
+
     insights_config {
       query_insights_enabled  = true
       query_plans_per_minute  = 5

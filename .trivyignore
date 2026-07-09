@@ -1,0 +1,35 @@
+# =============================================================================
+# Trivy IaC misconfig baseline — by-design findings (Sec · IaC Scan, INF.22)
+# =============================================================================
+# Each ID was reviewed individually (NOT a blanket ignore). Real fixes were made
+# in terraform for the findings that were genuine gaps — AVD-GCP-0030
+# (block-project-ssh-keys) + AVD-GCP-0020/0014 (db log_lock_waits/log_temp_files).
+# Below are ONLY the true by-design findings, each with its rationale.
+# Re-review whenever the architecture changes. Format: one AVD-ID per line.
+
+# AVD-GCP-0074 — deny_all_ingress (vpc.tf) uses protocol="all". This is the
+# explicit DEFAULT-DENY rule (priority 65534); Trivy flags "large port range"
+# without distinguishing deny from allow. All-protocols on a DENY is correct.
+AVD-GCP-0074
+
+# AVD-GCP-0017 — Cloud SQL ipv4_enabled=true. Akash containers live outside the
+# VPC (no peering possible) and can only reach the PUBLIC IP; private-only would
+# crash-loop every Akash service in the pg_isready gate. Exposure is mitigated:
+# authorized_networks is EMPTY (IAM-proxy connections only) + ssl_mode is
+# ENCRYPTED_ONLY (database.tf:14-26). Kamal/GCP fallback uses the private VPC IP.
+AVD-GCP-0017
+
+# AVD-GCP-0031 — Ingress Anchor public IP. Architecturally required: CoAP uplink
+# from field nodes (Soldier/Queen) + HTTP-ingress termination. Without a public
+# IP the Anchor cannot perform its one function.
+AVD-GCP-0031
+
+# AVD-GCP-0033 — VM boot disk without CSEK. Google-managed at-rest encryption is
+# active by default; Customer-Supplied Encryption Keys add key-rotation infra a
+# solo founder on TRL-3 deliberately does not carry (enterprise over-kill).
+AVD-GCP-0033
+
+# AVD-DS-0026 — Dockerfile has no HEALTHCHECK. Liveness/readiness is done OUTSIDE
+# the container by Kamal proxy (/up->/ready, INF.10) + Akash readiness; a Docker-
+# native HEALTHCHECK would duplicate that and needs curl in the slim image.
+AVD-DS-0026

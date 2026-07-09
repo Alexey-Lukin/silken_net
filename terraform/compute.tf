@@ -273,6 +273,9 @@ SYSTEMD_DAEMON
 
   metadata = {
     enable-oslogin = "TRUE"
+    # OS Login already ignores project-wide SSH keys; block them explicitly too
+    # (defense-in-depth, satisfies AVD-GCP-0030 — no metadata-key SSH path at all).
+    block-project-ssh-keys = "TRUE"
     # Update this value after Akash deployment to route traffic:
     #   gcloud compute instances add-metadata silken-net-ingress \
     #     --metadata akash-deployment-ip=<NEW_AKASH_IP> --zone europe-west1-b
