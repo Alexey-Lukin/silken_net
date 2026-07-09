@@ -324,7 +324,7 @@ RSpec.describe Identity, type: :model do
     it "stores access_token as ciphertext, not plaintext" do
       identity = create(:identity, access_token: "super-secret-oauth-token")
 
-      raw = Identity.connection.select_value("SELECT access_token FROM identities WHERE id = #{identity.id}")
+      raw = described_class.connection.select_value("SELECT access_token FROM identities WHERE id = #{identity.id}")
       expect(raw).not_to include("super-secret-oauth-token")
       expect(identity.reload.access_token).to eq("super-secret-oauth-token")
     end
@@ -332,7 +332,7 @@ RSpec.describe Identity, type: :model do
     it "stores refresh_token as ciphertext, not plaintext" do
       identity = create(:identity, refresh_token: "super-secret-refresh")
 
-      raw = Identity.connection.select_value("SELECT refresh_token FROM identities WHERE id = #{identity.id}")
+      raw = described_class.connection.select_value("SELECT refresh_token FROM identities WHERE id = #{identity.id}")
       expect(raw).not_to include("super-secret-refresh")
       expect(identity.reload.refresh_token).to eq("super-secret-refresh")
     end
@@ -341,7 +341,7 @@ RSpec.describe Identity, type: :model do
       data = { "provider" => "google_oauth2", "info" => { "email" => "leaf@silken.net" } }
       identity = create(:identity, auth_data: data)
 
-      raw = Identity.connection.select_value("SELECT auth_data FROM identities WHERE id = #{identity.id}")
+      raw = described_class.connection.select_value("SELECT auth_data FROM identities WHERE id = #{identity.id}")
       expect(raw).not_to include("leaf@silken.net")
       expect(identity.reload.auth_data).to eq(data)
     end
