@@ -45,7 +45,7 @@
 - [5. Домен: Верифікація та Ідентичність (Verification & Identity)](#-5-домен-верифікація-та-ідентичність-verification--identity) — IoTeX, peaq, Chainlink, Ed25519
 - [6. Домен: NaaS Контракти (Contract Management)](#-6-домен-naas-контракти-contract-management) — Contract health/termination
 - [7. Домен: Надзвичайне Реагування (Emergency Response)](#-7-домен-надзвичайне-реагування-emergency-response) — `EmergencyResponseService`
-- [8. Домен: Апаратне Забезпечення та Безпека (Hardware, IoT & Security)](#-8-домен-апаратне-забезпечення-та-безпека-hardware-iot--security) — HardwareKey, OTA HMAC, OtaPackager, **WeakKeyDetector**, **Web3NetworkGuard**
+- [8. Домен: Апаратне Забезпечення та Безпека (Hardware, IoT & Security)](#-8-домен-апаратне-забезпечення-та-безпека-hardware-iot--security) — HardwareKey, OTA HMAC, OtaPackager, **WeakKeyDetector**, **Web3NetworkGuard**, **EncryptionKeyGuard**
 - [9. Домен: Фінансові Оракули (Finance Oracles)](#-9-домен-фінансові-оракули-finance-oracles) — `PriceOracleService`
 - [10. Домен: Мультичейн — Паралельні Рейки (Multi-chain)](#-10-домен-мультичейн--паралельні-рейки-multi-chain) — Solana, Celo, Klima, Hadron, Ethereum L1, Filecoin, Streamr, The Graph, dClimate, Treasury
 - [10b. Codex (Lore Layer) Сервіси](#-10b-codex-lore-layer-сервіси)
@@ -484,6 +484,27 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Файл** | `config/initializers/web3_network_guard.rb` |
 | **Що робить** | У `Rails.env.production?`/canopy АБО `WEB3_STRICT_MODE=true` (той самий gate, що IoTeX/Hadron) після `after_initialize` викликає `Security::Web3NetworkGuard.violations(ENV, signer_process: Sidekiq.server?)`; будь-яке порушення → raise `SecurityError` fail-closed ДО прийому трафіку. Presence-вимога ключів діє лише в signer-процесі (job) — відсутній ключ все одно падає гучно на job-boot, ДО DeadSet; web/coap бутяться keyless by design. У dev/test без strict-mode — вимкнений. Asset-build skip через `SECRET_KEY_BASE_DUMMY`. |
 | **Bypass** | `SILKENNET_SKIP_WEB3_NETWORK_GUARD=1` — для one-off rescue-boot. Логується гучно, не може стати рутиною. |
+
+### `Security::EncryptionKeyGuard` 🔐 [SEC.22]
+
+| | |
+|---|---|
+| **Файл** | `app/services/security/encryption_key_guard.rb` |
+| **Вхід** | `env` (Hash-подібний, типово `ENV`; інжектиться в тестах) |
+| **Що робить** | Чистий content-judge ключів ActiveRecord Encryption (дзеркалить `WeakKeyDetector`/`Web3NetworkGuard`). Перевіряє три `ACTIVE_RECORD_ENCRYPTION_*` ENV (primary/deterministic/key_derivation_salt): blank → «not set», `< 32` символів → «too short», інакше `Security::WeakKeyDetector.detect` (known-vector/degenerate/placeholder). Ключі шифрують колонки `hardware_keys` (device AES/Lorenz-seed) та `identities` (OAuth access/refresh + auth_data). [SEC.22] Живуть у ENV, НЕ в `credentials.yml.enc` — інакше поглибили б runtime-залежність від `RAILS_MASTER_KEY`, яку SEC.22 розчиняє. Blank-ключ НЕ провалюється в plaintext: non-deterministic `encrypts` з nil-ключем raise-ить Configuration на першому encrypt/decrypt → провіженінг+telemetry-decrypt+OAuth були б dead-on-first-use. |
+| **Зовнішні виклики** | — (in-memory). |
+| **Публічні методи** | `.violations(env = ENV) → Array<String>` (порожній = безпечно; префікс `[ar-encryption]`). |
+| **Тест coverage** | `spec/services/security/encryption_key_guard_spec.rb` — clean env, missing/blank/too-short кожного ключа, WeakKeyDetector-reason surface, all-missing-at-once. |
+| **Інвокери** | `config/initializers/active_record_encryption_keys_check.rb` (boot-time guard, див. нижче). |
+| **Cross-ref** | [`06_04 §5.5`](06_04_Secrets_Checklist), [`00_07` — SEC.22](00_07_Action_Plan_Tracker). AR-encryption на `identities` закриває ARCH.57(4) plaintext-OAuth-токени. |
+
+#### Boot-time AR-encryption keys guard (initializer)
+
+| | |
+|---|---|
+| **Файл** | `config/initializers/active_record_encryption_keys_check.rb` |
+| **Що робить** | У `Rails.env.production?`/canopy після `after_initialize` викликає `Security::EncryptionKeyGuard.violations(ENV)`; будь-яке порушення → raise `SecurityError` fail-closed ДО прийому трафіку. **НЕ** process-scoped (на відміну від Web3NetworkGuard `signer_process:`): web (provisioning/m2m/OAuth) і Sidekiq-воркери (telemetry-unpack/OTA/key-rotation) обидва декриптять AR-колонки — кожен процес, що бутить повний застосунок, потребує ключів (coap-демон лише enqueue-ить, але ключі вузькі per-column, не vault-key → uniform-перевірка простіша). У dev/test guard вимкнений (fixtures у `config/environments/{test,development}.rb`). Asset-build skip через `SECRET_KEY_BASE_DUMMY`. |
+| **Bypass** | `SILKENNET_SKIP_AR_ENCRYPTION_KEYS_CHECK=1` — для one-off rescue-boot. Логується гучно, не може стати рутиною. |
 
 ### `SilkenNet::DidDerivation` [FW.54]
 

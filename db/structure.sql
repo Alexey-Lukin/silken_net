@@ -1717,7 +1717,7 @@ CREATE TABLE public.identities (
     updated_at timestamp(6) without time zone NOT NULL,
     access_token character varying,
     refresh_token character varying,
-    auth_data jsonb,
+    auth_data text,
     expires_at timestamp(6) without time zone,
     locked_at timestamp(6) without time zone,
     "primary" boolean DEFAULT false NOT NULL
@@ -8040,8 +8040,5 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('20260705090000'),
-('20260707120000'),
-('20260707120001'),
-('20260708120000');
+('20260709140000');
 

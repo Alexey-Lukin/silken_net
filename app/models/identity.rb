@@ -4,6 +4,17 @@ class Identity < ApplicationRecord
   # --- ЗВ'ЯЗКИ (The Authentication Anchor) ---
   belongs_to :user
 
+  # --- БЕЗПЕКА (ActiveRecord Encryption) — OAuth-секрети at rest [SEC.22 / ARCH.57(4)] ---
+  # Non-deterministic (дефолт): жодну з цих колонок не шукають за значенням — Identity
+  # дістають лише за (provider, uid), тож deterministic_key тут не потрібен, а однакові
+  # токени/профілі не колапсують у той самий шифротекст. auth_data — text-колонка (див.
+  # міграцію) з JSON-coder, щоб Ruby-Hash round-trip'ив; serialize ОГОЛОШЕНО ПЕРЕД encrypts,
+  # аби шифрування огорнуло вже JSON-кодований тип. Ключі — з ENV (production.rb, SEC.22).
+  serialize :auth_data, coder: JSON
+  encrypts :access_token
+  encrypts :refresh_token
+  encrypts :auth_data
+
   # ⚡ [СИНХРОНІЗАЦІЯ]: Прямий доступ до контексту через користувача
   # Це дозволяє робити виклики на кшталт identity.organization або identity.wallets
   delegate :organization, :role, to: :user, allow_nil: true

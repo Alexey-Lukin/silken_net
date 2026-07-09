@@ -126,6 +126,19 @@ Rails.application.configure do
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [ :id ]
 
+  # [SEC.22] ActiveRecord Encryption keys come from ENV, NEVER credentials.yml.enc.
+  # Storing them in the vault would deepen the runtime RAILS_MASTER_KEY dependency
+  # SEC.22 is dissolving (an Akash provider reads /proc/<pid>/environ). dev/test pin
+  # fixtures in their own env files; production reads real >=32-byte values injected
+  # per process (web + Sidekiq workers decrypt hardware_keys + identities; the coap
+  # daemon only enqueues). ENV[...] not fetch: a nil is caught loudly at boot by
+  # config/initializers/active_record_encryption_keys_check.rb instead of raising at
+  # the first encrypt/decrypt mid-request. support_unencrypted_data stays false
+  # (Rails 8.1 default): hard cutover, no pre-mainnet prod rows, never accept plaintext.
+  config.active_record.encryption.primary_key         = ENV["ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY"]
+  config.active_record.encryption.deterministic_key   = ENV["ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY"]
+  config.active_record.encryption.key_derivation_salt = ENV["ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT"]
+
   # [PROD] DNS rebinding & Host header attack protection.
   # RAILS_ALLOWED_HOSTS is a comma-separated allowlist (supports leading "."
   # for subdomain wildcards: e.g. ".silken.net,silken.app"). Health check
