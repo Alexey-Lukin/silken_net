@@ -44,25 +44,36 @@ Sentry.init do |config|
     # (and Sentry.capture_message in event.message) — which the extra-context scrub above
     # and filter_parameters (request params only) both miss. Redact only the value AFTER a
     # labelled secret, so public hashes (tx / address) stay readable for debugging.
-    secret_value = /\b(aes_key|wallet_private_key|private_key|secret_key|signing_key|api_key|secret|mnemonic|seed|keypair|passw(?:or)?d|token)(["']?\s*[=:]\s*["']?)([^\s"',;)]{2,})/i
-    # Inline URL credentials (rediss://user:PWD@host, postgres://user:PWD@host) and
-    # RPC keys embedded in a path carry NO label=, so the pattern above misses them —
-    # a PG/Redis connection error or an http_logger breadcrumb would leak them raw.
-    inline_url_cred = %r{(://[^:/@\s]+:)([^@\s/]{2,})(@)}
-    redact = lambda do |str|
-      next str unless str.is_a?(String)
-      str = str.gsub(secret_value) { "#{$1}#{$2}[FILTERED]" }
-      str.gsub(inline_url_cred) { "#{$1}[FILTERED]#{$3}" }
+    # `[\w-]*token` catches access_token=/refresh_token= (a bare `token` alt misses them —
+    # no word boundary after the underscore).
+    secret_value = /\b(aes_key|wallet_private_key|private_key|secret_key|signing_key|api_key|secret|mnemonic|seed|keypair|passw(?:or)?d|[\w-]*token)(["']?\s*[=:]\s*["']?)([^\s"',;)]{2,})/i
+    # Inline URL credentials (rediss://user:PWD@host, postgres://user:PWD@host, and the
+    # user-less redis://:PWD@host shape — group 1 is `*` not `+`) carry NO label=, so the
+    # pattern above misses them; a PG/Redis error or http_logger breadcrumb leaks them raw.
+    inline_url_cred = %r{(://[^:/@\s]*:)([^@\s/]{2,})(@)}
+    # `Authorization: Bearer <jwt>` / bare `Bearer <token>` — space-separated, no label=.
+    # Applied BEFORE secret_value so the "Bearer" label survives while its token is redacted.
+    bearer_token = %r{\b(bearer\s+)([A-Za-z0-9._~+/-]{8,}=*)}i
+    redact = lambda do |val|
+      case val
+      when String
+        s = val.gsub(bearer_token) { "#{$1}[FILTERED]" }
+        s = s.gsub(secret_value) { "#{$1}#{$2}[FILTERED]" }
+        s.gsub(inline_url_cred) { "#{$1}[FILTERED]#{$3}" }
+      when Hash  then val.transform_values { |v| redact.call(v) }
+      when Array then val.map { |v| redact.call(v) }
+      else val
+      end
     end
 
     event.try(:exception)&.values&.each { |ex| ex.value = redact.call(ex.value) }
     event.message = redact.call(event.message) if event.respond_to?(:message=) && event.message.present?
     # Breadcrumbs (incl. the :http_logger RPC-URL crumb) were NOT scrubbed despite the
-    # comment above — apply the same redaction to each crumb's message + data values.
+    # comment above — recursively redact each crumb's message + nested data values.
     if event.respond_to?(:breadcrumbs) && event.breadcrumbs.respond_to?(:each)
       event.breadcrumbs.each do |bc|
         bc.message = redact.call(bc.message) if bc.respond_to?(:message=) && bc.message
-        bc.data = bc.data.transform_values { |v| redact.call(v) } if bc.respond_to?(:data=) && bc.data.is_a?(Hash)
+        bc.data = redact.call(bc.data) if bc.respond_to?(:data=) && bc.data
       end
     end
 

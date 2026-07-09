@@ -114,6 +114,56 @@ RSpec.describe Sentry do
       expect(filtered.message).to eq("tx 0xabc123def reverted on Polygon")
     end
 
+    it "redacts an access_token= value leaked into event.message" do
+      event = Sentry::Event.new(configuration: config)
+      event.message = "oauth refresh failed access_token=ya29.SECRETVALUE123 retrying"
+
+      filtered = config.before_send.call(event, {})
+
+      expect(filtered.message).to include("access_token=[FILTERED]")
+      expect(filtered.message).not_to include("ya29.SECRETVALUE123")
+    end
+
+    it "redacts a Bearer token leaked into event.message" do
+      event = Sentry::Event.new(configuration: config)
+      event.message = "rpc 401 Authorization: Bearer eyJhbGciOiJIUzI1.payloadpart.sigpart denied"
+
+      filtered = config.before_send.call(event, {})
+
+      expect(filtered.message).to include("Bearer [FILTERED]")
+      expect(filtered.message).not_to include("eyJhbGciOiJIUzI1")
+    end
+
+    it "redacts a user-less inline URL credential (redis://:pw@host)" do
+      event = Sentry::Event.new(configuration: config)
+      event.message = "redis down: redis://:supersecretpw@cache.internal:6379"
+
+      filtered = config.before_send.call(event, {})
+
+      expect(filtered.message).to include("://:[FILTERED]@")
+      expect(filtered.message).not_to include("supersecretpw")
+    end
+
+    it "recursively redacts nested breadcrumb data" do
+      event = Sentry::Event.new(configuration: config)
+      buffer = Sentry::BreadcrumbBuffer.new
+      buffer.record(
+        Sentry::Breadcrumb.new(
+          category: "http",
+          message: "GET https://user:pw12345678@rpc.host/path",
+          data: { "response" => { "body" => "signing_key=deadbeefcafe1234" } }
+        )
+      )
+      event.breadcrumbs = buffer
+
+      filtered = config.before_send.call(event, {})
+      crumb = filtered.breadcrumbs.to_a.last
+
+      expect(crumb.message).to include("://user:[FILTERED]@")
+      expect(crumb.data.dig("response", "body")).to include("signing_key=[FILTERED]")
+      expect(crumb.data.dig("response", "body")).not_to include("deadbeefcafe1234")
+    end
+
     it "passes through events without sensitive fields unchanged" do
       event = Sentry::Event.new(configuration: config)
       event.extra = { gateway_uid: "SNET-Q-001", status: "ok" }
