@@ -37,6 +37,16 @@ Rails.application.config.after_initialize do
   # app accepts traffic.
   next if ENV["SECRET_KEY_BASE_DUMMY"].present?
 
+  # The CoAP intake daemon (lib/daemons/coap_listener) is pure UDP glue: it
+  # receives datagrams and perform_async's them to UnpackTelemetryWorker. All key
+  # derivation (HardwareKeyService, OtaHmacKeyService) happens in the Sidekiq
+  # workers (OTA) and the provisioning web path — never in this process. So it
+  # needs no PROVISIONING_MASTER_KEY; let it boot without the HKDF crown-jewel,
+  # keeping the fleet-wide-forge root off the coap container's plaintext
+  # /proc/environ (SEC.22). Mirrors web3_network_guard's process-scoping
+  # (signer_process: Sidekiq.server?).
+  next if $PROGRAM_NAME.include?("coap_listener")
+
   if ENV["SILKENNET_SKIP_MASTER_KEY_STRENGTH_CHECK"] == "1"
     # [SEC.9] Loud on purpose — a bypassed boot-time crypto strength check must
     # leave a trail so the rescue-boot escape hatch cannot quietly become routine.
