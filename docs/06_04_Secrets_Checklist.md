@@ -304,7 +304,8 @@
 
 ### 5.2. Ротація секретів
 
-- **AES master key** (`PROVISIONING_MASTER_KEY`): ротація потребує перевипуску всіх деривованих ключів через provisioning — per-device (KEYL session, K_seed, KEYC) і per-cluster (K_ota, KEYB — FW.2 (в)). Несумісно зі вже зашитими пристроями. Plan: `FW.17` (Hash Ratchet KDF, лише session) у майбутньому циклі.
+- **`PROVISIONING_MASTER_KEY`** (HKDF root, 6 key classes): планова ротація потребує перевипуску всіх деривованих ключів через provisioning — per-device (KEYL session, K_seed, KEYC) + per-cluster (K_ota, KEYB — FW.2 (в)); несумісно зі вже зашитими пристроями (rotation = fleet re-flash). Plan: `FW.17` (Hash Ratchet KDF, session-only) у майбутньому циклі. ⚠️ **On-compromise = crown-jewel, effectively un-rotatable сьогодні** (fleet re-flash + усі деривовані ключі — Opus-sweep 2026-07-09); справжній latch = GCP-KMS-MAC (ключ не покидає HSM) → `SEC.22` (pre-mainnet).
+- **`RAILS_MASTER_KEY`** / **`secret_key_base`**: планової ротації немає; on-compromise **entangled** — ротація master-key re-encrypt'ить `credentials.yml.enc`, але той самий `secret_key_base` лишається → атакер зберігає session/cookie-forge; щоб revoke, треба ротувати й `secret_key_base`, що invalidate'ить УСІ сесії. Runbook + `SECRET_KEY_BASE`-env-detach (дзеркало §5.4 peaq на master-рівні) → `SEC.22`.
 - **Database password**: змінити Cloud SQL → оновити `POSTGRES_PASSWORD` GitHub Secret (живить Kamal `POSTGRES_PASSWORD` + Terraform `TF_VAR_db_password`) → `kamal redeploy`.
 - **Sentry DSN**: rotate у Sentry UI → оновити `SENTRY_DSN` → redeploy.
 - **Chainlink HMAC**: координовано з backend deploy (зміна на льоту викличе rejected callbacks).

@@ -213,6 +213,17 @@ An assurance case is credible because it states what is **not** yet fully closed
 - **External-trust assumptions.** The argument assumes the Chainlink DON behaves per its own fraud-proof
   model, that the chains finalize honestly, and that an Akash provider cannot defeat container attestation —
   defended where code can (HMAC on callbacks, signed images, multi-RPC fallback) but not eliminated.
+- **Secrets live in a running process on an untrusted Akash provider (at-rest ≠ runtime).** A provider with
+  container access reads `/proc/<pid>/environ`, so at-rest encryption cannot hide a secret that must be live
+  in the process. The *unbounded-fraud* keys are being moved out of process memory — EVM signing → GCP-KMS
+  remote-signer (`SEC.17`, key never in-process); `PROVISIONING_MASTER_KEY` (the HKDF root that derives every
+  device key — higher blast-radius than the minter key) → GCP-KMS-MAC + an Expand-only KDF (pre-mainnet,
+  firmware-coordinated). Until those land they are provider-visible; bounded-blast operational credentials
+  (`REDIS_URL`, the DB-access credential, per-vendor API keys, webhook HMACs) stay resident by design (Akash
+  offers no Workload Identity Federation). A third at-rest copy of the whole bundle sits in the GCS
+  Terraform-state object (`sensitive=true` hides display, not storage) — treated as a top-tier store. Rotation
+  runbooks for the two master keys are the required safety net. Program + phasing: `SEC.22`
+  ([`00_07`](00_07_Action_Plan_Tracker)); mechanism → [`06_04 §5.5`](06_04_Secrets_Checklist).
 
 ---
 
