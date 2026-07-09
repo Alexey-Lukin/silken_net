@@ -6,7 +6,7 @@
 
 **Правило одного місця (DRY):** редагуєш канон → онови залежні пункти 00_07 (за рефами); закрив пункт → онови канон + познач тут (✅ → **§🗄️ Архів**, вказівник ID→канон). Так апдейт робиться в одному місці, а референси ведуть, де ще синхронізувати.
 
-**Структура:** **🚦 Critical Path** (P0-гейти перед мілстоунами) → **§00–§08 модуль-секції** (реєстр незробленого; **номер секції = канон-модуль першого рефа** — enforced `tracker:check` section-home guard; великий модуль → під-секції **`§NNa/b/c`** того ж модуля, курація за під-темою — §01a Anchor / §01b EBFC, §02a Node / §02b Gateway, §03a Firmware / §03b Edge-crypto, §08a/b/c) → **🔀 Cross-cutting** / **📌 Backlog** → **🗄️ Архів**. Документ — живий операційний інструмент.
+**Структура:** **🚦 Critical Path** (P0-гейти перед мілстоунами) → **§00–§08 модуль-секції** (реєстр незробленого; **номер секції = канон-модуль першого рефа** — enforced `tracker:check` section-home guard; великий модуль → під-секції **`§NNa/b/c`** того ж модуля, курація за під-темою — §01a Anchor / §01b EBFC, §02a Node / §02b Gateway, §03a Firmware / §03b Edge-crypto, §08a/b/c) → **🔀 Cross-cutting** → **🗄️ Архів**. Документ — живий операційний інструмент.
 
 ---
 
@@ -43,7 +43,6 @@
 - [§08b · External Stakeholders (B2G / B2B / Cultural)](#08b--external-stakeholders-b2g--b2b--cultural)
 - [§08c · IP / Grants (BIZ)](#08c--ip--grants-biz)
 - [Cross-cutting · Doc-drift (DOC-T) — SSOT doc↔code + tracker form/tooling](#-cross-cutting--doc-drift-doc-t--ssot-doccode--tracker-formtooling)
-- [Backlog (не блокери · довгострокові)](#-backlog-не-блокери--довгострокові)
 - [Архів закритих пунктів (мігровано в канон)](#-архів-закритих-пунктів-мігровано-в-канон)
 <!-- TOC:AUTO:END -->
 
@@ -123,6 +122,36 @@
 - [x] ✅ **OpenSSF Best Practices — `silver` earned 2026-06-25** (проєкт [13358](https://www.bestpractices.dev/projects/13358); динамічна плашка в README + `00_00` авто-рендерить рівень — markdown без змін). Passing + silver критерії всі Met (FLOSS · CI · тести · `SECURITY.md` · SAST/DAST ASan+UBSan · `crypto_*` · `input_validation` · `hardening` · `signed_releases` Sigstore build-provenance · `assurance_case` → `SECURITY_ASSURANCE_CASE.md`). Закриває Scorecard `CIIBestPractices` (→ silver-level). **Gold не цілимо** (вимагає bus-factor ≥2 maintainers — solo-структурний бар'єр, як `CodeReview`/`SAST`-Scorecard)
 - [ ] 👤 (опц.) secret-scanning validity-checks + non-provider toggles · `SCORECARD_TOKEN` ([`06_04 §1.3`](06_04_Secrets_Checklist))
 - [ ] 🤖 [gap-pass §06] Trivy CVE-scan побудованого образу (проти вже-генерованого SBOM `mirror-ghcr.yml`) → SARIF у Security-tab (дзеркало Slither/Aderyn/Scorecard); образ публічний на GHCR для недовірених Akash-провайдерів
+
+#### ARCH.1 — Fractal topology — L2 Conductor nodes
+- **P3** · 🤖 · 🌿 · → [`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap)
+- **Стан:** Far-horizon — L2 Conductor nodes (Hub Trees; H-LDSE hierarchical routing, geohashing). Post-TRL 7 scaling. Канон [`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap).
+- [ ] 🤖 дизайн L2 Conductor role + H-LDSE routing (design-half; активація post-scale)
+
+#### ARCH.6 — Federated Learning auto-retraining
+- **P3** · 🤖 · 🌿 · → [`00_08 §1.2`](00_08_Beyond_TRL9_Planetary_Roadmap)
+- **Стан:** Far-horizon — monthly cycle + A/B testing, обмежено L2 Conductors / L3 Queens (compute-budget-paradox: 0.47F supercap + STOP2 300 nA не витримує gradient epoch на L1 Soldier). Канон [`00_08 §1.2`](00_08_Beyond_TRL9_Planetary_Roadmap).
+- [ ] 🤖 federated-retraining дизайн (L2/L3-only; активація post-scale)
+
+#### ARCH.9 — Network Sharding — ізоляція секторів
+- **P3** · 🤖 · 🌿 · → [`00_08 §2.4`](00_08_Beyond_TRL9_Planetary_Roadmap)
+- **Стан:** Far-horizon — isolate anomalous clusters to prevent storm propagation. Post-TRL 7 scaling. Канон [`00_08 §2.4`](00_08_Beyond_TRL9_Planetary_Roadmap).
+- [ ] 🤖 sharding-ізоляція дизайн (активація post-scale)
+
+#### ARCH.11 — Energy-Aware Routing (load-balanced)
+- **P3** · 🤖 · 🌿 · → [`00_08 §2.5`](00_08_Beyond_TRL9_Planetary_Roadmap)
+- **Стан:** Far-horizon — route metric = f(hop_count, remaining_energy, bio_potential). Post-TRL 7 scaling mesh. Канон [`00_08 §2.5`](00_08_Beyond_TRL9_Planetary_Roadmap).
+- [ ] 🤖 energy-aware route-metric дизайн (активація post-mesh)
+
+#### ARCH.19 — BSP-кластеризація IoT-графу
+- **P3** · 🤖 · 🌿 · → [`00_08 §2.4`](00_08_Beyond_TRL9_Planetary_Roadmap)
+- **Стан:** Far-horizon — Binary Space Partitioning дерево на геокоординатах Queen замість flat TTL-mesh; зменшує broadcast collisions + енергоспоживання (кожна Queen знає лише сусідів). Post-TRL 7 scaling. Канон [`00_08 §2.4`](00_08_Beyond_TRL9_Planetary_Roadmap).
+- [ ] 🤖 BSP-tree дизайн (активація post-scale)
+
+#### ARCH.10 — Queen-to-Queen Backhaul Mesh
+- **P3** · 🤖+👤 · 🌿 · → [`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap)
+- **Стан:** Far-horizon — LoRa SF12 inter-Queen relay (Starlink fallback). Post-TRL 8 scaling. Канон [`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap).
+- [ ] 🤖+👤 backhaul-relay дизайн + hardware (активація post-scale)
 
 ## §01a · Anchor — Geometry & Metallurgy
 
@@ -295,6 +324,11 @@
 - [ ] 🤖 скласти FMEA/FMECA-таблицю (усі трекнуті failure-mode'и × S×O×D → RPN-ранг) — desk-study з наявного
 - [ ] 👤 валідувати severity-числа + пріоритети (інженерне судження) → живить HW.24 coin-allocation
 
+#### ARCH.30 — Parallel CFD gyroid simulation на Akash GPU
+- **P3** · 🤖+👤 · 🌿 · → `01_01`
+- **Стан:** Far-horizon — domain decomposition для 3D TPMS-симуляцій на heterogeneous Akash GPU; CFD lead-time ~2 год → real-time валідація геометрії перед DMLS. Cross-ref ARCH.25 (gyroid validation scripts). Канон `01_01`.
+- [ ] 🤖+👤 domain-decomposition CFD + Akash GPU setup
+
 ## §01b · EBFC — Chemistry & Bio-electrochemistry
 
 > EBFC Gen 2.0 — біоелектрохімія/хімія стека (анод dgrFAD-GDH+Os, катод Laccase/ZIF, цвітеріонна мембрана) + in-silico Zero-Lab. Канон [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell). The Root-рівень стека (огляд — §01a).
@@ -384,6 +418,11 @@
 - **Стан:** Gap-pass §01 (2026-07-05) — «Стаття 29» (`08_01`) явно скоуплена на *Pinus sylvestris* біоакумуляцію/safety-margin. Ніщо не оцінює non-target екологічну долю на planetary fleet-scale: ґрунтовий мікробіом, ґрунтові води, invertebrate/wildlife food-chain exposure до ZIF-нанозиму (Co/Cu/Ce/Ru) чи end-of-life/damaged-unit leachate коли дерево гине / анкер покинуто. Scope-extension, не нова інфраструктура — той самий ICP-MS/in-silico-потік. **Моя рекомендація: трекати як scope-extension Статті 29, P3, важить pre-field TRL5/6 — не блокує зараз** (дешево заскоупити тепер, критично до реального лісового пілоту). **🤖-half:** я складу screening-протокол-чернетку (endpoints/матриці); 👤 = paper-scope + партнер при фіксації ролей. Канон `01_03 §3.4`, `08_01`.
 - [ ] 🤖 чернетка non-target ecoscreen-протоколу (endpoints: soil-microbiome · groundwater-leachate · invertebrate; ZIF Co/Cu/Ce/Ru)
 - [ ] 👤 включити в Статтю 29 scope при фіксації ролей (Суховой/Гусак) — pre-field TRL5/6
+
+#### E.29 — Альтернативні EBFC медіатори
+- **P3** · 🤖+👤 · 🌿 · → `01_03`
+- **Стан:** Far-horizon / R&D — ferrocene, methylene blue як альтернативи медіатору. Потребує lab / in-silico валідацію. Канон `01_03`.
+- [ ] 👤 lab-скринінг альтернатив (in-silico half можлива)
 
 ## §02a · Node — Capsule & Electronics
 
@@ -494,6 +533,16 @@
 - **Стан:** Gap-pass §02 (2026-07-05) — `02_03 §12.1` обґрунтовує 20-річний claim для 0.47F EDLC через «>500,000 циклів» (vendor-marketing). Real-world EDLC end-of-life нормально керується **temperature-dependent endurance-hours** (electrolyte dry-out / ESR-rise, Arrhenius) — саме тим строгим трактуванням, що вже дано Ti/PEEK (HW.3/HW.3.IS: Lamé + Prony). Немає Arrhenius-екстраполяції для EDLC проти Eaton/KEMET datasheet endurance-hours-at-temperature. HW.19 (VOC-діагностика) лише *детектує* деградацію post-hoc — не заміна pre-deployment life-qual, а EDLC = single-point-of-failure (смерть = смерть вузла). **🤖-half несе більшість (desk, нуль лаб):** я прожену Arrhenius-екстраполяцію з datasheet endurance-spec (як HW.3 для Ti); 👤 = дати точний datasheet + валідувати. Sibling-методологія HW.3 (не дублікат: HW.3 = Ti/PEEK-матеріал, це = EDLC-компонент). Канон `02_03 §12.1`, `02_03 §6`.
 - [ ] 🤖 Arrhenius endurance-hours-екстраполяція EDLC (з datasheet rated-temp) → 20-рік life vs -40…+70°C (derate/oversize?)
 - [ ] 👤 дати обраний EDLC datasheet endurance-spec + валідувати припущення
+
+#### E.40 — Ignion Virtual Antenna™ (NN02-310)
+- **P3** · 👤 · 🌿 · → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM)
+- **Стан:** Far-horizon — NN02-310 як альтернатива Yageo/Taoglas 868 МГц. Потребує evaluation kit + VSWR тест (дотично UNI.10). Канон [`02_01 §5`](02_01_Hardware_Architecture_and_BOM).
+- [ ] 👤 eval kit + VSWR тест
+
+#### ARCH.24 — CE/FCC/RoHS/EMC/IP68 compliance roadmap
+- **P3** · 👤 · 🌿 · → `02_01`
+- **Стан:** Far-horizon — CE-RED (868 МГц LoRa), FCC Part 15/90, RoHS-2, IP68 (IEC 60529), REACH для EU/NA. Pre-mass production; кожна cert 3-6 міс + спец-лаба. Канон `02_01`.
+- [ ] 👤 compliance-roadmap (pre-mass, спец-лаби)
 
 ## §02b · Gateway — Queen Hardware
 
@@ -691,6 +740,61 @@
 - [ ] 🔗 передумови: ARCH.26 рандеву-фліп + downlink-wire-ревізія (MAC/FC, [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security))
 - [ ] 🤖+👤 wire-rev3 addressing-дизайн (cleartext TTL/DID + opaque relay + DID-таргетований downlink)
 
+#### ARCH.8 — Event-Triggered Reporting (тиша = здоров'я)
+- **P3** · 🤖 · 🌿 · → `03_01`
+- **Стан:** Far-horizon — heartbeat 1/добу + continuous streaming на аномалії (~24× трафік-економія); систематична cadence-політика зверху (подієвий panic-TX уже є). Gated DCI-precond (ARCH.22 challenge-sampling) + чіпає `delta_t`→GP-економіку (E.63). Канон `03_01`.
+- [ ] 🤖 cadence-політика дизайн (після DCI challenge-sampling)
+
+#### ARCH.29 — RTOS Deadlock-Free верифікація (Petri Nets)
+- **P3** · 🤖 · ⚪ · → `03_01`
+- **Стан:** Не почато — формальна PN-модель firmware tasks (Sensing/Compute/TX/OTA/WDT) на Soldier + reachability graph для доведення відсутності circular wait. Self-own machine-half (formal, як ARCH.20). Канон `03_01`.
+- [ ] 🤖 PN-модель Soldier tasks + reachability аналіз
+
+#### E.50 — Edge fuzzy_distance dedup на STM32WLE5JC
+- **P3** · 🤖 · ⚪ · → `03_01`
+- **Стан:** Не почато — fuzzy_distance dedup (<1 мс CPU, <128 B RAM); ціль 30-40% TX зниження через suppression near-duplicate пакетів. Host-half machine-doable. Канон `03_01`.
+- [ ] 🤖 fuzzy-dedup функція + host-тест
+
+#### ARCH.18 — Детерміністична Fixed-Point Lorenz (Integer Math)
+- **P3** · 🤖 · 🌿 · → `03_04`
+- **Стан:** Far-horizon — int64 fixed-point (×10⁶/10⁸) замість IEEE-754 для bit-identical Soldier↔Backend Lorenz (усуне hardware drift). Firmware-тег `[FW.45]`, deferred until ZK-circuit milestone; ризик overflow при множенні. Канон `03_04`.
+- [ ] 🤖 integer-math Lorenz rewrite (deferred → ZK milestone)
+
+#### ARCH.22 — Arithmetic compression для LoRa payload
+- **P3** · 🤖 · 🌿 · → [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- **Стан:** Far-horizon — lambda-exponent (2 B) замість повного Z (16 B); ~34% TX-економія. DCI-precondition: λ послаблює anti-fraud (many-to-one) → потребує full-Z challenge sampling / Z-sentinel перед вмиканням. Канон [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security).
+- [ ] 🤖 λ-compression (після Z-sentinel challenge-sampling)
+
+#### ARCH.23 — Multi-Attribute Utility Function TX (MCU)
+- **P3** · 🤖 · 🌿 · → `03_01`
+- **Стан:** Far-horizon — оцінка важливості пакету (Vcap, delta_t, acoustic, bio_status) → TX лише якщо utility > threshold; ~30-40% TX-зниження. Канон `03_01`.
+- [ ] 🤖 utility-функція TX-decision (host-half)
+
+#### E.31 — TinyML OTA: .tflite формат
+- **P3** · 🤖 · 🌿 · → `03_03`
+- **Стан:** Far-horizon — `.tflite` (INT8 quantization) + Python ML microservice для OTA моделі. Post-TRL 8. Канон `03_03`.
+- [ ] 🤖 .tflite OTA-pipeline + ML microservice
+
+#### E.9 — DMA SPI optimization
+- **P3** · 🤖 · 🌿 · → `03_01`
+- **Стан:** Far-horizon / R&D — SPI DMA для зменшення енергоспоживання (Ярмілко Vector 1). Потребує board. Канон `03_01`.
+- [ ] 🤖 SPI DMA-config (bench-валідація)
+
+#### E.10 — Kalman/EMA filtering для delta_t
+- **P3** · 🤖 · 🔗 · → `03_01`
+- **Стан:** Blocked (gated E.63 bench — delta_t сам невалідований) — Kalman noise suppression ±8% → ±1.2% поверх FW.21 EMA; живить E.26. Канон `03_01`.
+- [ ] 🤖 Kalman-фільтр delta_t (після E.63 bench-калібрування)
+
+#### E.12 — Boolean minimization TX decision
+- **P3** · 🤖 · 🌿 · → `03_01`
+- **Стан:** Far-horizon / R&D — Karnaugh / Quine-McCluskey мінімізація TX-умов (Любченко). Канон `03_01`.
+- [ ] 🤖 boolean-minimization TX-conditions
+
+#### E.15 — Reed-Solomon FEC / Hamming для LoRa
+- **P3** · 🤖 · 🌿 · → `03_01`
+- **Стан:** Far-horizon / R&D — Reed-Solomon або Hamming FEC для LoRa error correction (Косенюк). Потребує bench BER. Канон `03_01`.
+- [ ] 🤖 FEC-код + host-тест (bench BER-валідація)
+
 ## §03b · Edge crypto
 
 #### SEC.3 — Factory Flashing pipeline
@@ -742,6 +846,11 @@
 - **Стан:** Gap-pass §03 (2026-07-05) — verified 0: `arm-none-eabi.cmake` не ставить `-fstack-protector` (gcc не дефолтить), нема `ARM_MPU_`/`HAL_MPU_` ніде (STM32WLE5 Cortex-M4 має 8-region MPU + CMSIS_6 вже vendors API). Релевантно бо **обидва вузли парсять untrusted attacker-reachable байти в сирому C ДО crypto/MIC-чеку** (LoRa-RX від будь-якого передавача в зоні — threat-model прямо називає; + SIM7070 AT-токенайзер) → stack-overflow у парсері має нуль runtime-backstop, лише `cppcheck` (static). ASan/UBSan = host-lane, не таргет. **🤖-half:** `-fstack-protector-strong` додається ЗАРАЗ + CI-verifiable через `firmware_arm_build` (нуль-заліза: compile+link+size-delta); MPU register-config bench-gated. Канон [`03_05 §9`](03_05_Hardware_Symmetric_Crypto_and_Security), `firmware/cmake`.
 - [ ] 🤖 `-fstack-protector-strong` у `arm-none-eabi.cmake` + `__stack_chk_fail` handler → CI size-delta через `firmware_arm_build`
 - [ ] 🤖 MPU region-config (NX-stack + RO-code) у main.c — host-stub compile, bench-verify активацію
+
+#### ARCH.33 — ECDH P-256 key exchange (alt HKDF-only)
+- **P3** · 🤖 · 🌿 · → `03_05`
+- **Стан:** Far-horizon / research — ECDH (factory/field provisioning) як альтернатива per-device HKDF (FW.1); PFS без shared master key, але +512 B SRAM + 50 мс/handshake. Узгодити з FW.17 Hash Ratchet; firmware-Ed25519 feasibility → L2 device-voice roadmap. Канон `03_05`.
+- [ ] 🤖 ECDH-provisioning feasibility (SE050-L2 контекст)
 
 ## §04 · Backend / API / UI
 
@@ -878,6 +987,56 @@
 - **Стан:** Виявлено §04 coverage-sweep (2026-07-08). `MintingRollbackService#perform_safe_rollback` кличе `tx.wallet.broadcast_update` — Turbo::Broadcastable дефолт рендерить НЕІСНУЮЧИЙ партіал `wallets/_wallet` → `ActionView::MissingTemplate` у проді (masked у тестах stub'ом `allow…broadcast_update`). Намір — `Wallet#broadcast_balance_update` (як `credit!`/`lock_and_mint!`). **НЕ money-loss:** rollback (`release_locked_funds!` + tx→`:failed`) commit-иться у transaction ПЕРЕД broadcast; на Sidekiq-retry `locked_balance=0` → release-guards skip (ідемпотентно). Але кожна RPC-капітуляція → job кидає → DeadSet-флуд + UI-broadcast мертвий. Blast: fix ripples 4 специ (стабають `broadcast_update`) + 1 obsolete «respond_to? false» тест → окремий focused-review, не coverage-byproduct. Inline `⚠️[BUG]` лишено на місці. Канон `04_02 §11` (Workers), `04_04` (Turbo-broadcast).
 - [ ] 🤖 `broadcast_update` → `broadcast_balance_update` + оновити 4 специ + прибрати obsolete respond_to?-тест
 
+#### E.26 — health_trend field для TelemetryLog
+- **P3** · 🤖 · 🔗 · → `04_01`
+- **Стан:** Blocked (gated E.10 Kalman) — predictive degradation field; firmware TRL 6 вже є. Канон `04_01`.
+- [ ] 🤖 health_trend field + predictive-логіка (після E.10)
+
+#### E.30 — InsightGenerator — кліматичні базлайни per region
+- **P3** · 🤖 · 🌿 · → `04_02`
+- **Стан:** Far-horizon — per-region climate baselines для InsightGenerator. Потребує multi-region deployment дані. Канон `04_02`.
+- [ ] 🤖 regional-baseline модель (потребує regional дані)
+
+#### E.52 — GA-оптимізація ваг silken_forest.marshal
+- **P3** · 🤖+👤 · 🔗 · → `04_02`
+- **Стан:** Blocked (gated дані + Akash GPU) — GA для `InsightGeneratorService` stress_index (Любченко). Потребує lab `AiInsight` rows + GPU-кластер. Канон `04_02`.
+- [ ] 🤖+👤 GA-оптимізація (після lab-дані + Akash GPU)
+
+#### ARCH.5 — Cross-Registry Export (Verra/GS/UNFCCC)
+- **P3** · 🤖 · 🌿 · → `04_02`
+- **Стан:** Far-horizon — export у Verra / Gold Standard / UNFCCC. Gated BIZ.9 (незалежний carbon-методолог) + реальні реєстри + перший клієнт. Канон `04_02`.
+- [ ] 🤖 registry-export адаптери (pre-commercial)
+
+#### ARCH.16 — Mobile app для foresters
+- **P3** · 🤖+👤 · 🌿 · → `04_04`
+- **Стан:** Far-horizon — Phase 2 product roadmap ([`00_01 §4`]). Канон `04_04`.
+- [ ] 🤖+👤 mobile-app (Phase 2)
+
+#### E.33 — AlertNotification rate limits
+- **P3** · 🤖 · 🌿 · → `04_02`
+- **Стан:** Far-horizon — FCM multicast (500 tokens/req) + Twilio Notify rate limits, шар поверх ARCH.60 delivery. Scale-gated (мало вузлів на TRL-3). Канон `04_02`.
+- [ ] 🤖 rate-limiter (FCM/Twilio; scale-gated)
+
+#### E.36 — PostGIS Generated Column (geo_boundary)
+- **P3** · 🤖 · ⚪ · → `04_01`
+- **Стан:** Не почато (YAGNI) — generated column замість тригера `sync_cluster_geo_boundary()`; тригер працює, чистий рефактор без стосунку до TRL. Канон `04_01`.
+- [ ] 🤖 generated-column рефактор (YAGNI, nice-to-have)
+
+#### E.14 — Multi-source satellite + anchor data fusion
+- **P3** · 🤖+👤 · 🌿 · → `04_02`
+- **Стан:** Far-horizon — Sentinel-2 NDVI + anchor data fusion (Любченко + Бушин). Потребує супутникові дані + партнери. Канон `04_02`.
+- [ ] 🤖+👤 satellite-fusion (потребує NDVI дані + партнери)
+
+#### E.37 — TimescaleDB для telemetry_logs
+- **P3** · 🤖 · 🌿 · → `04_01`
+- **Стан:** Far-horizon — hypertables + continuous aggregates (+ `[INS.1]` `ai_insights` co-partition: `DailyHealthRouter` подвоює daily-read A+B). Тригер: >100M рядків/місяць. Канон `04_01`.
+- [ ] 🤖 TimescaleDB міграція (при >100M рядків/міс)
+
+#### ARCH.20 — Petri Net PN-модель Rails моноліту
+- **P3** · 🤖 · ⚪ · → `04_02`
+- **Стан:** Не почато — формальна верифікація відсутності deadlock при 10 000 concurrent (Sidekiq + Puma + PG); convolution method для state-space reduction (Супруненко). Self-own machine-half. Канон `04_02`.
+- [ ] 🤖 PN-модель Rails + convolution reachability
+
 ## §05 · Web3 / Економіка / Slashing
 
 > Мультичейн, oracle/chain-конфіг та slashing-механіка — канон `05_xx`.
@@ -988,6 +1147,11 @@
 - **P3** · 🤖 · 🌿 · → `05_04`
 - **Стан:** Scale-time cost-opt (research): EigenLayer AVS (~$0.01/тиждень) замість direct L1 write (~$5-15/тиждень) для weekly `StateRootAnchor`. **Чесна рамка:** при 1 tx/тиждень ($5-15 ≈ $260-780/рік) economics не тисне, а AVS = реальна operational-складність (operators/slashing/restaked-ETH security) → виграш на scale/gas-spikes, не на launch; direct-L1 лишається baseline. **Ортогональна вісь до ARCH.12** (deep-audit 2026-06-28): ARCH.13 = *транспорт* кореня (куди писати: direct-L1 vs AVS), ARCH.12 = *структура* кореня (що комітить: flat vs Merkle) — дві незалежні осі, не змішувати в одну роботу. Канон [`05_04`](05_04_Ethereum_L1_State_Anchor).
 - [ ] 🤖 оцінити AVS feasibility + security перед mainnet anchor-arch lock-in (low urgency)
+
+#### ARCH.17 — Bonding Curves для dynamic SCC pricing
+- **P3** · 🤖 · 🌿 · → `05_03`
+- **Стан:** Far-horizon (TRL 9+) — bonding curves для динамічного SCC-ціноутворення. Канон `05_03`.
+- [ ] 🤖 bonding-curve дизайн (TRL 9+)
 
 ## §06 · Deploy / Observability / Secrets / Ops
 
@@ -1206,6 +1370,11 @@
 #### E.27 — Chaos Engineering (Chaos Mesh / kill-scripts)
 - **P3** · 👤 · 🌿 · → `06_08`
 - **Стан:** Chaos Mesh (Akash) або kill-scripts (Kamal) для відмовостійкості — post-TRL 7 production hardening. Дотично DR.1 (DR drill) + `06_08` resilience policy.
+
+#### ARCH.14 — Read-Only PostgreSQL Replicas
+- **P3** · 🤖+👤 · 🌿 · → `06_01`
+- **Стан:** Far-horizon — RO replicas для analytics + Oracle queries. Scale-gated (single-DB достатньо на TRL-3). Канон `06_01`.
+- [ ] 🤖+👤 RO-replica config (scale-gated)
 
 ## §07 · Юридичні / Бізнес
 
@@ -1457,6 +1626,11 @@
 - [ ] 👤 identify call (HORIZON-CL6-*-BIODIV) → consortium (SilkenNet coord + ЧНУ/ЧДТУ/біо-хаб + 1-2 EU: Linköping/CSIC) → submit при acceptance 24a
 - [ ] 🔗 E.59/FW.4-EXT (5-class TinyML) + UNI.13a (Soundscape Library)
 
+#### ARCH.44 — GaiaNexus multi-net vision page
+- **P3** · 🤖+👤 · 🌿 · → [`08_01 §2`](08_01_Joint_Publications_and_IP_Strategy)
+- **Стан:** Far-horizon (founder-gated) — повний vision/manifesto планетарної федерації (Cryo/Abyssal/Litho/Myco + ноосферна економіка); тонка рамка вже в `00_08 §3`, повний 17-net каталог у нотатках founder (no-premature-canon). Будувати лише на founder go. Канон [`08_01 §2`](08_01_Joint_Publications_and_IP_Strategy) + `00_08 §3`.
+- [ ] 🤖+👤 повна vision-сторінка (лише на founder go)
+
 ## 🔀 Cross-cutting · Doc-drift (DOC-T) — SSOT doc↔code + tracker form/tooling
 
 DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** еволюцію самого tracker'а — форму пунктів і drift-guards. **Не блокери виконання, але блокери для аудиту й онбордингу.**
@@ -1469,46 +1643,6 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 > Inbound item-ref (`NN_NN — DOC-T.N`) резолвиться `tracker:check` ([`00_06 §3`](00_06_SSOT_Documentation_Standard)).
 
 _Наразі всі DOC-T resolved → §🗄️ нижче. Нову SSOT doc-drift / tracker-tooling знахідку відкривати таблицею `| ID | Пункт | Канон |` тут._
-
-## 📌 Backlog (не блокери · довгострокові)
-
-| ID | Опис | Джерело | Note / Milestone |
-|----|------|---------|------------------|
-| E.26 | `health_trend` field для TelemetryLog — predictive degradation | Legacy | Post-TRL 6, потребує E.10 (Kalman) |
-| ARCH.8 | **Event-Triggered Reporting** («тиша = здоров'я»): heartbeat 1/добу в нормі + continuous streaming на аномалії (~24× трафік-економія). Подієвий негайний panic-TX вже існує (chainsaw → `PANIC_TTL=5`, `03_01`) — ARCH.8 = систематична cadence-політика зверху; передумови ділить з ARCH.22 (рідкий Z послаблює DCI → challenge-sampling) + cadence чіпає `delta_t`→`m(delta_t)` GP-економіку (E.63) | [`00_08 §2.3`](00_08_Beyond_TRL9_Planetary_Roadmap) + `02_03` (зимовий режим) | Post-TRL 6 |
-| ARCH.29 | **RTOS Deadlock-Free верифікація через Petri Nets** — формальна PN-модель firmware tasks (Sensing/Compute/TX/OTA/WDT) на Soldier + reachability graph аналіз для доведення відсутності circular wait. Відрізняється від ARCH.20 (Petri Net Rails моноліт) тим що моделює embedded RTOS scheduling | `08_02` §1B (Ярмілко) | Post-TRL 6 (R&D — Ярмілко, ЧНУ) |
-| E.30 | InsightGenerator: кліматичні базлайни per region | `04_02` | Post-TRL 7 |
-| E.50 | **Edge fuzzy_distance dedup function** на STM32WLE5JC: <1 мс CPU, <128 байт RAM, ціль — 30-40% TX зниження за рахунок suppression near-duplicate пакетів | `08_02` §1B (Ярмілко) | Post-TRL 7 (R&D — Ярмілко) |
-| E.52 | **GA-оптимізація ваг `silken_forest.marshal`** ML моделі на Akash GPU кластері — генетичний алгоритм для `InsightGeneratorService` stress_index класифікації | `08_02` §1B (Любченко) | Post-TRL 7 |
-| ARCH.1 | Fractal topology: L2 Conductor nodes (Hub Trees, formerly "Sergeant"; H-LDSE hierarchical routing, geohashing) | `00_01` | Post-TRL 7 |
-| ARCH.5 | Cross-Registry Export (Verra, Gold Standard, UNFCCC) | `04_02` | Post-TRL 7 |
-| ARCH.6 | Federated Learning auto-retraining (monthly cycle, A/B testing) — **обмежено L2 Conductors / L3 Queens; ніколи на L1 Soldier** (compute budget paradox, [`00_08 §1.2`](00_08_Beyond_TRL9_Planetary_Roadmap) revised 2026-05-16: 0.47F supercap + STOP2 300 nA не витримує жодного gradient epoch'у) | `04_02`, [`00_08 §1`](00_08_Beyond_TRL9_Planetary_Roadmap) | Post-TRL 7 |
-| ARCH.9 | Network Sharding: isolate anomalous clusters to prevent storm propagation | `00_01` | Post-TRL 7 |
-| ARCH.11 | Energy-Aware Routing: route metric = f(hop_count, remaining_energy, bio_potential) | `00_01` | Post-TRL 7 |
-| ARCH.14 | Read-Only PostgreSQL Replicas для analytics та Oracle queries | `00_01`, `06_01` | Post-TRL 7 |
-| ARCH.16 | Mobile app для foresters (Phase 2 roadmap) | `00_01 §4` | Post-TRL 7 |
-| ARCH.18 | Детерміністична Fixed-Point арифметика (Integer Math): для досягнення побітової ідентичності розрахунків (consensus) між STM32 (Soldier) та GCP/Akash (Backend), необхідно відмовитись від IEEE 754 Floating-Point. Всі вхідні дані мають множитись на 10⁶ (або 10⁸) і розраховуватись у 64-бітних цілих числах (`int64_t` у C, `Integer` у Ruby). Це усуне апаратний drift при розрахунку Атрактора Лоренца. Потребує повного переписування математики в прошивці з урахуванням ризиків переповнення буферів (overflows) під час множення великих чисел. **Firmware-код тег цього ж рішення = `[FW.45]`** (Lorenz Integer-Math hardening, deferred until ZK-circuit milestone — `03_04`). | `03_04`, `05_02` | Post-TRL 7 |
-| ARCH.19 | BSP-кластеризація IoT-графу для заміни flat TTL-mesh при масштабуванні: Binary Space Partitioning дерево на основі географічних координат Queen. Зменшує broadcast collisions та енергоспоживання. Кожна Queen знає тільки своїх сусідів | `08_02` | Post-TRL 7 |
-| ARCH.22 | Arithmetic compression для LoRa payload: lambda-exponent (2 байти) замість повного Z (16 байт). Потенційна економія ~34% TX часу (21→~14 bytes). Event-Triggered Reporting: "мовчання = здоров'я" — 24× зниження трафіку. **DCI-precondition (нот.6):** λ послаблює anti-fraud (λ many-to-one → device-λ vs server-λ слабший за точний Z-cross-check) → потребує full-Z challenge sampling / Z-sentinel перед вмиканням | `08_02`, `00_01`, `00_08 §2.3` | Post-TRL 7 |
-| ARCH.23 | Multi-Attribute Utility Function для автономного рішення TX на MCU: оцінка важливості поточного пакету (Vcap, delta_t, acoustic, bio_status) — відправляти лише якщо utility > threshold. Оцінка: 30-40% зниження TX | `08_02` | Post-TRL 7 (Ярмілко, ЧНУ) |
-| ARCH.30 | **Parallel CFD gyroid simulation на Akash GPU** — domain decomposition алгоритм для 3D TPMS-симуляцій на heterogeneous GPU вузлах Akash. Скорочує CFD lead-time з ~2 годин до real-time валідації геометрії перед DMLS order. Cross-ref ARCH.25 (gyroid validation scripts) | `08_02` §1B (Онищенко) | Post-TRL 7 (методологія + Akash GPU integration) |
-| E.31 | TinyML OTA: `.tflite` формат (INT8 quantization) + Python ML microservice | `03_03` | Post-TRL 8 |
-| E.33 | AlertNotification rate limits: FCM multicast (500 tokens/req), Twilio Notify | `04_02` | Post-TRL 8 |
-| E.36 | PostGIS Generated Column (geo_boundary) замість тригера — тригер `sync_cluster_geo_boundary()` працює, це чистий рефактор без стосунку до TRL | `04_01` | YAGNI (nice-to-have) |
-| ARCH.10 | Queen-to-Queen Backhaul Mesh: LoRa SF12 inter-Queen relay (Starlink fallback) | `00_01` | Post-TRL 8 |
-| ARCH.17 | Bonding Curves для dynamic SCC pricing | `05_03` | TRL 9+ |
-| ARCH.44 | **GaiaNexus multi-net vision page** (BIZ.16 level-3, founder-deferred) — опційний повний vision/manifesto планетарної федерації (Cryo/Abyssal/Litho/Myco + ноосферна економіка). Тонка far-horizon рамка вже є ([`00_08 §3`](00_08_Beyond_TRL9_Planetary_Roadmap)); повний 17-net каталог лишається в нотатках founder'а (no-premature-canon). Будувати лише на founder go | `00_08 §3`, `08_01 §2` | Post-TRL 9 (vision; founder-gated) |
-| E.9 | DMA SPI optimization — зменшення енергоспоживання (Vector 1 — Ярмілко) | `08_02` | R&D partnership |
-| E.10 | Kalman/EMA filtering для delta_t noise suppression (±8% → ±1.2%) | `08_02` | R&D partnership |
-| E.12 | Boolean minimization TX decision conditions (Karnaugh/Quine-McCluskey) | `08_02` | Потребує Любченко |
-| E.14 | Multi-source satellite + anchor data fusion (Sentinel-2 NDVI) | `08_02` | Потребує Любченко + Бушин |
-| E.15 | Reed-Solomon FEC або Hamming для LoRa error correction | `08_02` | Потребує Косенюк |
-| E.29 | Альтернативні EBFC медіатори (ferrocene, methylene blue) | `01_03` | R&D alternatives |
-| E.37 | TimescaleDB для telemetry_logs: hypertables + continuous aggregates (+ **[INS.1]** `ai_insights` — co-partition кандидат: `DailyHealthRouter` подвоює daily-read A+B) | `04_01` | >100M рядків/місяць |
-| E.40 | **Ignion Virtual Antenna™:** NN02-310 як альтернатива Yageo/Taoglas 868 МГц | `02_01` §5 | Evaluation kit + VSWR тест |
-| ARCH.20 | Petri Net PN-модель Rails моноліту: формальна верифікація відсутності deadlock при 10,000 concurrent IoT connections. Sidekiq + Puma + PostgreSQL modeling. Конволюційний метод для зменшення state space explosion у 10-100 разів | `08_02` | R&D (Супруненко, ЧНУ) |
-| ARCH.24 | CE/FCC/RoHS/EMC/IP68 compliance roadmap для EU/NA ринків: CE-RED (868 МГц LoRa), FCC Part 15/90, RoHS-2, IP68 (IEC 60529), REACH. Кожна сертифікація потребує 3-6 місяців та спеціалізованої лабораторії | `08_02` | Pre-mass production (Косенюк, ЧНУ) |
-| ARCH.33 | **ECDH P-256 key exchange як альтернатива HKDF-only provisioning** — мерехтливий розгляд: замість per-device HKDF (FW.1) використати ECDH у factory або field provisioning. Plus: Perfect Forward Secrecy без shared master key. Minus: Curve25519/P-256 потребує ~512 байт SRAM + 50 мс CPU на handshake | `08_02` §1B (Ярмілко), `03_05` | Research alternative (узгодити з FW.17 Hash Ratchet) |
 
 ## 🗄️ Архів закритих пунктів (мігровано в канон)
 
