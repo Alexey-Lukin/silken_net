@@ -19,7 +19,11 @@ require "yaml"
 STATIC = "deploy/akash/deploy.yaml"
 TPL    = "deploy/akash/deploy.yaml.tpl"
 
-SECRET_NAME = /(_PRIVATE_KEY|_KEYPAIR|MASTER_KEY|SECRET_KEY_BASE|_HMAC_SECRET|_PASSWORD)\z/
+# Secret-bearing var-name suffixes. `_SECRET` subsumes `_HMAC_SECRET`/`_WEBHOOK_SECRET`;
+# `_BASE64` catches GCP_SA_KEY_BASE64; `_RPC_URL`/`REDIS_URL` embed provider keys /
+# passwords in the URL; `_TOKEN`/`_API_KEY` cover Grafana/service tokens. All current
+# manifests keep these as REQUIRED_SECRET_NOT_SET / ${tpl}, so no false positives.
+SECRET_NAME = /(_PRIVATE_KEY|_KEYPAIR|MASTER_KEY|SECRET_KEY_BASE|_SECRET|_PASSWORD|_TOKEN|_BASE64|_API_KEY|_RPC_URL|REDIS_URL)\z/
 PLACEHOLDER = "REQUIRED_SECRET_NOT_SET"
 TPL_MARKER  = "TPLVAR" # what load_tpl replaces ${var} with
 
@@ -62,8 +66,10 @@ failures = []
     end
   end
 
-  # Invariant B — signing sextet is job-only (never web/coap; must be in job).
-  %w[web coap].each do |svc|
+  # Invariant B — signing sextet is job-only. Allow-list (every service EXCEPT job),
+  # not a web/coap deny-list, so a future internet-facing service can't silently
+  # escape the money-key gate by not being named here.
+  (services - [ "job" ]).each do |svc|
     leaked = SIGNING_SEXTET & env_names(sdl, svc)
     failures << "#{name}: signing sextet #{leaked} on #{svc} env — must be JOB-ONLY" if leaked.any?
   end

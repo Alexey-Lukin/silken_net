@@ -84,6 +84,12 @@ jobs:
               - 'deploy/**'
               - 'scripts/sdl_consistency_check.rb'
               - 'scripts/deploy_secret_scan.rb'
+              # deploy_secret_scan Invariant C guards .dockerignore/Dockerfile —
+              # they MUST trigger it, else a PR that removes the credentials.yml.enc
+              # exclusion ships secrets into the public image (mirror-ghcr rebuilds
+              # on exactly these paths) while the scan sits skipped.
+              - '.dockerignore'
+              - 'Dockerfile'
 
   firmware_test:
     needs: changes

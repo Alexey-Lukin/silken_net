@@ -70,6 +70,12 @@ jobs:
           for v in GCP_SA_KEY GCP_PROJECT_ID POSTGRES_PASSWORD; do
             [ -z "${!v}" ] && missing="$missing $v"
           done
+          # GCP_BILLING_ACCOUNT_ID is deliberately NOT gated here — a repo provisioned
+          # without billing still gets core-resource drift detection. BUT once a
+          # google_billing_budget is in live state, this secret MUST be set (it feeds
+          # TF_VAR_billing_account_id above): an empty value collapses the billing
+          # module count-guard, so plan wants to DESTROY the budget → exit 2 → red
+          # every run. Set it whenever billing is applied (deploy.yml passes it too).
           if [ -n "$missing" ]; then
             echo "::notice::drift check skipped — missing secrets:$missing (config-half ready, activates once fully provisioned + first apply lands)."
             echo "configured=false" >> "$GITHUB_OUTPUT"
