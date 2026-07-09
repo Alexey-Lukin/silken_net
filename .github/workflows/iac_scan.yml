@@ -1,0 +1,74 @@
+name: Sec · IaC Scan
+
+# Trivy config (misconfiguration) scan of the Infrastructure-as-Code surface —
+# Terraform (terraform/**) + the Dockerfile. Catches IaC misconfigurations
+# (public buckets, permissive firewall/IAM, missing encryption, unpinned base
+# images…) at PR/push time, BEFORE the first live deploy — the cheapest moment
+# to fix them. Static: reads files only, no cloud creds (contrast: terraform_drift,
+# which plans against LIVE state and needs GCP_SA_KEY).
+#
+# Findings → SARIF in the Security tab (coexists with CodeQL default-setup /
+# Scorecard / Aderyn — distinct `category`). SOFT-FAIL by design (exit-code
+# omitted → 0): a first scan surfaces low-severity hygiene notes (like Scorecard's
+# ~13), so this is a visibility report, not a blocking gate — raise to hard once
+# the baseline is triaged. Tool choice = Trivy `config` (not tfsec — aquasecurity
+# folded tfsec into Trivy; Trivy covers terraform AND Dockerfile in one pass).
+# Canon: IaC-scan policy = 00_05 §2.7 (SHA-pinned scan-tool), inventory = 06_07 §1.
+# Tracker: INF.22 (docs/00_07 §06).
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/**'
+      - 'Dockerfile'
+      - '.github/workflows/iac_scan.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'terraform/**'
+      - 'Dockerfile'
+      - '.github/workflows/iac_scan.yml'
+  workflow_dispatch:
+
+# Least-privilege floor; the scan job elevates only the SARIF-upload write.
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: Trivy IaC misconfig
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read           # checkout
+      security-events: write   # upload the SARIF result to code-scanning (Security tab)
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      # SHA-pinned action + explicit `version:` binary pin (00_05 §2.7 ruff
+      # precedent). skip-dirs excludes non-target noise: deploy/akash (SDL is not
+      # a k8s manifest), deploy/grafana (alert-provisioning YAML), firmware/extern
+      # (vendored third-party Dockerfiles we can't fix). config/*.yml (Rails) carry
+      # no apiVersion/kind so Trivy's k8s parser ignores them; .github/workflows
+      # has no Trivy config scanner — both are already silent, no skip needed.
+      - name: Trivy config scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .
+          version: v0.72.0
+          format: sarif
+          output: trivy-iac.sarif
+          skip-dirs: deploy/akash,deploy/grafana,firmware/extern
+          # exit-code omitted → 0 → soft-fail (hygiene report, not a blocking gate).
+
+      - name: Upload SARIF to code-scanning
+        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4
+        with:
+          sarif_file: trivy-iac.sarif
+          category: trivy-iac

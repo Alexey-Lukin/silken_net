@@ -293,5 +293,16 @@ SYSTEMD_DAEMON
 
   allow_stopping_for_update = true
 
+  # akash-deployment-ip is operator-mutated out-of-band on every Akash re-deploy
+  # (see the add-metadata command above), so the live value ≠ the committed
+  # "AKASH_IP_NOT_SET" the moment the Anchor routes traffic. Without this,
+  # `terraform plan -detailed-exitcode` (Ops · TF Drift) would report permanent
+  # drift on this one field forever → red every run → alert fatigue that trains
+  # the owner to ignore a REAL future drift. Ignore just this key so drift stays
+  # a real signal; the live value is read by the startup script above (S1.5).
+  lifecycle {
+    ignore_changes = [metadata["akash-deployment-ip"]]
+  }
+
   depends_on = [google_project_service.compute]
 }

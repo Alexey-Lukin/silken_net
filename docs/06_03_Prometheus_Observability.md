@@ -10,7 +10,7 @@
 |-----|------------|--------|
 | **APM / Error Tracking** | Sentry | ✅ Реалізовано в коді |
 | **Time-series / Metrics** | Prometheus (`prometheus-client`) + Grafana Alloy | ✅ `/metrics` endpoint існує, ✅ Alloy scrapes + remote_write → Grafana Cloud |
-| **Logs** | GCP Cloud Logging + Structured JSON | ✅ Реалізовано (WARNING+, JSON з Sentry correlation) |
+| **Logs** | GCP Cloud Logging + Structured JSON | ✅ GCP/Kamal-шлях (Cloud Logging, WARNING+, JSON+Sentry correlation); ⚠️ **Akash-шлях = ефемерний lease-log** → Rails-push у Loki (§Частина III · [`INF.22`](00_07_Action_Plan_Tracker)) |
 | **Visualization** | Grafana Cloud | ✅ **Доступна через SaaS (дашборди — операційна задача)** |
 | **Alerting** | Grafana Cloud Alerting | ✅ **Доступний через SaaS (правила — операційна задача)** |
 
@@ -441,6 +441,8 @@ bin/rails runner 'SilkenNet::Metrics::REGISTRY.metrics.sort_by{|m|[m.type.to_s,m
 ---
 
 ## 🪵 Частина III: Logs — GCP Cloud Logging
+
+> ⚠️ **Scope: GCP/Kamal-шлях.** Ця частина описує Cloud Logging, куди тече stdout при деплої на GCP VM (Kamal). На **Akash** та сама фізика не працює: кожен Akash-`service` — окремий контейнер, Alloy-сайдкар не має доступу до stdout інших сервісів (нема kubelet/docker-сокета, поза lease-ізоляцією) → lease-логи ефемерні (виживають лише Sentry-exceptions). Закриття = Rails-HTTP-push у Grafana Cloud Loki (backend **§04**, НЕ Alloy-scrape) — tracked [`INF.22`](00_07_Action_Plan_Tracker), робити з першим Akash-деплоєм (TRL-3 = нуль логів для тюну).
 
 ### 3.1 Поточна конфігурація
 

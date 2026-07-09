@@ -89,7 +89,7 @@
 | Prometheus metric registry | `06_03 §2.8` (regen з `SilkenNet::Metrics::REGISTRY`) |
 | DR / backup posture | `06_06` (config SSOT = `terraform/database.tf`) |
 | CI/CD workflows + runbook index | `06_07` |
-| Supply-chain hardening (Actions SHA-pin · harden-runner · Scorecard · build-provenance signing · CLI-tool hash-pin) | `00_05 §2.7` (IaC policy); інвентар workflow → `06_07 §1`; signed-release verify-команда → `SECURITY.md`; дія/стан → `00_07` OPS.10 |
+| Supply-chain hardening (Actions SHA-pin · harden-runner · Scorecard · IaC misconfig-scan (Trivy) · build-provenance signing · CLI-tool hash-pin) | `00_05 §2.7` (IaC policy); інвентар workflow → `06_07 §1`; signed-release verify-команда → `SECURITY.md`; дія/стан → `00_07` OPS.10 |
 | Security assurance case (threat model · trust boundaries · OWASP map · residual risks) | `SECURITY_ASSURANCE_CASE.md` (synthesis-дім — аргументує + реферить canon, **не** новий source-of-truth: AES-режими лишаються в `03_05`, slashing у `05_05`, тощо) |
 | Академічний ростер (5 ВНЗ: партнер → що валідує → канон-дім) | `08_02` (Academic Institutions Registry; §1 ЧНУ [§1A Hard Science + §1B ФОТІУС], §2 ЧДТУ, §3 ЧІПБ, §4 ЧМА, §5 СЄУ) |
 | MOIC-концепція кластера + план публікацій (Ст. 1–35) + IP-рамка | `08_01` (cluster head) |
