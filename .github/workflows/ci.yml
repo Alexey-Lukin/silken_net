@@ -83,6 +83,7 @@ jobs:
             alloy:
               - 'deploy/**'
               - 'scripts/sdl_consistency_check.rb'
+              - 'scripts/deploy_secret_scan.rb'
 
   firmware_test:
     needs: changes
@@ -498,6 +499,12 @@ jobs:
         # Akash provider — the INF.17 dead-path class at the manifest level.
         # Pure ruby+yaml, no bundle needed.
         run: ruby scripts/sdl_consistency_check.rb
+
+      - name: Deploy-secret scan (no key literals; signing sextet job-only)
+        # Never-drift secrets gate: no committed key literal in any service env, and
+        # the money-signing sextet stays JOB-ONLY (web3_network_guard enforces this at
+        # runtime — this is the CI gate on SDL placement). Pure ruby+yaml, no bundle.
+        run: ruby scripts/deploy_secret_scan.rb
 
       - name: Validate Grafana IaC (dashboards + alerts, no credentials — S2.2)
         # `--dry-run` parses both artifacts (JSON dashboard + YAML alert rules),
