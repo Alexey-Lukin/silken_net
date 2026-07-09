@@ -4,7 +4,7 @@
 # Each ID was reviewed individually (NOT a blanket ignore). Real fixes were made
 # in terraform for the findings that were genuine gaps — AVD-GCP-0030
 # (block-project-ssh-keys) + AVD-GCP-0020/0014 (db log_lock_waits/log_temp_files)
-# + AVD-GCP-0033 (boot-disk CMEK, kms.tf — silken-disk-ew1 keyring, 06_04 §5.5).
+# + AVD-GCP-0033 (boot-disk CMEK, kms.tf — silken-disk-ew1 keyring; home 06_04 §5.6).
 # Below are ONLY the true by-design findings, each with its rationale.
 # Re-review whenever the architecture changes. Format: one AVD-ID per line.
 

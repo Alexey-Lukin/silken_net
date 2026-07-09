@@ -58,6 +58,13 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   `deploy/akash/deploy.yaml`; інжектити через Akash Console / `env.secret`. **Money/signing-
   шістка (`ORACLE_*`×4 вкл. `CELO` + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`) = JOB-ONLY** —
   web/coap бутяться keyless (guard scoped `signer_process: Sidekiq.server?`). → `06_02` / `06_04 §1.1`.
+- **Secrets-at-rest = дві ISOLATED KMS-осі (2026-07-09).** Boot-disk Anchor'а (тримає
+  `coap.env` master-keys) шифрується **CMEK** — keyring `silken-disk-ew1` (`kms.tf`, grantee =
+  compute service-agent, НЕ deploy-SA); money-signing custody (SEC.17, pre-mainnet) = окремий
+  keyring `silken-sign-ew1` (job-SA). Key-level IAM + purpose-enum-бар'єр; **НЕ** generic keyring
+  (blast-radius merge-trap). CMEK boot-dependency: `reset`=DEK-cached (safe), лише stop→start/revoke
+  б'є KMS (bounded: `prevent_destroy` + 30d-grace + Akash coap-fallback). ⚠️ найбільша at-rest-діра
+  лишається **Akash-plaintext** (money-sextet + `RAILS_MASTER_KEY` provider-visible) → SEC.17. → `06_04 §5.6`.
 - **Deploy/release ланцюг (2026-06-19).** Canopy = кожен push у `main` після CI (continuous);
   Production = GitHub Release, який тримає **release-please** (`Ops · Release`: semver+CHANGELOG із
   conventional commits → `release: published`); GHCR-mirror path-gated + пушить SLSA provenance+SBOM
@@ -70,11 +77,11 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 | Шар | Шлях |
 |---|---|
 | Kamal deploy | `config/deploy.yml` · `config/deploy.canopy.yml` · `.kamal/secrets` |
-| IaC (GCP) | `terraform/` (`compute.tf` — incl. анкор-демон systemd/env-file · `database.tf` · `vpc.tf` · `iam.tf` · `main.tf`) |
+| IaC (GCP) | `terraform/` (`compute.tf` — incl. анкор-демон systemd/env-file + boot-disk CMEK · `database.tf` · `vpc.tf` · `iam.tf` · `main.tf` · `kms.tf` — Cloud KMS keyring/IAM, disk-CMEK) |
 | Akash | `deploy/akash/` (`deploy.yaml` SDL · `deploy.yaml.tpl` · `config.alloy` · `encode-alloy-config.sh`); SDL-гейт `ruby scripts/sdl_consistency_check.rb` (services≡deployment, static≡tpl — CI + локально перед комітом SDL-змін) |
 | Observability | `config/initializers/prometheus.rb` (`SilkenNet::Metrics`) · `app/middleware/prometheus_collector.rb` · `lib/silken_net/metrics_exporter.rb` (embedded /metrics job/coap) · `deploy/akash/config.alloy` · Grafana IaC `deploy/grafana/` (`alerts/silkennet-alerts.yaml` · `dashboards/` · `import.rb`) |
 | Web-сервер | `config/puma.rb` |
-| CI/CD | `.github/workflows/` (`deploy.yml` — path-gated INF.9 · `deploy-production.yml` · `coap_smoke.yml` — post-deploy gate + 30хв liveness-schedule · `akash_escrow_watch.yml` — AKT-runway вартовий OPS.11, skip-clean до `AKASH_OWNER_ADDRESS` · `mirror-ghcr.yml` · `release-please.yml` · `ci.yml` · `docs.yml` · `ssot_guard.yml`) |
+| CI/CD | `.github/workflows/` (`deploy.yml` — path-gated INF.9 · `deploy-production.yml` · `coap_smoke.yml` — post-deploy gate + 30хв liveness-schedule · `akash_escrow_watch.yml` — AKT-runway вартовий OPS.11, skip-clean до `AKASH_OWNER_ADDRESS` · `iac_scan.yml` — Sec·IaC-Scan (Trivy `config`, SARIF soft-fail; baseline у `.trivyignore`) · `terraform_drift.yml` — Ops·TF-Drift (weekly `plan -detailed-exitcode`, skip-clean до 3 secrets) · `mirror-ghcr.yml` · `release-please.yml` · `ci.yml` · `docs.yml` · `ssot_guard.yml`) |
 
 ## Gotchas (верифіковані, не з канону)
 

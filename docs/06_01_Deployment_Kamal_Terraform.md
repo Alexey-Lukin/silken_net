@@ -101,7 +101,12 @@ terraform init
 terraform plan
 terraform apply
 # → outputs: ingress_ip, database_url
-# GCP тепер містить: Cloud SQL PostgreSQL (приватна IP) + Ingress Anchor (e2-small, статична IP, CoAP-демон PRIMARY)
+# GCP тепер містить: Cloud SQL PostgreSQL (приватна IP) + Ingress Anchor (e2-small,
+#   статична IP, CoAP-демон PRIMARY, boot-disk CMEK через `silken-disk-ew1` keyring)
+#   + Cloud KMS keyring (`kms.tf` — compute service-agent IAM створюється автоматично)
+# ⚠️ Перший apply може РАЗ впасти "kmsPermissionDenied" (compute P4SA / KMS-IAM
+#   propagation ще не поширилась) → просто re-apply (той самий клас, що першу
+#   активацію billing-API; на brownfield-проєкті зазвичай проходить з першого разу)
 
 # Крок 4: Створити DNS A-запис
 # api.silkennet.com → $(terraform output -raw ingress_ip)

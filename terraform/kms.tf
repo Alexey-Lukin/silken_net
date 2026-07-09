@@ -7,7 +7,7 @@
 #
 #   silken-disk-ew1  (this file)  — ENCRYPT_DECRYPT, disk CMEK.
 #                                    Grantee: Compute Engine Service Agent only.
-#   silken-sign-ew1  (SEC.17, pre-mainnet, docs/06_04 §5.5) — ASYMMETRIC_SIGN,
+#   silken-sign-ew1  (SEC.17, pre-mainnet; keyring-arch §5.6, custody §5.5) — ASYMMETRIC_SIGN,
 #                                    oracle-minter/slasher. Grantee: the job
 #                                    signer SA only. NEVER the compute agent.
 #
@@ -47,6 +47,12 @@ resource "google_kms_crypto_key" "anchor_boot" {
   # re-encrypt the live disk (it keeps wrapping under its original version);
   # old versions stay enabled + decrypt-capable → rotation never breaks boot.
   rotation_period = "7776000s"
+
+  # Version-destroy grace pinned to 30d (Terraform/API default is 24h; the DR
+  # canon 06_06 §1 promises 30d — pin so the doc stays code-true). Only bites on
+  # an out-of-band gcloud/console version-destroy — prevent_destroy blocks the
+  # Terraform-initiated ones.
+  destroy_scheduled_duration = "2592000s"
 
   # Destroying the key permanently orphans the disk (unbootable). KMS keys are
   # also undeletable in GCP; dev teardown needs `terraform state rm` first.
