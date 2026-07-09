@@ -6,7 +6,9 @@ class NaasContractPolicy < ApplicationPolicy
   end
 
   def show?
-    admin_or_above? || same_organization?(record.organization_id)
+    # super_admin? not admin_or_above? — a plain admin is org-scoped; using
+    # admin_or_above? leaked every org's NaaS financials cross-tenant (SEC.16).
+    super_admin? || same_organization?(record.organization_id)
   end
 
   def stats?
@@ -15,7 +17,7 @@ class NaasContractPolicy < ApplicationPolicy
 
   class Scope < ApplicationPolicy::Scope
     def resolve
-      if admin_or_above?
+      if super_admin? # platform-wide only; a plain admin is org-scoped (SEC.16)
         scope.all
       else
         scope.where(organization_id: user.organization_id)

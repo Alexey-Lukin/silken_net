@@ -55,9 +55,15 @@ RSpec.describe WalletPolicy do
       expect(scope).not_to include(other_tree.wallet)
     end
 
-    it "returns all for admin" do
-      scope = described_class::Scope.new(admin, Wallet).resolve
+    it "returns all for super_admin" do
+      scope = described_class::Scope.new(super_admin, Wallet).resolve
       expect(scope).to include(own_tree.wallet, other_tree.wallet)
+    end
+
+    it "scopes admin to own org (org-scoped, not platform)" do
+      scope = described_class::Scope.new(admin, Wallet).resolve
+      expect(scope).to include(own_tree.wallet)
+      expect(scope).not_to include(other_tree.wallet)
     end
   end
 

@@ -55,13 +55,13 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         expect(response.parsed_body["data"]).to be_empty
       end
 
-      it "returns all contracts for admin users" do
+      it "scopes admin to own-org contracts (org-scoped, not platform)" do
         get "/api/v1/contracts", headers: admin_headers, as: :json
         expect(response).to have_http_status(:ok)
 
         ids = response.parsed_body["data"].map { |c| c["id"] }
         expect(ids).to include(own_contract.id)
-        expect(ids).to include(other_contract.id)
+        expect(ids).not_to include(other_contract.id)
       end
     end
 
@@ -91,9 +91,9 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         expect(response).to have_http_status(:not_found)
       end
 
-      it "allows admin to view any contract" do
+      it "denies admin a contract from another org (org-scoped, not platform)" do
         get "/api/v1/contracts/#{other_contract.id}", headers: admin_headers, as: :json
-        expect(response).to have_http_status(:ok)
+        expect(response).to have_http_status(:not_found)
       end
 
       it "includes backing_asset data" do

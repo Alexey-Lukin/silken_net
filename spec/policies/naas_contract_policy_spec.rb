@@ -10,6 +10,7 @@ RSpec.describe NaasContractPolicy do
 
   let(:investor) { create(:user, :investor, organization: organization) }
   let(:admin) { create(:user, :admin, organization: organization) }
+  let(:super_admin) { create(:user, :super_admin) }
 
   describe "#show?" do
     it "allows user from same org" do
@@ -22,9 +23,14 @@ RSpec.describe NaasContractPolicy do
       expect(described_class.new(investor, contract).show?).to be false
     end
 
-    it "allows admin regardless of org" do
+    it "denies admin from a different org (admin is org-scoped, not platform)" do
       contract = create(:naas_contract, organization: other_org, cluster: other_cluster)
-      expect(described_class.new(admin, contract).show?).to be true
+      expect(described_class.new(admin, contract).show?).to be false
+    end
+
+    it "allows super_admin regardless of org" do
+      contract = create(:naas_contract, organization: other_org, cluster: other_cluster)
+      expect(described_class.new(super_admin, contract).show?).to be true
     end
   end
 
@@ -38,9 +44,15 @@ RSpec.describe NaasContractPolicy do
       expect(scope).not_to include(other_contract)
     end
 
-    it "returns all for admin" do
-      scope = described_class::Scope.new(admin, NaasContract).resolve
+    it "returns all for super_admin" do
+      scope = described_class::Scope.new(super_admin, NaasContract).resolve
       expect(scope).to include(own_contract, other_contract)
+    end
+
+    it "scopes admin to own org (org-scoped, not platform)" do
+      scope = described_class::Scope.new(admin, NaasContract).resolve
+      expect(scope).to include(own_contract)
+      expect(scope).not_to include(other_contract)
     end
   end
 

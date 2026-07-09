@@ -53,8 +53,17 @@ RSpec.describe "Pundit authorization integration" do
       expect(ids).not_to include(other_tree.wallet.id)
     end
 
-    it "returns all wallets for admin" do
+    it "scopes wallets to own org for admin (org-scoped, not platform)" do
       get "/api/v1/wallets", headers: admin_headers, as: :json
+      expect(response).to have_http_status(:ok)
+
+      ids = response.parsed_body["data"].map { |w| w["id"] }
+      expect(ids).to include(own_tree.wallet.id)
+      expect(ids).not_to include(other_tree.wallet.id)
+    end
+
+    it "returns all wallets for super_admin (platform-wide)" do
+      get "/api/v1/wallets", headers: super_admin_headers, as: :json
       expect(response).to have_http_status(:ok)
 
       ids = response.parsed_body["data"].map { |w| w["id"] }
