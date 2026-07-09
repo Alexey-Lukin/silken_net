@@ -4,7 +4,7 @@
 #
 # The three keys decrypt `hardware_keys` (device AES / Lorenz-seed columns) and
 # `identities` (OAuth access/refresh tokens + auth_data). They live in ENV, never
-# credentials.yml.enc — see config/environments/production.rb and docs/06_04 §5.5.
+# credentials.yml.enc — see config/environments/production.rb and docs/06_04 §5.7.
 # Without them, non-deterministic `encrypts` raises Configuration at the first
 # encrypt/decrypt, so provisioning + telemetry-decrypt + OAuth are dead-on-first-use
 # rather than failing loudly up front. The content judgement lives in
@@ -44,6 +44,6 @@ Rails.application.config.after_initialize do
         "[SEC.22] Refusing to boot (RAILS_ENV=#{Rails.env}) — ActiveRecord Encryption:\n  " +
         violations.join("\n  ") +
         "\nGenerate via `bin/rails db:encryption:init` (or SecureRandom.alphanumeric(32)) " \
-        "and inject as ENV on web + job. See docs/06_04 §5.5 and docs/00_07 SEC.22. " \
+        "and inject as ENV on web + job. See docs/06_04 §5.7 and docs/00_07 SEC.22. " \
         "For a deliberate rescue boot, set SILKENNET_SKIP_AR_ENCRYPTION_KEYS_CHECK=1."
 end

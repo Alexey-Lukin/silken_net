@@ -496,7 +496,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Публічні методи** | `.violations(env = ENV) → Array<String>` (порожній = безпечно; префікс `[ar-encryption]`). |
 | **Тест coverage** | `spec/services/security/encryption_key_guard_spec.rb` — clean env, missing/blank/too-short кожного ключа, WeakKeyDetector-reason surface, all-missing-at-once. |
 | **Інвокери** | `config/initializers/active_record_encryption_keys_check.rb` (boot-time guard, див. нижче). |
-| **Cross-ref** | [`06_04 §5.5`](06_04_Secrets_Checklist), [`00_07` — SEC.22](00_07_Action_Plan_Tracker). AR-encryption на `identities` закриває ARCH.57(4) plaintext-OAuth-токени. |
+| **Cross-ref** | [`06_04 §5.7`](06_04_Secrets_Checklist), [`00_07` — SEC.22](00_07_Action_Plan_Tracker). AR-encryption на `identities` закриває ARCH.57(4) plaintext-OAuth-токени. |
 
 #### Boot-time AR-encryption keys guard (initializer)
 

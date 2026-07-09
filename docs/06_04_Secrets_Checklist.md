@@ -474,6 +474,20 @@ Separation тримається на: key-level IAM (не keyring-level); `purpo
 
 Cross-ref: [`00_07`](00_07_Action_Plan_Tracker) INF.22 (GCP-0033-fix), §5.5 (sign-keyring SEC.17), [`06_06 §1`](06_06_Disaster_Recovery_and_Backup) (KMS key = availability-critical DR-inventory).
 
+### 5.7. Secrets-at-rest/runtime latch — credentials→ENV + AR-Encryption keys (SEC.22)
+
+**Принцип (at-rest ≠ runtime):** Akash-провайдер читає `/proc/<pid>/environ` живого процесу, тож `RAILS_MASTER_KEY` у runtime-ENV дозволяє провайдеру розшифрувати `credentials.yml.enc` (→ `secret_key_base` + увесь vault). Латч розчиняє runtime-потребу в `RAILS_MASTER_KEY`: кожне читання секрету в проді йде з ENV, не з master-key-розблокованого vault. **НЕ** коштує Akash — справжній «sealed-never-undone» = pre-mainnet SEC.17 KMS-signing + KMS-MAC `PROVISIONING` (§5.5), не Akash-shuffle (blast-radius-reduction, не повний seal).
+
+**AR-Encryption keys (3, boot-critical) — SHIPPED 2026-07-09.** `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY` / `_DETERMINISTIC_KEY` / `_KEY_DERIVATION_SALT` шифрують колонки `hardware_keys` (device AES/Lorenz-seed) + `identities` (OAuth access/refresh/auth_data — закриває ARCH.57(4) plaintext). З ENV, **НЕ** `credentials.yml.enc` (інакше поглибили б `RAILS_MASTER_KEY`-залежність). Раніше не сконфігуровані НІДЕ в проді → `hardware_keys` encryption raise-ила на першому use (provisioning dead-on-first-boot). Guard `config/initializers/active_record_encryption_keys_check.rb` (production-wide — web+workers декриптять; coap лише enqueue-ить, але uniform-перевірка простіша) fail-closed на blank/`<32`/weak (пуста content-логіка = `Security::EncryptionKeyGuard`). Генерувати всі три: `bin/rails db:encryption:init`. Deploy-дім: SDL web/job/coap (23-char placeholder `<32` → guard fails-closed) + Kamal `env.secret` + `terraform/akash/variables.tf` (≥32 validation) + `deploy_secret_scan` SECRET_NAME. Bypass: `SILKENNET_SKIP_AR_ENCRYPTION_KEYS_CHECK=1` (rescue-boot).
+
+**credentials→ENV (8 сервісів) — SHIPPED.** iotex/streamr/the_graph/filecoin/peaq(+signing_key)/hadron/dclimate/puro читають `ENV["X"].presence || credentials.x` (per-process: the_graph=web, 7=job). `config/storage.yml` (AWS+GCS) теж ENV-primary. Behavior-preserving (vault nil сьогодні). ENV-імена — `.env.example` (reconciled до код-читаних) + §2.1.
+
+**coap PROVISIONING-drop.** coap-guard (`master_key_strength_check.rb` `$PROGRAM_NAME`-skip) дозволяє coap бутитись без `PROVISIONING_MASTER_KEY` (coap лише enqueue-ить, ключів не деривує). SDL несе його для parity — 👤 verify `$PROGRAM_NAME` у контейнері + omit at first deploy (crown-jewel off coap `/proc/environ`).
+
+**Phase-2 (👤, deploy-gated): drop `RAILS_MASTER_KEY`.** Після інжекту `SECRET_KEY_BASE` (= поточне `credentials.secret_key_base`, інакше ВСІ сесії ламаються — §5.2 entangled) + AR-encryption keys + service keys, ніщо не читає vault у runtime → `RAILS_MASTER_KEY` droppable з web/coap/job. **НЕ** додано в SDL сьогодні (свідомо): `SECRET_KEY_BASE` (present-placeholder override footgun) + 8 service keys (present-placeholder → 401) — inject-at-deploy через Console.
+
+Cross-ref: [`00_07`](00_07_Action_Plan_Tracker) SEC.22, §5.2 (rotation entanglement), §5.5 (KMS pre-mainnet seal), [`04_02`](04_02_Business_Logic_and_Services) `Security::EncryptionKeyGuard`.
+
 ---
 
 ## 🔗 Залежності та посилання
