@@ -71,6 +71,21 @@ failures = []
   failures << "#{name}: signing sextet missing from job env: #{missing}" if missing.any?
 end
 
+# Invariant C — .dockerignore keeps secret files out of the PUBLIC GHCR image
+# (a leaked RAILS_MASTER_KEY would decrypt a shipped credentials.yml.enc).
+DOCKERIGNORE_MUST = [ "config/credentials.yml.enc", "config/master.key", "config/credentials/*.key" ].freeze
+if File.exist?(".dockerignore")
+  di = File.read(".dockerignore").lines.map(&:strip)
+  DOCKERIGNORE_MUST.each do |pat|
+    excluded = di.any? { |l| !l.start_with?("!") && l.sub(%r{\A/}, "") == pat }
+    failures << ".dockerignore: no exclusion for #{pat} — would ship into the public image" unless excluded
+  end
+  negated = di.select { |l| l.start_with?("!") && l.match?(/credential|master\.key|\.enc/i) }
+  failures << ".dockerignore: a negation re-includes a secret file: #{negated}" if negated.any?
+else
+  failures << ".dockerignore is missing entirely"
+end
+
 if failures.empty?
   puts "✓ Deploy-secret scan: no key literals; signing sextet job-only across both manifests"
 else
