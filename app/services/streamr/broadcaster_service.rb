@@ -40,8 +40,8 @@ module Streamr
     end
 
     def publish_to_streamr(payload)
-      stream_id = Rails.application.credentials.streamr_stream_id
-      api_key   = Rails.application.credentials.streamr_api_key
+      stream_id = ENV["STREAMR_STREAM_ID"].presence || Rails.application.credentials.streamr_stream_id
+      api_key   = ENV["STREAMR_API_KEY"].presence || Rails.application.credentials.streamr_api_key
 
       raise BroadcastError, "streamr_stream_id не налаштовано в credentials" if stream_id.blank?
       raise BroadcastError, "streamr_api_key не налаштовано в credentials" if api_key.blank?

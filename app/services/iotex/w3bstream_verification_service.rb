@@ -72,8 +72,8 @@ module Iotex
     end
 
     def send_to_w3bstream(payload)
-      w3bstream_url = Rails.application.credentials.iotex_w3bstream_url
-      api_key       = Rails.application.credentials.iotex_api_key
+      w3bstream_url = ENV["IOTEX_W3BSTREAM_URL"].presence || Rails.application.credentials.iotex_w3bstream_url
+      api_key       = ENV["IOTEX_API_KEY"].presence || Rails.application.credentials.iotex_api_key
 
       raise VerificationError, "iotex_w3bstream_url не налаштовано в credentials" if w3bstream_url.blank?
       raise VerificationError, "iotex_api_key не налаштовано в credentials" if api_key.blank?

@@ -125,7 +125,7 @@ module Filecoin
 
     # Виконує HTTP POST до IPFS pinning API
     def upload_to_ipfs(payload)
-      api_key = Rails.application.credentials.filecoin_api_key
+      api_key = ENV["FILECOIN_API_KEY"].presence || Rails.application.credentials.filecoin_api_key
       raise "🛑 [Filecoin] Missing filecoin_api_key in credentials" if api_key.blank?
 
       response = Web3::HttpClient.post(PINATA_API_URL,

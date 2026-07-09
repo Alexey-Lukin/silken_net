@@ -8,6 +8,11 @@ RSpec.describe Peaq::DidRegistryService, type: :service do
 
   before do
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    # SEC.22: creds resolve ENV-primary; neutralize ambient .env (dotenv) so these
+    # specs deterministically exercise the credentials path regardless of a local .env.
+    allow(ENV).to receive(:[]).and_call_original
+    allow(ENV).to receive(:[]).with("PEAQ_NODE_URL").and_return(nil)
+    allow(ENV).to receive(:[]).with("PEAQ_SIGNING_KEY").and_return(nil)
   end
 
   describe "#register!" do

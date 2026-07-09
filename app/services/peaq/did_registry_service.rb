@@ -27,7 +27,7 @@ module Peaq
     end
 
     def register_on_peaq(did_string)
-      node_url = Rails.application.credentials.peaq_node_url
+      node_url = ENV["PEAQ_NODE_URL"].presence || Rails.application.credentials.peaq_node_url
       raise RegistrationError, "peaq_node_url не налаштовано в credentials" unless node_url.present?
 
       metadata = {
@@ -45,7 +45,7 @@ module Peaq
 
       # [BLOCKER-08 FIX]: peaq_signing_key обов'язковий для W3C DID Core compliance.
       # Без Ed25519-підпису DID-документ не має криптографічного доказу автентичності.
-      peaq_signing_key = Rails.application.credentials.peaq_signing_key
+      peaq_signing_key = ENV["PEAQ_SIGNING_KEY"].presence || Rails.application.credentials.peaq_signing_key
       raise RegistrationError, "peaq_signing_key обов'язковий у credentials для реєстрації DID (W3C DID Core spec)" if peaq_signing_key.blank?
 
       begin

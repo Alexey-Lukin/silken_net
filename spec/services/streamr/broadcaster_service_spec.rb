@@ -9,6 +9,11 @@ RSpec.describe Streamr::BroadcasterService, type: :service do
 
   before do
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    # SEC.22: creds resolve ENV-primary; neutralize ambient .env (dotenv) so these
+    # specs deterministically exercise the credentials path regardless of a local .env.
+    allow(ENV).to receive(:[]).and_call_original
+    allow(ENV).to receive(:[]).with("STREAMR_STREAM_ID").and_return(nil)
+    allow(ENV).to receive(:[]).with("STREAMR_API_KEY").and_return(nil)
   end
 
   describe "#broadcast!" do

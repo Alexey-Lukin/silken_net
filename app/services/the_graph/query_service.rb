@@ -71,7 +71,7 @@ module TheGraph
     private
 
     def validated_api_url
-      url = Rails.application.credentials.the_graph_api_url
+      url = ENV["THE_GRAPH_API_URL"].presence || Rails.application.credentials.the_graph_api_url
       raise QueryError, "the_graph_api_url не налаштовано в credentials" if url.blank?
 
       url

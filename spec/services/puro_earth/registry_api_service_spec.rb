@@ -34,8 +34,11 @@ RSpec.describe PuroEarth::RegistryApiService do
     allow(Rails.application.credentials).to receive(:dig).with(:puro_earth, :api_key).and_return("test-api-key")
     allow(ENV).to receive(:fetch).and_call_original
     allow(ENV).to receive(:fetch).with("PURO_EARTH_API_URL", "https://api.puro.earth").and_return("https://api.puro.earth")
-    allow(ENV).to receive(:fetch).with("PURO_EARTH_API_KEY", nil).and_return(nil)
     allow(ENV).to receive(:fetch).with("PURO_EARTH_REGISTRY_CONTRACT_ADDRESS", nil).and_return("0x#{"ee" * 20}")
+    # SEC.22: api_key resolves ENV-primary via ENV[]; neutralize ambient .env so the
+    # credentials path is deterministic (per-test override re-adds ENV where needed).
+    allow(ENV).to receive(:[]).and_call_original
+    allow(ENV).to receive(:[]).with("PURO_EARTH_API_KEY").and_return(nil)
   end
 
   describe "#submit!" do
@@ -106,9 +109,9 @@ RSpec.describe PuroEarth::RegistryApiService do
       )
     end
 
-    it "falls back to ENV API key when credentials are absent" do
+    it "uses the ENV API key as the primary source (SEC.22)" do
       allow(Rails.application.credentials).to receive(:dig).with(:puro_earth, :api_key).and_return(nil)
-      allow(ENV).to receive(:fetch).with("PURO_EARTH_API_KEY", nil).and_return("env-api-key")
+      allow(ENV).to receive(:[]).with("PURO_EARTH_API_KEY").and_return("env-api-key")
 
       described_class.new(payload, tx_hash: tx_hash).submit!
 
@@ -122,7 +125,7 @@ RSpec.describe PuroEarth::RegistryApiService do
 
     it "omits Authorization header when no API key is available" do
       allow(Rails.application.credentials).to receive(:dig).with(:puro_earth, :api_key).and_return(nil)
-      allow(ENV).to receive(:fetch).with("PURO_EARTH_API_KEY", nil).and_return(nil)
+      allow(ENV).to receive(:[]).with("PURO_EARTH_API_KEY").and_return(nil)
 
       described_class.new(payload, tx_hash: tx_hash).submit!
 

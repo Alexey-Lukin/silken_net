@@ -70,7 +70,7 @@ module Polygon
 
     # [BLOCKER-4 FIX]: У production (WEB3_STRICT_MODE=true) заглушки вимкнено.
     def check_kyc_status(crypto_address)
-      api_key = Rails.application.credentials.hadron_api_key
+      api_key = ENV["HADRON_API_KEY"].presence || Rails.application.credentials.hadron_api_key
 
       if api_key.present?
         perform_kyc_request(crypto_address, api_key)
@@ -83,7 +83,7 @@ module Polygon
 
     # [BLOCKER-4 FIX]: У production (WEB3_STRICT_MODE=true) заглушки вимкнено.
     def register_rwa_asset(naas_contract)
-      api_key = Rails.application.credentials.hadron_api_key
+      api_key = ENV["HADRON_API_KEY"].presence || Rails.application.credentials.hadron_api_key
 
       if api_key.present?
         perform_asset_registration(naas_contract, api_key)

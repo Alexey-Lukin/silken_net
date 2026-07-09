@@ -112,12 +112,12 @@ module PuroEarth
       headers
     end
 
-    # Resolves API key from Rails credentials (preferred) or ENV (fallback).
-    # Credentials: Rails.application.credentials.dig(:puro_earth, :api_key)
+    # Resolves API key from ENV (preferred, SEC.22) or Rails credentials (fallback).
     # ENV: PURO_EARTH_API_KEY
+    # Credentials: Rails.application.credentials.dig(:puro_earth, :api_key)
     def resolve_api_key
-      Rails.application.credentials.dig(:puro_earth, :api_key) ||
-        ENV.fetch("PURO_EARTH_API_KEY", nil)
+      ENV["PURO_EARTH_API_KEY"].presence ||
+        Rails.application.credentials.dig(:puro_earth, :api_key)
     end
 
     # Extracts the CORC reference from Puro.earth API response.

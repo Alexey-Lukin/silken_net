@@ -102,7 +102,7 @@ module Dclimate
     # GET-запит до dClimate FIRMS endpoint з координатами та часовим вікном.
     # Авторизація через Bearer-токен з Rails credentials.
     def fetch_firms_data(lat, lng, date)
-      api_key = Rails.application.credentials.dig(:dclimate, :api_key)
+      api_key = ENV["DCLIMATE_API_KEY"].presence || Rails.application.credentials.dig(:dclimate, :api_key)
 
       url = build_firms_url(lat, lng, date)
 
