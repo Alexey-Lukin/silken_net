@@ -456,6 +456,23 @@ bin/rails runner "
 
 Cross-ref: [`00_07`](00_07_Action_Plan_Tracker) SEC.17 (стан/тригер), E.2 role-split [`05_03`](05_03_Tokenomics_SCC_and_SFC), SEC.3 master-key DI-патерн.
 
+### 5.6. Disk-encryption CMEK + KMS keyring architecture (GCP-0033)
+
+**Рішення (2026-07-09):** boot-disk Ingress Anchor'а тримає `coap.env` (`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`) at-rest. Поверх дефолтного GMEK — **CMEK** (`terraform/kms.tf`: keyring `silken-disk-ew1`, key `anchor-boot`, symmetric) для key-lifecycle-контролю (disable/rotate/audit/crypto-shred). Wrap DEK робить **Compute Engine Service Agent** (`service-<num>@compute-system`, key-level encrypter/decrypter — **НЕ** deploy-SA; `google_project_service_identity` compute-excluded → constructed string + `depends_on` compute-API). SHIPPED pre-deploy (timing: `kms_key_self_link`=ForceNew → на живий VM = replacement; до 1-го apply = нуль-cost).
+
+**KMS keyring architecture (one-home, обидва ключі) — ДВА isolated keyring'и** (blast-radius-бар'єр: роль на одному не тече на sibling):
+
+| Keyring | Key | Purpose · grantee (key-level IAM) | Стан |
+|---|---|---|---|
+| `silken-disk-ew1` | `anchor-boot` | ENCRYPT_DECRYPT · compute service-agent | ✅ shipped |
+| `silken-sign-ew1` | `oracle-minter`/`slasher` | ASYMMETRIC_SIGN secp256k1 · job signer-SA | 🔗 SEC.17 (§5.5), pre-mainnet |
+
+Separation тримається на: key-level IAM (не keyring-level); `purpose`-enum = hard type-barrier (symmetric НЕ підписує, asymmetric НЕ wrap'ить disk → key-role-confusion структурно неможлива; residual IAM-scope знято 2-keyring-split'ом); E.2 mint⊥burn (окремі CryptoKey). Обидва — `europe-west1` (EU at-rest pin), одна `kms.tf` → SEC.17 додає sign-keyring без rename. **НЕ** робити generic `silken-kms` (blast-radius-merge trap).
+
+**Availability (boot-dependency):** disabled/destroyed key → **stopped** VM не старт (DEK re-fetch fail); operator-`reset`=reboot з cached DEK (safe, нуль KMS-call), live-migration зберігає DEK. Bounded: `prevent_destroy` + KMS 30-day restore-grace + Akash coap-fallback (INF.17). Rotation 90d НЕ re-encrypt'ить live disk (старі versions decrypt-capable → boot-safe). Keyring/key **undeletable** у GCP (dev-teardown: `state rm` перед destroy).
+
+Cross-ref: [`00_07`](00_07_Action_Plan_Tracker) INF.22 (GCP-0033-fix), §5.5 (sign-keyring SEC.17), [`06_06 §1`](06_06_Disaster_Recovery_and_Backup) (KMS key = availability-critical DR-inventory).
+
 ---
 
 ## 🔗 Залежності та посилання

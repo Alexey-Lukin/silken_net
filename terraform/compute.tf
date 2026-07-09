@@ -45,6 +45,11 @@ resource "google_compute_instance" "ingress_anchor" {
       size = 20
       type = "pd-standard"
     }
+    # CMEK for the boot disk (holds /etc/silkennet/coap.env secrets). This is
+    # ForceNew — adding it to a LIVE instance replaces the VM; done here
+    # pre-first-deploy the disk is simply created encrypted (zero replacement).
+    # Accepts the key .id (provider diff-suppresses relative-path vs self_link).
+    kms_key_self_link = google_kms_crypto_key.anchor_boot.id
   }
 
   network_interface {
@@ -307,5 +312,12 @@ SYSTEMD_DAEMON
     ignore_changes = [metadata["akash-deployment-ip"]]
   }
 
-  depends_on = [google_project_service.compute]
+  depends_on = [
+    google_project_service.compute,
+    # The compute service agent must hold cryptoKeyEncrypterDecrypter on the
+    # boot-disk KMS key BEFORE the encrypted disk is created, else
+    # instances.insert fails with a KMS permission error. The VM references the
+    # KEY, not the binding — no implicit ordering exists, so make it explicit.
+    google_kms_crypto_key_iam_member.anchor_boot_agent,
+  ]
 }

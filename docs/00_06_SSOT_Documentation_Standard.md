@@ -89,7 +89,8 @@
 | Prometheus metric registry | `06_03 §2.8` (regen з `SilkenNet::Metrics::REGISTRY`) |
 | DR / backup posture | `06_06` (config SSOT = `terraform/database.tf`) |
 | CI/CD workflows + runbook index | `06_07` |
-| Supply-chain hardening (Actions SHA-pin · harden-runner · Scorecard · IaC misconfig-scan (Trivy) · build-provenance signing · CLI-tool hash-pin) | `00_05 §2.7` (IaC policy); інвентар workflow → `06_07 §1`; signed-release verify-команда → `SECURITY.md`; дія/стан → `00_07` OPS.10 |
+| Supply-chain hardening (Actions SHA-pin · harden-runner · Scorecard · IaC misconfig-scan (Trivy) + TF-drift · build-provenance signing · CLI-tool hash-pin) | `00_05 §2.7` (IaC policy); інвентар workflow → `06_07 §1`; signed-release verify-команда → `SECURITY.md`; дія/стан → `00_07` OPS.10 (supply-chain) / INF.22 (IaC-scan/drift) |
+| GCP Cloud KMS keyring/IAM (disk-CMEK + mint-signer custody) | `06_04 §5.6` (2 isolated keyrings `silken-disk-ew1`/`silken-sign-ew1` + separation-rules); mint-custody design → `06_04 §5.5`; стан → `00_07` SEC.17/INF.22. Інші доки реферять, не дублюють keyring-архітектуру |
 | Security assurance case (threat model · trust boundaries · OWASP map · residual risks) | `SECURITY_ASSURANCE_CASE.md` (synthesis-дім — аргументує + реферить canon, **не** новий source-of-truth: AES-режими лишаються в `03_05`, slashing у `05_05`, тощо) |
 | Академічний ростер (5 ВНЗ: партнер → що валідує → канон-дім) | `08_02` (Academic Institutions Registry; §1 ЧНУ [§1A Hard Science + §1B ФОТІУС], §2 ЧДТУ, §3 ЧІПБ, §4 ЧМА, §5 СЄУ) |
 | MOIC-концепція кластера + план публікацій (Ст. 1–35) + IP-рамка | `08_01` (cluster head) |

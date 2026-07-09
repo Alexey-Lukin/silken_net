@@ -59,6 +59,7 @@
 | **`PROVISIONING_MASTER_KEY`** | secrets store | ручний | 🔴 **Незамінний** — без нього не деривувати нові per-device ключі (вже прошиті пристрої працюють; нове provisioning — ні) |
 | **On-chain state** (SCC/SFC баланси, slashing, anchors) | Polygon / Ethereum L1 | сам блокчейн = immutable backup | 🟢 N/A — мережа є джерелом правди |
 | Oracle/anchor private keys, contract addresses | secrets ([`06_04`](06_04_Secrets_Checklist)) | ручний | 🟡 Високо — redeployable, але disruptive (revoke+redeploy) |
+| **KMS `anchor-boot` key** (disk-CMEK, [`06_04 §5.6`](06_04_Secrets_Checklist)) | Cloud KMS `silken-disk-ew1` | `prevent_destroy` + 30-day restore-grace; **undeletable** | 🟠 Availability-critical — anchor boot-disk unbootable без key (key-**not**-data → не в backup; сам disk = cattle, rebuild з IaC + operator-injected `coap.env`). ⚠️ snapshot НЕ inherit'ить CMEK → майбутній anchor-snapshot потребує `--kms-key` |
 | **Redis** (Sidekiq queue, Kredis locks, Rack::Attack) | Upstash (managed) | managed durability; **app-tolerant** | 🟢 Низько — jobs re-enqueue, locks re-acquire, rate-limit лічильники не критичні |
 | Schema | `db/structure.sql` (git) | git | 🟢 Низько — у репозиторії |
 

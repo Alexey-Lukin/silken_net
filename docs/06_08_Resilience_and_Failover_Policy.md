@@ -150,7 +150,7 @@ end
 |---------|--------|----------------|
 | Telemetry intake survival при Queen offline | ≥ 95% за 24 год | Queen self-telemetry CIFO fill + Helium fallback hit rate |
 | Mint flow availability при single Web3-chain outage | ≥ 80% (degraded but functional) | Prometheus `silkennet_mint_success_total / silkennet_mint_attempts_total` over 1h windows |
-| Recovery to full pipeline after multi-chain outage | < 4 год once external chains restore | Sidekiq retry-drain + reconcile-крони (ARCH.45); 🟡 target-виміри: backfill-воркери (IoTeX/Filecoin re-pin) не реалізовані — INF.22 |
+| Recovery to full pipeline after multi-chain outage | < 4 год once external chains restore | Sidekiq retry-drain + reconcile-крони (ARCH.45; Filecoin re-pin ✅ shipped) + Solana RPC-каскад; 🟡 target-вимір: IoTeX backfill не реалізований — INF.22 |
 | No data loss when all external chains down for ≤ 24 год | 100% — все буферизується | `TelemetryLog.count`, `BlockchainTransaction.where(state: :pending).count` зростання без втрат |
 
 **Емпіричний вимір стелі:** INF.23 load-harness (`lib/silken_net/load_test/` + `bin/coap_load`) міряє ці SLO проти живого стека — backlog→μ, arrival→sustainable-λ, сценарій S6 прямо валідує §2.5 process-ізоляцію (firehose ‖ money → starvation → flip → обидва SLO). ⚠️ dev-прогін = regression+structural detector (bottleneck-class inversion: dev compute-bound, prod IO-bound); абсолютна стеля — лише staging з prod-adapters. GVL-мікробенч уже показав pure-Ruby Lorenz-стелю ПЛОСКОЮ (горизонталь = процеси, не треди). Методологія + 6 сценаріїв + staging-runbook: `lib/silken_net/load_test/README.md`.
@@ -185,7 +185,7 @@ end
 | CoAP retry loop on Queen (`COAP_MAX_RETRIES`) | `firmware/queen/main.c`; host-tests `test_at_engine.c` (conversation-fail) + `test_fw51_*` (fail→retry→no-loss), FW.9 | ✅ Реалізовано |
 | Manual review terminal state | `BlockchainTransaction` AASM | ✅ Реалізовано |
 | Money-path crash-window idempotency (intent-marker + `in_flight` guard) | `BlockchainBurningService` / `Solana::BatchPayoutService` ([ARCH.45], [`04_02 §4/§10`](04_02_Business_Logic_and_Services)) | ✅ Реалізовано |
-| Backfill/buffer-list/gas-defer механізми матриці §2.2 (IoTeX backfill · Filecoin re-pin · streamr/celo buffer · anchor gas-gate) | — | 🟡 target-пакет [`00_07` INF.22](00_07_Action_Plan_Tracker) (Solana RPC-каскад ✅ виніс — §2.2 крок 7) |
+| Backfill/buffer-list механізми матриці §2.2 (IoTeX backfill · streamr/celo buffer) | — | 🟡 target-пакет [`00_07` INF.22](00_07_Action_Plan_Tracker) (Solana RPC-каскад + Filecoin re-pin ✅ shipped; anchor gas-gate ✂️ rejected → ARCH.66 — §2.2) |
 | Stuck-`:sent` mint re-arm sweeper (EVM-scoped, cron 30 хв) | `StuckSentTransactionSweeperWorker` | ✅ SHIPPED (ARCH.55; дім — [`04_02 §4`](04_02_Business_Logic_and_Services)) |
 | Queen-to-Queen Backhaul Mesh | Concept у [`02_05`](02_05_Queen_Hardware_and_Starlink) | 🟡 Concept, planned Phase 2 |
 | Helium fallback emit (Queen-side LoRaWAN) | Queen firmware `queen_helium_lorawan_uplink()` | 🟡 ARCH.34: обв'язка+wire+тригер+MAC-adapter+повний host-цикл join+uplink (мок-LNS)+KV-mount ✅ 2026-07-05 (гейт `ARCH34_HELIUM_ENABLED 0`); лишився bench OTAA-ефір + Helium Console (👤); backend ✅; Soldier-side відкинуто — Soldier не несе LoRaWAN MAC stack |

@@ -3,7 +3,8 @@
 # =============================================================================
 # Each ID was reviewed individually (NOT a blanket ignore). Real fixes were made
 # in terraform for the findings that were genuine gaps — AVD-GCP-0030
-# (block-project-ssh-keys) + AVD-GCP-0020/0014 (db log_lock_waits/log_temp_files).
+# (block-project-ssh-keys) + AVD-GCP-0020/0014 (db log_lock_waits/log_temp_files)
+# + AVD-GCP-0033 (boot-disk CMEK, kms.tf — silken-disk-ew1 keyring, 06_04 §5.5).
 # Below are ONLY the true by-design findings, each with its rationale.
 # Re-review whenever the architecture changes. Format: one AVD-ID per line.
 
@@ -23,11 +24,6 @@ AVD-GCP-0017
 # from field nodes (Soldier/Queen) + HTTP-ingress termination. Without a public
 # IP the Anchor cannot perform its one function.
 AVD-GCP-0031
-
-# AVD-GCP-0033 — VM boot disk without CSEK. Google-managed at-rest encryption is
-# active by default; Customer-Supplied Encryption Keys add key-rotation infra a
-# solo founder on TRL-3 deliberately does not carry (enterprise over-kill).
-AVD-GCP-0033
 
 # AVD-DS-0026 — Dockerfile has no HEALTHCHECK. Liveness/readiness is done OUTSIDE
 # the container by Kamal proxy (/up->/ready, INF.10) + Akash readiness; a Docker-
