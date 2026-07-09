@@ -64,6 +64,21 @@ RSpec.describe Peaq::DidRegistryService, type: :service do
       end
     end
 
+    context "when both ENV and credentials are set (SEC.22 — ENV wins)" do
+      before do
+        allow(ENV).to receive(:[]).with("PEAQ_NODE_URL").and_return("https://env-node.example.com")
+        allow(ENV).to receive(:[]).with("PEAQ_SIGNING_KEY").and_return("e" * 64)
+        allow(Rails.application.credentials).to receive_messages(peaq_node_url: "https://cred-node.example.com", peaq_signing_key: "c" * 64)
+        allow(Ed25519Crypto::SigningService).to receive_messages(sign: "sig", public_key_from_seed: "pub")
+        allow(Web3::HttpClient).to receive(:post).and_return(Web3::HttpClient::Response.new("{}"))
+      end
+
+      it "signs with the ENV signing key, not the credentials key" do
+        described_class.new(tree).register!
+        expect(Ed25519Crypto::SigningService).to have_received(:sign).with("e" * 64, anything)
+      end
+    end
+
     context "when peaq_node_url is not configured" do
       before do
         allow(Rails.application.credentials).to receive_messages(peaq_node_url: nil, peaq_signing_key: "a" * 64)

@@ -123,6 +123,18 @@ RSpec.describe PuroEarth::RegistryApiService do
       )
     end
 
+    it "prefers the ENV API key over a present credentials value (SEC.22)" do
+      allow(Rails.application.credentials).to receive(:dig).with(:puro_earth, :api_key).and_return("cred-api-key")
+      allow(ENV).to receive(:[]).with("PURO_EARTH_API_KEY").and_return("env-api-key")
+
+      described_class.new(payload, tx_hash: tx_hash).submit!
+
+      expect(Web3::HttpClient).to have_received(:post).with(
+        anything,
+        hash_including(headers: hash_including("Authorization" => "Bearer env-api-key"))
+      )
+    end
+
     it "omits Authorization header when no API key is available" do
       allow(Rails.application.credentials).to receive(:dig).with(:puro_earth, :api_key).and_return(nil)
       allow(ENV).to receive(:[]).with("PURO_EARTH_API_KEY").and_return(nil)

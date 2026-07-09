@@ -89,6 +89,24 @@ RSpec.describe Streamr::BroadcasterService, type: :service do
       end
     end
 
+    context "when both ENV and credentials are set (SEC.22 — ENV wins)" do
+      before do
+        allow(ENV).to receive(:[]).with("STREAMR_STREAM_ID").and_return("env-stream/telemetry")
+        allow(ENV).to receive(:[]).with("STREAMR_API_KEY").and_return("env-key")
+        allow(Rails.application.credentials).to receive_messages(streamr_stream_id: "cred-stream", streamr_api_key: "cred-key")
+      end
+
+      it "uses the ENV values, not the credentials values" do
+        allow(Web3::HttpClient).to receive(:post) do |url, **kwargs|
+          expect(url).to include("env-stream%2Ftelemetry")
+          expect(kwargs[:headers]["Authorization"]).to eq("Bearer env-key")
+          Web3::HttpClient::Response.new("{}".to_json)
+        end
+
+        described_class.new(telemetry_log).broadcast!
+      end
+    end
+
     context "when streamr_stream_id is not configured" do
       before do
         allow(Rails.application.credentials).to receive_messages(streamr_stream_id: nil, streamr_api_key: "test-key")

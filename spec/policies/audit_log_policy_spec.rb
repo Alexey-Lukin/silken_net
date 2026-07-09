@@ -31,20 +31,27 @@ RSpec.describe AuditLogPolicy do
   end
 
   describe "#show?" do
+    let(:own_record) { double("Record", organization_id: organization.id) }
+    let(:other_record) { double("Record", organization_id: other_org.id) }
+
     it "denies investors" do
-      expect(described_class.new(investor, record).show?).to be false
+      expect(described_class.new(investor, own_record).show?).to be false
     end
 
     it "denies foresters" do
-      expect(described_class.new(forester, record).show?).to be false
+      expect(described_class.new(forester, own_record).show?).to be false
     end
 
-    it "allows admins" do
-      expect(described_class.new(admin, record).show?).to be true
+    it "allows an admin their own org's log" do
+      expect(described_class.new(admin, own_record).show?).to be true
     end
 
-    it "allows super_admins" do
-      expect(described_class.new(super_admin, record).show?).to be true
+    it "denies an admin another org's log (org-scoped, not platform)" do
+      expect(described_class.new(admin, other_record).show?).to be false
+    end
+
+    it "allows super_admin any org's log" do
+      expect(described_class.new(super_admin, other_record).show?).to be true
     end
   end
 
