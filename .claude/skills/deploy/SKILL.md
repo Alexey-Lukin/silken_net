@@ -58,6 +58,13 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   `deploy/akash/deploy.yaml`; інжектити через Akash Console / `env.secret`. **Money/signing-
   шістка (`ORACLE_*`×4 вкл. `CELO` + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`) = JOB-ONLY** —
   web/coap бутяться keyless (guard scoped `signer_process: Sidekiq.server?`). → `06_02` / `06_04 §1.1`.
+- **SEC.22 latch (credentials→ENV, 2026-07-09).** at-rest ≠ runtime: провайдер читає
+  `/proc/environ`, тож `RAILS_MASTER_KEY` у runtime-ENV розшифровує весь vault. Розчинено:
+  8 зовн.-сервісів + `storage.yml` читають `ENV[..].presence || credentials`; **AR-encryption
+  ключі** (`hardware_keys`/`identities` at-rest) = ENV `ACTIVE_RECORD_ENCRYPTION_*` (boot-guard
+  fail-closed; були DEAD-in-prod — ніде не сконфігуровані); coap-guard пропускає master_key-check.
+  Phase-2 drop `RAILS_MASTER_KEY` = deploy-gated (👤; SECRET_KEY_BASE+service-keys inject-at-deploy).
+  Дім → `06_04 §5.7` / 00_07 SEC.22.
 - **Secrets-at-rest = дві ISOLATED KMS-осі (2026-07-09).** Boot-disk Anchor'а (тримає
   `coap.env` master-keys) шифрується **CMEK** — keyring `silken-disk-ew1` (`kms.tf`, grantee =
   compute service-agent, НЕ deploy-SA); money-signing custody (SEC.17, pre-mainnet) = окремий
