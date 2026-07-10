@@ -79,8 +79,8 @@ registry:
   password:
     - GCP_ARTIFACT_REGISTRY_KEY
 
-# Inject ENV variables into containers (secrets come from .kamal/secrets).
-# Drift guard: each entry below MUST also be declared in .kamal/secrets — otherwise
+# Inject ENV variables into containers (secrets come from .kamal/secrets-common).
+# Drift guard: each entry below MUST also be declared in .kamal/secrets-common — otherwise
 # Kamal injects nothing and the container crashes at boot. See docs/06_01 §Kamal Detailed
 # and docs/00_08 cross-doc audit sweep entry #12.
 env:
@@ -92,7 +92,7 @@ env:
     - REDIS_URL
     # KREDIS_REDIS_URL intentionally absent — Kredis auto-derives it from REDIS_URL (DB 1)
     # via config/redis/shared.yml. Declaring it here would inject an empty string that
-    # overrides the derive (see .kamal/secrets note). Add back only for a separate instance.
+    # overrides the derive (see .kamal/secrets-common note). Add back only for a separate instance.
     # --- Observability ---
     - SENTRY_DSN
     # --- Hardware provisioning gate (config/initializers/master_key_strength_check.rb) ---

@@ -94,22 +94,23 @@ jobs:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           CANOPY_REDIS_URL: ${{ secrets.CANOPY_REDIS_URL }}
-          ORACLE_MINTER_PRIVATE_KEY: ${{ secrets.ORACLE_MINTER_PRIVATE_KEY }}
-          ORACLE_SLASHER_PRIVATE_KEY: ${{ secrets.ORACLE_SLASHER_PRIVATE_KEY }}
+          # Money/signing keys deliberately ABSENT (INF.22): environment-scoped to
+          # `production` (unreadable from this workflow) AND kamal-unused on canopy
+          # anyway — the sextet lives in servers.job.env.secret only, and canopy is
+          # web-only (no job role in config/deploy.canopy.yml), so `kamal deploy -d
+          # canopy` never injects them; web boots keyless (Web3NetworkGuard
+          # signer_process scope). Gating on them here would skip canopy forever.
           HELIUM_WEBHOOK_SECRET: ${{ secrets.HELIUM_WEBHOOK_SECRET }}
           # Runtime (lazy): feature degraded until provisioned, not a boot crash. Warn only.
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          ETHEREUM_ANCHOR_PRIVATE_KEY: ${{ secrets.ETHEREUM_ANCHOR_PRIVATE_KEY }}
           ALCHEMY_POLYGON_RPC_URL: ${{ secrets.ALCHEMY_POLYGON_RPC_URL }}
           ALCHEMY_ETHEREUM_RPC_URL: ${{ secrets.ALCHEMY_ETHEREUM_RPC_URL }}
           SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
           POLYGON_RPC_URL: ${{ secrets.POLYGON_RPC_URL }}
           CELO_RPC_URL: ${{ secrets.CELO_RPC_URL }}
-          SOLANA_WALLET_KEYPAIR: ${{ secrets.SOLANA_WALLET_KEYPAIR }}
           SOLANA_FEE_PAYER_PUBKEY: ${{ secrets.SOLANA_FEE_PAYER_PUBKEY }}
           SOLANA_FEE_PAYER_TOKEN_ACCOUNT: ${{ secrets.SOLANA_FEE_PAYER_TOKEN_ACCOUNT }}
           SOLANA_USDC_MINT_ADDRESS: ${{ secrets.SOLANA_USDC_MINT_ADDRESS }}
-          ORACLE_CELO_PRIVATE_KEY: ${{ secrets.ORACLE_CELO_PRIVATE_KEY }}
           CHAINLINK_HMAC_SECRET: ${{ secrets.CHAINLINK_HMAC_SECRET }}
         run: |
           # B1: gate the FULL boot-critical set, not just PROVISIONING_MASTER_KEY — else the
@@ -117,8 +118,11 @@ jobs:
           # verify (false safety). Boot-critical = crashes boot (master-key decrypt /
           # PROVISIONING guard / oracle KeyError per web3_network_guard) or blocks kamal.
           # Runtime = lazy-fail on first use (warn, don't block). Canon: docs/06_04 §1+§2.
-          BOOT_CRITICAL="RAILS_MASTER_KEY PROVISIONING_MASTER_KEY GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD CANOPY_REDIS_URL ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY"
-          RUNTIME="SENTRY_DSN ETHEREUM_ANCHOR_PRIVATE_KEY ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL POLYGON_RPC_URL CELO_RPC_URL SOLANA_WALLET_KEYPAIR SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS ORACLE_CELO_PRIVATE_KEY CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET"
+          # Money/signing sextet EXCLUDED from both sets (INF.22): canopy is web-only
+          # (keyless boot by design) and the keys are production-environment-scoped —
+          # requiring them here would read "" and skip-or-warn canopy forever.
+          BOOT_CRITICAL="RAILS_MASTER_KEY PROVISIONING_MASTER_KEY GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD CANOPY_REDIS_URL"
+          RUNTIME="SENTRY_DSN ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL POLYGON_RPC_URL CELO_RPC_URL SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET"
 
           missing=""
           for v in $BOOT_CRITICAL; do
@@ -248,10 +252,11 @@ jobs:
 
       - name: Kamal Deploy to Canopy
         run: kamal deploy -d canopy
-        # ⚠️ Drift guard: this env: block MUST mirror config/deploy.yml env.secret (which
-        # .kamal/secrets reads as $VAR from THIS shell). Any env.secret entry missing here is
-        # injected EMPTY → boot crash (RAILS_MASTER_KEY decrypt / PROVISIONING_MASTER_KEY guard)
-        # or web3-strict raise. KREDIS_REDIS_URL is intentionally omitted (auto-derives from
+        # ⚠️ Drift guard: this env: block MUST mirror the GLOBAL config/deploy.yml env.secret
+        # (which .kamal/secrets-common reads as $VAR from THIS shell). Any global env.secret
+        # entry missing here is injected EMPTY → boot crash (RAILS_MASTER_KEY decrypt /
+        # PROVISIONING_MASTER_KEY guard). The servers.job sextet is deliberately NOT mirrored —
+        # canopy has no job role. KREDIS_REDIS_URL is intentionally omitted (auto-derives from
         # REDIS_URL). Canon: docs/06_04 §1 + §2.
         env:
           # [INF.22] Short-lived WIF access token (username oauth2accesstoken in
@@ -268,24 +273,20 @@ jobs:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           # --- Hardware provisioning gate (master_key_strength_check.rb — boot-critical) ---
           PROVISIONING_MASTER_KEY: ${{ secrets.PROVISIONING_MASTER_KEY }}
-          # --- Web3 oracle keys (dual-key split, B-02) — web3_network_guard fail-closes at boot ---
-          ORACLE_PRIVATE_KEY: ${{ secrets.ORACLE_PRIVATE_KEY }}
-          ORACLE_MINTER_PRIVATE_KEY: ${{ secrets.ORACLE_MINTER_PRIVATE_KEY }}
-          ORACLE_SLASHER_PRIVATE_KEY: ${{ secrets.ORACLE_SLASHER_PRIVATE_KEY }}
-          ETHEREUM_ANCHOR_PRIVATE_KEY: ${{ secrets.ETHEREUM_ANCHOR_PRIVATE_KEY }}
+          # --- Web3 money/signing keys: NOT mapped (INF.22) — the sextet is
+          #     servers.job.env.secret-only and canopy has no job role, so kamal
+          #     never looks these up here; they are also production-environment-
+          #     scoped and would interpolate "" (present-empty → guard raise). ---
           # --- RPC endpoints (Web3::RpcConnectionPool; testnet-marker boot guard) ---
           ALCHEMY_POLYGON_RPC_URL: ${{ secrets.ALCHEMY_POLYGON_RPC_URL }}
           ALCHEMY_ETHEREUM_RPC_URL: ${{ secrets.ALCHEMY_ETHEREUM_RPC_URL }}
           SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
           POLYGON_RPC_URL: ${{ secrets.POLYGON_RPC_URL }}
           CELO_RPC_URL: ${{ secrets.CELO_RPC_URL }}
-          # --- Solana minting (Solana::MintingService) ---
-          SOLANA_WALLET_KEYPAIR: ${{ secrets.SOLANA_WALLET_KEYPAIR }}
+          # --- Solana public identifiers (signing keypair = job-only sextet, not mapped) ---
           SOLANA_FEE_PAYER_PUBKEY: ${{ secrets.SOLANA_FEE_PAYER_PUBKEY }}
           SOLANA_FEE_PAYER_TOKEN_ACCOUNT: ${{ secrets.SOLANA_FEE_PAYER_TOKEN_ACCOUNT }}
           SOLANA_USDC_MINT_ADDRESS: ${{ secrets.SOLANA_USDC_MINT_ADDRESS }}
-          # --- Celo dedicated signer (ARCH.50; falls back to ORACLE_PRIVATE_KEY) ---
-          ORACLE_CELO_PRIVATE_KEY: ${{ secrets.ORACLE_CELO_PRIVATE_KEY }}
           # --- Webhook HMACs (Chainlink callback — dispatch removed ARCH.53; Helium SOS ARCH.34) ---
           CHAINLINK_HMAC_SECRET: ${{ secrets.CHAINLINK_HMAC_SECRET }}
           HELIUM_WEBHOOK_SECRET: ${{ secrets.HELIUM_WEBHOOK_SECRET }}

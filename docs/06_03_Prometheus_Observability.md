@@ -69,7 +69,7 @@
 | Prometheus Server | `deploy/akash/deploy.yaml` (alloy сервіс) | ✅ **Grafana Alloy sidecar → Grafana Cloud** |
 | Grafana | Grafana Cloud SaaS | ✅ **Доступна (дашборди — операційна задача)** |
 | Alertmanager | Grafana Cloud Alerting | ✅ **Доступний (правила — операційна задача)** |
-| `SENTRY_DSN` у secrets | `.kamal/secrets`, Akash SDL env | ✅ Додано |
+| `SENTRY_DSN` у secrets | `.kamal/secrets-common`, Akash SDL env | ✅ Додано |
 | Grafana Alloy config | `deploy/akash/config.alloy` | ✅ Scrape + remote_write |
 | Grafana Alloy SDL service | `deploy/akash/deploy.yaml` (`alloy` сервіс) | ✅ 0.5 CPU, 512Mi RAM |
 | Terraform Grafana Cloud vars | `terraform/akash/variables.tf` | ✅ 5 змінних (3 sensitive) |
@@ -146,7 +146,7 @@ Gem `sentry-sidekiq` автоматично додає Sentry middleware до Si
 | `development` | Інертний (немає `SENTRY_DSN`) |
 | `test` | Інертний (немає `SENTRY_DSN`) |
 | Canopy (staging) | Працює під `RAILS_ENV=production` (НЕ окремий Rails-env); активний, `SENTRY_DSN` присутній — розрізняється `external_labels` env/release (§2.9) |
-| `production` | Активний (✅ `SENTRY_DSN` додано у `.kamal/secrets`) |
+| `production` | Активний (✅ `SENTRY_DSN` додано у `.kamal/secrets-common`) |
 
 ---
 
@@ -596,7 +596,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 
 | ENV змінна | Обов'язкова | Де використовується | Статус |
 |-----------|-------------|---------------------|--------|
-| `SENTRY_DSN` | ✅ Для production | `config/initializers/sentry.rb` | ✅ Додано у `.kamal/secrets` |
+| `SENTRY_DSN` | ✅ Для production | `config/initializers/sentry.rb` | ✅ Додано у `.kamal/secrets-common` |
 | `SENTRY_TRACES_SAMPLE_RATE` | ❌ (default: 0.001) | `config/initializers/sentry.rb` | — |
 | `SENTRY_WORKER_THREADS` | ❌ (default: 2) | `config/initializers/sentry.rb` | — |
 | `RELEASE_VERSION` | ❌ (рекомендовано) | `config.release` | ✅ Додано у deploy.yml (git SHA), deploy-production.yml (release tag), config/deploy.yml (Kamal), deploy/akash/deploy.yaml |

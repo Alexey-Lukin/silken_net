@@ -88,12 +88,19 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   з образом (`gh attestation verify`). `verify-secrets` у Canopy **skip-clean** без секретів (Production
   лишається fail-loud). `main` захищено branch-protection (required `CI passed` + `Docs passed`,
   `enforce_admins=false` — owner пушить напряму). Деталі/діаграма — `06_07 §1`/`§2`.
+- **GH Environment `production` = дім money-шістки (INF.22, 2026-07-10).** Signing-шістка
+  (`ORACLE_*`×4 + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`) у GitHub живе **environment-scoped**
+  (`gh secret set X --env production`), НЕ repo-level — читають лише `deploy-production.yml`
+  jobs `verify-secrets`+`deploy` (`environment:`); wait-timer 10 хв **per-job** (2 гейти/release)
+  + ref-policy `v*`∪`main`. Canopy шістку НЕ споживає (web-only, гейт підрізано). Kamal secrets-файл =
+  **`.kamal/secrets-common`** (з destination плейн `secrets` НЕВИДИМИЙ — Kamal читає лише
+  `-common` + `secrets.<dest>`). → `06_04 §1` / `06_07 §1`.
 
 ## Карта коду / конфігів
 
 | Шар | Шлях |
 |---|---|
-| Kamal deploy | `config/deploy.yml` · `config/deploy.canopy.yml` · `.kamal/secrets` |
+| Kamal deploy | `config/deploy.yml` · `config/deploy.canopy.yml` · `.kamal/secrets-common` |
 | IaC (GCP) | `terraform/` (`compute.tf` — incl. анкор-демон systemd/env-file + boot-disk CMEK · `database.tf` · `vpc.tf` · `iam.tf` · `main.tf` · `kms.tf` — Cloud KMS keyring/IAM, disk-CMEK) |
 | Akash | `deploy/akash/` (`deploy.yaml` SDL · `deploy.yaml.tpl` · `config.alloy` · `encode-alloy-config.sh`); SDL-гейт `ruby scripts/sdl_consistency_check.rb` (services≡deployment, static≡tpl — CI + локально перед комітом SDL-змін) |
 | Observability | `config/initializers/prometheus.rb` (`SilkenNet::Metrics`) · `app/middleware/prometheus_collector.rb` · `lib/silken_net/metrics_exporter.rb` (embedded /metrics job/coap) · `deploy/akash/config.alloy` · Grafana IaC `deploy/grafana/` (`alerts/silkennet-alerts.yaml` · `dashboards/` · `import.rb`) |
@@ -104,7 +111,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 
 1. **jemalloc через `LD_PRELOAD`** у Docker-образі (`libjemalloc.so`) — менше пам'яті
    й латентності. Не прибирай без бенчмарку.
-2. **`SENTRY_DSN` задається at deploy time** (`.kamal/secrets`); без нього Sentry
+2. **`SENTRY_DSN` задається at deploy time** (`.kamal/secrets-common`); без нього Sentry
    інертний — нуль crash-репортів.
 3. **Старт через Thruster** (`thrust ./bin/rails server`) за замовчуванням; overridable at runtime.
 

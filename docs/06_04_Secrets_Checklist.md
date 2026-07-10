@@ -8,7 +8,7 @@
 
 > **Чотири місця зберігання секретів:**
 > 1. **GitHub Repository Secrets** — для CI/CD workflows (`.github/workflows/*.yml`)
-> 2. **`.kamal/secrets`** — runtime секрети для Kamal-деплою на VM (читаються з ENV або keychain)
+> 2. **`.kamal/secrets-common`** — runtime секрети для Kamal-деплою на VM (читаються з ENV або keychain)
 > 3. **`deploy/akash/deploy.yaml`** — секрети Akash деплою (поточно `REQUIRED_SECRET_NOT_SET` плейсхолдери)
 > 4. **`terraform/terraform.tfvars`** — секрети Terraform (НЕ комітиться, `*.tfvars` у `.gitignore`)
 
@@ -16,8 +16,8 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 5 — механізм секретів (AR-encryption non-deterministic, HKDF per-device, `.kamal/secrets`, `verify-secrets` CI gate) реалізований і перевірений у Canopy; production-значення ще не провіженені (операційна, не технологічна задача). Канон модульного TRL — [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond).
-- **Поточний стан:** Backend код підтримує всі секрети, але production значення **не встановлені** в GitHub repository та `.kamal/secrets`. Це блокує весь CI/CD pipeline.
+- **Поточний TRL:** TRL 5 — механізм секретів (AR-encryption non-deterministic, HKDF per-device, `.kamal/secrets-common`, `verify-secrets` CI gate) реалізований і перевірений у Canopy; production-значення ще не провіженені (операційна, не технологічна задача). Канон модульного TRL — [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond).
+- **Поточний стан:** Backend код підтримує всі секрети, але production значення **не встановлені** в GitHub repository та `.kamal/secrets-common`. Це блокує весь CI/CD pipeline.
 - **Відкрите:** production secret values не провіжені (блокує CI/CD) → [`00_07`](00_07_Action_Plan_Tracker) (S1.1, S4.3, S5.6).
 
 ---
@@ -35,7 +35,7 @@
 
 <!-- TOC:AUTO:START -->
 - [1. GitHub Repository Secrets (CI/CD)](#1-github-repository-secrets-cicd)
-- [2. (Kamal Runtime)](#2-kamalsecrets-kamal-runtime)
+- [2. (Kamal Runtime)](#2-kamalsecrets-common-kamal-runtime)
 - [3. Akash SDL ( + )](#3-akash-sdl-deployakashdeployyaml--deployyamltpl)
 - [4. `terraform/terraform.tfvars](#4-terraformterraformtfvars)
 - [5. Operational Procedures](#5-operational-procedures)
@@ -48,16 +48,18 @@
 
 > **Шлях створення:** `Settings → Secrets and variables → Actions → New repository secret`
 >
+> **[INF.22 2026-07-10] Два рівні скоупу — money-шістка НЕ repo-level.** GH Environment **`production`** (створений API, wait-timer 10 хв + ref-policy `v*`-теги ∪ `main`) скоупить **money/signing-шістку**: `ORACLE_PRIVATE_KEY` · `ORACLE_MINTER_PRIVATE_KEY` · `ORACLE_SLASHER_PRIVATE_KEY` · `ORACLE_CELO_PRIVATE_KEY` · `ETHEREUM_ANCHOR_PRIVATE_KEY` · `SOLANA_WALLET_KEYPAIR` — класти через `Settings → Environments → production → Add secret` (або `gh secret set <NAME> --env production`), **НЕ** як repository secret. Environment-секрет читається ЛИШЕ job'ами з `environment: production` (`deploy-production.yml`: `verify-secrets` + `deploy`; будь-який інший workflow бачить `""`); wait-timer спрацьовує **per-job** → 2 гейти по 10 хв на release (свідомо: перед terraform-apply і перед kamal-шипом signing-контейнера; solo-substitute людського approval, bus_factor=1). Canopy web-only і шістку не споживає (гейт/env підрізано — див. коментарі в `deploy.yml`). Решта секретів (shared boot-core: master-keys, POSTGRES, REDIS, RPC, HMAC) = **repo-level** — їх потребують canopy + drift-workflow; стеля позначена: окремий environment для canopy = YAGNI до появи canopy-специфічних money-потреб. ⚠️ Пастка: репо стане private → environment-protection **ігнорується** (rules лишаються, не діють).
+>
 > **Перевірка покриття:** `grep -rh "secrets\." .github/workflows/ | grep -oP "secrets\.[A-Z_]+" | sort -u`
 >
-> **[B1] CI Kamal deploy мапить увесь `env.secret` набір.** `deploy.yml`/`deploy-production.yml` у кроці `kamal deploy` передають **весь** `config/deploy.yml env.secret` набір із GitHub Secrets у shell-ENV — `.kamal/secrets` читає кожну як `$VAR`. Пропущена тут = порожній інжект → boot-crash (`RAILS_MASTER_KEY` decrypt / `PROVISIONING_MASTER_KEY` guard / oracle KeyError) або web3-strict raise. Тому **і P0-набір (§1.1), і Web3/runtime-набір (§1.4) = GitHub Secrets.** `verify-secrets` гейтить повний boot-critical набір (fail-loud на production, skip-clean на canopy).
+> **[B1] CI Kamal deploy мапить увесь `env.secret` набір.** `deploy.yml`/`deploy-production.yml` у кроці `kamal deploy` передають **весь** `config/deploy.yml env.secret` набір із GitHub Secrets у shell-ENV — `.kamal/secrets-common` читає кожну як `$VAR`. Пропущена тут = порожній інжект → boot-crash (`RAILS_MASTER_KEY` decrypt / `PROVISIONING_MASTER_KEY` guard / oracle KeyError) або web3-strict raise. Тому **і P0-набір (§1.1), і Web3/runtime-набір (§1.4) = GitHub Secrets.** `verify-secrets` гейтить повний boot-critical набір (fail-loud на production, skip-clean на canopy).
 >
 > `DATABASE_URL`/`DATABASE_PASSWORD`/`CANOPY_DATABASE_URL` виведені — component style, INF.16. `KREDIS_REDIS_URL` виведений — Kredis auto-derive DB 1 із `REDIS_URL` (`config/redis/shared.yml`, §2.1).
 
 ### 1.1. P0 — Blocking (без цих secrets CI/CD не запуститься)
 
-- [ ] `RAILS_MASTER_KEY` — Rails credentials decryption key. **[B1]** CI читає його як GitHub Secret; `.kamal/secrets` тепер ENV-first (`${RAILS_MASTER_KEY:-$(cat config/master.key)}`) — `config/master.key` gitignored, відсутній у CI checkout, тож GitHub Secret мусить перемогти, інакше boot-decrypt падає.
-> ~~`KAMAL_MASTER_KEY`~~ — **ВИДАЛЕНО 2026-07-04 (фантом):** Kamal 2.x не має механізму «encrypted secrets master key»; `.kamal/secrets` — plain `$VAR`-файл, споживача не існувало ніде в репо, а verify-secrets гейтив production на неіснуючу залежність. Не заводити.
+- [ ] `RAILS_MASTER_KEY` — Rails credentials decryption key. **[B1]** CI читає його як GitHub Secret; `.kamal/secrets-common` тепер ENV-first (`${RAILS_MASTER_KEY:-$(cat config/master.key)}`) — `config/master.key` gitignored, відсутній у CI checkout, тож GitHub Secret мусить перемогти, інакше boot-decrypt падає.
+> ~~`KAMAL_MASTER_KEY`~~ — **ВИДАЛЕНО 2026-07-04 (фантом):** Kamal 2.x не має механізму «encrypted secrets master key»; `.kamal/secrets-common` — plain `$VAR`-файл, споживача не існувало ніде в репо, а verify-secrets гейтив production на неіснуючу залежність. Не заводити.
 - [ ] `PROVISIONING_MASTER_KEY` — HKDF root для per-device AES-деривації (boot-critical: `config/initializers/master_key_strength_check.rb` raise при відсутності в production). **[B1]** `verify-secrets` перевіряє присутність + довжину ≥64; обидва deploy-workflow маплять його у `kamal deploy`. Генерувати: `ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"`. (Runtime-роль — §2.)
 > ~~`GCP_SA_KEY`~~ — **ВИДАЛЕНО як CI-secret 2026-07-09 (INF.22, keyless WIF):** CI автентифікується до GCP через **Workload Identity Federation** (`terraform/wif.tf`) — GitHub карбує короткоживучий OIDC-токен, GCP STS обмінює його на impersonated deploy-SA access-token; JSON-ключ (6-місний, boot-critical, безстроковий credential) з CI зник. Замість нього — два **repo Variables** (не secrets, це публічні ідентифікатори): `GCP_WORKLOAD_IDENTITY_PROVIDER` (з `terraform output workload_identity_provider`) + `GCP_SERVICE_ACCOUNT` (SA email). Довгоживучий SA-ключ лишається ЛИШЕ в Akash `GCP_SA_KEY_BASE64` (Cloud SQL proxy — §3.1/§4; [`06_02 §Security Exception`](06_02_Akash_Network_Integration)).
 - [ ] `GCP_PROJECT_ID` — ID GCP проєкту (наприклад, `silken-net-prod`)
@@ -82,10 +84,10 @@
 
 ### 1.4. Web3 / runtime secrets — GitHub Secrets для CI Kamal deploy [B1]
 
-> Раніше ці жили лише у `.kamal/secrets` (§2) / Akash SDL (§3) / Terraform (§4). **Після B1** обидва deploy-workflow маплять їх із GitHub Secrets у крок `kamal deploy`, тож для CI-деплою вони **мусять існувати як GitHub Repository Secrets**. Повний опис кожного — §2.1 (one-home); тут лише перелік + boot-vs-lazy клас (`verify-secrets` гейтить boot-critical, warn на lazy).
+> Раніше ці жили лише у `.kamal/secrets-common` (§2) / Akash SDL (§3) / Terraform (§4). **Після B1** обидва deploy-workflow маплять їх із GitHub Secrets у крок `kamal deploy`, тож для CI-деплою вони **мусять існувати як GitHub Repository Secrets**. Повний опис кожного — §2.1 (one-home); тут лише перелік + boot-vs-lazy клас (`verify-secrets` гейтить boot-critical, warn на lazy).
 
 **Boot-critical** (порожній → контейнер падає на boot / terraform не apply-неться; `verify-secrets` блокує; гейт покриває і infra-передумови `GCP_PROJECT_ID` + WIF-Variables `GCP_WORKLOAD_IDENTITY_PROVIDER`/`GCP_SERVICE_ACCOUNT` — SA-JSON `GCP_SA_KEY` вилучено, CI keyless WIF INF.22; SSH-секрети ЗНЯТО, INF.20 (в) IAP keyless, див. §1.1):
-- [ ] `ORACLE_MINTER_PRIVATE_KEY` · `ORACLE_SLASHER_PRIVATE_KEY` — `web3_network_guard` raise при boot **signer-процесу (Sidekiq job)**, якщо немає ні specific-ключа, ні `ORACLE_PRIVATE_KEY`-fallback. **Money/signing-ключі = JOB-ONLY (2026-07-04):** signing-шістка (`ORACLE_*` ×4 вкл. `ORACLE_CELO_PRIVATE_KEY` + `ETHEREUM_ANCHOR_PRIVATE_KEY` + `SOLANA_WALLET_KEYPAIR`) живе лише в `job` (Kamal `servers.job.env.secret` / Akash SDL job-сервіс); web/coap бутяться keyless by design (Akash ENV = plaintext провайдеру; guard scoped `signer_process: Sidekiq.server?` — [`04_02 §Web3NetworkGuard`](04_02_Business_Logic_and_Services)).
+- [ ] `ORACLE_MINTER_PRIVATE_KEY` · `ORACLE_SLASHER_PRIVATE_KEY` — `web3_network_guard` raise при boot **signer-процесу (Sidekiq job)**, якщо немає ні specific-ключа, ні `ORACLE_PRIVATE_KEY`-fallback. **Money/signing-ключі = JOB-ONLY (2026-07-04):** signing-шістка (`ORACLE_*` ×4 вкл. `ORACLE_CELO_PRIVATE_KEY` + `ETHEREUM_ANCHOR_PRIVATE_KEY` + `SOLANA_WALLET_KEYPAIR`) живе лише в `job` (Kamal `servers.job.env.secret` / Akash SDL job-сервіс); web/coap бутяться keyless by design (Akash ENV = plaintext провайдеру; guard scoped `signer_process: Sidekiq.server?` — [`04_02 §Web3NetworkGuard`](04_02_Business_Logic_and_Services)). **[INF.22 2026-07-10] У GitHub шістка = environment-scoped `production`** (не repo-level — §1 header): доступна лише `deploy-production.yml` jobs з `environment:`, за wait-timer + ref-policy.
 
 **Lazy runtime** (порожній → фіча degraded на першому use, НЕ boot-crash; `verify-secrets` warn):
 - [ ] `SENTRY_DSN` · `ETHEREUM_ANCHOR_PRIVATE_KEY` · `ORACLE_PRIVATE_KEY` (legacy fallback) · `ORACLE_CELO_PRIVATE_KEY` (ARCH.50 — порожній = Celo на legacy-fallback, ізоляція вимкнена)
@@ -93,13 +95,13 @@
 - [ ] Solana: `SOLANA_WALLET_KEYPAIR` · `SOLANA_FEE_PAYER_PUBKEY` · `SOLANA_FEE_PAYER_TOKEN_ACCOUNT` · `SOLANA_USDC_MINT_ADDRESS`
 - [ ] Webhook HMACs: `CHAINLINK_HMAC_SECRET` (callback-endpoint; dispatch вилучено — ARCH.53) · `HELIUM_WEBHOOK_SECRET` (Queen SOS — під `WEB3_STRICT_MODE` контролер raise'ить per-request без нього)
 
-> **🔴 Drift guard:** цей набір = `config/deploy.yml env.secret` = `.kamal/secrets` = deploy-workflow `env:` блок. Розбіжність у будь-яку сторону → порожній інжект → boot-crash. Канонічний список — `config/deploy.yml env.secret` (SSOT).
+> **🔴 Drift guard:** цей набір = `config/deploy.yml env.secret` = `.kamal/secrets-common` = deploy-workflow `env:` блок. Розбіжність у будь-яку сторону → порожній інжект → boot-crash. Канонічний список — `config/deploy.yml env.secret` (SSOT).
 
 ---
 
-## 2. `.kamal/secrets` (Kamal Runtime)
+## 2. `.kamal/secrets-common` (Kamal Runtime)
 
-> **Шлях:** `.kamal/secrets` (НЕ комітити!). Файл уже існує у репо і містить **посилання на ENV** (`$VARIABLE`), не raw values. Перед `kamal deploy` встанови ці змінні у shell або CI environment.
+> **Шлях:** `.kamal/secrets-common` — **закомічений свідомо** ($VAR-форма: лише посилання на shell-ENV, не raw values — safe-for-git за дизайном Kamal; RAW-значень сюди не вписувати ніколи). Перед `kamal deploy` встанови ці змінні у shell або CI environment. **Чому `-common`, не `secrets` [INF.22]:** з destination (`kamal deploy -d canopy`) Kamal читає ЛИШЕ `secrets-common` + `secrets.<destination>` — плейн `secrets`-файл для destination-запусків невидимий (canopy-нога падала б `Secret not found` на першому ж global env.secret lookup); `-common` живить обидві ноги.
 
 - [ ] `RAILS_MASTER_KEY` — **[B1]** ENV-first: `${RAILS_MASTER_KEY:-$(cat config/master.key)}`. CI бере з GitHub Secret (§1.1; `config/master.key` gitignored → відсутній у checkout); локально fallback на файл.
 - [ ] `GCP_ARTIFACT_REGISTRY_KEY` — **[INF.22]** короткоживучий WIF access-token для Kamal push у Artifact Registry (registry username = `oauth2accesstoken` у `config/deploy.yml`), НЕ довгоживучий JSON-ключ. У CI видає auth-крок (`token_format: access_token`); локально — `gcloud auth print-access-token`.
@@ -107,12 +109,12 @@
 - [ ] `REDIS_URL` — те саме значення
 - [ ] `SENTRY_DSN` — Sentry project DSN. Без цього Sentry **інертний** — production помилки не репортуються (BLOCKER у [`00_07`](00_07_Action_Plan_Tracker)). Отримати: Sentry → Project Settings → Client Keys (DSN).
 
-> **`KREDIS_REDIS_URL` виведено [B1]** — Kredis auto-derive DB 1 із `REDIS_URL` (`config/redis/shared.yml`). Не оголошуй у `.kamal/secrets` / `env.secret`: порожній або placeholder-інжект truthy для `ENV.fetch` і перебив би derive → Kredis конектиться до сміття. Override лише вказівкою на окремий Redis-інстанс.
+> **`KREDIS_REDIS_URL` виведено [B1]** — Kredis auto-derive DB 1 із `REDIS_URL` (`config/redis/shared.yml`). Не оголошуй у `.kamal/secrets-common` / `env.secret`: порожній або placeholder-інжект truthy для `ENV.fetch` і перебив би derive → Kredis конектиться до сміття. Override лише вказівкою на окремий Redis-інстанс.
 - [ ] `PROVISIONING_MASTER_KEY` — HKDF master key для per-device AES key derivation. Генерувати: `ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"`. ⚠️ **Production guard:** provisioning endpoint **MUST** raise/refuse при відсутності ENV у production (`Rails.env.production?`) — будь-який fallback на raw AES key є **критичною security regression** і допустимий ТІЛЬКИ у TRL4 lab mode (`RAILS_ENV=development|test`). Recommended controller-level guard: `raise "PROVISIONING_MASTER_KEY required in production" if Rails.env.production? && ENV["PROVISIONING_MASTER_KEY"].blank?`
 - [ ] `CHAINLINK_HMAC_SECRET` — HMAC-SHA256 секрет для верифікації `X-Chainlink-Signature` header у `/api/v1/oracle_callbacks`. Генерувати як `SecureRandom.hex(32)`. (Dispatch-секрети `ROUTER`/`SUBSCRIPTION_ID`/`DON_ID` вилучено — ARCH.53 демоут.)
-- [ ] `HELIUM_WEBHOOK_SECRET` — [ARCH.34] HMAC-SHA256 секрет `X-Helium-Signature` для `/api/v1/telemetry/helium` (SOS Королеви; той самий рецепт `SecureRandom.hex(32)`; вписується і у Helium Console HTTP Integration). `WEB3_STRICT_MODE=true` → відсутність = SecurityError. ✅ 2026-07-04 провід заведено НАСКРІЗНО: Kamal `env.secret` + `.kamal/secrets` + обидва deploy-workflows (RUNTIME-warn) + Akash SDL web (static + `.tpl` + tf-var) — до того секрет був задекларований лише тут, і кожен Kamal/Akash-деплой гарантовано 500-ив Queen-SOS endpoint.
+- [ ] `HELIUM_WEBHOOK_SECRET` — [ARCH.34] HMAC-SHA256 секрет `X-Helium-Signature` для `/api/v1/telemetry/helium` (SOS Королеви; той самий рецепт `SecureRandom.hex(32)`; вписується і у Helium Console HTTP Integration). `WEB3_STRICT_MODE=true` → відсутність = SecurityError. ✅ 2026-07-04 провід заведено НАСКРІЗНО: Kamal `env.secret` + `.kamal/secrets-common` + обидва deploy-workflows (RUNTIME-warn) + Akash SDL web (static + `.tpl` + tf-var) — до того секрет був задекларований лише тут, і кожен Kamal/Akash-деплой гарантовано 500-ив Queen-SOS endpoint.
 
-### 2.1. ENV-only змінні (НЕ у `.kamal/secrets`, потрібні воркерам)
+### 2.1. ENV-only змінні (НЕ у `.kamal/secrets-common`, потрібні воркерам)
 
 > Ці змінні встановлюються через Kamal `env: clear:` або Akash SDL. Не є секретами в строгому сенсі, але без них Web3 пайплайн не працює.
 
@@ -120,7 +122,7 @@
 - [ ] `ORACLE_PRIVATE_KEY` — приватний ключ EVM oracle wallet для мінтингу SCC/SFC. **Критичний.** Гаманець потребує MATIC для газу.
 - [ ] `ETHEREUM_ANCHOR_PRIVATE_KEY` — приватний ключ для тижневого SHA-256 state root anchoring на L1. Потребує ETH для газу.
 - [ ] `ALCHEMY_POLYGON_RPC_URL` — Alchemy/Infura RPC для Polygon (Primary). `Web3::ResilientClient` підтримує fallback cascade — також встанови `ALCHEMY_POLYGON_RPC_URL_FALLBACK_*` за потреби.
-- [ ] `POLYGON_RPC_URL` — **окремий** Polygon RPC для `PriceOracleService` (`Web3::RpcConnectionPool.client_for("POLYGON_RPC_URL")`, `ENV.fetch` без fallback → `KeyError` якщо відсутній). Може дорівнювати `ALCHEMY_POLYGON_RPC_URL` або public endpoint (`https://polygon-rpc.com`). ✅ заведено у Kamal env.secret + `.kamal/secrets` + обидва deploy-workflows (INF.12 machine-half).
+- [ ] `POLYGON_RPC_URL` — **окремий** Polygon RPC для `PriceOracleService` (`Web3::RpcConnectionPool.client_for("POLYGON_RPC_URL")`, `ENV.fetch` без fallback → `KeyError` якщо відсутній). Може дорівнювати `ALCHEMY_POLYGON_RPC_URL` або public endpoint (`https://polygon-rpc.com`). ✅ заведено у Kamal env.secret + `.kamal/secrets-common` + обидва deploy-workflows (INF.12 machine-half).
 - [ ] `ALCHEMY_ETHEREUM_RPC_URL` — Alchemy RPC для Ethereum L1
 - [ ] `SOLANA_RPC_URL` — Solana RPC. ⚠️ **БЕЗ цього ENV дефолт = Solana Devnet** — мікро-винагороди USDC підуть на тестову мережу (`E.47` у [`00_07`](00_07_Action_Plan_Tracker))! Mainnet: Helius/QuickNode. Опц. `SOLANA_RPC_URL_FALLBACK_1/2` — fallback-каскад (INF.22, `Solana::MintingService#execute_rpc_call`); порожні = single-RPC.
 - [ ] `CARBON_COIN_CONTRACT_ADDRESS` — адреса SCC контракту після deploy (`BlockchainMintingService`, `ENV.fetch` без default → `KeyError` на першому SCC mint)
@@ -288,7 +290,7 @@
 *Chainlink oracle-callback HMAC (dispatch вилучено — ARCH.53):*
 - [ ] `chainlink_hmac_secret`
 
-> **🔴 Drift guard:** Кожен sensitive у `terraform.tfvars` **обов'язково** на момент `terraform apply` — без нього `templatefile()` рендерить порожні рядки → SDL отримує `=` без value → Rails отримує `nil` ENV. Для boot-critical (`provisioning_master_key`) це Puma crash; для Web3 — Sidekiq DeadSet; для Alloy — німі метрики. Drift у будь-яку сторону між `.kamal/secrets`, Kamal `env.secret`, SDL (`web` + `job`), `deploy.yaml.tpl`, `variables.tf`, та `main.tf` `templatefile()` — критичний bug. **Single source of truth: `config/deploy.yml env.secret` блок** (Kamal canonical list).
+> **🔴 Drift guard:** Кожен sensitive у `terraform.tfvars` **обов'язково** на момент `terraform apply` — без нього `templatefile()` рендерить порожні рядки → SDL отримує `=` без value → Rails отримує `nil` ENV. Для boot-critical (`provisioning_master_key`) це Puma crash; для Web3 — Sidekiq DeadSet; для Alloy — німі метрики. Drift у будь-яку сторону між `.kamal/secrets-common`, Kamal `env.secret`, SDL (`web` + `job`), `deploy.yaml.tpl`, `variables.tf`, та `main.tf` `templatefile()` — критичний bug. **Single source of truth: `config/deploy.yml env.secret` блок** (Kamal canonical list).
 
 ---
 
@@ -298,8 +300,8 @@
 
 > **One-Home: порядок дня деплою живе у [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform)** (фази −1…6) — старий 8-кроковий список тут суперечив 06_01-порядку (секрети до/після apply). Секрет-специфіка, яку тримає ЦЕЙ дім:
 >
-> - **GitHub Secrets = дві партії:** Batch A (pre-infra, ДО `terraform apply`): `GCP_PROJECT_ID` · `POSTGRES_PASSWORD` · `RAILS_MASTER_KEY` · `PROVISIONING_MASTER_KEY` (SSH-секретів НЕМАЄ — INF.20 (в): IAP+OS Login keyless; `GCP_SA_KEY` НЕМАЄ — CI keyless через WIF, INF.22: після 1-го apply зчитай `workload_identity_provider`/`service_account_email` у repo **Variables** `GCP_WORKLOAD_IDENTITY_PROVIDER`/`GCP_SERVICE_ACCOUNT`). Batch B (post-infra, значення існують лише ПІСЛЯ apply/акаунтів): `REDIS_URL`/`CANOPY_REDIS_URL` (Upstash ×2 — Фаза −1) · RPC×5 · Solana×4 · `SENTRY_DSN` · webhook-HMACs · oracle-ключі.
-> - `.kamal/secrets` вже закомічений ($VAR-форма) — «створювати» його не треба; треба заповнити shell-ENV (CI робить це сам з GitHub Secrets).
+> - **GitHub Secrets = дві партії:** Batch A (pre-infra, ДО `terraform apply`): `GCP_PROJECT_ID` · `POSTGRES_PASSWORD` · `RAILS_MASTER_KEY` · `PROVISIONING_MASTER_KEY` (SSH-секретів НЕМАЄ — INF.20 (в): IAP+OS Login keyless; `GCP_SA_KEY` НЕМАЄ — CI keyless через WIF, INF.22: після 1-го apply зчитай `workload_identity_provider`/`service_account_email` у repo **Variables** `GCP_WORKLOAD_IDENTITY_PROVIDER`/`GCP_SERVICE_ACCOUNT`). Batch B (post-infra, значення існують лише ПІСЛЯ apply/акаунтів): `REDIS_URL`/`CANOPY_REDIS_URL` (Upstash ×2 — Фаза −1) · RPC×5 · Solana-public×3 · `SENTRY_DSN` · webhook-HMACs — repo-level; **money/signing-шістка** (oracle×4 + anchor + Solana keypair) — **[INF.22] НЕ repo-level: environment `production`** (`gh secret set <NAME> --env production`; §1 header — wait-timer + ref-policy вже сконфігуровані API).
+> - `.kamal/secrets-common` вже закомічений ($VAR-форма) — «створювати» його не треба; треба заповнити shell-ENV (CI робить це сам з GitHub Secrets).
 > - Akash SDL секрети — через `.tpl` + `terraform/akash/terraform.tfvars` (§3/§4); gas на гаманцях — Фаза −1/4.
 
 ### 5.2. Ротація секретів
@@ -319,7 +321,7 @@
 grep -rh "secrets\." .github/workflows/ | grep -oP "secrets\.[A-Z_]+" | sort -u
 
 # Перевірка Kamal secrets
-grep -E "^[A-Z][A-Z0-9_]*=" .kamal/secrets | cut -d= -f1 | sort -u
+grep -E "^[A-Z][A-Z0-9_]*=" .kamal/secrets-common | cut -d= -f1 | sort -u
 
 # Перевірка Akash SDL
 grep -E "^\s+[A-Z_]+:" deploy/akash/deploy.yaml | head -50

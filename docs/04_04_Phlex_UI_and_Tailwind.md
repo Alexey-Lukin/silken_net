@@ -1735,7 +1735,7 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 - **Deployment frequency:** фази → окремі PR-и (≥ 1 на фазу) — досягнуто.
 - **Lead time for changes:** малий surface → швидкий review.
 - **Change failure rate:** `parallel_validation` + CodeQL + повний RSpec прогін перед merge.
-- **MTTR:** Sentry DSN підключено через `.kamal/secrets` → стек-трейси в production.
+- **MTTR:** Sentry DSN підключено через `.kamal/secrets-common` → стек-трейси в production.
 
 ### 18.8 Rails-specific — Rails Doctrine + The Rails Way
 

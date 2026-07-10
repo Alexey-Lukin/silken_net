@@ -690,7 +690,7 @@ Branch інертний до фліпу `FW2_CCM_ENABLED` + `TELEMETRY_CCM_ENABL
 ```bash
 # Kamal env push без redeploy:
 kamal env push --secret GAIA_DCI_NUMERIC_TOLERANCE=false
-# АБО видалити з .kamal/secrets, тоді next deploy картки залишиться без флагу
+# АБО видалити з .kamal/secrets-common, тоді next deploy картки залишиться без флагу
 ```
 
 Жоден код-rollback не потрібен — feature-flag перетворює numeric branch на no-op. Категорична перевірка продовжує захищати DCI.

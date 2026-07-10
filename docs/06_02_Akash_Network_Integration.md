@@ -108,7 +108,7 @@ Akash Network **не шифрує** ENV-блок SDL на стороні про�
 - через kubectl/k9s, якщо провайдер скомпрометований,
 - у самому SDL-маніфесті, який Terraform рендерить у `terraform/akash/generated-deploy.yaml` (`file_permission = "0600"`, але існує на диску деплоєра).
 
-Це **слабша гарантія**, ніж у GCP Secret Manager (HSM-backed) або Kamal `.kamal/secrets` (тільки на машинах деплоєра, не на серверах).
+Це **слабша гарантія**, ніж у GCP Secret Manager (HSM-backed) або Kamal `.kamal/secrets-common` (тільки на машинах деплоєра, не на серверах).
 
 **Mitigation (TRL 6-7, поточний пріоритет):**
 1. **Scoped on-chain roles:** Akash-deployment ORACLE keys повинні мати **тільки** `MINTER_ROLE`/`SLASHER_ROLE` на SCC/SFC контрактах — **ніколи** `DEFAULT_ADMIN_ROLE`. Це обмежує blast radius при витоку до конкретної операції (mint/burn), без можливості змінити contract owner або вкрасти treasury.
@@ -610,7 +610,7 @@ params:
 
 **Розділ SDL:** `services.web.env` + `services.job.env`  
 **Відповідність:** `config/deploy.yml` → `env.secret` + `env.clear`  
-**Кількість:** ~30 ENV-змінних (мірор `.kamal/secrets`)
+**Кількість:** ~30 ENV-змінних (мірор `.kamal/secrets-common`)
 
 ENV-блоки `web` та `job` сервісів **дзеркалюють** один одного — Sidekiq у `job`-сервісі ходить через ті ж Rails initializers, які перевіряють boot-critical секрети. Колонка **«Required for»** показує, де змінна *критично* необхідна:
 - **boot** — Rails не стартує без неї (Puma crash до accept loop).
@@ -993,7 +993,7 @@ akash tx deployment close \
 
 ## 6. Відповідність Kamal → Akash
 
-Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/secrets`) та SDL (`deploy/akash/deploy.yaml` + `deploy/akash/deploy.yaml.tpl`). Список повністю синхронізовано — кожен запис у Kamal `env.secret` повинен мати відповідник у обох сервісах SDL (`web` + `job`).
+Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/secrets-common`) та SDL (`deploy/akash/deploy.yaml` + `deploy/akash/deploy.yaml.tpl`). Список повністю синхронізовано — кожен запис у Kamal `env.secret` повинен мати відповідник у обох сервісах SDL (`web` + `job`).
 
 ### Структурні відповідники
 
@@ -1018,7 +1018,7 @@ Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/s
 
 ### Mapping `env.secret` → SDL `env:`
 
-> **Принцип:** кожна змінна нижче повинна бути одночасно у `.kamal/secrets`, `config/deploy.yml env.secret`, `deploy/akash/deploy.yaml` (обидва сервіси), `deploy/akash/deploy.yaml.tpl` (обидва сервіси), `terraform/akash/variables.tf` (як `sensitive = true`), та `terraform/akash/main.tf` (у `templatefile()` map). Drift = boot crash або тиха відмова Web3 pipeline.
+> **Принцип:** кожна змінна нижче повинна бути одночасно у `.kamal/secrets-common`, `config/deploy.yml env.secret`, `deploy/akash/deploy.yaml` (обидва сервіси), `deploy/akash/deploy.yaml.tpl` (обидва сервіси), `terraform/akash/variables.tf` (як `sensitive = true`), та `terraform/akash/main.tf` (у `templatefile()` map). Drift = boot crash або тиха відмова Web3 pipeline.
 
 **Application core (boot):**
 
