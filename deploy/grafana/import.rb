@@ -116,6 +116,12 @@ GRAFANA_URL = ENV["GRAFANA_URL"] or fail! "GRAFANA_URL не заданий (http
 TOKEN       = ENV["GRAFANA_API_TOKEN"] or fail! "GRAFANA_API_TOKEN не заданий (service-account token з роллю Editor+)"
 FOLDER      = ENV.fetch("GRAFANA_FOLDER", "SilkenNet")
 
+# Resolve the contact-point config UP FRONT so a half-configured channel (Telegram token
+# without chat-id) fails BEFORE any dashboard/rules are imported — the live path matches the
+# --dry-run pre-check. contact_integrations raises on half-Telegram.
+CONTACT_NAME = ENV.fetch("ALERT_CONTACT_NAME", "silkennet-oncall")
+integrations = contact_integrations(CONTACT_NAME)
+
 def request(method, path, body: nil, headers: {})
   uri = URI.join(GRAFANA_URL, path)
   klass = { get: Net::HTTP::Get, post: Net::HTTP::Post, put: Net::HTTP::Put }.fetch(method)
@@ -128,6 +134,8 @@ def request(method, path, body: nil, headers: {})
   [ res.code.to_i, res.body.to_s.empty? ? {} : JSON.parse(res.body) ]
 rescue JSON::ParserError
   [ res.code.to_i, { "raw" => res.body } ]
+rescue SocketError, SystemCallError, Net::OpenTimeout, Net::ReadTimeout => e
+  fail! "HTTP #{method.upcase} #{path} → #{e.class}: #{e.message} (перевір GRAFANA_URL / мережу / токен)"
 end
 
 # 1. Datasource UID
@@ -191,9 +199,7 @@ groups.each do |g|
   end
 end
 
-# 5. Contact point + root notification policy (off-by-default — без ENV пропуск).
-CONTACT_NAME = ENV.fetch("ALERT_CONTACT_NAME", "silkennet-oncall")
-integrations = contact_integrations(CONTACT_NAME)
+# 5. Contact point + root notification policy (CONTACT_NAME/integrations resolved up front).
 if integrations.empty?
   warn "⚠ Contact point пропущено — задай ALERT_CONTACT_EMAIL та/або ALERT_CONTACT_TELEGRAM_TOKEN+_CHATID."
   warn "  Без нього alert rules firing-ять у нікуди (README §Notification channel)."

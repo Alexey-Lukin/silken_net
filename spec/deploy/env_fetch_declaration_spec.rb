@@ -32,9 +32,13 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
   let(:deploy_clear)   { names("config/deploy.yml", /^\s+([A-Z][A-Z0-9_]{2,}):/) }
   let(:secrets_common) { names(".kamal/secrets-common", /^([A-Z][A-Z0-9_]{2,})=/) }
   let(:akash_sdl)      { names("deploy/akash/deploy.yaml", /^\s+-\s*([A-Z][A-Z0-9_]{2,})=/) }
+  # The KEY (LHS) of `KEY: ${{ secrets.X }}` is what .kamal/secrets-common reads as $KEY — NOT
+  # the secret name (RHS). A typo in the KEY (REDIS_URL:→REDIS_URI:, RHS intact) is the exact B1
+  # empty-inject crash, so capture the LHS. This also picks up KEYs injected from a step output
+  # (GCP_ARTIFACT_REGISTRY_KEY ← auth access_token), not just secrets.
   let(:workflow_env) do
     %w[.github/workflows/deploy.yml .github/workflows/deploy-production.yml]
-      .flat_map { |p| names(p, /secrets\.([A-Z][A-Z0-9_]{2,})/) }.uniq
+      .flat_map { |p| names(p, /^\s+([A-Z][A-Z0-9_]{2,}):\s*\$\{\{/) }.uniq
   end
 
   def names(path, regex) = File.read(Rails.root.join(path)).scan(regex).flatten.uniq
@@ -52,14 +56,15 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
   end
 
   # B1/INF.19 (the 4-month deploy-block root) generalised beyond the code-fetched vars: EVERY
-  # env.secret var must resolve in .kamal/secrets-common ($VAR) AND be mapped in a deploy
-  # workflow env: block, else CI injects "" → boot crash behind a green verify. Exception:
-  # GCP_ARTIFACT_REGISTRY_KEY is a short-lived WIF token from the auth step's output, not a
-  # GitHub Secret, so it carries no secrets.X reference.
+  # env.secret var must resolve in .kamal/secrets-common ($VAR) AND be mapped as a workflow
+  # env: KEY, else CI injects "" → boot crash behind a green verify. workflow_env captures the
+  # LHS KEY, so a step-output-injected var (GCP_ARTIFACT_REGISTRY_KEY ← auth token) is covered
+  # too — no exception needed. NOTE: workflow_env unions both workflows, so a var deliberately
+  # absent from canopy vs forgotten there is not distinguished (LOW — deploy verify-secrets is a
+  # second net; per-workflow split if it ever bites).
   it "every env.secret completes the Kamal chain — secrets-common AND a workflow env: block (B1/INF.19)" do
-    wif_issued = %w[GCP_ARTIFACT_REGISTRY_KEY]
     missing_common   = deploy_secret - secrets_common
-    missing_workflow = deploy_secret - workflow_env - wif_issued
+    missing_workflow = deploy_secret - workflow_env
     aggregate_failures do
       expect(missing_common).to be_empty, "in env.secret but not .kamal/secrets-common (Kamal $VAR unresolved): #{missing_common.join(', ')}"
       expect(missing_workflow).to be_empty, "in env.secret but not a deploy-workflow env: block (CI injects '' → boot crash, B1): #{missing_workflow.join(', ')}"

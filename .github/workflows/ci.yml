@@ -93,6 +93,9 @@ jobs:
               - 'Dockerfile'
             terraform:
               - 'terraform/**'
+              # the akash root renders this via templatefile() — an unwired ${var} added here
+              # fails `terraform validate` (break-tested), so a tpl-only change must re-run it.
+              - 'deploy/akash/deploy.yaml.tpl'
 
   firmware_test:
     needs: changes
