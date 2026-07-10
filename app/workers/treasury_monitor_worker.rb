@@ -3,9 +3,9 @@
 # = ===================================================================
 # 💰 TREASURY MONITOR WORKER (Scheduled Oracle Wallet Health Check)
 # = ===================================================================
-# Періодично перевіряє баланси Oracle-гаманців на всіх 4 мережах:
-#   - Polygon (MATIC) — мінтинг SCC/SFC
-#   - Solana (SOL) — мікро-винагороди USDC
+# Періодично перевіряє баланси всіх живих Oracle-підписантів (per-signer, INF.22):
+#   - Polygon (MATIC) — MINTER (мінт SCC/SFC) + SLASHER + activation-gated aux
+#   - Solana (SOL) — fee-payer мікро-винагород USDC
 #   - Celo (CELO) — community rewards cUSD
 #   - Ethereum L1 (ETH) — state root anchoring
 #

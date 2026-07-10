@@ -161,8 +161,8 @@ groups:
         execErrState: Error
         for: 5m
         annotations:
-          summary: "Oracle balance ratio = {{ $values.A.Value | printf \"%.2f\" }} на мережі {{ $labels.network }} (поріг: 1.0, критично: < 0.2)."
-          description: "Oracle wallet вичерпує кошти. Мінтинг SCC заблокується при 0. Поповни wallet через multisig: docs/05_03_Smart_Contracts_and_Tokenomics.md"
+          summary: "Oracle balance ratio = {{ $values.A.Value | printf \"%.2f\" }} на {{ $labels.network }}/{{ $labels.signer }} (поріг: 1.0, критично: < 0.2)."
+          description: "Oracle-підписант ({{ $labels.signer }}) вичерпує кошти. Його web3-шлях заблокується при 0. Поповни wallet через multisig: docs/05_03_Smart_Contracts_and_Tokenomics.md"
           runbook_url: "docs/05_03_Smart_Contracts_and_Tokenomics.md#OracleBalance"
         labels:
           severity: critical
@@ -909,7 +909,7 @@ groups:
         execErrState: Error
         for: 15m
         annotations:
-          summary: "Oracle balance ratio = {{ $values.A.Value | printf \"%.2f\" }} на {{ $labels.network }} (нижче мінімального порогу)."
+          summary: "Oracle balance ratio = {{ $values.A.Value | printf \"%.2f\" }} на {{ $labels.network }}/{{ $labels.signer }} (нижче мінімального порогу)."
           description: "Баланс oracle wallet нижче мінімуму. Ще не критично, але потребує поповнення до виснаження."
         labels:
           severity: info

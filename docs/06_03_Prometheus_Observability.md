@@ -358,7 +358,7 @@ end
 | `silkennet_telemetry_log_unpruned_lookups_total` | `caller` | Total TelemetryLog lookups without partition pruning (degraded path; missing or invalid ISO8601 created_at_iso) |
 | `silkennet_telemetry_processed_total` | — | Total telemetry chunks processed by TelemetryUnpackerService |
 | `silkennet_tinyml_threshold_invalid_reports_total` | — | FW.18b telemetry packets reporting a nonzero rejected-OTA-thresholds counter (per-DID attribution in logs) |
-| `silkennet_treasury_check_errors_total` | `network`, `error_type` | Total treasury monitoring RPC errors |
+| `silkennet_treasury_check_errors_total` | `network`, `signer`, `error_type` | Total treasury monitoring RPC errors |
 | `silkennet_w3bstream_signature_fallback_total` | `reason` | Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature |
 
 **Gauges (30):**
@@ -380,8 +380,8 @@ end
 | `silkennet_gateways_faulty` | — | Current number of gateways in the faulty state (set on each staleness sweep) |
 | `silkennet_hadron_kyc_pending_depth` | — | Count of Wallet+Organization rows with hadron_kyc_status=pending (KYC backlog gating mint) |
 | `silkennet_mint_volume_window_scc` | `token_type` | SCC/SFC minted in the trailing 1h window (ARCH.62 volume-anomaly detector input) |
-| `silkennet_oracle_balance` | `network` | Oracle wallet balance in native currency (wei/lamports) |
-| `silkennet_oracle_balance_ratio` | `network` | Oracle balance as ratio to minimum threshold (below 1.0 = critical) |
+| `silkennet_oracle_balance` | `network`, `signer` | Oracle wallet balance in native currency (wei/lamports) |
+| `silkennet_oracle_balance_ratio` | `network`, `signer` | Oracle balance as ratio to minimum threshold (below 1.0 = critical) |
 | `silkennet_process_resident_memory_bytes` | — | Resident set size (RSS) of the scraped process in bytes (Linux /proc; 0 elsewhere) |
 | `silkennet_puma_backlog` | — | Puma requests waiting for a free thread (backlog; sustained >0 = under-provisioned) |
 | `silkennet_puma_max_threads` | — | Puma configured max threads (pool ceiling) |

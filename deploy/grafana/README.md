@@ -45,7 +45,7 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 | Telemetry Ingest + Fraud | processed_total, fraud_total, acoustic_overflow, panic_replay, cluster_entropy, tinyml_threshold_invalid_reports (FW.18b), coap_packets by status | Telemetry ingest rate + fraud detection |
 | Sidekiq Queues | queue_size × 9, queue_latency × 9 | Sidekiq queues (9 черг, size + latency) |
 | Web3 RPC | rpc_errors by network/type, circuit_breaker_open, scc_minted, oracle_dispatch latency | Web3 RPC errors by network |
-| Treasury / Oracle | oracle_balance_ratio, oracle_balance by network | Treasury / Oracle balance monitoring |
+| Treasury / Oracle | oracle_balance_ratio, oracle_balance by network+signer (INF.22 per-signer: Polygon minter/slasher + activation-gated aux) | Treasury / Oracle balance monitoring |
 | Database Pool | db_pool_connections / db_pool_size, db_pool_waiting | Database connection pool stats |
 | 💰 Money-Path Reliability [ARCH.45] | mint/slash/solana-payout/insurance-payout success-rate (SLO ratio), sidekiq_dead_set_size, manual_review_depth, limbo_locked_total, chain_audit_delta [G1/G2] | Money-path SLO + DeadSet + manual-review/limbo/chain-audit gauges |
 | ⚙️ Process / Runtime Health | process_resident_memory_bytes (RSS), ruby_gc_count/major_count, ruby_gc_heap_live_slots, ruby_threads, puma_running/max/pool_capacity/backlog | Runtime observability gap (RSS/GC/Puma) |

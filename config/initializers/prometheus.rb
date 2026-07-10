@@ -312,25 +312,27 @@ module SilkenNet
     # Відстежує баланси Oracle wallets на всіх мережах.
     # Критично для масштабування: при мільйонах дерев витрати газу зростають пропорційно.
 
-    # Oracle wallet balance in native currency (MATIC, SOL, CELO, ETH)
+    # Oracle wallet balance in native currency (MATIC, SOL, CELO, ETH).
+    # `signer`-вимір [INF.22]: на одній мережі кілька dedicated-підписантів (Polygon:
+    # minter/slasher/aux) — без нього два записи колізять на спільному network-лейблі.
     ORACLE_BALANCE = REGISTRY.gauge(
       :silkennet_oracle_balance,
       docstring: "Oracle wallet balance in native currency (wei/lamports)",
-      labels: [ :network ]
+      labels: [ :network, :signer ]
     )
 
     # Oracle wallet balance as ratio to minimum threshold (< 1.0 = critical)
     ORACLE_BALANCE_RATIO = REGISTRY.gauge(
       :silkennet_oracle_balance_ratio,
       docstring: "Oracle balance as ratio to minimum threshold (below 1.0 = critical)",
-      labels: [ :network ]
+      labels: [ :network, :signer ]
     )
 
     # Treasury monitor errors (network unreachable, RPC timeout)
     TREASURY_CHECK_ERRORS_TOTAL = REGISTRY.counter(
       :silkennet_treasury_check_errors_total,
       docstring: "Total treasury monitoring RPC errors",
-      labels: [ :network, :error_type ]
+      labels: [ :network, :signer, :error_type ]
     )
 
     # -----------------------------------------------------------------------

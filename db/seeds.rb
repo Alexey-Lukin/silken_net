@@ -87,7 +87,11 @@ system_params = [
   # Мінімальні баланси Oracle wallets (у нативній валюті). Нижче — транзакції fail.
   # Рекомендується зробити configurable через ProtocolParameters для on-chain governance.
   { key: "oracle_min_balance_matic", value: "0.05", value_type: "float", category: "minting",
-    min_value: 0.001, max_value: 10.0, description: "Minimum MATIC balance for Polygon Oracle wallet" },
+    min_value: 0.001, max_value: 10.0, description: "Minimum MATIC balance for Polygon MINTER Oracle wallet" },
+  # [INF.22] SLASHER = окремий required-підписант з власним газ-профілем (slash ≠ mint cadence).
+  # Aux (etherisc/puro/klima) свідомо НЕ сіються — activation-gated, параметр створюється при активації.
+  { key: "oracle_min_balance_matic_slasher", value: "0.05", value_type: "float", category: "minting",
+    min_value: 0.001, max_value: 10.0, description: "Minimum MATIC balance for Polygon SLASHER Oracle wallet" },
   { key: "oracle_min_balance_sol", value: "0.05", value_type: "float", category: "minting",
     min_value: 0.001, max_value: 10.0, description: "Minimum SOL balance for Solana Oracle wallet" },
   { key: "oracle_min_balance_celo", value: "0.05", value_type: "float", category: "minting",

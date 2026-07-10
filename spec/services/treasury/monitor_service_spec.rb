@@ -6,12 +6,14 @@ RSpec.describe Treasury::MonitorService do
   before do
     ENV["ALCHEMY_POLYGON_RPC_URL"] ||= "https://polygon-rpc.example.com"
     ENV["ORACLE_MINTER_PRIVATE_KEY"] ||= "0x" + "a" * 64
+    ENV["ORACLE_SLASHER_PRIVATE_KEY"] ||= "0x" + "e" * 64
     ENV["ORACLE_CELO_PRIVATE_KEY"] ||= "0x" + "c" * 64
     ENV["SOLANA_RPC_URL"] ||= "https://api.devnet.solana.com"
     ENV["SOLANA_FEE_PAYER_PUBKEY"] = "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
     ENV["CELO_RPC_URL"] ||= "https://alfajores-forno.celo-testnet.org"
     ENV["ALCHEMY_ETHEREUM_RPC_URL"] ||= "https://eth-mainnet.example.com"
     ENV["ETHEREUM_ANCHOR_PRIVATE_KEY"] ||= "0x" + "b" * 64
+    # aux activation-gated (etherisc/puro/klima) СВІДОМО не сетяться — дормантний default
 
     # Стаб Eth::Key для EVM мереж
     allow(Eth::Key).to receive(:new).and_return(mock_key)
@@ -48,18 +50,26 @@ RSpec.describe Treasury::MonitorService do
         allow(mock_evm_client).to receive(:get_balance).and_return(healthy_balance)
       end
 
-      it "returns results for all 4 networks" do
+      it "returns results for all 5 required wallets (per-signer, INF.22)" do
         results = described_class.call
-        expect(results.size).to eq(4)
-        expect(results.map { |r| r[:network] }).to contain_exactly("polygon", "solana", "celo", "ethereum")
+        expect(results.size).to eq(5)
+        expect(results.map { |r| [ r[:network], r[:signer] ] }).to contain_exactly(
+          [ "polygon", "minter" ], [ "polygon", "slasher" ],
+          [ "solana", "fee_payer" ], [ "celo", "rewards" ], [ "ethereum", "anchor" ]
+        )
       end
 
-      it "marks all networks as healthy" do
+      it "skips dormant activation-gated aux signers (no result, no gauge, no alert)" do
+        results = described_class.call
+        expect(results.map { |r| r[:signer] }).not_to include("etherisc", "puro", "klima")
+      end
+
+      it "marks all wallets as healthy" do
         results = described_class.call
         expect(results).to all(include(status: :healthy))
       end
 
-      it "reports ratio > 1.0 for all networks" do
+      it "reports ratio > 1.0 for all wallets" do
         results = described_class.call
         results.each do |result|
           expect(result[:ratio]).to be > 1.0
@@ -70,12 +80,29 @@ RSpec.describe Treasury::MonitorService do
         expect { described_class.call }.not_to change(EwsAlert, :count)
       end
 
-      it "updates Prometheus ORACLE_BALANCE gauges" do
+      it "updates Prometheus ORACLE_BALANCE gauges per network+signer" do
         described_class.call
 
-        %w[polygon solana celo ethereum].each do |network|
-          expect(SilkenNet::Metrics::ORACLE_BALANCE.get(labels: { network: network })).to be_positive
+        [ %w[polygon minter], %w[polygon slasher], %w[solana fee_payer],
+          %w[celo rewards], %w[ethereum anchor] ].each do |network, signer|
+          expect(
+            SilkenNet::Metrics::ORACLE_BALANCE.get(labels: { network: network, signer: signer })
+          ).to be_positive
         end
+      end
+
+      it "monitors an aux signer once its activation-gated key is injected" do
+        ENV["ORACLE_ETHERISC_PRIVATE_KEY"] = "0x" + "f" * 64
+
+        results = described_class.call
+
+        etherisc = results.find { |r| r[:signer] == "etherisc" }
+        expect(etherisc).to include(network: "polygon", status: :healthy)
+        expect(
+          SilkenNet::Metrics::ORACLE_BALANCE.get(labels: { network: "polygon", signer: "etherisc" })
+        ).to be_positive
+      ensure
+        ENV.delete("ORACLE_ETHERISC_PRIVATE_KEY")
       end
 
       # [G1/G2] money-path limbo + drift видимість (той самий 15-хв прохід).
@@ -136,23 +163,27 @@ RSpec.describe Treasury::MonitorService do
           .with("ALCHEMY_ETHEREUM_RPC_URL").and_return(mock_evm_client)
       end
 
-      it "marks Polygon as critical" do
+      it "marks both Polygon signers as critical (shared RPC, both wallets checked)" do
         results = described_class.call
-        polygon_result = results.find { |r| r[:network] == "polygon" }
-        expect(polygon_result[:status]).to eq(:critical)
-        expect(polygon_result[:ratio]).to be < 1.0
+        polygon_results = results.select { |r| r[:network] == "polygon" }
+        expect(polygon_results.map { |r| r[:signer] }).to contain_exactly("minter", "slasher")
+        polygon_results.each do |result|
+          expect(result[:status]).to eq(:critical)
+          expect(result[:ratio]).to be < 1.0
+        end
       end
 
-      it "creates an EwsAlert for critical balance" do
-        expect { described_class.call }.to change(EwsAlert, :count).by(1)
+      it "creates an EwsAlert per critical signer (minter + slasher)" do
+        expect { described_class.call }.to change(EwsAlert, :count).by(2)
       end
 
-      it "creates EwsAlert with system_fault type" do
+      it "creates EwsAlert with system_fault type naming the signer" do
         described_class.call
         alert = EwsAlert.last
         expect(alert.alert_type).to eq("system_fault")
         expect(alert.severity).to eq("critical")
         expect(alert.message).to include("polygon")
+        expect(alert.message).to match(/minter|slasher/)
         expect(alert.message).to include("below minimum threshold")
       end
     end
@@ -174,16 +205,16 @@ RSpec.describe Treasury::MonitorService do
         described_class.call
         expect(
           SilkenNet::Metrics::TREASURY_CHECK_ERRORS_TOTAL.get(
-            labels: { network: "solana", error_type: "Timeout::Error" }
+            labels: { network: "solana", signer: "fee_payer", error_type: "Timeout::Error" }
           )
         ).to be_positive
       end
 
       it "does not fail the entire service" do
         results = described_class.call
-        expect(results.size).to eq(4)
+        expect(results.size).to eq(5)
         healthy_results = results.select { |r| r[:status] == :healthy }
-        expect(healthy_results.size).to eq(3)
+        expect(healthy_results.size).to eq(4)
       end
     end
 
@@ -329,12 +360,12 @@ RSpec.describe Treasury::MonitorService do
   end
 
   describe "build_config" do
-    it "merges network config with default min_balance" do
+    it "resolves the wallet entry with the default min_balance" do
       service = described_class.new
-      defaults = described_class::DEFAULTS[:polygon]
-      config = service.send(:build_config, :polygon, defaults)
+      config = service.send(:build_config, described_class::WALLETS[:polygon_minter])
 
       expect(config[:currency]).to eq("MATIC")
+      expect(config[:signer]).to eq("minter")
       expect(config[:decimals]).to eq(18)
       expect(config[:min_balance_wei]).to be_a(Integer)
       expect(config[:min_balance_wei]).to be > 0
@@ -344,18 +375,26 @@ RSpec.describe Treasury::MonitorService do
     it "uses SystemParameter value when available" do
       allow(SystemParameter).to receive(:current).with("oracle_min_balance_matic", default: 0.05).and_return("0.1")
       service = described_class.new
-      defaults = described_class::DEFAULTS[:polygon]
-      config = service.send(:build_config, :polygon, defaults)
+      config = service.send(:build_config, described_class::WALLETS[:polygon_minter])
 
       # 0.1 MATIC = 100_000_000_000_000_000 wei
       expect(config[:min_balance_wei]).to eq(100_000_000_000_000_000)
     end
 
+    it "gives the slasher wallet its OWN threshold param (slash-gas ≠ mint-gas profile)" do
+      allow(SystemParameter).to receive(:current).and_call_original
+      allow(SystemParameter).to receive(:current)
+        .with("oracle_min_balance_matic_slasher", default: 0.05).and_return("0.2")
+      service = described_class.new
+      config = service.send(:build_config, described_class::WALLETS[:polygon_slasher])
+
+      expect(config[:min_balance_wei]).to eq(200_000_000_000_000_000)
+    end
+
     it "falls back to default when SystemParameter returns nil" do
       allow(SystemParameter).to receive(:current).and_return(nil)
       service = described_class.new
-      defaults = described_class::DEFAULTS[:polygon]
-      config = service.send(:build_config, :polygon, defaults)
+      config = service.send(:build_config, described_class::WALLETS[:polygon_minter])
 
       # 0.05 MATIC
       expect(config[:min_balance_wei]).to eq(50_000_000_000_000_000)
@@ -366,9 +405,7 @@ RSpec.describe Treasury::MonitorService do
     it "returns 0 when private_key is blank" do
       stub_const("ENV", ENV.to_h.except("ORACLE_MINTER_PRIVATE_KEY"))
       service = described_class.new
-      config = described_class::NETWORK_CONFIG[:polygon].merge(
-        currency: "MATIC", decimals: 18, min_balance_wei: 50_000_000_000_000_000
-      )
+      config = described_class::WALLETS[:polygon_minter].merge(min_balance_wei: 50_000_000_000_000_000)
 
       result = service.send(:fetch_evm_balance, config)
       expect(result).to eq(0)
@@ -381,9 +418,7 @@ RSpec.describe Treasury::MonitorService do
       allow(mock_evm_client).to receive(:get_balance).and_return(healthy_balance)
 
       service = described_class.new
-      config = described_class::NETWORK_CONFIG[:celo].merge(
-        currency: "CELO", decimals: 18, min_balance_wei: 50_000_000_000_000_000
-      )
+      config = described_class::WALLETS[:celo_rewards].merge(min_balance_wei: 50_000_000_000_000_000)
 
       result = service.send(:fetch_evm_balance, config)
       expect(result).to eq(healthy_balance)
@@ -391,14 +426,12 @@ RSpec.describe Treasury::MonitorService do
   end
 
   describe "fetch_solana_balance" do
+    let(:solana_config) { described_class::WALLETS[:solana_fee_payer].merge(min_balance_wei: 50_000_000) }
+
     it "returns 0 when fee_payer pubkey is blank" do
       stub_const("ENV", ENV.to_h.except("SOLANA_FEE_PAYER_PUBKEY"))
-      service = described_class.new
-      config = described_class::NETWORK_CONFIG[:solana].merge(
-        currency: "SOL", decimals: 9, min_balance_wei: 50_000_000
-      )
 
-      result = service.send(:fetch_solana_balance, config)
+      result = described_class.new.send(:fetch_solana_balance, solana_config)
       expect(result).to eq(0)
     end
 
@@ -407,25 +440,17 @@ RSpec.describe Treasury::MonitorService do
         double("response", parsed_body: nil)
       )
 
-      service = described_class.new
-      config = described_class::NETWORK_CONFIG[:solana].merge(
-        currency: "SOL", decimals: 9, min_balance_wei: 50_000_000
-      )
-
-      result = service.send(:fetch_solana_balance, config)
+      result = described_class.new.send(:fetch_solana_balance, solana_config)
       expect(result).to eq(0)
     end
 
     it "returns 0 and logs a warning in production when RPC URL ENV is not set [E.47]" do
-      config = described_class::NETWORK_CONFIG[:solana].merge(
-        currency: "SOL", decimals: 9, min_balance_wei: 50_000_000
-      )
-      stub_const("ENV", ENV.to_h.except(config[:env_rpc_key].to_s))
+      stub_const("ENV", ENV.to_h.except(solana_config[:env_rpc_key].to_s))
       allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production"))
 
       expect(Rails.logger).to receive(:warn).with(/not set in production/)
 
-      result = described_class.new.send(:fetch_solana_balance, config)
+      result = described_class.new.send(:fetch_solana_balance, solana_config)
       expect(result).to eq(0)
     end
 
@@ -434,12 +459,7 @@ RSpec.describe Treasury::MonitorService do
         double("response", parsed_body: { "error" => { "message" => "bad request" } })
       )
 
-      service = described_class.new
-      config = described_class::NETWORK_CONFIG[:solana].merge(
-        currency: "SOL", decimals: 9, min_balance_wei: 50_000_000
-      )
-
-      result = service.send(:fetch_solana_balance, config)
+      result = described_class.new.send(:fetch_solana_balance, solana_config)
       expect(result).to eq(0)
     end
   end
@@ -469,9 +489,9 @@ RSpec.describe Treasury::MonitorService do
     it "reports ratio 0.0 and healthy status when min_balance_wei is 0 (div-by-zero guard)" do
       service = described_class.new
       allow(service).to receive(:fetch_balance).and_return(healthy_balance)
-      config = { network: "polygon", currency: "MATIC", decimals: 18, min_balance_wei: 0 }
+      config = { network: "polygon", signer: "minter", currency: "MATIC", decimals: 18, min_balance_wei: 0 }
 
-      result = service.send(:check_balance, :polygon, config)
+      result = service.send(:check_balance, config)
 
       expect(result[:ratio]).to eq(0.0)
       expect(result[:status]).to eq(:healthy) # balance >= 0

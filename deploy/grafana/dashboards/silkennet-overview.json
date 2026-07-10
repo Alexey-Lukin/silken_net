@@ -415,7 +415,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
           "expr": "silkennet_oracle_balance_ratio",
-          "legendFormat": "{{network}}",
+          "legendFormat": "{{network}}/{{signer}}",
           "refId": "A"
         }
       ],
@@ -424,7 +424,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "description": "Oracle wallet balance by network (raw units: wei / lamports / атоми).",
+      "description": "Oracle wallet balance by network+signer (raw units: wei / lamports / атоми).",
       "fieldConfig": {
         "defaults": { "unit": "short" },
         "overrides": []
@@ -442,9 +442,9 @@
           "refId": "A"
         }
       ],
-      "title": "Oracle Balances by Network",
+      "title": "Oracle Balances by Wallet",
       "transformations": [
-        { "id": "filterFieldsByName", "options": { "include": { "names": ["network", "Value"] } } }
+        { "id": "filterFieldsByName", "options": { "include": { "names": ["network", "signer", "Value"] } } }
       ],
       "type": "table"
     },

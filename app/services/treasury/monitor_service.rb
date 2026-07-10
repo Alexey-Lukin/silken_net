@@ -7,55 +7,86 @@ module Treasury
   # =========================================================================
   # 💰 TREASURY MONITOR SERVICE (Централізований моніторинг Oracle Wallets)
   # =========================================================================
-  # Перевіряє баланси Oracle-гаманців на ВСІХ мережах одночасно:
-  #   - Polygon (MATIC) → мінтинг SCC/SFC, слешинг
-  #   - Solana (SOL) → мікро-винагороди USDC
+  # Перевіряє баланси ВСІХ живих Oracle-підписантів (per-signer після INF.22 key-спліту):
+  #   - Polygon (MATIC) → MINTER (мінт SCC/SFC) + SLASHER (слешинг) + activation-gated
+  #     aux (etherisc/puro/klima — дормантні шляхи пропускаються, поки ключ не інжектнуто)
+  #   - Solana (SOL) → fee-payer мікро-винагород USDC
   #   - Celo (CELO) → community rewards cUSD
   #   - Ethereum L1 (ETH) → state root anchoring (щотижня)
   #
   # Повертає структурований звіт для Prometheus gauges та EWS alerts.
-  # Підтримує пороги (мінімальні баланси) для кожної мережі.
+  # Підтримує пороги (мінімальні баланси) per-wallet.
   #
   # Використання:
   #   report = Treasury::MonitorService.call
-  #   report.each { |r| puts "#{r[:network]}: #{r[:status]}" }
+  #   report.each { |r| puts "#{r[:network]}/#{r[:signer]}: #{r[:status]}" }
   # =========================================================================
   class MonitorService < ApplicationService
-    # [E.51] Мінімальні пороги балансу Oracle wallets — configurable через SystemParameter.
-    # Дефолтні значення використовуються як fallback якщо SystemParameter ще не seed-нуті.
-    # Governance: може бути оновлено через ProtocolParameters.sol + ParameterSyncWorker.
-    DEFAULTS = {
-      polygon: { min_balance: 0.05, currency: "MATIC", decimals: 18, param_key: "oracle_min_balance_matic" },
-      solana:  { min_balance: 0.05, currency: "SOL",   decimals: 9,  param_key: "oracle_min_balance_sol" },
-      celo:    { min_balance: 0.05, currency: "CELO",  decimals: 18, param_key: "oracle_min_balance_celo" },
-      ethereum: { min_balance: 0.01, currency: "ETH",  decimals: 18, param_key: "oracle_min_balance_eth" }
-    }.freeze
-
-    # Network-specific configuration (RPC keys, private keys, fallback URLs).
-    # [INF.22] env_private_key = ключ, що РЕАЛЬНО підписує на цій мережі (моніторимо
-    # газ-гаманець живого signer'а, не легасі base-EOA — та retired повністю):
-    # Polygon-мінт живе на MINTER, Celo — на dedicated CELO (ARCH.50).
-    NETWORK_CONFIG = {
-      polygon: {
-        network: "polygon",
+    # [E.51/INF.22] Один гаманець = один запис: після key-спліту на мережі живе КІЛЬКА
+    # dedicated-підписантів (Polygon: minter/slasher + activation-gated aux) — моніторимо
+    # газ КОЖНОГО живого signer'а, не легасі base-EOA (та retired повністю).
+    # Пороги (min_balance) — fallback; runtime-значення через SystemParameter
+    # (governance: ProtocolParameters.sol + ParameterSyncWorker).
+    # activation_gated: ключ інжектиться Console'ю при активації шляху (06_04 §2.1) —
+    # відсутній ENV = шлях дормантний → запис пропускається (без gauge і без алерту),
+    # present = моніториться нарівні з required-набором.
+    WALLETS = {
+      polygon_minter: {
+        network: "polygon", signer: "minter",
         env_rpc_key: "ALCHEMY_POLYGON_RPC_URL",
-        env_private_key: "ORACLE_MINTER_PRIVATE_KEY"
+        env_private_key: "ORACLE_MINTER_PRIVATE_KEY",
+        min_balance: 0.05, currency: "MATIC", decimals: 18,
+        param_key: "oracle_min_balance_matic"
       },
-      solana: {
-        network: "solana",
+      polygon_slasher: {
+        network: "polygon", signer: "slasher",
+        env_rpc_key: "ALCHEMY_POLYGON_RPC_URL",
+        env_private_key: "ORACLE_SLASHER_PRIVATE_KEY",
+        min_balance: 0.05, currency: "MATIC", decimals: 18,
+        param_key: "oracle_min_balance_matic_slasher"
+      },
+      solana_fee_payer: {
+        network: "solana", signer: "fee_payer",
         env_rpc_key: "SOLANA_RPC_URL",
-        env_public_key: "SOLANA_FEE_PAYER_PUBKEY"
+        env_public_key: "SOLANA_FEE_PAYER_PUBKEY",
+        min_balance: 0.05, currency: "SOL", decimals: 9,
+        param_key: "oracle_min_balance_sol"
       },
-      celo: {
-        network: "celo",
+      celo_rewards: {
+        network: "celo", signer: "rewards",
         env_rpc_key: "CELO_RPC_URL",
         env_private_key: "ORACLE_CELO_PRIVATE_KEY",
-        fallback_rpc: "https://alfajores-forno.celo-testnet.org"
+        fallback_rpc: "https://alfajores-forno.celo-testnet.org",
+        min_balance: 0.05, currency: "CELO", decimals: 18,
+        param_key: "oracle_min_balance_celo"
       },
-      ethereum: {
-        network: "ethereum",
+      ethereum_anchor: {
+        network: "ethereum", signer: "anchor",
         env_rpc_key: "ALCHEMY_ETHEREUM_RPC_URL",
-        env_private_key: "ETHEREUM_ANCHOR_PRIVATE_KEY"
+        env_private_key: "ETHEREUM_ANCHOR_PRIVATE_KEY",
+        min_balance: 0.01, currency: "ETH", decimals: 18,
+        param_key: "oracle_min_balance_eth"
+      },
+      polygon_etherisc: {
+        network: "polygon", signer: "etherisc", activation_gated: true,
+        env_rpc_key: "ALCHEMY_POLYGON_RPC_URL",
+        env_private_key: "ORACLE_ETHERISC_PRIVATE_KEY",
+        min_balance: 0.05, currency: "MATIC", decimals: 18,
+        param_key: "oracle_min_balance_matic_etherisc"
+      },
+      polygon_puro: {
+        network: "polygon", signer: "puro", activation_gated: true,
+        env_rpc_key: "ALCHEMY_POLYGON_RPC_URL",
+        env_private_key: "ORACLE_PURO_PRIVATE_KEY",
+        min_balance: 0.05, currency: "MATIC", decimals: 18,
+        param_key: "oracle_min_balance_matic_puro"
+      },
+      polygon_klima: {
+        network: "polygon", signer: "klima", activation_gated: true,
+        env_rpc_key: "ALCHEMY_POLYGON_RPC_URL",
+        env_private_key: "ORACLE_KLIMA_PRIVATE_KEY",
+        min_balance: 0.05, currency: "MATIC", decimals: 18,
+        param_key: "oracle_min_balance_matic_klima"
       }
     }.freeze
 
@@ -72,9 +103,13 @@ module Treasury
     MINT_CIRCUIT_TTL = 1.hour
 
     def perform
-      results = DEFAULTS.map do |chain_key, defaults|
-        config = build_config(chain_key, defaults)
-        check_balance(chain_key, config)
+      results = WALLETS.filter_map do |wallet_key, wallet|
+        if wallet[:activation_gated] && ENV[wallet[:env_private_key]].blank?
+          Rails.logger.debug { "[Treasury] #{wallet_key} dormant (activation-gated, ключ відсутній) — skip" }
+          next
+        end
+
+        check_balance(build_config(wallet))
       end
 
       # Оновлюємо Prometheus gauges
@@ -187,24 +222,19 @@ module Treasury
                          "нові #{token_type} mint-батчі тримаються :pending до TTL-expiry/reset."
     end
 
-    # [E.51] Builds config for a chain by merging network config with governance-aware thresholds.
+    # [E.51] Resolves the wallet entry into a runtime config with governance-aware thresholds.
     # SystemParameter.current reads from 24h cache → no DB hit on every monitor cycle.
-    def build_config(chain_key, defaults)
-      net = NETWORK_CONFIG[chain_key]
-      min_balance = (SystemParameter.current(defaults[:param_key], default: defaults[:min_balance]) || defaults[:min_balance]).to_f
-      min_balance_wei = (BigDecimal(min_balance.to_s) * 10**defaults[:decimals]).to_i
+    def build_config(wallet)
+      min_balance = (SystemParameter.current(wallet[:param_key], default: wallet[:min_balance]) || wallet[:min_balance]).to_f
+      min_balance_wei = (BigDecimal(min_balance.to_s) * 10**wallet[:decimals]).to_i
 
-      net.merge(
-        currency: defaults[:currency],
-        decimals: defaults[:decimals],
-        min_balance_wei: min_balance_wei
-      )
+      wallet.merge(min_balance_wei: min_balance_wei)
     end
 
-    # Перевіряє баланс Oracle-гаманця на конкретній мережі.
+    # Перевіряє баланс одного Oracle-гаманця (network+signer).
     # Повертає Hash з результатом перевірки.
-    def check_balance(chain_key, config)
-      balance = fetch_balance(chain_key, config)
+    def check_balance(config)
+      balance = fetch_balance(config)
 
       min_threshold = config[:min_balance_wei].to_i
       ratio = min_threshold.positive? ? (balance.to_f / min_threshold) : 0.0
@@ -212,6 +242,7 @@ module Treasury
 
       {
         network: config[:network],
+        signer: config[:signer],
         currency: config[:currency],
         balance_raw: balance,
         balance_human: humanize_balance(balance, config[:decimals]),
@@ -222,13 +253,14 @@ module Treasury
       }
     rescue StandardError => e
       SilkenNet::Metrics::TREASURY_CHECK_ERRORS_TOTAL.increment(
-        labels: { network: config[:network], error_type: e.class.name }
+        labels: { network: config[:network], signer: config[:signer], error_type: e.class.name }
       )
 
-      Rails.logger.error "🛑 [Treasury] #{config[:network]} balance check failed: #{e.message}"
+      Rails.logger.error "🛑 [Treasury] #{config[:network]}/#{config[:signer]} balance check failed: #{e.message}"
 
       {
         network: config[:network],
+        signer: config[:signer],
         currency: config[:currency],
         balance_raw: nil,
         balance_human: "ERROR",
@@ -240,11 +272,11 @@ module Treasury
       }
     end
 
-    # Отримує баланс для конкретної мережі
-    def fetch_balance(chain_key, config)
+    # Отримує баланс гаманця (диспетч за мережею)
+    def fetch_balance(config)
       Timeout.timeout(RPC_TIMEOUT) do
-        case chain_key
-        when :solana then fetch_solana_balance(config)
+        case config[:network]
+        when "solana" then fetch_solana_balance(config)
         else fetch_evm_balance(config)
         end
       end
@@ -295,19 +327,13 @@ module Treasury
     # Оновлює Prometheus gauges з поточними балансами
     def update_metrics(results)
       results.each do |result|
-        network = result[:network]
+        labels = { network: result[:network], signer: result[:signer] }
 
         if result[:balance_raw]
-          SilkenNet::Metrics::ORACLE_BALANCE.set(
-            result[:balance_raw],
-            labels: { network: network }
-          )
+          SilkenNet::Metrics::ORACLE_BALANCE.set(result[:balance_raw], labels: labels)
         end
 
-        SilkenNet::Metrics::ORACLE_BALANCE_RATIO.set(
-          result[:ratio],
-          labels: { network: network }
-        )
+        SilkenNet::Metrics::ORACLE_BALANCE_RATIO.set(result[:ratio], labels: labels)
       end
     end
 
@@ -317,7 +343,7 @@ module Treasury
       return if critical_results.empty?
 
       critical_results.each do |result|
-        Rails.logger.warn "🚨 [Treasury] CRITICAL: #{result[:network]} Oracle balance " \
+        Rails.logger.warn "🚨 [Treasury] CRITICAL: #{result[:network]}/#{result[:signer]} Oracle balance " \
                           "#{result[:balance_human]} #{result[:currency]} " \
                           "below threshold #{result[:min_threshold_human]} #{result[:currency]} " \
                           "(ratio: #{result[:ratio]}x)"
@@ -326,7 +352,7 @@ module Treasury
         EwsAlert.create(
           alert_type: :system_fault,
           severity: :critical,
-          message: "#{result[:network]} Oracle wallet balance " \
+          message: "#{result[:network]} #{result[:signer]} Oracle wallet balance " \
                    "(#{result[:balance_human]} #{result[:currency]}) " \
                    "is below minimum threshold " \
                    "(#{result[:min_threshold_human]} #{result[:currency]}). " \
