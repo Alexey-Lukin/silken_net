@@ -332,6 +332,8 @@ backend "gcs" {
 
 Цей bucket має існувати **до** першого `terraform init`. Terraform не може його створити автоматично. Деталі вирішення — в [`06_01`](06_01_Deployment_Kamal_Terraform) (Quickstart, Крок 1 — `terraform/bootstrap.sh`).
 
+**[SEC.22] той самий bootstrap латчить state-at-rest:** tf-state = повна plaintext-копія секретів terraform (третя, після Akash-ENV і `coap.env`) → скрипт створює CMEK-keyring `silken-tfstate-ew1` (той самий chicken-and-egg: ключ потрібен ДО `init`, тому gcloud out-of-band, не `kms.tf`), ставить default-CMEK + `--public-access-prevention` на bucket і ріже versioning-retention до 10 версій / 30 днів. Механіка/IAM-модель (GCS service-agent = крипто-принципал; deploy-SA без KMS-ролі) — [`06_04 §5.6`](06_04_Secrets_Checklist).
+
 ---
 
 ### Akash не має офіційного Terraform provider

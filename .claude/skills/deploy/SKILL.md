@@ -72,10 +72,13 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   fail-closed; були DEAD-in-prod — ніде не сконфігуровані); coap-guard пропускає master_key-check.
   Phase-2 drop `RAILS_MASTER_KEY` = deploy-gated (👤; SECRET_KEY_BASE+service-keys inject-at-deploy).
   Дім → `06_04 §5.7` / 00_07 SEC.22.
-- **Secrets-at-rest = дві ISOLATED KMS-осі (2026-07-09).** Boot-disk Anchor'а (тримає
+- **Secrets-at-rest = три ISOLATED KMS-осі (2026-07-10).** Boot-disk Anchor'а (тримає
   `coap.env` master-keys) шифрується **CMEK** — keyring `silken-disk-ew1` (`kms.tf`, grantee =
   compute service-agent, НЕ deploy-SA); money-signing custody (SEC.17, pre-mainnet) = окремий
-  keyring `silken-sign-ew1` (job-SA). Key-level IAM + purpose-enum-бар'єр; **НЕ** generic keyring
+  keyring `silken-sign-ew1` (job-SA); **tf-state bucket** (3-тя plaintext-копія секретів) =
+  keyring `silken-tfstate-ew1` — **bootstrap.sh-owned, out-of-band** (chicken-egg: ключ ДО
+  `terraform init`; grantee = GCS service-agent; deploy-SA KMS-ролі НЕ потребує — objectAdmin
+  достатньо; retention 10 версій/30д). Key-level IAM + purpose-enum-бар'єр; **НЕ** generic keyring
   (blast-radius merge-trap). CMEK boot-dependency: `reset`=DEK-cached (safe), лише stop→start/revoke
   б'є KMS (bounded: `prevent_destroy` + 30d-grace + Akash coap-fallback). ⚠️ найбільша at-rest-діра
   лишається **Akash-plaintext** (money-sextet + `RAILS_MASTER_KEY` provider-visible) → SEC.17. → `06_04 §5.6`.

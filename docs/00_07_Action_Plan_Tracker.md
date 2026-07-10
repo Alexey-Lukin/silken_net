@@ -1272,7 +1272,7 @@
 - [ ] 👤 **Phase-2 (deploy-gated) — drop `RAILS_MASTER_KEY` з web/coap/job:** інжект `SECRET_KEY_BASE` (= поточне `credentials.secret_key_base`, інакше ВСІ сесії ламаються — §5.2 entangled) + AR-encryption keys + 8 service keys через Console (свідомо НЕ в SDL: present-placeholder footgun) → verify нічого не читає vault у runtime → drop `RAILS_MASTER_KEY`. + coap `PROVISIONING`-omit (verify `$PROGRAM_NAME` у контейнері)
 - [x] 🤖 **cache `iotex_seed` ✅ SHIPPED** — per-uplink crown-jewel reduction: `derive_iotex_seed` (підписує КОЖЕН uplink через `W3bstreamVerificationService`, ампліфіковано ретраями `IotexVerificationWorker`) memoized in-process (`DERIVED_KEY_CACHE`, дзеркало `HardwareKey#cached_binary_key`; лише ENV-path, explicit `master_key:` derives fresh; валідний process-wide бо master-key boot-immutable → restart чистить). Дім [`06_04 §5.7`](06_04_Secrets_Checklist). ⚠️ `K_ota` звірено cold-path (єдиний caller `OtaPackagerService`/downlink, не per-uplink) → свідомо НЕ кешовано; угруповання «iotex_seed/K_ota» було припущенням, код не підтвердив
 - [ ] 🔗 **pre-mainnet (decisive seal)** — SEC.17 KMS-signing (5 EVM-ключів, не лише minter/slasher) + **KMS-MAC `PROVISIONING`** (Expand-only HKDF backend+firmware разом; 3-й keyring `silken-mac-ew1` поряд `silken-disk/sign-ew1`) → crown-jewel з кожного Akash-процесу
-- [ ] 🤖 **terraform-state latch** (Sonnet #1 central-hole: 3-я plaintext-копія ВСІХ секретів у GCS-state; `db_password` LIVE через CI) — CMEK-state-bucket + tight-IAM + GCS-versioning-retention drop (bootstrap.sh chicken-egg, keyring `silken-tfstate-ew1`, GCS-service-agent IAM)
+- [x] 🤖 **terraform-state latch ✅ SHIPPED (2026-07-10)** (Sonnet #1 central-hole: 3-я plaintext-копія ВСІХ секретів у GCS-state; `db_password` LIVE через CI) — `terraform/bootstrap.sh` (мігровано legacy gsutil → `gcloud storage`) створює keyring `silken-tfstate-ew1`/key `tfstate` out-of-band (chicken-egg: ключ ДО `init`) + default-CMEK + `--public-access-prevention` + retention 30в/90д→**10в/30д** (noncurrent-версія = копія секретів). 🔑 Крипто-принципал = **GCS service-agent** (verified tf-gcs-backend docs): deploy-SA KMS-ролі НЕ потребує (objectAdmin достатньо, iam.tf as-is) — первинна гіпотеза «WIF-нога 403-не без binding» перевернута research'ем; + документований 30s IAM-propagation sleep між authorize і bucket-update. Дім [`06_04 §5.6`](06_04_Secrets_Checklist) (+[`06_02`](06_02_Akash_Network_Integration) §GCS · [`06_06 §1`](06_06_Disaster_Recovery_and_Backup) DR-рядок `tfstate`-key)
 - [ ] 👤 **founder-decisions** — Solana-Ed25519 (Vault-Transit vs pin `SolanaMicroRewardWorker`→Anchor; GCP-KMS без EdDSA) · deploy-SA `instanceAdmin.v1` privesc-split (Opus#5: GCP-root god-credential; CMEK не закриває live-VM)
 - [ ] 🤖 **rotation-on-compromise + canon-honesty** — runbook crown-jewels (`RAILS_MASTER_KEY`+`PROVISIONING` un-rotatable, дзеркало S6.14 §5.4); `SECURITY_ASSURANCE §6` honest-residual ✅ done, custody-prominence residual (Opus#7 #3)
 
@@ -1377,8 +1377,8 @@
 
 #### S5.6 — GCS bucket для Terraform state (chicken-and-egg)
 - **P3** · 👤 · ⚪ · → `06_02 §GCS bucket`
-- **Стан:** Не розпочато — GCS bucket для remote TF state створюється вручну перед `terraform init` (chicken-and-egg). Канон `06_02 §GCS bucket`.
-- [ ] 👤 `gsutil mb` → верифікувати `terraform init`
+- **Стан:** Не розпочато (провіжн) — bucket для remote TF state створює `terraform/bootstrap.sh` перед `terraform init` (chicken-and-egg). **[SEC.22 2026-07-10]:** скрипт латчить і at-rest — CMEK-keyring `silken-tfstate-ew1` + `--public-access-prevention` + retention 10 версій/30 днів (мігровано legacy gsutil → `gcloud storage`). Канон `06_02 §GCS bucket` + [`06_04 §5.6`](06_04_Secrets_Checklist).
+- [ ] 👤 `./terraform/bootstrap.sh` → верифікувати `terraform init` (+ разовий ~30s IAM-propagation sleep усередині — не переривати)
 
 #### E.5 — CoAP listener scale ceiling (~10k вузлів)
 - **P3** · 🤖 · 🌿 · → `06_01`

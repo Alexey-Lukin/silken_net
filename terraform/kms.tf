@@ -2,17 +2,27 @@
 # Cloud KMS — customer-managed encryption keys (CMEK).
 # =============================================================================
 #
-# Home for the project's KMS keyring/IAM architecture. Two keyrings, ISOLATED by
-# purpose so a role on one can never leak to the other (blast-radius boundary):
+# Home for the project's KMS keyring/IAM architecture. Three keyrings, ISOLATED
+# by purpose so a role on one can never leak to a sibling (blast-radius boundary):
 #
-#   silken-disk-ew1  (this file)  — ENCRYPT_DECRYPT, disk CMEK.
-#                                    Grantee: Compute Engine Service Agent only.
-#   silken-sign-ew1  (SEC.17, pre-mainnet; keyring-arch §5.6, custody §5.5) — ASYMMETRIC_SIGN,
-#                                    oracle-minter/slasher. Grantee: the job
-#                                    signer SA only. NEVER the compute agent.
+#   silken-disk-ew1    (this file)  — ENCRYPT_DECRYPT, disk CMEK.
+#                                      Grantee: Compute Engine Service Agent only.
+#   silken-sign-ew1    (SEC.17, pre-mainnet; keyring-arch §5.6, custody §5.5) — ASYMMETRIC_SIGN,
+#                                      oracle-minter/slasher. Grantee: the job
+#                                      signer SA only. NEVER the compute agent.
+#   silken-tfstate-ew1 (bootstrap.sh, out-of-band [SEC.22]) — ENCRYPT_DECRYPT,
+#                                      state-bucket CMEK. Chicken-and-egg: the
+#                                      backend bucket needs the key before
+#                                      terraform init can run, so gcloud owns it
+#                                      (drift-invisible here; `terraform import`
+#                                      if that ever matters). Grantee: the GCS
+#                                      service agent only — the deploy SA needs
+#                                      NO KMS role (gcs-backend reads/writes with
+#                                      storage.objectAdmin alone, iam.tf).
 #
-# Coherence: same region (europe-west1, EU data-at-rest pin), purpose-scoped
-# names, one kms.tf — so SEC.17 later just adds silken-sign-ew1 with zero rename.
+# Coherence: same region (europe-west1, EU data-at-rest pin — and a hard KMS<->GCS
+# same-region constraint for the state bucket), purpose-scoped names, one
+# architecture home — so SEC.17 later just adds silken-sign-ew1 with zero rename.
 # GCP's `purpose` enum is a hard type barrier (a symmetric key physically cannot
 # sign, an asymmetric key cannot wrap a disk) → the only residual risk is IAM
 # scope, eliminated by the two-keyring split + key-level bindings below.
