@@ -472,7 +472,7 @@ Cross-ref: [`00_07`](00_07_Action_Plan_Tracker) SEC.17 (стан/тригер), 
 
 ### 5.6. Disk-encryption CMEK + KMS keyring architecture (GCP-0033)
 
-**Рішення (2026-07-09):** boot-disk Ingress Anchor'а тримає `coap.env` (`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`) at-rest. Поверх дефолтного GMEK — **CMEK** (`terraform/kms.tf`: keyring `silken-disk-ew1`, key `anchor-boot`, symmetric) для key-lifecycle-контролю (disable/rotate/audit/crypto-shred). Wrap DEK робить **Compute Engine Service Agent** (`service-<num>@compute-system`, key-level encrypter/decrypter — **НЕ** deploy-SA; `google_project_service_identity` compute-excluded → constructed string + `depends_on` compute-API). SHIPPED pre-deploy (timing: `kms_key_self_link`=ForceNew → на живий VM = replacement; до 1-го apply = нуль-cost).
+**Рішення (2026-07-09):** boot-disk Ingress Anchor'а тримає `coap.env` (`RAILS_MASTER_KEY` + AR-encryption-ключі; **НЕ** `PROVISIONING_MASTER_KEY` — INF.17 2026-07-10 прибрав його з coap, fleet-forge root off анкора) at-rest. Поверх дефолтного GMEK — **CMEK** (`terraform/kms.tf`: keyring `silken-disk-ew1`, key `anchor-boot`, symmetric) для key-lifecycle-контролю (disable/rotate/audit/crypto-shred). Wrap DEK робить **Compute Engine Service Agent** (`service-<num>@compute-system`, key-level encrypter/decrypter — **НЕ** deploy-SA; `google_project_service_identity` compute-excluded → constructed string + `depends_on` compute-API). SHIPPED pre-deploy (timing: `kms_key_self_link`=ForceNew → на живий VM = replacement; до 1-го apply = нуль-cost).
 
 **KMS keyring architecture (one-home, всі ключі) — ТРИ isolated keyring'и** (blast-radius-бар'єр: роль на одному не тече на sibling):
 
