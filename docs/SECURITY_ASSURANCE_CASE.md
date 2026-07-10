@@ -217,12 +217,19 @@ An assurance case is credible because it states what is **not** yet fully closed
   container access reads `/proc/<pid>/environ`, so at-rest encryption cannot hide a secret that must be live
   in the process. The *unbounded-fraud* keys are being moved out of process memory — EVM signing → GCP-KMS
   remote-signer (`SEC.17`, key never in-process); `PROVISIONING_MASTER_KEY` (the HKDF root that derives every
-  device key — higher blast-radius than the minter key) → GCP-KMS-MAC + an Expand-only KDF (pre-mainnet,
-  firmware-coordinated). Until those land they are provider-visible; bounded-blast operational credentials
+  device key — higher blast-radius than the minter key; on compromise the derived Lorenz seed breaks the DCI
+  anti-fraud invariant for the whole flashed fleet until an SWD re-flash) → GCP-KMS-MAC + an Expand-only KDF
+  (pre-mainnet, firmware-coordinated). **`RAILS_MASTER_KEY` belongs in the same sentence:** it unlocks the
+  credentials vault and — via the entangled `secret_key_base` ([`06_04 §5.2`](06_04_Secrets_Checklist)) —
+  forges sessions and every `generates_token_for` token; its *runtime* need is being dissolved
+  (credentials→ENV shipped, Phase-2 drop deploy-gated — `SEC.22`), and both master keys are effectively
+  un-rotatable today. Until those land they are provider-visible; bounded-blast operational credentials
   (`REDIS_URL`, the DB-access credential, per-vendor API keys, webhook HMACs) stay resident by design (Akash
-  offers no Workload Identity Federation). A third at-rest copy of the whole bundle sits in the GCS
-  Terraform-state object (`sensitive=true` hides display, not storage) — treated as a top-tier store. Rotation
-  runbooks for the two master keys are the required safety net. Program + phasing: `SEC.22`
+  offers no Workload Identity Federation). The third at-rest copy in the GCS Terraform-state bucket is now
+  CMEK-sealed with public-access-prevention and a deliberately short 10-version/30-day retention
+  ([`06_04 §5.6`](06_04_Secrets_Checklist), 2026-07-10). Rotation-on-compromise runbooks for the two master
+  keys are **written** — an ordered-degradation playbook, honest that neither key rotates cleanly →
+  [`06_04 §5.8`](06_04_Secrets_Checklist). Program + phasing: `SEC.22`
   ([`00_07`](00_07_Action_Plan_Tracker)); mechanism → [`06_04 §5.5`](06_04_Secrets_Checklist).
 
 ---

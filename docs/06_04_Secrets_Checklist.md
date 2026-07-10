@@ -306,8 +306,8 @@
 
 ### 5.2. Ротація секретів
 
-- **`PROVISIONING_MASTER_KEY`** (HKDF root, 6 key classes): планова ротація потребує перевипуску всіх деривованих ключів через provisioning — per-device (KEYL session, K_seed, KEYC) + per-cluster (K_ota, KEYB — FW.2 (в)); несумісно зі вже зашитими пристроями (rotation = fleet re-flash). Plan: `FW.17` (Hash Ratchet KDF, session-only) у майбутньому циклі. ⚠️ **On-compromise = crown-jewel, effectively un-rotatable сьогодні** (fleet re-flash + усі деривовані ключі — Opus-sweep 2026-07-09); справжній latch = GCP-KMS-MAC (ключ не покидає HSM) → `SEC.22` (pre-mainnet).
-- **`RAILS_MASTER_KEY`** / **`secret_key_base`**: планової ротації немає; on-compromise **entangled** — ротація master-key re-encrypt'ить `credentials.yml.enc`, але той самий `secret_key_base` лишається → атакер зберігає session/cookie-forge; щоб revoke, треба ротувати й `secret_key_base`, що invalidate'ить УСІ сесії. Runbook + `SECRET_KEY_BASE`-env-detach (дзеркало §5.4 peaq на master-рівні) → `SEC.22`.
+- **`PROVISIONING_MASTER_KEY`** (HKDF root, **6** key classes): планова ротація потребує перевипуску всіх деривованих ключів через provisioning — per-device (KEYL session, K_seed, KEYC) + per-cluster (K_ota, KEYB — FW.2 (в)) + backend-only (**iotex_seed** Ed25519 W3bstream — єдиний клас без hardware-persistence, ротується redeploy'єм); несумісно зі вже зашитими пристроями (rotation = fleet re-flash). Plan: `FW.17` (Hash Ratchet KDF, session-only) у майбутньому циклі. ⚠️ **On-compromise = crown-jewel, effectively un-rotatable сьогодні** (fleet re-flash + усі деривовані ключі — Opus-sweep 2026-07-09); справжній latch = GCP-KMS-MAC (ключ не покидає HSM) → `SEC.22` (pre-mainnet). **Порядок дій при компрометації → §5.8-A.**
+- **`RAILS_MASTER_KEY`** / **`secret_key_base`**: планової ротації немає; on-compromise **entangled** — ротація master-key re-encrypt'ить `credentials.yml.enc`, але той самий `secret_key_base` лишається → атакер зберігає session/cookie-forge; щоб revoke, треба ротувати й `secret_key_base`, що invalidate'ить УСІ сесії + `generates_token_for`-токени (найдовший хвіст — `api_access` 30 днів) + Codex pair-HMAC (`Codex::PairSelectorService`) + CSRF/ActiveStorage signed IDs. **Порядок дій → §5.8-B** (`SECRET_KEY_BASE`-env-detach механіка — §5.7 Phase-2).
 - **Database password**: змінити Cloud SQL → оновити `POSTGRES_PASSWORD` GitHub Secret (живить Kamal `POSTGRES_PASSWORD` + Terraform `TF_VAR_db_password`) → `kamal redeploy`.
 - **Sentry DSN**: rotate у Sentry UI → оновити `SENTRY_DSN` → redeploy.
 - **Chainlink HMAC**: координовано з backend deploy (зміна на льоту викличе rejected callbacks).
@@ -350,6 +350,8 @@ bin/rails runner "
 #### Крок 2: Containment (< 15 хвилин)
 
 **2a. Негайна заміна ключа в credentials:**
+
+> ⚠️ **ENV-first (SEC.22, §5.7/§5.8):** сервіс читає `ENV["PEAQ_SIGNING_KEY"].presence || credentials.peaq_signing_key` — якщо ключ заведено в deploy-ENV (GitHub Secret / Kamal / SDL), `credentials:edit` **НЕ ротує активне значення** (ENV перемагає). Спочатку перевір і ротуй ENV-поверхні, credentials — другим.
 
 ```bash
 RAILS_CREDENTIALS_EDITOR=vim bin/rails credentials:edit
@@ -494,6 +496,33 @@ Cross-ref: [`00_07`](00_07_Action_Plan_Tracker) INF.22 (GCP-0033-fix), §5.5 (si
 **iotex_seed hot-path cache — SHIPPED.** `HardwareKeyService.derive_iotex_seed` підписується на КОЖЕН uplink (`W3bstreamVerificationService` через `IotexVerificationWorker`, ампліфіковано ретраями) → щоразу re-touch'ив `PROVISIONING_MASTER_KEY` crown-jewel через HKDF. Тепер memoized in-process (`DERIVED_KEY_CACHE`, дзеркало `HardwareKey#cached_binary_key`): cache-hit **не торкається master-key**. Keyed by `(hkdf-info, device_uid)`; лише ENV-path — explicit `master_key:` (SEC.3 DI / factory) derives fresh (не ділить slot із іншим коренем). Валідний увесь process-life бо master-key boot-immutable (§5.2/§5.4: rotation = fleet re-flash + redeploy → restart чистить кеш). `K_ota` (`OtaHmacKeyService`) звірено cold-path (єдиний caller = `OtaPackagerService`/downlink, не per-uplink) → свідомо НЕ кешовано (YAGNI + OTA-verify blast-radius).
 
 Cross-ref: [`00_07`](00_07_Action_Plan_Tracker) SEC.22, §5.2 (rotation entanglement), §5.5 (KMS pre-mainnet seal), [`04_02`](04_02_Business_Logic_and_Services) `Security::EncryptionKeyGuard`.
+
+### 5.8. Rotation-on-compromise Runbook — crown-jewels `PROVISIONING_MASTER_KEY` + `RAILS_MASTER_KEY` (SEC.22)
+
+> **Threat model + чесна рамка.** Обидва ключі — effectively **un-rotatable сьогодні** (§5.2): цей runbook = впорядкована деградація й пріоритети, НЕ «заміна за 15 хв» (контраст: `peaq_signing_key` §5.4 — повністю rotatable). Структура дзеркалить §5.4 (Detection → Containment → Recovery → Post-Incident). Справжній latch (ключ не покидає HSM) = pre-mainnet GCP-KMS-MAC / KMS-signing — §5.5/§5.7. ⚠️ **ENV-first пастка (стосується КОЖНОГО кроку будь-якого runbook'а):** після SEC.22 credentials→ENV `bin/rails credentials:edit` НЕ ротує значення, якщо той самий ключ заведено в deploy-ENV (`ENV[..].presence ||` перемагає) — **перевіряй ENV-поверхні першими** (GitHub Secrets / Kamal / SDL / tfvars / `coap.env`).
+
+**A. `PROVISIONING_MASTER_KEY` compromised** (HKDF-корінь **6** класів ключів — §5.2; blast-radius вищий за minter-ключ):
+
+1. **Detection:** масові DCI-дивергенції, що «сходяться» (fraud, який ПРОХОДИТЬ Z-звірку = сигнатура K_seed-компрометації — чесний збій дає розбіжність, не збіг) · fauna/telemetry-аномалії кластерами · невпізнані provisioning-запити в `AuditLog` · IoTeX-верифікації від неіснуючих пристроїв.
+2. **Containment (порядок = за незворотністю шкоди):**
+   - **Зупинити provisioning** нових пристроїв (кожен новий = розширення компрометованого кореня); ротувати ENV на новий master для **майбутнього** provisioning — старі деривації в `HardwareKey`/Flash лишаються під старим коренем (це і є un-rotatable половина).
+   - **Підняти недовіру до телеметрії всього existing-fleet:** K_seed відтворюється offline із master + публічного `device_uid` (DID on-chain) → **DCI anti-fraud invariant зламано для ВСІХ прошитих дерев до re-flash** — найвищий blast-radius клас із шести. Мінт-рішення (freeze/manual_review-режим) = founder per-інцидент.
+   - **Прийняти: OTA-канал заморожений** — K_ota деривується з master, кожен непрошитий вузол відхиляє образ під новим коренем fail-safe → rescue-прошивку ефіром НЕ доставиш; єдиний канал = фізичний SWD.
+   - Gateway-ключі: `HardwareKeyService#rotate_gateway_random!` (KEYC вже SecureRandom, master-незалежний) — але доставка на Queen = той самий re-flash bottleneck.
+3. **Recovery = fleet re-flash (SWD, фізична експедиція):** через `FactoryFlashing` per-device (KEYL/K_seed/KEYC) + per-cluster (KEYB — **нуль soft-path, кластер синхронно**; K_ota). Пріоритет: Queen'и першими (KEYC/KEYB відновлюють control-plane кластера), Soldier'и — за економічною вагою кластера. `iotex_seed` — єдиний клас БЕЗ hardware-persistence (чистий backend-derive) → ротується redeploy'єм, АЛЕ ⚠️ незвірено, чи W3bstream пінить pubkey per-DID довгостроково — **перший крок інциденту: звірити з IoTeX, чи зміна ключа ламає верифікацію existing DID**. `DERIVED_KEY_CACHE` тримає старі деривації process-wide → **redeploy/restart обов'язковий** після ENV-ротації.
+   - **Що НЕ зачеплено (за дизайном):** Gateway M2M Ed25519-ідентичність (EDSK/voice-сім'я) — `SecureRandom` на factory host, НЕ HKDF-від-master (`FactoryFlashing::Session#gateway_voice_seed`) — компрометація master її не розкриває.
+4. **Post-Incident:** інцидент в `AuditLog` + оновити residual у `SECURITY_ASSURANCE §6` · прискорити KMS-MAC (§5.5) · переглянути custody-тір ([`03_06 §5.A`](03_06_Factory_Flashing_and_Key_Provisioning) ранжує Direct-ENV найнижче — сьогодні це єдиний живий шлях).
+
+**B. `RAILS_MASTER_KEY` / `secret_key_base` compromised (entangled — §5.2):**
+
+1. **Detection:** сесії/дії без відповідних login-подій (session-forge) · валідні `generates_token_for`-токени, яких ніхто не видавав · Sentry CSRF-аномалії.
+2. **Containment — два ключі, дві половини:**
+   - Re-encrypt vault: `bin/rails credentials:edit` з новим master (commit нового `.enc`) — закриває ЧИТАННЯ vault'а, але **НЕ** revoke: той самий `secret_key_base` лишається → session/token-forge триває.
+   - Справжній revoke = **ротація `secret_key_base`** (інжект нового `SECRET_KEY_BASE` у deploy-ENV — механіка Phase-2 §5.7) = one-shot інвалідація **всіх**: dashboard-сесій · `password_reset` (15 хв) · `email_verification` (24 год) · **`api_access` (30 днів — найбільший операційний хвіст: усі API-клієнти re-issue)** · `stream_access` (1 год) · Codex battle-pairing HMAC (`Codex::PairSelectorService`, 5-хв TTL — найм'якший) · CSRF · ActiveStorage signed IDs.
+3. **Recovery:** користувачі re-login (очікуваний support-сплеск), API-інтеграції перевипускають токени; даних не втрачено (AR-encryption ключі — ОКРЕМІ ENV-секрети §5.7, цим інцидентом не зачеплені).
+4. **Post-Incident:** як A.4 + якщо вектор = витік із running-process на Akash — аргумент прискорити Phase-2 drop `RAILS_MASTER_KEY` (§5.7).
+
+Cross-ref: §5.2 (un-rotatable вердикти + 6 класів) · §5.4 (rotatable-контраст + ENV-first нота) · §5.5/§5.7 (KMS-latch = вихід із цього runbook'а) · [`06_06 §4`](06_06_Disaster_Recovery_and_Backup) (**втрата ≠ компрометація**: втрата master-keys незворотна — інший клас) · [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) (re-flash механіка).
 
 ---
 

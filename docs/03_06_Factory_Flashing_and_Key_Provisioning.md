@@ -167,7 +167,9 @@ CoAP-магістраль (Queen ↔ Rails) — тільки на Gateway-ряд
   HKDF(master_key, device_uid, "silken-aes-256-device-key") → 32 bytes (AES-256)
 
 Де:
-  master_key  = 32-байтний секрет (генерується HRNG, зберігається у Rails Vault)
+  master_key  = 32-байтний секрет (генерується HRNG; custody СЬОГОДНІ = deploy-ENV
+                `PROVISIONING_MASTER_KEY` + boot-guard SEC.9 — НЕ Rails Vault/HSM;
+                KMS-MAC latch = pre-mainnet SEC.22 → 06_04 §5.7, on-compromise → §5.8)
   device_uid  = wire-ідентифікатор пристрою: Tree → DID "SNET-XXXXXXXX"
                 (ДЕРИВОВАНИЙ з 96-біт silicon UID, murmur3-fmix32 — 03_01 §7;
                 сирий 24-hex UID живе окремо у trees.silicon_uid_hex);
@@ -431,7 +433,7 @@ STM32CubeProgrammer → Option Bytes → Write Protection:
 | Master key size | 256 bits | 256 bits | Master input — однаковий 256-bit secret для обох KDF-outputs |
 | Output key size | **128 bits (16 bytes)** — ARCH.42 | 256 bits (32 bytes) | LoRa: AES-128 (свідомий вибір, **не** SE-constraint — SE050 вміє 256, 03_05 §3.7); CoAP: AES-256 (Queen Flash, no SE constraint) |
 | Info string | `"silken-aes-128-lora-key"` (session) · `"silken-aes-128-broadcast-key"` (KEYB cluster, salt=`"cluster:<id>"` — FW.2 (в)) | `"silken-aes-256-device-key"` | Domain separation — усі KDF outputs ortho (вкл. `"silken-ota-hmac-v1"` §4) |
-| Master key storage | Rails Vault (AR Encryption) + HSM у production | Same | Never in-repo |
+| Master key storage | **Deploy-ENV `PROVISIONING_MASTER_KEY`** (boot-guard SEC.9; §5.A ранжує Direct-ENV найнижче — чесний поточний тір) → KMS-MAC pre-mainnet (SEC.22, [`06_04 §5.7`](06_04_Secrets_Checklist)); **деривовані** ключі — `HardwareKey` AR-encrypted | Same | Never in-repo; on-compromise runbook → [`06_04 §5.8`](06_04_Secrets_Checklist) |
 | Device key storage | Protected Flash (LoRa magic `"KEYL"`) — **обидві гілки** (SEC.14 provisioning-only; SE Slot 0 reserved для urban-варіанту — 03_05 §3.7) | Protected Flash (CoAP magic `"KEYC"`) — Queen MCU only | Фізичний захист; AES-128 на LoRa — свідомий вибір, не SE-constraint (ADR 03_05 §3.7); CoAP-key лишається у MCU Flash (канал не через SE) |
 | Backup/rotate | Session: dual-key grace period (HardwareKey#previous_aes_key_hex — закривається неявним uplink-ACK). **KEYB: re-provision only** — grace незастосовний (broadcast-ключ не має власного uplink'а для ACK; клас K_ota) | Same (grace) | Zero-downtime rotation (session); cluster-ключі ротуються фізичним re-flash 125-ї сторінки |
 | Post-quantum margin | $2^{128}$ (post-Grover ≈ $2^{64}$ — захищається ratchet `[FW.17]` + PQC bridge 03_05 §10) | $2^{256}$ (post-Grover ≈ $2^{128}$ — абсолютний квантовий імунітет) | Чому CoAP залишається 256: інфраструктурне TLS-termination через Cloudflare X25519+Kyber вже доступне (post-quantum hybrid) |
