@@ -1206,7 +1206,7 @@
 
 #### S6.18 — Rails web security hardening
 - **P1** · 👤 · 🟢 · → `06_04 §2.1`
-- **Стан:** Код готовий — production.rb (force_ssl/HSTS + host-auth з probe-exclusions `/up`/`/ready`/`/metrics`) + CSP (report-only) + security_headers.rb + session_store. `RAILS_ALLOWED_HOSTS` значення свідомо НЕ закомічено (на відміну від `APP_HOST`/`WEB3_STRICT_MODE`): порожнє → warn-and-allow (degraded, не fatal), а закомічене **неправильне** → 403 block-all. Публічний домен зафіксовано INF.4 (Опція A Cloudflare, 07-03) = **`silkennet.app`**; operator-set перед prod. Канон `06_04 §2.1`.
+- **Стан:** Код готовий — production.rb (force_ssl/HSTS + host-auth з probe-exclusions `/up`/`/ready`/`/metrics`) + CSP (report-only) + security_headers.rb + session_store. `RAILS_ALLOWED_HOSTS` значення свідомо НЕ закомічено (на відміну від `APP_HOST`/`WEB3_STRICT_MODE`): порожнє → warn-and-allow (degraded, не fatal), а закомічене **неправильне** → 403 block-all. Публічний домен зафіксовано INF.4 (Опція A Cloudflare, 07-03) = **`silkennet.app`**; operator-set перед prod. **DRY-hardening 2026-07-10:** probe-exclusion paths були дубльовані у `force_ssl` redirect-exclude + `host_authorization` exclude (ідентичні лямбди) → single-sourced у `probe_paths`/`probe_request` (дрейф однієї копії ламав би deploy health-check/SSL-redirect за зеленим boot; тепер структурно неможливий). Канон `06_04 §2.1`.
 - [ ] 👤 `RAILS_ALLOWED_HOSTS=silkennet.app` у Kamal/Akash env.clear при деплої — інакше 403 block-all
 - [ ] 👤 після 1-2 тиж CSP-репортів → `CSP_ENFORCE=true`
 

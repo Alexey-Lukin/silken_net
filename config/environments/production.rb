@@ -38,12 +38,20 @@ Rails.application.configure do
   # only for non-TLS canary deployments.
   config.assume_ssl = ENV["DISABLE_SSL"] != "true"
 
+  # Internal probe paths (health checks + Prometheus scrape) reach the app over HTTP by IP
+  # with no Host header — excluded from BOTH the SSL redirect and host-authorization below.
+  # Single-sourced so the two exclusions can never drift: a renamed/added probe touched in
+  # one place but not the other would silently break the deploy health-check behind a green
+  # boot. Keep in sync with config.silence_healthcheck_path (/up) + Kamal proxy.healthcheck.
+  probe_paths   = %w[/up /ready /metrics].freeze
+  probe_request = ->(request) { probe_paths.include?(request.path) }
+
   # [PROD] Force all access to the app over SSL, enable HSTS (1 year + subdomains + preload),
   # and use secure cookies. Health checks (/up, /ready) and Prometheus scrape (/metrics) are excluded so
   # internal probes that hit HTTP directly continue to work.
   config.force_ssl = ENV["DISABLE_SSL"] != "true"
   config.ssl_options = {
-    redirect: { exclude: ->(request) { request.path == "/up" || request.path == "/ready" || request.path == "/metrics" } },
+    redirect: { exclude: probe_request },
     hsts:     { expires: 1.year, subdomains: true, preload: true }
   }
 
@@ -160,6 +168,6 @@ Rails.application.configure do
     end
   end
   config.host_authorization = {
-    exclude: ->(request) { request.path == "/up" || request.path == "/ready" || request.path == "/metrics" }
+    exclude: probe_request
   }
 end
