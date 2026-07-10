@@ -486,6 +486,8 @@ Cross-ref: [`00_07`](00_07_Action_Plan_Tracker) INF.22 (GCP-0033-fix), §5.5 (si
 
 **Phase-2 (👤, deploy-gated): drop `RAILS_MASTER_KEY`.** Після інжекту `SECRET_KEY_BASE` (= поточне `credentials.secret_key_base`, інакше ВСІ сесії ламаються — §5.2 entangled) + AR-encryption keys + service keys, ніщо не читає vault у runtime → `RAILS_MASTER_KEY` droppable з web/coap/job. **НЕ** додано в SDL сьогодні (свідомо): `SECRET_KEY_BASE` (present-placeholder override footgun) + 8 service keys (present-placeholder → 401) — inject-at-deploy через Console.
 
+**iotex_seed hot-path cache — SHIPPED.** `HardwareKeyService.derive_iotex_seed` підписується на КОЖЕН uplink (`W3bstreamVerificationService` через `IotexVerificationWorker`, ампліфіковано ретраями) → щоразу re-touch'ив `PROVISIONING_MASTER_KEY` crown-jewel через HKDF. Тепер memoized in-process (`DERIVED_KEY_CACHE`, дзеркало `HardwareKey#cached_binary_key`): cache-hit **не торкається master-key**. Keyed by `(hkdf-info, device_uid)`; лише ENV-path — explicit `master_key:` (SEC.3 DI / factory) derives fresh (не ділить slot із іншим коренем). Валідний увесь process-life бо master-key boot-immutable (§5.2/§5.4: rotation = fleet re-flash + redeploy → restart чистить кеш). `K_ota` (`OtaHmacKeyService`) звірено cold-path (єдиний caller = `OtaPackagerService`/downlink, не per-uplink) → свідомо НЕ кешовано (YAGNI + OTA-verify blast-radius).
+
 Cross-ref: [`00_07`](00_07_Action_Plan_Tracker) SEC.22, §5.2 (rotation entanglement), §5.5 (KMS pre-mainnet seal), [`04_02`](04_02_Business_Logic_and_Services) `Security::EncryptionKeyGuard`.
 
 ---

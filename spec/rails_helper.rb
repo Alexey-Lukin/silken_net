@@ -44,6 +44,10 @@ RSpec.configure do |config|
   config.before do
     Sidekiq::Job.clear_all
     Rails.cache.clear
+    # [SEC.22] Derived-key cache is keyed by (info, uid) without a master-key
+    # version → clear it so a seed derived under one example's ENV master key
+    # never bleeds into the next (the `config.around` below restores ENV itself).
+    DERIVED_KEY_CACHE.clear
     Rack::Attack.cache.store.clear
     Rack::Attack.reset!
     Web3::RpcConnectionPool.reset!

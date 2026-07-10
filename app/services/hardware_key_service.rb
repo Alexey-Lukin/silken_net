@@ -115,10 +115,21 @@ class HardwareKeyService
                 length: BROADCAST_KEY_SIZE_BYTES, master_key: master_key)
   end
 
-  # Iotex W3bstream Ed25519 seed (post-ARCH.42) — derived on-demand для signature
-  # attestation. Returns 64-char HEX (32 bytes). Domain-separated from AES/Lorenz keys.
+  # Iotex W3bstream Ed25519 seed (post-ARCH.42) — signed on EVERY uplink by
+  # W3bstreamVerificationService (via IotexVerificationWorker, up to 5× on retry),
+  # so each call re-touched the PROVISIONING_MASTER_KEY crown-jewel through HKDF.
+  # [SEC.22] Memoize the ENV-path derivation in-process (mirror
+  # HardwareKey#cached_binary_key): a cache hit touches no master key. Safe because
+  # the ENV master key is boot-immutable — rotation = fleet re-flash + redeploy →
+  # restart clears DERIVED_KEY_CACHE, so a cached seed never diverges from a fresh
+  # one. An explicit master_key: (SEC.3 DI / factory) bypasses the cache — it must
+  # not share the (info, uid) slot with a different root, and is never a hot path.
+  # Returns 64-char HEX (32 bytes). Domain-separated from AES/Lorenz keys.
   def self.derive_iotex_seed(device_uid, master_key: nil)
-    hkdf_derive(device_uid, info: IOTEX_HKDF_INFO, length: IOTEX_SEED_SIZE_BYTES, master_key: master_key)
+    derive = -> { hkdf_derive(device_uid, info: IOTEX_HKDF_INFO, length: IOTEX_SEED_SIZE_BYTES, master_key: master_key) }
+    return derive.call unless master_key.nil?
+
+    DERIVED_KEY_CACHE.getset("#{IOTEX_HKDF_INFO}\x00#{device_uid}", &derive)
   end
 
   # Gateway CoAP AES-256 key — без змін після ARCH.42 (32 bytes).

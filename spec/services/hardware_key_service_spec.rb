@@ -254,6 +254,64 @@ RSpec.describe HardwareKeyService, type: :service do
     end
   end
 
+  # Iotex Ed25519 attestation seed — the per-uplink hot path (W3bstream signs
+  # every telemetry log). Cached in-process to spare the crown-jewel (SEC.22).
+  describe ".derive_iotex_seed" do
+    before do
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return("test-master-key-for-hkdf-derive!")
+    end
+
+    it "derives a deterministic 32-byte (64-hex) seed per device" do
+      s1 = described_class.derive_iotex_seed("DEVICE-A")
+      s2 = described_class.derive_iotex_seed("DEVICE-A")
+
+      expect(s1).to eq(s2)
+      expect(s1.length).to eq(64) # 32 bytes for Ed25519
+      expect(s1).to match(/\A[0-9A-F]+\z/)
+    end
+
+    it "isolates devices — different device_uid → different seed" do
+      expect(described_class.derive_iotex_seed("DEVICE-A"))
+        .not_to eq(described_class.derive_iotex_seed("DEVICE-B"))
+    end
+
+    it "is domain-separated from the CoAP device key on the same salt input" do
+      expect(described_class.derive_iotex_seed("DEVICE-A"))
+        .not_to eq(described_class.derive_device_key("DEVICE-A"))
+    end
+
+    # [SEC.22] The whole point: a cache hit must NOT re-touch the master key via HKDF.
+    it "memoizes the ENV-path derivation (second call touches no crown-jewel)" do
+      described_class.derive_iotex_seed("DEVICE-A") # warm: miss → one HKDF call
+
+      expect(OpenSSL::KDF).not_to receive(:hkdf)
+      expect(described_class.derive_iotex_seed("DEVICE-A").length).to eq(64)
+    end
+
+    # [SEC.3 DI] Explicit master_key: derives fresh and must NOT poison the shared
+    # (info, uid) cache slot — otherwise the ENV path would serve the DI seed.
+    it "bypasses the cache for an explicit master_key: without poisoning the ENV path" do
+      di_key = "di-alive-proof-master-key-distinct"
+      via_param = described_class.derive_iotex_seed("DEVICE-A", master_key: di_key)
+      via_env   = described_class.derive_iotex_seed("DEVICE-A")
+
+      expect(via_param).not_to eq(via_env)
+      oracle = OpenSSL::KDF.hkdf(
+        "test-master-key-for-hkdf-derive!", salt: "DEVICE-A",
+        info: described_class::IOTEX_HKDF_INFO, length: described_class::IOTEX_SEED_SIZE_BYTES,
+        hash: "SHA256"
+      ).unpack1("H*").upcase
+      expect(via_env).to eq(oracle)
+    end
+
+    it "raises SecurityError without a master key [SEC.11]" do
+      allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return(nil)
+      expect { described_class.derive_iotex_seed("DEVICE-A") }
+        .to raise_error(SecurityError, /PROVISIONING_MASTER_KEY/)
+    end
+  end
+
   describe ".rotate" do
     let!(:hardware_key) do
       HardwareKey.create!(

@@ -18,3 +18,17 @@
 require "sin_lru_redux"
 
 HARDWARE_KEY_CACHE = SinLruRedux::ThreadSafeCache.new(10_000)
+
+# ---------------------------------------------------------------------------
+# [SEC.22]: In-process cache for ENV-path HKDF derivations (crown-jewel reduction)
+# ---------------------------------------------------------------------------
+# PROVISIONING_MASTER_KEY-derived secrets re-derived on the hot path (iotex_seed —
+# signed on every uplink, up to 5× on IotexVerificationWorker retry) are memoized
+# here so a cache hit touches no master key. Same guarantees as HARDWARE_KEY_CACHE:
+# secrets stay in worker RAM, never serialized, vanish on restart. Keyed by
+# "<hkdf-info>\x00<salt>" (info = domain separator → no cross-key collision).
+# Only the ENV path is cached; an explicit master_key: (SEC.3 DI) derives fresh.
+# Valid for the whole process life because the master key is boot-immutable —
+# rotation = fleet re-flash + redeploy (06_04 §5.2/§5.4) → restart clears this.
+# ---------------------------------------------------------------------------
+DERIVED_KEY_CACHE = SinLruRedux::ThreadSafeCache.new(10_000)
