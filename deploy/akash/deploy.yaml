@@ -406,11 +406,9 @@ services:
       # Sidekiq enqueue target (UnpackTelemetryWorker.perform_async).
       - REDIS_URL=REQUIRED_SECRET_NOT_SET
       # KREDIS_REDIS_URL omitted — auto-derives from REDIS_URL (config/redis/shared.yml). [B1]
-      # PROVISIONING_MASTER_KEY — the coap-guard now SKIPS master_key_strength_check for
-      # this process (coap only enqueues, never derives keys), so it is no longer
-      # boot-critical here. Carried for parity; can be omitted at deploy to keep the HKDF
-      # root off coap's plaintext /proc/environ [SEC.22 — 👤 verify $PROGRAM_NAME at first deploy].
-      - PROVISIONING_MASTER_KEY=REQUIRED_SECRET_NOT_SET
+      # No PROVISIONING_MASTER_KEY — master_key_strength_check skips coap_listener
+      # ($PROGRAM_NAME guard, code-proven): coap only enqueues, never derives keys. Keeping
+      # the HKDF fleet-forge root off coap's plaintext /proc/environ [SEC.22]. Web/job carry it; coap must not.
       # 🛑 BOOT-CRITICAL: active_record_encryption_keys_check.rb raises without these.
       # AR-Encryption keys from ENV (SEC.22); placeholder <32 chars → guard fails closed.
       - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=REQUIRED_SECRET_NOT_SET

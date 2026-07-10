@@ -195,9 +195,9 @@ services:
       - GCP_SA_KEY_BASE64=${gcp_sa_key_base64}
       - REDIS_URL=${redis_url}
       # KREDIS_REDIS_URL omitted — auto-derives from REDIS_URL (config/redis/shared.yml). [B1]
-      # PROVISIONING_MASTER_KEY — coap-guard skips master_key_strength_check here (coap
-      # only enqueues); carried for parity, omittable at deploy [SEC.22].
-      - PROVISIONING_MASTER_KEY=${provisioning_master_key}
+      # No PROVISIONING_MASTER_KEY — master_key_strength_check skips coap_listener
+      # (code-proven $PROGRAM_NAME guard): coap only enqueues. Keep the HKDF root off
+      # coap's plaintext env [SEC.22]. Web/job carry the shared var; coap must not.
       # --- 🛑 BOOT-CRITICAL: active_record_encryption_keys_check.rb ---
       - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=${active_record_encryption_primary_key}
       - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=${active_record_encryption_deterministic_key}

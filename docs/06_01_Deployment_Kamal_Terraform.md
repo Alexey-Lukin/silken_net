@@ -646,9 +646,12 @@ repo-секрети як fallback), але ізоляція тихо знуль�
 введення значень (GitHub секретів назад не віддає) → DNS: `api.silkennet.com` **A → ingress_ip
 (DNS-only, сіра хмарка!)** + `silkennet.app` CNAME → Akash ingress (proxied, після Фази 3) →
 Kamal-плейсхолдери: `image:` AR-шлях, servers-IP, `POSTGRES_HOST` (S1.5/INF.15) →
-**заповнити `/etc/silkennet/coap.env` на анкорі** (5 значень: `POSTGRES_PASSWORD`/
-`REDIS_URL`/`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`/`SENTRY_DSN`; Postgres-host
-уже впечатаний terraform'ом) → `systemctl restart coap-daemon` → `bin/coap_smoke --host <ingress_ip>`.
+**заповнити `/etc/silkennet/coap.env` на анкорі** (7 значень: `POSTGRES_PASSWORD`/
+`REDIS_URL`/`RAILS_MASTER_KEY`/`ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`/`_DETERMINISTIC_KEY`/
+`_KEY_DERIVATION_SALT`/`SENTRY_DSN`; **НЕ** `PROVISIONING_MASTER_KEY` — coap лише
+enqueue-ить, `master_key_strength_check` його `$PROGRAM_NAME`-skip-ає [SEC.22]; AR-encryption
+×3 = boot-critical, guard fail-closed без них; Postgres-host уже впечатаний terraform'ом) →
+`systemctl restart coap-daemon` → `bin/coap_smoke --host <ingress_ip>`.
 
 **Фаза 2 — Контракти (до першого mint; можна паралельно з Фазою 3):**
 fund deployer wallet → `forge script contracts/script/Deploy.s.sol --broadcast --verify`

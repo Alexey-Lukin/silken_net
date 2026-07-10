@@ -220,7 +220,15 @@ POSTGRES_DATABASE=silken_net_production
 # Upstash Redis (TLS) — Sidekiq enqueue target (UnpackTelemetryWorker).
 REDIS_URL=REQUIRED_SECRET_NOT_SET
 RAILS_MASTER_KEY=REQUIRED_SECRET_NOT_SET
-PROVISIONING_MASTER_KEY=REQUIRED_SECRET_NOT_SET
+# No PROVISIONING_MASTER_KEY — coap_listener is pure UDP glue (enqueue only); key
+# derivation lives in the workers, master_key_strength_check skips this process, so
+# provisioning the fleet-wide-forge crown-jewel here would expose it for nothing (SEC.22). Do not re-add.
+# 🛑 BOOT-CRITICAL: active_record_encryption_keys_check.rb is production-wide (NOT
+# coap-skipped — these are narrow column keys, not the vault key) → the daemon raises
+# without them. A <32-char placeholder also fails the guard closed; fill real values (SEC.22).
+ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=REQUIRED_SECRET_NOT_SET
+ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=REQUIRED_SECRET_NOT_SET
+ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=REQUIRED_SECRET_NOT_SET
 SENTRY_DSN=REQUIRED_SECRET_NOT_SET
 WEB3_STRICT_MODE=true
 COAP_ENV
