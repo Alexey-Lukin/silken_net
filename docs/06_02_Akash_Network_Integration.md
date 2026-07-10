@@ -1018,7 +1018,7 @@ Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/s
 
 ### Mapping `env.secret` → SDL `env:`
 
-> **Принцип:** кожна змінна нижче повинна бути одночасно у `.kamal/secrets-common`, `config/deploy.yml env.secret`, `deploy/akash/deploy.yaml` (обидва сервіси), `deploy/akash/deploy.yaml.tpl` (обидва сервіси), `terraform/akash/variables.tf` (як `sensitive = true`), та `terraform/akash/main.tf` (у `templatefile()` map). Drift = boot crash або тиха відмова Web3 pipeline.
+> **Принцип:** кожна змінна нижче повинна бути одночасно у `.kamal/secrets-common`, `config/deploy.yml env.secret`, `deploy/akash/deploy.yaml` (обидва сервіси), `deploy/akash/deploy.yaml.tpl` (обидва сервіси), `terraform/akash/variables.tf` (як `sensitive = true`), та `terraform/akash/main.tf` (у `templatefile()` map). Drift = boot crash або тиха відмова Web3 pipeline. **Виняток [INF.22]:** `ORACLE_PRIVATE_KEY` (legacy fallback) = **SDL-only** — з Kamal-поверхонь (`env.secret`/`secrets-common`) знято свідомо (unprovisioned-but-mapped = present-empty guard-crash; [`06_04 §1`](06_04_Secrets_Checklist)); напрямок Kamal ⊆ SDL зберігається.
 
 **Application core (boot):**
 

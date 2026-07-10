@@ -50,6 +50,13 @@ jobs:
           # nothing in .kamal/ consumes it (plain $VAR secrets file, not encrypted).
           RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           PROVISIONING_MASTER_KEY: ${{ secrets.PROVISIONING_MASTER_KEY }}
+          # [SEC.22] AR-encryption keys (hardware_keys/identities at-rest) — boot-critical:
+          # active_record_encryption_keys_check.rb fail-closes production boot without them.
+          # They sit in env.secret + secrets-common, so an unmapped var here injects "" →
+          # crash AFTER a green verify (the B1 class this gate exists to kill).
+          ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY: ${{ secrets.ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY }}
+          ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY: ${{ secrets.ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY }}
+          ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT: ${{ secrets.ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT }}
           # [INF.22] Keyless CI: the WIF provider + SA email are non-secret repo
           # VARIABLES, not GCP_SA_KEY. Their presence is the "infra provisioned"
           # deploy-gate signal that GCP_SA_KEY used to carry.
@@ -81,7 +88,7 @@ jobs:
           # false-safety that hid the 4-month deploy block). Boot-critical = crashes boot
           # (master-key decrypt / PROVISIONING guard / oracle KeyError per web3_network_guard)
           # or blocks kamal. Runtime = lazy-fail on use (warn, don't block). Canon: docs/06_04 §1+§2.
-          BOOT_CRITICAL="RAILS_MASTER_KEY PROVISIONING_MASTER_KEY GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD REDIS_URL ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY"
+          BOOT_CRITICAL="RAILS_MASTER_KEY PROVISIONING_MASTER_KEY ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD REDIS_URL ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY"
           RUNTIME="SENTRY_DSN ETHEREUM_ANCHOR_PRIVATE_KEY ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL POLYGON_RPC_URL CELO_RPC_URL SOLANA_WALLET_KEYPAIR SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS ORACLE_CELO_PRIVATE_KEY CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET"
 
           missing=""
@@ -227,6 +234,10 @@ jobs:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           # --- Hardware provisioning gate (master_key_strength_check.rb — boot-critical) ---
           PROVISIONING_MASTER_KEY: ${{ secrets.PROVISIONING_MASTER_KEY }}
+          # --- AR-encryption keys (active_record_encryption_keys_check.rb — boot-critical) [SEC.22] ---
+          ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY: ${{ secrets.ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY }}
+          ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY: ${{ secrets.ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY }}
+          ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT: ${{ secrets.ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT }}
           # --- Web3 oracle keys (dual-key split, B-02) — web3_network_guard fail-closes at boot.
           #     ORACLE_PRIVATE_KEY (legacy fallback) is NOT mapped: dropped from the kamal
           #     leg (INF.22) — an unprovisioned secret maps to "" (present-empty) and the
