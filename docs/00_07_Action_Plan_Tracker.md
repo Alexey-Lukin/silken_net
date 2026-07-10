@@ -1260,6 +1260,11 @@
 - [ ] 👤 грант CI-SA `roles/billing.costsManager` на billing-акаунті → tfvars `billing_account_id` (+`billing_budget_usd`) + GH-секрет `GCP_BILLING_ACCOUNT_ID` → apply (порядок несучий — [`06_02 §4.4`](06_02_Akash_Network_Integration))
 - [ ] 👤 AKT initial over-fund (≥2× місячна оцінка) при створенні lease + repo Variable `AKASH_OWNER_ADDRESS` → escrow-watch живий
 
+#### OPS.12 — SentinelOne EDR: IT-exclusions для dev-тулчейну (рецидивний session-killer)
+- **P1** · 👤 · 🟡 · → [`06_07`](06_07_CICD_and_Runbook_Index)
+- **Стан:** Корпоративний SentinelOne на dev-Mac рецидивно false-positive-карантинить entry-points тулчейну (6 епізодів станом на 2026-07-10; того дня двічі поспіль — обидва рази вбито живі Claude-сесії mid-task): RVM-шими · repo-binstubs (`bin/rspec`/`bin/rubocop`) · brew · conda · npm-cli · навіть сам recovery-скрипт `rvm-heal`. Ліби/гемсети цілі — їсть лише лаунчери. Симптоматичне відновлення повне й швидке (≈5 хв; рецепти + backup = memory-дім `project_sentinelone_quarantine`), але durable fix існує ЛИШЕ на корпоративному боці — кожен епізод коштує вбиту сесію + відновлення + crash-recovery реконструкцію задачі.
+- [ ] 👤 запит до IT: folder-exclusions `~/.rvm` · `/opt/homebrew` · `~/miniforge3` · `~/.nvm` · `~/silken_net` + позначити `/bin/zsh` benign (Apple-signed shell, false positive) + bulk-restore наявного карантину
+
 #### SEC.17 — Money-mint-key custody (GCP-KMS remote-signer для ORACLE_MINTER/SLASHER)
 - **P2** · 🤖+👤 · 🔗 · → [`06_04 §5.5`](06_04_Secrets_Checklist), `05_03`
 - **Стан:** Custody-поріг вирішено — **GCP Cloud KMS remote-signer** (asymmetric secp256k1, ключ не покидає HSM; founder 2026-07-06). Наявний захист ✅ (E.2 mint⊥burn key-split, Gnosis Safe admin/PAUSER, ARCH.47 boot-guard `Web3NetworkGuard`, WEB3_STRICT_MODE fail-closed); лишкова діра = приватники plaintext у deploy-ENV (mint за реальну вартість = найбільша одинична точка катастрофи). KMS > Fireblocks (enterprise-cost + забирає broadcast/nonce, перетин ARCH.47-lock) і Safe-module (admin-вектор SEC.1, не hot-mint): HSM-grade + дешево + GCP у стеку. **Impl gated pre-mainnet** (до prod-mint ENV-ключ теж нічого не мінтить → НЕ TRL-3-блокер + уникає bit-rot `google-cloud-kms`). Дизайн + 3-крок seam-мапа → [`06_04 §5.5`](06_04_Secrets_Checklist). Дзеркалить S6.14 (peaq custody) на money-рівні. Відкрите ↓.
