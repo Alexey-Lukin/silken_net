@@ -489,7 +489,7 @@ Placement вище фільтрує лише `host: akash` + `signedBy` (ауд�
 
 **Справжній EU-residency-важіль для PII** = EU-пінований Ingress Anchor (GCP, data-in-use для coap/DB-шляху) + Cloud SQL at-rest — не Akash-тег. Akash несе цензуростійкі money/web за дизайном.
 
-**👤-рішення** (→ [`00_07`](00_07_Action_Plan_Tracker) SEC.19): активувати м'яку EU-преференцію зараз (ціна = вужчий пул) vs відкласти до EU-онбордингу (BIZ.3 Privacy Policy / ARCH.57 EU-PII-тригер).
+**✅ Рішення (founder 2026-07-10, → [`00_07`](00_07_Action_Plan_Tracker) SEC.19): м'яка EU-преференція АКТИВНА з першого render'а** — `akash_region = "eu-west"` розкоментовано в `terraform.tfvars.example`. Операційний фолбек: якщо render збирає **нуль bid'ів** (over-tight `region` × `signedBy`), закоментувати рядок і пере-render'ити — доступність важливіша за м'яку преференцію; повернути фільтр при ширшому пулі / EU-онбордингу (BIZ.3 / ARCH.57).
 
 ---
 

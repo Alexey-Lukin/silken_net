@@ -9,11 +9,14 @@ akash_key_name        = "silken-deploy"
 akash_chain_id        = "akashnet-2"
 akash_node            = "https://rpc.akashnet.net:443"
 akash_auditor_address = "akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63"
-# [SEC.19] Provider region filter — data-in-use residency preference (off by default).
-# Empty/absent = any provider. Values mirror 04_01 data_region (eu-west, eu-central).
+# [SEC.19] Provider region filter — data-in-use residency preference (ACTIVE:
+# founder 2026-07-10 chose the soft EU preference from day one). Values mirror
+# 04_01 data_region (eu-west, eu-central).
 # ⚠️ SELF-REPORTED, not audited → a soft preference, NOT a residency guarantee; narrows
 # the pool. Hard EU-PII residency = the GCP Ingress Anchor + Cloud SQL at-rest (06_02 §1.3).
-# akash_region = "eu-west"
+# ⚠️ Fallback: if a render collects ZERO bids, comment this line out (region×signedBy
+# can over-tighten the pool) and re-render — availability beats a soft preference.
+akash_region = "eu-west"
 
 # Application — [INF.21] pin an immutable tag for any real render (`sha-<commit>`
 # from mirror-ghcr, or `vX.Y.Z` on releases): `:latest` moves under the lease on
