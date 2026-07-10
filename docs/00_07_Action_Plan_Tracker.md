@@ -661,7 +661,7 @@
 #### FW.18b — OTA threshold invalid counter (production-visibility)
 - **P2** · 👤 · 🟢 · → [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference)
 - **Стан:** OTA-поріг validation + invalid-counter — `TinyML_Apply/Validate_Threshold` (NaN/out-of-range/інверсія → default; інваріант `SILENCE<WARNING<CRITICAL`) + saturating `tinyml_threshold_invalid_count` (байт 11 `[thr_invalid:5|TTL:3]`; CCM-дім `diag` byte 18) + backend-метрика `silkennet_tinyml_threshold_invalid_reports_total` (без per-DID — [`06_03 §2.9`](06_03_Prometheus_Observability)) + Grafana IaC (`deploy/grafana/`, `import.rb` ідемпотентний) — host-done + канон [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference).
-- [ ] 👤 запустити `deploy/grafana/import.rb` (Grafana Cloud токен + notification policy + verify на живих метриках) — разом із S2.2/S2.3
+- [ ] 👤 запустити `deploy/grafana/import.rb` (Grafana Cloud токен + notification policy + verify на живих метриках) — разом із S2.2
 
 #### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
 - **P2** · 👤 · 🟢 · → [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)
@@ -1205,7 +1205,7 @@
 - [ ] 🔗 CNAME-origin lease-прив'язаний (re-lease/failover = ручний CF-крок; канонізовано `06_02` §Automation note 2026-07-04) → автоматизація (CF API/terraform) лише коли multi-provider failover стане живим
 
 #### S6.18 — Rails web security hardening
-- **P1** · 👤 · 🟢 · → `06_04 §2.1`
+- **P1** · 🤖+👤 · 🟢 · → `06_04 §2.1`
 - **Стан:** Код готовий — production.rb (force_ssl/HSTS + host-auth з probe-exclusions `/up`/`/ready`/`/metrics`) + CSP (report-only) + security_headers.rb + session_store. `RAILS_ALLOWED_HOSTS` значення свідомо НЕ закомічено (на відміну від `APP_HOST`/`WEB3_STRICT_MODE`): порожнє → warn-and-allow (degraded, не fatal), а закомічене **неправильне** → 403 block-all. Публічний домен зафіксовано INF.4 (Опція A Cloudflare, 07-03) = **`silkennet.app`**; operator-set перед prod. **DRY-hardening 2026-07-10:** probe-exclusion paths були дубльовані у `force_ssl` redirect-exclude + `host_authorization` exclude (ідентичні лямбди) → single-sourced у `probe_paths`/`probe_request` (дрейф однієї копії ламав би deploy health-check/SSL-redirect за зеленим boot; тепер структурно неможливий). Канон `06_04 §2.1`.
 - [ ] 👤 `RAILS_ALLOWED_HOSTS=silkennet.app` у Kamal/Akash env.clear при деплої — інакше 403 block-all
 - [ ] 👤 після 1-2 тиж CSP-репортів → `CSP_ENFORCE=true`
@@ -1218,7 +1218,7 @@
 
 #### INF.11 — `WEB3_STRICT_MODE` у deploy-конфігах (KYC fail-closed)
 - **P1** · 🤖+👤 · 🟢 · → `06_04`
-- **Стан:** Machine-half ✅ — `WEB3_STRICT_MODE="true"` заведено в `config/deploy.yml` env.clear + Akash `deploy.yaml`/`deploy.yaml.tpl` (web+job); canopy успадковує (`RAILS_ENV=production` → strict консистентно). **Money-path рішення ВИРІШЕНО + hardened 2026-07-10 (deep-dig повної fail-closed-картини):** exhaustive-мапа 8 гейтів показала, що `HadronComplianceService` (`check_kyc_status`/`register_rwa_asset`) був **ЄДИНИМ flag-only** гейтом (`elsif WEB3_STRICT_MODE=="true"` сам) — усі решта (oracle_callbacks/helium_sos/w3bstream/web3_network_guard) вже belt-and-suspenders `|| Rails.env.production?`, а Hadron лишився з незавершеного BLOCKER-4-фіксу. Це найкритичніший шлях (KYC→mint через `kyc_approved_for_minting?`, нуль вторинного guard) при найменшому захисті: забутий прапор на deploy-поверхні → `simulate_kyc_check`=`{approved:true}` → фродовий mint. **Fix = harden-only** (додано `|| Rails.env.production?` в обидва методи, дзеркало контролерів + вирівняно з коментарем «У production заглушки вимкнено»); **value-guard свідомо НЕ додано** — після hardening прапор redundant із production для всіх money-гейтів (guard стеріг би те, що вже нічого одноосібно не захищає). Blast-radius мінімальний (міняє лише «prod+прапор-відсутній»→raise; canopy/dev незмінні), money-path регресія 0 (219 прикладів green), +2 spec-кейси «production без прапора→raise». Канон-синх: `06_02 §Env-таблиця` + `06_04 §2.1` (belt-and-suspenders). Лишається 👤 verify на деплої. Канон `06_04 §2.1`.
+- **Стан:** Machine-half ✅ — `WEB3_STRICT_MODE="true"` на всіх web+job-поверхнях (canopy успадковує `RAILS_ENV=production`). **Money-path рішення ВИРІШЕНО + hardened 2026-07-10:** deep-dig fail-closed-мапи (8 гейтів) показав `HadronComplianceService` (KYC+RWA) **ЄДИНИМ flag-only** гейтом — решта вже belt-and-suspenders `|| Rails.env.production?`, Hadron лишився з незавершеного BLOCKER-4. Найкритичніший шлях (KYC→mint через `kyc_approved_for_minting?`, нуль вторинного guard) при найменшому захисті: забутий прапор → `simulate_kyc_check={approved:true}` → фродовий mint. **Fix = harden-only** (`|| Rails.env.production?` в обидва методи, дзеркало контролерів); **value-guard свідомо НЕ** — після hardening прапор redundant з production (стеріг би те, що вже нічого одноосібно не захищає). Belt-and-suspenders канонізовано → `06_02 §Env-таблиця` + `06_04 §2.1`; повна 8-гейт-мапа + blast-radius → git `977df0d8` + [[project_money_path_orchestration]]. Money-path регресія 0 (hadron+minting+integration+mint-batch+wallet+org специ) + 2 spec-кейси. Лишається 👤 verify на деплої. Канон `06_04 §2.1`.
 - [ ] 👤 верифікувати fail-closed на першому деплої (real hadron_api_key присутній → real KYC; відсутній → raise, НЕ simulate)
 
 #### INF.12 — Deploy ENV-injection drift: код `ENV.fetch` без default ∉ deploy-декларації

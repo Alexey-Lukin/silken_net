@@ -19,7 +19,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 6 — бібліотеки встановлені, кастомні метрики реалізовані та інструментовані (повний реєстр + кількість — §2.8), структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (Grafana Cloud SaaS, OBS.1); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
-- **Відкрите:** перший деплой з метриками в Grafana Cloud (TRL 6→7); dashboard import → [`00_07`](00_07_Action_Plan_Tracker) (OBS.1, S2.2/S2.3).
+- **Відкрите:** перший деплой з метриками в Grafana Cloud (TRL 6→7); dashboard import → [`00_07`](00_07_Action_Plan_Tracker) (OBS.1, S2.2).
 
 ---
 
@@ -30,7 +30,7 @@
 | [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | Розгортання (Kamal/Terraform) |
 | [`06_02` — Akash Network Integration](06_02_Akash_Network_Integration) | Akash SDL (`alloy` сервіс) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (інструментовані метрики) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | OBS.1 (Grafana Cloud), S2.2/S2.3 |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | OBS.1 (Grafana Cloud), S2.2 |
 
 ## 📑 Зміст
 
@@ -270,7 +270,7 @@ end
 
 Нормалізована ентропія Шеннона Z-розподілу кластера (0.0–1.0). Оновлюється `ClusterEntropyAnalyzerWorker` (queue: `alerts`, рекомендовано: щогодинний cron). Здоровий ліс: ≈ 0.75-0.95. Критичний поріг: < 0.65 → `EwsAlert(entropy_anomaly)`.
 
-**Grafana Alert Rule:** `sn-alert-cluster-entropy` (`< 0.65`, for 30m) — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, 👤 import (S2.3).
+**Grafana Alert Rule:** `sn-alert-cluster-entropy` (`< 0.65`, for 30m) — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, 👤 import (S2.2).
 
 > Проміжний підсумок видалено — див. фінальну цифру у §2.8 (SSOT).
 
@@ -289,7 +289,7 @@ end
 
 > **Перспектива:** Коли обсяг governance-операцій зростатиме, можна додати histogram `silkennet_governance_sync_duration_seconds` (rejected-counter уже live ↑).
 
-### 2.8 Circuit Breaker та Acoustic Overflow метрики (S2.2/S2.3/FW.22)
+### 2.8 Circuit Breaker та Acoustic Overflow метрики (S2.2/FW.22)
 
 2 нові метрики для покращення observability circuit breaker'а та acoustic overflow:
 
@@ -300,7 +300,7 @@ end
 
 Додатково: `silkennet_rpc_errors_total` тепер інструментовано безпосередньо в `Web3::ResilientClient#record_failure` з класифікацією error_type (timeout, connection_refused, host_unreachable, dns_error, io_error, rate_limited, unknown).
 
-**Grafana Alert Rules:** `sn-alert-acoustic-overflow` (`rate(...[5m]) > 0`, for 5m) та `sn-alert-circuit-breaker` (`> 0`, for 2m) — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, 👤 import (S2.3). Споріднений firmware-діагностичний counter `silkennet_tinyml_threshold_invalid_reports_total` (FW.18b, той самий патерн warn-лог-атрибуції) і його `sn-alert-tinyml-threshold-invalid` — канон [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference).
+**Grafana Alert Rules:** `sn-alert-acoustic-overflow` (`rate(...[5m]) > 0`, for 5m) та `sn-alert-circuit-breaker` (`> 0`, for 2m) — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, 👤 import (S2.2). Споріднений firmware-діагностичний counter `silkennet_tinyml_threshold_invalid_reports_total` (FW.18b, той самий патерн warn-лог-атрибуції) і його `sn-alert-tinyml-threshold-invalid` — канон [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference).
 
 ### 📊 Канонічний реєстр метрик (SSOT)
 
@@ -434,7 +434,7 @@ bin/rails runner 'SilkenNet::Metrics::REGISTRY.metrics.sort_by{|m|[m.type.to_s,m
 | 4 | ✅ **Cardinality budget** (2026-06-04) — `prometheus.relabel` `labeldrop` per-identity (`config.alloy`) | `cluster_id` (entropy) лишається (легітимна growth-вісь); per-DID labels (`did`/`tree_id`/`peaq_did`/`wallet_address`/`tx_hash`) дропаються до remote_write, щоб майбутня випадкова мітка не підірвала active-series біллінг (Grafana Cloud біллить за series / DPM) | ✅ DONE |
 | 5 | ✅ **`up` scrape-health alert** (IaC 2026-07-04) — `sn-alert-scrape-target-down`: `min by (process) (up{job="silken_net_scraper"})` per-process називає, КОТРИЙ з трьох таргетів мертвий; `NoData → Alerting` = сам Alloy впав. Лишається 👤 імпорт (S2.4) | ops |
 | 6 | 🟡 **SLO + error-budget** — mint-half ✅ (IaC 2026-07-04): `sn-alert-mint-slo-breach` <80%/1h (єдина канон-ціль — [`06_08 §2.4`](06_08_Resilience_and_Failover_Policy); PromQL-guard `and attempts>0`). Slash/payout/insurance ratios — пороги калібруються з перших live-вікон (00_07 S2.4), не вигадуються. **[ARCH.62]** `sn-alert-mint-volume-anomaly` (agg mint-volume ceiling ~MAX_SUPPLY, operator-калібрований) + per-token inert circuit-break | ops |
-| 7 | Dashboards + alerts + **contact point** import у Grafana Cloud (IaC у `deploy/grafana/`) | S2.2/S2.3 — IaC готовий; ✅ one-command `deploy/grafana/import.rb` (auto-discovery UID + ідемпотентний upsert + contact point/root notification policy з ENV off-by-default `ALERT_CONTACT_EMAIL`/`_TELEGRAM_*`, `--dry-run` без credentials); лишається 👤 запуск із токеном + значення каналу + verify | ops |
+| 7 | Dashboards + alerts + **contact point** import у Grafana Cloud (IaC у `deploy/grafana/`) | S2.2 — IaC готовий; ✅ one-command `deploy/grafana/import.rb` (auto-discovery UID + ідемпотентний upsert + contact point/root notification policy з ENV off-by-default `ALERT_CONTACT_EMAIL`/`_TELEGRAM_*`, `--dry-run` без credentials); лишається 👤 запуск із токеном + значення каналу + verify | ops |
 
 **#2 + #4 — імплементовано (2026-06-04) у `deploy/akash/config.alloy`:** pipeline `prometheus.scrape → prometheus.relabel.cardinality_budget → prometheus.remote_write` (queue_config + явний WAL). Значення живуть у `config.alloy` (SSOT) — тут не дублюються, щоб уникнути drift; rationale — рядки #2/#4 вище. Валідація: CI job `alloy_config_validate` (`grafana/alloy fmt`).
 

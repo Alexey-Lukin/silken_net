@@ -643,7 +643,7 @@ GitHub Secrets **Batch B** — ДВА доми [INF.22]: repo-level = `REDIS_URL
 wait-timer + ref-policy — [`06_04 §1`](06_04_Secrets_Checklist)). ⚠️ Пастка wrong-home:
 покладеш п'ятірку repo-level — деплой лишиться ЗЕЛЕНИМ (environment-jobs бачать
 repo-секрети як fallback), але ізоляція тихо знульована, а реверс = ручне повторне
-введення значень (GitHub секретів назад не віддає) → DNS: `api.silkennet.com` **A → ingress_ip
+введення значень (GitHub секретів назад не віддає) → **verify scope ДО деплою:** `ruby scripts/audit_deploy_secret_scope.rb` (S1.1 — read-only `gh`-preflight: money-квінтет ∈ env `production` ТІЛЬКИ (не repo), WIF-ids = Variables, retired ∉; ловить wrong-home перш ніж деплой його замаскує) → DNS: `api.silkennet.com` **A → ingress_ip
 (DNS-only, сіра хмарка!)** + `silkennet.app` CNAME → Akash ingress (proxied, після Фази 3) →
 Kamal-плейсхолдери: `image:` AR-шлях, servers-IP, `POSTGRES_HOST` (S1.5/INF.15) →
 **заповнити `/etc/silkennet/coap.env` на анкорі** (7 значень: `POSTGRES_PASSWORD`/

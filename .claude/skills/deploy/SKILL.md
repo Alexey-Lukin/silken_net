@@ -36,6 +36,12 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   VPC → Cloud SQL приватним IP БЕЗ Auth Proxy; секрети `/etc/silkennet/coap.env`,
   НЕ в metadata). Akash `coap`-сервіс = задеплоєний idle-**fallback** за socat;
   перемикання = 2×systemctl. Money/web лишаються на Akash (цензуростійкість). → `06_01` / `06_02`.
+  **coap.env boot-contract (INF.17):** coap = pure UDP glue (recvfrom→parse→`perform_async`,
+  нуль key-derivation) → несе `ACTIVE_RECORD_ENCRYPTION_*`-трійку (guard `active_record_encryption_keys_check`
+  production-wide, БЕЗ coap-skip) + `RAILS_MASTER_KEY`+POSTGRES+REDIS+SENTRY, але **НЕ**
+  `PROVISIONING_MASTER_KEY` (master_key-guard `$PROGRAM_NAME`-skip'ає coap; fleet-forge crown-jewel
+  off анкор-plaintext, SEC.22). 3-тя поверхня поза `sdl_consistency` → regression-guard
+  `spec/deploy/anchor_coap_env_spec.rb`. → `06_04 §5.7`.
 - **Cloud SQL Auth Proxy авторизує через Google API, але СОКЕТ іде на IP інстанса** —
   з Akash (поза VPC) досяжний лише ПУБЛІЧНИЙ IP → `ipv4_enabled = true` обов'язковий
   (authorized_networks порожній — доступ тільки IAM-proxy; ENCRYPTED_ONLY). private-only
@@ -112,7 +118,8 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 | Akash | `deploy/akash/` (`deploy.yaml` SDL · `deploy.yaml.tpl` · `config.alloy` · `encode-alloy-config.sh`); SDL-гейт `ruby scripts/sdl_consistency_check.rb` (services≡deployment, static≡tpl — CI + локально перед комітом SDL-змін) |
 | Observability | `config/initializers/prometheus.rb` (`SilkenNet::Metrics`) · `app/middleware/prometheus_collector.rb` · `lib/silken_net/metrics_exporter.rb` (embedded /metrics job/coap) · `deploy/akash/config.alloy` · Grafana IaC `deploy/grafana/` (`alerts/silkennet-alerts.yaml` · `dashboards/` · `import.rb`) |
 | Web-сервер | `config/puma.rb` |
-| CI/CD | `.github/workflows/` (`deploy.yml` — path-gated INF.9 · `deploy-production.yml` · `coap_smoke.yml` — post-deploy gate + 30хв liveness-schedule · `akash_escrow_watch.yml` — AKT-runway вартовий OPS.11, skip-clean до `AKASH_OWNER_ADDRESS` · `iac_scan.yml` — Sec·IaC-Scan (Trivy `config`, SARIF soft-fail; baseline у `.trivyignore`) · `terraform_drift.yml` — Ops·TF-Drift (weekly `plan -detailed-exitcode`, skip-clean до 3 secrets) · `mirror-ghcr.yml` · `release-please.yml` · `ci.yml` · `docs.yml` · `ssot_guard.yml`) |
+| CI/CD | `.github/workflows/` (`deploy.yml` — path-gated INF.9 · `deploy-production.yml` · `coap_smoke.yml` — post-deploy gate + 30хв liveness-schedule · `akash_escrow_watch.yml` — AKT-runway вартовий OPS.11, skip-clean до `AKASH_OWNER_ADDRESS` · `iac_scan.yml` — Sec·IaC-Scan (Trivy `config`, SARIF soft-fail; baseline у `.trivyignore`) · `terraform_drift.yml` — Ops·TF-Drift (weekly `plan -detailed-exitcode`, skip-clean до 3 secrets) · `ci.yml` `terraform_validate`-job (offline `validate`+`fmt`, path-gated `terraform/**`, pre-deploy config-validity — INF.15) · `mirror-ghcr.yml` · `release-please.yml` · `ci.yml` · `docs.yml` · `ssot_guard.yml`) |
+| Deploy drift-guards | CI-гейти над deploy-конфігом (offline, no-creds; НЕ дублюй їх логіку — правь дім): `scripts/deploy_secret_scan.rb` (no-literal + signing-quintet job-only + retired-tripwire) · `scripts/sdl_consistency_check.rb` (SDL services≡deployment, static≡tpl) · `scripts/audit_deploy_secret_scope.rb` (S1.1 — live `gh`-scope preflight: money-quintet env-only, WIF=Variables) · `spec/deploy/*_spec.rb` (INF.16 db-config · INF.17 coap.env boot-contract · INF.4 firmware↔host · DR.1 DR-posture · INF.12 ENV.fetch↔deploy declaration + B1-chain) |
 
 ## Gotchas (верифіковані, не з канону)
 

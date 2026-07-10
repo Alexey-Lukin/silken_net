@@ -27,6 +27,9 @@ RSpec.describe "Cloud SQL DR posture (terraform/database.tf ↔ 06_06)" do # rub
     expect(count).to be >= 30
   end
 
+  # NOTE: this checks the tf-var DEFAULT, not the effective value — a `-var db_availability_type=ZONAL`
+  # or a *.tfvars override would deploy ZONAL while this stays green. The default is the committed
+  # posture; an override is an explicit operator act (and terraform_drift would surface the live state).
   it "defaults to REGIONAL HA (automatic failover, not single-zone ZONAL)" do
     default = variables_tf[/variable "db_availability_type".*?default\s*=\s*"(\w+)"/m, 1]
     expect(default).to eq("REGIONAL")

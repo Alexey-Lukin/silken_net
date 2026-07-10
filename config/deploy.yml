@@ -47,6 +47,13 @@ servers:
     options:
       publish:
         - "5683:5683/udp"
+    # ⚠️ No env: override → this role inherits the GLOBAL env.secret, incl.
+    # PROVISIONING_MASTER_KEY which the coap daemon does NOT need (master_key_strength_check
+    # $PROGRAM_NAME-skips coap; SEC.22 wants the HKDF fleet-forge root off coap's plaintext env).
+    # Kamal has no per-role secret exclude. Accepted: the PRIMARY coap intake is the anchor
+    # systemd daemon (compute.tf) + Akash SDL coap — both correctly omit it; this Kamal coap role
+    # is a dormant fallback. If it ever goes live, move PROVISIONING_MASTER_KEY into per-role
+    # (web+job) env.secret so this role stops inheriting it.
 
 # Kamal proxy configuration.
 # SSL auto-certification via Let's Encrypt. Requires config.assume_ssl and config.force_ssl in production.rb.

@@ -31,6 +31,9 @@ RSpec.describe "Ingress Anchor coap.env (compute.tf)" do # rubocop:disable RSpec
   end
 
   it "omits PROVISIONING (coap-guard skips it) and the signing quintet (job-only)" do
+    # Denylist = the current job-only signers + PROVISIONING (stable, E.2 key-split). A NEW
+    # ORACLE_*_PRIVATE_KEY added to the quintet must be added here too (a derive-from-SDL form
+    # would auto-cover it — kept explicit for now since the quintet is architecturally frozen).
     forbidden = %w[
       PROVISIONING_MASTER_KEY ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY
       ORACLE_CELO_PRIVATE_KEY ETHEREUM_ANCHOR_PRIVATE_KEY SOLANA_WALLET_KEYPAIR
