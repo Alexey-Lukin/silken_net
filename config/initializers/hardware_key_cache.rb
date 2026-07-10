@@ -30,5 +30,9 @@ HARDWARE_KEY_CACHE = SinLruRedux::ThreadSafeCache.new(10_000)
 # Only the ENV path is cached; an explicit master_key: (SEC.3 DI) derives fresh.
 # Valid for the whole process life because the master key is boot-immutable —
 # rotation = fleet re-flash + redeploy (06_04 §5.2/§5.4) → restart clears this.
+# ⚠️ Correctness rests on that immutability — the key OMITS the master by design.
+# If a runtime master reload / per-tenant master is ever added, this would
+# silently serve seeds from the stale root → Ed25519 attestations fail. Then key
+# by a master fingerprint (or clear on reload) before shipping such a feature.
 # ---------------------------------------------------------------------------
 DERIVED_KEY_CACHE = SinLruRedux::ThreadSafeCache.new(10_000)
