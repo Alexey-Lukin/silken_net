@@ -1211,10 +1211,10 @@
 - [ ] 👤 після 1-2 тиж CSP-репортів → `CSP_ENFORCE=true`
 
 #### DR.1 — Disaster Recovery drill + master-key backup
-- **P1** · 👤 · 🟢 · → `06_06`
-- **Стан:** DR-постуру задокументовано (`06_06`): Cloud SQL PITR + REGIONAL HA + 30×daily + restore-runbook'и + RTO/RPO.
-- [ ] 👤 quarterly DR-drill (PITR-clone + TF-state rollback на staging, зафіксувати факт. RTO/RPO vs цілі)
-- [ ] 👤 master-ключі (`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`) → vault + offline-копія (незамінні, поза backup)
+- **P1** · 🤖+👤 · 🟢 · → `06_06`
+- **Стан:** DR-постуру задокументовано (`06_06`): Cloud SQL PITR + REGIONAL HA + 30×daily + restore-runbook'и + RTO/RPO. **Config-verified 2026-07-10:** `terraform/database.tf` реально вмикає постуру (`point_in_time_recovery_enabled=true` · `transaction_log_retention_days=30` · `retained_backups=30` · `db_availability_type` default=REGIONAL) — збігається з каноном, нуль дрейфу. **Posture guard ✅:** `spec/deploy/database_dr_posture_spec.rb` стверджує ці мінімуми проти 06_06-цілей — DR-регресія (disable PITR / cut retention / ZONAL) **тиха** (спливає лише пост-інцидентно; drift ловить live-vs-tf, не tf-пониження), тепер падає в CI. **Timing:** master-key backup = **deploy-time** (незамінні ключі, робити при провіжні секретів — S1.1-сусід); DR-drill = **post-deploy-recurring** (quarterly, потребує живої staging+даних — не first-deploy-блокер, але P1 тримається master-key-невідновністю).
+- [ ] 👤 (post-deploy, quarterly) DR-drill (PITR-clone + TF-state rollback на staging, зафіксувати факт. RTO/RPO vs цілі)
+- [ ] 👤 (deploy-time) master-ключі (`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`) → vault + offline-копія (незамінні, поза backup)
 
 #### INF.11 — `WEB3_STRICT_MODE` у deploy-конфігах (KYC fail-closed)
 - **P1** · 👤 · 🟢 · → `06_04`
