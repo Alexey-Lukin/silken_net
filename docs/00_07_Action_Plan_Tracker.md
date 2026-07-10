@@ -1227,9 +1227,9 @@
 - [ ] 👤 fill contract addresses post-`forge deploy` + provision RPC / secrets
 
 #### INF.15 — Terraform GCP `apply`-блокери (IAM ролі · firewall · tfvars · image-path)
-- **P1** · 👤 · 🟢 · → `06_01`
-- **Стан:** Machine-half ✅ — `iam.tf` +`storage.objectAdmin`(scoped до state-bucket)+`iam.serviceAccountUser`; firewall `allow_ssh` `count`-guard на порожній CIDR (GCP не відхиляє apply); `tfvars.example` CIDR-placeholder (не `0.0.0.0/0`); Kamal `image`→повний AR-шлях. `terraform fmt` clean, count-safe. ⚠️ provider/Kamal-behavior inferred → 👤 verify на реальному apply. Канон [`06_01`](06_01_Deployment_Kamal_Terraform).
-- [ ] 👤 верифікувати `terraform apply` + Kamal push end-to-end (підтвердити inferred-пункти)
+- **P1** · 🤖+👤 · 🟢 · → `06_01`
+- **Стан:** Machine-half ✅ — `iam.tf` +`storage.objectAdmin`(scoped до state-bucket)+`iam.serviceAccountUser`; firewall `allow_ssh` `count`-guard на порожній CIDR (GCP не відхиляє apply); `tfvars.example` CIDR-placeholder (не `0.0.0.0/0`); Kamal `image`→повний AR-шлях. `terraform fmt` clean, count-safe. **Config-validity inferred-точки машинно закрито 2026-07-10:** обидва tf-роути (root GCP + akash) `terraform validate` → **Success локально** (bad-ref/type/missing-arg/undeclared-var виключено); + **CI-гейт `terraform_validate` у ci.yml** (path-gated `terraform/**`, offline `init -backend=false`+`validate`+`fmt -check`, БЕЗ creds — дзеркало alloy_config_validate). 🔑 Закрив реальну діру: deploy-workflow terraform-job гейтований `if: verify-secrets.configured` → **pre-first-deploy tf не валідувався в CI взагалі** (саме поки вилизуємо конфіг). Лишається 👤 **provider/Kamal-behavior** (чи GCP приймає IAM-binding/firewall на apply, Kamal push — те, чого offline-validate не бачить). Канон [`06_01`](06_01_Deployment_Kamal_Terraform).
+- [ ] 👤 верифікувати `terraform apply` + Kamal push end-to-end (provider-behavior — config-validity уже машинно-гейтована)
 
 #### S4.3 — Akash SDL secrets
 - **P1** · 👤 · ⚪ · → `06_02`

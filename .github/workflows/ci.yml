@@ -38,6 +38,7 @@ jobs:
       alloy: ${{ steps.filter.outputs.alloy }}
       ci: ${{ steps.filter.outputs.ci }}
       workflows: ${{ steps.filter.outputs.workflows }}
+      terraform: ${{ steps.filter.outputs.terraform }}
     steps:
       - name: Harden runner (egress audit)
         uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
@@ -90,6 +91,8 @@ jobs:
               # on exactly these paths) while the scan sits skipped.
               - '.dockerignore'
               - 'Dockerfile'
+            terraform:
+              - 'terraform/**'
 
   firmware_test:
     needs: changes
@@ -519,6 +522,48 @@ jobs:
         # Pure stdlib (json/yaml/net/http/uri), no bundle needed.
         run: ruby deploy/grafana/import.rb --dry-run
 
+  terraform_validate:
+    needs: changes
+    if: ${{ needs.changes.outputs.terraform == 'true' || needs.changes.outputs.ci == 'true' }}
+    # [INF.15] Offline validate of BOTH terraform roots so a config error (bad reference,
+    # type mismatch, missing required arg, undeclared var) is caught HERE, not as a
+    # first-`apply` blocker. The deploy-workflow terraform job only runs once secrets are
+    # configured (if: verify-secrets.configured == 'true') → pre-first-deploy the tf is never
+    # validated in CI, exactly while the config is being polished. `init -backend=false` +
+    # `validate` need the provider schema but NO GCP credentials, so this is
+    # environment-independent (mirrors alloy_config_validate's no-secrets discipline).
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
+        with:
+          terraform_version: "~> 1.5"
+          terraform_wrapper: false # preserve real exit codes (drift-detector lesson, INF.22)
+
+      - name: Format check (both roots)
+        working-directory: terraform
+        run: terraform fmt -check -recursive
+
+      - name: Validate root (GCP)
+        working-directory: terraform
+        run: |
+          terraform init -backend=false -input=false -no-color
+          terraform validate -no-color
+
+      - name: Validate Akash root
+        working-directory: terraform/akash
+        run: |
+          terraform init -backend=false -input=false -no-color
+          terraform validate -no-color
+
   test:
     needs: changes
     if: ${{ needs.changes.outputs.ruby == 'true' || needs.changes.outputs.ci == 'true' }}
@@ -643,6 +688,7 @@ jobs:
       - workflow_lint
       - i18n_check
       - alloy_config_validate
+      - terraform_validate
       - test
       - feature-test
     runs-on: ubuntu-latest
