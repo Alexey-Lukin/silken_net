@@ -54,6 +54,13 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   `gcloud compute ssh silken-net-ingress --tunnel-through-iap` (доступ = tf-var
   `iap_admin_members` → osAdminLogin+tunnelResourceAccessor). CI-Kamal-нога dormant
   до (б)-клею (`ssh.proxy_command` через `start-iap-tunnel`). → `06_01` / 00_07 INF.20.
+- **CI→GCP auth = keyless WIF (INF.22, 2026-07-10).** Deploy/drift-workflow НЕ тримають
+  довгоживучий `GCP_SA_KEY` JSON — `google-github-actions/auth` карбує GitHub OIDC-токен
+  (`id-token: write` per-job) → GCP STS → impersonated deploy-SA access-token (`terraform/wif.tf`:
+  pool+provider, owner-`attribute_condition` + repo-`principalSet`, `lowerAscii()` case-safe).
+  Provider+SA email = repo **Variables** (не secrets; presence = deploy-gate, замінив `GCP_SA_KEY`).
+  Kamal registry = `oauth2accesstoken` + access-token. Виняток = Akash `GCP_SA_KEY_BASE64` (Cloud SQL
+  proxy — зовн. провайдер не досягає GitHub-issuer'а). → `06_04 §1.1` / `06_02 §Security Exception`.
 - **Akash SDL ENV — plaintext, видимий провайдеру.** Реальні ключі **ніколи** не в
   `deploy/akash/deploy.yaml`; інжектити через Akash Console / `env.secret`. **Money/signing-
   шістка (`ORACLE_*`×4 вкл. `CELO` + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`) = JOB-ONLY** —

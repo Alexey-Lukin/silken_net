@@ -36,8 +36,16 @@ output "artifact_registry_url" {
 }
 
 output "service_account_email" {
-  description = "Deploy service account email"
+  description = "Deploy service account email — set as GitHub repo Variable GCP_SERVICE_ACCOUNT (keyless CI auth, INF.22)"
   value       = google_service_account.deploy.email
+}
+
+# [INF.22] After the first (founder-local) apply, set this as the GitHub repo Variable
+# GCP_WORKLOAD_IDENTITY_PROVIDER — the deploy/drift workflows auth with it instead of
+# GCP_SA_KEY. Non-secret (a resource identifier, not a credential).
+output "workload_identity_provider" {
+  description = "WIF provider resource name — set as GitHub repo Variable GCP_WORKLOAD_IDENTITY_PROVIDER (keyless CI auth, INF.22)"
+  value       = google_iam_workload_identity_pool_provider.github.name
 }
 
 output "nat_name" {

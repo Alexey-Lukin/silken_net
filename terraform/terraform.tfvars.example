@@ -27,6 +27,10 @@ ssh_source_ranges = []
 # (mirror-ghcr pushes sha-<commit> per main push; vX.Y.Z on releases):
 # coap_daemon_image = "ghcr.io/alexey-lukin/silken_net:sha-<commit>"
 
+# [INF.22] Keyless CI: GitHub owner/repo allowed to impersonate the deploy SA via
+# Workload Identity Federation. Default matches this repo; override only on rename.
+# github_repository = "Alexey-Lukin/silken_net"
+
 # [OPS.11] FinOps: billing budget (50/90/100% + forecasted e-mail thresholds).
 # Find the id: `gcloud billing accounts list`. ⚠️ Set the SAME value as the
 # GitHub secret GCP_BILLING_ACCOUNT_ID, else the next CI apply destroys the budget.

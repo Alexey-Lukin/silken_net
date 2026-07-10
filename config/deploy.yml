@@ -70,8 +70,12 @@ boot:
 # Google Artifact Registry for Docker images.
 # Run `gcloud auth configure-docker <region>-docker.pkg.dev` before first deploy.
 registry:
+  # [INF.22] Keyless: oauth2accesstoken + a short-lived WIF access token as the
+  # password (GCP_ARTIFACT_REGISTRY_KEY), not a long-lived _json_key_base64. CI mints
+  # it via google-github-actions/auth (token_format: access_token); locally use
+  # `gcloud auth print-access-token`. See docs/06_02 §Security Exception.
   server: europe-west1-docker.pkg.dev
-  username: _json_key_base64
+  username: oauth2accesstoken
   password:
     - GCP_ARTIFACT_REGISTRY_KEY
 

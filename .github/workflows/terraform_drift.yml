@@ -7,13 +7,13 @@ name: Ops · TF Drift
 # — honester than a calendar reminder (same pattern as Ops · Akash Escrow Watch).
 #
 # Config-half now, value post-deploy: on TRL-3 no `apply` has run yet, so there
-# is no state to drift from. The job SKIPS CLEANLY (green) until GCP_SA_KEY is
-# provisioned (mirrors deploy.yml verify-secrets skip-clean) — it activates the
+# is no state to drift from. The job SKIPS CLEANLY (green) until the WIF provider
+# Variable is set (mirrors deploy.yml verify-secrets skip-clean) — it activates the
 # moment the first apply lands. Read-only: `plan -lock=false` never takes the
 # state lock, so it can never block a real apply.
 #
-# ⚠️ After provisioning GCP_SA_KEY / GCP_PROJECT_ID / POSTGRES_PASSWORD, VALIDATE
-# immediately via `workflow_dispatch` — do NOT wait for the weekly cron. That's
+# ⚠️ After setting the WIF Variables + GCP_PROJECT_ID / POSTGRES_PASSWORD secrets,
+# VALIDATE immediately via `workflow_dispatch` — do NOT wait for the weekly cron. That's
 # the only way to first confirm `plan` runs clean (not just skip-clean-green).
 #
 # Canon: 06_01 (terraform apply chain) / 06_07 §1 (workflow inventory).
@@ -24,9 +24,11 @@ on:
     - cron: '43 6 * * 2'   # Tue 06:43 UTC, weekly (unique slot — infra rarely changes)
   workflow_dispatch:
 
-# Least-privilege floor: read-only, no untrusted checkout, no write scopes needed.
+# Least-privilege floor: no untrusted checkout. id-token:write is required for keyless
+# WIF auth (INF.22); contents:read for checkout — no other write scopes.
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   drift:
@@ -57,17 +59,20 @@ jobs:
         id: guard
         working-directory: .
         env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          # [INF.22] Keyless CI: WIF provider + SA email are non-secret repo Variables
+          # (auth), GCP_PROJECT_ID / POSTGRES_PASSWORD stay secrets (TF_VARs).
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
-          # `plan` needs ALL THREE: GCP_SA_KEY (auth + GCS backend), GCP_PROJECT_ID
-          # (TF_VAR_project_id, regex-validated), POSTGRES_PASSWORD (TF_VAR_db_password,
-          # len≥16). Gating on GCP_SA_KEY alone would pass a partially-provisioned repo
+          # `plan` needs auth (WIF provider + SA, keyless) + GCP_PROJECT_ID
+          # (TF_VAR_project_id, regex-validated) + POSTGRES_PASSWORD (TF_VAR_db_password,
+          # len≥16). Gating on the provider alone would pass a partially-provisioned repo
           # → plan dies on var validation → red — the exact noise this guard prevents.
           # Mirrors deploy.yml verify-secrets' missing-loop.
           missing=""
-          for v in GCP_SA_KEY GCP_PROJECT_ID POSTGRES_PASSWORD; do
+          for v in GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD; do
             [ -z "${!v}" ] && missing="$missing $v"
           done
           # GCP_BILLING_ACCOUNT_ID is deliberately NOT gated here — a repo provisioned
@@ -87,11 +92,12 @@ jobs:
         if: steps.guard.outputs.configured == 'true'
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
-      - name: Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud (WIF, keyless)
         if: steps.guard.outputs.configured == 'true'
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
 
       - name: Setup Terraform
         if: steps.guard.outputs.configured == 'true'

@@ -59,7 +59,7 @@
 - [ ] `RAILS_MASTER_KEY` — Rails credentials decryption key. **[B1]** CI читає його як GitHub Secret; `.kamal/secrets` тепер ENV-first (`${RAILS_MASTER_KEY:-$(cat config/master.key)}`) — `config/master.key` gitignored, відсутній у CI checkout, тож GitHub Secret мусить перемогти, інакше boot-decrypt падає.
 > ~~`KAMAL_MASTER_KEY`~~ — **ВИДАЛЕНО 2026-07-04 (фантом):** Kamal 2.x не має механізму «encrypted secrets master key»; `.kamal/secrets` — plain `$VAR`-файл, споживача не існувало ніде в репо, а verify-secrets гейтив production на неіснуючу залежність. Не заводити.
 - [ ] `PROVISIONING_MASTER_KEY` — HKDF root для per-device AES-деривації (boot-critical: `config/initializers/master_key_strength_check.rb` raise при відсутності в production). **[B1]** `verify-secrets` перевіряє присутність + довжину ≥64; обидва deploy-workflow маплять його у `kamal deploy`. Генерувати: `ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"`. (Runtime-роль — §2.)
-- [ ] `GCP_SA_KEY` — GCP Service Account JSON ключ (raw або base64). Дозволи: `roles/artifactregistry.writer`, `roles/cloudsql.client`. Створюється в GCP IAM → Service Accounts → Keys.
+> ~~`GCP_SA_KEY`~~ — **ВИДАЛЕНО як CI-secret 2026-07-09 (INF.22, keyless WIF):** CI автентифікується до GCP через **Workload Identity Federation** (`terraform/wif.tf`) — GitHub карбує короткоживучий OIDC-токен, GCP STS обмінює його на impersonated deploy-SA access-token; JSON-ключ (6-місний, boot-critical, безстроковий credential) з CI зник. Замість нього — два **repo Variables** (не secrets, це публічні ідентифікатори): `GCP_WORKLOAD_IDENTITY_PROVIDER` (з `terraform output workload_identity_provider`) + `GCP_SERVICE_ACCOUNT` (SA email). Довгоживучий SA-ключ лишається ЛИШЕ в Akash `GCP_SA_KEY_BASE64` (Cloud SQL proxy — §3.1/§4; [`06_02 §Security Exception`](06_02_Akash_Network_Integration)).
 - [ ] `GCP_PROJECT_ID` — ID GCP проєкту (наприклад, `silken-net-prod`)
 - [ ] `POSTGRES_PASSWORD` — пароль Cloud SQL `silken_net` user (≥16 символів, password manager). **Component style** (`config/database.yml`): host/user/database — non-secret (`config/deploy.yml env.clear`), лише пароль = секрет. Один секрет живить Kamal `POSTGRES_PASSWORD` **і** Terraform `TF_VAR_db_password`. Той самий для production + canopy — ізоляція через `POSTGRES_DATABASE` (canopy = `silken_net_canopy`), НЕ окремий URL. (Замінив `DATABASE_URL`/`DATABASE_PASSWORD`/`CANOPY_DATABASE_URL` — INF.16.)
 - [ ] `REDIS_URL` — Production Redis (DB 0, Upstash): `rediss://default:<password>@<endpoint>.upstash.io:6379/0`
@@ -71,7 +71,7 @@
 - [ ] `PROJECT_PAT` — GitHub Personal Access Token з `project:write` scope (для `trl_sync.yml` GitHub Action — OPS.1). Тип: classic PAT або fine-grained PAT.
 - [ ] `GCP_BILLING_ACCOUNT_ID` — **[OPS.11]** дзеркало tfvars `billing_account_id` для CI terraform apply (`TF_VAR_billing_account_id` в обох deploy-workflow). ⚠️ Заводиться **разом** із tfvars-значенням: локальний apply з бюджетом + CI-apply без секрета = count→0 → CI **знесе бюджет**. ⚠️ ПЕРЕД активацією — обов'язковий грант CI-SA `roles/billing.costsManager` на billing-акаунті (plan-refresh 403-ить і блокує весь deploy-ланцюг — точна команда/механіка → [`06_02 §4.4`](06_02_Akash_Network_Integration)). Порожній = budget просто не керується (no-op).
 
-> **Repo Variables (не Secrets):** `CANOPY_COAP_HOST` / `PRODUCTION_COAP_HOST` (активують `coap_smoke` — INF.6) · `AKASH_OWNER_ADDRESS` (+опц. `AKASH_MIN_RUNWAY_DAYS`, `AKASH_LCD_BASE`) — активує **Ops · Akash Escrow Watch** [OPS.11] після першого lease. До заповнення обидва workflow видимо skip-clean.
+> **Repo Variables (не Secrets):** `GCP_WORKLOAD_IDENTITY_PROVIDER` / `GCP_SERVICE_ACCOUNT` (keyless WIF-auth deploy/drift — INF.22; з `terraform output` після 1-го apply; їх presence = infra-provisioned deploy-gate, який раніше ніс `GCP_SA_KEY`) · `CANOPY_COAP_HOST` / `PRODUCTION_COAP_HOST` (активують `coap_smoke` — INF.6) · `AKASH_OWNER_ADDRESS` (+опц. `AKASH_MIN_RUNWAY_DAYS`, `AKASH_LCD_BASE`) — активує **Ops · Akash Escrow Watch** [OPS.11] після першого lease. До заповнення обидва workflow видимо skip-clean.
 
 ### 1.3. P2 — Опціонально / Auto-derived
 
@@ -84,7 +84,7 @@
 
 > Раніше ці жили лише у `.kamal/secrets` (§2) / Akash SDL (§3) / Terraform (§4). **Після B1** обидва deploy-workflow маплять їх із GitHub Secrets у крок `kamal deploy`, тож для CI-деплою вони **мусять існувати як GitHub Repository Secrets**. Повний опис кожного — §2.1 (one-home); тут лише перелік + boot-vs-lazy клас (`verify-secrets` гейтить boot-critical, warn на lazy).
 
-**Boot-critical** (порожній → контейнер падає на boot / terraform не apply-неться; `verify-secrets` блокує; з 2026-07-04 гейт покриває і infra-передумову `GCP_PROJECT_ID` — SSH-секрети ЗНЯТО, INF.20 (в) IAP keyless, див. §1.1):
+**Boot-critical** (порожній → контейнер падає на boot / terraform не apply-неться; `verify-secrets` блокує; гейт покриває і infra-передумови `GCP_PROJECT_ID` + WIF-Variables `GCP_WORKLOAD_IDENTITY_PROVIDER`/`GCP_SERVICE_ACCOUNT` — SA-JSON `GCP_SA_KEY` вилучено, CI keyless WIF INF.22; SSH-секрети ЗНЯТО, INF.20 (в) IAP keyless, див. §1.1):
 - [ ] `ORACLE_MINTER_PRIVATE_KEY` · `ORACLE_SLASHER_PRIVATE_KEY` — `web3_network_guard` raise при boot **signer-процесу (Sidekiq job)**, якщо немає ні specific-ключа, ні `ORACLE_PRIVATE_KEY`-fallback. **Money/signing-ключі = JOB-ONLY (2026-07-04):** signing-шістка (`ORACLE_*` ×4 вкл. `ORACLE_CELO_PRIVATE_KEY` + `ETHEREUM_ANCHOR_PRIVATE_KEY` + `SOLANA_WALLET_KEYPAIR`) живе лише в `job` (Kamal `servers.job.env.secret` / Akash SDL job-сервіс); web/coap бутяться keyless by design (Akash ENV = plaintext провайдеру; guard scoped `signer_process: Sidekiq.server?` — [`04_02 §Web3NetworkGuard`](04_02_Business_Logic_and_Services)).
 
 **Lazy runtime** (порожній → фіча degraded на першому use, НЕ boot-crash; `verify-secrets` warn):
@@ -102,7 +102,7 @@
 > **Шлях:** `.kamal/secrets` (НЕ комітити!). Файл уже існує у репо і містить **посилання на ENV** (`$VARIABLE`), не raw values. Перед `kamal deploy` встанови ці змінні у shell або CI environment.
 
 - [ ] `RAILS_MASTER_KEY` — **[B1]** ENV-first: `${RAILS_MASTER_KEY:-$(cat config/master.key)}`. CI бере з GitHub Secret (§1.1; `config/master.key` gitignored → відсутній у checkout); локально fallback на файл.
-- [ ] `GCP_ARTIFACT_REGISTRY_KEY` — base64-encoded GCP Service Account JSON для pull Docker images з Artifact Registry. У CI підставляється з `GCP_SA_KEY`.
+- [ ] `GCP_ARTIFACT_REGISTRY_KEY` — **[INF.22]** короткоживучий WIF access-token для Kamal push у Artifact Registry (registry username = `oauth2accesstoken` у `config/deploy.yml`), НЕ довгоживучий JSON-ключ. У CI видає auth-крок (`token_format: access_token`); локально — `gcloud auth print-access-token`.
 - [ ] `POSTGRES_PASSWORD` — те саме значення що й GitHub Secret (host/user/database → `env.clear`, не secret)
 - [ ] `REDIS_URL` — те саме значення
 - [ ] `SENTRY_DSN` — Sentry project DSN. Без цього Sentry **інертний** — production помилки не репортуються (BLOCKER у [`00_07`](00_07_Action_Plan_Tracker)). Отримати: Sentry → Project Settings → Client Keys (DSN).
@@ -298,7 +298,7 @@
 
 > **One-Home: порядок дня деплою живе у [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform)** (фази −1…6) — старий 8-кроковий список тут суперечив 06_01-порядку (секрети до/після apply). Секрет-специфіка, яку тримає ЦЕЙ дім:
 >
-> - **GitHub Secrets = дві партії:** Batch A (pre-infra, ДО `terraform apply`): `GCP_SA_KEY` · `GCP_PROJECT_ID` · `POSTGRES_PASSWORD` · `RAILS_MASTER_KEY` · `PROVISIONING_MASTER_KEY` (SSH-секретів НЕМАЄ — INF.20 (в): IAP+OS Login keyless). Batch B (post-infra, значення існують лише ПІСЛЯ apply/акаунтів): `REDIS_URL`/`CANOPY_REDIS_URL` (Upstash ×2 — Фаза −1) · RPC×5 · Solana×4 · `SENTRY_DSN` · webhook-HMACs · oracle-ключі.
+> - **GitHub Secrets = дві партії:** Batch A (pre-infra, ДО `terraform apply`): `GCP_PROJECT_ID` · `POSTGRES_PASSWORD` · `RAILS_MASTER_KEY` · `PROVISIONING_MASTER_KEY` (SSH-секретів НЕМАЄ — INF.20 (в): IAP+OS Login keyless; `GCP_SA_KEY` НЕМАЄ — CI keyless через WIF, INF.22: після 1-го apply зчитай `workload_identity_provider`/`service_account_email` у repo **Variables** `GCP_WORKLOAD_IDENTITY_PROVIDER`/`GCP_SERVICE_ACCOUNT`). Batch B (post-infra, значення існують лише ПІСЛЯ apply/акаунтів): `REDIS_URL`/`CANOPY_REDIS_URL` (Upstash ×2 — Фаза −1) · RPC×5 · Solana×4 · `SENTRY_DSN` · webhook-HMACs · oracle-ключі.
 > - `.kamal/secrets` вже закомічений ($VAR-форма) — «створювати» його не треба; треба заповнити shell-ENV (CI робить це сам з GitHub Secrets).
 > - Akash SDL секрети — через `.tpl` + `terraform/akash/terraform.tfvars` (§3/§4); gas на гаманцях — Фаза −1/4.
 

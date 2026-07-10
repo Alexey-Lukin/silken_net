@@ -141,3 +141,22 @@ variable "billing_budget_usd" {
   type        = number
   default     = 100
 }
+
+# -----------------------------------------------------------------------------
+# Workload Identity Federation (INF.22) — keyless CI → GCP
+# -----------------------------------------------------------------------------
+
+# GitHub owner/repo whose Actions workflows may impersonate the deploy SA via WIF
+# (wif.tf). Case-insensitive: the OIDC claim preserves GitHub's stored mixed case,
+# so both the provider condition and the SA binding lowercase it. Change only if the
+# repo is renamed/transferred.
+variable "github_repository" {
+  description = "GitHub owner/repo allowed to impersonate the deploy SA via WIF (case-insensitive)"
+  type        = string
+  default     = "Alexey-Lukin/silken_net"
+
+  validation {
+    condition     = can(regex("^[^/]+/[^/]+$", var.github_repository))
+    error_message = "Must be in owner/repo form (e.g. Alexey-Lukin/silken_net)."
+  }
+}

@@ -5,7 +5,7 @@ name: Sec · IaC Scan
 # (public buckets, permissive firewall/IAM, missing encryption, unpinned base
 # images…) at PR/push time, BEFORE the first live deploy — the cheapest moment
 # to fix them. Static: reads files only, no cloud creds (contrast: terraform_drift,
-# which plans against LIVE state and needs GCP_SA_KEY).
+# which plans against LIVE state and authenticates keyless via WIF).
 #
 # Findings → SARIF in the Security tab (coexists with CodeQL default-setup /
 # Scorecard / Aderyn — distinct `category`). SOFT-FAIL by design (exit-code

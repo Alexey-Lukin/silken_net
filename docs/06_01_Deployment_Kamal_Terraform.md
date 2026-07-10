@@ -395,8 +395,11 @@ boot:
       - "443:443"
 
 registry:
+  # [INF.22] Keyless: oauth2accesstoken + short-lived WIF access token (НЕ
+  # _json_key_base64 + JSON) — CI видає його auth-кроком, локально
+  # `gcloud auth print-access-token`. Дзеркалить config/deploy.yml.
   server:   europe-west1-docker.pkg.dev
-  username: _json_key_base64
+  username: oauth2accesstoken
   password:
     - GCP_ARTIFACT_REGISTRY_KEY
 
@@ -612,11 +615,14 @@ Helius/QuickNode (Solana mainnet) RPC · 4+ Web3-гаманці (oracle/minter/s
 **Фаза 0 — Bootstrap інфри:**
 `terraform/bootstrap.sh` (GCS state-bucket) → `terraform.tfvars` (project_id, db_password,
 `ssh_source_ranges=[<твій реальний CIDR>]` — приклад у tfvars = TEST-NET-3, НЕ лишай!) →
-GitHub Secrets **Batch A** (pre-infra: `GCP_SA_KEY`, `GCP_PROJECT_ID`, `POSTGRES_PASSWORD`,
-`RAILS_MASTER_KEY`, `PROVISIONING_MASTER_KEY`) → tfvars: `iap_admin_members`
+GitHub Secrets **Batch A** (pre-infra: `GCP_PROJECT_ID`, `POSTGRES_PASSWORD`,
+`RAILS_MASTER_KEY`, `PROVISIONING_MASTER_KEY` — SA-JSON `GCP_SA_KEY` більше НЕ потрібен:
+CI keyless через WIF, INF.22) → tfvars: `iap_admin_members`
 (твій e-mail) + [INF.21] `coap_daemon_image` = іммутабельний `sha-<commit>` →
-`terraform init && plan && apply` → зчитати outputs (`ingress_ip`, `database_private_ip`,
-`artifact_registry_url`). **SSH на анкор = IAP-тунель + OS Login (INF.20 (в), wired):**
+`terraform init && plan && apply` (перший apply — локально твоїм ADC; він створює WIF-pool,
+тож CI не потребує ключа з дебюту) → зчитати outputs (`ingress_ip`, `database_private_ip`,
+`artifact_registry_url` + `workload_identity_provider`/`service_account_email` → repo
+**Variables** `GCP_WORKLOAD_IDENTITY_PROVIDER`/`GCP_SERVICE_ACCOUNT`, після чого CI-деплой keyless). **SSH на анкор = IAP-тунель + OS Login (INF.20 (в), wired):**
 `gcloud compute ssh silken-net-ingress --tunnel-through-iap --zone europe-west1-b` —
 порт 22 в інтернет не відкритий, ключі keyless (керує OS Login); Kamal-нога = (б)-клей
 за потребою (`ssh.proxy_command` через `start-iap-tunnel` + SA-ролі); Akash-шлях

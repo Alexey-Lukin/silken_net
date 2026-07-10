@@ -41,7 +41,11 @@ jobs:
           # nothing in .kamal/ consumes it (plain $VAR secrets file, not encrypted).
           RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           PROVISIONING_MASTER_KEY: ${{ secrets.PROVISIONING_MASTER_KEY }}
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          # [INF.22] Keyless CI: the WIF provider + SA email are non-secret repo
+          # VARIABLES, not GCP_SA_KEY. Their presence is the "infra provisioned"
+          # deploy-gate signal that GCP_SA_KEY used to carry.
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           REDIS_URL: ${{ secrets.REDIS_URL }}
@@ -68,7 +72,7 @@ jobs:
           # false-safety that hid the 4-month deploy block). Boot-critical = crashes boot
           # (master-key decrypt / PROVISIONING guard / oracle KeyError per web3_network_guard)
           # or blocks kamal. Runtime = lazy-fail on use (warn, don't block). Canon: docs/06_04 §1+§2.
-          BOOT_CRITICAL="RAILS_MASTER_KEY PROVISIONING_MASTER_KEY GCP_SA_KEY GCP_PROJECT_ID POSTGRES_PASSWORD REDIS_URL ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY"
+          BOOT_CRITICAL="RAILS_MASTER_KEY PROVISIONING_MASTER_KEY GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD REDIS_URL ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY"
           RUNTIME="SENTRY_DSN ETHEREUM_ANCHOR_PRIVATE_KEY ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL POLYGON_RPC_URL CELO_RPC_URL SOLANA_WALLET_KEYPAIR SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS ORACLE_CELO_PRIVATE_KEY CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET"
 
           missing=""
@@ -96,6 +100,12 @@ jobs:
     needs: verify-secrets
     runs-on: ubuntu-latest
 
+    # [INF.22] id-token:write lets google-github-actions/auth mint the OIDC token for
+    # WIF; contents:read for checkout (a per-job block overrides the top-level one).
+    permissions:
+      contents: read
+      id-token: write
+
     defaults:
       run:
         working-directory: terraform
@@ -108,10 +118,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
-      - name: Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud (WIF, keyless)
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
@@ -135,6 +146,12 @@ jobs:
     needs: terraform
     runs-on: ubuntu-latest
 
+    # [INF.22] id-token:write for keyless WIF auth (docker push + kamal registry);
+    # contents:read for checkout (per-job overrides the top-level).
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
       - name: Harden runner (egress audit)
         uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
@@ -146,10 +163,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
 
-      - name: Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud (WIF, keyless)
+        id: auth
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          # access_token feeds `gcloud auth configure-docker` (ADC) AND the kamal
+          # registry password (GCP_ARTIFACT_REGISTRY_KEY, username oauth2accesstoken).
+          token_format: access_token
 
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
@@ -177,7 +199,9 @@ jobs:
         # or web3-strict raise. KREDIS_REDIS_URL is intentionally omitted (auto-derives from
         # REDIS_URL). Canon: docs/06_04 §1 + §2.
         env:
-          GCP_ARTIFACT_REGISTRY_KEY: ${{ secrets.GCP_SA_KEY }}
+          # [INF.22] Short-lived WIF access token (username oauth2accesstoken in
+          # config/deploy.yml registry), not a JSON key.
+          GCP_ARTIFACT_REGISTRY_KEY: ${{ steps.auth.outputs.access_token }}
           # --- Application core ---
           RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           # Component style (config/database.yml): only the password is a secret; host/user/
