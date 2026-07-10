@@ -9,12 +9,18 @@
 
 # Canopy server IP — use Ingress Anchor IP from: terraform output ingress_ip
 # (same IP as production — canopy is differentiated by Akash SDL env vars, not server IP)
-servers:
-  web:
-    - <INGRESS_ANCHOR_IP>
-# No `job:` section by design — this Kamal fallback path is web-only (developer use).
-# Sidekiq workers run via the Akash primary deployment (deploy/akash/deploy.yaml `job`
+#
+# WEB-ONLY, enforced STRUCTURALLY: `servers:` uses the ARRAY form, which Kamal's
+# destination deep_merge REPLACES wholesale (an array is not a hash) → the base
+# `job:`/`coap:` roles do NOT leak in. Merely omitting a `job:` section would NOT
+# be enough — deep_merge is a keys-UNION, so an omitted role is INHERITED from
+# config/deploy.yml, bringing the money sextet in its env.secret; those secrets
+# are production-environment-scoped (INF.22) → they would interpolate present-empty
+# "" → Web3NetworkGuard raise on the job container's boot.
+# Canopy background jobs run on the Akash primary (deploy/akash/deploy.yaml `job`
 # service). Do NOT rely on `kamal deploy -d canopy` for background-job testing.
+servers:
+  - <INGRESS_ANCHOR_IP>
 
 # Canopy uses an ISOLATED database set on the same Cloud SQL instance: silken_net_canopy
 # (+ _cache/_queue/_cable). Same host/user/password as production (inherited from

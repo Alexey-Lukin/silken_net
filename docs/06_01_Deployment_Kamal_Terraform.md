@@ -61,7 +61,7 @@
 | # | Перевірка | Деталі |
 |---|-----------|--------|
 | **1** | **DNS / TLS до `kamal setup`** | Після `terraform apply` скопіюй IP та створи A-запис (`api.silkennet.com → <IP>`). Дочекайся: `dig api.silkennet.com` → правильний IP. **Тільки тоді** запускай `kamal setup`. Причина: при ввімкненому `proxy.ssl` (зараз **закоментований** у `config/deploy.yml`) **kamal-proxy** (Kamal 2.x — НЕ Traefik 1.x) робить Let's Encrypt ACME-challenge — без живого DNS сертифікат не видасться і проксі не підніметься. Поточно `proxy.ssl` вимкнено → TLS термінується зовні (Cloudflare / Akash hostname, рішення `[INF.4]`); DNS усе одно потрібен для маршрутизації трафіку. |
-| **2** | **`.kamal/secrets-common` файл існує + повний** | Kamal читає секрети з `.kamal/secrets-common` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `RAILS_MASTER_KEY`, `POSTGRES_PASSWORD` (host/user/database — non-secret `env.clear`, component style `config/database.yml`), `REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY` (registry pull). `KREDIS_REDIS_URL` — **не** додавати: Kredis auto-derive DB 1 з `REDIS_URL` (`config/redis/shared.yml`), порожній інжект перебив би derive [B1]. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_PRIVATE_KEY`, `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY`. **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_HMAC_SECRET` (лише callback-endpoint; dispatch-секрети вилучено — ARCH.53). **Той самий список застосовується для Akash SDL** (`deploy/akash/deploy.yaml` + `deploy.yaml.tpl`) та Terraform (`terraform/akash/terraform.tfvars`) — див. [`06_02 §2 ENV (Секрети SDL)`](06_02_Akash_Network_Integration). |
+| **2** | **`.kamal/secrets-common` файл існує + повний** | Kamal читає секрети з `.kamal/secrets-common` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `RAILS_MASTER_KEY`, `POSTGRES_PASSWORD` (host/user/database — non-secret `env.clear`, component style `config/database.yml`), `REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY` (registry pull). `KREDIS_REDIS_URL` — **не** додавати: Kredis auto-derive DB 1 з `REDIS_URL` (`config/redis/shared.yml`), порожній інжект перебив би derive [B1]. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY` — legacy `ORACLE_PRIVATE_KEY` на kamal-нозі **знято** (INF.22: unprovisioned-but-mapped = present-empty guard-crash); CI-джерело money-п'ятірки (ці три + `SOLANA_WALLET_KEYPAIR`, `ORACLE_CELO_PRIVATE_KEY`) = GH Environment `production`, НЕ repo-secrets (INF.22 → [`06_04 §1`](06_04_Secrets_Checklist)). **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_HMAC_SECRET` (лише callback-endpoint; dispatch-секрети вилучено — ARCH.53). **Той самий список застосовується для Akash SDL** (`deploy/akash/deploy.yaml` + `deploy.yaml.tpl`) та Terraform (`terraform/akash/terraform.tfvars`) — див. [`06_02 §2 ENV (Секрети SDL)`](06_02_Akash_Network_Integration). |
 | **3** | **Gas на Web3-гаманцях** | Воркери потребують нативної крипто: **MATIC** (Polygon), **ETH** (L1), **SOL** (Solana), **CELO** (Celo). Без газу → "Insufficient Funds" на кожній транзакції → Sidekiq потоне у ретраях. |
 | **4** | **LoRa-антена підключена** | **КРИТИЧНО.** Ніколи не подавай живлення без антени на SMA/U.FL порту. SX1262 відбиває RF назад у чип (high VSWR) — радіотракт згоряє за мілісекунди. Незворотно. Правило: антена → живлення. |
 | **5** | **HKDF AES-ключів (post-FW.1 + ARCH.42 + FW.2 (в))** | Кожен Soldier має **per-device session AES-128 LoRa ключ** (`aes_key[4]`, 16 bytes) + **cluster control-plane KEYB** (`bcast_key[4]`, 16 bytes — двоключова модель [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security)); Queen — той самий KEYB як єдиний LoRa-ключ + окремий **AES-256 CoAP ключ** (`coap_key[8]`, 32 bytes). Усі деривуються з `PROVISIONING_MASTER_KEY` через HKDF з domain-separated info-strings (`"silken-aes-128-lora-key"` / `"silken-aes-128-broadcast-key"` / `"silken-aes-256-device-key"`). Перевіряй на factory bench, що backend і firmware повертають той самий байтовий ключ за тим самим salt. Симптом mismatch: сміття після декрипту (телеметрія на Rails / downlink на Солдаті). Детальніше: [`03_06 §2`](03_06_Factory_Flashing_and_Key_Provisioning). |
@@ -125,8 +125,8 @@ terraform apply
 # Observability:
 #   SENTRY_DSN, PROMETHEUS_AUTH_USER, PROMETHEUS_AUTH_PASSWORD
 #   GRAFANA_REMOTE_WRITE_URL/USERNAME/TOKEN (тільки в alloy сервісі)
-# Web3 oracle keys (інакше Sidekiq DeadSet):
-#   ORACLE_PRIVATE_KEY, ORACLE_MINTER_PRIVATE_KEY, ORACLE_SLASHER_PRIVATE_KEY,
+# Web3 oracle keys (інакше Sidekiq DeadSet; legacy ORACLE_PRIVATE_KEY знято з kamal-ноги — INF.22):
+#   ORACLE_MINTER_PRIVATE_KEY, ORACLE_SLASHER_PRIVATE_KEY,
 #   ETHEREUM_ANCHOR_PRIVATE_KEY
 # RPC endpoints (Web3::RpcConnectionPool):
 #   ALCHEMY_POLYGON_RPC_URL, ALCHEMY_ETHEREUM_RPC_URL, SOLANA_RPC_URL
@@ -361,7 +361,7 @@ ENV.fetch("RACK_ATTACK_REDIS_URL") {
 | Файл | Опис |
 |------|------|
 | `config/deploy.yml` | Production-конфіг (основний) |
-| `config/deploy.canopy.yml` | Canopy-перевизначення (`-d canopy`). **Web-only за дизайном** — без `job:`-ролі; Sidekiq для Canopy іде через Akash primary `deploy.yaml` job-сервіс (INF.13). |
+| `config/deploy.canopy.yml` | Canopy-перевизначення (`-d canopy`). **Web-only СТРУКТУРНО** — `servers:` = array-форма, яку deep_merge замінює цілком (омітнута `job:`-секція НЕ прибирає роль: destination-merge = keys-union, роль успадкувалась би з base разом із money-`env.secret` → present-empty guard-crash; INF.22). Sidekiq для Canopy іде через Akash primary `deploy.yaml` job-сервіс (INF.13). |
 | `.kamal/secrets-common` | Runtime секрети (читаються при деплої) |
 | `.kamal/hooks/` | Хуки ЖЦ (тільки sample-файли) |
 
@@ -379,10 +379,11 @@ servers:
       - 192.168.0.1          # ⚠️ PLACEHOLDER
     cmd: bundle exec sidekiq -C config/sidekiq.yml
     env:
-      secret:                # Money/signing-ключі = JOB-ONLY (шістка: ORACLE_*×4
-        - ORACLE_PRIVATE_KEY #  + ETHEREUM_ANCHOR + SOLANA_WALLET_KEYPAIR) — web/coap
-        - …                  #  бутяться keyless; guard scoped signer_process:
-                             #  Sidekiq.server? (дзеркало Akash SDL job-сервіса)
+      secret:                       # Money/signing-ключі = JOB-ONLY (Kamal-п'ятірка:
+        - ORACLE_MINTER_PRIVATE_KEY #  MINTER/SLASHER/CELO + ETHEREUM_ANCHOR +
+        - …                         #  SOLANA_WALLET_KEYPAIR; legacy ORACLE_PRIVATE_KEY
+                                    #  знято — INF.22) — web/coap бутяться keyless;
+                                    #  guard scoped signer_process: Sidekiq.server?
   coap:
     cmd: bundle exec ruby lib/daemons/coap_listener
     options:

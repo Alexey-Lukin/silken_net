@@ -63,8 +63,10 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   proxy — зовн. провайдер не досягає GitHub-issuer'а). → `06_04 §1.1` / `06_02 §Security Exception`.
 - **Akash SDL ENV — plaintext, видимий провайдеру.** Реальні ключі **ніколи** не в
   `deploy/akash/deploy.yaml`; інжектити через Akash Console / `env.secret`. **Money/signing-
-  шістка (`ORACLE_*`×4 вкл. `CELO` + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`) = JOB-ONLY** —
-  web/coap бутяться keyless (guard scoped `signer_process: Sidekiq.server?`). → `06_02` / `06_04 §1.1`.
+  набір = JOB-ONLY** — SDL-job несе шістку (`ORACLE_*`×4 вкл. `CELO` + `ETHEREUM_ANCHOR` +
+  `SOLANA_WALLET_KEYPAIR`); Kamal-job несе **п'ятірку** (legacy `ORACLE_PRIVATE_KEY` знято з
+  kamal-ноги, INF.22 — unprovisioned-but-mapped = present-empty guard-crash); web/coap бутяться
+  keyless (guard scoped `signer_process: Sidekiq.server?`). → `06_02` / `06_04 §1.1`.
 - **SEC.22 latch (credentials→ENV, 2026-07-09).** at-rest ≠ runtime: провайдер читає
   `/proc/environ`, тож `RAILS_MASTER_KEY` у runtime-ENV розшифровує весь vault. Розчинено:
   8 зовн.-сервісів + `storage.yml` читають `ENV[..].presence || credentials`; **AR-encryption
@@ -88,11 +90,13 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   з образом (`gh attestation verify`). `verify-secrets` у Canopy **skip-clean** без секретів (Production
   лишається fail-loud). `main` захищено branch-protection (required `CI passed` + `Docs passed`,
   `enforce_admins=false` — owner пушить напряму). Деталі/діаграма — `06_07 §1`/`§2`.
-- **GH Environment `production` = дім money-шістки (INF.22, 2026-07-10).** Signing-шістка
-  (`ORACLE_*`×4 + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`) у GitHub живе **environment-scoped**
-  (`gh secret set X --env production`), НЕ repo-level — читають лише `deploy-production.yml`
-  jobs `verify-secrets`+`deploy` (`environment:`); wait-timer 10 хв **per-job** (2 гейти/release)
-  + ref-policy `v*`∪`main`. Canopy шістку НЕ споживає (web-only, гейт підрізано). Kamal secrets-файл =
+- **GH Environment `production` = дім money-п'ятірки (INF.22, 2026-07-10).** Signing-п'ятірка
+  (`MINTER`/`SLASHER`/`CELO` + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`) у GitHub живе
+  **environment-scoped** (`gh secret set X --env production`), НЕ repo-level — читають лише
+  `deploy-production.yml` jobs `verify-secrets`+`deploy` (`environment:`); wait-timer 10 хв
+  **per-job** (2 гейти/release) + ref-policy `v*`∪`main`. Canopy money-ключі НЕ споживає —
+  **структурно**: `deploy.canopy.yml` `servers:` = array-форма (Kamal deep_merge = keys-union →
+  омітнута роль УСПАДКОВУЄТЬСЯ; масив замінює hash цілком). Kamal secrets-файл =
   **`.kamal/secrets-common`** (з destination плейн `secrets` НЕВИДИМИЙ — Kamal читає лише
   `-common` + `secrets.<dest>`). → `06_04 §1` / `06_07 §1`.
 

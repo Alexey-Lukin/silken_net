@@ -26,7 +26,12 @@ servers:
         # worker; web/coap boot keyless (Security::Web3NetworkGuard scopes the
         # presence check via signer_process: Sidekiq.server?). Mirrors the Akash
         # SDL split (job service carries them, web does not).
-        - ORACLE_PRIVATE_KEY
+        # ORACLE_PRIVATE_KEY (legacy shared fallback) is deliberately NOT carried
+        # on the kamal leg (INF.22): E.2 mandates split MINTER/SLASHER keys, and an
+        # unprovisioned-but-mapped secret injects present-empty "" → the guard's
+        # format check raises at boot. The Akash SDL still lists it (its
+        # REQUIRED_SECRET_NOT_SET placeholder discipline covers it); full
+        # retirement is tracked in 00_07 INF.22.
         - ORACLE_CELO_PRIVATE_KEY
         - ORACLE_MINTER_PRIVATE_KEY
         - ORACLE_SLASHER_PRIVATE_KEY

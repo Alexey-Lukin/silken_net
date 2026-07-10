@@ -95,11 +95,13 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           CANOPY_REDIS_URL: ${{ secrets.CANOPY_REDIS_URL }}
           # Money/signing keys deliberately ABSENT (INF.22): environment-scoped to
-          # `production` (unreadable from this workflow) AND kamal-unused on canopy
-          # anyway — the sextet lives in servers.job.env.secret only, and canopy is
-          # web-only (no job role in config/deploy.canopy.yml), so `kamal deploy -d
-          # canopy` never injects them; web boots keyless (Web3NetworkGuard
-          # signer_process scope). Gating on them here would skip canopy forever.
+          # `production` (unreadable from this workflow) AND kamal-unused on canopy —
+          # the sextet lives in servers.job.env.secret only, and canopy is
+          # STRUCTURALLY web-only (array-form `servers:` in deploy.canopy.yml
+          # replaces the base hash; an omitted section would be INHERITED via
+          # deep_merge), so `kamal deploy -d canopy` never injects them; web boots
+          # keyless (Web3NetworkGuard signer_process scope). Gating on them here
+          # would skip canopy forever.
           HELIUM_WEBHOOK_SECRET: ${{ secrets.HELIUM_WEBHOOK_SECRET }}
           # Runtime (lazy): feature degraded until provisioned, not a boot crash. Warn only.
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
@@ -274,9 +276,11 @@ jobs:
           # --- Hardware provisioning gate (master_key_strength_check.rb — boot-critical) ---
           PROVISIONING_MASTER_KEY: ${{ secrets.PROVISIONING_MASTER_KEY }}
           # --- Web3 money/signing keys: NOT mapped (INF.22) — the sextet is
-          #     servers.job.env.secret-only and canopy has no job role, so kamal
-          #     never looks these up here; they are also production-environment-
-          #     scoped and would interpolate "" (present-empty → guard raise). ---
+          #     servers.job.env.secret-only and canopy is structurally web-only
+          #     (array-form servers: in deploy.canopy.yml; an omitted role would be
+          #     INHERITED via deep_merge), so kamal never looks these up here; they
+          #     are also production-environment-scoped and would interpolate ""
+          #     (present-empty → guard raise). ---
           # --- RPC endpoints (Web3::RpcConnectionPool; testnet-marker boot guard) ---
           ALCHEMY_POLYGON_RPC_URL: ${{ secrets.ALCHEMY_POLYGON_RPC_URL }}
           ALCHEMY_ETHEREUM_RPC_URL: ${{ secrets.ALCHEMY_ETHEREUM_RPC_URL }}
