@@ -26,7 +26,7 @@ jobs:
   verify-secrets:
     name: Verify Required Secrets [SEC.11]
     runs-on: ubuntu-latest
-    # [INF.22] GH Environment `production` scopes the money/signing sextet: those
+    # [INF.22] GH Environment `production` scopes the money/signing quintet: those
     # secrets live ONLY at environment level (any other workflow reads ""), and the
     # environment carries a wait-timer (solo-substitute for human approval,
     # bus_factor=1) + ref policy (v* tags + main). Wait-timer fires PER JOB that
@@ -154,7 +154,7 @@ jobs:
     name: Kamal Deploy (Production)
     needs: terraform
     runs-on: ubuntu-latest
-    # [INF.22] Second (and last) environment gate — the sextet is only readable
+    # [INF.22] Second (and last) environment gate — the quintet is only readable
     # here and in verify-secrets; see the note on verify-secrets.
     environment: production
 
@@ -206,10 +206,10 @@ jobs:
       - name: Kamal Deploy to Production
         run: kamal deploy
         # ⚠️ Drift guard: this env: block MUST mirror config/deploy.yml env.secret — global
-        # AND the servers.job sextet (which .kamal/secrets-common reads as $VAR from THIS
+        # AND the servers.job quintet (which .kamal/secrets-common reads as $VAR from THIS
         # shell). Any env.secret entry missing here is injected EMPTY → boot crash
         # (RAILS_MASTER_KEY decrypt / PROVISIONING_MASTER_KEY guard) or web3-strict raise.
-        # The sextet values resolve from the `production` environment scope (this job
+        # The quintet values resolve from the `production` environment scope (this job
         # references it). KREDIS_REDIS_URL is intentionally omitted (auto-derives from
         # REDIS_URL). Canon: docs/06_04 §1 + §2.
         env:

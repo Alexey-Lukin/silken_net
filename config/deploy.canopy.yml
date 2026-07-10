@@ -14,7 +14,7 @@
 # destination deep_merge REPLACES wholesale (an array is not a hash) → the base
 # `job:`/`coap:` roles do NOT leak in. Merely omitting a `job:` section would NOT
 # be enough — deep_merge is a keys-UNION, so an omitted role is INHERITED from
-# config/deploy.yml, bringing the money sextet in its env.secret; those secrets
+# config/deploy.yml, bringing the money quintet in its env.secret; those secrets
 # are production-environment-scoped (INF.22) → they would interpolate present-empty
 # "" → Web3NetworkGuard raise on the job container's boot.
 # Canopy background jobs run on the Akash primary (deploy/akash/deploy.yaml `job`

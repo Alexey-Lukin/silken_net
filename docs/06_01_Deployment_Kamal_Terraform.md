@@ -89,7 +89,9 @@
 # Крок 1: Створити GCS bucket для Terraform State (один раз, до terraform init)
 cd terraform
 chmod +x bootstrap.sh
-./bootstrap.sh  # автоматично перевіряє gcloud auth та створює bucket
+./bootstrap.sh  # gcloud auth check + bucket + CMEK-латч state-bucket'а [SEC.22]:
+                # keyring silken-tfstate-ew1 → default-CMEK + PAP + retention 10в/30д;
+                # усередині разовий sleep 30s (IAM-propagation) — не переривай
 
 # Крок 2: Налаштувати terraform.tfvars
 cd terraform
@@ -416,7 +418,8 @@ env:
     # --- Hardware provisioning gate (config/initializers/master_key_strength_check.rb) ---
     - PROVISIONING_MASTER_KEY
     # --- Money/signing-ключі НЕ ТУТ: JOB-ONLY (servers.job.env.secret вище) —
-    #     шістка ORACLE_PRIVATE/CELO/MINTER/SLASHER + ETHEREUM_ANCHOR + SOLANA_WALLET_KEYPAIR;
+    #     Kamal-п'ятірка CELO/MINTER/SLASHER + ETHEREUM_ANCHOR + SOLANA_WALLET_KEYPAIR
+    #     (legacy ORACLE_PRIVATE_KEY знято з kamal-ноги — INF.22; SDL-job несе всі 6);
     #     web/coap бутяться keyless (Web3NetworkGuard signer_process: Sidekiq.server?) ---
     # --- RPC endpoints (SSOT names expected by Web3::RpcConnectionPool) ---
     - ALCHEMY_POLYGON_RPC_URL
@@ -614,7 +617,8 @@ Helius/QuickNode (Solana mainnet) RPC · 4+ Web3-гаманці (oracle/minter/s
 `RAILS_MASTER_KEY`-бекап + `PROVISIONING_MASTER_KEY` → **vault + offline-копія (DR.1)**.
 
 **Фаза 0 — Bootstrap інфри:**
-`terraform/bootstrap.sh` (GCS state-bucket) → `terraform.tfvars` (project_id, db_password,
+`terraform/bootstrap.sh` (GCS state-bucket + CMEK-латч [SEC.22]: keyring `silken-tfstate-ew1`,
+PAP, retention 10в/30д; має разовий 30s IAM-sleep — не переривай) → `terraform.tfvars` (project_id, db_password,
 `ssh_source_ranges=[<твій реальний CIDR>]` — приклад у tfvars = TEST-NET-3, НЕ лишай!) →
 GitHub Secrets **Batch A** (pre-infra: `GCP_PROJECT_ID`, `POSTGRES_PASSWORD`,
 `RAILS_MASTER_KEY`, `PROVISIONING_MASTER_KEY` — SA-JSON `GCP_SA_KEY` більше НЕ потрібен:
@@ -630,9 +634,15 @@ CI keyless через WIF, INF.22) → tfvars: `iap_admin_members`
 (Фаза 3) від SSH не залежить.
 
 **Фаза 1 — Дротування post-infra:**
-GitHub Secrets **Batch B** (`REDIS_URL`,
-`CANOPY_REDIS_URL`, RPC×5, Solana×4, `SENTRY_DSN`, `CHAINLINK_HMAC_SECRET`,
-`HELIUM_WEBHOOK_SECRET`, oracle-ключі) → DNS: `api.silkennet.com` **A → ingress_ip
+GitHub Secrets **Batch B** — ДВА доми [INF.22]: repo-level = `REDIS_URL`,
+`CANOPY_REDIS_URL`, RPC×5, Solana-public×3, `SENTRY_DSN`, `CHAINLINK_HMAC_SECRET`,
+`HELIUM_WEBHOOK_SECRET`; **money-п'ятірка (`ORACLE_MINTER/SLASHER/CELO` +
+`ETHEREUM_ANCHOR_PRIVATE_KEY` + `SOLANA_WALLET_KEYPAIR`) = ЛИШЕ environment
+`production`** (`gh secret set <NAME> --env production`; environment уже створений API з
+wait-timer + ref-policy — [`06_04 §1`](06_04_Secrets_Checklist)). ⚠️ Пастка wrong-home:
+покладеш п'ятірку repo-level — деплой лишиться ЗЕЛЕНИМ (environment-jobs бачать
+repo-секрети як fallback), але ізоляція тихо знульована, а реверс = ручне повторне
+введення значень (GitHub секретів назад не віддає) → DNS: `api.silkennet.com` **A → ingress_ip
 (DNS-only, сіра хмарка!)** + `silkennet.app` CNAME → Akash ingress (proxied, після Фази 3) →
 Kamal-плейсхолдери: `image:` AR-шлях, servers-IP, `POSTGRES_HOST` (S1.5/INF.15) →
 **заповнити `/etc/silkennet/coap.env` на анкорі** (5 значень: `POSTGRES_PASSWORD`/
@@ -661,6 +671,9 @@ job-серії ≠ 0 (S2.1/INF.14) · Grafana-сесія: `deploy/grafana/import
 (Pre-Flight #3).
 
 **Фаза 5 — Production-render + hardening:**
+⏱️ [INF.22] Перший release-run **зависне ~10 хв PENDING ×2** (environment wait-timer,
+per-job: перед `verify-secrets` і перед `deploy`) — це НЕ зависання, НЕ скасовуй run;
+вікно = навмисний solo-approval-substitute ([`06_04 §1`](06_04_Secrets_Checklist)).
 Akash production-render (дефолтні vars) → повтор Фази 4 → `RAILS_ALLOWED_HOSTS=
 silkennet.app,api.silkennet.com` у env.clear/SDL (S6.18 — ОБИДВА легітимні хости:
 app = Cloudflare-HTTPS, api = анкор-шлях) → [INF.10] фліп `proxy.healthcheck.path: /ready`

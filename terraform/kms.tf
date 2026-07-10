@@ -25,7 +25,7 @@
 # architecture home — so SEC.17 later just adds silken-sign-ew1 with zero rename.
 # GCP's `purpose` enum is a hard type barrier (a symmetric key physically cannot
 # sign, an asymmetric key cannot wrap a disk) → the only residual risk is IAM
-# scope, eliminated by the two-keyring split + key-level bindings below.
+# scope, eliminated by the keyring split + key-level bindings below.
 # =============================================================================
 
 resource "google_project_service" "cloudkms" {

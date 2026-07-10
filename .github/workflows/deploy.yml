@@ -96,7 +96,7 @@ jobs:
           CANOPY_REDIS_URL: ${{ secrets.CANOPY_REDIS_URL }}
           # Money/signing keys deliberately ABSENT (INF.22): environment-scoped to
           # `production` (unreadable from this workflow) AND kamal-unused on canopy —
-          # the sextet lives in servers.job.env.secret only, and canopy is
+          # the quintet lives in servers.job.env.secret only, and canopy is
           # STRUCTURALLY web-only (array-form `servers:` in deploy.canopy.yml
           # replaces the base hash; an omitted section would be INHERITED via
           # deep_merge), so `kamal deploy -d canopy` never injects them; web boots
@@ -120,7 +120,7 @@ jobs:
           # verify (false safety). Boot-critical = crashes boot (master-key decrypt /
           # PROVISIONING guard / oracle KeyError per web3_network_guard) or blocks kamal.
           # Runtime = lazy-fail on first use (warn, don't block). Canon: docs/06_04 §1+§2.
-          # Money/signing sextet EXCLUDED from both sets (INF.22): canopy is web-only
+          # Money/signing quintet EXCLUDED from both sets (INF.22): canopy is web-only
           # (keyless boot by design) and the keys are production-environment-scoped —
           # requiring them here would read "" and skip-or-warn canopy forever.
           BOOT_CRITICAL="RAILS_MASTER_KEY PROVISIONING_MASTER_KEY GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD CANOPY_REDIS_URL"
@@ -257,7 +257,7 @@ jobs:
         # ⚠️ Drift guard: this env: block MUST mirror the GLOBAL config/deploy.yml env.secret
         # (which .kamal/secrets-common reads as $VAR from THIS shell). Any global env.secret
         # entry missing here is injected EMPTY → boot crash (RAILS_MASTER_KEY decrypt /
-        # PROVISIONING_MASTER_KEY guard). The servers.job sextet is deliberately NOT mirrored —
+        # PROVISIONING_MASTER_KEY guard). The servers.job quintet is deliberately NOT mirrored —
         # canopy has no job role. KREDIS_REDIS_URL is intentionally omitted (auto-derives from
         # REDIS_URL). Canon: docs/06_04 §1 + §2.
         env:
@@ -275,7 +275,7 @@ jobs:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           # --- Hardware provisioning gate (master_key_strength_check.rb — boot-critical) ---
           PROVISIONING_MASTER_KEY: ${{ secrets.PROVISIONING_MASTER_KEY }}
-          # --- Web3 money/signing keys: NOT mapped (INF.22) — the sextet is
+          # --- Web3 money/signing keys: NOT mapped (INF.22) — the quintet is
           #     servers.job.env.secret-only and canopy is structurally web-only
           #     (array-form servers: in deploy.canopy.yml; an omitted role would be
           #     INHERITED via deep_merge), so kamal never looks these up here; they
@@ -287,7 +287,7 @@ jobs:
           SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
           POLYGON_RPC_URL: ${{ secrets.POLYGON_RPC_URL }}
           CELO_RPC_URL: ${{ secrets.CELO_RPC_URL }}
-          # --- Solana public identifiers (signing keypair = job-only sextet, not mapped) ---
+          # --- Solana public identifiers (signing keypair = job-only quintet, not mapped) ---
           SOLANA_FEE_PAYER_PUBKEY: ${{ secrets.SOLANA_FEE_PAYER_PUBKEY }}
           SOLANA_FEE_PAYER_TOKEN_ACCOUNT: ${{ secrets.SOLANA_FEE_PAYER_TOKEN_ACCOUNT }}
           SOLANA_USDC_MINT_ADDRESS: ${{ secrets.SOLANA_USDC_MINT_ADDRESS }}
