@@ -81,8 +81,8 @@ resource "local_file" "akash_sdl" {
     active_record_encryption_key_derivation_salt = var.active_record_encryption_key_derivation_salt
     # Observability
     sentry_dsn = var.sentry_dsn
-    # Web3 oracle keys (dual-key split, B-02; Celo dedicated signer — ARCH.50)
-    oracle_private_key          = var.oracle_private_key
+    # Web3 oracle keys (dual-key split, B-02; Celo dedicated signer — ARCH.50;
+    # legacy shared oracle_private_key retired — INF.22)
     oracle_celo_private_key     = var.oracle_celo_private_key
     oracle_minter_private_key   = var.oracle_minter_private_key
     oracle_slasher_private_key  = var.oracle_slasher_private_key

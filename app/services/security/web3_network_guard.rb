@@ -14,17 +14,18 @@
 #   it would make booting depend on RPC liveness (an availability failure worse
 #   than the config bug it guards). A runtime chain-id assertion can layer on later.
 #
-# Oracle signer keys. BlockchainMintingService / BlockchainBurningService
-#   resolve their signer via `ENV.fetch("ORACLE_MINTER_PRIVATE_KEY") {
-#   ENV.fetch("ORACLE_PRIVATE_KEY") }` (+ the SLASHER variant). A missing key
-#   raises KeyError deep inside a Sidekiq worker → the job lands in the DeadSet
-#   silently. Resolve + format-check at boot instead. A second failure mode
-#   (ARCH.47): minting and slashing resolving to the SAME key — a shared
-#   ORACLE_PRIVATE_KEY fallback or identical MINTER/SLASHER keys — collide on one
-#   Kredis oracle lock and serialize mint↔slash, so a 120s mint stalls a
-#   time-sensitive slash (and a LockTimeout there silently aborts the burn,
-#   ARCH.48). E.2 (canon 07_01 §B-02) mandates physically separate keys; the
-#   fallback is legacy-only, so a strict boot also refuses an address collision.
+# Oracle signer keys. Every signer resolves a DEDICATED key (`ENV.fetch` with
+#   no fallback — the legacy shared ORACLE_PRIVATE_KEY is retired, INF.22). A
+#   missing key raises KeyError deep inside a Sidekiq worker → the job lands in
+#   the DeadSet silently, so the boot-critical pair (minter/slasher) is
+#   presence-checked at boot; every present oracle-family key is format-checked.
+#   A second failure mode (ARCH.47): minting and slashing resolving to the SAME
+#   key — identical MINTER/SLASHER values — collide on one Kredis oracle lock
+#   and serialize mint↔slash, so a 120s mint stalls a time-sensitive slash (and
+#   a LockTimeout there silently aborts the burn, ARCH.48). E.2 (canon 07_01
+#   §B-02) mandates physically separate keys. The retired legacy name is a
+#   tripwire: a value under ORACLE_PRIVATE_KEY is a dead plaintext surface no
+#   code reads — refuse it so zombie deploy-config can't linger.
 module Security
   module Web3NetworkGuard
     module_function
@@ -46,10 +47,20 @@ module Security
     # secp256k1 private key: 32 bytes hex, optional 0x prefix.
     HEX64 = /\A(?:0x)?[0-9a-fA-F]{64}\z/
 
-    ORACLE_KEY_ENVS = %w[ORACLE_PRIVATE_KEY ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY].freeze
+    # Every dedicated secp256k1 signer key (format-checked when present).
+    ORACLE_KEY_ENVS = %w[
+      ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY ORACLE_CELO_PRIVATE_KEY
+      ORACLE_ETHERISC_PRIVATE_KEY ORACLE_PURO_PRIVATE_KEY ORACLE_KLIMA_PRIVATE_KEY
+      ETHEREUM_ANCHOR_PRIVATE_KEY
+    ].freeze
 
-    # Minting/slashing signer fallback chains (specific → ORACLE_PRIVATE_KEY).
-    SIGNER_FALLBACKS = {
+    # Retired shared fallback [INF.22] — no code reads it; presence = zombie config.
+    RETIRED_KEY_ENV = "ORACLE_PRIVATE_KEY"
+
+    # Boot-critical signer roles (mint/slash money path) — presence-checked in
+    # the signer process. The aux signers (Celo/Etherisc/Puro/Klima) are
+    # activation-gated lazy keys: absent until their path goes live (06_04 §2.1).
+    SIGNER_KEYS = {
       "minting"  => "ORACLE_MINTER_PRIVATE_KEY",
       "slashing" => "ORACLE_SLASHER_PRIVATE_KEY"
     }.freeze
@@ -80,40 +91,46 @@ module Security
     def oracle_violations(env, signer_process: true)
       out = ORACLE_KEY_ENVS.filter_map do |var|
         key = env[var]
-        # An empty / whitespace value is NOT skipped: the services resolve via `ENV.fetch(var) { … }`,
-        # which returns "" when the KEY exists-but-blank (a known Kamal empty-inject) → `Eth::Key`
-        # raises at signing. `nil` = the key is genuinely absent → fine (the fallback handles it).
+        # An empty / whitespace value is NOT skipped: `ENV.fetch` returns "" when the KEY
+        # exists-but-blank (a known Kamal empty-inject) → `Eth::Key` raises at signing.
+        # `nil` = genuinely absent → fine here (the boot-critical pair is presence-checked
+        # below; aux signers are activation-gated lazy keys).
         next if key.nil? || key.match?(HEX64)
 
         "[oracle-key] #{var} is set but is not a 32-byte hex secp256k1 key " \
           "(expected 64 hex chars, optional 0x) — Eth::Key would raise at signing time."
       end
 
-      if signer_process
-        base = env["ORACLE_PRIVATE_KEY"]
-        SIGNER_FALLBACKS.each do |role, specific_var|
-          next if env[specific_var].present? || base.present?
+      # Retired-name tripwire [INF.22]: any value (even a valid key, even "") under the
+      # legacy name is config that no code reads — a pure plaintext liability on an
+      # untrusted provider, and a sign the deploy env predates the dedicated-key split.
+      unless env[RETIRED_KEY_ENV].nil?
+        out << "[oracle-key] #{RETIRED_KEY_ENV} is RETIRED (INF.22) — no code reads it; " \
+               "remove it from the deploy env (dedicated keys: #{ORACLE_KEY_ENVS.join(', ')})."
+      end
 
-          out << "[oracle-key] No #{role} oracle key: neither #{specific_var} nor the " \
-                 "ORACLE_PRIVATE_KEY fallback is set — #{role} jobs would KeyError into the Sidekiq DeadSet."
+      if signer_process
+        SIGNER_KEYS.each do |role, var|
+          next if env[var].present?
+
+          out << "[oracle-key] No #{role} oracle key: #{var} is not set — " \
+                 "#{role} jobs would KeyError into the Sidekiq DeadSet."
         end
       end
 
-      # [ARCH.47] Lock-key collision. Minting and slashing resolve a signer the same way the
-      # services do; if both land on the SAME address they share one Kredis lock
-      # `lock:web3:oracle:<addr>` → a 120s mint stalls a time-sensitive slash (whose LockTimeout
-      # then silently aborts the burn, ARCH.48). Compare resolved-key strings — same hex ⇒ same
-      # address; distinct hex ⇒ distinct address — so no Eth::Key derivation is needed at boot.
-      # Scope = the mint↔slash pair (the time-sensitive collision). A bare ORACLE_PRIVATE_KEY present
-      # *alongside* distinct MINTER/SLASHER does NOT collide the mint↔slash locks (legacy/Chainlink/Celo
-      # still use base). A lower-severity base-vs-specific collision (e.g. Celo's base lock == minter) is
-      # a deploy-checklist concern (distinct keys — INF.19/S1.1), not flagged here.
-      minter  = env["ORACLE_MINTER_PRIVATE_KEY"].presence  || base
-      slasher = env["ORACLE_SLASHER_PRIVATE_KEY"].presence || base
+      # [ARCH.47] Lock-key collision. If minting and slashing land on the SAME address they
+      # share one Kredis lock `lock:web3:oracle:<addr>` → a 120s mint stalls a time-sensitive
+      # slash (whose LockTimeout then silently aborts the burn, ARCH.48). Compare key strings —
+      # same hex ⇒ same address; distinct hex ⇒ distinct address — so no Eth::Key derivation is
+      # needed at boot. Scope = the mint↔slash pair (the time-sensitive collision); an
+      # aux-vs-mint collision (e.g. Etherisc key == minter) is a deploy-checklist concern
+      # (distinct keys — INF.19/S1.1), not flagged here.
+      minter  = env["ORACLE_MINTER_PRIVATE_KEY"]
+      slasher = env["ORACLE_SLASHER_PRIVATE_KEY"]
       if minter.present? && slasher.present? && normalized_key(minter) == normalized_key(slasher)
-        out << "[oracle-key] minting and slashing resolve to the SAME signer key — a shared " \
-               "ORACLE_PRIVATE_KEY fallback or identical MINTER/SLASHER keys collide on one Kredis " \
-               "lock 'lock:web3:oracle:<addr>', stalling a time-sensitive slash. Provision distinct " \
+        out << "[oracle-key] minting and slashing resolve to the SAME signer key — identical " \
+               "MINTER/SLASHER keys collide on one Kredis lock 'lock:web3:oracle:<addr>', " \
+               "stalling a time-sensitive slash. Provision distinct " \
                "ORACLE_MINTER_PRIVATE_KEY ≠ ORACLE_SLASHER_PRIVATE_KEY (E.2; canon 07_01 §B-02)."
       end
 

@@ -14,7 +14,7 @@ RSpec.describe BlockchainBurningService do
 
   before do
     ENV["ALCHEMY_POLYGON_RPC_URL"] ||= "https://polygon-rpc.example.com"
-    ENV["ORACLE_PRIVATE_KEY"] = "0x#{'a' * 64}"
+    ENV["ORACLE_SLASHER_PRIVATE_KEY"] = "0x#{'a' * 64}"
     ENV["CARBON_COIN_CONTRACT_ADDRESS"] ||= "0x#{'0' * 40}"
 
     # Kredis може бути відсутнім у тестовому середовищі
@@ -846,7 +846,7 @@ RSpec.describe BlockchainBurningService do
   end
 
   # =========================================================================
-  # ORACLE_SLASHER_PRIVATE_KEY FALLBACK (E.2 Role Separation)
+  # DEDICATED SLASHER KEY (E.2 Role Separation — legacy fallback retired, INF.22)
   # =========================================================================
   describe "key selection (E.2 Role Separation)" do
     let(:tree_burn) { create(:tree, cluster: cluster) }
@@ -856,22 +856,30 @@ RSpec.describe BlockchainBurningService do
       create(:blockchain_transaction, wallet: wallet_burn, amount: 100, status: :confirmed)
     end
 
-    it "uses ORACLE_SLASHER_PRIVATE_KEY when available" do
+    it "signs with the dedicated ORACLE_SLASHER_PRIVATE_KEY" do
       ENV["ORACLE_SLASHER_PRIVATE_KEY"] = "0x#{'b' * 64}"
 
       described_class.call(organization.id, naas_contract.id, source_tree: tree_burn)
 
       expect(Eth::Key).to have_received(:new).with(priv: "0x#{'b' * 64}")
     ensure
-      ENV.delete("ORACLE_SLASHER_PRIVATE_KEY")
+      ENV["ORACLE_SLASHER_PRIVATE_KEY"] = "0x#{'a' * 64}"
     end
 
-    it "falls back to ORACLE_PRIVATE_KEY when slasher key is missing" do
+    it "does NOT fall back to the retired ORACLE_PRIVATE_KEY when the slasher key is missing [INF.22]" do
+      # A zombie legacy value must never be picked up: the raw KeyError propagates
+      # (in prod the guard's boot presence-check fires long before this point).
       ENV.delete("ORACLE_SLASHER_PRIVATE_KEY")
+      ENV["ORACLE_PRIVATE_KEY"] = "0x#{'a' * 64}"
 
-      described_class.call(organization.id, naas_contract.id, source_tree: tree_burn)
+      expect {
+        described_class.call(organization.id, naas_contract.id, source_tree: tree_burn)
+      }.to raise_error(KeyError, /ORACLE_SLASHER_PRIVATE_KEY/)
 
-      expect(Eth::Key).to have_received(:new).with(priv: "0x#{'a' * 64}")
+      expect(Eth::Key).not_to have_received(:new)
+    ensure
+      ENV.delete("ORACLE_PRIVATE_KEY")
+      ENV["ORACLE_SLASHER_PRIVATE_KEY"] = "0x#{'a' * 64}"
     end
   end
 

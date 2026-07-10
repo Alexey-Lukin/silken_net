@@ -10,7 +10,7 @@ RSpec.describe Celo::CommunityRewardService do
   before do
     allow(ENV).to receive(:fetch).and_call_original
     allow(ENV).to receive(:fetch).with("CELO_RPC_URL", anything).and_return("https://alfajores-forno.celo-testnet.org")
-    allow(ENV).to receive(:fetch).with("ORACLE_PRIVATE_KEY").and_return("0x" + "ab" * 32)
+    allow(ENV).to receive(:fetch).with("ORACLE_CELO_PRIVATE_KEY").and_return("0x" + "ab" * 32)
     allow(ENV).to receive(:fetch).with("CELO_CUSD_CONTRACT_ADDRESS").and_return("0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1")
 
     # [ARCH.50] the reward now arms a Celo-aware reconcile — stub it everywhere.

@@ -861,9 +861,9 @@ blockchain_transactions
 | `credentials.iotex_w3bstream_url` | `Iotex::W3bstreamVerificationService` | ✅ Так |
 | `credentials.iotex_api_key` | `Iotex::W3bstreamVerificationService` | ✅ Так |
 | `ENV["CHAINLINK_HMAC_SECRET"]` | `OracleCallbacksController` (callback-endpoint; dispatch-секрети вилучено — ARCH.53) | ⚠️ PROD only |
-| `ENV["ORACLE_MINTER_PRIVATE_KEY"]` | `BlockchainMintingService` (MINTER_ROLE, [E.2]) | ✅ Так (fallback → `ORACLE_PRIVATE_KEY`) |
-| `ENV["ORACLE_SLASHER_PRIVATE_KEY"]` | `BlockchainBurningService` (SLASHER_ROLE, [E.2] — окремий ключ, blast-radius) | ✅ Так (fallback → `ORACLE_PRIVATE_KEY`) |
-| `ENV["ORACLE_PRIVATE_KEY"]` | Legacy base-EOA (PuroEarth/Etherisc/Klima) + backward-compat fallback для MINTER/SLASHER | ✅ Так |
+| `ENV["ORACLE_MINTER_PRIVATE_KEY"]` | `BlockchainMintingService` (MINTER_ROLE, [E.2]) | ✅ Так (dedicated-only — legacy fallback retired, INF.22) |
+| `ENV["ORACLE_SLASHER_PRIVATE_KEY"]` | `BlockchainBurningService` (SLASHER_ROLE, [E.2] — окремий ключ, blast-radius) | ✅ Так (dedicated-only) |
+| `ENV["ORACLE_ETHERISC/PURO/KLIMA_PRIVATE_KEY"]` | Activation-gated aux-підписанти (PuroEarth/Etherisc/Klima) — легасі спільний `ORACLE_PRIVATE_KEY` RETIRED [INF.22]: guard-tripwire відмовляє значенню під старим ім'ям | При активації шляху ([`06_04 §2.1`](06_04_Secrets_Checklist)) |
 | `ENV["ALCHEMY_POLYGON_RPC_URL"]` | `Web3::RpcConnectionPool` | ✅ Так |
 | `ENV["CARBON_COIN_CONTRACT_ADDRESS"]` | `BlockchainMintingService` | ✅ Так |
 | `ENV["FOREST_COIN_CONTRACT_ADDRESS"]` | `BlockchainMintingService` | ✅ Так |
@@ -871,7 +871,7 @@ blockchain_transactions
 | `ENV["SOLANA_RPC_URL"]` | `Solana::MintingService` | ✅ Так |
 | `ENV["PROVISIONING_MASTER_KEY"]` [SEC.11] | `SilkenNet::SeedDerivation`, `HardwareKeyService`, `OtaHmacKeyService` (runtime-fallback; фабрична `Session` передає ключ параметром від `MasterKeySource` — SEC.3 DI, [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)) | ✅ Так — без неї `SecurityError` (no SecureRandom fallback ANYWHERE; pre-prod hard cutover) |
 
-> **[ARCH.47]** `ORACLE_MINTER_PRIVATE_KEY` і `ORACLE_SLASHER_PRIVATE_KEY` мусять резолвитися в РІЗНІ адреси: спільний `ORACLE_PRIVATE_KEY`-fallback (або однакові ключі) дав би їм один Kredis-lock `lock:web3:oracle:<addr>` → mint стопорив би time-sensitive slash (а `LockTimeout` там тихо обриває burn). Під `WEB3_STRICT_MODE` `Security::Web3NetworkGuard` boot-енфорсить розділення (canon B-02 — [`07_01`](07_01_Nature_as_a_Service_Contracts)).
+> **[ARCH.47]** `ORACLE_MINTER_PRIVATE_KEY` і `ORACLE_SLASHER_PRIVATE_KEY` мусять резолвитися в РІЗНІ адреси: однакові ключі дали б їм один Kredis-lock `lock:web3:oracle:<addr>` → mint стопорив би time-sensitive slash (а `LockTimeout` там тихо обриває burn). Під `WEB3_STRICT_MODE` `Security::Web3NetworkGuard` boot-енфорсить розділення + відмовляє значенню під retired-ім'ям `ORACLE_PRIVATE_KEY` (canon B-02 — [`07_01`](07_01_Nature_as_a_Service_Contracts); INF.22).
 
 ---
 

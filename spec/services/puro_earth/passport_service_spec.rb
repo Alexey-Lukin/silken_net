@@ -26,7 +26,7 @@ RSpec.describe PuroEarth::PassportService do
     allow(Eth::Key).to receive(:new).and_return(mock_key)
     allow(Eth::Contract).to receive(:from_abi).and_return(mock_contract)
     allow(ENV).to receive(:fetch).and_call_original
-    allow(ENV).to receive(:fetch).with("ORACLE_PRIVATE_KEY").and_return("0x#{"ff" * 32}")
+    allow(ENV).to receive(:fetch).with("ORACLE_PURO_PRIVATE_KEY").and_return("0x#{"ff" * 32}")
     allow(ENV).to receive(:fetch).with("PURO_EARTH_REGISTRY_CONTRACT_ADDRESS").and_return("0x#{"ee" * 20}")
     allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
     allow(Kredis).to receive(:lock).and_yield # [ARCH.49] lock серіалізує підпис; стаб yield-ить синхронно
@@ -143,7 +143,8 @@ RSpec.describe PuroEarth::PassportService do
     end
 
     it "wraps missing ENV in AnchoringError" do
-      allow(ENV).to receive(:fetch).with("ORACLE_PRIVATE_KEY").and_raise(KeyError.new("key not found: \"ORACLE_PRIVATE_KEY\""))
+      allow(ENV).to receive(:fetch).with("ORACLE_PURO_PRIVATE_KEY")
+        .and_raise(KeyError.new("key not found: \"ORACLE_PURO_PRIVATE_KEY\""))
 
       expect {
         described_class.new(payload).anchor!

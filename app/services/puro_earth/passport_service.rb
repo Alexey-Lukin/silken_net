@@ -92,7 +92,9 @@ module PuroEarth
 
     def submit_anchor_transaction(payload_hash)
       client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
-      signing_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
+      # [INF.22] Dedicated Puro-підписант (легасі спільний ORACLE_PRIVATE_KEY retired) —
+      # E.2-ізоляція blast-radius. Ключ інжектиться при активації passport-шляху (06_04 §2.1).
+      signing_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PURO_PRIVATE_KEY"))
 
       contract = Eth::Contract.from_abi(
         name: "PuroEarthRegistry",
@@ -103,9 +105,10 @@ module PuroEarth
       tree_did = @payload[:tree_did].to_s
       hash_bytes32 = "0x#{payload_hash}"
 
-      # [ARCH.49] Серіалізуємо підпис на спільній base-EOA (той самий lock, що mint/burn/celo):
-      # eth-gem бере nonce per-call → конкурентні підписи колізять nonce. LockTimeout
-      # пробрасується крізь anchor! (re-raise перед StandardError) для чистого Sidekiq-retry.
+      # [ARCH.49] Per-address nonce-serialization: eth-gem бере nonce per-call → конкурентні
+      # підписи на одній адресі колізять nonce. Після dedicated-спліту [INF.22] адреса своя,
+      # тож lock серіалізує лише конкурентні Puro-anchors. LockTimeout пробрасується
+      # крізь anchor! (re-raise перед StandardError) для чистого Sidekiq-retry.
       tx_hash = nil
       lock_key = "lock:web3:oracle:#{signing_key.address}"
       Kredis.lock(lock_key, expires_in: 30.seconds, after_timeout: :raise) do

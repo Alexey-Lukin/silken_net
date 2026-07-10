@@ -92,8 +92,10 @@ sentry_dsn = "https://CHANGE_ME@o000000.ingest.sentry.io/0000000"
 # Rotate every 90 days. Prefer minimal on-chain roles (MINTER_ROLE only, never
 # DEFAULT_ADMIN_ROLE) for Akash-deployment keys. See docs/06_02 (INF.*).
 # Generate hex private key: openssl rand -hex 32 (then prepend 0x).
-oracle_private_key           = "0xCHANGE_ME_legacy_fallback_oracle_key"
-# Dedicated Celo signer (ARCH.50). Empty ⇒ Celo falls back to oracle_private_key.
+# Legacy shared oracle_private_key RETIRED [INF.22] — do not re-add (guard tripwire).
+# Aux signers (ORACLE_ETHERISC/PURO/KLIMA_PRIVATE_KEY) are activation-gated:
+# inject via Akash Console when their path goes live — never in tfvars/SDL.
+# Dedicated Celo signer (ARCH.50) — required, no fallback.
 oracle_celo_private_key      = "0xCHANGE_ME_dedicated_celo_cusd_signer"
 oracle_minter_private_key    = "0xCHANGE_ME_holds_MINTER_ROLE_on_SCC_SFC"
 oracle_slasher_private_key   = "0xCHANGE_ME_holds_SLASHER_ROLE_on_SCC_SFC"

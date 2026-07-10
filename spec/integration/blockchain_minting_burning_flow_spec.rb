@@ -18,7 +18,8 @@ RSpec.describe "Blockchain minting and burning pipeline" do
 
   before do
     ENV["ALCHEMY_POLYGON_RPC_URL"] ||= "https://polygon-rpc.example.com"
-    ENV["ORACLE_PRIVATE_KEY"] ||= "0x" + "a" * 64
+    ENV["ORACLE_MINTER_PRIVATE_KEY"] ||= "0x" + "a" * 64
+    ENV["ORACLE_SLASHER_PRIVATE_KEY"] ||= "0x" + "c" * 64
     ENV["CARBON_COIN_CONTRACT_ADDRESS"] ||= "0x" + "0" * 40
     ENV["FOREST_COIN_CONTRACT_ADDRESS"] ||= "0x" + "1" * 40
     ENV["DAO_TREASURY_ADDRESS"] ||= "0x" + "2" * 40

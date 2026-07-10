@@ -32,11 +32,14 @@ module Treasury
     }.freeze
 
     # Network-specific configuration (RPC keys, private keys, fallback URLs).
+    # [INF.22] env_private_key = ключ, що РЕАЛЬНО підписує на цій мережі (моніторимо
+    # газ-гаманець живого signer'а, не легасі base-EOA — та retired повністю):
+    # Polygon-мінт живе на MINTER, Celo — на dedicated CELO (ARCH.50).
     NETWORK_CONFIG = {
       polygon: {
         network: "polygon",
         env_rpc_key: "ALCHEMY_POLYGON_RPC_URL",
-        env_private_key: "ORACLE_PRIVATE_KEY"
+        env_private_key: "ORACLE_MINTER_PRIVATE_KEY"
       },
       solana: {
         network: "solana",
@@ -46,7 +49,7 @@ module Treasury
       celo: {
         network: "celo",
         env_rpc_key: "CELO_RPC_URL",
-        env_private_key: "ORACLE_PRIVATE_KEY",
+        env_private_key: "ORACLE_CELO_PRIVATE_KEY",
         fallback_rpc: "https://alfajores-forno.celo-testnet.org"
       },
       ethereum: {

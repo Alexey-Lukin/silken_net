@@ -127,8 +127,8 @@ class BlockchainMintingService < ApplicationService
     client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
     # [E.2 ROLE SEPARATION]: Окремий ключ для MINTER_ROLE зменшує blast radius
     # при компрометації — slashing залишається під окремим ключем.
-    # Backward-compatible fallback на ORACLE_PRIVATE_KEY для існуючих деплоїв.
-    oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_MINTER_PRIVATE_KEY") { ENV.fetch("ORACLE_PRIVATE_KEY") })
+    # Легасі-fallback на спільний ORACLE_PRIVATE_KEY retired [INF.22] — ключ dedicated-only.
+    oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_MINTER_PRIVATE_KEY"))
 
     # [SAFETY]: Перевірка балансу Оракула
     # [E.51] Threshold configurable через SystemParameter (governance-aware, 24h cache).

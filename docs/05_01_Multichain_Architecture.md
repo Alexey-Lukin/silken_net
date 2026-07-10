@@ -261,7 +261,7 @@ type SlashingEvent @entity { ... }
 | **Сервіси** | `BlockchainMintingService`, `BlockchainBurningService`, `ChainAuditService`, `PriceOracleService`, `MintingRollbackService` |
 | **Воркери** | `MintCarbonCoinWorker`, `BurnCarbonTokensWorker`, `BlockchainConfirmationWorker`, `TokenomicsEvaluatorWorker`, `Governance::ParameterSyncWorker` |
 | **Черги** | `web3_critical` (мінтинг, підтвердження), `critical` (спалювання), `default` (токеноміка), `web3_low` (governance sync) |
-| **ENV** | `ALCHEMY_POLYGON_RPC_URL`, `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY` (обидва fallback на `ORACLE_PRIVATE_KEY`; [E.2] розділені ключі mint/slash, blast-radius), `ORACLE_PRIVATE_KEY` (Chainlink-dispatch), `CARBON_COIN_CONTRACT_ADDRESS`, `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS` |
+| **ENV** | `ALCHEMY_POLYGON_RPC_URL`, `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY` (dedicated-only — legacy `ORACLE_PRIVATE_KEY` retired [INF.22]; [E.2] розділені ключі mint/slash, blast-radius), `CARBON_COIN_CONTRACT_ADDRESS`, `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS` |
 | **Спеки** | `spec/services/blockchain_minting_service_spec.rb`, `spec/services/blockchain_burning_service_spec.rb`, `spec/services/chain_audit_service_spec.rb`, `spec/services/price_oracle_service_spec.rb`, `spec/services/minting_rollback_service_spec.rb`, `spec/workers/governance/parameter_sync_worker_spec.rb` |
 
 **Governance DAO (✅ ARCH.4):**
@@ -341,7 +341,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 | **Черга** | `web3` (пріоритет 7) |
 | **Retry** | 3 |
 | **Тригер** | `ClusterHealthCheckWorker` (щоденно о 02:00 UTC) — для здорових кластерів |
-| **ENV** | `CELO_RPC_URL` ⚠️ без значення → fallback на Alfajores **TESTNET** (реальні cUSD на testnet, обходить `web3_network_guard`; E.49 → mainnet endpoint обов'язковий), **[ARCH.50]** `ORACLE_CELO_PRIVATE_KEY` (dedicated Celo-підписант, fallback `ORACLE_PRIVATE_KEY` — ізолює blast-radius від Polygon-флоту), `CELO_CUSD_CONTRACT_ADDRESS` |
+| **ENV** | `CELO_RPC_URL` ⚠️ без значення → fallback на Alfajores **TESTNET** (реальні cUSD на testnet, обходить `web3_network_guard`; E.49 → mainnet endpoint обов'язковий), **[ARCH.50]** `ORACLE_CELO_PRIVATE_KEY` (dedicated Celo-підписант, no fallback — ізолює blast-radius від Polygon-флоту), `CELO_CUSD_CONTRACT_ADDRESS` |
 | **Спека** | `spec/services/celo/community_reward_service_spec.rb` |
 
 **Умови нарахування:**
@@ -363,7 +363,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 | **Воркер** | `KlimaRetirementWorker` |
 | **Черга** | `web3_low` (пріоритет 8) |
 | **Retry** | 3 |
-| **ENV** | `ORACLE_PRIVATE_KEY`, `CARBON_COIN_CONTRACT_ADDRESS`, `KLIMA_RETIREMENT_CONTRACT` |
+| **ENV** | `ORACLE_KLIMA_PRIVATE_KEY` (activation-gated dedicated-підписант — INF.22), `CARBON_COIN_CONTRACT_ADDRESS`, `KLIMA_RETIREMENT_CONTRACT` |
 | **RPC** | `ALCHEMY_POLYGON_RPC_URL` (Polygon, де розгорнуто KlimaDAO) |
 | **Спека** | `spec/services/klima_dao/retirement_service_spec.rb` |
 
@@ -602,7 +602,7 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 | `ALCHEMY_ETHEREUM_RPC_URL` | Ethereum L1 |
 | `CELO_RPC_URL` | Celo |
 | `SOLANA_RPC_URL` | Solana |
-| `ORACLE_PRIVATE_KEY` | EVM oracle wallet |
+| `ORACLE_MINTER_PRIVATE_KEY` / `ORACLE_SLASHER_PRIVATE_KEY` / `ORACLE_CELO_PRIVATE_KEY` | Dedicated EVM signer wallets (legacy shared key retired — INF.22) |
 | `ETHEREUM_ANCHOR_PRIVATE_KEY` | L1 anchoring wallet |
 | `CARBON_COIN_CONTRACT_ADDRESS` | SCC contract |
 | `CHAINLINK_HMAC_SECRET` | Oracle-callback endpoint (dispatch-секрети вилучено — ARCH.53) |

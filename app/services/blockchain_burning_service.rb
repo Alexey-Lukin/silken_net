@@ -168,8 +168,8 @@ class BlockchainBurningService < ApplicationService
     client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
     # [E.2 ROLE SEPARATION]: Окремий ключ для SLASHER_ROLE зменшує blast radius
     # при компрометації — мінтинг залишається під окремим ключем.
-    # Backward-compatible fallback на ORACLE_PRIVATE_KEY для існуючих деплоїв.
-    oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_SLASHER_PRIVATE_KEY") { ENV.fetch("ORACLE_PRIVATE_KEY") })
+    # Легасі-fallback на спільний ORACLE_PRIVATE_KEY retired [INF.22] — ключ dedicated-only.
+    oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_SLASHER_PRIVATE_KEY"))
     contract_address = ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
     contract = Eth::Contract.from_abi(name: "SilkenCarbonCoin", address: contract_address, abi: CONTRACT_ABI)
 

@@ -47,20 +47,25 @@ RSpec.describe Security::Web3NetworkGuard do
 
     # --- oracle signer keys: presence + format ----------------------------
 
-    it "flags a missing minting oracle key (no specific key, no fallback)" do
+    it "flags a missing minting oracle key (no dedicated key — the legacy fallback is retired)" do
       env = clean_env.except("ORACLE_MINTER_PRIVATE_KEY")
       expect(described_class.violations(env)).to include(a_string_matching(/\[oracle-key\].*minting/))
     end
 
-    it "accepts a legacy ORACLE_PRIVATE_KEY present alongside distinct minter + slasher keys" do
-      # The fallback is legitimate for Chainlink/Celo/legacy signers as long as the
-      # role-specific keys resolve to DIFFERENT addresses than each other.
+    it "flags a retired ORACLE_PRIVATE_KEY even when it holds a valid key [INF.22]" do
+      # No code reads the legacy name anymore — a value here is zombie deploy-config
+      # and a pure plaintext liability on an untrusted provider.
       env = clean_env.merge("ORACLE_PRIVATE_KEY" => "a" * 64)
-      expect(described_class.violations(env)).to be_empty
+      expect(described_class.violations(env)).to include(a_string_matching(/\[oracle-key\].*RETIRED/))
     end
 
-    it "flags a malformed oracle key" do
-      env = clean_env.merge("ORACLE_PRIVATE_KEY" => "not-a-hex-key")
+    it "flags a retired ORACLE_PRIVATE_KEY that is present-but-empty" do
+      env = clean_env.merge("ORACLE_PRIVATE_KEY" => "")
+      expect(described_class.violations(env)).to include(a_string_matching(/\[oracle-key\].*RETIRED/))
+    end
+
+    it "flags a malformed aux signer key (present but not hex)" do
+      env = clean_env.merge("ORACLE_ETHERISC_PRIVATE_KEY" => "not-a-hex-key")
       expect(described_class.violations(env)).to include(a_string_matching(/\[oracle-key\].*hex/))
     end
 
@@ -77,10 +82,13 @@ RSpec.describe Security::Web3NetworkGuard do
 
     # --- oracle lock-key collision (ARCH.47) ------------------------------
 
-    it "flags a shared ORACLE_PRIVATE_KEY fallback (both specific keys absent)" do
-      # minter and slasher both resolve to the single base address → one lock key.
-      env = chain_env.merge("ORACLE_PRIVATE_KEY" => "a" * 64)
-      expect(described_class.violations(env)).to include(a_string_matching(/\[oracle-key\].*SAME signer key/))
+    it "flags a legacy-only env as retired + both signer keys missing (no silent fallback)" do
+      # Pre-split deploy config: only the shared base key set. The guard must refuse it
+      # loudly on all three counts rather than let the roles silently resolve anywhere.
+      violations = described_class.violations(chain_env.merge("ORACLE_PRIVATE_KEY" => "a" * 64))
+      expect(violations).to include(a_string_matching(/RETIRED/))
+      expect(violations).to include(a_string_matching(/minting/))
+      expect(violations).to include(a_string_matching(/slashing/))
     end
 
     it "flags identical specific minter + slasher keys" do

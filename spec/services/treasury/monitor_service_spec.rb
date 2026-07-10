@@ -5,7 +5,8 @@ require "rails_helper"
 RSpec.describe Treasury::MonitorService do
   before do
     ENV["ALCHEMY_POLYGON_RPC_URL"] ||= "https://polygon-rpc.example.com"
-    ENV["ORACLE_PRIVATE_KEY"] ||= "0x" + "a" * 64
+    ENV["ORACLE_MINTER_PRIVATE_KEY"] ||= "0x" + "a" * 64
+    ENV["ORACLE_CELO_PRIVATE_KEY"] ||= "0x" + "c" * 64
     ENV["SOLANA_RPC_URL"] ||= "https://api.devnet.solana.com"
     ENV["SOLANA_FEE_PAYER_PUBKEY"] = "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
     ENV["CELO_RPC_URL"] ||= "https://alfajores-forno.celo-testnet.org"
@@ -363,7 +364,7 @@ RSpec.describe Treasury::MonitorService do
 
   describe "fetch_evm_balance" do
     it "returns 0 when private_key is blank" do
-      stub_const("ENV", ENV.to_h.except("ORACLE_PRIVATE_KEY"))
+      stub_const("ENV", ENV.to_h.except("ORACLE_MINTER_PRIVATE_KEY"))
       service = described_class.new
       config = described_class::NETWORK_CONFIG[:polygon].merge(
         currency: "MATIC", decimals: 18, min_balance_wei: 50_000_000_000_000_000

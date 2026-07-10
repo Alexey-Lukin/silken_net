@@ -161,13 +161,15 @@ services:
       # ════════════════════════════════════════════════════════════════════════
       # Web3 money/signing keys — DELIBERATELY ABSENT from the web container.
       # ════════════════════════════════════════════════════════════════════════
-      # ORACLE_PRIVATE_KEY / ORACLE_CELO_PRIVATE_KEY / ORACLE_MINTER_PRIVATE_KEY /
-      # ORACLE_SLASHER_PRIVATE_KEY / ETHEREUM_ANCHOR_PRIVATE_KEY /
+      # ORACLE_MINTER_PRIVATE_KEY / ORACLE_SLASHER_PRIVATE_KEY /
+      # ORACLE_CELO_PRIVATE_KEY / ETHEREUM_ANCHOR_PRIVATE_KEY /
       # SOLANA_WALLET_KEYPAIR live ONLY in the `job` service: every signing call
       # site is a Sidekiq worker, and Akash SDL ENV is plaintext to the provider —
       # the internet-facing web surface must not carry money keys. Boot
       # presence-check is scoped to the signer process via
       # Security::Web3NetworkGuard (signer_process: Sidekiq.server?).
+      # The legacy shared ORACLE_PRIVATE_KEY is RETIRED [INF.22] — the guard
+      # refuses a value under that name anywhere.
 
       # ════════════════════════════════════════════════════════════════════════
       # RPC endpoints (Web3::RpcConnectionPool — required by ENV.fetch)
@@ -316,9 +318,12 @@ services:
       # inject the real value at deploy time.
 
       # --- Web3 oracle keys (BlockchainMintingService, BlockchainBurningService,
-      #     Ethereum::StateAnchorService, Celo/Etherisc/Toucan/Klima/PuroEarth) ---
-      - ORACLE_PRIVATE_KEY=REQUIRED_SECRET_NOT_SET
-      # Dedicated Celo cUSD signer (ARCH.50; falls back to ORACLE_PRIVATE_KEY).
+      #     Ethereum::StateAnchorService, Celo). Legacy shared ORACLE_PRIVATE_KEY
+      #     RETIRED [INF.22] — never re-add it (guard tripwire refuses it).
+      #     Aux signers (ORACLE_ETHERISC/PURO/KLIMA_PRIVATE_KEY) are deliberately
+      #     NOT here: activation-gated lazy keys, injected via Akash Console when
+      #     their path goes live (a placeholder would trip the guard format-check). ---
+      # Dedicated Celo cUSD signer (ARCH.50).
       - ORACLE_CELO_PRIVATE_KEY=REQUIRED_SECRET_NOT_SET
       - ORACLE_MINTER_PRIVATE_KEY=REQUIRED_SECRET_NOT_SET
       - ORACLE_SLASHER_PRIVATE_KEY=REQUIRED_SECRET_NOT_SET

@@ -77,11 +77,13 @@
 
 | ENV | Сервіс / Worker | Поведінка |
 |-----|-----------------|-----------|
-| `ORACLE_PRIVATE_KEY` | `Celo::CommunityRewardService` (fallback), `Klima::RetirementService`, `Etherisc::ClaimService`, `PuroEarth::PassportService`, fallback для minter/slasher | `KeyError` при першому виклику |
-| `ORACLE_CELO_PRIVATE_KEY` | `Celo::CommunityRewardService` (dedicated cUSD-підписант) — **[ARCH.50]** ізолює Celo blast-radius від спільного base-EOA (ARCH.49) | fallback на `ORACLE_PRIVATE_KEY` |
+| `ORACLE_CELO_PRIVATE_KEY` | `Celo::CommunityRewardService` (dedicated cUSD-підписант) — **[ARCH.50]** ізолює Celo blast-radius від Polygon-флоту | `KeyError` при першому виклику (fallback retired — INF.22) |
 | `ORACLE_MINTER_PRIVATE_KEY` | `BlockchainMintingService` (MINTER_ROLE) | SCC/SFC mint неможливий |
 | `ORACLE_SLASHER_PRIVATE_KEY` | `BlockchainBurningService` (SLASHER_ROLE) | Slashing зривається |
 | `ETHEREUM_ANCHOR_PRIVATE_KEY` | `Ethereum::StateAnchorService` | Weekly state-root anchor падає |
+| `ORACLE_ETHERISC_PRIVATE_KEY` · `ORACLE_PURO_PRIVATE_KEY` · `ORACLE_KLIMA_PRIVATE_KEY` | activation-gated aux-підписанти (`Etherisc::ClaimService` / `PuroEarth::PassportService` / `Klima::RetirementService`, Klima-воркер DEAD) — **НЕ в SDL/tfvars**: інжект через Console при активації шляху ([`06_04 §4`](06_04_Secrets_Checklist)) | `KeyError` при виклику неактивованого шляху — by design |
+
+> **[INF.22] Легасі спільний `ORACLE_PRIVATE_KEY` — RETIRED.** Жоден код його не читає; `Security::Web3NetworkGuard` **відмовляє** значенню під цим ім'ям (zombie-config tripwire), а `scripts/deploy_secret_scan.rb` (Invariant B2) ловить його повернення в SDL на CI. Кожен підписант = свій dedicated-ключ (E.2).
 | `ALCHEMY_POLYGON_RPC_URL` | `Web3::RpcConnectionPool.client_for` | Усі Polygon-операції недоступні |
 | `ALCHEMY_ETHEREUM_RPC_URL` | `Ethereum::StateAnchorService` | L1 anchor TX зривається |
 | `SOLANA_RPC_URL` | `Solana::MintingService` | Defaults to devnet — не критично, але неправильна мережа |
@@ -91,7 +93,7 @@
 | `SOLANA_USDC_MINT_ADDRESS` | `Solana::MintingService` | Raises explicit error |
 | `CHAINLINK_HMAC_SECRET` | `Api::V1::OracleCallbacksController` | Підпис callback не перевіряється (dev/test); `WEB3_STRICT_MODE` → `SecurityError`. Dispatch-секрети (`ROUTER`/`SUBSCRIPTION_ID`/`DON_ID`) вилучено — ARCH.53 |
 
-> **[ARCH.49] Nonce-serialization спільної base-EOA.** Усі Polygon-підписанти на спільному `ORACLE_PRIVATE_KEY` (mint/burn + `PuroEarth::PassportService`/`Etherisc::ClaimService`; Chainlink-dispatch вибув з флоту — ARCH.53 демоут прибрав його on-chain `transact`) серіалізують `transact` через спільний `Kredis.lock("lock:web3:oracle:#{addr}", expires_in: 30.seconds, after_timeout: :raise)` — eth-gem бере nonce per-call (`eth_getTransactionCount(pending)`), тож без локу конкурентні підписи на одній адресі колізять nonce → orphan «sent-but-never-mined» tx. Celo ізольовано власним chain-prefixed локом + dedicated key (ARCH.50, рядок вище). Chain-prefix свідомо **не** для Polygon: base-EOA = єдиний чейн після Celo-split, а `polygon:`-prefix вимагав би перейменувати й mint/burn lock-key (інакше Polygon-флот розколовся б на дві lock-групи, що не серіалізуються) — money-path-ризик без виграшу. Klima той самий патерн, але DEAD (0 enqueue) → lock при активації; Toucan видалено повністю (E.66 prune, воскресає з git при E.20-go — тоді ж lock обов'язковий).
+> **[ARCH.49] Per-address nonce-serialization.** eth-gem бере nonce per-call (`eth_getTransactionCount(pending)`), тож конкурентні підписи **на одній адресі** колізять nonce → orphan «sent-but-never-mined» tx. Кожен `transact` серіалізується через `Kredis.lock("lock:web3:oracle:#{addr}", expires_in: 30.seconds, after_timeout: :raise)`, ключований адресою підписанта. Після повного dedicated-спліту [INF.22] (спільна base-EOA retired) кожен сервіс має власну адресу → lock серіалізує лише конкуренцію **всередині** сервісу (два mint-батчі, два Etherisc-claims), а mint/slash/aux не контендять між собою (дзеркало ARCH.47-мети). Celo додатково має chain-prefixed lock (ARCH.50, історично — ізоляція від Polygon base ще до спліту). Klima той самий патерн, але DEAD (0 enqueue) → lock при активації; Toucan видалено повністю (E.66 prune, воскресає з git при E.20-go — тоді ж lock обов'язковий).
 
 #### Категорія C — Observability (silent failures)
 
@@ -113,7 +115,7 @@ Akash Network **не шифрує** ENV-блок SDL на стороні про�
 **Mitigation (TRL 6-7, поточний пріоритет):**
 1. **Scoped on-chain roles:** Akash-deployment ORACLE keys повинні мати **тільки** `MINTER_ROLE`/`SLASHER_ROLE` на SCC/SFC контрактах — **ніколи** `DEFAULT_ADMIN_ROLE`. Це обмежує blast radius при витоку до конкретної операції (mint/burn), без можливості змінити contract owner або вкрасти treasury.
 2. **Key rotation:** 90-денний цикл ротації через Terraform pipeline. Старі ключі revoke-ються на контрактах (revoke role).
-3. **Окремі гаманці per chain:** `ETHEREUM_ANCHOR_PRIVATE_KEY` ≠ `ORACLE_PRIVATE_KEY` (вже зроблено через B-02 split).
+3. **Окремі гаманці per signer:** повний dedicated-спліт [INF.22] — MINTER ⊥ SLASHER ⊥ CELO ⊥ ANCHOR ⊥ aux (Etherisc/Puro/Klima); легасі спільний ключ retired, guard-tripwire проти повернення.
 4. **Audited Akash providers only:** `signedBy.anyOf` обмежує deployment до провайдерів, перевірених Akash community auditor — зменшує ризик зловмисного провайдера.
 
 **Mitigation (TRL 8+, deferred):**
@@ -657,11 +659,12 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 
 | Змінна | Значення в SDL | Required for | Сервіс |
 |--------|---------------|-------------|--------|
-| `ORACLE_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Legacy fallback (Celo/Klima/PuroEarth/Etherisc) |
-| `ORACLE_CELO_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | **[ARCH.50]** Dedicated Celo cUSD-підписант (fallback `ORACLE_PRIVATE_KEY`) |
+| `ORACLE_CELO_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | **[ARCH.50]** Dedicated Celo cUSD-підписант (no fallback — INF.22) |
 | `ORACLE_MINTER_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `BlockchainMintingService` (MINTER_ROLE) |
 | `ORACLE_SLASHER_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `BlockchainBurningService` (SLASHER_ROLE) |
 | `ETHEREUM_ANCHOR_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `Ethereum::StateAnchorService` (окремий гаманець!) |
+
+> Легасі `ORACLE_PRIVATE_KEY` retired [INF.22] — зі SDL знято (Invariant B2 `deploy_secret_scan` проти повернення). Aux-підписанти (ETHERISC/PURO/KLIMA) — activation-gated, Console-інжект, НЕ в SDL.
 
 ### 2.5 RPC endpoints (`Web3::RpcConnectionPool`)
 
@@ -1018,7 +1021,7 @@ Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/s
 
 ### Mapping `env.secret` → SDL `env:`
 
-> **Принцип:** кожна змінна нижче повинна бути одночасно у `.kamal/secrets-common`, `config/deploy.yml env.secret`, `deploy/akash/deploy.yaml` (обидва сервіси), `deploy/akash/deploy.yaml.tpl` (обидва сервіси), `terraform/akash/variables.tf` (як `sensitive = true`), та `terraform/akash/main.tf` (у `templatefile()` map). Drift = boot crash або тиха відмова Web3 pipeline. **Виняток [INF.22]:** `ORACLE_PRIVATE_KEY` (legacy fallback) = **SDL-only** — з Kamal-поверхонь (`env.secret`/`secrets-common`) знято свідомо (unprovisioned-but-mapped = present-empty guard-crash; [`06_04 §1`](06_04_Secrets_Checklist)); напрямок Kamal ⊆ SDL зберігається.
+> **Принцип:** кожна змінна нижче повинна бути одночасно у `.kamal/secrets-common`, `config/deploy.yml env.secret`, `deploy/akash/deploy.yaml` (обидва сервіси), `deploy/akash/deploy.yaml.tpl` (обидва сервіси), `terraform/akash/variables.tf` (як `sensitive = true`), та `terraform/akash/main.tf` (у `templatefile()` map). Drift = boot crash або тиха відмова Web3 pipeline. (Колишній виняток `ORACLE_PRIVATE_KEY` знято — legacy retired повністю [INF.22]; activation-gated aux-підписанти свідомо поза УСІМА цими поверхнями — Console-only.)
 
 **Application core (boot):**
 
@@ -1051,7 +1054,6 @@ Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/s
 
 | Kamal `env.secret` | Akash SDL (web + job) | Terraform variable |
 |-------------------|----------------------|---------------------|
-| `ORACLE_PRIVATE_KEY` | `ORACLE_PRIVATE_KEY=${oracle_private_key}` | `var.oracle_private_key` |
 | `ORACLE_CELO_PRIVATE_KEY` | `ORACLE_CELO_PRIVATE_KEY=${oracle_celo_private_key}` | `var.oracle_celo_private_key` |
 | `ORACLE_MINTER_PRIVATE_KEY` | `ORACLE_MINTER_PRIVATE_KEY=${oracle_minter_private_key}` | `var.oracle_minter_private_key` |
 | `ORACLE_SLASHER_PRIVATE_KEY` | `ORACLE_SLASHER_PRIVATE_KEY=${oracle_slasher_private_key}` | `var.oracle_slasher_private_key` |

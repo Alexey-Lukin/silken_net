@@ -85,9 +85,10 @@ module Celo
         fallback: DEFAULT_RPC_URL,
         fallback_env_keys: RPC_FALLBACK_ENV_KEYS
       )
-      # [ARCH.50] Виділений Celo-підписант (fallback на спільний base) — ізолює blast-radius
-      # від Polygon-флоту (ARCH.49). Чейни мають незалежні nonce-простори, тож ключ — лише security.
-      oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_CELO_PRIVATE_KEY") { ENV.fetch("ORACLE_PRIVATE_KEY") })
+      # [ARCH.50] Виділений Celo-підписант — ізолює blast-radius від Polygon-флоту (ARCH.49).
+      # Легасі-fallback на спільний base retired [INF.22]. Чейни мають незалежні
+      # nonce-простори, тож ключ — лише security.
+      oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_CELO_PRIVATE_KEY"))
 
       # [BLOCKER-1 FIX]: Guard clause — перевірка балансу оракула перед відправкою.
       balance = client.get_balance(oracle_key.address)

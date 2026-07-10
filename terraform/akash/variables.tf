@@ -163,11 +163,10 @@ variable "sentry_dsn" {
 # roles (MINTER_ROLE only, never DEFAULT_ADMIN_ROLE) for the per-Akash-deployment
 # keys. See docs/06_02 § "Akash ENV plaintext exposure".
 
-variable "oracle_private_key" {
-  description = "Legacy fallback Web3 oracle key (Celo/Etherisc/Toucan/Klima/PuroEarth services). Hex-encoded, with 0x prefix. Used as fallback by BlockchainMintingService and BlockchainBurningService if dedicated keys absent."
-  type        = string
-  sensitive   = true
-}
+# Legacy shared oracle_private_key RETIRED [INF.22] — every signer has a dedicated
+# key; the runtime guard refuses a value under the old name. Aux signers
+# (Etherisc/Puro/Klima) are activation-gated: injected via Akash Console when
+# their path goes live, never rendered into the SDL.
 
 variable "oracle_minter_private_key" {
   description = "Web3 minter key — holds MINTER_ROLE on SCC & SFC contracts (BlockchainMintingService:107). Hex-encoded, with 0x prefix."
@@ -182,7 +181,7 @@ variable "oracle_slasher_private_key" {
 }
 
 variable "ethereum_anchor_private_key" {
-  description = "Dedicated Ethereum L1 wallet for weekly state-root anchor (Ethereum::StateAnchorService:147). MUST differ from oracle_private_key. Hex-encoded, with 0x prefix."
+  description = "Dedicated Ethereum L1 wallet for weekly state-root anchor (Ethereum::StateAnchorService:147). MUST differ from the minter/slasher keys. Hex-encoded, with 0x prefix."
   type        = string
   sensitive   = true
 }
@@ -254,10 +253,9 @@ variable "solana_usdc_mint_address" {
 # -----------------------------------------------------------------------------
 
 variable "oracle_celo_private_key" {
-  description = "Dedicated Celo cUSD signer key (hex 0x…). Celo::CommunityRewardService falls back to oracle_private_key when empty — isolation only, not boot-critical."
+  description = "Dedicated Celo cUSD signer key (hex 0x…) for Celo::CommunityRewardService. Required — the legacy shared-key fallback is retired [INF.22], and an empty render would inject present-empty '' (guard format-raise at boot)."
   type        = string
   sensitive   = true
-  default     = ""
 }
 
 # -----------------------------------------------------------------------------

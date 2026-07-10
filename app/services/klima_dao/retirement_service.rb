@@ -78,7 +78,9 @@ module KlimaDao
 
     def execute_blockchain_retirement
       client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
-      oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
+      # [INF.22] Dedicated Klima-підписант (легасі спільний ORACLE_PRIVATE_KEY retired) —
+      # E.2-ізоляція blast-radius. Ключ інжектиться при активації Klima-шляху (06_04 §2.1).
+      oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_KLIMA_PRIVATE_KEY"))
 
       scc_contract_address = ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
       klima_contract_address = ENV.fetch("KLIMA_RETIREMENT_CONTRACT")

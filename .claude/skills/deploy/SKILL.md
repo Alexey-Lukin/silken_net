@@ -63,10 +63,13 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   proxy — зовн. провайдер не досягає GitHub-issuer'а). → `06_04 §1.1` / `06_02 §Security Exception`.
 - **Akash SDL ENV — plaintext, видимий провайдеру.** Реальні ключі **ніколи** не в
   `deploy/akash/deploy.yaml`; інжектити через Akash Console / `env.secret`. **Money/signing-
-  набір = JOB-ONLY** — SDL-job несе шістку (`ORACLE_*`×4 вкл. `CELO` + `ETHEREUM_ANCHOR` +
-  `SOLANA_WALLET_KEYPAIR`); Kamal-job несе **п'ятірку** (legacy `ORACLE_PRIVATE_KEY` знято з
-  kamal-ноги, INF.22 — unprovisioned-but-mapped = present-empty guard-crash); web/coap бутяться
-  keyless (guard scoped `signer_process: Sidekiq.server?`). → `06_02` / `06_04 §1.1`.
+  набір = JOB-ONLY** — SDL-job і Kamal-job несуть однакову **п'ятірку** (`ORACLE_MINTER/
+  SLASHER/CELO` + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`); legacy `ORACLE_PRIVATE_KEY`
+  **RETIRED повністю** (INF.22 — жоден код не читає; guard-tripwire відмовляє значенню під
+  цим ім'ям, `deploy_secret_scan` Invariant B2 ловить повернення в SDL). Aux-підписанти
+  (`ORACLE_ETHERISC/PURO/KLIMA_PRIVATE_KEY`) — activation-gated: Console-інжект при
+  активації шляху, НЕ в SDL/tfvars. Web/coap бутяться keyless (guard scoped
+  `signer_process: Sidekiq.server?`). → `06_02` / `06_04 §1.1`.
 - **SEC.22 latch (credentials→ENV, 2026-07-09).** at-rest ≠ runtime: провайдер читає
   `/proc/environ`, тож `RAILS_MASTER_KEY` у runtime-ENV розшифровує весь vault. Розчинено:
   8 зовн.-сервісів + `storage.yml` читають `ENV[..].presence || credentials`; **AR-encryption
@@ -83,7 +86,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   достатньо; retention 10 версій/30д). Key-level IAM + purpose-enum-бар'єр; **НЕ** generic keyring
   (blast-radius merge-trap). CMEK boot-dependency: `reset`=DEK-cached (safe), лише stop→start/revoke
   б'є KMS (bounded: `prevent_destroy` + 30d-grace + Akash coap-fallback). ⚠️ найбільша at-rest-діра
-  лишається **Akash-plaintext** (money-sextet + `RAILS_MASTER_KEY` provider-visible) → SEC.17. → `06_04 §5.6`.
+  лишається **Akash-plaintext** (money-квінтет + `RAILS_MASTER_KEY` provider-visible) → SEC.17. → `06_04 §5.6`.
 - **Deploy/release ланцюг (2026-06-19).** Canopy = кожен push у `main` після CI (continuous);
   Production = GitHub Release, який тримає **release-please** (`Ops · Release`: semver+CHANGELOG із
   conventional commits → `release: published`); GHCR-mirror path-gated + пушить SLSA provenance+SBOM

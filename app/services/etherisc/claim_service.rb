@@ -40,7 +40,9 @@ module Etherisc
     # @raise [StandardError] при помилці RPC або недостатньому балансі Oracle
     def claim!
       client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
-      oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
+      # [INF.22] Dedicated Etherisc-підписант (легасі спільний ORACLE_PRIVATE_KEY retired) —
+      # E.2-ізоляція blast-radius. Ключ інжектиться при активації insurance-шляху (06_04 §2.1).
+      oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_ETHERISC_PRIVATE_KEY"))
 
       contract_address = ENV.fetch("ETHERISC_DIP_CONTRACT_ADDRESS")
       contract = Eth::Contract.from_abi(
@@ -54,10 +56,11 @@ module Etherisc
       Rails.logger.info "🛡️ [Etherisc] Triggering DIP claim for policy #{@insurance.etherisc_policy_id} " \
                         "(insurance ##{@insurance.id})..."
 
-      # [ARCH.49] Серіалізуємо підпис на спільній base-EOA (той самий lock, що mint/burn/celo):
-      # eth-gem бере nonce per-call → конкурентні підписи на одній адресі колізять nonce.
-      # after_timeout: :raise → lock не взято → transact не виконувався → LockTimeout
-      # пробрасується для Sidekiq-retry (idempotency double-claim уже закрита ARCH.45 у воркері).
+      # [ARCH.49] Per-address nonce-serialization: eth-gem бере nonce per-call → конкурентні
+      # підписи на одній адресі колізять nonce. Після dedicated-спліту [INF.22] адреса своя,
+      # тож lock серіалізує лише конкурентні Etherisc-claims. after_timeout: :raise → lock не
+      # взято → transact не виконувався → LockTimeout пробрасується для Sidekiq-retry
+      # (idempotency double-claim уже закрита ARCH.45 у воркері).
       tx_hash = nil
       lock_key = "lock:web3:oracle:#{oracle_key.address}"
       Kredis.lock(lock_key, expires_in: 30.seconds, after_timeout: :raise) do

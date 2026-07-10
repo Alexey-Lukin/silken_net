@@ -130,9 +130,10 @@ services:
       # --- Observability ---
       - SENTRY_DSN=${sentry_dsn}
       # --- Web3 oracle keys (BlockchainMintingService, BlockchainBurningService,
-      #     Ethereum::StateAnchorService — all Sidekiq workers) ---
-      - ORACLE_PRIVATE_KEY=${oracle_private_key}
-      # Dedicated Celo cUSD signer (ARCH.50; falls back to ORACLE_PRIVATE_KEY).
+      #     Ethereum::StateAnchorService — all Sidekiq workers). Legacy shared
+      #     ORACLE_PRIVATE_KEY RETIRED [INF.22]; aux signers (ETHERISC/PURO/KLIMA)
+      #     are activation-gated — Console-injected, never rendered here. ---
+      # Dedicated Celo cUSD signer (ARCH.50).
       - ORACLE_CELO_PRIVATE_KEY=${oracle_celo_private_key}
       - ORACLE_MINTER_PRIVATE_KEY=${oracle_minter_private_key}
       - ORACLE_SLASHER_PRIVATE_KEY=${oracle_slasher_private_key}
