@@ -666,7 +666,7 @@ web/job/coap up → `gcloud compute instances add-metadata silken-net-ingress
 `db:prepare` пройшов усі 3 бази (INF.16) · `curl https://silkennet.app/up` → 200 +
 `/ready` → 200 (DB+Redis+Kredis) · `coap_smoke` зелений + задати repo Variables
 `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST` (INF.6) · метрики: 3 process-таргети живі,
-job-серії ≠ 0 (S2.1/INF.14) · Grafana-сесія: `deploy/grafana/import.rb` (dashboards+alerts)
+job-серії ≠ 0 (S2.4/INF.14) · Grafana-сесія: `deploy/grafana/import.rb` (dashboards+alerts+contact point)
 + contact point (S2.2/S2.4) · `ss -tlnp | grep 3000` IPv6 (PUMA-IPV6-1) · money fail-closed
 (INF.11) · Sentry release (S5.2) · mailer/DB_POOL/entrypoint (INF.13) · гаманці з газом
 (Pre-Flight #3).

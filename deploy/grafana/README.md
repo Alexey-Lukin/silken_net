@@ -90,15 +90,26 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 
 ## Notification channel
 
-Налаштувати після першого deploy:
-```
-Grafana → Alerting → Contact points → New contact point
-  Type: Slack / PagerDuty / Email
-  Name: silkennet-oncall
+**Кодифіковано в `import.rb` (крок 5)** — той самий захід, off-by-default через ENV.
+Без цього alert rules firing-ять у нікуди (O3-MUST), тож канал — частина One-Command,
+а не ручний хвіст. Задай канал (email / Telegram / обидва) і перезапусти import:
 
-Grafana → Alerting → Notification policies
-  Default policy → Contact point: silkennet-oncall
-  Group wait: 30s
-  Group interval: 5m
-  Repeat interval: 4h
+```bash
+# Email:
+GRAFANA_URL=… GRAFANA_API_TOKEN=… \
+ALERT_CONTACT_EMAIL=ops@silkennet.com \
+  ruby deploy/grafana/import.rb
+
+# Telegram (обидва обов'язкові — half-config → fail-fast):
+… ALERT_CONTACT_TELEGRAM_TOKEN=<bot-token> ALERT_CONTACT_TELEGRAM_CHATID=<chat-id> \
+  ruby deploy/grafana/import.rb
 ```
+
+Скрипт створює contact point `silkennet-oncall` (ідемпотентно, per-(name,type) upsert) і
+маршрутизує **root notification policy** на нього (`GET → mutate receiver+timing → PUT` —
+наявні дочірні routes зберігаються). Timing з дефолтами (overridable ENV):
+`ALERT_GROUP_WAIT=30s` · `ALERT_GROUP_INTERVAL=5m` · `ALERT_REPEAT_INTERVAL=4h`.
+Ім'я — `ALERT_CONTACT_NAME` (дефолт `silkennet-oncall`).
+
+Без жодного `ALERT_CONTACT_*` крок 5 пропускається (warn), решта імпорту без змін —
+`--dry-run` показує, який канал буде провіжнено (і ловить half-Telegram ще до live).

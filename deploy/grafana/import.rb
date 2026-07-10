@@ -23,8 +23,11 @@
 # (JSON парситься + DS_PROMETHEUS input; YAML парситься, uid'и унікальні,
 # всі datasourceUid = плейсхолдер) + план дій.
 #
-# Контакт-поінт/notification policy НЕ створює — вибір каналу (Slack/
-# PagerDuty/Email) лишається owner-рішенням (README).
+#   5. Contact point + root notification policy — off-by-default через ENV
+#      (ALERT_CONTACT_EMAIL та/або ALERT_CONTACT_TELEGRAM_TOKEN+_CHATID). Без
+#      них — пропуск (канал = owner-рішення), але коли задані — кодифікуються,
+#      а не клацаються в UI. Без contact point УСІ alert rules firing-ять у
+#      нікуди (O3-MUST) — тому це частина One-Command, а не ручний хвіст.
 
 require "json"
 require "yaml"
@@ -44,6 +47,18 @@ end
 
 def step(msg)
   puts "→ #{msg}"
+end
+
+# Contact-point integrations з ENV (off-by-default). Half-Telegram → fail-fast.
+def contact_integrations(name)
+  ints = []
+  email = ENV["ALERT_CONTACT_EMAIL"].to_s
+  ints << { "name" => name, "type" => "email", "settings" => { "addresses" => email } } unless email.empty?
+  token = ENV["ALERT_CONTACT_TELEGRAM_TOKEN"].to_s
+  chat  = ENV["ALERT_CONTACT_TELEGRAM_CHATID"].to_s
+  fail! "Telegram потребує і ALERT_CONTACT_TELEGRAM_TOKEN, і _CHATID (задано лише одне)" if token.empty? ^ chat.empty?
+  ints << { "name" => name, "type" => "telegram", "settings" => { "bottoken" => token, "chatid" => chat } } unless token.empty?
+  ints
 end
 
 # ---------------------------------------------------------------------------
@@ -88,6 +103,9 @@ if ARGV.include?("--dry-run")
   puts "   дашборд: #{Array(dashboard['panels']).length} панелей, input #{DS_INPUT_NAME}"
   groups.each { |g| puts "   група #{g['name']}: #{g['rules'].length} рулів, interval #{g['interval']}" }
   puts "   план: discover datasource UID → folder → dashboards/import → #{rule_count}× provisioning upsert"
+  cn = ENV.fetch("ALERT_CONTACT_NAME", "silkennet-oncall")
+  ints = contact_integrations(cn) # валідує half-Telegram навіть у dry-run
+  puts(ints.empty? ? "   contact point: ПРОПУСК (задай ALERT_CONTACT_EMAIL / ALERT_CONTACT_TELEGRAM_TOKEN+_CHATID)" : "   contact point «#{cn}»: #{ints.map { |i| i['type'] }.join(' + ')} → root policy")
   exit 0
 end
 
@@ -173,5 +191,40 @@ groups.each do |g|
   end
 end
 
-puts "✅ імпортовано: дашборд + #{rule_count} alert rules у «#{FOLDER}»."
-puts "   Лишається вручну: Contact point + Notification policy (README §Notification channel)."
+# 5. Contact point + root notification policy (off-by-default — без ENV пропуск).
+CONTACT_NAME = ENV.fetch("ALERT_CONTACT_NAME", "silkennet-oncall")
+integrations = contact_integrations(CONTACT_NAME)
+if integrations.empty?
+  warn "⚠ Contact point пропущено — задай ALERT_CONTACT_EMAIL та/або ALERT_CONTACT_TELEGRAM_TOKEN+_CHATID."
+  warn "  Без нього alert rules firing-ять у нікуди (README §Notification channel)."
+else
+  code, existing = request(:get, "/api/v1/provisioning/contact-points")
+  fail! "GET contact-points → #{code}: #{existing}" unless code == 200
+  integrations.each do |cp|
+    match = Array(existing).find { |e| e["name"] == CONTACT_NAME && e["type"] == cp["type"] }
+    code, res = if match
+                  request(:put, "/api/v1/provisioning/contact-points/#{match['uid']}",
+                          body: cp.merge("uid" => match["uid"]), headers: prov_headers)
+    else
+                  request(:post, "/api/v1/provisioning/contact-points", body: cp, headers: prov_headers)
+    end
+    fail! "contact-point #{cp['type']} → #{code}: #{res}" unless [ 200, 201, 202 ].include?(code)
+    step "contact point «#{CONTACT_NAME}» (#{cp['type']}) ✓"
+  end
+
+  # Root policy → маршрут на наш contact point; наявні routes зберігаються (GET→mutate→PUT).
+  code, policy = request(:get, "/api/v1/provisioning/policies")
+  fail! "GET policies → #{code}: #{policy}" unless code == 200
+  policy["receiver"]        = CONTACT_NAME
+  policy["group_by"]        = %w[grafana_folder alertname] if Array(policy["group_by"]).empty?
+  policy["group_wait"]      = ENV.fetch("ALERT_GROUP_WAIT", "30s")
+  policy["group_interval"]  = ENV.fetch("ALERT_GROUP_INTERVAL", "5m")
+  policy["repeat_interval"] = ENV.fetch("ALERT_REPEAT_INTERVAL", "4h")
+  code, res = request(:put, "/api/v1/provisioning/policies", body: policy, headers: prov_headers)
+  fail! "PUT policies → #{code}: #{res}" unless [ 200, 201, 202 ].include?(code)
+  step "notification policy → «#{CONTACT_NAME}» (wait #{policy['group_wait']} / interval #{policy['group_interval']} / repeat #{policy['repeat_interval']}) ✓"
+end
+
+suffix = integrations.empty? ? "" : " + contact point «#{CONTACT_NAME}»"
+puts "✅ імпортовано: дашборд + #{rule_count} alert rules у «#{FOLDER}»#{suffix}."
+puts "   Contact point пропущено — задай ALERT_CONTACT_* і перезапусти (README §Notification channel)." if integrations.empty?

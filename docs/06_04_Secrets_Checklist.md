@@ -316,14 +316,23 @@
 
 ### 5.3. Аудит виконання
 
+**Live GitHub-scope preflight (S1.1 verify-half)** — `scripts/audit_deploy_secret_scope.rb`
+запусти ПІСЛЯ заведення секретів, ДО першого деплою. Read-only через `gh` (віддає лише
+**імена**, не значення — value-safe): стверджує scope-інваріанти, яких `verify-secrets`
+(CI, presence-only) не ловить — money-квінтет ∈ Environment `production` **тільки** (repo-level
+копія = R3c isolation breach, deploy лишається зеленим), retired `ORACLE_PRIVATE_KEY` ∉ ніде,
+WIF-ids = repo **Variables** (не Secrets). Не CI-гейт (потребує admin-token + заведені секрети);
+доповнює, не заміняє §1. `--self-test` = класифікатор offline без `gh`.
+
 ```bash
-# Перевірка наявності всіх референсів у workflows
+ruby scripts/audit_deploy_secret_scope.rb              # live scope-audit (exit 0/1/2)
+ruby scripts/audit_deploy_secret_scope.rb --self-test  # класифікатор, без gh
+
+# Статичні перевірки (файлові): референси у workflows
 grep -rh "secrets\." .github/workflows/ | grep -oP "secrets\.[A-Z_]+" | sort -u
-
-# Перевірка Kamal secrets
+# Kamal secrets
 grep -E "^[A-Z][A-Z0-9_]*=" .kamal/secrets-common | cut -d= -f1 | sort -u
-
-# Перевірка Akash SDL
+# Akash SDL
 grep -E "^\s+[A-Z_]+:" deploy/akash/deploy.yaml | head -50
 ```
 
