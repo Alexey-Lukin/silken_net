@@ -68,27 +68,31 @@ module Polygon
 
     private
 
-    # [BLOCKER-4 FIX]: У production (WEB3_STRICT_MODE=true) заглушки вимкнено.
+    # [BLOCKER-4 FIX]: У production АБО WEB3_STRICT_MODE заглушки вимкнено (belt-and-suspenders,
+    # дзеркало oracle_callbacks/helium_sos — прапор може дрейфнути з deploy-поверхні, production — ні;
+    # інакше забутий прапор → simulate = fake-KYC approve → фродовий mint через kyc_approved_for_minting?).
     def check_kyc_status(crypto_address)
       api_key = ENV["HADRON_API_KEY"].presence || Rails.application.credentials.hadron_api_key
 
       if api_key.present?
         perform_kyc_request(crypto_address, api_key)
-      elsif ENV["WEB3_STRICT_MODE"] == "true"
-        raise ComplianceError, "hadron_api_key обов'язковий у Production (WEB3_STRICT_MODE=true)."
+      elsif ENV["WEB3_STRICT_MODE"] == "true" || Rails.env.production?
+        raise ComplianceError, "hadron_api_key обов'язковий у production / WEB3_STRICT_MODE."
       else
         simulate_kyc_check(crypto_address)
       end
     end
 
-    # [BLOCKER-4 FIX]: У production (WEB3_STRICT_MODE=true) заглушки вимкнено.
+    # [BLOCKER-4 FIX]: У production АБО WEB3_STRICT_MODE заглушки вимкнено (belt-and-suspenders,
+    # дзеркало oracle_callbacks/helium_sos — прапор може дрейфнути з deploy-поверхні, production — ні;
+    # інакше забутий прапор → simulate = fake-KYC approve → фродовий mint через kyc_approved_for_minting?).
     def register_rwa_asset(naas_contract)
       api_key = ENV["HADRON_API_KEY"].presence || Rails.application.credentials.hadron_api_key
 
       if api_key.present?
         perform_asset_registration(naas_contract, api_key)
-      elsif ENV["WEB3_STRICT_MODE"] == "true"
-        raise ComplianceError, "hadron_api_key обов'язковий у Production (WEB3_STRICT_MODE=true)."
+      elsif ENV["WEB3_STRICT_MODE"] == "true" || Rails.env.production?
+        raise ComplianceError, "hadron_api_key обов'язковий у production / WEB3_STRICT_MODE."
       else
         simulate_asset_registration(naas_contract)
       end

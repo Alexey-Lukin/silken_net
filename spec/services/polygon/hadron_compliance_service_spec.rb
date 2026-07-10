@@ -45,7 +45,24 @@ RSpec.describe Polygon::HadronComplianceService do
       it "raises ComplianceError instead of running the simulator" do
         expect {
           described_class.new.verify_investor!(wallet)
-        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /WEB3_STRICT_MODE=true/)
+        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /WEB3_STRICT_MODE/)
+      end
+    end
+
+    # A forgotten WEB3_STRICT_MODE on a deploy surface must NOT reopen the fake-KYC hole:
+    # production alone fails closed (belt-and-suspenders, mirrors oracle_callbacks/helium_sos).
+    context "when RAILS_ENV=production without the flag or an API key" do
+      before do
+        allow(Rails.application.credentials).to receive(:hadron_api_key).and_return(nil)
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("WEB3_STRICT_MODE").and_return(nil)
+        allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production"))
+      end
+
+      it "raises instead of simulating (production alone is fail-closed)" do
+        expect {
+          described_class.new.verify_investor!(wallet)
+        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /production/)
       end
     end
 
@@ -175,7 +192,22 @@ RSpec.describe Polygon::HadronComplianceService do
       it "raises ComplianceError instead of running the simulator" do
         expect {
           described_class.new.register_asset!(naas_contract)
-        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /WEB3_STRICT_MODE=true/)
+        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /WEB3_STRICT_MODE/)
+      end
+    end
+
+    context "when RAILS_ENV=production without the flag or an API key" do
+      before do
+        allow(Rails.application.credentials).to receive(:hadron_api_key).and_return(nil)
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("WEB3_STRICT_MODE").and_return(nil)
+        allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production"))
+      end
+
+      it "raises instead of simulating (production alone is fail-closed)" do
+        expect {
+          described_class.new.register_asset!(naas_contract)
+        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /production/)
       end
     end
 

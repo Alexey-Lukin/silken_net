@@ -3,8 +3,8 @@
 # [KYC.1] Верифікація KYC бенефіціара мінтингу через Polygon Hadron.
 # Enqueue: after_commit на біндингу/зміні crypto_public_address
 # (Organization / Wallet — KYC чіпляється до адреси, зміна = ре-верифікація).
-# Dev без hadron_api_key → simulate-approve; prod (WEB3_STRICT_MODE) →
-# реальний API або loud fail (HadronComplianceService).
+# Dev без hadron_api_key → simulate-approve; production АБО WEB3_STRICT_MODE →
+# реальний API або loud fail (HadronComplianceService — belt-and-suspenders).
 class HadronKycVerificationWorker
   include ApplicationWeb3Worker
   sidekiq_options queue: "web3_low", retry: 5
