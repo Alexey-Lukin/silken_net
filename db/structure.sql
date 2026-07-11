@@ -1917,7 +1917,7 @@ CREATE TABLE public.provisioning_sessions (
     gilka character varying NOT NULL,
     device_uid character varying NOT NULL,
     batch_id character varying NOT NULL,
-    atecc_serial_hex character varying,
+    se_serial_hex character varying,
     firmware_version character varying NOT NULL,
     flash_addr character varying DEFAULT '0x0803E000'::character varying NOT NULL,
     rdp_level integer DEFAULT 1 NOT NULL,
@@ -8091,6 +8091,5 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('20260711170000'),
 ('20260711160000');
 

@@ -10,7 +10,7 @@
 #
 # `gilka` selects which provisioning branch runs:
 #   • "A" → Protected Flash Sector (FLASH_KEY_ADDR + RDP Level 1/2)
-#   • "B" → ATECC608B / STSAFE-A110 Secure Element (atecc_serial_hex required)
+#   • "B" → ATECC608B / STSAFE-A110 Secure Element (se_serial_hex required)
 class ProvisioningSession < ApplicationRecord
   include AASM
 
@@ -27,8 +27,8 @@ class ProvisioningSession < ApplicationRecord
   validates :device_uid, :batch_id, :firmware_version, :flash_addr, presence: true
   validates :gilka,      inclusion: { in: GILKAS }
   validates :rdp_level,  inclusion: { in: RDP_LEVELS }
-  validates :atecc_serial_hex, presence: true, if: -> { gilka == "B" }
-  validates :atecc_serial_hex, format: { with: /\A[0-9A-F]{18}\z/ }, allow_blank: true
+  validates :se_serial_hex, presence: true, if: -> { gilka == "B" }
+  validates :se_serial_hex, format: { with: /\A[0-9A-F]{18}\z/ }, allow_blank: true
   validate  :supervisor_must_differ_from_operator
 
   aasm column: :state, whiny_persistence: true do

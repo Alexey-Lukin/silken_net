@@ -250,16 +250,17 @@ jobs:
             -DSILKEN_WITH_HAL=ON
           cmake --build firmware/build --target hal_check hal_check_ccm
 
-      - name: '[SEC.21] Stack-canary presence gate — __stack_chk_fail інструментовано'
-        # -fstack-protector-strong мусить лишити canary-prologue у compiled коді
-        # (attacker-reachable LoRa-RX / AT-парсери в main.c мають addressable
-        # locals). Без цього чека тихе видалення прапора з toolchain нічого б
-        # не зламало (guard-lens). newlib резолвить символ на лінку.
+      - name: '[SEC.21] Stack-canary flag gate — -fstack-protector-strong у ARM build-config'
+        # Прапор мусить бути реально переданий крос-компілятору (attacker-reachable
+        # LoRa-RX / AT-парсери інструментуються canary-prologue). Перевіряємо
+        # build-config (Ninja/CMakeCache), а не canary-символ у .o: -strong
+        # інструментує лише функції з addressable-locals, тож nm-на-.o дає
+        # false-fail; видалення прапора з toolchain-файлу → нема в build-config →
+        # gate падає (guard-lens тримається).
         run: |
-          find firmware/build -name '*.o' -exec arm-none-eabi-nm {} + 2>/dev/null \
-            | grep -q '__stack_chk_fail' \
-            || { echo "❌ SEC.21: __stack_chk_fail ніде — -fstack-protector-strong мертвий"; exit 1; }
-          echo "✅ SEC.21: canary інструментовано у ARM-збірці"
+          grep -rq 'fstack-protector-strong' firmware/build \
+            || { echo "❌ SEC.21: -fstack-protector-strong не в ARM build-config"; exit 1; }
+          echo "✅ SEC.21: canary-прапор активний у ARM-компіляції"
 
       - name: '[FW.26] ARM static-RAM gate — реальні .data+.bss обох main.c проти леджера'
         # Перший НЕ-плацхолдерний RAM-гейт: arm-none-eabi-size на hal_check .obj

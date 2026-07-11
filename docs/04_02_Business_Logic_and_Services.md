@@ -527,7 +527,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | `FactoryFlashing::MasterKeySource` | Джерело master-ключа: `EnvAdapter` (з `Security::WeakKeyDetector`), `BitwardenAdapter` skeleton; fetched ключ живить HKDF через `Session` (не лише preflight-гейт) |
 | `FactoryFlashing::CommandBuilder` | Емісія `STM32_Programmer_CLI` команд: `preflight_commands` (connect + UID-read, обидві гілки) + per гілка A/B (KEYL/LSED/KOTA/**KEYB** slots для Tree; **KEYL(=KEYB-значення)**/KEYC/EDSK для Gateway — FW.2 (в): до 2026-07-03 Gateway KEYL не писався взагалі → фабрична Королева цеглилась на boot; RDP level) |
 | `FactoryFlashing::Executor` | Subprocess-запуск: dry-run за замовч.; `Open3.capture3` при `dry_run: false`, stop-on-first-fail |
-| `FactoryFlashing::AteccProvisioner` | Гілка B skeleton: `atcab_*` slot-writes + config/data-zone lock (raw key bytes scrubbed; rename → SE050 у SE050-MIGRATION) |
+| `FactoryFlashing::SecureElementProvisioner` | Гілка B skeleton: `atcab_*` slot-writes + config/data-zone lock (raw key bytes scrubbed; rename → SE050 у SE050-MIGRATION) |
 | `FactoryFlashing::AuditTrail` | `AuditLog(action:"factory_flash")` chain-hashed + `MaintenanceRecord(:installation)` |
 
 ---

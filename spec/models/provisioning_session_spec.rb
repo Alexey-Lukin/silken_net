@@ -14,21 +14,21 @@ RSpec.describe ProvisioningSession do
       expect(session.errors[:gilka]).to be_present
     end
 
-    it "requires atecc_serial_hex when gilka is B" do
-      session = build(:provisioning_session, gilka: "B", atecc_serial_hex: nil)
+    it "requires se_serial_hex when gilka is B" do
+      session = build(:provisioning_session, gilka: "B", se_serial_hex: nil)
       expect(session).not_to be_valid
-      expect(session.errors[:atecc_serial_hex]).to be_present
+      expect(session.errors[:se_serial_hex]).to be_present
     end
 
-    it "accepts atecc_serial_hex when gilka is B" do
+    it "accepts se_serial_hex when gilka is B" do
       session = build(:provisioning_session, :gilka_b)
       expect(session).to be_valid
     end
 
-    it "rejects atecc_serial_hex that is not 9 bytes hex" do
-      session = build(:provisioning_session, :gilka_b, atecc_serial_hex: "ABCD")
+    it "rejects se_serial_hex that is not 9 bytes hex" do
+      session = build(:provisioning_session, :gilka_b, se_serial_hex: "ABCD")
       expect(session).not_to be_valid
-      expect(session.errors[:atecc_serial_hex]).to be_present
+      expect(session.errors[:se_serial_hex]).to be_present
     end
 
     it "enforces the 2-Person Rule — supervisor must differ from operator" do

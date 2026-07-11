@@ -1299,9 +1299,9 @@ active/draft ──cancel──► cancelled
 |------|-----|------|
 | `device_uid` | string | Wire-ідентифікатор пристрою, що провіжиниться (presence): Tree → деривований DID (rake приймає 24-hex UID і сам деривує, [FW.54]); Gateway → uid |
 | `batch_id` | string | Ідентифікатор партії (presence) |
-| `gilka` | string | Гілка провіжинингу: `"A"` (Protected Flash + RDP) / `"B"` (Secure Element; `atecc_serial_hex` обов'язковий) — `GILKAS = %w[A B]` |
+| `gilka` | string | Гілка провіжинингу: `"A"` (Protected Flash + RDP) / `"B"` (Secure Element; `se_serial_hex` обов'язковий) — `GILKAS = %w[A B]` |
 | `rdp_level` | integer | Рівень RDP після flash — `RDP_LEVELS = [0, 1, 2]` |
-| `atecc_serial_hex` | string | 18 HEX (9-байт SE serial); presence лише для гілки B, format `/\A[0-9A-F]{18}\z/` |
+| `se_serial_hex` | string | 18 HEX (9-байт SE serial); presence лише для гілки B, format `/\A[0-9A-F]{18}\z/` |
 | `flash_addr` | string | Адреса запису ключа (presence) |
 | `firmware_version` | string | Версія прошивки (presence) |
 | `state` | enum (AASM) | `pending / supervisor_approved / active / completed / failed` |
@@ -1317,9 +1317,9 @@ supervisor_approved/active ──fail_with(reason)──► failed
 
 `approve` має guard `supervisor_present?` (`supervisor_id` присутній і ≠ `operator_id`).
 
-**Валідації:** `supervisor_must_differ_from_operator` (2-Person Rule); `gilka` inclusion `[A,B]`; `rdp_level` inclusion `[0,1,2]`; `atecc_serial_hex` format (18 HEX).
+**Валідації:** `supervisor_must_differ_from_operator` (2-Person Rule); `gilka` inclusion `[A,B]`; `rdp_level` inclusion `[0,1,2]`; `se_serial_hex` format (18 HEX).
 
-> Service-шар (orchestrator `FactoryFlashing::Session` + `MasterKeySource`/`CommandBuilder`/`Executor`/`AteccProvisioner`/`AuditTrail`, Rake CLI) — канон [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning); дзеркало у [`04_02`](04_02_Business_Logic_and_Services).
+> Service-шар (orchestrator `FactoryFlashing::Session` + `MasterKeySource`/`CommandBuilder`/`Executor`/`SecureElementProvisioner`/`AuditTrail`, Rake CLI) — канон [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning); дзеркало у [`04_02`](04_02_Business_Logic_and_Services).
 
 ---
 

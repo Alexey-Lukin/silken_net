@@ -4,10 +4,10 @@
 #
 # ⚠️ SE = NXP SE050 (2026-06-07, true-DePIN — docs/03_05 §3.7 SEC.6; supersedes
 # ATECC608B). This class is the LEGACY ATECC `atcab_*` / 16-slot skeleton, kept as
-# the audit provisioning-sequence placeholder. Full SE05x rewrite — object-model
-# instead of slots, on-chip Ed25519 keygen for the tree-voice, generic class-rename
-# (AteccProvisioner → SecureElementProvisioner), DB column atecc_serial_hex →
-# se_serial_hex — is bundled with the real-I²C work at eval-kit (00_07 SE050-MIGRATION).
+# the audit provisioning-sequence placeholder. Class-rename (ATECC→SE05x) + DB column
+# se_serial_hex ✅ done (SE050-MIGRATION A). The real-I²C rewrite — object-model
+# instead of slots, on-chip Ed25519 keygen for the tree-voice, `atcab_*`→`Se05x`/`sss`
+# emit — is bundled with the eval-kit work (00_07 SE050-MIGRATION B).
 #
 # Гілка B writes per-device keys into the Secure Element via I²C instead of STM32
 # Protected Flash. Slot map (canonical SSOT — docs/03_05 §3.7):
@@ -25,8 +25,8 @@
 # transcript for verbatim audit reproduction. Post-TRL 7: swap emit-only → real
 # SE05x I²C (public API unchanged).
 module FactoryFlashing
-  class AteccProvisioner
-    Result = Struct.new(:statements, :atecc_serial_hex, keyword_init: true)
+  class SecureElementProvisioner
+    Result = Struct.new(:statements, :se_serial_hex, keyword_init: true)
 
     # Raised when callers feed Гілка B inputs that violate the slot map.
     class InputError < StandardError; end
@@ -37,7 +37,7 @@ module FactoryFlashing
     # @param ecc_priv_hex    [String, nil] 64 hex (32B for Slot 1) — optional in MVP
     # @param cert_der_hex    [String, nil] ≤128 hex (≤64B for Slot 2) — optional in MVP
     def initialize(session:, aes_key_hex:, ota_hmac_hex:, ecc_priv_hex: nil, cert_der_hex: nil)
-      raise InputError, "AteccProvisioner is Гілка B only (got #{session.gilka.inspect})" unless session.gilka == "B"
+      raise InputError, "SecureElementProvisioner is Гілка B only (got #{session.gilka.inspect})" unless session.gilka == "B"
 
       @session       = session
       @aes_key_hex   = aes_key_hex.to_s.upcase
@@ -52,7 +52,7 @@ module FactoryFlashing
     def provision
       Result.new(
         statements: emit_statements,
-        atecc_serial_hex: @session.atecc_serial_hex
+        se_serial_hex: @session.se_serial_hex
       )
     end
 
@@ -70,7 +70,7 @@ module FactoryFlashing
     def emit_statements
       out = []
       out << "atcab_init(&cfg_ateccx08a_i2c)"
-      out << "atcab_read_serial_number(&serial[0])  # expect == #{@session.atecc_serial_hex}"
+      out << "atcab_read_serial_number(&serial[0])  # expect == #{@session.se_serial_hex}"
       out << "atcab_write_zone(ATCA_ZONE_DATA, 0, 0, 0, #{wrap(@aes_key_hex)}, #{@aes_key_hex.length / 2}) # Slot 0 AES-128 LoRa"
 
       if @ecc_priv_hex

@@ -155,7 +155,7 @@ module FactoryFlashing
 
     def gilka_b_commands
       # Гілка B routes the key through I²C ATCA write-zone instead of SWD writes.
-      # AteccProvisioner emits those statements; CommandBuilder only handles
+      # SecureElementProvisioner emits those statements; CommandBuilder only handles
       # the surrounding RDP-lock pair (connect живе у preflight_commands).
       [
         # No SWD key writes — keys live in ATECC608B data zone.

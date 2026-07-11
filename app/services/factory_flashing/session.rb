@@ -24,7 +24,7 @@
 module FactoryFlashing
   class Session
     Outcome = Struct.new(
-      :session, :device, :hardware_key, :transcript, :atecc_transcript, :audit_log,
+      :session, :device, :hardware_key, :transcript, :se_transcript, :audit_log,
       keyword_init: true
     )
 
@@ -62,7 +62,7 @@ module FactoryFlashing
         @executor.run(CommandBuilder.preflight_commands)
         verify_silicon_uid!
         hw_key = ensure_hardware_key
-        atecc_transcript = run_atecc_if_needed(hw_key)
+        se_transcript = run_secure_element_if_needed(hw_key)
         @executor.run(build_commands(hw_key))
         audit = AuditTrail.new(
           session:      @session,
@@ -77,7 +77,7 @@ module FactoryFlashing
           device:           @device,
           hardware_key:     hw_key,
           transcript:       @executor.results,
-          atecc_transcript: atecc_transcript,
+          se_transcript: se_transcript,
           audit_log:        audit.audit_log
         )
       end
@@ -183,12 +183,12 @@ module FactoryFlashing
       seed_hex
     end
 
-    def run_atecc_if_needed(hw_key)
+    def run_secure_element_if_needed(hw_key)
       return nil unless @session.gilka == "B"
       return nil unless @device.is_a?(Tree)
 
       ota_hmac_hex = OtaHmacKeyService.fetch_for(@device.cluster_id, master_key: @master_key)
-      AteccProvisioner.new(
+      SecureElementProvisioner.new(
         session:      @session,
         aes_key_hex:  hw_key.aes_key_hex,
         ota_hmac_hex: ota_hmac_hex

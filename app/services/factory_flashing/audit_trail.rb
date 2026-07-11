@@ -66,7 +66,7 @@ module FactoryFlashing
         batch_id:          @session.batch_id,
         flash_addr:        @session.flash_addr,
         rdp_level:         @session.rdp_level,
-        atecc_serial_hex:  @session.atecc_serial_hex,
+        se_serial_hex:  @session.se_serial_hex,
         firmware_version:  @session.firmware_version,
         command_count:     @transcript.size,
         dry_run:           @transcript.all? { |r| r.status.nil? }
@@ -93,7 +93,7 @@ module FactoryFlashing
         "RDP Level: #{@session.rdp_level}",
         "Firmware: #{@session.firmware_version}"
       ]
-      lines << "ATECC serial: #{@session.atecc_serial_hex}" if @session.atecc_serial_hex.present?
+      lines << "ATECC serial: #{@session.se_serial_hex}" if @session.se_serial_hex.present?
       lines.join(" | ")
     end
   end

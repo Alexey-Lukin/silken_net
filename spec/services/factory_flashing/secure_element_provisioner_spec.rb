@@ -2,8 +2,8 @@
 
 require "rails_helper"
 
-RSpec.describe FactoryFlashing::AteccProvisioner do
-  let(:session)      { build(:provisioning_session, :gilka_b, atecc_serial_hex: "0123456789ABCDEF01") }
+RSpec.describe FactoryFlashing::SecureElementProvisioner do
+  let(:session)      { build(:provisioning_session, :gilka_b, se_serial_hex: "0123456789ABCDEF01") }
   let(:aes_key_hex)  { "0123456789ABCDEF0123456789ABCDEF" }
   let(:ota_hmac_hex) { "0" * 64 }
   let(:ecc_priv_hex) { "F" * 64 }
@@ -22,7 +22,7 @@ RSpec.describe FactoryFlashing::AteccProvisioner do
       expect(result.statements).to include(a_string_matching(/Slot 2 cert — TODO/))
       expect(result.statements).to include("atcab_lock_config_zone()  # irreversible: slot policies frozen")
       expect(result.statements).to include("atcab_lock_data_zone()    # irreversible: all slot writes forbidden forever")
-      expect(result.atecc_serial_hex).to eq("0123456789ABCDEF01")
+      expect(result.se_serial_hex).to eq("0123456789ABCDEF01")
     end
 
     it "scrubs raw key bytes from the transcript (anti-leak per 03_06 §5 B)" do

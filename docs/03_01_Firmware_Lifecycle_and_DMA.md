@@ -761,14 +761,14 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 1. **SSOT-рев'ю.** Прочитати §2 (цю таблицю) ПОВНІСТЮ. Чи поле справді потребує переживання STOP2? Якщо ні — RAM-only достатньо. Якщо так, але переживає лише warm-boot, а не VBAT-loss → теж RAM (SRAM зберігається у STOP2).
 2. **Packing-аудит.** Перевірити для кожного існуючого packed-регістру (DR0, DR12), чи є вільні бітові щілини для нового поля. Реальні розміри:
-   - `DR0[15:8]` — 8 біт зарезервовано (vacant).
+   - `DR0[15:10]` — 6 біт vacant (`[9:8]` = `vm_err_streak`, SEC.20 — див. §2 DR0-рядок).
    - `DR12[31:24]` — `valid:8` зайнято, але вільних бітів немає.
    - Більшість «full uint32» регістрів використовують лише частину діапазону (наприклад, `last_wakeup_timestamp` у DR1 — це секунди від boot, рідко перевищує 24 біт за реалістичний час до VBAT-loss).
 3. **ASCII bit-field діаграма.** ОБОВ'ЯЗКОВО для будь-якого packed-регістру. Приклад з DR0:
    ```
-   DR0 = [panic_frame_counter:16][reserved:8][acoustic_events:8]
-          ↑              MSB                          LSB ↑
-          PANIC_COUNTER_DR0_SHIFT=16                  raw uint8
+   DR0 = [panic_frame_counter:16][rsv:6][vm_err_streak:2][acoustic_events:8]
+          ↑              MSB                  [9:8]=SEC.20          LSB ↑
+          PANIC_COUNTER_DR0_SHIFT=16                            raw uint8
    ```
    Без діаграми наступна людина (або ти за рік) не зрозумієш порядок бітів.
 4. **Magic marker policy.** Якщо `0` — валідне значення поля (як `(0.0, 0.0, 0.0)` для Lorenz state), то ОБОВ'ЯЗКОВО потрібен окремий 32-бітний marker у сусідньому регістрі АБО 8-бітний sentinel у packed-регістрі. Маркер додати у §2.1. Якщо `0` валідно інтерпретується як «cold-boot default» (як `tinyml_warning_threshold == 0.0f` → fallback `TINYML_DEFAULT_WARNING`), маркер не потрібен — достатньо range-check.
@@ -819,6 +819,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | `0x12` — **вільний** (drift-fix 2026-07-03) | заявлявся під FW8_AUDIO, але код так і не видав `#define`: жива гілка `0x9D` персистить audio-пороги у **RTC DR13/DR14** (§2), не у Flash-KV | — | зарезервований-невиданий; наступному споживачу — через процедуру §2.3 | не існує в коді |
 | `0x13` FW17_KEYVER | ratchet `key_version` (САМ ключ у Flash-KV НЕ їде — append-журнал не стирає; boot re-derive з K0) | `[version:16 \| rsv:16]` | FW.17 ротація ключа ([`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)) | gated (`FW17_RATCHET_ENABLED=0`); споживач ✅ у `main.c` — RX 0x9E → КЕНОЗИС-write, boot `Key_Ratchet_Apply`; активація після FW.2 CCM |
 | `0x14` FW2_FC_HIWATER | монотонна межа Frame Counter (high-water > усіх переданих FC; політика — [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) 📐) | `[frame_counter:24 \| rsv:8]` (значення ≤ `0xFFFFFF`; інше = сміття → floor відсутній) | FW.2 безумовна nonce-унікальність через cold-boot (`common/fc_hiwater.h`) | gated (`FW2_CCM_ENABLED=0`); споживач ✅ у `main.c` — boot-кеш після mount'а, КЕНОЗИС-advance, floor у `Load_Frame_Counter`; host-тести `test_flash_kv.c` |
+| `0x15` SEC20_OTA_VER | OTA version high-water — монотонна межа застосованої версії (кожен APPLY мусить > неї, інакше REJECT) | u32 (0 = ще не застосовано → перший OTA свіжий) | SEC.20 anti-rollback (`common/ota_antirollback.h`); споживач ✅ у `main.c` — OTA APPLY-гейт + Commit, compact у КЕНОЗИСІ | **live (НЕ-gated — перший не-gated Flash-KV споживач)** |
 | `0x20` S2_BITMAP | anti-storm журнал поколінь маяка (sliding window; покоління = `unix_ts/900`) | 1 dw: `[gen_hi:24 \| window:8]` (атомарний — порваної пари gen↔window не існує; gen завжди ≤ 2²⁴) | FW.20-S2 повний mesh-relay ([`03_02 §5а`](03_02_Queen_Gateway_Firmware)) | gated (`FW20_MESH_RELAY_ENABLED=0`); persist ✅ host (`common/beacon_dedup.h` + power-cut тести); споживач ✅ у `main.c` — boot-load після mount'а, Mark у RX, КЕНОЗИС-persist |
 
 > **Головний wall-маркер delta_t — НЕ Flash-KV ключ.** «Wall-секунди останнього energy-sufficient циклу» (база `Silken_Wall_Delta_Seconds`, `firmware/common/wall_time.h`) переселяє **семантику** `last_wakeup_timestamp` (DR1: tick-сек → wall-сек) — реюз наявного RTC-регістру, а не нова Flash-фіча. Тож FW.49 timebase **не** додає Flash-write/цикл; у Flash-KV їдуть лише вторинні маркери (`0x02`/`0x03`), що деградують м'яко (втрата → м'який re-ask після grace).
@@ -835,11 +836,11 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 | DR | Реальні біти | Реклемація | Ціна |
 |----|--------------|------------|------|
-| `DR2` `has_mesh_relay` | **1** (прапорець 0/1) | → біт у вільному `DR0[15:8]` ⇒ **DR2 вільний** | нуль, mode-independent |
+| `DR2` `has_mesh_relay` | **1** (прапорець 0/1) | → біт у вільному `DR0[15:10]` ⇒ **DR2 вільний** | нуль, mode-independent |
 | `DR14` `tinyml_critical` | ~7 (float ∈ [0.01,0.99]) | обидва пороги як 2× `uint8`-відсоток у `DR13[15:0]` ⇒ **DR14 вільний** | 1% гранулярність (нехтовна); freeze-contract правка |
-| `DR19` `LORENZ_STATE_MAGIC` | 32 (чистий маркер) | 7-біт sentinel у `DR0[15:9]` (як EMA `0xA5` у DR12) ⇒ **DR19 вільний** | слабша bit-flip-стійкість за 32-біт маркер |
+| `DR19` `LORENZ_STATE_MAGIC` | 32 (чистий маркер) | 7-біт sentinel у `DR0[15:10]` (як EMA `0xA5` у DR12) ⇒ **DR19 вільний** | слабша bit-flip-стійкість за 32-біт маркер |
 
-> `warning_counter` (головний live-споживач FW.54) ескалює на 3 і скидається ([`03_03 §5`](03_03_TinyML_Acoustic_Inference)) → реально **2 біти**, не 8. Він + `has_mesh_relay` (1 біт) сідають у вільний байт `DR0[15:8]` **без жодного нового регістру**.
+> `warning_counter` (головний live-споживач FW.54) ескалює на 3 і скидається ([`03_03 §5`](03_03_TinyML_Acoustic_Inference)) → реально **2 біти**, не 8. Він + `has_mesh_relay` (1 біт) сідають у вільний байт `DR0[15:10]` **без жодного нового регістру**.
 
 **Вісь 2 — частота запису (інверсія RTC↔Flash).** RTC backup безкоштовний щодо wear; Flash має wear + erase-блокує-шину. Оптимум: **write-ONCE → Flash** (нуль wear, ідеально), **часто-оновлюване → RTC**. Зараз **навпаки**:
 
@@ -853,7 +854,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 - `DR3`–`DR6` mesh-relay payload + `DR8`/`DR9`/`DR11` anti-pingpong кеш — транзитний/операційний (чужий пакет у транзиті; recent-DID дедуп). Втрата на cold-path безпечна (мережа має TTL/retry). У RTC лише щоб пережити майбутній SRAM2-off.
 - **Реклемація (mode-coupled):** під per-mode SRAM2 (§2.3.1 OTA-висновок: SRAM2 ON у вузьких активних вікнах, RTC-only у steady-state) цей клас живе у SRAM → до **~8 регістрів** звільняється. Ціна: зчеплено з per-mode рішенням + втрата mesh-стану на холодних шляхах. `recent_mesh_dids` додатково стискається до 16-біт DID-хешів (3 у ~1.5 рег) ціною рідких хеш-колізій.
 
-**Синтез + bottom-line для FW.54.** Усі 20 *allocated*, але мапа mis-allocated по трьох осях. Дешева реклемація (Вісь 1: DR2 тривіально; `warning_counter` у `DR0[15:8]`) **повністю розміщує live-набір FW.54 у RTC — Flash-KV для нього НЕ потрібен**. Flash-KV (§2.3) лишається виправданим лише для (а) gated bulk (FW.8 config, FW.20-S2 bitmap) ЯКЩО активуються, і (б) **не** OTA-буфера (це per-mode SRAM2, §2.3.1). Найбільший одиничний чистий виграш — **Вісь 2 (DR7/DID)**, що заразом закриває latent identity-orphaning. Порядок при наступній витраті регістру (доповнює §2.3): **(0) реклемація DR — Вісь 1 → Вісь 2 → Вісь 3 перед будь-яким Flash**.
+**Синтез + bottom-line для FW.54.** Усі 20 *allocated*, але мапа mis-allocated по трьох осях. Дешева реклемація (Вісь 1: DR2 тривіально; `warning_counter` у `DR0[15:10]`) **повністю розміщує live-набір FW.54 у RTC — Flash-KV для нього НЕ потрібен**. Flash-KV (§2.3) лишається виправданим лише для (а) gated bulk (FW.8 config, FW.20-S2 bitmap) ЯКЩО активуються, і (б) **не** OTA-буфера (це per-mode SRAM2, §2.3.1). Найбільший одиничний чистий виграш — **Вісь 2 (DR7/DID)**, що заразом закриває latent identity-orphaning. Порядок при наступній витраті регістру (доповнює §2.3): **(0) реклемація DR — Вісь 1 → Вісь 2 → Вісь 3 перед будь-яким Flash**.
 
 ### 2.4 Helper macros sketch (RTC_BKUP_Read32 / Write32) [ARCH.28]
 

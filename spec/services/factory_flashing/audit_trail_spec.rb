@@ -82,14 +82,14 @@ RSpec.describe FactoryFlashing::AuditTrail do
     let(:session) do
       create(:provisioning_session, :gilka_b,
              operator: operator, supervisor: supervisor,
-             device_uid: tree.did, atecc_serial_hex: "0123456789ABCDEF01",
+             device_uid: tree.did, se_serial_hex: "0123456789ABCDEF01",
              firmware_version: "fw-1.2.3")
     end
 
-    it "records atecc_serial_hex in audit metadata and notes" do
+    it "records se_serial_hex in audit metadata and notes" do
       result = trail.record!
       expect(result.audit_log.metadata["gilka"]).to eq("B")
-      expect(result.audit_log.metadata["atecc_serial_hex"]).to eq("0123456789ABCDEF01")
+      expect(result.audit_log.metadata["se_serial_hex"]).to eq("0123456789ABCDEF01")
       expect(result.maintenance_record.notes).to include("ATECC serial: 0123456789ABCDEF01")
     end
   end

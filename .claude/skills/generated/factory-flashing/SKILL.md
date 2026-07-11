@@ -32,7 +32,7 @@ Then **`FactoryFlashing::Session.run`** (after **supervisor-approved**). One `Ac
 2. **Wrong-board guard [FW.54]** — `CommandBuilder.preflight_commands` (connect + `-r32 0x1FFF7590 12`) runs FIRST; live mode parses stdout via `UidReadout` and compares the board's UID to `trees.silicon_uid_hex` **before any derivation or `-w32`** — mismatch/unparseable → `WrongBoardError` (not even a HardwareKey row materializes). dry-run or passport-less device → skip.
 3. **Master key** — `MasterKeySource` (Env or Bitwarden adapter); `WeakKeyDetector` refuses a weak key. The fetched key threads as `master_key:` param into every derivation below (runtime callers of the same services use the ENV fallback instead).
 4. **HardwareKey** — `HardwareKeyService.provision(device, master_key:)` (the SINGLE HKDF source — same derivation the firmware runs; never derive keys elsewhere).
-5. **ATECC (Гілка B + Tree only)** — `AteccProvisioner` emits the I²C ATCA write-zone transcript.
+5. **ATECC (Гілка B + Tree only)** — `SecureElementProvisioner` emits the I²C ATCA write-zone transcript.
 6. **Commands** — `CommandBuilder#flash_commands` (key writes + RDP + disconnect; connect/UID-read already ran as preflight).
 7. **Execute** — `Executor` (dry-run prints; `--execute` spawns subprocesses).
 8. **Audit** — `AuditTrail.record!` → chain-hashed `AuditLog` (metadata incl. `silicon_uid_hex`) + `MaintenanceRecord`; `complete!` (or `fail_with!` + rollback).
@@ -45,7 +45,7 @@ Then **`FactoryFlashing::Session.run`** (after **supervisor-approved**). One `Ac
 | `factory_flashing/tree_resolver.rb` | [FW.54] UID→DID→Tree: create / re-flash / bind / collision→quarantine; deliberately does NOT enqueue peaq (offline factory) |
 | `factory_flashing/uid_readout.rb` | [FW.54] tolerant `-r32` stdout parser (keyed on `1FFF7590`); live format = bench-confirm (RUNBOOK 1.3) |
 | `factory_flashing/command_builder.rb` | `STM32_Programmer_CLI` emission (`preflight_commands` class-method: connect+UID-read; `flash_commands` per гілка, `write_block`, `rdp_command`) |
-| `factory_flashing/atecc_provisioner.rb` | ATECC608B data-zone provisioning (Гілка B) |
+| `factory_flashing/secure_element_provisioner.rb` | ATECC608B data-zone provisioning (Гілка B) |
 | `factory_flashing/executor.rb` | dry-run vs live subprocess (`programmer_available?`) |
 | `factory_flashing/master_key_source.rb` | `Base` / `EnvAdapter` / `BitwardenAdapter` master-key fetch — the fetched key feeds HKDF via `Session` (SEC.3 DI), not just the preflight gate |
 | `factory_flashing/audit_trail.rb` | chain-hashed audit log record |

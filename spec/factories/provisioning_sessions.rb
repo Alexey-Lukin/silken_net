@@ -13,7 +13,7 @@ FactoryBot.define do
 
     trait :gilka_b do
       gilka { "B" }
-      sequence(:atecc_serial_hex) { |n| n.to_s(16).rjust(18, "0").upcase }
+      sequence(:se_serial_hex) { |n| n.to_s(16).rjust(18, "0").upcase }
     end
 
     trait :supervisor_approved do

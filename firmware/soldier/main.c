@@ -120,7 +120,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #define PANIC_COUNTER_DR0_SHIFT   16          // DR0[31:16] = panic_frame_counter (uint16)
 #define PANIC_COUNTER_MASK        0xFFFFu
 // [SEC.20] DR0[9:8] = ota_vm_error_streak (0..3): N поспіль bytecode-збоїв →
-// auto-fallback на embedded baseline. Vacant-байт DR0[15:8] (§2.3.2), DR7 цілий.
+// auto-fallback на embedded baseline. Vacant-байт DR0[15:10] (§2.3.2), DR7 цілий.
 #define OTA_VM_ERR_STREAK_DR0_SHIFT 8
 #define OTA_VM_ERR_STREAK_MASK      0x03u
 #define SEC20_VM_ERROR_FALLBACK_N   3u
@@ -246,7 +246,7 @@ uint32_t delta_t_seconds = 0;          // Швидкість заряду іон
 uint32_t tree_did = 0;                 // Decentralized Identity (Гаманець Дерева)
 
 // [SEC.10] Лічильник panic-кадрів — пакується у DR0[31:16] поряд з
-// acoustic_events у DR0[7:0] (DR0[15:8] резервовано). Сторожовий пес
+// acoustic_events у DR0[7:0] (DR0[15:10] резервовано). Сторожовий пес
 // панічного каналу: інкрементується (saturating) перед кожним
 // Trigger_Emergency_LoRa_TX, передається у байтах 14..15 panic_payload (BE),
 // сервер рубає replay через Redis SETNX nonce-key. Cold-boot RTC reset
@@ -1733,7 +1733,7 @@ int main(void)
   HAL_PWR_EnableBkUpAccess();
 
   // 2. Відновлюємо пам'ять з RTC (якщо було перезавантаження)
-  // [SEC.10] DR0 спакована: [panic_frame_counter:16 | reserved:8 | acoustic_events:8].
+  // [SEC.10/SEC.20] DR0: [panic:16 | rsv:6 | vm_err_streak:2 | acoustic:8].
   // При cold-boot DR0 == 0 → лічильник пересіємо з HRNG нижче, щоб уникнути
   // колізії з nonce'ами Redis від попереднього втілення вузла.
   {
@@ -2248,6 +2248,12 @@ int main(void)
               if (ota_vm_error_streak >= SEC20_VM_ERROR_FALLBACK_N) {
                   Ota_Hal_Erase((void *)0, OTA_CONTRACT_PAGE);
                   ota_vm_error_streak = 0;
+                  // NVIC_SystemReset зберігає DR0 (не VBAT-loss) → персистимо
+                  // streak=0 ЯВНО, інакше boot прочитав би старе значення й
+                  // erase-нув би передчасно ще раз.
+                  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
+                      ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
+                      (uint32_t)acoustic_events);
                   NVIC_SystemReset();
               }
           }
@@ -2904,10 +2910,12 @@ int main(void)
         Beacon_Dedup_Persist(&soldier_kv, &beacon_dedup);
     }
 #endif
-#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED
+#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED || SEC20_OTA_ANTIROLLBACK_ENABLED
     // [ARCH.28] Ущільнення журналу — спільне для всіх KV-споживачів, лише
     // у цій безпечній фазі (після TX, перед сном; erase ~десятки мс не
-    // сміє лягти під LoRa RX-вікно).
+    // сміє лягти під LoRa RX-вікно). [SEC.20] version-hiwater пише 0x15 щоразу
+    // на OTA APPLY — без compact сторінка переповниться (~254 APPLY), Put32
+    // замерзне приплив і Get32 віддаватиме стару версію → replay-downgrade.
     if (soldier_kv_mounted && FlashKv_NeedsCompact(&soldier_kv, 8)) {
         FlashKv_Compact(&soldier_kv);
     }
@@ -3085,8 +3093,11 @@ void Trigger_Emergency_LoRa_TX(void)
 
     // [SEC.10] Персистимо новий лічильник у DR0 НЕГАЙНО, до того як
     // PVD-брауноут або soft-reset встигне поглинути нас перед Phase 5.
+    // [SEC.20] Зберігаємо й vm_err_streak[9:8] — інакше panic-запис обнуляв би
+    // лічильник bytecode-збоїв (DR0-мапа §2 дотримана на ВСІХ трьох write).
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
         ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
+        ((uint32_t)(ota_vm_error_streak & OTA_VM_ERR_STREAK_MASK) << OTA_VM_ERR_STREAK_DR0_SHIFT) |
         (uint32_t)acoustic_events);
 
     // 4. Шифруємо AES-128 (post-ARCH.42) і миттєво вистрілюємо

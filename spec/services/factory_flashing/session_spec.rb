@@ -76,14 +76,14 @@ RSpec.describe FactoryFlashing::Session do
   end
 
   describe "happy path — Гілка B Tree" do
-    let!(:session) { make_session(gilka: "B", atecc_serial_hex: "0123456789ABCDEF01") }
+    let!(:session) { make_session(gilka: "B", se_serial_hex: "0123456789ABCDEF01") }
 
     it "also emits ATCA write-zone transcript" do
       outcome = described_class.run(
         session: session, executor: executor, master_key_source: master_key_source
       )
-      expect(outcome.atecc_transcript).to be_a(FactoryFlashing::AteccProvisioner::Result)
-      expect(outcome.atecc_transcript.statements).to include(a_string_matching(/Slot 0 AES-128 LoRa/))
+      expect(outcome.se_transcript).to be_a(FactoryFlashing::SecureElementProvisioner::Result)
+      expect(outcome.se_transcript.statements).to include(a_string_matching(/Slot 0 AES-128 LoRa/))
     end
   end
 
@@ -191,7 +191,7 @@ RSpec.describe FactoryFlashing::Session do
     end
 
     it "Гілка B: обидва OTA call-sites отримують адаптерний ключ" do
-      session = make_session(gilka: "B", atecc_serial_hex: "0123456789ABCDEF01")
+      session = make_session(gilka: "B", se_serial_hex: "0123456789ABCDEF01")
       expect(OtaHmacKeyService).to receive(:fetch_for)
         .with(tree.cluster_id, master_key: di_key).at_least(:once).and_call_original
 
@@ -202,16 +202,16 @@ RSpec.describe FactoryFlashing::Session do
   describe "Гілка B + Gateway device — ATCA provisioning skipped" do
     let(:gateway) { create(:gateway) }
     let!(:session) do
-      make_session(gilka: "B", device_uid: gateway.uid, atecc_serial_hex: "0123456789ABCDEF01")
+      make_session(gilka: "B", device_uid: gateway.uid, se_serial_hex: "0123456789ABCDEF01")
     end
 
-    it "completes without running AteccProvisioner (gateway has no ATCA chip)" do
-      expect(FactoryFlashing::AteccProvisioner).not_to receive(:new)
+    it "completes without running SecureElementProvisioner (gateway has no ATCA chip)" do
+      expect(FactoryFlashing::SecureElementProvisioner).not_to receive(:new)
       outcome = described_class.run(
         session: session, executor: executor, master_key_source: master_key_source
       )
       expect(session.reload).to be_completed
-      expect(outcome.atecc_transcript).to be_nil
+      expect(outcome.se_transcript).to be_nil
     end
   end
 

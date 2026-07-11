@@ -57,7 +57,7 @@ namespace :factory do
       operator_id:      Integer(args[:operator_id]),
       supervisor_id:    Integer(args[:supervisor_id]),
       firmware_version: args[:firmware_version],
-      atecc_serial_hex: (args[:gilka] == "B" ? ENV["ATECC_SERIAL"] : nil),
+      se_serial_hex: (args[:gilka] == "B" ? ENV["ATECC_SERIAL"] : nil),
       rdp_level:        Integer(ENV.fetch("RDP_LEVEL", 1))
     )
     puts "✅ Session ##{session.id} created (state=pending). Next: rake factory:approve[#{session.id}]"
@@ -92,8 +92,8 @@ namespace :factory do
     puts "   HardwareKey:  ##{outcome.hardware_key.id}"
     puts "   AuditLog:     ##{outcome.audit_log.id}"
     puts "   Commands:     #{outcome.transcript.size}"
-    if outcome.atecc_transcript
-      puts "   ATCA stmts:   #{outcome.atecc_transcript.statements.size}"
+    if outcome.se_transcript
+      puts "   ATCA stmts:   #{outcome.se_transcript.statements.size}"
     end
   end
 end
