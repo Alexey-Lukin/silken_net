@@ -60,7 +60,7 @@ extern "C" {
 #define HAL_RTC_MODULE_ENABLED
 /* #define HAL_SMARTCARD_MODULE_ENABLED */ /* SilkenNet: не використовується */
 /* #define HAL_SMBUS_MODULE_ENABLED */ /* SilkenNet: не використовується */
-/* #define HAL_SPI_MODULE_ENABLED */ /* SilkenNet: не використовується */
+#define HAL_SPI_MODULE_ENABLED /* SilkenNet: ARCH.35 W25Q32 SPI-ring (гейтований main.c-блок; compile-lane hal_check_ccm бачить HAL_SPI, як ARCH34→HAL_FLASH; реальний .ioc board-freeze) */
 #define HAL_SUBGHZ_MODULE_ENABLED
 #define HAL_TIM_MODULE_ENABLED
 #define HAL_UART_MODULE_ENABLED
