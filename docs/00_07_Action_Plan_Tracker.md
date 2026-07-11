@@ -969,6 +969,13 @@
 - [ ] ⚖️ interim: власний мінімальний SOP-текст (не-joint, без ЧНУ-бренду; заміниться UNI.12-контентом) — розблокував би 🤖-компонент до партнерства; чи чекаємо академічну версію?
 - [ ] 🤖 Phlex inline-SOP компонент на EwsAlert dashboard (структура компонента = content-contract для UNI.12)
 
+#### ARCH.69 — OAuth-флоу: написаний шлях без дроту (identity-шар є, OmniAuth нема)
+- **P3** · 🤖+👤 · ⚪ · → `04_03 §1`
+- **Стан:** Vilize-нора (2026-07-11), клас «написаний шлях без дроту»: `sessions#omniauth_create` (повний екшен: find_or_create User + locked-identity guard + `Identity.find_or_create_from_auth_hash`), Identity-модель, account_security link/unlink/lock-UI — УСЕ написано; але omniauth-гемів НЕМА в Gemfile, роута `/auth/:provider/callback` НЕМА, `request.env["omniauth.auth"]` ніколи не заповниться → identity-створення фізично неможливе, а «Available Providers»-кнопки в `account_security/show` ведуть на **404**. Дротування = вузьке: геми (omniauth + провайдери + rails_csrf_protection) + initializer + 2 роути + establish_session-стик (session[:ps]-stamp уже центральний ✓) + специ. 👤 = OAuth-app реєстрації у 4 провайдерів (`Identity::SUPPORTED_PROVIDERS`) + ключі в secrets. Канон `04_03 §1`.
+- [ ] ⚖️ чи потрібен OAuth-логін на MVP взагалі? (password-flow повний; 4 app-реєстрації = руки; альтернатива — викосити identities-UI до Phase-X)
+- [ ] 🤖 interim: сховати «Available Providers»-404-кнопки (як S6.21-caveat) до рішення
+- [ ] 🤖 (якщо так) дротування: геми+initializer+routes+специ; 👤 provider-app-реєстрації + ключі
+
 #### I18N.1 — alert_type i18n + ширша i18n-повнота (CI-parity + hardcoded-рядки)
 - **P3** · 🤖 · ⚪ · → `04_02`, `04_04`
 - **Стан:** Знахідка (INS.1, 2026-06-27) — `EwsAlert.message` + `TextFormatter#alert_title`/`#alert_icon` = **hardcoded-рядки**; `config/locales/alerts/*.yml` покривають лише UI-хром, БЕЗ per-alert-type value-labels. Audit §04 (2026-07-04, S4/O4) розширив: hardcoded-рядки поза alert_type — `shared/web3/address` (SHARED-компонент, поза CI-гейтом `components/**`), `maintenance/index` aria-labels ×4, `blockchain_transactions` dup, `alerts/row` `alert_type.humanize` (locale-blind). Поточно безпечно (`.humanize`/`else`-fallback), enum тепер 11 типів (не 8). ✅ **CI-parity закрито (vilize 2026-07-11):** `i18n-tasks.yml locales:` → `[en,uk,lv,lt]` — гейт одразу спіймав реальну діру (lt `codex.atlas.count` без `few` + typo `archtipas`), полатано, `missing`+`interpolations` чисті на 4 локалях; Gemfile-claim reconciled (чесний «missing», не «health» — unused хибить на динамічних лукапах). Канон `04_02` (TextFormatter), `04_04` (i18n-CI §12.1).
