@@ -229,11 +229,13 @@ class BlockchainTransaction < ApplicationRecord
 
   # [MRV.1] Tamper-evident слід money-переходів у SHA-256 AuditLog-ланцюг організації
   # (ISO 14064/Verra: аудитор простежує хто/коли/чому рухав стан коштів). Асинхронно
-  # (record_async! → AuditLogWorker) — не блокує money-path. Без організації (slashing-audit
-  # без wallet) чи системного юзера аудит неможливий (chain_hash — per-organization) →
-  # свідомий skip з WARN, транзакцію НЕ валимо.
+  # (record_async! → AuditLogWorker) — не блокує money-path. Org резолвиться wallet АБО
+  # cluster: cluster-sourced money (celo reward + last-tree slash, wallet=nil) має org через
+  # cluster, не wallet — інакше найматеріальніші рухи писали б нуль audit-row (ISO 14064/Verra
+  # compliance-діра). Без ЖОДНОЇ org чи системного юзера аудит неможливий (chain_hash —
+  # per-organization) → свідомий skip з WARN, транзакцію НЕ валимо.
   def record_money_audit_trail
-    org_id = wallet&.organization_id
+    org_id = wallet&.organization_id || cluster&.organization_id
     # Навмисно повторюваний lookup у батч-циклах (по одному на перехід) —
     # Prosopite.pause за прецедентом AuditLog#compute_chain_hash.
     # `defined?(Prosopite)`-else = прод-шлях (Prosopite лише group :development,:test);

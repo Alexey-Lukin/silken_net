@@ -636,5 +636,23 @@ RSpec.describe BlockchainTransaction, type: :model do
 
       expect(Rails.logger).to have_received(:warn).with(/AuditLog skip/)
     end
+
+    # [MRV.1] cluster-sourced money (celo reward + last-tree slash, wallet=nil) резолвить
+    # org через cluster — інакше найматеріальніші рухи писали б нуль audit-row (compliance-діра).
+    context "when the tx is cluster-sourced (wallet=nil, org via cluster)" do
+      let!(:oracle) do
+        create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+                                    first_name: "Oracle", last_name: "Executioner")
+      end
+      let(:cluster) { create(:cluster) }
+      let(:cluster_tx) do
+        create(:blockchain_transaction, status: :pending, tx_hash: nil, wallet: nil, cluster: cluster)
+      end
+
+      it "records the transition attributed to the cluster's organization" do
+        expect { cluster_tx.process! }.to change { AuditLogWorker.jobs.size }.by(1)
+        expect(AuditLogWorker.jobs.last["args"].first["organization_id"]).to eq(cluster.organization_id)
+      end
+    end
   end
 end
