@@ -85,6 +85,20 @@ failures = []
       failures << "#{name}: retired ORACLE_PRIVATE_KEY on #{svc} env — INF.22 retired it; use the dedicated keys"
     end
   end
+
+  # Invariant D — no present-empty env (`VAR=` with a blank RHS). Present-but-empty is worse than
+  # absent: it silences autodetect/derive (RELEASE_VERSION→Sentry, REDIS_URL→Kredis, PROMETHEUS_AUTH
+  # →known-value bypass) — the recurring B1 class. Placeholders are non-empty REQUIRED_SECRET_NOT_SET;
+  # conditional vars are .tpl-only (%{ if }→omitted at render), so a blank RHS is always a regression.
+  services.each do |svc|
+    (sdl.dig("services", svc, "env") || []).each do |line|
+      var, sep, value = line.to_s.partition("=")
+      next unless sep == "=" && value.strip.empty?
+
+      failures << "#{name}: #{svc}.#{var.strip} is present-but-empty (VAR=) — B1 silences " \
+                  "autodetect/derive; omit the key or give it a value"
+    end
+  end
 end
 
 # Invariant C — .dockerignore keeps secret files out of the PUBLIC GHCR image

@@ -132,6 +132,11 @@ if(CMAKE_CROSSCOMPILING)
     # [FW.26] RAM-гейт міряв БОЙОВИЙ hal_check (гейти 0), не фліпнутий.
     # + ARCH34_HELIUM_ENABLED=1: Queen KV-mount/Bind_Nvm-обв'язка (гейтована
     # гілка ARCH.34, HAL_FLASH_*) бачить WL-HAL цією ж лінзою.
+    # + ARCH35_RING_ENABLED=1: гейтована ARCH.35 flash-ring-обв'язка (6 #if-блоків
+    # у main.c, W25Q32 SPI) теж крос-компілюється цією лінзою — інакше дрейф
+    # flash_ring.h API від stale call-sites = compile-fail лише при фліпі на bench
+    # (queen_hal_check.c #include'ить main.c цілком; OBJECT-lib = compile-only, тож
+    # RAM-гейт [FW.26] на БОЙОВОМУ hal_check не зачеплено).
     add_library(hal_check_ccm OBJECT
       hal_glue/soldier_hal_check.c
       hal_glue/queen_hal_check.c)
@@ -149,7 +154,8 @@ if(CMAKE_CROSSCOMPILING)
       STM32WLE5xx USE_HAL_DRIVER
       MRB_NO_STDIO MRB_CONSTRAINED_BASELINE_PROFILE MRB_NO_BOXING
       FW2_CCM_ENABLED=1
-      ARCH34_HELIUM_ENABLED=1)
+      ARCH34_HELIUM_ENABLED=1
+      ARCH35_RING_ENABLED=1)
     target_compile_options(hal_check_ccm PRIVATE -Wall -Wextra -Os)
 
     # [ARCH.34] LoRaMac-node compile-lane: vendored MAC (EU868/ClassA профіль
