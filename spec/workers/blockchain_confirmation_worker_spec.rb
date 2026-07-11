@@ -144,12 +144,24 @@ RSpec.describe BlockchainConfirmationWorker, type: :worker do
   end
 
   describe ".confirmation_scope [ARCH.52 partition-prune]" do
-    it "bounds the lookup to a created_at window (excludes a same-hash tx outside ±1h)" do
+    it "lower-bounds the lookup (excludes an OLDER same-hash tx before earliest−1h)" do
       out_of_window = create(:blockchain_transaction, wallet: wallet, tx_hash: tx_hash, status: :sent, created_at: 3.hours.ago)
       scope = described_class.confirmation_scope(tx_hash, transaction.created_at.iso8601)
 
       expect(scope).to include(transaction)
-      expect(scope).not_to include(out_of_window) # poza ±1h vikном → не сканується
+      expect(scope).not_to include(out_of_window) # старіший за earliest−1h → не сканується
+    end
+
+    # [ARCH.52] LOWER-bound, НЕ symmetric ±1h: batch ділить 1 tx_hash на рядки з РІЗНИМИ
+    # created_at; enqueue keys off earliest.iso8601 (reset-to-pending тримає старий created_at),
+    # тож sibling НОВІШИЙ за earliest+1h МУСИТЬ лишатись у scope. Регресія
+    # `created_at >= t−1h` → `BETWEEN t−1h AND t+1h` пройшла б попередній тест зеленою (old-row
+    # і так виключений), але виштовхнула б цей newer-sibling → stuck :sent = locked funds.
+    it "INCLUDES a newer same-hash sibling >1h after earliest (lower-bound, not symmetric)" do
+      newer_sibling = create(:blockchain_transaction, wallet: wallet, tx_hash: tx_hash, status: :sent, created_at: transaction.created_at + 2.hours)
+      scope = described_class.confirmation_scope(tx_hash, transaction.created_at.iso8601)
+
+      expect(scope).to include(transaction, newer_sibling)
     end
 
     it "falls back to unscoped tx_hash lookup when created_at_iso is nil (legacy/puro enqueue)" do
