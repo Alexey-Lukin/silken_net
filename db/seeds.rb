@@ -65,7 +65,7 @@ system_params = [
   { key: "slash_threshold", value: "0.2", value_type: "float", category: "alerts",
     min_value: 0.05, max_value: 1.0, description: "Cluster degradation fraction that triggers the slashing checkpoint" },
   { key: "stress_threshold", value: "0.83", value_type: "float", category: "alerts",
-    min_value: 0.5, max_value: 1.0, description: "RF-confidence stress threshold for slash trigger + damage sizing (ARCH.46)" },
+    min_value: 0.65, max_value: 1.0, description: "RF-confidence stress threshold for slash trigger + damage sizing (ARCH.46); floor 0.65 > Z-anomaly base_stress 0.6 (E.64 §7 «Z alone never slashes» — mirror PARAMETER_MAP)" },
   { key: "slash_gamma", value: "1.3", value_type: "float", category: "alerts",
     min_value: 1.0, max_value: 3.0, description: "Convex slash curve exponent (05_05 §3)" },
   { key: "slash_penalty_factor_max", value: "2.0", value_type: "float", category: "alerts",
