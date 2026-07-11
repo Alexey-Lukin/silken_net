@@ -44,7 +44,15 @@ variable "akash_region" {
 variable "docker_image" {
   description = "Full Docker image URL. Default: GHCR public image (accessible to Akash providers). Override for private registries."
   type        = string
-  default     = "ghcr.io/alexey-lukin/silken_net:latest"
+  # [INF.21] fail-closed: PIN_ME is NOT a real tag, so a deploy that forgets to pin an
+  # immutable sha-<commit>/vX.Y.Z fails LOUD (Akash can't pull it) instead of silently riding
+  # mutable :latest (a restart/provider-migration/reboot would pull a DIFFERENT image with no
+  # rollback target). The mirror pushes immutable sha-<commit> + semver tags — consume one.
+  default = "ghcr.io/alexey-lukin/silken_net:PIN_ME"
+  validation {
+    condition     = !endswith(var.docker_image, ":latest")
+    error_message = "Pin an immutable sha-<commit>/vX.Y.Z image, never :latest — mutable tag = no rollback, non-reproducible deploy (INF.21)."
+  }
   # GHCR image is mirrored automatically by .github/workflows/mirror-ghcr.yml
   # For GCP Artifact Registry (private): europe-west1-docker.pkg.dev/your-project/silken-net/silken_net:latest
 }

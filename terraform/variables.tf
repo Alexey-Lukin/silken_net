@@ -106,7 +106,13 @@ variable "iap_admin_members" {
 variable "coap_daemon_image" {
   description = "Container image for the Anchor coap-daemon systemd unit (pin sha-<commit>/vX.Y.Z for deploys)"
   type        = string
-  default     = "ghcr.io/alexey-lukin/silken_net:latest"
+  # [INF.21] fail-closed: PIN_ME is NOT a real tag → forgetting to pin fails LOUD (docker pull
+  # errors) instead of the systemd unit silently riding mutable :latest across VM reboots.
+  default = "ghcr.io/alexey-lukin/silken_net:PIN_ME"
+  validation {
+    condition     = !endswith(var.coap_daemon_image, ":latest")
+    error_message = "Pin an immutable sha-<commit>/vX.Y.Z image, never :latest — mutable tag = no rollback, non-reproducible deploy (INF.21)."
+  }
 }
 
 # Optional DIRECT ssh (bypassing IAP) — normally stays []: the canonical admin path

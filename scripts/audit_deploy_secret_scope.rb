@@ -34,7 +34,9 @@ WIF_VARS   = %w[GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT].freeze # rep
 AUTODERIVE = %w[KREDIS_REDIS_URL RACK_ATTACK_REDIS_URL].freeze            # placeholder breaks auto-derive
 
 # Pure classifier over NAME sets only. Returns [errors, warnings].
-def audit(repo_secrets:, env_secrets:, variables:)
+# org_secrets = [] on a personal account (no org scope possible); a list if the repo lives under
+# a GitHub org (an ORG-level money key is visible to every repo/workflow — same R3c class as repo).
+def audit(repo_secrets:, env_secrets:, variables:, org_secrets: [])
   errors = []
   warnings = []
 
@@ -43,6 +45,11 @@ def audit(repo_secrets:, env_secrets:, variables:)
       errors << "#{k} = REPO-level secret — money-ключі мусять бути Environment `production`-scoped ТІЛЬКИ " \
                 "(repo-level видимий кожному workflow = R3c isolation breach). Перенеси: " \
                 "gh secret set #{k} --env production && gh secret delete #{k}"
+    end
+    if org_secrets.include?(k)
+      errors << "#{k} = ORG-level secret — money-ключі мусять бути Environment `production`-scoped ТІЛЬКИ " \
+                "(org-scope видимий кожному repo+workflow орг = R3c breach). Перенеси: " \
+                "gh secret set #{k} --env production && gh secret delete #{k} --org <org>"
     end
     warnings << "#{k} відсутній в Environment `production` — deploy-production не підпише поки не заведений " \
                 "(gh secret set #{k} --env production)" unless env_secrets.include?(k)
@@ -93,6 +100,7 @@ def self_test
   cases = [
     [ "clean",          { repo_secrets: [], env_secrets: q, variables: WIF_VARS },                             0, 0 ],
     [ "money at repo",  { repo_secrets: [ "ORACLE_MINTER_PRIVATE_KEY" ], env_secrets: q, variables: WIF_VARS }, 1, 0 ],
+    [ "money at org",   { repo_secrets: [], env_secrets: q, variables: WIF_VARS, org_secrets: [ "ORACLE_MINTER_PRIVATE_KEY" ] }, 1, 0 ],
     [ "money miss env", { repo_secrets: [], env_secrets: q - [ "SOLANA_WALLET_KEYPAIR" ], variables: WIF_VARS }, 0, 1 ],
     [ "retired zombie", { repo_secrets: [ "ORACLE_PRIVATE_KEY" ], env_secrets: q, variables: WIF_VARS },        0, 1 ],
     [ "wif as secret",  { repo_secrets: WIF_VARS, env_secrets: q, variables: [] },                             0, 4 ],
@@ -121,7 +129,13 @@ if env.nil?
   env = []
 end
 
-errors, warnings = audit(repo_secrets: repo, env_secrets: env, variables: vars)
+# Org-level scope: only if the repo's owner is a GitHub organization (a personal account has no
+# org secrets). An org-level money key is the same R3c breach as repo-level (visible org-wide).
+owner = `gh repo view --json owner -q '.owner.login' 2>/dev/null`.strip
+org = owner.empty? ? nil : gh_names_soft("secret list --org #{owner}")
+org ||= [] # not an org (personal account) or inaccessible → nothing to audit
+
+errors, warnings = audit(repo_secrets: repo, env_secrets: env, variables: vars, org_secrets: org)
 warnings.each { |w| puts "⚠ #{w}" }
 
 if errors.empty?
