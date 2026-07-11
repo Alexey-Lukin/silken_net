@@ -43,7 +43,7 @@ module Governance
       scc_fallback_price_usd:    { value_type: "float",   category: "tokenomics", min: 0.01,   max: 1000.0 },
       # Slashing (05_05 §3) + slash/stress пороги
       slash_threshold:           { value_type: "float",   category: "alerts",     min: 0.05,   max: 1.0 },
-      stress_threshold:          { value_type: "float",   category: "alerts",     min: 0.5,    max: 1.0 },
+      stress_threshold:          { value_type: "float",   category: "alerts",     min: 0.65,   max: 1.0 }, # [E.64] floor > Z-anomaly base_stress 0.6 (§7 «Z alone never slashes»: DAO не може опустити поріг під anomaly-рівень, інакше Z сам би слешив)
       slash_gamma:               { value_type: "float",   category: "alerts",     min: 1.0,    max: 3.0 },
       slash_penalty_factor_max:  { value_type: "float",   category: "alerts",     min: 1.0,    max: 5.0 }
     }.freeze

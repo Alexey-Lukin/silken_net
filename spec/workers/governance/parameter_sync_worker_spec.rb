@@ -49,6 +49,14 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
       )
     end
 
+    # [E.64 §7] «Z alone never slashes»: stress_threshold floor мусить лишатись ВИЩИМ за
+    # Z-anomaly base_stress (0.6, insight_generator_service.rb:337) — інакше DAO-vote у
+    # (0.6, floor] дав би Z-anomaly (0.6) перетнути поріг → slash на одному Z. Structural guard.
+    it "keeps stress_threshold floor above Z-anomaly base_stress 0.6 (§7 «Z alone never slashes»)" do
+      z_anomaly_base_stress = 0.6 # insight_generator_service.rb#calculate_stress_index_heuristic
+      expect(described_class::PARAMETER_MAP[:stress_threshold][:min]).to be > z_anomaly_base_stress
+    end
+
     it "contains NO Lorenz keys (DCI-locked, GOV.1)" do
       expect(described_class::PARAMETER_MAP.keys.grep(/lorenz/)).to be_empty
     end
