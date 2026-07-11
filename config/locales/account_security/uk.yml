@@ -43,6 +43,7 @@ uk:
         enabled_with_remaining: "✅ MFA увімкнено. Recovery codes залишилось: %{count}"
         heading: Двофакторна автентифікація (2FA)
         recovery_warning: Recovery codes збережіть в безпечному місці. Вони потрібні для входу при втраті TOTP.
+        wip_caveat: "⚠️ В розробці: recovery-коди ще не перевіряються при вході й не захищають акаунт. TOTP-вхід із другим фактором — незабаром."
       password:
         change_submit: Змінити пароль
         confirm_label: Підтвердьте новий пароль

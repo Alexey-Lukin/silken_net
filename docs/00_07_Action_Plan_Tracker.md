@@ -860,11 +860,10 @@
 - [ ] ⚖️ multi-zone Upstash (Global DB) — рішення за даними fallback-алерту в production (разовий blip = ні; повторюваність = так)
 
 #### S6.21 — MFA: TOTP second factor (claimed, not implemented + не enforced at login)
-- **P2** · 🤖+👤 · ⚪ · → `04_03 §1`
-- **Стан:** Не розпочато — honesty-gap. Реальність (`04_01` User): лише recovery-codes (10 шт.) + `otp_required_for_login` булевий флаг + step-up (`current_password`) на disable — **справжнього TOTP нема** (нема `rotp`/`otp_secret`-колонки/provisioning_uri). Audit §04 (2026-07-04) поглибив: навіть наявний recovery-code-«MFA» **не enforced на login взагалі** — `sessions#create` ніколи не читає `otp_required_for_login`, `consume_recovery_code!` = dead code (0 callers), нема route для second-factor challenge. Тобто «Увімкнути MFA» (04_03 §4 #9/#10) виставляє прапорець + step-up-захист на disable контролю, що НІЧОГО не захищає (компрометація пароля = повний доступ). Білд: `rotp` + `otp_secret` (AR-encrypted) + `MfaSetupsController` (QR) + verify-on-login + recovery-rotation. Канон `04_03 §1` (Автентифікація) / `04_01` (User).
-- [ ] 🤖 interim: hide MFA-toggle АБО inline-caveat «recovery-codes only, no login-challenge» (04_03 §4 #9/#10) — контроль зараз security-theatre
-- [ ] 🤖 `rotp` + `otp_secret` (encrypted) + `MfaSetupsController` (QR/provisioning_uri) + verify-on-login
-- [ ] 👤 (опц.) WebAuthn / hardware-key як сильніша альтернатива TOTP
+- **P2** · 🤖+👤 · 🟡 · → `04_03 §1`
+- **Стан:** Honesty-gap. Реальність (`04_01` User): лише recovery-codes (10 шт.) + `otp_required_for_login` булевий флаг + step-up (`current_password`) на disable — **справжнього TOTP нема** (нема `rotp`/`otp_secret`-колонки/provisioning_uri). Audit §04 (2026-07-04) поглибив, vilize (2026-07-11) реверифікував проти коду: `sessions#create` ніколи не читає `otp_required_for_login`, `consume_recovery_code!` = dead code (0 callers), нема route для second-factor challenge — компрометація пароля = повний доступ. ✅ **Interim shipped (2026-07-11):** MFA-toggle прибрано з `account_security/show` → чесний wip-caveat (4 локалі), spec-гейт проти повернення toggle без verify-on-login (negative-assertions). `users/profile` security_indicator читає той самий прапорець — для всіх реальних pre-deploy станів показує Disabled (правда); переглянути при build. Білд: `rotp` + `otp_secret` (AR-encrypted) + `MfaSetupsController` (QR) + verify-on-login + recovery-rotation + повернути toggle. Канон `04_03 §1` (Автентифікація) / `04_01` (User).
+- [ ] 🤖 `rotp` + `otp_secret` (encrypted) + `MfaSetupsController` (QR/provisioning_uri) + verify-on-login + toggle назад
+- [ ] ⚖️ WebAuthn / hardware-key як сильніша альтернатива TOTP — рішення чи потрібно (опц.)
 
 #### E.20 — Forester Guild: ForestBountyService (PoPhW fallback oracle + ranger economy)
 - **P2** · 🤖+👤 · ⚪ · → `04_02 §Forester Guild`

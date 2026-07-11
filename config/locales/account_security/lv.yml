@@ -43,6 +43,7 @@ lv:
         enabled_with_remaining: "✅ MFA iespējota. Atlikušie atjaunošanas kodi: %{count}"
         heading: Divu faktoru autentifikācija (2FA)
         recovery_warning: Saglabājiet atjaunošanas kodus drošā vietā. Tie nepieciešami, lai pieteiktos, ja pazaudēsiet TOTP ierīci.
+        wip_caveat: "⚠️ Izstrādē: atjaunošanas kodi pieteikšanās brīdī vēl netiek pārbaudīti un neaizsargā kontu. TOTP divu faktoru pieteikšanās drīzumā."
       password:
         change_submit: Mainīt paroli
         confirm_label: Apstiprināt jauno paroli

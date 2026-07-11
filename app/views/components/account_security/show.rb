@@ -26,39 +26,14 @@ module AccountSecurity
     end
 
     # --- MFA СЕКЦІЯ ---
+    # [S6.21] Toggle прибрано (interim): recovery-codes без login-challenge не
+    # захищають акаунт (sessions#create не читає otp_required_for_login) —
+    # контроль був security-theatre. Повертається разом із TOTP → 00_07 S6.21.
     def render_mfa_section
       div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
-        div(class: "flex justify-between items-center") do
-          div do
-            h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".mfa.heading") }
-            p(class: "text-tiny text-gray-600 mt-1") do
-              if @user.mfa_enabled?
-                t(".mfa.enabled_with_remaining", count: @user.recovery_codes_remaining)
-              else
-                t(".mfa.disabled_hint")
-              end
-            end
-          end
-          render_mfa_toggle
-        end
-
-        if @user.mfa_enabled?
-          div(class: "p-3 border border-status-warning/50 bg-status-warning/10") do
-            p(class: "text-mini text-status-warning-text uppercase tracking-widest") { t(".mfa.recovery_warning") }
-          end
-        end
-      end
-    end
-
-    def render_mfa_toggle
-      form(action: api_v1_account_security_mfa_path, method: "post", class: "inline") do
-        input(type: "hidden", name: "_method", value: "patch")
-        input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
-
-        if @user.mfa_enabled?
-          button(type: "submit", class: "px-4 py-2 border border-red-900 text-mini text-red-500 uppercase tracking-widest hover:bg-red-900 hover:text-white transition-all") { t(".mfa.disable_button") }
-        else
-          button(type: "submit", class: "px-4 py-2 border border-emerald-500 text-mini text-emerald-500 uppercase tracking-widest hover:bg-emerald-500 hover:text-black transition-all") { t(".mfa.enable_button") }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".mfa.heading") }
+        div(class: "p-3 border border-status-warning/50 bg-status-warning/10") do
+          p(class: "text-mini text-status-warning-text uppercase tracking-widest") { t(".mfa.wip_caveat") }
         end
       end
     end

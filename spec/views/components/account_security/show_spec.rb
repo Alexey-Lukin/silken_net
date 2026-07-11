@@ -46,32 +46,19 @@ RSpec.describe AccountSecurity::Show do
       expect(html).to include("Two-Factor Authentication")
     end
 
-    it "shows MFA disabled warning when mfa is off" do
-      expect(html).to include("MFA disabled")
+    it "shows the under-construction caveat instead of a working control" do
+      expect(html).to include("Under construction")
     end
 
-    it "shows MFA enabled status when mfa is active" do
-      user_with_mfa = mock_user(mfa_enabled: true, recovery_codes_remaining: 8)
-      html = render_component(user: user_with_mfa, identities: identities)
-      expect(html).to include("MFA enabled")
-    end
+    # [S6.21] Toggle без login-challenge = security-theatre; гейт проти його
+    # повернення ДО повного TOTP-контуру (verify-on-login).
+    it "does not render an MFA enable/disable toggle" do
+      expect(html).not_to include("Enable MFA")
+      expect(html).not_to include("Disable MFA")
 
-    it "shows recovery codes count when mfa enabled" do
-      user_with_mfa = mock_user(mfa_enabled: true, recovery_codes_remaining: 8)
-      html = render_component(user: user_with_mfa, identities: identities)
-      expect(html).to include("8")
-    end
-  end
-
-  describe "toggle button" do
-    it "renders Enable MFA button when mfa is disabled" do
-      expect(html).to include("Enable MFA")
-    end
-
-    it "renders Disable MFA button when mfa is enabled" do
       user_with_mfa = mock_user(mfa_enabled: true)
-      html = render_component(user: user_with_mfa, identities: identities)
-      expect(html).to include("Disable MFA")
+      html_enabled = render_component(user: user_with_mfa, identities: identities)
+      expect(html_enabled).not_to include("Disable MFA")
     end
   end
 

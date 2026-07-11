@@ -213,7 +213,7 @@ POST /api/v1/auth/m2m_token
 | 8a | POST | `/api/v1/auth/m2m_token/refresh` | `m2m_auth#refresh` | 🔑 Auth (Bearer) | **M2M Refresh:** Оновлення Bearer token без Ed25519 re-auth |
 | **🛡️ Безпека Акаунту** | | | | | |
 | 9 | GET | `/api/v1/account_security` | `account_security#show` | 🔑 Auth | MFA-стан, прив'язані identity |
-| 10 | PATCH | `/api/v1/account_security/mfa` | `account_security#toggle_mfa` | 🔑 Auth | Увімкнути/вимкнути MFA. **Disable вимагає `current_password` (step-up auth)**, окрім OAuth-only акаунтів. |
+| 10 | PATCH | `/api/v1/account_security/mfa` | `account_security#toggle_mfa` | 🔑 Auth | Увімкнути/вимкнути MFA-прапорець. **Disable вимагає `current_password` (step-up auth)**, окрім OAuth-only акаунтів. ⚠️ **[S6.21]** прапорець поки НЕ enforced на login (verify-on-login відсутній) — dashboard-toggle прибрано, лишився чесний wip-caveat; повний TOTP-контур → [`00_07` S6.21](00_07_Action_Plan_Tracker). |
 | 11 | PATCH | `/api/v1/account_security/password` | `account_security#change_password` | 🔑 Auth | Змінити пароль. **Усі інші Session-row відкликаються**, поточний request session виживає (IP+UA match → fallback на newest). |
 | 12 | DELETE | `/api/v1/account_security/identities/:id` | `account_security#unlink_identity` | 🔑 Auth | Відв'язати OAuth-провайдера |
 | 13 | PATCH | `/api/v1/account_security/identities/:id/lock` | `account_security#lock_identity` | 🔑 Auth | Заблокувати OAuth-ідентичність |

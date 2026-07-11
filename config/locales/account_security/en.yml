@@ -43,6 +43,7 @@ en:
         enabled_with_remaining: "✅ MFA enabled. Recovery codes remaining: %{count}"
         heading: Two-Factor Authentication (2FA)
         recovery_warning: Save your recovery codes in a safe place. They are required to log in if you lose your TOTP device.
+        wip_caveat: "⚠️ Under construction: recovery codes are not yet verified at login and do not protect your account. TOTP two-factor login is coming."
       password:
         change_submit: Change Password
         confirm_label: Confirm New Password
