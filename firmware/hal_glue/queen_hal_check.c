@@ -7,6 +7,17 @@
  * порожні заглушки — фізика тіл прийде з .ioc (👤 board-freeze).
  * Канон: docs/03_01 §12.4 · трекер: 00_07 FW.46.
  */
+
+/* ── board-freeze pin-макроси (👤 .ioc згенерує справжні) для ARCH.35-compile-lane:
+ * потрібні ДО include, бо гейтований main.c-блок кличе їх як макро (W25Q32 CS).
+ * Порожні = compile-only; реальний GPIO-toggle прийде з .ioc board-freeze. */
+#ifndef W25Q32_CS_LOW
+#define W25Q32_CS_LOW()   ((void)0)
+#endif
+#ifndef W25Q32_CS_HIGH
+#define W25Q32_CS_HIGH()  ((void)0)
+#endif
+
 #include "../queen/main.c"
 
 /* ── CubeMX-заглушки (👤 .ioc згенерує справжні) ───────────────────────── */

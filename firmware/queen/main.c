@@ -464,7 +464,9 @@ uint8_t cache_count = 0;
 // доставку (бекенд толерує дубль), але не губить.
 #include "../common/flash_ring.h"
 
-#define ARCH35_RING_ENABLED  0   // 🟡 фліп після BOM + board-freeze (bench)
+#ifndef ARCH35_RING_ENABLED
+#define ARCH35_RING_ENABLED  0   // 🟡 фліп після BOM + board-freeze (bench; -D через hal_check_ccm)
+#endif
 
 #if ARCH35_RING_ENABLED
 // --- SPI-глю W25Q32JV (datasheet cmd set) -------------------------------
