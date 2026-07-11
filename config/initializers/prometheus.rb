@@ -479,8 +479,8 @@ module SilkenNet
     # `Api::V1::M2mAuthController#create` падає з Redis SET NX на DB-backed
     # nonce cache коли Redis недоступний (Upstash outage / network blip).
     # Fallback path має малий TOCTOU window (acceptable у degraded mode).
-    # Counter дозволяє виміряти actual outage frequency та alert якщо
-    # > 0.1% requests за 1h → escalate до multi-zone Redis.
+    # Counter дозволяє виміряти actual outage frequency; alert-правило
+    # sn-alert-m2m-nonce-fallback (семантика — 04_03 §5.15).
     M2M_NONCE_FALLBACK_TOTAL = REGISTRY.counter(
       :silkennet_m2m_nonce_fallback_total,
       docstring: "Total M2M nonce checks falling back from Redis to DB-backed cache (Redis outage indicator)"

@@ -1139,3 +1139,80 @@ groups:
           component: web3
           team: ops
 
+      # -----------------------------------------------------------------------
+      # P2: M2M nonce Redis→DB fallback (S6.1/S6.19). Кожен інкремент = Redis
+      # (Upstash) був недоступний у момент M2M-auth: запит пройшов через Solid
+      # Cache fallback (TOCTOU-вікно прийнятне в degraded mode). M2M-auth
+      # рідкісний (~1/30 днів на шлюз) — відсотковий поріг математично мертвий,
+      # тому increase[1h] > 0: будь-який fallback вартий фіксації. Повторюваність
+      # → escalation-рішення multi-zone Upstash (04_03 §5.15).
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-m2m-nonce-fallback
+        title: "ℹ️ M2M auth on DB-nonce fallback (Redis outage)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: sum(increase(silkennet_m2m_nonce_fallback_total[1h]))
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 0m
+        annotations:
+          summary: "M2M auth впав на DB-nonce fallback ({{ $values.A.Value | printf \"%.0f\" }}× за 1h) — Redis був недоступний."
+          description: "Graceful degradation ПРАЦЮЄ (шлюзи автентифікуються через Solid Cache nonce) — це фіксація Redis-outage, не інцидент. Дія: разова подія = звірити Upstash status; повторюваність день-у-день → escalate до multi-zone Upstash (Global DB). 04_03 §5.15 (S6.1)."
+          runbook_url: "docs/04_03_REST_API_v1_Reference.md"
+        labels:
+          severity: info
+          component: redis
+          team: security
+
+      # -----------------------------------------------------------------------
+      # P2: QATT batch-nonce Redis→DB fallback (L1 QATT) — той самий S6.1-патерн,
+      # СВІДОМО окремий counter+алерт: батч-стрім щогодинний (кожна Queen), і
+      # змішування з M2M поховало б рідкісний auth-сигнал у батч-шумі
+      # (config/initializers/prometheus.rb, коментар QATT_NONCE_FALLBACK_TOTAL).
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-qatt-nonce-fallback
+        title: "ℹ️ QATT batch-nonce on DB fallback (Redis outage)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: sum(increase(silkennet_qatt_nonce_fallback_total[1h]))
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 0m
+        annotations:
+          summary: "QATT batch-nonce впав на DB fallback ({{ $values.A.Value | printf \"%.0f\" }}× за 1h) — Redis був недоступний під час unpack."
+          description: "Replay-захист Queen-attestation батчів працює через Solid Cache (degraded). Той самий Redis-outage клас, що sn-alert-m2m-nonce-fallback, але окремий сигнал: батчі щогодинні, тож тут видно ТРИВАЛІСТЬ outage. Повторюваність → multi-zone Upstash. 03_02 §7 / 04_03 §5.15."
+        labels:
+          severity: info
+          component: redis
+          team: security
+

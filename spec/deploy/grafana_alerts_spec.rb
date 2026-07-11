@@ -54,4 +54,14 @@ RSpec.describe "Grafana alert rules ↔ Prometheus registry consistency" do # ru
       expect(referenced).to include(name), "#{name} втратив alert-правило (ARCH.66 регресія)"
     end
   end
+
+  it "the S6.1 Redis→DB nonce-fallback counters are wired to an alert" do
+    %w[
+      silkennet_m2m_nonce_fallback_total
+      silkennet_qatt_nonce_fallback_total
+    ].each do |name|
+      expect(referenced).to include(name),
+        "#{name} без alert-правила — escalation-тригер multi-zone Upstash сліпий (S6.1, 04_03 §5.15)"
+    end
+  end
 end

@@ -1056,7 +1056,7 @@ SHA256-дайджест значення `signature` зберігається в
 - **Чому не 5 хв (рівно window):** підпис, створений на trailing edge timestamp window (наприклад, 5 хвилин тому, ще валідний за timestamp check), й одразу повторно надісланий — пройде nonce check якщо TTL == window. 10 хв = window + margin гарантує покриття всього періоду, протягом якого підпис вважається валідним.
 - **Чому не 15+ хв:** довший TTL збільшує Redis memory footprint per gateway (індивідуально незначно, але на 100k+ пристроях та burst auth flows накопичується) без додаткової security користі — timestamps старші 5 хв вже відхиляються timestamp check'ом.
 
-**Спостережуваність:** Prometheus counter `silkennet_m2m_nonce_fallback_total` інкрементується щоразу, коли запит падає з Redis на DB-backed fallback. Alert: rate > 0.1% requests/h → escalate до multi-zone Upstash.
+**Спостережуваність:** Prometheus counter `silkennet_m2m_nonce_fallback_total` інкрементується щоразу, коли запит падає з Redis на DB-backed fallback. Grafana-алерт `sn-alert-m2m-nonce-fallback` (p2-info): `increase[1h] > 0` — M2M-auth надто рідкісний (~1/30 днів на шлюз) для відсоткового порогу, тому фіксується БУДЬ-ЯКИЙ fallback; разове спрацювання = зафіксований Redis-blip, повторюваність день-у-день → escalate до multi-zone Upstash (Global DB) — ⚖️ рішення за прод-даними. Парний `sn-alert-qatt-nonce-fallback` окремо покриває QATT-батч-nonce (той самий S6.1-патерн; окремий counter, щоб щогодинний батч-стрім не маскував рідкісний auth-сигнал). Парність метрика↔алерт стереже `spec/deploy/grafana_alerts_spec.rb`.
 
 **Підпис на прошивці (псевдокод):**
 

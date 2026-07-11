@@ -855,9 +855,9 @@
 ## §04 · Backend / API / UI
 
 #### S6.1 — Redis SPOF для M2M автентифікації
-- **P1** · 👤 · 🟢 · → `04_03 §1.4`
-- **Стан:** Graceful degradation реалізовано — Redis down → DB-backed nonce (Solid Cache, TTL 10хв), шлюзи не отримують 503 (`m2m_auth_controller` [S6.1] + spec). Канон `04_03 §1.4` (M2M replay-nonce + graceful degradation).
-- [ ] 👤 верифікувати Upstash multi-zone replication у production
+- **P2** · 👤 · 🟢 · → `04_03 §1.4`
+- **Стан:** Graceful degradation реалізовано — Redis down → DB-backed nonce (Solid Cache, TTL 10хв), шлюзи не отримують 503 (`m2m_auth_controller` [S6.1] + spec). Escalation-тригер, який канон обіцяв, був сліпий (жодного alert-правила на ОБИДВА nonce-fallback counters — M2M і QATT) — закрито: `sn-alert-m2m-nonce-fallback` + `sn-alert-qatt-nonce-fallback` (p2-info, `increase[1h]>0`) + wired-гейт у `spec/deploy/grafana_alerts_spec.rb` (mutation-verified). P1→P2: SPOF-ризик знято degradation+observability, resid題 = ⚖️-рішення за прод-даними. Канон `04_03 §1.4`+`§5.15` (M2M replay-nonce + graceful degradation + alert-семантика).
+- [ ] ⚖️ multi-zone Upstash (Global DB) — рішення за даними fallback-алерту в production (разовий blip = ні; повторюваність = так)
 
 #### E.41 — Fire-event 48h latency (dClimate obscuration) → immediate-broadcast fallback
 - **P1** · 🤖+👤 · 🟢 · → `04_02 §11`, `05_01`

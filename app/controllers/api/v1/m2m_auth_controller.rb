@@ -81,8 +81,8 @@ module Api
           # Note: This fallback has a small TOCTOU window between exist?/write.
           # Acceptable tradeoff: Redis SET NX (primary path) is fully atomic;
           # this is the degraded fallback for Redis outage scenarios only.
-          # [S6.19]: Counter інкрементується для Grafana alerting на Redis outage.
-          # Якщо counter rate > 0.1% requests/h → escalate до multi-zone Upstash.
+          # [S6.19]: Counter живить Grafana-алерт sn-alert-m2m-nonce-fallback
+          # (escalation-семантика multi-zone Upstash — дім: 04_03 §5.15).
           SilkenNet::Metrics::M2M_NONCE_FALLBACK_TOTAL.increment
           Rails.logger.warn "⚠️ [M2M Auth] Redis unavailable, falling back to DB-based nonce check: #{e.message}"
 
