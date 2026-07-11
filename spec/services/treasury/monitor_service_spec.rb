@@ -300,6 +300,9 @@ RSpec.describe Treasury::MonitorService do
       described_class.call
 
       expect(Kredis).to have_received(:flag).with("#{BlockchainMintingService::MINT_CIRCUIT_FLAG_PREFIX}carbon_coin")
+      # [ARCH.62] TTL-pin: circuit auto-releases за MINT_CIRCUIT_TTL (re-runnable). Рефактор, що
+      # впустить expires_in → permanent flag → mint wedge назавжди до ручного .remove.
+      expect(flag).to have_received(:mark).with(expires_in: described_class::MINT_CIRCUIT_TTL)
     end
 
     it "trips INDEPENDENT per-token flags + alerts when both tokens breach (isolation)" do
