@@ -921,7 +921,7 @@
 - [ ] ⚖️ WebAuthn / hardware-key як сильніша альтернатива TOTP — рішення чи потрібно (опц.)
 
 #### SEC.18 — User/Org PII data-subject-rights (retention-TTL · DSAR-export · anonymization)
-- **P2** · 🤖+👤 · ⚪ · → [`04_01 §7`](04_01_Data_Models_and_Entities), `07_01 §8`
+- **P2** · 🤖+👤 · 🟡 · → [`04_01 §7`](04_01_Data_Models_and_Entities), `07_01 §8`
 - **Стан:** Over-ARCH.57 residual. **Erasure-ядро вже трекає ARCH.57(4)** («GDPR erasure-процедура + encrypt identities» — НЕ дублювати); наявна основа: `data_region`-шардинг ✅ (`04_01`, eu/us/ap — це GDPR-residency вісь, НЕ клімат), `filter_parameters` scrub'ить PII з логів, tree-дані свідомо ≠ PII (`00_08`), privacy-policy planned (BIZ.3). ✅ **Негейтований leak закрито (vilize 2026-07-11):** `first_name`/`last_name`/`recovery_codes` текли в логи ПОВЗ scrub-список (initializer цілив у контакти, імена пропустив; Sentry реюзає filter_parameters — покрито разом) + **schema-parity durable-гейт** (кожна нова string-колонка `users`/`organizations` мусить бути класифікована: filtered-PII або явний allow-list — example-based спека фізично не ловила нову колонку; mutation-verified). Примітка точності: «Forester» = `User.role` (окремої таблиці нема, PII цілком на users/organizations; `push_token` колонка ІСНУЄ і scrub'иться — E.33-агентський сигнал про її відсутність фальсифіковано). Ширший residual: (а) **retention-POLICY** (default-TTL/auto-expiry), (б) **DSAR-export** (віддати суб'єкту дані, ≠ стерти), (в) **anonymization↔immutability reconcile** (напруга з ARCH.57 append-only — тепер enforced кодом!). Pre-commercial-legal, активується при онбордингу EU-лісників. NB: `07_01 §2` «Таблиця SLA» — інша SLA. Канон `04_01 §7`, `07_01 §8`.
 - [ ] 🤖 retention-worker (per-модель TTL) + `AnonymizeUserService` (reconcile з ARCH.57 append-only guard) + DSAR-export endpoint
 - [ ] ⚖️ retention-періоди per-юрисдикція (СЄУ legal, `08_02 §5`) + consent-tracking рішення
@@ -940,7 +940,7 @@
 - [ ] ⚖️ status-кольори (red/amber/blue, ~100+ hits, PROTECTED у codemod) — окремий status-token refactor: робимо/коли?
 
 #### UI.2 — Codex real-time UI broadcasts dead-on-arrival
-- **P2** · 🤖 · ⚪ · → `04_05`
+- **P2** · 🤖+👤 · 🟡 · → `04_05`
 - **Стан:** Audit §04 (2026-07-04, A5-Codex). Чотири Codex «live»-фічі (attunement-counter, live-comments, citation-pills, discovery-toast) шлють `ActionCable.server.broadcast` у порожнечу — нема `@rails/actioncable` importmap-pin, нема `app/channels/`, нуль `subscriptions.create` у репо → браузер НІКОЛИ не отримує payload (робочий патерн — pair з `Turbo::StreamsChannel.broadcast_*_to`, як telemetry/burn; Codex робить лише raw-half). `Discoveries::Toast` взагалі ніде не інстанціюється; docstring'и стверджують протилежне shipped-поведінці. ✅ **Stimulus-scope-фікс SHIPPED (vilize 2026-07-11):** `data-controller` переїхав з внутрішнього `div#list` на `section` (Form-таргети були sibling'ами поза scope → Cmd/Ctrl+Enter і textarea-reset мертві) + Nokogiri containment-гейт у thread_spec (targets МУСЯТЬ жити в subtree controller-елемента — «не ловиться Phlex-string-специ» спростовано DOM-парсингом). Docstring-брехні (5 місць: toggle/strip/thread/toast + ADR-CDX-8 обіцяє Turbo-канал і навіть НЕ ТОЙ топік — `…_attunement_count` vs реальний `…_attunements`) лишаються до ⚖️-рішення нижче. Канон `04_05` (ADR-CDX-8).
 - [ ] ⚖️ wire vs descope: Codex-«живість» — продукт-рішення (wire = ШИРШЕ ніж чекбокс звучав: жоден із 4 компонентів не рендерить і `turbo_stream_from` — обидві половини Turbo-патерну відсутні; descope = видалити 4 raw-sites + виправити 5 брехливих docstring/ADR-CDX-8, найдешевший чесний хід перед демо)
 - [ ] 🤖 виконання обраної гілки (+ durable-гейт гілки: wire → `assert_turbo_stream`-спеки; descope → grep-lint на `ActionCable.server.broadcast` у codex/**); cross-ref ARCH.67 — спільна родина «broadcast-integrity», протилежні failure-modes
@@ -978,19 +978,19 @@
 - [ ] 👤 provider-app-реєстрації (4×) + ключі в deploy-secrets (`06_04`)
 
 #### I18N.1 — alert_type i18n + ширша i18n-повнота (CI-parity + hardcoded-рядки)
-- **P3** · 🤖 · ⚪ · → `04_02`, `04_04`
+- **P3** · 🤖 · 🟡 · → `04_02`, `04_04`
 - **Стан:** Знахідка (INS.1, 2026-06-27) — `EwsAlert.message` + `TextFormatter#alert_title`/`#alert_icon` = **hardcoded-рядки**; `config/locales/alerts/*.yml` покривають лише UI-хром, БЕЗ per-alert-type value-labels. Audit §04 (2026-07-04, S4/O4) розширив: hardcoded-рядки поза alert_type — `shared/web3/address` (SHARED-компонент, поза CI-гейтом `components/**`), `maintenance/index` aria-labels ×4, `blockchain_transactions` dup, `alerts/row` `alert_type.humanize` (locale-blind). Поточно безпечно (`.humanize`/`else`-fallback), enum тепер 11 типів (не 8). ✅ **CI-parity закрито (vilize 2026-07-11):** `i18n-tasks.yml locales:` → `[en,uk,lv,lt]` — гейт одразу спіймав реальну діру (lt `codex.atlas.count` без `few` + typo `archtipas`), полатано, `missing`+`interpolations` чисті на 4 локалях; Gemfile-claim reconciled (чесний «missing», не «health» — unused хибить на динамічних лукапах). Канон `04_02` (TextFormatter), `04_04` (i18n-CI §12.1).
 - [ ] 🤖 i18n-ключі per-alert-type (11 типів × 4 мови: title + icon) → `TextFormatter` через `I18n.t` — усі типи РАЗОМ, не по одному
 - [ ] 🤖 hardcoded-рядки → i18n: `shared/web3/address`, maintenance aria-labels (SHARED поза `components/**`-гейтом)
 
 #### ARCH.63 — B2B integration surface (OpenAPI-контракт + outbound webhooks) [lower-conf]
-- **P3** · 🤖+👤 · ⚪ · → `04_03`, `07_01 §8`
+- **P3** · 🤖 · ⚪ · → `04_03`, `07_01 §8`
 - **Стан:** Gap-pass §04 (2026-07-05, lower-confidence) — pre-commercial B2B-self-serve. (1) Нема machine-readable API-контракту (OpenAPI/Swagger) — `04_03` = якісний hand-written markdown, але партнер не заімпортує в Postman/codegen (нема `rswag`/`committee`). (2) Нема outbound webhook-підписки для NaaS-клієнтів (`Streamr::BroadcasterService` = публічний unscoped telemetry-firehose, не org-scoped бізнес-події «contract slashed»/«SCC minted»; нема `organizations.webhook_url`+signed-delivery). Обидва demand-gated (нема поточного клієнта). **🤖-half:** rswag-ген + outbound-webhook worker + HMAC — код; активація за першим B2B-інтегратором. Канон `04_03`, `07_01 §8`.
 - [ ] 🤖 (demand-gated) OpenAPI: РУКОПИСНИЙ `openapi.yaml` для ключових B2B-ендпоінтів (reports/telemetry/contracts/wallets) — транскрипція з готового канону `04_03 §4/§5`; опц. `committee`-валідація. НЕ rswag-«генерація з request-специв» — то міф: rswag = паралельний path/get/response-DSL, наші 42 request-спеки несумісні, було б переписування ~110+ ендпоінтів
 - [ ] 🤖 (demand-gated) `organizations.webhook_url` + signed outbound-delivery worker (org-scoped події) — колонку НЕ додавати наперед (5-рядкова міграція при першому інтеграторі); machine-half = дельта, не greenfield: HMAC-примітив реюз `oracle_callbacks`, worker ~90% клон `StreamrBroadcastWorker`
 
 #### E.36 — PostGIS Generated Column (geo_boundary)
-- **P3** · 🤖 · ⚪ · → `04_01`
+- **P3** · 🤖+👤 · ⚪ · → `04_01`
 - **Стан:** YAGNI-як-фіча стоїть, але framing чесніший (vilize 2026-07-11): це НЕ «чистий рефактор» — тригер толерує битий GeoJSON→NULL (EXCEPTION-хендлер), а generated-column-вираз винятків ловити НЕ МОЖЕ → зміна error-семантики (tolerant-NULL → write-fail) = 👤-мікро-ухвала перед механікою; + реконсиляція типу `Geometry`↔`Polygon` і `ST_SetSRID`. **Cost-розвилка:** зараз (clusters порожня) plain→STORED = DROP+ADD+GIST-rebuild ≈ безкоштовно; після деплою = `ACCESS EXCLUSIVE` rewrite tenant-root + GIST-rebuild + malformed-row backfill-ризик. Побічно усуває PERF.1-OR-REPLACE-пункт назавжди (функція зникає; сам PERF.1-фікс-через-міграцію марний — pg_dump не зберігає OR REPLACE). Канон `04_01`.
 - [ ] ⚖️ прийняти hard-fail на битий GeoJSON (замість тихого NULL)? — гейт рефактора
 - [ ] 🤖 generated-column swap (ЯКЩО так; дешевий ЛИШЕ до деплою — пізніше table-rewrite)
@@ -1020,7 +1020,7 @@
 - [ ] 🤖 rate-limiter поверх collected-delivery (потім scale-gate)
 
 #### ARCH.5 — Cross-Registry Export (Verra/GS/UNFCCC)
-- **P3** · 🤖 · 🌿 · → `04_02`
+- **P3** · 🤖+👤 · 🌿 · → `04_02`
 - **Стан:** Far-horizon, але Стан РОЗМІРНІСТЬ занижував (vilize 2026-07-11): **перший реальний registry-export УЖЕ shipped** — Puro.earth/CORC `[MAINNET READY]` (`PuroEarth::PassportService`/`RegistryApiService`: transform → canonical JSON → SHA-256 → on-chain anchor → IPFS → REST submit) + format-шар reports (JSON/CSV/PDF) + AuditLog immutable-chain як джерело. Тобто ARCH.5 = **format-адаптери × N поверх доведеного патерну**, не greenfield. Твердий гейт = BIZ.9 (методолог → затверджений PDD; без methodology-ID реєстр не прийме) + institutional buyer; формат-research (VCS/GS4GG публічні) машинно-доступний, але адаптер ДО PDD = передчасно (monitoring-параметри диктує методологія). Схему НЕ чіпати: vintage/serial/methodology-ID derivable з AuditLog-періоду, Verra присвоює serial сам — колонки зараз = спекулятивна схема. Когорта «pre-commercial integration surface» з ARCH.63 (cross-ref, не merge). Канон `04_02`.
 - [ ] ⚖️ котрий реєстр першим (Verra vs GS vs UNFCCC) — стратегічне рішення поверх уже-обраного Puro.earth
 - [ ] 🤖 format-адаптери обраного реєстру (після BIZ.9-PDD; патерн = Puro.earth)
