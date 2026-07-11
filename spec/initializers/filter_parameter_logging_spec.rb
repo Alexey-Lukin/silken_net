@@ -141,11 +141,13 @@ RSpec.describe "filter_parameter_logging initializer" do # rubocop:disable RSpec
   # редагується filter_parameters, або свідомо внесена в allow-list нижче.
   # Нова некласифікована колонка → цей тест червоний → людина вирішує.
   describe "PII-table column parity [SEC.18]" do
-    non_pii_allowed = {
-      "users" => %w[role locale time_zone],
-      "organizations" => %w[name registry_id data_region hadron_kyc_status
-                            crypto_public_address solana_public_address]
-    }.freeze
+    let(:non_pii_allowed) do
+      {
+        "users" => %w[role locale time_zone],
+        "organizations" => %w[name registry_id data_region hadron_kyc_status
+                              crypto_public_address solana_public_address]
+      }
+    end
 
     %w[users organizations].each do |table|
       it "classifies every string column of #{table} (filtered PII or explicit allow)" do
