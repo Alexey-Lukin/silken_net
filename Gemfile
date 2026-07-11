@@ -50,9 +50,11 @@ group :development, :test do
   gem "bundler-audit", require: false
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
   gem "factory_bot_rails"
-  # Catches missing / unused / inconsistent translations across all locale
-  # files. Runs in CI as a hard gate (`bin/i18n-tasks health`) so PRs that
-  # add a key in one locale but forget the other fail the build.
+  # Catches missing translations across all shipped locales (en/uk/lv/lt —
+  # config/i18n-tasks.yml). Runs in CI as a hard gate (`i18n-tasks missing`,
+  # ci.yml i18n_check) so a PR that adds a key in one locale but forgets the
+  # others fails the build. `health` свідомо НЕ ганяємо: його unused-половина
+  # хибно спрацьовує на динамічних лукапах (navigation.items.*, filter_*).
   gem "i18n-tasks", require: false
   gem "pg_query"
   gem "prosopite"

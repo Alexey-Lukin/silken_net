@@ -7,9 +7,11 @@
 # (class names, error keys, comments) are all in English — keeping the
 # base aligned with the source minimises diff noise.
 base_locale: en
-locales: [en, uk]
+# [I18N.1] Всі shipped-локалі: без lv/lt тут CI-parity їх НЕ бачив —
+# PR, що ламає lv/lt, проходив зеленим.
+locales: [en, uk, lv, lt]
 
-# YAML files live under config/locales/**/{en,uk}.yml. The pattern below
+# YAML files live under config/locales/**/*.yml. The pattern below
 # matches the sub-directory layout we already use (per-domain folders).
 data:
   read:

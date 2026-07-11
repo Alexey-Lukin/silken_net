@@ -3,7 +3,8 @@ lt:
   codex:
     atlas:
       count:
-        one: "%{count} archtipas kataloguotas"
+        one: "%{count} archetipas kataloguotas"
+        few: "%{count} archetipai kataloguoti"
         other: "%{count} archetipų kataloguota"
       empty:
         description: Pabandykite platesnę sritį arba išvalykite paiešką.
