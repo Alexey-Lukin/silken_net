@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 class GatewayTelemetryLog < ApplicationRecord
+  # PostgreSQL PK is composite (id, created_at) for declarative partitioning,
+  # but Rails should use id alone for lookups, dom_id, and associations —
+  # otherwise record.id returns [id, created_at] (дзеркало BlockchainTransaction).
+  self.primary_key = "id"
+
   # --- КОНСТАНТИ ПОРОГІВ (Single Source of Truth) ---
   LOW_BATTERY_THRESHOLD     = 3300  # mV: нижче цього — виснаження батареї/сонячної панелі
   OVERHEAT_THRESHOLD        = 65    # °C: SIM7070G починає деградувати при перевищенні

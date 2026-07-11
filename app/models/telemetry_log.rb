@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 class TelemetryLog < ApplicationRecord
+  # PostgreSQL PK is composite (id, created_at) for declarative partitioning,
+  # but Rails should use id alone for lookups, dom_id, and associations —
+  # otherwise record.id returns [id, created_at] (дзеркало BlockchainTransaction).
+  self.primary_key = "id"
+
   # --- ЗВ'ЯЗКИ (The Neural Links) ---
   belongs_to :tree
   # Зв'язок із Королевою через її UID

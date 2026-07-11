@@ -238,6 +238,16 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
         expect(response).to have_http_status(:unauthorized)
       end
 
+      it "rejects a cookie whose user no longer exists" do
+        post "/api/v1/login", params: { email: user.email_address, password: "password12345" }
+
+        user.sessions.delete_all
+        user.reload.destroy!
+
+        get "/api/v1/account_security"
+        expect(response).to have_http_status(:unauthorized)
+      end
+
       it "keeps the initiating session alive across its own password change" do
         post "/api/v1/login", params: { email: user.email_address, password: "password12345" }
 

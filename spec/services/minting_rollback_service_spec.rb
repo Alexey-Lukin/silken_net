@@ -106,7 +106,7 @@ RSpec.describe MintingRollbackService do
 
   describe ".call with transactions (auto-discovery flow)" do
     it "rolls back all provided pending/processing transactions" do
-      wallet.update!(locked_balance: 5_000)
+      wallet.update!(balance: 5_000, locked_balance: 5_000)
       tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 5_000, tx_hash: nil)
 
       described_class.call(transactions: BlockchainTransaction.where(id: tx.id))

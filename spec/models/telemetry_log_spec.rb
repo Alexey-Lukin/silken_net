@@ -7,6 +7,15 @@ RSpec.describe TelemetryLog, type: :model do
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
   end
 
+  # [ARCH.56] Composite partition-PK (id, created_at) авто-детектується Rails —
+  # без self.primary_key = "id" record.id повертає масив [id, created_at].
+  describe "primary key" do
+    it "exposes a scalar id despite the composite partition PK" do
+      log = create(:telemetry_log, tree: create(:tree))
+      expect(log.id).to be_an(Integer)
+    end
+  end
+
   describe "#healthy?" do
     it "returns true for homeostasis with normal readings" do
       log = build(:telemetry_log, :healthy)

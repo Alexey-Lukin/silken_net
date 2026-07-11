@@ -3,6 +3,16 @@
 require "rails_helper"
 
 RSpec.describe GatewayTelemetryLog, type: :model do
+  # [ARCH.56] Дзеркало TelemetryLog: без self.primary_key = "id" composite
+  # partition-PK робить record.id масивом [id, created_at].
+  describe "primary key" do
+    it "exposes a scalar id despite the composite partition PK" do
+      gateway = create(:gateway)
+      log = create(:gateway_telemetry_log, gateway: gateway, queen_uid: gateway.uid)
+      expect(log.id).to be_an(Integer)
+    end
+  end
+
   # =========================================================================
   # CONSTANTS
   # =========================================================================

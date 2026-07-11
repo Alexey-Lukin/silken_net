@@ -1639,12 +1639,13 @@ CREATE TABLE public.gateways (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     config_sleep_interval_s integer,
-    state integer,
+    state integer DEFAULT 0 NOT NULL,
     firmware_version character varying,
     latest_voltage_mv integer,
     firmware_update_status integer DEFAULT 0 NOT NULL,
     last_attested_at timestamp without time zone,
-    helium_dev_eui character varying
+    helium_dev_eui character varying,
+    ota_started_at timestamp with time zone
 );
 
 
@@ -2628,7 +2629,8 @@ CREATE TABLE public.wallets (
     locked_balance numeric(24,6) DEFAULT 0.0 NOT NULL,
     solana_public_address character varying,
     hadron_kyc_status character varying DEFAULT 'pending'::character varying,
-    esg_retired_balance numeric(24,6) DEFAULT 0.0 NOT NULL
+    esg_retired_balance numeric(24,6) DEFAULT 0.0 NOT NULL,
+    CONSTRAINT wallets_balance_invariants CHECK (((balance >= (0)::numeric) AND (locked_balance >= (0)::numeric) AND (esg_retired_balance >= (0)::numeric) AND (locked_balance <= balance)))
 );
 
 
@@ -4904,10 +4906,10 @@ CREATE INDEX index_actuator_commands_on_user_id ON public.actuator_commands USIN
 
 
 --
--- Name: index_actuators_on_gateway_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_actuators_on_gateway_id_and_endpoint; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_actuators_on_gateway_id ON public.actuators USING btree (gateway_id);
+CREATE UNIQUE INDEX index_actuators_on_gateway_id_and_endpoint ON public.actuators USING btree (gateway_id, endpoint);
 
 
 --
@@ -5009,10 +5011,24 @@ CREATE INDEX index_bio_contract_firmwares_on_tree_family_id ON public.bio_contra
 
 
 --
+-- Name: index_bio_contract_firmwares_on_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_bio_contract_firmwares_on_version ON public.bio_contract_firmwares USING btree (version);
+
+
+--
 -- Name: index_clusters_on_geo_boundary; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX index_clusters_on_geo_boundary ON public.clusters USING gist (geo_boundary);
+
+
+--
+-- Name: index_clusters_on_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_clusters_on_name ON public.clusters USING btree (name);
 
 
 --
@@ -5208,7 +5224,7 @@ CREATE UNIQUE INDEX index_codex_realms_on_slug ON public.codex_realms USING btre
 -- Name: index_device_calibrations_on_tree_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_device_calibrations_on_tree_id ON public.device_calibrations USING btree (tree_id);
+CREATE UNIQUE INDEX index_device_calibrations_on_tree_id ON public.device_calibrations USING btree (tree_id);
 
 
 --
@@ -5310,6 +5326,13 @@ CREATE UNIQUE INDEX index_hardware_keys_on_device_uid ON public.hardware_keys US
 
 
 --
+-- Name: index_identities_on_provider_and_uid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_identities_on_provider_and_uid ON public.identities USING btree (provider, uid);
+
+
+--
 -- Name: index_identities_on_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5377,6 +5400,20 @@ CREATE INDEX index_naas_contracts_on_hadron_asset_id ON public.naas_contracts US
 --
 
 CREATE INDEX index_naas_contracts_on_organization_id ON public.naas_contracts USING btree (organization_id);
+
+
+--
+-- Name: index_organizations_on_crypto_public_address; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_organizations_on_crypto_public_address ON public.organizations USING btree (crypto_public_address);
+
+
+--
+-- Name: index_organizations_on_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_organizations_on_name ON public.organizations USING btree (name);
 
 
 --
@@ -5489,6 +5526,20 @@ CREATE INDEX index_telemetry_logs_on_tree_id_and_created_at ON ONLY public.telem
 --
 
 CREATE INDEX index_tiny_ml_models_on_tree_family_id ON public.tiny_ml_models USING btree (tree_family_id);
+
+
+--
+-- Name: index_tiny_ml_models_on_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_tiny_ml_models_on_version ON public.tiny_ml_models USING btree (version);
+
+
+--
+-- Name: index_tree_families_on_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_tree_families_on_name ON public.tree_families USING btree (name);
 
 
 --
@@ -5607,7 +5658,7 @@ CREATE INDEX index_wallets_on_organization_id_and_balance ON public.wallets USIN
 -- Name: index_wallets_on_tree_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_wallets_on_tree_id ON public.wallets USING btree (tree_id);
+CREATE UNIQUE INDEX index_wallets_on_tree_id ON public.wallets USING btree (tree_id);
 
 
 --
@@ -8040,5 +8091,6 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260711150000'),
 ('20260709140000');
 

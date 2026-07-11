@@ -362,7 +362,7 @@ RSpec.describe Wallet, type: :model do
 
       it "release_locked_funds! uses with_lock" do
         wallet = create(:tree).wallet
-        wallet.update!(locked_balance: 500)
+        wallet.update!(balance: 500, locked_balance: 500)
         expect(wallet).to receive(:with_lock).and_call_original
         wallet.release_locked_funds!(100)
       end

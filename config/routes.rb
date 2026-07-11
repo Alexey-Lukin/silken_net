@@ -22,7 +22,7 @@ Rails.application.routes.draw do
   mount Sidekiq::Web => "/sidekiq", :constraints => lambda { |req|
     user = User.find_by(id: req.session[:user_id])
     user.present? &&
-      req.session[:ps].to_s == user.password_salt&.last(10).to_s &&
+      req.session[:ps].to_s == user.password_salt.to_s.last(10) &&
       (user.role_admin? || user.role_super_admin?)
   }
 

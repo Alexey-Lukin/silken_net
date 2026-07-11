@@ -756,7 +756,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
             did: format("SNET-%08X", "0000AC11".to_i(16)),
             cluster: cluster,
             tree_family: tree_family)
-          no_key_tree.create_device_calibration!
+          no_key_tree.create_device_calibration! if no_key_tree.device_calibration.nil?
           allow(TimeSyncDownlinkWorker).to receive(:perform_async)
 
           attributes = {
@@ -789,7 +789,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
         it "returns false when tree has no hardware_key" do
           bare_tree = create(:tree, did: format("SNET-%08X", "0000AC21".to_i(16)), cluster: cluster)
-          bare_tree.create_device_calibration!
+          bare_tree.create_device_calibration! if bare_tree.device_calibration.nil?
           attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
 
           expect(service.send(:try_time_sync_recovery, bare_tree, attributes, thresholds, true)).to be(false)
@@ -1429,7 +1429,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       other_did_hex = "0000BEEF"
       other_extracted = format("SNET-%08X", other_did_hex.to_i(16))
       other_tree = create(:tree, did: other_extracted)
-      other_tree.create_device_calibration!
+      other_tree.create_device_calibration! if other_tree.device_calibration.nil?
       other_key_hex = SecureRandom.hex(16).upcase
       HardwareKey.create!(
         device_uid: other_extracted,

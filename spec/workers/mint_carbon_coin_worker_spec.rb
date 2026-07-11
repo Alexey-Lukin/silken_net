@@ -138,7 +138,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
     context "with auto-discovery flow (nil telemetry_log_id)" do
       it "finds all pending/processing transactions when telemetry_log_id is nil" do
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 5_000, tx_hash: nil)
-        wallet.update!(locked_balance: 5_000)
+        wallet.update!(balance: 5_000, locked_balance: 5_000)
 
         allow_any_instance_of(Wallet).to receive(:broadcast_update)
 
@@ -195,7 +195,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
     context "with oracle-driven flow and nil created_at_iso" do
       it "finds telemetry log without partition pruning" do
         telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
-        wallet.update!(locked_balance: 5_000)
+        wallet.update!(balance: 5_000, locked_balance: 5_000)
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
                                              locked_points: 5_000, tx_hash: nil)
 
@@ -247,7 +247,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
     context "with invalid created_at_iso format" do
       it "falls back to search without partition pruning" do
         telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
-        wallet.update!(locked_balance: 5_000)
+        wallet.update!(balance: 5_000, locked_balance: 5_000)
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
                                              locked_points: 5_000, tx_hash: nil)
 

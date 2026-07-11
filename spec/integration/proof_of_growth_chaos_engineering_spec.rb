@@ -126,7 +126,7 @@ RSpec.describe "Chaos Engineering: Proof of Growth Pipeline" do
     end
 
     it "wallet balance remains locked during reorg uncertainty" do
-      wallet.update!(locked_balance: 10_000)
+      wallet.update!(balance: 10_000, locked_balance: 10_000)
 
       # Під час Reorg — заблоковані кошти НЕ повинні розблокуватись
       # до отримання підтвердження з нового канонічного ланцюгу

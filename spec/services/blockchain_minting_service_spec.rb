@@ -401,7 +401,7 @@ end
 
       tree = create(:tree)
       wallet = tree.wallet
-      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved", locked_balance: 1000)
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved", balance: 1000, locked_balance: 1000)
 
       tx = wallet.blockchain_transactions.create!(
         amount: 100, token_type: :carbon_coin, status: :pending,
@@ -418,7 +418,7 @@ end
     it "escalates an already-:sent tx to manual_review on a post-broadcast finalize crash" do
       tree = create(:tree)
       wallet = tree.wallet
-      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved", locked_balance: 1000)
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved", balance: 1000, locked_balance: 1000)
       tx = wallet.blockchain_transactions.create!(
         amount: 100, token_type: :carbon_coin, status: :pending,
         to_address: wallet.crypto_public_address, locked_points: 1000

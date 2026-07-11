@@ -96,9 +96,15 @@
 > **📝 Розглянута альтернатива — TimescaleDB (E.37):**
 > Для IoT-телеметрії такого масштабу розглядалось розширення TimescaleDB (hypertables, continuous aggregates, автоматична компресія до 90% економії місця). **Чому відхилено для поточного TRL:**
 > - Нативний PostgreSQL RANGE partitioning повністю покриває потреби TRL 6-8 (мільйони рядків/місяць, partition pruning через `find_with_partition_pruning`)
-> - TimescaleDB додає зовнішню залежність та ускладнює деплой (Kamal Docker, Akash SDL, GCP Cloud SQL)
+> - TimescaleDB-extension **недоступний на GCP Cloud SQL** (не в allow-list; вимагає `shared_preload_libraries`) — наш prod-Postgres ([`06_02`](06_02_Akash_Network_Integration)/[`06_06`](06_06_Disaster_Recovery_and_Backup)) його фізично не прийме; шлях = ClickHouse-OLAP / Timescale Cloud окремим інстансом / pg_partman
 > - Continuous Aggregates можна замінити `AiInsight` воркером (вже реалізовано: денна агрегація)
-> - При масштабуванні за 100M+ рядків/місяць — переглянути рішення (TimescaleDB або ClickHouse)
+> - При масштабуванні за 100M+ рядків/місяць — переглянути рішення (ClickHouse або Timescale Cloud)
+
+### DB-level integrity backstops [ARCH.56]
+
+Кожна Ruby-`uniqueness`-валідація має **дзеркальний unique-індекс** (race-вікно між SELECT і INSERT валідація не закриває): `organizations.name` + `organizations.crypto_public_address` · `clusters.name` · `tree_families.name` · `identities (provider, uid)` · `actuators (gateway_id, endpoint)` · `bio_contract_firmwares.version` · `tiny_ml_models.version` · `wallets.tree_id` · `device_calibrations.tree_id` (останні два — `has_one`: друга row = phantom; `Tree.after_create` сам створює wallet+калібровку, тож фабрики специв реюзають авто-створені через `initialize_with`).
+
+Money-інваріант застраховано CHECK-констрейнтом `wallets_balance_invariants`: `balance ≥ 0 AND locked_balance ≥ 0 AND esg_retired_balance ≥ 0 AND locked_balance ≤ balance` (семантика `Wallet#available_balance = balance − locked_balance`; прод-шляхи `lock_funds!`/`lock_and_mint!` мають guard, CHECK ловить bypass через `update_all`/SQL). `blockchain_transactions.amount` = `numeric(24,6)` (був bare `numeric`). `gateways.state` = `NOT NULL DEFAULT 0` (AASM nil-state footgun). Композитний PK партиційованих таблиць вимагає `self.primary_key = "id"` у моделі — інакше `record.id` повертає масив `[id, created_at]` (TelemetryLog / GatewayTelemetryLog / BlockchainTransaction — усі три декларують).
 
 ---
 
