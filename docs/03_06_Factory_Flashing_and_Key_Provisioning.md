@@ -138,7 +138,7 @@
 **Переваги обох гілок:**
 - Компрометація одного Soldier не розкриває ключі сусідів (per-device HKDF)
 - Фізичне вилучення ключа з чіпа неможливе після RDP Lock (Гілка A) або data-zone lock (Гілка B)
-- Ключ ніколи не існує в коді репозиторію — лише в Rails Vault (`HardwareKey`, encrypted at rest)
+- Деривовані device-ключі ніколи не в репозиторії — лише `HardwareKey` (AR-encrypted у Vault); сам `master_key` custody = deploy-ENV Тір-0 (§5.A), **НЕ** Vault
 - Якщо Backend-side master key компрометовано → перевипуск всіх ключів через field re-flash (Гілка A) або re-provisioning + ATECC re-lock через RMA (Гілка B, болючіше)
 
 **Для поточного прототипу (TRL 6):** Гілка A з protected Flash sector. Гілка B активується перед першим mass production batch (рішення прив'язане до BOM freeze, cross-ref [`07_02 §8.1`](07_02_Unit_Economics_and_BOM)).
@@ -194,10 +194,11 @@ STEP 1: Генерація MASTER KEY (одноразово, до виробни
 
 Backend (Rails):
   master_key = SecureRandom.bytes(32)       # CSPRNG, 256 bits
-  # Зберегти у HardwareKey master record (id: 0, device_uid: "MASTER")
-  # AR Encryption: at-rest encryption у Vault (HardwareKey#aes_key_hex)
+  # Custody СЬОГОДНІ: master → deploy-ENV PROVISIONING_MASTER_KEY (Тір-0, §5.A);
+  #   fetch = EnvAdapter (master_key_source.rb) + boot-guard SEC.9. НЕ HardwareKey-Vault-record
+  #   (той тримає лише ДЕРИВОВАНІ device-ключі, §2).
   # ⚠️ НІКОЛИ не комітити master_key у репозиторій!
-  # Зберегти у Bitwarden / 1Password / HashiCorp Vault (апаратний HSM у production)
+  # Висхідні тіри (Vault/Bitwarden → KMS-MAC pre-mainnet → HSM >1000 units) — §5.A ranking
 
 ═══════════════════════════════════════════════════════════════════════
 STEP 2: Factory Flashing (конвеєр на заводі)
@@ -797,7 +798,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 | Orchestrator | `app/services/factory_flashing/session.rb` | ✅ `ActiveRecord::Base.transaction` — failure rolls back HardwareKey + audit writes разом; `PreflightError` для non-approved sessions / missing device / unavailable master key. **[FW.54] Wrong-board guard**: live-режим ганяє `preflight_commands` і звіряє паспорт плати (`UidReadout`) з `trees.silicon_uid_hex` ДО деривації/першого `-w32` — чужа плата → `WrongBoardError`, навіть HardwareKey не матеріалізується (dry-run/безпаспортні: skip). Preflight-ключ НЕ відкидається: `@master_key` → `HardwareKeyService.provision` / `OtaHmacKeyService.fetch_for` / `SeedDerivation.derive_seed` параметром (SEC.3 DI; runtime-викликачі цих сервісів лишаються на ENV-fallback) |
 | Operator CLI | `lib/tasks/factory.rake` | ✅ `factory:flash[device_uid,batch_id,gilka,operator_id,supervisor_id,firmware_version]` — **[FW.54] Tree: device_uid = 24-hex silicon UID** (→ `TreeResolver`; create-гілка = `CLUSTER_ID`+`TREE_FAMILY_ID` env; голий `SNET-` DID лише для дерева з уже прив'язаним паспортом); Gateway: uid як досі (`ATECC_SERIAL` env для Гілки B, `RDP_LEVEL` env override) → `factory:approve[session_id]` (**mandatory `SUPERVISOR_PASSWORD` env — супервайзер автентифікується власним паролем, SEC.3**) → `factory:execute[session_id]` (`EXECUTE=1` для real subprocess) |
 
-> **[SEC.3] Authenticated 2-Person approval:** `factory:approve` вимагає `SUPERVISOR_PASSWORD` — `ProvisioningSession#approve_with_credentials!` верифікує його через `supervisor.authenticate` (Argon2id). Оператор може *назвати* супервайзера, але НЕ схвалить сесію без того, щоб супервайзер фізично ввів власний пароль (закрито колишній skippable `SUPERVISOR_ID` env-match). **Сирий `approve!` (Rails console) теж закрито кодом (2026-06-15):** перехід `approve` має guard `credentials_verified?`, що true лише всередині `approve_with_credentials!` після успішної Argon2id-автентифікації → console self-approve неможливий (`AASM::InvalidTransition`). **Залишок — суто операційний:** raw-SQL / object-manipulation (`update_column` / `instance_variable_set`) обходить будь-який in-process guard → межа §5.A access-control (master-key лише `super_admin` + MFA), не код.
+> **[SEC.3] Authenticated 2-Person approval:** `factory:approve` вимагає `SUPERVISOR_PASSWORD` — `ProvisioningSession#approve_with_credentials!` верифікує його через `supervisor.authenticate` (Argon2id). Оператор може *назвати* супервайзера, але НЕ схвалить сесію без того, щоб супервайзер фізично ввів власний пароль (закрито колишній skippable `SUPERVISOR_ID` env-match). **Сирий `approve!` (Rails console) теж закрито кодом (2026-06-15):** перехід `approve` має guard `credentials_verified?`, що true лише всередині `approve_with_credentials!` після успішної Argon2id-автентифікації → console self-approve неможливий (`AASM::InvalidTransition`). **Залишок — суто операційний:** raw-SQL / object-manipulation (`update_column` / `instance_variable_set`) обходить будь-який in-process guard → межа §5 access-control (master-key лише `super_admin` + MFA), не код.
 
 **Test coverage:** RSpec — `spec/models/provisioning_session_spec.rb` (AASM/validations + `approve_with_credentials!`), `spec/services/factory_flashing/*` (вкл. `tree_resolver_spec` — чотири долі кремнію; execute-path шим з UID-verify pass/wrong-board), `spec/integration/factory_flashing_e2e_spec.rb` (Rake trio: one-pass UID→Tree→ключі, firmware-equivalent HKDF, legacy-DID abort). Counts → suite.
 
@@ -956,6 +957,19 @@ MaintenanceRecord.create!(
 - RDP Level 1 відразу після Flash write
 
 **Перехід на Гілка B** активується перед першим mass production batch (рішення прив'язане до BOM freeze — cross-ref [`07_02 §8.1`](07_02_Unit_Economics_and_BOM), SEC.6, ARCH.42).
+
+### 5.A. Custody-тір ranking — `PROVISIONING_MASTER_KEY` storage (честь про поточний тір)
+
+> Дім ранжування custody самого `master_key` (НЕ деривованих `HardwareKey` — ті AR-encrypted у Vault, §2). Референситься [`06_04 §5.8`](06_04_Secrets_Checklist) (rotation) + §2 (storage). **Чесність (SEC.22):** master сьогодні на НАЙНИЖЧОМУ тірі — deploy-ENV plaintext; висхідні тіри = план, не поточність.
+
+| Тір | Custody | Стан сьогодні | master у пам'яті |
+|-----|---------|---------------|-------------------|
+| **0 · Direct-ENV** (найнижчий) | deploy-ENV `PROVISIONING_MASTER_KEY`; `EnvAdapter` (`master_key_source.rb`) + boot-guard SEC.9 | ✅ **єдиний живий шлях** | plaintext у `/proc/<pid>/environ`, provider-visible (SEC.22) |
+| **1 · Vault / secret-manager** | Bitwarden/1Password/HashiCorp; `BitwardenAdapter` | 🟡 skeleton (`NotImplementedError`) | at-rest enc, але master у RAM інструменту при fetch |
+| **2 · KMS-MAC** | GCP-KMS Expand-only HKDF (backend+firmware), keyring `silken-mac-ew1` | 🔗 pre-mainnet SEC.22 → [`06_04 §5.7`](06_04_Secrets_Checklist) | master **НІКОЛИ** не в процесі (деривація в KMS) |
+| **3 · HSM injection** (найвищий, >1000 units) | AWS CloudHSM / Thales Luna; master не покидає HSM | 🌿 mass-production | master у RAM інструменту не з'являється |
+
+**Master-тір ↑ = менша fleet-forge blast-radius** (master = HKDF-корінь усіх anti-fraud інваріантів флоту до re-flash — [`06_04 §5.8`](06_04_Secrets_Checklist)). Деривовані device-ключі AR-encrypted у Vault незалежно від master-тіру (§2 — це ІНШИЙ ключ).
 
 ---
 

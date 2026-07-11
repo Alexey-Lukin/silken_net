@@ -12,7 +12,9 @@ RSpec.describe "config.alloy declares the 3-process scrape topology (S2.4)" do #
   # __address__ → process — the load-bearing map (06_03 §2.9): web never sees worker increments.
   let(:targets) do
     text = File.read(Rails.root.join("deploy/akash/config.alloy"))
-    text.scan(/\{\s*"__address__"\s*=\s*"([^"]+)",\s*"process"\s*=\s*"([^"]+)"\s*\}/).to_h
+    # \s spans newlines, and ,? tolerates the trailing comma `alloy fmt` adds in the multi-line
+    # form (`"process" = "web",\n}`) — so a legit reformat can't false-alarm the guard.
+    text.scan(/\{\s*"__address__"\s*=\s*"([^"]+)",\s*"process"\s*=\s*"([^"]+)",?\s*\}/).to_h
   end
 
   it "scrapes exactly web:80 / job:9394 / coap:9395 with matching process labels" do
