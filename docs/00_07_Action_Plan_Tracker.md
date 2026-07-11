@@ -865,11 +865,13 @@
 - [ ] 🤖 `rotp` + `otp_secret` (encrypted) + `MfaSetupsController` (QR/provisioning_uri) + verify-on-login + toggle назад
 - [ ] ⚖️ WebAuthn / hardware-key як сильніша альтернатива TOTP — рішення чи потрібно (опц.)
 
-#### E.20 — Forester Guild: ForestBountyService (PoPhW fallback oracle + ranger economy)
-- **P2** · 🤖+👤 · ⚪ · → `04_02 §Forester Guild`
-- **Стан:** ⏸️ **DEFER до Phase 2 (founder 2026-07-03):** YAGNI — реальної ranger-мережі нема, `ForestBountyService` без неї = код попереду реальності (guild-маркетплейс = Phase 2 «мобільний додаток для лісників», `00_01 §4`). Резервний Оракул через фізичний PoPhW (рейнджер+дрон) + bounty-економіка (GPS/EXIF/IPFS→USDC, anti-Sybil); design готовий (`04_02 §Forester Guild`). **Поглинув S6.10** (audit §04 2026-07-04 merge — MaintenanceRecord ranger↔bounty task-matching = фасет тієї ж guild-роботи, той самий блокер/виконавець). **Блокер** для дрон-North-Star satellite-obscured fallback (ex-`E.41` §🗄️ — сам severity-фікс shipped 2026-07-03, Field-Audit-ескалація незалежна від E.20; `04_02 §11`) + BIZ.13-Модель-B. Enabler BIZ.13: PoPhW→operator-bond + guild-sponsor ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)). **Зчеплено:** E.66 `finalize_spend!`-prune (escrow-примітив, що E.20 реюзнув би) — при E.20-go воскресає з `[E.20]`-маркером.
+#### E.20 — Forester Guild: ForestBountyService (PoPhW fallback oracle + ranger economy + mobile-client)
+- **P2** · 🤖+👤 · 🌿 · → `04_02 §Forester Guild`
+- **Стан:** ⏸️ **DEFER до Phase 2 (founder 2026-07-03):** YAGNI — реальної ranger-мережі нема, `ForestBountyService` без неї = код попереду реальності (guild-маркетплейс = Phase 2 «мобільний додаток для лісників», `00_01 §4`). Резервний Оракул через фізичний PoPhW (рейнджер+дрон) + bounty-економіка (GPS/EXIF/IPFS→USDC, anti-Sybil); design готовий (`04_02 §Forester Guild`). **Поглинув S6.10** (audit §04 2026-07-04 — MaintenanceRecord ranger↔bounty task-matching = фасет тієї ж guild-роботи) **і ARCH.16** (vilize 2026-07-11 — mobile-app-для-foresters = той самий roadmap-рядок `00_01 §4` і той самий Phase-2-блокер). **Mobile-фасет — прихований актив:** дашборд уже mobile-first (drawer/card-flip/clamp/safe-area, `04_04`), а bespoke offline-first service worker УЖЕ написаний (`app/views/pwa/service-worker.js`: IndexedDB-черга offline-POST на `maintenance_records`, Background Sync + iOS-fallback, фейк-202 «queued») — повністю ІНЕРТНИЙ: не реєструється ніде, pwa-routes вимкнені, `manifest.json.erb` = стокова заглушка. ⚠️ Активація SW = money/integrity-поверхня (offline-фейк-202 → replay у bounty-шлях) — HARD-gate (idempotent sync + replay-safety) перед будь-яким увімкненням. **Блокер** для дрон-North-Star satellite-obscured fallback (ex-`E.41` §🗄️ — сам severity-фікс shipped 2026-07-03, Field-Audit-ескалація незалежна від E.20; `04_02 §11`) + BIZ.13-Модель-B. Enabler BIZ.13: PoPhW→operator-bond + guild-sponsor ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)). **Зчеплено:** E.66 `finalize_spend!`-prune (escrow-примітив, що E.20 реюзнув би) — при E.20-go воскресає з `[E.20]`-маркером.
 - [ ] 🤖 `ForestBountyService` — bounty matching ranger↔alert + USDC payout
 - [ ] 🤖 [ex-S6.10] ranger↔bounty task-assignment matching + scoring (`FOR UPDATE NOWAIT`, GPS/EXIF/IPFS→USDC, anti-Sybil) — `MaintenanceRecord`-driven; reputation-scaling operator-bond (BIZ.13 [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy))
+- [ ] 🤖 [ex-ARCH.16] guild-client / installable PWA: wire manifest+SW routes, реєстрація SW у `DashboardLayout`, brand-fix manifest — ПІСЛЯ HARD-gate offline-sync (integrity ↑)
+- [ ] ⚖️ активувати PWA-слайс РАНІШЕ Phase 2? (актив готовий, блокер нульовий технічно — але цінність без польових юзерів ≈0, а integrity-gate обов'язковий; product-рішення)
 - [ ] 👤 онбординг рейнджерів Forester Guild
 
 #### ARCH.31 — SOP-в-Phlex inline UI для EwsAlert
@@ -1005,11 +1007,6 @@
 - **P3** · 🤖 · 🌿 · → `04_02`
 - **Стан:** Far-horizon — export у Verra / Gold Standard / UNFCCC. Gated BIZ.9 (незалежний carbon-методолог) + реальні реєстри + перший клієнт. Канон `04_02`.
 - [ ] 🤖 registry-export адаптери (pre-commercial)
-
-#### ARCH.16 — Mobile app для foresters
-- **P3** · 🤖+👤 · 🌿 · → `04_04`
-- **Стан:** Far-horizon — Phase 2 product roadmap ([`00_01 §4`]). Канон `04_04`.
-- [ ] 🤖+👤 mobile-app (Phase 2)
 
 #### E.33 — AlertNotification rate limits
 - **P3** · 🤖 · 🌿 · → `04_02`
@@ -1666,6 +1663,7 @@ _Решта DOC-T resolved → §🗄️ нижче. Нову SSOT doc-drift / t
 | ID | Пункт | Канон |
 |----|-------|-------|
 | E.41 | Fire-event 48h latency → severity-гілка ✅ 2026-07-03 (critical+obscured → `escalate_obscured_critical_fire!`: негайний Field-Audit + HOLD payout; non-critical → orbital retry; spec покриває обидва плеча) — residual North-Star дрон-upgrade канонізовано `[PLANNED]` і живе в **E.20** (§04 vilize-архів 2026-07-11) | `04_02 §11`, `05_01` |
+| ARCH.16 | Mobile app для foresters — ЗЛИТО в **E.20** 2026-07-11 (той самий roadmap-рядок `00_01 §4` «мобільний додаток для лісників», той самий Phase-2-блокер; прецедент S6.10; guild-client живе `[ex-ARCH.16]`-чекбоксом + PWA-актив-нотаткою в E.20) | `04_02`, `04_04` |
 | S6.10 | ranger↔bounty task-assignment matching (`MaintenanceRecord`-driven) — ЗЛИТО в **E.20** 2026-07-04 (фасет тієї ж guild-роботи, той самий блокер/виконавець; matching живе `[ex-S6.10]`-чекбоксом у E.20) | `04_02` |
 | S2.1 | Post-deploy метрик-верифікація — ЗЛИТО в **S2.4** 2026-07-10 (up-alert `sn-alert-scrape-target-down` покрив «3 таргети живі» безперервно; лишився унікальний smoke «job-серії ≠ 0») | `06_03 §2.9` |
 | E.5 | CoAP intake scale-drabina — ЗЛИТО в **ARCH.2** 2026-07-11 (Rust/Go Ingress Proxy + Kafka = той самий intake-scale-шар; §06 vilize-merge) | `06_08` |
