@@ -183,8 +183,10 @@ module Celo
       # (automated daily). Backfill старого date (rdate < today−2д) мав би created_at ПОЗА
       # цим вікном → dedup СЛІПИЙ → silent double-pay. Шлях наразі недосяжний (нема backfill-
       # UI), але tripwire перетворює майбутню silent-стелю на гучний fail ДО появи backfill.
-      if rdate.to_date < 2.days.ago.to_date
-        raise "ARCH.64#2: stale reward_date #{rdate} (>2д тому) поза dedup-safe-вікном — " \
+      # `<=` (не `<`): dedup-вікно [rdate, rdate+2д) ВИКЛЮЧАЄ rdate+2 → саме на межі age=2
+      # (виконання у rdate+2) created_at випадає з вікна → dedup сліпий. Межа теж небезпечна.
+      if rdate.to_date <= 2.days.ago.to_date
+        raise "ARCH.64#2: stale reward_date #{rdate} (≥2д тому) поза dedup-safe-вікном — " \
               "backfill потребує розширеного dedup-вікна (00_07 ARCH.64), інакше double-pay ризик"
       end
 

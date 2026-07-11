@@ -131,6 +131,18 @@ RSpec.describe Celo::CommunityRewardService do
       stale_svc = described_class.new(cluster, 3.days.ago.to_date)
       expect { stale_svc.send(:reward_already_sent?) }.to raise_error(/ARCH\.64#2.*stale reward_date/)
     end
+
+    # [ARCH.64#2 boundary] Межа age=2 (rdate РІВНО 2 дні тому): dedup-вікно [rdate, rdate+2д)
+    # виключає rdate+2, тож і межа небезпечна → `<=` мусить raise (off-by-one guard).
+    it "raises on a reward_date EXACTLY 2 days ago (dedup-window boundary)" do
+      boundary_svc = described_class.new(cluster, 2.days.ago.to_date)
+      expect { boundary_svc.send(:reward_already_sent?) }.to raise_error(/ARCH\.64#2.*stale reward_date/)
+    end
+
+    it "does NOT raise on the daily-path reward_date (yesterday, age=1)" do
+      daily_svc = described_class.new(cluster, Date.yesterday)
+      expect { daily_svc.send(:reward_already_sent?) }.not_to raise_error
+    end
   end
 
   describe "#reward_community! — failure paths (ARCH.50 rescue split)" do
