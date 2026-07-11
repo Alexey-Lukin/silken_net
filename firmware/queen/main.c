@@ -359,6 +359,7 @@ static UartRxRing        uart_rx_ring;
 static volatile uint32_t uart_rx_wraps;   // TC-переривання = повний оберт кільця
 static DMA_HandleTypeDef hdma_usart1_rx;
 static char     coap_server_ip[16];     // [FW.56] CDNSGIP-кеш (CCOAPNEW хоче IP, не домен)
+static uint8_t  coap_consec_fail;       // [FW.58] flush-провали ПІДРЯД → re-resolve (reset на success)
 static uint16_t coap_mid;               // [FW.56] CoAP Message-ID наших PUT'ів
 
 // === LoRa RX Ring Helpers ================================================
@@ -560,11 +561,16 @@ static uint8_t   queen_ring_mounted = 0;
 // доставки (consume — лише після send_success: power-cut → дубль, не втрата).
 static uint8_t   ring_inflight = 0;
 
-// Слот CIFO → 21-байтний wire-запис (бітове дзеркало пакувальника
-// Flush_Cache_To_Rails: DID:4 BE + |RSSI| + payload:16).
-// ⚠️ [FW.2] При спільному фліпі з CCM: запис 21B → 29B (fmt-aware,
-// rx_route.h Queen_Ccm_Build_Record_From_Cache) + FLASH_RING_RECORD_SIZE —
-// ревізувати ДО фліпа ARCH35_RING_ENABLED у CCM-ері (00_07 FW.2).
+// Слот CIFO → wire-запис (бітове дзеркало пакувальника Flush_Cache_To_Rails:
+// DID:4 BE + |RSSI| + payload:16 = 21B у ECB-ері).
+// ⚠️ [FW.2] На спільному фліпі з CCM запис росте до air+1 (= QUEEN_CCM_RECORD_LEN,
+// rev2.1 = 31B; rx_route.h Queen_Ccm_Build_Record_From_Cache) + Serialize стає
+// fmt-aware — FLASH_RING_RECORD_SIZE (flash_ring.h:52) ревізувати ДО фліпа. Guard ↓ ловить.
+#if FW2_CCM_ENABLED
+_Static_assert(FLASH_RING_RECORD_SIZE >= QUEEN_CCM_RECORD_LEN,
+               "FW.2 ring: на CCM-ері FLASH_RING_RECORD_SIZE мусить вмістити air+1 — інакше "
+               "Ring_Serialize обріже MIC+EMA-delta_t. Підняти flash_ring.h:52 21u -> QUEEN_CCM_RECORD_LEN.");
+#endif
 static void Ring_Serialize_Slot(const EdgeCache *slot, uint8_t out[FLASH_RING_RECORD_SIZE])
 {
     out[0] = (uint8_t)(slot->uid >> 24);
@@ -1901,8 +1907,17 @@ void Flush_Cache_To_Rails(void)
     }
 
     // [ARCH.54 Шар 1] Слід провалу — у НАСТУПНИЙ health-блок (цей конверт
-    // уже підписаний): сатурований лічильник розмов, де всі retry впали.
-    if (!send_success && g_coap_fail_count < 255u) g_coap_fail_count++;
+    // уже підписаний): сатурований lifetime-лічильник розмов, де всі retry впали.
+    if (!send_success) {
+        if (g_coap_fail_count < 255u) g_coap_fail_count++;
+        // [FW.58] N провалів ПІДРЯД на резольвленому IP → мертвий → інвалідуємо
+        // CDNSGIP-кеш → наступний flush ре-резолвить (A-запис flip = zero-infra
+        // failover, інакше довбли б мертвий IP до IWDG-ребута). Строго fail-гілка.
+        if (Coap_Reresolve_Due(++coap_consec_fail)) {
+            coap_server_ip[0] = '\0';
+            coap_consec_fail  = 0;
+        }
+    }
 
     // [FW.51] Звільняємо кеш ЛИШЕ після підтвердженого send. Якщо всі retry
     // впали — слоти лишаються активними, наступний флеш повторить спробу
@@ -1911,6 +1926,7 @@ void Flush_Cache_To_Rails(void)
     // packed_count активних): якщо пакування обірвалось по місткості буфера,
     // решта мусить пережити флеш.
     if (send_success) {
+        coap_consec_fail = 0;   // [FW.58] стрік «N ПІДРЯД» скидається живим uplink'ом
         // [ARCH.34] Живий uplink — SOS-годинник назад на нуль.
         g_last_uplink_ok_tick = HAL_GetTick();
         uint8_t cleared = 0;

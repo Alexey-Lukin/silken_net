@@ -512,6 +512,15 @@ TEST(test_resolve_host_urc_before_and_after_ok) {
     ASSERT_FALSE(Sim7070_Resolve_Host(&io3, &e, "api.silkennet.com", ip, sizeof ip));
 }
 
+/* [FW.58] Предикат re-resolve: стрік провалів < поріг → тримаємо IP; >= поріг →
+ * інвалідація CDNSGIP-кешу (наступний flush ре-резолвить — A-запис flip failover). */
+TEST(test_fw58_reresolve_predicate) {
+    ASSERT_FALSE(Coap_Reresolve_Due(0u));
+    ASSERT_FALSE(Coap_Reresolve_Due((uint8_t)(COAP_RERESOLVE_THRESHOLD - 1u)));
+    ASSERT_TRUE(Coap_Reresolve_Due(COAP_RERESOLVE_THRESHOLD));
+    ASSERT_TRUE(Coap_Reresolve_Due(255u));
+}
+
 /* ════════════════════════════════════════════════════════════════════ */
 int main(void)
 {
@@ -554,6 +563,7 @@ int main(void)
     RUN(test_conversation_no_urc_cid_falls_back_to_zero);
     RUN(test_conversation_lowercase_nmi_hex);
     RUN(test_resolve_host_urc_before_and_after_ok);
+    RUN(test_fw58_reresolve_predicate);
 
     printf("\n════════════════════════════════════════════════════════════════════\n");
     printf("Passed: %d, Failed: %d\n", tests_passed, tests_failed);

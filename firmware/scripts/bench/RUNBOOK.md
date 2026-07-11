@@ -73,6 +73,7 @@
 | 5.2 Живі транскрипти | minicom-лог: ATE0/AT/CNMP/CPSMS/CEDRXS + CDNSGIP + CCOAPNEW/SEND/DEL | лог ≡ скриптовані транскрипти `test_at_engine.c` (URC-порядки, таймінги) |
 | 5.3 e2e PUT → Rails | повний flush на staging CoAP-intake; вердикт з боку Брами — `bin/coap_smoke --host <staging>` (freeze-contract semantic smoke, INF.6: ловить phantom-delivery, не лише liveness) | `+CCOAPNMI` 2.xx; запис у `TelemetryLog`; smoke зелений |
 | 5.4 DMA-вуха кремнію | `06_uart_dma_ears.py --plan`: USB-UART замість модема + pyOCD attach (producer-лічильники wraps/NDTR по SWD; логіка кільця host-доведена `test_uart_rx_ring.c`) | вердикт ✅ ROUTE/FEED/WRAP/BOUNDARY: DMAMUX-роутинг USART1_RX, TC = рівно +1 wrap, межовий байт повного кільця не губиться/не двоїться |
+| 5.5 **FW.58 DNS-failover** | на живому SIM7070 фліп A-запису `api.silkennet.com` (staging DNS) під час активної Королеви; спостерігати re-resolve після N=3 підряд провалів flush (без IWDG-ребута) | `coap_server_ip` оновлюється на новий IP, flush відновлюється; host-дім `test_fw58_reresolve_predicate` |
 
 ## 6. Решта фізики (по item-ах 00_07)
 

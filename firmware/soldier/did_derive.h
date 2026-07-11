@@ -16,7 +16,7 @@
 // Мікс — murmur3-фінalizer ланцюгом по трьох словах UID: повний avalanche
 // (один біт UID перемішує весь DID), чиста цілочисельна арифметика,
 // біт-у-біт відтворювана хостом (SilkenNet::DidDerivation — Ruby-дзеркало;
-// golden-вектори заморожені обабіч: test_did_derive.c ↔
+// golden-вектори заморожені обабіч: test_soldier_logic.c (golden g1-g4) ↔
 // spec/services/silken_net/did_derivation_spec.rb).
 //
 // DID == 0 зарезервовано ефіром під Королеву-Сентінель (03_02 §7) — нуль

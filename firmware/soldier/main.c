@@ -124,6 +124,15 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #define OTA_VM_ERR_STREAK_DR0_SHIFT 8
 #define OTA_VM_ERR_STREAK_MASK      0x03u
 #define SEC20_VM_ERROR_FALLBACK_N   3u
+// [FW.54 guard] DR0 bit-map compile-time non-overlap: panic[31:16] | rsv[15:10] |
+// vm_err_streak[9:8] | acoustic[7:0]. Нова фіча, що вкраде слот (§2.3.2 vacant [15:10]
+// або DR7), впаде ТУТ на компіляції — не тихо перекриє money-path-лічильник у полі.
+_Static_assert(
+    (((uint32_t)PANIC_COUNTER_MASK     << PANIC_COUNTER_DR0_SHIFT)     & 0xFFu) == 0u &&
+    (((uint32_t)OTA_VM_ERR_STREAK_MASK << OTA_VM_ERR_STREAK_DR0_SHIFT) & 0xFFu) == 0u &&
+    (((uint32_t)PANIC_COUNTER_MASK     << PANIC_COUNTER_DR0_SHIFT)     &
+     ((uint32_t)OTA_VM_ERR_STREAK_MASK << OTA_VM_ERR_STREAK_DR0_SHIFT)) == 0u,
+    "DR0 bit-map collision — panic[31:16]/vm_streak[9:8]/acoustic[7:0] перетнулись; ревізувати 03_01 §2");
 #define PANIC_COUNTER_MAX         0xFFFFu     // Saturating maximum
 #define PANIC_COUNTER_PAD_HI      14          // panic_payload[14] = counter MSB
 #define PANIC_COUNTER_PAD_LO      15          // panic_payload[15] = counter LSB
@@ -1671,7 +1680,9 @@ void Write_OTA_Contract_To_Flash(const uint8_t *data, uint16_t size)
 // [FW.46 Шлях A] Прототипи radio-колбеків для events-реєстрації в main():
 // тіла живуть унизу файла (ISR-зона), Semtech-драйвер кличе їх через таблицю.
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr);
-void OnCadDone(bool channelActivityDetected);
+#if ARCH26_CAD_ENABLED
+void OnCadDone(bool channelActivityDetected);  // ARCH.26 L3 — гейт дзеркалить дефініцію `OnCadDone` + реєстрацію
+#endif
 
 /* USER CODE END 0 */
 
@@ -1907,7 +1918,12 @@ int main(void)
   // перевіряє перед викликом).
   static RadioEvents_t radio_events;
   radio_events.RxDone  = OnRxDone;
+#if ARCH26_CAD_ENABLED
+  // ARCH.26 L3: реєстрація йде ЛИШЕ з дефініцією `OnCadDone` — інакше ungated-референс
+  // gated-функції зривав би лінк повного .elf на FW.46 board-freeze день (той самий,
+  // що фліпає гейт). Gate off → CadDone лишається NULL (static zero-init), драйвер її не кличе.
   radio_events.CadDone = OnCadDone;
+#endif
   Radio.Init(&radio_events);
   Radio.SetChannel(868000000); // Налаштовуємо на 868 МГц
 

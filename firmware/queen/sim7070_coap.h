@@ -135,4 +135,17 @@ static inline int Sim7070_Coap_Put(Sim7070Io *m, AtEngine *e,
     return confirmed;
 }
 
+/* [FW.58] Скільки flush-РОЗМОВ поспіль (де ВСІ retry впали) до інвалідації
+ * CDNSGIP-кешу. Мертвий CoAP-IP (A-запис flip на бекенді = єдиний zero-infra
+ * глобальний failover) інакше довбеться до IWDG-ребута. 3 розмови × COAP_MAX_RETRIES
+ * = ~9 доказів «IP мертвий» перед витратою DNS-раунду. Стрік окремий від
+ * g_coap_fail_count (той — lifetime health-одометр), reset на першому success. */
+#ifndef COAP_RERESOLVE_THRESHOLD
+#define COAP_RERESOLVE_THRESHOLD 3u
+#endif
+static inline int Coap_Reresolve_Due(uint8_t consec_fail)
+{
+    return consec_fail >= COAP_RERESOLVE_THRESHOLD;
+}
+
 #endif /* SILKEN_SIM7070_COAP_H */

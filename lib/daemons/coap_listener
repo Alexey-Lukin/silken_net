@@ -10,7 +10,6 @@ $stdout.sync = true
 
 # Порт за замовчуванням для CoAP
 PORT = ENV.fetch("COAP_PORT", 5683).to_i
-MAX_PACKET_SIZE = 2048
 
 socket = UDPSocket.new
 socket.bind("0.0.0.0", PORT)
@@ -40,47 +39,13 @@ end
 while running
   begin
     if IO.select([ socket ], nil, nil, 1)
-      data, sender = socket.recvfrom_nonblock(MAX_PACKET_SIZE)
+      data, sender = socket.recvfrom_nonblock(CoapGate::MAX_PACKET_SIZE)
       gateway_ip = sender[3]
-      timestamp = Time.current
-
-      # Ядро мовчки тне UDP понад буфер: обрізаний батч лишається валідним
-      # CoAP і у воркері впав би на MIC як «fraud» (P0-алерт полює на атаку,
-      # якої нема). bytesize == буфер — прагматичний proxy трункейта; дроп
-      # без відповіді → Королева тримає кеш і ретраїть (FW.51-семантика).
-      if data.bytesize == MAX_PACKET_SIZE
-        SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "oversized" })
-        puts "⚠️  [#{timestamp.strftime('%T')}] Датаграма ≥#{MAX_PACKET_SIZE}б від #{gateway_ip} — обрізана ядром, дроп"
-        next
-      end
-
-      result = CoapServerPdu.handle_telemetry_datagram(data)
-
-      # Лічильники межі: enqueued (тут) ↔ success (у воркері) — дельта між
-      # ними = втрати на ділянці Redis→обробка; malformed/unknown_route
-      # видимі ЛИШЕ звідси (до воркера такі датаграми не доходять).
-      case result.status
-      when :telemetry_batch
-        encoded_payload = Base64.strict_encode64(result.payload)
-        begin
-          UnpackTelemetryWorker.perform_async(encoded_payload, gateway_ip, result.gateway_uid)
-        rescue StandardError
-          # [PERF.1] Redis-enqueue-fail був невидимий: generic-rescue нижче
-          # ковтав без метрики → тихий drop пакетів під навантаженням.
-          SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "enqueue_error" })
-          raise
-        end
-        SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "enqueued" })
-        puts "📥 [#{timestamp.strftime('%T')}] Пакет від #{result.gateway_uid || gateway_ip} прийнято (#{result.payload.bytesize}б)"
-      when :unknown_route
-        SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "unknown_route" })
-        puts "⚠️  [#{timestamp.strftime('%T')}] Відхилено (4.04): невідомий маршрут від #{gateway_ip}"
-      when :malformed
-        SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "malformed" })
-        puts "⚠️  [#{timestamp.strftime('%T')}] Нечитабельний датаграм від #{gateway_ip} (#{data.bytesize}б) — RST"
-      end
-
-      socket.send(result.reply, 0, gateway_ip, sender[1]) if result.reply
+      # [FW.56] Тіло обробки — у тестованому CoapGate.handle_datagram: enqueue
+      # живе ТАМ, перед поверненням reply, тож ACK 2.04 структурно не випередить
+      # черги (FW.51). Демон лишається select-лупом + trap + metrics-boot.
+      reply = CoapGate.handle_datagram(data: data, gateway_ip: gateway_ip)
+      socket.send(reply, 0, gateway_ip, sender[1]) if reply
     end
   rescue Errno::EAGAIN, Errno::EWOULDBLOCK
     retry
