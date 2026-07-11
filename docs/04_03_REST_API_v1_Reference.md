@@ -65,8 +65,9 @@ Authorization: Bearer <token>
 ### 1.2 Session Cookie (для браузерного Dashboard)
 
 - Встановлюється автоматично при вході через форму `POST /api/v1/login` (формат HTML).
-- Cookie-based session (`session[:user_id]`).
+- Cookie-based session (`session[:user_id]` + **[SEC.16]** salt-stamp `session[:ps]` = `password_salt.last(10)`): `authenticate_user!` звіряє stamp — зміна пароля миттєво гасить усі інші cookie-сесії (дзеркало salt-bound `api_access`-токена; раніше викрадений cookie переживав password-reset до 14 днів).
 - Захист від Session Fixation: `reset_session` перед встановленням нової сесії.
+- Rack::Attack `account_security/ip` (10/хв на PATCH/DELETE `/api/v1/account_security*`) — step-up brute-force guard підбору `current_password` **[SEC.16]**.
 
 ### 1.3 Публічні ендпоінти (без автентифікації)
 
@@ -112,7 +113,8 @@ POST /api/v1/auth/m2m_token
 - `spec/requests/api/v1/m2m_auth_controller_spec.rb` — некоректний Ed25519 підпис → 401; nonce replay → 401; Redis unavailable → DB fallback (Solid Cache)
 - `spec/requests/api/v1/oracle_callbacks_controller_spec.rb` — replay callback → 409 Conflict; state machine guard
 - `spec/requests/api/v1/actuators_controller_spec.rb` — відсутній `Idempotency-Key` → 400; ідемпотентний повтор → 202; `command_status` 404 для cross-org команди; forester-guard
-- `spec/requests/api/v1/account_security_controller_spec.rb` — **MFA disable step-up** (wrong password / missing password / OAuth-only bypass); **session revocation на password change** (keeps current IP+UA / fallback на newest row)
+- `spec/requests/api/v1/account_security_controller_spec.rb` — **MFA disable step-up** (wrong password / missing password / OAuth-only bypass); **session revocation на password change** (keeps current IP+UA / fallback на newest row); **[SEC.16] salt-bound cookie** (stale cookie після чужого password-change → 401; ініціатор зміни лишається залогіненим)
+- `spec/requests/sidekiq_web_spec.rb` — **[ARCH.61]** `/sidekiq` route-constraint (анонім/non-admin/stale-cookie → 404; admin → 200)
 - `spec/requests/api/v1/alerts_controller_spec.rb` — enum allow-list для `status`/`severity` (fail-fast + happy "resolved")
 - `spec/requests/api/v1/blockchain_transactions_controller_spec.rb` — enum allow-list для `status`/`token_type` (fail-fast)
 - `spec/requests/api/v1/firmwares_controller_spec.rb` — bytecode_payload size cap (422), `target_type` allow-list (400), cluster tenant guard (404)
@@ -214,7 +216,7 @@ POST /api/v1/auth/m2m_token
 | **🛡️ Безпека Акаунту** | | | | | |
 | 9 | GET | `/api/v1/account_security` | `account_security#show` | 🔑 Auth | MFA-стан, прив'язані identity |
 | 10 | PATCH | `/api/v1/account_security/mfa` | `account_security#toggle_mfa` | 🔑 Auth | Увімкнути/вимкнути MFA-прапорець. **Disable вимагає `current_password` (step-up auth)**, окрім OAuth-only акаунтів. ⚠️ **[S6.21]** прапорець поки НЕ enforced на login (verify-on-login відсутній) — dashboard-toggle прибрано, лишився чесний wip-caveat; повний TOTP-контур → [`00_07` S6.21](00_07_Action_Plan_Tracker). |
-| 11 | PATCH | `/api/v1/account_security/password` | `account_security#change_password` | 🔑 Auth | Змінити пароль. **Усі інші Session-row відкликаються**, поточний request session виживає (IP+UA match → fallback на newest). |
+| 11 | PATCH | `/api/v1/account_security/password` | `account_security#change_password` | 🔑 Auth | Змінити пароль. **Усі інші Session-row відкликаються**, поточний request session виживає (IP+UA match → fallback на newest). **[SEC.16]** усі інші cookie-сесії гаснуть миттєво (salt-stamp §1); ініціаторова оновлює stamp і живе. |
 | 12 | DELETE | `/api/v1/account_security/identities/:id` | `account_security#unlink_identity` | 🔑 Auth | Відв'язати OAuth-провайдера |
 | 13 | PATCH | `/api/v1/account_security/identities/:id/lock` | `account_security#lock_identity` | 🔑 Auth | Заблокувати OAuth-ідентичність |
 | 14 | PATCH | `/api/v1/account_security/identities/:id/unlock` | `account_security#unlock_identity` | 🔑 Auth | Розблокувати OAuth-ідентичність |

@@ -221,6 +221,38 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
         expect(surviving_ids).to eq([ current_request_session.id ])
       end
     end
+
+    # [SEC.16] Cookie-сесія salt-bound: раніше dashboard-auth читав голий
+    # session[:user_id] і викрадений cookie переживав password-reset 14 днів.
+    context "with a salt-bound dashboard cookie [SEC.16]" do
+      it "invalidates a stale cookie after the password changes elsewhere" do
+        post "/api/v1/login", params: { email: user.email_address, password: "password12345" }
+
+        get "/api/v1/account_security"
+        expect(response).to have_http_status(:ok)
+
+        # Зміна пароля «з іншого пристрою» (поза цим cookie-jar)
+        user.update!(password: "hijack-survivor-pass-1")
+
+        get "/api/v1/account_security"
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "keeps the initiating session alive across its own password change" do
+        post "/api/v1/login", params: { email: user.email_address, password: "password12345" }
+
+        patch "/api/v1/account_security/password",
+              params: {
+                current_password: "password12345",
+                new_password: "fresh_secure_pass_3",
+                new_password_confirmation: "fresh_secure_pass_3"
+              }, as: :json
+        expect(response).to have_http_status(:ok)
+
+        get "/api/v1/account_security"
+        expect(response).to have_http_status(:ok)
+      end
+    end
   end
 
   # =========================================================================

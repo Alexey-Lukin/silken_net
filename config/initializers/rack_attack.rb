@@ -94,6 +94,19 @@ Rack::Attack.throttle("logins/ip", limit: 10, period: 1.minute) do |request|
 end
 
 # ---------------------------------------------------------------------------
+# 5c. ACCOUNT SECURITY THROTTLE [SEC.16] — step-up brute-force guard:
+# підбір current_password на password-change / identity-churn. Keyed на IP
+# (Rack::Attack сидить перед session-middleware — user_id тут недоступний;
+# IP = actor-проксі, дзеркало logins/ip вище).
+# ---------------------------------------------------------------------------
+Rack::Attack.throttle("account_security/ip", limit: 10, period: 1.minute) do |request|
+  if request.path.start_with?("/api/v1/account_security") &&
+     %w[PATCH DELETE].include?(request.request_method)
+    request.ip
+  end
+end
+
+# ---------------------------------------------------------------------------
 # 5a. M2M AUTH THROTTLE — prevent DID enumeration & Ed25519 DoS
 # ---------------------------------------------------------------------------
 Rack::Attack.throttle("m2m_auth/ip", limit: 15, period: 1.minute) do |request|

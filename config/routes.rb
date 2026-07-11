@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "sidekiq/web"
+
 Rails.application.routes.draw do
   # Reveal health status on /up
   get "up" => "rails/health#show", as: :rails_health_check
@@ -11,6 +13,18 @@ Rails.application.routes.draw do
   if Rails.env.development?
     mount Lookbook::Engine, at: "/lookbook"
   end
+
+  # [ARCH.61] Sidekiq Web UI — ops-інструмент DeadSet-runbook'ів (06_03 §2.8).
+  # Sidekiq::Web = Rack-app поза BaseController-auth → route-constraint =
+  # ЄДИНИЙ шлюз (HAProxy path-ACL нема): дзеркало admin_or_above? + SEC.16
+  # salt-bound cookie. Unmatched → 404 (шлях не розкривається, rack_attack
+  # fail2ban банить проби). CSRF вбудований у Sidekiq 8.
+  mount Sidekiq::Web => "/sidekiq", :constraints => lambda { |req|
+    user = User.find_by(id: req.session[:user_id])
+    user.present? &&
+      req.session[:ps].to_s == user.password_salt&.last(10).to_s &&
+      (user.role_admin? || user.role_super_admin?)
+  }
 
   namespace :api do
     namespace :v1 do

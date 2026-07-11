@@ -87,8 +87,10 @@ module Api
         # 1. Захист від Session Fixation: очищуємо стару сесію перед встановленням нової
         reset_session
 
-        # 2. Стандартна Rails сесія (Cookie-based)
+        # 2. Стандартна Rails сесія (Cookie-based) + salt-прив'язка [SEC.16]:
+        # authenticate_user! звіряє цей stamp — password-change гасить чужі cookie.
         session[:user_id] = user.id
+        session[:ps] = user.password_salt&.last(10)
 
         # 3. Створення запису в таблиці Session (Operational Pulse)
         # Це тригерне track_user_activity через after_create в моделі Session

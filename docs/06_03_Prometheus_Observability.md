@@ -221,6 +221,8 @@ end
 | `silkennet_sidekiq_queue_latency_seconds` | `SilkenNet::Metrics::SIDEKIQ_QUEUE_LATENCY` | `queue` (всі 9 черг) | `PrometheusCollector#refresh_sidekiq_gauges` | Вік найстарішої задачі в черзі (секунди) |
 | `silkennet_sidekiq_dead_set_size` | `SilkenNet::Metrics::SIDEKIQ_DEAD_SET_SIZE` | — | `PrometheusCollector#refresh_sidekiq_gauges` | **[ARCH.45]** Розмір Sidekiq DeadSet (job-и, що вичерпали retry) — money-path тут = stranded funds/tx без авто-відновлення |
 
+> **[ARCH.61]** Actioning DeadSet-алертів: **`/sidekiq`** (Sidekiq::Web, змонтований за admin-only route-constraint + SEC.16 salt-stamp; app-constraint = єдиний шлюз — HAProxy path-ACL немає; unmatched → 404). Механіка constraint — [`04_03 §1`](04_03_REST_API_v1_Reference).
+
 > Проміжний підсумок видалено — див. фінальну цифру у §2.8 (SSOT).
 
 ### 2.4 Реалізовані додаткові метрики (Sprint 2, S2.4)

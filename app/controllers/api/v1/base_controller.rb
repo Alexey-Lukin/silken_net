@@ -69,8 +69,14 @@ module Api
           User.find_by_token_for(:api_access, token)
         end
 
-        # Спроба 2: Перевірка через сесію Rails 8 (для Дашборду в браузері)
-        @current_user ||= User.find_by(id: session[:user_id]) if session[:user_id]
+        # Спроба 2: Перевірка через сесію Rails 8 (для Дашборду в браузері).
+        # [SEC.16] Cookie salt-bound (дзеркало api_access-токена в User):
+        # зміна пароля міняє password_salt → чужий/викрадений cookie гасне
+        # одразу, а не доживає свої 14 днів.
+        if @current_user.nil? && session[:user_id]
+          user = User.find_by(id: session[:user_id])
+          @current_user = user if user && session[:ps].to_s == user.password_salt&.last(10).to_s
+        end
 
         return render_unauthorized unless @current_user
 
