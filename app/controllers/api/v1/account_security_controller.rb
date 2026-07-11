@@ -146,8 +146,11 @@ module Api
 
         # [SEC.16] Свіжий salt-stamp для ПОТОЧНОЇ cookie-сесії — ініціатор зміни
         # лишається залогіненим; всі інші cookie гаснуть самі (stale salt у
-        # authenticate_user!).
-        session[:ps] = current_user.password_salt.to_s.last(10) if session[:user_id]
+        # authenticate_user!). Звірка user_id: Bearer-запит із ЧУЖИМ cookie-jar
+        # не має штампувати чужу сесію.
+        if session[:user_id].to_s == current_user.id.to_s
+          session[:ps] = current_user.password_salt.to_s.last(10)
+        end
 
         # [SECURITY] Revoke every other Rails session — a password change is a
         # security event; lingering sessions on other devices should not retain

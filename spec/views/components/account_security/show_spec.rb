@@ -128,22 +128,14 @@ RSpec.describe AccountSecurity::Show do
   end
 
   describe "available providers" do
-    it "renders available providers not yet linked" do
+    # [ARCH.69] Interim-stub: OmniAuth не задротований — «Link …»-кнопки вели
+    # на /auth/:provider = 404. Гейт проти повернення 404-лінків до дротування.
+    it "renders no provider-link buttons while OmniAuth is unwired" do
       identity = mock_identity(provider: "google_oauth2")
       html = render_component(user: user, identities: [ identity ])
-      expect(html).to include("Link Facebook")
-    end
-
-    it "does not show a provider if already linked" do
-      identity = mock_identity(provider: "google_oauth2")
-      html = render_component(user: user, identities: [ identity ])
-      expect(html).not_to include("Link Google Oauth2")
-    end
-
-    it "renders no available-providers section once every provider is linked" do
-      identities = Identity::SUPPORTED_PROVIDERS.map { |p| mock_identity(provider: p) }
-      html = render_component(user: user, identities: identities)
       expect(html).not_to include("Available Providers")
+      expect(html).not_to include("/auth/facebook")
+      expect(html).not_to include("Link Facebook")
     end
   end
 

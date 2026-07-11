@@ -87,6 +87,11 @@ module Api
 
         user.update!(password: params[:password])
 
+        # [SEC.16] Reset = НАЙБІЛЬШ компрометаційно-підозрілий шлях — гасимо ВСІ
+        # сесії (cookie й так стухнуть через salt-stamp; Session-журнал — явно).
+        # Ініціатор не залогінений (public flow) — нема кого зберігати.
+        user.sessions.destroy_all
+
         respond_to do |format|
           format.json { render json: { message: I18n.t("passwords.reset.updated_json") }, status: :ok }
           format.html { redirect_to api_v1_login_path, notice: I18n.t("passwords.reset.updated_flash") }

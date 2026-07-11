@@ -147,26 +147,11 @@ module AccountSecurity
       end
     end
 
+    # [ARCH.69] Interim-stub: OmniAuth ще не задротований (гемів/роутів нема) —
+    # «Available Providers»-лінки вели на /auth/:provider = 404. Повне тіло
+    # (рендер лінків) — у git; повертається разом із дротуванням + ключами.
     def render_available_providers
-      linked = @identities.map(&:provider)
-      available = Identity::SUPPORTED_PROVIDERS.reject { |p| linked.include?(p) }
-
-      return if available.empty?
-
-      div(class: "pt-4 border-t border-emerald-900/30") do
-        h4(class: "text-mini text-gray-600 uppercase tracking-widest mb-3") { t(".identities.available_heading") }
-        div(class: "flex flex-wrap gap-3") do
-          available.each do |provider|
-            a(
-              href: "/auth/#{provider}",
-              class: "flex items-center gap-2 px-4 py-2 border border-emerald-900/50 text-tiny text-emerald-700 uppercase tracking-widest hover:border-emerald-500 hover:text-emerald-400 transition-all"
-            ) do
-              span { provider_icon(provider) }
-              span { t(".identities.link_provider", provider: provider.titleize) }
-            end
-          end
-        end
-      end
+      nil
     end
 
     def field_container(label, &)
