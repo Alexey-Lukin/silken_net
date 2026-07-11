@@ -64,4 +64,9 @@ RSpec.describe "Grafana alert rules ↔ Prometheus registry consistency" do # ru
         "#{name} без alert-правила — escalation-тригер multi-zone Upstash сліпий (S6.1, 04_03 §5.15)"
     end
   end
+
+  it "the E.37 telemetry-volume scale trigger is wired to an alert" do
+    expect(referenced).to include("silkennet_telemetry_processed_total"),
+      "row-count-тригер E.37 (>100M/міс) знову сліпий — ⚖️-рішення про scale-двигун без раннього сигналу"
+  end
 end

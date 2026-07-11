@@ -8091,6 +8091,5 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('20260711150000'),
-('20260709140000');
+('20260711160000');
 

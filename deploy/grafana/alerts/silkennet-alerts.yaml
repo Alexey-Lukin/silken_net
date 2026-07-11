@@ -1180,6 +1180,45 @@ groups:
           team: security
 
       # -----------------------------------------------------------------------
+      # P2: Telemetry volume наближається до scale-порога (E.37). Row-count-
+      # тригер «>100M рядків/міс» інакше СЛІПИЙ: метрика per-row існує давно,
+      # але дивитись на неї проти порога не було кому. warn на 30M/30d — рано
+      # достатньо, щоб ⚖️-рішення (ClickHouse/Timescale Cloud/pg_partman;
+      # TimescaleDB-extension на Cloud SQL недоступний) не приймалось у пожежі.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-telemetry-volume-approaching
+        title: "ℹ️ Telemetry volume approaching scale threshold (E.37)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 2592000, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: sum(increase(silkennet_telemetry_processed_total[30d]))
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [30000000], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 1h
+        annotations:
+          summary: "Телеметрія: {{ $values.A.Value | printf \"%.0f\" }} рядків за 30 днів (>30M) — RANGE-партиції ще тримають, час планувати scale-двигун."
+          description: "Поріг E.37 (~100M/міс) наближається. Native RANGE + pruning покривають і більше (blockchain_transactions ≈12B/рік) — реальний driver рішення = compression/OLAP-latency. Дія: відкрити ⚖️ E.37 (ClickHouse vs Timescale Cloud vs pg_partman; Cloud SQL extension-шлях закритий). 04_01 §0."
+          runbook_url: "docs/04_01_Data_Models_and_Entities.md"
+        labels:
+          severity: info
+          component: database
+          team: backend
+
+      # -----------------------------------------------------------------------
       # P2: QATT batch-nonce Redis→DB fallback (L1 QATT) — той самий S6.1-патерн,
       # СВІДОМО окремий counter+алерт: батч-стрім щогодинний (кожна Queen), і
       # змішування з M2M поховало б рідкісний auth-сигнал у батч-шумі

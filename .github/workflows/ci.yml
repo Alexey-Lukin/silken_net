@@ -606,7 +606,25 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/silken_net_test
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           REDIS_URL: redis://localhost:6379/0
-        run: bin/rails db:test:prepare && bundle exec rspec --format progress
+        run: >
+          bin/rails db:test:prepare &&
+          bundle exec rspec --format progress
+          --format json --out tmp/rspec_results.json
+
+      # [TEST.6] Durable failure-артефакт: невідтворюваний red-run (як
+      # batch_payout-фантом — 0 влучань за 90 днів історії) інакше лишає
+      # тільки сирий лог на 90 днів; json несе example+seed+message —
+      # `--only-failures --seed <n>` = one-command repro.
+      - name: Upload RSpec failure details
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: failure()
+        with:
+          name: rspec-failure-details
+          path: |
+            tmp/rspec_results.json
+            spec/examples.txt
+          retention-days: 90
+          if-no-files-found: ignore
 
       - name: Upload SimpleCov coverage report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
