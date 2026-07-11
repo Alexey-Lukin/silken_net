@@ -22,9 +22,11 @@ RSpec.describe Organization, type: :model do
       expect(organization.wallets).to include(wallet)
     end
 
-    it "has audit_logs with delete_all dependency strategy" do
+    # [ARCH.57] Compliance-журнал переживає організацію (був delete_all —
+    # знищення Org стирало integrity-chain).
+    it "has audit_logs with restrict_with_error dependency strategy" do
       reflection = described_class.reflect_on_association(:audit_logs)
-      expect(reflection.options[:dependent]).to eq(:delete_all)
+      expect(reflection.options[:dependent]).to eq(:restrict_with_error)
     end
 
     it "has wallets with nullify dependency strategy" do

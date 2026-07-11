@@ -764,7 +764,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `trees` | `has_many, through: :clusters` | Всі дерева |
 | `wallets` | `has_many, dependent: :nullify` | Пряма магістраль (без 4-рівневого JOIN); `organization_id` обнуляється при видаленні Organization |
 | `ews_alerts` | `has_many, through: :clusters` | Тривоги всіх кластерів (через `under_threat?`) |
-| `audit_logs` | `has_many, dependent: :delete_all` | Незмінний аудит |
+| `audit_logs` | `has_many, dependent: :restrict_with_error` | Незмінний аудит — журнал переживає Org [ARCH.57] |
 | `logo` | `has_one_attached` | Active Storage |
 
 **Ключові поля:**
@@ -1127,6 +1127,8 @@ active/draft ──cancel──► cancelled
 ### `AuditLog` — Незмінний Журнал Дій
 
 **Призначення:** Повний compliance-журнал усіх дій. Підтримує blockchain-ланцюжок хешів та IPFS-архів.
+
+**Append-only [ARCH.57]:** «незмінність» тримається кодом, не лише конвенцією — `before_update` дозволяє мутацію ЛИШЕ архівних полів (`ARCHIVAL_MUTABLE_COLUMNS`: `ipfs_cid`/`archive_requested_at`), решта → `ActiveRecord::ReadOnlyRecord`; `before_destroy` завжди raise. `delete_all`/`update_all` обходять колбеки — org-каскад закритий `dependent: :restrict_with_error` (Org із журналом не видаляється; узгоджено з `users`/`naas_contracts`).
 
 **Асоціації:**
 - `belongs_to :user`

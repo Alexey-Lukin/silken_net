@@ -14,10 +14,10 @@ class Organization < ApplicationRecord
   # Лісові масиви, якими володіє або керує організація
   has_many :clusters, dependent: :destroy
 
-  # [ВИПРАВЛЕНО: Scalability]: Використовуємо delete_all замість destroy,
-  # щоб уникнути OOM та блокування БД при мільйонах записів аудит-логів.
-  # Один SQL DELETE замість завантаження N записів у пам'ять Ruby.
-  has_many :audit_logs, dependent: :delete_all
+  # [ARCH.57] Compliance-журнал переживає організацію: delete_all стирав
+  # integrity-chain разом із Org (carbon-registry вимагає незнищенність).
+  # Узгоджено з users/naas_contracts — Org з журналом не видаляється.
+  has_many :audit_logs, dependent: :restrict_with_error
 
   # Прямий доступ до всіх дерев, шлюзів та тривог через кластери
   has_many :trees, through: :clusters

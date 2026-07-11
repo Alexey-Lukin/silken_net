@@ -21,6 +21,14 @@ class AuditLog < ApplicationRecord
   # попереднього запису + payload, утворюючи локальний блокчейн per organization
   before_create :compute_chain_hash
 
+  # [ARCH.57] Append-only: мутація бізнес-полів тихо ламає hash-ланцюг
+  # (verify_chain_integrity), тож програмного шляху зміни не існує. Дозволені
+  # лише архівні поля (Filecoin pin ставить ipfs_cid post-create). delete_all/
+  # update_all обходять колбеки — org-каскад закрито restrict_with_error.
+  ARCHIVAL_MUTABLE_COLUMNS = %w[ipfs_cid archive_requested_at updated_at].freeze
+  before_update :forbid_business_field_mutation!
+  before_destroy { raise ActiveRecord::ReadOnlyRecord, "AuditLog append-only [ARCH.57]" }
+
   # --- СКОУПИ ---
   scope :recent, -> { order(created_at: :desc) }
   scope :by_action, ->(action) { where(action: action) if action.present? }
@@ -140,6 +148,14 @@ class AuditLog < ApplicationRecord
   end
 
   private
+
+  def forbid_business_field_mutation!
+    illegal = changed - ARCHIVAL_MUTABLE_COLUMNS
+    return if illegal.empty?
+
+    raise ActiveRecord::ReadOnlyRecord,
+          "AuditLog append-only [ARCH.57]: спроба змінити #{illegal.join(', ')}"
+  end
 
   def compute_chain_hash
     # Advisory lock per organization запобігає race condition

@@ -26,6 +26,33 @@ RSpec.describe AuditLog, type: :model do
   end
 
   # =========================================================================
+  # APPEND-ONLY [ARCH.57]
+  # =========================================================================
+  describe "append-only guard" do
+    let(:log) { create(:audit_log) }
+
+    it "raises on business-field mutation (would silently break the chain)" do
+      expect { log.update!(action: "tampered") }
+        .to raise_error(ActiveRecord::ReadOnlyRecord, /append-only/)
+    end
+
+    it "allows the Filecoin archival fields" do
+      expect { log.update!(ipfs_cid: "bafybeigdyrzt5example") }.not_to raise_error
+    end
+
+    it "raises on destroy" do
+      expect { log.destroy! }.to raise_error(ActiveRecord::ReadOnlyRecord, /append-only/)
+    end
+
+    it "restricts destroying an organization that has journal rows" do
+      org = log.organization
+      expect(org.destroy).to be false
+      expect(org.errors[:base]).to be_present
+      expect(described_class.exists?(log.id)).to be true
+    end
+  end
+
+  # =========================================================================
   # VALIDATIONS
   # =========================================================================
   describe "validations" do
