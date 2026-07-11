@@ -651,7 +651,7 @@ hmac_tag = OpenSSL::HMAC.digest("SHA256", K_ota, hmac_input)  # 32 bytes
 ```
 
 **Domain separation context** — `version_id` і `total_chunks` входять у HMAC input для запобігання:
-- **Replay attack** (старий image з валідним HMAC, але новою версією)
+- **Re-labeling** (старий image з валідним HMAC, пере-мічений НОВОЮ версією → HMAC над тілом ‖ версією ламається). ⚠️ **НЕ плутати з rollback:** валідно-`K_ota`-підписана СТАРА версія у свіжій сесії проходить цей HMAC — монотонність версій закрита ОКРЕМО на Soldier (`common/ota_antirollback.h`, Flash-KV high-water ключ 0x15; [`00_07` SEC.20](00_07_Action_Plan_Tracker))
 - **Truncation attack** (відкидання останніх chunks → змінений `total_chunks` ламає HMAC)
 
 ### Key Management — `K_ota` per-cluster

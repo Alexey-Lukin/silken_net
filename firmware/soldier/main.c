@@ -119,6 +119,11 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 // nonce'и Redis не закрили нову трансляцію.
 #define PANIC_COUNTER_DR0_SHIFT   16          // DR0[31:16] = panic_frame_counter (uint16)
 #define PANIC_COUNTER_MASK        0xFFFFu
+// [SEC.20] DR0[9:8] = ota_vm_error_streak (0..3): N поспіль bytecode-збоїв →
+// auto-fallback на embedded baseline. Vacant-байт DR0[15:8] (§2.3.2), DR7 цілий.
+#define OTA_VM_ERR_STREAK_DR0_SHIFT 8
+#define OTA_VM_ERR_STREAK_MASK      0x03u
+#define SEC20_VM_ERROR_FALLBACK_N   3u
 #define PANIC_COUNTER_MAX         0xFFFFu     // Saturating maximum
 #define PANIC_COUNTER_PAD_HI      14          // panic_payload[14] = counter MSB
 #define PANIC_COUNTER_PAD_LO      15          // panic_payload[15] = counter LSB
@@ -300,6 +305,7 @@ float ml_confidence = 0.0;        // Рівень впевненості мод�
 
 float   tinyml_warning_threshold  = TINYML_DEFAULT_WARNING;
 float   tinyml_critical_threshold = TINYML_DEFAULT_CRITICAL;
+uint8_t ota_vm_error_streak       = 0;   // [SEC.20] DR0[9:8]-persist: N поспіль bytecode-збоїв → fallback
 uint8_t warning_counter           = 0;   // Послідовні WARNING-події між cold-boot;
                                           // SRAM зберігається в STOP2, скидається
                                           // лише при VBAT-loss / IWDG / NVIC reset.
@@ -681,13 +687,16 @@ static uint16_t wire_ema_delta_t_s = 0;
 // без журналу дедуп тримається тільки на auth-біті (2-hop стеля, NULL-гілка
 // Soldier_Try_Relay_Time_Beacon). Королева вже транслює TTL=2 (03_02 §5а).
 #define FW20_MESH_RELAY_ENABLED 0
+// [SEC.20] Anti-rollback — перший НЕ-gated споживач journal Flash-KV: база
+// (ops+mount) мусить жити НЕЗАЛЕЖНО від фліп-гейтів фіч (OTA живий завжди).
+#define SEC20_OTA_ANTIROLLBACK_ENABLED 1
 #include "../common/beacon_dedup.h"
 
 #if FW20_MESH_RELAY_ENABLED
 static BeaconDedup beacon_dedup; // RAM-кеш журналу; істина — Flash-KV 0x20
 #endif
 
-#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED
+#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED || SEC20_OTA_ANTIROLLBACK_ENABLED
 // Збірка при фліпі: + ../common/flash_kv.c (як test_flash_kv). Тут — реальні
 // залізні примітиви; host-тести ганяють ту саму журнальну логіку на RAM-моці
 // з fault-injection (power-cut посеред compact), HAL-глю верифікує bench.
@@ -726,7 +735,7 @@ static const FlashKvOps soldier_kv_ops = {
 };
 static FlashKv soldier_kv;
 static uint8_t soldier_kv_mounted = 0;
-#endif // FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED
+#endif // FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED || SEC20_OTA_ANTIROLLBACK_ENABLED
 
 #if FW17_RATCHET_ENABLED
 static void MX_CRYP_Init(void); // повний прототип нижче — потрібен re-key'ю
@@ -1567,6 +1576,7 @@ static uint8_t Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS(const uint8_t* frame,
 // drift-gated. Регенерація: tools/firmware/gen_bytecode.sh · гейт: check_bytecode.py
 #include "../common/lorenz_bytecode.h"
 #include "../common/flash_ota.h"  // [FW.52-г] OTA contract blob writer (host-tested logic)
+#include "../common/ota_antirollback.h"  // [SEC.20] версійний anti-rollback приплив (Flash-KV 0x15)
 
 /* USER CODE END PV */
 
@@ -1730,6 +1740,9 @@ int main(void)
       uint32_t dr0_raw = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0);
       acoustic_events     = (uint8_t)(dr0_raw & 0xFFu);
       panic_frame_counter = (uint16_t)((dr0_raw >> PANIC_COUNTER_DR0_SHIFT) & PANIC_COUNTER_MASK);
+      // [SEC.20] Streak bytecode-збоїв переживає STOP2 у DR0[9:8] (RAM-only
+      // згорів би щоцикл у RTC-only сні). Cold-boot DR0=0 → streak=0 природно.
+      ota_vm_error_streak = (uint8_t)((dr0_raw >> OTA_VM_ERR_STREAK_DR0_SHIFT) & OTA_VM_ERR_STREAK_MASK);
       if (panic_frame_counter == 0) {
           // [SEC.10] Cold-boot resync: HRNG-сів значення у [1, 0xFFFF],
           // щоб panic-stream після перезавантаження не зустрів живі
@@ -1838,7 +1851,7 @@ int main(void)
                                  *(uint32_t*)(0x1FFF7594),
                                  *(uint32_t*)(0x1FFF7598));
 
-#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED
+#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED || SEC20_OTA_ANTIROLLBACK_ENABLED
   // [ARCH.28] Mount Flash-KV (сторінки 122-123). Невдача (обидві сторінки
   // биті) → mounted=0: споживачі живуть на дефолтах/K0 — деградація, не смерть.
   soldier_kv_mounted = FlashKv_Mount(&soldier_kv, &soldier_kv_ops, NULL,
@@ -2218,12 +2231,25 @@ int main(void)
               lorenz_x = (float)mrb_float(mrb_ary_entry(ruby_result, 1));
               lorenz_y = (float)mrb_float(mrb_ary_entry(ruby_result, 2));
               lorenz_z = (float)mrb_float(mrb_ary_entry(ruby_result, 3));
+              ota_vm_error_streak = 0; // [SEC.20] успіх — ланцюг збоїв обірвано
           } else {
               // Помилка mruby або невалідний результат — чесний VM_ERROR
               // (бекенд: vm_error → firmware_fault, НЕ вандалізм)
               lora_payload[10] = BIO_STATUS_VM_ERROR;
               lorenz_state_valid = 0; // Скидаємо для наступного циклу
               if (mrb->exc) mrb->exc = NULL;
+              // [SEC.20] N поспіль bytecode-збоїв → OTA-версія стабільно бита.
+              // Стираємо contract-сторінку (magic зникне) → наступний boot падає
+              // на вбудований baseline: «не карати жертву» на firmware-рівні —
+              // замість вічного vm_error вузол сам відкочується на робочу версію.
+              // Лічимо ЛИШЕ цей, bytecode-exec, збій — не no-seed/OOM нижче
+              // (fallback їх не лікує, лише зітер би валідний OTA даремно).
+              if (ota_vm_error_streak < OTA_VM_ERR_STREAK_MASK) ota_vm_error_streak++;
+              if (ota_vm_error_streak >= SEC20_VM_ERROR_FALLBACK_N) {
+                  Ota_Hal_Erase((void *)0, OTA_CONTRACT_PAGE);
+                  ota_vm_error_streak = 0;
+                  NVIC_SystemReset();
+              }
           }
       } else {
           // [SEC.11 / FW.30] Ні RTC state, ні K_seed не доступні.
@@ -2543,8 +2569,17 @@ int main(void)
                         received_ota_version, received_hmac_tag,
                         &data_len);
 
+                    // [SEC.20] Dual-gate довів справжність, але не свіжість:
+                    // старе валідно-підписане слово (replay/downgrade) чекає
+                    // тієї ж жертви лжемагії, що й крипто-відмова — bio_contract
+                    // тече лише вперед.
+                    if (verdict == OTA_FINALIZE_APPLY &&
+                        !Ota_Version_Is_Fresh(&soldier_kv, soldier_kv_mounted, received_ota_version)) {
+                        verdict = OTA_FINALIZE_REJECT;
+                    }
                     if (verdict == OTA_FINALIZE_APPLY) {
                         Write_OTA_Contract_To_Flash(ota_buffer, data_len);
+                        Ota_Version_Commit(&soldier_kv, soldier_kv_mounted, received_ota_version);
                         NVIC_SystemReset();
                     } else if (verdict == OTA_FINALIZE_REJECT) {
                         if (ota_bytes_received >= 4) {
@@ -2631,8 +2666,14 @@ int main(void)
                             received_ota_version, received_hmac_tag,
                             &data_len);
 
+                        // [SEC.20] Свіжість поверх справжності — див. 0x9B-гілку.
+                        if (verdict == OTA_FINALIZE_APPLY &&
+                            !Ota_Version_Is_Fresh(&soldier_kv, soldier_kv_mounted, received_ota_version)) {
+                            verdict = OTA_FINALIZE_REJECT;
+                        }
                         if (verdict == OTA_FINALIZE_APPLY) {
                             Write_OTA_Contract_To_Flash(ota_buffer, data_len);
+                            Ota_Version_Commit(&soldier_kv, soldier_kv_mounted, received_ota_version);
                             NVIC_SystemReset();
                         } else if (verdict == OTA_FINALIZE_REJECT) {
                             // Жертовне знищення лжемагії: CRC/брама/ключ впали —
@@ -2754,9 +2795,10 @@ int main(void)
     // =========================================================================
     // ФАЗА 5: КЕНОЗИС (Абсолютний сон та збереження)
     // =========================================================================
-    // [SEC.10] DR0 packed: [panic_frame_counter:16 | reserved:8 | acoustic_events:8]
+    // [SEC.10/SEC.20] DR0: [panic:16 | rsv:6 | vm_err_streak:2 | acoustic:8]
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
         ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
+        ((uint32_t)(ota_vm_error_streak & OTA_VM_ERR_STREAK_MASK) << OTA_VM_ERR_STREAK_DR0_SHIFT) |
         (uint32_t)acoustic_events);
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, last_wakeup_timestamp);
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR2, has_mesh_relay);
@@ -2952,6 +2994,7 @@ void HAL_PWR_PVDCallback(void)
     //    не зник при брауноуті між Phase 5 циклами.
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
         ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
+        ((uint32_t)(ota_vm_error_streak & OTA_VM_ERR_STREAK_MASK) << OTA_VM_ERR_STREAK_DR0_SHIFT) |
         (uint32_t)acoustic_events);
 
     // 2. [ARCH.21] Зберігаємо timestamp пробудження, щоб delta_t після

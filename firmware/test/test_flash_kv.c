@@ -654,6 +654,65 @@ TEST(test_fw20s2_dedup_survives_remount_and_compact) {
     ASSERT_TRUE(Beacon_Dedup_Seen(&bd2, gen));
 }
 
+/* ════════════════════════════════════════════════════════════════════
+ * 8. [SEC.20] OTA anti-rollback high-water поверх KV (ключ 0x15)
+ *
+ * dual-gate доводить справжність образу, приплив — свіжість. Приплив мусить
+ * пережити повну смерть живлення (на відміну від RTC), інакше replay старої
+ * версії проходив би щозими. Дисципліна викликача (Write→Commit, degraded-
+ * allow при !mounted) — шапка ota_antirollback.h.
+ * ════════════════════════════════════════════════════════════════════ */
+#include "../common/ota_antirollback.h"
+
+TEST(test_sec20_first_ota_any_version_fresh) {
+    /* Ключа ще нема (перший OTA) → будь-яка версія > 0 свіжа. */
+    fresh_mount();
+    ASSERT_TRUE(Ota_Version_Is_Fresh(&kv, 1, 5u));
+    ASSERT_TRUE(Ota_Version_Is_Fresh(&kv, 1, 1u));
+    ASSERT_EQ(Ota_Version_Load(&kv), 0u);
+}
+
+TEST(test_sec20_commit_then_replay_and_downgrade_rejected) {
+    /* Ядро: застосована версія → той самий (replay) і нижчий (downgrade)
+     * образ відкидаються, лише строго вищий свіжий. */
+    fresh_mount();
+    ASSERT_TRUE(Ota_Version_Is_Fresh(&kv, 1, 9u));
+    Ota_Version_Commit(&kv, 1, 9u);
+    ASSERT_FALSE(Ota_Version_Is_Fresh(&kv, 1, 9u)); /* replay */
+    ASSERT_FALSE(Ota_Version_Is_Fresh(&kv, 1, 4u)); /* downgrade */
+    ASSERT_TRUE(Ota_Version_Is_Fresh(&kv, 1, 10u)); /* свіжий */
+}
+
+TEST(test_sec20_hiwater_survives_vbat_loss) {
+    /* Приплив переживає повну смерть живлення — на відміну від RTC-слота,
+     * що обнулявся б щозими й пускав перший же replay. */
+    fresh_mount();
+    Ota_Version_Commit(&kv, 1, 42u);
+    FlashKv kv2;
+    ASSERT_TRUE(FlashKv_Mount(&kv2, &mock_ops, &flash, MOCK_PAGE_DWS));
+    ASSERT_EQ(Ota_Version_Load(&kv2), 42u);
+    ASSERT_FALSE(Ota_Version_Is_Fresh(&kv2, 1, 42u)); /* replay після ребуту */
+    ASSERT_FALSE(Ota_Version_Is_Fresh(&kv2, 1, 40u)); /* downgrade після ребуту */
+    ASSERT_TRUE(Ota_Version_Is_Fresh(&kv2, 1, 43u));
+}
+
+TEST(test_sec20_degraded_unmounted_allows) {
+    /* KV не змонтований (Flash мертвий) → degraded-allow: оновлення дорожче
+     * за теоретичний replay на вже-мертвому Flash (дзеркало fc_hiwater). */
+    ASSERT_TRUE(Ota_Version_Is_Fresh(&kv, 0, 1u));
+    ASSERT_TRUE(Ota_Version_Is_Fresh(&kv, 0, 0u));
+    Ota_Version_Commit(&kv, 0, 5u); /* no-op, не читає/не пише Flash */
+}
+
+TEST(test_sec20_hiwater_survives_compact) {
+    /* Приплив живе через compact (перенос живих ключів на нову сторінку). */
+    fresh_mount();
+    Ota_Version_Commit(&kv, 1, 77u);
+    ASSERT_TRUE(FlashKv_Compact(&kv));
+    ASSERT_TRUE(FlashKv_Mount(&kv, &mock_ops, &flash, MOCK_PAGE_DWS));
+    ASSERT_EQ(Ota_Version_Load(&kv), 77u);
+}
+
 /* ════════════════════════════════════════════════════════════════════ */
 int main(void)
 {
@@ -713,6 +772,13 @@ int main(void)
     RUN(test_fw20s2_dedup_persist_fail_ram_still_dedups);
     RUN(test_fw20s2_dedup_load_rejects_garbage);
     RUN(test_fw20s2_dedup_survives_remount_and_compact);
+
+    printf("\n— [SEC.20] OTA anti-rollback high-water поверх KV (0x15) —\n");
+    RUN(test_sec20_first_ota_any_version_fresh);
+    RUN(test_sec20_commit_then_replay_and_downgrade_rejected);
+    RUN(test_sec20_hiwater_survives_vbat_loss);
+    RUN(test_sec20_degraded_unmounted_allows);
+    RUN(test_sec20_hiwater_survives_compact);
 
     printf("\n════════════════════════════════════════════════════════════════════\n");
     printf("Passed: %d, Failed: %d\n", tests_passed, tests_failed);

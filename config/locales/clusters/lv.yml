@@ -30,8 +30,8 @@ lv:
         centroid: Centroīds
         heading: Ģeogrāfiskais enkurs
         mapped: Kartēts
-        mapped_no: 'Nē'
-        mapped_yes: 'Jā'
+        mapped_no: Nē
+        mapped_yes: Jā
         region: Reģions
         view_on_map: Skatīt kartē →
       header:

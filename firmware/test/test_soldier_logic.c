@@ -3626,6 +3626,22 @@ static uint8_t Unpack_DR0_Acoustic(uint32_t dr0) {
     return (uint8_t)(dr0 & 0xFFu);
 }
 
+/* [SEC.20] Розширення DR0-mirror: + vm_err_streak у vacant-байті [9:8]
+ * (panic[31:16]/acoustic[7:0] недоторкані). Дзеркалить main.c DR0-write. */
+#define OTA_VM_ERR_STREAK_DR0_SHIFT 8
+#define OTA_VM_ERR_STREAK_MASK      0x03u
+#define SEC20_VM_ERROR_FALLBACK_N   3u
+static uint32_t Pack_DR0_Full(uint16_t panic_counter, uint8_t streak, uint8_t acoustic) {
+    return Pack_DR0(panic_counter, acoustic) |
+           ((uint32_t)(streak & OTA_VM_ERR_STREAK_MASK) << OTA_VM_ERR_STREAK_DR0_SHIFT);
+}
+static uint8_t Unpack_DR0_Streak(uint32_t dr0) {
+    return (uint8_t)((dr0 >> OTA_VM_ERR_STREAK_DR0_SHIFT) & OTA_VM_ERR_STREAK_MASK);
+}
+static int Sec20_Should_Fallback(uint8_t streak) {
+    return streak >= SEC20_VM_ERROR_FALLBACK_N;
+}
+
 /* Mirror of Trigger_Emergency_LoRa_TX counter+payload logic. */
 static void Build_Panic_Payload_With_Counter(uint8_t* payload, uint32_t did,
                                               uint16_t* counter_inout) {
@@ -3672,6 +3688,38 @@ TEST(test_sec10_dr0_pack_independence) {
     uint32_t p4 = Pack_DR0(0xFFFF, 0x55);
     ASSERT_NE(Unpack_DR0_Counter(p3), Unpack_DR0_Counter(p4));
     ASSERT_EQ(Unpack_DR0_Acoustic(p3), Unpack_DR0_Acoustic(p4));
+}
+
+TEST(test_sec20_streak_dr0_roundtrip_panic_intact) {
+    /* Streak у [9:8] пакується й читається; panic + acoustic недоторкані. */
+    uint32_t packed = Pack_DR0_Full(0xABCD, 2, 0x42);
+    ASSERT_EQ(Unpack_DR0_Streak(packed), 2);
+    ASSERT_EQ(Unpack_DR0_Counter(packed), 0xABCD);
+    ASSERT_EQ(Unpack_DR0_Acoustic(packed), 0x42);
+}
+
+TEST(test_sec20_streak_independent_of_panic_and_acoustic) {
+    /* Зміна streak НЕ торкається panic-counter (SEC.10 anti-replay) й acoustic. */
+    uint32_t p1 = Pack_DR0_Full(0x1234, 0, 0x55);
+    uint32_t p2 = Pack_DR0_Full(0x1234, 3, 0x55);
+    ASSERT_EQ(Unpack_DR0_Counter(p1), Unpack_DR0_Counter(p2));
+    ASSERT_EQ(Unpack_DR0_Acoustic(p1), Unpack_DR0_Acoustic(p2));
+    ASSERT_NE(Unpack_DR0_Streak(p1), Unpack_DR0_Streak(p2));
+}
+
+TEST(test_sec20_streak_saturates_no_overflow) {
+    /* Насичення на 2-бітну маску — не переливається в acoustic/panic. */
+    uint32_t packed = Pack_DR0_Full(0xFFFF, 0xFF, 0xFF);
+    ASSERT_EQ(Unpack_DR0_Streak(packed), OTA_VM_ERR_STREAK_MASK);
+    ASSERT_EQ(Unpack_DR0_Counter(packed), 0xFFFF);
+    ASSERT_EQ(Unpack_DR0_Acoustic(packed), 0xFF);
+}
+
+TEST(test_sec20_fallback_at_third_consecutive) {
+    /* Fallback на embedded лише на N=3 поспіль bytecode-збоїв. */
+    ASSERT_FALSE(Sec20_Should_Fallback(0));
+    ASSERT_FALSE(Sec20_Should_Fallback(2));
+    ASSERT_TRUE(Sec20_Should_Fallback(3));
 }
 
 TEST(test_sec10_counter_increments_before_tx) {
@@ -5444,6 +5492,10 @@ int main(void)
     printf("\n  Panic Frame Counter Anti-Replay (SEC.10):\n");
     RUN(test_sec10_dr0_pack_roundtrip);
     RUN(test_sec10_dr0_pack_independence);
+    RUN(test_sec20_streak_dr0_roundtrip_panic_intact);
+    RUN(test_sec20_streak_independent_of_panic_and_acoustic);
+    RUN(test_sec20_streak_saturates_no_overflow);
+    RUN(test_sec20_fallback_at_third_consecutive);
     RUN(test_sec10_counter_increments_before_tx);
     RUN(test_sec10_counter_big_endian_in_pad);
     RUN(test_sec10_counter_saturates_at_max);

@@ -798,10 +798,10 @@
 ## §03b · Edge crypto
 
 #### SEC.3 — Factory Flashing pipeline
-- **P0** · 🤖+👤 · 🟡 · → [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)
+- **P0** · 👤 · 🟢 · → [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)
 - **Стан:** Rake-конвеєр (Гілки A+B) канонізовано + host-доведено: AASM + **authenticated 2-Person Rule** (console-bypass закрито guard'ом, RSpec-покрито) + execute-шим + **master-key DI ✅** (preflight-ключ від `MasterKeySource` наскрізно у всі **три** HKDF-читачі вкл. `SeedDerivation.derive_seed`; runtime = ENV-fallback; non-ENV adapter розблоковано, DI-proof спеки) + **one-pass UID→DID ✅ (FW.54, 2026-07-03)** — `TreeResolver` (24-hex UID → `wire_did` → Tree create/re-flash/bind/колізія→quarantine) + wrong-board guard у Session (preflight `-r32`, чужа плата → жодного `-w32`, навіть HardwareKey не матеріалізується). Механіка + delivery-варіанти — канон [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning) (+ §1 pipeline). bench-residual = фізичний SWD-флеш.
 - [ ] 👤 real `STM32_Programmer_CLI` на STM32WLE5JC bench (post-FW.2) — runbook `firmware/scripts/bench/`; + звірити реальний `-r32`-формат виводу проти `UidReadout` (wrong-board guard, RUNBOOK 1.3)
-- [ ] 🤖+👤 Bitwarden Secrets API live — 🤖 `BitwardenAdapter` імплементація+spec (зараз `NotImplementedError`; DI-pre-req ✅ знято 2026-07-02 — див. Стан) + 👤 акаунт/секрети + live-смок
+- [ ] 👤 Bitwarden Secrets API live **[field-batch gate]** — adapter пишеться на bench-день першої партії за готовим bws-рецептом (DI-swap ✅: `MasterKeySource.default` + `Session#preflight!` threads `@master_key`); доти YAGNI-hold — dev/lab на Direct-ENV + `WeakKeyDetector` fail-closed (custody-варіант 2 «Envelope/pilot», [`03_06 §5 A.2`](03_06_Factory_Flashing_and_Key_Provisioning)); + акаунт/секрети/live-смок
 - [ ] 🔗 real SE I²C (Гілка B) — SE050 eval-kit; `cryptoauthlib`→SE05x код-міграція → SE050-MIGRATION (legacy ATECC-патерн reusable, [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security))
 - [ ] 👤 operational residual (звужено 2026-06-15 — `approve!`-bypass закрито кодом, див. Стан): лишається лише raw-SQL / object-manipulation (`update_column`/`instance_variable_set`) — будь-який in-process guard це обходить = межа §5.A access-control ([`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning); master-key=`super_admin`+MFA+HSM); full crypto-approval (per-user PKI замість пароля) — bench/future
 
@@ -835,17 +835,20 @@
 - [ ] 🔗 L2 design-gap — **підхід вирішено** (Фаза 0, deep-audit 2026-06-28), реалізація post-anchor-TRL: тижневий device-Merkle-корінь підписується ПІСЛЯ intra-week мінтингу (Queen-relay L1) → **ex-post reconcile + clawback** (device-root vs намінтоване; mismatch = positive-A tamper → наявний `slash()`); pre-mint двофазний = North-Star (energy-gated). Дім політики [`05_05 §3.3`](05_05_Slashing_and_Risk_Policy); механізм Merkle = ARCH.12 / E.60
 - Cross-ref: SEC.6, SEC.14 (роль ✅ provisioning-only — §🗄️), ARCH.42, ARCH.43 (mesh-вісь; uplink-ізоляція ✅ FW.2 (в) двоключова — SE-era: KEYL лишається у Protected Flash, SE Slot 0 reserved urban-варіант; cluster KEYB у Flash як K_ota), E.60 (Merkle), FW.2, FW.23, ARCH.33 (firmware-Ed25519 feasibility), STK.4 (ЗВТ), BIZ.13 (operator-bond).
 
-#### SEC.20 — OTA/bytecode dual-gate без anti-rollback (version-monotonicity)
-- **P2** · 🤖 · ⚪ · → [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning), [`03_05 §2.4`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- **Стан:** Gap-pass §03 (2026-07-05) — verified: FW.23 HMAC-SHA256 dual-gate автентифікує integrity+origin+version-tag-binding, але **ніколи не звіряє** `received_ota_version` проти persisted «last-applied» перед `Write_OTA_Contract_To_Flash` (`flash_ota.h` = лише bytecode-blob, 0 version-metadata). Наслідок: захоплений/архівний старий **валідно-K_ota-підписаний** OTA-broadcast (чи випадковий re-issue) replay'иться по LoRa → тихий downgrade `bio_contract.rb` на версію з вже-полагодженими економічними багами (історія GP-формул E.63/FW.29 доводить, такі існували). Textbook rollback-protection (TUF/SUIT); асиметрія проти того, як важко команда билася з тим самим replay на **uplink** (CCM FC+SETNX+high-water). ≠ downlink-MAC/FC (`03_05 §2.4`, transport-replay) — не спиняє валідно-підписану СТАРУ версію в свіжій сесії. Суміжно: нема consecutive-VM-error-лічильника (bad bytecode → `tamper` вічно, нема auto-fallback; RTC-backup має spare-біти, `03_01 §2`). **🤖-half = вся задача (host-authorable):** persist last-version (RTC-backup слот) + одне порівняння. Канон [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning), [`03_05 §2.4`](03_05_Hardware_Symmetric_Crypto_and_Security).
-- [ ] 🤖 persist «last-applied ota_version» (RTC-backup слот) + monotonic-check перед flash-write; host-test як `FlashKvOps`
-- [ ] 🤖 consecutive-VM-error counter (RTC-backup spare) → auto-fallback на embedded baseline
+#### SEC.20 — OTA anti-rollback (version-monotonicity + VM-error auto-fallback)
+- **P2** · 🤖+👤 · 🟢 · → [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning), [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)
+- **Стан:** Version high-water (`common/ota_antirollback.h`, Flash-KV ключ 0x15) — кожен OTA APPLY мусить СТРОГО перевершити приплив, інакше REJECT (та сама жертва лжемагії, що й крипто-відмова). Носій = **Flash-KV, не RTC** (threat-model: RTC-слот обнулявся б при кожній зимовій смерті EDLC → перший replay старої версії проходив би без атакера; fc_hiwater-прецедент). `!mounted` → degraded-allow. VM-error counter (RTC-persist слот — розкладка [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)) — N=3 поспіль **bytecode-exec** збоїв → erase contract → boot embedded baseline («не карати жертву»; лічить лише bytecode-fault, не no-seed/OOM — fallback їх не лікує). journal Flash-KV база вимкнена з фліп-гейтів фіч (SEC.20 = перший НЕ-gated споживач). 9 host-тестів; panic-independence + VBAT-persist + fallback-поріг mutation-verified. ≠ downlink-MAC/FC ([`03_05 §2.4`](03_05_Hardware_Symmetric_Crypto_and_Security), transport-replay). Канон-дім [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning) (replay-нотатка виправлена) + [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA) (DR0-map). Bench + §3.6-wire ↓.
+- [x] 🤖 version high-water (Flash-KV 0x15) + monotonic-check перед flash-write; host-тести (VBAT-persist mutation-verified)
+- [x] 🤖 bytecode-only VM-error counter (RTC-persist) → auto-fallback на embedded; host-тести
+- [ ] 👤 bench: фізичний OTA-replay старої версії REJECT на кремнії + fallback-erase спрацьовує (RUNBOOK)
+- [ ] 🔗 §3.6 pre-L2 checklist: «anti-rollback persist» як pre-req (cross-task з SEC.2 — робить one-shot verify durable-gate'ом)
 
-#### SEC.21 — Немає runtime memory-safety на таргеті (stack-canary + MPU)
-- **P2** · 🤖 · ⚪ · → [`03_05 §9`](03_05_Hardware_Symmetric_Crypto_and_Security), `firmware/cmake`
-- **Стан:** Gap-pass §03 (2026-07-05) — verified 0: `arm-none-eabi.cmake` не ставить `-fstack-protector` (gcc не дефолтить), нема `ARM_MPU_`/`HAL_MPU_` ніде (STM32WLE5 Cortex-M4 має 8-region MPU + CMSIS_6 вже vendors API). Релевантно бо **обидва вузли парсять untrusted attacker-reachable байти в сирому C ДО crypto/MIC-чеку** (LoRa-RX від будь-якого передавача в зоні — threat-model прямо називає; + SIM7070 AT-токенайзер) → stack-overflow у парсері має нуль runtime-backstop, лише `cppcheck` (static). ASan/UBSan = host-lane, не таргет. **🤖-half:** `-fstack-protector-strong` додається ЗАРАЗ + CI-verifiable через `firmware_arm_build` (нуль-заліза: compile+link+size-delta); MPU register-config bench-gated. Канон [`03_05 §9`](03_05_Hardware_Symmetric_Crypto_and_Security), `firmware/cmake`.
-- [ ] 🤖 `-fstack-protector-strong` у `arm-none-eabi.cmake` + `__stack_chk_fail` handler → CI size-delta через `firmware_arm_build`
-- [ ] 🤖 MPU region-config (NX-stack + RO-code) у main.c — host-stub compile, bench-verify активацію
+#### SEC.21 — Runtime memory-safety (stack-canary shipped · MPU + fielded-handler residual)
+- **P2** · 🤖+👤 · 🟢 · → [`03_05 §9`](03_05_Hardware_Symmetric_Crypto_and_Security), `firmware/cmake`
+- **Стан:** `-fstack-protector-strong` (`arm-none-eabi.cmake`, C+CXX) інструментує canary на attacker-reachable парсери (LoRa-RX / SIM7070 AT-токенайзер жують untrusted байти в сирому C ДО MIC-чеку — threat-model прямо називає). newlib несе `__stack_chk_fail`/`__stack_chk_guard` → лінк не падає (теза трекера «треба власний handler» спростована для do-now). CI **nm-присутність-gate** (`firmware_arm_build`) стереже canary — без нього тихе видалення прапора нічого б не зламало (guard-lens; «size-delta gate» не існував — таргет `size` лише друкує). Канон [`03_05 §9`](03_05_Hardware_Symmetric_Crypto_and_Security). Residuals ↓.
+- [x] 🤖 `-fstack-protector-strong` (`arm-none-eabi.cmake`) + CI nm-присутність-gate (`firmware_arm_build`); newlib резолвить `__stack_chk_fail`
+- [ ] 🤖+👤 fielded-quality: власний `__stack_chk_fail` (`NVIC_SystemReset` + tamper-log замість newlib abort→hang під frozen-IWDG) + HRNG-seed `__stack_chk_guard` at-boot (newlib-default = фіксована константа)
+- [ ] 🤖+👤 MPU region-config (NX-stack + RO-code): CMSIS `ARM_MPU_*` host-stub-compilable, але АКТИВАЦІЯ (реальний trap) bench-gated (QEMU mps2 MPU не моделює вірогідно)
 
 #### ARCH.33 — ECDH P-256 key exchange (alt HKDF-only)
 - **P3** · 🤖 · 🌿 · → `03_05`
@@ -1025,23 +1028,11 @@
 - [ ] ⚖️ котрий реєстр першим (Verra vs GS vs UNFCCC) — стратегічне рішення поверх уже-обраного Puro.earth
 - [ ] 🤖 format-адаптери обраного реєстру (після BIZ.9-PDD; патерн = Puro.earth)
 
-#### E.14 — Multi-source satellite + anchor data fusion
-- **P3** · 🤖+👤 · 🌿 · → `03_03 §7`, `08_01`
-- **Стан:** Far-horizon (чесно: гейти = угода ЧНУ + анкер-поле з ground-truth (TRL-3) + TinyML 5-class FW.4/FW.25 як мікро-сигнал). Розшифровка: E.14 = технічний фасет **08_01 Стаття 10** (Любченко ансамбль Sentinel-2 + Бушин CNN-синтез); канонічний fusion-дизайн = «Macro-Micro verification» у `03_03` (вихід → `AiInsight#biodiversity_trend`), НЕ `04_02` (там лише consumer) — canon-ref виправлено. Розкол чекбокса: «потребує партнери» ХИБНЕ для інгест-half — Sentinel-2 NDVI = open data (Copernicus/AWS, без креденшелів), machine-доступний, але YAGNI: fusion'ити нема з чим (biodiversity_trend data-starved — soundscape сам far-horizon). Наявний dClimate-шлях ≠ NDVI (FIRMS fire, VIIRS-термалка — інший датасет; NDVI = greenfield-інгест, реюз лише HTTP-патерну). Family-cross-ref E.30/E.52 (Стаття 10/Любченко; різні блокери — не merge).
-- [ ] 🤖 (post-gates) Sentinel-2 NDVI-адаптер (STAC по `cluster.geo_center`, cloud-mask → biodiversity_trend confirm) — open-data, будувати коли є з чим fusion'ити
-- [ ] ⚖️ fusion-методологія (ANN+RF+GA / CNN) — партнерська голова (Любченко+Бушин, після угоди)
-
 #### E.37 — Telemetry-scale двигун (ex-TimescaleDB) — ClickHouse/Timescale Cloud/pg_partman
 - **P3** · 🤖+👤 · 🌿 · → `04_01`
 - **Стан:** Reframed (vilize 2026-07-11): «TimescaleDB міграція» як написано — НЕ виконувана: extension **недоступний на Cloud SQL** (не allow-list; канон `04_01 §0` виправлено з «ускладнює» на чесне unsupported) → реальні опції = ClickHouse-OLAP / Timescale Cloud окремим інстансом / pg_partman, вибір = ⚖️ (двигун+платформа). Row-count-тригер — консервативний проксі: RANGE доведений на порядки вище (blockchain_transactions ≈12B/рік), справжній driver = compression/OLAP-latency. ✅ **Тригер більше не сліпий (vilize):** `sn-alert-telemetry-volume-approaching` — `increase(silkennet_telemetry_processed_total[30d]) > 30M` (warn; метрика per-row вже існувала, дивитись на неї не було кому) + wired-гейт у grafana_alerts_spec. `DailyHealthRouter` A+B подвоєння = СВІДОМЕ (різні джоби = retry-ізоляція slash-vs-insurance), дешевого фіксу нема — чесно сидить у far-horizon co-partition. Канон `04_01 §0`.
 - [ ] ⚖️ (при спрацюванні 30M-алерту) двигун: ClickHouse vs Timescale Cloud vs pg_partman — і чи лишаємось на Cloud SQL
 - [ ] 🤖 міграція обраного (після ⚖️)
-
-#### ARCH.20 — Petri Net PN-модель Rails моноліту (академічний фасет — Стаття 7)
-- **P3** · 🤖+👤 · 🌿 · → `08_01`
-- **Стан:** Reframed (vilize 2026-07-11): canon-ref `04_02` був хибний (PN там НЕМА — там інженерна ЗАМІНА: advisory-lock дизайн + `FOR UPDATE NOWAIT`); справжній дім = **08_01 Стаття 7** (Супруненко+Онищенко, gated «R&D-угода ЧНУ + TRL 4 + студент») → це academic deliverable, не §04-інженерна потреба. Challenge-вердикт: ~90% цінності «deadlock при 10K» УЖЕ покрито емпірично (INF.23-гарнес shipped: ~10k-стеля, GVL-мікробенч) + shipped lock-дисципліна (NOWAIT/advisory/Kredis-timeout); PN-модель = one-shot snapshot → вічний drift без CI-re-verify — провалює durable-gate тест. НЕ виконувати як код зараз; рішення «чи женемо Стаття 7» = ⚖️ партнерський deliverable. Sibling **ARCH.29** (§03a firmware-PN, «як ARCH.20») — рішення застосувати консистентно; обидва пропустити через UNI.19-триаж, не вирізати ізольовано.
-- [ ] ⚖️ доля PN-осі (разом з ARCH.29, через UNI.19): чи потрібен паб-deliverable Стаття 7 → тоді 🔗 UNI.1/UNI.2
-- [ ] 🤖+👤 PN-модель+convolution (ЯКЩО так; співавтори ЧНУ)
 
 ## §05 · Web3 / Економіка / Slashing
 
@@ -1575,6 +1566,18 @@
 - **Стан:** Не почато (свіжо-сесійна задача; тригер = Shape Up PN хірургія 07-09 — ARCH.32/Стаття 9 показали, що портфель має декоративні ланки поряд зі статтями-з-product-коренем). Передивитись усі статті + магістерські на «product-relevant vs academic-decor»: 🤖 розкладе кожну (чи має робочий-вектор у 00_07 + product-корінь, чи чистий publication-decor gated на unresponsive-партнера), 👤 вирішує долю. **НЕ точкове видалення** — свідома системна кампанія (08_01 аспіраційний-за-дизайном, MoU нема → сиблінг-тест: не вирізай одну статтю ізольовано). Канон `08_01`.
 - [ ] 🤖 розклад статей + магістерських: product-vector (00_07-ID) / decor / partner-gated
 - [ ] ⚖️ рішення долі кожної (лишити / decor-хірургія à la ARCH.32 / прибрати)
+
+#### E.14 — Multi-source satellite + anchor data fusion (академічний фасет — Стаття 10)
+- **P3** · 🤖+👤 · 🌿 · → `08_01`, `03_03 §7`
+- **Стан:** Far-horizon (чесно: гейти = угода ЧНУ + анкер-поле з ground-truth (TRL-3) + TinyML 5-class FW.4/FW.25 як мікро-сигнал). Розшифровка: E.14 = технічний фасет **08_01 Стаття 10** (Любченко ансамбль Sentinel-2 + Бушин CNN-синтез); канонічний fusion-дизайн = «Macro-Micro verification» у `03_03` (вихід → `AiInsight#biodiversity_trend`), НЕ `04_02` (там лише consumer). Розкол чекбокса: «потребує партнери» ХИБНЕ для інгест-half — Sentinel-2 NDVI = open data (Copernicus/AWS, без креденшелів), machine-доступний, але YAGNI: fusion'ити нема з чим (biodiversity_trend data-starved — soundscape сам far-horizon). Наявний dClimate-шлях ≠ NDVI (FIRMS fire, VIIRS-термалка — інший датасет; NDVI = greenfield-інгест, реюз лише HTTP-патерну). Family-cross-ref E.30/E.52 (Стаття 10/Любченко; різні блокери — не merge).
+- [ ] 🤖 (post-gates) Sentinel-2 NDVI-адаптер (STAC по `cluster.geo_center`, cloud-mask → biodiversity_trend confirm) — open-data, будувати коли є з чим fusion'ити
+- [ ] ⚖️ fusion-методологія (ANN+RF+GA / CNN) — партнерська голова (Любченко+Бушин, після угоди)
+
+#### ARCH.20 — Petri Net PN-модель Rails моноліту (академічний фасет — Стаття 7)
+- **P3** · 🤖+👤 · 🌿 · → `08_01`
+- **Стан:** Reframed (vilize 2026-07-11): canon-ref `04_02` був хибний (PN там НЕМА — там інженерна ЗАМІНА: advisory-lock дизайн + `FOR UPDATE NOWAIT`); справжній дім = **08_01 Стаття 7** (Супруненко+Онищенко, gated «R&D-угода ЧНУ + TRL 4 + студент») → це academic deliverable, не §04-інженерна потреба. Challenge-вердикт: ~90% цінності «deadlock при 10K» УЖЕ покрито емпірично (INF.23-гарнес shipped: ~10k-стеля, GVL-мікробенч) + shipped lock-дисципліна (NOWAIT/advisory/Kredis-timeout); PN-модель = one-shot snapshot → вічний drift без CI-re-verify — провалює durable-gate тест. НЕ виконувати як код зараз; рішення «чи женемо Стаття 7» = ⚖️ партнерський deliverable. Sibling **ARCH.29** (§03a firmware-PN, «як ARCH.20») — рішення застосувати консистентно; обидва пропустити через UNI.19-триаж, не вирізати ізольовано.
+- [ ] ⚖️ доля PN-осі (разом з ARCH.29, через UNI.19): чи потрібен паб-deliverable Стаття 7 → тоді 🔗 UNI.1/UNI.2
+- [ ] 🤖+👤 PN-модель+convolution (ЯКЩО так; співавтори ЧНУ)
 
 ## §08b · External Stakeholders (B2G / B2B / Cultural)
 

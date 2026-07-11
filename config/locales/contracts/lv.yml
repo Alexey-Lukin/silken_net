@@ -42,9 +42,9 @@ lv:
         title: Blokķēdes emisijas vēsture
         tx_hash: TX Kods
       legal:
-        burn_no: 'Nē'
+        burn_no: Nē
         burn_points: Uzkrāto punktu sadedzināšana
-        burn_yes: 'Jā'
+        burn_yes: Jā
         cancellation_title: Atcelšanas nosacījumi
         early_exit_fee: Priekšlaicīgas izstāšanās maksa
         early_exit_value: "%{value}%"

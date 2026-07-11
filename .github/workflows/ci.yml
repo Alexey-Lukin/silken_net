@@ -250,6 +250,17 @@ jobs:
             -DSILKEN_WITH_HAL=ON
           cmake --build firmware/build --target hal_check hal_check_ccm
 
+      - name: '[SEC.21] Stack-canary presence gate — __stack_chk_fail інструментовано'
+        # -fstack-protector-strong мусить лишити canary-prologue у compiled коді
+        # (attacker-reachable LoRa-RX / AT-парсери в main.c мають addressable
+        # locals). Без цього чека тихе видалення прапора з toolchain нічого б
+        # не зламало (guard-lens). newlib резолвить символ на лінку.
+        run: |
+          find firmware/build -name '*.o' -exec arm-none-eabi-nm {} + 2>/dev/null \
+            | grep -q '__stack_chk_fail' \
+            || { echo "❌ SEC.21: __stack_chk_fail ніде — -fstack-protector-strong мертвий"; exit 1; }
+          echo "✅ SEC.21: canary інструментовано у ARM-збірці"
+
       - name: '[FW.26] ARM static-RAM gate — реальні .data+.bss обох main.c проти леджера'
         # Перший НЕ-плацхолдерний RAM-гейт: arm-none-eabi-size на hal_check .obj
         # (compile-lane вище). Леджер + стеля tensor arena — 03_03 §6.

@@ -38,8 +38,12 @@ set(CMAKE_SIZE_TOOL    "${_tc_bin}${_tc_prefix}size"    CACHE FILEPATH "size")
 # --- CPU / float ABI (no FPU on STM32WL) -----------------------------------
 set(SILKEN_CPU_FLAGS "-mcpu=cortex-m4 -mfloat-abi=soft -mthumb")
 
-set(CMAKE_C_FLAGS_INIT          "${SILKEN_CPU_FLAGS} -ffunction-sections -fdata-sections -Wall -Wextra")
-set(CMAKE_CXX_FLAGS_INIT        "${SILKEN_CPU_FLAGS} -ffunction-sections -fdata-sections -Wall -Wextra")
+# [SEC.21] -fstack-protector-strong: канарка на attacker-reachable парсери
+# (LoRa-RX / SIM7070 AT-токенайзер жують untrusted байти в сирому C ДО MIC-чеку).
+# newlib несе __stack_chk_fail/__stack_chk_guard → лінк не падає; власний
+# reset-handler + HRNG-seed guard'а = fielded-residual (00_07 SEC.21).
+set(CMAKE_C_FLAGS_INIT          "${SILKEN_CPU_FLAGS} -ffunction-sections -fdata-sections -fstack-protector-strong -Wall -Wextra")
+set(CMAKE_CXX_FLAGS_INIT        "${SILKEN_CPU_FLAGS} -ffunction-sections -fdata-sections -fstack-protector-strong -Wall -Wextra")
 set(CMAKE_ASM_FLAGS_INIT        "${SILKEN_CPU_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS_INIT "${SILKEN_CPU_FLAGS} -Wl,--gc-sections")
 

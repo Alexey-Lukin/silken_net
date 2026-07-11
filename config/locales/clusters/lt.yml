@@ -30,8 +30,8 @@ lt:
         centroid: Centroidas
         heading: Geografinis inkaras
         mapped: Sužymėta
-        mapped_no: 'Ne'
-        mapped_yes: 'Taip'
+        mapped_no: Ne
+        mapped_yes: Taip
         region: Regionas
         view_on_map: Žiūrėti žemėlapyje →
       header:

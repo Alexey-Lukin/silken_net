@@ -42,9 +42,9 @@ lt:
         title: Blokų grandinės emisijų istorija
         tx_hash: TX Kodas
       legal:
-        burn_no: 'Ne'
+        burn_no: Ne
         burn_points: Sukauptų taškų deginimas
-        burn_yes: 'Taip'
+        burn_yes: Taip
         cancellation_title: Atšaukimo sąlygos
         early_exit_fee: Išankstinio išėjimo mokestis
         early_exit_value: "%{value}%"
