@@ -59,7 +59,7 @@ module Trees
     def render_header
       div(class: "flex flex-col md:flex-row justify-between items-start md:items-center p-8 border border-gaia-border bg-gaia-surface shadow-2xl relative overflow-hidden") do
         # Декоративний фон
-        div(class: "absolute top-0 right-0 p-4 text-[100px] font-bold text-emerald-900/5 select-none") { "SOLDIER" }
+        div(class: "absolute top-0 right-0 p-4 text-[100px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { "SOLDIER" }
 
         div do
           h2(class: "text-4xl font-extralight tracking-tighter text-gaia-text") { @tree.did }

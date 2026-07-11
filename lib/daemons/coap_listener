@@ -62,7 +62,14 @@ while running
       case result.status
       when :telemetry_batch
         encoded_payload = Base64.strict_encode64(result.payload)
-        UnpackTelemetryWorker.perform_async(encoded_payload, gateway_ip, result.gateway_uid)
+        begin
+          UnpackTelemetryWorker.perform_async(encoded_payload, gateway_ip, result.gateway_uid)
+        rescue StandardError
+          # [PERF.1] Redis-enqueue-fail був невидимий: generic-rescue нижче
+          # ковтав без метрики → тихий drop пакетів під навантаженням.
+          SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "enqueue_error" })
+          raise
+        end
         SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "enqueued" })
         puts "📥 [#{timestamp.strftime('%T')}] Пакет від #{result.gateway_uid || gateway_ip} прийнято (#{result.payload.bytesize}б)"
       when :unknown_route

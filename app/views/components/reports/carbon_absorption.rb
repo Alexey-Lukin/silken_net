@@ -20,7 +20,7 @@ module Reports
 
     def header_section
       div(class: "p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
-        div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none") { t(".decoration") }
+        div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { t(".decoration") }
         div do
           p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { t(".title") }
           h2(class: "text-3xl font-extralight tracking-tighter text-white") { @organization.name }

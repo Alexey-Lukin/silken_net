@@ -43,7 +43,7 @@ module Codex
     # style, not tested.
     def render_hero
       div(class: "relative p-8 border border-gaia-border bg-gaia-surface overflow-hidden") do
-        div(class: "absolute top-0 right-0 p-4 text-[80px] font-bold text-gaia-primary opacity-5 select-none uppercase") do
+        div(class: "absolute top-0 right-0 p-4 text-[80px] font-bold text-gaia-primary opacity-5 select-none uppercase", aria_hidden: "true") do
           plain @node.realm&.name_en || "Codex"
         end
         div(class: "relative") do

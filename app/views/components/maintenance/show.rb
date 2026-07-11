@@ -35,7 +35,7 @@ module Maintenance
     def render_header
       div(class: "flex flex-col md:flex-row justify-between items-start md:items-center " \
                  "p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
-        div(class: "absolute top-0 right-0 p-4 text-[80px] font-bold text-emerald-900/5 select-none") do
+        div(class: "absolute top-0 right-0 p-4 text-[80px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") do
           @record.action_type.to_s.upcase
         end
 

@@ -13,13 +13,16 @@ module Codex
       end
 
       def view_template
-        section(class: "space-y-3") do
+        # [UI.2] controller — на СЕКЦІЇ: Stimulus-scope = елемент+нащадки, а
+        # Form (target=form/body) рендериться sibling'ом списку — з controller
+        # на div#list таргети форми були поза scope і Cmd/Ctrl+Enter був мертвий.
+        section(class: "space-y-3", data: { controller: "codex--comment" }) do
           h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-text-muted") { t("codex.comments.heading") }
 
           div(
             id: list_dom_id,
             class: "space-y-2",
-            data: { controller: "codex--comment", "codex--comment-target": "list" }
+            data: { "codex--comment-target": "list" }
           ) do
             if @comments.empty?
               p(class: "text-tiny text-gaia-text-muted italic") { t("codex.comments.empty") }

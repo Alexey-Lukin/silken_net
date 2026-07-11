@@ -11,7 +11,7 @@ module Views
               aria_label: t("theme.toggle_label"),
               class: "p-2 border border-gaia-border text-gaia-text-muted " \
                      "hover:text-gaia-primary hover:border-gaia-primary " \
-                     "focus:outline-none focus:ring-2 focus:ring-gaia-primary " \
+                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary " \
                      "transition-colors duration-300",
               data: { action: "click->theme#toggle", theme_target: "icon" }
             ) do

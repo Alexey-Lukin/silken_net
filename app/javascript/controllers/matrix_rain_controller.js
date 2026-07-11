@@ -6,6 +6,11 @@ const FRAME_INTERVAL = 60
 
 export default class extends Controller {
   connect() {
+    // [UI.3] Декоративний дощ поважає prefers-reduced-motion: глобальний
+    // CSS-гейт (application.css) глушить лише CSS-анімації, а не JS-canvas
+    // rAF-цикл — гейтимось тут (дзеркало reveal_controller).
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true) return
+
     this.canvas = this.element
     this.ctx = this.canvas.getContext("2d")
 

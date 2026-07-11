@@ -179,9 +179,13 @@ RSpec.describe Navigation::Sidebar do
       expect(html).to include('aria-label="Silken Net"')
     end
 
-    it "includes aria-label on nav items" do
-      expect(html).to include('aria-label="Oracle Visions"')
-      expect(html).to include('aria-label="Threat Alerts"')
+    # [UI.3] aria-label на <a> ПЕРЕКРИВАВ дочірній текст для SR — EWS-badge
+    # ставав нечутним. Лінки читаються дочірнім текстом (label + badge).
+    it "does not put aria-label on nav items (children must be audible)" do
+      expect(html).not_to include('aria-label="Oracle Visions"')
+      expect(html).not_to include('aria-label="Threat Alerts"')
+      expect(html).to include("Oracle Visions")
+      expect(html).to include("Threat Alerts")
     end
 
     it "includes aria-hidden on icon spans" do

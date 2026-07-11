@@ -135,4 +135,33 @@ RSpec.describe "filter_parameter_logging initializer" do # rubocop:disable RSpec
       expect(result[:longitude]).to eq(30.5234)
     end
   end
+
+  # [SEC.18] Schema-parity: example-based тести вище не ловлять НОВУ PII-колонку.
+  # Кожна string/text-колонка PII-таблиць мусить бути КЛАСИФІКОВАНА: або
+  # редагується filter_parameters, або свідомо внесена в allow-list нижче.
+  # Нова некласифікована колонка → цей тест червоний → людина вирішує.
+  describe "PII-table column parity [SEC.18]" do
+    non_pii_allowed = {
+      "users" => %w[role locale time_zone],
+      "organizations" => %w[name registry_id data_region hadron_kyc_status
+                            crypto_public_address solana_public_address]
+    }.freeze
+
+    %w[users organizations].each do |table|
+      it "classifies every string column of #{table} (filtered PII or explicit allow)" do
+        string_columns = ActiveRecord::Base.connection.columns(table)
+          .select { |c| %i[string text].include?(c.type) }
+          .map(&:name)
+
+        unclassified = string_columns.reject do |col|
+          non_pii_allowed.fetch(table, []).include?(col) ||
+            filter.filter({ col => "probe" })[col] == "[FILTERED]"
+        end
+
+        expect(unclassified).to be_empty,
+          "Некласифіковані string-колонки #{table}: #{unclassified.join(', ')} — " \
+          "додай у filter_parameters (PII) або в NON_PII_ALLOWED (свідомо не-PII)"
+      end
+    end
+  end
 end

@@ -9,7 +9,7 @@ module Wallets
     def view_template
       # ⚡ [СИНХРОНІЗАЦІЯ]: target ID для BlockchainMintingService
       div(id: "wallet_balance_#{@wallet.id}", class: container_classes) do
-        div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none") { t(".decoration") }
+        div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { t(".decoration") }
 
         p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-4") { t(".verified_balance") }
         div(class: "flex items-baseline gap-4") do

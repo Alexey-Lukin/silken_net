@@ -73,6 +73,22 @@ RSpec.describe Codex::Comments::Thread do
     expect(html).to include('data-controller="codex--comment"')
   end
 
+  # [UI.2] Stimulus-scope = controller-елемент + нащадки. Form (target=form/
+  # body) — sibling списку, тож controller мусить сидіти на СПІЛЬНОМУ предку,
+  # інакше composer-таргети поза scope і Cmd/Ctrl+Enter мертвий (регресія
+  # coverage-sweep 2026-07-08).
+  it "keeps the form/body targets INSIDE the controller element's subtree" do
+    user = double("User")
+    html = render_thread(node: node, comments: [], current_user: user)
+
+    doc = Nokogiri::HTML5.fragment(html)
+    scope = doc.at_css('[data-controller="codex--comment"]')
+    expect(scope).to be_present
+    expect(scope.at_css('[data-codex--comment-target="list"]')).to be_present
+    expect(scope.at_css('[data-codex--comment-target="form"]')).to be_present
+    expect(scope.at_css('[data-codex--comment-target="body"]')).to be_present
+  end
+
   it "uses gaia-* tokens only" do
     html = render_thread(node: node, comments: [], current_user: nil)
     expect(html).not_to include("bg-white")

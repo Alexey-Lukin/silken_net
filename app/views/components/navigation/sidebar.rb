@@ -102,10 +102,12 @@ module Navigation
       label  = t("navigation.items.#{key}")
       active = @current_path.start_with?(path.split("?").first)
 
+      # [UI.3] Без aria_label: він ПЕРЕКРИВАВ дочірній текст для SR — незрячий
+      # не чув EWS-badge («Threat Alerts 5» ставало «Threat Alerts»). Діти
+      # самодостатні: icon aria_hidden, label-span + badge-span читаються.
       a(
         href: path,
         aria_current: (active ? "page" : nil),
-        aria_label: label,
         class: tokens(
           nav_item_base_classes,
           active ? nav_item_active_classes : nav_item_inactive_classes

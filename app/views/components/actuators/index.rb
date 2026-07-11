@@ -35,7 +35,7 @@ module Actuators
     def header_section
       div(class: "p-8 border border-emerald-900 bg-black flex flex-col md:flex-row justify-between items-start md:items-center relative overflow-hidden shadow-2xl") do
         # Декоративний фон
-        div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none") { t(".decoration") }
+        div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { t(".decoration") }
 
         div do
           h3(class: "text-tiny uppercase tracking-[0.5em] text-emerald-700 mb-2") { t(".title") }

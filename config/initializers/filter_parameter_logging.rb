@@ -8,5 +8,8 @@ Rails.application.config.filter_parameters += [
   :aes_key, :wallet_private_key, :mnemonic, :binary_payload, :private_key, :secret_key,
   :signature, :payload, :ed25519_public_key,
   # PII, що текло в логи cleartext (O4/O3): контактні дані патрульних/лісників.
-  :phone_number, :telegram_chat_id, :push_token
+  :phone_number, :telegram_chat_id, :push_token,
+  # [SEC.18] Імена — теж PII (текли повз перший список); recovery_codes =
+  # креденшели другого фактора.
+  :first_name, :last_name, :recovery_codes
 ]

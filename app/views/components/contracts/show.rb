@@ -27,7 +27,7 @@ module Contracts
 
     def render_hero_section
       div(class: "p-10 border border-emerald-900 bg-zinc-950 flex flex-col md:flex-row justify-between items-center relative overflow-hidden") do
-         div(class: "absolute top-0 right-0 p-4 text-[100px] font-bold text-emerald-900/5 select-none") { t(".decoration") }
+         div(class: "absolute top-0 right-0 p-4 text-[100px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { t(".decoration") }
 
          div do
            p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { t(".identity") }

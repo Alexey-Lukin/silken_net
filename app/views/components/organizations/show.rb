@@ -33,7 +33,7 @@ module Organizations
     def render_header
       div(class: "flex flex-col md:flex-row justify-between items-start md:items-center p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
         # Декоративний фон для ідентифікації
-        div(class: "absolute top-0 right-0 p-4 text-[80px] font-bold text-emerald-900/5 select-none") { t(".hero_decoration") }
+        div(class: "absolute top-0 right-0 p-4 text-[80px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { t(".hero_decoration") }
 
         div do
           h2(class: "text-4xl font-extralight tracking-tighter text-emerald-400") { @organization.name }
