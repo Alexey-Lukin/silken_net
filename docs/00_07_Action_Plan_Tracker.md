@@ -11,7 +11,7 @@
 ---
 
 > **Розмітка — дві осі (як у Projects V2: `Assigned Agent` + `Shape Up Stage`):**
-> - **WHO** (хто робить *відкриту* роботу): `🤖` **Код/аналіз** — coding-agent самостійно (код/firmware/розрахунок/документ/тест) · `👤` **Операційна** — потрібен власник (hardware, фізична лабораторія, секрети, зустрічі, юрист, зовнішні UI/дашборди). Комбо `🤖+👤` — провідний перший, ОДНЕ написання.
+> - **WHO** (хто робить *відкриту* роботу): `🤖` **Код/аналіз** — coding-agent самостійно (код/firmware/розрахунок/документ/тест) · `👤` **Операційна** (руки) — потрібен власник (hardware, лабораторія, секрети, staging-verify, деплой, зустрічі, юрист, зовнішні UI/дашборди) · `⚖️` **Рішення** (голова, `⊂ 👤`) — присуд, що НЕ зводиться до відомої дії: вибір параметрів/чисел/порогів, ратифікація політики, arch-lock-in, вибір партнера/юрисдикції. Комбо `🤖+👤` — провідний перший, ОДНЕ написання. **`⚖️` — маркер decision-residual на ЧЕКБОКСАХ** (`- [ ] ⚖️ …`); meta-line WHO лишається `🤖`/`👤`/`🤖+👤` (meta-line-⚖️ = фаза 2, потребує `WHO_CANON`-оновлення).
 > - **STAGE** (лайфсайкл, окремо від WHO): `⚪` **Не почато** · `🟡` **В роботі** (частково зроблено) · `🟢` **Готово-інертно** (host/код done, чекає bench-фліпу або активації за гейтом) · `🔗` **Заблоковано** (на іншу задачу/рішення) · `🌿` **Far-horizon** (post-TRL). Повністю done → **§🗄️ Архів**.
 
 > **Форма пункту (стандарт — щоб трекер був однорідний):**
@@ -19,7 +19,7 @@
 > - **Meta-line** (рівно один, перший рядок): `**PN** · WHO · STAGE · → канон-реф`. `PN` ∈ `P0`–`P3`; `WHO` = `🤖`/`👤` (комбо `🤖+👤`, AI-first; **НЕ** `👤+🤖`/`👤/🤖`); `STAGE` = `⚪`/`🟡`/`🟢`/`🔗`/`🌿` (рівно ОДИН, окремо від WHO); реф = канон код-спан або лінк із реальним `§X`, і **нічого після нього** (контекст типу `· ✅ ліцензія` → у Стан). Форма enforced `meta_form_violations` ([`00_06 §3`](00_06_SSOT_Documentation_Standard) — **HARD**); Module = §-секція, вже enforced.
 > - **Порядок у секції — за пріоритетом** (`P0`→`P3`): новий пункт стає на позицію свого `PN` у пріоритет-кластері секції, не в хвіст — найгостріше згори (enforcement очима, не лінтером).
 > - **Тіло — тонкий вказівник, не копія канону.** Перший рядок тіла — **ЗАВЖДИ** `- **Стан:**` <суть/присуд + канон-pointer> (повний опис у каноні; для ⚪-пунктів — короткий опис стану «не почато»). Universal-форма (founder 2026-06-14): **НЕ** «✅ X»-лід / prose-лід / bare-checkbox-лід — однорідність трекера (enforced `verdict_lead_violations`, [`00_06 §3`](00_06_SSOT_Documentation_Standard) — **HARD** з 2026-06-14, усі 138 items на `**Стан:**`-ліді). Відкрите → `[ ]` (`[x]` done · `[~]` частково) з WHO-тегом. Bench/validation-чек-лист (runbook) лишається.
-> - **Чекбокси — вертикальним списком.** Кожен residual окремим рядком `- [ ] WHO — …` (читабельність + чисті diff'и, без glue-ризику). **≥2 інлайн `· [ ]` в одному рядку — ЗАБОРОНЕНО** (HARD guard `inline_residual_runon`, [`00_06 §3`](00_06_SSOT_Documentation_Standard)); одиничний residual теж краще вертикально.
+> - **Чекбокси — вертикальним списком.** Кожен residual окремим рядком `- [ ] WHO — …` (WHO ∈ `🤖`/`👤`/`⚖️`; `⚖️` = decision-residual «голови», `⊂ 👤` — потребує присуду, не відомої дії) (читабельність + чисті diff'и, без glue-ризику). **≥2 інлайн `· [ ]` в одному рядку — ЗАБОРОНЕНО** (HARD guard `inline_residual_runon`, [`00_06 §3`](00_06_SSOT_Documentation_Standard)); одиничний residual теж краще вертикально.
 > - **Без change-history та volatile-лічильників у тілі** — «коли» тримає git (не `✅ (дата) …`-стіни), к-сть тестів/рядків дрейфує. Повністю закритий пункт → **§🗄️ Архів** (рядок `ID → канон`), не «товстий ✅».
 
 ---
@@ -206,7 +206,7 @@
 - **Стан:** Гео-рішення founder + дим-фриз + машинна половина зацементовані в канон: орієнтація знята (рішення (б) — гіроїд бінеперервний, [`01_01 §5.5`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) · вал **Ø11** + монолітний центр-стрижень шини ([`01_01 §1.4`](01_01_Coaxial_Gyroid_Topology_and_PEEK)/HW.34) · радіальний дим-ланцюг frozen (PEEK 2 мм → рана Ø15; осьовий Zone 2 50 / фланець Ø25; unified Lamé combined SF 5.6×, [`01_01 §4.2`](01_01_Coaxial_Gyroid_Topology_and_PEEK)). PicoGK CAD-родина ✅ COMPLETE (v2 graded 3-осі + Деталь 3/4 + capsule-end/axial-stack mate-audit; ARCH.25 connectivity-стіл topology-agnostic) → sheet→network схиляння = трек, не рішення. Анкерний-кущ synergy-DAG живе у §01a intro. Залишок (нижче) — FEA · фіз-валідація · MATE-Ø.
 - [ ] 🤖+👤 **FEA пружності гіроїда — sheet-vs-network E (THE відкрита вісь)**: порозність-бік знятий (PicoGK voxel 0.1 → 67.6%≈65%; груба роздільність false-high 21–28%). Відкрита жорсткість — network@65% bending n=2 → E≈13.5 ГПа (= цільова §5.2) vs sheet stretch n≈1.3 → ~22–30 ГПа ≫ деревина → stress-shield повертається; ARCH.25 + літ по 4 осях (топологія / транспорт / механіка / друк) **схиляють до network**; + анізотропія (поперечна E_R/E_T ~0.5–1.5 ≪ поздовжня E_L, анкер горизонтальний); + стала-vs-градієнт порозність відкрита (CAD `wallParam(r)` тримає обидві). 💡 β-Ti coupling (HW.24 bake-off): низько-E сплав ~80 ГПа знижує gyroid-E → може зняти гостроту (in-silico `50`). Exact E = FEA-homogenization — **self-own-кандидат** (поверх ARCH.25-стола) АБО школа Гусака. Канон [`01_01 §5.2/§5.5/§5.6`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
 - [ ] 👤 фіз-валідація — µCT порозність + нанотвердомір E на купоні (post-перша-партія, HW.24)
-- [ ] 👤 **MATE-Ø skirt/inboard геом-вибір** (founder, з HW.17 Radome) — capsule-end/axial-stack mate-audit лишив незведеним ([`02_02 §4.4/§4.5`](02_02_Blind_Mate_Pogo_Pin_Interface))
+- [ ] ⚖️ **MATE-Ø skirt/inboard геом-вибір** (founder, з HW.17 Radome) — capsule-end/axial-stack mate-audit лишив незведеним ([`02_02 §4.4/§4.5`](02_02_Blind_Mate_Pogo_Pin_Interface))
 - [ ] 🔭 Future-lever: PEEK-стінка термічно надлишкова (combined SF 5.6× ≫ 3 → 2 мм не stress-обмежені) → тонша = менша рана / нижчий DBH-поріг; bench/FEA-gated, не зараз ([`01_01 §4.2`](01_01_Coaxial_Gyroid_Topology_and_PEEK))
 - [ ] 🤖 **LatticeLibrary submodule stale** (2025-07 vs ShapeKernel 2026-06) → `dependency-update` прохід (не блокер — власний SDF не залежить)
 
@@ -322,7 +322,7 @@
 - **P2** · 🤖+👤 · ⚪ · → `01_02 §1.3a`, [`00_03 §3.5`](00_03_TRL_Matrix_HIL_and_Beyond)
 - **Стан:** Gap-pass §01 (2026-07-05) — ~20+ *окремо* названих і трекнутих failure-mode'ів (V-release, PEEK creep, resinosis, H-embrittlement, chloride-corrosion, freeze-thaw, connector-fatigue, overgrowth, biofouling…), але **ніщо не синтезує їх у severity×occurrence×detectability risk-priority-ранжування**. `SECURITY_ASSURANCE_CASE.md` доводить, що орг цей патерн уміє й виконує — для **security** (threat-model→boundaries→guards→residuals); HW-еквіваленту нема. `01_02 §1.3a` називає «Failure Mode A/B/C» але вузько на 3 DMLS-кроки, retrospective. §01a synergy-DAG пріоритезує за work-dependency (що швидше розблоковує), не за risk-severity (що катастрофічне vs косметичне) — обидві осі потрібні, є лише одна. **🤖-half несе більшість (desk-synthesis, нуль лаб-роботи):** я СКЛАДУ FMEA-таблицю з уже-відомих mode'ів (S×O×D → RPN); 👤 = валідувати severity-числа. Прямо живить Stage-2 6-alloy coin bake-off (HW.24) coin-allocation. Канон [`00_03 §3.5`](00_03_TRL_Matrix_HIL_and_Beyond), `01_02 §1.3a`.
 - [ ] 🤖 скласти FMEA/FMECA-таблицю (усі трекнуті failure-mode'и × S×O×D → RPN-ранг) — desk-study з наявного
-- [ ] 👤 валідувати severity-числа + пріоритети (інженерне судження) → живить HW.24 coin-allocation
+- [ ] ⚖️ валідувати severity-числа + пріоритети (інженерне судження) → живить HW.24 coin-allocation
 
 #### ARCH.30 — Parallel CFD gyroid simulation на Akash GPU
 - **P3** · 🤖+👤 · 🌿 · → `01_01`
@@ -351,7 +351,7 @@
 - **P1** · 🤖+👤 · 🟡 · → `01_03 §3.4`
 - **Стан:** Zero-Lab in-silico (TRL 3) ✅ завершено (2026-05-25) — computational reverse-engineering хімії ДО Ti-coin (AlphaFold3+OpenMM+PySCF+scipy, Python→AI-clones); фізичний TRL 4 = Ti-coin in-vitro pending. Q1-paper (`08_01` Стаття 1): ①②④ ✅, ③ cathode borderline-robust (Ru λ=0.78) → текст сабміт-ready (publish-to-protect, UNI.3, `08_01 §2`). Канон `01_03 §3.4`; числа → [`SUMMARY`](protocols/ebfc/in_silico/SUMMARY.md)/[`PIPELINE_STATUS`](protocols/ebfc/in_silico/PIPELINE_STATUS.md). Хімічний working-backlog (CHEM.N + open computes) ↓.
 - [x] 🔗 **AF3 non-commercial × R&D-use** — рішення (founder 2026-07-05): **document + accept** (не re-predict зараз). Юр-позиція в `/NOTICE`: use через open-source+publication (restriction #1 виняток); MD = stability-sim ≠ Glide/AutoDock docking (#2 не apply); residual accepted pre-commercial. Legal-review defer-path вже трекнутий (UNI.16 · UNI-legal §). **ESMFold-mitigation** (open-weight re-predict із `job_request.json` sequence → замінити AF3 у R&D-шляху, лишити AF3 для publication-benchmark) — активувати ЛИШЕ якщо юр-позиція зміниться.
-- [ ] 👤 інфраструктура: workstation RTX 4090 ($5–10K) АБО cloud GPU (AWS p5.2xlarge / GCP g2-standard-12)
+- [ ] ⚖️ інфраструктура: workstation RTX 4090 ($5–10K) АБО cloud GPU (AWS p5.2xlarge / GCP g2-standard-12)
 - [ ] 👤 Joint Q1-paper з Мінаєвим (`08_01` Стаття 1 — in-silico electron-transfer energetics; повна назва — дім `08_01 §1`) — текст draft-complete (`paper/`), сабміт-ready
 - [ ] 👤 Fig 1 graphical-abstract (BioRender; code-draft є) + TOC-графіка
 - [ ] 👤 фіналізувати cover letter (draft є)
@@ -484,7 +484,7 @@
 - [ ] 👤 **HFSS-симуляція** Ti-фланець + PEEK-радом + чіп-антена (`02_01 §5.3` revised; VNA → Гончаров E.53) — VSWR < 1.8, gain ≥ −2 dBi
 - [ ] 👤 Замовити PEEK прототип (radome + shield-конус ≥3мм/R≥5, `01_04 §5.5`)
 - [ ] 👤 Верифікувати RF performance (VSWR/КСВ) з антеною під радомом + Ti-фланцем (overhang тест)
-- [ ] 👤 MATE-Ø skirt/inboard вибір (radial) + Z-reconcile (lock-groove-Z↔lug-Z) — bench разом (HW.8.8)
+- [ ] ⚖️ MATE-Ø skirt/inboard вибір (radial) + Z-reconcile (lock-groove-Z↔lug-Z) — bench разом (HW.8.8)
 
 #### HW.29 — Board-to-Board Connector pair: Power Deck ↔ RF Deck (NEW 2026-05-16)
 - **P1** · 👤 · ⚪ · → `02_01 §3.1`, `§5.3`
@@ -719,7 +719,7 @@
 #### FW.54 — STOP2 RTC-only 300nA: SRAM2-off → RAM-стан (Flash-KV vs RTC-реклемація)
 - **P2** · 👤 · 🟢 · → [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)
 - **Стан:** 300nA-режим вимикає SRAM2 retention → RAM-only стан гине (RTC DR0..DR19 виживає: EMA/mesh-кеш/Lorenz/delta_t wall-маркер). Host-готово: Flash-KV (`flash_kv.{h,c}`, power-cut тести) + RAM-state інвентар (§2.3.1, групи A/B/C) + 3-осьова RTC-реклемація (§2.3.2: дешева реклемація розміщує live-набір FW.54 у RTC — Flash для нього НЕ потрібен). **DID-інверсія ВИРІШЕНА** (founder, §7): DID = детермінований `f(96-біт UID)` murmur3-fmix32 recompute-on-boot (`did_derive.h` + Ruby-дзеркало `SilkenNet::DidDerivation`, golden g1-g4; нуль → Queen Sentinel) → **DR7 звільнено** (перша реклемація з FW.2-freeze), DID VBAT-durable, однопрохідна фабрика; стара `UID⊕random` (FW.24-fallback) сиротила гаманець при EDLC-розряді. **wire_did зшито обабіч ✅ (2026-07-03):** фабричний транскрипт (`TreeResolver`: create/re-flash/bind/колізія→quarantine на `trees.silicon_uid_hex` + live wrong-board guard `-r32`-preflight до першого `-w32`) + польовий register (мертвий `last(8)`-DID → деривований, ожив double-init guard) — [`03_06 §2/§5`](03_06_Factory_Flashing_and_Key_Provisioning) + [`03_01 §7`](03_01_Firmware_Lifecycle_and_DMA). Канон [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)/§2.3.1/§2.3.2 + DID-механізм [`03_01 §7`](03_01_Firmware_Lifecycle_and_DMA).
-- [ ] 👤 рішення: RTC-реклемація (§2.3.2) vs Flash-KV persist vs SRAM2-retain — свідомо відкладено до bench (приймати з виміряним 300nA floor PPK2/JS220, RUNBOOK 3.1, не з моделлю)
+- [ ] ⚖️ рішення: RTC-реклемація (§2.3.2) vs Flash-KV persist vs SRAM2-retain — свідомо відкладено до bench (приймати з виміряним 300nA floor PPK2/JS220, RUNBOOK 3.1, не з моделлю)
 - [ ] 👤 bench: HAL_FLASH glue + ECCD-політика + вимір 300nA + persist-roundtrip
 
 #### FW.59 — Немає reset-cause / crash-телеметрії (обидва вузли)
@@ -956,7 +956,7 @@
 - **P2** · 🤖+👤 · ⚪ · → [`04_01 §7`](04_01_Data_Models_and_Entities), `07_01 §8`
 - **Стан:** Не почато — over-ARCH.57 residual. **Erasure-ядро вже трекає ARCH.57(4)** («GDPR erasure-процедура + encrypt identities» — НЕ дублювати); наявна основа: `data_region`-шардинг ✅ (`04_01`, eu/us/ap), `filter_parameters` scrub'ить PII з логів, tree-дані свідомо ≠ PII (`00_08`), privacy-policy planned (BIZ.3). Ширший residual поза erasure: User/Org/Forester несуть PII (email/phone/telegram_chat_id/push_token), але немає (а) **retention-POLICY** (default-TTL/auto-expiry), (б) **DSAR-export** (право доступу/переносності — віддати суб'єкту дані, ≠ стерти), (в) **anonymization↔immutability reconcile** (стерти PII, зберігши immutable AuditLog — напруга з ARCH.57 (1)/(2)). Pre-commercial-legal, активується при онбордингу EU-лісників. NB: `07_01 §2` «Таблиця SLA» — інша SLA. Канон `04_01 §7`, `07_01 §8`.
 - [ ] 🤖 retention-worker (per-модель TTL) + `AnonymizeUserService` (reconcile з append-only AuditLog ARCH.57) + DSAR-export endpoint
-- [ ] 👤 retention-періоди per-юрисдикція (СЄУ legal, `08_02 §5`) + consent-tracking рішення
+- [ ] ⚖️ retention-періоди per-юрисдикція (СЄУ legal, `08_02 §5`) + consent-tracking рішення
 - [ ] 🤖 [gap-pass §07] outbound breach-notification (GDPR Art.33/34: 72h supervisory-authority + data-subject) — дзеркало SECURITY.md inbound-vuln-ack (ARCH.57 flag'ає `identities` plaintext)
 
 #### ARCH.61 — Sidekiq Web UI не змонтований (ops-рунбук шле на неіснуючий інструмент)
@@ -1049,14 +1049,14 @@
 #### SLASH-1 — Slashing cause-gate (positive-A-evidence)
 - **P0** · 🤖+👤 · 🟡 · → `05_05 §3.2/§6` (divergence `04_02 §13b`)
 - **Стан:** Необоротний `slash()` — лише за прямим доказом Кат-A на чокпоінті `BlockchainBurningService` (`Slashing::CauseEvidence#positive_a?`), інакше `:frozen` + Field-Audit (C-дефолт §2 відновлено; накриває всі 4 тригери burn). **Присуд P0-reframe («чесний decode», founder-вибір A):** wire status=3 виявився виключно софт-збоєм (`vm_error`; mruby повертає лише 0..2, фізичний tamper = PANIC_FLAG-канал) — старий decode був **інверсією**: positive-A живився софт-збоями, справжня пилка недосяжна, кластерний OTA-баг = детермінований 100%-slash невинних. Шиплено: `firmware_fault(11)` + chainsaw-гейт `panic? || anomaly?` + евристика vm_error→0.0 + `field_audit`-dedup (`escalate_field_audit!` + partial-unique) + penalty-uplift де-self-ref + Celo-reward на vm_error-день ратифіковано ПЛАТИТИ. **Наслідок-політика: `vandalism_breach` без авто-writer'а → авто-slash freeze-only до наповнення A-сету** (гейт-кластер 🚦; ручний шлях = Field-Audit C→A, [`06_08 §4`](06_08_Resilience_and_Failover_Policy)). Реальність сигналів + kill-chain + dedup — [`05_05 §3.2/§6/§7`](05_05_Slashing_and_Risk_Policy); decode/alert/reward-доми — [`04_01`](04_01_Data_Models_and_Entities) + [`04_02`](04_02_Business_Logic_and_Services); panic-флоу — [`03_03 §7.2`](03_03_TinyML_Acoustic_Inference). (INS.1-цемент: `field_audit`-тип/gap-D + `DailyHealthRouter` — дім [`05_05 §6`](05_05_Slashing_and_Risk_Policy).) Відкрите ↓.
-- [ ] 👤 DAO/founder перед mainnet (лише ПІСЛЯ field-validation TinyML): розширити A-сет (scoped-unmaintained + chainsaw + майбутній HW tamper-канал) + активувати inert `penalty_factor`-uplift (`slash_cause_uplift_enabled`)
+- [ ] ⚖️ DAO/founder перед mainnet (лише ПІСЛЯ field-validation TinyML): розширити A-сет (scoped-unmaintained + chainsaw + майбутній HW tamper-канал) + активувати inert `penalty_factor`-uplift (`slash_cause_uplift_enabled`)
 - [ ] 👤+🤖 (secondary, design-gated) tree-side `streamr_undelivered` сигнал-джерело + repeat-offence вага — будувати РАЗОМ з DAO-калібруванням uplift-активації (чекбокс ↑): backend-Kredis маркер НЕ сміє штрафувати (нот.12), node-offline вже покривають `comms_no_ack?`-типи → нове джерело без ground-truth = спекулятивний дизайн
 
 #### SEC.1 — Multisig Gnosis Safe + PAUSER⊥admin split + DAO-активація [поглинув BIZ.4 2026-07-04]
 - **P0** · 👤 · 🟢 · → [`05_03` — Admin-Role Split](05_03_Tokenomics_SCC_and_SFC), [`05_06`](05_06_Governance_and_DAO)
 - **Стан:** Code-complete + verified (`Deploy.t.sol` пінить матрицю ролей + закритий bypass); **нічого не задеплоєно**. Кожен economic-vector admin (SCC/SFC токени + `ProtocolParameters` + `StateRootAnchor`) = `SilkenTimelock` 48h; `pause`/`unpause`=Gnosis Safe (миттєво) — єдине правило «admin=Timelock, окрім pause». Закрито: instant-`grantRole(MINTER)` + Safe-`grantRole(GOVERNANCE_ROLE,self)`-bypass ([E.35]); `REQUIRE_SAFE_ADMIN` + last-admin guards. forge build/test/fmt зелені. **[BIZ.4 злито]** SEC.1 і BIZ.4 гейтили ОДНУ mainnet-подію (той самий `Deploy.s.sol` / Safe / Timelock): контракти + backend готові-інертно (`SilkenGovernor`+`SilkenTimelock`+`ProtocolParameters`+`Governance::ParameterSyncWorker` — активний daily cron, але self-skips без `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS` → **no-op до цього ж деплою**; Foundry+RSpec-покрито). Канон [`05_03` — Admin-Role Split](05_03_Tokenomics_SCC_and_SFC) (+ StateRootAnchor [`05_04`](05_04_Ethereum_L1_State_Anchor), governance [`05_06`](05_06_Governance_and_DAO), [`07_01`](07_01_Nature_as_a_Service_Contracts)).
 - [ ] 👤 створити Gnosis Safe (3/5|2/3) на Polygon + деплой з `ADMIN_ADDRESS=<Safe>` `REQUIRE_SAFE_ADMIN=true` + transfer admin-ролей → Timelock (крім `pause`, E.2) + активація on-chain governance (розблокує `ParameterSyncWorker` — GOV.1 ✅ §🗄️, read-path готовий)
-- [ ] 👤 реальні зовнішні co-signer'и Safe — solo-founder: усі ключі в однієї особи = театр (HW-wallet'и + social recovery); renounce Timelock-admin + Safe-PROPOSER→`address(0)` post-DAO
+- [ ] ⚖️ реальні зовнішні co-signer'и Safe — solo-founder: усі ключі в однієї особи = театр (HW-wallet'и + social recovery); renounce Timelock-admin + Safe-PROPOSER→`address(0)` post-DAO
 
 #### E.32 — Smart Contract Audit (pre-mainnet security gate)
 - **P1** · 👤 · 🟢 · → `05_03`
@@ -1085,12 +1085,12 @@
 - **Стан:** Dual-trigger oracle **SHIPPED** (minimal, INERT за kill-switch `:parametric_insurance_oracle_enabled` default off — `f6deb5ad`) — мертву `evaluate_daily_health!` (0 prod-callerів) оживлено: AI = Trigger-1 (`arm_candidate!` → `:triggered` + `field_audit`, **НЕ** payout), settlement лише за НЕЗАЛЕЖНИМ Trigger-2 (dClimate verified / Field-Audit) через `InsurancePayoutWorker#awaiting_independent_confirmation?` — закриває basis-risk/moral-hazard; no-data guard (`escalate_no_data_field_audit!` замість тихого 0 — «не карати жертву»); fire-шлях + integration-тест landed. + `DailyHealthRouter` (DRY) + `field_audit`/gap-D + insurance SLO. Філософія «почути дерева, без людського фрауду» (`00_01 §1/§2/§6`; North-Star = forest-collective `00_08 §1`). **[peril-honest routing SHIPPED]** verify-by-data (deep-audit) переписав drought-задачу: хибний-slash УЖЕ закритий SLASH-1 Cat-A гейтом; справжня діра — **Potemkin-peril** (Cosmic Eye обіцяв 3 перили, fire-FIRMS-двигун верифікує 1). `Dclimate::VerificationService` адьюдикує ЛИШЕ fire; не-пожежа (посуха/шкідник) → `escalate_non_fire_to_field_audit!` (`:inconclusive`/Field-Audit, НІКОЛИ `rejected_fraud`/slash; +insect у `requires_satellite_consensus?`/`awaiting_independent_confirmation?`) → прибрано «тавро жертви фраудом» + canon-drift (неіснуючий `dClimate.drought_index` у `05_05 §2/§4`). Дзеркало SLASH-1/E.63. `trigger_event` НЕ мертвий (= застрахований перил; тепер `validates presence` — гарантія майбутнього creation-шляху, прод-шляху ще немає; дім [`04_01`](04_01_Data_Models_and_Entities); «оживлення на payout» відкинуто verify-by-data як non-problem). 🔗 Зшито: **E.41** (satellite-obscured fire = той самий Field-Audit-клас) · **E.20/E.34** (`ForestBountyService` дрон-fallback) · **UNI.12** (Field-Audit SOP + ДСНС-API) · **S3.2** (real-API gate). Дім [`05_05 §4`](05_05_Slashing_and_Risk_Policy) (+ [`04_02 §6`](04_02_Business_Logic_and_Services) · [`07_01 §7`](07_01_Nature_as_a_Service_Contracts) · `04_01` · [`06_03 §2.8`](06_03_Prometheus_Observability) · [`05_06`](05_06_Governance_and_DAO)). Відкрите ↓.
 - [ ] 🤖 (deferred, 👤-API-gated) **реальний** drought/pest Trigger-2-оракул — misroute уже закрито (peril-honest routing ↑); лишається ДЖЕРЕЛО verified-підтвердження: dClimate `drought_index`/soil-moisture (S3.2) / ДСНС-API (UNI.12) / `ForestBountyService` дрон (E.20/E.34) + acoustic-pest; чистий armed-vs-confirmed payout-gate. North-Star = голос самого лісу (sap/VPD/acoustic [`05_05 §7`](05_05_Slashing_and_Risk_Policy); forest-collective [`00_08 §1`](00_08_Beyond_TRL9_Planetary_Roadmap))
 - [ ] 🤖 (deferred, gated) Auto-Immune Sentinel hook ([`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap) Gap #4): proactive cluster-fingerprint + decoy-DID tripwire (+ Merkle inclusion-witness ARCH.12/E.60 як крипто-доказ включення запису) як джерела незалежного підтвердження, коли money-path live + cap зросте
-- [ ] 👤 активувати kill-switch `:parametric_insurance_oracle_enabled` — drought-misroute УЖЕ закрито (посуха не йде хибним slash-шляхом); лишається: без реального drought/pest Trigger-2 (↑) посуха/шкідник тримаються у Field-Audit (не авто-платяться — безпечно, але peril неповний). ⚠️ На РЕ-активації після паузи врахувати накопичений `:triggered`-backlog → `InsurancePayoutRecoveryWorker`-burst (payouts idempotent+gated, переважно HOLD post-peril-honest → load-, не money-concern)
+- [ ] ⚖️ активувати kill-switch `:parametric_insurance_oracle_enabled` — drought-misroute УЖЕ закрито (посуха не йде хибним slash-шляхом); лишається: без реального drought/pest Trigger-2 (↑) посуха/шкідник тримаються у Field-Audit (не авто-платяться — безпечно, але peril неповний). ⚠️ На РЕ-активації після паузи врахувати накопичений `:triggered`-backlog → `InsurancePayoutRecoveryWorker`-burst (payouts idempotent+gated, переважно HOLD post-peril-honest → load-, не money-concern)
 
 #### BIZ.13 — Slashing principal-agent: investor capital vs operator-bond
 - **P2** · 🤖+👤 · 🔗 · → `05_05 §3.1`, `05_03 §Slashing`, `04_02`
 - **Стан:** Principal-agent (slash інвестора за провину оператора, `00_01 §6` «не карати жертву») **ЛАТЕНТНИЙ у поточній Моделі A** (ERD: `Cluster`+`NaasContract` belongs_to ОДНІЄЇ org, forester ∈ org → org інтерналізує ризик власного оператора; `forester_share` 95% обчислюється-**не**-диспенситься, doc-ahead-of-code). Зʼявляється з **guild-маркетплейсом** (Модель B: незалежні foresters ≠ інвестори — E.20). Рекомендація (deep-audit 2026-06-16, founder-схвалено): **hybrid + guild-sponsor** waterfall (holdback→operator-bond→sponsor-bond→investor-excess); guild-sponsor = соціальна застава новачка. **Фаза 2** — будувати РАЗОМ з forester-payout (greenfield) + з guild (E.20); фаза 1 = positive-A-guard (SLASH-1 §3.2, зараз). Канон [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy); service-зв'язок `04_02 §Forester Guild`.
-- [ ] 👤 DAO ratify (на Модель-B перехід): hybrid+guild-sponsor + параметри (bond-sizing / holdback-% / sponsor-cap / reputation-scaling)
+- [ ] ⚖️ DAO ratify (на Модель-B перехід): hybrid+guild-sponsor + параметри (bond-sizing / holdback-% / sponsor-cap / reputation-scaling)
 - [ ] 🤖 після DAO + guild-маркетплейс E.20 — `OperatorBond` + `GuildSponsorship` + `ProtocolParameters` + `BlockchainBurningService` waterfall + escrow (reuse `Wallet#lock_funds!`) + синх `05_05 §3`/`05_03`/`04_02`
 
 #### E.60 — Merkle CID-witness: Polygon ↔ Filecoin integrity bridge
@@ -1128,13 +1128,13 @@
 #### ARCH.62 — mint-volume/velocity anomaly circuit-breaker
 - **P2** · 🤖+👤 · 🟢 · → [`05_02`](05_02_Proof_of_Growth_Pipeline), [`06_03 §2.8`](06_03_Prometheus_Observability)
 - **Стан:** Machine-half ✅ **SHIPPED (2026-07-06).** Gap-pass §05 (2026-07-05) знахідка: per-tx guards + `MAX_SUPPLY`-стеля ловлять поодинокі аномалії, але **агрегатну аномалію обсягу mint'у ніщо не ловило** (`chain_audit_delta` мовчить, коли DB↔chain згодні на аномальному числі; `mint-slo-breach` = success-RATE не VOLUME; `scc_minted_total` = unalarmed лічильник). Живий PATH-2 довіряє upstream growth_points-арифметиці без oracle, MINTER-ключ = ENV-plaintext (SEC.17). Комплемент, НЕ заміна ex-post-clawback (ARCH.53/SLASH-1 §3.3) — обмежує blast-radius over-мінту у вікні детекції. **Шиплено:** gauge `silkennet_mint_volume_window_scc` (rolling-1h per token_type; семплить `Treasury::MonitorService` — той самий 15-хв money-path прохід що G1/G2) + detector vs `SystemParameter :mint_volume_hourly_max_scc` (inert 0=off, gauge живий завжди) → dedup'нутий `system_fault`-алерт + `sn-alert-mint-volume-anomaly` (Grafana operator-ceiling ~MAX_SUPPLY, калібрується вниз) + **per-token** inert circuit-break (`:mint_circuit_breaker_enabled` default false → Kredis `mint:circuit_broken:<token>`; `BlockchainMintingService` HOLD'ить лише той токен у `:pending` re-runnable, НЕ escalate — чистий tx не осиротюється). One-Home `Web3::Erc20Reader` зібрав 4× balanceOf-дубль. Inert default → поведінка незмінна. Дім [`05_02 §Модель довіри`](05_02_Proof_of_Growth_Pipeline) + [`06_03 §2.8`](06_03_Prometheus_Observability) + `04_02`. Відкрите ↓.
-- [ ] 👤 калібрувати `mint_volume_hourly_max_scc` з перших live-вікон + активувати `mint_circuit_breaker_enabled` (economic/ops; per-token поріг якщо SCC/SFC-scale розійдуться)
+- [ ] ⚖️ калібрувати `mint_volume_hourly_max_scc` з перших live-вікон + активувати `mint_circuit_breaker_enabled` (economic/ops; per-token поріг якщо SCC/SFC-scale розійдуться)
 - [ ] 🤖 (micro, deferred) explicit fee-cap на Polygon mint/burn `transact()` — eth-gem ставить EIP-1559 fee через мутований client-attr (`max_fee_per_gas=`), не per-call kwarg; client per-thread-cached + `ResilientClient`(method_missing) не expose'ить setter → cap діяв би лише на single-url, мовчки skip на fallback = decorative-захист; eth default-fee вже де-факто ceiling, Polygon low-blast → до реального gas-spike-болю
 
 #### INS.2 — Insurance Internal-mode payout: незабезпечений mint, відв'язаний від reserve
 - **P2** · 🤖+👤 · 🟢 · → `05_01`, [`07_01 §7`](07_01_Nature_as_a_Service_Contracts)
 - **Стан:** Machine-half ✅ **SHIPPED (2026-07-06).** Gap-pass §05 (2026-07-05) знахідка: Internal-mode виплата **мінтить новий SCC** (інфляція), не забезпечений `DAO_TREASURY`-пулом (той пул `insurance_pool_requires_funding?` читає лише для 2%-Dynamic-Tax); per-claim обмежений (`damage_ratio×insured_value`), aggregate/correlated cap відсутній — регіональна катастрофа мінтить пропорційно по всіх кластерах без systemic stop-loss окрім `MAX_SUPPLY`. **Шиплено:** `Insurance::ReserveGate` (перед Internal-mint у `InsurancePayoutWorker`; **лише Internal** — Etherisc-USDC виключено, не наша емісія) = (1) aggregate 24h correlated-event stop-loss + (2) reserve-adequacy (30d Internal-mint vs `DAO_TREASURY`-баланс × ratio), обидва пороги inert-default (`SystemParameter` 0=off). Breach → HOLD у `manual_review` (не незабезпечений mint); transient RPC → **fail-closed → Sidekiq-retry** (не permanent park — recovery-крон тягне лише `:triggered`); поточна tx виключена з суми (no double-count). One-Home reserve-читання через `Web3::Erc20Reader` (спільний cache з mint → 1 RPC/вікно). Дім [`07_01 §7`](07_01_Nature_as_a_Service_Contracts) + `05_01` + `04_02`. Відкрите ↓.
-- [ ] 👤 політика: reserve-adequacy-ratio + correlated-cap числа (economic) + Safe-custody для `DAO_TREASURY` (`REQUIRE_SAFE_ADMIN`-клас, `06_04 §5`)
+- [ ] ⚖️ політика: reserve-adequacy-ratio + correlated-cap числа (economic) + Safe-custody для `DAO_TREASURY` (`REQUIRE_SAFE_ADMIN`-клас, `06_04 §5`)
 
 #### ARCH.64 — Celo reward `:pending` silent-underpay reconcile
 - **P2** · 🤖+👤 · 🟢 · → [`05_01`](05_01_Multichain_Architecture), [`06_08 §2.2`](06_08_Resilience_and_Failover_Policy)
@@ -1156,7 +1156,7 @@
 #### ARCH.17 — Bonding Curves для dynamic SCC pricing
 - **P3** · 🤖 · 🌿 · → `05_03`
 - **Стан:** Far-horizon (TRL 9+) — bonding curves для динамічного SCC-ціноутворення. Канон `05_03`.
-- [ ] 🤖 bonding-curve дизайн (TRL 9+)
+- [ ] ⚖️ bonding-curve дизайн (TRL 9+)
 
 ## §06 · Deploy / Observability / Secrets / Ops
 
@@ -1207,7 +1207,7 @@
 #### INF.25 — APP_HOST mailer-host (`silkennet.com`) ≠ web-host (`silkennet.app`) → зламані auth-лінки
 - **P1** · 👤 · 🔗 · → [`06_04 §2.1`](06_04_Secrets_Checklist), [`06_02 §TLS термінація`](06_02_Akash_Network_Integration)
 - **Стан:** `APP_HOST=silkennet.com` (mailer `default_url_options`, `production.rb`+deploy×3+tpl×2) генерує password-reset/confirmation-лінки на `https://silkennet.com/...`, але web-app на `silkennet.app` (Cloudflare Опція A, INF.4) — apex `silkennet.com` до web НЕ під'єднаний (лише `api.`-піддомен для CoAP + Akash-fallback), і `silkennet.com` ∉ `RAILS_ALLOWED_HOSTS` (=`silkennet.app,api.silkennet.com`) → навіть якби долетів, host-authorization = 403. **Auth-листи зламані на 1-му проді.** Корінь: INF.4-red-team злив CoAP-apex-домен з web-доменом; INF.13-fix `example.com`→`silkennet.com` узяв хибний. Знайшов adversarial-агент 2026-07-11. **Опції:** (A) `APP_HOST`→`silkennet.app` (пряма прив'язка до web-host — найпростіше+надійніше, реверсує хибну INF.4-деталь); (B) лишити `silkennet.com` + Cloudflare apex-redirect→`silkennet.app` + додати в ALLOWED_HOSTS (brand-домен, більше рухомих частин). **Gated на founder-рішення про купівлю доменів у Cloudflare** (свіжа сесія — доречно вирішити ПЕРЕД). Blast: 6 config + 4 канон-поверхні (production.rb · deploy.yml · deploy.yaml×3 · .tpl×2 · INF.4/INF.13/06_04/06_01). ⚠️ НЕ чіпати `api.silkennet.com` (CoAP, коректний) ні `ops@silkennet.com` (email).
-- [ ] 👤 (свіжа сесія, після domain-purchase-рішення) обрати A/B → APP_HOST across surfaces → verify reset-лінк долітає в застосунок
+- [ ] ⚖️ (свіжа сесія, після domain-purchase-рішення) обрати A/B → APP_HOST across surfaces → verify reset-лінк долітає в застосунок
 
 #### S6.18 — Rails web security hardening
 - **P1** · 👤 · 🟢 · → `06_04 §2.1`
@@ -1247,7 +1247,7 @@
 - **Стан:** 7-агентний sweep (2S+5O) розкрив, що «більша діра» багатошарова. **Git-history CLEAN** (`master.key` ніколи не committed → публічний `credentials.yml.enc` safe-by-design). Корінь — **at-rest ≠ runtime**: Akash-провайдер читає `/proc/<pid>/environ`, тож crown-jewels у runtime-ENV provider-visible попри at-rest-шифрування. **Присуд (Opus №6+№7):** розчинити runtime-потребу в `RAILS_MASTER_KEY` (credentials→ENV) = blast-radius-reduction, НЕ повний seal; «sealed-never-undone» = pre-mainnet SEC.17 KMS-signing + KMS-MAC `PROVISIONING` (crown-jewel = HKDF-корінь 6 класів, fleet-wide-forge, вищий за minter). **Латч 07-09:** credentials→ENV 8 сервісів + `storage.yml` (per-process the_graph=web / 7=job) · **AR-encryption keys ENV** (`hardware_keys` encryption була DEAD-on-first-boot у проді — ключі ніде не сконфігуровані; + `identities` encrypts закрив ARCH.57(4)) + boot-guard `Security::EncryptionKeyGuard` + SDL/Kamal/tf config-half · master_key **coap-guard** (`$PROGRAM_NAME`-skip) · Sentry-scrub (Bearer/token/user-less-URL/nested-crumb) · surface-reduction (dockerignore-filter/CHAINLINK/deploy_secret_scan hardening). **Дожим 07-10 (3 жили):** tfstate-**CMEK-latch** (3-тя plaintext-копія запечатана: keyring `silken-tfstate-ew1` bootstrap-owned + PAP + retention 10в/30д — [`06_04 §5.6`](06_04_Secrets_Checklist)) · **iotex_seed hot-path cache** (per-uplink crown-jewel-touch знято; `K_ota` звірено cold-path → свідомо не кешовано — §5.7) · **rotation-on-compromise runbook** обох crown-jewels (ordered-degradation; K_seed=DCI-blast-корінь, ENV-first пастка, 6-й клас iotex_seed — [`06_04 §5.8`](06_04_Secrets_Checklist); custody-honesty [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) + `SECURITY_ASSURANCE §6` custody-prominence) · + AR-encryption-трійка домаплена в обидва deploy-workflow (R3a B1-клас: env.secret-declared але workflow-unmapped = "" на 1-му live-kamal). **credentials-ENV-first guard ✅ 2026-07-11** (`spec/deploy/credentials_env_fallback_spec.rb` — durable Phase-2-drop safety, дзеркало INF.12; дім §5.7). Канон [`06_04 §5.6–5.8`](06_04_Secrets_Checklist). Відкрите ↓ (Phase-2 + pre-mainnet + founder-decisions).
 - [ ] 👤 **Phase-2 (deploy-gated) — drop `RAILS_MASTER_KEY` з web/coap/job:** інжект `SECRET_KEY_BASE` (= поточне `credentials.secret_key_base`, інакше ВСІ сесії ламаються — §5.2 entangled) + AR-encryption keys + 8 service keys через Console (свідомо НЕ в SDL: present-placeholder footgun) → verify нічого не читає vault у runtime → drop `RAILS_MASTER_KEY`. + coap `PROVISIONING`-omit (verify `$PROGRAM_NAME` у контейнері)
 - [ ] 🔗 **pre-mainnet (decisive seal)** — SEC.17 KMS-signing (5 EVM-ключів, не лише minter/slasher) + **KMS-MAC `PROVISIONING`** (Expand-only HKDF backend+firmware разом; 3-й keyring `silken-mac-ew1` поряд `silken-disk/sign-ew1`) → crown-jewel з кожного Akash-процесу
-- [ ] 👤 **founder-decisions** — Solana-Ed25519 (Vault-Transit vs pin `SolanaMicroRewardWorker`→Anchor; GCP-KMS без EdDSA) · deploy-SA `instanceAdmin.v1` privesc-split (Opus#5: GCP-root god-credential; CMEK не закриває live-VM)
+- [ ] ⚖️ **founder-decisions** — Solana-Ed25519 (Vault-Transit vs pin `SolanaMicroRewardWorker`→Anchor; GCP-KMS без EdDSA) · deploy-SA `instanceAdmin.v1` privesc-split (Opus#5: GCP-root god-credential; CMEK не закриває live-VM)
 
 #### INF.24 — Akash `signedBy` auditor-адреса була бита (corrupt bech32 → нуль audited-bid'ів)
 - **P1** · 👤 · 🟢 · → [`06_02 §1.3`](06_02_Akash_Network_Integration)
@@ -1258,7 +1258,7 @@
 - **P1** · 👤 · 🟢 · → [`06_03 §2.9`](06_03_Prometheus_Observability)
 - **Стан:** industrial-grade hardening канонізовано — `external_labels` (env/service/source/release attribution) + `queue_config`+explicit WAL (backpressure) + cardinality-budget relabel + process/runtime gauges (`sample_process_runtime!`/`sample_connection_pool!`, RSpec-covered; bonus-fix: pool-gauges раніше були stale) + CI-валідація (`alloy_config_validate` синтаксис + `spec/deploy/alloy_scrape_topology_spec.rb` 3-target топологія ✅ 2026-07-11). **IaC-half §2.9 #5/#6 ✅ 2026-07-04:** `sn-alert-scrape-target-down` (per-process `min by (process) (up)` — 3 таргети, NoData→Alerting = сам Alloy впав) + `sn-alert-mint-slo-breach` (<0.8/1h, канон-ціль `06_08 §2.4`; PromQL-guard `and attempts>0` — тихий ліс ≠ breach) + dashboards `silkennet-overview.json` пройдено під 3-таргетну топологію (histogram_quantile → `sum by (le)`, голі counters → `sum(rate)`, ratio → `sum/sum`) + `sn-alert-gateway-faulty` перенесено p2-info→p0-critical (жив у неправильній групі) + smoke-schedule (`coap_smoke.yml` кожні 30хв — безперервний UDP-liveness анкора, skip-clean без Variables). Конкретні значення — `config.alloy`/`silkennet-alerts.yaml` SSOT. Канон [`06_03 §2.9`](06_03_Prometheus_Observability). **[поглинув S2.1 2026-07-10]:** post-deploy метрик-верифікація переїхала сюди — up-alert `sn-alert-scrape-target-down` покрив «3 таргети живі» (безперервно, не одноразово), лишився унікальний smoke «job-серії ≠ 0» (перевіряє, що embedded-exporter на job реально _емітить_ — регресія вічних-нулів web-процесу, найстрашніша діра); P0→P1 (confidence-check після deploy, не deploy-blocker — метрики течуть незалежно).
 - [ ] 👤 **[поглинув S2.1]** після S2.2-імпорту + першого Akash deploy: верифікувати збір метрик — up-alert бачить усі 3 process-таргети (web:80/job:9394/coap:9395, `sum by(process)`) + smoke job-серій ≠ 0 (money-path SLO / QATT-security / dead-man лічильники живі, не вічні нулі)
-- [ ] 👤 SLO-пороги slash/payout/insurance — калібрувати з перших live-вікон (канон цілі поки має лише mint ≥80%; не вигадуємо)
+- [ ] ⚖️ SLO-пороги slash/payout/insurance — калібрувати з перших live-вікон (канон цілі поки має лише mint ≥80%; не вигадуємо)
 
 #### ARCH.54 — Queen health program: dead-man switch · QATT-v2 пульс · SOS-роздільність
 - **P1** · 🤖+👤 · 🟢 · → [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy), [`03_02 §7`](03_02_Queen_Gateway_Firmware), [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)
@@ -1414,7 +1414,7 @@
 - **P1** · 🤖+👤 · ⚪ · → `07_01 §8`, `08_01 §0.1`
 - **Стан:** Gap-pass §07 (2026-07-05) — DAO-як-юр-особа покрито (BIZ.4/GOV.1/SEC.1, Swiss Verein) + RWA-wrapper для SCC-токена (STK.3, Zug/Wyoming), але **операційна компанія** — ніде. `/NOTICE` вестить copyright на фіз-особу «Oleksii Lukin»; `08_01 §0.1` кастить «Silken Net» окремим актором (IP holder + integrator), але жоден канон не каже, яка юр-форма. Не академічно: `07_03 §1` — **6/7 грантів «Подано»**, BIZ.2 MSA потребує названого counterparty, UNI.15 — trademark-заявника, `08_03 §2.4` — кримінальна exposure за anchor-install («втручання в держмайно»), що неінкорпорований несе особисто без liability-щита. **Моя рекомендація: інкорпорувати ЗАРАЗ — найвищий пріоритет комерційного батча** (гейтить BIZ.2 + гранти + щит; overdue). **🤖-half:** чернетка entity-option matrix (юрисдикція × тип × вартість × грант/RWA/MiCA-сумісність); 👤 = рішення+реєстрація (СЄУ Аблязов). Канон `08_01 §0.1`, `07_01 §8`.
 - [ ] 🤖 чернетка entity-option matrix (юрисдикція UA/EU/Zug/Wyoming × тип × вартість × грант/RWA/MiCA-fit) → живить рішення
-- [ ] 👤 обрати + інкорпорувати операційну особу (Аблязов) — counterparty для BIZ.2/грантів/trademark/liability
+- [ ] ⚖️ обрати + інкорпорувати операційну особу (Аблязов) — counterparty для BIZ.2/грантів/trademark/liability
 
 #### BIZ.17 — Procurement-workflow operational gaps (post-RFQ-layer dig)
 - **P2** · 👤 · ⚪ · → `07_02 §8`
@@ -1423,7 +1423,7 @@
 - [ ] 👤 **CDA/NDA шаблон** для 5-ВНЗ MoU (блокує UNI.1 → гранти; СЄУ Аблязов legal) — розширює BIZ.10
 - [ ] 👤 **ESG vendor-screening** matrix (репутаційне для climate-проєкту / grant-fonds)
 - [ ] 👤 **SE050 supply-timeline** (NXP availability для mass-population post-FW.2, `03_05 §3.7` / ARCH.43)
-- [ ] 👤 **Синт. сік make-vs-buy** (ЧНУ pilot-stock vs synthesize, `08_02 §1`)
+- [ ] ⚖️ **Синт. сік make-vs-buy** (ЧНУ pilot-stock vs synthesize, `08_02 §1`)
 - [ ] 🤖 (опц.) **completeness-audit гейт** — лінтер «канон-компонент не в `rfq_registry`» (self-maintaining); ~37 stub-аркушів авторяться інкрементально (registry status-col трекає)
 
 #### BIZ.3 — B2C ToS / Privacy Policy
@@ -1440,20 +1440,20 @@
 #### BIZ.11 — RWA pilot реєстрація лісової ділянки через Polygon Hadron
 - **P2** · 🤖+👤 · ⚪ · → `07_01 §8`
 - **Стан:** Не почато — Hadron (ERC-3643) RWA-pilot: 1 ділянка з кадастром + biomass appraisal (LIDAR+ground) + Hadron compliance. Канон `07_01 §8`.
-- [ ] 👤 партнер-лісокористувач (post-war/Carpathian) + кадастр/biomass appraisal
+- [ ] ⚖️ партнер-лісокористувач (post-war/Carpathian) + кадастр/biomass appraisal
 - [ ] 🤖 `Hadron::TokenizeForestPlotService` + KYC flow spec
 - [ ] 🔗 після BIZ.2 (MSA)
 
 #### BIZ.15 — B2B Fiat-to-Retirement SPV (corporate carbon on-ramp)
 - **P2** · 👤 · ⚪ · → `07_01 §8`
 - **Стан:** Не почато — корпорації з ESG-зобов'язаннями не триматимуть крипту/ключі заради ретайрменту → потрібен SPV-міст: фіат → SPV купує+ретайрить SCC → сертифікат офсету (CBAM/ISO 14064). Поточний `KlimaRetirementWorker` припускає, що клієнт уже on-chain власник SCC (нот.19). Канон `07_01 §8`.
-- [ ] 👤 юрисдикція SPV + ліцензія на вуглецеві активи + кастодіан крипти (СЄУ Аблязов Д., RWA/MiCA — `08_02 §5`)
+- [ ] ⚖️ юрисдикція SPV + ліцензія на вуглецеві активи + кастодіан крипти (СЄУ Аблязов Д., RWA/MiCA — `08_02 §5`)
 - [ ] 👤 бухгалтерська класифікація + сертифікат-флоу (СЄУ Ус Г.)
 
 #### BIZ.18 — Customer-facing availability-SLA (uptime-гарантія B2B-покупцям)
 - **P2** · 👤 · ⚪ · → `07_01 §8`, [`06_06 §3`](06_06_Disaster_Recovery_and_Backup)
 - **Стан:** Не почато — internal-SLO без customer-SLA. Наявна основа ✅: RTO/RPO-цілі (`06_06 §3` DR-таблиця), internal SLO mint ≥80% + intake ≥95% (`06_08 §2.4`), circuit-breaker/failover (`06_08`), Prometheus-алерти (`06_03`) — це **внутрішні операційні SLO**, не зовнішній контракт. Діра = **customer-facing availability-SLA** (визначений uptime-% + service-credits + incident-comms + публічний status-page), на який B2B-покупець кредитів (Азот CBAM, agri) послатиметься в угоді. Живить BIZ.2 (MSA — SLA = типовий exhibit) + BIZ.15 (SPV). NB: ≠ `07_01 §2` «Таблиця SLA» (legal-event→tx mapping — інше значення). Канон `07_01 §8`, `06_06 §3`.
-- [ ] 👤 визначити availability-target (%/вікна) з перших live-SLO-вікон + service-credit-схема → SLA-exhibit для BIZ.2 MSA
+- [ ] ⚖️ визначити availability-target (%/вікна) з перших live-SLO-вікон + service-credit-схема → SLA-exhibit для BIZ.2 MSA
 - [ ] 👤 (опц.) публічний status-page (external synthetic uptime — дотично INF.22 O3)
 
 #### BIZ.19 — «SCC = CBAM-офсет» стоїть на неперевіреній (ймовірно хибній) регуляторній премісі
@@ -1570,7 +1570,7 @@
 - **P3** · 🤖+👤 · ⚪ · → `08_01`
 - **Стан:** Не почато (свіжо-сесійна задача; тригер = Shape Up PN хірургія 07-09 — ARCH.32/Стаття 9 показали, що портфель має декоративні ланки поряд зі статтями-з-product-коренем). Передивитись усі статті + магістерські на «product-relevant vs academic-decor»: 🤖 розкладе кожну (чи має робочий-вектор у 00_07 + product-корінь, чи чистий publication-decor gated на unresponsive-партнера), 👤 вирішує долю. **НЕ точкове видалення** — свідома системна кампанія (08_01 аспіраційний-за-дизайном, MoU нема → сиблінг-тест: не вирізай одну статтю ізольовано). Канон `08_01`.
 - [ ] 🤖 розклад статей + магістерських: product-vector (00_07-ID) / decor / partner-gated
-- [ ] 👤 рішення долі кожної (лишити / decor-хірургія à la ARCH.32 / прибрати)
+- [ ] ⚖️ рішення долі кожної (лишити / decor-хірургія à la ARCH.32 / прибрати)
 
 ## §08b · External Stakeholders (B2G / B2B / Cultural)
 
@@ -1656,7 +1656,11 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 >
 > Inbound item-ref (`NN_NN — DOC-T.N`) резолвиться `tracker:check` ([`00_06 §3`](00_06_SSOT_Documentation_Standard)).
 
-_Наразі всі DOC-T resolved → §🗄️ нижче. Нову SSOT doc-drift / tracker-tooling знахідку відкривати таблицею `| ID | Пункт | Канон |` тут._
+| ID | Пункт | Канон |
+|----|-------|-------|
+| DOC-T.33 | **`⚖️` decision-residual маркер** (голова-vs-руки в `👤`) — Фаза 1 ✅ 2026-07-11: легенда 00_07 §розмітка + `00_06 §3` + back-fill 22 чекбоксів (§05 + крос-секційні §01/03/04/06/07/08); lint-safe (чекбокс-теги поза `meta_form_violations`). Фаза 2 (🤖, deferred): `WHO_CANON += ⚖️`-комбо у `lib/tracker/dashboard.rb#meta_form_violations` → `⚖️` дозволено в meta-line WHO (scan-on-section) + легенда-апдейт. | `00_06 §3` |
+
+_Решта DOC-T resolved → §🗄️ нижче. Нову SSOT doc-drift / tracker-tooling знахідку додавати рядком у таблицю вище._
 
 ## 🗄️ Архів закритих пунктів (мігровано в канон)
 
