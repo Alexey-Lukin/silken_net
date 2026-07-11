@@ -96,6 +96,22 @@ RSpec.describe KlimaDao::RetirementService do
       end
     end
 
+    # [ARCH.56] Guard мусить рахувати ДОСТУПНЕ (balance − locked): retire в
+    # locked-частину раніше проходив guard, палив SCC on-chain НЕЗВОРОТНО і
+    # аж тоді впирався у wallets_balance_invariants CHECK — burn без запису.
+    context "when the requested amount digs into the locked balance" do
+      it "refuses BEFORE any on-chain burn" do
+        wallet.update!(balance: 5000, locked_balance: 4000)
+
+        expect {
+          described_class.new(wallet, 2000).retire_carbon!
+        }.to raise_error(KlimaDao::RetirementService::InsufficientBalanceError, /Недостатньо коштів/)
+
+        expect(wallet.reload.esg_retired_balance).to eq(0)
+        expect(wallet.balance).to eq(5000)
+      end
+    end
+
     context "when wallet has no carbon_coin transactions" do
       it "raises InvalidTokenTypeError" do
         wallet.blockchain_transactions.destroy_all

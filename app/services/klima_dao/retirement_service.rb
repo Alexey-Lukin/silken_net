@@ -45,10 +45,13 @@ module KlimaDao
       ActiveRecord::Base.transaction do
         @wallet.lock!
 
-        # Повторна перевірка після блокування (Race Condition Protection)
-        if @wallet.balance < @amount_to_retire
+        # Повторна перевірка після блокування (Race Condition Protection).
+        # [ARCH.56] available_balance, НЕ balance: locked-частина зарезервована
+        # pending-мінтом — retire повз неї впирався в wallets_balance_invariants
+        # CHECK ПІСЛЯ необоротного on-chain burn (money-burned-without-record).
+        if @wallet.available_balance < @amount_to_retire
           raise InsufficientBalanceError,
-                "Баланс змінився під час транзакції (Доступно: #{@wallet.balance}, Потрібно: #{@amount_to_retire})"
+                "Баланс змінився під час транзакції (Доступно: #{@wallet.available_balance}, Потрібно: #{@amount_to_retire})"
         end
 
         @wallet.decrement!(:balance, @amount_to_retire)
@@ -69,10 +72,10 @@ module KlimaDao
               "Wallet ##{@wallet.id} не має carbon_coin транзакцій. Погашення доступне лише для SCC."
       end
 
-      # Guard Clause: Перевірка достатності балансу
-      if @wallet.balance < @amount_to_retire
+      # Guard Clause: достатність ДОСТУПНОГО балансу (мінус locked, [ARCH.56])
+      if @wallet.available_balance < @amount_to_retire
         raise InsufficientBalanceError,
-              "Недостатньо коштів (Доступно: #{@wallet.balance}, Потрібно: #{@amount_to_retire})"
+              "Недостатньо коштів (Доступно: #{@wallet.available_balance}, Потрібно: #{@amount_to_retire})"
       end
     end
 

@@ -1128,7 +1128,7 @@ active/draft ──cancel──► cancelled
 
 **Призначення:** Повний compliance-журнал усіх дій. Підтримує blockchain-ланцюжок хешів та IPFS-архів.
 
-**Append-only [ARCH.57]:** «незмінність» тримається кодом, не лише конвенцією — `before_update` дозволяє мутацію ЛИШЕ архівних полів (`ARCHIVAL_MUTABLE_COLUMNS`: `ipfs_cid`/`archive_requested_at`), решта → `ActiveRecord::ReadOnlyRecord`; `before_destroy` завжди raise. `delete_all`/`update_all` обходять колбеки — org-каскад закритий `dependent: :restrict_with_error` (Org із журналом не видаляється; узгоджено з `users`/`naas_contracts`).
+**Append-only [ARCH.57]:** «незмінність» тримається кодом, не лише конвенцією — `before_update` дозволяє мутацію ЛИШЕ архівних полів (`ARCHIVAL_MUTABLE_COLUMNS`: `ipfs_cid`/`archive_requested_at`/`updated_at` — останній механічний, Rails бампає на кожен update), решта → `ActiveRecord::ReadOnlyRecord`; `before_destroy` завжди raise. `delete_all`/`update_all` обходять колбеки — org-каскад закритий `dependent: :restrict_with_error` (Org із журналом не видаляється; узгоджено з `users`/`naas_contracts`).
 
 **Асоціації:**
 - `belongs_to :user`
@@ -1545,7 +1545,7 @@ Organization
   │     └── AiInsights polymorphic (delete_all)
   ├── Wallets (nullify)
   │     └── BlockchainTransactions (delete_all) ← PARTITION
-  └── AuditLogs (delete_all)
+  └── AuditLogs (restrict_with_error) ← журнал переживає Org [ARCH.57]
 
 User
   ├── Sessions (destroy)

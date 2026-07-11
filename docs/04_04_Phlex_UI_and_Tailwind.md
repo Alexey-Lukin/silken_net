@@ -878,7 +878,7 @@ end
 | Правило | Реалізація |
 |---|---|
 | `role` на семантичних елементах | `role="table"` на таблицях, `role="status"` на бейджах, `role="navigation"` на бічній панелі, `role="group"` на StatCard |
-| `aria-label` на інтерактивних елементах | Всі елементи `<button>` та `<a>` мають описовий `aria_label:` |
+| `aria-label` на інтерактивних елементах | `<button>` та icon-only `<a>` мають описовий `aria_label:`. **Виняток [UI.3]:** лінки з видимим текстом + динамічним дочірнім контентом (nav-item + EWS-badge у `Navigation::Sidebar`) — БЕЗ `aria_label` (він перекриває дочірній текст для SR, badge стає нечутним); такі читаються дочірнім текстом + `aria-current` |
 | `aria-current="page"` | Активні елементи навігації у `Navigation::Sidebar` |
 | `scope="col"` на `<th>` | Всі заголовки таблиць |
 | `focus-visible:` а не `focus:` | 100% відповідність у всіх 83+ компонентах |

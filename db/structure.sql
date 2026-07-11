@@ -398,7 +398,7 @@ ALTER SEQUENCE public.bio_contract_firmwares_id_seq OWNED BY public.bio_contract
 CREATE TABLE public.blockchain_transactions (
     id bigint NOT NULL,
     wallet_id bigint,
-    amount numeric,
+    amount numeric(24,6),
     token_type integer,
     status integer,
     tx_hash character varying,
@@ -452,7 +452,7 @@ ALTER SEQUENCE public.blockchain_transactions_id_seq OWNED BY public.blockchain_
 CREATE TABLE public.blockchain_transactions_default (
     id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
     wallet_id bigint,
-    amount numeric,
+    amount numeric(24,6),
     token_type integer,
     status integer,
     tx_hash character varying,
@@ -486,7 +486,7 @@ CREATE TABLE public.blockchain_transactions_default (
 CREATE TABLE public.blockchain_transactions_y2026m01 (
     id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
     wallet_id bigint,
-    amount numeric,
+    amount numeric(24,6),
     token_type integer,
     status integer,
     tx_hash character varying,
@@ -520,7 +520,7 @@ CREATE TABLE public.blockchain_transactions_y2026m01 (
 CREATE TABLE public.blockchain_transactions_y2026m02 (
     id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
     wallet_id bigint,
-    amount numeric,
+    amount numeric(24,6),
     token_type integer,
     status integer,
     tx_hash character varying,
@@ -554,7 +554,7 @@ CREATE TABLE public.blockchain_transactions_y2026m02 (
 CREATE TABLE public.blockchain_transactions_y2026m03 (
     id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
     wallet_id bigint,
-    amount numeric,
+    amount numeric(24,6),
     token_type integer,
     status integer,
     tx_hash character varying,
@@ -588,7 +588,7 @@ CREATE TABLE public.blockchain_transactions_y2026m03 (
 CREATE TABLE public.blockchain_transactions_y2026m04 (
     id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
     wallet_id bigint,
-    amount numeric,
+    amount numeric(24,6),
     token_type integer,
     status integer,
     tx_hash character varying,
@@ -622,7 +622,7 @@ CREATE TABLE public.blockchain_transactions_y2026m04 (
 CREATE TABLE public.blockchain_transactions_y2026m05 (
     id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
     wallet_id bigint,
-    amount numeric,
+    amount numeric(24,6),
     token_type integer,
     status integer,
     tx_hash character varying,
@@ -656,7 +656,7 @@ CREATE TABLE public.blockchain_transactions_y2026m05 (
 CREATE TABLE public.blockchain_transactions_y2026m06 (
     id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
     wallet_id bigint,
-    amount numeric,
+    amount numeric(24,6),
     token_type integer,
     status integer,
     tx_hash character varying,
@@ -690,7 +690,7 @@ CREATE TABLE public.blockchain_transactions_y2026m06 (
 CREATE TABLE public.blockchain_transactions_y2026m07 (
     id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
     wallet_id bigint,
-    amount numeric,
+    amount numeric(24,6),
     token_type integer,
     status integer,
     tx_hash character varying,
@@ -724,7 +724,7 @@ CREATE TABLE public.blockchain_transactions_y2026m07 (
 CREATE TABLE public.blockchain_transactions_y2026m08 (
     id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
     wallet_id bigint,
-    amount numeric,
+    amount numeric(24,6),
     token_type integer,
     status integer,
     tx_hash character varying,
@@ -8091,5 +8091,6 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260711170000'),
 ('20260711160000');
 
