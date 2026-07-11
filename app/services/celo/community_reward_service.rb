@@ -179,6 +179,15 @@ module Celo
     def reward_already_sent?
       rdate = reward_date_value
 
+      # [ARCH.64#2] dedup-вікно [rdate, rdate+2д) прив'язане до created_at≈rdate+1день
+      # (automated daily). Backfill старого date (rdate < today−2д) мав би created_at ПОЗА
+      # цим вікном → dedup СЛІПИЙ → silent double-pay. Шлях наразі недосяжний (нема backfill-
+      # UI), але tripwire перетворює майбутню silent-стелю на гучний fail ДО появи backfill.
+      if rdate.to_date < 2.days.ago.to_date
+        raise "ARCH.64#2: stale reward_date #{rdate} (>2д тому) поза dedup-safe-вікном — " \
+              "backfill потребує розширеного dedup-вікна (00_07 ARCH.64), інакше double-pay ризик"
+      end
+
       BlockchainTransaction
         .where(sourceable: @cluster, token_type: :cusd, blockchain_network: "celo", reward_date: rdate)
         .where(status: [ :pending, :processing, :sent, :confirmed, :manual_review ])

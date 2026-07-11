@@ -124,6 +124,13 @@ RSpec.describe Celo::CommunityRewardService do
       expect { described_class.new(cluster, target_date).reward_community! }
         .to change(BlockchainTransaction.where(status: :sent), :count).by(1)
     end
+
+    # [ARCH.64#2] stale reward_date (>2д) обходить dedup-вікно [rdate, +2д): backfill'у
+    # created_at поза вікном → dedup сліпий → silent double-pay. Tripwire = гучний fail.
+    it "raises on a stale reward_date >2д ago (backfill outside dedup window)" do
+      stale_svc = described_class.new(cluster, 3.days.ago.to_date)
+      expect { stale_svc.send(:reward_already_sent?) }.to raise_error(/ARCH\.64#2.*stale reward_date/)
+    end
   end
 
   describe "#reward_community! — failure paths (ARCH.50 rescue split)" do
