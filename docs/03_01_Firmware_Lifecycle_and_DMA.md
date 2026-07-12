@@ -396,7 +396,7 @@ Offset | Size | Field            | Значення
 8-9    | 2    | Metabolism       | delta_t_seconds (BE uint16)
 10     | 1    | BioContract      | [PanicFlag:1 bit | Status:2 bits | GrowthPoints:5 bits]
 11     | 1    | TTL byte         | [FW.18b] Бітфілд [thr_invalid:5 | TTL:3] (ttl_byte.h). TTL initial=3 (panic 5); верхні 5 біт — saturating лічильник відкинутих OTA-порогів (wire-кап 31; 03_03 §5.4)
-12-13  | 2    | FirmwareVersionID| FIRMWARE_VERSION_ID (BE uint16)
+12-13  | 2    | FwContractReport | [SEC.20] Wire-звіт contract-стану (BE uint16, common/fw_report.h): [semantic:1 | reverted:1 | hiwater&0x3FFF]. semantic=0 → legacy C-image константа (стара прошивка / KV недоступний); reverted=1 = auto-fallback стався (біжить baseline, версія id14 СПАЛЕНА — re-issue лише строго вищою). ⚠️ FIRMWARE_VERSION_ID = compile-const C-образу, bytecode-OTA її НЕ міняє — тут її більше нема
 14     | 1    | Gossip ts_lsb    | [FW.20-S2 §5] non-panic: soldier_unix_ts & 0xFF (час-gossip піггібек; дім — примітка [HW.32] нижче + 03_02). Panic-пакет: байт належить SEC.10 frame counter
 15     | 1    | Reserved         | Зарезервовано (0). Panic-пакет: SEC.10 frame counter (14-15 BE)
 ```
@@ -707,7 +707,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 | Регістр | Змінна | Тип | Опис |
 |---------|--------|-----|------|
-| `DR0` | `[panic_frame_counter:16 \| rsv:6 \| vm_err_streak:2 \| acoustic_events:8]` | uint32 packed | **[SEC.10 + FW.22]** Спакована плоть: лічильник panic-кадрів anti-replay (uint16, monotonic + saturating @ 0xFFFF) у high 16 біт + лічильник акустичних подій (uint8, saturating [0,255]) у low 8 біт. **[SEC.20]** `vm_err_streak` (uint2, `DR0[9:8]`): N=3 поспіль bytecode-exec збоїв OTA-байткоду → erase contract → auto-fallback на embedded baseline (лічить лише bytecode-fault, не no-seed/OOM; переживає STOP2, cold-boot=0 природно). Біти `[15:10]` зарезервовано. Пакетне збереження економить регістр — без packing був би потрібен новий слот, що залишило б DR15 єдиним вільним. Cold-boot DR0=0 → `panic_frame_counter` пересіюється з HRNG (range 0x0001..0xFFFF) для уникнення колізії з ще-не-протухлими Redis nonce-ключами попереднього втілення. |
+| `DR0` | `[panic_frame_counter:16 \| rsv:5 \| canary_trip:1 \| vm_err_streak:2 \| acoustic_events:8]` | uint32 packed | **[SEC.10 + FW.22]** Спакована плоть: лічильник panic-кадрів anti-replay (uint16, monotonic + saturating @ 0xFFFF) у high 16 біт + лічильник акустичних подій (uint8, saturating [0,255]) у low 8 біт. **[SEC.20]** `vm_err_streak` (uint2, `DR0[9:8]`): N=3 поспіль bytecode-exec збоїв OTA-байткоду → erase contract → auto-fallback на embedded baseline (лічить лише bytecode-fault, не no-seed/OOM; переживає STOP2, cold-boot=0 природно). **[SEC.21]** `canary_trip` (`DR0[10]`): sticky-слід власного `__stack_chk_fail` (пише напряму `TAMP->BKP0R` перед `NVIC_SystemReset`; усі 4 write-sites preserve); гаситиме майбутній wire-винос — до того читається SWD. Біти `[15:11]` зарезервовано. Пакетне збереження економить регістр — без packing був би потрібен новий слот, що залишило б DR15 єдиним вільним. Cold-boot DR0=0 → `panic_frame_counter` пересіюється з HRNG (range 0x0001..0xFFFF) для уникнення колізії з ще-не-протухлими Redis nonce-ключами попереднього втілення. |
 | `DR1` | `last_wakeup_timestamp` | uint32 | **[FW.49 S1]** Wall-маркер останнього циклу (`Wall_Seconds_Now()`, unix-секунди RTC-календаря; до 2026-06-12 — заморожений у STOP2 `HAL_GetTick/1000`). Перехід tick→wall значень поглинають guard-и `wall_time.h` (стрибок → baseline). [ARCH.21] Зберігається при PVD-брауноуті для delta_t continuity після recovery. |
 | `DR2` | `has_mesh_relay` | uint8 | Прапорець: 1 = є пакет для ретрансляції |
 | `DR3` | `mesh_relay_payload[0..3]` | uint32 | Транзитний пакет, байти 0-3 |
@@ -761,14 +761,14 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 1. **SSOT-рев'ю.** Прочитати §2 (цю таблицю) ПОВНІСТЮ. Чи поле справді потребує переживання STOP2? Якщо ні — RAM-only достатньо. Якщо так, але переживає лише warm-boot, а не VBAT-loss → теж RAM (SRAM зберігається у STOP2).
 2. **Packing-аудит.** Перевірити для кожного існуючого packed-регістру (DR0, DR12), чи є вільні бітові щілини для нового поля. Реальні розміри:
-   - `DR0[15:10]` — 6 біт vacant (`[9:8]` = `vm_err_streak`, SEC.20 — див. §2 DR0-рядок).
+   - `DR0[15:11]` — 5 біт vacant (`[10]` = `canary_trip` SEC.21, `[9:8]` = `vm_err_streak` SEC.20 — див. §2 DR0-рядок).
    - `DR12[31:24]` — `valid:8` зайнято, але вільних бітів немає.
    - Більшість «full uint32» регістрів використовують лише частину діапазону (наприклад, `last_wakeup_timestamp` у DR1 — це секунди від boot, рідко перевищує 24 біт за реалістичний час до VBAT-loss).
 3. **ASCII bit-field діаграма.** ОБОВ'ЯЗКОВО для будь-якого packed-регістру. Приклад з DR0:
    ```
-   DR0 = [panic_frame_counter:16][rsv:6][vm_err_streak:2][acoustic_events:8]
-          ↑              MSB                  [9:8]=SEC.20          LSB ↑
-          PANIC_COUNTER_DR0_SHIFT=16                            raw uint8
+   DR0 = [panic_frame_counter:16][rsv:5][canary:1][vm_err_streak:2][acoustic_events:8]
+          ↑              MSB       [10]=SEC.21   [9:8]=SEC.20        LSB ↑
+          PANIC_COUNTER_DR0_SHIFT=16                              raw uint8
    ```
    Без діаграми наступна людина (або ти за рік) не зрозумієш порядок бітів.
 4. **Magic marker policy.** Якщо `0` — валідне значення поля (як `(0.0, 0.0, 0.0)` для Lorenz state), то ОБОВ'ЯЗКОВО потрібен окремий 32-бітний marker у сусідньому регістрі АБО 8-бітний sentinel у packed-регістрі. Маркер додати у §2.1. Якщо `0` валідно інтерпретується як «cold-boot default» (як `tinyml_warning_threshold == 0.0f` → fallback `TINYML_DEFAULT_WARNING`), маркер не потрібен — достатньо range-check.
@@ -836,11 +836,11 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 | DR | Реальні біти | Реклемація | Ціна |
 |----|--------------|------------|------|
-| `DR2` `has_mesh_relay` | **1** (прапорець 0/1) | → біт у вільному `DR0[15:10]` ⇒ **DR2 вільний** | нуль, mode-independent |
+| `DR2` `has_mesh_relay` | **1** (прапорець 0/1) | → біт у вільному `DR0[15:11]` ⇒ **DR2 вільний** | нуль, mode-independent |
 | `DR14` `tinyml_critical` | ~7 (float ∈ [0.01,0.99]) | обидва пороги як 2× `uint8`-відсоток у `DR13[15:0]` ⇒ **DR14 вільний** | 1% гранулярність (нехтовна); freeze-contract правка |
-| `DR19` `LORENZ_STATE_MAGIC` | 32 (чистий маркер) | 7-біт sentinel у `DR0[15:10]` (як EMA `0xA5` у DR12) ⇒ **DR19 вільний** | слабша bit-flip-стійкість за 32-біт маркер |
+| `DR19` `LORENZ_STATE_MAGIC` | 32 (чистий маркер) | 5-біт sentinel у `DR0[15:11]` (як EMA `0xA5` у DR12) ⇒ **DR19 вільний** | слабша bit-flip-стійкість за 32-біт маркер |
 
-> `warning_counter` (головний live-споживач FW.54) ескалює на 3 і скидається ([`03_03 §5`](03_03_TinyML_Acoustic_Inference)) → реально **2 біти**, не 8. Він + `has_mesh_relay` (1 біт) сідають у вільний байт `DR0[15:10]` **без жодного нового регістру**.
+> `warning_counter` (головний live-споживач FW.54) ескалює на 3 і скидається ([`03_03 §5`](03_03_TinyML_Acoustic_Inference)) → реально **2 біти**, не 8. Він + `has_mesh_relay` (1 біт) сідають у вільні біти `DR0[15:11]` **без жодного нового регістру**.
 
 **Вісь 2 — частота запису (інверсія RTC↔Flash).** RTC backup безкоштовний щодо wear; Flash має wear + erase-блокує-шину. Оптимум: **write-ONCE → Flash** (нуль wear, ідеально), **часто-оновлюване → RTC**. Зараз **навпаки**:
 

@@ -25,6 +25,8 @@ description: "Use when working on the silken_net telemetry / Proof-of-Growth pip
 6. **Partition-aware lookups** — `TelemetryLog` RANGE-partitioned by `created_at`. Always use `find_with_partition_pruning(id, created_at)`.
 7. **«Wire = вхід GP» contract (E.63 (г), wire-rev2.1)** — the CCM frame carries BOTH dT fields: raw (bytes 12..13, diagnostics/server-EMA) and `ema_delta_t_s` (bytes 20..21) = the EXACT number `metabolic_health` consumed on the device → `check_metabolic_divergence!` recomputes GP statelessly via `Attractor.expected_homeostasis_gp(ema)` (byte-identical mirror of `bio_contract.rb` §4.3 — edit the formula/thresholds THERE first, mirror second, regen `lorenz_bytecode.h`). The branch is **observational** (warn+metric) until the bench calibrates `DELTA_T_FAST_S`/`DELTA_T_SLOW_S`; `ema_delta_t_s` is transient (stripped pre-persist, like `lorenz_temperature_c`/`device_z`). ECB frames carry no ema → branch honestly skips. Canon: `03_04 §4.3` + `03_01 §13.6`.
 
+8. **`firmware_version_id` = wire-ЗВІТ, не FK (SEC.20, 2026-07-12)** — post-SEC.20 семантика `[semantic:1|reverted:1|contract_id&0x3FFF]` (дзеркало `firmware/common/fw_report.h`): читай через `TelemetryLog#firmware_report_semantic?/reverted?/contract_id` (id ПО МОДУЛЮ 14 біт — НЕ join і не пряме порівняння з `BioContractFirmware.id`); legacy-кадри (без semantic-біта) несуть C-image константу — contract-версії НЕ мають. `reverted?` → `EwsAlert firmware_reverted` (термінальний: re-issue лише версією > спаленої — 03_06 §4 bump-інваріант).
+
 ## Common Tasks
 
 - **Add telemetry field**: firmware pack → `TelemetryUnpackerService` unpack → DB migration → Phlex dashboard component → update `docs/05_02`

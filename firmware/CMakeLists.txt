@@ -137,6 +137,8 @@ if(CMAKE_CROSSCOMPILING)
     # flash_ring.h API від stale call-sites = compile-fail лише при фліпі на bench
     # (queen_hal_check.c #include'ить main.c цілком; OBJECT-lib = compile-only, тож
     # RAM-гейт [FW.26] на БОЙОВОМУ hal_check не зачеплено).
+    # + SEC21_MPU_ENABLED=1: гейтований Silken_Mpu_Apply (MPU->RBAR/RASR/CTRL,
+    # CMSIS core) компілюється обабіч; реальний MemManage-trap — bench.
     add_library(hal_check_ccm OBJECT
       hal_glue/soldier_hal_check.c
       hal_glue/queen_hal_check.c)
@@ -155,7 +157,8 @@ if(CMAKE_CROSSCOMPILING)
       MRB_NO_STDIO MRB_CONSTRAINED_BASELINE_PROFILE MRB_NO_BOXING
       FW2_CCM_ENABLED=1
       ARCH34_HELIUM_ENABLED=1
-      ARCH35_RING_ENABLED=1)
+      ARCH35_RING_ENABLED=1
+      SEC21_MPU_ENABLED=1)
     target_compile_options(hal_check_ccm PRIVATE -Wall -Wextra -Os)
 
     # [ARCH.34] LoRaMac-node compile-lane: vendored MAC (EU868/ClassA профіль

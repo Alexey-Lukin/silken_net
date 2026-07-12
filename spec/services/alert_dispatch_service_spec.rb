@@ -18,7 +18,8 @@ RSpec.describe AlertDispatchService, type: :service do
   describe "defensive nil / defined?-guards" do
     def base_log(**overrides)
       instance_double(TelemetryLog, {
-        tree: tree, bio_status_vm_error?: false, voltage_mv: 3500, temperature_c: 25,
+        tree: tree, bio_status_vm_error?: false, firmware_report_reverted?: false,
+        voltage_mv: 3500, temperature_c: 25,
         bio_status_anomaly?: false, panic?: false, bio_status_stress?: false,
         acoustic_events: 10, z_value: 20.0
       }.merge(overrides))
@@ -39,6 +40,39 @@ RSpec.describe AlertDispatchService, type: :service do
     end
   end
 
+  # [SEC.20] Reverted-біт wire fw-report = термінальний відкат на baseline:
+  # окремий тип firmware_reverted (ops-дія «re-issue версією > спаленої»),
+  # НЕ транзієнтний firmware_fault і тим паче не A-сет.
+  describe "firmware_reverted (SEC.20 baseline-revert)" do
+    def reverted_log(**overrides)
+      instance_double(TelemetryLog, {
+        tree: tree, bio_status_vm_error?: false, firmware_report_reverted?: true,
+        firmware_report_contract_id: 42,
+        voltage_mv: 3500, temperature_c: 25,
+        bio_status_anomaly?: false, panic?: false, bio_status_stress?: false,
+        acoustic_events: 10, z_value: 20.0
+      }.merge(overrides))
+    end
+
+    it "raises firmware_reverted with the burned contract id in the message" do
+      expect {
+        described_class.analyze_and_trigger!(reverted_log)
+      }.to change(EwsAlert, :count).by(1)
+
+      alert = EwsAlert.last
+      expect(alert.alert_type).to eq("firmware_reverted")
+      expect(alert.severity).to eq("critical")
+      expect(alert.message).to include("ВІДКАТ ПРОШИВКИ").and include("42")
+      expect(EwsAlert.alert_type_vandalism_breach).to be_empty
+    end
+
+    it "does not raise firmware_reverted for a healthy frame (bit clear)" do
+      expect {
+        described_class.analyze_and_trigger!(reverted_log(firmware_report_reverted?: false))
+      }.not_to change(EwsAlert, :count)
+    end
+  end
+
   # [SLASH-1 P0] Wire status=3 = BIO_STATUS_VM_ERROR (софт-збій), НЕ tamper:
   # firmware_fault (ops-тріаж), НІКОЛИ vandalism_breach (positive-A сигнал).
   describe "firmware fault vs low-voltage logic" do
@@ -46,6 +80,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: true,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -70,6 +105,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: true,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 80,
         bio_status_anomaly?: false,
@@ -92,6 +128,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 50,
         temperature_c: 80,
         bio_status_anomaly?: false,
@@ -114,6 +151,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 50,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -138,6 +176,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 3300,
         temperature_c: 25,
         bio_status_anomaly?: true,
@@ -158,6 +197,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 3300,
         temperature_c: 80,
         bio_status_anomaly?: true
@@ -174,6 +214,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 3300,
         temperature_c: 25,
         bio_status_anomaly?: true,
@@ -192,6 +233,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 0,          # panic-кадр свідомо несе vcap=0 (legacy-parity)
         temperature_c: 0,
         bio_status_anomaly?: false, # пилка НЕ ставить anomaly — status лишається homeostasis
@@ -222,6 +264,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: true,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -242,6 +285,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -262,6 +306,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -290,6 +335,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree_with_sap,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -310,6 +356,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree_with_sap,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -334,6 +381,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -361,6 +409,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree_custom,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 70,  # above default 60 but below family's 80
         bio_status_anomaly?: false,
@@ -379,6 +428,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree_custom,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 80,  # exactly at family's fire_resistance_rating
         bio_status_anomaly?: false,
@@ -401,6 +451,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree_custom,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 85,  # above family's 80 but below cluster's 90
         bio_status_anomaly?: false,
@@ -420,6 +471,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree_custom,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -438,6 +490,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree_custom,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -458,6 +511,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -492,6 +546,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: target_tree,
         bio_status_vm_error?: true,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -511,6 +566,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 99,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -528,6 +584,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 100,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -548,6 +605,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: true,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -570,6 +628,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 25,  # normal temperature
         bio_status_anomaly?: true,
@@ -589,6 +648,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
+        firmware_report_reverted?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,

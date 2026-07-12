@@ -11,14 +11,37 @@ class TelemetryLog < ApplicationRecord
   # Зв'язок із Королевою через її UID
   belongs_to :gateway, foreign_key: :queen_uid, primary_key: :uid, optional: true
   # [E.62-патерн — mis-join trap, асоціація вимкнена]:
-  # `firmware_version_id` зберігає WIRE-ідентифікатор прошивки (21B: uint16 з
-  # PAD-байтів; CCM: 4-бітний epoch-нібл verbatim — стопгеп до OTA epoch config),
-  # а НЕ автоінкрементний `bio_contract_firmwares.id`. belongs_to по цій колонці
-  # повертав би чужий запис, щойно в таблиці з'являться рядки з малими id.
-  # Реальний трекінг версій — SemVer-рядки (`Tree.firmware_version`), див.
-  # коментар E.62 у `BioContractFirmware`. Розкоментовувати лише разом із
-  # канонізованим мапінгом wire-id ↔ запис.
+  # `firmware_version_id` зберігає WIRE-звіт прошивки, а НЕ чистий
+  # `bio_contract_firmwares.id`. Post-SEC.20 семантика (firmware/common/fw_report.h):
+  # semantic-біт → [reverted:1 | contract_id&0x3FFF] (id ПО МОДУЛЮ 14 біт —
+  # звіряй через firmware_report_contract_id, не join); без semantic-біта —
+  # legacy C-image константа (стара прошивка), contract-версії НЕ несе.
+  # belongs_to по цій колонці повертав би чужий запис — трекінг через
+  # хелпери нижче + SemVer-рядки (`Tree.firmware_version`, E.62).
   # belongs_to :bio_contract_firmware, foreign_key: :firmware_version_id, optional: true
+
+  # [SEC.20] Дзеркало fw_report.h — wire-звіт contract-стану (байти 12..13
+  # legacy / vpd-байт CCM, unpacker складає у спільні 16 біт).
+  FW_REPORT_SEMANTIC_BIT = 0x8000
+  FW_REPORT_REVERTED_BIT = 0x4000
+  FW_REPORT_ID_MASK      = 0x3FFF
+
+  # Звіт нової семантики? (legacy-прошивки шлють C-image константу без біта)
+  def firmware_report_semantic?
+    firmware_version_id.to_i.anybits?(FW_REPORT_SEMANTIC_BIT)
+  end
+
+  # Вузол біжить embedded baseline ПРИ спаленому OTA-припливі — сигнатура
+  # auto-fallback (SEC.20): термінальний стан до re-issue версії > спаленої.
+  def firmware_report_reverted?
+    firmware_report_semantic? && firmware_version_id.to_i.anybits?(FW_REPORT_REVERTED_BIT)
+  end
+
+  # Contract-id по модулю 14 біт (nil для legacy-кадрів).
+  def firmware_report_contract_id
+    return nil unless firmware_report_semantic?
+    firmware_version_id.to_i & FW_REPORT_ID_MASK
+  end
 
   # --- СТАТУСИ (The Pulse of Life) ---
   # [SLASH-1] Wire-код 3 пише ВИКЛЮЧНО BIO_STATUS_VM_ERROR (0x60, firmware/soldier/main.c):

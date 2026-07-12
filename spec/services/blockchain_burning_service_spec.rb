@@ -687,6 +687,15 @@ RSpec.describe BlockchainBurningService do
         expect(service.send(:critical_unmaintained?)).to be(false)
       end
 
+      # [SEC.20] firmware_reverted = термінальний vendor-стан (baseline після
+      # fallback; не самогаситься, виїздом не лікується) — blacklist-виключення
+      # обов'язкове, інакше PF_NO_MAINTENANCE штрафує оператора за наш баг.
+      it "excludes :firmware_reverted from critical_unmaintained? (terminal vendor state)" do
+        create(:ews_alert, cluster: cluster, severity: :critical, alert_type: :firmware_reverted,
+                           status: :active, created_at: 1.hour.ago)
+        expect(service.send(:critical_unmaintained?)).to be(false)
+      end
+
       it "excludes :firmware_fault from comms_no_ack? (node is alive — only mruby is broken)" do
         create(:ews_alert, cluster: cluster, severity: :critical,
                            alert_type: :firmware_fault, status: :active)

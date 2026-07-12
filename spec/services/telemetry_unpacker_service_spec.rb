@@ -348,17 +348,31 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         }.not_to raise_error
       end
 
-      it "skips when reported firmware matches latest" do
+      # [SEC.20] Порівнюється ЛИШЕ нова семантика (semantic-біт): legacy-кадри
+      # несуть C-image константу — пряме порівняння з contract-id було
+      # яблуками-з-грушами (вічний fw_pending після 1-ї кампанії).
+      it "skips a legacy report (no semantic bit) — C-image id is not a contract id" do
         service = described_class.new("", nil)
+        service.send(:check_firmware_mismatch!, tree, 0x0001)
+
+        expect(tree.reload.firmware_update_status).not_to eq("fw_pending")
+      end
+
+      it "skips when reported contract matches latest (modulo 14 bits)" do
+        service = described_class.new("", nil)
+        report = TelemetryLog::FW_REPORT_SEMANTIC_BIT |
+                 (active_firmware.id & TelemetryLog::FW_REPORT_ID_MASK)
         expect {
-          service.send(:check_firmware_mismatch!, tree, active_firmware.id)
+          service.send(:check_firmware_mismatch!, tree, report)
         }.not_to raise_error
         expect(tree.reload.firmware_update_status).not_to eq("fw_pending")
       end
 
-      it "marks tree as fw_pending when firmware mismatches and tree is fw_idle" do
+      it "marks tree as fw_pending when reported contract mismatches and tree is fw_idle" do
         service = described_class.new("", nil)
-        service.send(:check_firmware_mismatch!, tree, active_firmware.id + 999)
+        stale = TelemetryLog::FW_REPORT_SEMANTIC_BIT |
+                ((active_firmware.id + 999) & TelemetryLog::FW_REPORT_ID_MASK)
+        service.send(:check_firmware_mismatch!, tree, stale)
 
         expect(tree.reload.firmware_update_status).to eq("fw_pending")
       end
@@ -366,7 +380,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       it "does not mark tree as fw_pending when already fw_pending" do
         Tree.where(id: tree.id).update_all(firmware_update_status: :fw_pending)
         service = described_class.new("", nil)
-        service.send(:check_firmware_mismatch!, tree, active_firmware.id + 999)
+        stale = TelemetryLog::FW_REPORT_SEMANTIC_BIT |
+                ((active_firmware.id + 999) & TelemetryLog::FW_REPORT_ID_MASK)
+        service.send(:check_firmware_mismatch!, tree, stale)
 
         expect(tree.reload.firmware_update_status).to eq("fw_pending")
       end
@@ -1521,6 +1537,30 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       expect(TelemetryLog.last.vpd).to be_nil
     end
 
+    # [SEC.20] vpd-байт тимчасово несе contract-звіт [rev:1|id7] —
+    # unpacker складає його у 16-бітну fw_report-семантику.
+    it "assembles the SEC.20 fw-report from the vpd byte (running contract)" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 53, vpd_index: 42)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      log = TelemetryLog.last
+      expect(log.firmware_report_semantic?).to be(true)
+      expect(log.firmware_report_reverted?).to be(false)
+      expect(log.firmware_report_contract_id).to eq(42)
+    end
+
+    it "raises the reverted flag from the vpd high bit (SEC.20 baseline-revert)" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 54,
+                              vpd_index: 0x80 | 42)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      log = TelemetryLog.last
+      expect(log.firmware_report_reverted?).to be(true)
+      expect(log.firmware_report_contract_id).to eq(42)
+    end
+
     it "drops the Queen-sentinel CCM packet (DID=0) without raising or committing a log" do
       # CCM path does not support Queen self-telemetry — see process_ccm_chunk.
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
@@ -1670,20 +1710,16 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       end
     end
 
-    it "stores the firmware version nibble when fw_nibble is positive" do
+    # [SEC.20] mesh_ctrl fw-нібл = C-image epoch (транзієнт): contract-звіт
+    # їде vpd-байтом, тож нібл БІЛЬШЕ НЕ пише у firmware_version_id.
+    it "keeps the mesh fw-nibble out of firmware_version_id (vpd report owns the column)" do
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
                               dt: 100, status: 0, ttl: 3, fw_nibble: 7, fc: 15)
 
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
-      expect(TelemetryLog.last.firmware_version_id).to eq(7)
-    end
-
-    it "leaves firmware_version_id nil when fw_nibble is zero" do
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
-                              dt: 100, status: 0, ttl: 3, fw_nibble: 0, fc: 16)
-
-      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
-      expect(TelemetryLog.last.firmware_version_id).to be_nil
+      log = TelemetryLog.last
+      expect(log.firmware_version_id).to eq(TelemetryLog::FW_REPORT_SEMANTIC_BIT)
+      expect(log.firmware_report_contract_id).to eq(0)
     end
 
     it "increments the acoustic overflow metric when acoustic == 255 on the CCM path" do

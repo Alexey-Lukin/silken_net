@@ -142,6 +142,35 @@ RSpec.describe TelemetryLog, type: :model do
     end
   end
 
+  # [SEC.20] Дзеркало fw_report.h: wire-звіт contract-стану у firmware_version_id.
+  describe "firmware_report helpers" do
+    it "reads a running-OTA report (semantic set, reverted clear)" do
+      log = build(:telemetry_log, firmware_version_id: 0x8000 | 42)
+      expect(log.firmware_report_semantic?).to be true
+      expect(log.firmware_report_reverted?).to be false
+      expect(log.firmware_report_contract_id).to eq(42)
+    end
+
+    it "reads a reverted report — the burned contract id stays visible" do
+      log = build(:telemetry_log, firmware_version_id: 0xC000 | 42)
+      expect(log.firmware_report_reverted?).to be true
+      expect(log.firmware_report_contract_id).to eq(42)
+    end
+
+    it "treats a legacy C-image id as non-semantic (no contract id to read)" do
+      log = build(:telemetry_log, firmware_version_id: 0x0001)
+      expect(log.firmware_report_semantic?).to be false
+      expect(log.firmware_report_reverted?).to be false
+      expect(log.firmware_report_contract_id).to be_nil
+    end
+
+    it "stays quiet on a nil wire id (panic frames carry zeroed bytes 12..13)" do
+      log = build(:telemetry_log, firmware_version_id: nil)
+      expect(log.firmware_report_semantic?).to be false
+      expect(log.firmware_report_reverted?).to be false
+    end
+  end
+
   # [S6.16] One-Home pruning-логіки: 1с-вікно (стандарт BlockchainTransaction)
   # + degraded-облік. Воркери/сервіси/контролери делегують сюди.
   describe ".partition_pruned" do

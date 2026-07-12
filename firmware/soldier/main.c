@@ -36,6 +36,9 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include "did_derive.h"           // [FW.54 Вісь 2] DID = f(UID), recompute на boot
 #include "../common/adc_convert.h" // [FW.50] VREFINT-калібровані мВ (One-Home з host-тестами)
 #include "../common/wall_time.h"   // [FW.49] wall-clock guards + civil-інверсія (One-Home)
+#include "../common/stack_canary.h" // [SEC.21] сів вартової канарки (One-Home з host-тестами)
+#include "../common/fw_report.h"    // [SEC.20] wire-звіт contract-стану (байти 12..13 / CCM vpd)
+#include "../common/mpu_regions.h"  // [SEC.21] MPU NX-stack/RO-code розкладка (draft)
 #include "../common/tdma_schedule.h" // [ARCH.26 L2] розклад синхронних вікон з маяка (One-Home)
 #include "../common/cad_sniff.h"     // [ARCH.26 L3] CAD-нюх + PANIC-преамбула (One-Home)
 
@@ -64,7 +67,10 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 
 /* Private define ------------------------------------------------------------*/
 #define MRUBY_CONTRACT_FLASH_ADDR 0x0803F000 // Адреса для OTA оновлень
-#define FIRMWARE_VERSION_ID       0x0001     // Версія прошивки (інкрементується при OTA)
+// Версія C-ОБРАЗУ (compile-time; жива лише у CCM mesh_ctrl fw-nibble).
+// ⚠️ bytecode-OTA її НЕ міняє — contract-версію на дріт несе fw_contract_report
+// (байти 12..13, семантика common/fw_report.h; SEC.20).
+#define FIRMWARE_VERSION_ID       0x0001
 
 // [FIX: AUDIT MISRA] Іменовані константи замість магічних чисел
 #define OTA_MARKER                0x99       // Маркер OTA-пакета (перший байт)
@@ -120,19 +126,31 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #define PANIC_COUNTER_DR0_SHIFT   16          // DR0[31:16] = panic_frame_counter (uint16)
 #define PANIC_COUNTER_MASK        0xFFFFu
 // [SEC.20] DR0[9:8] = ota_vm_error_streak (0..3): N поспіль bytecode-збоїв →
-// auto-fallback на embedded baseline. Vacant-байт DR0[15:10] (§2.3.2), DR7 цілий.
+// auto-fallback на embedded baseline. Vacant-байт DR0[15:11] (§2.3.2), DR7 цілий.
 #define OTA_VM_ERR_STREAK_DR0_SHIFT 8
 #define OTA_VM_ERR_STREAK_MASK      0x03u
 #define SEC20_VM_ERROR_FALLBACK_N   3u
-// [FW.54 guard] DR0 bit-map compile-time non-overlap: panic[31:16] | rsv[15:10] |
-// vm_err_streak[9:8] | acoustic[7:0]. Нова фіча, що вкраде слот (§2.3.2 vacant [15:10]
-// або DR7), впаде ТУТ на компіляції — не тихо перекриє money-path-лічильник у полі.
+// [SEC.21] DR0[10] = canary_tripped: __stack_chk_fail лишає слід перед
+// перевтіленням — переписаний кадр стека то потенційний слід атаки, він
+// мусить пережити reset (RAM-слід згорів би разом зі стеком). Гаситиме
+// майбутній wire-винос (event-кадр 0x57, 00_07 SEC.21); до того — sticky,
+// читається SWD'ом на bench.
+#define CANARY_TRIP_DR0_SHIFT       10
+#define CANARY_TRIP_MASK            0x01u
+// [FW.54 guard] DR0 bit-map compile-time non-overlap: panic[31:16] | rsv[15:11] |
+// canary[10] | vm_err_streak[9:8] | acoustic[7:0]. Нова фіча, що вкраде слот
+// (§2.3.2 vacant [15:11] або DR7), впаде ТУТ на компіляції — не тихо перекриє
+// money-path-лічильник у полі.
 _Static_assert(
     (((uint32_t)PANIC_COUNTER_MASK     << PANIC_COUNTER_DR0_SHIFT)     & 0xFFu) == 0u &&
     (((uint32_t)OTA_VM_ERR_STREAK_MASK << OTA_VM_ERR_STREAK_DR0_SHIFT) & 0xFFu) == 0u &&
+    (((uint32_t)CANARY_TRIP_MASK       << CANARY_TRIP_DR0_SHIFT)       & 0xFFu) == 0u &&
     (((uint32_t)PANIC_COUNTER_MASK     << PANIC_COUNTER_DR0_SHIFT)     &
-     ((uint32_t)OTA_VM_ERR_STREAK_MASK << OTA_VM_ERR_STREAK_DR0_SHIFT)) == 0u,
-    "DR0 bit-map collision — panic[31:16]/vm_streak[9:8]/acoustic[7:0] перетнулись; ревізувати 03_01 §2");
+     ((uint32_t)OTA_VM_ERR_STREAK_MASK << OTA_VM_ERR_STREAK_DR0_SHIFT)) == 0u &&
+    (((uint32_t)CANARY_TRIP_MASK       << CANARY_TRIP_DR0_SHIFT)       &
+     (((uint32_t)PANIC_COUNTER_MASK     << PANIC_COUNTER_DR0_SHIFT) |
+      ((uint32_t)OTA_VM_ERR_STREAK_MASK << OTA_VM_ERR_STREAK_DR0_SHIFT))) == 0u,
+    "DR0 bit-map collision — panic[31:16]/canary[10]/vm_streak[9:8]/acoustic[7:0] перетнулись; ревізувати 03_01 §2");
 #define PANIC_COUNTER_MAX         0xFFFFu     // Saturating maximum
 #define PANIC_COUNTER_PAD_HI      14          // panic_payload[14] = counter MSB
 #define PANIC_COUNTER_PAD_LO      15          // panic_payload[15] = counter LSB
@@ -315,6 +333,11 @@ float ml_confidence = 0.0;        // Рівень впевненості мод�
 float   tinyml_warning_threshold  = TINYML_DEFAULT_WARNING;
 float   tinyml_critical_threshold = TINYML_DEFAULT_CRITICAL;
 uint8_t ota_vm_error_streak       = 0;   // [SEC.20] DR0[9:8]-persist: N поспіль bytecode-збоїв → fallback
+uint8_t canary_tripped            = 0;   // [SEC.21] DR0[10]-persist: слід __stack_chk_fail з минулого втілення
+// [SEC.20] Wire-звіт contract-стану (fw_report.h): рахується раз на boot у
+// contract-select. Дефолт = legacy C-image константа (semantic=0) — чесна
+// деградація, доки KV/contract не оглянуті.
+uint16_t fw_contract_report       = FIRMWARE_VERSION_ID;
 uint8_t warning_counter           = 0;   // Послідовні WARNING-події між cold-boot;
                                           // SRAM зберігається в STOP2, скидається
                                           // лише при VBAT-loss / IWDG / NVIC reset.
@@ -1684,6 +1707,52 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr);
 void OnCadDone(bool channelActivityDetected);  // ARCH.26 L3 — гейт дзеркалить дефініцію `OnCadDone` + реєстрацію
 #endif
 
+// [SEC.21] MPU: NX-stack + RO-code (розкладка/математика — mpu_regions.h).
+// #ifndef — щоб hal_check_ccm міг зібрати гілку `-DSEC21_MPU_ENABLED=1`
+// проти справжнього CMSIS, не чіпаючи бойового дефолту 0. АКТИВАЦІЯ (реальний
+// MemManage-trap) bench-gated: QEMU mps2 MPU не моделює вірогідно.
+#ifndef SEC21_MPU_ENABLED
+#define SEC21_MPU_ENABLED 0
+#endif
+#if SEC21_MPU_ENABLED
+static void Silken_Mpu_Apply(void)
+{
+    MpuRegionWord regions[3];
+    Mpu_Build_Region_Table(regions);
+    MPU->CTRL = 0u; // програмуємо з вимкненим MPU
+    for (uint32_t i = 0; i < 3u; i++) {
+        MPU->RBAR = regions[i].rbar; // VALID-біт несе номер регіону
+        MPU->RASR = regions[i].rasr;
+    }
+    // PRIVDEFENA — фонова мапа периферії/System (код повністю privileged);
+    // HFNMIENA=0 — у HardFault/NMI MPU спить: canary-варта пише TAMP без trap'а.
+    MPU->CTRL = MPU_CTRL_PRIVDEFENA_Msk | MPU_CTRL_ENABLE_Msk;
+    SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk; // окремий вектор (тіло — board-freeze .ioc)
+    __DSB();
+    __ISB();
+}
+#endif
+
+// [SEC.21] Власна варта канарки замість newlib'ової. Strong-символи цього TU
+// перекривають libc_a-stack_protector.o (архів лінкується ліниво — member не
+// витягується, конфлікту немає). Дефолт newlib: guard = 0x00000000 (.bss,
+// __stack_chk_init ніхто не кличе) і fail → abort → вічний wfi-hang без сліду.
+// Компайл-тайм значення guard'а живе лише до HRNG-сіву в main().
+uintptr_t __stack_chk_guard = CANARY_GUARD_LAST_RESORT;
+
+__attribute__((noreturn)) void __stack_chk_fail(void)
+{
+    // Канарка мертва — кадр стека переписано (LoRa-RX/AT-парсери жують
+    // untrusted байти ДО MIC-чеку; це потенційний слід атаки). Стеку більше
+    // не віримо: мінімум рухів, прямі регістри без HAL-хендлів.
+    // DBP ідемпотентно (fail міг статись до main-init), слід у DR0[10],
+    // негайне перевтілення — замість hang'у чекати ласки Сторожового Пса.
+    SET_BIT(PWR->CR1, PWR_CR1_DBP);
+    TAMP->BKP0R |= ((uint32_t)CANARY_TRIP_MASK << CANARY_TRIP_DR0_SHIFT);
+    NVIC_SystemReset();
+    for (;;) { } // недосяжно: заспокоює noreturn-аналіз
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -1707,6 +1776,22 @@ int main(void)
   MX_RNG_Init();
   MX_RTC_Init();
   MX_SUBGHZ_Init();
+
+  // [SEC.21] Сіємо вартову канарку з теплового шуму — якнайраніше, ДО того
+  // як парсери торкнуться першого untrusted-байта. main() не повертається
+  // (вічний цикл Фаз), тож зміна guard'а посеред власного кадру безпечна —
+  // epilogue-звірка main'а не настане ніколи.
+  {
+      uint32_t canary_r = 0;
+      if (HAL_RNG_GenerateRandomNumber(&hrng, &canary_r) != HAL_OK) canary_r = 0;
+      __stack_chk_guard = Canary_Guard_Derive(
+          canary_r, HAL_GetTick() ^ (uint32_t)(uintptr_t)&canary_r);
+  }
+
+#if SEC21_MPU_ENABLED
+  Silken_Mpu_Apply(); // [SEC.21] NX-stack + RO-code (draft; активація bench)
+#endif
+
   Load_AES_Key();  // [FW.1] Завантажити per-device ключ з Flash ПЕРЕД ініціалізацією CRYP
 #if FW2_CCM_ENABLED
   Load_Broadcast_Key(); // [FW.2 (в)] Cluster-plane KEYB (після KEYL — fallback читає aes_key)
@@ -1754,6 +1839,9 @@ int main(void)
       // [SEC.20] Streak bytecode-збоїв переживає STOP2 у DR0[9:8] (RAM-only
       // згорів би щоцикл у RTC-only сні). Cold-boot DR0=0 → streak=0 природно.
       ota_vm_error_streak = (uint8_t)((dr0_raw >> OTA_VM_ERR_STREAK_DR0_SHIFT) & OTA_VM_ERR_STREAK_MASK);
+      // [SEC.21] Слід канарки з минулого втілення: sticky, доки не забере
+      // wire-винос (до того видно SWD'ом). Cold-boot DR0=0 → чисто природно.
+      canary_tripped = (uint8_t)((dr0_raw >> CANARY_TRIP_DR0_SHIFT) & CANARY_TRIP_MASK);
       if (panic_frame_counter == 0) {
           // [SEC.10] Cold-boot resync: HRNG-сів значення у [1, 0xFFFF],
           // щоб panic-stream після перезавантаження не зустрів живі
@@ -1934,6 +2022,15 @@ int main(void)
   } else {
       current_lorenz_bytecode = (uint8_t*)lorenz_bytecode;
   }
+
+  // [SEC.20] Wire-звіт contract-стану: спалений приплив (0x15) при зниклому
+  // "RITE" = сигнатура auto-fallback — саме той факт, що інакше розчинявся б
+  // у здоровій baseline-телеметрії. Rails бачить його з кожного кадру.
+  fw_contract_report = Fw_Report_Compose(
+      soldier_kv_mounted,
+      soldier_kv_mounted ? Ota_Version_Load(&soldier_kv) : 0u,
+      *flash_check == 0x45544952u,
+      FIRMWARE_VERSION_ID);
 
   // =========================================================================
   // ІНІЦІАЛІЗАЦІЯ RUBY (Запуск VM один раз на все життя)
@@ -2167,8 +2264,10 @@ int main(void)
 
     // [FIX: Firmware Version] Байти 12-13: версія прошивки (big-endian).
     // Дозволяє серверу знати яка прошивка на кожному дереві, для OTA targeting.
-    lora_payload[12] = (uint8_t)(FIRMWARE_VERSION_ID >> 8);
-    lora_payload[13] = (uint8_t)(FIRMWARE_VERSION_ID & 0xFF);
+    // [SEC.20] Байти 12..13 = contract-звіт (fw_report.h), НЕ C-image
+    // константа: semantic-біт відрізняє нову семантику від legacy-прошивок.
+    lora_payload[12] = (uint8_t)(fw_contract_report >> 8);
+    lora_payload[13] = (uint8_t)(fw_contract_report & 0xFF);
 
     // =========================================================================
     // ФАЗА 3: ПЛАВКА (Запуск Ruby та Атрактора Лоренца)
@@ -2266,9 +2365,10 @@ int main(void)
                   ota_vm_error_streak = 0;
                   // NVIC_SystemReset зберігає DR0 (не VBAT-loss) → персистимо
                   // streak=0 ЯВНО, інакше boot прочитав би старе значення й
-                  // erase-нув би передчасно ще раз.
+                  // erase-нув би передчасно ще раз. Canary-слід [10] бережемо.
                   HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
                       ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
+                      ((uint32_t)(canary_tripped & CANARY_TRIP_MASK) << CANARY_TRIP_DR0_SHIFT) |
                       (uint32_t)acoustic_events);
                   NVIC_SystemReset();
               }
@@ -2367,7 +2467,11 @@ int main(void)
                                           ccm_mesh_ctrl,
                                           Pack_FW2_Device_Z(lorenz_z, lorenz_state_valid),
                                           ccm_diag,
-                                          0x00 /* vpd_index — до BME280 (HW.32) */,
+                                          /* [SEC.20] vpd-байт тимчасово несе
+                                             contract-звіт [rev:1|id7] до
+                                             BME280 (HW.32) → rev3 віддасть
+                                             чесні окремі поля */
+                                          Fw_Report_To_Vpd(fw_contract_report),
                                           Soldier_Pack_Gossip_Ts_Byte(soldier_unix_ts),
                                           wire_ema_delta_t_s /* [E.63 (г)] = вхід GP */,
                                           ccm_air) == HAL_OK) {
@@ -2820,6 +2924,7 @@ int main(void)
     // [SEC.10/SEC.20] DR0: [panic:16 | rsv:6 | vm_err_streak:2 | acoustic:8]
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
         ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
+        ((uint32_t)(canary_tripped & CANARY_TRIP_MASK) << CANARY_TRIP_DR0_SHIFT) |
         ((uint32_t)(ota_vm_error_streak & OTA_VM_ERR_STREAK_MASK) << OTA_VM_ERR_STREAK_DR0_SHIFT) |
         (uint32_t)acoustic_events);
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, last_wakeup_timestamp);
@@ -3018,6 +3123,7 @@ void HAL_PWR_PVDCallback(void)
     //    не зник при брауноуті між Phase 5 циклами.
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
         ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
+        ((uint32_t)(canary_tripped & CANARY_TRIP_MASK) << CANARY_TRIP_DR0_SHIFT) |
         ((uint32_t)(ota_vm_error_streak & OTA_VM_ERR_STREAK_MASK) << OTA_VM_ERR_STREAK_DR0_SHIFT) |
         (uint32_t)acoustic_events);
 
@@ -3113,6 +3219,7 @@ void Trigger_Emergency_LoRa_TX(void)
     // лічильник bytecode-збоїв (DR0-мапа §2 дотримана на ВСІХ трьох write).
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
         ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
+        ((uint32_t)(canary_tripped & CANARY_TRIP_MASK) << CANARY_TRIP_DR0_SHIFT) |
         ((uint32_t)(ota_vm_error_streak & OTA_VM_ERR_STREAK_MASK) << OTA_VM_ERR_STREAK_DR0_SHIFT) |
         (uint32_t)acoustic_events);
 

@@ -15,6 +15,9 @@
 
 #include "hal_mock.h"
 #include "../common/ttl_byte.h" /* [FW.18b] байт 11: [thr_invalid:5|TTL:3] */
+#include "../common/stack_canary.h" /* [SEC.21] guard-сів (I-CG: ніколи не нуль) */
+#include "../common/fw_report.h" /* [SEC.20] wire-звіт contract-стану [sem:1|rev:1|id14] */
+#include "../common/mpu_regions.h" /* [SEC.21] MPU region-math (draft, pure-half) */
 
 /* ════════════════════════════════════════════════════════════════════
  * CONSTANTS (from soldier/main.c)
@@ -3826,6 +3829,173 @@ TEST(test_sec10_two_panics_have_distinct_counters) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [SEC.20] fw_report — wire-звіт contract-стану (common/fw_report.h)
+ * ════════════════════════════════════════════════════════════════════
+ * [sem:1|rev:1|id14] у байтах 12..13 (BE) + стиск у CCM vpd-байт.
+ * Несучий інваріант: reverted ⇔ (kv ∧ hiwater>0 ∧ contract мертвий) —
+ * сигнатура auto-fallback, що інакше тонула у здоровій телеметрії.
+ */
+TEST(test_sec20_report_no_kv_degrades_to_legacy) {
+    /* Без припливу звіт був би вигадкою — чесна legacy-семантика (sem=0). */
+    ASSERT_EQ(Fw_Report_Compose(0, 7, 1, 0x0001), 0x0001);
+    ASSERT_EQ(Fw_Report_Compose(0, 0, 0, 0x0001), 0x0001);
+}
+
+TEST(test_sec20_report_factory_baseline) {
+    /* hiwater=0 ∧ contract мертвий = завод: semantic є, reverted НЕМА. */
+    ASSERT_EQ(Fw_Report_Compose(1, 0, 0, 0x0001), 0x8000);
+}
+
+TEST(test_sec20_report_running_ota) {
+    ASSERT_EQ(Fw_Report_Compose(1, 42, 1, 0x0001), 0x8000 | 42);
+}
+
+TEST(test_sec20_report_reverted_carries_burned_id) {
+    /* Ядро SEC.20: contract стерто fallback'ом, приплив живий → reverted +
+     * спалена версія (Rails одразу знає, від чого bump'ати). */
+    ASSERT_EQ(Fw_Report_Compose(1, 42, 0, 0x0001), 0xC000 | 42);
+}
+
+TEST(test_sec20_report_id_modulo_14bit) {
+    /* Стеля id14: великі BioContractFirmware.id їдуть по модулю (0x3FFF),
+     * несучий reverted-біт від колізій не залежить. */
+    ASSERT_EQ(Fw_Report_Compose(1, 0x4001u, 1, 0), 0x8000 | 0x0001);
+    ASSERT_EQ(Fw_Report_Compose(1, 0x4001u, 0, 0), 0xC000 | 0x0001);
+}
+
+TEST(test_sec20_report_vpd_squeeze) {
+    /* CCM-стиск [rev:1|id7]: legacy → 0x00 (байт як слався до патча). */
+    ASSERT_EQ(Fw_Report_To_Vpd(0x0001), 0x00);              /* legacy      */
+    ASSERT_EQ(Fw_Report_To_Vpd(0x8000), 0x00);              /* factory     */
+    ASSERT_EQ(Fw_Report_To_Vpd(0x8000 | 42), 42);           /* running     */
+    ASSERT_EQ(Fw_Report_To_Vpd(0xC000 | 42), 0x80 | 42);    /* reverted    */
+    ASSERT_EQ(Fw_Report_To_Vpd(0x8000 | 0x2A85), 0x05);     /* id modulo 7 */
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * [SEC.21] Stack-canary: guard-сів (common/stack_canary.h) + DR0[10]-слід
+ * ════════════════════════════════════════════════════════════════════
+ * Pure-half канарки: derivation guard'а (I-CG: ніколи не нуль, LSB=0x00)
+ * + пакування canary-сліду в DR0 без затирання money-path сусідів.
+ * Сам __stack_chk_fail/NVIC_SystemReset — ARM-only, host спостерігає
+ * лише «що лягло в DR0 перед перевтіленням».
+ */
+#define CANARY_TRIP_DR0_SHIFT 10
+#define CANARY_TRIP_MASK      0x01u
+
+/* Дзеркало main.c DR0-write усіх чотирьох sites (post-SEC.21). */
+static uint32_t Pack_DR0_Canary(uint16_t panic_counter, uint8_t canary,
+                                uint8_t streak, uint8_t acoustic) {
+    return Pack_DR0_Full(panic_counter, streak, acoustic) |
+           ((uint32_t)(canary & CANARY_TRIP_MASK) << CANARY_TRIP_DR0_SHIFT);
+}
+static uint8_t Unpack_DR0_Canary(uint32_t dr0) {
+    return (uint8_t)((dr0 >> CANARY_TRIP_DR0_SHIFT) & CANARY_TRIP_MASK);
+}
+
+TEST(test_sec21_guard_derive_hrng_nonzero_null_lsb) {
+    /* Живий HRNG: guard успадковує ентропію, молодший байт гаситься в NUL. */
+    uint32_t g = Canary_Guard_Derive(0xDEADBEEFu, 0x12345678u);
+    ASSERT_EQ(g, 0xDEADBE00u);
+    ASSERT_NE(g, 0u);
+}
+
+TEST(test_sec21_guard_derive_hrng_dead_falls_back) {
+    /* Мертвий HRNG → ентропія викликача (tick ⊕ адреса), маска LSB тримається. */
+    uint32_t g = Canary_Guard_Derive(0u, 0x12345678u);
+    ASSERT_EQ(g, 0x12345600u);
+}
+
+TEST(test_sec21_guard_derive_total_silence_last_resort) {
+    /* I-CG остання межа: повна тиша ентропії — guard усе одно не нуль. */
+    uint32_t g = Canary_Guard_Derive(0u, 0u);
+    ASSERT_EQ(g, CANARY_GUARD_LAST_RESORT);
+    ASSERT_NE(g, 0u);
+}
+
+TEST(test_sec21_guard_derive_lsb_only_entropy_still_nonzero) {
+    /* Крайова: уся ентропія у молодшому байті — NUL-маска з'їдає її повністю,
+     * але I-CG тримається (інакше guard = 0 = newlib-дефолт, який ми женемо). */
+    uint32_t g = Canary_Guard_Derive(0x000000FFu, 0x000000A5u);
+    ASSERT_EQ(g, CANARY_GUARD_LAST_RESORT);
+}
+
+TEST(test_sec21_canary_bit_dr0_roundtrip_fields_intact) {
+    /* Слід у DR0[10] живе поруч з panic/streak/acoustic, нікого не чіпає. */
+    uint32_t dr0 = Pack_DR0_Canary(0xBEEF, 1, 2, 0x7A);
+    ASSERT_EQ(Unpack_DR0_Canary(dr0), 1);
+    ASSERT_EQ(Unpack_DR0_Counter(dr0), 0xBEEF);
+    ASSERT_EQ(Unpack_DR0_Streak(dr0), 2);
+    ASSERT_EQ(Unpack_DR0_Acoustic(dr0), 0x7A);
+}
+
+TEST(test_sec21_canary_bit_no_overlap) {
+    /* Дзеркало _Static_assert'а main.c: маска сліду не перетинає сусідів. */
+    uint32_t canary_field = (uint32_t)CANARY_TRIP_MASK << CANARY_TRIP_DR0_SHIFT;
+    ASSERT_EQ(canary_field & ((uint32_t)PANIC_COUNTER_MASK << PANIC_COUNTER_DR0_SHIFT), 0u);
+    ASSERT_EQ(canary_field & ((uint32_t)OTA_VM_ERR_STREAK_MASK << OTA_VM_ERR_STREAK_DR0_SHIFT), 0u);
+    ASSERT_EQ(canary_field & 0xFFu, 0u);
+}
+
+TEST(test_sec21_canary_preserved_through_dr0_writeback) {
+    /* Sticky-контракт: слід переживає повний write-back цикл (Phase 5 / PVD /
+     * panic / fallback-reset) — жоден site не сміє його загубити. */
+    uint32_t before = Pack_DR0_Canary(0x1234, 1, 0, 0x05);
+    uint8_t restored = Unpack_DR0_Canary(before);
+    uint32_t after = Pack_DR0_Canary(0x1235, restored, 1, 0x06);
+    ASSERT_EQ(Unpack_DR0_Canary(after), 1);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * [SEC.21] MPU region-math (common/mpu_regions.h) — pure-half draft
+ * ════════════════════════════════════════════════════════════════════
+ * Golden RBAR/RASR-слова (ARMv7-M PMSA, незалежний розрахунок) + інваріант
+ * розкладки: RO-code не сміє накрити жодну сторінку, яку пише HAL_FLASH
+ * (KV 122-123 / identity 124 / KOTA+KEYB 125 / contract 126 / UID 127).
+ * Сам trap — bench-only (QEMU не моделює); host стереже МАТЕМАТИКУ.
+ */
+TEST(test_sec21_mpu_rbar_golden) {
+    MpuRegionWord r[3];
+    Mpu_Build_Region_Table(r);
+    ASSERT_EQ(r[0].rbar, 0x08000000u | 0x10u | 0u);
+    ASSERT_EQ(r[1].rbar, 0x0803C000u | 0x10u | 1u);
+    ASSERT_EQ(r[2].rbar, 0x20000000u | 0x10u | 2u);
+}
+
+TEST(test_sec21_mpu_rasr_golden) {
+    /* Незалежно зібрані слова: [xn:28|ap:26..24|c:17|srd:15..8|size:5..1|en:0] */
+    MpuRegionWord r[3];
+    Mpu_Build_Region_Table(r);
+    ASSERT_EQ(r[0].rasr, 0x06020023u); /* RO+X  256K (size=17)          */
+    ASSERT_EQ(r[1].rasr, 0x1302031Bu); /* RW+XN 16K, SRD=0x03 (size=13) */
+    ASSERT_EQ(r[2].rasr, 0x1302001Fu); /* RW+XN 64K (size=15)           */
+}
+
+TEST(test_sec21_mpu_tail_base_aligned_to_size) {
+    /* PMSA-закон: base вирівняна на розмір регіону — інакше кремній
+     * тихо маскує молодші біти і вікно з'їжджає. */
+    ASSERT_EQ(SEC21_MPU_TAIL_BASE & ((1u << SEC21_MPU_TAIL_LOG2) - 1u), 0u);
+}
+
+TEST(test_sec21_mpu_flash_tail_pages_writable) {
+    /* Кожна сторінка, яку пише HAL_FLASH, — під живим subregion'ом. */
+    for (uint32_t page = 122; page <= 127; page++) {
+        uint32_t addr = 0x08000000u + page * SEC21_MPU_FLASH_PAGE_SIZE;
+        ASSERT_EQ(Mpu_Flash_Addr_Writable(addr), 1);
+        ASSERT_EQ(Mpu_Flash_Addr_Writable(addr + SEC21_MPU_FLASH_PAGE_SIZE - 1u), 1);
+    }
+}
+
+TEST(test_sec21_mpu_code_pages_not_writable) {
+    /* Код лишається RO: і далекий початок, і сторінки 120-121 всередині
+     * TAIL-вікна (SRD-трюк провалює їх назад у RO-регіон #0). */
+    ASSERT_EQ(Mpu_Flash_Addr_Writable(0x08000000u), 0);
+    ASSERT_EQ(Mpu_Flash_Addr_Writable(0x08000000u + 119u * SEC21_MPU_FLASH_PAGE_SIZE), 0);
+    ASSERT_EQ(Mpu_Flash_Addr_Writable(0x08000000u + 120u * SEC21_MPU_FLASH_PAGE_SIZE), 0);
+    ASSERT_EQ(Mpu_Flash_Addr_Writable(0x08000000u + 121u * SEC21_MPU_FLASH_PAGE_SIZE), 0);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * [ARCH.21] Brownout PVD save Lorenz state
  * ════════════════════════════════════════════════════════════════════
  * Симуляція HAL_PWR_PVDCallback: рятує DR0 (packed) + DR1 + DR16-DR19
@@ -5507,6 +5677,24 @@ int main(void)
     RUN(test_sec10_panic_counter_does_not_overlap_panic_flag);
     RUN(test_sec10_dr0_acoustic_preserved_through_panic_writeback);
     RUN(test_sec10_two_panics_have_distinct_counters);
+    RUN(test_sec20_report_no_kv_degrades_to_legacy);
+    RUN(test_sec20_report_factory_baseline);
+    RUN(test_sec20_report_running_ota);
+    RUN(test_sec20_report_reverted_carries_burned_id);
+    RUN(test_sec20_report_id_modulo_14bit);
+    RUN(test_sec20_report_vpd_squeeze);
+    RUN(test_sec21_guard_derive_hrng_nonzero_null_lsb);
+    RUN(test_sec21_guard_derive_hrng_dead_falls_back);
+    RUN(test_sec21_guard_derive_total_silence_last_resort);
+    RUN(test_sec21_guard_derive_lsb_only_entropy_still_nonzero);
+    RUN(test_sec21_canary_bit_dr0_roundtrip_fields_intact);
+    RUN(test_sec21_canary_bit_no_overlap);
+    RUN(test_sec21_canary_preserved_through_dr0_writeback);
+    RUN(test_sec21_mpu_rbar_golden);
+    RUN(test_sec21_mpu_rasr_golden);
+    RUN(test_sec21_mpu_tail_base_aligned_to_size);
+    RUN(test_sec21_mpu_flash_tail_pages_writable);
+    RUN(test_sec21_mpu_code_pages_not_writable);
 
     printf("\n  Brownout PVD Lorenz Save (ARCH.21):\n");
     RUN(test_arch21_pvd_saves_lorenz_state);

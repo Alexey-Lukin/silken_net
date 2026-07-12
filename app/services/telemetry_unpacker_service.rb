@@ -363,13 +363,18 @@ class TelemetryUnpackerService < ApplicationService
     calibration = tree.device_calibration || tree.build_device_calibration
 
     # mesh_ctrl bitfield = [ttl:4 (high nibble) | fw_version_epoch_nibble:4 (low nibble)].
-    # 4-bit version nibble is an OTA-managed epoch stamp; full
-    # firmware_version_id reconstruction needs OTA epoch config which is
-    # not landed yet — record the nibble verbatim and skip the
-    # check_firmware_mismatch! comparison on the CCM path.
+    # Low-nibble = C-image epoch (compile-time, bytecode-OTA її не міняє) —
+    # contract-версію несе vpd-байт (SEC.20, нижче), нібл лишається транзієнтом.
     mesh_ttl     = (mesh_ctrl >> 4) & 0x0F
-    fw_nibble    = mesh_ctrl & 0x0F
     bio_status   = interpret_status((status_byte >> 5) & 0x03)
+
+    # [SEC.20] vpd-байт тимчасово (до BME280/HW.32 → rev3) несе contract-звіт
+    # [reverted:1 | id7] — складаємо у спільні 16 біт fw_report-семантики
+    # (semantic-біт ставимо самі: CCM-прошивка з патчем шле звіт завжди),
+    # щоб TelemetryLog-хелпери працювали однаково для обох ер.
+    fw_report = TelemetryLog::FW_REPORT_SEMANTIC_BIT |
+                (vpd_index.anybits?(0x80) ? TelemetryLog::FW_REPORT_REVERTED_BIT : 0) |
+                (vpd_index & 0x7F)
 
     log_attributes = {
       queen_uid: @gateway&.uid,
@@ -381,7 +386,7 @@ class TelemetryUnpackerService < ApplicationService
       metabolism_s: delta_t_s,
       growth_points: emission_eligible_growth_points(status_byte, bio_status),
       mesh_ttl: mesh_ttl,
-      firmware_version_id: (fw_nibble.positive? ? fw_nibble : nil),
+      firmware_version_id: fw_report,
       bio_status: bio_status,
       # [FW.29] PanicFlag — той самий StatusByte їде і в CCM-плейні
       # (Soldier_Build_CCM_LoRa_Packet приймає status_byte як є).
@@ -424,11 +429,8 @@ class TelemetryUnpackerService < ApplicationService
       Rails.logger.warn "🛡️ [FW.2] #{hex_did}: інваріант FC high-water втрачено (Flash відмовляє) — nonce-гарантія деградована."
     end
 
-    # [HW.32] vpd_index (byte 19): 0x00 = немає BME280 (резерв-дім поля).
-    # Шкала index→kPa визначиться при калібруванні сенсора — до того
-    # байт лише займає своє місце у wire, у БД не пишемо.
-    # (vpd-колонка telemetry_logs чекає каліброваного значення.)
-    _ = vpd_index
+    # [HW.32] Калібрований VPD у цьому байті ще не живе (шкала index→kPa
+    # прийде з BME280; vpd-колонка чекає) — до того байт несе SEC.20-звіт ↑.
 
     # [ARCH.41-B] sentinel 0xFE → нейтралізація ДО DCI + CMD_TIME_SYNC.
     apply_time_uncertain_sentinel!(tree, log_attributes, hex_did)
@@ -913,22 +915,26 @@ class TelemetryUnpackerService < ApplicationService
   end
 
   # [OTA MISMATCH DETECTION]: Перевіряємо, чи прошивка дерева актуальна.
-  # Якщо дерево повідомляє firmware_version_id, що відрізняється від найновішої
-  # активної BioContractFirmware для типу Tree, — позначаємо дерево для OTA-оновлення.
+  # [SEC.20] Порівнюємо ЛИШЕ звіти нової семантики (semantic-біт): вони несуть
+  # contract-id по модулю 14 біт. Legacy-кадри везуть C-image константу, яку
+  # bytecode-OTA не міняє — старе пряме порівняння з BioContractFirmware.id
+  # було яблуками-з-грушами (вічний fw_pending після першої ж кампанії).
   # Кешуємо latest_firmware_id на рівні батчу (1 SQL-запит на весь пакет).
   def check_firmware_mismatch!(tree, reported_firmware_id)
     return if reported_firmware_id.blank?
+    return unless reported_firmware_id.anybits?(TelemetryLog::FW_REPORT_SEMANTIC_BIT)
 
     latest_id = latest_tree_firmware_id
     return if latest_id.nil?
-    return if reported_firmware_id == latest_id
+    reported_contract = reported_firmware_id & TelemetryLog::FW_REPORT_ID_MASK
+    return if reported_contract == (latest_id & TelemetryLog::FW_REPORT_ID_MASK)
 
     # Дерево працює на застарілій прошивці — позначаємо як fw_pending
     # (тільки якщо не вже в процесі оновлення)
     return unless tree.firmware_fw_idle? || tree.firmware_fw_completed? || tree.firmware_fw_failed?
 
     Tree.where(id: tree.id).update_all(firmware_update_status: :fw_pending)
-    Rails.logger.info "🔄 [OTA Mismatch] Дерево #{tree.did}: firmware #{reported_firmware_id} != latest #{latest_id}. Позначено fw_pending."
+    Rails.logger.info "🔄 [OTA Mismatch] Дерево #{tree.did}: contract #{reported_contract} != latest #{latest_id}. Позначено fw_pending."
   end
 
   # Lazy-кешований ID останньої активної прошивки для дерев (1 запит на весь батч)

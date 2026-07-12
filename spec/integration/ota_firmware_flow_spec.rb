@@ -81,10 +81,12 @@ RSpec.describe "OTA firmware deployment flow" do
 
     it "tracks firmware mismatch via TelemetryUnpackerService" do
       latest_fw = create(:bio_contract_firmware, :for_tree, :active)
-      old_fw_id = latest_fw.id - 1
+      # [SEC.20] Wire-звіт нової семантики: semantic-біт + застарілий contract-id
+      stale_report = TelemetryLog::FW_REPORT_SEMANTIC_BIT |
+                     ((latest_fw.id - 1) & TelemetryLog::FW_REPORT_ID_MASK)
 
       service = TelemetryUnpackerService.new(nil, nil)
-      service.send(:check_firmware_mismatch!, tree, old_fw_id)
+      service.send(:check_firmware_mismatch!, tree, stale_report)
 
       tree.reload
       expect(tree.firmware_update_status).to eq("fw_pending")

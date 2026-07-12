@@ -40,6 +40,22 @@ class AlertDispatchService
       )
     end
 
+    # 1б. [SEC.20] ВІДКАТ НА BASELINE (wire fw-report: reverted-біт) — вузол
+    # стер биту OTA-версію і знову здоровий, але жити їй більше не судилося:
+    # anti-rollback приплив (0x15) спалив слот. Термінальний стан до re-issue
+    # версії СТРОГО вищої за спалену (contract_id у звіті) — 03_06 §4.
+    # Uniqueness-scope [tree_id, status] тримає один активний алерт на вузол,
+    # доки телеметрія несе reverted (стан, не подія — кадр щоциклу).
+    if telemetry_log.firmware_report_reverted?
+      create_and_dispatch_alert!(
+        cluster: cluster, tree: tree, severity: :critical,
+        alert_type: :firmware_reverted,
+        message: "⏮️ ВІДКАТ ПРОШИВКИ: вузол на embedded baseline, OTA-версія " \
+                 "#{telemetry_log.firmware_report_contract_id} спалена fallback'ом — " \
+                 "re-issue лише версією > спаленої. DID: #{tree.did}"
+      )
+    end
+
     # [SLASH-1] Panic-кадри свідомо несуть vcap=0 (legacy-parity обох збирачів —
     # Trigger_Emergency_LoRa_TX ECB і CCM): «втрата живлення» на них — фантом,
     # що забруднював comms_no_ack? (system_fault ∈ whitelist) і з'їдав SEC.10-ліміт.

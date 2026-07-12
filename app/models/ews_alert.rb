@@ -58,7 +58,15 @@ class EwsAlert < ApplicationRecord
     # OTA), НЕ біо-сигнал і НЕ вина оператора: не в A-сеті (vandalism_breach ↑), не в
     # comms_no_ack? whitelist (вузол ЖИВИЙ — радіо працює, зламаний лише mruby) і
     # виключений з critical_unmaintained? — не карати оператора за наш баг.
-    firmware_fault: 11
+    firmware_fault: 11,
+    # [SEC.20] Auto-fallback стався: вузол стер биту OTA-версію і біжить embedded
+    # baseline (wire fw-report: reverted-біт). ОКРЕМИЙ від firmware_fault —
+    # той транзієнтний (vm_error щоцикл, гасне сам), цей ТЕРМІНАЛЬНИЙ: вихід
+    # лише через re-issue OTA з версією СТРОГО вищою за спалену (anti-rollback
+    # приплив 0x15 не воскрешає стару — 03_06 §4 bump-інваріант). Різні
+    # ops-дії = різні типи. Slash-виключення дзеркалять firmware_fault:
+    # vendor-attributable, не A-сет, не comms_no_ack?, не critical_unmaintained?.
+    firmware_reverted: 12
   }, prefix: true
 
   # [COSMIC EYE]: Статус супутникової верифікації через dClimate.

@@ -21,6 +21,10 @@
 #include "coap_iv.h"
 // [FW.53] CRC16-CCITT One-Home — перевірка CoAP-OTA чанків від Rails
 #include "../common/silken_crc.h"
+// [SEC.21] Сів вартової канарки (One-Home з host-тестами Солдата).
+#include "../common/stack_canary.h"
+// [SEC.21] MPU NX-stack/RO-code розкладка (draft; той самий чип/мапа).
+#include "../common/mpu_regions.h"
 // [FW.3] Байтовий AT-токенайзер + транзакції (pure, host-tested)
 #include "at_engine.h"
 // [FW.56] CoAP PDU будує хост: SIM7070G — UDP-труба, не CoAP-стек
@@ -838,6 +842,44 @@ static void Broadcast_Time_Beacon(void);
 // [FW.46 Шлях A] Прототип radio-колбека для events-реєстрації в main():
 // тіло внизу файла (ISR-зона), Semtech-драйвер кличе через таблицю.
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr);
+
+// [SEC.21] MPU: NX-stack + RO-code (дзеркало Солдата; розкладка/математика —
+// mpu_regions.h, той самий чип і Flash-хвіст). #ifndef — hal_check_ccm
+// збирає гілку `-DSEC21_MPU_ENABLED=1`; активація bench-gated.
+#ifndef SEC21_MPU_ENABLED
+#define SEC21_MPU_ENABLED 0
+#endif
+#if SEC21_MPU_ENABLED
+static void Silken_Mpu_Apply(void)
+{
+    MpuRegionWord regions[3];
+    Mpu_Build_Region_Table(regions);
+    MPU->CTRL = 0u;
+    for (uint32_t i = 0; i < 3u; i++) {
+        MPU->RBAR = regions[i].rbar;
+        MPU->RASR = regions[i].rasr;
+    }
+    MPU->CTRL = MPU_CTRL_PRIVDEFENA_Msk | MPU_CTRL_ENABLE_Msk;
+    SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk; // вектор — board-freeze .ioc
+    __DSB();
+    __ISB();
+}
+#endif
+
+// [SEC.21] Власна варта канарки замість newlib'ової (дзеркало Солдата;
+// сів — common/stack_canary.h). Strong-символи цього TU перекривають
+// libc_a-stack_protector.o; дефолт newlib = guard 0x00000000 + fail→hang.
+// Королева backup-domain не тримає (hrtc відсутня) → сліду немає,
+// reset-only: миттєве перевтілення дешевше 26 секунд глухоти RX-конвеєра
+// до ласки Сторожового Пса. Persist-слід прийде з QATT-health лічильником
+// перевтілень (bench) — 00_07 SEC.21.
+uintptr_t __stack_chk_guard = CANARY_GUARD_LAST_RESORT;
+
+__attribute__((noreturn)) void __stack_chk_fail(void)
+{
+    NVIC_SystemReset();
+    for (;;) { } // недосяжно: заспокоює noreturn-аналіз
+}
 /* USER CODE END 0 */
 
 /**
@@ -855,6 +897,26 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+
+  // [SEC.21] Сіємо вартову канарку ДО відкриття вух: DMA-кільце (нижче)
+  // слухає модем з першої секунди, AT-токенайзер жує untrusted байти в
+  // сирому C. "Wu-Wei" RNG (Init→сів→DeInit, як flush-jitter); main() не
+  // повертається, тож зміна guard'а посеред власного кадру безпечна.
+  {
+      uint32_t canary_r = 0;
+      hrng.Instance = RNG;
+      if (HAL_RNG_Init(&hrng) == HAL_OK) {
+          if (HAL_RNG_GenerateRandomNumber(&hrng, &canary_r) != HAL_OK) canary_r = 0;
+          HAL_RNG_DeInit(&hrng);
+      }
+      __stack_chk_guard = Canary_Guard_Derive(
+          canary_r, HAL_GetTick() ^ (uint32_t)(uintptr_t)&canary_r);
+  }
+
+#if SEC21_MPU_ENABLED
+  Silken_Mpu_Apply(); // [SEC.21] NX-stack + RO-code (draft; активація bench)
+#endif
+
   MX_USART1_UART_Init(); // UART для розмови з SIM7070G (115200 baud)
   MX_USART1_RX_DMA_Init(); // [FW.3] кільце слухає модем з першої секунди
   MX_SUBGHZ_Init();

@@ -482,8 +482,12 @@ class BlockchainBurningService < ApplicationService
     # самому алерті = self-ref подвійне. Незалежна фізична недбалість = реальні tree/hardware-алерти.
     # [SLASH-1] І :firmware_fault — софт-збій прошивки vendor-attributable (наш баг,
     # лікується OTA з бекенду): «не виїхав на mruby-crash» ≠ фізична недбалість оператора.
+    # [SEC.20] І :firmware_reverted — той самий vendor-клас, але ТЕРМІНАЛЬНИЙ (не
+    # самогаситься; лікується лише re-issue OTA версією > спаленої) → без виключення
+    # штрафував би оператора гарантовано, щойно cause_uplift увімкнеться.
     stale_critical = @cluster.ews_alerts.severity_critical
-                             .where.not(alert_type: [ :field_audit, :vandalism_breach, :firmware_fault ])
+                             .where.not(alert_type: [ :field_audit, :vandalism_breach,
+                                                      :firmware_fault, :firmware_reverted ])
                              .where(created_at: ..30.minutes.ago)
     return false unless stale_critical.exists?
 

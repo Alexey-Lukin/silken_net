@@ -262,6 +262,20 @@ jobs:
             || { echo "❌ SEC.21: -fstack-protector-strong не в ARM build-config"; exit 1; }
           echo "✅ SEC.21: canary-прапор активний у ARM-компіляції"
 
+      - name: '[SEC.21] Fielded-canary gate — власні __stack_chk_fail/__stack_chk_guard в обох TU'
+        # Обидва main.c мусять нести власний handler (reset+слід) і guard-сів
+        # (HRNG через Canary_Guard_Derive) — інакше лінк тихо відкотився б на
+        # newlib: guard = нуль-.bss, fail = abort→hang. Source-gate, не nm:
+        # hal-lane компілює OBJECT-lib без лінку, символ у .a не з'явиться.
+        run: |
+          for f in firmware/soldier/main.c firmware/queen/main.c; do
+            grep -q 'void __stack_chk_fail(void)' "$f" \
+              || { echo "❌ SEC.21: власний __stack_chk_fail зник з $f"; exit 1; }
+            grep -q 'Canary_Guard_Derive' "$f" \
+              || { echo "❌ SEC.21: HRNG-сів guard'а зник з $f"; exit 1; }
+          done
+          echo "✅ SEC.21: fielded-canary (handler + сів) на місці в обох TU"
+
       - name: '[FW.26] ARM static-RAM gate — реальні .data+.bss обох main.c проти леджера'
         # Перший НЕ-плацхолдерний RAM-гейт: arm-none-eabi-size на hal_check .obj
         # (compile-lane вище). Леджер + стеля tensor arena — 03_03 §6.
