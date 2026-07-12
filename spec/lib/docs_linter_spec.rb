@@ -840,6 +840,16 @@ RSpec.describe DocsLinter do
       expect(described_class.source_line_ref_drift("03_02", txt)).to be_empty
     end
 
+    # 4th dialect (stan_audit dig 2026-07-12): `NN_NN:line` — a line-ref INTO a canon
+    # doc (the live `03_02:9` in the tracker). §-anchors are the stable form; the
+    # tracker is NOT exempt (that's where the ref lived), a `§`-ref / prose colon stay clean.
+    it "flags a doc-id `NN_NN:line` ref (incl. in 00_07), passes §-refs and a colon+space" do
+      expect(described_class.source_line_ref_drift("00_07", "packet-loss (`03_02:9`)\n"))
+        .to contain_exactly(a_string_matching(/`03_02:9`/))
+      expect(described_class.source_line_ref_drift("03_05", "див. `03_02 §9`; у 02_04: 12 голок\n"))
+        .to be_empty
+    end
+
     it "flags `ClassName:NNN` Ruby-symbol line-refs but not wire-field notation [DOC-T.29]" do
       txt = "`BlockchainMintingService:107` (MINTER_ROLE)\n" \
             "`Ethereum::StateAnchorService:147` weekly anchor\n" \

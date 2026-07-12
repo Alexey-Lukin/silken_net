@@ -716,6 +716,11 @@ module DocsLinter
   SOURCE_LINE_REF_RE = %r{(?<![\w/])[\w/*.-]+\.(?:[ch]|rb|rake|sol):\d+(?:[–-]\d+)?}
   CLASS_LINE_REF_RE  = /(?<![\w:])[A-Z][A-Za-z0-9]*(?:::[A-Z][A-Za-z0-9]*)+:\d+|(?<![\w:])[A-Z][A-Za-z0-9]*(?:Service|Worker|Controller|Job|Channel|Mailer|Component|Pool):\d+/
   PROSE_LINE_REF_RE  = /\(\s*(?:р|ряд(?:ок|ки))\.?\s*\d+(?:\s*,\s*\d+)*\s*\)/
+  # (4) doc-id dialect `NN_NN:line` (stan_audit dig 2026-07-12 caught a live `03_02:9`) —
+  # points at a LINE of a canon doc, which moves on every edit; none of the three
+  # dialects above matched it. §/heading anchors are the stable form — a `:`-digit
+  # tail after a doc-id is never legitimate. Tracker NOT exempt (the ref lived there).
+  DOC_LINE_REF_RE = /(?<![\w.:])\d\d_\d\d:\d+\b/
 
   def source_line_ref_drift(path, text)
     base = File.basename(path.to_s)
@@ -725,7 +730,8 @@ module DocsLinter
       [
         line[SOURCE_LINE_REF_RE],
         (line[CLASS_LINE_REF_RE] unless cites_examples),
-        (line[PROSE_LINE_REF_RE] unless prose_exempt)
+        (line[PROSE_LINE_REF_RE] unless prose_exempt),
+        (line[DOC_LINE_REF_RE] unless base.start_with?("00_06"))
       ].compact.map do |ref|
         "#{path}: volatile source line-ref `#{ref}` — cite the symbol/#define, not a line → #{line.strip[0, 80]}"
       end
