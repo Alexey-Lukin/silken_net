@@ -74,6 +74,7 @@
 | 5.3 e2e PUT → Rails | повний flush на staging CoAP-intake; вердикт з боку Брами — `bin/coap_smoke --host <staging>` (freeze-contract semantic smoke, INF.6: ловить phantom-delivery, не лише liveness) | `+CCOAPNMI` 2.xx; запис у `TelemetryLog`; smoke зелений |
 | 5.4 DMA-вуха кремнію | `06_uart_dma_ears.py --plan`: USB-UART замість модема + pyOCD attach (producer-лічильники wraps/NDTR по SWD; логіка кільця host-доведена `test_uart_rx_ring.c`) | вердикт ✅ ROUTE/FEED/WRAP/BOUNDARY: DMAMUX-роутинг USART1_RX, TC = рівно +1 wrap, межовий байт повного кільця не губиться/не двоїться |
 | 5.5 **FW.58 DNS-failover** | на живому SIM7070 фліп A-запису `api.silkennet.com` (staging DNS) під час активної Королеви; спостерігати re-resolve після N=3 підряд провалів flush (без IWDG-ребута) | `coap_server_ip` оновлюється на новий IP, flush відновлюється; host-дім `test_fw58_reresolve_predicate` |
+| 5.6 **HW.15 marking-звірка** | фізично прочитати маркування чипа модема на прототипі | = **SIM7070G** (не SIM7000G) — найменування у firmware/BOM/`02_05` уніфіковано, лишилась фіз-звірка |
 
 ## 6. Решта фізики (по item-ах 00_07)
 
@@ -83,6 +84,7 @@
 - **ARCH.35 W25Q32 sector-ring** (gated board-freeze — у BOM Queen ще нема): розводка SPI+CS у `.ioc` → bench SPI-глю (драйвер+power-cut host-доведені `flash_ring.c`) → фліп `ARCH35_RING_ENABLED 1`; перевірка drain Flash-first→RAM при переповненні CIFO.
 - **`Write_OTA_Contract_To_Flash`** — ✅ логіка готова (`flash_ota.c`, host-тест 8/8 `make -C firmware/test flash_ota`, power-cut-safe magic-last); 👤 на bench: HAL_FLASH erase/program-фаза (`g_ota_flash_ops`, main.c) на реальній STM32 + e2e OTA-day.
 - **BQ25570 VBAT_OV** резистори (HW, [`02_03`](../../../docs/02_03_BQ25570_MPPT_Nano_Power.md)): формулу можна звірити аналітично+Monte-Carlo до плати; на bench — DMM-замір порога OV проти 5.5 В EDLC-стелі.
+- **HW.15 VBAT-droop @ 2A burst** (acceptance `02_05 §2.2.1`): осцилограф на VBAT-піні SIM7070G під час LTE-M TX burst → просадка **< 20 мВ** (5-cap tank bank поз.17–20 тримає; brownout-поріг 3.0 В, margin >35×). Без цього замір — brownout-лотерея першого деплою.
 - **RF:** діаграма/дальність 868 МГц (HW.31 антени), mesh TTL у полі.
 - **П'єзо interrupt-storm поріг** (`03_03 §1.2`) — комп/RC-поріг рішення.
 

@@ -101,6 +101,10 @@ class GatewayTelemetryWorker
     elsif log.coap_fail_count.to_i >= GatewayTelemetryLog::COAP_FAIL_ALERT_THRESHOLD
       "📵 UPLINK: Королева #{gateway.uid} накопичила #{log.coap_fail_count} провалених " \
         "flush-розмов — LTE/Starlink деградує, телеметрія тримається на retry."
+    elsif log.temperature_c.present? && log.temperature_c > GatewayTelemetryLog::OVERHEAT_THRESHOLD
+      "🔥 ПЕРЕГРІВ: Королева #{gateway.uid} (#{log.temperature_c}°C). Ризик деградації SIM7070G."
+    elsif log.temperature_c.present? && log.temperature_c < GatewayTelemetryLog::LOW_TEMPERATURE_THRESHOLD
+      "❄️ ЗАМЕРЗАННЯ: Королева #{gateway.uid} (#{log.temperature_c}°C). LiFePO4 offline-ризик — заряд заблоковано."
     else
       "🛠️ Апаратний збій Королеви #{gateway.uid}. Потрібен огляд."
     end

@@ -81,7 +81,7 @@ STM32WLE5JC ─[UART1 AT]─▶ SIM7070G (Київстар SIM)
 |------|-------------|-------------------|------------------|
 | **Phase 1** | LTE-M через наземні вишки Київстар | ❌ Не потрібен | — |
 | **Phase 2.5** ⬅️ **НОВА** | LTE-M через Starlink DTC (Київстар) | ❌ Не потрібен | — |
-| **Phase 3** | Starlink Mini (термінал, Ethernet/WiFi) | ✅ Потрібен | TCP/IP co-proc. (ESP32-S3 або SIM8200G-M2) |
+| **Phase 3** | Starlink Mini (термінал, Ethernet/WiFi) | ✅ Потрібен | TCP/IP co-proc. (ESP32-S3) |
 
 **Практичне значення:** Phase 2.5 дозволяє покрити лісові масиви поза зоною LTE-вишок **вже зараз**, без апаратних змін і без додаткових витрат на термінал ($599). Єдина умова — SIM-карта Київстар з підтримкою DTC.
 
@@ -111,9 +111,9 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 ```
 - Один UART-інтерфейс, спрощена схема. Дорожчий компонент.
 
-> Блокує лише **Phase 3** (Planetary Scale); Phase 1 та 2.5 — не залежать. Відкриті дії (вибір co-proc, опис у [`03_02`](03_02_Queen_Gateway_Firmware), co-proc firmware) → [`00_07` — HW.18](00_07_Action_Plan_Tracker).
+> Блокує лише **Phase 3** (Planetary Scale); Phase 1 та 2.5 — не залежать. Відкрита дія (при Phase-3 bring-up: co-proc firmware-контракт [`03_02`](03_02_Queen_Gateway_Firmware) + прошивка) → [`00_07` — HW.18](00_07_Action_Plan_Tracker).
 
-**🤖 Decision memo [HW.18] — рекомендація: ESP32-S3** (confirm/adjust):
+**🤖 Decision memo [HW.18] — ✅ рішення: ESP32-S3** (підтверджено founder 2026-07-03):
 
 Роль co-processor у Phase 3 **єдина** — WiFi-STA + TCP/IP-міст STM32 → Starlink Mini (Ethernet/WiFi). Обидва варіанти це вміють; вирішують вартість/енергія/доцільність:
 
@@ -130,7 +130,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 **SIM8200G-M2 виправданий ЛИШЕ** якщо Phase 3 переосмислити як «5G-where-available як другий backhaul» (суперечить ultra-remote премісі). Інакше — ESP32-S3.
 
-**Після confirm:** оновити схему + [`03_02`](03_02_Queen_Gateway_Firmware) (firmware-контракт co-proc) + `firmware/esp32_coproc/` (UART-AT + WiFi-STA + lwIP).
+**При Phase-3 bring-up** (co-proc ще не будується — порожній контракт зараз = premature): [`03_02`](03_02_Queen_Gateway_Firmware) firmware-контракт co-proc + `firmware/esp32_coproc/` (UART-AT + WiFi-STA + lwIP).
 
 ---
 
@@ -338,7 +338,7 @@ ESR_parallel ≈ ESR_bulk ∥ ESR_MLCCs ≈ 15 mΩ ∥ ~5 mΩ ≈ 4 mΩ
 - ❌ Bulk cap далі ніж 15 мм від модему — паразитна індуктивність доріжки (~10 нГн/см) формує LC-tank, що дзвенить на спадаючому фронті
 - ❌ Економія на C_RF — без 33 pF cap RF-burst антени потрапляє назад у VBAT та збиває MCU UART (виглядає як «AT command no response»)
 
-> **Cross-ref:** додати ці п'ять компонентів у BOM §7 (рядки 16–20, нові). Специфікація узгоджена з SIMCom Hardware Design Guide §3.4.1 (Power Supply Design) та принципом tiered-decoupling, описаним у [`02_03 §6.3`](02_03_BQ25570_MPPT_Nano_Power).
+> **Cross-ref:** ці п'ять компонентів — у BOM §7 (поз.17–20). Специфікація узгоджена з SIMCom Hardware Design Guide §3.4.1 (Power Supply Design) та принципом tiered-decoupling, описаним у [`02_03 §6.3`](02_03_BQ25570_MPPT_Nano_Power).
 
 ---
 
@@ -419,7 +419,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 |-----------|------------|
 | STM32WLE5JC + SIM7070G (ідентично Phase 1/2.5) | 1.56 |
 | Starlink Mini активний (5 хв/год × 25 Вт × 24) | 50.0 |
-| ESP32-S3 co-processor (якщо використовується) | 12.0 |
+| ESP32-S3 co-processor | 12.0 |
 | **Разом Phase 3** | **~44–64 Вт·год/добу** |
 | **Генерація (зима, хвойний ліс)** | **18.75 Вт·год/добу** |
 | **Баланс (зима, Phase 3)** | **-25 до -45 Вт·год ⚠️** |
@@ -563,7 +563,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 [SIM7070G: LTE-M]
     Phase 1: наземні вишки Київстар
     Phase 2.5: Starlink DTC через Київстар (без термінала!) ← НОВА
-    Phase 3: Starlink Mini (термінал, ESP32/SIM8200G-M2)
+    Phase 3: Starlink Mini (термінал, ESP32-S3)
            │
            ▼
 [coap://api.silkennet.com:5683]

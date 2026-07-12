@@ -55,7 +55,7 @@
 - **Перед польовим деплоєм** (life-safety + security): `SEC.9` · `SEC.3` · `SEC.1` · `FW.2`-фліп + `FW.17`/downlink-wire-rev (обидва ⚖️ **ДО першого field-deploy** [pin 07-11]: CCM-cutover + key-ratchet-активація — rollback до поля = хвилини, після = SWD-візити на статичний KEYL) · `ARCH.60` (notification-delivery — wildfire/chainsaw-алерт мусить дійти до людини: email/SMS/push сьогодні мертві)
 - **Перед Web3 mainnet:** `S1.1` (GitHub CI secrets) · prod deploy-ENV → [`06_04`](06_04_Secrets_Checklist) (вкл. `SOLANA_RPC_URL` — інакше USDC на Devnet; guard ✅ E.47) · `S2.2`+`S2.4` (Grafana після першого `/metrics`) · `E.32` (paid manual audit — HARD) · `SLASH-1` (розширення A-сету + uplift-фліп) · `SEC.1` (Safe + Governor/Timelock активація + transfer admin — поглинув BIZ.4) · `SEC.17` (money-mint-key custody = GCP-KMS remote-signer, impl pre-mainnet — [`06_04 §5.5`](06_04_Secrets_Checklist)) · `S3.5` (subgraph cutover)
 - **Найближчий фіз-мілстоун — TRL 3→4 = Ti-coin in-vitro** (founder 2026-06-21; гроші є → блок не фінанси): вузький шлях, що **ОБХОДИТЬ** гіроїд/PEEK/press-fit/mate — `HW.24` Stage 2 (**6-alloy coin bake-off** Ø16 → EAAE → Gen 2.0 функціоналізація → CV/EIS у соку) + `HW.5` (хімія-стек) + V-release ICP-MS (`HW.3`). Канал = **гібрид commercial-lab + ЧНУ** (не чекати MoU). Канон [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
-- **Hardware-гейт** (TRL 4→6, повний анкер — після coin): `HW.1` (анкер-генерація — CAD machine-half ✅, фіз-друк → завод) · `HW.24` (staged validation SLA→coin→anchor→100) · `HW.23` (HIP postprocess) · `HW.31` (BOM Королеви)
+- **Hardware-гейт** (TRL 4→6, повний анкер — після coin): `HW.1` (анкер-генерація — CAD machine-half ✅, фіз-друк → завод) · `HW.24` (staged validation SLA→coin→anchor→100) · `HW.23` (HIP postprocess) · `HW.31`/`HW.15`/`HW.16` (BOM Королеви — кластер «02_05 BOM freeze» ↓, gated `HW.39` panel-decision — Queen winter-survival)
 - **Academic:** `UNI.1` (лаб + публікації) · `UNI.14` (MSA / B2B legal)
 - **Перед першим B2B-продажем** (комерціалізація — вісь розкрита gap-pass'ом): `BIZ.20` (юр-особа — гейтить решту) · `BIZ.2` (MSA) · `BIZ.21` (E&O/liability до підпису) · `BIZ.9` (незалежний carbon-методолог Verra/GS) · `BIZ.19` (CBAM-наратив — звірити/переформулювати ДО пітчу) · `SEC.18` (User/Org PII GDPR/DSAR) · `BIZ.18` (customer-SLA)
 
@@ -67,6 +67,8 @@
 |---|---|
 | **HW.9 KiCad PCB** (👤; сам ← BOM-фіналізація `HW.7/12/13/20` + RF Keep-Out) | `HW.17`-dimensions · `HW.29`-footprints · `HW.20`-BOM-part · SE050 DNP-footprint · `ARCH.35` W25Q32-розводка · пін-мапа → **FW.46 `.ioc`** (ланцюг до bench-дня ↓) |
 | **FW.46 board-freeze** `.ioc` (👤) | повний `.elf` → увесь bench-день: `FW.2`-фліп · `FW.3/8/17/20/23/31/49/50/52/54/55` · `ARCH.26/41` · `SEC.2`-OTA-verify · `SEC.20`-OTA-replay-REJECT+fallback-erase (host ✅, кремній) · `SEC.15`-WUT · `SEC.21`-MPU-activate (canary CI ✅) · `SEC.3`-SWD · `ARCH.35`-розводка · `radio_conf.h` → компіляція `radio.c` (SubGHz submodule + `RadioEvents_t` уже в репо — останній radio-гейт); суміжно `ARCH.34`-ефір: host-половина ПОВНА ✅ (glue+adapter+мок-LNS повний join+uplink+KV-bind; форк v2.6.2-silken.1); лишився OTAA-ефір на bench (дім ARCH.34) |
+| **`02_05` BOM freeze Королеви** (👤; сам ← `HW.39` panel-decision 10↔50W + BMS/MPPT SKU-pick) | `HW.31`-антена (поз.11/12) · `HW.15`-caps/MPPT/BMS (поз.6/8/17–20) · `HW.16`-DS18B20+charge-MOSFET (§4а.7 P0-зима) — усі Phase 1/2.5 Queen-BOM позиції одним закупом |
+| **Starlink-Mini Phase-3 bring-up** (👤; ultra-remote деплой, far-future) | `HW.14`-winter-energy закупка (40Ah+100W+Victron за `07_02 §4а`) · `HW.18`-ESP32-S3 co-proc firmware (`03_02`-контракт + `firmware/esp32_coproc/`) |
 | **Перший live-деплой** = акаунти/значення Фази −1 + секрети (`S1.1`+`S4.3`) + `OPS.11`-FinOps-значення (tf/workflow ✅ 07-05) → deploy фазами [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform) (👤; SSH keyless — INF.20 (в); CI→GCP auth keyless — WIF ✅ 07-10, лишається `INF.22`-apply-model founder-decision) | верифікації `INF.11/12/13/14/15/16` · `INF.17`-coap.env · `S1.5`-IP · `INF.20`-IAP-вхід · `INF.22`-CI-apply-model (founder-decision: apply founder-local vs deploy-SA-privesc) · `PUMA-IPV6-1` · `INF.10`-фліп · `S5.2` · `S3.2`-staging · `S6.1`-Upstash · `INF.21`-pin · `SEC.19`-region-placement (EU-PII residency) · `INF.24`-auditor-on-chain-звірка (`akash query audit`) · Grafana-сесія (`S2.2`-import + `S2.4`-verify/SLO + `FW.18b`) · активує escrow-watch (repo Variable `AKASH_OWNER_ADDRESS` — workflow ✅) · встановити repo Variables `GCP_WORKLOAD_IDENTITY_PROVIDER`/`GCP_SERVICE_ACCOUNT` (WIF deploy-gate — з `terraform output` після 1-го apply) · `SEC.22`-Phase-2 (drop `RAILS_MASTER_KEY`: `SECRET_KEY_BASE`+service-keys inject-at-deploy) + money-п'ятірка → GH Environment `production` (не repo — [`06_04 §1`](06_04_Secrets_Checklist)) · **[2026-07-10] config-validity/scope цих deploy-item'ів backed CI-drift-guardами** (`spec/deploy/`-suite: INF.16-db · INF.17-coap.env · INF.12-ENV.fetch+B1 · INF.4-coap-host · DR.1-DR-posture · **[07-11 vilize]** SEC.22-credentials-ENV-first · S2.4-alloy-3-target-topology · S4.3-present-empty(`deploy_secret_scan` Invariant D) · INF.24-auditor-bech32 · OPS.11-tf-var-parity · ARCH.35-compile-coverage(firmware hal_check_ccm); `terraform_validate` offline; `audit_deploy_secret_scope.rb` scope-preflight) → deploy-day = provider-behavior/значення verify, НЕ first-catch |
 | **Web3 mainnet-деплой** = Gnosis Safe + `Deploy.s.sol` + transfer admin→Timelock (👤; `SEC.1`, поглинув BIZ.4) | активує on-chain governance (read-path готовий, `ParameterSyncWorker` no-op доти — GOV.1 §🗄️) · `ARCH.66`-anchor-lifecycle (worker'и natural-inert доти) · `SEC.17`-KMS-money-key-provision (pre-mainnet) · `E.32`-Hacken post-deploy · `S3.5`-subgraph cutover |
 | **SE051 eval-пара** замовлення (👤) | `SE050-MIGRATION` (B) real-I²C emit + silicon-confirm (rename (A) ✅ shipped 2026-07-11) · `SEC.3` Гілка-B real-I²C |
@@ -550,35 +552,45 @@
 
 #### HW.31 — Queen Antenna Split (868 LoRa tuned ≠ dual-band)
 - **P0** · 👤 · 🟢 · → `02_05 §7`
-- **Стан:** Рознесено в каноні — поз.11 wideband LTE-M/NB-IoT (700–2700 МГц, Kyivstar B1/B3/B7/B8/B20, опц. LTE+GNSS) · поз.12 LoRa 868 **tuned** 5 dBi fiberglass omni (OD8-868/ALL.4101); окремі RF-порти SX1262 vs SIM7070G, dual-band SMA відхилено (VSWR>2.5 @868 → −3-5 дБ EIRP). Канон `02_05 §7`.
-- [ ] 👤 freeze поз.11/12 у BOM Королеви при 02_05 BOM freeze
+- **Стан:** Рознесено в каноні — поз.11 wideband LTE-M/NB-IoT (700–2700 МГц, Kyivstar B1/B3/B7/B8/B20) · поз.12 LoRa 868 **tuned** 5 dBi fiberglass omni (OD8-868/ALL.4101); окремі RF-порти SX1262 vs SIM7070G, dual-band SMA відхилено (VSWR>2.5 @868 → −3-5 дБ EIRP). Опційний LTE+GNSS combo (Taoglas FXUB63) = GPS-time-sync upgrade, **НЕ блокер** — FW.20 3-рівневий sync працює без GPS (CoAP `0x9C` + beacon, не PPS). Рішення (порт-split + tuned-vs-dual) зацементовано → лишається чиста рука. Канон `02_05 §7`.
+- [ ] 👤 freeze поз.11/12 у BOM Королеви — кластер «02_05 BOM freeze» (Critical Path ↑)
 
 #### HW.15 — BMS + VBAT decoupling для SIM7070G
 - **P1** · 👤 · 🟡 · → `02_05 §Пікові струми SIM7070G`, `§2.2.1`
-- **Стан:** Module-level fix зафіксовано — 5-cap VBAT tank bank проти 2A-burst brownout (просадка <20mV, margin >35×; BOM поз.17–20). PSM/eDRX ✅ shipped (init-тракт Queen `main.c` [HW.10]; дім AT-граматики — [`03_02 §4`](03_02_Queen_Gateway_Firmware); live-звірка таймінгів — RUNBOOK §5.2, разом з FW.3). Лишається system-level: BMS/MPPT моделі в BOM + bench-звірка маркування SIM7070G. Канон `02_05 §2.2.1` (+ §Пікові струми).
-- [ ] 👤 Обрати BMS: мінімум 12V / 20A continuous / 50A peak — рекоменд. **JBD/Jiabaida-клас** (найменші SKU 60-120A перекривають вимогу; відкритий протокол `esphome-jbd-bms` = телеметрія); self-drain верифікувати при закупівлі за per-SKU datasheet
-- [ ] 👤 Обрати MPPT: **Victron SmartSolar 75/15** (research-підтверджено 2026-07-03 по всіх осях: LiFePO4-пресет, LVD, VE.Direct, quiescent 20мА, −30…+60°C з дератингом >40°C; альт. EPEVER Tracer-AN / Renogy Rover-Li, дешевші, але quiescent/temp неверифіковані)
+- **Стан:** Module-level fix зафіксовано — 5-cap VBAT tank bank проти 2A-burst brownout (просадка <20mV, margin >35×; BOM поз.17–20). PSM/eDRX ✅ shipped (init-тракт Queen `main.c` [HW.10]; дім AT-граматики — [`03_02 §4`](03_02_Queen_Gateway_Firmware); live-звірка таймінгів — RUNBOOK §5.2, разом з FW.3). Лишається system-level: BMS/MPPT-моделі в BOM + bench-звірка маркування SIM7070G. ⚠️ quiescent-drift: `02_05 §4`/`§4а.2` рахують MPPT+BMS 5мА (1.44 Wh/добу), а Victron 75/15 research-число = 20мА (~5.76 Wh) → таблиця 4× оптимістична; консолідація в energy-моделі (HW.39 ↓). Канон `02_05 §2.2.1` (+ §Пікові струми).
+- [ ] ⚖️ Обрати BMS SKU в межах **JBD/Jiabaida-класу** (60/120A перекривають 12V/20A cont./50A peak; `esphome-jbd-bms` телеметрія; self-drain-verify per-datasheet при закупівлі) — клас затверджено, SKU-pick лишається
+- [ ] 👤 Зафіксувати MPPT **Victron SmartSolar 75/15** у BOM поз.6 + закупити (рішення done research'ем 2026-07-03: LiFePO4-пресет/LVD/VE.Direct/quiescent 20мА/−30…+60°C; альт. EPEVER/Renogy дешевші, quiescent/temp неверифіковані)
 - [ ] 👤 PCB layout: розмістити C_BULK ≤ 10 мм від VBAT pin, HF caps впритул
-- [ ] 👤 Оновити BOM (закупка 5 нових компонентів)
-- [ ] 👤 Bench: фізично звірити маркування модему на прототипі = **SIM7070G** (не SIM7000G; найменування у firmware/BOM/`02_05` вже уніфіковано — лишилась лише фізична звірка)
+- [ ] 👤 Закупити 5 caps (поз.17–20, специфіковані у BOM) + status-фліп поз.6/8 — кластер «02_05 BOM freeze» (Critical Path ↑)
+- [ ] 👤 Bench (RUNBOOK §5.6 marking + §6 VBAT-droop @2A): звірити маркування модему = **SIM7070G** + осцилограф VBAT-просадки <20mV (найменування у firmware/BOM/`02_05` уніфіковано)
+
+#### HW.39 — Queen energy-budget параметрична модель + panel-decision (NEW 2026-07-12)
+- **P1** · 🤖+👤 · ⚪ · → `02_05 §4`, `07_02 §4а`
+- **Стан:** Energy-числа Queen розкидані прозою по 3+ таблицях `02_05` з несумісними припущеннями — **4 числові drift**: panel 10↔50W (`07_02 §4`↔`02_05 §7`) · MPPT+BMS quiescent 5↔20мА (`§4`/`§4а.2`↔Victron-research) · ESP32-idle 150× (`§Зимовий` ~1мА↔`§4а.3` 500мВт) · Starlink 44↔50 Wh (`§Зимовий`↔`§4`). BOM-freeze (HW.31/15) морозить panel/battery/MPPT зараз **БЕЗ числа-гейта** → Queen ризикує «пригаснути» першої зими (10W-панель дає зимову маржу ~+0.55 Wh замість заявлених +15.5). Розв'язок — параметрична модель = single-source чисел + pre-deploy balance-гейт. Прецедент: `tools/firmware/dci_epsilon_sweep.rb` (Ruby-sweep без залежностей) + `scripts/model_doc_sync.rb` (doc↔code assert). Cross-ref: HW.14 (parent — winter deficit), HW.15 (quiescent-drift), HW.31 (panel у BOM).
+- [ ] 🤖 `tools/firmware/queen_energy_budget.rb` — вхід {phase · battery_Ah · DoD · panel_W · sun_h · insolation_% · starlink_duty · starlink_W · esp32_mode · mcu/modem/quiescent-рядки} → вихід {спожив по компонентах · gen · баланс · autonomy_days}
+- [ ] 🤖 `--assert` режим: Phase 1/2.5 winter_balance ≥ margin → exit 1 (deploy-гейт); Phase 3 = warn до Starlink bring-up → CI поруч `docs_check`
+- [ ] ⚖️ **panel-decision Phase 1/2.5** (10 vs 50W): модель з чесним quiescent (Victron 20мА) + зимова інсоляція (10-15% хвойний ліс) + надійність-margin → рекомендація → **founder-рішення**
+- [ ] 🤖 після рішення: drift-fix `07_02 §4`↔`02_05 §7` (panel/battery/MPPT) + консолідувати 4 числові drift (canon посилається на модель, не restate)
 
 #### HW.14 — Winter energy deficit for Queen Phase 3 (Starlink Mini)
-- **P2** · 👤 · ⚪ · → `02_05 §Зимовий енергодефіцит`
-- **Стан:** Не розпочато — Phase 3 (Starlink Mini) зимовий дефіцит: 44 Wh/добу спожив. vs 18.75 Wh генерації = −25 Wh/добу (LiFePO4 12V/20Ah → 7.7 днів автономності); Phase 2.5 (DTC) не зачеплено. Мітигації: 40Ah / 1-хв duty / 100W панель. Канон `02_05 §4` (§Зимовий енергодефіцит).
-- [ ] 👤 Збільшити батарею до 40Ah (15 днів автономності), АБО
-- [ ] 👤 Зменшити Starlink duty cycle до 1 хв/год (~9 Wh/day), АБО
-- [ ] 👤 Встановити 100W solar panel
+- **P2** · 🤖+👤 · 🟡 · → `02_05 §Зимовий енергодефіцит`, `07_02 §4а`
+- **Стан:** Phase 3 (Starlink Mini) зимовий дефіцит: 44 Wh/добу спожив. vs 18.75 Wh генерації = −25 Wh/добу (LiFePO4 12V/20Ah → 7.7 днів автономності). Cost-side комбо (40Ah+100W+Victron) ВЖЕ запечено у [`07_02 §4а`](07_02_Unit_Economics_and_BOM); енерго-баланс НЕ валідовано — за арифметикою канону 3 «АБО»-мітигації не взаємозамінні (100W сама = 37.5 Wh < 44 спожив; 40Ah сама не закриває місячний standing-deficit; лише duty-cycle+комбо). ⚠️ **pre-deploy drift (НЕ Phase-3):** `07_02 §4` Phase 1/2.5 = 10W/6Ah/CN3791, а spec-дім `02_05 §7` = 50W/20Ah/Victron → зимова маржа +15.5 vs ~+0.55 Wh; BOM-freeze (HW.31/15) морозить це зараз. Розв'язок = параметрична energy-модель (HW.39 ↓) дасть panel-рекомендацію + консолідує 4 числові drift. Канон `02_05 §4`.
+- [ ] 🤖 energy-модель + panel-рекомендація Phase 1/2.5 → окрема сесія (**HW.39** ↓)
+- [ ] ⚖️ panel-decision Phase 1/2.5 (10 vs 50W) — після модель-аналізу → drift-fix `07_02`↔`02_05`
+- [ ] 👤 Phase-3 закупка (комбо 40Ah+100W+Victron за `07_02 §4а`) — при Starlink-Mini bring-up, кластер «Phase-3» (Critical Path ↑)
 
 #### HW.16 — Thermal management в IP67 enclosure
 - **P2** · 👤 · 🟡 · → `02_05 §Теплове управління IP67`
-- **Стан:** Тепловий бюджет IP67 зроблено (Phase 1/2.5 ~130мВт→ΔT<1K; Phase 3 3Вт→ΔT~4.5K; sun load +15K домінує → sun-shade) + backend critical-temp гілка (`GatewayTelemetryLog#critical_fault?`, T<−20°C → ❄️ EwsAlert) ✅. Лишається hardware зимовий charge-protect (NTC/DS18B20 + MOSFET). Канон `02_05 §4а`.
-- [ ] 👤 Додати temperature sensor (NTC або DS18B20)
-- [ ] 👤 Реалізувати hardware charge protection при T < 0°C
+- **Стан:** Тепловий бюджет IP67 зроблено (Phase 1/2.5 ~130мВт→ΔT<1K; Phase 3 3Вт→ΔT~4.5K; sun load +15K домінує → sun-shade). Backend freeze/overheat-вердикт: `critical_fault?` + `format_health_message` дають ❄️ ЗАМЕРЗАННЯ (T<−20°C) / 🔥 ПЕРЕГРІВ (T>65°C) специфічні алерти (`GatewayTelemetryWorker`, mutation-verified spec). ⚠️ гілка **data-starved**: v2-пульс температури не несе («Королева без ADC», ARCH.54) → жива до HW.16-hardware + wire-розширення. Лишається hardware зимовий charge-protect; блокує зимову deploy-cert (літній first-deploy — ні). Канон `02_05 §4а`.
+- [ ] 👤 Додати temperature sensor **DS18B20** (canon §4а.6: ±0.5°C, 1-Wire) на LiFePO4 head
+- [ ] ⚖️ charge-protect: discrete P-MOSFET vs BMS-integrated low-temp cutoff (JBD-клас HW.15 типово має вбудований NTC+charge-FET → може субсумувати) — verify при HW.15 SKU
+- [ ] 👤 DS18B20 + charge-MOSFET → BOM §7 (§4а.7 P0-зима рядки не матеріалізовані) — кластер «02_05 BOM freeze» (Critical Path ↑)
 
 #### HW.18 — Starlink DTC: ESP32-S3 vs SIM8200G-M2 WiFi co-processor
 - **P2** · 🤖+👤 · 🔗 · → `02_05 §Starlink DTC vs Mini`
-- **Стан:** ✅ **Рішення підтверджено (founder 2026-07-03): ESP32-S3** для WiFi-мосту STM32→Starlink Mini (~$3, near-zero sleep; SIM8200G-M2 відхилено — 5G марнується в лісі, ~20× дорожчий). Phase 3 only (Starlink Mini). 03_02 firmware-контракт + co-proc прошивка = Phase-3-gated (co-proc ще не будується — порожній контракт зараз = premature). Канон `02_05 §Starlink DTC` (memo HW.18).
-- [ ] 🔗 Phase 3: co-processor firmware-контракт (STM32↔ESP32-S3 UART/SPI) у `03_02` + прошивка у `firmware/` — разом при Starlink-Mini bring-up
+- **Стан:** ✅ **Рішення: ESP32-S3** (founder 2026-07-03) для WiFi-мосту STM32→Starlink Mini (~$3, near-zero sleep; SIM8200G-M2 відхилено — 5G марнується в лісі, ~20× дорожчий). Phase 3 only. Firmware-контракт + co-proc прошивка = Phase-3-gated (порожній контракт зараз = premature — `firmware/esp32_coproc/` не існує, `03_02` чистий). Канон `02_05 §Starlink DTC` (memo HW.18).
+- [x] 🤖 cement рішення ESP32-S3 у canon (vilize 07-12): `02_05` memo «рекомендація/confirm-adjust» → «✅ рішення 07-03» + знято 3 дуалізми «ESP32-S3 або SIM8200G-M2» (фазова таблиця/діаграма/energy-hedge)
+- [ ] 🔗 Phase 3: co-processor firmware-контракт (STM32↔ESP32-S3 UART/SPI) у `03_02` + прошивка `firmware/esp32_coproc/` — разом при Starlink-Mini bring-up, кластер «Phase-3» (Critical Path ↑)
 
 ## §03a · Firmware
 

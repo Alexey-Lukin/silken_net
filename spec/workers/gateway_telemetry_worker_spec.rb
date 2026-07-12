@@ -106,12 +106,24 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
         }.not_to change(EwsAlert, :count)
       end
 
-      it "fallback-повідомлення для critical_fault поза csq/uplink-гілками (майбутній ADC-шлях)" do
+      it "fallback-повідомлення для battery-critical (voltage поза thermal/signal-гілками; майбутній ADC-шлях)" do
         # Пульс v2 напруги не несе, але модель дозволяє legacy/ADC-рядки
         # (insert_all-ера): voltage-critical лог мусить дати чесний вердикт.
         log = gateway.gateway_telemetry_logs.create!(gateway_id: gateway.id, voltage_mv: 3000)
         message = described_class.new.send(:format_health_message, gateway, log)
         expect(message).to include("Апаратний збій")
+      end
+
+      it "❄️-вердикт для замерзання (temperature_c < LOW_TEMPERATURE_THRESHOLD; charge-protect зона, HW.16)" do
+        log = gateway.gateway_telemetry_logs.create!(gateway_id: gateway.id, temperature_c: -25)
+        message = described_class.new.send(:format_health_message, gateway, log)
+        expect(message).to include("ЗАМЕРЗАННЯ")
+      end
+
+      it "🔥-вердикт для перегріву (temperature_c > OVERHEAT_THRESHOLD)" do
+        log = gateway.gateway_telemetry_logs.create!(gateway_id: gateway.id, temperature_c: 70)
+        message = described_class.new.send(:format_health_message, gateway, log)
+        expect(message).to include("ПЕРЕГРІВ")
       end
 
       it "no_signal (csq 99) не тригерить алерт (за специфікацією 3GPP)" do
