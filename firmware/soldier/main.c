@@ -513,7 +513,9 @@ static TdmaSchedule g_tdma_schedule = {0u, 0u, 0u, 0u};
 // Гейт INERT (окремий від L2 — фліпи незалежні): фліп = bench WUT-армінг
 // @ T_sniff + PPK2 CAD-профіль (00_07 ARCH.26). OnCadDone стрельне лише
 // після реєстрації RadioEvents_t на HAL-фазі (FW.46, доля OnRxDone).
-#define ARCH26_CAD_ENABLED        0
+#ifndef ARCH26_CAD_ENABLED
+#define ARCH26_CAD_ENABLED        0  // 🟡 фліп = bench (compile-lane: -D через hal_check_ccm)
+#endif
 #if ARCH26_CAD_ENABLED
 // Модуляція PANIC-TX = Scenario C (02_03 §9.8): SF9 / BW125 / CR4-5 / +14 дБм.
 // Semtech SetTxConfig LoRa-кодування: bandwidth 0 = 125 кГц, coderate 1 = 4/5.

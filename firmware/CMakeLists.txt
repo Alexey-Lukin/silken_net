@@ -139,6 +139,10 @@ if(CMAKE_CROSSCOMPILING)
     # RAM-гейт [FW.26] на БОЙОВОМУ hal_check не зачеплено).
     # + SEC21_MPU_ENABLED=1: гейтований Silken_Mpu_Apply (MPU->RBAR/RASR/CTRL,
     # CMSIS core) компілюється обабіч; реальний MemManage-trap — bench.
+    # + ARCH26_CAD_ENABLED=1: гейтована CAD-гілка Солдата (ARCH.26 L3 —
+    # StartCad-нюх, SetTxConfig extended-preamble, OnCadDone-реєстрація)
+    # компілюється проти справжнього Semtech radio.h. Стеля: link-бомбу НЕ
+    # ловить (OBJECT-lib compile-only) — справжній link-guard = FW.46 full-.elf.
     add_library(hal_check_ccm OBJECT
       hal_glue/soldier_hal_check.c
       hal_glue/queen_hal_check.c)
@@ -158,7 +162,8 @@ if(CMAKE_CROSSCOMPILING)
       FW2_CCM_ENABLED=1
       ARCH34_HELIUM_ENABLED=1
       ARCH35_RING_ENABLED=1
-      SEC21_MPU_ENABLED=1)
+      SEC21_MPU_ENABLED=1
+      ARCH26_CAD_ENABLED=1)
     target_compile_options(hal_check_ccm PRIVATE -Wall -Wextra -Os)
 
     # [ARCH.34] LoRaMac-node compile-lane: vendored MAC (EU868/ClassA профіль
