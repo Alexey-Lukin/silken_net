@@ -589,7 +589,6 @@
 #### HW.18 — Starlink DTC: ESP32-S3 vs SIM8200G-M2 WiFi co-processor
 - **P2** · 🤖+👤 · 🔗 · → `02_05 §Starlink DTC vs Mini`
 - **Стан:** ✅ **Рішення: ESP32-S3** (founder 2026-07-03) для WiFi-мосту STM32→Starlink Mini (~$3, near-zero sleep; SIM8200G-M2 відхилено — 5G марнується в лісі, ~20× дорожчий). Phase 3 only. Firmware-контракт + co-proc прошивка = Phase-3-gated (порожній контракт зараз = premature — `firmware/esp32_coproc/` не існує, `03_02` чистий). Канон `02_05 §Starlink DTC` (memo HW.18).
-- [x] 🤖 cement рішення ESP32-S3 **canon-wide** (vilize 07-12): `02_05` memo «рекомендація/confirm-adjust» → «✅ рішення 07-03»; знято дуалізм «ESP32-S3 або SIM8200G-M2» у `02_05` (фазова-таблиця/діаграма + energy-hedge «(якщо викор.)») · `07_02 §4а` (проза+BOM ×2) · `04_03` (uplink-сценарій)
 - [ ] 🔗 Phase 3: co-processor firmware-контракт (STM32↔ESP32-S3 UART/SPI) у `03_02` + прошивка `firmware/esp32_coproc/` — разом при Starlink-Mini bring-up, кластер «Phase-3» (Critical Path ↑)
 
 ## §03a · Firmware
