@@ -407,10 +407,14 @@ CPU — байти й URC поза вікном читання (запізніл
 0. [FW.16→FW.3] Restore_ECB_Mode() — ОДРАЗУ після CBC-encrypt батча,
    ще ДО розмови з модемом: вікно чужого CRYP-режиму = нуль.
 
-1. DNS (раз на boot): AT+CDNSGIP="api.silkennet.com"
+1. DNS (кеш порожній → резолв): AT+CDNSGIP="api.silkennet.com"
    ↳ URC +CDNSGIP: 1,"<host>","<ip>" (до АБО після OK — двигун ловить обидва
      порядки) → кеш coap_server_ip. Фейл → return: слоти живі (FW.51),
      наступний flush повторить і DNS.
+   [FW.58] N=3 flush-провали ПІДРЯД (coap_consec_fail, reset на success) →
+     Coap_Reresolve_Due → кеш інвалідується → примусовий re-resolve
+     наступного flush: A-запис-фліп (zero-infra failover) підхоплюється
+     БЕЗ ребута (host-дім test_fw58_reresolve_predicate; bench 00_07 FW.58).
 
 2. PDU: Coap_Build_Put(CON PUT /telemetry/batch/<queen_uid>,
                        payload = legacy [IV:16][ct] АБО підписаний
@@ -1085,7 +1089,7 @@ Per-channel режими (LoRa **AES-128** ECB→CCM · CoAP **AES-256-CBC**) �
 | `at_engine_state` | `AtEngine` | ~168 B | [FW.3] AT-токенайзер (лінія `AT_LINE_MAX` + стан) |
 | `uart_rx_buf[512]` + `uart_rx_ring` + `hdma_usart1_rx` | `uint8_t` + `UartRxRing` + DMA handle | ~632 B | **[FW.3]** circular-DMA вухо модема: кільце + вид консьюмера (`queen/uart_rx_ring.h`) + HAL-handle; `uart_rx_wraps` — у скалярах |
 | `coap_pdu_buf` | `uint8_t static` | sizeof(batch_attest_buffer)+64 | [FW.56] CoAP PDU (заголовок+Uri-Path+батч; static у `Flush_Cache_To_Rails`) |
-| `coap_server_ip[16]` | `char` | 16 B | [FW.56] CDNSGIP-кеш IP сервера (на boot) |
+| `coap_server_ip[16]` | `char` | 16 B | [FW.56] CDNSGIP-кеш IP сервера (boot; [FW.58] інвалідація після N=3 flush-провалів підряд → re-resolve) |
 | `cmd_dedup_ring[16]` | `uint32_t` | 64 B | DJB2 хеші idempotency токенів |
 | `cmd_decrypt_buf[544]` | `uint8_t` | 544 B | Decrypt buffer для CoAP команд/OTA |
 | `incoming_lora_payload` (видалено в FW.3) | — | 0 B | Замінено на `lora_rx_ring[16]` (288 B) |

@@ -222,7 +222,7 @@ Browser / API client                Queen Gateway (LoRa→CoAP)
 - [ ] **Origin URL відомий:** після `akash provider lease-status`, скопіювати URL виду `https://<lease-id>.ingress.akash.pub`.
 - [ ] **CNAME-запис створено:** `silkennet.app` (або subdomain) → `<lease-id>.ingress.akash.pub`, Proxy status: 🟠 **Proxied** (через CF).
 - [ ] **Ingress Anchor running:** `gcloud compute instances list --filter="name=ingress-anchor"` повертає running. Статичний IP закріплено (`gcloud compute addresses list`).
-- [ ] **Queens бʼють у Ingress Anchor, не в Cloudflare:** firmware резолвить `COAP_SERVER_HOST` (`api.silkennet.com`, `firmware/queen/main.c` — CDNSGIP) → A-запис цього хоста МУСИТЬ бути **DNS-only (сіра хмарка), НЕ proxied**, і вказувати на статичний Ingress-IP. ⚠️ Королева пінить резолв на весь boot (re-resolve лише post-reboot; fail-triggered re-resolve → [`00_07` FW.58](00_07_Action_Plan_Tracker)).
+- [ ] **Queens бʼють у Ingress Anchor, не в Cloudflare:** firmware резолвить `COAP_SERVER_HOST` (`api.silkennet.com`, `firmware/queen/main.c` — CDNSGIP) → A-запис цього хоста МУСИТЬ бути **DNS-only (сіра хмарка), НЕ proxied**, і вказувати на статичний Ingress-IP. Fail-triggered re-resolve host-shipped [FW.58]: після N=3 flush-провалів підряд кеш інвалідується → A-запис-фліп підхоплюється без ребута (механізм — [`03_02 §4`](03_02_Queen_Gateway_Firmware); bench-verify на живому SIM7070 → [`00_07` FW.58](00_07_Action_Plan_Tracker)).
 - [ ] **Rails-side ENVs** не вимикати: `force_ssl=true`, `assume_ssl=true`, `HSTS` активні. CF додає `X-Forwarded-Proto: https`, Rails з `assume_ssl` чесно це поважає.
 - [ ] **`DISABLE_SSL` ENV не встановлений** у `deploy/akash/deploy.yaml` (інакше Rails сам не форсуватиме HTTPS — false sense of security).
 
@@ -278,7 +278,7 @@ coap-client -m get coap://$INGRESS_IP:5683/health -v 6
 | `curl https://… → 525 SSL handshake failed` | Cloudflare→origin не може встановити TLS | Перевірити Akash `*.ingress.akash.pub` URL валідний (`akash provider lease-status`); CF SSL/TLS режим знизити до `Full` (без strict) на час діагностики |
 | `301 → http://...` нескінченний loop | Rails бачить `X-Forwarded-Proto: http`, hot-redirect-loop | Перевірити CF Page Rules — має бути `Always Use HTTPS`. У Rails — `config.force_ssl = true`, `config.ssl_options = { redirect: { exclude: ->(req) { req.path == "/up" } } }` для health-check |
 | WebSocket падає одразу | Hotwire/ActionCable через CF Free плану лімітується | Upgrade до CF Pro (WebSocket unlimited) АБО використати Cloudflare Tunnel з sticky origin |
-| CoAP запити від Queen не доходять | A-запис `api.silkennet.com` став CF-proxied (UDP крізь CF не проходить) АБО Королева тримає застарілий DNS-пін | Повернути запис у DNS-only → Ingress-IP; Королева підхопить лише post-reboot (IWDG/цикл живлення) — firmware пінить резолв на весь boot (fail-triggered re-resolve → [`00_07` FW.58](00_07_Action_Plan_Tracker)) |
+| CoAP запити від Queen не доходять | A-запис `api.silkennet.com` став CF-proxied (UDP крізь CF не проходить) АБО Королева тримає застарілий DNS-пін | Повернути запис у DNS-only → Ingress-IP; Королева підхопить сама після N=3 flush-провалів підряд (fail-triggered re-resolve [FW.58], [`03_02 §4`](03_02_Queen_Gateway_Firmware)) або post-reboot; bench-verify → [`00_07` FW.58](00_07_Action_Plan_Tracker) |
 | TLS grade B-C на SSL Labs | CF SSL/TLS режим = `Flexible` (CF→origin по HTTP) | Перемкнути на `Full (strict)`; примусово вимкнути TLS 1.0/1.1 в CF Edge Certificates |
 
 ##### Опція B (fallback): Akash hostname operator + Let's Encrypt
