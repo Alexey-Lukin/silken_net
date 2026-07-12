@@ -1401,7 +1401,7 @@ make -C firmware/test clean   # Remove test_queen, test_soldier binaries
 
 ### 12.4 ARM cross-compile build (FW.46)
 
-**Дім build-системи прошивки.** До FW.46 закомічченого ARM-build не було — `.elf` збирались зовні (CubeIDE), не відтворювано й не CI-gated. Тепер відтворюваний CMake-крос-компайл того, що ми **володіємо**, живе в репо й гейтиться в CI (`ci.yml › firmware_arm_build`). Повний HAL-лінкований `.elf` — наступний крок (👤, [`00_07` — FW.46](00_07_Action_Plan_Tracker)).
+**Дім build-системи прошивки.** До FW.46 закомічченого ARM-build не було — `.elf` збирались зовні (CubeIDE), не відтворювано й не CI-gated. Тепер відтворюваний CMake-крос-компайл того, що ми **володіємо**, живе в репо й гейтиться в CI (`ci.yml › firmware_arm_build`). Повний HAL-лінкований `.elf` — наступний крок (👤, [`00_07` — FW.46](00_07_Action_Plan_Tracker)). ⚠️ Стеля compile-lanes до того: OBJECT-lib **компілює, не лінкує** → ungated-референс gated-символу (клас OnCadDone link-бомби ARCH.26, знято гейт-симетрією 2026-07-11) невидимий CI аж до повного `.elf` — нова гейтована гілка мусить бути **гейт-симетричною** (прототип + реєстрація + дефініція під одним `#if`).
 
 ```
 firmware/
