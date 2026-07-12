@@ -948,6 +948,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 - `confirm(block_num, gas_cost)` (sent/processing→confirmed)
 - `fail(reason)` (any→failed)
 - `escalate_to_review(reason)` (pending/processing/sent/failed→manual_review) — **[DOUBLE-SPEND GUARD]**: tx_hash вже існує або стан на блокчейні невідомий; кошти залишаються у `locked_balance` до ручної звірки
+- `after_all_transitions` → async `record_money_audit_trail` — **[MRV.1]** кожен money-перехід пише SHA-256 `AuditLog`-ланцюг (actor=`oracle_executioner`, metadata from/to/tx_hash); org-резолюція `wallet&.organization_id || cluster&.organization_id` — cluster-sourced рухи (Celo reward, last-tree slash; `wallet=nil`) атрибутуються через кластер; без org/actor — WARN-skip, tx не валимо
 - `scope :in_flight` (recent `:pending`/`:sent`) — **[ARCH.45]** intent-marker idempotency guard (дзеркало `EthereumAnchor.in_flight`): на retry ловить on-chain↔DB crash-window для slash / Solana payout проти double-pay / double-burn ([`04_02 §4/§10`](04_02_Business_Logic_and_Services))
 
 **Методи:** `find_with_partition_pruning(id, created_at = nil)` _(клас)_, `explorer_url`, `solana_network?`, `celo_network?`, `broadcast_status_change`.
