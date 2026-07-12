@@ -38,6 +38,7 @@ namespace :tracker do
     verdict  = Tracker::Dashboard.verdict_lead_violations(md)
     metaform = Tracker::Dashboard.meta_form_violations(md)
     cluster  = Tracker::Dashboard.cluster_marker_violations(md)
+    bench    = Tracker::Dashboard.bench_tag_violations(md)
 
     puts "00_07 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(items).size} actionable)"
     puts "  duplicate IDs:    #{dups.empty? ? 'none ✓' : dups.inspect}"
@@ -125,6 +126,14 @@ namespace :tracker do
       puts "  кластер-marker violations (#{cluster.size}) — malformed/asymmetric (00_07 §розмітка):"
       cluster.each { |c| puts "    - #{c}" }
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || metaform.any? || cluster.any?
+    # [DOC-T.34 ①] bench-session tag symmetry — HARD: RUNBOOK §6 session registry ⇆
+    # 00_07 `[bench:slug]` tags, both directions. (00_06 §3.)
+    if bench.empty?
+      puts "  bench sessions:   [bench:slug] tags ⇆ RUNBOOK §6 registry symmetric ✓"
+    else
+      puts "  bench-tag violations (#{bench.size}) — tag↔registry asymmetry (RUNBOOK §6):"
+      bench.each { |b| puts "    - #{b}" }
+    end
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || metaform.any? || cluster.any? || bench.any?
   end
 end

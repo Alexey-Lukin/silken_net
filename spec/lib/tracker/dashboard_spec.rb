@@ -528,6 +528,90 @@ RSpec.describe Tracker::Dashboard do
     end
   end
 
+  # [DOC-T.34 ①] `[bench:slug]` tags ⇆ RUNBOOK §6 session registry, two-way.
+  # The registry row is anchored by the tag itself (`| [bench:slug] | … | IDs |`)
+  # so the RUNBOOK's other tables (tool names in code-spans) can't false-match.
+  describe ".bench_tag_violations" do
+    let(:runbook) do
+      <<~MD
+        | Інструмент | Для чого | Нотатка |
+        |---|---|---|
+        | `pyocd` (`pip install pyocd`) | SWD-оркестрація | not a session row |
+
+        | Сеанс | Секції RUNBOOK | 00_07-items |
+        |---|---|---|
+        | [bench:flash-kv] | §6 | FW.2 · FW.8 |
+        | [bench:coap] | §5 | FW.3 |
+      MD
+    end
+
+    let(:tracker_md) do
+      <<~MD
+        ## §03 · Firmware
+        #### FW.2 — item in session
+        - **P0** · 👤 · 🟢 · → `03_05`
+        - **Стан:** x.
+        - [ ] 👤 bench: CCM + Flash-KV [bench:flash-kv]
+        #### FW.8 — listed but NOT tagged
+        - **P2** · 👤 · 🟢 · → `03_01`
+        - **Стан:** x.
+        - [ ] 👤 bench: фліп парсера
+        #### FW.3 — tagged into the wrong session
+        - **P1** · 👤 · 🟢 · → `03_02`
+        - **Стан:** x.
+        - [ ] 👤 bench: таймінги [bench:flash-kv]
+        #### FW.9 — tag with an unregistered slug
+        - **P2** · 👤 · 🟢 · → `03_01`
+        - **Стан:** x.
+        - [ ] 👤 bench: щось [bench:phantom-day]
+      MD
+    end
+
+    it "flags both asymmetry directions + an unknown slug; the tool table never matches" do
+      res = described_class.bench_tag_violations(tracker_md, runbook)
+      expect(res).to contain_exactly(
+        a_string_matching(/FW\.3: \[bench:flash-kv\] — item not in that session/),
+        a_string_matching(/FW\.9: \[bench:phantom-day\] — no such session/),
+        a_string_matching(/RUNBOOK §6 \[bench:flash-kv\]: FW\.8 carries no tag/),
+        a_string_matching(/RUNBOOK §6 \[bench:coap\]: FW\.3 carries no tag/)
+      )
+      expect(described_class.bench_sessions(runbook).keys).to contain_exactly("flash-kv", "coap")
+    end
+
+    it "does not leak a tag mentioned AFTER a ## header onto the previous item" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### FW.2 — real item
+        - **P0** · 👤 · 🟢 · → `03_05`
+        - [ ] 👤 bench: x [bench:flash-kv]
+        ## 🔀 Cross-cutting
+        | DOC-T.99 | опис задачі згадує [bench:flash-kv] як приклад | `00_06 §3` |
+      MD
+      rb = "| [bench:flash-kv] | §6 | FW.2 |\n"
+      expect(described_class.bench_tag_violations(md, rb)).to be_empty
+    end
+
+    it "passes a fully symmetric registry ⇆ tag set (incl. a two-session item)" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### FW.2 — item in session
+        - **P0** · 👤 · 🟢 · → `03_05`
+        - **Стан:** x.
+        - [ ] 👤 bench: CCM + Flash-KV [bench:flash-kv]
+        #### FW.8 — two sessions, two tags
+        - **P2** · 👤 · 🟢 · → `03_01`
+        - **Стан:** x.
+        - [ ] 👤 bench: фліп [bench:flash-kv]
+        - [ ] 👤 bench: інший день [bench:coap]
+      MD
+      rb = <<~MD
+        | [bench:flash-kv] | §6 | FW.2 · FW.8 |
+        | [bench:coap] | §5 | FW.8 |
+      MD
+      expect(described_class.bench_tag_violations(md, rb)).to be_empty
+    end
+  end
+
   # [DOC-T.34 ③] `[кластер:slug:дім|важіль]` on item headings — one greppable form
   # for координатор ⊃ важелі. Symmetry: exactly ONE дім + ≥1 важіль per slug.
   describe ".cluster_marker_violations" do

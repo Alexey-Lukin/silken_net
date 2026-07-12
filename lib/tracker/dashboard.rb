@@ -452,6 +452,61 @@ module Tracker
       end
     end
 
+    # --- bench-session tag symmetry [DOC-T.34 ①] ---
+    # Bench work is organized in NAMED SESSIONS (one coherent stand-day block);
+    # the session registry is SSOT in firmware/scripts/bench/RUNBOOK.md §6
+    # (`| [bench:slug] | sections | IDs |` rows — the tag itself anchors the row,
+    # so the RUNBOOK's other tables can't false-match), and a 00_07 item whose
+    # bench work belongs to session X carries a `[bench:X]` tag on the checkbox.
+    # Two-way symmetry: a tag must name a registered session AND its item must be
+    # in that session's row; every ID a row lists must carry the tag. Closes the
+    # FW.8↔FW.20-style cross-ref asymmetry and makes a bench day grep-plannable.
+    BENCH_TAG    = /\[bench:([a-z0-9-]+)\]/
+    BENCH_ROW    = /\A\|\s*\[bench:([a-z0-9-]+)\]\s*\|[^|]*\|([^|]*)\|/
+    RUNBOOK_PATH = File.expand_path("../../firmware/scripts/bench/RUNBOOK.md", __dir__)
+
+    def self.bench_sessions(runbook)
+      runbook.each_line.with_object({}) do |line, h|
+        next unless (m = line.match(BENCH_ROW))
+
+        h[m[1]] = m[2].scan(PROSE_ID_TOKEN)
+      end
+    end
+
+    def self.bench_item_tags(markdown)
+      current = nil
+      markdown.each_line.with_object(Hash.new { |h, k| h[k] = [] }) do |line, h|
+        # a `## ` header ends the previous item's body — without this, a tag
+        # mentioned in a 🔀-section table row leaks onto the last #### item
+        current = nil if line.start_with?("## ")
+        current = line[ANY_ITEM_HEAD, 1] || current
+        next unless current
+
+        line.scan(BENCH_TAG) { |slug,| h[current] << slug }
+      end
+    end
+
+    def self.bench_tag_violations(markdown = File.read(DEFAULT_PATH), runbook = File.read(RUNBOOK_PATH))
+      sessions = bench_sessions(runbook)
+      tags     = bench_item_tags(markdown)
+      bad = []
+      tags.each do |id, slugs|
+        slugs.uniq.each do |slug|
+          if sessions.key?(slug)
+            bad << "#{id}: [bench:#{slug}] — item not in that session's RUNBOOK §6 row" unless sessions[slug].include?(id)
+          else
+            bad << "#{id}: [bench:#{slug}] — no such session in RUNBOOK §6"
+          end
+        end
+      end
+      sessions.each do |slug, ids|
+        ids.each do |id|
+          bad << "RUNBOOK §6 [bench:#{slug}]: #{id} carries no tag in 00_07" unless tags[id].include?(slug)
+        end
+      end
+      bad
+    end
+
     # --- дім-кластер marker guard [DOC-T.34 ③] ---
     # A coordination cluster (координатор ⊃ важелі — DRY without an item-merge)
     # is declared on ITEM HEADINGS as `[кластер:slug:дім]` / `[кластер:slug:важіль]`,

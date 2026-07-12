@@ -78,6 +78,21 @@
 
 ## 6. Решта фізики (по item-ах 00_07)
 
+> **Сеанс-реєстр [DOC-T.34 ①] — SSOT bench-сеансів.** Один сеанс = один зв'язний
+> блок стенд-роботи; 00_07-item, чия bench-робота належить сеансу, несе тег
+> `[bench:slug]` на відповідному чекбоксі. Симетрію тримає `tracker:check`
+> (`bench_tag_violations`, двосторонньо: кожен тег ∈ реєстр, кожен item реєстру
+> тегнутий). Плануєш стенд-день → `grep '\[bench:slug\]' docs/00_07_*` дає повний
+> зріз across секції. Нова сесія = новий рядок тут + теги на items.
+
+| Сеанс | Секції RUNBOOK | 00_07-items |
+|---|---|---|
+| [bench:flash-kv] | §6 (bullet «Flash-KV на кремнії» ↓) | FW.2 · FW.8 · FW.17 · FW.20 · FW.54 |
+| [bench:parity-dump] | §2.3 | FW.55 |
+| [bench:lse-rtc-wut] | §4 | FW.49 · FW.20 · ARCH.41 · ARCH.26 · SEC.15 |
+| [bench:coap] | §5 (+ §6 VBAT-droop) | FW.3 · FW.56 · FW.58 · HW.15 |
+| [bench:ota-day] | §2.5 (+ §6 `Write_OTA_Contract_To_Flash`) | FW.23 · FW.52 · SEC.20 |
+
 - **HW-AES-KEY/SEC.6:** SE050 eval kit (SEC.14 роль SE — рішення при BOM freeze; SE = SE050 — 03_05 §3.7 / 00_07 SE050-MIGRATION) + live SE05x I²C; **замір SE sleep-floor за load-switch гейтом** (TPS22860-патерн — SEC.14 cross-check 2026-06-12: always-on 150 нА ≈ 3.6 мДж/год > весь запас Сценарію C, гейт обов'язковий).
 - **BME280** I2C bring-up (`bme280_forced_read` транспорт-стаб → live) + gate-timing (VPD) + точка калібрування `vpd_index`→kPa (формула+квант канонізовані `02_01 §3.4`, компенсація host-golden `test_bme280.c`).
 - **Flash-KV на кремнії** (ОДНЕ HAL-глю відкриває ЧОТИРИ freeze-contract'и): `HAL_FLASH_*` glue + ECCD-політика читання + erase-час vs LoRa RX (`03_01 §2.3` bench-residual). Споживачі журналу: `0x10/0x11` Z-пороги (FW.8) · `0x13` key-version (FW.17) · `0x14` FC high-water (FW.2 nonce-якір) · `0x20` beacon-dedup поколінь (FW.20-S2). Фліпи після верифікації: `FW8_PARSER_ENABLED` · `FW17_RATCHET_ENABLED` (+ §2.6) · `FW20_MESH_RELAY_ENABLED`; persist-roundtrip через power-cycle на кожен ключ.
