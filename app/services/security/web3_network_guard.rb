@@ -114,7 +114,7 @@ module Security
     end
 
     def chain_violations(env)
-      RPC_URL_ENVS.filter_map do |var|
+      out = RPC_URL_ENVS.filter_map do |var|
         url = env[var]
         next if url.blank?
 
@@ -124,6 +124,19 @@ module Security
         "[chain] #{var} points at a TESTNET (matched #{marker.inspect}) — minting real " \
           "value on a testnet is unrecoverable. Point it at a mainnet endpoint."
       end
+
+      # [E.49] CELO_RPC_URL has a CODE-side testnet fallback (Alfajores): unset does not
+      # raise — real cUSD rewards would silently run against a throwaway chain, so the
+      # blank-skip above misses it. Presence is gated CONDITIONALLY on the Celo path being
+      # armed (its signer key present; the key lives only on the job surface, so web/coap
+      # boot clean without either).
+      if env["ORACLE_CELO_PRIVATE_KEY"].present? && env["CELO_RPC_URL"].blank?
+        out << "[chain] CELO_RPC_URL is not set while ORACLE_CELO_PRIVATE_KEY is present — " \
+               "the code falls back to Alfajores TESTNET (E.49): real cUSD would pay out " \
+               "on a throwaway chain. Set a mainnet Celo RPC."
+      end
+
+      out
     end
 
     def oracle_violations(env, signer_process: true)

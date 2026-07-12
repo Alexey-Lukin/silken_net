@@ -134,7 +134,7 @@
 - [ ] `ETHERISC_DIP_CONTRACT_ADDRESS` · `PURO_EARTH_REGISTRY_CONTRACT_ADDRESS` — параметричне страхування / D-MRV registry (Toucan-адресу вилучено — E.66 prune)
 - [ ] `ETHEREUM_ANCHOR_CONTRACT` — StateRootAnchor (Ethereum L1, weekly anchor)
 - [ ] `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS` — ProtocolParameters.sol (governance sync; `ENV[]` nil-safe → skip-sync)
-- [ ] `CELO_RPC_URL` — Celo RPC. ⚠️ **БЕЗ значення → код fallback на Alfajores TESTNET** (реальні cUSD на testnet, обходить `web3_network_guard`; E.49). Mainnet: Forno/Alchemy.
+- [ ] `CELO_RPC_URL` — Celo RPC. ⚠️ **БЕЗ значення → код fallback на Alfajores TESTNET** (реальні cUSD на testnet; E.49). З 2026-07-12 **умовно гейтовано boot-guard'ом**: `ORACLE_CELO_PRIVATE_KEY` присутній ∧ RPC blank → violation (озброєний Celo-шлях без mainnet-RPC не бутиться; неозброєний — чистий). Mainnet: Forno/Alchemy.
 > Усі контракт-адреси вище = **post-`forge deploy`** (deploy-order): у Kamal `env.clear` + Akash SDL як `REQUIRED_SECRET_NOT_SET` placeholder, fill після деплою контрактів (INF.12). Публічні on-chain → не секрети, але fail-loud на use поки не задані (виняток — `DAO_TREASURY_ADDRESS`: use-сайти fail-SILENT, гучним його робить boot-guard — див. рядок вище).
 - [ ] `SOLANA_USDC_MINT_ADDRESS` — SPL Token mint USDC (mainnet: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`). Solana-четвірка (keypair · fee-payer pubkey · token-account · цей mint) також presence-чекається boot-guard'ом `solana_violations` (signer-процес; batch-payout цикл ковтає per-wallet помилки без escalation — E.61)
 - [ ] `FILECOIN_PINNING_API_URL` — Pinata IPFS pinning service URL

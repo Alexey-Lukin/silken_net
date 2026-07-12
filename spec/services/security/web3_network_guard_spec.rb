@@ -55,6 +55,23 @@ RSpec.describe Security::Web3NetworkGuard do
       expect(described_class.violations(env)).to be_empty
     end
 
+    # [E.49] The blank-skip misses CELO_RPC_URL: unset falls back to Alfajores TESTNET in
+    # code (no raise) — so presence is demanded conditionally, only when the Celo path is
+    # armed (its signer key present).
+    it "flags a blank CELO_RPC_URL when the Celo signer key is present (silent Alfajores fallback)" do
+      env = clean_env.merge("ORACLE_CELO_PRIVATE_KEY" => "d" * 64)
+      expect(described_class.violations(env)).to include(a_string_matching(/\[chain\].*CELO_RPC_URL.*Alfajores/))
+    end
+
+    it "does not demand CELO_RPC_URL while the Celo path is unarmed (no signer key)" do
+      expect(described_class.violations(clean_env)).not_to include(a_string_matching(/CELO_RPC_URL/))
+    end
+
+    it "accepts an armed Celo path with a mainnet RPC" do
+      env = clean_env.merge("ORACLE_CELO_PRIVATE_KEY" => "d" * 64, "CELO_RPC_URL" => "https://forno.celo.org")
+      expect(described_class.violations(env)).to be_empty
+    end
+
     # --- oracle signer keys: presence + format ----------------------------
 
     it "flags a missing minting oracle key (no dedicated key — the legacy fallback is retired)" do
