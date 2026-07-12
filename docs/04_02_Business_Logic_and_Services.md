@@ -1105,7 +1105,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Тригер** | `EmergencyResponseService`, `HardwareKeyService` |
 | **Вхід** | `command_id` (Integer), `explicit_key` (hex, опціонально) |
 | **Сервіси** | — |
-| **Side Effects** | CoAP PUT до Queen gateway. `actuator.mark_active!`, `command.acknowledge!`. Планує `ResetActuatorStateWorker.perform_in(duration_seconds, ...)`. При `sidekiq_retries_exhausted`: `command.fail!` + Turbo Stream broadcast помилки. |
+| **Side Effects** | CoAP PUT до Queen gateway. `actuator.mark_active!`, `command.acknowledge!`. Планує `ResetActuatorStateWorker.perform_in(duration_seconds, ...)`. **[ARCH.58]** Dispatch-guard `command.dispatch! if command.may_dispatch?` — Sidekiq-retry після втраченого CoAP-ACK не згорає на `AASM::InvalidTransition` (Queen дедуплікує re-PUT за model-UUID `idempotency_token` — CMD-дедуп ring-buffer у `queen/main.c`; HTTP-шар має ОКРЕМИЙ `Idempotency-Key`-заголовок — [`04_03 §5`](04_03_REST_API_v1_Reference)). При `sidekiq_retries_exhausted`: `command.fail!` + Turbo Stream broadcast помилки. |
 
 #### `OtaTransmissionWorker`
 

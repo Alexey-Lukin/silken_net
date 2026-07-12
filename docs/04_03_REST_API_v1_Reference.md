@@ -65,7 +65,7 @@ Authorization: Bearer <token>
 ### 1.2 Session Cookie (для браузерного Dashboard)
 
 - Встановлюється автоматично при вході через форму `POST /api/v1/login` (формат HTML).
-- Cookie-based session (`session[:user_id]` + **[SEC.16]** salt-stamp `session[:ps]` = `password_salt.last(10)`): `authenticate_user!` звіряє stamp — зміна пароля миттєво гасить усі інші cookie-сесії (дзеркало salt-bound `api_access`-токена; раніше викрадений cookie переживав password-reset до 14 днів).
+- Cookie-based session — ставиться єдиною точкою логіну `establish_session` (`SessionsController`; OAuth-шлях ARCH.69 реюзить саме її, а `/sidekiq`-constraint ARCH.61 реюзить READ-бік salt-stamp'а): `session[:user_id]` + **[SEC.16]** salt-stamp `session[:ps]` = `password_salt.last(10)`; `authenticate_user!` звіряє stamp — зміна пароля миттєво гасить усі інші cookie-сесії (дзеркало salt-bound `api_access`-токена; раніше викрадений cookie переживав password-reset до 14 днів).
 - Захист від Session Fixation: `reset_session` перед встановленням нової сесії.
 - Rack::Attack `account_security/ip` (10/хв на PATCH/DELETE `/api/v1/account_security*`) — step-up brute-force guard підбору `current_password` **[SEC.16]**.
 
@@ -196,6 +196,8 @@ POST /api/v1/auth/m2m_token
 | `forester` | Лісник | + Provisioning, Actuators, Maintenance Records, Oracle Visions. Метод `forest_commander?` (User) охоплює `forester` + `admin` + `super_admin` |
 | `admin` | Адміністратор організації | + Firmwares, TreeFamilies, Settings, AuditLogs, SystemHealth, Users, Simulate |
 | `super_admin` | Суперадміністратор | + Organizations (глобальний доступ). `users#index` повертає **всіх** користувачів системи (`scope.all` через `UserPolicy::Scope`) — без фільтрації по org. |
+
+Policy-хелпер `admin_or_above?` (`ApplicationPolicy` + `Scope`) = `admin` ∪ `super_admin`. **[SEC.16]** Він **не** дає cross-tenant права: `show?`/`Scope` money/audit-політик = `super_admin? || same_org` (Wallet/NaasContract; AuditLog суворіший — same-org додатково вимагає `admin_or_above?`, лісник/інвестор журнал не бачить) — plain admin лишається `:organization`-scoped, лише `super_admin` = `:system` (`User#access_level`).
 
 ---
 

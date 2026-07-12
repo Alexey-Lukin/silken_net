@@ -83,6 +83,8 @@
 
 > **Наслідок:** на default-конфігу production має zone-failure resilience (REGIONAL auto-failover, ~хвилини) + 30-денне вікно PITR. Read-репліка (`failover_target = false`) — НЕ для DR, лише read-scaling.
 
+> **Posture-guard [DR.1]:** `spec/deploy/database_dr_posture_spec.rb` стверджує ці мінімуми (PITR=true · WAL/retained ≥ 30 · `db_availability_type` не-ZONAL) проти `terraform/database.tf` у CI — тихе пониження DR-постури (disable PITR / cut retention / ZONAL) падає до деплою, а не спливає постінцидентно; live-vs-tf дрейф ловить окремий `Ops · TF Drift`.
+
 ---
 
 ## 3. RTO / RPO targets

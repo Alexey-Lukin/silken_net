@@ -409,6 +409,7 @@ dormant ──reactivate──► active
 | `firmware_version` | string | Версія прошивки STM32 (SemVer) |
 | `altitude` | numeric | Висота над рівнем моря (м) |
 | `helium_dev_eui` | string | **[ARCH.54]** Helium SOS fallback dev EUI (`HeliumSosWorker` → `EwsAlert(queen_uplink_lost)`) |
+| `ota_started_at` | datetime | **[ARCH.56 pull-forward]** якір майбутнього ARCH.59-watchdog для stuck-`:updating` OTA (sweep-воркера ще нема — [`00_07`](00_07_Action_Plan_Tracker) ARCH.59); колонка дешева до деплою |
 
 > **Примітка:** `firmware_hash` НЕ є полем Gateway і наразі не існує як колонка — UI-компонент
 > (`components/gateways/show.rb`) робить `try(:firmware_hash)` із safe fallback `"—"`. Хеші OTA-артефактів
@@ -821,6 +822,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `password_digest` | string | Argon2id хеш |
 | `role` | enum | investor/forester/admin/super_admin |
 | `phone_number` | string | E.164 формат |
+| `first_name` / `last_name` | string | ПІБ — PII. **[SEC.18]** Обидва (+ `recovery_codes`) скрабляться з логів через `filter_parameters` (`config/initializers/filter_parameter_logging.rb`; Sentry реюзить той самий список); schema-parity гейт `spec/initializers/filter_parameter_logging_spec.rb` — кожна нова string/text-колонка `users`/`organizations` мусить бути класифікована: filtered-PII або явний allow-list |
 | `otp_required_for_login` | boolean | MFA активовано |
 | `recovery_codes` | text | JSON масив 10 одноразових кодів |
 | `telegram_chat_id` | string | Для Telegram сповіщень |
@@ -903,6 +905,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `lock_and_mint!(points_to_lock, threshold, token_type)` | Повний цикл емісії SCC (курс — [`05_03`](05_03_Tokenomics_SCC_and_SFC)) |
 | `kyc_approved_for_minting?` | [KYC.1] Гейт мінтингу = статус БЕНЕФІЦІАРА адреси: власна адреса → власний статус; custodial (без власної) → успадковує `organizations.hadron_kyc_status` (гейт — [`05_02` — Крок E](05_02_Proof_of_Growth_Pipeline)) |
 | `broadcast_balance_update` | Turbo Stream оновлення UI |
+| `guard_mrv_evidence!` | **[MRV.1]** `before_destroy` (prepend) destroy-guard MRV-доказів: гаманець із settled/in-flight `blockchain_transactions` → abort (грошові докази незнищенні); чисто-pending видаляється |
 
 > **[E.66] Toucan-prune:** `lock_for_toucan_bridge!` / `finalize_spend!` / `toucan_bridged_balance` видалено (flow DEAD, 0 enqueue-callerів; failure-path мав money-integrity діру — несиметричний rollback). Escrow-примітив воскресає з git при E.20-go (locked у mint-flow = «сконвертовано назавжди» by design — finalize не потрібен).
 
