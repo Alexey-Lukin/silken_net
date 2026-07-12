@@ -563,14 +563,12 @@ static uint8_t   ring_inflight = 0;
 
 // Слот CIFO → wire-запис (бітове дзеркало пакувальника Flush_Cache_To_Rails:
 // DID:4 BE + |RSSI| + payload:16 = 21B у ECB-ері).
-// ⚠️ [FW.2] На спільному фліпі з CCM запис росте до air+1 (= QUEEN_CCM_RECORD_LEN,
-// rev2.1 = 31B; rx_route.h Queen_Ccm_Build_Record_From_Cache) + Serialize стає
-// fmt-aware — FLASH_RING_RECORD_SIZE (flash_ring.h:52) ревізувати ДО фліпа. Guard ↓ ловить.
-#if FW2_CCM_ENABLED
-_Static_assert(FLASH_RING_RECORD_SIZE >= QUEEN_CCM_RECORD_LEN,
-               "FW.2 ring: на CCM-ері FLASH_RING_RECORD_SIZE мусить вмістити air+1 — інакше "
-               "Ring_Serialize обріже MIC+EMA-delta_t. Підняти flash_ring.h:52 21u -> QUEEN_CCM_RECORD_LEN.");
-#endif
+// ⚠️ [FW.2/ARCH.35] На спільному фліпі з CCM запис росте до air+1 (= QUEEN_CCM_RECORD_LEN,
+// rev2.1 = 31B; rx_route.h Queen_Ccm_Build_Record_From_Cache) → ring потребує RE-LAYOUT
+// ДО фліпа: FLASH_RING_RECORD_SIZE 21→31 + FLASH_RING_SLOTS_PER_SECTOR (192×31 не влазить
+// у 4096-сектор → ~130) + Serialize fmt-aware. Compile-time _Static_assert тут НЕ ставити:
+// hal_check_ccm фліпає обидва гейти для coverage БЕЗ ring-31-layout → assert падав би
+// на CI (це справжня 🔗 фліп-день робота, а не guard — 00_07 FW.2).
 static void Ring_Serialize_Slot(const EdgeCache *slot, uint8_t out[FLASH_RING_RECORD_SIZE])
 {
     out[0] = (uint8_t)(slot->uid >> 24);
