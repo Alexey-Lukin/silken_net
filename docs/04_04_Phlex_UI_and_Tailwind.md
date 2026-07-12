@@ -866,7 +866,7 @@ end
 | `wallet_balance_{id}` | `Wallets::BalanceDisplay` | `BlockchainMintingService` |
 | `transactions_ledger` | `Wallets::Show` | TX confirmation workers |
 | `telemetry_feed` | `Telemetry::LiveStream` | `UnpackTelemetryWorker` |
-| `ota_progress_{uid}` | `Firmwares::OtaProgressBar` | `OtaTransmissionWorker` |
+| `ota_progress_{uid}` | `Firmwares::OtaProgressBar` | ⚠️ producer-воркер superseded [FW.60] (Queen-driven fetch — per-chunk прогресу в Rails нема; підписник теж відсутній → 00_07 SEC.20-чекбокс) |
 | `alert_badge_{id}` | `Alerts::Badge` | `EwsAlertWorker` |
 
 ---

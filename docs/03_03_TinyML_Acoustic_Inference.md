@@ -928,7 +928,7 @@ Rails: ActiveStorage upload .tflite → TinyMlModel.create!(binary_payload: ...)
        │ SHA-256 integrity check
        │
        ▼
-OtaPackagerService → 512-byte chunks → OtaTransmissionWorker → Queen → Soldiers
+OtaPackagerService → 512-byte chunks → Queen poll-fetch [FW.60] → LoRa → Soldiers
 ```
 
 **Ключові обмеження:**

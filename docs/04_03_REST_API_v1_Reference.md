@@ -699,6 +699,8 @@ Policy-хелпер `admin_or_above?` (`ApplicationPolicy` + `Scope`) = `admin` 
 ```
 
 > **Idempotency:** повторний запит із тим самим `Idempotency-Key` повертає закешовану відповідь (без створення нової команди).
+>
+> **[FW.60] 202/`accepted` = команда в Rails-черзі** (`ActuatorCommand.pending`), НЕ негайна доставка: Королева забере її власним `poll/<uid>` після наступного флашу (`Downlink::PendingQueueService`, [`04_02`](04_02_Business_Logic_and_Services)) — латентність ≈ flush-період шлюза.
 
 **Conflict Response `409 Conflict`:**
 
@@ -714,7 +716,7 @@ Policy-хелпер `admin_or_above?` (`ApplicationPolicy` + `Scope`) = `admin` 
 
 **Доступ:** Роль `admin`.
 
-Контролер валідує params + tenancy і делегує в `Ota::DeploymentDispatcherService` ([`04_02`](04_02_Business_Logic_and_Services)): anti-rollback guard `firmware.id > clusters.ota_version_hiwater` (строго `>`, [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning)) → canary-когорта per-cluster → fan-out `OtaTransmissionWorker` **per gateway** (eligible: є `ip_address`, state ∉ maintenance/faulty/updating).
+Контролер валідує params + tenancy і делегує в `Ota::DeploymentDispatcherService` ([`04_02`](04_02_Business_Logic_and_Services)): anti-rollback guard `firmware.id > clusters.ota_version_hiwater` (строго `>`, [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning)) → canary-когорта per-cluster → таргет `gateways.pending_firmware_id` **per gateway** [FW.60] (eligible: є `ip_address` — проксі «шлюз виходив у мережу», НЕ доставочна адреса ([`04_01`](04_01_Data_Models_and_Entities) CGNAT-нотатка); state ∉ maintenance/faulty/updating); доставку тягне Королева poll'ом + oversized-гейт 16×512=8КБ ДО burn.
 
 **Request Body:**
 
@@ -736,7 +738,7 @@ Policy-хелпер `admin_or_above?` (`ApplicationPolicy` + `Scope`) = `admin` 
 
 ```json
 {
-  "message": "Наказ на еволюцію v1.4.2 відправлено в ефір.",
+  "message": "Наказ на еволюцію v1.4.2 поставлено в чергу — Королеви заберуть його власним poll-ом після наступного флашу.",
   "target": "Кластер #7",
   "canary_percentage": 10,
   "dispatched_gateways": 3,

@@ -370,23 +370,28 @@ HAL_CRYP_Init(&hcryp);
 > для *вхідних* байтів у модема два тракти. **(а) CCOAP-розмова:** відповідь сервера = один
 > hex-URC `+CCOAPNMI` → стеля PDU ≈ ⌊(`AT_LINE_MAX`−overhead)/2⌋ ≈ 60-70 Б — стеля **наша**
 > (буфер рядка токенайзера), модемна стеля довгого NMI невідома (bench). **(б) CA\*-сім'я:**
-> `AT+CAOPEN=<cid 0-12>,<pdp>,"UDP","<host≤64>",<port>` (DNS сам) → `CASEND` ≤1459 Б →
+> `AT+CAOPEN=<cid 0-12>,<pdp>,"UDP","<host≤64>",<port>` (DNS сам) → `CASEND` ≤1459 Б
+> (промпт `>` — голий, БЕЗ `\n`, читається посимвольно повз токенайзер) →
 > вхідне модем буферизує і будить коротким URC `+CADATAIND: <cid>` (офіційна NOTE мануалу) →
 > `AT+CARECV=<cid>,≤1459` віддає **сирі** (не hex) лічені байти — повнорозмірний PDU одним
 > читанням; `CASTATE`/`CACLOSE` керують життям. `CASERVER` (UDP/TCP listen) у модемі існує,
 > але мережево мертвий за CGNAT (спостережена адреса шлюза = egress — [`04_01`](04_01_Data_Models_and_Entities)).
 > Модемний DTLS-PSK (`CASSLCFG`+`PSKTABLE`) відхилено: ключ у модем + PSK plaintext'ом в AT —
-> проти Zero-Trust і FW.56-уроку. Споживач цих фактів = downlink-poll: рішення+план —
-> [`00_07` FW.60](00_07_Action_Plan_Tracker); банер §5.
+> проти Zero-Trust і FW.56-уроку.
+> **Wire-up ✅ (2026-07-12): увесь poll їде трактом (б)** — друге читання стелі
+> фальсифікувало «CMD ≤60 Б через CCOAP»: найменший CMD-конверт (UUID-36 + 0x9C-конверт +
+> CBC-pad + IV) = ~80 Б > NMI-стеля, обрізаний hex = втрачена сирена; тракт (а) лишається
+> чистим uplink'ом. Механіка poll'а — §4а нижче; бенч-residual — [`00_07` FW.60](00_07_Action_Plan_Tracker).
 
 ### Архітектура (FW.3 + FW.56): три pure-шари + UART-клей
 
 | Шар | Файл | Відповідальність | Host-тести |
 |-----|------|------------------|------------|
 | RX-кільце | `firmware/queen/uart_rx_ring.h` | Кільце-вид поверх circular-DMA: абсолютні лічильники (wraps·size + NDTR), монотонний clamp проти IRQ-латентності, overrun-детект + лічильник | `firmware/test/test_uart_rx_ring.c` (гонки знімка, wrap, overrun, інтеграція з токенайзером) |
-| Токенайзер | `firmware/queen/at_engine.h` | Байт→лінія→подія (`OK`/`ERROR`/`+CME ERROR: n`/URC), early-exit, транзакції, hex-кодек, парсери лапок | `firmware/test/test_at_engine.c` |
-| CoAP PDU | `firmware/queen/coap_pdu.h` | RFC 7252: CON PUT `/telemetry/batch/<uid>` builder + розбір відповіді (клас 2.xx, MID) | ↑ (golden-вектор — дослівно з SIMCom-ноти) |
-| Оркестратор | `firmware/queen/sim7070_coap.h` | `CDNSGIP → CCOAPNEW → CCOAPSEND(hex чанками) → +CCOAPNMI → CCOAPDEL` | ↑ (скриптований модем, повні розмови) |
+| Токенайзер | `firmware/queen/at_engine.h` | Байт→лінія→подія (`OK`/`ERROR`/`+CME ERROR: n`/URC), early-exit, транзакції, hex-кодек, парсери лапок; **[FW.60]** `At_Read_N` — лічене binary-read повз токенайзер (сирі байти `CARECV` несуть `0x0A`) | `firmware/test/test_at_engine.c` |
+| CoAP PDU | `firmware/queen/coap_pdu.h` | RFC 7252: CON PUT `/telemetry/batch/<uid>` builder + розбір відповіді (клас 2.xx, MID); **[FW.60]** `Coap_Build_Get` (Uri-Path + Uri-Query, опція на пару) + `Coap_Reply_Extract_Payload` (skip token/options до `0xFF`) | ↑ (golden-вектор — дослівно з SIMCom-ноти; GET-golden = freeze-contract зі `spec/lib/coap_server_pdu_spec.rb`) |
+| Оркестратор uplink | `firmware/queen/sim7070_coap.h` | `CDNSGIP → CCOAPNEW → CCOAPSEND(hex чанками) → +CCOAPNMI → CCOAPDEL` | ↑ (скриптований модем, повні розмови) |
+| Оркестратор poll **[FW.60]** | `firmware/queen/sim7070_udp.h` | Сира UDP-розмова: `CAOPEN → '>'-промпт → CASEND(сирий PDU) → +CADATAIND → CARECV(лічені сирі байти ≤1459) → CACLOSE`; `+CARECV: n,`-заголовок читається посимвольно | ↑ (happy-path + 3 fail-шляхи, сирі байти з `0x0A`) |
 | UART-клей | `main.c` (`MX_USART1_RX_DMA_Init`, `Uart_Ring_Sync`, `Uart_At_Source/Sink`, `SIM7070_Transact`) | DMA-ініт + консистентний знімок (double-read wraps довкола NDTR) + владар дедлайнів (`UartAtIo`) | компілюється cppcheck-гейтом |
 
 Латентність: токенайзер виходить на фіналі — обмін коштує реальний час
@@ -490,6 +495,43 @@ loopback-довід `spec/lib/coap_smoke_spec.rb`) заведений post-deplo
 - поведінка при реальних LTE-M/Starlink мережевих помилках (скриптовані
   ERROR/+CME/тиша — покриті host).
 
+### 4а. [FW.60] Downlink-poll після флашу (LwM2M Queue-Mode)
+
+Push із Rails фізично не долітає (`gateway.ip_address` = CGNAT-egress,
+`CASERVER` мережево мертвий — банер §4), тож **Королева сама питає свій
+downlink** одразу після `send_success`: модем теплий, IP резольвлений,
+NAT-pinhole свіжий — єдине живе вікно. Реалізація — `Queen_Poll_Downlink`
+(`main.c`, викликається з хвоста `Flush_Cache_To_Rails`; це **перший
+call-site** усього inbound-тракту — доти `Handle_CoAP_Command` був мертвим
+кодом):
+
+```
+1. Дренаж черги (≤ QUEEN_POLL_MAX_PER_FLUSH = 3 повідомлень):
+   GET poll/<uid>?fw=<delivered_id>  → Sim7070_Udp_Fetch (сирий CA*-тракт)
+     → Coap_Reply_Extract_Payload (2.05 + наш MID) → конверт
+     → Handle_CoAP_Command: 0 = time-only «черга порожня» → стоп;
+       1 = контент (CMD / 0x9E-каркас / 0x9F OTA-hint) → наступний poll.
+   ?fw= несе повністю зібраний contract-id (0 після ребуту) — Rails
+   звіряє з gateways.pending_firmware_id = спостережене підтвердження
+   доставки (Downlink::PendingQueueService, 04_02).
+
+2. OTA-фетч за hint'ом [0x9F][fw_id:4 BE][total:2 BE]
+   (≤ QUEEN_OTA_FETCH_PER_FLUSH = 4 чанків/флаш — IWDG-бюджет):
+   GET ota/<uid>?v=<fw_id>&ch=<n> → повний конверт із чанком (≤560 Б,
+   влазить лише в CARECV-ногу) → Handle_CoAP_Command → 0x99/0x9B гілки
+   (bitmap/трейлер незмінні). Курсор послідовний, Queen-driven — Rails
+   прогресу не веде; ребут → fw=0 → повторний hint → безпечний
+   idempotent re-fetch (bitmap дедуплікує). Пакети вичерпано + збірка
+   ожила (ota_is_active) → delivered_id = fw_id, hint згасне.
+```
+
+Кожна відповідь — той самий конверт `[IV:16][AES-256-CBC KEYC]` з
+`[0x9C][ts:4]` усередині (`CoapEncryption`) → **кожен poll = RTC-sync
+Королеви**, навіть порожній (time-only, 32 Б). Дубль-MID (CON-ретрансміт)
+Rails віддає байт-ідентично (MID-кеш `CoapGate`). Bench-residual: жива
+poll-розмова обома маршрутами + verbatim `+CADATAIND`/`CARECV`-поведінка —
+[`00_07` FW.60](00_07_Action_Plan_Tracker).
+
 ---
 
 ## 🔄 5. OTA Broadcast (Reflex Shot — LoRa Downlink до Солдатів)
@@ -530,12 +572,12 @@ if (current_ota_chunk_idx >= total_chunks):
 
 ### OTA Assembly (CoAP Downlink від Rails → RAM)
 
-> ⚠️ **[FW.60] Inbound-тракт UNWIRED:** усе нижче — wire-формат і guard-логіка `Handle_CoAP_Command`, host-tested, але сама функція **не має жодного call-site**: Queen не тримає CoAP-сервера (SIM7070-розмова клієнт-сесійна), а `gateway.ip_address` = CGNAT-egress, непридатний для вхідної сесії. Rails-продюсер готовий (SEC.20 Rails-half ✅); **транспорт ВИРІШЕНО (founder 2026-07-12): poll-після-флашу** — LwM2M Queue-Mode ідіома: Queen сама питає `poll/<uid>` одразу після `send_success` (модем теплий, свіжий NAT-pinhole; патерн device-event хвоста), Rails тримає чергу. Реалізація двонога, Rails-half тракт-агностичний: CCOAP-нога ≤~60 Б (CMD/0x9C/0x9E/0x9A) + CARECV-нога ≤1459 Б (OTA-чанки 512 Б, bitmap-16 незмінний) — модем-факти §4. Wire-up обох ніг + Rails-half + карта решти дрейф-місць — [`00_07` FW.60](00_07_Action_Plan_Tracker). Стеля збірки 16×512 = 8 КБ (Guard 3) **не звірена** з Rails-лімітами (256 КБ model / 20 МБ upload) — enforcement у FW.60-плані.
+> ✅ **[FW.60] Inbound-тракт WIRED (2026-07-12):** `Handle_CoAP_Command` живе — перший call-site = poll-цикл `Queen_Poll_Downlink` (§4а; push із Rails фізично не долітав — CGNAT). OTA-чанки прибувають як відповіді Queen-driven fetch'а `GET ota/<uid>?v=&ch=` (сира CARECV-нога — конверт ≤560 Б у NMI-лінію не влазить), кампанію анонсує hint `[0x9F]` у poll-відповіді. Стеля збірки 16×512 = 8 КБ (Guard 3) тепер **enforce'иться Rails-боком ДО burn** (`Ota::DeploymentDispatcherService` oversized-гейт — [`04_02`](04_02_Business_Logic_and_Services)). Bench-residual (жива розмова + verbatim модем-поведінка) — [`00_07` FW.60](00_07_Action_Plan_Tracker).
 
 **Два типи OTA-чанків — важливо не плутати:**
 | Тип | Джерело | Розмір payload | Макс чанків | Ліміт |
 |-----|---------|----------------|-------------|-------|
-| **CoAP downlink** (Rails → Queen) | `Handle_CoAP_Command` | ≤512 байт | 16 | `OTA_MAX_CHUNKS` (bitmap) |
+| **CoAP downlink** (Rails → Queen) | `Handle_CoAP_Command` ← Queen-driven fetch §4а (CARECV-нога, [FW.60]) | ≤512 байт | 16 | `OTA_MAX_CHUNKS` (bitmap; Rails-дзеркало = oversized-гейт dispatcher'а) |
 | **LoRa Reflex Shot** (Queen → Soldier) | Main loop | 11 байт | ≤745 | `(pending_ota_size+10)/11` |
 
 ```
@@ -853,7 +895,8 @@ if (decrypted_lora_buffer[0] == REREQUEST_MARKER) {
 
 ```
 Rails (NTP/UTC source)
-   │  CoAP downlink envelope: [0x9C][unix_ts_be:4][payload]   ✅ FW.20
+   │  CoAP downlink envelope: [0x9C][unix_ts_be:4][payload]   ✅ FW.20 (транспорт = poll §4а [FW.60] —
+   │    конверт їде в КОЖНІЙ poll-відповіді, окремої кампанії не треба)
    ▼
 Queen (LTE-anchored time)
    │  ① Reflex broadcast `[0x9C][ts:4][TDMA-resv:4][AUTH_FLAG|TTL][magic 'B'][PAD:5]`  ✅ FW.20
@@ -893,7 +936,7 @@ Soldier — gossip-uplift (3-hop reach)
 
 | Опкод | Маркер | Напрямок | Формат | Розмір | Cross-ref |
 |-------|--------|----------|--------|--------|-----------|
-| CMD_TIME_SYNC envelope | `0x9C` | Rails→Queen (CoAP) | `[0x9C][unix_ts_be:4][inner_payload]` | 5+N байт | FW.20 §1, `app/workers/concerns/coap_encryption.rb` |
+| CMD_TIME_SYNC envelope | `0x9C` | Rails→Queen (CoAP, доставка = poll §4а [FW.60]) | `[0x9C][unix_ts_be:4][inner_payload]` | 5+N байт | FW.20 §1, `app/workers/concerns/coap_encryption.rb` |
 | Time Beacon | `0x9C` + magic `'B'` | Queen→Soldier (LoRa ECB) | `[0x9C][ts:4][TDMA:4 →§5а.2а][AUTH\|TTL][magic 'B'][PAD:5]` | 16 байт | FW.20 §2 |
 | SYNC_REQUEST | `0x56` + magic `'S'` | Soldier→Queen (LoRa ECB) | `[0x56][DID:4][secs_since_sync:4][PANIC_TTL][magic 'S' = 0x53][PAD:5]` | 16 байт | FW.20-S2 §3, `firmware/soldier/main.c:Build_Time_Sync_Request_Payload` |
 | Gossip ts_lsb (freeze) | — | Soldier→Soldier (piggyback у telemetry) | 21B ECB: plaintext byte 14 = `(soldier_unix_ts & 0xFFu)`, valid коли `StatusByte & PANIC_FLAG_BIT == 0`. **CCM wire-rev2: AAD byte 4** (cleartext навмисно — сусід читає без per-Soldier ключа, бекенд автентифікує MIC'ом; [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) wire-budget ledger) | 1 байт задарма обома форматами | FW.20-S2 §5 |
@@ -923,10 +966,11 @@ Soldier — gossip-uplift (3-hop reach)
 |-------|------------|-------|-------|--------|
 | `0x55` | OTA_REQ_MARKER (FW.27-B Magic Re-Request) | Soldier→Queen LoRa | byte 10 не визначений | ✅ |
 | `0x56` | SYNC_REQ_MARKER (FW.20-S2 panic sync) | Soldier→Queen LoRa | byte 10 = `'S'` (0x53) | ✅ |
-| `0x99` | OTA_MARKER (bytecode chunk) | bidirectional | — | ✅ |
+| `0x99` | OTA_MARKER (bytecode chunk) | bidirectional | — | ✅ (Rails→Queen лег = poll-fetch §4а [FW.60]) |
 | `0x9A` | CMD_SET_LORENZ_THRESHOLDS (FW.8) | Rails→Queen→Soldier | freeze-contract | 🟡 deferred TRL-7 |
 | `0x9B` | HMAC_TRAILER_MARKER (FW.23 OTA dual-gate) | Rails→Queen→Soldier | seg_idx 1..3 печатка + 4 version | ✅ |
-| `0x9C` | CMD_TIME_SYNC envelope / Time Beacon (FW.20) | Rails→Queen / Queen→Soldier | byte 10 = `'B'` (0x42) для LoRa beacon'а | ✅ |
+| `0x9C` | CMD_TIME_SYNC envelope / Time Beacon (FW.20) | Rails→Queen / Queen→Soldier | byte 10 = `'B'` (0x42) для LoRa beacon'а | ✅ (Rails-лег = кожна poll-відповідь §4а) |
+| `0x9F` | OTA_FETCH_HINT (FW.60 — анонс кампанії у poll-відповіді) | Rails→Queen | `[0x9F][fw_id:4 BE][total:2 BE]` | ✅ |
 | `0x9D` | CMD_SET_AUDIO_THRESHOLDS (FW.18) | Rails→Queen→Soldier | CRC16 | ✅ |
 | `0x9E` | CMD_ROTATE_KEY (FW.17, реле — §5б) | Rails→Queen→Soldier | CRC16 | 🟡 gated (FW.2 CCM) |
 
@@ -1012,7 +1056,11 @@ Soldier — gossip-uplift (3-hop reach)
 
 ### Проблема, яку вирішує
 
-`ActuatorCommandWorker` на Rails повторює відправку команди якщо ACK загубився. Без дедуплікації — клапан відкриється двічі.
+**[FW.60]** `CMD:*` прибуває як відповідь на власний `poll/<uid>` Королеви (§4а;
+push-воркер superseded — CGNAT). Якщо 2.05-відповідь загубилась, Королева
+CON-ретрансмітить той самий MID і Rails віддає її байт-ідентично (MID-кеш
+`CoapGate`) — а якщо команда прилетіла двічі іншим шляхом, без дедуплікації
+клапан відкрився б двічі.
 
 ### Механізм
 

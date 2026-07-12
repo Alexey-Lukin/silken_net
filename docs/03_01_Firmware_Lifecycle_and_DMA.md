@@ -997,10 +997,11 @@ Chunk-розмір для LoRa OTA: **11 байт** корисного коду 
 | `0x55` | OTA_REQ_MARKER (Magic Re-Request) | Soldier→Queen | LoRa **uplink** | [`03_02 §5.1.3`](03_02_Queen_Gateway_Firmware) | ✅ FW.27-B (2026-05-02) |
 | `0x56` | SYNC_REQ_MARKER («Королево, час!» / cold-boot hello: DID + secs_since_sync + 'S' + vcap_mv у байтах 11..12) | Soldier→Queen | LoRa **uplink** | [`03_04 §2.1`](03_04_mruby_Lorenz_Attractor) (ARCH.41-C) | ✅ hello + Queen-перемотка маяка; drift-watchdog re-request вшито у ФАЗУ 4 — 0x56 ПОВЕРХ телеметрії за cooldown-гейтом (2026-07-12, [`03_02 §5а.1`](03_02_Queen_Gateway_Firmware) ③) |
 | `0x57` | DEVICE_EVT_MARKER (device-event: `[code:1\|arg:4\|'E':1\|TTL:1\|seq:2\|vcap:2]`; code 0x02=canary-trip) | Soldier→Queen→Rails | LoRa **uplink** + CoAP `device/event/<uid>` | `firmware/common/device_event.h` + [`03_05 §2.2а`](03_05_Hardware_Symmetric_Crypto_and_Security) | ✅ SEC.21 L1 (Королева витягує cleartext → підписує EDSK тегом QEVT1 → `DeviceEventWorker` verify gateway-origin; trust L1-observational, ніколи не money-path) |
-| `0x99` | OTA_MARKER (bytecode chunks) | Rails→Queen→Soldier | CoAP/LoRa | §4.4 + 03_02 §5 | ✅ |
+| `0x99` | OTA_MARKER (bytecode chunks) | Rails→Queen→Soldier | CoAP (poll-fetch [FW.60])/LoRa | §4.4 + 03_02 §5 | ✅ |
 | `0x9A` | CMD_SET_THRESHOLDS (Lorenz Z per-tree) | Rails→Queen→Soldier | CoAP/LoRa | [`05_02 §4а.1`](05_02_Proof_of_Growth_Pipeline) | 🟡 FW.8 (Queen-side; Soldier dispatcher TBD) |
 | `0x9B` | CMD_HMAC_TRAILER (OTA HMAC-SHA256 печатка) | Rails→Queen→Soldier | CoAP/LoRa | [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning) | ✅ FW.23 (2026-05-02) |
-| `0x9C` | CMD_TIME_SYNC (envelope) | Rails→Queen | CoAP | §11 (FW.20) | ✅ FW.20 |
+| `0x9C` | CMD_TIME_SYNC (envelope) | Rails→Queen | CoAP (кожна poll-відповідь [FW.60]) | §11 (FW.20) | ✅ FW.20 |
+| `0x9F` | OTA_FETCH_HINT (анонс кампанії: `[0x9F][fw_id:4 BE][total:2 BE]`) | Rails→Queen | CoAP (poll-відповідь) | [`03_02 §4а`](03_02_Queen_Gateway_Firmware) | ✅ FW.60 |
 | `0x9D` | CMD_SET_AUDIO_THRESHOLDS (TinyML per-Soldier) | Rails→Queen→Soldier | CoAP/LoRa | [`03_03 §5`](03_03_TinyML_Acoustic_Inference) | ✅ FW.18 (2026-05-02) |
 | `0x9E` | CMD_ROTATE_KEY (hash-ratchet advance-to-version) | Rails→Queen→Soldier | CoAP/LoRa | [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security) | 🟡 FW.17 (freeze-contract host-готово; активація CCM-gated) |
 | `0x9F` | _reserved_ | — | — | — | вільний |
@@ -1010,6 +1011,11 @@ Chunk-розмір для LoRa OTA: **11 байт** корисного коду 
 > **Ключ LoRa-шару (CCM-ера, FW.2 (в)):** усі опкоди цієї карти — і downlink-broadcast (`0x99..0x9E`), і uplink-запити (`0x55`/`0x56`) — їдуть 16B ECB на **cluster control-plane KEYB** ([`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security) двоключова модель); session KEYL носить лише телеметрію/panic (30B CCM rev2.1). ECB-ера — єдиний спільний ключ, як і було.
 
 ### 4.6 CoAP Downlink → OTA RAM Assembly
+
+> **[FW.60] Транспорт = poll-після-флашу** ([`03_02 §4а`](03_02_Queen_Gateway_Firmware)):
+> Queen сама тягне чанки `GET ota/<uid>?v=&ch=` після `send_success` (push із
+> Rails у CGNAT-egress не долітає; кампанію анонсує hint `[0x9F]` у
+> poll-відповіді). Нижче — незмінна guard-логіка приймання.
 
 Queen отримує великі OTA-пакети від Rails через CoAP (`Handle_CoAP_Command`):
 
@@ -1038,6 +1044,9 @@ Handle_CoAP_Command():
 > Будує `OtaPackagerService` (дзеркальні специфікації — `spec/services/ota_packager_service_spec.rb`).
 
 ### 4.7 Actuator Command Dedup (Idempotency)
+
+> **[FW.60]** `CMD:*` прибуває у відповіді на Королевин `poll/<uid>`
+> ([`03_02 §4а`](03_02_Queen_Gateway_Firmware)), не push'ем.
 
 ```
 CoAP Downlink: CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<UUID>

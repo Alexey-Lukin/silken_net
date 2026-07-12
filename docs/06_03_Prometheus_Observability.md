@@ -232,7 +232,7 @@ end
 | Metric Name | Тип | Воркер | Labels |
 |-------------|-----|--------|--------|
 | `silkennet_slashing_events_total` | Counter | `BurnCarbonTokensWorker` | `reason` |
-| `silkennet_ota_chunks_sent_total` | Counter | `OtaTransmissionWorker` | `firmware_version` |
+| `silkennet_ota_chunks_sent_total` | Counter | `Downlink::PendingQueueService` (chunk-server [FW.60]) | `firmware_version` |
 | `silkennet_ews_alerts_total` | Counter | `DclimateVerificationWorker` | `alert_type` |
 | `silkennet_oracle_dispatch_duration_seconds` | Histogram | `ChainlinkDispatchWorker` | — |
 | `silkennet_coap_packets_received_total` | Counter | `UnpackTelemetryWorker` | `status` |

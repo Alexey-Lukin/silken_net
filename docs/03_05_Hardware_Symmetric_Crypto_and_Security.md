@@ -1200,6 +1200,9 @@ HAL_CRYP_Encrypt(&hcryp, (uint32_t*)binary_batch_buffer,
 
 ### 4.3 Queen: CBC IV для CoAP Command Downlink (Handle_CoAP_Command)
 
+> **[FW.60]** Гілка виконується всередині poll-відповіді (Королева питає
+> `poll/<uid>` після флашу — [`03_02 §4а`](03_02_Queen_Gateway_Firmware)).
+
 IV надходить від Rails Backend як перші 16 байтів payload:
 
 ```c
@@ -1255,7 +1258,8 @@ RAILS BACKEND
   UnpackTelemetryWorker: [L1 QATT] verify-до-decrypt → strip конверта
   TelemetryUnpackerService.decrypt_and_parse(payload)
          │
-         │ CoAP Downlink (AES-256-CBC, [IV:16][Ciphertext])
+         │ CoAP Downlink (AES-256-CBC, [IV:16][Ciphertext]) —
+         │ їде відповіддю на Королевин poll/<uid> [FW.60], НЕ push/сервер
          ▼
 Handle_CoAP_Command():
   1. cmd_iv = payload[0..15]
@@ -1276,7 +1280,7 @@ Handle_CoAP_Command():
 | **Soldier → Queen** (LoRa, 28B — target FW.2, INERT за `FW2_CCM_ENABLED`) | AES-128 | CCM | **KEYL session (per-device)** | ✅ Nonce = DID‖FC24 (DR15 + Flash high-water) | ✅ 8B MIC (64-bit) | wire-rev2 §2.1; integration authored 2026-07-03, фліп = bench-атестація |
 | **Soldier → Queen** (`0x55`/`0x56` control-запити, 16B) | AES-128 | ECB | **KEYB cluster** (Королева читає сама) | ❌ Відсутній | ❌ Відсутній | control-plane; лишається ECB і в CCM-еру |
 | **Queen → Rails** (CoAP Batch) | AES-256 | CBC | KEYC (per-gateway) | ✅ HRNG (128-bit) | 🟡 **Ed25519 batch-sig (L1 QATT, §2.2)** — detached, encrypt-then-sign; legacy L0 без підпису приймається | IV prepend; sig хвостом |
-| **Rails → Queen** (CoAP Command) | AES-256 | CBC | KEYC (per-gateway) | ✅ Від Backend | ❌ Відсутній | IV в перших 16 байтах |
+| **Rails → Queen** (CoAP Command) | AES-256 | CBC | KEYC (per-gateway) | ✅ Від Backend | ❌ Відсутній | IV в перших 16 байтах; транспорт = poll-після-флашу [FW.60] ([`03_02 §4а`](03_02_Queen_Gateway_Firmware)) |
 | **Queen → Soldier** (downlink LoRa: OTA/beacon/CMD) | AES-128 | ECB | **KEYB cluster** | ❌ Відсутній | ❌ MAC відсутній (стеля — §2.4); OTA-image гейтований K_ota-HMAC (FW.23) | broadcast-структурний; без MAC — FW.17 лишається замкненим (§3.8) |
 
 ---
@@ -1291,7 +1295,7 @@ hcryp.Init.Algorithm = CRYP_AES_ECB;
 hcryp.Init.pInitVect = NULL;
 HAL_CRYP_Init(&hcryp);
 
-// Після Handle_CoAP_Command() (CBC → ECB):
+// Після Handle_CoAP_Command() (CBC → ECB; виконується в poll-циклі [FW.60]):
 hcryp.Init.Algorithm = CRYP_AES_ECB;
 hcryp.Init.pInitVect = NULL;
 HAL_CRYP_Init(&hcryp);

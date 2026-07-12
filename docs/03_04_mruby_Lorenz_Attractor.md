@@ -622,8 +622,8 @@ if (mrb) {
 
 **Процес оновлення:**
 1. Rails завантажує новий `bio_contract.rb`, компілює `mrbc` → байт-код
-2. `OtaTransmissionWorker` розбиває на chunks по 11 байт із заголовком `[0x99][idx:2][total:2][data:11]`
-3. Queen отримує chunks через CoAP, зберігає у `ota_buffer[1024]`
+2. `OtaPackagerService` різбиває на 512-байтні CoAP-чанки `[0x99][idx:2][total:2][len:2][bytecode][crc16:2]`; Королева тягне їх сама (`GET ota/<uid>?v=&ch=` — poll-fetch [FW.60], [`03_02 §4а`](03_02_Queen_Gateway_Firmware))
+3. Queen збирає chunks у `pending_ota_bytecode[8192]` (bitmap-дедуп)
 4. Queen передає chunks Soldier через LoRa Reflex Shot після кожного RX
 5. Soldier збирає chunks у `ota_buffer`, перевіряє CRC32 (ISO 3309)
 6. При успіху — записує у Flash (`0x0803F000`), виконує `NVIC_SystemReset()`

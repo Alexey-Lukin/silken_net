@@ -59,6 +59,9 @@ module Downlink
       packages = ota_packages(firmware_id)
       return nil unless packages && chunk_index < packages.size
 
+      SilkenNet::Metrics::OTA_CHUNKS_SENT_TOTAL.increment(
+        labels: { firmware_version: firmware_version_label(firmware_id) }
+      )
       envelope(packages[chunk_index])
     end
 
@@ -157,6 +160,12 @@ module Downlink
         firmware_version: firmware&.version || @gateway.firmware_version,
         state: @gateway.updating? ? :idle : @gateway.state
       )
+    end
+
+    def firmware_version_label(firmware_id)
+      Rails.cache.fetch("fw60/fw_version/#{firmware_id}", expires_in: 1.hour) do
+        BioContractFirmware.find_by(id: firmware_id)&.version.to_s
+      end
     end
 
     # Пакети кампанії — важке пакування кешується per (firmware, cluster):

@@ -413,6 +413,7 @@ dormant ──reactivate──► active
 | `altitude` | numeric | Висота над рівнем моря (м) |
 | `helium_dev_eui` | string | **[ARCH.54]** Helium SOS fallback dev EUI (`HeliumSosWorker` → `EwsAlert(queen_uplink_lost)`) |
 | `ota_started_at` | datetime | **[ARCH.56 pull-forward]** якір майбутнього ARCH.59-watchdog для stuck-`:updating` OTA (sweep-воркера ще нема — [`00_07`](00_07_Action_Plan_Tracker) ARCH.59); колонка дешева до деплою |
+| `pending_firmware_id` | bigint | **[FW.60]** таргет OTA-кампанії per-gateway (пише dispatcher атомарно з hiwater-burn; canary-когорта); Королева дізнається через hint у власному poll'і, глушиться спостереженим `?fw=` — [`04_02`](04_02_Business_Logic_and_Services) `Downlink::PendingQueueService` |
 
 > **Примітка:** `firmware_hash` НЕ є полем Gateway і наразі не існує як колонка — UI-компонент
 > (`components/gateways/show.rb`) робить `try(:firmware_hash)` із safe fallback `"—"`. Хеші OTA-артефактів
