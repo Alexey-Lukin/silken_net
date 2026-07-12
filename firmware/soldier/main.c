@@ -819,9 +819,10 @@ static void FW17_Restore_Key_Version(uint32_t did)
 // поряд з 0x55 (FW.27-B OTA Re-Request); 0x9C beacon — downlink і не
 // перетинається. Магія 'S' у байті 10 — миттєва дезамбігвація з 0x55 magic 'R'.
 //
-// Наразі функції callable + host-tested, але до hot path головного циклу НЕ
-// вшиті: повний FW.20-S2 mesh-relay (релей beacon'а між Солдатами) — окрема
-// ітерація. Це freeze-контракт wire-формату для майбутнього hook'у.
+// Вшито у hot path обабіч ФАЗИ 4: cold-boot hello (ARCH.41-C — 0x56 ЗАМІСТЬ
+// телеметрії у grace-вікні, щоциклово) та warm-зойк watchdog'а (0x56 ПОВЕРХ
+// телеметрії, cooldown-гейт). Mesh-relay маяка між Солдатами — RX-гілка
+// Сценарію 0 за гейтом FW20_MESH_RELAY_ENABLED (фліп = bench Flash-KV HAL).
 #define SYNC_REQ_MARKER                  0x56       // [FW.20-S2] Uplink: «Королево, час!»
 #define SYNC_REQ_MAGIC_BYTE              0x53       // [FW.20-S2] 'S' = sync — у байті 10
 #define SYNC_REQ_PACKET_SIZE             16         // Один AES-128-ECB блок (post-ARCH.42)
@@ -946,8 +947,8 @@ static uint8_t Soldier_Acoustic_Wire_Value(uint8_t snapshot, uint8_t time_uncert
 //   • dedup != NULL: повний mesh — auth=0 теж relay-able, а обсяг шторму
 //     гасить журнал поколінь (Flash-KV 0x20, beacon_dedup.h): ≤1
 //     ретрансляція на покоління на Провідника. TTL обмежує лише глибину.
-//     Це глушить і подвійний маяк Королеви (15-хв такт + після кожного
-//     зрізаного конверта), і луну Провідник↔Провідник при TTL≥3.
+//     Це глушить і подвійний маяк Королеви (15-хв такт + reflex-перемотка
+//     на зойк 0x56), і луну Провідник↔Провідник при TTL≥3.
 //
 // Вшито у RX-гілку Сценарію 0 за гейтом FW20_MESH_RELAY_ENABLED (фліп =
 // bench-верифікація Flash-KV HAL). Сторожовий пес часу (drift-monitor)
@@ -2486,6 +2487,26 @@ int main(void)
         HAL_CRYP_Encrypt(&hcryp, (uint32_t*)lora_payload, 4, (uint32_t*)encrypted_payload, 1000);
         Radio.Send(encrypted_payload, 16);
 #endif
+
+        // [FW.20-S2 3/5] Сторожовий пес часу подає голос: ≈12 год пробуджень
+        // без голосу Королеви → зойк 0x56 ПОВЕРХ телеметрії (перший — одразу,
+        // далі cooldown ≈1 год). Королева перемотує такт маяка → re-sync цим
+        // же пробудженням (вікно Фази 4.5 нижче вже відкрите). Пасивний шлях
+        // сам не гарантує: вухо 600 мс/цикл проти 15-хв такту ловить маяк у
+        // середньому раз на ~12 год — впритул до порога watchdog'а. У grace-
+        // вікні сюди не потрапляємо (гілка hello вище), а після нього при
+        // німому часі зойк і є rate-limited продовженням hello.
+        if (Soldier_Should_Request_Time_Sync()) {
+            uint8_t sync_plain[SYNC_REQ_PACKET_SIZE];
+            Build_Time_Sync_Request_Payload(sync_plain, tree_did,
+                                            Soldier_Seconds_Since_Last_Sync(),
+                                            vcap_voltage);
+            HAL_Delay(100); // радіо ще випромінює телеметрію (як mesh-relay)
+            HAL_CRYP_Encrypt(&hcryp, (uint32_t*)sync_plain, 4, (uint32_t*)encrypted_payload, 1000);
+            Radio.Send(encrypted_payload, 16);
+            wakeups_since_sync_request = 0; // мітка зойка — cooldown пішов
+            sync_request_ever = 1;
+        }
     }
 
     // [SEC.21] Слід канарки → ефір: 0x57 ПОВЕРХ телеметрії (патерн

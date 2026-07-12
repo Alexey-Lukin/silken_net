@@ -4419,9 +4419,9 @@ TEST(test_fw20s2_legacy_beacon_byte9_zero_clears_flag) {
  * [FW.20-S2] Drift-monitor + Panic Time-Sync Request
  * ════════════════════════════════════════════════════════════════════
  * Дзеркало логіки з firmware/soldier/main.c:
- *   - Soldier_Should_Request_Time_Sync(now_tick)
- *   - Soldier_Seconds_Since_Last_Sync(now_tick)
- *   - Build_Time_Sync_Request_Payload(out, did, secs_since_sync)
+ *   - Soldier_Should_Request_Time_Sync() — wall-кванти = пробудження
+ *   - Soldier_Seconds_Since_Last_Sync()
+ *   - Build_Time_Sync_Request_Payload(out, did, secs_since_sync, vcap_mv)
  * Кенозис тесту: відтворюємо «Солдат не чув Королеви 13 годин» і перевіряємо,
  * що сторожовий пес часу подає голос (з cooldown'ом проти спаму ефіру).
  */

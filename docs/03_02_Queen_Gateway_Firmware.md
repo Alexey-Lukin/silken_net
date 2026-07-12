@@ -848,6 +848,13 @@ Queen (LTE-anchored time)
    ▼
 Soldier — direct
    │  ③ Drift-monitor + panic sync request `[0x56][DID:4][secs:4][TTL][magic 'S']`     ✅ FW.20-S2 (2/5)
+   │     — hot-path wired обабіч ФАЗИ 4: cold-boot hello (ARCH.41-C, 0x56 ЗАМІСТЬ
+   │       телеметрії у grace-вікні) + warm-зойк watchdog'а ПОВЕРХ телеметрії
+   │       (cooldown ≈1 год; Queen у відповідь перемотує такт маяка → re-sync тим
+   │       самим пробудженням). Hook, не пасивна надія: вухо Фази 4.5 (600 мс/цикл)
+   │       ловить 15-хв маяк у середньому ~раз на 12 год — впритул до порога
+   │       TIME_SYNC_DRIFT_THRESHOLD_WAKEUPS, а квазі-резонанс такту з циклом
+   │       може давати довші сухі смуги
    │  ④ Per-hop drift compensation + anti-storm журнал поколінь (mesh-relay)           ✅ FW.20-S2 (3/5 + 4/5)
    │     — `Soldier_Try_Relay_Time_Beacon` вшито у RX-гілку Сценарію 0 за гейтом
    │       `FW20_MESH_RELAY_ENABLED` (фліп = bench Flash-KV HAL, як FW.17/FW.8/FW.2);

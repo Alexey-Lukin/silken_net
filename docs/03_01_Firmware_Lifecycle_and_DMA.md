@@ -995,7 +995,7 @@ Chunk-розмір для LoRa OTA: **11 байт** корисного коду 
 | Опкод | Назва | Напрямок | Лінк | Документ | Статус |
 |-------|-------|----------|------|----------|--------|
 | `0x55` | OTA_REQ_MARKER (Magic Re-Request) | Soldier→Queen | LoRa **uplink** | [`03_02 §5.1.3`](03_02_Queen_Gateway_Firmware) | ✅ FW.27-B (2026-05-02) |
-| `0x56` | SYNC_REQ_MARKER («Королево, час!» / cold-boot hello: DID + secs_since_sync + 'S' + vcap_mv у байтах 11..12) | Soldier→Queen | LoRa **uplink** | [`03_04 §2.1`](03_04_mruby_Lorenz_Attractor) (ARCH.41-C) | ✅ hello + Queen-перемотка маяка (2026-06-11); drift-watchdog re-request — FW.20-S2 freeze-contract |
+| `0x56` | SYNC_REQ_MARKER («Королево, час!» / cold-boot hello: DID + secs_since_sync + 'S' + vcap_mv у байтах 11..12) | Soldier→Queen | LoRa **uplink** | [`03_04 §2.1`](03_04_mruby_Lorenz_Attractor) (ARCH.41-C) | ✅ hello + Queen-перемотка маяка; drift-watchdog re-request вшито у ФАЗУ 4 — 0x56 ПОВЕРХ телеметрії за cooldown-гейтом (2026-07-12, [`03_02 §5а.1`](03_02_Queen_Gateway_Firmware) ③) |
 | `0x57` | DEVICE_EVT_MARKER (device-event: `[code:1\|arg:4\|'E':1\|TTL:1\|seq:2\|vcap:2]`; code 0x02=canary-trip) | Soldier→Queen→Rails | LoRa **uplink** + CoAP `device/event/<uid>` | `firmware/common/device_event.h` + [`03_05 §2.2а`](03_05_Hardware_Symmetric_Crypto_and_Security) | ✅ SEC.21 L1 (Королева витягує cleartext → підписує EDSK тегом QEVT1 → `DeviceEventWorker` verify gateway-origin; trust L1-observational, ніколи не money-path) |
 | `0x99` | OTA_MARKER (bytecode chunks) | Rails→Queen→Soldier | CoAP/LoRa | §4.4 + 03_02 §5 | ✅ |
 | `0x9A` | CMD_SET_THRESHOLDS (Lorenz Z per-tree) | Rails→Queen→Soldier | CoAP/LoRa | [`05_02 §4а.1`](05_02_Proof_of_Growth_Pipeline) | 🟡 FW.8 (Queen-side; Soldier dispatcher TBD) |
