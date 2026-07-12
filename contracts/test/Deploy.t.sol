@@ -129,16 +129,41 @@ contract DeployWiringTest is Test {
         d.protocolParams.grantRole(govRole, safe);
     }
 
-    // ─── [SEC.1] run()-entry mainnet-safety gate: refuse an EOA admin under REQUIRE_SAFE_ADMIN ──
-    // Pins the pre-broadcast guard (`_requireSafeOrWarn`) so a mainnet deploy cannot silently
-    // hand token/timelock admin to an EOA. An EOA `ADMIN_ADDRESS` (code.length == 0) with
-    // REQUIRE_SAFE_ADMIN=true must revert BEFORE any contract is deployed.
-    function testRevert_run_refusesEoaAdminWhenSafeRequired() public {
-        vm.setEnv("ADMIN_ADDRESS", vm.toString(makeAddr("eoaAdmin")));
+    // ─── [SEC.1/E.2] run()-entry mainnet-safety gates under REQUIRE_SAFE_ADMIN ──
+    // Pins the pre-broadcast guards so a mainnet deploy cannot silently (1) hand token/
+    // timelock admin custody to an EOA, (2) hand the DAO treasury (Dynamic-Tax recipient +
+    // INS.2 insurance reserve) to an EOA — reserve-adequacy against an EOA-held treasury
+    // would be theatre — or (3) collapse the E.2 mint/burn key-split by granting both oracle
+    // roles to one address. All cases live in ONE test: vm.setEnv is process-global and
+    // Foundry runs a contract's tests in parallel, so separate tests mutating the same ENV
+    // names would race each other.
+    function testRevert_run_mainnetSafetyGates() public {
         vm.setEnv("REQUIRE_SAFE_ADMIN", "true");
+        vm.setEnv("DAO_TREASURY_ADDRESS", vm.toString(makeAddr("eoaTreasury")));
+
+        // (1) EOA admin → revert BEFORE any contract is deployed.
+        vm.setEnv("ADMIN_ADDRESS", vm.toString(makeAddr("eoaAdmin")));
         vm.expectRevert(
             bytes("SEC.1: ADMIN_ADDRESS must be a Gnosis Safe contract (unset REQUIRE_SAFE_ADMIN for testnet EOA)")
         );
+        deploy.run();
+
+        // (2) Admin OK (a contract — the script itself) → the treasury custody-check is next.
+        vm.setEnv("ADMIN_ADDRESS", vm.toString(address(deploy)));
+        vm.expectRevert(
+            bytes(
+                "SEC.1: DAO_TREASURY_ADDRESS must be a Gnosis Safe contract (unset REQUIRE_SAFE_ADMIN for testnet EOA)"
+            )
+        );
+        deploy.run();
+
+        // (3) Custody OK for both → one address in both oracle roles must revert (the backend
+        // guard only catches identical keys at Sidekiq boot, after the irreversible grant).
+        vm.setEnv("DAO_TREASURY_ADDRESS", vm.toString(address(deploy)));
+        address sharedOracle = makeAddr("sharedOracle");
+        vm.setEnv("MINTER_ORACLE", vm.toString(sharedOracle));
+        vm.setEnv("SLASHER_ORACLE", vm.toString(sharedOracle));
+        vm.expectRevert(bytes("E.2: MINTER_ORACLE must differ from SLASHER_ORACLE (mint/burn key-split)"));
         deploy.run();
     }
 }

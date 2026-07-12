@@ -38,6 +38,8 @@ import "../ProtocolParameters.sol";
  *        MINTER_ORACLE        — backend oracle for minting (BlockchainMintingService)
  *        SLASHER_ORACLE       — backend oracle for slashing (BlockchainBurningService)
  *        ANCHOR_ORACLE        — backend oracle for L1 anchoring (EthereumAnchorWorker)
+ *        DAO_TREASURY_ADDRESS — DAO treasury (Dynamic-Tax recipient + INS.2 reserve holder);
+ *                               holds no on-chain role, custody-gated like ADMIN_ADDRESS
  *
  * [SEC.1] Role split: every DEFAULT_ADMIN_ROLE that gates an economic vector = the 48h
  *         Timelock. Tokens: granting any role (incl. MINTER_ROLE) carries a 48h public
@@ -67,13 +69,23 @@ contract DeploySilkenNet is Script {
 
     function run() external {
         address safe = _envAddr("ADMIN_ADDRESS"); // [SEC.1] Gnosis Safe multisig
-        _requireSafeOrWarn(safe);
+        _requireSafeOrWarn(safe, "ADMIN_ADDRESS");
+        // [SEC.1] DAO treasury custody: no on-chain role, but it receives the Dynamic-Tax SCC
+        // and backs the INS.2 insurance reserve — reserve-adequacy against an EOA-held
+        // treasury would be theatre, so the mainnet gate checks its custody too.
+        _requireSafeOrWarn(_envAddr("DAO_TREASURY_ADDRESS"), "DAO_TREASURY_ADDRESS");
+        // [E.2] mint/burn key-split: the token constructors take two oracle params but never
+        // assert they differ, and the backend guard (Web3NetworkGuard) only catches identical
+        // keys at Sidekiq boot — AFTER the irreversible on-chain grant (48h Timelock to unwind).
+        address minter = _envAddr("MINTER_ORACLE");
+        address slasher = _envAddr("SLASHER_ORACLE");
+        _requireDistinctOracles(minter, slasher);
 
         uint256 deployerKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address deployer = vm.addr(deployerKey);
 
         vm.startBroadcast(deployerKey);
-        deployAll(safe, deployer, _envAddr("MINTER_ORACLE"), _envAddr("SLASHER_ORACLE"), _envAddr("ANCHOR_ORACLE"));
+        deployAll(safe, deployer, minter, slasher, _envAddr("ANCHOR_ORACLE"));
         vm.stopBroadcast();
 
         console.log("");
@@ -127,16 +139,36 @@ contract DeploySilkenNet is Script {
         require(a != address(0), string.concat("Deploy: ", name, " not set"));
     }
 
-    /// @dev [SEC.1] Hard-fail on a non-Safe admin when REQUIRE_SAFE_ADMIN=true; else warn (testnet EOA OK).
-    function _requireSafeOrWarn(address safe) internal view {
+    /// @dev [SEC.1] Hard-fail when `addr` (ENV `name`) has no code under REQUIRE_SAFE_ADMIN=true;
+    ///      else warn (testnet EOA OK). One flag gates every custody-critical address:
+    ///      ADMIN_ADDRESS + DAO_TREASURY_ADDRESS.
+    function _requireSafeOrWarn(address addr, string memory name) internal view {
         if (vm.envOr("REQUIRE_SAFE_ADMIN", false)) {
             require(
-                safe.code.length > 0,
-                "SEC.1: ADMIN_ADDRESS must be a Gnosis Safe contract (unset REQUIRE_SAFE_ADMIN for testnet EOA)"
+                addr.code.length > 0,
+                string.concat(
+                    "SEC.1: ", name, " must be a Gnosis Safe contract (unset REQUIRE_SAFE_ADMIN for testnet EOA)"
+                )
             );
-        } else if (safe.code.length == 0) {
+        } else if (addr.code.length == 0) {
             console.log(
-                "[SEC.1] WARNING: ADMIN is an EOA, not a Gnosis Safe. OK for testnet; mainnet needs a Safe + REQUIRE_SAFE_ADMIN=true."
+                string.concat(
+                    "[SEC.1] WARNING: ",
+                    name,
+                    " is an EOA, not a Gnosis Safe. OK for testnet; mainnet needs a Safe + REQUIRE_SAFE_ADMIN=true."
+                )
+            );
+        }
+    }
+
+    /// @dev [E.2] Hard-fail on a collapsed mint/burn key-split under REQUIRE_SAFE_ADMIN=true;
+    ///      else warn (single-key testnet OK — the backend guard also allows it outside prod).
+    function _requireDistinctOracles(address minter, address slasher) internal view {
+        if (vm.envOr("REQUIRE_SAFE_ADMIN", false)) {
+            require(minter != slasher, "E.2: MINTER_ORACLE must differ from SLASHER_ORACLE (mint/burn key-split)");
+        } else if (minter == slasher) {
+            console.log(
+                "[E.2] WARNING: MINTER_ORACLE == SLASHER_ORACLE - the mint/burn key-split is collapsed. OK for testnet; mainnet needs distinct oracles."
             );
         }
     }

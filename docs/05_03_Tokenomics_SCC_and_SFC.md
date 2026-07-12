@@ -203,14 +203,14 @@ _[SEC.1] PAUSER (Safe) ≠ ADMIN (Timelock): pause — швидко; видач�
 | Крок | Дія |
 |------|-----|
 | 1 | Створити Gnosis Safe (3/5 або 2/3) на Polygon — `app.safe.global` |
-| 2 | `ADMIN_ADDRESS=<Safe>` у deploy ENV (= token PAUSER + Timelock admin) |
-| 3 | `REQUIRE_SAFE_ADMIN=true` (mainnet) → деплой hard-fail якщо `ADMIN_ADDRESS` = EOA |
+| 2 | `ADMIN_ADDRESS=<Safe>` у deploy ENV (= token PAUSER + Timelock admin); `DAO_TREASURY_ADDRESS=<Safe>` (скарбниця: Dynamic-Tax + INS.2-резерв — on-chain ролі не має, лише custody-гейт) |
+| 3 | `REQUIRE_SAFE_ADMIN=true` (mainnet) → деплой hard-fail якщо `ADMIN_ADDRESS` **або** `DAO_TREASURY_ADDRESS` = EOA |
 | 4 | `forge script script/Deploy.s.sol --rpc-url $RPC --broadcast` |
 | 5 | Верифікація (нижче) |
 
 **Deploy-послідовність [SEC.1]:** Timelock деплоїться **першим** (deployer = тимчасовий admin) → токени з `admin=Timelock`, `pauser=Safe` → Anchor/Governor/Params → wire Timelock-ролей (Governor = PROPOSER+CANCELLER; **Safe = PROPOSER** — bootstrap: може *планувати* `grantRole(MINTER)` з 48h-затримкою до активації DAO) → передати Timelock-admin Safe + **renounce deployer** (deployer лишається без жодної ролі). StateRootAnchor admin = Timelock теж (uniform «admin=Timelock, окрім pause»): контракт не має `pause()`, а видача `ANCHOR_ROLE` — management-влада, не аварійне гальмо → governance-gated; 6-денний `MIN_ANCHOR_INTERVAL` + off-chain верифікація root роблять повільніше (48h) oracle-rotation некритичним (low-sev). **ProtocolParameters admin = Timelock** (як токени, 2026-06-15): DEFAULT_ADMIN не може `grantRole(GOVERNANCE_ROLE, self)` в обхід 48h → зміна економічних параметрів (dynamic-tax / slash-curve / fallback-ціна, які бекенд читає через `SystemParameter`) теж за 48h-veto, тобто [E.35] правда як написано.
 
-**Guard у `Deploy.s.sol`:** при `REQUIRE_SAFE_ADMIN=true` деплой ревертиться, якщо `ADMIN_ADDRESS` — EOA (`safe.code.length == 0`); інакше — warning (testnet/local EOA допустимо).
+**Guard у `Deploy.s.sol`:** при `REQUIRE_SAFE_ADMIN=true` деплой ревертиться, якщо custody-адреса — EOA (`code.length == 0`); інакше — warning (testnet/local EOA допустимо). Один прапор гейтить **обидві** custody-адреси: `ADMIN_ADDRESS` (ролі: PAUSER + Timelock-admin) і `DAO_TREASURY_ADDRESS` (кошти: отримувач Dynamic-Tax + резерв INS.2 — reserve-adequacy проти EOA-скарбниці була б театром; on-chain ролі адреса не має, тож deploy-гейт = її єдина custody-перевірка). Той самий прапор hard-fail'ить і **сколапсований E.2 key-split** (`MINTER_ORACLE == SLASHER_ORACLE` — конструктори токенів приймають два oracle-параметри, але не перевіряють що вони різні; backend `Web3NetworkGuard` ловить однакові ключі лише на Sidekiq-boot, ПІСЛЯ незворотного on-chain гранту з 48h-Timelock unwind). Пін усіх трьох гейтів: `testRevert_run_mainnetSafetyGates` (`Deploy.t.sol`).
 
 **Last-admin guard (код SCC/SFC):** `_revokeRole` блокує видалення останнього `DEFAULT_ADMIN_ROLE` (`require(_adminCount > 1)`) — захист від lockout (останній admin = Timelock).
 
@@ -222,6 +222,11 @@ ADMIN=0x0000000000000000000000000000000000000000000000000000000000000000  # DEFA
 cast call $SCC "hasRole(bytes32,address)(bool)" $ADMIN $SAFE      # → true
 cast call $SCC "hasRole(bytes32,address)(bool)" $ADMIN $DEPLOYER  # → false
 # повторити для $SFC, $ANCHOR, $TIMELOCK, $PROTOCOL_PARAMS
+
+# On-chain grant ↔ backend signer: деплой грантить ролі адресам X, backend підписує ключами Y —
+# розбіжність self-reveals лише AccessControl-revert'ом на ПЕРШОМУ mint/slash, тому звір явно:
+cast call $SCC "hasRole(bytes32,address)(bool)" $(cast keccak "MINTER_ROLE")  $(cast wallet address --private-key $ORACLE_MINTER_PRIVATE_KEY)   # → true
+cast call $SCC "hasRole(bytes32,address)(bool)" $(cast keccak "SLASHER_ROLE") $(cast wallet address --private-key $ORACLE_SLASHER_PRIVATE_KEY)  # → true
 ```
 
 > `MINTER_ROLE` / `SLASHER_ROLE` належать backend-оракулам (operational, не admin) — нормально. `ProtocolParameters` **повністю** керується `SilkenTimelock` — і `GOVERNANCE_ROLE` (зміна параметрів), і `DEFAULT_ADMIN` (видача ролей) → обидва за 48h (Safe НЕ admin Params).

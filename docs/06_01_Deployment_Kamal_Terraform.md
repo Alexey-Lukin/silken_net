@@ -654,7 +654,7 @@ enqueue-ить, `master_key_strength_check` його `$PROGRAM_NAME`-skip-ає [
 `systemctl restart coap-daemon` → `bin/coap_smoke --host <ingress_ip>`.
 
 **Фаза 2 — Контракти (до першого mint; можна паралельно з Фазою 3):**
-fund deployer wallet → `forge script contracts/script/Deploy.s.sol --broadcast --verify`
+fund deployer wallet → export 6 ENV (`DEPLOYER_PRIVATE_KEY`/`ADMIN_ADDRESS`/`MINTER_ORACLE`/`SLASHER_ORACLE`/`ANCHOR_ORACLE`/`DAO_TREASURY_ADDRESS`) + `REQUIRE_SAFE_ADMIN=true` (mainnet-гейти: ADMIN+TREASURY = Safe-контракти, `MINTER != SLASHER` E.2) → `forge script contracts/script/Deploy.s.sol --broadcast --verify`
 (ordered SCC→SFC→Anchor→Timelock→Governor→ProtocolParameters — [`05_03`](05_03_Tokenomics_SCC_and_SFC)) →
 зібрати 9 адрес → вписати у `config/deploy.yml` env.clear + Akash SDL (INF.12) → redeploy job.
 

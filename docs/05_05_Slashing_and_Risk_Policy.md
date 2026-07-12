@@ -225,6 +225,6 @@ ForceMajeure event → InsurancePayoutWorker
   4. ROC детекції стресу + false-positive rate (slashing-safety).
   5. **VPD-confounder:** частка sap_flow-drops, пояснених погодою (high VPD) vs хворобою — валідує False-Slashing guard (§6, BME280 [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)).
 - **Критерії приймання (proposed):** ρ(`stress_index`, decline) ≥ 0.6; Z дає incremental ΔAUC > 0.05 над sap_flow-baseline (інакше Z = лише DCI); FPR < 5% на операційному порозі.
-- **Вихід:** калібровані ваги ML-`stress_index` + heuristic + slashing-пороги (DAO-tunable — [`00_07` BIZ.4](00_07_Action_Plan_Tracker)); рішення про роль Z (predictive vs DCI-only).
+- **Вихід:** калібровані ваги ML-`stress_index` + heuristic + slashing-пороги (DAO-tunable — [`00_07` SEC.1, BIZ.4 злито](00_07_Action_Plan_Tracker)); рішення про роль Z (predictive vs DCI-only).
 
 > **DCI лишається валідним незалежно.** Навіть якщо валідація демоутить Z до **DCI-only** (anti-fraud, §6), fraud-детекція не страждає — Лоренц-DCI не залежить від доведеності гіпотези «Z = здоров'я».
