@@ -570,13 +570,13 @@
 - [ ] 🤖 `tools/firmware/queen_energy_budget.rb` — вхід {phase · battery_Ah · DoD · panel_W · sun_h · insolation_% · starlink_duty · starlink_W · esp32_mode · mcu/modem/quiescent-рядки} → вихід {спожив по компонентах · gen · баланс · autonomy_days}
 - [ ] 🤖 `--assert` режим: Phase 1/2.5 winter_balance ≥ margin → exit 1 (deploy-гейт); Phase 3 = warn до Starlink bring-up → CI поруч `docs_check`
 - [ ] ⚖️ **panel-decision Phase 1/2.5** (10 vs 50W): модель з чесним quiescent (Victron 20мА) + зимова інсоляція (10-15% хвойний ліс) + надійність-margin → рекомендація → **founder-рішення**
-- [ ] 🤖 після рішення: drift-fix `07_02 §4`↔`02_05 §7` (panel/battery/MPPT) + консолідувати 4 числові drift (canon посилається на модель, не restate)
+- [ ] 🤖 після рішення: drift-fix `07_02 §4`↔`02_05 §7` (panel/battery/MPPT) + freeze поз.5/7 (panel/battery Phase 1/2.5) у BOM + консолідувати 4 числові drift (canon посилається на модель, не restate)
 
 #### HW.14 — Winter energy deficit for Queen Phase 3 (Starlink Mini)
 - **P2** · 🤖+👤 · 🟡 · → `02_05 §Зимовий енергодефіцит`, `07_02 §4а`
 - **Стан:** Phase 3 (Starlink Mini) зимовий дефіцит: 44 Wh/добу спожив. vs 18.75 Wh генерації = −25 Wh/добу (LiFePO4 12V/20Ah → 7.7 днів автономності). Cost-side комбо (40Ah+100W+Victron) ВЖЕ запечено у [`07_02 §4а`](07_02_Unit_Economics_and_BOM); енерго-баланс НЕ валідовано — за арифметикою канону 3 «АБО»-мітигації не взаємозамінні (100W сама = 37.5 Wh < 44 спожив; 40Ah сама не закриває місячний standing-deficit; лише duty-cycle+комбо). ⚠️ **pre-deploy drift (НЕ Phase-3):** `07_02 §4` Phase 1/2.5 = 10W/6Ah/CN3791, а spec-дім `02_05 §7` = 50W/20Ah/Victron → зимова маржа +15.5 vs ~+0.55 Wh; BOM-freeze (HW.31/15) морозить це зараз. Розв'язок = параметрична energy-модель (HW.39 ↓) дасть panel-рекомендацію + консолідує 4 числові drift. Канон `02_05 §4`.
 - [ ] 🤖 energy-модель + panel-рекомендація Phase 1/2.5 → окрема сесія (**HW.39** ↓)
-- [ ] ⚖️ panel-decision Phase 1/2.5 (10 vs 50W) — після модель-аналізу → drift-fix `07_02`↔`02_05`
+- [ ] 🔗 panel-decision + drift-fix `07_02`↔`02_05` — дім **HW.39** (⚖️ cb3/cb4; тут делеговано, не дублювати)
 - [ ] 👤 Phase-3 закупка (комбо 40Ah+100W+Victron за `07_02 §4а`) — при Starlink-Mini bring-up, кластер «Phase-3» (Critical Path ↑)
 
 #### HW.16 — Thermal management в IP67 enclosure
@@ -589,7 +589,7 @@
 #### HW.18 — Starlink DTC: ESP32-S3 vs SIM8200G-M2 WiFi co-processor
 - **P2** · 🤖+👤 · 🔗 · → `02_05 §Starlink DTC vs Mini`
 - **Стан:** ✅ **Рішення: ESP32-S3** (founder 2026-07-03) для WiFi-мосту STM32→Starlink Mini (~$3, near-zero sleep; SIM8200G-M2 відхилено — 5G марнується в лісі, ~20× дорожчий). Phase 3 only. Firmware-контракт + co-proc прошивка = Phase-3-gated (порожній контракт зараз = premature — `firmware/esp32_coproc/` не існує, `03_02` чистий). Канон `02_05 §Starlink DTC` (memo HW.18).
-- [x] 🤖 cement рішення ESP32-S3 у canon (vilize 07-12): `02_05` memo «рекомендація/confirm-adjust» → «✅ рішення 07-03» + знято 3 дуалізми «ESP32-S3 або SIM8200G-M2» (фазова таблиця/діаграма/energy-hedge)
+- [x] 🤖 cement рішення ESP32-S3 **canon-wide** (vilize 07-12): `02_05` memo «рекомендація/confirm-adjust» → «✅ рішення 07-03»; знято дуалізм «ESP32-S3 або SIM8200G-M2» у `02_05` (фазова-таблиця/діаграма + energy-hedge «(якщо викор.)») · `07_02 §4а` (проза+BOM ×2) · `04_03` (uplink-сценарій)
 - [ ] 🔗 Phase 3: co-processor firmware-контракт (STM32↔ESP32-S3 UART/SPI) у `03_02` + прошивка `firmware/esp32_coproc/` — разом при Starlink-Mini bring-up, кластер «Phase-3» (Critical Path ↑)
 
 ## §03a · Firmware

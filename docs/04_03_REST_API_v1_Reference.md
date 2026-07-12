@@ -1145,7 +1145,7 @@ if (days_until_token_expiry() < 7) {
 
 **Сценарії використання HTTP uplink:**
 1. CoAP/UDP заблоковано корпоративним фаєрволом або LTE-обмеженнями
-2. Phase 3 Starlink Mini з TCP/IP мостом (ESP32/SIM8200G-M2)
+2. Phase 3 Starlink Mini з TCP/IP мостом (ESP32-S3 — рішення HW.18)
 3. Ручне завантаження телеметрії через Dashboard (forester upload)
 
 **Доступ:** `Authorization: Bearer <token>` (будь-який автентифікований користувач організації).

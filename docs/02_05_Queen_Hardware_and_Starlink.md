@@ -126,7 +126,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 | Інтеграція | UART/SPI; ESP-IDF/lwIP зрілі; **треба написати прошивку** | один UART-AT, простіша схема |
 | Екосистема | величезна (ESP-IDF, lwIP) | нішевий M.2-модем |
 
-**Рекомендація: ESP32-S3.** Co-proc лише мостить до WiFi Starlink Mini — ESP32-S3 робить це за ~$3 з near-zero sleep (критично: Queen уже тягне 20–40 Вт Starlink-burst, зимовий дефіцит §Зимовий енергодефіцит — кожен mW idle важить). 5G у SIM8200G-M2 безсенсовий (нема покриття у Phase-3 ultra-remote) + ~20× дорожчий + вищий idle. Єдина ціна ESP32-S3 — написати co-proc прошивку (UART-AT bridge + WiFi-STA + lwIP), обмежено й зріло.
+**Чому ESP32-S3.** Co-proc лише мостить до WiFi Starlink Mini — ESP32-S3 робить це за ~$3 з near-zero sleep (критично: Queen уже тягне 20–40 Вт Starlink-burst, зимовий дефіцит §Зимовий енергодефіцит — кожен mW idle важить). 5G у SIM8200G-M2 безсенсовий (нема покриття у Phase-3 ultra-remote) + ~20× дорожчий + вищий idle. Єдина ціна ESP32-S3 — написати co-proc прошивку (UART-AT bridge + WiFi-STA + lwIP), обмежено й зріло.
 
 **SIM8200G-M2 виправданий ЛИШЕ** якщо Phase 3 переосмислити як «5G-where-available як другий backhaul» (суперечить ultra-remote премісі). Інакше — ESP32-S3.
 
@@ -162,7 +162,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 **Висновок (зима, Phase 3 Hard OFF):** 18.75 Вт·год vs ~44 Вт·год → дефіцит ~25 Вт·год → автономність 7.7 днів на LiFePO4 12V/20Ah.
 
-> Блокує лише **Phase 3** (Unit Economics — [`07_02`](07_02_Unit_Economics_and_BOM)). Відкриті мітигації (40Ah батарея / 1-хв duty cycle / 100W панель) → [`00_07` — HW.14](00_07_Action_Plan_Tracker).
+> Блокує лише **Phase 3** (Unit Economics — [`07_02`](07_02_Unit_Economics_and_BOM)). ⚠️ Мітигації **не взаємозамінні** (100W сама 37.5 Wh < 44 спожив; лише duty-cycle+комбо закриває баланс), а зимові числа (+15.5, quiescent 5мА) — під ревізією параметричної energy-моделі → [`00_07` — HW.14/HW.39](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -424,7 +424,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 | **Генерація (зима, хвойний ліс)** | **18.75 Вт·год/добу** |
 | **Баланс (зима, Phase 3)** | **-25 до -45 Вт·год ⚠️** |
 
-> **Висновок:** Phase 1/2.5 (SIM7070G / DTC) — стійка навіть взимку під кронами (профіцит +15.5 Вт·год). Phase 3 (Starlink Mini) вимагає або більшого акумулятора (≥40Ah), або скорочення duty cycle до 1 хв/год, або 100W панелі.
+> **Висновок:** Phase 1/2.5 (SIM7070G / DTC) — стійка навіть взимку під кронами (профіцит +15.5 Вт·год **на 50W-панелі spec-BOM §7**; ⚠️ [`07_02 §4`](07_02_Unit_Economics_and_BOM) закуп-BOM = 10W → зимова маржа під ревізією [`00_07` — HW.39](00_07_Action_Plan_Tracker)). Phase 3 (Starlink Mini) вимагає або більшого акумулятора (≥40Ah), або скорочення duty cycle до 1 хв/год, або 100W панелі.
 
 ---
 

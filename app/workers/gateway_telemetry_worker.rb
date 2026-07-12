@@ -104,7 +104,7 @@ class GatewayTelemetryWorker
     elsif log.temperature_c.present? && log.temperature_c > GatewayTelemetryLog::OVERHEAT_THRESHOLD
       "🔥 ПЕРЕГРІВ: Королева #{gateway.uid} (#{log.temperature_c}°C). Ризик деградації SIM7070G."
     elsif log.temperature_c.present? && log.temperature_c < GatewayTelemetryLog::LOW_TEMPERATURE_THRESHOLD
-      "❄️ ЗАМЕРЗАННЯ: Королева #{gateway.uid} (#{log.temperature_c}°C). LiFePO4 offline-ризик — заряд заблоковано."
+      "❄️ ЗАМЕРЗАННЯ: Королева #{gateway.uid} (#{log.temperature_c}°C). LiFePO4 offline-ризик — заряд <0°C небезпечний."
     else
       "🛠️ Апаратний збій Королеви #{gateway.uid}. Потрібен огляд."
     end
