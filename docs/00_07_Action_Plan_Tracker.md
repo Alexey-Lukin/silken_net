@@ -12,11 +12,11 @@
 
 > **Розмітка — дві осі (як у Projects V2: `Assigned Agent` + `Shape Up Stage`):**
 > - **WHO** (хто робить *відкриту* роботу): `🤖` **Код/аналіз** — coding-agent самостійно (код/firmware/розрахунок/документ/тест) · `👤` **Операційна** (руки) — потрібен власник (hardware, лабораторія, секрети, staging-verify, деплой, зустрічі, юрист, зовнішні UI/дашборди) · `⚖️` **Рішення** (голова, `⊂ 👤`) — присуд, що НЕ зводиться до відомої дії: вибір параметрів/чисел/порогів, ратифікація політики, arch-lock-in, вибір партнера/юрисдикції. Комбо `🤖+👤` — провідний перший, ОДНЕ написання. **`⚖️` живе на ЧЕКБОКСАХ** (`- [ ] ⚖️ …`) **та в meta-line WHO** (Ф2 ✅ 2026-07-12, scan-on-section): сольне `⚖️` (уся відкрита робота = присуд) або trailing у комбо `🤖+⚖️`/`👤+⚖️` — decider ⊂ 👤, тому НЕ веде комбо (`⚖️+👤` заборонено).
-> - **STAGE** (лайфсайкл, окремо від WHO): `⚪` **Не почато** · `🟡` **В роботі** (частково зроблено) · `🟢` **Готово-інертно** (host/код done, чекає bench-фліпу або активації за гейтом) · `🔗` **Заблоковано** (на іншу задачу/рішення) · `🌿` **Far-horizon** (post-TRL) · `∅` **Vacuous** («нема-що-завершувати»: premise спростовано / поглинуто деінде / vacuous-as-written — ≠ `🟢` нема-що-активувати, ≠ `🔗` нема-на-що-чекати; item лишається НА МІСЦІ як closed-canon нотатка, residual хіба `⚖️`/`🌿`-переоцінка). Повністю done → **§🗄️ Архів**.
+> - **STAGE** (лайфсайкл, окремо від WHO): `⚪` **Не почато** · `🟡` **В роботі** (частково зроблено) · `🟢` **Готово-інертно** (host/код done, чекає bench-фліпу або активації за гейтом) · `🔗` **Заблоковано** (на іншу задачу/рішення) · `🌿` **Far-horizon** (post-TRL) · `⚫` **Vacuous** («нема-що-завершувати»: premise спростовано / поглинуто деінде / vacuous-as-written — ≠ `🟢` нема-що-активувати, ≠ `🔗` нема-на-що-чекати; пара `⚪`↔`⚫` = «не почато»↔«нема чого починати»; item лишається НА МІСЦІ як closed-canon нотатка, residual хіба `⚖️`/`🌿`-переоцінка). Повністю done → **§🗄️ Архів**.
 
 > **Форма пункту (стандарт — щоб трекер був однорідний):**
 > - Заголовок: `#### ID — короткий заголовок`.
-> - **Meta-line** (рівно один, перший рядок): `**PN** · WHO · STAGE · → канон-реф`. `PN` ∈ `P0`–`P3`; `WHO` = `🤖`/`👤`/`⚖️` (комбо `🤖+👤`/`🤖+⚖️`/`👤+⚖️` — AI-first, decider trailing; **НЕ** `👤+🤖`/`⚖️+👤`); `STAGE` = `⚪`/`🟡`/`🟢`/`🔗`/`🌿`/`∅` (рівно ОДИН, окремо від WHO); реф = канон код-спан або лінк із реальним `§X`, і **нічого після нього** (контекст типу `· ✅ ліцензія` → у Стан). Форма enforced `meta_form_violations` ([`00_06 §3`](00_06_SSOT_Documentation_Standard) — **HARD**); Module = §-секція, вже enforced.
+> - **Meta-line** (рівно один, перший рядок): `**PN** · WHO · STAGE · → канон-реф`. `PN` ∈ `P0`–`P3`; `WHO` = `🤖`/`👤`/`⚖️` (комбо `🤖+👤`/`🤖+⚖️`/`👤+⚖️` — AI-first, decider trailing; **НЕ** `👤+🤖`/`⚖️+👤`); `STAGE` = `⚪`/`🟡`/`🟢`/`🔗`/`🌿`/`⚫` (рівно ОДИН, окремо від WHO); реф = канон код-спан або лінк із реальним `§X`, і **нічого після нього** (контекст типу `· ✅ ліцензія` → у Стан). Форма enforced `meta_form_violations` ([`00_06 §3`](00_06_SSOT_Documentation_Standard) — **HARD**); Module = §-секція, вже enforced.
 > - **Порядок у секції — за пріоритетом** (`P0`→`P3`): новий пункт стає на позицію свого `PN` у пріоритет-кластері секції, не в хвіст — найгостріше згори (enforcement очима, не лінтером).
 > - **Тіло — тонкий вказівник, не копія канону.** Перший рядок тіла — **ЗАВЖДИ** `- **Стан:**` <суть/присуд + канон-pointer> (повний опис у каноні; для ⚪-пунктів — короткий опис стану «не почато»). Universal-форма (founder 2026-06-14): **НЕ** «✅ X»-лід / prose-лід / bare-checkbox-лід — однорідність трекера (enforced `verdict_lead_violations`, [`00_06 §3`](00_06_SSOT_Documentation_Standard) — **HARD** з 2026-06-14, усі 138 items на `**Стан:**`-ліді). Відкрите → `[ ]` (`[x]` done · `[~]` частково) з WHO-тегом. Bench/validation-чек-лист (runbook) лишається.
 > - **Чекбокси — вертикальним списком.** Кожен residual окремим рядком `- [ ] WHO — …` (WHO ∈ `🤖`/`👤`/`⚖️`; `⚖️` = decision-residual «голови», `⊂ 👤` — потребує присуду, не відомої дії) (читабельність + чисті diff'и, без glue-ризику). **≥2 інлайн `· [ ]` в одному рядку — ЗАБОРОНЕНО** (HARD guard `inline_residual_runon`, [`00_06 §3`](00_06_SSOT_Documentation_Standard)); одиничний residual теж краще вертикально.
@@ -760,7 +760,7 @@
 - [ ] 🤖 cadence state-machine + challenge-sampling responder (після 👤-policy + ARCH.22 + E.63)
 
 #### ARCH.29 — RTOS Deadlock-Free верифікація (Petri Nets)
-- **P3** · ⚖️ · ∅ · → `03_01`
+- **P3** · ⚖️ · ⚫ · → `03_01`
 - **Стан:** vacuous-no-RTOS (vilize 07-11): grep FreeRTOS/osThread/mutex = 0 в owned firmware; Soldier = bare super-loop (soldier `while(1)` → Фази 0-5 → STOP2) → deadlock **неможливий by construction** (нема concurrent tasks/locks). ARCH.20 sibling вже Reframed→академічна «Стаття 7» (00_07 велить ARCH.29 тим самим маршрутом). Реальний liveness-ризик = WDT/IWDG (не deadlock) — покрито SEC.15 (WUT-arming) + `__disable_irq`-секції. Guard-дельта від PN = нуль. → **defer via UNI.19-триаж** (академ-deliverable), НЕ firmware-код. Канон `03_01`.
 - [ ] ⚖️ доля PN-осі через UNI.19-триаж (академ «Стаття 7», консистентно з ARCH.20) — НЕ виконувати як код (vacuous by construction)
 
@@ -775,7 +775,7 @@
 - [ ] 🌿 integer-math Lorenz rewrite (deferred → zkVM-Lorenz milestone; НЕ drift — нульовий за FW.55/FW.31)
 
 #### ARCH.22 — Arithmetic compression для LoRa payload
-- **P3** · 🤖 · ∅ · → [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- **P3** · 🤖 · ⚫ · → [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)
 - **Стан:** obsolete-premise (vilize 07-11) — «2B λ замість 16B Z, ~34%» мертвий двічі: (1) `device_z` на дроті **ВЖЕ 2B** (`lora_ccm.h` `FW2_DEVICE_Z_SCALE`, uint16 z×512, з FW.2 wire-rev2) — «16B» був старий ECB-**пакет цілком**, не Z-поле → λ(2B)↔Z(2B) = 0 байт економії; (2) 34% (стиснення всього 21B payload) канон **вже відхилив** §10.3 по енергії (big-int/біт > TX-виграш; no-FEC bit-flip руйнує пакет) + airtime символьно-квантований (стрижка байтів усередині блоку безкоштовна). closed-canon-нотатка, не far-horizon-робота; будь-яка зміна device_z→λ = wire-rev3 клас (як ARCH.43). Канон [`03_05 §10.3`](03_05_Hardware_Symmetric_Crypto_and_Security).
 - [ ] 🌿 переоцінити лише в парі з ARCH.43 wire-rev3 + Z-sentinel challenge-sampling — до того premise-obsolete
 
@@ -800,12 +800,12 @@
 - [ ] 🤖 Kalman-фільтр delta_t (після E.63 bench-калібрування; не пре-білдити — untuned = EMA)
 
 #### E.12 — Boolean minimization TX decision
-- **P3** · 🤖 · ∅ · → `03_01`
+- **P3** · 🤖 · ⚫ · → `03_01`
 - **Стан:** vacuous (vilize 07-11): реальна TX-boolean = 2-term AND (`temp<-15 && vcap<4000`, `Should_Defer_TX`), компілятор -O2 вже мінімізує; `Should_Defer_TX` вже винесено + 13 host-тестів (FW.10-гейт). Єдиний у TX-кластері БЕЗ числа виграшу = сигнатура порожнечі — розчиняється в компіляторі + наявному гейті. Cross-ref ARCH.8 (TX-cadence adj — інша вісь: синтаксис ≠ семантика). Канон `03_01`.
 - [ ] 🌿 (vacuous — компілятор мінімізує 2-term; nil-note, не робота)
 
 #### E.15 — Reed-Solomon FEC / Hamming для LoRa
-- **P3** · 🤖+👤 · ∅ · → [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- **P3** · 🤖+👤 · ⚫ · → [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)
 - **Стан:** vacuous як написано (vilize 07-11): LoRa PHY **CR 4/5 = Hamming-FEC у кремнії SX126x** (`radio.c` LoRa `CodingRate`, `LORA_PANIC_CR_4_5`) → within-packet bit-FEC + bench-BER дублює HW (при потребі — CR-knob 4/5→4/8, одна константа `SetTxConfig`). Чесний far-horizon-залишок = **cross-packet ERASURE-coding** (RS/fountain над N кадрами) для ACK-less uplink проти packet-loss (`03_02:9`), gated frozen-wire + EBFC airtime-бюджет. owner = 👤-design-call (заробляє airtime?), не «напиши FEC». Cross-ref ARCH.22 (LoRa payload-coding; осі протилежні — FEC додає надлишковість, compression прибирає). Канон [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security).
 - [ ] 👤 рішення: cross-packet erasure-coding vs CR-knob проти airtime/EBFC (математика в 03_05 airtime — bench-BER НЕ той гейт)
 
