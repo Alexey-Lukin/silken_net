@@ -21,7 +21,10 @@ module Tracker
     SKIP_SECTION = /^## (?:🎯|🚦|📌|🗄️)/
 
     # WHO axis (Projects-V2 "Assigned Agent") — who does the OPEN work.
-    EXECUTORS = { "🤖" => :machine, "👤" => :owner }.freeze
+    # ⚖️ = decision-residual (голова, ⊂ 👤 [DOC-T.33]): a verdict that does NOT
+    # reduce to a known action — allowed on checkboxes (phase 1) AND in the
+    # meta-line WHO (phase 2, scan-on-section).
+    EXECUTORS = { "🤖" => :machine, "👤" => :owner, "⚖️" => :decider }.freeze
     # STAGE axis (Projects-V2 "Shape Up Stage") — lifecycle, SEPARATE from WHO [DOC-T.18].
     # 🟡 (in-progress) and 🔗 (blocked) were wrongly mapped as :blocked EXECUTORS —
     # conflating who-with-status (a 🟡 in-progress item is NOT blocked; it routed to
@@ -452,7 +455,9 @@ module Tracker
     # executor parser uses `include?`, so it silently tolerated 👤+🤖 and tails; this locks
     # in the DOC-T.23 standardization. Registry scope as `parse`. (00_06 §3 recipe.)
     META_LINE = /\A-\s+\*\*P[0-3]\*\*\s+·\s+(.+?)\s+·\s+[⚪🟡🟢🔗🌿]\s+·\s+(.+?)\s*\z/u
-    WHO_CANON = [ "🤖", "👤", "🤖+👤" ].freeze
+    # ⚖️ joins the meta-line WHO as of DOC-T.33 phase 2 (solo or trailing in a
+    # combo — the decider is a 👤-subtype, so it never leads a combo).
+    WHO_CANON = [ "🤖", "👤", "⚖️", "🤖+👤", "🤖+⚖️", "👤+⚖️" ].freeze
     def self.meta_form_violations(markdown = File.read(DEFAULT_PATH))
       in_registry = false
       current = nil

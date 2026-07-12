@@ -40,6 +40,21 @@ RSpec.describe Tracker::Dashboard do
     expect(fw99.canon).to eq("03_05 §3.2")
   end
 
+  # [DOC-T.33] ⚖️ is a first-class executor (:decider) — an item whose only open
+  # work is a verdict must not trip the "missing executor" conformance gap.
+  it "reads a solo ⚖️ meta-line WHO as the :decider executor" do
+    md = <<~MD
+      ## §03 · Firmware
+      #### FW.94 — decision-only item
+      - **P3** · ⚖️ · ⚪ · → `03_01`
+      - **Стан:** verdict pending.
+      - [ ] ⚖️ доля осі
+    MD
+    item = described_class.parse(md).first
+    expect(item.executors).to contain_exactly(:decider)
+    expect(described_class.issues([ item ])).to be_empty
+  end
+
   # [HW light-touch items] `.parse` also picks up executors from unchecked
   # checkbox bullets (`- [ ] 🤖 …`), not just the `**P?**` meta-line.
   describe ".parse — checkbox-bullet executor pickup" do
@@ -511,6 +526,28 @@ RSpec.describe Tracker::Dashboard do
       res = described_class.meta_form_violations(md)
       expect(res).to include(a_string_matching(/S9\.7/))
       expect(res).not_to include(a_string_matching(/S9\.8/))
+    end
+
+    # [DOC-T.33 phase 2] ⚖️ (decision-residual, 👤-subtype) is a legal meta-line WHO —
+    # solo or TRAILING in a combo; a decider never leads (⚖️+👤 stays non-canonical).
+    it "passes ⚖️ solo and trailing combos (🤖+⚖️ / 👤+⚖️), flags a leading ⚖️+👤" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### FW.90 — pure decision residual
+        - **P3** · ⚖️ · ⚪ · → `03_01`
+        - **Стан:** x.
+        #### FW.91 — machine work gated on a verdict
+        - **P3** · 🤖+⚖️ · ⚪ · → `03_01`
+        - **Стан:** x.
+        #### FW.92 — hands + verdict
+        - **P3** · 👤+⚖️ · ⚪ · → `03_01`
+        - **Стан:** x.
+        #### FW.93 — decider must not lead
+        - **P3** · ⚖️+👤 · ⚪ · → `03_01`
+        - **Стан:** x.
+      MD
+      res = described_class.meta_form_violations(md)
+      expect(res).to contain_exactly(a_string_matching(/FW\.93/))
     end
 
     it "flags a tail after the canon-ref, passes a clean multi-ref (comma, not ·)" do
