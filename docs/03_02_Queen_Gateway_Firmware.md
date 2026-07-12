@@ -443,7 +443,10 @@ Starlink NAT та динамічні адреси).
 (`firmware/test/test_at_engine.c` ↔ `spec/lib/coap_server_pdu_spec.rb`,
 включно з пін-кейсом MID=0x00FF + 0xFF у payload), вердикт Брами винесено в
 pure `CoapServerPdu` (`lib/coap_server_pdu.rb` — серверне дзеркало
-`coap_pdu.h`; демон `lib/daemons/coap_listener` = лише UDP-клей), а повний
+`coap_pdu.h`), side-effect-оркестрацію — у `CoapGate.handle_datagram`
+(`lib/coap_gate.rb`: enqueue ПЕРЕД поверненням reply → ACK **структурно**
+не випереджає черги, enqueue-fail = no-reply = Королева ретраїть; демон
+`lib/daemons/coap_listener` = лише UDP-клей), а повний
 ланцюг PDU → парсер → `UnpackTelemetryWorker` → decrypt → unpack доведено
 `spec/integration/coap_telemetry_intake_e2e_spec.rb`. Семантика відповіді
 вирівняна з FW.51: **ACK 2.04 лише ПІСЛЯ прийняття батча в чергу**;
