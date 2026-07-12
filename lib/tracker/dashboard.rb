@@ -228,7 +228,7 @@ module Tracker
     # a stricter local scan flagged it). Policy: a status/checkbox bullet must not carry a bare
     # CHEM.N — reword, or make it a real `CHEM.N — …` def. Low-FP: only fires on no-em-dash
     # checkbox bullets that mention a CHEM token (legit refs live after the em-dash in a def bullet).
-    CHECKBOX_RE = /^\s*[-*]\s*\[[ xX]\]/
+    CHECKBOX_RE = /^\s*[-*]\s*\[[ xX~]\]/
     def self.chem_ambiguous_token_lines(markdown)
       markdown.each_line.filter_map do |l|
         next unless l.match?(CHECKBOX_RE)
@@ -469,26 +469,40 @@ module Tracker
       runbook.each_line.with_object({}) do |line, h|
         next unless (m = line.match(BENCH_ROW))
 
-        h[m[1]] = m[2].scan(PROSE_ID_TOKEN)
+        # expand_prose_ids so a slash-family shorthand (`FW.8/20`) in a registry
+        # row names BOTH members — a raw scan would demand a literal "FW.8/20"
+        # tag and silently unsee the real FW.20 (the very asymmetry this guards)
+        h[m[1]] = expand_prose_ids(m[2])
       end
     end
 
+    # Tags are read ONLY from checkbox rows (the documented home — 00_07 §розмітка)
+    # and never from fenced code: a grep-example ```[bench:x]``` inside an item body
+    # must not satisfy the "item carries the tag" leg (proven false-green in review).
     def self.bench_item_tags(markdown)
       current = nil
+      in_fence = false
       markdown.each_line.with_object(Hash.new { |h, k| h[k] = [] }) do |line, h|
+        in_fence = !in_fence if line.lstrip.start_with?("```")
+        next if in_fence
         # a `## ` header ends the previous item's body — without this, a tag
         # mentioned in a 🔀-section table row leaks onto the last #### item
         current = nil if line.start_with?("## ")
         current = line[ANY_ITEM_HEAD, 1] || current
-        next unless current
+        next unless current && line.match?(CHECKBOX_RE)
 
         line.scan(BENCH_TAG) { |slug,| h[current] << slug }
       end
     end
 
-    def self.bench_tag_violations(markdown = File.read(DEFAULT_PATH), runbook = File.read(RUNBOOK_PATH))
+    def self.bench_tag_violations(markdown = File.read(DEFAULT_PATH),
+                                  runbook = (File.read(RUNBOOK_PATH) if File.exist?(RUNBOOK_PATH)))
+      tags = bench_item_tags(markdown)
+      # a vanished registry must not crash the whole tracker:check, but with live
+      # tags in 00_07 it can't silently pass either — one honest violation instead
+      return tags.empty? ? [] : [ "RUNBOOK §6 registry not found (#{RUNBOOK_PATH}) — bench-tag symmetry unverifiable" ] if runbook.nil?
+
       sessions = bench_sessions(runbook)
-      tags     = bench_item_tags(markdown)
       bad = []
       tags.each do |id, slugs|
         slugs.uniq.each do |slug|
@@ -520,8 +534,11 @@ module Tracker
 
     def self.cluster_marker_violations(markdown = File.read(DEFAULT_PATH))
       bad = []
+      in_fence = false
       clusters = Hash.new { |h, k| h[k] = { "дім" => [], "важіль" => [] } }
       markdown.each_line do |line|
+        in_fence = !in_fence if line.lstrip.start_with?("```")
+        next if in_fence
         next unless (m = line.match(ANY_ITEM_HEAD))
 
         line.scan(CLUSTER_ANY) do |raw|
@@ -571,7 +588,7 @@ module Tracker
         seen_meta = true
         if (mm = line.match(META_LINE))
           who = mm[1].strip
-          bad << "#{current}: WHO `#{who}` ∉ {🤖,👤,🤖+👤}" unless WHO_CANON.include?(who)
+          bad << "#{current}: WHO `#{who}` ∉ {#{WHO_CANON.join(',')}}" unless WHO_CANON.include?(who)
           bad << "#{current}: meta tail after canon-ref" if mm[2].include?(" · ")
         else
           bad << "#{current}: malformed meta-line"

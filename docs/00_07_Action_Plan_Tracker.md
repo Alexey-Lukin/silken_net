@@ -581,7 +581,7 @@
 
 #### HW.16 — Thermal management в IP67 enclosure
 - **P2** · 👤 · 🟡 · → `02_05 §Теплове управління IP67`
-- **Стан:** Тепловий бюджет IP67 зроблено (Phase 1/2.5 ~130мВт→ΔT<1K; Phase 3 3Вт→ΔT~4.5K; sun load +15K домінує → sun-shade). Backend freeze/overheat-вердикт: `critical_fault?` + `format_health_message` дають ❄️ ЗАМЕРЗАННЯ (T<−20°C) / 🔥 ПЕРЕГРІВ (T>65°C) специфічні алерти (`GatewayTelemetryWorker`, mutation-verified spec). ⚠️ гілка **data-starved**: v2-пульс температури не несе («Королева без ADC», ARCH.54) → жива до HW.16-hardware + wire-розширення. Лишається hardware зимовий charge-protect; блокує зимову deploy-cert (літній first-deploy — ні). Канон `02_05 §4а`.
+- **Стан:** Тепловий бюджет IP67 зроблено (Phase 1/2.5 ~130мВт→ΔT<1K; Phase 3 3Вт→ΔT~4.5K; sun load +15K домінує → sun-shade). Backend freeze/overheat-вердикт: `critical_fault?` + `format_health_message` дають ❄️ ЗАМЕРЗАННЯ (T<−20°C) / 🔥 ПЕРЕГРІВ (T>65°C) специфічні алерти (механіка — `04_02` GatewayTelemetryWorker, mutation-verified spec). ⚠️ гілка **data-starved**: v2-пульс температури не несе («Королева без ADC», ARCH.54) → жива до HW.16-hardware + wire-розширення. Лишається hardware зимовий charge-protect; блокує зимову deploy-cert (літній first-deploy — ні). Канон `02_05 §4а`.
 - [ ] 👤 Додати temperature sensor **DS18B20** (canon §4а.6: ±0.5°C, 1-Wire) на LiFePO4 head
 - [ ] ⚖️ charge-protect: discrete P-MOSFET vs BMS-integrated low-temp cutoff (JBD-клас HW.15 типово має вбудований NTC+charge-FET → може субсумувати) — verify при HW.15 SKU
 - [ ] 👤 DS18B20 + charge-MOSFET → BOM §7 (§4а.7 P0-зима рядки не матеріалізовані) — кластер «02_05 BOM freeze» (Critical Path ↑)

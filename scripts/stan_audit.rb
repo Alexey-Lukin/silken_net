@@ -105,7 +105,7 @@ num_hits = 0
 items.each do |id, it|
   next unless it[:stan]
 
-  it[:stan].scan(/(.{0,28})(?<![A-Za-z.§v])\b(\d[\d  ]*(?:\/\d+)?)\s*(#{COUNT_WORDS})(.{0,22})/u) do |pre, num, word, post|
+  it[:stan].scan(%r{(.{0,28})(?<![A-Za-z.§v])\b(\d+(?:/\d+)?)\s*(#{COUNT_WORDS})(.{0,22})}u) do |pre, num, word, post|
     num_hits += 1
     puts "  #{id}: …#{pre}[#{num} #{word}]#{post}…"
   end

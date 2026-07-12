@@ -591,6 +591,51 @@ RSpec.describe Tracker::Dashboard do
       expect(described_class.bench_tag_violations(md, rb)).to be_empty
     end
 
+    it "reads tags ONLY from checkbox rows — a fenced grep-example or prose mention must not satisfy the registry leg" do
+      # the review-proven false-green: item listed in the registry, checkbox
+      # untagged, but a fenced/prose [bench:…] in the body used to count as tagged
+      md = <<~MD
+        ## §03 · Firmware
+        #### FW.2 — untagged checkbox with a fenced example
+        - **P0** · 👤 · 🟢 · → `03_05`
+        - **Стан:** приклад у прозі [bench:flash-kv] не рахується.
+        ```
+        grep '[bench:flash-kv]' docs/00_07_*
+        ```
+        - [ ] 👤 bench: чекбокс БЕЗ тега
+      MD
+      rb = "| [bench:flash-kv] | §6 | FW.2 |\n"
+      expect(described_class.bench_tag_violations(md, rb))
+        .to contain_exactly(a_string_matching(/FW\.2 carries no tag/))
+    end
+
+    it "expands a slash-family in a registry row into each member" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### FW.8 — tagged member one
+        - **P2** · 👤 · 🟢 · → `03_01`
+        - [ ] 👤 bench: x [bench:flash-kv]
+        #### FW.20 — member two, NOT tagged
+        - **P2** · 👤 · 🟢 · → `03_02`
+        - [ ] 👤 bench: y
+      MD
+      rb = "| [bench:flash-kv] | §6 | FW.8/20 |\n"
+      expect(described_class.bench_tag_violations(md, rb))
+        .to contain_exactly(a_string_matching(/FW\.20 carries no tag/))
+    end
+
+    it "reports one honest violation when the RUNBOOK registry is missing but tags exist" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### FW.2 — tagged item
+        - **P0** · 👤 · 🟢 · → `03_05`
+        - [ ] 👤 bench: x [bench:flash-kv]
+      MD
+      expect(described_class.bench_tag_violations(md, nil))
+        .to contain_exactly(a_string_matching(/registry not found/))
+      expect(described_class.bench_tag_violations("## §03 · Firmware\n", nil)).to be_empty
+    end
+
     it "passes a fully symmetric registry ⇆ tag set (incl. a two-session item)" do
       md = <<~MD
         ## §03 · Firmware
