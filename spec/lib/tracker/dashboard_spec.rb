@@ -40,6 +40,22 @@ RSpec.describe Tracker::Dashboard do
     expect(fw99.canon).to eq("03_05 §3.2")
   end
 
+  # [DOC-T.34 ②] ∅ = vacuous STAGE («нема-що-завершувати») — the parser must
+  # distinguish a vacuous item from an active one AND from a malformed meta-line.
+  it "reads ∅ as the :vacuous stage and passes conformance + meta-form" do
+    md = <<~MD
+      ## §03 · Firmware
+      #### E.90 — premise refuted, nothing to complete
+      - **P3** · 🤖 · ∅ · → `03_01`
+      - **Стан:** vacuous (premise dead).
+      - [ ] 🌿 переоцінити лише при wire-rev3
+    MD
+    item = described_class.parse(md).first
+    expect(item.stage).to eq(:vacuous)
+    expect(described_class.issues([ item ])).to be_empty
+    expect(described_class.meta_form_violations(md)).to be_empty
+  end
+
   # [DOC-T.33] ⚖️ is a first-class executor (:decider) — an item whose only open
   # work is a verdict must not trip the "missing executor" conformance gap.
   it "reads a solo ⚖️ meta-line WHO as the :decider executor" do

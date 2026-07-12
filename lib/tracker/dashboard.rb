@@ -30,9 +30,12 @@ module Tracker
     # conflating who-with-status (a 🟡 in-progress item is NOT blocked; it routed to
     # the dashboard's "Заблоковано" bucket). Now STAGE is its own axis; "blocked" in
     # the dashboard = STAGE 🔗, not a WHO.
+    # ∅ = vacuous [DOC-T.34]: «нема-що-завершувати» — the premise was refuted /
+    # absorbed elsewhere, so there is nothing to activate (≠ 🟢) and nothing to
+    # wait on (≠ 🔗); the item stays in place as a closed-canon note.
     STAGES = {
       "⚪" => :not_started, "🟡" => :in_progress, "🟢" => :done_inert,
-      "🔗" => :blocked, "🌿" => :far_horizon
+      "🔗" => :blocked, "🌿" => :far_horizon, "∅" => :vacuous
     }.freeze
 
     Item = Struct.new(:id, :title, :priority, :executors, :stage, :canon, :section_modules, keyword_init: true)
@@ -454,7 +457,7 @@ module Tracker
     # trails the canon-ref (a `· ✅ ліцензія` / `· 🔗 UNI.1` tail belongs in Стан). The
     # executor parser uses `include?`, so it silently tolerated 👤+🤖 and tails; this locks
     # in the DOC-T.23 standardization. Registry scope as `parse`. (00_06 §3 recipe.)
-    META_LINE = /\A-\s+\*\*P[0-3]\*\*\s+·\s+(.+?)\s+·\s+[⚪🟡🟢🔗🌿]\s+·\s+(.+?)\s*\z/u
+    META_LINE = /\A-\s+\*\*P[0-3]\*\*\s+·\s+(.+?)\s+·\s+[⚪🟡🟢🔗🌿∅]\s+·\s+(.+?)\s*\z/u
     # ⚖️ joins the meta-line WHO as of DOC-T.33 phase 2 (solo or trailing in a
     # combo — the decider is a 👤-subtype, so it never leads a combo).
     WHO_CANON = [ "🤖", "👤", "⚖️", "🤖+👤", "🤖+⚖️", "👤+⚖️" ].freeze
