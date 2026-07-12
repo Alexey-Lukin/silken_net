@@ -27,6 +27,8 @@ description: "Use when working on the silken_net telemetry / Proof-of-Growth pip
 
 8. **`firmware_version_id` = wire-ЗВІТ, не FK (SEC.20, 2026-07-12)** — post-SEC.20 семантика `[semantic:1|reverted:1|contract_id&0x3FFF]` (дзеркало `firmware/common/fw_report.h`): читай через `TelemetryLog#firmware_report_semantic?/reverted?/contract_id` (id ПО МОДУЛЮ 14 біт — НЕ join і не пряме порівняння з `BioContractFirmware.id`); legacy-кадри (без semantic-біта) несуть C-image константу — contract-версії НЕ мають. `reverted?` → `EwsAlert firmware_reverted` (термінальний: re-issue лише версією > спаленої — 03_06 §4 bump-інваріант).
 
+9. **Device-event 0x57 = ОКРЕМИЙ L1-канал, не телеметрія (SEC.21, 2026-07-12)** — рідкісні security-події (canary-trip) НЕ їдуть телеметрійним трактом: окремий CoAP `PUT device/event/<uid>` → `DeviceEventWorker` (не `UnpackTelemetryWorker`). Королева підписує cleartext-конверт власним EDSK (тег `SLKN-QEVT1`, окремий від QATT2) → worker **verify gateway-origin** (`HardwareKey.ed25519_public_key_hex`, як QATT-батч), Rails LoRa-ключа НЕ торкається. Не плутай з CCM blind-courier телеметрії (там per-DID decrypt на Rails); тут — L1-підпис Королеви. Trust L1-observational, НІКОЛИ не money-path. Дім `03_05 §2.2а` + `03_02 §7а`.
+
 ## Common Tasks
 
 - **Add telemetry field**: firmware pack → `TelemetryUnpackerService` unpack → DB migration → Phlex dashboard component → update `docs/05_02`

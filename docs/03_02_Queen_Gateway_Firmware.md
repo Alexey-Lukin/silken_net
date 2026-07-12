@@ -41,6 +41,7 @@
 - [5б. Soldier Command Relay (FW.20-Q2) — черга рефлекторних пострілів](#-5б-soldier-command-relay-fw20-q2--черга-рефлекторних-пострілів)
 - [6. Actuator Command Dedup (Idempotency Ring Buffer)](#-6-actuator-command-dedup-idempotency-ring-buffer)
 - [7. Пульс Королеви — health-блок QATT-v2](#-7-пульс-королеви--health-блок-qatt-v2-arch54-did0-sentinel-retired)
+- [7а. Device-Event Forward — L1 canary-канал](#-7а-device-event-forward--l1-canary-канал-sec21)
 - [8. Шифрування: Режими та Переходи](#-8-шифрування-режими-та-переходи)
 - [9. RAM Бюджет Королеви](#-9-ram-бюджет-королеви)
 - [10. HAL Периферія Королеви](#-10-hal-периферія-королеви)
@@ -1033,6 +1034,16 @@ DID=0-псевдодерево у батчі: 16B-пакет маскував he
 - **Masking-attack закритий конструкцією:** health без валідного Ed25519 не існує (`UnpackTelemetryWorker` енкʼює пульс ЛИШЕ з `:attested`-гілки).
 - **Маршрутизація на сервері:** `enqueue_envelope_health` → `GatewayTelemetryWorker` (черга uplink) → `GatewayTelemetryLog` (нові колонки `uptime_min/cifo_fill/lora_rx_drops/coap_fail_count/health_flags`; `voltage_mv`/`temperature_c` — nullable до ADC-тракту, не брешемо нулями). `health_flags` біт-розкладка — One-Home `queen_attest.h` (bit0 CCM-ера · bit1 ring · **bit2/bit3 = legacy-drops/ccm-spoof — wire-видимість cutover-вікна FW.2 (а)**; модель-хелпери `legacy_drops_seen?`/`ccm_spoof_seen?`). Dead-man switch і алерти — [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy).
 - **Golden-парність чотирьох реалізацій:** Monocypher (`test_queen_attest.c`) ↔ OpenSSL ↔ RSpec (`unpack_telemetry_worker_attest_spec.rb`) ↔ HIL-симулятор (`lib/hil/queen_simulator.rb`) — байт-у-байт (клас mirror-drift, що вбив DID=0, закритий назавжди).
+
+---
+
+## 🐦 7а. Device-Event Forward — L1 canary-канал [SEC.21]
+
+Окремий підписаний Queen→Rails канал для рідкісних security-подій вузла (canary-trip). НЕ телеметрія: у CIFO/батч не лягає (stride священний), окремий CoAP PUT `device/event/<uid>`.
+
+**RX-класифікація (LoRa `OnRxDone`-луп).** Після декрипту 16B ECB-кадру Королева впізнає device-event за `Device_Event_Is(decrypted)` (marker `0x57` @ [0] + magic `0x45` @ [10]) — ПЕРЕД CIFO, симетрично до `0x55/0x56` control-опкодів. ⚠️ Класифікація за marker+magic на `decrypted[0]/[10]` несе той самий наявний клас DID-колізії, що `0x55/0x56` (StatusByte `0x45` × DID-старший `0x57` = 1/256) — wire-rev3-адресація зніме її разом з рештою control-опкодів. Упізнаний кадр → cleartext-record `[did:4][code:1][soldier_seq:2]` у міні-ring (4 слоти; переповнення зсуває найстарший — Солдат повторює постріл ×3).
+
+**L1-forward (у `Flush_Cache_To_Rails`, ПІСЛЯ основного flush'у).** Королева підписує ring ВЛАСНИМ EDSK (тег `SLKN-QEVT1`, окремий від QATT2) — рунг **L1** ([`05_02` Trust-origin ladder](05_02_Proof_of_Growth_Pipeline)); конверт `[ver][queen_unix_ts][count][records][sig:64]`, повний wire-дім + «чому L1, а не blind-forward» — [`03_05 §2.2а`](03_05_Hardware_Symmetric_Crypto_and_Security). Гейт на `ed25519_ready` (без EDSK L1 неможливий — той самий гейт, що атестація батча). Best-effort (окремий PUT без retry); очистка ring лише по 2.xx (FW.51-інваріант). Споживач — `DeviceEventWorker` (verify gateway-origin, Rails LoRa-ключа не торкається). **Trust L1-observational: НІКОЛИ не money-path.**
 
 ---
 

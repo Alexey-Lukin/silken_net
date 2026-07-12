@@ -486,8 +486,8 @@ class BlockchainBurningService < ApplicationService
     # самогаситься; лікується лише re-issue OTA версією > спаленої) → без виключення
     # штрафував би оператора гарантовано, щойно cause_uplift увімкнеться.
     stale_critical = @cluster.ews_alerts.severity_critical
-                             .where.not(alert_type: [ :field_audit, :vandalism_breach,
-                                                      :firmware_fault, :firmware_reverted ])
+                             .where.not(alert_type: [ :field_audit, :vandalism_breach, :firmware_fault,
+                                                      :firmware_reverted, :firmware_canary_trip ])
                              .where(created_at: ..30.minutes.ago)
     return false unless stale_critical.exists?
 

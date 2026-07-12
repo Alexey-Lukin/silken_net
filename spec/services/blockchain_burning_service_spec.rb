@@ -696,6 +696,14 @@ RSpec.describe BlockchainBurningService do
         expect(service.send(:critical_unmaintained?)).to be(false)
       end
 
+      # [SEC.21] canary-trip = потенційна софт-атака на парсер, не фізична
+      # недбалість — виїзд її не лікує, тож поза critical_unmaintained?.
+      it "excludes :firmware_canary_trip from critical_unmaintained? (software attack ≠ negligence)" do
+        create(:ews_alert, cluster: cluster, severity: :critical, alert_type: :firmware_canary_trip,
+                           status: :active, created_at: 1.hour.ago)
+        expect(service.send(:critical_unmaintained?)).to be(false)
+      end
+
       it "excludes :firmware_fault from comms_no_ack? (node is alive — only mruby is broken)" do
         create(:ews_alert, cluster: cluster, severity: :critical,
                            alert_type: :firmware_fault, status: :active)

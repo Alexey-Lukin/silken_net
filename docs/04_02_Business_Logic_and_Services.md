@@ -952,6 +952,17 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Сервіси** | Немає — пряма робота з `Gateway`, `GatewayTelemetryLog` |
 | **Side Effects** | Створює `GatewayTelemetryLog` (voltage/temp — nullable до ADC-тракту). `mark_seen!` без voltage. `critical_fault?` (weak-CSQ / `coap_fail ≥ 10` / temp-плечі ❄️ ЗАМЕРЗАННЯ T<−20°C · 🔥 ПЕРЕГРІВ T>65°C — `format_health_message` дає специфічний текст алерту; temp-гілка **data-starved** до HW.16-hardware: v2-пульс температуру не несе, «Королева без ADC» ARCH.54) → `EwsAlert(system_fault)` з анти-спам guard'ом по кластеру → (via `after_create_commit` Transactional Outbox) → `AlertNotificationWorker.perform_async`. |
 
+#### `DeviceEventWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `uplink` |
+| **Retry** | 2 |
+| **Тригер** | **[SEC.21 L1]** CoAP-маршрут `PUT device/event/<uid>` (`CoapGate`) — Королева форвардить рідкісні uplink-події 0x57, які НЕ є станом (canary-trip); телеметрія їх не несе |
+| **Вхід** | `encoded_payload` (Base64: підписаний L1-конверт `[ver:1][queen_unix_ts:4][count:1][records:N×7][sig:64]`, `record=[did:4][code:1][soldier_seq:2]`), `gateway_uid` (String) |
+| **Сервіси** | `Ed25519Crypto::SigningService.verify`, `EwsAlert` |
+| **Side Effects** | **L1 gateway-origin verify** (проти Королевиного `HardwareKey.ed25519_public_key_hex` — той самий registry, що QATT+M2M; msg=`SLKN-QEVT1`‖uid_len‖uid‖body) — **Rails LoRa-ключа НЕ торкається** (per-Tree KEYL ≠ cluster-ключ, яким Королева шифрувала; blind-forward давав key-mismatch fail-open). Невалідний підпис/чужий ключ → drop. Anti-replay = SHA256(sig) SETNX TTL 25h (Королевин sig монотонний — не Солдатів per-boot seq). Парс cleartext-records → per-record `EwsAlert(firmware_canary_trip, critical, tree:)` (uniqueness `[tree,type,status]` = один активний/дерево). Trust L1-observational ([`03_05 §2.2а`](03_05_Hardware_Symmetric_Crypto_and_Security)): подія НІКОЛИ не рухає money-path — лише ops-алерт (slash-виключення дзеркалять firmware_fault). Wire-дім `firmware/common/device_event.h §Шар 2`. |
+
 #### `GatewayStalenessSweepWorker`
 
 | Параметр | Значення |

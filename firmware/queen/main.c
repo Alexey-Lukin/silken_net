@@ -25,6 +25,9 @@
 #include "../common/stack_canary.h"
 // [SEC.21] MPU NX-stack/RO-code розкладка (draft; той самий чип/мапа).
 #include "../common/mpu_regions.h"
+// [SEC.21 L1] uplink 0x57 device-event: розпізнати, витягти cleartext →
+// підписати EDSK (тег QEVT1) → окремий PUT device/event/<uid> (§Шар 2).
+#include "../common/device_event.h"
 // [FW.3] Байтовий AT-токенайзер + транзакції (pure, host-tested)
 #include "at_engine.h"
 // [FW.56] CoAP PDU будує хост: SIM7070G — UDP-труба, не CoAP-стек
@@ -346,6 +349,15 @@ static uint16_t ccm_legacy_telemetry_drops = 0; // 16B-телеметрія ст
 #endif
 
 uint8_t decrypted_payload[16];          // Розшифрований пакет від Солдата
+
+// [SEC.21 L1] Міні-ring device-event 0x57: CLEARTEXT-records (did/code/seq —
+// Королева ВЖЕ декриптувала кадр, щоб упізнати маркер). При flush конверт
+// підписується EDSK (тег QEVT1) → Rails верифікує gateway-origin, LoRa-ключа
+// не торкається (дім device_event.h). Переповнення → зсув найстаршого
+// (Солдат повторює постріли сам, 3× у різні цикли).
+#define QUEEN_EVT_RING_SLOTS DEVENV_MAX_RECORDS /* 4 */
+static uint8_t queen_evt_ring[QUEEN_EVT_RING_SLOTS][DEVENV_RECORD_LEN]; /* 7B cleartext */
+static uint8_t queen_evt_count = 0;
 volatile int8_t current_rssi = 0;       // RSSI поточного оброблюваного пакета (для downstream-кешу)
 volatile int8_t current_snr  = 0;       // [E.8] SNR поточного оброблюваного пакета (CIFO tiebreaker)
 
@@ -1264,6 +1276,33 @@ int main(void)
             continue;
         }
 
+        // [SEC.21 L1] Device-event 0x57 (canary-слід тощо): не телеметрія — у
+        // літопис (CIFO) не лягає, stride священний. Королева ВЖЕ декриптувала
+        // кадр (щоб упізнати маркер) → витягуємо CLEARTEXT-поля у ring; при
+        // flush конверт підписується EDSK (тег QEVT1) → Rails верифікує
+        // gateway-origin, LoRa-ключа не торкається. ⚠️ Класифікація за
+        // marker+magic на decrypted[0]/[10] — той самий наявний клас DID-
+        // колізії, що 0x55/0x56 (StatusByte 0x45 × DID-старший 0x57 = 1/256);
+        // wire-rev3-адресація зніме її разом з рештою control-опкодів.
+        if (Device_Event_Is(decrypted_payload)) {
+            uint32_t evt_did = ((uint32_t)decrypted_payload[1] << 24) |
+                               ((uint32_t)decrypted_payload[2] << 16) |
+                               ((uint32_t)decrypted_payload[3] << 8)  |
+                               (uint32_t)decrypted_payload[4];
+            uint16_t evt_seq = ((uint16_t)decrypted_payload[12] << 8) |
+                               decrypted_payload[13];
+            if (queen_evt_count == QUEEN_EVT_RING_SLOTS) {
+                memmove(queen_evt_ring[0], queen_evt_ring[1],
+                        (QUEEN_EVT_RING_SLOTS - 1u) * DEVENV_RECORD_LEN);
+                queen_evt_count--;
+            }
+            Devenv_Write_Record(queen_evt_ring[queen_evt_count], evt_did,
+                                decrypted_payload[5], evt_seq);
+            queen_evt_count++;
+            Radio.Rx(LORA_RX_INFINITE);
+            continue;
+        }
+
         // Витягуємо унікальний ID Солдата (перші 4 байти - DID)
         uint32_t sender_id = ((uint32_t)decrypted_payload[0] << 24) |
                              ((uint32_t)decrypted_payload[1] << 16) |
@@ -1976,6 +2015,63 @@ void Flush_Cache_To_Rails(void)
         if (Coap_Reresolve_Due(++coap_consec_fail)) {
             coap_server_ip[0] = '\0';
             coap_consec_fail  = 0;
+        }
+    }
+
+    // [SEC.21 L1] Device-event хвіст: підписаний конверт device/event/<uid>
+    // ПІСЛЯ вдалого основного flush'у (модем уже в розмові, IP резольвлено).
+    // Королева підписує cleartext-події ВЛАСНИМ EDSK (тег QEVT1, окремий від
+    // QATT2 — cross-protocol reuse guard) → Rails верифікує gateway-origin,
+    // LoRa-ключа не торкається. Гейт на ed25519_ready: без EDSK L1 неможливий
+    // (як і атестація батча) — canary чекає провіжинингу, не бреше L0.
+    // Best-effort (один прохід без retry — Солдат повторює постріл ×3);
+    // очистка ring'а лише по 2.xx (FW.51-інваріант).
+    if (send_success && queen_evt_count > 0u && ed25519_ready) {
+        size_t uid_len = strlen(queen_uid);
+        if (uid_len > 0u && uid_len < QUEEN_UID_MAX_LEN) {
+            // static — великі буфери повз стек (canary рідкісна, один екземпляр).
+            static uint8_t evt_env[DEVENV_HEADER_LEN
+                                   + DEVENV_MAX_RECORDS * DEVENV_RECORD_LEN
+                                   + DEVENV_SIG_LEN];
+            static uint8_t evt_msg[DEVENV_DOMAIN_TAG_LEN + 1u + QUEEN_UID_MAX_LEN
+                                   + DEVENV_HEADER_LEN
+                                   + DEVENV_MAX_RECORDS * DEVENV_RECORD_LEN];
+            Devenv_Write_Header(evt_env, Get_Current_Unix_Ts(), queen_evt_count);
+            uint16_t body_len = Devenv_Body_Len(queen_evt_count);
+            memcpy(evt_env + DEVENV_HEADER_LEN, queen_evt_ring,
+                   (size_t)queen_evt_count * DEVENV_RECORD_LEN);
+
+            // msg = "SLKN-QEVT1" ‖ uid_len ‖ uid ‖ body — доменний тег вшитий
+            // проти cross-protocol reuse (той самий інваріант, що QATT).
+            uint16_t mp = 0;
+            memcpy(evt_msg, DEVENV_DOMAIN_TAG, DEVENV_DOMAIN_TAG_LEN);
+            mp += DEVENV_DOMAIN_TAG_LEN;
+            evt_msg[mp++] = (uint8_t)uid_len;
+            memcpy(evt_msg + mp, queen_uid, uid_len);
+            mp += (uint16_t)uid_len;
+            memcpy(evt_msg + mp, evt_env, body_len);
+            mp += body_len;
+
+            HAL_IWDG_Refresh(&hiwdg); // software-Ed25519 — десятки-сотні мс
+            crypto_ed25519_sign(evt_env + body_len, ed25519_secret, evt_msg, mp);
+
+            static uint8_t evt_pdu_buf[96 + DEVENV_HEADER_LEN
+                                      + DEVENV_MAX_RECORDS * DEVENV_RECORD_LEN
+                                      + DEVENV_SIG_LEN];
+            coap_mid++;
+            uint16_t evt_pdu_len = Coap_Build_Put(
+                evt_pdu_buf, sizeof evt_pdu_buf, coap_mid,
+                "device", "event", queen_uid,
+                evt_env, (uint16_t)(body_len + DEVENV_SIG_LEN));
+            if (evt_pdu_len != 0u) {
+                UartAtIo evt_io = { HAL_GetTick() + COAP_CONV_BUDGET_MS };
+                Sim7070Io evt_m = { Uart_At_Source, Uart_At_Sink, &evt_io };
+                if (Sim7070_Coap_Put(&evt_m, &at_engine_state, coap_server_ip,
+                                     COAP_SERVER_PORT, evt_pdu_buf, evt_pdu_len,
+                                     coap_mid)) {
+                    queen_evt_count = 0;
+                }
+            }
         }
     }
 

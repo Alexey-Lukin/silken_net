@@ -97,6 +97,13 @@ class CoapServerPdu
          request.payload
         Intake.new(status: :telemetry_batch, reply: reply.call(CODE_CHANGED),
                    gateway_uid: segments[2], payload: request.payload)
+      elsif request.code == CODE_PUT && segments.first(2) == %w[device event] &&
+            request.payload
+        # [SEC.21 L1] Device-event 0x57: підписаний cleartext-конверт від
+        # Королеви ([ver|ts|count|records|sig:64], тег SLKN-QEVT1) —
+        # DeviceEventWorker верифікує gateway-origin (LoRa-ключа не торкається).
+        Intake.new(status: :device_event, reply: reply.call(CODE_CHANGED),
+                   gateway_uid: segments[2], payload: request.payload)
       else
         Intake.new(status: :unknown_route, reply: reply.call(CODE_NOT_FOUND))
       end

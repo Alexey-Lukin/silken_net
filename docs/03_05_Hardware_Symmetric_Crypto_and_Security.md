@@ -615,6 +615,25 @@ Legacy (L0):    [IV:16][Encrypted Data: N×16]                  довжина %
 
 ---
 
+### 2.2а Queen → Rails: Device-Event L1 Uplink (Ed25519, окремий канал) [SEC.21]
+
+**Навіщо окремий канал.** Рідкісні security-події з вузла (canary-trip = спрацював `__stack_chk_fail`, DR0[10]) НЕ є станом і не влазять у телеметрію. Живуть двома шарами (`firmware/common/device_event.h`):
+
+- **Шар 1 (Soldier→Queen, LoRa):** 16B ECB-кадр `0x57` на cluster-ключі — та сама транзишн-довіра, що `0x55/0x56` (control-plane, Королева читає сама). Розкладка: `[0]=0x57 [1..4]=DID [5]=code [6..9]=arg [10]=0x45 'E' [11]=TTL [12..13]=seq [14..15]=vcap`. Солдат шле 3× ПОВЕРХ телеметрії (LoRa-lossy) і гасить DR0[10] по 3-му.
+- **Шар 2 (Queen→Rails, CoAP `device/event/<uid>`):** Королева ДЕКРИПТУЄ кадр (щоб упізнати маркер), витягує cleartext-поля і форвардить під **ВЛАСНИМ Ed25519-підписом** — рунг **L1** драбини довіри ([`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline)):
+
+```
+[ver:1=0x01][queen_unix_ts:4 BE][count:1][records:count×7][sig:64]
+record = [did:4 BE][code:1][soldier_seq:2 BE]
+підпис Ed25519(EDSK) над:  "SLKN-QEVT1" ‖ uid_len:1 ‖ uid ‖ <body без sig>
+```
+
+**Чому L1, а не blind-forward сирого ct.** Rails per-Tree LoRa-ключа (KEYL) не має **у жодній ері** для цього шляху: ECB-ера — Королева знімає LoRa-шар сама (Rails бачить лише CBC-батч); CCM-ера — `0x57` = control-plane cluster **KEYB**, якого Rails не має. Blind-forward + Rails-decrypt дав би key-mismatch → канарка мертва **fail-open**. Королева ж уже тримає plaintext — форвардимо його. **Per-event device-підпис фізично неможливий** (64B у 16B кадр — §554 05_02) → L1 Queen-attest = правильний рівень **назавжди**, L2-Merkle його не торкнеться.
+
+**Домен-тег `SLKN-QEVT1`** (окремий від `SLKN-QATT2`) — canary-підпис не сплайснути в телеметрію-verify і навпаки (cross-protocol reuse guard, той самий інваріант, що QATT). **Механізм спільний з §2.2:** той самий EDSK (`ed25519_secret`), той самий `Ed25519Crypto::SigningService.verify` проти того самого `HardwareKey.ed25519_public_key_hex`-реєстру, той самий `ed25519_ready`-гейт (без EDSK L1 неможливий — canary чекає провіжинингу, не бреше L0). Споживач — `DeviceEventWorker` ([`04_02`](04_02_Business_Logic_and_Services)): verify → SHA256(sig)-nonce (anti-replay — Королевин sig монотонний, на відміну від Солдатового per-boot seq) → per-record `EwsAlert(firmware_canary_trip)`. **Trust L1-observational: НІКОЛИ не money-path** (slash-виключення дзеркалять `firmware_fault`). Best-effort доставка (окремий PUT без retry — Солдат повторює постріл ×3); опційний C-доповнювач (`QATT_HFLAG_CANARY` health-flag як гарантований кластер-early-warning) — YAGNI-резерв ([`00_07`](00_07_Action_Plan_Tracker) SEC.21).
+
+---
+
 ### 2.3 Rails → Queen: CoAP Command Downlink (AES-256-CBC)
 
 **Режим:** AES-256-CBC · **Структура:** `[IV:16][Encrypted Command Data]`
@@ -1323,7 +1342,7 @@ HAL_CRYP_Init(&hcryp);
 | **Secure Element (SE050)** | ✅ SEC.6 RESOLVED (true-DePIN) | §3.7 ADR — SE = **SE050** (Ed25519 on-chip keygen; реверс ATECC), soft-freeze DNP, populate post-FW.2; slot-map §3.7. Residuals → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker) |
 | **Key Rotation** | 🟡 host-готово | Hash-Ratchet freeze-contract §3.8 (backward secrecy, ключ не летить ефіром); активація CCM-gated — `[FW.17]` |
 | **HRNG Fallback** | ✅ Harden (2026-05-29) | `coap_fallback_iv_word` (pure, `coap_iv.h`) — унікальність across device/reboot/flush; §4.2 |
-| **Runtime memory-safety** | 🟡 PARTIAL (SEC.21) | ✅ `-fstack-protector-strong` (`arm-none-eabi.cmake`) інструментує canary на attacker-reachable парсери (LoRa-RX / AT-токенайзер жують untrusted байти в сирому C ДО MIC-чеку); CI flag-gate (`firmware_arm_build`) стереже прапор. ✅ **Fielded-варта (2026-07-12):** власні strong `__stack_chk_fail`/`__stack_chk_guard` в обох main.c перекривають newlib (lazy-archive; дефолт був guard=0x00000000 з .bss — `__stack_chk_init` ніхто не кличе — і fail→abort→вічний wfi-hang): Soldier = слід у `DR0[10]` (пряме `TAMP->BKP0R`) + `NVIC_SystemReset`, Queen = reset-only (backup-domain нема; persist-слід → QATT-health, bench); HRNG-сів guard'а at-boot (`common/stack_canary.h`, I-CG: ніколи не нуль, NUL-LSB; Queen — Wu-Wei ДО старту UART-кільця) + CI source-gate обох TU. ✅ **MPU-draft:** NX-stack (SRAM 64K XN) + RO-code (Flash 256K RO, RW-хвіст стор. 122-127 через 16K-вікно+SRD — `common/mpu_regions.h`, golden-host-тести) за гейтом `SEC21_MPU_ENABLED` (компайл = `hal_check_ccm`; PRIVDEFENA=1, HFNMIENA=0 — canary-варта пише TAMP без trap'а). Residuals → [`00_07`](00_07_Action_Plan_Tracker) SEC.21: MPU-АКТИВАЦІЯ (реальний MemManage-trap; QEMU не моделює) + canary wire-винос [bench] |
+| **Runtime memory-safety** | 🟡 PARTIAL (SEC.21) | ✅ `-fstack-protector-strong` (`arm-none-eabi.cmake`) інструментує canary на attacker-reachable парсери (LoRa-RX / AT-токенайзер жують untrusted байти в сирому C ДО MIC-чеку); CI flag-gate (`firmware_arm_build`) стереже прапор. ✅ **Fielded-варта (2026-07-12):** власні strong `__stack_chk_fail`/`__stack_chk_guard` в обох main.c перекривають newlib (lazy-archive; дефолт був guard=0x00000000 з .bss — `__stack_chk_init` ніхто не кличе — і fail→abort→вічний wfi-hang): Soldier = слід у `DR0[10]` (пряме `TAMP->BKP0R`) + `NVIC_SystemReset`, Queen = reset-only (backup-domain нема; persist-слід → QATT-health, bench); HRNG-сів guard'а at-boot (`common/stack_canary.h`, I-CG: ніколи не нуль, NUL-LSB; Queen — Wu-Wei ДО старту UART-кільця) + CI source-gate обох TU. ✅ **MPU-draft:** NX-stack (SRAM 64K XN) + RO-code (Flash 256K RO, RW-хвіст стор. 122-127 через 16K-вікно+SRD — `common/mpu_regions.h`, golden-host-тести) за гейтом `SEC21_MPU_ENABLED` (компайл = `hal_check_ccm`; PRIVDEFENA=1, HFNMIENA=0 — canary-варта пише TAMP без trap'а). Residuals → [`00_07`](00_07_Action_Plan_Tracker) SEC.21: MPU-АКТИВАЦІЯ (реальний MemManage-trap; QEMU не моделює) [bench] (canary wire-винос ✅ L1 device-event — §2.2а) |
 | **PQC Migration Roadmap** | ✅ Документовано | §10 — TRL-stratified layering (2026 → 2028 → 2035); LoRa поточно квантово-стійкий через симетрію + ratchet, асиметричні шари мігрують через hybrid Cloudflare X25519+Kyber → ML-KEM/ML-DSA |
 
 ---

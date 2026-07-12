@@ -18,6 +18,7 @@
 #include "../common/stack_canary.h" /* [SEC.21] guard-сів (I-CG: ніколи не нуль) */
 #include "../common/fw_report.h" /* [SEC.20] wire-звіт contract-стану [sem:1|rev:1|id14] */
 #include "../common/mpu_regions.h" /* [SEC.21] MPU region-math (draft, pure-half) */
+#include "../common/device_event.h" /* [SEC.21] uplink 0x57 device-event пакувальник */
 
 /* ════════════════════════════════════════════════════════════════════
  * CONSTANTS (from soldier/main.c)
@@ -3947,6 +3948,64 @@ TEST(test_sec21_canary_preserved_through_dr0_writeback) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [SEC.21] device-event 0x57 (common/device_event.h) — пакувальник
+ * ════════════════════════════════════════════════════════════════════
+ * Golden wire-розкладка + Is()-розпізнавач. Дзеркало DeviceEventWorker.
+ */
+TEST(test_sec21_devevt_wire_layout) {
+    uint8_t p[16];
+    Device_Event_Build(p, 0xAABBCCDDu, DEVICE_EVT_CANARY_TRIP,
+                       0x11223344u, 0x0102, 3300);
+    ASSERT_EQ(p[0], 0x57);                 /* marker              */
+    ASSERT_EQ(p[1], 0xAA); ASSERT_EQ(p[2], 0xBB);
+    ASSERT_EQ(p[3], 0xCC); ASSERT_EQ(p[4], 0xDD); /* DID BE       */
+    ASSERT_EQ(p[5], 0x02);                 /* canary code         */
+    ASSERT_EQ(p[6], 0x11); ASSERT_EQ(p[9], 0x44); /* arg BE       */
+    ASSERT_EQ(p[10], 0x45);                /* 'E' magic           */
+    ASSERT_EQ(p[11], 3);                   /* TTL                 */
+    ASSERT_EQ(p[12], 0x01); ASSERT_EQ(p[13], 0x02); /* seq BE     */
+    ASSERT_EQ(p[14], (3300 >> 8)); ASSERT_EQ(p[15], (3300 & 0xFF)); /* vcap */
+}
+
+TEST(test_sec21_devevt_recognizer) {
+    uint8_t p[16];
+    Device_Event_Build(p, 0x1234u, DEVICE_EVT_CANARY_TRIP, 0, 1, 3000);
+    ASSERT_TRUE(Device_Event_Is(p));
+    p[10] = 0x00; ASSERT_FALSE(Device_Event_Is(p)); /* magic зник → не наш */
+    Device_Event_Build(p, 0x1234u, DEVICE_EVT_CANARY_TRIP, 0, 1, 3000);
+    p[0] = 0x56; ASSERT_FALSE(Device_Event_Is(p));  /* 0x56 sync ≠ 0x57    */
+}
+
+/* [SEC.21 L1] Шар 2 — підписаний Queen→Rails конверт (dev_event.h §Шар 2).
+ * Golden byte-layout header+record + body-len; дзеркало DeviceEventWorker
+ * (Ruby-парс мусить бачити рівно ці зсуви). Сам підпис — Queen-side (main.c),
+ * host стереже РОЗКЛАДКУ. */
+TEST(test_sec21_devenv_header_golden) {
+    uint8_t h[DEVENV_HEADER_LEN];
+    Devenv_Write_Header(h, 0x11223344u, 3);
+    ASSERT_EQ(h[0], 0x01);                 /* ver                 */
+    ASSERT_EQ(h[1], 0x11); ASSERT_EQ(h[2], 0x22);
+    ASSERT_EQ(h[3], 0x33); ASSERT_EQ(h[4], 0x44); /* queen_unix_ts BE */
+    ASSERT_EQ(h[5], 3);                    /* count               */
+}
+
+TEST(test_sec21_devenv_record_golden) {
+    uint8_t r[DEVENV_RECORD_LEN];
+    Devenv_Write_Record(r, 0xAABBCCDDu, DEVICE_EVT_CANARY_TRIP, 0x0102);
+    ASSERT_EQ(r[0], 0xAA); ASSERT_EQ(r[1], 0xBB);
+    ASSERT_EQ(r[2], 0xCC); ASSERT_EQ(r[3], 0xDD); /* did BE          */
+    ASSERT_EQ(r[4], 0x02);                        /* code            */
+    ASSERT_EQ(r[5], 0x01); ASSERT_EQ(r[6], 0x02); /* soldier_seq BE  */
+}
+
+TEST(test_sec21_devenv_body_len) {
+    ASSERT_EQ(Devenv_Body_Len(0), DEVENV_HEADER_LEN);          /* heartbeat-нема */
+    ASSERT_EQ(Devenv_Body_Len(1), DEVENV_HEADER_LEN + 7u);
+    ASSERT_EQ(Devenv_Body_Len(DEVENV_MAX_RECORDS),
+              DEVENV_HEADER_LEN + DEVENV_MAX_RECORDS * DEVENV_RECORD_LEN);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * [SEC.21] MPU region-math (common/mpu_regions.h) — pure-half draft
  * ════════════════════════════════════════════════════════════════════
  * Golden RBAR/RASR-слова (ARMv7-M PMSA, незалежний розрахунок) + інваріант
@@ -5695,6 +5754,11 @@ int main(void)
     RUN(test_sec21_mpu_tail_base_aligned_to_size);
     RUN(test_sec21_mpu_flash_tail_pages_writable);
     RUN(test_sec21_mpu_code_pages_not_writable);
+    RUN(test_sec21_devevt_wire_layout);
+    RUN(test_sec21_devevt_recognizer);
+    RUN(test_sec21_devenv_header_golden);
+    RUN(test_sec21_devenv_record_golden);
+    RUN(test_sec21_devenv_body_len);
 
     printf("\n  Brownout PVD Lorenz Save (ARCH.21):\n");
     RUN(test_arch21_pvd_saves_lorenz_state);

@@ -73,6 +73,21 @@ RSpec.describe CoapServerPdu do
       expect(result.reply.unpack1("H*").upcase).to eq("604400FF")
     end
 
+    it "[SEC.21] приймає device/event маршрут як окремий статус" do
+      # L1-конверт [ver:1][ts:4][count:1][record:7][sig:64] = 77B (роутинг
+      # payload-агностичний; DeviceEventWorker верифікує підпис далі).
+      pdu = CoapClient.build_put(message_id: 0x1357,
+                                 path: "/device/event/SNET-Q-00FF00FF",
+                                 payload: "\x01".b * 77)
+      result = described_class.handle_telemetry_datagram(pdu)
+
+      expect(result.status).to eq(:device_event)
+      expect(result.gateway_uid).to eq("SNET-Q-00FF00FF")
+      expect(result.payload.bytesize).to eq(77)
+      # 2.04 CHANGED — той самий доставку-код, що телеметрія (клас 2.xx).
+      expect(result.reply.unpack1("H*").upcase).to eq("60441357")
+    end
+
     it "відповідає 4.04 на невідомий маршрут — Королева тримає кеш і повторить" do
       pdu = CoapClient.build_put(message_id: 0x1234, path: "/firmware/upload",
                                  payload: "x".b)

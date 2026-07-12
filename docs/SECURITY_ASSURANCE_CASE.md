@@ -105,6 +105,11 @@ the guard that enforces it.
   an Ed25519 signature; a `SETNX` nonce + timestamp window blocks replay.
 - **L1 gateway attestation** — Ed25519 batch signature verified against the `HardwareKey` registry
   (`firmware/common/queen_attest.h`).
+- **L1 device-event channel** — the separate `PUT device/event/<uid>` (SEC.21 canary-trip) crosses the same
+  boundary under its OWN Ed25519 gateway signature (domain tag `SLKN-QEVT1`, distinct from the batch's
+  `SLKN-QATT2`), verified by `DeviceEventWorker` against the same `HardwareKey.ed25519_public_key_hex` registry —
+  Rails never touches a LoRa key here ([`03_05 §2.2а`](03_05_Hardware_Symmetric_Crypto_and_Security)). Trust
+  L1-observational: the event never moves the money-path.
 - **KENOSIS ingestion boundary** — `TelemetryLog` carries no ActiveRecord validations by design; the single
   validation home is `valid_sensor_data?` in the unpacker service (`CLAUDE.md`,
   [`05_02`](05_02_Proof_of_Growth_Pipeline)).

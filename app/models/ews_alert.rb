@@ -66,7 +66,15 @@ class EwsAlert < ApplicationRecord
     # приплив 0x15 не воскрешає стару — 03_06 §4 bump-інваріант). Різні
     # ops-дії = різні типи. Slash-виключення дзеркалять firmware_fault:
     # vendor-attributable, не A-сет, не comms_no_ack?, не critical_unmaintained?.
-    firmware_reverted: 12
+    firmware_reverted: 12,
+    # [SEC.21] Спрацювала стек-канарка (__stack_chk_fail → reset → 0x57):
+    # переписаний кадр стека на attacker-reachable парсері = потенційна
+    # СПРОБА експлойту, але НЕ фізичний tamper корпусу → НЕ A-сет (доказ
+    # не positive-A), не comms (вузол живий), не critical_unmaintained?
+    # (виїзд не лікує софт-атаку; тріаж = security-ревізія + Field-Audit
+    # ескалація вручну). Trust L0-observational (ECB без MIC) — подія
+    # ніколи не рухає money-path.
+    firmware_canary_trip: 13
   }, prefix: true
 
   # [COSMIC EYE]: Статус супутникової верифікації через dClimate.

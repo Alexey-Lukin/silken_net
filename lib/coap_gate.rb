@@ -47,6 +47,11 @@ module CoapGate
       end
       SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "enqueued" })
       puts "📥 [#{timestamp.strftime('%T')}] Пакет від #{result.gateway_uid || gateway_ip} прийнято (#{result.payload.bytesize}б)"
+    when :device_event
+      # [SEC.21] той самий транспорт-шлях, що телеметрія: enqueue → ACK
+      encoded = Base64.strict_encode64(result.payload)
+      DeviceEventWorker.perform_async(encoded, result.gateway_uid)
+      SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "device_event" })
     when :unknown_route
       SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "unknown_route" })
       puts "⚠️  [#{timestamp.strftime('%T')}] Відхилено (4.04): невідомий маршрут від #{gateway_ip}"

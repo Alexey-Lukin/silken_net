@@ -39,6 +39,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include "../common/stack_canary.h" // [SEC.21] сів вартової канарки (One-Home з host-тестами)
 #include "../common/fw_report.h"    // [SEC.20] wire-звіт contract-стану (байти 12..13 / CCM vpd)
 #include "../common/mpu_regions.h"  // [SEC.21] MPU NX-stack/RO-code розкладка (draft)
+#include "../common/device_event.h" // [SEC.21] uplink 0x57 device-event (canary-слід → Rails)
 #include "../common/tdma_schedule.h" // [ARCH.26 L2] розклад синхронних вікон з маяка (One-Home)
 #include "../common/cad_sniff.h"     // [ARCH.26 L3] CAD-нюх + PANIC-преамбула (One-Home)
 
@@ -334,6 +335,8 @@ float   tinyml_warning_threshold  = TINYML_DEFAULT_WARNING;
 float   tinyml_critical_threshold = TINYML_DEFAULT_CRITICAL;
 uint8_t ota_vm_error_streak       = 0;   // [SEC.20] DR0[9:8]-persist: N поспіль bytecode-збоїв → fallback
 uint8_t canary_tripped            = 0;   // [SEC.21] DR0[10]-persist: слід __stack_chk_fail з минулого втілення
+uint8_t canary_evt_shots          = 0;   // [SEC.21] залишок 0x57-пострілів (RAM — живе крізь STOP2)
+uint16_t canary_evt_seq           = 0;   // [SEC.21] per-boot seq 0x57 (дедуп Rails SETNX)
 // [SEC.20] Wire-звіт contract-стану (fw_report.h): рахується раз на boot у
 // contract-select. Дефолт = legacy C-image константа (semantic=0) — чесна
 // деградація, доки KV/contract не оглянуті.
@@ -1839,9 +1842,11 @@ int main(void)
       // [SEC.20] Streak bytecode-збоїв переживає STOP2 у DR0[9:8] (RAM-only
       // згорів би щоцикл у RTC-only сні). Cold-boot DR0=0 → streak=0 природно.
       ota_vm_error_streak = (uint8_t)((dr0_raw >> OTA_VM_ERR_STREAK_DR0_SHIFT) & OTA_VM_ERR_STREAK_MASK);
-      // [SEC.21] Слід канарки з минулого втілення: sticky, доки не забере
-      // wire-винос (до того видно SWD'ом). Cold-boot DR0=0 → чисто природно.
+      // [SEC.21] Слід канарки з минулого втілення: sticky до wire-виносу.
+      // Cold-boot DR0=0 → чисто природно. Слід є → заряджаємо 3 постріли
+      // 0x57 (LoRa губить кадри; повтори в наступних циклах best-effort).
       canary_tripped = (uint8_t)((dr0_raw >> CANARY_TRIP_DR0_SHIFT) & CANARY_TRIP_MASK);
+      if (canary_tripped) canary_evt_shots = 3u;
       if (panic_frame_counter == 0) {
           // [SEC.10] Cold-boot resync: HRNG-сів значення у [1, 0xFFFF],
           // щоб panic-stream після перезавантаження не зустрів живі
@@ -2481,6 +2486,21 @@ int main(void)
         HAL_CRYP_Encrypt(&hcryp, (uint32_t*)lora_payload, 4, (uint32_t*)encrypted_payload, 1000);
         Radio.Send(encrypted_payload, 16);
 #endif
+    }
+
+    // [SEC.21] Слід канарки → ефір: 0x57 ПОВЕРХ телеметрії (патерн
+    // drift-watchdog'а 0x56), по одному пострілу на пробудження, всього 3.
+    // Після третього слід гаситься — Phase 5 понесе DR0[10]=0; Королева
+    // читає кадр сама (транзишн-ключ, дзеркало 0x55/0x56) → ring → Rails.
+    if (canary_evt_shots > 0u) {
+        uint8_t evt_plain[DEVICE_EVT_PACKET_SIZE];
+        Device_Event_Build(evt_plain, tree_did, DEVICE_EVT_CANARY_TRIP,
+                           0u /* arg — резерв (PC/LR-фрагмент) */,
+                           ++canary_evt_seq, vcap_voltage);
+        HAL_Delay(100); // пауза після попереднього TX (як mesh-relay)
+        HAL_CRYP_Encrypt(&hcryp, (uint32_t*)evt_plain, 4, (uint32_t*)encrypted_payload, 1000);
+        Radio.Send(encrypted_payload, 16);
+        if (--canary_evt_shots == 0u) canary_tripped = 0;
     }
 
     // =========================================================================
