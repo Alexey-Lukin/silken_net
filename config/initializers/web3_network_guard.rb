@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 # Refuse to boot a strict/mainnet deployment with unsafe Web3 wiring:
-# a TESTNET RPC URL (mints real value on a throwaway chain) or a missing/malformed
-# oracle signer key (KeyError → silent Sidekiq DeadSet). The content judgement
-# lives in `Security::Web3NetworkGuard` (unit-tested); this initializer only
-# decides WHEN to enforce + how to bypass — mirroring
+# a TESTNET RPC URL (mints real value on a throwaway chain), a missing/malformed
+# oracle signer key (KeyError → silent Sidekiq DeadSet), or a broken DAO-treasury
+# address (its read-sites rescue everything → the 2% Dynamic Tax silently stays
+# off). The content judgement lives in `Security::Web3NetworkGuard` (unit-tested);
+# this initializer only decides WHEN to enforce + how to bypass — mirroring
 # `config/initializers/master_key_strength_check.rb`.
 
 Rails.application.config.after_initialize do

@@ -538,21 +538,27 @@ function nonces(address owner)
 
 ## 💸 Dynamic Tax — HYBRID PROTOCOL GAIA
 
-`BlockchainMintingService` реалізує механізм автоматичного 2% відрахування від кожного SCC мінтингу до `DAO_TREASURY_ADDRESS`:
+`BlockchainMintingService#build_batch_arrays` реалізує механізм автоматичного 2% відрахування від кожного SCC мінтингу до `DAO_TREASURY_ADDRESS` (ставка `dynamic_tax_rate` — governance-aware, S6.17):
 
 ```ruby
-DYNAMIC_TAX_RATE = BigDecimal("0.02")  # 2%
+# При batchMint для carbon_coin — [O2/O4] податок агрегується:
+taxing = token_type == "carbon_coin" && insurance_pool_requires_funding?
+txs.each do |tx|
+  tax_amount = taxing ? (tx.amount * dynamic_tax_rate).round(4) : 0
+  tax_total += tax_amount
+  recipients.push(tx.to_address)
+  amounts.push(to_wei(tx.amount - tax_amount))
+end
 
-# При batchMint для carbon_coin:
-if token_type == "carbon_coin" && insurance_pool_requires_funding?
-  tax_amount = (tx.amount * DYNAMIC_TAX_RATE).round(4)
-  forester_amount = tx.amount - tax_amount
-
-  recipients.push(tx.to_address, ENV.fetch("DAO_TREASURY_ADDRESS"))
-  amounts.push(to_wei(forester_amount), to_wei(tax_amount))
-  identifiers.push(identifier_for(tx), "TAX_#{identifier_for(tx)}")
+# ОДИН агрегований treasury-запис на під-батч (N+1 записів ≤ 100, НЕ 2N):
+if tax_total.positive?
+  recipients.push(ENV.fetch("DAO_TREASURY_ADDRESS"))
+  amounts.push(to_wei(tax_total))
+  identifiers.push("TAX_BATCH_#{identifier_for(txs.first)}")
 end
 ```
+
+> ⚠️ `ENV.fetch` тут — під E.46 rescue-парасолькою (`insurance_pool_requires_funding?` → `false` при будь-якій помилці): зламаний/відсутній `DAO_TREASURY_ADDRESS` НЕ падає на use — tax тихо вимикається, лог хибно каже «RPC degraded». Гучність забезпечує boot-guard `Web3NetworkGuard.address_violations` ([`04_02 §8`](04_02_Business_Logic_and_Services)).
 
 ```ruby
 def insurance_pool_requires_funding?

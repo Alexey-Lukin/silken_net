@@ -26,6 +26,21 @@
 #   §B-02) mandates physically separate keys. The retired legacy name is a
 #   tripwire: a value under ORACLE_PRIVATE_KEY is a dead plaintext surface no
 #   code reads — refuse it so zombie deploy-config can't linger.
+#
+# Silent-address ENVs. Not secrets — public addresses whose FAILURE MODE is
+#   the problem: their read-sites sit under rescue-umbrellas written for RPC
+#   degradation, so a missing / placeholder / garbage value never surfaces as
+#   a config bug — the E.46 mint-tax check silently disables the tax, the
+#   ChainAuditService returns a false "delta 0, all clean" (the db<->chain
+#   fraud-detector masked), PriceOracleService silently serves fallback_price,
+#   and the INS.2 reserve gate fail-CLOSES but mislabels the bug as transient
+#   RPC. Boot is the only loud moment this class has. Values are never echoed
+#   into the violation text — a mispasted secret must not leak into logs.
+#
+# Solana signer set [E.61]. No stub mode exists; absence self-reveals only
+#   per-event (a DeadSet job), while the batch-payout loop swallows per-wallet
+#   errors with no escalation path — accumulated forester rewards would
+#   silently never pay out. The signer process must hold the full set.
 module Security
   module Web3NetworkGuard
     module_function
@@ -65,6 +80,26 @@ module Security
       "slashing" => "ORACLE_SLASHER_PRIVATE_KEY"
     }.freeze
 
+    # ETH-address ENVs whose read-sites fail SILENT (rescue umbrellas mask the
+    # config error as an operational state) → boot is their only loud gate.
+    # ENV → what the silence costs (goes into the violation text).
+    SILENT_ADDRESS_ENVS = {
+      "DAO_TREASURY_ADDRESS"         => "the 2% Dynamic Tax silently stays off — the DAO treasury " \
+                                        "leaks revenue and the log lies 'RPC degraded' (E.46 umbrella)",
+      "CARBON_COIN_CONTRACT_ADDRESS" => "ChainAuditService reports a false 'all clean' (the db<->chain " \
+                                        "fraud-detector is masked) and PriceOracleService silently " \
+                                        "serves fallback_price",
+      "FOREST_COIN_CONTRACT_ADDRESS" => "the SFC half of the chain-audit read-site degrades silently " \
+                                        "(same umbrella as the SCC address)"
+    }.freeze
+
+    # Solana money-path credentials [E.61] — presence-checked at signer boot
+    # (no stub mode; the batch-payout loop has no escalation path).
+    SOLANA_SIGNER_ENVS = %w[
+      SOLANA_WALLET_KEYPAIR SOLANA_FEE_PAYER_PUBKEY
+      SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS
+    ].freeze
+
     # `env` defaults to ENV but is injectable for tests.
     # `signer_process:` scopes the key-PRESENCE requirement to processes that
     # actually sign (Sidekiq). The web/coap containers never hold money keys
@@ -72,7 +107,10 @@ module Security
     # presence there would force keys BACK onto the widest attack surface.
     # Format and collision checks still run everywhere a key IS present.
     def violations(env = ENV, signer_process: true)
-      chain_violations(env) + oracle_violations(env, signer_process: signer_process)
+      chain_violations(env) +
+        oracle_violations(env, signer_process: signer_process) +
+        address_violations(env, signer_process: signer_process) +
+        solana_violations(env, signer_process: signer_process)
     end
 
     def chain_violations(env)
@@ -135,6 +173,39 @@ module Security
       end
 
       out
+    end
+
+    # The silent-address read-sites swallow config errors (their umbrellas mask
+    # a misconfig as an operational state), so unset/garbage is only ever loud
+    # HERE. Presence is demanded in the signer process only (web/coap never
+    # mint/audit); format is checked wherever a value IS present. The value
+    # itself is never included in the message.
+    def address_violations(env, signer_process: true)
+      SILENT_ADDRESS_ENVS.filter_map do |var, cost|
+        value = env[var]
+        if value.blank?
+          next unless signer_process
+
+          "[address] #{var} is not set — this would NOT crash: #{cost}."
+        elsif !value.match?(EthAddressValidatable::ETH_ADDRESS_FORMAT)
+          "[address] #{var} is set but is not a 0x-prefixed 40-hex address (value not " \
+            "echoed — it could be a mispasted secret; the REQUIRED_SECRET_NOT_SET deploy " \
+            "placeholder trips this too) — #{cost}."
+        end
+      end
+    end
+
+    # Solana presence: absence self-reveals only per-event (DeadSet); the batch
+    # path loses the payment entirely — so demand the full set at signer boot.
+    def solana_violations(env, signer_process: true)
+      return [] unless signer_process
+
+      SOLANA_SIGNER_ENVS.filter_map do |var|
+        next if env[var].present?
+
+        "[solana] #{var} is not set — per-event rewards would DeadSet and batch " \
+          "payouts would silently skip every wallet (no escalation path, E.61)."
+      end
     end
 
     # Normalize a hex private key for equality: drop an optional 0x prefix, downcase.

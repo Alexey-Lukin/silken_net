@@ -126,17 +126,17 @@
 - [ ] `POLYGON_RPC_URL` — **окремий** Polygon RPC для `PriceOracleService` (`Web3::RpcConnectionPool.client_for("POLYGON_RPC_URL")`, `ENV.fetch` без fallback → `KeyError` якщо відсутній). Може дорівнювати `ALCHEMY_POLYGON_RPC_URL` або public endpoint (`https://polygon-rpc.com`). ✅ заведено у Kamal env.secret + `.kamal/secrets-common` + обидва deploy-workflows (INF.12 machine-half).
 - [ ] `ALCHEMY_ETHEREUM_RPC_URL` — Alchemy RPC для Ethereum L1
 - [ ] `SOLANA_RPC_URL` — Solana RPC. ⚠️ **БЕЗ цього ENV дефолт = Solana Devnet** — мікро-винагороди USDC підуть на тестову мережу (`E.47` у [`00_07`](00_07_Action_Plan_Tracker))! Mainnet: Helius/QuickNode. Опц. `SOLANA_RPC_URL_FALLBACK_1/2` — fallback-каскад (INF.22, `Solana::MintingService#execute_rpc_call`); порожні = single-RPC.
-- [ ] `CARBON_COIN_CONTRACT_ADDRESS` — адреса SCC контракту після deploy (`BlockchainMintingService`, `ENV.fetch` без default → `KeyError` на першому SCC mint)
-- [ ] `FOREST_COIN_CONTRACT_ADDRESS` — адреса SFC контракту після deploy (той самий `ENV.fetch`-патерн → `KeyError` на першому SFC mint). ✅ placeholder заведено у Kamal env.clear + Akash SDL (INF.12 machine-half; fill = post-`forge deploy`).
+- [ ] `CARBON_COIN_CONTRACT_ADDRESS` — адреса SCC контракту після deploy (`BlockchainMintingService`, `ENV.fetch` без default → `KeyError` на першому SCC mint). Тихі споживачі (`ChainAuditService` хибне «all clean» · `PriceOracleService` fallback_price) → також у boot-guard `address_violations` (presence signer + формат)
+- [ ] `FOREST_COIN_CONTRACT_ADDRESS` — адреса SFC контракту після deploy (той самий `ENV.fetch`-патерн → `KeyError` на першому SFC mint; тихий audit-споживач → boot-guard `address_violations`). ✅ placeholder заведено у Kamal env.clear + Akash SDL (INF.12 machine-half; fill = post-`forge deploy`).
 - [ ] `KLIMA_RETIREMENT_CONTRACT` — адреса KlimaDAO Retirement Aggregator
-- [ ] `DAO_TREASURY_ADDRESS` — DAO Treasury (Dynamic Tax 2% · `BlockchainMintingService`)
+- [ ] `DAO_TREASURY_ADDRESS` — DAO Treasury (Dynamic Tax 2% · `BlockchainMintingService` + INS.2 `Insurance::ReserveGate`). ⚠️ **Виняток із «fail-loud on use»**: mint-сайт (E.46 rescue) fail-SILENT — tax тихо OFF, лог хибно «RPC degraded»; ReserveGate — fail-closed hold, але config-баг маскується під transient `:eval_error`. Гучність дає **boot-guard** `Web3NetworkGuard.address_violations` (presence у signer-процесі + формат `0x`+40hex; значення в лог не echo-иться; той самий guard-set покриває SCC/SFC-адреси й Solana-четвірку — [`04_02 §8`](04_02_Business_Logic_and_Services)). Custody = Safe, не EOA — deploy-гейт `_requireSafeOrWarn` ([`05_03` — Admin-Role Split](05_03_Tokenomics_SCC_and_SFC)).
 - [ ] `CELO_CUSD_CONTRACT_ADDRESS` — cUSD на Celo (`CommunityRewardService`)
 - [ ] `ETHERISC_DIP_CONTRACT_ADDRESS` · `PURO_EARTH_REGISTRY_CONTRACT_ADDRESS` — параметричне страхування / D-MRV registry (Toucan-адресу вилучено — E.66 prune)
 - [ ] `ETHEREUM_ANCHOR_CONTRACT` — StateRootAnchor (Ethereum L1, weekly anchor)
 - [ ] `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS` — ProtocolParameters.sol (governance sync; `ENV[]` nil-safe → skip-sync)
 - [ ] `CELO_RPC_URL` — Celo RPC. ⚠️ **БЕЗ значення → код fallback на Alfajores TESTNET** (реальні cUSD на testnet, обходить `web3_network_guard`; E.49). Mainnet: Forno/Alchemy.
-> Усі контракт-адреси вище = **post-`forge deploy`** (deploy-order): у Kamal `env.clear` + Akash SDL як `REQUIRED_SECRET_NOT_SET` placeholder, fill після деплою контрактів (INF.12). Публічні on-chain → не секрети, але fail-loud на use поки не задані.
-- [ ] `SOLANA_USDC_MINT_ADDRESS` — SPL Token mint USDC (mainnet: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`)
+> Усі контракт-адреси вище = **post-`forge deploy`** (deploy-order): у Kamal `env.clear` + Akash SDL як `REQUIRED_SECRET_NOT_SET` placeholder, fill після деплою контрактів (INF.12). Публічні on-chain → не секрети, але fail-loud на use поки не задані (виняток — `DAO_TREASURY_ADDRESS`: use-сайти fail-SILENT, гучним його робить boot-guard — див. рядок вище).
+- [ ] `SOLANA_USDC_MINT_ADDRESS` — SPL Token mint USDC (mainnet: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`). Solana-четвірка (keypair · fee-payer pubkey · token-account · цей mint) також presence-чекається boot-guard'ом `solana_violations` (signer-процес; batch-payout цикл ковтає per-wallet помилки без escalation — E.61)
 - [ ] `FILECOIN_PINNING_API_URL` — Pinata IPFS pinning service URL
 - [ ] `WEB3_STRICT_MODE` — `true` у production. У production **АБО** `WEB3_STRICT_MODE=true` (belt-and-suspenders — Hadron harden 2026-07-10) Hadron-stub raise при відсутності ENV + oracle-callback HMAC fail-fast (SEC.5; Chainlink-dispatch більше не STRICT-gated — local marker, ARCH.53). Заведено в `config/deploy.yml` env.clear + Akash `deploy.yaml`/`.tpl` (web+job) (INF.11); canopy успадковує (`RAILS_ENV=production`). Інвентар Akash — §3.1 + [`06_02 §2.8`](06_02_Akash_Network_Integration).
 - [ ] `RAILS_ALLOWED_HOSTS` — comma-separated allowlist хостів для захисту від DNS-rebinding атак (підтримує leading `.` для subdomain wildcard, напр. `api.silkennet.com,.silkennet.com`). Якщо не встановлено — Rails логує попередження `[SECURITY]` при кожному старті контейнера. Встановлюється через Kamal `env.clear` або Akash SDL. **⚠️ Обов'язково для production.** Probe-шляхи `/up`/`/ready`/`/metrics` виключені і з `host_authorization`, і з `force_ssl`-redirect — single-sourced `probe_paths`/`probe_request` у `production.rb` **[S6.18]** (дрейф однієї копії ламав би deploy health-check за зеленим boot).
@@ -270,11 +270,10 @@
 - [ ] `prometheus_auth_user` — Basic Auth user для `/metrics` endpoint
 - [ ] `prometheus_auth_password` — Basic Auth password (`Rails.application.config.prometheus_auth`)
 
-*Web3 oracle keys (dual-key split, B-02):*
-- [ ] `oracle_private_key` — hex `0x…`
+*Web3 oracle keys (dual-key split, B-02; легасі `oracle_private_key` RETIRED [INF.22] — значення під старим ім'ям = guard-violation):*
 - [ ] `oracle_minter_private_key` — hex `0x…`
-- [ ] `oracle_slasher_private_key` — hex `0x…`
-- [ ] `ethereum_anchor_private_key` — hex `0x…` (MUST differ from `oracle_private_key`)
+- [ ] `oracle_slasher_private_key` — hex `0x…` (MUST differ from minter — E.2; boot-guard колізії + deploy-гейт `_requireDistinctOracles`)
+- [ ] `ethereum_anchor_private_key` — hex `0x…` (MUST differ from minter/slasher)
 
 *RPC endpoints:*
 - [ ] `alchemy_polygon_rpc_url`

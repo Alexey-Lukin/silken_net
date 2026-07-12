@@ -867,7 +867,7 @@ blockchain_transactions
 | `ENV["ALCHEMY_POLYGON_RPC_URL"]` | `Web3::RpcConnectionPool` | ✅ Так |
 | `ENV["CARBON_COIN_CONTRACT_ADDRESS"]` | `BlockchainMintingService` | ✅ Так |
 | `ENV["FOREST_COIN_CONTRACT_ADDRESS"]` | `BlockchainMintingService` | ✅ Так |
-| `ENV["DAO_TREASURY_ADDRESS"]` | `BlockchainMintingService` (Dynamic Tax) | ✅ Так |
+| `ENV["DAO_TREASURY_ADDRESS"]` | `BlockchainMintingService` (Dynamic Tax) + `Insurance::ReserveGate` (INS.2) | ✅ Так — але use-сайти fail-SILENT (E.46 rescue → tax тихо off); гучність = boot-guard `Web3NetworkGuard.address_violations` |
 | `ENV["SOLANA_RPC_URL"]` | `Solana::MintingService` | ✅ Так |
 | `ENV["PROVISIONING_MASTER_KEY"]` [SEC.11] | `SilkenNet::SeedDerivation`, `HardwareKeyService`, `OtaHmacKeyService` (runtime-fallback; фабрична `Session` передає ключ параметром від `MasterKeySource` — SEC.3 DI, [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)) | ✅ Так — без неї `SecurityError` (no SecureRandom fallback ANYWHERE; pre-prod hard cutover) |
 

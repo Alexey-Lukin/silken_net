@@ -16,10 +16,20 @@ RSpec.describe Security::Web3NetworkGuard do
     # [E.2 / ARCH.47] A clean strict env uses PHYSICALLY SEPARATE minter + slasher keys.
     # A bare-ORACLE_PRIVATE_KEY-only env is NOT clean — both roles would resolve to one
     # address and collide on a single oracle lock (the canon 07_01 §B-02 rule, now boot-enforced).
+    # The silent-address set (treasury + SCC/SFC) and the Solana signer set are part of a
+    # clean signer env: their read-sites fail SILENT (rescue umbrellas / no-escalation batch
+    # loop), so boot presence is the only loud gate they have.
     let(:clean_env) do
       chain_env.merge(
-        "ORACLE_MINTER_PRIVATE_KEY"  => "b" * 64,
-        "ORACLE_SLASHER_PRIVATE_KEY" => "c" * 64
+        "ORACLE_MINTER_PRIVATE_KEY"      => "b" * 64,
+        "ORACLE_SLASHER_PRIVATE_KEY"     => "c" * 64,
+        "DAO_TREASURY_ADDRESS"           => "0x#{'a' * 40}",
+        "CARBON_COIN_CONTRACT_ADDRESS"   => "0x#{'b' * 40}",
+        "FOREST_COIN_CONTRACT_ADDRESS"   => "0x#{'c' * 40}",
+        "SOLANA_WALLET_KEYPAIR"          => "keypair",
+        "SOLANA_FEE_PAYER_PUBKEY"        => "pubkey",
+        "SOLANA_FEE_PAYER_TOKEN_ACCOUNT" => "token-account",
+        "SOLANA_USDC_MINT_ADDRESS"       => "usdc-mint"
       )
     end
 
@@ -111,6 +121,37 @@ RSpec.describe Security::Web3NetworkGuard do
       expect(described_class.violations(clean_env)).not_to include(a_string_matching(/SAME signer key/))
     end
 
+    # --- silent-address set: presence + format (the silent-failure class) ----
+
+    it "flags a missing DAO_TREASURY_ADDRESS in the signer process" do
+      env = clean_env.except("DAO_TREASURY_ADDRESS")
+      expect(described_class.violations(env)).to include(a_string_matching(/\[address\].*DAO_TREASURY_ADDRESS.*not set/))
+    end
+
+    it "flags a missing SCC contract address (chain-audit would report a false 'all clean')" do
+      env = clean_env.except("CARBON_COIN_CONTRACT_ADDRESS")
+      expect(described_class.violations(env))
+        .to include(a_string_matching(/\[address\].*CARBON_COIN_CONTRACT_ADDRESS.*not set/))
+    end
+
+    it "flags the Kamal deploy placeholder (present-but-garbage, the likeliest real misconfig)" do
+      env = clean_env.merge("DAO_TREASURY_ADDRESS" => "REQUIRED_SECRET_NOT_SET")
+      expect(described_class.violations(env)).to include(a_string_matching(/\[address\].*40-hex/))
+    end
+
+    it "never echoes the malformed value into the violation (could be a mispasted secret)" do
+      env = clean_env.merge("DAO_TREASURY_ADDRESS" => "deadbeef-mispasted-value")
+      expect(described_class.violations(env).join).not_to include("deadbeef")
+    end
+
+    # --- Solana signer set: presence (no stub mode; batch loop has no escalation) ---
+
+    it "flags a missing Solana credential in the signer process" do
+      env = clean_env.except("SOLANA_WALLET_KEYPAIR")
+      expect(described_class.violations(env))
+        .to include(a_string_matching(/\[solana\].*SOLANA_WALLET_KEYPAIR.*not set/))
+    end
+
     # --- process scoping: web/coap boot keyless by design ------------------
 
     context "when signer_process: false (web / coap containers)" do
@@ -137,6 +178,18 @@ RSpec.describe Security::Web3NetworkGuard do
         env = chain_env.merge("SOLANA_RPC_URL" => "https://api.devnet.solana.com")
         expect(described_class.violations(env, signer_process: false))
           .to include(a_string_matching(/\[chain\].*TESTNET/))
+      end
+
+      it "does not demand the silent-address or Solana sets (web/coap never mint/audit)" do
+        violations = described_class.violations(chain_env, signer_process: false)
+        expect(violations).not_to include(a_string_matching(/\[address\]/))
+        expect(violations).not_to include(a_string_matching(/\[solana\]/))
+      end
+
+      it "still flags a malformed treasury address that IS present" do
+        env = chain_env.merge("DAO_TREASURY_ADDRESS" => "not-an-address")
+        expect(described_class.violations(env, signer_process: false))
+          .to include(a_string_matching(/\[address\].*40-hex/))
       end
     end
   end
