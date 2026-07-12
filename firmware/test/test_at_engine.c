@@ -521,6 +521,171 @@ TEST(test_fw58_reresolve_predicate) {
     ASSERT_TRUE(Coap_Reresolve_Due(255u));
 }
 
+
+/* ════════════════════════════════════════════════════════════════════
+ * 6. [FW.60] POLL-ПРИМІТИВИ — GET-білдер, payload-екстрактор, binary-read,
+ *    сира UDP-розмова CA*-сім'ї
+ * ════════════════════════════════════════════════════════════════════ */
+#include "../queen/sim7070_udp.h"
+
+/* Freeze-contract з Rails-боком: той самий hex заморожено у
+ * spec/lib/coap_server_pdu_spec.rb (golden GET poll) — C-білдер ↔ Rails-парсер.
+ * GET poll/SNET-Q-00000001?fw=42, MID 0x1234:
+ * 40011234 B4 "poll" 0D02 <uid:15> 45 "fw=42" */
+TEST(test_fw60_coap_build_get_golden) {
+    uint8_t pdu[96];
+    uint16_t n = Coap_Build_Get(pdu, sizeof pdu, 0x1234,
+                                "poll", "SNET-Q-00000001", "fw=42", NULL);
+    static const uint8_t expected[] = {
+        0x40, 0x01, 0x12, 0x34,
+        0xB4, 'p', 'o', 'l', 'l',
+        0x0D, 0x02, 'S','N','E','T','-','Q','-','0','0','0','0','0','0','0','1',
+        0x45, 'f','w','=','4','2'
+    };
+    ASSERT_EQ(n, (uint16_t)sizeof expected);
+    ASSERT_TRUE(memcmp(pdu, expected, sizeof expected) == 0);
+}
+
+TEST(test_fw60_coap_build_get_two_queries_and_guards) {
+    uint8_t pdu[96];
+    /* Друга query-пара — окрема опція 15 з delta 0 (RFC 7252). */
+    uint16_t n = Coap_Build_Get(pdu, sizeof pdu, 0x0001,
+                                "ota", "X", "v=7", "ch=3");
+    ASSERT_TRUE(n > 0u);
+    /* ... B3"ota" 01"X" 43"v=7" 03"ch=3" — друга query delta=0, len=4 */
+    ASSERT_EQ(pdu[4], 0xB3);              /* Uri-Path delta 11 len 3 */
+    ASSERT_EQ(pdu[10], 0x43);             /* Uri-Query delta 4 len 3 */
+    ASSERT_EQ(pdu[14], 0x04);             /* друга query: delta 0 len 4 */
+    ASSERT_EQ(Coap_Build_Get(pdu, sizeof pdu, 1, "", "X", "q", NULL), 0);   /* порожній сегмент */
+    ASSERT_EQ(Coap_Build_Get(pdu, 8, 1, "poll", "LONG-UID-123456", "q=1", NULL), 0); /* не влізло */
+}
+
+/* Golden SIMCom App Note: 2.05 Content із payload "024" — досі цей payload
+ * викидався (читали лише 4-байтний header). Тепер він — сенс розмови. */
+TEST(test_fw60_extract_payload_official_note) {
+    uint8_t reply[32];
+    uint16_t n = 0;
+    ASSERT_TRUE(At_Hex_Decode(reply, sizeof reply, "60457233c02105ff303234", &n));
+    const uint8_t *pl = NULL;
+    uint16_t pl_len = 0;
+    ASSERT_TRUE(Coap_Reply_Extract_Payload(reply, n, 0x7233, &pl, &pl_len));
+    ASSERT_EQ(pl_len, 3);
+    ASSERT_TRUE(memcmp(pl, "024", 3) == 0);
+}
+
+TEST(test_fw60_extract_payload_edges) {
+    const uint8_t *pl = NULL;
+    uint16_t pl_len = 9;
+    /* 2.04 ACK без payload — валідно, тіла нема. */
+    static const uint8_t ack[] = { 0x60, 0x44, 0x00, 0x07 };
+    ASSERT_TRUE(Coap_Reply_Extract_Payload(ack, 4, 0x0007, &pl, &pl_len));
+    ASSERT_EQ(pl_len, 0);
+    /* Чужий MID на ACK → відмова. */
+    ASSERT_FALSE(Coap_Reply_Extract_Payload(ack, 4, 0x0008, &pl, &pl_len));
+    /* RST → відмова. */
+    static const uint8_t rst[] = { 0x70, 0x00, 0x00, 0x07 };
+    ASSERT_FALSE(Coap_Reply_Extract_Payload(rst, 4, 0x0007, &pl, &pl_len));
+    /* TKL=2: токен проминається, payload після маркера на межі опцій. */
+    static const uint8_t tkl2[] = { 0x62, 0x45, 0x00, 0x07, 0xAA, 0xBB, 0xFF, 0x01, 0x02 };
+    ASSERT_TRUE(Coap_Reply_Extract_Payload(tkl2, sizeof tkl2, 0x0007, &pl, &pl_len));
+    ASSERT_EQ(pl_len, 2);
+    ASSERT_EQ(pl[0], 0x01);
+    /* Маркер без тіла → format error (дзеркало Rails-парсера). */
+    static const uint8_t bare[] = { 0x60, 0x45, 0x00, 0x07, 0xFF };
+    ASSERT_FALSE(Coap_Reply_Extract_Payload(bare, sizeof bare, 0x0007, &pl, &pl_len));
+    /* 0xFF ВСЕРЕДИНІ опції ≠ маркер (клас бага FW.56): опція 11 len 1
+     * зі значенням 0xFF, справжній payload далі. */
+    static const uint8_t ff_opt[] = { 0x60, 0x45, 0x00, 0x07, 0xB1, 0xFF, 0xFF, 0x5A };
+    ASSERT_TRUE(Coap_Reply_Extract_Payload(ff_opt, sizeof ff_opt, 0x0007, &pl, &pl_len));
+    ASSERT_EQ(pl_len, 1);
+    ASSERT_EQ(pl[0], 0x5A);
+}
+
+/* Binary-read повз токенайзер: 0x0A всередині сирих байтів НЕ ламає читання. */
+TEST(test_fw60_at_read_n_binary_safe) {
+    static const Stage st[] = { { "PING", "\x01\x0A\xFF\x0D\x05rest" } };
+    ModemSim m; modem_init(&m, st, 1);
+    Sim7070Io io = { modem_src, modem_sink, &m };
+    ASSERT_TRUE(io.sink(io.io, (const uint8_t *)"PING", 4)); /* озброїти reply */
+    uint8_t buf[8];
+    ASSERT_EQ(At_Read_N(io.src, io.io, buf, 5), 5);
+    ASSERT_EQ(buf[1], 0x0A); /* лічене читання, не line-based */
+    ASSERT_EQ(buf[2], 0xFF);
+    /* Тиша після вичерпання reply → недочит. */
+    ASSERT_EQ(At_Read_N(io.src, io.io, buf, 8), 4); /* "rest" */
+}
+
+/* Повна сира UDP-розмова: CAOPEN → '>' → PDU → OK → +CADATAIND → CARECV
+ * (заголовок посимвольно + сирі байти З 0x0A всередині) → CACLOSE. */
+TEST(test_fw60_udp_fetch_happy_path) {
+    /* Відповідь: 2.05 (MID 0x1234) + 0xFF + 5 байт тіла (з \n усередині). */
+    static const Stage st[] = {
+        { "AT+CAOPEN=0,0,\"UDP\",\"10.0.0.1\",5683",
+          "\r\n+CAOPEN: 0,0\r\n\r\nOK\r\n" },
+        { "AT+CASEND=0,", "\r\n> " },
+        { "\x40\x01\x12\x34", "\r\nOK\r\n\r\n+CADATAIND: 0\r\n" },
+        { "AT+CARECV=0,",
+          "\r\n+CARECV: 10,\x60\x45\x12\x34\xFF\x21\x0A\x22\x0D\x23\r\nOK\r\n" },
+        { "AT+CACLOSE=0", "\r\nOK\r\n" },
+    };
+    ModemSim m; modem_init(&m, st, 5);
+    Sim7070Io io = { modem_src, modem_sink, &m };
+    AtEngine e; At_Engine_Reset(&e);
+
+    static const uint8_t pdu[] = { 0x40, 0x01, 0x12, 0x34 };
+    uint8_t reply[64];
+    uint16_t got = Sim7070_Udp_Fetch(&io, &e, "10.0.0.1", 5683,
+                                     pdu, sizeof pdu, reply, sizeof reply);
+    ASSERT_EQ(got, 10);
+    const uint8_t *pl = NULL;
+    uint16_t pl_len = 0;
+    ASSERT_TRUE(Coap_Reply_Extract_Payload(reply, got, 0x1234, &pl, &pl_len));
+    ASSERT_EQ(pl_len, 5);
+    ASSERT_EQ(pl[1], 0x0A); /* сирий 0x0A пережив увесь тракт */
+}
+
+TEST(test_fw60_udp_fetch_failures) {
+    uint8_t reply[32];
+    /* MID без 0x00-байтів: ModemSim текстовий (strstr), NUL обриває матчинг. */
+    static const uint8_t pdu[] = { 0x40, 0x01, 0x01, 0x01 };
+
+    /* CAOPEN result != 0 → сокет не відкрився. */
+    static const Stage bad_open[] = {
+        { "AT+CAOPEN=0,", "\r\n+CAOPEN: 0,23\r\n\r\nOK\r\n" },
+        { "AT+CACLOSE=0", "\r\nOK\r\n" },
+    };
+    ModemSim m1; modem_init(&m1, bad_open, 2);
+    Sim7070Io io1 = { modem_src, modem_sink, &m1 };
+    AtEngine e1; At_Engine_Reset(&e1);
+    ASSERT_EQ(Sim7070_Udp_Fetch(&io1, &e1, "10.0.0.1", 5683, pdu, 4, reply, sizeof reply), 0);
+
+    /* Тиша замість +CADATAIND (сервер не відповів) → 0, сокет прибрано. */
+    static const Stage no_data[] = {
+        { "AT+CAOPEN=0,", "\r\n+CAOPEN: 0,0\r\n\r\nOK\r\n" },
+        { "AT+CASEND=0,", "\r\n> " },
+        { "\x40\x01\x01\x01", "\r\nOK\r\n" },
+        { "AT+CACLOSE=0", "\r\nOK\r\n" },
+    };
+    ModemSim m2; modem_init(&m2, no_data, 4);
+    Sim7070Io io2 = { modem_src, modem_sink, &m2 };
+    AtEngine e2; At_Engine_Reset(&e2);
+    ASSERT_EQ(Sim7070_Udp_Fetch(&io2, &e2, "10.0.0.1", 5683, pdu, 4, reply, sizeof reply), 0);
+    ASSERT_TRUE(strstr(m2.tx, "AT+CACLOSE=0") != NULL); /* best-effort прибирання */
+
+    /* CARECV каже більше, ніж влазить у буфер → відмова без переповнення. */
+    static const Stage oversize[] = {
+        { "AT+CAOPEN=0,", "\r\n+CAOPEN: 0,0\r\n\r\nOK\r\n" },
+        { "AT+CASEND=0,", "\r\n> " },
+        { "\x40\x01\x01\x01", "\r\nOK\r\n\r\n+CADATAIND: 0\r\n" },
+        { "AT+CARECV=0,", "\r\n+CARECV: 999,junk" },
+        { "AT+CACLOSE=0", "\r\nOK\r\n" },
+    };
+    ModemSim m3; modem_init(&m3, oversize, 5);
+    Sim7070Io io3 = { modem_src, modem_sink, &m3 };
+    AtEngine e3; At_Engine_Reset(&e3);
+    ASSERT_EQ(Sim7070_Udp_Fetch(&io3, &e3, "10.0.0.1", 5683, pdu, 4, reply, 32), 0);
+}
+
 /* ════════════════════════════════════════════════════════════════════ */
 int main(void)
 {
@@ -564,6 +729,15 @@ int main(void)
     RUN(test_conversation_lowercase_nmi_hex);
     RUN(test_resolve_host_urc_before_and_after_ok);
     RUN(test_fw58_reresolve_predicate);
+
+    printf("\n— [FW.60] Poll-примітиви + сира UDP-розмова —\n");
+    RUN(test_fw60_coap_build_get_golden);
+    RUN(test_fw60_coap_build_get_two_queries_and_guards);
+    RUN(test_fw60_extract_payload_official_note);
+    RUN(test_fw60_extract_payload_edges);
+    RUN(test_fw60_at_read_n_binary_safe);
+    RUN(test_fw60_udp_fetch_happy_path);
+    RUN(test_fw60_udp_fetch_failures);
 
     printf("\n════════════════════════════════════════════════════════════════════\n");
     printf("Passed: %d, Failed: %d\n", tests_passed, tests_failed);

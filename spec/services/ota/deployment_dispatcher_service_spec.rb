@@ -18,18 +18,18 @@ RSpec.describe Ota::DeploymentDispatcherService do
 
   before { OtaTransmissionWorker.clear }
 
-  describe "fan-out per gateway" do
+  describe "per-gateway targeting (FW.60 poll-тракт)" do
     let!(:gateways) { create_list(:gateway, 2, cluster: cluster) }
 
-    it "enqueues one OtaTransmissionWorker per eligible gateway with the WORKER's signature" do
+    it "persists pending_firmware_id per eligible gateway and never push-enqueues" do
       result = call_service
 
       expect(result.dispatched_gateways).to eq(2)
-      expect(OtaTransmissionWorker.jobs.size).to eq(2)
-      enqueued_args = OtaTransmissionWorker.jobs.map { |j| j["args"] }
       gateways.each do |gw|
-        expect(enqueued_args).to include([ gw.uid, "firmware", firmware.id, 0, 0 ])
+        expect(gw.reload.pending_firmware_id).to eq(firmware.id)
       end
+      # [FW.60] push-fan-out superseded: доставку тягне Королева через poll.
+      expect(OtaTransmissionWorker.jobs).to be_empty
     end
 
     it "burns the cluster hiwater to firmware.id on dispatch" do
@@ -92,7 +92,8 @@ RSpec.describe Ota::DeploymentDispatcherService do
       result = call_service
 
       expect(result.dispatched_gateways).to eq(1)
-      expect(OtaTransmissionWorker.jobs.sole["args"].first).to eq(eligible.uid)
+      expect(eligible.reload.pending_firmware_id).to eq(firmware.id)
+      expect(Gateway.where.not(id: eligible.id).pluck(:pending_firmware_id)).to all(be_nil)
     end
 
     it "does NOT burn hiwater for a cluster with zero eligible gateways" do
@@ -114,13 +115,33 @@ RSpec.describe Ota::DeploymentDispatcherService do
       result = call_service(canary_percentage: 25)
 
       expect(result.dispatched_gateways).to eq(1)
-      expect(OtaTransmissionWorker.jobs.sole["args"].first).to eq(gateways.min_by(&:id).uid)
+      expect(gateways.min_by(&:id).reload.pending_firmware_id).to eq(firmware.id)
+      expect(gateways.max_by(&:id).reload.pending_firmware_id).to be_nil
     end
 
     it "rounds up so a small cluster still gets at least one gateway" do
       result = call_service(canary_percentage: 30) # 4 * 0.3 = 1.2 → 2
 
       expect(result.dispatched_gateways).to eq(2)
+    end
+  end
+
+  describe "oversized-firmware gate (FW.60 — дзеркало Queen OTA_MAX_CHUNKS=16)" do
+    let!(:gateway) { create(:gateway, cluster: cluster) }
+    let(:oversized) { create(:bio_contract_firmware, bytecode_payload: "01" * 9_000) } # 9 КБ binary ≥ 18 чанків
+
+    it "rejects the campaign BEFORE burning hiwater or targeting gateways" do
+      result = call_service(fw: oversized)
+
+      expect(result.dispatched?).to be(false)
+      expect(result.skipped_clusters.map(&:reason)).to eq([ "oversized_firmware" ])
+      expect(cluster.reload.ota_version_hiwater).to eq(0)
+      expect(gateway.reload.pending_firmware_id).to be_nil
+      expect(oversized.reload.is_active).to be(false)
+    end
+
+    it "passes a firmware that fits the 16-chunk assembly ceiling" do
+      expect(call_service.dispatched?).to be(true)
     end
   end
 

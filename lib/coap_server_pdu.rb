@@ -26,21 +26,26 @@ class CoapServerPdu
   TYPE_ACK = 2
   TYPE_RST = 3
 
+  CODE_GET         = 0x01 # 0.01 — [FW.60] Queen-ініційований downlink-poll
   CODE_PUT         = 0x03 # 0.03
   CODE_CHANGED     = 0x44 # 2.04 — єдиний код, що Coap_Reply_Confirms зарахує
+  CODE_CONTENT     = 0x45 # 2.05 — [FW.60] piggyback-відповідь poll із payload
   CODE_NOT_FOUND   = 0x84 # 4.04 — клас 4 → Королева тримає кеш і повторює
 
   OPT_URI_PATH    = 11
+  OPT_URI_QUERY   = 15
   PAYLOAD_MARKER  = 0xFF
   HEADER_SIZE     = 4
   MAX_TKL         = 8 # RFC 7252 §3: TKL 9..15 зарезервовано → format error
 
   Request = Struct.new(:version, :type, :tkl, :code, :message_id, :token,
-                       :uri_path, :payload, keyword_init: true)
+                       :uri_path, :uri_query, :payload, keyword_init: true)
 
   # Вердикт обробки датаграми. reply — байти відповіді (nil = мовчимо:
-  # NON-запит або сміття без читабельного заголовка).
-  Intake = Struct.new(:status, :reply, :gateway_uid, :payload, keyword_init: true)
+  # NON-запит або сміття без читабельного заголовка). Для :downlink_poll
+  # reply будує CoapGate ПІСЛЯ derivation черги (build_content на request).
+  Intake = Struct.new(:status, :reply, :gateway_uid, :payload, :request, :query,
+                      keyword_init: true)
 
   class << self
     # Датаграма → Request або nil (malformed). Опції проходяться послідовно:
@@ -62,6 +67,7 @@ class CoapServerPdu
         message_id: data.byteslice(2, 2).unpack1("n"),
         token: data.byteslice(HEADER_SIZE, tkl),
         uri_path: [],
+        uri_query: [],
         payload: nil
       )
 
@@ -81,6 +87,13 @@ class CoapServerPdu
       return nil if data.nil? || data.bytesize < HEADER_SIZE
 
       [ (1 << 6) | (TYPE_RST << 4), 0x00, data.byteslice(2, 2).unpack1("n") ].pack("CCn")
+    end
+
+    # [FW.60] 2.05 Content piggyback з payload — відповідь на downlink-poll.
+    # Порожній payload легальний RFC-ом лише без маркера, але наш контракт
+    # завжди несе конверт (мінімум time-only, 32 Б) → маркер завжди присутній.
+    def build_content(request, payload:)
+      build_ack(request, code: CODE_CONTENT) + PAYLOAD_MARKER.chr(Encoding::BINARY) + payload.b
     end
 
     # Повний вердикт Брами для одного UDP-датаграма — те, що демон робить
@@ -104,12 +117,33 @@ class CoapServerPdu
         # DeviceEventWorker верифікує gateway-origin (LoRa-ключа не торкається).
         Intake.new(status: :device_event, reply: reply.call(CODE_CHANGED),
                    gateway_uid: segments[2], payload: request.payload)
+      elsif request.code == CODE_GET && segments.first == "poll" && segments[1]
+        # [FW.60] Downlink-poll (Queen питає pending одразу після флашу,
+        # LwM2M Queue-Mode). reply тут НЕ будується: CoapGate спершу derive'ить
+        # чергу (Downlink::PendingQueueService), тоді build_content(request).
+        # NON-GET легальний парсеру, але контракту не відповідає → мовчання
+        # вирішує CoapGate (poll без CON не ретраїться Королевою — дроп чесніший).
+        Intake.new(status: :downlink_poll, gateway_uid: segments[1],
+                   request: request, query: parse_query(request.uri_query))
+      elsif request.code == CODE_GET && segments.first == "ota" && segments[1]
+        # [FW.60] Stateless chunk-server: Queen-driven fetch відсутніх чанків
+        # (?v=<firmware_id>&ch=<n>) — вона єдина знає свій bitmap.
+        Intake.new(status: :ota_chunk_fetch, gateway_uid: segments[1],
+                   request: request, query: parse_query(request.uri_query))
       else
         Intake.new(status: :unknown_route, reply: reply.call(CODE_NOT_FOUND))
       end
     end
 
     private
+
+    # [FW.60] Uri-Query опції → {"fw" => "123", ...}. RFC 7252: кожна пара =
+    # окрема опція 15; &-склейку в одній опції теж розкладаємо (стійкість до
+    # не-RFC-чистих клієнтів, вона ж вкусила перший драфт цієї ж спеки).
+    def parse_query(pairs)
+      pairs.flat_map { |p| p.split("&") }
+           .to_h { |pair| k, v = pair.split("=", 2); [ k, v.to_s ] }
+    end
 
     # Опційний цикл: на межі кожної опції або маркер+payload, або
     # delta/length-нібли (13 → +1 ext-байт, 14 → +2 BE, 15 → reserved).
@@ -140,6 +174,7 @@ class CoapServerPdu
         cursor += length
 
         request.uri_path << value if option_number == OPT_URI_PATH
+        request.uri_query << value if option_number == OPT_URI_QUERY
       end
 
       true # запит без payload — синтаксично валідний (маршрут вирішить)

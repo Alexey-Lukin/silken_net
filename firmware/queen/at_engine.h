@@ -152,6 +152,19 @@ static inline int At_Await_Urc(AtEngine *e, const char *urc_prefix,
     return 0;
 }
 
+/* [FW.60] Лічене бінарне читання ПОВЗ токенайзер: `AT+CARECV` віддає сирі
+ * байти (не hex), і будь-який 0x0A всередині зламав би line-збирання. Читає
+ * рівно n байтів з того самого джерела (interbyte/deadline-годинник у нього);
+ * повертає фактично прочитане — < n означає тишу до дедлайну. */
+static inline uint16_t At_Read_N(AtByteSource src, void *io,
+                                 uint8_t *dst, uint16_t n)
+{
+    uint16_t got = 0;
+    uint8_t b;
+    while (got < n && src(io, &b)) dst[got++] = b;
+    return got;
+}
+
 /* ── Дрібні чисті парсери AT-ліній ──────────────────────────────────── */
 
 /* n-та (від 1) лапкована підстрока лінії → out (NUL-терміновано).

@@ -149,7 +149,7 @@ $(BINDIR)/test_encryption: test_encryption.c hal_mock.h ../queen/coap_iv.h
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_encryption.c $(OPENSSL_LIBS)
 
 # [FW.3/FW.56] AT-токенайзер + CoAP PDU + SIM7070G розмова — pure, без OpenSSL.
-$(BINDIR)/test_at_engine: test_at_engine.c ../queen/at_engine.h ../queen/coap_pdu.h ../queen/sim7070_coap.h
+$(BINDIR)/test_at_engine: test_at_engine.c ../queen/at_engine.h ../queen/coap_pdu.h ../queen/sim7070_coap.h ../queen/sim7070_udp.h
 	$(CC) $(CFLAGS) -o $@ test_at_engine.c
 
 # [FW.3] Кільце-вид поверх circular-DMA RX — гонки знімка/IRQ, overrun, wrap.

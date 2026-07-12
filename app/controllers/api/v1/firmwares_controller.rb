@@ -191,8 +191,15 @@ module Api
             end
           end
         else
-          # Нічого не відправлено: anti-rollback переміг усі цілі — або цілей нема.
-          reason_key = result.skipped_clusters.any? { |sc| sc.reason == "rollback" } ? "deployment_rejected_stale" : "deployment_no_targets"
+          # Нічого не затаргечено: oversized-гейт [FW.60] / anti-rollback / нема цілей.
+          reason_key =
+            if result.skipped_clusters.any? { |sc| sc.reason == "oversized_firmware" }
+              "deployment_oversized"
+            elsif result.skipped_clusters.any? { |sc| sc.reason == "rollback" }
+              "deployment_rejected_stale"
+            else
+              "deployment_no_targets"
+            end
           respond_to do |format|
             format.json do
               render json: {

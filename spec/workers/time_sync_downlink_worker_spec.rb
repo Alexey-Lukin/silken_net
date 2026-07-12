@@ -123,4 +123,20 @@ RSpec.describe TimeSyncDownlinkWorker, type: :worker do
       expect { described_class.new.perform(cluster.id) }.to raise_error(Timeout::Error)
     end
   end
+
+  describe "sidekiq_retries_exhausted (FW.60 — слід замість тихого DeadSet)" do
+    it "logs the dead job loudly (Королева синкнеться наступним poll'ом)" do
+      expect(Rails.logger).to receive(:error).with(a_string_matching(/TimeSyncDownlink.*помер/))
+
+      described_class.sidekiq_retries_exhausted_block.call(
+        { "args" => [ 42 ], "error_message" => "Timeout::Error" }, StandardError.new
+      )
+    end
+
+    it "is nil-safe on a malformed job payload" do
+      expect {
+        described_class.sidekiq_retries_exhausted_block.call({ "args" => nil }, StandardError.new)
+      }.not_to raise_error
+    end
+  end
 end

@@ -34,6 +34,7 @@
 #include "coap_pdu.h"
 // [FW.3/FW.56] Повна CoAP-PUT розмова з модемом (pure-оркестратор)
 #include "sim7070_coap.h"
+#include "sim7070_udp.h"
 
 #include "uart_rx_ring.h"
 #include "ota_window.h"   // [FW.52б] воскресіння OTA-вікна запізнілою печаткою
@@ -68,6 +69,15 @@
 // (раніше CRC16 від бекенду взагалі ігнорувався!) закривають клас помилок.
 #define OTA_COAP_HEADER_SIZE  7      // [0x99][index:2][total:2][len:2]
 #define OTA_COAP_MIN_FRAME    (OTA_COAP_HEADER_SIZE + 1 + OTA_CRC_SIZE)  // 10
+
+// [FW.60] Poll-після-флашу (LwM2M Queue-Mode): Королева сама питає свій
+// downlink одразу після send_success — push із Rails фізично не долітає
+// (CGNAT-egress; CASERVER мережево мертвий — 03_02 §4 [FW.60]-банер).
+#define OTA_FETCH_HINT_MARKER      0x9F  // [0x9F][firmware_id:4 BE][total:2 BE]
+#define OTA_FETCH_HINT_LEN         7
+#define QUEEN_POLL_MAX_PER_FLUSH   3u    // дренаж CMD-черги без вічного циклу
+#define QUEEN_OTA_FETCH_PER_FLUSH  4u    // IWDG-бюджет: розмови ≤ вікна пса
+#define QUEEN_POLL_REPLY_MAX       600u  // конверт ≤ 560 (buf 544 + IV) + CoAP-обгортка
 
 // [FW.23] HMAC-трейлер OTA — backend пакує 32-байтну печатку HMAC-SHA256
 // у 3× 16-байтні LoRa-чанки + 4-й чанк з version_id, усі з маркером 0x9B.
@@ -687,6 +697,15 @@ uint16_t pending_ota_size = 0;
 // Стан збирання OTA-чанків від бекенду (CoAP downlink → RAM assembly)
 uint16_t ota_total_expected_chunks = 0;  // Загальна кількість чанків (з заголовка пакета)
 uint16_t ota_chunks_received = 0;        // Скільки чанків вже отримано
+
+// [FW.60] RAM-стан фетч-кампанії (гине з ребутом — СВІДОМО: fw=0 у першому
+// poll'і чесно каже Rails «я нічого не пам'ятаю» → повторний hint → безпечний
+// idempotent re-fetch; bitmap і 0x9B-гілка дедуплікують повтори).
+static uint32_t g_ota_delivered_fw_id = 0; // повністю зібраний contract-id (їде в poll ?fw=)
+static uint32_t g_ota_fetch_fw_id     = 0; // кампанія, яку зараз тягнемо
+static uint16_t g_ota_fetch_total     = 0; // пакетів у кампанії (bytecode + 0x9B-трейлер)
+static uint16_t g_ota_fetch_next_ch   = 0; // курсор послідовного фетчу
+static uint8_t  g_ota_fetch_pending   = 0;
 // [FIX: AUDIT] Бітова карта для захисту від дублікатів OTA-чанків.
 // Без неї повторна доставка чанка (ACK loss) збільшує ota_chunks_received
 // і може спровокувати передчасну активацію бродкасту з неповними даними.
@@ -836,7 +855,8 @@ static void queen_helium_lorawan_uplink(const uint8_t sos_frame[HELIUM_SOS_WIRE_
 static uint32_t djb2_hash(const char* str, uint8_t len);
 static uint32_t djb2_hash_bytes(const uint8_t* buf, uint8_t len);
 uint8_t Cmd_Dedup_Check(uint32_t hash);
-void Handle_CoAP_Command(uint8_t* payload, uint16_t len);
+int Handle_CoAP_Command(uint8_t* payload, uint16_t len);
+static void Queen_Poll_Downlink(void);
 // [FW.1] Завантаження LoRa AES-128 ключа з Protected Flash Sector (post-ARCH.42).
 static void Load_AES_Key(void);
 // [ARCH.42] Завантаження CoAP AES-256 ключа (KEYC; м'який fallback — нулі).
@@ -2120,6 +2140,10 @@ void Flush_Cache_To_Rails(void)
             }
         }
 #endif
+
+        // [FW.60] Poll-після-флашу — ПЕРШИЙ (і єдиний) call-site усього
+        // inbound-тракту: звідси оживає Handle_CoAP_Command (CMD/OTA/hint).
+        Queen_Poll_Downlink();
     }
 #if ARCH35_RING_ENABLED
     else if (queen_ring_mounted) {
@@ -2215,10 +2239,13 @@ uint8_t Cmd_Dedup_Check(uint32_t hash)
 //
 // [OTA Downlink]: OtaTransmissionWorker формує payload (після зрізання конверта):
 //   [0x99][chunk_index:2][total_chunks:2][bytecode:≤512][CRC:2]
-void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
+// [FW.60] Повертає 1, коли по знятті 0x9C-конверта БУВ inner-контент
+// (CMD/OTA/трейлер/hint — байдуже, чи прийнятий), 0 — порожній time-only
+// конверт або відмова. Poll-цикл на 0 зупиняє дренаж черги.
+int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
 {
     // Мінімум: IV (16 байт) + один AES-блок (16 байт) = 32 байти
-    if (len < 32 || len > (CMD_DECRYPT_BUF_SIZE + 16)) return;
+    if (len < 32 || len > (CMD_DECRYPT_BUF_SIZE + 16)) return 0;
 
     // 1. Витягуємо IV з перших 16 байтів пейлоада
     uint32_t cmd_iv[4];
@@ -2238,7 +2265,7 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
     if (aligned > CMD_DECRYPT_BUF_SIZE) {
         // [FIX FW.16] Відновлюємо ECB перед виходом (з error recovery)
         Restore_ECB_Mode();
-        return;
+        return 0;
     }
     HAL_CRYP_Decrypt(&hcryp, (uint32_t*)(payload + 16), aligned / 4,
                      (uint32_t*)cmd_decrypt_buf, 2000);
@@ -2274,8 +2301,11 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         inner_payload = cmd_decrypt_buf + CMD_TIME_SYNC_HEADER_SIZE;
         inner_aligned = (uint16_t)(aligned - CMD_TIME_SYNC_HEADER_SIZE);
 
-        // Якщо конверт без inner-пейлоада (серверний "ping") — нічого більше не робимо
-        if (inner_aligned == 0) return;
+        // Конверт без inner-пейлоада (time-only "ping") — [FW.60] це і є
+        // сигнал «черга порожня» для poll-циклу. Zero-pad CBC дає inner з
+        // самих нулів — теж порожньо (нульовий перший байт не матчить жоден
+        // маркер нижче, але чесніше сказати це явно).
+        if (inner_aligned == 0 || inner_payload[0] == 0x00u) return 0;
     }
 
     // =========================================================================
@@ -2292,11 +2322,11 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
             if (*p++ == ':') colons++;
             scanned++;
         }
-        if (colons < 3 || *p == '\0') return;
+        if (colons < 3 || *p == '\0') return 1;
 
         // 7. 🛡️ Idempotency: хешуємо токен і перевіряємо кільцевий буфер
         if (Cmd_Dedup_Check(djb2_hash(p, UUID_STR_LEN)) == 1) {
-            return; // Дублікат — ACK відправляємо, але команду НЕ виконуємо вдруге
+            return 1; // Дублікат — ACK відправляємо, але команду НЕ виконуємо вдруге
         }
 
         // 8. Команда валідна та унікальна — передаємо на виконання актуатору
@@ -2316,7 +2346,7 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         // і головний цикл автоматично починає LoRa-бродкаст на Солдатів.
 
         // [MISRA C] Мінімальна довжина: header(7) + 1 байт коду + crc16(2) = 10
-        if (inner_aligned < OTA_COAP_MIN_FRAME) return;
+        if (inner_aligned < OTA_COAP_MIN_FRAME) return 1;
 
         // Витягуємо chunk_index, total_chunks, payload_len (big-endian)
         uint16_t chunk_index  = ((uint16_t)inner_payload[1] << 8) | inner_payload[2];
@@ -2324,16 +2354,16 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         uint16_t payload_len  = ((uint16_t)inner_payload[5] << 8) | inner_payload[6];
 
         // [MISRA C] Захист від невалідних заголовків
-        if (total_chunks == 0) return;
+        if (total_chunks == 0) return 1;
 
         // [FIX: AUDIT] Захист від chunk_index >= OTA_MAX_CHUNKS (переповнення bitmap)
-        if (chunk_index >= OTA_MAX_CHUNKS) return;
+        if (chunk_index >= OTA_MAX_CHUNKS) return 1;
 
         // Брехливий або порожній len: межі диктує бекендів MAX_OTA_CHUNK_PAYLOAD,
         // а повний кадр (header + len + crc) мусить вміститись у дешифроване.
-        if (payload_len == 0 || payload_len > MAX_OTA_CHUNK_PAYLOAD) return;
+        if (payload_len == 0 || payload_len > MAX_OTA_CHUNK_PAYLOAD) return 1;
         uint32_t frame_len = (uint32_t)OTA_COAP_HEADER_SIZE + payload_len + OTA_CRC_SIZE;
-        if (frame_len > inner_aligned) return;
+        if (frame_len > inner_aligned) return 1;
 
         // CRC16-CCITT над header+bytecode проти хвостових 2 байтів (BE) —
         // дзеркало OtaPackagerService.crc16_ccitt. Біт, що збрехав у LTE/Starlink
@@ -2342,13 +2372,13 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
                                                    (uint16_t)(OTA_COAP_HEADER_SIZE + payload_len));
         uint16_t received_crc = ((uint16_t)inner_payload[OTA_COAP_HEADER_SIZE + payload_len] << 8)
                               | inner_payload[OTA_COAP_HEADER_SIZE + payload_len + 1];
-        if (expected_crc != received_crc) return;
+        if (expected_crc != received_crc) return 1;
 
         // Обчислюємо зсув у RAM-буфері
         uint32_t offset = (uint32_t)chunk_index * (uint32_t)MAX_OTA_CHUNK_PAYLOAD;
 
         // [MISRA C] Перевірка меж буфера: запобігаємо переповненню від зловмисних пакетів
-        if (offset + payload_len > sizeof(pending_ota_bytecode)) return;
+        if (offset + payload_len > sizeof(pending_ota_bytecode)) return 1;
 
         // [FW.53] Світанок нової кампанії: pending_ota_size
         // раніше лише ріс (max-трек) і переживав попередню прошивку — менша
@@ -2363,7 +2393,7 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         uint16_t chunk_bit = (uint16_t)(1U << chunk_index);
         if (ota_chunk_bitmap & chunk_bit) {
             // Дублікат — дані вже є в RAM, просто ігноруємо
-            return;
+            return 1;
         }
 
         // Копіюємо байткод у відповідну позицію RAM-буфера
@@ -2396,7 +2426,7 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
     // істина живе між ними двома, Королева її не торкається.
     else if (inner_aligned >= 16 && inner_payload[0] == HMAC_TRAILER_MARKER) {
         uint16_t seg_idx = ((uint16_t)inner_payload[1] << 8) | inner_payload[2];
-        if (seg_idx < 1 || seg_idx > OTA_TRAILER_TOTAL_CHUNKS) return;
+        if (seg_idx < 1 || seg_idx > OTA_TRAILER_TOTAL_CHUNKS) return 1;
         // Беремо перші 16 байт inner_payload — готовий до повторної проповіді блок.
         memcpy(pending_ota_hmac_chunks[seg_idx - 1], inner_payload, 16);
         hmac_segments_received |= (uint8_t)(1u << (seg_idx - 1));
@@ -2414,6 +2444,26 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
             ota_is_active        = 1;
         }
     }
+    // [FW.60] OTA-hint: Rails каже «для тебе є кампанія» у poll-відповіді
+    // (повний чанк 521+ Б у неї не влазив би й не мусить — доставку тягне
+    // сама Королева ліченими CARECV-читаннями, Queen_Poll_Downlink).
+    else if (inner_aligned >= OTA_FETCH_HINT_LEN &&
+             inner_payload[0] == OTA_FETCH_HINT_MARKER) {
+        uint32_t hint_fw = ((uint32_t)inner_payload[1] << 24) |
+                           ((uint32_t)inner_payload[2] << 16) |
+                           ((uint32_t)inner_payload[3] << 8)  |
+                           (uint32_t)inner_payload[4];
+        uint16_t hint_total = (uint16_t)(((uint16_t)inner_payload[5] << 8) |
+                                         inner_payload[6]);
+        if (hint_fw != 0u && hint_total != 0u) {
+            if (hint_fw != g_ota_fetch_fw_id) {
+                g_ota_fetch_fw_id   = hint_fw;   // нова кампанія → курсор на 0
+                g_ota_fetch_next_ch = 0;
+            }
+            g_ota_fetch_total   = hint_total;
+            g_ota_fetch_pending = 1;
+        }
+    }
     // [FW.20-Q2] Soldier-bound команди спільного каркаса (0x9A
     // CMD_SET_THRESHOLDS [FW.8], 0x9E CMD_ROTATE_KEY [FW.17]) → черга
     // рефлекторних пострілів (валідатор + дедуп + бюджет —
@@ -2426,6 +2476,91 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         Soldier_Cmd_Queue_Push(&soldier_cmd_queue, inner_payload, inner_aligned);
     }
 #endif
+    return 1; // inner-контент був (навіть нерозпізнаний) — черга може мати ще
+}
+
+// =========================================================================
+// [FW.60] POLL-ПІСЛЯ-ФЛАШУ — Королева сама питає свій downlink
+// =========================================================================
+// LwM2M Queue-Mode: одразу після send_success модем теплий, IP резольвлений,
+// NAT-pinhole свіжий — єдине живе вікно доставки Rails→Queen (CASERVER
+// мертвий за CGNAT, push із Rails фізично не долітає — 03_02 §4 [FW.60]).
+// Розмова їде СИРИМ UDP CA*-сім'ї (sim7070_udp.h): CCOAP-тракт віддає
+// відповідь hex-URC'ом крізь line-стелю AT_LINE_MAX ≈ 60-70 Б корисних — навіть
+// найменший CMD-конверт (~80 Б) туди не влазить, обрізаний hex = втрачена
+// сирена. Дренаж: до QUEEN_POLL_MAX_PER_FLUSH повідомлень (порожній time-only
+// конверт = «черга порожня», Handle_CoAP_Command → 0), далі — фетч OTA-чанків
+// за hint'ом (Queen-driven: Rails стану прогресу не веде, bitmap наш).
+static void Queen_Poll_Downlink(void)
+{
+    if (coap_server_ip[0] == '\0' || queen_uid[0] == '\0') return;
+
+    static uint8_t poll_pdu[96];
+    static uint8_t poll_reply[QUEEN_POLL_REPLY_MAX];
+    char q1[24], q2[16];
+
+    for (uint8_t i = 0; i < QUEEN_POLL_MAX_PER_FLUSH; i++) {
+        HAL_IWDG_Refresh(&hiwdg);
+        // fw= несе повністю зібраний contract-id (0 після ребуту): Rails
+        // звіряє з pending_firmware_id — спостережене підтвердження доставки.
+        snprintf(q1, sizeof q1, "fw=%lu", (unsigned long)g_ota_delivered_fw_id);
+        coap_mid++;
+        uint16_t pdu_len = Coap_Build_Get(poll_pdu, sizeof poll_pdu, coap_mid,
+                                          "poll", queen_uid, q1, NULL);
+        if (pdu_len == 0u) return;
+
+        UartAtIo io = { HAL_GetTick() + COAP_CONV_BUDGET_MS };
+        Sim7070Io m = { Uart_At_Source, Uart_At_Sink, &io };
+        uint16_t reply_len = Sim7070_Udp_Fetch(&m, &at_engine_state,
+                                               coap_server_ip, COAP_SERVER_PORT,
+                                               poll_pdu, pdu_len,
+                                               poll_reply, sizeof poll_reply);
+        if (reply_len == 0u) return; // транспорт мовчить — наступний флаш
+
+        const uint8_t *envelope = NULL;
+        uint16_t env_len = 0;
+        if (!Coap_Reply_Extract_Payload(poll_reply, reply_len, coap_mid,
+                                        &envelope, &env_len)) return; // 4.04/RST
+        if (env_len == 0u) return;
+
+        // poll_reply — наш буфер: const знімається легально (decrypt читає
+        // envelope, пише в cmd_decrypt_buf; CBC→ECB restore всередині).
+        if (!Handle_CoAP_Command((uint8_t *)(uintptr_t)envelope, env_len)) break;
+    }
+
+    if (!g_ota_fetch_pending) return;
+    for (uint8_t f = 0; f < QUEEN_OTA_FETCH_PER_FLUSH &&
+                        g_ota_fetch_next_ch < g_ota_fetch_total; f++) {
+        HAL_IWDG_Refresh(&hiwdg);
+        snprintf(q1, sizeof q1, "v=%lu", (unsigned long)g_ota_fetch_fw_id);
+        snprintf(q2, sizeof q2, "ch=%u", (unsigned)g_ota_fetch_next_ch);
+        coap_mid++;
+        uint16_t pdu_len = Coap_Build_Get(poll_pdu, sizeof poll_pdu, coap_mid,
+                                          "ota", queen_uid, q1, q2);
+        if (pdu_len == 0u) return;
+
+        UartAtIo io = { HAL_GetTick() + COAP_CONV_BUDGET_MS };
+        Sim7070Io m = { Uart_At_Source, Uart_At_Sink, &io };
+        uint16_t reply_len = Sim7070_Udp_Fetch(&m, &at_engine_state,
+                                               coap_server_ip, COAP_SERVER_PORT,
+                                               poll_pdu, pdu_len,
+                                               poll_reply, sizeof poll_reply);
+        if (reply_len == 0u) return; // докачаємо наступним флашем (курсор стоїть)
+
+        const uint8_t *envelope = NULL;
+        uint16_t env_len = 0;
+        if (!Coap_Reply_Extract_Payload(poll_reply, reply_len, coap_mid,
+                                        &envelope, &env_len)) return; // 4.04 = кампанія зникла
+        if (env_len == 0u) return;
+        (void)Handle_CoAP_Command((uint8_t *)(uintptr_t)envelope, env_len);
+        g_ota_fetch_next_ch++;
+    }
+    // Пакети вичерпані (0x9B-трейлер іде хвостом списку) і збірка ожила →
+    // кампанія доставлена: наступний poll понесе fw=<id>, Rails згасить hint.
+    if (g_ota_fetch_next_ch >= g_ota_fetch_total && ota_is_active) {
+        g_ota_delivered_fw_id = g_ota_fetch_fw_id;
+        g_ota_fetch_pending   = 0;
+    }
 }
 
 // =========================================================================

@@ -12,6 +12,13 @@ require "base64"
 module CoapGate
   MAX_PACKET_SIZE = 2048
 
+  # [FW.60] Дедуп CON-ретрансмітів poll'а: Королева повторює той самий MID,
+  # коли 2.05 загубився в UDP — ми зобов'язані відповісти ТИМИ Ж байтами
+  # (інакше видана CMD-команда втрачається назавжди: derivation уже перевела
+  # її в acknowledged). Один слот на uid достатній — Queen шле строго
+  # послідовно; демон однопроцесний і однопотоковий → без mutex.
+  REPLY_CACHE = {} # uid => [message_id, reply_bytes]
+
   # Обробляє одну датаграму. Повертає CoAP-reply (String) для відправки, або
   # nil = мовчазний дроп (oversized/truncate — FW.51 Королева тримає кеш і
   # ретраїть). Кидає далі, якщо enqueue впав (Redis) — демон-rescue логне,
@@ -52,6 +59,12 @@ module CoapGate
       encoded = Base64.strict_encode64(result.payload)
       DeviceEventWorker.perform_async(encoded, result.gateway_uid)
       SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "device_event" })
+    when :downlink_poll, :ota_chunk_fetch
+      # [FW.60] Queen-ініційований downlink (poll-після-флашу). Derivation
+      # синхронна в демоні (кілька DB-читань на poll) — свідома стеля
+      # single-loop'а: на TRL-3 одна Королева, ~1 poll/flush; масштаб-відповідь
+      # (окремий потік/процес) — коли Королев стане багато, не зараз.
+      return handle_queen_pull(result, timestamp)
     when :unknown_route
       SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "unknown_route" })
       puts "⚠️  [#{timestamp.strftime('%T')}] Відхилено (4.04): невідомий маршрут від #{gateway_ip}"
@@ -62,4 +75,50 @@ module CoapGate
 
     result.reply
   end
+
+  # [FW.60] Спільна обробка обох Queen-pull маршрутів (poll + ota chunk-server).
+  def self.handle_queen_pull(result, timestamp)
+    request = result.request
+    # Контракт = CON (Королевин білдер завжди CON; NON не ретраїться нею,
+    # тож мовчазний дроп чесніший за неретрансльовану відповідь).
+    return nil unless request.type == CoapServerPdu::TYPE_CON
+
+    cached_mid, cached_reply = REPLY_CACHE[result.gateway_uid]
+    if cached_mid == request.message_id
+      SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "poll_retransmit" })
+      return cached_reply
+    end
+
+    gateway = Gateway.find_by(uid: result.gateway_uid)
+    unless gateway
+      SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "poll_unknown_uid" })
+      return CoapServerPdu.build_ack(request, code: CoapServerPdu::CODE_NOT_FOUND)
+    end
+
+    envelope =
+      if result.status == :downlink_poll
+        Downlink::PendingQueueService.poll_reply(gateway: gateway, query: result.query)
+      else
+        Downlink::PendingQueueService.ota_chunk_reply(gateway: gateway, query: result.query)
+      end
+
+    reply =
+      if envelope
+        CoapServerPdu.build_content(request, payload: envelope)
+      else
+        # Нема ключа / чужа-завершена OTA-версія / ch поза межами → 4.04:
+        # Королева бачить не-2.05 і не почне decrypt (poll) або перечитає
+        # hint наступним poll'ом (ota).
+        CoapServerPdu.build_ack(request, code: CoapServerPdu::CODE_NOT_FOUND)
+      end
+
+    REPLY_CACHE[result.gateway_uid] = [ request.message_id, reply ]
+    SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(
+      labels: { status: result.status == :downlink_poll ? "downlink_poll" : "ota_chunk" }
+    )
+    puts "📤 [#{timestamp.strftime('%T')}] #{result.status == :downlink_poll ? 'Poll' : 'OTA-чанк'} " \
+         "#{result.gateway_uid}: відповідь #{reply.bytesize}б"
+    reply
+  end
+  private_class_method :handle_queen_pull
 end

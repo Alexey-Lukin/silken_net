@@ -200,4 +200,75 @@ RSpec.describe CoapServerPdu do
       expect(request.uri_path).to eq([])
     end
   end
+
+  # [FW.60] Downlink-poll маршрути + 2.05-білдер
+  describe "downlink poll routing (FW.60)" do
+    def get_pdu(segments, query: [], mid: 0x1234)
+      pdu = [ 0x40, 0x01, mid ].pack("CCn")
+      number = 0
+      (segments.map { |s| [ 11, s ] } + query.map { |q| [ 15, q ] }).each do |(opt, value)|
+        delta = opt - number
+        number = opt
+        d_nib, d_ext = delta > 12 ? [ 13, [ delta - 13 ].pack("C") ] : [ delta, "" ]
+        l_nib, l_ext = value.bytesize > 12 ? [ 13, [ value.bytesize - 13 ].pack("C") ] : [ value.bytesize, "" ]
+        pdu << [ (d_nib << 4) | l_nib ].pack("C") << d_ext << l_ext << value
+      end
+      pdu
+    end
+
+    it "GET poll/<uid> → :downlink_poll з request і розібраним query" do
+      intake = described_class.handle_telemetry_datagram(
+        get_pdu(%w[poll SNET-Q-00000001], query: [ "fw=42" ])
+      )
+
+      expect(intake.status).to eq(:downlink_poll)
+      expect(intake.gateway_uid).to eq("SNET-Q-00000001")
+      expect(intake.query).to eq({ "fw" => "42" })
+      expect(intake.reply).to be_nil # 2.05 будує CoapGate після derivation
+      expect(intake.request.message_id).to eq(0x1234)
+    end
+
+    it "GET ota/<uid> → :ota_chunk_fetch; &-склейка в одній опції теж розкладається" do
+      intake = described_class.handle_telemetry_datagram(
+        get_pdu(%w[ota SNET-Q-00000001], query: [ "v=7&ch=3" ])
+      )
+
+      expect(intake.status).to eq(:ota_chunk_fetch)
+      expect(intake.query).to eq({ "v" => "7", "ch" => "3" })
+    end
+
+
+    it "parses the frozen C-builder GET golden byte-for-byte (firmware Coap_Build_Get)" do
+      # [FW.60 freeze-contract] Той самий hex заморожено у
+      # firmware/test/test_at_engine.c (test_fw60_coap_build_get_golden).
+      golden_get_hex = "40011234" \
+                       "B4706F6C6C" \
+                       "0D02534E45542D512D3030303030303031" \
+                       "4566773D3432"
+      intake = described_class.handle_telemetry_datagram([ golden_get_hex ].pack("H*"))
+
+      expect(intake.status).to eq(:downlink_poll)
+      expect(intake.gateway_uid).to eq("SNET-Q-00000001")
+      expect(intake.query).to eq({ "fw" => "42" })
+      expect(intake.request.message_id).to eq(0x1234)
+    end
+
+    it "PUT на poll-шлях НЕ матчить downlink-маршрут (4.04)" do
+      put_pdu = get_pdu(%w[poll SNET-Q-00000001])
+      put_pdu.setbyte(1, 0x03) # code → PUT
+
+      intake = described_class.handle_telemetry_datagram(put_pdu)
+
+      expect(intake.status).to eq(:unknown_route)
+    end
+
+    it "build_content: 2.05 piggyback ACK + 0xFF + payload (те, що Coap_Reply_Confirms зарахує)" do
+      request = described_class.parse_request(get_pdu(%w[poll X], mid: 0xBEEF))
+
+      reply = described_class.build_content(request, payload: "\x01\x02".b)
+
+      expect(reply.bytes.first(4)).to eq([ 0x60, 0x45, 0xBE, 0xEF ])
+      expect(reply.byteslice(4, 3)).to eq("\xFF\x01\x02".b)
+    end
+  end
 end

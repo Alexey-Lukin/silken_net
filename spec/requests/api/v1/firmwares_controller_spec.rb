@@ -17,14 +17,15 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
 
     before { OtaTransmissionWorker.clear }
 
-    it "fans out per-gateway jobs with the worker's real signature" do
+    it "targets the gateway via pending_firmware_id (FW.60 poll-тракт, без push-enqueue)" do
       post "/api/v1/firmwares/#{firmware.id}/deploy",
            params: { cluster_id: cluster.id, canary_percentage: 5 }, headers: headers, as: :json
 
       expect(response).to have_http_status(:accepted)
       expect(response.parsed_body["canary_percentage"]).to eq(5)
       expect(response.parsed_body["dispatched_gateways"]).to eq(1)
-      expect(OtaTransmissionWorker.jobs.sole["args"]).to eq([ gateway.uid, "firmware", firmware.id, 0, 0 ])
+      expect(gateway.reload.pending_firmware_id).to eq(firmware.id)
+      expect(OtaTransmissionWorker.jobs).to be_empty
     end
 
     it "defaults canary_percentage to 100 when not specified" do
@@ -116,7 +117,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
 
       expect(response).to have_http_status(:accepted)
       expect(response.parsed_body["dispatched_gateways"]).to eq(1)
-      expect(OtaTransmissionWorker.jobs.sole["args"]).to eq([ gateway.uid, "firmware", firmware.id, 0, 0 ])
+      expect(gateway.reload.pending_firmware_id).to eq(firmware.id)
     end
 
     it "rejects cluster_id from another organization with 404" do
@@ -197,14 +198,14 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     before { OtaTransmissionWorker.clear }
 
     it "redirects with a notice on successful HTML deploy (the UI one-click path)" do
-      create(:gateway, cluster: cluster)
+      gw = create(:gateway, cluster: cluster)
 
       post "/api/v1/firmwares/#{firmware.id}/deploy",
            headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
 
       expect(response).to have_http_status(:redirect)
       expect(flash[:notice]).to be_present
-      expect(OtaTransmissionWorker.jobs.size).to eq(1)
+      expect(gw.reload.pending_firmware_id).to eq(firmware.id)
     end
 
     it "redirects with an alert when nothing was dispatched" do

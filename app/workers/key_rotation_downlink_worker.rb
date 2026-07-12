@@ -18,6 +18,19 @@ class KeyRotationDownlinkWorker
 
   sidekiq_options queue: "downlink", retry: 2
 
+  # [FW.60] Вичерпані ретраї падали в DeadSet БЕЗ сліду в БД — а тут наслідок
+  # важчий за time-sync: key_version уже бампнутий транзакційно з enqueue
+  # (HardwareKeyService#rotate_tree_via_ratchet!), тож смерть job'а = ключ
+  # ротований у БД, кадр 0x9E не доставлений. Recovery існує derivation'ом:
+  # Dual-Key Grace (previous_aes_key_hex ≠ NULL) робить незавершену ротацію
+  # видимою Downlink::PendingQueueService — Королева добере 0x9E наступним
+  # poll'ом. Слід тут = гучність для оператора.
+  sidekiq_retries_exhausted do |msg, _ex|
+    device_uid, target_version = msg["args"]
+    Rails.logger.error "🛑 [KeyRotationDownlink] Job для #{device_uid} (v#{target_version}) помер " \
+                       "(#{msg['error_message'].to_s.truncate(120)}) — 0x9E добере poll-derivation (Grace-вікно)"
+  end
+
   def perform(device_uid, target_version)
     unless HardwareKeyService.ratchet_dispatch_enabled?
       Rails.logger.warn("[KeyRotationDownlink] #{device_uid}: dispatch відхилено — " \

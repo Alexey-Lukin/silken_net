@@ -2,6 +2,12 @@
 
 require "timeout"
 
+# ⚠️ [FW.60 superseded] Push-конвеєр чанків на gateway.ip_address (CGNAT-egress,
+# inbound-недосяжний) — жоден код більше не enqueue'ить цей воркер:
+# Ota::DeploymentDispatcherService пише gateways.pending_firmware_id, доставку
+# тягне сама Королева (poll → OTA-hint → Downlink::PendingQueueService
+# chunk-server). Видалити після bench-верифікації poll-тракту [bench:coap];
+# CHUNK_SIZE лишається живою константою пакування.
 class OtaTransmissionWorker
   include Sidekiq::Job
   include CoapEncryption

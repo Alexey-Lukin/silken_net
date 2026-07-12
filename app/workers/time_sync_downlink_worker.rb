@@ -17,6 +17,15 @@ class TimeSyncDownlinkWorker
 
   sidekiq_options queue: "downlink", retry: 2
 
+  # [FW.60] Вичерпані ретраї падали в DeadSet БЕЗ сліду. Наслідок м'який —
+  # стану в БД нема, а Королева однаково отримує свіжий [0x9C][ts:4] у КОЖНІЙ
+  # poll-відповіді (CoapEncryption) — тож слід тут = видимість, не recovery.
+  sidekiq_retries_exhausted do |msg, _ex|
+    cluster_id = msg["args"]&.first
+    Rails.logger.error "🛑 [TimeSyncDownlink] Job для кластера #{cluster_id} помер " \
+                       "(#{msg['error_message'].to_s.truncate(120)}) — Королева синкнеться наступним poll'ом"
+  end
+
   def perform(cluster_id)
     gateway = best_gateway_for(cluster_id)
     return unless gateway

@@ -59,4 +59,62 @@ RSpec.describe CoapGate do
     expect(UnpackTelemetryWorker).not_to receive(:perform_async)
     expect(described_class.handle_datagram(data: "small", gateway_ip: gateway_ip)).to eq(reply_bytes)
   end
+
+  # [FW.60] Queen-pull гілки: poll + ota chunk-server
+  describe "downlink poll (FW.60)" do
+    let(:request) do
+      instance_double(CoapServerPdu::Request, type: CoapServerPdu::TYPE_CON, message_id: 7)
+    end
+
+    def poll_result(uid: "SNET-Q-00000001", req: request, query: {})
+      result(status: :downlink_poll, gateway_uid: uid).tap do |r|
+        allow(r).to receive_messages(request: req, query: query)
+      end
+    end
+
+    before { CoapGate::REPLY_CACHE.clear }
+
+    it "derive'ить чергу і відповідає 2.05 з конвертом" do
+      gateway = create(:gateway)
+      allow(Downlink::PendingQueueService).to receive(:poll_reply)
+        .with(gateway: gateway, query: {}).and_return("ENVELOPE".b)
+      allow(CoapServerPdu).to receive_messages(handle_telemetry_datagram: poll_result(uid: gateway.uid), build_content: "REPLY205".b)
+
+      expect(described_class.handle_datagram(data: "x", gateway_ip: gateway_ip)).to eq("REPLY205".b)
+    end
+
+    it "невідомий uid → 4.04, derivation не торкається" do
+      allow(CoapServerPdu).to receive_messages(handle_telemetry_datagram: poll_result(uid: "SNET-Q-DEADBEEF"), build_ack: "ACK404".b)
+      expect(Downlink::PendingQueueService).not_to receive(:poll_reply)
+
+      expect(described_class.handle_datagram(data: "x", gateway_ip: gateway_ip)).to eq("ACK404".b)
+    end
+
+    it "NON-poll → мовчазний дроп (контракт = CON)" do
+      non_request = instance_double(CoapServerPdu::Request, type: CoapServerPdu::TYPE_NON)
+      allow(CoapServerPdu).to receive(:handle_telemetry_datagram).and_return(poll_result(req: non_request))
+
+      expect(described_class.handle_datagram(data: "x", gateway_ip: gateway_ip)).to be_nil
+    end
+
+    it "CON-ретрансміт (той самий MID) → закешована відповідь без re-derivation" do
+      gateway = create(:gateway)
+      allow(Downlink::PendingQueueService).to receive(:poll_reply).once.and_return("ENVELOPE".b)
+      allow(CoapServerPdu).to receive_messages(handle_telemetry_datagram: poll_result(uid: gateway.uid), build_content: "REPLY205".b)
+
+      first  = described_class.handle_datagram(data: "x", gateway_ip: gateway_ip)
+      replay = described_class.handle_datagram(data: "x", gateway_ip: gateway_ip)
+
+      expect(replay).to eq(first)
+      expect(Downlink::PendingQueueService).to have_received(:poll_reply).once
+    end
+
+    it "порожня derivation (нема KEYC) → 4.04" do
+      gateway = create(:gateway)
+      allow(Downlink::PendingQueueService).to receive(:poll_reply).and_return(nil)
+      allow(CoapServerPdu).to receive_messages(handle_telemetry_datagram: poll_result(uid: gateway.uid), build_ack: "ACK404".b)
+
+      expect(described_class.handle_datagram(data: "x", gateway_ip: gateway_ip)).to eq("ACK404".b)
+    end
+  end
 end

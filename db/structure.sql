@@ -1646,7 +1646,8 @@ CREATE TABLE public.gateways (
     firmware_update_status integer DEFAULT 0 NOT NULL,
     last_attested_at timestamp without time zone,
     helium_dev_eui character varying,
-    ota_started_at timestamp with time zone
+    ota_started_at timestamp with time zone,
+    pending_firmware_id bigint
 );
 
 

@@ -2,6 +2,14 @@
 
 require "timeout"
 
+# ⚠️ [FW.60 superseded] Push-доставка CMD на gateway.ip_address (CGNAT-egress,
+# inbound-недосяжний) — ActuatorCommand#dispatch_to_edge! більше не enqueue'ить
+# цей воркер: команда чекає в .pending, Королева забирає її власним poll'ом
+# (Downlink::PendingQueueService — там же повний success-lifecycle
+# dispatch→acknowledge→Reset-план). Гірше за недоставку: швидкі ретраї сюди
+# fail!'или команду ДО першого poll'а. Видалити після bench-верифікації
+# poll-тракту [bench:coap]; broadcast_command_state_static лишається живим
+# UI-хелпером (кличе PendingQueueService).
 class ActuatorCommandWorker
   include Sidekiq::Job
   include CoapEncryption

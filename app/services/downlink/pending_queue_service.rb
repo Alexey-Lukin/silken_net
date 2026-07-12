@@ -1,0 +1,210 @@
+# frozen_string_literal: true
+
+module Downlink
+  # [FW.60] Черга Rails→Queen downlink для poll-після-флашу (LwM2M Queue-Mode):
+  # Queen сама питає `poll/<uid>` одразу після send_success — цей сервіс
+  # derive'ить «що віддати» з наявного стану БД, без власної таблиці-черги.
+  #
+  # Пріоритет: CMD (life-safety) > 0x9E ratchet (gated FW.17) > OTA-hint >
+  # time-only конверт. 0x9C у пріоритет-рядку трекера задовольняється тотожно:
+  # CoapEncryption вшиває [0x9C][ts:4] у КОЖЕН конверт — будь-яка відповідь
+  # (включно з порожньою time-only) синхронізує RTC Королеви.
+  #
+  # OTA їде окремим stateless chunk-server'ом (`ota/<uid>?v=&ch=`): Queen
+  # єдина знає свій bitmap, тож веде прогрес сама; Rails персистить лише
+  # таргет кампанії (gateways.pending_firmware_id — canary-когорту пише
+  # Ota::DeploymentDispatcherService) і спостерігає доставку через
+  # `fw=<contract_id>` у poll-query (RAM-стан Королеви: 0 після ребуту →
+  # повторний hint → безпечний idempotent re-fetch).
+  class PendingQueueService
+    include CoapEncryption
+
+    # Дзеркало firmware CMD_DECRYPT_BUF_SIZE (544) + IV 16: конверт понад цю
+    # стелю Queen мовчки відкине ще до decrypt (03_02 §5 «Вхідні перевірки»).
+    MAX_ENVELOPE_BYTES = 560
+
+    OTA_HINT_MARKER = 0x9F # [0x9F][firmware_id:4 BE][total_packages:2 BE]
+
+    def self.poll_reply(gateway:, query:)
+      new(gateway).poll_reply(query)
+    end
+
+    def self.ota_chunk_reply(gateway:, query:)
+      new(gateway).ota_chunk_reply(query)
+    end
+
+    def initialize(gateway)
+      @gateway = gateway
+    end
+
+    # → envelope-байти ([IV:16][AES-256-CBC KEYC]) або nil (нема ключа —
+    # CoapGate відповість 4.04, Queen не почне decrypt сміття).
+    def poll_reply(query)
+      return nil unless encryption_key
+
+      observe_delivered_firmware!(query["fw"])
+
+      envelope(next_inner_payload)
+    end
+
+    # Stateless chunk-server: ?v=<firmware_id>&ch=<n> → конверт із чанком.
+    # nil → 4.04 (чужа/завершена версія, ch поза межами — Queen перечитає hint).
+    def ota_chunk_reply(query)
+      return nil unless encryption_key
+
+      firmware_id = query["v"].to_i
+      chunk_index = query["ch"].to_i
+      return nil unless firmware_id.positive? && firmware_id == @gateway.pending_firmware_id
+
+      packages = ota_packages(firmware_id)
+      return nil unless packages && chunk_index < packages.size
+
+      envelope(packages[chunk_index])
+    end
+
+    private
+
+    # Пріоритет-драбина. Кожна сходинка повертає inner-байти або nil.
+    def next_inner_payload
+      actuator_command_payload || key_rotation_payload || ota_hint_payload || "".b
+    end
+
+    # ── CMD (найпріоритетніший — сирена/клапан) ──────────────────────────
+    # Видача в 2.05 = семантичний аналог push-успіху (Queen запитала і
+    # отримує відповідь на власний свіжий NAT-pinhole; втрату відповіді
+    # покриває CON-ретрансміт Королеви + MID-кеш CoapGate — та сама відповідь
+    # повторюється байт-у-байт). Тому тут повне дзеркало success-гілки
+    # ActuatorCommandWorker: dispatch→acknowledge→mark_active→Reset-план.
+    def actuator_command_payload
+      loop do
+        command = pending_commands.first
+        return nil unless command
+
+        if command.expired?
+          command.fail!("⏱️ Команда протермінована (TTL: #{command.expires_at})") if command.may_fail?
+          next
+        end
+
+        inner = "CMD:#{command.command_payload}:#{command.duration_seconds}:" \
+                "#{command.actuator_id}:#{command.idempotency_token}"
+        if oversized?(inner)
+          command.fail!("Конверт понад стелю Queen (#{MAX_ENVELOPE_BYTES} Б)") if command.may_fail?
+          next
+        end
+
+        ActiveRecord::Base.transaction do
+          command.dispatch! if command.may_dispatch?
+          # may_activate?-guard: друга команда на ВЖЕ активний актуатор
+          # (подовження/override) — легальний потік; голий mark_active! тут
+          # кидав AASM::InvalidTransition (латентна бомба ще push-воркера).
+          command.actuator.mark_active! if command.actuator.may_activate?
+          command.acknowledge! if command.may_acknowledge?
+        end
+        ResetActuatorStateWorker.perform_in(command.duration_seconds.seconds, command.id)
+        ActuatorCommandWorker.broadcast_command_state_static(command)
+
+        return inner
+      end
+    end
+
+    def pending_commands
+      ActuatorCommand.joins(:actuator)
+                     .where(actuators: { gateway_id: @gateway.id })
+                     .pending.by_priority
+    end
+
+    # ── 0x9E ratchet (gated FW.17 — той самий guard, що KeyRotationDownlinkWorker) ──
+    # Джерело derivable: tree-ключ кластера в Dual-Key Grace
+    # (previous_aes_key_hex ≠ NULL = ротація не підтверджена Солдатом).
+    def key_rotation_payload
+      return nil unless HardwareKeyService.ratchet_dispatch_enabled?
+
+      key = HardwareKey.joins(:tree)
+                       .where(trees: { cluster_id: @gateway.cluster_id })
+                       .where.not(previous_aes_key_hex: nil)
+                       .order(:updated_at).first
+      return nil unless key
+
+      OtaPackagerService.build_rotate_key_block(key.key_version)
+    end
+
+    # ── OTA-hint (нога-2 відкривається Королевою після цього анонсу) ─────
+    def ota_hint_payload
+      firmware_id = @gateway.pending_firmware_id
+      return nil unless firmware_id
+
+      packages = ota_packages(firmware_id)
+      return nil unless packages
+
+      unless @gateway.updating?
+        # ARCH.59-якір: watchdog ловить stuck-:updating саме за цією парою.
+        @gateway.update!(state: :updating, ota_started_at: Time.current)
+      end
+
+      [ OTA_HINT_MARKER, firmware_id, packages.size ].pack("CNn")
+    end
+
+    # Спостережене підтвердження доставки: Queen несе свій RAM-стан
+    # «повністю зібраний contract_id» у кожному poll (0 після ребуту).
+    def observe_delivered_firmware!(fw_param)
+      delivered_id = fw_param.to_i
+      pending_id = @gateway.pending_firmware_id
+      return unless pending_id && delivered_id >= pending_id
+
+      firmware = BioContractFirmware.find_by(id: pending_id)
+      @gateway.update!(
+        pending_firmware_id: nil,
+        firmware_version: firmware&.version || @gateway.firmware_version,
+        state: @gateway.updating? ? :idle : @gateway.state
+      )
+    end
+
+    # Пакети кампанії — важке пакування кешується per (firmware, cluster):
+    # той самий масив живить hint (total) і chunk-server (байти чанків).
+    def ota_packages(firmware_id)
+      Rails.cache.fetch("fw60/ota_packages/#{firmware_id}/#{@gateway.cluster_id}",
+                        expires_in: 1.hour) do
+        firmware = BioContractFirmware.find_by(id: firmware_id)
+        next nil unless firmware
+
+        OtaPackagerService.prepare(
+          firmware,
+          chunk_size: OtaTransmissionWorker::CHUNK_SIZE,
+          cluster_id: @gateway.cluster_id
+        )[:packages].to_a
+      end
+    end
+
+    def envelope(inner)
+      encrypted = coap_encrypt(inner, encryption_key)
+      return encrypted unless oversized_envelope?(encrypted)
+
+      Rails.logger.error "🛑 [FW.60] Конверт #{encrypted.bytesize} Б > стелі " \
+                         "#{MAX_ENVELOPE_BYTES} Б для #{@gateway.uid} — відповідаю time-only"
+      coap_encrypt("".b, encryption_key)
+    end
+
+    # Dual-Key Grace: доки Королева не підтвердила ротацію — старий ключ
+    # (дзеркало ActuatorCommandWorker).
+    def encryption_key
+      return @encryption_key if defined?(@encryption_key)
+
+      record = @gateway.hardware_key
+      @encryption_key =
+        if record.nil? || record.aes_key_hex.blank?
+          Rails.logger.error "🛑 [FW.60] KEYC для #{@gateway.uid} відсутній — poll без відповіді"
+          nil
+        else
+          record.binary_previous_key || record.binary_key
+        end
+    end
+
+    def oversized?(inner)
+      # envelope 5 Б + zero-pad до 16 + IV 16.
+      iv_and_ct = 16 + ((inner.bytesize + TIME_SYNC_HEADER_SIZE + 15) / 16) * 16
+      iv_and_ct > MAX_ENVELOPE_BYTES
+    end
+
+    def oversized_envelope?(encrypted) = encrypted.bytesize > MAX_ENVELOPE_BYTES
+  end
+end

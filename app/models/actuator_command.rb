@@ -182,12 +182,15 @@ class ActuatorCommand < ApplicationRecord
     # Транслюємо створення в UI
     broadcast_prepend_to_activity_feed
 
-    if actuator.ready_for_deployment?
-      ActuatorCommandWorker.perform_async(self.id)
-    else
+    unless actuator.ready_for_deployment?
       update_columns(status: self.class.statuses[:failed], error_message: "Актуатор недоступний")
       Rails.logger.warn "🛑 [COMMAND] Спроба активації ##{id} провалена: Актуатор #{actuator.name} недоступний."
     end
+    # [FW.60] Push-enqueue (ActuatorCommandWorker) superseded: команда чекає
+    # в .pending — Королева забере її власним poll'ом після наступного флашу
+    # (Downlink::PendingQueueService, пріоритет CMD найвищий). Push у
+    # CGNAT-egress не лише не долітав — його швидкі ретраї fail!'или команду
+    # ДО того, як Queen могла її запитати.
   end
 
   # 📈 Використовуємо денормалізований organization_id замість глибокого JOIN

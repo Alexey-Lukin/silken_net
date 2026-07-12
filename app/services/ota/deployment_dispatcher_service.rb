@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 module Ota
-  # [SEC.20 Rails-half] Диспетчер OTA-кампанії: розгортає прошивку на шлюзи
-  # організації через fan-out per-gateway OtaTransmissionWorker.
+  # [SEC.20 Rails-half] Диспетчер OTA-кампанії: таргетує прошивку на шлюзи
+  # організації через per-gateway `pending_firmware_id` — [FW.60] доставку
+  # виконує сама Королева (poll-після-флашу → OTA-hint → chunk-server
+  # `Downlink::PendingQueueService`), push-fan-out OtaTransmissionWorker
+  # superseded (CGNAT-egress inbound-недосяжний).
   #
   # Anti-rollback: firmware.id мусить СТРОГО перевершити clusters.ota_version_hiwater
   # (Rails-дзеркало Солдатового інваріанта — той самий firmware.id їде в seg-4
@@ -10,8 +13,10 @@ module Ota
   # Слот палиться при DISPATCH (свідомо суворіше за Soldier APPLY-time):
   # обірвана кампанія перевипускається НОВИМ записом прошивки, не re-issue.
   class DeploymentDispatcherService
-    # Воркерова гілка BioContractFirmware у fetch_firmware_record.
-    FIRMWARE_TYPE = "firmware"
+    # [FW.60] Дзеркало Queen bitmap-стелі: OTA_MAX_CHUNKS=16 × 512 Б = 8 КБ
+    # збірки (docs/03_02 §5 Guard 3). Понад — Queen мовчки дропає ch≥16 і
+    # збірка зависає назавжди, тож відхиляємо кампанію ДО burn.
+    QUEEN_MAX_BYTECODE_CHUNKS = 16
 
     SkippedCluster = Struct.new(:id, :name, :reason)
     Result = Struct.new(:dispatched_gateways, :skipped_clusters, keyword_init: true) do
@@ -28,16 +33,12 @@ module Ota
     end
 
     def call
+      if (skipped = oversized_rejection)
+        return Result.new(dispatched_gateways: 0, skipped_clusters: skipped)
+      end
+
       cohort_uids, skipped = plan_and_burn_hiwater!
 
-      # Стеля (свідома): інфра-збій нижче (Redis-down посеред enqueue,
-      # DB-збій активації) лишає hiwater спаленим — це БЕЗПЕЧНА сторона
-      # (частково-полетілу кампанію відкочувати не можна); recovery = новий
-      # запис прошивки. TOCTOU до воркерового state=:updating закривається
-      # ARCH.59 ota_started_at-механікою.
-      cohort_uids.each do |uid|
-        OtaTransmissionWorker.perform_async(uid, FIRMWARE_TYPE, @firmware.id, 0, 0)
-      end
       # Оживлення read-live шва: TelemetryUnpackerService#latest_tree_firmware_id
       # читає .active — без активації check_firmware_mismatch! лишається no-op.
       @firmware.deploy_globally!(percentage: @canary_percentage) if cohort_uids.any?
@@ -47,9 +48,22 @@ module Ota
 
     private
 
+    # [FW.60] 16-чанк/8КБ-гейт: manifest дешевий (lazy-packages не
+    # матеріалізуються), total_chunks = чисті bytecode-чанки 0x99 —
+    # HMAC-трейлер 0x9B живе поза Queen-bitmap'ом і стелі не їсть.
+    def oversized_rejection
+      manifest = OtaPackagerService.prepare(
+        @firmware, chunk_size: OtaTransmissionWorker::CHUNK_SIZE
+      )[:manifest]
+      return nil if manifest[:total_chunks] <= QUEEN_MAX_BYTECODE_CHUNKS
+
+      target_clusters.map { |c| SkippedCluster.new(c.id, c.name, "oversized_firmware") }
+    end
+
     # У одній транзакції: lock цільових кластерів → відсів rollback/порожніх →
-    # canary-когорта per-cluster → hiwater-бамп ЛИШЕ кластерам з реальним диспатчем.
-    # Enqueue — після commit (щоб job не стартував поперед бампа).
+    # canary-когорта per-cluster → hiwater-бамп + pending_firmware_id-таргет
+    # ЛИШЕ кластерам з реальним диспатчем (атомарно: обірваний dispatch не
+    # лишає когорту без таргета при спаленому hiwater).
     def plan_and_burn_hiwater!
       cohort_uids = []
       skipped = []
@@ -68,6 +82,9 @@ module Ota
           end
 
           cluster.update_column(:ota_version_hiwater, @firmware.id)
+          # [FW.60] Канарейкова когорта персистується per-gateway: Королева
+          # дізнається через OTA-hint на власному poll'і, не push'ем.
+          cluster.gateways.where(uid: uids).update_all(pending_firmware_id: @firmware.id)
           cohort_uids.concat(uids)
         end
       end
