@@ -366,6 +366,19 @@ HAL_CRYP_Init(&hcryp);
 > (теж сирий PDU). Доменів CCOAPNEW не приймає → потрібен крок `AT+CDNSGIP`.
 > **Bench-рядок:** verbatim-звірка SIM7070-ноти V1.03 (`firmware/scripts/bench/RUNBOOK.md`).
 
+> **📡 [FW.60] Inbound-тракти модема (розвідка 2026-07-12; AT Manual V1.03 + TCPUDP-нота V1.02, звірено посторінково):**
+> для *вхідних* байтів у модема два тракти. **(а) CCOAP-розмова:** відповідь сервера = один
+> hex-URC `+CCOAPNMI` → стеля PDU ≈ ⌊(`AT_LINE_MAX`−overhead)/2⌋ ≈ 60-70 Б — стеля **наша**
+> (буфер рядка токенайзера), модемна стеля довгого NMI невідома (bench). **(б) CA\*-сім'я:**
+> `AT+CAOPEN=<cid 0-12>,<pdp>,"UDP","<host≤64>",<port>` (DNS сам) → `CASEND` ≤1459 Б →
+> вхідне модем буферизує і будить коротким URC `+CADATAIND: <cid>` (офіційна NOTE мануалу) →
+> `AT+CARECV=<cid>,≤1459` віддає **сирі** (не hex) лічені байти — повнорозмірний PDU одним
+> читанням; `CASTATE`/`CACLOSE` керують життям. `CASERVER` (UDP/TCP listen) у модемі існує,
+> але мережево мертвий за CGNAT (спостережена адреса шлюза = egress — [`04_01`](04_01_Data_Models_and_Entities)).
+> Модемний DTLS-PSK (`CASSLCFG`+`PSKTABLE`) відхилено: ключ у модем + PSK plaintext'ом в AT —
+> проти Zero-Trust і FW.56-уроку. Споживач цих фактів = downlink-poll: рішення+план —
+> [`00_07` FW.60](00_07_Action_Plan_Tracker); банер §5.
+
 ### Архітектура (FW.3 + FW.56): три pure-шари + UART-клей
 
 | Шар | Файл | Відповідальність | Host-тести |
@@ -517,7 +530,7 @@ if (current_ota_chunk_idx >= total_chunks):
 
 ### OTA Assembly (CoAP Downlink від Rails → RAM)
 
-> ⚠️ **[FW.60] Inbound-тракт UNWIRED:** усе нижче — wire-формат і guard-логіка `Handle_CoAP_Command`, host-tested, але сама функція **не має жодного call-site**: Queen не тримає CoAP-сервера (SIM7070-розмова клієнт-сесійна), а `gateway.ip_address` = CGNAT-egress, непридатний для вхідної сесії. Rails-продюсер готовий (SEC.20 Rails-half ✅); транспорт-рішення + wire-up + карта решти дрейф-місць канону — [`00_07` FW.60](00_07_Action_Plan_Tracker). Стеля збірки 16×512 = 8 КБ (Guard 3) **не звірена** з Rails-лімітами (256 КБ model / 20 МБ upload) — узгодження там само.
+> ⚠️ **[FW.60] Inbound-тракт UNWIRED:** усе нижче — wire-формат і guard-логіка `Handle_CoAP_Command`, host-tested, але сама функція **не має жодного call-site**: Queen не тримає CoAP-сервера (SIM7070-розмова клієнт-сесійна), а `gateway.ip_address` = CGNAT-egress, непридатний для вхідної сесії. Rails-продюсер готовий (SEC.20 Rails-half ✅); **транспорт ВИРІШЕНО (founder 2026-07-12): poll-після-флашу** — LwM2M Queue-Mode ідіома: Queen сама питає `poll/<uid>` одразу після `send_success` (модем теплий, свіжий NAT-pinhole; патерн device-event хвоста), Rails тримає чергу. Реалізація двонога, Rails-half тракт-агностичний: CCOAP-нога ≤~60 Б (CMD/0x9C/0x9E/0x9A) + CARECV-нога ≤1459 Б (OTA-чанки 512 Б, bitmap-16 незмінний) — модем-факти §4. Wire-up обох ніг + Rails-half + карта решти дрейф-місць — [`00_07` FW.60](00_07_Action_Plan_Tracker). Стеля збірки 16×512 = 8 КБ (Guard 3) **не звірена** з Rails-лімітами (256 КБ model / 20 МБ upload) — enforcement у FW.60-плані.
 
 **Два типи OTA-чанків — важливо не плутати:**
 | Тип | Джерело | Розмір payload | Макс чанків | Ліміт |

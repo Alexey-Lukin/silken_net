@@ -90,7 +90,7 @@
 | [bench:flash-kv] | §6 (bullet «Flash-KV на кремнії» ↓) | FW.2 · FW.8 · FW.17 · FW.20 · FW.54 |
 | [bench:parity-dump] | §2.3 | FW.55 |
 | [bench:lse-rtc-wut] | §4 | FW.49 · FW.20 · ARCH.41 · ARCH.26 · SEC.15 |
-| [bench:coap] | §5 (+ §6 VBAT-droop) | FW.3 · FW.56 · FW.58 · HW.15 |
+| [bench:coap] | §5 (+ §6 VBAT-droop) | FW.3 · FW.56 · FW.58 · FW.60 · HW.15 |
 | [bench:ota-day] | §2.5 (+ §6 `Write_OTA_Contract_To_Flash`) | FW.23 · FW.52 · SEC.20 |
 
 - **HW-AES-KEY/SEC.6:** SE050 eval kit (SEC.14 роль SE — рішення при BOM freeze; SE = SE050 — 03_05 §3.7 / 00_07 SE050-MIGRATION) + live SE05x I²C; **замір SE sleep-floor за load-switch гейтом** (TPS22860-патерн — SEC.14 cross-check 2026-06-12: always-on 150 нА ≈ 3.6 мДж/год > весь запас Сценарію C, гейт обов'язковий).
