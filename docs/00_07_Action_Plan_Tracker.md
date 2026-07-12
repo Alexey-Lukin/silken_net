@@ -15,7 +15,7 @@
 > - **STAGE** (лайфсайкл, окремо від WHO): `⚪` **Не почато** · `🟡` **В роботі** (частково зроблено) · `🟢` **Готово-інертно** (host/код done, чекає bench-фліпу або активації за гейтом) · `🔗` **Заблоковано** (на іншу задачу/рішення) · `🌿` **Far-horizon** (post-TRL) · `⚫` **Vacuous** («нема-що-завершувати»: premise спростовано / поглинуто деінде / vacuous-as-written — ≠ `🟢` нема-що-активувати, ≠ `🔗` нема-на-що-чекати; пара `⚪`↔`⚫` = «не почато»↔«нема чого починати»; item лишається НА МІСЦІ як closed-canon нотатка, residual хіба `⚖️`/`🌿`-переоцінка). Повністю done → **§🗄️ Архів**.
 
 > **Форма пункту (стандарт — щоб трекер був однорідний):**
-> - Заголовок: `#### ID — короткий заголовок`.
+> - Заголовок: `#### ID — короткий заголовок` (+ опційні хвостові теги: `[поглинув X дата]` — дзеркальна пара; **`[кластер:slug:дім|важіль]`** — координатор ⊃ важелі, DRY без item-merge: рівно ОДИН `дім` + ≥1 `важіль` на slug, enforced `cluster_marker_violations` — **HARD**; живі кластери: `tx-cadence` · `fauna` · `parity` · `rendezvous`).
 > - **Meta-line** (рівно один, перший рядок): `**PN** · WHO · STAGE · → канон-реф`. `PN` ∈ `P0`–`P3`; `WHO` = `🤖`/`👤`/`⚖️` (комбо `🤖+👤`/`🤖+⚖️`/`👤+⚖️` — AI-first, decider trailing; **НЕ** `👤+🤖`/`⚖️+👤`); `STAGE` = `⚪`/`🟡`/`🟢`/`🔗`/`🌿`/`⚫` (рівно ОДИН, окремо від WHO); реф = канон код-спан або лінк із реальним `§X`, і **нічого після нього** (контекст типу `· ✅ ліцензія` → у Стан). Форма enforced `meta_form_violations` ([`00_06 §3`](00_06_SSOT_Documentation_Standard) — **HARD**); Module = §-секція, вже enforced.
 > - **Порядок у секції — за пріоритетом** (`P0`→`P3`): новий пункт стає на позицію свого `PN` у пріоритет-кластері секції, не в хвіст — найгостріше згори (enforcement очима, не лінтером).
 > - **Тіло — тонкий вказівник, не копія канону.** Перший рядок тіла — **ЗАВЖДИ** `- **Стан:**` <суть/присуд + канон-pointer> (повний опис у каноні; для ⚪-пунктів — короткий опис стану «не почато»). Universal-форма (founder 2026-06-14): **НЕ** «✅ X»-лід / prose-лід / bare-checkbox-лід — однорідність трекера (enforced `verdict_lead_violations`, [`00_06 §3`](00_06_SSOT_Documentation_Standard) — **HARD** з 2026-06-14, усі 138 items на `**Стан:**`-ліді). Відкрите → `[ ]` (`[x]` done · `[~]` частково) з WHO-тегом. Bench/validation-чек-лист (runbook) лишається.
@@ -644,7 +644,7 @@
 - **Стан:** TENSOR_ARENA верифіковано — реальний ARM static-RAM CI-гейт `[FW.26]` (`check_ram_budget.sh --hal-objects` через FW.46 compile-lane, per-TU бюджети 8 192/20 480; arena ляже у `.bss` і зірве гейт → свідома ревізія) над виміряним RAM-леджером (mruby 38 392 — FW.55-вимір зняв «~4КБ»-міф → **стеля tensor arena ≈ 7–15 КБ**; стара умова «>46KB→overflow» була на міфі; бриф ML-партнерам arena ≤ 10 КБ). FW.4 baseline приземлено: forward-pass **972 B Flash / 0 .bss / 76 B стек** << стелі (prune/кап не знадобились). Канон леджера [`03_03 §6`](03_03_TinyML_Acoustic_Inference) + arena-оцінка [`03_03 §4.3`](03_03_TinyML_Acoustic_Inference) + build [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA).
 - [ ] 🔗 ARM `arm-none-eabi-size` на повному `.elf` (`.bss+.data` після HAL-link; ELF-режим гейта готовий, per-target 14 800/40 960) — після FW.46 board-freeze
 
-#### FW.55 — QEMU-M4 bit-parity lane: ARM↔x86 mruby double residual → CI
+#### FW.55 — QEMU-M4 bit-parity lane: ARM↔x86 mruby double residual → CI [кластер:parity:дім]
 - **P1** · 👤 · 🟢 · → [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA)
 - **Стан:** QEMU-M4 bit-parity lane (`qemu-system-arm -M mps2-an386`, той самий `libmruby.a` + software-double `__aeabi_d*`, що піде на WLE5) ганяє committed-байткод реальним Cortex-M4 код-шляхом → **byte-exact** проти host-голдена (зчеплені кейси — хаос ампліфікує ULP), закриває FW.7/FW.19 ARM↔x86 Float-drift до тонкого silicon-confirm. Дві ноги (mruby + log-mel CMSIS, обидві soft-float) + заскриптована кремнієва нога `wle5_bench` (`05_parity_dump.py`). **64КБ фіт-гейт у CI зловив 4 девайс-знахідки** до кремнію (червоний 102400 → плато sbrk 38392 Б): ① runner arena save/restore; ② `MRB_CONSTRAINED_BASELINE_PROFILE`; ③ newlib-nano; ④ **`MRB_NO_BOXING` явний пін** — канон FW.19 «дефолт=NO_BOXING» був ХИБНИЙ (mruby 4.0 дефолт = `MRB_WORD_BOXING` → ~20.5КБ RFloat-транзієнту/виклик на ARM32), фіт-гейт тепер = CI-enforcement FW.19; + бонус per-wakeup `mrb_full_gc`. RAM-леджер виведено у FW.26 / [`03_03 §6`](03_03_TinyML_Acoustic_Inference). Канон [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA) (lane) + §12.4 (піни); межі ISA≠кремній = клас C (bench).
 - [ ] 👤 silicon-confirm: один прогін на платі — `bench/05_parity_dump.py --plan` (flash `parity_wle5.elf` → дамп по VCP → вердикт) — **консолідований дім**: закриває FW.7/FW.19 **+ FW.31 Gate L** разом (vilize 07-11)
@@ -660,7 +660,7 @@
 - **Стан:** Знахідка pre-deploy нори 2026-07-04 (Opus-агент, верифіковано кодом): `coap_server_ip` (CDNSGIP-кеш `COAP_SERVER_HOST`) резолвиться ЛИШЕ коли порожній і НЕ скидається при провалі відправки (`g_coap_fail_count++` без інвалідації) → жива Королева довбе мертвий IP до IWDG-ребута (~26с hang) чи циклу живлення; **зміна A-запису `api.silkennet.com` — єдиний zero-infra глобальний failover — не підхоплювалась.** Фікс host-shipped (варіант B, vilize 07-11): `coap_consec_fail` streak (reset на success) + `Coap_Reresolve_Due` → інвалідація кешу після N=3 підряд → примусовий re-resolve наступного flush; host-тест `test_fw58_reresolve_predicate`. Зроблено ДО прошивки Queens (після — була б лише OTA-кампанія). Механізм канонізовано [`03_02 §4`](03_02_Queen_Gateway_Firmware) (флоу + RAM-таблиця); [`06_02`](06_02_Akash_Network_Integration) pre-flight + failure-modes і [`06_08`](06_08_Resilience_and_Failover_Policy) крок 2 реферять. Супутньо там же вичищено фантомні `CMD_SET_BACKEND`/`QUEEN_BACKEND_HOST` (команда ніколи не існувала у firmware — doc-drift).
 - [ ] 👤 bench: живий SIM7070 — A-запис фліп → Королева підхоплює без ребута (разом з FW.56-bench)
 
-#### E.59 — Mongabay biodiversity D-MRV pivot (acoustic fauna) [strategic]
+#### E.59 — Mongabay biodiversity D-MRV pivot (acoustic fauna) [strategic] [кластер:fauna:дім]
 - **P1** · 🤖+👤 · 🟢 · → `03_03 §10`, `08_01 §1`
 - **Стан:** Стратегічний pivot carbon-MRV → biodiversity D-MRV (acoustic), після Delgado et al. (Nicoya, 119 ділянок, 16000 год аудіо; Mongabay, тр. 2026). Defensible moat проти Pachama/Sylvera/NCX (єдиний micro-acoustic verification layer). Firmware-фундамент pivot'а вже shipped 🟢 (log-mel FW.25 → §🗄️; fauna-інфра FW.42/ARCH.40 host-done) — відкрите gated датасетом/академіками. Координує вже-трековані: FW.4-EXT (5-class TinyML + `fauna_activity`), UNI.11+UNI.13a (Cherkasy Soundscape Library), BIZ.12 (Horizon CLUSTER 6 grant), 08_01 Стаття 24a. Канон `03_03 §10` + `08_01 §1/§2` + `08_02 §1B`.
 - [ ] 🔗 FW.4-EXT 5-class `fauna_activity` — дім = FW.4 (🌿-чекбокс); gated UNI.11+UNI.13a dataset
@@ -691,12 +691,12 @@
 - [ ] 👤 bench TRL-7 (термокамера ЧНУ, gated): ±60°C ppm(T)-крива (RUNBOOK §4.3) — недосяжна на TRL-6 → окремо (vilize 07-11 TRL-split: інакше задача вічно-відкрита)
 - [ ] 🤖 мікро-дрейфи (vilize 07-11, buildable): warm drift-watchdog `Soldier_Should_Request_Time_Sync` без hot-path call-site → canon-caveat §5а.1③ (passive-beacon re-sync достатній) або 10-рядк hook; стейл-коментар mesh-relay (soldier); `beacon_dedup.h`-коментар «маячить після кожного конверта» ≠ код (лише 0x56). ⚠️ mesh-relay FW.20 = downlink-**маяк** (KEYB 16B ECB), НЕ ARCH.43 uplink → гейт = чистий bench-flip, не wire-rev3. + E.51 cross-ref TTL≥3 (P_delivery-крива)
 
-#### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier
+#### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier [кластер:rendezvous:важіль]
 - **P2** · 🤖 · 🟢 · → [`03_02 §5.1`](03_02_Queen_Gateway_Firmware)
 - **Стан:** Soldier RX-верифікація OTA вирішена Design B (Magic Re-Request) — Soldier bitmap-uplink `[0x55]` (`OTA_REQ_MARKER`) → Queen targeted re-broadcast лише missing chunks (60-90% economy vs wave) + djb2-dedup replay-protection + host-тести; «5 хв тиші» STOP2-імунна **без FW.49** (`OTA_REREQUEST_SILENT_WAKEUPS=10` тихих пробуджень з відкритим вухом — чесніше за мертвий STOP2-tick, що запізнювався у ~6-15×). Beacon anti-storm журнал реалізовано (FW.20-S2, Flash-KV `0x20` — [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)). Канон [`03_02 §5.1.3`](03_02_Queen_Gateway_Firmware).
 - [ ] 🔗 Design A (ACK-aggregation, collective recovery) залежить від ARCH.26 TDMA RX-вікна (host-half ✅ 2026-07-02 — слот-примітив `Tdma_Slot_For_Did` готовий; активація = bench-фліп `ARCH26_TDMA_ENABLED`); Design B незалежний ✅
 
-#### FW.31 — DCI: числовий tolerance band у `check_z_divergence!` (feature-flag flip)
+#### FW.31 — DCI: числовий tolerance band у `check_z_divergence!` (feature-flag flip) [кластер:parity:важіль]
 - **P2** · 👤 · 🟢 · → [`03_04 §7.1`](03_04_mruby_Lorenz_Attractor)
 - **Стан:** Числовий DCI-band (`check_z_divergence!` + `DEFAULT_DCI_EPSILON=0.001`, два ENV-флаги default-off) ДОПОВНЮЄ категоричний check → ловить replay з валідним StatusByte, але хибною Z-magnitude. **Gate L machine-closed без заліза**: N=10 000 зчеплених кейсів mruby-VM↔CRuby = **бітова рівність 10000/10000, max|Δz|=0** (ARM-плече нульове за FW.55 QEMU byte-parity; історичні «~1e-14» superseded за pinned `MRB_NO_BOXING`) → ε=0.001 = чиста страховка. device_z wire-дім готовий (FW.2 wire-rev2 bytes 16..17, q=2⁻⁹). Канон [`03_04 §7.1`](03_04_mruby_Lorenz_Attractor).
 - [ ] 🔗 silicon-хвіст Gate L = **дім FW.55** (той самий one-command SWD-дамп закриває FW.7/FW.19/FW.31 разом — консолідовано в один чекбокс, не окремий; vilize 07-11)
@@ -708,7 +708,7 @@
 - [ ] 🔗 активація fauna-pathway після FW.4 fauna-pivot (гейт + ARCH.40-сесія готові; firmware call-site ставить diag-біти при pivot'і)
 - [ ] 🔗 Grafana-панель — після перших живих інкрементів (мертва панель без джерела = передчасний dashboard)
 
-#### ARCH.26 — Синхронні вікна (TDMA) + CAD preamble detection (Проблема Рандеву mesh relay)
+#### ARCH.26 — Синхронні вікна (TDMA) + CAD preamble detection (Проблема Рандеву mesh relay) [кластер:rendezvous:дім]
 - **P2** · 👤 · 🟢 · → [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA), [`03_02 §5.1.4`](03_02_Queen_Gateway_Firmware)
 - **Стан:** Рандеву-драбина host-half ПОВНА (2026-07-02): L1 Queen always-on ✅ · L2 TDMA-вікна 🟡 · L3 CAD 🟡 — обидві половини INERT за незалежними гейтами `ARCH26_TDMA_ENABLED`/`ARCH26_CAD_ENABLED`. Дім драбини + енерго-політика ролей (full-RX/нюх лише Провідник ARCH.27; PANIC = extended-preamble відправника) = [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA); wire-дім розкладки + стелі точності (±1 с, `ts_frac`-апгрейд, sync-бюджет ±10 мс) = [`03_02 §5а.2а`](03_02_Queen_Gateway_Firmware); CAD-енерго-double-bind (нюх ≠ EBFC → surplus-Провідник; baseline-пара 3 с ↔ 4 с) = [`02_03 §9.10`](02_03_BQ25570_MPPT_Nano_Power). Розблоковує: FW.27 Design A ([`03_02 §5.1.4`](03_02_Queen_Gateway_Firmware)) · ARCH.43 (рандеву-передумова) · mesh-TTL rev2-рішення ([`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)) · stigmergy-зворотний шлях ([`00_08 §1`](00_08_Beyond_TRL9_Planetary_Roadmap)). Активація post-TRL 6.
 - [ ] 🤖 (опц.) `ARCH26_CAD_ENABLED=1` compile-lane у `hal_check_ccm` (compile-coverage гейтованої CAD-гілки, патерн ARCH.34/ARCH.35); стеля: link-бомбу НЕ ловить — compile-lanes не лінкують ([`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)), справжній link-guard = FW.46 full-`.elf`
@@ -747,13 +747,13 @@
 - [ ] 🤖 **✅ buildable-confirmed (vilize 07-11) → окрема сесія (founder)**: `tools/mesh/` Monte-Carlo (RGG+ER, N≈100, q 0.20-0.30, TTL 1..7, depth-BFS-до-Queen, 10⁴ реалізацій; env silken_mesh або reuse silken_md). ⚠️ PREMISE-SHIFT: star-only робить «live routing const» counterfactual → reframe deliverable на 4 живих: wire-defensibility (byte18 magic 5/3), q_c→parametric-insurance (05_05/07_01), seed-deck, ARCH.43-readiness
 - [ ] 🤖 math-обґрунтування у seed-deck форму (Порубльов co-validation door open, не блокер)
 
-#### ARCH.43 — Mesh-relay повернення: wire-rev3 addressing (post-CCM star-only)
+#### ARCH.43 — Mesh-relay повернення: wire-rev3 addressing (post-CCM star-only) [кластер:rendezvous:важіль]
 - **P3** · 🤖+👤 · 🔗 · → [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA)
 - **Стан:** Звужено — FW.2 гейт (в) закрив uplink/demux-вісь двоключовою моделлю (session KEYL per-device + cluster KEYB, [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security)); лишається mesh-вісь. У CCM-еру Сценарій Б мертвий by construction (`#if !FW2_CCM_ENABLED`: air-кадр гине на RX-guard сусіда, TTL у ciphertext) → **star-only прийнято** (ухвала FW.2 (а)); стеля масштабу однієї Queen (TTL=3 · relay-буфер без агрегації · CIFO) + масштаб-відповідь «більше Queen» (ARCH.1/ARCH.10) = [`03_01 §1.9.1`](03_01_Firmware_Lifecycle_and_DMA). Повернення mesh = wire-rev3-клас: cleartext TTL/адресація (mesh-TTL rev2-рішення) + opaque pass-through relay без декрипту + `0x9E` DID-таргет (FW.17 gate (ii), [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)). Активація post-TRL 6, на масштаб-тригер.
 - [ ] 🔗 передумови: ARCH.26 рандеву-фліп + downlink-wire-ревізія (MAC/FC, [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security))
 - [ ] 🤖+👤 wire-rev3 addressing-дизайн (cleartext TTL/DID + opaque relay + DID-таргетований downlink)
 
-#### ARCH.8 — Event-Triggered Reporting (тиша = здоров'я) [дім TX-cadence кластера]
+#### ARCH.8 — Event-Triggered Reporting (тиша = здоров'я) [кластер:tx-cadence:дім]
 - **P3** · 🤖+👤 · 🌿 · → `03_01`
 - **Стан:** **Дім TX-cadence кластера (vilize 07-11)** — legitimate far-horizon (≠vacuous, на відміну від важелів): baseline TX іде щопробудження (ФАЗА-4 TX, heartbeat-1/добу НЕ існує), panic-TX additive, не cadence-гейт. Два code-grounded блокери: DCI-precond (per-packet `device_z` anti-fraud) + PoG-конфлікт (`metabolic_health`→GP мінтить щопакет → heartbeat = економічне голодування дерева, поки GP-accrual не time-weighted). ⊃ candidate-важелі: **ARCH.23** (importance), **E.50** (redundancy), **E.12** (boolean, adj) — **cross-ref, НЕ item-merge** (founder 07-11: тримати окремими, ARCH.8=дім). Ядро cadence-policy = 👤-рішення (silence-семантика + PoG-reconciliation + anti-fraud sampling-rate). Double-gated ARCH.22-challenge + E.63. Канон `03_01`.
 - [ ] 👤 cadence-policy tradeoff-рішення (silence-семантика + PoG-accrual reconciliation + anti-fraud sampling)
@@ -764,7 +764,7 @@
 - **Стан:** vacuous-no-RTOS (vilize 07-11): grep FreeRTOS/osThread/mutex = 0 в owned firmware; Soldier = bare super-loop (soldier `while(1)` → Фази 0-5 → STOP2) → deadlock **неможливий by construction** (нема concurrent tasks/locks). ARCH.20 sibling вже Reframed→академічна «Стаття 7» (00_07 велить ARCH.29 тим самим маршрутом). Реальний liveness-ризик = WDT/IWDG (не deadlock) — покрито SEC.15 (WUT-arming) + `__disable_irq`-секції. Guard-дельта від PN = нуль. → **defer via UNI.19-триаж** (академ-deliverable), НЕ firmware-код. Канон `03_01`.
 - [ ] ⚖️ доля PN-осі через UNI.19-триаж (академ «Стаття 7», консистентно з ARCH.20) — НЕ виконувати як код (vacuous by construction)
 
-#### E.50 — Edge fuzzy_distance dedup на STM32WLE5JC [candidate-важіль ARCH.8]
+#### E.50 — Edge fuzzy_distance dedup на STM32WLE5JC [кластер:tx-cadence:важіль]
 - **P3** · 👤 · 🌿 · → `03_01`
 - **Стан:** vacuous-standalone (vilize 07-11): `fuzzy_distance` = 0 hits; 3 dedup-осі в коді (Queen cmd djb2, CIFO eviction, Soldier beacon) — жодна не E.50; Soldier telemetry-TX-gate = 0. E.50 = вироджений спецвипадок TX-cadence (novelty-suppression) → **candidate-важіль ARCH.8** (дім TX-cadence). Ядро = 👤-policy (чи дозволено гасити TX, коли delta_t = PoG-сигнал E.63 + DCI-cross-verify), не 🤖-shell. ~30-40% = та сама suppression, що ARCH.23. Cross-ref ARCH.8/ARCH.23. Канон `03_01`.
 - [ ] 👤 policy-важіль — розглянути під ARCH.8 cadence-рішенням (не окрема робота)
@@ -779,7 +779,7 @@
 - **Стан:** obsolete-premise (vilize 07-11) — «2B λ замість 16B Z, ~34%» мертвий двічі: (1) `device_z` на дроті **ВЖЕ 2B** (`lora_ccm.h` `FW2_DEVICE_Z_SCALE`, uint16 z×512, з FW.2 wire-rev2) — «16B» був старий ECB-**пакет цілком**, не Z-поле → λ(2B)↔Z(2B) = 0 байт економії; (2) 34% (стиснення всього 21B payload) канон **вже відхилив** §10.3 по енергії (big-int/біт > TX-виграш; no-FEC bit-flip руйнує пакет) + airtime символьно-квантований (стрижка байтів усередині блоку безкоштовна). closed-canon-нотатка, не far-horizon-робота; будь-яка зміна device_z→λ = wire-rev3 клас (як ARCH.43). Канон [`03_05 §10.3`](03_05_Hardware_Symmetric_Crypto_and_Security).
 - [ ] 🌿 переоцінити лише в парі з ARCH.43 wire-rev3 + Z-sentinel challenge-sampling — до того premise-obsolete
 
-#### ARCH.23 — Multi-Attribute Utility Function TX (MCU) [candidate-важіль ARCH.8]
+#### ARCH.23 — Multi-Attribute Utility Function TX (MCU) [кластер:tx-cadence:важіль]
 - **P3** · 👤 · 🌿 · → `03_01`
 - **Стан:** vacuous-standalone (vilize 07-11): `utility_function` = 0 hits; per-axis TX-гейти ВЖЕ в коді (cold-defer `Should_Defer_TX`, fauna `Fauna_Should_Sample`, panic-TX `Trigger_Emergency_LoRa_TX`, grace-hello) → weighted-score не додає гейта, лише пере-параметризує. 2/4 осей мертвий сигнал pre-deploy (Vcap=VDDA-proxy, delta_t невалід E.63). Конфлікт з PoG (suppress low-utility = гасить валідний GP-beat). Ядро = 👤-policy (value-of-information), не 🤖-дедлайв. → **candidate-важіль ARCH.8** (дім TX-cadence); ~30-40% та сама suppression, що E.50. Cross-ref ARCH.8/E.50/E.12. Канон `03_01`.
 - [ ] 👤 policy-важіль — розглянути під ARCH.8 cadence-рішенням (не окрема робота)
@@ -1543,13 +1543,13 @@
 - **Стан:** Зустрічі **відбулися** (Кирилюк, ректор — 6 трав. 2026; Спрягайло — 8 трав.) → очікується рішення ректорату, рамковий MoU ЧНУ↔SilkenNet **ще не підписаний**; тиша достатньо довга для ввічливого нагадування. NB субординація: ректор делегує операційну ФОТІУС-координацію декану Онищенку (UNI.1) — НЕ маршрутизувати «теплий інтро» через декана після зустрічі з ректором. Канон `08_02`, `08_01`.
 - [ ] 👤 ввічливий follow-up Кирилюк/Спрягайло + дотиснути рамковий MoU (framework — BIZ.10)
 
-#### UNI.11 — ChDTU Базіло+Бондаренко (ПМКТ): акустична валідація фононної лінзи
+#### UNI.11 — ChDTU Базіло+Бондаренко (ПМКТ): акустична валідація фононної лінзи [кластер:fauna:важіль]
 - **P2** · 👤 · ⚪ · → `08_02 §2`, `03_03 §10`
 - **Стан:** Не почато (**P1 у Mongabay-пивоті**, E.59) — ПМКТ (п'єзоелектрика + акуст. метаматеріали): EIS п'єзодиска 25-150кГц (cavitation) + верифікація гіроїдного phonon lens; ціль Q1 *IEEE TBME*. **📐 One-Home частоти кавітації (2026-07-03):** 25-150 кГц (ультразвукова AE, Tyree&Dixon 1983) = ЄДИНЕ правильне число — reframe-пас виправив drift у 4 місцях (03_03 §4.2/§1.2, 01_01 §5.4/§5.6, synthetic.py, manifest), де кавітацію хибно клали в 5-20 кГц. Поточний 16 кГц/Nyquist-8 audible-тракт її **не оцифровує** → cavitation-клас TinyML reframed до **low-freq structural water-stress proxy** (клас лишено, перейменовано наміром); справжня ultrasonic-детекція = цей UNI.11-канал / v3 AI-chip. Канон `08_02 §2`, `03_03 §10` + `03_03 §4.2` (reframe-дім).
 - [ ] 👤 зустріч Базіло+Бондаренко + EIS-протокол + acoustic стенд (HW.1)
 - [ ] 🌿 Mongabay: dawn/dusk Cherkasy Soundscape Library для 5-class TinyML «Fauna» (`08_01 Стаття 24a`) — recordings з UNI.13a (Спрягайло-Гаврилюк): AudioMoth, 4 сезони, ≥30хв dawn+dusk/ділянку, labeled таксони
 
-#### 🌿 UNI.13a — ChNU Біо-хаб (Спрягайло+Гаврилюк): Acoustic Biodiversity Baseline (Mongabay)
+#### 🌿 UNI.13a — ChNU Біо-хаб (Спрягайло+Гаврилюк): Acoustic Biodiversity Baseline (Mongabay) [кластер:fauna:важіль]
 - **P2** · 👤 · 🌿 · → `08_01 §1/§2`, `08_01 Стаття 24a`
 - **Стан:** Far-horizon (Mongabay-пивот) — Delgado et al. (Nicoya, 119 ділянок, 16k год; Mongabay 2026): dawn/dusk fauna-піки = маркер біорізноманіття (NDVI бачить покрив, не функцію). UA-аналог: **Cherkasy Soundscape Library** (4 сезони, з ЧДТУ ПМКТ UNI.11) → ground truth для 5-class TinyML (FW.4-EXT) + Q1. Канон `08_01 §1/§2`, `08_01 Стаття 24a`.
 - [ ] 👤 зустріч Спрягайло (проректор) + Гаврилюк (ННІ природничих) + студенти-біологи + joint methodology workshop (з ЧДТУ ПМКТ) + expedition runs (4 ділянки × 4 сезони × dawn/dusk ≈ 32 записи)
@@ -1645,7 +1645,7 @@
 - [ ] 👤 co-authorship + open-license MoU × 5 (паралельно UNI.4-14) → Master Collaboration Agreement (юрист, не патентний повірений)
 - [ ] 🔗 після UNI.1/9/12/13/14
 
-#### 🌿 BIZ.12 — Horizon Europe CLUSTER 6 заявка (Biodiversity Monitoring, Mongabay pivot)
+#### 🌿 BIZ.12 — Horizon Europe CLUSTER 6 заявка (Biodiversity Monitoring, Mongabay pivot) [кластер:fauna:важіль]
 - **P2** · 👤 · 🌿 · → `08_01 Стаття 24a`, `03_03 §10`
 - **Стан:** Far-horizon — Horizon CL6 Biodiversity Monitoring (2-6 М€, 36-48 міс); SilkenNet = єдиний планетарний D-MRV з micro-acoustic біорізноманіттям. Submission прив'язати до acceptance Статті 24a → «published research». Канон `08_01 Стаття 24a`, `03_03 §10`.
 - [ ] 👤 identify call (HORIZON-CL6-*-BIODIV) → consortium (SilkenNet coord + ЧНУ/ЧДТУ/біо-хаб + 1-2 EU: Linköping/CSIC) → submit при acceptance 24a

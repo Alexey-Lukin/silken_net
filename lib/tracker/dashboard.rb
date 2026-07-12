@@ -452,6 +452,38 @@ module Tracker
       end
     end
 
+    # --- дім-кластер marker guard [DOC-T.34 ③] ---
+    # A coordination cluster (координатор ⊃ важелі — DRY without an item-merge)
+    # is declared on ITEM HEADINGS as `[кластер:slug:дім]` / `[кластер:slug:важіль]`,
+    # formalizing the ad-hoc «[дім X кластера]» / «[candidate-важіль Y]» spellings
+    # into ONE greppable, symmetric form. Every slug needs exactly ONE дім and
+    # ≥1 важіль (a дім alone / a важіль pointing at no дім is a half-migrated
+    # cluster); a malformed [кластер:…] tail is flagged. Distinct from the
+    # `[поглинув X]` mirror-pair spelling — that one stays free prose.
+    CLUSTER_MARKER = /\[кластер:([a-z0-9-]+):(дім|важіль)\]/
+    CLUSTER_ANY    = /\[кластер:[^\]]*\]/
+
+    def self.cluster_marker_violations(markdown = File.read(DEFAULT_PATH))
+      bad = []
+      clusters = Hash.new { |h, k| h[k] = { "дім" => [], "важіль" => [] } }
+      markdown.each_line do |line|
+        next unless (m = line.match(ANY_ITEM_HEAD))
+
+        line.scan(CLUSTER_ANY) do |raw|
+          if (mm = raw.match(CLUSTER_MARKER))
+            clusters[mm[1]][mm[2]] << m[1]
+          else
+            bad << "#{m[1]}: malformed #{raw} (want [кластер:slug:дім|важіль])"
+          end
+        end
+      end
+      clusters.each do |slug, roles|
+        bad << "кластер:#{slug}: #{roles['дім'].size} дім-markers (need exactly 1)" if roles["дім"].size != 1
+        bad << "кластер:#{slug}: no важіль items (дім alone)" if roles["важіль"].empty?
+      end
+      bad
+    end
+
     # --- meta-line form guard [DOC-T.23, founder 2026-06-14] ---
     # Every registry #### meta-line is EXACTLY `- **P?** · WHO · STAGE · → канон-реф`:
     # WHO ∈ {🤖, 👤, 🤖+👤} (canonical AI-first combo — rejects 👤+🤖 / 👤/🤖) and NOTHING

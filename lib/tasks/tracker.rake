@@ -37,6 +37,7 @@ namespace :tracker do
     runon    = Tracker::Dashboard.inline_residual_runon(md)
     verdict  = Tracker::Dashboard.verdict_lead_violations(md)
     metaform = Tracker::Dashboard.meta_form_violations(md)
+    cluster  = Tracker::Dashboard.cluster_marker_violations(md)
 
     puts "00_07 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(items).size} actionable)"
     puts "  duplicate IDs:    #{dups.empty? ? 'none ✓' : dups.inspect}"
@@ -116,6 +117,14 @@ namespace :tracker do
       puts "  meta-line form violations (#{metaform.size}) — non-canonical WHO / trailing tail (00_07 intro):"
       metaform.each { |m| puts "    - #{m}" }
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || metaform.any?
+    # [DOC-T.34 ③] дім-кластер markers — HARD: symmetric form `[кластер:slug:дім|важіль]`,
+    # exactly one дім + ≥1 важіль per slug (half-migrated clusters are the drift). (00_06 §3.)
+    if cluster.empty?
+      puts "  кластер markers:  every [кластер:slug:…] symmetric (1 дім + ≥1 важіль) ✓"
+    else
+      puts "  кластер-marker violations (#{cluster.size}) — malformed/asymmetric (00_07 §розмітка):"
+      cluster.each { |c| puts "    - #{c}" }
+    end
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || metaform.any? || cluster.any?
   end
 end

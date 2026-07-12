@@ -528,6 +528,55 @@ RSpec.describe Tracker::Dashboard do
     end
   end
 
+  # [DOC-T.34 ③] `[кластер:slug:дім|важіль]` on item headings — one greppable form
+  # for координатор ⊃ важелі. Symmetry: exactly ONE дім + ≥1 важіль per slug.
+  describe ".cluster_marker_violations" do
+    it "passes a symmetric cluster (one дім, two важелі) and ignores [поглинув …]" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### ARCH.80 — coordinator [кластер:tx-test:дім]
+        - **P3** · 🤖 · 🌿 · → `03_01`
+        #### E.80 — lever one [кластер:tx-test:важіль]
+        - **P3** · 👤 · 🌿 · → `03_01`
+        #### E.81 — lever two [кластер:tx-test:важіль] [поглинув E.82 2026-07-01]
+        - **P3** · 👤 · 🌿 · → `03_01`
+      MD
+      expect(described_class.cluster_marker_violations(md)).to be_empty
+    end
+
+    it "flags a дім without важелі, a second дім, and a важіль-only slug" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### ARCH.80 — lonely coordinator [кластер:solo:дім]
+        - **P3** · 🤖 · 🌿 · → `03_01`
+        #### ARCH.81 — first дім [кластер:twin:дім]
+        - **P3** · 🤖 · 🌿 · → `03_01`
+        #### ARCH.82 — second дім [кластер:twin:дім]
+        - **P3** · 🤖 · 🌿 · → `03_01`
+        #### E.83 — twin lever [кластер:twin:важіль]
+        - **P3** · 👤 · 🌿 · → `03_01`
+        #### E.84 — orphan lever [кластер:orphan:важіль]
+        - **P3** · 👤 · 🌿 · → `03_01`
+      MD
+      res = described_class.cluster_marker_violations(md)
+      expect(res).to contain_exactly(
+        a_string_matching(/кластер:solo: no важіль/),
+        a_string_matching(/кластер:twin: 2 дім-markers/),
+        a_string_matching(/кластер:orphan: 0 дім-markers/)
+      )
+    end
+
+    it "flags a malformed [кластер:…] tail (bad role word) on a heading" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### ARCH.85 — bad role [кластер:x:coordinator]
+        - **P3** · 🤖 · 🌿 · → `03_01`
+      MD
+      expect(described_class.cluster_marker_violations(md))
+        .to contain_exactly(a_string_matching(/ARCH\.85: malformed/))
+    end
+  end
+
   describe ".meta_form_violations" do
     it "flags a non-canonical WHO combo, passes 🤖+👤 / 🤖 / 👤" do
       md = <<~MD
