@@ -14,10 +14,13 @@ lv:
       invalid_token_type: 'Nederīgs token_type filtrs: %{value}.'
     firmwares:
       deployment_dispatched: Izvietošanas rīkojums v%{version} nosūtīts.
+      deployment_no_targets: 'OTA noraidīta: nav piemērotu vārteju izvietošanai.'
+      deployment_rejected_stale: 'OTA noraidīta: versija nepārsniedz klastera augstākā ūdens atzīmi (anti-rollback). Izveidojiet jaunu programmaparatūras ierakstu.'
       file_too_large: Faila izmērs pārsniedz %{limit} MB ierobežojumu.
       invalid_target_type: 'target_type jābūt vienam no: %{allowed}.'
       target_all: Viss mežs
       target_cluster: 'Klasteris #%{id}'
+      target_type_mismatch: target_type neatbilst programmaparatūras aparatūras tipam (%{expected}).
       uploaded: Jaunā evolūcija v%{version} augšupielādēta Okeānā.
     maintenance:
       hardware_verified: Aparatūras stāvoklis verificēts. STM32 impulss apstiprināts.

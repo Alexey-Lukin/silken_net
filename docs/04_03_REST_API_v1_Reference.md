@@ -714,6 +714,8 @@ Policy-хелпер `admin_or_above?` (`ApplicationPolicy` + `Scope`) = `admin` 
 
 **Доступ:** Роль `admin`.
 
+Контролер валідує params + tenancy і делегує в `Ota::DeploymentDispatcherService` ([`04_02`](04_02_Business_Logic_and_Services)): anti-rollback guard `firmware.id > clusters.ota_version_hiwater` (строго `>`, [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning)) → canary-когорта per-cluster → fan-out `OtaTransmissionWorker` **per gateway** (eligible: є `ip_address`, state ∉ maintenance/faulty/updating).
+
 **Request Body:**
 
 ```json
@@ -726,9 +728,9 @@ Policy-хелпер `admin_or_above?` (`ApplicationPolicy` + `Scope`) = `admin` 
 
 | Параметр | Тип | Опис |
 |---|---|---|
-| `cluster_id` | Integer | ID кластера (якщо відсутній — оновлення для всього лісу). **MUST належати організації caller-а** — інакше `404 Not Found` (запобігає cross-tenant OTA-розгортанню). |
-| `target_type` | String | `"Tree"` або `"Gateway"` **тільки** (allow-list `DEPLOY_TARGET_TYPES`). Інші значення → `400 Bad Request` з `flash.firmwares.invalid_target_type`. |
-| `canary_percentage` | Integer | 1–100. За замовчуванням 100 (всі пристрої). Canary: поступове розгортання |
+| `cluster_id` | Integer | ID кластера (якщо відсутній — оновлення для всього лісу = усі кластери організації). **MUST належати організації caller-а** — інакше `404 Not Found` (запобігає cross-tenant OTA-розгортанню). |
+| `target_type` | String | `"Tree"` або `"Gateway"` **тільки** (allow-list `DEPLOY_TARGET_TYPES`). Інші значення → `400 Bad Request` з `flash.firmwares.invalid_target_type`. Суперечність із `firmware.target_hardware_type` → `400` з `flash.firmwares.target_type_mismatch` (human-error guard). |
+| `canary_percentage` | Integer | 1–100. За замовчуванням 100 (всі пристрої). Canary: перші `ceil(N × pct / 100)` шлюзів **кожного** кластера за `id` — стабільна когорта |
 
 **Success Response `202 Accepted`:**
 
@@ -736,7 +738,18 @@ Policy-хелпер `admin_or_above?` (`ApplicationPolicy` + `Scope`) = `admin` 
 {
   "message": "Наказ на еволюцію v1.4.2 відправлено в ефір.",
   "target": "Кластер #7",
-  "canary_percentage": 10
+  "canary_percentage": 10,
+  "dispatched_gateways": 3,
+  "skipped_clusters": []
+}
+```
+
+**Rejected Response `422 Unprocessable Content`** — жодного шлюзу не відправлено: усі цільові кластери відсіяні anti-rollback guard'ом (`reason: "rollback"` — версія ≤ high-water, слот спалений при попередньому dispatch: «фікс завжди НОВИЙ запис») та/або не мають eligible-шлюзів (`reason: "no_gateways"` — hiwater такому кластеру НЕ палиться):
+
+```json
+{
+  "error": "OTA відхилено: версія не перевищує high-water кластера (anti-rollback). Створіть новий запис прошивки.",
+  "skipped_clusters": [{ "id": 7, "name": "Sector 7", "reason": "rollback" }]
 }
 ```
 

@@ -133,14 +133,16 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
       expect(json).to include("trees", "gateways")
     end
 
-    it "POST /api/v1/firmwares/:id/deploy queues OTA transmission" do
-      expect(OtaTransmissionWorker).to receive(:perform_async)
+    it "POST /api/v1/firmwares/:id/deploy fans out OTA transmission per gateway" do
+      gateway = create(:gateway, cluster: cluster)
+      OtaTransmissionWorker.clear
 
       post "/api/v1/firmwares/#{firmware.id}/deploy",
            params: { cluster_id: cluster.id, target_type: "Tree", canary_percentage: 10 },
            headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:accepted)
+      expect(OtaTransmissionWorker.jobs.sole["args"]).to eq([ gateway.uid, "firmware", firmware.id, 0, 0 ])
     end
 
     it "returns 403 for non-admin" do

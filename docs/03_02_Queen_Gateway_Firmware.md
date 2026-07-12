@@ -517,6 +517,8 @@ if (current_ota_chunk_idx >= total_chunks):
 
 ### OTA Assembly (CoAP Downlink від Rails → RAM)
 
+> ⚠️ **[FW.60] Inbound-тракт UNWIRED:** усе нижче — wire-формат і guard-логіка `Handle_CoAP_Command`, host-tested, але сама функція **не має жодного call-site**: Queen не тримає CoAP-сервера (SIM7070-розмова клієнт-сесійна), а `gateway.ip_address` = CGNAT-egress, непридатний для вхідної сесії. Rails-продюсер готовий (SEC.20 Rails-half ✅); транспорт-рішення + wire-up + карта решти дрейф-місць канону — [`00_07` FW.60](00_07_Action_Plan_Tracker). Стеля збірки 16×512 = 8 КБ (Guard 3) **не звірена** з Rails-лімітами (256 КБ model / 20 МБ upload) — узгодження там само.
+
 **Два типи OTA-чанків — важливо не плутати:**
 | Тип | Джерело | Розмір payload | Макс чанків | Ліміт |
 |-----|---------|----------------|-------------|-------|

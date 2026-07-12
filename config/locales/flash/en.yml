@@ -14,10 +14,13 @@ en:
       invalid_token_type: 'Invalid token_type filter: %{value}.'
     firmwares:
       deployment_dispatched: Deployment order for v%{version} dispatched.
+      deployment_no_targets: 'OTA rejected: no eligible gateways to deploy to.'
+      deployment_rejected_stale: 'OTA rejected: version does not exceed the cluster high-water mark (anti-rollback). Create a new firmware record.'
       file_too_large: File size exceeds the %{limit} MB limit.
       invalid_target_type: 'target_type must be one of: %{allowed}.'
       target_all: Entire forest
       target_cluster: 'Cluster #%{id}'
+      target_type_mismatch: target_type does not match the firmware hardware type (%{expected}).
       uploaded: New evolution v%{version} uploaded to the Ocean.
     maintenance:
       hardware_verified: Hardware state verified. STM32 pulse acknowledged.

@@ -112,8 +112,11 @@ class BioContractFirmware < ApplicationRecord
       # [BUG FIX]: Песимістичне блокування для захисту від гонки конкурентних деплоїв
       lock!
 
-      # 1. Кенозис старих версій
-      self.class.active.where.not(id: id).update_all(is_active: false)
+      # 1. Кенозис старих версій СВОГО класу обладнання: Gateway-реліз не гасить
+      # активний Tree-контракт (latest_tree_firmware_id живиться скоупом .active)
+      self.class.active.where.not(id: id)
+          .where(target_hardware_type: target_hardware_type)
+          .update_all(is_active: false)
 
       # 2. Активація нової істини з фіксацією відсотка розгортання
       update!(is_active: true, rollout_percentage: clamped)

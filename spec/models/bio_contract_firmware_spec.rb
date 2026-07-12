@@ -270,5 +270,25 @@ RSpec.describe BioContractFirmware, type: :model do
       expect(old.reload.is_active).to be false
       expect(new_fw.reload.is_active).to be true
     end
+
+    it "scopes the kenosis to its own hardware type: a Gateway release must not blind latest_tree_firmware_id" do
+      tree_fw = create(:bio_contract_firmware, :active, :for_tree)
+      gateway_fw = create(:bio_contract_firmware, :for_gateway)
+
+      gateway_fw.deploy_globally!(percentage: 100)
+
+      expect(tree_fw.reload.is_active).to be true
+      expect(gateway_fw.reload.is_active).to be true
+    end
+
+    it "treats untyped (nil) firmware as its own kenosis lane — it neither kills nor is killed by typed releases" do
+      tree_fw = create(:bio_contract_firmware, :active, :for_tree)
+      untyped_fw = create(:bio_contract_firmware)
+
+      untyped_fw.deploy_globally!(percentage: 100)
+
+      expect(tree_fw.reload.is_active).to be true
+      expect(untyped_fw.reload.is_active).to be true
+    end
   end
 end

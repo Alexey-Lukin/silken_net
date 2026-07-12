@@ -14,10 +14,13 @@ uk:
       invalid_token_type: 'Невірний фільтр token_type: %{value}.'
     firmwares:
       deployment_dispatched: Наказ на еволюцію v%{version} відправлено в ефір.
+      deployment_no_targets: 'OTA відхилено: немає придатних шлюзів для розгортання.'
+      deployment_rejected_stale: 'OTA відхилено: версія не перевищує high-water кластера (anti-rollback). Створіть новий запис прошивки.'
       file_too_large: Розмір файлу перевищує ліміт %{limit} МБ.
       invalid_target_type: 'target_type має бути одним з: %{allowed}.'
       target_all: Весь ліс
       target_cluster: 'Кластер #%{id}'
+      target_type_mismatch: target_type не відповідає типу обладнання прошивки (%{expected}).
       uploaded: Нову еволюцію v%{version} завантажено в Океан.
     maintenance:
       hardware_verified: Стан hardware верифіковано. STM32 pulse підтверджено.

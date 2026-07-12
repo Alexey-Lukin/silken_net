@@ -12,19 +12,19 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     let!(:firmware) do
       BioContractFirmware.create!(version: "2.0.0", bytecode_payload: "AABBCCDD")
     end
+    let(:cluster) { create(:cluster, organization: organization) }
+    let!(:gateway) { create(:gateway, cluster: cluster) }
 
-    before do
-      allow(OtaTransmissionWorker).to receive(:perform_async)
-    end
+    before { OtaTransmissionWorker.clear }
 
-    it "passes canary_percentage to OtaTransmissionWorker" do
+    it "fans out per-gateway jobs with the worker's real signature" do
       post "/api/v1/firmwares/#{firmware.id}/deploy",
-           params: { canary_percentage: 5 }, headers: headers, as: :json
+           params: { cluster_id: cluster.id, canary_percentage: 5 }, headers: headers, as: :json
 
       expect(response).to have_http_status(:accepted)
       expect(response.parsed_body["canary_percentage"]).to eq(5)
-      expect(OtaTransmissionWorker).to have_received(:perform_async)
-        .with(firmware.id, nil, nil, 5)
+      expect(response.parsed_body["dispatched_gateways"]).to eq(1)
+      expect(OtaTransmissionWorker.jobs.sole["args"]).to eq([ gateway.uid, "firmware", firmware.id, 0, 0 ])
     end
 
     it "defaults canary_percentage to 100 when not specified" do
@@ -44,9 +44,48 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     end
 
     # =========================================================================
-    # INPUT GUARDS: deploy is enqueued asynchronously into a Sidekiq worker
-    # that walks devices by cluster_id without re-checking org or accepting
-    # arbitrary target_type — the guards live in the controller.
+    # ANTI-ROLLBACK (SEC.20 Rails-half): firmware.id must STRICTLY exceed the
+    # cluster hiwater — the Rails mirror of the Soldier Flash-KV 0x15 invariant.
+    # =========================================================================
+    it "rejects a stale deploy with 422 and enqueues nothing" do
+      cluster.update!(ota_version_hiwater: firmware.id)
+
+      post "/api/v1/firmwares/#{firmware.id}/deploy",
+           params: { cluster_id: cluster.id }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["error"]).to include("anti-rollback")
+      expect(response.parsed_body["skipped_clusters"].sole["reason"]).to eq("rollback")
+      expect(OtaTransmissionWorker.jobs).to be_empty
+    end
+
+    it "rejects a deploy with no eligible gateways with 422" do
+      gateway.update!(state: :maintenance)
+
+      post "/api/v1/firmwares/#{firmware.id}/deploy",
+           params: { cluster_id: cluster.id }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["skipped_clusters"].sole["reason"]).to eq("no_gateways")
+      expect(OtaTransmissionWorker.jobs).to be_empty
+    end
+
+    it "mixed whole-forest rejection carries BOTH skip reasons; stale message wins the headline" do
+      cluster.update!(ota_version_hiwater: firmware.id) # rollback-skip
+      empty_cluster = create(:cluster, organization: organization) # no_gateways-skip
+
+      post "/api/v1/firmwares/#{firmware.id}/deploy", headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["error"]).to include("anti-rollback")
+      reasons = response.parsed_body["skipped_clusters"].to_h { |sc| [ sc["id"], sc["reason"] ] }
+      expect(reasons).to eq(cluster.id => "rollback", empty_cluster.id => "no_gateways")
+      expect(OtaTransmissionWorker.jobs).to be_empty
+    end
+
+    # =========================================================================
+    # INPUT GUARDS: the guards live in the controller (params + authz);
+    # the dispatcher re-scopes tenancy as belt-and-suspenders.
     # =========================================================================
     it "rejects unknown target_type with 400 and does not enqueue" do
       post "/api/v1/firmwares/#{firmware.id}/deploy",
@@ -54,20 +93,30 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
 
       expect(response).to have_http_status(:bad_request)
       expect(response.parsed_body["error"]).to include("Tree", "Gateway")
-      expect(OtaTransmissionWorker).not_to have_received(:perform_async)
+      expect(OtaTransmissionWorker.jobs).to be_empty
     end
 
-    it "passes Tree target_type through to the worker" do
-      cluster = create(:cluster, organization: organization)
+    it "rejects target_type contradicting the firmware hardware type with 400" do
+      firmware.update!(target_hardware_type: "Tree")
+
+      post "/api/v1/firmwares/#{firmware.id}/deploy",
+           params: { target_type: "Gateway", cluster_id: cluster.id }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:bad_request)
+      expect(response.parsed_body["error"]).to include("Tree")
+      expect(OtaTransmissionWorker.jobs).to be_empty
+    end
+
+    it "accepts a matching target_type and reports the cluster target" do
+      firmware.update!(target_hardware_type: "Tree")
+
       post "/api/v1/firmwares/#{firmware.id}/deploy",
            params: { target_type: "Tree", cluster_id: cluster.id, canary_percentage: 25 },
            headers: headers, as: :json
 
       expect(response).to have_http_status(:accepted)
-      # `as: :json` keeps `cluster.id` as an integer through the param parser;
-      # `.presence` returns it untouched.
-      expect(OtaTransmissionWorker).to have_received(:perform_async)
-        .with(firmware.id, cluster.id, "Tree", 25)
+      expect(response.parsed_body["dispatched_gateways"]).to eq(1)
+      expect(OtaTransmissionWorker.jobs.sole["args"]).to eq([ gateway.uid, "firmware", firmware.id, 0, 0 ])
     end
 
     it "rejects cluster_id from another organization with 404" do
@@ -78,7 +127,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
            params: { cluster_id: other_cluster.id }, headers: headers, as: :json
 
       expect(response).to have_http_status(:not_found)
-      expect(OtaTransmissionWorker).not_to have_received(:perform_async)
+      expect(OtaTransmissionWorker.jobs).to be_empty
     end
   end
 
@@ -143,15 +192,28 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     let!(:firmware) do
       BioContractFirmware.create!(version: "5.0.0", bytecode_payload: "AABBCCDD")
     end
+    let(:cluster) { create(:cluster, organization: organization) }
 
-    before do
-      allow(OtaTransmissionWorker).to receive(:perform_async)
-    end
+    before { OtaTransmissionWorker.clear }
 
-    it "redirects on successful HTML deploy" do
+    it "redirects with a notice on successful HTML deploy (the UI one-click path)" do
+      create(:gateway, cluster: cluster)
+
       post "/api/v1/firmwares/#{firmware.id}/deploy",
            headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+
       expect(response).to have_http_status(:redirect)
+      expect(flash[:notice]).to be_present
+      expect(OtaTransmissionWorker.jobs.size).to eq(1)
+    end
+
+    it "redirects with an alert when nothing was dispatched" do
+      post "/api/v1/firmwares/#{firmware.id}/deploy",
+           headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+
+      expect(response).to have_http_status(:redirect)
+      expect(flash[:alert]).to be_present
+      expect(OtaTransmissionWorker.jobs).to be_empty
     end
   end
 end

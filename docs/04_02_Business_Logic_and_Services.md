@@ -442,6 +442,17 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Вихід (без cluster_id)** | `{ manifest: { version, total_size, checksum, sha256, total_chunks }, packages: Enumerator<16-byte blocks> }` |
 | **Вихід (з cluster_id)** | `{ manifest: { version, total_size, checksum, sha256, total_chunks, lora_total_chunks, total_packages, hmac_signed: true, hmac_cluster_id }, packages: Enumerator<bytecode_chunks + 4 trailer_chunks> }` — `total_packages = total_chunks + 4`; `OtaTransmissionWorker` ітерує по `packages` без змін у логіці pacing. |
 
+### `Ota::DeploymentDispatcherService` 🔐 [SEC.20 Rails-half]
+
+| | |
+|---|---|
+| **Файл** | `app/services/ota/deployment_dispatcher_service.rb` |
+| **Вхід** | `firmware:` (BioContractFirmware), `organization:` (tenant-скоуп), `cluster_id:` (опц. — nil = усі кластери організації), `canary_percentage:` (1–100, default 100) |
+| **Що робить** | Єдиний вхід deploy-кампанії (викликається з `FirmwaresController#deploy`). В одній транзакції: `lock` цільових кластерів → **anti-rollback guard** `firmware.id > clusters.ota_version_hiwater` (строго `>` — Rails-дзеркало Солдатового інваріанта Flash-KV 0x15, [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning); той самий `firmware.id` їде в seg-4 HMAC-трейлера) → canary-когорта **per-cluster** (перші `ceil(N × pct / 100)` за `id` — стабільна когорта) → **hiwater палиться при dispatch** лише кластерам із реальною когортою («фікс завжди НОВИЙ запис»; слот НЕ палиться кластеру без eligible-шлюзів). Після commit — fan-out `OtaTransmissionWorker.perform_async(gateway.uid, "firmware", firmware.id, 0, 0)` per gateway + `firmware.deploy_globally!(percentage:)` (живить `latest_tree_firmware_id` → `check_firmware_mismatch!`). Eligible-фільтр = модельний скоуп `Gateway.ota_deployable` (`ip_address` present, state ∉ {maintenance, faulty, **updating**} — Queen має один глобальний OTA-буфер без campaign-id, конкурентна кампанія на шлюзі = битий образ в ефірі, [`03_02 §5`](03_02_Queen_Gateway_Firmware)); ширший за `best_gateway_for` воркерів рівно на `:updating`. **Стелі (свідомі):** активація `deploy_globally!` глобальна навіть від per-cluster canary (per-cluster tracking = E.62, не реалізовано); інфра-збій після hiwater-burn лишає слот спаленим (безпечна сторона — частково-полетілу кампанію не відкотити; recovery = новий запис); TOCTOU-вікно до воркерового `state=:updating` закриється ARCH.59 `ota_started_at`-механікою. |
+| **Зовнішні виклики** | — (DB + Sidekiq enqueue) |
+| **Вихід** | `Result` struct: `dispatched_gateways` (Integer), `skipped_clusters` (масив `SkippedCluster(id, name, reason)` з reason `"rollback"` \| `"no_gateways"`), предикат `dispatched?` |
+| **Cross-ref** | [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning) (bump-інваріант + Rails-half), [`04_03 §5.7`](04_03_REST_API_v1_Reference) (HTTP-контракт), [`00_07` — SEC.20](00_07_Action_Plan_Tracker) |
+
 ### `Security::WeakKeyDetector` 🔐 [SEC.9]
 
 | | |
@@ -1124,7 +1135,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 |----------|----------|
 | **Черга** | `downlink` |
 | **Retry** | false (самостійна retry-логіка) |
-| **Тригер** | Ручний запуск через API або після OTA mismatch detection |
+| **Тригер** | `Ota::DeploymentDispatcherService` fan-out (per-gateway; єдиний enqueuer) + self-scheduling `perform_in` між чанками |
 | **Вхід** | `queen_uid`, `firmware_type` (`mruby`/`firmware`/`tinyml`/`weights`), `record_id`, `chunk_index` (default 0), `retry_count` (default 0) |
 | **Сервіси** | `OtaPackagerService.prepare(firmware, chunk_size: CHUNK_SIZE, cluster_id: gateway.cluster_id)` |
 | **Side Effects** | CoAP PUT до Queen (AES-256-CBC). Pacing: `perform_in(0.4.seconds, ...)` між чанками. **[FW.23]** Worker завжди форвардить `gateway.cluster_id` (колонка `NOT NULL` у `gateways`), тож `packages` Enumerator автоматично містить 3 HMAC trailer-чанки `[0x9B]` після bytecode; логіка pacing без змін. Queen relay-ює `[0x9B]`-чанки stateless; Soldier верифікує dual-gate перед FLASH write. `total_chunks` worker'а береться з `manifest[:total_packages]` (= bytecode + 3 trailer) і саме за цим лічильником Turbo Stream `OtaProgressBar` рахує процент та переводить шлюз у `:idle` — без фолбеку на `total_chunks` шлюз би "завершив" OTA за 3 чанки до отримання HMAC печатки. При `sidekiq_retries_exhausted`: `gateway.update!(state: :faulty)` — запобігає Gateway stuck у `:updating`. |

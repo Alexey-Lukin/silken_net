@@ -121,6 +121,15 @@ class Gateway < ApplicationRecord
 
   scope :ready_for_commands, -> { idle.online }
 
+  # [SEC.20] Придатний для OTA-кампанії: є куди слати (ip) + не в сервісних
+  # станах + НЕ у своїй кампанії (updating): Queen тримає один глобальний
+  # OTA-буфер без campaign-id — перекриті кампанії = битий образ в ефірі.
+  # Ширший за best_gateway_for downlink-воркерів рівно на :updating
+  # (одиночна дейтаграма кампанії не боїться).
+  scope :ota_deployable, -> {
+    where.not(ip_address: [ nil, "" ]).where.not(state: %w[maintenance faulty updating])
+  }
+
   # --- МЕТОДИ (Intelligence) ---
 
   # [ВИПРАВЛЕНО: Race Condition + Performance]:

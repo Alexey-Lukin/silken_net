@@ -142,6 +142,8 @@ OTA-lifecycle для IoT-пристроїв. Додає enum `firmware_update_st
 
 AASM-переходи: `schedule_update` → `start_download` → `start_verification` → `start_flashing` → `complete_update`. Збій на будь-якому етапі → `fail_update`. Скидання → `reset_firmware`.
 
+> ⚠️ `fw_pending` наразі **write-only**: єдиний писач — `TelemetryUnpackerService#check_firmware_mismatch!`, споживача (worker/cron/scope-read) нема — прапорець лежить назавжди. Дім споживача → [`00_07` ARCH.59](00_07_Action_Plan_Tracker).
+
 ---
 
 ### `GeoLocatable`
@@ -338,6 +340,7 @@ dormant ──reactivate──► active
 | `active_trees_count` | bigint | Counter cache (оновлюється Tree callbacks) |
 | `climate_type` | string | Кліматичний тип зони (напр. "temperate_continental") |
 | `environmental_settings` | jsonb | `custom_fire_threshold`, `seismic_sensitivity_threshold`, `timezone`, `lorenz_overrides_by_species` |
+| `ota_version_hiwater` | bigint | [SEC.20] Anti-rollback high-water: максимальний `BioContractFirmware#id`, ВЖЕ dispatch-нутий у кластер. Guard `firmware.id > hiwater` + бамп — `Ota::DeploymentDispatcherService` ([`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning)); default 0 = кампаній не було |
 
 > **`lorenz_overrides_by_species`** [FW.8] — JSONB hash з per-species Lorenz thresholds для цього кластера. Ключ: `scientific_name` (string); значення: `{ "z_min": Float, "z_max": Float, "z_optimal": Float }`. Дозволяє override для конкретного виду тільки в цьому кластері. Підлягає валідації через `validate_lorenz_overrides_by_species`. Приклад:
 > ```json
@@ -402,7 +405,7 @@ dormant ──reactivate──► active
 | `state` | enum | `idle/active/updating/maintenance/faulty` |
 | `firmware_update_status` | enum | OTA lifecycle (via Firmwareable) |
 | `config_sleep_interval_s` | integer | Інтервал сну (≥ 60 сек) |
-| `ip_address` | string | IP модему SIM7070G |
+| `ip_address` | string | Спостережений source-IP **останнього uplink** (`mark_seen!`; nil до першого виходу в ефір). Це CGNAT/Starlink-egress — НЕ inbound-reachable адреса ([`00_07` FW.60](00_07_Action_Plan_Tracker)) |
 | `last_seen_at` | datetime | Останній CoAP batch |
 | `last_attested_at` | datetime | **[L1 QATT]** Останній батч з валідним Ed25519-підписом Королеви (wire-дім [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)); `nil` = шлюз на L0 |
 | `latest_voltage_mv` | integer | Денормалізована напруга |

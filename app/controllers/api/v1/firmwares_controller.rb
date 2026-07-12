@@ -132,15 +132,16 @@ module Api
       # --- НАКАЗ НА ОНОВЛЕННЯ (The Deployment) ---
       # POST /api/v1/firmwares/:id/deploy
       # Параметри: { cluster_id: 5, target_type: 'Tree', canary_percentage: 1 }
-      # canary_percentage (0–100): відсоток пристроїв для Canary Deployment.
-      # Якщо не вказано — оновлення піде на ВСІ пристрої (100%).
+      # canary_percentage (0–100): відсоток шлюзів КОЖНОГО кластера для Canary
+      # Deployment. Якщо не вказано — оновлення піде на ВСІ пристрої (100%).
+      # Fan-out per-gateway + anti-rollback guard живуть у
+      # Ota::DeploymentDispatcherService (SEC.20 Rails-half).
       def deploy
         @firmware = BioContractFirmware.find(params[:id])
         canary_percentage = params[:canary_percentage].present? ? params[:canary_percentage].to_i.clamp(1, 100) : 100
 
         # [INPUT GUARD]: target_type must be on the allow-list — otherwise an
-        # arbitrary string reaches the worker (Sidekiq job) and crashes it
-        # asynchronously, leaving a dead deploy attempt with no client feedback.
+        # arbitrary string reaches the dispatcher and dies without client feedback.
         target_type = params[:target_type].presence
         if target_type && !DEPLOY_TARGET_TYPES.include?(target_type)
           render json: {
@@ -149,39 +150,68 @@ module Api
           return
         end
 
+        # [HUMAN-ERROR GUARD]: деплой Tree-контракту з target_type=Gateway (чи
+        # навпаки) — ознака плутанини оператора, не легітимний запит.
+        if target_type && @firmware.target_hardware_type.present? && target_type != @firmware.target_hardware_type
+          render json: {
+            error: I18n.t("flash.firmwares.target_type_mismatch", expected: @firmware.target_hardware_type)
+          }, status: :bad_request
+          return
+        end
+
         # [TENANT-ISOLATION]: cluster_id must belong to the caller's organization.
-        # Without this, an admin from org A could deploy firmware into org B's
-        # cluster — the worker walks devices by cluster_id without re-checking.
+        # The dispatcher re-scopes through organization.clusters as well —
+        # belt-and-suspenders on the cross-tenant OTA vector.
         cluster_id = params[:cluster_id].presence
         if cluster_id && !current_user.organization.clusters.exists?(id: cluster_id)
           render json: { error: I18n.t("errors.api.not_found", model: "Cluster") }, status: :not_found
           return
         end
 
-        # Запускаємо масове оновлення через Sidekiq
-        # [СИНХРОНІЗОВАНО]: OtaTransmissionWorker обробить чергу завантажень
-        OtaTransmissionWorker.perform_async(
-          @firmware.id,
-          cluster_id,
-          target_type,
-          canary_percentage
+        result = Ota::DeploymentDispatcherService.call(
+          firmware: @firmware,
+          organization: current_user.organization,
+          cluster_id: cluster_id,
+          canary_percentage: canary_percentage
         )
 
-        respond_to do |format|
-          format.json do
-            render json: {
-              message: I18n.t("flash.firmwares.deployment_dispatched", version: @firmware.version),
-              target: params[:cluster_id] ? I18n.t("flash.firmwares.target_cluster", id: params[:cluster_id]) : I18n.t("flash.firmwares.target_all"),
-              canary_percentage: canary_percentage
-            }, status: :accepted
+        if result.dispatched?
+          respond_to do |format|
+            format.json do
+              render json: {
+                message: I18n.t("flash.firmwares.deployment_dispatched", version: @firmware.version),
+                target: cluster_id ? I18n.t("flash.firmwares.target_cluster", id: cluster_id) : I18n.t("flash.firmwares.target_all"),
+                canary_percentage: canary_percentage,
+                dispatched_gateways: result.dispatched_gateways,
+                skipped_clusters: skipped_clusters_json(result)
+              }, status: :accepted
+            end
+            format.html do
+              redirect_to api_v1_firmwares_path, notice: I18n.t("flash.firmwares.deployment_dispatched", version: @firmware.version)
+            end
           end
-          format.html do
-            redirect_to api_v1_firmwares_path, notice: I18n.t("flash.firmwares.deployment_dispatched", version: @firmware.version)
+        else
+          # Нічого не відправлено: anti-rollback переміг усі цілі — або цілей нема.
+          reason_key = result.skipped_clusters.any? { |sc| sc.reason == "rollback" } ? "deployment_rejected_stale" : "deployment_no_targets"
+          respond_to do |format|
+            format.json do
+              render json: {
+                error: I18n.t("flash.firmwares.#{reason_key}"),
+                skipped_clusters: skipped_clusters_json(result)
+              }, status: :unprocessable_content
+            end
+            format.html do
+              redirect_to api_v1_firmwares_path, alert: I18n.t("flash.firmwares.#{reason_key}")
+            end
           end
         end
       end
 
       private
+
+      def skipped_clusters_json(result)
+        result.skipped_clusters.map { |sc| { id: sc.id, name: sc.name, reason: sc.reason } }
+      end
 
       def firmware_params
         params.require(:firmware).permit(:version, :binary_file, :target_hardware, :notes, :target_hardware_type, :tree_family_id, :bytecode_payload)
