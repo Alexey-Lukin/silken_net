@@ -12,7 +12,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — DSP Path B зафіксовано + **self-owned baseline приземлено** (`FW.4`, 2026-06-12): `Run_Inference` розкоментовано, `silken_net_audio_model.h` (INT8 forward-pass, §4.1), arena виміряно (§4.3). Відкриті: ARM `arm-none-eabi-size` (CI hal_check) + confidence threshold (`FW.18`) → [`00_07 §03a`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 6 — DSP Path B зафіксовано + **self-owned baseline приземлено** (`FW.4`, 2026-06-12): `Run_Inference` розкоментовано, `silken_net_audio_model.h` (INT8 forward-pass, §4.1), arena виміряно (§4.3). Відкриті: ARM `arm-none-eabi-size` на повному `.elf` (`FW.26`, після board-freeze) + threshold-visibility Grafana (`FW.18b`, їде з S2.2) → [`00_07 §03a`](00_07_Action_Plan_Tracker); сам confidence threshold закрито (`FW.18` → §🗄️).
 
 ---
 

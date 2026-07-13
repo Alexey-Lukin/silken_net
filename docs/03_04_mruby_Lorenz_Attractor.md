@@ -14,7 +14,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — Lorenz атрактор: **категорично** ідентичний firmware↔backend (status/growth_points, FW.7 Float math), raw Z у межах numeric-tolerance (~1e-14 реальний mruby-VM↔CRuby, §5; FW.46); SEC.11 seed provenance закрито. Канонічний дім Lorenz-констант (§1.2). Відкрите: numeric DCI ε flip (`FW.31`, deferred) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 6 — Lorenz атрактор: **категорично** ідентичний firmware↔backend (status/growth_points, FW.7 Float math), raw Z **бітово ідентичний** (drift = 0: mruby-VM↔CRuby sweep N=10k + FW.55 QEMU byte-parity ARM↔x86 — §5, §7.1 Gate L; історичні «~1e-14» superseded pinned `MRB_NO_BOXING`); SEC.11 seed provenance закрито. Канонічний дім Lorenz-констант (§1.2). Відкрите: numeric DCI ε flip (`FW.31`, deferred) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -30,7 +30,7 @@
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | CRITICAL_Z_MIN/MAX → slashing |
 | [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Матем. верифікація числової стабільності |
 | `firmware/bio_contracts/bio_contract.rb` · `app/services/silken_net/attractor.rb` · `seed_derivation.rb` | mruby + Rails-дзеркало (Float parity); SEC.11 entry-point |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.31 numeric-DCI flip (deferred); ARCH.18 fixed-point hardening (firmware-тег FW.45) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.31 numeric-DCI flip (deferred); ARCH.18 int-Lorenz (🌿 zkVM-мотив; drift-мотив знято FW.55/FW.31, §5) |
 
 ## 📑 Зміст
 
@@ -90,7 +90,7 @@ dz/dt = x · y - β · z
 >
 > Третій рівень hardening — **fixed-point Q-формат:** вхідні дані × 10⁶, всі арифметичні операції у `int64_t`/Ruby `Integer` (немає overflow до 2⁶³ ≈ 9.2·10¹⁸). Тоді результат **бітово ідентичний на будь-якому процесорі**, від AVR до zkVM.
 >
-> Ціна: повне переписування `firmware/bio_contracts/bio_contract.rb`, `app/services/silken_net/attractor.rb`, всіх 50k parity-тестів, плюс ручне керування overflow (квадрати/добутки потрібно зрізати до Q-формату на кожному кроці Ейлера). Робота S→L залежно від обсягу регресії. Цінність — лише при переході до ZK-proof Lorenz (Risc Zero / SP1) або при підтримці радикально іншої HW-цілі (RV32E без FPU, тощо). До цього моменту Float-парність достатня. Зафіксовано як `[FW.45] Integer-Math Lorenz hardening — deferred until ZK-circuit milestone` у [`00_07`](00_07_Action_Plan_Tracker).
+> Ціна: повне переписування `firmware/bio_contracts/bio_contract.rb`, `app/services/silken_net/attractor.rb`, всіх 50k parity-тестів, плюс ручне керування overflow (квадрати/добутки потрібно зрізати до Q-формату на кожному кроці Ейлера). Робота S→L залежно від обсягу регресії. Цінність — лише при переході до ZK-proof Lorenz (Risc Zero / SP1) або при підтримці радикально іншої HW-цілі (RV32E без FPU, тощо). До цього моменту Float-парність достатня. Зафіксовано як **ARCH.18** (int-Lorenz, 🌿 deferred until zkVM-Lorenz milestone; `FW.45` = історичний firmware-тег, злитий у ARCH.18 → §🗄️) у [`00_07`](00_07_Action_Plan_Tracker).
 
 ### 1.3 Класичний Атрактор Лоренца (Метелик)
 

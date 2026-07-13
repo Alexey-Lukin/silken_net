@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — увесь C-код Soldier+Queen реалізований, host-based тести зелені (`make -C firmware/test`). Відкриті обмеження (чому не вище): async UART DMA flush (`FW.3` AT-blind), key-rotation (`FW.17`), RDP-2 (`SEC.2`) — реєстр у [`00_07 §03a`](00_07_Action_Plan_Tracker)
+- **Поточний TRL:** TRL 6 — увесь C-код Soldier+Queen реалізований, host-based тести зелені (`make -C firmware/test`). Відкриті обмеження (чому не вище): silicon-bench UART/CoAP (`FW.3`, AT/DMA закрито host-рівнем), key-rotation активація (`FW.17`, gated MAC-downlink), RDP-2 (`SEC.2`) — реєстр у [`00_07 §03a`](00_07_Action_Plan_Tracker)
 
 ---
 
@@ -23,7 +23,7 @@
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Математика Атрактора Лоренца |
 | [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Шифрування, ключі, RDP |
 | [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) | Power-path: BQ25570 MPPT + EDLC буфер 0.47F (§12), VBAT_OK гейт |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери модуля 03** (SSOT): `FW.3` AT-blind, `FW.17` key-rotation, `SEC.2` RDP-2, `SEC.3` factory |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери модуля 03** (SSOT): `FW.3` silicon-bench, `FW.17` key-rotation активація, `SEC.2` RDP-2, `SEC.3` factory |
 
 ---
 
@@ -1461,9 +1461,9 @@ toolchain-файлів помилково пінила апаратний FPv4 h
 - **MCU-профіль:** `MRB_CONSTRAINED_BASELINE_PROFILE` (рідний upstream-профіль: heap-сторінки 256 об'єктів замість 1024, без method-cache, малий khash) — з дефолтними сторінками `mrb_open()` не вліз би у 64 КБ SRAM.
 - **minimal gembox:** core + лише `mruby-compar-ext` (для `clamp`); core дає `abs`/`round`/`times`. `default-no-stdio` (~254 KB) не влазить у Flash.
 
-**HAL compile-lane (`-DSILKEN_WITH_HAL=ON`, 2026-06-11):** WL-HAL завендорено pinned submodules (`stm32wlxx-hal-driver` v1.6.0 + `cmsis-device-wl` v1.4.0 — консистентна пара за актуальним STM32CubeWL), і CI компілює **обидва** `main.c` (ARM soft-float) проти справжнього HAL — вперше за історію репо. Анатомія: `firmware/hal_glue/` — owned CubeMX-замінники (`main.h`, `stm32wlxx_hal_conf.h` з рівно нашим периферійним набором, `radio.h` API-дзеркало Semtech) + wrapper-TU (`{soldier,queen}_hal_check.c` `#include`'ять main.c дослівно і докладають порожні MX-заглушки в той самий TU — main.c-фрагменти незаймані, merge-модель CubeMX збережена). Перший прогін зловив: `__HAL_RCC_CRYP_*` (F4-стиль) не існує на WL → `__HAL_RCC_AES_*` (Soldier STOP2-цикл + Queen `Restore_ECB_Mode`). Передбачені раніше mruby-renames (`mrb_alloca`/`io.h`) не знадобились — main.c їх не вживає.
+**HAL compile-lane (`-DSILKEN_WITH_HAL=ON`, 2026-06-11):** WL-HAL завендорено pinned submodules (`stm32wlxx-hal-driver` v1.6.0 + `cmsis-device-wl` v1.4.0 — консистентна пара за актуальним STM32CubeWL), і CI компілює **обидва** `main.c` (ARM soft-float) проти справжнього HAL — вперше за історію репо. Анатомія: `firmware/hal_glue/` — owned CubeMX-замінники (`main.h`, `stm32wlxx_hal_conf.h` з рівно нашим периферійним набором; `radio.h` тепер вендорний Semtech `extern/subghz-phy/radio_driver` — owned-stub видалено Шляхом A 2026-07-04, §12.5) + wrapper-TU (`{soldier,queen}_hal_check.c` `#include`'ять main.c дослівно і докладають порожні MX-заглушки в той самий TU — main.c-фрагменти незаймані, merge-модель CubeMX збережена). Перший прогін зловив: `__HAL_RCC_CRYP_*` (F4-стиль) не існує на WL → `__HAL_RCC_AES_*` (Soldier STOP2-цикл + Queen `Restore_ECB_Mode`). Передбачені раніше mruby-renames (`mrb_alloca`/`io.h`) не знадобились — main.c їх не вживає.
 
-**Scope-межа (залишок 👤):** повний `.elf` потребує те, чого не можна вигадати без board-freeze: `.ioc` → тіла `MX_*`/`SystemClock_Config` (пін-мапа, клок-дерево, ADC-канали, LSE — [`00_07` — FW.49/FW.50](00_07_Action_Plan_Tracker)) + SubGHz_Phy radio middleware (з реєстрацією `RadioEvents_t` — зараз `Radio.Init(NULL)`, латентний баг для Queen RX) + startup/ld → link → `check_ram_budget.sh` дає істинний повний [`00_07` — FW.26](00_07_Action_Plan_Tracker) розмір.
+**Scope-межа (залишок 👤):** повний `.elf` потребує те, чого не можна вигадати без board-freeze: `.ioc` → тіла `MX_*`/`SystemClock_Config` (пін-мапа, клок-дерево, ADC-канали, LSE — [`00_07` — FW.49/FW.50](00_07_Action_Plan_Tracker)) + компіляція SubGHz_Phy `radio.c` middleware (`radio_conf.h` з .ioc; сам submodule + `RadioEvents_t`-реєстрація обабіч уже ✅ — Шлях A 2026-07-04, §12.5; латентний `Radio.Init(NULL)` Queen-RX баг закрито тоді ж) + startup/ld → link → `check_ram_budget.sh` дає істинний повний [`00_07` — FW.26](00_07_Action_Plan_Tracker) розмір.
 
 ### 12.5 Vendor / dependency pin-policy (FW.47)
 

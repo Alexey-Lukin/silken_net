@@ -11,7 +11,6 @@ RSpec.describe "Emergency response and actuator command flow" do
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
     allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
     allow(AlertNotificationWorker).to receive(:perform_async)
-    allow(ActuatorCommandWorker).to receive(:perform_async)
   end
 
   describe "EmergencyResponseService dispatches actuator commands" do

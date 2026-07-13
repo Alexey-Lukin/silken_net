@@ -25,7 +25,7 @@
 | [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | AES режими, ключі (§3.1), HRNG IV |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `UnpackTelemetryWorker` (батч [IV:16][CBC ciphertext]) |
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Втрата пакетів Queen → ZK-proof/мінтинг |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.3 AT-blind async-DMA, FW.27 OTA ACK-agg |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.3 silicon-bench (AT/UART DMA закрито host-рівнем), FW.27 Design A ACK-agg (gated ARCH.26) |
 
 ## 📑 Зміст
 
@@ -287,7 +287,7 @@ evict_idx = (best_evict_idx >= 0) ? best_evict_idx : fallback_idx
 Buffer size: binary_batch_buffer[2048] — достатньо з запасом
 ```
 
-> **[FW.2, INERT]** CCM-ера: запис = **29 Б** (розкладка — 📐 [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) cross-ref; білдер `firmware/queen/rx_route.h`, golden-звірений), 50 × 29 = 1450 ≤ 2048 — запас лишається. Батч ОДНОРІДНИЙ (Rails тримає один stride): 16B-телеметрія не-прошитих Солдатів дропається з лічильником, health-запис DID=0 не пакується (фліп-гейти → [`00_07`](00_07_Action_Plan_Tracker) FW.2).
+> **[FW.2, INERT]** CCM-ера: запис = **31 Б** (air+1, rev2.1; розкладка — 📐 [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) cross-ref; білдер `firmware/queen/rx_route.h`, golden-звірений), 50 × 31 = 1550 ≤ 2048 — запас лишається. Батч ОДНОРІДНИЙ (Rails тримає один stride): 16B-телеметрія не-прошитих Солдатів дропається з лічильником, health-запис DID=0 не пакується (фліп-гейти → [`00_07`](00_07_Action_Plan_Tracker) FW.2).
 
 **RSSI інверсія:** `(uint8_t)(-(int16_t)rssi)` — `int16_t` cast запобігає UB при rssi == −128 (мінімум int8_t).
 

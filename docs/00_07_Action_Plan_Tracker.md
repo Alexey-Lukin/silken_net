@@ -663,7 +663,7 @@
 
 #### FW.60 — Queen inbound CoAP RX (Rails→Queen downlink poll-тракт)
 - **P1** · 👤 · 🟢 · → [`03_02 §4а`](03_02_Queen_Gateway_Firmware), [`04_02`](04_02_Business_Logic_and_Services)
-- **Стан:** Poll-після-флашу (LwM2M Queue-Mode, ⚖️ founder): Королева питає `poll/<uid>` після `send_success` — механіка [`03_02 §4а`](03_02_Queen_Gateway_Firmware), derivation-черга + chunk-server + MID-кеш = [`04_02`](04_02_Business_Logic_and_Services) `Downlink::PendingQueueService`. Дві дельти від першого читання: «CMD ≤60 Б через CCOAP-ногу» фальсифіковано математикою (CMD-конверт ≥80 Б > NMI-стеля ~68 Б — обрізаний hex = втрачена сирена) → увесь poll однією CA\*-ногою (`sim7070_udp.h`); canary несумісний із hiwater-derivation → таргет `gateways.pending_firmware_id`. Push-воркери superseded (їхні швидкі ретраї в CGNAT-діру `fail!`'или команду ДО першого poll'а). Крипто незмінне (`[IV:16][AES-256-CBC KEYC]`); no-MAC стеля = вісь FW.17-гейт (i).
+- **Стан:** Poll-після-флашу (LwM2M Queue-Mode, ⚖️ founder): Королева питає `poll/<uid>` після `send_success` — механіка [`03_02 §4а`](03_02_Queen_Gateway_Firmware), derivation-черга + chunk-server + MID-кеш = [`04_02`](04_02_Business_Logic_and_Services) `Downlink::PendingQueueService`. Дві дельти від першого читання: «CMD ≤60 Б через CCOAP-ногу» фальсифіковано математикою (CMD-конверт ≥80 Б > NMI-стеля ~68 Б — обрізаний hex = втрачена сирена) → увесь poll однією CA\*-ногою (`sim7070_udp.h`); canary несумісний із hiwater-derivation → таргет `gateways.pending_firmware_id`. Push-воркери superseded (їхні швидкі ретраї в CGNAT-діру `fail!`'или команду ДО першого poll'а); останню live push-ногу — emergency mass-insert `EmergencyResponseService` (обходила `dispatch_to_edge!`, safety-path сирени) — знято 2026-07-13 + guard-спека. Крипто незмінне (`[IV:16][AES-256-CBC KEYC]`); no-MAC стеля = вісь FW.17-гейт (i).
 - [ ] 👤 bench: жива poll-розмова (CAOPEN/CASEND-промпт/CADATAIND/CARECV verbatim — довгий буфер = модемна невідома; їде з FW.56-bench) [bench:coap]
 - [ ] 🤖 post-bench: видалити superseded push-воркери (`OtaTransmissionWorker` цілком; `ActuatorCommandWorker#perform` — `broadcast_command_state_static` лишається UI-хелпером) + їхні спеки
 - [ ] 🤖 (не-блокер, сусідня знахідка wire-нори) CMD-парсер Queen рахує двокрапки: `command_payload` виду `OPEN:60` (живе в seeds) зсуває UUID-вікно дедупу — self-consistent для retry, але контракт «3-тя двокрапка» крихкий; лікувати разом із майбутнім CMD-wire-рефакторм
@@ -673,7 +673,7 @@
 - **P1** · 🤖+👤 · 🟢 · → `03_03 §10`, `08_01 §1`
 - **Стан:** Стратегічний pivot carbon-MRV → biodiversity D-MRV (acoustic), після Delgado et al. (Nicoya, 119 ділянок, 16000 год аудіо; Mongabay, тр. 2026). Defensible moat проти Pachama/Sylvera/NCX (єдиний micro-acoustic verification layer). Firmware-фундамент pivot'а вже shipped 🟢 (log-mel FW.25 → §🗄️; fauna-інфра FW.42/ARCH.40 host-done) — відкрите gated датасетом/академіками. Координує вже-трековані: FW.4-EXT (5-class TinyML + `fauna_activity`), UNI.11+UNI.13a (Cherkasy Soundscape Library), BIZ.12 (Horizon CLUSTER 6 grant), 08_01 Стаття 24a. Канон `03_03 §10` + `08_01 §1/§2` + `08_02 §1B`.
 - [ ] 🔗 FW.4-EXT 5-class `fauna_activity` — дім = FW.4 (🌿-чекбокс); gated UNI.11+UNI.13a dataset
-- [ ] 👤 AiInsight#biodiversity_trend → ForestNFT metadata "biodiversity_score" (`04_02`)
+- [ ] 🤖 AiInsight#biodiversity_trend → ForestNFT metadata "biodiversity_score" (`04_02`) — gated fauna-сигналом (FW.4-EXT/UNI-датасет): зараз enum-only (`InsightGeneratorService` пише лише `daily_health_summary`), метадані без джерела = передчасні (патерн FW.42-Grafana)
 - [ ] 🔗 координація UNI.11/UNI.13a (soundscape) + BIZ.12 (Horizon) + 08_01 Стаття 24a
 
 #### FW.18b — OTA threshold invalid counter (production-visibility)
@@ -732,9 +732,10 @@
 - [ ] 👤 bench: e2e cold-boot день (VBAT-pull → hello → маяк → синк → перший чистий пакет) — RUNBOOK §4.5 (сусідить з FW.49 LSE/RTC §4.1) [bench:lse-rtc-wut]
 
 #### FW.52 — OTA throughput by-design: 1 RX-пакет/пробудження + give-up без печатки
-- **P2** · 👤 · 🟢 · → [`03_02 §5.1.6`](03_02_Queen_Gateway_Firmware)
+- **P2** · 👤+⚖️ · 🟢 · → [`03_02 §5.1.6`](03_02_Queen_Gateway_Firmware)
 - **Стан:** Повільний OTA (порядок днів-тижнів) прийнято founder'ом як свідомий energy-first ADR — Soldier RX = 1 пакет/wake (`break` = анти-vampire; delta_t = економіка дерева E.63; 1024 B → ~94 пробудження); vcap-гейтований re-arm = опція перегляду після bench (FW.50). Дві знахідки закрито: (б) мертве вікно при запізнілій печатці = reliability-баг, **ВИПРАВЛЕНО** (`Ota_Late_Trailer_Resurrects`, `firmware/queen/ota_window.h`, host-тести); (г) `Write_OTA_Contract_To_Flash` (`flash_ota.{h,c}`, power-cut-safe magic-last) → [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA); re-request на STOP2-tick → FW.49 / §5.1.3. Канон [`03_02 §5.1.6`](03_02_Queen_Gateway_Firmware).
 - [ ] 👤 bench: HAL_FLASH erase/program-фаза (`g_ota_flash_ops`, `main.c`) на STM32 + e2e OTA-day (включно з late-trailer воскресінням) — RUNBOOK §2.5 [bench:ota-day]
+- [ ] ⚖️ (gated bench) vcap-гейтований RX re-arm поверх ADR «1 пакет/wake» — приймати з виміряними E_cycle/recharge кривими (FW.50, RUNBOOK 3.2/3.3; поріг без них = здогадка) → [`03_02 §5.1.6`](03_02_Queen_Gateway_Firmware)
 
 #### FW.54 — STOP2 RTC-only 300nA: SRAM2-off → RAM-стан (Flash-KV vs RTC-реклемація)
 - **P2** · 👤+⚖️ · 🟢 · → [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)

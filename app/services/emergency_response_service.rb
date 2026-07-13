@@ -80,8 +80,11 @@ class EmergencyResponseService
     end.flatten
 
     begin
-      result = ActuatorCommand.insert_all(attrs, returning: %w[id])
-      result.each { |row| ActuatorCommandWorker.perform_async(row["id"]) }
+      # [FW.60] Без push-enqueue: insert_all обходить dispatch_to_edge!, але
+      # команди (:issued) вже в .pending — Королева забере їх власним poll'ом
+      # (Downlink::PendingQueueService, CMD найпріоритетніший). Push-ретраї
+      # в CGNAT-діру fail!'или б сирену ДО першого poll'а.
+      ActuatorCommand.insert_all(attrs)
     rescue => e
       Rails.logger.error "🛑 [Emergency Error] Масове створення наказів провалене: #{e.message}"
     end

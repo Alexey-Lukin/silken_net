@@ -398,7 +398,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Файл** | `app/services/emergency_response_service.rb` |
 | **Вхід** | `ews_alert` (EwsAlert AR instance) |
 | **Що робить** | Визначає протокол фізичної відповіді за типом загрози: `severe_drought` → відкрити water_valve (2г), `fire_detected` → water_valve (4г) + fire_siren (1г), `insect_epidemic` → water_valve (1г), `seismic_anomaly` → seismic_beacon (30хв). Пріоритизує актуатори за відстанню до дерева (`SilkenNet::GeoUtils`). Масове `insert_all` для ActuatorCommand. |
-| **Зовнішні виклики** | `ActuatorCommandWorker.perform_async` per command |
+| **Зовнішні виклики** | (нема) — ⚠️ **[FW.60]** push-ногу `ActuatorCommandWorker.perform_async` знято (2026-07-13, останній live-enqueuer): `insert_all` обходить `dispatch_to_edge!`, але команди (`:issued`) вже видимі poll-тракту через scope `.pending` — Королева забирає їх сама (`Downlink::PendingQueueService`, CMD найпріоритетніший); push-ретраї в CGNAT-діру `fail!`'или б сирену ДО першого poll'а |
 | **Вихід** | `nil`. Side effect: Масово створює `ActuatorCommand` записи. |
 
 ---
@@ -1135,7 +1135,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 |----------|----------|
 | **Черга** | `downlink` |
 | **Retry** | 3 (include `CoapEncryption`) |
-| **Тригер** | `EmergencyResponseService`, `HardwareKeyService` |
+| **Тригер** | (нема — enqueue-мертвий з 2026-07-13; історично `EmergencyResponseService` mass-insert [останню push-ногу знято] + `dispatch_to_edge!`) |
 | **Вхід** | `command_id` (Integer), `explicit_key` (hex, опціонально) |
 | **Сервіси** | — |
 | **Side Effects** | ⚠️ **[FW.60 superseded]**: воркер більше не enqueue'иться (`dispatch_to_edge!` push-ногу зняв — його швидкі ретраї в CGNAT-діру `fail!`'или команду ДО першого poll'а); доставку + повний success-lifecycle (`dispatch!`→`mark_active!`→`acknowledge!`→`ResetActuatorStateWorker`) веде `Downlink::PendingQueueService` при видачі в poll-відповідь. Живим лишається `broadcast_command_state_static` (UI-хелпер). Історична механіка PUT: CoAP PUT до Queen gateway. **[ARCH.58]** Dispatch-guard `command.dispatch! if command.may_dispatch?` — Sidekiq-retry після втраченого CoAP-ACK не згорає на `AASM::InvalidTransition` (Queen дедуплікує re-PUT за model-UUID `idempotency_token` — CMD-дедуп ring-buffer у `queen/main.c`; HTTP-шар має ОКРЕМИЙ `Idempotency-Key`-заголовок — [`04_03 §5`](04_03_REST_API_v1_Reference)). При `sidekiq_retries_exhausted`: `command.fail!` + Turbo Stream broadcast помилки. |
