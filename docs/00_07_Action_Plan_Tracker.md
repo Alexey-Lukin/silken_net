@@ -1434,12 +1434,12 @@
 #### BIZ.20 — Немає юридичної особи «Silken Net» (undefined MSA/grant/trademark counterparty)
 - **P1** · 🤖+👤 · ⚪ · → `07_01 §8`, `08_01 §0.1`
 - **Стан:** Gap-pass §07 (2026-07-05) — DAO-як-юр-особа покрито (GOV.1/SEC.1, Swiss Verein) + RWA-wrapper для SCC-токена (STK.3, Zug/Wyoming), але **операційна компанія** — ніде. `/NOTICE` вестить copyright на фіз-особу «Oleksii Lukin»; `08_01 §0.1` кастить «Silken Net» окремим актором (IP holder + integrator), але жоден канон не каже, яка юр-форма. Не академічно: `07_03 §1` — **6/7 грантів «Подано»**, BIZ.2 MSA потребує названого counterparty, UNI.15 — trademark-заявника, `08_03 §2.4` — кримінальна exposure за anchor-install («втручання в держмайно»), що неінкорпорований несе особисто без liability-щита. **Моя рекомендація: інкорпорувати ЗАРАЗ — найвищий пріоритет комерційного батча** (гейтить BIZ.2 + гранти + щит; overdue). **🤖-half:** чернетка entity-option matrix (юрисдикція × тип × вартість × грант/RWA/MiCA-сумісність); 👤 = рішення+реєстрація (СЄУ Аблязов). Канон `08_01 §0.1`, `07_01 §8`.
-- [ ] 🤖 чернетка entity-option matrix (юрисдикція UA/EU/Zug/Wyoming × тип × вартість × грант/RWA/MiCA-fit) → живить рішення
+- [ ] 🤖 чернетка entity-option matrix (юрисдикція UA/EU/Zug/Wyoming × тип × вартість × грант/RWA/MiCA-fit; + SPV-вісь для BIZ.15) → живить рішення
 - [ ] ⚖️ обрати + інкорпорувати операційну особу (Аблязов) — counterparty для BIZ.2/грантів/trademark/liability
 
 #### BIZ.17 — Procurement-workflow operational gaps (post-RFQ-layer dig)
-- **P2** · 👤 · ⚪ · → `07_02 §8`
-- **Стан:** RFQ-layer структура ✅ (`protocols/procurement/` — `rfq_registry` + `ebfc_chem_rfq` + `anchor_alloy_rfq`; concern-шар, `00_06 §2`); deep dig (2 Explore-сповзки) виявив 5 operational-gaps без дому + registry-maintenance — консолідовано тут. Канон `07_02 §8` (BOM/хаби) + registry.
+- **P2** · 👤 · 🟡 · → `07_02 §8`
+- **Стан:** RFQ-layer структура ✅ (`protocols/procurement/` — `rfq_registry.md` + `ebfc_chem_rfq.md` + `anchor_alloy_rfq.md`; concern-шар, `00_06 §2`); deep dig (2 Explore-сповзки) виявив 5 operational-gaps без дому + registry-maintenance — консолідовано тут. Канон `07_02 §8` (BOM/хаби) + registry.
 - [ ] 👤 **DMLS vendor-scoring matrix** (lead-time × quality × price × ISO-13485) → живить BIZ.8 Frame Agreement
 - [ ] 👤 **CDA/NDA шаблон** для 5-ВНЗ MoU (блокує UNI.1 → гранти; СЄУ Аблязов legal) — розширює BIZ.10
 - [ ] 👤 **ESG vendor-screening** matrix (репутаційне для climate-проєкту / grant-fonds)
@@ -1449,15 +1449,17 @@
 - [ ] 🤖 (опц.) **completeness-audit гейт** — лінтер «канон-компонент не в `rfq_registry`» (self-maintaining); ~37 stub-аркушів авторяться інкрементально (registry status-col трекає)
 
 #### BIZ.3 — B2C ToS / Privacy Policy
-- **P2** · 👤 · ⚪ · → `07_01`
-- **Стан:** Не почато — B2C юр-документи (канон `07_01`).
-- [ ] 👤 ToS draft + Privacy Policy (GDPR) + Cookie Policy
+- **P2** · 🤖+👤 · ⚪ · → `07_01`
+- **Стан:** Не почато — B2C юр-документи (канон `07_01`); чернетки = machine-half (owner-split), юр-review + named-counterparty = 👤.
+- [ ] 🤖 чернетки ToS + Privacy Policy (GDPR) + Cookie Policy → живлять юр-review
+- [ ] 👤 юр-review + фіналізація (named counterparty після BIZ.20)
 
 #### BIZ.9 — Незалежний carbon credit методолог (Verra/Gold Standard)
 - **P2** · 👤 · ⚪ · → `07_01 §3`, `07_02 §7.3`
 - **Стан:** Не почато — конвертація SCC utility-token → сертифіковані kg CO₂ для institutional buyers потребує independent methodology audit (Verra/Gold Standard/Puro.earth). Канон `07_01 §3`, `07_02 §7.3`.
-- [ ] 👤 engagement methodologist (~$50-100k) → PDD у Verra
-- [ ] 🔗 залежить від HW.3 (Arrhenius) + UNI.6/UNI.7 (DFT+diffusion)
+- [ ] ⚖️ вибір registry: Verra vs Gold Standard vs Puro.earth (методологія-fit × вартість × timeline; Puro вже фігурує в death-path `07_01 §2` biochar CORC — інший трек)
+- [ ] 👤 engagement methodologist (~$50-100k) → PDD у обраному registry
+- [ ] 🔗 залежить від HW.3 (Arrhenius) + UNI.4/UNI.5 (DFT+diffusion)
 
 #### BIZ.11 — RWA pilot реєстрація лісової ділянки через Polygon Hadron
 - **P2** · 🤖+👤 · ⚪ · → `07_01 §8`
@@ -1469,6 +1471,7 @@
 #### BIZ.15 — B2B Fiat-to-Retirement SPV (corporate carbon on-ramp)
 - **P2** · 👤 · ⚪ · → `07_01 §8`
 - **Стан:** Не почато — корпорації з ESG-зобов'язаннями не триматимуть крипту/ключі заради ретайрменту → потрібен SPV-міст: фіат → SPV купує+ретайрить SCC → сертифікат офсету (CBAM/ISO 14064). Поточний `KlimaRetirementWorker` припускає, що клієнт уже on-chain власник SCC (нот.19). Канон `07_01 §8`.
+- [ ] 🔗 SPV-опції (юрисдикція × ліцензія × кастодіан) — вісь у BIZ.20 entity-matrix (🤖-дім там)
 - [ ] ⚖️ юрисдикція SPV + ліцензія на вуглецеві активи + кастодіан крипти (СЄУ Аблязов Д., RWA/MiCA — `08_02 §5`)
 - [ ] 👤 бухгалтерська класифікація + сертифікат-флоу (СЄУ Ус Г.)
 
@@ -1481,7 +1484,7 @@
 #### BIZ.19 — «SCC = CBAM-офсет» стоїть на неперевіреній (ймовірно хибній) регуляторній премісі
 - **P2** · 🤖+👤 · ⚪ · → `07_01 §8`, `08_03 §5.2`
 - **Стан:** Gap-pass §07 (2026-07-05) — `08_03 §5.2` (STK.6 Азот) + `07_01 §8` (BIZ.15) + 00_07 стверджують як факт, що SCC-retirement = «легальний CO₂-офсет» проти EU-CBAM. Але **CBAM Reg. (EU) 2023/956 знижує certificate-обов'язок імпортера лише через Art.9 — реальну ціну вуглецю, СПЛАЧЕНУ виробником у країні походження (ETS-еквівалент), НЕ купівлю/retirement voluntary-credits**. Поширена плутанина climate-tech-пітчів; жоден док не цитує механізм, що робив би SCC-for-CBAM робочим. Якщо хибно — flagship-наратив Азоту треба переформулювати ДО зовнішнього пітчу. **Моя рекомендація: переформулювати в voluntary Scope 1-3 / net-zero-disclosure офсет (НЕ CBAM-compliance), і НЕ пітчити CBAM-compliance до юр-звірки** (~30 хв на вже-планованій Аблязов-консультації UNI.14/16). **🤖-half:** я складу виправлений CBAM-Art.9-аналіз + переформульований наратив; 👤 = юр-підтвердження + оновити пітч. Канон `08_03 §5.2`, `07_01 §8`.
-- [ ] 🤖 чернетка: CBAM-Art.9-механіка + виправлений voluntary-Scope-наратив (замінити «CBAM-офсет»-claim у 08_03/07_01)
+- [ ] 🤖 чернетка: CBAM-Art.9-механіка + виправлений voluntary-Scope-наратив (замінити «CBAM-офсет»-claim у 08_03/07_01 + дзеркала 00_07 STK.5/STK.6)
 - [ ] 👤 юр-підтвердження (Аблязов, ~30 хв) → оновити Азот-пітч + канон
 
 #### BIZ.21 — Немає company-level E&O / liability-страхування (≠ INS.1 параметричний продукт)
@@ -1505,7 +1508,7 @@
 - [ ] 👤 призначити + провести зустріч
 
 #### UNI.14 — СЄУ: перший контакт ректорату + токеноміка RWA / правова архітектура
-- **P0** · 👤 · ⚪ · → `08_02 §5`
+- **P0** · 🤖+👤 · ⚪ · → `08_02 §5`
 - **Стан:** Не почато (консолідує legacy UNI.8) — перший контакт ректорату СЄУ + СЄУ-робота: (1) MSA/Term Sheet (Аблязов Д., к.ю.н.), (2) KYC/AML юросіб (Hadron), (3) DAO як юрособа (cooperative/Swiss Verein), (4) ESG Accounting (Ус Г.О.). Блокує Economic Whitepaper / Legal Framework / NaaS-шаблони (`07_01` B2B-MSA/B2C-ToS). ⚠️ 7 посад потребують verify. Канон `08_02 §5`.
 - [ ] 👤 зустріч Чудаєва (ректор)/Аблязова Н. + verify 7 посад + MoU СЄУ↔SilkenNet + workshop Аблязов (MSA) + workshop Ус (ESG framework)
 - [ ] 🤖+👤 [gap-pass §07] tax-posture: grant-income + personal-income-on-receipt (UA SCC-holders) + `dynamic_tax`×UA-податкове — 🤖 складе питання-меморандум → 👤 Ус Г.О.
@@ -1576,7 +1579,7 @@
 - **P2** · 👤 · 🌿 · → `08_01 §1/§2`, `08_01 Стаття 24a`
 - **Стан:** Far-horizon (Mongabay-пивот) — Delgado et al. (Nicoya, 119 ділянок, 16k год; Mongabay 2026): dawn/dusk fauna-піки = маркер біорізноманіття (NDVI бачить покрив, не функцію). UA-аналог: **Cherkasy Soundscape Library** (4 сезони, з ЧДТУ ПМКТ UNI.11) → ground truth для 5-class TinyML (FW.4-EXT) + Q1. Канон `08_01 §1/§2`, `08_01 Стаття 24a`.
 - [ ] 👤 зустріч Спрягайло (проректор) + Гаврилюк (ННІ природничих) + студенти-біологи + joint methodology workshop (з ЧДТУ ПМКТ) + expedition runs (4 ділянки × 4 сезони × dawn/dusk ≈ 32 записи)
-- [ ] 🔗 manual labeling (комахи/птахи/амфібії 0-63) → GA-оптимізація Любченко (UNI.6/E.52-EXT) + cross-val 10-річні дані (Спрягайло) + Horizon CL6 grant (BIZ.12)
+- [ ] 🔗 manual labeling (комахи/птахи/амфібії 0-63) → GA-оптимізація Любченко (E.52-EXT) + cross-val 10-річні дані (Спрягайло) + Horizon CL6 grant (BIZ.12)
 
 #### UNI.13 — ChMA: біохімія EBFC + токсикологія
 - **P2** · 👤 · ⚪ · → `08_02 §4`
@@ -1613,12 +1616,12 @@
 #### STK.1 — Tier 1 B2G: Дзюбенко (ДП "Ліси України") — легальний доступ до Черкаського бору
 - **P1** · 👤 · ⚪ · → `08_03 §2.1`
 - **Стан:** Не почато (trigger: TRL 5 у `01_01`) — Дзюбенко (ДП «Ліси України»), Заслужений лісівник + д.е.н. + проф. ЧДТУ; підпис → експериментальний полігон у держлісі (канал через `08_02 §2` ЧДТУ MoU). Канон `08_03 §2.1`.
-- [ ] 👤 verify title/contact (ChDTU rector) → first-meeting brief (NaaS+ESG/FSC) → Pilot Site MoU → координація з UNI.6 (Спрягайло) ПЗФ
+- [ ] 👤 verify title/contact (ChDTU rector) → first-meeting brief (NaaS+ESG/FSC) → Pilot Site MoU → координація зі Спрягайлом (ПЗФ-сумісність, `08_02 §1`)
 
 #### STK.2 — Tier 1 B2G: Сегеда (ДП "Смілянське ЛГ") — еко-аудит + Геронимівка
 - **P1** · 👤 · ⚪ · → `08_03 §2.2`
 - **Стан:** Не почато (trigger: після STK.1) — Сегеда (ДП «Смілянське ЛГ»), Заслужений природоохоронець у Геронимівці (центр Genesis-кластера); еко-аудит + розширення в Смілянщину. Канон `08_03 §2.2`.
-- [ ] 👤 first-contact (cross-link UNI.6 Спрягайло ПЗФ) → біосумісність (LoRaWAN+CODIT) → DAO advisory (PoG oracle validation)
+- [ ] 👤 first-contact (cross-link Спрягайло ПЗФ, `08_02 §1`) → біосумісність (LoRaWAN+CODIT) → DAO advisory (PoG oracle validation)
 
 #### STK.3 — Tier 1 B2G: Заслужений юрист — Legal Wrapper для SCC
 - **P1** · 👤 · 🔗 · → `08_03 §2.4`
