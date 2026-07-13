@@ -910,7 +910,8 @@
 - [ ] 🤖 OTA-watchdog [P1-клас — co-schedule з ARCH.58-sweep: та сама started_at+margin механіка, спільний downlink-stuck-cron]: колонка `gateways.ota_started_at` ✅ shipped (ARCH.56-міграція, pull-forward); лишилось — писати на chunk-0/clear на завершенні + sweep-нога `state=:updating AND ota_started_at < margin.ago → report_fault!` (online-stuck зараз НЕВИДИМИЙ назавжди: staleness-sweep ловить лише offline, а `:updating` блокує ВСІ downlink включно з сиреною) + прибрати мертвий `sidekiq_retries_exhausted`-блок (`retry: false` минає його — death_handlers-шлях)
 - [ ] 🤖 [un-gated] KeyRotation enqueue ПІСЛЯ transaction-commit (дзеркало P1-7; врахувати trade-off: Redis-down тепер = rotated-in-DB-but-not-dispatched — потрібна reconcile-думка); [gated Enterprise] redelivery-guards Elo/AuditLog/FractionAudit
 - [ ] 🤖 `push_bulk` для ClusterEntropySweep (механічний swap, дзеркало `alert_notification_worker`; Batch-шим = orchestration-обгортка БЕЗ RTT-виграшу — не той інструмент); ClusterHealthCheck = НЕ чистий fan-out (inline-аудит + умовний enqueue) → реструктуризація collect→push_bulk, окремий підхід
-- [ ] 🤖 `fw_pending`-consumer відсутній (SEC.20-розвідка 2026-07-12): `check_firmware_mismatch!` пише `Tree.firmware_update_status = :fw_pending`, але жоден worker/cron/scope його НЕ читає — глухий прапорець назавжди; природний дім споживача = OTA-sweep цього ж айтема (re-deploy-політика = 👤-рішення, не автоматизувати мовчки; доставка FW.60 ✅ wire-up — лишився bench)
+- [ ] 🤖 `fw_pending`-consumer відсутній (SEC.20-розвідка 2026-07-12): `check_firmware_mismatch!` пише `Tree.firmware_update_status = :fw_pending`, але жоден worker/cron/scope його НЕ читає — глухий прапорець назавжди; природний дім споживача = OTA-sweep цього ж айтема (політика поведінки → ⚖️ нижче; доставка FW.60 ✅ wire-up — лишився bench)
+- [ ] ⚖️ `fw_pending` re-deploy-політика (гейт consumer-поведінки ↑): авто-enqueue OTA-кампанії на mismatch-дерева vs surface-for-approval у sweep-звіті — «не автоматизувати мовчки» = дефолт до присуду
 
 #### ARCH.67 — minting_rollback broadcast → MissingTemplate (DeadSet-флуд на RPC-капітуляцію)
 - **P2** · 🤖 · ⚪ · → `04_02 §11`, `04_04`
@@ -992,7 +993,7 @@
 - [ ] 👤 provider-app-реєстрації (4×) + ключі в deploy-secrets (`06_04`)
 
 #### ARCH.71 — TinyML deploy-тракт відсутній (воркер-гілка без enqueuer'а)
-- **P3** · 🤖 · 🔗 · → `04_02 §11`, [`03_03`](03_03_TinyML_Acoustic_Inference)
+- **P3** · 🤖 · 🌿 · → `04_02 §11`, [`03_03`](03_03_TinyML_Acoustic_Inference)
 - **Стан:** Мертва тип-гілка, клас ARCH.69 «написаний шлях без дроту» (SEC.20-розвідка 2026-07-12): `OtaTransmissionWorker#fetch_firmware_record` вміє типи `tinyml`/`weights` (TinyMlModel), але контролера/роута для TinyML-деплою НЕ існує; `TinyMlModel#activate!` — 0 call-sites. Аспіраційний тракт доставки ваг (03_03 baseline shipped; польовий model-update = майбутнє). Реалізація = дзеркало SEC.20 Rails-half: параметризувати `Ota::DeploymentDispatcherService` по firmware_type + TinyML-ендпоінт/policy/anti-rollback власного простору версій. FW.60-транспорт ✅ wire-up (07-12) — лишився чистий YAGNI-гейт до другої моделі (dispatcher параметризувати по firmware_type дешево будь-коли).
 - [ ] 🤖 (за реальної потреби польового model-update) TinyML deploy-ендпоінт → диспетчер `firmware_type: "tinyml"` + `activate!`-wire + специ
 

@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — Схема БД затверджена, міграції написані, поліморфні зв'язки та індекси оптимізовані для planetary-scale highload. Відкрите: SSOT Drift Register моніторинг (§12) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 8 — Схема БД затверджена, міграції написані, поліморфні зв'язки та індекси оптимізовані для planetary-scale highload. Відкрите: data-шар беклог → [`00_07 §04`](00_07_Action_Plan_Tracker); §12 doc↔schema синхронність — enforced `model_doc_sync`-гейтом ([`00_06 §3`](00_06_SSOT_Documentation_Standard)), не ручний моніторинг.
 
 ---
 
@@ -20,7 +20,7 @@
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (сервіси над моделями) |
 | [`03_06` — Factory Flashing and Key Provisioning](03_06_Factory_Flashing_and_Key_Provisioning) | HardwareKey HKDF/K_seed деривація (03_06 §2/§3): aes_key, lorenz_seed |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Web3-економіка (Wallet, BlockchainTransaction) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (SSOT Drift Register §12) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (§04 data-шар) |
 
 ### Конвенція впорядкування розділів
 

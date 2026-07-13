@@ -10,7 +10,7 @@
 
 - **Поточний TRL:** TRL 8 — System Qualified / Mainnet Ready.
 - **Обґрунтування:** Всі заглушки (dClimate, Puro.earth) замінено на бойові Web3/HTTP інтеграції. Бізнес-логіка пройшла параноїдальний AI-аудит: повністю усунуто пастки `Network-in-Transaction`, витоки пам'яті (OOM) та ризики подвійної витрати (Double-Spend). Воркери fault-tolerant; money-path idempotency **шарова** — status guards / pessimistic lock (concurrent) + [ARCH.45] durable intent-marker + in-flight guard на on-chain↔DB crash-window (§4 / §10 / §11). **Примітка:** Chainlink dispatch демоутнуто до local correlation-marker **[ARCH.53]** — on-chain `sendRequest` вилучено (DON-callback unwired; LINK-cost без відповіді); мінт іде PATH 2 tokenomics, callback-endpoint live для майбутнього PATH 1.
-- **Відкрите:** Drift Register моніторинг (§13b); Planned-сервіси (Forester Guild, Cross-Registry, Federated Learning) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Відкрите:** Planned-сервіси (Forester Guild → E.20, Cross-Registry → ARCH.5, Federated Learning → E.52) → [`00_07`](00_07_Action_Plan_Tracker); §13b doc↔code синхронність — enforced `model_doc_sync`-гейтом ([`00_06 §3`](00_06_SSOT_Documentation_Standard)), не ручний моніторинг.
 
 ---
 
@@ -21,7 +21,7 @@
 | [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | Схема БД (моделі під сервісами) |
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof-of-Growth пайплайн (порядок сервісів) |
 | [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Апаратне шифрування, HKDF ключі |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (Drift Register, Planned services) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (Planned services: E.20 / ARCH.5 / E.52) |
 
 ### Конвенція впорядкування розділів
 
@@ -1772,7 +1772,7 @@ Privileged action (money-tx / contract / actuator / role / param / rotate / verd
 
 **Механічна частина — ✅ enforced by `scripts/model_doc_sync.rb`** (CI `docs.yml`): кожен `app/services/**` / `app/workers/**` клас згаданий у цьому реєстрі — зловив би сервіс, повністю відсутній у доку (як `FactoryFlashing::*`-пропуск, що цей гейт і закрив). Семантику (сигнатури/ENV/guard-clauses/queue-розміщення) скрипт НЕ перевіряє — ручний cool-down аудит ([`00_04 §5.3`](00_04_Shape_Up_Operations_and_RnD_Clusters)).
 
-**Відкриті drift-айтеми живуть у [`00_07`](00_07_Action_Plan_Tracker)** (One-Home для backlog — не датований лог у каноні): cron-missing воркери ([`00_07` — S6.20](00_07_Action_Plan_Tracker)), slashing — positive-A-guard + convex-формула + blackout ✅ (картки §6); відкрите → A-сет-розширення + `penalty_factor`-uplift-активація ([`00_07` — SLASH-1](00_07_Action_Plan_Tracker)).
+**Відкриті drift-айтеми живуть у [`00_07`](00_07_Action_Plan_Tracker)** (One-Home для backlog — не датований лог у каноні): slashing — positive-A-guard + convex-формула + blackout ✅ (картки §6); відкрите → A-сет-розширення + `penalty_factor`-uplift-активація ([`00_07` — SLASH-1](00_07_Action_Plan_Tracker)).
 
 > **«Planned» (Forester Guild / Cross-Registry / Federated Learning)** — design-RFC, у коді **відсутні** (Post-TRL 6/7, нормально — не code-drift, тому не у `model_doc_sync`).
 
@@ -1838,7 +1838,7 @@ FilecoinArchiveWorker → immutable proof archive
 
 ### Архітектурний дизайн: Task Assignment Algorithm 🤖 (E.20)
 
-> **Cross-ref:** [`00_07` — E.20](00_07_Action_Plan_Tracker), [`00_07` — E.34](00_07_Action_Plan_Tracker) (Forester Guild task-assignment + dClimate fallback).
+> **Cross-ref:** [`00_07` — E.20](00_07_Action_Plan_Tracker) (Forester Guild task-assignment + dClimate-fallback — одна вісь; окремий беклог-рядок був дублем, заархівовано).
 
 Workflow вище показує **створення** bounty та **claim**, але **алгоритм матчингу ranger↔bounty** і пріоритезація не визначені. Без цього система деградує до first-come-first-served race (далекий ranger може вкрасти bounty у локального) або silent expiry (життєво-критична `EwsAlert :critical` залишається без виконавця, бо нікому не повідомили). Цей розділ закриває E.20 (Forester Guild task-assignment).
 

@@ -10,7 +10,7 @@
 
 - **Поточний TRL:** TRL 8 — Дизайн-система відповідає SSOT. Потребує production verification.
 - **Стек:** Rails 8.1 · Phlex · Tailwind CSS 4 · TailwindMerge · Stimulus · Turbo 8
-- **Відкрите:** production verification (UI на живому деплої) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Відкрите:** production verification (UI на живому деплої) — [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform); UI-беклог (токен-міграція / a11y / i18n) → [`00_07`](00_07_Action_Plan_Tracker) UI.1/UI.2/UI.3, I18N.1.
 
 ---
 
@@ -22,7 +22,7 @@
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (сервіси) |
 | [`04_03` — REST API v1 Reference](04_03_REST_API_v1_Reference) | REST API (Turbo Frame ендпоінти) |
 | [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Прошивка (OTA progress streams) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (UI verification, i18n) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (UI.1/UI.2/UI.3, I18N.1) |
 
 ## 📑 Зміст
 
