@@ -540,4 +540,30 @@ RSpec.describe User, type: :model do
       end
     end
   end
+
+  # [ARCH.57] Зміна ролі → audit-ланцюг (model-layer ловить і console-шлях).
+  describe "role-change audit-trail [ARCH.57]" do
+    let!(:oracle) do
+      create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+                                  first_name: "Oracle", last_name: "Executioner")
+    end
+
+    it "audits a role change, chain-only" do
+      user = create(:user, role: :investor)
+
+      expect { user.update!(role: :admin) }.to change { AuditLogWorker.jobs.size }.by(1)
+
+      job = AuditLogWorker.jobs.last
+      attrs = job["args"].first
+      expect(attrs["action"]).to eq("user_role_changed")
+      expect(attrs["metadata"]).to include("from" => "investor", "to" => "admin")
+      expect(job["args"][1]).to be false
+    end
+
+    it "does not audit non-role updates" do
+      user = create(:user, role: :investor)
+
+      expect { user.update!(first_name: "Нове") }.not_to change { AuditLogWorker.jobs.size }
+    end
+  end
 end

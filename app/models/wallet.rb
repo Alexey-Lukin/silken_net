@@ -5,14 +5,17 @@ class Wallet < ApplicationRecord
 
   # --- ЗВ'ЯЗКИ (The Financial Fabric) ---
   belongs_to :tree
-  # [ВИПРАВЛЕНО: Чорна Діра Пам'яті]: Використовуємо delete_all для масової таблиці
-  # blockchain_transactions, щоб уникнути OOM при видаленні гаманця з мільйонами TX.
-  has_many :blockchain_transactions, dependent: :delete_all
+  # [ARCH.57] nullify (не delete_all): guard нижче — первинний захист (settled/in-flight
+  # недоторкані), nullify — backstop дозволеного destroy (порожній/чисто-pending гаманець):
+  # навіть ці рядки лишаються сиротами замість стирання (`wallet` на tx optional за дизайном —
+  # cluster-sourced money вже живе без wallet, MRV.1). Масова таблиця: один UPDATE без
+  # інстанціації — OOM-safe, як і колишній delete_all [Чорна Діра Пам'яті].
+  has_many :blockchain_transactions, dependent: :nullify
 
   # [MRV.1] Settled/in-flight money-tx = докази під виданими кредитами (ISO 14064/Verra) —
-  # хардделіт гаманця стер би trail (delete_all обходить callbacks). Порожній/чисто-pending
-  # гаманець видаляється вільно; off-board з доказами = деактивація, не destroy.
-  # prepend: true — інакше dependent: :delete_all (оголошений вище) стирає tx ДО guard'а.
+  # хардделіт гаманця стер би trail. Порожній/чисто-pending гаманець видаляється вільно;
+  # off-board з доказами = деактивація, не destroy.
+  # prepend: true — guard стріляє ДО dependent-обробки (оголошеної вище).
   before_destroy :guard_mrv_evidence!, prepend: true
 
   # ⚡ [ВИПРАВЛЕНО: The Join Abyss]: Прямий зв'язок з організацією через денормалізований FK.

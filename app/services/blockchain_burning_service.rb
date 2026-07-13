@@ -3,6 +3,8 @@
 require "eth"
 
 class BlockchainBurningService < ApplicationService
+  include Auditable
+
   # ABI для Sovereign Slashing. [SLASH.2] `slashUpTo(investor, maxAmount)` замість `slash`:
   # спалює min(maxAmount, balanceOf) АТОМАРНО on-chain → строгий slash() тихо revert-ив, коли
   # бекенд рахував pre-tax БД-суму > on-chain балансу (DynamicTax пішов у treasury, SCC вільно
@@ -190,6 +192,23 @@ class BlockchainBurningService < ApplicationService
 
     amount_in_wei = Web3::WeiConverter.to_wei(effective_burn, TOKEN_DECIMALS)
 
+    # [ARCH.57] Slash-вердикт (ПРИЧИНА) в audit-ланцюг: MRV.1 логує лише tx-переходи (РУХ
+    # коштів), а тут фіксується ЧОМУ — contractual vs positive-A + розміри. ДО broadcast:
+    # вирок зафіксований незалежно від долі транзакції (її життя доскаже MRV.1).
+    # Chain-only (без IPFS): source_tree_did + fraud-attribution + detection-пороги
+    # на публічному сховищі = INF.22 over-exposure клас; tamper-evidence дає сам ланцюг.
+    record_audit_trail!(
+      action: "slash_verdict_burn",
+      organization_id: @naas_contract.organization_id,
+      auditable: @naas_contract,
+      metadata: {
+        verdict: @contractual ? "contractual_forfeiture" : "positive_a_tamper",
+        cluster_id: @cluster.id, source_tree_did: @source_tree&.did,
+        damage_ratio: damage_ratio.to_s, slash_ratio: slash_ratio.to_s,
+        effective_burn: effective_burn, total_minted: total_minted_amount.to_s
+      }
+    )
+
     # 3. ВИКОНАННЯ (The Verdict)
     lock_key = "lock:web3:oracle:#{oracle_key.address}"
 
@@ -319,6 +338,17 @@ class BlockchainBurningService < ApplicationService
       message: "Слешинг заблоковано (#{context}): #{detail}. Кошти НЕ спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5)."
     )
 
+    # [ARCH.57] Freeze — теж привілейований вирок (кошти утримано без burn) → ланцюг.
+    # Chain-only; щоденний re-freeze незакритого інциденту пише новий рядок — кожен
+    # істинний факт «на цю дату», без IPFS-піна це прийнятний append-шум.
+    record_audit_trail!(
+      action: "slash_verdict_frozen",
+      organization_id: @naas_contract.organization_id,
+      auditable: @naas_contract,
+      metadata: { verdict: "frozen_cat_c", reason: reason.to_s,
+                  cluster_id: @cluster.id, source_tree_did: @source_tree&.did }
+    )
+
     :frozen
   end
 
@@ -338,6 +368,16 @@ class BlockchainBurningService < ApplicationService
     EwsAlert.escalate_field_audit!(
       cluster: @cluster,
       message: "Slash-ухилення (#{context}): доказ Категорії A є, але порушник вивів усі SCC до виконання вироку (запит #{requested_burn} SCC, on-chain баланс ≈0). Спалення неможливе — потрібен юридичний/ручний трек (позов, off-chain clawback; 05_05 §3.2)."
+    )
+
+    # [ARCH.57] Evasion-вердикт → ланцюг (chain-only): доказ A є, активи виведено —
+    # юридичний трек.
+    record_audit_trail!(
+      action: "slash_verdict_evasion",
+      organization_id: @naas_contract.organization_id,
+      auditable: @naas_contract,
+      metadata: { verdict: "evaded_pre_slash", requested_burn: requested_burn,
+                  cluster_id: @cluster.id, source_tree_did: @source_tree&.did }
     )
 
     :evaded

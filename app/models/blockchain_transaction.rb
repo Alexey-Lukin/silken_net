@@ -124,10 +124,16 @@ class BlockchainTransaction < ApplicationRecord
   # =========================================================================
   # ЖИТТЄВИЙ ЦИКЛ ТРАНЗАКЦІЇ (The Web3 State Machine — AASM)
   # =========================================================================
-  aasm column: :status, enum: true, whiny_persistence: true do
-    # [MRV.1] Кожен money-перехід → tamper-evident AuditLog-ланцюг (compliance-trail).
-    after_all_transitions :record_money_audit_trail
+  # [MRV.1] Кожен money-перехід → tamper-evident AuditLog-ланцюг (compliance-trail).
+  # [ARCH.57] after_update_commit, НЕ AASM after_all_transitions: той файрить ДО
+  # персистенції — rollback переходу (deadlock/validation у save-вікні) лишав би
+  # фантомний money-audit рядок + IPFS-пін (Sidekiq-push у Redis не відкочується).
+  # ⚠️ Стеля: два переходи одного instance в ОДНІЙ AR-транзакції злилися б в один
+  # рядок (last-save saved_changes) — таких шляхів нема (Solana-пари йдуть під
+  # Kredis.lock окремими комітами); не загортай послідовні transitions у transaction.
+  after_update_commit :record_money_audit_trail, if: :saved_change_to_status?
 
+  aasm column: :status, enum: true, whiny_persistence: true do
     state :pending, initial: true
     state :processing
     state :sent
@@ -236,33 +242,33 @@ class BlockchainTransaction < ApplicationRecord
   # per-organization) → свідомий skip з WARN, транзакцію НЕ валимо.
   def record_money_audit_trail
     org_id = wallet&.organization_id || cluster&.organization_id
-    # Навмисно повторюваний lookup у батч-циклах (по одному на перехід) —
-    # Prosopite.pause за прецедентом AuditLog#compute_chain_hash.
-    # `defined?(Prosopite)`-else = прод-шлях (Prosopite лише group :development,:test);
-    # hide_const ламає глобальні Prosopite RSpec-хуки → лишаємо некритим (§B.4/§B.5 leave).
-    actor_id = begin
-      Prosopite.pause if defined?(Prosopite)
-      User.oracle_executioner&.id
-    ensure
-      Prosopite.resume if defined?(Prosopite)
-    end
+    # Actor-lookup (Prosopite-нюанси, §B.4/§B.5 leave) → One-Home Auditable.system_actor_id.
+    actor_id = Auditable.system_actor_id
+    from, to = saved_change_to_status
 
     if org_id.blank? || actor_id.blank?
-      Rails.logger.warn "📋 [MRV.1] AuditLog skip tx ##{id} (#{aasm.from_state}→#{aasm.to_state}): " \
+      Rails.logger.warn "📋 [MRV.1] AuditLog skip tx ##{id} (#{from}→#{to}): " \
                         "organization=#{org_id.inspect}, oracle_executioner=#{actor_id.inspect}"
       return
     end
 
+    # Event-ім'я лише коли aasm-стан свіжий САМЕ для цієї зміни; raw update!
+    # (хук тепер ловить і не-AASM шляхи) або stale instance → state-based fallback.
+    event = aasm.current_event.to_s.delete("!")
+    action = event.present? && aasm.to_state.to_s == to ? "blockchain_tx_#{event}" : "blockchain_tx_to_#{to}"
+
     AuditLog.record_async!(
-      user_id: actor_id,
-      organization_id: org_id,
-      action: "blockchain_tx_#{aasm.current_event.to_s.delete('!')}",
-      auditable_type: self.class.name,
-      auditable_id: id,
-      metadata: {
-        from: aasm.from_state.to_s, to: aasm.to_state.to_s,
-        token_type: token_type, amount: amount.to_s,
-        tx_hash: tx_hash, error: error_message
+      {
+        user_id: actor_id,
+        organization_id: org_id,
+        action: action,
+        auditable_type: self.class.name,
+        auditable_id: id,
+        metadata: {
+          from: from.to_s, to: to.to_s,
+          token_type: token_type, amount: amount.to_s,
+          tx_hash: tx_hash, error: error_message
+        }
       }
     )
   end

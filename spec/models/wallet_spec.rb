@@ -441,5 +441,16 @@ RSpec.describe Wallet, type: :model do
 
       expect { wallet.destroy! }.to change(described_class, :count).by(-1)
     end
+
+    # [ARCH.57] Дозволений destroy лишає ряди сиротами (nullify), НЕ стирає:
+    # сирітський tx валідний за дизайном (cluster-sourced money вже живе без wallet).
+    it "nullifies (not deletes) the remaining tx rows on a permitted destroy" do
+      tx = wallet.blockchain_transactions.create!(
+        amount: 1, token_type: :carbon_coin, status: :pending, to_address: "0x" + "b" * 40
+      )
+
+      expect { wallet.destroy! }.not_to change(BlockchainTransaction, :count)
+      expect(tx.reload.wallet_id).to be_nil
+    end
   end
 end

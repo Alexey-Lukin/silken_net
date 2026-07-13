@@ -35,6 +35,11 @@ class SystemParameter < ApplicationRecord
 
   after_commit :invalidate_cache
 
+  # [ARCH.57] Зміна протокольного параметра = економічно-привілейований акт (governance).
+  # Create (seeds/bootstrap) свідомо не аудитується — привілейована межа = мутація значення.
+  include Auditable
+  after_update_commit :record_parameter_change_audit, if: :saved_change_to_value?
+
   scope :by_category, ->(cat) { where(category: cat) }
 
   # Primary API: fetch a parameter with cached lookup and default fallback.
@@ -98,6 +103,17 @@ class SystemParameter < ApplicationRecord
   end
 
   private
+
+  # [ARCH.57] organization_id: nil → ГЛОБАЛЬНИЙ ланцюг (параметри org-less).
+  def record_parameter_change_audit
+    from, to = saved_change_to_value
+    record_audit_trail!(
+      action: "system_parameter_changed",
+      organization_id: nil,
+      user_id: updated_by_id,
+      metadata: { key: key, from: from, to: to, source: source }
+    )
+  end
 
   def value_within_bounds
     numeric = begin

@@ -111,6 +111,24 @@ RSpec.describe BlockchainBurningService do
         expect(naas_contract.reload.status).not_to eq("breached")
       end
 
+      # [ARCH.57] Freeze-вердикт (кошти утримано без burn) → audit-ланцюг з причиною;
+      # chain-only (fraud-attribution + DID не пінити на публічний IPFS).
+      it "records the frozen verdict into the audit chain, chain-only" do
+        create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+                                    first_name: "Oracle", last_name: "Executioner")
+
+        expect { described_class.call(organization.id, naas_contract.id) }
+          .to change { AuditLogWorker.jobs.size }.by(1)
+
+        job = AuditLogWorker.jobs.last
+        attrs = job["args"].first
+        expect(attrs["action"]).to eq("slash_verdict_frozen")
+        expect(attrs["organization_id"]).to eq(naas_contract.organization_id)
+        expect(attrs["metadata"]).to include("verdict" => "frozen_cat_c",
+                                             "reason" => "indeterminate_magnitude")
+        expect(job["args"][1]).to be false
+      end
+
       # [ARCH.46] Threshold fix: moderate stress (0.83 ≤ s < 1.0) now counts as damage (was 1.0-only).
       it "counts moderate stress (stress_index 0.9) as damage — proportional, not 100% (ARCH.46)" do
         other_tree = create(:tree, cluster: cluster)

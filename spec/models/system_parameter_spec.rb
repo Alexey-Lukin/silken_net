@@ -298,4 +298,32 @@ RSpec.describe SystemParameter, type: :model do
       expect(described_class.by_category("lorenz")).to contain_exactly(lorenz)
     end
   end
+
+  # [ARCH.57] Мутація значення → ГЛОБАЛЬНИЙ ланцюг (organization_id: nil);
+  # bootstrap-create (seeds) свідомо не аудитується.
+  describe "parameter-change audit-trail [ARCH.57]" do
+    let!(:oracle) do
+      create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+                                  first_name: "Oracle", last_name: "Executioner")
+    end
+
+    it "does not audit the bootstrap create" do
+      expect { described_class.set(:audit_probe, 1, value_type: "integer", category: "general") }
+        .not_to change { AuditLogWorker.jobs.size }
+    end
+
+    it "audits a value mutation into the global (org-less) chain" do
+      described_class.set(:audit_probe, 1, value_type: "integer", category: "general")
+
+      expect { described_class.set(:audit_probe, 2) }
+        .to change { AuditLogWorker.jobs.size }.by(1)
+
+      job = AuditLogWorker.jobs.last
+      attrs = job["args"].first
+      expect(attrs["action"]).to eq("system_parameter_changed")
+      expect(attrs["organization_id"]).to be_nil
+      expect(attrs["metadata"]).to include("key" => "audit_probe", "from" => "1", "to" => "2")
+      expect(job["args"][1]).to be false
+    end
+  end
 end

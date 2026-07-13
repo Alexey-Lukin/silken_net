@@ -203,6 +203,6 @@ SystemParameter.set("slash_gamma", "1.5", updated_by: admin, source: "governance
 - Fallback на `default:` при відсутності запису
 - Type coercion: `integer`, `float`, `decimal`, `string`, `boolean`, `json`
 - Bounds validation (`min_value` / `max_value`) — governance-safety-межі (↑)
-- Audit trail (`updated_by` → User FK, `source`: default/admin/governance)
+- Audit trail (`updated_by` → User FK, `source`: default/admin/governance) + **[ARCH.57]** value-мутація пише tamper-evident `system_parameter_changed` у глобальний (org=nil) AuditLog hash-ланцюг (концерн `Auditable` — [`04_01 §7`](04_01_Data_Models_and_Entities))
 - seed-параметри: tokenomics/minting/insurance + slashing/alerts (slash_threshold/stress_threshold/slash_gamma/slash_penalty_factor_max) + fraud/fire/hardware + **insurance kill-switch** (`parametric_insurance_oracle_enabled` — kill-switch money-path параметричного страхування, default false; [INS.1] — admin/governance, НЕ on-chain `ProtocolParameters`); Lorenz свідомо НЕ сідирується (DCI ↑)
 - Синхронізація з `ProtocolParameters.sol` через RPC eth_call — `Governance::ParameterSyncWorker` (§2)

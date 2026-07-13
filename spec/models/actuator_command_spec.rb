@@ -655,4 +655,37 @@ RSpec.describe ActuatorCommand, type: :model do
       end
     end
   end
+
+  # [ARCH.57] Фізична дія в лісі (сирена/клапан) → chain-only audit (без IPFS-піна).
+  describe "actuator audit-trail [ARCH.57]" do
+    let!(:oracle) do
+      create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+                                  first_name: "Oracle", last_name: "Executioner")
+    end
+
+    it "records dispatch into the chain, chain-only" do
+      command = create(:actuator_command, status: :issued)
+
+      expect { command.dispatch! }.to change { AuditLogWorker.jobs.size }.by(1)
+
+      job = AuditLogWorker.jobs.last
+      attrs = job["args"].first
+      expect(attrs["action"]).to eq("actuator_to_sent")
+      expect(attrs["metadata"]).to include("from" => "issued", "to" => "sent")
+      expect(job["args"][1]).to be false
+    end
+
+    it "records a bulk override-cancellation as one aggregate row (update_all bypasses callbacks)" do
+      command = create(:actuator_command, status: :issued)
+      create(:actuator_command, actuator: command.actuator, status: :issued)
+      AuditLogWorker.jobs.clear
+
+      expect { command.send(:cancel_pending_for_actuator!) }
+        .to change { AuditLogWorker.jobs.size }.by(1)
+
+      attrs = AuditLogWorker.jobs.last["args"].first
+      expect(attrs["action"]).to eq("actuator_bulk_cancelled")
+      expect(attrs["metadata"]).to include("cancelled_count" => 1)
+    end
+  end
 end

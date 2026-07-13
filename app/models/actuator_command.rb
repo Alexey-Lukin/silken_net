@@ -2,6 +2,7 @@
 
 class ActuatorCommand < ApplicationRecord
   include AASM
+  include Auditable
 
   belongs_to :actuator
   belongs_to :ews_alert, optional: true
@@ -28,6 +29,13 @@ class ActuatorCommand < ApplicationRecord
   # =========================================================================
   # ЖИТТЄВИЙ ЦИКЛ КОМАНДИ (AASM State Machine)
   # =========================================================================
+  # [ARCH.57] Актуатор = фізична дія в лісі (сирена/клапан) — кожна зміна статусу
+  # у audit-ланцюг; chain-only (не IPFS), ініціатор-людина зберігається як актор.
+  # after_update_commit, НЕ AASM after_all_transitions: той файрить ДО персистенції —
+  # rollback переходу лишав би фантомний рядок (Sidekiq-push не відкочується);
+  # saved_change-guard заразом глушить self-loop failed→failed (no-op write).
+  after_update_commit :record_actuator_audit_trail, if: :saved_change_to_status?
+
   aasm column: :status, enum: true, whiny_persistence: true do
     state :issued, initial: true
     state :sent
@@ -121,6 +129,33 @@ class ActuatorCommand < ApplicationRecord
 
   private
 
+  # [ARCH.57] update_columns у dispatch_to_edge! свідомо обходить валідації (і колбеки) —
+  # ланцюг закривається ручним викликом; ім'я те саме state-based, що дав би хук.
+  def record_pre_dispatch_failure_audit!(reason)
+    record_audit_trail!(
+      action: "actuator_to_failed",
+      organization_id: organization_id,
+      user_id: user_id,
+      metadata: { actuator_id: actuator_id, ews_alert_id: ews_alert_id,
+                  priority: priority.to_s, from: "issued", to: "failed", reason: reason }
+    )
+  end
+
+  # [ARCH.57] user_id = людський ініціатор, якщо є (EWS-автоматика → oracle_executioner).
+  # Імена state-based: update_columns/raw-шляхи не мають AASM-події.
+  def record_actuator_audit_trail
+    from, to = saved_change_to_status
+    record_audit_trail!(
+      action: "actuator_to_#{to}",
+      organization_id: organization_id,
+      user_id: user_id,
+      metadata: {
+        actuator_id: actuator_id, ews_alert_id: ews_alert_id, priority: priority.to_s,
+        from: from.to_s, to: to.to_s
+      }
+    )
+  end
+
   # 🛡️ Генеруємо унікальний токен для кожної команди
   def assign_idempotency_token
     self.idempotency_token ||= SecureRandom.uuid
@@ -168,6 +203,15 @@ class ActuatorCommand < ApplicationRecord
 
     if cancelled_count > 0
       Rails.logger.warn "🛑 [OVERRIDE] Команда ##{id} (#{command_payload}) скасувала #{cancelled_count} pending-команд для актуатора #{actuator_id}."
+      # [ARCH.57] update_all обходить колбеки → один сукупний audit-рядок за bulk-скасування
+      # (physical-safety trail: emergency-override не сміє бути невидимим у ланцюзі).
+      record_audit_trail!(
+        action: "actuator_bulk_cancelled",
+        organization_id: organization_id,
+        user_id: user_id,
+        metadata: { actuator_id: actuator_id, cancelled_count: cancelled_count,
+                    override_command_id: id, command_payload: command_payload }
+      )
     end
   end
 
@@ -175,6 +219,7 @@ class ActuatorCommand < ApplicationRecord
     # ⏱️ TTL: перевіряємо актуальність перед диспетчеризацією
     if expired?
       update_columns(status: self.class.statuses[:failed], error_message: "Команда протермінована (TTL)")
+      record_pre_dispatch_failure_audit!("ttl_expired")
       Rails.logger.warn "⏱️ [COMMAND] Команда ##{id} протермінована до відправки."
       return
     end
@@ -184,6 +229,7 @@ class ActuatorCommand < ApplicationRecord
 
     unless actuator.ready_for_deployment?
       update_columns(status: self.class.statuses[:failed], error_message: "Актуатор недоступний")
+      record_pre_dispatch_failure_audit!("actuator_not_ready")
       Rails.logger.warn "🛑 [COMMAND] Спроба активації ##{id} провалена: Актуатор #{actuator.name} недоступний."
     end
     # [FW.60] Push-enqueue (ActuatorCommandWorker) superseded: команда чекає

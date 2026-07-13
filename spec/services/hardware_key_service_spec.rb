@@ -45,6 +45,23 @@ RSpec.describe HardwareKeyService, type: :service do
       expect(hardware_key.rotated_at).not_to be_nil
     end
 
+    # [ARCH.57] Ротація → chain-only audit; key-матеріал у metadata НЕ потрапляє.
+    it "records the rotation into the audit chain without key material" do
+      create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+                                  first_name: "Oracle", last_name: "Executioner")
+      open_ratchet_gate!
+
+      expect { described_class.new(tree).rotate! }
+        .to change { AuditLogWorker.jobs.size }.by(1)
+
+      job = AuditLogWorker.jobs.last
+      attrs = job["args"].first
+      expect(attrs["action"]).to eq("hardware_key_rotated")
+      expect(attrs["metadata"]).to include("mode" => "ratchet", "device_uid" => tree.did)
+      expect(attrs["metadata"].values.join).not_to include(hardware_key.reload.aes_key_hex)
+      expect(job["args"][1]).to be false
+    end
+
     # [FW.17] Tree-шлях — ратчет, не SecureRandom: новий ключ детермінований
     # (K_{v+1} = KeyRatchet), версія інкрементована, 0x9E поставлено в чергу.
     it "derives the Tree key via Hash-Ratchet and dispatches CMD_ROTATE_KEY" do

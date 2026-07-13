@@ -19,6 +19,23 @@ RSpec.describe AuditLogWorker, type: :worker do
     end
   end
 
+  # [ARCH.57] archive=false → chain-only: без outbox-маркера і без Filecoin-піна
+  # (security-метадані привілейованих дій не течуть на публічний IPFS).
+  describe "#perform with archive=false" do
+    it "creates the log without the outbox marker and without FilecoinArchiveWorker" do
+      user = create(:user)
+      attrs = { "user_id" => user.id, "organization_id" => user.organization_id,
+                "action" => "hardware_key_rotated" }
+
+      expect { described_class.new.perform(attrs, false) }
+        .to change(AuditLog, :count).by(1)
+      expect { described_class.new.perform(attrs, false) }
+        .not_to change { FilecoinArchiveWorker.jobs.size }
+
+      expect(AuditLog.last.archive_requested_at).to be_nil
+    end
+  end
+
   describe "#perform" do
     it "creates an audit log record from attributes" do
       user = create(:user)

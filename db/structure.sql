@@ -318,7 +318,7 @@ CREATE TABLE public.ar_internal_metadata (
 CREATE TABLE public.audit_logs (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    organization_id bigint NOT NULL,
+    organization_id bigint,
     action character varying NOT NULL,
     auditable_type character varying,
     auditable_id bigint,

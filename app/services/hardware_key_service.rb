@@ -4,6 +4,8 @@ require "securerandom"
 require "openssl"
 
 class HardwareKeyService
+  include Auditable
+
   # Gateway CoAP channel (Queen ↔ Rails): AES-256-CBC.
   COAP_KEY_SIZE_BYTES = 32
   COAP_HKDF_INFO      = "silken-aes-256-device-key"
@@ -206,14 +208,42 @@ class HardwareKeyService
             "Дочекайтесь першого пакету на новому ключі або очистіть Grace Period вручну."
     end
 
-    if @device.is_a?(Tree)
+    new_hex_key = if @device.is_a?(Tree)
       rotate_tree_via_ratchet!(key_record)
     else
       rotate_gateway_random!(key_record)
     end
+
+    # Audit-збій (Redis down на enqueue) не сміє валити ВЖЕ успішну ротацію:
+    # retry впреться в RotationPendingError (guard вище), а не в подвійний advance.
+    begin
+      record_rotation_audit!(key_record)
+    rescue StandardError => e
+      Rails.logger.warn "📋 [ARCH.57] rotation-audit enqueue провалено для #{@device_uid}: #{e.message}"
+    end
+
+    new_hex_key
   end
 
   private
+
+  # [ARCH.57] Ротація = привілейований security-акт → chain-only (archive: false —
+  # key-метадані НЕ на публічний IPFS; сам ключ у metadata не потрапляє ніколи).
+  # Пристрій без кластера → org=nil → глобальний ланцюг (свідомо: краще запис
+  # у global-chain, ніж жодного).
+  def record_rotation_audit!(key_record)
+    record_audit_trail!(
+      action: "hardware_key_rotated",
+      organization_id: @device.cluster&.organization_id,
+      auditable: key_record,
+      metadata: {
+        device_uid: @device_uid,
+        device_type: @device.class.name,
+        mode: @device.is_a?(Tree) ? "ratchet" : "random_reprovision",
+        key_version: key_record.key_version
+      }
+    )
+  end
 
   # [FW.17] Tree: один ратчет-крок вперед. Інкремент по одному — target у
   # кадрі абсолютний, тож пропущена команда доганяється наступною; стрибки

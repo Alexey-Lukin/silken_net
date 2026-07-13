@@ -16,6 +16,11 @@ class User < ApplicationRecord
   has_many :maintenance_records, dependent: :restrict_with_error
   has_many :audit_logs, dependent: :restrict_with_error
 
+  # [ARCH.57] Зміна ролі = привілейований RBAC-акт → audit-ланцюг. Хук на моделі
+  # ловить УСІ шляхи запису (role-контролера сьогодні не існує — console-only).
+  include Auditable
+  after_update_commit :record_role_change_audit, if: :saved_change_to_role?
+
   # --- CODEX (Lore Layer) ---
   # Phase 2: User-authored social activity in the Codex.
   # `restrict_with_error` keeps the moderation history intact: deleting a
@@ -183,6 +188,17 @@ class User < ApplicationRecord
   end
 
   private
+
+  # [ARCH.57] Актор = система (oracle_executioner): request-контексту на model-рівні
+  # нема (Current-патерн не заведено — YAGNI до першого role-UI); суб'єкт зміни = auditable.
+  def record_role_change_audit
+    from, to = saved_change_to_role
+    record_audit_trail!(
+      action: "user_role_changed",
+      organization_id: organization_id,
+      metadata: { from: from.to_s, to: to.to_s }
+    )
+  end
 
   # [ВИПРАВЛЕНО]: Тепер ця логіка реально керує валідацією.
   # Пароль не потрібен, якщо користувач прийшов через Google/Apple і вже має Identity.

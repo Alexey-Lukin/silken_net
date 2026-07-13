@@ -2,6 +2,7 @@
 
 class NaasContract < ApplicationRecord
   include AASM
+  include Auditable
 
   # [HYBRID PROTOCOL GAIA]: Ставка корпоративної страхової премії (Corporate Premium).
   # 5% від total_funding кожного NaaS-контракту направляється до DAO Treasury Parametric Insurance Pool.
@@ -25,6 +26,12 @@ class NaasContract < ApplicationRecord
   # =========================================================================
   # ЖИТТЄВИЙ ЦИКЛ КОНТРАКТУ (AASM State Machine)
   # =========================================================================
+  # [ARCH.57] Кожна зміна статусу контракту → tamper-evident audit-ланцюг. Хук на
+  # saved_change_to_status?, НЕ на AASM after_all_transitions: prod-шляхи ставлять
+  # статус raw enum-write'ом (breach у BlockchainBurningService, cancel у
+  # ContractTerminationService — обидва update!), який AASM-хук не бачить.
+  after_update_commit :record_contract_audit_trail, if: :saved_change_to_status?
+
   aasm column: :status, enum: true, whiny_persistence: true do
     state :draft, initial: true
     state :active
@@ -163,6 +170,21 @@ class NaasContract < ApplicationRecord
   end
 
   private
+
+  # [ARCH.57] Імена state-based (raw update!-шляхи breach/cancel не мають AASM-події).
+  # Chain-only (без IPFS): total_funding комерційно чутливий — публічний IPFS-периметр
+  # лишається за money-tx переходами MRV.1.
+  def record_contract_audit_trail
+    from, to = saved_change_to_status
+    record_audit_trail!(
+      action: "naas_contract_to_#{to}",
+      organization_id: organization_id,
+      metadata: {
+        from: from.to_s, to: to.to_s,
+        cluster_id: cluster_id, total_funding: total_funding.to_s
+      }
+    )
+  end
 
   def end_date_after_start_date
     return if end_date.blank? || start_date.blank?

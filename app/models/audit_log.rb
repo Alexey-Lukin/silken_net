@@ -9,7 +9,10 @@ class AuditLog < ApplicationRecord
 
   # --- ЗВ'ЯЗКИ ---
   belongs_to :user
-  belongs_to :organization
+  # [ARCH.57] nil = ГЛОБАЛЬНИЙ системний ланцюг (org-less привілейовані дії:
+  # SystemParameter-зміни). Кожен ланцюг ізольований per organization_id;
+  # NULL-група — окремий ланцюг з advisory-lock ключем 0 (org.id ≥ 1, колізії нема).
+  belongs_to :organization, optional: true
   belongs_to :auditable, polymorphic: true, optional: true
 
   # --- ВАЛІДАЦІЇ ---
@@ -48,8 +51,12 @@ class AuditLog < ApplicationRecord
   # ---------------------------------------------------------------------------
   # Hot-Path: асинхронний запис через Sidekiq (не блокує основну дію користувача)
   # ---------------------------------------------------------------------------
-  def self.record_async!(attrs)
-    AuditLogWorker.perform_async(attrs.deep_stringify_keys)
+  # archive: true → AuditLogWorker ставить outbox-маркер `archive_requested_at` +
+  # Filecoin/IPFS-пін (money/MRV-докази). archive: false → chain-only [ARCH.57]:
+  # security/ops-метадані (ключі, ролі, актуатори) НЕ пінити на публічний IPFS
+  # (INF.22 over-exposure клас) — tamper-evidence дає сам hash-ланцюг.
+  def self.record_async!(attrs, archive: true)
+    AuditLogWorker.perform_async(attrs.deep_stringify_keys, archive)
   end
 
   # ---------------------------------------------------------------------------
@@ -117,7 +124,9 @@ class AuditLog < ApplicationRecord
     { valid: true, verified_count: count }
   end
 
-  # Канонічний payload для chain hash — детермінований рядок з бізнес-полів
+  # Канонічний payload для chain hash — детермінований рядок з бізнес-полів.
+  # [ARCH.57] created_at/ip_address/user_agent У ЛАНЦЮЗІ: без них timestamp/actor-tamper
+  # через update_all (повз append-only колбек) був невидимий для verify_chain_integrity.
   def chain_payload
     self.class.chain_payload_from_row(
       "organization_id" => organization_id,
@@ -125,7 +134,10 @@ class AuditLog < ApplicationRecord
       "action" => action,
       "auditable_type" => auditable_type,
       "auditable_id" => auditable_id,
-      "metadata" => metadata
+      "metadata" => metadata,
+      "created_at" => created_at,
+      "ip_address" => ip_address,
+      "user_agent" => user_agent
     )
   end
 
@@ -143,8 +155,23 @@ class AuditLog < ApplicationRecord
       row["action"],
       row["auditable_type"],
       row["auditable_id"],
-      meta_str
+      meta_str,
+      canonical_timestamp(row["created_at"]),
+      row["ip_address"].to_s,
+      row["user_agent"].to_s
     ].join("|")
+  end
+
+  # [ARCH.57] Канонічна форма timestamp'а для хешу: UTC + мікросекунди (iso8601(6)
+  # ТРІМИТЬ ns → µs — та сама операція, що PG timestamp(6)-серіалізація, тож значення
+  # до insert і після reload дають ідентичний рядок незалежно від таймзони процесу).
+  # ⚠️ Стеля String-гілки: рядок МУСИТЬ нести явний offset (iso8601) — naive-рядок
+  # Time.zone.parse інтерпретує в поточній зоні → хибний tamper при не-UTC Time.zone.
+  def self.canonical_timestamp(value)
+    return "" if value.blank?
+
+    time = value.acts_like?(:time) ? value : Time.zone.parse(value.to_s)
+    time.utc.iso8601(6)
   end
 
   private
@@ -164,6 +191,11 @@ class AuditLog < ApplicationRecord
     # навмисно повторюваними (один раз на кожен новий запис у ланцюзі).
     Prosopite.pause if defined?(Prosopite)
 
+    # [ARCH.57] created_at входить у payload → фіксуємо ДО хешування, щоб значення
+    # в хеші гарантовано збіглося зі збереженим (незалежно від порядку AR-колбеків).
+    self.created_at ||= Time.current
+
+    # nil.to_i = 0 → глобальний (org-less) ланцюг має власний lock-ключ.
     self.class.connection.execute(
       "SELECT pg_advisory_xact_lock(#{CHAIN_LOCK_NS}, #{organization_id.to_i})"
     )

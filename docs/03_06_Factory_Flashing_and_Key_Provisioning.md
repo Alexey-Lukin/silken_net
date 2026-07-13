@@ -935,7 +935,7 @@ MaintenanceRecord.create!(
 
 **Tamper-evident retention policy:**
 - `AuditLog` — заборонено видаляти (Rails guard: `before_destroy { raise "AuditLog is immutable" }`).
-- Chain hash перевіряється при кожному audit export (`AuditLog.verify_chain_integrity!`).
+- Chain hash перевіряється при кожному audit export (`AuditLog.verify_chain_integrity`).
 - Мінімальний retention: 7 років (GDPR Article 17(3)(b) — legal obligation exception).
 
 **2-Person Rule (рекомендовано для > 100 unit batch):** supervisor має підтвердити сесію через окремий Rails UI перед тим як інструмент отримає session token. Реалізується через `ProvisioningSession` AASM: `pending → supervisor_approved → active → completed/failed`.

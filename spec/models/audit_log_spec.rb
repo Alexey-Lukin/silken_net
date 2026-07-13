@@ -26,6 +26,70 @@ RSpec.describe AuditLog, type: :model do
   end
 
   # =========================================================================
+  # CHAIN-PAYLOAD TAMPER-EVIDENCE [ARCH.57]
+  # created_at/ip_address/user_agent У хеші: підміна через update_all (повз
+  # append-only колбек) мусить ламати verify_chain_integrity.
+  # =========================================================================
+  describe "chain-payload tamper-evidence [ARCH.57]" do
+    let(:organization) { create(:organization) }
+    let(:user) { create(:user, organization: organization) }
+
+    it "verifies intact after a DB round-trip (canonical timestamp serialization)" do
+      2.times do |i|
+        described_class.create!(user: user, organization: organization, action: "priv_#{i}",
+                                ip_address: "10.0.0.#{i}", user_agent: "console")
+      end
+
+      expect(described_class.verify_chain_integrity(organization.id))
+        .to include(valid: true, verified_count: 2)
+    end
+
+    it "detects created_at tamper applied via update_all (bypasses the append-only callback)" do
+      log = described_class.create!(user: user, organization: organization, action: "priv")
+      described_class.where(id: log.id).update_all(created_at: 1.year.ago)
+
+      expect(described_class.verify_chain_integrity(organization.id)[:valid]).to be false
+    end
+
+    it "detects ip_address tamper" do
+      log = described_class.create!(user: user, organization: organization,
+                                    action: "priv", ip_address: "10.0.0.1")
+      described_class.where(id: log.id).update_all(ip_address: "203.0.113.66")
+
+      expect(described_class.verify_chain_integrity(organization.id)[:valid]).to be false
+    end
+
+    it "maintains a separate global chain for org-less system actions (organization: nil)" do
+      described_class.create!(user: user, organization: nil, action: "system_parameter_changed")
+
+      expect(described_class.verify_chain_integrity(nil)).to include(valid: true, verified_count: 1)
+      expect(described_class.verify_chain_integrity(organization.id)[:verified_count]).to eq(0)
+    end
+
+    it "keeps a pre-set created_at intact through hashing (hash-time == stored)" do
+      explicit = 2.days.ago
+      log = described_class.create!(user: user, organization: organization,
+                                    action: "backdated", created_at: explicit)
+
+      expect(log.created_at).to be_within(1.second).of(explicit)
+      expect(described_class.verify_chain_integrity(organization.id)[:valid]).to be true
+    end
+
+    describe ".canonical_timestamp" do
+      it "returns an empty string for blank input" do
+        expect(described_class.canonical_timestamp(nil)).to eq("")
+      end
+
+      it "parses a String into the same canonical UTC form as a Time" do
+        time = Time.zone.parse("2026-07-13 10:15:30.123456")
+
+        expect(described_class.canonical_timestamp(time.iso8601(6)))
+          .to eq(described_class.canonical_timestamp(time))
+      end
+    end
+  end
+
+  # =========================================================================
   # APPEND-ONLY [ARCH.57]
   # =========================================================================
   describe "append-only guard" do

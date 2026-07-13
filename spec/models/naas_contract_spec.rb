@@ -625,4 +625,43 @@ RSpec.describe NaasContract, type: :model do
       expect(described_class.total_insurance_premiums).to eq(BigDecimal("0"))
     end
   end
+
+  # [ARCH.57] Кожна зміна статусу контракту → audit-ланцюг організації, chain-only.
+  # Хук = saved_change_to_status? — МУСИТЬ ловити і raw update!-шляхи (breach у
+  # BlockchainBurningService, cancel у ContractTerminationService йдуть повз AASM).
+  describe "contract audit-trail [ARCH.57]" do
+    let!(:oracle) do
+      create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+                                  first_name: "Oracle", last_name: "Executioner")
+    end
+    let(:contract) { create(:naas_contract, status: :draft) }
+
+    it "records an AASM transition into the org chain, chain-only" do
+      expect { contract.activate! }.to change { AuditLogWorker.jobs.size }.by(1)
+
+      job = AuditLogWorker.jobs.last
+      attrs = job["args"].first
+      expect(attrs["action"]).to eq("naas_contract_to_active")
+      expect(attrs["organization_id"]).to eq(contract.organization_id)
+      expect(attrs["metadata"]).to include("from" => "draft", "to" => "active")
+      expect(job["args"][1]).to be false
+    end
+
+    it "records a raw update!(status:) that bypasses AASM (the production breach/cancel path)" do
+      contract.update!(status: :active)
+      AuditLogWorker.jobs.clear
+
+      expect { contract.update!(status: :breached) }
+        .to change { AuditLogWorker.jobs.size }.by(1)
+
+      attrs = AuditLogWorker.jobs.last["args"].first
+      expect(attrs["action"]).to eq("naas_contract_to_breached")
+      expect(attrs["metadata"]).to include("from" => "active", "to" => "breached")
+    end
+
+    it "does not record non-status updates" do
+      expect { contract.update!(total_funding: contract.total_funding + 1) }
+        .not_to change { AuditLogWorker.jobs.size }
+    end
+  end
 end

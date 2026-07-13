@@ -627,6 +627,24 @@ RSpec.describe BlockchainTransaction, type: :model do
         expect(args["auditable_type"]).to eq("BlockchainTransaction")
         expect(args["metadata"]).to include("from" => "pending", "to" => "processing")
       end
+
+      # [ARCH.57] money/MRV-шлях лишається в IPFS-outbox-периметрі (archive=true),
+      # на відміну від chain-only привілейованих дій.
+      it "passes archive: true (money/MRV IPFS outbox half)" do
+        tx.process!
+
+        expect(AuditLogWorker.jobs.last["args"][1]).to be true
+      end
+
+      # [ARCH.57] Raw update!(status:) повз AASM (perform_safe_rollback-шлях) —
+      # хук ловить, action = state-based fallback (event-імені нема).
+      it "records a raw update!(status:) with the state-based fallback action" do
+        tx.update!(status: :failed)
+
+        attrs = AuditLogWorker.jobs.last["args"].first
+        expect(attrs["action"]).to eq("blockchain_tx_to_failed")
+        expect(attrs["metadata"]).to include("from" => "pending", "to" => "failed")
+      end
     end
 
     it "skips with a WARN when the system actor is absent (no chain owner)" do

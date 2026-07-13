@@ -44,7 +44,7 @@
 
 <!-- TOC:AUTO:START -->
 - [0. PostgreSQL Інфраструктура](#-0-postgresql-інфраструктура) — extensions, тригери, партиціонування (4 таблиці), TimescaleDB rationale
-- [1. Concerns](#-1-concerns) — 6 mixin'ів (EthAddressValidatable, Firmwareable, GeoLocatable, HasArgon2Password, NormalizeIdentifier, OtaChunkable)
+- [1. Concerns](#-1-concerns) — 7 mixin'ів (Auditable, EthAddressValidatable, Firmwareable, GeoLocatable, HasArgon2Password, NormalizeIdentifier, OtaChunkable)
 - [2. Біологічний Рівень](#-2-біологічний-рівень) — TreeFamily, **Tree** (Soldier), Cluster
 - [3. Апаратний Рівень](#-3-апаратний-рівень) — **Gateway** (Queen), HardwareKey, DeviceCalibration, **TelemetryLog** (partitioned), GatewayTelemetryLog (partitioned)
 - [4. AI / OTA / Актуатори](#-4-ai--ota--актуатори) — TinyMlModel, BioContractFirmware, Actuator, ActuatorCommand
@@ -110,7 +110,14 @@ Money-інваріант застраховано CHECK-констрейнтом
 
 ## 🔧 1. Concerns
 
-Шість спільних модулів, що підключаються через `include` до відповідних моделей.
+Сім спільних модулів, що підключаються через `include` до відповідних моделей.
+
+### `Auditable`
+**Використовується:** `NaasContract`, `ActuatorCommand`, `User`, `SystemParameter` (+ сервіси `BlockchainBurningService`, `HardwareKeyService`)
+
+**[ARCH.57]** Запис привілейованих дій у tamper-evident AuditLog-ланцюг: `record_audit_trail!(action:, organization_id:, auditable:, user_id:, ip_address:, user_agent:, metadata:, archive:)` — async (дзеркало MRV.1), актор = людський ініціатор або `Auditable.system_actor_id` (`oracle_executioner`; без актора → WARN-skip, дію не валимо). `archive: false` (default) = chain-only; ЄДИНИЙ `archive: true` = MRV.1 money-tx переходи (IPFS-outbox). Coverage-мапа + хук-механізм → §7 AuditLog-картка.
+
+---
 
 ### `EthAddressValidatable`
 **Використовується:** `Organization`, `Wallet`, `BlockchainTransaction`
@@ -720,7 +727,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 
 ### `ActuatorCommand` — Команда Актуатору
 
-**Включає:** `AASM`
+**Включає:** `AASM`, `Auditable` ([ARCH.57] `after_update_commit if: :saved_change_to_status?` → `actuator_to_*` chain-only; bulk-обходи закриті ручними викликами — `actuator_bulk_cancelled` на override-`update_all` + pre-dispatch failures `ttl_expired`/`actuator_not_ready` на `update_columns`)
 
 **Призначення:** Одна команда до актуатора з підтвердженням виконання та idempotency.
 
@@ -798,7 +805,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 
 ### `User` — Суб'єкт Системи
 
-**Включає:** `HasArgon2Password`
+**Включає:** `HasArgon2Password`, `Auditable` ([ARCH.57] `after_update_commit if: :saved_change_to_role?` → `user_role_changed` chain-only — model-layer ловить і console-шлях, role-контролера не існує)
 
 **Ролі (RBAC):**
 
@@ -884,7 +891,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 **Асоціації:**
 - `belongs_to :tree`
 - `belongs_to :organization` (optional, денормалізований FK)
-- `has_many :blockchain_transactions, dependent: :delete_all`
+- `has_many :blockchain_transactions, dependent: :nullify` — **[ARCH.57]** дозволений destroy (порожній/чисто-pending гаманець) лишає tx-ряди сиротами, не стирає (сирітський ряд валідний за дизайном — cluster-sourced money вже живе без wallet); первинний захист доказів = `guard_mrv_evidence!`
 - `has_one :cluster, through: :tree`
 
 **Ключові поля:**
@@ -955,7 +962,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 - `confirm(block_num, gas_cost)` (sent/processing→confirmed)
 - `fail(reason)` (any→failed)
 - `escalate_to_review(reason)` (pending/processing/sent/failed→manual_review) — **[DOUBLE-SPEND GUARD]**: tx_hash вже існує або стан на блокчейні невідомий; кошти залишаються у `locked_balance` до ручної звірки
-- `after_all_transitions` → async `record_money_audit_trail` — **[MRV.1]** кожен money-перехід пише SHA-256 `AuditLog`-ланцюг (actor=`oracle_executioner`, metadata from/to/tx_hash); org-резолюція `wallet&.organization_id || cluster&.organization_id` — cluster-sourced рухи (Celo reward, last-tree slash; `wallet=nil`) атрибутуються через кластер; без org/actor — WARN-skip, tx не валимо
+- `after_update_commit :record_money_audit_trail, if: :saved_change_to_status?` — **[MRV.1/ARCH.57]** кожна зміна статусу (AASM І raw `update!`) пише SHA-256 `AuditLog`-ланцюг ПІСЛЯ commit (AASM `after_all_transitions` файрив ДО персистенції → phantom-рядок на rollback; event-ім'я зберігається з freshness-guard'ом, fallback = state-based `blockchain_tx_to_*`); actor=`oracle_executioner`, metadata from/to/tx_hash; org-резолюція `wallet&.organization_id || cluster&.organization_id` — cluster-sourced рухи (Celo reward, last-tree slash; `wallet=nil`) атрибутуються через кластер; без org/actor — WARN-skip, tx не валимо
 - `scope :in_flight` (recent `:pending`/`:sent`) — **[ARCH.45]** intent-marker idempotency guard (дзеркало `EthereumAnchor.in_flight`): на retry ловить on-chain↔DB crash-window для slash / Solana payout проти double-pay / double-burn ([`04_02 §4/§10`](04_02_Business_Logic_and_Services))
 
 **Методи:** `find_with_partition_pruning(id, created_at = nil)` _(клас)_, `explorer_url`, `solana_network?`, `celo_network?`, `broadcast_status_change`.
@@ -968,7 +975,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 
 ### `NaasContract` — Nature-as-a-Service Контракт
 
-**Включає:** `AASM`
+**Включає:** `AASM`, `Auditable` ([ARCH.57] `after_update_commit if: :saved_change_to_status?` → `naas_contract_to_*` chain-only — ловить і raw `update!`-шляхи breach/cancel, що йдуть повз AASM у Burning/Termination-сервісах)
 
 **Асоціації:**
 - `belongs_to :organization`
@@ -1138,9 +1145,13 @@ active/draft ──cancel──► cancelled
 
 **Append-only [ARCH.57]:** «незмінність» тримається кодом, не лише конвенцією — `before_update` дозволяє мутацію ЛИШЕ архівних полів (`ARCHIVAL_MUTABLE_COLUMNS`: `ipfs_cid`/`archive_requested_at`/`updated_at` — останній механічний, Rails бампає на кожен update), решта → `ActiveRecord::ReadOnlyRecord`; `before_destroy` завжди raise. `delete_all`/`update_all` обходять колбеки — org-каскад закритий `dependent: :restrict_with_error` (Org із журналом не видаляється; узгоджено з `users`/`naas_contracts`).
 
+**Chain-payload tamper-evidence [ARCH.57]:** канонічний рядок хешу = `org|user|action|auditable_type|auditable_id|metadata(sorted-JSON)|created_at|ip_address|user_agent` — часова мітка й актор-форензика В ланцюзі, тож tamper через `update_all`/raw SQL (повз append-only колбек) ламає `verify_chain_integrity` (mutation-verified спеки). Timestamp канонізує `canonical_timestamp` (UTC + `iso8601(6)` — µs-трім збігається з PG `timestamp(6)`-серіалізацією → DB round-trip детермінований); `compute_chain_hash` фіксує `created_at ||= Time.current` ДО хешування.
+
+**Auditable-концерн [ARCH.57]** (`app/models/concerns/auditable.rb`): привілейовані дії пишуться в ланцюг через `record_audit_trail!` (async, дзеркало MRV.1; актор = людський ініціатор або `oracle_executioner` через `Auditable.system_actor_id`, без актора → WARN-skip). **Хук-механізм = `after_update_commit if: :saved_change_to_status?`, НЕ AASM `after_all_transitions`** — з двох причин: (1) AASM-колбек файрить ДО персистенції → rollback переходу лишав би фантомний рядок (Sidekiq-push не відкочується); (2) prod-шляхи ставлять статус raw `update!`-ом повз AASM (breach/cancel контрактів). Bulk-обходи (`update_all`/`update_columns` в ActuatorCommand) закриті ручними викликами (aggregate-рядок `actuator_bulk_cancelled` + pre-dispatch failures). Coverage: money-переходи (MRV.1, єдиний `archive: true` — IPFS-outbox) · `NaasContract`-статуси · slash-вердикти `slash_verdict_burn/frozen/evasion` (`BlockchainBurningService` — ПРИЧИНА вироку; MRV.1 логує лише рух коштів) · `ActuatorCommand`-статуси · `User` role-change · `SystemParameter` value-мутація · `HardwareKeyService`-ротація — усе нове **chain-only** (`archive: false`: fraud-attribution/DID/key/role-метадані не пінити на публічний IPFS — INF.22 over-exposure клас; tamper-evidence дає сам ланцюг). Стеля: глобальний (org=nil) ланцюг наразі read-only через console `verify_chain_integrity(nil)` — org-скоуплені контролери його не віддають; UI-reader = за першою ops-потребою.
+
 **Асоціації:**
 - `belongs_to :user`
-- `belongs_to :organization`
+- `belongs_to :organization` (**optional [ARCH.57]** — `nil` = глобальний системний ланцюг для org-less дій, як-от `SystemParameter`; окремий advisory-lock ключ 0, верифікація `verify_chain_integrity(nil)`)
 - `belongs_to :auditable, polymorphic: true` (optional)
 
 **Ключові поля:**
@@ -1159,9 +1170,9 @@ active/draft ──cancel──► cancelled
 
 | Метод | Опис |
 |-------|------|
-| `record_async!(attrs)` | Async-запис через Worker |
+| `record_async!(attrs, archive: true)` | Async-запис через Worker; `archive: false` = chain-only [ARCH.57] (без outbox-маркера і Filecoin-піна) |
 | `bulk_record!(entries)` | Bulk insert_all |
-| `verify_chain_integrity(org_id)` | Перевірка ланцюжка хешів |
+| `verify_chain_integrity(org_id)` | Перевірка ланцюжка хешів (`nil` = глобальний ланцюг) |
 
 **Scopes:** `recent`, `archived` (ipfs_cid присутній), `not_archived`, `archivable` (archive_requested_at присутній — outbox-eligible), `pending_archive` (archivable ∧ not_archived — FilecoinReconcileWorker-скоуп), `by_action`, `by_user`, `by_ip`, `for_period`.
 
@@ -1276,7 +1287,7 @@ active/draft ──cancel──► cancelled
 **Публічний API:**
 - `SystemParameter.current(:lorenz_sigma, default: 10.0)` — кешований lookup (TTL 24h), повертає typed value або default
 - `SystemParameter.current_values(lorenz_sigma: 10.0, lorenz_rho: 28.0)` — batch lookup кількох параметрів
-- `SystemParameter.set("lorenz_sigma", "12.0", updated_by: admin, source: "governance")` — оновлення з аудит-трейлом
+- `SystemParameter.set("lorenz_sigma", "12.0", updated_by: admin, source: "governance")` — оновлення з аудит-трейлом: окрім row-колонок (`updated_by`/`source`), **[ARCH.57]** value-мутація (`after_update_commit if: :saved_change_to_value?`, концерн `Auditable`) пише tamper-evident рядок `system_parameter_changed` у **глобальний (org=nil) hash-ланцюг** AuditLog; bootstrap-create (seeds) свідомо не аудитується
 
 **Валідації:**
 - `key` — presence, uniqueness, format `/\A[a-z][a-z0-9_]*\z/`
@@ -1552,7 +1563,7 @@ Organization
   │     ├── EwsAlerts (delete_all)
   │     └── AiInsights polymorphic (delete_all)
   ├── Wallets (nullify)
-  │     └── BlockchainTransactions (delete_all) ← PARTITION
+  │     └── BlockchainTransactions (nullify [ARCH.57]) ← PARTITION
   └── AuditLogs (restrict_with_error) ← журнал переживає Org [ARCH.57]
 
 User
