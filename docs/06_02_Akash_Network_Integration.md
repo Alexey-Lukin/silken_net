@@ -694,7 +694,7 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 | Змінна | Значення | Required for | Опис |
 |--------|---------|-------------|------|
 | `WEB3_STRICT_MODE` | `true` | web3-worker | Hadron KYC/RWA + Chainlink-callback HMAC fail-closed на missing creds — **belt-and-suspenders** `WEB3_STRICT_MODE == "true" \|\| Rails.env.production?` (прапор може дрейфнути з deploy-поверхні, production — ні; Hadron harden 2026-07-10 вирівняв його з контролерами/W3bstream/boot-guard — раніше він єдиний був flag-only → forgotten-flag=fake-KYC mint); dispatch більше не STRICT-gated — local marker, ARCH.53; web+job (INF.11) |
-| `RAILS_ALLOWED_HOSTS` | *(потрібно встановити)* | runtime ⚠️ | Comma-separated allowlist (DNS-rebinding захист) — напр. `api.silkennet.com,.silkennet.com` |
+| `RAILS_ALLOWED_HOSTS` | *(потрібно встановити)* | runtime ⚠️ | Comma-separated allowlist (DNS-rebinding захист) — канон-пара INF.4: `silkennet.app,api.silkennet.com` (web-хост обов'язковий — wildcard `.silkennet.com` його НЕ покриває → 403 block-all) |
 | `DISABLE_SSL` | *(не встановлювати)* | runtime | `true` лише якщо Akash ingress / Cloudflare термінує TLS |
 | `CSP_ENFORCE` | *(не встановлювати)* | runtime | `true` після burn-in CSP report-only (1–2 тижні) |
 
