@@ -595,7 +595,7 @@ HMAC-SHA256(K_ota, full_bytecode || version_id || total_chunks) → 32 bytes
 - HMAC-SHA256 рахується **програмно** (pure-C `silken_sha256.h`, FW.30 — у STM32WLE5JC є апаратний AES, але **немає** HASH/SHA-блоку, тож SHA256 завжди software): кілька SHA-проходів над image — на порядок дешевше за програмний Ed25519 verify (~80 мс)
 - 32-байтний tag поміщається у 3 LoRa-чанки (vs 64 байти Ed25519 sig → 6 чанків)
 - Симетричне рішення прийнятне ТОМУ ЩО `K_ota` per-кластер, не глобальний (компрометація Queen ≠ компрометація всієї мережі)
-- При billion-tree масштабі — міграційний шлях на ECDSA P-256 (slot 1 ATECC608B, post-TRL 7) описаний нижче
+- При billion-tree масштабі — міграційний шлях на асиметричний image-підпис (post-TRL 7; SE05x-ера = Ed25519, присуд → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker)) — скетч механіки нижче
 
 ### Wire Format — `[0x9B] HMAC-Trailer` Chunk
 
@@ -759,7 +759,9 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 
 ### Future Evolution: HMAC → ECDSA-P256 (post-TRL 7)
 
-Архітектурний шлях (не fallback) при додаванні ATECC608B (03_05 §3.7) для billion-tree масштабу де компрометація одного Queen не повинна дозволяти підпис нових images:
+> ⚠️ **Скетч ATECC-ери (2026-05)** — SE = **SE050** (ATECC superseded, SEC.6 ✅ — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) ADR): у SE05x-ері природна крива = **Ed25519** (on-chip keygen, «голос дерева»), не P-256. Механіка кроків (HSM-підпис → pubkey у Flash → sig-чанки → software verify → асиметрія довіри) переноситься 1:1; присуд «чи мігрувати» = [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker) ⚖️ OTA-auth еволюція.
+
+Архітектурний шлях (не fallback) для billion-tree масштабу де компрометація одного Queen не повинна дозволяти підпис нових images:
 1. Backend підписує image через ECDSA-P256 з master key (HSM)
 2. Public key розповсюджується у Soldier flash (slot 2 ATECC608B або Protected Flash)
 3. Wire format: `[0x9B][seg_idx:2][total:2][sig_segment]` → 6 чанків (64B sig)
@@ -771,7 +773,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 - **Firmware (`firmware/test/test_soldier_logic.c`):** trailer assemble (version chunk, all-4=0x0F, seg_idx>4 reject), **реальний HMAC compute** (`Silken_Hmac_Sha256_Concat ≡ one-shot ≡ OpenSSL`), `OTA_Try_Finalize` APPLY·WAIT·REJECT (tampered/version-mismatch/no-key), constant-time compare
 - **Integration (`spec/integration/ota_firmware_flow_spec.rb`):** backend → Queen relay (4 segments) → Soldier dual-gate accept/reject; tag reconstruction == `compute_hmac_tag`
 
-> **Cross-ref:** FW.1 (HKDF master-key infrastructure), FW.2 (CCM MIC для телеметрії — паралельний MAC concept), 03_05 §3.7 (ATECC608B slot 3 reserved for OTA HMAC), 03_05 §6 «Queen → Soldier (OTA LoRa)» row у криптографічній таблиці.
+> **Cross-ref:** FW.1 (HKDF master-key infrastructure), FW.2 (CCM MIC для телеметрії — паралельний MAC concept), 03_05 §3.7 (SE-роль ADR; ATECC slot-map = legacy-патерн), 03_05 §6 «Queen → Soldier (OTA LoRa)» row у криптографічній таблиці.
 
 ---
 
@@ -824,7 +826,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 **Hardware-gated TODO:**
 - 👤 Реальний `STM32_Programmer_CLI` execution на STM32WLE5JC bench (зараз `EXECUTE=1` raise'ить `ProgrammerMissingError` без CLI у PATH). ✅ (2026-06-07) Software-половина доведена шим-інтеграцією: fake-CLI на PATH → повна Session через реальні subprocess'и (ok/verify-fail/rdp-fail + [FW.54] UID-verify pass/wrong-board, stop-on-fail, transcript) — `spec/services/factory_flashing/session_run_execute_path_spec.rb`; на bench лишається фізика SWD **+ звірити реальний формат `-r32`-виводу проти `UidReadout` парсера (RUNBOOK 1.3)**
 - 👤 Bitwarden Secrets Manager live API (`BitwardenAdapter#fetch_master_key` placeholder)
-- 🔗 Live `cryptoauthlib` I²C call в `SecureElementProvisioner` — після SEC.6 PCBA з ATECC608B
+- 🔗 Live SE I²C call в `SecureElementProvisioner` — eval-kit-gated (SE = **SE050**, SEC.6 ✅; `cryptoauthlib`→SE05x/`sss` код-міграція → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker) (B))
 
 ---
 

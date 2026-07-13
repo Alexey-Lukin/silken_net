@@ -1017,9 +1017,9 @@ atca_status_t status = atcab_aes_encrypt(
 - I²C: 2 GPIO (PB6/PB7) + 2 pull-ups (4.7 kΩ × 2)
 - Загалом: ~3% PCB area для Soldier (KiCad layout у HW.9)
 
-**Роль SE у LoRa-крипті: per-packet AES vs provisioning-only — відкритий trade-off [SEC.14]**
+**Роль SE у LoRa-крипті: per-packet AES vs provisioning-only — trade-off [SEC.14 — ✅ RESOLVED 2026-07-03, §🗄️]**
 
-> Це уточнення *всередині* Варіанту B, **не** перегляд ARCH.42. ARCH.42 зафіксував *AES-128-ключ у ATECC608B Slot 0*; відкритим лишається інше питання — *хто виконує шифрування кожного пакета*: сам SE щопакета, чи вбудований radio-AES STM32 з ключем у RDP-Flash.
+> Це уточнення *всередині* Варіанту B, **не** перегляд ARCH.42. ARCH.42 зафіксував *AES-128-ключ у ATECC608B Slot 0*; окреме питання — *хто виконує шифрування кожного пакета*: сам SE щопакета, чи вбудований radio-AES STM32 з ключем у RDP-Flash — вирішене (Статус нижче: **provisioning-only**); аналіз залишено як обґрунтування.
 
 Решта §3.7 (API sketch, latency/power) неявно припускає **per-packet ATECC AES** (`atcab_aes_encrypt()` на кожен LoRa-кадр). Це не єдиний шлях, і попередня подача «1.5 мс нехтовно / +0.1% ✅» приховувала справжню вісь. Енергія тут — хибний слід (вона мала з обох боків). Реальна вісь:
 
@@ -1099,12 +1099,12 @@ atca_status_t status = atcab_aes_encrypt(
 
 **Дорожня карта:**
 
-- [ ] 🤖 SE050 footprint + I²C placement у KiCad floorplan (soft-freeze DNP — ADR угорі §3.7) → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker)
+- [ ] 👤 SE050 footprint + I²C placement у KiCad floorplan (soft-freeze DNP — ADR угорі §3.7) — дім роботи [`00_07` — HW.9](00_07_Action_Plan_Tracker) (PCB layout)
 - [x] 🤖 (SEC.14) Перефреймувати latency/power → чесний trade-off «per-packet AES vs provisioning-only» — ✅ Виконано (підрозділ вище): енерго-аргумент перевірено = малий, але не вирішальний; справжня вісь = tamper-resistance LoRa-ключа ⟷ latency/ідіом; role-split альтернатива подана
 - [x] 🤖 (SEC.14, 2026-06-12) Cross-check проти Сценарію C ([`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)) — точні %: active ≈0.3% TX / ≈0.2% циклу / ≈3% годинного запасу (підтверджує «малий»); **знахідка-інверсія**: always-on sleep 150 нА ≈ 3.6 мДж/год > запас Сценарію C → **load-switch гейт SE обов'язковий** (Power impact вище; стосується обох ролей)
 - [x] 👤 (SEC.14) Роль SE обрано — ✅ RESOLVED 2026-07-03: **provisioning-only** design-default (Статус вище); eval-residual = silicon-confirm чисел → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker)
 - [x] 🤖 Update 03_06 §1 Factory Flashing pipeline з SE-варіантом — ✅ Виконано: 03_06 §1 розділено на Гілку A (Protected Flash, TRL 6/7) та Гілку B (ATECC608B/STSAFE-A110, mass production > 10k); додано двошаровий defense-in-depth (data zone lock + RDP), latency/power/cost impact, criteria для вибору гілки, та irreversibility note (B → A неможливо)
-- [ ] 🤖 Інтеграція з Backend `Provisioning::HardwareKeyService` (генерація ECC keypair + cert)
+- [ ] 🤖 Інтеграція з Backend `HardwareKeyService` (генерація SE-identity keypair + cert) — eval-kit-gated, Гілка B → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker)
 - [ ] 🤖 (лише якщо колись обрано urban/high-value варіант) drop-in `Crypto_AES_Encrypt_Block()` SE-шлях за `#define USE_SECURE_ELEMENT` — **N/A для forest-baseline** (SEC.14 provisioning-only: LoRa AES = HAL_CRYP завжди)
 - [ ] 👤 Замовити eval-пару: **SE051-кіт** (звірити офіційний OM-SE051ARD; fallback = Mikroe SE051 Plug&Trust Click) + **OM-SE050ARD-E** companion для порівняльного bench (**НЕ** -F — FIPS-режим без Ed25519) — baseline-рішення й обґрунтування в datasheet-verify таблиці вище → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker)
 - [ ] 👤 Прийняти final BOM рішення перед першим mass production batch (>1000 unit)
@@ -1341,7 +1341,7 @@ HAL_CRYP_Init(&hcryp);
 | **MAC/MIC (LoRa)** | 🟡 OPEN — закривається з FW.2 CCM | 8-byte MIC (64-bit, forge probability $5.4×10^{-20}$) |
 | **CoAP batch origin + integrity** | 🟡 **L1 QATT shipped** (2026-06-07) | Ed25519 batch-підпис Королеви (§2.2): закриває CBC-malleability/injection + anti-replay у nonce-вікні; legacy L0 без підпису ще приймається (fleet-перехід); 👤 bench: EDSK на кремнії. Ladder → [`05_02`](05_02_Proof_of_Growth_Pipeline) |
 | **RDP Protection** | 🟡 OPEN | Level 0 (розробка). Level 1/2 — фінальний крок Factory Flashing (розділ 3.3). Pre-flight checklist та незворотна процедура задокументовані у §3.6 🤖 |
-| **Factory Flashing Pipeline** | 🟡 PARTIAL (SEC.3) | ✅ Архітектура (03_06 §1) + HKDF (03_06 §2) + Operations Security threat model + tool implementation + master-key DI + one-pass UID→DID (FW.54: `TreeResolver` + wrong-board guard) (03_06 §5 — `app/services/factory_flashing/*`, `lib/tasks/factory.rake`, RSpec-покрито, dry-run default). Residuals → [`00_07`](00_07_Action_Plan_Tracker) SEC.3 (bench SWD + `-r32`-формат · Bitwarden live · ATCA I²C) |
+| **Factory Flashing Pipeline** | 🟡 PARTIAL (SEC.3) | ✅ Архітектура (03_06 §1) + HKDF (03_06 §2) + Operations Security threat model + tool implementation + master-key DI + one-pass UID→DID (FW.54: `TreeResolver` + wrong-board guard) (03_06 §5 — `app/services/factory_flashing/*`, `lib/tasks/factory.rake`, RSpec-покрито, dry-run default). Residuals → [`00_07`](00_07_Action_Plan_Tracker) SEC.3 (bench SWD + `-r32`-формат · Bitwarden live · SE-I²C — SE050 eval-kit) |
 | **Shipping Mode (Геркон)** | ✂️ PRUNED | Не потрібен (SEC.4 RESOLVED 2026-07-03) — фізика проти компонента; decision-record + reopen-умови → розділ 3.5 |
 | **Secure Element (SE050)** | ✅ SEC.6 RESOLVED (true-DePIN) | §3.7 ADR — SE = **SE050** (Ed25519 on-chip keygen; реверс ATECC), soft-freeze DNP, populate post-FW.2; slot-map §3.7. Residuals → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker) |
 | **Key Rotation** | 🟡 host-готово | Hash-Ratchet freeze-contract §3.8 (backward secrecy, ключ не летить ефіром); активація CCM-gated — `[FW.17]` |
