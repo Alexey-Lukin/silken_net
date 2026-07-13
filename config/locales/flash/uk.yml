@@ -14,8 +14,8 @@ uk:
       invalid_token_type: 'Невірний фільтр token_type: %{value}.'
     firmwares:
       deployment_dispatched: Наказ на еволюцію v%{version} поставлено в чергу — Королеви заберуть його власним poll-ом після наступного флашу.
-      deployment_oversized: "OTA відхилено: прошивка понад стелю Королеви (16 чанків × 512 Б = 8 КБ збірки)."
       deployment_no_targets: 'OTA відхилено: немає придатних шлюзів для розгортання.'
+      deployment_oversized: 'OTA відхилено: прошивка понад стелю Королеви (16 чанків × 512 Б = 8 КБ збірки).'
       deployment_rejected_stale: 'OTA відхилено: версія не перевищує high-water кластера (anti-rollback). Створіть новий запис прошивки.'
       file_too_large: Розмір файлу перевищує ліміт %{limit} МБ.
       invalid_target_type: 'target_type має бути одним з: %{allowed}.'

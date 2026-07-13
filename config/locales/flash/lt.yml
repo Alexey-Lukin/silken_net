@@ -14,8 +14,8 @@ lt:
       invalid_token_type: 'Neteisingas token_type filtras: %{value}.'
     firmwares:
       deployment_dispatched: Diegimo užsakymas v%{version} įtrauktas į eilę — Karalienės jį paims kitame poll užklausime.
-      deployment_oversized: "OTA atmesta: programinė įranga viršija Karalienės surinkimo lubas (16 gabalų x 512 B = 8 KB)."
       deployment_no_targets: 'OTA atmesta: nėra tinkamų šliuzų diegimui.'
+      deployment_oversized: 'OTA atmesta: programinė įranga viršija Karalienės surinkimo lubas (16 gabalų x 512 B = 8 KB).'
       deployment_rejected_stale: 'OTA atmesta: versija neviršija klasterio aukščiausios žymos (anti-rollback). Sukurkite naują programinės įrangos įrašą.'
       file_too_large: Failo dydis viršija %{limit} MB limitą.
       invalid_target_type: 'target_type turi būti vienas iš: %{allowed}.'
