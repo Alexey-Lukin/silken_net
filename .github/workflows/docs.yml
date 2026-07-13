@@ -55,6 +55,7 @@ jobs:
               - 'spec/lib/docs_toc_spec.rb'
               - 'scripts/model_doc_sync.rb'
               - 'scripts/protocols_ref_check.rb'
+              - 'tools/firmware/queen_energy_budget.rb'
               - 'app/models/**'
               - 'app/services/**'
               - 'app/workers/**'
@@ -98,6 +99,11 @@ jobs:
         # Pure Ruby, no Rails — the protocols/ subtree refs canon by relative path,
         # which the top-level gates never see; verifies every such ref resolves.
         run: ruby scripts/protocols_ref_check.rb
+
+      - name: Queen energy-budget deploy-gate (HW.39)
+        # Pure Ruby, no Rails — параметрична модель = SSOT енерго-чисел 02_05 §4;
+        # Phase 1/2.5 winter-balance ≥ margin, Phase 3 warn-only до Starlink bring-up.
+        run: ruby tools/firmware/queen_energy_budget.rb --assert
 
   docs-ok:
     # Single required status check for the SSOT gates on `main`. Always runs so a
