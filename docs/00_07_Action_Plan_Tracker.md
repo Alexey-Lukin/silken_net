@@ -198,7 +198,7 @@
 - [ ] 👤 Втомні випробування (Wöhler) у синтетичному ксилемному соку — еквівалент 5+ років фретингу
 
 #### HW.24 — Staged validation gate (SLA → Ti-coin → full anchor)
-- **P0** · 👤 · ⚪ · → `01_01 §6.1`
+- **P0** · 👤 · 🟡 · → `01_01 §6.1`
 - **Стан:** Не розпочато — гейт «100 DMLS-анкерів лише після Stage 1 (SLA form&fit) + Stage 2 (Ti-coin in-vitro біохімія)»; передчасна 100-партія = методологічна помилка. **Stage 2 = найближча ціль (founder 2026-06-21): фізичний TRL 3→4** (🚦 Critical Path) — критичний шлях обходить гіроїд/PEEK/збірку; канал = **гібрид commercial-lab + ЧНУ** (не чекати MoU); coin = **6-сплавний bake-off** down-select (4V/7Nb/CP-Ti/β-Ti/Ta/Ti-15Zr, HW.3/§2.5). Канон `01_01 §6.1`.
 - [ ] 👤 **Stage 1 — SLA макети (5 шт):** друк прозорого фотополімеру (Form 3 або SLA-сервіс) для перевірки form & fit, ергономіки, Flush Mount step drilling, допусків press-fit «пластик-в-пластик»
 - [ ] 👤 **Stage 2 — Ti-coins (~15 шт, Ø16 disc frozen — A=2 см²/грань, `01_01 §6.1`; **6-сплавний bake-off** down-select: 4V control + 7Nb + CP-Ti + β-Ti + Ta benchmark + Ti-15Zr, §2.5; 🤖 machine-half ✅ — `cem/ti_coin.<alloy>` 6 CEM + predicted release/E `tools/in_silico` 51/50 + RFQ `procurement/anchor_alloy_rfq` + acceptance-gates `01_03 §3.5`):** SLM-друк + EAAE (з обов'язковим dehydrogenation bake `01_02 §1.3 Крок 5b`) → **Gen 2.0 анодний стек** (одношаровий dgrFAD-GDH + Os polymer в genipin-chitosan-CNC матриці поверх fMWCNT, `01_03 §2.1`) + **Gen 2.0 катодний стек** (Laccase + nCoCuCeZIF nanozyme гібрид DET, `01_03 §2.2`) + **Nafion-g-PSBMA анти-resin coating** → in vitro CV/EIS у синтетичному ксилемному соку (**канал = commercial electrochem-lab на критичному шляху + біо-хаб ЧНУ паралельно**, рецептура [`08_02`](08_02_Academic_Institutions_Registry)). 30-day stability gate. Chloride tolerance test (0.25 М NaCl). UCST winter-lock тест (-10°C → +25°C цикл). 💡 **Electrode-дизайн:** замовити з «вушком» (отвір/виступ на краю) для кріплення потенціостат-кліпси без пошкодження активної площі (A_electrode = 2 см²). In-silico predictions для порівняння — `40_validate_vs_experiment.py` готовий. (`01_03 §3.7`)
@@ -210,20 +210,21 @@
 - **Стан:** Гео-рішення founder + дим-фриз + машинна половина зацементовані в канон: орієнтація знята (рішення (б) — гіроїд бінеперервний, [`01_01 §5.5`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) · вал **Ø11** + монолітний центр-стрижень шини ([`01_01 §1.4`](01_01_Coaxial_Gyroid_Topology_and_PEEK)/HW.34) · радіальний дим-ланцюг frozen (PEEK 2 мм → рана Ø15; осьовий Zone 2 50 / фланець Ø25; unified Lamé combined SF 5.6×, [`01_01 §4.2`](01_01_Coaxial_Gyroid_Topology_and_PEEK)). PicoGK CAD-родина ✅ COMPLETE (v2 graded 3-осі + Деталь 3/4 + capsule-end/axial-stack mate-audit; ARCH.25 connectivity-стіл topology-agnostic) → sheet→network схиляння = трек, не рішення. Анкерний-кущ synergy-DAG живе у §01a intro. Залишок (нижче) — FEA · фіз-валідація · MATE-Ø.
 - [ ] 🤖+👤 **FEA пружності гіроїда — sheet-vs-network E (THE відкрита вісь)**: порозність-бік знятий (PicoGK voxel 0.1 → 67.6%≈65%; груба роздільність false-high 21–28%). Відкрита жорсткість — network@65% bending n=2 → E≈13.5 ГПа (= цільова §5.2) vs sheet stretch n≈1.3 → ~22–30 ГПа ≫ деревина → stress-shield повертається; ARCH.25 + літ по 4 осях (топологія / транспорт / механіка / друк) **схиляють до network**; + анізотропія (поперечна `E_R`/`E_T` ~0.5–1.5 ≪ поздовжня `E_L`, анкер горизонтальний); + стала-vs-градієнт порозність відкрита (CAD `wallParam(r)` тримає обидві). 💡 β-Ti coupling (HW.24 bake-off): низько-E сплав ~80 ГПа знижує gyroid-E → може зняти гостроту (in-silico `50`). Exact E = FEA-homogenization — **self-own-кандидат** (поверх ARCH.25-стола) АБО школа Гусака. Канон [`01_01 §5.2/§5.5/§5.6`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
 - [ ] 👤 фіз-валідація — µCT порозність + нанотвердомір E на купоні (post-перша-партія, HW.24)
-- [ ] ⚖️ **MATE-Ø skirt/inboard + Z-reconcile** (founder — **єдиний ⚖️-дім**, ← 🔗 HW.17 radome-чекбокс / bench HW.8.8): radial (skirt Ø30 vs inboard Ø25) + Z (lock-groove-Z↔lug-Z) — capsule-end/axial-stack mate-audit лишив незведеним; інж-рекоменд. `skirt` ([`02_02 §4.4/§4.5`](02_02_Blind_Mate_Pogo_Pin_Interface))
+- [ ] ⚖️ **MATE-Ø skirt/inboard + Z-reconcile** (founder — MATE-Ø ⚖️-дім; ⚖️ також у HW.36 severity + HW.34 друк-vs-звар, ← 🔗 HW.17 radome-чекбокс / bench HW.8.8): radial (skirt Ø30 vs inboard Ø25) + Z (lock-groove-Z↔lug-Z) — capsule-end/axial-stack mate-audit лишив незведеним; інж-рекоменд. `skirt` ([`02_02 §4.4/§4.5`](02_02_Blind_Mate_Pogo_Pin_Interface))
 - [ ] 🔭 Future-lever: PEEK-стінка термічно надлишкова (combined SF 5.6× ≫ 3 → 2 мм не stress-обмежені) → тонша = менша рана / нижчий DBH-поріг; bench/FEA-gated, не зараз ([`01_01 §4.2`](01_01_Coaxial_Gyroid_Topology_and_PEEK))
 - [ ] 🤖 **LatticeLibrary submodule stale** (2025-07 vs ShapeKernel 2026-06) → `dependency-update` прохід (не блокер — власний SDF не залежить)
 
 #### HW.34 — Bus conductor realization (матеріал · ізоляція каналу · нижній спай · BOM-рядок) (NEW 2026-06-21)
 - **P1** · 🤖+👤 · 🟡 · → `01_01 §1.4`, `02_02 §1.2`, `01_02 §2.5`
-- **Стан:** **Monolithic adopted** (founder 2026-06-21) — шина монолітна з анодом (= сплав анода, HW.24-gated), що розв'язує колишню дихотомію «анодний вал / Cu-провідник». Спека-дім → [`01_01 §1.4`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (топологія/ізоляція/термінус); термо+механіка (in-silico `54`+`55`, machine-half ✅) → [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) §HW.34 — Cu-шина домінувала б розрив (анодна кишеня ~−15°C → freeze-risk), монолітна Ti термічно невидима + механічно надійна за наявності lining'а. **Резолвлено:** матеріал (monolithic, HW.24-gated) · нижній Ti↔Cu спай (усунуто) · BOM (шина = частина анодного друку). **Відкрите** ↓. Трек повного анкера TRL 4→6 — **НЕ блокує coin** (обходить PEEK/шину).
+- **Стан:** **Monolithic adopted** (founder 2026-06-21) — шина монолітна з анодом (= сплав анода, HW.24-gated), що розв'язує колишню дихотомію «анодний вал / Cu-провідник». Спека-дім → [`01_01 §1.4`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (топологія/ізоляція/термінус); термо+механіка (in-silico `54`+`55`; ⚠️ **`55` bus-mech порахований на `D_BUS=1.3`=канал ≠ канон rod Ø1.0 §1.4 → механіка-SF завищено ~2.2× (σ∝1/d³); re-run @ Ø1.0 ↓**) → [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) §HW.34 — Cu-шина домінувала б розрив (анодна кишеня ~−15°C → freeze-risk), монолітна Ti термічно невидима + механічно надійна за наявності lining'а. **Резолвлено:** матеріал (monolithic, HW.24-gated) · нижній Ti↔Cu спай (усунуто) · BOM (шина = частина анодного друку). **Відкрите** ↓. Трек повного анкера TRL 4→6 — **НЕ блокує coin** (обходить PEEK/шину).
 - [x] 👤 **Матеріал — ✅ monolithic** (= сплав анода, HW.24-gated; in-silico `54`: усі реальні кандидати λ≈7 ≪ Cu). Дихотомія §1.4 знята.
 - [x] 👤 **Нижній спай — ✅ усунуто** монолітністю (один метал; окремого Ti↔Cu стику немає).
 - [x] 🤖 **BOM — ✅ уточнено:** шина = частина анодного друку, без окремого Cu-рядка (`07_02 §1.2`).
 - [ ] 🤖+👤 **Ізоляція каналу:** lining крізь катод (PEEK-лайнер / Parylene / анодований TiO₂) — реалізація; = **також бічна опора проти втоми** (in-silico `55`)
-- [ ] 👤 **Друк-vs-звар:** друкований-інтегральний стрижень vs той-самий-сплав приварений Ti-дріт (benign weld — без гальваніки)
+- [ ] ⚖️ **Друк-vs-звар:** друкований-інтегральний стрижень vs той-самий-сплав приварений Ti-дріт (benign weld — без гальваніки) — **arch-lock** (fabrication-топологія; §1.4 «реалізація відкрита»), emp-gated на DMLS-print-feasibility (≠ рука: вибір топології, не down-select даними)
 - [x] 🤖+👤 **CAD-rod + Ø-reconcile — ✅ DONE 2026-06-22** (`tools/cad`, з founder): bore→суцільне осердя (`Zone1Anode.BuildMonolithic`, voxConstruct gotcha #9 — нічний native-abort страх знятий: solid-rod безпечний, рендер чистий) + F3→`BusRodClears` (rod+2×liner ≤ канал) + **measured rod-volume гейт** (gotcha #4; pine +34.4/oak +32.1 мм³) + CEM-родина (7 anchors rod 1.0 · cathode liner 0.15 · lock.zone1 bore→0). Дими: стрижень Ø1.0 / канал Ø1.3 / lining 0.15. 55 тестів + verify зелені
-- [ ] 👤 **Shank-insertion ↔ розрив (ties HW.8.9):** інсерція = термо↔press-fit важіль; справжній розрив = зазор `L_g` (placeholder F2)
+- [ ] 🔗 **Shank-insertion ↔ розрив (HW.8.9):** інсерція = термо↔press-fit важіль; справжній розрив = зазор `L_g` (placeholder F2) — homed HW.8.9
+- [ ] 🤖 **D_BUS re-run @ Ø1.0** (окрема compute-сесія): `54`/`55` беруть `D_BUS=1.3` (=канал), а канон rod = Ø1.0 (§1.4) → механіка-SF завищено ~2.2× (σ∝1/d³: реально ~4–12× не 9–26×; м'які Ta/CP-Ti = fail-межа). Перерахувати bus-mech `55` на канон Ø1.0 (CAD-родина cem rod=1.0 вже чиста — дрейф лише у скриптах)
 
 #### HW.2 — Dual-scale roughness spec
 - **P1** · 👤 · ⚪ · → `01_02`
@@ -243,7 +244,7 @@
 - [ ] 👤 HW.3.IS: **Prony-series authoritative fit** PEEK 450G (Maxwell-Wiechert, measured creep) → Гусак (`08_01` Стаття 2) — замінює interim literature-2-term; двері відкриті
 - [ ] 👤🤖 HW.3.IS: **barb-tip stress-concentration FEA** → Гусак (mesh-FEA ANSYS, `00_02 §4a`); self-own якщо Гусак мовчить (light analytical bound, Lamé вже є) — DEFERRED
 - [ ] 🤖 HW.3.IS: **MD ion-permeation Ti²⁺/V³⁺ через PEEK** (класична MD) — «корозія не отруїть ферменти 20р»; НЕ DFT (лише single-jump NEB) — DEFERRED (~2-3 тиж GPU milestone)
-- [ ] 🤖 HW.3.IS: (nice-to-have) **unified thick-wall Lamé** — interference-hoop (51) + thermal-mismatch (50) в ОДНУ модель; комбінований @ −30°C+max-fit може впасти ~1.4× → `THERMAL_STRESS_REPORT.md` Remaining Tasks
+- [x] 🤖 HW.3.IS: **unified thick-wall Lamé ✅ DONE 2026-06-22** (`56_unified_press_fit_lame.py` + `lib/mechanics`) — interference-hoop + thermal-mismatch в ОДНУ модель: combined SF **5.6× / vM 4.7×** (наївне додавання ~1.4× = apples+oranges артефакт, debunked; `01_01 §4.2` несе 5.6×)
 
 #### HW.6 — Resin barrier + Flush Mount Installation
 - **P1** · 👤 · ⚪ · → `01_04 §3`
@@ -293,7 +294,7 @@
 #### ARCH.25 — Gyroid geometric validation scripts (per-slice / topology / BFS connectivity)
 - **P2** · 🤖 · 🟢 · → `01_02 §6`, `08_02 §1B`
 - **Стан:** Машинну половину закрито self-owned (не чекаючи Порубльова/Онищенка) — двофазний топологічний аудит гіроїда (`tools/cad/Connectivity.cs`, pure-managed display-less xUnit): один flood-fill = обчислювальний прокси чотирьох лаб-тестів (open-pore/percolation/solid-island/closed-pore) + adaptive-resolution застереження + робоче вікно `wallParam` — повний design-justification у каноні [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS). Topology measured, not assumed. Партнерська CFD/польова нога pending — [`08_02 §1B`](08_02_Academic_Institutions_Registry) (Порубльов).
-- [ ] 🔗 C++/CFD topological-integrity mesh + Akash GPU (ARCH.30, Онищенко) — self-own за потреби, партнер pending
+- [ ] 🔗 C++/CFD topological-integrity mesh + Akash GPU (Онищенко; **[поглинув ARCH.30]** far-horizon domain-decomp CFD — `Connectivity.cs` flood-fill + tortuosity-proxy вже покривають topology, канон [`01_01 §5.5`](01_01_Coaxial_Gyroid_Topology_and_PEEK) заморозив flow-orientation як «маргінальну для бінеперервного гіроїда»; dangling 06_02-hook у `08_02 §1B`) — self-own за потреби, партнер pending
 - [ ] 🤖 deferred (nice-to-have): Euler-χ крос-чек · tortuosity (random-walk на percolated cluster) · voxel-cross-check на as-printed grid (не лише SDF-intent)
 
 #### HW.4 — Self-healing coating (NEW: zone-restricted)
@@ -325,13 +326,8 @@
 #### HW.36 — Немає формального FMEA/FMECA / hardware risk-register
 - **P2** · 🤖+👤 · ⚪ · → `01_02 §1.3a`, [`00_03 §3.5`](00_03_TRL_Matrix_HIL_and_Beyond)
 - **Стан:** Gap-pass §01 (2026-07-05) — ~20+ *окремо* названих і трекнутих failure-mode'ів (V-release, PEEK creep, resinosis, H-embrittlement, chloride-corrosion, freeze-thaw, connector-fatigue, overgrowth, biofouling…), але **ніщо не синтезує їх у severity×occurrence×detectability risk-priority-ранжування**. `SECURITY_ASSURANCE_CASE.md` доводить, що орг цей патерн уміє й виконує — для **security** (threat-model→boundaries→guards→residuals); HW-еквіваленту нема. `01_02 §1.3a` називає «Failure Mode A/B/C» але вузько на 3 DMLS-кроки, retrospective. §01a synergy-DAG пріоритезує за work-dependency (що швидше розблоковує), не за risk-severity (що катастрофічне vs косметичне) — обидві осі потрібні, є лише одна. **🤖-half несе більшість (desk-synthesis, нуль лаб-роботи):** я СКЛАДУ FMEA-таблицю з уже-відомих mode'ів (S×O×D → RPN); 👤 = валідувати severity-числа. Прямо живить Stage-2 6-alloy coin bake-off (HW.24) coin-allocation. Канон [`00_03 §3.5`](00_03_TRL_Matrix_HIL_and_Beyond), `01_02 §1.3a`.
-- [ ] 🤖 скласти FMEA/FMECA-таблицю (усі трекнуті failure-mode'и × S×O×D → RPN-ранг) — desk-study з наявного
+- [ ] 🤖 скласти FMEA/FMECA-таблицю (усі трекнуті failure-mode'и × S×O×D → RPN-ранг) — desk-study з наявного (**Build = окрема сесія**, прецедент HW.37/HW.30/E.51 — план у 00_07, не будувати в хвіст vilize)
 - [ ] ⚖️ валідувати severity-числа + пріоритети (інженерне судження) → живить HW.24 coin-allocation
-
-#### ARCH.30 — Parallel CFD gyroid simulation на Akash GPU
-- **P3** · 🤖+👤 · 🌿 · → `01_01`
-- **Стан:** Far-horizon — domain decomposition для 3D TPMS-симуляцій на heterogeneous Akash GPU; CFD lead-time ~2 год → real-time валідація геометрії перед DMLS. Cross-ref ARCH.25 (gyroid validation scripts). Канон `01_01`.
-- [ ] 🤖+👤 domain-decomposition CFD + Akash GPU setup
 
 ## §01b · EBFC — Chemistry & Bio-electrochemistry
 
