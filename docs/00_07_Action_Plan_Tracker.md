@@ -209,7 +209,7 @@
 - **Стан:** Гео-рішення founder + дим-фриз + машинна половина зацементовані в канон: орієнтація знята (рішення (б) — гіроїд бінеперервний, [`01_01 §5.5`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) · вал **Ø11** + монолітний центр-стрижень шини ([`01_01 §1.4`](01_01_Coaxial_Gyroid_Topology_and_PEEK)/HW.34) · радіальний дим-ланцюг frozen (PEEK 2 мм → рана Ø15; осьовий Zone 2 50 / фланець Ø25; unified Lamé combined SF 5.6×, [`01_01 §4.2`](01_01_Coaxial_Gyroid_Topology_and_PEEK)). PicoGK CAD-родина ✅ COMPLETE (v2 graded 3-осі + Деталь 3/4 + capsule-end/axial-stack mate-audit; ARCH.25 connectivity-стіл topology-agnostic) → sheet→network схиляння = трек, не рішення. Анкерний-кущ synergy-DAG живе у §01a intro. Залишок (нижче) — FEA · фіз-валідація · MATE-Ø.
 - [ ] 🤖+👤 **FEA пружності гіроїда — sheet-vs-network E (THE відкрита вісь)**: порозність-бік знятий (PicoGK voxel 0.1 → 67.6%≈65%; груба роздільність false-high 21–28%). Відкрита жорсткість — network@65% bending n=2 → E≈13.5 ГПа (= цільова §5.2) vs sheet stretch n≈1.3 → ~22–30 ГПа ≫ деревина → stress-shield повертається; ARCH.25 + літ по 4 осях (топологія / транспорт / механіка / друк) **схиляють до network**; + анізотропія (поперечна `E_R`/`E_T` ~0.5–1.5 ≪ поздовжня `E_L`, анкер горизонтальний); + стала-vs-градієнт порозність відкрита (CAD `wallParam(r)` тримає обидві). 💡 β-Ti coupling (HW.24 bake-off): низько-E сплав ~80 ГПа знижує gyroid-E → може зняти гостроту (in-silico `50`). Exact E = FEA-homogenization — **self-own-кандидат** (поверх ARCH.25-стола) АБО школа Гусака. Канон [`01_01 §5.2/§5.5/§5.6`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
 - [ ] 👤 фіз-валідація — µCT порозність + нанотвердомір E на купоні (post-перша-партія, HW.24)
-- [ ] ⚖️ **MATE-Ø skirt/inboard геом-вибір** (founder, з HW.17 Radome) — capsule-end/axial-stack mate-audit лишив незведеним ([`02_02 §4.4/§4.5`](02_02_Blind_Mate_Pogo_Pin_Interface))
+- [ ] ⚖️ **MATE-Ø skirt/inboard + Z-reconcile** (founder — **єдиний ⚖️-дім**, ← 🔗 HW.17 radome-чекбокс / bench HW.8.8): radial (skirt Ø30 vs inboard Ø25) + Z (lock-groove-Z↔lug-Z) — capsule-end/axial-stack mate-audit лишив незведеним; інж-рекоменд. `skirt` ([`02_02 §4.4/§4.5`](02_02_Blind_Mate_Pogo_Pin_Interface))
 - [ ] 🔭 Future-lever: PEEK-стінка термічно надлишкова (combined SF 5.6× ≫ 3 → 2 мм не stress-обмежені) → тонша = менша рана / нижчий DBH-поріг; bench/FEA-gated, не зараз ([`01_01 §4.2`](01_01_Coaxial_Gyroid_Topology_and_PEEK))
 - [ ] 🤖 **LatticeLibrary submodule stale** (2025-07 vs ShapeKernel 2026-06) → `dependency-update` прохід (не блокер — власний SDF не залежить)
 
@@ -440,7 +440,7 @@
 - **P1** · 👤 · ⚪ · → `02_03`
 - **Стан:** Не розпочато — CJMCU-2557 може мати Li-Po дефолт (VBAT_OV 4.2V замість 5.5V для supercap) → перевірити/замінити 8 SMD-резисторів. Блокує фіналізацію схеми + PCBA. Канон `02_03 §4/§5` (calc + табл.) / §11 (checklist).
 - [ ] 👤 Виміряти 8 резисторів мультиметром
-- [ ] 👤 Порівняти з розрахунковою таблицею (Section 4 в `02_03`)
+- [ ] 👤 Порівняти з розрахунковою таблицею (`02_03 §5` summary — 8 резисторів OV/UV/OK/OUT; MPPT-пара §4.А = HW.13)
 - [ ] 👤 Замінити SMD резистори якщо мисматч
 - [ ] 👤 Задокументувати фінальні номінали
 
@@ -454,7 +454,7 @@
 - [ ] 👤 HW.8.5: O-ring ✅ spec EPDM 70 Shore A, CS 1.78 мм, 20% compression + **IP68 затверджено** (founder 07-03, `02_02 §3.2/§3.3`) — лишається фіз IP-верифікація bench
 - [ ] 👤 HW.8.6: Допуски соосності (XY) → Lead-in chamfer
 - [ ] 👤 HW.8.7: фіз-bench QA-вимір D3+D4 + robot spacer-selection (Z-stack ✅ обчислено → `02_02 §3.5`)
-- [ ] 👤 **HW.8.8: lug/Z mate reconcile** — bayonet Деталь3↔4 НЕ зведена (lug-Z 15.5 ↔ lock-groove-Z 3.5 → bayonet-Z 6.42 + RF 8<12мм); bench: lug_protrusion/lock_groove_z/lug_z цілісно + radial skirt (→ HW.17/HW.33) + HFSS Ø30. `02_02 §4.4`
+- [ ] 👤 **HW.8.8: lug/Z mate reconcile** — bayonet Деталь3↔4 НЕ зведена (lug-Z 15.5 ↔ lock-groove-Z 3.5 → bayonet-Z 6.42 + RF 8<12мм); bench: lug_protrusion/lock_groove_z/lug_z цілісно + radial skirt (⚖️ → HW.33) + HFSS Ø30. `02_02 §4.4`
 - [ ] 👤 **HW.8.9: press-fit shank-Ø reconcile** — Zone 2↔3 НЕ press-fit (shank Ø9 placeholder у bore Ø11 = 1мм зазор, ~50× промах H7/s6); bench: shank-Ø під bore Ø11 H7/s6 — разом із 8.8. `02_02 §4.5`
 
 #### HW.9 — PCB KiCad layouts
@@ -462,35 +462,38 @@
 - **Стан:** Не розпочато — Soldier + Queen PCB KiCad layouts (блокується фіналізацією BOM + RF Keep-Out спекою); від HW.9 залежать HW.17/HW.20/HW.29 (B2B) + SE050 DNP-footprint. Канон `02_01 §8` (status) / §5.2–§5.3 (RF Keep-Out).
 - [ ] 👤 Soldier PCB layout (KiCad)
 - [ ] 👤 Queen PCB layout (KiCad)
-- [ ] 👤 RF Keep-Out Zone verification
+- [ ] 👤 RF Keep-Out **§5.2** (2D on-board copper DRC під антеною) — §5.3 3D antenna↔Ti геометрія вже 🤖-verified (`Assembly.RfClearanceMm` + `52_z_stack_tolerance.py`, знахідка 8<12мм surfaced у HW.17/HW.8); VNA-валідація = HW.17/UNI.10
 
 #### HW.12 — EBFC upper voltage limit >5.5V protection
-- **P1** · 👤 · ⚪ · → `02_03 §4`
-- **Стан:** Не розпочато — захист від EBFC >5.5V (тривала інсоляція → overcharge supercap → деградація): верифікувати BQ25570 OV (VBAT_OV=5.5V) + TVS/zener backup. Блокує hardware safety (TRL 5). Канон `02_03 §4` (§Б Overvoltage).
-- [ ] 👤 Верифікувати BQ25570 OV protection threshold (VBAT_OV = 5.5V, див. HW.7)
-- [ ] 👤 Додати TVS-діод або зенерівський обмежувач як backup
+- **P1** · 🤖+👤 · ⚪ · → `02_03 §4`
+- **Стан:** Не розпочато — захист від EBFC >5.5V (тривала інсоляція → overcharge supercap → деградація): верифікувати BQ25570 OV (VBAT_OV=5.5V) + зовнішній clamp-backup. Блокує hardware safety (TRL 5). ⚠️ **Canon-orphan:** TVS/zener-spec у `02_03 §4.Б` **відсутній** (§Б = лише ROV1/ROV2-дільник внутрішнього OV BQ25570) — заповнити при виборі clamp. Канон `02_03 §4` (§Б Overvoltage).
+- [ ] 🔗 BQ25570 OV threshold (VBAT_OV=5.5V) — резисторна верифікація homed у HW.7 (§4.Б/§5/§11 зводять ROV1/ROV2 туди)
+- [ ] ⚖️ Топологія clamp-backup: TVS **vs** zener/shunt (fault = *континуальний* overcharge → TVS transient-rated спалюється; zener/shunt continuous) + V_clamp-вікно (>OV setpoint, ≤5.5V cap-max)
+- [ ] 🤖 datasheet clamp-part + V_clamp-розрахунок (desk, HW.37-патерн) → канон-додаток `02_03 §4.Б`/`§6`
+- [ ] 👤 запаяти clamp + bench overcharge-тест
 
 #### HW.13 — MPPT coefficient verification for EBFC
-- **P1** · 👤 · ⚪ · → `02_03 §4`
+- **P1** · 🤖+👤 · ⚪ · → `02_03 §4`
 - **Стан:** Не розпочато — MPPT 50% VOC занадто низько для EBFC (dgrFAD-GDH/Laccase, MPP 60–70% VOC; при 50% — масо-транспортні обмеження). Ціль 65%: R_OC1=10.0MΩ (VOC_SAMP→GND), R_OC2=5.36MΩ (VSTOR→VOC_SAMP) за TI SLUSBH2G §8.2.3.2 (⚠️ зворотна конвенція → 35%). Блокує max EBFC power. Канон `02_03 §4` (§А MPPT + anti-footgun).
 - [ ] 👤 Зняти повну P-V криву (потужність-напруга) EBFC
 - [ ] 👤 Виміряти VOC та VMP при різному освітленні (ранок/день/вечір, сезонно)
 - [ ] 👤 Визначити оптимальну фракцію (починати з 65%)
 - [ ] 👤 Якщо потрібно — замінити R_OC1/R_OC2 (звіряти з TI Figure 42 та `02_03 §4` SSOT Convention block)
-- [ ] 👤 **Cold-start R_int** (`02_03 §1.5`): виміряти R_int EBFC (V_OC + V@15µA); якщо > 12 кΩ → cold-start oscillation-loop → серійний стек 2× EBFC (A) / паралель (B) / LTC3108 DNP-footprint (C). Не замовляти 100 PCBA без DNP-LTC3108 до перевірки.
+- [ ] 🤖 **BQ25570-drift guard** (DocsLinter-член, mirror `magic_marker_hex_drift`): інваріант R⊢заявлений-поріг — `1.21×(1+ROV1/ROV2)`⊢VBAT_OV (§4.Б, спільно з HW.7/HW.12) + `R_OC1/(R_OC1+R_OC2)`⊢MPPT-фракція (§4.А, окрема формула) — ловить swap-footgun (65↔35%) + §4↔§5 drift, НЕ пінить провізорну ціль. Build = окрема сесія
+- [ ] 👤 **Cold-start R_int** (`02_03 §1.5`): виміряти R_int EBFC (V_OC + V@15µA); якщо > 12 кΩ → cold-start oscillation-loop → серійний стек 2× EBFC (A) / паралель (B) / LTC3108 DNP-footprint (C) — **post-measure A/B/C-вибір = ⚖️**. Не замовляти 100 PCBA без DNP-LTC3108 до перевірки.
 
 #### HW.17 — PEEK radome prototype (Деталь 4)
 - **P1** · 👤 · 🟡 · → `02_01 §5.2`, `01_04 §5.5`
 - **Стан:** Осьова вісь розблокована (freeze 2026-06-20) — PEEK Radome (Деталь 4) **Ø25 на байонеті** Zone 3 катод-фланця (НЕ анод, НЕ різьба — §3.5 Z-stack): радіопрозорий купол + O-ring EPDM → IP68; керамічна SMD-антена з Z-clearance + overhang (`02_01 §5.2/§5.3`); інтегрований anti-overgrowth shield (`01_04 §5.5`, residual → HW.28). **PicoGK машинна половина ✅ DONE** (`CathodeFlange.cs` + `Radome.cs` + capsule-end `Assembly.cs`; числа/верифи — `tools/cad` + HW.1). **MATE-Ø кількісно виміряно** (`02_02 §4.4`): radial −2.0 / bayonet-Z 6.42 / RF 8<12 мм; skirt Ø30 ↔ inboard Ø25 Δ-кандидати — bench-вибір. Тип кріплення байонет ✅ (HW.8.4). Канон `02_01 §5.2` / `01_04 §5.5` / `02_02 §4.4`.
 - [ ] 👤 KiCad PCB layout (HW.9) → PEEK radome dimensions
 - [ ] 👤 Визначити матеріал O-ring (EPDM vs FKM) для ксилемного середовища
-- [ ] 👤 **HFSS-симуляція** Ti-фланець + PEEK-радом + чіп-антена (`02_01 §5.3` revised; VNA → Гончаров E.53) — VSWR < 1.8, gain ≥ −2 dBi
+- [ ] 👤 **HFSS-симуляція** Ti-фланець + PEEK-радом + чіп-антена (`02_01 §5.3` revised; VNA → Гончаров UNI.10) — VSWR < 1.8, gain ≥ −2 dBi
 - [ ] 👤 Замовити PEEK прототип (radome + shield-конус ≥3мм/R≥5, `01_04 §5.5`)
 - [ ] 👤 Верифікувати RF performance (VSWR/КСВ) з антеною під радомом + Ti-фланцем (overhang тест)
-- [ ] ⚖️ MATE-Ø skirt/inboard вибір (radial) + Z-reconcile (lock-groove-Z↔lug-Z) — bench разом (HW.8.8)
+- [ ] 🔗 MATE-Ø skirt/inboard + Z-reconcile — ⚖️-присуд homed у **HW.33** (mate-audit-дім, його MATE-Ø-чекбокс); bench разом HW.8.8
 
 #### HW.29 — Board-to-Board Connector pair: Power Deck ↔ RF Deck (NEW 2026-05-16)
-- **P1** · 👤 · ⚪ · → `02_01 §3.1`, `§5.3`
+- **P1** · 👤 · 🟢 · → `02_01 §3.1`, `§5.3`
 - **Стан:** ✅ **Конектор обрано (founder 2026-07-03): Samtec FTSH header + CLT socket** (1.27мм pitch SMD, 8–10мм stack, ~$0.85/пара) — без нього RF Deck не отримує 3V3 (Pogo зайняті VIN_DC+GND). Rigid-flex (~+$1.50) **deferred**: механічна точка відмови B2B прийнятна при TRL-3, перегляд лише якщо польова надійність вимагатиме. Лишається KiCad placement (HW.9) + фіз-вимір. Канон `02_01 §5.3` (+ BOM поз.12 §3.1).
 - [ ] 👤 KiCad: place B2B footprints на обидві деки + перевірка signal integrity для 6-8 сигналів (3V3, GND, VSTOR_sense, EBFC_sense, piezo_EXTI, BQ25570 EN)
 - [ ] 👤 Виміряти insertion loss + height variation на 5 зразках першої партії
@@ -505,14 +508,14 @@
 
 #### HW.11 — Conformal Coating (Parylene C; Sylgard rejected — TinyML acoustic)
 - **P2** · 👤 · 🟡 · → `02_01`, `02_02 §3.4`
-- **Стан:** Рішення зафіксовано — **Parylene C 10 µm (CVD)** для серії + acrylic Humiseal 1A33 для прототипів; повний Sylgard-184 potting відхилено (акустичний демпфер 15–25 dB @ 16 kHz глушить TinyML-п'єзо). Acoustically transparent + IP68 з O-ring (HW.8.5 ✅ 07-03). Лишається вибір coating + verify. Канон `02_02 §3.4` (+ BOM `02_01 §3`).
+- **Стан:** Рішення зафіксовано — **Parylene C 10 µm (CVD)** для серії + acrylic Humiseal 1A33 для прототипів; повний Sylgard-184 potting відхилено (акустичний демпфер 15–25 dB @ 16 kHz глушить TinyML-п'єзо). Acoustically transparent + IP68 з O-ring (HW.8.5 ✅ 07-03). Coating вже обрано — лишається CVD-house-контакт + attenuation/thermal-bench. Канон `02_02 §3.4` (+ BOM `02_01 §3`).
 - [ ] 👤 Контакт з CVD-сервісом Parylene-deposition (Київ / Львів — пошукати спеціалізовані PCB-house)
-- [ ] 👤 Верифікувати п'єзо-attenuation: тест 16 kHz tone з/без coating на калібрувальному стенді
+- [ ] 👤 Верифікувати п'єзо-attenuation: тест 16 kHz tone з/без coating на калібрувальному стенді [bench:acoustic]
 - [ ] 👤 Верифікувати з кварцовим резонатором при -20°C / +60°C (Parylene Shore D ~50, м'якший за air-gap воду)
 
 #### HW.19 — VOC-діагностика деградації конденсатора (ADS1220 + TPS22860)
-- **P2** · 🤖+👤 · 🟢 · → `02_03 §12.4.2`
-- **Стан:** Концепт верифіковано (DCI-safe) — добова VOC EBFC розрізняє «дерево хворіє» vs «конденсатор деградує» (обидва ростять delta_t); корекція живе на **slashing-шарі** (`ContractHealthCheckService`), НЕ в Z-математиці (інакше server-Z≠device-Z → fraud-flag щопакета). Реалізація gated на firmware VOC-вимір + delivery-контракт. TRL 8+. Канон `02_03 §12.4.2`.
+- **P2** · 🤖+👤 · ⚪ · → `02_03 §12.4.2`
+- **Стан:** Верифіковано лише **DCI-safe дизайн-присуд** — добова VOC EBFC розрізняє «дерево хворіє» vs «конденсатор деградує» (обидва ростять delta_t); корекція має жити на **slashing-шарі** (`ContractHealthCheckService`), НЕ в Z-математиці (інакше server-Z≠device-Z → fraud-flag щопакета). **Код не почато** (canon `02_03 §12.4.2` сам маркує «Перспективна ідея… gated»): `voc_mv`-колонки, VOC-корекції в `ContractHealthCheckService`, firmware VOC-виміру ще немає. Реалізація gated на firmware VOC-вимір + delivery-контракт. TRL 8+. Канон `02_03 §12.4.2`.
 - [ ] 🤖 Валідувати концепт на вбудованому 12-біт ADC (firmware: GPIO disconnect EDLC → measure VOC → reconnect)
 - [ ] 👤 Якщо 12-біт недостатньо — додати ADS1220 + TPS22860 до BOM
 - [ ] 🤖 Backend (gated): `voc_mv` колонка + VOC-корекція у `ContractHealthCheckService` (виключити hardware-confounded дерева зі slashing-підрахунку), **НЕ в `Attractor`**. Чекає firmware VOC-вимір + delivery-контракт.
@@ -523,29 +526,28 @@
 - [ ] 👤 внести фінальний part у KiCad BOM (HW.9)
 
 #### HW.30 — SMD Piezo + Acoustic Pad (Zero-Touch Wake) (NEW 2026-05-16)
-- **P2** · 👤 · ⚪ · → `02_01 §6`
+- **P2** · 🤖+👤 · ⚪ · → `02_01 §6`
 - **Стан:** Не розпочато — SMD-piezo (живі кандидати `02_01 §6`: **Mallory AST1240/AST1109** 4.0–4.1 кГц активні + **Murata PKMCS0909E4000-R1** 4.0 кГц ⚠️LTB-2027; мертві 7BB-obsolete-THT-6кГц + TDK-SMD-неіснує викинуто канон-фіксом 07-03; вибір = bench receive-V, фаворит Mallory-AST) на нижній стороні Power Deck + Bergquist Sil-Pad 1500ST acoustic coupling до Ti Zone 3 → сигнал через B2B (HW.29) → BAT54S → EXTI; усе SMD (стара клеєна ∅27мм через-отв. з дротами порушувала Zero-Touch §5.2). **🔑 Sil-Pad = 3-тя пружина Z-stack** (∥ pogo на спільному Power↔Zone3 gap, 30-40% compression + 20-р creep, HW.8.7 / `02_02 §3.5`) — compression-вікно freeze разом із Z-stack. Канон `02_01 §6` (+ BOM поз.5 §3.1).
-- [ ] 👤 Вибрати SMD-piezo з 3 кандидатів (Murata/TDK/Mallory), компроміс sensitivity vs пасивний voltage swing на резонансі ~4 кГц
-- [ ] 👤 Acoustic coupling test: SMD-piezo + Sil-Pad + Ti-coin → подаючи 16 кГц tone через анкер → виміряти voltage spike на p'єзо vs стара ∅27 мм через-отв. архітектура
+- [ ] 👤 Вибрати SMD-piezo з 2 живих (Mallory-фаворит / Murata-LTB), компроміс sensitivity vs пасивний voltage swing на резонансі ~4 кГц
+- [ ] 👤 Acoustic coupling test: SMD-piezo + Sil-Pad + Ti-coin → подаючи 16 кГц tone через анкер → виміряти voltage spike на p'єзо vs стара ∅27 мм через-отв. архітектура [bench:acoustic]
 - [ ] 👤 Verify EXTI wake-on-vibration latency vs стара через-отв. baseline (target < 5 мс)
-- [ ] 👤 **Interrupt-storm mitigation** (нот.5): амплітудний поріг — hardware comparator/RC АБО software fast-amplitude gate, щоб вітер/дощ/гойдання гілок НЕ будили повний аудіо-цикл → drain-захист 0.47 F supercap (поточно лише `BAT54S` voltage-clamp, без порогу; `03_03 §1.2`)
+- [ ] ⚖️ **Interrupt-storm архіт-пік** (нот.5): hardware comparator/RC **vs** software fast-amplitude gate — brownout-safety на SPOF-supercap (вітер/дощ/гойдання гілок будять повний аудіо-цикл → drain 0.47F; поточно лише `BAT54S` voltage-clamp, без порогу; `03_03 §1.2`)
+- [ ] 🤖 **(якщо SW-gate) amplitude-gate скафолд** — post-EXTI quick-ADC pre-check перед повним аудіо-циклом (`raw_audio_buffer`) + saturating skip-counter + DR-persist поріг (valid-clamp, OTA-hook); прецедент `Fauna_Should_Sample`/FW.42 + FW.18 (`tinyml_*_threshold` DR13/14); host-тест на синтет-буфері, поріг калібрований post-coupling-test. **Build = окрема сесія**
 - [ ] 👤 Lifecycle test: Sil-Pad creep під 30-40% compression × 20 років (Arrhenius accelerated)
 
 #### HW.37 — EDLC calendar-life на cycle-count, не temperature-endurance
 - **P2** · 🤖+👤 · ⚪ · → `02_03 §12.1`, `02_03 §6`
-- **Стан:** Gap-pass §02 (2026-07-05) — `02_03 §12.1` обґрунтовує 20-річний claim для 0.47F EDLC через «>500,000 циклів» (vendor-marketing). Real-world EDLC end-of-life нормально керується **temperature-dependent endurance-hours** (electrolyte dry-out / ESR-rise, Arrhenius) — саме тим строгим трактуванням, що вже дано Ti/PEEK (HW.3/HW.3.IS: Lamé + Prony). Немає Arrhenius-екстраполяції для EDLC проти Eaton/KEMET datasheet endurance-hours-at-temperature. HW.19 (VOC-діагностика) лише *детектує* деградацію post-hoc — не заміна pre-deployment life-qual, а EDLC = single-point-of-failure (смерть = смерть вузла). **🤖-half несе більшість (desk, нуль лаб):** я прожену Arrhenius-екстраполяцію з datasheet endurance-spec (як HW.3 для Ti); 👤 = дати точний datasheet + валідувати. Sibling-методологія HW.3 (не дублікат: HW.3 = Ti/PEEK-матеріал, це = EDLC-компонент). Канон `02_03 §12.1`, `02_03 §6`.
-- [ ] 🤖 Arrhenius endurance-hours-екстраполяція EDLC (з datasheet rated-temp) → 20-рік life vs -40…+70°C (derate/oversize?)
-- [ ] 👤 дати обраний EDLC datasheet endurance-spec + валідувати припущення
-
-#### E.40 — Ignion Virtual Antenna™ (NN02-310)
-- **P3** · 👤 · 🌿 · → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM)
-- **Стан:** Far-horizon — NN02-310 як альтернатива Yageo/Taoglas 868 МГц. Потребує evaluation kit + VSWR тест (дотично UNI.10). Канон [`02_01 §5`](02_01_Hardware_Architecture_and_BOM).
-- [ ] 👤 eval kit + VSWR тест
+- **Стан:** Gap-pass §02 — `02_03 §12.1` обґрунтовує 20-річний claim для 0.47F EDLC через «>500,000 циклів» (vendor-marketing; вузол робить ~99k циклів/20р ≪ 500k → cycle-count НЕ binding). Real-world EDLC end-of-life керується **temperature-dependent endurance-hours** (electrolyte dry-out / ESR-rise, Arrhenius) — те строге трактування, що вже дано Ti/PEEK (HW.3/HW.3.IS). **🤖-half розблоковано ЗАРАЗ** (datasheet-gate був фальшивий): EDLC-part уже обраний конкретними SKU у каноні — **Eaton HV0H474AEJ-R / KEMET FG0H474ZF** (`02_01 §3` поз.3), обидва з публічним endurance-hours@rated-temp; reuse Arrhenius-kernel `arrhenius_aging` (`51_gusak_degradation_model.py`, той самий, що HW.3 для Ti). HW.19 (VOC) лише *детектує* деградацію post-hoc — не заміна pre-deployment life-qual; EDLC = single-point-of-failure (смерть = смерть вузла). Sibling HW.3 (не дублікат: HW.3 = Ti/PEEK-матеріал, це = EDLC-компонент). **Build = окрема сесія.** Канон `02_03 §12.1`, `02_03 §6`.
+- [ ] 🤖 Arrhenius endurance-hours-екстраполяція обох SKU (datasheet rated-temp, reuse `arrhenius_aging`) → 20-рік life vs −40…+70°C
+- [ ] ⚖️ post-Arrhenius присуд (якщо endurance-hours не сягають 20р на +70°C): derate (V-margin/холодніше розміщення) / oversize (вищий temp-rating / більший part) / SKU-freeze (Eaton vs KEMET)
+- [ ] 👤 валідувати Arrhenius-припущення проти фінального datasheet (post-SKU-freeze)
 
 #### ARCH.24 — CE/FCC/RoHS/EMC/IP68 compliance roadmap
-- **P3** · 👤 · 🌿 · → `02_01`
-- **Стан:** Far-horizon — CE-RED (868 МГц LoRa), FCC Part 15/90, RoHS-2, IP68 (IEC 60529), REACH для EU/NA. Pre-mass production; кожна cert 3-6 міс + спец-лаба. Канон `02_01`.
-- [ ] 👤 compliance-roadmap (pre-mass, спец-лаби)
+- **P3** · 🤖+👤 · 🌿 · → `02_01`
+- **Стан:** Far-horizon — CE-RED (868 МГц LoRa), FCC Part 15/90, RoHS-2, IP68 (IEC 60529), REACH для EU/NA. Pre-mass production; кожна cert 3-6 міс + спец-лаба. Roadmap-**документ** desk-draftable зараз (owner-split як BIZ.19/BIZ.21); фіз-cert 🌿. Перший деплой = UA (Черкаський бір), CE-RED = ЄС-market-entry → far. Канон `02_01`.
+- [ ] 🤖 чернетка compliance-roadmap-doc (послідовність cert / evidence-per-cert / lab-map / cost-time) — desk
+- [ ] ⚖️ cert-стратегія: юрисдикція-first + self-cert vs notified-body + FCC Part 15 vs 90 (mirror ARCH.5 registry-first)
+- [ ] 👤 фіз-cert через спец-лаби (pre-mass; EMC-bench-half = UNI.10 Гончаров)
 
 ## §02b · Gateway — Queen Hardware
 
@@ -1542,10 +1544,11 @@
 - [ ] 👤 зустріч (ChDTU rectorat) + кафедральна тема «Statistics of Bio-IoT Telemetry» + 2-3 магістерські (2026-2027)
 - [ ] 🤖 SLA R-кластеру (тренування `silken_forest.marshal`, post-TRL 7)
 
-#### UNI.10 — ChDTU Гончаров (ФЕТР): RF верифікація + EMC pre-compliance
+#### UNI.10 — ChDTU Гончаров (ФЕТР): RF верифікація + EMC pre-compliance [поглинув E.40 2026-07-14]
 - **P1** · 👤 · ⚪ · → `08_02 §2`
 - **Стан:** Не почато — А.А. Гончаров (ФЕТР): VNA + анехоїчна камера для (a) SMD-антена під PEEK (HW.17), (b) Link Budget у лісі (SF7-9, 50-250м), (c) EMC pre-compliance CE/FCC (E.11). Канон `08_02 §2`.
 - [ ] 👤 зустріч + RF-лаб access + VNA-вимір PEEK-кришки (1.5/2.0/2.5 мм; ціль VSWR <1.5 @ 868 МГц, сухий/вологий стан + 3D Keep-Out з Ti-фланцем: Z-clearance 5/8/12 мм, з/без overhang — ex-E.53, вимога [`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM)) + Link Budget field test
+- [ ] 👤 A/B **Ignion NN02-310** (Virtual Antenna™) vs incumbent Yageo/Taoglas у тій самій VNA-сесії (eval-kit + VSWR під PEEK) — ex-E.40, far-horizon vendor-swap
 - [ ] 🔗 залежить HW.9 + HW.17
 
 #### UNI.12 — ChIPB-NUTSU: пожежна безпека + параметричне страхування
@@ -1695,8 +1698,9 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 
 | ID | Пункт | Канон |
 |----|-------|-------|
+| DOC-T.38 | **stan_audit residual verify-at-cement** (founder 07-14 «нащо архівувати незакінчене») — DOC-T.37 §🗄️ помилково лишила 3 діагностики з нотою «канонізуються при цементі», що звучить як відкладена робота. Розбір (код+канон): **усі 3 = чесні FP**, механізми ВЖЕ канонізовані, символи = код-цитати в Стані-наративах, НЕ canon-діри — **SEC.16** `sessions.destroy_all`→session-revoke salt-stamp SHIPPED [`04_03 §1`] (legacy-цитата) · **UI.3** `active_contract`→N+1-приклад, механізм [`04_04 §6`] · **I18N.1** `alert_type.humanize`=Rails-презентація-метод. Робота ≠ канонізація (нема діри); лишається verify-контроль: при shipping власних items (SEC.16/UI.3/I18N.1 усі 🟡) підтвердити stan-re-flag зник. §🗄️ DOC-T.37-нота почищена ↓. | `00_06 §3` |
 
-_Наразі порожньо (DOC-T.37 resolved → §🗄️ нижче). Нову SSOT doc-drift / tracker-tooling знахідку додавати рядком у таблицю вище._
+_Нову SSOT doc-drift / tracker-tooling знахідку додавати рядком у таблицю вище._
 
 ## 🗄️ Архів закритих пунктів (мігровано в канон)
 
@@ -1708,7 +1712,7 @@ _Наразі порожньо (DOC-T.37 resolved → §🗄️ нижче). Н�
 | DOC-T.35 | Volatile-counts у Стан-лідах ✅ 2026-07-12 — нора довела: класи (event-history «176 спек» · скоуп-вимога «12 call-sites у 7 сервісах» · поточний-код лічильник) лексично нерозрізнимі → **HARD-lint відхилено** (FP-шторм); shipped **advisory-вісь 2** `scripts/stan_audit.rb` (число+лічильне слово, класифікація A/B/C/D очима на цемент-сесії) + разова чистка єдиного C-хіта (E.12 «13 host-тестів» → реф suite) | `00_06 §3` |
 | DOC-T.36 | «Канон X»-клейм без канону ✅ 2026-07-12 — shipped **advisory-вісь 1** `scripts/stan_audit.rb` (код-символ зі Стану ∉ заявлені доми; negation-exempt «вичищено X» — клас chain_hash-guard'а; підказка «∈ інший дім / канон ніде»); proof-of-value розбори: SEC.16 FP (04_03 описує) · HW.16 справжня діра → канонізовано `04_02` GatewayTelemetryWorker ❄️/🔥 · E.15 несло doc-line-ref у 03_02 → 4-й line-ref-діалект `NN_NN:line` HARD у `docs:check_refs`; historical sweep → DOC-T.37 | `00_06 §3` |
 | DOC-T.34 | Tracker structural improvements v2 (founder-approved, усі 3) ✅ 2026-07-12: ① bench-session first-class — RUNBOOK §6 сеанс-реєстр (flash-kv/parity-dump/lse-rtc-wut/coap/ota-day) + `[bench:slug]`-теги на bench-чекбоксах + `bench_tag_violations` двостороння симетрія (HARD; закрив FW.8↔FW.20-клас асиметрії); ② vacuous-STAGE `⚫` (founder-pick замість ∅: емодзі-ряд + діаметр-колізія) — E.12/E.15/ARCH.22/ARCH.29 позначені НА МІСЦІ; ③ `[кластер:slug:дім\|важіль]` + `cluster_marker_violations` (HARD) — tx-cadence/fauna/parity/rendezvous формалізовані | `00_06 §3`, RUNBOOK §6 |
-| DOC-T.37 | Historical stan_audit sweep ✅ 2026-07-12 — розібрано ВСІ ~88 canon-claim хіти × 50 айтемів (реєстр підріс від сідових ~53) + 2 READ-ONLY Explore-звірки (усі активні «зміст уже в каноні»-клейми ⚪/🌿/⚫-айтемів підтверджені цитатами — жодного FW.58-класу; екзистенція 50+ токенів у коді — фантомів-брехні 0, «відсутні» чесно заявлені Станами). **FP-класи вбито в скрипт:** negation+= (зрізано/прибрано/неіснуючий/squash/не читають) · `_`-суфікси/toolchain · ALL_CAPS = spec-at-source · file-exists · object-chain-цитати · memory-дім · `Class#`→клас-у-домі · діалект-нормалізація case/hyphen/space/Camel (`allow_iap_ssh`≡`allow-iap-ssh` 06_01 · `coap_smoke`≡`CoapSmoke` 04_06 · clamp-guard пробілами 00_06) · `00_06` universal-дім · status-mute ⚪/⚫/🌿/🔗 (дім = призначення роботи; випливають при 🟢/🟡) · вісь-2 `PATH N`-виняток. **Справжні діри канонізовано:** User PII-scrub + schema-parity гейт (`04_01 §5`) · Wallet `guard_mrv_evidence!` (`04_01 §6`) · Gateway `ota_started_at` (`04_01 §3`) · ActuatorCommandWorker dispatch-guard (`04_02 §11`) · probe-exclusions single-source (`06_04 §2.1`) · DR posture-guard (`06_06 §2`) · `sdl_consistency_check`+`deploy_secret_scan` у CI-інвентар (`06_07 §1`) · `establish_session`/`admin_or_above?` (`04_03 §1`/§3) · clamp-guard engine-ім'я (`00_06 §3`) + 11 Стан-реф-дожимів wrong-дім-хінтів (MRV.1→04_01 · ARCH.58→§11 · SEC.18→§5 · INF.15/17/21/S4.3→06_07 · ARCH.34/35→03_05 · ARCH.56 squash-чесність). Залишок = 7 розібраних-FP (INF.22 brace-expansion `oracle_min_balance_{…}` у 04_02 · цитати чужих механізмів INF.11/ARCH.64/INF.14 · відкриті діагностики SEC.16/UI.3/I18N.1 — канонізуються при цементі) + 7 осі-2 [B/D] = чесний advisory-фон. **Пост-рев'ю (Sonnet проти живих даних + Opus проти коду):** 5 канон-фіксів (sidekiq-constraint = READ-бік · AuditLogPolicy суворіший · два idempotency-шари розведені · string/text · clamp-exempt 03_01-дрейф) + скрипт-точність (Class# case-sensitive `\b` · CamelCase замість substring-склейки · file-чек на сирому tok + `.tflite` · 2-сегментний `table.column` перевіряється · muted = ID×count) + 3 задокументовані стелі (negation-двобічність · ALL_CAPS-сліпота до wrong-дому · Class#-зарахування) | `00_06 §3` |
+| DOC-T.37 | Historical stan_audit sweep ✅ 2026-07-12 — розібрано ВСІ ~88 canon-claim хіти × 50 айтемів (реєстр підріс від сідових ~53) + 2 READ-ONLY Explore-звірки (усі активні «зміст уже в каноні»-клейми ⚪/🌿/⚫-айтемів підтверджені цитатами — жодного FW.58-класу; екзистенція 50+ токенів у коді — фантомів-брехні 0, «відсутні» чесно заявлені Станами). **FP-класи вбито в скрипт:** negation+= (зрізано/прибрано/неіснуючий/squash/не читають) · `_`-суфікси/toolchain · ALL_CAPS = spec-at-source · file-exists · object-chain-цитати · memory-дім · `Class#`→клас-у-домі · діалект-нормалізація case/hyphen/space/Camel (`allow_iap_ssh`≡`allow-iap-ssh` 06_01 · `coap_smoke`≡`CoapSmoke` 04_06 · clamp-guard пробілами 00_06) · `00_06` universal-дім · status-mute ⚪/⚫/🌿/🔗 (дім = призначення роботи; випливають при 🟢/🟡) · вісь-2 `PATH N`-виняток. **Справжні діри канонізовано:** User PII-scrub + schema-parity гейт (`04_01 §5`) · Wallet `guard_mrv_evidence!` (`04_01 §6`) · Gateway `ota_started_at` (`04_01 §3`) · ActuatorCommandWorker dispatch-guard (`04_02 §11`) · probe-exclusions single-source (`06_04 §2.1`) · DR posture-guard (`06_06 §2`) · `sdl_consistency_check`+`deploy_secret_scan` у CI-інвентар (`06_07 §1`) · `establish_session`/`admin_or_above?` (`04_03 §1`/§3) · clamp-guard engine-ім'я (`00_06 §3`) + 11 Стан-реф-дожимів wrong-дім-хінтів (MRV.1→04_01 · ARCH.58→§11 · SEC.18→§5 · INF.15/17/21/S4.3→06_07 · ARCH.34/35→03_05 · ARCH.56 squash-чесність). Залишок = 7 розібраних-FP (INF.22 brace-expansion `oracle_min_balance_{…}` у 04_02 · цитати чужих механізмів INF.11/ARCH.64/INF.14 · SEC.16/UI.3/I18N.1 = FP-цитати вже-канонізованих механізмів [verify-трекер `DOC-T.38`]) + 7 осі-2 [B/D] = чесний advisory-фон. **Пост-рев'ю (Sonnet проти живих даних + Opus проти коду):** 5 канон-фіксів (sidekiq-constraint = READ-бік · AuditLogPolicy суворіший · два idempotency-шари розведені · string/text · clamp-exempt 03_01-дрейф) + скрипт-точність (Class# case-sensitive `\b` · CamelCase замість substring-склейки · file-чек на сирому tok + `.tflite` · 2-сегментний `table.column` перевіряється · muted = ID×count) + 3 задокументовані стелі (negation-двобічність · ALL_CAPS-сліпота до wrong-дому · Class#-зарахування) | `00_06 §3` |
 | TEST.6 | Non-deterministic spec flakes — закрито ✅/фантом 2026-07-12 (founder): **(1)** `coap_smoke` «тиша» FIXED 07-08 — ICMP `ECONNREFUSED` на readable-socket, host-independent регресія (`04_06 §B.2` #10); **(2)** `batch_payout_service` race = **фантом-репорт агентського review**: 90-денна CI-історія — 0 red із 80 failure-ранів (+ 0 re-run'ів у проєкті) · 87 clean репро-прогонів на 2 платформах · обидві гіпотези фальсифіковані (`04_06 §B.2` #11 — «спершу CI-історія, потім hunt»); сторожа = on-failure артефакти `rspec_results.json`+`examples.txt` (one-command repro `--only-failures --seed`) — ре-відкривати ЛИШЕ з реальним failing-example; стрес-harness 1000× відхилено (компут на подію з частотою ≈0) | `04_06 §B.2` |
 | E.41 | Fire-event 48h latency → severity-гілка ✅ 2026-07-03 (critical+obscured → `escalate_obscured_critical_fire!`: негайний Field-Audit + HOLD payout; non-critical → orbital retry; spec покриває обидва плеча) — residual North-Star дрон-upgrade канонізовано `[PLANNED]` і живе в **E.20** (§04 vilize-архів 2026-07-11) | `04_02 §11`, `05_01` |
 | ARCH.16 | Mobile app для foresters — ЗЛИТО в **E.20** 2026-07-11 (той самий roadmap-рядок `00_01 §4` «мобільний додаток для лісників», той самий Phase-2-блокер; прецедент S6.10; guild-client живе `[ex-ARCH.16]`-чекбоксом + PWA-актив-нотаткою в E.20) | `04_02`, `04_04` |
@@ -1848,5 +1852,6 @@ _Наразі порожньо (DOC-T.37 resolved → §🗄️ нижче). Н�
 | E.3 | Breadboard-відео для грантів → злито чекбоксом у HW.35 (стенд Гілки-А) | [`02_04`](02_04_Legacy_Breadboard_Appendix) |
 | E.53 | state_root: `total_sfc` (сума confirmed SFC-мінтів) у формулі EthereumAnchor — migration applied; `[E.53]`-теги в `04_01`/`05_01`/`05_04` = ця робота. ID був помилково перевикористаний у беклозі під VNA-вимір антени → та вісь тепер чекбокс UNI.10 | [`05_04`](05_04_Ethereum_L1_State_Anchor) |
 | E.54 | state_root: `active_tree_count` (метрика покриття екосистеми) — migration applied; `[E.54]`-теги = ця робота. ID був помилково перевикористаний у беклозі під SOP-документи EwsAlert → та вісь тепер UNI.12 (контент) + ARCH.31 (inline UI) | [`05_04`](05_04_Ethereum_L1_State_Anchor) |
+| E.40 | Ignion NN02-310 antenna eval → A/B-чекбокс у VNA-сесії UNI.10 (та сама Гончаров-лаба; ex-«дотично UNI.10» far-horizon vendor-swap) | [`02_01 §5`](02_01_Hardware_Architecture_and_BOM) |
 | FW.25 | TinyML DSP-path: Path B (log-mel) SELECTED + shipped self-owned — `Compute_LogMel` + 3-way parity + `contract_hash` tripwire + бюджет-конверт (arena ≤ 10 КБ); живить FW.4 baseline. Residual'и мігрували: Path C-fallback + опц. партнер-апгрейд + 🌿 dataset → FW.4 | [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) (decision-matrix) + [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference) (контракт) |
 

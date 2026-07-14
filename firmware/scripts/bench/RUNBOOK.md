@@ -92,16 +92,18 @@
 | [bench:lse-rtc-wut] | §4 | FW.49 · FW.20 · ARCH.41 · ARCH.26 · SEC.15 |
 | [bench:coap] | §5 (+ §6 VBAT-droop) | FW.3 · FW.56 · FW.58 · FW.60 · HW.15 |
 | [bench:ota-day] | §2.5 (+ §6 `Write_OTA_Contract_To_Flash`) | FW.23 · FW.52 · SEC.20 |
+| [bench:acoustic] | §6 (bullet «Acoustic 16 kHz стенд» ↓) | HW.11 · HW.30 |
 
 - **HW-AES-KEY/SEC.6:** SE050 eval kit (SEC.14 роль SE — рішення при BOM freeze; SE = SE050 — 03_05 §3.7 / 00_07 SE050-MIGRATION) + live SE05x I²C; **замір SE sleep-floor за load-switch гейтом** (TPS22860-патерн — SEC.14 cross-check 2026-06-12: always-on 150 нА ≈ 3.6 мДж/год > весь запас Сценарію C, гейт обов'язковий).
 - **BME280** I2C bring-up (`bme280_forced_read` транспорт-стаб → live) + gate-timing (VPD) + точка калібрування `vpd_index`→kPa (формула+квант канонізовані `02_01 §3.4`, компенсація host-golden `test_bme280.c`).
 - **Flash-KV на кремнії** (ОДНЕ HAL-глю відкриває ЧОТИРИ freeze-contract'и): `HAL_FLASH_*` glue + ECCD-політика читання + erase-час vs LoRa RX (`03_01 §2.3` bench-residual). Споживачі журналу: `0x10/0x11` Z-пороги (FW.8) · `0x13` key-version (FW.17) · `0x14` FC high-water (FW.2 nonce-якір) · `0x20` beacon-dedup поколінь (FW.20-S2). Фліпи після верифікації: `FW8_PARSER_ENABLED` · `FW17_RATCHET_ENABLED` (+ §2.6) · `FW20_MESH_RELAY_ENABLED`; persist-roundtrip через power-cycle на кожен ключ.
 - **ARCH.35 W25Q32 sector-ring** (gated board-freeze — у BOM Queen ще нема): розводка SPI+CS у `.ioc` → bench SPI-глю (драйвер+power-cut host-доведені `flash_ring.c`) → фліп `ARCH35_RING_ENABLED 1`; перевірка drain Flash-first→RAM при переповненні CIFO.
 - **`Write_OTA_Contract_To_Flash`** — ✅ логіка готова (`flash_ota.c`, host-тест 8/8 `make -C firmware/test flash_ota`, power-cut-safe magic-last); 👤 на bench: HAL_FLASH erase/program-фаза (`g_ota_flash_ops`, main.c) на реальній STM32 + e2e OTA-day.
-- **BQ25570 VBAT_OV** резистори (HW, [`02_03`](../../../docs/02_03_BQ25570_MPPT_Nano_Power.md)): формулу можна звірити аналітично+Monte-Carlo до плати; на bench — DMM-замір порога OV проти 5.5 В EDLC-стелі.
+- **BQ25570 VBAT_OV** резистори (HW, [`02_03`](../../../docs/02_03_BQ25570_MPPT_Nano_Power.md)): формулу можна звірити аналітично+Monte-Carlo до плати; на bench — DMM-замір порога OV проти 5.5 В EDLC-стелі + HW.12 зовн. clamp (TVS/zener) overcharge-тест.
 - **HW.15 VBAT-droop @ 2A burst** (acceptance `02_05 §2.2.1`): осцилограф на VBAT-піні SIM7070G під час LTE-M TX burst → просадка **< 20 мВ** (5-cap tank bank поз.17–20 тримає; brownout-поріг 3.0 В, margin >35×). Без цього замір — brownout-лотерея першого деплою.
 - **RF:** діаграма/дальність 868 МГц (HW.31 антени), mesh TTL у полі.
-- **П'єзо interrupt-storm поріг** (`03_03 §1.2`) — комп/RC-поріг рішення.
+- **П'єзо interrupt-storm поріг** (`03_03 §1.2`, HW.30 cb-4/5) — ⚖️ hardware comparator/RC **vs** software amplitude-gate; якщо SW → поріг калібрується на [bench:acoustic]-ризі (cb-5, post-coupling).
+- **Acoustic 16 kHz стенд** (спільний день HW.11 + HW.30, той самий Ti-coin + 16 kHz tone на тому самому п'єзо): HW.11 coating-attenuation з/без (`02_02 §3.4`) + HW.30 SMD-piezo+Sil-Pad voltage-spike vs стара ∅27мм через-отв. (`02_01 §6`) — один стенд-день, спільний rig.
 
 ## Вихідний критерій дня
 
