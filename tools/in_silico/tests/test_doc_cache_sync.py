@@ -121,6 +121,11 @@ CHECKS = [
         SUMMARY, r"IP_adiab\(FAD ([\d.]+)\)",
         "dft/delta_scf_corrections.json", lambda d: d["IP_adiabatic_eV"], 0.001,
     ),
+    (
+        "PCET E°(FAD/FADH₂) pH7 → pcet_redox_potential.json",
+        SUMMARY, rf"E°\(FAD/FADH₂\) = \*\*{N} mV vs NHE",
+        "dft/pcet_redox_potential.json", lambda d: d["E_vs_SHE_mV"]["pH_7.0"], 1.0,
+    ),
     # ── Hammett LFER ──
     (
         "LFER slope → os_mediator_series.json",
