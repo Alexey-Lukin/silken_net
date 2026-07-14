@@ -9,7 +9,9 @@
 > інструмента.
 >
 > **Pre-flight (твердо):** антена ПЕРЕД живленням на SX1262 (згорить без
-> антени — CLAUDE.md §10); ESD-браслет; лог усього дня → `bench_artifacts/`.
+> антени — [`06_01` Pre-Flight](../../../docs/06_01_Deployment_Kamal_Terraform.md) /
+> [`02_01 §5`](../../../docs/02_01_Hardware_Architecture_and_BOM.md) SWR-фізика);
+> ESD-браслет; лог усього дня → `bench_artifacts/`.
 
 ## 0. Інструменти
 
@@ -69,12 +71,13 @@
 
 | Крок | Як | Очікуване |
 |---|---|---|
-| 5.1 **Verbatim-звірка ноти** | роздобути SIM7070_…_CoAP(S)_Application Note **V1.03** (Techship/SIMCom; публічні дзеркала 403) і звірити проти `03_02 §4` | граматика збігається АБО оновити `at_engine`-транскрипти |
+| 5.1 **Verbatim-звірка ноти** | роздобути SIM7070_…_CoAP(S)_Application Note **V1.03** (Techship/SIMCom; публічні дзеркала 403) і звірити проти `03_02 §4`. AT Manual V1.03 + TCPUDP-нота V1.02 вже звірені посторінково (FW.60-розвідка 2026-07-12, `03_02 §4`) — residual лише CoAP(S)-нота | граматика збігається АБО оновити `at_engine`-транскрипти |
 | 5.2 Живі транскрипти | minicom-лог: ATE0/AT/CNMP/CPSMS/CEDRXS + CDNSGIP + CCOAPNEW/SEND/DEL | лог ≡ скриптовані транскрипти `test_at_engine.c` (URC-порядки, таймінги) |
 | 5.3 e2e PUT → Rails | повний flush на staging CoAP-intake; вердикт з боку Брами — `bin/coap_smoke --host <staging>` (freeze-contract semantic smoke, INF.6: ловить phantom-delivery, не лише liveness) | `+CCOAPNMI` 2.xx; запис у `TelemetryLog`; smoke зелений |
 | 5.4 DMA-вуха кремнію | `06_uart_dma_ears.py --plan`: USB-UART замість модема + pyOCD attach (producer-лічильники wraps/NDTR по SWD; логіка кільця host-доведена `test_uart_rx_ring.c`) | вердикт ✅ ROUTE/FEED/WRAP/BOUNDARY: DMAMUX-роутинг USART1_RX, TC = рівно +1 wrap, межовий байт повного кільця не губиться/не двоїться |
 | 5.5 **FW.58 DNS-failover** | на живому SIM7070 фліп A-запису `api.silkennet.com` (staging DNS) під час активної Королеви; спостерігати re-resolve після N=3 підряд провалів flush (без IWDG-ребута) | `coap_server_ip` оновлюється на новий IP, flush відновлюється; host-дім `test_fw58_reresolve_predicate` |
 | 5.6 **HW.15 marking-звірка** | фізично прочитати маркування чипа модема на прототипі | = **SIM7070G** (не SIM7000G) — найменування у firmware/BOM/`02_05` уніфіковано, лишилась фіз-звірка |
+| 5.7 **FW.60 poll-downlink live** | Rails ставить pending CMD (`Downlink::PendingQueueService`) → повний flush → після `send_success` Королева сама `GET poll/<uid>` сирим CA\*-трактом (`sim7070_udp.h`; механіка [`03_02 §4а`](../../../docs/03_02_Queen_Gateway_Firmware.md)) | verbatim URC-порядок `CAOPEN → '>' → CASEND → +CADATAIND → CARECV(≤1459 Б) → CACLOSE` ≡ host-транскриптам (**довгий CARECV-буфер = модемна невідома** — головне, що міряємо); CMD доставлено, UUID-дедуп тримає; кожен poll несе `[0x9C][ts:4]` → RTC-sync задарма |
 
 ## 6. Решта фізики (по item-ах 00_07)
 
@@ -94,11 +97,11 @@
 | [bench:ota-day] | §2.5 (+ §6 `Write_OTA_Contract_To_Flash`) | FW.23 · FW.52 · SEC.20 |
 | [bench:acoustic] | §6 (bullet «Acoustic 16 kHz стенд» ↓) | HW.11 · HW.30 |
 
-- **HW-AES-KEY/SEC.6:** SE050 eval kit (SEC.14 роль SE — рішення при BOM freeze; SE = SE050 — 03_05 §3.7 / 00_07 SE050-MIGRATION) + live SE05x I²C; **замір SE sleep-floor за load-switch гейтом** (TPS22860-патерн — SEC.14 cross-check 2026-06-12: always-on 150 нА ≈ 3.6 мДж/год > весь запас Сценарію C, гейт обов'язковий).
-- **BME280** I2C bring-up (`bme280_forced_read` транспорт-стаб → live) + gate-timing (VPD) + точка калібрування `vpd_index`→kPa (формула+квант канонізовані `02_01 §3.4`, компенсація host-golden `test_bme280.c`).
-- **Flash-KV на кремнії** (ОДНЕ HAL-глю відкриває ЧОТИРИ freeze-contract'и): `HAL_FLASH_*` glue + ECCD-політика читання + erase-час vs LoRa RX (`03_01 §2.3` bench-residual). Споживачі журналу: `0x10/0x11` Z-пороги (FW.8) · `0x13` key-version (FW.17) · `0x14` FC high-water (FW.2 nonce-якір) · `0x20` beacon-dedup поколінь (FW.20-S2). Фліпи після верифікації: `FW8_PARSER_ENABLED` · `FW17_RATCHET_ENABLED` (+ §2.6) · `FW20_MESH_RELAY_ENABLED`; persist-roundtrip через power-cycle на кожен ключ.
-- **ARCH.35 W25Q32 sector-ring** (gated board-freeze — у BOM Queen ще нема): розводка SPI+CS у `.ioc` → bench SPI-глю (драйвер+power-cut host-доведені `flash_ring.c`) → фліп `ARCH35_RING_ENABLED 1`; перевірка drain Flash-first→RAM при переповненні CIFO.
-- **`Write_OTA_Contract_To_Flash`** — ✅ логіка готова (`flash_ota.c`, host-тест 8/8 `make -C firmware/test flash_ota`, power-cut-safe magic-last); 👤 на bench: HAL_FLASH erase/program-фаза (`g_ota_flash_ops`, main.c) на реальній STM32 + e2e OTA-day.
+- **HW-AES-KEY/SEC.6:** SE05x eval-пара (baseline **SE051C2**, companion OM-SE050ARD-E — 03_05 §3.7 / 00_07 SE050-MIGRATION; роль SE ✅ provisioning-only 2026-07-03) + live SE05x I²C: **cold-boot заряд + T1oI2C-латентності provisioning-операцій** (датащит не специфікує — головне питання) + **замір SE sleep-floor за load-switch гейтом** (TPS22860-патерн — SEC.14 cross-check 2026-06-12: always-on 150 нА ≈ 3.6 мДж/год > весь запас Сценарію C, гейт обов'язковий).
+- **BME280** I2C bring-up — forced-mode read транспорту в коді ще НЕМА (`bme280.h` = лише компенсація+VPD-математика, host-golden `test_bme280.c`): написати I2C-глю → live read + gate-timing (VPD) + точка калібрування `Bme280_Vpd_Index`→kPa (формула+квант канонізовані `02_01 §3.4`).
+- **Flash-KV на кремнії** (ОДНЕ HAL-глю відкриває П'ЯТЬ freeze-contract'ів): `HAL_FLASH_*` glue + ECCD-політика читання + erase-час vs LoRa RX (`03_01 §2.3` bench-residual). Споживачі журналу: `0x10/0x11` Z-пороги (FW.8) · `0x13` key-version (FW.17) · `0x14` FC high-water (FW.2 nonce-якір) · `0x15` OTA version-hiwater (SEC.20 anti-replay — тому §2.5 [bench:ota-day] залежить від цього ж глю) · `0x20` beacon-dedup поколінь (FW.20-S2). Фліпи після верифікації: `FW8_PARSER_ENABLED` · `FW17_RATCHET_ENABLED` (+ §2.6) · `FW20_MESH_RELAY_ENABLED`; persist-roundtrip через power-cycle на кожен ключ.
+- **ARCH.35 W25Q32 sector-ring** (gated board-freeze; BOM Queen поз.16 🟡 — W25Q32JV специфіковано, розводки ще нема): розводка SPI+CS у `.ioc` → bench SPI-глю (драйвер+power-cut host-доведені `flash_ring.c`) → фліп `ARCH35_RING_ENABLED 1`; перевірка drain Flash-first→RAM при переповненні CIFO.
+- **`Write_OTA_Contract_To_Flash`** — ✅ логіка готова (`flash_ota.c`, host-suite `make -C firmware/test flash_ota` зелена, power-cut-safe magic-last); 👤 на bench: HAL_FLASH erase/program-фаза (`g_ota_flash_ops`, main.c) на реальній STM32 + e2e OTA-day.
 - **BQ25570 VBAT_OV** резистори (HW, [`02_03`](../../../docs/02_03_BQ25570_MPPT_Nano_Power.md)): формулу можна звірити аналітично+Monte-Carlo до плати; на bench — DMM-замір порога OV проти 5.5 В EDLC-стелі + HW.12 зовн. clamp (TVS/zener) overcharge-тест.
 - **HW.15 VBAT-droop @ 2A burst** (acceptance `02_05 §2.2.1`): осцилограф на VBAT-піні SIM7070G під час LTE-M TX burst → просадка **< 20 мВ** (5-cap tank bank поз.17–20 тримає; brownout-поріг 3.0 В, margin >35×). Без цього замір — brownout-лотерея першого деплою.
 - **RF:** діаграма/дальність 868 МГц (HW.31 антени), mesh TTL у полі.
