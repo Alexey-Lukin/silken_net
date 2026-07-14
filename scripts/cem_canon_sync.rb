@@ -34,29 +34,29 @@ C4 = "01_04_CODIT_and_Xylemointegration.md"
 # [label, cem-file, json-path, canon-doc, /regex ONE capture/, mode, tol]
 CHECKS = [
   # ── §4.3 mechanical-lock barb working-point (over-specified tooth: pin h + α/β, base is derived) ──
-  ["barb height h", "mechanical_lock.zone1.json", "barb_height_mm",
-   C1, /Робоча точка \*\*h = ([\d.]+)\*\*/, :eq, 0.001],
-  ["barb lead-angle α", "mechanical_lock.zone1.json", "lead_angle_deg",
-   C1, /leading-edge α = (\d+)°/, :eq, 0.5],
-  ["barb trail-angle β", "mechanical_lock.zone1.json", "trail_angle_deg",
-   C1, /trailing-edge β = (\d+)°/, :eq, 0.5],
+  [ "barb height h", "mechanical_lock.zone1.json", "barb_height_mm",
+   C1, /Робоча точка \*\*h = ([\d.]+)\*\*/, :eq, 0.001 ],
+  [ "barb lead-angle α", "mechanical_lock.zone1.json", "lead_angle_deg",
+   C1, /leading-edge α = (\d+)°/, :eq, 0.5 ],
+  [ "barb trail-angle β", "mechanical_lock.zone1.json", "trail_angle_deg",
+   C1, /trailing-edge β = (\d+)°/, :eq, 0.5 ],
   # ── §1.4 monolithic bus (rod Ø1.0 / channel Ø1.3 / liner 0.15) ──
-  ["bus rod Ø (§1.4)", "anchor_zone1.pine.json", "bus_rod_diameter_mm",
-   C1, /стрижень \*\*Ø([\d.]+) мм\*\*/, :eq, 0.001],
-  ["cathode bus channel Ø (§1.4)", "cathode_flange.json", "bore_diameter_mm",
-   C1, /катодний канал \*\*Ø([\d.]+) мм\*\*/, :eq, 0.001],
-  ["bus liner (§1.4)", "cathode_flange.json", "bus_liner_thickness_mm",
-   C1, /lining \*\*([\d.]+) мм\*\*/, :eq, 0.001],
+  [ "bus rod Ø (§1.4)", "anchor_zone1.pine.json", "bus_rod_diameter_mm",
+   C1, /стрижень \*\*Ø([\d.]+) мм\*\*/, :eq, 0.001 ],
+  [ "cathode bus channel Ø (§1.4)", "cathode_flange.json", "bore_diameter_mm",
+   C1, /катодний канал \*\*Ø([\d.]+) мм\*\*/, :eq, 0.001 ],
+  [ "bus liner (§1.4)", "cathode_flange.json", "bus_liner_thickness_mm",
+   C1, /lining \*\*([\d.]+) мм\*\*/, :eq, 0.001 ],
   # ── §5.5-A anti-overgrowth bell (≥ constraints — the bell_radius that had NO assert) ──
-  ["radome bell-rise ≥ (§5.5)", "radome.json", "bell_rise_mm",
-   C4, /Виступ ≥ (\d+) мм/, :ge, 0.0],
-  ["radome bell-radius ≥ (§5.5)", "radome.json", "bell_radius_mm",
-   C4, /Радіус заокруглення ≥ (\d+) мм/, :ge, 0.0],
+  [ "radome bell-rise ≥ (§5.5)", "radome.json", "bell_rise_mm",
+   C4, /Виступ ≥ (\d+) мм/, :ge, 0.0 ],
+  [ "radome bell-radius ≥ (§5.5)", "radome.json", "bell_radius_mm",
+   C4, /Радіус заокруглення ≥ (\d+) мм/, :ge, 0.0 ],
   # ── §4.3 B DIN-471 groove (THE drift this guard was born for: canon §3 = §4.3 B = C#-default = json) ──
-  ["lock groove width (§4.3 B DIN-471 Ø11)", "mechanical_lock.zone1.json", "groove_width_mm",
-   C1, /Ø11 → width ≈ ([\d.]+) mm × depth/, :eq, 0.001],
-  ["lock groove depth (§4.3 B DIN-471 Ø11)", "mechanical_lock.zone1.json", "groove_depth_mm",
-   C1, /width ≈ 1\.1 mm × depth ≈ ([\d.]+) mm/, :eq, 0.001],
+  [ "lock groove width (§4.3 B DIN-471 Ø11)", "mechanical_lock.zone1.json", "groove_width_mm",
+   C1, /Ø11 → width ≈ ([\d.]+) mm × depth/, :eq, 0.001 ],
+  [ "lock groove depth (§4.3 B DIN-471 Ø11)", "mechanical_lock.zone1.json", "groove_depth_mm",
+   C1, /width ≈ 1\.1 mm × depth ≈ ([\d.]+) mm/, :eq, 0.001 ]
 ]
 
 failures = []
