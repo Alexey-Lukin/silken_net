@@ -195,7 +195,9 @@ def main() -> int:
         "beta_d_std": round(float(bd.std()), 3),
         "beta_d_single_snapshot_AF3": single_bd,
         "conformational_gating_factor": round(gating, 3) if n_valid > 1 else None,
-        "status": "WIP — needs PBC-unwrapping of production.dcd before the ensemble is meaningful",
+        "status": ("WIP — needs PBC-unwrapping of production.dcd before the ensemble is meaningful"
+                   if pbc_limited else
+                   f"complete — image_molecules co-locates the FAD cofactor; {n_valid}/{n_total} frames analysable"),
         "interpretation": verdict,
     }, indent=2))
     banner(f"✅ Saved {OUT.relative_to(REPO_ROOT)}")

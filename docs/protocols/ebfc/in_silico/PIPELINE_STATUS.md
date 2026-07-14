@@ -26,7 +26,7 @@
 | 11 | `full_matrix_md` | **RMSD 1.22 Å** (100ps); 10ns 4.02 Å, **Rg stable** → AF3 relaxation, not denaturation | `runs/` |
 | 12 | `temperature_sweep_md` | **4/4 temps** 0.76–1.47 Å, all ≪3Å STABLE (313K NaN fixed) | `kinetics/temperature_sweep.json` |
 | 13 | `psbma_diffusion_md` | D_eff=5.1e-4 cm²/s (monomer; L4 uses lit. 2e-6) | — |
-| 14 | `xylem_sap_sweep_md` | **6/6 species** stable (pH 4.2–5.8) | `kinetics/xylem_sap_sweep.json` |
+| 14 | `xylem_sap_sweep_md` | **6/6 species** stable (pH 4.2–6.0) | `kinetics/xylem_sap_sweep.json` |
 | 15 | `pvi_coverage_md` | RMSD 1.10 Å → PVI brush safe, no denaturation | `runs/` |
 | 16 | `strain_cycling_md` | pseudoplastic (compress<stretch), PE drift 1.0% | `kinetics/strain_cycling.json` |
 | 20 | `dft_lumiflavin` | HOMO(FADH₂) = -5.14 eV | `dft/lumiflavin.json` |
@@ -50,7 +50,7 @@
 | 31b | `cathode_det_rct` | ③ cathode DET R_ct band ~0.002–230 Ω (borderline k_DET × unknown Γ, ×10⁵) → kinetic competition, not a fixed Rct; INDICATIVE | `kinetics/cathode_det_rct.json` |
 | 32 | `pcet_redox_potential` | E°(FAD/FADH₂) **-158 mV** (Δ50 mV vs free-flavin exp) — PCET valid w/ implicit solvent | `dft/pcet_redox_potential.json` |
 | 33 | `pcet_cascade_semiquinone` | PCET cost +5.87 eV → cascade **+1.63 eV** (dimethyl Os), **does NOT flip downhill** (PCM solvation limit) | `dft/pcet_cascade.json` |
-| 34 | `dft_microsolvation` | **② chloro-bracket (dimethyl)**: [Os(H₂O)₆] **+0.98 eV** benchmark, chloro Cl⁻-solvation **+0.21 eV** (+1/+2 lower), bis-Im **+0.55** / aqua **+0.49** (+2/+3 upper) + substituent **+0.146** → gap = decomposed method limit | `dft/microsolvation_dmbpy.json` |
+| 34 | `dft_microsolvation` | **② chloro-bracket (dimethyl)**: [Os(H₂O)₆] **+0.98 eV** benchmark, chloro Cl⁻-solvation **+0.21 eV** (+1/+2 lower), bis-Im **+0.55** / aqua **+0.49** (+2/+3 upper) + substituent **+0.142** ① → gap = decomposed method limit | `dft/microsolvation_dmbpy.json` |
 | 34b | `wb97x_speciation` | **② ωB97X cross-check ✅** (B4 dimethyl): chloro↔+2/+3 **bracket functional-robust** (both functionals); internal aqua↔bis-Im order functional-**sensitive** (ωB97X aqua>bis-Im, B3LYP-dimethyl bis-Im>aqua, <0.15 eV) | `dft/wb97x_speciation[_dmbpy].json` |
 | 35 | `dft_metal_reorganization` | **③** computed inner-sphere λ (Nelsen 4-pt): Ru **0.78**, Ce 0.87, Co 3.09 (B3LYP spin-crossover ~2× over-est) | `dft/metal_reorganization.json` |
 | 40 | `validate_vs_experiment` | predictions ready for Ti-coin CV/EIS | `kinetics/validation_report.json` |
@@ -164,7 +164,7 @@ Validation:
 - ✅ ~~Genipin rerun (scripts 10-11)~~ — DONE (RMSD 1.20/1.22 Å)
 - ✅ ~~Temperature sweep (script 12)~~ — DONE 4/4 temps (263K-313K all stable, ≪3Å)
 - ✅ ~~PSBMA diffusion (script 13)~~ — DONE (model limitation noted)
-- ✅ ~~Xylem sap sweep (script 14)~~ — DONE 6/6 species (pH 4.2-5.8 all stable)
+- ✅ ~~Xylem sap sweep (script 14)~~ — DONE 6/6 species (pH 4.2-6.0 all stable)
 - ✅ ~~ωB97X DFT (scripts 21d/21f/21g)~~ — DONE. **dimethyl recompute B1/B2 ✅**. Koopmans Δε=−6.02 eV dimethyl (RSH artifact). Adiabatic ΔSCF +1.03 eV dimethyl / +0.884 plain (uphill; verified cascade +574 mV → SUMMARY).
 - ✅ ~~L3b Co-Ce + Ce-graphene (script 24)~~ — DONE (geom-fixed t_ij; k_DET borderline ×1–30, scripts 24/25/35)
 - ✅ ~~PCET potential + cascade (scripts 32, 33)~~ — DONE (potential -158 mV valid; cascade does not flip — PCM limit)

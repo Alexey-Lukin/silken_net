@@ -8,6 +8,6 @@
   "beta_d_std": 0.126,
   "beta_d_single_snapshot_AF3": 2.054,
   "conformational_gating_factor": 1.032,
-  "status": "WIP \u2014 needs PBC-unwrapping of production.dcd before the ensemble is meaningful",
+  "status": "complete \u2014 image_molecules co-locates the FAD cofactor; 15/15 frames analysable",
   "interpretation": "path thermally robust (gating modest)"
 }

@@ -163,7 +163,7 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
    - **Товщина шару:** 5–10 µm — оптимум між густиною Os↔FAD couples та diffusion length глюкози.
    - **Глибина FAD N5 від поверхні білка (in-silico L1):** `d_FAD = 15.998 Å` (AlphaFold 3 + ChimeraX, deglycosylated G8E4B5 → Tyr90 OH; повний протокол — [`protocols/ebfc/in_silico/L1_protein_architecture.md`](protocols/ebfc/in_silico/L1_protein_architecture.md)). Підтверджена константа для дизайну Os-shell.
    - **Узгодження потенціалів:** E°(Os²⁺/³⁺) = +309 мВ vs NHE (Zafar 2012, dimethyl-bpy Os-PVI) — на **~574 мВ** позитивніше за E°(FAD-GDH = **−265 мВ vs SHE**, Schachinger, Ma, Ludwig 2023) → каскад надійно exoergic. Зворотний бік великої рушійної сили — частина OCV витрачається на перенапругу, тож робочий потенціал медіатора є компромісом швидкість ↔ напруга комірки; +309 мВ є саме цей емпіричний оптимум (а не максимум рушійної сили).
-   - **PVI backbone стеричний тест (in-silico L2, script 15):** RMSD 1.10 ± 0.29 Å з 5×PVI трімером на протеїні → **PVI-щітка НЕ денатурує фермент** (2026-05-27). Безпечно для Gen 2.0 MET-стеку.
+   - **PVI backbone стеричний тест (in-silico L2, script 15):** RMSD ~1.10 Å (mean-only; ±std не в committed-run — як PIPELINE_STATUS) з 5×PVI трімером на протеїні → **PVI-щітка НЕ денатурує фермент** (2026-05-27). Безпечно для Gen 2.0 MET-стеку.
    - **Альтернатива:** PPy (поліпірол) як кополімерний підсилювач провідності — додається electrochemically між Os-polymer і ферментом (§2.3).
 
 4. **Шар 4 (Захисний/Каталітичний, **Genipin-Chitosan-CNC**):** Поверх Шару 3 — гідрогель з:
@@ -302,11 +302,9 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 | Метрика L2 baseline | Результат |
 |---|---|
 | Стек | AMBER ff14SB (протеїн) + TIP3P-FB/NaCl 0.05 M + GAFF-2.11 (FAD з AF3 pose, 10 × genipin) |
-| Розмір системи | 477 413 атомів (1.0 nm padding box) |
 | Pipeline | min → NVT 50 ps (100→298 K, restrained heavy atoms) → NPT 100 ps → production 100 ps |
-| Speed (Apple M-GPU, OpenCL) | 10.37 ns/day |
-| **Backbone RMSD vs frame 0** | ~~0.951 Å (wrong genipin isomer)~~ → **1.20 Å (correct C₁₁ genipin, rerun 2026-05-26)** ≪ 3 Å → STABLE |
-| Verdict | dgrGcGDH + genipin = mechanically compatible at pH 4.5 |
+| Система · швидкість · точний RMSD | → [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) §L2 (SSOT — correct C₁₁ genipin rerun; не дублюємо числа проти drift) |
+| Verdict | ✅ Backbone RMSD ≪ 3 Å → dgrGcGDH + genipin mechanically compatible at pH 4.5 |
 
 Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored). Скрипт — [`10_genipin_stability_md.py`](../tools/in_silico/scripts/10_genipin_stability_md.py).
 
@@ -317,12 +315,8 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 | Метрика L2-extended | Результат |
 |---|---|
 | Стек | AMBER ff14SB + TIP3P-FB/NaCl 0.05 M + GAFF-2.11 (FAD + 10×genipin + 5×chitosan trimer + 8×cellobiose) |
-| Розмір системи | 467 417 атомів |
-| Matrix atoms | 975 (10×GEN 270 + 5×CSO 345 + 8×CLB 360) |
-| Speed (Apple M-GPU, OpenCL) | 10.83 ns/day |
-| **Backbone RMSD — 100 ps screen** | 1.108 ± 0.263 Å (max 1.439 Å) — STABLE |
-| **Backbone RMSD — 10 ns production** | **4.02 Å, але Rg стабільний (-0.1%)** → конформаційна релаксація з AF3-структури під AMBER ff14SB, **НЕ денатурація** |
-| Verdict | dgrGcGDH + повна матриця Gen 2.0 = mechanically compatible at pH 4.5 |
+| Система · matrix atoms · швидкість · RMSD (100 ps + 10 ns) | → [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) §L2 (SSOT — correct C₁₁ genipin rerun; не дублюємо числа проти drift) |
+| Verdict | dgrGcGDH + повна матриця Gen 2.0 = mechanically compatible at pH 4.5 (RMSD ≪ 3 Å; 10 ns = конформаційна релаксація, Rg стабільний — ⚠️-нота нижче) |
 
 > ⚠️ **Чому RMSD 4.02 Å на 10 ns — це НЕ провал (важливо для рецензента):** 100 ps — лише screen; на повному 10 ns ран білок релаксує з ідеалізованої AF3-пози (RMSD росте), але **радіус інерції Rg падає лише на 0.1%** — глобуля не розгортається, FAD-кишеня ціла. Високий RMSD при стабільному Rg = нормальна конформаційна релаксація, не втрата фолду. Повне врівноваження 600-аа ферменту потребує 20–50 ns (deferred до GPU-cloud). Без 10 ns рядка рецензент побачив би 1.1 Å @ 100 ps і звинуватив у "toy simulation".
 
@@ -353,17 +347,17 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 **Що залишається опційним для майбутнього L2 (Gen 2.5+):**
 
 - **PVI-backbone без металу** — параметризувати поліvinylimidazole через GAFF як полімерну ланцюговку без Os центрів. Моделює steric coverage на протеїні без забруднення electronic-структури. Дешево (~години), якщо знадобиться відповідь на питання "чи бачить протеїн PVI-щітку як stress source?".
-- ✅ ~~**Розширена матриця**~~: chitosan trimer + cellobiose (CNC proxy) додано (2026-05-25). RMSD 1.108 ± 0.263 Å (max 1.439 Å) — STABLE.
+- ✅ ~~**Розширена матриця**~~: chitosan trimer + cellobiose (CNC proxy) додано (2026-05-25). RMSD → [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) §L2 (correct C₁₁ rerun, 1.22 Å) — STABLE.
 
 **Кроки до повного гейту TRL 3 → 4:**
 
 1. ✅ L1 (AF3 + ChimeraX d_FAD)
 2. ✅ L2 (genipin RMSD, baseline)
-3. ✅ L2-extended (genipin + chitosan + CNC, 100 ps, 2026-05-25) — RMSD 1.11 Å ≪ 3 Å
+3. ✅ L2-extended (genipin + chitosan + CNC, 100 ps, 2026-05-25) — RMSD 1.22 Å ≪ 3 Å (correct C₁₁)
    - ✅ L2-extended 10 ns run COMPLETE (2026-05-26): **RMSD 4.02 ± 0.82 Å**, Rg stable (-0.1%). Higher RMSD is normal conformational relaxation from AF3 structure under AMBER ff14SB (not denaturation — Rg proves fold intact). Full equilibration requires 20-50 ns for 600-residue enzyme.
    - ✅ Genipin rerun (correct C₁₁): baseline 1.20 Å, full matrix 1.22 Å. Temp sweep: -10°C to 25°C all stable.
-   - ✅ **Cross-species validation (2026-05-27):** 6/6 xylem sap profiles stable (pH 4.2-5.8): Pinus=1.03, Picea=1.09, Quercus=1.05, Fagus=0.98 Å — all ≪ 3 Å.
-4. ✅ L3 pass (B3LYP + ωB97X + ΔSCF + tunneling, 2026-05-27; Os-якір перераховано на dimethyl-bpy 2026-06-17). Каскад FADH₂→Os **верифіковано downhill +574 мВ / −0.574 eV** (E°(Os) +309 − E°(FAD-GDH −265 мВ SHE)); сирий DFT uphill у кожному методі (adiabatic ΔSCF ωB97X), розрив = метод-ліміт (differential PCM-сольватація у вилці chloro↔bis-Im + substituent, декомпозований ②); стара «B3LYP-corrected −0.07» best-estimate **відкликана** (артефакт +60 мВ FAD → [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md)). **PCET-валідація (script 32):** thermodynamic proton reference дав E°(FAD/FADH₂) = **-158 mV** vs NHE — в межах **50 mV** від експериментального free-flavin. Це **ізолює** залишковий ~1 eV uphill каскаду суто до обмеження implicit-solvent (диференціальна сольватація PCM), а не до хімії — тобто "PCM solvation limit" є **доведеним фактом**, не відмовкою (cascade PCET reframing, script 33, downhill НЕ дає → теж PCM, не proton coupling). **Tunneling pathway** (script 28, Beratan-Onuchic): FAD→ALA261→THR260→THR288, β·d=2.05 (PDB resSeq; #3) — tunneling feasible. **L3b cathode DET ✅ COMPLETE** (geom-fixed t_ij + computed λ): cathode DET **borderline** at realistic λ (Cu-Co bottleneck ~turnover, не old ×10⁵) — числа + λ-чутливість → [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) §Cathode. Деталі → [`L3_quantum_chemistry.md`](protocols/ebfc/in_silico/L3_quantum_chemistry.md)
+   - ✅ **Cross-species validation (2026-05-27):** 6/6 xylem sap profiles stable (pH 4.2-6.0): Pinus=1.03, Picea=1.09, Quercus=1.05, Fagus=0.98 Å — all ≪ 3 Å.
+4. ✅ L3 pass (B3LYP + ωB97X + ΔSCF + tunneling, 2026-05-27; Os-якір перераховано на dimethyl-bpy 2026-06-17). Каскад FADH₂→Os **верифіковано downhill +574 мВ / −0.574 eV** (E°(Os) +309 − E°(FAD-GDH −265 мВ SHE)); сирий DFT uphill у кожному методі (adiabatic ΔSCF ωB97X), розрив = метод-ліміт (differential PCM-сольватація у вилці chloro↔bis-Im + substituent, декомпозований ②); стара «B3LYP-corrected −0.07» best-estimate **відкликана** (артефакт +60 мВ FAD → [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md)). **PCET-валідація (script 32):** thermodynamic proton reference дав E°(FAD/FADH₂) = **-158 mV** vs NHE — в межах **50 mV** від експериментального free-flavin. Це **ізолює** залишковий ~1 eV uphill каскаду суто до обмеження implicit-solvent (диференціальна сольватація PCM), а не до хімії — тобто "PCM solvation limit" є **доведеним фактом**, не відмовкою (cascade PCET reframing, script 33, downhill НЕ дає → теж PCM, не proton coupling). **Tunneling pathway** (script 28, Beratan-Onuchic): FAD→ALA261→THR260→THR283→THR288, β·d=2.05 (PDB resSeq; #3) — tunneling feasible. **L3b cathode DET ✅ COMPLETE** (geom-fixed t_ij + computed λ): cathode DET **borderline** at realistic λ (Cu-Co bottleneck ~turnover, не old ×10⁵) — числа + λ-чутливість → [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) §Cathode. Деталі → [`L3_quantum_chemistry.md`](protocols/ebfc/in_silico/L3_quantum_chemistry.md)
 5. 🟡 L4 (2026-05-25, REVISED [E.63] 2026-06-08): Michaelis-Menten + Arrhenius + BQ25570 boost → recharge-kinetics model sound, але **за лаб-стеля** (E_CYCLE=5мДж / j_max=494; healthy 35.7 s, stressed 190 s). **[E.63]:** β-coupling реверсовано (delta_t→β було економічно нульове/інвертоване) — `delta_t` тепер → `growth_points` НАПРЯМУ ([`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)); FAST/SLOW field-scale calibration-pending (bench recharge-крива). Скрипт: `30_kinetics_delta_t.py`. Diffusion NOT rate-limiting (j_diff >> j_kinetic).
 
 **Вихід з TRL 3 (Zero-Lab in-silico):** ✅ **завершено** (2026-05-25). Усі 4 рівні дали позитивний результат — Zero-Lab computational proof завершено: EBFC Gen 2.0 доведено in silico на всіх рівнях (структура → стабільність → редокс-потенціал → кінетика). ⚠️ Це **TRL 3** (за NASA in-silico ≠ TRL 4); фізичний **TRL 4** = Ti-monet у CRO (Stage 2). Наступний крок — замовлення Ti-monet.
@@ -435,7 +429,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 3. **ZIF — відтворюваність:** жорстко прописати розмір 40–80 нм + **SEM-контроль** у T&C (макрокристали відпадуть з електрода).
 4. **Ti-монети — електрод-дизайн:** замовити з невеликим **«вушком»** (отвір/виступ на краю) для кріплення «крокодильчика» потенціостата, не пошкоджуючи активну площу (A_electrode = 2 см²). Dehydrogenation bake (вакуум 250°C) після EAAE — обов'язково (інакше водневе окрихчення, [`01_02 §1.3`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)).
 
-> 🎯 **Критичний шлях = пункт 1 (dgrFAD-GDH, 4–8 тиж).** Геніпін (3) і Ti-монети (5) — швидкі; мембрана (2) і ZIF (4) — середні. Фермент — найдовший. **Пріоритет #1 прямо зараз:** скласти specification sheet на dgrFAD-GDH (dgr-mutant ген, послідовність з §L1) і розіслати RFQ кільком CRO паралельно. Решту замовляти одночасно — усе сходиться на Ti-монетах для CV (§3.5).
+> 🎯 **Критичний шлях = пункт 1 (dgrFAD-GDH, 4–8 тиж).** Геніпін (3) і Ti-монети (5) — швидкі; мембрана (2) і ZIF (4) — середні. Фермент — найдовший. **Пріоритет #1 прямо зараз:** spec-sheet на dgrFAD-GDH складено ✅ ([`ebfc_chem_rfq.md §1`](protocols/procurement/ebfc_chem_rfq.md)) — лишається розіслати RFQ кільком CRO паралельно (+ freeze послідовності після CHEM.10/11). Решту замовляти одночасно — усе сходиться на Ti-монетах для CV (§3.5).
 
 ---
 

@@ -94,3 +94,29 @@ jobs:
           SILKEN_MIN_ITERATIONS: "500"
           SILKEN_MD_STEPS: "100"
         run: python tools/in_silico/scripts/01_smoke_test_water_box.py
+
+      - name: Cache-integrity tests (conda env — needs numpy/openmm for lib/ imports)
+        shell: bash -el {0}
+        run: python -m pytest tools/in_silico/tests/test_cache_integrity.py -q
+
+  cache_doc_sync:
+    # Numeric-drift guard — stdlib-only (no conda env → runs fast, in parallel
+    # with the heavy L2 smoke, no lock_sync dependency). test_doc_cache_sync pins
+    # every headline number in SUMMARY/L3 to its OWNER cache JSON — the
+    # self-consistent stale pocket `rg`/graphify cannot see (the 2026-06-19 model
+    # swap, the −1.054↔−1.051 provenance mix, the xylem-pH column drift).
+    # (test_cache_integrity imports lib/ → needs numpy/openmm → it runs in the
+    # `smoke` conda job above, NOT here; this bare-pytest job stays import-free.)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: Install pytest
+        run: python3 -m pip install --user pytest
+      - name: Doc↔cache numeric-drift guard
+        run: python3 -m pytest tools/in_silico/tests/test_doc_cache_sync.py -q

@@ -35,7 +35,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 11 | `11_full_matrix_md.py` | L2-extended: protein + FAD + genipin + chitosan + CNC full matrix MD | varies |
 | 12 | `12_temperature_sweep_md.py` | L2: full matrix at -10, 5, 25, 40°C → RMSD(T) curve | ~2.5 h GPU |
 | 13 | `13_psbma_diffusion_md.py` | L2: glucose diffusion through SBMA slab → D_eff from MSD | ~1-2 h GPU |
-| 14 | `14_xylem_sap_sweep_md.py` | L2: enzyme stability across 6 tree species (pH 4.2-5.8) | ~3-4 h GPU |
+| 14 | `14_xylem_sap_sweep_md.py` | L2: enzyme stability across 6 tree species (pH 4.2-6.0) | ~3-4 h GPU |
 | 15 | `15_pvi_coverage_md.py` | L2 Gen 2.5+: PVI backbone steric (brush) test | ~1 h GPU |
 | 16 | `16_strain_cycling_md.py` | HW.3.IS: cyclic ±5% strain on the genipin-chitosan-CNC matrix | ~30 min GPU |
 | 20 | `20_dft_lumiflavin.py` | L3 DFT: FAD/FADH₂ frontier orbitals (B3LYP/6-31G(d)+PCM) | ~2 min |

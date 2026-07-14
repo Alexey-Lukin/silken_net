@@ -7,7 +7,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 3 — in-silico pipeline L1-L4 ✅ (аналітичний PoC); xylem sap sweep: enzyme stable across 6 species (pH 4.2-5.8). Фізичний **TRL 4 = in-vitro Ti-coin** (Stage 2, pending) — канон [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond). Відкриті: resin-barrier + Flush Mount drilling (HW.6), No-EtO sterilization (HW.22), польові випробування → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 3 — in-silico pipeline L1-L4 ✅ (аналітичний PoC); xylem sap sweep: enzyme stable across 6 species (pH 4.2-6.0). Фізичний **TRL 4 = in-vitro Ti-coin** (Stage 2, pending) — канон [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond). Відкриті: resin-barrier + Flush Mount drilling (HW.6), No-EtO sterilization (HW.22), польові випробування → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -45,7 +45,7 @@
 Це аналог "остеоінтеграції" у зубних імплантатах людини, але для рослин.
 Замість того, щоб утворити мертву зону навколо анкера, дерево сприймає пористий титан Ti-6Al-4V як матрицю (скаффолд).
 
-1. **Фаза 1 (0-30 днів):** Захисна реакція. Дерево виділяє фенольні сполуки і смолу. Наші ферменти (dgrFAD-GDH та Laccase/ZIF-nanozyme) повинні витримати цей агресивний хімічний удар. У Gen 2.0 ZIF-каркас фізично стабілізує лакказу при атаці фенолів; цвітеріонна PSBMA-мембрана відштовхує гідрофобну смолу. **In-silico validated** (2026-05-27): L2 xylem sap sweep confirmed enzyme stability at pH 4.2-5.8 across 6 tree species ([`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md)); L2 strain cycling confirmed pseudoplastic matrix behavior (script 16).
+1. **Фаза 1 (0-30 днів):** Захисна реакція. Дерево виділяє фенольні сполуки і смолу. Наші ферменти (dgrFAD-GDH та Laccase/ZIF-nanozyme) повинні витримати цей агресивний хімічний удар. У Gen 2.0 ZIF-каркас фізично стабілізує лакказу при атаці фенолів; цвітеріонна PSBMA-мембрана відштовхує гідрофобну смолу. **In-silico validated** (2026-05-27): L2 xylem sap sweep confirmed enzyme stability at pH 4.2-6.0 across 6 tree species ([`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md)); L2 strain cycling confirmed pseudoplastic matrix behavior (script 16).
 2. **Фаза 2 (1-6 місяців):** Формування калюсу. Недиференційовані клітини починають заповнювати простір навколо **Zone 1 анодної секції** і проникати у її макропори (60-70% порожнечі). Калюс **не повинен наростати на Zone 3 катодний фланець** — там потрібен постійний доступ атмосферного O₂ (§5). **In-silico validated:** гідрогель Genipin-Chitosan-CNC демонструє псевдопластичність при циклічному навантаженні (script 16, 2026-05-27): при ±5% деформації матриця поглинає енергію без мікротріщин — амортизація при тигмоморфогенезі стовбура.
 3. **Фаза 3 (1-3 роки):** Диференціація. Калюс всередині **Zone 1 (анод)** перетворюється на функціональну ксилему та флоему. Ксилемний сік починає текти *крізь* анодну гіроїдну секцію природним шляхом. **Zone 3 (катод) залишається відкритим атмосфері** через anti-overgrowth shield (§5.5).
 4. **Фаза 4 (Довгострокова, 3+ років) — PARTIAL XYLEMOINTEGRATION:**

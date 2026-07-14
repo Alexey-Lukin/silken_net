@@ -174,7 +174,7 @@ driving force. That gap is **decomposed**, not hand-waved — differential PCM s
 |---|---|---|
 | ε_HOMO(FADH₂) | -5.137 eV | **-7.664 eV** |
 | ε_LUMO(Os(III)) dmbpy | -4.086 eV | **-1.644 eV** |
-| Δε (dimethyl) | -1.054 eV | **-6.020 eV** |
+| Δε (dimethyl) | -1.051 eV | **-6.020 eV** |
 | Direction | ❌ UPHILL | ❌ UPHILL (much larger) |
 
 **Critical interpretation:** The much larger ωB97X uphill (-6.02 eV vs -1.05 eV, dmbpy) does NOT invalidate the cascade. Range-separated hybrids are known to give Koopmans orbital energies that are **poor proxies for redox potentials** — they correctly reproduce ionization potentials but virtual orbital energies (LUMO) are systematically too high. B3LYP benefits from error cancellation that makes its orbital energies closer to E° values.
@@ -189,7 +189,7 @@ Computed vertical ionization of FADH₂ → FADH₂⁺ (radical cation, UKS) and
 | Os(III) + e⁻ → Os(II) (reduction, dmbpy) | **-4.243** (release; +0.149 vs plain −4.392) |
 | **Full: FADH₂ + Os(III) → FADH₂⁺ + Os(II)** | **+1.40 (UPHILL)** |
 
-Discrepancy from the verified driving force (−0.574 eV downhill): **~1.6 eV** (plain bpy; the dimethyl recompute B1 widens it ~+0.15 eV via the substituent) — the real mediator is **chloro** (Zafar), so the gap is **differential PCM solvation** (chloro↔bis-Im bracket, §E) + the **4,4'-dimethyl substituent** (+0.146 eV), with vertical geometry (~0.3 eV) and no ZPE/entropy (~0.1 eV) as minor terms.
+Discrepancy from the verified driving force (−0.574 eV downhill): **~1.6 eV** (plain bpy; the dimethyl recompute B1 widens it ~+0.15 eV via the substituent) — the real mediator is **chloro** (Zafar), so the gap is **differential PCM solvation** (chloro↔bis-Im bracket, §E) + the **4,4'-dimethyl substituent** (+0.149 eV, adiabatic), with vertical geometry (~0.3 eV) and no ZPE/entropy (~0.1 eV) as minor terms.
 
 ### Summary: all methods compared (2026-05-27)
 
@@ -213,7 +213,7 @@ to the deprotonated product. This makes the FAD/FADH₂ PCET (FAD + 2H⁺ + 2e�
 
 **PCET cascade test (script 33, 2026-05-28) — does NOT flip the cascade downhill.** Reviewer hypothesis: the bare cation-radical IP (+5.391 eV) is "inflated" by FADH₂•⁺ instability, so the proton-coupled oxidation `FADH₂ → FADH• + H⁺ + e⁻` should drop the cost ~1-1.5 eV → cascade downhill. **Tested with geom-optimized FADH•/FADH₂ (B3LYP/6-31G(d) opt → ωB97X/def2-TZVP SP) + proton reference:** PCET oxidation cost = **+5.87 eV** — *higher*, not lower, than the bare IP (+0.48 eV). Cascade = **+1.627 eV (still uphill)** (dimethyl Os −4.243, drift-safe from B1; was +1.478 on plain Os −4.392). Why: the bare IP we use is **vertical** (frozen geometry) — it was never inflated by the cation-radical *geometric* instability (that only appears on relaxation, which fragments — see script 29). Deprotonation of FADH₂•⁺ is itself +0.48 eV uphill in PCM (cation radical not acidic enough there — another PCM artifact). **Conclusion:** PCET reframing does not resolve the gap; the ΔSCF–experiment discrepancy (vs the verified −0.574 eV) is **differential PCM solvation (chloro↔bis-Im) + the 4,4'-dimethyl substituent** (decomposed in ②, §E), not proton coupling. Cache: `dft/pcet_cascade.json` (Os-reduction re-loaded drift-safe for the dimethyl mediator on B1).
 
-**Residual gap** between the adiabatic ΔSCF (uphill; **+1.03 eV** dimethyl mediator, +0.88 plain bpy) and the verified driving force (−0.574 eV downhill) is **decomposed by ② (§E)**: **differential PCM solvation** bracketed [chloro +1/+2 (+0.21 eV / 3 Cl⁻-waters) ↔ bis-Im +2/+3 (+0.55 eV, PVI-realistic)] + the **4,4'-dimethyl substituent** (+0.146 eV), validated on the [Os(H₂O)₆] group-8 benchmark (+0.98 eV); plus minor ZPE/entropy and vertical Os geometry. Rigorous closure = explicit-water QM/MM of the **chloro** species (школа Мінаєва). **Authoritative cascade verdict = the verified E°s (+574 mV / −0.574 eV downhill); the DFT supplies in-silico mechanism with a quantified, decomposed method limit.**
+**Residual gap** between the adiabatic ΔSCF (uphill; **+1.03 eV** dimethyl mediator, +0.88 plain bpy) and the verified driving force (−0.574 eV downhill) is **decomposed by ② (§E)**: **differential PCM solvation** bracketed [chloro +1/+2 (+0.21 eV / 3 Cl⁻-waters) ↔ bis-Im +2/+3 (+0.55 eV, PVI-realistic)] + the **4,4'-dimethyl substituent** (+0.149 eV, = +1.03 − +0.88 adiabatic), validated on the [Os(H₂O)₆] group-8 benchmark (+0.98 eV); plus minor ZPE/entropy and vertical Os geometry. Rigorous closure = explicit-water QM/MM of the **chloro** species (школа Мінаєва). **Authoritative cascade verdict = the verified E°s (+574 mV / −0.574 eV downhill); the DFT supplies in-silico mechanism with a quantified, decomposed method limit.**
 
 **The verified cascade (+574 mV / −0.574 eV downhill, from E°(Os +309, Zafar 2012) − E°(FAD-GDH −265 mV SHE, Schachinger 2023) is the authoritative verdict.** Raw DFT is uphill in every method (Koopmans Δε −1.05 on the dimethyl mediator; ΔSCF ωB97X adiabatic +1.03 dimethyl / +0.88 plain); the underestimate is a differential-solvation + 4,4'-dimethyl-substituent model limitation, not a chemistry problem, and is **decomposed** by ② (§E). The earlier «−0.07 reproduces −0.14» claim was fortuitous error-cancellation tuned to a mis-valued (+60 mV) FAD and is **withdrawn**. For Q1 publication: explicit-solvation QM/MM of the **chloro** species (школа Мінаєва) closes the residual.
 
@@ -243,12 +243,12 @@ PCM failure (Ru(H₂O)₆ ~1 V error, JPCC 10.1021/jp406772u). Full numbers →
    ωB97X cross-check keeps aqua > bis-Im (≤0.15 eV); functional-robust is the chloro↔{aqua,bis-Im}
    bracket (both +2/+3 above chloro at both functionals). aqua (**+0.49 eV**) is a methodological
    benchmark, **not** the measured species.
-4. **Substituent axis** — the dimethyl chloro baseline is **+0.146 eV more uphill** than
-   plain bpy (① Hammett, donor 4,4'-Me) — a contribution the earlier ② did not separate.
+4. **Substituent axis** — the dimethyl chloro baseline sits **+0.142 eV more uphill** than
+   plain bpy (① Hammett, donor 4,4'-Me — Koopmans) — a contribution the earlier ② did not separate.
 
 **Conclusion:** the gap decomposes into **differential PCM solvation** bracketed between
 chloro (+1/+2, lower) and bis-Im (+2/+3, upper) **+ the 4,4'-dimethyl substituent**
-(+0.146) — all computed from first principles. The "exp = aqua" framing is **withdrawn**:
+(+0.142 Koopmans / +0.149 adiabatic) — all computed from first principles. The "exp = aqua" framing is **withdrawn**:
 the real mediator is chloro (Zafar +309 mV), so the rigorous closure is QM/MM of the
 **chloro** species (школа Мінаєва). A **quantified method limit, not a chemistry
 failure** — the methodological core of Стаття 1.

@@ -101,13 +101,13 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | Species | pH | RMSD (Å) | Verdict |
 |---------|-----|----------|---------|
 | Pinus sylvestris (summer) | 5.0 | 1.026 ± 0.244 (max 1.316) | ✅ STABLE |
-| Pinus sylvestris (winter) | 5.0 | 1.030 ± 0.260 (max 1.340) | ✅ STABLE |
+| Pinus sylvestris (winter) | 4.5 | 1.030 ± 0.260 (max 1.340) | ✅ STABLE |
 | Picea abies (spruce) | 4.2 | 1.090 ± 0.269 (max 1.420) | ✅ STABLE |
 | Quercus robur (oak) | 5.5 | 1.045 ± 0.288 (max 1.428) | ✅ STABLE |
-| Fagus sylvatica (beech) | 5.8 | 0.984 ± 0.244 (max 1.322) | ✅ STABLE |
-| Generic simplified | 5.0 | 1.052 ± 0.268 (max 1.426) | ✅ STABLE |
+| Fagus sylvatica (beech) | 6.0 | 0.984 ± 0.244 (max 1.322) | ✅ STABLE |
+| Generic simplified | 4.5 | 1.052 ± 0.268 (max 1.426) | ✅ STABLE |
 
-**Conclusion:** dgrGcGDH + Gen 2.0 matrix stable across all tested tree species (pH 4.2-5.8). Lowest RMSD at pH 5.8 (beech) — less acidic = gentler. Highest at pH 4.2 (spruce) — most acidic, still well within threshold. **Cross-species deployment validated.**
+**Conclusion:** dgrGcGDH + Gen 2.0 matrix stable across all tested tree species (pH 4.2-6.0). Lowest RMSD at pH 6.0 (beech) — less acidic = gentler. Highest at pH 4.2 (spruce) — most acidic, still well within threshold. **Cross-species deployment validated.**
 
 ### Parameterized Ligands
 
@@ -142,10 +142,10 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 |----------|-------|
 | ε_HOMO(FADH₂) | -5.137 eV |
 | ε_LUMO(Os(III)) dmbpy | -4.086 eV |
-| Raw Δε (dimethyl) | -1.054 eV (UPHILL; +0.146 more uphill than plain bpy via the 4,4'-substituent ①) |
+| Raw Δε (dimethyl) | -1.051 eV (UPHILL; +0.142 more uphill than plain bpy via the 4,4'-substituent ①) |
 | **Verified driving force** | **+574 mV / −0.574 eV (downhill)** |
 | ↳ E°(Os +309 vs NHE, Zafar 2012) − E°(FAD-GDH −265 mV SHE, Schachinger 2023) | verified E°s |
-| Gap raw-DFT ↔ verified | ② chloro-anchored bracket — differential PCM solvation [chloro +1/+2 lower ↔ bis-Im +2/+3 upper] + substituent +0.146 |
+| Gap raw-DFT ↔ verified | ② chloro-anchored bracket — differential PCM solvation [chloro +1/+2 lower ↔ bis-Im +2/+3 upper] + substituent +0.142 ① (Koopmans; +0.149 on the adiabatic ΔSCF) |
 
 **Conclusion:** Raw DFT verdict UPHILL is a **method limit** (differential PCM solvation, chloro↔bis-Im bracket + the 4,4'-dimethyl substituent), decomposed by ② (§"Cluster-Continuum Micro-Solvation"). The cascade is **experimentally downhill** (+574 mV, verified E°s — Os +309 vs NHE / FAD-GDH −265 mV SHE). The earlier «bias-corrected Δε ≈ −0.07 eV reproduces exp −0.14» was fortuitous cancellation tuned to a mis-valued (+60 mV) FAD potential — **withdrawn**; Cosnier 1999's +140 mV pertains to glucose-oxidase, not GcGDH.
 
@@ -217,8 +217,8 @@ robust result (absolute E° is electronic-E proxy, ±0.15 V).
 
 **(b) The real mediator IS chloro — explicit Cl⁻ solvation** of the verified
 cis-[Os(4,4'-dimethyl-bpy)₂(1-MeIm)Cl]⁺/²⁺ + k·H₂O on Cl⁻ (k=0 = the device baseline;
-its cascade Δ −1.054 is **+0.146 eV more uphill** than plain bpy — the 4,4'-dimethyl
-**substituent** axis ①, a contribution separate from solvation):
+its cascade Δ −1.054 = the k0 baseline; the 4,4'-dimethyl **substituent** axis ① adds
+**+0.142 eV** [Hammett: dmbpy −1.051 vs plain −0.909], a contribution separate from solvation):
 
 | k·H₂O(Cl⁻) | cascade Δ (eV) | gap closed vs k0 |
 |---|---|---|
@@ -250,7 +250,7 @@ carry the larger group-8 PCM bias (benchmark a).
 the raw-DFT↔exp gap is differential PCM solvation **bracketed** between the as-synthesised
 **chloro (+1/+2, lower — +0.21 eV/3 waters, trending to a sub-1-eV full shell)** and the
 operando **bis-Im (+2/+3, upper — +0.55 eV B3LYP / +0.27 ωB97X, PVI-realistic)**, plus the **4,4'-dimethyl
-substituent** (+0.146 eV, a separate axis ①). aqua is a methodological benchmark, **not**
+substituent** (+0.142 eV Koopmans ①, a separate axis). aqua is a methodological benchmark, **not**
 "what the experiment measures" — the earlier "exp = aqua" framing is **withdrawn** (Zafar's
 polymer is explicitly chloro). The gap is a **quantified method limit**, not a chemistry
 failure; rigorous closure = QM/MM of the **chloro** species (школа Мінаєва).
