@@ -15,12 +15,14 @@ on:
     paths:
       - 'tools/in_silico/**'
       - 'docs/protocols/ebfc/in_silico/**'
+      - 'docs/01_04_CODIT_and_Xylemointegration.md'  # thermal_penetration.json cache↔doc (test_doc_cache_sync)
       - '.github/workflows/in_silico_smoke.yml'
   push:
     branches: [ main ]
     paths:
       - 'tools/in_silico/**'
       - 'docs/protocols/ebfc/in_silico/**'
+      - 'docs/01_04_CODIT_and_Xylemointegration.md'  # thermal_penetration.json cache↔doc (test_doc_cache_sync)
 
 jobs:
   lock_sync:

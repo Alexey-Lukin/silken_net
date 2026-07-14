@@ -395,7 +395,7 @@ B2. Запакування у стерильний blister
        │
        ▼
 F1. Розпакування A4 + B2 у чистому ламінарі
-F2. Ламінація PTFE-GDL на Zone 3 катод (epoxy-free press-fit або pressure-sensitive adhesive)
+F2. Ламінація PTFE-GDL на Zone 3 катод (epoxy-free press-fit — механічний обтиск по периметру, **без клеїв** §5.3: контамінація)
 F3. Встановлення O-ring у Зону 3 байонет
 F4. Запакування фінального виробу у стерильний blister + N₂ purge
 F5. Інспекція візуальна + bubble-point test PTFE

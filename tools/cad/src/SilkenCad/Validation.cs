@@ -41,7 +41,7 @@ internal sealed record GeometryMetrics
     public int? BarbCount { get; init; }                    // ratchet teeth counted along R(z) — must == BarbRows
     public double? MaxBarbHeightMm { get; init; }           // peak ridge height h (§4.3 A: 0.25–0.40)
     public double? BarbBaseMm { get; init; }                // tooth base = h·(cot α + cot β) (§4.3 A: 0.40–0.60)
-    public double? GrooveDepthMm { get; init; }             // DIN-471 retaining groove depth (§4.3 B: 0.6)
+    public double? GrooveDepthMm { get; init; }             // DIN-471 retaining groove depth (§4.3 B: 0.25 для Ø11)
     public double? SelfSupportFaceDeg { get; init; }        // best-orientation downfacing barb angle from horizontal; ≥45° self-supports (Ti64 LPBF: 60° → Sa≈15µm)
 
     // Cathode flange measurements (Деталь 3, 01_01 §1, null for non-flange parts). See Validation.MeasureFlange.

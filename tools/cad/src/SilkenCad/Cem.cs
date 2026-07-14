@@ -153,10 +153,10 @@ internal sealed record MechanicalLockCem
     public float TrailAngleDeg { get; init; } = 70f;       // β trailing — steep ⇒ short ramp ⇒ hard pull-out
     public int BarbDirection { get; init; } = 1;           // +1 Zone-1 lean; −1 Zone-3 opposite (§4.3 figure)
 
-    // DIN-471 retaining-ring groove (§4.3 B) — ∅0.8 × 0.6 deep, near the outer (capsule-side) end.
+    // DIN-471 retaining-ring groove (§4.3 B) — 1.1 × 0.25 deep for the Ø11 shank, near the outer (capsule-side) end.
     public float GrooveOffsetMm { get; init; } = 15f;
-    public float GrooveWidthMm { get; init; } = 0.8f;
-    public float GrooveDepthMm { get; init; } = 0.6f;
+    public float GrooveWidthMm { get; init; } = 1.1f;   // DIN-471 для Ø11 shank (§4.3 B; «0.8×0.6» = off-spec, не штатне кільце)
+    public float GrooveDepthMm { get; init; } = 0.25f;
 }
 
 // Zone 3 cathode flange (Деталь 3, 01_01 §1 + 02_02 §1.2) — the capsule-side anchor end: a SOLID Ti

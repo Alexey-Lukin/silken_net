@@ -13,7 +13,7 @@ public class MechanicalLockTests
         ContactStartMm = 2f, ContactLengthMm = 12f,
         BarbRows = 4, BarbHeightMm = 0.28f, LeadAngleDeg = 30f, TrailAngleDeg = 70f,
         BarbDirection = iDir,
-        GrooveOffsetMm = 15f, GrooveWidthMm = 0.8f, GrooveDepthMm = 0.6f,
+        GrooveOffsetMm = 15f, GrooveWidthMm = 1.1f, GrooveDepthMm = 0.25f,
     };
 
     [Fact]

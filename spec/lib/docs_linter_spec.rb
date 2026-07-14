@@ -428,7 +428,7 @@ RSpec.describe DocsLinter do
     it "flags a superseded SF 9.9× near a thermal keyword" do
       hits = described_class.thermal_stress_drift("01_01", "Lamé worst-case SF 9.9× vs PEEK yield\n")
       expect(hits.size).to eq(1)
-      expect(hits.first).to include("SF = 3.4×")
+      expect(hits.first).to include("SF = 5.6×")
     end
 
     it "flags a superseded press-fit P_c value" do
@@ -436,9 +436,19 @@ RSpec.describe DocsLinter do
         "01_01", "контактний тиск P_c релаксує 34.7→22.6 MPa\n").size).to be >= 1
     end
 
-    it "passes the frozen values" do
+    it "flags the superseded SF 3.4× generation (2nd gen, pre unified-Lamé re-run)" do
       expect(described_class.thermal_stress_drift(
-        "01_01", "SF 3.4× (frozen Ø11/2мм); P_c 0.49-3.32 MPa press-fit\n")).to be_empty
+        "01_01", "Lamé combined SF 3.4× vs PEEK yield\n").size).to eq(1)
+    end
+
+    it "exempts a Correction-C line citing the old 3.4× artefact" do
+      expect(described_class.thermal_stress_drift(
+        "01_01", "Колишній «SF 3.4×» — артефакт завищеного (k²−1)-знаменника, виправлено\n")).to be_empty
+    end
+
+    it "passes the current frozen values (5.6× combined)" do
+      expect(described_class.thermal_stress_drift(
+        "01_01", "SF 5.6× (frozen Ø11/2мм); P_c 0.32-2.16 MPa press-fit\n")).to be_empty
     end
 
     it "ignores a bare number with no thermal context" do

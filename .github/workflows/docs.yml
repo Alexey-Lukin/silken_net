@@ -57,6 +57,8 @@ jobs:
               - 'scripts/protocols_ref_check.rb'
               - 'tools/firmware/queen_energy_budget.rb'
               - 'tools/firmware/scc_rate.rb'
+              - 'tools/cad/cem/**'
+              - 'scripts/cem_canon_sync.rb'
               - 'app/models/**'
               - 'app/services/**'
               - 'app/workers/**'
@@ -111,6 +113,13 @@ jobs:
         # виводить packets×GP з ОДНОГО delta_t → ловить несумісні-числа drift
         # (adversarial 2026-07-14: 24 пакети × 50 GP були фізично несумісні).
         run: ruby tools/firmware/scc_rate.rb --assert
+
+      - name: CEM↔canon geometry guard (HW.33 — shipped cem/*.json ↔ 01_01/01_02/01_04)
+        # Pure Ruby stdlib (json) — pins shipped cem geometry to its canon owner;
+        # catches what the C# xUnit (validates record-defaults, even locks off-spec
+        # 0.8×0.6) + prose-only anchor_dimension_drift both miss (bell_radius=5.0 had
+        # no assert anywhere). §01a vilize 2026-07-14.
+        run: ruby scripts/cem_canon_sync.rb
 
   docs-ok:
     # Single required status check for the SSOT gates on `main`. Always runs so a

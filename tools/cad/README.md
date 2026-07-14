@@ -133,7 +133,7 @@ macOS-with-display runner would re-arm render-verify as a hard gate.
 5-SKU per-species sweep + a porosity-gradient demo + a stepped demo (7 SKU total).
 
 **ARCH.25 connectivity (shipped)** — `Connectivity.cs` adds a two-phase topological audit
-(open-pore↔Archimedes · percolation↔EAAE flow-through · solid-island↔AM/electrical · specific-surface
+(open-pore↔Archimedes · percolation↔EAAE flow-through · solid-island↔AM/electrical · closed-pore↔trapped-powder · specific-surface
 ↔EBFC-area) as a fast display-less xUnit gate; `verify` adds open≥95% · solid-disc≤2% · percolate
 axial+radial. Two-phase resolution: **pore** OK at the coarse step, **solid** needs ~period/16 (a coarse
 grid fragments thin walls into false islands — skill `picogk` gotcha #8). Feeds `00_07` HW.33 sheet-vs-network.

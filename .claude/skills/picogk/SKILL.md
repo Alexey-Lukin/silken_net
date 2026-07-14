@@ -127,7 +127,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   leading-ramp-down, `01_02 §1.6`); DIN-471 groove = real shaft dims (not the off-spec canon 0.8×0.6).
 - **Connectivity / validation (ARCH.25)**: `Connectivity.cs` samples the CEM SDF → 3-phase grid →
   6-conn flood-fill → open-pore (Archimedes) / percolation (EAAE flow-through) / solid-island (AM +
-  electrical) / specific-surface. Pure-managed → fast display-less xUnit. Two-phase resolution split:
+  electrical) / closed-pore (trapped-powder) / specific-surface. Pure-managed → fast display-less xUnit. Two-phase resolution split:
   **pore** OK at the coarse step, **solid** needs ~period/16 (gotcha #8). The `verify` gate adds
   open≥95% · solid-disc≤2% · percolate axial+radial. Feeds HW.33 sheet-vs-network (topology-agnostic).
 - **Capsule-end assembly (`Assembly.cs`, SHIPPED)**: brings Деталь 3 ↔ Деталь 4 into one frame at the

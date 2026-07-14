@@ -71,6 +71,7 @@ def _to_float(s: str) -> float:
 
 SUMMARY = "docs/protocols/ebfc/in_silico/SUMMARY.md"
 L3 = "docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md"
+CODIT = "docs/01_04_CODIT_and_Xylemointegration.md"  # thermal-penetration cache (§3.5) — a non-SUMMARY doc-target
 
 # Each check: (label, doc-path, regex with ONE capture group = the doc number,
 #             cache-file, resolver(cache)->float, tolerance).
@@ -227,6 +228,19 @@ CHECKS = [
         SUMMARY, r"Generic simplified \| ([\d.]+) \|",
         "kinetics/xylem_sap_sweep.json",
         lambda d: named(xylem_rows(d), "species", "generic_simplified")["ph"], 0.05,
+    ),
+    # ── Thermal penetration (01_04 §3.5 thermal-install management) — NON-SUMMARY doc-target ──
+    # Orphan-cache guard: thermal_penetration.json was committed data-only (no generator) and
+    # was outside every existing guard's doc-set → §3.5's 22.7 min / α could silently drift.
+    (
+        "thermal tip→150°C time → thermal_penetration.json (01_04 §3.5)",
+        CODIT, r"150°C \(коагуляція смоли\) через ([\d.]+) хвилин",
+        "kinetics/thermal_penetration.json", lambda d: d["time_to_target_min"], 0.1,
+    ),
+    (
+        "thermal diffusivity Ti-6Al-4V → thermal_penetration.json (01_04 §3.5)",
+        CODIT, r"α=([\d.]+)×10⁻⁶ m²/s",
+        "kinetics/thermal_penetration.json", lambda d: d["thermal_diffusivity_m2s"] * 1e6, 0.01,
     ),
 ]
 

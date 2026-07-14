@@ -386,19 +386,21 @@ module DocsLinter
 
   # [SSOT anti-drift] Superseded HW.3.IS thermal-stress / press-fit numbers (One-Home = the report +
   # 01_01 §4.2). The Lamé press-fit numbers were on the stale baseline (Ø10 / 3 mm) AND carried a
-  # contact_pressure bug (b = R_INNER, not R_INTERFACE); frozen + fixed 2026-06-21 (σ_t SF 9.9×→3.4×;
-  # P_c 34.7→22.6 buggy → 0.49-3.32→0.32-2.16). A value pattern AND a thermal-context keyword on one
-  # line; a line marking the value historical (correction/baseline/buggy/застаріл) is exempt — the
+  # contact_pressure bug (b = R_INNER, not R_INTERFACE); frozen + fixed 2026-06-21, then the unified
+  # thick-wall Lamé re-run 2026-06-22 moved SF again (σ_t SF 9.9×→3.4×→5.6× combined; P_c 34.7→22.6
+  # buggy → 0.49-3.32→0.32-2.16). Both superseded SF generations (9.9× and 3.4×) are caught now. A
+  # value pattern AND a thermal-context keyword on one line; a line marking the value historical
+  # (correction/baseline/buggy/застаріл/колишній/старий/артефакт) is exempt — the
   # owner's Correction B quotes the old number legitimately. Mirrors anchor_dimension_drift; at the next
   # re-run that moves these numbers, supersede the patterns here too (like DEPRECATED_TERMS).
   THERMAL_STRESS_DRIFT = [
-    [ /(?<!\d)9\.9\s*[×x](?!\d)/, /\bSF\b|safety|Lam[ée]|PEEK|σ_?t|press[- ]?fit|thermal|термонапр/i,
-     "thermal-stress SF = 3.4× frozen (01_01 §4.2 / THERMAL_STRESS_REPORT)" ],
+    [ /(?<!\d)(?:9\.9|3\.4)\s*[×x](?!\d)/, /\bSF\b|safety|Lam[ée]|PEEK|σ_?t|press[- ]?fit|thermal|термонапр/i,
+     "thermal-stress SF = 5.6× combined / 14.6× thermal-only frozen (01_01 §4.2 / THERMAL_STRESS_REPORT)" ],
     [ /(?<!\d)(?:34\.7|22\.6)(?!\d)/, /P_c|press[- ]?fit|MPa|МПа|contact|relax|натяг/i,
      "press-fit P_c = 0.49-3.32→0.32-2.16 MPa frozen+bug-fixed (THERMAL_STRESS_REPORT)" ]
   ].freeze
 
-  THERMAL_STRESS_HISTORICAL = /correction|baseline|buggy|застаріл|було|\bold\b|superseded|баговий|раніше|historical/i
+  THERMAL_STRESS_HISTORICAL = /correction|baseline|buggy|застаріл|було|\bold\b|superseded|баговий|раніше|historical|колишній|старий|артефакт/i
 
   def thermal_stress_drift(_basename, text)
     in_fence = false

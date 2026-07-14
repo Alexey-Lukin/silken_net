@@ -26,7 +26,8 @@ internal static class Radome
         float fInnerR = fR - fWall;
 
         // 1. Outer dome — cylinder body + hemispherical cap (rounded shield bell): smooth, no callus-grip
-        //    edge. Cap rise = fR ≥ BellRiseMm, cap edge radius = fR ≥ BellRadiusMm (both gated in verify).
+        //    edge. Cap rise = fR ≥ BellRiseMm (gated in verify); cap edge radius = fR ≥ BellRadiusMm
+        //    (pinned ≥ canon §5.5 by scripts/cem_canon_sync.rb — no C# verify assert on the radius).
         Voxels voxDome = new BaseCylinder(new LocalFrame(Vector3.Zero), fCavH, fR).voxConstruct();
         voxDome.BoolAdd(new BaseSphere(new LocalFrame(new Vector3(0f, 0f, fCavH)), fR).voxConstruct());
 
