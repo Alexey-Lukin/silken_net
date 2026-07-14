@@ -78,13 +78,12 @@
 | Партнер | Профіль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
 | доц. **Ярмілко А.В.** | IIoT / embedded / lightweight crypto | SPI/DMA енергооптимізація ([`02_01`](02_01_Hardware_Architecture_and_BOM)); MAC/MIC + ECDH ([`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)); арифм. стиснення + fuzzy-dedup + dependability ([`03_01`](03_01_Firmware_Lifecycle_and_DMA), Open Research) | Ст. 4 |
-| **Порубльов І.М.** | дискретна математика, обчисл. геометрія | Аудит точності Lorenz (Euler/RK4, [`03_04 §7`](03_04_mruby_Lorenz_Attractor)); mesh percolation/Markov `q_c` ([`06_08`](06_08_Resilience_and_Failover_Policy)); валідація TPMS-геометрії ([`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) — машинну половину (двофазна connectivity/percolation) закрив self-owned **ARCH.25** (`tools/cad`, як Базіло-patten нижче); партнерська CFD/польова + percolation `q_c` 🟡 pending | Ст. 5/15 |
+| **Порубльов І.М.** | дискретна математика, обчисл. геометрія | Аудит точності Lorenz (Euler/RK4, [`03_04 §7`](03_04_mruby_Lorenz_Attractor)); mesh percolation/Markov `q_c` ([`06_08`](06_08_Resilience_and_Failover_Policy)); валідація TPMS-геометрії ([`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) — машинну половину (двофазна connectivity/percolation) закрив self-owned **ARCH.25** (`tools/cad`, як Базіло-patten нижче); партнерська CFD/польова + percolation `q_c` 🟡 pending | Ст. 15/21 |
 | доц. **Косенюк Г.В.** | військова радіотехніка, теорія кодування | RF impedance/Link Budget/ground-plane ([`02_01 §5`](02_01_Hardware_Architecture_and_BOM)); FEC + hash-захист потоків ([`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)) | Ст. 8/23 |
-| **Онищенко Б.О.** (декан ФОТІУС) | стохастична оптимізація, паралельні алгоритми | Stochastic B&B mesh-надійність ([`06_08`](06_08_Resilience_and_Failover_Policy)); мінорантні методи on-MCU ([`03_03`](03_03_TinyML_Acoustic_Inference)); Petri+Akash CFD ([`06_02`](06_02_Akash_Network_Integration)) | Ст. 5 |
-| доц. **Бушин І.М.** | CNN / computer vision / BSP | CNN-NDVI synthesis → Digital Twin ([`03_03 §10`](03_03_TinyML_Acoustic_Inference)); BSP IoT-кластеризація; фізика DMLS ([`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)) | Ст. 6/18 |
-| доц. **Супруненко О.О.** (зав. ПЗАС) | Petri nets, аналіз вимог | PN-верифікація Rails-моноліту + Convolution method (deadlock-free Sidekiq/Puma/PG) → [`04_02`](04_02_Business_Logic_and_Services), [`04_06`](04_06_Testing_Guide_and_Coverage) | Ст. 7 |
+| **Онищенко Б.О.** (декан ФОТІУС) | стохастична оптимізація, паралельні алгоритми | Stochastic B&B mesh-надійність ([`06_08`](06_08_Resilience_and_Failover_Policy)); мінорантні методи on-MCU ([`03_03`](03_03_TinyML_Acoustic_Inference)); паралельні CFD-симуляції на Akash ([`06_02`](06_02_Akash_Network_Integration)) | Ст. 21 |
+| доц. **Бушин І.М.** | CNN / computer vision / BSP | CNN-NDVI synthesis → Digital Twin ([`03_03 §10`](03_03_TinyML_Acoustic_Inference)); BSP IoT-кластеризація; фізика DMLS ([`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)) | Ст. 10/24a |
 | д.т.н. **Осауленко І.А.** | управління R&D-портфелем | Кластеризація R&D-портфеля ([`00_04`](00_04_Shape_Up_Operations_and_RnD_Clusters)); Потрійна спіраль Smart Forest; Data Mining Edge AI | Ст. 9 |
-| ст.викл. **Любченко К.М.** | нейромережі, GA, Master of Logic | GA-оптимізація backend ML (`InsightGeneratorService`, [`04_02`](04_02_Business_Logic_and_Services), Open Research); NSGA-II TinyML ([`03_03`](03_03_TinyML_Acoustic_Inference)); КНФ/ДНФ верифікація контрактів ([`05_02`](05_02_Proof_of_Growth_Pipeline)) | Ст. 10/17 |
+| ст.викл. **Любченко К.М.** | нейромережі, GA, Master of Logic | GA-оптимізація backend ML (`InsightGeneratorService`, [`04_02`](04_02_Business_Logic_and_Services), Open Research); NSGA-II TinyML ([`03_03`](03_03_TinyML_Acoustic_Inference)); КНФ/ДНФ верифікація контрактів ([`05_02`](05_02_Proof_of_Growth_Pipeline)) | Ст. 10 |
 
 > **План публікацій ЧНУ:** [`08_01 §1`](08_01_Joint_Publications_and_IP_Strategy) (Hard Science + ФОТІУС) · [`08_01 §1C`](08_01_Joint_Publications_and_IP_Strategy) (ФОТІУС × ЧДТУ синергія) · [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy) (ректорат ННІ — біоекономіка/синергетика).
 
@@ -143,7 +142,7 @@ B2G-міст до ДСНС + наукове обґрунтування пара�
 
 | Партнер | Роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| **Чудаєва І.Б.** | макроекономіка | Стрес-тест dual-token (інфляція, Dynamic Tax 2%, рівновага) → [`05_03`](05_03_Tokenomics_SCC_and_SFC) | Ст. 31 |
+| **Чудаєва І.Б.** (ректор СЄУ) | макроекономіка | Стрес-тест dual-token (інфляція, Dynamic Tax 2%, рівновага) → [`05_03`](05_03_Tokenomics_SCC_and_SFC) | Ст. 31 |
 | **Ус Г.О.** | unit-econ / ESG | ESG-облік, KlimaDAO retirement, loss ratio → [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`07_02`](07_02_Unit_Economics_and_BOM) | Ст. 31 |
 | **Аблязов Д.Е.** | право | RWA legal architecture (ERC-3643), KYC/AML templates → [`07_01`](07_01_Nature_as_a_Service_Contracts), [`05_06`](05_06_Governance_and_DAO) | Ст. 32 |
 | **Аблязова Н.Р.** | консорціум / гранти | Horizon Europe / NRFU стратегія консорціуму → [`07_03`](07_03_Grant_Applications_Tracker) | 08_01 §3 |

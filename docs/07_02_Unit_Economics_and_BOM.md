@@ -258,7 +258,7 @@
 
 Система генерує цінність через емісію токенів **SCC (Silken Carbon/Condition Coin)**, які підтверджують гомеостаз дерева (Proof of Growth) та поглинання CO₂ (→ [`05_03`](05_03_Tokenomics_SCC_and_SFC)).
 
-> **⚠️ ВИПРАВЛЕННЯ (аудит 2026-04-23):** Попередня версія документа помилково вказувала "1 SCC/дерево/добу". Правильна модель узгоджена з [`07_01 §3`](07_01_Nature_as_a_Service_Contracts) та [`05_03`](05_03_Tokenomics_SCC_and_SFC) Tokenomics: **10,000 growth_points = 1 SCC, середня генерація ~1 SCC/тиждень/дерево** (при 24 пакетах/добу × ~60 GP/пакет у гомеостазі).
+> **⚠️ SCC-rate модель (self-consistent, calibration-pending):** 10,000 growth_points = 1 SCC. Realistic — Variant C (`delta_t`≈1.77 год, рекомендований energy-positive [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)): ~13.6 пакети/добу × ~16 stored GP = ~217 GP/добу → **~8 SCC/дерево/рік**. Magnitude = f(EBFC recharge `delta_t`), placeholder до bench [E.63]; фізична стеля Δt=600s ≈ 326. Модель+гейт: `tools/firmware/scc_rate.rb`. Арбітр [`05_03`](05_03_Tokenomics_SCC_and_SFC) `MAX_SUPPLY=1B ≈ 20M дерево-років` ⇒ 50 (у діапазоні [8, 326]). ⚠️ 1 TX/год (Δt=3600s) = energy-NEGATIVE без мітигацій ([`02_03 §9.5`](02_03_BQ25570_MPPT_Nano_Power)) — НЕ baseline. Стара «~1 SCC/тиждень / 44–52 SCC/рік» брала несумісні packets×GP (24 і 50 з різних `delta_t`) — superseded.
 
 ### 7.1. Механізм накопичення growth_points та CO₂ еквівалент
 
@@ -266,23 +266,25 @@
 
 | Параметр | Значення |
 |---|---|
-| Packets / day (гомеостаз, 1 пакет/год) | **24** |
-| Wire GP / packet (при Z ≈ OPTIMAL_Z_TARGET = 29.0) | **~25** |
-| Stored GP / packet (×2 backend upscale) | **~50** |
-| Stored GP / день / дерево | **~1,200** |
-| Днів до 1 SCC (10,000 GP) | **~8 днів** |
-| **Цільова продуктивність** | **≈ 1 SCC / тиждень / дерево** |
+| Packets / day (Variant C, Δt≈1.77 год) | **~13.6** |
+| Wire GP / packet (Variant C `delta_t`, m≈0.13) | **~8** |
+| Stored GP / packet (×2 backend upscale) | **~16** |
+| Stored GP / день / дерево | **~217** |
+| Днів до 1 SCC (10,000 GP) | **~46 днів** |
+| **Realistic продуктивність (Variant C)** | **~8 SCC/дерево/рік** (calibration-pending [E.63]; стеля Δt=600s ≈ 326) |
 | **1 SCC = CO₂ еквівалент** | **0.5 кг CO₂** (2000 SCC = 1 tCO₂) |
-| 1 дерево / рік (52 SCC) | **~26 кг CO₂** |
-| Кластер 100 дерев / рік (≈5,200 SCC) | **~2.6 tCO₂** |
+| 1 дерево / рік (~8 SCC) | **~4 кг CO₂** |
+| Кластер 100 дерев / рік (~800 SCC) | **~0.4 tCO₂** |
 
 > **CO₂ еквівалент [BIZ.1]:** `2000 SCC = 1 тонна поглиненого CO₂`. **SSOT:** [`05_03`](05_03_Tokenomics_SCC_and_SFC) + [`07_01 §3`](07_01_Nature_as_a_Service_Contracts) (on-chain `ProtocolParameters.sol#sccPerTonneCo2()` + `SystemParameter(:scc_per_tonne_co2)`) — значення в таблиці вище **дзеркало SSOT**, при зміні правити там, не тут.
 
+> **SCC-rate модель (single-source):** `tools/firmware/scc_rate.rb` (`--assert` docs-гейт — виводить packets×GP з ОДНОГО `delta_t`, self-consistency + anti-over-mint стеля; magnitude calibration-pending [E.63]). Канон посилається сюди, не restate'ить.
+>
 > Детально про Lorenz attractor та формулу growth_points: [`03_04`](03_04_mruby_Lorenz_Attractor) та [`05_02`](05_02_Proof_of_Growth_Pipeline).
 
 ### 7.2. Розрахунок ROI
 
-**Baseline: 1 SCC/тиждень/дерево, ціна $0.30/SCC, baseline OPEX $12 (§6, без replacements):**
+**Baseline: 1 SCC/тиждень/дерево** ⚠️ (**optimistic** — realistic Variant C ~8 SCC/рік (§7.1) дає РАЗ на порядок гірший payback; economics жорстко gated на bench EBFC recharge `delta_t` — числа нижче тримати як стелю-сценарій до калібрування)**, ціна $0.30/SCC, baseline OPEX $12 (§6, без replacements):**
 
 - Кластер 100 дерев: 100 SCC/тиждень → **~433 SCC / місяць**
 - Дохід кластера: 433 × $0.30 = **~$130 / місяць**
@@ -300,6 +302,8 @@ Month 58:    +$39  (чиста ліквідність для DAO та власн
 ### 7.3. Sensitivity Analysis — ROI Waterfall (канонічний дім payback)
 
 > 🏠 **One-Home: payback-крива живе ТУТ.** Формула: **payback = CAPEX (§5.3) / (дохід − OPEX)**. Вхід: CAPEX **$6,805** (1K, ←§5.3); baseline OPEX **$12** (§6, без replacements); дохід = 433 SCC/міс × ціна. §7.2 / §8a.4 / §9 **дзеркалять** цю криву (правити тут).
+>
+> ⚠️ **Стеля-сценарій:** 433 SCC/міс бере **optimistic** ~52 SCC/дерево/рік; realistic Variant C = **~8 SCC/рік** (§7.1) → дохід ×~0.15, payback ×~6.5. Уся крива нижче = optimistic-стеля до bench-калібрування EBFC recharge `delta_t` [E.63]; НЕ committed-число.
 
 | Ціна SCC | Дохід / міс | Net (−$12 OPEX) | Payback (CAPEX $6,805, 1K) |
 |---|---|---|---|
@@ -406,16 +410,16 @@ PCBA + Збірка (Черкаси — SVS-ARTA)
 
 ### 8a.3. Queen LiFePO4 Battery Degradation
 
-Технічна довідка LiFePO4 12V 6Ah cell (BOM §4 рядок 4):
+Технічна довідка LiFePO4 12V **20Ah** cell (BOM §4 рядок 4; 6Ah відхилено — HW.39, dark-автономність):
 - **Cycle life:** ~2000 повних циклів до 80% capacity
-- **Daily depth-of-discharge** Queen у нормі: ~25-30% (eSIM idle + hourly flush)
-- **Циклів на рік:** ~365 (1 cycle/day equivalent при 25% DoD)
-- **Час до 80% capacity:** ~5.5 років (2000 циклів / 365 cycles/year ≈ 5.48 yr)
-- **Calendar aging:** додаткова втрата ~3% capacity/рік незалежно від циклів → ефективний lifetime до 80% при змішаному використанні: **~5 років**
+- **Daily depth-of-discharge** Queen у нормі: **~7–9%** (20Ah дає ~3.3× запас проти добового розряду; 6Ah-варіант мав би ~25–30%)
+- **Циклів на рік:** ~365 (1 cycle/day equivalent)
+- **Час до 80% capacity:** при DoD <10% LiFePO4 значно перевищує 2000 циклів → lifetime стає **calendar-limited**, не cycle-limited
+- **Calendar aging:** ~3% capacity/рік → ефективний lifetime до 80% при низькому DoD: **~8–10 років**
 
 **Імплікація для OPEX:**
-- Battery replacement раз на 5 років: $22 (LiFePO4) + 0.5 год інженерної праці ($25) = $47 / 60 міс = **$0.78/міс на кластер**
-- При жорстких умовах (-30°C зими, активний charging при низьких температурах без BMS температурного захисту — див. HW.16) lifetime скорочується до 3 років → $1.30/міс
+- Battery replacement раз на ~8–10 років: **~$45** (20Ah LiFePO4 cell) + 0.5 год інженерної праці ($25) = ~$70 / ~96–120 міс = **~$0.6–0.7/міс на кластер** (≈ wash проти 6Ah: дорожча заміна × довше життя; §8a.4 payback-зсув <1 міс)
+- При жорстких умовах (-30°C зими, активний charging при низьких температурах без BMS температурного захисту — див. HW.16) lifetime скорочується → **~$1.0/міс**
 - **Recommendation:** включити battery health check (`vbat_mv` через GatewayTelemetryWorker) у моніторинг, тригерити preventive replacement при capacity < 85%.
 
 ### 8a.4. Оновлена ROI модель (realistic life-cycle — OPEX дім)

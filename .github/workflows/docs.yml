@@ -56,6 +56,7 @@ jobs:
               - 'scripts/model_doc_sync.rb'
               - 'scripts/protocols_ref_check.rb'
               - 'tools/firmware/queen_energy_budget.rb'
+              - 'tools/firmware/scc_rate.rb'
               - 'app/models/**'
               - 'app/services/**'
               - 'app/workers/**'
@@ -104,6 +105,12 @@ jobs:
         # Pure Ruby, no Rails — параметрична модель = SSOT енерго-чисел 02_05 §4;
         # Phase 1/2.5 winter-balance ≥ margin, Phase 3 warn-only до Starlink bring-up.
         run: ruby tools/firmware/queen_energy_budget.rb --assert
+
+      - name: SCC-rate model guard (E.63)
+        # Pure Ruby — SCC-generation rate self-consistency + anti-over-mint стеля;
+        # виводить packets×GP з ОДНОГО delta_t → ловить несумісні-числа drift
+        # (adversarial 2026-07-14: 24 пакети × 50 GP були фізично несумісні).
+        run: ruby tools/firmware/scc_rate.rb --assert
 
   docs-ok:
     # Single required status check for the SSOT gates on `main`. Always runs so a

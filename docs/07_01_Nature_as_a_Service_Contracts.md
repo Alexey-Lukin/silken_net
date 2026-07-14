@@ -24,7 +24,7 @@
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth (мінтинг-тригер) |
 | [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка, BOM |
 | [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | MSA / KYC legal (Аблязов) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | BIZ.1/2/3/4/6/9/11/13/14, UNI.14 |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | §07 юр/бізнес-дім: BIZ.2/3/9/11/14/15/18/19/20/21 (BIZ.6/8/17 → [`07_02`](07_02_Unit_Economics_and_BOM); BIZ.13 → [`05_05`](05_05_Slashing_and_Risk_Policy); BIZ.10/12 → [`08_01`](08_01_Joint_Publications_and_IP_Strategy)) |
 
 ## 📑 Зміст
 
@@ -120,7 +120,7 @@ NaaS — це модель підписки, де клієнти (Організ
 | **Шкідники** (`insect_epidemic`) | `AiInsight.insight_type = :insect_epidemic` | `InsurancePayoutWorker` | `SilkenCarbonCoin.sol` або Etherisc DIP | `mint(to, payout)` або `triggerClaim()` | Параметрична виплата |
 | **Дострокове розірвання** (Early Exit Investor) | `ContractTerminationService.call(contract)` | Sync (API call) | `SilkenCarbonCoin.sol` | `slash(investor, burned_points)` (якщо `burn_accrued_points = true`; `contractual: true` — пропускає positive-A gate, бо це погоджена форфейтура, не slash-за-провину) | `NaasContract.status = :cancelled`, повернення з вирахуванням штрафу |
 | **Успішне завершення** (контракт закінчився) | `NaasContract.pending_completion` + аудит | `ClusterHealthCheckWorker` → `fulfill!` | — | — | `NaasContract.status = :fulfilled`, звіт в Filecoin |
-| **Смерть дерева** (біологічна) | `Tree.status = :deceased`, MaintenanceRecord | `EcosystemHealingWorker` → `PuroEarthPassportWorker` | Puro.earth (майбутня інтеграція) | D-MRV Biomass Passport | Biochar CORC генерація на Puro.earth |
+| **Смерть дерева** (біологічна) | `Tree.status = :deceased`, MaintenanceRecord | `EcosystemHealingWorker` → `PuroEarthPassportWorker` | Puro.earth (`PuroEarthPassportWorker` ✅ код; on-chain post-TRL 7) | D-MRV Biomass Passport | Biochar CORC генерація на Puro.earth |
 | **ESG Ретайрмент** | `KlimaRetirementWorker` | `KlimaRetirementWorker` → `KlimaDao::RetirementService` | KlimaDAO (Polygon) | `approve()` + `retire()` | SCC перено до `esg_retired_balance` (незворотно) |
 | **Щотижнева фіналізація** | Cron (понеділок 03:00 UTC) | `EthereumAnchorWorker` | Ethereum L1 | `anchorStateRoot(bytes32)` | State Root → Ethereum Mainnet |
 
@@ -133,7 +133,7 @@ NaaS — це модель підписки, де клієнти (Організ
 | Параметр | Значення | Джерело |
 |---|---|---|
 | **Конверсія: growth_points → SCC** | 10,000 growth_points = 1 SCC | [`05_03`](05_03_Tokenomics_SCC_and_SFC), `TokenomicsEvaluatorWorker` |
-| **Денне накопичення** | ~24 growth_points/дерево/добу (~1 LoRa пакет/год; живлення EBFC Gen 2.0 **>500 mV**, а не застаріле 44 mV) | [`05_03`](05_03_Tokenomics_SCC_and_SFC) |
+| **Денне накопичення** | **Calibration-pending** (`delta_t` recharge-каденція + GP-магнітуда = placeholder, чекають bench-кривої, [E.63](00_07_Action_Plan_Tracker)). Self-consistent realistic (Variant C, `delta_t`≈1.77 год [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)): ~13.6 пакети/добу × ~16 stored GP = **~217 growth_points/добу → ~8 SCC/дерево/рік**. Магнітуда = f(EBFC recharge): швидший `delta_t` → вище (фіз. стеля Δt=600s ≈ 325 SCC/рік; 1 TX/год = energy-negative без мітигацій). wire 5–31 × [FW.29] ×2 | [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`07_02 §7.1`](07_02_Unit_Economics_and_BOM), [`02_03 §9`](02_03_BQ25570_MPPT_Nano_Power) |
 | **Поріг емісії** | `Wallet.balance >= 10,000` | `TokenomicsEvaluatorWorker` |
 | **Страхова премія** | 5% від `total_funding` → DAO Treasury Pool | `NaasContract::INSURANCE_PREMIUM_RATE = BigDecimal("0.05")` |
 | **Частка форестера** | 95% від `total_funding` | `NaasContract#forester_share_amount` |
@@ -346,15 +346,15 @@ Polygon Hadron Identity Platform надає технічну верифікац�
 - Яка юрисдикція? (ЄС — AMLD5, США — BSA, міжнародні — FATF)
 - Скільки коштує ліцензія на надання таких послуг?
 
-**Дія:** Консультація з compliance-спеціалістом та вибір KYC-провайдера (Sumsub, Veriff, або Polygon Hadron). **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович) — юридична рамка KYC/AML для B2B клієнтів у контексті ERC-3643 та AMLD5/FATF регулювань; СЄУ (Ус Галина Олександрівна) — бухгалтерська класифікація KYC витрат та compliance-процесів у корпоративному обліку. Детально: [`08_02 §5`](08_02_Academic_Institutions_Registry).
+**Дія:** ⚖️ вибір KYC-провайдера (Sumsub / Veriff / Polygon Hadron) + юрисдикції (AMLD5/BSA/FATF) = рішення у [`00_07`](00_07_Action_Plan_Tracker) BIZ.20 (entity+KYC-counterparty) та BIZ.11 (Hadron KYC-flow) — не окремий item. Консультація compliance + **академічний шлях:** СЄУ (Аблязов Денис Едуардович) — юридична рамка KYC/AML для B2B клієнтів у контексті ERC-3643 та AMLD5/FATF регулювань; СЄУ (Ус Галина Олександрівна) — бухгалтерська класифікація KYC витрат та compliance-процесів у корпоративному обліку. Детально: [`08_02 §5`](08_02_Academic_Institutions_Registry).
 
 ---
 
 ### Відсутній B2B Fiat-to-Retirement шлях (SPV-міст) [нот.19]
 
-**Статус:** Не специфіковано. Блокує масовий B2B-онбординг (`00_07 BIZ.15`).
+**Статус:** Не специфіковано. Блокує масовий B2B-онбординг (BIZ.15).
 
-Корпорації з ESG-зобов'язаннями **не триматимуть крипту** на балансі й не керуватимуть Polygon-гаманцями/ключами заради ретайрменту. Поточний шлях ([`05_03`](05_03_Tokenomics_SCC_and_SFC) `KlimaRetirementWorker` → on-chain `retire()`) припускає, що клієнт уже володіє SCC on-chain. Бракує **Fiat-to-Retirement SPV** — інструмента, де корпорація платить фіат, а юр-особа-оператор (SPV) купує+ретайрить SCC від її імені й видає сертифікат офсету (CBAM/ISO 14064-сумісний):
+Корпорації з ESG-зобов'язаннями **не триматимуть крипту** на балансі й не керуватимуть Polygon-гаманцями/ключами заради ретайрменту. Поточний шлях ([`05_03`](05_03_Tokenomics_SCC_and_SFC) `KlimaRetirementWorker` → on-chain `retire()`) припускає, що клієнт уже володіє SCC on-chain. Бракує **Fiat-to-Retirement SPV** — інструмента, де корпорація платить фіат, а юр-особа-оператор (SPV) купує+ретайрить SCC від її імені й видає сертифікат офсету (ISO 14064-сумісний; ⚠️ **CBAM-сумісність — неперевірена преміса** [BIZ.19]: CBAM Reg. (EU) 2023/956 Art.9 знижує обов'язок імпортера лише ETS-ціною виробника, НЕ купівлею voluntary-credits — до юр-звірки формулювати як voluntary Scope 1-3, не CBAM-compliance):
 
 - Юрисдикція SPV + ліцензія на роботу з вуглецевими активами; хто кастодіан крипти.
 - Bridge фіат → купівля SCC → `esg_retired_balance` (незворотно) → сертифікат.
@@ -411,11 +411,31 @@ SilkenForestCoin має `ERC20Votes` (checkpoint-based voting power), але:
 
 **Поточний стан коду** (`contracts/SilkenForestCoin.sol`):
 ```solidity
-bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE"); // рядок 37
-function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE) nonReentrant { ... } // рядок 148
+bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
+function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE) nonReentrant { ... }
 ```
 
 **Дія:** Vote Escrow — опціональне покращення для повного DAO governance launch.
+
+---
+
+### Відсутня Customer-Facing Availability-SLA (BIZ.18)
+
+**Статус:** Internal SLO є ([`06_08 §2.4`](06_08_Resilience_and_Failover_Policy) mint≥80%/intake≥95%, [`06_06 §3`](06_06_Disaster_Recovery_and_Backup) RTO/RPO), зовнішній customer-facing SLA — ні.
+
+Специфікація артефакту: визначений uptime-% + service-credits + incident-comms + публічний status-page, на який B2B-покупець кредитів (Азот/agri) послатиметься в MSA (SLA = типовий exhibit BIZ.2). NB: ≠ `§2` «Таблиця SLA» (legal-event→tx, інше значення).
+
+**Дія:** availability-target з перших live-SLO-вікон → SLA-exhibit. Статус трекається BIZ.18.
+
+---
+
+### Відсутнє Company-Level E&O / Liability-Страхування (BIZ.21)
+
+**Статус:** INS.1 (параметричне) + DAO Treasury Pool страхують КЛІЄНТА від деградації лісу; professional-liability самого SilkenNet/founder — відсутня.
+
+Специфікація артефакту: E&O/general-liability coverage (D-MRV-accuracy dispute · anchor-install injury третьої особи · carbon-credit-claim dispute); Certificate of Insurance = signing-exhibit B2B-MSA-due-diligence. Юрисдикція залежить від BIZ.20-entity.
+
+**Дія:** coverage-spec → брокер+поліс (post-BIZ.20). Гейт BIZ.2 signing. Статус трекається BIZ.21.
 
 ---
 
