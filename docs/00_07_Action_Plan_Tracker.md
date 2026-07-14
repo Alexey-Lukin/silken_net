@@ -166,7 +166,7 @@
 > 🧭 **Анкерний кущ — synergy map (dependency-DAG).** Анкер — система зшитих залежностями деталей; закриваємо **пакетами**, не поштучно. Обидві machine-осі зведені, критичний шлях перейшов на фізику:
 >
 > **✅ Machine-фундамент ЗАКРИТО** (CAD + in-silico, self-owned):
-> - **Дим-фриз** — геометрія frozen (вал Ø11 · PEEK стінка 2 мм · рана Ø15 · Zone 2 50 мм · фланець Ø25 · Z-stack spacer+bayonet · O-ring 15–30 %), data-grounded Lamé+CODIT+3-spring, анти-дрейф guard `00_06 §3` (HW.33 · HW.8 · HW.26).
+> - **Дим-фриз** — геометрія frozen (вал Ø11 · PEEK стінка 2 мм · рана Ø15 · Zone 2 50 мм · фланець Ø25 · Z-stack spacer+bayonet · O-ring 15–30 %), data-grounded Lamé+CODIT+3-spring, анти-дрейф guard `00_06 §3` (HW.33 anchor-dims + **cem↔canon geometry** `cem_canon_sync` · HW.8 · HW.26).
 > - **PicoGK CAD-родина** (`tools/cad` — **лінчпін**, живить кожну стадію): 6/6 генераторів (coin → anode-v2 → barbs → Деталь 3 → Деталь 4 → Zone-2 втулка) + 2 інтеграційні assembly (capsule-end · осьовий стек) + drawing-program (HW.1).
 > - **In-silico прокси фіз-тестів:** двофазна connectivity ↔ Архімед/µCT/AM-island (ARCH.25) · thermal-stress + press-fit Lamé ↔ aging (HW.3.IS) · Z-stack RSS ↔ tolerance QA (HW.8.7).
 >
