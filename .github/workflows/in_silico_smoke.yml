@@ -118,7 +118,7 @@ jobs:
           egress-policy: audit
       - name: Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-      - name: Install pytest
-        run: python3 -m pip install --user pytest
+      - name: Install pytest (hash-pinned)
+        run: python3 -m pip install --user --require-hashes -r tools/in_silico/requirements-pytest.txt
       - name: Doc↔cache numeric-drift guard
         run: python3 -m pytest tools/in_silico/tests/test_doc_cache_sync.py -q
