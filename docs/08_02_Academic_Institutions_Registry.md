@@ -83,7 +83,7 @@
 | **Онищенко Б.О.** (декан ФОТІУС) | стохастична оптимізація, паралельні алгоритми | Stochastic B&B mesh-надійність ([`06_08`](06_08_Resilience_and_Failover_Policy)); мінорантні методи on-MCU ([`03_03`](03_03_TinyML_Acoustic_Inference)); паралельні CFD-симуляції на Akash ([`06_02`](06_02_Akash_Network_Integration)) | Ст. 21 |
 | доц. **Бушин І.М.** | CNN / computer vision / BSP | CNN-NDVI synthesis → Digital Twin ([`03_03 §10`](03_03_TinyML_Acoustic_Inference)); BSP IoT-кластеризація; фізика DMLS ([`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)) | Ст. 10/24a |
 | д.т.н. **Осауленко І.А.** | управління R&D-портфелем | Кластеризація R&D-портфеля ([`00_04`](00_04_Shape_Up_Operations_and_RnD_Clusters)); Потрійна спіраль Smart Forest; Data Mining Edge AI | Ст. 9 |
-| ст.викл. **Любченко К.М.** | нейромережі, GA, Master of Logic | GA-оптимізація backend ML (`InsightGeneratorService`, [`04_02`](04_02_Business_Logic_and_Services), Open Research); NSGA-II TinyML ([`03_03`](03_03_TinyML_Acoustic_Inference)); КНФ/ДНФ верифікація контрактів ([`05_02`](05_02_Proof_of_Growth_Pipeline)) | Ст. 10 |
+| ст.викл. **Любченко К.М.** | нейромережі, GA, Master of Logic | GA-оптимізація backend ML (`InsightGeneratorService`, [`04_02`](04_02_Business_Logic_and_Services), Open Research); NSGA-II TinyML ([`03_03`](03_03_TinyML_Acoustic_Inference)); КНФ/ДНФ верифікація контрактів ([`05_02`](05_02_Proof_of_Growth_Pipeline)) | Ст. 10/24a |
 
 > **План публікацій ЧНУ:** [`08_01 §1`](08_01_Joint_Publications_and_IP_Strategy) (Hard Science + ФОТІУС) · [`08_01 §1C`](08_01_Joint_Publications_and_IP_Strategy) (ФОТІУС × ЧДТУ синергія) · [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy) (ректорат ННІ — біоекономіка/синергетика).
 
@@ -95,7 +95,7 @@
 
 | Партнер | Кафедра / роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Time-series, ML, anomaly-інваріанти (без raw Z), Lyapunov/RQA, utility-функції, Kalman → [`04_02`](04_02_Business_Logic_and_Services), [`03_04`](03_04_mruby_Lorenz_Attractor) | Ст. 11–14 |
+| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Time-series, ML, anomaly-інваріанти (без raw Z), Lyapunov/RQA, utility-функції, Kalman → [`04_02`](04_02_Business_Logic_and_Services), [`03_04`](03_04_mruby_Lorenz_Attractor) | Ст. 11–13, 15 |
 | декан **Гончаров А.** | ФЕТР, радіотехніка | Експериментальна RF-верифікація (VNA S11, EMC pre-scan, натурний Link Budget) розрахунків Косенюка → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM) | Ст. 23 |
 | проф. **Базіло К.В.** + проф. **Бондаренко М.О.** | ПМКТ, акустична мехатроніка | Валідація фононної лінзи гіроїда (EIS + AE) + **калібрувальний TinyML-датасет** (польова валідність 5-class моделі; машинну половину `FW.4`/Run_Inference закрив self-owned ESC-50 baseline — [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference)) | Ст. 24 |
 | доц. **Хоменко Ю.В.** | металорізальні верстати (80+ патентів) | DMLS post-processing, геометрія різання анкера, deinstall-інструмент, prior-art landscape → [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | IP→08_01 |
@@ -111,10 +111,10 @@ B2G-міст до ДСНС + наукове обґрунтування пара�
 | Партнер | Роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
 | **Биченко А.** | диспетчеризація | Інтеграція EWS ↔ протоколи реагування ДСНС → [`04_02`](04_02_Business_Logic_and_Services) (`EwsAlert`/`AlertDispatch`) | Ст. 26 |
-| **Ротар В.** | SOP | Стандартні операційні процедури лісників (field ops) → [`08_03`](08_03_External_Stakeholders_Registry) (forester) | — |
+| **Ротар В.** | SOP | Стандартні операційні процедури лісників (field ops) → [`08_03`](08_03_External_Stakeholders_Registry) (forester) | Ст. 26 |
 | **Куліца О.** | моделювання пожеж | Предиктивне поширення вогню (динам. пороги) → [`03_03`](03_03_TinyML_Acoustic_Inference), dClimate FRP | Ст. 27 |
 | **Зобенко Н.** | актуарій | Актуарне обґрунтування blockchain-оракулів параметр. страхування → [`07_01 §7`](07_01_Nature_as_a_Service_Contracts), [`05_05`](05_05_Slashing_and_Risk_Policy) | Ст. 25 |
-| **Несен І.** | інжиніринг | Нетравматична заміна/деінсталяція капсули (динамометр) → [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface), [`01_04`](01_04_CODIT_and_Xylemointegration) | — |
+| **Несен І.** | інжиніринг | Нетравматична заміна/деінсталяція капсули (динамометр) → [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 26 |
 
 > **План публікацій ЧІПБ:** [`08_01 §1D`](08_01_Joint_Publications_and_IP_Strategy) (параметричне страхування, ДСНС SOP, fire model).
 
@@ -127,7 +127,7 @@ B2G-міст до ДСНС + наукове обґрунтування пара�
 | Партнер | Роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
 | **Губенко І.** (ректор) | біосумісність | Макро-біосумісність + ксилемоінтеграція ↔ CODIT-каскад → [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 30 |
-| **Боєчко В.** | фізіологія стресу | Біомаркери стресу дерева ↔ Lorenz/`stress_index` → [`03_04`](03_04_mruby_Lorenz_Attractor), [`04_02`](04_02_Business_Logic_and_Services) | Ст. 28 |
+| **Боєчко В.** | фізіологія стресу | Біомаркери стресу дерева ↔ Lorenz/`stress_index` → [`03_04`](03_04_mruby_Lorenz_Attractor), [`04_02`](04_02_Business_Logic_and_Services) | Ст. 30 |
 | **Бушуєва І.** | фармацевтичні дисципліни | EBFC ензимна іммобілізація (валідація стеку Gen 2.0) → [`01_03 §2`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | Ст. 28 |
 | **Суховой Г.** | токсикологія | Токсикологія Ti-6Al-4V (V/Al release у ксилему) → [`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 29 |
 | **Глущенко О.** | покриття | Self-healing 8-HQ мікрокапсули — **already-canon** → [`01_02 §3`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ст. 29 |
@@ -146,7 +146,7 @@ B2G-міст до ДСНС + наукове обґрунтування пара�
 | **Ус Г.О.** | unit-econ / ESG | ESG-облік, KlimaDAO retirement, loss ratio → [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`07_02`](07_02_Unit_Economics_and_BOM) | Ст. 31 |
 | **Аблязов Д.Е.** | право | RWA legal architecture (ERC-3643), KYC/AML templates → [`07_01`](07_01_Nature_as_a_Service_Contracts), [`05_06`](05_06_Governance_and_DAO) | Ст. 32 |
 | **Аблязова Н.Р.** | консорціум / гранти | Horizon Europe / NRFU стратегія консорціуму → [`07_03`](07_03_Grant_Applications_Tracker) | 08_01 §3 |
-| **Гедз М.Й.** | аудит D-MRV | Методологічний аудит pipeline (IoTeX→Chainlink→mint, DCI) → [`05_02`](05_02_Proof_of_Growth_Pipeline) | — |
+| **Гедз М.Й.** | аудит D-MRV | Методологічний аудит pipeline (IoTeX→Chainlink→mint, DCI) → [`05_02`](05_02_Proof_of_Growth_Pipeline) | Ст. 32/35 |
 | **Денисенко Ю.М.** | промисловий дизайн | Біомімікрічний антивандальний PEEK-радом капсули → [`02_01`](02_01_Hardware_Architecture_and_BOM), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | Ст. 33 |
 | **Теліженко О.В.** | UX | B2B data-viz / audience-aware UI → [`04_04`](04_04_Phlex_UI_and_Tailwind) | 08_03 |
 

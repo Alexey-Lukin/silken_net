@@ -497,7 +497,7 @@ _«Дослідження акустичних властивостей пори
 | Автор | Внесок |
 |-------|--------|
 | **Биченко А.** (ЧІПБ) | Протокол конверсії EwsAlert → ДСНС dispatch, інтеграція з «Пульт-112», drone reconnaissance |
-| **Ротар В.** (ЧІПБ) | 7 SOP-документів per alert_type, протоколи для форестерів та патрулів |
+| **Ротар В.** (ЧІПБ) | 8 SOP-документів per alert_type (drought/epidemic/vandalism/fire/seismic/fault/entropy/field_audit — [`00_07` UNI.12/ARCH.31](00_07_Action_Plan_Tracker)), протоколи для форестерів та патрулів |
 | **Несен І.** (ЧІПБ) | Протокол екстракції анкера, інструмент деінсталяції, post-extraction SOP |
 | Архітектор (Silken Net) | EmergencyResponseService, EwsAlert, ActuatorCommand, PANIC_TTL firmware |
 
