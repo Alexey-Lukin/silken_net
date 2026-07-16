@@ -772,9 +772,9 @@
 - [ ] 🤖 cadence state-machine + challenge-sampling responder (після 👤-policy + ARCH.22 + E.63)
 
 #### E.50 — Edge fuzzy_distance dedup на STM32WLE5JC [кластер:tx-cadence:важіль]
-- **P3** · 👤 · 🌿 · → `03_01`
+- **P3** · ⚖️ · ⚫ · → `03_01`
 - **Стан:** vacuous-standalone (vilize 07-11): `fuzzy_distance` = 0 hits; 3 dedup-осі в коді (Queen cmd djb2, CIFO eviction, Soldier beacon) — жодна не E.50; Soldier telemetry-TX-gate = 0. E.50 = вироджений спецвипадок TX-cadence (novelty-suppression) → **candidate-важіль ARCH.8** (дім TX-cadence). Ядро = 👤-policy (чи дозволено гасити TX, коли delta_t = PoG-сигнал E.63 + DCI-cross-verify), не 🤖-shell. ~30-40% = та сама suppression, що ARCH.23. Cross-ref ARCH.8/ARCH.23. Канон `03_01`.
-- [ ] 🔗 policy-важіль — розглянути під ARCH.8 cadence-рішенням (тут делеговано, не окрема робота)
+- [ ] 🌿 переоцінити під ARCH.8 silence-контрактом — novelty-suppression не додає гейта поверх time-weighted m(delta_t) (важіль порожній standalone; присуд живе в ARCH.8-домі)
 
 #### ARCH.18 — Детерміністична Fixed-Point Lorenz (Integer Math)
 - **P3** · 🤖 · 🌿 · → `03_04`
@@ -782,9 +782,9 @@
 - [ ] 🌿 integer-math Lorenz rewrite (deferred → zkVM-Lorenz milestone; НЕ drift — нульовий за FW.55/FW.31)
 
 #### ARCH.23 — Multi-Attribute Utility Function TX (MCU) [кластер:tx-cadence:важіль]
-- **P3** · 👤 · 🌿 · → `03_01`
+- **P3** · ⚖️ · ⚫ · → `03_01`
 - **Стан:** vacuous-standalone (vilize 07-11): `utility_function` = 0 hits; per-axis TX-гейти ВЖЕ в коді (cold-defer `Should_Defer_TX`, fauna `Fauna_Should_Sample`, panic-TX `Trigger_Emergency_LoRa_TX`, grace-hello) → weighted-score не додає гейта, лише пере-параметризує. 2/4 осей мертвий сигнал pre-deploy (Vcap=VDDA-proxy, delta_t невалід E.63). Конфлікт з PoG (suppress low-utility = гасить валідний GP-beat). Ядро = 👤-policy (value-of-information), не 🤖-дедлайв. → **candidate-важіль ARCH.8** (дім TX-cadence); ~30-40% та сама suppression, що E.50. Cross-ref ARCH.8/E.50/E.12. Канон `03_01`.
-- [ ] 🔗 policy-важіль — розглянути під ARCH.8 cadence-рішенням (тут делеговано, не окрема робота)
+- [ ] 🌿 переоцінити під ARCH.8 silence-контрактом — importance-зважування (MAUT) не додає гейта поверх time-weighted m(delta_t) (важіль порожній standalone; присуд живе в ARCH.8-домі)
 
 #### E.31 — TinyML OTA: .tflite формат
 - **P3** · 🤖+👤 · 🌿 · → `03_03`
