@@ -634,6 +634,12 @@
 - [ ] 🤖 flip FW.26 на повний `.elf` після HAL
 - [ ] 🤖 (optional, far-future) toolchain pin via ARM-tarball ([`00_08`](00_08_Beyond_TRL9_Planetary_Roadmap))
 
+#### FW.61 — Baseline radio modulation не конфігурується (SetRxConfig ніде, SetTxConfig лише panic)
+- **P2** · 🤖+👤 · 🔗 · → `03_01`
+- **Стан:** Канон специфікує raw-LoRa default SF9/BW125/CR4/5 ([`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) + [`02_03 §9.8`](02_03_BQ25570_MPPT_Nano_Power) Сценарій C), і на цих числах стоїть уся airtime-математика бюджету. Але код їх НЕ ставить: `Radio.Init`+`SetChannel`+`SetModem`+`Rx` без жодного `SetRxConfig`; `SetTxConfig` викликається ЛИШЕ в panic-шляху (`soldier/main.c` `LORA_PANIC_*`). Драйвер (`radio.c` `RadioInit`) modulation не дефолтить — лише таймери/IRQ. Baseline телеметрія летить на невизначеній модуляції, а після першого panic-TX — на panic-параметрах (клас ECB-restore: сконфігурував під одне, не повернув). Specification-without-implementation — це ПАРАМЕТРИ, не символи, тож `stan_audit` структурно сліпий. Gated FW.46 board-freeze (`radio.c` не компілюється до `radio_conf.h`/.ioc) — виявиться на першому radio-bench. ⚠️ Підриває E.15 «CR-knob = одна константа `SetTxConfig`»: виклику для baseline нема. Канон `03_01`.
+- [ ] 🤖 baseline `SetTxConfig`/`SetRxConfig` (SF9/BW125/CR4/5, Soldier+Queen) + restore після panic — при FW.46 board-freeze
+- [ ] 👤 radio-bench: підтвердити реальну модуляцію на кремнії проти канон-params (RUNBOOK)
+
 #### FW.3 — Queen AT Command Blocking
 - **P1** · 👤 · 🟢 · → `03_02 §4`
 - **Стан:** Queen AT-blocking закрито архітектурно (host) — RX-кільце circular-DMA (`uart_rx_ring.h`: абс. лічильники, монотонний clamp, overrun-детект → запізнілі URC/`+CCOAPNMI` більше не гинуть в ORE) + early-exit AT-токенайзер (`at_engine.h`) + host-built CoAP PDU (`coap_pdu.h`) + оркестратор (`sim7070_coap.h`); канон [`03_02 §4`](03_02_Queen_Gateway_Firmware) (incl. FW.56-знахідка «модем = UDP-труба, не CoAP-стек»). **FW.3 — чисто bench.**
@@ -766,10 +772,11 @@
 - [ ] 🤖+👤 wire-rev3 addressing-дизайн (cleartext TTL/DID + opaque relay + DID-таргетований downlink)
 
 #### ARCH.8 — Event-Triggered Reporting (тиша = здоров'я) [кластер:tx-cadence:дім]
-- **P3** · 🤖+⚖️ · 🌿 · → `03_01`
-- **Стан:** **Дім TX-cadence кластера (vilize 07-11)** — legitimate far-horizon (≠vacuous, на відміну від важелів): baseline TX іде щопробудження (ФАЗА-4 TX, heartbeat-1/добу НЕ існує), panic-TX additive, не cadence-гейт. Два code-grounded блокери: DCI-precond (per-packet `device_z` anti-fraud) + PoG-конфлікт (`metabolic_health`→GP мінтить щопакет → heartbeat = економічне голодування дерева, поки GP-accrual не time-weighted). ⊃ candidate-важелі: **ARCH.23** (importance), **E.50** (redundancy), **E.12** (boolean, adj) — **cross-ref, НЕ item-merge** (founder 07-11: тримати окремими, ARCH.8=дім). Ядро cadence-policy = 👤-рішення (silence-семантика + PoG-reconciliation + anti-fraud sampling-rate). Double-gated ARCH.22-challenge + E.63. Канон `03_01`.
-- [ ] ⚖️ cadence-policy tradeoff-рішення (silence-семантика + PoG-accrual reconciliation + anti-fraud sampling)
-- [ ] 🤖 cadence state-machine + challenge-sampling responder (після 👤-policy + ARCH.22 + E.63)
+- **P3** · 🤖+⚖️ · 🔗 · → `03_01`
+- **Стан:** Дім TX-cadence кластера, **розчеплено на 4 ноги (2026-07-16)** — старе зчеплення ховало, що справжній гейт не cadence-оптимізація, а БЕЗПЕКА. Енергомотив СИЛЬНИЙ, не vacuous: TX ≈ 38% повного / 65% активного бюджету ([`02_03 §9.7`](02_03_BQ25570_MPPT_Nano_Power) Сценарій C), найбільший гейтований сток — пригнічення TX-циклу = різниця break-even↔плюс. Але присуд bench-blocked двічі: період WUT у коді не заданий (FW.49 заглушка), масштаб `delta_t` невизначений ×35-190 (E.63) — при ~хвилинному перезаряді cadence-гейт **екзистенційний**, при 1.77 год оптимізація. **(1) зимове виживання** — залізо (PFET cut-off + TX при VSTOR≥5.0V), дім [`02_03 §9.8`](02_03_BQ25570_MPPT_Nano_Power) + HW.14, НЕ software-cadence. **(2) адаптивний інтервал** — вже ЗАТВЕРДЖЕНО ([`02_03 §9.8`](02_03_BQ25570_MPPT_Nano_Power) п.4: mruby подовжує зимовий інтервал), не відкрите. **(3) DCI-precond** — ФАЛЬШИВИЙ блокер: категоричний `check_z_divergence!` cadence-agnostic (per-received-packet на 1/добу так само); challenge-sampling вирішує ARCH.22 λ-fidelity, НЕ ARCH.8 rare-Z (категорійна помилка старого зчеплення). **(4) справжній гейт** — silence-семантика (SILENCE-1: мовчазне здоров'я ↔ вкрадений/мертвий вузол сьогодні byte-ідентичні, розрізнювача per-Soldier нема) + time-weighted GP-accrual (backend-ready, чекає присуд про кредит НЕспостережуваної тиші). ⊃ candidate-важелі ARCH.23/E.50 (не додають гейта поверх `m(delta_t)`). Канон `03_01`.
+- [ ] 🔗 передумова безпеки: SILENCE-1 (signed daily heartbeat + per-Soldier staleness sweeper) — доки нема, event-triggered = осліплення money-path (мертве дерево = здорове)
+- [ ] ⚖️ time-weighted GP silence-семантика: чи кредитувати інтеграл метаболізму по НЕспостережуваній тиші (анти-фрод = server `created_at`, не device-час) — backend-ready, [`05_02`](05_02_Proof_of_Growth_Pipeline)
+- [ ] 🤖 cadence state-machine — після SILENCE-1 + bench (FW.49 WUT-період + E.63 delta_t-масштаб)
 
 #### E.50 — Edge fuzzy_distance dedup на STM32WLE5JC [кластер:tx-cadence:важіль]
 - **P3** · ⚖️ · ⚫ · → `03_01`
@@ -1295,6 +1302,13 @@
 - **P1** · 👤 · 🟡 · → [`06_07`](06_07_CICD_and_Runbook_Index)
 - **Стан:** Корпоративний SentinelOne на dev-Mac рецидивно false-positive-карантинить entry-points тулчейну (6 епізодів станом на 2026-07-10; того дня двічі поспіль — обидва рази вбито живі Claude-сесії mid-task): RVM-шими · repo-binstubs (`bin/rspec`/`bin/rubocop`) · brew · conda · npm-cli · навіть сам recovery-скрипт `rvm-heal`. Ліби/гемсети цілі — їсть лише лаунчери. Симптоматичне відновлення повне й швидке (≈5 хв; рецепти + backup = memory-дім `project_sentinelone_quarantine`), але durable fix існує ЛИШЕ на корпоративному боці — кожен епізод коштує вбиту сесію + відновлення + crash-recovery реконструкцію задачі.
 - [ ] 👤 запит до IT: folder-exclusions `~/.rvm` · `/opt/homebrew` · `~/miniforge3` · `~/.nvm` · `~/silken_net` + позначити `/bin/zsh` benign (Apple-signed shell, false positive) + bulk-restore наявного карантину
+
+#### SILENCE-1 — Per-Soldier silence-семантика (розрізнити мовчазне здоров'я від смерті/крадіжки)
+- **P2** · 🤖+👤 · ⚪ · → [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy)
+- **Стан:** Передумова безпеки для ARCH.8 (event-triggered TX), сьогодні НЕ побудована. Здорове дерево цокоче щопробудження — тож будь-яка тиша де-факто аномальна; щойно ARCH.8 увімкне «тиша=здоров'я», мовчазне здоров'я і вкрадений/мертвий/розряджений вузол стануть byte-ідентичні. Розрізнювача per-Soldier НЕМА: dead-man switch лише для Queen (`GatewayStalenessSweepWorker`, [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy)); `Tree.silent` scope — мертвий код (визначений, нуль прод-консюмерів); backend бачить зникнення лише cluster-wide (`DailyHealthRouter#blackout?`) → вкрадене дерево мінтить необмежено, доки не замовк ВЕСЬ кластер. Challenge-response як сурогат валиться (RX gated `vcap>2800` + broadcast без TDMA/адресації → не-відповідь = {мертвий∨бідний∨спав}, той самий конфаунд). Тиша НІКОЛИ не slash (Field Audit, [`05_05`](05_05_Slashing_and_Risk_Policy)) — але й наслідку нема. Канон [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy).
+- [ ] 🤖 per-Soldier staleness sweeper (оживити `Tree.silent` + cron, аналог `GatewayStalenessSweepWorker`) + `EwsAlert` на пропущений pulse
+- [ ] 🤖+👤 signed daily heartbeat-контракт (Soldier «тихий, але живий» pulse + backend verify) — firmware-нога [`03_01`](03_01_Firmware_Lifecycle_and_DMA), gated bench
+- [ ] ⚖️ GP-кредит vs pulse: не мінтити за НЕспостережувану тишу без живого heartbeat (money-path, з ARCH.8 time-weighted → [`05_02`](05_02_Proof_of_Growth_Pipeline))
 
 #### SEC.17 — Money-mint-key custody (GCP-KMS remote-signer для ORACLE_MINTER/SLASHER)
 - **P2** · 🤖+👤 · 🔗 · → [`06_04 §5.5`](06_04_Secrets_Checklist), `05_03`
