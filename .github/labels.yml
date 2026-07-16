@@ -1,5 +1,5 @@
 # SSOT for repository labels — Labels-as-Code.
-# Synced by .github/workflows/labels_sync.yml (uses EndBug/label-sync@v2 with delete-other-labels: true).
+# Synced by .github/workflows/labels_sync.yml (uses EndBug/label-sync@v2 with delete-other-labels: false — OPS.9).
 # Doc reference: docs/00_05_GitHub_Projects_and_IaC_Automation.md §4 Label Conventions.
 
 # ─────────────────────────────────────────────────────────────────────────
@@ -24,7 +24,7 @@
 
 - name: "cluster:cross-cluster"
   color: "F1E05A"
-  description: "Task spans multiple clusters — resolve into primary or keep as cross-cluster"
+  description: "Transient triage marker (NOT a resting state) — resolve into exactly one primary cluster:*"
 
 # ─────────────────────────────────────────────────────────────────────────
 # Cluster cross-reference (secondary, optional)
