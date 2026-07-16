@@ -2112,10 +2112,11 @@ ModelValidationService.validate(new_model, test_set)
   - Якщо ні → discard, keep old model
         │
         ▼
-ActiveStorage: зберегти новий marshal як TinyMlModel.binary_payload
-OtaTransmissionWorker → OTA broadcast нової моделі на STM32-вузли
+ActiveStorage: зберегти новий marshal (server-side модель InsightGeneratorService)
 AuditLogWorker → запис факту оновлення моделі
 ```
+
+> ⚠️ **Межа конвеєрів:** `.marshal` (Rumale) — **server-side** модель `InsightGeneratorService`; на STM32 вона НЕ передається (заборонений формат — [`03_03 §11.1`](03_03_TinyML_Acoustic_Inference)). Device-модель TinyML (TFLite INT8, `TinyMlModel`) має окремий retrain/OTA-конвеєр: [`03_03 §11.3`](03_03_TinyML_Acoustic_Inference).
 
 **Нові компоненти:**
 
@@ -2127,8 +2128,7 @@ AuditLogWorker → запис факту оновлення моделі
 | `ModelAuditRecord` | Model | Лог кожного оновлення моделі (версія, точність, timestamp, deployer) |
 
 **Безпека:**
-- SHA256-хеш нового marshal файлу перевіряється перед OTA-розсилкою
-- `TinyMlModel.checksum` порівнюється на Soldier після отримання OTA
+- SHA256-хеш нового marshal файлу перевіряється перед активацією (дзеркало наявного integrity-check у `InsightGeneratorService`)
 - Rollback: якщо нова модель видає >5% false positives за тиждень → auto-revert до попередньої
 
 **Пріоритет:** Post-TRL 7. Не блокує прототип.

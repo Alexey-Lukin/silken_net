@@ -41,7 +41,7 @@
 - [7. Інтеграція з Іншими Модулями](#-7-інтеграція-з-іншими-модулями)
 - [8. Верифікація TRL 7 — Чеклист](#-8-верифікація-trl-7--чеклист)
 - [10. Mongabay Pivot — 5-й клас «Fauna Activity» та біорізноманіття як D-MRV сигнал](#-10-mongabay-pivot--5-й-клас-fauna-activity-та-біорізноманіття-як-d-mrv-сигнал)
-- [OTA Model Format та Federated Learning Pipeline](#-ota-model-format-та-federated-learning-pipeline)
+- [11. OTA Model Format та Federated Learning Pipeline](#-11-ota-model-format-та-federated-learning-pipeline)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -867,7 +867,7 @@ TRL 8 → 9  (production biodiversity D-MRV):
 
 1. **Tensor Arena зростання** для 5-class CNN — масштаб залежить від обраного DSP-шляху (§3.2): Path A: +30–50% RAM (~20–40 KB; модель сама вчиться features); Path B: +10–20% (~15–30 KB; features pre-extracted, менша модель); Path C: +15–25% (~25–35 KB; включає frontend scratch). Baseline (per-frame MLP) тривіально влазить (§4.3); партнерська 2D-CNN — повторний замір проти стелі §6.
 2. **Шум вітру 0.5–2 кГц перетинається з амфібіями** — ризик false positives для класу 4. Mitigation: акумульоване вікно + dawn/dusk timing constraint (вночі/на світанку вітер слабший). Path B/C дають кращу spectral discrimination ніж Path A.
-3. **Регіональна специфіка soundscape** — модель, натренована на Черкаському борі, може не узагальнюватись на тропіки. Potential solution: Federated Learning (вже описаний у §9).
+3. **Регіональна специфіка soundscape** — модель, натренована на Черкаському борі, може не узагальнюватись на тропіки. Potential solution: Federated Learning (вже описаний у §11.3).
 4. **Чи буде fauna класифікуватись через TinyML, чи через окремий DSP-only метричний модуль (без NN)?** — alternative architecture: спектральний descriptor **(ACI — Acoustic Complexity Index, Pieretti et al. 2011) обчислюється на STM32 з FFT (тобто потребує Path B-style DSP), без NN**. Це може стати TRL-7 інкрементом до повноцінної 5-class моделі. ACI **не є** "no-FFT alternative" — це спектральний показник, не часовий; виконується на тому ж FFT-output, що й Path B mel-bank.
 5. **DSP-path lock-in ризик:** Path B (custom Mel-bank) self-owned + доведено (3-way parity + QEMU + baseline приземлено) → міграція на Path C малоймовірна; червневий леджер (§3.2) показав, що TFLM-фолбек вузький (його C++-каркас з'їдає ту саму arena-стелю). «Обирати Path C з самого початку» — **застаріла порада** (передувала self-owned DSP + бюджет-виміру); Path C лишається лише документованим fallback (§4.1).
 
@@ -883,9 +883,9 @@ TRL 8 → 9  (production biodiversity D-MRV):
 
 ---
 
-## 🔬 OTA Model Format та Federated Learning Pipeline
+## 🔬 11. OTA Model Format та Federated Learning Pipeline
 
-### Формат Моделі — TFLite (єдиний допустимий)
+### 11.1 Формат Моделі — TFLite (єдиний допустимий)
 
 **Критичне обмеження:** STM32WLE5JC (ARM Cortex-M4, C/C++) **не може** виконувати Ruby/Python артефакти (`.marshal`, `.pkl`, `.h5`). Допустимі формати для OTA-оновлення моделі:
 
@@ -900,7 +900,7 @@ TRL 8 → 9  (production biodiversity D-MRV):
 | Python Pickle | `.pkl` | ❌ Заборонено | MCU не має Python runtime |
 | ONNX | `.onnx` | ❌ Заборонено | Немає ONNX runtime для 64 KB SRAM |
 
-### Квантизація — INT8 (обов'язкова)
+### 11.2 Квантизація — INT8 (обов'язкова)
 
 Модель **обов'язково** повинна використовувати **INT8 post-training quantization** для розгортання на STM32WLE5JC:
 
@@ -909,7 +909,7 @@ TRL 8 → 9  (production biodiversity D-MRV):
 - **Втрата точності:** типово < 1-2% для аудіо-класифікації (допустимо)
 - **Інструмент:** `tf.lite.TFLiteConverter` з `tf.lite.Optimize.DEFAULT` + representative dataset
 
-### Federated Learning Pipeline (Архітектура, Post-TRL 8)
+### 11.3 Federated Learning Pipeline (Архітектура, Post-TRL 8)
 
 Тренування моделі **не може** відбуватися в Rails. Потрібен окремий ML-мікросервіс:
 
@@ -939,7 +939,7 @@ OtaPackagerService → 512-byte chunks → Queen poll-fetch [FW.60] → LoRa →
 
 **Статус:** Не реалізовано. Post-TRL 8. Прерквізити FW.4 ✅ (inference + `model.h` приземлено) — federated retraining лишається TRL-8 надбудовою.
 
-### Beyond TRL 9: On-Device Learning — Edge RL та Evolutionary Algorithms
+### 11.4 Beyond TRL 9: On-Device Learning — Edge RL та Evolutionary Algorithms
 
 > **Контекст:** Federated Learning Pipeline вище — це **top-down** (cloud навчає → edge виконує). Це **достатньо для TRL 9**, але обмежує адаптивність: модель оновлюється раз на тижні/місяці, а кліматичні мікро-зміни відбуваються щодоби.
 >
