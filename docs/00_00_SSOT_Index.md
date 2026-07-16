@@ -19,14 +19,14 @@ _Read-first мета-лінза проєкту: **НАВІЩО** (візія, м
 
 ## 🗺️ Системна Карта: 8 Рівнів Кіберфізики (The Constitution)
 
-_Top-down конституція системи: дані течуть знизу вгору — від біохімії дерева до фіналізації в Ethereum L1. Кожен рівень розгортається у профільному модулі Tier I (01–06). Повний **12-крокового Proof-of-Growth конвеєр** — канонічно [`05_02`](05_02_Proof_of_Growth_Pipeline) (операційний потік) + [`05_01 §1–2`](05_01_Multichain_Architecture) (ролі 12 мереж); політика resilience/failover — [`06_08`](06_08_Resilience_and_Failover_Policy). Методологія/процес — цей Модуль 00 (Фундамент, сторінки нижче); економіка/фінансування — Tier II (07)._
+_Top-down конституція системи: дані течуть знизу вгору — від біохімії дерева до фіналізації в Ethereum L1. Кожен рівень розгортається у профільному модулі Tier I (01–06). Повний **Proof-of-Growth конвеєр** (кроки A–F) — канонічно [`05_02`](05_02_Proof_of_Growth_Pipeline) (операційний потік) + [`05_01 §1–2`](05_01_Multichain_Architecture) (ролі 12 мереж); політика resilience/failover — [`06_08`](06_08_Resilience_and_Failover_Policy). Методологія/процес — цей Модуль 00 (Фундамент, сторінки нижче); економіка/фінансування — Tier II (07)._
 
 | Рівень | Сутність | Канон |
 |--------|----------|-------|
 | **1. Біофізика (The Root)** | Тризонний коаксіальний анкер Ti-6Al-4V + EBFC Gen 2.0 (dgrFAD-GDH анод + Laccase/ZIF катод, цвітеріонна мембрана) → >500 mV прямо з метаболізму дерева, без зовнішніх дротів | [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK) · [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) · [`01_04`](01_04_CODIT_and_Xylemointegration) |
 | **2. Апаратура (The Capsule)** | Герметична капсула, blind-mate Pogo Pins до анкера, BQ25570 MPPT + іоністор 0.47F/5.5V, акустичний п'єзо-тригер пробудження (Zero-Power Wake) | [`02_01`](02_01_Hardware_Architecture_and_BOM) · [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) · [`02_03`](02_03_BQ25570_MPPT_Nano_Power) |
-| **3. Прошивка / Edge AI (The Brain)** | STM32WLE5JC, STOP2 RTC-only **300 nA**, DMA-мікрофон, TinyML (тиша/вітер/пилка), mruby Lorenz-атрактор, апаратний AES-128 (LoRa-payload), factory provisioning ключів | [`03_01`](03_01_Firmware_Lifecycle_and_DMA) · [`03_03`](03_03_TinyML_Acoustic_Inference) · [`03_04`](03_04_mruby_Lorenz_Attractor) · [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security) · [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) |
-| **4. Мережа (The Veins)** | LoRa mesh 868 МГц (custom TTL-based, AES-128); Queen-шлюз агрегує пакети → CoAP-батч (**AES-256-CBC**) у хмару (опц. Starlink D2C); Helium як fallback при втраті Queen | [`02_05`](02_05_Queen_Hardware_and_Starlink) · [`03_02`](03_02_Queen_Gateway_Firmware) · failover [`06_08`](06_08_Resilience_and_Failover_Policy) |
+| **3. Прошивка / Edge AI (The Brain)** | STM32WLE5JC, STOP2 RTC-only (🟡 **300 nA — таргет, не вимір**; bench-гейт [`00_07`](00_07_Action_Plan_Tracker) FW.54), DMA-мікрофон, TinyML (тиша/вітер/пилка), mruby Lorenz-атрактор, апаратний AES-128 (LoRa-payload), factory provisioning ключів | [`03_01`](03_01_Firmware_Lifecycle_and_DMA) · [`03_03`](03_03_TinyML_Acoustic_Inference) · [`03_04`](03_04_mruby_Lorenz_Attractor) · [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security) · [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) |
+| **4. Мережа (The Veins)** | LoRa 868 МГц, **star-only** (ухвала FW.2 (а) — TTL-flood mesh гейтовано в CCM-ері; повернення = wire-rev3, [`00_07`](00_07_Action_Plan_Tracker) ARCH.43); Queen-шлюз агрегує пакети → CoAP-батч (**AES-256-CBC**) у хмару (опц. Starlink D2C); 🟡 Helium-fallback + Q2Q backhaul — **target, не в польоті** (ARCH.34 / ARCH.10) | [`02_05`](02_05_Queen_Hardware_and_Starlink) · [`03_02`](03_02_Queen_Gateway_Firmware) · failover [`06_08`](06_08_Resilience_and_Failover_Policy) |
 | **5. Серверне ядро (The Engine)** | Rails 8.1 Omakase + PostgreSQL + Sidekiq: декодування L3, REST API, бізнес-логіка NaaS-контрактів | Модуль 04 ([`04_01`](04_01_Data_Models_and_Entities) · [`04_02`](04_02_Business_Logic_and_Services)) |
 | **6. Верифікація (The Truth)** | peaq Machine DID (паспорт дерева) + IoTeX W3bstream ZK-proofs (real-silicon + гомеостаз Лоренца) + Streamr/Filecoin | [`05_01`](05_01_Multichain_Architecture) · [`05_02`](05_02_Proof_of_Growth_Pipeline) |
 | **7. Фінанси (The Ledger)** | Polygon EVM — mint SCC/SFC; Chainlink DON oracle; Solana/Celo мікро-рейки; KlimaDAO ESG retirement; Polygon Hadron KYC (ERC-3643) | [`05_01`](05_01_Multichain_Architecture) · [`05_03`](05_03_Tokenomics_SCC_and_SFC) |
@@ -37,9 +37,9 @@ _Top-down конституція системи: дані течуть зниз�
 
 ```
 Soldier (Tree)         Soldier (Tree)         Soldier (Tree)
-      │ LoRa                │ LoRa mesh            │ LoRa
+      │ LoRa                │ LoRa                 │ LoRa      ← star-only
       ▼                     ▼                      ▼
-   Queen (Gateway) ◄──── Mesh Relay ────► Queen (Gateway)
+   Queen (Gateway)   ◄╌╌ Q2Q backhaul ╌╌►   Queen (Gateway)    ← 🟡 ARCH.10, не в польоті
       │ LTE/Starlink                          │ LTE/Starlink
       ▼                                       ▼
    ┌──────────────────────────────────────────────┐
@@ -124,7 +124,7 @@ _Логіка STM32WLE5JC: STOP2 / DMA / TinyML / mruby Lorenz / апаратн�
 _Rails 8.1 Omakase: моделі даних, бізнес-логіка, REST API, Phlex UI та тестова матриця._
 
 - [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) (ActiveRecord моделі, PostgreSQL-схема, RANGE-partitioning)
-- [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) (Service Objects + Sidekiq воркери, Web3CircuitBreaker, Drift Register)
+- [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) (Service Objects + Sidekiq воркери, Web3CircuitBreaker, doc↔code sync)
 - [`04_03` — REST API v1 Reference](04_03_REST_API_v1_Reference) (REST API v1, Pagy, Idempotency-Key, RBAC)
 - [`04_04` — Phlex UI and Tailwind](04_04_Phlex_UI_and_Tailwind) (Phlex компоненти + Tailwind 4 + gaia design tokens + i18n)
 - [`04_05` — Codex Lore Module](04_05_Codex_Lore_Module) (Codex — read-only наративний шар над телеметрією; ADR-зафіксований, поза hot-path)

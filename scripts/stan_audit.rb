@@ -152,7 +152,11 @@ items.each do |id, it|
   tokens = it[:stan].scan(/`([^`\s]+)`/).flatten.select do |t|
     t.match?(/\A[\w:#.!?()\[\]]+\z/) && (t.include?("_") || t.include?("#") || t.end_with?("()"))
   end
-  homes = it[:docs] | [ "00_06" ]
+  # 00_07 НЕ дім самому собі: it[:docs] збирається зі Стан-рядка, тож згадка
+  # «→ 00_07» робила трекер власним домом і кожен токен резолвився сам об себе
+  # (4 айтеми глушились цілком, §00-рев'ю 07-16). Той самий виняток нижче в
+  # `elsewhere` стояв лише на підказці — до первинного чека не доходив.
+  homes = (it[:docs] - [ "00_07" ]) | [ "00_06" ]
   tokens.uniq.each do |tok|
     next if tok.start_with?("_") # суфікс-скорочення / toolchain-символ
     next if tok.match?(FILE_EXT) && repo_file_exists?(File.basename(tok)) # сирий tok: 05_parity_dump.py
