@@ -200,8 +200,8 @@ fused rod. Full anode→cathode-channel→flange-pad through-rod; `AxialStack.Bu
 **Engineering drawings + render (shipped)** — `draw <cem>` → SVG/PDF (human) + **DXF via netDxf** (factory-native, opens
 in AutoCAD/Fusion), pure-managed, consuming the CEM `ToleranceSpec`/`NotesSpec` (fits as Lamé-µm, NOT a blind ISO-286
 metal `H7/s6` on a PEEK bore; GD&T datums; coating-restriction; lattice-spec). §7/§8 DECIDED: DXF+SVG / ISO 1st-angle /
-CEM-tolerances; Phase 2 (sleeve/flange/radome DXF, gyroid inspection-card, assembly drawing) deferred to a real factory
-contract (`docs/drawings_program.md`). `render` / `section <cem>` → PicoGK native-viewer PNG (presentation gallery
+CEM-tolerances. Shipped `draw` kinds: `ti_coin` + `cathode_flange` (both = live factory deliverables). Phase 2 (sleeve/
+radome DXF, gyroid inspection-card, assembly drawing) deferred to a real factory contract (`docs/drawings_program.md`). `render` / `section <cem>` → PicoGK native-viewer PNG (presentation gallery
 `docs/images/cad/`, rebuilt by `scripts/render_gallery.sh`, NOT SSOT). LEAP 71 ships metal engines WITHOUT 2D drawings —
 code is the engineering intent.
 

@@ -46,7 +46,7 @@
 - **Ti-6Al-7Nb** — ISO-13485 ортопед-стандарт (medical AM-бюро).
 
 **Tier-2 — vendor-hunt паралельно (НЕ блокує):**
-- **β-Ti-13Nb-13Zr** — research-grade порошок (гаряча LPBF-тема 2024; UTS~1020/yield~795) → академ-колаборація (co-pub, Гусак/[`08_02`](../../08_02_Academic_Institutions_Registry.md)) або спец-порошок.
+- **β-Ti-13Nb-13Zr** — research-grade порошок (гаряча LPBF-тема 2024; UTS~1020/yield~795 — ⚠️ літ-оцінка **розходиться** з дім-значенням `ALLOY_PROPERTIES` (`tools/in_silico/lib/constants.py`) `yield_MPa: 900`; жодне з двох не несе джерела — ймовірно as-built LPBF vs HIP'd, але це **не звірено**; для vendor-hunt-контексту не несуче, для acceptance — звірити ДО спека) → академ-колаборація (co-pub, Гусак/[`08_02`](../../08_02_Academic_Institutions_Registry.md)) або спец-порошок.
 - **Ta** — LPBF **рідко** (вартість/відбивність/ризик принтеру) → **думка-outside workaround: Ta-coating на дешевому Ti-купоні** (біоінертна Ta-поверхня без bulk-Ta друку; EBFC бачить поверхню). Bulk-Ta — лише за EBM-Ta вендором.
 - **Ti-15Zr** — Roxolid пропрієтарний (Straumann); AM-порошок research-grade → спец-постачальник або defer.
 
