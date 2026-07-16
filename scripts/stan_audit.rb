@@ -4,7 +4,7 @@
 # [DOC-T.35 + DOC-T.36 + DOC-T.37] On-demand «Стан-лід» audit — ADVISORY, НЕ CI-gate.
 # Запускати на цемент/vilize-сесії: ruby scripts/stan_audit.rb
 #
-# Дві осі по `- **Стан:**`-рядках registry-айтемів 00_07:
+# Три осі по registry-айтемах 00_07 (1-2 — Стан-рядки, 3 — чекбокси):
 #
 # 1. CANON-CLAIM (DOC-T.36): код-символ зі Стану (snake_case / Class#method /
 #    fn() у code-span) має зустрічатись хоч в ОДНОМУ заявленому канон-домі
@@ -71,8 +71,14 @@
 #      [A] ID-число (FW.2, PATH 2, §4) — виключено механічно
 #          (+ DOC-T.37: «PATH 2»/«Фаза 3» перед лічильним словом).
 #
+# 3. [X]-STALENESS: `- [x]`-чекбокс живе ГОДИНИ-ДНІ — закрите цементується у
+#    Стан/канон і зрізається (інакше ✅-історія топить відкрите, а правило
+#    трималось лише на дисципліні). Бокс із датою `✅ YYYY-MM-DD` старший за
+#    ~14 днів → «цементуй і зрізай»; бокс без дати — лічильник-нагадування.
+#
 # Pure Ruby (no Rails); реюзить Tracker::Dashboard-константи парсингу.
 
+require "date"
 require_relative "../lib/tracker/dashboard"
 
 REPO_ROOT = File.expand_path("..", __dir__)
@@ -229,4 +235,39 @@ items.each do |id, it|
 end
 puts "  (чисто ✓)" if num_hits.zero?
 
-puts "\nadvisory: хіти розібрати очима — [C]-клас лікується прибиранням числа + рефом джерела."
+# --- вісь 3: [x]-staleness ---
+STALE_AFTER_DAYS = 14
+puts "\n── Вісь 3 · [x]-staleness: чекнутий бокс старший за ~#{STALE_AFTER_DAYS} днів — цементуй у Стан/канон і зрізай ──"
+today       = Date.today
+stale_hits  = 0
+dateless    = 0
+current     = nil
+in_registry = false
+md.each_line do |line|
+  if line.start_with?("## ")
+    in_registry = line.match?(Tracker::Dashboard::REGISTRY_SECTION) &&
+                  !line.match?(Tracker::Dashboard::SKIP_SECTION)
+    next
+  end
+  if in_registry && (m = line.match(Tracker::Dashboard::ITEM_HEAD))
+    current = m[1]
+    next
+  end
+  next unless in_registry && line.match?(/\A\s*-\s*\[x\]/i)
+
+  dates = line.scan(/\b(\d{4}-\d{2}-\d{2})\b/).flatten
+  if dates.empty?
+    dateless += 1
+    next
+  end
+  age = (today - Date.parse(dates.max)).to_i
+  next if age <= STALE_AFTER_DAYS
+
+  stale_hits += 1
+  puts "  #{current}: #{age} дн. (#{dates.max}) — #{line.strip[0, 100]}"
+end
+puts "  (чисто ✓)" if stale_hits.zero?
+puts "  (+#{dateless} [x] без дати — вік невідомий; датуй закриття `✅ YYYY-MM-DD`)" if dateless.positive?
+
+puts "\nadvisory: хіти розібрати очима — [C]-клас лікується прибиранням числа + рефом джерела; " \
+     "stale-[x] — цементацією в Стан/канон."
