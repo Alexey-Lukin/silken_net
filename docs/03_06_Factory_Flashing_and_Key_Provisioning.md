@@ -10,7 +10,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — backend provisioning + HKDF + K_seed + OTA-HMAC реалізовано (host-тести зелені); фабрична Rake-CLI dry-run ✅. Відкрите: real `STM32_Programmer_CLI`/`cryptoauthlib` на bench (SEC.3), RDP Level 2 (SEC.2), K_ota bench (FW.23) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 6 — backend provisioning + HKDF + K_seed + OTA-HMAC реалізовано (host-тести зелені); фабрична Rake-CLI dry-run ✅. Відкрите: real `STM32_Programmer_CLI` + live SE05x/`sss` I²C на bench (SEC.3; SE = **SE050**, `cryptoauthlib` — ATECC-ери, superseded SEC.6), RDP Level 2 (SEC.2), K_ota bench (FW.23) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 

@@ -12,7 +12,7 @@
 > (Postgres, Redis, the chains, Chainlink DON, Akash providers) except where SilkenNet code defends against
 > their misbehaviour.
 >
-> **Status.** Living document — last reviewed 2026-06-25. This is a *synthesis*: it argues and points to the
+> **Status.** Living document — last reviewed 2026-07-16. This is a *synthesis*: it argues and points to the
 > canonical homes for mechanism detail rather than restating them (one-home, registered in
 > [`00_06`](00_06_SSOT_Documentation_Standard)). Open items are tracked in
 > [`00_07`](00_07_Action_Plan_Tracker) (`SEC.*` / `FW.*` IDs).
@@ -243,12 +243,12 @@ An assurance case is credible because it states what is **not** yet fully closed
 
 The claims above are backed by enforced, automated evidence — not by assertion:
 
-- **Tests.** RSpec with a hard SimpleCov gate (line 99% / branch 95%, plus per-group floors); Foundry
+- **Tests.** RSpec with a hard SimpleCov gate (line 99% / branch 98%, plus per-group floors); Foundry
   contract tests including the security invariants (`testRevert_cannotRemoveLastAdmin`,
   `test_pause_allowsSlash`, `totalSupply() <= MAX_SUPPLY`); the firmware host suite run additionally under
   **AddressSanitizer + UndefinedBehaviorSanitizer** on every CI run.
-- **Static analysis (SAST).** Brakeman (Rails), Slither + Aderyn (Solidity), CodeQL (6 languages), cppcheck (MISRA) —
-  all gating CI. **Halmos** symbolic proofs (`test/symbolic/`) and **Foundry + Medusa** property-fuzzing
+- **Static analysis (SAST).** Brakeman (Rails), Slither + Aderyn (Solidity), CodeQL (6 languages), cppcheck (firmware C) —
+  all gating CI; cppcheck's MISRA C:2012 addon is opt-in and advisory, not part of the gate. **Halmos** symbolic proofs (`test/symbolic/`) and **Foundry + Medusa** property-fuzzing
   (`test/invariant/`, `test/medusa/`) add depth on the token/governance contracts — all gating in CI.
 - **Composition analysis (SCA).** Dependabot (weekly), bundler-audit (every CI), OpenSSF Scorecard (weekly).
 - **Supply chain.** Sigstore-signed SLSA build-provenance on the released container — verifiable per

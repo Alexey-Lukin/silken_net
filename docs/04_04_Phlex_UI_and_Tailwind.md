@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — Дизайн-система відповідає SSOT. Потребує production verification.
+- **Поточний TRL:** TRL 8 — рушій (Phlex + `@theme`-токени + `tokens()`) production-grade; **дизайн-система ≠ повністю мігрована**: shared-компоненти чисті, але raw-Tailwind у прикладних компонентах лишається (токен-міграція UI.1-3), а `gaia:lint_tokens` — rake-таск **без CI-гейта** (тож правило не enforced, лише документоване). Потребує production verification.
 - **Стек:** Rails 8.1 · Phlex · Tailwind CSS 4 · TailwindMerge · Stimulus · Turbo 8
 - **Відкрите:** production verification (UI на живому деплої) — [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform); UI-беклог (токен-міграція / a11y / i18n) → [`00_07`](00_07_Action_Plan_Tracker) UI.1/UI.2/UI.3, I18N.1.
 
