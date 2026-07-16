@@ -19,24 +19,29 @@
           - 'docs/05_*'
 
 "cluster:C-scaling":
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'app/**'
-          - 'config/**'
-          - 'lib/**'
-          - 'db/**'
-          - 'spec/**'
-          - 'deploy/**'
-          - 'terraform/**'
-          - 'docs/04_*'
-          - 'docs/06_*'
+  # `all:` обгортка обов'язкова: без неї матчери під одним `changed-files`
+  # дефолтяться в `any:` (OR) — негативна клауза сама матчить будь-який PR поза
+  # виключеними піддеревами, і лейбл липне на все. Форма — 00_05 §2.6.
+  - all:
+      - changed-files:
+          - any-glob-to-any-file:
+              - 'app/**'
+              - 'config/**'
+              - 'lib/**'
+              - 'db/**'
+              - 'spec/**'
+              - 'deploy/**'
+              - 'terraform/**'
+              - 'docs/04_*'
+              - 'docs/06_*'
       # [OPS.9] Exclude cluster-B and cluster-D subtrees so the broad app/**
       # glob doesn't double-label them (primary-cluster mutual exclusivity, 00_05 §2).
-      - all-globs-to-all-files:
-          - '!app/services/iotex/**'
-          - '!app/services/silken_net/attractor*'
-          - '!app/services/silken_net/seed_derivation*'
-          - '!app/services/polygon/hadron_*'
+      - changed-files:
+          - all-globs-to-all-files:
+              - '!app/services/iotex/**'
+              - '!app/services/silken_net/attractor*'
+              - '!app/services/silken_net/seed_derivation*'
+              - '!app/services/polygon/hadron_*'
 
 "cluster:D-compliance":
   - changed-files:

@@ -24,7 +24,7 @@
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | §6.3 Forest-Level Lorenz Coupling (Gap #1 firmware-бік) |
 | [`05_06` — Governance and DAO](05_06_Governance_and_DAO) | Auto-Immune Sentinel §5 (Gap #4 governance-бік) |
 | [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) | Queen failover / Q2Q backhaul — мережева реалізація §2 |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | ARCH.1/6/7/10/22 — інженерні backlog-вектори цієї агенди |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | ARCH.1/6/9/10/11/19 — інженерні backlog-вектори цієї агенди |
 
 ## 📑 Зміст
 
@@ -73,7 +73,7 @@
 > ⚠️ **Ієрархічне делегування інтелекту (Compute Budget Constraint).** L1 Soldier (STM32WLE5JC + 0.47F supercap, енергобаланс [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power) Сценарій C = +1.4 мДж/год запасу) **фізично не може** тренувати моделі або агрегувати градієнти — будь-який Federated Learning epoch, обчислення Chimera coupling або forest-wide attractor inversion утримуватиме MCU в active-режимі (≥12 mA × ≥секунди) і **гарантовано виведе supercap у brownout** ще до завершення першої епохи. Тому:
 >
 > - **L1 Soldiers (STM32 + 0.47F):** залишаються наївними виконавцями (Inference only). Емітують 1-bit stigmergic сигнали (рядок «Stigmergic Communication» — це **єдина дешева опція** на L1, ~110 ms LoRa TX @ +14 dBm).
-> - **L2 Conductors / L3 Queens (LiFePO4 + Solar):** тут відбуваються Federated Learning, Chimera coupling math та network-level Lorenz координація. Queen має 20Ah батарею і Cortex-M4 + LTE backbone — обчислювально на 4-5 порядків багатший за Soldier.
+> - **L2 Conductors / L3 Queens (LiFePO4 + Solar):** тут відбуваються Federated Learning, Chimera coupling math та network-level Lorenz координація. Queen має 20Ah батарею і Cortex-M4 + LTE backbone — **той самий STM32WLE5JC, що й Soldier** ([`02_05 §2.1`](02_05_Queen_Hardware_and_Starlink)); різниця не в обчисленні, а в **енергетичному бюджеті** — легшому на 4-5 порядків (§1.2 нижче).
 >
 > Solidiers отримують результат як **скомпільований mruby bytecode через OTA-канал** ([`03_02`](03_02_Queen_Gateway_Firmware) Queen → broadcast chunks по 11 байт), що зберігається у `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`. Жодного "self-training" на L1. Зберігає SRL roadmap реалістичним.
 
@@ -206,7 +206,7 @@ SRL:Deployed ━━━ Verified, formal, planetary-scale autopoiesis ← Silken 
 
 ## 🌐 2. Фрактальна Мережева Топологія — Planetary Network Scaling
 
-> Поточна плоска LoRa-меш архітектура задихнеться від колізій та затримок вже на кількох тисячах вузлів. Для мільйонів дерев необхідна **фрактальна топологія**. Це мережевий (routing/topology) аналог §1 — там йшлося про *колективний інтелект*, тут — про *фізичне масштабування мережі*. Hardware/compute-envelope трьох рівнів (L1/L2/L3) описаний у [§1.2](#12-gap-2--self-evolving-behaviour-on-device-edge-ai) (таблиця делегування інтелекту); нижче — їхня **мережева роль і маршрутизація**.
+> **⚠️ Premise-refresh — мережа сьогодні: star-only, не плоский mesh.** TTL-flood mesh-relay для телеметрії/panic живе лише в ECB-ері; CCM-ера (ухвала FW.2 (а)) гейтує його геть — TTL живе у ciphertext, тож **star-only прийнято**, mesh повертається лише з wire-rev3-класом ([`03_01 §1.9.1`](03_01_Firmware_Lifecycle_and_DMA), [`00_07` — ARCH.43](00_07_Action_Plan_Tracker)). Реальна стеля масштабу — **не колізії плоского mesh, а радіус покриття однієї Queen**: навіть в ECB-ері `DEFAULT_TTL=3` ⇒ ≤3 хопи ≈ ~450–600 м, а Queen CIFO переповнюється за ~30 хв без Starlink ([`03_01 §1.9.1`](03_01_Firmware_Lifecycle_and_DMA)). **Масштаб до тисяч+ дерев = більше Queen, не довший mesh** — саме тому для мільйонів дерев необхідна **фрактальна топологія** (більше рівнів ієрархії, не довший TTL). Це мережевий (routing/topology) аналог §1 — там йшлося про *колективний інтелект*, тут — про *фізичне масштабування мережі*. Hardware/compute-envelope трьох рівнів (L1/L2/L3) описаний у [§1.2](#12-gap-2--self-evolving-behaviour-on-device-edge-ai) (таблиця делегування інтелекту); нижче — їхня **мережева роль і маршрутизація**.
 
 ### 2.1. Трьохрівнева ієрархія вузлів (The Fractal Stack)
 
@@ -246,7 +246,7 @@ L1: Soldier Nodes (Regular Tree — Листя) — поточна архіте�
 
 **Геохешинг:** Кожен супер-кластер отримує ID на основі координат. Пакет не шукає маршрут — він тече в бік зменшення градієнта до найближчої Королеви. Усуває broadcast storm.
 
-> **⚠️ Розмежування рівнів: геохешинг — це здатність L2 Conductor, НЕ L1 Soldier.** Поточна прошивка ([`03_01`](03_01_Firmware_Lifecycle_and_DMA), [`08_02`](08_02_Academic_Institutions_Registry)) — наївний **TTL-flood relay** (PANIC_TTL=5, DEFAULT_TTL=3) без маршрутизації. Градієнтний геохешинг вимагає, щоб вузол оперував координатами та сусідським градієнтом — це покладається на **L2 Conductor** (має RTC, більший енергобюджет, відомі координати). **L1 Soldiers залишаються TTL-flood вузлами**, які просто «кричать» у радіусі свого найближчого L2 Conductor (відповідно до фрактальної ієрархії вище). H-LDSE — це цільова еволюція рівня L2, а не зміна поведінки L1.
+> **⚠️ Розмежування рівнів: геохешинг — це здатність L2 Conductor, НЕ L1 Soldier.** Поточна прошивка ([`03_01`](03_01_Firmware_Lifecycle_and_DMA), [`08_02`](08_02_Academic_Institutions_Registry)) — наївний **TTL-flood relay** (PANIC_TTL=5, DEFAULT_TTL=3) без маршрутизації для телеметрії/panic, але **лише в ECB-ері**: CCM-ера гейтує цю естафету геть (ухвала FW.2 (а) — TTL живе у ciphertext, тож **star-only прийнято**; mesh повертається лише з wire-rev3-класом, [`03_01 §1.9.1`](03_01_Firmware_Lifecycle_and_DMA), [`00_07` — ARCH.43](00_07_Action_Plan_Tracker)). Єдиний L1↔L1 релей, не виключений цим рішенням, — **time-beacon** (control-plane, кластерний ключ KEYB, TTL=2 / 1 relay-хоп, шторм-безпечний журналом поколінь замість маршрутизації, intra-cluster; [`03_02 §5а`](03_02_Queen_Gateway_Firmware)) — і він так само не оперує координатами чи градієнтом. Градієнтний геохешинг вимагає, щоб вузол оперував координатами та сусідським градієнтом — це покладається на **L2 Conductor** (має RTC, більший енергобюджет, відомі координати). **L1 Soldiers залишаються не-маршрутизуючими вузлами** (TTL-flood телеметрії в ECB-ері + beacon-релей завжди), які просто «кричать» у радіусі свого найближчого L2 Conductor (відповідно до фрактальної ієрархії вище). H-LDSE — це цільова еволюція рівня L2, а не зміна поведінки L1.
 
 **Spatial Multiplexing:** L1 та L2 працюють на різних частотних підканалах 868 MHz ISM — усуває міжрівневі колізії (inter-tier interference).
 
@@ -255,13 +255,16 @@ L1: Soldier Nodes (Regular Tree — Листя) — поточна архіте�
 Замість передачі повних координат атрактора Лоренца, вузол передає лише **lambda-exponent** (показник хаотичності Ляпунова):
 
 ```
-Поточний підхід:      16 байт payload → Z-координата Лоренца
-Планетарний підхід:      2 байти lambda → описує стан всього дерева
+Історичний підхід (pre-wire-rev2):  16 байт ECB-пакет → Z-координата Лоренца
+Сьогодні (wire-rev2, FW.2):           2 байти device_z (fixed-point, z×512) → Z-координата Лоренца
+Гіпотетичний lambda-підхід:           2 байти lambda → описує стан всього дерева
 ```
 
-> **Що зберігається:** lambda-exponent (показник Ляпунова) відображає ступінь хаотичності атрактора — достатньо для визначення "норма / стрес / аномалія". **Що втрачається:** абсолютні координати (X, Y, Z) — їх відновлення неможливе без повного ряду. Коли lambda перевищує поріг аномалії (`|λ| > λ_threshold`), Солдат автоматично переходить у режим повного стрімінгу з 16-байт payload — втрата інформації повністю усувається при критичних подіях.
+> **⚠️ Байтова економія вище — мертва премісса ([`00_07` — ARCH.22](00_07_Action_Plan_Tracker), closed-canon).** `device_z` на дроті **вже 2 байти** (`firmware/common/lora_ccm.h`, `FW2_DEVICE_Z_SCALE`, uint16 z×512, wire-rev2) — «16 байт» був старий ECB-**пакет цілком** (AES-блок), не розмір самого Z-поля → λ(2B) ↔ Z(2B) = **0 байт економії**. Канон уже відхилив і ширшу arithmetic-компресію всього payload по енергії (big-int/біт-бюджет > TX-виграш; no-FEC bit-flip руйнує пакет) — [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security). Заміна device_z→λ лишається можливою лише як wire-rev3-клас (як [`00_07` — ARCH.43](00_07_Action_Plan_Tracker)), не як компресія.
 
-> **⚠️ Стиснення × Dual Computation Integrity (design-flag).** Поточний DCI ([`03_04 §5`](03_04_mruby_Lorenz_Attractor)) порівнює device-Z vs server-recomputed-Z — точну координату після 250 ітерацій, чутливу до input-tampering майже на біт-рівні. У lambda-mode вузол передає лише скаляр Ляпунова, тож DCI змушений порівнювати **device-λ vs server-λ** (сервер так само рекомпʼютить λ з тих самих inputs + K_seed). Це **слабший** cross-check: λ — many-to-one відображення (різні траєкторії → той самий λ), тож простір підробки ширший, ніж проти точного Z. Тому lambda-compression лишається **Beyond-TRL-9** і не вмикається без DCI-захисту: періодичний **full-Z challenge** (random-sample вузли віддають 16-байт Z для калібрування) АБО λ + occasional Z-sentinel. Це **не** «fatal» для поточної архітектури (вона передає повний Z) — це передумова *безпечного* вмикання стиснення.
+> **Що зберігається:** lambda-exponent (показник Ляпунова) відображає ступінь хаотичності атрактора — достатньо для визначення "норма / стрес / аномалія". **Що втрачається:** абсолютні координати (X, Y, Z) — їх відновлення неможливе без повного ряду. Коли lambda перевищує поріг аномалії (`|λ| > λ_threshold`), Солдат автоматично переходить у режим повного стрімінгу (кожнопакетний device_z, без lambda-агрегації) — втрата інформації повністю усувається при критичних подіях.
+
+> **⚠️ Стиснення × Dual Computation Integrity (design-flag).** Поточний DCI ([`03_04 §5`](03_04_mruby_Lorenz_Attractor)) порівнює device-Z vs server-recomputed-Z — точну координату після 250 ітерацій, чутливу до input-tampering майже на біт-рівні. У lambda-mode вузол передає лише скаляр Ляпунова, тож DCI змушений порівнювати **device-λ vs server-λ** (сервер так само рекомпʼютить λ з тих самих inputs + K_seed). Це **слабший** cross-check: λ — many-to-one відображення (різні траєкторії → той самий λ), тож простір підробки ширший, ніж проти точного Z. Тому lambda-compression лишається **Beyond-TRL-9** і не вмикається без DCI-захисту: періодичний **full-Z challenge** (random-sample вузли віддають повний `device_z` для калібрування) АБО λ + occasional Z-sentinel. Це **не** «fatal» для поточної архітектури (вона передає повний Z) — це передумова *безпечного* вмикання стиснення.
 
 **Event-Triggered Reporting:** "Тиша означає здоров'я":
 - Стабільний атрактор → heartbeat раз на добу (1 пакет/24 год)

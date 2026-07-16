@@ -197,7 +197,7 @@ Betting Table — у Week 0 кожного 8-тижневого циклу. **А
 Cool-down — це **дихальний простір** (Shape Up: unstructured time), а НЕ ще один спринт. Якщо набити його обов'язковим bug-bash + refactor + документуванням, після 6 тижнів Big Bets це дає миттєвий burnout. Тому жорстко-обов'язкові — лише пункти, що підтримують **життєздатність системи**; решта — на розсуд команди.
 
 **Обов'язково (system viability):**
-- [ ] **SSOT drift audit** для змінених модулів циклу: code-vs-doc diff проти [`04_02 §13b`](04_02_Business_Logic_and_Services) (Drift Register), [`04_03`](04_03_REST_API_v1_Reference), [`05_02`](05_02_Proof_of_Growth_Pipeline), [`06_02`](06_02_Akash_Network_Integration).
+- [ ] **SSOT drift audit** для змінених модулів циклу — **семантичний** (сигнатури / ENV / guard-clauses / queue-розміщення): code-vs-doc diff по [`04_02`](04_02_Business_Logic_and_Services), [`04_03`](04_03_REST_API_v1_Reference), [`05_02`](05_02_Proof_of_Growth_Pipeline), [`06_02`](06_02_Akash_Network_Integration). Механічну частину (клас у коді, не згаданий у доку) вже тримає CI-гейт `model_doc_sync` — руками сюди приходить лише те, чого скрипт не бачить (цей аудит і є ручна половина, на яку вказує [`04_02 §13b`](04_02_Business_Logic_and_Services)). Знайдений drift → запис у [`00_07`](00_07_Action_Plan_Tracker).
 - [ ] Закриті cycle issues анотувати TRL advancement (через `trl_sync.yml` — авто, див. [`00_05`](00_05_GitHub_Projects_and_IaC_Automation)); update [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond) (фактичні TRL зрушення).
 
 **Опціонально (на розсуд команди, НЕ мандат):**

@@ -187,10 +187,10 @@ end
 | Money-path crash-window idempotency (intent-marker + `in_flight` guard) | `BlockchainBurningService` / `Solana::BatchPayoutService` ([ARCH.45], [`04_02 §4/§10`](04_02_Business_Logic_and_Services)) | ✅ Реалізовано |
 | Backfill/buffer-list механізми матриці §2.2 (IoTeX backfill · streamr/celo buffer) | — | 🟡 target-пакет [`00_07` INF.22](00_07_Action_Plan_Tracker) (Solana RPC-каскад + Filecoin re-pin ✅ shipped; anchor gas-gate ✂️ rejected → ARCH.66 — §2.2) |
 | Stuck-`:sent` mint re-arm sweeper (EVM-scoped, cron 30 хв) | `StuckSentTransactionSweeperWorker` | ✅ SHIPPED (ARCH.55; дім — [`04_02 §4`](04_02_Business_Logic_and_Services)) |
-| Queen-to-Queen Backhaul Mesh | Concept у [`02_05`](02_05_Queen_Hardware_and_Starlink) | 🟡 Concept, planned Phase 2 |
+| Queen-to-Queen Backhaul Mesh | §1.2 L2-рядок (спека — дім тут) · [`00_07` — ARCH.10](00_07_Action_Plan_Tracker) | 🟡 Concept, planned Phase 2 |
 | Helium fallback emit (Queen-side LoRaWAN) | Queen firmware `queen_helium_lorawan_uplink()` | 🟡 ARCH.34: обв'язка+wire+тригер+MAC-adapter+повний host-цикл join+uplink (мок-LNS)+KV-mount ✅ 2026-07-05 (гейт `ARCH34_HELIUM_ENABLED 0`); лишився bench OTAA-ефір + Helium Console (👤); backend ✅; Soldier-side відкинуто — Soldier не несе LoRaWAN MAC stack |
 | Ingress Proxy (Rust/Go CoAP buffer, Series D) | ARCH.2 / E.5 | 🟡 far-horizon |
-| Conductor L2 cluster heads (formerly "Sergeant") | [`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap) | 🟡 Concept (HW.27, TRL 1) |
+| Conductor L2 cluster heads (formerly "Sergeant") | [`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap) | 🟡 Concept (ARCH.1, TRL 1) |
 
 ---
 

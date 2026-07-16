@@ -98,9 +98,11 @@
 - [ ] 👤 (опц.) увімкнути "Require review from Code Owners" коли зʼявиться другий рев'юер (CODEOWNERS уже на місці)
 
 #### OPS.3 — R&D Portfolio Management: Shape Up + cluster routing
-- **P1** · 👤 · 🟢 · → `00_04 §5`, `00_05 §6`
-- **Стан:** Shape Up template + Projects V2 kanban-mapping реалізовано (R&D Cluster/Stage/Cycle + auto-routing; 4 кластери A/B/C/D) — `00_04 §5`, `00_05 §6`.
-- [ ] 👤 перший betting cycle після UNI.1/UNI.14
+- **P1** · 🤖+👤 · 🟢 · → `00_04 §5`, `00_05 §6`
+- **Стан:** Shape Up template (`.github/ISSUE_TEMPLATE/shape_up_task.md`) + Projects V2 kanban-mapping реалізовано (R&D Cluster/Stage/Cycle; 4 кластери A/B/C/D) — `00_04 §5`, `00_05 §6`. ⚠️ **Auto-routing був зламаний і полагоджений 2026-07-16:** матчери під одним `changed-files` дефолтяться в `any:` (OR), тож негативна клауза сама матчила будь-який PR поза виключеними піддеревами → `cluster:C-scaling` липнув на ВСІ відкриті PR (8 із них `.github`-only). Фікс = `all:`-обгортка, форму взято з канон-блоку §2.6 (він єдиний був правий). `sync-labels: true` зніме хибний лейбл сам на наступному `synchronize`. **Оголилося те, що баг маскував — routing-coverage неповний:** `.github/**` і `docs/03_*` не матчаться ЖОДНИМ `cluster:*`, а §4.1 вимагає 100% accountability («завдання не може лишатися нічиїм»). Фікс структурно-verified (YAML + доку labeler), **не** mutation-verified — спек на роутинг у репо нема.
+- [ ] 🤖 закрити coverage-діри auto-routing: `.github/**` + `docs/03_*` без кластера (§4.1 100%-accountability)
+- [ ] 🤖 verify labeler на першому PR після фіксу (structural-only сьогодні)
+- [ ] 🔗 перший betting cycle → UNI.1/UNI.14 (gated-at-home, прецедент FW.42; eventual-WHO лишається тут)
 
 #### OPS.4 — GitHub Projects V2: семестрова синхронізація з ChNU/ChDTU
 - **P2** · 👤 · 🟢 · → `00_05 §5`
@@ -108,15 +110,17 @@
 - [ ] 👤 узгодити календар з ФОТІУС (UNI.2) + створити `Academic Semester` single-select field у Projects V2
 
 #### OPS.6 — Bootstrap scripts для GitHub Projects V2 + IaC initial sync
-- **P2** · 👤 · 🟢 · → `00_05 §1.2/§6`
-- **Стан:** `lib/github_bootstrap.rb` готовий (`FIELDS` SSOT, idempotent GraphQL diff, rake `github:bootstrap`, RSpec-покрито) — `00_05 §1.2/§6`.
-- [ ] 👤 запустити `bin/bootstrap_github.sh` проти живого Projects V2 при setup/fork
+- **P2** · 🤖+👤 · 🟢 · → `00_05 §1.2/§6`
+- **Стан:** Машинна частина зацементована — `lib/github_bootstrap.rb` (`FIELDS` = код-SSOT схеми, справжній idempotent GraphQL diff read→create-missing, rake `github:bootstrap`, mock-GraphQL спека). ⚠️ **Але `FIELDS` розійшовся з каноном [`00_05 §1.1`](00_05_GitHub_Projects_and_IaC_Automation), і спека дрейф ЦЕМЕНТУЄ:** `CLUSTER_OPTIONS` досі несе `Cross-cluster`, скасований §1.1 комітом `352b661e` (2026-06-02), а спека асертить його присутність — зелений CI на скасованому значенні (дзеркало `cem_canon_sync`-приводу: golden-тест локає хибне число). **Порядок робіт жорсткий:** diff іде лише за ІМЕНЕМ поля → 👤-прогін ДО фіксу запече 5-ту опцію на живій дошці назавжди (повторний прогін відрапортує `:exists`; зняти = ручна data-touching операція в UI). Похідне, не блокер: `MODULE_OPTIONS` = `"NN: Module"`-плейсхолдер, тоді як §1.1 обіцяє «Формує Swimlanes», а `.github/labels.yml` заявляє «matches Project V2 Module field» — заява сьогодні хибна (закрита дев'ятка імен живе саме там + §4.4). Походження сліпої зони: схемою володів **OPS.5** (§🗄️) з канон-рефом на §1.1 — айтем заархівували ДО того, як канон поїхав. Канон `00_05 §1.2/§6`.
+- [ ] 🤖 вирівняти `FIELDS` ⟷ [`00_05 §1.1`](00_05_GitHub_Projects_and_IaC_Automation): `CLUSTER_OPTIONS` −`Cross-cluster` · `MODULE_OPTIONS` ← закрита дев'ятка `.github/labels.yml`; **розлочити спеку** (вона асертить скасоване)
+- [ ] 🤖 `bin/bootstrap_github.sh`: `SHAPING_STUB` документований, але ніде не читається (`exec` — останній рядок) → канон §6 крок 4 не реалізований; крок 1 друкує «✓ clean» за `git diff HEAD` = uncommitted, а шапка обіцяє **unpushed** (`labels_sync.yml` тригериться на push)
+- [ ] 👤 запустити `bin/bootstrap_github.sh` проти живого Projects V2 при setup/fork — **лише ПІСЛЯ 🤖-фіксу** (порядок ↑); потребує `gh auth --scopes project,repo` (поточний токен project-скоупу не має)
 
 #### OPS.7 — 00_07 → Projects V2 draft-issues sync (tracker-as-tasks IaC)
 - **P3** · 🤖 · ⚪ · → `00_05 §1.2`
-- **Стан:** Не почато — скрипт-парсер 00_07-пунктів (`#### ID` + meta-line + відкриті `[ ]`) → idempotent sync у Projects V2 draft-issues (поля з `lib/github_bootstrap.rb`: Module/TRL/Cluster/Appetite/SSOT Link). Спирається на канонну форму пункту (інтро 00_07) — стандартизація трекера = передумова; чернетки скрипта нема, founder відклав («як треба»). Канон `00_05 §1.2`.
-- [ ] 🤖 парсер 00_07 → draft-issues (idempotent за ID; pri/executor/module → поля)
-- [ ] 👤 прогін проти живого Projects V2
+- **Стан:** Не почато — sync 00_07-пунктів у Projects V2 draft-issues. **Передумова знята:** форма пункту вже HARD-enforced (`meta_form_violations`/`verdict_lead_violations`), а `Tracker::Dashboard.parse` віддає готовий `Item` — тож це чистий build на наявному парсері, не «новий парсер». Обсяг чесно **день+**, не пів дня: 232 айтеми × ~4 записи ≈ ~900 мутацій + пагінація наявних draft-issues, а `GithubBootstrap::PROJECT_QUERY` вибирає лише `ProjectV2FieldCommon` **без `options`** → option-ID для single-select треба дозапитати (як це вже робить `trl_sync.yml`). З трекера реально виводяться **три** поля: `Module` ← §-секція, `SSOT Link` ← канон-реф, `Assigned Agent` ← WHO (масив → колапс на провідного); `Current/Target TRL` · `Appetite` · `R&D Cluster` · `Cycle` · `Academic Semester` джерела в meta-line не мають — лишаються порожні (колишній список Стану був аспіраційний). `Priority` поля у `FIELDS` нема свідомо (P0–P3 = лейбли, [`00_05 §4.4`](00_05_GitHub_Projects_and_IaC_Automation)), але draft-issue лейблів не носить → поле додати (механіка; процедура — у шапці `github_bootstrap.rb`). Founder відклав **пріоритет** (P3), не рішення: дім ратифіковано [`00_05 §1.2`](00_05_GitHub_Projects_and_IaC_Automation).
+- [ ] 🤖 sync 00_07 → draft-issues (idempotent за ID; §-секція/канон/WHO → поля; + `Priority` у `FIELDS` + `00_05 §1.1` в lockstep)
+- [ ] 👤 прогін проти живого Projects V2 — потребує наявної дошки (OPS.6) + `gh auth --scopes project` (поточний токен скоупу не має)
 
 #### OPS.10 — Supply-chain CI hardening residuals (long tail; CI ~90% done)
 - **P3** · 🤖+👤 · 🟢 · → `00_05`
@@ -128,24 +132,29 @@
 - [ ] 🤖 [gap-pass §06] Trivy CVE-scan побудованого образу (проти вже-генерованого SBOM `mirror-ghcr.yml`) → SARIF у Security-tab (дзеркало Slither/Aderyn/Scorecard); образ публічний на GHCR для недовірених Akash-провайдерів
 
 #### ARCH.1 — Fractal topology — L2 Conductor nodes
-- **P3** · 🤖 · 🌿 · → [`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap)
-- **Стан:** Far-horizon — L2 Conductor nodes (Hub Trees; H-LDSE hierarchical routing, geohashing). Post-TRL 7 scaling. Канон [`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap).
-- [ ] 🤖 дизайн L2 Conductor role + H-LDSE routing (design-half; активація post-scale)
+- **P3** · 🤖+⚖️ · 🌿 · → [`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap), [`00_08 §2.2`](00_08_Beyond_TRL9_Planetary_Roadmap), [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA)
+- **Стан:** Far-horizon L2-tier (Hub Trees) — агрегація 50–200 Солдатів у один summary замість 100 пакетів ([`§2.1`](00_08_Beyond_TRL9_Planetary_Roadmap)); H-LDSE/геохешинг живе в [`§2.2`](00_08_Beyond_TRL9_Planetary_Roadmap) («цільова еволюція рівня L2», НЕ L1) — звідси другий реф. Роль частково приземлена: [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA) уже канонізував енерго-політику (повний RX у вікні дозволений лише Провідникові). Рандеву-передумова §2.1 знята — ARCH.26 host-half ✅, тож design-half не заблокований; гейт = масштаб. ⚠️ **Нерозв'язаний arch-lock-in:** §2.1 описує Провідника водночас як **обрану роль** («динамічно обирається на основі `vcap`») і як **окремий SKU** («Solar + LiFePO4»; §1.2 делегує спеку в «§2.1 L2 placeholder», де спеки нема) — динамічно обрати вузол в інший енергостек неможливо. Присуд вирішує, чи ARCH.1 дістає 👤-половину (як ARCH.10).
+- [ ] ⚖️ elected-role vs Solar+LiFePO4-SKU (arch-lock-in) — гейтить design-half
+- [ ] 🤖 дизайн ролі L2 поверх landed-політики [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA) — після ⚖️
+- [ ] 🤖 H-LDSE routing + геохешинг ([`§2.2`](00_08_Beyond_TRL9_Planetary_Roadmap)) — після ⚖️
 
-#### ARCH.6 — Federated Learning auto-retraining
-- **P3** · 🤖 · 🌿 · → [`00_08 §1.2`](00_08_Beyond_TRL9_Planetary_Roadmap)
-- **Стан:** Far-horizon — monthly cycle + A/B testing, обмежено L2 Conductors / L3 Queens (compute-budget-paradox: 0.47F supercap + STOP2 300 nA не витримує gradient epoch на L1 Soldier). Канон [`00_08 §1.2`](00_08_Beyond_TRL9_Planetary_Roadmap).
-- [ ] 🤖 federated-retraining дизайн (L2/L3-only; активація post-scale)
+#### ARCH.6 — Cluster-level Edge Retraining (канон-назва; НЕ «Federated Learning» — §1.1 їх розрізняє)
+- **P3** · ⚖️ · ⚫ · → [`00_08 §1.2`](00_08_Beyond_TRL9_Planetary_Roadmap)
+- **Стан:** Vacuous як сформульовано, три ноги. (1) Дизайн, що його просив чекбокс, уже в каноні — delegation-таблиця L1/L2/L3 [`00_08 §1.2`](00_08_Beyond_TRL9_Planetary_Roadmap) + [`§1.1`](00_08_Beyond_TRL9_Planetary_Roadmap); проєктувати нічого. (2) Premise фіз-спростовано для L3: Королева = **той самий STM32WLE5JC** ([`02_05 §2.1`](02_05_Queen_Hardware_and_Starlink)) — Cortex-M4/64 КБ не виконає TF fine-tune ані `mrbc`; тренування живе поза Rails (Python/GPU, [`03_03`](03_03_TinyML_Acoustic_Inference)), on-device потребує AI-co-processor у v3-залізі. ⚠️ §1.1 «на 4-5 порядків багатший» стосується **енергії**, не compute (§1.2 формулює це чесно) — джерело хиби. (3) Buildable-half поглинутий: справжній FL (обмін оновленнями моделі Queen↔Rails) = deliverable **E.31**; monthly-cycle + A/B-тест = **E.52** ([`04_02`](04_02_Business_Logic_and_Services)) — саме звідти колишній Стан їх і сплайснув під 00_08-реф. Реф §1.2 лишається навмисно: він тримає ARCH.6 окремо від E.31 (переїзд у §03a злив би обидва в один дубль).
+- [ ] 🌿 переоцінити в парі з ARCH.1 — L2-спека сама «TBD spec, §2.1 L2 placeholder», тож premise не визначений, поки L2-заліза нема
 
 #### ARCH.9 — Network Sharding — ізоляція секторів
-- **P3** · 🤖 · 🌿 · → [`00_08 §2.4`](00_08_Beyond_TRL9_Planetary_Roadmap)
-- **Стан:** Far-horizon — isolate anomalous clusters to prevent storm propagation. Post-TRL 7 scaling. Канон [`00_08 §2.4`](00_08_Beyond_TRL9_Planetary_Roadmap).
-- [ ] 🤖 sharding-ізоляція дизайн (активація post-scale)
+- **P3** · 🤖+⚖️ · 🔗 · → [`00_08 §2.4`](00_08_Beyond_TRL9_Planetary_Roadmap)
+- **Стан:** Premise не спростовано — він **безносійний**: inter-cluster лінки сьогодні немає жодної, тож ізолювати нічого. Кластери розділяє **двоключова модель** (per-cluster KEYB — `derive_broadcast_key` солить на `cluster:<id>`), а не star-only; спільний 868 ISM лишається (PHY-інтерференція — вісь §2.2, не ця). Носій, який ріже бокс §2.4 — це **Q2Q** (ARCH.10; `q2q_unavailable` захардкоджено в прошивці Королеви), не L1-релей. Живий L1↔L1 beacon-релей на KEYB існує, але шторм-безпечний конструкцією (журнал поколінь ≤1 ретрансляція/покоління, TTL=2) і **intra**-cluster. Backend-firehose-вісь має власника — **ARCH.52**. ⚡ ARCH.43 (wire-rev3 «opaque pass-through relay без декрипту») воскресить premise і на L1: opaque-релей ключа не потребує → знімає KEYB-межу, яка сьогодні і Є shard-межею. Канон [`00_08 §2.4`](00_08_Beyond_TRL9_Planetary_Roadmap) механізму не несе — ні тригера ізоляції, ні критерію де-ізоляції.
+- [ ] 🔗 носій: ARCH.10 (Q2Q backhaul) — первинний; ARCH.43 (wire-rev3 opaque relay) — друге джерело оживлення
+- [ ] ⚖️ тригер ізоляції + критерій де-ізоляції (коли Королева відмовляє сусідові в транзиті: розмін «втрата даних сусіда» vs «власний uplink») — після носія
 
 #### ARCH.11 — Energy-Aware Routing (load-balanced)
-- **P3** · 🤖 · 🌿 · → [`00_08 §2.5`](00_08_Beyond_TRL9_Planetary_Roadmap)
-- **Стан:** Far-horizon — route metric = f(hop_count, remaining_energy, bio_potential). Post-TRL 7 scaling mesh. Канон [`00_08 §2.5`](00_08_Beyond_TRL9_Planetary_Roadmap).
-- [ ] 🤖 energy-aware route-metric дизайн (активація post-mesh)
+- **P3** · 🤖+⚖️ · 🔗 · → [`00_08 §2.5`](00_08_Beyond_TRL9_Planetary_Roadmap)
+- **Стан:** ADR ухвалено — метрика на `vcap_headroom`, `bio_potential` **явно відхилено** (observer-effect: воно вимірюване, а не ресурс маршрутизації), балансування вирівнює Vcap, а не шукає «найбагатшого». Предмета сьогодні нема: L1 mesh-relay гейтовано, **star-only** (ухвала FW.2 (а), [`03_01 §1.9.1`](03_01_Firmware_Lifecycle_and_DMA)) → оживе лише з ARCH.43 (wire-rev3); route-metric-половина потребує ще й L2-Провідника (ARCH.1 — L1 лишається TTL-flood, [`00_08 §2.2`](00_08_Beyond_TRL9_Planetary_Roadmap)). Друга передумова, у каноні не записана — **FW.50**: `vcap_mv` = VDDA-проксі регульованої шини, не заряд EDLC → headroom ≈ const, метрика вироджується у `f(hop_count)` (той самий shortest-path, який §2.5 відкидає), а поріг на реальній Vcap-шкалі fail-closed (дзеркало `FAUNA_VCAP_MIN_MV`); `VCAP_SAFE_THRESHOLD` — канон-словник, у коді не існує. Канон [`00_08 §2.5`](00_08_Beyond_TRL9_Planetary_Roadmap).
+- [ ] 🔗 передумови: ARCH.43 (повернення mesh, wire-rev3) + FW.50 (живий Vcap-канал з дільником)
+- [ ] ⚖️ вага `hop_count`↔`vcap_headroom` (латентність vs довговічність вузла) + значення `VCAP_SAFE_THRESHOLD` — після FW.50-шкали
+- [ ] 🤖 route-metric дизайн — після ⚖️-присуду
 
 #### ARCH.19 — BSP-кластеризація IoT-графу
 - **P3** · 🤖 · 🌿 · → [`00_08 §2.4`](00_08_Beyond_TRL9_Planetary_Roadmap)

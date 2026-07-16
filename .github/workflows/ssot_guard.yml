@@ -135,7 +135,8 @@ jobs:
             // so a mismatch (e.g. `type:bugfix` on a schema change) is caught by reviewers.
             // [OPS.9] type:refactor & type:bugfix removed from bypass — they
             // change names/paths/logic → context drift. Such PRs must update
-            // docs OR add a Drift Register entry (04_02 §13b). Only genuinely
+            // the relevant docs/ file, or log the open drift in docs/00_07
+            // (the One-Home backlog — itself a docs/ change). Only genuinely
             // non-architectural classes may bypass the docs requirement.
             const BYPASS_LABELS = [
               'type:chore',
@@ -186,7 +187,8 @@ jobs:
               '   - `type:test` — test-only change',
               '',
               '> `type:refactor` / `type:bugfix` no longer bypass — they change names/paths/logic',
-              '> (context drift). Update `docs/` OR add a Drift Register entry (04_02 §13b).',
+              '> (context drift). Update the relevant `docs/` file, or log the open drift in',
+              '> `docs/00_07_Action_Plan_Tracker.md` — the One-Home backlog, itself a `docs/` change.',
               '> Generic skip-label was deliberately rejected — the semantic label forces classification.',
               '> Ref: [00_05 §2.3 SSOT Integrity Guard](../docs/00_05_GitHub_Projects_and_IaC_Automation.md)',
             ].join('\n');

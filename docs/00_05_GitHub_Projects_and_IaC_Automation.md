@@ -25,7 +25,7 @@
 | [`00_02` — AI Native Engineering and TRL](00_02_AI_Native_Engineering_and_TRL) | AI-Native методологія (philosophy) |
 | [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Стратегічна дорожня карта + TRL-матриця |
 | [`00_04` — Shape Up Operations and RnD Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §5.2 Betting Table, §6 Academic Semester |
-| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | §13b Drift Register (живиться результатами SSOT Integrity Guard) |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | §13b Doc↔Code Sync: механіка — гейт `model_doc_sync` (НЕ цей guard), семантика — ручний cool-down аудит ([`00_04 §5.3`](00_04_Shape_Up_Operations_and_RnD_Clusters)); відкриті drift-айтеми → [`00_07`](00_07_Action_Plan_Tracker) |
 | [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | Kamal / Terraform CI integration |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (OPS.3 / OPS.4 + trl_sync/labeler) |
 
@@ -136,7 +136,7 @@ jobs:
 
 - **Умова:** Pull Request вносить зміни в `app/models/`, `app/services/`, `firmware/` або `contracts/`.
 - **Дія:** Action перевіряє наявність відповідних змін у папці `docs/` (або заповненого поля `SSOT Link` у linked issue). Мердж блокується, якщо документація не оновлена.
-- **Bypass:** PR із semantic-label з whitelist (`type:chore`, `type:deps`, `type:perf`, `type:test`) автоматично пропускається — ці типи **за визначенням** не змінюють архітектуру/контракти. **`type:refactor` та `type:bugfix` навмисно ВИКЛЮЧЕНО з auto-bypass**: рефакторинг змінює імена класів / шляхи (напр. `app/services/blockchain_minting_service.rb`), а багфікс — логіку (класичний приклад: FW.7 Lorenz BigDecimal→Float) → обидва спричиняють Context Drift у Wiki. Для них guard вимагає **або** оновлення відповідного `docs/`-файла, **або** запис у Drift Register ([`04_02 §13b`](04_02_Business_Logic_and_Services)) — а він сам є зміною у [`04_02`](04_02_Business_Logic_and_Services), тож автоматично задовольняє перевірку. Явний вибір label лишається форс-функцією: автор класифікує зміну, а не додає порожній коміт у `docs/`.
+- **Bypass:** PR із semantic-label з whitelist (`type:chore`, `type:deps`, `type:perf`, `type:test`) автоматично пропускається — ці типи **за визначенням** не змінюють архітектуру/контракти. **`type:refactor` та `type:bugfix` навмисно ВИКЛЮЧЕНО з auto-bypass**: рефакторинг змінює імена класів / шляхи (напр. `app/services/blockchain_minting_service.rb`), а багфікс — логіку (класичний приклад: FW.7 Lorenz BigDecimal→Float) → обидва спричиняють Context Drift у Wiki. Для них guard вимагає **або** оновлення відповідного `docs/`-файла, **або** запис відкритого drift-айтема у [`00_07`](00_07_Action_Plan_Tracker) (One-Home для backlog — саме туди їх адресує [`04_02 §13b`](04_02_Business_Logic_and_Services), а не в датований лог у каноні) — а він сам є зміною у `docs/`, тож автоматично задовольняє перевірку. Явний вибір label лишається форс-функцією: автор класифікує зміну, а не додає порожній коміт у `docs/`.
 
 > **Чому семантичні label замість `skip-ssot-guard`:** Generic skip-label буде зловживатись (натиснув-обійшов). Семантичні `type:*` змушують автора публічно класифікувати зміну. Якщо PR має `type:bugfix`, але насправді міняє схему — code reviewer одразу побачить mismatch у заголовку та назві label.
 
@@ -185,8 +185,8 @@ jobs:
             echo "❌ Code changed but no docs/* updated."
             echo ""
             echo "Either:"
-            echo "  (a) Update the relevant SSOT file in docs/ (for type:refactor / type:bugfix a"
-            echo "      Drift Register entry in docs/04_02 §13b counts as a docs/ change), or"
+            echo "  (a) Update the relevant SSOT file in docs/ (for type:refactor / type:bugfix an"
+            echo "      open-drift entry in docs/00_07 counts as a docs/ change), or"
             echo "  (b) Add one of: type:chore, type:deps, type:perf, type:test"
             echo "      if this PR genuinely does not alter architecture or logic."
             exit 1
@@ -255,45 +255,16 @@ jobs:
 
 Routes PRs автоматично у відповідні кластери на основі шляхів файлів.
 
-> **⚠️ Конфіг — `actions/labeler@v6` синтаксис, overlap усунено:** (1) попередній `- any: [...]` формат був v4 і не парситься на v6; (2) широкий `app/**` кластера C **поглинав** спеціалізовані піддерева B (`iotex`, `attractor*`, `seed_derivation*`) і D (`hadron_*`) → PR отримував ДВА primary-cluster labels, ламаючи взаємовиключність (§4.1). Тепер C явно виключає їх (`!`-глоби) → специфічний кластер виграє над загальним. (3) `chainlink_router_version*` прибрано з primary-B (це Router-ABI **failover**, інфраструктура — [`06_08`](06_08_Resilience_and_Failover_Policy), а не математика/ZK) → лишається primary-C через `app/**` + secondary `cluster-ref:B`, як інші web3-сервіси. PR, що чіпає одночасно різні top-level дерева (напр. `app/` + `contracts/`) — справді cross-cluster, резолвиться вручну (`cluster:cross-cluster`, §4.1). Застосування цих правок у реальному `.github/labeler.yml` — tracked у [`00_07`](00_07_Action_Plan_Tracker).
+> **Конфіг = SSOT у [`.github/labeler.yml`](../.github/labeler.yml); тут — лише політика.** Дзеркало глобів раніше жило в цьому §, розійшлося з файлом у 5 місцях і навіть іменувало неіснуючий `module:06-infra` (живий — `module:06-matrix`, §4.4) — прибрано за One-Home, як solc-pragma. Правки застосовані (OPS.9 — вже в архіві [`00_07`](00_07_Action_Plan_Tracker)); coverage-residual → [`00_07`](00_07_Action_Plan_Tracker) OPS.3.
 
-```yaml
-# .github/labeler.yml — config (actions/labeler@v6 syntax: changed-files / *-glob-to-*-file)
-# Primary cluster labels mutually-exclusive (§4.1): спеціалізовані B/D-піддерева
-# ВИКЛЮЧЕНО з широкого app/** кластера C (!-глоби) → специфічний кластер виграє.
-'cluster:C-scaling':
-  - all:
-      - changed-files:
-          - any-glob-to-any-file: ['app/**', 'config/**', 'lib/**', 'db/**', 'spec/**']
-      - changed-files:
-          - all-globs-to-all-files:
-              - '!app/services/iotex/**'
-              - '!app/services/silken_net/attractor*'
-              - '!app/services/silken_net/seed_derivation*'
-              - '!app/services/polygon/hadron_*'
-'cluster:D-compliance':
-  - changed-files:
-      - any-glob-to-any-file: ['app/services/polygon/hadron_*', 'docs/07_*']
-'cluster:A-hardware':
-  - changed-files:
-      - any-glob-to-any-file: ['firmware/**', 'docs/01_*', 'docs/02_*', 'docs/08_*']
-'cluster:B-verification':
-  - changed-files:
-      - any-glob-to-any-file: ['contracts/**', 'app/services/iotex/**', 'app/services/silken_net/attractor*', 'app/services/silken_net/seed_derivation*']
-# secondary (RACI consult) — НЕ mutually-exclusive, співіснують з primary C:
-'cluster-ref:B':
-  - changed-files:
-      - any-glob-to-any-file: ['app/services/blockchain_*', 'app/services/celo/**', 'app/services/solana/**', 'app/services/web3/chainlink_router_version*']
-'module:04-server-core':
-  - changed-files:
-      - any-glob-to-any-file: ['app/models/**', 'app/controllers/**', 'app/services/**', 'app/workers/**', 'app/views/**']
-'module:03-firmware':
-  - changed-files:
-      - any-glob-to-any-file: ['firmware/**']
-'module:06-infra':
-  - changed-files:
-      - any-glob-to-any-file: ['deploy/**', '.kamal/**', 'terraform/**']
-```
+**Політика роутингу (durable):**
+
+- **Primary-кластери взаємовиключні** (§4.1): широкий `app/**` кластера C **мусить** явно виключати спеціалізовані піддерева B (`iotex`, `attractor*`, `seed_derivation*`) і D (`hadron_*`) — інакше PR дістає два primary-label; специфічний кластер виграє над загальним.
+- 🔴 **`all:`-обгортка обов'язкова скрізь, де є негативні глоби.** Матчери під одним `changed-files` дефолтяться в `any:` (**OR**) → негативна клауза сама матчить кожен PR поза виключеними піддеревами, і лейбл липне на все. AND дає лише `- all:` з окремими `changed-files`-блоками. Цей баг був живий (C липнув на всі PR) і пофікшений 2026-07-16 — деталь у [`00_07`](00_07_Action_Plan_Tracker) OPS.3.
+- `chainlink_router_version*` — **не** primary-B: це Router-ABI failover, інфраструктура ([`06_08`](06_08_Resilience_and_Failover_Policy)), а не математика/ZK → primary-C через `app/**` + secondary `cluster-ref:B`, як інші web3-сервіси.
+- PR, що чіпає різні top-level дерева (`app/` + `contracts/`) — справді cross-cluster → `cluster:cross-cluster` як **транзитний** triage-маркер (§4.1), резолвиться вручну.
+- **Routing-coverage = інваріант §4.1** (100% accountability): кожен шлях мусить мати primary-кластер. Відкриті діри (`.github/**`, `docs/03_*` — сьогодні без жодного `cluster:*`) → [`00_07`](00_07_Action_Plan_Tracker) OPS.3.
+
 
 ```yaml
 # .github/workflows/labeler.yml  (skeleton — реальний файл SHA-пінить `uses:` + має harden-runner першим кроком, §2.7)
@@ -390,7 +361,7 @@ jobs:
 - `complexity:XS/S/M/L/XL`
 - `agent:ai` / `agent:human` / `agent:ops` / `agent:hybrid` _(назви labels без emoji у [`.github/labels.yml`](../.github/labels.yml); emoji `🤖 / 👤 / 🔧 / 🔗` — **візуальні маркери виконавця**: передусім swimlane-навігація у [`00_07`](00_07_Action_Plan_Tracker), а в каноні Tier I/II трапляються точково (👤 bench-residual / 🤖 AI-doable))_
 - `module:00-codex` / `module:01-anchor` / `module:02-capsule` / `module:03-firmware` / `module:04-server-core` / `module:05-ledger` / `module:06-matrix` / `module:07-naas` / `module:08-academic`
-- `type:chore` / `type:deps` / `type:perf` / `type:test` — **SSOT Guard auto-bypass**; `type:refactor` / `type:bugfix` — класифікація **без** bypass (вимагають docs-update або Drift Register, див. §2.3)
+- `type:chore` / `type:deps` / `type:perf` / `type:test` — **SSOT Guard auto-bypass**; `type:refactor` / `type:bugfix` — класифікація **без** bypass (вимагають docs-update або запису в [`00_07`](00_07_Action_Plan_Tracker), див. §2.3)
 
 ---
 
