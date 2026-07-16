@@ -14,8 +14,10 @@
   "notes": {
     "material": "Ti-6Al-7Nb (ASTM F1295, V-free)",
     "process": "SLM/DMLS + HIP + dehydrogenation bake (01_02 1.3); EAAE may need per-alloy tuning vs 4V baseline",
+    "post_process": "dehydrogenation bake 250C/10-3 mbar/3h, within 2h of rinse (01_02 1.3 Step 5b) - MANDATORY after EAAE",
     "surface_finish": "EAAE dual-scale on the active face: micro Sa 0.5-5 um + nano Sv 50-500 nm (01_02 1.2)",
-    "inspection": "CV/EIS biochem (Stage-2, 01_01 6); j on PROJECTED area (01_02 1.4); ICP-MS Al+Nb release (V-free alloy, 01_02 2.5)",
+    "coating_restriction": "Active face (EBFC Gen 2.0 stack): ZnO-Ta, self-healing 8-HQ and biomimetic (Zn-HAp/chitosan) ALL FORBIDDEN - bare metal only, any dielectric blocks DET (01_02 3.6; RFQ 4.B)",
+    "inspection": "CV/EIS biochem (Stage-2, 01_01 6); j on PROJECTED area (01_02 1.4); ICP-MS Al+Nb release (V-free alloy, 01_02 2.5); LECO RH404 H<100 ppm per batch or rejected (01_02 1.3a-C)",
     "extra": [
       "Active electrode area = 1 face ~= 2.01 cm2 (O16, 01_03 3.5)",
       "Alloy bake-off SKU (01_02 2.5): direction (a) V-free, but 6% Al remains (Al phytotoxic in acidic sap)",
