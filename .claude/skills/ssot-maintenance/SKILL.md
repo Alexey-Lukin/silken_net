@@ -67,10 +67,10 @@ All via binstubs — **`bin/rails` / `bin/rspec`**, never `bundle exec` (`[[feed
 | `bin/rails wiki:sync PUSH=1` | Commit + push the canon `NN_NN` pages to the GitHub wiki (SSH to `*.wiki.git`). | ↑ |
 | `COVERAGE=0 bin/rspec spec/lib/docs_linter_spec.rb spec/lib/docs_toc_spec.rb spec/lib/docs_graph_spec.rb` | Unit-test the linter / ToC / ref-graph engines (pure functions — `spec_helper`, **no Rails/DB**; `COVERAGE=0` skips the whole-suite coverage gate on a subset run). | — |
 | `ruby scripts/docs_check.rb [refs\|tracker]` | **Fast local** alias — runs `docs:check_refs` + `tracker:check` with **no Rails boot** (~0.3s vs ~1.2s; no `bundle`/DB — only `ruby`+`rake`). Reuses the exact rake bodies → cannot drift from CI. Read-only (ToC regen stays `bin/rails docs:toc`). Ideal for a pre-commit hook / non-Rails contributor. | reuses `lib/tasks/docs.rake` + `tracker.rake` |
-| `ruby scripts/stan_audit.rb` | _(advisory, on-demand — ганяти на цемент/vilize-сесіях, НЕ CI-gate)_ дві осі по `**Стан:**`-рядках 00_07: **canon-claim** (код-символ ∉ заявлені канон-доми айтема — ловить «Механіка — `NN_NN §X`» без змісту; FP-класи вбиті historical sweep'ом DOC-T.37 — повний exempt-перелік у шапці скрипта) + **volatile-numbers** (число+лічильне слово, класи A/B/C/D очима). Кожен хіт розібрати очима: FP / wrong-дім → Стан-реф-дожим / діра → канонізувати-migrate; новий повторюваний FP-клас → вбити В СКРИПТ. Метод/історія → `00_06 §3` | `scripts/stan_audit.rb` (standalone; реюзить `Tracker::Dashboard`-парсинг) |
+| `ruby scripts/stan_audit.rb` | _(advisory, on-demand — ганяти на цемент/vilize-сесіях, НЕ CI-gate)_ три осі по registry-айтемах 00_07 — третя = **[x]-staleness** (чекнутий бокс із датою `✅ YYYY-MM-DD` старший ~14 днів → цементуй у Стан/канон і зрізай; бездатні = лічильник). Дві осі по `**Стан:**`-рядках: **canon-claim** (код-символ ∉ заявлені канон-доми айтема — ловить «Механіка — `NN_NN §X`» без змісту; FP-класи вбиті historical sweep'ом DOC-T.37 — повний exempt-перелік у шапці скрипта) + **volatile-numbers** (число+лічильне слово, класи A/B/C/D очима). Кожен хіт розібрати очима: FP / wrong-дім → Стан-реф-дожим / діра → канонізувати-migrate; новий повторюваний FP-клас → вбити В СКРИПТ. Метод/історія → `00_06 §3` | `scripts/stan_audit.rb` (standalone; реюзить `Tracker::Dashboard`-парсинг) |
 | `ruby scripts/model_doc_sync.rb` | **code↔doc registry gate** (HARD, CI `docs.yml`): `04_01` ⟷ `app/models/` (model files ⟷ `### Model` headings §2..§7b 1:1 · concerns ⟷ §1 · `PARTITIONED_TABLES` ⟷ §0/§11) **+ `04_02` ⟷ `app/services/**`+`app/workers/**`** (every class mentioned). Replaced the manual «§12/§13b SSOT Drift Register» (silently stale: 35 models for 36 files; missed the whole FactoryFlashing::* namespace). Run it (or rely on CI) after adding a model/service/worker. Pure Ruby, no Rails. Method/why → `00_06 §3`. | `scripts/model_doc_sync.rb` (standalone) |
 
-CI: `docs.yml` is the **single home** for the doc gates — triggers on `docs/**`, `**.md`, the lib-docs engines/specs, `.github/**` (so the external-doc-path guard sees `.github/`+root-md changes), **and `app/models/**` + `partition_maintenance_worker.rb` + `scripts/model_doc_sync.rb`** (so the model↔code registry gate catches a model added in code, not just a doc edit). The duplicate steps were removed from `ci.yml` (2026-06-02), so a mixed code+docs PR no longer double-runs them; `ci.yml` (code CI) `paths-ignore`s `**.md`/`docs/**`. `main` is currently **unprotected** — when protection lands, mark `docs_check` required (a docs-only PR skips `ci.yml`).
+CI: `docs.yml` is the **single home** for the doc gates. Its `changes` filter covers `docs/**` + `**.md` + **every source tree** — deliberately wide, because two gates scan them tree-wide (external doc-path drift + `code_tracker_id_check`) and the pin/model-sync/FIELDS gates read specific files inside them. **A gate whose input sits outside that filter is decorative** — it only ever runs on someone else's PR (the `bio_contract.rb` hole, DOC-T.40 CHECK D); `guard_registry_sync` now enforces that for pinned sources. The duplicate steps were removed from `ci.yml` (2026-06-02), so a mixed code+docs PR no longer double-runs them; `ci.yml` (code CI) `paths-ignore`s `**.md`/`docs/**`. `main` **is** branch-protected: the required check is the always-on aggregate **`docs-ok` («Docs passed»)** — a path-gated `docs_check` cannot be required directly (it would block code-only PRs that skip it). Canon → `06_07 §2`.
 
 ## Add a new drift guard — *how this skill evolves*
 
@@ -84,7 +84,7 @@ This is the point: the skill stays small, but it lets you turn **any** newly-fou
    - **Exempt the owner doc** — it's *allowed* to state the fact.
 4. **Unit-test it** in `spec/lib/docs_linter_spec.rb`: a positive (catches the real drift), a clean pass, and the near-misses that must *not* trip. Run `bin/rspec spec/lib/docs_linter_spec.rb`.
 5. **Wire it into** `lib/tasks/docs.rake` `check_refs`: accumulate hits, print a report block, push a label into `failed` (advisory while you clean the existing drift → flip to **HARD** once it's at 0).
-6. **Record it** in the `00_06 §3` guard table and the campaign memory — **not in this skill**. (For an *unambiguous* retired string with no legit current use, skip the bespoke linter: add it to `DocsLinter::DEPRECATED_TERMS` — the general "any retired token's return is blocked" net.)
+6. **Record it** in the `00_06 §3` guard table and the campaign memory — **not in this skill**. This is now *enforced*, not remembered: `guard_registry_sync` (DOC-T.40) fails CI if a new gate has no §3 row (and if a §3 row names a file that no longer exists). Cross-file / code-reading gates go in `scripts/*.rb`, not `lib/docs_linter.rb` (which is pure-doc text); wire the new script into `docs.yml` **and** confirm its inputs are inside the `changes` filter — a gate outside it is decorative. (For an *unambiguous* retired string with no legit current use, skip the bespoke linter: add it to `DocsLinter::DEPRECATED_TERMS` — the general "any retired token's return is blocked" net.)
 
 > When the **standard itself** changes (skeleton, home registry), edit `00_06` (the home) — this skill's pointers stay valid by design.
 
@@ -126,10 +126,12 @@ GATE per-phase docs:check_refs + tracker:check + zero-loss set-diff + wiki dry-r
 **Before merge** (any docs change):
 
 ```
-- [ ] bin/rails docs:check_refs           → green
-- [ ] bin/rails tracker:check             → green (if 00_07 touched)
-- [ ] bin/rails docs:toc                  → run if headings changed, then check_refs green
+- [ ] ruby scripts/docs_check.rb          → green (fast: check_refs + tracker:check, no Rails)
+- [ ] bin/rails docs:toc                  → run if headings changed, then re-check green
 - [ ] ruby scripts/model_doc_sync.rb      → green (if 04_01/04_02 or app/models touched)
+- [ ] ruby scripts/guard_registry_sync.rb → green (if a guard / 00_06 §3 / docs.yml touched)
+- [ ] ruby scripts/field_canon_sync.rb    → green (if github_bootstrap.rb / 00_05 §1.1 / labels.yml touched)
+- [ ] ruby scripts/code_tracker_id_check.rb → green (if code cites a tracker-ID, or 00_07 IDs moved)
 - [ ] linter/ToC specs green              → if lib/docs_*.rb touched
 - [ ] fact edited ONLY at its home (§8.2); mirrors labelled
 - [ ] no volatile counts · no blocker section in canon · Cross-references at top
