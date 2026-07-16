@@ -72,6 +72,18 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   (`contracts/`), rubygems.org (gems), PyPI release history (ML/in-silico). A `@vN`-pinned CI action
   also floats to fresh patches that run in CI with secrets — SHA-pin the high-blast-radius ones
   (cf. tj-actions/changed-files, 2025).
+- **Age the DIFF, not the PR title** (2026-07-16). A Dependabot PR is named for its *target* dep,
+  but bundler re-resolves the target's own dependencies to latest in the same lock-diff — so a
+  "ripe" PR smuggles fresh transitives past the gate. Seen: `pagy 43.5.6→43.6.0` (age 7d ✅) carried
+  `json 2.20.0→2.21.1` (age **3d**) as a passenger. Read `gh pr diff <n>` and age **every changed
+  line**, then weigh against the target's actual value (that pagy release only touched
+  searchkick/elasticsearch paginators — `grep` said 0 uses → no-op, so zero cost to let it ripen).
+- **A green Dependabot PR can still break `main`** (2026-07-16 → `00_07 OPS.13`). Ask what actually
+  *builds* the changed artifact and on which trigger. Our only docker build (`mirror-ghcr.yml`) runs
+  on `workflow_run[branches: main]` + `release` + `dispatch` — **not `pull_request`** → a base-image
+  bump is never built on the PR. `library/ruby` bumps only the Dockerfile while `Gemfile` holds a
+  hard `ruby "4.0.5"` pin ⇒ `bundle install` dies *after* merge. **A Ruby bump is the full 7-mirror
+  recipe (row 2 of the table) + `rvm install` + full suite — never a merge button.**
 - **Transitive caps block "latest" — and that's not our drift.** A bump can be held back by a
   depending gem's constraint; document the blocker, don't force it (forcing breaks the holder):
   seen this session — `eth` caps openssl `~>3.3` + bigdecimal `~>3.1`; `rbsecp256k1` caps
