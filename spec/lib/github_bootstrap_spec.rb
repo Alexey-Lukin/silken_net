@@ -227,7 +227,7 @@ RSpec.describe GithubBootstrap do
 
       canon = row.scan(/`([A-D] — [^`]+)`/).flatten
       expect(canon.size).to eq(4), "expected 4 primary clusters in canon, got #{canon.inspect}"
-      expect(described_class::CLUSTER_OPTIONS).to contain_exactly(*canon)
+      expect(described_class::CLUSTER_OPTIONS).to match_array(canon)
       expect(described_class::CLUSTER_OPTIONS).not_to include("Cross-cluster")
     end
 
