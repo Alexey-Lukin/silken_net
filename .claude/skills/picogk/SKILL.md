@@ -20,7 +20,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 | `docs/00_07_Action_Plan_Tracker.md` HW.1 / **HW.33** | Build state + the anchor geometry audit (founder decisions: radial gyroid (б), Ø11; open gaps: PEEK/hole chain, FEA) |
 | `docs/00_08_Beyond_TRL9_Planetary_Roadmap.md §1.3` | Cross-biome 5-SKU (pine/oak/broadleaf/mangrove/tropical) |
 | `docs/00_02_AI_Native_Engineering_and_TRL.md §4a` | Code-as-CAD vs generative-AI; In-Silico for the Hardware stream |
-| `tools/cad/docs/drawings_program.md` | Engineering-drawing program: CEM-native DXF (netDxf) + SVG/PDF, the ASME-Y14.5≠projection fix, lattice-as-inspection-card, phased §7 rollout |
+| `tools/cad/docs/drawings_program.md` | Engineering-drawing program: CEM-native DXF (netDxf) + SVG, the ASME-Y14.5≠projection fix, lattice-as-inspection-card, phased §7 rollout |
 | `extern/.../README_ImplicitLibrary.md` | LEAP's own implicit/TPMS guide (splitting logic, modular workflow for the graded v2) |
 
 ## Source Files
@@ -29,8 +29,8 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 |------|------|
 | `tools/cad/cem/*.json` | CEM manifests — the Git-SSOT parameter inputs (`kind` discriminator: `ti_coin`, `anchor_zone1`, `mechanical_lock`, `cathode_flange`, `radome`, `zone2_sleeve`, `anchor_assembly`, `anchor_axial_stack`) |
 | `tools/cad/src/SilkenCad/Program.cs` | CLI dispatch (`smoke`/`build`/`verify`/`scan`/`draw`/`render`/`section`) + `RunHeadless` (the `Library.Go` wrapper); `draw` is pure-managed (no Library.Go), `render`/`section` drive the native viewer |
-| `tools/cad/src/SilkenCad/Cem.cs` | CEM records + JSON parse (snake_case). Engineering-drawing PMI lives here: optional `ToleranceSpec` (fits / Lamé-µm / GD&T datums) + `NotesSpec` (material/process/surface/coating-restriction/lattice-spec/inspection) on each part record — Noyron-native SSOT, fed to `draw` |
-| `tools/cad/src/SilkenCad/Drawing.cs` | CEM-native engineering drawings (`draw <cem>`): **SVG/PDF (human) + DXF via netDxf (CAD-native factory deliverable, opens in AutoCAD/Fusion)**. Pure-managed string/entity build, no Library.Go. Consumes the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text); `DrawingStandard` param (ISO 1st-angle default / ASME). PoC = Ti-coin; rest of §7 deferred (`docs/drawings_program.md`) |
+| `tools/cad/src/SilkenCad/Cem.cs` | CEM records + JSON parse (snake_case). Engineering-drawing PMI lives here: optional `ToleranceSpec` (fits / Lamé-µm / GD&T datums) + `NotesSpec` (material/process/**post-process**/surface/coating-restriction/lattice-spec/inspection) on each part record — Noyron-native SSOT, fed to `draw` |
+| `tools/cad/src/SilkenCad/Drawing.cs` | CEM-native engineering drawings (`draw <cem>`): **SVG (human) + DXF via netDxf (CAD-native factory deliverable, opens in AutoCAD/Fusion)** — no PDF (never built; `drawings_program §3`). Pure-managed string/entity build, no Library.Go. Consumes the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text); `DrawingStandard` param (ISO 1st-angle default / ASME). Shipped kinds = `ti_coin` + `cathode_flange` (§7 rest deferred — `docs/drawings_program.md`). ⚠️ gotcha #11 |
 | `tools/cad/src/SilkenCad/TiCoin.cs` | Ti-coin coupon — `BaseCylinder` disc + `BaseRing` eyelet, `BoolAdd` |
 | `tools/cad/src/SilkenCad/Zone1Anode.cs` | Zone-1 anode + `CartesianGyroid:IImplicit` (the from-scratch SDF) + `Anode()` render path |
 | `tools/cad/src/SilkenCad/Validation.cs` | golden-metrics via `Voxels.CalculateProperties` (porosity needs an envelope ref) + reuses LEAP `Measure.fGetSurfaceArea` |
@@ -99,6 +99,30 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
     view-cube presets (instance, not static) but NOT `SetViewAngles`/`RequestClose` (drop explicit
     camera → auto-frame; `bEndAppWithTask` exits). `ColorFloat` alpha does NOT show a rod through a
     dense gyroid → use `section` (cutaway) + a gold material.
+11. 🔴 **The drawing tract SILENTLY invents and silently drops — and the reviewer sees LESS than the
+    factory** (deep-dig 2026-07-16; the `topology: "sheet"` default below is ONE MEMBER of this class,
+    not a one-off).
+    - **Silent drop:** `Drawing.NotesLines` → `void Add(label, v) { if (!string.IsNullOrWhiteSpace(v)) … }`
+      — a null CEM field removes the whole line. There is no empty `Post-process: ___` for the shop to
+      query; the drawing looks COMPLETE. Same for `ToleranceLines`: `Feature` renders only if Plus **or**
+      Minus exists (`cathode_flange.json`'s `shank_dia` is absent from BOTH svg and dxf **today**), and
+      `InterferenceMin/Max` need BOTH or both vanish.
+    - **Silent invention (worse):** the fallbacks are unmarked defaults, so a missing field becomes a
+      FABRICATED factory instruction — `?? "Ti-6Al-4V"` / `?? "SLM/DMLS"` (title-block) stamp the 4V
+      baseline onto a Ta/Au/7Nb/CP-Ti coupon; the `Notes == null` branch prints "Ti-6Al-4V (**Grade 5**)"
+      outright; `N(t.PlusMm ?? 0)` renders `"bore: 0.1/0 mm"` — a **zero minus-tolerance the CEM never
+      stated**, in PMI, in the DXF. `CAD_REV ?? "local"` stamps `rev local` → zero git traceability.
+    - **Reviewer < factory (inverted risk):** the SVG title-block truncates (`CathodeFlange`, PROCESS →
+      22 chars) and overflows its canvas (TiCoin title-block writes past x=820 → PROCESS clipped
+      mid-word; the SSOT line sits at y=566 on a 560-tall frame = invisible); the **DXF truncates
+      nothing**. So a bad note rides to the shop precisely because self-review can't see it.
+    - **Tests protect the bug:** every xUnit CEM is an INLINE literal — **not one test reads a shipped
+      `cem/*.json`** — and `DrawingTests` asserts `Contains("Ti-6Al-4V", svg)` on a `Notes == null` coin,
+      i.e. it green-lights the fallback that IS the defect. CI never runs `draw` on a real CEM
+      (`cad_smoke.yml` runs `verify` only). The one test worth writing: read the real `cem/ti_coin.*.json`
+      and assert every non-empty field appears VERBATIM in the DXF.
+    Reflex when touching `Drawing.cs`/CEM: ask "what does a NULL here print on a factory drawing?" —
+    and prefer a loud `NOT SPECIFIED IN CEM` over a plausible default.
 
 ## Common Tasks
 
@@ -107,7 +131,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 - **Change anchor geometry**: edit `cem/anchor_zone1.*.json` (Ø, bore, period, wallParam).
   Geometry numbers are owned in `01_01 §5` + founder decisions in `00_07 HW.33`; **MEASURE
   porosity after** (gotcha #4). Render via `Zone1Anode.Anode` (the ctor route, gotcha #1).
-  🔴 **`topology` defaults to `"sheet"` SILENTLY** (`Cem.cs`) and 6/7 `anchor_zone1.*` omit the key —
+  🔴 **`topology` defaults to `"sheet"` SILENTLY** (`Cem.cs`; a member of gotcha #11's class) and 6/7 `anchor_zone1.*` omit the key —
   so every SKU renders sheet, while canon `01_01 §5.6` says "дані схиляють до **network**". That choice
   is an un-made founder verdict (`00_07 HW.33` ⚖️), not a default to inherit: a factory STL cut today
   would ship the disfavored branch. Do NOT quietly pick a side when touching these manifests.
@@ -151,7 +175,8 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   `Frames.cs` — NOT centred), so stack lifts are absolute; the render overlap sleeve∩capsule is the flange
   SHOULDER on the sleeve top face, not the shank (the Ø9 floats in the bore).
 - **Generate an engineering drawing (`Drawing.cs` / `draw`, SHIPPED Phase 0+1)**: `draw <cem>` emits
-  **SVG/PDF (human) + DXF via netDxf (factory, opens in AutoCAD/Fusion)** — pure-managed, no Library.Go,
+  **SVG (human) + DXF via netDxf (factory, opens in AutoCAD/Fusion)** — no PDF (scoped in research, never
+  built); ⚠️ read gotcha #11 BEFORE touching notes/tolerances — pure-managed, no Library.Go,
   consuming the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text; `DrawingStandard` ISO/ASME
   param). Drawing carries fits (Lamé-µm, NOT a blind ISO-286 metal `H7/s6` on a PEEK bore), GD&T datums,
   post-process + coating-restriction notes, lattice-spec. Shipped kinds = **`ti_coin` (Phase 1) +

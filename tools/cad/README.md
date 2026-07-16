@@ -33,7 +33,7 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 |---|---|
 | `cem/*.json` | CEM manifests (Git-SSOT inputs) — e.g. `ti_coin`, `anchor_zone1.pine` |
 | `src/SilkenCad/Program.cs` | CLI: `smoke` / `build <cem>` / `verify <cem>` (headless `Library.Go`) · `scan <cem>` (wallParam window, pure) · `draw <cem>` (engineering drawing SVG+DXF, pure-managed) · `render` / `section <cem>` (PicoGK native-viewer screenshot / cutaway → `out/*.png`) |
-| `src/SilkenCad/Drawing.cs` | CEM-native engineering drawings (`draw`): SVG/PDF (human) + DXF via netDxf (factory, opens in AutoCAD/Fusion). Pure-managed; consumes the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text) |
+| `src/SilkenCad/Drawing.cs` | CEM-native engineering drawings (`draw`): SVG (human) + DXF via netDxf (factory, opens in AutoCAD/Fusion). Pure-managed; consumes the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text). ⚠️ The SVG title-block TRUNCATES (flange PROCESS → 22 chars) and overflows the canvas; the DXF does NOT — so the reviewer sees LESS than the factory |
 | `src/SilkenCad/TiCoin.cs` | Stage-2 in-vitro coupon — disc + eyelet (`01_01 §6.1`) |
 | `src/SilkenCad/Zone1Anode.cs` | Zone-1 gyroid anode + the custom `CartesianGyroid` SDF |
 | `src/SilkenCad/Validation.cs` | golden-metrics via `Voxels.CalculateProperties` (porosity/bbox/tris) + LEAP `Measure.fGetSurfaceArea` |
@@ -197,7 +197,7 @@ adds a SOLID central rod (`BusRod.voxConstruct()` `BoolAdd`, gotcha #9 — not t
 of the gyroid (the rod is SDF-invisible → connectivity/porosity gates untouched), `verify` separately MEASURES the
 fused rod. Full anode→cathode-channel→flange-pad through-rod; `AxialStack.BusRodClears` audits rod + 2·liner ≤ channel.
 
-**Engineering drawings + render (shipped)** — `draw <cem>` → SVG/PDF (human) + **DXF via netDxf** (factory-native, opens
+**Engineering drawings + render (shipped)** — `draw <cem>` → SVG (human) + **DXF via netDxf** (factory-native, opens
 in AutoCAD/Fusion), pure-managed, consuming the CEM `ToleranceSpec`/`NotesSpec` (fits as Lamé-µm, NOT a blind ISO-286
 metal `H7/s6` on a PEEK bore; GD&T datums; coating-restriction; lattice-spec). §7/§8 DECIDED: DXF+SVG / ISO 1st-angle /
 CEM-tolerances. Shipped `draw` kinds: `ti_coin` + `cathode_flange` (both = live factory deliverables). Phase 2 (sleeve/

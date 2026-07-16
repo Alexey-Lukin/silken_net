@@ -2,7 +2,7 @@
 
 > **Status:** research + program (2026-06-20 analysis; **2026-06-21 decided + web-grounded**). The
 > recommended path, why, and a **phased** roadmap (§7). Founder decisions (§8) are **resolved** —
-> DXF (netDxf) + SVG/PDF · ISO 1st-angle + ISO 1101 · CEM-`tolerances` SSOT; Phase 0+1 active, Phase 2
+> DXF (netDxf) + SVG · ISO 1st-angle + ISO 1101 · CEM-`tolerances` SSOT; Phase 0+1 active, Phase 2
 > deferred. Canon refs are pointers, not restated.
 > Question from founder: «як отримати креслення анкера + Ti-coin у висновку».
 
@@ -48,8 +48,10 @@ the generator emits its own predicted properties *and* its own documentation).
 A drawing is just **orthographic views + dimensions + a title block**, and for our parts the views
 are computed **analytically from the CEM parameters** we already own — no mesh, no GUI, no loss.
 
-- **Deterministic & Git-friendly:** `cem/*.json` + a small drawing generator → a **`.svg`/`.pdf`**
+- **Deterministic & Git-friendly:** `cem/*.json` + a small drawing generator → a **`.svg`**
   (text-reviewable, version-controlled, regenerates on a dim change — like `metrics.json`).
+  ⚠️ *PDF was scoped here in the 2026-06-20 research and never built* — `draw` emits `.svg` + `.dxf`
+  only (`Program.cs`). Convert SVG→PDF ad-hoc if a publication needs it; do not cite PDF as shipped.
 - **Exact:** dimension values come straight from the frozen CEM (`01_01 §1`), not a measured mesh.
 - **Honest about the lattice:** the gyroid is documented as a **spec callout** (porosity / period /
   topology) on an **envelope** view, not drawn cell-by-cell — which is the AM-industry norm
@@ -70,11 +72,11 @@ are computed **analytically from the CEM parameters** we already own — no mesh
 ## 5. Technical paths (ranked)
 
 - **A — C# generator inside `tools/cad` (PRIMARY, decided).** `Drawing.cs` + `draw <cem>` verb:
-  compute view rectangles/circles/section-lines from the CEM, emit **DXF (factory) + SVG/PDF (human)**
+  compute view rectangles/circles/section-lines from the CEM, emit **DXF (factory) + SVG (human)**
   with dimension lines, a title block, GD&T datums, and a notes block. **DXF via `netDxf` (MIT, NuGet,
   .NET) — CAD-native, the shop opens it in AutoCAD/Fusion; native dimension entities (linear/radial/
   diametric) → the library draws them, not us** (lazy-senior ladder: a maintained library beats a
-  hand-rolled SVG dimension-engine). SVG/PDF stays for human/publication/self-review. Pure-managed
+  hand-rolled SVG dimension-engine). SVG stays for human/publication/self-review. Pure-managed
   (no `Library.Go` for analytic parts → CI logic-job; gyroid cross-section = pure SDF-sample à la
   `Connectivity.SampleAnchor`, no render). **This is the path that matches our pipeline.**
 - **B — STL/STEP → FreeCAD TechDraw, headless Python (FALLBACK, only if a shop contractually demands
@@ -86,7 +88,7 @@ are computed **analytically from the CEM parameters** we already own — no mesh
 - **C — Manual import into Fusion/SolidWorks (ONE-OFF).** Import STL as reference, draw by hand.
   Acceptable for a single publication figure; not for a maintained, regenerating deliverable.
 
-**Decided: A** (DXF via netDxf + SVG/PDF) for the maintained drawings — regenerate on every dim change,
+**Decided: A** (DXF via netDxf + SVG) for the maintained drawings — regenerate on every dim change,
 like `metrics.json`. **B** (FreeCAD STEP) deferred until a factory contractually requires STEP.
 
 ## 6. What an AM drawing must carry (grounded in our canon)
@@ -136,7 +138,7 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
 Derived from the canon shops (Київ **3D Metal Tech** ISO 13485 / Дніпро **ALT Ukraine** / EU backup
 hubs — `07_02 §8.1`) + web-grounding (sources below).
 
-1. **Deliverable format** — **DXF (netDxf) + SVG/PDF + STL**. No STEP for now: AM shops print from
+1. **Deliverable format** — **DXF (netDxf) + SVG + STL**. No STEP for now: AM shops print from
    STL/3D, and the drawing is for **GD&T/CMM acceptance**, not the print. STEP = deferred path B if a
    shop contractually requires it.
 2. **Drawing standard** — **ISO**, made a CEM/config parameter (default). ⚠️ **These are TWO orthogonal

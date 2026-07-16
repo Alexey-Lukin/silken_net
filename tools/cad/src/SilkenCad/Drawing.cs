@@ -15,7 +15,7 @@ internal enum DrawingStandard { Iso, Asme }
 // CEM-native engineering drawing (research → tools/cad/docs/drawings_program.md). A drawing is just
 // orthographic views + dimensions + a title block — all computed ANALYTICALLY from the CEM numbers we
 // already own (NOT from the lossy voxel mesh; STL→STEP→drawing loses precision + needs manual rebuild).
-// Two outputs from the same CEM: SVG/PDF (human/publication/self-review) + DXF (CAD-native factory
+// Two outputs from the same CEM: SVG (human/publication/self-review) + DXF (CAD-native factory
 // deliverable, opened in AutoCAD/Fusion — netDxf draws the dimensions). Deterministic, Git-friendly, no
 // Library.Go, regenerates on a dim change like metrics.json — the Noyron way (the generator documents
 // itself). PoC = Ti-coin (Stage 2, the most urgent physical part, 01_01 §6.1).
