@@ -91,8 +91,10 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   depending gem's constraint; document the blocker, don't force it (forcing breaks the holder):
   seen this session — `eth` caps openssl `~>3.3` + bigdecimal `~>3.1`; `rbsecp256k1` caps
   rubyzip `~>2.3`; `lookbook` caps rouge `<5.0` + htmlentities `~>4.3.4`; `rspec` caps
-  diff-lcs `<2.0`; **TF** caps h5py `<3.15`. Detect with `bundle update <g>` "stayed the same"
-  / `pip check`. Revert the over-bump to the capped version.
+  diff-lcs `<2.0`; **TF** caps h5py `<3.15`; `conda-lock` caps dulwich `<0.25` while the
+  PYSEC-2026-2462..66 fix lives only in 1.2.5 (documented blocker in requirements-conda-lock.in;
+  Scorecard alert → owner dismiss-with-reason — re-check on every conda-lock bump). Detect with
+  `bundle update <g>` "stayed the same" / `pip check`. Revert the over-bump to the capped version.
 - **Conda `>=` env vs lock.** ML env is a `>=` spec (raise floors to tested-current — esp. a
   DSP floor like `librosa>=0.11` that protects the parity contract). in-silico has a real
   `conda-lock.yml` — that's the reproducible pin the DFT ran on; the env.yml floors are loose

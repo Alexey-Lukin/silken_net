@@ -2,4 +2,19 @@
 # conda-lock.yml ⟷ environment.yml. Version-pin = версія останнього зеленого
 # прогону (2026-07-16); бамп → перегенеруй .txt (команда в його шапці) —
 # прохід скіла dependency-update.
+#
+# ⚠️ Регенерувати ЛИШЕ `uv pip compile --universal` (команда в шапці .txt):
+# pip-compile фіксує markers ПІД СВОЄЮ платформою — macOS-компіляція викинула
+# linux-only SecretStorage (keyring), і --require-hashes на раннері впав.
+# --universal тримає marker-гілки всіх платформ в одному файлі.
 conda-lock==4.0.2
+# ⚠️ Документований транзитивний КАП (клас скіла dependency-update, НЕ дрейф):
+# conda-lock 4.0.2 вимагає dulwich >=0.22.6,<0.25, а PYSEC-2026-2462..2466
+# (Scorecard OSV alert #47) fixed лише в 1.2.5 — floor неможливий без розриву
+# резолюції. Експлуатовність у нашому вжитку ≈ нуль: вразливі поверхні dulwich
+# (format_patch / NTFS-Windows / merge-driver / submodule clone / receive-pack)
+# потребують git-операцій над недовіреними repo, а lock_sync ганяє лише
+# `conda-lock lock --check-input-hash` над довіреним environment.yml БЕЗ
+# git+-залежностей. Alert → dismiss-with-reason (👤-рішення власника); зняти
+# кап → бамп conda-lock, коли upstream відпустить dulwich (перевіряти на
+# dependency-update проході).
