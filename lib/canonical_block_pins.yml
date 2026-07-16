@@ -33,3 +33,65 @@ wire_payload_format:
   note: 'Wire decode formats — a silent change here breaks the whole uplink decode.
     On drift: reconcile mirrors + full bin/rspec, then `rake docs:repin`.'
   repinned: '2026-07-03'
+slashing_curve:
+  source: app/services/blockchain_burning_service.rb
+  consts:
+  - DEFAULT_SLASH_GAMMA
+  - DEFAULT_PENALTY_FACTOR_MAX
+  - DEFAULT_PENALTY_FACTOR
+  - PF_NO_ACK
+  - PF_STREAMR_GAP
+  - PF_NO_MAINTENANCE
+  sha256: '0495170f9bccdd60b3b99d29a8675aab88e241148b4f9f1b7452f53ad08a1c41'
+  mirrors:
+  - docs/05_05_Slashing_and_Risk_Policy.md §3 — slash_ratio formula block (GAMMA /
+    PENALTY_FACTOR_MAX / per-cause uplift weights)
+  note: 'slash() is IRREVERSIBLE — a silent shift here re-sentences every operator.
+    The code already declares this mirror ("дзеркало канону 05_05 §3 — правити ТАМ");
+    the pin makes the declaration binding. GAMMA/PF_MAX are DAO-promotable to SystemParameter
+    — a promotion must reconcile 05_05 §3 in the same commit. On drift: reconcile
+    the mirror + bin/rspec, then `rake docs:repin`.'
+  repinned: '2026-07-16'
+metabolic_gp_core:
+  source: firmware/bio_contracts/bio_contract.rb
+  consts:
+  - DELTA_T_FAST_S
+  - DELTA_T_SLOW_S
+  - GP_HOMEO_MIN
+  - GP_HOMEO_MAX
+  - CRITICAL_Z_MIN
+  - CRITICAL_Z_MAX
+  sha256: 35c0396923cb0bd8a85a7c4b74cffafd7e1644311cc95d3b9a6ce3120d501ddc
+  mirrors:
+  - app/services/silken_net/attractor.rb (self-declared "byte-identical mirror" —
+    GP_HOMEO_MIN/MAX + DELTA_T_FAST_S/SLOW_S; server-half parity is NOT spec-covered,
+    attractor_spec defers metabolic_health to FW.2)
+  - docs/03_04_mruby_Lorenz_Attractor.md §4.3 — m(delta_t) formula + GP table
+  - CLAUDE.md §5 «Критичні інваріанти» (CRITICAL_Z_MIN + growth_points)
+  note: 'Post-E.63 the EMISSION MAGNITUDE is m(delta_t), not Z — so these consts ARE
+    the token rate (10 000 GP = 1 SCC). GP_HOMEO_MAX=31 is also the 5-bit wire ceiling
+    (status<<5|gp). lorenz_core pins the CHAOS half of this same file; this pins the
+    money half. On drift: reconcile mirrors, regen lorenz_bytecode.h (FW.46) + full
+    bin/rspec, then `rake docs:repin`.'
+  repinned: '2026-07-16'
+qatt_envelope:
+  source: app/workers/unpack_telemetry_worker.rb
+  consts:
+  - QATT_SIG_LEN
+  - QATT_HEALTH_LEN
+  - QATT_HEADER_LEN
+  - QATT_VERSION_2
+  - QATT_DOMAIN_TAG
+  - QATT_RESIDUE
+  sha256: 847ae3893f854fd5e72dfd55dd5fc2c238419ca181cacc97b4511bd892e1b235
+  mirrors:
+  - firmware/common/queen_attest.h — the C half (#define QATT_HEADER_LEN/SIG_LEN/
+    DOMAIN_TAG/RESIDUE); the pin engine parses Ruby `NAME = value` only, so the C
+    side rides here as prose — reconcile it BY HAND on any hit
+  - docs/03_05_Hardware_Symmetric_Crypto_and_Security.md §2.2 — QATT-v2 envelope
+  note: 'Ed25519 signs DOMAIN_TAG‖uid_len‖uid‖body by CONCATENATION — a one-byte HEADER_LEN
+    skew or one letter in the domain-tag fails EVERY cluster batch, and telemetry
+    dies silently (minting stops). QATT_RESIDUE discriminates the CCM era from legacy
+    [IV][ct] — a shift there mis-parses both. On drift: reconcile the C header + 03_05
+    §2.2 + bin/rspec, then `rake docs:repin`.'
+  repinned: '2026-07-16'
