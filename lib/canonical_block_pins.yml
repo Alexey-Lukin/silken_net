@@ -33,6 +33,22 @@ wire_payload_format:
   note: 'Wire decode formats — a silent change here breaks the whole uplink decode.
     On drift: reconcile mirrors + full bin/rspec, then `rake docs:repin`.'
   repinned: '2026-07-03'
+solc_pragma:
+  source: contracts/foundry.toml
+  consts:
+  - solc_version
+  sha256: ca71e8486b1290b640743a16803fb44a8bfcc0a84302324b483de3307a564d2b
+  mirrors:
+  - docs/05_03_Tokenomics_SCC_and_SFC.md §Pragma-таблиця + OpenZeppelin-рядок («0.8.35
+    locked» ×2)
+  - contracts/*.sol — `pragma solidity` кожного контракту (не пінується — інший синтаксис;
+    звіряй грепом на хіт)
+  note: 'foundry.toml = код-SSOT версії (00_06 §2). `SOLC_VERSION_RE` у docs_linter
+    version-AGNOSTIC — він банить re-statement поза 05_03, але owner до коду НЕ пінить,
+    тож бамп лишав 05_03 stale і зеленим (прецедент: 9 stale-копій 0.8.28 пережили
+    бамп на 0.8.35). TOML парситься тим самим `NAME = value`-регексом, що й Ruby —
+    рушій не чіпано. On drift: reconcile 05_03 + pragma всіх *.sol, then `rake docs:repin`.'
+  repinned: '2026-07-16'
 slashing_curve:
   source: app/services/blockchain_burning_service.rb
   consts:
