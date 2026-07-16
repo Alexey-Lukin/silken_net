@@ -21,7 +21,7 @@ module Firmwareable
     # =========================================================================
     # OTA LIFECYCLE (AASM State Machine — firmware_update_status)
     # =========================================================================
-    aasm :firmware, column: :firmware_update_status, enum: true, namespace: :firmware, whiny_persistence: true do
+    aasm :firmware, column: :firmware_update_status, enum: true, whiny_persistence: true do
       state :fw_idle, initial: true
       state :fw_pending
       state :fw_downloading
