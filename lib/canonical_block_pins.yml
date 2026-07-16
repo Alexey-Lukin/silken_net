@@ -13,8 +13,9 @@ lorenz_core:
   - RHO_MAX
   sha256: 65bed100a839390686a1712da5dea89aebe4c80b2622dcdf4ad4cf4a3c0ee627
   mirrors:
-  - CLAUDE.md §3 (Firmware Lorenz константи block; SIGMA_LIMITS/RHO_LIMITS Range-form
-    mirrors code MIN/MAX consts)
+  - CLAUDE.md §5 «Критичні інваріанти» (Lorenz константи-block)
+  - app/services/silken_net/attractor.rb (SIGMA_LIMITS/RHO_LIMITS Range-form mirrors
+    code MIN/MAX consts)
   - docs/03_04_mruby_Lorenz_Attractor.md (§4.1 const table + iterate listings)
   note: 'SSOT = this code. On drift: reconcile the mirrors, regen lorenz_bytecode.h
     (FW.46) + full bin/rspec, then `rake docs:repin`.'
@@ -26,7 +27,7 @@ wire_payload_format:
   - CCM_SENSOR_PAYLOAD_FORMAT
   sha256: 2c3c392e3e9773f5a4d8ff295783b6498d1adbc953536b5c16cb5e40b2f09b7b
   mirrors:
-  - CLAUDE.md §3 — 21-byte packet format block + Ruby unpack string
+  - CLAUDE.md §5 «Критичні інваріанти» — 21-byte packet format + Ruby unpack string
   - docs/03_05_Hardware_Symmetric_Crypto_and_Security.md §2.1 — wire-budget ledger
     / CCM wire-rev2
   note: 'Wire decode formats — a silent change here breaks the whole uplink decode.

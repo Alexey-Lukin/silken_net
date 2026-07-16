@@ -93,6 +93,11 @@ RSpec.describe DocsLinter do
         .to contain_exactly("## 🛑 Відкриті Блокери", "## ✅ Закриті Блокери (PR #254)")
     end
 
+    it "flags a '## 🚨 Блокери …' heading (🚨 was outside the emoji set — 05_02 slipped through)" do
+      expect(described_class.canon_blocker_sections("## 🚨 Блокери та статус\n"))
+        .to contain_exactly("## 🚨 Блокери та статус")
+    end
+
     it "does not flag a status-emoji heading lacking a blocker/archive word" do
       md = "## 🛑 Архітектурні правила (фіксоване)\n## ✅ Governance DAO — Реалізовано\n"
       expect(described_class.canon_blocker_sections(md)).to be_empty

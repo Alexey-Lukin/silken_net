@@ -53,7 +53,11 @@
 #    Відомі стелі (задокументовані, не баги — advisory читається очима):
 #      • NEGATION-вікно двобічне (±90): «squash'нуто X в Y» гасить і Y
 #        (результат, не жертву) — при розборі перевіряй напрямок дієслова;
-#      • Class#-правило зараховує метод за наявністю КЛАСУ в домі.
+#      • Class#-правило зараховує метод за наявністю КЛАСУ в домі;
+#      • селектор токенів вимагає `_` / `#` / `()` — CamelCase-only символ
+#        (GraphQL `ProjectV2FieldCommon`, клас без методу) структурно НЕ
+#        перевіряється; свідома стеля (§00 vilize 07-16): розширення на
+#        CamelCase повертає префікс-колізії класу, знятого delete("_")-уроком.
 #
 # 2. VOLATILE-NUMBERS (DOC-T.35): число біля лічильного слова — розібрати
 #    КЛАС очима (нора 07-12 довела: класи лексично нерозрізнимі → HARD-lint
@@ -104,7 +108,7 @@ md.each_line do |line|
 
   if line.match?(/\*\*P[0-3]\*\*/)
     items[current][:docs] |= line.scan(/\b(\d\d_\d\d)\b/).flatten
-    items[current][:status] ||= line[/[🟢🟡🔴⚪⚫🌿🔗]/]
+    items[current][:status] ||= line[/[⚪🟡🟢🔗🌿⚫]/] # = Dashboard::STAGES набір
   end
   next unless line.start_with?("- **Стан:**") && items[current][:stan].nil?
 

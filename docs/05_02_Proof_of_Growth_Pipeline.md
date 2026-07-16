@@ -36,7 +36,7 @@
 - [Схема Полів БД (Proof of Growth State Machine)](#схема-полів-бд-proof-of-growth-state-machine)
 - [Змінні Середовища та Credentials](#змінні-середовища-та-credentials)
 - [SEC.11 — Lorenz Seed Provenance & Dual Computation Integrity](#-sec11--lorenz-seed-provenance--dual-computation-integrity)
-- [Блокери та статус](#-блокери-та-статус)
+- [Статус пайплайну](#-статус-пайплайну)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -943,7 +943,7 @@ telemetry_log.update!(
 
 ---
 
-## 🚨 Блокери та статус
+## 📌 Статус пайплайну
 
 > **One-Home:** відкриті блокери живуть у [`00_07`](00_07_Action_Plan_Tracker), не в каноні (00_06 §1). Для цього пайплайну:
 > - **FW.8** — `CRITICAL_Z_MIN/MAX` firmware-hardcoded vs server per-species (раніше тут «BLOCKER-03» — невідповідність `bio_status`/`growth_points` firmware↔backend для не-сосни). OTA-дизайн — §4а вище; трекер — [`00_07` — FW.8](00_07_Action_Plan_Tracker) (Rails-сторона ✅, firmware-парсер host-tested+gated, persist Flash-KV; bench-residual).

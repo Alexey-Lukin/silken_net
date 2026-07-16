@@ -73,10 +73,10 @@ module DocsLinter
   # nor a resolved-archive ("✅ Архів", "✅ Закриті Блокери (PR #…)"). ALL blockers
   # (open + closed) live in 00_07 (open → §module, closed → §🗄️ Архів); canon keeps
   # the design/constraint as body prose. Heuristic: a `## ` heading bearing a status
-  # emoji (🛑/✅/🟢/🟡/🔴) together with a blocker/archive word. Returns the offending
+  # emoji (🛑/✅/🟢/🟡/🔴/🚨) together with a blocker/archive word. Returns the offending
   # headings. Lines inside ``` fenced blocks are skipped, so a skeleton *example*
   # (e.g. 00_06 §1) is not a false positive. (Caller exempts 00_07.)
-  STATUS_EMOJI = "🛑✅🟢🟡🔴"
+  STATUS_EMOJI = "🛑✅🟢🟡🔴🚨"
 
   def canon_blocker_sections(text)
     in_fence = false
