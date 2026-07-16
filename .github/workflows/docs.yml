@@ -43,30 +43,24 @@ jobs:
         with:
           filters: |
             docs:
+              # Source trees are doc-relevant on purpose: two gates scan them
+              # tree-wide — external doc-path drift (stale docs/NN_NN refs in
+              # code comments) + code_tracker_id_check (phantom tracker-IDs) —
+              # and the canonical-pin/model-sync/FIELDS gates read specific
+              # files inside them. A gate whose input is outside this filter
+              # is decorative (the bio_contract.rb hole, DOC-T.40 CHECK D).
               - 'docs/**'
               - '**.md'
-              - 'lib/docs_linter.rb'
-              - 'lib/docs_toc.rb'
-              - 'lib/docs_graph.rb'
-              - 'lib/tasks/docs.rake'
-              - 'lib/tracker/**'
-              - 'lib/tasks/tracker.rake'
-              - 'spec/lib/docs_linter_spec.rb'
-              - 'spec/lib/docs_toc_spec.rb'
-              - 'scripts/model_doc_sync.rb'
-              - 'scripts/protocols_ref_check.rb'
-              - 'tools/firmware/queen_energy_budget.rb'
-              - 'tools/firmware/scc_rate.rb'
-              - 'tools/cad/cem/**'
-              - 'scripts/cem_canon_sync.rb'
-              - 'app/models/**'
-              - 'app/services/**'
-              - 'app/workers/**'
-              - 'firmware/bio_contracts/**'
-              - 'lib/canonical_block_pins.yml'
-              - 'lib/github_bootstrap.rb'
-              - 'scripts/guard_registry_sync.rb'
-              - 'scripts/field_canon_sync.rb'
+              - 'app/**'
+              - 'bin/**'
+              - 'config/**'
+              - 'contracts/**'
+              - 'db/**'
+              - 'firmware/**'
+              - 'lib/**'
+              - 'scripts/**'
+              - 'spec/**'
+              - 'tools/**'
               - '.github/**'
 
   docs_check:
@@ -137,6 +131,13 @@ jobs:
         # table + Module vs the labels.yml closed nine + Semester/Cycle prefix.
         # The Cross-cluster option survived its own retirement 37 days here.
         run: ruby scripts/field_canon_sync.rb
+
+      - name: Phantom tracker-ID gate (code ⟷ 00_07 ID-set)
+        # Pure Ruby, no Rails — every tracker-ID cited in code/workflow text
+        # must resolve against 00_07 (items + archive + verbatim facet tags).
+        # Proof-case: main.c cited a phantom "-Q2Q" facet on ARCH.35 (real home
+        # ARCH.10) and nothing blinked.
+        run: ruby scripts/code_tracker_id_check.rb
 
   docs-ok:
     # Single required status check for the SSOT gates on `main`. Always runs so a

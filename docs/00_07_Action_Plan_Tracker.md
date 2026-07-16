@@ -1864,4 +1864,17 @@ _Нову SSOT doc-drift / tracker-tooling знахідку додавати р�
 | E.54 | state_root: `active_tree_count` (метрика покриття екосистеми) — migration applied; `[E.54]`-теги = ця робота. ID був помилково перевикористаний у беклозі під SOP-документи EwsAlert → та вісь тепер UNI.12 (контент) + ARCH.31 (inline UI) | [`05_04`](05_04_Ethereum_L1_State_Anchor) |
 | E.40 | Ignion NN02-310 antenna eval → A/B-чекбокс у VNA-сесії UNI.10 (та сама Гончаров-лаба; ex-«дотично UNI.10» far-horizon vendor-swap) | [`02_01 §5`](02_01_Hardware_Architecture_and_BOM) |
 | FW.25 | TinyML DSP-path: Path B (log-mel) SELECTED + shipped self-owned — `Compute_LogMel` + 3-way parity + `contract_hash` tripwire + бюджет-конверт (arena ≤ 10 КБ); живить FW.4 baseline. Residual'и мігрували: Path C-fallback + опц. партнер-апгрейд + 🌿 dataset → FW.4 | [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) (decision-matrix) + [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference) (контракт) |
+| E.1 | Інваріант «SFC voting-power МУСИТЬ падати після slashing» — досліджено в ARCH.4-DAO роботі (2026-04-22): OZ ERC20Votes `_update`→`_transferVotingUnits` знижує голоси by-design; інваріант живе тестом у `contracts/test/SilkenForestCoin.t.sol` | [`05_03`](05_03_Tokenomics_SCC_and_SFC) |
+| E.13 | Petri-Net модель Rails-моноліту (deadlock-free @10k IoT) → дедуп-rename у ARCH.20 (within-doc дубль; ARCH.20 нині won't-do — PN = one-shot snapshot) | [`08_01`](08_01_Joint_Publications_and_IP_Strategy) |
+| FW.11 | Race condition `vibration_detected` — NVIC-рівнева ізоляція EXTI0 замість `__disable_irq` (реалізовано, квітень-2026) | [`03_01`](03_01_Firmware_Lifecycle_and_DMA) |
+| FW.12 | Насичення `acoustic_events` на 255 при payload-packing (реалізовано, квітень-2026; пара FW.22) | [`03_03`](03_03_TinyML_Acoustic_Inference) |
+| FW.14 | `Error_Handler`: soft-reset замість вічного циклу з вимкненими IRQ (реалізовано, квітень-2026) | [`03_01`](03_01_Firmware_Lifecycle_and_DMA) |
+| ARCH.15 | `SystemParameter` — governance-aware protocol-константи з cached `.current` (реалізовано; пара `Governance::ParameterSyncWorker`) | [`05_06 §7`](05_06_Governance_and_DAO) |
+| INF.2 | GHCR-дзеркалення Docker-образу (Akash-провайдери не тягнуть із приватного GCP AR) — реалізовано, живе `mirror-ghcr.yml` | [`06_02`](06_02_Akash_Network_Integration) |
+| DIFF.2 | `carbon_sequestration_coefficient` — species-weighted нарахування SCC (`TreeFamily` + `weighted_growth_points`), реалізовано | [`04_01`](04_01_Data_Models_and_Entities) |
+| OPS.8 | Аудит seed-дрейфу `TreeFamily` (`db/seeds.rb` vs Lorenz-SSOT) — закрито, знання в каноні; ID живе провенанс-міткою у `seeded_tree_families_lorenz_alignment_spec.rb` (прун-коміт заявив «zero inbound refs», а спека цитувала — клас-привід `code_tracker_id_check`) | [`03_04 §4.1`](03_04_mruby_Lorenz_Attractor) |
+| S3.1 | Guard-clause audit конвеєра (Chainlink dispatch / IoTeX verify / minting) — реалізовано + тести (квітень-2026) | [`05_02`](05_02_Proof_of_Growth_Pipeline) |
+| S3.4 | M2M token refresh — sliding-window оновлення 30-денного Bearer без Ed25519 re-auth | [`04_03 §5.15.1`](04_03_REST_API_v1_Reference) |
+| S6.5 | Kredis mint-lock 30s→120s (batch minting worst-case ~130 с — double-mint guard) | [`05_02`](05_02_Proof_of_Growth_Pipeline) |
+| S6.7 | Double-anchoring guard: network-timeout ≠ `:failed` (TX може сидіти в mempool); ширший наступник — ARCH.66 confirmation-lifecycle | [`05_04`](05_04_Ethereum_L1_State_Anchor) |
 
