@@ -286,6 +286,30 @@ module DocsLinter
     end
   end
 
+  # [SSOT anti-drift] Rate-guard SELF-ANCHOR (DOC-T.40). The guard's regexes hardcode the
+  # CURRENT governance-changeable values — a deliberate tripwire (§3 footnote), but a latent
+  # mine: a re-price edits the home doc, the stale regex silently stops guarding the NEW value,
+  # and the One-Home function is lost without a single red light. The anchor closes that loop:
+  # each home must still MATCH the guard's own pattern, so re-pricing the home fails CI until
+  # the regex is consciously updated together with every mirror. The violation text doubles as
+  # the mirror checklist — manifest.md + 07_02 are exempt from the drift-guard by design (genre),
+  # so THIS is the only red light that will ever name them on a re-price (DOC-T.41).
+  RATE_ANCHOR_HOMES = {
+    "05_03" => [ [ :TOKENOMICS_RATE_RE, "mint rate `10,000 gp = 1 SCC`" ] ],
+    "07_01" => [ [ :TOKENOMICS_RATE_RE, "mint rate `10,000 gp = 1 SCC`" ],
+                 [ :CARBON_RATE_RE, "carbon rate `2000 SCC = 1 tCO₂`" ] ]
+  }.freeze
+
+  def tokenomics_rate_anchor(basename, text)
+    (RATE_ANCHOR_HOMES[basename[/\A\d\d_\d\d/]] || []).filter_map do |const, label|
+      next if text.match?(DocsLinter.const_get(const))
+
+      "home #{basename[/\A\d\d_\d\d/]} no longer matches the guard's #{const} (#{label}) — " \
+        "re-price? Update the regex in lib/docs_linter.rb AND sweep the mirrors: " \
+        "manifest.md (§2 genre home), 07_02 ROI, 03_04/05_02 references"
+    end
+  end
+
   # [SSOT anti-drift] Solidity solc / pragma version One-Home (HARD). The locked
   # compiler version (`pragma solidity 0.8.X`, foundry `solc_version`, myth `--solv`) is a
   # single repo-wide fact — every contract pins the SAME version. Its documented home is
@@ -400,9 +424,17 @@ module DocsLinter
      "press-fit P_c = 0.49-3.32→0.32-2.16 MPa frozen+bug-fixed (THERMAL_STRESS_REPORT)" ]
   ].freeze
 
-  THERMAL_STRESS_HISTORICAL = /correction|baseline|buggy|застаріл|було|\bold\b|superseded|баговий|раніше|historical|колишній|старий|артефакт/i
+  THERMAL_STRESS_HISTORICAL = /correction|baseline|buggy|застаріл|було|\bold\b|superseded|баговий|раніше|historical|колишній|старий|артефакт|former|artifact|overstated|over-stated/i
+  # The report itself is the second owner (01_01 §4.2 + THERMAL_STRESS_REPORT, 00_06 §3 row):
+  # its Correction-B/C chronology quotes every superseded number legitimately, incl. the frozen
+  # pre-Correction §1 blockquote that carries no historical marker on the line. The exempt was
+  # unnecessary while the scan stopped at docs/*.md; the DOC-T.42 extended surface reaches the
+  # report, so the owner-exempt becomes load-bearing (same shape as RATE_OWNER_DOC).
+  THERMAL_STRESS_OWNER_DOC = /\ATHERMAL_STRESS_REPORT\z/
 
-  def thermal_stress_drift(_basename, text)
+  def thermal_stress_drift(basename, text)
+    return [] if basename.match?(THERMAL_STRESS_OWNER_DOC)
+
     in_fence = false
     out = []
     text.each_line do |line|

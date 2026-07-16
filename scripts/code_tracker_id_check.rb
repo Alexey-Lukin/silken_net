@@ -26,8 +26,8 @@
 require_relative "../lib/tracker/dashboard"
 
 ROOT  = File.expand_path("..", __dir__)
-TREES = %w[app lib firmware contracts spec scripts tools bin config db].freeze
-EXTS  = "{rb,c,h,sol,py,sh,rake,erb,yml,yaml,md}"
+TREES = %w[app lib firmware contracts spec scripts tools bin config db .claude].freeze
+EXTS  = "{rb,c,h,sol,py,sh,rake,erb,yml,yaml,md,json}"
 
 # The tracker parser + its spec fixtures legitimately carry ID-shaped tokens
 # that exercise the resolver; this script itself cites the proof-case phantom;
@@ -58,13 +58,14 @@ KNOWN_BENIGN = %w[E.164].to_set # ITU-T phone-number format
 # they appear verbatim in the ID-set (below) — never as phantom candidates.
 TOKEN_RE = %r{(?<![A-Za-z0-9_])[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*[.\-]\d[0-9A-Za-z.]*(?:-[A-Z0-9.]+)*(?:/\d+)*}
 
-tracker_md = File.read(Tracker::Dashboard::DEFAULT_PATH)
-ids        = Tracker::Dashboard.all_item_ids(tracker_md).to_set
-families   = ids.filter_map { |id| id[/\A[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*(?=[.\-]\d)/] }.to_set
+tracker_md     = File.read(Tracker::Dashboard::DEFAULT_PATH)
+ids            = Tracker::Dashboard.all_item_ids(tracker_md).to_set
+facet_evidence = Tracker::Dashboard.item_body_text(tracker_md)
+families       = ids.filter_map { |id| id[/\A[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*(?=[.\-]\d)/] }.to_set
 
 # A token resolves if it IS an item ID, or if it is a FACET of one: `FW.20-S2`,
 # `ARCH.41-B`, `HW.3.IS` — a real item (the base) plus a suffix declared
-# verbatim in 00_07. Both halves are required, and that is the whole guard:
+# verbatim in a LIVE `####` item body. Both halves are required:
 #
 #   * base must be a real item → a bare ID with no home (`E.2`) is a phantom
 #     even though 00_07 happens to name it in someone else's prose (it did:
@@ -72,13 +73,19 @@ families   = ids.filter_map { |id| id[/\A[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)
 #     plain verbatim fallback let the 14th orphan through.
 #   * facet must be declared → `ARCH.35-Q2Q` fails (real base, invented
 #     suffix: 00_07 never wrote that compound). That is the proof-case.
-def resolves?(tok, ids, tracker_md)
+#
+# Evidence scope = item_body_text (#### blocks only), NOT the whole tracker
+# (DOC-T.42 ①): a retired sub-ID is verbatim-quoted by the very §🗄️/DOC-T
+# table-row that documents its retirement, so a whole-file match keeps the
+# dead ID "resolvable" forever — the necrology immunises the phantom (8
+# HW.1-family refs survived 11 passes on exactly this trap).
+def resolves?(tok, ids, facet_evidence)
   return true if ids.include?(tok)
 
   base = tok[/\A[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*\.\d+/]
   return false unless base && base != tok && ids.include?(base)
 
-  tracker_md.match?(/(?<![A-Za-z0-9_])#{Regexp.escape(tok)}(?![0-9A-Za-z])/)
+  facet_evidence.match?(/(?<![A-Za-z0-9_])#{Regexp.escape(tok)}(?![0-9A-Za-z])/)
 end
 
 files = TREES.flat_map { |t| Dir[File.join(ROOT, t, "**", "*.#{EXTS}")] } +
@@ -112,7 +119,7 @@ phantoms = files.flat_map do |rel|
       end
       parts.filter_map do |part|
         next unless families.include?(part[/\A[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*/])
-        next if KNOWN_BENIGN.include?(part) || resolves?(part, ids, tracker_md)
+        next if KNOWN_BENIGN.include?(part) || resolves?(part, ids, facet_evidence)
 
         "#{rel}:#{n}: `#{part}` не резолвиться в 00_07 (фантом-ID або renamed)"
       end

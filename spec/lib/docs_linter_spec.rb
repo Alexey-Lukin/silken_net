@@ -329,6 +329,26 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".tokenomics_rate_anchor" do
+    it "flags a rate HOME that no longer matches the guard's own regex (re-price mine, DOC-T.40)" do
+      hits = described_class.tokenomics_rate_anchor(
+        "07_01_Nature_as_a_Service_Contracts", "Конверсія: 12,000 growth_points = 1 SCC; 2500 SCC = 1 tCO₂\n")
+      expect(hits.size).to eq(2)
+      expect(hits.join).to include("TOKENOMICS_RATE_RE").and include("CARBON_RATE_RE").and include("manifest.md")
+    end
+
+    it "passes homes that still carry the pinned values; 05_03 is not required to carry carbon" do
+      expect(described_class.tokenomics_rate_anchor(
+        "07_01_Nature_as_a_Service_Contracts", "10,000 growth_points = 1 SCC; 2000 SCC = 1 tCO₂\n")).to be_empty
+      expect(described_class.tokenomics_rate_anchor(
+        "05_03_Tokenomics_SCC_and_SFC", "10,000 growth_points = 1 SCC\n")).to be_empty
+    end
+
+    it "ignores non-home docs entirely" do
+      expect(described_class.tokenomics_rate_anchor("00_01_Vision", "no rates here at all\n")).to be_empty
+    end
+  end
+
   describe ".solc_pragma_version_drift" do
     it "flags a solc version re-stated outside the 05_03 owner" do
       hits = described_class.solc_pragma_version_drift("00_05_GitHub_Projects", "Slither: solc 0.8.35, fail-on high\n")
@@ -449,6 +469,18 @@ RSpec.describe DocsLinter do
     it "exempts a Correction-C line citing the old 3.4× artefact" do
       expect(described_class.thermal_stress_drift(
         "01_01", "Колишній «SF 3.4×» — артефакт завищеного (k²−1)-знаменника, виправлено\n")).to be_empty
+    end
+
+    it "exempts the English historical markers the report's chronology uses (DOC-T.42 ②)" do
+      expect(described_class.thermal_stress_drift(
+        "PIPELINE_STATUS", "thermal σ_t SF 14.6× (was SF 3.4× — overstated (k²−1) denominator, fixed)\n")).to be_empty
+      expect(described_class.thermal_stress_drift(
+        "SUMMARY", "the former \"SF 3.4×\" headline was an artifact of a legacy denominator\n")).to be_empty
+    end
+
+    it "exempts the report itself as co-owner (frozen pre-Correction §1 quotes carry no marker)" do
+      expect(described_class.thermal_stress_drift(
+        "THERMAL_STRESS_REPORT", "> σ_t @ -30°C: 10.1 → 29.7 MPa, SF 9.9× → 3.4×.\n")).to be_empty
     end
 
     it "passes the current frozen values (5.6× combined)" do

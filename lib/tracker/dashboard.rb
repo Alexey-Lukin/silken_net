@@ -125,14 +125,33 @@ module Tracker
     # work surfaced). `all_item_ids` collects EVERY 00_07 item ID — all #### headings +
     # all table-row first-cells, across ALL sections incl. 📌 Backlog / 🗄️ Архів (NOT
     # section-filtered like parse/table_row_ids, since inbound refs point into those too).
-    # `inbound_ref_violations` flags any em-dash ref to a non-existent ID. The captured ID
+    # `inbound_ref_violations` flags any such ref to a non-existent ID. The em-dash is
+    # OPTIONAL (DOC-T.42): the no-dash dialect `[`00_07` DOC.5](00_07_…)` is the same ref
+    # and was covered by NOTHING (tracker:check saw only the em-dash form). The captured ID
     # REQUIRES a `.`/`-` separator (`INF.4`, `DOC-T.5`) so a directory-title link
     # (`[`00_07` — Action Plan Tracker](…)`) is NOT a false positive. Pure (caller passes docs_dir).
     ANY_ITEM_HEAD  = /^####\s+(?:[✅\p{So}\p{Sk}\u{FE0F}]+\s+)*([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)/
-    INBOUND_REF_RE = /\[`00_07`\s*[—-]\s*([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)\]\(00_07/
+    INBOUND_REF_RE = /\[`00_07`\s*(?:[—-]\s*)?([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)\]\(00_07/
 
     def self.all_item_ids(markdown)
       markdown.each_line.filter_map { |l| (l.match(ANY_ITEM_HEAD) || l.match(TABLE_ID_RE))&.captures&.first }
+    end
+
+    # --- живі ####-тіла як єдине джерело facet-доказів (DOC-T.42 ①) ---
+    # Concatenated text of every `#### <ID>` item block (heading → next ####/##).
+    # Facet resolution (code_tracker_id_check) must take its verbatim evidence from
+    # HERE, not the whole tracker: a retired ID is naturally mentioned by the very
+    # §🗄️/DOC-T table-row that documents its retirement, so a whole-file match keeps
+    # the dead ID "resolvable" forever — every attempt to write the obituary
+    # immunises the phantom (the HW.1-family refs survived 11 passes this way).
+    # Ceiling: an obituary written INSIDE a #### body still immunises — form can't
+    # see semantics; the table-row necrology is the dominant, now-closed case.
+    def self.item_body_text(markdown)
+      in_item = false
+      markdown.each_line.filter_map do |line|
+        in_item = line.match?(ANY_ITEM_HEAD) || (in_item && !line.start_with?("## ", "#### "))
+        line if in_item
+      end.join
     end
 
     # --- global ID uniqueness (dup-guard scope widened) ---

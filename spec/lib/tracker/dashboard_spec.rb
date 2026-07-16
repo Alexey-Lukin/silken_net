@@ -290,6 +290,11 @@ RSpec.describe Tracker::Dashboard do
         .to be_empty
     end
 
+    it "captures the no-dash dialect too (DOC-T.42 ③ — the form nothing covered)" do
+      expect("[`00_07` DOC.5](00_07_Action_Plan_Tracker)".scan(described_class::INBOUND_REF_RE).flatten)
+        .to eq([ "DOC.5" ])
+    end
+
     it "flags an inbound ref to a non-existent 00_07 item, passes a real one" do
       require "tmpdir"
       Dir.mktmpdir do |dir|
@@ -300,6 +305,23 @@ RSpec.describe Tracker::Dashboard do
         expect(described_class.inbound_ref_violations(dir))
           .to contain_exactly(a_string_matching(/06_99_Sample → `00_07 — DOC\.5`/))
       end
+    end
+  end
+
+  describe ".item_body_text" do
+    it "keeps #### item bodies but drops table-rows outside them (the necrology trap, DOC-T.42 ①)" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### FW.1 — live item
+        - **Стан:** declared facet FW.1-S2 lives here.
+
+        ## 🗄️ Архів
+        | ID | Пункт |
+        | DOC-T.9 | retired the FW.9-DEAD sub-ID (obituary) |
+      MD
+      body = described_class.item_body_text(md)
+      expect(body).to include("FW.1-S2")
+      expect(body).not_to include("FW.9-DEAD")
     end
   end
 

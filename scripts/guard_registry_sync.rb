@@ -19,10 +19,18 @@
 #   C. every file path / script name cited in §3 exists on disk (a registry
 #      row must not point at a deleted engine);
 #   D. parity of the "decorative guard" class: ssot_guard.yml `paths:` ⟷ its
-#      embedded `mappings` array (held only by a ⚠️ comment before), and every
+#      embedded `mappings` array (held only by a ⚠️ comment before), every
 #      canonical_block_pins.yml source ⊆ the docs.yml `changes` filter (a
 #      pinned source outside the filter means the HARD pin-gate silently does
-#      not run on the PR that breaks it — the bio_contract.rb hole).
+#      not run on the PR that breaks it — the bio_contract.rb hole), and every
+#      pin KEY named in the §3 pin-inventory row (a third pin must not leave
+#      the row silently stale);
+#   E. the REVERSE of A (DOC-T.40 tail): a §3 row may CLAIM a command / a
+#      workflow home that the job never runs — the class DOC-T.41 caught by
+#      hand in SECURITY_ASSURANCE_CASE ("cppcheck (MISRA) — all gating CI"
+#      with no CI call). Every `cmd` (…wf.yml…) pair in the command column
+#      must find cmd inside that workflow's run-steps, and every command span
+#      must live in SOME workflow unless the row is marked advisory/on-demand.
 #
 # Pure Ruby (yaml stdlib only, no Rails). Run: ruby scripts/guard_registry_sync.rb
 # Exit 0 = in sync; exit 1 = drift (lists the divergence). Method/why → docs/00_06 §3.
@@ -56,6 +64,7 @@ DOCS_RAKE_LABELS = {
   "thermal-stress drift (superseded HW.3.IS SF/P_c number outside 01_01 §4.2 / the report)" => "thermal-stress One-Home",
   "superseded term in front-matter (🎯/Статус names a reversed decision)"                   => "superseded term in front-matter",
   "tokenomics/carbon rate restated outside One-Home (05_03/07_01)"                         => "tokenomics/carbon rate One-Home",
+  "rate-guard anchor stale (home re-priced, regex not — DOC-T.40)"                          => "rate-guard self-anchor",
   "solc/pragma version restated outside One-Home (05_03; code = foundry.toml)"             => "solc/pragma version One-Home",
   "canonical source-block drift (pinned code block changed → reconcile mirrors + `rake docs:repin`)" => "canonical source-block pin",
   "AI-vendor name restated outside One-Home (00_02 §2 roster; use roles)"                  => "AI-vendor name One-Home",
@@ -166,18 +175,66 @@ glob_res = filter_globs.map do |g|
   re = Regexp.escape(g).gsub('\*\*', "DOUBLESTAR").gsub('\*', "[^/]*").gsub("DOUBLESTAR", ".*")
   Regexp.new("\\A#{re}\\z")
 end
-pin_inputs = (YAML.safe_load_file(PINS_YML) || {}).values.map { |cfg| cfg["source"].to_s } +
+pins = YAML.safe_load_file(PINS_YML) || {}
+pin_inputs = pins.values.map { |cfg| cfg["source"].to_s } +
              [ "lib/canonical_block_pins.yml" ]
 pin_inputs.uniq.each do |src|
   covered = glob_res.any? { |re| re.match?(src) }
   errors << "pinned source `#{src}` NOT covered by the docs.yml changes-filter — the HARD pin-gate is decorative for it" unless covered
 end
 
+# ── D3. every pin KEY is named in §3 (inventory tripwire, DOC-T.40) ─────────
+pins.each_key do |key|
+  errors << "pin `#{key}` (canonical_block_pins.yml) not named in 00_06 §3 — the pin-inventory row went stale" unless registry.include?("`#{key}`")
+end
+
+# ── E. §3 command column → workflows (reverse loop of A, DOC-T.40) ──────────
+wf_runs = Hash.new do |h, wf|
+  path = File.join(ROOT, ".github/workflows", wf)
+  h[wf] = if File.exist?(path)
+            YAML.safe_load_file(path).fetch("jobs", {}).values
+                .flat_map { |j| (j["steps"] || []).filter_map { |s| s["run"] } }.join("\n")
+  end
+end
+cmd_span_re = /\A(?:[A-Z0-9_]+=\S+\s+)*(?:bin\/|ruby |python|make )/
+all_wf_runs = nil
+claimed = 0
+registry.each_line do |line|
+  next unless line.lstrip.start_with?("|")
+  next if line.match?(/advisory|on-demand|НЕ CI/i)
+
+  cmd_col = line.split("|")[-2].to_s
+
+  cmd_col.scan(/`([^`]+)`\s*\(([^)]*)\)/) do |cmd, paren|
+    # a workflow home is cited by BARE name (docs.yml, ci.yml); a path segment
+    # (`lib/canonical_block_pins.yml`) is a config file, not a workflow claim
+    paren.scan(%r{(?<![\w./-])[\w-]+\.yml}).each do |wf|
+      claimed += 1
+      runs = wf_runs[wf]
+      if runs.nil?
+        errors << "§3 claims `#{cmd}` runs in #{wf}, but that workflow does not exist"
+      elsif !runs.include?(cmd)
+        errors << "§3 claims `#{cmd}` runs in #{wf}, but no run-step there contains it (phantom gate claim)"
+      end
+    end
+  end
+
+  cmds = cmd_col.scan(/`([^`]+)`/).flatten.grep(cmd_span_re)
+  next if cmds.empty?
+
+  all_wf_runs ||= Dir[File.join(ROOT, ".github/workflows/*.yml")]
+                  .map { |p| wf_runs[File.basename(p)] }.join("\n")
+  unless cmds.any? { |c| all_wf_runs.include?(c) }
+    errors << "§3 row claims #{cmds.inspect} but NO workflow runs any of them (mark the row advisory/on-demand, or drop it)"
+  end
+end
+
 # ── report ──────────────────────────────────────────────────────────────────
 if errors.empty?
   puts "guard_registry_sync ✓ — 00_06 §3 ⟷ CI gates (#{run_cmds.size} run-steps, " \
        "#{labels.size} docs.rake labels, #{guards.size} tracker guards, " \
-       "#{sg_paths.size} ssot_guard areas, #{pin_inputs.uniq.size} pinned inputs)"
+       "#{sg_paths.size} ssot_guard areas, #{pin_inputs.uniq.size} pinned inputs, " \
+       "#{claimed} reverse §3→workflow claims)"
   exit 0
 else
   warn "guard_registry_sync ✗ — guard-registry ↔ code drift (DOC-T.40):"

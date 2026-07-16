@@ -66,6 +66,7 @@ namespace :docs do
     magic_drift = []  # soft: magic-marker hex ≠ BE/LE ASCII of its quoted name
     bare_refs   = []  # hard: bare code-span `NN_NN §X` ref that should be a full link
     rate_drift  = []  # hard: tokenomics/carbon rate value re-stated outside its One-Home (05_03/07_01)
+    rate_anchor = []  # hard: a rate HOME no longer matches the guard's own regex (re-price w/o updating the tripwire — DOC-T.40)
     solc_drift  = []  # hard: solc/pragma version re-stated outside 05_03 owner (code SSOT = foundry.toml)
     ai_vendor   = []  # hard: AI-vendor name (Gemini/Cursor/…) re-stated outside 00_02 §2 roster (use roles)
     bare_doc    = []  # hard: bare code-span `NN_NN` doc-id (no §) that should be a full link
@@ -122,6 +123,7 @@ namespace :docs do
       magic_drift.concat(DocsLinter.magic_marker_hex_drift(text).map { |h| "#{base}: #{h}" })
       bare_refs.concat(DocsLinter.bare_section_ref(base, text).map { |h| "#{base}: #{h}" })
       rate_drift.concat(DocsLinter.tokenomics_rate_drift(base, text).map { |h| "#{base}: #{h}" })
+      rate_anchor.concat(DocsLinter.tokenomics_rate_anchor(base, text))
       solc_drift.concat(DocsLinter.solc_pragma_version_drift(base, text).map { |h| "#{base}: #{h}" })
       ai_vendor.concat(DocsLinter.ai_vendor_name_drift(base, text).map { |h| "#{base}: #{h}" })
       bare_doc.concat(DocsLinter.bare_doc_ref(base, text, valid_ids).map { |h| "#{base}: #{h}" })
@@ -214,6 +216,36 @@ namespace :docs do
       next # skip non-UTF-8 / binary files
     end
 
+    # [DOC-T.42 ②] value/owner-only guards over the EXTENDED text surface. The main
+    # loop scans docs/*.md only, so docs/protocols/** + the shipped tools/cad/cem/*.json
+    # were a blind spot for every value-guard — a live superseded `SF 3.4×` sat in
+    # zone2_sleeve.json signed "§4.2 frozen" and nothing blinked (§01a-close 2026-07-16).
+    # Structural/skeleton gates (ToC, TRL, xref-form, bare-ref) stay top-level-only: the
+    # subtree has its own ref conventions (protocols_ref_check) and no canon skeleton.
+    # json is scanned as TEXT on purpose — the prose `_note`/`notes` fields are exactly
+    # where the stale physics froze, and cem_canon_sync pins only the numeric dims.
+    ext_value_files = (Dir[File.join(DOCS_DIR, "**", "*.md")] - files) +
+                      Dir[File.join(root_dir, "tools", "cad", "cem", "*.json")]
+    ext_value_files.each do |f|
+      base = File.basename(f).sub(/\.(?:md|json)\z/, "")
+      text = begin
+        File.read(f)
+      rescue ArgumentError
+        next # non-UTF-8 / binary
+      end
+      rtc_drift.concat(DocsLinter.rtc_register_allocation_drift(base, text).map { |h| "#{base}: #{h}" })
+      rtc_phantom.concat(DocsLinter.rtc_register_out_of_range(text).map { |h| "#{base}: #{h}" })
+      lorenz_drift.concat(DocsLinter.lorenz_formula_drift(base, text).map { |h| "#{base}: #{h}" })
+      tl_chain_hash.concat(DocsLinter.telemetry_log_chain_hash_drift(text).map { |h| "#{base}: #{h}" })
+      gp_clamp.concat(DocsLinter.growth_points_clamp_drift(base, text).map { |h| "#{base}: #{h}" })
+      deprecated.concat(DocsLinter.deprecated_terms(base, text).map { |h| "#{base}: #{h}" })
+      rate_drift.concat(DocsLinter.tokenomics_rate_drift(base, text).map { |h| "#{base}: #{h}" })
+      solc_drift.concat(DocsLinter.solc_pragma_version_drift(base, text).map { |h| "#{base}: #{h}" })
+      ai_vendor.concat(DocsLinter.ai_vendor_name_drift(base, text).map { |h| "#{base}: #{h}" })
+      anchor_dim.concat(DocsLinter.anchor_dimension_drift(base, text).map { |h| "#{base}: #{h}" })
+      thermal_drift.concat(DocsLinter.thermal_stress_drift(base, text).map { |h| "#{base}: #{h}" })
+    end
+
     # [TRL single-value] HARD — 00_03 §1 per-module matrix cells single 1-9.
     # [TRL range-consistency] HARD — a doc's member-TRL stays inside its module band
     # (00_03 §1): band well-formed + row ≤ max member + member ≤ target (see linter).
@@ -300,6 +332,12 @@ namespace :docs do
     else
       puts "  RATE DRIFT (#{rate_drift.size}) — mint/carbon rate value belongs only in 05_03 / 07_01 §3:"
       rate_drift.sort.each { |d| puts "    ✗ #{d}" }
+    end
+    if rate_anchor.empty?
+      puts "  rate anchor:    both rate homes still match the guard's own regexes ✓"
+    else
+      puts "  RATE ANCHOR STALE (#{rate_anchor.size}) — a home was re-priced but the guard regex was not (DOC-T.40):"
+      rate_anchor.sort.each { |d| puts "    ✗ #{d}" }
     end
     if solc_drift.empty?
       puts "  solc One-Home: no solc/pragma version restated outside 05_03 ✓"
@@ -452,6 +490,7 @@ namespace :docs do
     failed << "thermal-stress drift (superseded HW.3.IS SF/P_c number outside 01_01 §4.2 / the report)" unless thermal_drift.empty?
     failed << "superseded term in front-matter (🎯/Статус names a reversed decision)" unless superseded_fm.empty?
     failed << "tokenomics/carbon rate restated outside One-Home (05_03/07_01)" unless rate_drift.empty?
+    failed << "rate-guard anchor stale (home re-priced, regex not — DOC-T.40)" unless rate_anchor.empty?
     failed << "solc/pragma version restated outside One-Home (05_03; code = foundry.toml)" unless solc_drift.empty?
     failed << "canonical source-block drift (pinned code block changed → reconcile mirrors + `rake docs:repin`)" unless block_drift.empty?
     failed << "AI-vendor name restated outside One-Home (00_02 §2 roster; use roles)" unless ai_vendor.empty?
