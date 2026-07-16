@@ -114,13 +114,15 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
 
 > **Phase 0** (canon honesty + CEM `tolerances`/`notes` block) + **Phase 1** (Ti-coin DXF deliverable)
 > are active. **Phase 2** (steps 2/4/5) is deferred until a factory contract — full §7 risks being
-> "packaging for an imagined factory" (no contract yet).
+> "packaging for an imagined factory" (no contract yet). **One Phase-2 part already landed**: Деталь 3
+> flange (step 2) ships as `draw cathode_flange` — it rode the Ø25 freeze, not a contract.
 
 1. **Ti-coin drawing** (**Phase 1**) — the simplest + most urgent part (Stage 2, ~15 pcs). Proves
    `Drawing.cs` + `draw` verb + **DXF (netDxf)** + title block + dimension primitives, consuming the
    CEM `tolerances`/`notes` block (zero hardcoded). xUnit (DXF well-formed, dim values = CEM, no NaN).
-2. **Simple anchor parts** (**Phase 2**) — Zone-2 sleeve, Деталь 3 flange (**closes the central-pad
-   Ø4-5 / PEEK-ring gap → HW.8**), Деталь 4 radome (analytic sections).
+2. **Simple anchor parts** (**Phase 2**) — Деталь 3 flange **✅ landed** (`Drawing.CathodeFlange` +
+   `CathodeFlangeDxf`; **closes the central-pad Ø4-5 / PEEK-ring gap → HW.8**) — residual: it has no
+   xUnit yet, while Ti-coin carries five. Still open: Zone-2 sleeve, Деталь 4 radome (analytic sections).
 3. **CEM `tolerances`/`notes` block** (**Phase 0**) — fits (Lamé-µm), GD&T datums, surface-finish,
    post-process notes, lattice-spec are SSOT in `cem/*.json`, feeding drawing + HW.8 + HW.8.9.
 4. **Zone-1 envelope + lattice spec** (**Phase 2**) — the gyroid is an **inspection-card** (envelope +

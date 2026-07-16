@@ -12,7 +12,7 @@ permissions:
 #     connectivity flood-fill — no Library.Go / display). Cheap + fast → the HARD regression gate.
 #   • render (macos) — Library.Go voxelisation needs a display; first-party PicoGK = macOS/Win64. Builds
 #     the golden metrics for every CEM (verify exit-code = gate) + publishes metrics/SBOM artifacts.
-# Local-verify (`dotnet run -- verify`) stays the PRIMARY developer gate (00_07 HW.1.PicoGK); CI mirrors it.
+# Local-verify (`dotnet run -- verify`) stays the PRIMARY developer gate (00_07 HW.1); CI mirrors it.
 on:
   pull_request:
     paths:
@@ -73,7 +73,7 @@ jobs:
         # inits a Metal viewer and the runner has no window-server/GPU context. So render-verify stays
         # best-effort here; the HARD gates are `logic` (the full PicoGK-runtime-free xUnit suite on Linux)
         # + `Build` above (LEAP source vs PicoGK 2.2 on both OSes). Local `dotnet run -- verify` is the
-        # primary metrics gate (00_07 HW.1.PicoGK); a self-hosted macOS-with-display runner would re-arm it.
+        # primary metrics gate (00_07 HW.1); a self-hosted macOS-with-display runner would re-arm it.
         continue-on-error: true
         working-directory: tools/cad
         run: |

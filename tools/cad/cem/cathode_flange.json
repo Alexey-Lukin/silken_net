@@ -37,7 +37,7 @@
     "material": "Ti-6Al-4V (Grade 5)",
     "process": "SLM/DMLS or EBM (flat flange — precision less critical, roughness = ECSA advantage, 01_02 1.7)",
     "post_process": "selective Hard-Gold ENIG on central GND pad + outer pogo ring (02_02 1.2, Ti-Au galvanic-trap fix); build tip-down (01_02 1.6)",
-    "coating_restriction": "ZnO-Ta / HAp / RGD FORBIDDEN on the cathode catalytic side/perimeter active surface (01_02 3.6)",
+    "coating_restriction": "Catalytic face (Laccase + ZIF-nanozyme + PTFE-GDL): ZnO-Ta, self-healing 8-HQ and biomimetic (Zn-HAp/chitosan) ALL FORBIDDEN - bare Ti only, any dielectric blocks DET. Outer jacket: ZnO-Ta + 8-HQ allowed. NOT on PEEK. (01_02 3.6)",
     "extra": [
       "Central GND pad O4-5 (Hard Gold ENIG >=0.76 um Au / 1.27 um Ni) — galvanic-trap fix (02_02 1.2)",
       "PEEK isolation ring >=1.5 mm centre<->outer (short-circuit guard)",

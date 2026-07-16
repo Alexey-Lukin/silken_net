@@ -27,7 +27,7 @@ require_relative "../lib/tracker/dashboard"
 
 ROOT  = File.expand_path("..", __dir__)
 TREES = %w[app lib firmware contracts spec scripts tools bin config db].freeze
-EXTS  = "{rb,c,h,sol,py,sh,rake,erb,yml,yaml}"
+EXTS  = "{rb,c,h,sol,py,sh,rake,erb,yml,yaml,md}"
 
 # The tracker parser + its spec fixtures legitimately carry ID-shaped tokens
 # that exercise the resolver; this script itself cites the proof-case phantom;

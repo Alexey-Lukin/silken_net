@@ -8,7 +8,7 @@ in the spirit of LEAP 71 **Noyron** — an algorithm, not generative ML.
 
 > **Canon SSOT:** [`01_02 §6`](../../docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) (PicoGK
 > stack + Noyron methodology) · [`01_01 §5`](../../docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md)
-> (anchor geometry) · tracker [`00_07` HW.1.PicoGK / HW.33](../../docs/00_07_Action_Plan_Tracker.md).
+> (anchor geometry) · tracker [`00_07` HW.1 / HW.33](../../docs/00_07_Action_Plan_Tracker.md).
 > The geometry numbers are owned there; the `.cs` generators + `cem/*.json` are the
 > Git-SSOT, the STL is a derived artifact (gitignored).
 
@@ -116,7 +116,7 @@ dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # �
   `Library.Go` SIGSEGVs / exit 139 on the headless hosted runner — no Metal/display context,
   CI-confirmed 2026-06-20) + a CycloneDX SBOM + metrics artifacts.
 
-Local `dotnet run -- verify` stays the PRIMARY metrics gate (`00_07` HW.1.PicoGK); a self-hosted
+Local `dotnet run -- verify` stays the PRIMARY metrics gate (`00_07` HW.1); a self-hosted
 macOS-with-display runner would re-arm render-verify as a hard gate.
 
 ## Status & deferred

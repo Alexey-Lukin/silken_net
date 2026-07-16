@@ -241,7 +241,8 @@ internal static class Program
 
     // CEM-native engineering drawing (tools/cad/docs/drawings_program.md): analytic orthographic SVG
     // computed from the CEM numbers (no mesh, no Library.Go) — the Noyron "generator documents itself".
-    // PoC = ti_coin (Stage-2 coupon, the most urgent physical part); other kinds → roadmap §7.
+    // Phase 1 = ti_coin (Stage-2 coupon, the most urgent physical part); Phase 2 landed cathode_flange
+    // (Деталь 3). Remaining kinds (Zone-2 sleeve, Zone-1 envelope card, assemblies) → roadmap §7.
     private static int Draw(string strCemPath)
     {
         string strJson = File.ReadAllText(strCemPath);
@@ -767,7 +768,7 @@ internal static class Program
             "  verify <cem.json> measure golden-metrics → out/<name>.metrics.json (exit 0/1)\n" +
             "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)\n" +
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json\n" +
-            "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg (PoC: ti_coin)");
+            "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg + .dxf (ti_coin | cathode_flange)");
         return 0;
     }
 

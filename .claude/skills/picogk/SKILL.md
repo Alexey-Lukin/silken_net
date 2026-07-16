@@ -17,7 +17,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 | `tools/cad/README.md` | Operational home: layout, local-verify recipe, the FULL gotcha list, license |
 | `docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md §6` | PicoGK stack (.NET 9, PicoGK 2.2 NuGet + ShapeKernel/LatticeLibrary submodules), Noyron methodology, real API, honest caveats |
 | `docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md §5/§6` | Anchor geometry: gyroid 65% porosity, pore gradient 300→100µm, Gibson-Ashby isoelasticity, Ti-coin Stage-2 coupon (A=2cm²+eyelet) |
-| `docs/00_07_Action_Plan_Tracker.md` HW.1.PicoGK / **HW.33** | Build state + the anchor geometry audit (founder decisions: radial gyroid (б), Ø11; open gaps: PEEK/hole chain, FEA) |
+| `docs/00_07_Action_Plan_Tracker.md` HW.1 / **HW.33** | Build state + the anchor geometry audit (founder decisions: radial gyroid (б), Ø11; open gaps: PEEK/hole chain, FEA) |
 | `docs/00_08_Beyond_TRL9_Planetary_Roadmap.md §1.3` | Cross-biome 5-SKU (pine/oak/broadleaf/mangrove/tropical) |
 | `docs/00_02_AI_Native_Engineering_and_TRL.md §4a` | Code-as-CAD vs generative-AI; In-Silico for the Hardware stream |
 | `tools/cad/docs/drawings_program.md` | Engineering-drawing program: CEM-native DXF (netDxf) + SVG/PDF, the ASME-Y14.5≠projection fix, lattice-as-inspection-card, phased §7 rollout |
@@ -107,6 +107,12 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 - **Change anchor geometry**: edit `cem/anchor_zone1.*.json` (Ø, bore, period, wallParam).
   Geometry numbers are owned in `01_01 §5` + founder decisions in `00_07 HW.33`; **MEASURE
   porosity after** (gotcha #4). Render via `Zone1Anode.Anode` (the ctor route, gotcha #1).
+  🔴 **`topology` defaults to `"sheet"` SILENTLY** (`Cem.cs`) and 6/7 `anchor_zone1.*` omit the key —
+  so every SKU renders sheet, while canon `01_01 §5.6` says "дані схиляють до **network**". That choice
+  is an un-made founder verdict (`00_07 HW.33` ⚖️), not a default to inherit: a factory STL cut today
+  would ship the disfavored branch. Do NOT quietly pick a side when touching these manifests.
+  (`stepped` is a THIRD value outside the documented `sheet|network` domain — it routes to `ZonedGyroid`,
+  which never receives the `bNetwork` flag.)
 - **Monolithic bus rod (`01_01 §1.4`, HW.34, SHIPPED)**: `bus_rod_diameter_mm` > 0 ⇒ a SOLID central
   rod core. `Zone1Anode.BuildMonolithic` = `Anode` (gyroid, ctor) **+ `BoolAdd(BusRod.voxConstruct())`**
   (solid via voxConstruct, gotcha #9 — NOT the SDF ctor). 🔑 **Porosity stays a property of the gyroid**
@@ -148,8 +154,10 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   **SVG/PDF (human) + DXF via netDxf (factory, opens in AutoCAD/Fusion)** — pure-managed, no Library.Go,
   consuming the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text; `DrawingStandard` ISO/ASME
   param). Drawing carries fits (Lamé-µm, NOT a blind ISO-286 metal `H7/s6` on a PEEK bore), GD&T datums,
-  post-process + coating-restriction notes, lattice-spec. PoC = Ti-coin; sleeve/flange/radome/gyroid-
-  inspection-card/assembly = Phase 2 deferred to a factory contract. Home: `docs/drawings_program.md`.
+  post-process + coating-restriction notes, lattice-spec. Shipped kinds = **`ti_coin` (Phase 1) +
+  `cathode_flange` (Phase 2, rode the Ø25 freeze)** — flange has NO xUnit yet while Ti-coin carries five.
+  Still deferred: Zone-2 sleeve, radome, **`draw anchor_zone1`** (gyroid inspection-card — does NOT exist,
+  so the Zone-1 coating-restriction map has no carrier yet), assemblies. Home: `docs/drawings_program.md`.
 - **Render / section for presentation (`render`/`section`, SHIPPED)**: `render <cem>` = a PicoGK native-viewer
   screenshot (gold Ti-metallic material); `section <cem>` = a −X cutaway (shows the bus rod through a dense gyroid
   where `ColorFloat` alpha can't). Display-gated (gotcha #10); output → `out/*.png` (native TGA → `sips`). The

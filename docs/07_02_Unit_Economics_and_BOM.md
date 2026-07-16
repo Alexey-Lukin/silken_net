@@ -350,7 +350,7 @@ Month 58:    +$39  (чиста ліквідність для DAO та власн
 **Дії (👤 операційні):**
 - [ ] Отримати quotes від 2-3 EU підрядників (мінімальна партія 100 шт)
 - [ ] Підписати NDA та framework agreement з Tier-1 кандидатом (без зобов'язання обсягу)
-- [ ] Передати **PicoGK CAD-STL** (`tools/cad` `build` — анкер/катод/радом STL готові; AM-бюро друкують зі STL, **STEP не потрібен**) + factory spec (HW.1, HW.2) кожному підряднику для валідації feasibility. _DXF GD&T-креслення (Lamé-µm / datums / surface-finish / coating-restriction) поки лише **монета** (`draw ti_coin`, відкривається AutoCAD/Fusion); анкер/катод-креслення — Phase 2 заводського контракту (`drawings_program.md §7`). nTop — reference._
+- [ ] Передати **PicoGK CAD-STL** (`tools/cad` `build` — анкер/катод/радом STL готові; AM-бюро друкують зі STL, **STEP не потрібен**) + factory spec (HW.1, HW.2) кожному підряднику для валідації feasibility. _DXF GD&T-креслення (Lamé-µm / datums / surface-finish / coating-restriction) готові для **монети** (`draw ti_coin`) і **катодного фланця** (`draw cathode_flange`) — обидва відкриваються AutoCAD/Fusion; анкер (Zone-1 envelope-картка) + Zone-2 втулка — Phase 2 заводського контракту (`drawings_program.md §7`). nTop — reference._
 - [ ] Замовити пробну партію 10 шт у Tier-1 EU підрядника для quality benchmarking vs UA
 
 ### 8.2. Логістика

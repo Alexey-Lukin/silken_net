@@ -99,7 +99,9 @@ internal sealed record TiCoinCem
 // INDEPENDENT, CEM-driven axes (the FEA/bio "which is best" answer is open, so none is hard-coded):
 //   • pore/cell size — GyroidPeriod{Mm core → RimMm} (biology: ingrowth core / transport rim)
 //   • porosity / E   — GyroidWallParam{ core → Rim }  (mechanics: HOLD or GRADE the porosity)
-//   • topology       — Topology = sheet|network        (surface vs stress-shielding, HW.33)
+//   • topology       — sheet|network|stepped           (surface vs stress-shielding, HW.33;
+//                       sheet|network = the OPEN founder verdict — do NOT inherit the default
+//                       silently; stepped = zoned-period variant, a third implemented branch)
 // Core = axis (r=bore/2), Rim = periphery (r=outer/2); a *Rim* field of 0 ⇒ equals Core ⇒ v1 constant.
 // Porosity is MEASURED, never assumed: PorosityTarget is only a verify goal, and 65 % itself is a rough
 // placeholder (founder 2026-06-21) — Gibson-Ashby n=2 suits network, not our sheet (n≈1.3 → higher E),
@@ -237,8 +239,9 @@ internal sealed record RadomeCem
 // Zone 2 PEEK thermal-break sleeve (Деталь 2, 01_01 §1 + §4.1/§4.2) — the MIDDLE part: a plain hollow
 // PEEK tube that press-fits onto the Zone-1 anode shaft (one end) and receives the Zone-3 flange shank
 // (the other end), thermally decoupling the buried anode from the capsule-side cathode. Frozen dims
-// (01_01 §1): bore Ø11 (= Zone-1 shaft, press-fit H7/s6), wall 2.0 mm (CTE-limited Lamé SF 3.7×, NOT
-// press-fit hoop — §4.2), OD Ø15 = the WOUND in the tree (CODIT <25 → DBH ≥38). Length 50 mm (axial
+// (01_01 §1): bore Ø11 (= Zone-1 shaft, press-fit H7/s6), wall 2.0 mm (robust default, NOT CTE-limited —
+// unified Lamé §4.2: combined SF 5.6× / thermal-only 14.6× / press-fit-only 9×), OD Ø15 = the WOUND in
+// the tree (CODIT <25 → DBH ≥38). Length 50 mm (axial
 // thermal break, §4.1). The bore is a plain round hole: anti-rotation is a hex/spline profile in canon
 // (§1 + §4.3 C, ≤0.05 mm clearance) but that is bench-gated and not needed for the mate-audit → deferred
 // (00_07). DIN-471 retaining grooves live on the Ti Zone-1/Zone-3 ends (§3 step 6), NOT the PEEK sleeve;
@@ -250,7 +253,7 @@ internal sealed record Zone2SleeveCem
     public string Name { get; init; } = "zone2_sleeve";
     public float VoxelSizeMm { get; init; } = 0.1f;       // no sub-mm features (a plain tube) → 0.1 ok (as radome)
     public float BoreDiameterMm { get; init; } = 11f;     // = Zone-1 anode Ø (press-fit), frozen 01_01 §1
-    public float WallThicknessMm { get; init; } = 2f;     // CTE Lamé SF 3.7× (§4.2), frozen — NOT press-fit hoop
+    public float WallThicknessMm { get; init; } = 2f;     // frozen §1 — robust default, NOT CTE-limited (§4.2)
     public float LengthMm { get; init; } = 50f;           // axial thermal break (§4.1), frozen
     // OD = bore + 2·wall = Ø15 = the wound diameter in the tree (derived in Zone2Sleeve.OuterR, not stored).
     public ToleranceSpec? Tolerances { get; init; }       // drawing PMI (press-fit Lamé-µm, hex clearance)

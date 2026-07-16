@@ -356,7 +356,7 @@ STM32WLE5JC
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-> 🔧 **PicoGK-генератор (Деталь 4):** `tools/cad` `Radome.cs` — hollow купол + shield-дзвін + bayonet-socket + PCB cavity + O-ring groove (verify hollow/bell/cavity/mate-fit; анкер-CAD-родина ПОВНА — [`00_07` HW.1.PicoGK](00_07_Action_Plan_Tracker)). **MATE-Ø + RF кількісно виміряно** (capsule-end assembly, [`02_02 §4.4`](02_02_Blind_Mate_Pogo_Pin_Interface)): lugs Ø29 vs Ø25 → skirt Ø30 / inboard Ø25 Δ-кандидати; **⚠ при bayonet-datum antenna↔Ti = 8 < 12 мм** (cavity провалюється на фланець, §5.3) → Z-stack reconcile (👤 bench, HW.8/HW.17).
+> 🔧 **PicoGK-генератор (Деталь 4):** `tools/cad` `Radome.cs` — hollow купол + shield-дзвін + bayonet-socket + PCB cavity + O-ring groove (verify hollow/bell/cavity/mate-fit; анкер-CAD-родина ПОВНА — [`00_07` HW.1](00_07_Action_Plan_Tracker)). **MATE-Ø + RF кількісно виміряно** (capsule-end assembly, [`02_02 §4.4`](02_02_Blind_Mate_Pogo_Pin_Interface)): lugs Ø29 vs Ø25 → skirt Ø30 / inboard Ø25 Δ-кандидати; **⚠ при bayonet-datum antenna↔Ti = 8 < 12 мм** (cavity провалюється на фланець, §5.3) → Z-stack reconcile (👤 bench, HW.8/HW.17).
 
 #### Механічна Інтеграція Деталі 4 (Zero-Touch Assembly)
 

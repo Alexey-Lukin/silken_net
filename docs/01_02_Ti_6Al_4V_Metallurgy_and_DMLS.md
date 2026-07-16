@@ -174,7 +174,8 @@
          → Анод Zone 1 у тримачі ізольовано від електроліту (silicone masking)
 
 Крок 8 ⚠️: Нанесення ZnO-Ta функціонального шару (PEO) — ЛИШЕ на НЕАКТИВНІ поверхні
-         (зовнішня сорочка катодного фланця Zone 3, торці PEEK-втулки)
+         (зовнішня сорочка катодного фланця Zone 3). НЕ на PEEK — карта §3.6
+         (PEO росте оксид із вентильного металу підкладки; на полімері не працює)
          ❌ НЕ наносити на гіроїдну анодну секцію (Zone 1) — ZnO є діелектриком
             і блокуватиме EBFC-провідність. Деталі — §3.6.
 ```
@@ -399,14 +400,14 @@ Arrhenius scaling: t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 
 **Investor-Grade Claim:** _"Ti-6Al-4V gyroid anchor demonstrates < 0.1 µg/cm² ion release after equivalent 5-year accelerated aging test in synthetic xylem sap (Pinus sylvestris, Cherkasy)"_
 
-### 2.5. ⚠️ Відкритий архітектурний конфлікт: V-release Zone 1 (мітигація — відкрите питання)
+### 2.5. V-release Zone 1 — напрям (a) V-free обрано; сплав → Stage-2 coin bake-off
 
 > **In-silico baseline (script 51):** Kirkendall-дифузія (Fick's 1st law) → **V-release 1.12 µg/cm²/yr для голого Ti-6Al-4V** — перевищує target §2.4 (0.02 µg/cm²) у **56×**. Arrhenius: 12 тиж @ 40°C ≈ 2.2–5.7 польових років (Ea 0.7–1.0 eV).
 >
-> 🔴 **Конфлікт:** ZnO-Ta + 8-HQ бар'єр **НЕ можна** наносити на Zone 1 гіроїд (§3.6 — там голий Ti потрібен для DET ферментів), але саме Zone 1 — найбільша площа контакту з соком → головне джерело V. Покриття Zone 3-сорочки проблему не закриває. Шляхи (потребують in-vitro перевірки, НЕ «ОБОВ'ЯЗКОВІ ZnO»):
-> - **(a) V-free сплав для Zone 1** — **НЕ Ti-6Al-4V ELI** (ELI зберігає ~4% V!), а ванадій-вільні імплант-сплави **Ti-6Al-7Nb (ASTM F1295)** або **Ti-5Al-2.5Fe** (Nb/Fe заміщують цитотоксичний V). Усуває V у джерелі.
-> - **(b) Ензимна матриця як бар'єр/хелатор:** хітозан — хелатор важких металів; Genipin-Chitosan-CNC + Nafion-g-PSBMA на Zone 1 можуть зв'язувати/блокувати дифузію V. Тест — ЧМА (Суховой): V-release крізь функціоналізовану vs голу поверхню.
-> - **(c)** ZnO-Ta + 8-HQ — лише на неактивних поверхнях (Zone 3 сорочка, торці PEEK); Zone 1 не розв'язують.
+> 🔴 **Конфлікт:** ZnO-Ta + 8-HQ бар'єр **НЕ можна** наносити на Zone 1 гіроїд (§3.6 — там голий Ti потрібен для DET ферментів), але саме Zone 1 — найбільша площа контакту з соком → головне джерело V. Покриття Zone 3-сорочки проблему не закриває. Розглядалися три шляхи — **обрано (a)**, присуд у Статусі ↓:
+> - **(a) ✅ ОБРАНО — V-free сплав для Zone 1** — **НЕ Ti-6Al-4V ELI** (ELI зберігає ~4% V!), а ванадій-вільні імплант-сплави (Nb/Fe/Zr заміщують цитотоксичний V). Усуває V у джерелі; конкретний сплав — Stage-2 coin bake-off ↓.
+> - **(b) ❌ ВІДКИНУТО — ензимна матриця як бар'єр/хелатор:** хітозан-хелатор + Genipin-Chitosan-CNC + Nafion-g-PSBMA на Zone 1 могли б зв'язувати дифузію V — але це латало б проблему, яку (a) знімає в корені. *(Роботи за цим шляхом не призначаються.)*
+> - **(c) ❌ ВІДКИНУТО — ZnO-Ta + 8-HQ** лише на неактивних поверхнях (Zone 3 сорочка; **на PEEK не наноситься** — карта §3.6): Zone 1 не розв'язують.
 >
 > **Статус:** V-safety Zone 1 — напрям **обрано (founder 2026-06-21): (a) V-free** (Nb/Zr заміщують цитотоксичний V у джерелі; (b) хітозан-бар'єр / (c) ZnO-на-Zone-3 відкинуто — латали б проблему, яку (a) знімає в корені). **Конкретний сплав down-select'иться емпірично** Stage-2 **6-сплавним coin bake-off** — не committed на 7Nb з літератури: контроль **Ti-6Al-4V** + **Ti-6Al-7Nb** (F1295) + **CP-Ti Gr4** (F1581) + **β-Ti-13Nb-13Zr** (F1713, low-E) + **Ta** (біоінертний benchmark) + **Ti-15Zr** (Roxolid), усі рівні до coin-даних (CV/EIS + ICP-MS у синт. соку; predicted release/E — `tools/in_silico` script 51/50). 🌳 **Дерево-лінза:** не лише V — **Al³⁺ теж фітотоксичний** у кислому соку ([`01_04 §4.2`](01_04_CODIT_and_Xylemointegration)), тож zero-Al кандидати (CP-Ti/β-Ti/Ta/Ti-15Zr) дерево-чистіші за Al-bearing 7Nb. ⚠️ **Baseline §1 лишається Ti-6Al-4V Grade 5** до coin-валідації (no-premature-canon). Трекінг — [`00_07` HW.3/HW.24](00_07_Action_Plan_Tracker).
 
@@ -515,7 +516,7 @@ Arrhenius scaling: t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 - ✅ Карта обмежень покриттів по зонах визначена (§3.6)
 - ✅ Протокол прискореного старіння визначено та задокументовано (§2)
 - ✅ Self-healing концепт визначено (§3)
-- ✅ **nTop ліцензія отримана** — параметрична CAD-модель гіроїда
+- ✅ **Параметрична CAD-модель гіроїда — PicoGK** (`tools/cad`, §6: повна анкер-родина + 2 assembly + ARCH.25-аудит); nTop-ліцензія отримана = опційний escape-hatch, робота в ньому ~нуль
 - **[Stage 1]** 5 SLA-макетів для перевірки form & fit (див. [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK))
 - **[Stage 2]** ~15 Ti-«монет» **Ø16×1 мм диск** (**6-сплавний bake-off** down-select: 4V/7Nb/CP-Ti/β-Ti/Ta/Ti-15Zr, §2.5; [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK): 2.01 см²/грань ≈ A_electrode, frozen — диск, не квадрат) для in vitro біохімії Gen 2.0 — циклічна вольтамперометрія, EIS, перевірка dgrFAD-GDH + Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA + Laccase/ZIF-nanozyme в синтетичному ксилемному соку
 - **[Factory]** Передати специфікацію дворівневої шорсткості заводу (Sa 0.5–5 µm, Sv 50–500 nm)
@@ -543,13 +544,13 @@ nTop — провідний інструмент для генерації мі�
 - Автоматично валідує мінімальну товщину стінок для DMLS (≥ 0.3 мм)
 - Експортує STL/3MF файл для відправки на завод
 
-**Наступний крок:** Передати STL з nTop на завод разом із специфікацією дворівневої шорсткості (розділ 1).
+**Наступний крок:** Передати STL з **PicoGK** (`tools/cad` — primary трек; nTop = опційний reference) на завод разом із специфікацією дворівневої шорсткості (розділ 1) — повний перелік заводських документів тримає §5.
 
 **🟡 Архітектурне обмеження nTop:** GUI-only workflow → **AI-агенти сліпі у візуальних інтерфейсах** (coding-agents не можуть "клікати" по нодах). Це блокер для AI-Native Engineering принципу ([`00_02 §2`](00_02_AI_Native_Engineering_and_TRL)). Параметричні моделі зберігаються у бінарних `.ntop` файлах — **не Git-friendly**, без зрозумілого diff'у, без code review. Для масової вибірки per-species геометрій (5 SKU: pine/oak/broadleaf/mangrove/tropical — [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) потрібна Code-as-CAD парадигма.
 
 ### PicoGK + C# — Code-as-CAD (primary code-CAD трек)
 
-**Статус: ✅ scaffold + Ti-coin + v1 анкер (2026-06-20) + v2 ГРАДІЄНТНИЙ анкер (2026-06-21), `tools/cad/`** — pipeline доведено end-to-end (PicoGK 2.2 → **власний SDF** → headless `Library.Go` → STL + per-shell `metrics.json`); 3 осі градації (cell-size / `wallParam`-пористість / stepped-зони) + 7-SKU + 8 xUnit. **🏁 Повна анкер-родина (6 деталей: Ti-coin / anode / §4.3 lock / Деталь 3 фланець / Деталь 4 radome / Zone-2 PEEK-втулка) + 2 інтеграційні assembly** — capsule-end (bayonet, `Assembly.cs`) + повний осьовий стек (press-fit, `AxialStack.cs`); обидва = аудит-столи, що МІРЯЮТЬ незведений mismatch ([`02_02 §4.4/§4.5`](02_02_Blind_Mate_Pogo_Pin_Interface)). **PicoGK = primary code-CAD шлях** (nTop-ліцензія є, але робота в nTop практично не починалась → реального incumbent немає). Реалізаційний стан/залишок → [`00_07` HW.1.PicoGK](00_07_Action_Plan_Tracker); анкер-геометрія + founder-рішення → HW.33.
+**Статус: ✅ scaffold + Ti-coin + v1 анкер (2026-06-20) + v2 ГРАДІЄНТНИЙ анкер (2026-06-21), `tools/cad/`** — pipeline доведено end-to-end (PicoGK 2.2 → **власний SDF** → headless `Library.Go` → STL + per-shell `metrics.json`); 3 осі градації (cell-size / `wallParam`-пористість / stepped-зони) + 7-SKU + 8 xUnit. **🏁 Повна анкер-родина (6 деталей: Ti-coin / anode / §4.3 lock / Деталь 3 фланець / Деталь 4 radome / Zone-2 PEEK-втулка) + 2 інтеграційні assembly** — capsule-end (bayonet, `Assembly.cs`) + повний осьовий стек (press-fit, `AxialStack.cs`); обидва = аудит-столи, що МІРЯЮТЬ незведений mismatch ([`02_02 §4.4/§4.5`](02_02_Blind_Mate_Pogo_Pin_Interface)). **PicoGK = primary code-CAD шлях** (nTop-ліцензія є, але робота в nTop практично не починалась → реального incumbent немає). Реалізаційний стан/залишок → [`00_07` HW.1](00_07_Action_Plan_Tracker); анкер-геометрія + founder-рішення → HW.33.
 
 **PicoGK** ("пікок", павич) — відкритий воксельний SDF-ядро від **LEAP 71** (засновники Lin Kayser, Josefine Lissner, ex-Hyperganic; CEO LEAP 71). Це open-source engine, на якому працює пропрієтарна ШІ-модель LEAP 71 **Noyron** (внутрішній "головний інженер"). Сам Noyron закритий, але PicoGK відкритий на GitHub.
 
@@ -600,7 +601,7 @@ nTop — провідний інструмент для генерації мі�
 - AI-Native Engineering → [`00_02 §4a`](00_02_AI_Native_Engineering_and_TRL)
 - TPMS-геометрія анкера → [`01_01 §5`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
 - Cross-biome 5-SKU → [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)
-- Реалізація + трекер → `tools/cad` + [`00_07` HW.1.PicoGK / HW.33](00_07_Action_Plan_Tracker)
+- Реалізація + трекер → `tools/cad` + [`00_07` HW.1 / HW.33](00_07_Action_Plan_Tracker)
 
 ### Перша Партія — 100 одиниць (Київ / Дніпро)
 
@@ -617,7 +618,7 @@ nTop — провідний інструмент для генерації мі�
 | Поверхня (Zone 3, фланець) | Sand-blasting допустимий → EAAE → PEP smoothing → ZnO-Ta (PEO) |
 
 **Перелік документів для заводу:**
-1. STL файл анодної секції (Zone 1) з **PicoGK** (`tools/cad`; nTop — опційний reference) — гіроїд з градієнтом пор 300→100 µm, пористість 65%, build direction вертикально
+1. STL файл анодної секції (Zone 1) з **PicoGK** (`tools/cad`; nTop — опційний reference) — гіроїд, build direction вертикально. ⚠️ **Пор-діапазон на кресленні НЕ 300→100 µm @ 65%:** канонічний діапазон узятий з анатомії ксилеми і **несумісний із SLM** (§6 стеля: стінка ~200 µm → мін. друкована пора ≈1.2 мм; 100 µm дали б стінку ~26 µm) — на завод іде **друкований** діапазон + порозність-профіль за присудом [`00_07` HW.33](00_07_Action_Plan_Tracker), не канон-анатомія
 2. Креслення катодного фланця (Zone 3) — плоска геометрія ∅25 мм (frozen)
 3. Специфікація SLM-параметрів (шар 30 µm, Ar atmosphere, <0.1% O₂)
 4. **Специфікація HIP-постпроцесу** (920°C / 100–150 МПа Ar / 2–4 год) — КРИТИЧНО, §1.7

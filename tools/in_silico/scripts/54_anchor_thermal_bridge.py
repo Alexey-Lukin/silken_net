@@ -120,7 +120,8 @@ A_GAP_VOID = area_circle_mm2(D_SLEEVE_BORE)                       # open bore in
 
 BUS_MATERIALS = {
     "none":  {"lambda": 0.0,        "rho": None,     "label": "no bus (bare break)"},
-    "Cu":    {"lambda": LAMBDA_CU,  "rho": RHO_CU,   "label": "copper (current spec)"},
+    # superseded 2026-06-21 (01_01 §1.4 monolithic) — kept as the pre-monolithic baseline
+    "Cu":    {"lambda": LAMBDA_CU,  "rho": RHO_CU,   "label": "copper (pre-monolithic baseline)"},
     "Ti":    {"lambda": LAMBDA_TI,  "rho": RHO_TI,   "label": "Ti-6Al-4V (monolithic w/ anode)"},
     "316SS": {"lambda": LAMBDA_316SS, "rho": RHO_316SS, "label": "316 stainless"},
 }

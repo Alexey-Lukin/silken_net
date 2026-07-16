@@ -14,7 +14,7 @@ public class Zone2SleeveTests
 
         Zone2SleeveCem cem = Cem.Parse<Zone2SleeveCem>(strJson);
         Assert.Equal(11f, cem.BoreDiameterMm);   // = Zone-1 shaft Ø (press-fit), frozen 01_01 §1
-        Assert.Equal(2f, cem.WallThicknessMm);   // CTE Lamé SF 3.7× (§4.2)
+        Assert.Equal(2f, cem.WallThicknessMm);   // frozen §1 — robust default, NOT CTE-limited (§4.2)
         Assert.Equal(50f, cem.LengthMm);         // axial thermal break (§4.1)
     }
 
