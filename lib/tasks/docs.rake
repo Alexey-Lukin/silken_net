@@ -222,8 +222,8 @@ namespace :docs do
     trl_ranges  = matrix_text ? DocsLinter.trl_matrix_range_violations(matrix_text) : []
     trl_band    = matrix_text ? DocsLinter.trl_range_consistency(matrix_text, doc_trls) : []
 
-    # [Blockers → 00_07] ADVISORY (→ HARD once the sweep removes them all). Canon
-    # docs must not host a 🛑/✅-archive blocker section; 00_07 is the tracker — exempt.
+    # [Blockers → 00_07] HARD (sweep completed 2026-05-30). Canon docs must not
+    # host a 🛑/✅-archive blocker section; 00_07 is the tracker — exempt.
     blocker_sections = files.reject { |f| File.basename(f).start_with?("00_07") }
                             .flat_map { |f| DocsLinter.canon_blocker_sections(File.read(f)).map { |h| "#{File.basename(f, '.md')}: #{h}" } }
 
@@ -352,7 +352,7 @@ namespace :docs do
     if blocker_sections.empty?
       puts "  blockers→00_07:  no canon doc hosts a 🛑/✅-archive blocker section ✓"
     else
-      puts "  ⚠️ canon docs still hosting blocker sections (#{blocker_sections.size}) — advisory, migrate to 00_07:"
+      puts "  canon docs hosting blocker sections (#{blocker_sections.size}) — HARD, migrate to 00_07:"
       blocker_sections.sort.each { |b| puts "    · #{b}" }
     end
     if toc_drift.empty?

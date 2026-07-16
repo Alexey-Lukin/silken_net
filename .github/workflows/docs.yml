@@ -62,6 +62,9 @@ jobs:
               - 'app/models/**'
               - 'app/services/**'
               - 'app/workers/**'
+              - 'firmware/bio_contracts/**'
+              - 'lib/canonical_block_pins.yml'
+              - 'scripts/guard_registry_sync.rb'
               - '.github/**'
 
   docs_check:
@@ -120,6 +123,12 @@ jobs:
         # 0.8×0.6) + prose-only anchor_dimension_drift both miss (bell_radius=5.0 had
         # no assert anywhere). §01a vilize 2026-07-14.
         run: ruby scripts/cem_canon_sync.rb
+
+      - name: Guard-registry ⟷ code sync (DOC-T.40 — 00_06 §3 rots one-way)
+        # Pure Ruby, no Rails — every docs_check run-step / docs.rake failed-label /
+        # tracker.rake guard maps to a 00_06 §3 row; files cited in §3 exist;
+        # ssot_guard paths↔mappings parity; pinned sources ⊆ this changes-filter.
+        run: ruby scripts/guard_registry_sync.rb
 
   docs-ok:
     # Single required status check for the SSOT gates on `main`. Always runs so a

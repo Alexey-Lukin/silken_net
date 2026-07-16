@@ -1,0 +1,186 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Guard-registry ⟷ code sync gate (DOC-T.40).
+#
+# The 00_06 §3 drift-prevention registry is itself a hand-written mirror of the
+# CI gates — and it rots strictly one-way: new guards land in docs.yml /
+# docs.rake / tracker.rake and never get a §3 row (canonical_block_drift — a
+# HARD gate — had zero mentions; scc_rate/queen_energy_budget --assert none at
+# all). This gate closes the loop:
+#
+#   A. every `run:` step of the docs.yml `docs_check` job appears VERBATIM in
+#      the §3 command column (a wired gate must be registered);
+#   B. every `failed <<` label in docs.rake and every Tracker::Dashboard guard
+#      called by tracker.rake maps to a §3 row — via the curated maps below
+#      (deliberate tripwire, like DEPRECATED_TERMS: a NEW label/guard fails
+#      here until it gets a §3 row + a map entry; a RETIRED one leaves a dead
+#      map entry that fails too);
+#   C. every file path / script name cited in §3 exists on disk (a registry
+#      row must not point at a deleted engine);
+#   D. parity of the "decorative guard" class: ssot_guard.yml `paths:` ⟷ its
+#      embedded `mappings` array (held only by a ⚠️ comment before), and every
+#      canonical_block_pins.yml source ⊆ the docs.yml `changes` filter (a
+#      pinned source outside the filter means the HARD pin-gate silently does
+#      not run on the PR that breaks it — the bio_contract.rb hole).
+#
+# Pure Ruby (yaml stdlib only, no Rails). Run: ruby scripts/guard_registry_sync.rb
+# Exit 0 = in sync; exit 1 = drift (lists the divergence). Method/why → docs/00_06 §3.
+
+require "yaml"
+
+ROOT          = File.expand_path("..", __dir__)
+REGISTRY_DOC  = File.join(ROOT, "docs/00_06_SSOT_Documentation_Standard.md")
+DOCS_WORKFLOW = File.join(ROOT, ".github/workflows/docs.yml")
+SSOT_GUARD_WF = File.join(ROOT, ".github/workflows/ssot_guard.yml")
+DOCS_RAKE     = File.join(ROOT, "lib/tasks/docs.rake")
+TRACKER_RAKE  = File.join(ROOT, "lib/tasks/tracker.rake")
+PINS_YML      = File.join(ROOT, "lib/canonical_block_pins.yml")
+
+# docs.rake `failed <<` label → distinctive §3-row anchor substring.
+DOCS_RAKE_LABELS = {
+  "dangling doc links"                                                                     => "dangling `NN_NN` doc-links",
+  "✅ Статус docs without a TRL"                                                            => "кожен док з `## ✅ Статус` декларує TRL",
+  "TRL ranges in 00_03 §1 matrix"                                                          => "одинарне 1-9",
+  "TRL band inconsistency (doc TRL vs 00_03 §1 module band)"                               => "TRL range-consistency",
+  "ToC drift (run docs:toc)"                                                               => "ToC sync",
+  "canon docs hosting blocker sections (→ 00_07)"                                          => "blocker-hygiene",
+  "docs missing the standard skeleton"                                                     => "standard-conformance",
+  "RTC register-map drift (availability claimed outside 03_01)"                            => "RTC reg-map drift",
+  "phantom RTC register DR>19 (STM32WLE5JC has only DR0..DR19)"                            => "RTC phantom register",
+  "Lorenz-formula drift (β re-stated outside 03_04 §4.1)"                                  => "Lorenz-formula drift",
+  "telemetry_logs.chain_hash drift (no such column; Merkle leaf = 05_02 §E.60)"            => "telemetry_logs.chain_hash drift",
+  "retired growth_points clamp `(…,10,63)` (FW.29-PACK → 03_04 §4.3)"                      => "growth_points clamp drift",
+  "deprecated SSOT terms present"                                                          => "deprecated terms (Ruthless Pruning)",
+  "anchor dimension drift (superseded flange/Zone2 range outside 01_01 §1 freeze)"         => "anchor dimension drift",
+  "thermal-stress drift (superseded HW.3.IS SF/P_c number outside 01_01 §4.2 / the report)" => "thermal-stress One-Home",
+  "superseded term in front-matter (🎯/Статус names a reversed decision)"                   => "superseded term in front-matter",
+  "tokenomics/carbon rate restated outside One-Home (05_03/07_01)"                         => "tokenomics/carbon rate One-Home",
+  "solc/pragma version restated outside One-Home (05_03; code = foundry.toml)"             => "solc/pragma version One-Home",
+  "canonical source-block drift (pinned code block changed → reconcile mirrors + `rake docs:repin`)" => "canonical source-block pin",
+  "AI-vendor name restated outside One-Home (00_02 §2 roster; use roles)"                  => "AI-vendor name One-Home",
+  "bare code-span `NN_NN §X` refs (should be `[`…`](Doc)` links)"                          => "bare §-ref → link",
+  "bare code-span `NN_NN` doc-ids (should be `[`…`](Doc)` links)"                          => "bare doc-id → link",
+  "link label↔href mismatches"                                                             => "link label↔href mismatch",
+  "doc-id link labels not in code-span form (00_06 §1)"                                    => "cross-ref label single-form",
+  "§-after-link refs (DOC-T.16 — fold §X into the link label)"                             => "§-after-link → fold",
+  "canon §-refs (numbered `NN_NN §X` not resolving to a heading)"                          => "canon §-ref resolution",
+  "dangling #anchors (fragment ≠ heading slug)"                                            => "#anchor resolution",
+  "stale external docs/NN_NN refs (.github / root *.md / source)"                          => "external doc-path",
+  "volatile source line-refs `*.c`/`*.h`/`*.rb` (DOC-T.15 — cite symbol/#define)"          => "source line-ref drift"
+}.freeze
+
+# tracker.rake guard method (Tracker::Dashboard.<name>) → §3-row anchor.
+TRACKER_GUARDS = {
+  "duplicate_ids"                => "whole-file global uniqueness",
+  "issues"                       => "meta-line conformance",
+  "dangling_refs"                => "canon-ref resolution",
+  "section_dangling_refs"        => "§-section resolution",
+  "file_section_dangling_refs"   => "whole-file 00_07 §-ref",
+  "section_home_violations"      => "section↔canon-home",
+  "inbound_ref_violations"       => "inbound 00_07 item-ref",
+  "inbound_prose_ref_violations" => "prose 00_07 ID-ref",
+  "chem_note_ref_violations"     => "CHEM.N in-silico note-ref",
+  "chem_note_ids"                => "CHEM.N in-silico note-ref",
+  "chem_ambiguous_token_lines"   => "CHEM.N phantom-def hygiene",
+  "inline_residual_runon"        => "residual run-on",
+  "verdict_lead_violations"      => "verdict-lead",
+  "meta_form_violations"         => "meta-line form",
+  "cluster_marker_violations"    => "дім-кластер marker",
+  "bench_tag_violations"         => "bench-session tag symmetry"
+}.freeze
+# Non-guard Dashboard calls in tracker.rake (parsing/reporting helpers).
+TRACKER_HELPERS = %w[parse open_items].freeze
+
+# §3 slice of 00_06 (from the "3. Drift-prevention" h2 to the next h2).
+reg_lines = File.readlines(REGISTRY_DOC)
+start = reg_lines.index { |l| l.start_with?("## ") && l.include?("3. Drift-prevention") } or
+  abort("guard_registry_sync: cannot locate the §3 h2 in 00_06")
+rest     = reg_lines[(start + 1)..]
+stop     = rest.index { |l| l.start_with?("## ") } || rest.size
+registry = rest[0...stop].join
+
+errors = []
+
+# ── A. docs_check run-steps ⊆ §3 command column (verbatim) ──────────────────
+docs_wf = YAML.safe_load_file(DOCS_WORKFLOW)
+steps   = docs_wf.dig("jobs", "docs_check", "steps") or
+  abort("guard_registry_sync: cannot read jobs.docs_check.steps from docs.yml")
+run_cmds = steps.filter_map { |s| s["run"]&.strip }
+run_cmds.each do |cmd|
+  errors << "docs_check run-step not registered in 00_06 §3: `#{cmd}`" unless registry.include?(cmd)
+end
+
+# ── B. rake guards ↔ §3 rows (curated maps, both directions) ────────────────
+labels = File.read(DOCS_RAKE).scan(/failed << "([^"]+)"/).flatten
+(labels - DOCS_RAKE_LABELS.keys).each do |l|
+  errors << "NEW docs.rake failed-label without a §3 row / map entry: #{l.inspect}"
+end
+(DOCS_RAKE_LABELS.keys - labels).each do |l|
+  errors << "dead map entry — label no longer in docs.rake: #{l.inspect}"
+end
+
+guards = File.read(TRACKER_RAKE).scan(/Tracker::Dashboard\.(\w+)/).flatten.uniq - TRACKER_HELPERS
+(guards - TRACKER_GUARDS.keys).each do |g|
+  errors << "NEW tracker.rake guard without a §3 row / map entry: Tracker::Dashboard.#{g}"
+end
+(TRACKER_GUARDS.keys - guards).each do |g|
+  errors << "dead map entry — guard no longer called by tracker.rake: #{g}"
+end
+
+(DOCS_RAKE_LABELS.values | TRACKER_GUARDS.values).each do |anchor|
+  errors << "§3 row missing — anchor not found in 00_06 §3: #{anchor.inspect}" unless registry.include?(anchor)
+end
+
+# ── C. every file cited in §3 exists on disk ────────────────────────────────
+BARE_NAME_DIRS = "{app,scripts,tools,lib,bin,spec,firmware,docs,.github}"
+registry.scan(%r{[\w./*-]*\w\.(?:rb|py|sh|yml|rake)}).uniq.each do |token|
+  found =
+    if token.include?("*")
+      Dir.glob(File.join(ROOT, token)).any?
+    elsif token.include?("/")
+      File.exist?(File.join(ROOT, token))
+    else
+      Dir.glob(File.join(ROOT, BARE_NAME_DIRS, "**", token)).any?
+    end
+  errors << "§3 cites `#{token}` which does not exist on disk" unless found
+end
+
+# ── D1. ssot_guard.yml paths: ⟷ embedded mappings parity ────────────────────
+sg_text = File.read(SSOT_GUARD_WF)
+sg_yaml = YAML.safe_load(sg_text)
+sg_on   = sg_yaml["on"] || sg_yaml[true] # YAML 1.1 parses bare `on:` as boolean true
+sg_paths = (sg_on.dig("pull_request", "paths") || []).map { |g| g.sub(/\*\*\z/, "") }.sort
+sg_mappings = sg_text.scan(%r{pattern:\s*/\^(.+?)/,}).flatten.map { |p| p.gsub('\\/', "/") }.sort
+if sg_paths != sg_mappings
+  (sg_paths - sg_mappings).each { |p| errors << "ssot_guard.yml paths: has `#{p}**` with NO mappings pattern (run starts, area invisible → green)" }
+  (sg_mappings - sg_paths).each { |p| errors << "ssot_guard.yml mappings has /^#{p}/ with NO paths: glob (run never starts for that area)" }
+end
+
+# ── D2. pinned sources ⊆ docs.yml changes-filter (anti-decorative-guard) ────
+filters_raw = (docs_wf.dig("jobs", "changes", "steps") || [])
+              .filter_map { |s| s.dig("with", "filters") }.first or
+  abort("guard_registry_sync: cannot read the changes-filter from docs.yml")
+filter_globs = YAML.safe_load(filters_raw)["docs"]
+glob_res = filter_globs.map do |g|
+  re = Regexp.escape(g).gsub('\*\*', "DOUBLESTAR").gsub('\*', "[^/]*").gsub("DOUBLESTAR", ".*")
+  Regexp.new("\\A#{re}\\z")
+end
+pin_inputs = (YAML.safe_load_file(PINS_YML) || {}).values.map { |cfg| cfg["source"].to_s } +
+             [ "lib/canonical_block_pins.yml" ]
+pin_inputs.uniq.each do |src|
+  covered = glob_res.any? { |re| re.match?(src) }
+  errors << "pinned source `#{src}` NOT covered by the docs.yml changes-filter — the HARD pin-gate is decorative for it" unless covered
+end
+
+# ── report ──────────────────────────────────────────────────────────────────
+if errors.empty?
+  puts "guard_registry_sync ✓ — 00_06 §3 ⟷ CI gates (#{run_cmds.size} run-steps, " \
+       "#{labels.size} docs.rake labels, #{guards.size} tracker guards, " \
+       "#{sg_paths.size} ssot_guard areas, #{pin_inputs.uniq.size} pinned inputs)"
+  exit 0
+else
+  warn "guard_registry_sync ✗ — guard-registry ↔ code drift (DOC-T.40):"
+  errors.each { |e| warn "  · #{e}" }
+  exit 1
+end
