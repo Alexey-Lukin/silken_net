@@ -82,7 +82,7 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5) > web3_critical(6
 
 ## 6. Крос-доменні пастки (gotchas — найчастіші помилки)
 
-- **Backend Lorenz = Float (IEEE 754 double)**, НЕ BigDecimal (FW.7 — бітово ≡ firmware mruby; DCI divergence>30% → fraud) → `05_02`/`03_04`.
+- **Backend Lorenz = Float (IEEE 754 double)**, НЕ BigDecimal (FW.7 — бітово ≡ firmware mruby; DCI = категоричний homeostasis-match, numeric ε-tolerance flag-off — «30%» = тест-сценарій `00_03`, НЕ рантайм-поріг) → `05_02`/`03_04`.
 - **ECB-restore:** Queen після CBC-flush ОБОВ'ЯЗКОВО відновлює `CRYP_KEYSIZE_128B`+LoRa-key, інакше LoRa-decrypt ламається → `firmware`-скіл.
 - **Key-scoping CCM-ери (FW.2 (в)):** амбієнтний `hcryp` Солдата = **KEYB** (control-plane); session KEYL живе ЛИШЕ в CCM-скоупі — `MX_CRYP_Init_CCM` ставить `pKey` ЯВНО, Restore повертає KEYB (липкий session = Rails MIC-fail'ить кожен кадр). Ратчет FW.17 ротує лише session. Mesh-Сценарій Б у CCM-збірці гейтовано геть (star-only) → `firmware`-скіл / `03_05 §3.1`.
 - **`Load_AES_Key` ПЕРЕД `MX_CRYP_Init`**; **`vcap` = мВ VDDA (VREFINT-cal, FW.50), НЕ Vcap іоністора** (fauna-гейт 4500 свідомо fail-closed до Vcap-каналу); **`HAL_GetTick` заморожений у STOP2** (wall-time через RTC) → `firmware`-скіл / `03_01`.
