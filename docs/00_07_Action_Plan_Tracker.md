@@ -167,19 +167,6 @@
 - [ ] ⚖️ вага `hop_count`↔`vcap_headroom` (латентність vs довговічність вузла) + значення `VCAP_SAFE_THRESHOLD` — після FW.50-шкали
 - [ ] 🤖 route-metric дизайн — після ⚖️-присуду
 
-#### ARCH.19 — BSP-кластеризація IoT-графу
-- **P3** · 👤 · 🔗 · → [`00_08 §2.4`](00_08_Beyond_TRL9_Planetary_Roadmap)
-- **Стан:** ⚠️ **Айтем дрейфанув від власного джерела** (§00 vilize 07-16). BSP у `00_08` = **0 входжень** — реф `§2.4` («Network Sharding») осиротілий. Справжній дім — академічний: [`08_02`](08_02_Academic_Institutions_Registry) веде доц. **Бушина І.М.** («CNN / computer vision / **BSP**; BSP IoT-кластеризація»), [`08_01`](08_01_Joint_Publications_and_IP_Strategy) Стаття 10 (Q1, IEEE TNNLS) — «**BSP-кластеризація просторового розподілу аномалій**», гейт-зустріч = UNI.2. Тобто партнерський вектор = **аналітика мапи аномалій → Digital Twin** ([`03_03 §10`](03_03_TinyML_Acoustic_Inference)), а трекер переписав його як **mesh-роутинг на координатах Queen** — це й створило хибну схожість на §2.2-геохешинг (той канон явно шлюзує на **L2**, тоді як «кожна Queen знає лише сусідів» = L3). Merge в ARCH.1 відхилено: знищив би академ-провенанс + злив L3 у L2-дім. Канон-додаток у `00_08` **не робити** — канонізує дрейф.
-- [ ] 🤖 **re-home → §08a, реф `08_01 §Стаття 10`**; Стан переписати на партнерський вектор (кластеризація розподілу аномалій → Digital Twin), mesh-роутингове формулювання зняти як дрейф
-- [ ] 🔗 гейт = зустріч з Бушиним → UNI.2 (метод належить названому партнеру; solo-«BSP-tree дизайн» pre-empt'ить внесок колаборанта — контраст ARCH.25, де machine-half був self-ownable й заявлений)
-
-#### ARCH.10 — Queen-to-Queen Backhaul Mesh
-- **P3** · 🤖+👤 · 🌿 · → [`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap)
-- **Стан:** Far-horizon — LoRa SF12 inter-Queen relay (Starlink fallback). Коду НУЛЬ: `RELAY_QUEEN`/`delegate_uplink_frame` = канон-вигадані назви (1 влучання в репо = сам рядок канону), а прошивка Королеви несе `q2q_unavailable` хардкодом → умова «сусіди недоступні» істинна порожньо, тобто ARCH.10 = жива залежність ARCH.34. Фіз-гейт чесніший за «post-TRL 8»: потрібні **≥2 Queen у радіусі 5–15 км** — при одній Queen не будується й не тестується. ⚠️ **Мис-homed:** `00_08 §2.1` дає один ASCII-рядок; субстанція (SF12, `RELAY_QUEEN`, TTL=4, тригер) живе в [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy), а `02_05` — futurum («планується»), секції Q2Q не має. Канон [`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap).
-- [ ] 🤖 **re-home → §06, реф `06_08 §1.2`** (§00 vilize 07-16): L1/L3 тієї самої 4-рівневої failover-таблиці §1.2 уже там — ARCH.35 (Flash overflow) і ARCH.34 (Helium SOS); L2-Q2Q = єдиний сирота в §00. §02b відпадає прецедентом ARCH.35 (чистіше залізний чекбокс, і теж §06) — маршрутизує дім першого рефа, не залізність
-- [ ] 🤖+👤 backhaul-relay дизайн + hardware (активація post-scale)
-- [ ] ⚖️ link-budget + смуга: `06_08 §1.2` обіцяє дренаж за «Minutes», рахуючи чистий TOA (200×21 Б ≈ 134 с на 250 bps) — але **не застосовує EU868 1% duty-cycle**, ту саму фізику, якою документ двома рядками нижче вбиває Helium-як-бекхол; при 1% це години. Або Q2Q сідає в 10%-смугу g3 (канон її ніде не називає), або claim падає на ~2 порядки. Суміжно: HW.31 заморозив 5 dBi omni під кластер 3–5 км, не під 15 км SF12
-
 ## §01a · Anchor — Geometry & Metallurgy
 
 > ⚠️ Потребують фізичної роботи в лабораторії та/або з підрядниками.
@@ -1424,6 +1411,12 @@
 - **P3** · 🤖 · 🌿 · → `06_01`, `00_01`
 - **Стан:** Far-horizon scale-tier (Series D) над Ruby CoAP-демоном: `lib/daemons/coap_listener` стеля ~10k вузлів (**E.5**, load_test-grounded — `lib/silken_net/load_test/README.md`) → за межею Rust/Go Ingress Proxy + Kafka для >1M packets/hour (**ARCH.2**). Дотично INF.17 (prod-процес демона) + INF.6 (Ingress Anchor). Канон [`06_01`](06_01_Deployment_Kamal_Terraform) + `00_01`.
 
+#### ARCH.10 — Queen-to-Queen Backhaul Mesh
+- **P3** · 🤖+👤 · 🌿 · → [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy), [`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap)
+- **Стан:** Far-horizon — LoRa SF12 inter-Queen relay (Starlink fallback); L2 тієї самої 4-рівневої failover-таблиці [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy), що й ARCH.35 (L1) / ARCH.34 (L3) вище (re-home §00→§06 2026-07-16 — дім першого рефа). Коду НУЛЬ: `RELAY_QUEEN`/`delegate_uplink_frame` = канон-вигадані назви (1 влучання в репо = сам рядок канону), а прошивка Королеви несе `q2q_unavailable` хардкодом → умова «сусіди недоступні» істинна порожньо, тобто ARCH.10 = жива залежність ARCH.34. Фіз-гейт чесніший за «post-TRL 8»: потрібні **≥2 Queen у радіусі 5–15 км** — при одній Queen не будується й не тестується. ⚠️ **Канон мис-homed:** `00_08 §2.1` дає один ASCII-рядок; субстанція (SF12, `RELAY_QUEEN`, TTL=4, тригер) живе в [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy), а `02_05` — futurum («планується»), секції Q2Q не має.
+- [ ] 🤖+👤 backhaul-relay дизайн + hardware (активація post-scale)
+- [ ] ⚖️ link-budget + смуга: `06_08 §1.2` обіцяє дренаж за «Minutes», рахуючи чистий TOA (200×21 Б ≈ 134 с на 250 bps) — але **не застосовує EU868 1% duty-cycle**, ту саму фізику, якою документ двома рядками нижче вбиває Helium-як-бекхол; при 1% це години. Або Q2Q сідає в 10%-смугу g3 (канон її ніде не називає), або claim падає на ~2 порядки. Суміжно: HW.31 заморозив 5 dBi omni під кластер 3–5 км, не під 15 км SF12
+
 #### E.27 — Chaos Engineering (Chaos Mesh / kill-scripts)
 - **P3** · 👤 · 🌿 · → `06_08`
 - **Стан:** Chaos Mesh (Akash) або kill-scripts (Kamal) для відмовостійкості — post-TRL 7 production hardening. Дотично DR.1 (DR drill) + `06_08` resilience policy.
@@ -1625,6 +1618,11 @@
 - **Стан:** Far-horizon (чесно: гейти = угода ЧНУ + анкер-поле з ground-truth (TRL-3) + TinyML 5-class FW.4/FW.25 як мікро-сигнал). Розшифровка: E.14 = технічний фасет **08_01 Стаття 10** (Любченко ансамбль Sentinel-2 + Бушин CNN-синтез); канонічний fusion-дизайн = «Macro-Micro verification» у `03_03` (вихід → `AiInsight#biodiversity_trend`), НЕ `04_02` (там лише consumer). Розкол чекбокса: «потребує партнери» ХИБНЕ для інгест-half — Sentinel-2 NDVI = open data (Copernicus/AWS, без креденшелів), machine-доступний, але YAGNI: fusion'ити нема з чим (biodiversity_trend data-starved — soundscape сам far-horizon). Наявний dClimate-шлях ≠ NDVI (FIRMS fire, VIIRS-термалка — інший датасет; NDVI = greenfield-інгест, реюз лише HTTP-патерну). Family-cross-ref E.30/E.52 (Стаття 10/Любченко; різні блокери — не merge).
 - [ ] 🤖 (post-gates) Sentinel-2 NDVI-адаптер (STAC по `cluster.geo_center`, cloud-mask → biodiversity_trend confirm) — open-data, будувати коли є з чим fusion'ити
 - [ ] ⚖️ fusion-методологія (ANN+RF+GA / CNN) — партнерська голова (Любченко+Бушин, після угоди)
+
+#### ARCH.19 — BSP-кластеризація просторового розподілу аномалій (академічний фасет — Стаття 10, Бушин)
+- **P3** · 👤 · 🔗 · → [`08_01` Стаття 10](08_01_Joint_Publications_and_IP_Strategy), [`08_02`](08_02_Academic_Institutions_Registry)
+- **Стан:** Партнерський вектор (re-home §00→§08a 2026-07-16 — айтем дрейфанув від власного джерела: BSP у `00_08` = 0 входжень, колишній реф §2.4 осиротілий, а трекер переписав тему як mesh-роутинг на координатах Queen — хибна схожість із §2.2-геохешингом, який шлюзує на L2). Справжній дім — академічний: [`08_02`](08_02_Academic_Institutions_Registry) веде доц. **Бушина І.М.** («CNN / computer vision / **BSP**; BSP IoT-кластеризація»), [`08_01`](08_01_Joint_Publications_and_IP_Strategy) Стаття 10 (Q1, IEEE TNNLS) — «**BSP-кластеризація просторового розподілу аномалій**» → аналітика мапи аномалій → Digital Twin ([`03_03 §10`](03_03_TinyML_Acoustic_Inference)); сиблінг-фасет тієї самої Статті 10 — E.14 ↑. Merge в ARCH.1 відхилено (знищив би академ-провенанс + злив L3 у L2-дім); канон-додаток у `00_08` **не робити** — канонізує дрейф.
+- [ ] 🔗 гейт = зустріч з Бушиним → UNI.2 (метод належить названому партнеру; solo-«BSP-tree дизайн» pre-empt'ить внесок колаборанта — контраст ARCH.25, де machine-half був self-ownable й заявлений)
 
 ## §08b · External Stakeholders (B2G / B2B / Cultural)
 
