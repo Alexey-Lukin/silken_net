@@ -22,9 +22,11 @@
 #      embedded `mappings` array (held only by a ⚠️ comment before), every
 #      canonical_block_pins.yml source ⊆ the docs.yml `changes` filter (a
 #      pinned source outside the filter means the HARD pin-gate silently does
-#      not run on the PR that breaks it — the bio_contract.rb hole), and every
-#      pin KEY named in the §3 pin-inventory row (a third pin must not leave
-#      the row silently stale);
+#      not run on the PR that breaks it — the bio_contract.rb hole), every
+#      ruby_version_sync mirror + its SSOT ⊆ the same filter (OPS.13 — the
+#      Dockerfile/Gemfile bump must trigger the parity gate, not dodge it),
+#      and every pin KEY named in the §3 pin-inventory row (a third pin must
+#      not leave the row silently stale);
 #   E. the REVERSE of A (DOC-T.40 tail): a §3 row may CLAIM a command / a
 #      workflow home that the job never runs — the class DOC-T.41 caught by
 #      hand in SECURITY_ASSURANCE_CASE ("cppcheck (MISRA) — all gating CI"
@@ -36,6 +38,7 @@
 # Exit 0 = in sync; exit 1 = drift (lists the divergence). Method/why → docs/00_06 §3.
 
 require "yaml"
+require_relative "ruby_version_sync"
 
 ROOT          = File.expand_path("..", __dir__)
 REGISTRY_DOC  = File.join(ROOT, "docs/00_06_SSOT_Documentation_Standard.md")
@@ -177,7 +180,8 @@ glob_res = filter_globs.map do |g|
 end
 pins = YAML.safe_load_file(PINS_YML) || {}
 pin_inputs = pins.values.map { |cfg| cfg["source"].to_s } +
-             [ "lib/canonical_block_pins.yml" ]
+             [ "lib/canonical_block_pins.yml" ] +
+             RubyVersionSync::MIRRORS.keys + [ RubyVersionSync::SSOT ]
 pin_inputs.uniq.each do |src|
   covered = glob_res.any? { |re| re.match?(src) }
   errors << "pinned source `#{src}` NOT covered by the docs.yml changes-filter — the HARD pin-gate is decorative for it" unless covered

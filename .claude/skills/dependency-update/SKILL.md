@@ -78,12 +78,15 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   `json 2.20.0→2.21.1` (age **3d**) as a passenger. Read `gh pr diff <n>` and age **every changed
   line**, then weigh against the target's actual value (that pagy release only touched
   searchkick/elasticsearch paginators — `grep` said 0 uses → no-op, so zero cost to let it ripen).
-- **A green Dependabot PR can still break `main`** (2026-07-16 → `00_07 OPS.13`). Ask what actually
-  *builds* the changed artifact and on which trigger. Our only docker build (`mirror-ghcr.yml`) runs
-  on `workflow_run[branches: main]` + `release` + `dispatch` — **not `pull_request`** → a base-image
-  bump is never built on the PR. `library/ruby` bumps only the Dockerfile while `Gemfile` holds a
-  hard `ruby "4.0.5"` pin ⇒ `bundle install` dies *after* merge. **A Ruby bump is the full 7-mirror
-  recipe (row 2 of the table) + `rvm install` + full suite — never a merge button.**
+- **A green Dependabot PR can still break `main`** (2026-07-16 → OPS.13, now hard-gated). Ask what
+  actually *builds* the changed artifact and on which trigger. The historical hole: the only docker
+  build (`mirror-ghcr.yml`) runs on `workflow_run[branches: main]` — not `pull_request` — so a
+  `library/ruby` bump touched only the Dockerfile while `Gemfile` held a hard `ruby "X.Y.Z"` pin ⇒
+  `bundle install` died *after* merge (PR #463). Since 2026-07-16 two gates hold the line:
+  `scripts/ruby_version_sync.rb` (version parity across ALL mirrors — the script's `MIRRORS` is the
+  authoritative list; `docs.yml`) + `docker_smoke` in `ci.yml` (full image build on the PR, in the
+  required `ci-ok`). **A Ruby bump is still the full every-mirror recipe (row 2 of the table) +
+  `rvm install` + full suite — never a merge button; the gates make the shortcut red, not safe.**
 - **Transitive caps block "latest" — and that's not our drift.** A bump can be held back by a
   depending gem's constraint; document the blocker, don't force it (forcing breaks the holder):
   seen this session — `eth` caps openssl `~>3.3` + bigdecimal `~>3.1`; `rbsecp256k1` caps

@@ -40,8 +40,12 @@ jobs:
         with:
           egress-policy: audit
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-      - name: Install conda-lock
-        run: pipx install conda-lock
+      - name: Install conda-lock (hash-pinned)
+        # `pipx install conda-lock` плавав latest без версії й хеша — єдина
+        # pip-поверхня поза «hash-pinned CI-тулзи» (00_05 §2.7). Той самий
+        # рецепт, що requirements-pytest: pip-compile --generate-hashes
+        # (+ --allow-unsafe — conda-lock прямо залежить від setuptools).
+        run: python3 -m pip install --user --require-hashes -r tools/in_silico/requirements-conda-lock.txt
       - name: conda-lock.yml in sync with environment.yml (no silent drift)
         run: |
           conda-lock lock --check-input-hash \

@@ -287,9 +287,19 @@ jobs:
       - name: Install crytic-compile (hash-pinned)
         run: pip install --require-hashes -r requirements-crytic.txt
 
-      - name: Install Medusa
+      - name: Install Medusa (release binary + sha256 verify)
+        # Реліз medusa .sha256-файл НЕ публікує (лише Sigstore-attestation), тож
+        # дзеркалити aderyn-блок не можна — sha256 захардкоджено по-actionlint-івськи
+        # (без мережевої довіри й нових тулів; строгіше за aderyn, що тягне .sha256
+        # з того ж origin). Значення обчислено з release-асета 2026-07-16 і
+        # звірено з digest у medusa-linux-x64.tar.gz.sigstore.json (messageSignature.
+        # messageDigest — підпис crytic-CI). Бамп версії → перерахуй обидва
+        # (прохід скіла dependency-update). Присуд ⚖️ → 00_07 OPS.10.
         run: |
-          curl -sSfL https://github.com/crytic/medusa/releases/download/v1.5.1/medusa-linux-x64.tar.gz -o medusa.tar.gz
+          ver=v1.5.1
+          sha256=ddfe1517ae9028ef9fc331b00f5a6a9d5406f3fcd11a715d60c6b6fb3e4546d3
+          curl -sSfL "https://github.com/crytic/medusa/releases/download/$ver/medusa-linux-x64.tar.gz" -o medusa.tar.gz
+          echo "$sha256  medusa.tar.gz" | sha256sum -c -
           tar -xzf medusa.tar.gz
           sudo mv medusa /usr/local/bin/medusa
           medusa --version

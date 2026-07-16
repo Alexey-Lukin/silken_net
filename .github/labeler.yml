@@ -5,6 +5,11 @@
   - changed-files:
       - any-glob-to-any-file:
           - 'firmware/**'
+          # [OPS.3] docs/03_* (firmware canon) + tools/** (in-silico/ML/CAD/
+          # firmware-моделі) — дзеркало ci.yml firmware-area (tools/ml,
+          # tools/firmware ідуть firmware-смугою) + naukova база кластера A.
+          - 'docs/03_*'
+          - 'tools/**'
           - 'docs/01_*'
           - 'docs/02_*'
           - 'docs/08_*'
@@ -34,6 +39,17 @@
               - 'terraform/**'
               - 'docs/04_*'
               - 'docs/06_*'
+              # [OPS.3] 100%-coverage хвіст (00_05 §4.1): process/CI/deploy-infra
+              # та root-файли (Gemfile/Dockerfile/*.md + dot-конфіги) → C.
+              - '.github/**'
+              - '.claude/**'
+              - '.kamal/**'
+              - 'bin/**'
+              - 'public/**'
+              - 'vendor/**'
+              - 'docs/00_*'
+              - '*'
+              - '.*'
       # [OPS.9] Exclude cluster-B and cluster-D subtrees so the broad app/**
       # glob doesn't double-label them (primary-cluster mutual exclusivity, 00_05 §2).
       - changed-files:
@@ -61,6 +77,7 @@
   - changed-files:
       - any-glob-to-any-file:
           - 'firmware/**'
+          - 'docs/03_*'
 
 "module:04-server-core":
   - changed-files:
@@ -76,7 +93,9 @@
           - 'deploy/**'
           - '.kamal/**'
           - 'terraform/**'
-          - '.github/workflows/**'
+          # ширше за workflows/: actions/, dependabot.yml, labeler.yml — той
+          # самий CI/CD-дім (Матриця), 06_07 §1 інвентаризує їх разом.
+          - '.github/**'
 
 "module:00-codex":
   - changed-files:

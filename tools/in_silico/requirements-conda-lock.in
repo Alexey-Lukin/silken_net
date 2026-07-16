@@ -1,0 +1,5 @@
+# conda-lock для CI-джоба lock_sync (in_silico_smoke.yml) — drift-гейт
+# conda-lock.yml ⟷ environment.yml. Version-pin = версія останнього зеленого
+# прогону (2026-07-16); бамп → перегенеруй .txt (команда в його шапці) —
+# прохід скіла dependency-update.
+conda-lock==4.0.2
