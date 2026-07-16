@@ -1525,13 +1525,9 @@ TEST(test_acoustic_packing_uint8_max) {
  * FW.10 — TEMPERATURE-BASED TX DEFERRAL
  * ════════════════════════════════════════════════════════════════════ */
 
-#define COLD_TX_DEFER_TEMP_TEST    (-15)
-#define COLD_TX_DEFER_VCAP_MV_TEST 4000
-
-/* Extracted decision logic matching firmware/soldier/main.c */
-static int Should_Defer_TX(int8_t temp, uint16_t vcap_mv) {
-    return (temp < COLD_TX_DEFER_TEMP_TEST && vcap_mv < COLD_TX_DEFER_VCAP_MV_TEST);
-}
+/* One-Home: той самий предикат, що прошивка (firmware/common/tx_defer.h) —
+ * тест б'є по справжньому коду, не по копії (freeze-contract на < і −15/4000). */
+#include "../common/tx_defer.h"
 
 TEST(test_tx_defer_cold_and_low_vcap) {
     /* -20°C, 3500 mV → MUST defer */

@@ -42,6 +42,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include "../common/device_event.h" // [SEC.21] uplink 0x57 device-event (canary-слід → Rails)
 #include "../common/tdma_schedule.h" // [ARCH.26 L2] розклад синхронних вікон з маяка (One-Home)
 #include "../common/cad_sniff.h"     // [ARCH.26 L3] CAD-нюх + PANIC-преамбула (One-Home)
+#include "../common/tx_defer.h"      // [FW.10] зимовий кенозис TX: Should_Defer_TX (One-Home)
 
 // Підключаємо скомпільовану нейромережу TinyML.
 // Якщо реальної моделі ще немає (модель ще не #include'нута → fallback; docs/03_03 §4) на
@@ -114,8 +115,6 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #define TX_JITTER_MAX_MS          500        // Максимальна рандомізована затримка TX (мс)
 #define PANIC_TTL                 5          // TTL для екстрених пакетів
 #define DEFAULT_TTL               3          // Стандартний TTL для пакетів
-#define COLD_TX_DEFER_TEMP        (-15)      // Temperature threshold for TX deferral (°C)
-#define COLD_TX_DEFER_VCAP_MV     4000       // Vcap threshold for TX deferral (mV)
 #define PANIC_FLAG_BIT            0x80       // [FW.29] Bit 7 of StatusByte: panic disambiguation
 
 // [SEC.10] Frame Counter anti-replay для panic packets.
@@ -2414,7 +2413,7 @@ int main(void)
     // Фази 4–4.5 і одразу падаємо у Кенозис.
     {
         int8_t packed_temp = (int8_t)lora_payload[6];
-        if (packed_temp < COLD_TX_DEFER_TEMP && vcap_voltage < COLD_TX_DEFER_VCAP_MV) {
+        if (Should_Defer_TX(packed_temp, vcap_voltage)) {
             goto phase5_kenosis;
         }
     }
