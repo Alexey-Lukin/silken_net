@@ -39,8 +39,10 @@ protocols.each do |f|
   rel  = f.sub("#{DOCS}/", "")
   text = File.read(f)
 
-  # (1)+(3) relative-href canon links: target exists, optional #anchor resolves
-  text.scan(%r{\]\((?:\.\./)+(\d\d_\d\d_[A-Za-z0-9_]+)(#[^)]*)?\)}).each do |base, frag|
+  # (1)+(3) relative-href canon links: target exists, optional #anchor resolves.
+  # `.md` is optional-but-usual: the protocols/ subtree writes the extension, and
+  # without this the scan matched 1 link of 142 (silent since DOC-T.26 landed).
+  text.scan(%r{\]\((?:\.\./)+(\d\d_\d\d_[A-Za-z0-9_]+)(?:\.md)?(#[^)]*)?\)}).each do |base, frag|
     unless existing.include?(base)
       violations << "#{rel}: dangling canon link → `#{base}` (no such doc)"
       next
