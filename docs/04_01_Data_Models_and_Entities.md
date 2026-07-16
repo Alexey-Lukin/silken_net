@@ -387,7 +387,7 @@ dormant ──reactivate──► active
 
 ## ⚙️ 3. Апаратний Рівень
 
-### `Gateway` — Королева (LoRa mesh Шлюз)
+### `Gateway` — Королева (LoRa Шлюз, star-only)
 
 **Включає:** `AASM`, `Firmwareable`, `GeoLocatable`, `NormalizeIdentifier`
 

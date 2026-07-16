@@ -19,7 +19,7 @@ module SilkenNet
     #  • forked-scaling: більше воркерів → якщо achieved росте лінійно, впирався
     #    генератор; якщо плато — вузьке місце нижче (listener/kernel).
     #  • kernel UDP-drop лічильник (before/after) — авторитетний, бо демон
-    #    ковтає Redis-enqueue-fail без метрики (PERF-3), а loopback ховає
+    #    ковтає Redis-enqueue-fail без метрики (PERF.1), а loopback ховає
     #    NIC-ring-drop (⚠️ Darwin recvspace ~42KB → knee = артефакт, не стеля;
     #    intake-число НЕ переноситься на Linux — re-run на staging).
     #  • monotonic MID (не random) — birthday-колізії дали б фейкові «дропи».

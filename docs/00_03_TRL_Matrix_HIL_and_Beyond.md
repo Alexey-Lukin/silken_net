@@ -108,7 +108,7 @@
 | Per-domain TRL | Physical-Equivalent Target (НЕ блокер) | HIL, що його відтворює | Status |
 |----------------|----------------------|----------------|--------|
 | Software TRL 5 (Prototype validated) | ~анкер у дереві 30 днів | `bin/forest_simulator` + integration tests | ✅ Достатньо |
-| Software TRL 6 (Demonstration in relevant environment) | ~LoRa mesh у канопі | HIL Queen Simulator + Akash staging deploy + multi-node forest_simulator | 🟡 Частково (HIL Queen ще не написаний) |
+| Software TRL 6 (Demonstration in relevant environment) | ~LoRa-лінк у канопі | HIL Queen Simulator + Akash staging deploy + multi-node forest_simulator | 🟡 Частково (HIL Queen ще не написаний) |
 | Software TRL 7 (Operational prototype) | ~pilot 100 дерев | Все HIL + chaos engineering + **реальний testnet pipeline ОБОВ'ЯЗКОВИЙ** (Polygon Amoy + Solana Devnet + Ethereum Sepolia) з реальними RPC-вузлами | 🟡 Частково (chaos engineering exists; testnet pipeline — TODO) |
 | Software TRL 8 (Production-validated) | ~1000+ дерев у полі | **HIL відтворює 1000+ віртуальних дерев** + **повний testnet stress** (Amoy/Devnet/Sepolia: gas spikes, RPC 429, nonce collisions, DON latency, orphaned blocks) + Slither/Aderyn high-severity = 0 + Halmos symbolic proofs + Medusa property-fuzz clean + multi-sig deployment dry-run. Mainnet — лише TRL 9. | 🟡 Контракти TRL 9-ready (Foundry/Slither/Aderyn/Halmos/Medusa); backend↔chain integration потребує testnet-стресу |
 

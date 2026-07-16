@@ -98,7 +98,7 @@ Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, 
 
 **TRL Gate Events** (єдині точки, де Архітектор **гарантовано** втручається):
 - 4 → 5: перехід з лабораторії до pilot (потребує HIL-валідації, [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond)).
-- 6 → 7: перехід до canopy environment (real LoRa mesh, real CoAP intake).
+- 6 → 7: перехід до canopy environment (real LoRa link, real CoAP intake).
 - 8 → 9: **зняття «тренувальних коліс»** — передача повного управління контрактами від Multi-sig (`Gnosis Safe`) до децентралізованого DAO (`SilkenGovernor` + Timelock) + зняття штучних лімітів емісії, при **доведеній стабільній безперебійній роботі повноцінного комерційного кластера (Operational Canopy, 1000+ дерев) без втручання**. *(Масштаб до мільйонів вузлів = SRL/виробнича зрілість поза TRL — [`00_08`](00_08_Beyond_TRL9_Planetary_Roadmap).)*
 
   > **⚠️ Корекція:** мінтинг SCC — **НЕ перемикач**, який Архітектор вмикає на TRL 9. Він керується децентралізованим оракулом (Chainlink) + Guard Clauses (`verified_by_iotex` + `oracle_status_fulfilled` + `hadron_kyc`, [`05_02`](05_02_Proof_of_Growth_Pipeline)/[`00_01 §5`](00_01_Vision_Mission_and_Roadmap)). На TRL 7-8 система **вже** в mainnet — з малим лімітом емісії та multi-sig на DAO-скарбниці. TRL 9 = **доведена стабільна комерційна робота (Operational Canopy) + децентралізація**, а не «deploy» і не «мільйони вузлів» (масштаб = SRL, [`00_08`](00_08_Beyond_TRL9_Planetary_Roadmap)).

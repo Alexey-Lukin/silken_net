@@ -76,7 +76,7 @@ bin/coap_load --arrival --trees 200 --lambda 5 --batches 300    # sustainable-λ
 3. **Живий Sidekiq** із **money-path у виділеному процесі** (ARCH.52) — інакше
    strict-serialization завищить cascade-drain.
 4. **Kernel UDP counters** (Linux `nstat -az | grep -i Udp` `RcvbufErrors`) — гарнес
-   читає їх, бо loopback ховає NIC-ring-drop, а demon ковтає Redis-fail (PERF-3).
+   читає їх, бо loopback ховає NIC-ring-drop, а demon ковтає Redis-fail (PERF.1).
 5. **CoV ≤ 0.05** (`LoadReport.coefficient_of_variation`) перед екстраполяцією;
    decompose-by-stage (compute масштабується clock-ratio, DB/Redis — network-topology).
 

@@ -247,6 +247,7 @@ md.each_line do |line|
   if line.start_with?("## ")
     in_registry = line.match?(Tracker::Dashboard::REGISTRY_SECTION) &&
                   !line.match?(Tracker::Dashboard::SKIP_SECTION)
+    current = nil # section boundary — as in the axis-1/2 loop above
     next
   end
   if in_registry && (m = line.match(Tracker::Dashboard::ITEM_HEAD))
@@ -260,11 +261,13 @@ md.each_line do |line|
     dateless += 1
     next
   end
-  age = (today - Date.parse(dates.max)).to_i
-  next if age <= STALE_AFTER_DAYS
+  # OLDEST date wins: a line carrying two dates is stale from the first claim,
+  # and `.max` on a future date would silently yield a negative age.
+  age = dates.filter_map { |d| Date.parse(d) rescue nil }.map { |d| (today - d).to_i }.max
+  next if age.nil? || age <= STALE_AFTER_DAYS
 
   stale_hits += 1
-  puts "  #{current}: #{age} дн. (#{dates.max}) — #{line.strip[0, 100]}"
+  puts "  #{current}: #{age} дн. (#{dates.min}) — #{line.strip[0, 100]}"
 end
 puts "  (чисто ✓)" if stale_hits.zero?
 puts "  (+#{dateless} [x] без дати — вік невідомий; датуй закриття `✅ YYYY-MM-DD`)" if dateless.positive?

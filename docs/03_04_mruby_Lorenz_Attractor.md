@@ -90,7 +90,7 @@ dz/dt = x · y - β · z
 >
 > Третій рівень hardening — **fixed-point Q-формат:** вхідні дані × 10⁶, всі арифметичні операції у `int64_t`/Ruby `Integer` (немає overflow до 2⁶³ ≈ 9.2·10¹⁸). Тоді результат **бітово ідентичний на будь-якому процесорі**, від AVR до zkVM.
 >
-> Ціна: повне переписування `firmware/bio_contracts/bio_contract.rb`, `app/services/silken_net/attractor.rb`, всіх 50k parity-тестів, плюс ручне керування overflow (квадрати/добутки потрібно зрізати до Q-формату на кожному кроці Ейлера). Робота S→L залежно від обсягу регресії. Цінність — лише при переході до ZK-proof Lorenz (Risc Zero / SP1) або при підтримці радикально іншої HW-цілі (RV32E без FPU, тощо). До цього моменту Float-парність достатня. Зафіксовано як **ARCH.18** (int-Lorenz, 🌿 deferred until zkVM-Lorenz milestone; `FW.45` = історичний firmware-тег, злитий у ARCH.18 → §🗄️) у [`00_07`](00_07_Action_Plan_Tracker).
+> Ціна: повне переписування `firmware/bio_contracts/bio_contract.rb`, `app/services/silken_net/attractor.rb`, усього parity-корпусу (§4.2 — sweep + Ruby/C-мірор), плюс ручне керування overflow (квадрати/добутки потрібно зрізати до Q-формату на кожному кроці Ейлера). Робота S→L залежно від обсягу регресії. Цінність — лише при переході до ZK-proof Lorenz (Risc Zero / SP1) або при підтримці радикально іншої HW-цілі (RV32E без FPU, тощо). До цього моменту Float-парність достатня. Зафіксовано як **ARCH.18** (int-Lorenz, 🌿 deferred until zkVM-Lorenz milestone; `FW.45` = історичний firmware-тег, злитий у ARCH.18 → §🗄️) у [`00_07`](00_07_Action_Plan_Tracker).
 
 ### 1.3 Класичний Атрактор Лоренца (Метелик)
 

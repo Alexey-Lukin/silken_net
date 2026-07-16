@@ -123,7 +123,7 @@
 
 ## 📡 4. CAPEX: Специфікація шлюзу "Queen" (BOM)
 
-Шлюз агрегує дані по LoRa mesh і відправляє їх у хмару/блокчейн. Супутниковий бекхол (Starlink) винесено в окремий "Mother Gateway" (→ [`02_05`](02_05_Queen_Hardware_and_Starlink)), тому стандартна Queen використовує енергоефективний **LTE-M / NB-IoT**.
+Шлюз агрегує дані по LoRa (star-only) і відправляє їх у хмару/блокчейн. Супутниковий бекхол (Starlink) винесено в окремий "Mother Gateway" (→ [`02_05`](02_05_Queen_Hardware_and_Starlink)), тому стандартна Queen використовує енергоефективний **LTE-M / NB-IoT**.
 
 > 🏠 **One-Home: Queen node-CAPEX живе ТУТ.** Component-spec (моделі/фази: STM32 / SIM7070G / solar / battery / MPPT…) — дім [`02_05 §7`](02_05_Queen_Hardware_and_Starlink); тут — node-rollup $. Cost-домен registry — [`00_06 §2`](00_06_SSOT_Documentation_Standard).
 

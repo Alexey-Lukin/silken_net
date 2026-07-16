@@ -30,29 +30,55 @@ TREES = %w[app lib firmware contracts spec scripts tools bin config db].freeze
 EXTS  = "{rb,c,h,sol,py,sh,rake,erb,yml,yaml}"
 
 # The tracker parser + its spec fixtures legitimately carry ID-shaped tokens
-# that exercise the resolver; CHANGELOG is a frozen event-log (its IDs are
-# history, not live refs); this script itself cites the proof-case phantom;
+# that exercise the resolver; this script itself cites the proof-case phantom;
 # vendored/build trees are not our prose.
-EXEMPT = %r{\A(?:lib/tracker/dashboard\.rb|spec/lib/|CHANGELOG\.md|scripts/code_tracker_id_check\.rb|contracts/(?:out|cache|node_modules|lib)/|firmware/extern/|tools/[^/]+/(?:node_modules|venv)/)}
+#
+# CHANGELOG.md is NOT exempt as a file — it is release-please-generated, so a
+# stale ID there cannot be "fixed" in place (rewriting it would falsify
+# history), but it is the best index of which IDs ever existed: exempting the
+# file hid E.28, the twin of the OPS.8 orphan (same prune commit, same "zero
+# inbound refs" claim). So it reports separately instead of gating.
+EXEMPT = %r{\A(?:lib/tracker/dashboard\.rb|spec/lib/|scripts/code_tracker_id_check\.rb|contracts/(?:out|cache|node_modules|lib)/|firmware/extern/|tools/[^/]+/(?:node_modules|venv)/)}
+ADVISORY_ONLY = %r{\ACHANGELOG\.md:}
 
 # ID-shaped tokens that are NOT tracker refs: external standards etc.
 KNOWN_BENIGN = %w[E.164].to_set # ITU-T phone-number format
 
-# ID-shaped token: family prefix (may be hyphen-joined like DOC-T) + `.` +
-# digit tail; optional UPPERCASE hyphen-segments stay part of the token.
-TOKEN_RE = /(?<![A-Za-z0-9_])[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*\.\d[0-9A-Za-z.]*(?:-[A-Z0-9.]+)*/
+# ID-shaped token: family prefix (may be hyphen-joined like DOC-T, PUMA-IPV6)
+# + `.` OR `-` + digit tail; optional UPPERCASE hyphen-segments (facets) stay
+# part of the token; `/`-joined digit families (`ARCH.64/65`) expand below.
+#
+# The separator class MUST match Tracker::Dashboard's own ID shape (`[.\-]`):
+# an earlier `\.\d` here made the gate structurally blind to every
+# hyphen-numbered ID — `SLASH-1` (cited in 33 files!), `PUMA-IPV6-1`,
+# `PUMA-RACK-1` were never even candidates. Close-review 2026-07-16.
+#
+# Known ceiling: dotless word-IDs (`SE050-MIGRATION`, `OS-RECOMPUTE`) are
+# shape-identical to ordinary SHOUTED prose, so they are matched only when
+# they appear verbatim in the ID-set (below) — never as phantom candidates.
+TOKEN_RE = %r{(?<![A-Za-z0-9_])[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*[.\-]\d[0-9A-Za-z.]*(?:-[A-Z0-9.]+)*(?:/\d+)*}
 
 tracker_md = File.read(Tracker::Dashboard::DEFAULT_PATH)
 ids        = Tracker::Dashboard.all_item_ids(tracker_md).to_set
 families   = ids.filter_map { |id| id[/\A[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*(?=[.\-]\d)/] }.to_set
 
-# A token resolves if it is an item ID, or if 00_07 knows it VERBATIM anywhere
-# in its text — facet tags (`FW.20-S2`, `ARCH.41-B`) and sub-IDs (`HW.3.IS`)
-# are declared in their item's body, so a facet on the WRONG base (the
-# ARCH.35-Q2Q phantom class) still fails: 00_07 never wrote that compound.
+# A token resolves if it IS an item ID, or if it is a FACET of one: `FW.20-S2`,
+# `ARCH.41-B`, `HW.3.IS` — a real item (the base) plus a suffix declared
+# verbatim in 00_07. Both halves are required, and that is the whole guard:
+#
+#   * base must be a real item → a bare ID with no home (`E.2`) is a phantom
+#     even though 00_07 happens to name it in someone else's prose (it did:
+#     inside SEC.1's body). Close-review 2026-07-16 caught exactly this — a
+#     plain verbatim fallback let the 14th orphan through.
+#   * facet must be declared → `ARCH.35-Q2Q` fails (real base, invented
+#     suffix: 00_07 never wrote that compound). That is the proof-case.
 def resolves?(tok, ids, tracker_md)
-  ids.include?(tok) ||
-    tracker_md.match?(/(?<![A-Za-z0-9_])#{Regexp.escape(tok)}(?![0-9A-Za-z])/)
+  return true if ids.include?(tok)
+
+  base = tok[/\A[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*\.\d+/]
+  return false unless base && base != tok && ids.include?(base)
+
+  tracker_md.match?(/(?<![A-Za-z0-9_])#{Regexp.escape(tok)}(?![0-9A-Za-z])/)
 end
 
 files = TREES.flat_map { |t| Dir[File.join(ROOT, t, "**", "*.#{EXTS}")] } +
@@ -71,7 +97,19 @@ phantoms = files.flat_map do |rel|
     line.scan(TOKEN_RE).flat_map do |tok|
       tok = tok.sub(/[.\-]+\z/, "") # sentence punctuation / dangling hyphen
       # An ID-shaped hyphen segment is a RANGE (`E.20-E.34`) — check each end.
+      # DOTTED both sides on purpose: a `[.\-]\d` lookahead here would slice
+      # fixture strings (`TEST-DEVICE-001` → `TEST` + `DEVICE-001`) into
+      # phantom halves.
       parts = tok.split(/-(?=[A-Z][A-Za-z0-9]*\.\d)/)
+      # `/`-joined digit family (`ARCH.64/65`, `INF.3/4/6`) — every member is a
+      # ref; the same idiom Tracker::Dashboard.expand_prose_ids already handles.
+      parts = parts.flat_map do |p|
+        segs = p.split("/")
+        next [ p ] if segs.one?
+
+        prefix = segs.first[/\A[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*[.\-]/]
+        prefix ? segs.map { |s| s.match?(/\A\d/) ? "#{prefix}#{s}" : s } : [ p ]
+      end
       parts.filter_map do |part|
         next unless families.include?(part[/\A[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*/])
         next if KNOWN_BENIGN.include?(part) || resolves?(part, ids, tracker_md)
@@ -82,12 +120,20 @@ phantoms = files.flat_map do |rel|
   end
 end.uniq
 
-if phantoms.empty?
+gating, advisory = phantoms.partition { |p| !p.match?(ADVISORY_ONLY) }
+
+unless advisory.empty?
+  puts "code_tracker_id_check — CHANGELOG cites #{advisory.size} ID(s) with no 00_07 home " \
+       "(advisory: generated file, do not rewrite; give the ID a §🗄️ row if it deserves one):"
+  advisory.sort.each { |a| puts "  · #{a}" }
+end
+
+if gating.empty?
   puts "code_tracker_id_check ✓ — #{files.size} files scanned; every cited tracker-ID " \
        "resolves against 00_07 (#{ids.size} IDs, #{families.size} families)"
   exit 0
 else
   warn "code_tracker_id_check ✗ — phantom tracker-IDs cited in code (00_07 has no such item):"
-  phantoms.sort.each { |p| warn "  · #{p}" }
+  gating.sort.each { |p| warn "  · #{p}" }
   exit 1
 end
