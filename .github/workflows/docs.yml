@@ -64,7 +64,9 @@ jobs:
               - 'app/workers/**'
               - 'firmware/bio_contracts/**'
               - 'lib/canonical_block_pins.yml'
+              - 'lib/github_bootstrap.rb'
               - 'scripts/guard_registry_sync.rb'
+              - 'scripts/field_canon_sync.rb'
               - '.github/**'
 
   docs_check:
@@ -129,6 +131,12 @@ jobs:
         # tracker.rake guard maps to a 00_06 §3 row; files cited in §3 exist;
         # ssot_guard paths↔mappings parity; pinned sources ⊆ this changes-filter.
         run: ruby scripts/guard_registry_sync.rb
+
+      - name: FIELDS ⟷ canon sync (OPS.6 — Projects V2 schema vs 00_05 §1.1)
+        # Pure Ruby, no Rails — row-scoped GithubBootstrap::FIELDS vs the §1.1
+        # table + Module vs the labels.yml closed nine + Semester/Cycle prefix.
+        # The Cross-cluster option survived its own retirement 37 days here.
+        run: ruby scripts/field_canon_sync.rb
 
   docs-ok:
     # Single required status check for the SSOT gates on `main`. Always runs so a
