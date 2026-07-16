@@ -71,6 +71,13 @@
   description: "Big Bet completed within the current cycle"
 
 # ─────────────────────────────────────────────────────────────────────────
+# TRL gate (OPS.1/OPS.9 — trl_sync.yml)
+# ─────────────────────────────────────────────────────────────────────────
+- name: "architect-approved"
+  color: "6F42C1"
+  description: "Architect sign-off — unlocks Current TRL advance to >=5 (00_05 §2.2)"
+
+# ─────────────────────────────────────────────────────────────────────────
 # Priority
 # ─────────────────────────────────────────────────────────────────────────
 - name: "priority:P0"

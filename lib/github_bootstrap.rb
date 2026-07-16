@@ -82,7 +82,7 @@ module GithubBootstrap
   # via the UI for long-running planning.
   CYCLE_OPTIONS = %w[Cycle\ 2026.Q2 Cycle\ 2026.Q3 Cycle\ 2026.Q4 Cycle\ 2027.Q1].freeze
   SEMESTER_OPTIONS = [
-    "Spring 2025-2026", "Fall 2026-2027",
+    "Fall 2025-2026", "Spring 2025-2026", "Fall 2026-2027",
     "Spring 2026-2027", "Fall 2027-2028"
   ].freeze
 

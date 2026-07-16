@@ -8,17 +8,11 @@
 # 1. A repository secret named PROJECT_PAT must exist.
 #    It needs the scopes: repo, project (read:project + write:project).
 #
-# 2. Set the environment variables below to match your project board.
-#    You can obtain them with the GitHub CLI:
-#
-#      # List your projects and find the number:
+# 2. Set PROJECT_OWNER / PROJECT_NUMBER below to match your project board
+#    (defaults = bin/bootstrap_github.sh defaults). Find the number with:
 #      gh project list --owner <OWNER>
-#
-#      # Get the Project Node ID and field IDs:
-#      gh project field-list <PROJECT_NUMBER> --owner <OWNER> --format json
-#
-#    Copy the node IDs for "Target TRL" and "Current TRL" fields, as well
-#    as the Project node ID (starts with PVT_), and paste them below.
+#    Project/field/option node IDs are resolved at runtime via GraphQL —
+#    nothing else to paste here.
 # ─────────────────────────────────────────────────────────────────────
 
 name: Ops · TRL Sync
@@ -188,7 +182,7 @@ jobs:
             core.info(`Target TRL value: "${targetTrlName}"`);
 
             // ── 4a. [OPS.9] Architect-approval gate for TRL ≥ 5 ────
-            // 00_05 §3: advancing to TRL ≥ 5 requires Architect/DAO approval.
+            // 00_05 §2.2: advancing to TRL ≥ 5 requires Architect/DAO approval.
             // Auto-advance only TRL ≤ 4; for ≥ 5 require the `architect-approved`
             // label on the issue, otherwise leave Current TRL untouched.
             const targetTrlNum = parseInt((targetTrlName.match(/\d+/) || ['0'])[0], 10);
@@ -197,7 +191,7 @@ jobs:
             if (targetTrlNum >= 5 && !issueLabels.includes('architect-approved')) {
               core.warning(
                 `⛔ Pending Architect Approval: Target TRL "${targetTrlName}" (≥ 5) needs the ` +
-                `\`architect-approved\` label before Current TRL advances (00_05 §3). ` +
+                `\`architect-approved\` label before Current TRL advances (00_05 §2.2). ` +
                 `Current TRL left unchanged for issue #${issueNumber}.`
               );
               return;

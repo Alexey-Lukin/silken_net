@@ -1,10 +1,12 @@
 # SSOT Integrity Guard (OPS.2)
 #
-# Blocks PR merges when changes to core code (models, firmware) are not
-# accompanied by corresponding documentation updates.
+# Fails (red X) when changes to core code (models, workers, firmware) are not
+# accompanied by corresponding documentation updates. Advisory by position:
+# the check is NOT in the branch-protection required list (ратифіковано
+# docs/06_07 §2) — the red X informs, it does not block the merge.
 #
 # This prevents context drift between implementation and the SSOT docs.
-# Ref: docs/00_05_GitHub_Projects_and_IaC_Automation.md
+# Ref: docs/00_05_GitHub_Projects_and_IaC_Automation.md §2.3
 
 name: CI · SSOT Guard
 
@@ -14,21 +16,28 @@ concurrency:
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
-    # Only the protected areas this guard checks (the path→doc mappings in the
+    # labeled/unlabeled: the bypass mechanism IS labels — without these types
+    # adding `type:chore` never re-runs the check (red X sticks until the next
+    # push), and removing a bypass label leaves a stale green forever.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    # Only the protected areas this guard checks (the `mappings` array in the
     # script below). A PR touching only ml/terraform/docs never trips the guard,
     # so don't spin a runner for it. Mixed code+X PRs still match.
+    # ⚠️ Parity rule: this list mirrors the `mappings` array in the script
+    # below — extend BOTH or the new area silently passes (zero matched
+    # mappings → empty triggeredAreas → green check).
     paths:
       - 'app/models/**'
       - 'app/services/**'
+      - 'app/workers/**'
       - 'firmware/soldier/**'
       - 'firmware/queen/**'
       - 'firmware/bio_contracts/**'
+      - 'firmware/common/**'
       - 'contracts/**'
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   ssot_check:
@@ -68,38 +77,42 @@ jobs:
             const changedFiles = diffOutput.split('\n').filter(Boolean);
             core.info(`Changed files (${changedFiles.length}):\n${changedFiles.join('\n')}`);
 
-            // ── Mapping: source paths → expected doc updates ──────────
-            // Each entry: { pattern, description, docPatterns }
+            // ── Mapping: source paths → protected areas ───────────────
+            // ⚠️ Parity rule: mirrors the workflow `paths:` filter above —
+            // extend BOTH (paths-only = the run never starts; mappings-only
+            // = the run starts but triggeredAreas stays empty → green).
             const mappings = [
               {
                 pattern: /^app\/models\//,
                 description: 'Data models (app/models/)',
-                docPatterns: [/^docs\//, /\.md$/],
+              },
+              {
+                pattern: /^app\/workers\//,
+                description: 'Sidekiq workers (app/workers/)',
               },
               {
                 pattern: /^firmware\/soldier\//,
                 description: 'Soldier firmware (firmware/soldier/)',
-                docPatterns: [/^docs\//, /\.md$/],
               },
               {
                 pattern: /^firmware\/queen\//,
                 description: 'Queen firmware (firmware/queen/)',
-                docPatterns: [/^docs\//, /\.md$/],
               },
               {
                 pattern: /^firmware\/bio_contracts\//,
                 description: 'Bio-contracts (firmware/bio_contracts/)',
-                docPatterns: [/^docs\//, /\.md$/],
+              },
+              {
+                pattern: /^firmware\/common\//,
+                description: 'Shared wire/crypto libs (firmware/common/)',
               },
               {
                 pattern: /^contracts\//,
                 description: 'Smart contracts (contracts/)',
-                docPatterns: [/^docs\//, /\.md$/],
               },
               {
                 pattern: /^app\/services\//,
                 description: 'Business services (app/services/)',
-                docPatterns: [/^docs\//, /\.md$/],
               },
             ];
 
@@ -190,7 +203,7 @@ jobs:
               '> (context drift). Update the relevant `docs/` file, or log the open drift in',
               '> `docs/00_07_Action_Plan_Tracker.md` — the One-Home backlog, itself a `docs/` change.',
               '> Generic skip-label was deliberately rejected — the semantic label forces classification.',
-              '> Ref: [00_05 §2.3 SSOT Integrity Guard](../docs/00_05_GitHub_Projects_and_IaC_Automation.md)',
+              '> Ref: docs/00_05_GitHub_Projects_and_IaC_Automation.md §2.3 (SSOT Integrity Guard)',
             ].join('\n');
 
             core.setFailed(message);

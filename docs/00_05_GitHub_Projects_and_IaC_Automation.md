@@ -54,7 +54,7 @@
 | **Assigned Agent** | Single Select | Виконавець: `Architect`, `AI Agent`, `Lab (ChNU)`, `Factory`, `nTop Expert`. |
 | **Module** | Single Select | Компонент екосистеми (наприклад, `04: Server Core`). Формує Swimlanes. |
 | **Appetite** | Single Select | `Small Batch` (1-2w) або `Big Bet` (6w) згідно з методологією Shape Up. |
-| **SSOT Link** | URL | Пряме посилання на сторінку Wiki або звіт (Лабораторна валідація). |
+| **SSOT Link** | Text | Пряме посилання на сторінку Wiki або звіт (Лабораторна валідація). Тип Text, бо Projects V2 не має URL-dataType (`GithubBootstrap::FIELDS` = `:text`). |
 | **R&D Cluster** | Single Select | Primary кластер відповідальності — **рівно ОДИН** (accountability): `A — Hardware/EBFC`, `B — Verification/Math`, `C — Scaling/Cloud`, `D — Compliance/Legal`. *(«Cross-cluster» прибрано як resting-стан поля — крос-кластерність виражають secondary-лейбли `cluster-ref:*` (§4.2); драйвер завжди один, [`00_04 §2`](00_04_Shape_Up_Operations_and_RnD_Clusters).)* |
 | **Shape Up Stage** | Single Select | Стадія всередині 8-тижневого циклу: `Shaping`, `Bet (active)`, `Building`, `Hill (uphill)`, `Hill (downhill)`, `Park`, `Drop`, `Done` |
 | **Cycle** | Single Select | Cycle milestone (формат `YYYY.QN`): `Cycle 2026.Q2`, `Cycle 2026.Q3`, … |
@@ -134,64 +134,13 @@ jobs:
 
 Автоматична перевірка актуальності документації (The Codex).
 
-- **Умова:** Pull Request вносить зміни в `app/models/`, `app/services/`, `firmware/` або `contracts/`.
-- **Дія:** Action перевіряє наявність відповідних змін у папці `docs/` (або заповненого поля `SSOT Link` у linked issue). Мердж блокується, якщо документація не оновлена.
+- **Умова:** Pull Request вносить зміни в захищені зони: `app/{models,services,workers}/`, `firmware/{soldier,queen,bio_contracts,common}/` або `contracts/` (точний список — `paths:`-фільтр живого файла; він дзеркалить `mappings` у скрипті — розширювати ОБИДВА).
+- **Дія:** Action перевіряє наявність відповідних змін у `docs/` (або `README.md`/`CLAUDE.md`). Якщо документація не оновлена — чек червоніє (`core.setFailed`), але **advisory за позицією**: він не в required-списку branch-protection, мердж фізично не блокується — так ратифіковано [`06_07 §2`](06_07_CICD_and_Runbook_Index).
 - **Bypass:** PR із semantic-label з whitelist (`type:chore`, `type:deps`, `type:perf`, `type:test`) автоматично пропускається — ці типи **за визначенням** не змінюють архітектуру/контракти. **`type:refactor` та `type:bugfix` навмисно ВИКЛЮЧЕНО з auto-bypass**: рефакторинг змінює імена класів / шляхи (напр. `app/services/blockchain_minting_service.rb`), а багфікс — логіку (класичний приклад: FW.7 Lorenz BigDecimal→Float) → обидва спричиняють Context Drift у Wiki. Для них guard вимагає **або** оновлення відповідного `docs/`-файла, **або** запис відкритого drift-айтема у [`00_07`](00_07_Action_Plan_Tracker) (One-Home для backlog — саме туди їх адресує [`04_02 §13b`](04_02_Business_Logic_and_Services), а не в датований лог у каноні) — а він сам є зміною у `docs/`, тож автоматично задовольняє перевірку. Явний вибір label лишається форс-функцією: автор класифікує зміну, а не додає порожній коміт у `docs/`.
 
 > **Чому семантичні label замість `skip-ssot-guard`:** Generic skip-label буде зловживатись (натиснув-обійшов). Семантичні `type:*` змушують автора публічно класифікувати зміну. Якщо PR має `type:bugfix`, але насправді міняє схему — code reviewer одразу побачить mismatch у заголовку та назві label.
 
-```yaml
-# .github/workflows/ssot_guard.yml
-name: CI · SSOT Guard
-on:
-  pull_request:
-    paths:
-      - 'app/models/**'
-      - 'app/services/**'
-      - 'firmware/**'
-      - 'contracts/**'
-jobs:
-  guard:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with: { fetch-depth: 0 }
-
-      - name: Check bypass labels
-        id: bypass
-        env:
-          LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
-        run: |
-          # Whitelist non-architectural change types.
-          # type:refactor / type:bugfix НЕ тут — вони міняють імена/шляхи/логіку (drift). Див. §2.3.
-          BYPASS_LABELS="type:chore type:deps type:perf type:test"
-          for label in $BYPASS_LABELS; do
-            if echo "$LABELS" | grep -q "\"$label\""; then
-              echo "✅ Bypass: PR has label '$label' — non-architectural change, SSOT update not required."
-              echo "skip=true" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-          done
-          echo "skip=false" >> $GITHUB_OUTPUT
-
-      - name: Check docs/ changes
-        if: steps.bypass.outputs.skip == 'false'
-        run: |
-          BASE=${{ github.event.pull_request.base.sha }}
-          HEAD=${{ github.event.pull_request.head.sha }}
-          CODE_CHANGED=$(git diff --name-only $BASE $HEAD | grep -E '^(app|firmware|contracts)/' | wc -l)
-          DOCS_CHANGED=$(git diff --name-only $BASE $HEAD | grep -E '^docs/' | wc -l)
-          if [ "$CODE_CHANGED" -gt 0 ] && [ "$DOCS_CHANGED" -eq 0 ]; then
-            echo "❌ Code changed but no docs/* updated."
-            echo ""
-            echo "Either:"
-            echo "  (a) Update the relevant SSOT file in docs/ (for type:refactor / type:bugfix an"
-            echo "      open-drift entry in docs/00_07 counts as a docs/ change), or"
-            echo "  (b) Add one of: type:chore, type:deps, type:perf, type:test"
-            echo "      if this PR genuinely does not alter architecture or logic."
-            exit 1
-          fi
-```
+> **One-Home:** живий файл — `.github/workflows/ssot_guard.yml` (`github-script`/JS: diff base...head → `mappings`-матч захищених зон → bypass-лейбли → `core.setFailed`); код тут не дублюється (прецедент §2.6 — YAML-дзеркало розійшлось із файлом і було згорнуто).
 
 **`type:*` labels потрібно додати у `.github/labels.yml`** як частину Labels-as-Code SSOT (див. §2.5). Auto-bypass SSOT Guard дають **лише** `chore/deps/perf/test` (§2.3). Запропоновані визначення:
 
