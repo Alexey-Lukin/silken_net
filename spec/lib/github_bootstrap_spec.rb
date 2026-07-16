@@ -216,9 +216,19 @@ RSpec.describe GithubBootstrap do
       expect(described_class::READINESS_HORIZON_OPTIONS).not_to include("TRL:10", "TRL:11", "TRL:12")
     end
 
-    it "lists the four primary R&D clusters + Cross-cluster" do
-      expect(described_class::CLUSTER_OPTIONS.size).to eq(5)
-      expect(described_class::CLUSTER_OPTIONS).to include("Cross-cluster")
+    # Reads the canon instead of hand-copying it: the previous version asserted
+    # `size == 5` + `include("Cross-cluster")` and so LOCKED a value 00_05 §1.1
+    # had retired — a green CI on cancelled canon (the cem_canon_sync failure
+    # mode: "the golden test locks the wrong number").
+    it "lists exactly the primary R&D clusters that 00_05 §1.1 declares" do
+      row = File.read(Rails.root.join("docs/00_05_GitHub_Projects_and_IaC_Automation.md"))
+                .lines.find { |l| l.include?("**R&D Cluster**") }
+      expect(row).to be_present, "00_05 §1.1 has no R&D Cluster row — canon moved?"
+
+      canon = row.scan(/`([A-D] — [^`]+)`/).flatten
+      expect(canon.size).to eq(4), "expected 4 primary clusters in canon, got #{canon.inspect}"
+      expect(described_class::CLUSTER_OPTIONS).to contain_exactly(*canon)
+      expect(described_class::CLUSTER_OPTIONS).not_to include("Cross-cluster")
     end
 
     it "covers the eight Shape Up stages from 00_07 §1.1" do

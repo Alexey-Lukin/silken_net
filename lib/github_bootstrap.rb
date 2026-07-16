@@ -47,7 +47,15 @@ module GithubBootstrap
     "Architect", "AI Agent", "Lab (ChNU)", "Factory", "nTop Expert"
   ].freeze
 
-  MODULE_OPTIONS = (0..8).map { |n| "%02d: Module" % n }.freeze
+  # Swimlane names — mirror the closed nine of .github/labels.yml (`module:NN-slug`,
+  # docs/00_05 §4.4). The old `"%02d: Module"` placeholder shipped nine
+  # indistinguishable lanes, which defeats the field's stated purpose ("Формує
+  # Swimlanes", §1.1) and made labels.yml's `# Module (matches Project V2 Module
+  # field)` untrue.
+  MODULE_OPTIONS = [
+    "00: Codex", "01: Anchor", "02: Capsule", "03: Firmware", "04: Server Core",
+    "05: Ledger", "06: Matrix", "07: NaaS", "08: Academic"
+  ].freeze
 
   APPETITE_OPTIONS = [ "Small Batch", "Big Bet" ].freeze
 
@@ -55,9 +63,14 @@ module GithubBootstrap
     "A — Hardware/EBFC",
     "B — Verification/Math",
     "C — Scaling/Cloud",
-    "D — Compliance/Legal",
-    "Cross-cluster"
+    "D — Compliance/Legal"
   ].freeze
+  # NB: no "Cross-cluster" option — docs/00_05 §1.1 retired it as a resting
+  # state of the FIELD (exactly one primary cluster = accountability); the
+  # transitional case is the `cluster:cross-cluster` LABEL, which the
+  # auto-labeler writes and the Betting Table must resolve. A single-select
+  # with no auto-writer can only ever be a resting state, so an empty field
+  # (= "not triaged", filterable) is the honest transitional value here.
 
   SHAPE_UP_STAGE_OPTIONS = [
     "Shaping", "Bet (active)", "Building",
