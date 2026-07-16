@@ -154,6 +154,7 @@
 - [ ] 🔗 передумови: ARCH.43 (повернення mesh, wire-rev3) + FW.50 (живий Vcap-канал з дільником)
 - [ ] ⚖️ вага `hop_count`↔`vcap_headroom` (латентність vs довговічність вузла) + значення `VCAP_SAFE_THRESHOLD` — після FW.50-шкали
 - [ ] 🤖 route-metric дизайн — після ⚖️-присуду
+- [ ] 🤖 vocabulary-guard проти реінтродукції `bio_potential`-як-метрики (клас `chain_hash`: owner-less rejected-vocabulary + negation-exempt, НЕ owner-only) — не gated передумовами, ідея §00-close з пам'яті 2026-07-16
 
 ## §01a · Anchor — Geometry & Metallurgy
 
