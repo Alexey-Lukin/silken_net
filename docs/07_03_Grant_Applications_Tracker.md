@@ -206,7 +206,7 @@ Q4 2026:   Seed-раунд (climate/deeptech фонди)
 ```
 WP1 Coordination & Dissemination → СЄУ (Аблязова Н., Гедз М.) + ЧНУ парасоль (Кирилюк Є.М.)
 WP2 Hardware & Materials          → ЧНУ (Гусак, Мінаєв) + ЧМА (токсикологія) + Silken Net
-WP3 Firmware & Edge AI            → ЧНУ ФОТІУС (Осауленко, Порубльов, Ярмілко) + ЧДТУ (Карапетян)
+WP3 Firmware & Edge AI            → ЧНУ ФОТІУС (Порубльов, Ярмілко) + ЧДТУ (Карапетян)
 WP4 D-MRV Methodology             → СЄУ (Гедз М.) + ЧДТУ (Карапетян) + ЧНУ біо-хаб (Спрягайло — ground truth)
 WP5 Legal & Compliance            → СЄУ (Аблязов Д., Ус Г.) + ЧНУ біо-хаб (Спрягайло — ПЗФ-сумісність)
 WP6 Industrial Design             → СЄУ (Денисенко, Теліженко)
@@ -227,7 +227,7 @@ WP9 Exploitation & IPR            → ActiveBridge + Silken Net
 | **Тип** | Research grant до $150K |
 | **Фокус** | ZK-proofs, DePIN, on-chain verifiable data, public goods |
 | **Статус** | Не подано |
-| **Академічний лідер** | **СЄУ (Аблязова Н.) + ЧНУ ФОТІУС (Осауленко)** |
+| **Академічний лідер** | **СЄУ (Аблязова Н.)** + ЧНУ ФОТІУС (Осауленко) ⚠️ — його публікаційні ланки вилучені (UNI.19, 2026-07-17), а тема заявки (ZK-proofs на STM32) не збігається з його профілем (управління R&D-портфелем) → **лідерство потребує підтвердження або переназначення ⚖️ перед подачею** |
 
 **Тема заявки:** _"Trustless D-MRV: IoTeX W3bstream ZK-proofs for biological homeostasis verification on STM32WLE5JC edge devices"_ — пов'язано з `IotexVerificationWorker`, `Iotex::W3bstreamVerificationService` та [`05_02`](05_02_Proof_of_Growth_Pipeline).
 
