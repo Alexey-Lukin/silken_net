@@ -145,7 +145,7 @@ SilkenNet об'єднує сім академічних та індустріа�
 | Розділ | Роль у MOIC | Як читати |
 |--------|--------------|------------|
 | [`08_01`](08_01_Joint_Publications_and_IP_Strategy) (цей документ) | MOIC head: концепція кластера + план публікацій (Ст. 1–35) + IP framework | SSOT публікаційного плану та IP |
-| [`08_02 §1`](08_02_Academic_Institutions_Registry) | ЧНУ — Hard Science (§1A: фізика/хімія/біологія) + ФОТІУС (§1B: формальна верифікація, mruby Lorenz) | Лабораторні протоколи + матем. основа Статей 1–4, 8–13, 15, 21, 34 |
+| [`08_02 §1`](08_02_Academic_Institutions_Registry) | ЧНУ — Hard Science (§1A: фізика/хімія/біологія) + ФОТІУС (§1B: формальна верифікація, mruby Lorenz) | Лабораторні протоколи + матем. основа Статей 1–3, 8–13, 21 |
 | [`08_02 §2`](08_02_Academic_Institutions_Registry) | Data / RF / Acoustics ortho-niche (ЧДТУ) | 3 кафедри ЧДТУ |
 | [`08_02 §3`](08_02_Academic_Institutions_Registry) | Regulated Safety ortho-niche (ЧІПБ) | Інтеграція з ДСНС, fire model, SOP |
 | [`08_02 §4`](08_02_Academic_Institutions_Registry) | Biomedical ortho-niche (ЧМА) | EBFC біохімія, токсикологія, ксилемоінтеграція |
@@ -225,27 +225,6 @@ SilkenNet об'єднує сім академічних та індустріа�
 | **Ярмілко А.В.** | Аналіз відмовостійкості TTL-flood relay при стохастичних енергетичних відмовах (dependability framework); верифікація state machine Soldier |
 | Косенюк Г.В. | RF link budget LoRa у лісовому масиві; FEC-схема 21-байтового пакету; Hash Method для захисту телеметрійних потоків перед blockchain записом |
 | Архітектор (Silken Net) | Дизайн системи, практична імплементація |
-
----
-
-### Стаття 4: Embedded Security та Dependability для Лісових Smart Implants
-
-**Назва (EN):** _"Energy-Constrained Security and Dependability in Forest Bio-IoT: Lightweight Cryptography, Arithmetic Compression, and Brownout-Resilient Firmware for Tree-Powered STM32 Nodes"_
-**Журнали:** IEEE Transactions on Information Forensics and Security (Q1) · Sensors (Q2) · Journal of Network and Computer Applications (Q1)
-
-| Автор | Внесок |
-|-------|--------|
-| **Ярмілко А.В.** | Lightweight crypto (ECC/SipHash); arithmetic compression; dependability framework; fuzzy dedup methodology |
-| **Порубльов І.М.** | Математична реалізація `fuzzy_distance()` для бінарних пакетів |
-| Архітектор (Silken Net) | Апаратна специфіка (STM32WLE5JC, BQ25570, 21-байтовий пакет, EBFC) |
-
-**Магістерська робота (Науковий керівник — Порубльов):**
-_«Аналіз накопичення похибки в хаотичних системах: Float64 precision для Lorenz Attractor»_
-_(Запропонована тема; студент визначається після підписання R&D партнерської угоди ЧНУ–Silken Net; очікуваний старт: після TRL 4)_
-
-**Магістерська робота (Науковий керівник — Ярмілко):**
-_«Оптимізація топології LoRa-мережі для мінімізації енерговитрат IoT-рою з нестабільним живленням»_
-_(Запропонована тема; студент визначається після підписання R&D партнерської угоди ЧНУ–Silken Net; очікуваний старт: після TRL 4)_
 
 ---
 
@@ -349,21 +328,6 @@ _(Запропонована тема; студент визначається �
 ## 🤝 1C. Міжуніверситетські Публікації (ЧНУ ФОТІУС × ЧДТУ)
 
 > **Принцип:** Де ЧНУ ФОТІУС створює алгоритм або модель — ЧДТУ статистично валідує та розширює. Де ЧНУ ФОТІУС виконує аналітичний розрахунок (RF, фільтри) — ЧДТУ (ФЕТР, ПМКТ) верифікує лабораторно. 10 зон перетину ідентифіковано у [`08_02 §2`](08_02_Academic_Institutions_Registry#-2-чдту--черкаський-державний-технологічний-університет).
-
-### Стаття 15: Хаотичний Індекс Здоров'я Дерев — Формальна Верифікація та Динамічний Аналіз
-
-**Назва (EN):** _"Chaos-Based Tree Health Index: Formal Verification and Dynamical Analysis"_
-**Журнали:** Chaos, Solitons & Fractals (Q1) · Nonlinear Dynamics (Q1)
-
-| Автор | Внесок |
-|-------|--------|
-| **Порубльов І.М.** (ЧНУ ФОТІУС) | Формальна верифікація Float64 precision, Euler vs RK4, OPTIMAL_Z_TARGET=29.0, аудит BLOCKER-1/-2/-3 |
-| **Карапетян А.Р.** (ЧДТУ) | Ляпуновські показники, фрактальна розмірність, RQA, ентропія, реконструкція фазового простору |
-| Архітектор (Silken Net) | Lorenz Attractor специфіка, Dual Computation Integrity |
-
-**Тип зв'язку:** Послідовний — ФОТІУС верифікує математичну коректність → ЧДТУ аналізує властивості Z-траєкторій на верифікованих даних
-
----
 
 ### Стаття 21: Перколяційне Параметричне Страхування для IoT-Лісових Мереж
 

@@ -4,7 +4,7 @@
 
 Зафіксувати повний trustless консенсусний пайплайн SilkenNet — від фізичних біосигналів дерева (Lorenz Z як DCI/anti-fraud сигнал; гомеостаз-інтерпретація — недоведена гіпотеза, ⚠️ нижче) до верифікованих on-chain активів (SilkenCarbonCoin / SCC). Включає опис прошивок Солдата й Королеви, всіх кроків верифікації (peaq DID → IoTeX ZK → Chainlink → Polygon + Solana) та відкритих блокерів.
 
-> **⚠️ [Lorenz de-risk]** Інтерпретація «Z-координата = гомеостаз/здоров'я» — недоведена гіпотеза ([`05_05 §8`](05_05_Slashing_and_Risk_Policy)); slashing вимагає ≥1 прямого сигналу (sap_flow / VPD / acoustic), не лише Z ([`05_05 §7`](05_05_Slashing_and_Risk_Policy)). Lorenz-DCI (anti-fraud) валідний незалежно — пайплайн нижче коректний як механіка, навіть якщо роль Z демоутиться до DCI-only.
+> **⚠️ [Lorenz de-risk]** Інтерпретація «Z-координата = гомеостаз/здоров'я» — **не просто недоведена, а емпірично degenerate + temp-confounded** (E.64 paired-ensemble; вирок + докази = дім [`03_04 §4`](03_04_mruby_Lorenz_Attractor), НЕ дублюю): `stress` (z<2) був недосяжний, `anomaly` (z>45) тригерився теплим днем. **[E.63] growth_points БІЛЬШЕ не Z-похідні** (магнітуда = метаболізм `m(delta_t)`); Лоренц лишився **status-гейтом** (anomaly-поріг ρ-відносний після E.64-фіксу) + **DCI (anti-fraud) валідний незалежно**. Ground-truth-протокол Z↔health → [`05_05 §8`](05_05_Slashing_and_Risk_Policy); slashing вимагає ≥1 прямого сигналу (sap_flow / VPD / acoustic), не лише Z ([`05_05 §7`](05_05_Slashing_and_Risk_Policy)). Пайплайн нижче коректний як механіка — роль Z уже демоутнута до status+DCI.
 
 ---
 
