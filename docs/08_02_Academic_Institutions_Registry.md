@@ -145,7 +145,7 @@ B2G-міст до ДСНС + наукове обґрунтування пара�
 | **Чудаєва І.Б.** (ректор СЄУ) | макроекономіка | Стрес-тест dual-token (інфляція, Dynamic Tax 2%, рівновага) → [`05_03`](05_03_Tokenomics_SCC_and_SFC) | Ст. 31 |
 | **Ус Г.О.** | unit-econ / ESG | ESG-облік, KlimaDAO retirement, loss ratio → [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`07_02`](07_02_Unit_Economics_and_BOM) | Ст. 31 |
 | **Аблязов Д.Е.** | право | RWA legal architecture (ERC-3643), KYC/AML templates → [`07_01`](07_01_Nature_as_a_Service_Contracts), [`05_06`](05_06_Governance_and_DAO) | Ст. 32 |
-| **Аблязова Н.Р.** | консорціум / гранти | Horizon Europe / NRFU стратегія консорціуму → [`07_03`](07_03_Grant_Applications_Tracker) | 08_01 §3 |
+| **Аблязова Н.Р.** | консорціум / гранти | ⚠️ Публікаційних ланок нема (жодної авторської комірки в портфелі — реєстр і раніше вказував на §3 Alumni, не на статтю). Консорціум-лідерство перепризначено 2026-07-17 → Спрягайло ([`07_03`](07_03_Grant_Applications_Tracker)); Triple-Helix-тема = дім [`08_01 §0.2`](08_01_Joint_Publications_and_IP_Strategy). Двері відкриті: з'явиться жива тема — впишемо | — |
 | **Гедз М.Й.** | аудит D-MRV | Методологічний аудит pipeline (IoTeX→Chainlink→mint, DCI) → [`05_02`](05_02_Proof_of_Growth_Pipeline) | Ст. 32/35 |
 | **Денисенко Ю.М.** | промисловий дизайн | Біомімікрічний антивандальний PEEK-радом капсули → [`02_01`](02_01_Hardware_Architecture_and_BOM), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | Ст. 33 |
 | **Теліженко О.В.** | UX | B2B data-viz / audience-aware UI → [`04_04`](04_04_Phlex_UI_and_Tailwind) | 08_03 |
