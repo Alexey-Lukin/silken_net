@@ -210,7 +210,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 - **SSOT-мапінг:** [`08_01`](08_01_Joint_Publications_and_IP_Strategy)
   (IP strategy), [`08_02 §5`](08_02_Academic_Institutions_Registry)
   (RWA legal architecture).
-- **Status:** 🟡 Outreach (через СЄУ — Аблязов уже залучений).
+- **Status:** 🔵 Identified. ⚠️ Виправлено 2026-07-17: було «🟡 Outreach (Аблязов уже залучений)», але [`00_07`](00_07_Action_Plan_Tracker) UNI.14 = **⚪ Не почато** («зустріч Чудаєва…») — контакту з СЄУ не було.
 
 ---
 
@@ -232,7 +232,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 - **SSOT-мапінг:** [`08_02 §3`](08_02_Academic_Institutions_Registry) (primary),
   [`03_03`](03_03_TinyML_Acoustic_Inference) (chainsaw + thermal),
   [`07_01`](07_01_Nature_as_a_Service_Contracts) (parametric insurance trigger).
-- **Status:** 🟢 Engaged (через ЧІПБ — Несен Іван активний).
+- **Status:** 🔵 Identified. ⚠️ Виправлено 2026-07-17: було «🟢 Engaged (через ЧІПБ — Несен активний)», але [`00_07`](00_07_Action_Plan_Tracker) UNI.12 = **⚪ Не почато**, чекбокс «👤 **cold contact** ректорат» — контакту не було.
 
 ### 3.2. Енергетика (ПАТ "Черкасиобленерго" + Укрзалізниця ЛЕП) — ЛЕП-моніторинг
 
@@ -628,10 +628,8 @@ PEEK-куполів, антивандальної біомімікрії.
   патерн-бренд.
 - **SSOT-мапінг:** [`04_04`](04_04_Phlex_UI_and_Tailwind) (Phlex UI motifs),
   [`02_05`](02_05_Queen_Hardware_and_Starlink) (Queen radome graphics).
-- **Cross-link:** вже зафіксована як **активний UX-партнер** у
-  [`08_02 §5`](08_02_Academic_Institutions_Registry). Active outreach
-  ведеться через СЄУ-MoU; запис тут — для координації Genesis NFT треку.
-- **Status:** 🟡 Outreach (через СЄУ).
+- **Cross-link:** та сама особа, що «Теліженко О.В.» у [`08_02 §5`](08_02_Academic_Institutions_Registry) — **не два записи**. ⚠️ **СЄУ-афіліацію не верифіковано** ([`00_07`](00_07_Action_Plan_Tracker) UNI.14 «7 посад потребують verify»): реєстр [`08_02 §5`](08_02_Academic_Institutions_Registry) веде її як СЄУ-викладачку (+ наук. керівник бакалаврської), а картка тут описує незалежну художницю з резиденції в Сахнівці. Запис тут — координація Genesis NFT треку.
+- **Status:** 🔵 Identified. ⚠️ Виправлено 2026-07-17: було «🟡 Outreach + Active outreach ведеться через СЄУ-MoU» — MoU **не існує**, UNI.14 = ⚪ Не почато.
 
 #### A3. Віктор Афонін — UI/UX та гравіювання капсули
 

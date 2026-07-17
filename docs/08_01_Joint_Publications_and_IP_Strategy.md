@@ -479,11 +479,11 @@ _«Дослідження акустичних властивостей пори
 | Автор | Внесок |
 |-------|--------|
 | **Денисенко Ю.М.** (СЄУ) | 3D CAD-модель PEEK-радому з текстурою кори Pinus sylvestris, **виступаючий "дзвін" ≥ 3 мм + R заокруглення ≥ 5 мм** як anti-overgrowth shield ([`01_04 §5.5`](01_04_CODIT_and_Xylemointegration)), stress concentration analysis, FDM-прототип |
-| **Теліженко О.В.** (СЄУ) | Кольорове/композиційне кодування, візуалізація для pitch deck, **selection super-hydrophobic coating** (Fluoropel PFC-1601V або еквівалент, CA > 150°) для запобігання адгезії клітин калюсу до катода |
+| **Теліженко О.В.** (Олександра — Народний художник України, етнодизайн) | Орнаментально-композиційне кодування форми (патерн-мова «Silken Net» ≈ рушник-оберіг). ⚠️ **Ланку «selection super-hydrophobic coating» знято 2026-07-17** — фторполімерна хімія не її фах (профіль «покриття» = Глущенко, ЧМА); присуд по coating = founder ([`00_07` HW.28](00_07_Action_Plan_Tracker) ⚖️ «Cu-сплав vs органіка»). Її дім = [`04_04`](04_04_Phlex_UI_and_Tailwind) (UI-motifs) + [`02_05`](02_05_Queen_Hardware_and_Starlink) (radome graphics) → **чи взагалі ця стаття = ⚖️ UNI.19** |
 | **Гусак А.М.** (ЧНУ) | FEM-моделювання stress-strain текстурованої поверхні PEEK + **PEEK creep simulation** (ANSYS LS-DYNA Prony series, 10-y cyclic ±35°C) для confirm-ня необхідності annular barbs mechanical lock у пресsfit з Ti-зонами ([`01_01 §4.3`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) |
 | Архітектор (Silken Net) | 01_01 Деталь 4 (PEEK радом, тепер з anti-overgrowth shield), 02_01 §5 (SMD антена, **3D Keep-Out ≥ 8 мм Z-clearance** revised + PCB overhang за периметр Ti), IP67 з conformal Parylene C (НЕ повне Sylgard-potting через TinyML акустику, [`02_02 §3.4`](02_02_Blind_Mate_Pogo_Pin_Interface)) |
 
-**Тип зв'язку:** Послідовний — ЧНУ (Гусак): матеріалознавчі обмеження + PEEK creep simulation → СЄУ (Денисенко): дизайн у межах обмежень + anti-overgrowth geometry → СЄУ (Теліженко): візуалізація + surface treatment selection
+**Тип зв'язку:** Послідовний — ЧНУ (Гусак): матеріалознавчі обмеження + PEEK creep simulation → СЄУ (Денисенко): дизайн у межах обмежень + anti-overgrowth geometry → Теліженко: орнаментальний патерн форми (⚠️ surface-treatment selection знято — не її фах, див. рядок вище)
 
 ---
 
