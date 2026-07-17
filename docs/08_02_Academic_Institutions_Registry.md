@@ -23,7 +23,7 @@
 | [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC — валідують ЧНУ Мінаєв (DFT) + ЧМА Бушуєва (ензими) |
 | [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ti-довговічність/Kirkendall — ЧНУ Гусак + ЧМА Суховой (токсикологія) |
 | [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | §10 Soundscape — ЧДТУ ПМКТ (датасет) + ЧНУ Бушин (CNN-NDVI) |
-| [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz — ФОТІУС Порубльов (точність §7) + ЧДТУ Карапетян (RQA) |
+| [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz = status-гейт + DCI-anti-fraud (E.63/E.64 — Z↔health емпірично degenerate). Точність-аудит **self-own стався** ([`05_05 §6`](05_05_Slashing_and_Risk_Policy)); партнерська ланка = ground-truth-протокол §6 нижче |
 | [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | §8 Ground-Truth Z↔health протокол (партнерський ростер — §6 нижче) |
 | [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) | Mesh percolation/Markov (ФОТІУС Порубльов/Онищенко, Open Research) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Backend ML/DS — ФОТІУС Любченко + ЧДТУ Карапетян |
@@ -78,9 +78,9 @@
 | Партнер | Профіль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
 | доц. **Ярмілко А.В.** | IIoT / embedded / lightweight crypto | SPI/DMA енергооптимізація ([`02_01`](02_01_Hardware_Architecture_and_BOM)); MAC/MIC + ECDH ([`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)); AES-128-CCM LoRa-тракт ([`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security), FW.2) | Ст. 8 |
-| **Порубльов І.М.** | дискретна математика, обчисл. геометрія | mesh percolation/Markov `q_c` ([`06_08`](06_08_Resilience_and_Failover_Policy)) — ⚠️ **відкладено**: mesh-relay живий лише в ECB-ері (`#if !FW2_CCM_ENABLED`), CCM-фліп робить star-only; повернення = ARCH.43 post-TRL 6. Валідація TPMS-геометрії ([`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) — машинну половину закрив self-owned **ARCH.25** (`tools/cad`); Lorenz-аудит (Float64/Euler-RK4) **self-own стався** ([`05_05 §6`](05_05_Slashing_and_Risk_Policy), 50 000 parity-тестів) | Ст. 21 |
+| **Порубльов І.М.** | дискретна математика, обчисл. геометрія | mesh percolation/Markov `q_c` ([`06_08`](06_08_Resilience_and_Failover_Policy)) — ⚠️ **відкладено**: mesh-relay живий лише в ECB-ері (`#if !FW2_CCM_ENABLED`), CCM-фліп робить star-only; повернення = ARCH.43 post-TRL 6. Валідація TPMS-геометрії ([`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) — машинну половину закрив self-owned **ARCH.25** (`tools/cad`); Lorenz-аудит (Float64/Euler-RK4) **self-own стався** ([`05_05 §6`](05_05_Slashing_and_Risk_Policy), 50 000 parity-тестів) | Ст. 3/25 |
 | доц. **Косенюк Г.В.** | військова радіотехніка, теорія кодування | RF impedance/Link Budget/ground-plane ([`02_01 §5`](02_01_Hardware_Architecture_and_BOM)); FEC + hash-захист потоків ([`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)) | Ст. 8/23 |
-| **Онищенко Б.О.** (декан ФОТІУС) | стохастична оптимізація, паралельні алгоритми | Stochastic B&B mesh-надійність ([`06_08`](06_08_Resilience_and_Failover_Policy)); мінорантні методи on-MCU ([`03_03`](03_03_TinyML_Acoustic_Inference)); паралельні CFD-симуляції на Akash ([`06_02`](06_02_Akash_Network_Integration)) | Ст. 21 |
+| **Онищенко Б.О.** (декан ФОТІУС) | стохастична оптимізація, паралельні алгоритми | ⚠️ Публікаційних ланок не лишилось (Ст.21 вилучена 2026-07-17 — `B&B` = 0 hits, [`06_08`](06_08_Resilience_and_Failover_Policy) кредитує Маркова/перколяцію, не B&B). **Інституційна роль жива** — декан ФОТІУС, [`00_07`](00_07_Action_Plan_Tracker) UNI.1 (P0, відмикає лаб-роботу). Двері відкриті: з’явиться жива тема — впишемо | — |
 | доц. **Бушин І.М.** | CNN / computer vision / BSP | CNN-NDVI synthesis → Digital Twin ([`03_03 §10`](03_03_TinyML_Acoustic_Inference)); BSP IoT-кластеризація; фізика DMLS ([`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)) | Ст. 10/24a |
 | д.т.н. **Осауленко І.А.** | управління R&D-портфелем | Кластеризація R&D-портфеля ([`00_04`](00_04_Shape_Up_Operations_and_RnD_Clusters)); Потрійна спіраль Smart Forest; Data Mining Edge AI | Ст. 9 |
 | ст.викл. **Любченко К.М.** | нейромережі, GA, Master of Logic | GA-оптимізація backend ML (`InsightGeneratorService`, [`04_02`](04_02_Business_Logic_and_Services), Open Research); NSGA-II TinyML ([`03_03`](03_03_TinyML_Acoustic_Inference)); КНФ/ДНФ верифікація контрактів ([`05_02`](05_02_Proof_of_Growth_Pipeline)) | Ст. 10/24a |
@@ -95,7 +95,7 @@
 
 | Партнер | Кафедра / роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Time-series, ML, anomaly-інваріанти (без raw Z), Lyapunov/RQA, utility-функції, Kalman → [`04_02`](04_02_Business_Logic_and_Services), [`03_04`](03_04_mruby_Lorenz_Attractor) | Ст. 11–13, 15 |
+| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Anomaly/fraud-детекція (`FRAUD_DEVIATION_THRESHOLD`, Ст.13) + актуарна математика страхових тригерів (Weibull/Pareto, basis-risk copula — Ст.25) → [`04_02`](04_02_Business_Logic_and_Services), [`05_05`](05_05_Slashing_and_Risk_Policy). ⚠️ Lyapunov/RQA (Ст.15) знято — E.64; Kalman = E.10 🔗 «не пре-білдити»; time-series (Ст.11) знято — джерело даних синтетичне до заліза | Ст. 12/13/25 |
 | декан **Гончаров А.** | ФЕТР, радіотехніка | Експериментальна RF-верифікація (VNA S11, EMC pre-scan, натурний Link Budget) розрахунків Косенюка → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM) | Ст. 23 |
 | проф. **Базіло К.В.** + проф. **Бондаренко М.О.** | ПМКТ, акустична мехатроніка | Валідація фононної лінзи гіроїда (EIS + AE) + **калібрувальний TinyML-датасет** (польова валідність 5-class моделі; машинну половину `FW.4`/Run_Inference закрив self-owned ESC-50 baseline — [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference)) | Ст. 24 |
 | доц. **Хоменко Ю.В.** | металорізальні верстати (80+ патентів) | DMLS post-processing, геометрія різання анкера, deinstall-інструмент, prior-art landscape → [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | IP→08_01 |
@@ -112,7 +112,7 @@ B2G-міст до ДСНС + наукове обґрунтування пара�
 |---|---|---|---|
 | **Биченко А.** | диспетчеризація | Інтеграція EWS ↔ протоколи реагування ДСНС → [`04_02`](04_02_Business_Logic_and_Services) (`EwsAlert`/`AlertDispatch`) | Ст. 26 |
 | **Ротар В.** | SOP | Стандартні операційні процедури лісників (field ops) → [`08_03`](08_03_External_Stakeholders_Registry) (forester) | Ст. 26 |
-| **Куліца О.** | моделювання пожеж | Предиктивне поширення вогню (динам. пороги) → [`03_03`](03_03_TinyML_Acoustic_Inference), dClimate FRP | Ст. 27 |
+| **Куліца О.** | моделювання пожеж | Предиктивне поширення вогню (динам. пороги) → [`03_03`](03_03_TinyML_Acoustic_Inference), dClimate FRP | Ст. 25 |
 | **Зобенко Н.** | актуарій | Актуарне обґрунтування blockchain-оракулів параметр. страхування → [`07_01 §7`](07_01_Nature_as_a_Service_Contracts), [`05_05`](05_05_Slashing_and_Risk_Policy) | Ст. 25 |
 | **Несен І.** | інжиніринг | Нетравматична заміна/деінсталяція капсули (динамометр) → [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 26 |
 
