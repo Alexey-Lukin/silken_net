@@ -215,7 +215,7 @@ WP8 Biodiversity Baseline (Cluster 6) → ЧНУ біо-хаб (Спрягайл
 WP9 Exploitation & IPR            → ActiveBridge + Silken Net
 ```
 
-> **Twin-pack publication backbone (cross-ref [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy)):** Стаття 34 (Кирилюк ↔ Lorenz синергетика) обґрунтовує WP7; Стаття 35 (Кирилюк ↔ Спрягайло біоекономіка) і Стаття 24a (Спрягайло ↔ Mongabay) — WP8. Подання до журналу Q1 за 2–3 місяці до Horizon-deadline переводить заявку з категорії «концепт» у «published research» (вирішальне для evaluators).
+> **Twin-pack publication backbone (cross-ref [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy)):** Стаття 35 (Кирилюк ↔ Спрягайло біоекономіка) і Стаття 24a (Спрягайло ↔ Mongabay) — WP8. Подання до журналу Q1 за 2–3 місяці до Horizon-deadline переводить заявку з категорії «концепт» у «published research» (вирішальне для evaluators). ⚠️ **WP7 (Bioeconomy & Tokenized Markets) лишився без публікаційної основи** — Стаття 34 (Lorenz↔синергетика) вилучена 2026-07-17 (теза «Z = гомеостаз» мертва за E.63/E.64 — див. [`00_07` UNI.19](00_07_Action_Plan_Tracker)); або WP7 спирається на Ст.35 як теоретичну рамку, або потребує іншого обґрунтування ⚖️.
 
 **Зв'язок з кодбейсом:** Horizon Europe вимагає Open Science — `StateRootAnchor.sol` (публічна верифікація), Filecoin-архів телеметрії, The Graph subgraph (публічний доступ до даних).
 
