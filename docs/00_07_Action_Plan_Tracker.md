@@ -1542,7 +1542,7 @@
 
 #### UNI.4 — ChNU школа Мінаєва: DFT-моделювання EBFC
 - **P1** · 👤 · ⚪ · → `08_01 Стаття 1`, `08_03 §1`
-- **Стан:** Не почато — DFT електрон-трансферна енергетика EBFC Gen 2.0 (dgrFAD-GDH/Os, Laccase-ZIF, PSBMA; школа Мінаєва, світовий DFT); ціль Q1 *Electrochimica Acta*. Стаття 1 submission-ready як defensive-pub (own in-silico, `L3_quantum_chemistry`) — Мінаєв = co-validation/co-authorship credibility, НЕ блокер (стара Gen 1.0 «streaming potential» відкинута). Канон `08_01 Стаття 1`, `08_03 §1`.
+- **Стан:** Не почато — DFT електрон-трансферна енергетика EBFC Gen 2.0 (dgrFAD-GDH/Os, Laccase-ZIF, PSBMA; школа Мінаєва, світовий DFT); журнали-цілі = дім [`08_01`](08_01_Joint_Publications_and_IP_Strategy) Стаття 1 (⚠️ «ціль Q1 *Electrochimica Acta*» знято 07-17 — Ст.1 його **явно виключає**: comp-only поза їх scope без експерименту; primary = *J. Phys. Chem. B*). Стаття 1 submission-ready як defensive-pub (own in-silico, `L3_quantum_chemistry`) — Мінаєв = co-validation/co-authorship credibility, НЕ блокер (стара Gen 1.0 «streaming potential» відкинута). Канон `08_01 Стаття 1`, `08_03 §1`.
 - [ ] 👤 зустріч (через декана хімії) + NDA/IP (BIZ.10) + спільний грант MES/Horizon
 
 #### UNI.5 — ChNU школа Гусака: дифузійна деградація 20-років (Kirkendall effect)
@@ -1586,7 +1586,7 @@
 
 #### UNI.11 — ChDTU Базіло+Бондаренко (ПМКТ): акустична валідація фононної лінзи [кластер:fauna:важіль]
 - **P2** · 👤 · ⚪ · → `08_02 §2`, `03_03 §10`
-- **Стан:** Не почато (**P1 у Mongabay-пивоті**, E.59) — ПМКТ (п'єзоелектрика + акуст. метаматеріали): EIS п'єзодиска 25-150кГц (cavitation) + верифікація гіроїдного phonon lens; ціль Q1 *IEEE TBME*. **📐 One-Home частоти кавітації (2026-07-03):** 25-150 кГц (ультразвукова AE, Tyree&Dixon 1983) = ЄДИНЕ правильне число — reframe-пас виправив drift у 4 місцях (03_03 §4.2/§1.2, 01_01 §5.4/§5.6, synthetic.py, manifest), де кавітацію хибно клали в 5-20 кГц. Поточний 16 кГц/Nyquist-8 audible-тракт її **не оцифровує** → cavitation-клас TinyML reframed до **low-freq structural water-stress proxy** (клас лишено, перейменовано наміром); справжня ultrasonic-детекція = цей UNI.11-канал / v3 AI-chip. Канон `08_02 §2`, `03_03 §10` + `03_03 §4.2` (reframe-дім).
+- **Стан:** Не почато (**P1 у Mongabay-пивоті**, E.59) — ПМКТ (п'єзоелектрика + акуст. метаматеріали): EIS п'єзодиска 25-150кГц (cavitation) + верифікація гіроїдного phonon lens; журнали-цілі = дім [`08_01`](08_01_Joint_Publications_and_IP_Strategy) Ст.24/24a (⚠️ «ціль Q1 *IEEE TBME*» знято 07-17 — його нема в жодній з них: Ст.24 → *J. Sound & Vibration* / *Ultrasonics* / *Applied Acoustics*). **📐 One-Home частоти кавітації (2026-07-03):** 25-150 кГц (ультразвукова AE, Tyree&Dixon 1983) = ЄДИНЕ правильне число — reframe-пас виправив drift у 4 місцях (03_03 §4.2/§1.2, 01_01 §5.4/§5.6, synthetic.py, manifest), де кавітацію хибно клали в 5-20 кГц. Поточний 16 кГц/Nyquist-8 audible-тракт її **не оцифровує** → cavitation-клас TinyML reframed до **low-freq structural water-stress proxy** (клас лишено, перейменовано наміром); справжня ultrasonic-детекція = цей UNI.11-канал / v3 AI-chip. Канон `08_02 §2`, `03_03 §10` + `03_03 §4.2` (reframe-дім).
 - [ ] 👤 зустріч Базіло+Бондаренко + EIS-протокол + acoustic стенд (HW.1)
 - [ ] 🌿 Mongabay: dawn/dusk Cherkasy Soundscape Library для 5-class TinyML «Fauna» (`08_01 Стаття 24a`) — recordings з UNI.13a (Спрягайло-Гаврилюк): AudioMoth, 4 сезони, ≥30хв dawn+dusk/ділянку, labeled таксони
 
