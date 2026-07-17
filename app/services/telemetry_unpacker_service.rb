@@ -592,7 +592,7 @@ class TelemetryUnpackerService < ApplicationService
   # the exact GP↔delta_t recompute is deferred to FW.2 (wire to carry EMA dT) —
   # 00_07 E.63. Here we enforce what is stateless-knowable: firmware
   # guarantees homeostasis → GP ∈ [GP_HOMEO_MIN..GP_HOMEO_MAX], stress → GP_STRESS
-  # (anomaly/tamper already zeroed upstream). A violation ⇒ a corrupt ECB block
+  # (anomaly/vm_error already zeroed upstream). A violation ⇒ a corrupt ECB block
   # (no MIC in the transitional frame), a forged StatusByte, or stale firmware.
   # Observational (fraud metric, never drops the packet) — same posture as
   # check_z_divergence!.

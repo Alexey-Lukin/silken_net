@@ -107,7 +107,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║     Payload [16 bytes]: DID(N) Vcap(n) Temp(c) Acoustic(C)          ║
 ║                          Metabolism(n) StatusByte(C) TTL(C) Pad(a4) ║
 ║     AES-128-ECB hardware (CRYP module) → encrypted_payload[16]      ║
-║     [post-ARCH.42; FW.2 target: AES-128-CCM 28B wire-rev2 з MIC]     ║
+║     [post-ARCH.42; FW.2 target: AES-128-CCM 30B wire-rev2.1 з MIC]  ║
 ║     Prefix: DID[4] + RSSI_inverted[1] = L2 header (21 bytes total)  ║
 ║                                                                      ║
 ║   ФАЗА 4: LoRa TX / MESH RELAY                                       ║
@@ -180,9 +180,9 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║  [ChainlinkDispatchWorker] queue: web3_critical (prio 6), retry: 5  ║
 ║    Guard: log.verified_by_iotex? == true                             ║
 ║    Chainlink::OracleDispatchService#dispatch!                        ║
-║    [PROD] Eth::Contract.transact("sendRequest", sub_id, payload)    ║
-║           via Alchemy Polygon RPC → TX hash                          ║
-║    [DEV]  SecureRandom.hex(16) stub                                  ║
+║    dispatch! = local correlation-marker (ARCH.53 demote):           ║
+║      request_id = "chainlink-req-{SecureRandom.hex(16)}"            ║
+║      NO on-chain sendRequest / NO RPC (PATH 1 callback unwired)     ║
 ║    → log.update!(chainlink_request_id:, oracle_status: "dispatched")║
 ║                                                                      ║
 ║  ─────────── КРОК D: Oracle Callback → Minting ──────────────────── ║
@@ -377,7 +377,7 @@ Backend вже має `TreeFamily#critical_z_min|max|optimal_z_target` чере�
 15–16  Reserved pad       uint16 Pad[2:3] (нулі, зарезервовано)
 ```
 
-**Шифрування:** **AES-128-ECB** апаратним модулем `CRYP` (`CRYP_KEYSIZE_128B`, post-ARCH.42 Variant B) → `HAL_CRYP_Encrypt`. **FW.2 target:** AES-128-CCM (28B wire-rev2 packet з 8-byte MIC + Frame Counter + device_z/diag/vpd, апаратно через `HAL_CRYPEx_AESCCM_Encrypt`; розкладка — [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)).
+**Шифрування:** **AES-128-ECB** апаратним модулем `CRYP` (`CRYP_KEYSIZE_128B`, post-ARCH.42 Variant B) → `HAL_CRYP_Encrypt`. **FW.2 target:** AES-128-CCM (30B wire-rev2.1 packet з 8-byte MIC + Frame Counter + device_z/diag/vpd, апаратно через `HAL_CRYPEx_AESCCM_Encrypt`; розкладка — [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)).
 Заголовок [DID:4][RSSI:1] передається відкрито; payload[16] зашифровано.
 
 #### Фаза 4 — LoRa TX + Mesh
@@ -547,7 +547,7 @@ ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 |------|--------------|-------------|------------------|------|--------|
 | **L0** custodial | backend (HKDF-derived seed — `w3bstream_verification_service`) | цілісність pipeline + прив'язка до on-chain peaq DID (master-backed) | фізичне походження (backend сам генерує підпис) | — | **зараз** |
 | **L1** Queen-attestation | Королева (software-Ed25519, Monocypher; сім'я `EDSK` у Protected Flash — генерується фабричним хостом, **НЕ HKDF-від-master**, інакше backend міг би підробити; backend-verify проти `HardwareKey.ed25519_public_key_hex` — той самий ключ-реєстр, що M2M-auth) | crypto gateway-origin: дані пройшли крізь **реальну** Королеву, не підроблені backend'ом / injection; + integrity CBC-батча (до L1 він був malleable — без MAC) + anti-replay у nonce-вікні | per-tree authenticity (оператор контролює Королеву); replay після nonce-TTL-вікна | — (не gated на анкер/енергію/SE; Queen на LiFePO4) | 🟡 **shipped 2026-06-07** (firmware sign + backend verify + host/RSpec golden-parity; wire-дім [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)) **+ HIL e2e soft-verified 2026-07-02** (`queen_simulator` signed-режим → повний worker-ланцюг до БД-маркерів, `spec/integration/qatt_hil_e2e_spec.rb`). **Той самий механізм атестує й окремий device-event canary-канал** (SEC.21, тег `SLKN-QEVT1` — [`03_05 §2.2а`](03_05_Hardware_Symmetric_Crypto_and_Security)), не лише телеметрійний батч. 👤 bench-residual: EDSK-flash + e2e на кремнії |
-| **L2** per-tree device-voice | **дерево саме** (SE050 non-extractable Ed25519, щотижневий Merkle-корінь) | повне device-origin, **операторо-непідробне** («голос дерева») | — | анкер-TRL + енергія (1 TX ≈ 39 мДж vs +33.6 мДж/добу Scenario C → weekly влазить, daily = Scenario D / 2× anchor) + SE050 populate | **North-Star** (механізм = §E.60 + [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)) |
+| **L2** per-tree device-voice | **дерево саме** (SE050 non-extractable Ed25519, щотижневий Merkle-корінь) | повне device-origin, **операторо-непідробне** («голос дерева») | — | анкер-TRL + енергія (1 TX ≈ 21.8 мДж SF9 +14dBm; weekly Merkle-корінь амортизує підпис ≈3.1 мДж/добу → влазить у Scenario C margin +33.6; daily-cadence = відкритий energy-⚖️ — не «39 мДж→Scenario D» [deprecated +22dBm], бо cold-boot/headroom поза цим числом; повний бюджет [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)) + SE050 populate | **North-Star** (механізм = §E.60 + [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)) |
 
 > **Крипта доповнює, не замінює:** L0–L2 доводять, що голос **дерева** і **цілий**; але **ЗВТ-метрологія** (STK.4) доводить, що голос **точний** (legal/CBAM carbon), а **operator-bond + slashing** (BIZ.13) робить брехню **дорогою**. Трійця (origin + accuracy + skin-in-game) = довірений RWA. Жоден рунг ladder не знімає потреби у ЗВТ та економічному шарі.
 
@@ -831,7 +831,7 @@ trees
 telemetry_logs  [PARTITION BY RANGE(created_at)]
   ├─ z_value              :decimal           Lorenz Z (BigDecimal 18 precision)
   ├─ growth_points        :integer           [FW.29-PACK] stored 0..62 = wire bits [4:0] (0..31) × 2 backend upscale
-  ├─ bio_status           :integer enum      0=homeostasis|1=stress|2=anomaly|3=tamper
+  ├─ bio_status           :integer enum      0=homeostasis|1=stress|2=anomaly|3=vm_error
   ├─ verified_by_iotex    :boolean  NOT NULL DEFAULT false
   ├─ zk_proof_ref         :string            "proof_id" або "receipt_id" від W3bstream
   ├─ chainlink_request_id :string  INDEX     TX hash або stub request ID

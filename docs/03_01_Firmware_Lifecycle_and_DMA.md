@@ -1318,7 +1318,7 @@ C-код знає **тільки** про `calculate_state` (через `mrb_int
 payload_byte = (status << 5) | growth_points
 ```
 
-Status: 0 homeostasis / 1 stress / 2 anomaly / 3 tamper (mruby VM error, виживає `& 0x7F` → GP 31). Wire-GP 5-біт (5..31) масштабується ÷2; backend ×2 upscale при unpack (tokenomic invariant). Серверне дзеркало `attractor.rb` звіряє z-val (розходження → DCI Alert).
+Status: 0 homeostasis / 1 stress / 2 anomaly / 3 vm_error (mruby VM-збій, виживає `& 0x7F` → GP 31; **НЕ** tamper — SLASH-1 P0, фізичний tamper → PANIC_FLAG-канал). Wire-GP 5-біт (5..31) масштабується ÷2; backend ×2 upscale при unpack (tokenomic invariant). Серверне дзеркало `attractor.rb` звіряє z-val (розходження → DCI Alert).
 
 
 ## 🛠️ 12. Тестова Інфраструктура (`firmware/test/`)
