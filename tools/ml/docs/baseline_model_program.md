@@ -138,13 +138,13 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 
 | # | Де | Суть | Фікс |
 |---|-----|------|------|
-| 1 | 03_03 §4.1 / §6 / §3.2 / §10.7 | **runtime-дрейф** «TFLM як наш вибір» + категорійна помилка «TFLM vs CMSIS-NN» | примирення §1.4 (fixed-topology forward pass; TFLM=fallback) |
-| 2 | 03_03 §5.3 + §7.1 | Soldier→Queen LoRa = **AES-256-ECB** (стале) | **AES-128-ECB** (post-ARCH.42; firmware правий) |
-| 3 | 03_03 §5.3 code | стале тіло `Trigger_Emergency_LoRa_TX` (нема `Ttl_Byte_Pack`/`PANIC_FLAG_BIT`/counter[14..15]) | звірити з `main.c:2767` |
-| 4 | 03_03 §4.2 + §4.4 | return-doc лише 4 класи (0–3), пропущено **fauna=4** | додати 5-й клас |
-| 5 | 03_03 §3.1 | стале «модель отримує сирий time-domain; DSP невідомий (BLOCKER-2)» | Path B обрано → 40 log-mel, DSP = `Compute_LogMel` |
+| 1 | 03_03 §4.1 / §6 / §3.2 / §10.7 | **runtime-дрейф** «TFLM як наш вибір» + категорійна помилка «TFLM vs CMSIS-NN» | ✅ **закрито** — §4.1 примирення · §3.2 «Лочить на TFLM (НЕ завендорено)» · §6 «landed baseline = forward-pass 76 B» · §10.7 «Path C — лише документований fallback» |
+| 2 | 03_03 §5.3 + §7.1 | Soldier→Queen LoRa = **AES-256-ECB** (стале) | ✅ **закрито** — `grep -c "AES-256" docs/03_03` = 0; усюди AES-128 |
+| 3 | 03_03 §5.3 code | стале тіло `Trigger_Emergency_LoRa_TX` (нема `Ttl_Byte_Pack`/`PANIC_FLAG_BIT`/counter[14..15]) | 🔴 **ЄДИНИЙ ЖИВИЙ** (звірка 2026-07-17: `Ttl_Byte_Pack` — 03_03 = 0 входжень, `main.c` = 2) → звірити код-блок із `Trigger_Emergency_LoRa_TX` |
+| 4 | 03_03 §4.2 + §4.4 | return-doc лише 4 класи (0–3), пропущено **fauna=4** | ✅ **закрито** — §4.2 і §4.4 несуть «4=Fauna» |
+| 5 | 03_03 §3.1 | стале «модель отримує сирий time-domain; DSP невідомий (BLOCKER-2)» | ✅ **закрито** — §3.1 «Path B зафіксовано … НЕ сирий time-domain»; `grep -c BLOCKER docs/03_03` = 0 |
 | 6 | 03_03 §4.5 | latency-таблиця «Conv1D шар 1/2» (Path A мова) | ✅ **закрито 2026-07-17** — таблицю перемарковано як оцінку партнерського CNN-класу + landed FC 40→16→5 названо явно (число не вигадуємо — bench) |
-| 7 | 02_01 §line | «TinyML Inference (CMSIS-NN, **~200 мс**)» суперечить §4.5 (~8–24 мс) | звірити/виправити latency |
+| 7 | 02_01 §line | «TinyML Inference (CMSIS-NN, **~200 мс**)» суперечить §4.5 (~8–24 мс) | ✅ **закрито** — `grep -c "CMSIS-NN" docs/02_01` = 0; `02_01 §2` несе ноту «консервативний envelope, не landed-вимір» + зустрічна нота у `03_03 §4.5` (петля замкнена 07-17) |
 | 8 | 08_01 Стаття 24a / 03_01 vendor-table | «<16KB arena» / «CMSIS-NN must vendor» — уточнити проти виміряної стелі + «pure-C baseline, CMSIS-NN опційно» | ✅ **закрито 2026-07-17** (UNI.19-свіп): `03_01` vendor-table + `02_01`-нота були закриті раніше; лишались `08_01` Ст.24a (унікальність #1 + «ML-партнер тренує CNN»), `05_02`, `00_08`, `04_02`, `03_01` Flash-рядок, `03_03` ×2 — усі вирівняні на landed 972 B / 76 B |
 
 ---
@@ -178,6 +178,7 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
   `test_audio_model` (12 golden) + увесь firmware-сьют зелений. `main.c` call-site
   розкоментовано + `logmel.h`. **Docs:** runtime-примирення 03_03 §4.1 + ~14 stale-спотів
   (CLAUDE.md / .github / stub.h / main.c / 03_03 / 03_01 / 00_07); `docs:check_refs` +
-  `tracker:check` EXIT=0. **Deferred (low-pri/cascade):** 02_01 ~200мс latency (енергобаланс
-  §9), 08_01/manifest `<16KB` envelope, 03_03 §367/820 Path-A-4-class. **Commit — за командою
-  founder'а** (ще не просили).
+  `tracker:check` EXIT=0. **Deferred — ✅ вичерпано 2026-07-17:** 02_01 ~200мс (нота-envelope `02_01 §2`) · `08_01`/manifest
+  `<16KB` (UNI.19-свіп + DOC-T.41 07-16) · 03_03 Path-A-4-class (§4.2/§4.4 = 5 класів). ⚠️ Цей
+  список був **третім дзеркалом** боргу №8 — усередині файлу, що його ж і реєструє: борг стояв
+  у §5-таблиці, у §8-Deferred і в самому каноні одночасно.

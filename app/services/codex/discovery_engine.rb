@@ -145,7 +145,7 @@ module Codex
 
       acoustic_class_count: ->(user, rule, _payload) {
         # `acoustic_events` is the per-packet event count produced by
-        # the on-device CMSIS-NN classifier (firmware/soldier/main.c).
+        # the on-device TinyML INT8 classifier (firmware/soldier/main.c).
         # We treat *high-acoustic* packets (>= `min_events`) as a proxy
         # for "the user's org's trees recorded a noteworthy acoustic class
         # ≥ threshold_value times." `params["min_events"]` defaults to

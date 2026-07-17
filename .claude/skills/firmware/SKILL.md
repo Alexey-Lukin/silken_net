@@ -15,7 +15,7 @@ points, it does not restate (so it can't drift). Verify a fact at its home befor
 | `CLAUDE.md §3` | High-level architecture, AES table, OTA, Lorenz (summary — for exact packet/Status-byte bit-layout trust the canon docs below, not the summary) |
 | `docs/03_01_Firmware_Lifecycle_and_DMA.md` | Soldier/Queen lifecycle, STOP2 phases, ISR map, **RTC Backup Register Map §2 (canonical DR0..DR19 + magic markers)**, binary packet format §8, mesh-relay + rendezvous ladder §1.9 (CCM-era star-only; single-Queen scale ceiling §1.9.1) |
 | `docs/03_02_Queen_Gateway_Firmware.md` | Queen: LoRa RX → CIFO dedup → CoAP flush, OTA broadcast, AES mode transitions |
-| `docs/03_03_TinyML_Acoustic_Inference.md` | Audio DMA, CMSIS-NN, decision logic, confidence thresholds (DR13/DR14) |
+| `docs/03_03_TinyML_Acoustic_Inference.md` | Audio DMA, TinyML INT8 forward-pass (NOT CMSIS-NN), decision logic, confidence thresholds (DR13/DR14) |
 | `docs/03_04_mruby_Lorenz_Attractor.md` | Lorenz constants (§4.1), Float-not-BigDecimal parity, RTC continuation vs cold-start (§2.1), Status-byte packing |
 | `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md` | AES modes, key rotation (FW.17), SE05x secure element (baseline SE051C2; SEC.6 + SEC.14 provisioning-only — KEYL stays in Protected Flash; ATECC608B = banner-legacy pattern), IV, QATT wire (§2.2), PQC roadmap |
 | `docs/03_06_Factory_Flashing_and_Key_Provisioning.md` | Factory home (split from 03_05 §3.4): HKDF per-device derivation, K_seed, K_ota (FW.23 §4), flashing pipeline + ops-security (SEC.3 §5) |

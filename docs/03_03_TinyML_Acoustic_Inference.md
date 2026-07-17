@@ -220,7 +220,7 @@ for(int i = 0; i < 512; i++) {
 >
 > **Fallback на Path C** — лише якщо ML-партнер (Бушин/Любченко) сильно
 > натисне на TFLM end-to-end через тренувальний workflow (Edge Impulse).
-> **Path A — fast-path MVP** для 4-class без fauna, якщо ML-партнер недоступний
+> **Path A — fast-path MVP** для 4-class без fauna, якщо знадобиться більша модель (партнерів нема — baseline self-owned)
 > 2+ місяців; пізніше міграція на Path B.
 >
 > Path B = **log-mel БЕЗ DCT-кроку MFCC** (поширена помилка плутати ці терміни).
@@ -512,7 +512,7 @@ uint8_t Run_Inference(const float* buffer, float* confidence);
 
 ### 4.5 Latency Estimation @ 48 MHz Cortex-M4
 
-> ⚠️ **Таблиця = оцінка ПАРТНЕРСЬКОГО CNN-класу, не landed-вимір** (борг №6,
+> ⚠️ **Таблиця = рання оцінка TFLM-2D-CNN-класу (Path-A мова, fallback — §4.3), не landed-вимір** (борг №6,
 > `tools/ml/docs/baseline_model_program.md`): приземлений baseline FW.4 — per-frame
 > **FC 40→16→5** (§4.1), Conv1D-шарів у ньому нема; 972 B Flash / 76 B стеку ⇒ реальна
 > латентність на порядок менша за рядки нижче. Тримаємо консервативний envelope свідомо
@@ -843,8 +843,8 @@ RWA market: інвестор бачить не лише CO₂, а й функц�
 
 | Залежність | Партнер | Документ | Що потрібно |
 |------------|---------|----------|-------------|
-| FW.4 (`Run_Inference()`) розкоментувати, додати модель | ML-партнер (Бушин/Любченко ЧНУ або ChDTU) | [`03_03 §1`](03_03_TinyML_Acoustic_Inference), [`08_02 §1B`](08_02_Academic_Institutions_Registry) | Натренована TFLite модель з 5 класами (INT8) |
-| FW.25 (DSP-шлях choice gate) — переведено P1→P0 | **Primary owner: Бушин або Любченко (ЧНУ ФОТІУС, ML)** — рішення про шлях A/B/C (§3.2 Decision Matrix). **Secondary: Ярмілко (ЧНУ ФОТІУС, SPI/DMA)** — integration consultant після вибору шляху, якщо обрано Path B з CMSIS-DSP | [`08_02 §1B`](08_02_Academic_Institutions_Registry) | (1) Узгодити шлях A/B/C; (2) Path A: збільшити INT8 модель; Path B: CMSIS-DSP `arm_rfft_fast_f32` + custom Mel-bank + `arm_vlog_f32` (НЕ повний MFCC); Path C: TFLM `signal::microfrontend` op; (3) tensor_arena recheck per path |
+| ~~FW.4 (`Run_Inference()`) + модель~~ — ✅ **закрито self-owned** ([`00_07` FW.4](00_07_Action_Plan_Tracker) 🟢: ESC-50 baseline landed, 972 B Flash / 76 B стеку; call-site розкоментовано) | — (партнерів нема; модель НАША end-to-end) | [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference) | Партнерська/польова модель = **опційний апгрейд, НЕ блокер** |
+| ~~FW.25 (DSP-шлях choice gate)~~ — ✅ **вирішено self-owned**: Path B (log-mel) обрано, `Compute_LogMel` реалізовано (librosa≡stdlib≡C golden-vector parity) | — (рішення НЕ чекало партнера) | [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) | Ярмілко-консультація по SPI/DMA лишається опційною ([`03_01`](03_01_Firmware_Lifecycle_and_DMA) — дім DMA) |
 | Калібрувальний датасет з dawn/dusk записами Черкаського бору | Базіло + Бондаренко (ЧДТУ ПМКТ) + Спрягайло/Гаврилюк (ЧНУ Біо-хаб) | [`08_02 §2`](08_02_Academic_Institutions_Registry) (ПМКТ калібрувальний датасет), [`08_02 §2`](08_02_Academic_Institutions_Registry) Homeostasis Baseline | Польові аудіозаписи на світанку/в сутінках на ділянках різного типу (захищений бір, регенерація, монокультура), мінімум 4 сезони |
 | GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk | Любченко (ЧНУ ФОТІУС) | [`08_02 §1B`](08_02_Academic_Institutions_Registry) | Akash GPU кластер, фітнес-функція з ground truth |
 | Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | Бушин (ЧНУ ФОТІУС, CNN) | [`08_02 §1B`](08_02_Academic_Institutions_Registry) | Pipeline злиття супутника + TinyML; AiInsight#biodiversity_trend |
