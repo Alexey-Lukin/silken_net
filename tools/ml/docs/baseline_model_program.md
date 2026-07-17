@@ -140,7 +140,7 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 |---|-----|------|------|
 | 1 | 03_03 §4.1 / §6 / §3.2 / §10.7 | **runtime-дрейф** «TFLM як наш вибір» + категорійна помилка «TFLM vs CMSIS-NN» | ✅ **закрито** — §4.1 примирення · §3.2 «Лочить на TFLM (НЕ завендорено)» · §6 «landed baseline = forward-pass 76 B» · §10.7 «Path C — лише документований fallback» |
 | 2 | 03_03 §5.3 + §7.1 | Soldier→Queen LoRa = **AES-256-ECB** (стале) | ✅ **закрито** — `grep -c "AES-256" docs/03_03` = 0; усюди AES-128 |
-| 3 | 03_03 §5.3 code | стале тіло `Trigger_Emergency_LoRa_TX` (нема `Ttl_Byte_Pack`/`PANIC_FLAG_BIT`/counter[14..15]) | 🔴 **ЄДИНИЙ ЖИВИЙ** (звірка 2026-07-17: `Ttl_Byte_Pack` — 03_03 = 0 входжень, `main.c` = 2) → звірити код-блок із `Trigger_Emergency_LoRa_TX` |
+| 3 | 03_03 §5.3 code | стале тіло `Trigger_Emergency_LoRa_TX` (нема `Ttl_Byte_Pack`/`PANIC_FLAG_BIT`/counter[14..15]) | 🔴 **ЄДИНИЙ ЖИВИЙ** → трекер-дім **`00_07` FW.62** (звірка 2026-07-17: `Ttl_Byte_Pack` — 03_03 = 0 входжень, `main.c` = 2) → звірити код-блок із `Trigger_Emergency_LoRa_TX` |
 | 4 | 03_03 §4.2 + §4.4 | return-doc лише 4 класи (0–3), пропущено **fauna=4** | ✅ **закрито** — §4.2 і §4.4 несуть «4=Fauna» |
 | 5 | 03_03 §3.1 | стале «модель отримує сирий time-domain; DSP невідомий (BLOCKER-2)» | ✅ **закрито** — §3.1 «Path B зафіксовано … НЕ сирий time-domain»; `grep -c BLOCKER docs/03_03` = 0 |
 | 6 | 03_03 §4.5 | latency-таблиця «Conv1D шар 1/2» (Path A мова) | ✅ **закрито 2026-07-17** — таблицю перемарковано як оцінку партнерського CNN-класу + landed FC 40→16→5 названо явно (число не вигадуємо — bench) |
