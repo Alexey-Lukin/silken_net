@@ -309,7 +309,7 @@ _«Дослідження акустичних властивостей пори
 
 **Унікальність публікації (відсутня в світовій літературі станом на 2026-05):**
 1. Перша інтеграція **soundscape ecology** (Pijanowski et al. 2011, ACI Index Pieretti et al. 2011) з **embedded TinyML на суб-кілобайтному бюджеті**: self-contained INT8 forward-pass (40 log-mel → 16 → 5 класів), **972 B Flash / 76 B стеку / ~0 .bss**, без TFLM- і без CMSIS-NN-рантайму ([`03_03 §4.1`](03_03_TinyML_Acoustic_Inference)) — тоді як типова ESC-CNN потребує ~16 КБ tensor arena, що при цьому енерго/RAM-бюджеті **фізично не деплоїться** ([`03_03 §3.4`](03_03_TinyML_Acoustic_Inference)).
-2. Перший **продакшн-D-MRV pipeline**, що cryptographically доводить біорізноманіття: `TinyML soundscape → CoAP → IoTeX W3bstream ZK-proof → Chainlink Oracle → Polygon SCC mint guard`.
+2. Перший **D-MRV pipeline**, що зв'язує акустичний біо-сигнал із on-chain емісією: `TinyML soundscape → CoAP → Rails → Polygon SCC`. ⚠️ **Не «продакшн» і не «cryptographically доводить» (виправлено 2026-07-17 за ARCH.53):** живий шлях мінтить **оптимістично** — IoTeX/Chainlink НЕ enforced; ланка `W3bstream ZK-proof → Chainlink Oracle → mint guard` = PATH 1 ⚪ **Demoted/unwired** (нема DON source/consumer/relayer), trust-origin = **L0**, anti-fraud = ex-post clawback (ще не збудований) → [`05_02`](05_02_Proof_of_Growth_Pipeline). Це архітектура-**намір** (North-Star §0.1), не доведений факт: «доводить» тут = той самий reviewer-landmine, за який Статтю 1 переписали з «*Validation*» (2026-06-05).
 3. Перша **Macro-Micro residual analysis**: де NDVI=high & fauna=low → кандидат на «green-washing», де NDVI=low & fauna=high → ранньо-стадія регенерації, що supercluster карбон/біо інтегруються.
 
 | Автор | Афіліація | Внесок |
