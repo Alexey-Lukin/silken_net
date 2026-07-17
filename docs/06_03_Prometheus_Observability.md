@@ -126,7 +126,7 @@ Gem `sentry-sidekiq` автоматично додає Sentry middleware до Si
 
 ### 1.4 Виключені виключення (Zero Noise Policy)
 
-**36 класів виключень** виключені зі Sentry, щоб уникнути alert fatigue:
+Розширений набір **класів виключень** виключено зі Sentry, щоб уникнути alert fatigue (повний перелік — SSOT `config/initializers/sentry.rb`):
 
 | Категорія | Приклади |
 |-----------|----------|
@@ -616,7 +616,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 ### Що реально реалізовано (TRL 6 факти)
 
 1. **Prometheus-client інтегрований** — повний реєстр метрик визначено (кількість — §2.8), `/metrics` endpoint працює з IP-захистом + Basic Auth.
-2. **Sentry SDK встановлений і налаштований** — zero-noise конфігурація з 34 виключеннями, автоматична Sidekiq-інтеграція, PII-scrubbing.
+2. **Sentry SDK встановлений і налаштований** — zero-noise конфігурація (набір виключень — SSOT `config/initializers/sentry.rb`), автоматична Sidekiq-інтеграція, PII-scrubbing.
 3. **Інструментація в бізнес-логіці** — всі критичні операції (мінтинг, слешинг, RPC-помилки, телеметрія, OTA, EWS, CoAP) мають Prometheus-лічильники.
 4. **GCP Cloud Logging** — WARNING+ логи зберігаються, cost-control фільтр активний.
 5. **Structured JSON logging** — активовано у production: кожен рядок містить `timestamp`, `pid`, `request_id`, `sentry_trace_id`, `sentry_span_id`.

@@ -13,7 +13,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 4 — інфраструктурний код існує, реальний деплой не проводився
-- **Відкрите:** deploy-readiness (Ingress IP, GitHub Secrets, Akash SDL secrets) → [`00_07`](00_07_Action_Plan_Tracker) (S1.1, INF.3/4/6, S5.6).
+- **Відкрите:** deploy-readiness (Ingress IP, GitHub Secrets, Akash SDL secrets) → [`00_07`](00_07_Action_Plan_Tracker) (S1.1, INF.4/6, S5.6).
 
 ---
 
@@ -30,7 +30,7 @@
 | [`06_04` — Secrets Checklist](06_04_Secrets_Checklist) | секрети — SSOT |
 | [`06_06` — Disaster Recovery and Backup](06_06_Disaster_Recovery_and_Backup) | backup / restore / RTO·RPO |
 | [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) | CI/CD pipeline + runbook index |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | S1.1, S1.5, INF.3/4/6, S5.6 |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | S1.1, S1.5, INF.4/6, S5.6 |
 
 ## 📑 Зміст
 
@@ -478,7 +478,7 @@ terraform/
 ├── vpc.tf        # VPC, subnet (10.0.0.0/20), Cloud Router, Cloud NAT, Firewall
 ├── compute.tf    # Ingress Anchor (e2-small, silken-net-ingress), Static IP + CoAP-демон (PRIMARY)
 ├── database.tf   # Cloud SQL PostgreSQL 17, 3 databases (primary/cache/cable — Solid Queue pruned INF.18) + canopy-тріо, Private Service Access
-├── iam.tf        # Service Account silken-net-deploy + 7 IAM roles
+├── iam.tf        # Service Account silken-net-deploy + IAM roles (deploy-SA + IAP-operator)
 ├── variables.tf  # Всі input variables з валідацією
 └── outputs.tf    # ingress_ip, DB URL тощо
 
@@ -513,7 +513,7 @@ terraform/akash/
 
 ```
 Service Account: silken-net-deploy@<project>.iam.gserviceaccount.com
-Ролі (iam.tf — 9):
+Ролі deploy-SA (iam.tf):
   - artifactregistry.writer   (push Docker images)
   - artifactregistry.reader   (pull на анкорі/fallback)
   - compute.instanceAdmin.v1  (Kamal SSH deploy)
@@ -523,6 +523,9 @@ Service Account: silken-net-deploy@<project>.iam.gserviceaccount.com
   - monitoring.metricWriter   (Cloud Monitoring)
   - cloudsql.client           (Cloud SQL connect)
   - storage.objectAdmin       (GCS Terraform state, scoped до bucket)
+IAP-operator ролі (iam.tf, for_each `iap_admin_members` — люди-адміни, не SA):
+  - compute.osAdminLogin       (sudo на анкорі через IAP-тунель, INF.20)
+  - iap.tunnelResourceAccessor (відкриття IAP-тунелю)
 ```
 
 ### Розрахунок `max_connections` (database.tf)
@@ -575,8 +578,8 @@ cd terraform/akash
 #   provisioning_master_key  ← 🛑 BOOT-CRITICAL
 #   sentry_dsn, prometheus_auth_user/password
 #   grafana_remote_write_url/username/token
-#   oracle_private_key, oracle_minter_private_key, oracle_slasher_private_key,
-#     ethereum_anchor_private_key
+#   oracle_minter_private_key, oracle_slasher_private_key,
+#     ethereum_anchor_private_key   (легасі oracle_private_key RETIRED — INF.22)
 #   alchemy_polygon_rpc_url, alchemy_ethereum_rpc_url, solana_rpc_url
 #   solana_wallet_keypair, solana_fee_payer_pubkey,
 #     solana_fee_payer_token_account, solana_usdc_mint_address

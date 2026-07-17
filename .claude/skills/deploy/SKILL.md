@@ -28,98 +28,65 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 
 ## Несучі інваріанти (не очевидні з коду)
 
-Будь-хто, хто чіпає деплой, МУСИТЬ це знати:
+Будь-хто, хто чіпає деплой, МУСИТЬ це знати (суть тут, механіка — за canon-§):
 
 - **Akash + GCP — failover, не «або-або».** Rails-ворклоад на Akash; GCP тримає
   Cloud SQL + є failover-ціллю (Redis — зовнішній **Upstash** Serverless TLS, не GCP). → `06_01` / `06_02`.
-- **CoAP-інтейк: PRIMARY = демон на Ingress Anchor** (e2-small; docker+systemd,
-  VPC → Cloud SQL приватним IP БЕЗ Auth Proxy; секрети `/etc/silkennet/coap.env`,
-  НЕ в metadata). Akash `coap`-сервіс = задеплоєний idle-**fallback** за socat;
-  перемикання = 2×systemctl. Money/web лишаються на Akash (цензуростійкість). → `06_01` / `06_02`.
-  **coap.env boot-contract (INF.17):** coap = pure UDP glue (recvfrom→parse→`perform_async`,
-  нуль key-derivation) → несе `ACTIVE_RECORD_ENCRYPTION_*`-трійку (guard `active_record_encryption_keys_check`
-  production-wide, БЕЗ coap-skip) + `RAILS_MASTER_KEY`+POSTGRES+REDIS+SENTRY, але **НЕ**
-  `PROVISIONING_MASTER_KEY` (master_key-guard `$PROGRAM_NAME`-skip'ає coap; fleet-forge crown-jewel
-  off анкор-plaintext, SEC.22). 3-тя поверхня поза `sdl_consistency` → regression-guard
-  `spec/deploy/anchor_coap_env_spec.rb`. → `06_04 §5.7`.
+- **CoAP-інтейк: PRIMARY = демон на Ingress Anchor** (docker+systemd, приватний IP Cloud SQL
+  БЕЗ Auth Proxy; секрети `/etc/silkennet/coap.env`, НЕ metadata). Akash `coap` = idle-**fallback**
+  за socat (перемикання 2×systemctl); money/web лишаються на Akash. **coap.env** = 3-тя
+  boot-contract поверхня поза `sdl_consistency` (pure UDP glue, нуль key-derivation → несе
+  AR-encryption-трійку, **НЕ** `PROVISIONING_MASTER_KEY`; guard `spec/deploy/anchor_coap_env_spec.rb`).
+  → `06_01` / `06_02` / `06_04 §5.7`.
 - **Cloud SQL Auth Proxy авторизує через Google API, але СОКЕТ іде на IP інстанса** —
   з Akash (поза VPC) досяжний лише ПУБЛІЧНИЙ IP → `ipv4_enabled = true` обов'язковий
   (authorized_networks порожній — доступ тільки IAM-proxy; ENCRYPTED_ONLY). private-only
-  = crash-loop усіх сервісів у entrypoint-гейті. Проксі активується **лише** коли
-  `CLOUD_SQL_INSTANCE_CONNECTION_NAME` заданий у ENV; Kamal-шлях (у VPC) — приватний IP напряму. → `06_02`.
-- **Observability: Alloy → Grafana Cloud SaaS. Self-hosted Prometheus НЕ потрібен — за дизайном (OBS.1).**
-  Prometheus-реєстр — **in-process** → Alloy скрейпить **три таргети** (`web:80` +
-  `job:9394` + `coap:9395` embedded-експортери, лейбл `process`; порти 9394/9395 —
-  service-scope only) → `remote_write` → Grafana Cloud. Механіка/стелі — `06_03 §2.9`;
-  реєстр і кількість метрик — `06_03 §2.8` (regen з REGISTRY, **не хардкодь**).
+  = crash-loop усіх сервісів. Проксі активується **лише** коли `CLOUD_SQL_INSTANCE_CONNECTION_NAME`
+  заданий; Kamal-шлях (у VPC) — приватний IP напряму. → `06_02` (+ `terraform/database.tf` at-use).
+- **Observability = Alloy → Grafana Cloud SaaS; self-hosted Prometheus НЕ потрібен (OBS.1).**
+  Реєстр **in-process** → web:80 НЕ бачить job/coap-інкрементів напряму → Alloy скрейпить
+  **три таргети** (`web:80`+`job:9394`+`coap:9395`, лейбл `process`). Топологія/стелі → `06_03 §2.9`;
+  реєстр+кількість метрик → `06_03 §2.8` (**не хардкодь**).
 - **Секрети One-Home:** канонічний дім — `config/deploy.yml env.secret`; повний
   інвентар + checklist — `06_04`. CI-гейт `verify-secrets`.
-- **SSH на Ingress Anchor = IAP-тунель + OS Login, keyless (INF.20 (в), 2026-07-04).**
-  Порт 22 в інтернет НЕ відкритий (firewall лише 35.235.240.0/20); metadata ssh-keys
-  ІГНОРУЮТЬСЯ (`enable-oslogin=TRUE`); SSH-секретів у deploy-наборі НЕМАЄ. Вхід:
-  `gcloud compute ssh silken-net-ingress --tunnel-through-iap` (доступ = tf-var
-  `iap_admin_members` → osAdminLogin+tunnelResourceAccessor). CI-Kamal-нога dormant
-  до (б)-клею (`ssh.proxy_command` через `start-iap-tunnel`). → `06_01` / 00_07 INF.20.
-- **CI→GCP auth = keyless WIF (INF.22, 2026-07-10).** Deploy/drift-workflow НЕ тримають
-  довгоживучий `GCP_SA_KEY` JSON — `google-github-actions/auth` карбує GitHub OIDC-токен
-  (`id-token: write` per-job) → GCP STS → impersonated deploy-SA access-token (`terraform/wif.tf`:
-  pool+provider, owner-`attribute_condition` + repo-`principalSet`, `lowerAscii()` case-safe).
-  Provider+SA email = repo **Variables** (не secrets; presence = deploy-gate, замінив `GCP_SA_KEY`).
-  Kamal registry = `oauth2accesstoken` + access-token. Виняток = Akash `GCP_SA_KEY_BASE64` (Cloud SQL
-  proxy — зовн. провайдер не досягає GitHub-issuer'а). → `06_04 §1.1` / `06_02 §Security Exception`.
-- **Akash SDL ENV — plaintext, видимий провайдеру.** Реальні ключі **ніколи** не в
-  `deploy/akash/deploy.yaml`; інжектити через Akash Console / `env.secret`. **Money/signing-
-  набір = JOB-ONLY** — SDL-job і Kamal-job несуть однакову **п'ятірку** (`ORACLE_MINTER/
-  SLASHER/CELO` + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`); legacy `ORACLE_PRIVATE_KEY`
-  **RETIRED повністю** (INF.22 — жоден код не читає; guard-tripwire відмовляє значенню під
-  цим ім'ям, `deploy_secret_scan` Invariant B2 ловить повернення в SDL). Aux-підписанти
-  (`ORACLE_ETHERISC/PURO/KLIMA_PRIVATE_KEY`) — activation-gated: Console-інжект при
-  активації шляху, НЕ в SDL/tfvars. Web/coap бутяться keyless (guard scoped
-  `signer_process: Sidekiq.server?`). → `06_02` / `06_04 §1.1`.
-- **SEC.22 latch (credentials→ENV, 2026-07-09).** at-rest ≠ runtime: провайдер читає
-  `/proc/environ`, тож `RAILS_MASTER_KEY` у runtime-ENV розшифровує весь vault. Розчинено:
-  8 зовн.-сервісів + `storage.yml` читають `ENV[..].presence || credentials`; **AR-encryption
-  ключі** (`hardware_keys`/`identities` at-rest) = ENV `ACTIVE_RECORD_ENCRYPTION_*` (boot-guard
-  fail-closed; були DEAD-in-prod — ніде не сконфігуровані); coap-guard пропускає master_key-check.
-  Phase-2 drop `RAILS_MASTER_KEY` = deploy-gated (👤; SECRET_KEY_BASE+service-keys inject-at-deploy).
-  Дім → `06_04 §5.7` / 00_07 SEC.22.
-- **Secrets-at-rest = три ISOLATED KMS-осі (2026-07-10).** Boot-disk Anchor'а (тримає
-  `coap.env` master-keys) шифрується **CMEK** — keyring `silken-disk-ew1` (`kms.tf`, grantee =
-  compute service-agent, НЕ deploy-SA); money-signing custody (SEC.17, pre-mainnet) = окремий
-  keyring `silken-sign-ew1` (job-SA); **tf-state bucket** (3-тя plaintext-копія секретів) =
-  keyring `silken-tfstate-ew1` — **bootstrap.sh-owned, out-of-band** (chicken-egg: ключ ДО
-  `terraform init`; grantee = GCS service-agent; deploy-SA KMS-ролі НЕ потребує — objectAdmin
-  достатньо; retention 10 версій/30д). Key-level IAM + purpose-enum-бар'єр; **НЕ** generic keyring
-  (blast-radius merge-trap). CMEK boot-dependency: `reset`=DEK-cached (safe), лише stop→start/revoke
-  б'є KMS (bounded: `prevent_destroy` + 30d-grace + Akash coap-fallback). ⚠️ найбільша at-rest-діра
-  лишається **Akash-plaintext** (money-квінтет + `RAILS_MASTER_KEY` provider-visible) → SEC.17. → `06_04 §5.6`.
-- **Deploy/release ланцюг (2026-06-19).** Canopy = кожен push у `main` після CI (continuous);
-  Production = GitHub Release, який тримає **release-please** (`Ops · Release`: semver+CHANGELOG із
-  conventional commits → `release: published`); GHCR-mirror path-gated + пушить SLSA provenance+SBOM
-  з образом (`gh attestation verify`). `verify-secrets` у Canopy **skip-clean** без секретів (Production
-  лишається fail-loud). `main` захищено branch-protection (required `CI passed` + `Docs passed`,
-  `enforce_admins=false` — owner пушить напряму). Деталі/діаграма — `06_07 §1`/`§2`.
-- **GH Environment `production` = дім money-п'ятірки (INF.22, 2026-07-10).** Signing-п'ятірка
-  (`MINTER`/`SLASHER`/`CELO` + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`) у GitHub живе
-  **environment-scoped** (`gh secret set X --env production`), НЕ repo-level — читають лише
-  `deploy-production.yml` jobs `verify-secrets`+`deploy` (`environment:`); wait-timer 10 хв
-  **per-job** (2 гейти/release) + ref-policy `v*`∪`main`. Canopy money-ключі НЕ споживає —
-  **структурно**: `deploy.canopy.yml` `servers:` = array-форма (Kamal deep_merge = keys-union →
-  омітнута роль УСПАДКОВУЄТЬСЯ; масив замінює hash цілком). Kamal secrets-файл =
-  **`.kamal/secrets-common`** (з destination плейн `secrets` НЕВИДИМИЙ — Kamal читає лише
-  `-common` + `secrets.<dest>`). → `06_04 §1` / `06_07 §1`.
+- **SSH на Ingress Anchor = IAP-тунель + OS Login, keyless (INF.20 (в)).** Порт 22 в інтернет
+  НЕ відкритий; SSH-секретів у deploy-наборі НЕМАЄ; вхід `gcloud compute ssh silken-net-ingress
+  --tunnel-through-iap` (доступ = tf-var `iap_admin_members`). Команда/роль-модель/(б)-клей → `06_01` / 00_07 INF.20.
+- **CI→GCP auth = keyless WIF (INF.22)** — без довгоживучого `GCP_SA_KEY` JSON (GitHub OIDC →
+  GCP STS → impersonated deploy-SA). Provider+SA email = repo **Variables** (presence = deploy-gate).
+  Виняток = Akash `GCP_SA_KEY_BASE64` (зовн. провайдер не досягає GitHub-issuer'а). Механіка/case-safety
+  → `06_04 §1.1` / `06_02 §Security Exception`.
+- **Akash SDL ENV = plaintext, видимий провайдеру.** Реальні ключі **ніколи** в `deploy.yaml` —
+  інжект через Console/`env.secret`. **Money/signing-п'ятірка = JOB-ONLY** (`ORACLE_MINTER/SLASHER/CELO`
+  + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`); legacy `ORACLE_PRIVATE_KEY` **RETIRED** (guard-tripwire).
+  Web/coap keyless (guard scoped `signer_process: Sidekiq.server?`). Mitigation/aux-gated → `06_02` / `06_04 §1.1`.
+- **SEC.22 latch: at-rest ≠ runtime** — провайдер читає `/proc/environ`, тож жоден секрет не сміє
+  жити лише за `RAILS_MASTER_KEY`-vault у runtime. credentials→ENV (8 сервісів + `storage.yml`);
+  AR-encryption ключі = ENV (boot-guard fail-closed, були DEAD-in-prod). Механіка/Phase-2-drop →
+  `06_04 §5.7` / 00_07 SEC.22.
+- **Secrets-at-rest = три ISOLATED KMS-keyring'и** (`silken-disk-ew1` boot-disk CMEK ·
+  `silken-sign-ew1` money-signing SEC.17 pre-mainnet · `silken-tfstate-ew1` bootstrap-owned) —
+  key-level IAM бар'єр, **НЕ** generic keyring (merge-trap). ⚠️ найбільша at-rest-діра лишається
+  **Akash-plaintext** (money-квінтет provider-visible) → SEC.17. Grantee/purpose/boot-dep → `06_04 §5.6`.
+- **Deploy/release ланцюг:** Canopy = continuous push у `main` після CI; Production = GitHub Release
+  (release-please: semver+CHANGELOG); GHCR-mirror пушить SLSA provenance+SBOM. `main` branch-protected
+  (`CI passed`+`Docs passed`, owner пушить напряму). Діаграма/гейти → `06_07 §1`/`§2`.
+- **GH Environment `production` = дім money-п'ятірки (INF.22)** — environment-scoped, НЕ repo-level;
+  Canopy money-ключі структурно не споживає (`deploy.canopy.yml` `servers:` array-form → Kamal
+  deep_merge keys-union). Wait-timer-per-job / Kamal-secrets-chain (`.kamal/secrets-common`) → `06_04 §1` / `06_07 §1`.
 
 ## Карта коду / конфігів
 
 | Шар | Шлях |
 |---|---|
 | Kamal deploy | `config/deploy.yml` · `config/deploy.canopy.yml` · `.kamal/secrets-common` |
-| IaC (GCP) | `terraform/` (`compute.tf` — incl. анкор-демон systemd/env-file + boot-disk CMEK · `database.tf` · `vpc.tf` · `iam.tf` · `main.tf` · `kms.tf` — Cloud KMS keyring/IAM, disk-CMEK) |
+| IaC (GCP) | `terraform/` (`compute.tf` — анкор-демон systemd/env-file + boot-disk CMEK · `database.tf` · `vpc.tf` · `iam.tf` · `main.tf` · `kms.tf` — Cloud KMS keyring/IAM · `wif.tf` — keyless CI→GCP OIDC (INF.22) · `billing.tf` — OPS.11 budget-guard) |
 | Akash | `deploy/akash/` (`deploy.yaml` SDL · `deploy.yaml.tpl` · `config.alloy` · `encode-alloy-config.sh`); SDL-гейт `ruby scripts/sdl_consistency_check.rb` (services≡deployment, static≡tpl — CI + локально перед комітом SDL-змін) |
 | Observability | `config/initializers/prometheus.rb` (`SilkenNet::Metrics`) · `app/middleware/prometheus_collector.rb` · `lib/silken_net/metrics_exporter.rb` (embedded /metrics job/coap) · `deploy/akash/config.alloy` · Grafana IaC `deploy/grafana/` (`alerts/silkennet-alerts.yaml` · `dashboards/` · `import.rb`) |
 | Web-сервер | `config/puma.rb` |
+| Load/throughput | `lib/silken_net/load_test/` + `bin/coap_load` (INF.23 harness: factory·flood·drain·microbench·report). ⚠️ dev-число ≠ capacity — bottleneck-class inversion (prod network-IO-bound, dev завищує 10-50×); реальна стеля лише staging з prod-adapters → `06_08 §2.4` |
 | CI/CD | `.github/workflows/` (`deploy.yml` — path-gated INF.9 · `deploy-production.yml` · `coap_smoke.yml` — post-deploy gate + 30хв liveness-schedule · `akash_escrow_watch.yml` — AKT-runway вартовий OPS.11, skip-clean до `AKASH_OWNER_ADDRESS` · `iac_scan.yml` — Sec·IaC-Scan (Trivy `config`, SARIF soft-fail; baseline у `.trivyignore`) · `terraform_drift.yml` — Ops·TF-Drift (weekly `plan -detailed-exitcode`, skip-clean до 3 secrets) · `ci.yml` `terraform_validate`-job (offline `validate`+`fmt`, path-gated `terraform/**`, pre-deploy config-validity — INF.15) · `mirror-ghcr.yml` · `release-please.yml` · `ci.yml` · `docs.yml` · `ssot_guard.yml`) |
-| Deploy drift-guards | CI-гейти над deploy-конфігом (offline, no-creds; НЕ дублюй їх логіку — правь дім): `scripts/deploy_secret_scan.rb` (no-literal + signing-quintet job-only + retired-tripwire + present-empty Invariant D) · `scripts/sdl_consistency_check.rb` (SDL services≡deployment, static≡tpl) · `scripts/audit_deploy_secret_scope.rb` (S1.1 — live `gh`-scope preflight: money-quintet env-only, WIF=Variables) · `spec/deploy/*_spec.rb` (INF.16 db-config · INF.17 coap.env boot-contract · INF.4 firmware↔host · DR.1 DR-posture · INF.12 ENV.fetch↔deploy declaration + B1-chain · INF.12-behavior web3-env-loudness (кожен web3-ENV ∈ guard-set ∪ LOUD ∪ SOFT — silent-class tripwire) · SEC.22 credentials-ENV-first · S2.4 alloy-scrape-topology · INF.24 akash-auditor-bech32 · OPS.11 tf-workflow-var-parity) |
+| Deploy drift-guards | CI-гейти над deploy-конфігом (offline, no-creds; НЕ дублюй їх логіку — правь дім): `scripts/deploy_secret_scan.rb` (no-literal + signing-quintet job-only + retired-tripwire + `.dockerignore`-exclusion + present-empty Invariant D) · `scripts/sdl_consistency_check.rb` (SDL services≡deployment, static≡tpl) · `scripts/audit_deploy_secret_scope.rb` (S1.1 — live `gh`-scope preflight: money-quintet env-only · retired-zombie · WIF=Variables · Kredis-autoderive footgun) · `spec/deploy/*_spec.rb` (INF.16 db-config · INF.17 coap.env boot-contract · INF.4 firmware↔host · DR.1 DR-posture · INF.12 ENV.fetch↔deploy declaration + B1-chain · INF.12-behavior web3-env-loudness (кожен web3-ENV ∈ guard-set ∪ LOUD ∪ SOFT — silent-class tripwire) · SEC.22 credentials-ENV-first · S2.4 alloy-scrape-topology · S2.4 grafana-alerts↔REGISTRY-parity (silkennet_-метрика в alert-expr ∈ REGISTRY, typo→dead-alert) · INF.24 akash-auditor-bech32 · OPS.11 tf-workflow-var-parity) |
 
 ## Gotchas (верифіковані, не з канону)
 
@@ -128,6 +95,10 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 2. **`SENTRY_DSN` задається at deploy time** (`.kamal/secrets-common`); без нього Sentry
    інертний — нуль crash-репортів.
 3. **Старт через Thruster** (`thrust ./bin/rails server`) за замовчуванням; overridable at runtime.
+4. **WIF рантайм = ТРИ GCP API** — `iam` (default-on) + `sts` + `iamcredentials`; останні два увімкнути **ЯВНО**. Пропущений `sts.googleapis.com` → перший keyless CI-run падає `SERVICE_DISABLED` (STS робить OIDC→federated exchange ПЕРЕД impersonation), а `terraform validate`/local-apply це НЕ ловлять (STS не викликається при create pool).
+5. **keyless AUTH ≠ terraform-apply CAPABILITY** — CI імперсонує least-privilege deploy-SA БЕЗ IAM/WIF/serviceusage-admin → CI `terraform apply`/drift-`plan` рефреш IAM/WIF-ресурсів = **403**. Модель: `apply` founder-local (рек.) АБО SA-privesc (god-credential concern). → 00_07 INF.22.
+6. **`gh run watch --exit-status` бреше** (exit 0 on fail / 1 on empty) — щоб перевірити, чи Deploy·Canopy/Production реально пройшов, довіряй `gh run view --json conclusion`, не `watch`.
+7. **`gh attestation verify` рендерить TTY-only** → piped/`tail`/`grep` захоплюють ПОРОЖНЄ; довіряй **EXIT=0** або `--format json`.
 
 ## Робочі правила
 

@@ -23,7 +23,7 @@
 |---|---|
 | `config/puma.rb` | Конфігурація (SSOT) |
 | `app/middleware/mark_web3_requests_as_io_bound.rb` | IO-bound middleware |
-| `Dockerfile` | `LD_PRELOAD=libjemalloc2.so`, `CMD: thrust ./bin/rails server` |
+| `Dockerfile` | `LD_PRELOAD=libjemalloc.so` (symlink на `libjemalloc.so.2`, пакет `libjemalloc2`), `CMD: thrust ./bin/rails server` |
 | `config/application.rb` | Реєстрація middleware (після `PrometheusCollector`) |
 | [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | Kamal phased restart, `WEB_CONCURRENCY` |
 | [`06_02` — Akash Network Integration](06_02_Akash_Network_Integration) | `WEB_CONCURRENCY=4` у Akash SDL |

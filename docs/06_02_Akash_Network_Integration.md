@@ -801,10 +801,9 @@ silken-net-terraform-state/ (GCS bucket)
 
 | Змінна | Валідація |
 |--------|-----------|
-| `oracle_private_key` | Hex `0x…` (legacy fallback для Celo/Klima/PuroEarth/Etherisc) |
 | `oracle_minter_private_key` | Hex `0x…` (MINTER_ROLE на SCC/SFC) |
 | `oracle_slasher_private_key` | Hex `0x…` (SLASHER_ROLE на SCC/SFC) |
-| `ethereum_anchor_private_key` | Hex `0x…` (окремий wallet для L1 anchor — MUST differ from `oracle_private_key`) |
+| `ethereum_anchor_private_key` | Hex `0x…` (окремий wallet для L1 anchor — MUST differ from minter/slasher signers) |
 
 **RPC endpoints (Web3::RpcConnectionPool — ENV.fetch raises KeyError без значення):**
 
