@@ -69,7 +69,7 @@
 | проф. **Мінаєв Б.Ф.** (+ проф. Мінаєва В.О.) | хімія та наноматеріалознавство | Квантова хімія EBFC (DFT: dgrFAD-GDH/Os, Laccase-ZIF, PSBMA) → [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) + [`L3_quantum_chemistry`](protocols/ebfc/in_silico/L3_quantum_chemistry.md) | Ст. 1 |
 | проф. **Гусак А.М.** | фізика (Wiley-монографія, UCLA-колаб.) | Нанодифузія/Kirkendall: 20-річний V/Al release + PEEK creep → [`01_02 §2`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK); sheet-vs-network FEA-E homogenization ([`00_07` HW.33](00_07_Action_Plan_Tracker) — self-own-кандидат, 🟡 pending) | Ст. 2 |
 | доц. **Спрягайло О.В.** (проректор) + к.б.н. **Гаврилюк М.В.** (дир. ННІ) | біо-хаб (дендрофлора/ПЗФ/екологія) | *Pinus sylvestris* baseline + хім. склад ксилемного соку + dawn/dusk «Cherkasy Soundscape Library» → [`03_04`](03_04_mruby_Lorenz_Attractor), [`03_03 §10`](03_03_TinyML_Acoustic_Inference), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 35 |
-| проф. **Кирилюк Є.М.** (в.о. ректора) | ННІ економіки і права, біоекономіка/синергетика | Теор. база NaaS + біоекономіка; парасольовий MoU → [`07_01`](07_01_Nature_as_a_Service_Contracts) | Ст. 35 |
+| проф. **Кирилюк Є.М.** (в.о. ректора) | ННІ економіки і права, біоекономіка/синергетика | Теор. база NaaS + біоекономіка; парасольовий MoU → [`07_01`](07_01_Nature_as_a_Service_Contracts); синергетика порогового гейта (Ст.34) | Ст. 34/35 |
 
 > Протоколи Hard-Science (Quantum-Sap, Long-Term Integrity, Homeostasis Baseline, Xylem-Sim, Steril) — already-canon: дім у [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)/[`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)/[`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)/[`01_04 §6`](01_04_CODIT_and_Xylemointegration)/[`03_04`](03_04_mruby_Lorenz_Attractor) + [`in_silico/`](protocols/ebfc/in_silico/SUMMARY.md). Спрягайло↔Кирилюк — дзеркальна пара ко-PI на Horizon Europe Cluster 6 / NRFU.
 
@@ -77,8 +77,8 @@
 
 | Партнер | Профіль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| доц. **Ярмілко А.В.** | IIoT / embedded / lightweight crypto | SPI/DMA енергооптимізація ([`02_01`](02_01_Hardware_Architecture_and_BOM)); MAC/MIC + ECDH ([`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)); AES-128-CCM LoRa-тракт ([`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security), FW.2) | Ст. 23 |
-| **Порубльов І.М.** | дискретна математика, обчисл. геометрія | mesh percolation/Markov `q_c` ([`06_08`](06_08_Resilience_and_Failover_Policy)) — ⚠️ **відкладено**: mesh-relay живий лише в ECB-ері (`#if !FW2_CCM_ENABLED`), CCM-фліп робить star-only; повернення = ARCH.43 post-TRL 6. Валідація TPMS-геометрії ([`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) — машинну половину закрив self-owned **ARCH.25** (`tools/cad`); Lorenz-аудит (Float64/Euler-RK4) **self-own стався** ([`05_05 §6`](05_05_Slashing_and_Risk_Policy), 50 000 parity-тестів) | Ст. 3/25 |
+| доц. **Ярмілко А.В.** | IIoT / embedded / lightweight crypto | SPI/DMA енергооптимізація ([`02_01`](02_01_Hardware_Architecture_and_BOM)); MAC/MIC + ECDH ([`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)); AES-128-CCM LoRa-тракт ([`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security), FW.2) | Ст. 23 |
+| **Порубльов І.М.** | дискретна математика, обчисл. геометрія | mesh percolation/Markov `q_c` ([`06_08`](06_08_Resilience_and_Failover_Policy)) — ⚠️ **відкладено**: mesh-relay живий лише в ECB-ері (`#if !FW2_CCM_ENABLED`), CCM-фліп робить star-only; повернення = ARCH.43 post-TRL 6. Валідація TPMS-геометрії ([`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) — машинну половину закрив self-owned **ARCH.25** (`tools/cad`); Lorenz-аудит (Float64/Euler-RK4) **self-own стався** ([`05_05 §6`](05_05_Slashing_and_Risk_Policy), 50 000 parity-тестів); пороги гейта + numeric-DCI (Ст.34) | Ст. 3/25/34 |
 | доц. **Косенюк Г.В.** | військова радіотехніка, теорія кодування | RF impedance/Link Budget/ground-plane ([`02_01 §5`](02_01_Hardware_Architecture_and_BOM)); FEC + hash-захист потоків ([`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)) | Ст. 23 |
 | **Онищенко Б.О.** (декан ФОТІУС) | стохастична оптимізація, паралельні алгоритми | ⚠️ Публікаційних ланок не лишилось (Ст.21 вилучена 2026-07-17 — `B&B` = 0 hits, [`06_08`](06_08_Resilience_and_Failover_Policy) кредитує Маркова/перколяцію, не B&B). **Інституційна роль жива** — декан ФОТІУС, [`00_07`](00_07_Action_Plan_Tracker) UNI.1 (P0, відмикає лаб-роботу). Двері відкриті: з’явиться жива тема — впишемо | — |
 | доц. **Бушин І.М.** | CNN / computer vision / BSP | CNN-NDVI synthesis → Digital Twin ([`03_03 §10`](03_03_TinyML_Acoustic_Inference)); BSP IoT-кластеризація; фізика DMLS ([`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)) | Ст. 24a |
@@ -95,7 +95,7 @@
 
 | Партнер | Кафедра / роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Anomaly/fraud-детекція (`FRAUD_DEVIATION_THRESHOLD`, Ст.13) + актуарна математика страхових тригерів (Weibull/Pareto, basis-risk copula — Ст.25) → [`04_02`](04_02_Business_Logic_and_Services), [`05_05`](05_05_Slashing_and_Risk_Policy). ⚠️ Lyapunov/RQA (Ст.15) знято — E.64; Kalman = E.10 🔗 «не пре-білдити»; time-series (Ст.11) знято — джерело даних синтетичне до заліза | Ст. 13/25 |
+| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Anomaly/fraud-детекція (`FRAUD_DEVIATION_THRESHOLD`, Ст.13) + актуарна математика страхових тригерів (Weibull/Pareto, basis-risk copula — Ст.25) + **Lyapunov/RQA — дім Ст.34** (режимна структура атрактора навколо порогів гейта; Ст.15 вилучена — E.64) → [`04_02`](04_02_Business_Logic_and_Services), [`05_05`](05_05_Slashing_and_Risk_Policy). ⚠️ Kalman = E.10 🔗 «не пре-білдити»; time-series (Ст.11) знято — джерело синтетичне до заліза | Ст. 13/25/34 |
 | декан **Гончаров А.** | ФЕТР, радіотехніка | Експериментальна RF-верифікація (VNA S11, EMC pre-scan, натурний Link Budget) розрахунків Косенюка → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM) | Ст. 23 |
 | проф. **Базіло К.В.** + проф. **Бондаренко М.О.** | ПМКТ, акустична мехатроніка | Валідація фононної лінзи гіроїда (EIS + AE) + **калібрувальний TinyML-датасет** (польова валідність 5-class моделі; машинну половину `FW.4`/Run_Inference закрив self-owned ESC-50 baseline — [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference)) | Ст. 24 |
 | доц. **Хоменко Ю.В.** | металорізальні верстати (80+ патентів) | DMLS post-processing, геометрія різання анкера, deinstall-інструмент, prior-art landscape → [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | IP→08_01 |
@@ -142,13 +142,13 @@ B2G-міст до ДСНС + наукове обґрунтування пара�
 
 | Партнер | Роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| **Чудаєва І.Б.** (ректор СЄУ) | макроекономіка | Стрес-тест dual-token (інфляція, Dynamic Tax 2%, рівновага) → [`05_03`](05_03_Tokenomics_SCC_and_SFC) | Ст. 31 |
+| **Чудаєва І.Б.** (ректор СЄУ) | макроекономіка | Стрес-тест dual-token (інфляція, Dynamic Tax 2%, рівновага) → [`05_03`](05_03_Tokenomics_SCC_and_SFC); макро-модель SCC-ринку живить біфуркаційний макро-шар Ст.34 і регіональний Ст.35 | Ст. 31/34/35 |
 | **Ус Г.О.** | unit-econ / ESG | ESG-облік, KlimaDAO retirement, loss ratio → [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`07_02`](07_02_Unit_Economics_and_BOM) | Ст. 31 |
-| **Аблязов Д.Е.** | право | RWA legal architecture (ERC-3643), KYC/AML templates → [`07_01`](07_01_Nature_as_a_Service_Contracts), [`05_06`](05_06_Governance_and_DAO) | Ст. 32 |
+| **Аблязов Д.Е.** | право | RWA legal architecture (ERC-3643), KYC/AML templates → [`07_01`](07_01_Nature_as_a_Service_Contracts), [`05_06`](05_06_Governance_and_DAO); правова сумісність токенізації з режимом ПЗФ (Ст.35) | Ст. 32/35 |
 | **Аблязова Н.Р.** | консорціум / гранти | ⚠️ Публікаційних ланок нема (жодної авторської комірки в портфелі — реєстр і раніше вказував на §3 Alumni, не на статтю). Консорціум-лідерство перепризначено 2026-07-17 → Спрягайло ([`07_03`](07_03_Grant_Applications_Tracker)); Triple-Helix-тема = дім [`08_01 §0.2`](08_01_Joint_Publications_and_IP_Strategy). Двері відкриті: з'явиться жива тема — впишемо | — |
 | **Гедз М.Й.** | аудит D-MRV | Методологічний аудит pipeline (IoTeX→Chainlink→mint, DCI) → [`05_02`](05_02_Proof_of_Growth_Pipeline) | Ст. 32/35 |
 | **Денисенко Ю.М.** | промисловий дизайн | Біомімікрічний антивандальний PEEK-радом капсули → [`02_01`](02_01_Hardware_Architecture_and_BOM), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | Ст. 33 |
-| **Теліженко О.В.** | UX | B2B data-viz / audience-aware UI → [`04_04`](04_04_Phlex_UI_and_Tailwind) | 08_03 |
+| **Теліженко О.В.** | промдизайн / поверхні | **Super-hydrophobic coating** (Fluoropel PFC-1601V, CA>150° — анти-адгезія калюсу до катода, [`01_04 §5.5`](01_04_CODIT_and_Xylemointegration), HW.28); B2B data-viz → [`04_04`](04_04_Phlex_UI_and_Tailwind). ⚠️ Реєстр досі вів її як «08_03/UX» — розсинхрон із портфелем знято 2026-07-17 | Ст. 33 |
 
 > **План публікацій СЄУ:** [`08_01 §1F`](08_01_Joint_Publications_and_IP_Strategy) (токеноміка, RWA-право, промдизайн).
 

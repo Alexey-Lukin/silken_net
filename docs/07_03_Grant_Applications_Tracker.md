@@ -215,7 +215,7 @@ WP8 Biodiversity Baseline (Cluster 6) → ЧНУ біо-хаб (Спрягайл
 WP9 Exploitation & IPR            → ActiveBridge + Silken Net
 ```
 
-> **Twin-pack publication backbone (cross-ref [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy)):** Стаття 35 (Кирилюк ↔ Спрягайло біоекономіка) і Стаття 24a (Спрягайло ↔ Mongabay) — WP8. Подання до журналу Q1 за 2–3 місяці до Horizon-deadline переводить заявку з категорії «концепт» у «published research» (вирішальне для evaluators). ⚠️ **WP7 (Bioeconomy & Tokenized Markets) лишився без публікаційної основи** — Стаття 34 (Lorenz↔синергетика) вилучена 2026-07-17 (теза «Z = гомеостаз» мертва за E.63/E.64 — див. [`00_07` UNI.19](00_07_Action_Plan_Tracker)); або WP7 спирається на Ст.35 як теоретичну рамку, або потребує іншого обґрунтування ⚖️.
+> **Twin-pack publication backbone (cross-ref [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy)):** **Стаття 34** (Кирилюк ↔ синергетика порогового гейта Лоренца) обґрунтовує **WP7**; **Стаття 35** (Кирилюк ↔ Спрягайло біоекономіка) і **Стаття 24a** (Спрягайло ↔ Mongabay) — **WP8**. Подання до журналу Q1 за 2–3 місяці до Horizon-deadline переводить заявку з категорії «концепт» у «published research» (вирішальне для evaluators).
 
 **Зв'язок з кодбейсом:** Horizon Europe вимагає Open Science — `StateRootAnchor.sol` (публічна верифікація), Filecoin-архів телеметрії, The Graph subgraph (публічний доступ до даних).
 
@@ -231,7 +231,7 @@ WP9 Exploitation & IPR            → ActiveBridge + Silken Net
 
 **Тема заявки:** _"Trustless D-MRV: IoTeX W3bstream ZK-proofs for biological homeostasis verification on STM32WLE5JC edge devices"_ — пов'язано з `IotexVerificationWorker`, `Iotex::W3bstreamVerificationService` та [`05_02`](05_02_Proof_of_Growth_Pipeline).
 
-> **Детально про консорціум та грантову стратегію:** [`08_02 §5`](08_02_Academic_Institutions_Registry) (Аблязова Н.).
+> **Детально про консорціум та грантову стратегію:** [`08_02 §5`](08_02_Academic_Institutions_Registry) (СЄУ; консорціум-лідерство → Спрягайло, §8 вище).
 
 ## 🗺️ 9. Грантова Дипломатія (Cross-chain Grant Strategy)
 
