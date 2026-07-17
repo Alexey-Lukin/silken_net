@@ -149,9 +149,11 @@ Rails.application.configure do
 
   # [PROD] DNS rebinding & Host header attack protection.
   # RAILS_ALLOWED_HOSTS is a comma-separated allowlist (supports leading "."
-  # for subdomain wildcards: e.g. ".silken.net,silken.app"). Health check
-  # and Prometheus scrape paths are excluded so internal IP-based probes
-  # keep working.
+  # for subdomain wildcards: ".silkennet.com" covers "api.silkennet.com").
+  # NOTE: a wildcard does NOT cover a different TLD — the web host must be
+  # listed explicitly (canon pair + current value live in 06_04 §2.1).
+  # Health check and Prometheus scrape paths are excluded so internal
+  # IP-based probes keep working.
   #
   # If RAILS_ALLOWED_HOSTS is empty we log a loud warning at boot but keep
   # the app reachable so a forgotten env var does not blackhole production
