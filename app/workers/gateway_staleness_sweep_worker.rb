@@ -62,7 +62,7 @@ class GatewayStalenessSweepWorker
     count = 0
     Gateway.online.faulty.includes(:cluster).find_each do |gateway|
       gateway.recover!
-      resolve_offline_alert(gateway)
+      resolve_comms_alerts(gateway)
       count += 1
     end
     count
@@ -88,8 +88,17 @@ class GatewayStalenessSweepWorker
     )
   end
 
-  def resolve_offline_alert(gateway)
-    EwsAlert.unresolved.alert_type_queen_offline
+  # Резолвимо ОБИДВА comms-типи: dead-man switch (ми помітили тишу) і Helium-SOS
+  # (Королева крикнула через чужі hotspot'и, ARCH.34). Обидва стверджують одне —
+  # «Королева без uplink» — і обидва спростовує той самий факт: вона знову в ефірі.
+  # До цього queen_uplink_lost не мав резолвера ЖОДНОГО (HeliumSosWorker обіцяв
+  # «sweeper-recovery після повернення батчів», але sweeper фільтрував лише
+  # queen_offline) → лишався активним вічно й латчив comms_no_ack? назавжди.
+  # resolve! без `user:` — машинний шлях (дискримінатор gap-E: див.
+  # BlockchainBurningService#critical_unmaintained?).
+  def resolve_comms_alerts(gateway)
+    EwsAlert.unresolved
+            .where(alert_type: [ :queen_offline, :queen_uplink_lost ])
             .where(cluster_id: gateway.cluster_id).find_each do |alert|
       alert.resolve!(notes: "Королева #{gateway.uid} повернулась в ефір " \
                             "(#{gateway.last_seen_at.utc.iso8601}).") # online ⇒ present

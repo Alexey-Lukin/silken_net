@@ -14,7 +14,7 @@ module Slashing
   # НЕМАЄ: wire status=3 виявився BIO_STATUS_VM_ERROR (софт-збій → :firmware_fault,
   # AlertDispatchService), а справжня пилка їде panic→`chainsaw_detected`. Ворота лишаються
   # wired і чесно-порожні: до наповнення A-сету КОЖЕН slash-тригер іде freeze/Field-Audit.
-  # Джерела vandalism_breach: ручна C→A ескалація Field-Audit (console, `06_08 §4`) зараз;
+  # Джерела vandalism_breach: ручна C→A ескалація Field-Audit (console-рецепт, `06_08 §4.6`) зараз;
   # chainsaw після field-validation TinyML (клас = synthetic placeholder, `03_03 §4.2`;
   # slash() необоротний) та майбутній HW tamper-канал (tamper-switch/SE05x) — потім.
   # `critical_unmaintained?` досі рахує й force-majeure-типи (aged `fire_detected` без
@@ -49,7 +49,7 @@ module Slashing
     # Tamper / розкриття корпусу: живий critical-алерт `vandalism_breach` — однозначна
     # ознака людського втручання (Категорія A, `05_05 §6` hardware tamper → авто-A).
     # [SLASH-1 P0] Автоматичний writer знято (wire status=3 = vm_error, не tamper);
-    # алерт створює лише людина (Field-Audit C→A, `06_08 §4`) або майбутнє
+    # алерт створює лише людина (Field-Audit C→A, `06_08 §4.6`) або майбутнє
     # validated-джерело — див. шапку класу.
     def tamper_breach?
       @cluster.ews_alerts.critical.alert_type_vandalism_breach.exists?

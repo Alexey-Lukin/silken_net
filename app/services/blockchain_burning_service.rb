@@ -525,9 +525,20 @@ class BlockchainBurningService < ApplicationService
     # [SEC.20] І :firmware_reverted — той самий vendor-клас, але ТЕРМІНАЛЬНИЙ (не
     # самогаситься; лікується лише re-issue OTA версією > спаленої) → без виключення
     # штрафував би оператора гарантовано, щойно cause_uplift увімкнеться.
+    # [SLASH-1 gap-E] Виключаємо МАШИННИЙ resolve. `severity_critical` (без `.unresolved`)
+    # тут свідомий — форестер сам може закрити власний алерт (`alerts_controller#resolve`,
+    # resolve ≡ ack), тож фільтр по unresolved знімав би штраф одним кліком. Але коли алерт
+    # закрила СИСТЕМА (Королева повернулась в ефір сама — GatewayStalenessSweepWorker), виїзд
+    # не був потрібен нікому → MaintenanceRecord не може існувати за визначенням → рядок
+    # інакше читався б як «недбалість» ВІЧНО (ретеншену нема, а `created_at`-предикат
+    # рахується в момент слешу, тож транзієнтна тиша латчила б PF_NO_MAINTENANCE назавжди).
+    # Дискримінатор: `resolve!(user:)` лишає `resolved_by` NULL лише на машинному шляху —
+    # обидва людські сайти передають user. Звуження свідоме: оператор, що полагодив Королеву
+    # без paperwork, штрафу уникне — false-negative, а burn необоротний (05_05 §3.2 асиметрія).
     stale_critical = @cluster.ews_alerts.severity_critical
                              .where.not(alert_type: [ :field_audit, :vandalism_breach, :firmware_fault,
                                                       :firmware_reverted, :firmware_canary_trip ])
+                             .where.not(status: :resolved, resolved_by: nil)
                              .where(created_at: ..30.minutes.ago)
     return false unless stale_critical.exists?
 

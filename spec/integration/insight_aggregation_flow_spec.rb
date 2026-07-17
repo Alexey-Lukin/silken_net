@@ -126,8 +126,10 @@ RSpec.describe "Insight generation and daily aggregation flow" do
       expect { DailyAggregationWorker.new.perform(weekday.to_s) }
         .to change(EwsAlert, :count).by(1)
 
+      # [SLASH-1 gap-D] :field_audit, НЕ :system_fault — fleet-wide блекаут = force-majeure
+      # (05_05 §6), а :system_fault накручував би penalty_factor обома гілками.
       alert = EwsAlert.last
-      expect(alert.alert_type).to eq("system_fault")
+      expect(alert.alert_type).to eq("field_audit")
       expect(alert.message).to include("БЛЕКАУТ")
     end
   end

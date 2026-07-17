@@ -79,6 +79,36 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
       expect(alert.reload.status_resolved?).to be(true)
       expect(alert.resolution_notes).to include(gateway.uid)
     end
+
+    # [ARCH.34] Helium-SOS-алерт не мав резолвера ЖОДНОГО: HeliumSosWorker обіцяв
+    # «sweeper-recovery після повернення батчів», але sweeper фільтрував лише
+    # queen_offline → рядок лишався активним вічно й латчив comms_no_ack? назавжди.
+    it "резолвить і queen_uplink_lost (Helium-SOS), не лише queen_offline" do
+      gateway = silent_gateway
+      sos = create(:ews_alert, cluster: cluster, severity: :critical,
+                               alert_type: :queen_uplink_lost, status: :active)
+      sweep
+
+      gateway.reload.mark_seen! # свіжий last_seen_at → online
+      described_class.new.perform
+
+      expect(sos.reload.status_resolved?).to be(true)
+    end
+
+    # [SLASH-1 gap-E] Дискримінатор «машина vs людина» тримається на ДЕФОЛТНОМУ kwarg'у
+    # resolve!(user: nil) — майбутній машинний resolve-сайт, що передасть system-user,
+    # мовчки зламав би BlockchainBurningService#critical_unmaintained? (транзієнтна тиша
+    # знову латчила б PF_NO_MAINTENANCE). Піна, щоб ламалось ГУЧНО, тут.
+    it "лишає resolved_by NULL — машинний resolve мусить лишатись відрізнимим (gap-E)" do
+      gateway = silent_gateway
+      sweep
+      alert = EwsAlert.alert_type_queen_offline.last
+
+      gateway.reload.mark_seen!
+      described_class.new.perform
+
+      expect(alert.reload.resolved_by).to be_nil
+    end
   end
 
   describe "метрики" do

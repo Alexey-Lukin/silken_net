@@ -260,5 +260,31 @@ tx.fail!
 
 **Pause/unpause:** тільки Gnosis Safe (PAUSER_ROLE, миттєво, поза Timelock); причина + timestamp → `AuditLog`; slash працює під паузою (B-07) — це фіча, не баг.
 
+### 4.6 Field-Audit ескалація C→A (console-рецепт — відкриває ворота необоротного slash)
+
+> [SLASH-1] **Єдиний живий шлях до positive-A.** Автоматичного writer'а `vandalism_breach` немає за дизайном (wire status=3 = `vm_error` → `firmware_fault`; пилка → `chainsaw_detected`, поза A-сетом до field-validation) — тож доки людина не ескалює, КОЖЕН slash-тригер іде freeze/Field-Audit (`Slashing::CauseEvidence#positive_a?` = tamper-only). Політика + межі A-сету — [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy); процедура Кат-C peer-review — [`05_05 §5`](05_05_Slashing_and_Risk_Policy). ⚠️ Крок незворотний за наслідком: після нього наступний `BurnCarbonTokensWorker` по цьому кластеру палить, а не морозить.
+
+**Передумова:** прямий ФІЗИЧНИЙ доказ втручання, зафіксований людиною на місці (розкритий корпус, зрізаний/викопаний анкер) — з актом і фото. Непрямий сигнал (тиша, divergence, аномалія Z, акустика без field-validation) Кат-A **не дає** — [`05_05 §6`](05_05_Slashing_and_Risk_Policy) вимагає прямого некорельованого підтвердження.
+
+```ruby
+cluster = Cluster.find(<id>)
+
+# Ескалація C→A. `severity: :critical` обов'язковий — гейт читає `.critical`
+# (= severity_critical.unresolved), medium/low ворота не відчиняють.
+EwsAlert.create!(
+  cluster: cluster,
+  tree:    <Tree|nil>,          # опційно — для атрибуції в аудиті; гейт cluster-scoped
+  severity: :critical,
+  alert_type: :vandalism_breach,
+  message: "Field-Audit <дата>: розкрито корпус вузла <uid>; акт №<N>, фото <ref>. Ескалація C→A."
+)
+
+Slashing::CauseEvidence.new(cluster).positive_a?   # → true (ворота відчинені)
+```
+
+**Відкликання** (доказ не підтвердився): `alert.resolve!(user: <auditor>, notes: "...")` → гейт знову закритий (`positive_a?` читає лише unresolved). ⚠️ `resolve!` **з `user:`** — машинний resolve (`resolved_by` NULL) зарезервовано за sweeper'ом і має окремий сенс у penalty-тракті (gap-E, [`05_05 §6`](05_05_Slashing_and_Risk_Policy)).
+
+Після ескалації: запис в `AuditLog` (`action: "field_audit_escalated_c_to_a"`, metadata: cluster_id + акт + фото-ref) — tamper-evident слід для MRV-аудитора ([MRV.1]). `vandalism_breach` свідомо виключений з `comms_no_ack?`/`critical_unmaintained?` (P1-3 self-ref: доказ A не має ще й накручувати penalty на собі).
+
 ---
 

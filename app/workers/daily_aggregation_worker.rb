@@ -40,15 +40,21 @@ class DailyAggregationWorker
     else
       Rails.logger.warn "⚠️ [Хронометрист] За #{target_date} не знайдено даних для агрегації. Ланцюг аудиту зупинено."
 
-      # Якщо робочий день пройшов без жодного байта даних — це глобальна аварія зв'язку.
-      # Сповіщаємо патрульних через EwsAlert для кожного активного кластера.
+      # [SLASH-1 gap-D] Робочий день без жодного байта — сигнатура force-majeure
+      # (Starlink-блекаут / масовий відказ шлюзів), НЕ халатність лісника: burn на
+      # ній був би false slash (05_05 §6 «масовий blackout = A ⇒ карати лісника за
+      # вкрадений шлюз»). Тому :field_audit, а НЕ :system_fault — той сидить і в
+      # comms_no_ack?-whitelist, і поза critical_unmaintained?-blacklist, тож
+      # накручував би penalty_factor обома гілками одразу (стеля pf), причому
+      # назавжди: резолвера в system_fault немає. Дзеркалить
+      # ContractHealthCheckService#flag_data_blackout! (той самий факт, той самий
+      # вибір типу); хелпер дедуплікує — багатоденний блекаут не плодить дубль щодоби.
       if target_date.on_weekday?
         Cluster.joins(:naas_contracts).merge(NaasContract.status_active).distinct.find_each do |cluster|
-          EwsAlert.create!(
-            cluster_id: cluster.id,
-            severity: :critical,
-            alert_type: :system_fault,
-            message: "🛰️ ГЛОБАЛЬНИЙ БЛЕКАУТ: За #{target_date} не надійшло жодних даних телеметрії. Можлива аварія Starlink або масовий відказ шлюзів."
+          EwsAlert.escalate_field_audit!(
+            cluster: cluster,
+            message: "🛰️ ГЛОБАЛЬНИЙ БЛЕКАУТ: За #{target_date} не надійшло жодних даних телеметрії. " \
+                     "Можлива аварія Starlink або масовий відказ шлюзів — Field Audit (Кат-C), slashing НЕ застосовано."
           )
         end
       end

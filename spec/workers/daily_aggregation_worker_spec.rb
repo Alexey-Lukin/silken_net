@@ -55,7 +55,11 @@ RSpec.describe DailyAggregationWorker, type: :worker do
         expect(InsightGeneratorOrchestratorWorker.jobs).to be_empty
       end
 
-      it "creates EwsAlert for active clusters on weekdays" do
+      # [SLASH-1 gap-D] Тип НЕСУЧИЙ, не косметика: :system_fault сидить і в
+      # comms_no_ack?-whitelist, і поза critical_unmaintained?-blacklist, тож
+      # fleet-wide force-majeure накручував би penalty_factor обома гілками —
+      # рівно те, що 05_05 §6 забороняє («карати лісника за вкрадений шлюз»).
+      it "escalates a Field Audit (NOT :system_fault) for active clusters on weekdays" do
         org = create(:organization)
         cluster = create(:cluster, organization: org)
         create(:naas_contract, organization: org, cluster: cluster, status: :active)
@@ -70,8 +74,29 @@ RSpec.describe DailyAggregationWorker, type: :worker do
 
         alert = EwsAlert.last
         expect(alert.severity).to eq("critical")
-        expect(alert.alert_type).to eq("system_fault")
+        expect(alert.alert_type).to eq("field_audit")
         expect(alert.message).to include("БЛЕКАУТ")
+      end
+
+      # Багатоденний блекаут (Starlink лежить тиждень) не плодить рядок щодоби —
+      # дедуп дає escalate_field_audit! (раніше був голий create! без guard'а).
+      it "does not pile duplicate escalations across a multi-day blackout" do
+        org = create(:organization)
+        cluster = create(:cluster, organization: org)
+        create(:naas_contract, organization: org, cluster: cluster, status: :active)
+
+        # ОБИДВА дні мусять бути робочими — інакше 2-й прогін мовчки виходить по
+        # on_weekday?-гілці й тест проходить, нічого не перевіривши.
+        day1 = Date.new(2026, 3, 6)
+        day1 += 1 until day1.on_weekday?
+        day2 = day1 + 1
+        day2 += 1 until day2.on_weekday?
+
+        described_class.new.perform(day1.to_s)
+
+        expect {
+          described_class.new.perform(day2.to_s)
+        }.not_to change(EwsAlert, :count)
       end
 
       it "does not create alerts on weekends" do

@@ -669,6 +669,30 @@ RSpec.describe BlockchainBurningService do
         expect(service.send(:critical_unmaintained?)).to be(false)
       end
 
+      # [SLASH-1 gap-E] Машинний resolve ≠ ack оператора. Коли Королева повернулась в ефір
+      # САМА, GatewayStalenessSweepWorker закриває queen_offline без `user:` → виїзд не був
+      # потрібен нікому → MaintenanceRecord не може існувати за визначенням → рядок інакше
+      # читався б як «недбалість» вічно (ретеншену нема, а created_at-предикат рахується в
+      # момент слешу — транзієнтна тиша латчила б PF_NO_MAINTENANCE назавжди).
+      it "excludes a machine-resolved alert from critical_unmaintained? (gap-E)" do
+        alert = create(:ews_alert, cluster: cluster, severity: :critical,
+                                   alert_type: :queen_offline, status: :active, created_at: 1.hour.ago)
+        alert.resolve!(notes: "Королева повернулась в ефір.") # машинний шлях — БЕЗ user:
+
+        expect(alert.reload.resolved_by).to be_nil # дискримінатор, на якому тримається фільтр
+        expect(service.send(:critical_unmaintained?)).to be(false)
+      end
+
+      # Анти-гейминг ЖИВИЙ: саме тому предикат не фільтрує по `.unresolved` — форестер
+      # резолвить власні алерти (resolve ≡ ack), тож клік без виїзду штраф НЕ знімає.
+      it "still flags an alert resolved BY A HUMAN with no MaintenanceRecord (anti-gaming)" do
+        alert = create(:ews_alert, cluster: cluster, severity: :critical,
+                                   alert_type: :queen_offline, status: :active, created_at: 1.hour.ago)
+        alert.resolve!(user: create(:user), notes: "Подивився, начебто гаразд.")
+
+        expect(service.send(:critical_unmaintained?)).to be(true)
+      end
+
       # [P1-3] vandalism_breach = сам positive-A доказ Cat-A slash → НЕ рахується у comms/unmaintained
       # (self-ref: той самий tamper-алерт накручував penalty на СОБІ → множник завжди сідав на стелю).
       it "excludes vandalism_breach (the positive-A evidence) from comms_no_ack? (P1-3 self-ref)" do
