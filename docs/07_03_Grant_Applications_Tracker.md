@@ -209,7 +209,7 @@ WP2 Hardware & Materials          → ЧНУ (Гусак, Мінаєв) + ЧМА
 WP3 Firmware & Edge AI            → ЧНУ ФОТІУС (Порубльов, Ярмілко) + ЧДТУ (Карапетян)
 WP4 D-MRV Methodology             → СЄУ (Гедз М.) + ЧДТУ (Карапетян) + ЧНУ біо-хаб (Спрягайло — ground truth)
 WP5 Legal & Compliance            → СЄУ (Аблязов Д., Ус Г.) + ЧНУ біо-хаб (Спрягайло — ПЗФ-сумісність)
-WP6 Industrial Design             → СЄУ (Денисенко, Теліженко)
+WP6 Industrial Design             → СЄУ (Денисенко)
 WP7 Bioeconomy & Tokenized Markets → ЧНУ ректорат (Кирилюк Є.М.) + СЄУ (Чудаєва) — теоретична рамка SCC/NaaS
 WP8 Biodiversity Baseline (Cluster 6) → ЧНУ біо-хаб (Спрягайло, Гаврилюк) + ЧДТУ ПМКТ (Базіло, Бондаренко) — Cherkasy Soundscape Library
 WP9 Exploitation & IPR            → ActiveBridge + Silken Net

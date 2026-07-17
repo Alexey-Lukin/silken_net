@@ -143,9 +143,9 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 | 3 | 03_03 §5.3 code | стале тіло `Trigger_Emergency_LoRa_TX` (нема `Ttl_Byte_Pack`/`PANIC_FLAG_BIT`/counter[14..15]) | звірити з `main.c:2767` |
 | 4 | 03_03 §4.2 + §4.4 | return-doc лише 4 класи (0–3), пропущено **fauna=4** | додати 5-й клас |
 | 5 | 03_03 §3.1 | стале «модель отримує сирий time-domain; DSP невідомий (BLOCKER-2)» | Path B обрано → 40 log-mel, DSP = `Compute_LogMel` |
-| 6 | 03_03 §4.5 | latency-таблиця «Conv1D шар 1/2» (Path A мова) | per-frame log-mel топологія |
+| 6 | 03_03 §4.5 | latency-таблиця «Conv1D шар 1/2» (Path A мова) | ✅ **закрито 2026-07-17** — таблицю перемарковано як оцінку партнерського CNN-класу + landed FC 40→16→5 названо явно (число не вигадуємо — bench) |
 | 7 | 02_01 §line | «TinyML Inference (CMSIS-NN, **~200 мс**)» суперечить §4.5 (~8–24 мс) | звірити/виправити latency |
-| 8 | 08_01 Стаття 24a / 03_01 vendor-table | «<16KB arena» / «CMSIS-NN must vendor» — уточнити проти виміряної стелі + «pure-C baseline, CMSIS-NN опційно» | синхронізувати |
+| 8 | 08_01 Стаття 24a / 03_01 vendor-table | «<16KB arena» / «CMSIS-NN must vendor» — уточнити проти виміряної стелі + «pure-C baseline, CMSIS-NN опційно» | ✅ **закрито 2026-07-17** (UNI.19-свіп): `03_01` vendor-table + `02_01`-нота були закриті раніше; лишались `08_01` Ст.24a (унікальність #1 + «ML-партнер тренує CNN»), `05_02`, `00_08`, `04_02`, `03_01` Flash-рядок, `03_03` ×2 — усі вирівняні на landed 972 B / 76 B |
 
 ---
 

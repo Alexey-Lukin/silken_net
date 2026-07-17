@@ -1453,7 +1453,7 @@ toolchain-файлів помилково пінила апаратний FPv4 h
 | logmel.c (наш DSP, `LOGMEL_USE_CMSIS`) | ~6.3 KB | 28 B |
 | lorenz_bytecode (mrbc) | ~2.5 KB | 0 |
 
-> mruby ≈ 46% від 256 KB Flash — інherentна ціна за **OTA-оновлюваний bio-contract** (байткод OTA'ється без reflash). Тримати в бюджеті при HAL-інтеграції (+ CMSIS-NN модель, [`00_07` — FW.4](00_07_Action_Plan_Tracker)).
+> mruby ≈ 46% від 256 KB Flash — інherentна ціна за **OTA-оновлюваний bio-contract** (байткод OTA'ється без reflash). Тримати в бюджеті при HAL-інтеграції (+ TinyML-модель — landed baseline 972 B, [`00_07` — FW.4](00_07_Action_Plan_Tracker)).
 
 **mruby build-інваріанти** (verified проти `doc/mruby4.0.md`; джерело — `build_config.rb`):
 - **double, не float32:** НЕ ставимо `MRB_USE_FLOAT32` (флаг перейменовано з `MRB_USE_FLOAT` у mruby ≥3.0 — [`00_07` — FW.19](00_07_Action_Plan_Tracker)) → `mrb_float` = double, потрібно для DCI numeric parity ([`03_04 §5`](03_04_mruby_Lorenz_Attractor)).

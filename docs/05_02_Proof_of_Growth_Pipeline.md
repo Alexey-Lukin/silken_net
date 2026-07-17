@@ -227,7 +227,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 |--------|---------|--------|
 | `vcap_voltage` | ADC → VREFINT канал | uint16 (мВ, 0–5000; ⚠️ сирий до FW.50 — [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)) |
 | `internal_temp` | ADC → внутрішній датчик | int8 (°C, −45..90) |
-| `acoustic_events` | DMA 16 кГц → TinyML CMSIS-NN | uint8 (0–255) |
+| `acoustic_events` | DMA 16 кГц → TinyML INT8 forward-pass | uint8 (0–255) |
 | `delta_t_seconds` | `HAL_GetTick() - last_wakeup_timestamp` | uint32 (EBFC метаболізм) |
 
 > **[SEC.11]** `chaos_seed = HAL_RNG_GenerateRandomNumber()` як вхід Лоренца — **видалено** (hard cutover). Початкова точка `(x₀, y₀, z₀)` тепер деривується з per-device `K_seed` (Flash) через `HMAC-SHA256(K_seed, "init|" || epoch_day_be)` лише при cold-start після VBAT loss; у норму FW.6 RTC continuation (DR16-DR18 magic `"LZST"`) пропускає re-init. HRNG залишається лише для AES IV jitter, mesh anti-pingpong та CoAP nonce. Деталі — [`03_06 §3`](03_06_Factory_Flashing_and_Key_Provisioning).
