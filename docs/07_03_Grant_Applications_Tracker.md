@@ -227,7 +227,7 @@ WP9 Exploitation & IPR            → ActiveBridge + Silken Net
 | **Тип** | Research grant до $150K |
 | **Фокус** | ZK-proofs, DePIN, on-chain verifiable data, public goods |
 | **Статус** | Не подано |
-| **Академічний лідер** | **СЄУ (Аблязова Н.)** + ЧНУ ФОТІУС (Осауленко) ⚠️ — його публікаційні ланки вилучені (UNI.19, 2026-07-17), а тема заявки (ZK-proofs на STM32) не збігається з його профілем (управління R&D-портфелем) → **лідерство потребує підтвердження або переназначення ⚖️ перед подачею** |
+| **Академічний лідер** | **СЄУ (Аблязова Н.)** — координація/консорціум. ⚠️ Тема заявки (ZK-proofs на STM32) технічно ближча до ФОТІУС (Порубльов/Ярмілко) — при підготовці подачі назвати технічного co-PI ⚖️ |
 
 **Тема заявки:** _"Trustless D-MRV: IoTeX W3bstream ZK-proofs for biological homeostasis verification on STM32WLE5JC edge devices"_ — пов'язано з `IotexVerificationWorker`, `Iotex::W3bstreamVerificationService` та [`05_02`](05_02_Proof_of_Growth_Pipeline).
 
