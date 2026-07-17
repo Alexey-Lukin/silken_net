@@ -146,6 +146,15 @@ jobs:
         # FW.7 device↔server parity.
         run: ruby scripts/governance_key_sync.rb
 
+      - name: Governance-bounds sync (GOV.3 — db/seeds.rb ⟷ PARAMETER_MAP)
+        # Pure Ruby, no Rails — sibling of GOV.2 on the OTHER axis of the same
+        # worker mirror: the bounds/value_type/category the 9 governance-synced
+        # keys write must match their db/seeds.rb defaults (canon 05_06 §7
+        # "One-Home меж = PARAMETER_MAP ↔ db/seeds.rb"). Directional — every
+        # PARAMETER_MAP key needs a seed with identical config. Closes the E.64
+        # drift review caught by hand (stress floor 0.5 seed vs 0.65 map).
+        run: ruby scripts/governance_bounds_sync.rb
+
       - name: Ruby-version parity across дзеркала (OPS.13)
         # Pure Ruby, no Rails — .ruby-version = SSOT; Gemfile hard-pin / .rvmrc /
         # Dockerfile FROM-tag / CLAUDE·AGENTS·copilot / 06_01 Docker-stage мусять
