@@ -138,6 +138,14 @@ jobs:
         # The Cross-cluster option survived its own retirement 37 days here.
         run: ruby scripts/field_canon_sync.rb
 
+      - name: Governance-key sync (GOV.2 — ProtocolParameters.sol ⟷ ParameterSyncWorker)
+        # Pure Ruby, no Rails — the on-chain↔backend bridge rests entirely on
+        # keccak256(param_key) string equality. Economic and Lorenz sets are
+        # compared SEPARATELY: a Lorenz key MOVED into PARAMETER_MAP leaves the
+        # union unchanged, and that move hands governance the lever to break
+        # FW.7 device↔server parity.
+        run: ruby scripts/governance_key_sync.rb
+
       - name: Ruby-version parity across дзеркала (OPS.13)
         # Pure Ruby, no Rails — .ruby-version = SSOT; Gemfile hard-pin / .rvmrc /
         # Dockerfile FROM-tag / CLAUDE·AGENTS·copilot / 06_01 Docker-stage мусять
