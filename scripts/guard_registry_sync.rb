@@ -81,7 +81,8 @@ DOCS_RAKE_LABELS = {
   "canon §-refs (numbered `NN_NN §X` not resolving to a heading)"                          => "canon §-ref resolution",
   "dangling #anchors (fragment ≠ heading slug)"                                            => "#anchor resolution",
   "stale external docs/NN_NN refs (.github / root *.md / source)"                          => "external doc-path",
-  "volatile source line-refs `*.c`/`*.h`/`*.rb` (DOC-T.15 — cite symbol/#define)"          => "source line-ref drift"
+  "volatile source line-refs `*.c`/`*.h`/`*.rb` (DOC-T.15 — cite symbol/#define)"          => "source line-ref drift",
+  "magic-marker hex ≠ BE/LE ASCII of its quoted name (DOC-T.46)"                            => "magic-marker hex"
 }.freeze
 
 # tracker.rake guard method (Tracker::Dashboard.<name>) → §3-row anchor.

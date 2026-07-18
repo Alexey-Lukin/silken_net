@@ -64,7 +64,7 @@ namespace :docs do
     statusbyte_drift = [] # hard: retired pre-FW.29 StatusByte bit-layout (6-bit `<<6`/`0x3F`/bits 7..6) — DOC-T.43
     deprecated  = []  # hard: retired SSOT term reappeared (DocsLinter::DEPRECATED_TERMS)
     label_drift = []  # hard: link label leads with a different NN_NN than its href resolves to
-    magic_drift = []  # soft: magic-marker hex ≠ BE/LE ASCII of its quoted name
+    magic_drift = []  # hard: magic-marker hex ≠ BE/LE ASCII of its quoted name (DOC-T.46 flip — deterministic byte-packing, 0 residual)
     bare_refs   = []  # hard: bare code-span `NN_NN §X` ref that should be a full link
     rate_drift  = []  # hard: tokenomics/carbon rate value re-stated outside its One-Home (05_03/07_01)
     rate_anchor = []  # hard: a rate HOME no longer matches the guard's own regex (re-price w/o updating the tripwire — DOC-T.40)
@@ -296,9 +296,11 @@ namespace :docs do
       puts "  ⚠️ §-section labels with no matching heading (#{suspect.uniq.size}) — advisory:"
       suspect.sort.uniq.first(40).each { |s| puts "    · #{s}" }
     end
-    unless magic_drift.empty?
-      puts "  ⚠️ magic-marker hex ≠ BE/LE ASCII of its name (#{magic_drift.uniq.size}) — advisory:"
-      magic_drift.sort.uniq.first(40).each { |s| puts "    · #{s}" }
+    if magic_drift.empty?
+      puts "  magic-marker:   every 4-byte magic literal = BE/LE ASCII of its quoted name ✓"
+    else
+      puts "  MAGIC-MARKER HEX DRIFT (#{magic_drift.uniq.size}) — literal ≠ BE/LE packing of its quoted name (DOC-T.46):"
+      magic_drift.sort.uniq.each { |s| puts "    ✗ #{s}" }
     end
     if src_line_refs.empty?
       puts "  source line-refs: no volatile `*.c`/`*.h`/`*.rb` in docs/ + .github/ (cite symbol/#define) ✓"
@@ -524,6 +526,7 @@ namespace :docs do
     failed << "dangling #anchors (fragment ≠ heading slug)" unless dangling_anchors.empty?
     failed << "stale external docs/NN_NN refs (.github / root *.md / source)" unless ext_drift.empty?
     failed << "volatile source line-refs `*.c`/`*.h`/`*.rb` (DOC-T.15 — cite symbol/#define)" unless src_line_refs.empty?
+    failed << "magic-marker hex ≠ BE/LE ASCII of its quoted name (DOC-T.46)" unless magic_drift.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
   end
 
