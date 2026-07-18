@@ -130,6 +130,7 @@ GATE per-phase docs:check_refs + tracker:check + zero-loss set-diff + wiki dry-r
 - [ ] bin/rails docs:toc                  → run if headings changed, then re-check green
 - [ ] ruby scripts/model_doc_sync.rb      → green (if 04_01/04_02 or app/models touched)
 - [ ] ruby scripts/guard_registry_sync.rb → green (if a guard / 00_06 §3 / docs.yml touched)
+- [ ] ruby scripts/workflow_gate_perimeter.rb → green (if .github/workflows/** touched — CI gate-perimeter, OPS.14: every PR-workflow classified required/advisory-by-design/flip_pending)
 - [ ] ruby scripts/field_canon_sync.rb    → green (if github_bootstrap.rb / 00_05 §1.1 / labels.yml touched)
 - [ ] ruby scripts/governance_key_sync.rb / governance_bounds_sync.rb → green (if contracts/** · app/** · db/seeds.rb touched — GOV.2/GOV.3 param parity)
 - [ ] ruby scripts/code_tracker_id_check.rb → green (if code cites a tracker-ID, or 00_07 IDs moved)
