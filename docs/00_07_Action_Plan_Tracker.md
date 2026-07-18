@@ -86,6 +86,12 @@
 
 > Process-automation, Projects-V2/IaC та SSOT-tooling — канон `00_04`/`00_05`. P0-гейти — у 🚦 Critical Path.
 
+#### OPS.15 — solidity_audit money-path → required
+- **P0** · 🤖+👤 · 🟡 · → [`00_05 §2.4`](00_05_GitHub_Projects_and_IaC_Automation)
+- **Стан:** Money-path контракти (SCC/SFC/Governor/Timelock/slashing) під Slither/Aderyn/Halmos/Medusa/coverage — job-зелені, але `solidity_audit.yml` поза branch-protection required-checks → merge-advisory (попри canon «all gating» — OPS.17). Перевірено `gh api`: required = лише `CI passed`+`Docs passed`. `solidity-ok` always-run aggregate будується (worktree, дзеркало `docs-ok`); PUT у required — 👤 після короткого bake-in (Halmos символьний/Medusa fuzz несуть timeout/flake).
+- [ ] 🤖 `solidity-ok` aggregate (внутрішній `changes`-job + per-job `if` + `if:always` fail-on)
+- [ ] 👤 додати `Solidity passed` у branch-protection required-checks (після bake-in)
+
 #### OPS.1 — TRL Auto-Advancement GitHub Action
 - **P1** · 🤖+👤 · 🟡 · → [`00_05 §2.2`](00_05_GitHub_Projects_and_IaC_Automation)
 - **Стан:** Машинна половина **ПОВНА** (2026-07-16): `trl_sync.yml` = GraphQL Projects v2 resolve→mutate + semester-stamp + `permissions: {}` + harden-runner + **TRL≥5 label-gate** (OPS.9: без `architect-approved` `Current TRL` НЕ рухається; warning у run-лозі) + `architect-approved` заведено в `.github/labels.yml` (Labels-as-IaC синкає сам). **Присуд ⚖️ 2026-07-16:** канон-визначення гейта звужено до реального label-gate + warning ([`00_05 §2.2`](00_05_GitHub_Projects_and_IaC_Automation)/[`§5`](00_05_GitHub_Projects_and_IaC_Automation)) — інваріант тримає **лейбл**; окреме поле `Status` було б подвійним домом лайфсайклу (`Shape Up Stage`, [`00_05 §1.1`](00_05_GitHub_Projects_and_IaC_Automation)), а `createComment` без другого maintainer'а — ритуал (і ламав би `permissions: {}` на `issues: write`). `PROJECT_OWNER`/`PROJECT_NUMBER` = дефолти `bin/bootstrap_github.sh`, не блокують. Workflow інертний до `PROJECT_PAT` — лишилась чисто 👤-половина.
@@ -98,6 +104,12 @@
 - [ ] 🤖 label-existence guard: ключі `labeler.yml` ⊆ `.github/labels.yml` (ловить phantom-label клас `module:06-infra`; дешевий сусід `field_canon_sync`) — ідея §00-close, з пам'яті 2026-07-16
 - [ ] 🔗 перший betting cycle → UNI.1/UNI.14 (gated-at-home, прецедент FW.42; eventual-WHO лишається тут)
 
+#### OPS.14 — CI gate-perimeter meta-guard
+- **P1** · 🤖 · 🟡 · → [`00_05 §2.1`](00_05_GitHub_Projects_and_IaC_Automation)
+- **Стан:** `scripts/workflow_gate_perimeter.rb` звіряє КОЖЕН `pull_request`-triggered workflow проти курованого periметр-SSOT (required-via-`if:always`-aggregate / advisory-by-design+причина / flip_pending→OPS.15/16). Мотив = DOC-T.45-клас на рівні CI-периметра: `main` вимагає лише `CI passed`+`Docs passed`, тож новий детермінований PR-гейт може мовчки народитись merge-advisory (як solidity money-path). HARD: некласифікований PR-workflow · required-без-aggregate · dead-entry. Advisory: flip_pending count (спадає з кожним flip). Будується (worktree-агент).
+- [ ] 🤖 скрипт + spec (mutation-verified) + wire `docs.yml` + §3-рядок + `guard_registry` + канон `06_07 §2`
+- [ ] 🤖 (опц.) `--live` gh-api звірка required-labels ⊆ branch-protection (local/manual, не CI)
+
 #### OPS.4 — GitHub Projects V2: семестрова синхронізація з ChNU/ChDTU
 - **P2** · 👤 · 🟢 · → [`00_04 §6`](00_04_Shape_Up_Operations_and_RnD_Clusters)
 - **Стан:** Host-код готовий і **інертний**: `trl_sync.yml` рахує семестр із `closed_at` (UTC) і стемпить `Academic Semester` (graceful no-op, якщо поля нема) — але весь workflow мовчить до `PROJECT_PAT` (гейт → OPS.1), а саме поле з'являється на дошці лише bootstrap-прогоном (OPS.6). Канон календаря — [`00_04 §6`](00_04_Shape_Up_Operations_and_RnD_Clusters) (мапінг Fall/Spring [`§6.2`](00_04_Shape_Up_Operations_and_RnD_Clusters); TRL↔семестр + 15.VI hard-deadline [`§6.3`](00_04_Shape_Up_Operations_and_RnD_Clusters)); схема поля — [`00_05 §1.1`](00_05_GitHub_Projects_and_IaC_Automation). «Створити field» руками не треба: `GithubBootstrap::FIELDS` уже несе `Academic Semester` — це той самий OPS.6-прогін, не окрема робота.
@@ -108,6 +120,17 @@
 - **P2** · 🤖+👤 · 🟢 · → `00_05 §1.2/§6`
 - **Стан:** Машинна частина зацементована й **вирівняна з каноном** (2026-07-16, mutation-verified ×4): `lib/github_bootstrap.rb` (`FIELDS` = код-SSOT схеми, idempotent GraphQL diff read→create-missing, rake `github:bootstrap`) + спека, що **ЧИТАЄ канон** (парсить §1.1 — перший прецедент у репо), + durable-гейт `field_canon_sync` (HARD `docs.yml`, row-scoped §1.1⟷FIELDS + Module⟷labels.yml-дев'ятка + Semester/Cycle-префікс — [`00_06 §3`](00_06_SSOT_Documentation_Standard)); чинні значення опцій = самі `00_05 §1.1` + `.github/labels.yml` (деталь вирівнювання — git). Історія сліпої зони: `CLUSTER_OPTIONS` ніс скасований `Cross-cluster` 37 днів (killing-коміт `352b661e`), спека дрейф локала, а схемою володів заархівований OPS.5 — тихе повернення класу тепер неможливе. **Скрипт-обгортку полагоджено 2026-07-16b:** `exec`-хвіст з'їдав крок 4 — `SHAPING_STUB` тепер створює idempotent stub (канон §6 увесь виконуваний), а крок 1 ловить і uncommitted, і committed-but-unpushed (обидва інертні для push-тригерного `labels_sync.yml`). ⚠️ Односторонні двері — властивість, не баг: `sync_project_fields` дифить лише за ІМЕНЕМ поля, тож зміна опцій existing-поля НЕ оновить живу дошку (ручна UI-операція). Канон `00_05 §1.2/§6`.
 - [ ] 👤 запустити `bin/bootstrap_github.sh` проти живого Projects V2 при setup/fork; потребує `gh auth --scopes project,repo` (поточний токен project-скоупу не має)
+
+#### OPS.16 — cad/ml/in_silico/iac smokes → required
+- **P2** · 🤖+👤 · 🟡 · → [`00_05 §2.1`](00_05_GitHub_Projects_and_IaC_Automation)
+- **Стан:** Детерміновані PR-гейти поза required: `cad_smoke` (logic — CEM/SDF-math), `ml_smoke` (log-mel parity), `in_silico_smoke` (`lock_sync`/`cache_doc_sync` — env+numeric drift), `iac_scan` (Trivy IaC-misconfig). Aggregates будуються (worktree); `iac` Trivy exit-code→`1` (baseline нуль open findings). `cad render`-job (headless SIGSEGV) лишається advisory-by-design (`continue-on-error`). `in_silico smoke` (важкий conda/OpenMM) — окреме рішення про merge-path.
+- [ ] 🤖 aggregates `cad-ok`/`ml-ok`/`in-silico-ok`/`iac-ok` + `iac` Trivy `exit-code:'1'`
+- [ ] 👤 додати відповідні checks у branch-protection (`in_silico smoke` heavy — judgment)
+
+#### OPS.17 — canon «all gating CI» overclaim → job-vs-merge precision
+- **P2** · 🤖 · 🟡 · → [`00_05 §2.1`](00_05_GitHub_Projects_and_IaC_Automation)
+- **Стан:** `SECURITY_ASSURANCE_CASE §Verification` (Slither/Aderyn/Halmos/Medusa «all gating in CI») + `CLAUDE §8` («усі gating (fail-on)») + `00_05` overclaim-ять merge-enforcement: правда на рівні job-exit, оманливо про required-checks (money-path поза branch-protection доки OPS.15). Той самий DOC-T.41-клас, half-fixed — MISRA виправлено на сусідньому реченні, money-path-половину ні. Правиться (worktree): «gating» = job-level fail-on, merge-required лише через `ci-ok`/`docs-ok`.
+- [ ] 🤖 уточнити 3 доки (assurance-case чесний про job-vs-merge enforcement)
 
 #### OPS.7 — 00_07 → Projects V2 draft-issues sync (tracker-as-tasks IaC)
 - **P3** · 🤖 · ⚪ · → `00_05 §1.2`
@@ -122,6 +145,13 @@
 - [ ] 👤 (опц.) `SCORECARD_TOKEN` — fine-grained read-only PAT: вмикає Branch-Protection/Webhooks-перевірки Scorecard, які `GITHUB_TOKEN` не читає ([`06_04 §1.3`](06_04_Secrets_Checklist))
 - [ ] 👤 (опц.) secret-scanning validity-checks + non-provider patterns — GitHub-side toggles, які [`00_05 §2.7`](00_05_GitHub_Projects_and_IaC_Automation) числить за OPS.10, але ніде не описує: перед вмиканням дати їм рядок у §2.7, інакше дім де-факто тут (DRY)
 - [ ] 🤖 [gap-pass §06] Trivy CVE-scan побудованого образу (проти вже-генерованого SBOM `mirror-ghcr.yml`) → SARIF у Security-tab (дзеркало Slither/Aderyn/Scorecard); образ публічний на GHCR для недовірених Akash-провайдерів
+
+#### OPS.18 — CI config-cleanup: dead profile · no-op required · lock-asymmetry
+- **P3** · 🤖 · 🟡 · → [`00_05 §2.1`](00_05_GitHub_Projects_and_IaC_Automation)
+- **Стан:** Три config-дрейфи (audit-знахідки). (1) `contracts/foundry.toml [profile.ci]` мертвий — ніхто не ставить `FOUNDRY_PROFILE=ci`, CI бігає `default` (fuzz 512, суворіше за задум) → remove-or-wire. (2) `firmware_ram_budget` job = required-check, що завжди `exit 0` (no ELF → skip); реальний RAM-гейт живе в `firmware_arm_build --hal-objects` (false-confidence required). (3) `tools/ml` без conda-lock/`lock_sync`-гейта (асиметрія з `in_silico`, що має).
+- [ ] 🤖 foundry `[profile.ci]` remove-or-wire (з доказом, що не референсований)
+- [ ] 🤖 `firmware_ram_budget` no-op → merge в `arm_build` або справжній ELF-гейт
+- [ ] 🤖 `tools/ml` conda-lock + `lock_sync` gate (дзеркало `in_silico`)
 
 #### ARCH.1 — Fractal topology — L2 Conductor nodes
 - **P3** · 🤖+⚖️ · 🌿 · → [`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap), [`00_08 §2.2`](00_08_Beyond_TRL9_Planetary_Roadmap), [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA)
