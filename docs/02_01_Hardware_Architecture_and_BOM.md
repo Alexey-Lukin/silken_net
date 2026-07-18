@@ -116,7 +116,7 @@ Supercapacitor 0.47 F  ──── (енергетичний буфер: 4.14 �
 STM32WLE5JC
   ├──► TinyML Inference (~200 мс, 8 мДж — консерв. envelope; landed forward-pass ≪)
   ├──► mruby Lorenz (250 ітерацій, float32/64)
-  ├──► AES-128 Encrypt (21-байтовий пакет, post-ARCH.42 Variant B)
+  ├──► AES-128 Encrypt (16-байтовий блок ECB, post-ARCH.42 Variant B)
   └──► SX1262 LoRa TX (+14 dBm SF9, ~165 мс, ~22 мДж)
        (zaмість +22 dBm для позитивного енергобалансу — `02_03 §9.6`)
             │
@@ -124,7 +124,7 @@ STM32WLE5JC
       Ceramic SMD Antenna
             │  (крізь PEEK-радом та кору дерева)
             ▼
-      LoRa Mesh → Queen Gateway
+      LoRa → Queen Gateway (star-only, FW.2 (а))
 ```
 
 ---

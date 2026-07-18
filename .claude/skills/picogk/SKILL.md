@@ -135,8 +135,8 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   so every SKU renders sheet, while canon `01_01 §5.6` says "дані схиляють до **network**". That choice
   is an un-made founder verdict (`00_07 HW.33` ⚖️), not a default to inherit: a factory STL cut today
   would ship the disfavored branch. Do NOT quietly pick a side when touching these manifests.
-  (`stepped` is a THIRD value outside the documented `sheet|network` domain — it routes to `ZonedGyroid`,
-  which never receives the `bNetwork` flag.)
+  (`stepped` is a separate, already-decided THIRD branch — implemented `ZonedGyroid`, orthogonal to the
+  open sheet-vs-network verdict; `Cem.cs` now documents all three.)
 - **Monolithic bus rod (`01_01 §1.4`, HW.34, SHIPPED)**: `bus_rod_diameter_mm` > 0 ⇒ a SOLID central
   rod core. `Zone1Anode.BuildMonolithic` = `Anode` (gyroid, ctor) **+ `BoolAdd(BusRod.voxConstruct())`**
   (solid via voxConstruct, gotcha #9 — NOT the SDF ctor). 🔑 **Porosity stays a property of the gyroid**
