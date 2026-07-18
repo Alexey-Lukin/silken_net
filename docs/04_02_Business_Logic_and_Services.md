@@ -1023,7 +1023,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Side Effects** | ActionCable broadcast до dashboard. Знаходить stakeholders організації через `.find_each(batch_size: 500)`, збирає args у масив → `Sidekiq::Client.push_bulk("class" => SingleNotificationWorker, "args" => bulk_args)` — один Redis round-trip замість N окремих `LPUSH`. |
 
 > **⚠️ Rate Limiting (Post-TRL 8):** При кластерах з 5000+ стейкхолдерів `push_bulk` створить 5000 `SingleNotificationWorker` джобів, кожен з яких робить HTTP-запит до Twilio/FCM. Це гарантовано призведе до HTTP 429 (Too Many Requests) від провайдерів. **Рішення:** Замість тисяч окремих воркерів, використовувати нативні Bulk API:
-> - **FCM:** Multicast-повідомлення — до 500 device tokens за 1 HTTP-запит (`send_multicast`)
+> - **FCM:** Multicast-повідомлення — до 500 device tokens за 1 HTTP-запит (`send_multicast` — ⚠️ legacy, вимкнено Google ~2024; будувати одразу на HTTP v1 `sendEachForMulticast`, [`00_07` ARCH.60](00_07_Action_Plan_Tracker))
 > - **Twilio:** Notify Service — до 10,000 номерів за 1 API виклик (`create_notification`)
 > - **Батчинг:** `AlertNotificationWorker` має групувати recipients по каналу (`:sms` / `:push`) та відправляти батчами по 500 (FCM) або 10,000 (Twilio), а не делегувати кожне повідомлення окремому воркеру.
 

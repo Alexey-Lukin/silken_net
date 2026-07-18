@@ -15,9 +15,12 @@
 | Домен | Скіл (авто) | Дім-canon |
 |-------|-------------|-----------|
 | STM32 firmware (Soldier/Queen, mruby, `firmware/common`) | `firmware` | `03_01`–`03_05` |
+| Factory-flashing (per-device key provisioning at manufacture, SEC.3) | `factory-flashing` | `03_06` |
 | Web3 / контракти / minting / slashing | `web3-pipeline` | `05_01`–`05_06` |
 | Telemetry / Proof-of-Growth / Sidekiq-черги | `telemetry-pipeline` | `05_02` (+§5) |
 | Frontend (Phlex / Tailwind v4 / Stimulus / Turbo) | `frontend` | `04_04` (+`04_06 §A`) |
+| Backend Web2-core (моделі · REST API v1 · auth/RBAC · non-money сервіси·воркери · MaintenanceRecord) | `backend` | `04_01`–`04_03` (+`04_06`) |
+| Codex Lore Layer (read-only наратив-шар, `codex_*`) | `codex` | `04_05` (+`04_01 §7b`) |
 | TinyML / log-mel / INT8 | `ml-engineering` | `03_03` + `tools/ml` |
 | EBFC DFT/MD in-silico | `in-silico` | `01_03` + `protocols/ebfc/in_silico` |
 | Code-as-CAD (анкер/coin/radome) | `picogk` | `01_01/01_02/02_01/02_02` + `tools/cad` |

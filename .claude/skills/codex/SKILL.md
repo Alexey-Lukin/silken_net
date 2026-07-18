@@ -34,7 +34,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 - **Discovery fail-open (ADR-CDX-7):** збій enqueue probe НЕ відкочує user-facing операцію. Presence-gated (Redis TTL 10 хв) → O(active_users), не O(all_users).
 - **Markdown-санітизація (ADR-CDX-5):** через `Codex::MarkdownRenderer` allow-list; сирий HTML ніколи в DOM.
 - **Citation allow-list (ADR-CDX-9):** `citable_type` лише через `CITABLE_CLASS_MAP` — без `constantize` з params (object-injection guard).
-- **Stimulus-мінімалізм (ADR-CDX-8):** рівно 2 контролери (`codex--reveal`, `codex--comment`); решта — Turbo Stream broadcast / нативний `data-turbo-confirm`.
+- **Stimulus-мінімалізм (ADR-CDX-8):** рівно 2 контролери (`codex--reveal`, `codex--comment`); решта — нативний `data-turbo-confirm`. ⚠️ **Broadcast-half живості (attunement-counter · live-comments · citation-pills · discovery-toast) наразі DEAD-on-arrival** — шлють сирий `ActionCable.server.broadcast` без жодного consumer'а (нема `@rails/actioncable`-pin / `app/channels/` / `subscriptions.create` у репо). Робочий патерн живості = `turbo_stream_from` + `Turbo::StreamsChannel.broadcast_*_to` (як telemetry/burn/wallet), НЕ raw broadcast. Wire-vs-descope = відкрите ⚖️ → [`00_07` UI.2](00_07_Action_Plan_Tracker).
 - **N+1:** citation-strip завжди через `Codex::Citation.bulk_for(targets)`.
 - **Партиціювання (ADR-CDX-6):** лише `codex_matches` (RANGE/місяць, write-heavy); `codex_nodes` ~10K → без партицій.
 - **bigint PK + `codex_uid` (ADR-CDX-1):** `CDX-XXX-####` — людино-читабельний, НЕ PK.

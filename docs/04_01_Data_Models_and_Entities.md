@@ -89,7 +89,7 @@
 | `blockchain_transactions` | RANGE by month | ≈ 12B рядків/рік при 1B дерев × щомісячний SCC мінтинг; composite PK `(id, created_at)` |
 | `codex_matches` | RANGE by month | Codex Battle Arena (Phase 4) — 100M+ duel-рядків очікувано на масштабі. Додано в `PartitionMaintenanceWorker.PARTITIONED_TABLES` (див. [`04_02 §11`](04_02_Business_Logic_and_Services) DOC-R.11) |
 
-Поточні партиції: для трьох core-таблиць — `y2026m01` → `y2026m06` + `_default`. Для `codex_matches` (Phase 4) — `y2026m04` → `y2026m09` (запущена пізніше) + `_default`.
+Партиції створюються rolling-window'ом (`PartitionMaintenanceWorker` — поточний + наступний місяць, щодня), тож точний перелік росте й живе у `db/structure.sql`, не тут. Три core-таблиці стартують з `y2026m01`; `codex_matches` (Phase 4) — пізніше, з `y2026m04`. Усі + `_default`.
 
 **Автоматизація:** `PartitionMaintenanceWorker` (черга `default`) щодня о 02:30 UTC гарантує існування партицій для **поточного та наступного місяця** для всіх **чотирьох** партиційованих таблиць (`telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`, `codex_matches`). Назва партиції формується за шаблоном `<table>_y<YYYY>m<MM>` (напр. `blockchain_transactions_y2026m04`). Операція ідемпотентна — `CREATE TABLE IF NOT EXISTS`. SSOT константа: `PartitionMaintenanceWorker::PARTITIONED_TABLES`. При додаванні нової RANGE-таблиці — внесіть її **і сюди (§0)**, і у `PARTITIONED_TABLES`, і у `spec/workers/partition_maintenance_worker_spec.rb` (очікуване число OK-ліній = `tables × 2 months`).
 
@@ -104,7 +104,7 @@
 
 Кожна Ruby-`uniqueness`-валідація має **дзеркальний unique-індекс** (race-вікно між SELECT і INSERT валідація не закриває): `organizations.name` + `organizations.crypto_public_address` · `clusters.name` · `tree_families.name` · `identities (provider, uid)` · `actuators (gateway_id, endpoint)` · `bio_contract_firmwares.version` · `tiny_ml_models.version` · `wallets.tree_id` · `device_calibrations.tree_id` (останні два — `has_one`: друга row = phantom; `Tree.after_create` сам створює wallet+калібровку, тож фабрики специв реюзають авто-створені через `initialize_with`).
 
-Money-інваріант застраховано CHECK-констрейнтом `wallets_balance_invariants`: `balance ≥ 0 AND locked_balance ≥ 0 AND esg_retired_balance ≥ 0 AND locked_balance ≤ balance` (семантика `Wallet#available_balance = balance − locked_balance`; прод-шляхи `lock_funds!`/`lock_and_mint!` мають guard, CHECK ловить bypass через `update_all`/SQL). `blockchain_transactions.amount` = `numeric(24,6)` (був bare `numeric`). `gateways.state` = `NOT NULL DEFAULT 0` (AASM nil-state footgun). Композитний PK партиційованих таблиць вимагає `self.primary_key = "id"` у моделі — інакше `record.id` повертає масив `[id, created_at]` (TelemetryLog / GatewayTelemetryLog / BlockchainTransaction — усі три декларують).
+Money-інваріант застраховано CHECK-констрейнтом `wallets_balance_invariants`: `balance ≥ 0 AND locked_balance ≥ 0 AND esg_retired_balance ≥ 0 AND locked_balance ≤ balance` (семантика `Wallet#available_balance = balance − locked_balance`; прод-шляхи `lock_funds!`/`lock_and_mint!` мають guard, CHECK ловить bypass через `update_all`/SQL). `blockchain_transactions.amount` = `numeric(24,6)` (був bare `numeric`). `gateways.state` = `NOT NULL DEFAULT 0` (AASM nil-state footgun). Композитний PK партиційованих таблиць вимагає `self.primary_key = "id"` у моделі — інакше `record.id` повертає масив `[id, created_at]` (TelemetryLog / GatewayTelemetryLog / BlockchainTransaction — усі три декларують). ⚠️ **`Codex::Match` — виняток-НЕ-compliant:** оголошує `self.primary_key = [:id, :created_at]` (протилежне) → `match.id` = масив, що ламає `Codex::EloRecomputeWorker` (пише масив у bigint `codex_discoveries.trigger_ref_id`); той самий ARCH.56-клас, ще не залатаний — дім відкритого → [`00_07` ARCH.56](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -872,9 +872,9 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 |------|-----|------|
 | `provider` | string | Назва провайдера |
 | `uid` | string | Унікальний ID у провайдера (unique per provider) |
-| `access_token` / `refresh_token` | string | OAuth2 токени |
+| `access_token` / `refresh_token` | string (encrypted) | OAuth2 токени — at-rest AR-encryption [SEC.22 / ARCH.57(4)] |
 | `expires_at` | datetime | Термін дії токена |
-| `auth_data` | jsonb | Повний зліпок профілю |
+| `auth_data` | text (encrypted, JSON-серіалізовано) | Повний зліпок профілю — `serialize :auth_data, coder: JSON` + `encrypts` (НЕ jsonb-колонка) [SEC.22] |
 | `primary` | boolean | Основний метод входу |
 | `locked_at` | datetime | Час блокування (Account Takeover Protection) |
 
@@ -1370,7 +1370,7 @@ Lore-шар SilkenNet — read-only бібліотека "архетипів" (�
 
 ### `Codex::Citation` — Полі-морфне Посилання
 
-**Атрибути:** `codex_node_id` (FK), `citable_type` + `citable_id` (поліморфне), `created_by_user_id`, `note`, `created_at`. Унікальний індекс `(codex_node_id, citable_type, citable_id)` запобігає дублюванню. Counter cache → `Codex::Node.citation_count`.
+**Атрибути:** `codex_node_id` (FK), `citable_type` + `citable_id` (поліморфне), `created_by_user_id`, `note`, `created_at`. Унікальний індекс `idx_codex_citations_unique_per_user` = **4 колонки** `(codex_node_id, citable_type, citable_id, created_by_user_id)`: РІЗНІ користувачі можуть цитувати той самий вузол на тій самій сутності — забороняється лише дубль від ОДНОГО користувача. Counter cache → `Codex::Node.citation_count`.
 
 **Призначення:** доменна сутність з `Codex::Citation::ALLOWED_CITABLE_TYPES` (`Tree`, `Cluster`, `AiInsight`, `EwsAlert`, `OracleVision`, `NaasContract`) може отримати "пілюлю-посилання" на Codex-запис. Phase 6 додасть `CitationPill` UI-примітив.
 

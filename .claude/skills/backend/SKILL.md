@@ -1,0 +1,65 @@
+---
+name: backend
+description: "Use when working on the silken_net Rails 'Web2 core' — data models (app/models/ + concerns), the REST API v1 controllers (app/controllers/api/v1/), auth/RBAC (Bearer + salt-bound session cookie, M2M Ed25519, Pundit policies), the non-money services/workers (app/services/, app/workers/), and the MaintenanceRecord / Evidence-Protocol domain. Knows the non-obvious gotchas — role enum prefix:true (role_admin?, NOT admin?; no 'patrol' role exists), the IDOR sibling-guard for client-supplied FKs (foreign-but-existing → 404, missing → 422), the session[:ps] password-salt stamp, M2M token = full org-admin scope (SEC.16), Idempotency-Key → 400 not 422, the webhook HMAC fail-closed pattern, exact HKDF info-strings per owner type, Gateway#online? = config_sleep_interval_s * 1.2, self.primary_key = 'id' on partitioned models, Auditable = after_update_commit + saved_change (NOT AASM after_all_transitions), the FactoryBot initialize_with reuse for Tree's auto-created wallet/calibration. Routes to the 04_01/04_02/04_03/04_06 canon + CLAUDE.md §5/§6, does not restate. NOT this skill: money-path/minting/slashing → web3-pipeline; telemetry uplink/TelemetryLog → telemetry-pipeline; Phlex/Tailwind UI → frontend; Codex lore → codex. Examples: 'add a REST endpoint', 'add a model / column / validation', 'change a role or policy check', 'why does my spec create a second wallet', 'add a maintenance action_type', 'why 404 on a foreign cluster_id', 'rotate a hardware key', 'add an audit-trail hook'."
+---
+
+# Backend (Models + Services + REST API — the Web2 core)
+
+Navigation aid + non-obvious gotchas. **SSOT = canon-доки нижче + код** — цей скіл вказує, не
+реставляє (щоб не дрейфував). Домен: моделі (`04_01`) + non-money сервіси/воркери (`04_02`) +
+REST API/auth/RBAC (`04_03`) + MaintenanceRecord. Money-path, телеметрія, UI, Codex — сусідні
+скіли (межі внизу).
+
+## SSOT Documents — Read These First
+
+| Document | What it covers |
+|----------|----------------|
+| `docs/04_01_Data_Models_and_Entities.md` | **Model-layer SSOT** — §0 Postgres-інфра (партиції), §1 Concerns (Auditable, EthAddressValidatable, HasArgon2Password, …), §2–§6 доменні моделі, §7 аудит/інтелект (AuditLog, **MaintenanceRecord**, SystemParameter), §9–§11 індекси/зв'язки/принципи БД, §12 drift-register (`db/structure.sql` = authoritative reality) |
+| `docs/04_02_Business_Logic_and_Services.md` | **Services/workers SSOT** — §1 засади (ApplicationService), §5–§8 verification/identity, NaaS, emergency, hardware+security, §11 Workers Registry (черги!), §12 call chains |
+| `docs/04_03_REST_API_v1_Reference.md` | **API SSOT** — §1 auth (Bearer / session-cookie / публічні / M2M), §3 RBAC, §4 повна таблиця ендпоінтів, §5 детальні описи, §7 headers |
+| `docs/04_06_Testing_Guide_and_Coverage.md` | RSpec-конвенції (§A) + відомі coverage-стелі (§B) |
+| `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md` | Key-model канон (двоключова модель, HKDF, FW.17 ratchet) — `HardwareKey`/`HardwareKeyService` мають дім ТУТ |
+| `CLAUDE.md §5/§6` | Load-bearing інваріанти (Sidekiq strict, KENOSIS, partition-pruning, `oracle_status_*`, `manual_review`, AES-keys-in-process, thin controllers) — тут НЕ дубльовані |
+
+## Source Files (code map)
+
+| Path | Role |
+|------|------|
+| `app/models/` + `concerns/` | AR-моделі; 7 concerns — `Auditable` [ARCH.57], `EthAddressValidatable` (shape-regex `0x`+40hex, НЕ EIP-55 checksum), `NormalizeIdentifier`, `GeoLocatable`, `Firmwareable`, `OtaChunkable`, `HasArgon2Password` |
+| `app/controllers/api/v1/` | ~30 контролерів < `BaseController` (dual-auth Bearer+cookie, CSRF-bypass лише для Bearer, `rescue_from`-драбина, `render_dashboard`/`render_auth_page` = Phlex-транспорт) |
+| `app/policies/` | Pundit; `ApplicationPolicy#admin_or_above?` (boolean-OR) — `index?`/`show?` поки `true` (deny-default = відкритий SEC.16 → `00_07`) |
+| `app/services/` (non-money) | `hardware_key_service`, `insight_generator_service`, `emergency_response_service`, `security/`, `downlink/`, `factory_flashing/`, `cryptography/` |
+| `app/workers/` (non-money) | `ecosystem_healing_worker` (critical) · `actuator_command_worker`, `key_rotation_downlink_worker`, `ota_transmission_worker` (downlink) · `*_notification_worker` (alerts) · `insight_generator_orchestrator_worker`, `audit_log_worker` (low) |
+| `db/structure.sql` + `db/migrate/` | Schema-SSOT: pre-launch = ОДНА консолідована міграція (`init_consolidated`) — зміна схеми = edit обох + `db:schema:load`, НЕ нова міграція; dump-дисципліна → CLAUDE §2 |
+
+## Gotchas Not Obvious From Docs
+
+1. **RBAC prefix** — `enum :role, {investor, forester, admin, super_admin}, prefix: true` → `role_admin?`, НЕ `admin?`; ролі «patrol» НЕ існує. Authz = boolean-OR іменованих ролей, не числовий ранг: `User#forest_commander?`/`#access_level`, Pundit `admin_or_above?`. Той самий prefix-патерн на всіх enum'ах (`status_resolved?`, `action_type_repair?`; `oracle_status_*` → CLAUDE §6).
+2. **IDOR sibling-guard** — write-ендпоінт із клієнтським FK ЗОБОВ'ЯЗАНИЙ звірити його проти `current_user.organization`: існуючий-але-чужий → 404 (`RecordNotFound`), відсутній → fall-through у модельну 422. Зразки: `ProvisioningController#register` (cluster_id), `MaintenanceRecordsController#verify_maintainable_within_organization!`. Новий ендпоінт — дзеркаль їх.
+3. **M2M-токен = повний org-admin scope** — `m2m_auth#create` видає `api_access` першого org-admin'а будь-якому Ed25519-довівшому пристрою; звуження = відкритий SEC.16 (`00_07`). Replay-guard = Redis `SET NX` на `SHA256(sig)`, TTL 600 c, + SolidCache-fallback при Redis-down.
+4. **`session[:ps]` salt-stamp (SEC.16)** — `establish_session` (ЄДИНА точка логіну, обидва шляхи) ставить `password_salt.last(10)`; `authenticate_user!` звіряє; `change_password` оновлює ЛИШЕ ініціатора (guard `session[:user_id]==current_user.id`) + `destroy_all` інших Session. Крадений cookie гасне на password-change.
+5. **Webhook-HMAC fail-closed патерн** (`oracle_callbacks` / `helium_sos`) — skip auth → HMAC-SHA256 над **raw body** (`X-Chainlink-Signature` / `X-Helium-Signature`); секрет відсутній у `production?` АБО `WEB3_STRICT_MODE=="true"` → **raise SecurityError** (dev/test = warn-bypass). Новий inbound-webhook — клонуй цей патерн, не Bearer.
+6. **Idempotency-Key** на `POST actuators/:id/execute`: JSON без ключа → **400** (НЕ 422); pending-команда → 409; cache-write їде `rack.response_finished` (Puma 7+) — вужча лямбда-сигнатура мовчки скипає запис.
+7. **DID не приходить від клієнта** — provisioning деривує його з 24-hex silicon UID (murmur3-fmix32, FW.54). `Tree::DID_FORMAT` = `SNET-XXXXXXXX`, Gateway = `SNET-Q-XXXXXXXX`; `tree.peaq_did` = зовнішній `did:peaq:0x…` (пише `PeaqRegistrationWorker`, модельної format-валідації НЕМА).
+8. **HardwareKey: довжина за ТИПОМ ВЛАСНИКА** (`detect_owner_kind` — колонки device_type нема): 32 hex = AES-128 Tree-LoRa · 64 hex = AES-256 Gateway-CoAP. HKDF-SHA256 info-strings (точні): `"silken-aes-128-lora-key"` · `"silken-aes-256-device-key"` · `"silken-aes-128-broadcast-key"` (KEYB) · `"silken-ed25519-iotex-v1"`; без `PROVISIONING_MASTER_KEY` → `SecurityError` (fail-closed).
+9. **Dual-Key Grace** — `previous_aes_key_hex` живе до першого uplink'а на новому ключі (`clear_grace_period!`); `rotate!` при живому grace → `RotationPendingError`. Tree-ротація = FW.17 ratchet за ENV `FW17_RATCHET_DOWNLINK_ENABLED` (default OFF); Gateway = random + ФІЗИЧНИЙ re-provision (key-downlink'а не існує).
+10. **`Gateway#online?` динамічний** — `last_seen_at >= (config_sleep_interval_s * 1.2).seconds.ago`, жодного фіксованого порогу; SQL-двійник `scope :online` через `make_interval`. Міняєш логіку — міняй обидва.
+11. **Партиційні моделі декларують `self.primary_key = "id"`** (`TelemetryLog`/`GatewayTelemetryLog`/`BlockchainTransaction`) — інакше `.id` повертає масив. `Codex::Match` робить НАВПАКИ (`[:id, :created_at]`), і його коментар хибно зве це «project standard» — не копіюй звідти (`00_07` ARCH.56 residual).
+12. **Auditable [ARCH.57]** — хук = `after_update_commit if: :saved_change_to_X?`, НІКОЛИ AASM `after_all_transitions` (файрить ДО персистенції + сліпий до raw `update!` — обґрунтування `04_01 §7`). 6 wire-sites (User-role, NaasContract, ActuatorCommand, SystemParameter, HardwareKeyService, BlockchainBurningService). Без актора → WARN-skip (дію не валимо); `archive: false` default (chain-only).
+13. **FactoryBot reuse-ідіома** — `Tree.after_create` авто-створює wallet + device_calibration (has_one) → фабрики реюзають через `initialize_with`; фабрика, що create-ить другий запис, б'ється об unique-index (ARCH.56).
+14. **MaintenanceRecord Evidence Protocol** — фото обов'язкові ЛИШЕ для `repair`+`installation` (`skip_photo_validation: true` = системні записи); `biomass_extraction` вимагає `biomass_yield_kg > 0` → `EcosystemHealingWorker` (**async** `after_create_commit`, черга critical, НЕ inline) → `declare_deceased!` + `PuroEarthPassportWorker` (після commit; необоротний on-chain CORC). Статус дерева removed/deceased далі тригерить слешинг (money → `web3-pipeline`). Мутації запису = автор-або-admin. Ranger-економіка → `00_07` E.20 (deferred Phase 2).
+
+## Common Tasks
+
+- **Add a REST endpoint**: контролер < `BaseController`, thin (params + authz + render — CLAUDE §6); клієнтський FK → IDOR-guard (#2); Blueprint-серіалізатор; spec per `04_06 §A`; рядок у таблицю `04_03 §4`.
+- **Add a model / column**: дім `04_01`; pre-launch схема = `structure.sql` + консолідована міграція (НЕ нова migration); uniqueness-валідація → дзеркальний unique-index (ARCH.56); enum → `prefix`; привілейована мутація → Auditable-хук (#12). Гейт: `ruby scripts/model_doc_sync.rb`.
+- **Add a service / worker**: `app/services/<domain>/` або `app/workers/`; чергу обґрунтуй проти CLAUDE §5 (strict-priority!); реєструй у `04_02 §11`.
+- **Local-verify**: `bin/rubocop -a` → `bin/rspec` (full перед push) → `ruby scripts/model_doc_sync.rb` при touch models/services/workers.
+
+## Keep Bounded — route, don't restate
+
+- **money-path / minting / slashing / Wallet-баланси / BlockchainTransaction-AASM** → скіл `web3-pipeline` (`04_02 §4/§9/§10`, `05_0x`); `EMISSION_THRESHOLD` (TokenomicsEvaluatorWorker + SystemParameter override) — теж там.
+- **telemetry uplink→mint / TelemetryLog / KENOSIS / черги / partition-pruning** → скіл `telemetry-pipeline` (CLAUDE §5/§6, `05_02`).
+- **Phlex / Tailwind / Stimulus / Turbo** → скіл `frontend` (`04_04`); `render_dashboard` тут — лише транспорт.
+- **Codex lore layer** → скіл `codex` (`04_05`).
+- Інваріанти CLAUDE §5/§6 — дім ТАМ; цей скіл їх не дублює.

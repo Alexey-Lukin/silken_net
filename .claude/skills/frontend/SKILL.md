@@ -39,11 +39,13 @@ summary. The view layer is **Phlex** (Ruby components, NOT ERB) on Rails 8.1, st
 6. **Specs default to English** — a Ukrainian / LV / LT assertion needs an explicit `I18n.with_locale(:uk) { ... }`.
 7. **Turbo `broadcast_*` runs in MODEL context** — a `broadcast_*` inside a model callback renders the component outside the request → **no `current_user` / session**. Pass everything the component needs explicitly; lean on the delegated pure helpers, not view helpers.
 8. **`tokens()` is the class-builder, not string interpolation** — `tokens("base btn", active?: "ring-2")` merges via TailwindMerge so a later conflicting utility wins; hand-joined class strings don't get that conflict resolution.
+9. **For live updates use `turbo_stream_from` + `Turbo::StreamsChannel.broadcast_*_to` (§8), NOT raw `ActionCable.server.broadcast`** — there is **no** consumer wiring repo-wide (`@rails/actioncable` isn't importmap-pinned, `app/channels/` is empty, no `subscriptions.create`). Raw `ActionCable.server.broadcast` broadcasts into the void; it has already shipped dead **4×** (Codex live-features, telemetry raw-hex) and never reached a browser. The working pattern is the Turbo helper — see telemetry/burn/wallet for the live examples. (UI.2 tracks the Codex descope/wire decision.)
 
 ## Common Tasks
 
 - **Add a Phlex component**: `app/views/components/<domain>/<name>.rb` (`< ApplicationComponent`, `def view_template`); a reusable primitive → `app/views/shared/ui/`. **Tokens only** if shared; accept **pre-loaded data** (no DB in `initialize`); i18n via `t('.key')`. Spec per `04_06 §A`.
 - **Add a design token**: edit the `@theme` block in `app/assets/tailwind/application.css` (a `gaia-*`/`status-*`/`token-*` colour or a font-size); a **font-size ALSO → `CUSTOM_TEXT_SCALE`**; document the usage rule in `04_04 §3`.
+- **Token-migration (UI.1 buildable-backlog)**: `bin/rails gaia:lint_tokens` reports raw-Tailwind hits in shared components; `bin/migrate-tailwind-tokens` = the safe Ruby codemod (30-entry MAPPING + PROTECTED list + dry-run) — replacement is NOT visually-neutral, so QA both themes after a run. Migrate-to-green THEN wire the CI gate. Plan → `00_07 UI.1`.
 - **Add a Stimulus controller**: `app/javascript/controllers/<name>_controller.js` (auto-registered); wire via `data-controller` / `data-action` in the Phlex component.
 - **A Turbo broadcast**: render the component with explicit data (no `current_user`, gotcha #7); use the delegated pure helpers.
 - **Local-verify**: `bin/rubocop -a app/views app/javascript` ([[feedback_local_verify]]) → `COVERAGE=0 bin/rspec spec/views` (Phlex specs — wrap non-English assertions in `I18n.with_locale`) → eyeball the dark theme + `focus-visible:` rings.

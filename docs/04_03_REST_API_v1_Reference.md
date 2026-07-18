@@ -103,6 +103,7 @@ POST /api/v1/auth/m2m_token
 - Бекенд перевіряє підпис та timestamp (±5 хвилин) перед видачею токена.
 - **Replay-захист (nonce):** SHA256-дайджест підпису зберігається в Redis із TTL 10 хв (`SET NX`). Повторне використання тієї ж `signature` повертає `401 Unauthorized` із повідомленням `"Replay attack detected"`. **[S6.1]** При Redis outage: fallback на Solid Cache (DB) — шлюзи не отримують `503`.
 - Токен дійсний 30 днів. Для оновлення: `POST /api/v1/auth/m2m_token/refresh` з поточним Bearer token (§5.15.1), або повторний `POST /api/v1/auth/m2m_token` з Ed25519-підписом.
+- ⚠️ **[SEC.16] Scope-каveat:** виданий `api_access`-токен = ПОВНИЙ org-admin scope (`organization.users.role_admin.first`), нерозрізнимий від людського admin-Bearer. Тобто compromised-шлюз = повний admin-API org-и. Звуження до `:m2m_access` purpose + endpoint-allowlist трекається → [`00_07` SEC.16](00_07_Action_Plan_Tracker).
 - Детальний опис: §5.15.
 
 ### 1.5 Тестове Покриття Безпеки

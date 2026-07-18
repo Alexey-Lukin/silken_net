@@ -9,11 +9,12 @@ description: "Use when working on the silken_net telemetry / Proof-of-Growth pip
 
 | Document | What it covers |
 |----------|---------------|
-| `CLAUDE.md §5` | Proof of Growth pipeline — full A→D flow |
-| `CLAUDE.md §6` | Sidekiq queue priority (strict, not weighted) |
-| `docs/05_01_Tokenomics_Proof_of_Growth.md` | Growth points, SCC minting, slashing |
-| `docs/05_02_Pipeline_Sequence.md` | Exact worker ordering with queue assignments |
-| `docs/03_05_Security_Architecture.md §3` | AES decrypt chain, key management |
+| `CLAUDE.md §1` | Proof of Growth pipeline — full A→D flow (sense→…→mint SCC) |
+| `CLAUDE.md §5` | Sidekiq strict-priority queues + Lorenz/StatusByte + AES invariants |
+| `CLAUDE.md §6` | Telemetry cross-domain gotchas (oracle_status prefix · KENOSIS · partitions) |
+| `docs/05_02_Proof_of_Growth_Pipeline.md` | Exact worker ordering with queue assignments |
+| `docs/05_03_Tokenomics_SCC_and_SFC.md` | Growth points, SCC minting (slashing → `05_05`) |
+| `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md §3` | AES decrypt chain, key management |
 
 ## Gotchas Not Obvious From Docs
 
@@ -32,4 +33,4 @@ description: "Use when working on the silken_net telemetry / Proof-of-Growth pip
 ## Common Tasks
 
 - **Add telemetry field**: firmware pack → `TelemetryUnpackerService` unpack → DB migration → Phlex dashboard component → update `docs/05_02`
-- **Change minting logic**: `BlockchainMintingService` → the 3-guard chain (IoTeX + oracle_status + Hadron) protects PATH 1 only (latent — ARCH.53: dispatch = local marker, DON-callback unwired); the live PATH 2 tokenomics mint is optimistic (KYC-only guard; L0-custodial + ex-post clawback) → update `docs/05_01`/`05_02`
+- **Change minting logic**: `BlockchainMintingService` → the **2-guard oracle chain (IoTeX + oracle_status)** protects PATH 1 only (latent — ARCH.53: dispatch = local marker, DON-callback unwired); **KYC (Hadron) guards ALL paths and is the sole PATH-2 perimeter** (live PATH 2 mint = optimistic, KYC-only; L0-custodial + ex-post clawback). Service-home = `04_02 §4`; tokenomics course → `05_03` (see `web3-pipeline` skill)

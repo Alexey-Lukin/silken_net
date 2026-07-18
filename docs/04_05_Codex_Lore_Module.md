@@ -79,8 +79,11 @@ Codex перетворює операційний стек телеметрії 
 
 Таблиці `codex_*` використовують `bigserial` PK (консистентно з рештою моноліту;
 `uuid` зарезервований для зовнішніх ідентифікаторів типу `idempotency_token`).
-Людино-читабельний ідентифікатор — `codex_uid` (`CDX-XXX-####`), обчислюється з
-`(realm_short_code, slug_hash)`; це *не* PK.
+Людино-читабельний ідентифікатор — `codex_uid` (`CDX-{ECO|TRE|PRT|MYT}-####`,
+`Codex::Node::CODEX_UID_FORMAT`); це *не* PK. Значення виписане вручну в seed-YAML
+(послідовний лічильник за realm-префіксом), `NodeImportService` лише пропускає його
+through — жодної hash-функції з `realm_short_code` не існує (`Codex::Realm` не має
+колонки `short_code`).
 
 ### ADR-CDX-2 — Без STI, Realm'и — це рядки таблиці
 
@@ -163,7 +166,8 @@ Codex-UI тримає рівно **два** Stimulus-контролери, ко�
 
 `Codex::Citation#citable_type` НЕ резолвиться вільним `constantize` з params — лише
 через явний `Codex::CitationsController::CITABLE_CLASS_MAP` allow-list
-(Tree / Cluster / Alert / Wallet / …). Тип поза мапою → 422, ніколи не торкається
+(джерело істини = `Codex::Citation::ALLOWED_CITABLE_TYPES`: Tree / Cluster / AiInsight /
+EwsAlert / OracleVision / NaasContract). Тип поза мапою → 422, ніколи не торкається
 ORM. Це закриває object-injection / arbitrary-class-lookup вектор (Brakeman-clean)
 і робить набір citable-моделей **свідомим** рішенням, а не наслідком user-input.
 

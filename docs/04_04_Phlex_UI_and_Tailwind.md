@@ -379,8 +379,11 @@ end
 
 **Глобальний `prefers-reduced-motion`** (WCAG 2.3.3) — у `@layer base`:
 усі `animation-duration` та `transition-duration` примусово зводяться до 0.01ms,
-коли OS повідомляє про reduced-motion. Сторінкам нічого додавати не треба —
-правило діє автоматично.
+коли OS повідомляє про reduced-motion. Для CSS-анімації сторінкам нічого додавати
+не треба — правило діє автоматично. ⚠️ **Виняток — canvas/`requestAnimationFrame`:**
+CSS-гейт глушить лише `*-duration`, НЕ JS rAF-цикл, тож JS-контролери руху
+(`matrix-rain`, `reveal`, `codex--reveal`) мусять САМІ перевіряти
+`matchMedia("(prefers-reduced-motion: reduce)")` у `connect()` і виходити (реалізовано).
 
 **`@utility animate-fade-in`** — keyframe `gaia-fade-in` (translateY 4px → 0 +
 opacity 0 → 1) тривалістю `--motion-base`. Використовуйте для entrance-анімацій
