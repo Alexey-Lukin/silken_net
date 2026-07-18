@@ -7,16 +7,18 @@ concurrency:
 permissions:
   contents: read
 
-# Path-filtered so the conda env install only triggers on PRs that touch the ML
-# stack. Everything else uses the lighter `ci.yml` firmware job (which checks the
-# committed tables with pure stdlib — no conda). Pattern mirrors
-# `in_silico_smoke.yml`. This job is where the HEAVY librosa ≡ stdlib parity lives.
+# The conda env install is heavy, so a `changes` job (dorny/paths-filter) gates the
+# `smoke` job to PRs that actually touch the ML stack. Everything else uses the
+# lighter `ci.yml` firmware job (which checks the committed tables with pure
+# stdlib — no conda). Pattern mirrors `in_silico_smoke.yml`. This job is where the
+# HEAVY librosa ≡ stdlib parity lives.
+#
+# Runs on every PR (no pull_request paths-filter): the always-on `ml-ok` aggregate
+# emits a status on every PR — that's what lets it become a required branch-
+# protection check without hanging unrelated PRs ("waiting for status"). Same
+# shape as docs.yml's docs-ok / ci.yml's ci-ok.
 on:
   pull_request:
-    paths:
-      - 'tools/ml/**'
-      - 'firmware/common/logmel_*.h'
-      - '.github/workflows/ml_smoke.yml'
   push:
     branches: [ main ]
     paths:
@@ -24,7 +26,31 @@ on:
       - 'firmware/common/logmel_*.h'
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      ml: ${{ steps.filter.outputs.ml }}
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: Detect ML changes
+        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
+        id: filter
+        with:
+          filters: |
+            ml:
+              - 'tools/ml/**'
+              - 'firmware/common/logmel_*.h'
+              - '.github/workflows/ml_smoke.yml'
+
   smoke:
+    needs: changes
+    if: ${{ needs.changes.outputs.ml == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -58,3 +84,25 @@ jobs:
       - name: Firmware tables match the contract (canonical regen)
         shell: bash -el {0}
         run: python -m silken_ml.codegen.emit_c --check
+
+  ml-ok:
+    # Single aggregate status check for branch protection — mirrors docs-ok/ci-ok.
+    # Because `smoke` is path-gated (skipped on a non-ML PR), it can't be a required
+    # check on its own (a skipped required check blocks the merge forever). This job
+    # depends on it and fails ONLY if it actually ran and failed/was cancelled.
+    name: ML passed
+    if: ${{ always() }}
+    needs: [changes, smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+      - name: Fail if the ML smoke job failed or was cancelled
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: |
+          echo "::error::The ML smoke job failed or was cancelled — see the job list above."
+          exit 1
+      - name: All clear
+        run: echo "ML smoke passed (path-skipped on a non-ML change is OK)."

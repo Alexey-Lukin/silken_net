@@ -7,16 +7,16 @@ concurrency:
 permissions:
   contents: read
 
-# Path-filtered so the 3-GB conda env install only triggers on PRs that
-# actually touch the in-silico stack. Other PRs use the existing CI matrix
-# in `ci.yml`.
+# 3-GB conda env installs are heavy, so a `changes` job (dorny/paths-filter) gates
+# `lock_sync`/`smoke`/`cache_doc_sync` to PRs that actually touch the in-silico
+# stack. Other PRs use the existing CI matrix in `ci.yml`.
+#
+# Runs on every PR (no pull_request paths-filter): the always-on `in-silico-ok`
+# aggregate emits a status on every PR — that's what lets it become a required
+# branch-protection check without hanging unrelated PRs ("waiting for status").
+# Same shape as docs.yml's docs-ok / ci.yml's ci-ok.
 on:
   pull_request:
-    paths:
-      - 'tools/in_silico/**'
-      - 'docs/protocols/ebfc/in_silico/**'
-      - 'docs/01_04_CODIT_and_Xylemointegration.md'  # thermal_penetration.json cache↔doc (test_doc_cache_sync)
-      - '.github/workflows/in_silico_smoke.yml'
   push:
     branches: [ main ]
     paths:
@@ -25,7 +25,31 @@ on:
       - 'docs/01_04_CODIT_and_Xylemointegration.md'  # thermal_penetration.json cache↔doc (test_doc_cache_sync)
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      in_silico: ${{ steps.filter.outputs.in_silico }}
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: Detect in-silico changes
+        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
+        id: filter
+        with:
+          filters: |
+            in_silico:
+              - 'tools/in_silico/**'
+              - 'docs/protocols/ebfc/in_silico/**'
+              - 'docs/01_04_CODIT_and_Xylemointegration.md'
+              - '.github/workflows/in_silico_smoke.yml'
+
   lock_sync:
+    needs: changes
+    if: ${{ needs.changes.outputs.in_silico == 'true' }}
     # Fail-fast drift guard: the committed conda-lock.yml must still match
     # environment.yml. Editing env.yml without regenerating the lock would
     # otherwise silently install the OLD pinned env — `smoke` consumes the
@@ -57,7 +81,12 @@ jobs:
             || { echo "::error::conda-lock.yml is stale vs environment.yml — regenerate (see tools/in_silico/README.md) and commit"; exit 1; }
 
   smoke:
-    needs: lock_sync
+    needs: [changes, lock_sync]
+    # Path-gate AND the original success-dependency on lock_sync — an explicit `if:`
+    # replaces the implicit success() default GitHub applies from `needs:` alone, so
+    # both conditions must be spelled out or a failed lock_sync would no longer skip
+    # this expensive job.
+    if: ${{ needs.changes.outputs.in_silico == 'true' && needs.lock_sync.result == 'success' }}
     # Runs 01_smoke_test_water_box.py on the GH-hosted Ubuntu runner.
     # Forces the CPU platform — runners have no GPU drivers and we want
     # deterministic timing for the gate.
@@ -107,6 +136,8 @@ jobs:
         run: python -m pytest tools/in_silico/tests/test_cache_integrity.py -q
 
   cache_doc_sync:
+    needs: changes
+    if: ${{ needs.changes.outputs.in_silico == 'true' }}
     # Numeric-drift guard — stdlib-only (no conda env → runs fast, in parallel
     # with the heavy L2 smoke, no lock_sync dependency). test_doc_cache_sync pins
     # every headline number in SUMMARY/L3 to its OWNER cache JSON — the
@@ -127,3 +158,25 @@ jobs:
         run: python3 -m pip install --user --require-hashes -r tools/in_silico/requirements-pytest.txt
       - name: Doc↔cache numeric-drift guard
         run: python3 -m pytest tools/in_silico/tests/test_doc_cache_sync.py -q
+
+  in-silico-ok:
+    # Single aggregate status check for branch protection — mirrors docs-ok/ci-ok.
+    # A skipped `smoke` after a `lock_sync` failure is expected (see the `smoke`
+    # if-condition above) — `lock_sync`'s own failure already trips this gate, so
+    # there's no double-counting.
+    name: In-silico passed
+    if: ${{ always() }}
+    needs: [changes, lock_sync, smoke, cache_doc_sync]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+      - name: Fail if an in-silico job failed or was cancelled
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: |
+          echo "::error::An in-silico CI job failed or was cancelled — see the job list above."
+          exit 1
+      - name: All clear
+        run: echo "In-silico jobs that ran passed (path-skipped on a non-in-silico change is OK)."

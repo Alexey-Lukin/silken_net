@@ -7,17 +7,19 @@ concurrency:
 permissions:
   contents: read
 
-# Path-filtered to tools/cad. Two gates split by whether they need a render:
+# Two gates split by whether they need a render:
 #   • logic  (ubuntu) — the whole xUnit suite is PicoGK-runtime-free (CEM parse, gyroid/mate SDF math,
 #     connectivity flood-fill — no Library.Go / display). Cheap + fast → the HARD regression gate.
 #   • render (macos) — Library.Go voxelisation needs a display; first-party PicoGK = macOS/Win64. Builds
 #     the golden metrics for every CEM (verify exit-code = gate) + publishes metrics/SBOM artifacts.
 # Local-verify (`dotnet run -- verify`) stays the PRIMARY developer gate (00_07 HW.1); CI mirrors it.
+#
+# Runs on every PR (no pull_request paths-filter): a `changes` job (dorny/paths-filter) gates
+# `logic`/`render` to tools/cad-relevant diffs, and the always-on `cad-ok` aggregate emits a status
+# on every PR — that's what lets it become a required branch-protection check without hanging
+# unrelated PRs ("waiting for status"). Same shape as docs.yml's docs-ok / ci.yml's ci-ok.
 on:
   pull_request:
-    paths:
-      - 'tools/cad/**'
-      - '.github/workflows/cad_smoke.yml'
   push:
     branches: [ main ]
     paths:
@@ -25,7 +27,30 @@ on:
       - '.github/workflows/cad_smoke.yml'
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      cad: ${{ steps.filter.outputs.cad }}
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: Detect CAD changes
+        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
+        id: filter
+        with:
+          filters: |
+            cad:
+              - 'tools/cad/**'
+              - '.github/workflows/cad_smoke.yml'
+
   logic:
+    needs: changes
+    if: ${{ needs.changes.outputs.cad == 'true' }}
     name: logic
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -51,6 +76,8 @@ jobs:
         run: dotnet test tools/cad/SilkenCad.sln -c Release --no-build
 
   render:
+    needs: changes
+    if: ${{ needs.changes.outputs.cad == 'true' }}
     name: render
     runs-on: macos-14
     timeout-minutes: 30
@@ -100,3 +127,26 @@ jobs:
             tools/cad/sbom/
           if-no-files-found: warn
           retention-days: 14
+
+  cad-ok:
+    # Single aggregate status check for branch protection — mirrors docs-ok/ci-ok.
+    # `render`'s best-effort steps (headless Metal SIGSEGV, by design) already use
+    # continue-on-error: true, so a flaky verify/SBOM step there does NOT flip the
+    # `render` JOB's own result to failure — this aggregate only trips on a real
+    # `logic` or `render`-build failure, never on the known-flaky verify step.
+    name: CAD passed
+    if: ${{ always() }}
+    needs: [changes, logic, render]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+      - name: Fail if logic or the render build failed or was cancelled
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: |
+          echo "::error::A CAD CI job failed or was cancelled — see the job list above."
+          exit 1
+      - name: All clear
+        run: echo "CAD jobs that ran passed (path-skipped on a non-CAD change is OK)."

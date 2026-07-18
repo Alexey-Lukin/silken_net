@@ -8,20 +8,28 @@ name: Sec · IaC Scan
 # which plans against LIVE state and authenticates keyless via WIF).
 #
 # Findings → SARIF in the Security tab (coexists with CodeQL default-setup /
-# Scorecard / Aderyn — distinct `category`). SOFT-FAIL by design (exit-code
-# omitted → 0): a first scan surfaces low-severity hygiene notes (like Scorecard's
-# ~13), so this is a visibility report, not a blocking gate — raise to hard once
-# the baseline is triaged. Tool choice = Trivy `config` (not tfsec — aquasecurity
-# folded tfsec into Trivy; Trivy covers terraform AND Dockerfile in one pass).
+# Scorecard / Aderyn — distinct `category`). HARD gate (exit-code 1 on any
+# finding): the initial soft-fail baseline triaged to 0 open findings, so a new
+# misconfiguration now fails the build, not just the SARIF report. Tool choice =
+# Trivy `config` (not tfsec — aquasecurity folded tfsec into Trivy; Trivy covers
+# terraform AND Dockerfile in one pass).
 # Canon: IaC-scan policy = 00_05 §2.7 (SHA-pinned scan-tool), inventory = 06_07 §1.
 # Tracker: INF.22 (docs/00_07 §06).
+#
+# Runs on every PR (no pull_request paths-filter): a `changes` job (dorny/paths-filter)
+# gates `scan` to IaC-relevant diffs, and the always-on `iac-ok` aggregate emits a
+# status on every PR — that's what lets it become a required branch-protection check
+# without hanging unrelated PRs ("waiting for status"). Same shape as docs.yml's
+# docs-ok / ci.yml's ci-ok.
+#
+# `scan`'s if-condition also ORs in `github.event_name == 'workflow_dispatch'`: unlike
+# docs.yml/ci.yml, this workflow keeps a manual-dispatch trigger, and a dispatch run on
+# `main` itself diffs against its own merge-base (0 changed files) — paths-filter would
+# report the output false and silently no-op the scan. The OR makes a manual dispatch
+# always run it, same as before this path-gate conversion.
 
 on:
   pull_request:
-    paths:
-      - 'terraform/**'
-      - 'Dockerfile'
-      - '.github/workflows/iac_scan.yml'
   push:
     branches: [ main ]
     paths:
@@ -35,7 +43,31 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      iac: ${{ steps.filter.outputs.iac }}
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: Detect IaC changes
+        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
+        id: filter
+        with:
+          filters: |
+            iac:
+              - 'terraform/**'
+              - 'Dockerfile'
+              - '.github/workflows/iac_scan.yml'
+
   scan:
+    needs: changes
+    if: ${{ needs.changes.outputs.iac == 'true' || github.event_name == 'workflow_dispatch' }}
     name: Trivy IaC misconfig
     runs-on: ubuntu-latest
     permissions:
@@ -65,10 +97,29 @@ jobs:
           format: sarif
           output: trivy-iac.sarif
           skip-dirs: deploy/akash,deploy/grafana,firmware/extern
-          # exit-code omitted → 0 → soft-fail (hygiene report, not a blocking gate).
+          exit-code: '1' # HARD gate — baseline triaged to 0 open findings.
 
       - name: Upload SARIF to code-scanning
         uses: github/codeql-action/upload-sarif@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4
         with:
           sarif_file: trivy-iac.sarif
           category: trivy-iac
+
+  iac-ok:
+    # Single aggregate status check for branch protection — mirrors docs-ok/ci-ok.
+    name: IaC passed
+    if: ${{ always() }}
+    needs: [changes, scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+      - name: Fail if the Trivy IaC scan failed or was cancelled
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: |
+          echo "::error::The Trivy IaC config scan failed or was cancelled — see the job list above."
+          exit 1
+      - name: All clear
+        run: echo "IaC scan passed (path-skipped on a non-IaC change is OK)."

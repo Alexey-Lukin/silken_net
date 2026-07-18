@@ -1,5 +1,17 @@
 name: CI · Solidity
 
+# Runs on every PR (no pull_request paths-filter): a `changes` job (dorny/paths-filter)
+# gates the 5 audit jobs to contracts-relevant diffs, and the always-on `solidity-ok`
+# aggregate emits a status on every PR — that's what lets it become a required
+# branch-protection check without hanging unrelated PRs ("waiting for status").
+# Same shape as docs.yml's docs-ok / ci.yml's ci-ok.
+#
+# Every gated job also ORs in `github.event_name == 'workflow_dispatch'`: unlike
+# docs.yml/ci.yml, this workflow keeps a manual-dispatch trigger, and a dispatch run
+# on `main` itself diffs against its own merge-base (0 changed files) — paths-filter
+# would report every output false and silently no-op the whole audit. The OR makes a
+# manual dispatch always run everything, same as before this path-gate conversion.
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -10,10 +22,6 @@ permissions:
 on:
   workflow_dispatch:
   pull_request:
-    paths:
-      - 'contracts/**'
-      # Re-run when the audit workflow itself changes, so config fixes self-validate.
-      - '.github/workflows/solidity_audit.yml'
   push:
     branches: [ main ]
     paths:
@@ -21,7 +29,30 @@ on:
       - '.github/workflows/solidity_audit.yml'
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      sol: ${{ steps.filter.outputs.sol }}
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: Detect contract changes
+        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
+        id: filter
+        with:
+          filters: |
+            sol:
+              - 'contracts/**'
+              - '.github/workflows/solidity_audit.yml'
+
   foundry-tests:
+    needs: changes
+    if: ${{ needs.changes.outputs.sol == 'true' || github.event_name == 'workflow_dispatch' }}
     name: Foundry Tests & Coverage
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -119,6 +150,8 @@ jobs:
           retention-days: 14
 
   slither:
+    needs: changes
+    if: ${{ needs.changes.outputs.sol == 'true' || github.event_name == 'workflow_dispatch' }}
     name: Slither Static Analysis
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -160,6 +193,8 @@ jobs:
           fail-on: high
 
   halmos:
+    needs: changes
+    if: ${{ needs.changes.outputs.sol == 'true' || github.event_name == 'workflow_dispatch' }}
     name: Halmos Symbolic Proofs
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -201,6 +236,8 @@ jobs:
         run: halmos --function "^check_" --solver-threads 1 --loop 3 --statistics
 
   aderyn:
+    needs: changes
+    if: ${{ needs.changes.outputs.sol == 'true' || github.event_name == 'workflow_dispatch' }}
     name: Aderyn Static Analysis
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -255,6 +292,8 @@ jobs:
           category: aderyn
 
   medusa:
+    needs: changes
+    if: ${{ needs.changes.outputs.sol == 'true' || github.event_name == 'workflow_dispatch' }}
     name: Medusa Property Fuzzing
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -335,3 +374,27 @@ jobs:
             contracts/medusa-corpus-scc/coverage/
             contracts/medusa-corpus-sfc/coverage/
           retention-days: 14
+
+  solidity-ok:
+    # Single aggregate status check for branch protection — mirrors docs-ok/ci-ok.
+    # Because the 5 audit jobs above are path-gated (skipped on a non-contracts PR),
+    # they can't each be a required check on their own (a skipped required check
+    # blocks the merge forever). This job depends on all of them and fails ONLY if
+    # one that actually ran failed/was cancelled; skipped + success are both fine.
+    # Make THIS the sole required check for the Solidity audit on main.
+    name: Solidity passed
+    if: ${{ always() }}
+    needs: [changes, foundry-tests, slither, halmos, aderyn, medusa]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+      - name: Fail if any Solidity audit job failed or was cancelled
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: |
+          echo "::error::A Solidity CI/audit job failed or was cancelled — see the job list above."
+          exit 1
+      - name: All clear
+        run: echo "All Solidity jobs that ran passed (path-skipped on a non-contracts change is OK)."
