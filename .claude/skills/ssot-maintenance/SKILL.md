@@ -19,7 +19,7 @@ These are the canonical homes. Read them before acting; never copy their content
 | `docs/00_06 §3` | **Drift-prevention tooling** — the CI-enforced guard table. Add new guards here. |
 | `docs/00_00` | SSOT index + reading order. |
 
-**State** (what's done / next) lives in memory, not here: `[[project_ssot_campaign_history]]`, plus `[[feedback_no_volatile_counts]]`, `[[feedback_ssot_review_workflow]]`, `[[project_wiki_sync]]`.
+**State** (what's done / next) lives in memory, not here: `[[project_ssot_campaign_history]]` (Gen1 SSOT-standardization campaign, DORMANT) + `[[feedback_vilize_sweep_method]]` (the LIVE method — 00_07 tracker-hygiene + 7-family guard-craft) + `[[project_vilize_00]]` / `[[project_doc_t33_t34_seed]]` (§00-tooling: field_canon_sync, markers, stan_audit), plus `[[feedback_no_volatile_counts]]`, `[[feedback_ssot_review_workflow]]`, `[[project_wiki_sync]]`.
 
 ## When to use
 
@@ -82,7 +82,7 @@ This is the point: the skill stays small, but it lets you turn **any** newly-fou
    - Unicode-letter boundaries `(?<!\p{L})…(?![\p{L}])` so `звільнило`/`зарезервовано:` don't match a `вільн`/`резерв` rule.
    - Skip table rows (`line.lstrip.start_with?("|")`) and ```` ``` ```` fenced code.
    - **Exempt the owner doc** — it's *allowed* to state the fact.
-4. **Unit-test it** in `spec/lib/docs_linter_spec.rb`: a positive (catches the real drift), a clean pass, and the near-misses that must *not* trip. Run `bin/rspec spec/lib/docs_linter_spec.rb`.
+4. **Unit-test it** in `spec/lib/docs_linter_spec.rb`: a positive (catches the real drift), a clean pass, and the near-misses that must *not* trip. Run `bin/rspec spec/lib/docs_linter_spec.rb`. **Then mutation-verify** (break it → FAIL → revert): the spec proves it catches the INTENDED, nothing about what it CAN'T see — ask "what does this regex NOT match?" A symmetry / false-green-prone guard goes through a 2-agent review before it silences a class (`[[project_doc_t33_t34_seed]]`; a freshly-written gate is the worst-tested code in the repo — `[[feedback_vilize_sweep_method]]` F4).
 5. **Wire it into** `lib/tasks/docs.rake` `check_refs`: accumulate hits, print a report block, push a label into `failed` (advisory while you clean the existing drift → flip to **HARD** once it's at 0).
 6. **Record it** in the `00_06 §3` guard table and the campaign memory — **not in this skill**. This is now *enforced*, not remembered: `guard_registry_sync` (DOC-T.40) fails CI if a new gate has no §3 row, if a §3 row names a file that no longer exists, **or if a §3 row claims a command/workflow the CI never runs** (reverse axis E — write the §3 command column exactly as the workflow runs it, and mark non-CI rows `advisory`/`on-demand`). Cross-file / code-reading gates go in `scripts/*.rb`, not `lib/docs_linter.rb` (which is pure-doc text); wire the new script into `docs.yml` **and** confirm its inputs are inside the `changes` filter — a gate outside it is decorative. (For an *unambiguous* retired string with no legit current use, skip the bespoke linter: add it to `DocsLinter::DEPRECATED_TERMS` — the general "any retired token's return is blocked" net.)
 
@@ -131,27 +131,22 @@ GATE per-phase docs:check_refs + tracker:check + zero-loss set-diff + wiki dry-r
 - [ ] ruby scripts/model_doc_sync.rb      → green (if 04_01/04_02 or app/models touched)
 - [ ] ruby scripts/guard_registry_sync.rb → green (if a guard / 00_06 §3 / docs.yml touched)
 - [ ] ruby scripts/field_canon_sync.rb    → green (if github_bootstrap.rb / 00_05 §1.1 / labels.yml touched)
+- [ ] ruby scripts/governance_key_sync.rb / governance_bounds_sync.rb → green (if contracts/** · app/** · db/seeds.rb touched — GOV.2/GOV.3 param parity)
 - [ ] ruby scripts/code_tracker_id_check.rb → green (if code cites a tracker-ID, or 00_07 IDs moved)
 - [ ] linter/ToC specs green              → if lib/docs_*.rb touched
 - [ ] fact edited ONLY at its home (§8.2); mirrors labelled
 - [ ] no volatile counts · no blocker section in canon · Cross-references at top
 ```
 
-**Before wiki publish:**
-
-```
-- [ ] docs committed (wiki:sync mirrors the working tree)
-- [ ] bin/rails wiki:sync                 → review --stat + "unresolved links"
-- [ ] fix any unresolved (usually a stale source link)
-- [ ] bin/rails wiki:sync PUSH=1
-```
+**Wiki publish — ZERO-TOUCH** (since 2026-06-24): `.github/workflows/wiki.yml` publishes on every push to `main` touching `docs/**` (off-switch: repo var `DISABLE_WIKI_AUTOSYNC=true`). Do **NOT** run `wiki:sync PUSH=1` by hand after a normal canon-push — it RACES the CI run (non-fast-forward reject). A manual `bin/rails wiki:sync` (dry-run) stays a useful link-check before a big restructure. Detail → `[[project_wiki_sync]]`.
 
 ## Gotchas (hard-won)
 
 - **Subset `bin/rspec` runs trip the SimpleCov coverage gate** ("Models 0% < 90%" / `minimum_coverage`). That's an **artifact** of a partial resultset, not a real failure. The linter/ToC specs are pure units (`spec_helper`, no Rails/DB) — run them gate-free with `COVERAGE=0 bin/rspec spec/lib/docs_*_spec.rb`; for app-coverage truth run the full `bin/rspec` (`[[feedback_local_verify]]`).
 - **`db/structure.sql`**: never stage drive-by Postgres-version line diffs — restore from HEAD (`[[feedback_structure_sql]]`).
 - **No volatile counts in prose** (test/line tallies drift every commit). Reference the source or generate it (`[[feedback_no_volatile_counts]]`).
-- **`wiki:sync` needs SSH access** to the `*.wiki.git` repo; **always dry-run first**; read its "unresolved links" — they're often stale source links worth fixing.
+- **`wiki:sync` needs SSH access** to the `*.wiki.git` repo; **always dry-run first**; read its "unresolved links" — they're often stale source links worth fixing. **Run it PLAIN** — never prepend `/usr/bin` to PATH (shadows the rvm ruby shim → system Ruby 2.6 → bundler crash); a `Gem::Resolver…GemParser` trace can also be a SentinelOne-eaten shim (`[[project_rvm_env_repair]]`).
+- **A missing closing ` ``` ` fence silently desyncs EVERY fence-aware guard** (the `in_fence` toggle runs in ~9 `DocsLinter` methods) + truncates the ToC — one unclosed fence disables them all at once. Scan for balanced fences after editing a doc with code blocks.
 - **`.c` firmware comments stay Ukrainian + the file's poetic house style** (`[[feedback_comment_style]]`).
 - **zsh**: `status` is read-only; quote globs (`[[feedback_zsh_bash_gotchas]]`).
 - **Required-check caveat**: if `ci.yml` jobs are *required* status checks, also mark `docs.yml`'s gate required — else a docs-only PR (which skips `ci.yml`) could merge without the gate enforced.

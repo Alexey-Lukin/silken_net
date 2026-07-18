@@ -1729,6 +1729,8 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 
 | ID | Пункт | Канон |
 |----|-------|-------|
+| DOC-T.43 | 🤖 StatusByte wire-layout (PanicFlag/status/GP = 1/2/5 біт, post-FW.29) дубльована 7+ сайтів (03_01·03_04·03_05·05_02) без layout value-guard; FW.2 wire-rev2.1 рухає пакет → сайти мусять lockstep. §2-home заведено 2026-07-18; лишається context-anchored guard (owner 03_04 логіка + 03_05 §2.1 wire). | [`03_04`](03_04_mruby_Lorenz_Attractor) · [`00_06 §2`](00_06_SSOT_Documentation_Standard) |
+| DOC-T.44 | 🤖 `guard_registry_sync` CHECK A сканує код→§3 лише в `docs.yml` → canon↔code гейти в ІНШИХ workflow (firmware_tables·bytecode·`test_doc_cache_sync` in_silico_smoke) ведуться в §3 руками (клас, що загубив test_doc_cache §3-рядок до 2026-07-18 — тепер заведено). + `.claude/**` §-рефи (routing-шар) не резолвить жоден гейт (`code_doc_section_refs` TREES=app/spec/lib; 0 живого дрейфу зараз). Розширити CHECK A/TREES + оголосити стелю-скоуп у шапці §3. | [`00_06 §3`](00_06_SSOT_Documentation_Standard) |
 
 _Нову SSOT doc-drift / tracker-tooling знахідку додавати рядком у таблицю вище._
 

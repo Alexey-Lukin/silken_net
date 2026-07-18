@@ -35,13 +35,13 @@ L8  Ethereum L1       Щотижневий SHA-256 state root (фіналіза�
 L7  Polygon + DeFi    SCC/SFC мінтинг, Solana нагороди, Celo ReFi, KlimaDAO ESG
 L6  Верифікація       peaq DID, IoTeX ZK-proofs, Streamr P2P, Filecoin/IPFS
 L5  Rails Backend     Rails 8.1 API, PostgreSQL, Sidekiq (50+ воркерів)
-L4  LoRa Мережа       868 МГц меш, CoAP/UDP, шлюзи Королеви, Starlink/LTE
+L4  LoRa Мережа       868 МГц star-only, CoAP/UDP, шлюзи Королеви, Starlink/LTE
 L3  Прошивка + AI     STM32WLE5JC, TinyML (INT8 pure-C + CMSIS-DSP log-mel), mruby Лоренц, AES-128-ECB/CCM
 L2  Апаратна Капсула  BQ25570 MPPT, суперконденсатор 0.47Ф, Pogo Pin
 L1  Біофізика         Ti-6Al-4V гіроїдний анкер, EBFC Gen 2.0 (dgrFAD-GDH анод + Laccase/ZIF-nanozyme катод)
 ```
 
-Кожен вузол («Солдат») — це STM32WLE5JC, вбудований у титановий гіроїдний анкер у стовбурі дерева. Ензимний біопаливний елемент (EBFC) перетворює глюкозу ксилемного соку на >500 мВ. Енергія заряджає суперконденсатор 0.47Ф, який живить мікроконтролер. Солдат класифікує звуки (5-класовий TinyML: тиша / вітер / пилка / фауна / водно-стресовий проксі), обчислює гомеостаз дерева через Атрактор Лоренца (mruby) та відправляє 21-байтні AES-128 пакети через LoRa mesh (868 МГц) до шлюзу «Королева» (CoAP-батч у хмару йде вже під AES-256-CBC).
+Кожен вузол («Солдат») — це STM32WLE5JC, вбудований у титановий гіроїдний анкер у стовбурі дерева. Ензимний біопаливний елемент (EBFC) перетворює глюкозу ксилемного соку на >500 мВ. Енергія заряджає суперконденсатор 0.47Ф, який живить мікроконтролер. Солдат класифікує звуки (5-класовий TinyML: тиша / вітер / пилка / фауна / водно-стресовий проксі), обчислює гомеостаз дерева через Атрактор Лоренца (mruby) та відправляє 21-байтні AES-128 пакети через LoRa 868 МГц (star-only — mesh-релей гейтовано в CCM-ері, повернення = ARCH.43) до шлюзу «Королева» (CoAP-батч у хмару йде вже під AES-256-CBC).
 
 ---
 
@@ -50,7 +50,7 @@ L1  Біофізика         Ti-6Al-4V гіроїдний анкер, EBFC Gen
 | Роль | Мережа | Функція |
 |------|--------|---------|
 | **Ідентичність** | peaq | Machine DID паспорт дерева |
-| **Верифікація** | IoTeX W3bstream | ZK-proof автентичності даних STM32 |
+| **Верифікація** | IoTeX W3bstream | ZK-proof цілісності pipeline + peaq-DID (L0-custodial; silicon-origin = North-Star) |
 | **Оракул** | Chainlink | CCIP/Functions: Rails → Polygon/Solana |
 | **Токени** | Polygon | SCC (утилітарний) + SFC (governance DAO) |
 | **Мікроплатежі** | Solana | USDC нагороди лісникам |
@@ -259,7 +259,7 @@ kamal deploy
 **Governance DAO** ([`05_06`](docs/05_06_Governance_and_DAO.md)) — SFC holders голосують за зміну параметрів протоколу:
 - `SilkenGovernor.sol` — OZ Governor + GovernorVotes (snapshot defense) + 48h Timelock
 - `SilkenTimelock.sol` — TimelockController з 48h мінімальною затримкою
-- `ProtocolParameters.sol` — on-chain registry (13 параметрів: Lorenz σ/ρ/β, tokenomics, slashing)
+- `ProtocolParameters.sol` — on-chain registry (17 well-known ключів: 8 Lorenz DCI-locked + 9 економічних tokenomics/slashing)
 - `StateRootAnchor.sol` — щотижнева фіналізація state root в Ethereum L1
 
 Всі контракти: `contracts/*.sol`, тести: `contracts/test/*.t.sol` (Foundry)
@@ -302,6 +302,7 @@ kamal deploy
 - [`02_01`](docs/02_01_Hardware_Architecture_and_BOM.md) — BOM та архітектура Солдата
 - [`02_02`](docs/02_02_Blind_Mate_Pogo_Pin_Interface.md) — сліпий з'єднувач Pogo Pin
 - [`02_03`](docs/02_03_BQ25570_MPPT_Nano_Power.md) — BQ25570 MPPT, нано-менеджмент живлення + EDLC-буфер 0.47Ф (§12)
+- [`02_04`](docs/02_04_Bench_Build_Guide.md) — 🔧 Bench Build & Test Guide (Soldier+Queen поблоково на макетці)
 - [`02_05`](docs/02_05_Queen_Hardware_and_Starlink.md) — шлюз Королева + Starlink/LTE
 
 **Прошивка та Edge AI (Модуль 03)**
@@ -357,7 +358,7 @@ kamal deploy
 | Підсистема | TRL | Статус |
 |------------|-----|--------|
 | Rails Backend (API, сервіси, воркери) | 8 | Production Ready |
-| Смарт-контракти (SCC/SFC) | 9 | Mainnet Ready |
+| Смарт-контракти (SCC/SFC) | 8 | TRL 9-ready (Slither/Halmos/Medusa clean; mainnet-deploy pending) |
 | Токеноміка та Proof of Growth | 8 | Production Ready |
 | REST API (82 ендпоінти) | 8 | Production Ready |
 | Phlex UI + Tailwind дизайн-система | 8 | Production Ready |
@@ -366,7 +367,7 @@ kamal deploy
 | Апаратна капсула (BOM, MPPT) | 6 | Архітектура заморожена |
 | Ti-6Al-4V гіроїдний анкер | 3 | In-silico: PicoGK Code-as-CAD генерація + Lamé press-fit (safety 9.9×; nTop = опційний reference); фізична DMLS-партія = TRL 4 |
 | EBFC Gen 2.0 (dgrFAD-GDH + Laccase/ZIF) | 3 | **Zero-Lab L1-L4 PASSED** (in-silico = TRL 3; physical TRL 4 = in-vitro Ti-coin; see `docs/protocols/ebfc/in_silico/SUMMARY.md`) |
-| Академічна мережа (ЧНУ+ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ) | 3 | 5 університетів під MOIC, 35 статей Q1-pipeline |
+| Академічна мережа (ЧНУ+ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ) | 2 | 5 університетів під MOIC, ~17 живих Q1-статей (портфель UNI.19) |
 | Розгортання GCP + Kamal | 4 | Код існує, деплой не проводився |
 
 ---

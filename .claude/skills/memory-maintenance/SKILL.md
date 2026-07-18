@@ -11,6 +11,8 @@ Executable playbook for keeping the persistent memory (`~/.claude/projects/…/m
 
 Full step-by-step playbook + founder's principles + the zero-loss scripts → **`.claude/prompts/memory_housekeeping.md`**. Read it before acting. Sister to `[[reference_deep_archival_prompt]]` (00_07 cement) — same "the prompt is the home, the skill just points" pattern as `ssot-maintenance`.
 
+**Two modes:** (1) *housekeeping* (this skill + the prompt — de-cruft, structure, stale-hooks, action-items→00_07); (2) *4-way memory-sync* — a per-section pass bringing memory ↔ domain-skill ↔ canon ↔ 00_07 to one truth (ROUTE-not-restate, fix drift on BOTH surfaces, write gaps). The sync recipe (fan-out READ-ONLY agents + fable-holistic) lives in `[[project_memory_sync_program]]`; the §00–§08 cycle closed 2026-07-18.
+
 ## When to use
 - Structuring / grouping `MEMORY.md` (by kind: 👤User / 🛠Feedback / 📚Reference / 📦Project, + sub-themes).
 - Removing memory cruft / duplication; trimming a bloated index hook (detail belongs in the file).

@@ -62,6 +62,7 @@ jobs:
               - 'spec/**'
               - 'tools/**'
               - '.github/**'
+              - '.claude/**'  # skills/prompts/hooks carry tracker-IDs → code_tracker_id_check scans them (else decorative)
               # ruby_version_sync mirrors (OPS.13) — guard_registry_sync CHECK D
               # asserts this coverage, so a mirror added there must be added here.
               - 'Gemfile'
