@@ -10,7 +10,7 @@
 #
 # Trust L1-observational: подія НІКОЛИ не рухає money-path — лише ops-алерт
 # (slash-виключення дзеркалять firmware_fault). Per-event device-підпис фізично
-# неможливий (64B у 16B кадр, 05_02 §554) → L1 Queen-attest = правильний рівень
+# неможливий (64B у 16B кадр, 05_02 trust-ladder) → L1 Queen-attest = правильний рівень
 # назавжди. Wire-дім: firmware/common/device_event.h (§Шар 2), канон 03_05 §2.2а.
 #
 # Anti-replay: SHA256(Королевин sig) SETNX — кожен Королевин flush несе свіжий

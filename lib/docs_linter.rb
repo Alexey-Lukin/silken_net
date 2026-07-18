@@ -256,6 +256,45 @@ module DocsLinter
     end
   end
 
+  # [SSOT anti-drift] StatusByte layout One-Home (DOC-T.43). Post-FW.29 wire byte 10 =
+  # [PanicFlag:1 (bit7) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)] — pack
+  # (status << 5) | gp, mask & 0x1F. Owner logic+packing = 03_04 §4.3/§4.4; wire byte-position =
+  # 03_05 §2.1; 7 sites (03_01/03_02/05_02/04_01/04_02) reference, not restate. FW.2 wire-rev2.1
+  # moves the packet, so a site lagging back to the pre-FW.29 6-bit layout is a silent drift that
+  # carries growth_points (the mint magnitude). ANTI-RETIRED, not positive-consistency: most live
+  # sites state the layout in PROSE ("bits 6..5") with no code literal → a "must be present" rule
+  # would FP every one of them; instead ban the dead pre-FW.29 signature (status << 6, the 6-bit
+  # mask 0x3F, "bits 7..6"/[7:6], a 6-bit growth width), which has ZERO docs hits today. Context-
+  # anchored to a StatusByte keyword so an unrelated 0x3FFF/0x7F/96-bit UID is ignored; a line
+  # marking the value historical (the owner's "6 → 5" migration note) is exempt. NOT table-skipped
+  # (gp_clamp drift lived in a table cell). Meta 00_06/00_07 exempt (they name the retired form as
+  # an example). Orthogonal to growth_points_clamp_drift (that bans the wire RANGE 10,63; this bans
+  # the bit GEOMETRY — the two never share a regex). Same shape as anchor_dimension_drift.
+  STATUSBYTE_META_DOC = /\A00_06_|\A00_07_/
+  STATUSBYTE_CTX_RE   = /StatusByte|status_byte|PanicFlag|PANIC_FLAG|bio_status|growth[_ ]?points|GrowthPoints/i
+  STATUSBYTE_RETIRED  = [
+    [ /\bstatus\b[^\n]{0,14}<<\s*6\b/i,               "status packed << 6 (was bits 7..6)" ],
+    [ /(?<![0-9A-Fa-fx])0x3F(?![0-9A-Fa-f])/,         "6-bit growth mask 0x3F (live = 0x1F)" ],
+    [ /bits?\s*7\s*[.:]+\s*6\b|\[\s*7\s*:\s*6\s*\]/i, "status in bits 7..6 / [7:6]" ],
+    [ /(?:growth[_ ]?points|GrowthPoints|\bgp\b)[^\n]{0,20}\b6[\s-]*(?:bit|біт)/i, "6-bit growth width" ]
+  ].freeze
+  STATUSBYTE_HISTORICAL = /переїхав|зменшено|було|раніше|superseded|застаріл|historical|retired|deprecated|до FW\.29|6\s*[→–-]+\s*5|→\s*6\.\.5|усунено|колишн|\bold\b|former/i
+
+  def status_byte_layout_drift(basename, text)
+    return [] if basename.match?(STATUSBYTE_META_DOC)
+
+    out = []
+    text.each_line do |line|
+      next unless line.match?(STATUSBYTE_CTX_RE)
+      next if line.match?(STATUSBYTE_HISTORICAL)
+
+      STATUSBYTE_RETIRED.each do |retired_re, label|
+        out << "retired pre-FW.29 StatusByte layout (#{label}) — live = [PanicFlag:1|Status:2 (bits 6..5)|GrowthPoints:5 (bits 4..0)], pack (status<<5)|gp, mask 0x1F (03_04 §4.3/§4.4 + wire 03_05 §2.1) → #{line.strip[0, 90]}" if line.match?(retired_re)
+      end
+    end
+    out
+  end
+
   # [SSOT anti-drift] Tokenomics / carbon RATE One-Home (HARD after the 2026-05-31
   # dedup). The mint rate (`10,000 growth_points = 1 SCC`) and carbon rate
   # (`2000 SCC = 1 tCO₂`) are governance-CHANGEABLE parameters (05_06), so they get

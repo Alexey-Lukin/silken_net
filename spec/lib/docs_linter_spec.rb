@@ -292,6 +292,47 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".status_byte_layout_drift" do
+    it "flags the retired `status << 6` pack (was bits 7..6) in a mirror" do
+      hits = described_class.status_byte_layout_drift("05_02_Pipeline", "payload_byte = (status << 6) | growth_points\n")
+      expect(hits).not_to be_empty
+      expect(hits.first).to include("0x1F")
+    end
+
+    it "flags the retired 6-bit growth mask `0x3F` near a StatusByte keyword" do
+      expect(described_class.status_byte_layout_drift("04_02_Business_Logic_and_Services", "growth_points = status_byte & 0x3F\n")).not_to be_empty
+    end
+
+    it "flags the retired `bits 7..6` status position in prose (no HIST marker)" do
+      expect(described_class.status_byte_layout_drift("03_01_Firmware_Lifecycle_and_DMA", "StatusByte: Status:2 (bits 7..6) | GrowthPoints:6\n")).not_to be_empty
+    end
+
+    it "flags a retired 6-bit growth width even inside a table cell (NOT table-skipped)" do
+      expect(described_class.status_byte_layout_drift("05_02_Pipeline", "| byte 10 | growth_points 6-bit (0..63) |\n")).not_to be_empty
+    end
+
+    it "does NOT flag the live layout (`<< 5` / mask `0x1F`)" do
+      live = "StatusByte pack (status << 5) | growth_points; unpack (status_byte & 0x1F)\n"
+      expect(described_class.status_byte_layout_drift("05_02_Pipeline", live)).to be_empty
+    end
+
+    it "exempts a historical migration note (the owner's `6 → 5` / `bits 7..6 → 6..5`)" do
+      expect(described_class.status_byte_layout_drift("03_05_Hardware_Symmetric_Crypto_and_Security", "growth зменшено з 6 → 5 бітів (StatusByte)\n")).to be_empty
+      expect(described_class.status_byte_layout_drift("03_01_Firmware_Lifecycle_and_DMA", "Status переїхав з bits 7..6 → 6..5 (StatusByte)\n")).to be_empty
+    end
+
+    it "does NOT false-positive proxy hex/width tokens near a StatusByte keyword" do
+      expect(described_class.status_byte_layout_drift("03_01_Firmware_Lifecycle_and_DMA", "StatusByte diag: hiwater & 0x3FFF; vm_error & 0x7F survives\n")).to be_empty
+      expect(described_class.status_byte_layout_drift("03_06_Factory", "PanicFlag context: 96-біт UID трьома словами\n")).to be_empty
+    end
+
+    it "exempts meta docs 00_06/00_07 (they name the retired form as an example)" do
+      retired = "StatusByte: status << 6, mask 0x3F, bits 7..6\n"
+      expect(described_class.status_byte_layout_drift("00_06_SSOT_Documentation_Standard", retired)).to be_empty
+      expect(described_class.status_byte_layout_drift("00_07_Action_Plan_Tracker", retired)).to be_empty
+    end
+  end
+
   describe ".tokenomics_rate_drift" do
     it "flags the mint rate re-stated outside the home" do
       hits = described_class.tokenomics_rate_drift("05_06_Governance", "фіксований курс 10,000 growth_points = 1 SCC.\n")

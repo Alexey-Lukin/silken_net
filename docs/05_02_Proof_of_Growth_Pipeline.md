@@ -267,10 +267,10 @@ def self.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vc
   # (x_prev, y_prev, z_prev): warm — з RTC DR16-18; cold — з SEC.11 K_seed/epoch_day
   z_val = Attractor.calculate_z_axis(x_prev, y_prev, z_prev, temp, acoustic)  # [E.63] β фікс
   if    z_val < CRITICAL_Z_MIN  → status=1, growth_points=1  # stress
-  elsif z_val > CRITICAL_Z_MAX  → status=2, growth_points=0  # anomaly
+  elsif z_val > anomaly_ceiling → status=2, growth_points=0  # anomaly [E.64] ρ-відносна стеля (≈45 при ρ=28), НЕ absolute — SSOT 03_04 §4
   else                          → status=0                    # homeostasis
     # [E.63] growth_points = метаболічна жвавість m(delta_t), НЕ |29−z| — SSOT 03_04 §4.3
-    growth_points = metabolic_growth_points(delta_t_s)        # 5-bit wire (5..31)
+    growth_points = metabolic_health(delta_t_s)               # 5-bit wire (5..31)
   end
   payload_byte = (status << 5) | growth_points  # [PanicFlag:1 (FW.29) | Status:2 | GP:5]
 end

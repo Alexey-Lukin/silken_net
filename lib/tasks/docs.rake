@@ -61,6 +61,7 @@ namespace :docs do
     lorenz_drift = [] # hard: Lorenz β formula re-stated outside 03_04 owner
     tl_chain_hash = [] # hard: telemetry_logs has no chain_hash column (Merkle leaf = 05_02 §E.60)
     gp_clamp     = [] # hard: retired growth_points clamp `(…,10,63)` (pre-FW.29-PACK)
+    statusbyte_drift = [] # hard: retired pre-FW.29 StatusByte bit-layout (6-bit `<<6`/`0x3F`/bits 7..6) — DOC-T.43
     deprecated  = []  # hard: retired SSOT term reappeared (DocsLinter::DEPRECATED_TERMS)
     label_drift = []  # hard: link label leads with a different NN_NN than its href resolves to
     magic_drift = []  # soft: magic-marker hex ≠ BE/LE ASCII of its quoted name
@@ -118,6 +119,7 @@ namespace :docs do
       lorenz_drift.concat(DocsLinter.lorenz_formula_drift(base, text).map { |h| "#{base}: #{h}" })
       tl_chain_hash.concat(DocsLinter.telemetry_log_chain_hash_drift(text).map { |h| "#{base}: #{h}" })
       gp_clamp.concat(DocsLinter.growth_points_clamp_drift(base, text).map { |h| "#{base}: #{h}" })
+      statusbyte_drift.concat(DocsLinter.status_byte_layout_drift(base, text).map { |h| "#{base}: #{h}" })
       deprecated.concat(DocsLinter.deprecated_terms(base, text).map { |h| "#{base}: #{h}" })
       label_drift.concat(DocsLinter.link_label_target_mismatch(text).map { |h| "#{base}: #{h}" })
       magic_drift.concat(DocsLinter.magic_marker_hex_drift(text).map { |h| "#{base}: #{h}" })
@@ -238,6 +240,7 @@ namespace :docs do
       lorenz_drift.concat(DocsLinter.lorenz_formula_drift(base, text).map { |h| "#{base}: #{h}" })
       tl_chain_hash.concat(DocsLinter.telemetry_log_chain_hash_drift(text).map { |h| "#{base}: #{h}" })
       gp_clamp.concat(DocsLinter.growth_points_clamp_drift(base, text).map { |h| "#{base}: #{h}" })
+      statusbyte_drift.concat(DocsLinter.status_byte_layout_drift(base, text).map { |h| "#{base}: #{h}" })
       deprecated.concat(DocsLinter.deprecated_terms(base, text).map { |h| "#{base}: #{h}" })
       rate_drift.concat(DocsLinter.tokenomics_rate_drift(base, text).map { |h| "#{base}: #{h}" })
       solc_drift.concat(DocsLinter.solc_pragma_version_drift(base, text).map { |h| "#{base}: #{h}" })
@@ -441,6 +444,12 @@ namespace :docs do
       puts "  GROWTH_POINTS FORMULA DRIFT (#{gp_clamp.size}) — [E.63] live form is `metabolic_health(delta_t)` (03_04 §4.3):"
       gp_clamp.sort.each { |d| puts "    ✗ #{d}" }
     end
+    if statusbyte_drift.empty?
+      puts "  StatusByte:     no retired pre-FW.29 6-bit layout (`<<6` / `0x3F` / bits 7..6) outside owner ✓"
+    else
+      puts "  STATUSBYTE LAYOUT DRIFT (#{statusbyte_drift.size}) — post-FW.29 = [PanicFlag:1|Status:2|GP:5], pack (status<<5)|gp, mask 0x1F (03_04 §4.3/§4.4 + wire 03_05 §2.1):"
+      statusbyte_drift.sort.each { |d| puts "    ✗ #{d}" }
+    end
     if deprecated.empty?
       puts "  deprecated terms: no retired SSOT tokens present ✓"
     else
@@ -485,6 +494,7 @@ namespace :docs do
     failed << "Lorenz-formula drift (β re-stated outside 03_04 §4.1)" unless lorenz_drift.empty?
     failed << "telemetry_logs.chain_hash drift (no such column; Merkle leaf = 05_02 §E.60)" unless tl_chain_hash.empty?
     failed << "retired growth_points clamp `(…,10,63)` (FW.29-PACK → 03_04 §4.3)" unless gp_clamp.empty?
+    failed << "retired pre-FW.29 StatusByte bit-layout (6-bit `<<6`/`0x3F`/bits 7..6 outside owner)" unless statusbyte_drift.empty?
     failed << "deprecated SSOT terms present" unless deprecated.empty?
     failed << "anchor dimension drift (superseded flange/Zone2 range outside 01_01 §1 freeze)" unless anchor_dim.empty?
     failed << "thermal-stress drift (superseded HW.3.IS SF/P_c number outside 01_01 §4.2 / the report)" unless thermal_drift.empty?

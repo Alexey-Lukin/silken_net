@@ -62,6 +62,7 @@ DOCS_RAKE_LABELS = {
   "Lorenz-formula drift (β re-stated outside 03_04 §4.1)"                                  => "Lorenz-formula drift",
   "telemetry_logs.chain_hash drift (no such column; Merkle leaf = 05_02 §E.60)"            => "telemetry_logs.chain_hash drift",
   "retired growth_points clamp `(…,10,63)` (FW.29-PACK → 03_04 §4.3)"                      => "growth_points clamp drift",
+  "retired pre-FW.29 StatusByte bit-layout (6-bit `<<6`/`0x3F`/bits 7..6 outside owner)"    => "StatusByte layout",
   "deprecated SSOT terms present"                                                          => "deprecated terms (Ruthless Pruning)",
   "anchor dimension drift (superseded flange/Zone2 range outside 01_01 §1 freeze)"         => "anchor dimension drift",
   "thermal-stress drift (superseded HW.3.IS SF/P_c number outside 01_01 §4.2 / the report)" => "thermal-stress One-Home",
@@ -103,6 +104,22 @@ TRACKER_GUARDS = {
 }.freeze
 # Non-guard Dashboard calls in tracker.rake (parsing/reporting helpers).
 TRACKER_HELPERS = %w[parse open_items].freeze
+
+# DOC-T.44 (CHECK A2): canon↔code / config-mirror gates that run OUTSIDE docs.yml.
+# CHECK A scans docs.yml ONLY, so a gate wired in another workflow rots its §3 row
+# one-way — exactly how test_doc_cache_sync lost its row. Curated allow-list (NOT
+# every ci.yml step — most are build/test/lint/fuzz, indistinguishable from a
+# registry gate by machine): each cmd must have a §3 row AND still run in its named
+# workflow. A NEW canon↔code gate outside docs.yml → add it here + a §3 row (else no
+# CHECK sees it); a RETIRED one → dead map entry fails. Scope-ceiling → 00_06 §3 note.
+CANON_CODE_GATES_OUTSIDE_DOCS = {
+  "ci.yml" => [
+    "check_firmware_tables.py", "check_bytecode.py", "gen_bytecode.sh --check",
+    "sdl_consistency_check.rb", "deploy_secret_scan.rb"
+  ],
+  "ml_smoke.yml"        => [ "emit_c --check" ],
+  "in_silico_smoke.yml" => [ "test_doc_cache_sync.py", "conda-lock lock --check-input-hash" ]
+}.freeze
 
 # §3 slice of 00_06 (from the "3. Drift-prevention" h2 to the next h2).
 reg_lines = File.readlines(REGISTRY_DOC)
@@ -200,6 +217,24 @@ wf_runs = Hash.new do |h, wf|
                 .flat_map { |j| (j["steps"] || []).filter_map { |s| s["run"] } }.join("\n")
   end
 end
+
+# ── A2. canon↔code gates OUTSIDE docs.yml ⊆ §3 (DOC-T.44) ────────────────────
+# Forward: each curated gate must be registered in §3 (CHECK A only covers docs.yml).
+# Dead-map: each must still run in its named workflow (a retired one fails loudly).
+a2_gates = 0
+CANON_CODE_GATES_OUTSIDE_DOCS.each do |wf, cmds|
+  runs = wf_runs[wf]
+  cmds.each do |cmd|
+    a2_gates += 1
+    errors << "canon↔code gate `#{cmd}` (#{wf}) not registered in 00_06 §3 — a gate outside docs.yml rots one-way (DOC-T.44)" unless registry.include?(cmd)
+    if runs.nil?
+      errors << "DOC-T.44 A2 map cites workflow #{wf} that does not exist"
+    elsif !runs.include?(cmd)
+      errors << "DOC-T.44 A2 map cites `#{cmd}` in #{wf}, but no run-step there contains it (retired gate → drop the map entry)"
+    end
+  end
+end
+
 cmd_span_re = /\A(?:[A-Z0-9_]+=\S+\s+)*(?:bin\/|ruby |python|make )/
 all_wf_runs = nil
 claimed = 0
@@ -238,7 +273,7 @@ if errors.empty?
   puts "guard_registry_sync ✓ — 00_06 §3 ⟷ CI gates (#{run_cmds.size} run-steps, " \
        "#{labels.size} docs.rake labels, #{guards.size} tracker guards, " \
        "#{sg_paths.size} ssot_guard areas, #{pin_inputs.uniq.size} pinned inputs, " \
-       "#{claimed} reverse §3→workflow claims)"
+       "#{a2_gates} outside-docs.yml A2 gates, #{claimed} reverse §3→workflow claims)"
   exit 0
 else
   warn "guard_registry_sync ✗ — guard-registry ↔ code drift (DOC-T.40):"

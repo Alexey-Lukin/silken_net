@@ -28,23 +28,30 @@ require_relative "../lib/tracker/dashboard"
 
 ROOT  = File.expand_path("..", __dir__)
 TREES = %w[app spec lib].freeze
+# .claude/** (skills + prompts) is the ROUTING layer — it references canon by `NN_NN §X`
+# too, and a canon renumber rots those refs just as silently (DOC-T.44 TREES-extension).
+# Scanned as *.md alongside the Ruby trees; report-only all the same.
+CLAUDE_TREE = ".claude"
 
-# The §-resolution engine + its unit tests legitimately cite stale-LOOKING example
-# refs (fixtures that exercise the resolver) — exempt them, same idea as
-# protocols_ref_check skipping the subtree's own filename-link convention.
-EXEMPT = %r{\A(?:lib/docs_linter\.rb|lib/docs_graph\.rb|lib/tracker/dashboard\.rb|spec/lib/)}
+# The §-resolution engine + its unit tests legitimately cite stale-LOOKING example refs
+# (fixtures that exercise the resolver) — exempt them, same idea as protocols_ref_check
+# skipping the subtree's own filename-link convention. The ssot-maintenance SKILL is exempt
+# for the same reason: its "worked example" cites `05_03 §749` / `07_01 §6.5` as deliberate
+# renumber-drift teaching cases (a doc renumber MOVED those sections — that IS the lesson).
+EXEMPT = %r{\A(?:lib/docs_linter\.rb|lib/docs_graph\.rb|lib/tracker/dashboard\.rb|spec/lib/|\.claude/skills/ssot-maintenance/SKILL\.md\z)}
 
-files = TREES.flat_map { |t| Dir[File.join(ROOT, t, "**", "*.rb")] }
-            .map { |f| f.sub("#{ROOT}/", "") }
-            .reject { |rel| rel =~ EXEMPT }
-            .sort
+files = (TREES.flat_map { |t| Dir[File.join(ROOT, t, "**", "*.rb")] } +
+         Dir[File.join(ROOT, CLAUDE_TREE, "**", "*.md")])
+        .map { |f| f.sub("#{ROOT}/", "") }
+        .reject { |rel| rel =~ EXEMPT }
+        .sort
 
 violations = files.flat_map do |rel|
   Tracker::Dashboard.file_section_dangling_refs(File.read(File.join(ROOT, rel))).map { |h| "#{rel}: #{h}" }
 end
 
 if violations.empty?
-  puts "code_doc_section_refs — #{files.size} source files scanned; every `NN_NN §X` code-ref resolves ✓"
+  puts "code_doc_section_refs — #{files.size} source + .claude routing files scanned; every `NN_NN §X` ref resolves ✓"
 else
   puts "code_doc_section_refs — #{violations.size} stale code→doc §-refs (report-only, not a CI gate):"
   violations.uniq.sort.each { |v| puts "  ✗ #{v}" }
