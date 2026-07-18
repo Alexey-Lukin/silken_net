@@ -783,7 +783,7 @@ contracts/test/
 ├── SilkenTimelock.t.sol             # ✅ [ARCH.4] Foundry тести Timelock (delay, roles, scheduling)
 └── ProtocolParameters.t.sol         # ✅ [ARCH.4] Foundry тести registry (set, batch, access, defaults)
 
-contracts/foundry.toml               # ✅ Foundry config: solc 0.8.35, EVM cancun, profiles (default/ci/production)
+contracts/foundry.toml               # ✅ Foundry config: solc 0.8.35, EVM cancun, profiles (default/production)
 ```
 
 ---

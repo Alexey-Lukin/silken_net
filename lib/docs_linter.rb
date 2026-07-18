@@ -718,7 +718,7 @@ module DocsLinter
     end
   end
 
-  # [SSOT anti-drift] Magic-marker hex self-consistency (ADVISORY). Firmware uses
+  # [SSOT anti-drift] Magic-marker hex self-consistency (HARD, DOC-T.46). Firmware uses
   # 4-byte ASCII magic markers ("RITE"/"LZST"/"KEYL"/"LSED"/"KEYC"/"QUID"…) whose
   # uint32 literal is the byte-packing of the four characters — but the codebase
   # mixes endianness ("RITE"=0x45544952 little-endian vs "LZST"=0x4C5A5354 big-
