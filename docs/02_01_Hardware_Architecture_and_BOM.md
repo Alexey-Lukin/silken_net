@@ -563,7 +563,7 @@ STM32WLE5JC
 
 **Production breadboard wiring** і протокол першого холодного старту з реальним EBFC — [`02_03 §10`](02_03_BQ25570_MPPT_Nano_Power).
 
-**Legacy LTC3108-based educational stand** (44 мВ симулятор + Coilcraft xfmr + Meissner oscillator) для студентських робіт ЧНУ — [`02_04`](02_04_Legacy_Breadboard_Appendix).
+**Bench build+test guide** (повний Soldier поблоково на макетці — harvester-фронт + production sense/SE/radio; legacy 44 мВ LTC3108 harvester + Meissner-фізика = його §5) — [`02_04`](02_04_Bench_Build_Guide).
 
 **SWD/UART debug-підключення** ST-LINK-V3MINIE та FT232RL до LoRa-E5 — [`03_01`](03_01_Firmware_Lifecycle_and_DMA) — розділ «Фізичне Підключення Апаратного Відладчика».
 

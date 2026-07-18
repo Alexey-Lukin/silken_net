@@ -130,8 +130,7 @@ RSpec.describe DocsLinter do
       bare = "## 🎯 Мета\n"
       expect(described_class.conformance_violations("00_00_SSOT_Index", bare)).to be_empty
       expect(described_class.conformance_violations("00_07_Action_Plan_Tracker", bare)).to be_empty
-      expect(described_class.conformance_violations("02_04_Legacy_Breadboard_Appendix", bare)).to be_empty
-      # the *_Appendix NAME-branch (not the 02_04_ prefix) must also exempt a future appendix doc:
+      # the *_Appendix NAME-branch exempts a legacy-appendix doc:
       expect(described_class.conformance_violations("07_09_Some_Field_Appendix", bare)).to be_empty
     end
 
@@ -393,12 +392,11 @@ RSpec.describe DocsLinter do
       expect(described_class.ai_vendor_name_drift("01_02_Ti", row)).not_to be_empty
     end
 
-    it "exempts the owner 00_02, the standard 00_06, the tracker 00_07 and legacy 02_04" do
+    it "exempts the owner 00_02, the standard 00_06, and the tracker 00_07" do
       line = "frontier-LLM: Gemini · coding-agent: Cursor / Copilot\n"
       expect(described_class.ai_vendor_name_drift("00_02_AI_Native", line)).to be_empty
       expect(described_class.ai_vendor_name_drift("00_06_SSOT_Documentation_Standard", line)).to be_empty
       expect(described_class.ai_vendor_name_drift("00_07_Action_Plan_Tracker", line)).to be_empty
-      expect(described_class.ai_vendor_name_drift("02_04_Legacy_Breadboard", line)).to be_empty
     end
 
     it "does not flag a labelled mirror or a line referencing the 00_02 home" do
@@ -524,8 +522,7 @@ RSpec.describe DocsLinter do
       expect(described_class.deprecated_terms("01_03", "Gen 2.0 anode/cathode chemistry")).to be_empty
     end
 
-    it "exempts the legacy-appendix + meta docs (they may name retired things)" do
-      expect(described_class.deprecated_terms("02_04", "legacy ZP-3 + silkennet-v1-aes256")).to be_empty
+    it "exempts the meta docs (they may name retired things)" do
       expect(described_class.deprecated_terms("00_06", "example token ZP-3")).to be_empty
       expect(described_class.deprecated_terms("00_07", "migrate-from ZP-3 baseline")).to be_empty
     end
@@ -682,7 +679,7 @@ RSpec.describe DocsLinter do
       expect(described_class.bare_section_ref("00_00_SSOT_Index", "`05_05 §3`\n")).to be_empty
       expect(described_class.bare_section_ref("00_06_SSOT_Documentation_Standard", "| AES | `03_05 §3.7` |\n")).to be_empty
       expect(described_class.bare_section_ref("00_07_Action_Plan_Tracker", "- **P0** · → `05_05 §3`\n")).to be_empty
-      expect(described_class.bare_section_ref("02_04_Legacy_Breadboard_Appendix", "`02_03 §9`\n")).to be_empty
+      expect(described_class.bare_section_ref("07_09_Some_Field_Appendix", "`02_03 §9`\n")).to be_empty
     end
   end
 
@@ -717,7 +714,7 @@ RSpec.describe DocsLinter do
 
     it "exempts index / standard-owner / tracker / appendix / manifesto" do
       %w[00_00_SSOT_Index 00_06_SSOT_Documentation_Standard 00_07_Action_Plan_Tracker
-         02_04_Legacy_Breadboard_Appendix manifest].each do |b|
+         07_09_Some_Field_Appendix manifest].each do |b|
         expect(described_class.bare_doc_ref(b, "`06_07`\n", ids)).to be_empty
       end
     end
@@ -829,7 +826,7 @@ RSpec.describe DocsLinter do
     it "exempts the index, standard-owner, tracker, and appendix docs" do
       txt = "[`01_04`](01_04_CODIT_and_Xylemointegration) §4\n"
       %w[00_00_SSOT_Index 00_06_SSOT_Documentation_Standard
-         00_07_Action_Plan_Tracker 02_04_Legacy_Breadboard_Appendix].each do |b|
+         00_07_Action_Plan_Tracker 07_09_Some_Field_Appendix].each do |b|
         expect(described_class.section_ref_after_doclink(b, txt)).to be_empty
       end
     end
@@ -908,13 +905,11 @@ RSpec.describe DocsLinter do
       expect(hits).not_to include(a_string_matching(/Payload:16/))
     end
 
-    it "flags `(р.N)`/`(рядок N)` Ukrainian-prose line-refs, exempt legacy 02_04 [DOC-T.29]" do
+    it "flags `(р.N)`/`(рядок N)` Ukrainian-prose line-refs [DOC-T.29]" do
       txt = "`application.rb` (рядок 31) registers it\n`web3.rb` (р.76,80,84,88) counters\n"
       hits = described_class.source_line_ref_drift("06_03", txt)
       expect(hits.size).to eq(2)
       expect(hits).to include(a_string_matching(/\(рядок 31\)/), a_string_matching(/\(р\.76,80,84,88\)/))
-      # 02_04 legacy breadboard: "рядок 10" = a physical breadboard row, not a source line
-      expect(described_class.source_line_ref_drift("02_04", "Точка Магії (рядок 10) між R1 та R2\n")).to be_empty
     end
 
     it "does not flag a ClassName:NNN ref inside 00_06/00_07 (they cite the bad forms as examples)" do

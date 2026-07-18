@@ -26,7 +26,7 @@
 | [`02_02` — Blind Mate Pogo Pin Interface](02_02_Blind_Mate_Pogo_Pin_Interface) | Pogo R_interface (§3.5 Z-stack; cold-start contact) |
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | BioContract: `delta_t` заряду EDLC → growth_points (§12.3) |
 | [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Споживач (STM32; wake = RTC-WUT, VBAT_OK = живлення-гейт) |
-| [`02_04` — Legacy Breadboard Appendix](02_04_Legacy_Breadboard_Appendix) | Legacy LTC3108 breadboard прототип |
+| [`02_04` — Bench Build & Test Guide](02_04_Bench_Build_Guide) | Bench-збірка Soldier на макетці (LTC3108 harvester = §5) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.7 resistors, HW.13 MPPT/R_int |
 
 ## 📑 Зміст
@@ -54,11 +54,11 @@
 
 Мікросхема BQ25570 — це надпотужний менеджер живлення, але вона має **фундаментальне обмеження**: для самостійного запуску (Cold Start) їй необхідна вхідна напруга не менше **330 мВ** та струм не менше 15 мкА.
 
-> 📦 **Історична нота (артефакт → [`02_04`](02_04_Legacy_Breadboard_Appendix)):** рання версія припускала, що ксилемний потоковий потенціал дає лише ~**44 мВ** (макет з імітатором — дільник 3.3 кОм/100 Ом від AA), ~7.5× менше за поріг cold-start. Ця гіпотеза **відкинута з EBFC Gen 2.0**; повний опис того breadboard — у legacy-додатку, тут не дублюється.
+> 📦 **Історична нота (44мВ-стенд → [`02_04 §5`](02_04_Bench_Build_Guide)):** рання версія припускала, що ксилемний потоковий потенціал дає лише ~**44 мВ** (макет з імітатором — дільник 3.3 кОм/100 Ом від AA), ~7.5× менше за поріг cold-start. Гіпотеза 44мВ **як джерело енергії відкинута з EBFC Gen 2.0**; сам 44мВ-harvester живе як навчальний bench-фронт ([`02_04 §5`](02_04_Bench_Build_Guide)), тут не дублюється.
 
-### 1.2. Первісне Рішення: Каскад LTC3108 → BQ25570 (артефакт → 02_04)
+### 1.2. Первісне Рішення: Каскад LTC3108 → BQ25570 (bench-harvester → 02_04 §5)
 
-> 📦 Рання архітектура долала cold-start каскадом **LTC3108** (осцилятор Майснера: трансформатор 1:100 + C1/C2 обв'язка, старт від ~20 мВ) перед BQ25570. Повний опис того breadboard-каскаду — схема, піни, повний перелік недоліків — живе у legacy-додатку [`02_04`](02_04_Legacy_Breadboard_Appendix); тут **не дублюється** (Ruthless Pruning, [`00_06 §4`](00_06_SSOT_Documentation_Standard)). Стисло про мотивацію пів'оту: +2 компоненти (трансформатор + LTC3108), нижчий загальний ККД, +~40% площі плати, складніша збірка.
+> 📦 Рання архітектура долала cold-start каскадом **LTC3108** (осцилятор Майснера: трансформатор 1:100 + C1/C2 обв'язка, старт від ~20 мВ) перед BQ25570. Повний опис того breadboard-каскаду — схема, піни трансформатора, недоліки — живе у bench-guide [`02_04 §5`](02_04_Bench_Build_Guide); тут **не дублюється** (Ruthless Pruning, [`00_06 §4`](00_06_SSOT_Documentation_Standard)). Стисло про мотивацію пів'оту: +2 компоненти (трансформатор + LTC3108), нижчий загальний ККД, +~40% площі плати, складніша збірка.
 
 ### 1.3. Архітектурний Пів'от
 
@@ -702,11 +702,11 @@ EBFC (Ti-6Al-4V anchor)  >500 мВ
 
 Це дозволяє відтворити cold-start loop, MPPT tracking та аналіз TX просадки **без LTC3108 у тестовому setup**, оскільки виробнича схема його не має.
 
-### 10.3. Legacy Educational Setup
+### 10.3. Bench Build Guide (повний вузол на макетці)
 
-Для студентських лабораторних робіт (ЧНУ, демонстрація принципу 44мВ→3.3V) — окремий навчальний breadboard на LTC3108 + AA + Coilcraft xfmr — задокументовано в окремому додатку:
+Повна поблокова збірка Soldier на макетці — harvester-фронт (44мВ LTC3108 / майбутній EBFC) + production sense/SE/compute/radio на готовому LoRa-E5 — плюс навчальна фізика harvester-ланцюга (ЧНУ, 44мВ→3.3V) живуть у bench build+test guide:
 
-→ **[`02_04` — Legacy Breadboard Appendix](02_04_Legacy_Breadboard_Appendix)** (legacy LTC3108-based, 44 мВ симулятор, тільки для освіти)
+→ **[`02_04` — Bench Build & Test Guide](02_04_Bench_Build_Guide)** (повний вузол поблоково; legacy 44мВ LTC3108 harvester + Meissner-фізика = його §5)
 
 ### 10.4. Тестовий Запуск з Реальним EBFC
 

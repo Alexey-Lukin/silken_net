@@ -96,11 +96,10 @@ module DocsLinter
   # [SSOT standard conformance] Each canon doc must carry the standard skeleton
   # (00_06): a ✅ Статус, a top 🔗 Cross-references, and an auto-ToC (TOC:AUTO
   # markers). Exempt: 00_00 (SSOT index), 00_07 (tracker / blocker home), and
-  # legacy appendix files (02_04_ prefix OR any *_Appendix / *_appendix name —
-  # case-insensitive first letter so the real `..._Appendix` basename matches, not
-  # only a lowercase `_[Aa]ppendix`). Caller passes basename (sans .md)
+  # legacy appendix files (any *_Appendix / *_appendix name — case-insensitive first
+  # letter so the real `..._Appendix` basename matches). Caller passes basename (sans .md)
   # + text; returns the missing element names so a CI gate keeps the tree from regressing.
-  CONFORMANCE_EXEMPT = /\A00_00_|\A00_07_|\A02_04_|_[Aa]ppendix/
+  CONFORMANCE_EXEMPT = /\A00_00_|\A00_07_|_[Aa]ppendix/
 
   def conformance_violations(basename, text)
     return [] unless basename.match?(/\A\d\d_\d\d_/)
@@ -345,8 +344,8 @@ module DocsLinter
   # EXCLUDES overloaded/generic tokens that would false-positive: "Codex" (04_05 Codex Lore
   # Module / "The Codex" SSOT-guard nickname / ADR-CDX), bare "Claude"/"Opus"/"Sonnet"/"Fable"
   # (model words that collide with prose). Exempt: 00_02 (roster home), 00_06 (cites examples),
-  # 00_07 (tracker), 02_04 (legacy). Skips fenced code (a script may legitimately name a tool).
-  AI_VENDOR_OWNER_DOC = /\A00_02_|\A00_06_|\A00_07_|\A02_04_/
+  # 00_07 (tracker). Skips fenced code (a script may legitimately name a tool).
+  AI_VENDOR_OWNER_DOC = /\A00_02_|\A00_06_|\A00_07_/
   AI_VENDOR_RE        = /(?<![A-Za-z])(Gemini|Cursor|Copilot|Windsurf|ChatGPT|Grok|DeepSeek|Claude Code)(?![A-Za-z])/
   AI_VENDOR_MIRROR_RE = /дзеркал|mirror|00_02/i
 
@@ -373,8 +372,8 @@ module DocsLinter
   # qualifies; a token still alive somewhere does NOT — LTC3108 survives as a DNP
   # cold-start fallback, so it is deliberately absent. Substring match → keep tokens
   # specific. Meta/legacy docs are EXEMPT (they legitimately NAME retired things):
-  # 02_04 (legacy-appendix home), 00_06 (this standard cites them as examples),
-  # 00_07 (tracker may reference an old baseline in a "migrate-from" note).
+  # 00_06 (this standard cites them as examples), 00_07 (tracker may reference an
+  # old baseline in a "migrate-from" note).
   # [SSOT anti-drift] Frozen anchor key-dimensions (01_01 §1 home, radial+axial freeze
   # 2026-06-20). ONE physical anchor crosses every domain doc (geometry / metallurgy /
   # capsule / pogo / economics / RF), so each legitimately cites its dims — and a freeze must
@@ -465,7 +464,7 @@ module DocsLinter
     "Gaia 2.0" => "retired project codename → SilkenNet (product) / GaiaNexus (planetary federation), 08_01 §2"
   }.freeze
 
-  DEPRECATED_EXEMPT = %w[02_04 00_06 00_07].freeze
+  DEPRECATED_EXEMPT = %w[00_06 00_07].freeze
 
   def deprecated_terms(basename, text)
     return [] if DEPRECATED_EXEMPT.any? { |prefix| basename.start_with?(prefix) }
@@ -567,7 +566,7 @@ module DocsLinter
   # registry tables are the bare-by-design home registry), 00_07 (tracker — terse
   # pointers by design, §-resolution is tracker:check's job), legacy appendix.
   # Caller passes basename (sans .md) + text; returns ["bare ref `05_05 §3` …", …].
-  BARE_REF_EXEMPT = /\A00_00_|\A00_06_|\A00_07_|\A02_04_|_[Aa]ppendix/
+  BARE_REF_EXEMPT = /\A00_00_|\A00_06_|\A00_07_|_[Aa]ppendix/
   BARE_SECTION_REF_RE = /(?<!\[)`(\d\d_\d\d[^`]*§[^`]*)`/
   PLACEHOLDER_SECTION_RE = /\A[nxy._]+\z/i
 
@@ -600,7 +599,7 @@ module DocsLinter
   # set as bare_section_ref + manifest — index / standard-owner / tracker / appendix /
   # manifesto keep their bare-by-design refs. Caller passes basename + text + the Set
   # of valid NN_NN ids. Pure: no I/O.
-  BARE_DOC_EXEMPT = /\A00_00_|\A00_06_|\A00_07_|\A02_04_|_[Aa]ppendix|\Amanifest/
+  BARE_DOC_EXEMPT = /\A00_00_|\A00_06_|\A00_07_|_[Aa]ppendix|\Amanifest/
   BARE_DOC_REF_RE = /(?<!\[)`(?:docs\/)?(\d\d_\d\d)(?:_[A-Za-z0-9_]+)?`/
 
   def bare_doc_ref(basename, text, valid_ids)
@@ -759,12 +758,11 @@ module DocsLinter
   def source_line_ref_drift(path, text)
     base = File.basename(path.to_s)
     cites_examples = base.start_with?("00_06", "00_07")           # standard + tracker name the bad forms
-    prose_exempt = cites_examples || base.start_with?("02_04")    # + legacy breadboard rows ≠ source
     text.each_line.flat_map do |line|
       [
         line[SOURCE_LINE_REF_RE],
         (line[CLASS_LINE_REF_RE] unless cites_examples),
-        (line[PROSE_LINE_REF_RE] unless prose_exempt),
+        (line[PROSE_LINE_REF_RE] unless cites_examples),
         (line[DOC_LINE_REF_RE] unless base.start_with?("00_06"))
       ].compact.map do |ref|
         "#{path}: volatile source line-ref `#{ref}` — cite the symbol/#define, not a line → #{line.strip[0, 80]}"
