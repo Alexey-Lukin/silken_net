@@ -112,8 +112,8 @@ R_int = 20 кΩ → V_drop = 300 мВ → V_actual = 200 мВ ❌
 
 **Мітигація (пріоритизовано):**
 - **Lab (обов'язково):** виміряти R_int двома точками — V_OC та V@15µA (резистор 23.3 кΩ); R_int = (V_OC − V_loaded)·23.3/V_loaded. Запит у [`08_02 §4`](08_02_Academic_Institutions_Registry).
-- **A (рекоменд., якщо R_int > 12 кΩ):** серійний стек 2× EBFC → V_OC = 1.0 В → R_int_max ≤ 47.3 кΩ (comfortable). Сумісно з anchor stacking ([`01_03 §5.1`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)). +1 анкер.
-- **B:** 2× анкери паралельно → R_int /2 (потребує узгоджених V_OC).
+- **A (рекоменд., якщо R_int > 12 кΩ):** 2 анкери **паралельно** → R_int /2 (аноди на одному потенціалі → shunt-free; потребує узгоджених V_OC). Дім — anchor stacking ([`01_03 §6.1`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)). +1 анкер.
+- **B (⚠️ лише між РІЗНИМИ деревами):** серійний стек 2× EBFC → V_OC = 1.0 В → R_int_max ≤ 47.3 кΩ, **АЛЕ** серія у спільному ксилемному соку = **ionic shunting → електроліз → емболія** ([`01_03 §6.1`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)); within-tree ЗНЯТО, допустиме лише між стовбурами (дроти).
 - **C:** LTC3108 cold-start preboost у **DNP footprint** (pads лишити, паяти лише для проблемних анкерів).
 
 ⚠️ До lab-перевірки R_int — **не замовляти 100 шт. PCBA без DNP-footprint LTC3108**.

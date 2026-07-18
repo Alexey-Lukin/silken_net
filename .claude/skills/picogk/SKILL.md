@@ -132,7 +132,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   Geometry numbers are owned in `01_01 §5` + founder decisions in `00_07 HW.33`; **MEASURE
   porosity after** (gotcha #4). Render via `Zone1Anode.Anode` (the ctor route, gotcha #1).
   🔴 **`topology` defaults to `"sheet"` SILENTLY** (`Cem.cs`; a member of gotcha #11's class) and 6/7 `anchor_zone1.*` omit the key —
-  so every SKU renders sheet, while canon `01_01 §5.6` says "дані схиляють до **network**". That choice
+  so every SKU renders sheet, while canon `01_01 §5.5` says "дані схиляють до **network**". That choice
   is an un-made founder verdict (`00_07 HW.33` ⚖️), not a default to inherit: a factory STL cut today
   would ship the disfavored branch. Do NOT quietly pick a side when touching these manifests.
   (`stepped` is a separate, already-decided THIRD branch — implemented `ZonedGyroid`, orthogonal to the
