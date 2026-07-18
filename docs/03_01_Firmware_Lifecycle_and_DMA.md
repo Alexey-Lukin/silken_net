@@ -403,8 +403,8 @@ Offset | Size | Field            | Значення
 
 **Байт 10 (BioContract) — результат mruby Атрактора:**
 - Біт `[7]`: PanicFlag → `0`=звичайний пакет, `1`=panic (Emergency TX). Нормальні пакети завжди маскуються `& ~PANIC_FLAG_BIT`.
-- Біти `[6:5]`: Status → `0`=homeostasis, `1`=stress, `2`=anomaly, `3`=tamper
-- Біти `[4:0]`: Growth Points → `0-31` (Proof of Growth; нормальний діапазон 10–31)
+- Біти `[6:5]`: Status → `0`=homeostasis, `1`=stress, `2`=anomaly, `3`=vm_error (mruby VM-збій, **НЕ** tamper — SLASH-1 P0; фізичний tamper їде PanicFlag-каналом, див. §11.3)
+- Біти `[4:0]`: Growth Points → `0-31` (Proof of Growth; wire-гомеостаз 5–31, stored ×2 = 10–62)
 
 > **[FW.29] Disambiguація panic vs насичений acoustic_events:** до FW.29 `acoustic_events == 0xFF` вказував і на реальне насичення кавітаційних подій, і на panic. Тепер `PANIC_FLAG_BIT` (bit 7 байта 10) однозначно маркує паніку: `panic_payload[10] = 0x80`, а `panic_payload[7] = 0xFF` (acoustic). Нормальні пакети завжди виконують `lora_payload[10] &= ~PANIC_FLAG_BIT`.
 
@@ -453,7 +453,7 @@ mrb_value result = mrb_funcall_argv(mrb, ...);
 if (!mrb->exc) {
     lora_payload[10] = (uint8_t)mrb_fixnum(result);
 } else {
-    lora_payload[10] = BIO_STATUS_VM_ERROR; // 0xFF = tamper status
+    lora_payload[10] = BIO_STATUS_VM_ERROR; // 0x60: status=3=vm_error (НЕ tamper — SLASH-1; наш софт-збій)
     mrb->exc = NULL;
 }
 mrb_gc_arena_restore(mrb, arena_idx);     // Відновлюємо GC arena
@@ -620,7 +620,7 @@ on_lora_rx(payload, did_from_packet):
 
 **Властивості:**
 - **LIFO eviction** замість FIFO/LRU обрано через простоту (3 mov-операції замість циклу пошуку).
-- **Persistence через STOP2:** кеш виживає глибокий сон і повне знеструмлення з RTC Backup живленням. При full power-loss (включно з RTC) — кеш скидається у нулі, але `tree_did != 0` у DR7 захищає від ретрансляції власних пакетів.
+- **Persistence через STOP2:** кеш виживає глибокий сон і повне знеструмлення з RTC Backup живленням. При full power-loss (включно з RTC) — кеш скидається у нулі; захист від ретрансляції власних пакетів = порівняння `did_from_packet == tree_did`, де `tree_did` деривується з UID на кожному boot ([§7](#-7-did-derivation-імя-з-кремнію), FW.54 — DR7 звільнено, у RTC зберігати нічого).
 - **Невразливість до DID-spoofing у короткому вікні:** якщо зловмисник інжектує пакети з DID реального сусіднього дерева, перший пройде, але всі наступні будуть drop'нуті. Atttacker мусить сатурувати весь radio space — що видно через `acoustic_events` (FW.18) і `panic TX` (SEC.10).
 
 ---
@@ -963,14 +963,14 @@ EdgeCache forest_cache[50]; // 50 слотів = 1150 байт RAM
 **Flush Jitter:** При одночасному ребуті кількох Queens (blackout) — без jitter всі Queens відправлять батч одночасно → DDoS на backend. Jitter (0-60s, HRNG) розмазує трафік.
 
 **Послідовність:**
-1. Inject Queen Health Packet (DID=0x00000000 sentinel)
+1. Health Королеви → підписаний **QATT-v2 header** конверта (ARCH.54); окремий DID=0x00000000 pseudo-record **retired 2026-07-03** ([`03_02 §7`](03_02_Queen_Gateway_Firmware))
 2. Pack cache → `binary_batch_buffer` (21 байт/запис: 4 DID + 1 RSSI + 16 payload)
 3. **MX_CRYP re-init** → `CRYP_KEYSIZE_256B` + `coap_key[8]` (CoAP AES-256-CBC ключ Queen, окремий HKDF info `"silken-aes-256-device-key"`)
 4. AES-256-CBC encrypt з HRNG IV (prepend IV як перші 16 байт)
 5. `AT+CCOAPNEW` → `AT+CCOAPSEND` (hex-кодований) → `HAL_Delay(2000)` → `AT+CCOAPDEL`
 6. **Restore ECB+128B mode** → `CRYP_KEYSIZE_128B` + `aes_key[4]` (LoRa) для трафіку від Soldiers (критично — SEC.8 ECB Restoration)
 
-**Queen Sentinel Packet (DID = 0x00000000):** health-пакет Королеви перевикористовує ту саму 16-байтну wire-розкладку, що й Soldier, але з `DID=0` (sentinel «це Королева, не дерево») і репурпозить поля (uptime · cache-load · health-proxy `cache_count`, cap 5-біт). Повна byte-map + C-код + server-routing (`GatewayTelemetryWorker`) — канон [`03_02 §7`](03_02_Queen_Gateway_Firmware).
+**Queen Health — QATT-v2 конверт-header (ARCH.54):** пульс Королеви їде **підписаним health-блоком QATT-v2 конверта** (uptime · cache-load · lora_rx_drops · coap_fail · csq · flags). Стара DID=0x00000000 16-байтна sentinel-розкладка **retired 2026-07-03** — мертва обабіч (дропається), masking-атака закрита by construction (без валідного Ed25519-підпису → без health). Механізм + byte-map + server-routing (`enqueue_envelope_health`) — канон [`03_02 §7`](03_02_Queen_Gateway_Firmware).
 
 ### 4.5 OTA Reflex Shot (Broadcast до Soldiers)
 
@@ -1004,8 +1004,6 @@ Chunk-розмір для LoRa OTA: **11 байт** корисного коду 
 | `0x9F` | OTA_FETCH_HINT (анонс кампанії: `[0x9F][fw_id:4 BE][total:2 BE]`) | Rails→Queen | CoAP (poll-відповідь) | [`03_02 §4а`](03_02_Queen_Gateway_Firmware) | ✅ FW.60 |
 | `0x9D` | CMD_SET_AUDIO_THRESHOLDS (TinyML per-Soldier) | Rails→Queen→Soldier | CoAP/LoRa | [`03_03 §5`](03_03_TinyML_Acoustic_Inference) | ✅ FW.18 (2026-05-02) |
 | `0x9E` | CMD_ROTATE_KEY (hash-ratchet advance-to-version) | Rails→Queen→Soldier | CoAP/LoRa | [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security) | 🟡 FW.17 (freeze-contract host-готово; активація CCM-gated) |
-| `0x9F` | _reserved_ | — | — | — | вільний |
-
 > **Політика розширення:** перед додаванням нового опкоду — (1) перевірити цю таблицю, (2) обрати наступний вільний з `0x9E..0x9F`, (3) задокументувати тут І у відповідному функціональному документі (03_02/03_05/05_02). Якщо `0x9E..0x9F` вичерпано — обговорити перепакування або новий безпечний діапазон.
 >
 > **Ключ LoRa-шару (CCM-ера, FW.2 (в)):** усі опкоди цієї карти — і downlink-broadcast (`0x99..0x9E`), і uplink-запити (`0x55`/`0x56`) — їдуть 16B ECB на **cluster control-plane KEYB** ([`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security) двоключова модель); session KEYL носить лише телеметрію/panic (30B CCM rev2.1). ECB-ера — єдиний спільний ключ, як і було.
@@ -1318,7 +1316,7 @@ C-код знає **тільки** про `calculate_state` (через `mrb_int
 payload_byte = (status << 5) | growth_points
 ```
 
-Status: 0 homeostasis / 1 stress / 2 anomaly / 3 vm_error (mruby VM-збій, виживає `& 0x7F` → GP 31; **НЕ** tamper — SLASH-1 P0, фізичний tamper → PANIC_FLAG-канал). Wire-GP 5-біт (5..31) масштабується ÷2; backend ×2 upscale при unpack (tokenomic invariant). Серверне дзеркало `attractor.rb` звіряє z-val (розходження → DCI Alert).
+Status: 0 homeostasis / 1 stress / 2 anomaly / 3 vm_error (mruby VM-збій → `BIO_STATUS_VM_ERROR=0x60`, виживає `& 0x7F` як status=3, **GP=0**; **НЕ** tamper — SLASH-1 P0, фізичний tamper → PANIC_FLAG-канал). Wire-GP 5-біт (5..31) масштабується ÷2; backend ×2 upscale при unpack (tokenomic invariant). Серверне дзеркало `attractor.rb` звіряє z-val (розходження → DCI Alert).
 
 
 ## 🛠️ 12. Тестова Інфраструктура (`firmware/test/`)

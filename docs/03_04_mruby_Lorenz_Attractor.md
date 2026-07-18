@@ -436,7 +436,7 @@ payload_byte = (status << 5) | growth_points
 | `00` | `0` | Гомеостаз (Healthy Chaos) |
 | `01` | `1` | Стрес (Посуха / Low Turgidity) |
 | `10` | `2` | Аномалія (Critical Stress) |
-| `11` | `3` | `vm_error` (mruby VM-збій → `0x7F` після firmware mask `& 0x7F`; софт-фолт, **НЕ** tamper — SLASH-1 P0; фізичний tamper → PANIC_FLAG-канал) |
+| `11` | `3` | `vm_error` (mruby VM-збій → `BIO_STATUS_VM_ERROR=0x60`: status=3, gp=0, виживає mask `& 0x7F`; софт-фолт, **НЕ** tamper — SLASH-1 P0; фізичний tamper → PANIC_FLAG-канал) |
 
 **Розпакування на backend:**
 

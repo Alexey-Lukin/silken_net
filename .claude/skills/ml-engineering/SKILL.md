@@ -21,7 +21,7 @@ on-device features, proven, not hoped.**
 | `docs/00_02` | Validation Gate — LLM proposes a *hypothesis*; no code until the spec is approved. |
 | `docs/03_01 §12.4` | **Firmware ARM cross-compile build** (FW.46) — CMake, pinned submodules (`firmware/extern/`), mrbc bytecode, toolchain pin, footprint, mruby `double`/NO_BOXING/minimal-gembox invariants. |
 
-**State** (what's built / next) lives in memory, not here: `[[project_e61_done_next_machine_doable]]`, plus `[[feedback_no_volatile_counts]]`, `[[feedback_c_comments_ukrainian]]`.
+**State** (what's built / next) lives in memory, not here: `[[project_e61_done_next_machine_doable]]`, plus `[[feedback_no_volatile_counts]]`, `[[feedback_comment_style]]`.
 
 ## Core invariant — three implementations, one definition, proven equal
 
@@ -138,7 +138,7 @@ drop-in header swap (the `_stub.h` `__has_include` fallback stays).
 - **Host DFT accumulates in double** *on purpose* — it's a reference for the table/pipeline test; naive float32 DFT (O(N) error) is worse-conditioned than the device `arm_rfft_fast_f32` and its log-floor noise on silent bands over-reads error. On-target float32 FFT parity is **STM32-bench-gated**, not host.
 - **Periodic Hann, not `arm_hanning_f32`** (that one is symmetric, denom N−1) → use the precomputed table.
 - **conda `soundfile`** is pulled transitively by `librosa` — don't pin it by name (the conda-forge name bites).
-- **`.c` comments**: Ukrainian + the file's poetic house style (`[[feedback_c_comments_ukrainian]]`).
+- **`.c` comments**: Ukrainian + the file's poetic house style (`[[feedback_comment_style]]`).
 - **No commit/push** unless asked; verify the diff scope before any commit (Ruby side).
 
 ## Keep this skill bounded
