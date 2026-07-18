@@ -133,6 +133,16 @@ jobs:
         # ssot_guard paths↔mappings parity; pinned sources ⊆ this changes-filter.
         run: ruby scripts/guard_registry_sync.rb
 
+      - name: Gate-perimeter meta-guard (OPS.14 — required-check perimeter ⟷ PR-workflows)
+        # Pure Ruby, no Rails — classifies EVERY pull_request-triggered workflow
+        # (:required / :advisory_by_design / :flip_pending) in a curated PERIMETER
+        # SSOT. A NEW deterministic PR-gate born outside the required set → RED
+        # "classify it" (the class that let the money-path Solidity audit stay
+        # merge-advisory while canon claimed "all gating"). Advisory lists
+        # flip_pending (→ OPS.15, OPS.16). Input `.github/**` already in the
+        # changes-filter, so the gate is not decorative.
+        run: ruby scripts/workflow_gate_perimeter.rb
+
       - name: FIELDS ⟷ canon sync (OPS.6 — Projects V2 schema vs 00_05 §1.1)
         # Pure Ruby, no Rails — row-scoped GithubBootstrap::FIELDS vs the §1.1
         # table + Module vs the labels.yml closed nine + Semester/Cycle prefix.
