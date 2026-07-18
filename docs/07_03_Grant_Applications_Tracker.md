@@ -8,9 +8,9 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 4 — заявки подано до 7 екосистем; чекаємо відповідей. ⚠️ Заявки подані від фіз-особи (Oleksii Lukin); milestone-acceptance / отримання коштів гейтовані на інкорпорацію юр-особи-заявника ([`00_07` BIZ.20](00_07_Action_Plan_Tracker))
+- **Поточний TRL:** TRL 4 — заявки подано до Web3-екосистем; **відповіді відсутні (dead silence)** — жоден фонд не відреагував; Giveth = єдиний із живим профілем (донатів поки нема). ⚠️ Заявки подані від фіз-особи (Oleksii Lukin); milestone-acceptance / отримання коштів гейтовані на інкорпорацію юр-особи-заявника ([`00_07` BIZ.20](00_07_Action_Plan_Tracker)).
 - **Готові артефакти:** Технічна документація Wiki, BOM, демо Attractor, збірна інструкція.
-- **Відкрите:** відповіді від 7 грантових екосистем — зовнішнє очікування (активного трекер-айтема немає; дія народжується з відповіді). Підготовка Horizon/EF-заявок → [`00_07`](00_07_Action_Plan_Tracker) BIZ.12 (академ-гейти UNI.1/UNI.14).
+- **Відкрите:** Web3-грант-трек = **холодний, не теплий** — активного трекер-айтема немає (дія народжується з відповіді, якої нема). Живий вектор = **Horizon Europe Cluster 6** (нижче, gated на публікації) → [`00_07`](00_07_Action_Plan_Tracker) BIZ.12 (академ-гейти UNI.1/UNI.14).
 
 ---
 
@@ -29,14 +29,12 @@
 
 <!-- TOC:AUTO:START -->
 - [1. Карта Стратегічних Грантів (Ecosystem Matrix)](#-1-карта-стратегічних-грантів-ecosystem-matrix)
-- [2. Деталізація Цінності (Value Proposition per Partner)](#-2-деталізація-цінності-value-proposition-per-partner)
-- [3. Модель Public Goods Funding (Giveth.io)](#-3-модель-public-goods-funding-givethio)
-- [4. Артефакти для Milestone 1 (Grant Deliverables)](#-4-артефакти-для-milestone-1-grant-deliverables)
-- [5. Інструкція Монтажу Анкера (Field Assembly Guide)](#-5-інструкція-монтажу-анкера-field-assembly-guide)
-- [6. Інструменти для Паралельної Розробки (Virtual Prototyping)](#-6-інструменти-для-паралельної-розробки-virtual-prototyping)
-- [7. Дорожня Карта Фінансування (Funding Roadmap)](#-7-дорожня-карта-фінансування-funding-roadmap)
-- [8. Академічні Гранти (Horizon Europe & Ethereum Foundation)](#-8-академічні-гранти-horizon-europe--ethereum-foundation)
-- [9. Грантова Дипломатія (Cross-chain Grant Strategy)](#-9-грантова-дипломатія-cross-chain-grant-strategy)
+- [2. Модель Public Goods Funding (Giveth.io)](#-2-модель-public-goods-funding-givethio)
+- [3. Артефакти для Milestone 1 (Grant Deliverables)](#-3-артефакти-для-milestone-1-grant-deliverables)
+- [4. Інструкція Монтажу Анкера (Field Assembly Guide)](#-4-інструкція-монтажу-анкера-field-assembly-guide)
+- [5. Інструменти для Паралельної Розробки (Virtual Prototyping)](#-5-інструменти-для-паралельної-розробки-virtual-prototyping)
+- [6. Дорожня Карта Фінансування (Funding Roadmap)](#-6-дорожня-карта-фінансування-funding-roadmap)
+- [7. Академічні Гранти (Horizon Europe & Ethereum Foundation)](#-7-академічні-гранти-horizon-europe--ethereum-foundation)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -45,41 +43,19 @@
 
 | Екосистема | Категорія гранту | Роль у SilkenNet | Статус |
 |---|---|---|---|
-| **peaq** | DePIN / Machine Rewards | Machine DID для кожного "Солдата" | Подано |
-| **IoTeX** | Halo / W3bstream | ZK-proofs для верифікації телеметрії | Подано |
-| **Chainlink** | BUILD / Social Impact | Оракули для мінтингу та Slashing | Подано |
-| **Filecoin** | Green Data / Storage | Незмінний архів телеметрії лісу | Подано |
-| **Giveth.io** | Public Goods / ReFi | Донати від спільноти + GIVmatching | Подано ✅ Активний |
-| **Solana** | DePIN Track | Мікро-винагороди у USDC за гомеостаз | Подано |
-| **Polygon** | Hadron (Institutional) | KYC-compliance для Carbon Credits | Подано |
+| **peaq** | DePIN / Machine Rewards | Machine DID для кожного "Солдата" | Подано · без відповіді |
+| **IoTeX** | Halo / W3bstream | ZK-proofs для верифікації телеметрії | Подано · без відповіді |
+| **Chainlink** | BUILD / Social Impact | Оракули для мінтингу та Slashing | Подано · без відповіді |
+| **Filecoin** | Green Data / Storage | Незмінний архів телеметрії лісу | Подано · без відповіді |
+| **Giveth.io** | Public Goods / ReFi | Донати від спільноти + GIVmatching | Подано ✅ Активний (профіль) |
+| **Solana** | DePIN Track | Мікро-винагороди у USDC за гомеостаз | Подано · без відповіді |
+| **Polygon** | Hadron (Institutional) | KYC-compliance для Carbon Credits | Подано · без відповіді |
+
+> **Грант ≠ інтеграція.** Статус стосується виключно *грантової заявки* — усі шість мовчазних фондів. **Технічна роль** (колонка 3) залишається живою: інтеграції не потребують дозволу фонду ([`05_01` Permissionless Integration](05_01_Multichain_Architecture)) — IoTeX-верифікація, Chainlink-оракул (⚪ demoted, ARCH.53), Solana-нагороди, Polygon-Hadron KYC працюють поза грант-віссю. Мертва заявка не робить мертвою інтеграцію.
 
 ---
 
-## 🛠️ 2. Деталізація Цінності (Value Proposition per Partner)
-
-### 🆔 peaq (The Identity Provider)
-
-- **Навіщо їм ми:** Найбільший у світі живий флот "Машин" (дерев), що мають суверенний DID
-- **Наш запит:** Грант на інтеграцію `peaq-pallet-did` у наш бекенд та підтримку "Economy of Things"
-
-### 🧮 IoTeX (The Verification Layer)
-
-- **Навіщо їм ми:** Складний кейс для W3bstream — верифікація біологічного гомеостазу через ZK-SNARKs
-- **Наш запит:** Технічна підтримка для розгортання zkVM логіки Атрактора Лоренца
-
-### 🌉 Chainlink (The Truth Bridge)
-
-- **Навіщо їм ми:** Демонстрація Chainlink Functions як критичної ланки між IoT та On-chain фінансами
-- **Наш запит:** Доступ до програми BUILD та субсидування Gas-витрат для оракулів
-
-### 🧊 Filecoin (The Eternal Memory)
-
-- **Навіщо їм ми:** Величезні масиви "зелених даних" (Environmental Data), що мають зберігатися вічно для аудиту вуглецевих кредитів
-- **Наш запит:** Грант на зберігання даних та статус "Verified Client"
-
----
-
-## 🌱 3. Модель Public Goods Funding (Giveth.io)
+## 🌱 2. Модель Public Goods Funding (Giveth.io)
 
 **Статус:** ✅ Профіль активний. Очікуємо донатів від спільноти та GIVmatching-раундів.
 
@@ -95,7 +71,7 @@
 
 ---
 
-## 📋 4. Артефакти для Milestone 1 (Grant Deliverables)
+## 📋 3. Артефакти для Milestone 1 (Grant Deliverables)
 
 Для успішного проходження першого етапу (Milestone Acceptance) більшість фондів вимагає:
 
@@ -113,7 +89,7 @@
 
 ---
 
-## 🔧 5. Інструкція Монтажу Анкера (Field Assembly Guide)
+## 🔧 4. Інструкція Монтажу Анкера (Field Assembly Guide)
 
 > **Канон процедури встановлення — [`01_04 §3`](01_04_CODIT_and_Xylemointegration) (Flush Mount + Microfrezing).** Ця секція — спрощений польовий **grant-deliverable** для арбористів/волонтерів (15-хв чек-лист), а не заміна хірургічного протоколу. ⚠️ Свердління нижче — **fallback-режим** для польових умов без прецизійного інструменту ([`01_04 §3.4`](01_04_CODIT_and_Xylemointegration)); канон рекомендує **microfrezing** (свердло тригерить resinosis — [`01_04 §3.3`](01_04_CODIT_and_Xylemointegration)), а при свердлінні **обов'язкові** anti-resin стратегії (Nafion-g-PSBMA).
 
@@ -155,37 +131,34 @@
 
 ---
 
-## 💻 6. Інструменти для Паралельної Розробки (Virtual Prototyping)
+## 💻 5. Інструменти для Паралельної Розробки (Virtual Prototyping)
 
-> **Канон dev/prototyping toolchain** (LTspice, KiCad, Wokwi, Proteus, STM32CubeIDE, ST-LINK-V3MINIE) — [`02_01 §7`](02_01_Hardware_Architecture_and_BOM) (Development Toolchain). **Управління секретами** при деплої (Bitwarden/1Password, окремий vault per-середовище) — [`06_04`](06_04_Secrets_Checklist). Тут не дублюємо — SSOT тримає один дім; для грантів ці інструменти потрібні лише як deliverable-чекліст (вище §4).
+> **Канон dev/prototyping toolchain** (LTspice, KiCad, Wokwi, Proteus, STM32CubeIDE, ST-LINK-V3MINIE) — [`02_01 §7`](02_01_Hardware_Architecture_and_BOM) (Development Toolchain). **Управління секретами** при деплої (Bitwarden/1Password, окремий vault per-середовище) — [`06_04`](06_04_Secrets_Checklist). Тут не дублюємо — SSOT тримає один дім; для грантів ці інструменти потрібні лише як deliverable-чекліст (вище §3).
 
 ---
 
-## 🗺️ 7. Дорожня Карта Фінансування (Funding Roadmap)
+## 🗺️ 6. Дорожня Карта Фінансування (Funding Roadmap)
 
 ```
-Зараз:     Чекаємо відповідей грантів + донати Giveth
-           │
-           ▼
-Q2 2026:   Перший транш → Закупівля компонентів (деталі для прототипу)
-           → Тестова партія 100 анкерів (Київ/Дніпро DMLS)
-           │
-           ▼
-Q3 2026:   Розгортання першого кластера (Черкаський бір, 10–20 дерев)
-           → Перші дані телеметрії → Перший SCC-мінт
-           → R&D звіт ЧНУ (протокол «Long-Term Integrity»)
-           │
-           ▼
-Q4 2026:   Seed-раунд (climate/deeptech фонди)
-           → Дані + університетська верифікація + перший SCC = strong pitch
-           │
-           ▼
-2027:      Scale-out: 1,000 дерев → NaaS-контракти → Carbon Credits
+Зараз:      Web3-гранти — тиша (dead silence); Giveth-профіль живий, донатів нема
+            → Фінансування = self-funded + академ-парасоль (Horizon, gated на публікації)
+            │
+            ▼
+Розблок:    Інкорпорація юр-особи (BIZ.20) → milestone-acceptance + MSA-counterparty
+            → Закупівля першої партії 100 анкерів (Giveth-збір / self-fund; DMLS-хаб)
+            │
+            ▼
+1-й кластер: Черкаський бір, 10–20 дерев → перші дані телеметрії → перший SCC-мінт
+            → R&D звіт ЧНУ (протокол «Long-Term Integrity»)
+            │
+            ▼
+Seed-раунд: climate/deeptech фонди (дані + університетська верифікація + перший SCC = pitch)
+            → Scale-out: 1,000 дерев → NaaS-контракти → Carbon Credits
 ```
 
 ---
 
-## 🏛️ 8. Академічні Гранти (Horizon Europe & Ethereum Foundation)
+## 🏛️ 7. Академічні Гранти (Horizon Europe & Ethereum Foundation)
 
 > **Стратегічний рівень:** Web3-екосистемні гранти (секції 1-7) покривають технічну інфраструктуру. Horizon Europe та Ethereum Foundation гранти легітимізують проєкт для інституційних інвесторів та ESG-регуляторів ЄС.
 
@@ -226,46 +199,9 @@ WP9 Exploitation & IPR            → ActiveBridge + Silken Net
 | **Програма** | Ethereum Foundation Academic Grants Round |
 | **Тип** | Research grant до $150K |
 | **Фокус** | ZK-proofs, DePIN, on-chain verifiable data, public goods |
-| **Статус** | Не подано |
-| **Академічний лідер** | **Архітектор (Silken Net)** — тема заявки (ZK-proofs W3bstream на STM32WLE5JC) = наш власний технічний домен, не академічний. Академ-співавтори за потреби: ФОТІУС (Порубльов — Lorenz/DCI-математика, Ярмілко — embedded-крипто) ⚖️ при підготовці подачі |
+| **Статус** | ⚪ Неактивний напрямок — без відповіді / не пріоритет (тема = наш власний тех-домен, не академічний) |
 
 **Тема заявки:** _"Trustless D-MRV: IoTeX W3bstream ZK-proofs for biological homeostasis verification on STM32WLE5JC edge devices"_ — пов'язано з `IotexVerificationWorker`, `Iotex::W3bstreamVerificationService` та [`05_02`](05_02_Proof_of_Growth_Pipeline).
 
-> **Детально про консорціум та грантову стратегію:** [`08_02 §5`](08_02_Academic_Institutions_Registry) (СЄУ; консорціум-лідерство → Спрягайло, §8 вище).
+> **Детально про консорціум та грантову стратегію:** [`08_02 §5`](08_02_Academic_Institutions_Registry) (СЄУ; консорціум-лідерство → Спрягайло, §7 вище).
 
-## 🗺️ 9. Грантова Дипломатія (Cross-chain Grant Strategy)
-
-> Стратегічний протокол подачі грантових заявок: кому, про кого і як розповідати для максимального результату на технічних дзвінках (Technical Due Diligence).
-
-### Загальне Позиціонування
-
-SilkenNet = **Modular DePIN Stack** (агностична інфраструктура). Не "кидаємо" одну мережу заради іншої — кожна вирішує свій шар. Це усуває звинувачення в "зраді" і позиціонує як **Системного Архітектора**, а не "шукача грантів".
-
-> Відповідь на питання "Чому ви подалися до конкурентів?":
-> *"SilkenNet — це інфраструктурний проєкт планетарного масштабу. Ми збираємо найкращий технологічний стек у світі: хтось вирішує швидкість транзакцій, хтось — ідентичність машин, хтось — вічне зберігання даних."*
-
----
-
-### Шпаргалка по Аудиторії
-
-| Грантодавець | Наш Статус для Них | Про кого КАЗАТИ | Про кого МОВЧАТИ |
-|---|---|---|---|
-| **Solana Foundation** | "High-Speed DePIN Execution Layer" | Chainlink (оракули), IoTeX (верифікація заліза) | peaq, Ethereum (конкуренти за "найкращу мережу") |
-| **peaq / IoTeX** | "Machine Economy / DePIN Infrastructure" | Один про одного, Filecoin (зберігання біо-даних) | Solana як "основний дім" (вони хочуть власні L2) |
-| **Chainlink** | "Cross-chain Oracle Consumer" | ВСІХ — Chainlink "Швейцарія", їм вигідне охоплення всіх мереж | — (немає ворогів) |
-| **Ethereum Foundation (ESP)** | "Public Good / ReFi" | Filecoin, Chainlink, ReFi-спільнота | Solana "вона краща" — EF цінує ідеологію, а не швидкість |
-| **Climate.biz / KlimaDAO** | "ReFi Natural Capital Protocol" | IoTeX (trustless hardware data), Filecoin (незмінний аудит) | Фінансові спекуляції, "швидкі гроші" |
-| **Filecoin / Protocol Labs** | "DePIN Data Archive (Hardware-to-IPFS)" | Ethereum, IoTeX | Суто фінансові проєкти без реальних даних |
-| **Polygon / Hadron** | "RWA Natural Capital (ERC-3643)" | IoTeX ZK-proof, Chainlink oracle | — |
-
----
-
-### Elevator Pitch по Аудиторії (Дипломатична версія)
-
-| Кому | Ключова фраза |
-|---|---|
-| **Solana** | *"Solana — наш Execution Layer для Proof of Growth мікроплатежів. Chainlink доставляє ZK-дані з IoTeX в наші Solana смарт-контракти."* |
-| **peaq / IoTeX** | *"Кожне дерево отримує peaq Machine DID при провізіонінгу. IoTeX W3bstream верифікує кожен пакет телеметрії. Filecoin архівує всі дані назавжди."* |
-| **Chainlink** | *"Ми розгортаємося на Solana, Polygon та Ethereum одночасно. Chainlink Functions — наш єдиний trusted міст між IoTeX ZK-proof і смарт-контрактами на всіх мережах."* |
-| **Ethereum Foundation** | *"SilkenNet — Public Good планетарного масштабу. Щотижневий SHA-256 State Root anchoring на Ethereum L1 гарантує незмінність даних про ліс на десятки років."* |
-| **Filecoin / Protocol Labs** | *"Кожен день AuditLogWorker архівує терабайти біо-телеметрії в IPFS/Filecoin. Через 10 років будь-який аудитор може перевірити кожну секунду життя кожного дерева."* |
