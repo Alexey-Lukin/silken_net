@@ -77,6 +77,7 @@ namespace :docs do
     src_line_refs = [] # hard: volatile `*.c`/`*.h`/`*.rb` source line-refs (DOC-T.15)
     anchor_dim   = []  # hard: superseded anchor dimension range near part keyword (01_01 §1 freeze)
     thermal_drift = [] # hard: superseded HW.3.IS thermal-stress/press-fit number (01_01 §4.2 / report)
+    fence_unbalanced = [] # hard: unclosed ``` code fence (odd count) desyncs fence-aware guards + truncates ToC — DOC-T.45
     graph_docs  = {}  # id "NN_NN" → text, for the #anchor-resolution gate (DocsGraph)
     doc_trls    = {}  # basename → member-TRL int (from ✅ Статус), for the 00_03 §1 band guard
 
@@ -135,6 +136,7 @@ namespace :docs do
       anchor_dim.concat(DocsLinter.anchor_dimension_drift(base, text).map { |h| "#{base}: #{h}" })
       thermal_drift.concat(DocsLinter.thermal_stress_drift(base, text).map { |h| "#{base}: #{h}" })
       src_line_refs.concat(DocsLinter.source_line_ref_drift(base, text))
+      fence_unbalanced.concat(DocsLinter.unbalanced_code_fences(text).map { |h| "#{base}: #{h}" })
     end
 
     # [canonical source-block pin] HARD — value-bearing const blocks that live in BOTH
@@ -213,7 +215,9 @@ namespace :docs do
     # family needs relative-href support before it can cover protocols/ → 00_07 DOC-T.26.)
     (Dir[File.join(DOCS_DIR, "**", "*.md")] - files).each do |f|
       base = File.basename(f, ".md")
-      sec_after_link.concat(DocsLinter.section_ref_after_doclink(base, File.read(f)).map { |h| "#{base}: #{h}" })
+      ptext = File.read(f)
+      sec_after_link.concat(DocsLinter.section_ref_after_doclink(base, ptext).map { |h| "#{base}: #{h}" })
+      fence_unbalanced.concat(DocsLinter.unbalanced_code_fences(ptext).map { |h| "#{base}: #{h}" })
     rescue ArgumentError
       next # skip non-UTF-8 / binary files
     end
@@ -402,6 +406,12 @@ namespace :docs do
       puts "  ToC DRIFT (#{toc_drift.size}) — run `bin/rails docs:toc`:"
       toc_drift.each { |d| puts "    ✗ #{d}" }
     end
+    if fence_unbalanced.empty?
+      puts "  fence balance:  every doc has balanced ``` code fences (no in_fence toggle desync) ✓"
+    else
+      puts "  UNBALANCED CODE FENCES (#{fence_unbalanced.size}) — an unclosed ``` desyncs every fence-aware guard + truncates the ToC (DOC-T.45):"
+      fence_unbalanced.sort.each { |d| puts "    ✗ #{d}" }
+    end
     if conformance.empty?
       puts "  conformance:    every canon doc carries Статус + Cross-references + ToC ✓"
     else
@@ -498,6 +508,7 @@ namespace :docs do
     failed << "deprecated SSOT terms present" unless deprecated.empty?
     failed << "anchor dimension drift (superseded flange/Zone2 range outside 01_01 §1 freeze)" unless anchor_dim.empty?
     failed << "thermal-stress drift (superseded HW.3.IS SF/P_c number outside 01_01 §4.2 / the report)" unless thermal_drift.empty?
+    failed << "unbalanced code fences (unclosed ``` desyncs fence-aware guards + ToC — DOC-T.45)" unless fence_unbalanced.empty?
     failed << "superseded term in front-matter (🎯/Статус names a reversed decision)" unless superseded_fm.empty?
     failed << "tokenomics/carbon rate restated outside One-Home (05_03/07_01)" unless rate_drift.empty?
     failed << "rate-guard anchor stale (home re-priced, regex not — DOC-T.40)" unless rate_anchor.empty?

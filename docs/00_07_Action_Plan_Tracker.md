@@ -1729,7 +1729,7 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 
 | ID | Пункт | Канон |
 |----|-------|-------|
-| DOC-T.45 | 🤖 Fence-balance гейт: незакритий code-fence тихо десинхронізує КОЖЕН fence-aware guard (усі скани лише toggle-skip) + обрізає ToC — а самого гейта парності fence досі НЕМА. Побудувати advisory-лінтер балансу code-fence по `docs/**` (мотив-gotcha — `.claude/skills/ssot-maintenance/SKILL.md`; relocate з ssot_campaign §Durable 2026-07-18). | [`00_06 §3`](00_06_SSOT_Documentation_Standard) |
+| DOC-T.45 | 🤖 Fence-balance гейт — ЗАКРИТО ✅ 2026-07-18. `DocsLinter.unbalanced_code_fences` (HARD `docs:check_refs`): незакритий code-fence (непарна к-сть fence-маркерів) лишав `in_fence`-toggle застряглим `true` до EOF → усі ~9 fence-aware guards німіли (`next if in_fence`) + auto-ToC обрізалась (`DocsToc` губить хвостові заголовки). Детермінований структурний інваріант (0 owner-винятків, 0 легіт-непарних доків) — рахує fence ТИМ САМИМ предикатом (рядок починається з трьох backtick), що й toggle-guards → self-consistent із тим, що захищає (tilde/inline/indented ігнор — дзеркало guards, не CommonMark). Емпірика: 76 доків, 0 незбалансованих → founder «flip to HARD once it's at 0» (advisory-формулювання айтема = поки-чистиш-дрейф; дрейфу 0 → HARD одразу). Сканує `docs/**/*.md` (top-level + protocols). Spec 7 cases + mutation-verified (toggle→nil ⇒ 2 RED) + end-to-end (probe-doc → `abort` rc=1). §3-рядок «fence balance» + `guard_registry_sync` label-map. | [`00_06 §3`](00_06_SSOT_Documentation_Standard) |
 
 _Нову SSOT doc-drift / tracker-tooling знахідку додавати рядком у таблицю вище._
 

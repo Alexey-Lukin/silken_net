@@ -995,4 +995,44 @@ RSpec.describe DocsLinter do
       expect(hits.first).to include("(unpinned)")
     end
   end
+
+  describe ".unbalanced_code_fences" do
+    let(:fence) { "```" }
+
+    it "flags an odd fence count (one opened, never closed) with the opening line" do
+      md = "intro\n#{fence}ruby\ncode\nmore prose\n" # single opening fence @ line 2, no close
+      hits = described_class.unbalanced_code_fences(md)
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include('line 2').and(include('unclosed'))
+    end
+
+    it "passes a balanced open+close fence block" do
+      md = "intro\n#{fence}ruby\ncode\n#{fence}\ntrailing\n"
+      expect(described_class.unbalanced_code_fences(md)).to be_empty
+    end
+
+    it "passes several balanced fence blocks" do
+      md = "#{fence}\na\n#{fence}\ntext\n#{fence}sh\nb\n#{fence}\n"
+      expect(described_class.unbalanced_code_fences(md)).to be_empty
+    end
+
+    it "reports the LAST still-open fence when balanced blocks precede it" do
+      md = "#{fence}\na\n#{fence}\ntext\n#{fence}sh\nb\nEOF no close\n" # 3rd marker opens @ line 5
+      expect(described_class.unbalanced_code_fences(md).first).to include('line 5')
+    end
+
+    it "counts info-string + 4-backtick fences (start_with three backticks), mirroring the guards" do
+      md = "`#{fence}mermaid\ndiagram\n`#{fence}\n" # 4-backtick open+close → balanced
+      expect(described_class.unbalanced_code_fences(md)).to be_empty
+    end
+
+    it "ignores ~~~ tilde fences and inline/indented backticks (the guards ignore them too)" do
+      md = "~~~\ncode\n~~~\nuse #{fence}inline#{fence} here\n    #{fence}not-a-fence\n"
+      expect(described_class.unbalanced_code_fences(md)).to be_empty
+    end
+
+    it "passes a file with no fences at all" do
+      expect(described_class.unbalanced_code_fences("plain\nprose\nno fences\n")).to be_empty
+    end
+  end
 end

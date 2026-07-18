@@ -842,4 +842,33 @@ module DocsLinter
 
     [ "#{key}: canonical block in #{source_basename} changed (#{sha[0, 12]}… ≠ pinned #{(expected_sha.to_s.empty? ? '(unpinned)' : expected_sha[0, 12])}…) — reconcile the mirrors in canonical_block_pins.yml, then `rake docs:repin`" ]
   end
+
+  # [SSOT anti-drift] Code-fence parity (HARD, DOC-T.45). The fence-skip logic in ~9
+  # DocsLinter methods + DocsToc is a single `in_fence = !in_fence if line.start_with?` on
+  # a ``` prefix: an ODD number of fence markers (one opened, never closed) leaves that
+  # toggle stuck `true` to EOF, so every downstream `next if in_fence` silently swallows the
+  # rest of the file — one unclosed fence disables EVERY fence-aware guard at once AND
+  # truncates the auto-ToC (DocsToc.content_headings drops the trailing headings). This is
+  # the structural invariant that keeps that toggle honest, so it MUST count fences by the
+  # EXACT predicate the guards use — a line starting with three backticks (a bare or
+  # info-string fence toggles; a `~~~` tilde fence and an indented / inline fence do not —
+  # mirror the guards, not CommonMark). Deterministic (an unclosed fence always breaks the
+  # render), so there is NO owner exemption and NO legit odd-fence doc — every markdown file
+  # must balance. Reports the line where the still-open fence began. Pure: no I/O.
+  FENCE_PREFIX = "```"
+
+  def unbalanced_code_fences(text)
+    open_line = nil
+    lineno = 0
+    text.each_line do |line|
+      lineno += 1
+      next unless line.start_with?(FENCE_PREFIX)
+
+      open_line = open_line ? nil : lineno
+    end
+    return [] unless open_line
+
+    [ "unclosed #{FENCE_PREFIX} code fence opened at line #{open_line} — odd fence count " \
+      "desyncs every fence-aware guard (in_fence toggle stuck) + truncates the ToC" ]
+  end
 end

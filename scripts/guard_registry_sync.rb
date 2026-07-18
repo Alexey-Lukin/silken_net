@@ -55,6 +55,7 @@ DOCS_RAKE_LABELS = {
   "TRL ranges in 00_03 §1 matrix"                                                          => "одинарне 1-9",
   "TRL band inconsistency (doc TRL vs 00_03 §1 module band)"                               => "TRL range-consistency",
   "ToC drift (run docs:toc)"                                                               => "ToC sync",
+  "unbalanced code fences (unclosed ``` desyncs fence-aware guards + ToC — DOC-T.45)"      => "fence balance",
   "canon docs hosting blocker sections (→ 00_07)"                                          => "blocker-hygiene",
   "docs missing the standard skeleton"                                                     => "standard-conformance",
   "RTC register-map drift (availability claimed outside 03_01)"                            => "RTC reg-map drift",
