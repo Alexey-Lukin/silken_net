@@ -1,7 +1,7 @@
-# 02_04: Bench Build & Test Guide — Складання Вузла «Soldier» на Макетці
+# 02_04: Bench Build & Test Guide — Складання Вузлів Soldier + Королева на Макетці
 
 > **🔧 ЖИВИЙ РОБОЧИЙ ДОКУМЕНТ.** Практичний посібник, як **фізично зібрати й
-> перевірити повний вузол Soldier поблоково на макетній платі** — крок за кроком,
+> перевірити повні вузли Soldier (Частина I) + Королева (Частина II) поблоково на макетній платі** — крок за кроком,
 > у міру надходження деталей. Поки власна PCB недоступна для замовлення на заводі,
 > **breadboard — єдиний фізичний шлях** зібрати й протестувати архітектуру.
 >
@@ -18,8 +18,8 @@
 
 ## 🎯 Мета
 
-Дати покрокову збірку та bring-up **кожного функціонального блоку** Soldier на
-макетці — з wiring-таблицями, мультиметр-checkpoint'ами й застереженнями, що кусають
+Дати покрокову збірку та bring-up **кожного функціонального блоку** Soldier (Частина I) і
+Королеви (Частина II) на макетці — з wiring-таблицями, мультиметр-checkpoint'ами й застереженнями, що кусають
 не-експерта, — поки PCBA заблоковано (HW.9). Production-специфікації компонентів
 (part-номери, ціни, DC-bias, DNP-стратегія) **не дублюються** тут — вони живуть у
 [`02_01 §3`](02_01_Hardware_Architecture_and_BOM) / [`02_03`](02_03_BQ25570_MPPT_Nano_Power);
@@ -41,7 +41,8 @@ silicon-атестація (µА-профілі, crypto-KAT) — у `firmware/sc
 
 | Ресурс | Опис |
 |--------|------|
-| [`02_03`](02_03_BQ25570_MPPT_Nano_Power) | Production power-архітектура (BQ25570, post-pivot) |
+| [`02_03`](02_03_BQ25570_MPPT_Nano_Power) | Production power-архітектура Soldier (BQ25570, post-pivot) |
+| [`02_05`](02_05_Queen_Hardware_and_Starlink) | Королева HW: SIM7070G модем, solar/BMS/Victron, Starlink (Частина II) |
 | [`02_01 §3`](02_01_Hardware_Architecture_and_BOM) | Electronics BOM (production-специфікація + ціни) |
 | [`07_02 §1.2`](07_02_Unit_Economics_and_BOM) | Повна вартість вузла (node-rollup) |
 | [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) / [`00_07` SE050-MIGRATION](00_07_Action_Plan_Tracker) | Secure Element (SE05x, роль/eval) |
@@ -59,6 +60,12 @@ silicon-атестація (µА-профілі, crypto-KAT) — у `firmware/sc
 - [4. Bench Bring-up Протокол](#4-bench-bring-up-протокол)
 - [5. Legacy Harvester — Фізика (для розуміння + ЧНУ)](#5-legacy-harvester--фізика-для-розуміння--чну)
 - [6. Перехід до PCB / Production](#6-перехід-до-pcb--production)
+- [7. Частина II — Королева (Queen Gateway): що інше](#7-частина-ii--королева-queen-gateway-що-інше)
+- [8. BOM Королеви (живий чекліст)](#8-bom-королеви-живий-чекліст)
+- [9. Блокова Архітектура Королеви](#9-блокова-архітектура-королеви)
+- [10. Складання Королеви по Блоках](#10-складання-королеви-по-блоках)
+- [11. Bench-протокол Королеви](#11-bench-протокол-королеви)
+- [12. Starlink (Phase 3 — майбутнє)](#12-starlink-phase-3--майбутнє)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -291,3 +298,138 @@ E(0.47Ф до 3.4В)=½·0.47·3.4²=2.71 Дж → t=2.71/1µВт≈31 доба
 4. Перевірити cold-start: R_int EBFC ([`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power)); якщо >12 кΩ → LTC3108 як DNP-preboost.
 5. Перепрограмувати резистори BQ25570 Li-Po→supercap ([`02_03 §4`](02_03_BQ25570_MPPT_Nano_Power); R_OC1=VOC_SAMP→GND, інакше 35% замість 65%).
 6. Розвести PCB (Power Deck + RF Deck, B2B-конектор) → production breadboard-валідація [`02_03 §10`](02_03_BQ25570_MPPT_Nano_Power).
+
+---
+
+## 7. Частина II — Королева (Queen Gateway): що інше
+
+> Королева — **шлюз, не сенсор**: слухає LoRa від Soldier'ів і шле батчі в інтернет
+> через стільниковий модем (SIM7070G + SIM-карта), згодом — Starlink. Живиться
+> сонцем/акумулятором (не harvester). Інший стенд, але **той самий модуль LoRa-E5 mini**,
+> тож частина silicon-bench спільна. Головна нова фізика: модем дає **2 А RF-burst**,
+> що просаджує живлення → без tank-конденсаторів модем перезавантажується.
+
+| Вісь | Soldier (Частина I) | Королева |
+|---|---|---|
+| Живлення | harvester 44мВ→LTC3108→BQ25570→EDLC | Solar 50W → Victron MPPT → LiFePO4 12В/20Ah + BMS |
+| LoRa | **TX** (передає) | **RX continuous** (`OnRxDone` ISR, слухає Soldier'ів) |
+| Uplink | лише LoRa 868 | **SIM7070G cellular** + LoRa-RX + (Starlink Phase-3) |
+| Крипто | ECB-encrypt (TX) | ECB-**decrypt** (RX) + AES-256-**CBC** (CoAP батч) |
+| Периферія | ADC/TIM/RTC (Lorenz/sense) | без ADC/TIM/RTC (пульс data-starved, ARCH.54) |
+| Консоль | FT232RL на UART модуля | **USART1 зайнятий модемом** → консоль через SWD/RTT |
+| Корпус | 2-декова капсула | IP67 ABS/PC ≥2.5 л |
+
+---
+
+## 8. BOM Королеви (живий чекліст)
+
+> Production-spec + ціни — [`02_05 §7`](02_05_Queen_Hardware_and_Starlink); node-вартість — [`07_02 §4`](07_02_Unit_Economics_and_BOM).
+> Нові позиції — постав ✅ в руках / 🛒 замовити по факту.
+
+### Compute / LoRa-RX
+| Компонент | Модель | ⚠️ Кусає |
+|---|---|---|
+| MCU+LoRa | Seeed **LoRa-E5 mini** (STM32WLE5JC+SX1262) | той самий, що на Soldier; тут LoRa працює на **RX** |
+| Overflow Flash | Winbond **W25Q32JV** (SPI, gated) | опційно — CIFO працює RAM-only без нього |
+
+### Cellular (Phase 1/2.5)
+| Компонент | Модель | ⚠️ Кусає |
+|---|---|---|
+| Модем | **SIM7070G** (LTE-M/NB-IoT, UART AT, 3.7 В) + **breakout** (Waveshare/DFRobot — канон дає голий LCC68) | **НЕ SIM7000G** (firmware = 7070G); маркування звірити (RUNBOOK §5.6) |
+| SIM-карта | **Kyivstar фізична** (UA: наземні вишки + Starlink DTC) · eSIM 1NCE/Twilio для інших країн | 🔴 APN + D2C-transport = фазована стратегія [`00_07`](00_07_Action_Plan_Tracker) HW.41 (firmware init БЕЗ `AT+CGDCONT`; D2C Carrier-NAT → CoAP/UDP ненадійний → CoAP-over-TCP) |
+| Cellular антена | Wideband **700–2700 МГц** SMA (Kyivstar B1/3/7/8/20) | окрема від LoRa (не dual-band) |
+
+### LoRa-антена
+| Компонент | Модель | ⚠️ Кусає |
+|---|---|---|
+| 868 антена | **tuned** 5 dBi fiberglass omni (Mobilemark OD8-868 / Taoglas ALL.4101) SMA | 🔴 НЕ dual-band (VSWR>2.5 @868 → −3-5 дБ); 🔴 антена ПЕРЕД живленням |
+
+### Power (Phase 1/2.5 — зафіксовано HW.39/HW.15)
+| Компонент | Модель | ⚠️ Кусає |
+|---|---|---|
+| Панель | Monocrystalline **50 W** | 10 W відхилено (−4.4 Вт·год/добу взимку під кронами) |
+| MPPT | **Victron SmartSolar 75/15** | 🔴 **LiFePO4-пресет** (не lead-acid); quiescent 20 мА = найбільший сток |
+| Акумулятор | LiFePO4 **12 В / 20 Ah** | заряд лише 0…+45 °C → charge-protect (нижче) |
+| BMS | JBD/Jiabaida-клас **20 А cont / 50 А peak** (SKU 👤) | має витримати 2 А burst; JBD з NTC+charge-FET субсумує charge-protect |
+| Buck 12→3.7 В | ≥3 А cont / ≥5 А peak (MP1584/LM2596-клас, part# 👤) | живить модем; сам не рятує від burst — треба tank ↓ |
+| Buck 12→3.3 В | ≥500 мА | живить STM32 |
+
+### 🔴 VBAT tank конденсатори (5 шт — обов'язкові, впритул до VBAT модема)
+| Cap | Значення | Відстань |
+|---|---|---|
+| C_BULK | **470 µF / 6.3 В** alu-polymer (Panasonic EEFCX0J471R / Kemet T520B477M006ATE015), ESR≤15мΩ | 5-10 мм |
+| C_MID | **100 µF / 25 В** X7R 1210 (Murata GRM32ER71E107K) | ≤5 мм |
+| C_HF1 | **10 µF / 25 В** X7R 0805 | ≤3 мм |
+| C_HF2 | **100 nF / 50 В** X7R 0402 | впритул |
+| C_RF | **33 pF / 50 В** NP0 0402 | впритул |
+
+### Thermal (зима, P0) + Starlink (Phase 3 — майбутнє, НЕ для цього bench)
+| Компонент | Модель | ⚠️ Кусає |
+|---|---|---|
+| T-датчик | **DS18B20** (1-Wire, ±0.5 °C) на LiFePO4 head | гейт charge-MOSFET при T<+1 °C |
+| Charge-protect | P-MOSFET у charge path (part# 👤, або BMS-integrated) | 🔴 заряд <0 °C вбиває LiFePO4 (зимовий деплой; літній — ні) |
+| Корпус | IP67 ABS/PC ≥2.5 л (світлий RAL 7035 проти sun-load) | bench-некритично; freeze-pending |
+| _(Phase 3)_ Starlink | Starlink Mini + ESP32-S3 WiFi-міст | 🔴 прошивки ESP32 НЕ існує → не збирати зараз (§12) |
+
+**Bench-carrier комплект (🛒):** LoRa-E5 mini · SIM7070G breakout · Victron 75/15 · LiFePO4 20Ah + BMS · панель 50W · антени 868+wideband · 5 VBAT-caps.
+
+---
+
+## 9. Блокова Архітектура Королеви
+
+```
+☀️ Solar 50W → [Victron MPPT 75/15] → [LiFePO4 12В/20Ah + BMS] ──┬──▶ Starlink Mini (Phase 3)
+   (quiescent 20mA)          (192 Вт·год корисні)                 │
+                                                                  ├─[buck 12→3.7В]─▶ SIM7070G VBAT
+                                                                  │                   └[5-cap tank ВПРИТУЛ]
+                                                                  │                   └─SMA─ wideband 700-2700
+                                                                  └─[buck 12→3.3В]─▶ LoRa-E5 mini
+                                                                       ├─SX1262─SMA─ 868 tuned (LoRa RX)
+                                                                       ├─USART1(PA9/PA10)─ SIM7070G AT
+                                                                       └─1-Wire─ DS18B20 (на LiFePO4 head)
+        ═══════ СПІЛЬНА ШИНА GND (усі −: MPPT · BMS · обидва buck · модем · tank · STM32) ═══════
+── усе в IP67 ≥2.5л; Starlink ПОЗА корпусом
+```
+**Data-flow:** Soldier → LoRa RX → ECB-decrypt → CIFO cache → (flush @3600с або ≥45/50 слотів) → CBC-encrypt батча → **ECB-restore + LoRa-key** (🔴 інакше LoRa-decrypt наступних пакетів ламається) → CoAP → SIM7070G → Rails.
+
+---
+
+## 10. Складання Королеви по Блоках
+
+### 10.1 Живлення (solar → battery)
+1. Solar(+/−) → Victron MPPT solar-in; MPPT battery-out → LiFePO4(+/−) через BMS. **⚠️ Victron у LiFePO4-пресет.**
+2. Battery 12 В → два buck: 12→3.7 В (модем) + 12→3.3 В (STM32). **🔵 Усі GND — solar/MPPT/battery/BMS/обидва buck/модем/tank/STM32 — в єдину спільну землю** (без неї UART без опори + 2А-return без шляху → brownout).
+3. **Checkpoint:** мультиметр — MPPT bulk-charge активний, buck-виходи стабільні 3.7 / 3.3 В.
+
+### 10.2 Модем SIM7070G (+ 🔴 tank)
+1. Buck-3.7 В → SIM7070G VCC; **5-cap tank ВПРИТУЛ до VBAT-піна** (C_BULK 5-10мм … C_HF2/C_RF впритул). ⚠️ На breadboard паразитна індуктивність гірша за PCB → caps максимально близько до VBAT-піна breakout'а.
+2. UART: STM32 **PA9**→SIM_RX, **PA10**→SIM_TX; PWR_KEY→GPIO (👤 обрати вільний, або тримати для always-on).
+3. Wideband антена → SMA модема; SIM-карта у breakout.
+4. **Checkpoint:** `AT`→`OK`; `AT+CGDCONT=1,"IP","<APN 👤>"`; `AT+CGATT?`→`1` (зареєстровано); осцилограф VBAT під TX-burst → просадка **<20 мВ** (RUNBOOK §6).
+
+### 10.3 LoRa-RX
+1. 🔴 **868-антена → SMA ПЕРЕД живленням** (SX1262 PA). SX1262 у RX-continuous.
+2. **Checkpoint:** Soldier-стенд (Частина I) TX → Queen `OnRxDone` ISR ловить пакет (SWD/RTT-лог).
+
+### 10.4 Thermal (зимовий charge-protect)
+1. DS18B20 (1-Wire GPIO, **pull-up 4.7 кΩ data→VDD** — інакше не відповість) на корпус LiFePO4 head → charge-MOSFET гейт.
+2. **Checkpoint:** DS18B20 читає T; при T<+1 °C заряд блокується.
+
+---
+
+## 11. Bench-протокол Королеви
+
+| Блок | RUNBOOK-сеанс | Що атестує |
+|---|---|---|
+| Cellular init/e2e | RUNBOOK §5 [bench:coap] | AT-граматика, CoAP PUT→Rails, DNS-failover, poll-downlink |
+| Модем marking | RUNBOOK §5.6 | = SIM7070G (не 7000G) |
+| VBAT power | RUNBOOK §6 | 5-cap tank тримає просадку <20 мВ |
+| LoRa RX | RUNBOOK §6 (RF-bullet, HW.31) | 868 покриття/дальність |
+
+---
+
+## 12. Starlink (Phase 3 — майбутнє)
+
+> **⚠️ Starlink DTC ≠ Starlink Mini.** Для України пакети йдуть через **Starlink Direct-to-Cell** (Phase 2.5) — Kyivstar SIM конектиться через LEO-супутники, **той самий SIM7070G, без термінала** (§8; транспорт → [`00_07`](00_07_Action_Plan_Tracker) HW.41). Ця секція — про **Starlink Mini** (Phase 3): окремий high-bandwidth термінал + ESP32-S3 WiFi-міст.
+
+ESP32-S3 WiFi-міст STM32→Starlink Mini — **прошивки ще нема** (`firmware/esp32_coproc/` відсутня). Phase 1/2.5 працює через SIM7070G без Mini-термінала (DTC через Kyivstar). Збирати при Starlink-Mini bring-up. Дім рішення (ESP32-S3, не SIM8200G-M2) — [`02_05`](02_05_Queen_Hardware_and_Starlink) / [`00_07`](00_07_Action_Plan_Tracker) HW.18.
