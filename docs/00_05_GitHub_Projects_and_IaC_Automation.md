@@ -158,6 +158,7 @@ jobs:
 Автоматизована перевірка та аудит смарт-контрактів Solidity (6 контрактів: SCC, SFC, StateRootAnchor, SilkenGovernor, SilkenTimelock, ProtocolParameters).
 
 - **Тригер:** Push до `main` або PR зі змінами у `contracts/**` (або в самому workflow-файлі); + ручний `workflow_dispatch`
+- **Позиція в branch-protection:** кожен джоб — fail-on (**job-level gate**), але сам workflow не в required-checks `main` (required-набір → §2.1 / [`06_07 §2`](06_07_CICD_and_Runbook_Index)): червоний audit видно на PR, merge фізично не блокується; включення в required-checks → `OPS.15` ([`00_07`](00_07_Action_Plan_Tracker))
 - **Job 1: Foundry Tests & Coverage** (`foundry-tests`, timeout: 15 хв):
   - `npm ci` → `forge build --sizes` → `forge test -vvv --gas-report` → `forge coverage --ir-minimum --report lcov --report summary`
   - Coverage artifact: `lcov.info` (retention 14 днів)
@@ -173,7 +174,7 @@ jobs:
 - **Конфігурація Foundry** (`contracts/foundry.toml`):
   - solc (версія → [`05_03`](05_03_Tokenomics_SCC_and_SFC)), EVM cancun, optimizer 200 runs (default), 1000 runs (production profile)
   - Gas reports: SCC, SFC, StateRootAnchor, SilkenGovernor, SilkenTimelock, ProtocolParameters
-  - Fuzz: 512 runs (default), 256 (ci profile). Invariant: 128 runs, depth 64 (+ Medusa coverage-guided property-fuzz — `medusa` job, `test/medusa/*`)
+  - Fuzz: 512 runs (default). Invariant: 128 runs, depth 64 (+ Medusa coverage-guided property-fuzz — `medusa` job, `test/medusa/*`)
 - **Тестове покриття:** 6 test suites (`contracts/test/*.t.sol`; точна к-сть тестів — `forge test`)
 
 ### 2.5 Labels Sync (IaC) — `.github/labels.yml` + `labels_sync.yml`

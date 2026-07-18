@@ -117,7 +117,7 @@ deploy/akash · terraform · subgraph       # infra / The Graph
 
 ## 8. Solidity / Foundry (контракти SCC/SFC/Governance/Anchor)
 
-**Дім контрактів:** `contracts/*.sol` + парні тести `contracts/test/{Name}.t.sol`. Конфіг — `contracts/foundry.toml` (профілі `default`/`ci`/`production`); `forge-std` через `npm ci`. Контракт-спека + ролі → `docs/05_03`; тест-методологія всіх шарів → `docs/04_06 §B`.
+**Дім контрактів:** `contracts/*.sol` + парні тести `contracts/test/{Name}.t.sol`. Конфіг — `contracts/foundry.toml` (профілі `default`/`production`); `forge-std` через `npm ci`. Контракт-спека + ролі → `docs/05_03`; тест-методологія всіх шарів → `docs/04_06 §B`.
 
 **Конвенції тестів (must):**
 - Naming: `test_` (happy-path) · `testRevert_` (expected revert) · `testFuzz_` (property/fuzz) · `check_` (Halmos symbolic, `test/symbolic/`) · `property_` (Medusa fuzz, `test/medusa/`) · `invariant_` (Foundry stateful, `test/invariant/`).
@@ -132,4 +132,4 @@ deploy/akash · terraform · subgraph       # infra / The Graph
 - `totalSupply() <= MAX_SUPPLY` (1B SCC) після будь-якої послідовності операцій.
 - Ці 3 гейти **доведені Halmos** (`check_*` у `test/symbolic/` — symbolically, не семпл; loop-bound `--loop 3`) + **fuzz-Medusa** (`property_*` у `test/medusa/`), не лише unit-тести.
 
-**Команди + ролі:** `forge test -vvv --gas-report` · `forge build --sizes` (ліміт EIP-170 = 24KB) · `forge coverage --report lcov` (→ CI lcov-артефакт, ≥90% floor). **CI-аудит** (`solidity_audit.yml`, CI-gated не локально): Slither + `aderyn .` **gate-на-high** (static); `halmos --function "^check_"` (symbolic) + `medusa fuzz --config medusa-{scc,sfc}.json` (fuzz) — усі **gating** (fail-on). On-chain адмін-ролі → Timelock (крім `pause`); `slash()` = `SLASHER_ROLE`, `mint()` = `MINTER_ROLE` (фізично розділені ключі, E.2).
+**Команди + ролі:** `forge test -vvv --gas-report` · `forge build --sizes` (ліміт EIP-170 = 24KB) · `forge coverage --report lcov` (→ CI lcov-артефакт, ≥90% floor). **CI-аудит** (`solidity_audit.yml`, CI-gated не локально): Slither + `aderyn .` **gate-на-high** (static); `halmos --function "^check_"` (symbolic) + `medusa fuzz --config medusa-{scc,sfc}.json` (fuzz) — усі **fail-on** у своєму job (НЕ merge-required — workflow поза required-checks `main`; включення → 00_07 OPS.15). On-chain адмін-ролі → Timelock (крім `pause`); `slash()` = `SLASHER_ROLE`, `mint()` = `MINTER_ROLE` (фізично розділені ключі, E.2).

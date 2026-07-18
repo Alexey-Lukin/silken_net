@@ -247,9 +247,17 @@ The claims above are backed by enforced, automated evidence — not by assertion
   contract tests including the security invariants (`testRevert_cannotRemoveLastAdmin`,
   `test_pause_allowsSlash`, `totalSupply() <= MAX_SUPPLY`); the firmware host suite run additionally under
   **AddressSanitizer + UndefinedBehaviorSanitizer** on every CI run.
-- **Static analysis (SAST).** Brakeman (Rails), Slither + Aderyn (Solidity), CodeQL (6 languages), cppcheck (firmware C) —
-  all gating CI; cppcheck's MISRA C:2012 addon is opt-in and advisory, not part of the gate. **Halmos** symbolic proofs (`test/symbolic/`) and **Foundry + Medusa** property-fuzzing
-  (`test/invariant/`, `test/medusa/`) add depth on the token/governance contracts — all gating in CI.
+- **Static analysis (SAST).** Brakeman (Rails) and cppcheck (firmware C) run in `ci.yml`, whose
+  `CI passed` aggregate is a merge-required branch-protection check on `main` — a finding blocks the
+  merge; cppcheck's MISRA C:2012 addon is opt-in and advisory, not part of the gate. Slither + Aderyn
+  (Solidity, fail-on-high), **Halmos** symbolic proofs (`test/symbolic/`) and **Foundry + Medusa**
+  property-fuzzing (`test/invariant/`, `test/medusa/`) add depth on the token/governance contracts; they
+  run in the separate `solidity_audit.yml` and each fails its own job on findings (job-level gate), but
+  that workflow is **not yet in the branch-protection required-check set** — a red audit is visible on
+  the PR without physically blocking a merge (promotion tracked as `OPS.15`,
+  [`00_07`](00_07_Action_Plan_Tracker)). CodeQL (default setup, 6 languages) and OpenSSF Scorecard
+  likewise report findings without being merge-required. The exact required-check surface (`CI passed` +
+  `Docs passed` only) → [`06_07 §2`](06_07_CICD_and_Runbook_Index).
 - **Composition analysis (SCA).** Dependabot (weekly), bundler-audit (every CI), OpenSSF Scorecard (weekly).
 - **Supply chain.** Sigstore-signed SLSA build-provenance on the released container — verifiable per
   `SECURITY.md` ("Verifying release artifacts").
