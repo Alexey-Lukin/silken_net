@@ -31,6 +31,11 @@ SimpleCov.start "rails" do
   # uncovered total). Same rationale as the /firmware/ and /lib/daemons/ filters
   # above. See 04_06 §B.3 for the coverage-scope policy.
   add_filter "/lib/tasks/"
+  # Standalone CLI guard-scripts (workflow_gate_perimeter / guard_registry_sync /
+  # docs_check / stan_audit …) — pure-Ruby drift-gates run via `ruby scripts/*.rb`
+  # in docs.yml, NOT Rails-runtime code; their quality gate is their own spec +
+  # mutation-verification, not the app coverage-floor. Same rationale as /lib/tasks/.
+  add_filter "/scripts/"
 
   # Boilerplate Rails-файли без бізнес-логіки
   add_filter "app/jobs/application_job.rb"
