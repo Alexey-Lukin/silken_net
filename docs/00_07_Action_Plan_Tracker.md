@@ -1498,10 +1498,9 @@
 - [ ] 👤 (опц.) публічний status-page (external synthetic uptime — дотично INF.22 O3)
 
 #### BIZ.19 — «SCC = CBAM-офсет» стоїть на неперевіреній (ймовірно хибній) регуляторній премісі
-- **P2** · 🤖+👤 · 🟡 · → `07_01 §8`, `08_03 §5.2`
-- **Стан:** Gap-pass §07 (2026-07-05) — `08_03 §5.2` (STK.6 Азот) + `07_01 §8` (BIZ.15) + 00_07 стверджують як факт, що SCC-retirement = «легальний CO₂-офсет» проти EU-CBAM. Але **CBAM Reg. (EU) 2023/956 знижує certificate-обов'язок імпортера лише через Art.9 — реальну ціну вуглецю, СПЛАЧЕНУ виробником у країні походження (ETS-еквівалент), НЕ купівлю/retirement voluntary-credits**. Поширена плутанина climate-tech-пітчів; жоден док не цитує механізм, що робив би SCC-for-CBAM робочим. Якщо хибно — flagship-наратив Азоту треба переформулювати ДО зовнішнього пітчу. **Моя рекомендація: переформулювати в voluntary Scope 1-3 / net-zero-disclosure офсет (НЕ CBAM-compliance), і НЕ пітчити CBAM-compliance до юр-звірки** (~30 хв на вже-планованій Аблязов-консультації UNI.14/16). **🤖-half:** я складу виправлений CBAM-Art.9-аналіз + переформульований наратив; 👤 = юр-підтвердження + оновити пітч. Канон `08_03 §5.2`, `07_01 §8`.
-- [x] 🤖 CBAM-Art.9-аналіз + voluntary-Scope наратив складено 2026-07-14 → [`protocols/business/cbam_offset_analysis.md`](../protocols/business/cbam_offset_analysis.md) (SCC-retirement ≠ CBAM-reduction — Art.9 = ETS-ціна виробника, не voluntary-credits → позиціонувати як voluntary Scope 1-3). ⚠️-caveat поставлено у 6 сайтах (`07_01 §8`-SPV + `08_03 §5.2`/§4.1/rule4 + 00_07 STK.5/STK.6/BIZ.15)
-- [ ] 👤 юр-підтвердження (Аблязов, ~30 хв — Art.9 + UA-ETS-статус + SCC-як-Scope-3) → повний reframe caveat→resolved + оновити Азот-пітч
+- **P2** · 👤 · 🟡 · → `07_01 §8`, `08_03 §5.2`
+- **Стан:** 🤖-присуд (2026-07-14, висока впевненість, потребує юр-підтвердження): **SCC-retirement ≠ CBAM-reduction** — CBAM Reg. (EU) 2023/956 Art.9 знижує обов'язок імпортера лише вуглецевою ціною, СПЛАЧЕНОЮ виробником у країні походження (ETS-еквівалент), НЕ купівлею/retirement voluntary-credits (поширена плутанина compliance-ринку з добровільним). → Позиціонувати SCC як **voluntary Scope 1-3 / net-zero-disclosure**, НЕ CBAM-compliance; **не пітчити CBAM Азоту до юр-звірки** (репутаційний ризик — юр-неправда CFO). Аналіз + reframe у каноні done → [`cbam_offset_analysis.md`](../protocols/business/cbam_offset_analysis.md) + ⚠️-caveat у `07_01 §8` / `08_03 §5.2`.
+- [ ] 👤 юр-підтвердження (Аблязов, ~30 хв — Art.9 + UA-ETS-статус + SCC-як-Scope-3, на UNI.14/16-консультації) → повний reframe caveat→resolved + оновити Азот-пітч
 
 #### BIZ.21 — Немає company-level E&O / liability-страхування (≠ INS.1 параметричний продукт)
 - **P2** · 🤖+👤 · ⚪ · → `07_01 §8`, `08_02 §5`
