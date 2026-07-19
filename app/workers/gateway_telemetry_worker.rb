@@ -78,11 +78,16 @@ class GatewayTelemetryWorker
     # Формуємо вердикт для патрульного
     message = format_health_message(gateway, log)
 
-    # Анти-спам: активний system_fault кластера вже кличе патрульного —
+    # Анти-спам: активний cluster-level system_fault вже кличе патрульного —
     # кожен наступний пульс не повинен плодити дублікати (log-створення
     # щофлешу, ~щогодини; tree_id тут nil → модельна uniqueness мовчить).
+    # [SLASH-1] Звуження tree_id: nil несуче: tree-scoped system_fault (fraud /
+    # power-loss / hardware-decay) — чужі сигнали без авто-резолвера, і без
+    # звуження один стоячий tree-алерт безстроково глушив НОВИЙ gateway-fault.
+    # Стеля: залишковий конфлат з іншими cluster-level писарями (Actuator,
+    # slashing-failure) розкладе типова декомпозиція кошика → 00_07 SLASH-1.
     return if EwsAlert.unresolved.alert_type_system_fault
-                      .exists?(cluster_id: gateway.cluster_id)
+                      .exists?(cluster_id: gateway.cluster_id, tree_id: nil)
 
     EwsAlert.create!(
       cluster_id: gateway.cluster_id,

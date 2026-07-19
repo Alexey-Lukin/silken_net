@@ -106,6 +106,21 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
         }.not_to change(EwsAlert, :count)
       end
 
+      it "не глушиться стоячим tree-scoped system_fault (fraud/power-loss — чужий сигнал) [SLASH-1]" do
+        tree = create(:tree, cluster: cluster)
+        create(:ews_alert, cluster: cluster, tree: tree,
+                           alert_type: :system_fault, severity: :critical,
+                           message: "🚨 ФРОД: аномалія Z-розподілу.")
+
+        stats = valid_stats.merge("cellular_signal_csq" => 2)
+        expect {
+          described_class.new.perform(gateway.uid, stats)
+        }.to change(EwsAlert, :count).by(1)
+
+        expect(EwsAlert.last.tree_id).to be_nil
+        expect(EwsAlert.last.message).to include("Слабкий сигнал")
+      end
+
       it "fallback-повідомлення для battery-critical (voltage поза thermal/signal-гілками; майбутній ADC-шлях)" do
         # Пульс v2 напруги не несе, але модель дозволяє legacy/ADC-рядки
         # (insert_all-ера): voltage-critical лог мусить дати чесний вердикт.
