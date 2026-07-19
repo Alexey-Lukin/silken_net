@@ -335,6 +335,16 @@ peaq_node_url: "https://peaq-node.example.com"
 
 > **Зв'язок:** Emergency Revocation Runbook → [`06_04 §5.4`](06_04_Secrets_Checklist)
 
+### `Mrv::TelemetryLeaf` [ARCH.12/E.60]
+
+| | |
+|---|---|
+| **Файл** | `app/services/mrv/telemetry_leaf.rb` |
+| **Вхід** | `log` (TelemetryLog AR instance) |
+| **Що робить** | Код-дім canonical leaf-формули Merkle-дерев (leaf-контент канонізовано у [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline)): будує **пінений** payload `{telemetry_log_id, device_uid = tree.did (attr_readonly — лист не «переїжджає»), z_value = BigDecimal#to_s("F") (plain fixed-point, НЕ scientific; NULL → JSON null — рядок ніколи не виключається з дерева), bio_status = сирий enum-integer (rename-proof), created_at = utc.iso8601(6)}` → `Filecoin::CidGenerator.cidv1`. `LEAF_VERSION = 1`: зміна формули = bump (historical-верифікація за версією). Споживачі: тижневий Eth-L1 `state_root` (ARCH.12 Фаза 1а), mint-lineage вікна (MRV.1), майбутній Polygon `archive_root` (E.60 Фаза 1б). Golden-vector spec пінить CID. |
+| **Зовнішні виклики** | — (pure; лише `Filecoin::CidGenerator`) |
+| **Вихід** | `payload_for(log)` → Hash · `cid_for(log)` → CIDv1 String (`bafkrei…`) |
+
 ### `Chainlink::OracleDispatchService`
 
 | | |

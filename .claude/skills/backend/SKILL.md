@@ -30,7 +30,7 @@ REST API/auth/RBAC (`04_03`) + MaintenanceRecord. Money-path, телеметрі
 | `app/policies/` | Pundit; `ApplicationPolicy#admin_or_above?` (boolean-OR) — `index?`/`show?` поки `true` (deny-default = відкритий SEC.16 → `00_07`) |
 | `app/services/` (non-money) | `hardware_key_service`, `insight_generator_service`, `emergency_response_service`, `security/`, `downlink/`, `factory_flashing/`, `cryptography/` |
 | `app/workers/` (non-money) | `ecosystem_healing_worker` (critical) · `actuator_command_worker`, `key_rotation_downlink_worker`, `ota_transmission_worker` (downlink) · `*_notification_worker` (alerts) · `insight_generator_orchestrator_worker`, `audit_log_worker` (low) |
-| `db/structure.sql` + `db/migrate/` | Schema-SSOT: pre-launch = ОДНА консолідована міграція (`init_consolidated`) — зміна схеми = edit обох + `db:schema:load`, НЕ нова міграція; dump-дисципліна → CLAUDE §2 |
+| `db/structure.sql` + `db/migrate/` | Schema-SSOT: squash-анкер `init_consolidated` — зміна схеми = **нова міграція поверх анкера → `db:migrate` → `db:schema:dump`** (задокументовано в самому анкері; періодичний re-squash pre-launch = окрема процедура там же); data-INSERT'и в міграціях ЗАБОРОНЕНІ (seeds/rake); dump-дисципліна → CLAUDE §2 |
 
 ## Gotchas Not Obvious From Docs
 
@@ -52,7 +52,7 @@ REST API/auth/RBAC (`04_03`) + MaintenanceRecord. Money-path, телеметрі
 ## Common Tasks
 
 - **Add a REST endpoint**: контролер < `BaseController`, thin (params + authz + render — CLAUDE §6); клієнтський FK → IDOR-guard (#2); Blueprint-серіалізатор; spec per `04_06 §A`; рядок у таблицю `04_03 §4`.
-- **Add a model / column**: дім `04_01`; pre-launch схема = `structure.sql` + консолідована міграція (НЕ нова migration); uniqueness-валідація → дзеркальний unique-index (ARCH.56); enum → `prefix`; привілейована мутація → Auditable-хук (#12). Гейт: `ruby scripts/model_doc_sync.rb`.
+- **Add a model / column**: дім `04_01`; схема = нова міграція поверх squash-анкера → `db:migrate` → `db:schema:dump` (рецепт в `init_consolidated`; re-squash — окремо); uniqueness-валідація → дзеркальний unique-index (ARCH.56); enum → `prefix`; привілейована мутація → Auditable-хук (#12). Гейт: `ruby scripts/model_doc_sync.rb`.
 - **Add a service / worker**: `app/services/<domain>/` або `app/workers/`; чергу обґрунтуй проти CLAUDE §5 (strict-priority!); реєструй у `04_02 §11`.
 - **Local-verify**: `bin/rubocop -a` → `bin/rspec` (full перед push) → `ruby scripts/model_doc_sync.rb` при touch models/services/workers.
 

@@ -87,6 +87,9 @@ class Tree < ApplicationRecord
   normalize_identifier :did
   validates :did, presence: true, uniqueness: true,
             format: { with: DID_FORMAT, message: "має відповідати апаратному формату (SNET-XXXXXXXX)" }
+  # DID входить у Merkle leaf-формулу (Mrv::TelemetryLeaf) — зміна після створення
+  # зробила б історичні листи невідтворюваними (якорені корені «попливли» б).
+  attr_readonly :did
 
   # [FW.54/SEC.3] Кремнієвий паспорт (96-біт STM32 UID, три %08X-слова у
   # порядку регістрів): DID деривується з нього (SilkenNet::DidDerivation),
