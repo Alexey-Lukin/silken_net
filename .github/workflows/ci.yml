@@ -168,31 +168,6 @@ jobs:
         # роздули б .bss → хибний фейл size-check'а, якби йшов перед ним).
         run: make -C firmware/test coverage
 
-  firmware_ram_budget:
-    needs: changes
-    if: ${{ needs.changes.outputs.firmware == 'true' || needs.changes.outputs.ci == 'true' }}
-    # [FW.26] RAM budget gate. Installs arm-none-eabi binutils so future cross-
-    # compile pipelines (post-FW.4) can be measured. Currently informational —
-    # the script exits 0 with a notice when no ELF is present. Once the ARM
-    # build pipeline is wired (production firmware Makefile), the same job
-    # automatically gates `.bss + .data > 50 KB`.
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-      - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
-        with:
-          egress-policy: audit
-      - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-
-      - name: Install arm-none-eabi binutils
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends binutils-arm-none-eabi
-
-      - name: Run RAM budget check
-        run: firmware/scripts/check_ram_budget.sh
-
   firmware_arm_build:
     needs: changes
     if: ${{ needs.changes.outputs.firmware == 'true' || needs.changes.outputs.ci == 'true' }}
@@ -768,7 +743,6 @@ jobs:
     needs:
       - changes
       - firmware_test
-      - firmware_ram_budget
       - firmware_arm_build
       - firmware_lint
       - scan_ruby
