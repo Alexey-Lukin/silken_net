@@ -95,6 +95,14 @@ class BlockchainTransaction < ApplicationRecord
   validates :block_number, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validates :nonce, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
 
+  # [MRV.1] lineage-вікно вимірів mint-інтенту + Merkle-корінь вікна (fail-open:
+  # nil легітимний — witness-фіча ніколи не блокує мінт)
+  validates :telemetry_merkle_root,
+            format: { with: /\A[a-f0-9]{64}\z/, message: "must be a 64-char hex Merkle root" },
+            allow_nil: true
+  validates :telemetry_window_from_id, :telemetry_window_to_id, :telemetry_lineage_version,
+            numericality: { only_integer: true }, allow_nil: true
+
   # [MULTICHAIN]: blockchain_network визначає мережу транзакції
   validates :blockchain_network, inclusion: { in: %w[evm solana celo] }
 

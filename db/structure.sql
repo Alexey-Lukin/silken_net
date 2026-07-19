@@ -421,7 +421,13 @@ CREATE TABLE public.blockchain_transactions (
     chainlink_request_id character varying,
     zk_proof_ref character varying,
     blockchain_network character varying DEFAULT 'evm'::character varying,
-    reward_date date
+    reward_date date,
+    telemetry_window_from_at timestamp without time zone,
+    telemetry_window_from_id bigint,
+    telemetry_window_to_at timestamp without time zone,
+    telemetry_window_to_id bigint,
+    telemetry_merkle_root character varying(64),
+    telemetry_lineage_version integer
 )
 PARTITION BY RANGE (created_at);
 
@@ -475,7 +481,13 @@ CREATE TABLE public.blockchain_transactions_default (
     chainlink_request_id character varying,
     zk_proof_ref character varying,
     blockchain_network character varying DEFAULT 'evm'::character varying,
-    reward_date date
+    reward_date date,
+    telemetry_window_from_at timestamp without time zone,
+    telemetry_window_from_id bigint,
+    telemetry_window_to_at timestamp without time zone,
+    telemetry_window_to_id bigint,
+    telemetry_merkle_root character varying(64),
+    telemetry_lineage_version integer
 );
 
 
@@ -509,7 +521,13 @@ CREATE TABLE public.blockchain_transactions_y2026m01 (
     chainlink_request_id character varying,
     zk_proof_ref character varying,
     blockchain_network character varying DEFAULT 'evm'::character varying,
-    reward_date date
+    reward_date date,
+    telemetry_window_from_at timestamp without time zone,
+    telemetry_window_from_id bigint,
+    telemetry_window_to_at timestamp without time zone,
+    telemetry_window_to_id bigint,
+    telemetry_merkle_root character varying(64),
+    telemetry_lineage_version integer
 );
 
 
@@ -543,7 +561,13 @@ CREATE TABLE public.blockchain_transactions_y2026m02 (
     chainlink_request_id character varying,
     zk_proof_ref character varying,
     blockchain_network character varying DEFAULT 'evm'::character varying,
-    reward_date date
+    reward_date date,
+    telemetry_window_from_at timestamp without time zone,
+    telemetry_window_from_id bigint,
+    telemetry_window_to_at timestamp without time zone,
+    telemetry_window_to_id bigint,
+    telemetry_merkle_root character varying(64),
+    telemetry_lineage_version integer
 );
 
 
@@ -577,7 +601,13 @@ CREATE TABLE public.blockchain_transactions_y2026m03 (
     chainlink_request_id character varying,
     zk_proof_ref character varying,
     blockchain_network character varying DEFAULT 'evm'::character varying,
-    reward_date date
+    reward_date date,
+    telemetry_window_from_at timestamp without time zone,
+    telemetry_window_from_id bigint,
+    telemetry_window_to_at timestamp without time zone,
+    telemetry_window_to_id bigint,
+    telemetry_merkle_root character varying(64),
+    telemetry_lineage_version integer
 );
 
 
@@ -611,7 +641,13 @@ CREATE TABLE public.blockchain_transactions_y2026m04 (
     chainlink_request_id character varying,
     zk_proof_ref character varying,
     blockchain_network character varying DEFAULT 'evm'::character varying,
-    reward_date date
+    reward_date date,
+    telemetry_window_from_at timestamp without time zone,
+    telemetry_window_from_id bigint,
+    telemetry_window_to_at timestamp without time zone,
+    telemetry_window_to_id bigint,
+    telemetry_merkle_root character varying(64),
+    telemetry_lineage_version integer
 );
 
 
@@ -645,7 +681,13 @@ CREATE TABLE public.blockchain_transactions_y2026m05 (
     chainlink_request_id character varying,
     zk_proof_ref character varying,
     blockchain_network character varying DEFAULT 'evm'::character varying,
-    reward_date date
+    reward_date date,
+    telemetry_window_from_at timestamp without time zone,
+    telemetry_window_from_id bigint,
+    telemetry_window_to_at timestamp without time zone,
+    telemetry_window_to_id bigint,
+    telemetry_merkle_root character varying(64),
+    telemetry_lineage_version integer
 );
 
 
@@ -679,7 +721,13 @@ CREATE TABLE public.blockchain_transactions_y2026m06 (
     chainlink_request_id character varying,
     zk_proof_ref character varying,
     blockchain_network character varying DEFAULT 'evm'::character varying,
-    reward_date date
+    reward_date date,
+    telemetry_window_from_at timestamp without time zone,
+    telemetry_window_from_id bigint,
+    telemetry_window_to_at timestamp without time zone,
+    telemetry_window_to_id bigint,
+    telemetry_merkle_root character varying(64),
+    telemetry_lineage_version integer
 );
 
 
@@ -713,7 +761,13 @@ CREATE TABLE public.blockchain_transactions_y2026m07 (
     chainlink_request_id character varying,
     zk_proof_ref character varying,
     blockchain_network character varying DEFAULT 'evm'::character varying,
-    reward_date date
+    reward_date date,
+    telemetry_window_from_at timestamp without time zone,
+    telemetry_window_from_id bigint,
+    telemetry_window_to_at timestamp without time zone,
+    telemetry_window_to_id bigint,
+    telemetry_merkle_root character varying(64),
+    telemetry_lineage_version integer
 );
 
 
@@ -747,7 +801,13 @@ CREATE TABLE public.blockchain_transactions_y2026m08 (
     chainlink_request_id character varying,
     zk_proof_ref character varying,
     blockchain_network character varying DEFAULT 'evm'::character varying,
-    reward_date date
+    reward_date date,
+    telemetry_window_from_at timestamp without time zone,
+    telemetry_window_from_id bigint,
+    telemetry_window_to_at timestamp without time zone,
+    telemetry_window_to_id bigint,
+    telemetry_merkle_root character varying(64),
+    telemetry_lineage_version integer
 );
 
 
@@ -1330,7 +1390,11 @@ CREATE TABLE public.ethereum_anchors (
     updated_at timestamp(6) without time zone NOT NULL,
     total_sfc numeric(30,4) DEFAULT 0,
     active_tree_count integer DEFAULT 0,
-    nonce bigint
+    nonce bigint,
+    window_from timestamp without time zone,
+    leaf_count integer DEFAULT 0,
+    root_version integer DEFAULT 0 NOT NULL,
+    subtree_roots jsonb
 );
 
 
@@ -2632,6 +2696,8 @@ CREATE TABLE public.wallets (
     solana_public_address character varying,
     hadron_kyc_status character varying DEFAULT 'pending'::character varying,
     esg_retired_balance numeric(24,6) DEFAULT 0.0 NOT NULL,
+    lineage_cursor_at timestamp without time zone,
+    lineage_cursor_log_id bigint,
     CONSTRAINT wallets_balance_invariants CHECK (((balance >= (0)::numeric) AND (locked_balance >= (0)::numeric) AND (esg_retired_balance >= (0)::numeric) AND (locked_balance <= balance)))
 );
 
@@ -8093,5 +8159,6 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260719150000'),
 ('20260711160000');
 

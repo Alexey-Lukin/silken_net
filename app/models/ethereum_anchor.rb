@@ -34,6 +34,12 @@ class EthereumAnchor < ApplicationRecord
   # той самий слот (same-nonce, не N+1). Nil доти, доки anchor не дійшов до broadcast.
   validates :nonce, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
   validates :error_message, length: { maximum: 500 }, allow_nil: true
+  # [ARCH.12 Фаза 1а] Merkle-якір: version-умовні (legacy flat-рядки root_version=0 лишаються
+  # валідними на resume-update!). window_from nullable і для v1 — перший merkle-якір =
+  # from-genesis вікно (prev confirmed v1 ще не існує).
+  validates :root_version, inclusion: { in: [ 0, 1 ] }
+  validates :leaf_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validates :subtree_roots, presence: true, if: -> { root_version == 1 }
 
   # --- СКОУПИ ---
   scope :recent, -> { order(created_at: :desc) }

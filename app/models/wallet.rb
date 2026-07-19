@@ -28,6 +28,8 @@ class Wallet < ApplicationRecord
   validates :balance, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :locked_balance, numericality: { greater_than_or_equal_to: 0 }
   validates :esg_retired_balance, numericality: { greater_than_or_equal_to: 0 }
+  # [MRV.1] watermark-курсор lineage (позиція останнього лога, спожитого mint-вікном)
+  validates :lineage_cursor_log_id, numericality: { only_integer: true }, allow_nil: true
 
   # SCC = Silken Carbon Coin — public-facing alias for the internal balance column.
   alias_attribute :scc_balance, :balance

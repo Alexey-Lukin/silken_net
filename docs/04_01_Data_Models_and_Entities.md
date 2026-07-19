@@ -904,6 +904,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `crypto_public_address` | string | Polygon/Ethereum-адреса гаманця (EIP-55) |
 | `solana_public_address` | string | Solana Base58-адреса (для мікро-нагород) |
 | `hadron_kyc_status` | string | KYC статус Polygon Hadron (default: `pending`); [KYC.1] зміна `crypto_public_address` скидає у `pending` + enqueue `HadronKycVerificationWorker` (KYC чіпляється до адреси) |
+| `lineage_cursor_at` / `lineage_cursor_log_id` | timestamp / bigint | **[MRV.1]** watermark-курсор lineage: позиція останнього TelemetryLog, спожитого mint-вікном (`lock_and_mint!` рухає монотонно, лише разом зі створенням tx). NULL = мінтів ще не було → перше вікно чесно атрибутує всю історію дерева |
 
 **Ключові методи:**
 
@@ -955,6 +956,9 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `zk_proof_ref` | string | Посилання на ZK-proof IoTeX |
 | `locked_points` | bigint | Заблоковані growth_points при мінтингу |
 | `cumulative_gas_cost` | numeric | Накопичені витрати на газ |
+| `telemetry_window_from_at/from_id` · `telemetry_window_to_at/to_id` | timestamp/bigint | **[MRV.1]** lineage-вікно вимірів mint-інтенту (від watermark-курсора Wallet до нового; пишеться в `lock_and_mint!` під wallet-локом). NULL = pre-lineage tx або non-mint |
+| `telemetry_merkle_root` | string(64) | **[MRV.1/ARCH.12]** Merkle-корінь вікна (leaf = `Mrv::TelemetryLeaf`); **fail-open** — nil легітимний (witness-фіча ніколи не блокує мінт) |
+| `telemetry_lineage_version` | integer | Версія leaf-формули (`Mrv::TelemetryLeaf::LEAF_VERSION`) — historical-верифікація при майбутньому bump'і |
 
 **AASM:**
 - `process` (pending→processing)
@@ -1238,6 +1242,10 @@ active/draft ──cancel──► cancelled
 | `nonce` | bigint | EVM nonce broadcast'у — персиститься **перед** `transact` ([ARCH.66] companion: F2a same-nonce resume проти double-send; NULL доти, доки anchor не дійшов до broadcast) |
 | `status` | integer | Enum: `pending(0) / sent(1) / confirmed(2) / failed(3) / manual_review(4)` [ARCH.66] |
 | `error_message` | string(500) | Деталі помилки (якщо є) |
+| `root_version` | integer | **[ARCH.12 Фаза 1а]** 0 = legacy flat SHA-256 commitment · 1 = Merkle-корінь; `verify_state_root` маршрутизується за версією (legacy-рядки верифікуються старою формулою назавжди) |
+| `window_from` | timestamp | **[ARCH.12]** нижня межа вікна телеметрія-листя (= `anchored_at` попереднього confirmed v1-якоря, exclusive); NULL для legacy і для першого merkle-якоря (from-genesis вікно). Верхня межа = `anchored_at − GRACE` |
+| `leaf_count` | integer | **[ARCH.12]** кількість телеметрія-листя у вікні (без leaf0) — аудитор відрізняє «партицію дропнули» від «листя не було» |
+| `subtree_roots` | jsonb | **[ARCH.12]** упорядкований tier2-масив `[{cluster_id: null\|int, root: hex}]` (перший елемент = leaf0-агрегат): `verify_state_root` самодостатній O(#кластерів) і переживає ретеншн-дроп партицій; фіксує групування-як-було (cluster_id мутабельний) |
 
 **Enum `status`** (prefix: true)**:**
 
