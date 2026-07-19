@@ -67,7 +67,11 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     ///        bytes32(0) = «без witness-клейму» (windowless/fail-open мінт), НЕ «порожньо».
     ///        Root = свідок evidence-набору ДИСПАТЧУ (N:1), не 1:1 композиції мінта.
     event CarbonMinted(
-        address indexed investor, uint256 amount, bytes32 indexed treeDidHash, string treeDid, bytes32 indexed archiveRoot
+        address indexed investor,
+        uint256 amount,
+        bytes32 indexed treeDidHash,
+        string treeDid,
+        bytes32 indexed archiveRoot
     );
 
     /// @notice Емітується при спалюванні токенів через slashing protocol.

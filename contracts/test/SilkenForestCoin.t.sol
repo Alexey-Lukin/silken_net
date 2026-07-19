@@ -39,7 +39,11 @@ contract SilkenForestCoinTest is Eip712SigUtils {
     string public constant CLUSTER_ID = "cluster-alpha-1";
 
     event ForestMinted(
-        address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId, bytes32 indexed archiveRoot
+        address indexed investor,
+        uint256 amount,
+        bytes32 indexed clusterIdHash,
+        string clusterId,
+        bytes32 indexed archiveRoot
     );
     event GovernanceSlashed(address indexed investor, uint256 amount, bytes32 contextHash);
 

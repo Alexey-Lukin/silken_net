@@ -64,7 +64,11 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     ///        evidence-набору, НЕ carbon-клейм (токен-семантика живе в токені; SCC/SFC
     ///        симетричні за founder-рішенням — один Ruby ABI). bytes32(0) = без witness-клейму.
     event ForestMinted(
-        address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId, bytes32 indexed archiveRoot
+        address indexed investor,
+        uint256 amount,
+        bytes32 indexed clusterIdHash,
+        string clusterId,
+        bytes32 indexed archiveRoot
     );
 
     /// @notice [B-06] Емітується при спалюванні governance токенів через slashing protocol.

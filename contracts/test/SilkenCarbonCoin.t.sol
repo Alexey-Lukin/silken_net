@@ -41,7 +41,11 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
     string public constant TREE_DID = "SNET-1A2B3C4D";
 
     event CarbonMinted(
-        address indexed investor, uint256 amount, bytes32 indexed treeDidHash, string treeDid, bytes32 indexed archiveRoot
+        address indexed investor,
+        uint256 amount,
+        bytes32 indexed treeDidHash,
+        string treeDid,
+        bytes32 indexed archiveRoot
     );
     event TokenSlashed(address indexed investor, uint256 amount, bytes32 contextHash);
 
