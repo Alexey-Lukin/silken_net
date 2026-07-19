@@ -32,6 +32,7 @@ module Gateways
           # Панель управління та Метадані
           div(class: "space-y-8") do
             render_network_config
+            render_ota_evolution
             render_hardware_vault
           end
         end
@@ -127,6 +128,24 @@ module Gateways
           end
         end
       end
+    end
+
+    # [SEC.20] Живий OTA-прогрес: підписка на персональний канал шлюзу;
+    # broadcast'ить Downlink::PendingQueueService (FW.60 poll-тракт).
+    def render_ota_evolution
+      turbo_stream_from "ota_channel_#{@gateway.uid}"
+      render Firmwares::OtaProgressBar.new(
+        uid: @gateway.uid,
+        percent: 0, current: 0, total: 0,
+        status: initial_ota_status
+      )
+    end
+
+    def initial_ota_status
+      return "TRANSMITTING" if @gateway.updating?
+      return "PENDING" if @gateway.pending_firmware_id
+
+      "IDLE"
     end
 
     def render_hardware_vault

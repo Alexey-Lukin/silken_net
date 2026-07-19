@@ -92,6 +92,38 @@ RSpec.describe Firmwares::Index do
     end
   end
 
+  describe "active OTA evolutions (SEC.20)" do
+    def mock_ota_gateway(uid: "SNET-Q-01", updating: true)
+      gw = OpenStruct.new(uid: uid)
+      gw.define_singleton_method(:updating?) { updating }
+      gw
+    end
+
+    it "does not render the section without active campaigns" do
+      html = render_component(firmwares: [], inventory_stats: mock_inventory_stats, pagy: mock_pagy(count: 0, last: 1))
+      expect(html).not_to include("Active Evolutions")
+    end
+
+    it "renders subscription + progress bar per updating gateway" do
+      html = render_component(
+        firmwares: [], inventory_stats: mock_inventory_stats, pagy: mock_pagy(count: 0, last: 1),
+        active_ota_gateways: [ mock_ota_gateway(uid: "SNET-Q-01") ]
+      )
+      expect(html).to include("Active Evolutions // Live OTA")
+      expect(html).to include("turbo-cable-stream-source")
+      expect(html).to include("ota_progress_SNET-Q-01")
+      expect(html).to include("TRANSMITTING")
+    end
+
+    it "renders PENDING for a targeted gateway that has not polled yet" do
+      html = render_component(
+        firmwares: [], inventory_stats: mock_inventory_stats, pagy: mock_pagy(count: 0, last: 1),
+        active_ota_gateways: [ mock_ota_gateway(uid: "SNET-Q-02", updating: false) ]
+      )
+      expect(html).to include("PENDING")
+    end
+  end
+
   describe "accessibility" do
     let(:html) { render_component(firmwares: [ mock_firmware ], inventory_stats: mock_inventory_stats, pagy: mock_pagy(last: 1)) }
 

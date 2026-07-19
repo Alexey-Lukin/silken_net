@@ -32,6 +32,9 @@ class ActuatorCommandWorker
   end
 
   # 📈 Статичний метод для broadcast з денормалізованим organization_id
+  # Rescue-ізоляція: викликається і з синхронного poll-тракту coap-демона
+  # (Downlink::PendingQueueService CMD-видача) — збій cable-транспорту там
+  # губив би acknowledged-команду (сирену) назавжди; UI-декорація ≠ доставка.
   def self.broadcast_command_state_static(command)
     org = command.organization || command.actuator.gateway.cluster.organization
     return unless org
@@ -41,6 +44,8 @@ class ActuatorCommandWorker
       target: "command_status_#{command.id}",
       html: Actuators::CommandStatusBadge.new(command: command).call
     )
+  rescue StandardError => e
+    Rails.logger.warn "⚠️ [FW.60] CMD-статус broadcast не пройшов для наказу ##{command.id}: #{e.message}"
   end
 
   def perform(command_id, explicit_key = nil)

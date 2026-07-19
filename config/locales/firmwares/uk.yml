@@ -12,6 +12,7 @@ uk:
       version_label: Версія еволюції
       version_placeholder: напр. 1.4.2
     index:
+      active_evolutions: Активні еволюції // Живий OTA
       columns:
         checksum: Контрольна сума (SHA-256)
         command: Команда

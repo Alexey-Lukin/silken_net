@@ -186,4 +186,73 @@ RSpec.describe Downlink::PendingQueueService do
       expect(gateway.reload.pending_firmware_id).to eq(firmware.id)
     end
   end
+
+  describe "[SEC.20] Turbo-прогрес кампанії (живий producer бара)" do
+    let(:firmware) { create(:bio_contract_firmware, bytecode_payload: "AB" * 64) }
+
+    before do
+      gateway.update!(pending_firmware_id: firmware.id)
+      allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+    end
+
+    it "hint мовить старт 0% TRANSMITTING у персональний канал шлюзу" do
+      poll
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).with(
+        "ota_channel_#{gateway.uid}",
+        hash_including(target: "ota_progress_#{gateway.uid}",
+                       html: include(">TRANSMITTING<").and(include("width: 0%")))
+      )
+    end
+
+    it "chunk-fetch мовить прогрес (ch+1 із total)" do
+      total = OtaPackagerService.prepare(
+        firmware, chunk_size: OtaTransmissionWorker::CHUNK_SIZE, cluster_id: cluster.id
+      )[:packages].to_a.size
+
+      described_class.ota_chunk_reply(gateway: gateway, query: { "v" => firmware.id.to_s, "ch" => "0" })
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).with(
+        "ota_channel_#{gateway.uid}",
+        hash_including(html: include("CHUNK: 1 / #{total}"))
+      )
+    end
+
+    it "fw=-підтвердження мовить COMPLETE 100% (total невідомий — без ділення на нуль)" do
+      gateway.update!(state: :updating, ota_started_at: Time.current)
+
+      poll({ "fw" => firmware.id.to_s })
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).with(
+        "ota_channel_#{gateway.uid}",
+        hash_including(html: include(">COMPLETE<").and(include("width: 100%")))
+      )
+    end
+
+    it "відхилений chunk-запит (чужа версія) НЕ мовить" do
+      described_class.ota_chunk_reply(
+        gateway: gateway, query: { "v" => (firmware.id + 99).to_s, "ch" => "0" }
+      )
+
+      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_replace_to)
+    end
+
+    it "0% мовиться лише на ПЕРШОМУ hint'і — re-hint не пиляє бар назад (Queen тримає курсор)" do
+      2.times { poll }
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).once
+    end
+
+    it "збій Turbo-транспорту не вбиває конверт (rescue-ізоляція: UI-декорація ≠ доставка)" do
+      allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+        .and_raise(StandardError, "cable down")
+
+      expect(decrypt_inner(poll).getbyte(0)).to eq(0x9F)
+
+      fetched = described_class.ota_chunk_reply(
+        gateway: gateway, query: { "v" => firmware.id.to_s, "ch" => "0" }
+      )
+      expect(fetched).not_to be_nil
+    end
+  end
 end

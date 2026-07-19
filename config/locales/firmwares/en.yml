@@ -12,6 +12,7 @@ en:
       version_label: Evolution Version
       version_placeholder: e.g. 1.4.2
     index:
+      active_evolutions: Active Evolutions // Live OTA
       columns:
         checksum: Checksum (SHA-256)
         command: Command

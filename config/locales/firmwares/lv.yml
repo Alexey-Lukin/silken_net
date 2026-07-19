@@ -12,6 +12,7 @@ lv:
       version_label: Evolūcijas versija
       version_placeholder: piem. 1.4.2
     index:
+      active_evolutions: Aktīvās evolūcijas // Tiešraides OTA
       columns:
         checksum: Kontrolsumma (SHA-256)
         command: Komanda

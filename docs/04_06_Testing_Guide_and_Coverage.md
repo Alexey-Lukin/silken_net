@@ -307,7 +307,7 @@ it "test that status works" do
 
 ### 30. Мінімум 8 examples на компонент
 Менше — означає недостатнє покриття. Виняток: тривіальні wrapper-компоненти
-(BalanceFrame, OtaProgressBar) можуть мати 5-7.
+(BalanceFrame) можуть мати 5-7.
 
 ---
 

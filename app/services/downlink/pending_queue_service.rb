@@ -62,6 +62,7 @@ module Downlink
       SilkenNet::Metrics::OTA_CHUNKS_SENT_TOTAL.increment(
         labels: { firmware_version: firmware_version_label(firmware_id) }
       )
+      broadcast_ota_progress(chunk_index + 1, packages.size, "TRANSMITTING")
       envelope(packages[chunk_index])
     end
 
@@ -142,6 +143,11 @@ module Downlink
       unless @gateway.updating?
         # ARCH.59-якір: watchdog ловить stuck-:updating саме за цією парою.
         @gateway.update!(state: :updating, ota_started_at: Time.current)
+        # 0% лише на ПЕРШОМУ hint'і: hint повторюється кожен poll до
+        # fw=-підтвердження, але Queen тримає курсор кампанії (re-hint того
+        # самого fw НЕ скидає bitmap) — re-broadcast 0% пиляв би бар назад.
+        # Після ребуту Королеви бар виправить перший chunk-broadcast.
+        broadcast_ota_progress(0, packages.size, "TRANSMITTING")
       end
 
       [ OTA_HINT_MARKER, firmware_id, packages.size ].pack("CNn")
@@ -160,6 +166,7 @@ module Downlink
         firmware_version: firmware&.version || @gateway.firmware_version,
         state: @gateway.updating? ? :idle : @gateway.state
       )
+      broadcast_ota_progress(0, 0, "COMPLETE")
     end
 
     def firmware_version_label(firmware_id)
@@ -182,6 +189,31 @@ module Downlink
           cluster_id: @gateway.cluster_id
         )[:packages].to_a
       end
+    end
+
+    # [SEC.20] Живий producer OTA-прогрес-бара (push-воркер superseded FW.60):
+    # hint = старт, chunk-fetch = прогрес, fw= у poll'і = завершення.
+    # Підписники: Gateways::Show + Firmwares::Index (04_04 §8).
+    # Rescue-ізоляція: ми в синхронному reply-шляху coap-демона — збій
+    # cable-транспорту не сміє вбити конверт (UI-декорація ≠ доставка).
+    def broadcast_ota_progress(current, total, status)
+      percent =
+        if total.positive?
+          ((current.to_f / total) * 100).to_i
+        else
+          status == "COMPLETE" ? 100 : 0
+        end
+
+      Turbo::StreamsChannel.broadcast_replace_to(
+        "ota_channel_#{@gateway.uid}",
+        target: "ota_progress_#{@gateway.uid}",
+        html: Firmwares::OtaProgressBar.new(
+          uid: @gateway.uid, percent: percent,
+          current: current, total: total, status: status
+        ).call
+      )
+    rescue StandardError => e
+      Rails.logger.warn "⚠️ [SEC.20] OTA-прогрес broadcast не пройшов для #{@gateway.uid}: #{e.message}"
     end
 
     def envelope(inner)

@@ -2,20 +2,42 @@
 
 module Firmwares
   class Index < ApplicationComponent
-    def initialize(firmwares:, inventory_stats:, pagy:)
+    def initialize(firmwares:, inventory_stats:, pagy:, active_ota_gateways: [])
       @firmwares = firmwares
       @inventory_stats = inventory_stats
       @pagy = pagy
+      @active_ota_gateways = active_ota_gateways
     end
 
     def view_template
       div(class: "space-y-10 animate-in fade-in duration-700") do
+        render_active_evolutions
         render_inventory_summary
         render_firmware_registry
       end
     end
 
     private
+
+    # [SEC.20] Живі OTA-кампанії: підписка + initial-render прогрес-барів;
+    # broadcast'ить Downlink::PendingQueueService (FW.60 poll-тракт).
+    def render_active_evolutions
+      return if @active_ota_gateways.empty?
+
+      div(class: "p-6 border border-emerald-900 bg-black") do
+        h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-6") { t(".active_evolutions") }
+        div(class: "space-y-4") do
+          @active_ota_gateways.each do |gateway|
+            turbo_stream_from "ota_channel_#{gateway.uid}"
+            render Firmwares::OtaProgressBar.new(
+              uid: gateway.uid,
+              percent: 0, current: 0, total: 0,
+              status: gateway.updating? ? "TRANSMITTING" : "PENDING"
+            )
+          end
+        end
+      end
+    end
 
     def render_inventory_summary
       div(class: "p-6 border border-emerald-900 bg-zinc-950 shadow-2xl") do

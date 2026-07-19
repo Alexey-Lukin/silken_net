@@ -12,6 +12,7 @@ lt:
       version_label: Evoliucijos versija
       version_placeholder: pvz. 1.4.2
     index:
+      active_evolutions: Aktyvios evoliucijos // Tiesioginis OTA
       columns:
         checksum: Kontrolinė suma (SHA-256)
         command: Komanda

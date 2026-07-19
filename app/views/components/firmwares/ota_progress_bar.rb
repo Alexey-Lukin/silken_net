@@ -19,9 +19,13 @@ module Firmwares
           div(class: "h-full bg-emerald-500 shadow-[0_0_10px_#10b981] transition-all duration-500", style: "width: #{@percent}%")
         end
 
-        div(class: "flex justify-between mt-2 text-micro text-gray-600") do
-          span { t(".chunk", current: @current, total: @total) }
-          span { t(".complete", percent: @percent) }
+        # total=0 — initial-render без кампанії (IDLE) або COMPLETE-сигнал:
+        # чанк-лічильник не має що показувати.
+        if @total.positive?
+          div(class: "flex justify-between mt-2 text-micro text-gray-600") do
+            span { t(".chunk", current: @current, total: @total) }
+            span { t(".complete", percent: @percent) }
+          end
         end
       end
     end
@@ -32,6 +36,7 @@ module Firmwares
       case @status
       when "COMPLETE" then "text-emerald-400"
       when "FAILED"   then "text-red-500 animate-pulse"
+      when "IDLE"     then "text-gray-600"
       else "text-emerald-600 animate-pulse"
       end
     end

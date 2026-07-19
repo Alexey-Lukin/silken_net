@@ -29,6 +29,12 @@ module Api
           gateways: org.gateways.group(:firmware_version).count
         }
 
+        # [SEC.20] Живі OTA-кампанії: updating АБО затаргечені (Queen ще
+        # не поллила hint) — прогрес-бари з підпискою на Firmwares::Index.
+        @active_ota_gateways = org.gateways.where(state: :updating)
+                                  .or(org.gateways.where.not(pending_firmware_id: nil))
+                                  .order(:uid).to_a
+
         respond_to do |format|
           # API Response
           format.json do
@@ -48,7 +54,8 @@ module Api
               component: Firmwares::Index.new(
                 firmwares: @firmwares,
                 inventory_stats: @inventory_stats,
-                pagy: @pagy
+                pagy: @pagy,
+                active_ota_gateways: @active_ota_gateways
               )
             )
           end

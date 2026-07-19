@@ -72,6 +72,25 @@ RSpec.describe Firmwares::OtaProgressBar do
     end
   end
 
+  describe "initial-render states (SEC.20)" do
+    it "renders IDLE in gray without pulse" do
+      html = render_component(uid: "X", percent: 0, current: 0, total: 0, status: "IDLE")
+      expect(html).to include("text-gray-600")
+      expect(html).not_to include("animate-pulse")
+    end
+
+    it "hides the chunk counter when total is zero" do
+      html = render_component(uid: "X", percent: 100, current: 0, total: 0, status: "COMPLETE")
+      expect(html).not_to include("CHUNK:")
+      expect(html).to include("COMPLETE")
+    end
+
+    it "keeps the Turbo replace target id in the zero-total state" do
+      html = render_component(uid: "SNET-Q-1", percent: 0, current: 0, total: 0, status: "IDLE")
+      expect(html).to include("ota_progress_SNET-Q-1")
+    end
+  end
+
   describe "best practices compliance" do
     let(:html) { render_component(uid: "TEST", percent: 50, current: 25, total: 50, status: "TRANSMITTING") }
 

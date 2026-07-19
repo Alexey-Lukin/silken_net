@@ -597,7 +597,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 
 | Компонент | Файл | Props | Опис |
 |---|---|---|---|
-| `Firmwares::Index` | `firmwares/index.rb` | `firmwares:`, `pagy:` | Список прошивок |
+| `Firmwares::Index` | `firmwares/index.rb` | `firmwares:`, `inventory_stats:`, `pagy:`, `active_ota_gateways:` | Список прошивок + інвентар версій + секція живих OTA-кампаній [SEC.20] |
 | `Firmwares::New` | `firmwares/new.rb` | — | Форма завантаження нової прошивки |
 | `Firmwares::Form` | `firmwares/form.rb` | `firmware:` | Поля форми прошивки |
 | `Firmwares::Row` | `firmwares/row.rb` | `firmware:` | Один рядок списку прошивок |
@@ -824,6 +824,7 @@ Canvas-ефект Matrix digital rain з hex-символами (`0-9A-F`). Canv
 |---|---|---|
 | `"telemetry_stream"` | `Telemetry::LiveStream` | `UnpackTelemetryWorker` (черга: `uplink`) |
 | `@wallet, :transactions` | `Wallets::Show` | `BlockchainMintingService` / TX workers |
+| `"ota_channel_{uid}"` | `Gateways::Show` · `Firmwares::Index` (секція активних кампаній) | `Downlink::PendingQueueService` [SEC.20] (FW.60 poll-тракт, coap-демон) |
 
 **Патерн:**
 
@@ -869,7 +870,7 @@ end
 | `wallet_balance_{id}` | `Wallets::BalanceDisplay` | `BlockchainMintingService` |
 | `transactions_ledger` | `Wallets::Show` | TX confirmation workers |
 | `telemetry_feed` | `Telemetry::LiveStream` | `UnpackTelemetryWorker` |
-| `ota_progress_{uid}` | `Firmwares::OtaProgressBar` | ⚠️ producer-воркер superseded [FW.60] (Queen-driven fetch — per-chunk прогресу в Rails нема; підписник теж відсутній → 00_07 SEC.20-чекбокс) |
+| `ota_progress_{uid}` | `Firmwares::OtaProgressBar` | `Downlink::PendingQueueService` [SEC.20]: hint → 0% · chunk-fetch → `ch+1/total` · `fw=` → COMPLETE (Rails бачить кожен fetch Королеви; initial-render = `Gateways::Show` + `Firmwares::Index`) |
 | `alert_badge_{id}` | `Alerts::Badge` | `EwsAlertWorker` |
 
 ---

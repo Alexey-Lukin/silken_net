@@ -240,6 +240,31 @@ RSpec.describe Gateways::Show do
     end
   end
 
+  describe "OTA evolution (SEC.20)" do
+    it "subscribes to the gateway's personal ota channel" do
+      expect(html).to include("turbo-cable-stream-source")
+    end
+
+    it "renders the progress bar target with IDLE initial state" do
+      expect(html).to include("ota_progress_SNET-Q-AAB01234")
+      expect(html).to include("IDLE")
+    end
+
+    it "renders TRANSMITTING when the gateway is updating" do
+      gw = mock_gateway(state: "updating")
+      gw.define_singleton_method(:updating?) { true }
+      rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
+      expect(rendered).to include("TRANSMITTING")
+    end
+
+    it "renders PENDING when firmware is targeted but not yet polled" do
+      gw = mock_gateway
+      gw.pending_firmware_id = 42
+      rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
+      expect(rendered).to include("PENDING")
+    end
+  end
+
   describe "connection LED" do
     it "shows green LED when recently seen" do
       gw = mock_gateway(last_seen_at: 1.minute.ago)
