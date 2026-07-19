@@ -81,6 +81,8 @@ for FIELD in "Current TRL" "Target TRL" "Readiness Horizon" "Assigned Agent" "Mo
 done
 ```
 
+⚠️ **Односторонні двері (властивість, не баг):** `sync_project_fields` дифить лише за ІМ'ЯМ поля — створює відсутні, але зміна option-сету *існуючого* поля у `FIELDS`/§1.1 НЕ оновить живу дошку; редагування опцій наявного поля = ручна UI-операція.
+
 ---
 
 ## ⚙️ 2. Автоматизація через GitHub Actions
