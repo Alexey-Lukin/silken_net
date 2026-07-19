@@ -297,5 +297,14 @@ Slashing::CauseEvidence.new(cluster).positive_a?   # → true (ворота ві
 
 Після ескалації: запис в `AuditLog` (`action: "field_audit_escalated_c_to_a"`, metadata: cluster_id + акт + фото-ref) — tamper-evident слід для MRV-аудитора ([MRV.1]). `vandalism_breach` свідомо виключений з `comms_no_ack?`/`critical_unmaintained?` (P1-3 self-ref: доказ A не має ще й накручувати penalty на собі).
 
+### 4.7 Archive-batch `mismatch` / zero32-мінт (E.60 Фаза 1б — integrity, НЕ money)
+
+> Механіка/семантика тракту — [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline). Money-периметр НЕ зачеплений: батч-стани живуть на `TelemetryArchiveBatch`, tx-AASM недоторканий — жоден крок тут не рухає кошти.
+
+- **`mismatch`** (rebuild-root ≠ stored при живих логах; алерт по `…archive_batch_failures_total{reason="mismatch"}`): root уже поїхав on-chain — артефакт НЕ запінено (guard). Розслідування: `batch.blockchain_transactions` → вікна → знайди мутований лог (порівняй `Mrv::TelemetryLeaf.cid_for(log)` з `log.merkle_leaf`, якщо стемп встиг; sweeper-нога зазвичай показує `leaf_stamp_drift` поруч). Мутація = інцидент цілісності БД (raw-SQL повз seal-guard) — джерело шукати в git/логах, стан батчу лишити `mismatch` як слід; on-chain root ЧЕСНИЙ на момент диспатчу (артефакт відновлюваний лише якщо мутацію відкотили).
+- **Repaired-`build_failed`** (пізній rebuild вдався — `repair!` → пін): root живе off-chain-only, chain на той мінт уже поїхав zero32 — легально за семантикою «zero32 = без witness-клейму»; артефакт = off-chain доказ, аудитор бачить розбіжність чесно.
+- **Abandoned-`build_failed`** (repair неможливий: усі tx уже в інших батчах / вікна порожні — `abandon_repair!` → `superseded`): доказ невиправний, root лишається NULL, рядок виходить із `.reconcilable` (daily-backstop більше не чіпає). НЕ інцидент — dead-end слід; chain на той мінт уже поїхав zero32.
+- **zero32-мінт при непорожніх персистованих вікнах** (алерт `reason="build"`): тракт зламався, гроші течуть (fail-open за дизайном) — лагодити тракт, НЕ зупиняти мінт; вікна персистовані → пізній repair намагається відновити доказ (успіх/неможливість → два буллети вище).
+
 ---
 

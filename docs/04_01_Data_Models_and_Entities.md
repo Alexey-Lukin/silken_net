@@ -560,6 +560,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `gateway_attested` | boolean | **[L1 QATT]** Рядок приїхав під валідним Ed25519-підписом Королеви (default `false`; wire-дім [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security), ladder [`05_02`](05_02_Proof_of_Growth_Pipeline)) |
 | `chainlink_request_id` | string | ID запиту Chainlink Oracle |
 | `tamper_detected` | boolean | ⚠️ **DEAD-колонка** — жоден код не читає і не пише (tamper-семантика живе в алертах: panic→`chainsaw_detected`, ручний `vandalism_breach`); кандидат на прибирання або майбутній HW tamper-канал (tamper-switch/SE05x) |
+| `archive_root` / `merkle_leaf` | string(64) ×2 | **[E.60]** стемп архів-батчу (пише pin-воркер raw-SQL'ем ПІСЛЯ звірки кореня): `archive_root` = корінь батчу-власника (join-ключ до `TelemetryArchiveBatch`), `merkle_leaf` = CID листа. Partial index `WHERE merkle_leaf IS NOT NULL` (sweeper-семпл). **Seal-guard** `before_update` (перший AR-колбек моделі; прецедент `AuditLog#forbid_business_field_mutation!`): мутація leaf-payload-поля (`z_value`/`bio_status`/`created_at`/`tree_id`) стемпнутого рядка = raise; пара захистів — guard тримає AR-шлях, sweeper-нога ловить raw-SQL. KENOSIS недоторканий (intake = insert_all, колбек не стріляє) |
 | `cold_start_flag` | boolean | `true` якщо пакет перший після VBAT loss (initial_state від K_seed, не warm chain) |
 | `lorenz_state_x/y/z` | float | Хвіст траєкторії Лоренца для chain-старту наступного пакету |
 | `time_unsynced_fallback` | boolean | `true` якщо DCI mismatch відновлено через ARCH.41 epoch_day fallback (Soldier мав застарілий RTC після VBAT loss); `CMD_TIME_SYNC` downlink поставлено в чергу автоматично |
@@ -917,7 +918,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `lock_and_mint!(points_to_lock, threshold, token_type)` | Повний цикл емісії SCC (курс — [`05_03`](05_03_Tokenomics_SCC_and_SFC)) |
 | `kyc_approved_for_minting?` | [KYC.1] Гейт мінтингу = статус БЕНЕФІЦІАРА адреси: власна адреса → власний статус; custodial (без власної) → успадковує `organizations.hadron_kyc_status` (гейт — [`05_02` — Крок E](05_02_Proof_of_Growth_Pipeline)) |
 | `broadcast_balance_update` | Turbo Stream оновлення UI |
-| `guard_mrv_evidence!` | **[MRV.1]** `before_destroy` (prepend) destroy-guard MRV-доказів: гаманець із settled/in-flight `blockchain_transactions` → abort (грошові докази незнищенні); чисто-pending видаляється. **Межа (fable №2):** failed-tx НЕ блокують destroy (points звільнено — грошово безпечно), але їхні lineage-вікна сиротіють (`dependent: :nullify` відриває від wallet → успадкування (г) їх не побачить; новий wallet дерева стартує NULL-курсором з ре-атрибуцією тих самих логів) |
+| `guard_mrv_evidence!` | **[MRV.1]** `before_destroy` (prepend) destroy-guard MRV-доказів: гаманець із settled/in-flight `blockchain_transactions` → abort (грошові докази незнищенні); чисто-pending видаляється. **[E.60]** + tx з `archive_batch_id` (будь-який статус, включно pending/failed) → abort: стемпнутий tx = член архів-батчу, видалення стерло б вікна → хибний `mismatch` у pin-воркера. **Межа (fable №2, звужена E.60):** лише failed-tx БЕЗ архів-членства не блокують destroy |
 
 > **[E.66] Toucan-prune:** `lock_for_toucan_bridge!` / `finalize_spend!` / `toucan_bridged_balance` видалено (flow DEAD, 0 enqueue-callerів; failure-path мав money-integrity діру — несиметричний rollback). Escrow-примітив воскресає з git при E.20-go (locked у mint-flow = «сконвертовано назавжди» by design — finalize не потрібен).
 
@@ -958,6 +959,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `cumulative_gas_cost` | numeric | Накопичені витрати на газ |
 | `telemetry_window_from_at/from_id` · `telemetry_window_to_at/to_id` | timestamp/bigint | **[MRV.1]** lineage-вікно вимірів mint-інтенту (від watermark-курсора Wallet до нового; пишеться в `lock_and_mint!` під wallet-локом). NULL = pre-lineage tx або non-mint |
 | `telemetry_merkle_root` | string(64) | **[MRV.1/ARCH.12]** Merkle-корінь вікна (leaf = `Mrv::TelemetryLeaf`); **fail-open** — nil легітимний (witness-фіча ніколи не блокує мінт). AuditLog-печатка = стан кореня НА МОМЕНТ status-переходу (attach йде post-commit — перший перехід теоретично може запечатати nil; bundle показує стан tx-рядка) |
+| `archive_batch_id` | bigint | **[E.60]** set-once membership архів-батчу (`belongs_to :archive_batch`, FK + btree): ставиться РАЗ атомарно зі створенням батчу (`Mrv::TelemetryArchiveBatchService`), re-dispatch реюзає stored root; НІКОЛИ не перевішується. Non-NULL = MRV-доказ → `Wallet#guard_mrv_evidence!` abort'ить destroy |
 | `telemetry_lineage_version` | integer | Версія leaf-формули (`Mrv::TelemetryLeaf::LEAF_VERSION`) — historical-верифікація при майбутньому bump'і |
 
 **AASM:**
@@ -976,6 +978,19 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 **Масштабування:** Таблиця переведена на PostgreSQL Declarative RANGE Partitioning по `created_at` (місячні партиції). Composite PK `(id, created_at)` — вимога partitioning. `self.primary_key = "id"` — Rails використовує `id` для `dom_id` та асоціацій. Всі 8 індексів перестворені (автоматично пропагуються на партиції). `PartitionMaintenanceWorker` тепер підтримує `blockchain_transactions` поряд з `telemetry_logs` та `gateway_telemetry_logs`.
 
 ---
+
+### `TelemetryArchiveBatch` — Реєстр Архів-Батчів (E.60 Фаза 1б)
+
+Один рядок = один `archive_root` mint-диспатчу (mint-anchored батч → `mint(bytes32)` → пін артефакту). Механіка/семантика — One-Home [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline); тут — модель-факти:
+
+| Поле / аспект | Опис |
+|------|------|
+| `archive_root` | string(64), **nullable** + partial-unique `(archive_root, token_type) WHERE archive_root IS NOT NULL` — NULL-root легальний для `build_failed` (слід збою) і `superseded`-через-`abandon_repair!` (невиправний слід), обидва поза unique; zero32 у реєстрі НІКОЛИ не зберігається (derived-only on-chain) |
+| `status` | integer-enum prefix: `pending`/`pinned`/`build_failed`/`mismatch`/`retention_expired`/`superseded`. **CAS-переходи** (`with_lock`-гарди — прецедент `EthereumAnchor` ARCH.66): термінали лише з `pending` (конкурентна pin-копія no-op, не перетираються); `repair!` (`build_failed`→`pending`, пізній rebuild вдався) і `abandon_repair!` (`build_failed`→`superseded`, невиправний — усі tx розібрані / вікна порожні; вихід із `.reconcilable`) — лише з `build_failed`. `pin_failed`-стану СВІДОМО нема (вичерпання = `pending` + `error_message`, документована стеля) |
+| `tx_ids` | jsonb — snapshot-слід диспатчу (авторитетне членство = `blockchain_transactions.archive_batch_id`, set-once) |
+| `txs_created_from` / `txs_created_to` | timestamp ×2 — `created_at`-межі tx-набору диспатчу: pin-/repair-воркер несе їх у КОЖЕН read-back по партиційованій `blockchain_transactions` (partition-pruning; id-only lookup сканував би кожну партицію) |
+| `leaf_count` / `tx_count` / `ipfs_cid` / `tax_rate_applied` / `error_message` | лічильники + Pinata-CID артефакту + застосована tax-rate (у артефакт) + слід збою (≤500) |
+| Індекси | partial-unique вище + `(status, updated_at)` (reconcile-скоуп `.reconcilable`, дзеркало `index_audit_logs_pending_archive`) |
 
 ### `NaasContract` — Nature-as-a-Service Контракт
 

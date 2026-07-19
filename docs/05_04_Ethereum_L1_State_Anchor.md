@@ -461,6 +461,7 @@ Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
 | `rescues Net::ReadTimeout and updates anchor to failed` | Timeout + EthereumAnchor persistence |
 | `rescues IOError and updates anchor to failed` | Connection error + EthereumAnchor persistence |
 | `logs successful anchoring` | Rails.logger.info при успіху |
+| describe `root_version: 1 (Merkle) [ARCH.12]` | tier2-побудова (leaf0-агрегат + cluster-субкорені), ланцюжіння вікон (`window_from` = попередній confirmed v1), GRACE-межа, персист `subtree_roots`/`leaf_count` |
 
 ### `spec/workers/ethereum_anchor_worker_spec.rb`
 
@@ -481,6 +482,9 @@ Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
 | scopes: `recent`, `successful`, `latest_confirmed`, `stuck_sent` [ARCH.66] | AR scopes |
 | enum status | pending/sent/confirmed/failed/**manual_review** [ARCH.66] |
 | `confirm!` / `mark_failed!` / `escalate_to_review!` [ARCH.66] | guarded lifecycle transitions (`with_lock`, idempotent from `:sent`) |
+| describe `verify_state_root` version-route [ARCH.12] | v0 = flat-формула назавжди; v1 = leaf0-звірка + корінь зі збережених `subtree_roots` (самодостатньо, tamper → false) |
+
+> [ARCH.12] Merkle-примітив має власний дім-спек `spec/lib/merkle_tree_spec.rb` (golden-vectors + mutation-verified, pure — без Rails); mrv-споживачі (`spec/services/mrv/*`) — інвентар біля своєї підсистеми ([`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline) + карти [`04_02`](04_02_Business_Logic_and_Services)).
 
 ---
 
@@ -630,11 +634,11 @@ bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_sp
 
 **Контракт НЕ змінився:** `storeStateRoot(bytes32)` приймає Merkle-корінь так само, як flat-хеш; legacy-якорі (`root_version: 0`) верифікуються старою формулою назавжди.
 
-**Паралель E.60, не вкладеність:** цей Eth-L1 weekly state-root і Polygon per-batch `archive_root` ([`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline)) — два незалежні якорі, що ділять ОДИН `MerkleTree` primitive (`lib/merkle_tree.rb`: sha256, RFC-6962 domain-sep 0x00/0x01, promotion непарного вузла, hash-of-hex; двоярусність = композиція verify×2 у споживачах); Polygon-нога = **Фаза 1б deferred** ([`00_07`](00_07_Action_Plan_Tracker) E.60). keccak / OZ-`MerkleProof` — upgrade-path лише за on-chain-verify споживача (YAGNI).
+**Паралель E.60, не вкладеність:** цей Eth-L1 weekly state-root і Polygon per-batch `archive_root` ([`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline)) — два незалежні якорі, що ділять ОДИН `MerkleTree` primitive (`lib/merkle_tree.rb`: sha256, RFC-6962 domain-sep 0x00/0x01, promotion непарного вузла, hash-of-hex; двоярусність = композиція verify×2 у споживачах); Polygon-нога = **✅ Фаза 1б SHIPPED 2026-07-19** (mint-anchored батч → `mint(bytes32)`; механіка — [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline), стан — [`00_07`](00_07_Action_Plan_Tracker) E.60). keccak / OZ-`MerkleProof` — upgrade-path лише за on-chain-verify споживача (YAGNI).
 
 **L2 device-voice (чесна межа):** кластерний ярус НЕ дає per-tree піддерева (листя дерев перемішані всередині кластера) — майбутній L2-рунг ([`05_05 §3.3`](05_05_Slashing_and_Risk_Policy)) підписуватиме **власний per-tree корінь** (mint-window-подібний, MRV.1), не кластерний субкорінь.
 
-**Стан/фазування:** [`00_07`](00_07_Action_Plan_Tracker) ARCH.12 (Фаза 1а shipped; 1б = E.60 Polygon-нога, ⚖️ sequencing проти SEC.1-деплою).
+**Стан/фазування:** [`00_07`](00_07_Action_Plan_Tracker) ARCH.12 (обидві фази SHIPPED 2026-07-19; residuals-⚖️ — дім E.60).
 
 ### EigenLayer / AVS як Альтернатива Прямому L1 Запису (Дослідження)
 

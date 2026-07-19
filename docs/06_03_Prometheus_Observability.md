@@ -330,6 +330,7 @@ end
 | `silkennet_filecoin_archive_exhausted_total` | — | FilecoinArchiveWorker jobs that exhausted all retries (archive landed in Dead Set) |
 | `silkennet_filecoin_repin_total` | — | AuditLog archive re-enqueues issued by FilecoinReconcileWorker |
 | `silkennet_filecoin_verification_failures_total` | `reason` | Filecoin archive integrity verification failures (E.60 sweep) |
+| `silkennet_telemetry_archive_batch_failures_total` | `reason` | [E.60 Фаза 1б] збої архів-тракту по фазах: `build` (fail-open → zero32-мінт; при непорожніх вікнах = кандидат-інцидент) · `pin` (exhausted-hook) · `mismatch` (rebuild ≠ root при живих логах — integrity, runbook 06_08 §4.7) · `retention_expired` · `dispatch_drift` · `leaf_stamp_drift` (sweeper-семпл) |
 | `silkennet_fw2_fc_degraded_reports_total` | — | FW.2 telemetry packets reporting a lost FC high-water invariant (Flash refusing writes; per-DID attribution in logs) |
 | `silkennet_gateways_offline_total` | — | Total gateway offline transitions detected by the staleness sweeper (queen_offline alerts) |
 | `silkennet_governance_param_rejected_total` | `parameter` | Governance parameter syncs rejected by bounds validation |
@@ -379,6 +380,7 @@ end
 | `silkennet_ethereum_anchor_manual_review_depth` | — | Count of EthereumAnchor rows escalated to :manual_review (unconfirmed seal awaiting human check, ARCH.66) |
 | `silkennet_ethereum_anchor_stuck_sent_depth` | — | Count of EthereumAnchor rows stuck in :sent past the confirmation-poll SLA (ARCH.66) |
 | `silkennet_filecoin_unarchived_depth` | — | Count of archive-requested AuditLog rows still missing ipfs_cid (Filecoin archive backlog) |
+| `silkennet_telemetry_archive_unpinned_depth` | — | [E.60 Фаза 1б] незапінені архів-батчі (pending/build_failed); семплить `Treasury::MonitorService` (15-хв). SLO-поріг «unpinned age < ретеншн-горизонт партицій» = 👤 калібрування ([`00_07`](00_07_Action_Plan_Tracker) E.60-residual) |
 | `silkennet_gateway_attest_lapsed` | — | Online QATT-capable gateways whose last Ed25519-attested batch is older than the lapse window |
 | `silkennet_gateways_faulty` | — | Current number of gateways in the faulty state (set on each staleness sweep) |
 | `silkennet_hadron_kyc_pending_depth` | — | Count of Wallet+Organization rows with hadron_kyc_status=pending (KYC backlog gating mint) |
