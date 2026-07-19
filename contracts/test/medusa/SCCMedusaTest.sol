@@ -48,7 +48,7 @@ contract SCCMedusaTest {
         if (remaining == 0) return;
         amount = (amount % remaining) + 1; // [1, remaining] → never exceeds cap
         vm.prank(MINTER);
-        scc.mint(_actor(actorSeed), amount, "MEDUSA-INV");
+        scc.mint(_actor(actorSeed), amount, "MEDUSA-INV", bytes32(uint256(0xE60)));
         ghostMinted += amount;
     }
 

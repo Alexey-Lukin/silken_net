@@ -38,7 +38,9 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
     string public constant CLUSTER_ID = "cluster-alpha-1";
 
-    event ForestMinted(address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId);
+    event ForestMinted(
+        address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId, bytes32 indexed archiveRoot
+    );
     event GovernanceSlashed(address indexed investor, uint256 amount, bytes32 contextHash);
 
     function setUp() public {
@@ -104,7 +106,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
     function test_mint_mintsTokens() public {
         vm.prank(minter);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         assertEq(sfc.balanceOf(user1), 1000e18);
         assertEq(sfc.totalSupply(), 1000e18);
@@ -113,13 +115,13 @@ contract SilkenForestCoinTest is Eip712SigUtils {
     function test_mint_emitsForestMinted() public {
         vm.prank(minter);
         vm.expectEmit(true, true, false, true);
-        emit ForestMinted(user1, 1000e18, keccak256(bytes(CLUSTER_ID)), CLUSTER_ID);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        emit ForestMinted(user1, 1000e18, keccak256(bytes(CLUSTER_ID)), CLUSTER_ID, bytes32(uint256(0xE60)));
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
     }
 
     function test_mint_autoDelegatesToSelf() public {
         vm.prank(minter);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         // After mint, user1 should be self-delegated (ERC20Votes auto-delegation)
         assertEq(sfc.delegates(user1), user1);
@@ -127,7 +129,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
     function test_mint_votingPowerActiveImmediately() public {
         vm.prank(minter);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         // Advance 1 block so checkpoint is queryable
         vm.roll(block.number + 1);
@@ -137,7 +139,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
     function test_mint_secondMintDoesNotReDelegate() public {
         vm.startPrank(minter);
-        sfc.mint(user1, 500e18, "cluster-1");
+        sfc.mint(user1, 500e18, "cluster-1", bytes32(uint256(0xE60)));
 
         // user1 delegates to user2 manually
         vm.stopPrank();
@@ -146,7 +148,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
         // Second mint should NOT override user1's delegation to user2
         vm.prank(minter);
-        sfc.mint(user1, 500e18, "cluster-2");
+        sfc.mint(user1, 500e18, "cluster-2", bytes32(uint256(0xE60)));
 
         assertEq(sfc.delegates(user1), user2);
     }
@@ -154,25 +156,25 @@ contract SilkenForestCoinTest is Eip712SigUtils {
     function testRevert_mint_unauthorizedCaller() public {
         vm.prank(unauthorized);
         vm.expectRevert();
-        sfc.mint(user1, 100e18, CLUSTER_ID);
+        sfc.mint(user1, 100e18, CLUSTER_ID, bytes32(uint256(0xE60)));
     }
 
     function testRevert_mint_zeroRecipient() public {
         vm.prank(minter);
         vm.expectRevert("SFC: zero recipient");
-        sfc.mint(address(0), 100e18, CLUSTER_ID);
+        sfc.mint(address(0), 100e18, CLUSTER_ID, bytes32(uint256(0xE60)));
     }
 
     function testRevert_mint_zeroAmount() public {
         vm.prank(minter);
         vm.expectRevert("SFC: zero amount");
-        sfc.mint(user1, 0, CLUSTER_ID);
+        sfc.mint(user1, 0, CLUSTER_ID, bytes32(uint256(0xE60)));
     }
 
     function testRevert_mint_emptyClusterId() public {
         vm.prank(minter);
         vm.expectRevert("SFC: empty clusterId");
-        sfc.mint(user1, 100e18, "");
+        sfc.mint(user1, 100e18, "", bytes32(uint256(0xE60)));
     }
 
     function testRevert_mint_clusterIdTooLong() public {
@@ -183,14 +185,14 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
         vm.prank(minter);
         vm.expectRevert("SFC: clusterId too long");
-        sfc.mint(user1, 100e18, string(longId));
+        sfc.mint(user1, 100e18, string(longId), bytes32(uint256(0xE60)));
     }
 
     function testRevert_mint_exceedsMaxSupply() public {
         uint256 cap = sfc.MAX_SUPPLY();
         vm.prank(minter);
         vm.expectRevert("SFC: cap exceeded");
-        sfc.mint(user1, cap + 1, CLUSTER_ID);
+        sfc.mint(user1, cap + 1, CLUSTER_ID, bytes32(uint256(0xE60)));
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -210,7 +212,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
         ids[1] = "cl-2";
 
         vm.prank(minter);
-        sfc.batchMint(recipients, amounts, ids);
+        sfc.batchMint(recipients, amounts, ids, bytes32(uint256(0xE60)));
 
         assertEq(sfc.balanceOf(user1), 500e18);
         assertEq(sfc.balanceOf(user2), 300e18);
@@ -229,7 +231,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
         ids[1] = "cl-2";
 
         vm.prank(minter);
-        sfc.batchMint(recipients, amounts, ids);
+        sfc.batchMint(recipients, amounts, ids, bytes32(uint256(0xE60)));
 
         assertEq(sfc.delegates(user1), user1);
         assertEq(sfc.delegates(user2), user2);
@@ -238,13 +240,13 @@ contract SilkenForestCoinTest is Eip712SigUtils {
     function testRevert_batchMint_emptyBatch() public {
         vm.prank(minter);
         vm.expectRevert("SFC: empty batch");
-        sfc.batchMint(new address[](0), new uint256[](0), new string[](0));
+        sfc.batchMint(new address[](0), new uint256[](0), new string[](0), bytes32(uint256(0xE60)));
     }
 
     function testRevert_batchMint_arrayLengthMismatch() public {
         vm.prank(minter);
         vm.expectRevert("SFC: array length mismatch");
-        sfc.batchMint(new address[](2), new uint256[](3), new string[](2));
+        sfc.batchMint(new address[](2), new uint256[](3), new string[](2), bytes32(uint256(0xE60)));
     }
 
     function testRevert_batchMint_tooLarge() public {
@@ -260,7 +262,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
         vm.prank(minter);
         vm.expectRevert("SFC: batch too large");
-        sfc.batchMint(r, a, d);
+        sfc.batchMint(r, a, d, bytes32(uint256(0xE60)));
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -269,7 +271,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
     function test_slash_burnsTokens() public {
         vm.prank(minter);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         vm.prank(slasher);
         sfc.slash(user1, 400e18);
@@ -279,7 +281,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
     function test_slash_emitsGovernanceSlashed() public {
         vm.prank(minter);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         vm.prank(slasher);
         vm.expectEmit(true, false, false, true);
@@ -290,7 +292,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
     function test_slash_reducesVotingPower() public {
         // [E.1] SFC voting power MUST decrease after slashing
         vm.prank(minter);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
         vm.roll(block.number + 1);
         assertEq(sfc.getVotes(user1), 1000e18);
 
@@ -303,7 +305,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
     function testRevert_slash_unauthorizedCaller() public {
         vm.prank(minter);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         vm.prank(unauthorized);
         vm.expectRevert();
@@ -324,7 +326,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
     function testRevert_slash_insufficientBalance() public {
         vm.prank(minter);
-        sfc.mint(user1, 100e18, CLUSTER_ID);
+        sfc.mint(user1, 100e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         vm.prank(slasher);
         vm.expectRevert("SFC: insufficient balance");
@@ -337,7 +339,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
     function test_slashUpTo_burnsRequestedWhenBalanceSufficient() public {
         vm.prank(minter);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         vm.prank(slasher);
         uint256 slashed = sfc.slashUpTo(user1, 400e18, bytes32(0));
@@ -350,7 +352,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
     ///         a 1-wei evasion transfer no longer lets governance power survive the slash.
     function test_slashUpTo_clampsAndZeroesVotingPower() public {
         vm.prank(minter);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         vm.prank(user1);
         sfc.transfer(user2, 1); // 1-wei evasion attempt
@@ -366,7 +368,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
     function test_slashUpTo_emitsActualSlashedAmount() public {
         vm.prank(minter);
-        sfc.mint(user1, 100e18, CLUSTER_ID);
+        sfc.mint(user1, 100e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         vm.prank(slasher);
         vm.expectEmit(true, false, false, true);
@@ -376,7 +378,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
     function testRevert_slashUpTo_unauthorizedCaller() public {
         vm.prank(minter);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         vm.prank(unauthorized);
         vm.expectRevert();
@@ -407,7 +409,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
     function test_pause_blocksTransfers() public {
         vm.prank(minter);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         vm.prank(pauser);
         sfc.pause();
@@ -423,12 +425,12 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
         vm.prank(minter);
         vm.expectRevert();
-        sfc.mint(user1, 100e18, CLUSTER_ID);
+        sfc.mint(user1, 100e18, CLUSTER_ID, bytes32(uint256(0xE60)));
     }
 
     function test_pause_allowsSlash() public {
         vm.prank(minter);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         vm.prank(pauser);
         sfc.pause();
@@ -442,7 +444,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
     function test_pause_allowsSlashUpTo() public {
         // [B-07][SLASH.2] slashUpTo is the same security mechanism — must bypass pause too
         vm.prank(minter);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         vm.prank(pauser);
         sfc.pause();
@@ -456,7 +458,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
     function test_unpause_resumesOperations() public {
         vm.prank(minter);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         vm.prank(pauser);
         sfc.pause();
@@ -513,7 +515,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
     function test_delegate_transfersVotingPower() public {
         vm.prank(minter);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         vm.prank(user1);
         sfc.delegate(user2);
@@ -529,14 +531,14 @@ contract SilkenForestCoinTest is Eip712SigUtils {
         vm.roll(100);
 
         vm.prank(minter);
-        sfc.mint(user1, 1000e18, CLUSTER_ID);
+        sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         // Advance past snapshot block so it becomes queryable as a past block.
         vm.roll(101);
 
         // Mint more after snapshot (at a later block)
         vm.prank(minter);
-        sfc.mint(user1, 500e18, "cluster-2");
+        sfc.mint(user1, 500e18, "cluster-2", bytes32(uint256(0xE60)));
 
         // Advance one more block so block 101 is also in the past
         vm.roll(102);
@@ -628,7 +630,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
     /// @dev Happy path: a valid delegation signature moves voting power and burns one nonce.
     function test_delegateBySig_delegatesVotingPower() public {
         vm.prank(minter);
-        sfc.mint(permitOwner, 1_000e18, CLUSTER_ID); // auto-delegates to self on first mint
+        sfc.mint(permitOwner, 1_000e18, CLUSTER_ID, bytes32(uint256(0xE60))); // auto-delegates to self on first mint
         assertEq(sfc.getVotes(permitOwner), 1_000e18);
 
         uint256 nonce = sfc.nonces(permitOwner);
@@ -674,7 +676,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
     ///      untouched, so no real voting power can be moved by a foreign-chain signature.
     function test_delegateBySig_crossChainDoesNotAffectIntendedSigner() public {
         vm.prank(minter);
-        sfc.mint(permitOwner, 1_000e18, CLUSTER_ID);
+        sfc.mint(permitOwner, 1_000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
         assertEq(sfc.delegates(permitOwner), permitOwner);
 
         uint256 expiry = block.timestamp + 1 hours;
@@ -716,7 +718,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
     function testFuzz_mint_arbitraryAmount(uint256 amount) public {
         amount = bound(amount, 1, sfc.MAX_SUPPLY());
         vm.prank(minter);
-        sfc.mint(user1, amount, CLUSTER_ID);
+        sfc.mint(user1, amount, CLUSTER_ID, bytes32(uint256(0xE60)));
         assertEq(sfc.balanceOf(user1), amount);
         assertLe(sfc.totalSupply(), sfc.MAX_SUPPLY());
     }
@@ -726,7 +728,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
         slashAmt = bound(slashAmt, 1, mintAmt);
 
         vm.prank(minter);
-        sfc.mint(user1, mintAmt, CLUSTER_ID);
+        sfc.mint(user1, mintAmt, CLUSTER_ID, bytes32(uint256(0xE60)));
 
         vm.prank(slasher);
         sfc.slash(user1, slashAmt);

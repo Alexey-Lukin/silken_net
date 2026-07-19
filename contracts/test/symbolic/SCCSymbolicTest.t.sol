@@ -36,7 +36,7 @@ contract SCCSymbolicTest is Test {
         vm.assume(to != address(0));
         vm.assume(amount > 0 && amount <= scc.MAX_SUPPLY());
         vm.prank(minter);
-        scc.mint(to, amount, "SNET-SYM");
+        scc.mint(to, amount, "SNET-SYM", bytes32(uint256(0xE60)));
         assert(scc.totalSupply() <= scc.MAX_SUPPLY());
     }
 
@@ -59,7 +59,7 @@ contract SCCSymbolicTest is Test {
         vm.assume(slashAmount > 0 && slashAmount <= mintAmount);
 
         vm.prank(minter);
-        scc.mint(holder, mintAmount, "SNET-SYM");
+        scc.mint(holder, mintAmount, "SNET-SYM", bytes32(uint256(0xE60)));
 
         vm.prank(pauser);
         scc.pause();
@@ -83,7 +83,7 @@ contract SCCSymbolicTest is Test {
         vm.assume(maxAmount > 0);
 
         vm.prank(minter);
-        scc.mint(holder, mintAmount, "SNET-SYM");
+        scc.mint(holder, mintAmount, "SNET-SYM", bytes32(uint256(0xE60)));
         vm.prank(holder);
         scc.transfer(sink, drained); // the evasion attempt
 

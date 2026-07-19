@@ -44,7 +44,7 @@ contract SCCHandler is Test {
         address to = _actor(actorSeed);
         amount = bound(amount, 1, remaining);
         vm.prank(minter);
-        scc.mint(to, amount, "SNET-INVARIANT");
+        scc.mint(to, amount, "SNET-INVARIANT", bytes32(uint256(0xE60)));
         ghostMinted += amount;
     }
 

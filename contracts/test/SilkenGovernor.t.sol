@@ -277,7 +277,7 @@ contract SilkenGovernorTest is Test {
         assertTrue(scc.hasRole(scc.MINTER_ROLE(), newMinter));
         // ...and the newly-authorized oracle can actually mint.
         vm.prank(newMinter);
-        scc.mint(recipient, 1_000e18, "SNET-DAO-1");
+        scc.mint(recipient, 1_000e18, "SNET-DAO-1", bytes32(uint256(0xE60)));
         assertEq(scc.balanceOf(recipient), 1_000e18);
     }
 
@@ -294,7 +294,7 @@ contract SilkenGovernorTest is Test {
         assertTrue(scc.hasRole(scc.SLASHER_ROLE(), newSlasher));
         // Prove the rotated slasher is functional end-to-end (mint via the genesis oracle, then slash).
         vm.prank(minter);
-        scc.mint(holder, 1_000e18, "SNET-DAO-2");
+        scc.mint(holder, 1_000e18, "SNET-DAO-2", bytes32(uint256(0xE60)));
         vm.prank(newSlasher);
         scc.slash(holder, 400e18);
         assertEq(scc.balanceOf(holder), 600e18);
@@ -319,7 +319,7 @@ contract SilkenGovernorTest is Test {
 
     function _mintAndDelegate(address to, uint256 amount, string memory clusterId) internal {
         vm.prank(minter);
-        sfc.mint(to, amount, clusterId);
+        sfc.mint(to, amount, clusterId, bytes32(uint256(0xE60)));
 
         // SFC auto-delegates on first mint, but if we need explicit delegation:
         // vm.prank(to);

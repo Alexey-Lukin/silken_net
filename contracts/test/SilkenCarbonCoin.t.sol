@@ -40,7 +40,9 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
     string public constant TREE_DID = "SNET-1A2B3C4D";
 
-    event CarbonMinted(address indexed investor, uint256 amount, bytes32 indexed treeDidHash, string treeDid);
+    event CarbonMinted(
+        address indexed investor, uint256 amount, bytes32 indexed treeDidHash, string treeDid, bytes32 indexed archiveRoot
+    );
     event TokenSlashed(address indexed investor, uint256 amount, bytes32 contextHash);
 
     function setUp() public {
@@ -112,7 +114,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
     function test_mint_mintsTokens() public {
         vm.prank(minter);
-        scc.mint(user1, 100e18, TREE_DID);
+        scc.mint(user1, 100e18, TREE_DID, bytes32(uint256(0xE60)));
 
         assertEq(scc.balanceOf(user1), 100e18);
         assertEq(scc.totalSupply(), 100e18);
@@ -122,39 +124,80 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
         vm.prank(minter);
 
         vm.expectEmit(true, true, false, true);
-        emit CarbonMinted(user1, 100e18, keccak256(bytes(TREE_DID)), TREE_DID);
+        emit CarbonMinted(user1, 100e18, keccak256(bytes(TREE_DID)), TREE_DID, bytes32(uint256(0xE60)));
 
-        scc.mint(user1, 100e18, TREE_DID);
+        scc.mint(user1, 100e18, TREE_DID, bytes32(uint256(0xE60)));
     }
 
     function test_mintForTree_isSameAsMint() public {
         vm.prank(minter);
-        scc.mintForTree(user1, 100e18, TREE_DID);
+        scc.mintForTree(user1, 100e18, TREE_DID, bytes32(uint256(0xE60)));
         assertEq(scc.balanceOf(user1), 100e18);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // [E.60] ARCHIVE ROOT (mint-anchored witness)
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// @dev Root проходить у event ЯК ПЕРЕДАНО (не захардкоджений); zero32 легальний
+    ///      («без witness-клейму» — windowless/fail-open мінт бекенда).
+    function test_mint_emitsArchiveRootAsPassed() public {
+        bytes32 customRoot = keccak256("dispatch-evidence-set");
+
+        vm.prank(minter);
+        vm.expectEmit(true, true, true, true);
+        emit CarbonMinted(user1, 100e18, keccak256(bytes(TREE_DID)), TREE_DID, customRoot);
+        scc.mint(user1, 100e18, TREE_DID, customRoot);
+
+        vm.prank(minter);
+        vm.expectEmit(true, true, true, true);
+        emit CarbonMinted(user1, 50e18, keccak256(bytes(TREE_DID)), TREE_DID, bytes32(0));
+        scc.mint(user1, 50e18, TREE_DID, bytes32(0));
+    }
+
+    /// @dev «Один batchMint = один архів-батч»: усі events батчу несуть ТОЙ САМИЙ root.
+    function test_batchMint_singleArchiveRootAcrossAllEvents() public {
+        bytes32 batchRoot = keccak256("batch-root");
+        address[] memory recipients = new address[](2);
+        uint256[] memory amounts = new uint256[](2);
+        string[] memory dids = new string[](2);
+        recipients[0] = user1;
+        recipients[1] = user2;
+        amounts[0] = 10e18;
+        amounts[1] = 20e18;
+        dids[0] = "did:peaq:tree-a";
+        dids[1] = "did:peaq:tree-b";
+
+        vm.prank(minter);
+        vm.expectEmit(true, true, true, true);
+        emit CarbonMinted(user1, 10e18, keccak256(bytes(dids[0])), dids[0], batchRoot);
+        vm.expectEmit(true, true, true, true);
+        emit CarbonMinted(user2, 20e18, keccak256(bytes(dids[1])), dids[1], batchRoot);
+        scc.batchMint(recipients, amounts, dids, batchRoot);
     }
 
     function testRevert_mint_unauthorizedCaller() public {
         vm.prank(unauthorized);
         vm.expectRevert();
-        scc.mint(user1, 100e18, TREE_DID);
+        scc.mint(user1, 100e18, TREE_DID, bytes32(uint256(0xE60)));
     }
 
     function testRevert_mint_zeroRecipient() public {
         vm.prank(minter);
         vm.expectRevert("SCC: zero recipient");
-        scc.mint(address(0), 100e18, TREE_DID);
+        scc.mint(address(0), 100e18, TREE_DID, bytes32(uint256(0xE60)));
     }
 
     function testRevert_mint_zeroAmount() public {
         vm.prank(minter);
         vm.expectRevert("SCC: zero amount");
-        scc.mint(user1, 0, TREE_DID);
+        scc.mint(user1, 0, TREE_DID, bytes32(uint256(0xE60)));
     }
 
     function testRevert_mint_emptyTreeDid() public {
         vm.prank(minter);
         vm.expectRevert("SCC: empty treeDid");
-        scc.mint(user1, 100e18, "");
+        scc.mint(user1, 100e18, "", bytes32(uint256(0xE60)));
     }
 
     function testRevert_mint_treeDidTooLong() public {
@@ -166,20 +209,20 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
         vm.prank(minter);
         vm.expectRevert("SCC: treeDid too long");
-        scc.mint(user1, 100e18, string(longDid));
+        scc.mint(user1, 100e18, string(longDid), bytes32(uint256(0xE60)));
     }
 
     function testRevert_mint_exceedsMaxSupply() public {
         uint256 cap = scc.MAX_SUPPLY();
         vm.prank(minter);
         vm.expectRevert("SCC: cap exceeded");
-        scc.mint(user1, cap + 1, TREE_DID);
+        scc.mint(user1, cap + 1, TREE_DID, bytes32(uint256(0xE60)));
     }
 
     function test_mint_exactlyMaxSupply() public {
         uint256 cap = scc.MAX_SUPPLY();
         vm.prank(minter);
-        scc.mint(user1, cap, TREE_DID);
+        scc.mint(user1, cap, TREE_DID, bytes32(uint256(0xE60)));
         assertEq(scc.totalSupply(), cap);
     }
 
@@ -203,7 +246,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
         dids[2] = "SNET-003";
 
         vm.prank(minter);
-        scc.batchMint(recipients, amounts, dids);
+        scc.batchMint(recipients, amounts, dids, bytes32(uint256(0xE60)));
 
         assertEq(scc.balanceOf(user1), 150e18);
         assertEq(scc.balanceOf(user2), 200e18);
@@ -213,7 +256,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
     function testRevert_batchMint_emptyBatch() public {
         vm.prank(minter);
         vm.expectRevert("SCC: empty batch");
-        scc.batchMint(new address[](0), new uint256[](0), new string[](0));
+        scc.batchMint(new address[](0), new uint256[](0), new string[](0), bytes32(uint256(0xE60)));
     }
 
     function testRevert_batchMint_arrayLengthMismatch() public {
@@ -223,7 +266,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
         vm.prank(minter);
         vm.expectRevert("SCC: array length mismatch");
-        scc.batchMint(r, a, d);
+        scc.batchMint(r, a, d, bytes32(uint256(0xE60)));
     }
 
     function testRevert_batchMint_batchTooLarge() public {
@@ -240,7 +283,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
         vm.prank(minter);
         vm.expectRevert("SCC: batch too large");
-        scc.batchMint(r, a, d);
+        scc.batchMint(r, a, d, bytes32(uint256(0xE60)));
     }
 
     function testRevert_batchMint_exceedsMaxSupply() public {
@@ -257,7 +300,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
         vm.prank(minter);
         vm.expectRevert("SCC: cap exceeded");
-        scc.batchMint(r, a, d);
+        scc.batchMint(r, a, d, bytes32(uint256(0xE60)));
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -267,7 +310,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
     function test_slash_burnsTokens() public {
         // Arrange: mint first
         vm.prank(minter);
-        scc.mint(user1, 1000e18, TREE_DID);
+        scc.mint(user1, 1000e18, TREE_DID, bytes32(uint256(0xE60)));
 
         // Act: slash
         vm.prank(slasher);
@@ -280,7 +323,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
     function test_slash_emitsTokenSlashed() public {
         vm.prank(minter);
-        scc.mint(user1, 1000e18, TREE_DID);
+        scc.mint(user1, 1000e18, TREE_DID, bytes32(uint256(0xE60)));
 
         vm.prank(slasher);
         vm.expectEmit(true, false, false, true);
@@ -290,7 +333,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
     function testRevert_slash_unauthorizedCaller() public {
         vm.prank(minter);
-        scc.mint(user1, 1000e18, TREE_DID);
+        scc.mint(user1, 1000e18, TREE_DID, bytes32(uint256(0xE60)));
 
         vm.prank(unauthorized);
         vm.expectRevert();
@@ -311,7 +354,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
     function testRevert_slash_insufficientBalance() public {
         vm.prank(minter);
-        scc.mint(user1, 100e18, TREE_DID);
+        scc.mint(user1, 100e18, TREE_DID, bytes32(uint256(0xE60)));
 
         vm.prank(slasher);
         vm.expectRevert("SCC: insufficient balance");
@@ -324,7 +367,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
     function test_slashUpTo_burnsRequestedWhenBalanceSufficient() public {
         vm.prank(minter);
-        scc.mint(user1, 1000e18, TREE_DID);
+        scc.mint(user1, 1000e18, TREE_DID, bytes32(uint256(0xE60)));
 
         vm.prank(slasher);
         uint256 slashed = scc.slashUpTo(user1, 300e18, bytes32(0));
@@ -338,7 +381,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
     ///         slash() revert; slashUpTo burns the entire remaining balance instead.
     function test_slashUpTo_clampsToBalanceAfterEvasionTransfer() public {
         vm.prank(minter);
-        scc.mint(user1, 1000e18, TREE_DID);
+        scc.mint(user1, 1000e18, TREE_DID, bytes32(uint256(0xE60)));
 
         vm.prank(user1);
         scc.transfer(user2, 1); // 1-wei evasion attempt
@@ -352,7 +395,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
     function test_slashUpTo_emitsActualSlashedAmount() public {
         vm.prank(minter);
-        scc.mint(user1, 100e18, TREE_DID);
+        scc.mint(user1, 100e18, TREE_DID, bytes32(uint256(0xE60)));
 
         vm.prank(slasher);
         vm.expectEmit(true, false, false, true);
@@ -362,7 +405,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
     function testRevert_slashUpTo_unauthorizedCaller() public {
         vm.prank(minter);
-        scc.mint(user1, 1000e18, TREE_DID);
+        scc.mint(user1, 1000e18, TREE_DID, bytes32(uint256(0xE60)));
 
         vm.prank(unauthorized);
         vm.expectRevert();
@@ -395,7 +438,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
     function test_pause_blocksTransfers() public {
         vm.prank(minter);
-        scc.mint(user1, 1000e18, TREE_DID);
+        scc.mint(user1, 1000e18, TREE_DID, bytes32(uint256(0xE60)));
 
         vm.prank(pauser);
         scc.pause();
@@ -411,13 +454,13 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
         vm.prank(minter);
         vm.expectRevert();
-        scc.mint(user1, 100e18, TREE_DID);
+        scc.mint(user1, 100e18, TREE_DID, bytes32(uint256(0xE60)));
     }
 
     function test_pause_allowsSlash() public {
         // [B-07] Slash MUST work during pause — security mechanism
         vm.prank(minter);
-        scc.mint(user1, 1000e18, TREE_DID);
+        scc.mint(user1, 1000e18, TREE_DID, bytes32(uint256(0xE60)));
 
         vm.prank(pauser);
         scc.pause();
@@ -431,7 +474,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
     function test_pause_allowsSlashUpTo() public {
         // [B-07][SLASH.2] slashUpTo is the same security mechanism — must bypass pause too
         vm.prank(minter);
-        scc.mint(user1, 1000e18, TREE_DID);
+        scc.mint(user1, 1000e18, TREE_DID, bytes32(uint256(0xE60)));
 
         vm.prank(pauser);
         scc.pause();
@@ -445,7 +488,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
     function test_unpause_allowsTransfersAgain() public {
         vm.prank(minter);
-        scc.mint(user1, 1000e18, TREE_DID);
+        scc.mint(user1, 1000e18, TREE_DID, bytes32(uint256(0xE60)));
 
         vm.prank(pauser);
         scc.pause();
@@ -604,7 +647,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
     function testFuzz_mint_arbitraryAmount(uint256 amount) public {
         amount = bound(amount, 1, scc.MAX_SUPPLY());
         vm.prank(minter);
-        scc.mint(user1, amount, TREE_DID);
+        scc.mint(user1, amount, TREE_DID, bytes32(uint256(0xE60)));
         assertEq(scc.balanceOf(user1), amount);
     }
 
@@ -613,7 +656,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
         slashAmt = bound(slashAmt, 1, mintAmt);
 
         vm.prank(minter);
-        scc.mint(user1, mintAmt, TREE_DID);
+        scc.mint(user1, mintAmt, TREE_DID, bytes32(uint256(0xE60)));
 
         vm.prank(slasher);
         scc.slash(user1, slashAmt);
@@ -631,7 +674,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
         maxAmount = bound(maxAmount, 1, type(uint256).max);
 
         vm.prank(minter);
-        scc.mint(user1, mintAmt, TREE_DID);
+        scc.mint(user1, mintAmt, TREE_DID, bytes32(uint256(0xE60)));
         vm.prank(user1);
         scc.transfer(user2, drainAmt);
 
@@ -652,7 +695,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
         }
 
         vm.prank(minter);
-        scc.mint(user1, 1e18, string(did));
+        scc.mint(user1, 1e18, string(did), bytes32(uint256(0xE60)));
         assertEq(scc.balanceOf(user1), 1e18);
     }
 }

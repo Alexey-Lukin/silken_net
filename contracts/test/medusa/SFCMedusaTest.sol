@@ -50,7 +50,7 @@ contract SFCMedusaTest {
         if (remaining == 0) return;
         amount = (amount % remaining) + 1;
         vm.prank(MINTER);
-        sfc.mint(_actor(actorSeed), amount, "MEDUSA-CLUSTER");
+        sfc.mint(_actor(actorSeed), amount, "MEDUSA-CLUSTER", bytes32(uint256(0xE60)));
         ghostMinted += amount;
     }
 

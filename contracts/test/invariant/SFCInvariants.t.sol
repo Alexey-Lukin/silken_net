@@ -48,7 +48,7 @@ contract SFCHandler is Test {
         address to = _actor(actorSeed);
         amount = bound(amount, 1, remaining);
         vm.prank(minter);
-        sfc.mint(to, amount, "SNET-CLUSTER-INV");
+        sfc.mint(to, amount, "SNET-CLUSTER-INV", bytes32(uint256(0xE60)));
         ghostMinted += amount;
     }
 

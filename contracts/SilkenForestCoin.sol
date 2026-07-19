@@ -60,7 +60,12 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param amount Кількість токенів (wei).
     /// @param clusterIdHash Keccak256 хеш ID кластера (indexed для пошуку).
     /// @param clusterId Повний ID кластера у читабельному вигляді.
-    event ForestMinted(address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId);
+    /// @param archiveRoot [E.60] Merkle-корінь телеметрія-архів-батчу диспатчу — MRV-witness
+    ///        evidence-набору, НЕ carbon-клейм (токен-семантика живе в токені; SCC/SFC
+    ///        симетричні за founder-рішенням — один Ruby ABI). bytes32(0) = без witness-клейму.
+    event ForestMinted(
+        address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId, bytes32 indexed archiveRoot
+    );
 
     /// @notice [B-06] Емітується при спалюванні governance токенів через slashing protocol.
     /// @param investor Адреса, з якої спалюються governance токени.
@@ -100,8 +105,13 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param to Адреса отримувача.
     /// @param amount Кількість токенів (wei).
     /// @param clusterId ID кластера лісу.
-    /// @dev Reverts if totalSupply() + amount > MAX_SUPPLY.
-    function mint(address to, uint256 amount, string calldata clusterId) external nonReentrant onlyRole(MINTER_ROLE) {
+    /// @param archiveRoot [E.60] Merkle-корінь архів-батчу (bytes32(0) = без witness-клейму).
+    /// @dev Reverts if totalSupply() + amount > MAX_SUPPLY. archiveRoot СВІДОМО без валідації.
+    function mint(address to, uint256 amount, string calldata clusterId, bytes32 archiveRoot)
+        external
+        nonReentrant
+        onlyRole(MINTER_ROLE)
+    {
         require(to != address(0), "SFC: zero recipient");
         require(amount > 0, "SFC: zero amount");
         require(bytes(clusterId).length > 0, "SFC: empty clusterId");
@@ -114,18 +124,20 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         if (delegates(to) == address(0)) {
             _delegate(to, to);
         }
-        emit ForestMinted(to, amount, keccak256(bytes(clusterId)), clusterId);
+        emit ForestMinted(to, amount, keccak256(bytes(clusterId)), clusterId, archiveRoot);
     }
 
     /// @notice [B-04] Пакетна емісія governance токенів з обмеженням розміру масиву.
     /// @param recipients Масив адрес отримувачів (max MAX_BATCH_SIZE = 100).
     /// @param amounts Масив сум для кожного отримувача.
     /// @param clusterIds Масив ID кластерів.
-    function batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata clusterIds)
-        external
-        nonReentrant
-        onlyRole(MINTER_ROLE)
-    {
+    /// @param archiveRoot [E.60] ОДИН Merkle-корінь на весь батч (batch-level witness).
+    function batchMint(
+        address[] calldata recipients,
+        uint256[] calldata amounts,
+        string[] calldata clusterIds,
+        bytes32 archiveRoot
+    ) external nonReentrant onlyRole(MINTER_ROLE) {
         uint256 length = recipients.length;
         require(length > 0, "SFC: empty batch");
         require(length == amounts.length && length == clusterIds.length, "SFC: array length mismatch");
@@ -149,7 +161,7 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
             if (delegates(recipients[i]) == address(0)) {
                 _delegate(recipients[i], recipients[i]);
             }
-            emit ForestMinted(recipients[i], amounts[i], keccak256(bytes(clusterIds[i])), clusterIds[i]);
+            emit ForestMinted(recipients[i], amounts[i], keccak256(bytes(clusterIds[i])), clusterIds[i], archiveRoot);
         }
     }
 

@@ -33,7 +33,7 @@ contract SFCSymbolicTest is Test {
         vm.assume(to != address(0));
         vm.assume(amount > 0 && amount <= sfc.MAX_SUPPLY());
         vm.prank(minter);
-        sfc.mint(to, amount, "SNET-CLUSTER-SYM");
+        sfc.mint(to, amount, "SNET-CLUSTER-SYM", bytes32(uint256(0xE60)));
         assert(sfc.totalSupply() <= sfc.MAX_SUPPLY());
     }
 
@@ -53,7 +53,7 @@ contract SFCSymbolicTest is Test {
         vm.assume(slashAmount > 0 && slashAmount <= mintAmount);
 
         vm.prank(minter);
-        sfc.mint(holder, mintAmount, "SNET-CLUSTER-SYM");
+        sfc.mint(holder, mintAmount, "SNET-CLUSTER-SYM", bytes32(uint256(0xE60)));
 
         vm.prank(pauser);
         sfc.pause();
@@ -74,7 +74,7 @@ contract SFCSymbolicTest is Test {
         vm.assume(slashAmount > 0 && slashAmount <= mintAmount);
 
         vm.prank(minter);
-        sfc.mint(holder, mintAmount, "SNET-CLUSTER-SYM"); // auto-delegates holder→holder
+        sfc.mint(holder, mintAmount, "SNET-CLUSTER-SYM", bytes32(uint256(0xE60))); // auto-delegates holder→holder
 
         vm.prank(slasher);
         sfc.slash(holder, slashAmount);
@@ -93,7 +93,7 @@ contract SFCSymbolicTest is Test {
         vm.assume(maxAmount > 0);
 
         vm.prank(minter);
-        sfc.mint(holder, mintAmount, "SNET-CLUSTER-SYM");
+        sfc.mint(holder, mintAmount, "SNET-CLUSTER-SYM", bytes32(uint256(0xE60)));
         vm.prank(holder);
         sfc.transfer(sink, drained); // the evasion attempt
 

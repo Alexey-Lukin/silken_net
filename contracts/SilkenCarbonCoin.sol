@@ -62,7 +62,13 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param amount Кількість токенів (wei).
     /// @param treeDidHash Keccak256 хеш DID дерева (indexed для пошуку).
     /// @param treeDid Повний DID дерева у читабельному вигляді.
-    event CarbonMinted(address indexed investor, uint256 amount, bytes32 indexed treeDidHash, string treeDid);
+    /// @param archiveRoot [E.60] Merkle-корінь телеметрія-архів-батчу диспатчу
+    ///        (mint-anchored witness; indexed — аудиторський topic-lookup за root).
+    ///        bytes32(0) = «без witness-клейму» (windowless/fail-open мінт), НЕ «порожньо».
+    ///        Root = свідок evidence-набору ДИСПАТЧУ (N:1), не 1:1 композиції мінта.
+    event CarbonMinted(
+        address indexed investor, uint256 amount, bytes32 indexed treeDidHash, string treeDid, bytes32 indexed archiveRoot
+    );
 
     /// @notice Емітується при спалюванні токенів через slashing protocol.
     /// @param investor Адреса, з якої спалюються токени.
@@ -102,46 +108,56 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param to Адреса отримувача.
     /// @param amount Кількість токенів (wei).
     /// @param treeDid DID дерева-джерела.
+    /// @param archiveRoot [E.60] Merkle-корінь архів-батчу (bytes32(0) = без witness-клейму).
     /// @dev Reverts if totalSupply() + amount > MAX_SUPPLY.
-    function mintForTree(address to, uint256 amount, string calldata treeDid)
+    function mintForTree(address to, uint256 amount, string calldata treeDid, bytes32 archiveRoot)
         external
         nonReentrant
         onlyRole(MINTER_ROLE)
     {
-        _mintSCC(to, amount, treeDid);
+        _mintSCC(to, amount, treeDid, archiveRoot);
     }
 
     /// @notice Backward-compatible alias для mintForTree.
     /// @param to Адреса отримувача.
     /// @param amount Кількість токенів (wei).
     /// @param treeDid DID дерева-джерела.
+    /// @param archiveRoot [E.60] Merkle-корінь архів-батчу (bytes32(0) = без witness-клейму).
     /// @dev Reverts if totalSupply() + amount > MAX_SUPPLY.
-    function mint(address to, uint256 amount, string calldata treeDid) external nonReentrant onlyRole(MINTER_ROLE) {
-        _mintSCC(to, amount, treeDid);
+    function mint(address to, uint256 amount, string calldata treeDid, bytes32 archiveRoot)
+        external
+        nonReentrant
+        onlyRole(MINTER_ROLE)
+    {
+        _mintSCC(to, amount, treeDid, archiveRoot);
     }
 
     /// @dev Внутрішня реалізація мінтингу, спільна для mint() та mintForTree().
     ///      Усуває дублювання коду — будь-які зміни валідації або логіки
-    ///      застосовуються до обох entry points одночасно.
-    function _mintSCC(address to, uint256 amount, string calldata treeDid) internal {
+    ///      застосовуються до обох entry points одночасно. archiveRoot СВІДОМО
+    ///      без валідації: zero32 = легальний «мінт без witness-клейму» (E.60).
+    function _mintSCC(address to, uint256 amount, string calldata treeDid, bytes32 archiveRoot) internal {
         require(to != address(0), "SCC: zero recipient");
         require(amount > 0, "SCC: zero amount");
         require(bytes(treeDid).length > 0, "SCC: empty treeDid");
         require(bytes(treeDid).length <= MAX_STRING_BYTES, "SCC: treeDid too long");
         require(totalSupply() + amount <= MAX_SUPPLY, "SCC: cap exceeded");
         _mint(to, amount);
-        emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid);
+        emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid, archiveRoot);
     }
 
     /// @notice [B-04] Масовий мінтинг токенів для економії газу при обробці всього сектора.
     /// @param recipients Масив адрес отримувачів (max MAX_BATCH_SIZE = 100).
     /// @param amounts Масив сум для кожного отримувача.
     /// @param treeDids Масив DID дерев-джерел.
-    function batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata treeDids)
-        external
-        nonReentrant
-        onlyRole(MINTER_ROLE)
-    {
+    /// @param archiveRoot [E.60] ОДИН Merkle-корінь на весь батч (batch-level witness;
+    ///        Ruby-шар гарантує «один batchMint = один архів-батч» за конструкцією).
+    function batchMint(
+        address[] calldata recipients,
+        uint256[] calldata amounts,
+        string[] calldata treeDids,
+        bytes32 archiveRoot
+    ) external nonReentrant onlyRole(MINTER_ROLE) {
         uint256 length = recipients.length;
         require(length > 0, "SCC: empty batch");
         require(length == amounts.length && length == treeDids.length, "SCC: array length mismatch");
@@ -161,7 +177,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
 
         for (uint256 i = 0; i < length; i++) {
             _mint(recipients[i], amounts[i]);
-            emit CarbonMinted(recipients[i], amounts[i], keccak256(bytes(treeDids[i])), treeDids[i]);
+            emit CarbonMinted(recipients[i], amounts[i], keccak256(bytes(treeDids[i])), treeDids[i], archiveRoot);
         }
     }
 
