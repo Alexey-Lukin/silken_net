@@ -308,16 +308,16 @@ end
 
 > **ЄДИНЕ авторитетне джерело переліку + кількості метрик** — згенеровано з
 > `SilkenNet::Metrics::REGISTRY`, verified vs `config/initializers/prometheus.rb`
-> 2026-07-04 (додано GOV.1 bounds-reject + E.60 sweep counters; дожим 3 gauge-дрейфів
-> money-limbo/manual_review/chain_audit із §05-сесій). Усі інші
+> 2026-07-19 (додано SILENCE-1 tree-silence пару — dead-man switch Солдата;
+> раніше 07-04: GOV.1 bounds-reject + E.60 sweep counters + дожим 3 gauge-дрейфів). Усі інші
 > згадки (CLAUDE.md, `config.alloy`, підсекції §2.3–2.7 з обґрунтуванням/alert-прикладами)
 > **рефлять сюди**, не дублюють число/перелік.
 > При зміні реєстру в коді — **регенерувати ЛИШЕ цю таблицю** (команда в кінці).
 > Де інкрементується/оновлюється кожна — `grep -rn "SilkenNet::Metrics::<CONST>" app/`.
 >
-> **Разом: 73 метрики = 41 counters + 30 gauges + 2 histograms** (звірено регенерацією нижче).
+> **Разом: 75 метрик = 42 counters + 31 gauges + 2 histograms** (звірено регенерацією нижче).
 
-**Counters (41):**
+**Counters (42):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -361,9 +361,10 @@ end
 | `silkennet_telemetry_processed_total` | — | Total telemetry chunks processed by TelemetryUnpackerService |
 | `silkennet_tinyml_threshold_invalid_reports_total` | — | FW.18b telemetry packets reporting a nonzero rejected-OTA-thresholds counter (per-DID attribution in logs) |
 | `silkennet_treasury_check_errors_total` | `network`, `signer`, `error_type` | Total treasury monitoring RPC errors |
+| `silkennet_tree_silence_total` | — | Total tree silence transitions detected by the staleness sweeper (per-tree field_audit escalations) |
 | `silkennet_w3bstream_signature_fallback_total` | `reason` | Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature |
 
-**Gauges (30):**
+**Gauges (31):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -397,6 +398,7 @@ end
 | `silkennet_sidekiq_dead_set_size` | — | Current size of the Sidekiq DeadSet (jobs that exhausted all retries) |
 | `silkennet_sidekiq_queue_latency_seconds` | `queue` | Latency (age of oldest job) in a Sidekiq queue |
 | `silkennet_sidekiq_queue_size` | `queue` | Current size of a Sidekiq queue |
+| `silkennet_trees_silent` | — | Current number of active trees silent beyond the silence threshold (set on each staleness sweep) |
 
 **Histograms (2):**
 

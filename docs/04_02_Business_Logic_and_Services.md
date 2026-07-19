@@ -994,7 +994,18 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Тригер** | Sidekiq-cron — **[ARCH.54 Шар 0]** dead-man switch Королеви ([`06_08 §1.3`](06_08_Resilience_and_Failover_Policy)) |
 | **Вхід** | — |
 | **Сервіси** | Немає — `Gateway.offline`/`online` скоупи + AASM |
-| **Side Effects** | offline у робочих станах → `report_fault!` + критичний `EwsAlert(queen_offline)` (анти-спам по кластеру; skip: maintenance, `last_seen_at` nil); повернення в ефір → `recover!` + auto-`resolve!`; attest-lapse (>24h без QATT-підпису при online) → warn+gauge. Метрики: `gateways_offline_total`, `gateways_faulty`, `gateway_attest_lapsed`. |
+| **Side Effects** | offline у робочих станах → `report_fault!` + критичний `EwsAlert(queen_offline)` (анти-спам по кластеру; skip: maintenance, `last_seen_at` nil); повернення в ефір → `recover!` + машинний auto-resolve ОБОХ comms-типів (`resolve_comms_alerts`: queen_offline + queen_uplink_lost — Helium-SOS без нього латчився вічно); attest-lapse (>24h без QATT-підпису при online) → warn+gauge. Метрики: `gateways_offline_total`, `gateways_faulty`, `gateway_attest_lapsed`. |
+
+#### `TreeStalenessSweepWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `alerts` |
+| **Retry** | 2 · cron `*/5 * * * *` |
+| **Тригер** | Sidekiq-cron — **[SILENCE-1]** dead-man switch Солдата ([`06_08 §1.3`](06_08_Resilience_and_Failover_Policy)) |
+| **Вхід** | — |
+| **Сервіси** | Немає — `Tree.silent(threshold)` + `EwsAlert.escalate_field_audit!(tree:)` |
+| **Side Effects** | Аномальна тиша (active-дерево мовчить довше `SystemParameter :tree_silence_threshold_hours`, 24h [transitional] до bench E.63) → per-tree критичний `EwsAlert(:field_audit)` — свідомо НЕ новий alert-тип (blacklist-предикат `critical_unmaintained?` — [`05_05`](05_05_Slashing_and_Risk_Policy)); статус дерева НЕ чіпає (removed/deceased запускають slashing, dormant = людське рішення). Повернення в ефір → машинний `resolve!` (resolved_by NULL, gap-E). Метрики: `tree_silence_total`, `trees_silent`. |
 
 #### `HeliumSosWorker`
 

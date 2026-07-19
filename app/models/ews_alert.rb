@@ -143,17 +143,21 @@ class EwsAlert < ApplicationRecord
   scope :critical, -> { severity_critical.unresolved }
   scope :recent, -> { order(created_at: :desc).limit(20) }
 
-  # [SLASH-1] One-Home cluster-level Field-Audit ескалації з dedup-ключем
-  # (cluster_id, :field_audit, :active, tree_id: nil): щоденні crons (freeze
-  # slash-гейта / blackout / insurance no-data) при тривалій деградації плодили
-  # дубль щодоби. Одна АКТИВНА ескалація на кластер — resolve відкриває наступну.
-  # Race-safety = частковий unique-index (..._unique_active_cluster_field_audit).
+  # [SLASH-1] One-Home Field-Audit ескалації, два скоупи за dedup-ключем:
+  #   • cluster-level (tree: nil) — (cluster_id, :field_audit, :active, tree_id NULL):
+  #     щоденні crons (freeze slash-гейта / blackout / insurance no-data) при тривалій
+  #     деградації плодили дубль щодоби. Одна АКТИВНА ескалація на кластер.
+  #   • per-tree ([SILENCE-1], tree: задано) — dedup тримають модельна валідація
+  #     (scope [tree_id, status]) + частковий unique-index (..._unique_active_per_tree);
+  #     індекси взаємовиключні (tree_id IS NULL ⊥ IS NOT NULL) → скоупи співіснують:
+  #     cluster-blackout і per-tree тиша — різні сигнали, не дедупляться між собою.
+  # Resolve відкриває наступну. Race-safety = часткові unique-index'и.
   # Повертає алерт або nil (dedup-skip) — виклик-сайти на nil НЕ реагують
   # (аудит-виїзд спільний, контекст лишається у їхніх логах).
-  def self.escalate_field_audit!(cluster:, message:)
-    existing = active_cluster_field_audit_for(cluster)
+  def self.escalate_field_audit!(cluster:, message:, tree: nil)
+    existing = tree ? active_tree_field_audit_for(tree) : active_cluster_field_audit_for(cluster)
     if existing
-      Rails.logger.info "🔍 [SLASH-1] Field-Audit по кластеру ##{cluster.id} вже активний (##{existing.id}) — дубль не створюємо."
+      Rails.logger.info "🔍 [SLASH-1] Field-Audit по #{tree ? "дереву #{tree.did}" : "кластеру ##{cluster.id}"} вже активний (##{existing.id}) — дубль не створюємо."
       return nil
     end
 
@@ -163,10 +167,19 @@ class EwsAlert < ApplicationRecord
     # Ruby-rescue її не лікує, імпліцитний COMMIT тихо стає ROLLBACK і trigger!
     # зникає без жодного ексепшена.
     transaction(requires_new: true) do
-      create!(cluster: cluster, severity: :critical, alert_type: :field_audit, message: message)
+      create!(cluster: cluster, tree: tree, severity: :critical, alert_type: :field_audit, message: message)
     end
   rescue ActiveRecord::RecordNotUnique
-    Rails.logger.info "🔍 [SLASH-1] Field-Audit dedup-гонку по кластеру ##{cluster.id} програно — активна ескалація вже існує."
+    Rails.logger.info "🔍 [SLASH-1] Field-Audit dedup-гонку по #{tree ? "дереву #{tree.did}" : "кластеру ##{cluster.id}"} програно — активна ескалація вже існує."
+    nil
+  rescue ActiveRecord::RecordInvalid => e
+    # [SILENCE-1] Другий гоночний шлях tree-гілки: дубль ЗАКОМІТИВСЯ між pre-check'ом
+    # і create! → його ловить модельна uniqueness-валідація (RecordInvalid, не index).
+    # Cluster-гілка цього шляху не має (валідація скоуплена tree_id.present?). Ловимо
+    # ВУЗЬКО (лише :taken) — інший invalid = справжній баг, летить гучно.
+    raise unless tree && e.record.errors.of_kind?(:alert_type, :taken)
+
+    Rails.logger.info "🔍 [SLASH-1] Field-Audit dedup-гонку по дереву #{tree.did} програно (модельна валідація) — активна ескалація вже існує."
     nil
   end
 
@@ -174,6 +187,13 @@ class EwsAlert < ApplicationRecord
   # при реальному дублі в БД → форсує RecordNotUnique з індексу).
   def self.active_cluster_field_audit_for(cluster)
     cluster.ews_alerts.critical.alert_type_field_audit.where(tree_id: nil).first
+  end
+
+  # [SILENCE-1] Per-tree дзеркало ↑. Предикат = ТОЧНО модельна валідація
+  # (status_active, БЕЗ severity-фільтра) — щоб create! ніколи не бився об
+  # uniqueness-валідацію повз RecordNotUnique-rescue.
+  def self.active_tree_field_audit_for(tree)
+    tree.ews_alerts.status_active.alert_type_field_audit.first
   end
 
   # =========================================================================

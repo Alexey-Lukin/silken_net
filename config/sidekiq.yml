@@ -173,6 +173,16 @@
       cron: '*/5 * * * *'
       class: GatewayStalenessSweepWorker
 
+    # --- [SILENCE-1] DEAD-MAN SWITCH СОЛДАТА (The Silent Soldier Watcher) ---
+    # Per-tree тиша ≠ cluster-blackout: вкрадене/мертве дерево при живих сусідах
+    # бачить ЛИШЕ цей sweeper (06_08 §1.3). Поріг = SystemParameter
+    # :tree_silence_threshold_hours (24h transitional, bench-калібрування E.63);
+    # носій = per-tree field_audit («слухай, не карай» — 05_05). */5 — дзеркало
+    # Queen-sweeper'а: детект-резолюція хвилини при порозі-годинах, прохід дешевий.
+    tree_staleness_sweep:
+      cron: '*/5 * * * *'
+      class: TreeStalenessSweepWorker
+
     # --- ЦИКЛ CELO-ВІДНОВЛЕННЯ (The Silent Underpay Net) [ARCH.64] ---
     # Celo reward-intent, що застряг у :pending (transient RPC-timeout → dedup-skip
     # на Sidekiq-retry, job "успішний"), не озброює жодного reconcile (CeloConfirmationWorker

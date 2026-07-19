@@ -208,8 +208,9 @@ RSpec.describe Tree, type: :model do
       end
     end
 
+    # [SILENCE-1] Аномальна тиша: active + вже виходив в ефір + мовчить довше порога.
     describe ".silent" do
-      it "returns trees not seen for more than 24 hours" do
+      it "returns active trees not seen beyond the default 24h threshold" do
         silent = create(:tree)
         silent.update_columns(last_seen_at: 25.hours.ago)
 
@@ -218,6 +219,29 @@ RSpec.describe Tree, type: :model do
 
         expect(described_class.silent).to include(silent)
         expect(described_class.silent).not_to include(recent)
+      end
+
+      it "accepts a custom threshold" do
+        tree = create(:tree)
+        tree.update_columns(last_seen_at: 2.hours.ago)
+
+        expect(described_class.silent(1.hour)).to include(tree)
+        expect(described_class.silent).not_to include(tree)
+      end
+
+      it "excludes never-seen trees (last_seen_at NULL — мовчання ненародженого)" do
+        never_seen = create(:tree, last_seen_at: nil)
+
+        expect(described_class.silent).not_to include(never_seen)
+      end
+
+      it "excludes legitimately-silent statuses (dormant/removed/deceased)" do
+        %i[dormant removed deceased].each do |status|
+          tree = create(:tree)
+          tree.update_columns(status: status, last_seen_at: 25.hours.ago)
+
+          expect(described_class.silent).not_to include(tree)
+        end
       end
     end
   end

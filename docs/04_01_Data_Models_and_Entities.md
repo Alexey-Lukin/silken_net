@@ -1121,7 +1121,7 @@ active/draft ──cancel──► cancelled
 | `resolved_at` | datetime | Час вирішення |
 | `dclimate_ref` | string | Посилання на dClimate для супутникової верифікації |
 
-**Унікальність:** `alert_type` унікальний в межах `[tree_id, status]` — захист від дублів. **[SLASH-1]** cluster-level дзеркало: частковий unique-index `(cluster_id) WHERE alert_type=field_audit AND status=active AND tree_id IS NULL` + One-Home хелпер `EwsAlert.escalate_field_audit!(cluster:, message:)` (exists?-skip → nil; `RecordNotUnique`-rescue) — одна АКТИВНА Field-Audit ескалація на кластер (щоденні crons freeze/blackout/insurance при тривалій деградації плодили дубль щодоби); усі 5 creation-сайтів через хелпер.
+**Унікальність:** `alert_type` унікальний в межах `[tree_id, status]` — захист від дублів. **[SLASH-1]** cluster-level дзеркало: частковий unique-index `(cluster_id) WHERE alert_type=field_audit AND status=active AND tree_id IS NULL` + One-Home хелпер `EwsAlert.escalate_field_audit!(cluster:, message:, tree: nil)` (exists?-skip → nil; `RecordNotUnique`-rescue) — одна АКТИВНА Field-Audit ескалація на кластер (щоденні crons freeze/blackout/insurance при тривалій деградації плодили дубль щодоби). **[SILENCE-1]** per-tree гілка того ж хелпера (`tree:` задано): dedup = модельна валідація + частковий unique-index `..._unique_active_per_tree` (`tree_id IS NOT NULL`) + вузький `RecordInvalid(:taken)`-rescue (другий гоночний шлях — committed-дубль ловить валідація, не index); індекси взаємовиключні → cluster-blackout ⊥ per-tree тиша співіснують. Усі creation-сайти через хелпер ([`04_02 §11`](04_02_Business_Logic_and_Services) — 5 cluster-scoped + `TreeStalenessSweepWorker`).
 
 **Ключові методи:**
 

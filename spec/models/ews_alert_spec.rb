@@ -137,6 +137,74 @@ RSpec.describe EwsAlert, type: :model do
     end
   end
 
+  # [SILENCE-1] Per-tree гілка: dedup тримають модельна валідація + частковий
+  # unique-index (..._unique_active_per_tree); скоупи ⊥ cluster-level.
+  describe ".escalate_field_audit! (per-tree, SILENCE-1)" do
+    let(:cluster) { create(:cluster) }
+    let(:tree) { create(:tree, cluster: cluster) }
+
+    it "creates an active per-tree field_audit alert" do
+      alert = described_class.escalate_field_audit!(cluster: cluster, tree: tree, message: "Вузол мовчить")
+
+      expect(alert).to be_persisted
+      expect(alert.alert_type).to eq("field_audit")
+      expect(alert.severity).to eq("critical")
+      expect(alert.tree_id).to eq(tree.id)
+    end
+
+    it "skips (returns nil) while an active per-tree field_audit already exists" do
+      described_class.escalate_field_audit!(cluster: cluster, tree: tree, message: "День 1")
+
+      expect {
+        expect(described_class.escalate_field_audit!(cluster: cluster, tree: tree, message: "День 2")).to be_nil
+      }.not_to change(described_class, :count)
+    end
+
+    it "coexists with an active cluster-level escalation in BOTH directions (⊥ dedup-скоупи)" do
+      cluster_level = described_class.escalate_field_audit!(cluster: cluster, message: "Blackout")
+      per_tree = described_class.escalate_field_audit!(cluster: cluster, tree: tree, message: "Тиша вузла")
+
+      expect(cluster_level).to be_persisted
+      expect(per_tree).to be_persisted
+      # І назад: активний per-tree не блокує новий cluster-level після resolve першого.
+      cluster_level.update!(status: :resolved)
+      expect(described_class.escalate_field_audit!(cluster: cluster, message: "Blackout 2")).to be_persisted
+    end
+
+    it "does not dedup across different trees" do
+      other_tree = create(:tree, cluster: cluster)
+      described_class.escalate_field_audit!(cluster: cluster, tree: tree, message: "Дерево 1")
+
+      expect(
+        described_class.escalate_field_audit!(cluster: cluster, tree: other_tree, message: "Дерево 2")
+      ).to be_persisted
+    end
+
+    it "creates a fresh escalation after the previous one is resolved" do
+      first = described_class.escalate_field_audit!(cluster: cluster, tree: tree, message: "Епізод 1")
+      first.update!(status: :resolved)
+
+      expect(described_class.escalate_field_audit!(cluster: cluster, tree: tree, message: "Епізод 2")).to be_persisted
+    end
+
+    it "does not poison an enclosing transaction when losing the unique race (savepoint)" do
+      described_class.escalate_field_audit!(cluster: cluster, tree: tree, message: "Переможець")
+      # Сліпимо dedup-скан → create! б'ється об модельну uniqueness-валідацію
+      # (committed-переможець видимий її SELECT'у) → вузький RecordInvalid-rescue
+      # (:taken) → nil. TOCTOU-шлях повз валідацію (uncommitted-паралель →
+      # RecordNotUnique з індексу) ділить rescue з cluster-гілкою — тест вище.
+      allow(described_class).to receive(:active_tree_field_audit_for).and_return(nil)
+
+      sibling = nil
+      ActiveRecord::Base.transaction do
+        sibling = create(:ews_alert, cluster: cluster, alert_type: :fire_detected, severity: :critical)
+        expect(described_class.escalate_field_audit!(cluster: cluster, tree: tree, message: "Програв гонку")).to be_nil
+      end
+
+      expect(sibling.reload).to be_persisted # зовнішня транзакція КОМІТНУЛАСЬ
+    end
+  end
+
   # =========================================================================
   # VALIDATIONS
   # =========================================================================

@@ -120,8 +120,15 @@ class Tree < ApplicationRecord
   # `Tree.active` автогенерується `enum :status, { active: 0, ... }`, не дублюємо.
   scope :geolocated, -> { where.not(latitude: nil, longitude: nil) }
 
-  # [ОПТИМІЗАЦІЯ]: Використовуємо окрему колонку для швидкодії
-  scope :silent, -> { where("last_seen_at < ?", 24.hours.ago) }
+  # [SILENCE-1] Аномальна тиша: active-дерево, що ВЖЕ виходило в ефір, але мовчить
+  # довше порога. Поза скоупом свідомо: last_seen_at NULL («мовчання ненародженого» —
+  # beginless range робить SQL-відкидання NULL семантикою, не випадковістю), dormant
+  # (свідомо приспане) і removed/deceased (легітимно мовчазні — інакше sweeper ганяв би
+  # Field Audit на кладовище). Рантайм-поріг веде TreeStalenessSweepWorker через
+  # SystemParameter; дефолт 24h [transitional] до bench-калібрування (00_07 SILENCE-1:
+  # delta_t навмисно варіативний, поріг НЕ виводиться з конфіга). Стеля: індексу на
+  # last_seen_at нема — на тисячах рядків seq-scan дешевий, scale → індекс.
+  scope :silent, ->(threshold = 24.hours) { active.where(last_seen_at: ...threshold.ago) }
   # [UTC Anchor]: Використовуємо фіксований UTC для скоупу без контексту кластера.
   scope :critical_stress, -> {
     joins(:ai_insights)

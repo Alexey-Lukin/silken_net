@@ -260,6 +260,18 @@ module SilkenNet
       docstring: "Online QATT-capable gateways whose last Ed25519-attested batch is older than the lapse window"
     )
 
+    # [SILENCE-1] Dead-man switch Солдата (TreeStalenessSweepWorker):
+    # переходи в аномальну тишу (counter) + поточний стан флоту (gauge).
+    TREE_SILENCE_TOTAL = REGISTRY.counter(
+      :silkennet_tree_silence_total,
+      docstring: "Total tree silence transitions detected by the staleness sweeper (per-tree field_audit escalations)"
+    )
+
+    TREES_SILENT = REGISTRY.gauge(
+      :silkennet_trees_silent,
+      docstring: "Current number of active trees silent beyond the silence threshold (set on each staleness sweep)"
+    )
+
     # [ARCH.34 L3] Helium SOS intake (HeliumSosWorker):
     # accepted / unknown_dev_eui / did_mismatch / malformed.
     HELIUM_SOS_RECEIVED_TOTAL = REGISTRY.counter(
