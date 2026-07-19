@@ -38,6 +38,7 @@ export function handleCarbonMinted(event: CarbonMinted): void {
   entity.amount = event.params.amount;
   entity.treeDidHash = event.params.treeDidHash;
   entity.treeDid = event.params.treeDid;
+  entity.archiveRoot = event.params.archiveRoot; // [E.60] dispatch archive-batch witness
   entity.timestamp = event.block.timestamp;
   entity.blockNumber = event.block.number;
   entity.transactionHash = event.transaction.hash;
@@ -80,6 +81,7 @@ export function handleForestMinted(event: ForestMinted): void {
   entity.amount = event.params.amount;
   entity.clusterIdHash = event.params.clusterIdHash;
   entity.clusterId = event.params.clusterId;
+  entity.archiveRoot = event.params.archiveRoot; // [E.60] MRV-witness, not a carbon claim
   entity.timestamp = event.block.timestamp;
   entity.blockNumber = event.block.number;
   entity.transactionHash = event.transaction.hash;

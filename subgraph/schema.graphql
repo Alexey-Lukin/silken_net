@@ -4,6 +4,7 @@ type CarbonMintEvent @entity {
   amount: BigInt!
   treeDidHash: Bytes!
   treeDid: String!
+  archiveRoot: Bytes! # [E.60] Merkle-root of the dispatch archive batch; 0x0 = no witness claim
   timestamp: BigInt!
   blockNumber: BigInt!
   transactionHash: Bytes!
@@ -16,6 +17,7 @@ type ForestMintEvent @entity {
   amount: BigInt!
   clusterIdHash: Bytes!
   clusterId: String!
+  archiveRoot: Bytes! # [E.60] MRV-witness of the dispatch evidence-set, NOT a carbon claim
   timestamp: BigInt!
   blockNumber: BigInt!
   transactionHash: Bytes!

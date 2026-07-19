@@ -34,7 +34,7 @@ dataSources:
         - name: SilkenCarbonCoin
           file: ./abis/SilkenCarbonCoin.json
       eventHandlers:
-        - event: CarbonMinted(indexed address,uint256,indexed bytes32,string)
+        - event: CarbonMinted(indexed address,uint256,indexed bytes32,string,indexed bytes32)
           handler: handleCarbonMinted
         - event: TokenSlashed(indexed address,uint256,bytes32)
           handler: handleTokenSlashed
@@ -62,7 +62,7 @@ dataSources:
         - name: SilkenForestCoin
           file: ./abis/SilkenForestCoin.json
       eventHandlers:
-        - event: ForestMinted(indexed address,uint256,indexed bytes32,string)
+        - event: ForestMinted(indexed address,uint256,indexed bytes32,string,indexed bytes32)
           handler: handleForestMinted
         - event: GovernanceSlashed(indexed address,uint256,bytes32)
           handler: handleGovernanceSlashed
