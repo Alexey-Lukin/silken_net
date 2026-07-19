@@ -112,16 +112,18 @@ class TelemetryArchiveBatchWorker
   def stamp!(leaves, root)
     conn = ActiveRecord::Base.connection
     leaves.each_slice(STAMP_SLICE) do |slice|
-      values = slice.map { |log, cid| "(#{log.id.to_i}, #{conn.quote(cid)})" }.join(", ")
+      placeholders = ([ "(?, ?)" ] * slice.size).join(", ")
       t_min, t_max = slice.map { |log, _cid| log.created_at }.minmax
-      conn.exec_update(<<~SQL)
-        UPDATE telemetry_logs
-        SET merkle_leaf = v.leaf, archive_root = #{conn.quote(root)}
-        FROM (VALUES #{values}) AS v(id, leaf)
-        WHERE telemetry_logs.id = v.id
-          AND telemetry_logs.created_at >= #{conn.quote(t_min)}
-          AND telemetry_logs.created_at <= #{conn.quote(t_max)}
-      SQL
+      conn.exec_update(ActiveRecord::Base.sanitize_sql_array(
+        [ <<~SQL, root, *slice.flat_map { |log, cid| [ log.id, cid ] }, t_min, t_max ]
+          UPDATE telemetry_logs
+          SET merkle_leaf = v.leaf, archive_root = ?
+          FROM (VALUES #{placeholders}) AS v(id, leaf)
+          WHERE telemetry_logs.id = v.id
+            AND telemetry_logs.created_at >= ?
+            AND telemetry_logs.created_at <= ?
+        SQL
+      ))
     end
   end
 
