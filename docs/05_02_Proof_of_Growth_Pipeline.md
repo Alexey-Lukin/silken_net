@@ -71,7 +71,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
           → solana micro-reward sent                 ← Solana SPL reward
 ```
 
-⚠️ **PATH 1 наразі НЕ виконується у проді — ДЕМОУТНУТО [ARCH.53]** (founder-рішення 2026-07-03): on-chain `sendRequest` вилучено з `Chainlink::OracleDispatchService` (LINK-cost за callback, що не прилетить: DON Functions JS-source / consumer `fulfillRequest` / relayer відсутні; ще й tx_hash≠requestId — lookup не збігся б). Dispatch = local correlation-marker (Крок C); tokenomics-шлях (PATH 2) і `MintBatchCollector` мінтять **без** цього gate (KYC + balance + active-tree enforced; oracle — ні). Цей ланцюг — **latent gate** для майбутнього PATH 1 (замикання = DON-інженерія, свідомо відкинута при TRL-3); guard'и й callback-endpoint збережені.
+⚠️ **PATH 1 наразі НЕ виконується у проді — ДЕМОУТНУТО [ARCH.53]** (founder-рішення 2026-07-03): on-chain `sendRequest` вилучено з `Chainlink::OracleDispatchService` (LINK-cost за callback, що не прилетить: DON Functions JS-source / consumer `fulfillRequest` / relayer відсутні; ще й tx_hash≠requestId — lookup не збігся б). Dispatch = local correlation-marker (Крок C); tokenomics-шлях (PATH 2) і `MintBatchCollector` мінтять **без** цього gate (KYC + balance + active-tree enforced; oracle — ні). Цей ланцюг — **latent-код + manual-fulfillment двері**: замикання PATH 1 **відмовлено остаточно** (founder-присуд 2026-07-19, ARCH.53 §🗄️ — Merkle-lineage [ARCH.12/MRV.1] дає аудитору сильніший доказ, ніж DON-переверифікація нашого ж обчислення); guard'и й callback-endpoint збережені.
 
 ---
 

@@ -33,4 +33,4 @@ description: "Use when working on the silken_net telemetry / Proof-of-Growth pip
 ## Common Tasks
 
 - **Add telemetry field**: firmware pack → `TelemetryUnpackerService` unpack → DB migration → Phlex dashboard component → update `docs/05_02`
-- **Change minting logic**: `BlockchainMintingService` → the **2-guard oracle chain (IoTeX + oracle_status)** protects PATH 1 only (latent — ARCH.53: dispatch = local marker, DON-callback unwired); **KYC (Hadron) guards ALL paths and is the sole PATH-2 perimeter** (live PATH 2 mint = optimistic, KYC-only; L0-custodial + ex-post clawback). Service-home = `04_02 §4`; tokenomics course → `05_03` (see `web3-pipeline` skill)
+- **Change minting logic**: `BlockchainMintingService` → the **2-guard oracle chain (IoTeX + oracle_status)** protects PATH 1 only (latent — ARCH.53 §🗄️: dispatch = local marker, DON-callback unwired, closure refused 2026-07-19); **KYC (Hadron) guards ALL paths and is the sole PATH-2 perimeter** (live PATH 2 mint = optimistic, KYC-only; L0-custodial + ex-post clawback). Service-home = `04_02 §4`; tokenomics course → `05_03` (see `web3-pipeline` skill)

@@ -52,7 +52,7 @@
 
 ## 2. Категоризація причини деградації
 
-Кожен інцидент `cluster.degradation_event` отримує `cause_classification` (визначається `InsightGeneratorService` + Chainlink DON cross-check + DAO override):
+Кожен інцидент `cluster.degradation_event` отримує `cause_classification` (визначається `InsightGeneratorService` + незалежні verified-джерела (dClimate/FIRMS — §4) + DAO override):
 
 | Категорія | Приклади | Прокся-сигнал | Реакція |
 |-----------|----------|---------------|---------|

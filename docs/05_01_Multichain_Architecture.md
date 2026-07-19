@@ -696,7 +696,7 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 - `oracle_callbacks` ендпоінт (HMAC-SHA256, replay-guard) — двері для майбутнього PATH 1 / manual-fulfillment; будь-який підписант з валідним HMAC може викликати.
 - **DOC.8-інваріант діє:** cleanup НЕ видаляє `oracle_status: dispatched` записи — вони приймуть callback, якщо/коли PATH 1 замкнеться.
 
-**Шлях до PATH 1 (якщо DAO вирішить, post-TRL-3):** Functions JS-source + consumer `fulfillRequest` + relayer + повернення on-chain гілки з git (Router ABI registry + bytecode probe + ARCH.49 nonce-lock). Manual bypass (`OracleManualFulfillmentService`, super_admin, реліз-тег для аудиту) — так само майбутнє, не реалізовано.
+**PATH 1 закривати відмовлено (founder-присуд 2026-07-19, ARCH.53 §🗄️):** superseded by Merkle-lineage (ARCH.12/MRV.1 — аудитор верифікує кредит проти якорених вимірів офлайн; DON засвідчував би *обчислення*, не *походження даних*). Технічний шлях (Functions JS-source + consumer `fulfillRequest` + relayer + git-воскресіння on-chain гілки з Router ABI registry + bytecode probe + ARCH.49 nonce-lock) — історична нотатка. Manual bypass (`OracleManualFulfillmentService`, super_admin, реліз-тег для аудиту) — так само майбутнє, не реалізовано.
 
 ### 8.4. Critical Path: IoTeX W3bstream
 
@@ -746,7 +746,7 @@ Outage цих мереж **не блокує** core flow:
 | Мережа | Tier | Single Point of Failure? | Auto-recovery? | Manual escalation |
 |---|---|---|---|---|
 | Polygon | 🔴 Critical | Mitigated by `Web3::ResilientClient` cascade | Yes (RPC fallback + Sidekiq retry) | Multi-day outage → admin investigation |
-| Chainlink | ⚪ Unwired [ARCH.53] | — (local marker, без зовнішньої залежності) | — | PATH 1 замикання = DAO-рішення post-TRL-3 |
+| Chainlink | ⚪ Unwired [ARCH.53] | — (local marker, без зовнішньої залежності) | — | PATH 1 закривати відмовлено (founder 2026-07-19, ARCH.53 §🗄️) |
 | IoTeX | 🔴 Critical | Yes | Sidekiq retry | Multi-day → temporary minting freeze |
 | Solana | 🟠 Important | Mitigated by `SOLANA_RPC_URL_FALLBACK` cascade [INF.22] | Yes (RPC fallback + Sidekiq retry) | Catchup worker after restore |
 | Hadron | 🟠 Important | Yes | No | Strict-mode override (emergency) |
