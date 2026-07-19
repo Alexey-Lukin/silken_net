@@ -3,11 +3,13 @@
 
 # Gate-perimeter meta-guard (OPS.14).
 #
-# `main`'s branch protection requires exactly two checks — `CI passed` (ci-ok)
-# + `Docs passed` (docs-ok). Every OTHER pull_request-triggered workflow
-# (solidity_audit = money-path SCC/SFC/Governor contracts, cad/ml/in_silico
-# smokes, iac_scan) is job-gating but merge-ADVISORY. Nothing watched the gate
-# PERIMETER itself: a new deterministic PR-gate can be born outside the required
+# `main`'s branch protection requires all seven deterministic PR-gates —
+# `CI passed` (ci-ok), `Docs passed` (docs-ok), `Solidity passed` (money-path
+# SCC/SFC/Governor), and the `CAD passed` / `ML passed` / `In-silico passed` /
+# `IaC passed` smokes. Only `ssot_guard.yml` stays advisory-by-design (path-gated
+# red-X informs, does not block). The flip-pending migration is complete (0 left).
+# Nothing watched the gate PERIMETER itself: a new deterministic PR-gate can be
+# born outside the required
 # set and nobody notices — exactly how the money-path Solidity audit stayed
 # merge-advisory while canon claimed "all gating". Sibling class of DOC-T.44
 # ("a gate outside the registry rots one-way") — the class bites, no guard
@@ -17,8 +19,8 @@
 # pull_request-triggered `.github/workflows/*.yml` into one of three buckets —
 #
 #   :required           → merge-blocking via an `if: always()` aggregate job
-#                         whose `name:` is the branch-protection context (today:
-#                         ci.yml→"CI passed", docs.yml→"Docs passed").
+#                         whose `name:` is the branch-protection context
+#                         (e.g. ci.yml→"CI passed", solidity_audit.yml→"Solidity passed").
 #   :advisory_by_design → deliberately NOT merge-blocking, with a ratified
 #                         reason (today: ssot_guard.yml — path-gated red-X
 #                         informs, does not block; 06_07 §2).
@@ -63,11 +65,11 @@ module WorkflowGatePerimeter
     "ci.yml"              => [ :required,           "CI passed" ],
     "docs.yml"            => [ :required,           "Docs passed" ],
     "ssot_guard.yml"      => [ :advisory_by_design, "path-gated red-X informs, not blocks — 06_07 §2" ],
-    "solidity_audit.yml"  => [ :flip_pending,       "OPS.15" ],
-    "cad_smoke.yml"       => [ :flip_pending,       "OPS.16" ],
-    "ml_smoke.yml"        => [ :flip_pending,       "OPS.16" ],
-    "in_silico_smoke.yml" => [ :flip_pending,       "OPS.16" ],
-    "iac_scan.yml"        => [ :flip_pending,       "OPS.16" ]
+    "solidity_audit.yml"  => [ :required,           "Solidity passed" ],
+    "cad_smoke.yml"       => [ :required,           "CAD passed" ],
+    "ml_smoke.yml"        => [ :required,           "ML passed" ],
+    "in_silico_smoke.yml" => [ :required,           "In-silico passed" ],
+    "iac_scan.yml"        => [ :required,           "IaC passed" ]
   }.freeze
 
   CLASSES = %i[required advisory_by_design flip_pending].freeze

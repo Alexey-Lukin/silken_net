@@ -138,9 +138,10 @@ jobs:
         # (:required / :advisory_by_design / :flip_pending) in a curated PERIMETER
         # SSOT. A NEW deterministic PR-gate born outside the required set → RED
         # "classify it" (the class that let the money-path Solidity audit stay
-        # merge-advisory while canon claimed "all gating"). Advisory lists
-        # flip_pending (→ OPS.15, OPS.16). Input `.github/**` already in the
-        # changes-filter, so the gate is not decorative.
+        # merge-advisory while canon claimed "all gating"). The flip_pending
+        # migration is complete (0 left; OPS.15/16 landed 2026-07-19 — all 7
+        # PR-gates required). Input `.github/**` already in the changes-filter,
+        # so the gate is not decorative.
         run: ruby scripts/workflow_gate_perimeter.rb
 
       - name: FIELDS ⟷ canon sync (OPS.6 — Projects V2 schema vs 00_05 §1.1)

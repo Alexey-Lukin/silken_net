@@ -14,7 +14,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 7 — CI/CD пайплайн TRL Auto-Advancement на стадії впровадження. **`main` захищено branch-protection** (required status checks = `CI passed` + `Docs passed`, `enforce_admins=false` — owner лишає прямий push; канон [`06_07 §2`](06_07_CICD_and_Runbook_Index)). Відкриті: `PROJECT_PAT` provision + GitHub App-token міграція → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 7 — CI/CD пайплайн TRL Auto-Advancement на стадії впровадження. **`main` захищено branch-protection** (required status checks = усі **7** детермінованих PR-гейтів — `CI`/`Docs`/`Solidity`/`CAD`/`ML`/`In-silico`/`IaC passed`, `enforce_admins=false` — owner лишає прямий push; канон [`06_07 §2`](06_07_CICD_and_Runbook_Index)). Відкриті: `PROJECT_PAT` provision + GitHub App-token міграція → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 

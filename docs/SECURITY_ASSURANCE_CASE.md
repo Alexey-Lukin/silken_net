@@ -252,12 +252,12 @@ The claims above are backed by enforced, automated evidence — not by assertion
   merge; cppcheck's MISRA C:2012 addon is opt-in and advisory, not part of the gate. Slither + Aderyn
   (Solidity, fail-on-high), **Halmos** symbolic proofs (`test/symbolic/`) and **Foundry + Medusa**
   property-fuzzing (`test/invariant/`, `test/medusa/`) add depth on the token/governance contracts; they
-  run in the separate `solidity_audit.yml` and each fails its own job on findings (job-level gate), but
-  that workflow is **not yet in the branch-protection required-check set** — a red audit is visible on
-  the PR without physically blocking a merge (promotion tracked as `OPS.15`,
-  [`00_07`](00_07_Action_Plan_Tracker)). CodeQL (default setup, 6 languages) and OpenSSF Scorecard
-  likewise report findings without being merge-required. The exact required-check surface (`CI passed` +
-  `Docs passed` only) → [`06_07 §2`](06_07_CICD_and_Runbook_Index).
+  run in the separate `solidity_audit.yml`, whose **`Solidity passed` aggregate is a merge-required
+  branch-protection check on `main`** (OPS.15, landed 2026-07-19) — each job also fails on its own
+  findings, and a red audit now physically blocks the merge. CodeQL (default setup, 6 languages) and
+  OpenSSF Scorecard report findings without being merge-required. The exact required-check surface (all
+  **7** deterministic PR-gates — `CI passed` + `Docs passed` + `Solidity passed` + the CAD/ML/In-silico/IaC
+  smoke aggregates) → [`06_07 §2`](06_07_CICD_and_Runbook_Index).
 - **Composition analysis (SCA).** Dependabot (weekly), bundler-audit (every CI), OpenSSF Scorecard (weekly).
 - **Supply chain.** Sigstore-signed SLSA build-provenance on the released container — verifiable per
   `SECURITY.md` ("Verifying release artifacts").
