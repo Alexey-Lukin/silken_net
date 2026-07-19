@@ -427,7 +427,8 @@ CREATE TABLE public.blockchain_transactions (
     telemetry_window_to_at timestamp without time zone,
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
-    telemetry_lineage_version integer
+    telemetry_lineage_version integer,
+    archive_batch_id bigint
 )
 PARTITION BY RANGE (created_at);
 
@@ -487,7 +488,8 @@ CREATE TABLE public.blockchain_transactions_default (
     telemetry_window_to_at timestamp without time zone,
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
-    telemetry_lineage_version integer
+    telemetry_lineage_version integer,
+    archive_batch_id bigint
 );
 
 
@@ -527,7 +529,8 @@ CREATE TABLE public.blockchain_transactions_y2026m01 (
     telemetry_window_to_at timestamp without time zone,
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
-    telemetry_lineage_version integer
+    telemetry_lineage_version integer,
+    archive_batch_id bigint
 );
 
 
@@ -567,7 +570,8 @@ CREATE TABLE public.blockchain_transactions_y2026m02 (
     telemetry_window_to_at timestamp without time zone,
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
-    telemetry_lineage_version integer
+    telemetry_lineage_version integer,
+    archive_batch_id bigint
 );
 
 
@@ -607,7 +611,8 @@ CREATE TABLE public.blockchain_transactions_y2026m03 (
     telemetry_window_to_at timestamp without time zone,
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
-    telemetry_lineage_version integer
+    telemetry_lineage_version integer,
+    archive_batch_id bigint
 );
 
 
@@ -647,7 +652,8 @@ CREATE TABLE public.blockchain_transactions_y2026m04 (
     telemetry_window_to_at timestamp without time zone,
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
-    telemetry_lineage_version integer
+    telemetry_lineage_version integer,
+    archive_batch_id bigint
 );
 
 
@@ -687,7 +693,8 @@ CREATE TABLE public.blockchain_transactions_y2026m05 (
     telemetry_window_to_at timestamp without time zone,
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
-    telemetry_lineage_version integer
+    telemetry_lineage_version integer,
+    archive_batch_id bigint
 );
 
 
@@ -727,7 +734,8 @@ CREATE TABLE public.blockchain_transactions_y2026m06 (
     telemetry_window_to_at timestamp without time zone,
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
-    telemetry_lineage_version integer
+    telemetry_lineage_version integer,
+    archive_batch_id bigint
 );
 
 
@@ -767,7 +775,8 @@ CREATE TABLE public.blockchain_transactions_y2026m07 (
     telemetry_window_to_at timestamp without time zone,
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
-    telemetry_lineage_version integer
+    telemetry_lineage_version integer,
+    archive_batch_id bigint
 );
 
 
@@ -807,7 +816,8 @@ CREATE TABLE public.blockchain_transactions_y2026m08 (
     telemetry_window_to_at timestamp without time zone,
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
-    telemetry_lineage_version integer
+    telemetry_lineage_version integer,
+    archive_batch_id bigint
 );
 
 
@@ -2100,6 +2110,47 @@ ALTER SEQUENCE public.system_parameters_id_seq OWNED BY public.system_parameters
 
 
 --
+-- Name: telemetry_archive_batches; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_archive_batches (
+    id bigint NOT NULL,
+    archive_root character varying(64),
+    token_type integer NOT NULL,
+    status integer DEFAULT 0 NOT NULL,
+    leaf_count integer DEFAULT 0 NOT NULL,
+    tx_count integer DEFAULT 0 NOT NULL,
+    tx_ids jsonb,
+    txs_created_from timestamp(6) without time zone,
+    txs_created_to timestamp(6) without time zone,
+    ipfs_cid character varying,
+    tax_rate_applied numeric,
+    error_message character varying(500),
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: telemetry_archive_batches_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.telemetry_archive_batches_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: telemetry_archive_batches_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.telemetry_archive_batches_id_seq OWNED BY public.telemetry_archive_batches.id;
+
+
+--
 -- Name: telemetry_logs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2134,7 +2185,9 @@ CREATE TABLE public.telemetry_logs (
     pressure numeric,
     vpd numeric,
     gateway_attested boolean DEFAULT false NOT NULL,
-    panic boolean DEFAULT false NOT NULL
+    panic boolean DEFAULT false NOT NULL,
+    archive_root character varying(64),
+    merkle_leaf character varying(64)
 )
 PARTITION BY RANGE (created_at);
 
@@ -2193,7 +2246,9 @@ CREATE TABLE public.telemetry_logs_default (
     pressure numeric,
     vpd numeric,
     gateway_attested boolean DEFAULT false NOT NULL,
-    panic boolean DEFAULT false NOT NULL
+    panic boolean DEFAULT false NOT NULL,
+    archive_root character varying(64),
+    merkle_leaf character varying(64)
 );
 
 
@@ -2232,7 +2287,9 @@ CREATE TABLE public.telemetry_logs_y2026m01 (
     pressure numeric,
     vpd numeric,
     gateway_attested boolean DEFAULT false NOT NULL,
-    panic boolean DEFAULT false NOT NULL
+    panic boolean DEFAULT false NOT NULL,
+    archive_root character varying(64),
+    merkle_leaf character varying(64)
 );
 
 
@@ -2271,7 +2328,9 @@ CREATE TABLE public.telemetry_logs_y2026m02 (
     pressure numeric,
     vpd numeric,
     gateway_attested boolean DEFAULT false NOT NULL,
-    panic boolean DEFAULT false NOT NULL
+    panic boolean DEFAULT false NOT NULL,
+    archive_root character varying(64),
+    merkle_leaf character varying(64)
 );
 
 
@@ -2310,7 +2369,9 @@ CREATE TABLE public.telemetry_logs_y2026m03 (
     pressure numeric,
     vpd numeric,
     gateway_attested boolean DEFAULT false NOT NULL,
-    panic boolean DEFAULT false NOT NULL
+    panic boolean DEFAULT false NOT NULL,
+    archive_root character varying(64),
+    merkle_leaf character varying(64)
 );
 
 
@@ -2349,7 +2410,9 @@ CREATE TABLE public.telemetry_logs_y2026m04 (
     pressure numeric,
     vpd numeric,
     gateway_attested boolean DEFAULT false NOT NULL,
-    panic boolean DEFAULT false NOT NULL
+    panic boolean DEFAULT false NOT NULL,
+    archive_root character varying(64),
+    merkle_leaf character varying(64)
 );
 
 
@@ -2388,7 +2451,9 @@ CREATE TABLE public.telemetry_logs_y2026m05 (
     pressure numeric,
     vpd numeric,
     gateway_attested boolean DEFAULT false NOT NULL,
-    panic boolean DEFAULT false NOT NULL
+    panic boolean DEFAULT false NOT NULL,
+    archive_root character varying(64),
+    merkle_leaf character varying(64)
 );
 
 
@@ -2427,7 +2492,9 @@ CREATE TABLE public.telemetry_logs_y2026m06 (
     pressure numeric,
     vpd numeric,
     gateway_attested boolean DEFAULT false NOT NULL,
-    panic boolean DEFAULT false NOT NULL
+    panic boolean DEFAULT false NOT NULL,
+    archive_root character varying(64),
+    merkle_leaf character varying(64)
 );
 
 
@@ -2466,7 +2533,9 @@ CREATE TABLE public.telemetry_logs_y2026m07 (
     pressure numeric,
     vpd numeric,
     gateway_attested boolean DEFAULT false NOT NULL,
-    panic boolean DEFAULT false NOT NULL
+    panic boolean DEFAULT false NOT NULL,
+    archive_root character varying(64),
+    merkle_leaf character varying(64)
 );
 
 
@@ -2505,7 +2574,9 @@ CREATE TABLE public.telemetry_logs_y2026m08 (
     pressure numeric,
     vpd numeric,
     gateway_attested boolean DEFAULT false NOT NULL,
-    panic boolean DEFAULT false NOT NULL
+    panic boolean DEFAULT false NOT NULL,
+    archive_root character varying(64),
+    merkle_leaf character varying(64)
 );
 
 
@@ -3192,6 +3263,13 @@ ALTER TABLE ONLY public.system_parameters ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
+-- Name: telemetry_archive_batches id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_archive_batches ALTER COLUMN id SET DEFAULT nextval('public.telemetry_archive_batches_id_seq'::regclass);
+
+
+--
 -- Name: telemetry_logs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3658,6 +3736,14 @@ ALTER TABLE ONLY public.system_parameters
 
 
 --
+-- Name: telemetry_archive_batches telemetry_archive_batches_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_archive_batches
+    ADD CONSTRAINT telemetry_archive_batches_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: telemetry_logs telemetry_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3789,6 +3875,20 @@ CREATE INDEX index_blockchain_transactions_on_sourceable ON ONLY public.blockcha
 --
 
 CREATE INDEX blockchain_transactions_defau_sourceable_type_sourceable_id_idx ON public.blockchain_transactions_default USING btree (sourceable_type, sourceable_id);
+
+
+--
+-- Name: index_blockchain_transactions_on_archive_batch_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_on_archive_batch_id ON ONLY public.blockchain_transactions USING btree (archive_batch_id);
+
+
+--
+-- Name: blockchain_transactions_default_archive_batch_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_default_archive_batch_id_idx ON public.blockchain_transactions_default USING btree (archive_batch_id);
 
 
 --
@@ -3960,6 +4060,13 @@ CREATE INDEX blockchain_transactions_y2026_sourceable_type_sourceable_id_idx ON 
 
 
 --
+-- Name: blockchain_transactions_y2026m01_archive_batch_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m01_archive_batch_id_idx ON public.blockchain_transactions_y2026m01 USING btree (archive_batch_id);
+
+
+--
 -- Name: blockchain_transactions_y2026m01_block_number_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4013,6 +4120,13 @@ CREATE INDEX blockchain_transactions_y2026m01_wallet_id_idx ON public.blockchain
 --
 
 CREATE INDEX blockchain_transactions_y2026m01_wallet_id_status_idx ON public.blockchain_transactions_y2026m01 USING btree (wallet_id, status);
+
+
+--
+-- Name: blockchain_transactions_y2026m02_archive_batch_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m02_archive_batch_id_idx ON public.blockchain_transactions_y2026m02 USING btree (archive_batch_id);
 
 
 --
@@ -4072,6 +4186,13 @@ CREATE INDEX blockchain_transactions_y2026m02_wallet_id_status_idx ON public.blo
 
 
 --
+-- Name: blockchain_transactions_y2026m03_archive_batch_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m03_archive_batch_id_idx ON public.blockchain_transactions_y2026m03 USING btree (archive_batch_id);
+
+
+--
 -- Name: blockchain_transactions_y2026m03_block_number_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4125,6 +4246,13 @@ CREATE INDEX blockchain_transactions_y2026m03_wallet_id_idx ON public.blockchain
 --
 
 CREATE INDEX blockchain_transactions_y2026m03_wallet_id_status_idx ON public.blockchain_transactions_y2026m03 USING btree (wallet_id, status);
+
+
+--
+-- Name: blockchain_transactions_y2026m04_archive_batch_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m04_archive_batch_id_idx ON public.blockchain_transactions_y2026m04 USING btree (archive_batch_id);
 
 
 --
@@ -4184,6 +4312,13 @@ CREATE INDEX blockchain_transactions_y2026m04_wallet_id_status_idx ON public.blo
 
 
 --
+-- Name: blockchain_transactions_y2026m05_archive_batch_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m05_archive_batch_id_idx ON public.blockchain_transactions_y2026m05 USING btree (archive_batch_id);
+
+
+--
 -- Name: blockchain_transactions_y2026m05_block_number_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4237,6 +4372,13 @@ CREATE INDEX blockchain_transactions_y2026m05_wallet_id_idx ON public.blockchain
 --
 
 CREATE INDEX blockchain_transactions_y2026m05_wallet_id_status_idx ON public.blockchain_transactions_y2026m05 USING btree (wallet_id, status);
+
+
+--
+-- Name: blockchain_transactions_y2026m06_archive_batch_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m06_archive_batch_id_idx ON public.blockchain_transactions_y2026m06 USING btree (archive_batch_id);
 
 
 --
@@ -4296,6 +4438,13 @@ CREATE INDEX blockchain_transactions_y2026m06_wallet_id_status_idx ON public.blo
 
 
 --
+-- Name: blockchain_transactions_y2026m07_archive_batch_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m07_archive_batch_id_idx ON public.blockchain_transactions_y2026m07 USING btree (archive_batch_id);
+
+
+--
 -- Name: blockchain_transactions_y2026m07_block_number_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4349,6 +4498,13 @@ CREATE INDEX blockchain_transactions_y2026m07_wallet_id_idx ON public.blockchain
 --
 
 CREATE INDEX blockchain_transactions_y2026m07_wallet_id_status_idx ON public.blockchain_transactions_y2026m07 USING btree (wallet_id, status);
+
+
+--
+-- Name: blockchain_transactions_y2026m08_archive_batch_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m08_archive_batch_id_idx ON public.blockchain_transactions_y2026m08 USING btree (archive_batch_id);
 
 
 --
@@ -4877,6 +5033,13 @@ CREATE INDEX idx_telemetry_logs_bio_status_created ON ONLY public.telemetry_logs
 
 
 --
+-- Name: idx_telemetry_logs_merkle_leaf_stamped; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_logs_merkle_leaf_stamped ON ONLY public.telemetry_logs USING btree (merkle_leaf, created_at) WHERE (merkle_leaf IS NOT NULL);
+
+
+--
 -- Name: idx_telemetry_logs_oracle_dispatched; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4993,6 +5156,20 @@ CREATE INDEX index_ai_insights_on_analyzable ON public.ai_insights USING btree (
 --
 
 CREATE INDEX index_ai_insights_on_source_log_ids ON public.ai_insights USING gin (source_log_ids);
+
+
+--
+-- Name: index_archive_batches_on_status_updated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_archive_batches_on_status_updated ON public.telemetry_archive_batches USING btree (status, updated_at);
+
+
+--
+-- Name: index_archive_batches_root_token_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_archive_batches_root_token_unique ON public.telemetry_archive_batches USING btree (archive_root, token_type) WHERE (archive_root IS NOT NULL);
 
 
 --
@@ -5745,6 +5922,13 @@ CREATE INDEX telemetry_logs_default_chainlink_request_id_idx ON public.telemetry
 
 
 --
+-- Name: telemetry_logs_default_merkle_leaf_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_default_merkle_leaf_created_at_idx ON public.telemetry_logs_default USING btree (merkle_leaf, created_at) WHERE (merkle_leaf IS NOT NULL);
+
+
+--
 -- Name: telemetry_logs_default_oracle_status_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5791,6 +5975,13 @@ CREATE INDEX telemetry_logs_y2026m01_bio_status_created_at_idx ON public.telemet
 --
 
 CREATE INDEX telemetry_logs_y2026m01_chainlink_request_id_idx ON public.telemetry_logs_y2026m01 USING btree (chainlink_request_id);
+
+
+--
+-- Name: telemetry_logs_y2026m01_merkle_leaf_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m01_merkle_leaf_created_at_idx ON public.telemetry_logs_y2026m01 USING btree (merkle_leaf, created_at) WHERE (merkle_leaf IS NOT NULL);
 
 
 --
@@ -5843,6 +6034,13 @@ CREATE INDEX telemetry_logs_y2026m02_chainlink_request_id_idx ON public.telemetr
 
 
 --
+-- Name: telemetry_logs_y2026m02_merkle_leaf_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m02_merkle_leaf_created_at_idx ON public.telemetry_logs_y2026m02 USING btree (merkle_leaf, created_at) WHERE (merkle_leaf IS NOT NULL);
+
+
+--
 -- Name: telemetry_logs_y2026m02_oracle_status_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5889,6 +6087,13 @@ CREATE INDEX telemetry_logs_y2026m03_bio_status_created_at_idx ON public.telemet
 --
 
 CREATE INDEX telemetry_logs_y2026m03_chainlink_request_id_idx ON public.telemetry_logs_y2026m03 USING btree (chainlink_request_id);
+
+
+--
+-- Name: telemetry_logs_y2026m03_merkle_leaf_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m03_merkle_leaf_created_at_idx ON public.telemetry_logs_y2026m03 USING btree (merkle_leaf, created_at) WHERE (merkle_leaf IS NOT NULL);
 
 
 --
@@ -5941,6 +6146,13 @@ CREATE INDEX telemetry_logs_y2026m04_chainlink_request_id_idx ON public.telemetr
 
 
 --
+-- Name: telemetry_logs_y2026m04_merkle_leaf_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m04_merkle_leaf_created_at_idx ON public.telemetry_logs_y2026m04 USING btree (merkle_leaf, created_at) WHERE (merkle_leaf IS NOT NULL);
+
+
+--
 -- Name: telemetry_logs_y2026m04_oracle_status_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5987,6 +6199,13 @@ CREATE INDEX telemetry_logs_y2026m05_bio_status_created_at_idx ON public.telemet
 --
 
 CREATE INDEX telemetry_logs_y2026m05_chainlink_request_id_idx ON public.telemetry_logs_y2026m05 USING btree (chainlink_request_id);
+
+
+--
+-- Name: telemetry_logs_y2026m05_merkle_leaf_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m05_merkle_leaf_created_at_idx ON public.telemetry_logs_y2026m05 USING btree (merkle_leaf, created_at) WHERE (merkle_leaf IS NOT NULL);
 
 
 --
@@ -6039,6 +6258,13 @@ CREATE INDEX telemetry_logs_y2026m06_chainlink_request_id_idx ON public.telemetr
 
 
 --
+-- Name: telemetry_logs_y2026m06_merkle_leaf_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m06_merkle_leaf_created_at_idx ON public.telemetry_logs_y2026m06 USING btree (merkle_leaf, created_at) WHERE (merkle_leaf IS NOT NULL);
+
+
+--
 -- Name: telemetry_logs_y2026m06_oracle_status_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6085,6 +6311,13 @@ CREATE INDEX telemetry_logs_y2026m07_bio_status_created_at_idx ON public.telemet
 --
 
 CREATE INDEX telemetry_logs_y2026m07_chainlink_request_id_idx ON public.telemetry_logs_y2026m07 USING btree (chainlink_request_id);
+
+
+--
+-- Name: telemetry_logs_y2026m07_merkle_leaf_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m07_merkle_leaf_created_at_idx ON public.telemetry_logs_y2026m07 USING btree (merkle_leaf, created_at) WHERE (merkle_leaf IS NOT NULL);
 
 
 --
@@ -6137,6 +6370,13 @@ CREATE INDEX telemetry_logs_y2026m08_chainlink_request_id_idx ON public.telemetr
 
 
 --
+-- Name: telemetry_logs_y2026m08_merkle_leaf_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m08_merkle_leaf_created_at_idx ON public.telemetry_logs_y2026m08 USING btree (merkle_leaf, created_at) WHERE (merkle_leaf IS NOT NULL);
+
+
+--
 -- Name: telemetry_logs_y2026m08_oracle_status_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6176,6 +6416,13 @@ CREATE INDEX telemetry_logs_y2026m08_tree_id_idx ON public.telemetry_logs_y2026m
 --
 
 ALTER INDEX public.index_blockchain_transactions_on_sourceable ATTACH PARTITION public.blockchain_transactions_defau_sourceable_type_sourceable_id_idx;
+
+
+--
+-- Name: blockchain_transactions_default_archive_batch_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_archive_batch_id ATTACH PARTITION public.blockchain_transactions_default_archive_batch_id_idx;
 
 
 --
@@ -6291,6 +6538,13 @@ ALTER INDEX public.index_blockchain_transactions_on_sourceable ATTACH PARTITION 
 
 
 --
+-- Name: blockchain_transactions_y2026m01_archive_batch_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_archive_batch_id ATTACH PARTITION public.blockchain_transactions_y2026m01_archive_batch_id_idx;
+
+
+--
 -- Name: blockchain_transactions_y2026m01_block_number_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -6344,6 +6598,13 @@ ALTER INDEX public.index_blockchain_transactions_on_wallet_id ATTACH PARTITION p
 --
 
 ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH PARTITION public.blockchain_transactions_y2026m01_wallet_id_status_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m02_archive_batch_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_archive_batch_id ATTACH PARTITION public.blockchain_transactions_y2026m02_archive_batch_id_idx;
 
 
 --
@@ -6403,6 +6664,13 @@ ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH 
 
 
 --
+-- Name: blockchain_transactions_y2026m03_archive_batch_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_archive_batch_id ATTACH PARTITION public.blockchain_transactions_y2026m03_archive_batch_id_idx;
+
+
+--
 -- Name: blockchain_transactions_y2026m03_block_number_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -6456,6 +6724,13 @@ ALTER INDEX public.index_blockchain_transactions_on_wallet_id ATTACH PARTITION p
 --
 
 ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH PARTITION public.blockchain_transactions_y2026m03_wallet_id_status_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m04_archive_batch_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_archive_batch_id ATTACH PARTITION public.blockchain_transactions_y2026m04_archive_batch_id_idx;
 
 
 --
@@ -6515,6 +6790,13 @@ ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH 
 
 
 --
+-- Name: blockchain_transactions_y2026m05_archive_batch_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_archive_batch_id ATTACH PARTITION public.blockchain_transactions_y2026m05_archive_batch_id_idx;
+
+
+--
 -- Name: blockchain_transactions_y2026m05_block_number_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -6571,6 +6853,13 @@ ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH 
 
 
 --
+-- Name: blockchain_transactions_y2026m06_archive_batch_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_archive_batch_id ATTACH PARTITION public.blockchain_transactions_y2026m06_archive_batch_id_idx;
+
+
+--
 -- Name: blockchain_transactions_y2026m06_block_number_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -6624,6 +6913,13 @@ ALTER INDEX public.index_blockchain_transactions_on_wallet_id ATTACH PARTITION p
 --
 
 ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH PARTITION public.blockchain_transactions_y2026m06_wallet_id_status_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m07_archive_batch_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_archive_batch_id ATTACH PARTITION public.blockchain_transactions_y2026m07_archive_batch_id_idx;
 
 
 --
@@ -6687,6 +6983,13 @@ ALTER INDEX public.index_blockchain_transactions_on_wallet_id ATTACH PARTITION p
 --
 
 ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH PARTITION public.blockchain_transactions_y2026m07_wallet_id_status_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m08_archive_batch_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_archive_batch_id ATTACH PARTITION public.blockchain_transactions_y2026m08_archive_batch_id_idx;
 
 
 --
@@ -7201,6 +7504,13 @@ ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION
 
 
 --
+-- Name: telemetry_logs_default_merkle_leaf_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_merkle_leaf_stamped ATTACH PARTITION public.telemetry_logs_default_merkle_leaf_created_at_idx;
+
+
+--
 -- Name: telemetry_logs_default_oracle_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -7254,6 +7564,13 @@ ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public
 --
 
 ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION public.telemetry_logs_y2026m01_chainlink_request_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m01_merkle_leaf_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_merkle_leaf_stamped ATTACH PARTITION public.telemetry_logs_y2026m01_merkle_leaf_created_at_idx;
 
 
 --
@@ -7313,6 +7630,13 @@ ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION
 
 
 --
+-- Name: telemetry_logs_y2026m02_merkle_leaf_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_merkle_leaf_stamped ATTACH PARTITION public.telemetry_logs_y2026m02_merkle_leaf_created_at_idx;
+
+
+--
 -- Name: telemetry_logs_y2026m02_oracle_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -7366,6 +7690,13 @@ ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public
 --
 
 ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION public.telemetry_logs_y2026m03_chainlink_request_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m03_merkle_leaf_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_merkle_leaf_stamped ATTACH PARTITION public.telemetry_logs_y2026m03_merkle_leaf_created_at_idx;
 
 
 --
@@ -7425,6 +7756,13 @@ ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION
 
 
 --
+-- Name: telemetry_logs_y2026m04_merkle_leaf_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_merkle_leaf_stamped ATTACH PARTITION public.telemetry_logs_y2026m04_merkle_leaf_created_at_idx;
+
+
+--
 -- Name: telemetry_logs_y2026m04_oracle_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -7478,6 +7816,13 @@ ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public
 --
 
 ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION public.telemetry_logs_y2026m05_chainlink_request_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m05_merkle_leaf_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_merkle_leaf_stamped ATTACH PARTITION public.telemetry_logs_y2026m05_merkle_leaf_created_at_idx;
 
 
 --
@@ -7537,6 +7882,13 @@ ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION
 
 
 --
+-- Name: telemetry_logs_y2026m06_merkle_leaf_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_merkle_leaf_stamped ATTACH PARTITION public.telemetry_logs_y2026m06_merkle_leaf_created_at_idx;
+
+
+--
 -- Name: telemetry_logs_y2026m06_oracle_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -7593,6 +7945,13 @@ ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION
 
 
 --
+-- Name: telemetry_logs_y2026m07_merkle_leaf_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_merkle_leaf_stamped ATTACH PARTITION public.telemetry_logs_y2026m07_merkle_leaf_created_at_idx;
+
+
+--
 -- Name: telemetry_logs_y2026m07_oracle_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -7646,6 +8005,13 @@ ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public
 --
 
 ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION public.telemetry_logs_y2026m08_chainlink_request_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m08_merkle_leaf_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_merkle_leaf_stamped ATTACH PARTITION public.telemetry_logs_y2026m08_merkle_leaf_created_at_idx;
 
 
 --
@@ -8138,6 +8504,14 @@ ALTER TABLE ONLY public.device_calibrations
 
 
 --
+-- Name: blockchain_transactions fk_rails_ffe8ce2692; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE public.blockchain_transactions
+    ADD CONSTRAINT fk_rails_ffe8ce2692 FOREIGN KEY (archive_batch_id) REFERENCES public.telemetry_archive_batches(id);
+
+
+--
 -- Name: system_parameters fk_rails_system_parameters_updated_by; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8160,5 +8534,5 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('20260719160000');
+('20260719200000');
 

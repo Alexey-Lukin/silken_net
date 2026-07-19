@@ -231,10 +231,15 @@ class Wallet < ApplicationRecord
   end
 
   # [MRV.1] Абортить destroy за наявності settled/in-flight money-tx (докази MRV).
+  # [E.60 Фаза 1б] + tx із archive_batch_id: стемпнутий tx = член archive-батчу
+  # (root міг поїхати on-chain / артефакт запінено) — видалення wallet стерло б
+  # вікна і дало pin-воркеру ХИБНИЙ mismatch на легальну операцію.
   def guard_mrv_evidence!
-    return unless blockchain_transactions.where(status: [ :confirmed, :sent, :manual_review ]).exists?
+    evidence = blockchain_transactions.where(status: [ :confirmed, :sent, :manual_review ])
+                                      .or(blockchain_transactions.where.not(archive_batch_id: nil))
+    return unless evidence.exists?
 
-    errors.add(:base, "Wallet має settled/in-flight blockchain-транзакції (MRV-докази) — деактивуй, не видаляй")
+    errors.add(:base, "Wallet має settled/in-flight/архів-стемпнуті blockchain-транзакції (MRV-докази) — деактивуй, не видаляй")
     throw :abort
   end
 

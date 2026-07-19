@@ -47,6 +47,11 @@ class BlockchainTransaction < ApplicationRecord
   # Поліморфний зв'язок для аудиту (Напр. AiInsight, EwsAlert або NaasContract)
   belongs_to :sourceable, polymorphic: true, optional: true
 
+  # [E.60 Фаза 1б] Set-once membership архів-батчу: ставиться РАЗ (атомарно зі
+  # створенням батчу в Mrv::TelemetryArchiveBatchService), re-dispatch групує по
+  # ньому і реюзає stored root. Ніколи не перевішувати на інший батч.
+  belongs_to :archive_batch, class_name: "TelemetryArchiveBatch", optional: true
+
   # ---------------------------------------------------------------------------
   # SCALABILITY NOTE (Series D — Planetary Scale)
   # ---------------------------------------------------------------------------

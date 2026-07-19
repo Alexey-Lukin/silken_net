@@ -373,4 +373,27 @@ RSpec.describe TelemetryLog, type: :model do
       )
     end
   end
+
+  # [E.60 Фаза 1б] Seal-guard: мутація leaf-payload стемпнутого рядка = зламаний
+  # артефакт ↔ on-chain root. Guard тримає AR-шлях; сам стемп (nil→value) проходить.
+  describe "#forbid_sealed_leaf_mutation!" do
+    let(:tree) { create(:tree) }
+    let(:log) { create(:telemetry_log, tree: tree) }
+
+    it "allows stamping an unstamped row (nil → value passes)" do
+      expect { log.update!(merkle_leaf: "bafkrei" + "a" * 52, archive_root: "a" * 64) }
+        .not_to raise_error
+    end
+
+    it "raises on mutating a leaf-payload column of a sealed row" do
+      log.update!(merkle_leaf: "bafkrei" + "a" * 52)
+      expect { log.reload.update!(z_value: 42.0) }
+        .to raise_error(ActiveRecord::ReadOnlyRecord, /sealed leaf/)
+    end
+
+    it "allows non-payload updates on a sealed row (oracle_status is not leaf-payload)" do
+      log.update!(merkle_leaf: "bafkrei" + "a" * 52)
+      expect { log.reload.update!(oracle_status: :fulfilled) }.not_to raise_error
+    end
+  end
 end

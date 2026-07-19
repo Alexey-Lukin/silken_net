@@ -545,6 +545,20 @@ RSpec.describe Wallet, type: :model do
       expect { wallet.destroy! }.to change(described_class, :count).by(-1)
     end
 
+    # [E.60 Фаза 1б] Стемпнутий tx = член archive-батчу: root міг поїхати on-chain,
+    # видалення стерло б вікна → хибний mismatch у pin-воркера.
+    it "aborts destroy when a pending tx is archive-batch-stamped [E.60]" do
+      batch = TelemetryArchiveBatch.create!(archive_root: "e" * 64, token_type: :carbon_coin)
+      wallet.blockchain_transactions.create!(
+        amount: 1, token_type: :carbon_coin, status: :pending,
+        to_address: "0x" + "b" * 40, archive_batch_id: batch.id
+      )
+
+      expect(wallet.destroy).to be false
+      expect(wallet.errors[:base].first).to include("MRV")
+      expect(described_class.exists?(wallet.id)).to be true
+    end
+
     # [ARCH.57] Дозволений destroy лишає ряди сиротами (nullify), НЕ стирає:
     # сирітський tx валідний за дизайном (cluster-sourced money вже живе без wallet).
     it "nullifies (not deletes) the remaining tx rows on a permitted destroy" do

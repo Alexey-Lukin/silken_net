@@ -77,6 +77,17 @@ class TelemetryLog < ApplicationRecord
   # в TelemetryUnpackerService.valid_sensor_data? до створення запису.
   # ActiveRecord валідації на кожному INSERT — зайві цикли CPU.
 
+  # [E.60 Фаза 1б] Seal-guard стемпнутого листа: merkle_leaf = персистований CID
+  # leaf-payload'а (Mrv::TelemetryLeaf); мутація payload-поля після стемпу зламала б
+  # відповідність лист ↔ запінений артефакт ↔ on-chain root. Свідома пара захистів:
+  # guard тримає AR-шлях (update/save), sweeper-нога FilecoinVerificationSweepWorker
+  # ловить raw-SQL-шлях семпл-перерахунком CID. Сам стемп пише pin-воркер raw-SQL'ем
+  # (колбек не стріляє) і nil→value проходить guard (merkle_leaf_was порожній).
+  # KENOSIS недоторканий: intake = insert_all, before_update на INSERT не стріляє.
+  # Прецедент: AuditLog#forbid_business_field_mutation! (ARCH.57).
+  LEAF_PAYLOAD_COLUMNS = %w[z_value bio_status created_at tree_id].freeze
+  before_update :forbid_sealed_leaf_mutation!
+
   # --- ПОРОГИ АНАЛІТИКИ (канон значень — тут, 04_01 дзеркалить) ---
   # Акустика: < CALM_MAX — здорова тиша; > STORM_MIN — шторм (шкідники/пилка).
   # Сіра зона CALM_MAX..STORM_MIN навмисна: «навантажено, але ще не аномалія».
@@ -178,5 +189,19 @@ class TelemetryLog < ApplicationRecord
     return false unless healthy?
 
     tree.health_streak >= 3
+  end
+
+  private
+
+  # [E.60] Дзеркало AuditLog#forbid_business_field_mutation! — детальніше біля
+  # LEAF_PAYLOAD_COLUMNS вище.
+  def forbid_sealed_leaf_mutation!
+    return if merkle_leaf_was.blank?
+
+    illegal = changed & LEAF_PAYLOAD_COLUMNS
+    return if illegal.empty?
+
+    raise ActiveRecord::ReadOnlyRecord,
+          "TelemetryLog ##{id}: sealed leaf [E.60] — спроба змінити #{illegal.join(', ')}"
   end
 end
