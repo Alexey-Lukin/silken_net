@@ -355,6 +355,16 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Зовнішні виклики** | — (pure AR-запит + `MerkleTree`/`Mrv::TelemetryLeaf`) |
 | **Вихід** | `logs_for(tx)` → AR-relation (ordered) · `root_for(tx)` → 64-hex String \| nil |
 
+### `Mrv::LineageReportService` [MRV.1/ARCH.12 — перший inclusion-proof-споживач]
+
+| | |
+|---|---|
+| **Файл** | `app/services/mrv/lineage_report_service.rb` |
+| **Вхід** | `organization:, from:, to:` |
+| **Що робить** | ISO lineage-bundle `silken.mrv.lineage.v1` (founder-присуд 2026-07-19): для кожного confirmed-мінту організації (org-scoping через cluster-ланцюг, created_at = partition-pruning) — вікно вимірів + canonical-payload'и листя + двоярусні inclusion-proof'и до якорених `state_root` (covering-lookup = найранішій confirmed v1-якір; tier2-шлях зі збережених `subtree_roots` O(#кластерів), tier1 = report-time перевибірка кластерного вікна) + референси якоря (etherscan). Чесні статуси: `anchored` / `pending_anchor` (лист новіший за останній якір) / `unprovable_regrouped` (дерево змінило кластер після якоря — перерахований субкорінь ≠ збереженому). Failed-спроби успадковуються в наступний успішний кредит («чесна межа (г)»). Продюсер: rake `mrv:lineage_bundle[org_id,from,to]`. **Споживач пруфів = `scripts/verify_lineage_bundle.rb`** (pure Ruby, офлайн, без Rails/БД/мережі: leaf-CID recompute + tier1-субкорінь recompute + tier2 → state_root; exit 1 на будь-який crypto-mismatch; on-chain звірку кореня робить людина за etherscan_url). HTTP-ендпоінт deferred (YAGNI — реальний споживач офлайновий). |
+| **Зовнішні виклики** | — (чисті AR-запити + `MerkleTree`/`Mrv::TelemetryLeaf`/`Mrv::LineageWindow`) |
+| **Вихід** | Hash-bundle (серіалізовний у JSON) |
+
 ### `Chainlink::OracleDispatchService`
 
 | | |

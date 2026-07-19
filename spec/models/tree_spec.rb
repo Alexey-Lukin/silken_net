@@ -416,4 +416,19 @@ RSpec.describe Tree, type: :model do
       end
     end
   end
+
+  # [MRV.1] Tree-destroy НЕ обходить wallet-guard MRV-доказів: has_one dependent: :destroy
+  # каскадить у Wallet#guard_mrv_evidence! (settled tx → abort) → дерево і його
+  # заякорені телеметрія-листи лишаються (деактивуй, не видаляй).
+  describe "destroy with settled money evidence" do
+    it "aborts tree.destroy while a confirmed blockchain_transaction exists" do
+      tree = create(:tree)
+      create(:blockchain_transaction, wallet: tree.wallet, status: :confirmed,
+                                      tx_hash: "0x#{SecureRandom.hex(32)}")
+
+      expect { tree.destroy! }.to raise_error(ActiveRecord::RecordNotDestroyed)
+      expect(described_class.exists?(tree.id)).to be true
+      expect(Wallet.exists?(tree.wallet.id)).to be true
+    end
+  end
 end
