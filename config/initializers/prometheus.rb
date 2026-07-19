@@ -474,6 +474,25 @@ module SilkenNet
       docstring: "AuditLog archive re-enqueues issued by FilecoinReconcileWorker"
     )
 
+    # [E.60 Фаза 1б] Mint-anchored телеметрія-батч-архівація: збої тракту по фазах.
+    # reason: build (fail-open → мінт із zero32 при непорожніх вікнах = кандидат-інцидент) ·
+    # pin (Pinata-вичерпання, retries_exhausted-hook) · mismatch (rebuild ≠ stored root при
+    # живих логах = integrity-сигнал, runbook 06_08 §4) · retention_expired (листя зникли з
+    # дропнутими партиціями — НЕ tamper) · dispatch_drift (advisory: size-1 root ≠
+    # telemetry_merkle_root = мутація між lock_and_mint! і диспатчем) · leaf_stamp_drift
+    # (sweeper-семпл: перерахований CID ≠ стемп merkle_leaf — raw-SQL мутація).
+    TELEMETRY_ARCHIVE_FAILURES_TOTAL = REGISTRY.counter(
+      :silkennet_telemetry_archive_batch_failures_total,
+      docstring: "Telemetry archive-batch tract failures by phase (build/pin/mismatch/retention_expired/dispatch_drift/leaf_stamp_drift)",
+      labels: [ :reason ]
+    )
+    # Глибина незапінених батчів (pending/build_failed) — семплить Treasury::MonitorService
+    # (15-хв). SLO: unpinned age < retention-горизонт партицій (інакше rebuild втратить листя).
+    TELEMETRY_ARCHIVE_UNPINNED_DEPTH = REGISTRY.gauge(
+      :silkennet_telemetry_archive_unpinned_depth,
+      docstring: "Count of telemetry archive batches not yet pinned (pending/build_failed)"
+    )
+
     # [E.50]: Streamr broadcast failures counter — раніше помилки мовчки логувались без метрик.
     # Streamr — потік присутності (не фінансовий консенсус), але масові збої потребують alerting.
     STREAMR_BROADCAST_FAILURES_TOTAL = REGISTRY.counter(

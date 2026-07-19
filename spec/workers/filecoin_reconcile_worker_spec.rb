@@ -72,4 +72,20 @@ RSpec.describe FilecoinReconcileWorker, type: :worker do
       expect(Rails.logger).not_to have_received(:warn)
     end
   end
+
+  # [E.60 Фаза 1б] Друга нога: backstop для архів-батчів (первинний enqueue при
+  # створенні; тут — crash/exhaustion recovery + repair build_failed).
+  describe "archive-batch reconcile leg" do
+    it "re-enqueues stale pending/build_failed batches, skips fresh and terminal" do
+      stale = TelemetryArchiveBatch.create!(archive_root: "a" * 64, token_type: :carbon_coin)
+      trace = TelemetryArchiveBatch.create!(token_type: :carbon_coin, status: :build_failed)
+      [ stale, trace ].each { |b| b.update_column(:updated_at, 3.hours.ago) }
+      TelemetryArchiveBatch.create!(archive_root: "b" * 64, token_type: :carbon_coin) # fresh
+
+      expect(TelemetryArchiveBatchWorker).to receive(:perform_async).with(stale.id)
+      expect(TelemetryArchiveBatchWorker).to receive(:perform_async).with(trace.id)
+
+      described_class.new.perform
+    end
+  end
 end

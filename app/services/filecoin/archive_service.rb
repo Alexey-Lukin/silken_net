@@ -56,9 +56,14 @@ module Filecoin
     def archive!
       return if @audit_log.ipfs_cid.present?
 
-      payload = build_payload
-      response = upload_to_ipfs(payload)
-      cid = extract_cid(response)
+      cid = self.class.pin_json!(
+        build_content,
+        name: "silkennet-audit-#{@audit_log.id}",
+        keyvalues: {
+          organization_id: @audit_log.organization_id.to_s,
+          chain_hash: @audit_log.chain_hash.to_s
+        }
+      )
 
       @audit_log.update!(ipfs_cid: cid)
 
@@ -69,28 +74,18 @@ module Filecoin
 
     private
 
-    # Формує JSON payload з даними аудит-логу та добовими зведеннями телеметрії.
+    # Формує content для піну (дані аудит-логу + добові зведення телеметрії).
     # У вміст вбудовується самоописовий `content_cid` (E.60): верифікатор згодом
     # перерахує CID і виявить ex-post підміну архіву (`05_02 §E.60`).
-    def build_payload
+    # Pinata-обгортку (pinataContent/pinataMetadata) додає pin_json!.
+    def build_content
       content = self.class.content_attrs(@audit_log).merge(
         metadata: @audit_log.metadata,
         telemetry_summary: build_telemetry_summary,
         archived_at: Time.current.iso8601
       )
       content[:content_cid] = self.class.content_cid(content)
-
-      {
-        pinataContent: content,
-        pinataMetadata: {
-          name: "silkennet-audit-#{@audit_log.id}",
-          keyvalues: {
-            organization_id: @audit_log.organization_id.to_s,
-            chain_hash: @audit_log.chain_hash.to_s,
-            source: "silken_net"
-          }
-        }
-      }
+      content
     end
 
     # Збирає добове зведення телеметрії для організації на дату аудит-логу.
@@ -123,25 +118,24 @@ module Filecoin
       }
     end
 
-    # Виконує HTTP POST до IPFS pinning API
-    def upload_to_ipfs(payload)
+    # [E.60 Фаза 1б] One-Home Pinata-виклик: юзають audit-шлях (цей сервіс) і
+    # телеметрія-батч-пін (TelemetryArchiveBatchWorker). Повертає CID.
+    def self.pin_json!(content, name:, keyvalues: {})
       api_key = ENV["FILECOIN_API_KEY"].presence || Rails.application.credentials.filecoin_api_key
       raise "🛑 [Filecoin] Missing filecoin_api_key in credentials" if api_key.blank?
 
       response = Web3::HttpClient.post(PINATA_API_URL,
-        body: payload,
+        body: {
+          pinataContent: content,
+          pinataMetadata: { name: name, keyvalues: keyvalues.merge(source: "silken_net") }
+        },
         headers: { "Authorization" => "Bearer #{api_key}" },
         open_timeout: OPEN_TIMEOUT,
         read_timeout: READ_TIMEOUT,
         service_name: "Filecoin"
       )
 
-      response.parsed_body
-    end
-
-    # Витягує CID з відповіді Pinata API
-    def extract_cid(response)
-      cid = response["IpfsHash"]
+      cid = response.parsed_body["IpfsHash"]
       raise "🛑 [Filecoin] No CID returned from IPFS pinning service" if cid.blank?
 
       cid

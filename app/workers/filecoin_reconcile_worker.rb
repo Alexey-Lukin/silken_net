@@ -59,9 +59,32 @@ class FilecoinReconcileWorker
     ids.each { |id| FilecoinArchiveWorker.perform_async(id) }
     SilkenNet::Metrics::FILECOIN_REPIN_TOTAL.increment(by: ids.size) if ids.any?
 
-    return if ids.empty?
+    if ids.any?
+      Rails.logger.warn "📦 [INF.22] Re-enqueued #{ids.size} застряглих archive-requested AuditLog'ів → " \
+                        "FilecoinArchiveWorker (Pinata-exhaustion recovery)."
+    end
 
-    Rails.logger.warn "📦 [INF.22] Re-enqueued #{ids.size} застряглих archive-requested AuditLog'ів → " \
-                      "FilecoinArchiveWorker (Pinata-exhaustion recovery)."
+    reconcile_archive_batches
+  end
+
+  private
+
+  # [E.60 Фаза 1б] Друга нога — телеметрія-архів-батчі: первинний enqueue іде
+  # одразу при створенні batch-row (Mrv::TelemetryArchiveBatchService), тут —
+  # backstop на crash/pin-вичерпання (pending) + repair-нога (build_failed →
+  # пізній rebuild у воркері). Ідемпотентно: термінали CAS-гардовані в моделі,
+  # superseded/retention_expired/pinned/mismatch поза скоупом .reconcilable.
+  # ⚠️ Daily-cadence: поріг STALE_THRESHOLD моделі (2h) = фільтр віку, не SLA —
+  # реальна затримка backstop'а ≤24h (первинний enqueue тримає штатний шлях швидким).
+  def reconcile_archive_batches
+    batch_ids = TelemetryArchiveBatch.reconcilable
+                                     .order(:updated_at)
+                                     .limit(BATCH_LIMIT)
+                                     .pluck(:id)
+    return if batch_ids.empty?
+
+    batch_ids.each { |id| TelemetryArchiveBatchWorker.perform_async(id) }
+    Rails.logger.warn "📦 [E.60] Re-enqueued #{batch_ids.size} застряглих archive-батчів → " \
+                      "TelemetryArchiveBatchWorker (pin/repair backstop)."
   end
 end

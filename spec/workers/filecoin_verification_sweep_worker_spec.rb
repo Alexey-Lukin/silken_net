@@ -71,4 +71,32 @@ RSpec.describe FilecoinVerificationSweepWorker, type: :worker do
       expect(Rails.logger).to have_received(:warn).with(/gateway unreachable/).at_least(:once)
     end
   end
+
+  # [E.60 Фаза 1б] Leaf-стемп-нога: пара до seal-guard'а моделі (guard = AR-шлях,
+  # sweeper = raw-SQL-шлях).
+  describe "leaf-stamp sample leg" do
+    let(:tree) { create(:tree) }
+
+    before { allow_any_instance_of(Tree).to receive(:broadcast_map_update) }
+
+    it "ловить drift: перерахований CID ≠ merkle_leaf → метрика leaf_stamp_drift" do
+      log = create(:telemetry_log, tree: tree, created_at: 1.hour.ago)
+      TelemetryLog.where(id: log.id, created_at: log.created_at)
+                  .update_all(merkle_leaf: "bafkrei" + "x" * 52) # битий стемп raw-SQL'ем
+
+      expect(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL)
+        .to receive(:increment).with(labels: { reason: "leaf_stamp_drift" })
+
+      described_class.new.perform
+    end
+
+    it "чистий стемп проходить без метрики" do
+      log = create(:telemetry_log, tree: tree, created_at: 1.hour.ago)
+      TelemetryLog.where(id: log.id, created_at: log.created_at)
+                  .update_all(merkle_leaf: Mrv::TelemetryLeaf.cid_for(log))
+
+      expect(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL).not_to receive(:increment)
+      described_class.new.perform
+    end
+  end
 end

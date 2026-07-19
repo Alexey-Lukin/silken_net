@@ -151,6 +151,11 @@ module Treasury
       # cadence робить `min_over_time[6h]`-alert осмисленим. ВЕСЬ pending_archive (не LOOKBACK-
       # вікно) — post-LOOKBACK хвіст тримає плато, оператор бачить persistent-діру, не нуль.
       SilkenNet::Metrics::FILECOIN_UNARCHIVED_DEPTH.set(AuditLog.pending_archive.count)
+      # [E.60 Фаза 1б] Незапінені архів-батчі (pending/build_failed) — той самий
+      # freshness-паттерн, що й unarchived_depth вище.
+      SilkenNet::Metrics::TELEMETRY_ARCHIVE_UNPINNED_DEPTH.set(
+        TelemetryArchiveBatch.where(status: [ :pending, :build_failed ]).count
+      )
 
       # [ARCH.66] Anchor stuck-:sent backlog — той самий 15-хв money-path прохід (freshness
       # проти restart-обнулення in-process gauge; sweeper-repair окремо hourly). `stuck_sent`
