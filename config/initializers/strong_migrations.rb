@@ -8,7 +8,7 @@
 # Всі майбутні міграції з timestamp > 20260709140000 проходять
 # Strong Migrations перевірки. Bump цього значення під час кожного
 # наступного squash (див. db/migrate/<ts>_init_consolidated.rb).
-StrongMigrations.start_after = 20260711160000
+StrongMigrations.start_after = 20260719160000
 
 # Час очікування lock-у на таблицю перед відміною міграції.
 # 10 секунд — безпечний ліміт для IoT uplink pipeline (телеметрія не чекатиме довше).
