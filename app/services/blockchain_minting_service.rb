@@ -30,13 +30,17 @@ class BlockchainMintingService < ApplicationService
   TREASURY_CACHE_TTL = 15.minutes
   TREASURY_RPC_TIMEOUT = 10
 
-  # ABI оновлено для підтримки поштучного mint та пакетного batchMint
+  # ABI оновлено для підтримки поштучного mint та пакетного batchMint.
+  # [E.60 Фаза 1б] +archiveRoot (bytes32): Merkle-корінь архів-батчу телеметрії
+  # (mint-anchored witness; zero32 = «без witness-клейму»). СПІЛЬНИЙ для SCC і
+  # SFC (симетричні контракти — founder-рішення, жодних per-token ABI-гілок).
   CONTRACT_ABI = [
     {
       "inputs" => [
         { "internalType" => "address", "name" => "to", "type" => "address" },
         { "internalType" => "uint256", "name" => "amount", "type" => "uint256" },
-        { "internalType" => "string", "name" => "identifier", "type" => "string" }
+        { "internalType" => "string", "name" => "identifier", "type" => "string" },
+        { "internalType" => "bytes32", "name" => "archiveRoot", "type" => "bytes32" }
       ],
       "name" => "mint", "outputs" => [], "stateMutability" => "nonpayable", "type" => "function"
     },
@@ -44,7 +48,8 @@ class BlockchainMintingService < ApplicationService
       "inputs" => [
         { "internalType" => "address[]", "name" => "recipients", "type" => "address[]" },
         { "internalType" => "uint256[]", "name" => "amounts", "type" => "uint256[]" },
-        { "internalType" => "string[]", "name" => "treeDids", "type" => "string[]" }
+        { "internalType" => "string[]", "name" => "treeDids", "type" => "string[]" },
+        { "internalType" => "bytes32", "name" => "archiveRoot", "type" => "bytes32" }
       ],
       "name" => "batchMint", "outputs" => [], "stateMutability" => "nonpayable", "type" => "function"
     }
@@ -175,14 +180,31 @@ class BlockchainMintingService < ApplicationService
     contract = Eth::Contract.from_abi(name: "SilkenCoin", address: contract_address, abi: CONTRACT_ABI)
     lock_key = "lock:web3:oracle:#{oracle_key.address}"
 
+    # [E.60 Фаза 1б] Архів-групування: ПІСЛЯ KYC/SEC.13-фільтрів (perform) і
+    # circuit-check (вище), ПОЗА oracle-локом (побудова = SELECT + sha256;
+    # стемпінг/пін — async у pin-воркері; НІКОЛИ не носити це під 120s-бюджет
+    # локу). Один transact-виклик = один root фізично → цикл per-підгрупою;
+    # свіжий диспатч = усі tx у nil-групі → 1 батч → 1 виклик (без gas-регресу).
+    archive_groups = Mrv::TelemetryArchiveBatchService.group(
+      txs, token_type: token_type,
+      tax_rate: token_type == "carbon_coin" ? dynamic_tax_rate : nil
+    )
+
     # [OBSERVABILITY]: every tx we commit to minting counts as an attempt — the
     # SLO denominator (success = MINT_SUCCESS_TOTAL on status→sent). Counted before
     # the lock so lock-timeout / RPC-outage failures still land in the ratio.
     txs.each { SilkenNet::Metrics::MINT_ATTEMPTS_TOTAL.increment(labels: { token_type: token_type }) }
 
+    # [E.60] Rescue живе ПЕР-ПІДГРУПОЮ (усередині
+    # dispatch_archive_group): збій пізньої підгрупи НЕ торкається tx уже-sent
+    # ранніх (старий group-wide rescue ескалював би здорові :sent у manual_review,
+    # а retry сліпо re-мінтив би їх = double-mint). safe_fail якоїсь підгрупи
+    # re-raise'иться ПІСЛЯ проходу всіх груп; safe-failed tx одужують через
+    # СВІЖІ tokenomics-tx (усі growth-викликачі переобирають лише :pending),
+    # retry-сигнал лише повертає джоб у чергу; sent/manual_review захищені
+    # dispatchable-фільтром у dispatch.
+    safe_fail_error = nil
     begin
-      tx_hash = nil
-
       # [S6.5 FIX]: Збільшено lock timeout з 30s до 120s для batch operations.
       # Хоча ми не чекаємо підтвердження блоку (fire-and-forget), batch minting може включати:
       #   - Dry-run eth_call (~3-5s)
@@ -190,112 +212,137 @@ class BlockchainMintingService < ApplicationService
       #   - Fallback individual mints для poisoned records: до ~30 × transact() = ~90s
       # Загальний worst case: ~130s. З 30s lock виникає double-mint ризик при RPC congestion.
       Kredis.lock(lock_key, expires_in: 120.seconds, after_timeout: :raise) do
-        # Переводимо всі транзакції в статус обробки
-        txs.each do |tx|
-          tx.update!(status: :processing)
-          broadcast_tx_update(tx)
-        end
-
-        if txs.size == 1
-          # Одиночний мінтинг (Fire-and-Forget)
-          tx = txs.first
-          # [ВИПРАВЛЕНО]: Використовуємо transact ЗАМІСТЬ transact_and_wait
-          tx_hash = client.transact(
-            contract, "mint", tx.to_address, to_wei(tx.amount), identifier_for(tx),
-            sender_key: oracle_key, legacy: false
-          )
-        else
-          # 💎 ПАКЕТНИЙ МІНТИНГ (Gas Saving Mode)
-          # [HYBRID PROTOCOL GAIA]: Для carbon_coin при недофінансованому страховому пулі
-          # застосовується Dynamic Tax — 2% від суми кожної транзакції направляється до DAO Treasury.
-          # batchMint в Solidity підтримує array-based splitting, тому math виконується off-chain.
-          recipients, amounts, identifiers = build_batch_arrays(txs, token_type)
-
-          Rails.logger.info "📦 [Web3] BatchMinting #{txs.size} транзакцій для #{token_type}..."
-
-          # [DRY-RUN GUARD]: Симулюємо batchMint через eth_call перед реальною відправкою.
-          # Якщо хоча б один запис у батчі спричиняє revert (наприклад, відкликаний Hadron KYC
-          # між моментом перевірки та виконанням на блокчейні), весь атомарний batchMint впаде.
-          # Dry-run виявляє "отруйний" запис ДО витрати газу і дозволяє fallback.
-          #
-          # [BINARY SEARCH]: При збої dry-run замість наївного fallback на N окремих mint(),
-          # використовується алгоритм бінарного пошуку для ізоляції "отруйних" записів.
-          # Чисті підбатчі відправляються через batchMint, отруйні — поштучно.
-          if batch_dry_run_reverts?(client, contract, oracle_key, recipients, amounts, identifiers)
-            Rails.logger.warn "⚠️ [Web3] batchMint dry-run reverted. Binary search isolation for #{txs.size} txs..."
-            tx_hash = fallback_to_individual_mints(client, contract, oracle_key, token_type, txs)
-          else
-            tx_hash = client.transact(
-              contract, "batchMint", recipients, amounts, identifiers,
-              sender_key: oracle_key, legacy: false
-            )
-          end
+        archive_groups.each do |group|
+          safe_fail_error ||= dispatch_archive_group(client, contract, oracle_key, token_type, group)
         end
       end
-
-      # 5. ФІКСАЦІЯ ВІДПРАВКИ (The Sentinel State)
-      if tx_hash.present?
-        txs.each do |tx|
-          # Оновлюємо статус на :sent і зберігаємо хеш для подальшого аудиту.
-          # [TRUSTLESS]: Зберігаємо chainlink_request_id та zk_proof_ref для
-          # перманентного зв'язку між on-chain транзакцією та її децентралізованим доказом.
-          # [ARCH.55] Через AASM mark_as_sent! (НЕ голий update!) — інакше `sent_at` лишається
-          # NULL і stuck-:sent sweeper не має за що зачепитись (ключується на моменті broadcast,
-          # не created_at, який = момент :pending і зсунутий батч-віком).
-          if @telemetry_log
-            tx.chainlink_request_id = @telemetry_log.chainlink_request_id
-            tx.zk_proof_ref = @telemetry_log.zk_proof_ref
-          end
-          tx.mark_as_sent!(tx_hash)
-          broadcast_tx_update(tx)
-
-          # [OBSERVABILITY]: Increment minted token counter for Prometheus
-          SilkenNet::Metrics::SCC_MINTED_TOTAL.increment(labels: { token_type: token_type })
-          # SLO numerator (06_08 §2.4) — successful broadcast (status→sent).
-          SilkenNet::Metrics::MINT_SUCCESS_TOTAL.increment(labels: { token_type: token_type })
-        end
-
-        # Запускаємо воркер-підтверджувач, який прийде через 30 секунд перевірити квитанцію.
-        # [ARCH.52] earliest батч-created_at → ConfirmationWorker partition-prune (батч ділить
-        # один tx_hash, рядки span до MAX_PENDING_AGE; ±1h вікно у воркері покриває весь батч).
-        BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash, txs.min_by(&:created_at).created_at.iso8601)
-
-        Rails.logger.info "🛰️ [Web3] Пакет відправлено в мемпул. TX: #{tx_hash}"
-      end
-
-    rescue StandardError => e
-      # [P0-1/M6] Стан-обізнаний rescue: голий `fail!` + M2-release на ambiguous broadcast =
-      # DOUBLE-MINT (batchMint/mint МІГ приземлитись, а fail! звільняє locked_points → наступний
-      # tokenomics-цикл re-lock+re-mint). Розрізняємо (дзеркало send_clean_batch M6 + burn ARCH.48):
-      #   :sent-tx (finalize-крах ПІСЛЯ mark_as_sent) → broadcast стався → escalate, НЕ fail!;
-      #   Kredis::LockTimeout / pre-broadcast transact-error (revert/nonce/known/underpriced/
-      #     insufficient) → tx НЕ полетіла → безпечний fail! (retry/tokenomics re-mint);
-      #   ambiguous transact (timeout/connection ПІСЛЯ можливого broadcast) → escalate manual_review.
-      lock_timeout = e.is_a?(Kredis::LockTimeout)
-      safe_fail = lock_timeout || transact_error_pre_broadcast?(e)
+    rescue Kredis::LockTimeout => e
+      # Лок не взято — ЦЕЙ джоб нічого не бродкастив. АЛЕ in-memory статуси
+      # можуть бути stale: конкурентний джоб (той, що тримав лок >120s) міг уже
+      # змінтити спільні tx → reload + той самий sent/manual_review-guard, що й
+      # у dispatch (сліпий fail! клоберив би :sent → release locked_points при
+      # токенах on-chain = double-credit; lock_version на партиційованій таблиці
+      # немає — optimistic-lock не рятує).
       txs.each do |tx|
-        if tx.status_sent?
-          # :sent → escalate завжди легальний (from-state дозволяє) → без may_escalate-guard.
-          tx.escalate_to_review!("Крах після broadcast — звір Polygonscan ПЕРЕД re-mint: #{e.message}")
-        elsif safe_fail
-          tx.fail!(e.message.truncate(200))
-        else
-          # ambiguous: tx у :processing (переведений перед dry-run) → escalate завжди легальний.
-          tx.escalate_to_review!("Ambiguous batchMint broadcast — звір Polygonscan ПЕРЕД re-mint: #{e.message}")
-        end
+        tx.reload
+        next if tx.status_sent? || tx.status_manual_review? || tx.status_confirmed?
+
+        tx.fail!(e.message.truncate(200))
         broadcast_tx_update(tx)
       end
-      Rails.logger.error "🛑 [Web3 Failure] Пакетна помилка (#{safe_fail ? 'pre-broadcast' : 'AMBIGUOUS→manual_review'}): #{e.message}"
-      raise e if safe_fail # retry лише safe-класи; ambiguous escalate без retry (як burn ARCH.48)
+      Rails.logger.error "🛑 [Web3 Failure] Lock timeout (#{token_type}): #{e.message}"
+      raise e
     end
+
+    raise safe_fail_error if safe_fail_error
+  end
+
+  # [E.60 Фаза 1б] Диспатч однієї архів-підгрупи: єдиний transact несе ЇЇ root
+  # (N:1 — bisect/individual-гілки теж). Фіналізація per-групою ОДРАЗУ після
+  # broadcast (прецедент — send_clean_batch у тому ж локу). Повертає safe_fail-
+  # помилку для re-raise (Sidekiq-retry) або nil (успіх / ambiguous-ескалація).
+  def dispatch_archive_group(client, contract, oracle_key, token_type, group)
+    # Диспатчабельні = НЕ sent/manual_review/processing: retry після часткової
+    # multi-групової відмови (і direct .call на recovered-orphan) НЕ сміє сліпо
+    # флипати їх у :processing — обхід double-spend hold. :processing-orphan
+    # (crash між transact і mark_as_sent) — справа sweeper'а (escalate за 15хв),
+    # не сліпого re-mint'а.
+    txs = group.txs.reject { |tx| tx.status_sent? || tx.status_manual_review? || tx.status_processing? }
+    skipped = group.txs.size - txs.size
+    if skipped.positive?
+      Rails.logger.warn "🚫 [Web3] #{skipped} tx підгрупи в sent/manual_review/processing — skip (double-mint guard)."
+    end
+    return nil if txs.empty?
+
+    root_arg = bytes32_arg(group.root)
+
+    # Переводимо транзакції підгрупи в статус обробки
+    txs.each do |tx|
+      tx.update!(status: :processing)
+      broadcast_tx_update(tx)
+    end
+
+    if txs.size == 1
+      # Одиночний мінтинг (Fire-and-Forget): root ПІДГРУПИ — для генуїнно-1-tx
+      # батчу бітово = telemetry_merkle_root; після dispatchable-відсіву сусідів
+      # одинак далі несе batch-root (N:1); ZERO_ROOT для windowless —
+      # insurance/celo/burn мінти чесно їдуть «без witness-клейму».
+      # [ВИПРАВЛЕНО]: Використовуємо transact ЗАМІСТЬ transact_and_wait
+      tx = txs.first
+      tx_hash = client.transact(
+        contract, "mint", tx.to_address, to_wei(tx.amount), identifier_for(tx), root_arg,
+        sender_key: oracle_key, legacy: false
+      )
+      finalize_sent_transaction(tx, tx_hash, token_type)
+      Rails.logger.info "🛰️ [Web3] Одиночний мінт у мемпулі. TX: #{tx_hash}"
+    else
+      # 💎 ПАКЕТНИЙ МІНТИНГ (Gas Saving Mode)
+      # [HYBRID PROTOCOL GAIA]: Для carbon_coin при недофінансованому страховому пулі
+      # застосовується Dynamic Tax — 2% від суми кожної транзакції до DAO Treasury.
+      recipients, amounts, identifiers = build_batch_arrays(txs, token_type)
+
+      Rails.logger.info "📦 [Web3] BatchMinting #{txs.size} транзакцій для #{token_type} " \
+                        "(root #{group.root[0, 12]}…)..."
+
+      # [DRY-RUN GUARD]: eth_call-симуляція ловить "отруйний" запис ДО витрати газу;
+      # [BINARY SEARCH]: при revert — ізоляція отруйних У МЕЖАХ підгрупи (halves
+      # не страдлять межі батчів — E.60 інваріант «один виклик = один root»).
+      if batch_dry_run_reverts?(client, contract, oracle_key, recipients, amounts, identifiers, root_arg)
+        Rails.logger.warn "⚠️ [Web3] batchMint dry-run reverted. Binary search isolation for #{txs.size} txs..."
+        fallback_to_individual_mints(client, contract, oracle_key, token_type, txs, root_arg)
+      else
+        tx_hash = client.transact(
+          contract, "batchMint", recipients, amounts, identifiers, root_arg,
+          sender_key: oracle_key, legacy: false
+        )
+        # [ARCH.52] earliest батч-created_at → ConfirmationWorker partition-prune
+        # (батч ділить один tx_hash; спільний confirm_at → unique_for дедуплікує до 1).
+        batch_confirm_at = txs.min_by(&:created_at).created_at
+        txs.each { |tx| finalize_sent_transaction(tx, tx_hash, token_type, batch_confirm_at) }
+        Rails.logger.info "🛰️ [Web3] Пакет відправлено в мемпул. TX: #{tx_hash}"
+      end
+    end
+    nil
+  rescue StandardError => e
+    # [P0-1/M6] Стан-обізнаний rescue ЦІЄЇ підгрупи (дзеркало
+    # send_clean_batch M6 + burn ARCH.48) — сусідні підгрупи недоторкані:
+    #   :sent (finalize-крах ПІСЛЯ mark_as_sent У ЦІЙ групі) → escalate, НЕ fail!;
+    #   pre-broadcast transact-error (revert/insufficient) → tx НЕ полетіла →
+    #     безпечний fail! + return e (caller re-raise → Sidekiq retry перемінтить);
+    #   ambiguous (timeout/connection ПІСЛЯ можливого broadcast) → escalate
+    #     manual_review, БЕЗ retry (сліпий re-mint = double).
+    # KeyError (ENV-конфіг: DAO_TREASURY_ADDRESS тощо) = ДО transact гарантовано →
+    # safe fail!+retry, не хибний manual_review-toil на конфіг-баг.
+    safe_fail = e.is_a?(KeyError) || transact_error_pre_broadcast?(e)
+    # escalate без may-гарда легальний: dispatchable-фільтр + processing-флип
+    # гарантують from-стан :sent/:processing (обидва в дозволених для escalate).
+    txs.each do |tx|
+      if tx.status_sent?
+        tx.escalate_to_review!("Крах після broadcast — звір Polygonscan ПЕРЕД re-mint: #{e.message}")
+      elsif safe_fail
+        tx.fail!(e.message.truncate(200))
+      else
+        tx.escalate_to_review!("Ambiguous mint broadcast — звір Polygonscan ПЕРЕД re-mint: #{e.message}")
+      end
+      broadcast_tx_update(tx)
+    end
+    Rails.logger.error "🛑 [Web3 Failure] Підгрупа (root #{group.root[0, 12]}…) впала " \
+                       "(#{safe_fail ? 'pre-broadcast' : 'AMBIGUOUS→manual_review'}): #{e.message}"
+    safe_fail ? e : nil
+  end
+
+  # [E.60] hex-root → bytes32-аргумент eth.rb: "0x"-префікс без padding
+  # (прецедент Ethereum::StateAnchorService#anchor_to_l1! root_bytes).
+  def bytes32_arg(root_hex)
+    "0x#{root_hex}"
   end
 
   # [DRY-RUN GUARD]: Симуляція batchMint через eth_call (zero-gas execution).
   # eth_call виконує код контракту на поточному блоці без створення транзакції.
   # Повертає true, якщо симуляція завершилась revert (батч містить "отруйний" запис).
   # При помилці підключення — повертає false (оптимістичний фолбек: спробувати transact).
-  def batch_dry_run_reverts?(client, contract, oracle_key, recipients, amounts, identifiers)
-    client.call(contract, "batchMint", recipients, amounts, identifiers, sender_key: oracle_key)
+  def batch_dry_run_reverts?(client, contract, oracle_key, recipients, amounts, identifiers, root_arg)
+    client.call(contract, "batchMint", recipients, amounts, identifiers, root_arg, sender_key: oracle_key)
     false
   rescue StandardError => e
     Rails.logger.warn "⚠️ [Web3] batchMint dry-run помилка: #{e.message}"
@@ -337,25 +384,28 @@ class BlockchainMintingService < ApplicationService
   # Якщо batchMint dry-run впав, розбиваємо батч навпіл і тестуємо кожну половину.
   # "Чисті" половини відправляються через batchMint, "отруйні" — далі діляться.
   # Результат: 99 з 100 транзакцій відправляються 1-2 batchMint, 1 отруйна — mint().
-  def fallback_to_individual_mints(client, contract, oracle_key, token_type, txs)
+  # [E.60] root_arg = root архів-підгрупи: усі sub-batch'і та individual-мінти
+  # одного диспатчу несуть ТОЙ САМИЙ root (N:1 — root свідчить evidence-набір
+  # диспатчу, не 1:1 композицію мінта; канон 05_02 §E.60).
+  def fallback_to_individual_mints(client, contract, oracle_key, token_type, txs, root_arg)
     poisoned = []
     clean = []
     original_batch_size = txs.size
 
     # Запускаємо бінарний пошук для ізоляції отруйних записів
     isolate_poisoned_records(client, contract, oracle_key, token_type, txs, poisoned, clean,
-                             depth: 0, original_batch_size: original_batch_size)
+                             root_arg, depth: 0, original_batch_size: original_batch_size)
 
     Rails.logger.info "🔍 [Web3] Binary search result: #{clean.size} clean, #{poisoned.size} poisoned out of #{original_batch_size}"
 
     # Відправляємо "чисті" транзакції оптимальними батчами
     clean.each_slice(Treasury::MintBatchCollectorService::OPTIMAL_BATCH_SIZE) do |batch|
-      send_clean_batch(client, contract, oracle_key, token_type, batch)
+      send_clean_batch(client, contract, oracle_key, token_type, batch, root_arg)
     end
 
     # Мінтимо "отруйні" транзакції поштучно (вони, ймовірно, впадуть)
     poisoned.each do |tx|
-      mint_individual(client, contract, oracle_key, token_type, tx)
+      mint_individual(client, contract, oracle_key, token_type, tx, root_arg)
     end
 
     # Повертаємо nil — всі транзакції вже оброблені
@@ -364,7 +414,7 @@ class BlockchainMintingService < ApplicationService
 
   # Рекурсивний бінарний пошук для ізоляції отруйних записів.
   # Кожен рівень рекурсії ділить батч навпіл і тестує через eth_call dry-run.
-  def isolate_poisoned_records(client, contract, oracle_key, token_type, txs, poisoned, clean, depth:, original_batch_size:)
+  def isolate_poisoned_records(client, contract, oracle_key, token_type, txs, poisoned, clean, root_arg, depth:, original_batch_size:)
     # Базовий випадок: батч занадто малий або досягнуто максимальної глибини — мінтимо поштучно
     if txs.size < MIN_BINARY_SEARCH_SIZE || depth >= MAX_BINARY_SEARCH_DEPTH
       Rails.logger.info "🔍 [Web3] Binary search: #{txs.size} txs at depth=#{depth} below threshold, marking as potentially poisoned"
@@ -386,24 +436,24 @@ class BlockchainMintingService < ApplicationService
 
     # Тестуємо ліву половину через dry-run
     process_half(client, contract, oracle_key, token_type, left_half, poisoned, clean,
-                 depth: depth, original_batch_size: original_batch_size)
+                 root_arg, depth: depth, original_batch_size: original_batch_size)
 
     # Тестуємо праву половину через dry-run
     process_half(client, contract, oracle_key, token_type, right_half, poisoned, clean,
-                 depth: depth, original_batch_size: original_batch_size)
+                 root_arg, depth: depth, original_batch_size: original_batch_size)
   end
 
   # Обробляє одну половину батча: dry-run → clean або рекурсивний поділ.
-  def process_half(client, contract, oracle_key, token_type, half_txs, poisoned, clean, depth:, original_batch_size:)
+  def process_half(client, contract, oracle_key, token_type, half_txs, poisoned, clean, root_arg, depth:, original_batch_size:)
     return if half_txs.empty?
 
     recipients, amounts, identifiers = build_batch_arrays(half_txs, token_type)
 
-    if batch_dry_run_reverts?(client, contract, oracle_key, recipients, amounts, identifiers)
+    if batch_dry_run_reverts?(client, contract, oracle_key, recipients, amounts, identifiers, root_arg)
       # Ця половина містить отруйний запис — ділимо далі
       Rails.logger.info "🔍 [Web3] Binary search depth=#{depth + 1}: sub-batch of #{half_txs.size} reverted, splitting..."
       isolate_poisoned_records(client, contract, oracle_key, token_type, half_txs, poisoned, clean,
-                               depth: depth + 1, original_batch_size: original_batch_size)
+                               root_arg, depth: depth + 1, original_batch_size: original_batch_size)
     else
       # Ця половина чиста — додаємо до clean
       clean.concat(half_txs)
@@ -448,18 +498,18 @@ class BlockchainMintingService < ApplicationService
   end
 
   # Відправляє "чистий" батч через batchMint (або mint для одиночних).
-  def send_clean_batch(client, contract, oracle_key, token_type, txs)
+  def send_clean_batch(client, contract, oracle_key, token_type, txs, root_arg)
     return if txs.empty?
 
     if txs.size == 1
-      mint_individual(client, contract, oracle_key, token_type, txs.first)
+      mint_individual(client, contract, oracle_key, token_type, txs.first, root_arg)
       return
     end
 
     recipients, amounts, identifiers = build_batch_arrays(txs, token_type)
 
     tx_hash = client.transact(
-      contract, "batchMint", recipients, amounts, identifiers,
+      contract, "batchMint", recipients, amounts, identifiers, root_arg,
       sender_key: oracle_key, legacy: false
     )
 
@@ -477,7 +527,7 @@ class BlockchainMintingService < ApplicationService
     # re-mint наосліп. txs тут у :processing (переведені перед dry-run) → escalate легальний.
     if transact_error_pre_broadcast?(e)
       Rails.logger.error "🛑 [Web3] Clean batch pre-broadcast fail (#{txs.size} txs): #{e.message}. Individual fallback."
-      txs.each { |tx| mint_individual(client, contract, oracle_key, token_type, tx) }
+      txs.each { |tx| mint_individual(client, contract, oracle_key, token_type, tx, root_arg) }
     else
       Rails.logger.error "🛑 [Web3] Clean batch AMBIGUOUS broadcast (#{txs.size} txs): #{e.message}. " \
                          "→ manual_review (no blind re-mint — batchMint міг landed)."
@@ -502,9 +552,11 @@ class BlockchainMintingService < ApplicationService
   end
 
   # Мінтить одну транзакцію індивідуально з обробкою помилок.
-  def mint_individual(client, contract, oracle_key, token_type, tx)
+  # [E.60] root_arg = root архів-підгрупи (N:1 — навіть poisoned-одинак свідчить
+  # батчем, у якому диспатчився).
+  def mint_individual(client, contract, oracle_key, token_type, tx, root_arg)
     individual_tx_hash = client.transact(
-      contract, "mint", tx.to_address, to_wei(tx.amount), identifier_for(tx),
+      contract, "mint", tx.to_address, to_wei(tx.amount), identifier_for(tx), root_arg,
       sender_key: oracle_key, legacy: false
     )
 

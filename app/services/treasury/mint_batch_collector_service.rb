@@ -14,6 +14,11 @@ module Treasury
   #
   # Gas savings: batchMint(100) ≈ 30-40% дешевше ніж 100 × mint()
   #
+  # [E.60 Фаза 1б] Диспатч-слайс (≤100) = телеметрія-батч ЗА КОНСТРУКЦІЄЮ
+  # (mint-anchored вісь): BlockchainMintingService сам будує/реюзає архів-батчі
+  # per token-group + set-once archive_batch_id (Mrv::TelemetryArchiveBatchService)
+  # — цей collector структурно НЕ знає про архівацію і не групує по ній.
+  #
   # Використання:
   #   Treasury::MintBatchCollectorService.call
   # =========================================================================

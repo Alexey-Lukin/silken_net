@@ -939,11 +939,11 @@ end
     context "when dry-run succeeds (no revert)" do
       before do
         # eth_call (dry-run) succeeds → no revert
-        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything).and_return(nil)
+        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything, anything).and_return(nil)
       end
 
       it "proceeds with batch mint via transact" do
-        allow(mock_client).to receive(:transact).with(anything, "batchMint", anything, anything, anything, anything).and_return(fake_tx_hash)
+        allow(mock_client).to receive(:transact).with(anything, "batchMint", anything, anything, anything, anything, anything).and_return(fake_tx_hash)
 
         described_class.call_batch([ tx1.id, tx2.id ])
 
@@ -956,7 +956,7 @@ end
     context "when dry-run detects EVM revert" do
       before do
         # eth_call (dry-run) fails with revert → fallback to individual mints
-        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything)
+        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything, anything)
           .and_raise(StandardError, "execution reverted: KYC not approved")
         # balanceOf call for insurance pool
         allow(mock_client).to receive(:call).with(anything, "balanceOf", anything).and_return(0)
@@ -1025,7 +1025,7 @@ end
         allow(mock_client).to receive(:transact).and_raise(Net::ReadTimeout, "timeout")
 
         expect {
-          service.send(:mint_individual, mock_client, double("contract"), mock_key, "carbon_coin", tx)
+          service.send(:mint_individual, mock_client, double("contract"), mock_key, "carbon_coin", tx, "0x" + "0" * 64)
         }.not_to raise_error
         expect(tx.reload.status).to eq("manual_review")
       end
@@ -1044,7 +1044,7 @@ end
         allow(mock_client).to receive(:transact).and_raise(Net::ReadTimeout, "timeout")
 
         expect {
-          service.send(:send_clean_batch, mock_client, double("contract"), mock_key, "carbon_coin", txs)
+          service.send(:send_clean_batch, mock_client, double("contract"), mock_key, "carbon_coin", txs, "0x" + "0" * 64)
         }.not_to raise_error
         txs.each { |t| expect(t.reload.status).to eq("manual_review") }
       end
@@ -1053,14 +1053,14 @@ end
     context "when dry-run fails with network error (not revert)" do
       before do
         # eth_call fails with timeout → NOT a revert, proceed optimistically
-        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything)
+        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything, anything)
           .and_raise(Net::ReadTimeout, "RPC timeout")
         # balanceOf call for insurance pool
         allow(mock_client).to receive(:call).with(anything, "balanceOf", anything).and_return(0)
       end
 
       it "proceeds with batch mint optimistically (network error is not a revert)" do
-        allow(mock_client).to receive(:transact).with(anything, "batchMint", anything, anything, anything, anything).and_return(fake_tx_hash)
+        allow(mock_client).to receive(:transact).with(anything, "batchMint", anything, anything, anything, anything, anything).and_return(fake_tx_hash)
 
         described_class.call_batch([ tx1.id, tx2.id ])
 
@@ -1101,7 +1101,7 @@ end
         # Full batch dry-run reverts (initial trigger)
         # Sub-batch dry-runs: only reverts if poisoned_address is included
         call_count = 0
-        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything) do |_c, _m, recipients, *_args|
+        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything, anything) do |_c, _m, recipients, *_args|
           call_count += 1
           if recipients.include?(poisoned_address)
             raise StandardError, "execution reverted: KYC not approved"
@@ -1168,7 +1168,7 @@ end
     context "when binary search reaches minimum batch size" do
       before do
         # ALL dry-runs revert (all records appear poisoned)
-        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything)
+        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything, anything)
           .and_raise(StandardError, "execution reverted: contract error")
         allow(mock_client).to receive(:call).with(anything, "balanceOf", anything).and_return(0)
       end
@@ -1194,7 +1194,7 @@ end
       before do
         # First dry-run (full batch) reverts
         first_call = true
-        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything) do |*_args|
+        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything, anything) do |*_args|
           if first_call
             first_call = false
             raise StandardError, "execution reverted: KYC not approved"
@@ -1664,15 +1664,15 @@ end
 
     it "delegates to mint_individual when there is exactly one clean tx" do
       expect(service).to receive(:mint_individual)
-        .with(mock_client, mock_contract, mock_key, "carbon_coin", tx).once
+        .with(mock_client, mock_contract, mock_key, "carbon_coin", tx, "0x" + "0" * 64).once
       expect(mock_client).not_to receive(:transact)
 
-      service.send(:send_clean_batch, mock_client, mock_contract, mock_key, "carbon_coin", [ tx ])
+      service.send(:send_clean_batch, mock_client, mock_contract, mock_key, "carbon_coin", [ tx ], "0x" + "0" * 64)
     end
 
     it "is a no-op for an empty txs array (defensive recursion guard)" do
       expect(mock_client).not_to receive(:transact)
-      expect { service.send(:send_clean_batch, mock_client, mock_contract, mock_key, "carbon_coin", []) }
+      expect { service.send(:send_clean_batch, mock_client, mock_contract, mock_key, "carbon_coin", [], "0x" + "0" * 64) }
         .not_to raise_error
     end
   end
@@ -1685,7 +1685,7 @@ end
     it "returns immediately when half_txs is empty" do
       expect(service).not_to receive(:batch_dry_run_reverts?)
       service.send(:process_half, mock_client, mock_contract, mock_key, "carbon_coin", [],
-                   [], [], depth: 0, original_batch_size: 6)
+                   [], [], "0x" + "0" * 64, depth: 0, original_batch_size: 6)
     end
   end
 
@@ -1715,7 +1715,7 @@ end
     it "fallbacks to individual mints when poisoned ratio exceeds 30%" do
       # batchMint dry-run always reverts → drives binary search down to
       # MIN_BINARY_SEARCH_SIZE bottoms, accumulating poisoned > 30%.
-      allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything)
+      allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything, anything)
         .and_raise(StandardError, "execution reverted: contract error")
       allow(mock_client).to receive(:call).with(anything, "balanceOf", anything).and_return(0)
       allow(Rails.logger).to receive(:warn)
@@ -1731,6 +1731,187 @@ end
       expect(mint_calls).to all(eq("mint"))
       expect(Rails.logger).to have_received(:warn)
         .with(a_string_matching(/\[Web3\] Binary search: >30% poisoned/)).at_least(:once)
+    end
+  end
+
+  # [E.60 Фаза 1б] Per-archive_batch transact-цикл: один on-chain виклик = один root.
+  describe "archive-batch root wiring [E.60]" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+
+    def windowed_tx!(tree, address_nibble)
+      wallet = tree.wallet
+      wallet.update!(balance: 5000, crypto_public_address: "0x" + address_nibble * 40,
+                     hadron_kyc_status: "approved")
+      allow_any_instance_of(Tree).to receive(:active?).and_return(true)
+      create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
+      wallet.reload.lock_and_mint!(500, 100)
+    end
+
+    it "одиночний windowed-мінт несе root свого батчу (≡ telemetry_merkle_root)" do
+      tx = windowed_tx!(create(:tree, cluster: cluster), "b")
+      calls = []
+      allow(mock_client).to receive(:transact) do |_c, method, *args, **_o|
+        calls << [ method, args.last ]
+        fake_tx_hash
+      end
+
+      described_class.call_batch([ tx.id ])
+
+      expect(calls).to eq([ [ "mint", "0x#{tx.reload.telemetry_merkle_root}" ] ])
+      expect(tx.archive_batch_id).to be_present
+    end
+
+    it "windowless-мінт несе zero32 і НЕ створює batch-row" do
+      tree = create(:tree, cluster: cluster)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "c" * 40, hadron_kyc_status: "approved")
+      tx = wallet.blockchain_transactions.create!(
+        amount: 10, token_type: :carbon_coin, status: :pending, to_address: "0x" + "c" * 40
+      )
+      roots = []
+      allow(mock_client).to receive(:transact) do |_c, _m, *args, **_o|
+        roots << args.last
+        fake_tx_hash
+      end
+
+      expect { described_class.call_batch([ tx.id ]) }.not_to change(TelemetryArchiveBatch, :count)
+      expect(roots).to eq([ "0x" + "0" * 64 ])
+      expect(tx.reload.archive_batch_id).to be_nil
+    end
+
+    it "mixed-archive_batch слайс → окремий batchMint з root'ом КОЖНІЙ підгрупі (re-dispatch)" do
+      txs_b1 = [ windowed_tx!(create(:tree, cluster: cluster), "1"),
+                 windowed_tx!(create(:tree, cluster: cluster), "2") ]
+      txs_b2 = [ windowed_tx!(create(:tree, cluster: cluster), "3"),
+                 windowed_tx!(create(:tree, cluster: cluster), "4") ]
+      b1 = Mrv::TelemetryArchiveBatchService.group(txs_b1, token_type: "carbon_coin").first.batch
+      b2 = Mrv::TelemetryArchiveBatchService.group(txs_b2, token_type: "carbon_coin").first.batch
+      expect(b1.id).not_to eq(b2.id)
+
+      batch_calls = []
+      allow(mock_client).to receive(:transact) do |_c, method, *args, **_o|
+        batch_calls << [ method, args.last ]
+        fake_tx_hash
+      end
+
+      described_class.call_batch((txs_b1 + txs_b2).map(&:id))
+
+      expect(batch_calls).to contain_exactly(
+        [ "batchMint", "0x#{b1.archive_root}" ],
+        [ "batchMint", "0x#{b2.archive_root}" ]
+      )
+      (txs_b1 + txs_b2).each { |tx| expect(tx.reload.status).to eq("sent") }
+    end
+
+    # Rescue живе ПЕР-ПІДГРУПОЮ: збій пізньої групи не чіпає
+    # здорову вже-sent ранню (старий group-wide rescue тягнув її в manual_review,
+    # а retry сліпо ре-мінтив = double-mint).
+    it "ambiguous-збій пізньої підгрупи НЕ ескалює здорову :sent ранню" do
+      txs_b1 = [ windowed_tx!(create(:tree, cluster: cluster), "1"),
+                 windowed_tx!(create(:tree, cluster: cluster), "2") ]
+      txs_b2 = [ windowed_tx!(create(:tree, cluster: cluster), "3"),
+                 windowed_tx!(create(:tree, cluster: cluster), "4") ]
+      Mrv::TelemetryArchiveBatchService.group(txs_b1, token_type: "carbon_coin")
+      b2 = Mrv::TelemetryArchiveBatchService.group(txs_b2, token_type: "carbon_coin").first.batch
+
+      # Валимо САМЕ підгрупу b2 (по root-аргументу — порядок диспатчу груп
+      # недетермінований, лічильник викликів флейкав).
+      allow(mock_client).to receive(:transact) do |_c, _m, *args, **_o|
+        raise Net::ReadTimeout, "RPC timeout після можливого broadcast" if args.last == "0x#{b2.archive_root}"
+        fake_tx_hash
+      end
+
+      expect {
+        described_class.call_batch((txs_b1 + txs_b2).map(&:id))
+      }.not_to raise_error # ambiguous → escalate БЕЗ retry
+
+      txs_b1.each { |tx| expect(tx.reload.status).to eq("sent") }
+      txs_b2.each { |tx| expect(tx.reload.status).to eq("manual_review") }
+    end
+
+    it "retry після часткової відмови СКІПАЄ sent/manual_review tx підгрупи (double-mint guard)" do
+      txs = [ windowed_tx!(create(:tree, cluster: cluster), "5"),
+              windowed_tx!(create(:tree, cluster: cluster), "6") ]
+      batch = Mrv::TelemetryArchiveBatchService.group(txs, token_type: "carbon_coin").first.batch
+      txs.first.update!(status: :sent, tx_hash: "0x" + "e" * 64)
+
+      calls = []
+      allow(mock_client).to receive(:transact) do |_c, method, *args, **_o|
+        calls << [ method, args.last ]
+        fake_tx_hash
+      end
+
+      described_class.call_batch(txs.map(&:id))
+
+      expect(calls).to eq([ [ "mint", "0x#{batch.archive_root}" ] ])
+      expect(txs.first.reload.status).to eq("sent")
+      expect(txs.last.reload.status).to eq("sent")
+    end
+
+    it "ambiguous-збій підгрупи з уже-:manual_review сусідом — без ре-ескалації і без краху" do
+      txs = [ windowed_tx!(create(:tree, cluster: cluster), "b"),
+              windowed_tx!(create(:tree, cluster: cluster), "c") ]
+      Mrv::TelemetryArchiveBatchService.group(txs, token_type: "carbon_coin")
+      # Перший tx уже в manual_review (минула ескалація) — фільтр його скіпне,
+      # а ambiguous-rescue другого НЕ повинен ре-ескалювати чи впасти.
+      txs.first.update!(status: :manual_review, tx_hash: "0x" + "9" * 64)
+      allow(mock_client).to receive(:transact).and_raise(Net::ReadTimeout, "після можливого broadcast")
+
+      expect { described_class.call_batch(txs.map(&:id)) }.not_to raise_error
+
+      expect(txs.first.reload.status).to eq("manual_review")
+      expect(txs.last.reload.status).to eq("manual_review")
+    end
+
+    it "повністю sent-група → повний skip, нуль transact" do
+      txs = [ windowed_tx!(create(:tree, cluster: cluster), "d"),
+              windowed_tx!(create(:tree, cluster: cluster), "e") ]
+      Mrv::TelemetryArchiveBatchService.group(txs, token_type: "carbon_coin")
+      txs.each { |tx| tx.update!(status: :sent, tx_hash: "0x" + "8" * 64) }
+
+      expect(mock_client).not_to receive(:transact)
+      described_class.call_batch(txs.map(&:id))
+      txs.each { |tx| expect(tx.reload.status).to eq("sent") }
+    end
+
+    it "LockTimeout НЕ клоберить stale-:sent конкурентного джоба (reload-guard)" do
+      txs = [ windowed_tx!(create(:tree, cluster: cluster), "9"),
+              windowed_tx!(create(:tree, cluster: cluster), "a") ]
+      Mrv::TelemetryArchiveBatchService.group(txs, token_type: "carbon_coin")
+      # Конкурент устиг змінтити першу, поки ЦЕЙ джоб чекав лок (in-memory stale).
+      BlockchainTransaction.where(id: txs.first.id, created_at: txs.first.created_at)
+                           .update_all(status: BlockchainTransaction.statuses[:sent] || "sent",
+                                       tx_hash: "0x" + "d" * 64, sent_at: Time.current)
+      allow(Kredis).to receive(:lock).and_raise(Kredis::LockTimeout)
+
+      expect { described_class.call_batch(txs.map(&:id)) }.to raise_error(Kredis::LockTimeout)
+
+      expect(txs.first.reload.status).to eq("sent")   # НЕ клобернуто у failed
+      expect(txs.last.reload.status).to eq("failed")  # чистий pending → safe fail!
+    end
+
+    # Bisect-гілки несуть РЕАЛЬНИЙ root підгрупи (N:1) — не zero32.
+    it "bisect/individual-fallback несе root свого батчу" do
+      txs = [ windowed_tx!(create(:tree, cluster: cluster), "7"),
+              windowed_tx!(create(:tree, cluster: cluster), "8") ]
+      batch = Mrv::TelemetryArchiveBatchService.group(txs, token_type: "carbon_coin").first.batch
+      allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything, anything)
+        .and_raise(StandardError, "execution reverted: poisoned")
+      allow(mock_client).to receive(:call).with(anything, "balanceOf", anything).and_return(0)
+
+      roots = []
+      allow(mock_client).to receive(:transact) do |_c, method, *args, **_o|
+        expect(method).to eq("mint")
+        roots << args.last
+        fake_tx_hash
+      end
+
+      described_class.call_batch(txs.map(&:id))
+
+      expect(roots).to eq([ "0x#{batch.archive_root}" ] * 2)
+      expect(batch.archive_root).not_to eq("0" * 64)
+      txs.each { |tx| expect(tx.reload.status).to eq("sent") }
     end
   end
 
