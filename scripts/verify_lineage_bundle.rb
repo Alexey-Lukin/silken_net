@@ -34,6 +34,11 @@ abort "Usage: ruby scripts/verify_lineage_bundle.rb <bundle.json>" if ARGV.empty
 
 # Анти-smuggling: JSON з дубль-ключами (людина бачить перший, парсер бере
 # останній) відкидається на вході — класика атак на JSON-верифікатори.
+# ДВОШАРОВО: json ≥ 2.20 — нативний `allow_duplicate_key: false` (C-парсер
+# дедуплікує ДО виклику []=, тож object_class-override там СЛІПИЙ — fable №2
+# емпірично); старші json опцію мовчки ігнорують, але їхній парсер кличе []=
+# на кожен ключ → StrictHash ловить. Захист не залежить від версії на машині
+# аудитора.
 class StrictHash < Hash
   def []=(key, value)
     raise JSON::ParserError, "duplicate JSON key: #{key.inspect}" if key?(key)
@@ -43,7 +48,7 @@ class StrictHash < Hash
 end
 
 begin
-  bundle = JSON.parse(File.read(ARGV[0]), object_class: StrictHash)
+  bundle = JSON.parse(File.read(ARGV[0]), object_class: StrictHash, allow_duplicate_key: false)
 rescue JSON::ParserError => e
   abort "✗ Bundle відхилено: #{e.message}"
 end
@@ -54,6 +59,8 @@ anchored = 0
 pending = 0
 regrouped = 0
 total_leaves = 0
+sealed_credits = 0
+unsealed_credits = 0
 roots_to_check = {}
 
 bundle.fetch("credits").each do |credit|
@@ -106,19 +113,29 @@ bundle.fetch("credits").each do |credit|
 
   # 3. Sealed-кредит: mint-root перераховується з own-window листя (канонічний порядок
   # = порядок масиву; підміна набору/порядку/листа → mismatch)
-  next unless credit["seal"] == "sealed"
-
-  own_cids = credit["leaves"].select { |l| l["window_source"] == tx_id }.map { |l| l["leaf_cid"] }
-  recomputed_root = MerkleTree.root(own_cids)
-  unless recomputed_root == credit["telemetry_merkle_root"]
-    failures << "tx #{tx_id}: mint-root mismatch (перераховано #{recomputed_root.inspect}, " \
-                "заявлено #{credit['telemetry_merkle_root'].inspect}) — набір/порядок листя підмінено"
+  if credit["seal"] == "sealed"
+    sealed_credits += 1
+    own_cids = credit["leaves"].select { |l| l["window_source"] == tx_id }.map { |l| l["leaf_cid"] }
+    recomputed_root = MerkleTree.root(own_cids)
+    unless recomputed_root == credit["telemetry_merkle_root"]
+      failures << "tx #{tx_id}: mint-root mismatch (перераховано #{recomputed_root.inspect}, " \
+                  "заявлено #{credit['telemetry_merkle_root'].inspect}) — набір/порядок листя " \
+                  "підмінено АБО пізній commit/ретеншн-дроп (05_04 GRACE-residual)"
+    end
+  else
+    unsealed_credits += 1
   end
 end
 
 puts "── Lineage bundle: #{bundle['credits'].size} credits " \
      "(org #{bundle.dig('organization', 'id')}, #{bundle.dig('period', 'from')}..#{bundle.dig('period', 'to')})"
-puts "   leaves anchored=#{anchored} pending_anchor=#{pending} unprovable_regrouped=#{regrouped}"
+puts "   leaves anchored=#{anchored} pending_anchor=#{pending} unprovable_regrouped=#{regrouped} · " \
+     "credits sealed=#{sealed_credits} unsealed=#{unsealed_credits}"
+
+if unsealed_credits.positive?
+  puts "   ⚠️  #{unsealed_credits} unsealed-кредит(и): mint-root-binding для них НЕ перевірявся " \
+       "(nil-root = легітимний fail-open, але аудит мусить це БАЧИТИ, не пропустити мовчки)."
+end
 
 if anchored.zero? && total_leaves.positive?
   puts "   ⚠️  ЖОДЕН лист не заякорений — ланцюг до on-chain кореня НЕ перевірявся " \

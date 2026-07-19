@@ -917,7 +917,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `lock_and_mint!(points_to_lock, threshold, token_type)` | Повний цикл емісії SCC (курс — [`05_03`](05_03_Tokenomics_SCC_and_SFC)) |
 | `kyc_approved_for_minting?` | [KYC.1] Гейт мінтингу = статус БЕНЕФІЦІАРА адреси: власна адреса → власний статус; custodial (без власної) → успадковує `organizations.hadron_kyc_status` (гейт — [`05_02` — Крок E](05_02_Proof_of_Growth_Pipeline)) |
 | `broadcast_balance_update` | Turbo Stream оновлення UI |
-| `guard_mrv_evidence!` | **[MRV.1]** `before_destroy` (prepend) destroy-guard MRV-доказів: гаманець із settled/in-flight `blockchain_transactions` → abort (грошові докази незнищенні); чисто-pending видаляється |
+| `guard_mrv_evidence!` | **[MRV.1]** `before_destroy` (prepend) destroy-guard MRV-доказів: гаманець із settled/in-flight `blockchain_transactions` → abort (грошові докази незнищенні); чисто-pending видаляється. **Межа (fable №2):** failed-tx НЕ блокують destroy (points звільнено — грошово безпечно), але їхні lineage-вікна сиротіють (`dependent: :nullify` відриває від wallet → успадкування (г) їх не побачить; новий wallet дерева стартує NULL-курсором з ре-атрибуцією тих самих логів) |
 
 > **[E.66] Toucan-prune:** `lock_for_toucan_bridge!` / `finalize_spend!` / `toucan_bridged_balance` видалено (flow DEAD, 0 enqueue-callerів; failure-path мав money-integrity діру — несиметричний rollback). Escrow-примітив воскресає з git при E.20-go (locked у mint-flow = «сконвертовано назавжди» by design — finalize не потрібен).
 

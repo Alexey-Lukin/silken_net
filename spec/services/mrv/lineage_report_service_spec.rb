@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require "open3"
 
 RSpec.describe Mrv::LineageReportService do
   let(:organization) { create(:organization) }
@@ -59,19 +60,40 @@ RSpec.describe Mrv::LineageReportService do
     File.write(path, JSON.generate(result))
     verifier = Rails.root.join("scripts/verify_lineage_bundle.rb").to_s
     expect(system(RbConfig.ruby, verifier, path.to_s, out: File::NULL)).to be(true), "верифікатор мав пройти"
+  ensure
+    FileUtils.rm_f(path) if path
+  end
 
-    tampered = JSON.parse(File.read(path))
+  it "офлайн-верифікатор валить кожен tamper-клас: payload · mint-root · dup-key" do
+    create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
+    mint_confirmed!
+    anchor_confirmed!
+    result = bundle
+    path = Rails.root.join("tmp/lineage_tamper_spec_#{Process.pid}.json")
+    verifier = Rails.root.join("scripts/verify_lineage_bundle.rb").to_s
+
+    tampered = JSON.parse(JSON.generate(result))
     tampered["credits"][0]["leaves"][0]["payload"]["z_value"] = "999.99"
     File.write(path, JSON.generate(tampered))
     expect(system(RbConfig.ruby, verifier, path.to_s, out: File::NULL)).to be(false), "payload-tamper мав дати exit 1"
 
-    # Review-фікс (fable MAJOR): mint-root тепер ПЕРЕВІРЯЄТЬСЯ — підміна набору листя
-    # sealed-кредиту (чужий root) мусить валити верифікатор, не братись на віру.
-    tampered_root = JSON.parse(File.read(path))
-    tampered_root["credits"][0]["leaves"][0]["payload"]["z_value"] = "23.45" # відкотити payload
-    tampered_root["credits"][0]["telemetry_merkle_root"] = "ff" * 32
-    File.write(path, JSON.generate(tampered_root))
-    expect(system(RbConfig.ruby, verifier, path.to_s, out: File::NULL)).to be(false), "root-tamper мав дати exit 1"
+    # Пін mint-root НЕ-вакуумний (fable №2): тамперимо ЛИШЕ root на ЧИСТОМУ bundle
+    # і assert'имо САМЕ mint-root-помилку — видалення check'а з верифікатора = RED.
+    clean = JSON.parse(JSON.generate(result))
+    clean["credits"][0]["telemetry_merkle_root"] = "ff" * 32
+    File.write(path, JSON.generate(clean))
+    out, status = Open3.capture2e(RbConfig.ruby, verifier, path.to_s)
+    expect(status.success?).to be(false), "root-tamper мав дати exit 1"
+    expect(out).to include("mint-root mismatch")
+
+    # Dup-key smuggling (fable №2: json ≥ 2.20 дедуплікує ДО object_class —
+    # захист двошаровий, пін ловить регресію на будь-якій версії json)
+    dup_json = JSON.generate(JSON.parse(JSON.generate(result)))
+                   .sub('"telemetry_merkle_root":', "\"telemetry_merkle_root\":\"#{'aa' * 32}\",\"telemetry_merkle_root\":")
+    File.write(path, dup_json)
+    out, status = Open3.capture2e(RbConfig.ruby, verifier, path.to_s)
+    expect(status.success?).to be(false), "dup-key мав дати відхилення"
+    expect(out).to include("duplicate")
   ensure
     FileUtils.rm_f(path) if path
   end
