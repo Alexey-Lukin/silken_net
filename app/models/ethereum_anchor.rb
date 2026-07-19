@@ -40,6 +40,7 @@ class EthereumAnchor < ApplicationRecord
   validates :root_version, inclusion: { in: [ 0, 1 ] }
   validates :leaf_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :subtree_roots, presence: true, if: -> { root_version == 1 }
+  validates :window_to, presence: true, if: -> { root_version == 1 }
 
   # --- СКОУПИ ---
   scope :recent, -> { order(created_at: :desc) }
@@ -57,13 +58,20 @@ class EthereumAnchor < ApplicationRecord
 
   # --- ХЕЛПЕРИ ---
 
+  # [ARCH.12] One-Home агрегат-формули: ЄДИНЕ місце рядка-payload'а — юзають і
+  # generate_state_root (leaf0), і verify нижче. Розійтись їм більше нема як.
+  def self.aggregate_payload(total_scc:, total_sfc:, active_tree_count:, chain_hash:, anchored_at:)
+    "#{total_scc}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{anchored_at.utc.iso8601}"
+  end
+
   # Перевіряє, чи можна незалежно відтворити state_root з збережених компонентів.
   # Дозволяє зовнішньому аудитору верифікувати хеш без доступу до PostgreSQL.
   # [E.53/E.54] Формула оновлена: включає total_sfc та active_tree_count.
+  # [ARCH.12] Версіонування: 0 = legacy flat SHA-256 (стара формула verbatim, назавжди);
+  # 1 = Merkle — leaf0 звіряється з агрегат-формулою, корінь перераховується зі збережених
+  # subtree_roots (самодостатньо O(#кластерів), переживає ретеншн-дроп телеметрія-партицій).
   def verify_state_root
-    payload = "#{total_scc}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{anchored_at.utc.iso8601}"
-    expected = Digest::SHA256.hexdigest(payload)
-    expected == state_root
+    root_version.to_i >= 1 ? verify_merkle_root : verify_flat_root
   end
 
   # Etherscan URL для L1 транзакції
@@ -123,5 +131,26 @@ class EthereumAnchor < ApplicationRecord
 
       update!(status: :manual_review, error_message: reason.to_s.truncate(450))
     end
+  end
+
+  private
+
+  def verify_flat_root
+    Digest::SHA256.hexdigest(components_payload) == state_root
+  end
+
+  def verify_merkle_root
+    return false if subtree_roots.blank?
+
+    tier2 = subtree_roots.map { |entry| entry["root"] }
+    subtree_roots.first["root"] == Digest::SHA256.hexdigest(components_payload) &&
+      MerkleTree.root(tier2) == state_root
+  end
+
+  def components_payload
+    self.class.aggregate_payload(
+      total_scc: total_scc, total_sfc: total_sfc, active_tree_count: active_tree_count,
+      chain_hash: chain_hash, anchored_at: anchored_at
+    )
   end
 end

@@ -142,6 +142,72 @@ RSpec.describe EthereumAnchor, type: :model do
 
       expect(record.verify_state_root).to be false
     end
+
+    describe "root_version: 1 (Merkle) [ARCH.12]" do
+      let(:now) { Time.current.utc }
+      let(:leaf0) do
+        Digest::SHA256.hexdigest(
+          described_class.aggregate_payload(
+            total_scc: BigDecimal("1000.5"), total_sfc: BigDecimal("0"),
+            active_tree_count: 0, chain_hash: "test_chain_hash", anchored_at: now
+          )
+        )
+      end
+      let(:cluster_root) { MerkleTree.root([ "bafkrei-leaf-1", "bafkrei-leaf-2" ]) }
+      let(:tier2) do
+        [ { "kind" => "aggregate", "root" => leaf0 },
+          { "cluster_id" => 7, "root" => cluster_root } ]
+      end
+
+      def build_merkle_record(state_root:, subtree_roots: tier2)
+        described_class.new(
+          state_root: state_root, total_scc: BigDecimal("1000.5"),
+          chain_hash: "test_chain_hash", anchored_at: now,
+          root_version: 1, subtree_roots: subtree_roots, window_to: now - 5.minutes
+        )
+      end
+
+      it "verifies leaf0 against the aggregate formula AND the root against stored subtree_roots" do
+        freeze_time do
+          record = build_merkle_record(state_root: MerkleTree.root([ leaf0, cluster_root ]))
+          expect(record.verify_state_root).to be true
+        end
+      end
+
+      it "returns false when a stored subtree root is tampered" do
+        freeze_time do
+          tampered = [ tier2.first, { "cluster_id" => 7, "root" => "f" * 64 } ]
+          record = build_merkle_record(
+            state_root: MerkleTree.root([ leaf0, cluster_root ]), subtree_roots: tampered
+          )
+          expect(record.verify_state_root).to be false
+        end
+      end
+
+      it "returns false when leaf0 does not match the aggregate components (supply tamper)" do
+        freeze_time do
+          record = build_merkle_record(state_root: MerkleTree.root([ leaf0, cluster_root ]))
+          record.total_scc = BigDecimal("9999.9")
+          expect(record.verify_state_root).to be false
+        end
+      end
+
+      it "returns false on blank subtree_roots" do
+        record = build_merkle_record(state_root: "a" * 64, subtree_roots: nil)
+        expect(record.verify_state_root).to be false
+      end
+
+      it "validates subtree_roots + window_to presence for merkle, not for legacy" do
+        merkle = described_class.new(root_version: 1)
+        legacy = described_class.new(root_version: 0)
+        merkle.validate
+        legacy.validate
+        expect(merkle.errors[:subtree_roots]).to be_present
+        expect(merkle.errors[:window_to]).to be_present
+        expect(legacy.errors[:subtree_roots]).to be_blank
+        expect(legacy.errors[:window_to]).to be_blank
+      end
+    end
   end
 
   describe "#etherscan_url" do

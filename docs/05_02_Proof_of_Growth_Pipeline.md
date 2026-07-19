@@ -559,7 +559,9 @@ ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 
 > **Статус:** частково реалізовано (2026-06-03). ✅ `Filecoin::CidGenerator` (детермінований CIDv1: codec raw + sha2-256 → base32 multibase, golden-vector проти `ipfs add --raw-leaves --cid-version 1`) + content-CID guard у потоці архівації AuditLog: `ArchiveService` вбудовує самоописовий `content_cid`, `VerificationService` незалежно перераховує його (локально vs віддалено) і fail-fast при розбіжності → детект ex-post підміни архіву. 🔗 **Залишок (follow-on):** per-tree Merkle-witness нижче (leaf_cid → `archive_root` → Polygon `mint(bytes32)`) для телеметрія-батчу — потребує `MerkleTree`, колонок `archive_cid`/`merkle_leaf` на партиційованому `TelemetryLog` (міграція) та Solidity `mint(bytes32)`; саме там worker-guard з `manual_review`. Розширює Крок B (IoTeX W3bstream witness) і змикає його з кроком архівації Filecoin ([`05_01 §Рівень 1`](05_01_Multichain_Architecture)). Трекер: [`00_07` — E.60](00_07_Action_Plan_Tracker).
 
-> **🧭 Архітектурний контракт (Фаза 0 — ARCH.12 × E.60 × L2).** Ця секція — **One-Home leaf-формули** (нижче) і структури Merkle-кореня для всіх трьох застосувань. (1) **Паралель, не вкладеність:** E.60 `archive_root` (Polygon, per-batch, archive-integrity) і тижневий `state_root` (Eth L1, [`05_04`](05_04_Ethereum_L1_State_Anchor) ARCH.12, supply-finality) — **два незалежні якорі**, що ділять ОДИН `MerkleTree` primitive + цю leaf-формулу; нуль крос-чейн зчеплення. (2) **leaf = Z** (не λ — λ many-to-one → слабший DCI, Beyond-TRL-9 [`00_08 §2.3`](00_08_Beyond_TRL9_Planetary_Roadmap)). (3) **hash = sha256** (One-Home з anchor + Filecoin CID; keccak/OZ-`MerkleProof` — upgrade-path лише за on-chain-verify споживача, YAGNI). (4) Примітив **ієрархічний** (cluster-subtree → root) — мапиться на L1/L2/L3 ([`00_08 §2`](00_08_Beyond_TRL9_Planetary_Roadmap)) і не впирається у scale ([`00_07`](00_07_Action_Plan_Tracker) ARCH.52). L2 device-voice clawback-policy при mismatch — [`05_05 §3.3`](05_05_Slashing_and_Risk_Policy).
+> **🧭 Архітектурний контракт (ARCH.12 × E.60 × L2; Фаза 1а SHIPPED 2026-07-19).** Ця секція — **One-Home leaf-формули** (нижче) і структури Merkle-кореня для всіх трьох застосувань. (1) **Паралель, не вкладеність:** E.60 `archive_root` (Polygon, per-batch, archive-integrity) і тижневий `state_root` (Eth L1, [`05_04`](05_04_Ethereum_L1_State_Anchor) ARCH.12, supply-finality) — **два незалежні якорі**, що ділять ОДИН `MerkleTree` primitive + цю leaf-формулу; нуль крос-чейн зчеплення. (2) **leaf = Z** (не λ — λ many-to-one → слабший DCI, Beyond-TRL-9 [`00_08 §2.3`](00_08_Beyond_TRL9_Planetary_Roadmap)). (3) **hash = sha256** (One-Home з anchor + Filecoin CID; keccak/OZ-`MerkleProof` — upgrade-path лише за on-chain-verify споживача, YAGNI). (4) Примітив **ієрархічний** (cluster-subtree → root) — мапиться на L1/L2/L3 ([`00_08 §2`](00_08_Beyond_TRL9_Planetary_Roadmap)) і не впирається у scale ([`00_07`](00_07_Action_Plan_Tracker) ARCH.52). L2 device-voice clawback-policy при mismatch — [`05_05 §3.3`](05_05_Slashing_and_Risk_Policy).
+>
+> **✅ Фаза 1а (перший споживач = ISO-звіт/MRV.1, founder 2026-07-19):** примітив `lib/merkle_tree.rb` SHIPPED (RFC-6962 domain-sep 0x00/0x01 · promotion непарного вузла · hash-of-hex · двоярусність = композиція verify×2 у споживачах, примітив ярусів не знає) + **код-дім leaf-формули = `Mrv::TelemetryLeaf`** з піненою серіалізацією скалярів: `device_uid = tree.did` (`Tree#device_uid` НЕ існує — did під `attr_readonly`, лист не «переїжджає»), `z_value = BigDecimal#to_s("F")` (plain fixed-point, НЕ scientific-notation; NULL → JSON null — рядок ніколи не виключається), `bio_status` = сирий enum-integer (rename-proof), `created_at = utc.iso8601(6)`; `LEAF_VERSION = 1` (зміна формули = bump). Живі споживачі: Eth-L1 `state_root` ([`05_04 §Merkle`](05_04_Ethereum_L1_State_Anchor)) + mint-lineage вікна (MRV.1). **Polygon `archive_root`-нога = Фаза 1б deferred** (телеметрія-батч-архівації не існує; «1 batchMint = 1 батч» хибно — collector групує за розміром/віком; arity-зміна `mint()` ламає 3 proof-родини) — [`00_07`](00_07_Action_Plan_Tracker) E.60, ⚖️ sequencing проти SEC.1-деплою.
 >
 > **✅ Leaf-guard озброєно (2026-07-04):** `FilecoinVerificationSweepWorker` (cron 04:40 UTC, queue `low`) кличе `VerificationService#verify!` двома вибірками — свіжо-заархівовані (24h-вікно, кожен архів звірено хоч раз) + **випадкова вибірка старших** (ex-post підміна можлива будь-коли — самі свіжі не покривають threat-model). Mismatch → ERROR-лог + `silkennet_filecoin_verification_failures_total{reason=cid_mismatch|chain_hash_mismatch}` ([`06_03 §2.8`](06_03_Prometheus_Observability)); integrity-fail не «лікується» retry, gateway-флейк = unreachable (не failure). Вибірка старших — `ORDER BY RANDOM()` O(n) `[transitional]`, апгрейд-шлях TABLESAMPLE при мільйонах архівів.
 
@@ -571,17 +573,15 @@ ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 
 ```ruby
 # Iotex::W3bstreamVerificationService — пропозиція E.60 (revised)
-# [FUTURE — Фаза 1]: MerkleTree primitive + telemetry_logs.{archive_cid,merkle_leaf} (міграція)
-#                    + Solidity mint(bytes32) ще НЕ існують — це цільовий дизайн, не поточний код.
+# [Фаза 1б — deferred]: MerkleTree primitive ✅ SHIPPED (lib/merkle_tree.rb, Фаза 1а) і leaf-builder
+#                       ✅ Mrv::TelemetryLeaf (пінена серіалізація — контракт вище); АЛЕ
+#                       telemetry_logs.{archive_cid,merkle_leaf} (міграція) + Solidity mint(bytes32)
+#                       + телеметрія-батч-архівація ще НЕ існують — цей батч-потік = цільовий дизайн.
 # 1) Per-tree leaf — детермінований CID індивідуального payload (canonical leaf-формула, One-Home)
-leaf_payload = {
-  telemetry_log_id: log.id,
-  device_uid: tree.device_uid,
-  z_value: log.z_value,
-  bio_status: log.bio_status,
-  created_at: log.created_at
-}.to_json
-leaf_cid = Filecoin::CidGenerator.cidv1(leaf_payload)   # multihash sha256 → base32
+leaf_payload = Mrv::TelemetryLeaf.payload_for(log)   # {telemetry_log_id, device_uid: tree.did,
+                                                     #  z_value: to_s("F"), bio_status: int,
+                                                     #  created_at: utc.iso8601(6)}
+leaf_cid = Mrv::TelemetryLeaf.cid_for(log)           # CidGenerator.cidv1 → multihash sha256 → base32
 
 # 2) Batch Merkle Root над листям усіх дерев батча
 leaves       = batch.map { |l| Filecoin::CidGenerator.cidv1(leaf_for(l)) }
@@ -590,7 +590,7 @@ inclusion    = MerkleTree.proof(leaves, index_of(log))   # шлях листа �
 
 # 3) Per-device witness доводить включення СВОГО листа у спільний корінь
 zk_witness = {
-  device_uid:     tree.device_uid,
+  device_uid:     tree.did,
   attractor_z:    server_z_value,
   lambda_exp:     lyapunov_exponent,
   leaf_cid:       leaf_cid,

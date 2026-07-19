@@ -60,6 +60,13 @@ module Ethereum
     # Дзеркало money-path AMBIGUOUS-класу (celo `AMBIGUOUS_PATTERNS` / mint pre-broadcast whitelist).
     AMBIGUOUS_ALREADY_LANDED = /nonce too low|already known|replacement transaction underpriced|already imported/i
 
+    # [ARCH.12] Верхня межа вікна = now − GRACE: рядок телеметрії, що комітиться ПІД ЧАС
+    # repeatable_read-снапшота (created_at уже поставлено, commit ще ні), інакше випав би
+    # з ЦЬОГО вікна назавжди (наступне стартує вище). GRACE >> insert-латентності; residual
+    # (commit довший за GRACE) — теоретичний, задокументовано в 05_04. Історичні вікна
+    # НЕ залежать від значення константи — обидві межі персистуються (window_from/window_to).
+    WINDOW_GRACE = 5.minutes
+
     # Генерує State Root — SHA256 дайджест, що об'єднує:
     # 1. Сумарний scc_balance усіх гаманців (SCC supply)
     # 2. Сумарний SFC balance усіх гаманців (SFC supply) — [E.53]
@@ -82,6 +89,10 @@ module Ethereum
     # та AuditLog.pick(:chain_hash) бачать один і той самий "заморожений" знімок БД,
     # навіть якщо паралельний воркер (MintCarbonCoinWorker, AuditLogWorker) записує
     # дані між цими двома SQL-запитами.
+    # [ARCH.12 Фаза 1а] state_root = Merkle-корінь: tier2-листя = [leaf0-агрегат] + cluster-субкорені.
+    # leaf0 = SHA256 тієї САМОЇ агрегат-формули (EthereumAnchor.aggregate_payload — One-Home з
+    # verify), тож supply-finality і незалежна верифікація з 5 збережених колонок живуть далі;
+    # per-record телеметрія-листя (Mrv::TelemetryLeaf) дають inclusion-proof для ISO-звіту.
     def generate_state_root
       ActiveRecord::Base.transaction(isolation: :repeatable_read) do
         total_scc = Wallet.sum(:scc_balance).to_d
@@ -90,8 +101,22 @@ module Ethereum
         latest_chain_hash = AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash) || "GENESIS"
         timestamp = Time.current.utc
 
-        payload = "#{total_scc}|#{total_sfc}|#{active_tree_count}|#{latest_chain_hash}|#{timestamp.iso8601}"
-        state_root = Digest::SHA256.hexdigest(payload)
+        leaf0 = Digest::SHA256.hexdigest(
+          EthereumAnchor.aggregate_payload(
+            total_scc: total_scc, total_sfc: total_sfc, active_tree_count: active_tree_count,
+            chain_hash: latest_chain_hash, anchored_at: timestamp
+          )
+        )
+
+        # Вікно ланцюжиться від window_to ПОПЕРЕДНЬОГО confirmed merkle-якоря (перший → from-genesis);
+        # (from, to] — суміжні вікна не перетинаються і не лишають дір.
+        window_from = EthereumAnchor.status_confirmed.where(root_version: 1)
+                                    .order(anchored_at: :desc, id: :desc).pick(:window_to)
+        window_to = timestamp - WINDOW_GRACE
+        subroots, leaf_count = telemetry_subtree_roots(window_from, window_to)
+
+        tier2 = [ { "kind" => "aggregate", "root" => leaf0 } ] + subroots
+        state_root = MerkleTree.root(tier2.map { |entry| entry["root"] })
 
         {
           state_root: state_root,
@@ -99,7 +124,12 @@ module Ethereum
           total_sfc: total_sfc,
           active_tree_count: active_tree_count,
           chain_hash: latest_chain_hash,
-          anchored_at: timestamp
+          anchored_at: timestamp,
+          window_from: window_from,
+          window_to: window_to,
+          leaf_count: leaf_count,
+          subtree_roots: tier2,
+          root_version: 1
         }
       end
     end
@@ -149,6 +179,11 @@ module Ethereum
           active_tree_count: root_data[:active_tree_count],
           chain_hash: root_data[:chain_hash],
           anchored_at: root_data[:anchored_at],
+          window_from: root_data[:window_from],
+          window_to: root_data[:window_to],
+          leaf_count: root_data[:leaf_count],
+          subtree_roots: root_data[:subtree_roots],
+          root_version: root_data[:root_version],
           status: :pending
         )
       end
@@ -255,6 +290,31 @@ module Ethereum
     end
 
     private
+
+    # [ARCH.12] Cluster-субкорені вікна (from, to]: детермінований порядок = cluster_id asc,
+    # NULL-cluster sentinel-групою останньою; листя всередині кластера — (created_at, id) asc.
+    # [transitional] один процес вантажить усе тижневе вікно в память (partition-scan hot-path;
+    # стеля ~10^6 листя) — upgrade-path = per-cluster субкорінь-воркери поверх збережених
+    # subtree_roots → ARCH.52. Ієрархія тут форму дає, масштаб ще ні (05_04).
+    def telemetry_subtree_roots(window_from, window_to)
+      base = TelemetryLog.joins(:tree).where(created_at: ..window_to)
+      base = base.where("telemetry_logs.created_at > ?", window_from) if window_from
+
+      cluster_ids = base.distinct.pluck("trees.cluster_id")
+                        .sort_by { |cid| cid.nil? ? [ 1, 0 ] : [ 0, cid ] }
+      leaf_count = 0
+
+      subroots = cluster_ids.map do |cid|
+        leaf_cids = base.where(trees: { cluster_id: cid })
+                        .order(:created_at, :id)
+                        .preload(:tree)
+                        .map { |log| Mrv::TelemetryLeaf.cid_for(log) }
+        leaf_count += leaf_cids.size
+        { "cluster_id" => cid, "root" => MerkleTree.root(leaf_cids) }
+      end
+
+      [ subroots, leaf_count ]
+    end
 
     # [ARCH.66 companion] Чи node-помилка = «tx під цим nonce уже досяг мережі» (див. AMBIGUOUS_ALREADY_LANDED).
     def ambiguous_already_landed?(message)

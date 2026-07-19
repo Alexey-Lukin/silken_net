@@ -69,16 +69,90 @@ RSpec.describe Ethereum::StateAnchorService do
       end
     end
 
-    it "uses GENESIS fallback when no AuditLog exists" do
+    it "uses GENESIS fallback when no AuditLog exists (leaf0 = flat aggregate, root = Merkle over [leaf0])" do
       expected_payload = "0.0|0.0|0|GENESIS|#{Time.current.utc.iso8601}"
-      expected_hash = Digest::SHA256.hexdigest(expected_payload)
+      leaf0 = Digest::SHA256.hexdigest(expected_payload)
 
       freeze_time do
         result = described_class.new.generate_state_root
-        expect(result[:state_root]).to eq(expected_hash)
+        expect(result[:state_root]).to eq(MerkleTree.root([ leaf0 ]))
         expect(result[:chain_hash]).to eq("GENESIS")
         expect(result[:total_sfc]).to eq(0)
         expect(result[:active_tree_count]).to eq(0)
+      end
+    end
+
+    describe "Merkle tier2 [ARCH.12 Фаза 1а]" do
+      it "empty window → tier2 = [aggregate leaf0] only, root_version 1, leaf_count 0" do
+        result = described_class.new.generate_state_root
+
+        expect(result[:root_version]).to eq(1)
+        expect(result[:leaf_count]).to eq(0)
+        expect(result[:subtree_roots].size).to eq(1)
+        expect(result[:subtree_roots].first["kind"]).to eq("aggregate")
+        expect(result[:window_from]).to be_nil
+        expect(result[:window_to]).to eq(result[:anchored_at] - described_class::WINDOW_GRACE)
+      end
+
+      it "leaf0 equals the flat aggregate hash (supply-finality preserved)" do
+        freeze_time do
+          result = described_class.new.generate_state_root
+          expected_leaf0 = Digest::SHA256.hexdigest(
+            EthereumAnchor.aggregate_payload(
+              total_scc: result[:total_scc], total_sfc: result[:total_sfc],
+              active_tree_count: result[:active_tree_count],
+              chain_hash: result[:chain_hash], anchored_at: result[:anchored_at]
+            )
+          )
+          expect(result[:subtree_roots].first["root"]).to eq(expected_leaf0)
+        end
+      end
+
+      it "builds one cluster subroot per cluster and counts leaves; state_root = Merkle over tier2" do
+        log = create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
+        result = described_class.new.generate_state_root
+
+        cluster_entry = result[:subtree_roots].find { |e| e["cluster_id"] == cluster.id }
+        expect(cluster_entry).to be_present
+        expect(cluster_entry["root"]).to eq(MerkleTree.root([ Mrv::TelemetryLeaf.cid_for(log) ]))
+        expect(result[:leaf_count]).to eq(1)
+        expect(result[:state_root])
+          .to eq(MerkleTree.root(result[:subtree_roots].map { |e| e["root"] }))
+      end
+
+      it "GRACE boundary: logs newer than window_to are excluded (no forever-lost rows)" do
+        create(:telemetry_log, tree: tree, created_at: 1.minute.ago)
+        result = described_class.new.generate_state_root
+
+        expect(result[:leaf_count]).to eq(0)
+      end
+
+      it "window chains from previous confirmed merkle anchor's window_to" do
+        old_log = create(:telemetry_log, tree: tree, created_at: 3.days.ago)
+        create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
+        prev = create(:ethereum_anchor, :confirmed,
+                      root_version: 1, window_to: 1.day.ago,
+                      subtree_roots: [ { "kind" => "aggregate", "root" => "ab" * 32 } ],
+                      leaf_count: 1, anchored_at: 1.day.ago)
+
+        result = described_class.new.generate_state_root
+
+        expect(result[:window_from]).to be_within(1.second).of(prev.window_to)
+        expect(result[:leaf_count]).to eq(1) # old_log поза вікном (≤ prev.window_to)
+        cluster_entry = result[:subtree_roots].find { |e| e["cluster_id"] == cluster.id }
+        expect(cluster_entry["root"]).not_to eq(MerkleTree.root([ Mrv::TelemetryLeaf.cid_for(old_log) ]))
+      end
+
+      it "NULL-cluster trees form a sentinel group sorted last" do
+        clusterless_tree = create(:tree, cluster: nil)
+        create(:telemetry_log, tree: clusterless_tree, created_at: 2.hours.ago)
+        create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
+
+        result = described_class.new.generate_state_root
+
+        expect(result[:subtree_roots].last["cluster_id"]).to be_nil
+        expect(result[:subtree_roots].last).not_to have_key("kind")
+        expect(result[:leaf_count]).to eq(2)
       end
     end
 

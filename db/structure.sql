@@ -1394,7 +1394,8 @@ CREATE TABLE public.ethereum_anchors (
     window_from timestamp without time zone,
     leaf_count integer DEFAULT 0,
     root_version integer DEFAULT 0 NOT NULL,
-    subtree_roots jsonb
+    subtree_roots jsonb,
+    window_to timestamp without time zone
 );
 
 
@@ -8159,6 +8160,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260719151000'),
 ('20260719150000'),
 ('20260711160000');
 

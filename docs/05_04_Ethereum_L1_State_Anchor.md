@@ -219,14 +219,15 @@ Result:   "7f4a9b2c1e8d3f6a0b5c8e2d7a4f1b9e3c6d0a7f4b1e8d5c2a9f6b3e0d7a4c1"  (64
 
 | Включено ✅ | Відсутнє ⚠️ |
 |------------|------------|
-| Загальний SCC supply (всі гаманці) | TelemetryLog count за тиждень |
-| Загальний SFC supply (підтверджені мінтинги) [E.53] | Lorenz Z-value статистика |
-| Кількість активних дерев [E.54] | Merkle root над індивідуальними tree hashes |
-| Останній AuditLog chain_hash | |
-| Timestamp виконання (збережений в БД) | |
+| Загальний SCC supply (всі гаманці) — leaf0 | Lorenz Z-value статистика (агрегатна) |
+| Загальний SFC supply (підтверджені мінтинги) [E.53] — leaf0 | |
+| Кількість активних дерев [E.54] — leaf0 | |
+| Останній AuditLog chain_hash — leaf0 | |
+| Timestamp виконання (збережений в БД) — leaf0 | |
+| **Per-record телеметрія-листя вікна** (cluster-субкорені; leaf = `Mrv::TelemetryLeaf`) [ARCH.12 Фаза 1а] | |
 | `REPEATABLE READ` snapshot isolation | |
 
-> **Примітка:** Це SHA-256 flat commitment, а не повноцінний Merkle Root — майбутній Merkle-якір (часткова верифікація) описано у §Перспективи нижче ([ARCH.12]). Незалежна верифікація: `EthereumAnchor#verify_state_root` відтворює хеш з збережених компонентів.
+> **Примітка [ARCH.12 Фаза 1а, 2026-07-19]:** Агрегат-формула вище тепер = **`leaf0`** Merkle-дерева, а `state_root = MerkleTree.root([leaf0] + cluster-субкорені)` (`root_version: 1`; One-Home рядка-формули = `EthereumAnchor.aggregate_payload` — юзають і generate, і verify). Legacy-якорі (`root_version: 0`) — flat commitment, верифікуються старою формулою назавжди. Незалежна верифікація: `EthereumAnchor#verify_state_root` version-route — v0 відтворює хеш з 5 збережених колонок; v1 звіряє leaf0 з тих самих 5 колонок І перераховує корінь зі збережених `subtree_roots` (самодостатньо O(#кластерів), переживає ретеншн). Механіка вікна/листя — §Merkle нижче.
 
 ---
 
@@ -606,31 +607,33 @@ bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_sp
 
 ## 🔬 Перспективи Розвитку L1 Якоріння
 
-### Merkle Tree замість Flat SHA-256 [ARCH.12]
+### Merkle state_root [ARCH.12 — Фаза 1а SHIPPED 2026-07-19]
 
-Поточна реалізація (TRL 8) — SHA-256 flat commitment над агрегатами (`total_scc|total_sfc|active_tree_count|chain_hash|timestamp`). Це не дозволяє **часткову верифікацію**: аудитор мусить відтворити весь агрегат, щоб перевірити хеш — не можна довести один запис одного дерева.
-
-**Покращення (ARCH.12):** anchor-ити **Merkle-корінь**, де `leaves[0]` = поточний агрегат-хеш (зберігає supply-finality + наявний `verify_state_root`), а `leaves[1..n]` = per-record телеметрія-листя за вікно. Один корінь дає inclusion-proof для будь-якого листа:
+Перший inclusion-proof-споживач визначено founder-присудом 2026-07-19 (**ISO-звіт/MRV.1** — офлайн-verifiable lineage-bundle) → Фаза 1а реалізована. `state_root` = Merkle-корінь (`root_version: 1`): `tier2 = [leaf0-агрегат] + cluster-субкорені`, де `leaf0` = SHA-256 старої агрегат-формули (§3 — supply-finality збережена), а листя = per-record телеметрія (leaf-формула One-Home [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline), код-дім `Mrv::TelemetryLeaf`; **НЕ** `TelemetryLog.chain_hash` — такої колонки немає, агрегатний AuditLog `chain_hash` лишається всередині leaf0).
 
 ```
-                   state_root (Merkle Root)
-                  /                         \
-         leaves[0] = aggregate        subtree (per-record)
-                                      /                    \
-                              leaf(logA)              leaf(logB)
+                state_root = MerkleTree.root(tier2)
+               /                |                    \
+        leaf0 = aggregate   subroot(cluster 7)   subroot(NULL-sentinel)
+        (SHA256 §3-формули)  /            \             |
+                       leaf(logA)    leaf(logB)     leaf(logC)
 ```
 
-**Архітектурний контракт (рішення Фази 0 — leaf-формула One-Home [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline)):**
-- **leaf = Z-based per-record** — та сама canonical leaf-формула, що E.60 (`{telemetry_log_id, device_uid, z_value, bio_status, created_at}` → `Filecoin::CidGenerator`), **НЕ** `TelemetryLog.chain_hash` (такої колонки немає; агрегатний AuditLog `chain_hash` лишається всередині `leaves[0]`).
-- **Паралель E.60, не вкладеність:** цей Eth-L1 weekly state-root і Polygon per-batch `archive_root` ([`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline)) — **два незалежні якорі**, що ділять ОДИН `MerkleTree` primitive; нуль крос-чейн зчеплення.
-- **hash = sha256** (One-Home з наявним anchor + Filecoin CID; keccak / OZ-`MerkleProof` — upgrade-path лише за on-chain-verify споживача, YAGNI).
-- **Ієрархія (cluster-subtree → weekly-global-root)** — мапиться на фрактал L1/L2/L3 ([`00_08 §2`](00_08_Beyond_TRL9_Planetary_Roadmap)); один плоский Merkle над усією телеметрією на planetary-scale не feasible ([`00_07`](00_07_Action_Plan_Tracker) ARCH.52 — той самий partition-prune hot-path).
+**Механіка вікна (персистована, GRACE-захищена):**
+- Вікно листя = `(window_from .. window_to]`; `window_from` = `window_to` попереднього confirmed v1-якоря (ланцюжиться без дір і перекриттів; перший v1-якір → from-genesis), `window_to` = `anchored_at − WINDOW_GRACE` (5 хв). **GRACE закриває клас «рядок загублено назавжди»**: телеметрія, що комітиться під час repeatable_read-снапшота, має `created_at` нижче за верхню межу — без лагу вона випала б і з цього вікна, і з усіх наступних. Обидві межі **персистуються** (`window_from`/`window_to`) — історичні вікна не залежать від значення константи.
+- Порядок детермінований: кластери за `cluster_id` asc (NULL-cluster = sentinel-група останньою), листя всередині кластера — `(created_at, id)` asc.
+- **Overlap-правило:** `manual_review`-якір, підтверджений оператором пізніше, дає легальні перекриті вікна з наступним тижневим — bundle обирає «найранішій confirmed-якір, що покриває лист».
+- `[transitional]` стеля: один процес сканує все тижневе вікно в одному снапшоті (~10⁶ листя межа) — ієрархія тут дає форму, масштаб ще ні; upgrade-path = per-cluster субкорінь-воркери поверх збережених `subtree_roots` → [`00_07`](00_07_Action_Plan_Tracker) ARCH.52.
 
-**Переваги:** часткова верифікація (Merkle Proof, O(log N)) для ISO 14064 / Verra-аудиту; кожен вузол доводить власний внесок; **фундамент L2 device-voice** ([`05_05 §3.3`](05_05_Slashing_and_Risk_Policy) — дерево підписує цей корінь).
+**Верифікація (два рівні, `verify_state_root` version-route):** (1) **агрегат-фінальність** — самодостатня назавжди: leaf0 з 5 збережених колонок + корінь зі збереженого `subtree_roots` (O(#кластерів), переживає ретеншн; `subtree_roots` також фіксує групування-як-було — `cluster_id` мутабельний); (2) **per-leaf inclusion-proof** — поки живуть телеметрія-партиції, з БД; довгостроково — через самодостатній lineage-bundle (несе листя+пруфи). Ретеншн-дроп партицій сьогодні НЕ реалізований (`PartitionMaintenanceWorker` лише створює) — політика майбутня, bundle = довгостроковий носій верифіковності.
 
-**Контракт НЕ міняється:** `storeStateRoot(bytes32)` приймає Merkle-корінь так само, як flat-хеш (sha256 → 64-hex `bytes32`).
+**Контракт НЕ змінився:** `storeStateRoot(bytes32)` приймає Merkle-корінь так само, як flat-хеш; legacy-якорі (`root_version: 0`) верифікуються старою формулою назавжди.
 
-**Статус:** Фаза 0 — рішення канонізовано; Фаза 1 (`MerkleTree` primitive + застосування) будується **з першим споживачем** inclusion-proof (зараз prod-споживача немає — нема proof-endpoint в API/UI/subgraph/ISO-звіті; будувати раніше = built-but-unused). Поточний flat commitment достатній для TRL 8. Стан/фазування — [`00_07`](00_07_Action_Plan_Tracker) ARCH.12.
+**Паралель E.60, не вкладеність:** цей Eth-L1 weekly state-root і Polygon per-batch `archive_root` ([`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline)) — два незалежні якорі, що ділять ОДИН `MerkleTree` primitive (`lib/merkle_tree.rb`: sha256, RFC-6962 domain-sep 0x00/0x01, promotion непарного вузла, hash-of-hex; двоярусність = композиція verify×2 у споживачах); Polygon-нога = **Фаза 1б deferred** ([`00_07`](00_07_Action_Plan_Tracker) E.60). keccak / OZ-`MerkleProof` — upgrade-path лише за on-chain-verify споживача (YAGNI).
+
+**L2 device-voice (чесна межа):** кластерний ярус НЕ дає per-tree піддерева (листя дерев перемішані всередині кластера) — майбутній L2-рунг ([`05_05 §3.3`](05_05_Slashing_and_Risk_Policy)) підписуватиме **власний per-tree корінь** (mint-window-подібний, MRV.1), не кластерний субкорінь.
+
+**Стан/фазування:** [`00_07`](00_07_Action_Plan_Tracker) ARCH.12 (Фаза 1а shipped; 1б = E.60 Polygon-нога, ⚖️ sequencing проти SEC.1-деплою).
 
 ### EigenLayer / AVS як Альтернатива Прямому L1 Запису (Дослідження)
 
