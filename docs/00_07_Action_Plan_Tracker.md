@@ -1913,7 +1913,10 @@ _Активних DOC-T немає — усі закриті мігровані 
 | DIFF.2 | `carbon_sequestration_coefficient` — species-weighted нарахування SCC (`TreeFamily` + `weighted_growth_points`), реалізовано | [`04_01`](04_01_Data_Models_and_Entities) |
 | OPS.8 | Аудит seed-дрейфу `TreeFamily` (`db/seeds.rb` vs Lorenz-SSOT) — закрито, знання в каноні; ID живе провенанс-міткою у `seeded_tree_families_lorenz_alignment_spec.rb` (прун-коміт заявив «zero inbound refs», а спека цитувала — клас-привід `code_tracker_id_check`) | [`03_04 §4.1`](03_04_mruby_Lorenz_Attractor) |
 | S3.1 | Guard-clause audit конвеєра (Chainlink dispatch / IoTeX verify / minting) — реалізовано + тести (квітень-2026) | [`05_02`](05_02_Proof_of_Growth_Pipeline) |
+| S3.3 | PuroEarth REST API integration — CORC-сабмішн D-MRV: `PuroEarth::RegistryApiService` + `PuroEarthPassportWorker` + `corc_ref` на `MaintenanceRecord` (реалізовано квітень-2026; orphan-ID з CHANGELOG, §🗄️-рядок доданий 2026-07-19) | картка [`04_02`](04_02_Business_Logic_and_Services) |
 | S3.4 | M2M token refresh — sliding-window оновлення 30-денного Bearer без Ed25519 re-auth | [`04_03 §5.15.1`](04_03_REST_API_v1_Reference) |
+| S5.4 | Redis DB isolation strategy — розведення stateful-підсистем по ізольованих Redis DB / PG-backed сховищах, deploy-канон (реалізовано квітень-2026; orphan-ID з CHANGELOG) | [`06_01`](06_01_Deployment_Kamal_Terraform) |
+| S5.5 | JSON wallet balance/metadata endpoints (`wallets#balance`/`#metadata`, `WalletBlueprint`) (реалізовано квітень-2026; orphan-ID з CHANGELOG) | [`04_03`](04_03_REST_API_v1_Reference) |
 | S6.5 | Kredis mint-lock 30s→120s (batch minting worst-case ~130 с — double-mint guard); `[S6.5]`-тег живе в дім-рядку | [`05_01 §5`](05_01_Multichain_Architecture) + картка [`04_02`](04_02_Business_Logic_and_Services) |
 | S6.7 | Double-anchoring guard: network-timeout ≠ `:failed` (TX може сидіти в mempool); ширший наступник — ARCH.66 confirmation-lifecycle | [`05_04`](05_04_Ethereum_L1_State_Anchor) |
 
