@@ -76,6 +76,93 @@ RSpec.describe Wallet, type: :model do
     end
   end
 
+  describe "#lock_and_mint! lineage [MRV.1]" do
+    let(:wallet) do
+      w = create(:tree).wallet
+      w.update!(balance: 1000)
+      allow(w.tree).to receive(:active?).and_return(true)
+      w
+    end
+
+    it "first mint (NULL cursor): window covers full history up to GRACE, root attached, cursor advanced" do
+      old_log = create(:telemetry_log, tree: wallet.tree, created_at: 2.hours.ago)
+      tx = wallet.lock_and_mint!(500, 100)
+      wallet.reload
+
+      expect(tx.telemetry_window_from_at).to be_nil
+      expect(tx.telemetry_window_to_id).to eq(old_log.id)
+      expect(tx.telemetry_lineage_version).to eq(Mrv::TelemetryLeaf::LEAF_VERSION)
+      expect(tx.reload.telemetry_merkle_root)
+        .to eq(MerkleTree.root([ Mrv::TelemetryLeaf.cid_for(old_log) ]))
+      expect(wallet.lineage_cursor_log_id).to eq(old_log.id)
+    end
+
+    it "GRACE: log younger than WINDOW_GRACE stays out of the window (next mint's business)" do
+      create(:telemetry_log, tree: wallet.tree, created_at: 1.minute.ago)
+      tx = wallet.lock_and_mint!(500, 100)
+      wallet.reload
+
+      expect(tx.telemetry_window_to_at).to be_nil
+      expect(tx.reload.telemetry_merkle_root).to be_nil
+      expect(wallet.lineage_cursor_log_id).to be_nil
+    end
+
+    it "empty window (carry-mint без нових логів): from == to == cursor, root nil, cursor unchanged" do
+      log = create(:telemetry_log, tree: wallet.tree, created_at: 2.hours.ago)
+      wallet.lock_and_mint!(300, 100)
+      wallet.reload
+      tx2 = wallet.lock_and_mint!(300, 100)
+      wallet.reload
+
+      expect(tx2.telemetry_window_from_id).to eq(log.id)
+      expect(tx2.telemetry_window_to_id).to eq(log.id)
+      expect(tx2.reload.telemetry_merkle_root).to be_nil
+      expect(wallet.lineage_cursor_log_id).to eq(log.id)
+    end
+
+    it "consecutive windows chain without overlap: second mint covers only newer logs" do
+      log1 = create(:telemetry_log, tree: wallet.tree, created_at: 3.hours.ago)
+      wallet.lock_and_mint!(300, 100)
+      log2 = create(:telemetry_log, tree: wallet.tree, created_at: 1.hour.ago)
+      tx2 = wallet.reload.lock_and_mint!(300, 100)
+
+      expect(tx2.telemetry_window_from_id).to eq(log1.id)
+      expect(tx2.telemetry_window_to_id).to eq(log2.id)
+      expect(Mrv::LineageWindow.logs_for(tx2.reload)).to contain_exactly(
+        an_object_having_attributes(id: log2.id)
+      )
+    end
+
+    it "cursor is monotonic: tx.fail! does NOT roll it back (windows attach to attempts)" do
+      log = create(:telemetry_log, tree: wallet.tree, created_at: 2.hours.ago)
+      tx = wallet.lock_and_mint!(500, 100)
+      tx.fail!("boom")
+      wallet.reload
+
+      expect(wallet.lineage_cursor_log_id).to eq(log.id)
+    end
+
+    it "fail-open: root computation failure never blocks the mint (WARN + metric, root NULL)" do
+      create(:telemetry_log, tree: wallet.tree, created_at: 2.hours.ago)
+      allow(Mrv::LineageWindow).to receive(:root_for).and_raise(StandardError, "leaf exploded")
+      expect(SilkenNet::Metrics::LINEAGE_ROOT_FAILURES_TOTAL).to receive(:increment)
+
+      tx = wallet.lock_and_mint!(500, 100)
+
+      expect(tx).to be_persisted
+      expect(tx.reload.telemetry_merkle_root).to be_nil
+    end
+
+    it "zero-mint (points below threshold) does not move the cursor" do
+      create(:telemetry_log, tree: wallet.tree, created_at: 2.hours.ago)
+      result = wallet.lock_and_mint!(50, 100)
+      wallet.reload
+
+      expect(result).to be_nil
+      expect(wallet.lineage_cursor_log_id).to be_nil
+    end
+  end
+
   describe "validations" do
     it "rejects negative balance" do
       wallet = create(:tree).wallet

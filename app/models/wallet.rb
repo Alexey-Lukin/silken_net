@@ -132,7 +132,7 @@ class Wallet < ApplicationRecord
       end
 
       tokens_to_mint = (points_to_lock.to_f / threshold).floor
-      return if tokens_to_mint.zero? # Немає сенсу створювати транзакцію на 0 токенів
+      return if tokens_to_mint.zero? # Немає сенсу створювати транзакцію на 0 токенів (курсор НЕ рухається)
 
       # 4. БЛОКУВАННЯ КОШТІВ (Pending Balance Protection)
       # Замість негайного списання з balance, блокуємо кошти в locked_balance.
@@ -140,20 +140,45 @@ class Wallet < ApplicationRecord
       # до фіналізації транзакції в блокчейні.
       increment!(:locked_balance, points_to_lock)
 
-      blockchain_transactions.create!(
+      # [MRV.1] Lineage-вікно вимірів (під тим самим wallet-локом — дешеве: 1 SELECT позиції):
+      # (курсор .. останній лог ≤ now−GRACE]. GRACE — щоб лог, що комітиться зараз, не випав
+      # з вікон назавжди (Mrv::WINDOW_GRACE). Курсор рухається ЛИШЕ разом зі створенням tx
+      # і монотонно (fail! мінта його НЕ відкочує — вікна чіпляються до СПРОБ, успішний
+      # кредит у bundle успадковує вікна failed-попередників). Порожнє вікно = from==to.
+      window_upper = tree.telemetry_logs
+                         .where(created_at: ..(Time.current - Mrv::WINDOW_GRACE))
+                         .order(created_at: :desc, id: :desc).pick(:created_at, :id)
+      window_to_at, window_to_id =
+        window_upper || [ lineage_cursor_at, lineage_cursor_log_id ]
+
+      tx_record = blockchain_transactions.create!(
         amount: tokens_to_mint,
         token_type: token_type,
         status: :pending,
         to_address: target_address,
         locked_points: points_to_lock,
+        telemetry_window_from_at: lineage_cursor_at,
+        telemetry_window_from_id: lineage_cursor_log_id,
+        telemetry_window_to_at: window_to_at,
+        telemetry_window_to_id: window_to_id,
+        telemetry_lineage_version: Mrv::TelemetryLeaf::LEAF_VERSION,
         notes: "Конвертація #{points_to_lock} балів росту (Поріг: #{threshold})."
       )
+
+      update!(lineage_cursor_at: window_to_at, lineage_cursor_log_id: window_to_id) if window_upper
+
+      tx_record
     end
 
     # `unless tx`-then dead: transaction-блок завжди завершується create! (non-nil) або
     # виходить з методу раніше (`return if tokens_to_mint.zero?` / raise) — tx тут non-nil;
     # guard = financial-safety-defensive проти зміни семантики блоку (§B.4 leave).
     return unless tx
+
+    # [MRV.1] Корінь вікна — ПІСЛЯ коміту і fail-open: обчислення (SELECT вікна + N×sha256)
+    # не тримає wallet-лок і НІКОЛИ не валить мінт (прецедент best-effort audit-trail);
+    # rescue → root лишається NULL + WARN + метрика (bundle покаже unsealed).
+    attach_lineage_root(tx)
 
     # 5. ЛОГУВАННЯ ТА ОНОВЛЕННЯ UI
     # [TRUSTLESS]: MintCarbonCoinWorker тепер працює з telemetry_log_id (oracle-driven flow).
@@ -163,6 +188,15 @@ class Wallet < ApplicationRecord
 
     broadcast_balance_update
     tx
+  end
+
+  # [MRV.1] Merkle-корінь lineage-вікна tx (Mrv::LineageWindow — One-Home запиту).
+  def attach_lineage_root(tx)
+    root = Mrv::LineageWindow.root_for(tx)
+    tx.update!(telemetry_merkle_root: root) if root
+  rescue StandardError => e
+    Rails.logger.warn "⚠️ [MRV.1] Lineage-root failed для tx ##{tx.id} (мінт НЕ зачеплено): #{e.message}"
+    SilkenNet::Metrics::LINEAGE_ROOT_FAILURES_TOTAL.increment
   end
 
   # Трансляція оновленого стану гаманця через Turbo Streams

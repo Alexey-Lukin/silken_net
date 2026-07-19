@@ -345,6 +345,16 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Зовнішні виклики** | — (pure; лише `Filecoin::CidGenerator`) |
 | **Вихід** | `payload_for(log)` → Hash · `cid_for(log)` → CIDv1 String (`bafkrei…`) |
 
+### `Mrv::LineageWindow` [MRV.1]
+
+| | |
+|---|---|
+| **Файл** | `app/services/mrv/lineage_window.rb` |
+| **Вхід** | `tx` (BlockchainTransaction з lineage-вікном) |
+| **Що робить** | One-Home запиту «логи вікна tx»: tuple-діапазон `(from_at, from_id) < (created_at, id) <= (to_at, to_id)` по логах дерева гаманця — суміжні вікна не перетинаються і не лишають дір; порожнє вікно (from == to або to NULL) = нуль рядків. Юзають fail-open обчислення кореня при мінті (`Wallet#attach_lineage_root`) і lineage-bundle (аудиторський перерахунок). `root_for(tx)` = `MerkleTree.root` над leaf-CID'ами вікна (nil для порожнього). GRACE-лаг меж = `Mrv::WINDOW_GRACE` (One-Home константи, спільна з тижневим якорем). |
+| **Зовнішні виклики** | — (pure AR-запит + `MerkleTree`/`Mrv::TelemetryLeaf`) |
+| **Вихід** | `logs_for(tx)` → AR-relation (ordered) · `root_for(tx)` → 64-hex String \| nil |
+
 ### `Chainlink::OracleDispatchService`
 
 | | |

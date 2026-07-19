@@ -446,6 +446,14 @@ module SilkenNet
       labels: [ :reason ]
     )
 
+    # [MRV.1/ARCH.12] Fail-open обчислення mint-lineage кореня впало (мінт пройшов,
+    # telemetry_merkle_root лишився NULL) — witness-фіча ніколи не блокує money-path,
+    # але тихо-порожній root = діра в credit→measurements трейсі → видимість тут.
+    LINEAGE_ROOT_FAILURES_TOTAL = REGISTRY.counter(
+      :silkennet_lineage_root_failures_total,
+      docstring: "Mint lineage Merkle-root computation failures (fail-open, root left NULL)"
+    )
+
     # [INF.22 крок 11] Filecoin archive-outbox backlog + recovery видимість.
     # unarchived_depth = archive-requested AuditLog'и без ipfs_cid (money/MRV, які ще не на
     # IPFS) — семплить Treasury::MonitorService (15-хв, freshness проти restart-обнулення

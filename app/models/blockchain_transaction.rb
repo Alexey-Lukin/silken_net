@@ -275,7 +275,10 @@ class BlockchainTransaction < ApplicationRecord
         metadata: {
           from: from.to_s, to: to.to_s,
           token_type: token_type, amount: amount.to_s,
-          tx_hash: tx_hash, error: error_message
+          tx_hash: tx_hash, error: error_message,
+          # [MRV.1/ARCH.12] транзитивна печатка: корінь вікна → AuditLog-ланцюг →
+          # leaf0 наступного тижневого якоря (nil = unsealed, bundle покаже чесно)
+          telemetry_merkle_root: telemetry_merkle_root
         }
       }
     )

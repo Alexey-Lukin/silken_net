@@ -645,6 +645,16 @@ RSpec.describe BlockchainTransaction, type: :model do
         expect(attrs["action"]).to eq("blockchain_tx_to_failed")
         expect(attrs["metadata"]).to include("from" => "pending", "to" => "failed")
       end
+
+      # [MRV.1/ARCH.12] Транзитивна печатка lineage: корінь вікна їде в AuditLog-ланцюг
+      # (→ leaf0 наступного тижневого якоря); nil = чесний unsealed у bundle.
+      it "carries telemetry_merkle_root in metadata (lineage transitive seal)" do
+        tx.update!(telemetry_merkle_root: "ab" * 32)
+        tx.process!
+
+        args = AuditLogWorker.jobs.last["args"].first
+        expect(args["metadata"]).to include("telemetry_merkle_root" => "ab" * 32)
+      end
     end
 
     it "skips with a WARN when the system actor is absent (no chain owner)" do
