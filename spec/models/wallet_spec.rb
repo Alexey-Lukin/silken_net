@@ -133,6 +133,22 @@ RSpec.describe Wallet, type: :model do
       )
     end
 
+    it "clock-regression clamp: window_upper нижче курсора → порожнє вікно, курсор СТОЇТЬ (review-фікс)" do
+      log = create(:telemetry_log, tree: wallet.tree, created_at: 2.hours.ago)
+      wallet.lock_and_mint!(300, 100)
+      wallet.reload
+      # Симуляція NTP step-back / крос-нодового відставання: курсор «у майбутньому»
+      future_cursor = 1.hour.from_now
+      wallet.update!(lineage_cursor_at: future_cursor, lineage_cursor_log_id: log.id + 1_000)
+
+      tx2 = wallet.lock_and_mint!(300, 100)
+      wallet.reload
+
+      expect(tx2.telemetry_window_from_at).to eq(tx2.telemetry_window_to_at) # порожнє
+      expect(wallet.lineage_cursor_at).to be_within(1.second).of(future_cursor) # НЕ відкотився
+      expect(tx2.reload.telemetry_merkle_root).to be_nil
+    end
+
     it "cursor is monotonic: tx.fail! does NOT roll it back (windows attach to attempts)" do
       log = create(:telemetry_log, tree: wallet.tree, created_at: 2.hours.ago)
       tx = wallet.lock_and_mint!(500, 100)

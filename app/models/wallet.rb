@@ -148,6 +148,13 @@ class Wallet < ApplicationRecord
       window_upper = tree.telemetry_logs
                          .where(created_at: ..(Time.current - Mrv::WINDOW_GRACE))
                          .order(created_at: :desc, id: :desc).pick(:created_at, :id)
+      # Монотонний clamp (clock-regression / майбутній ретеншн-дроп): верхня межа
+      # НЕ вище курсора = аномалія — вікно порожнє, курсор стоїть (інакше наступне
+      # вікно перекрило б уже-атрибутовані логи, double-attribution).
+      if window_upper && lineage_cursor_at &&
+         (window_upper <=> [ lineage_cursor_at, lineage_cursor_log_id ]) <= 0
+        window_upper = nil
+      end
       window_to_at, window_to_id =
         window_upper || [ lineage_cursor_at, lineage_cursor_log_id ]
 

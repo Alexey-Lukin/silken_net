@@ -64,8 +64,8 @@ module Ethereum
     # repeatable_read-снапшота (created_at уже поставлено, commit ще ні), інакше випав би
     # з ЦЬОГО вікна назавжди (наступне стартує вище). GRACE >> insert-латентності; residual
     # (commit довший за GRACE) — теоретичний, задокументовано в 05_04. Історичні вікна
-    # НЕ залежать від значення константи — обидві межі персистуються (window_from/window_to).
-    WINDOW_GRACE = 5.minutes
+    # НЕ залежать від значення — обидві межі персистуються. One-Home значення = Mrv.
+    WINDOW_GRACE = Mrv::WINDOW_GRACE
 
     # Генерує State Root — SHA256 дайджест, що об'єднує:
     # 1. Сумарний scc_balance усіх гаманців (SCC supply)

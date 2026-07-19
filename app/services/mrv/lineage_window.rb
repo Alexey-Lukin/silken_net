@@ -17,11 +17,16 @@ module Mrv
       tree = tx.wallet&.tree
       return TelemetryLog.none if tree.nil? || tx.telemetry_window_to_at.nil?
 
+      # «Голі» created_at-межі поруч із tuple-предикатами РЕДУНДАНТНІ семантично,
+      # але несучі для плану: PG прунить партиції лише по literal/param на
+      # partition-key — RowCompareExpr він не розкладає (EXPLAIN: 9 партицій → 1).
       scope = tree.telemetry_logs
+                  .where(created_at: ..tx.telemetry_window_to_at)
                   .where("(telemetry_logs.created_at, telemetry_logs.id) <= (?, ?)",
                          tx.telemetry_window_to_at, tx.telemetry_window_to_id)
       if tx.telemetry_window_from_at
-        scope = scope.where("(telemetry_logs.created_at, telemetry_logs.id) > (?, ?)",
+        scope = scope.where(created_at: tx.telemetry_window_from_at..)
+                     .where("(telemetry_logs.created_at, telemetry_logs.id) > (?, ?)",
                             tx.telemetry_window_from_at, tx.telemetry_window_from_id)
       end
       scope.order(:created_at, :id)

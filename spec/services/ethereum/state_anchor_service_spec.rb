@@ -130,14 +130,17 @@ RSpec.describe Ethereum::StateAnchorService do
       it "window chains from previous confirmed merkle anchor's window_to" do
         old_log = create(:telemetry_log, tree: tree, created_at: 3.days.ago)
         create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
+        # window_to СВІДОМО розведено з anchored_at: тест мусить розрізняти
+        # «код бере prev.window_to» (правильно) від «prev.anchored_at» (регресія
+        # → загублені-назавжди рядки між ними) — review-фікс слабкого assert.
         prev = create(:ethereum_anchor, :confirmed,
-                      root_version: 1, window_to: 1.day.ago,
+                      root_version: 1, window_to: 1.day.ago - 10.minutes,
                       subtree_roots: [ { "kind" => "aggregate", "root" => "ab" * 32 } ],
                       leaf_count: 1, anchored_at: 1.day.ago)
 
         result = described_class.new.generate_state_root
 
-        expect(result[:window_from]).to be_within(1.second).of(prev.window_to)
+        expect(result[:window_from]).to eq(prev.reload.window_to)
         expect(result[:leaf_count]).to eq(1) # old_log поза вікном (≤ prev.window_to)
         cluster_entry = result[:subtree_roots].find { |e| e["cluster_id"] == cluster.id }
         expect(cluster_entry["root"]).not_to eq(MerkleTree.root([ Mrv::TelemetryLeaf.cid_for(old_log) ]))

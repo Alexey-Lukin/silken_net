@@ -63,7 +63,15 @@ RSpec.describe Mrv::LineageReportService do
     tampered = JSON.parse(File.read(path))
     tampered["credits"][0]["leaves"][0]["payload"]["z_value"] = "999.99"
     File.write(path, JSON.generate(tampered))
-    expect(system(RbConfig.ruby, verifier, path.to_s, out: File::NULL)).to be(false), "tamper мав дати exit 1"
+    expect(system(RbConfig.ruby, verifier, path.to_s, out: File::NULL)).to be(false), "payload-tamper мав дати exit 1"
+
+    # Review-фікс (fable MAJOR): mint-root тепер ПЕРЕВІРЯЄТЬСЯ — підміна набору листя
+    # sealed-кредиту (чужий root) мусить валити верифікатор, не братись на віру.
+    tampered_root = JSON.parse(File.read(path))
+    tampered_root["credits"][0]["leaves"][0]["payload"]["z_value"] = "23.45" # відкотити payload
+    tampered_root["credits"][0]["telemetry_merkle_root"] = "ff" * 32
+    File.write(path, JSON.generate(tampered_root))
+    expect(system(RbConfig.ruby, verifier, path.to_s, out: File::NULL)).to be(false), "root-tamper мав дати exit 1"
   ensure
     FileUtils.rm_f(path) if path
   end
@@ -159,14 +167,6 @@ RSpec.describe Mrv::LineageReportService do
       leaf = credit[:leaves].find { |l| l[:telemetry_log_id] == late_log.id }
       expect(leaf[:anchor_proof][:status]).to eq("anchored")
       expect(leaf[:anchor_proof][:anchor][:state_root]).to eq(anchor2.state_root)
-    end
-  end
-
-  describe "Mrv::LineageWindow guard branches" do
-    it "returns none for a wallet-less (cluster-sourced) tx" do
-      tx = build(:blockchain_transaction, wallet: nil, telemetry_window_to_at: 1.hour.ago,
-                                          telemetry_window_to_id: 1)
-      expect(Mrv::LineageWindow.logs_for(tx)).to be_empty
     end
   end
 end

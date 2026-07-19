@@ -21,12 +21,21 @@ module Mrv
   class LineageReportService
     SCHEMA = "silken.mrv.lineage.v1"
 
+    # Чесна межа довіри (анти-overclaim — клас, за який архівовано ARCH.53):
+    # офлайн-верифіковне З ЦЬОГО ФАЙЛУ — payload→CID, mint-root sealed-кредитів,
+    # tier1-субкорінь, tier2→state_root, device_uid↔tree_did. Issuer-asserted
+    # (офлайн НЕ перевіриш): amount, ПОВНОТА набору кредитів/листя, континуїтет
+    # вікон; backstop = org AuditLog-ланцюг, запечатаний у leaf0 тижневих якорів.
     VERIFICATION_INSTRUCTIONS =
       "Run `ruby scripts/verify_lineage_bundle.rb <bundle.json>` (pure Ruby, offline). " \
-      "It recomputes every leaf CID from its canonical payload, every tier1 subroot from " \
-      "the audit path, and every tier2 state_root — then compare each anchor's state_root " \
-      "against the on-chain StateRootAnchor record (etherscan_url) yourself. " \
-      "No trust in this file or its issuer is required beyond the on-chain roots."
+      "Cryptographically verified from this file alone: leaf payload -> CID, per-credit " \
+      "window Merkle-root (sealed credits), tier1 subroot recomputation, tier2 -> state_root, " \
+      "device_uid <-> tree_did binding. THEN verify each printed state_root on-chain: the " \
+      "storeStateRoot tx MUST target the canonical StateRootAnchor contract — cross-check " \
+      "the `anchor_contract` address against an INDEPENDENT source (project canon / official " \
+      "site), never against this file alone. Issuer-asserted (NOT offline-verifiable): tx " \
+      "amounts, completeness of the credit/leaf set, window continuity; backstop = the org " \
+      "AuditLog hash-chain sealed into every weekly anchor's leaf0."
 
     def self.call(organization:, from:, to:)
       new(organization: organization, from: from, to: to).call
@@ -36,6 +45,9 @@ module Mrv
       @organization = organization
       @from = from
       @to = to
+      # Мемо (opus/fable review): усі листи одного кластера в одному якорі ділять
+      # ідентичний leaf-list — без мемо bundle був O(листя × кластер-вікно).
+      @cluster_cids_memo = {}
     end
 
     def call
@@ -44,6 +56,7 @@ module Mrv
         generated_at: Time.current.utc.iso8601,
         organization: { id: @organization.id, name: @organization.name },
         period: { from: @from.utc.iso8601, to: @to.utc.iso8601 },
+        anchor_contract: ENV["ETHEREUM_ANCHOR_CONTRACT"],
         credits: credit_transactions.map { |tx| credit_entry(tx) },
         verification_instructions: VERIFICATION_INSTRUCTIONS
       }
@@ -69,7 +82,7 @@ module Mrv
 
       {
         tx: {
-          id: tx.id, tx_hash: tx.tx_hash, amount: tx.amount.to_s, token_type: tx.token_type,
+          id: tx.id, tx_hash: tx.tx_hash, amount: tx.amount.to_s("F"), token_type: tx.token_type,
           to_address: tx.to_address, tree_did: tx.wallet.tree.did,
           created_at: tx.created_at.utc.iso8601(6)
         },
@@ -92,16 +105,23 @@ module Mrv
 
     # «Чесна межа (г)»: failed-спроби між попереднім confirmed-мінтом гаманця і цим —
     # їхні бали звільнено і повторно замінчено, тож їхні вікна доказують ЦЕЙ кредит.
+    # Межі = tuple (created_at, id) — total order, µs-збіг не сиротить спробу;
+    # «голий» created_at-предикат поруч — partition-pruning (партиційована таблиця).
     def inherited_failed_attempts(tx)
-      prev_confirmed_at = tx.wallet.blockchain_transactions
-                            .where(status: :confirmed)
-                            .where("created_at < ?", tx.created_at)
-                            .maximum(:created_at)
+      prev = tx.wallet.blockchain_transactions
+               .where(status: :confirmed)
+               .where(created_at: ..tx.created_at)
+               .where("(created_at, id) < (?, ?)", tx.created_at, tx.id)
+               .order(:created_at, :id).last
       scope = tx.wallet.blockchain_transactions
                 .where(status: :failed)
                 .where.not(telemetry_window_to_at: nil)
-                .where("created_at < ?", tx.created_at)
-      scope = scope.where("created_at > ?", prev_confirmed_at) if prev_confirmed_at
+                .where(created_at: ..tx.created_at)
+                .where("(created_at, id) < (?, ?)", tx.created_at, tx.id)
+      if prev
+        scope = scope.where(created_at: prev.created_at..)
+                     .where("(created_at, id) > (?, ?)", prev.created_at, prev.id)
+      end
       scope.order(:created_at, :id)
     end
 
@@ -117,21 +137,20 @@ module Mrv
 
     # Covering-lookup: НАЙРАНІШІЙ confirmed merkle-якір, чиє вікно покриває лист
     # (log.created_at ∈ (window_from, window_to]) — overlap-правило 05_04 §Merkle.
+    # Кандидати кешуються раз на виклик сервісу (пошук по листах — in-memory).
     def anchor_proof(log)
-      anchor = EthereumAnchor.status_confirmed.where(root_version: 1)
-                             .where(window_to: log.created_at..)
-                             .where("window_from IS NULL OR window_from < ?", log.created_at)
-                             .order(:anchored_at, :id).first
+      anchor = covering_anchors.find do |a|
+        a.window_to >= log.created_at && (a.window_from.nil? || a.window_from < log.created_at)
+      end
       return { status: "pending_anchor" } if anchor.nil?
 
       cluster_id = log.tree.cluster_id
       entry_index = anchor.subtree_roots.index { |e| e.key?("cluster_id") && e["cluster_id"] == cluster_id }
       return { status: "unprovable_regrouped" } if entry_index.nil?
 
-      cluster_cids = anchor_cluster_leaf_cids(anchor, cluster_id)
+      cluster_cids, recomputed_subroot = anchor_cluster_leaf_cids(anchor, cluster_id)
       leaf_cid = Mrv::TelemetryLeaf.cid_for(log)
       leaf_index = cluster_cids.index(leaf_cid)
-      recomputed_subroot = MerkleTree.root(cluster_cids)
       stored_subroot = anchor.subtree_roots[entry_index]["root"]
       # Дерево могло змінити кластер ПІСЛЯ якоря (групування зафіксоване в subtree_roots) —
       # перерахунок тоді не збігається; чесний маркер замість фальшивого пруфа.
@@ -154,13 +173,22 @@ module Mrv
       }
     end
 
-    # Перевибірка кластерного вікна якоря в канонічному порядку (report-time, не hot-path).
+    def covering_anchors
+      @covering_anchors ||= EthereumAnchor.status_confirmed.where(root_version: 1)
+                                          .order(:anchored_at, :id).to_a
+    end
+
+    # Перевибірка кластерного вікна якоря в канонічному порядку (report-time, не hot-path);
+    # мемо по (anchor, cluster) → [cids, субкорінь] — колапсує K листів у 1 скан.
     def anchor_cluster_leaf_cids(anchor, cluster_id)
-      scope = TelemetryLog.joins(:tree)
-                          .where(trees: { cluster_id: cluster_id })
-                          .where(created_at: ..anchor.window_to)
-      scope = scope.where("telemetry_logs.created_at > ?", anchor.window_from) if anchor.window_from
-      scope.order(:created_at, :id).preload(:tree).map { |l| Mrv::TelemetryLeaf.cid_for(l) }
+      @cluster_cids_memo[[ anchor.id, cluster_id ]] ||= begin
+        scope = TelemetryLog.joins(:tree)
+                            .where(trees: { cluster_id: cluster_id })
+                            .where(created_at: ..anchor.window_to)
+        scope = scope.where("telemetry_logs.created_at > ?", anchor.window_from) if anchor.window_from
+        cids = scope.order(:created_at, :id).preload(:tree).map { |l| Mrv::TelemetryLeaf.cid_for(l) }
+        [ cids, MerkleTree.root(cids) ]
+      end
     end
   end
 end
