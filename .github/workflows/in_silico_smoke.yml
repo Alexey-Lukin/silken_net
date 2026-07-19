@@ -16,6 +16,7 @@ permissions:
 # branch-protection check without hanging unrelated PRs ("waiting for status").
 # Same shape as docs.yml's docs-ok / ci.yml's ci-ok.
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches: [ main ]
@@ -23,6 +24,7 @@ on:
       - 'tools/in_silico/**'
       - 'docs/protocols/ebfc/in_silico/**'
       - 'docs/01_04_CODIT_and_Xylemointegration.md'  # thermal_penetration.json cache↔doc (test_doc_cache_sync)
+      - '.github/workflows/in_silico_smoke.yml'
 
 jobs:
   changes:
