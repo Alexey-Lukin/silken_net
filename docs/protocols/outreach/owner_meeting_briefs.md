@@ -1,4 +1,4 @@
-# Owner Meeting Briefs — ЧНУ (Онищенко / Кафедра ІВ)
+# Owner Meeting Briefs — ЧНУ (Кафедра ІВ · TISC)
 
 > **Що це:** робочі **one-pager'и підготовки до зустрічей** — тонкий **meeting-prep шар**, що
 > **СКЛАДАЄ за посиланнями** розпорошений канон + додає лише **meeting-specific** (asks, framing,
@@ -8,7 +8,7 @@
 > ростер ФОТІУС → [`08_02 §1B`](../../08_02_Academic_Institutions_Registry.md) ·
 > план публікацій / Стаття 5 → [`08_01 §1`](../../08_01_Joint_Publications_and_IP_Strategy.md) ·
 > engagement TISC/Кафедра-ІВ (предметний перелік) → [`08_01 §2.1`](../../08_01_Joint_Publications_and_IP_Strategy.md) ·
-> дії → [`00_07`](../../00_07_Action_Plan_Tracker.md) UNI.1/2/15/16 + UNI.3 ·
+> дії → [`00_07`](../../00_07_Action_Plan_Tracker.md) UNI.2/15/16 + UNI.3 ·
 > IP-постава → [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) + [`defensive_disclosure.md`](../anchor/defensive_disclosure.md).
 
 ---
@@ -16,23 +16,13 @@
 ## Спільний контекст
 
 **Статус ЧНУ** (→ [`08_02`](../../08_02_Academic_Institutions_Registry.md) Статус): ректорські зустрічі проведено, **парасольовий MoU ще не
-підписаний** — один підпис в.о. ректора Кирилюка розблоковує лабораторії + грантові заявки. Обидві
-зустрічі нижче — **auxiliary** під цим MoU (UNI.15 + UNI.16 обидва 🔗 UNI.1). **Перевага входу:**
+підписаний** — один підпис в.о. ректора Кирилюка розблоковує лабораторії + грантові заявки. Зустріч
+нижче — **auxiliary** під цим MoU (UNI.15 + UNI.16 🔗 UNI.18). **Перевага входу:**
 Архітектор — випускник ФОТІУС ([`08_02 §1`](../../08_02_Academic_Institutions_Registry.md)), теплий контакт.
 
 ---
 
-## Бриф 1 — Онищенко Б.О., декан ФОТІУС (UNI.1 · 🔴 P0)
-
-- **Хто / трек:** декан ФОТІУС; профіль + валід-трек + Стаття 5 — **owner [`08_02 §1B`](../../08_02_Academic_Institutions_Registry.md)** (не дублюю).
-- **Чому критично** (→ UNI.1): зустріч **блокує всю лаб-роботу + 10 публікацій + 11 магістерських**; Онищенко — ворота до раунду ФОТІУС і фабрики магістерських.
-- **Що принести** (усе за реф): ростер 8 викладачів ФОТІУС → [`08_02 §1B`](../../08_02_Academic_Institutions_Registry.md) + UNI.2 · магістерські теми → [`08_01 §3`](../../08_01_Joint_Publications_and_IP_Strategy.md) · чернетка Статті 5 → [`08_01 §1`](../../08_01_Joint_Publications_and_IP_Strategy.md).
-- **Asks (meeting-specific):** 1) прискорити **парасольовий MoU** (Кирилюк); 2) greenlight **раунд зустрічей ФОТІУС** (UNI.2); 3) SilkenNet як **офіційний полігон магістерських**; 4) **співавторство Статті 5**.
-- **Next:** 👤 призначити+провести зустріч (UNI.1) → розблоковує UNI.2 + публікації + теми.
-
----
-
-## Бриф 2 — ЧНУ Кафедра ІВ (UNI.16 · P1 · юр-review + open-license)
+## Бриф 1 — ЧНУ Кафедра ІВ (UNI.16 · P1 · юр-review + open-license)
 
 - **Хто / предмет:** Кафедра ІВ ЧНУ — точковий UA-юр-review; предметний перелік (RWA / SCC-SFC / NaaS / авт. право `bio_contract.rb` як основа копілефту / **open-license**) — **owner [`08_01 §2.1.2`](../../08_01_Joint_Publications_and_IP_Strategy.md)** + UNI.16 (не дублюю).
 - **Чому важливо:** юр-валідація **open-ліцензій** (AGPL/CERN-OHL-S/CC-BY-SA у UA + **AF3 non-commercial × комерц-вимір**) + RWA/SCC дозволи — основа правової певності (патенту немає, [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md)).
@@ -46,9 +36,9 @@
 
 | Ресурс | Роль (owner / реф) |
 |---|---|
-| [`08_02 §1B`](../../08_02_Academic_Institutions_Registry.md) | **owner** ростера ФОТІУС (Онищенко + 8 викл.) — бриф реферить |
+| [`08_02 §1B`](../../08_02_Academic_Institutions_Registry.md) | **owner** ростера ФОТІУС (8 викладачів) — бриф реферить |
 | [`08_01 §1`](../../08_01_Joint_Publications_and_IP_Strategy.md) | **owner** плану публікацій (Стаття 5) + фабрики магістерських (§3) |
 | [`08_01 §2.1`](../../08_01_Joint_Publications_and_IP_Strategy.md) | **owner** engagement TISC + Кафедра-ІВ (предметний перелік) |
 | [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) | IP-постава + ліцензійна матриця (`/NOTICE` — AF3 carve-out) для license-review |
-| [`00_07`](../../00_07_Action_Plan_Tracker.md) | дії: UNI.1/2/15/16 + UNI.3 |
+| [`00_07`](../../00_07_Action_Plan_Tracker.md) | дії: UNI.2/15/16 + UNI.3 |
 | [`07_01`](../../07_01_Nature_as_a_Service_Contracts.md) | RWA/NaaS — предмет меморандумів |
