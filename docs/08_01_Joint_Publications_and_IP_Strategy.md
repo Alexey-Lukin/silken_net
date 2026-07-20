@@ -299,7 +299,7 @@ _«Дослідження акустичних властивостей пори
 
 | Автор | Афіліація | Внесок |
 |-------|-----------|--------|
-| **Бушин І.М.** (ЧНУ ФОТІУС) | CNN, Sentinel-2, Computer Vision | NDVI-pipeline, dual-source verification, Macro-layer ground truth (FIRMS/dClimate), Random Forest ансамбль з `fauna_activity_index` |
+| **Бушин І.М.** (ЧНУ ФОТІУС) | CNN, Sentinel-2, Computer Vision | NDVI-pipeline (Sentinel-2) + Macro-Micro verification (NDVI ↔ soundscape) → `biodiversity_trend` |
 | **Любченко К.М.** (ЧНУ ФОТІУС) | Genetic Algorithms, Edge AI, Master of Logic | NSGA-II multi-objective GA для 5-class TinyML моделі (silence/wind/cavitation/chainsaw/**fauna**); циркадно-залежні confidence thresholds (dawn vs dusk) |
 | **Базіло К.В.** (ЧДТУ ПМКТ) | П'єзоелектрика, EIS-характеризація | Резонансні характеристики п'єзосенсора у діапазоні фауни 0.5–12 кГц; калібрування АЧХ під soundscape |
 | **Бондаренко М.О.** (ЧДТУ ПМКТ) | Acoustic Emission, мікродеформації | AE-методологія для розрізнення layered soundscape від механічного шуму; "Cherkasy Soundscape Library" — методологія записів |

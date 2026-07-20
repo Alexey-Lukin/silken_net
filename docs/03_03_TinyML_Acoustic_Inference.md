@@ -218,7 +218,7 @@ for(int i = 0; i < 512; i++) {
 > CMSIS-DSP вже завендорено (FW.46 `extern/`; logmel FFT `arm_rfft_fast_f32`) —
 > додавання Mel-bank ~1-2 KB коду без зміни toolchain.
 >
-> **Fallback на Path C** — лише якщо ML-партнер (Бушин/Любченко) сильно
+> **Fallback на Path C** — лише якщо ML-партнер (якщо матеріалізується) сильно
 > натисне на TFLM end-to-end через тренувальний workflow (Edge Impulse).
 > **Path A — fast-path MVP** для 4-class без fauna, якщо знадобиться більша модель (партнерів нема — baseline self-owned)
 > 2+ місяців; пізніше міграція на Path B.
@@ -345,7 +345,7 @@ PVD safety, з запасом). Path B має найменшу sum, але рі�
 
 ### 3.4 Log-Mel Feature Contract (FW.25) — конкретна специфікація
 
-> **Призначення:** конвертувати «implementation gate» (FW.25 log-mel contract) у простий *confirm*. Нижче — повний MCU-готовий контракт log-mel ознак. Firmware (`Compute_LogMel`) і тренувальний pipeline ML-партнера **мусять використовувати ідентичні параметри** — інакше модель, натренована на librosa-фічах, не працюватиме на MCU-фічах. ML-партнер (Бушин/Любченко) **підтверджує або коригує** ці значення; після цього DSP-імплементація (CMSIS-DSP + golden-vector host-тести) розблокована.
+> **Призначення:** конвертувати «implementation gate» (FW.25 log-mel contract) у простий *confirm*. Нижче — повний MCU-готовий контракт log-mel ознак. Firmware (`Compute_LogMel`) і тренувальний pipeline **мусять використовувати ідентичні параметри** — інакше модель, натренована на librosa-фічах, не працюватиме на MCU-фічах. **DSP self-owned** (`Compute_LogMel`, librosa≡stdlib≡C golden-vector parity + host-тести — вже реалізовано); опційна партнер-модель тренується на ЦЬОМУ контракті, не змінює його.
 
 #### Параметри (proposed baseline)
 
@@ -662,7 +662,7 @@ acoustic_events = 0; // Скидаємо лічильник після паку�
 > - **Path C (TFLM frontend)** при `N_features = 40` mel bins: `mean[40] = 160 B` + `M2[40] = 160 B` + `count = 4 B` + `inference_input[80] = 320 B` ≈ **644 B**, округлено до **~768 B**.
 > - **Path A (raw window memory)**: ширша статистика на time-domain envelope (`mean+std+kurtosis+RMS+ZCR`), ~**2 KB** з повним 512-семпловим reference window для cross-correlation.
 >
-> RAM виділяється тільки на час fauna-сесії і звільняється перед STOP2 — звичайні класи 0–3 (32 мс post-EXTI) цей блок не використовують. Точний розмір зафіксується після (1) вибору DSP-шляху ML-партнером (Бушин/Любченко), (2) калібрувального датасету ЧДТУ ПМКТ (див. §10.5), (3) фінального вибору `N_features` для 5-class моделі.
+> RAM виділяється тільки на час fauna-сесії і звільняється перед STOP2 — звичайні класи 0–3 (32 мс post-EXTI) цей блок не використовують. Точний розмір зафіксується після (1) DSP-шляху (Path B log-mel обрано self-owned), (2) калібрувального датасету ЧДТУ ПМКТ (див. §10.5), (3) фінального вибору `N_features` для 5-class моделі.
 
 ---
 
