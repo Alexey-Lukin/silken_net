@@ -358,7 +358,7 @@ _«Дослідження акустичних властивостей пори
 |-------|--------|
 | **Биченко А.** (ЧІПБ) | Протокол конверсії EwsAlert → ДСНС dispatch, інтеграція з «Пульт-112», drone reconnaissance |
 | **Ротар В.** (ЧІПБ) | 8 SOP-документів per alert_type (drought/epidemic/vandalism/fire/seismic/fault/entropy/field_audit — [`00_07` UNI.12/ARCH.31](00_07_Action_Plan_Tracker)), протоколи для форестерів та патрулів |
-| **Несен І.** (ЧІПБ) | Протокол екстракції анкера, інструмент деінсталяції + польова ергономіка обслуговування ([`02_02 §4.1`](02_02_Blind_Mate_Pogo_Pin_Interface); перевішено з Ст.33 2026-07-19), post-extraction SOP |
+| **Несен І.** (ЧІПБ) | Нетравматична заміна/деінсталяція капсули (динамометр + польова ергономіка обслуговування) → [`02_02 §4.1`](02_02_Blind_Mate_Pogo_Pin_Interface); service-SOP |
 | Архітектор (Silken Net) | EmergencyResponseService, EwsAlert, ActuatorCommand, PANIC_TTL firmware |
 
 ---
