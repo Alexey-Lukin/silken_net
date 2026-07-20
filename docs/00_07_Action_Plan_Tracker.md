@@ -1067,7 +1067,7 @@
 
 #### ARCH.19 — Spatial-кластеризація просторового розподілу аномалій → Digital Twin аналітика
 - **P3** · 🤖 · 🌿 · → [`04_02`](04_02_Business_Logic_and_Services)
-- **Стан:** Far-horizon self-own (Бушин знято 07-20 — академ-провенанс порожній: Стаття 10 вилучена UNI.19, `BSP` у Ст.24a = 0 входжень, статті-дому нема). Задача = **generic spatial-clustering** (DBSCAN на координатах EwsAlert-аномалій → мапа кластерів проблем → Digital Twin [`03_03 §10`](03_03_TinyML_Acoustic_Inference)), self-ownable — НЕ унікальний BSP-метод Бушина. **Data-gated** (як сусід ARCH.70): кластеризувати нічого до реального флоту-аномалій (System TRL 3, no deploy) — scaffold без даних = repo-антипатерн (E.10-прецедент). Канон `04_02` (`InsightGeneratorService`).
+- **Стан:** **Generic spatial-clustering** (DBSCAN на координатах EwsAlert-аномалій → мапа кластерів проблем → Digital Twin [`03_03 §10`](03_03_TinyML_Acoustic_Inference)). **Data-gated:** кластеризувати нічого до реального флоту-аномалій (System TRL 3, no deploy) — scaffold без даних = repo-антипатерн (E.10-прецедент). Канон `04_02` (`InsightGeneratorService`).
 - [ ] 🤖 DBSCAN spatial-clustering аномалій → Digital Twin мапа — коли реальні аномалії-дані (post-deployment, opportunistic)
 
 ## §05 · Web3 / Економіка / Slashing
