@@ -287,8 +287,8 @@
 
 #### ARCH.25 — Gyroid geometric validation scripts (per-slice / topology / BFS connectivity) [поглинув ARCH.30 2026-07-16]
 - **P2** · 🤖 · 🟢 · → `01_02 §6`, `08_02 §1B`
-- **Стан:** Машинну половину закрито self-owned (не чекаючи Порубльова/Онищенка) — двофазний топологічний аудит гіроїда (`tools/cad/Connectivity.cs`, pure-managed display-less xUnit): один flood-fill = обчислювальний прокси чотирьох лаб-тестів (open-pore/percolation/solid-island/closed-pore) + adaptive-resolution застереження + робоче вікно `wallParam` — повний design-justification у каноні [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS). Topology measured, not assumed. Партнерська CFD/польова нога pending — [`08_02 §1B`](08_02_Academic_Institutions_Registry) (Порубльов).
-- [ ] 🔗 C++/CFD topological-integrity mesh + Akash GPU (Онищенко; **[поглинув ARCH.30]** far-horizon domain-decomp CFD — `Connectivity.cs` flood-fill + tortuosity-proxy вже покривають topology, канон [`01_01 §5.5`](01_01_Coaxial_Gyroid_Topology_and_PEEK) заморозив flow-orientation як «маргінальну для бінеперервного гіроїда»; dangling 06_02-hook у `08_02 §1B`) — self-own за потреби, партнер pending
+- **Стан:** Машинну половину закрито self-owned — двофазний топологічний аудит гіроїда (`tools/cad/Connectivity.cs`, pure-managed display-less xUnit): один flood-fill = обчислювальний прокси чотирьох лаб-тестів (open-pore/percolation/solid-island/closed-pore) + adaptive-resolution застереження + робоче вікно `wallParam` — повний design-justification у каноні [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS). Topology measured, not assumed. Партнерська CFD/польова нога — far-horizon, self-own за потреби.
+- [ ] 🔗 C++/CFD topological-integrity mesh + Akash GPU (**[поглинув ARCH.30]** far-horizon domain-decomp CFD — `Connectivity.cs` flood-fill + tortuosity-proxy вже покривають topology, канон [`01_01 §5.5`](01_01_Coaxial_Gyroid_Topology_and_PEEK) заморозив flow-orientation як «маргінальну для бінеперервного гіроїда») — self-own за потреби
 - [ ] 🤖 deferred (nice-to-have): Euler-χ крос-чек · tortuosity (random-walk на percolated cluster) · voxel-cross-check на as-printed grid (не лише SDF-intent)
 
 #### HW.4 — Self-healing coating (NEW: zone-restricted)
@@ -1519,7 +1519,7 @@
 
 #### UNI.1 — Перший контакт з деканом Онищенком (ChNU FOTIUS)
 - **P0** · 👤 · ⚪ · → `08_01`
-- **Стан:** Не почато — перший контакт з деканом Онищенком (ChNU FOTIUS); блокує всю лаб-роботу, 10 публікацій, 11 магістерських. Канон `08_01`.
+- **Стан:** Не почато — вхід у ФОТІУС-раунд (Порубльов/Ярмілко/Косенюк/Любченко) через декана Онищенка, ПІСЛЯ ректорського MoU. ⚠️ Лаб-доступ = підпис в.о. ректора Кирилюка (UNI.15/UNI.18), **НЕ** декан; ректор делегував ФОТІУС-операційку деканату (UNI.18 NB). Онищенко = операційний роутер, не валідатор. Канон `08_01`.
 - [ ] 👤 призначити + провести зустріч
 
 #### UNI.14 — СЄУ: перший контакт ректорату + токеноміка RWA / правова архітектура
@@ -1804,10 +1804,10 @@ _Активних DOC-T немає — усі закриті мігровані 
 | UNI.8 | СЄУ ректорат — перший контакт = **legacy dup**, консолідовано в живий **UNI.14** (P0; перший контакт + MSA/KYC/DAO-юрособа/ESG, блокує Economic Whitepaper/Legal/NaaS) | `08_02 §5` |
 | UNI.6 | (retired) ранній ID, тричі колізійно перевикористаний до marks-audit 2026-07-13 (DFT-школи → живі UNI.4/UNI.5 · Любченко-GA → E.52 · ПЗФ-Спрягайло → STK.1/STK.2); знято з живого канону, власного значення не має | — |
 | UNI.7 | (retired) ранній ID, знято без живого дому (marks-audit 2026-07-13) | — |
-| ARCH.32 | Shape-Up PN-decor хірургія Статті 9 (2026-07-09, commit `e11958bb`) — знято декоративну Petri-Net-ланку (Супруненко), лишено product-корінь Осауленко-portfolio (ARCH.23 MAUT+DBSCAN); **прецедент decor-хірургії для UNI.19** (вирізати ланку, не статтю). Видалено з живого 00_07, git тримає | `08_01 Стаття 9` |
+| ARCH.32 | Shape-Up PN-decor хірургія Статті 9 (2026-07-09, commit `e11958bb`) — знято декоративну Petri-Net-ланку, лишено product-корінь portfolio-моделі (ARCH.23 MAUT+DBSCAN); **прецедент decor-хірургії для UNI.19** (вирізати ланку, не статтю). Видалено з живого 00_07, git тримає | `08_01 Стаття 9` |
 | UNI.19 | Review публікаційного портфеля 08_01 — ланко-хірургія **26→17** (07-17) → **16** (07-19, Ст.33 зрізано цілком). Критерій складу = канон [`08_01 §Відкриті передумови`](08_01_Joint_Publications_and_IP_Strategy) («треба для наукового підтвердження»; «робота» ≠ «стаття»). 07-19 закрито 3 ⚖️: Ус/Ротар=ТРИМАТИ (defensibility — SOP=доказова база slash-negligence), Ст.24=3 honesty-фікси, Ст.33=CUT (ідентичність трималась на Теліженко-етнодизайні+bark-camo; кістяк → `01_04 §5.5` / `01_01 §4.3`; Денисенко виходить з портфеля, робота жива). Уроки/метод → пам'ять `project_portfolio_lano_surgery` + `feedback_vilize_sweep_method`; per-стаття «чому» → git (07-17/07-19). Прецедент → ARCH.32 | `08_01` |
 | ARCH.29 | RTOS Deadlock-Free PN-верифікація firmware — **won't-do (founder 2026-07-14)**: vacuous-by-construction (Soldier = bare super-loop, deadlock неможливий, guard-дельта нуль); liveness покрито SEC.15. Academic firmware-PN (Стаття 5-ланка, теж вилучена) не переслідується | `03_01` |
-| ARCH.20 | Petri Net PN-модель Rails моноліту (Стаття 7) — **won't-do (founder 2026-07-14)**: PN = one-shot snapshot (drift, провалює durable-gate); ~90% «deadlock@10K» покрито INF.23-гарнесом + lock-дисципліною. Стаття 7 вилучена (Супруненко-водоспад — PN був її єдиним внеском) | `08_01` |
+| ARCH.20 | Petri Net PN-модель Rails моноліту (Стаття 7) — **won't-do (founder 2026-07-14)**: PN = one-shot snapshot (drift, провалює durable-gate); ~90% «deadlock@10K» покрито INF.23-гарнесом + lock-дисципліною. Стаття 7 вилучена (PN був її єдиним внеском) | `08_01` |
 | BIZ.16 | Naming model **RESOLVED** (founder 2026-06-16): codename «Gaia 2.0» **розчинено** за висотою → **SilkenNet** (лісовий net / продукт) + **GaiaNexus** (планетарна федерація / ноосферний апекс, far-horizon); sphere-таксономія + `PlanetaryNode`-абстракція. ~66-site sweep (docs+code+contracts NatSpec+foundry fuzz-seed) + deprecated-term guard «Gaia 2.0». ™-заявка лишається UNI.3/UNI.15; повна multi-net vision-сторінка відкладена → ARCH.44 | `08_01 §2`, `00_08 §3` |
 | PUMA-RACK-1 | Idempotency write off response path (`rack.response_finished`) | `06_05 §7` |
 | TRL Матриця | Per-module TRL (мігровано з 00_07) | `00_03 §1` |
