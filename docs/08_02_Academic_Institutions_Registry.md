@@ -81,7 +81,7 @@
 | **Порубльов І.М.** | дискретна математика, обчисл. геометрія | Z-пороги гейта + numeric-DCI (Ст.25/34 — «найбільший науковий ризик проєкту») | Ст. 25/34 |
 | доц. **Косенюк Г.В.** | військова радіотехніка, теорія кодування | RF impedance/Link Budget/ground-plane ([`02_01 §5`](02_01_Hardware_Architecture_and_BOM)); енерго-свідомий вибір coding-rate ([`00_07` FW.61](00_07_Action_Plan_Tracker)) | Ст. 23 |
 | **Онищенко Б.О.** (декан ФОТІУС) | стохастична оптимізація, паралельні алгоритми | Інституційна роль — декан ФОТІУС ([`00_07` UNI.1](00_07_Action_Plan_Tracker), відмикає лаб-роботу) | — |
-| доц. **Бушин І.М.** | CNN / computer vision / BSP | CNN-NDVI synthesis → Digital Twin ([`03_03 §10`](03_03_TinyML_Acoustic_Inference)); BSP-кластеризація аномалій | Ст. 24a |
+| доц. **Бушин І.М.** | CNN / computer vision | CNN-NDVI synthesis → Digital Twin ([`03_03 §10`](03_03_TinyML_Acoustic_Inference)) | Ст. 24a |
 | ст.викл. **Любченко К.М.** | нейромережі, GA, Master of Logic | GA-оптимізація backend ML (`InsightGeneratorService`, [`04_02`](04_02_Business_Logic_and_Services)); NSGA-II TinyML + циркадні пороги ([`03_03`](03_03_TinyML_Acoustic_Inference)) | Ст. 24a |
 
 > **План публікацій ЧНУ:** [`08_01 §1`](08_01_Joint_Publications_and_IP_Strategy) (Hard Science + ФОТІУС) · [`08_01 §1C`](08_01_Joint_Publications_and_IP_Strategy) (ФОТІУС × ЧДТУ синергія) · [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy) (ректорат ННІ — біоекономіка/синергетика).
