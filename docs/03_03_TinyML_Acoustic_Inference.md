@@ -589,32 +589,15 @@ acoustic_events = 0; // Скидаємо лічильник після паку�
 
 ### 5.3 Emergency LoRa TX (Реакція на Бензопилу)
 
-```c
-void Trigger_Emergency_LoRa_TX(void)
-{
-    uint8_t panic_payload[16] = {0};
-    uint8_t encrypted_panic[16] = {0};
+*Ілюстрація decision-flow, **не** бітова копія (дім розкладки — нижче).* Коли TinyML класифікує пилку (`CRITICAL`), `Trigger_Emergency_LoRa_TX` (`firmware/soldier/main.c`) **позачергово** (поза Phase 4 jitter) шле 16-байтний panic-кадр і одразу засинає:
 
-    // Байти 0-3: DID дерева (ідентифікатор)
-    panic_payload[0] = (uint8_t)(tree_did >> 24);
-    panic_payload[1] = (uint8_t)(tree_did >> 16);
-    panic_payload[2] = (uint8_t)(tree_did >> 8);
-    panic_payload[3] = (uint8_t)(tree_did & 0xFF);
+- **DID** дерева у байтах 0..3; **`0xFF`** — маркер паніки у байті 7 (максимальна тривога);
+- **[FW.29]** `PANIC_FLAG_BIT` у StatusByte (байт 10) — однозначна детекція паніки на бекенді;
+- **[FW.18b]** байт 11 = `Ttl_Byte_Pack(PANIC_TTL, tinyml_threshold_invalid_count)` — підвищений TTL (5 проти `DEFAULT_TTL` 3) для глибшого mesh-проникнення + спакований invalid-counter;
+- **[SEC.10]** `panic_frame_counter` (saturating @ 0xFFFF) у байтах 14..15 (BE) — anti-replay nonce (сервер рубає повтори через Redis SETNX), персиститься у DR0 негайно;
+- шифрування AES-128 (ECB-ера) **або** CCM-потік (`#if FW2_CCM_ENABLED`, той самий anti-replay FC у нонсі) → негайний `Radio.Send` → `Radio.Sleep`. Гілка `ARCH26_CAD_ENABLED` подовжує преамбулу («останній зойк» поза зоною Королеви).
 
-    // Байт 7: 0xFF — маркер паніки (максимальна тривога)
-    panic_payload[7] = 0xFF;
-
-    // Байт 11: PANIC_TTL = 5 (стандартний TTL = 3 стрибки)
-    panic_payload[11] = PANIC_TTL; // 5 стрибків замість стандартних 3
-
-    // AES-128-ECB шифрування + негайна відправка (post-ARCH.42 LoRa-ключ; режими — 03_05 §3.7)
-    HAL_CRYP_Encrypt(&hcryp, (uint32_t*)panic_payload, 4, (uint32_t*)encrypted_panic, 1000);
-    Radio.Send(encrypted_panic, 16);
-
-    HAL_Delay(100); // Час фізичного випромінювання
-    Radio.Sleep();  // Економія енергії
-}
-```
+> **Дім бітової розкладки panic-кадру:** [`03_01 §8`](03_01_Firmware_Lifecycle_and_DMA) (binary packet format) + StatusByte [`03_04 §4.4`](03_04_mruby_Lorenz_Attractor). Тут — лише ілюстрація реакції; байтові offset'и не дублюємо, щоб копія не старіла.
 
 **Ключові відмінності panic-пакета від стандартного:**
 
