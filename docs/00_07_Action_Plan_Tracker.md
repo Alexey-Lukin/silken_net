@@ -1520,7 +1520,7 @@
 #### UNI.14 — СЄУ: перший контакт ректорату + токеноміка RWA / правова архітектура
 - **P0** · 🤖+👤 · ⚪ · → `08_02 §5`
 - **Стан:** Не почато (консолідує legacy UNI.8) — перший контакт ректорату СЄУ + СЄУ-робота: (1) MSA/Term Sheet (Аблязов Д., к.ю.н.), (2) KYC/AML юросіб (Hadron), (3) DAO як юрособа (cooperative/Swiss Verein), (4) ESG Accounting (Ус Г.О.). Блокує Economic Whitepaper / Legal Framework / NaaS-шаблони (`07_01` B2B-MSA/B2C-ToS). ⚠️ 7 посад потребують verify. Канон `08_02 §5`.
-- [ ] 👤 зустріч Чудаєва (ректор)/Аблязова Н. + verify 7 посад + MoU СЄУ↔SilkenNet + workshop Аблязов (MSA) + workshop Ус (ESG framework)
+- [ ] 👤 зустріч Чудаєва (ректор) + verify 7 посад + MoU СЄУ↔SilkenNet + workshop Аблязов (MSA) + workshop Ус (ESG framework)
 - [ ] 🤖+👤 [gap-pass §07] tax-posture: grant-income + personal-income-on-receipt (UA SCC-holders) + `dynamic_tax`×UA-податкове — 🤖 складе питання-меморандум → 👤 Ус Г.О.
 
 #### UNI.2 — зустрічі з факультетом ФОТІУС
