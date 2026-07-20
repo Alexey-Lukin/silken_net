@@ -224,9 +224,8 @@ SilkenNet об'єднує сім академічних та індустріа�
 
 | Автор | Внесок |
 |-------|--------|
-| **Порубльов І.М.** | Percolation/Markov `q_c`-теорія надійності mesh — ⚠️ **відкладено** (mesh star-only post-CCM, ARCH.43 post-TRL 6), **двері відкриті**; Monte-Carlo `P_delivery` G(V,E,P) / TTL-калібрування (E.51) **self-own ухвалено 07-20** ([`00_07` — E.51](00_07_Action_Plan_Tracker) ⚪ → `tools/mesh/`) |
+| **Порубльов І.М.** | Percolation/Markov `q_c`-теорія надійності mesh — ⚠️ **відкладено** (mesh star-only post-CCM, ARCH.43 post-TRL 6), **двері відкриті**; Monte-Carlo `P_delivery` G(V,E,P) / TTL-калібрування (ARCH.74) **self-own ухвалено 07-20** ([`00_07` — ARCH.74](00_07_Action_Plan_Tracker) ⚪ → `tools/mesh/`) |
 | **Ярмілко А.В.** | Аналіз відмовостійкості TTL-flood relay при стохастичних енергетичних відмовах (dependability framework); верифікація state machine Soldier |
-| Косенюк Г.В. | Hash Method для захисту телеметрійних потоків перед blockchain-записом. ⚠️ RF link budget + FEC знято 2026-07-17 — дім Link Budget = Ст.23 (стояв двічі; саме це усував merge Ст.8→Ст.23), FEC = [`00_07` E.15](00_07_Action_Plan_Tracker) ⚫ (CR 4/5 Hamming уже в кремнії SX126x) |
 | Архітектор (Silken Net) | Дизайн системи, практична імплементація |
 
 ---

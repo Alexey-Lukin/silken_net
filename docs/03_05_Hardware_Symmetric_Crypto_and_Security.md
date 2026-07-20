@@ -276,6 +276,7 @@ HAL_CRYPEx_AESCCM_GenerateAuthTAG(&hcryp, tag_w, 1000);
 - **Mesh-relay TTL у шифртексті:** ретранслятор НЕ може декрементувати `mesh_ctrl.ttl` (encrypted+MIC, per-Soldier ключ). Спадок rev1-freeze, rev2 не погіршує: relay CCM-телеметрії = opaque store-and-forward, дедуп — за cleartext DID (`recent_mesh_dids`). Чесне рішення (TTL у AAD? hop-лічильник Queen-side?) — разом з ARCH.26 TDMA.
 - **Climate frame (HW.32 сирі RH/тиск):** окремий періодичний кадр (НЕ per-cycle поле) — Queen маршрутизує за довжиною (16B control / air-телеметрія (30B rev2.1) / інша довжина = climate). Формат проєктувати при HW.32.
 - **E.63 EMA-delta_t — ✅ РОЗВ'ЯЗАНО rev2.1 (founder 2026-07-03, друге читання; було «на фліп-дні» V3+):** wire несе ОБИДВА — raw dT (bytes 12..13, діагностика/server-EMA — [`03_01 §13.6`](03_01_Firmware_Lifecycle_and_DMA)) + **EMA-delta_t (bytes 20..21, контракт «wire = вхід GP»)** → точний stateless recompute можливий конструкцією, observational до bench-калібрування. Чому переглянуто V3+: носій ≠ форма (поле інваріантне до порогів/m()); самоцінність для калібрування (польовий розподіл recharge-кривих); airtime нуль; «на фліп-дні» ламало дисципліну ревізії нижче. Якщо bench покаже мертвий сигнал — поле деградує в діагностично-резервне (прецедент vpd_index). Гейт (г) фліп-чекліста ✅.
+- **FW.59 reset-cause / crash-forensics (кандидат наступної ревізії):** Soldier потребує 3-біт cause + consec-counter на дроті (Королева reset-cause = era-invariant QATT-nibble bits4..7 у §2.2, НЕ тут). Слот-кандидати з headroom вище: `vpd_index` (double-book з HW.32) / реклемований `mesh_ctrl.ttl`-біт / airtime-free 31B. Рішення при CCM-wire-фіналі → [`00_07` — FW.59](00_07_Action_Plan_Tracker).
 
 **Дисципліна ревізії:** формат ревізується ЛИШЕ до польового фліпу (`FW2_CCM_ENABLED` все ще 0 — обидві прошивки і бекенд за гейтами, тож rev2 коштував код+тести+KAT-регенерацію, нуль міграції). Після фліпу будь-яка зміна = повний міграційний цикл (фліт у полі) → нові претенденти збираються тут і їдуть пакетом у rev3.
 
@@ -536,14 +537,14 @@ static void MX_CRYP_Init(void)
 |       DID (Device ID, 4 байти, big-endian)        |   0    |   0    |   0    | 0xFF   |
 +--------+--------+--------+--------+--------+--------+--------+--------+
 | Byte 8 | Byte 9 |Byte 10 |Byte 11 |Byte 12 |Byte 13 |Byte 14 |Byte 15 |
-|   0    |   0    | PANIC_FLAG_BIT |PANIC_TTL| FW_HI | FW_LO  |CTR_HI  |CTR_LO  |
+|   0    |   0    | PANIC_FLAG_BIT |PANIC_TTL|   0    |   0    |CTR_HI  |CTR_LO  |
 +--------+--------+--------+--------+--------+--------+--------+--------+
 ```
 
 - Byte 7 = `0xFF` → код паніки (максимальна акустична подія)
 - Byte 10 = `PANIC_FLAG_BIT` (0x80) → **[FW.29]** однозначний disambiguation panic vs saturated acoustic
 - Byte 11 = `PANIC_TTL` (= 5, збільшений TTL для досягнення Queen через більше стрибків)
-- Bytes 12-13 = `firmware_version_id` BE (FW.22)
+- Bytes 12-13 = `0x00` — panic НЕ несе firmware-версію (код `panic_payload[]` присвоює лише [0-3]/[7]/[10]/[11]/[14-15], решта zero-init; backend читає firmware_id = 0 для panic-кадрів)
 - Bytes 14-15 = **[SEC.10]** `panic_frame_counter` BE (uint16, monotonic + saturating @ 0xFFFF)
 
 **[SEC.10] Frame Counter anti-replay для panic packets (2026-05-03):**
@@ -599,14 +600,15 @@ Legacy (L0):    [IV:16][Encrypted Data: N×16]                  довжина %
 **Кожен "Encrypted Block" містить один або кілька 21-байтних записів телеметрії** (вирівняних padding нулями до кратного 16; розкладка запису — [`03_01 §8`](03_01_Firmware_Lifecycle_and_DMA) One-Home):
 
 ```
-21-byte Telemetry Record (before encryption):
-+--------+--------+--------+--------+--------+--------+--------+--------+--------+
-|  DID[0]|  DID[1]|  DID[2]|  DID[3]|  UID   | RSSI   |Vcap MSB|Vcap LSB| Temp°C |
-+--------+--------+--------+--------+--------+--------+--------+--------+--------+
-|Acoustic|ΔT MSB  |ΔT LSB  |GrowthPt|  TTL   |FW MSB  |FW LSB  |BioStat | RSSI   |
-+--------+--------+--------+--------+--------+--------+--------+--------+--------+
-| Hash   |  0     |  0     |        (padding нулями до кратного 16 байт)          |
-+--------+--------+--------+--------+--------+--------+--------+--------+--------+
+21-byte Telemetry Record (Queen→Rails, у батчі перед AES-256-CBC):
++--------+--------+--------+--------+--------+-----------------------------------+
+| DID[0] | DID[1] | DID[2] | DID[3] |  RSSI  |   16-байтний ECB-payload block     |
++--------+--------+--------+--------+--------+-----------------------------------+
+  bytes 0..3 : DID (Device ID, big-endian)
+  byte 4     : RSSI (Queen додає при LoRa-RX — Soldier його НЕ передає)
+  bytes 5..20: непрозорий 16-байтний блок телеметрії (розкладка = normal-telemetry
+               діаграма §2.2 вище + 03_01 §8 One-Home; поля UID/BioStat/Hash
+               з попередньої чорнетки в коді НЕ існують)
 ```
 
 **CoAP URI:** `PUT /telemetry/batch/<QUEEN_UID>` (queen_uid читається з Flash — Flash-provisioned або `"UNPROV-{HEX}"` через STM32 HW UID)
