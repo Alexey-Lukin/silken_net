@@ -255,4 +255,39 @@ RSpec.describe Downlink::PendingQueueService do
       expect(fetched).not_to be_nil
     end
   end
+
+  describe "[FW.60/SEC.11] OTA fail-closed без PROVISIONING_MASTER_KEY (SecurityError-ізоляція)" do
+    let(:firmware) { create(:bio_contract_firmware, bytecode_payload: "AB" * 64) }
+
+    before do
+      gateway.update!(pending_firmware_id: firmware.id)
+      # OtaHmacKeyService кидає SecurityError (< Exception, НЕ StandardError) без
+      # PROVISIONING_MASTER_KEY — демон-rescue StandardError його НЕ ловить; без
+      # guard'а це crash-loop усього CoAP-інтейку на першому hint/chunk кампанії.
+      allow(OtaHmacKeyService).to receive(:fetch_binary_for)
+        .and_raise(SecurityError, "PROVISIONING_MASTER_KEY ENV is required")
+    end
+
+    it "poll не падає: hint пропущено → time-only конверт (RTC-sync Королеви живий)" do
+      expect { poll }.not_to raise_error
+      expect(decrypt_inner(poll).bytes).to all(eq(0))
+    end
+
+    it "chunk-fetch fail-closed → nil (CoapGate відповість 4.04), демон не крашиться" do
+      fetched = nil
+      expect do
+        fetched = described_class.ota_chunk_reply(
+          gateway: gateway, query: { "v" => firmware.id.to_s, "ch" => "0" }
+        )
+      end.not_to raise_error
+      expect(fetched).to be_nil
+    end
+
+    it "nil НЕ кешується — щойно ключ зʼявляється, hint оживає (без години зависання)" do
+      poll # SecurityError → fail-closed nil; якби nil закешувався — hint застряг би
+
+      allow(OtaHmacKeyService).to receive(:fetch_binary_for).and_call_original
+      expect(decrypt_inner(poll).getbyte(0)).to eq(0x9F)
+    end
+  end
 end

@@ -177,6 +177,15 @@ module Downlink
 
     # Пакети кампанії — важке пакування кешується per (firmware, cluster):
     # той самий масив живить hint (total) і chunk-server (байти чанків).
+    #
+    # [FW.60/SEC.11] `OtaPackagerService.prepare` → `OtaHmacKeyService` кидає
+    # `SecurityError` (< Exception, НЕ StandardError) без PROVISIONING_MASTER_KEY.
+    # Це ЄДИНЕ джерело SecurityError у poll-тракті, а демон-rescue ловить лише
+    # StandardError → без цього guard'а перший hint/chunk активної кампанії валив
+    # би увесь CoAP-інтейк (телеметрія включно) у crash-loop. Fail-closed: nil →
+    # hint пропущено (poll усе одно віддає time-only = RTC-sync Королеви живий),
+    # chunk → 4.04. Rescue ЗЗОВНІ cache.fetch — nil не кешується, redeploy з
+    # ключем одразу відновлює видачу.
     def ota_packages(firmware_id)
       Rails.cache.fetch("fw60/ota_packages/#{firmware_id}/#{@gateway.cluster_id}",
                         expires_in: 1.hour) do
@@ -189,6 +198,10 @@ module Downlink
           cluster_id: @gateway.cluster_id
         )[:packages].to_a
       end
+    rescue SecurityError => e
+      Rails.logger.error "🛑 [FW.60/SEC.11] OTA fail-closed для #{@gateway.uid}: " \
+                         "#{e.message.lines.first&.strip} — кампанія стоїть, інтейк живий"
+      nil
     end
 
     # [SEC.20] Живий producer OTA-прогрес-бара (push-воркер superseded FW.60):
