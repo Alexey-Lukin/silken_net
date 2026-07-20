@@ -51,7 +51,7 @@ module Ethereum
 
     # [BLOCKER-4] Мінімальний баланс ETH на oracle-гаманці для виконання L1 транзакції.
     # 0.01 ETH достатньо для ~3-5 storeStateRoot транзакцій при нормальних gas цінах.
-    # [E.51] Default value — fallback if SystemParameter not seeded yet.
+    # [INF.22] Default value — fallback if SystemParameter not seeded yet.
     DEFAULT_MIN_ANCHOR_BALANCE_ETH = 0.01
 
     # [ARCH.66 companion] Node-помилки, що доводять: tx під нашим nonce уже досяг мережі (mined
@@ -192,7 +192,7 @@ module Ethereum
       anchor_key = Eth::Key.new(priv: ENV.fetch("ETHEREUM_ANCHOR_PRIVATE_KEY"))
 
       # [BLOCKER-4] Inline guard clause — перевірка балансу ETH перед відправленням.
-      # [E.51] Threshold configurable через SystemParameter (governance-aware, 24h cache).
+      # [INF.22] Threshold configurable через SystemParameter (governance-aware, 24h cache).
       min_eth = (SystemParameter.current(:oracle_min_balance_eth, default: DEFAULT_MIN_ANCHOR_BALANCE_ETH) || DEFAULT_MIN_ANCHOR_BALANCE_ETH).to_f
       min_balance_wei = (min_eth * (10**18)).to_i
       balance = client.get_balance(anchor_key.address)

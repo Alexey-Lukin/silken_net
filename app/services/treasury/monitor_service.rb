@@ -22,7 +22,7 @@ module Treasury
   #   report.each { |r| puts "#{r[:network]}/#{r[:signer]}: #{r[:status]}" }
   # =========================================================================
   class MonitorService < ApplicationService
-    # [E.51/INF.22] Один гаманець = один запис: після key-спліту на мережі живе КІЛЬКА
+    # [INF.22] Один гаманець = один запис: після key-спліту на мережі живе КІЛЬКА
     # dedicated-підписантів (Polygon: minter/slasher + activation-gated aux) — моніторимо
     # газ КОЖНОГО живого signer'а, не легасі base-EOA (та retired повністю).
     # Пороги (min_balance) — fallback; runtime-значення через SystemParameter
@@ -227,7 +227,7 @@ module Treasury
                          "нові #{token_type} mint-батчі тримаються :pending до TTL-expiry/reset."
     end
 
-    # [E.51] Resolves the wallet entry into a runtime config with governance-aware thresholds.
+    # [INF.22] Resolves the wallet entry into a runtime config with governance-aware thresholds.
     # SystemParameter.current reads from 24h cache → no DB hit on every monitor cycle.
     def build_config(wallet)
       min_balance = (SystemParameter.current(wallet[:param_key], default: wallet[:min_balance]) || wallet[:min_balance]).to_f

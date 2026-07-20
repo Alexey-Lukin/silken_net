@@ -47,7 +47,7 @@ module Solana
 
     # Мінімальний баланс оракула (SOL) для оплати газу транзакцій.
     # Аналог перевірки MATIC у BlockchainMintingService.
-    # [E.51] Default value — fallback if SystemParameter not seeded yet.
+    # [INF.22] Default value — fallback if SystemParameter not seeded yet.
     DEFAULT_MIN_ORACLE_BALANCE_SOL = 0.05
 
     # [E.61] TransferChecked валідує mint+decimals on-chain (захист від
@@ -551,7 +551,7 @@ module Solana
     # [BLOCKER-1 FIX]: Oracle Balance Guard
     # =========================================================================
     # Перевіряє баланс SOL на гаманці оракула перед відправкою транзакції.
-    # [E.51] Threshold configurable через SystemParameter (governance-aware, 24h cache).
+    # [INF.22] Threshold configurable через SystemParameter (governance-aware, 24h cache).
     def verify_oracle_balance!(fee_payer_pubkey)
       min_balance_sol = (SystemParameter.current(:oracle_min_balance_sol, default: DEFAULT_MIN_ORACLE_BALANCE_SOL) || DEFAULT_MIN_ORACLE_BALANCE_SOL).to_f
       min_balance_lamports = (min_balance_sol * 1_000_000_000).to_i
