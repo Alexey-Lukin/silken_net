@@ -23,9 +23,9 @@
 | [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC — валідують ЧНУ Мінаєв (DFT) + ЧМА Бушуєва (ензими) |
 | [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ti-довговічність/Kirkendall — ЧНУ Гусак + ЧМА Суховой (токсикологія) |
 | [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | §10 Soundscape — ЧДТУ ПМКТ (датасет) + ЧНУ Бушин (CNN-NDVI) |
-| [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz = status-гейт + DCI-anti-fraud (E.63/E.64 — Z↔health емпірично degenerate). Точність-аудит **self-own стався** ([`05_05 §6`](05_05_Slashing_and_Risk_Policy)); партнерська ланка = ground-truth-протокол §6 нижче |
+| [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz = status-гейт + DCI-anti-fraud; партнерська ланка = ground-truth-протокол §6 нижче |
 | [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | §8 Ground-Truth Z↔health протокол (партнерський ростер — §6 нижче) |
-| [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) | Mesh percolation/Markov (ФОТІУС Порубльов/Онищенко, Open Research) |
+| [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) | Mesh percolation/Markov — надійність mesh |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Backend ML/DS — ФОТІУС Любченко + ЧДТУ Карапетян |
 | [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS/страхування — Кирилюк/Зобенко/Аблязов |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | UNI.* outreach-трекер |
@@ -67,7 +67,7 @@
 | Партнер | Кафедра / роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
 | проф. **Мінаєв Б.Ф.** (+ проф. Мінаєва В.О.) | хімія та наноматеріалознавство | Квантова хімія EBFC (DFT: dgrFAD-GDH/Os, Laccase-ZIF, PSBMA) → [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) + [`L3_quantum_chemistry`](protocols/ebfc/in_silico/L3_quantum_chemistry.md); DFT-адсорбція на TiO₂ (Ст.28) | Ст. 1/28 |
-| проф. **Гусак А.М.** | фізика (Wiley-монографія, UCLA-колаб.) | Нанодифузія/Kirkendall: 20-річний V/Al release + PEEK creep → [`01_02 §2`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK); sheet-vs-network FEA-E homogenization ([`00_07` HW.33](00_07_Action_Plan_Tracker) — self-own-кандидат, 🟡 pending); FEM термо-механіка Ti↔деревина (Ст.30) + PEEK creep Prony (Ст.33 зрізано 2026-07-19 → перевішено в [`01_01 §4.3`](01_01_Coaxial_Gyroid_Topology_and_PEEK)/[`00_07` HW.26](00_07_Action_Plan_Tracker), не публікація) | Ст. 2/29/30 |
+| проф. **Гусак А.М.** | фізика (Wiley-монографія, UCLA-колаб.) | Нанодифузія/Kirkendall: 20-річний V/Al release + PEEK creep → [`01_02 §2`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK); sheet-vs-network FEA-E homogenization ([`00_07` HW.33](00_07_Action_Plan_Tracker)); FEM термо-механіка Ti↔деревина (Ст.30) | Ст. 2/29/30 |
 | доц. **Спрягайло О.В.** (проректор) + к.б.н. **Гаврилюк М.В.** (дир. ННІ) | біо-хаб (дендрофлора/ПЗФ/екологія) | *Pinus sylvestris* baseline + хім. склад ксилемного соку + dawn/dusk «Cherkasy Soundscape Library» → [`03_04`](03_04_mruby_Lorenz_Attractor), [`03_03 §10`](03_03_TinyML_Acoustic_Inference), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 2/24a/29/30/35 (Спрягайло) · 2/24a/35 (Гаврилюк) |
 | проф. **Кирилюк Є.М.** (в.о. ректора) | ННІ економіки і права, біоекономіка/синергетика | Теор. база NaaS + біоекономіка; парасольовий MoU → [`07_01`](07_01_Nature_as_a_Service_Contracts); синергетика порогового гейта (Ст.34) | Ст. 34/35 |
 
@@ -83,7 +83,7 @@
 | **Онищенко Б.О.** (декан ФОТІУС) | стохастична оптимізація, паралельні алгоритми | Інституційна роль — декан ФОТІУС ([`00_07` UNI.1](00_07_Action_Plan_Tracker), відмикає лаб-роботу) | — |
 | доц. **Бушин І.М.** | CNN / computer vision / BSP | CNN-NDVI synthesis → Digital Twin ([`03_03 §10`](03_03_TinyML_Acoustic_Inference)); BSP-кластеризація аномалій | Ст. 24a |
 | д.т.н. **Осауленко І.А.** | управління R&D-портфелем | Передіснуюча модель Потрійної Спіралі ([`08_01 §0`](08_01_Joint_Publications_and_IP_Strategy), зовнішня робота) | — |
-| ст.викл. **Любченко К.М.** | нейромережі, GA, Master of Logic | GA-оптимізація backend ML (`InsightGeneratorService`, [`04_02`](04_02_Business_Logic_and_Services), Open Research); NSGA-II TinyML + циркадні пороги ([`03_03`](03_03_TinyML_Acoustic_Inference), Open Research) | Ст. 24a |
+| ст.викл. **Любченко К.М.** | нейромережі, GA, Master of Logic | GA-оптимізація backend ML (`InsightGeneratorService`, [`04_02`](04_02_Business_Logic_and_Services)); NSGA-II TinyML + циркадні пороги ([`03_03`](03_03_TinyML_Acoustic_Inference)) | Ст. 24a |
 
 > **План публікацій ЧНУ:** [`08_01 §1`](08_01_Joint_Publications_and_IP_Strategy) (Hard Science + ФОТІУС) · [`08_01 §1C`](08_01_Joint_Publications_and_IP_Strategy) (ФОТІУС × ЧДТУ синергія) · [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy) (ректорат ННІ — біоекономіка/синергетика).
 
@@ -95,10 +95,10 @@
 
 | Партнер | Кафедра / роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Anomaly/fraud-детекція (`FRAUD_DEVIATION_THRESHOLD`, Ст.13) + актуарна математика страхових тригерів (Weibull/Pareto, basis-risk copula — Ст.25) + **Lyapunov/RQA — дім Ст.34** (режимна структура атрактора навколо порогів гейта; Ст.15 вилучена — E.64) → [`04_02`](04_02_Business_Logic_and_Services), [`05_05`](05_05_Slashing_and_Risk_Policy) | Ст. 13/24/24a/25/31/34 |
+| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Anomaly/fraud-детекція (`FRAUD_DEVIATION_THRESHOLD`, Ст.13) + актуарна математика страхових тригерів (Weibull/Pareto, basis-risk copula — Ст.25) + **Lyapunov/RQA — дім Ст.34** (режимна структура атрактора навколо порогів гейта) → [`04_02`](04_02_Business_Logic_and_Services), [`05_05`](05_05_Slashing_and_Risk_Policy) | Ст. 13/24/24a/25/31/34 |
 | декан **Гончаров А.** | ФЕТР, радіотехніка | Експериментальна RF-верифікація (VNA S11, EMC pre-scan, натурний Link Budget) розрахунків Косенюка → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM) | Ст. 23 |
-| проф. **Базіло К.В.** + проф. **Бондаренко М.О.** | ПМКТ, акустична мехатроніка | Валідація фононної лінзи гіроїда (EIS + AE) + **калібрувальний TinyML-датасет** (польова валідність 5-class моделі; машинну половину `FW.4`/Run_Inference закрив self-owned ESC-50 baseline — [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference)); резонанс п'єзо у діапазоні фауни 0.5–12 кГц (Ст.24a) | Ст. 24/24a |
-| доц. **Хоменко Ю.В.** | металорізальні верстати (80+ патентів) | DMLS post-processing, геометрія різання анкера, deinstall-інструмент → [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface). ⚠️ Публікаційних ланок нема (у [`08_01`](08_01_Joint_Publications_and_IP_Strategy) — 0 входжень; колонка раніше казала «IP→08_01», показуючи на док, який його не знає). «Prior-art landscape» знято 2026-07-17 — дім = **TISC при ЧНУ** ([`08_01 §2.1`](08_01_Joint_Publications_and_IP_Strategy)), не ЧДТУ. Двері відкриті: [`00_07` UNI.17](00_07_Action_Plan_Tracker) ⚪ | — |
+| проф. **Базіло К.В.** + проф. **Бондаренко М.О.** | ПМКТ, акустична мехатроніка | Валідація фононної лінзи гіроїда (EIS + AE) + **калібрувальний TinyML-датасет** (польова валідність 5-class моделі — [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference)); резонанс п'єзо у діапазоні фауни 0.5–12 кГц (Ст.24a) | Ст. 24/24a |
+| доц. **Хоменко Ю.В.** | металорізальні верстати (80+ патентів) | DMLS post-processing, геометрія різання анкера, deinstall-інструмент → [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | — |
 
 > Повний реєстр Data-Science задач (≈10 тем × методи) — research-агенда рівня публікацій; інженерні точки дотику вже в каноні (`InsightGeneratorService`, `Attractor`, `dClimate`, `ParametricInsurance`). Деталі методів — у спільних статтях [`08_01 §1B`](08_01_Joint_Publications_and_IP_Strategy).
 
@@ -111,8 +111,8 @@ B2G-міст до ДСНС + наукове обґрунтування пара�
 | Партнер | Роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
 | **Биченко А.** | диспетчеризація | Інтеграція EWS ↔ протоколи реагування ДСНС → [`04_02`](04_02_Business_Logic_and_Services) (`EwsAlert`/`AlertDispatch`) | Ст. 26 |
-| **Ротар В.** | SOP | 8 SOP-документів per alert_type (field ops) → [`04_02`](04_02_Business_Logic_and_Services) (EwsAlert/AlertDispatch — дім); трек [`00_07` ARCH.31/UNI.12](00_07_Action_Plan_Tracker) (SOP-compliance = зворотний бік Кат-A negligence-evidence для slashing). ⚠️ Дім виправлено 2026-07-17: було [`08_03`](08_03_External_Stakeholders_Registry), де «SOP»/«forester» = 0 входжень | Ст. 26 |
-| **Куліца О.** | моделювання пожеж | Предиктивне поширення вогню + калібрування `FIRE_FRP_THRESHOLD_MW` (єдиний працюючий Trigger-2 страхових виплат) → [`05_05`](05_05_Slashing_and_Risk_Policy), [`07_01 §7`](07_01_Nature_as_a_Service_Contracts). ⚠️ Дім виправлено 2026-07-17: було [`03_03`](03_03_TinyML_Acoustic_Inference) (акустика — сама пише «без термального порога») | Ст. 25 |
+| **Ротар В.** | SOP | 8 SOP-документів per alert_type (field ops) → [`04_02`](04_02_Business_Logic_and_Services) (EwsAlert/AlertDispatch — дім); трек [`00_07` ARCH.31/UNI.12](00_07_Action_Plan_Tracker) (SOP-compliance = зворотний бік Кат-A negligence-evidence для slashing) | Ст. 26 |
+| **Куліца О.** | моделювання пожеж | Предиктивне поширення вогню + калібрування `FIRE_FRP_THRESHOLD_MW` (єдиний працюючий Trigger-2 страхових виплат) → [`05_05`](05_05_Slashing_and_Risk_Policy), [`07_01 §7`](07_01_Nature_as_a_Service_Contracts) | Ст. 25 |
 | **Зобенко Н.** | актуарій | Актуарне обґрунтування blockchain-оракулів параметр. страхування → [`07_01 §7`](07_01_Nature_as_a_Service_Contracts), [`05_05`](05_05_Slashing_and_Risk_Policy) | Ст. 25 |
 | **Несен І.** | інжиніринг | Нетравматична заміна/деінсталяція капсули (динамометр) → [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 26 |
 
@@ -127,7 +127,7 @@ B2G-міст до ДСНС + наукове обґрунтування пара�
 | Партнер | Роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
 | **Губенко І.** (ректор) | біосумісність | Макро-біосумісність + ксилемоінтеграція ↔ CODIT-каскад → [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 30 |
-| **Боєчко В.** | фізіологія стресу | Preclinical stress signature + recovery curve → незалежні ground-truth мітки для `stress_index` ([`04_02`](04_02_Business_Logic_and_Services); блокер E.52) + CODIT-aware калібрація ([`01_04`](01_04_CODIT_and_Xylemointegration)). ⚠️ «↔ Lorenz» знято 2026-07-17 — Z↔health емпірично degenerate (E.64, [`03_04 §4`](03_04_mruby_Lorenz_Attractor)); саме за цю тезу вилучено Ст.15 | Ст. 30 |
+| **Боєчко В.** | фізіологія стресу | Preclinical stress signature + recovery curve → незалежні ground-truth мітки для `stress_index` ([`04_02`](04_02_Business_Logic_and_Services); блокер E.52) + CODIT-aware калібрація ([`01_04`](01_04_CODIT_and_Xylemointegration)) | Ст. 30 |
 | **Бушуєва І.** | фармацевтичні дисципліни | EBFC ензимна іммобілізація (валідація стеку Gen 2.0) → [`01_03 §2`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | Ст. 28 |
 | **Суховой Г.** | токсикологія | Токсикологія Ti-6Al-4V (V/Al release у ксилему) → [`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 29 |
 | **Глущенко О.** | покриття | Self-healing 8-HQ мікрокапсули — **already-canon** → [`01_02 §3`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS); Os redox polymer стабільність + cross-linking (Ст.28) | Ст. 28/29 |
@@ -145,12 +145,12 @@ B2G-міст до ДСНС + наукове обґрунтування пара�
 | **Чудаєва І.Б.** (ректор СЄУ) | макроекономіка | Стрес-тест dual-token (інфляція, Dynamic Tax 2%, рівновага) → [`05_03`](05_03_Tokenomics_SCC_and_SFC); макро-модель SCC-ринку живить біфуркаційний макро-шар Ст.34 і регіональний Ст.35 | Ст. 31/34/35 |
 | **Ус Г.О.** | unit-econ / ESG | ESG-облік, KlimaDAO retirement, loss ratio → [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`07_02`](07_02_Unit_Economics_and_BOM) | Ст. 31 |
 | **Аблязов Д.Е.** | право | RWA legal architecture (ERC-3643), KYC/AML templates → [`07_01`](07_01_Nature_as_a_Service_Contracts), [`05_06`](05_06_Governance_and_DAO); правова сумісність токенізації з режимом ПЗФ (Ст.35) | Ст. 32/35 |
-| **Аблязова Н.Р.** | консорціум / гранти | ⚠️ Публікаційних ланок нема (жодної авторської комірки в портфелі — реєстр і раніше вказував на §3 Alumni, не на статтю). Консорціум-лідерство перепризначено 2026-07-17 → Спрягайло ([`07_03`](07_03_Grant_Applications_Tracker)); Triple-Helix-тема = дім [`08_01 §0.2`](08_01_Joint_Publications_and_IP_Strategy). Двері відкриті: з'явиться жива тема — впишемо | — |
+| **Аблязова Н.Р.** | консорціум / гранти | Консорціум-лідерство перепризначено 2026-07-17 → Спрягайло ([`07_03`](07_03_Grant_Applications_Tracker)) | — |
 | **Гедз М.Й.** | аудит D-MRV | Методологічний аудит pipeline (IoTeX→Chainlink→mint, DCI) → [`05_02`](05_02_Proof_of_Growth_Pipeline) | Ст. 32/35 |
-| **Денисенко Ю.М.** | промисловий дизайн | Біомімікрічний антивандальний PEEK-радом капсули → [`02_01`](02_01_Hardware_Architecture_and_BOM), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | — (Ст.33 зрізано 2026-07-19; radome-CAD робота жива → 02_01/02_02/tools/cad, не публікація) |
-| **Теліженко О.В.** (Олександра) | етнодизайн / UX | Народний художник України (етнодизайн, монументальне мистецтво). Орнаментальний патерн-бренд: «Silken Net» = текстильна метафора, mesh-топологія що обплітає бір ≈ рушник-оберіг → [`04_04`](04_04_Phlex_UI_and_Tailwind) (Phlex UI motifs), [`02_05`](02_05_Queen_Hardware_and_Starlink) (Queen radome graphics); B2B data-viz / UX-дашборд для ESG-інвесторів. ⚠️ Ст.33-ланка «selection super-hydrophobic coating» — **хибна атрибуція** (фторполімерна хімія ≠ її фах; присуд по coating = founder, [`00_07` HW.28](00_07_Action_Plan_Tracker) ⚖️, знято 07-17). ⚖️ **ВИРІШЕНО 2026-07-19** ([`00_07` UNI.19](00_07_Action_Plan_Tracker)): знято зі Ст.33 — етнодизайн фейлить критерій наукового підтвердження; Ст.33 зрізано цілком (портфель 17→16). 0 портфельних ланок — трек живий поза портфелем: Genesis NFT → [`08_03`](08_03_External_Stakeholders_Registry) + UI-motifs → [`04_04`](04_04_Phlex_UI_and_Tailwind) | — (знято зі Ст.33 07-19; трек 08_03/04_04) |
+| **Денисенко Ю.М.** | промисловий дизайн | Біомімікрічний антивандальний PEEK-радом капсули → [`02_01`](02_01_Hardware_Architecture_and_BOM), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | — |
+| **Теліженко О.В.** (Олександра) | етнодизайн / UX | Народний художник України (етнодизайн, монументальне мистецтво). Орнаментальний патерн-бренд: «Silken Net» = текстильна метафора, mesh-топологія що обплітає бір ≈ рушник-оберіг → [`04_04`](04_04_Phlex_UI_and_Tailwind) (Phlex UI motifs), [`02_05`](02_05_Queen_Hardware_and_Starlink) (Queen radome graphics); B2B data-viz / UX-дашборд для ESG-інвесторів; Genesis NFT → [`08_03`](08_03_External_Stakeholders_Registry) | — |
 
-> **План публікацій СЄУ:** [`08_01 §1F`](08_01_Joint_Publications_and_IP_Strategy) (токеноміка, RWA-право). Промдизайн Денисенка = жива CAD-робота (не публікаційна ланка — Ст.33 зрізано 2026-07-19; дім-рефи у картці Денисенка вище).
+> **План публікацій СЄУ:** [`08_01 §1F`](08_01_Joint_Publications_and_IP_Strategy) (токеноміка, RWA-право).
 
 ---
 
@@ -158,4 +158,4 @@ B2G-міст до ДСНС + наукове обґрунтування пара�
 
 Протокол валідації гіпотези «Лоренц Z ↔ здоров'я дерева» (когорта 20–30 дерев, незалежний ground-truth, калібрування slashing-порогів, `SilkenNet::LorenzValidationService`) — канонічний дім [`05_05 §8`](05_05_Slashing_and_Risk_Policy) (вихід протоколу = пороги ризику/slashing; «одна річ — один дім»).
 
-**Ростер для протоколу:** польова когорта Черкаського бору + незалежний ground-truth (sap-flow, дендрометр, NDVI, експертний бал) — **ЧНУ біо-хаб** (Спрягайло/Гаврилюк, UNI.13a) + **Data Science ЧДТУ** (Карапетян, §2, UNI.9) + **лабораторія Гусака** (§1A, UNI.5). Deliverable — **калібрування предиктивності Z** (вихід протоколу = пороги ризику/slashing). ⚠️ Публікаційного виходу НЕМА: Ст.15 «Chaos-Based Tree Health Index» вилучена 2026-07-17 (E.64 — мапінг Z→bio_status емпірично degenerate, [`03_04 §4`](03_04_mruby_Lorenz_Attractor); стаття називалась саме тим, що зламалось). Стаття може народитись **після** протоколу — якщо він дасть позитивний результат, а не до нього.
+**Ростер для протоколу:** польова когорта Черкаського бору + незалежний ground-truth (sap-flow, дендрометр, NDVI, експертний бал) — **ЧНУ біо-хаб** (Спрягайло/Гаврилюк, UNI.13a) + **Data Science ЧДТУ** (Карапетян, §2, UNI.9) + **лабораторія Гусака** (§1A, UNI.5). Deliverable — **калібрування предиктивності Z** (вихід протоколу = пороги ризику/slashing). Публікаційного виходу НЕМА — стаття можлива лише ПІСЛЯ позитивного протоколу, не до нього.
