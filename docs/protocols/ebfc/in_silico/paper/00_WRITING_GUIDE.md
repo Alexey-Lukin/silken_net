@@ -136,7 +136,7 @@ Methods → Results → Introduction → Discussion/Conclusions → Abstract + T
       series and the ZIF-laccase-mimic cathodes — these are prior art, our novelty is the *integrated* system).
 - [ ] Each figure stands alone; TOC graphic present.
 - [ ] Limitations paragraph is explicit.
-- [ ] Scope honored (L1 + L3 + L3b + mediator + solvation; L2→Стаття 2, L4→Стаття 3).
+- [ ] Scope honored (L1 + L3 + L3b + mediator + solvation; L2/L4 → окремі майбутні EBFC-статті).
 - [ ] IP gate respected before any external disclosure.
 
 ## 7. Key references to read (method + how-to)

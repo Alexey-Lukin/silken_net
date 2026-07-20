@@ -56,7 +56,7 @@ problem (autonomous EBFC sensing; ET is the bottleneck) → gap (field models EB
 
 ## 5. Scope boundary
 
-L1 (distance/path) + L3 (anode) + L3b (cathode) + mediator series + solvation methodology. **Out of scope** (→ other Статті): L2 MD stability → Стаття 2; L4 delta_t/EIS → Стаття 3 (cited here only as experimental-closure predictions).
+L1 (distance/path) + L3 (anode) + L3b (cathode) + mediator series + solvation methodology. **Out of scope** (→ окремі майбутні EBFC-статті): L2 MD stability; L4 delta_t/EIS (cited here only as experimental-closure predictions).
 
 ## 6. Introduction reference scaffold (key anchors; expand to ~40–60)
 
