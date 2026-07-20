@@ -132,7 +132,7 @@ RSpec.describe Tracker::Dashboard do
   # prose that section_dangling_refs (#### meta-refs only) misses. Uses the real docs.
   describe ".file_section_dangling_refs (whole-file §-ref resolution)" do
     it "flags a bare code-span §-ref (backlog/archive cell) to an absent section" do
-      expect(described_class.file_section_dangling_refs("| E.99 | x | `08_02` §1.3 (Ярмілко) | y |"))
+      expect(described_class.file_section_dangling_refs("| E.99 | x | `08_02` §1.3 (партнер) | y |"))
         .to include(a_string_matching(%r{08_02 §1\.3}))
     end
 

@@ -179,7 +179,7 @@ Seed-раунд: climate/deeptech фонди (дані + університет�
 ```
 WP1 Coordination & Dissemination → ЧНУ (Спрягайло О.В. — координація) + СЄУ (Гедз М.) + ЧНУ парасоль (Кирилюк Є.М.)
 WP2 Hardware & Materials          → ЧНУ (Гусак, Мінаєв) + ЧМА (токсикологія) + Silken Net
-WP3 Firmware & Edge AI            → ЧНУ ФОТІУС (Порубльов, Ярмілко) + ЧДТУ (Карапетян)
+WP3 Firmware & Edge AI            → ЧНУ ФОТІУС (Ярмілко) + ЧДТУ (Карапетян)
 WP4 D-MRV Methodology             → СЄУ (Гедз М.) + ЧДТУ (Карапетян) + ЧНУ біо-хаб (Спрягайло — ground truth)
 WP5 Legal & Compliance            → СЄУ (Аблязов Д., Ус Г.) + ЧНУ біо-хаб (Спрягайло — ПЗФ-сумісність)
 WP6 Industrial Design             → СЄУ (Денисенко)

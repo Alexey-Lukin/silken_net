@@ -77,9 +77,8 @@
 
 | Партнер | Профіль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| доц. **Ярмілко А.В.** | IIoT / embedded / lightweight crypto | AES-128-CCM LoRa-тракт ([`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security), FW.2); SPI/DMA енергооптимізація ([`03_01`](03_01_Firmware_Lifecycle_and_DMA) — дім DMA) | Ст. 23/24 |
-| **Порубльов І.М.** | дискретна математика, обчисл. геометрія | Z-пороги гейта + numeric-DCI (Ст.25/34 — «найбільший науковий ризик проєкту») | Ст. 25/34 |
-| доц. **Косенюк Г.В.** | військова радіотехніка, теорія кодування | RF impedance/Link Budget/ground-plane ([`02_01 §5`](02_01_Hardware_Architecture_and_BOM)); енерго-свідомий вибір coding-rate ([`00_07` FW.61](00_07_Action_Plan_Tracker)) | Ст. 23 |
+| доц. **Ярмілко А.В.** | IIoT / embedded / lightweight crypto | Engaged partner (зустрічі 2026, вхід у ректорат); airtime↔крипто tradeoff-аналіз (Ст.23); SPI/DMA-консультація ([`03_01`](03_01_Firmware_Lifecycle_and_DMA) — Open-Research) | Ст. 23/24 |
+| доц. **Косенюк Г.В.** | військова радіотехніка, теорія кодування | RF impedance / Link Budget / ground-plane / 3D-діаграма з Ti-фланцем як Ground Plane ([`02_01 §5`](02_01_Hardware_Architecture_and_BOM)) — фізична лаб-валідація прихованої антени під PEEK (TRL-гейт) | Ст. 23 |
 | ст.викл. **Любченко К.М.** | нейромережі, GA, Master of Logic | Ст.24a + 2 магістерські: NSGA-II 5-class TinyML tuning + циркадні пороги ([`03_03`](03_03_TinyML_Acoustic_Inference)) — метод generic (pymoo), gate = ground-truth Біо-хаб | Ст. 24a |
 
 > **План публікацій ЧНУ:** [`08_01 §1`](08_01_Joint_Publications_and_IP_Strategy) (Hard Science + ФОТІУС) · [`08_01 §1C`](08_01_Joint_Publications_and_IP_Strategy) (ФОТІУС × ЧДТУ синергія) · [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy) (ректорат ННІ — біоекономіка/синергетика).

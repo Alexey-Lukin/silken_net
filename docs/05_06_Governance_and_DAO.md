@@ -162,7 +162,7 @@ contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
 >
 > **Філософська позиція:** SCC — це **критична інфраструктура планетарного клімату**. Стандарт безпеки має бути **на рівні national-grid SCADA**, а не «не гірше за DeFi 2020–2024».
 >
-> **Деталі повної R&D-програми:** [`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap) — Auto-Immune Sentinel Gap. Партнери: Аблязов Д. (СЄУ, правова рамка), Карапетян (ChDTU, статистика fraud detection), Ярмілко (**лише асиметричний provisioning-PQC**: Ed25519+Dilithium-2, [`03_05 §10`](03_05_Hardware_Symmetric_Crypto_and_Security)).
+> **Деталі повної R&D-програми:** [`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap) — Auto-Immune Sentinel Gap. Партнери: Аблязов Д. (СЄУ, правова рамка), Карапетян (ChDTU, статистика fraud detection).
 
 ## 6. Bonding Curves — Динамічне Ціноутворення (Перспектива TRL 9+)
 
