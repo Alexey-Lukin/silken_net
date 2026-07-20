@@ -7,7 +7,7 @@
  *          symbols that `firmware/soldier/main.c` references so the build still
  *          compiles. The PRIMARY header now EXISTS — a self-owned INT8 baseline
  *          (ESC-50, FW.4, `silken_ml.export`, gemmlowp pure-C forward pass); a
- *          future partner/field model (Бушин/Любченко + Cherkasy soundscape,
+ *          future partner/field model (Любченко + Cherkasy soundscape,
  *          `docs/08_02 §1B`) replaces it. FW.4 closed the model gap 2026-06-12 (model
  *          landed, call-site uncommented).
  *

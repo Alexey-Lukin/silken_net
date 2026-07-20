@@ -620,7 +620,7 @@
 - **Стан:** self-owned ESC-50 baseline приземлено (машинна половина) — `silken_net_audio_model.h` (INT8 forward-pass, gemmlowp, **972 B Flash / ~0 .bss / 76 B стек** << arena-стелі 7–15 КБ) + `Run_Inference` call-site розкоментовано + host-тест зелений; log-mel DSP (FW.25/FW.46, soft-float) живить його. Канон [`03_03 §4`](03_03_TinyML_Acoustic_Inference) (примирення TFLM↔CMSIS-NN §4.1; **silence+cavitation = синтетичні placeholder'и, НЕ field-валідовані** §4.2; точність = pipeline-integrity-метрика, run-provenance `tools/ml`). ML-партнерів нема → модель НАША end-to-end; апгрейд опційний.
 - [ ] 🔗 ARM arena-RAM verify = **дім FW.26** (не окремо — baseline arena 76B stack / ~0 .bss, const-weights Flash; per-TU `check_ram_budget --hal-objects` покриває Soldier-TU ВЖЕ, «після board-freeze» був хибний gate; 16KB-arena = лише TFLM Path C ↓; vilize 07-11)
 - [ ] 👤 bench-формальність: silicon float32-confirm CMSIS-шляху (один прогін на платі)
-- [ ] 👤 (опц.) польова/партнерська модель замінює header (Бушин CNN + Любченко NSGA-II + Cherkasy soundscape) — апгрейд, НЕ блокер
+- [ ] 👤 (опц.) польова/партнерська модель замінює header (Любченко NSGA-II + Cherkasy soundscape) — апгрейд, НЕ блокер
 - [ ] 🔗 fallback Path C (TFLM runtime) — лише після повторного FW.26-заміру з TFLM-обвісом ([`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) противага; ex-FW.25 residual)
 - [ ] 🌿 FW.4-EXT (post-TRL 7): 5-й клас `fauna_activity` dawn/dusk ([`03_03 §10`](03_03_TinyML_Acoustic_Inference)), залежить від UNI.11+UNI.13a
 
@@ -1531,7 +1531,7 @@
 #### UNI.2 — зустрічі з факультетом ФОТІУС
 - **P1** · 👤 · ⚪ · → `08_02`
 - **Стан:** Не почато — зустрічі з факультетом ФОТІУС (по кафедрах; поіменний склад ↓ — рухається за портфелем `08_01`, UNI.19). Канон `08_02`.
-- [ ] 👤 Порубльов (Z-пороги гейта + numeric-DCI · Ст.25/34) · Ярмілко (embedded-крипто AES-CCM · Ст.23) · Косенюк (RF/антена + coding-rate · Ст.23) · Бушин (CNN-NDVI · Ст.24a) · Любченко (NSGA-II TinyML · Ст.24a)
+- [ ] 👤 Порубльов (Z-пороги гейта + numeric-DCI · Ст.25/34) · Ярмілко (embedded-крипто AES-CCM · Ст.23) · Косенюк (RF/антена + coding-rate · Ст.23) · Любченко (NSGA-II TinyML · Ст.24a)
 
 #### UNI.3 — Defensive-publication + open-license execution (IP-постава)
 - **P1** · 🤖+👤 · 🟡 · → `08_01 §2`
@@ -1609,9 +1609,9 @@
 
 #### E.14 — Multi-source satellite + anchor data fusion (академічний фасет — Стаття 24a)
 - **P3** · 🤖+👤 · 🌿 · → `08_01`, `03_03 §7`
-- **Стан:** Far-horizon (чесно: гейти = угода ЧНУ + анкер-поле з ground-truth (TRL-3) + TinyML 5-class FW.4/FW.25 як мікро-сигнал). Розшифровка: E.14 = технічний фасет **08_01 Стаття 24a** (перевішено 2026-07-17 — Ст.10 вилучена; Любченко/Бушин живі саме в 24a) (Любченко ансамбль Sentinel-2 + Бушин CNN-синтез); канонічний fusion-дизайн = «Macro-Micro verification» у `03_03` (вихід → `AiInsight#biodiversity_trend`), НЕ `04_02` (там лише consumer). Розкол чекбокса: «потребує партнери» ХИБНЕ для інгест-half — Sentinel-2 NDVI = open data (Copernicus/AWS, без креденшелів), machine-доступний, але YAGNI: fusion'ити нема з чим (biodiversity_trend data-starved — soundscape сам far-horizon). Наявний dClimate-шлях ≠ NDVI (FIRMS fire, VIIRS-термалка — інший датасет; NDVI = greenfield-інгест, реюз лише HTTP-патерну). Family-cross-ref E.30/E.52 (Стаття 24a/Любченко; різні блокери — не merge).
+- **Стан:** Far-horizon (чесно: гейти = угода ЧНУ + анкер-поле з ground-truth (TRL-3) + TinyML 5-class FW.4/FW.25 як мікро-сигнал). Розшифровка: E.14 = технічний фасет **08_01 Стаття 24a** (перевішено 2026-07-17 — Ст.10 вилучена; Любченко живий саме в 24a) (Любченко ансамбль Sentinel-2; NDVI-синтез = наш open-data адаптер); канонічний fusion-дизайн = «Macro-Micro verification» у `03_03` (вихід → `AiInsight#biodiversity_trend`), НЕ `04_02` (там лише consumer). Розкол чекбокса: «потребує партнери» ХИБНЕ для інгест-half — Sentinel-2 NDVI = open data (Copernicus/AWS, без креденшелів), machine-доступний, але YAGNI: fusion'ити нема з чим (biodiversity_trend data-starved — soundscape сам far-horizon). Наявний dClimate-шлях ≠ NDVI (FIRMS fire, VIIRS-термалка — інший датасет; NDVI = greenfield-інгест, реюз лише HTTP-патерну). Family-cross-ref E.30/E.52 (Стаття 24a/Любченко; різні блокери — не merge).
 - [ ] 🤖 (post-gates) Sentinel-2 NDVI-адаптер (STAC по `cluster.geo_center`, cloud-mask → biodiversity_trend confirm) — open-data, будувати коли є з чим fusion'ити
-- [ ] ⚖️ fusion-методологія (ANN+RF+GA / CNN) — партнерська голова (Любченко+Бушин, після угоди)
+- [ ] ⚖️ fusion-методологія (ANN+RF+GA) — партнерська голова (Любченко/Карапетян, після угоди)
 
 ## §08b · External Stakeholders (B2G / B2B / Cultural)
 

@@ -22,11 +22,11 @@
 | [`08_03` — External Stakeholders Registry](08_03_External_Stakeholders_Registry) | Зовнішні B2G/B2B + культурний шар (не академічні) |
 | [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC — валідують ЧНУ Мінаєв (DFT) + ЧМА Бушуєва (ензими) |
 | [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ti-довговічність/Kirkendall — ЧНУ Гусак + ЧМА Суховой (токсикологія) |
-| [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | §10 Soundscape — ЧДТУ ПМКТ (датасет) + ЧНУ Бушин (CNN-NDVI) |
+| [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | §10 Soundscape — ЧДТУ ПМКТ (датасет) + наш NDVI-адаптер (open-data Sentinel-2) |
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz = status-гейт + DCI-anti-fraud; партнерська ланка = ground-truth-протокол §6 нижче |
 | [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | §8 Ground-Truth Z↔health протокол (партнерський ростер — §6 нижче) |
 | [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) | Mesh percolation/Markov — надійність mesh |
-| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Backend ML/DS — ФОТІУС Любченко + ЧДТУ Карапетян |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Backend ML/DS = наш (`InsightGeneratorService`); статистична консультація — ЧДТУ Карапетян |
 | [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS/страхування — Кирилюк/Зобенко/Аблязов |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | UNI.* outreach-трекер |
 
@@ -80,8 +80,7 @@
 | доц. **Ярмілко А.В.** | IIoT / embedded / lightweight crypto | AES-128-CCM LoRa-тракт ([`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security), FW.2); SPI/DMA енергооптимізація ([`03_01`](03_01_Firmware_Lifecycle_and_DMA) — дім DMA) | Ст. 23/24 |
 | **Порубльов І.М.** | дискретна математика, обчисл. геометрія | Z-пороги гейта + numeric-DCI (Ст.25/34 — «найбільший науковий ризик проєкту») | Ст. 25/34 |
 | доц. **Косенюк Г.В.** | військова радіотехніка, теорія кодування | RF impedance/Link Budget/ground-plane ([`02_01 §5`](02_01_Hardware_Architecture_and_BOM)); енерго-свідомий вибір coding-rate ([`00_07` FW.61](00_07_Action_Plan_Tracker)) | Ст. 23 |
-| доц. **Бушин І.М.** | CNN / computer vision | CNN-NDVI synthesis → Digital Twin ([`03_03 §10`](03_03_TinyML_Acoustic_Inference)) | Ст. 24a |
-| ст.викл. **Любченко К.М.** | нейромережі, GA, Master of Logic | GA-оптимізація backend ML (`InsightGeneratorService`, [`04_02`](04_02_Business_Logic_and_Services)); NSGA-II TinyML + циркадні пороги ([`03_03`](03_03_TinyML_Acoustic_Inference)) | Ст. 24a |
+| ст.викл. **Любченко К.М.** | нейромережі, GA, Master of Logic | Ст.24a + 2 магістерські: NSGA-II 5-class TinyML tuning + циркадні пороги ([`03_03`](03_03_TinyML_Acoustic_Inference)) — метод generic (pymoo), gate = ground-truth Біо-хаб | Ст. 24a |
 
 > **План публікацій ЧНУ:** [`08_01 §1`](08_01_Joint_Publications_and_IP_Strategy) (Hard Science + ФОТІУС) · [`08_01 §1C`](08_01_Joint_Publications_and_IP_Strategy) (ФОТІУС × ЧДТУ синергія) · [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy) (ректорат ННІ — біоекономіка/синергетика).
 

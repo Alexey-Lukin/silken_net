@@ -831,8 +831,8 @@ RWA market: інвестор бачить не лише CO₂, а й функц�
 | ~~FW.4 (`Run_Inference()`) + модель~~ — ✅ **закрито self-owned** ([`00_07` FW.4](00_07_Action_Plan_Tracker) 🟢: ESC-50 baseline landed, 972 B Flash / 76 B стеку; call-site розкоментовано) | — (партнерів нема; модель НАША end-to-end) | [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference) | Партнерська/польова модель = **опційний апгрейд, НЕ блокер** |
 | ~~FW.25 (DSP-шлях choice gate)~~ — ✅ **вирішено self-owned**: Path B (log-mel) обрано, `Compute_LogMel` реалізовано (librosa≡stdlib≡C golden-vector parity) | — (рішення НЕ чекало партнера) | [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) | Ярмілко-консультація по SPI/DMA лишається опційною ([`03_01`](03_01_Firmware_Lifecycle_and_DMA) — дім DMA) |
 | Калібрувальний датасет з dawn/dusk записами Черкаського бору | Базіло + Бондаренко (ЧДТУ ПМКТ) + Спрягайло/Гаврилюк (ЧНУ Біо-хаб) | [`08_02 §2`](08_02_Academic_Institutions_Registry) (ПМКТ калібрувальний датасет), [`08_02 §2`](08_02_Academic_Institutions_Registry) Homeostasis Baseline | Польові аудіозаписи на світанку/в сутінках на ділянках різного типу (захищений бір, регенерація, монокультура), мінімум 4 сезони |
-| GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk | Любченко (ЧНУ ФОТІУС) | [`08_02 §1B`](08_02_Academic_Institutions_Registry) | Akash GPU кластер, фітнес-функція з ground truth |
-| Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | Бушин (ЧНУ ФОТІУС, CNN) | [`08_02 §1B`](08_02_Academic_Institutions_Registry) | Pipeline злиття супутника + TinyML; AiInsight#biodiversity_trend |
+| GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk | Любченко (ЧНУ ФОТІУС) | [`08_02 §1B`](08_02_Academic_Institutions_Registry) | Фітнес-функція з ground-truth (data-gate = Біо-хаб); GA generic (pymoo), compute = наш Akash-deploy |
+| Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | наш NDVI-адаптер + Карапетян (статистика fusion) | [`08_02 §2`](08_02_Academic_Institutions_Registry) | NDVI band-ratio (open-data Sentinel-2) ↔ TinyML; вихід → `biodiversity_trend` (наш enum); fusion = permutation/ANOVA (Карапетян) |
 | Статистика розподілів `fauna_activity_index` між ділянками | Карапетян (ЧДТУ Data Science) | [`08_02 §2`](08_02_Academic_Institutions_Registry) | R-аналіз, ANOVA dawn/dusk peak amplitude між ландшафтами |
 | Грантовий вектор Horizon Europe CLUSTER 6 (Biodiversity Monitoring) | СЄУ + усі академічні партнери | [`00_07` BIZ section](00_07_Action_Plan_Tracker), [`08_01` Стаття 24a/34](08_01_Joint_Publications_and_IP_Strategy) | Заявка з акцентом на acoustic D-MRV |
 
@@ -853,7 +853,7 @@ TRL 7 → 8  (Mongabay pivot, blocked by ChDTU PMKT dataset):
   - OTA-deploy через TinyMlModel + OtaPackagerService
 
 TRL 8 → 9  (production biodiversity D-MRV):
-  - Macro-Micro verification (Бушин CNN ↔ TinyML soundscape)
+  - Macro-Micro verification (наш NDVI ↔ TinyML soundscape)
   - AiInsight#biodiversity_trend → ForestNFT metadata
   - Horizon Europe CLUSTER 6 grant submission
 ```

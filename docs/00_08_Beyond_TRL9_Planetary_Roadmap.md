@@ -186,7 +186,7 @@
 | Підхід | Принцип | Партнер / дім |
 |---|---|---|
 | **Cross-species acoustic generalization** | 5-class fauna-модель (pine dawn/dusk) → biome-agnostic soundscape: інвазивні види, міграційні патерни, per-biome таксон-профілі (дзеркало Gap #3 hardware cross-biome, для звуку) | Спрягайло/Гаврилюк UNI.13a → INPA/CSIRO/MUSE |
-| **Planetary biodiversity aggregation** | L3 Queen зводить cluster soundscape-індекси → Rails планетарна biodiversity-карта (дзеркало Gap #1 forest-emergence, для fauna-сигналу); Macro-Micro fusion NDVI ↔ soundscape | Бушин CNN-NDVI ([`08_02 §1B`](08_02_Academic_Institutions_Registry)) |
+| **Planetary biodiversity aggregation** | L3 Queen зводить cluster soundscape-індекси → Rails планетарна biodiversity-карта (дзеркало Gap #1 forest-emergence, для fauna-сигналу); Macro-Micro fusion NDVI ↔ soundscape | наш NDVI-адаптер (open-data) + Карапетян (fusion-статистика) ([`08_02 §2`](08_02_Academic_Institutions_Registry)) |
 | **Dual-market tokenization** | ⚖️ монетизаційна вилка ([`00_07` E.59](00_07_Action_Plan_Tracker)): biodiversity = премія до того самого SCC (1 токен, 2 докази) **vs** окремий nature-credit (TNFD-ринок) — firmware/backend ідентичні, рішення при live money-path | СЄУ токеноміка ([`08_02 §5`](08_02_Academic_Institutions_Registry)) |
 
 **SRL шлях:** `SRL:Concept` (Стаття 24a Q1 + Cherkasy Soundscape Library, [`08_01`](08_01_Joint_Publications_and_IP_Strategy)) → `SRL:Pilot` (планетарна biodiversity-карта на пілотних біомах) → `SRL:Deployed` (continuous nature-credit MRV **поряд** з carbon).
@@ -201,7 +201,7 @@
 | 2 | Self-Evolving Behaviour | Top-down OTA only | On-device edge GA + RL | Порубльов, Ярмілко | 2 (Edge AI + Evolutionary Comp.) |
 | 3 | Cross-Biome Generalization | Pine-only | 5+ biomes, community-driven onboarding | Спрягайло + INPA/CSIRO/MUSE | 3–5 (per biome) |
 | 4 | Auto-Immune Sentinel | Reactive Slashing | Proactive AI Sentinel + PQC | Аблязов Д., Карапетян, ML-security partners | 2 (Adversarial ML + Web3 Security) |
-| 5 | Planetary Biodiversity Intelligence | Per-tree fauna (5-й acoustic-клас) | Планетарна biodiversity-карта (nature-credits **поряд** з carbon) | Спрягайло, Бушин, СЄУ + INPA/CSIRO | 1–2 (Bioacoustics + Biodiversity MRV) |
+| 5 | Planetary Biodiversity Intelligence | Per-tree fauna (5-й acoustic-клас) | Планетарна biodiversity-карта (nature-credits **поряд** з carbon) | Спрягайло, СЄУ + INPA/CSIRO | 1–2 (Bioacoustics + Biodiversity MRV) |
 
 ### 1.7. Як це впливає на TRL ladder
 
@@ -223,7 +223,7 @@ SRL:Deployed ━━━ Verified, formal, planetary-scale autopoiesis ← Silken 
 - **Gap #2 (Self-Evolving):** firmware extension у [`03_03 §Y`](03_03_TinyML_Acoustic_Inference) (TinyML online learning) + [`03_04 §Z`](03_04_mruby_Lorenz_Attractor) (mruby GA); безпекова валідація у [`05_03 §SCC Anti-Adversarial`](05_03_Tokenomics_SCC_and_SFC)
 - **Gap #3 (Cross-Biome):** parametric CAD у [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (Stages 2+ extended до 5 biomes); R&D у [`08_02 §1`](08_02_Academic_Institutions_Registry) (Спрягайло + НАН України канал)
 - **Gap #4 (Auto-Immune Sentinel):** розширення Slashing v2 у [`05_05 §6`](05_05_Slashing_and_Risk_Policy) + [`05_06 §5`](05_06_Governance_and_DAO) + Chainlink hardening у [`05_02`](05_02_Proof_of_Growth_Pipeline)
-- **Gap #5 (Planetary Biodiversity):** рішення both/and → [`00_07` E.59](00_07_Action_Plan_Tracker); механіка fauna → [`03_03 §10`](03_03_TinyML_Acoustic_Inference); стратегія/публікація → [`08_01` Стаття 24a](08_01_Joint_Publications_and_IP_Strategy); координація датасету → [`08_02 §1B`](08_02_Academic_Institutions_Registry) (Спрягайло/Бушин)
+- **Gap #5 (Planetary Biodiversity):** рішення both/and → [`00_07` E.59](00_07_Action_Plan_Tracker); механіка fauna → [`03_03 §10`](03_03_TinyML_Acoustic_Inference); стратегія/публікація → [`08_01` Стаття 24a](08_01_Joint_Publications_and_IP_Strategy); координація датасету → [`08_02 §1B`](08_02_Academic_Institutions_Registry) (Спрягайло)
 
 ---
 
