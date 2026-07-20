@@ -15,7 +15,7 @@ on-device features, proven, not hoped.**
 | Source | Owns |
 |---|---|
 | `docs/03_03 §3.4` | **Log-mel feature contract** (SR / n_fft / mel / HTK / DC-removal / periodic-Hann / tol). The values live here; everything else mirrors. |
-| `docs/03_03 §3.2/§4/§10` | DSP-path decision (Path B log-mel), model architecture (Path B, 5-class), Mongabay fauna pivot. |
+| `docs/03_03 §3.2/§4/§10` | DSP-path decision (Path B log-mel), model architecture (Path B, 5-class), Mongabay fauna (biodiversity = 2-й D-MRV вимір, both/and — не заміна carbon). |
 | `tools/ml/README.md` | Package layout, the three-impl parity diagram, the local-verify recipes, the deferred stack. |
 | `docs/00_06 §2` | Canonical-home registry — the contract's home + its C/python mirrors + drift guard. |
 | `docs/00_02` | Validation Gate — LLM proposes a *hypothesis*; no code until the spec is approved. |

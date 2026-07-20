@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Канонічний дім **far-horizon R&D-агенди за межами TRL 9** (горизонт 2026–2040+): чотири Planetary-Intelligence прогалини (колективний гомеостаз, self-evolving edge AI, cross-biome генералізація, auto-immune sentinel безпека) + **фрактальна мережева топологія** (L1/L2/L3, H-LDSE, Edge Data Fusion, energy-aware routing) для масштабування до мільйонів вузлів. Це SRL/MRL-сходи, що перетворюють Silken Net з D-MRV-інструменту на планетарну нервову систему. Виокремлено з [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond) (де лишається жива TRL-матриця + HIL), щоб стабільна 15-річна візія не ділила файл із щотижнево-оновлюваним станом готовності.
+Канонічний дім **far-horizon R&D-агенди за межами TRL 9** (горизонт 2026–2040+): п'ять Planetary-Intelligence прогалин (колективний гомеостаз, self-evolving edge AI, cross-biome генералізація, auto-immune sentinel безпека, planetary biodiversity intelligence) + **фрактальна мережева топологія** (L1/L2/L3, H-LDSE, Edge Data Fusion, energy-aware routing) для масштабування до мільйонів вузлів. Це SRL/MRL-сходи, що перетворюють Silken Net з D-MRV-інструменту на планетарну нервову систему. Виокремлено з [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond) (де лишається жива TRL-матриця + HIL), щоб стабільна 15-річна візія не ділила файл із щотижнево-оновлюваним станом готовності.
 
 ---
 
@@ -40,7 +40,7 @@
 
 > **Контекст:** TRL 1–9 описують шлях від ідеї до «стабільного мінтингу SCC на мільйонах вузлів». Це готує **Silken Net як інструмент** — фізично надійний D-MRV для лісу. Але **жодний з TRL-рівнів не описує перехід від «розумних дерев» до «розумного лісу»** — від суми ізольованих агентів до колективного інтелекту планетарного масштабу.
 >
-> Цей розділ фіксує **4 архітектурні прогалини**, які стоять між поточною архітектурою та справжнім "planetary intelligence". Це **не блокери** для TRL 9 (комерційний продукт можливий і без них), але це **дослідницький горизонт за межами TRL 9** — наукова програма на 5–15 років, яка перетворить Silken Net з IoT-системи в самоорганізовану кібер-екосистему.
+> Цей розділ фіксує **5 архітектурних прогалин**, які стоять між поточною архітектурою та справжнім "planetary intelligence". Це **не блокери** для TRL 9 (комерційний продукт можливий і без них), але це **дослідницький горизонт за межами TRL 9** — наукова програма на 5–15 років, яка перетворить Silken Net з IoT-системи в самоорганізовану кібер-екосистему.
 >
 > **⚠️ Метрика: «TRL 10-12» — НЕ використовується.** TRL стандартизовано на 1-9 (NASA / ISO 16290) і вимірює лише технологічну готовність. Зрілість за межами TRL 9 трекається окремими шкалами ([`00_02 §1`](00_02_AI_Native_Engineering_and_TRL)): **SRL (System Readiness Level)** — системна/інтеграційна зрілість, стадії `Concept → Pilot → Deployed`; **MRL (Manufacturing Readiness Level, 8-10)** — серійне виробництво (5 SKU). Нижче «TRL шлях» кожної прогалини переформульовано як **SRL-шлях**.
 >
@@ -172,7 +172,28 @@
 
 **SRL шлях:** `SRL:Concept` (Red Team exercises у production) → `SRL:Pilot` (AI Sentinel deployed) → `SRL:Deployed` (formal verification of slashing protocol проти всіх відомих vectors).
 
-### 1.5. Зведена Таблиця Чотирьох Прогалин
+### 1.5. Gap #5 — Planetary Biodiversity Intelligence (Acoustic D-MRV поза вуглецем)
+
+**Поточний стан:** both/and-рішення (ратифіковано founder 2026-07-20, [`00_07` E.59](00_07_Action_Plan_Tracker)) додало biodiversity **другим D-MRV виміром ПОВЕРХ** carbon-ядра — fauna = 5-й acoustic-клас + `biodiversity_score` метадані `ForestNFT` ([`03_03 §10`](03_03_TinyML_Acoustic_Inference), [`08_01` Стаття 24a](08_01_Joint_Publications_and_IP_Strategy)). Але сигнал живе **per-tree / per-cluster**: кожен вузол чує лише СВІЙ dawn/dusk soundscape. Планетарного зведення немає — платформа не «чує біом як екосистему», лише окремі дерева.
+
+**Чому це принципово важливо:**
+- Carbon вимірює **масу** (скільки CO₂ секвестровано), acoustic biodiversity вимірює **функцію** (чи ліс живий) — NDVI-супутник бачить «зелений піксель», не розрізняє функціональну екосистему від мертвої монокультури (Delgado et al., [`03_03 §10.1`](03_03_TinyML_Acoustic_Inference)). На планетарному масштабі both/and-мережа стає **континуальною картою функціонального здоров'я біосфери** — чого не дає жоден супутниковий MRV.
+- Dual-signal на мільйонах вузлів = **перший планетарний біорізноманіттєвий нервовий шар**: не окреме дерево, а весь бір/біом «звучить» як єдиний організм (дзеркало Gap #1 forest-emergence, але для acoustic-fauna, не Lorenz-coupling).
+- Ринок **nature-credits (TNFD)** росте окремо від carbon → far-horizon both/and живить **обидва ринки з ОДНІЄЇ фізичної мережі**.
+
+**Технічні вектори вирішення:**
+
+| Підхід | Принцип | Партнер / дім |
+|---|---|---|
+| **Cross-species acoustic generalization** | 5-class fauna-модель (pine dawn/dusk) → biome-agnostic soundscape: інвазивні види, міграційні патерни, per-biome таксон-профілі (дзеркало Gap #3 hardware cross-biome, для звуку) | Спрягайло/Гаврилюк UNI.13a → INPA/CSIRO/MUSE |
+| **Planetary biodiversity aggregation** | L3 Queen зводить cluster soundscape-індекси → Rails планетарна biodiversity-карта (дзеркало Gap #1 forest-emergence, для fauna-сигналу); Macro-Micro fusion NDVI ↔ soundscape | Бушин CNN-NDVI ([`08_02 §1B`](08_02_Academic_Institutions_Registry)) |
+| **Dual-market tokenization** | ⚖️ монетизаційна вилка ([`00_07` E.59](00_07_Action_Plan_Tracker)): biodiversity = премія до того самого SCC (1 токен, 2 докази) **vs** окремий nature-credit (TNFD-ринок) — firmware/backend ідентичні, рішення при live money-path | СЄУ токеноміка ([`08_02 §5`](08_02_Academic_Institutions_Registry)) |
+
+**SRL шлях:** `SRL:Concept` (Стаття 24a Q1 + Cherkasy Soundscape Library, [`08_01`](08_01_Joint_Publications_and_IP_Strategy)) → `SRL:Pilot` (планетарна biodiversity-карта на пілотних біомах) → `SRL:Deployed` (continuous nature-credit MRV **поряд** з carbon).
+
+> **⚠️ both/and, НЕ заміна:** вуглець (`growth_points`→SCC) лишається **емісійним ядром**; biodiversity — 2-й вимір ПОВЕРХ (шар доказу на `ForestNFT`-метаданих, не інший емісійний драйвер). Дім рішення → [`00_07` E.59](00_07_Action_Plan_Tracker); механіка → [`03_03 §10`](03_03_TinyML_Acoustic_Inference); стратегія → [`08_01` Стаття 24a](08_01_Joint_Publications_and_IP_Strategy).
+
+### 1.6. Зведена Таблиця П'яти Прогалин
 
 | # | Gap | Поточний стан (TRL 9) | Майбутній стан (SRL:Deployed) | Партнер | Q1 паперів |
 |---|---|---|---|---|---|
@@ -180,10 +201,11 @@
 | 2 | Self-Evolving Behaviour | Top-down OTA only | On-device edge GA + RL | Порубльов, Ярмілко | 2 (Edge AI + Evolutionary Comp.) |
 | 3 | Cross-Biome Generalization | Pine-only | 5+ biomes, community-driven onboarding | Спрягайло + INPA/CSIRO/MUSE | 3–5 (per biome) |
 | 4 | Auto-Immune Sentinel | Reactive Slashing | Proactive AI Sentinel + PQC | Аблязов Д., Карапетян, ML-security partners | 2 (Adversarial ML + Web3 Security) |
+| 5 | Planetary Biodiversity Intelligence | Per-tree fauna (5-й acoustic-клас) | Планетарна biodiversity-карта (nature-credits **поряд** з carbon) | Спрягайло, Бушин, СЄУ + INPA/CSIRO | 1–2 (Bioacoustics + Biodiversity MRV) |
 
-### 1.6. Як це впливає на TRL ladder
+### 1.7. Як це впливає на TRL ladder
 
-Ці 4 прогалини **не блокують** TRL 9 (commercial product можливий і без них). Але вони визначають **SRL-ієрархію за межами TRL 9** (а не «TRL 10-12»), яка перетворює Silken Net з **D-MRV-інструменту** на **планетарну нервову систему**:
+Ці 5 прогалин **не блокують** TRL 9 (commercial product можливий і без них). Але вони визначають **SRL-ієрархію за межами TRL 9** (а не «TRL 10-12»), яка перетворює Silken Net з **D-MRV-інструменту** на **планетарну нервову систему**:
 
 ```
 TRL 9        ━━━ Operational. Stable SCC mint.                ← Silken Net як IoT-продукт
@@ -195,12 +217,13 @@ SRL:Deployed ━━━ Verified, formal, planetary-scale autopoiesis ← Silken 
 
 Це **15-річний горизонт** (2026–2040+) — за ним вже сяє візія ([`08_02 §5`](08_02_Academic_Institutions_Registry)): D-MRV як база для **global climate governance protocol**, на рівні WTO або ISO.
 
-### 1.7. Cross-references та де ще згадано
+### 1.8. Cross-references та де ще згадано
 
 - **Gap #1 (Forest Emergence):** деталі у [`03_04 §6.3`](03_04_mruby_Lorenz_Attractor); координація з [`08_02 §1B`](08_02_Academic_Institutions_Registry) (Порубльов кібернетика) та [`08_02 §1A`](08_02_Academic_Institutions_Registry) (Кирилюк синергетика)
 - **Gap #2 (Self-Evolving):** firmware extension у [`03_03 §Y`](03_03_TinyML_Acoustic_Inference) (TinyML online learning) + [`03_04 §Z`](03_04_mruby_Lorenz_Attractor) (mruby GA); безпекова валідація у [`05_03 §SCC Anti-Adversarial`](05_03_Tokenomics_SCC_and_SFC)
 - **Gap #3 (Cross-Biome):** parametric CAD у [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (Stages 2+ extended до 5 biomes); R&D у [`08_02 §1`](08_02_Academic_Institutions_Registry) (Спрягайло + НАН України канал)
 - **Gap #4 (Auto-Immune Sentinel):** розширення Slashing v2 у [`05_05 §6`](05_05_Slashing_and_Risk_Policy) + [`05_06 §5`](05_06_Governance_and_DAO) + Chainlink hardening у [`05_02`](05_02_Proof_of_Growth_Pipeline)
+- **Gap #5 (Planetary Biodiversity):** рішення both/and → [`00_07` E.59](00_07_Action_Plan_Tracker); механіка fauna → [`03_03 §10`](03_03_TinyML_Acoustic_Inference); стратегія/публікація → [`08_01` Стаття 24a](08_01_Joint_Publications_and_IP_Strategy); координація датасету → [`08_02 §1B`](08_02_Academic_Institutions_Registry) (Спрягайло/Бушин)
 
 ---
 

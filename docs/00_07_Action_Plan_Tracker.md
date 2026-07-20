@@ -684,12 +684,13 @@
 - [ ] 🤖 (не-блокер, сусідня знахідка wire-нори) CMD-парсер Queen рахує двокрапки: `command_payload` виду `OPEN:60` (живе в seeds) зсуває UUID-вікно дедупу — self-consistent для retry, але контракт «3-тя двокрапка» крихкий; лікувати разом із майбутнім CMD-wire-рефакторм
 - Cross-ref: SEC.20 (живий Turbo-producer OTA-прогресу в цьому ж тракті: перший-hint/chunk-fetch/`fw=` → підписники `Gateways::Show`+`Firmwares::Index`, [`04_04 §8`](04_04_Phlex_UI_and_Tailwind)), FW.56 (дзеркальна uplink-знахідка), FW.46 (board-freeze незалежний), ARCH.59 (OTA-watchdog той самий тракт), FW.20/FW.17 (їхні downlink-леги тепер фізично доставні)
 
-#### E.59 — Mongabay biodiversity D-MRV pivot (acoustic fauna) [strategic] [кластер:fauna:дім]
-- **P1** · 🤖+👤 · 🟢 · → `03_03 §10`, `08_01 §1`
-- **Стан:** Стратегічний pivot carbon-MRV → biodiversity D-MRV (acoustic), після Delgado et al. (Nicoya, 119 ділянок, 16000 год аудіо; Mongabay, тр. 2026). Defensible moat проти Pachama/Sylvera/NCX (єдиний micro-acoustic verification layer). Firmware-фундамент pivot'а вже shipped 🟢 (log-mel FW.25 → §🗄️; fauna-інфра FW.42/ARCH.40 host-done) — відкрите gated датасетом/академіками. Координує вже-трековані: FW.4-EXT (5-class TinyML + `fauna_activity`), UNI.11+UNI.13a (Cherkasy Soundscape Library), BIZ.12 (Horizon CLUSTER 6 grant), 08_01 Стаття 24a. Канон `03_03 §10` + `08_01 §1/§2` + `08_02 §1B`.
+#### E.59 — Biodiversity як 2-й D-MRV вимір (acoustic fauna, Mongabay) [strategic] [кластер:fauna:дім]
+- **P1** · 🤖+👤 · 🔗 · → `03_03 §10`, `08_01 §1`
+- **Стан:** biodiversity = ДРУГИЙ D-MRV вимір ПОВЕРХ carbon-core (both/and, НЕ заміна), acoustic — після Delgado et al. (Nicoya, 119 ділянок, 16000 год аудіо; Mongabay, тр. 2026). Defensible moat проти Pachama/Sylvera/NCX (єдиний micro-acoustic verification layer). **Присуд (ратифіковано 2026-07-20, founder):** вуглець (`growth_points`→SCC) лишається ЯДРОМ економіки; fauna = 5-й акустичний клас + `biodiversity_score` метадані ForestNFT (окремий шар доказу, не інший токен); «pivot» у назві = історичне перебільшення, рамка = «друге вухо». Firmware-фундамент shipped (log-mel FW.25 → §🗄️; fauna-інфра FW.42/ARCH.40 host-done) — сам вимір gated датасетом/академіками + FW.50 (не firmware-/рішення-gated). Координує вже-трековані: FW.4-EXT (5-class TinyML + `fauna_activity`), UNI.11+UNI.13a (Cherkasy Soundscape Library), BIZ.12 (Horizon CLUSTER 6 grant), 08_01 Стаття 24a. Канон `03_03 §10` + `08_01 §1/§2` + `08_02 §1B`.
 - [ ] 🔗 FW.4-EXT 5-class `fauna_activity` — дім = FW.4 (🌿-чекбокс); gated UNI.11+UNI.13a dataset
 - [ ] 🤖 AiInsight#biodiversity_trend → ForestNFT metadata "biodiversity_score" (`04_02`) — gated fauna-сигналом (FW.4-EXT/UNI-датасет): зараз enum-only (`InsightGeneratorService` пише лише `daily_health_summary`), метадані без джерела = передчасні (патерн FW.42-Grafana)
 - [ ] 🔗 координація UNI.11/UNI.13a (soundscape) + BIZ.12 (Horizon) + 08_01 Стаття 24a
+- [ ] ⚖️ (far-horizon, TRL-8+ монетизація) вилка biodiversity: премія до того самого SCC (1 токен, 2 докази) vs окремий nature-credit (свій ринок TNFD) — firmware/backend ідентичні в обох, різниця лише в токенізації/продажі; рішення коли money-path live. Токеноміка-дім → `08_01`
 
 #### FW.61 — Baseline radio modulation не конфігурується (SetRxConfig ніде, SetTxConfig лише panic)
 - **P2** · 🤖+👤 · 🔗 · → `03_01`
@@ -733,7 +734,7 @@
 #### FW.42 — Vcap guard для fauna acoustic sampling (brownout protection)
 - **P2** · 🤖 · 🟢 · → [`03_03 §10.3`](03_03_TinyML_Acoustic_Inference)
 - **Стан:** Brownout-guard для fauna-сесії — `Fauna_Should_Sample(vcap_mv)` (дворівнева Vcap-політика: ≥4.5V повна сесія, нижче — skip + counter `fauna_skipped_low_vcap`; fauna ~78.3 мДж ≈ 2× TX → при низькому V_cap concurrent TX = brownout) + host-тести. Поки сирий ADC не сконвертовано (FW.50), guard **fail-CLOSED** — `FAUNA_VCAP_MIN_MV=4500` > стелі VREFINT-тракту, tripwire-тест тримає інваріант ([`03_01 §1`](03_01_Firmware_Lifecycle_and_DMA) FW.50). Wire-дім: fauna-маркери = 2 біти `diag[2..1]` (CCM-кадр byte 18 — offset незмінний у rev2.1, [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) ledger) + бекенд-лічильник `silkennet_fauna_skip_reports_total` ([`06_03 §2.8`](06_03_Prometheus_Observability)). Канон [`03_03 §10.3`](03_03_TinyML_Acoustic_Inference).
-- [ ] 🔗 активація fauna-pathway після FW.4 fauna-pivot (гейт + ARCH.40-сесія готові; firmware call-site ставить diag-біти при pivot'і)
+- [ ] 🔗 активація fauna-pathway після FW.4-EXT (dataset + 5-class; гейт + ARCH.40-сесія готові; firmware call-site ставить diag-біти при активації)
 - [ ] 🔗 Grafana-панель — після перших живих інкрементів (мертва панель без джерела = передчасний dashboard)
 
 #### ARCH.26 — Синхронні вікна (TDMA) + CAD preamble detection (Проблема Рандеву mesh relay) [кластер:rendezvous:дім]
@@ -743,8 +744,8 @@
 
 #### ARCH.40 — Fauna 5-сек вікно: монолітне awake-обчислення (SRAM2 wipe)
 - **P2** · 🤖+👤 · 🟢 · → [`03_03 §10.2`](03_03_TinyML_Acoustic_Inference)
-- **Стан:** Fauna-сесія монолітна за 1 awake — STOP2 стирає SRAM2 (`float[156][N_mel]` не переживе сну, 20 RTC DR зайняті) → Welford mean+M2 у RAM, STOP2 лише після згортки в байт. Model-незалежна половина зафіксована кодом ДО pivot'а: `firmware/common/fauna_session.h` (монолітний `Fauna_Run_Session`, синхронний — STOP2 фізично не втрутиться; `FaunaWelford` ~324 Б із sizeof-tripwire) + named-тест `test_fauna_sampling_no_stop2_in_session` + Welford↔two-pass еталон. Згортка mean/var→байт (0–63) свідомо відкладена (калібрування після моделі). Канон [`03_03 §10.2`](03_03_TinyML_Acoustic_Inference).
-- [ ] 🔗 при FW.4 fauna-pivot — вживлення call-site у main.c (TIM2+DMA провайдер кадрів + `Fauna_Should_Sample` гейт + згортка в байт) ДО Фази 5 кенозису
+- **Стан:** Fauna-сесія монолітна за 1 awake — STOP2 стирає SRAM2 (`float[156][N_mel]` не переживе сну, 20 RTC DR зайняті) → Welford mean+M2 у RAM, STOP2 лише після згортки в байт. Model-незалежна половина зафіксована кодом ДО активації: `firmware/common/fauna_session.h` (монолітний `Fauna_Run_Session`, синхронний — STOP2 фізично не втрутиться; `FaunaWelford` ~324 Б із sizeof-tripwire) + named-тест `test_fauna_sampling_no_stop2_in_session` + Welford↔two-pass еталон. Згортка mean/var→байт (0–63) свідомо відкладена (калібрування після моделі). Канон [`03_03 §10.2`](03_03_TinyML_Acoustic_Inference).
+- [ ] 🔗 при fauna-активації (FW.4-EXT dataset) — вживлення call-site у main.c (TIM2+DMA провайдер кадрів + `Fauna_Should_Sample` гейт + згортка в байт) ДО Фази 5 кенозису
 
 #### ARCH.41 — Cold-start Time Paradox (DCI)
 - **P2** · 👤 · 🟢 · → [`03_04 §2.1`](03_04_mruby_Lorenz_Attractor)
