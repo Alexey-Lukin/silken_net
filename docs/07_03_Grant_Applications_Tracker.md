@@ -183,7 +183,7 @@ WP2 Hardware & Materials          → ЧНУ (Гусак, Мінаєв) + ЧМА
 WP3 Firmware & Edge AI            → ЧНУ ФОТІУС (Ярмілко) + Silken Net (Edge AI / TinyML self-owned)
 WP4 D-MRV Methodology             → профільний carbon-методолог (BIZ.9, TBD) + ЧДТУ (Карапетян — статистика) + ЧНУ біо-хаб (Спрягайло — ground truth)
 WP5 Legal & Compliance            → СЄУ (Аблязов Д. — UA-юрисдикційна правова рамка) + профільний крипто-юрист (TBD — MiCA/ERC-3643) + ЧНУ біо-хаб (Спрягайло — ПЗФ-сумісність)
-WP6 Industrial Design             → профільний промдизайнер (TBD; СЄУ Денисенко = графдизайн/бренд, не продуктовий)
+WP6 Industrial Design             → профільний промдизайнер (TBD); бренд/UI-дизайн — self
 WP7 Bioeconomy & Tokenized Markets → ЧНУ ректорат (Кирилюк Є.М.) + СЄУ (Чудаєва) — теоретична рамка SCC/NaaS
 WP8 Biodiversity Baseline (Cluster 6) → ЧНУ біо-хаб (Спрягайло, Гаврилюк) + ЧДТУ ПМКТ (Базіло, Бондаренко) — Cherkasy Soundscape Library
 WP9 Exploitation & IPR            → ActiveBridge + Silken Net
