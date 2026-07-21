@@ -91,12 +91,14 @@
 
 | Партнер | Кафедра / роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Anomaly/fraud-детекція (`FRAUD_DEVIATION_THRESHOLD`, Ст.13) + **Lyapunov/RQA — дім Ст.34** (режимна структура атрактора навколо порогів гейта) → [`04_02`](04_02_Business_Logic_and_Services), [`05_05`](05_05_Slashing_and_Risk_Policy) | Ст. 13/24/24a/31/34 |
+| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Anomaly/fraud-статистика телеметрії (`FRAUD_DEVIATION_THRESHOLD`, Ст.13) + biodiversity fusion-статистика (ANOVA/permutation, Ст.24a) + ground-truth Z-калібрація (§6) → [`04_02`](04_02_Business_Logic_and_Services), [`05_05`](05_05_Slashing_and_Risk_Policy) | Ст. 13/24a |
 | декан **Гончаров А.** | ФЕТР, радіотехніка | Експериментальна RF-верифікація (VNA S11, EMC pre-scan, натурний Link Budget) розрахунків Косенюка → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM) | Ст. 23 |
 | проф. **Базіло К.В.** + проф. **Бондаренко М.О.** | ПМКТ, акустична мехатроніка | Валідація фононної лінзи гіроїда (EIS + AE) + **калібрувальний TinyML-датасет** (польова валідність 5-class моделі — [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference)); резонанс п'єзо у діапазоні фауни 0.5–12 кГц (Ст.24a) | Ст. 24/24a |
 | доц. **Хоменко Ю.В.** | металорізальні верстати (80+ патентів) | CNC post-DMLS (PEEK Zone 2 фрезерування, bayonet, катод Zone 3) + різальна геометрія анкера → [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK), [`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | — |
 
 > Повний реєстр Data-Science задач (≈10 тем × методи) — research-агенда рівня публікацій; інженерні точки дотику вже в каноні (`InsightGeneratorService`, `Attractor`, `dClimate`, `ParametricInsurance`). Деталі методів — у спільних статтях [`08_01 §1B`](08_01_Joint_Publications_and_IP_Strategy).
+
+> ⚖️ **Карапетян trim (2026-07-21, UNI.19-лінія):** real-fit статистик (к.т.н. «Інформаційні технології», методи оптимізації/R), але була over-attributed на 5 статей. Зняті **Ст.34** (Ляпунов/RQA — нелінійна динаміка поза її документованим фахом + аналіз декоративної динаміки: Z «емпірично degenerate + temp-confounded», [`03_04 §4`](03_04_mruby_Lorenz_Attractor); константи атрактора фіксовані/textbook), **Ст.24** (тонка статистична гарнітура на future-ultrasonic фізику Базіло/Бондаренка) і **Ст.31** (Monte Carlo власного контракту → self-owned; статтю несе Чудаєва). Лишились **genuine-fit 13+24a** (класична anomaly/fraud + ANOVA/permutation — точний R-фах). git тримає зняте.
 
 ---
 
