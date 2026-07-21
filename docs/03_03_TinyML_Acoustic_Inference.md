@@ -834,7 +834,7 @@ RWA market: інвестор бачить не лише CO₂, а й функц�
 | GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk | Любченко (ЧНУ ФОТІУС) | [`08_02 §1B`](08_02_Academic_Institutions_Registry) | Фітнес-функція з ground-truth (data-gate = Біо-хаб); GA generic (pymoo), compute = наш Akash-deploy |
 | Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | наш NDVI-адаптер + Карапетян (статистика fusion) | [`08_02 §2`](08_02_Academic_Institutions_Registry) | NDVI band-ratio (open-data Sentinel-2) ↔ TinyML; вихід → `biodiversity_trend` (наш enum); fusion = permutation/ANOVA (Карапетян) |
 | Статистика розподілів `fauna_activity_index` між ділянками | Карапетян (ЧДТУ Data Science) | [`08_02 §2`](08_02_Academic_Institutions_Registry) | R-аналіз, ANOVA dawn/dusk peak amplitude між ландшафтами |
-| Грантовий вектор Horizon Europe CLUSTER 6 (Biodiversity Monitoring) | СЄУ + усі академічні партнери | [`00_07` BIZ section](00_07_Action_Plan_Tracker), [`08_01` Стаття 24a/34](08_01_Joint_Publications_and_IP_Strategy) | Заявка з акцентом на acoustic D-MRV |
+| Грантовий вектор Horizon Europe CLUSTER 6 (Biodiversity Monitoring) | СЄУ + усі академічні партнери | [`00_07` BIZ section](00_07_Action_Plan_Tracker), [`08_01` Стаття 24a](08_01_Joint_Publications_and_IP_Strategy) | Заявка з акцентом на acoustic D-MRV |
 
 ### 10.6 Дорожня карта (TRL крок за кроком)
 

@@ -66,10 +66,10 @@
 
 | Партнер | Кафедра / роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| проф. **Мінаєв Б.Ф.** (+ проф. Мінаєва В.О.) | хімія та наноматеріалознавство | Квантова хімія EBFC (DFT: dgrFAD-GDH/Os, Laccase-ZIF, PSBMA) → [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) + [`L3_quantum_chemistry`](protocols/ebfc/in_silico/L3_quantum_chemistry.md); DFT-адсорбція на TiO₂ (Ст.28) | Ст. 1/28 |
-| проф. **Гусак А.М.** | фізика (Wiley-монографія, UCLA-колаб.) | Нанодифузія/Kirkendall: 20-річний V/Al release + PEEK creep → [`01_02 §2`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK); sheet-vs-network FEA-E homogenization ([`00_07` HW.33](00_07_Action_Plan_Tracker)); FEM термо-механіка Ti↔деревина (Ст.30) | Ст. 2/29/30 |
+| проф. **Мінаєв Б.Ф.** (+ проф. Мінаєва В.О.) | хімія та наноматеріалознавство | Квантова хімія EBFC (DFT: dgrFAD-GDH/Os, Laccase-ZIF, PSBMA) → [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) + [`L3_quantum_chemistry`](protocols/ebfc/in_silico/L3_quantum_chemistry.md); строгий DFT charge-transfer крізь нативний TiO₂-оксид (Ст.28) | Ст. 1/28 |
+| проф. **Гусак А.М.** | фізика (Wiley-монографія, UCLA-колаб.) | PEEK creep (Prony/Maxwell-Wiechert, виміряні дані) + ICP-MS-калібрація Kirkendall-моделі (наш script 51) → [`01_02 §2`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK); sheet-vs-network FEA-E homogenization ([`00_07` HW.33](00_07_Action_Plan_Tracker)); FEM термо-механіка Ti↔деревина (Ст.30) | Ст. 2/29/30 |
 | доц. **Спрягайло О.В.** (проректор) + к.б.н. **Гаврилюк М.В.** (дир. ННІ) | біо-хаб (дендрофлора/ПЗФ/екологія) | *Pinus sylvestris* baseline + хім. склад ксилемного соку + dawn/dusk «Cherkasy Soundscape Library» → [`03_04`](03_04_mruby_Lorenz_Attractor), [`03_03 §10`](03_03_TinyML_Acoustic_Inference), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 2/24a/29/30/35 (Спрягайло) · 2/24a/35 (Гаврилюк) |
-| проф. **Кирилюк Є.М.** (в.о. ректора) | ННІ економіки і права, біоекономіка/синергетика | Теор. база NaaS + біоекономіка; парасольовий MoU → [`07_01`](07_01_Nature_as_a_Service_Contracts); синергетика порогового гейта (Ст.34) | Ст. 34/35 |
+| проф. **Кирилюк Є.М.** (в.о. ректора) | ННІ економіки і права, біоекономіка/синергетика | Теор. база NaaS + біоекономіка; парасольовий MoU → [`07_01`](07_01_Nature_as_a_Service_Contracts) | Ст. 35 |
 
 > Протоколи Hard-Science (Quantum-Sap, Long-Term Integrity, Homeostasis Baseline, Xylem-Sim, Steril) — already-canon: дім у [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)/[`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)/[`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)/[`01_04 §6`](01_04_CODIT_and_Xylemointegration)/[`03_04`](03_04_mruby_Lorenz_Attractor) + [`in_silico/`](protocols/ebfc/in_silico/SUMMARY.md).
 
@@ -136,12 +136,12 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 
 | Партнер | Роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| **Чудаєва І.Б.** (ректор СЄУ) | макроекономіка | Стрес-тест dual-token (інфляція, Dynamic Tax 2%, рівновага) → [`05_03`](05_03_Tokenomics_SCC_and_SFC); макро-модель SCC-ринку живить біфуркаційний макро-шар Ст.34 і регіональний Ст.35 | Ст. 31/34/35 |
-| **Ус Г.О.** | unit-econ / ESG | ESG-облік, KlimaDAO retirement, loss ratio → [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`07_02`](07_02_Unit_Economics_and_BOM) | Ст. 31 |
+| **Чудаєва І.Б.** (ректор СЄУ) | макроекономіка | Стрес-тест dual-token (інфляція, Dynamic Tax 2%, рівновага) → [`05_03`](05_03_Tokenomics_SCC_and_SFC); макро-модель SCC-ринку живить регіональний Ст.35 | Ст. 31/35 |
+| **Ус Г.О.** | unit-econ / ESG | ESG-облік, KlimaDAO retirement → [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`07_02`](07_02_Unit_Economics_and_BOM) | Ст. 31 |
 | **Аблязов Д.Е.** | право | RWA legal architecture (ERC-3643), KYC/AML templates → [`07_01`](07_01_Nature_as_a_Service_Contracts), [`05_06`](05_06_Governance_and_DAO); правова сумісність токенізації з режимом ПЗФ (Ст.35) | Ст. 32/35 |
 | **Гедз М.Й.** | аудит D-MRV | Методологічний аудит pipeline (IoTeX→Chainlink→mint, DCI) → [`05_02`](05_02_Proof_of_Growth_Pipeline) | Ст. 32/35 |
 | **Денисенко Ю.М.** | промисловий дизайн | Біомімікрічний антивандальний PEEK-радом капсули → [`02_01`](02_01_Hardware_Architecture_and_BOM), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | — |
-| **Теліженко О.В.** (Олександра) | етнодизайн / UX | Народний художник України (етнодизайн, монументальне мистецтво). Орнаментальний патерн-бренд: «Silken Net» = текстильна метафора, mesh-топологія що обплітає бір ≈ рушник-оберіг → [`04_04`](04_04_Phlex_UI_and_Tailwind) (Phlex UI motifs), [`02_05`](02_05_Queen_Hardware_and_Starlink) (Queen radome graphics); B2B data-viz / UX-дашборд для ESG-інвесторів; Genesis NFT → [`08_03`](08_03_External_Stakeholders_Registry) | — |
+| **Теліженко О.В.** (Олександра) | етнодизайн / орнамент-патерн | Народний художник України (етнодизайн, монументальне мистецтво). Орнаментальний патерн-бренд: «Silken Net» = текстильна метафора, mesh-топологія що обплітає бір ≈ рушник-оберіг → [`04_04`](04_04_Phlex_UI_and_Tailwind) (Phlex UI motifs), [`02_05`](02_05_Queen_Hardware_and_Starlink) (Queen radome graphics); Genesis NFT → [`08_03`](08_03_External_Stakeholders_Registry) | — |
 
 > **План публікацій СЄУ:** [`08_01 §1F`](08_01_Joint_Publications_and_IP_Strategy) (токеноміка, RWA-право).
 

@@ -189,7 +189,7 @@ WP8 Biodiversity Baseline (Cluster 6) → ЧНУ біо-хаб (Спрягайл
 WP9 Exploitation & IPR            → ActiveBridge + Silken Net
 ```
 
-> **Twin-pack publication backbone (cross-ref [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy)):** **Стаття 34** (Кирилюк ↔ синергетика порогового гейта Лоренца) обґрунтовує **WP7**; **Стаття 35** (Кирилюк ↔ Спрягайло біоекономіка) і **Стаття 24a** (Спрягайло ↔ Mongabay) — **WP8**. Подання до журналу Q1 за 2–3 місяці до Horizon-deadline переводить заявку з категорії «концепт» у «published research» (вирішальне для evaluators).
+> **Twin-pack publication backbone (cross-ref [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy)):** **Стаття 31** (Чудаєва ↔ макроекономіка SCC-ринку) обґрунтовує **WP7**; **Стаття 35** (Кирилюк ↔ Спрягайло біоекономіка) і **Стаття 24a** (Спрягайло ↔ Mongabay) — **WP8**. Подання до журналу Q1 за 2–3 місяці до Horizon-deadline переводить заявку з категорії «концепт» у «published research» (вирішальне для evaluators).
 
 **Зв'язок з кодбейсом:** Horizon Europe вимагає Open Science — `StateRootAnchor.sol` (публічна верифікація), Filecoin-архів телеметрії, The Graph subgraph (публічний доступ до даних).
 

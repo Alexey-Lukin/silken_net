@@ -637,8 +637,6 @@ if (mrb) {
 >
 > **Майбутній напрям (Beyond TRL 9 / SRL roadmap) — Chimera States у network of coupled attractors:** розширити `bio_contract.rb` так, щоб входи атрактора містили **aggregated neighbor signals** (median Z у кластері за останню годину, отриманий через stigmergic LoRa-broadcast). Це дає математично описуваний колективний гомеостаз — теорія Куромото-Баттогтох (2002) **chimera states** передбачає, що такі мережі утворюють частково синхронізовані, частково хаотичні patterns, які точно віддзеркалюють реальну структуру здорового лісу.
 >
-> **Партнери:** Кирилюк (синергетика економічних систем, [`08_02 §1A`](08_02_Academic_Institutions_Registry)), Гусак (нелінійна динаміка, [`08_02 §1A`](08_02_Academic_Institutions_Registry)).
->
 > **Деталі повної R&D-програми:** [`00_08 §1.1`](00_08_Beyond_TRL9_Planetary_Roadmap) — Forest-Level Emergence Gap.
 
 ---
