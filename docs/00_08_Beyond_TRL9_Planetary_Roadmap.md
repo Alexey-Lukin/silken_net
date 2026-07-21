@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Канонічний дім **far-horizon R&D-агенди за межами TRL 9** (горизонт 2026–2040+): п'ять Planetary-Intelligence прогалин (колективний гомеостаз, self-evolving edge AI, cross-biome генералізація, auto-immune sentinel безпека, planetary biodiversity intelligence) + **фрактальна мережева топологія** (L1/L2/L3, H-LDSE, Edge Data Fusion, energy-aware routing) для масштабування до мільйонів вузлів. Це SRL/MRL-сходи, що перетворюють Silken Net з D-MRV-інструменту на планетарну нервову систему. Виокремлено з [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond) (де лишається жива TRL-матриця + HIL), щоб стабільна 15-річна візія не ділила файл із щотижнево-оновлюваним станом готовності.
+Канонічний дім **far-horizon R&D-агенди за межами TRL 9** (горизонт 2026–2040+): п'ять Planetary-Intelligence прогалин (колективний гомеостаз, self-evolving edge AI, cross-biome генералізація, auto-immune sentinel безпека, planetary biodiversity intelligence) + **фрактальна мережева топологія** (L1/L2/L3, H-LDSE, Edge Data Fusion, energy-aware routing) для масштабування до мільйонів вузлів. Це SRL/MRL-сходи, що перетворюють Silken Net з D-MRV-інструменту на планетарну нервову систему.
 
 ---
 
@@ -44,7 +44,7 @@
 >
 > **⚠️ Метрика: «TRL 10-12» — НЕ використовується.** TRL стандартизовано на 1-9 (NASA / ISO 16290) і вимірює лише технологічну готовність. Зрілість за межами TRL 9 трекається окремими шкалами ([`00_02 §1`](00_02_AI_Native_Engineering_and_TRL)): **SRL (System Readiness Level)** — системна/інтеграційна зрілість, стадії `Concept → Pilot → Deployed`; **MRL (Manufacturing Readiness Level, 8-10)** — серійне виробництво (5 SKU). Нижче «TRL шлях» кожної прогалини переформульовано як **SRL-шлях**.
 >
-> **Не плутати з блокерами в [`00_07`](00_07_Action_Plan_Tracker):** там — конкретні інженерні задачі з measurable outcomes. Тут — стратегічні R&D-вектори, які потребують академічної колаборації (Q1 публікації) та можуть стати темою PhD-дисертацій під школами Кирилюка (синергетика) + Мінаєва (квантова хімія) + FOTIUS кібернетика.
+> **Не плутати з блокерами в [`00_07`](00_07_Action_Plan_Tracker):** там — конкретні інженерні задачі з measurable outcomes. Тут — стратегічні R&D-вектори, які потребують академічної колаборації (Q1 публікації) та можуть стати темою PhD-дисертацій під школами Мінаєва (квантова хімія) + FOTIUS кібернетика.
 
 ### 1.1. Gap #1 — Forest-Level Emergence (Колективний Гомеостаз)
 
@@ -57,11 +57,11 @@
 
 **Технічні вектори вирішення:**
 
-| Підхід | Принцип | Потенційний партнер ЧНУ/СЄУ |
+| Підхід | Принцип | Реалізація / дім |
 |---|---|---|
-| **Розподілене навчання між Queens (дві РІЗНІ математики — не плутати):** | (a) **Lorenz σ/ρ/β** — це ODE-система **без ваг**, її не тренують backprop'ом → **Distributed Parameter Estimation** (PSO/GA на Queen знаходить оптимальні σ,ρ,β для локального кластера; Queens обмінюються *оцінками параметрів*, не градієнтами). (b) **TinyML акустика** — тут доречне навчання, але точна назва залежить від рівня. **Cluster-level Edge Retraining** (Queen ретренить класифікатор на даних свого кластера + компілює `.tflite` → OTA) — це **НЕ** Federated Learning, а локальний batch-training на edge-сервері (Soldier фізично не рахує градієнти, §1.2). **Справжній FL** можливий лише як обмін *оновленнями моделі* Queen↔Rails (не сирими даними) — і лише якщо так структуровано. Мотив — **не privacy** (у дерев немає GDPR-даних; бекенду навпаки потрібні сирі семпли кавітації/пилки для глобальної моделі), а **економія airtime/енергії** (не гнати все аудіо в хмару) + стійкість. | Любченко GA/NSGA-II ([`08_02`](08_02_Academic_Institutions_Registry)); Карапетян статистика ([`08_02 §2`](08_02_Academic_Institutions_Registry)) |
-| **Stigmergic Communication (L2/L3-опосередкована, НЕ P2P)** | Soldier емітує 1-bit стрес-сигнал («я в червоному Z-bucket», ~110 ms LoRa TX) → **L3 Queen** (always-on) акумулює його як «феромонний слід» → команда «підняти sampling rate» доставляється сусідам у їхнє наступне заплановане RX-вікно (CAD / TDMA / OTA-downlink). Прямого peer-RX немає (фізика — у ⚠️ нижче) | mruby VM mod ([`03_04`](03_04_mruby_Lorenz_Attractor)); двері відкриті ЧНУ-ФОТІУС |
-| **Chimera States у network of attractors** | Математична теорія Куромото (Kuramoto-Battogtokh 2002): network coupled Lorenz oscillators утворює **частково синхронізовані, частково хаотичні patterns** — це саме структура здорового лісу (homeostasis-coupled domains across disturbance gradients) | Кирилюк синергетика економічних систем ([`08_02 §1A`](08_02_Academic_Institutions_Registry)); Гусак нелінійна динаміка ([`08_02 §1A`](08_02_Academic_Institutions_Registry)) |
+| **Розподілене навчання між Queens (дві РІЗНІ математики — не плутати):** | (a) **Lorenz σ/ρ/β** — це ODE-система **без ваг**, її не тренують backprop'ом → **Distributed Parameter Estimation** (PSO/GA на Queen знаходить оптимальні σ,ρ,β для локального кластера; Queens обмінюються *оцінками параметрів*, не градієнтами). (b) **TinyML акустика** — тут доречне навчання, але точна назва залежить від рівня. **Cluster-level Edge Retraining** (Queen ретренить класифікатор на даних свого кластера + компілює `.tflite` → OTA) — це **НЕ** Federated Learning, а локальний batch-training на edge-сервері (Soldier фізично не рахує градієнти, §1.2). **Справжній FL** можливий лише як обмін *оновленнями моделі* Queen↔Rails (не сирими даними) — і лише якщо так структуровано. Мотив — **не privacy** (у дерев немає GDPR-даних; бекенду навпаки потрібні сирі семпли кавітації/пилки для глобальної моделі), а **економія airtime/енергії** (не гнати все аудіо в хмару) + стійкість. |  |
+| **Stigmergic Communication (L2/L3-опосередкована, НЕ P2P)** | Soldier емітує 1-bit стрес-сигнал («я в червоному Z-bucket», ~110 ms LoRa TX) → **L3 Queen** (always-on) акумулює його як «феромонний слід» → команда «підняти sampling rate» доставляється сусідам у їхнє наступне заплановане RX-вікно (CAD / TDMA / OTA-downlink). Прямого peer-RX немає (фізика — у ⚠️ нижче) | mruby VM mod ([`03_04`](03_04_mruby_Lorenz_Attractor)) |
+| **Chimera States у network of attractors** | Математична теорія Куромото (Kuramoto-Battogtokh 2002): network coupled Lorenz oscillators утворює **частково синхронізовані, частково хаотичні patterns** — це саме структура здорового лісу (homeostasis-coupled domains across disturbance gradients) |  |
 | **Forest-Wide Lorenz Coupling** | Розширення `bio_contract.rb`: вхідні параметри атрактора містять не лише власні `delta_t/temp/acoustic`, а й aggregated neighbor signals (median Z у кластері за останню годину) | Розширення `03_04 §X.Y` (новий розділ після TRL 9) |
 
 > **⚠️ Stigmergy маршрутизується через L2/L3, не P2P:** рядок «Stigmergic Communication» вище описує лише *емісію* 1-bit сигналу (дешево: ~110 ms LoRa TX @ +14 dBm). **Зворотний шлях** («сусіди підвищують sampling rate») НЕ може бути peer-to-peer broadcast: Soldier перебуває у STOP2 ~99.9% часу ([`03_01`](03_01_Firmware_Lifecycle_and_DMA) / [`08_02`](08_02_Academic_Institutions_Registry)), радіо SX1262 вимкнене — він фізично не «чує» сусіда, а continuous-RX вичерпав би 0.47F supercap за хвилини. Тому: Soldier-емітент → сигнал ловить **always-on L2 Conductor / L3 Queen** і акумулює як «феромонний слід» → команда «підняти sampling rate» доставляється сусідам лише у їхнє наступне заплановане RX-вікно (CAD-пінг / TDMA-слот / OTA-downlink, [`03_02`](03_02_Queen_Gateway_Firmware)). Це не послаблення ідеї, а **точніша** stigmergy: мурахи теж не передають сигнал напряму, а лишають слід у середовищі — роль персистентного середовища тут грає Queen.
@@ -142,7 +142,6 @@
 **Партнерські школи:**
 - Спрягайло ([`08_02 §1A`](08_02_Academic_Institutions_Registry)) — extension до інших порід ЧНУ Botanical Hub
 - НАН України через школу НБС Гришка (intro Спрягайла, кандидатська 2013) — broadleaf і fruit tree calibration
-- Future: international university partnerships (Brazil INPA для tropical, Australia CSIRO для eucalyptus, ASEAN MUSE для mangrove)
 
 **SRL/MRL шлях:** `SRL:Concept` (multi-species PoC у 3 lab settings) → `SRL:Pilot` + `MRL:8` (deployed pilots у 3 biomes одночасно, мала серія 5 SKU) → `SRL:Deployed` + `MRL:10` (open framework + повносерійне виробництво per-biome SKU).
 
@@ -162,10 +161,10 @@
 
 | Підхід | Принцип | Реалізація |
 |---|---|---|
-| **Proactive Anomaly Detection (Federated)** | Замість per-tree fraud detection — **cluster-level statistical fingerprints**. Якщо 100 дерев одного кластера раптом починають видавати «too perfect» Z-curves (lower variance than possible), це → suspicious | ML-сервіс у Rails + GA-оптимізація Любченка ([`08_02`](08_02_Academic_Institutions_Registry)); запит до Карапетяна (статистика, [`08_02 §2`](08_02_Academic_Institutions_Registry)) |
+| **Proactive Anomaly Detection (Federated)** | Замість per-tree fraud detection — **cluster-level statistical fingerprints**. Якщо 100 дерев одного кластера раптом починають видавати «too perfect» Z-curves (lower variance than possible), це → suspicious | ML-сервіс у Rails |
 | **Adversarial Telemetry Generators (Red Team)** | Внутрішня команда генерує **GAN-вироблені синтетичні telemetry, які намагаються пройти Dual Computation** → знаходить вразливості до того, як їх знайде зовнішній attacker | Регулярні Red Team Exercises як частина CI/CD ([`04_06 §B`](04_06_Testing_Guide_and_Coverage)); Q1 paper "Adversarial robustness of bio-token mints" |
 | **Decoy DID Tripwire (backend, НЕ on-chain honeypot)** | ⚠️ Виправлено: on-chain honeypot не працює — стейт контракту публічний, а навіть «реальне-але-заблоковане» дерево видає себе **відсутністю mint-подій** (атакер аналізує on-chain патерн і обходить). Тому — **бекенд-tripwire**: набір **decoy DID**, яких немає як реальних анкерів, у серверному watchlist (НЕ публікуються, НЕ on-chain). **Будь-яка телеметрія/mint-спроба від decoy DID = доведена підробка** (жоден реальний Soldier його не має) → instant alert + slashing + 12-chain rotation. Додатково: **Shadow Trees** — синтетичні фейкові дані у *публічному дашборді* (information warfare: торговий бот, що будує атаку на shadow-даних, руйнує свою стратегію). | Backend watchlist decoy DIDs + `TelemetryUnpackerService` tripwire (НЕ on-chain flag) |
-| **Quantum-Resistant Oracle Migration** | ⚠️ PQC — це **асиметрична** проблема (Shor): вразливі ECDSA (Chainlink/Polygon/ETH), Ed25519 (peaq DID), ECDH-provisioning. **Симетричний LoRa/CoAP-трафік (AES-128/256) уже квантово-стійкий** (Grover лише √-ослаблення: AES-256 = 2¹²⁸) — на Soldier PQC-коду НЕ пишемо (Dilithium 2420 B не вміщається у 30B-пакет). Канон-дім — [`03_05 §10`](03_05_Hardware_Symmetric_Crypto_and_Security) (TRL-stratified roadmap). | Аблязов Д. (СЄУ, [`08_02 §5`](08_02_Academic_Institutions_Registry)) — правова рамка |
+| **Quantum-Resistant Oracle Migration** | ⚠️ PQC — це **асиметрична** проблема (Shor): вразливі ECDSA (Chainlink/Polygon/ETH), Ed25519 (peaq DID), ECDH-provisioning. **Симетричний LoRa/CoAP-трафік (AES-128/256) уже квантово-стійкий** (Grover лише √-ослаблення: AES-256 = 2¹²⁸) — на Soldier PQC-коду НЕ пишемо (Dilithium 2420 B не вміщається у 30B-пакет). Канон-дім — [`03_05 §10`](03_05_Hardware_Symmetric_Crypto_and_Security) (TRL-stratified roadmap). |  |
 | **Auto-Immune Sentinel** | Окремий ML-сервіс, який моніторить весь стек 24/7 в режимі **«hunting for hunters»** — шукає координовані patterns між: trading volume на SCC DEXs + telemetry anomalies + oracle response patterns. Це **проактивний counter-AI** проти adversarial AI | Roadmap `SRL:Pilot`+; вимагає budget на dedicated AI/ML engineer; партнерство з академічними лабораторіями з ML security |
 
 **Філософська позиція:** Silken Net — це **критична інфраструктура планетарного клімату**. Тому стандарт безпеки має бути не «не гірше за DeFi», а **на рівні national-grid SCADA**: continuous threat hunting, mandatory bug bounty, formal verification critical path.
@@ -185,9 +184,9 @@
 
 | Підхід | Принцип | Партнер / дім |
 |---|---|---|
-| **Cross-species acoustic generalization** | 5-class fauna-модель (pine dawn/dusk) → biome-agnostic soundscape: інвазивні види, міграційні патерни, per-biome таксон-профілі (дзеркало Gap #3 hardware cross-biome, для звуку) | Спрягайло/Гаврилюк UNI.13a → INPA/CSIRO/MUSE |
-| **Planetary biodiversity aggregation** | L3 Queen зводить cluster soundscape-індекси → Rails планетарна biodiversity-карта (дзеркало Gap #1 forest-emergence, для fauna-сигналу); Macro-Micro fusion NDVI ↔ soundscape | наш NDVI-адаптер (open-data) + Карапетян (fusion-статистика) ([`08_02 §2`](08_02_Academic_Institutions_Registry)) |
-| **Dual-market tokenization** | ⚖️ монетизаційна вилка ([`00_07` E.59](00_07_Action_Plan_Tracker)): biodiversity = премія до того самого SCC (1 токен, 2 докази) **vs** окремий nature-credit (TNFD-ринок) — firmware/backend ідентичні, рішення при live money-path | СЄУ токеноміка ([`08_02 §5`](08_02_Academic_Institutions_Registry)) |
+| **Cross-species acoustic generalization** | 5-class fauna-модель (pine dawn/dusk) → biome-agnostic soundscape: інвазивні види, міграційні патерни, per-biome таксон-профілі (дзеркало Gap #3 hardware cross-biome, для звуку) | Спрягайло/Гаврилюк UNI.13a |
+| **Planetary biodiversity aggregation** | L3 Queen зводить cluster soundscape-індекси → Rails планетарна biodiversity-карта (дзеркало Gap #1 forest-emergence, для fauna-сигналу); Macro-Micro fusion NDVI ↔ soundscape | наш NDVI-адаптер (open-data) |
+| **Dual-market tokenization** | ⚖️ монетизаційна вилка ([`00_07` E.59](00_07_Action_Plan_Tracker)): biodiversity = премія до того самого SCC (1 токен, 2 докази) **vs** окремий nature-credit (TNFD-ринок) — firmware/backend ідентичні, рішення при live money-path |  |
 
 **SRL шлях:** `SRL:Concept` (Стаття 24a Q1 + Cherkasy Soundscape Library, [`08_01`](08_01_Joint_Publications_and_IP_Strategy)) → `SRL:Pilot` (планетарна biodiversity-карта на пілотних біомах) → `SRL:Deployed` (continuous nature-credit MRV **поряд** з carbon).
 
@@ -197,11 +196,11 @@
 
 | # | Gap | Поточний стан (TRL 9) | Майбутній стан (SRL:Deployed) | Партнер | Q1 паперів |
 |---|---|---|---|---|---|
-| 1 | Forest-Level Emergence | Ізольовані Lorenz | Chimera states у network of attractors | Кирилюк, Гусак, Любченко | 2–3 (Synergetics + Network Science) |
-| 2 | Self-Evolving Behaviour | Top-down OTA only | On-device edge GA + RL | Ярмілко | 2 (Edge AI + Evolutionary Comp.) |
-| 3 | Cross-Biome Generalization | Pine-only | 5+ biomes, community-driven onboarding | Спрягайло + INPA/CSIRO/MUSE | 3–5 (per biome) |
-| 4 | Auto-Immune Sentinel | Reactive Slashing | Proactive AI Sentinel + PQC | Аблязов Д., Карапетян, ML-security partners | 2 (Adversarial ML + Web3 Security) |
-| 5 | Planetary Biodiversity Intelligence | Per-tree fauna (5-й acoustic-клас) | Планетарна biodiversity-карта (nature-credits **поряд** з carbon) | Спрягайло, СЄУ + INPA/CSIRO | 1–2 (Bioacoustics + Biodiversity MRV) |
+| 1 | Forest-Level Emergence | Ізольовані Lorenz | Chimera states у network of attractors |  | 2–3 (Synergetics + Network Science) |
+| 2 | Self-Evolving Behaviour | Top-down OTA only | On-device edge GA + RL |  | 2 (Edge AI + Evolutionary Comp.) |
+| 3 | Cross-Biome Generalization | Pine-only | 5+ biomes, community-driven onboarding | Спрягайло | 3–5 (per biome) |
+| 4 | Auto-Immune Sentinel | Reactive Slashing | Proactive AI Sentinel + PQC |  | 2 (Adversarial ML + Web3 Security) |
+| 5 | Planetary Biodiversity Intelligence | Per-tree fauna (5-й acoustic-клас) | Планетарна biodiversity-карта (nature-credits **поряд** з carbon) | Спрягайло | 1–2 (Bioacoustics + Biodiversity MRV) |
 
 ### 1.7. Як це впливає на TRL ladder
 
@@ -219,7 +218,7 @@ SRL:Deployed ━━━ Verified, formal, planetary-scale autopoiesis ← Silken 
 
 ### 1.8. Cross-references та де ще згадано
 
-- **Gap #1 (Forest Emergence):** деталі у [`03_04 §6.3`](03_04_mruby_Lorenz_Attractor); координація з [`08_02 §1B`](08_02_Academic_Institutions_Registry) (ФОТІУС кібернетика) та [`08_02 §1A`](08_02_Academic_Institutions_Registry) (Кирилюк синергетика)
+- **Gap #1 (Forest Emergence):** деталі у [`03_04 §6.3`](03_04_mruby_Lorenz_Attractor); координація з [`08_02 §1B`](08_02_Academic_Institutions_Registry) (ФОТІУС кібернетика)
 - **Gap #2 (Self-Evolving):** firmware extension у [`03_03 §Y`](03_03_TinyML_Acoustic_Inference) (TinyML online learning) + [`03_04 §Z`](03_04_mruby_Lorenz_Attractor) (mruby GA); безпекова валідація у [`05_03 §SCC Anti-Adversarial`](05_03_Tokenomics_SCC_and_SFC)
 - **Gap #3 (Cross-Biome):** parametric CAD у [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (Stages 2+ extended до 5 biomes); R&D у [`08_02 §1`](08_02_Academic_Institutions_Registry) (Спрягайло + НАН України канал)
 - **Gap #4 (Auto-Immune Sentinel):** розширення Slashing v2 у [`05_05 §6`](05_05_Slashing_and_Risk_Policy) + [`05_06 §5`](05_06_Governance_and_DAO) + Chainlink hardening у [`05_02`](05_02_Proof_of_Growth_Pipeline)
