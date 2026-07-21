@@ -22,7 +22,7 @@
 | [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS value-prop |
 | [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) | Unit economics для заявок |
 | [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | академічні гранти |
-| [`08_01` — Joint Publications and IP Strategy](08_01_Joint_Publications_and_IP_Strategy) | Twin-pack / Horizon консорціум backbone (§1G) |
+| [`08_01` — Joint Publications and IP Strategy](08_01_Joint_Publications_and_IP_Strategy) | Horizon консорціум / publication backbone (Ст.24a) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | BIZ.12, UNI.1/UNI.14 |
 
 ## 📑 Зміст
@@ -171,25 +171,26 @@ Seed-раунд: climate/deeptech фонди (дані + університет�
 | **Орієнтовний бюджет** | €3–5M на 4 роки |
 | **Вимоги до консорціуму** | Мін. 3 країни ЄС; Ukraine є асоційованою країною (partial eligibility) |
 | **Статус** | Не подано — потребує підготовки |
-| **Академічний лідер консорціуму** | **ЧНУ (Спрягайло О.В., проректор з науки)** — координація консорціуму (ЧНУ/ЧДТУ/СЄУ + ActiveBridge + лісові господарства); Triple Helix модель. ⚠️ Перепризначено 2026-07-17 (UNI.19): попередня носійка ролі мала **0 публікаційних ланок** у портфелі — роль потребувала наукового тилу |
-| **Парасоль ЧНУ (інституційний)** | **В.о. ректора Кирилюк Є.М.** (директор ННІ економіки і права) — підпис парасольового MoU ЧНУ↔Silken Net, ко-PI WP-Bioeconomy; **проректор з науки Спрягайло О.В.** — ко-PI WP-Biodiversity, регіональний contact з Черкаською ОДА, ПЗФ-сумісність pilot'у. Деталі: [`08_02 §1A`](08_02_Academic_Institutions_Registry), [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy). |
+| **Академічний лідер консорціуму** | **ЧНУ (Спрягайло О.В., проректор з науки)** — координація консорціуму (ЧНУ/ЧДТУ/СЄУ + ActiveBridge + лісові господарства); Triple Helix модель. |
+| **Парасоль ЧНУ (інституційний)** | **Проректор з науки Спрягайло О.В.** — інституційний якір / MoU-канал ЧНУ↔Silken Net; регіональний contact з Черкаською ОДА, ПЗФ-сумісність pilot'у. Деталі: [`08_02 §1A`](08_02_Academic_Institutions_Registry). |
 | **Парасоль ЧДТУ (інституційний)** | **Перший проректор Гончаров А.В.** (каф. РТРС — радіотехніка/signal-processing) — інституційний якір ЧДТУ, MoU-підписант ЧДТУ↔Silken Net, ко-PI WP2 (RF/EMC-верифікація hardware). Деталі: [`08_02 §2`](08_02_Academic_Institutions_Registry). |
 
 **Структура консорціуму для Horizon Europe:**
 
 ```
-WP1 Coordination & Dissemination → ЧНУ (Спрягайло О.В. — координація) + СЄУ (Гедз М.) + ЧНУ парасоль (Кирилюк Є.М.)
-WP2 Hardware & Materials          → ЧНУ (Гусак, Мінаєв) + ЧМА (токсикологія) + Silken Net
-WP3 Firmware & Edge AI            → ЧНУ ФОТІУС (Ярмілко) + Silken Net (Edge AI / TinyML self-owned)
-WP4 D-MRV Methodology             → профільний carbon-методолог (BIZ.9, TBD) + ЧДТУ (Карапетян — статистика) + ЧНУ біо-хаб (Спрягайло — ground truth)
-WP5 Legal & Compliance            → СЄУ (Аблязов Д. — UA-юрисдикційна правова рамка) + профільний крипто-юрист (TBD — MiCA/ERC-3643) + ЧНУ біо-хаб (Спрягайло — ПЗФ-сумісність)
-WP6 Industrial Design             → профільний промдизайнер (TBD); бренд/UI-дизайн — self
-WP7 Bioeconomy & Tokenized Markets → ЧНУ ректорат (Кирилюк Є.М.) + СЄУ (Чудаєва) — теоретична рамка SCC/NaaS
-WP8 Biodiversity Baseline (Cluster 6) → ЧНУ біо-хаб (Спрягайло, Гаврилюк) + ЧДТУ ПМКТ (Базіло, Бондаренко) — Cherkasy Soundscape Library
-WP9 Exploitation & IPR            → ActiveBridge + Silken Net
+WP1 Coordination & Dissemination
+WP2 Hardware & Materials
+WP3 Firmware & Edge AI
+WP4 D-MRV Methodology
+WP5 Legal & Compliance
+WP6 Industrial Design
+WP7 Bioeconomy & Tokenized Markets
+WP8 Biodiversity Baseline (Cluster 6)
+WP9 Exploitation & IPR
+(поіменний склад — після підписання MoU; тем-скелет = планувальний)
 ```
 
-> **Twin-pack publication backbone (cross-ref [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy)):** **Стаття 31** (Чудаєва ↔ макроекономіка SCC-ринку) обґрунтовує **WP7**; **Стаття 35** (Кирилюк ↔ Спрягайло біоекономіка) і **Стаття 24a** (Спрягайло ↔ Mongabay) — **WP8**. Подання до журналу Q1 за 2–3 місяці до Horizon-deadline переводить заявку з категорії «концепт» у «published research» (вирішальне для evaluators).
+> **Publication backbone:** **Стаття 24a** (Спрягайло ↔ Mongabay — acoustic biodiversity) обґрунтовує **WP8**. Подання до журналу Q1 за 2–3 місяці до Horizon-deadline переводить заявку з категорії «концепт» у «published research» (вирішальне для evaluators).
 
 **Зв'язок з кодбейсом:** Horizon Europe вимагає Open Science — `StateRootAnchor.sol` (публічна верифікація), Filecoin-архів телеметрії, The Graph subgraph (публічний доступ до даних).
 

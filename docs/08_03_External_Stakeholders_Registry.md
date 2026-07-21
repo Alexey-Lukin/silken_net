@@ -43,7 +43,7 @@
 | [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | B2B/B2C контракти, SLA (§2) |
 | [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) | Unit economics за tier |
 | [`07_03` — Grant Applications Tracker](07_03_Grant_Applications_Tracker) | Horizon Europe pipeline |
-| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Академічні партнери: §1A Кирилюк (ректор-парасоль) · §3 ЧІПБ/ДСНС · §5 СЄУ Аблязов (legal) |
+| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Академічні партнери: §1A Спрягайло (ЧНУ-парасоль) · §3 ЧІПБ/ДСНС · §5 СЄУ Аблязов (legal) |
 | [`02_05`](02_05_Queen_Hardware_and_Starlink) / [`03_04`](03_04_mruby_Lorenz_Attractor) | LoRa висотні точки / Lorenz stress-аналіз |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | § External Stakeholders (UNI.x, BIZ.x) |
 
@@ -190,8 +190,8 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 - **Звання:** Заслужений юрист України.
 - **Кандидати:** Колишні судді апеляційних судів, екскерівники обласної
   юстиції, топ-адвокати, професура **ННІ економіки і права ЧНУ** —
-  доступ через [`08_02 §1 Кирилюк`](08_02_Academic_Institutions_Registry)
-  (директор ННІ + в.о. ректора). Тут резонує також з
+  доступ через [`08_02 §1 Спрягайло`](08_02_Academic_Institutions_Registry)
+  (проректор з науки — канал ЧНУ). Тут резонує також з
   [`08_02 §5 Аблязов Денис`](08_02_Academic_Institutions_Registry)
   — він закриває RWA-правову архітектуру.
 - **API In:**
@@ -210,7 +210,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 - **SSOT-мапінг:** [`08_01`](08_01_Joint_Publications_and_IP_Strategy)
   (IP strategy), [`08_02 §5`](08_02_Academic_Institutions_Registry)
   (RWA legal architecture).
-- **Status:** 🔵 Identified. ⚠️ Виправлено 2026-07-17: було «🟡 Outreach (Аблязов уже залучений)», але [`00_07`](00_07_Action_Plan_Tracker) UNI.14 = **⚪ Не почато** («зустріч Чудаєва…») — контакту з СЄУ не було.
+- **Status:** 🔵 Identified — контакту з СЄУ не було ([`00_07`](00_07_Action_Plan_Tracker) UNI.14 ⚪ Не почато).
 
 ---
 
@@ -530,9 +530,9 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 - **Кандидати:** Наталія Джур (колишня директорка Черкаського інституту
   банківської справи НБУ, екон. доктор наук); Олександр Черевко (Заслужений
   економіст, екс-голова ОДА).
-- **Status:** ⚪ Conceptual — переважно покривається активним партнером
-  Кирилюком ([`08_02 §1`](08_02_Academic_Institutions_Registry)) як директором
-  ННІ економіки і права ЧНУ та СЄУ-командою Чудаєвої/Ус ([`08_02 §5`](08_02_Academic_Institutions_Registry)).
+- **Status:** ⚪ Conceptual — переважно покривається СЄУ-командою
+  (Аблязов/Ус/Гедз, [`08_02 §5`](08_02_Academic_Institutions_Registry)) + ННІ економіки і
+  права ЧНУ (доступ через Спрягайла, [`08_02 §1`](08_02_Academic_Institutions_Registry)).
   Залишається advisory pool, без active outreach.
 
 ---
