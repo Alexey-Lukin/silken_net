@@ -1557,9 +1557,9 @@
 - [ ] 👤 зустріч (ChDTU rectorat) + кафедральна тема «Statistics of Bio-IoT Telemetry» + 2-3 магістерські (2026-2027)
 - [ ] 🤖 SLA R-кластеру (тренування `silken_forest.marshal`, post-TRL 7)
 
-#### UNI.10 — ChDTU Гончаров (ФЕТР): RF верифікація + EMC pre-compliance [поглинув E.40 2026-07-14]
+#### UNI.10 — ChDTU Гончаров (перший проректор, каф. РТРС): RF верифікація + EMC pre-compliance [поглинув E.40 2026-07-14]
 - **P1** · 👤 · ⚪ · → `08_02 §2`
-- **Стан:** Не почато — А.А. Гончаров (ФЕТР): VNA + анехоїчна камера для (a) SMD-антена під PEEK (HW.17), (b) Link Budget у лісі (SF7-9, 50-250м), (c) EMC pre-compliance CE/FCC (E.11). Канон `08_02 §2`.
+- **Стан:** Не почато — **А.В. Гончаров, перший проректор ЧДТУ** (каф. РТРС; він же **інституційний якір / MoU-підписант ЧДТУ** — `08_02 §2`): VNA + анехоїчна камера для (a) SMD-антена під PEEK (HW.17), (b) Link Budget у лісі (SF7-9, 50-250м), (c) EMC pre-compliance CE/FCC (E.11). Канон `08_02 §2`.
 - [ ] 👤 зустріч + RF-лаб access + VNA-вимір PEEK-кришки (1.5/2.0/2.5 мм; ціль VSWR <1.5 @ 868 МГц, сухий/вологий стан + 3D Keep-Out з Ti-фланцем: Z-clearance 5/8/12 мм, з/без overhang — ex-E.53, вимога [`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM)) + Link Budget field test
 - [ ] 👤 A/B **Ignion NN02-310** (Virtual Antenna™) vs incumbent Yageo/Taoglas у тій самій VNA-сесії (eval-kit + VSWR під PEEK) — ex-E.40, far-horizon vendor-swap
 - [ ] 🔗 залежить HW.9 + HW.17
@@ -1601,10 +1601,10 @@
 - **Стан:** Не почато — ChMA: (1) валідація dgrFAD-GDH + Laccase/ZIF-nanozyme при pH 4.5-5.5 (`01_03`), (2) токсикологія Ti/Al/V іонів, (3) геніпін cross-linking біосумісність (vs глутаральдегід). ⚠️ посади не верифіковані. Канон `08_02 §4`.
 - [ ] 👤 СПОЧАТКУ verify посади (сайт ChMA) → cold contact ректор → joint biochemistry protocol EBFC Gen 2.0 (HW.5)
 
-#### UNI.17 — ChDTU Хоменко (Кафедра металорізальних верстатів): прецизійна механіка + DMLS post-processing
+#### UNI.17 — CNC post-DMLS механообробка (fab-infra / procurement, не публікаційний партнер)
 - **P2** · 👤 · ⚪ · → `08_02 §2`
-- **Стан:** Не почато — Хоменко (Заслужений винахідник, 80+ патентів): прецизійна CNC-обробка post-DMLS (PEEK Zone 2 фрезерування, bayonet-геометрія, катод Zone 3) + різальна геометрія анкера (`01_01`/`01_02`/`02_02`). Канон `08_02 §2`.
-- [ ] 👤 контакт (ChDTU rectorat) + prior-art consult (Хоменко = 80+ патентів → patent-landscape для UNI.15 TISC) + прототип різальної геометрії в ЧДТУ machine shop
+- **Стан:** Не почато — **fab-infra, не наукова валідація** (manufacturing-крок, процес відомий). Прецизійна CNC-обробка post-DMLS (PEEK Zone 2 фрезерування, bayonet-геометрія, катод Zone 3) + різальна геометрія анкера (`01_01`/`01_02`/`02_02`). Виконавець TBD (не контактовано) — ЧДТУ machine-shop АБО комерційний CNC-цех (RFQ). Канон `08_02 §2` (fab-infra нота).
+- [ ] 👤 RFQ CNC-цеху АБО контакт ЧДТУ machine-shop + прототип різальної геометрії post-DMLS
 
 #### E.14 — Multi-source satellite + anchor data fusion (академічний фасет — Стаття 24a)
 - **P3** · 🤖+👤 · 🌿 · → `08_01`, `03_03 §7`
