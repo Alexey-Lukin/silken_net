@@ -66,7 +66,7 @@ SilkenNet об'єднує сім академічних та індустріа�
 > **Створення першої у світі автономної, trustless D-MRV (Digital Measurement, Reporting, Verification) системи для моніторингу природного капіталу планетарного масштабу.**
 
 Цільовий продукт — не «черговий IoT-датчик», а **зміна парадигми**: дерево перестає бути пасивним об'єктом екології і стає **активним економічним агентом**, який:
-- самостійно доводить свою життєздатність криптографічними ZK-доказами (IoTeX W3bstream, [`05_02`](05_02_Proof_of_Growth_Pipeline)),
+- має доводити життєздатність криптографічними ZK-доказами (IoTeX W3bstream, [`05_02`](05_02_Proof_of_Growth_Pipeline)) — ціль: ZK→mint наразі optimistic-L0, не enforced (ARCH.53),
 - сам фінансує свій захист через Web3-ринок RWA-активів (Polygon SCC + Hadron ERC-3643, [`05_01`](05_01_Multichain_Architecture), [`05_03`](05_03_Tokenomics_SCC_and_SFC)),
 - emit'ить власний грошовий потік (NaaS-контракти, [`07_01`](07_01_Nature_as_a_Service_Contracts)).
 
@@ -84,8 +84,10 @@ SilkenNet об'єднує сім академічних та індустріа�
 2. **Академічний консорціум — ортогональний.**
    Кожен з п'яти університетів закриває **виключно свою** ланку без дублювання. Розподіл нижче (§0.3) є **інваріантом MOIC** — будь-яке нове залучення (наприклад, додатковий університет або дослідницький інститут) повинно або займати порожню комірку, або еволюціонувати існуючу без перекриття.
 
+   > **Режим залучення (чесно):** 2 лаб-MoU (ЧНУ/ЧДТУ — розблокують ICP-MS/VNA/акустику) + персональні контакти (СЄУ/ЧІПБ/ЧМА, люди без лаб-доступу). Партнери **ідентифіковані, не законтрактовані** — жоден MoU ще не підписаний.
+
 3. **Держава / регулятор / end-user.**
-   Не пасивний споживач, а **третя вершина спіралі**: Черкаська ОДА (Стратегія розвитку області, ПЗФ-інтеграція через Спрягайла, [`08_02 §1A`](08_02_Academic_Institutions_Registry)), ДСНС (інтеграція EwsAlert через ЧІПБ, [`08_02 §3`](08_02_Academic_Institutions_Registry)), європейські реєстри (ISO 14064 / ICROA mapping через Гедза, [`08_02 §5`](08_02_Academic_Institutions_Registry)).
+   Не пасивний споживач, а **третя вершина спіралі**: Черкаська ОДА (Стратегія розвитку області, ПЗФ-інтеграція через Спрягайла, [`08_02 §1A`](08_02_Academic_Institutions_Registry)), ДСНС (інтеграція EwsAlert через ЧІПБ, [`08_02 §3`](08_02_Academic_Institutions_Registry)), європейські реєстри (ISO 14064 / ICROA mapping — профільний carbon-методолог, [`00_07` BIZ.9](00_07_Action_Plan_Tracker)).
 
 ### 0.3. Hard Science Layer ↔ Business Layer (Ортогональна Карта)
 
@@ -103,7 +105,7 @@ SilkenNet об'єднує сім академічних та індустріа�
 | **СЄУ** | Business | UA-правова рамка RWA + господарське право (Аблязов Д.), фінансовий облік криптоактивів (Гедз), цифрова економіка + моделювання (Ус); дизайн — self | [`08_02 §5`](08_02_Academic_Institutions_Registry) | — |
 | **Silken Net + ActiveBridge** | Mission Controller | IP holder, system integrator, firmware/backend/contracts, фінальна інтеграція WP1–WP9 у TRL 8 продукт | [`08_02 §5`](08_02_Academic_Institutions_Registry), [`07_03`](07_03_Grant_Applications_Tracker) | — |
 
-> **Принцип ортогональності:** жодна комірка `(ВНЗ, ніша)` не дублюється. Якщо два університети потенційно претендують на одну тему то межа проходить за **об'єктом аналізу** (напр. ЧДТУ веде статистичне виявлення аномалій та шахрайства — `FRAUD_DEVIATION_THRESHOLD`, Ст.13); перетин фіксується як **міжуніверситетська синергія** (зона §1C).
+> **Принцип ортогональності:** жодна комірка `(ВНЗ, ніша)` не дублюється. Якщо два університети потенційно претендують на одну тему то межа проходить за **об'єктом аналізу** (напр. ЧДТУ веде статистичне виявлення аномалій та шахрайства — Ст.13); перетин фіксується як **міжуніверситетська синергія** (зона §1C).
 
 ### 0.4. Цінність Кластера — Зовнішня Валідація
 
@@ -111,9 +113,9 @@ MOIC додає до кожного технічного твердження п
 
 | Параметр | Без MOIC | З MOIC |
 |----------|----------|--------|
-| Кожен параметр смарт-контракту (`OPTIMAL_Z_TARGET=29.0`, `MAX_SUPPLY=1B SCC`, `FRAUD_DEVIATION_THRESHOLD=30%`, `Dynamic Tax=2%`) | Код стартапу | + Q1-публікація + лабораторний тест профільного інституту |
+| Кожен параметр смарт-контракту (`MAX_SUPPLY=1B SCC`, `FRAUD_DEVIATION_THRESHOLD=30%`, `Dynamic Tax=2%`) | Код стартапу | + Q1-публікація + лабораторний тест профільного інституту |
 | Кожен хардверний вузол (тризонний Ti-6Al-4V анкер з Zone 1 гіроїд / Zone 2 PEEK + mechanical lock barbs / Zone 3 фланець з anti-overgrowth shield, **EBFC Gen 2.0** — dgrFAD-GDH + Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA + Laccase/ZIF-nanozyme DET, BQ25570 MPPT, SX1262 LoRa, PEEK-радом IoT-капсули з super-hydrophobic coating) | Концепт | + DFT/FEM/ICP-MS/VNA/EMC дані з акредитованих лабораторій |
-| D-MRV pipeline як замінник Verra/Gold Standard | Вимога довіри | + ISO 14064 / ICROA mapping (Гедз, [`08_02 §5`](08_02_Academic_Institutions_Registry)) |
+| D-MRV pipeline як замінник Verra/Gold Standard | Вимога довіри | + ISO 14064 / ICROA mapping (профільний carbon-методолог, [`00_07` BIZ.9](00_07_Action_Plan_Tracker)) |
 | Біорізноманіттєвий шар | NDVI-only | + acoustic ground-truth (Mongabay pivot, Стаття 24a) + ботанічна валідація (Спрягайло) |
 
 Сукупно це робить консорціум кандидатом на гранти **Horizon Europe Cluster 6** (Biodiversity Monitoring + Bioeconomy, [`07_03`](07_03_Grant_Applications_Tracker)).
@@ -123,11 +125,11 @@ MOIC додає до кожного технічного твердження п
 | Розділ | Роль у MOIC | Як читати |
 |--------|--------------|------------|
 | [`08_01`](08_01_Joint_Publications_and_IP_Strategy) (цей документ) | MOIC head: концепція кластера + план публікацій + IP framework | SSOT публікаційного плану та IP |
-| [`08_02 §1`](08_02_Academic_Institutions_Registry) | ЧНУ — Hard Science (§1A: фізика/хімія/біологія) + ФОТІУС (§1B: mruby-Lorenz-аудит + GA/NSGA-II ML) | Лабораторні протоколи + матем. основа Статей 1–3, 23–25, 28–30, 35 |
+| [`08_02 §1`](08_02_Academic_Institutions_Registry) | ЧНУ — Hard Science (§1A: фізика/хімія/біологія) + ФОТІУС (§1B: mruby-Lorenz-аудит + GA/NSGA-II ML) | Лабораторні протоколи + матем. основа Статей 1, 2, 23, 24, 24a, 28, 29 |
 | [`08_02 §2`](08_02_Academic_Institutions_Registry) | Data / RF / Acoustics ortho-niche (ЧДТУ) | 3 кафедри ЧДТУ |
 | [`08_02 §3`](08_02_Academic_Institutions_Registry) | Regulated Safety ortho-niche (ЧІПБ) | Інтеграція з ДСНС, fire model, SOP |
 | [`08_02 §4`](08_02_Academic_Institutions_Registry) | Biomedical ortho-niche (ЧМА) | EBFC біохімія, токсикологія, ксилемоінтеграція |
-| [`08_02 §5`](08_02_Academic_Institutions_Registry) | Business Layer (СЄУ: макро / право / D-MRV-аудит / промдизайн) | Horizon-заявки; консорціум-лідерство → ЧНУ Спрягайло ([`07_03`](07_03_Grant_Applications_Tracker)) |
+| [`08_02 §5`](08_02_Academic_Institutions_Registry) | Business Layer (СЄУ: право (Аблязов) / облік (Ус, Гедз)) | Horizon-заявки; консорціум-лідерство → ЧНУ Спрягайло ([`07_03`](07_03_Grant_Applications_Tracker)) |
 | [`08_03`](08_03_External_Stakeholders_Registry) | External Stakeholders (B2G/B2B + культурний шар) | Не академічні партнери — поза MOIC core |
 
 > **Операційне правило:** при підготовці будь-якої зовнішньої комунікації (pitch deck, grant proposal, академічний візит) спочатку звіряти позиціонування з §0 цього документа, потім — з відповідним доменним 08_0X, і тільки потім — з конкретним розділом-§1A…§1E нижче.
@@ -263,24 +265,24 @@ _«Дослідження акустичних властивостей пори
 **Назва (UA):** _«Мультимасштабна акустична верифікація супутникового лісового покриву через TinyML Edge AI: розрізнення функціональних екосистем та монокультурних плантацій за допомогою безперервної Bio-IoT класифікації звукового ландшафту»_
 **Журнали:** *Ecological Indicators* (Q1, IF ~6.3) · *Remote Sensing of Environment* (Q1, IF ~13.5) · *Methods in Ecology and Evolution* (Q1, IF ~8.0) · *Bioacoustics* (Q2)
 
-> ⚠️ **Рамка (both/and — не заміна карбону):** «Pivot» у назві = історичний ярлик кампанії Mongabay, а НЕ зміна позиціювання від карбону. Biodiversity — **другий D-MRV вимір ПОВЕРХ карбонового ядра**, не замість нього: `growth_points → SCC` лишається ядром економіки; fauna = 5-й акустичний клас (поверх 4: silence/wind/cavitation/chainsaw) + `biodiversity_score` як метадані `ForestNFT` — окремий шар доказу, не інший токен.
+> ⚠️ **Рамка (both/and — не заміна карбону):** «Pivot» у назві = історичний ярлик кампанії Mongabay, а НЕ зміна позиціювання від карбону. Biodiversity — **другий D-MRV вимір ПОВЕРХ карбонового ядра**, не замість нього: `growth_points → SCC` лишається ядром економіки; fauna = 5-й акустичний клас (поверх 4: silence/wind/cavitation/chainsaw) + `biodiversity_score` (proposed) як метадані `ForestNFT` (proposed) — окремий шар доказу, не інший токен.
 
 **Контекст / мотивація:** Дослідження Delgado et al. (Nicoya Peninsula, Costa Rica, 119 ділянок, 16 000 годин аудіо; огляд: *Mongabay News*, травень 2026) інструментально довело фундаментальне обмеження виключно супутникового MRV: NDVI не розрізняє функціональну екосистему (захищений ліс / PES-регенерація з dawn-dusk піками фауни) від монокультурної плантації або деградованого пасовища (нерухомий, шар-без-шарів звуковий фон). Стаття 24a переносить методологію Delgado у **безперервну on-tree IoT-площину** — замість 119 портативних рекордерів на 1 рік дослідження, Silken Net надає тисячі STM32WLE5JC сенсорів з `fauna_activity_index` 24/7, цифрово підписаним та anchored на блокчейн (Polygon SCC).
 
 **Унікальність публікації (відсутня в світовій літературі станом на 2026-05):**
 1. Перша інтеграція **soundscape ecology** (Pijanowski et al. 2011, ACI Index Pieretti et al. 2011) з **embedded TinyML на суб-кілобайтному бюджеті**: self-contained INT8 forward-pass (40 log-mel → 16 → 5 класів), **972 B ваг у Flash** (`const`/.rodata) / **~76 B стеку** (активації forward-pass) / ~0 .bss, без TFLM- і без CMSIS-NN-рантайму ([`03_03 §4.1`](03_03_TinyML_Acoustic_Inference)) — тоді як типова ESC-CNN потребує ~16 КБ tensor arena, що при цьому енерго/RAM-бюджеті **фізично не деплоїться** ([`03_03 §3.4`](03_03_TinyML_Acoustic_Inference)).
-2. Перший **D-MRV pipeline**, що зв'язує акустичний біо-сигнал із on-chain записом: `TinyML soundscape → CoAP → Rails → Polygon SCC`. **Both/and:** це **другий D-MRV вимір** (biodiversity) ПОВЕРХ карбонового ядра — `growth_points → SCC` лишається емісійним драйвером, а `fauna` живить `biodiversity_score` (метадані `ForestNFT`), НЕ заміна карбону. ⚠️ **Не «продакшн» і не «cryptographically доводить» (виправлено 2026-07-17 за ARCH.53):** живий шлях мінтить **оптимістично** — IoTeX/Chainlink НЕ enforced; ланка `W3bstream ZK-proof → Chainlink Oracle → mint guard` = PATH 1 ⚪ **Demoted/unwired** (нема DON source/consumer/relayer), trust-origin = **L0**, anti-fraud = ex-post clawback (ще не збудований) → [`05_02`](05_02_Proof_of_Growth_Pipeline). Це архітектура-**намір** (North-Star §0.1), не доведений факт: «доводить» тут = той самий reviewer-landmine, за який Статтю 1 переписали з «*Validation*» (2026-06-05).
+2. Перший **D-MRV pipeline**, що зв'язує акустичний біо-сигнал із on-chain записом: `TinyML soundscape → CoAP → Rails → Polygon SCC`. **Both/and:** це **другий D-MRV вимір** (biodiversity) ПОВЕРХ карбонового ядра — `growth_points → SCC` лишається емісійним драйвером, а `fauna` живитиме `biodiversity_score` (proposed метадані `ForestNFT`, ще не в коді), НЕ заміна карбону. ⚠️ **Не «продакшн» і не «cryptographically доводить» (виправлено 2026-07-17 за ARCH.53):** живий шлях мінтить **оптимістично** — IoTeX/Chainlink НЕ enforced; ланка `W3bstream ZK-proof → Chainlink Oracle → mint guard` = PATH 1 ⚪ **Demoted/unwired** (нема DON source/consumer/relayer), trust-origin = **L0**, anti-fraud = ex-post clawback (ще не збудований) → [`05_02`](05_02_Proof_of_Growth_Pipeline). Це архітектура-**намір** (North-Star §0.1), не доведений факт: «доводить» тут = той самий reviewer-landmine, за який Статтю 1 переписали з «*Validation*» (2026-06-05).
 3. Перша **Macro-Micro residual analysis**: де NDVI=high & fauna=low → кандидат на «green-washing», де NDVI=low & fauna=high → ранньо-стадія регенерації, що supercluster карбон/біо інтегруються.
 
 | Автор | Афіліація | Внесок |
 |-------|-----------|--------|
-| **Любченко К.М.** (ЧНУ ФОТІУС) | Genetic Algorithms, Edge AI, Master of Logic | NSGA-II multi-objective GA для 5-class TinyML моделі (silence/wind/cavitation/chainsaw/**fauna**); циркадно-залежні confidence thresholds (dawn vs dusk) |
+| **Любченко К.М.** (ЧНУ ФОТІУС) | Genetic Algorithms, Edge AI, Master of Logic | NSGA-II tuning ваг 5-class TinyML (метод generic pymoo; модель — наша self-owned end-to-end, [`00_07` FW.4](00_07_Action_Plan_Tracker)); циркадно-залежні confidence thresholds (dawn vs dusk) |
 | **Базіло К.В.** (ЧДТУ ПМКТ) | П'єзоелектрика, EIS-характеризація | Резонансні характеристики п'єзосенсора у діапазоні фауни 0.5–12 кГц; калібрування АЧХ під soundscape |
 | **Бондаренко М.О.** (ЧДТУ ПМКТ) | Acoustic Emission, мікродеформації | AE-методологія для розрізнення layered soundscape від механічного шуму; "Cherkasy Soundscape Library" — методологія записів |
 | **Карапетян А.Р.** (ЧДТУ) | Math statistics, R, Data Science | ANOVA dawn/dusk peak amplitude між ландшафтами; Pareto-front Pareto аналіз GA-результатів; Permutation tests для biodiversity_trend |
 | **Спрягайло О.В.** (ЧНУ біо-хаб) | Ботаніка, фітоценологія, екологія | Польові експедиції Черкаського бору, ground-truth labeling таксономічних груп, 10-річні дані стресових подій як external validation |
 | **Гаврилюк М.В.** (ЧНУ біо-хаб) | Зоологія, remote sensing, GIS | Cross-validation soundscape ↔ зоологічні обліки птахів та амфібій; GIS-інтеграція ділянок |
-| Архітектор (Silken Net) | TinyML, firmware, Web3 | Едж AI архітектура — **Path B (log-mel) обрано + DSP front-end реалізовано self-owned** (`Compute_LogMel`, librosa≡stdlib≡C golden-vector parity; повний MFCC з DCT **не рекомендовано** для CNN-ESC — [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference)); 5-class INT8 baseline натреновано **self-owned end-to-end** (ESC-50; per-frame FC 40→16→5 — **не** CNN, [`00_07` FW.4](00_07_Action_Plan_Tracker)) на контракті ознак [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference); AiInsight#biodiversity_trend integration; ForestNFT metadata |
+| Архітектор (Silken Net) | TinyML, firmware, Web3 | Едж AI архітектура — **Path B (log-mel) обрано + DSP front-end реалізовано self-owned** (`Compute_LogMel`, librosa≡stdlib≡C golden-vector parity; повний MFCC з DCT **не рекомендовано** для CNN-ESC — [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference)); 5-class INT8 baseline натреновано **self-owned end-to-end** (ESC-50; per-frame FC 40→16→5 — **не** CNN, [`00_07` FW.4](00_07_Action_Plan_Tracker)) на контракті ознак [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference); AiInsight#biodiversity_trend integration; ForestNFT metadata (proposed) |
 
 **Тип зв'язку:** Багатошарова паралель з фінальним синтезом — ЧНУ біо-хаб (ground truth) + ЧДТУ ПМКТ (hardware acoustic) працюють паралельно з ЧНУ ФОТІУС (GA — Любченко) + ЧДТУ Карапетян (статистика + fusion-верифікація); архітектор інтегрує firmware і backend; усі шари сходяться на одному датасеті ("Cherkasy Soundscape Library") та одній публікації.
 
