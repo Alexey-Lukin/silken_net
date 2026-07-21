@@ -1,31 +1,17 @@
-# Owner Meeting Briefs — UA-юр-review (Аблязов) + TISC/trademark
+# Owner Meeting Brief — UA-юр-review (Аблязов, СЄУ)
 
-> **Що це:** робочі **one-pager'и підготовки до зустрічей** — тонкий **meeting-prep шар**, що
-> **СКЛАДАЄ за посиланнями** розпорошений канон + додає лише **meeting-specific** (asks, framing,
-> наступний крок). **НЕ дублює** ростер/план — їх дім нижче.
+> **Що це:** робочий one-pager підготовки до зустрічі — meeting-prep шар, що **СКЛАДАЄ за посиланнями** розпорошений канон + додає лише **meeting-specific** (asks, framing, next). **НЕ дублює** канон.
 > **Статус:** 🟡 робочий артефакт (не канон).
-> 🛑 **One-Home ([`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)):** substance живе в каноні, цей бриф лише реферить —
-> ростер ФОТІУС → [`08_02 §1B`](../../08_02_Academic_Institutions_Registry.md) ·
-> план публікацій / Стаття 5 → [`08_01 §1`](../../08_01_Joint_Publications_and_IP_Strategy.md) ·
-> TISC-консультація + UA-юр-review (предметний перелік) → [`08_01 §2.1`](../../08_01_Joint_Publications_and_IP_Strategy.md) ·
-> дії → [`00_07`](../../00_07_Action_Plan_Tracker.md) UNI.2/15/16 + UNI.3 ·
-> IP-постава → [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) + [`defensive_disclosure.md`](../anchor/defensive_disclosure.md).
+> 🛑 **One-Home ([`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)):** substance — у каноні, бриф лише реферить — UA-юр-review предметний перелік → [`08_01 §2.1.2`](../../08_01_Joint_Publications_and_IP_Strategy.md) · дії → [`00_07`](../../00_07_Action_Plan_Tracker.md) UNI.16 + UNI.14 · IP-постава → [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) + [`defensive_disclosure.md`](../anchor/defensive_disclosure.md).
 
 ---
 
-## Спільний контекст
+## Бриф — UA-юр-review Аблязов (UNI.16 · P1 · RWA/SCC/open-license)
 
-**Статус ЧНУ** (→ [`08_02`](../../08_02_Academic_Institutions_Registry.md) Статус): ректорські зустрічі проведено, **парасольовий MoU ще не
-підписаний** — рамковий MoU через Спрягайла розблоковує лабораторії + грантові заявки. Зустріч
-нижче — **auxiliary** під цим MoU (UNI.15 + UNI.16 🔗 UNI.18).
----
-
-## Бриф 1 — UA-юр-review Аблязов (UNI.16 · P1 · RWA/SCC/open-license)
-
-- **Хто / предмет:** Аблязов Д.Е. (СЄУ, персонально) + крипто/IP-юрист TBD — точковий UA-юр-review; предметний перелік (RWA / SCC-SFC / NaaS / авт. право `bio_contract.rb` як основа копілефту / **open-license**) — **owner [`08_01 §2.1.2`](../../08_01_Joint_Publications_and_IP_Strategy.md)** + UNI.16 (не дублюю).
+- **Хто / предмет:** Аблязов Д.Е. (СЄУ, персонально — UNI.14) + крипто/IP-юрист TBD — точковий UA-юр-review; предметний перелік (RWA / SCC-SFC / NaaS / авт. право `bio_contract.rb` як основа копілефту / **open-license**) — owner [`08_01 §2.1.2`](../../08_01_Joint_Publications_and_IP_Strategy.md) (не дублюю).
 - **Чому важливо:** юр-валідація **open-ліцензій** (AGPL/CERN-OHL-S/CC-BY-SA у UA + **AF3 non-commercial × комерц-вимір**) + RWA/SCC дозволи — основа правової певності (патенту немає, [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md)).
-- **Що принести (meeting-specific):** IP-постава [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) + `/NOTICE` (ліцензійна матриця + AF3 carve-out) для license-review.
-- **Asks (meeting-specific):** ціль **2 меморандуми** (RWA → розблок [`07_01`](../../07_01_Nature_as_a_Service_Contracts.md) BLOCKER-6 · SCC-класифікація) + NaaS/copyright [перелік → [`08_01 §2.1.2`](../../08_01_Joint_Publications_and_IP_Strategy.md)] · **open-license + AF3 review** · координація **TISC** (UNI.15, trademark) · workshop **Аблязов** (UA×MiCA).
+- **Що принести:** IP-постава [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) + `/NOTICE` (ліцензійна матриця + AF3 carve-out) для license-review.
+- **Asks:** ціль **2 меморандуми** (RWA → розблок [`07_01`](../../07_01_Nature_as_a_Service_Contracts.md) BLOCKER-6 · SCC-класифікація) + NaaS/copyright + **open-license + AF3 review**.
 - **Next:** 👤 workshop Аблязов (персонально) → меморандуми + open-license/AF3 sanity (розблок [`07_01`](../../07_01_Nature_as_a_Service_Contracts.md) BLOCKER-6).
 
 ---
@@ -34,9 +20,7 @@
 
 | Ресурс | Роль (owner / реф) |
 |---|---|
-| [`08_02 §1B`](../../08_02_Academic_Institutions_Registry.md) | **owner** ростера ФОТІУС (8 викладачів) — бриф реферить |
-| [`08_01 §1`](../../08_01_Joint_Publications_and_IP_Strategy.md) | **owner** плану публікацій (Стаття 5) + фабрики магістерських (§3) |
-| [`08_01 §2.1`](../../08_01_Joint_Publications_and_IP_Strategy.md) | **owner** TISC-консультація + UA-юр-review (предметний перелік) |
-| [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) | IP-постава + ліцензійна матриця (`/NOTICE` — AF3 carve-out) для license-review |
-| [`00_07`](../../00_07_Action_Plan_Tracker.md) | дії: UNI.2/15/16 + UNI.3 |
+| [`08_01 §2.1`](../../08_01_Joint_Publications_and_IP_Strategy.md) | **owner** UA-юр-review (предметний перелік) + TISC-консультація |
+| [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) | IP-постава + ліцензійна матриця (`/NOTICE` — AF3 carve-out) |
+| [`00_07`](../../00_07_Action_Plan_Tracker.md) | дії: UNI.16 (юр-review) + UNI.14 (СЄУ контакт) |
 | [`07_01`](../../07_01_Nature_as_a_Service_Contracts.md) | RWA/NaaS — предмет меморандумів |
