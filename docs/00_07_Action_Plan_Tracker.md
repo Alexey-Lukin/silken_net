@@ -1537,7 +1537,7 @@
 - **P1** · 🤖+👤 · 🟡 · → `08_01 §2`
 - **Стан:** Постава = **defensive-publication-first** (`08_01 §2`; патент НЕ подаємо). Ліцензії застосовано (AGPL / CERN-OHL-S / CC-BY-SA + `/NOTICE`); disclosure готовий ([`defensive_disclosure.md`](protocols/anchor/defensive_disclosure.md)) + landscape ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)) → **Стаття 1 розблокована** (publish-to-protect).
 - [ ] 👤 TDCommons-постинг disclosure (prior-art якір)
-- [ ] 👤 trademark-заявка SilkenNet™/GaiaNexus™/SCC™ через TISC (UNI.15)
+- [ ] 👤 trademark-заявка SilkenNet™/GaiaNexus™/SCC™ через повіреного УкрНОІВІ (UNI.15)
 - [ ] 👤 Кафедра-ІВ open-license + AF3 legal review (UNI.16)
 - [ ] 🤖 SPDX-headers по source (`app`/`lib`/`firmware`[крім `extern`]/`contracts`/`tools` = `AGPL-3.0-or-later`; CERN-OHL-S для hw-design) — скриптом, ідемпотентно (skip-if-present); великий механічний diff → deferred (plan Phase 7)
 
@@ -1569,15 +1569,15 @@
 - **Стан:** Не почато — ChIPB + НУЦЗУ (2 real-fit-експерти: Биченко тактика гасіння→диспетчеризація/drones, Ротар правова компетентність ЦЗ→SOP): (1) SOP для всіх EwsAlert-типів (drought/insect/vandalism/fire/seismic/fault/entropy/field_audit [INS.1]), (2) ДСНС API. Канон `08_02 §3`.
 - [ ] 👤 cold contact ЧІПБ (Биченко + Ротар — real-fit фах verified) + joint SOP workshop (ARCH.31)
 
-#### UNI.15 — ЧНУ TISC engagement (prior-art landscape + trademark + open-license consult)
+#### UNI.15 — Trademark (повірений УкрНОІВІ) + TISC-консультація (public, no MoU)
 - **P1** · 👤 · 🔗 · → `08_01 §2.1`
-- **Стан:** prior-art landscape готовий (query-sets + CPC, [`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)); далі TISC ЧНУ (WIPO/УкрНОІВІ) engagement — (2) торгові марки SilkenNet™/GaiaNexus™/SCC™ (~5-10k UAH; повірений УкрНОІВІ) + (3) open-license UA-сумісність consult. Патент НЕ подаємо (defensive publication, `08_01 §2.1`). Заблоковано на UNI.18/BIZ.10 (рамковий MoU — через Спрягайла).
-- [ ] 👤 контакт TISC (Спрягайло) + auxiliary MoU + trademark-заявка + open-license sanity
+- **Стан:** prior-art landscape готовий ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)); далі торгові марки SilkenNet™/GaiaNexus™/SCC™ через **прямого повіреного УкрНОІВІ** (~5-10k UAH) + опційна TISC-консультація (prior-art / open-license, public — MoU не вимагає). Канон `08_01 §2.1`.
+- [ ] 👤 trademark-заявка через повіреного УкрНОІВІ (SilkenNet™/GaiaNexus™/SCC™) + опційна TISC-консультація
 
-#### UNI.16 — ЧНУ Кафедра ІВ engagement (юр-експертиза RWA/токеноміки + open-license)
+#### UNI.16 — UA-юр-review (RWA/токеноміка/open-license) → Аблязов + крипто-юрист TBD
 - **P1** · 👤 · 🔗 · → `08_01 §2.1`
-- **Стан:** Заблоковано на UNI.18/BIZ.10 (рамковий MoU) — Кафедра ІВ ЧНУ точковий UA-юрисдикційний review (СЄУ §5 = макро): (1) RWA ERC-3643 vs Лісовий Кодекс/ПЗФ, (2) SCC/SFC за ЗУ «Про віртуальні активи» 2022 + MiCA 2024, (3) NaaS у UA Civil Code, (4) авторське право `bio_contract.rb`/`Attractor` (основа enforcement копілефту), (5) open-license review (AGPL/CERN-OHL-S/CC-BY-SA дійсність у UA + AF3 non-commercial × комерц-вимір). Ціль: 2 меморандуми + license-sanity. Канон `08_01 §2.1`.
-- [ ] 👤 контакт зав. кафедри + workshop Аблязов (UA×MiCA) + меморандум RWA (розблок `07_01` RWA-передумов) + меморандум SCC + open-license/AF3 review
+- **Стан:** Точковий UA-юрисдикційний review → **Аблязов** (СЄУ, персонально — UNI.14) + профільний крипто/IP-юрист TBD: (1) RWA ERC-3643 vs Лісовий Кодекс/ПЗФ, (2) SCC/SFC за ЗУ «Про віртуальні активи» 2022 + MiCA 2024, (3) NaaS у UA Civil Code, (4) авторське право `bio_contract.rb`/`Attractor` (основа enforcement копілефту), (5) open-license review (AGPL/CERN-OHL-S/CC-BY-SA + AF3 non-commercial × комерц-вимір). Ціль: 2 меморандуми. Канон `08_01 §2.1`.
+- [ ] 👤 workshop Аблязов (UA×MiCA) + крипто/IP-юрист TBD → меморандум RWA (розблок `07_01`) + меморандум SCC + open-license/AF3 review
 
 #### UNI.18 — ЧНУ ректорат: follow-up рішення + рамковий MoU
 - **P1** · 👤 · 🟡 · → `08_02`, `08_01`
@@ -1628,7 +1628,7 @@
 
 #### STK.3 — Tier 1 B2G: Заслужений юрист — Legal Wrapper для SCC
 - **P1** · 👤 · 🔗 · → `08_03 §2.4`
-- **Стан:** Заблоковано на UNI.16 (Кафедра ІВ ЧНУ) + UNI.14 (СЄУ Аблязов) — Заслужений юрист для Legal Wrapper SCC: перекласифікація анкера «втручання»→«науково-вимірювальний прилад» до прокуратури; кандидати через ННІ права ЧНУ (доступ через Спрягайла) + СЄУ Аблязов. Канон `08_03 §2.4`.
+- **Стан:** Заблоковано на UNI.16 (UA-юр-review Аблязов) + UNI.14 (СЄУ Аблязов) — Заслужений юрист для Legal Wrapper SCC: перекласифікація анкера «втручання»→«науково-вимірювальний прилад» до прокуратури; кандидати через ННІ права ЧНУ (доступ через Спрягайла) + СЄУ Аблязов. Канон `08_03 §2.4`.
 - [ ] 👤 identify candidate (через Спрягайла + Аблязов) → узгодити legal opinion з UNI.16
 
 #### STK.5 — Tier 3 Certification: Чорней (ДП "Черкасистандартметрологія") — SCC certification

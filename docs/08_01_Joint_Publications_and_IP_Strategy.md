@@ -6,7 +6,7 @@
 
 > **Принцип партнерства:** Silken Net надає інноваційний R&D-полігон. ЧНУ надає академічну легітимність та лабораторну інфраструктуру. Обидві сторони отримують максимум при мінімальних витратах.
 
-> **Карта документа** (cluster head Модуля 08, ~4 блоки): **§0** MOIC — місія/архітектура кластера · **§1–§1E** план публікацій (per-ВНЗ; нумерація рідка — діри = вилучені статті, номери НЕ перевикористовуються заради crossref-стабільності) · **§2–§2.1** IP-рамка (розподіл прав + TISC) · **§3–§4** кадровий резерв (Alumni → CTO). Реєстр самих ВНЗ-партнерів (хто / що валідує) — [`08_02`](08_02_Academic_Institutions_Registry); зовнішні стейкхолдери — [`08_03`](08_03_External_Stakeholders_Registry).
+> **Карта документа** (cluster head Модуля 08, ~4 блоки): **§0** MOIC — місія/архітектура кластера · **§1–§1E** план публікацій (per-ВНЗ; нумерація рідка — діри = вилучені статті, номери НЕ перевикористовуються заради crossref-стабільності) · **§2–§2.1** IP-рамка (розподіл прав + TISC/trademark/юр-review). Реєстр самих ВНЗ-партнерів (хто / що валідує) — [`08_02`](08_02_Academic_Institutions_Registry); зовнішні стейкхолдери — [`08_03`](08_03_External_Stakeholders_Registry).
 
 ---
 
@@ -38,7 +38,7 @@
 - [1C. Міжуніверситетські Публікації (ЧНУ ФОТІУС × ЧДТУ)](#-1c-міжуніверситетські-публікації-чну-фотіус--чдту)
 - [1E. Публікації ЧМА (Біохімія EBFC, Токсикологія, Ксилемоінтеграція)](#-1e-публікації-чма-біохімія-ebfc-токсикологія-ксилемоінтеграція)
 - [2. Розподіл Інтелектуальної Власності (IP Framework)](#-2-розподіл-інтелектуальної-власності-ip-framework)
-- [2.1. ЧНУ інституційні інструменти (prior-art landscape + trademark + legal review)](#-21-чну-інституційні-інструменти-prior-art-landscape--trademark--legal-review)
+- [2.1. IP-інструменти (TISC-консультація + trademark + UA-юр-review)](#-21-ip-інструменти-tisc-консультація--trademark--ua-юр-review)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -370,7 +370,7 @@ _«Дослідження акустичних властивостей пори
    share-alike (CC-BY-SA) для доків. **Copyright утримуємо** — але мета = **enforcement копілефту**, не
    пропрієтарність (Lorenz / `bio_contract.rb` / `attractor.rb` — об'єкт авт. права, ліцензований відкрито).
 3. **Trademark** — SilkenNet™ / GaiaNexus™ / SCC™ зарезервовані (захист довіри/бренду — справжній рів
-   MRV-мережі); відкритими ліцензіями НЕ покриваються. Заявка через TISC (§2.1.1).
+   MRV-мережі); відкритими ліцензіями НЕ покриваються. Заявка через прямого повіреного УкрНОІВІ (§2.1).
 4. **Trade secret** — ТІЛЬКИ для нерозкритого: **криптоключі (ніколи не публікуються), польові
    production-дані, ваги ML-моделі**. Під AGPL код відкритий → формат пакета / crypto-інтеграція **вже
    open**, не secret.
@@ -433,46 +433,33 @@ hydrosphere → Abyssal · lithosphere → Litho · pedosphere → Myco), а **n
 
 ---
 
-## 🏛️ 2.1. ЧНУ інституційні інструменти (prior-art landscape + trademark + legal review)
+## 🏛️ 2.1. IP-інструменти (TISC-консультація + trademark + UA-юр-review)
 
-> **Контекст:** TISC + Кафедра ІВ ЧНУ корисні й під open-поставою — але для **prior-art landscape**
-> (доказ новизни + анти-захоплення), **trademark** і **юр-review ліцензій/токеноміки**, а **НЕ** для
-> подачі патенту (її немає). Academic rate + спільне авторство.
+> **Контекст:** Під defensive-publication (§2) prior-art landscape уже готовий ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)); лишаються **TISC-консультація**, **trademark** і **точковий UA-юр-review**.
 
-### 2.1.1. TISC при ЧНУ — prior-art landscape + trademark + open-license consult
+### 2.1.1. TISC — консультація (prior-art / IP / open-license)
 
-**Що це:** Центр Підтримки Технологій та Інновацій — мережа **WIPO**, координує **УкрНОІВІ**.
+**Що це:** Центр Підтримки Технологій та Інновацій — публічна мережа **WIPO** (координує УкрНОІВІ); academic-rate консультація.
 
-**Чим корисний (під defensive-publication):**
-
-| Сервіс TISC | Кейс SilkenNet |
+| Сервіс TISC (консультативний) | Кейс SilkenNet |
 |---|---|
-| Prior-art landscape (Espacenet / PATENTSCOPE / Google Patents) | Доказ новизни для Статті 1 + підтвердити, що нема чинного патенту 3-ї сторони на синергію (анти-захоплення) → [`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md) |
-| Заявки на **торгові марки** (SilkenNet™, GaiaNexus™, SCC™) | Захист бренду/довіри — стандартна процедура УкрНОІВІ |
+| Prior-art landscape (Espacenet / PATENTSCOPE / Google Patents) | верифікація новизни Статті 1 + анти-захоплення (база вже є → [`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)) |
+| Консультація з **торгових марок** | напрям заявки SilkenNet™ / GaiaNexus™ / SCC™ (подача — повірений, ↓) |
 | Консультація з **open-license** сумісності у UA-юрисдикції | AGPL / CERN-OHL-S / CC-BY-SA legal sanity |
 
-**Що НЕ через TISC:** подача ТМ — повірений УкрНОІВІ (TISC консультативний); патент **не подаємо взагалі**.
+**Подача ™** — прямий **повірений УкрНОІВІ** (~5-10k UAH; TISC консультативний, сам не подає).
 
-### 2.1.2. Кафедра Інтелектуальної Власності та Цивільно-Правових Дисциплін ЧНУ
+### 2.1.2. UA-юр-review → Аблязов + крипто/IP-юрист TBD
 
-**Чим корисна для Silken Net:** Юридична експертиза двох критичних SilkenNet-доменів, для яких **СЄУ ([`08_02 §5`](08_02_Academic_Institutions_Registry))** дає макро-економічний/regulatory shape, але **точкова юридична верифікація** потрібна на рівні UA-юрисдикції.
+**Точковий UA-юр-review:** RWA як `hadron_asset_id` vs Лісовий Кодекс/ПЗФ ([`00_07` BIZ.11](00_07_Action_Plan_Tracker)) · SCC utility-vs-security за ЗУ «Про віртуальні активи» + MiCA ([`05_03`](05_03_Tokenomics_SCC_and_SFC)) · NaaS у Civil Code + `parametric_insurance` ([`07_01`](07_01_Nature_as_a_Service_Contracts)) · AGPL-enforcement + open-license/AF3 valida (§2). Виконавець: **Аблязов Д.Е.** (СЄУ, персонально) + профільний крипто/IP-юрист TBD.
 
-| Експертиза кафедри | Конкретне завдання Silken Net | Cross-ref |
-|---------------------|-------------------------------|-----------|
-| Правова архітектура **RWA-токенізації** (Real-World Assets) під українським законодавством | Як зареєструвати лісову ділянку (державний ПЗФ або приватне лісокористування) як `hadron_asset_id` для ERC-3643 без конфлікту з Лісовим Кодексом України та Законом «Про природно-заповідний фонд»? | [`00_07` — BIZ.11](00_07_Action_Plan_Tracker) (RWA реєстрація-process не відпрацьований) |
-| Юридична експертиза **токеноміки** (SCC/SFC) на відповідність UA-режиму віртуальних активів (Закон «Про віртуальні активи» 2022 + MiCA-imports 2024) | Чи є SCC utility token чи security token? Які KYC-вимоги до wallet holders для UA-резидентів? Як корелює `dynamic_tax` з UA tax law? | [`05_03` — Tokenomics](05_03_Tokenomics_SCC_and_SFC), [`08_02 §5` СЄУ Аблязов Д.] |
-| Цивільно-правові аспекти **NaaS-контрактів** (Nature-as-a-Service) | Юридична природа NaaS-контракту: чи це договір про надання послуг, чи новий sui generis вид? Як корелює `parametric_insurance` з UA Civil Code? | [`07_01` — NaaS Contracts](07_01_Nature_as_a_Service_Contracts) |
-| Авторське право на **Lorenz / `bio_contract.rb` / `attractor.rb`** | Основа **enforcement AGPL-копілефту** (не пропрієтарність) у UA-режимі — щоб копілефт був дієвим | §2 (стовп 2) |
-| **Open-license review** | Дійсність + сумісність **AGPL / CERN-OHL-S / CC-BY-SA** у UA-юрисдикції; **AF3 non-commercial × комерц-вимір SilkenNet** (research-use carve-out) | §2 (стовп 1-2) + `/NOTICE` |
+### 2.1.3. Операційна послідовність
 
-### 2.1.3. Операційна послідовність (defensive publication + trademark + open license)
-
-| Етап | Дія | Власник | Результат |
-|---|---|---|---|
-| 1 | auxiliary MoU ЧНУ (через Спрягайла) | 👤 Архітектор + Спрягайло | open-license + co-authorship MoU (**без** embargo/NDA на технологію) |
-| 2 | Prior-art landscape (TISC) | 🤖 TISC + 👤 | новизна для Статті 1 + нема блокуючого патенту (анти-захоплення) → [`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md) |
-| 3 | Публікація disclosure (TDCommons) + застосувати LICENSE-файли | 👤 + 🤖 | prior art зафіксовано → [`defensive_disclosure.md`](protocols/anchor/defensive_disclosure.md) |
-| 4 | Заявка на торгові марки (SilkenNet™ / GaiaNexus™ / SCC™) | 👤 повірений + TISC | зареєстровані ™ |
-| 5 | Юр-review Кафедри ІВ (open-license + RWA + SCC + NaaS + AF3) | 👤 Кафедра ІВ + Аблязов | меморандуми → розблок [`00_07` — BIZ.11](00_07_Action_Plan_Tracker) (07_01 RWA), [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`08_02 §5`](08_02_Academic_Institutions_Registry) |
-| 6 | Сабміт Статті 1 (вже unblocked — publish-to-protect) | 👤 | подано до журналу |
+| Етап | Дія | Власник |
+|---|---|---|
+| 1 | Prior-art landscape ✅ ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)) | 🤖 done |
+| 2 | Публікація disclosure (TDCommons) + LICENSE-файли → [`defensive_disclosure.md`](protocols/anchor/defensive_disclosure.md) | 👤 + 🤖 |
+| 3 | Заявка на ™ (прямий повірений УкрНОІВІ) | 👤 повірений |
+| 4 | UA-юр-review (Аблязов + крипто/IP-юрист TBD) | 👤 |
+| 5 | Сабміт Статті 1 (вже unblocked — publish-to-protect) | 👤 |
 
