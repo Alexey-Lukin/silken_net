@@ -1087,18 +1087,18 @@
 - [ ] 👤 CertiK Skynet runtime monitoring — post-mainnet deploy
 
 #### E.63 — метаболічний сигнал: розв'язано від хаосу (Option A) [2026-06-08]
-- **P1** · 🤖+👤 · 🟢 · → `05_02`
+- **P2** · 🤖+👤 · 🟢 · → `05_02`
 - **Стан:** Option A (founder) — здоров'я **розв'язано від хаосу**: Лоренц = лише status-гейт (β=`BASE_BETA` фікс), `growth_points` у гомеостазі = `metabolic_health(delta_t)` напряму (FW.5 β-перт реверсована — β не рухає z-нерухому точку z_eq=ρ−1, тому delta_t→β-сигнал виходив економічно нульовий); byte-identical DCI обабіч + guard `growth_points_clamp_drift`. **Гілка B ✅ вирішено+shipped wire-rev2.1 (founder 2026-07-03, друге читання переглянуло V3+):** wire несе EMA-вхід GP (30B, контракт «wire = вхід GP») → `expected_homeostasis_gp(ema)` recompute **stateless байт-точно**, гілка observational до bench (V3+-принцип = перемикач строгості). Формула + присуд — [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor); wire-ухвала — [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) ledger; механіка — [`03_01 §13.6`](03_01_Firmware_Lifecycle_and_DMA); фізична шкала delta_t — [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) L4 / [`02_03 §9.8`](02_03_BQ25570_MPPT_Nano_Power) енергобюджет. seed↔`PARAMETER_MAP` bounds-parity residual → GOV.3 §🗄️ (guard `governance_bounds_sync`, дім `00_06 §3`).
 - [ ] 👤 bench: реальна P_ebfc (`HW.13`) + E_cycle + recharge-крива (`03_power_profile.py`, RUNBOOK §3.2-3.3)
 - [ ] 🤖 калібрування `DELTA_T_FAST_S`/`DELTA_T_SLOW_S` (placeholder 600/7200с) під зміряну recharge-криву — per-deployment/species; тим самим кроком увімкнути строгість точної metabolic-гілки (observational → gate, один перемикач)
 
 #### S3.2 — dClimate Real API verification
-- **P1** · 👤 · 🟢 · → `05_01`
+- **P2** · 👤 · 🟢 · → `05_01`
 - **Стан:** Реалізовано — `Dclimate::VerificationService` (NASA FIRMS, FRP≥10MW, cloud fallback) + `DclimateVerificationWorker`. Лишається verify з реальним API key у staging. Канон `05_01`.
 - [ ] 👤 верифікувати з реальним API key у staging + e2e `DclimateVerificationWorker`
 
 #### S3.5 — Subgraph contract address
-- **P1** · 👤 · 🟢 · → `05_03`
+- **P2** · 👤 · 🟢 · → `05_03`
 - **Стан:** SFC events (ForestMinted, GovernanceSlashed) у subgraph + zero-address fail-fast guard `subgraph/validate_addresses.sh` ✅ (раніше E.45); SFC-адреса = placeholder до mainnet-деплою. Канон `05_03`.
 - [ ] 👤 mainnet-cutover subgraph (раніше E.48): `network: polygon-amoy` → mainnet + замінити `0x0000…` на реальну SFC-адресу у `subgraph.yaml` (після контракт-деплою)
 
@@ -1314,18 +1314,18 @@
 - [ ] 👤 грант CI-SA `roles/billing.costsManager` на billing-акаунті → tfvars `billing_account_id` (+`billing_budget_usd`) + GH-секрет `GCP_BILLING_ACCOUNT_ID` → apply (порядок несучий — [`06_02 §4.4`](06_02_Akash_Network_Integration))
 - [ ] 👤 AKT initial over-fund (≥2× місячна оцінка) при створенні lease + repo Variable `AKASH_OWNER_ADDRESS` → escrow-watch живий
 
+#### SEC.17 — Money-mint-key custody (GCP-KMS remote-signer для ORACLE_MINTER/SLASHER)
+- **P1** · 🤖+👤 · 🟡 · → [`06_04 §5.5`](06_04_Secrets_Checklist), `05_03`
+- **Стан:** Custody-поріг вирішено — **GCP Cloud KMS remote-signer** (asymmetric secp256k1, ключ не покидає HSM; founder 2026-07-06). Наявний захист ✅ (E.2 mint⊥burn key-split, Gnosis Safe admin/PAUSER, ARCH.47 boot-guard `Web3NetworkGuard`, WEB3_STRICT_MODE fail-closed); лишкова діра = приватники plaintext у deploy-ENV (mint за реальну вартість = найбільша одинична точка катастрофи). KMS > Fireblocks (enterprise-cost + забирає broadcast/nonce, перетин ARCH.47-lock) і Safe-module (admin-вектор SEC.1, не hot-mint): HSM-grade + дешево + GCP у стеку. **Impl gated pre-mainnet** (до prod-mint ENV-ключ теж нічого не мінтить → НЕ TRL-3-блокер). ⚠️ **Defer-причина уточнена 2026-07-11:** bit-rot `google-cloud-kms` стосується лише `KmsSigner`-half — seam-half (`LocalEnvSigner`, behavior-preserving) gem НЕ тягне і має поточну DRY-цінність (key-derivation inline `Eth::Key.new(priv: ENV.fetch)` × 7 сервісів, нуль shared owner) → технічно НЕ заблокований. Defer-причина 07-11 (money-YAGNI + far-mainnet) — історична: **defer ЗНЯТО (founder 2026-07-19)** — seam-half = актуальна 🤖-робота (кандидат на свіжу сесію); `KmsSigner`-half + provision лишаються pre-mainnet-gated (KMS-вимоги address-from-pubkey/low-s/recovery-id кристалізуються при impl). Дизайн + 3-крок seam-мапа → [`06_04 §5.5`](06_04_Secrets_Checklist). Дзеркалить S6.14 (peaq custody) на money-рівні. Відкрите ↓.
+- [ ] 🤖 (founder-go 2026-07-19; defer знято) `Web3::OracleSigner` seam — **усі 12 `sender_key`-call-sites у 7 сервісах** (mint/burn/celo/anchor + gated aux etherisc/puro/klima, **НЕ лише mint/burn** — інакше half-migration лишає 5 ключів raw-ENV; Solana-Ed25519 окремо — SEC.22 founder-decision), обгортає `address`+`transact`+`static_call` (address живить balance/lock/nonce, не самий transact), `LocalEnvSigner` default = behavior-preserving → `Web3::KmsSigner` (crypto-послідовність + offline-тести → [`06_04 §5.5`](06_04_Secrets_Checklist)); ⚠️ grep 2026-07-19: address-делегація живе і у `Treasury::MonitorService#fetch_evm_balance` — 8-й сервіс поза рахунком «7», включити в seam-мапу
+- [ ] 👤 (pre-mainnet) provision KMS keyring/key + IAM (job-процес signer-роль) + ENV `ORACLE_MINTER_KMS_KEY`/`ORACLE_SLASHER_KMS_KEY` → live round-trip verify
+
 #### SILENCE-1 — Per-Soldier silence-семантика (розрізнити мовчазне здоров'я від смерті/крадіжки)
 - **P2** · 🤖+👤 · 🟡 · → [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy)
 - **Стан:** Передумова безпеки для ARCH.8 (event-triggered TX), сьогодні НЕ побудована. Здорове дерево цокоче щопробудження — тож будь-яка тиша де-факто аномальна; щойно ARCH.8 увімкне «тиша=здоров'я», мовчазне здоров'я і вкрадений/мертвий/розряджений вузол стануть byte-ідентичні. Розрізнювача per-Soldier НЕМА: dead-man switch лише для Queen (`GatewayStalenessSweepWorker`, [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy)); `Tree.silent` scope — мертвий код (визначений, нуль прод-консюмерів); backend бачить зникнення лише cluster-wide (`DailyHealthRouter#blackout?`) → вкрадене дерево мінтить необмежено, доки не замовк ВЕСЬ кластер. Challenge-response як сурогат валиться (RX gated `vcap>2800` + broadcast без TDMA/адресації → не-відповідь = {мертвий∨бідний∨спав}, той самий конфаунд). Тиша НІКОЛИ не slash (Field Audit, [`05_05`](05_05_Slashing_and_Risk_Policy)) — але й наслідку нема. **[recon 2026-07-17 — три несучі факти, що переоформлюють задачу]** (1) 🔴 **«Аналог `GatewayStalenessSweepWorker`» структурно НЕ будується:** Queen-поріг per-device (`config_sleep_interval_s * 1.2` з колонки), а `trees` такої колонки не має **й не може** — Soldier спить між energy-sufficient циклами, тож `delta_t` **навмисно варіативний** (до ~18 год: стрес → повільніший заряд → довша тиша = САМ сигнал, не шум; масштаб невизначений ×35-190 → E.63). Поріг доведеться або хардкодити (як мертвий `Tree.silent` = 24 год), або вести `SystemParameter` — і **калібрувати bench-ом, а не виводити з конфіга**. (2) **Носій = `field_audit` з `tree_id`, НЕ новий alert-тип:** ⚠️ новий critical-тип потрапив би в `critical_unmaintained?` (private `BlockchainBurningService`) **за замовчуванням** (той предикат = blacklist) → тиша накручувала б penalty оператору, проти канону; `field_audit` уже виключений з обох гілок. БД **готова без міграцій** — два partial-unique індекси взаємовиключні (`tree_id IS NULL` cluster-level ⊥ `IS NOT NULL` per-tree) → співіснують; але `EwsAlert.escalate_field_audit!(cluster:, message:)` **`tree:` не приймає**, а дедуп-хелпер жорстко cluster-scoped → потрібна tree-aware гілка. Verified 07-19: model-валідація теж per-tree-ready (`alert_type` unique `scope: [tree_id, status]` при `tree_id.present?`) → per-tree дедуп тримають БД+model самі (ручний guard, як у cluster-гілці, не потрібен) — cluster-lock сидить ЛИШЕ у двох class-методах. (3) **`dormant` = готовий slash-safe стан** «мовчить, але не мертвий» (AASM `suspend`/`reactivate`, поза `trigger_slashing_protocol`-guard'ом) — але **нуль прод-викликів**, живе лише в специ; ⚠️ `removed`/`deceased` slashing ЗАПУСКАЮТЬ → мовчазне дерево туди переводити не можна. Індексу на `trees.last_seen_at` нема (на тисячах рядків seq-scan дешевий; стеля при scale). **Sweeper-нога SHIPPED 2026-07-19** — повна механіка канонізована [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy): `TreeStalenessSweepWorker` (*/5, alerts) + `Tree.silent(threshold)` (active + NOT-NULL семантикою) + tree-гілка `escalate_field_audit!(tree:)` + dark-cluster suppression (анти-шторм) + departed-resolve + fail-safe поріг + Grafana P1 `sn-alert-trees-silent`. Build-уроки: (а) tree-гілка має ДРУГИЙ гоночний шлях повз `RecordNotUnique` — committed-дубль ловить модельна валідація (`RecordInvalid`), cluster-гілка його структурно не має → вузький `:taken`-rescue; (б) 1:1 дзеркало Queen-патерну без cross-tree suppression = шторм (gateway на кластер один, дерев тисячі — корельована тиша) — зловлено adversarial-рев'ю. Розрізнювач ПОВНИЙ лише з heartbeat-ногою (нижче).
 - [ ] ⚖️ поріг тиші Soldier'а: значення/схема (flat-24h vs per-species) — рішення потребує bench-даних про реальний розкид `delta_t` (E.63), інакше = вгадування; transitional-механізм SHIPPED (`SystemParameter :tree_silence_threshold_hours`, default 24h) — ⚖️ лишається: bench-калібрування + чи per-species
 - [ ] 🤖+👤 signed daily heartbeat-контракт (Soldier «тихий, але живий» pulse + backend verify) — firmware-нога [`03_01`](03_01_Firmware_Lifecycle_and_DMA), gated bench
 - [ ] ⚖️ GP-кредит vs pulse: не мінтити за НЕспостережувану тишу без живого heartbeat (money-path, з ARCH.8 time-weighted → [`05_02`](05_02_Proof_of_Growth_Pipeline))
-
-#### SEC.17 — Money-mint-key custody (GCP-KMS remote-signer для ORACLE_MINTER/SLASHER)
-- **P2** · 🤖+👤 · 🟡 · → [`06_04 §5.5`](06_04_Secrets_Checklist), `05_03`
-- **Стан:** Custody-поріг вирішено — **GCP Cloud KMS remote-signer** (asymmetric secp256k1, ключ не покидає HSM; founder 2026-07-06). Наявний захист ✅ (E.2 mint⊥burn key-split, Gnosis Safe admin/PAUSER, ARCH.47 boot-guard `Web3NetworkGuard`, WEB3_STRICT_MODE fail-closed); лишкова діра = приватники plaintext у deploy-ENV (mint за реальну вартість = найбільша одинична точка катастрофи). KMS > Fireblocks (enterprise-cost + забирає broadcast/nonce, перетин ARCH.47-lock) і Safe-module (admin-вектор SEC.1, не hot-mint): HSM-grade + дешево + GCP у стеку. **Impl gated pre-mainnet** (до prod-mint ENV-ключ теж нічого не мінтить → НЕ TRL-3-блокер). ⚠️ **Defer-причина уточнена 2026-07-11:** bit-rot `google-cloud-kms` стосується лише `KmsSigner`-half — seam-half (`LocalEnvSigner`, behavior-preserving) gem НЕ тягне і має поточну DRY-цінність (key-derivation inline `Eth::Key.new(priv: ENV.fetch)` × 7 сервісів, нуль shared owner) → технічно НЕ заблокований. Defer-причина 07-11 (money-YAGNI + far-mainnet) — історична: **defer ЗНЯТО (founder 2026-07-19)** — seam-half = актуальна 🤖-робота (кандидат на свіжу сесію); `KmsSigner`-half + provision лишаються pre-mainnet-gated (KMS-вимоги address-from-pubkey/low-s/recovery-id кристалізуються при impl). Дизайн + 3-крок seam-мапа → [`06_04 §5.5`](06_04_Secrets_Checklist). Дзеркалить S6.14 (peaq custody) на money-рівні. Відкрите ↓.
-- [ ] 🤖 (founder-go 2026-07-19; defer знято) `Web3::OracleSigner` seam — **усі 12 `sender_key`-call-sites у 7 сервісах** (mint/burn/celo/anchor + gated aux etherisc/puro/klima, **НЕ лише mint/burn** — інакше half-migration лишає 5 ключів raw-ENV; Solana-Ed25519 окремо — SEC.22 founder-decision), обгортає `address`+`transact`+`static_call` (address живить balance/lock/nonce, не самий transact), `LocalEnvSigner` default = behavior-preserving → `Web3::KmsSigner` (crypto-послідовність + offline-тести → [`06_04 §5.5`](06_04_Secrets_Checklist)); ⚠️ grep 2026-07-19: address-делегація живе і у `Treasury::MonitorService#fetch_evm_balance` — 8-й сервіс поза рахунком «7», включити в seam-мапу
-- [ ] 👤 (pre-mainnet) provision KMS keyring/key + IAM (job-процес signer-роль) + ENV `ORACLE_MINTER_KMS_KEY`/`ORACLE_SLASHER_KMS_KEY` → live round-trip verify
 
 #### S6.14 — peaq_signing_key: rotation & revocation
 - **P2** · 👤 · 🟢 · → `06_04 §5.4`, `04_02 §S6.14`
@@ -1438,16 +1438,6 @@
 
 > Юридично-бізнесовий work-stream — канон `07_xx`. NB: пов'язані BIZ-айтеми за канон-домом живуть у `§05` (BIZ.13 slashing) та `§08` (BIZ.10 IP, BIZ.12 Horizon-biodiv).
 
-#### BIZ.2 — B2B MSA (Master Service Agreement)
-- **P1** · 👤 · ⚪ · → `07_01`, `08_02 §5`
-- **Стан:** Не почато — B2B MSA template; партнер СЄУ (Аблязов Д.Е., к.ю.н.). Канон `07_01`, `08_02 §5`.
-- [ ] 👤 юр-консультація (MiCA/ERC-3643/RWA) → MSA template (Term Sheet + Carbon Credit Purchase Agreement) → review практикуючим юристом
-
-#### BIZ.6 — Supply chain war-zone risk mitigation
-- **P1** · 👤 · 🟡 · → `07_02 §8.1.1`
-- **Стан:** Contingency Plan EU Backup DMLS Hubs готовий (4 кандидати; triggers; +~20% payback) — UA-підрядники у зоні бойових дій. Канон `07_02 §8.1.1`.
-- [ ] 👤 отримати quotes для порівняння (→ BIZ.8)
-
 #### BIZ.8 — EU DMLS quotes → Frame Agreement (procurement track, extends BIZ.6)
 - **P1** · 👤 · ⚪ · → `07_02 §8.1.1`
 - **Стан:** Не почато — BIZ.6 ✅ ідентифікував 4 EU кандидати (3D Lab PL, Materialise BE, Sauber/Lithoz, TRUMPF); procurement-трек до Frame Agreement. Канон `07_02 §8.1.1`.
@@ -1459,6 +1449,16 @@
 - **Стан:** Немає операційної юр-особи «Silken Net». DAO-legal-wrapper + RWA-jurisdiction (Swiss Verein / Zug / Wyoming) — відкриті, недовирішені ([`07_01 §8`](07_01_Nature_as_a_Service_Contracts) «Дія»). `/NOTICE` вестить copyright на фіз-особу «Oleksii Lukin»; `08_01 §0.1` кастить «Silken Net» окремим актором (IP holder + integrator), але жоден канон не каже, яка юр-форма. Не академічно: `07_03 §1` — **7/7 грантів «Подано»** (Giveth активний; заявник = фіз-особа до інкорпорації), BIZ.2 MSA потребує названого counterparty, UNI.15 — trademark-заявника, `08_03 §2.4` — кримінальна exposure за anchor-install («втручання в держмайно»), що неінкорпорований несе особисто без liability-щита. **🤖-half:** чернетка entity-option matrix (юрисдикція × тип × вартість × грант/RWA/MiCA-сумісність); 👤 = рішення+реєстрація (СЄУ Аблязов). Канон `08_01 §0.1`, `07_01 §8`. **BIZ.20-close = один із подієвих тригерів re-visit Web3-грант-треку** (⚖️ 2026-07-18: трек opportunistic-passive до появи юр-особи-заявника АБО першого SCC-мінту; дім [`07_03`](07_03_Grant_Applications_Tracker) §Статус).
 - [ ] 🤖 чернетка entity-option matrix (юрисдикція UA/EU/Zug/Wyoming × тип × вартість × грант/RWA/MiCA-fit; + SPV-вісь для BIZ.15) → живить рішення
 - [ ] ⚖️ обрати + інкорпорувати операційну особу (Аблязов) — counterparty для BIZ.2/грантів/trademark/liability
+
+#### BIZ.2 — B2B MSA (Master Service Agreement)
+- **P2** · 👤 · ⚪ · → `07_01`, `08_02 §5`
+- **Стан:** Не почато — B2B MSA template; партнер СЄУ (Аблязов Д.Е., к.ю.н.). Канон `07_01`, `08_02 §5`.
+- [ ] 👤 юр-консультація (MiCA/ERC-3643/RWA) → MSA template (Term Sheet + Carbon Credit Purchase Agreement) → review практикуючим юристом
+
+#### BIZ.6 — Supply chain war-zone risk mitigation
+- **P2** · 👤 · 🟡 · → `07_02 §8.1.1`
+- **Стан:** Contingency Plan EU Backup DMLS Hubs готовий (4 кандидати; triggers; +~20% payback) — UA-підрядники у зоні бойових дій. Канон `07_02 §8.1.1`.
+- [ ] 👤 отримати quotes для порівняння (→ BIZ.8)
 
 #### BIZ.17 — Procurement-workflow operational gaps (post-RFQ-layer dig)
 - **P2** · 👤 · 🟡 · → `07_02 §8`
@@ -1524,12 +1524,12 @@
 > **Поточний стан:** 5 академічних установ — ЧНУ (фіз-хім + ФОТІУС; Спрягайло-якір), ЧДТУ (Data Science + RF + акустика; Гончаров-якір), ЧІПБ (пожежна безпека), ЧМА (біохімія + токсикологія), СЄУ (право + економіка). Режим: **лаб-MoU ЧНУ/ЧДТУ** (розблокують лабораторії) + **персональні контакти СЄУ/ЧІПБ/ЧМА** (люди, не лаби); жоден ще не законтрактований.
 
 #### UNI.1 — Вхід у ФОТІУС-раунд (ChNU FOTIUS) — post-MoU
-- **P0** · 👤 · ⚪ · → `08_01`
+- **P1** · 👤 · ⚪ · → `08_01`
 - **Стан:** Не почато — вхід у ФОТІУС-раунд (Ярмілко/Косенюк/Любченко), ПІСЛЯ ректорського MoU (UNI.18). Лаб-доступ = рамковий MoU через Спрягайла (UNI.15/UNI.18); далі прямий контакт з викладачами. Канон `08_01`.
 - [ ] 👤 ініціювати ФОТІУС-раунд після MoU (UNI.18) → поіменні зустрічі (UNI.2)
 
 #### UNI.14 — СЄУ: персональний контакт (Аблязов legal/RWA + Ус/Гедз облік)
-- **P0** · 🤖+👤 · ⚪ · → `08_02 §5`
+- **P1** · 🤖+👤 · ⚪ · → `08_02 §5`
 - **Стан:** Не почато (консолідує legacy UNI.8). **СЄУ = economics+law — 3 фахівці, персональний контакт:** Аблязов **Денис Едуардович** (віцепрезидент, к.ю.н. — господарське право/протидія рейдерству; MSA/інкорпорація), Гедз (проректор якості — фінансовий облік криптоактивів 2025), Ус (цифрова економіка + матем. моделювання). Глибина крипто-права → профільний TBD. Канон `08_02 §5`.
 - [ ] 👤 персональний контакт: workshop Аблязов (UA-legal/MSA/інкорпорація) + Ус/Гедз (облік SCC); глибина крипто-права/carbon → профільні TBD
 - [ ] 🤖+👤 [gap-pass §07] tax-posture: grant-income + personal-income-on-receipt (UA SCC-holders) + `dynamic_tax`×UA-податкове — 🤖 складе питання-меморандум → 👤 Ус Г.О.
@@ -1596,12 +1596,6 @@
 - [ ] 👤 зустріч Базіло+Бондаренко + EIS-протокол + acoustic стенд (HW.1)
 - [ ] 🌿 Mongabay: dawn/dusk Cherkasy Soundscape Library для 5-class TinyML «Fauna» (`08_01 Стаття 24a`) — recordings з UNI.13a (Спрягайло-Гаврилюк): AudioMoth, 4 сезони, ≥30хв dawn+dusk/ділянку, labeled таксони
 
-#### 🌿 UNI.13a — ChNU Біо-хаб (Спрягайло+Гаврилюк): Acoustic Biodiversity Baseline (Mongabay) [кластер:fauna:важіль]
-- **P2** · 👤 · 🌿 · → `08_01 §1/§2`, `08_01 Стаття 24a`
-- **Стан:** Far-horizon (fauna-вимір E.59, both/and) — Delgado et al. (Nicoya, 119 ділянок, 16k год; Mongabay 2026): dawn/dusk fauna-піки = маркер біорізноманіття (NDVI бачить покрив, не функцію). UA-аналог: **Cherkasy Soundscape Library** (4 сезони, з ЧДТУ ПМКТ UNI.11) → ground truth для 5-class TinyML (FW.4-EXT) + Q1. Канон `08_01 §1/§2`, `08_01 Стаття 24a`.
-- [ ] 👤 зустріч Спрягайло (проректор) + Гаврилюк (ННІ природничих) + студенти-біологи + joint methodology workshop (з ЧДТУ ПМКТ) + expedition runs (4 ділянки × 4 сезони × dawn/dusk ≈ 32 записи)
-- [ ] 🔗 manual labeling (комахи/птахи/амфібії 0-63) → GA-оптимізація Любченко (E.52-EXT) + cross-val 10-річні дані (Спрягайло) + Horizon CL6 grant (BIZ.12)
-
 #### UNI.13 — ChMA: біохімія EBFC + токсикологія
 - **P2** · 👤 · ⚪ · → `08_02 §4`
 - **Стан:** ЧМА = 3 реальні фахівці: Суховий (токсиколог, к.фарм.н. ЗДМФУ/ЧМА-2024), Глущенко (Алла Володимирівна, фітотерапія), Бушуєва (фармтех ЗДМФУ). Глибока EBFC-ензимологія (лакказа/Nafion) → профільний біохімік (TBD). Канон `08_02 §4`.
@@ -1611,6 +1605,12 @@
 - **P2** · 👤 · ⚪ · → `08_02 §2`
 - **Стан:** Не почато — **fab-infra, не наукова валідація** (manufacturing-крок, процес відомий). Прецизійна CNC-обробка post-DMLS (PEEK Zone 2 фрезерування, bayonet-геометрія, катод Zone 3) + різальна геометрія анкера (`01_01`/`01_02`/`02_02`). Виконавець TBD (не контактовано) — ЧДТУ machine-shop АБО комерційний CNC-цех (RFQ). Канон `08_02 §2` (fab-infra нота).
 - [ ] 👤 RFQ CNC-цеху АБО контакт ЧДТУ machine-shop + прототип різальної геометрії post-DMLS
+
+#### 🌿 UNI.13a — ChNU Біо-хаб (Спрягайло+Гаврилюк): Acoustic Biodiversity Baseline (Mongabay) [кластер:fauna:важіль]
+- **P3** · 👤 · 🌿 · → `08_01 §1/§2`, `08_01 Стаття 24a`
+- **Стан:** Far-horizon (fauna-вимір E.59, both/and) — Delgado et al. (Nicoya, 119 ділянок, 16k год; Mongabay 2026): dawn/dusk fauna-піки = маркер біорізноманіття (NDVI бачить покрив, не функцію). UA-аналог: **Cherkasy Soundscape Library** (4 сезони, з ЧДТУ ПМКТ UNI.11) → ground truth для 5-class TinyML (FW.4-EXT) + Q1. Канон `08_01 §1/§2`, `08_01 Стаття 24a`.
+- [ ] 👤 зустріч Спрягайло (проректор) + Гаврилюк (ННІ природничих) + студенти-біологи + joint methodology workshop (з ЧДТУ ПМКТ) + expedition runs (4 ділянки × 4 сезони × dawn/dusk ≈ 32 записи)
+- [ ] 🔗 manual labeling (комахи/птахи/амфібії 0-63) → GA-оптимізація Любченко (E.52-EXT) + cross-val 10-річні дані (Спрягайло) + Horizon CL6 grant (BIZ.12)
 
 #### E.14 — Multi-source satellite + anchor data fusion (академічний фасет — Стаття 24a)
 - **P3** · 🤖+👤 · 🌿 · → `08_01`, `03_03 §7`
@@ -1681,7 +1681,7 @@
 - [ ] 🔗 після UNI.1/9/12/13/14
 
 #### 🌿 BIZ.12 — Horizon Europe CLUSTER 6 заявка (Biodiversity Monitoring, fauna-вимір) [кластер:fauna:важіль]
-- **P2** · 👤 · 🌿 · → `08_01 Стаття 24a`, `03_03 §10`
+- **P3** · 👤 · 🌿 · → `08_01 Стаття 24a`, `03_03 §10`
 - **Стан:** Far-horizon — Horizon CL6 Biodiversity Monitoring (2-6 М€, 36-48 міс); SilkenNet = єдиний планетарний D-MRV з micro-acoustic біорізноманіттям. Submission прив'язати до acceptance Статті 24a → «published research». Канон `08_01 Стаття 24a`, `03_03 §10`.
 - [ ] 👤 identify call (HORIZON-CL6-*-BIODIV) → consortium (SilkenNet coord + ЧНУ/ЧДТУ/біо-хаб + 1-2 EU: Linköping/CSIC) → submit при acceptance 24a
 - [ ] 🔗 E.59/FW.4-EXT (5-class TinyML) + UNI.13a (Soundscape Library)
