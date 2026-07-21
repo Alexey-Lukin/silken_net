@@ -44,8 +44,8 @@ journal's recent model-driven redox-mediator design literature. A distinguishing
 scripts (a committed `conda-lock` environment), and the full pipeline is provided for the reviewers.
 
 This work is original, has not been published previously, and is not under consideration elsewhere. A
-portion of the methodology (explicit-solvation QM/MM of the cascade) is being developed with the
-[School of B. Minaev, Cherkasy National University] and is reflected in the author contributions.
+portion of the methodology (explicit-solvation QM/MM of the cascade) is planned as a follow-up with an
+external computational-electrochemistry collaborator (TBD) and is reflected in the author contributions.
 [⚠️ founder: competing-interests — none re: IP (no patent pending; defensive-publication posture, 08_01 §2). Confirm standard declaration.]
 
 We thank you for your consideration and look forward to the reviewers' comments.

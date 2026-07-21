@@ -20,8 +20,8 @@
 |---|---|
 | [`08_01` — Joint Publications and IP Strategy](08_01_Joint_Publications_and_IP_Strategy) | MOIC-концепція (§0), план публікацій, IP-рамка — **голова кластера** |
 | [`08_03` — External Stakeholders Registry](08_03_External_Stakeholders_Registry) | Зовнішні B2G/B2B + культурний шар (не академічні) |
-| [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC — валідують ЧНУ Мінаєв (DFT) + ЧМА Бушуєва (ензими) |
-| [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ti-довговічність/Kirkendall — ЧНУ Гусак + ЧМА Суховой (токсикологія) |
+| [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC — ЧНУ Мінаєв (spin-кінетика O₂) + ЧМА фарм-стабілізація (Бушуєва); DFT-редокс/ензимологія self-owned + TBD-профільний |
+| [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ti-довговічність/Kirkendall — ЧНУ Гусак + ЧМА Суховий (токсикологія) |
 | [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | §10 Soundscape — ЧДТУ ПМКТ (датасет) + наш NDVI-адаптер (open-data Sentinel-2) |
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz = status-гейт + DCI-anti-fraud; партнерська ланка = ground-truth-протокол §6 нижче |
 | [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | §8 Ground-Truth Z↔health протокол (партнерський ростер — §6 нижче) |
@@ -66,9 +66,9 @@
 
 | Партнер | Кафедра / роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| проф. **Мінаєв Б.Ф.** (+ проф. Мінаєва В.О.) | хімія та наноматеріалознавство | Квантова хімія EBFC (DFT: dgrFAD-GDH/Os, Laccase-ZIF, PSBMA) → [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) + [`L3_quantum_chemistry`](protocols/ebfc/in_silico/L3_quantum_chemistry.md); строгий DFT charge-transfer крізь нативний TiO₂-оксид (Ст.28) | Ст. 1/28 |
-| проф. **Гусак А.М.** | фізика (Wiley-монографія, UCLA-колаб.) | PEEK creep (Prony/Maxwell-Wiechert, виміряні дані) + ICP-MS-калібрація Kirkendall-моделі (наш script 51) → [`01_02 §2`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK); sheet-vs-network FEA-E homogenization ([`00_07` HW.33](00_07_Action_Plan_Tracker)); FEM термо-механіка Ti↔деревина (Ст.30) | Ст. 2/29/30 |
-| доц. **Спрягайло О.В.** (проректор) + к.б.н. **Гаврилюк М.В.** (дир. ННІ) | біо-хаб (дендрофлора/ПЗФ/екологія) | *Pinus sylvestris* baseline + хім. склад ксилемного соку + dawn/dusk «Cherkasy Soundscape Library» → [`03_04`](03_04_mruby_Lorenz_Attractor), [`03_03 §10`](03_03_TinyML_Acoustic_Inference), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 2/24a/29/30/35 (Спрягайло) · 2/24a/35 (Гаврилюк) |
+| проф. **Мінаєв Б.Ф.** (+ проф. Мінаєва В.О.) | квантова хімія: spin-orbit, фотофізика, активація O₂ | **Spin-forbidden кінетика активації O₂** на біоелектродах (triplet→singlet: FAD-оксидазний анод + laccase ORR-катод) — світовий фах школи (SOC, активація дикисню оксидазами), механізм поза власним L3 → [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell). NB: ground-state QM/MM-редокс Os і slab-DFT TiO₂ — **не** їхній метод (mis-cast; ті кроки = власний follow-up / профільна computational-electrochemistry колаборація) | Ст. 1/28 |
+| проф. **Гусак А.М.** | фізика (Wiley-монографія, UCLA-колаб.) | PEEK creep (Prony/Maxwell-Wiechert, виміряні дані) + ICP-MS-калібрація Kirkendall-моделі (наш script 51) → [`01_02 §2`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK); sheet-vs-network FEA-E homogenization ([`00_07` HW.33](00_07_Action_Plan_Tracker)) | Ст. 2/29 |
+| доц. **Спрягайло О.В.** (проректор) + к.б.н. **Гаврилюк М.В.** (дир. ННІ) | біо-хаб (дендрофлора/ПЗФ/екологія) | *Pinus sylvestris* baseline + хім. склад ксилемного соку + dawn/dusk «Cherkasy Soundscape Library» → [`03_04`](03_04_mruby_Lorenz_Attractor), [`03_03 §10`](03_03_TinyML_Acoustic_Inference), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 2/24a/29/35 (Спрягайло) · 2/24a/35 (Гаврилюк) |
 | проф. **Кирилюк Є.М.** (в.о. ректора) | ННІ економіки і права, біоекономіка/синергетика | Теор. база NaaS + біоекономіка; парасольовий MoU → [`07_01`](07_01_Nature_as_a_Service_Contracts) | Ст. 35 |
 
 > Протоколи Hard-Science (Quantum-Sap, Long-Term Integrity, Homeostasis Baseline, Xylem-Sim, Steril) — already-canon: дім у [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)/[`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)/[`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)/[`01_04 §6`](01_04_CODIT_and_Xylemointegration)/[`03_04`](03_04_mruby_Lorenz_Attractor) + [`in_silico/`](protocols/ebfc/in_silico/SUMMARY.md).
@@ -120,11 +120,11 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 
 | Партнер | Роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| **Губенко І.** (ректор) | біосумісність | Макро-біосумісність + ксилемоінтеграція ↔ CODIT-каскад → [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 30 |
-| **Боєчко В.** | фізіологія стресу | Preclinical stress signature + recovery curve → незалежні ground-truth мітки для `stress_index` ([`04_02`](04_02_Business_Logic_and_Services); блокер E.52) + CODIT-aware калібрація ([`01_04`](01_04_CODIT_and_Xylemointegration)) | Ст. 30 |
-| **Бушуєва І.** | фармацевтичні дисципліни | EBFC ензимна іммобілізація (валідація стеку Gen 2.0) → [`01_03 §2`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | Ст. 28 |
-| **Суховой Г.** | токсикологія | Токсикологія Ti-6Al-4V (V/Al release у ксилему) → [`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 29 |
-| **Глущенко О.** | покриття | Self-healing 8-HQ мікрокапсули — **already-canon** → [`01_02 §3`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS); Os redox polymer стабільність + cross-linking (Ст.28) | Ст. 28/29 |
+| **Губенко І.Я.** (ректор ЧМА) | інституційний якір | Ректор-підписант MoU ЧМА↔SilkenNet (аналог Гончарова в ЧДТУ). Фах = педіатрія/імунологія + медсестринська освіта (к.мед.н.) — технічну CODIT/biomaterials-валідацію картка НЕ несе (ЧМА = навч. коледж, не матеріалознавча лаба) | — |
+| **Боєчко В.Ф.** (Владислав Федорович, проректор ЧМА) | адмін-ресурс | д. істор. наук + пауерліфтер-практик «Черкаські богатирі» (stress/recovery людини). ⚠️ НЕ фізіолог — рослинний `stress_index` ground-truth дає біо-хаб Спрягайло (Ст.24a); фізіологія-напрямок потребує профільного біолога | — |
+| **Бушуєва І.В.** (Інна Володимирівна) | фарм. технологія / регуляторика | д.фарм.н., проф. ЗДМФУ (стейкхолдер/рецензент ЧМА-програм). Технологія стабілізації активних речовин у гель-матрицях (лікарські форми) + регуляторна валідація — дотично до Genipin-Chitosan immobilization-матриці [`01_03 §2`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell). ⚠️ НЕ глибока EBFC-ензимологія (валідація лаккази/Nafion — потребує біохіміка) | Ст. 28 |
+| **Суховий Г.П.** (Григорій Пилипович) | токсикологічна хімія | к.фарм.н., доц. каф. неорганічної та токсикологічної хімії (ЗДМФУ; афіліація ЧМА з 2024). Хіміко-токсикологічний аналіз V/Al release у ксилему + Safety Margin → [`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 29 |
+| **Глущенко А.В.** (Алла Володимирівна, викладач ЧМА) | фармація / фітотерапія | Фітотоксичність 8-HQ self-healing покриття (профіль: рослинні екстракти, хім. аналіз препаратів) — already-canon → [`01_02 §3`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS); Os redox polymer cross-linking (Ст.28) | Ст. 28/29 |
 
 > **План публікацій ЧМА:** [`08_01 §1E`](08_01_Joint_Publications_and_IP_Strategy) (біохімія EBFC, токсикологія Ti, ксилемоінтеграція).
 
@@ -136,12 +136,12 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 
 | Партнер | Роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| **Чудаєва І.Б.** (ректор СЄУ) | макроекономіка | Стрес-тест dual-token (інфляція, Dynamic Tax 2%, рівновага) → [`05_03`](05_03_Tokenomics_SCC_and_SFC); макро-модель SCC-ринку живить регіональний Ст.35 | Ст. 31/35 |
-| **Ус Г.О.** | unit-econ / ESG | ESG-облік, KlimaDAO retirement → [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`07_02`](07_02_Unit_Economics_and_BOM) | Ст. 31 |
-| **Аблязов Д.Е.** | право | RWA legal architecture (ERC-3643), KYC/AML templates → [`07_01`](07_01_Nature_as_a_Service_Contracts), [`05_06`](05_06_Governance_and_DAO); правова сумісність токенізації з режимом ПЗФ (Ст.35) | Ст. 32/35 |
-| **Гедз М.Й.** | аудит D-MRV | Методологічний аудит pipeline (IoTeX→Chainlink→mint, DCI) → [`05_02`](05_02_Proof_of_Growth_Pipeline) | Ст. 32/35 |
-| **Денисенко Ю.М.** | промисловий дизайн | Біомімікрічний антивандальний PEEK-радом капсули → [`02_01`](02_01_Hardware_Architecture_and_BOM), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | — |
-| **Теліженко О.В.** (Олександра) | етнодизайн / орнамент-патерн | Народний художник України (етнодизайн, монументальне мистецтво). Орнаментальний патерн-бренд: «Silken Net» = текстильна метафора, mesh-топологія що обплітає бір ≈ рушник-оберіг → [`04_04`](04_04_Phlex_UI_and_Tailwind) (Phlex UI motifs), [`02_05`](02_05_Queen_Hardware_and_Starlink) (Queen radome graphics); Genesis NFT → [`08_03`](08_03_External_Stakeholders_Registry) | — |
+| **Чудаєва І.Б.** (ректор СЄУ) | регіональна економіка / якір | Ректор-підписант MoU СЄУ; макро-рамка Ст.31/35. Фах = регіонально-інноваційна економіка (технопарки, структурні диспропорції), не монетарна макра — токеном-стрес-тест dual-token = наша модель [`05_03`](05_03_Tokenomics_SCC_and_SFC) | Ст. 31/35 |
+| **Ус Г.О.** (зав. каф. економіки) | екон.-мат. моделювання | Управління знаннями, ризикологія, цифровізація економіки. ⚠️ НЕ ESG-облік — ESG-Accounting Framework = наша потреба, дотичність лише за назвою кафедри | Ст. 31 |
+| **Аблязов Д.Е.** (Денис Едуардович, віце-президент СЄУ) | право (загальне / корпоративне) | к.ю.н.; конституційне/міжнародне право, медіація → MSA/MoU/інкорпорація-counterparty ([`00_07` BIZ.2/BIZ.20](00_07_Action_Plan_Tracker)). ⚠️ НЕ крипто-фінтех — вузьку MiCA/ERC-3643/KYC-специфіку картка приписала over-spec (потребує профільного крипто-юриста) → [`07_01`](07_01_Nature_as_a_Service_Contracts), [`05_06`](05_06_Governance_and_DAO) | Ст. 32/35 |
+| **Гедз М.Й.** (проректор з якості) | фінанси регіональної економіки | Загальна економічна експертиза СЄУ. ⚠️ НЕ GHG/карбон-аудит — спеціалізований D-MRV-аудит (ISO 14064/ICROA/Verra) потребує профільного методолога ([`00_07` BIZ.9](00_07_Action_Plan_Tracker)) | Ст. 32/35 |
+| **Денисенко Ю.М.** (Юрій Миколайович) | архітектура / графічний дизайн | к.архітектури, в.о. зав. каф. дизайну СЄУ (спец. «022.01 Графічний дизайн і реклама»). ⚠️ НЕ промисловий/продуктовий дизайн — CAD PEEK-радому не має вдома в СЄУ; radome-геометрія вже канон [`01_04 §5.5`](01_04_CODIT_and_Xylemointegration) (робота, не партнер-ланка) | — |
+| **Теліженко О.В.** (Олександра Василівна) | етнодизайн / орнамент-патерн | Заслужена художниця України, доцент каф. дизайну СЄУ (гарант ОП «Дизайн»); етнодизайн, народна вишивка. Орнаментальний патерн-бренд: «Silken Net» = текстильна метафора, mesh-топологія що обплітає бір ≈ рушник-оберіг → [`04_04`](04_04_Phlex_UI_and_Tailwind) (Phlex UI motifs), [`02_05`](02_05_Queen_Hardware_and_Starlink) (Queen radome graphics); Genesis NFT → [`08_03`](08_03_External_Stakeholders_Registry) | — |
 
 > **План публікацій СЄУ:** [`08_01 §1F`](08_01_Joint_Publications_and_IP_Strategy) (токеноміка, RWA-право).
 

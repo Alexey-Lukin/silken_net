@@ -26,4 +26,4 @@ This study used artificial-intelligence tools, disclosed here for transparency:
 - **Competing Interests.** [finalise]
 - **Funding.** [finalise — see funding-statement guidance]
 - **Author Contributions (CRediT).** [finalise — Architect (Silken Net): in-silico baseline, drafting;
-  Школа Мінаєва (ЧНУ): explicit-water QM/MM section, added pre-submission per `08_01 §1` Стаття 1]
+  external computational-electrochemistry collaborator (TBD): explicit-water QM/MM section, added pre-submission per `08_01 §1` Стаття 1]

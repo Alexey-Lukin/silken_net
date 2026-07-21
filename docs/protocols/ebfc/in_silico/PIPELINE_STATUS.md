@@ -133,7 +133,7 @@ Validation:
 | L4b Monte Carlo | ✅ Complete | — |
 | L4c EIS | ✅ Complete | — |
 
-**Verdict: ✅ Ready.** Q1 publication (школа Мінаєва): ωB97X/def2-TZVP adiabatic ΔSCF complete (+1.03 eV dimethyl, uphill = quantified method limit; the «−0.07 corrected» estimate **withdrawn** — built on a +60 mV FAD artifact); L3b cathode complete (geom-fixed; k_DET borderline at realistic λ — a clean paper finding, motivates Ru/cMOF/enzyme-free); MD→DFT ensemble confirms thermal robustness; PCET via thermodynamic proton reference (script 32) validates the FAD/FADH₂ potential (within 50 mV of free-flavin). Closed limitations (both clean "limitations of implicit solvation" points for the paper): (a) Nelsen λ — script-29 (FADH₂•⁺) radical-cation pathological, **rescued by 29b** (FADH⁻/FADH• couple) → computed inner-sphere λ_i = **0.39 eV**, total ~0.7-0.8 w/ outer-sphere ≈ lit (→ L3 Nelsen-λ row); (b) PCET cascade reframing (script 33) does NOT flip the ΔSCF cascade downhill — the gap is differential PCM solvation (chloro↔bis-Im bracket) + the 4,4'-dimethyl substituent (decomposed by ②, script 34), not proton coupling. **Authoritative cascade verdict = verified E°s (+574 mV / −0.574 eV downhill, Zafar 2012 + Schachinger 2023); raw DFT uphill = quantified method limit (the «−0.07 ≈ −0.14» claim was withdrawn — built on a +60 mV FAD artifact).**
+**Verdict: ✅ Ready.** Q1 publication: ωB97X/def2-TZVP adiabatic ΔSCF complete (+1.03 eV dimethyl, uphill = quantified method limit; the «−0.07 corrected» estimate **withdrawn** — built on a +60 mV FAD artifact); L3b cathode complete (geom-fixed; k_DET borderline at realistic λ — a clean paper finding, motivates Ru/cMOF/enzyme-free); MD→DFT ensemble confirms thermal robustness; PCET via thermodynamic proton reference (script 32) validates the FAD/FADH₂ potential (within 50 mV of free-flavin). Closed limitations (both clean "limitations of implicit solvation" points for the paper): (a) Nelsen λ — script-29 (FADH₂•⁺) radical-cation pathological, **rescued by 29b** (FADH⁻/FADH• couple) → computed inner-sphere λ_i = **0.39 eV**, total ~0.7-0.8 w/ outer-sphere ≈ lit (→ L3 Nelsen-λ row); (b) PCET cascade reframing (script 33) does NOT flip the ΔSCF cascade downhill — the gap is differential PCM solvation (chloro↔bis-Im bracket) + the 4,4'-dimethyl substituent (decomposed by ②, script 34), not proton coupling. **Authoritative cascade verdict = verified E°s (+574 mV / −0.574 eV downhill, Zafar 2012 + Schachinger 2023); raw DFT uphill = quantified method limit (the «−0.07 ≈ −0.14» claim was withdrawn — built on a +60 mV FAD artifact).**
 
 ### ✅ Sufficient for Pitch / Investor Meeting?
 
@@ -143,7 +143,7 @@ Validation:
 - "Electrode cascade E°(Os) − E°(FAD-GDH) = +574 mV (verified E°s, Zafar 2012 + Schachinger 2023); raw DFT uphill = method limit decomposed by ②"
 - "ZIF cathode DET computed at the electronic-structure level — borderline at realistic λ, with a clear low-λ-metal (Ru) / conductive-MOF improvement path"
 
-### ✅ Sufficient for Мінаєв Meeting?
+### ✅ Sufficient for external QM/MM collaborator?
 
 **Verdict: ✅ YES.** Key pitch points:
 1. Pipeline PySCF+B3LYP+PCM runs end-to-end ✅
@@ -170,7 +170,7 @@ Validation:
 - ✅ ~~PCET potential + cascade (scripts 32, 33)~~ — DONE (potential -158 mV valid; cascade does not flip — PCM limit)
 
 ### Future (publication-grade, needs external compute / collaboration):
-- QM/MM explicit-solvation shell (школа Мінаєв) — to resolve the ~1 eV PCM differential-solvation gap on the cascade + enable a true 4-point λ
+- QM/MM explicit-solvation shell — to resolve the ~1 eV PCM differential-solvation gap on the cascade + enable a true 4-point λ
 - **FO-DFT coupling (CHEM.14):** in-house upgrade of script-24's crude State-A/B t_ij to a fragment-orbital H_ab (dimer-Fock projection) for the Cu-Co cathode bottleneck — no new dependency; the next ③-coupling rigor step (full CDFT needs PyCDFT = capstone).
 - **Dynamic-tunneling ensemble (CHEM.16):** ✅ **done** (script **28b**) — the Beratan–Onuchic pathway (script 28) replayed over 15 MD frames gives β·d = **2.02 ± 0.13** ≈ the AF3 single-snapshot 2.05, with a conformational-gating factor of **1.03×** (modest). The path is **thermally robust**: the static single-snapshot is representative of the thermal ensemble (validates the §3.1 analysis), no significant thermal gating. PBC handled by mdtraj `image_molecules` (anchor = protein) — it co-locates the FAD cofactor (a separate non-covalent molecule) into the protein's image; `make_molecules_whole` alone leaves the FAD in a different image (1/15 frames only).
 - **②-gap closers, COSMO-RS / MACE (CHEM.22/5):** verified **NOT** clean replacements for QM/MM on the charged Os(III/II) couple — openCOSMO-RS is neutral-molecule-validated (charged-metal blind spot); MACE-MP is a fixed-charge sampling MLIP, not a redox-ΔG method (it could only accelerate the sampling *within* a QM/MM). → don't add a dependency just for ②.
