@@ -8,7 +8,7 @@
 
 ## Бриф — UA-юр-review Аблязов (UNI.16 · P1 · RWA/SCC/open-license)
 
-- **Хто / предмет:** Аблязов Д.Е. (СЄУ, персонально — UNI.14) + крипто/IP-юрист TBD — точковий UA-юр-review; предметний перелік (RWA / SCC-SFC / NaaS / авт. право `bio_contract.rb` як основа копілефту / **open-license**) — owner [`08_01 §2.1.2`](../../08_01_Joint_Publications_and_IP_Strategy.md) (не дублюю).
+- **Хто / предмет:** Аблязов Д.Е. (СЄУ, персонально — UNI.14) + крипто/IP-юрист TBD — точковий UA-юр-review; предметний перелік (RWA / SCC-SFC / NaaS / авт. право `bio_contract.rb` як основа копілефту / **open-license**) — owner [`08_01 §2.1.2`](../../08_01_Joint_Publications_and_IP_Strategy.md).
 - **Чому важливо:** юр-валідація **open-ліцензій** (AGPL/CERN-OHL-S/CC-BY-SA у UA + **AF3 non-commercial × комерц-вимір**) + RWA/SCC дозволи — основа правової певності (патенту немає, [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md)).
 - **Що принести:** IP-постава [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) + `/NOTICE` (ліцензійна матриця + AF3 carve-out) для license-review.
 - **Asks:** ціль **2 меморандуми** (RWA → розблок [`07_01`](../../07_01_Nature_as_a_Service_Contracts.md) BLOCKER-6 · SCC-класифікація) + NaaS/copyright + **open-license + AF3 review**.
