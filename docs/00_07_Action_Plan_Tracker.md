@@ -990,7 +990,7 @@
 - **P2** · 🤖+⚖️ · 🔗 · → `04_02`, `08_02 §3`
 - **Стан:** SOP-runbook'и per alert_type (drought/epidemic/vandalism/fire/seismic/fault/entropy/**field_audit** [INS.1]) як inline-інструкції при кліку на EwsAlert у дашборді — forester отримує немедіане runbook замість пошуку в документах. 🔗 на UNI.12 (самі SOP-документи UA+EN — joint ChIPB-NUTSU; ex-E.54). Канон `04_02` (EwsAlert/EWS), `08_02 §3` (SOP-джерело). SOP-compliance = зворотний бік Кат-A negligence-evidence (no-firebreak-after-alert = недотримання fire-SOP — SLASH-1/BIZ.13 міряють саме його відсутність).
 - [ ] 🔗 UNI.12 — SOP-документи (per alert_type × UA+EN)
-- [x] ⚖️→рішення (2026-07-21): operational-SOP-runbook (для UI, forester читає) ≠ academic-SOP-стаття (Ст.26 Ротар/Биченко — наукове обґрунтування методології). Критерій сам розділяє «SOP-робота ≠ Q1-стаття». Operational-текст = наша машинна робота (НЕ gated партнерами, НЕ interim-заглушка), пишеться разом з Phlex-компонентом; академічну версію НЕ чекаємо.
+- [x] ⚖️→рішення: operational-SOP-runbook (для UI, forester читає) = наша машинна робота (НЕ gated партнерами, НЕ interim-заглушка), пишеться разом з Phlex-компонентом. «SOP-робота ≠ Q1-стаття» — академічної SOP-публікації в портфелі нема, робота на неї не gated.
 - [ ] 🤖 Phlex inline-SOP компонент на EwsAlert dashboard (структура компонента = content-contract для UNI.12)
 
 #### ARCH.69 — OAuth-флоу: написаний шлях без дроту (identity-шар є, OmniAuth нема)
