@@ -90,7 +90,7 @@
 
 | Партнер | Кафедра / роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Anomaly/fraud-статистика телеметрії (`FRAUD_DEVIATION_THRESHOLD`, Ст.13) + biodiversity fusion-статистика (ANOVA/permutation, Ст.24a) + ground-truth Z-калібрація (§6) → [`04_02`](04_02_Business_Logic_and_Services), [`05_05`](05_05_Slashing_and_Risk_Policy) | Ст. 13/24a |
+| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Anomaly/fraud-статистика: CUSUM/EWMA research-шар ПОВЕРХ нашого порога `FRAUD_DEVIATION_THRESHOLD` (Ст.13) + biodiversity fusion-статистика (ANOVA/permutation, Ст.24a) + ground-truth Z-калібрація (§6) → [`04_02`](04_02_Business_Logic_and_Services), [`05_05`](05_05_Slashing_and_Risk_Policy) | Ст. 13/24a |
 | **перший проректор Гончаров А.В.** | каф. РТРС (радіотехніка / signal-processing) | **Інституційний якір ЧДТУ** (MoU-підписант ЧДТУ↔SilkenNet) + експериментальна RF-верифікація (VNA S11, EMC pre-scan, натурний Link Budget) розрахунків Косенюка → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM) | Ст. 23 |
 | проф. **Базіло К.В.** + проф. **Бондаренко М.О.** | ПМКТ, акустична мехатроніка | Валідація фононної лінзи гіроїда (EIS + AE) + **калібрувальний TinyML-датасет** (польова валідність 5-class моделі — [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference)); резонанс п'єзо у діапазоні фауни 0.5–12 кГц (Ст.24a) | Ст. 24/24a |
 
