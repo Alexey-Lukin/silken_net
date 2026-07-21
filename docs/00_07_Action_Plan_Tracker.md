@@ -1543,7 +1543,7 @@
 
 #### UNI.4 — ChNU школа Мінаєва: DFT-моделювання EBFC
 - **P1** · 👤 · ⚪ · → `08_01 Стаття 1`, `08_03 §1`
-- **Стан:** Не почато — DFT електрон-трансферна енергетика EBFC Gen 2.0 (dgrFAD-GDH/Os, Laccase-ZIF, PSBMA; школа Мінаєва, світовий DFT); журнали-цілі = дім [`08_01`](08_01_Joint_Publications_and_IP_Strategy) Стаття 1 (⚠️ «ціль Q1 *Electrochimica Acta*» знято 07-17 — Ст.1 його **явно виключає**: comp-only поза їх scope без експерименту; primary = *J. Phys. Chem. B*). Стаття 1 submission-ready як defensive-pub (own in-silico, `L3_quantum_chemistry`) — Мінаєв = co-validation/co-authorship credibility, НЕ блокер (стара Gen 1.0 «streaming potential» відкинута). Канон `08_01 Стаття 1`, `08_03 §1`.
+- **Стан:** Не почато — DFT електрон-трансферна енергетика EBFC Gen 2.0 (dgrFAD-GDH/Os, Laccase-ZIF, PSBMA; школа Мінаєва, світовий DFT); журнали-цілі = дім [`08_01`](08_01_Joint_Publications_and_IP_Strategy) Стаття 1 (⚠️ «ціль Q1 *Electrochimica Acta*» знято 07-17 — Ст.1 його **явно виключає**: comp-only поза їх scope без експерименту; primary = *J. Phys. Chem. B*). Стаття 1 submission-ready як defensive-pub (own in-silico, `L3_quantum_chemistry`) — Мінаєв = co-validation/co-authorship credibility, НЕ блокер (стара Gen 1.0 «streaming potential» відкинута). ⚠️ verify capability: школа робить surface/slab DFT + QM/MM зарядженого Os-couple (не лише TDDFT/фосфоресценція/spin-orbit) — Ст.28 oxide-DET reframe + Ст.1 QM/MM real-fit на цьому стоять. Канон `08_01 Стаття 1`, `08_03 §1`.
 - [ ] 👤 зустріч (через декана хімії) + NDA/IP (BIZ.10) + спільний грант MES/Horizon
 
 #### UNI.5 — ChNU школа Гусака: дифузійна деградація 20-років (Kirkendall effect)
@@ -1598,7 +1598,7 @@
 
 #### UNI.13 — ChMA: біохімія EBFC + токсикологія
 - **P2** · 👤 · ⚪ · → `08_02 §4`
-- **Стан:** Не почато — ChMA: (1) валідація dgrFAD-GDH + Laccase/ZIF-nanozyme при pH 4.5-5.5 (`01_03`), (2) токсикологія Ti/Al/V іонів, (3) геніпін cross-linking біосумісність (vs глутаральдегід). ⚠️ посади не верифіковані. Канон `08_02 §4`.
+- **Стан:** Не почато — ChMA: (1) валідація dgrFAD-GDH + Laccase/ZIF-nanozyme при pH 4.5-5.5 (`01_03`), (2) токсикологія Ti/Al/V іонів, (3) геніпін cross-linking біосумісність (vs глутаральдегід). ⚠️ посади не верифіковані — web-фах per-персона: **Боєчко** спеціалізація → distinct ground-truth джерело (→ `05_05 §8` ростер) чи dup (trim); **Губенко** (ректор) biomaterials + підпис=ворота ЧМА-MoU? → institutional-anchor mirror Гончарова. Канон `08_02 §4`.
 - [ ] 👤 СПОЧАТКУ verify посади (сайт ChMA) → cold contact ректор → joint biochemistry protocol EBFC Gen 2.0 (HW.5)
 
 #### UNI.17 — CNC post-DMLS механообробка (fab-infra / procurement, не публікаційний партнер)
