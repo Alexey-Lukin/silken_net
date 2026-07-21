@@ -27,7 +27,7 @@
 | [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | §8 Ground-Truth Z↔health протокол (партнерський ростер — §6 нижче) |
 | [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) | Mesh percolation/Markov — надійність mesh |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Backend ML/DS = наш (`InsightGeneratorService`); статистична консультація — ЧДТУ Карапетян |
-| [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS/страхування — Кирилюк/Зобенко/Аблязов |
+| [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS/страхування — Кирилюк/Аблязов |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | UNI.* outreach-трекер |
 
 ## 📑 Зміст
@@ -52,7 +52,7 @@
 |---|---|---|
 | **ЧНУ** (Hard Science + ФОТІУС) | фізика/хімія/біологія + кібернетика/ПЗ/радіо | TRL 1–6 |
 | **ЧДТУ** | дані/моделі, RF-виміри, акустика, прецизійна механіка | TRL 2–8 |
-| **ЧІПБ** | пожежна безпека, ДСНС-міст, параметричне страхування | TRL 3–5 |
+| **ЧІПБ** | пожежна безпека, ДСНС-міст | TRL 3–5 |
 | **ЧМА** | біомедична валідація EBFC, токсикологія, ксилемоінтеграція | TRL 2–4 |
 | **СЄУ** | макроекономіка токеноміки, RWA-право, промдизайн | TRL 1–5 |
 
@@ -91,7 +91,7 @@
 
 | Партнер | Кафедра / роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Anomaly/fraud-детекція (`FRAUD_DEVIATION_THRESHOLD`, Ст.13) + актуарна математика страхових тригерів (Weibull/Pareto, basis-risk copula — Ст.25) + **Lyapunov/RQA — дім Ст.34** (режимна структура атрактора навколо порогів гейта) → [`04_02`](04_02_Business_Logic_and_Services), [`05_05`](05_05_Slashing_and_Risk_Policy) | Ст. 13/24/24a/25/31/34 |
+| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Anomaly/fraud-детекція (`FRAUD_DEVIATION_THRESHOLD`, Ст.13) + **Lyapunov/RQA — дім Ст.34** (режимна структура атрактора навколо порогів гейта) → [`04_02`](04_02_Business_Logic_and_Services), [`05_05`](05_05_Slashing_and_Risk_Policy) | Ст. 13/24/24a/31/34 |
 | декан **Гончаров А.** | ФЕТР, радіотехніка | Експериментальна RF-верифікація (VNA S11, EMC pre-scan, натурний Link Budget) розрахунків Косенюка → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM) | Ст. 23 |
 | проф. **Базіло К.В.** + проф. **Бондаренко М.О.** | ПМКТ, акустична мехатроніка | Валідація фононної лінзи гіроїда (EIS + AE) + **калібрувальний TinyML-датасет** (польова валідність 5-class моделі — [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference)); резонанс п'єзо у діапазоні фауни 0.5–12 кГц (Ст.24a) | Ст. 24/24a |
 | доц. **Хоменко Ю.В.** | металорізальні верстати (80+ патентів) | CNC post-DMLS (PEEK Zone 2 фрезерування, bayonet, катод Zone 3) + різальна геометрія анкера → [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK), [`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | — |
@@ -102,17 +102,15 @@
 
 ## 🔥 3. ЧІПБ — Черкаський інститут пожежної безпеки (ДСНС)
 
-B2G-міст до ДСНС + наукове обґрунтування параметричного страхування + SOP для лісників.
+B2G-міст до ДСНС + SOP для лісників.
 
 | Партнер | Роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
 | **Биченко А.** | диспетчеризація | Інтеграція EWS ↔ протоколи реагування ДСНС → [`04_02`](04_02_Business_Logic_and_Services) (`EwsAlert`/`AlertDispatch`) | Ст. 26 |
 | **Ротар В.** | SOP | 8 SOP-документів per alert_type (field ops) → [`04_02`](04_02_Business_Logic_and_Services) (EwsAlert/AlertDispatch — дім); трек [`00_07` ARCH.31/UNI.12](00_07_Action_Plan_Tracker) (SOP-compliance = зворотний бік Кат-A negligence-evidence для slashing) | Ст. 26 |
-| **Куліца О.** | моделювання пожеж | Предиктивне поширення вогню + калібрування `FIRE_FRP_THRESHOLD_MW` (єдиний працюючий Trigger-2 страхових виплат) → [`05_05`](05_05_Slashing_and_Risk_Policy), [`07_01 §7`](07_01_Nature_as_a_Service_Contracts) | Ст. 25 |
-| **Зобенко Н.** | актуарій | Актуарне обґрунтування blockchain-оракулів параметр. страхування → [`07_01 §7`](07_01_Nature_as_a_Service_Contracts), [`05_05`](05_05_Slashing_and_Risk_Policy) | Ст. 25 |
 | **Несен І.** | інжиніринг | Нетравматична заміна/деінсталяція капсули (динамометр) → [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 26 |
 
-> **План публікацій ЧІПБ:** [`08_01 §1D`](08_01_Joint_Publications_and_IP_Strategy) (параметричне страхування, ДСНС SOP, fire model).
+> **План публікацій ЧІПБ:** [`08_01 §1D`](08_01_Joint_Publications_and_IP_Strategy) (ДСНС SOP).
 
 ---
 
