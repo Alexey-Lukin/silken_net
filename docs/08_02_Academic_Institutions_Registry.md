@@ -102,13 +102,12 @@
 
 ## 🔥 3. ЧІПБ — Черкаський інститут пожежної безпеки (ДСНС)
 
-B2G-міст до ДСНС + SOP для лісників.
+B2G-міст до ДСНС + академічне обґрунтування SOP реагування на кіберфізичні тривоги. Двоє профільних експертів: Биченко (тактика гасіння / керівництво діями підрозділів → диспетчеризація + drone-розвідка), Ротар (правова компетентність ЦЗ, тактичні алгоритми → SOP-регламентація).
 
 | Партнер | Роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
 | **Биченко А.** | диспетчеризація | Інтеграція EWS ↔ протоколи реагування ДСНС → [`04_02`](04_02_Business_Logic_and_Services) (`EwsAlert`/`AlertDispatch`) | Ст. 26 |
-| **Ротар В.** | SOP | 8 SOP-документів per alert_type (field ops) → [`04_02`](04_02_Business_Logic_and_Services) (EwsAlert/AlertDispatch — дім); трек [`00_07` ARCH.31/UNI.12](00_07_Action_Plan_Tracker) (SOP-compliance = зворотний бік Кат-A negligence-evidence для slashing) | Ст. 26 |
-| **Несен І.** | інжиніринг | Нетравматична заміна/деінсталяція капсули (динамометр) → [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 26 |
+| **Ротар В.** | SOP | SOP-документи per alert_type (field ops) → [`04_02`](04_02_Business_Logic_and_Services) (EwsAlert/AlertDispatch — дім); трек [`00_07` ARCH.31/UNI.12](00_07_Action_Plan_Tracker) (SOP-compliance = зворотний бік Кат-A negligence-evidence для slashing) | Ст. 26 |
 
 > **План публікацій ЧІПБ:** [`08_01 §1D`](08_01_Joint_Publications_and_IP_Strategy) (ДСНС SOP).
 

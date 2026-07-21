@@ -988,8 +988,8 @@
 
 #### ARCH.31 — SOP-в-Phlex inline UI для EwsAlert
 - **P2** · 🤖+⚖️ · 🔗 · → `04_02`, `08_02 §3`
-- **Стан:** 8 SOP-runbook'ів (drought/epidemic/vandalism/fire/seismic/fault/entropy/**field_audit** [INS.1]) як inline-інструкції при кліку на EwsAlert у дашборді — forester отримує немедіане runbook замість пошуку в документах. 🔗 на UNI.12 (самі SOP-документи UA+EN — joint ChIPB-NUTSU; ex-E.54). Канон `04_02` (EwsAlert/EWS), `08_02 §3` (SOP-джерело). SOP-compliance = зворотний бік Кат-A negligence-evidence (no-firebreak-after-alert = недотримання fire-SOP — SLASH-1/BIZ.13 міряють саме його відсутність).
-- [ ] 🔗 UNI.12 — SOP-документи (8 alert-типів × UA+EN)
+- **Стан:** SOP-runbook'и per alert_type (drought/epidemic/vandalism/fire/seismic/fault/entropy/**field_audit** [INS.1]) як inline-інструкції при кліку на EwsAlert у дашборді — forester отримує немедіане runbook замість пошуку в документах. 🔗 на UNI.12 (самі SOP-документи UA+EN — joint ChIPB-NUTSU; ex-E.54). Канон `04_02` (EwsAlert/EWS), `08_02 §3` (SOP-джерело). SOP-compliance = зворотний бік Кат-A negligence-evidence (no-firebreak-after-alert = недотримання fire-SOP — SLASH-1/BIZ.13 міряють саме його відсутність).
+- [ ] 🔗 UNI.12 — SOP-документи (per alert_type × UA+EN)
 - [ ] ⚖️ interim: власний мінімальний SOP-текст (не-joint, без ЧНУ-бренду; заміниться UNI.12-контентом) — розблокував би 🤖-компонент до партнерства; чи чекаємо академічну версію?
 - [ ] 🤖 Phlex inline-SOP компонент на EwsAlert dashboard (структура компонента = content-contract для UNI.12)
 
@@ -1564,11 +1564,10 @@
 - [ ] 👤 A/B **Ignion NN02-310** (Virtual Antenna™) vs incumbent Yageo/Taoglas у тій самій VNA-сесії (eval-kit + VSWR під PEEK) — ex-E.40, far-horizon vendor-swap
 - [ ] 🔗 залежить HW.9 + HW.17
 
-#### UNI.12 — ChIPB-NUTSU: пожежна безпека + параметричне страхування
+#### UNI.12 — ChIPB-NUTSU: ДСНС SOP + пожежна безпека
 - **P1** · 👤 · ⚪ · → `08_02 §3`
-- **Стан:** Не почато — ChIPB + НУЦЗУ: (1) валідація тригерів параметричного страхування (FRP/confidence з dClimate), (2) SOP для 8 EwsAlert-типів (drought/insect/vandalism/fire/seismic/fault/entropy/field_audit [INS.1]), (3) ДСНС API. Канон `08_02 §3`.
-- [ ] 👤 cold contact ректорат + презентація fire-safety stack + joint SOP workshop (ARCH.31)
-- [ ] 🔗 залежить UNI.14 (СЄУ legal) для structuring страхування
+- **Стан:** Не почато — ChIPB + НУЦЗУ (2 real-fit-експерти: Биченко тактика гасіння→диспетчеризація/drones, Ротар правова компетентність ЦЗ→SOP): (1) SOP для всіх EwsAlert-типів (drought/insect/vandalism/fire/seismic/fault/entropy/field_audit [INS.1]), (2) ДСНС API. Канон `08_02 §3`.
+- [ ] 👤 cold contact ЧІПБ (Биченко + Ротар — real-fit фах verified) + joint SOP workshop (ARCH.31)
 
 #### UNI.15 — ЧНУ TISC engagement (prior-art landscape + trademark + open-license consult)
 - **P1** · 👤 · 🔗 · → `08_01 §2.1`
