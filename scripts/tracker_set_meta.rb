@@ -36,7 +36,6 @@ OVERRIDES = {
   "PUMA-IPV6-1" => { p: "P2" }, # post-deploy IPv6 bind verification (minor verify task)
   "ARCH.35"     => { p: "P2" }, # Queen flash ring: scale-tier (100 Soldiers), gated on board-freeze
   "UNI.13a"     => { p: "P2" }, # 🌿 far-horizon (Mongabay pivot) — 🌿 should not sit at P1
-  "BIZ.12"      => { p: "P2" }, # 🌿 far-horizon Horizon CL6 — 🌿 should not sit at P1
   # P2 -> P1 promotion:
   "S6.20"       => { p: "P1" }  # real reliability bug: dead entropy alerts + stuck insurance payouts
 }

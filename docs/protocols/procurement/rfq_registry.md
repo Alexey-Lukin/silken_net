@@ -44,7 +44,7 @@ Stage-2 coin-bake-off = **R&D-шар**; 100-партія = **Production-шар**
 
 - **IP / CDA / NDA:** [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) — **defensive-publication** → RFQ-specs **відкриті** (вже prior art); CDA = **стандартні комерц-умови** (ціни/строки/QC), НЕ для новизни; NDA **лише** для нерозкритого (prod-keys/telemetry/ML-ваги). RFQ-аркуші це наслідують у §IP.
 - **Академічний канал** ([`08_02`](../../08_02_Academic_Institutions_Registry.md)): co-pub (ЧНУ/ЧМА/ЧДТУ) = $0 + Q1-публікація, але темп-партнер-залежний; commercial CRO = $ + швидше + стандартний CDA. **Гібрид** на критичному шляху (HW.5: academ-валідація архітектури + commercial-експресія). Партнер-MoU гейт = **BIZ.10** / UNI.1 (СЄУ Аблязов legal).
-- **Grant-гейти** ([`07_03`](../../07_03_Grant_Applications_Tracker.md)): транші вивільняють procurement-authority поетапно (Giveth → перша 100-партія CAPEX; Horizon = long-lead 18-24міс).
+- **Фінансування-гейти** ([`00_07` BIZ.20](../../00_07_Action_Plan_Tracker.md)): procurement-authority вивільняється поетапно з self-fund + інкорпорацією юр-особи (перша 100-партія CAPEX gated на BIZ.20).
 
 ---
 

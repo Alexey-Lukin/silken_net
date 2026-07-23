@@ -23,8 +23,8 @@
 | [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC — ЧНУ Мінаєв (spin-кінетика O₂) + ЧМА фарм-стабілізація (Бушуєва); DFT-редокс/ензимологія self-owned + TBD-профільний |
 | [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ti-довговічність/Kirkendall — ЧНУ Гусак + ЧМА Суховий (токсикологія) |
 | [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | §10 Soundscape — ЧДТУ ПМКТ (датасет) + наш NDVI-адаптер (open-data Sentinel-2) |
-| [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz = status-гейт + DCI-anti-fraud; партнерська ланка = ground-truth-протокол §6 нижче |
-| [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | §8 Ground-Truth Z↔health протокол (партнерський ростер — §6 нижче) |
+| [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz = status-гейт + DCI-anti-fraud; партнерська ланка = ground-truth-протокол → [`05_05 §8`](05_05_Slashing_and_Risk_Policy) |
+| [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | §8 Ground-Truth Z↔health протокол (партнерський ростер) |
 | [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) | Mesh percolation/Markov — надійність mesh |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Backend ML/DS = наш (`InsightGeneratorService`); статистична консультація — ЧДТУ Карапетян |
 | [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS/RWA-право — Аблязов |
@@ -39,7 +39,6 @@
 - [3. ЧІПБ — Черкаський інститут пожежної безпеки (ДСНС)](#-3-чіпб--черкаський-інститут-пожежної-безпеки-дснс)
 - [4. ЧМА — Черкаська медична академія](#-4-чма--черкаська-медична-академія)
 - [5. СЄУ — Східноєвропейський університет](#-5-сєу--східноєвропейський-університет)
-- [6. Ground-Truth Validation — партнерський ростер](#-6-ground-truth-validation--партнерський-ростер)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -90,13 +89,15 @@
 
 | Партнер | Кафедра / роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Anomaly/fraud-статистика: CUSUM/EWMA research-шар ПОВЕРХ нашого порога `FRAUD_DEVIATION_THRESHOLD` (Ст.13) + biodiversity fusion-статистика (ANOVA/permutation, Ст.24a) + ground-truth Z-калібрація (§6) → [`04_02`](04_02_Business_Logic_and_Services), [`05_05`](05_05_Slashing_and_Risk_Policy) | Ст. 13/24a |
+| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Anomaly/fraud-статистика: CUSUM/EWMA research-шар ПОВЕРХ нашого порога `FRAUD_DEVIATION_THRESHOLD` (Ст.13) + biodiversity fusion-статистика (ANOVA/permutation, Ст.24a) + ground-truth Z-калібрація ([`05_05 §8`](05_05_Slashing_and_Risk_Policy)) → [`04_02`](04_02_Business_Logic_and_Services) | Ст. 13/24a |
 | **перший проректор Гончаров А.В.** | каф. РТРС (радіотехніка / signal-processing) | **Інституційний якір ЧДТУ** (MoU-підписант ЧДТУ↔SilkenNet) + експериментальна RF-верифікація (VNA S11, EMC pre-scan, натурний Link Budget) розрахунків Косенюка → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM) | Ст. 23 |
 | проф. **Базіло К.В.** + проф. **Бондаренко М.О.** | ПМКТ, акустична мехатроніка | Валідація фононної лінзи гіроїда (EIS + AE) + **калібрувальний TinyML-датасет** (польова валідність 5-class моделі — [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference)); резонанс п'єзо у діапазоні фауни 0.5–12 кГц (Ст.24a) | Ст. 24/24a |
 
 > Повний реєстр Data-Science задач (≈10 тем × методи) — research-агенда рівня публікацій; інженерні точки дотику вже в каноні (`InsightGeneratorService`, `Attractor`, `dClimate`, `ParametricInsurance`). Деталі методів — у спільних статтях [`08_01 §1B`](08_01_Joint_Publications_and_IP_Strategy).
 
 > **Fab-infra (поза академ-публікаційним ровером):** CNC post-DMLS механообробка (PEEK Zone 2 фрезерування, bayonet-геометрія, катод Zone 3, різальна геометрія → [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK), [`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface)) = **manufacturing-крок, не наукова валідація** (процес відомий, публікації нема). Джерело — ЧДТУ machine-shop **або** комерційний CNC-вендор (procurement); виконавець TBD, не контактовано.
+
+> **Культурно-історичний контекст (не технічна валідація):** проф. **Мельниченко В.** (ЧДТУ, краєзнавство; Засл. працівник культури, очільник Черкаського осередку Спілки краєзнавців) — історико-культурний контекст RWA-токенів (Холодноярські Master Nodes, скіфські городища) + вибір висот Queen-шлюзів за історичними оглядовими точками → [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`02_05`](02_05_Queen_Hardware_and_Starlink). ⚪ Conceptual.
 
 ---
 
@@ -120,6 +121,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 | **Бушуєва І.В.** (Інна Володимирівна) | фарм. технологія / регуляторика | д.фарм.н., проф. ЗДМФУ (стейкхолдер/рецензент ЧМА-програм). Технологія стабілізації активних речовин у гель-матрицях (лікарські форми) + регуляторна валідація — дотично до Genipin-Chitosan immobilization-матриці [`01_03 §2`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | Ст. 28 |
 | **Суховий Г.П.** (Григорій Пилипович) | токсикологічна хімія | к.фарм.н., доц. каф. неорганічної та токсикологічної хімії (ЗДМФУ; афіліація ЧМА з 2024). Хіміко-токсикологічний аналіз V/Al release у ксилему + Safety Margin → [`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 29 |
 | **Глущенко А.В.** (Алла Володимирівна, викладач ЧМА) | фармація / фітотерапія | Фітотоксичність 8-HQ self-healing покриття (профіль: рослинні екстракти, хім. аналіз препаратів) — already-canon → [`01_02 §3`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS); Os redox polymer cross-linking (Ст.28) | Ст. 28/29 |
+| **Котикова Р.** (⚪ conceptual) | фармакокінетика | Засл. працівниця фармації — пролонговане (≈5-річне) вивільнення 8-HQ self-healing мікрокапсули без вимивання (фармакокінетика; суміжно до фітотоксичності Глущенко) → [`01_02 §3`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS); активувати за 8-HQ-валідації | — |
 
 > **План публікацій ЧМА:** [`08_01 §1E`](08_01_Joint_Publications_and_IP_Strategy) (біохімія EBFC, токсикологія Ti).
 
@@ -135,10 +137,3 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 | **Аблязов Д.Е.** (Денис Едуардович, віцепрезидент СЄУ) | комерційне право / legal-risk | к.ю.н.; господарське/комерційне право, протидія корпоративному рейдерству (2021), інвестиції → MSA/MoU/інкорпорація-counterparty ([`00_07` BIZ.2/BIZ.20](00_07_Action_Plan_Tracker)) → [`07_01`](07_01_Nature_as_a_Service_Contracts) | — |
 | **Гедз М.Й.** (проректор з якості) | фінанси / облік криптоактивів | Д.е.н., проф. (ex-ЧДТУ); регіональна економіка, фінансовий облік криптоактивів в Україні (2025), якість/акредитація (ISO 9001) | — |
 
----
-
-## 🔬 6. Ground-Truth Validation — партнерський ростер
-
-Протокол валідації гіпотези «Лоренц Z ↔ здоров'я дерева» (когорта 20–30 дерев, незалежний ground-truth, калібрування slashing-порогів, `SilkenNet::LorenzValidationService`) — канонічний дім [`05_05 §8`](05_05_Slashing_and_Risk_Policy) (вихід протоколу = пороги ризику/slashing; «одна річ — один дім»).
-
-**Ростер для протоколу:** польова когорта Черкаського бору + незалежний ground-truth (sap-flow, дендрометр, NDVI, експертний бал) — **ЧНУ біо-хаб** (Спрягайло/Гаврилюк, UNI.13a) + **Data Science ЧДТУ** (Карапетян, §2, UNI.9) + **лабораторія Гусака** (§1A, UNI.5). Deliverable — **калібрування предиктивності Z** (вихід протоколу = пороги ризику/slashing). Публікаційного виходу НЕМА — стаття можлива лише ПІСЛЯ позитивного протоколу, не до нього.

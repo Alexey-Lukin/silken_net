@@ -104,36 +104,9 @@ SilkenNet об'єднує сім академічних та індустріа�
 | **ЧМА** | Hard Science | Токсикологія Ti-6Al-4V (Суховий), фітотоксикологія покриттів (Глущенко), фарм-стабілізація ферментів (Бушуєва — дотично); глибока EBFC-ензимологія → профільний біохімік (TBD); інституційний доступ — персонально | [`08_02 §4`](08_02_Academic_Institutions_Registry) | [§1E](#-1e-публікації-чма-біохімія-ebfc-токсикологія) |
 | **ЧІПБ** | Business (regulated safety) | SOP реагування ДСНС на кіберфізичні тривоги: диспетчеризація + drone-розвідка (Биченко — тактика гасіння), SOP per alert_type (Ротар — правова регламентація) | [`08_02 §3`](08_02_Academic_Institutions_Registry) | [`00_07` ARCH.31/UNI.12](00_07_Action_Plan_Tracker) |
 | **СЄУ** | Business | UA-правова рамка RWA + господарське право (Аблязов Д.), фінансовий облік криптоактивів (Гедз), цифрова економіка + моделювання (Ус); дизайн — self | [`08_02 §5`](08_02_Academic_Institutions_Registry) | — |
-| **Silken Net + ActiveBridge** | Mission Controller | IP holder, system integrator, firmware/backend/contracts, фінальна інтеграція WP1–WP9 у TRL 8 продукт | [`08_02 §5`](08_02_Academic_Institutions_Registry), [`07_03`](07_03_Grant_Applications_Tracker) | — |
+| **Silken Net + ActiveBridge** | Mission Controller | IP holder, system integrator, firmware/backend/contracts, фінальна інтеграція WP1–WP9 у TRL 8 продукт | [`08_02 §5`](08_02_Academic_Institutions_Registry) | — |
 
 > **Принцип ортогональності:** жодна комірка `(ВНЗ, ніша)` не дублюється. Якщо два університети потенційно претендують на одну тему то межа проходить за **об'єктом аналізу** (напр. ЧДТУ веде статистичне виявлення аномалій та шахрайства — Ст.13); перетин фіксується як **міжуніверситетська синергія** (зона §1C).
-
-### 0.4. Цінність Кластера — Зовнішня Валідація
-
-MOIC додає до кожного технічного твердження проєкту зовнішню наукову валідацію (Q1-публікація + лабораторний тест профільного інституту):
-
-| Параметр | Без MOIC | З MOIC |
-|----------|----------|--------|
-| Кожен ключовий системний параметр (смарт-контракт: `MAX_SUPPLY=1B SCC`, `Dynamic Tax=2%`; backend anti-fraud: `FRAUD_DEVIATION_THRESHOLD=30%`) | Код стартапу | + Q1-публікація + лабораторний тест профільного інституту |
-| Кожен хардверний вузол (тризонний Ti-6Al-4V анкер з Zone 1 гіроїд / Zone 2 PEEK + mechanical lock barbs / Zone 3 фланець з anti-overgrowth shield, **EBFC Gen 2.0** — dgrFAD-GDH + Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA + Laccase/ZIF-nanozyme DET, BQ25570 MPPT, SX1262 LoRa, PEEK-радом IoT-капсули з anti-overgrowth-захистом радома — super-hydrophobic-покриття = кандидат ⚖️, не зафіксовано) | Концепт | + DFT/FEM/ICP-MS/VNA/EMC дані з акредитованих лабораторій |
-| D-MRV pipeline як замінник Verra/Gold Standard | Вимога довіри | + ISO 14064 / ICROA mapping (профільний carbon-методолог, [`00_07` BIZ.9](00_07_Action_Plan_Tracker)) |
-| Біорізноманіттєвий шар | NDVI-only | + acoustic ground-truth (Mongabay pivot, Стаття 24a) + ботанічна валідація (Спрягайло) |
-
-Сукупно це робить консорціум кандидатом на гранти **Horizon Europe Cluster 6** (Biodiversity Monitoring + Bioeconomy, [`07_03`](07_03_Grant_Applications_Tracker)).
-
-### 0.5. Зв'язок MOIC з рештою Модуля 08
-
-| Розділ | Роль у MOIC | Як читати |
-|--------|--------------|------------|
-| [`08_01`](08_01_Joint_Publications_and_IP_Strategy) (цей документ) | MOIC head: концепція кластера + план публікацій + IP framework | SSOT публікаційного плану та IP |
-| [`08_02 §1`](08_02_Academic_Institutions_Registry) | ЧНУ — Hard Science (§1A: фізика/хімія/біологія) + ФОТІУС (§1B: mruby-Lorenz-аудит + GA/NSGA-II ML) | Лабораторні протоколи + матем. основа Статей 1, 2, 23, 24, 24a, 28, 29 |
-| [`08_02 §2`](08_02_Academic_Institutions_Registry) | Data / RF / Acoustics ortho-niche (ЧДТУ) | 3 кафедри ЧДТУ |
-| [`08_02 §3`](08_02_Academic_Institutions_Registry) | Regulated Safety ortho-niche (ЧІПБ) | Інтеграція з ДСНС, fire model, SOP |
-| [`08_02 §4`](08_02_Academic_Institutions_Registry) | Biomedical ortho-niche (ЧМА) | EBFC біохімія, токсикологія |
-| [`08_02 §5`](08_02_Academic_Institutions_Registry) | Business Layer (СЄУ: право (Аблязов) / облік (Гедз) / економіка (Ус)) | Horizon-заявки; консорціум-лідерство → ЧНУ Спрягайло ([`07_03`](07_03_Grant_Applications_Tracker)) |
-| [`08_03`](08_03_External_Stakeholders_Registry) | External Stakeholders (B2G/B2B + культурний шар) | Не академічні партнери — поза MOIC core |
-
-> **Операційне правило:** при підготовці будь-якої зовнішньої комунікації (pitch deck, grant proposal, академічний візит) спочатку звіряти позиціонування з §0 цього документа, потім — з відповідним доменним 08_0X, і тільки потім — з конкретним розділом-§1A…§1E нижче.
 
 ---
 
@@ -294,8 +267,6 @@ _«Дослідження акустичних властивостей пори
 - [`08_02 §1B` NSGA-II GA](08_02_Academic_Institutions_Registry) — Любченко 5-class оптимізація
 - [`08_02 §2`](08_02_Academic_Institutions_Registry) — ПМКТ калібрувальний датасет
 - [`00_07` — UNI.11](00_07_Action_Plan_Tracker) — операційний tracker
-
-**Грантовий вектор:** Стаття 24a → Horizon Europe Cluster 6 (Biodiversity Monitoring) — Q1-acceptance переводить заявку з «концепт» у «published research».
 
 **Магістерські та PhD роботи:**
 - (магістерська ЧНУ біо) _«Динаміка денних та сутіночних піків акустичної активності фауни Черкаського бору як індикатор екологічного здоров'я»_ (Спрягайло)

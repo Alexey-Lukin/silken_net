@@ -344,7 +344,6 @@ kamal deploy
 **Економіка та Фінансування / Economics & Funding (Модуль 07)**
 - [`07_01`](docs/07_01_Nature_as_a_Service_Contracts.md) — NaaS контракти та страхування
 - [`07_02`](docs/07_02_Unit_Economics_and_BOM.md) — юніт-економіка та ROI через SCC
-- [`07_03`](docs/07_03_Grant_Applications_Tracker.md) — трекер грантових заявок
 
 **Академічна Інтеграція / Academic & Partnerships (Модуль 08)** — 5 ВНЗ під рамкою MOIC
 - [`08_01`](docs/08_01_Joint_Publications_and_IP_Strategy.md) — MOIC + спільні публікації (Статті 1–35) + стратегія IP

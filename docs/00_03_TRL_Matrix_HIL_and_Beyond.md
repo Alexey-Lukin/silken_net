@@ -60,7 +60,7 @@
 | 04 Backend Rails | 8 | 9 | RSpec тести |
 | 05 Web3 Pipeline | 8 | 9 | SFC address |
 | 06 DevOps | 5 | 9 | перший реальний Akash deploy не проведено (06_02; GHCR mirror + Upstash TLS вже ✅); GCP/Kamal = fallback (06_01=4, не на критичному шляху) |
-| 07 Business | 5 | 8 | CO₂ methodology, MSA, ToS (07_03=4 — заявки від фіз-особи, milestone-acceptance gated на юр-особу BIZ.20; рядок = 07_01-леджер) |
+| 07 Business | 5 | 8 | CO₂ methodology, MSA, ToS; заявки від фіз-особи, milestone-acceptance gated на юр-особу BIZ.20 |
 | 08 University R&D | 2 | 6 | 5-сторонній партнерський фреймворк (ChNU + ChDTU + ChIPB + ChMA + СЄУ) — UNI.4-14 |
 | 09 Project Management | 7 | 9 | OPS.3 R&D portfolio, OPS.4 semester sync |
 | 10 Security | 7 | 9 | SEC.9 master key, ✅ SEC.11 Lorenz seed provenance, Multisig, RDP, Factory (Rails web layer ✅ S6.18) |

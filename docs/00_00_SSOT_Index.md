@@ -164,7 +164,6 @@ _NaaS-контракти, юніт-економіка та гранти. Зов�
 
 - [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) (NaaS контракти + параметричне страхування + фінансові константи)
 - [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) (Юніт-економіка + ROI через SCC + Supply Chain Ukraine)
-- [`07_03` — Grant Applications Tracker](07_03_Grant_Applications_Tracker) (Трекер грантових заявок — Horizon Europe, Verra, Gold Standard)
 
 ## 🔬 Модуль 08: Академічна Інтеграція (Academic & Partnerships)
 
