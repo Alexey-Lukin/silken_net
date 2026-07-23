@@ -1552,8 +1552,8 @@
 - [ ] 👤 зустріч (через декана хімії) + NDA/IP + спільний грант MES
 
 #### UNI.5 — ChNU школа Гусака: дифузійна деградація 20-років (Kirkendall effect)
-- **P1** · 👤 · ⚪ · → `08_01 Стаття 2`, `08_03 §2`
-- **Стан:** Не почато — моделювання Kirkendall на Ti-6Al-4V/xylem + Arrhenius 12-тижн (школа Гусака, diffusion-controlled corrosion); ціль Q1 *Corrosion Science*, 20+ years claim; залежить HW.3. Канон `08_01 Стаття 2`, `08_03 §2`.
+- **P1** · 👤 · ⚪ · → `08_01 Стаття 2`, `08_02 §1`
+- **Стан:** Не почато — моделювання Kirkendall на Ti-6Al-4V/xylem + Arrhenius 12-тижн (школа Гусака, diffusion-controlled corrosion); ціль Q1 *Corrosion Science*, 20+ years claim; залежить HW.3. Канон `08_01 Стаття 2`, `08_02 §1`.
 - [ ] 👤 зустріч + спільний експеримент HW.3 + co-authored paper
 
 #### UNI.9 — ChDTU Карапетян: Data Science колаборація
@@ -1663,7 +1663,7 @@ _Активних DOC-T немає — усі закриті мігровані 
 | ID | Пункт | Канон |
 |----|-------|-------|
 | BIZ.12 | Horizon Europe CLUSTER 6 biodiversity-grant заявка (fauna-вимір) — ⚫ грант-вектор знято (founder 2026-07-23: Horizon прибрано з проєкту, `07_03` retired; Web3/академ-грант-трек = opportunistic-passive). Fauna-D-MRV наукова цінність лишається (НЕ грант-gated): acoustic biodiversity → 08_01 Стаття 24a, 03_03 §10, E.59 both/and-вимір | [`08_01 §1`](08_01_Joint_Publications_and_IP_Strategy) · [`03_03 §10`](03_03_TinyML_Acoustic_Inference) |
-| STK.7 | Tier 5 Social-Inclusion outreach (Кучер, соц. сфера) — ⚫ Horizon-грант-тригер знято (founder 2026-07-23); Кучер-профіль + Tier 5 вилучено з 08_03; Eco-Therapy 4.0 (цифрова лісотерапія) concept → 08_03 Частина B | [`08_03`](08_03_External_Stakeholders_Registry) |
+| STK.7 | Tier 5 Social-Inclusion outreach (Кучер, соц. сфера) — ⚫ Horizon-грант-тригер знято (founder 2026-07-23); Кучер-профіль + Tier 5 вилучено з 08_03; Eco-Therapy 4.0 (цифрова лісотерапія) → 07_01 §1.2 | [`08_03`](08_03_External_Stakeholders_Registry) |
 | BIZ.10 | Multi-party co-authorship + open-license MoU framework — ⚫ надлишковий під open-поставою (founder 2026-07-23): co-authorship + open-license acknowledgment (AGPL/CERN-OHL-S/CC-BY-SA) уже дають tech-sharing без формального 5-стороннього Master Collaboration Agreement; лаб-доступ = per-item UNI.1 (ЧНУ парасоль); NDA лише для нерозкритого (ключі/production-дані) | [`08_01 §2`](08_01_Joint_Publications_and_IP_Strategy) |
 | STK.8 | Cultural Tier A (7 черкаських митців) pre-Genesis NFT outreach — ⚫ deferred (founder 2026-07-23: «як треба буде — розбереться»); профілі лишаються 08_03 §11, re-opens при TRL 7 + Genesis onchain | [`08_03 §11`](08_03_External_Stakeholders_Registry) |
 | STK.9 | Cultural Tier B (7 національних митців) pre-launch outreach — ⚫ deferred (founder 2026-07-23); профілі лишаються 08_03 §11, re-opens при TRL 8 | [`08_03 §11`](08_03_External_Stakeholders_Registry) |
