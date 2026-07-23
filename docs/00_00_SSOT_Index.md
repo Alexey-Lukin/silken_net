@@ -160,7 +160,7 @@ _Деплой, моніторинг, секрети та децентраліз�
 
 ## 💰 Модуль 07: Економіка та Фінансування (Economics & Funding)
 
-_NaaS-контракти, юніт-економіка та гранти. Зовнішні стейкхолдери (B2G/B2B + культурний шар) переїхали у Модуль 08 ([`08_03`](08_03_External_Stakeholders_Registry)). Візія/місія/дорожня карта — у Фундаменті [`00_01`](00_01_Vision_Mission_and_Roadmap)._
+_NaaS-контракти та юніт-економіка. Зовнішні стейкхолдери (B2G/B2B + культурний шар) переїхали у Модуль 08 ([`08_03`](08_03_External_Stakeholders_Registry)). Візія/місія/дорожня карта — у Фундаменті [`00_01`](00_01_Vision_Mission_and_Roadmap)._
 
 - [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) (NaaS контракти + параметричне страхування + фінансові константи)
 - [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) (Юніт-економіка + ROI через SCC + Supply Chain Ukraine)

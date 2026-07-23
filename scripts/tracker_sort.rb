@@ -6,7 +6,7 @@
 # item-blocks by priority (P0→P3) WITHIN each group.
 #
 # A "group" = the run of items under a `## ` or `### ` header (so §08 sub-groups
-# 🌐 External Stakeholders / ⚖️ IP-Grants sort independently; the 🚦 Dashboard's
+# 🌐 External Stakeholders sort independently; the 🚦 Dashboard's
 # `### ` buckets hold no `#### ` items → untouched; 📌/🗄️/DOC-T tables → untouched).
 #
 # An item-block = `#### …` through every following line until the next

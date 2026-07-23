@@ -65,7 +65,7 @@
 | Реальні числа/claims (Стаття 1 ①②③④) — One-Home | `protocols/ebfc/in_silico/SUMMARY.md` + `PIPELINE_STATUS.md` |
 | Staffing / AI-clones / хто що пише | `00_02 §4a` |
 | Інституції / співавтори (Мінаєв, Гусак) | `08_02` |
-| Paper-трекер (UNI.3, HW.3.IS, CHEM.*, BIZ.12) | `00_07` |
+| Paper-трекер (UNI.3, HW.3.IS, CHEM.*, E.59) | `00_07` |
 
 ## Чим це НЕ є
 

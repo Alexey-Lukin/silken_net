@@ -35,7 +35,6 @@ OVERRIDES = {
   "BIZ.14"=>[ "🤖", "🟢" ],   "ARCH.34"=>[ "🤖", "⚪" ],   # ARCH.34 = named-next AI task, NOT blocked
   "S6.10"=>[ "🤖", "🔗" ],    "UNI.15"=>[ "👤+🤖", "🔗" ], "UNI.16"=>[ "👤", "🔗" ], "STK.3"=>[ "👤", "🔗" ],
   "HW.1"=>[ "👤", "⚪" ],      "UNI.9"=>[ "👤", "⚪" ],     # HW.1: license=precondition; UNI.9: false-🌿
-  "BIZ.8"=>[ "👤", "⚪" ],                              # BIZ.6-✅=precondition; own quotes/NDA not started
   "SE050-MIGRATION"=>[ "🤖+👤", "🟡" ],                # real SE05x mechanics rewrite (not activation)
   "FW.31"=>[ "👤", "🟢" ],    "FW.50"=>[ "👤", "🟢" ],    "FW.55"=>[ "👤", "🟢" ], "FW.52"=>[ "👤", "🟢" ],
   "FW.54"=>[ "👤", "🟢" ],    "FW.56"=>[ "👤", "🟢" ],    "FW.46"=>[ "🤖+👤", "🟢" ], "FW.26"=>[ "🤖", "🟢" ],
