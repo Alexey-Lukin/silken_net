@@ -130,7 +130,7 @@ MOIC додає до кожного технічного твердження п
 | [`08_02 §2`](08_02_Academic_Institutions_Registry) | Data / RF / Acoustics ortho-niche (ЧДТУ) | 3 кафедри ЧДТУ |
 | [`08_02 §3`](08_02_Academic_Institutions_Registry) | Regulated Safety ortho-niche (ЧІПБ) | Інтеграція з ДСНС, fire model, SOP |
 | [`08_02 §4`](08_02_Academic_Institutions_Registry) | Biomedical ortho-niche (ЧМА) | EBFC біохімія, токсикологія |
-| [`08_02 §5`](08_02_Academic_Institutions_Registry) | Business Layer (СЄУ: право (Аблязов) / облік (Ус, Гедз)) | Horizon-заявки; консорціум-лідерство → ЧНУ Спрягайло ([`07_03`](07_03_Grant_Applications_Tracker)) |
+| [`08_02 §5`](08_02_Academic_Institutions_Registry) | Business Layer (СЄУ: право (Аблязов) / облік (Гедз) / економіка (Ус)) | Horizon-заявки; консорціум-лідерство → ЧНУ Спрягайло ([`07_03`](07_03_Grant_Applications_Tracker)) |
 | [`08_03`](08_03_External_Stakeholders_Registry) | External Stakeholders (B2G/B2B + культурний шар) | Не академічні партнери — поза MOIC core |
 
 > **Операційне правило:** при підготовці будь-якої зовнішньої комунікації (pitch deck, grant proposal, академічний візит) спочатку звіряти позиціонування з §0 цього документа, потім — з відповідним доменним 08_0X, і тільки потім — з конкретним розділом-§1A…§1E нижче.

@@ -53,7 +53,7 @@
 | **ЧНУ** (Hard Science + ФОТІУС) | фізика/хімія/біологія + кібернетика/ПЗ/радіо | TRL 1–6 |
 | **ЧДТУ** | дані/моделі, RF-виміри, акустика, прецизійна механіка | TRL 2–8 |
 | **ЧІПБ** | пожежна безпека, ДСНС-міст | TRL 3–5 |
-| **ЧМА** | біомедична валідація EBFC, токсикологія, ксилемоінтеграція | TRL 2–4 |
+| **ЧМА** | біомедична валідація EBFC, токсикологія | TRL 2–4 |
 | **СЄУ** | макроекономіка токеноміки, RWA-право, фінансовий облік | TRL 1–5 |
 
 ---
@@ -78,7 +78,7 @@
 |---|---|---|---|
 | доц. **Ярмілко А.В.** | IIoT / embedded / lightweight crypto | Engaged partner (зустрічі 2026, вхід у ректорат); airtime↔CCM tradeoff = spot-check нашого self-own розрахунку (Ст.23), не незалежна валідація; SPI/DMA-консультація ([`00_07` E.9](00_07_Action_Plan_Tracker) — Open-Research); far-horizon PQC | Ст. 23/24 |
 | доц. **Косенюк Г.В.** | військова радіотехніка, теорія кодування | RF impedance / Link Budget / ground-plane / 3D-діаграма з Ti-фланцем як Ground Plane — **аналітичний розрахунок + FEKO/CST моделювання** прихованої антени під PEEK ([`02_01 §5`](02_01_Hardware_Architecture_and_BOM)); фізична VNA-верифікація = Гончаров (§2) | Ст. 23 |
-| ст.викл. **Любченко К.М.** | нейромережі, GA, Master of Logic | Ст.24a + 2 магістерські: NSGA-II 5-class TinyML tuning + циркадні пороги ([`03_03`](03_03_TinyML_Acoustic_Inference)) — метод generic (pymoo), gate = ground-truth Біо-хаб | Ст. 24a |
+| ст.викл. **Любченко К.М.** | нейромережі, GA, Master of Logic | Ст.24a + 2 магістерські (real-fit двері): NSGA-II 5-class TinyML tuning + циркадні пороги ([`03_03`](03_03_TinyML_Acoustic_Inference)) — метод generic (pymoo, self-generable), **опц., не load-bearing валідація** ([`00_07` FW.4](00_07_Action_Plan_Tracker)); gate = ground-truth Біо-хаб | Ст. 24a |
 
 > **План публікацій ЧНУ:** [`08_01 §1`](08_01_Joint_Publications_and_IP_Strategy) (Hard Science + ФОТІУС) · [`08_01 §1C`](08_01_Joint_Publications_and_IP_Strategy) (ФОТІУС × ЧДТУ синергія).
 
