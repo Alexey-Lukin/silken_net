@@ -171,9 +171,9 @@ Seed-раунд: climate/deeptech фонди (дані + університет�
 | **Орієнтовний бюджет** | €3–5M на 4 роки |
 | **Вимоги до консорціуму** | Мін. 3 країни ЄС; Ukraine асоційована (partial eligibility). ⚠️ 3 EU-партнери ще не ідентифіковані |
 | **Статус** | Не подано — потребує підготовки |
-| **Академічний лідер консорціуму** | **ЧНУ (Спрягайло О.В., проректор з науки)** — координація консорціуму (ЧНУ/ЧДТУ/СЄУ + ActiveBridge + лісові господарства); Triple Helix модель. |
+| **Академічний лідер консорціуму (запланований)** | **ЧНУ (Спрягайло О.В., проректор з науки)** — координація консорціуму (ЧНУ/ЧДТУ/СЄУ + ActiveBridge); Triple Helix. ⚠️ MoU ще не підписано; лісгоспи (STK.1/STK.2) — не законтрактовані (0 контакт). |
 | **Парасоль ЧНУ (інституційний)** | **Проректор з науки Спрягайло О.В.** — інституційний якір / MoU-канал ЧНУ↔Silken Net; регіональний contact з Черкаською ОДА, ПЗФ-сумісність pilot'у. Деталі: [`08_02 §1A`](08_02_Academic_Institutions_Registry). |
-| **Парасоль ЧДТУ (інституційний)** | **Перший проректор Гончаров А.В.** (каф. РТРС — радіотехніка/signal-processing) — інституційний якір ЧДТУ, MoU-підписант ЧДТУ↔Silken Net, ко-PI WP2 (RF/EMC-верифікація hardware). Деталі: [`08_02 §2`](08_02_Academic_Institutions_Registry). |
+| **Парасоль ЧДТУ (інституційний)** | **Перший проректор Гончаров А.В.** (каф. РТРС — радіотехніка/signal-processing) — інституційний якір ЧДТУ (заявлений MoU-підписант ЧДТУ↔Silken Net); RF/EMC-верифікація hardware (роль у WP2 — за підписання MoU). Деталі: [`08_02 §2`](08_02_Academic_Institutions_Registry). |
 
 **Структура консорціуму для Horizon Europe:**
 
@@ -190,7 +190,7 @@ WP9 Exploitation & IPR
 (поіменний склад — після підписання MoU; тем-скелет = планувальний)
 ```
 
-> **Publication backbone:** **Стаття 24a** (Спрягайло ↔ Mongabay — acoustic biodiversity) обґрунтовує **WP8**. Подання до журналу Q1 за 2–3 місяці до Horizon-deadline переводить заявку з категорії «концепт» у «published research» (вирішальне для evaluators).
+> **Publication backbone:** **Стаття 24a** (Спрягайло ↔ Mongabay — acoustic biodiversity) обґрунтовує **WP8**. **Acceptance** Q1-статті (не саме подання — [`08_01`](08_01_Joint_Publications_and_IP_Strategy) Ст.24a) переводить заявку з «концепт» у «published research»; тому подання варто робити завчасно до Horizon-deadline (вирішальне для evaluators).
 
 **Зв'язок з кодбейсом:** Horizon Europe вимагає Open Science — `StateRootAnchor.sol` (публічна верифікація), Filecoin-архів телеметрії, The Graph subgraph (публічний доступ до даних).
 
@@ -201,7 +201,7 @@ WP9 Exploitation & IPR
 | **Програма** | Ethereum Foundation Academic Grants Round |
 | **Тип** | Research grant до $150K |
 | **Фокус** | ZK-proofs, DePIN, on-chain verifiable data, public goods |
-| **Статус** | ⚪ Неактивний напрямок — без відповіді / не пріоритет (тема = наш власний тех-домен, не академічний) |
+| **Статус** | ⚪ Неактивний — **не подано** (тема = наш власний тех-домен, не академічний-fit); не пріоритет |
 
 **Тема заявки:** _"Trustless D-MRV: IoTeX W3bstream ZK-proofs for biological homeostasis verification on STM32WLE5JC edge devices"_ — пов'язано з `IotexVerificationWorker`, `Iotex::W3bstreamVerificationService` та [`05_02`](05_02_Proof_of_Growth_Pipeline).
 
