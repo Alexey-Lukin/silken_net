@@ -57,7 +57,7 @@ NaaS — це модель підписки, де клієнти (Організ
 - Real-time dashboard зі станом лісового кластера через Streamr P2P та Prometheus.
 - Параметричне страхування кластера (`ParametricInsurance`) від `critical_fire`, `extreme_drought`, `insect_epidemic`.
 - Корпоративний ESG-звіт з можливістю ретайрменту SCC через KlimaDAO.
-- **(Roadmap, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM))** Гіперлокальні мікрокліматичні дані (t°/RH/тиск/VPD з BME280) — data-as-a-service для агрохолдингів і страховиків: 1000+ датчиків *усередині* екосистеми проти усереднених метеостанцій на 50 км². Окреме джерело доходу поза SCC; доводить біопреципітацію цифрами.
+- **(Roadmap, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM))** Гіперлокальні мікрокліматичні дані (t°/RH/тиск/VPD з BME280) — data-as-a-service для агрохолдингів і страховиків: 1000+ датчиків *усередині* екосистеми проти усереднених метеостанцій на 50 км². Окреме джерело доходу поза SCC; має кількісно вимірювати біопреципітацію.
 
 **Умови входу:**
 - KYC/KYB верифікація через Polygon Hadron Identity Platform (ERC-3643). Поле `hadron_kyc_status = 'approved'` на `Wallet` є обов'язковою guard clause перед будь-яким мінтингом SCC.
@@ -86,7 +86,7 @@ NaaS — це модель підписки, де клієнти (Організ
 - Роль `User.role = :investor` або `User.role = :forester`.
 - `Wallet` автоматично створюється при реєстрації Tree-вузла.
 
-**Поточний стан:** Технічна інфраструктура повністю готова. Публічного B2C онбординг-флоу (лендинг, ToS, Privacy Policy) — немає → відкрите [`00_07`](00_07_Action_Plan_Tracker) BIZ.3 (B2C ToS/Privacy).
+**Поточний стан:** Бекенд-інфраструктура (онбординг / Wallet / rewards) готова; on-chain SCC-мінт gated на деплой контрактів (BIZ.20). Публічного B2C онбординг-флоу (лендинг, ToS, Privacy Policy) — немає → відкрите [`00_07`](00_07_Action_Plan_Tracker) BIZ.3 (B2C ToS/Privacy).
 
 ---
 
@@ -102,7 +102,7 @@ NaaS — це модель підписки, де клієнти (Організ
 - Участь у верифікованій екосистемі (SCC-адреса на Polygon).
 - Gasless approvals через EIP-2612 (`ERC20Permit`).
 
-**Поточний стан:** SFC смарт-контракт задеплоєно. DAO Governance процес (Snapshot / Governor) — не визначений → механіка [`05_06`](05_06_Governance_and_DAO); юр-оформлення DAO → [`00_07`](00_07_Action_Plan_Tracker) BIZ.*.
+**Поточний стан:** SFC смарт-контракт code-complete + CI-audited, **ще НЕ задеплоєно** (placeholder-адреса до mainnet, [`05_03`](05_03_Tokenomics_SCC_and_SFC)). DAO Governance процес (Snapshot / Governor) — не визначений → механіка [`05_06`](05_06_Governance_and_DAO); юр-оформлення DAO → [`00_07`](00_07_Action_Plan_Tracker) BIZ.*.
 
 ---
 
@@ -110,10 +110,10 @@ NaaS — це модель підписки, де клієнти (Організ
 
 | Юридична Подія | D-MRV Тригер | Rails Worker | Смарт-Контракт | Функція | Наслідок |
 |---|---|---|---|---|---|
-| **Послуга надана** (дерево здорове, Z в межах норми) | `growth_points` ≥ 0, `stress_index < 0.83` | `TokenomicsEvaluatorWorker` (щогодинний cron) → `EvaluateTreeBatchWorker` → `Wallet#lock_and_mint!` → `BlockchainMintingService` (`telemetry_log: nil` для Path 2) | `SilkenCarbonCoin.sol` | `mint(to, amount, treeDid)` / `batchMint` | Інвестор отримує SCC на `Wallet.crypto_public_address`. **Guards (Path 2 — tokenomics aggregate):** `hadron_kyc_status = "approved"` (єдиний обов'язковий perimeter); `verified_by_iotex?` / `oracle_status` свідомо пропускаються — `growth_points` вже зараховані через AES-256-CBC decrypt + `valid_sensor_data?` у `TelemetryUnpackerService` (per-packet integrity). Альтернативний Path 1 (oracle-driven per-telemetry mint) тригериться `ChainlinkDispatchWorker` → `MintCarbonCoinWorker`. Cross-ref: [`05_02 §Усі Шляхи до lock_and_mint! [DOC.7]`](05_02_Proof_of_Growth_Pipeline). |
+| **Послуга надана** (дерево здорове, Z в межах норми) | `growth_points` ≥ 0, `stress_index < 0.83` | `TokenomicsEvaluatorWorker` (щогодинний cron) → `EvaluateTreeBatchWorker` → `Wallet#lock_and_mint!` → `BlockchainMintingService` (`telemetry_log: nil` для Path 2) | `SilkenCarbonCoin.sol` | `mint(to, amount, treeDid)` / `batchMint` | Інвестор отримує SCC на `Wallet.crypto_public_address`. **Guards (Path 2 — tokenomics aggregate):** `hadron_kyc_status = "approved"` (єдиний обов'язковий perimeter); `verified_by_iotex?` / `oracle_status` свідомо пропускаються — `growth_points` вже зараховані через AES-256-CBC decrypt + `valid_sensor_data?` у `TelemetryUnpackerService` (per-packet integrity). Альтернативний Path 1 (oracle-driven per-telemetry mint) — **латентний**: `ChainlinkDispatchWorker` dispatch = local-marker без RPC, callback unwired ([`00_07` ARCH.53](00_07_Action_Plan_Tracker)); живий мінт-шлях = Path 2 (вище). Cross-ref: [`05_02 §Усі Шляхи до lock_and_mint! [DOC.7]`](05_02_Proof_of_Growth_Pipeline). |
 | **Пакетна емісія** (ціла лісова ділянка) | Batch з ≤100 дерев | `MintCarbonCoinWorker` (Gas Saving Mode) | `SilkenCarbonCoin.sol` | `batchMint(recipients[], amounts[], treeDids[])` | Масова емісія для всього кластера |
 | **Дерево під стресом** (`stress_index ≥ 0.83`) | AiInsight.stress_index | `ClusterHealthCheckWorker` | — | Облік у D-MRV арбітражі | Якщо >20% кластера — тригер слешингу |
-| **Порушення контракту** (>20% дерев аномальні) | `critical_insights_count > total_active_count / 5` | `ClusterHealthCheckWorker` (тригериться через `InsightBatchCallbacks#on_success` — коли всі `GenerateClusterInsightWorker` за добу зелені) → `BurnCarbonTokensWorker` | `SilkenCarbonCoin.sol` | `slash(investor, amount)` (gated) | [SLASH-1] **positive-A gate** ([`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)): прямий доказ Кат-A (tamper `vandalism_breach`) → SCC спалюються + `status = :breached`; інакше → `:frozen` + Field-Audit `EwsAlert` (no burn, контракт лишається активним до C→A класифікації) |
+| **Порушення контракту** (>20% дерев аномальні) | `critical_insights_count > total_active_count / 5` | `ClusterHealthCheckWorker` (тригериться через `InsightBatchCallbacks#on_success` — коли всі `GenerateClusterInsightWorker` за добу зелені) → `BurnCarbonTokensWorker` | `SilkenCarbonCoin.sol` | `slash(investor, amount)` (gated) | [SLASH-1] **positive-A gate** ([`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)): прямий доказ Кат-A (напр. panic-пилка `chainsaw_detected`; авто-writer'а `vandalism_breach` немає) → SCC спалюються + `status = :breached`; інакше → `:frozen` + Field-Audit `EwsAlert` (no burn, контракт лишається активним до C→A класифікації) |
 | **Відсутність даних** (cluster-wide blackout — Starlink/шлюз) | `AiInsight.empty?` для кластера | `ContractHealthCheckService#flag_data_blackout!` | — (no on-chain дія) | `EwsAlert(:field_audit)` | **Force-majeure-сигнатура** (вкрадений/знищений шлюз, блекаут) → Field Audit (Category C), **НЕ** slash — карати лісника за збитий шлюз = false slash ([`05_05 §6`](05_05_Slashing_and_Risk_Policy)) |
 | **Дерево згоріло** (`AiInsight.insight_type = :critical_fire`) | TinyML: `fire` клас | `EcosystemHealingWorker` → `InsurancePayoutWorker` | `SilkenCarbonCoin.sol` або Etherisc DIP | `mint(to, payout)` або `triggerClaim()` | Параметричне страхування активується |
 | **Посуха** (`extreme_drought`) | `AiInsight.insight_type = :extreme_drought` | `InsurancePayoutWorker` | `SilkenCarbonCoin.sol` або Etherisc DIP | `mint(to, payout)` або `triggerClaim()` | Параметрична виплата |
@@ -317,7 +317,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 - **Service Level Agreement (SLA)** — параметри якості: час реакції на інциденти, uptime гарантії, умови відшкодування при недоступності системи.
 - **Subscription Order Form** — документ на конкретний `NaasContract` (кластер, тривалість, `total_funding`, `cancellation_terms`).
 
-**Дія:** Залучення юридичного консультанта (бажано з досвідом Web3 / ReFi) для підготовки шаблонів. **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович, к.ю.н., доцент кафедри публічного та приватного права) — розробка шаблонів MSA, Term Sheet та Carbon Credit Purchase Agreement згідно з MiCA та українським законодавством. Детально: [`08_02 §5`](08_02_Academic_Institutions_Registry).
+**Дія:** Залучення юридичного консультанта (бажано з досвідом Web3 / ReFi) для підготовки шаблонів. **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович, к.ю.н., віцепрезидент СЄУ — господарське/комерційне право) — розробка шаблонів MSA, Term Sheet та Carbon Credit Purchase Agreement згідно з **українським господарським правом** (його фах); EU/MiCA-складова → профільний крипто/IP-юрист TBD. Детально: [`08_02 §5`](08_02_Academic_Institutions_Registry).
 
 ---
 
@@ -346,7 +346,7 @@ Polygon Hadron Identity Platform надає технічну верифікац�
 - Яка юрисдикція? (ЄС — AMLD5, США — BSA, міжнародні — FATF)
 - Скільки коштує ліцензія на надання таких послуг?
 
-**Дія:** ⚖️ вибір KYC-провайдера (Sumsub / Veriff / Polygon Hadron) + юрисдикції (AMLD5/BSA/FATF) = рішення у [`00_07`](00_07_Action_Plan_Tracker) BIZ.20 (entity+KYC-counterparty) та BIZ.11 (Hadron KYC-flow) — не окремий item. Консультація compliance + **академічний шлях:** СЄУ (Аблязов Денис Едуардович) — юридична рамка KYC/AML для B2B клієнтів у контексті ERC-3643 та AMLD5/FATF регулювань; СЄУ (Ус Галина Олександрівна) — бухгалтерська класифікація KYC витрат та compliance-процесів у корпоративному обліку. Детально: [`08_02 §5`](08_02_Academic_Institutions_Registry).
+**Дія:** ⚖️ вибір KYC-провайдера (Sumsub / Veriff / Polygon Hadron) + юрисдикції (AMLD5/BSA/FATF) = рішення у [`00_07`](00_07_Action_Plan_Tracker) BIZ.20 (entity+KYC-counterparty) та BIZ.11 (Hadron KYC-flow) — не окремий item. Консультація compliance + **академічний шлях:** СЄУ (Аблязов Денис Едуардович) — **UA-правова** рамка KYC/AML для B2B клієнтів; EU-складова (ERC-3643 / AMLD5 / FATF) → профільний крипто-юрист TBD; облік KYC-витрат — СЄУ (Гедз М.Й., фінансовий облік криптоактивів). Детально: [`08_02 §5`](08_02_Academic_Institutions_Registry).
 
 ---
 
@@ -360,14 +360,14 @@ Polygon Hadron Identity Platform надає технічну верифікац�
 - Bridge фіат → купівля SCC → `esg_retired_balance` (незворотно) → сертифікат.
 - Audit-trail ретайрменту (Filecoin immutable archive — нот.18) для регуляторного звіту.
 
-**Дія:** юридична рамка SPV — СЄУ (Аблязов Д., RWA/MiCA) + бухгалтерія — СЄУ (Ус Г.). Cross-ref [`08_02 §5`](08_02_Academic_Institutions_Registry).
+**Дія:** юридична рамка SPV — СЄУ (Аблязов Д., UA господарське право; MiCA/EU-складова → крипто-юрист TBD) + облік — СЄУ (Гедз М.Й., фінансовий облік криптоактивів). Cross-ref [`08_02 §5`](08_02_Academic_Institutions_Registry).
 
 ---
 
 
 ### Відсутній DAO Governance процес для SFC
 
-**Статус:** SFC контракт задеплоєно, механізм голосування — не визначено.
+**Статус:** SFC контракт code-complete (ще не задеплоєно), механізм голосування — не визначено.
 
 SilkenForestCoin має `ERC20Votes` (checkpoint-based voting power), але:
 
@@ -431,7 +431,7 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 ### Відсутнє Company-Level E&O / Liability-Страхування (BIZ.21)
 
-**Статус:** INS.1 (параметричне) + DAO Treasury Pool страхують КЛІЄНТА від деградації лісу; professional-liability самого SilkenNet/founder — відсутня.
+**Статус:** INS.1 (параметричне) + DAO Treasury Pool за дизайном страхують КЛІЄНТА від деградації лісу (механіка inert — kill-switch off); professional-liability самого SilkenNet/founder — відсутня.
 
 Специфікація артефакту: E&O/general-liability coverage (D-MRV-accuracy dispute · anchor-install injury третьої особи · carbon-credit-claim dispute); Certificate of Insurance = signing-exhibit B2B-MSA-due-diligence. Юрисдикція залежить від BIZ.20-entity.
 
@@ -467,9 +467,9 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 | Аспект | Поточний стан |
 |---|---|
-| **Бізнес-логіка (код)** | ✅ Повністю реалізована: lifecycle, slashing, insurance, early exit |
-| **On-chain механіка** | ✅ SCC mint/slash на Amoy testnet; mainnet заблоковано |
-| **D-MRV підкріплення** | ✅ peaq DID + IoTeX ZK + Chainlink + The Graph |
+| **Бізнес-логіка (код)** | ✅ Реалізована: lifecycle, slashing, early exit. Insurance-механіка (oracle/payout) є, але **INERT** — kill-switch off, без prod creation-path полісів |
+| **On-chain механіка** | 🟡 Контракти **code-complete + CI-audited** (Slither/Aderyn/Halmos/Medusa), але **ще НЕ задеплоєно** — placeholder-адреси ([`05_03`](05_03_Tokenomics_SCC_and_SFC)); deploy gated на BIZ.20 інкорпорацію |
+| **D-MRV підкріплення** | peaq DID + IoTeX ZK + The Graph (живі); Chainlink oracle PATH 1 = **latent** (unwired local-marker, ARCH.53) |
 | **B2B продажі** | 🔴 Заблоковано: MSA, SLA, KYC відсутні |
 | **B2C онбординг** | 🔴 Заблоковано: ToS, Privacy Policy відсутні |
 | **CO₂ методологія** | ✅ 2000 SCC = 1 tCO₂ (1 SCC = 0.5 kg CO₂) — on-chain + SystemParameter |
