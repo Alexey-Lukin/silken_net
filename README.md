@@ -85,7 +85,7 @@ Slashing: лише за доведену халатність (cause-gate A/B/C;
 
 ## 🌐 Social API Registry (Зовнішні Стейкхолдери)
 
-Окрім академічного консорціуму ([`08_01`](docs/08_01_Joint_Publications_and_IP_Strategy.md)–[`08_03`](docs/08_03_External_Stakeholders_Registry.md)), проєкт залежить від зовнішніх **non-operational** стейкхолдерів: B2G-гейткіпери (лісівник Дзюбенко, природоохоронець Сегеда), B2B-клієнти (CBAM-офсет для "Азоту", лісосмуги агросектора), метрологія (Чорней — сертифікація SCC) та культурний шар (16 митців національного/локального рівня для Genesis NFT + Data Sonification). Жоден із записів не блокує merge — це outreach pool, що активується за TRL-тригерами. Принцип Zero-Trust: матриця інтерфейсів `(API In, API Out, SSOT-link, Status)` замість сюжетів. Деталі: [`docs/08_03_External_Stakeholders_Registry.md`](docs/08_03_External_Stakeholders_Registry.md) (B2G/B2B Matrix + Cultural Layer). Outreach tasks: [`docs/00_07`](docs/00_07_Action_Plan_Tracker.md) § STK.1–STK.10.
+Окрім академічних партнерів ([`08_01`](docs/08_01_Joint_Publications_and_IP_Strategy.md)–[`08_03`](docs/08_03_External_Stakeholders_Registry.md)), проєкт залежить від зовнішніх **non-operational** стейкхолдерів: B2G-гейткіпери (лісівник Дзюбенко, природоохоронець Сегеда), B2B-клієнти (CBAM-офсет для "Азоту", лісосмуги агросектора), метрологія (Чорней — сертифікація SCC) та культурний шар (16 митців національного/локального рівня для Genesis NFT + Data Sonification). Жоден із записів не блокує merge — це outreach pool, що активується за TRL-тригерами. Принцип Zero-Trust: матриця інтерфейсів `(API In, API Out, SSOT-link, Status)` замість сюжетів. Деталі: [`docs/08_03_External_Stakeholders_Registry.md`](docs/08_03_External_Stakeholders_Registry.md) (B2G/B2B Matrix + Cultural Layer). Outreach tasks: [`docs/00_07`](docs/00_07_Action_Plan_Tracker.md) § STK.1–STK.10.
 
 ---
 
@@ -345,8 +345,8 @@ kamal deploy
 - [`07_01`](docs/07_01_Nature_as_a_Service_Contracts.md) — NaaS контракти та страхування
 - [`07_02`](docs/07_02_Unit_Economics_and_BOM.md) — юніт-економіка та ROI через SCC
 
-**Академічна Інтеграція / Academic & Partnerships (Модуль 08)** — 5 ВНЗ під рамкою MOIC
-- [`08_01`](docs/08_01_Joint_Publications_and_IP_Strategy.md) — MOIC + спільні публікації (Статті 1–29) + стратегія IP
+**Академічна Інтеграція / Academic & Partnerships (Модуль 08)** — 5 ВНЗ-партнерів
+- [`08_01`](docs/08_01_Joint_Publications_and_IP_Strategy.md) — спільні публікації (Статті 1–29) + стратегія IP
 - [`08_02`](docs/08_02_Academic_Institutions_Registry.md) — Реєстр Академічних Інституцій (ЧНУ+ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ: хто → що валідує → канон-дім)
 - [`08_03`](docs/08_03_External_Stakeholders_Registry.md) — External Stakeholders (B2G/B2B + культурний шар; non-hot-path outreach pool)
 
@@ -366,7 +366,7 @@ kamal deploy
 | Апаратна капсула (BOM, MPPT) | 6 | Архітектура заморожена |
 | Ti-6Al-4V гіроїдний анкер | 3 | In-silico: PicoGK Code-as-CAD генерація + Lamé press-fit (safety 9.9×; nTop = опційний reference); фізична DMLS-партія = TRL 4 |
 | EBFC Gen 2.0 (dgrFAD-GDH + Laccase/ZIF) | 3 | **Zero-Lab L1-L4 PASSED** (in-silico = TRL 3; physical TRL 4 = in-vitro Ti-coin; see `docs/protocols/ebfc/in_silico/SUMMARY.md`) |
-| Академічна мережа (ЧНУ+ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ) | 2 | 5 університетів під MOIC, 8 живих Q1-статей (портфель UNI.19) |
+| Академічна мережа (ЧНУ+ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ) | 2 | 5 університетів-партнерів, 8 живих Q1-статей (портфель UNI.19) |
 | Розгортання GCP + Kamal | 4 | Код існує, деплой не проводився |
 
 ---

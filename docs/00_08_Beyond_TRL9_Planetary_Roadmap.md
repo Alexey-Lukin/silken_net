@@ -140,7 +140,7 @@
 | **DAO Governance** | Кожен new biome потребує community vote (SFC) + lab validation slot перш ніж SCC можуть мінтитись з нього | Розширення Slashing v2 на biome-specific stress detection thresholds |
 
 **Партнерські школи:**
-- Спрягайло ([`08_02 §1A`](08_02_Academic_Institutions_Registry)) — extension до інших порід ЧНУ Botanical Hub
+- Спрягайло ([`08_02 §1`](08_02_Academic_Institutions_Registry)) — extension до інших порід ЧНУ Botanical Hub
 - НАН України через школу НБС Гришка (intro Спрягайла, кандидатська 2013) — broadleaf і fruit tree calibration
 
 **SRL/MRL шлях:** `SRL:Concept` (multi-species PoC у 3 lab settings) → `SRL:Pilot` + `MRL:8` (deployed pilots у 3 biomes одночасно, мала серія 5 SKU) → `SRL:Deployed` + `MRL:10` (open framework + повносерійне виробництво per-biome SKU).
@@ -218,11 +218,11 @@ SRL:Deployed ━━━ Verified, formal, planetary-scale autopoiesis ← Silken 
 
 ### 1.8. Cross-references та де ще згадано
 
-- **Gap #1 (Forest Emergence):** деталі у [`03_04 §6.3`](03_04_mruby_Lorenz_Attractor); координація з [`08_02 §1B`](08_02_Academic_Institutions_Registry) (ФОТІУС кібернетика)
+- **Gap #1 (Forest Emergence):** деталі у [`03_04 §6.3`](03_04_mruby_Lorenz_Attractor); координація з [`08_02 §1`](08_02_Academic_Institutions_Registry) (ФОТІУС кібернетика)
 - **Gap #2 (Self-Evolving):** firmware extension у [`03_03 §Y`](03_03_TinyML_Acoustic_Inference) (TinyML online learning) + [`03_04 §Z`](03_04_mruby_Lorenz_Attractor) (mruby GA); безпекова валідація у [`05_03 §SCC Anti-Adversarial`](05_03_Tokenomics_SCC_and_SFC)
 - **Gap #3 (Cross-Biome):** parametric CAD у [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (Stages 2+ extended до 5 biomes); R&D у [`08_02 §1`](08_02_Academic_Institutions_Registry) (Спрягайло + НАН України канал)
 - **Gap #4 (Auto-Immune Sentinel):** розширення Slashing v2 у [`05_05 §6`](05_05_Slashing_and_Risk_Policy) + [`05_06 §5`](05_06_Governance_and_DAO) + Chainlink hardening у [`05_02`](05_02_Proof_of_Growth_Pipeline)
-- **Gap #5 (Planetary Biodiversity):** рішення both/and → [`00_07` E.59](00_07_Action_Plan_Tracker); механіка fauna → [`03_03 §10`](03_03_TinyML_Acoustic_Inference); стратегія/публікація → [`08_01` Стаття 24a](08_01_Joint_Publications_and_IP_Strategy); координація датасету → [`08_02 §1B`](08_02_Academic_Institutions_Registry) (Спрягайло)
+- **Gap #5 (Planetary Biodiversity):** рішення both/and → [`00_07` E.59](00_07_Action_Plan_Tracker); механіка fauna → [`03_03 §10`](03_03_TinyML_Acoustic_Inference); стратегія/публікація → [`08_01` Стаття 24a](08_01_Joint_Publications_and_IP_Strategy); координація датасету → [`08_02 §1`](08_02_Academic_Institutions_Registry) (Спрягайло)
 
 ---
 

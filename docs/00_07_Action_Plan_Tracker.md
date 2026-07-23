@@ -291,7 +291,7 @@
 - [ ] 👤 Втомне тестування Ti-coin Stage 2 (HW.24) — порівняння з/без dehydrogenation bake для підтвердження ефекту; **спільна S-N-крива з HW.23** (Wöhler у соку) → один купон-захід, не два
 
 #### ARCH.25 — Gyroid geometric validation scripts (per-slice / topology / BFS connectivity) [поглинув ARCH.30 2026-07-16]
-- **P2** · 🤖 · 🟢 · → `01_02 §6`, `08_02 §1B`
+- **P2** · 🤖 · 🟢 · → `01_02 §6`, `08_02 §1`
 - **Стан:** Машинну половину закрито self-owned — двофазний топологічний аудит гіроїда (`tools/cad/Connectivity.cs`, pure-managed display-less xUnit): один flood-fill = обчислювальний прокси чотирьох лаб-тестів (open-pore/percolation/solid-island/closed-pore) + adaptive-resolution застереження + робоче вікно `wallParam` — повний design-justification у каноні [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS). Topology measured, not assumed. Партнерська CFD/польова нога — far-horizon, self-own за потреби.
 - [ ] 🔗 C++/CFD topological-integrity mesh + Akash GPU (**[поглинув ARCH.30]** far-horizon domain-decomp CFD — `Connectivity.cs` flood-fill + tortuosity-proxy вже покривають topology, канон [`01_01 §5.5`](01_01_Coaxial_Gyroid_Topology_and_PEEK) заморозив flow-orientation як «маргінальну для бінеперервного гіроїда») — self-own за потреби
 - [ ] 🤖 deferred (nice-to-have): Euler-χ крос-чек · tortuosity (random-walk на percolated cluster) · voxel-cross-check на as-printed grid (не лише SDF-intent)
@@ -691,7 +691,7 @@
 
 #### E.59 — Biodiversity як 2-й D-MRV вимір (acoustic fauna, Mongabay) [strategic] [кластер:fauna:дім]
 - **P1** · 🤖+👤 · 🔗 · → `03_03 §10`, `08_01 §1`
-- **Стан:** biodiversity = ДРУГИЙ D-MRV вимір ПОВЕРХ carbon-core (both/and, НЕ заміна), acoustic — після Delgado et al. (Nicoya, 119 ділянок, 16000 год аудіо; Mongabay, тр. 2026). Defensible moat проти Pachama/Sylvera/NCX (єдиний micro-acoustic verification layer). **Присуд (ратифіковано 2026-07-20, founder):** вуглець (`growth_points`→SCC) лишається ЯДРОМ економіки; fauna = 5-й акустичний клас + `biodiversity_score` метадані ForestNFT (окремий шар доказу, не інший токен); «pivot» у назві = історичне перебільшення, рамка = «друге вухо». Firmware-фундамент shipped (log-mel FW.25 → §🗄️; fauna-інфра FW.42/ARCH.40 host-done) — сам вимір gated датасетом/академіками + FW.50 (не firmware-/рішення-gated). Координує вже-трековані: FW.4-EXT (5-class TinyML + `fauna_activity`), UNI.11+UNI.13a (Cherkasy Soundscape Library), 08_01 Стаття 24a. Канон `03_03 §10` + `08_01 §1/§2` + `08_02 §1B`.
+- **Стан:** biodiversity = ДРУГИЙ D-MRV вимір ПОВЕРХ carbon-core (both/and, НЕ заміна), acoustic — після Delgado et al. (Nicoya, 119 ділянок, 16000 год аудіо; Mongabay, тр. 2026). Defensible moat проти Pachama/Sylvera/NCX (єдиний micro-acoustic verification layer). **Присуд (ратифіковано 2026-07-20, founder):** вуглець (`growth_points`→SCC) лишається ЯДРОМ економіки; fauna = 5-й акустичний клас + `biodiversity_score` метадані ForestNFT (окремий шар доказу, не інший токен); «pivot» у назві = історичне перебільшення, рамка = «друге вухо». Firmware-фундамент shipped (log-mel FW.25 → §🗄️; fauna-інфра FW.42/ARCH.40 host-done) — сам вимір gated датасетом/академіками + FW.50 (не firmware-/рішення-gated). Координує вже-трековані: FW.4-EXT (5-class TinyML + `fauna_activity`), UNI.11+UNI.13a (Cherkasy Soundscape Library), 08_01 Стаття 24a. Канон `03_03 §10` + `08_01 §1/§2` + `08_02 §1`.
 - [ ] 🔗 FW.4-EXT 5-class `fauna_activity` — дім = FW.4 (🌿-чекбокс); gated UNI.11+UNI.13a dataset
 - [ ] 🤖 AiInsight#biodiversity_trend → ForestNFT metadata "biodiversity_score" (`04_02`) — gated fauna-сигналом (FW.4-EXT/UNI-датасет): зараз enum-only (`InsightGeneratorService` пише лише `daily_health_summary`), метадані без джерела = передчасні (патерн FW.42-Grafana)
 - [ ] 🔗 координація UNI.11/UNI.13a (soundscape) + 08_01 Стаття 24a
@@ -1444,8 +1444,8 @@
 > Юридично-бізнесовий work-stream — канон `07_xx`. NB: пов'язані BIZ-айтеми за канон-домом живуть у `§05` (BIZ.13 slashing).
 
 #### BIZ.20 — Немає юридичної особи «Silken Net» (undefined MSA/grant/trademark counterparty)
-- **P1** · 🤖+👤 · ⚪ · → `07_01 §8`, `08_01 §0.1`
-- **Стан:** Немає операційної юр-особи «Silken Net». DAO-legal-wrapper + RWA-jurisdiction (Swiss Verein / Zug / Wyoming) — відкриті, недовирішені ([`07_01 §8`](07_01_Nature_as_a_Service_Contracts) «Дія»). `/NOTICE` вестить copyright на фіз-особу «Oleksii Lukin»; `08_01 §0.1` кастить «Silken Net» окремим актором (IP holder + integrator), але жоден канон не каже, яка юр-форма. Не академічно: BIZ.2 MSA потребує названого counterparty, UNI.15 — trademark-заявника, anchor-install кримінальна exposure («втручання в держмайно»), що неінкорпорований несе особисто без liability-щита. **🤖-half:** чернетка entity-option matrix (юрисдикція × тип × вартість × грант/RWA/MiCA-сумісність); 👤 = рішення+реєстрація (СЄУ Аблязов). Канон `08_01 §0.1`, `07_01 §8`. **BIZ.20-close = подієвий тригер re-visit Web3/академ-грант-треку** (⚖️ founder 2026-07-18: трек opportunistic-passive — активного айтема нема, дія народжується з відповіді фонду; re-visit при появі юр-особи-заявника АБО першому SCC-мінті. Horizon-вектор знято 2026-07-23; grant≠інтеграція — chains живі `§05` permissionless).
+- **P1** · 🤖+👤 · ⚪ · → `07_01 §8`, `08_01 §2`
+- **Стан:** Немає операційної юр-особи «Silken Net». DAO-legal-wrapper + RWA-jurisdiction (Swiss Verein / Zug / Wyoming) — відкриті, недовирішені ([`07_01 §8`](07_01_Nature_as_a_Service_Contracts) «Дія»). `/NOTICE` вестить copyright на фіз-особу «Oleksii Lukin»; `08_01 §2` кастить «Silken Net» окремим актором (IP holder + integrator), але жоден канон не каже, яка юр-форма. Не академічно: BIZ.2 MSA потребує названого counterparty, UNI.15 — trademark-заявника, anchor-install кримінальна exposure («втручання в держмайно»), що неінкорпорований несе особисто без liability-щита. **🤖-half:** чернетка entity-option matrix (юрисдикція × тип × вартість × грант/RWA/MiCA-сумісність); 👤 = рішення+реєстрація (СЄУ Аблязов). Канон `08_01 §2`, `07_01 §8`. **BIZ.20-close = подієвий тригер re-visit Web3/академ-грант-треку** (⚖️ founder 2026-07-18: трек opportunistic-passive — активного айтема нема, дія народжується з відповіді фонду; re-visit при появі юр-особи-заявника АБО першому SCC-мінті. Horizon-вектор знято 2026-07-23; grant≠інтеграція — chains живі `§05` permissionless).
 - [ ] 🤖 чернетка entity-option matrix (юрисдикція UA/EU/Zug/Wyoming × тип × вартість × грант/RWA/MiCA-fit; + SPV-вісь для BIZ.15) → живить рішення
 - [ ] ⚖️ обрати + інкорпорувати операційну особу (Аблязов) — counterparty для BIZ.2/грантів/trademark/liability
 
@@ -1503,8 +1503,8 @@
 - [ ] 👤 (опц.) публічний status-page (external synthetic uptime — дотично INF.22 O3)
 
 #### BIZ.19 — «SCC = CBAM-офсет» стоїть на неперевіреній (ймовірно хибній) регуляторній премісі
-- **P2** · 👤 · 🟡 · → `07_01 §8`, `08_03 §5.2`
-- **Стан:** 🤖-присуд (2026-07-14, висока впевненість, потребує юр-підтвердження): **SCC-retirement ≠ CBAM-reduction** — CBAM Reg. (EU) 2023/956 Art.9 знижує обов'язок імпортера лише вуглецевою ціною, СПЛАЧЕНОЮ виробником у країні походження (ETS-еквівалент), НЕ купівлею/retirement voluntary-credits (поширена плутанина compliance-ринку з добровільним). → Позиціонувати SCC як **voluntary Scope 1-3 / net-zero-disclosure**, НЕ CBAM-compliance; **не пітчити CBAM Азоту до юр-звірки** (репутаційний ризик — юр-неправда CFO). Аналіз + reframe у каноні done → [`cbam_offset_analysis.md`](../protocols/business/cbam_offset_analysis.md) + ⚠️-caveat у `07_01 §8` / `08_03 §5.2`.
+- **P2** · 👤 · 🟡 · → `07_01 §8`, `07_01 §8`
+- **Стан:** 🤖-присуд (2026-07-14, висока впевненість, потребує юр-підтвердження): **SCC-retirement ≠ CBAM-reduction** — CBAM Reg. (EU) 2023/956 Art.9 знижує обов'язок імпортера лише вуглецевою ціною, СПЛАЧЕНОЮ виробником у країні походження (ETS-еквівалент), НЕ купівлею/retirement voluntary-credits (поширена плутанина compliance-ринку з добровільним). → Позиціонувати SCC як **voluntary Scope 1-3 / net-zero-disclosure**, НЕ CBAM-compliance; **не пітчити CBAM Азоту до юр-звірки** (репутаційний ризик — юр-неправда CFO). Аналіз + reframe у каноні done → [`cbam_offset_analysis.md`](../protocols/business/cbam_offset_analysis.md) + ⚠️-caveat у `07_01 §8` / `07_01 §8`.
 - [ ] 👤 юр-підтвердження (Аблязов, ~30 хв — Art.9 + UA-ETS-статус + SCC-як-Scope-3, на UNI.14/16-консультації) → повний reframe caveat→resolved + оновити Азот-пітч
 
 #### BIZ.21 — Немає company-level E&O / liability-страхування (≠ INS.1 параметричний продукт)
@@ -1641,14 +1641,9 @@
 - **Стан:** Не почато (trigger: TRL 6 у `05_02`) — землевпорядник для RWA-кадастр oracle: сервітут під Queen-щоглу + кадастровий oracle; ім'я не верифіковане (Сіроштан — перевірити). Канон `08_03 §2.3`.
 - [ ] 👤 identify candidate (cross-ref Аблязов UNI.14)
 
-#### STK.6 — Tier 4 B2B: ПрАТ "Азот" — CBAM offset + хімічний scale-up
-- **P2** · 👤 · ⚪ · → `08_03 §5.2`
-- **Стан:** Не почато (trigger: TRL 7 у `05_02`, live SCC mint) — ПрАТ «Азот»: першочерговий B2B SCC-клієнт (⚠️ CBAM-офсет — неперевірена преміса [BIZ.19] → voluntary Scope до юр-звірки) + канал на scale-up осмієвих полімерів EBFC (І. Кухоль, О. Хуторний). Канон `08_03 §5.2`.
-- [ ] 👤 ESG officer cold-contact → CBAM model (`07_02`) → EBFC scale-up feasibility (`08_02 §4`)
-
 #### STK.10 — Cultural Tier C (Media): Калініченко / Душок (ТРК Ільдана) — PR shield
-- **P2** · 👤 · ⚪ · → `08_03 §11.3`
-- **Стан:** Не почато (trigger: перед першою публічною інсталяцією) — Калініченко/Душок (ТРК Ільдана): превентивний інфо-фон проти екопанік («чіпують дерева»); Калініченко — викладач ЧНУ, міст із `08_01`. Канон `08_03 §11.3`.
+- **P2** · 👤 · ⚪ · → `08_02 §1`
+- **Стан:** Не почато (trigger: перед першою публічною інсталяцією) — Калініченко/Душок (ТРК Ільдана): превентивний інфо-фон проти екопанік («чіпують дерева»); Калініченко — викладач ЧНУ, міст із `08_01`. Канон `08_02 §1`.
 - [ ] 👤 через ЧНУ (Спрягайло) перший контакт → документальний міні-сюжет про DMLS-друк (post-prototype)
 
 ## 🔀 Cross-cutting · Doc-drift (DOC-T) — SSOT doc↔code + tracker form/tooling
