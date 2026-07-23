@@ -4,7 +4,7 @@
 
 Легітимізація технології Silken Net у світовому науковому просторі та юридичне закріплення прав на інтелектуальну власність у межах співпраці ЧНУ та Silken Net. Формування системи публікацій, що охоплює весь технологічний стек від фізики анкера до математики токеноміки.
 
-> **Принцип партнерства:** Silken Net надає інноваційний R&D-полігон. ЧНУ надає академічну легітимність та лабораторну інфраструктуру. Обидві сторони отримують максимум при мінімальних витратах.
+> **Принцип партнерства:** Silken Net надає інноваційний R&D-полігон. ЧНУ надає академічну легітимність та лабораторну інфраструктуру.
 
 > **Карта документа** (cluster head Модуля 08, ~4 блоки): **§0** MOIC — місія/архітектура кластера · **§1–§1E** план публікацій (per-ВНЗ; нумерація рідка — діри = вилучені статті, номери НЕ перевикористовуються заради crossref-стабільності) · **§2–§2.1** IP-рамка (розподіл прав + TISC/trademark/юр-review). Реєстр самих ВНЗ-партнерів (хто / що валідує) — [`08_02`](08_02_Academic_Institutions_Registry); зовнішні стейкхолдери — [`08_03`](08_03_External_Stakeholders_Registry).
 
@@ -36,7 +36,7 @@
 - [1. План Публікацій (Scopus / Web of Science)](#-1-план-публікацій-scopus--web-of-science)
 - [1B. Публікації ЧДТУ (Data Science)](#-1b-публікації-чдту-data-science)
 - [1C. Міжуніверситетські Публікації (ЧНУ ФОТІУС × ЧДТУ)](#-1c-міжуніверситетські-публікації-чну-фотіус--чдту)
-- [1E. Публікації ЧМА (Біохімія EBFC, Токсикологія, Ксилемоінтеграція)](#-1e-публікації-чма-біохімія-ebfc-токсикологія-ксилемоінтеграція)
+- [1E. Публікації ЧМА (Біохімія EBFC, Токсикологія)](#-1e-публікації-чма-біохімія-ebfc-токсикологія)
 - [2. Розподіл Інтелектуальної Власності (IP Framework)](#-2-розподіл-інтелектуальної-власності-ip-framework)
 - [2.1. IP-інструменти (TISC-консультація + trademark + UA-юр-review)](#-21-ip-інструменти-tisc-консультація--trademark--ua-юр-review)
 <!-- TOC:AUTO:END -->
@@ -88,6 +88,7 @@ SilkenNet об'єднує сім академічних та індустріа�
 
 3. **Держава / регулятор / end-user.**
    Не пасивний споживач, а **третя вершина спіралі**: Черкаська ОДА (Стратегія розвитку області, ПЗФ-інтеграція через Спрягайла, [`08_02 §1A`](08_02_Academic_Institutions_Registry)), ДСНС (інтеграція EwsAlert через ЧІПБ, [`08_02 §3`](08_02_Academic_Institutions_Registry)), європейські реєстри (ISO 14064 / ICROA mapping — профільний carbon-методолог, [`00_07` BIZ.9](00_07_Action_Plan_Tracker)).
+   > **Чесно (симетрично п.2):** контакти опосередковані (ОДА → через Спрягайла, ДСНС → через ЧІПБ) або TBD (carbon-методолог ще не залучений) — прямого MoU з жодним із цих вузлів не підписано.
 
 ### 0.3. Hard Science Layer ↔ Business Layer (Ортогональна Карта)
 
@@ -100,7 +101,7 @@ SilkenNet об'єднує сім академічних та індустріа�
 |-----|-------|--------------------|---------------------|---------------|
 | **ЧНУ (ректорат + hard-science школи)** | Hard Science | Фізика твердого тіла (Гусак), квантова хімія (Мінаєв), біоценологія/дендрологія (Спрягайло, Гаврилюк), кібернетика ФОТІУС (Ярмілко, Косенюк, Любченко) + інституційна парасоля (Спрягайло) | [`08_02 §1`](08_02_Academic_Institutions_Registry) | [§1, §1C](#-1-план-публікацій-scopus--web-of-science) |
 | **ЧДТУ (3 кафедри)** | Hard Science | Data Science та статистика (Карапетян, кафедра статистики), радіофізика/signal-processing (Гончаров — перший проректор ЧДТУ, каф. РТРС), акустична мехатроніка та п'єзохарактеризація (Базіло, Бондаренко, ПМКТ) | [`08_02 §2`](08_02_Academic_Institutions_Registry) | [§1B](#-1b-публікації-чдту-data-science) |
-| **ЧМА** | Hard Science | Токсикологія Ti-6Al-4V (Суховий), фітотоксикологія покриттів (Глущенко), фарм-стабілізація ферментів (Бушуєва — дотично); глибока EBFC-ензимологія → профільний біохімік (TBD); інституційний доступ — персонально | [`08_02 §4`](08_02_Academic_Institutions_Registry) | [§1E](#-1e-публікації-чма-біохімія-ebfc-токсикологія-ксилемоінтеграція) |
+| **ЧМА** | Hard Science | Токсикологія Ti-6Al-4V (Суховий), фітотоксикологія покриттів (Глущенко), фарм-стабілізація ферментів (Бушуєва — дотично); глибока EBFC-ензимологія → профільний біохімік (TBD); інституційний доступ — персонально | [`08_02 §4`](08_02_Academic_Institutions_Registry) | [§1E](#-1e-публікації-чма-біохімія-ebfc-токсикологія) |
 | **ЧІПБ** | Business (regulated safety) | SOP реагування ДСНС на кіберфізичні тривоги: диспетчеризація + drone-розвідка (Биченко — тактика гасіння), SOP per alert_type (Ротар — правова регламентація) | [`08_02 §3`](08_02_Academic_Institutions_Registry) | [`00_07` ARCH.31/UNI.12](00_07_Action_Plan_Tracker) |
 | **СЄУ** | Business | UA-правова рамка RWA + господарське право (Аблязов Д.), фінансовий облік криптоактивів (Гедз), цифрова економіка + моделювання (Ус); дизайн — self | [`08_02 §5`](08_02_Academic_Institutions_Registry) | — |
 | **Silken Net + ActiveBridge** | Mission Controller | IP holder, system integrator, firmware/backend/contracts, фінальна інтеграція WP1–WP9 у TRL 8 продукт | [`08_02 §5`](08_02_Academic_Institutions_Registry), [`07_03`](07_03_Grant_Applications_Tracker) | — |
@@ -113,8 +114,8 @@ MOIC додає до кожного технічного твердження п
 
 | Параметр | Без MOIC | З MOIC |
 |----------|----------|--------|
-| Кожен параметр смарт-контракту (`MAX_SUPPLY=1B SCC`, `FRAUD_DEVIATION_THRESHOLD=30%`, `Dynamic Tax=2%`) | Код стартапу | + Q1-публікація + лабораторний тест профільного інституту |
-| Кожен хардверний вузол (тризонний Ti-6Al-4V анкер з Zone 1 гіроїд / Zone 2 PEEK + mechanical lock barbs / Zone 3 фланець з anti-overgrowth shield, **EBFC Gen 2.0** — dgrFAD-GDH + Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA + Laccase/ZIF-nanozyme DET, BQ25570 MPPT, SX1262 LoRa, PEEK-радом IoT-капсули з super-hydrophobic coating) | Концепт | + DFT/FEM/ICP-MS/VNA/EMC дані з акредитованих лабораторій |
+| Кожен ключовий системний параметр (смарт-контракт: `MAX_SUPPLY=1B SCC`, `Dynamic Tax=2%`; backend anti-fraud: `FRAUD_DEVIATION_THRESHOLD=30%`) | Код стартапу | + Q1-публікація + лабораторний тест профільного інституту |
+| Кожен хардверний вузол (тризонний Ti-6Al-4V анкер з Zone 1 гіроїд / Zone 2 PEEK + mechanical lock barbs / Zone 3 фланець з anti-overgrowth shield, **EBFC Gen 2.0** — dgrFAD-GDH + Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA + Laccase/ZIF-nanozyme DET, BQ25570 MPPT, SX1262 LoRa, PEEK-радом IoT-капсули з anti-overgrowth-захистом радома — super-hydrophobic-покриття = кандидат ⚖️, не зафіксовано) | Концепт | + DFT/FEM/ICP-MS/VNA/EMC дані з акредитованих лабораторій |
 | D-MRV pipeline як замінник Verra/Gold Standard | Вимога довіри | + ISO 14064 / ICROA mapping (профільний carbon-методолог, [`00_07` BIZ.9](00_07_Action_Plan_Tracker)) |
 | Біорізноманіттєвий шар | NDVI-only | + acoustic ground-truth (Mongabay pivot, Стаття 24a) + ботанічна валідація (Спрягайло) |
 
@@ -128,7 +129,7 @@ MOIC додає до кожного технічного твердження п
 | [`08_02 §1`](08_02_Academic_Institutions_Registry) | ЧНУ — Hard Science (§1A: фізика/хімія/біологія) + ФОТІУС (§1B: mruby-Lorenz-аудит + GA/NSGA-II ML) | Лабораторні протоколи + матем. основа Статей 1, 2, 23, 24, 24a, 28, 29 |
 | [`08_02 §2`](08_02_Academic_Institutions_Registry) | Data / RF / Acoustics ortho-niche (ЧДТУ) | 3 кафедри ЧДТУ |
 | [`08_02 §3`](08_02_Academic_Institutions_Registry) | Regulated Safety ortho-niche (ЧІПБ) | Інтеграція з ДСНС, fire model, SOP |
-| [`08_02 §4`](08_02_Academic_Institutions_Registry) | Biomedical ortho-niche (ЧМА) | EBFC біохімія, токсикологія, ксилемоінтеграція |
+| [`08_02 §4`](08_02_Academic_Institutions_Registry) | Biomedical ortho-niche (ЧМА) | EBFC біохімія, токсикологія |
 | [`08_02 §5`](08_02_Academic_Institutions_Registry) | Business Layer (СЄУ: право (Аблязов) / облік (Ус, Гедз)) | Horizon-заявки; консорціум-лідерство → ЧНУ Спрягайло ([`07_03`](07_03_Grant_Applications_Tracker)) |
 | [`08_03`](08_03_External_Stakeholders_Registry) | External Stakeholders (B2G/B2B + культурний шар) | Не академічні партнери — поза MOIC core |
 
@@ -148,7 +149,7 @@ MOIC додає до кожного технічного твердження п
 
 ### Стаття 1: Електрон-трансферна енергетика EBFC Gen 2.0 (квантова хімія, Пріоритет: Перша)
 
-> ⚠️ **Переформульовано (2026-06-05) — чесна рамка замість overclaim.** Стара назва *"Quantum-Chemical **Validation**…"* суперечила власним результатам L3: сирий обчислювальний вердикт каскаду FADH₂→Os — **uphill у кожному методі** (B3LYP Koopmans −1.05 eV на реальному dimethyl-медіаторі; ωB97X ΔSCF adiabatic +1.03 eV dimethyl / +0.88 eV plain, B1/B2 ✅), а downhill — це **верифіковані E°s** (+574 мВ: Os +309 − FAD-GDH −265 мВ SHE, Zafar 2012 + Schachinger 2023); стара «−0.07 ≈ −0.14 (Cosnier)» bias-корекція стояла на хибному +60 мВ FAD і **withdrawn**. Тобто обчислення не «валідує» — воно експонує межу методу; «validation» = reviewer-landmine. Переорієнтовано на **механізм + межі методу** (повний аудит — `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md`). _Історія:_ під Gen 2.0 переписано 2026-05-28 зі старої Gen 1.0 «Streaming Potential» (відкинута); ICP-MS Ti/Al/V → Стаття 2.
+> ⚠️ **Переформульовано (2026-06-05) — чесна рамка замість overclaim.** Стара назва *"Quantum-Chemical **Validation**…"* суперечила власним результатам L3: сирий обчислювальний вердикт каскаду FADH₂→Os — **uphill у кожному методі** (B3LYP Koopmans −1.05 eV на реальному dimethyl-медіаторі; ωB97X ΔSCF adiabatic +1.03 eV dimethyl / +0.88 eV plain, B1/B2 ✅), а downhill — це **верифіковані E°s** (+574 мВ: Os +309 − FAD-GDH −265 мВ SHE, Zafar 2012 + Schachinger 2023); стара «−0.07 ≈ −0.14 (Cosnier)» bias-корекція стояла на хибному +60 мВ FAD і **withdrawn**. Тобто обчислення не «валідує» — воно експонує межу методу; «validation» = reviewer-landmine. Переорієнтовано на **механізм + межі методу** (повний аудит — `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md`). (ICP-MS Ti/Al/V перенесено → Стаття 2.)
 
 **Назва (EN):** _"Computational Electron-Transfer Energetics of a FAD–Osmium Enzymatic Biofuel Cell: PCET Redox Potentials, Mediator Structure–Activity, ZIF-Nanozyme Direct Electron Transfer, and the Limits of Implicit-Solvation DFT"_
 
@@ -224,7 +225,7 @@ MOIC додає до кожного технічного твердження п
 |-------|--------|
 | **Косенюк Г.В.** (ЧНУ ФОТІУС) | Аналітичний розрахунок імпедансу, FEKO/CST моделювання діаграми спрямованості, LC-узгодження; Link Budget LoRa у лісі (SF=7–9, [`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM)); 3D-діаграма з Ti-анкером (Zone 1 + Zone 3 фланець) як Ground Plane; CE/FCC compliance roadmap |
 | **Гончаров А.В.** (ЧДТУ, перший проректор, каф. РТРС) | VNA-виміри S11 реальної зборки, натурні вимірювання path loss у лісі, EMC pre-compliance тестування |
-| **Ярмілко А.В.** (ЧНУ ФОТІУС) | Крипто-навантаження того самого LoRa-хопа: аналіз впливу автентифікованого шифрування (CCM-MIC / довжина кадру) на airtime-бюджет |
+| **Ярмілко А.В.** (ЧНУ ФОТІУС) | Engaged-партнер (lightweight crypto / embedded; вхід у ректорат). Airtime↔CCM tradeoff = spot-check нашого self-own розрахунку (CCM = FW.2, airtime = наша LoRa-формула), не незалежна валідація; far-horizon PQC-консультації |
 | Каф. РТРС (радіотехніка) | Лабораторна інфраструктура: VNA, EMC-камера, вимірювальні стенди |
 | Архітектор (Silken Net) | STM32WLE5JC RF-конфігурація, PEEK-радом IoT-капсули (∅25 мм frozen, IP68 — **окрема деталь, не PEEK-втулка Zone 2** анкера; anti-overgrowth shield + 3D RF Keep-Out ≥8 мм Z-clearance проти Ti-фланця), Ti-6Al-4V Ground Plane, firmware radio driver, EBFC Gen 2.0 як джерело живлення (>500 мВ, <500 мкВт — [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)) |
 
@@ -276,10 +277,10 @@ _«Дослідження акустичних властивостей пори
 
 | Автор | Афіліація | Внесок |
 |-------|-----------|--------|
-| **Любченко К.М.** (ЧНУ ФОТІУС) | Genetic Algorithms, Edge AI, Master of Logic | NSGA-II tuning ваг 5-class TinyML (метод generic pymoo; модель — наша self-owned end-to-end, [`00_07` FW.4](00_07_Action_Plan_Tracker)); циркадно-залежні confidence thresholds (dawn vs dusk) |
+| **Любченко К.М.** (ЧНУ ФОТІУС) | Genetic Algorithms, Edge AI, Master of Logic | Опційний GA-tuning ваг (generic pymoo NSGA-II на нашій self-owned моделі — self-generable апгрейд, **НЕ** load-bearing валідація; [`00_07` FW.4](00_07_Action_Plan_Tracker) «опц., не блокер»). Реальні двері = 2 магістерські-теми (студентська GA-робота) |
 | **Базіло К.В.** (ЧДТУ ПМКТ) | П'єзоелектрика, EIS-характеризація | Резонансні характеристики п'єзосенсора у діапазоні фауни 0.5–12 кГц; калібрування АЧХ під soundscape |
 | **Бондаренко М.О.** (ЧДТУ ПМКТ) | Acoustic Emission, мікродеформації | AE-методологія для розрізнення layered soundscape від механічного шуму; "Cherkasy Soundscape Library" — методологія записів |
-| **Карапетян А.Р.** (ЧДТУ) | Math statistics, R, Data Science | ANOVA dawn/dusk peak amplitude між ландшафтами; Pareto-front Pareto аналіз GA-результатів; Permutation tests для biodiversity_trend |
+| **Карапетян А.Р.** (ЧДТУ) | Math statistics, R, Data Science | ANOVA dawn/dusk peak amplitude між ландшафтами (над польовими даними); Permutation tests для biodiversity_trend |
 | **Спрягайло О.В.** (ЧНУ біо-хаб) | Ботаніка, фітоценологія, екологія | Польові експедиції Черкаського бору, ground-truth labeling таксономічних груп, 10-річні дані стресових подій як external validation |
 | **Гаврилюк М.В.** (ЧНУ біо-хаб) | Зоологія, remote sensing, GIS | Cross-validation soundscape ↔ зоологічні обліки птахів та амфібій; GIS-інтеграція ділянок |
 | Архітектор (Silken Net) | TinyML, firmware, Web3 | Едж AI архітектура — **Path B (log-mel) обрано + DSP front-end реалізовано self-owned** (`Compute_LogMel`, librosa≡stdlib≡C golden-vector parity; повний MFCC з DCT **не рекомендовано** для CNN-ESC — [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference)); 5-class INT8 baseline натреновано **self-owned end-to-end** (ESC-50; per-frame FC 40→16→5 — **не** CNN, [`00_07` FW.4](00_07_Action_Plan_Tracker)) на контракті ознак [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference); AiInsight#biodiversity_trend integration; ForestNFT metadata (proposed) |
@@ -304,7 +305,7 @@ _«Дослідження акустичних властивостей пори
 
 ---
 
-## 🧬 1E. Публікації ЧМА (Біохімія EBFC, Токсикологія, Ксилемоінтеграція)
+## 🧬 1E. Публікації ЧМА (Біохімія EBFC, Токсикологія)
 
 > **Контекст:** ЧМА (Черкаська медична академія) забезпечує токсикологічну оцінку вивільнення іонів V/Al з Ti-6Al-4V (Суховий) та фітотоксикологію self-healing покриттів (Глущенко); фарм-технологію стабілізації ферментів у матрицях (Бушуєва — дотично); глибока EBFC-ензимологія → профільний біохімік (TBD). ЧМА = навчальний коледж (не матеріалознавча лабораторія); інституційний доступ — персонально. Повний реєстр задач — у [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry).
 

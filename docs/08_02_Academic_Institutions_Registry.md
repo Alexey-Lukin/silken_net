@@ -54,7 +54,7 @@
 | **ЧДТУ** | дані/моделі, RF-виміри, акустика, прецизійна механіка | TRL 2–8 |
 | **ЧІПБ** | пожежна безпека, ДСНС-міст | TRL 3–5 |
 | **ЧМА** | біомедична валідація EBFC, токсикологія, ксилемоінтеграція | TRL 2–4 |
-| **СЄУ** | макроекономіка токеноміки, RWA-право, промдизайн | TRL 1–5 |
+| **СЄУ** | макроекономіка токеноміки, RWA-право, фінансовий облік | TRL 1–5 |
 
 ---
 
@@ -67,7 +67,7 @@
 | Партнер | Кафедра / роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
 | проф. **Мінаєв Б.Ф.** (+ проф. Мінаєва В.О.) | квантова хімія: spin-orbit, фотофізика, активація O₂ | **Spin-forbidden кінетика активації O₂** на біоелектродах (triplet→singlet: FAD-оксидазний анод + laccase ORR-катод) — світовий фах школи (SOC, активація дикисню оксидазами), механізм поза власним L3 → [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | Ст. 1/28 |
-| проф. **Гусак А.М.** | фізика (Wiley-монографія, UCLA-колаб.) | PEEK creep (Prony/Maxwell-Wiechert, виміряні дані) + ICP-MS-калібрація Kirkendall-моделі (наш script 51) → [`01_02 §2`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK); sheet-vs-network FEA-E homogenization ([`00_07` HW.33](00_07_Action_Plan_Tracker)) | Ст. 2/29 |
+| проф. **Гусак А.М.** | фізика (Wiley-монографія, UCLA-колаб.) | PEEK creep (Prony/Maxwell-Wiechert, виміряні дані) + ICP-MS-калібрація Kirkendall-моделі (наш script 51) → [`01_02 §2`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK); sheet-vs-network FEA-E homogenization (⚖️ [`00_07` HW.33](00_07_Action_Plan_Tracker) — self-own-кандидат vs школа Гусака, вісь відкрита) | Ст. 2/29 |
 | доц. **Спрягайло О.В.** (проректор з науки — **інституційний якір / MoU-канал ЧНУ**) + к.б.н. **Гаврилюк М.В.** (дир. ННІ) | біо-хаб (дендрофлора/ПЗФ/екологія) + парасольовий MoU ЧНУ↔SilkenNet → [`07_01`](07_01_Nature_as_a_Service_Contracts) | *Pinus sylvestris* baseline + хім. склад ксилемного соку + dawn/dusk «Cherkasy Soundscape Library» → [`03_04`](03_04_mruby_Lorenz_Attractor), [`03_03 §10`](03_03_TinyML_Acoustic_Inference), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 2/24a/29 (Спрягайло) · 2/24a (Гаврилюк) |
 
 > Протоколи Hard-Science (Quantum-Sap, Long-Term Integrity, Homeostasis Baseline, Xylem-Sim, Steril) — already-canon: дім у [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)/[`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)/[`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)/[`01_04 §6`](01_04_CODIT_and_Xylemointegration)/[`03_04`](03_04_mruby_Lorenz_Attractor) + [`in_silico/`](protocols/ebfc/in_silico/SUMMARY.md).
@@ -76,8 +76,8 @@
 
 | Партнер | Профіль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| доц. **Ярмілко А.В.** | IIoT / embedded / lightweight crypto | Engaged partner (зустрічі 2026, вхід у ректорат); airtime↔крипто tradeoff-аналіз (Ст.23); SPI/DMA-консультація ([`03_01`](03_01_Firmware_Lifecycle_and_DMA) — Open-Research) | Ст. 23/24 |
-| доц. **Косенюк Г.В.** | військова радіотехніка, теорія кодування | RF impedance / Link Budget / ground-plane / 3D-діаграма з Ti-фланцем як Ground Plane ([`02_01 §5`](02_01_Hardware_Architecture_and_BOM)) — фізична лаб-валідація прихованої антени під PEEK (TRL-гейт) | Ст. 23 |
+| доц. **Ярмілко А.В.** | IIoT / embedded / lightweight crypto | Engaged partner (зустрічі 2026, вхід у ректорат); airtime↔CCM tradeoff = spot-check нашого self-own розрахунку (Ст.23), не незалежна валідація; SPI/DMA-консультація ([`00_07` E.9](00_07_Action_Plan_Tracker) — Open-Research); far-horizon PQC | Ст. 23/24 |
+| доц. **Косенюк Г.В.** | військова радіотехніка, теорія кодування | RF impedance / Link Budget / ground-plane / 3D-діаграма з Ti-фланцем як Ground Plane — **аналітичний розрахунок + FEKO/CST моделювання** прихованої антени під PEEK ([`02_01 §5`](02_01_Hardware_Architecture_and_BOM)); фізична VNA-верифікація = Гончаров (§2) | Ст. 23 |
 | ст.викл. **Любченко К.М.** | нейромережі, GA, Master of Logic | Ст.24a + 2 магістерські: NSGA-II 5-class TinyML tuning + циркадні пороги ([`03_03`](03_03_TinyML_Acoustic_Inference)) — метод generic (pymoo), gate = ground-truth Біо-хаб | Ст. 24a |
 
 > **План публікацій ЧНУ:** [`08_01 §1`](08_01_Joint_Publications_and_IP_Strategy) (Hard Science + ФОТІУС) · [`08_01 §1C`](08_01_Joint_Publications_and_IP_Strategy) (ФОТІУС × ЧДТУ синергія).
@@ -113,7 +113,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 
 ## 🧬 4. ЧМА — Черкаська медична академія
 
-Біомедична валідація EBFC + токсикологія Ti + ксилемоінтеграція як аналогія остеоінтеграції.
+Біомедична валідація EBFC + токсикологія Ti.
 
 | Партнер | Роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
@@ -121,7 +121,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 | **Суховий Г.П.** (Григорій Пилипович) | токсикологічна хімія | к.фарм.н., доц. каф. неорганічної та токсикологічної хімії (ЗДМФУ; афіліація ЧМА з 2024). Хіміко-токсикологічний аналіз V/Al release у ксилему + Safety Margin → [`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 29 |
 | **Глущенко А.В.** (Алла Володимирівна, викладач ЧМА) | фармація / фітотерапія | Фітотоксичність 8-HQ self-healing покриття (профіль: рослинні екстракти, хім. аналіз препаратів) — already-canon → [`01_02 §3`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS); Os redox polymer cross-linking (Ст.28) | Ст. 28/29 |
 
-> **План публікацій ЧМА:** [`08_01 §1E`](08_01_Joint_Publications_and_IP_Strategy) (біохімія EBFC, токсикологія Ti, ксилемоінтеграція).
+> **План публікацій ЧМА:** [`08_01 §1E`](08_01_Joint_Publications_and_IP_Strategy) (біохімія EBFC, токсикологія Ti).
 
 ---
 
