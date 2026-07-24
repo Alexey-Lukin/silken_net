@@ -63,7 +63,7 @@
 | **Файл** | `contracts/SilkenCarbonCoin.sol` | `contracts/SilkenForestCoin.sol` |
 | **ENV адреса** | `CARBON_COIN_CONTRACT_ADDRESS` | `FOREST_COIN_CONTRACT_ADDRESS` |
 | **Pragma** | `0.8.35` (locked) | `0.8.35` (locked) |
-| **Максимальна емісія** | ✅ `MAX_SUPPLY = 1_000_000_000 SCC` — [CONTRACT.1] деривація: 10k GP=1 SCC · 2k SCC=1 tCO2 → ≈500k tCO2 ≈ 20M дерево-років (≈2M дерев × 10 р.) = свідомо-скромна launch-стеля pilot-горизонту; планетарний масштаб = новий деплой/L2, не підняття константи | ✅ `MAX_SUPPLY = 100_000_000 SFC` |
+| **Максимальна емісія** | ✅ `MAX_SUPPLY = 1_000_000_000 SCC` — [CONTRACT.1] деривація: 10k GP=1 SCC · 2k SCC=1 tCO2 → ≈500k tCO2 ≈ 20M дерево-років (≈2M дерев × 10 р.) = свідомо-скромна launch-стеля pilot-горизонту; планетарний масштаб = новий деплой/L2, не підняття константи. **NB:** «2k SCC=1 tCO₂» = внутрішня облікова конвенція Proof-of-Growth/Condition-токена, НЕ registry-визнаний offset (продаваний кредит лише через незалежну методологію → [`07_01 §3`](07_01_Nature_as_a_Service_Contracts), [`00_07`](00_07_Action_Plan_Tracker) BIZ.9) | ✅ `MAX_SUPPLY = 100_000_000 SFC` |
 | **Slash / Burn** | ✅ `slash()` + `slashUpTo()` [SLASH.2] через `SLASHER_ROLE` | ✅ `slash()` + `slashUpTo()` [SLASH.2] через `SLASHER_ROLE` (B-06 виправлено) |
 | **Gasless approvals** | ✅ EIP-2612 / EIP-712 (PR #253) | ✅ EIP-2612 / EIP-712 |
 | **DAO голосування** | ❌ | ✅ `ERC20Votes` |

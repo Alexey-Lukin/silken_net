@@ -82,7 +82,7 @@ NaaS — це модель підписки, де клієнти (Організ
 - **(Roadmap, deferred B2C) Eco-Therapy 4.0** — цифрова лісотерапія: користувач біля дерева відкриває додаток → бачить «пульс» (`delta_t`) → синхронізація з природними ритмами. Перший у світі інструмент цифрової лісотерапії (напр. реабілітація ветеранів з ПТСД).
 
 **Умови входу:**
-- Реєстрація через OAuth2 (Google/Apple) або стандартна автентифікація (argon2id).
+- Реєстрація через OAuth2 (Google / Facebook / LinkedIn / Twitter — `Identity::SUPPORTED_PROVIDERS`; OmniAuth-флоу ще без дроту → [`00_07`](00_07_Action_Plan_Tracker) ARCH.69) або стандартна автентифікація (argon2id).
 - Роль `User.role = :investor` або `User.role = :forester`.
 - `Wallet` автоматично створюється при реєстрації Tree-вузла.
 
@@ -143,7 +143,7 @@ NaaS — це модель підписки, де клієнти (Організ
 | **Штраф за дострокове розірвання** | `total_funding × early_exit_fee_percent / 100` | `NaasContract#calculate_early_exit_fee` |
 | **Пропорційне повернення** | `total_funding × (remaining_days / total_days) − fee` | `NaasContract#calculate_prorated_refund` |
 | **Поріг слешингу** | >20% дерев кластера з `stress_index >= 0.83` | `ContractHealthCheckService` |
-| **1 SCC = X кг CO₂** | ✅ **2000 SCC = 1 tCO₂ (1 SCC = 0.5 kg CO₂)** — `SystemParameter.current(:scc_per_tonne_co2, default: 2000)`, `ProtocolParameters.sol#sccPerTonneCo2()` | [BIZ.1] |
+| **1 SCC = X кг CO₂** | ✅ **2000 SCC = 1 tCO₂ (1 SCC = 0.5 kg CO₂)** — `SystemParameter.current(:scc_per_tonne_co2, default: 2000)`, `ProtocolParameters.sol#sccPerTonneCo2()`. **Внутрішня облікова конвенція** Proof-of-Growth (Condition-прочитання — [`07_02 §7`](07_02_Unit_Economics_and_BOM)), НЕ registry-визнаний tCO₂e-кредит: продаваний кредит лише через незалежну методологію (BIZ.9); трек = MRV-Data-Provider/permanence-monitor | [BIZ.1] |
 | **1 SCC = $Y (контрактна вартість)** | ⚠️ **Не зафіксовано** — визначається динамічно через DEX | `PriceOracleService` |
 
 ---

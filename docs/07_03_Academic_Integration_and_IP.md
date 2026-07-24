@@ -322,7 +322,8 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 
 | Зона | Ліцензія | Дім |
 |---|---|---|
-| Код (backend / firmware / contracts / tooling) | **GNU AGPL-3.0-or-later** | `/LICENSE` |
+| Код (backend / firmware / tooling) | **GNU AGPL-3.0-or-later** | `/LICENSE` |
+| Смарт-контракти (`contracts/*.sol`) | **MIT** — per-file SPDX (on-chain composability / audit-tooling / OpenZeppelin-consistency; ратифіковано DOC-T.47) | SPDX headers |
 | Залізо (gyroid / EBFC / PCB-дизайн) | **CERN-OHL-S-2.0** | `/LICENSE-HARDWARE.txt` |
 | Документація (`docs/**`) | **CC-BY-SA-4.0** | `/LICENSE-DOCS.txt` |
 | Мапа зон + third-party винятки (AF3 non-commercial!) + pledge | — | `/NOTICE` |
@@ -371,8 +372,8 @@ SilkenNet не подає й не assert-итиме патентів на цю �
 | Етап | Дія | Власник |
 |---|---|---|
 | 1 | Prior-art landscape ✅ ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)) | 🤖 done |
-| 2 | Публікація disclosure (TDCommons) + LICENSE-файли → [`defensive_disclosure.md`](protocols/anchor/defensive_disclosure.md) | 👤 + 🤖 |
-| 3 | Заявка на ™ (прямий повірений УкрНОІВІ) | 👤 повірений |
+| 2 | Заявка на ™ (прямий повірений УкрНОІВІ) — пріоритет-дата ДО disclosure-splash (squatting-guard; режими юридично незалежні, порядок = risk-management) | 👤 повірений |
+| 3 | Публікація disclosure (TDCommons) + LICENSE-файли → [`defensive_disclosure.md`](protocols/anchor/defensive_disclosure.md) | 👤 + 🤖 |
 | 4 | UA-юр-review (Аблязов + крипто/IP-юрист TBD) | 👤 |
 | 5 | Сабміт Статті 1 (вже unblocked — publish-to-protect) | 👤 |
 
