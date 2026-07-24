@@ -54,7 +54,7 @@
 - **Найближчий фіз-мілстоун — TRL 3→4 = Ti-coin in-vitro** (founder 2026-06-21; гроші є → блок не фінанси): вузький шлях, що **ОБХОДИТЬ** гіроїд/PEEK/press-fit/mate — `HW.24` Stage 2 (**6-alloy coin bake-off** Ø16 → EAAE → Gen 2.0 функціоналізація → CV/EIS у соку) + `HW.5` (хімія-стек — spec-sheets ✅ [`ebfc_chem_rfq.md`](protocols/procurement/ebfc_chem_rfq.md), RFQ-ready) + V-release ICP-MS (`HW.3`). Канал = **гібрид commercial-lab + ЧНУ** (не чекати MoU). Канон [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
 - **Hardware-гейт** (TRL 4→6, повний анкер — після coin): `HW.1` (анкер-генерація — CAD machine-half ✅, фіз-друк → завод) · `HW.24` (staged validation SLA→coin→anchor→100) · `HW.23` (HIP postprocess) · `HW.31`/`HW.15`/`HW.16` (BOM Королеви — кластер «02_05 BOM freeze» ↓; panel/battery/MPPT зафіксовано `HW.39`+`HW.15` — лишились ⚖️ BMS-SKU + закуп)
 - **Academic:** `UNI.14` (юр-хаб — counterparty/MSA/інкорпорація) · `UNI.3` (IP / defensive-pub)
-- **Перед першим B2B-продажем** (комерціалізація — вісь розкрита gap-pass'ом): `BIZ.20` (юр-особа — гейтить решту) · `BIZ.2` (MSA) · `BIZ.21` (E&O/liability до підпису) · `BIZ.9` (незалежний carbon-методолог Verra/GS) · `BIZ.19` (CBAM-наратив — звірити/переформулювати ДО пітчу) · `SEC.18` (User/Org PII GDPR/DSAR) · `BIZ.18` (customer-SLA)
+- **Перед першим B2B-продажем** (комерціалізація — вісь розкрита gap-pass'ом): `BIZ.20` (юр-особа — гейтить решту) · `BIZ.2` (MSA) · `BIZ.21` (E&O/liability до підпису) · `BIZ.9` (незалежний carbon-методолог Verra/GS) · `SEC.18` (User/Org PII GDPR/DSAR) · `BIZ.18` (customer-SLA)
 
 ### ⛓️ Гейт-кластери — одна дія відкриває кластер (міжсекційна синергія)
 
@@ -553,7 +553,7 @@
 
 #### ARCH.24 — CE/FCC/RoHS/EMC/IP68 compliance roadmap
 - **P3** · 🤖+👤 · 🌿 · → `02_01`
-- **Стан:** Far-horizon — CE-RED (868 МГц LoRa), FCC Part 15/90, RoHS-2, IP68 (IEC 60529), REACH для EU/NA. Pre-mass production; кожна cert 3-6 міс + спец-лаба. Roadmap-**документ** desk-draftable зараз (owner-split як BIZ.19/BIZ.21); фіз-cert 🌿. Перший деплой = UA (Черкаський бір), CE-RED = ЄС-market-entry → far. Канон `02_01`.
+- **Стан:** Far-horizon — CE-RED (868 МГц LoRa), FCC Part 15/90, RoHS-2, IP68 (IEC 60529), REACH для EU/NA. Pre-mass production; кожна cert 3-6 міс + спец-лаба. Roadmap-**документ** desk-draftable зараз (owner-split як BIZ.21); фіз-cert 🌿. Перший деплой = UA (Черкаський бір), CE-RED = ЄС-market-entry → far. Канон `02_01`.
 - [ ] 🤖 чернетка compliance-roadmap-doc (послідовність cert / evidence-per-cert / lab-map / cost-time) — desk
 - [ ] ⚖️ cert-стратегія: юрисдикція-first + self-cert vs notified-body + FCC Part 15 vs 90 (mirror ARCH.5 registry-first)
 - [ ] 👤 фіз-cert через спец-лаби (pre-mass; EMC-bench-half = UNI.10 Гончаров)
@@ -1196,7 +1196,7 @@
 
 #### STK.5 — ЗВТ-метрологія: accuracy-нога (Чорней / ДП «Черкасистандартметрологія»)
 - **P3** · 👤 · 🌿 · → `05_02`
-- **Стан:** Не почато (far-horizon — метрологія не повіряє in-silico прилад; gated на фізичний анкер, System TRL 3→≥4, [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond)). Accuracy-нога trust-ladder ([`05_02`](05_02_Proof_of_Growth_Pipeline) §Trust-origin ladder: origin-крипта L0-L2 + **accuracy-ЗВТ** + skin-in-game operator-bond BIZ.13). **Дві чесні тези (adversarial-verified):** (1) *досяжне — стандартна метрологія:* поканальна traceable-калібрація (internal_temp → термометр-еталон, вже 2-точкова factory-cal TSENSE_CAL1/2; vcap-VDDA → VREFINT-вольтметр; delta_t/RTC → частотний/часовий еталон) + поканальний uncertainty budget + дрейф-компенсація (гачки вже в `DeviceCalibration`); (2) *category-обмежене:* сертифікація КОМПОЗИТНОГО carbon-measurand (метаболічна жвавість → SCC) як єдиного legal-ЗВТ = **можливий category-error** (indirect measurand без нац-еталона — expert-питання, не founder-дія). UA-scope: ДСТУ / нац-реєстр ЗВТ (НЕ BIPM/OIML). Dormant 👤-контакт, НЕ дотискати — outreach передчасний до internal uncertainty-budget. CBAM-прийнятність = окрема хибна преміса [BIZ.19] (метрологія робить цифру точною, не робить SCC офсетом).
+- **Стан:** Не почато (far-horizon — метрологія не повіряє in-silico прилад; gated на фізичний анкер, System TRL 3→≥4, [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond)). Accuracy-нога trust-ladder ([`05_02`](05_02_Proof_of_Growth_Pipeline) §Trust-origin ladder: origin-крипта L0-L2 + **accuracy-ЗВТ** + skin-in-game operator-bond BIZ.13). **Дві чесні тези (adversarial-verified):** (1) *досяжне — стандартна метрологія:* поканальна traceable-калібрація (internal_temp → термометр-еталон, вже 2-точкова factory-cal TSENSE_CAL1/2; vcap-VDDA → VREFINT-вольтметр; delta_t/RTC → частотний/часовий еталон) + поканальний uncertainty budget + дрейф-компенсація (гачки вже в `DeviceCalibration`); (2) *category-обмежене:* сертифікація КОМПОЗИТНОГО carbon-measurand (метаболічна жвавість → SCC) як єдиного legal-ЗВТ = **можливий category-error** (indirect measurand без нац-еталона — expert-питання, не founder-дія). UA-scope: ДСТУ / нац-реєстр ЗВТ (НЕ BIPM/OIML). Dormant 👤-контакт, НЕ дотискати — outreach передчасний до internal uncertainty-budget. (Метрологія робить цифру точною — не робить SCC регуляторним compliance-інструментом.)
 - [ ] 👤 (self-ownable ЗАРАЗ, папір) internal GUM uncertainty-budget `delta_t→GP→SCC→tCO₂` — агрегатор 5 наявних компонентів (`DeviceCalibration`-пороги · vcap VDDA-proxy · FW.57 raw-vs-display · `valid_sensor_data?` · EMA FW.21 ±8%→±2.7% [апріорні, не bench]); keystone, що робить розмову з метрологом предметною
 - [ ] 👤 (після uncertainty-budget + фіз-анкер) розвідка з expert-метрологом: чи існує повірочний шлях для indirect bio-derived measurand, чи це category-error
 
@@ -1449,7 +1449,7 @@
 
 #### UNI.14 — СЄУ: персональний контакт (Аблязов legal/RWA + Ус/Гедз облік)
 - **P1** · 🤖+👤 · ⚪ · → `07_03 §1.5`
-- **Стан:** Не почато (консолідує legacy UNI.8). **Юр-хаб §07** — один воркшоп Аблязова фанається в BIZ.20 (вибір юр-форми), BIZ.2 (MSA), BIZ.19 (CBAM), BIZ.15 (SPV), UNI.16, STK.3. **СЄУ = economics+law, 3 фахівці, персональний контакт:** Аблязов **Денис Едуардович** (віцепрезидент, к.ю.н. — господарське право/протидія рейдерству; MSA/інкорпорація), Гедз (проректор якості — фінансовий облік криптоактивів 2025), Ус (цифрова економіка + матем. моделювання). Глибина крипто-права → профільний TBD. Канон `07_03 §1.5`.
+- **Стан:** Не почато (консолідує legacy UNI.8). **Юр-хаб §07** — один воркшоп Аблязова фанається в BIZ.20 (вибір юр-форми), BIZ.2 (MSA), BIZ.15 (SPV), UNI.16, STK.3. **СЄУ = economics+law, 3 фахівці, персональний контакт:** Аблязов **Денис Едуардович** (віцепрезидент, к.ю.н. — господарське право/протидія рейдерству; MSA/інкорпорація), Гедз (проректор якості — фінансовий облік криптоактивів 2025), Ус (цифрова економіка + матем. моделювання). Глибина крипто-права → профільний TBD. Канон `07_03 §1.5`.
 - [ ] 👤 персональний контакт: workshop Аблязов (UA-legal/MSA/інкорпорація) + Ус/Гедз (облік SCC); глибина крипто-права/carbon → профільні TBD
 - [ ] 🤖+👤 tax-posture меморандум: grant-income + personal-income-on-receipt (UA SCC-holders) + `dynamic_tax`×UA-податкове — 🤖 складе питання → 👤 Ус Г.О.
 - [ ] 🤖+👤 фіат-операційка B2B-продажу: ПДВ-режим (експорт послуг 0% / карбон-кредит як послуга vs товар vs фінінструмент) + банк-рахунок + крос-бордер інвойсинг — 🤖 меморандум-питання → 👤 Ус/Аблязов
@@ -1480,39 +1480,27 @@
 - [ ] 👤 юр-review + фіналізація (named counterparty після BIZ.20)
 
 #### BIZ.9 — Незалежний carbon credit методолог (Verra/Gold Standard)
-- **P2** · 👤 · ⚪ · → `07_01 §3`, `07_02 §7.3`
+- **P2** · 🤖+👤 · ⚪ · → `07_01 §3`, `07_02 §7.3`
 - **Стан:** Не почато — конвертація SCC utility-token → сертифіковані kg CO₂ для institutional buyers потребує independent methodology audit (Verra/Gold Standard/Puro.earth). Канон `07_01 §3`, `07_02 §7.3`.
-- [ ] ⚖️ вибір registry: Verra vs Gold Standard vs Puro.earth (методологія-fit × вартість × timeline; Puro вже фігурує в death-path `07_01 §2` biochar CORC — інший трек)
+- [ ] 🤖+⚖️ порівняльна registry-matrix (Verra vs Gold Standard vs Puro.earth: методологія-fit × вартість × timeline; Puro вже в death-path `07_01 §2` biochar CORC — інший трек) → 🤖 складе, ⚖️ вибір
 - [ ] 👤 engagement methodologist (~$50-100k) → PDD — gated на реальний ліс + MRV-дані + VVB (роки downstream)
 - [ ] 🔗 залежить від HW.3 (Arrhenius) + UNI.4/UNI.5 (DFT+diffusion)
 
-#### BIZ.15 — B2B Fiat-to-Retirement SPV (corporate carbon on-ramp)
-- **P2** · 👤 · ⚪ · → `07_01 §8`
-- **Стан:** Не почато — корпорації з ESG-зобов'язаннями не триматимуть крипту/ключі заради ретайрменту → потрібен SPV-міст: фіат → SPV купує+ретайрить SCC → сертифікат офсету (ISO 14064; ⚠️ CBAM-сумісність — неперевірена преміса [BIZ.19] → voluntary Scope до юр-звірки). Поточний `KlimaRetirementWorker` припускає, що клієнт уже on-chain власник SCC (нот.19). Канон `07_01 §8`.
-- [ ] 🔗 SPV-опції (юрисдикція × ліцензія × кастодіан) — вісь у BIZ.20 entity-matrix (🤖-дім там)
-- [ ] ⚖️ юрисдикція SPV + ліцензія на вуглецеві активи + кастодіан крипти (СЄУ Аблязов Д., RWA/MiCA — `07_03 §1.5`)
-- [ ] 👤 бухгалтерська класифікація + сертифікат-флоу (СЄУ Ус Г.)
-
 #### BIZ.17 — Procurement-workflow operational gaps (post-RFQ-layer dig)
-- **P2** · 👤 · 🟡 · → `07_02 §8`
+- **P2** · 🤖+👤 · 🟡 · → `07_02 §8`
 - **Стан:** RFQ-layer структура ✅ (`protocols/procurement/` — `rfq_registry.md` + `ebfc_chem_rfq.md` + `anchor_alloy_rfq.md`; concern-шар, `00_06 §2`); deep dig виявив operational-gaps без дому + registry-maintenance — консолідовано тут. Канон `07_02 §8` (BOM/хаби) + registry.
-- [ ] 👤 **DMLS vendor-scoring matrix** (lead-time × quality × price × ISO-13485)
+- [ ] 🤖+👤 **DMLS vendor-scoring template** (🤖 критерії lead-time × quality × price × ISO-13485 → 👤 fill quotes)
 - [ ] 👤 **CDA/NDA шаблон** для ВНЗ-MoU (блокує UNI.2 → лаб-доступ; СЄУ Аблязов legal)
-- [ ] 👤 **ESG vendor-screening** matrix (репутаційне для climate-проєкту / grant-fonds)
+- [ ] 🤖+👤 **ESG vendor-screening template** (🤖 критерії → 👤 fill; репутаційне для climate-проєкту / grant-fonds)
 - [ ] 👤 **Ціновий моніторинг BOM** (DMLS, EBFC) при масштабуванні — periodic price-refresh `rfq_registry`
 - [ ] 👤 **SE050 supply-timeline** (NXP availability для mass-population post-FW.2, `03_05 §3.7` / ARCH.43)
 - [ ] ⚖️ **Синт. сік make-vs-buy** (ЧНУ pilot-stock vs synthesize, `07_03 §1.1`)
 
 #### BIZ.18 — Customer-facing availability-SLA (uptime-гарантія B2B-покупцям)
-- **P2** · 👤 · ⚪ · → `07_01 §8`, [`06_06 §3`](06_06_Disaster_Recovery_and_Backup)
-- **Стан:** Не почато — internal-SLO без customer-SLA. Наявна основа ✅: RTO/RPO-цілі (`06_06 §3` DR-таблиця), internal SLO mint ≥80% + intake ≥95% (`06_08 §2.4`), circuit-breaker/failover (`06_08`), Prometheus-алерти (`06_03`) — це **внутрішні операційні SLO**, не зовнішній контракт. Діра = **customer-facing availability-SLA** (визначений uptime-% + service-credits + incident-comms + публічний status-page), на який B2B-покупець кредитів (Азот CBAM, agri) послатиметься в угоді. Живить BIZ.2 (MSA — SLA = типовий exhibit) + BIZ.15 (SPV). NB: ≠ `07_01 §2` «Таблиця SLA» (legal-event→tx mapping — інше значення). Канон `07_01 §8`, `06_06 §3`.
-- [ ] ⚖️ визначити availability-target (%/вікна) з перших live-SLO-вікон + service-credit-схема → SLA-exhibit для BIZ.2 MSA
+- **P2** · 🤖+👤 · ⚪ · → `07_01 §8`, [`06_06 §3`](06_06_Disaster_Recovery_and_Backup)
+- **Стан:** Не почато — internal-SLO без customer-SLA. Наявна основа ✅: RTO/RPO-цілі (`06_06 §3` DR-таблиця), internal SLO mint ≥80% + intake ≥95% (`06_08 §2.4`), circuit-breaker/failover (`06_08`), Prometheus-алерти (`06_03`) — це **внутрішні операційні SLO**, не зовнішній контракт. Діра = **customer-facing availability-SLA** (визначений uptime-% + service-credits + incident-comms + публічний status-page), на який B2B-покупець кредитів (Азот, agri) послатиметься в угоді. Живить BIZ.2 (MSA — SLA = типовий exhibit) + BIZ.15 (SPV). NB: ≠ `07_01 §2` «Таблиця SLA» (legal-event→tx mapping — інше значення). Канон `07_01 §8`, `06_06 §3`.
+- [ ] 🤖+⚖️ SLA-exhibit template (🤖 структура uptime-% / service-credits / incident-comms → ⚖️ target-числа з перших live-SLO-вікон) → exhibit для BIZ.2 MSA
 - [ ] 👤 (опц.) публічний status-page (external synthetic uptime — дотично INF.22 O3)
-
-#### BIZ.19 — «SCC = CBAM-офсет» стоїть на неперевіреній (ймовірно хибній) регуляторній премісі
-- **P2** · 👤 · 🟡 · → `07_01 §8`
-- **Стан:** 🤖-присуд (висока впевненість, потребує юр-підтвердження): **SCC-retirement ≠ CBAM-reduction** — CBAM Reg. (EU) 2023/956 Art.9 знижує обов'язок імпортера лише вуглецевою ціною, СПЛАЧЕНОЮ виробником у країні походження (ETS-еквівалент), НЕ купівлею/retirement voluntary-credits (поширена плутанина compliance-ринку з добровільним). → Позиціонувати SCC як **voluntary Scope 1-3 / net-zero-disclosure**, НЕ CBAM-compliance; **не пітчити CBAM Азоту до юр-звірки** (репутаційний ризик — юр-неправда CFO). Аналіз + reframe у каноні done → [`cbam_offset_analysis.md`](../protocols/business/cbam_offset_analysis.md) + ⚠️-caveat у `07_01 §8`.
-- [ ] 👤 юр-підтвердження (Аблязов, ~30 хв — Art.9 + UA-ETS-статус + SCC-як-Scope-3, на UNI.14/16-консультації) → повний reframe caveat→resolved + оновити Азот-пітч
 
 #### BIZ.21 — Немає company-level E&O / liability-страхування (≠ INS.1 параметричний продукт)
 - **P2** · 🤖+👤 · ⚪ · → `07_01 §8`, `07_03 §1.5`
@@ -1545,11 +1533,6 @@
 - **Стан:** Заблоковано на UNI.14 (Аблязов-контакт) — точковий UA-юрисдикційний review → **Аблязов** (СЄУ, персонально — UNI.14) + профільний крипто/IP-юрист TBD: (1) RWA ERC-3643 vs Лісовий Кодекс/ПЗФ, (2) SCC/SFC за ЗУ «Про віртуальні активи» 2022 + MiCA 2024, (3) NaaS у UA Civil Code, (4) авторське право `bio_contract.rb`/`Attractor` (основа enforcement копілефту), (5) open-license review (AGPL/CERN-OHL-S/CC-BY-SA + AF3 non-commercial × комерц-вимір). Ціль: 2 меморандуми. Канон `07_03 §4`.
 - [ ] 👤 workshop Аблязов (UA×MiCA) + крипто/IP-юрист TBD → меморандум RWA (розблок `07_01`) + меморандум SCC + open-license/AF3 review
 
-#### UNI.17 — CNC post-DMLS механообробка (fab-infra / procurement, не публікаційний партнер)
-- **P2** · 👤 · ⚪ · → `07_03 §1.2`
-- **Стан:** Не почато — **fab-infra, не наукова валідація** (manufacturing-крок, процес відомий). Прецизійна CNC-обробка post-DMLS (PEEK Zone 2 фрезерування, bayonet-геометрія, катод Zone 3) + різальна геометрія анкера (`01_01`/`01_02`/`02_02`). Виконавець TBD (не контактовано) — ЧДТУ machine-shop АБО комерційний CNC-цех (RFQ). Канон `07_03 §1.2` (fab-infra нота).
-- [ ] 👤 RFQ CNC-цеху АБО контакт ЧДТУ machine-shop + прототип різальної геометрії post-DMLS
-
 #### STK.3 — Tier 1 B2G: Заслужений юрист — Legal Wrapper для SCC
 - **P2** · 👤 · 🔗 · → `07_03 §1.5`
 - **Стан:** Заблоковано на UNI.16 (UA-юр-review Аблязов) + UNI.14 (СЄУ Аблязов) — Заслужений юрист для Legal Wrapper SCC: перекласифікація анкера «втручання»→«науково-вимірювальний прилад» до прокуратури; кандидати через ННІ права ЧНУ (доступ через Спрягайла) + СЄУ Аблязов. Канон `07_03 §1.5` (Аблязов legal).
@@ -1566,6 +1549,13 @@
 - **P3** · 🤖 · 🟢 · → `07_01 §8`
 - **Стан:** Core закрито — `SilkenForestCoin.slash()` (SLASHER_ROLE) зменшує voting power при slashing → атака «купити SFC + навмисне порушення NaaS» неможлива. Residual: ~1–5 хв lag (`web3_critical` черга) між SCC-slash і SFC-slash — у вікні учасник технічно ще може проголосувати. Канон `07_01 §8`.
 - [ ] 🔗 Vote-Escrow (veToken) при `breached`-контрактах — опціонально, gated на повний DAO governance launch (SEC.1)
+
+#### BIZ.15 — B2B Fiat-to-Retirement SPV (corporate carbon on-ramp)
+- **P3** · 👤 · ⚪ · → `07_01 §8`
+- **Стан:** Не почато — SPV-міст, щоб корпорація платила **фіатом замість крутити крипту**: клієнт → фіат → SPV купує+гасить SCC → паперовий сертифікат офсету (ISO 14064). Знімає бар'єр «не хочу тримати токени/ключі». Передчасно — нема B2B-клієнта (GTM відкладено), gated BIZ.20. Поточний `KlimaRetirementWorker` припускає, що клієнт уже on-chain власник SCC. Канон `07_01 §8`.
+- [ ] 🔗 SPV-опції (юрисдикція × ліцензія × кастодіан) — вісь у BIZ.20 entity-matrix
+- [ ] ⚖️ юрисдикція SPV + ліцензія на вуглецеві активи + кастодіан крипти (Аблязов, RWA/MiCA — `07_03 §1.5`)
+- [ ] 👤 бухгалтерська класифікація + сертифікат-флоу (Ус Г.)
 
 #### UNI.2 — зустрічі з факультетом ФОТІУС
 - **P3** · 👤 · ⚪ · → `07_03`
@@ -1595,6 +1585,11 @@
 - **P3** · 👤 · ⚪ · → `07_03 §1.3`
 - **Стан:** Не почато — ChIPB + НУЦЗУ (2 real-fit-експерти: Биченко тактика гасіння→диспетчеризація/drones, Ротар правова компетентність ЦЗ→SOP): (1) SOP для всіх EwsAlert-типів (drought/insect/vandalism/fire/seismic/fault/entropy/field_audit [INS.1]), (2) ДСНС API. Канон `07_03 §1.3`.
 - [ ] 👤 cold contact ЧІПБ (Биченко + Ротар — real-fit фах verified) + joint SOP workshop (ARCH.31)
+
+#### UNI.17 — CNC post-DMLS механообробка (fab-infra / procurement, не публікаційний партнер)
+- **P3** · 👤 · ⚪ · → `07_03 §1.2`
+- **Стан:** Не почато — **fab-infra, не наукова валідація** (manufacturing-крок, процес відомий; gated на сам DMLS-друк анкера). Прецизійна CNC-обробка post-DMLS (PEEK Zone 2 фрезерування, bayonet-геометрія, катод Zone 3) + різальна геометрія анкера (`01_01`/`01_02`/`02_02`). Виконавець TBD (не контактовано) — ЧДТУ machine-shop АБО комерційний CNC-цех (RFQ). Канон `07_03 §1.2` (fab-infra нота).
+- [ ] 👤 RFQ CNC-цеху АБО контакт ЧДТУ machine-shop + прототип різальної геометрії post-DMLS
 
 #### 🌿 UNI.13a — ChNU Біо-хаб (Спрягайло+Гаврилюк): Acoustic Biodiversity Baseline (Mongabay) [кластер:fauna:важіль]
 - **P3** · 👤 · 🌿 · → `07_03 §2.1/§3`, `07_03 Стаття 24a`
