@@ -4,8 +4,6 @@
 
 Зафіксувати бізнес-логіку та юридичні параметри моделі Nature-as-a-Service (NaaS): хто є клієнтами, що саме вони купують, як юридичні події відображаються у викликах смарт-контрактів (`mint`, `slash`) і які правові документи наразі відсутні.
 
-Документ **не** є юридичним текстом. Він фіксує поточний стан ("як є") для синхронізації команди та партнерів.
-
 ---
 
 ## ✅ Статус
@@ -441,7 +439,6 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 ---
 
-
 ## 🔗 9. Міжланцюгові Залежності (Cross-Module Dependencies)
 
 ```
@@ -460,8 +457,6 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 | `GET` | `/api/v1/contracts` | Required | Портфель NaaS контрактів (Pagy) |
 | `GET` | `/api/v1/contracts/:id` | Required | Деталі контракту |
 | `GET` | `/api/v1/contracts/stats` | Required | `total_invested`, `tokens_minted`, `portfolio_health`, `market_value_usd` |
-
----
 
 ---
 
