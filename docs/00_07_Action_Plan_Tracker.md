@@ -6,7 +6,7 @@
 
 **Правило одного місця (DRY):** редагуєш канон → онови залежні пункти 00_07 (за рефами); закрив пункт → онови канон + познач тут (✅ → **§🗄️ Архів**, вказівник ID→канон). Так апдейт робиться в одному місці, а референси ведуть, де ще синхронізувати.
 
-**Структура:** **🚦 Critical Path** (мілстоун-гейти, будь-який P) → **§00–§08 модуль-секції** (реєстр незробленого; **номер секції = канон-модуль першого рефа** — enforced `tracker:check` section-home guard; великий модуль → під-секції **`§NNa/b/c`** того ж модуля, курація за під-темою — §01a Anchor / §01b EBFC, §02a Node / §02b Gateway, §03a Firmware / §03b Edge-crypto, §08a/b/c) → **🔀 Cross-cutting** → **🗄️ Архів**. Документ — живий операційний інструмент.
+**Структура:** **🚦 Critical Path** (мілстоун-гейти, будь-який P) → **§00–§07 модуль-секції** (реєстр незробленого; **номер секції = канон-модуль першого рефа** — enforced `tracker:check` section-home guard; великий модуль → під-секції **`§NNa/b/c`** того ж модуля, курація за під-темою — §01a Anchor / §01b EBFC, §02a Node / §02b Gateway, §03a Firmware / §03b Edge-crypto, §07a Академ / §07b Stakeholders) → **🔀 Cross-cutting** → **🗄️ Архів**. Документ — живий операційний інструмент.
 
 ---
 
@@ -1789,7 +1789,7 @@ _Активних DOC-T немає — усі закриті мігровані 
 | SEC.13 | peaq_did_compromised mint-skip guard + emergency revocation runbook | `06_04 §5.4` |
 | DOC-T.13 | SSOT 360 R3–R4: docs:graph ref-graph + #anchor HARD-gate + dup-guard table-rows | `00_06 §3` |
 | DOC-T.11 | 05/07 реструктуризація (Фази 1-2): slashing `00_01 §6` → `05_05`; governance `05_03` → `05_06` — нові канон-доми + навігаційні stubs; cross-refs re-pointed | `05_05`, `05_06` |
-| DOC-T.12 | Taxonomy v3 P4: дисолюція Module 08 (7→3 доки) — `07_03` Joint Pubs/IP · `07_03` Academic Registry (5 ВНЗ, relationship-шар, інж-субстанція реферить Tier I) · `08_03` External; mesh-математика → `06_08`; ~260 inbound refs swept | `07_03`, `07_03`, `08_03`, `06_08` |
+| DOC-T.12 | Дисолюція Module 08 — двоетапна: Taxonomy v3 P4 (spawn 7→3 доки, ~260 inbound swept) → **повне розчинення 2026-07-24** (08_01 Publications+IP + 08_02 Registry → `07_03` Academic Integration; 08_03 External раніше → ноти §1.1/§1.2 + `cultural_layer.md`; mesh-математика → `06_08`). Модуль 08 більше не існує (8→7); ~245 inbound refs swept у фінальному розчиненні | `07_03`, `06_08` |
 | DOC-T.14 | 03_01↔03_02 semantic overlap зведено: Queen RAM → `03_02 §9`, test-matrix → `03_02 §11`, AES-таблиця → `03_05 §6`; residual health-sentinel byte-map dup + stale 6-біт GP-cap теж усунено (03_01 → ref `03_02 §7`, cement 2026-06-08) | `03_02`, `03_05 §6` |
 | DOC-T.1 | AES master-key doc contradiction («навмисно не публікується» vs «перші 4 слова = FIPS-197 Appendix B») — РЕЗОЛВНУТО (re-audit 2026-06-09): §3.1 тепер когерентний (FW.1 hardcoded-key removed → per-device HKDF + Protected Flash) + §3.1а WeakKeyDetector boot-guard. Оригінальна дія «видалити test-vector згадку» **суперседнута**: історична FIPS-197-нота лишена СВІДОМО як stop-and-escalate сигнал для аудиторів pre-FW.1 прошивки. Doc-side key-agnostic → НЕ залежав від SEC.9 key-replace (хибний «blocked»); stale line-refs (panic-map range + `main.c` AES-key block=removed) знято | `03_05 §3.1`, §3.1а |
 | DOC-T.2 | Канон↔канон дубль-аудит завершено: єдина справжня ПОВНА ре-декларація (Lorenz-блок `05_02` → `03_04 §4.1`) усунена; решта = контекстні згадки під value-guard'ами; ⚠️ blind value-de-dup небезпечний (колізії чисел) → рефати per-case; auto canon↔canon value-detect deferred | `00_06 §2`, §3 |

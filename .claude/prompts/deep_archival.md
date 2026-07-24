@@ -36,7 +36,7 @@
 ### Фаза 0 — Інструкції (раз на сесію)
 - Прочитай `00_06` **повністю** (skeleton §1 · home-registry §2 · drift-гейти §3 · restructure/prune §4).
 - Підніми skill `ssot-maintenance` (операційний playbook гейтів).
-- Витягни структурну мапу: `ruby scripts/doc_structure_map.rb` — скелетон 00_01→08_02 (🎯/TRL/секції), щоб **не перечитувати все** і знати, де що живе.
+- Витягни структурну мапу: `ruby scripts/doc_structure_map.rb` — скелетон 00_01→07_03 (🎯/TRL/секції), щоб **не перечитувати все** і знати, де що живе.
 - Baseline-гейти зелені: `ruby scripts/docs_check.rb refs` + `ruby scripts/docs_check.rb tracker`.
 
 ### Фаза 1 — Вибір пункту
@@ -45,7 +45,7 @@
 
 ### Фаза 2 — ШИРОКИЙ аудит (не зупиняйся на одному документі!)
 - **ID repo-wide:** `grep -rn "FW\.NN\b" docs/ firmware/ app/ spec/ scripts/ lib/ .github/`.
-- **Семантичні терміни** (не лише ID — робота розкидана!): назви сервісів/класів, константи, opcode, wire-маркери, HKDF-info — по **ВСІХ** `docs/00_01..08_02` + код + тести. Канон часто перефразовує — grep по токену це пропустить.
+- **Семантичні терміни** (не лише ID — робота розкидана!): назви сервісів/класів, константи, opcode, wire-маркери, HKDF-info — по **ВСІХ** `docs/00_01..07_03` + код + тести. Канон часто перефразовує — grep по токену це пропустить.
 - **Forward-рефи:** на що пункт посилається (канон-дім + sibling-доки).
 - **Inbound-рефи (додано):** хто посилається **НА** цей ID (інші 00_07-пункти, канон-доки, код-коментарі, `[`00_07` — ID]`). Trim не сміє лишити dangling-реф деінде.
 - **Крос-рефи крос-рефів** — транзитивне замикання в обидва боки.
@@ -100,7 +100,7 @@
 |---|---|
 | `ruby scripts/docs_check.rb refs` | Омнібус doc-гейт (~0.3с): dangling-лінки, §-drift, TRL, blockers→00_07, ToC, RTC reg-map, Lorenz/GP формули, opcode, deprecated-терми, xref-форма, external-paths. |
 | `ruby scripts/docs_check.rb tracker` | 00_07: dup-IDs, #3-conformance, canon-ref + §-section resolution, section-home, inbound-refs, prose-ID-refs, CHEM.N. |
-| `ruby scripts/doc_structure_map.rb` | Структурна мапа 00_01→08_02 (🎯/TRL/doc-links/секції) — навігація без читання всього. |
+| `ruby scripts/doc_structure_map.rb` | Структурна мапа 00_01→07_03 (🎯/TRL/doc-links/секції) — навігація без читання всього. |
 | `ruby scripts/content_dup_audit.rb --near` | Семантичний near-dup (Jaccard) — там, де grep по токену сліпий. |
 | `ruby scripts/crossref_audit.rb` / `normalize_crossrefs.rb` / `linkify_bare_refs.rb` / `fix_stale_anchors.rb` | Таксономія + bulk-нормалізація крос-рефів / лінкіфікація bare-рефів / фікс stale-anchor. |
 | `bin/rails docs:toc` | Регенерувати auto-ToC після зміни h2-заголовків. |
@@ -128,7 +128,7 @@
 ## ✅ Чеклист на пункт
 
 ```
-[ ] Широкий аудит: ID + семантика по ВСІХ docs/00_01..08_02 + код + spec + .github
+[ ] Широкий аудит: ID + семантика по ВСІХ docs/00_01..07_03 + код + spec + .github
 [ ] Forward + inbound рефи (хто на нього посилається) + крос-рефи крос-рефів
 [ ] Реальний код прочитано; кожне ✅ verified; wire byte-accurate; git-verify DONE
 [ ] Bug/anomaly hunt — фікс або явна нота
