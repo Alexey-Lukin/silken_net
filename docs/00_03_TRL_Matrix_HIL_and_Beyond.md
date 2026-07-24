@@ -22,7 +22,7 @@
 | [`00_04` — Shape Up Operations and RnD Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §Async-Review TRL Gates |
 | [`00_05` — GitHub Projects and IaC Automation](00_05_GitHub_Projects_and_IaC_Automation) | TRL Auto-Advancement (HIL → Projects V2 cards) |
 | [`04_06` — Testing Guide and Coverage](04_06_Testing_Guide_and_Coverage) | §B Gap Analysis — відомі обмеження тестів + відкриті ризики |
-| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Фізичні валідаційні протоколи ВНЗ (TRL 1-4) |
+| [`07_03` — Academic Institutions Registry](07_03_Academic_Integration_and_IP) | Фізичні валідаційні протоколи ВНЗ (TRL 1-4) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** |
 
 ## 📑 Зміст

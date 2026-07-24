@@ -699,9 +699,9 @@ RSpec.describe DocsLinter do
     it "skips meta-syntactic placeholders (§NN / §X.Y / §x), flags real alphanumeric refs (§1A)" do
       ph = "форма `03_04 §X.Y`; `00_07 §NN` placeholder; приклад `02_01 §x`\n"
       expect(described_class.bare_section_ref("00_03_TRL", ph)).to be_empty
-      hits = described_class.bare_section_ref("08_01_Pubs", "ЧНУ Hard-Science — `08_02 §1A`\n")
+      hits = described_class.bare_section_ref("07_03_Acad", "ЧНУ Hard-Science — `07_03 §1A`\n")
       expect(hits.size).to eq(1)
-      expect(hits.first).to include("08_02 §1A")
+      expect(hits.first).to include("07_03 §1A")
     end
 
     it "skips fenced code but does NOT skip table rows (cells carry real refs)" do

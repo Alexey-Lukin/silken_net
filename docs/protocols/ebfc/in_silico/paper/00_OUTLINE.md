@@ -3,16 +3,16 @@
 > **This is the writing plan / skeleton**, not a number source. All numerical results
 > live in [`SUMMARY.md`](../SUMMARY.md) (One-Home) — this doc *references* them, never
 > restates. The canonical publication plan (title, journals, authors, IP posture) lives in
-> [`08_01 §Стаття 1`](../../../08_01_Joint_Publications_and_IP_Strategy.md); keep them in sync.
+> [`07_03 Стаття 1`](../../../07_03_Academic_Integration_and_IP.md); keep them in sync.
 > Built 2026-06-05 while ① runs; sections tagged **[READY]** / **[PENDING ②/③/④]**.
 
 ## 0. Front matter
 
-- **Working title (EN):** *"Computational Electron-Transfer Energetics of a FAD–Osmium Enzymatic Biofuel Cell: PCET Redox Potentials, Mediator Structure–Activity, ZIF-Nanozyme Direct Electron Transfer, and the Limits of Implicit-Solvation DFT."* (base = 08_01 canon title; the **"Mediator Structure–Activity"** clause is **new**, earned by ①'s Hammett LFER — if kept, update 08_01 too.)
+- **Working title (EN):** *"Computational Electron-Transfer Energetics of a FAD–Osmium Enzymatic Biofuel Cell: PCET Redox Potentials, Mediator Structure–Activity, ZIF-Nanozyme Direct Electron Transfer, and the Limits of Implicit-Solvation DFT."* (base = 07_03 canon title; the **"Mediator Structure–Activity"** clause is **new**, earned by ①'s Hammett LFER — if kept, update 07_03 too.)
 - **Type:** purely computational quantum-chemistry paper (no wet experiment yet — Ti-coin = Stage 2). Sells on **mechanistic + methodological** novelty, NOT "validation."
 - **Target:** *J. Phys. Chem. B* (primary) · *PCCP* (fallback) · *Bioelectrochemistry* (applied backup). IMRaD identical across the first two.
 - **Authors / CRediT:** Architect (Silken Net) — Conceptualization, Methodology, Software, Investigation, Writing-original-draft. External computational-electrochemistry collaborator (TBD) — Methodology (explicit-water QM/MM, §3.5 upgrade), Investigation, Writing-review. Corresponding = founder's call.
-- **✅ IP — defensive publication** (08_01 §2): **публікація = захист** (prior art) → submission-ready, без патентного гейту. Prior-art landscape: `protocols/anchor/prior_art_landscape.md`.
+- **✅ IP — defensive publication** (07_03 §3): **публікація = захист** (prior art) → submission-ready, без патентного гейту. Prior-art landscape: `protocols/anchor/prior_art_landscape.md`.
 
 ## 1. Thesis (honest, one paragraph)
 

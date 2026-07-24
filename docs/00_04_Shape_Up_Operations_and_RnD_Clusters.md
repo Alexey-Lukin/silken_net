@@ -25,7 +25,7 @@
 | [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + HIL (decoupling software TRL від hardware) |
 | [`00_05` — GitHub Projects and IaC Automation](00_05_GitHub_Projects_and_IaC_Automation) | Projects V2 fields, labels-as-code, cluster routing |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (OPS.3 / OPS.4 + Convolution Method context) |
-| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Стратегічні підстави для multi-cluster R&D (§1.1-1.3) |
+| [`07_03` — Academic Institutions Registry](07_03_Academic_Integration_and_IP) | Стратегічні підстави для multi-cluster R&D (§1.1-1.3) |
 
 ## 📑 Зміст
 
@@ -67,14 +67,14 @@ Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, 
 
 Розподіл 25+ паралельних задач між 8+ науковцями реалізовано через **чотири кластери**. Кожна Big Bet прив'язується до одного кластера у момент betting table.
 
-> Ростер ВНЗ (хто / кафедра → що валідує) — канон [`08_02`](08_02_Academic_Institutions_Registry); таблиця нижче — **композиційний зріз** (кластер ↔ база-команда), а не другий ростер. Спеціальності — дзеркало 08_02, правити там.
+> Ростер ВНЗ (хто / кафедра → що валідує) — канон [`07_03`](07_03_Academic_Integration_and_IP); таблиця нижче — **композиційний зріз** (кластер ↔ база-команда), а не другий ростер. Спеціальності — дзеркало 07_03, правити там.
 
 | Кластер | Сфера відповідальності | Типові epic-домени | Базова команда |
 |---------|-------------------------|---------------------|-----------------|
-| **A — Hardware / EBFC** | Атоми, фізика, матеріали, біопаливний елемент, гідрогелі | EBFC catalyst R&D, Ti-6Al-4V DMLS, EDLC supercap MPPT, friction-fit pull-out, біосумісність, BIO.* sterilization, **RF/antenna фізика** (impedance, VNA S11, link budget, проникнення крізь PEEK/Ti) | **ЧНУ** (Мінаєв — квант. хімія [`08_01`](08_01_Joint_Publications_and_IP_Strategy), Гусак — металургія/FEA, Біо-Хаб Спрягайло), **ЧМА** (біохімія EBFC, токсикологія [`08_02 §4`](08_02_Academic_Institutions_Registry)), **ЧДТУ ПМКТ** (Базіло/Бондаренко — акустика [`08_02 §2`](08_02_Academic_Institutions_Registry)), **ЧДТУ РТРС** (Гончаров — перший проректор; RF-лабораторія: VNA/EMC/натурний Link Budget [`02_01 §5`](02_01_Hardware_Architecture_and_BOM)), **ЧНУ ФОТІУС** (Косенюк — RF impedance/ground-plane [`02_01 §5`](02_01_Hardware_Architecture_and_BOM)) |
-| **B — Verification / Math** | Докази, математика, верифікація, ZK | Lorenz attractor params, IoTeX W3bstream, peaq DID schemes, Chainlink Functions, dual-computation integrity, Solidity governance | **ЧНУ ФОТІУС** (Любченко — Master of Logic/GA [`08_02`](08_02_Academic_Institutions_Registry)), **ЧДТУ** (Карапетян — Data Science/статистика [`08_02 §2`](08_02_Academic_Institutions_Registry)), AI agents (theorem proving) |
+| **A — Hardware / EBFC** | Атоми, фізика, матеріали, біопаливний елемент, гідрогелі | EBFC catalyst R&D, Ti-6Al-4V DMLS, EDLC supercap MPPT, friction-fit pull-out, біосумісність, BIO.* sterilization, **RF/antenna фізика** (impedance, VNA S11, link budget, проникнення крізь PEEK/Ti) | **ЧНУ** (Мінаєв — квант. хімія [`07_03`](07_03_Academic_Integration_and_IP), Гусак — металургія/FEA, Біо-Хаб Спрягайло), **ЧМА** (біохімія EBFC, токсикологія [`07_03 §1.4`](07_03_Academic_Integration_and_IP)), **ЧДТУ ПМКТ** (Базіло/Бондаренко — акустика [`07_03 §1.2`](07_03_Academic_Integration_and_IP)), **ЧДТУ РТРС** (Гончаров — перший проректор; RF-лабораторія: VNA/EMC/натурний Link Budget [`02_01 §5`](02_01_Hardware_Architecture_and_BOM)), **ЧНУ ФОТІУС** (Косенюк — RF impedance/ground-plane [`02_01 §5`](02_01_Hardware_Architecture_and_BOM)) |
+| **B — Verification / Math** | Докази, математика, верифікація, ZK | Lorenz attractor params, IoTeX W3bstream, peaq DID schemes, Chainlink Functions, dual-computation integrity, Solidity governance | **ЧНУ ФОТІУС** (Любченко — Master of Logic/GA [`07_03`](07_03_Academic_Integration_and_IP)), **ЧДТУ** (Карапетян — Data Science/статистика [`07_03 §1.2`](07_03_Academic_Integration_and_IP)), AI agents (theorem proving) |
 | **C — Scaling / Cloud** | Software stack, infrastructure, performance | Rails core ([`04_02`](04_02_Business_Logic_and_Services)), multi-chain web3 (12 chains), Akash deploy ([`06_02`](06_02_Akash_Network_Integration)), Prometheus/Grafana, Sidekiq queues, Solid Cable, Phlex UI | Architect + AI coding-agents |
-| **D — Compliance / Legal** | Юриспруденція, регуляторика, IP, B2B, операційні SOP | Polygon Hadron (ERC-3643), MSA з СЄУ, Verra / Gold Standard методологія, GDPR / ESG звітність, IP-постава (defensive publication + open-license), аварійні SOP | **СЄУ** (Аблязов — господарське право/UA-legal, Ус — цифрова економіка/моделювання, Гедз — крипто-облік; D-MRV/крипто-глибина → профільні TBD [`08_02 §5`](08_02_Academic_Institutions_Registry)), **ЧІПБ** (пожежна безпека, SOP, параметричне страхування [`08_02 §3`](08_02_Academic_Institutions_Registry)) |
+| **D — Compliance / Legal** | Юриспруденція, регуляторика, IP, B2B, операційні SOP | Polygon Hadron (ERC-3643), MSA з СЄУ, Verra / Gold Standard методологія, GDPR / ESG звітність, IP-постава (defensive publication + open-license), аварійні SOP | **СЄУ** (Аблязов — господарське право/UA-legal, Ус — цифрова економіка/моделювання, Гедз — крипто-облік; D-MRV/крипто-глибина → профільні TBD [`07_03 §1.5`](07_03_Academic_Integration_and_IP)), **ЧІПБ** (пожежна безпека, SOP, параметричне страхування [`07_03 §1.3`](07_03_Academic_Integration_and_IP)) |
 
 > **Принцип взаємовиключності:** кожна задача має **рівно один primary cluster label** (`cluster:A-hardware` / `cluster:B-verification` / `cluster:C-scaling` / `cluster:D-compliance`). Cross-cluster задачі мають **secondary label** (`cluster-ref:X`). Primary cluster визначає, хто веде задачу на betting table; secondary — кого консультують у RACI-режимі. Повна label-таксономія + YAML SSOT — у [`00_05 §Labels`](00_05_GitHub_Projects_and_IaC_Automation).
 
@@ -233,6 +233,6 @@ TRL-матриця крокує "квартально-функціональни
 | TRL 4-5 (lab validation) | Fall (вересень — січень) | Лабораторні протоколи, перший draft публікації | UNI.1 (вхід ФОТІУС) + UNI.4 (школа Мінаєва) + UNI.5 (школа Гусака) |
 | TRL 5-6 (relevant environment) | Spring (лютий — травень) | Магістерські та дипломні **захисти у червні** | UNI.13 / UNI.14 верифікація науковців |
 | TRL 6-7 (pilot deploy) | Літня перерва + Fall | Pilot installation, conference paper draft | UNI.14 СЄУ MSA |
-| TRL 7-8 (operational) | Spring | Peer-reviewed публікація | UNI.* IP strategy ([`08_01`](08_01_Joint_Publications_and_IP_Strategy)) |
+| TRL 7-8 (operational) | Spring | Peer-reviewed публікація | UNI.* IP strategy ([`07_03`](07_03_Academic_Integration_and_IP)) |
 
 > Фінальні захисти у червні — **hard deadline** для TRL freeze поточного циклу. Будь-яка картка з `Target TRL ≥ 6` повинна бути закрита **до 15 червня**, інакше прив'язка зсувається у `Fall {Y}-{Y+1}`.

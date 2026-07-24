@@ -338,4 +338,4 @@ Scripts: `23_build_zif_clusters.py` (geometry + deprotonation), `24_dft_hopping_
 - L1 protein architecture → [`L1_protein_architecture.md`](L1_protein_architecture.md)
 - Pipeline operational status → [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md)
 - All results summary → [`SUMMARY.md`](SUMMARY.md)
-- IP posture (defensive publication) → [`08_01 §2`](../../../08_01_Joint_Publications_and_IP_Strategy.md)
+- IP posture (defensive publication) → [`07_03 §3`](../../../07_03_Academic_Integration_and_IP.md)

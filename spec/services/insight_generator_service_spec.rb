@@ -422,7 +422,7 @@ RSpec.describe InsightGeneratorService, type: :service do
       expect(service.send(:apply_weather_confounder, 0.9, 0.2, 0.5)).to eq(0.9)
     end
 
-    context "when calibrated (post ground-truth, 08_02 §4)" do
+    context "when calibrated (post ground-truth, 07_03 §1.4)" do
       before { allow(service).to receive(:vpd_confounder_calibration).and_return({ low_kpa: 0.5, max_discount: 0.4 }) }
 
       it "discounts stress when air is saturated (low VPD) and sap departs baseline" do
@@ -506,7 +506,7 @@ RSpec.describe InsightGeneratorService, type: :service do
       expect(service.send(:sap_stress_contribution, -0.9)).to eq(0.0)
     end
 
-    context "when calibrated (post ground-truth, 08_02 §4)" do
+    context "when calibrated (post ground-truth, 07_03 §1.4)" do
       before { allow(service).to receive(:sap_stress_calibration).and_return({ threshold: 0.3, weight: 0.2 }) }
 
       it "adds the weight when sap is well below baseline (drought signal)" do
@@ -612,7 +612,7 @@ RSpec.describe InsightGeneratorService, type: :service do
       expect(service.send(:acoustic_stress_contribution, 200)).to eq(0.0)
     end
 
-    context "when calibrated (post ground-truth, 08_02 §4)" do
+    context "when calibrated (post ground-truth, 07_03 §1.4)" do
       before { allow(service).to receive(:acoustic_stress_calibration).and_return({ threshold: 50, weight: 0.2 }) }
 
       it "adds the weight when cavitation is at/above the calibrated count" do

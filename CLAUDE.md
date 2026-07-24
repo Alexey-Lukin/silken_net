@@ -1,6 +1,6 @@
 # SilkenNet — контекст для Claude (orientation + routing)
 
-> **Цей файл prepend-иться в КОЖЕН промпт — він тугий orientation, НЕ manual.** Глибина живе в `docs/` (canon, `00_00`→`08_02`) + скілах (авто-інвокуються). Один факт — один дім (`00_06 §2`): тут — філософія, навігація, критичні інваріанти, крос-доменні пастки; решта — pointers. Конфлікт із `docs/` → **canon WINS**.
+> **Цей файл prepend-иться в КОЖЕН промпт — він тугий orientation, НЕ manual.** Глибина живе в `docs/` (canon, `00_00`→`07_03`) + скілах (авто-інвокуються). Один факт — один дім (`00_06 §2`): тут — філософія, навігація, критичні інваріанти, крос-доменні пастки; решта — pointers. Конфлікт із `docs/` → **canon WINS**.
 
 ## 1. Що це
 
@@ -10,7 +10,7 @@
 
 ## 2. Як тут працювати
 
-**Скіли авто-інвокуються за доменом і маршрутизують у точний canon-doc. НЕ читай усі docs наосліп — дай скілу привести тебе.** Канон-bird's-eye (🎯/TRL/секції 00→08, без читання всього) → `ruby scripts/doc_structure_map.rb`.
+**Скіли авто-інвокуються за доменом і маршрутизують у точний canon-doc. НЕ читай усі docs наосліп — дай скілу привести тебе.** Канон-bird's-eye (🎯/TRL/секції 00→07, без читання всього) → `ruby scripts/doc_structure_map.rb`.
 
 | Домен | Скіл (авто) | Дім-canon |
 |-------|-------------|-----------|
@@ -108,7 +108,7 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5) > web3_critical(6
 app/{controllers/api/v1, services/<domain>, workers, views/components}   # Rails моноліт
 firmware/{soldier,queen}/main.c · queen/lorawan_glue/ (ARCH.34 glue до LoRaMac-node) · bio_contracts/ (mruby) · common/ (header-libs) · test/ (host x86)
 contracts/*.sol + test/*.t.sol            # Solidity (Foundry) — §8
-docs/NN_NN_*.md                           # SSOT canon (00→08); відкрите/блокери → 00_07
+docs/NN_NN_*.md                           # SSOT canon (00→07); відкрите/блокери → 00_07
 tools/{ml, cad, in_silico}                # Python / .NET допоміжні
 deploy/akash · terraform · subgraph       # infra / The Graph
 ```

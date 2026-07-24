@@ -1,6 +1,6 @@
 # Cover Letter — Стаття 1 (draft)
 
-> 🟡 **DRAFT** · ✅ **submission-ready** — defensive publication (`08_01 §2`; tracker `UNI.3`): the
+> 🟡 **DRAFT** · ✅ **submission-ready** — defensive publication (`07_03 §3`; tracker `UNI.3`): the
 > publication itself is the protection (prior art); no patent gate.
 > Target: *J. Phys. Chem. B* (primary) · *PCCP* fallback · *Bioelectrochemistry* applied-backup.
 > Voice/claims per [`00_OUTLINE.md §0`](00_OUTLINE.md) + [`00_WRITING_GUIDE.md`](00_WRITING_GUIDE.md);
@@ -46,7 +46,7 @@ scripts (a committed `conda-lock` environment), and the full pipeline is provide
 This work is original, has not been published previously, and is not under consideration elsewhere. A
 portion of the methodology (explicit-solvation QM/MM of the cascade) is planned as a follow-up with an
 external computational-electrochemistry collaborator (TBD) and is reflected in the author contributions.
-[⚠️ founder: competing-interests — none re: IP (no patent pending; defensive-publication posture, 08_01 §2). Confirm standard declaration.]
+[⚠️ founder: competing-interests — none re: IP (no patent pending; defensive-publication posture, 07_03 §3). Confirm standard declaration.]
 
 We thank you for your consideration and look forward to the reviewers' comments.
 

@@ -158,16 +158,10 @@ _Деплой, моніторинг, секрети та децентраліз�
 
 # 🌿 Tier II — Програма
 
-## 💰 Модуль 07: Економіка та Фінансування (Economics & Funding)
+## 💰 Модуль 07: Екосистема та Партнерства (Ecosystem & Partnerships)
 
-_NaaS-контракти та юніт-економіка. Зовнішні стейкхолдери (B2G/B2B) — ноти в [`08_02`](08_02_Academic_Institutions_Registry); культурний шар (митці) — `cultural_layer.md`. Візія/місія/дорожня карта — у Фундаменті [`00_01`](00_01_Vision_Mission_and_Roadmap)._
+_Зовнішній шар довкола системи: NaaS-контракти, юніт-економіка, академічні партнери та IP. Культурний шар (митці) — `cultural_layer.md`. Візія/місія/дорожня карта — у Фундаменті [`00_01`](00_01_Vision_Mission_and_Roadmap). Інженерна R&D-субстанція партнерів реферить канон Tier I (01–06), не дублює._
 
 - [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) (NaaS контракти + параметричне страхування + фінансові константи)
 - [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) (Юніт-економіка + ROI через SCC + Supply Chain Ukraine)
-
-## 🔬 Модуль 08: Академічна Інтеграція (Academic & Partnerships)
-
-_Партнерства ВНЗ (ЧНУ+ФОТІУС, ЧДТУ, ЧІПБ, ЧМА, СЄУ): MoU, спільні публікації, IP-стратегія. Інженерна R&D-субстанція реферить канон Tier I (01–06), не дублює._
-
-- [`08_01` — Joint Publications and IP Strategy](08_01_Joint_Publications_and_IP_Strategy) (спільні публікації + IP-постава: defensive publication + open-license)
-- [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) (Реєстр 5 ВНЗ: хто/кафедра → що валідує [канон-дім] → публікація)
+- [`07_03` — Academic Integration and IP](07_03_Academic_Integration_and_IP) (Реєстр 5 ВНЗ + спільні публікації + IP-постава + бренд-архітектура)

@@ -85,7 +85,7 @@ Slashing: лише за доведену халатність (cause-gate A/B/C;
 
 ## 🌐 Зовнішні Стейкхолдери
 
-Окрім академічних партнерів ([`08_01`](docs/08_01_Joint_Publications_and_IP_Strategy.md)–[`08_02`](docs/08_02_Academic_Institutions_Registry.md)), проєкт залежить від зовнішніх **non-operational** стейкхолдерів: B2G-гейткіпери (лісівник Дзюбенко, природоохоронець Сегеда) — ноти в [`08_02`](docs/08_02_Academic_Institutions_Registry.md); метрологія (Чорней — сертифікація SCC) — [`00_07`](docs/00_07_Action_Plan_Tracker.md) § STK.5; культурний шар (митці національного/локального рівня для Genesis NFT + Data Sonification) — `docs/cultural_layer.md`. Жоден із записів не блокує merge — це outreach pool, що активується за TRL-тригерами.
+Окрім академічних партнерів ([`07_03`](docs/07_03_Academic_Integration_and_IP.md)), проєкт залежить від зовнішніх **non-operational** стейкхолдерів: B2G-гейткіпери (лісівник Дзюбенко, природоохоронець Сегеда) — ноти в [`07_03`](docs/07_03_Academic_Integration_and_IP.md); метрологія (Чорней — сертифікація SCC) — [`00_07`](docs/00_07_Action_Plan_Tracker.md) § STK.5; культурний шар (митці національного/локального рівня для Genesis NFT + Data Sonification) — `docs/cultural_layer.md`. Жоден із записів не блокує merge — це outreach pool, що активується за TRL-тригерами.
 
 ---
 
@@ -339,15 +339,12 @@ kamal deploy
 - [`06_07`](docs/06_07_CICD_and_Runbook_Index.md) — CI/CD workflows + єдиний operations runbook-індекс
 - [`06_08`](docs/06_08_Resilience_and_Failover_Policy.md) — Queen failover 4 рівні + Per-Chain Fallback Matrix
 
-### 🌿 Tier II — Програма (07–08)
+### 🌿 Tier II — Програма (07)
 
-**Економіка та Фінансування / Economics & Funding (Модуль 07)**
+**Екосистема та Партнерства / Ecosystem & Partnerships (Модуль 07)**
 - [`07_01`](docs/07_01_Nature_as_a_Service_Contracts.md) — NaaS контракти та страхування
 - [`07_02`](docs/07_02_Unit_Economics_and_BOM.md) — юніт-економіка та ROI через SCC
-
-**Академічна Інтеграція / Academic & Partnerships (Модуль 08)** — 5 ВНЗ-партнерів
-- [`08_01`](docs/08_01_Joint_Publications_and_IP_Strategy.md) — спільні публікації (Статті 1–29) + стратегія IP
-- [`08_02`](docs/08_02_Academic_Institutions_Registry.md) — Реєстр Академічних Інституцій (ЧНУ+ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ: хто → що валідує → канон-дім)
+- [`07_03`](docs/07_03_Academic_Integration_and_IP.md) — Академічна інтеграція: реєстр 5 ВНЗ + спільні публікації + IP-постава + бренд
 
 ---
 
@@ -384,7 +381,7 @@ kamal deploy
 
 ## 📜 Ліцензія та IP-постава
 
-SilkenNet — **mission-first, defensive-publication-first**: ми **не патентуємо** цю роботу, а публікуємо її як prior art, щоб вона лишалась вільною для всіх лісів і її **не можна було захопити**. Канон постави — [`08_01 §2`](docs/08_01_Joint_Publications_and_IP_Strategy.md); повна мапа зон і винятків — [`NOTICE`](NOTICE).
+SilkenNet — **mission-first, defensive-publication-first**: ми **не патентуємо** цю роботу, а публікуємо її як prior art, щоб вона лишалась вільною для всіх лісів і її **не можна було захопити**. Канон постави — [`07_03 §3`](docs/07_03_Academic_Integration_and_IP.md); повна мапа зон і винятків — [`NOTICE`](NOTICE).
 
 | Зона | Ліцензія | Файл |
 |------|----------|------|

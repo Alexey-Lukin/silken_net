@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module SilkenNet
-  # [Lorenz de-risk / 08_02 §4] Ground-truth validation harness.
+  # [Lorenz de-risk / 07_03 §1.4] Ground-truth validation harness.
   #
   # Push-button correlation analysis for the "Lorenz Z ↔ tree health" hypothesis,
   # to be run once ЧНУ collects paired (telemetry, ground-truth) observations.
@@ -10,7 +10,7 @@ module SilkenNet
   # no DB reads/writes, no slashing side-effects, no global state. Safe to run
   # anywhere (rake task, console, CI) without touching production records.
   #
-  # Primary questions it answers (05_05 §8, 08_02 §4):
+  # Primary questions it answers (05_05 §8, 07_03 §1.4):
   #   1. Does `stress_index` track ground-truth decline?         → spearman
   #   2. Does Z add predictive value OVER direct signals (sap)?   → report[:z_incremental_over_sap]
   #   3. Does device bio_status agree with expert labels?         → cohens_kappa

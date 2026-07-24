@@ -132,18 +132,18 @@ RSpec.describe Tracker::Dashboard do
   # prose that section_dangling_refs (#### meta-refs only) misses. Uses the real docs.
   describe ".file_section_dangling_refs (whole-file §-ref resolution)" do
     it "flags a bare code-span §-ref (backlog/archive cell) to an absent section" do
-      expect(described_class.file_section_dangling_refs("| E.99 | x | `08_02` §1.3 (партнер) | y |"))
-        .to include(a_string_matching(%r{08_02 §1\.3}))
+      expect(described_class.file_section_dangling_refs("| E.99 | x | `05_05` §9.9 (партнер) | y |"))
+        .to include(a_string_matching(%r{05_05 §9\.9}))
     end
 
     it "does not flag a valid bare §-ref" do
-      expect(described_class.file_section_dangling_refs("| E.99 | x | `08_02` §1B | y |")).to be_empty
+      expect(described_class.file_section_dangling_refs("| E.99 | x | `07_03` §1.1 | y |")).to be_empty
     end
 
-    it "is boundary-aware: §1.3 does NOT resolve against a 2.1.3 heading" do
-      # 08_01 has §2.1.3 but no §1.3 — the retired substring `include?` would false-pass.
-      expect(described_class.file_section_dangling_refs("ref `08_01 §1.3` here"))
-        .to include(a_string_matching(%r{08_01 §1\.3}))
+    it "is boundary-aware: §3.1 does NOT resolve against a 1.3.1 heading" do
+      # 03_01 has §1.3.1 but no §3.1 — the retired substring `include?` would false-pass.
+      expect(described_class.file_section_dangling_refs("ref `03_01 §3.1` here"))
+        .to include(a_string_matching(%r{03_01 §3\.1}))
     end
 
     it "resolves a parent-group ref whose children exist (§4а ⇐ 4а.1..4а.5)" do
@@ -426,9 +426,9 @@ RSpec.describe Tracker::Dashboard do
   # by the `[A-Z]`-anchored match, hiding UNI.13a / BIZ.12 from every tracker check.
   it "parses a #### item behind a leading emoji prefix" do
     md = <<~MD
-      ## §08 · Академічна інтеграція
+      ## §07a · Академічна інтеграція
       #### 🌿 UNI.13a — emoji-prefixed item
-      - **P1** · 👤 · → `08_01 §1B`
+      - **P1** · 👤 · → `07_03 §2.2`
     MD
     expect(described_class.parse(md).map(&:id)).to contain_exactly("UNI.13a")
   end

@@ -8,7 +8,7 @@
 
 ## 1. RFQ-artifact registry (компонент-група → дім → аркуш → канал → статус)
 
-Статус: **✅** повний аркуш є · **🟡** stub (індексовано; аркуш авториться як-procure'иться) · **⚪** future. Канал: **CRO** commercial · **ACAD** академ-co-pub ([`08_02`](../../08_02_Academic_Institutions_Registry.md)) · **DIST** дистриб'ютор · **AM** друк-бюро.
+Статус: **✅** повний аркуш є · **🟡** stub (індексовано; аркуш авториться як-procure'иться) · **⚪** future. Канал: **CRO** commercial · **ACAD** академ-co-pub ([`07_03`](../../07_03_Academic_Integration_and_IP.md)) · **DIST** дистриб'ютор · **AM** друк-бюро.
 
 | Домен | Компонент-група | Канон BOM-дім | Hard-constraint дім (§4) | Аркуш | Vendor / канал | 00_07 |
 |---|---|---|---|---|---|---|
@@ -42,8 +42,8 @@ Stage-2 coin-bake-off = **R&D-шар**; 100-партія = **Production-шар**
 
 ## 3. Cross-cutting procurement-політики (вказівники на доми)
 
-- **IP / CDA / NDA:** [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) — **defensive-publication** → RFQ-specs **відкриті** (вже prior art); CDA = **стандартні комерц-умови** (ціни/строки/QC), НЕ для новизни; NDA **лише** для нерозкритого (prod-keys/telemetry/ML-ваги). RFQ-аркуші це наслідують у §IP.
-- **Академічний канал** ([`08_02`](../../08_02_Academic_Institutions_Registry.md)): co-pub (ЧНУ/ЧМА/ЧДТУ) = $0 + Q1-публікація, але темп-партнер-залежний; commercial CRO = $ + швидше + стандартний CDA. **Гібрид** на критичному шляху (HW.5: academ-валідація архітектури + commercial-експресія). Партнер-MoU гейт = **UNI.1** (СЄУ Аблязов legal).
+- **IP / CDA / NDA:** [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) — **defensive-publication** → RFQ-specs **відкриті** (вже prior art); CDA = **стандартні комерц-умови** (ціни/строки/QC), НЕ для новизни; NDA **лише** для нерозкритого (prod-keys/telemetry/ML-ваги). RFQ-аркуші це наслідують у §IP.
+- **Академічний канал** ([`07_03`](../../07_03_Academic_Integration_and_IP.md)): co-pub (ЧНУ/ЧМА/ЧДТУ) = $0 + Q1-публікація, але темп-партнер-залежний; commercial CRO = $ + швидше + стандартний CDA. **Гібрид** на критичному шляху (HW.5: academ-валідація архітектури + commercial-експресія). Партнер-MoU гейт = **UNI.1** (СЄУ Аблязов legal).
 - **Фінансування-гейти** ([`00_07` BIZ.20](../../00_07_Action_Plan_Tracker.md)): procurement-authority вивільняється поетапно з self-fund + інкорпорацією юр-особи (перша 100-партія CAPEX gated на BIZ.20).
 
 ---
@@ -78,6 +78,6 @@ Stage-2 coin-bake-off = **R&D-шар**; 100-партія = **Production-шар**
 |---|---|
 | [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md) | One-Home реєстрація цього concern'у |
 | [`07_02 §8`](../../07_02_Unit_Economics_and_BOM.md) | economics/BOM + україн­ські DMLS-хаби + Production-шар (Frame Agreement) |
-| [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) | IP/CDA/NDA-політика (defensive-publication) — дім |
-| [`08_02`](../../08_02_Academic_Institutions_Registry.md) | академічні co-pub канали (ЧНУ/ЧМА/ЧДТУ) |
+| [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) | IP/CDA/NDA-політика (defensive-publication) — дім |
+| [`07_03`](../../07_03_Academic_Integration_and_IP.md) | академічні co-pub канали (ЧНУ/ЧМА/ЧДТУ) |
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | HW.*/BIZ.* procurement-action-items + DOC-T (інкрементальне авторство) |

@@ -118,7 +118,7 @@ Methods → Results → Introduction → Discussion/Conclusions → Abstract + T
 ```
 
 - **✅ IP posture — defensive publication:** no patent is filed (by design). The publication **IS** the
-  protection — it fixes prior art (see [`08_01 §2`](../../../08_01_Joint_Publications_and_IP_Strategy.md)
+  protection — it fixes prior art (see [`07_03 §3`](../../../07_03_Academic_Integration_and_IP.md)
   and `protocols/anchor/prior_art_landscape.md`). Submit freely; no gate.
 - **Authorship/CRediT:** agree this *before* drafting (OUTLINE §0): you (Conceptualization, Methodology,
   Software, Investigation, Writing-original) + an external computational-electrochemistry collaborator TBD (the QM/MM upgrade, Writing-review).

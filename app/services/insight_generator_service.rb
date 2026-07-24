@@ -257,7 +257,7 @@ class InsightGeneratorService < ApplicationService
   # INERT (returns stress unchanged) when ANY holds — by design we ship NO guessed
   # kPa threshold into the slashing path:
   #   • avg_vpd nil       → firmware not yet emitting VPD (HW.32 / 03_01)
-  #   • calibration nil   → ground-truth thresholds unset (08_02 §4)
+  #   • calibration nil   → ground-truth thresholds unset (07_03 §1.4)
   #   • VPD not low        → normal/high VPD = no weather excuse for low sap
   #   • sap near baseline  → nothing weather could account for
   #
@@ -278,7 +278,7 @@ class InsightGeneratorService < ApplicationService
   end
 
   # Calibration-pending config for the VPD gate. Returns nil (→ gate inert) until
-  # BOTH ground-truth values are supplied (08_02 §4) via ENV — deliberately not
+  # BOTH ground-truth values are supplied (07_03 §1.4) via ENV — deliberately not
   # hardcoded, so no guessed threshold can silently enter slashing. low_kpa =
   # "saturated air" VPD floor (kPa); max_discount = max stress reduction (0..1].
   def vpd_confounder_calibration
@@ -354,7 +354,7 @@ class InsightGeneratorService < ApplicationService
   #
   # INERT by default (0.0): like the VPD gate, NO guessed weight enters live
   # slashing — activates only once ground-truth calibration sets ENV
-  # STRESS_SAP_LOW_THRESHOLD + STRESS_SAP_WEIGHT (08_02 §4).
+  # STRESS_SAP_LOW_THRESHOLD + STRESS_SAP_WEIGHT (07_03 §1.4).
   def sap_stress_contribution(sap_signed_deviation)
     calibration = sap_stress_calibration
     return 0.0 unless calibration
@@ -364,7 +364,7 @@ class InsightGeneratorService < ApplicationService
   end
 
   # Calibration-pending config for the sap-stress term. nil (→ term inert) until
-  # BOTH ground-truth values are set via ENV (08_02 §4): threshold = fraction below
+  # BOTH ground-truth values are set via ENV (07_03 §1.4): threshold = fraction below
   # baseline that counts as drought-stress (e.g. 0.30); weight = stress increment
   # (e.g. 0.2). Deliberately not hardcoded — no guessed weight in live slashing.
   def sap_stress_calibration
@@ -384,7 +384,7 @@ class InsightGeneratorService < ApplicationService
   # Only HIGH cavitation (≥ calibrated count) adds stress; bounded + max()'d with the
   # sap term so drought CORROBORATES but never SOLELY slashes. INERT by default —
   # activates only via ground-truth ENV STRESS_ACOUSTIC_THRESHOLD + STRESS_ACOUSTIC_WEIGHT
-  # (08_02 §4); the max() in the heuristic already prevents same-root-cause stacking.
+  # (07_03 §1.4); the max() in the heuristic already prevents same-root-cause stacking.
   def acoustic_stress_contribution(max_acoustic)
     calibration = acoustic_stress_calibration
     return 0.0 unless calibration
@@ -394,7 +394,7 @@ class InsightGeneratorService < ApplicationService
   end
 
   # Calibration-pending config for the acoustic-stress term. nil (→ inert) until both
-  # ground-truth values are set via ENV (08_02 §4): threshold = cavitation event count
+  # ground-truth values are set via ENV (07_03 §1.4): threshold = cavitation event count
   # that counts as drought-stress (e.g. 50); weight = stress increment (e.g. 0.2).
   # Deliberately not hardcoded — no guessed count in live slashing.
   def acoustic_stress_calibration

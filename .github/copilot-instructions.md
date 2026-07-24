@@ -1,6 +1,6 @@
 # Copilot Instructions — SilkenNet
 
-> **SSOT = `CLAUDE.md` + `docs/` (`00_00`→`08_02`) + [Wiki](https://github.com/Alexey-Lukin/silken_net/wiki). Read those first.**
+> **SSOT = `CLAUDE.md` + `docs/` (`00_00`→`07_03`) + [Wiki](https://github.com/Alexey-Lukin/silken_net/wiki). Read those first.**
 > This file is a thin pointer + a short trap cheat-sheet. **If anything here conflicts with `CLAUDE.md`, `CLAUDE.md` WINS** (it is the single maintained home; this file is kept thin on purpose so it cannot drift).
 
 **SilkenNet** — planetary Bio-IoT D-MRV platform for forest monitoring (Ti-6Al-4V gyroid anchor + EBFC → STM32 Soldier → LoRa → Queen gateway → Rails 8.1 / Ruby 4.0.5 / PostgreSQL / Sidekiq → 12-chain Web3 Proof-of-Growth → SCC mint).

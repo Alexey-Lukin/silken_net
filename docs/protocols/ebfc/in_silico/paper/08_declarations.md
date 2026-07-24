@@ -2,7 +2,7 @@
 
 > **Draft section** (self-review Gate 4, 2026-06-16). Standard journal declarations + the AI-use
 > disclosure. **Venue-specific:** final wording and placement follow the target journal's policy
-> (*J. Phys. Chem. B* / ACS); ethos = `08_01 §2` (publish-to-protect — transparency is the standard,
+> (*J. Phys. Chem. B* / ACS); ethos = `07_03 §3` (publish-to-protect — transparency is the standard,
 > not concealment). Items marked **[finalise]** need author input before submission.
 
 ## AI Use Disclosure
@@ -22,8 +22,8 @@ This study used artificial-intelligence tools, disclosed here for transparency:
 ## Other required declarations [finalise at submission]
 
 - **Data Availability.** Scripts, golden reference outputs, and result caches provided as Supporting
-  Information / repository (publish-to-protect, `08_01 §2`). [finalise — repository DOI]
+  Information / repository (publish-to-protect, `07_03 §3`). [finalise — repository DOI]
 - **Competing Interests.** [finalise]
 - **Funding.** [finalise — see funding-statement guidance]
 - **Author Contributions (CRediT).** [finalise — Architect (Silken Net): in-silico baseline, drafting;
-  external computational-electrochemistry collaborator (TBD): explicit-water QM/MM section, added pre-submission per `08_01 §1` Стаття 1]
+  external computational-electrochemistry collaborator (TBD): explicit-water QM/MM section, added pre-submission per `07_03 §2.1` Стаття 1]

@@ -5,12 +5,12 @@
 > лишався **вільним для всіх лісів і спільнот** і (b) **ніхто не зміг його запатентувати** й заблокувати
 > мережу (анти-захоплення). Це чесна реалізація постави **defensive-publication-first**.
 > **Статус:** 🟢 disclosure-ready (для TDCommons + публічний repo + наукова стаття = три prior-art-якорі).
-> **Канон постави:** [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) ·
+> **Канон постави:** [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) ·
 > ландшафт новизни → [`prior_art_landscape.md`](prior_art_landscape.md) ·
 > EBFC → [`01_03`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) ·
 > gyroid → [`01_01`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md).
 >
-> **Чому публікуємо, а не патентуємо** ([`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md)): для місія-first проєкту з публічним repo, solo-UA
+> **Чому публікуємо, а не патентуємо** ([`07_03 §3`](../../07_03_Academic_Integration_and_IP.md)): для місія-first проєкту з публічним repo, solo-UA
 > enforcement-реальністю та open/DePIN-ДНК **defensive publication досягає анти-захоплення без вартості
 > й виключності патенту** — опублікований винахід стає prior art, тож його не можна монополізувати, а
 > мережа лишається спільним надбанням. Дата цього розкриття + публічний git-історія + наукова стаття =
@@ -75,11 +75,11 @@ enzyme-несучу gyroid-стінку (щоб не пасивувати EBFC-�
 
 - **TDCommons** (technical disclosure commons) — безкоштовна платформа defensive publication → індексується патентними офісами.
 - **Публічний git-репозиторій** SilkenNet (цей файл) — датоване публічне розкриття.
-- **Наукова стаття** (Стаття 1, [`08_01 §1`](../../08_01_Joint_Publications_and_IP_Strategy.md)) — рецензований prior art механізму.
+- **Наукова стаття** (Стаття 1, [`07_03 §2.1`](../../07_03_Academic_Integration_and_IP.md)) — рецензований prior art механізму.
 
 Разом вони роблять інвентивне ядро **неможливим для патентування третіми сторонами** і назавжди
 вільним для використання у моніторингу здоров'я лісів. Жоден патент SilkenNet не подається
-(patent non-assertion pledge — `NOTICE`, [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md)).
+(patent non-assertion pledge — `NOTICE`, [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md)).
 
 ---
 
@@ -87,7 +87,7 @@ enzyme-несучу gyroid-стінку (щоб не пасивувати EBFC-�
 
 | Ресурс | Що бере |
 |---|---|
-| [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) | **owner** IP-постави (defensive-publication-first + ліцензії + pledge) |
+| [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) | **owner** IP-постави (defensive-publication-first + ліцензії + pledge) |
 | [`prior_art_landscape.md`](prior_art_landscape.md) | ландшафт новизни (доказ + анти-захоплення FTO-lite) |
 | [`01_03`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) · [`01_01`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) | EBFC / gyroid технічний канон |
 | [`03_04`](../../03_04_mruby_Lorenz_Attractor.md) | хаотична класифікація `delta_t` (Lorenz) |

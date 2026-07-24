@@ -1,13 +1,13 @@
 # Prior-Art Landscape — SilkenNet (novelty evidence + anti-capture scan)
 
 > **Що це:** карта попереднього рівня техніки навколо SilkenNet. Під **defensive-publication** поставою
-> ([`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md)) її мета **подвійна**: (a) **доказ новизни** для наукової статті ([`08_01 §1`](../../08_01_Joint_Publications_and_IP_Strategy.md)); (b)
+> ([`07_03 §3`](../../07_03_Academic_Integration_and_IP.md)) її мета **подвійна**: (a) **доказ новизни** для наукової статті ([`07_03 §2.1`](../../07_03_Academic_Integration_and_IP.md)); (b)
 > **анти-захоплення FTO-lite** — підтвердити, що жодна третя сторона вже не тримає блокуючого патенту на
 > ту саму синергію, тож наше відкрите використання безпечне. **Це НЕ patentability-пошук перед поданням
-> заявки** (ми не подаємо — [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md)).
+> заявки** (ми не подаємо — [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md)).
 > **Cross-ref:** [`defensive_disclosure.md`](defensive_disclosure.md) (що саме ми розкриваємо) ·
-> [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) (постава) ·
-> [`08_01 §2.1.1`](../../08_01_Joint_Publications_and_IP_Strategy.md) (TISC може прогнати ці запити).
+> [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) (постава) ·
+> [`07_03 §4.1`](../../07_03_Academic_Integration_and_IP.md) (TISC може прогнати ці запити).
 
 ---
 
@@ -84,4 +84,4 @@
 > **Висновок-рамка:** очікуваний результат — компоненти мають prior art, але **синергія A (EBFC =
 > одночасно живлення + zero-noise `delta_t`-сенсор)** не вчиться ніким → новизна для статті стоїть, і
 > якщо нема чинного блокуючого патенту на синергію — наше відкрите використання вільне (анти-захоплення
-> підтверджено). Будь-який near-hit на саму синергію → ескалювати на FTO-оцінку ([`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md)).
+> підтверджено). Будь-який near-hit на саму синергію → ескалювати на FTO-оцінку ([`07_03 §3`](../../07_03_Academic_Integration_and_IP.md)).

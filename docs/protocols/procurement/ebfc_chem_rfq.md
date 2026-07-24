@@ -12,9 +12,9 @@
 > [`01_03 §3.7`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) (CRO-нюанси/bottlenecks) ·
 > [`L1`](../ebfc/in_silico/L1_protein_architecture.md) (ген+11 N→Q — **owner послідовності**) ·
 > [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.5 (хімічний стек) / HW.24 (staged-validation) ·
-> [`08_02`](../../08_02_Academic_Institutions_Registry.md) (ЧНУ нанохімія — ZIF за співавторство).
+> [`07_03`](../../07_03_Academic_Integration_and_IP.md) (ЧНУ нанохімія — ZIF за співавторство).
 >
-> ℹ️ **IP:** **defensive-publication** постава ([`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md)) —
+> ℹ️ **IP:** **defensive-publication** постава ([`07_03 §3`](../../07_03_Academic_Integration_and_IP.md)) —
 > специфікації **відкриті** (вже публічні як prior art; патенту немає). CRO-CDA = **стандартні комерційні
 > умови** (ціни/строки/QC), **НЕ** для захисту новизни. Окремий NDA доречний лише для **нерозкритого**
 > (production-дані / ключі), не для tech-специфік.
@@ -69,8 +69,8 @@
 | **Гібрид** | поєднання з Laccase на MWCNT (резерв безферментного каталізу при денатурації) |
 | **QC / acceptance** | SEM (розмір/морфологія), XRD (фаза ZIF), ICP/EDS (Cu:Co:Ce стехіометрія), BET (площа) |
 | **Цільові показники** (дзеркало) | ×10 power density vs чиста Laccase; 75% активності після 10 днів; **+7.5%** з 0.25 М NaCl (vs −41.7% чиста Laccase) — **значення в `01_03 §2.2`** |
-| **Партнер-опція** | Нанохімія **ЧНУ** або НАН України — за співавторство Q1 (`08_02`); або комерційний CRO |
-| **IP** | за академ-партнерства — співавторство (`08_01 §2`); CDA — §IP |
+| **Партнер-опція** | Нанохімія **ЧНУ** або НАН України — за співавторство Q1 (`07_03`); або комерційний CRO |
+| **IP** | за академ-партнерства — співавторство (`07_03 §3`); CDA — §IP |
 
 ---
 
@@ -117,10 +117,10 @@
 - [ ] 👤 **CDA-шаблон** (комерц-умови) — §IP.
 - [ ] 👤 **Spec A (dgrFAD-GDH)** — RFQ на квоту/строки **зараз** (🔴 4–8 тиж тримає весь Stage 2). Sequence freeze — після CHEM.11+CHEM.10.
 - [ ] 👤 **Spec C (геніпін)** — закупка паралельно (найшвидше).
-- [ ] 👤 **Spec B (ZIF)** — RFQ або ЧНУ-партнерство ([`08_02`](../../08_02_Academic_Institutions_Registry.md)) паралельно.
+- [ ] 👤 **Spec B (ZIF)** — RFQ або ЧНУ-партнерство ([`07_03`](../../07_03_Academic_Integration_and_IP.md)) паралельно.
 - [ ] 👤 **Spec D (мембрана)** — окремий fluoropolymer-вендор (3–6 тиж).
 - [ ] 👤 **Spec E (CNC)** — закупка ENERON.
-- [ ] 👤 Усі deliverables → **Stage 2 Ti-coins (HW.24)**: in-vitro CV/EIS у синтетичному ксилемному соку (рецептура — біо-хаб ЧНУ, [`08_02`](../../08_02_Academic_Institutions_Registry.md)), 30-day stability, chloride-tolerance (0.25 М NaCl), UCST winter-lock. Електрод із «вушком» під потенціостат-кліпсу, A=2 см².
+- [ ] 👤 Усі deliverables → **Stage 2 Ti-coins (HW.24)**: in-vitro CV/EIS у синтетичному ксилемному соку (рецептура — біо-хаб ЧНУ, [`07_03`](../../07_03_Academic_Integration_and_IP.md)), 30-day stability, chloride-tolerance (0.25 М NaCl), UCST winter-lock. Електрод із «вушком» під потенціостат-кліпсу, A=2 см².
 
 > **Залежність:** Spec A–E живлять **Stage 2** гейту HW.24 (Ti-coins) → Stage 3 (full anchor) → Stage 4
 > (100 шт). Передчасне замовлення 100-DMLS-партії без Stage 2/3 — методологічна помилка ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24).
@@ -136,5 +136,5 @@
 | [`01_03 §3.7`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) | CRO-нюанси: Pichia-not-E.coli, ZIF SEM-gate, мембрана-bottleneck |
 | [`L1 §2`](../ebfc/in_silico/L1_protein_architecture.md) | **owner** мутованої послідовності (600 aa, 11 N→Q) + CHEM.10/11 gate |
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | HW.5 (хім-стек action items) · HW.24 (staged validation) · HW.5.IS (CHEM.*) |
-| [`08_02`](../../08_02_Academic_Institutions_Registry.md) | ЧНУ нанохімія (ZIF) + біо-хаб (рецептура соку) |
-| [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) | IP-постава (defensive publication) — owner |
+| [`07_03`](../../07_03_Academic_Integration_and_IP.md) | ЧНУ нанохімія (ZIF) + біо-хаб (рецептура соку) |
+| [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) | IP-постава (defensive publication) — owner |

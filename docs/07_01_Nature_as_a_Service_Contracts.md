@@ -21,7 +21,7 @@
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | SCC/SFC + фінансові константи (home) |
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth (мінтинг-тригер) |
 | [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка, BOM |
-| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | MSA / KYC legal (Аблязов) |
+| [`07_03` — Academic Institutions Registry](07_03_Academic_Integration_and_IP) | MSA / KYC legal (Аблязов) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | §07 юр/бізнес-дім: BIZ.2/3/9/11/14/15/18/19/20/21 (BIZ.6/17 → [`07_02`](07_02_Unit_Economics_and_BOM); BIZ.13 → [`05_05`](05_05_Slashing_and_Risk_Policy)) |
 
 ## 📑 Зміст
@@ -317,7 +317,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 - **Service Level Agreement (SLA)** — параметри якості: час реакції на інциденти, uptime гарантії, умови відшкодування при недоступності системи.
 - **Subscription Order Form** — документ на конкретний `NaasContract` (кластер, тривалість, `total_funding`, `cancellation_terms`).
 
-**Дія:** Залучення юридичного консультанта (бажано з досвідом Web3 / ReFi) для підготовки шаблонів. **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович, к.ю.н., віцепрезидент СЄУ — господарське/комерційне право) — розробка шаблонів MSA, Term Sheet та Carbon Credit Purchase Agreement згідно з **українським господарським правом** (його фах); EU/MiCA-складова → профільний крипто/IP-юрист TBD. Детально: [`08_02 §5`](08_02_Academic_Institutions_Registry).
+**Дія:** Залучення юридичного консультанта (бажано з досвідом Web3 / ReFi) для підготовки шаблонів. **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович, к.ю.н., віцепрезидент СЄУ — господарське/комерційне право) — розробка шаблонів MSA, Term Sheet та Carbon Credit Purchase Agreement згідно з **українським господарським правом** (його фах); EU/MiCA-складова → профільний крипто/IP-юрист TBD. Детально: [`07_03 §1.5`](07_03_Academic_Integration_and_IP).
 
 ---
 
@@ -346,7 +346,7 @@ Polygon Hadron Identity Platform надає технічну верифікац�
 - Яка юрисдикція? (ЄС — AMLD5, США — BSA, міжнародні — FATF)
 - Скільки коштує ліцензія на надання таких послуг?
 
-**Дія:** ⚖️ вибір KYC-провайдера (Sumsub / Veriff / Polygon Hadron) + юрисдикції (AMLD5/BSA/FATF) = рішення у [`00_07`](00_07_Action_Plan_Tracker) BIZ.20 (entity+KYC-counterparty) та BIZ.11 (Hadron KYC-flow) — не окремий item. Консультація compliance + **академічний шлях:** СЄУ (Аблязов Денис Едуардович) — **UA-правова** рамка KYC/AML для B2B клієнтів; EU-складова (ERC-3643 / AMLD5 / FATF) → профільний крипто-юрист TBD; облік KYC-витрат — СЄУ (Гедз М.Й., фінансовий облік криптоактивів). Детально: [`08_02 §5`](08_02_Academic_Institutions_Registry).
+**Дія:** ⚖️ вибір KYC-провайдера (Sumsub / Veriff / Polygon Hadron) + юрисдикції (AMLD5/BSA/FATF) = рішення у [`00_07`](00_07_Action_Plan_Tracker) BIZ.20 (entity+KYC-counterparty) та BIZ.11 (Hadron KYC-flow) — не окремий item. Консультація compliance + **академічний шлях:** СЄУ (Аблязов Денис Едуардович) — **UA-правова** рамка KYC/AML для B2B клієнтів; EU-складова (ERC-3643 / AMLD5 / FATF) → профільний крипто-юрист TBD; облік KYC-витрат — СЄУ (Гедз М.Й., фінансовий облік криптоактивів). Детально: [`07_03 §1.5`](07_03_Academic_Integration_and_IP).
 
 ---
 
@@ -360,7 +360,7 @@ Polygon Hadron Identity Platform надає технічну верифікац�
 - Bridge фіат → купівля SCC → `esg_retired_balance` (незворотно) → сертифікат.
 - Audit-trail ретайрменту (Filecoin immutable archive — нот.18) для регуляторного звіту.
 
-**Дія:** юридична рамка SPV — СЄУ (Аблязов Д., UA господарське право; MiCA/EU-складова → крипто-юрист TBD) + облік — СЄУ (Гедз М.Й., фінансовий облік криптоактивів). Cross-ref [`08_02 §5`](08_02_Academic_Institutions_Registry).
+**Дія:** юридична рамка SPV — СЄУ (Аблязов Д., UA господарське право; MiCA/EU-складова → крипто-юрист TBD) + облік — СЄУ (Гедз М.Й., фінансовий облік криптоактивів). Cross-ref [`07_03 §1.5`](07_03_Academic_Integration_and_IP).
 
 ---
 
@@ -392,8 +392,8 @@ SilkenForestCoin має `ERC20Votes` (checkpoint-based voting power), але:
 **Дія:** Пілотна реєстрація однієї лісової ділянки через Polygon Hadron з юридичним супроводом.
 
 > 📋 **Юридичний супровід — рекомендована послідовність:**
-> 1. **UA-юрисдикція:** Аблязов Д.Е. (СЄУ, персонально) + профільний крипто/IP-юрист TBD — меморандум «Юридична допустимість токенізації UA-лісу через ERC-3643» (cross-ref [`08_01 §2.1`](08_01_Joint_Publications_and_IP_Strategy)). Перевіряє сумісність з Лісовим Кодексом України та Законом «Про природно-заповідний фонд».
-> 2. **EU/MiCA:** Аблязов Д.Е. (СЄУ) — правова рамка ERC-3643 / MiCA для лісових RWA ([`08_02 §5`](08_02_Academic_Institutions_Registry)).
+> 1. **UA-юрисдикція:** Аблязов Д.Е. (СЄУ, персонально) + профільний крипто/IP-юрист TBD — меморандум «Юридична допустимість токенізації UA-лісу через ERC-3643» (cross-ref [`07_03 §4`](07_03_Academic_Integration_and_IP)). Перевіряє сумісність з Лісовим Кодексом України та Законом «Про природно-заповідний фонд».
+> 2. **EU/MiCA:** Аблязов Д.Е. (СЄУ) — правова рамка ERC-3643 / MiCA для лісових RWA ([`07_03 §1.5`](07_03_Academic_Integration_and_IP)).
 > 3. **Пілотна реєстрація:** одна ділянка Черкаського бору / ПЗФ за двостороннім меморандумом ЧНУ + СЄУ.
 
 ---
