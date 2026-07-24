@@ -578,7 +578,7 @@ module Tracker
     # --- meta-line form guard [DOC-T.23, founder 2026-06-14] ---
     # Every registry #### meta-line is EXACTLY `- **P?** · WHO · STAGE · → канон-реф`:
     # WHO ∈ {🤖, 👤, 🤖+👤} (canonical AI-first combo — rejects 👤+🤖 / 👤/🤖) and NOTHING
-    # trails the canon-ref (a `· ✅ ліцензія` / `· 🔗 UNI.1` tail belongs in Стан). The
+    # trails the canon-ref (a `· ✅ ліцензія` / `· 🔗 UNI.16` tail belongs in Стан). The
     # executor parser uses `include?`, so it silently tolerated 👤+🤖 and tails; this locks
     # in the DOC-T.23 standardization. Registry scope as `parse`. (00_06 §3 recipe.)
     META_LINE = /\A-\s+\*\*P[0-3]\*\*\s+·\s+(.+?)\s+·\s+[⚪🟡🟢🔗🌿⚫]\s+·\s+(.+?)\s*\z/u
