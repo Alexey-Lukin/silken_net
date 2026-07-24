@@ -6,7 +6,7 @@
 
 **Правило одного місця (DRY):** редагуєш канон → онови залежні пункти 00_07 (за рефами); закрив пункт → онови канон + познач тут (✅ → **§🗄️ Архів**, вказівник ID→канон). Так апдейт робиться в одному місці, а референси ведуть, де ще синхронізувати.
 
-**Структура:** **🚦 Critical Path** (мілстоун-гейти, будь-який P) → **§00–§07 модуль-секції** (реєстр незробленого; **номер секції = канон-модуль першого рефа** — enforced `tracker:check` section-home guard; великий модуль → під-секції **`§NNa/b/c`** того ж модуля, курація за під-темою — §01a Anchor / §01b EBFC, §02a Node / §02b Gateway, §03a Firmware / §03b Edge-crypto, §07a Академ / §07b Stakeholders) → **🔀 Cross-cutting** → **🗄️ Архів**. Документ — живий операційний інструмент.
+**Структура:** **🚦 Critical Path** (мілстоун-гейти, будь-який P) → **§00–§07 модуль-секції** (реєстр незробленого; **номер секції = канон-модуль першого рефа** — enforced `tracker:check` section-home guard; великий модуль → під-секції **`§NNa/b/c`** того ж модуля, курація за під-темою — §01a Anchor / §01b EBFC, §02a Node / §02b Gateway, §03a Firmware / §03b Edge-crypto) → **🔀 Cross-cutting** → **🗄️ Архів**. Документ — живий операційний інструмент.
 
 ---
 
@@ -38,9 +38,7 @@
 - [§04 · Backend / API / UI](#04--backend--api--ui)
 - [§05 · Web3 / Економіка / Slashing](#05--web3--економіка--slashing)
 - [§06 · Deploy / Observability / Secrets / Ops](#06--deploy--observability--secrets--ops)
-- [§07 · Юридичні / Бізнес](#07--юридичні--бізнес)
-- [§07a · Академічна інтеграція](#07a--академічна-інтеграція)
-- [§07b · External Stakeholders (B2G / B2B / Cultural)](#07b--external-stakeholders-b2g--b2b--cultural)
+- [§07 · Бізнес / Право / Академія / Партнери](#07--бізнес--право--академія--партнери)
 - [Cross-cutting · Doc-drift (DOC-T) — SSOT doc↔code + tracker form/tooling](#-cross-cutting--doc-drift-doc-t--ssot-doccode--tracker-formtooling)
 - [Архів закритих пунктів (мігровано в канон)](#-архів-закритих-пунктів-мігровано-в-канон)
 <!-- TOC:AUTO:END -->
@@ -55,7 +53,7 @@
 - **Перед Web3 mainnet:** `S1.1` (GitHub CI secrets) · prod deploy-ENV → [`06_04`](06_04_Secrets_Checklist) (вкл. `SOLANA_RPC_URL` — інакше USDC на Devnet; guard ✅ E.47) · `S2.2`+`S2.4` (Grafana після першого `/metrics`) · `E.32` (paid manual audit — HARD) · `SLASH-1` (розширення A-сету + uplift-фліп) · `SEC.1` (Safe + Governor/Timelock активація + transfer admin — поглинув BIZ.4) · `SEC.17` (money-mint-key custody = GCP-KMS remote-signer, impl pre-mainnet — [`06_04 §5.5`](06_04_Secrets_Checklist)) · `S3.5` (subgraph cutover)
 - **Найближчий фіз-мілстоун — TRL 3→4 = Ti-coin in-vitro** (founder 2026-06-21; гроші є → блок не фінанси): вузький шлях, що **ОБХОДИТЬ** гіроїд/PEEK/press-fit/mate — `HW.24` Stage 2 (**6-alloy coin bake-off** Ø16 → EAAE → Gen 2.0 функціоналізація → CV/EIS у соку) + `HW.5` (хімія-стек — spec-sheets ✅ [`ebfc_chem_rfq.md`](protocols/procurement/ebfc_chem_rfq.md), RFQ-ready) + V-release ICP-MS (`HW.3`). Канал = **гібрид commercial-lab + ЧНУ** (не чекати MoU). Канон [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
 - **Hardware-гейт** (TRL 4→6, повний анкер — після coin): `HW.1` (анкер-генерація — CAD machine-half ✅, фіз-друк → завод) · `HW.24` (staged validation SLA→coin→anchor→100) · `HW.23` (HIP postprocess) · `HW.31`/`HW.15`/`HW.16` (BOM Королеви — кластер «02_05 BOM freeze» ↓; panel/battery/MPPT зафіксовано `HW.39`+`HW.15` — лишились ⚖️ BMS-SKU + закуп)
-- **Academic:** `UNI.1` (лаб + публікації) · `UNI.14` (MSA / B2B legal)
+- **Academic:** `UNI.14` (юр-хаб — counterparty/MSA/інкорпорація) · `UNI.3` (IP / defensive-pub)
 - **Перед першим B2B-продажем** (комерціалізація — вісь розкрита gap-pass'ом): `BIZ.20` (юр-особа — гейтить решту) · `BIZ.2` (MSA) · `BIZ.21` (E&O/liability до підпису) · `BIZ.9` (незалежний carbon-методолог Verra/GS) · `BIZ.19` (CBAM-наратив — звірити/переформулювати ДО пітчу) · `SEC.18` (User/Org PII GDPR/DSAR) · `BIZ.18` (customer-SLA)
 
 ### ⛓️ Гейт-кластери — одна дія відкриває кластер (міжсекційна синергія)
@@ -94,7 +92,7 @@
 - **P1** · 🤖+👤 · 🟢 · → `00_04 §5`, `00_05 §6`
 - **Стан:** Shape Up template (`.github/ISSUE_TEMPLATE/shape_up_task.md`) + Projects V2 kanban-mapping реалізовано (R&D Cluster/Stage/Cycle; 4 кластери A/B/C/D) — `00_04 §5`, `00_05 §6`. **Auto-routing: два фікси 2026-07-16, live-verified.** (1) OR-баг: матчери під одним `changed-files` дефолтяться в `any:` → негативна клауза матчила все, `cluster:C-scaling` липнув на всі PR; фікс = `all:`-обгортка (форма з канон-блоку §2.6). (2) Coverage-діри закрито **ширше за флаговані**: без кластера жили й `tools/**`/`docs/00_*`/`bin/**`/`.claude/**`/root-файли; мапінг + rationale = [`00_05 §2.6`](00_05_GitHub_Projects_and_IaC_Automation) (A ← firmware-area-дзеркало; C ← process/infra). Попутна чесність §4.1: labeler v6 «matched ≥2» не виражає → `cluster:cross-cluster` вішається вручну, авто-сигнал multi-tree = dual-primary. Live-verify = свіжий `synchronize` (#467): C лишився по праву + `module:06-matrix` додався; ⚠️ `gh run rerun` для `pull_request_target` конфіг НЕ ре-читає (payload заморожений) — верифікація лише свіжою подією.
 - [ ] 🤖 label-existence guard: ключі `labeler.yml` ⊆ `.github/labels.yml` (ловить phantom-label клас `module:06-infra`; дешевий сусід `field_canon_sync`) — ідея §00-close, з пам'яті 2026-07-16
-- [ ] 🔗 перший betting cycle → UNI.1/UNI.14 (gated-at-home, прецедент FW.42; eventual-WHO лишається тут)
+- [ ] 🔗 перший betting cycle → UNI.2/UNI.14 (gated-at-home, прецедент FW.42; eventual-WHO лишається тут)
 
 #### OPS.4 — GitHub Projects V2: семестрова синхронізація з ChNU/ChDTU
 - **P2** · 👤 · 🟢 · → [`00_04 §6`](00_04_Shape_Up_Operations_and_RnD_Clusters)
@@ -1445,35 +1443,35 @@
 - **Стан:** Far-horizon — RO replicas для analytics + Oracle queries. Scale-gated (single-DB достатньо на TRL-3). Канон `06_01`.
 - [ ] 🤖+👤 RO-replica config (scale-gated)
 
-## §07 · Юридичні / Бізнес
+## §07 · Бізнес / Право / Академія / Партнери
 
-> Юридично-бізнесовий work-stream — канон `07_xx`. NB: пов'язані BIZ-айтеми за канон-домом живуть у `§05` (BIZ.13 slashing).
+> Юридично-бізнесовий + академ-валідаційний + партнер-outreach work-stream — канон `07_01`/`07_02`/`07_03`. Партнер-режим **passive** (рішення на боці ВНЗ, не дотискати): лаб-MoU ЧНУ/ЧДТУ (Спрягайло/Гончаров-якорі) + персональні контакти СЄУ/ЧІПБ/ЧМА. STK = B2G/media outreach pool, TRL-trigger-gated. NB: пов'язані BIZ за канон-домом живуть у `§05` (BIZ.13 slashing); юр-хаб §07 = UNI.14 (Аблязов).
+
+#### UNI.14 — СЄУ: персональний контакт (Аблязов legal/RWA + Ус/Гедз облік)
+- **P1** · 🤖+👤 · ⚪ · → `07_03 §1.5`
+- **Стан:** Не почато (консолідує legacy UNI.8). **Юр-хаб §07** — один воркшоп Аблязова фанається в BIZ.20 (вибір юр-форми), BIZ.2 (MSA), BIZ.19 (CBAM), BIZ.15 (SPV), UNI.16, STK.3. **СЄУ = economics+law, 3 фахівці, персональний контакт:** Аблязов **Денис Едуардович** (віцепрезидент, к.ю.н. — господарське право/протидія рейдерству; MSA/інкорпорація), Гедз (проректор якості — фінансовий облік криптоактивів 2025), Ус (цифрова економіка + матем. моделювання). Глибина крипто-права → профільний TBD. Канон `07_03 §1.5`.
+- [ ] 👤 персональний контакт: workshop Аблязов (UA-legal/MSA/інкорпорація) + Ус/Гедз (облік SCC); глибина крипто-права/carbon → профільні TBD
+- [ ] 🤖+👤 tax-posture меморандум: grant-income + personal-income-on-receipt (UA SCC-holders) + `dynamic_tax`×UA-податкове — 🤖 складе питання → 👤 Ус Г.О.
+- [ ] 🤖+👤 фіат-операційка B2B-продажу: ПДВ-режим (експорт послуг 0% / карбон-кредит як послуга vs товар vs фінінструмент) + банк-рахунок + крос-бордер інвойсинг — 🤖 меморандум-питання → 👤 Ус/Аблязов
 
 #### BIZ.20 — Немає юридичної особи «Silken Net» (undefined MSA/grant/trademark counterparty)
 - **P1** · 🤖+👤 · ⚪ · → `07_01 §8`, `07_03 §3`
-- **Стан:** Немає операційної юр-особи «Silken Net». DAO-legal-wrapper + RWA-jurisdiction (Swiss Verein / Zug / Wyoming) — відкриті, недовирішені ([`07_01 §8`](07_01_Nature_as_a_Service_Contracts) «Дія»). `/NOTICE` вестить copyright на фіз-особу «Oleksii Lukin»; `07_03 §3` кастить «Silken Net» окремим актором (IP holder + integrator), але жоден канон не каже, яка юр-форма. Не академічно: BIZ.2 MSA потребує названого counterparty, UNI.15 — trademark-заявника, anchor-install кримінальна exposure («втручання в держмайно»), що неінкорпорований несе особисто без liability-щита. **🤖-half:** чернетка entity-option matrix (юрисдикція × тип × вартість × грант/RWA/MiCA-сумісність); 👤 = рішення+реєстрація (СЄУ Аблязов). Канон `07_03 §3`, `07_01 §8`. **BIZ.20-close = подієвий тригер re-visit Web3/академ-грант-треку** (⚖️ founder 2026-07-18: трек opportunistic-passive — активного айтема нема, дія народжується з відповіді фонду; re-visit при появі юр-особи-заявника АБО першому SCC-мінті. Horizon-вектор знято 2026-07-23; grant≠інтеграція — chains живі `§05` permissionless).
+- **Стан:** Немає операційної юр-особи «Silken Net». DAO-legal-wrapper + RWA-jurisdiction (Swiss Verein / Zug / Wyoming) — відкриті, недовирішені ([`07_01 §8`](07_01_Nature_as_a_Service_Contracts) «Дія»). `/NOTICE` вестить copyright на фіз-особу «Oleksii Lukin»; `07_03 §3` кастить «Silken Net» окремим актором (IP holder + integrator), але жоден канон не каже, яка юр-форма. Вибір юр-форми gated на UNI.14 (Аблязов-консультація). Не академічно: BIZ.2 MSA потребує названого counterparty, UNI.15 — trademark-заявника, anchor-install кримінальна exposure («втручання в держмайно»), що неінкорпорований несе особисто без liability-щита. **🤖-half:** чернетка entity-option matrix (юрисдикція × тип × вартість × грант/RWA/MiCA-сумісність); 👤 = рішення+реєстрація. BIZ.20-close re-visit'ить Web3/академ-грант-трек (opportunistic-passive — при появі юр-особи-заявника АБО першому SCC-мінті). Канон `07_03 §3`, `07_01 §8`.
 - [ ] 🤖 чернетка entity-option matrix (юрисдикція UA/EU/Zug/Wyoming × тип × вартість × грант/RWA/MiCA-fit; + SPV-вісь для BIZ.15) → живить рішення
 - [ ] ⚖️ обрати + інкорпорувати операційну особу (Аблязов) — counterparty для BIZ.2/грантів/trademark/liability
+
+#### UNI.3 — Defensive-publication + open-license execution (IP-постава)
+- **P1** · 🤖+👤 · 🟡 · → `07_03 §3`
+- **Стан:** Постава = **defensive-publication-first** (`07_03 §3`; патент НЕ подаємо). Ліцензії застосовано (AGPL / CERN-OHL-S / CC-BY-SA + `/NOTICE`); disclosure готовий ([`defensive_disclosure.md`](protocols/anchor/defensive_disclosure.md)) + landscape ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)) → **Стаття 1 розблокована** (publish-to-protect). Тайминг: ™-заявка (UNI.15) + домени ПЕРЕД/РАЗОМ з TDCommons-splash (розкриття експонує назву).
+- [ ] 👤 TDCommons-постинг disclosure (prior-art якір)
+- [ ] 👤 trademark-заявка SilkenNet™/GaiaNexus™/SCC™ через повіреного УкрНОІВІ (UNI.15)
+- [ ] 👤 Кафедра-ІВ open-license + AF3 legal review (UNI.16)
+- [ ] 🤖 SPDX-headers по source (`app`/`lib`/`firmware`[крім `extern`]/`tools`=`AGPL-3.0-or-later`; CERN-OHL-S для hw-design) — скриптом, ідемпотентно; ⚠️ `contracts`=MIT + `tools/cad`=Apache/CC0 вже теговані (audit-tooling-compat) — звірити виняток ПЕРЕД run; великий diff → deferred (Phase 7)
 
 #### BIZ.2 — B2B MSA (Master Service Agreement)
 - **P2** · 👤 · ⚪ · → `07_01`, `07_03 §1.5`
 - **Стан:** Не почато — B2B MSA template; партнер СЄУ (Аблязов Д.Е., к.ю.н.). Канон `07_01`, `07_03 §1.5`.
 - [ ] 👤 юр-консультація (MiCA/ERC-3643/RWA) → MSA template (Term Sheet + Carbon Credit Purchase Agreement) → review практикуючим юристом
-
-#### BIZ.6 — Supply chain war-zone risk mitigation
-- **P2** · 👤 · 🟡 · → `07_02 §8.1.1`
-- **Стан:** Contingency Plan EU Backup DMLS Hubs готовий (4 кандидати; triggers; +~20% payback) — UA-підрядники у зоні бойових дій. Канон `07_02 §8.1.1`.
-- [ ] 👤 отримати quotes для порівняння
-
-#### BIZ.17 — Procurement-workflow operational gaps (post-RFQ-layer dig)
-- **P2** · 👤 · 🟡 · → `07_02 §8`
-- **Стан:** RFQ-layer структура ✅ (`protocols/procurement/` — `rfq_registry.md` + `ebfc_chem_rfq.md` + `anchor_alloy_rfq.md`; concern-шар, `00_06 §2`); deep dig виявив 5 operational-gaps без дому + registry-maintenance — консолідовано тут. Канон `07_02 §8` (BOM/хаби) + registry.
-- [ ] 👤 **DMLS vendor-scoring matrix** (lead-time × quality × price × ISO-13485)
-- [ ] 👤 **CDA/NDA шаблон** для ВНЗ-MoU (блокує UNI.1 → лаб-доступ; СЄУ Аблязов legal)
-- [ ] 👤 **ESG vendor-screening** matrix (репутаційне для climate-проєкту / grant-fonds)
-- [ ] 👤 **Ціновий моніторинг BOM** (DMLS, EBFC) при масштабуванні — periodic price-refresh `rfq_registry`
-- [ ] 👤 **SE050 supply-timeline** (NXP availability для mass-population post-FW.2, `03_05 §3.7` / ARCH.43)
-- [ ] ⚖️ **Синт. сік make-vs-buy** (ЧНУ pilot-stock vs synthesize, `07_03 §1.1`)
 
 #### BIZ.3 — B2C ToS / Privacy Policy
 - **P2** · 🤖+👤 · ⚪ · → `07_01`
@@ -1485,15 +1483,8 @@
 - **P2** · 👤 · ⚪ · → `07_01 §3`, `07_02 §7.3`
 - **Стан:** Не почато — конвертація SCC utility-token → сертифіковані kg CO₂ для institutional buyers потребує independent methodology audit (Verra/Gold Standard/Puro.earth). Канон `07_01 §3`, `07_02 §7.3`.
 - [ ] ⚖️ вибір registry: Verra vs Gold Standard vs Puro.earth (методологія-fit × вартість × timeline; Puro вже фігурує в death-path `07_01 §2` biochar CORC — інший трек)
-- [ ] 👤 engagement methodologist (~$50-100k) → PDD у обраному registry
+- [ ] 👤 engagement methodologist (~$50-100k) → PDD — gated на реальний ліс + MRV-дані + VVB (роки downstream)
 - [ ] 🔗 залежить від HW.3 (Arrhenius) + UNI.4/UNI.5 (DFT+diffusion)
-
-#### BIZ.11 — RWA pilot реєстрація лісової ділянки через Polygon Hadron
-- **P2** · 🤖+👤 · 🟡 · → `07_01 §8`
-- **Стан:** Інфраструктура частково існує (verified) — `Polygon::HadronComplianceService` + `HadronAssetRegistrationWorker` + `HadronKycVerification/ReverifyWorker` реалізовані ✅; діра = `TokenizeForestPlotService` (plot-tokenize orchestration поверх наявного `register_asset!` — механізм `04_02`/`05_01`) + реальний партнер-лісокористувач/кадастр. Канон `07_01 §8`.
-- [ ] ⚖️ партнер-лісокористувач (post-war/Carpathian) + кадастр/biomass appraisal
-- [ ] 🤖 `Hadron::TokenizeForestPlotService` (plot-tokenize orchestration — KYC-flow вже існує, розширює `register_asset!`)
-- [ ] 🔗 після BIZ.2 (MSA)
 
 #### BIZ.15 — B2B Fiat-to-Retirement SPV (corporate carbon on-ramp)
 - **P2** · 👤 · ⚪ · → `07_01 §8`
@@ -1502,6 +1493,16 @@
 - [ ] ⚖️ юрисдикція SPV + ліцензія на вуглецеві активи + кастодіан крипти (СЄУ Аблязов Д., RWA/MiCA — `07_03 §1.5`)
 - [ ] 👤 бухгалтерська класифікація + сертифікат-флоу (СЄУ Ус Г.)
 
+#### BIZ.17 — Procurement-workflow operational gaps (post-RFQ-layer dig)
+- **P2** · 👤 · 🟡 · → `07_02 §8`
+- **Стан:** RFQ-layer структура ✅ (`protocols/procurement/` — `rfq_registry.md` + `ebfc_chem_rfq.md` + `anchor_alloy_rfq.md`; concern-шар, `00_06 §2`); deep dig виявив operational-gaps без дому + registry-maintenance — консолідовано тут. Канон `07_02 §8` (BOM/хаби) + registry.
+- [ ] 👤 **DMLS vendor-scoring matrix** (lead-time × quality × price × ISO-13485)
+- [ ] 👤 **CDA/NDA шаблон** для ВНЗ-MoU (блокує UNI.2 → лаб-доступ; СЄУ Аблязов legal)
+- [ ] 👤 **ESG vendor-screening** matrix (репутаційне для climate-проєкту / grant-fonds)
+- [ ] 👤 **Ціновий моніторинг BOM** (DMLS, EBFC) при масштабуванні — periodic price-refresh `rfq_registry`
+- [ ] 👤 **SE050 supply-timeline** (NXP availability для mass-population post-FW.2, `03_05 §3.7` / ARCH.43)
+- [ ] ⚖️ **Синт. сік make-vs-buy** (ЧНУ pilot-stock vs synthesize, `07_03 §1.1`)
+
 #### BIZ.18 — Customer-facing availability-SLA (uptime-гарантія B2B-покупцям)
 - **P2** · 👤 · ⚪ · → `07_01 §8`, [`06_06 §3`](06_06_Disaster_Recovery_and_Backup)
 - **Стан:** Не почато — internal-SLO без customer-SLA. Наявна основа ✅: RTO/RPO-цілі (`06_06 §3` DR-таблиця), internal SLO mint ≥80% + intake ≥95% (`06_08 §2.4`), circuit-breaker/failover (`06_08`), Prometheus-алерти (`06_03`) — це **внутрішні операційні SLO**, не зовнішній контракт. Діра = **customer-facing availability-SLA** (визначений uptime-% + service-credits + incident-comms + публічний status-page), на який B2B-покупець кредитів (Азот CBAM, agri) послатиметься в угоді. Живить BIZ.2 (MSA — SLA = типовий exhibit) + BIZ.15 (SPV). NB: ≠ `07_01 §2` «Таблиця SLA» (legal-event→tx mapping — інше значення). Канон `07_01 §8`, `06_06 §3`.
@@ -1509,8 +1510,8 @@
 - [ ] 👤 (опц.) публічний status-page (external synthetic uptime — дотично INF.22 O3)
 
 #### BIZ.19 — «SCC = CBAM-офсет» стоїть на неперевіреній (ймовірно хибній) регуляторній премісі
-- **P2** · 👤 · 🟡 · → `07_01 §8`, `07_01 §8`
-- **Стан:** 🤖-присуд (2026-07-14, висока впевненість, потребує юр-підтвердження): **SCC-retirement ≠ CBAM-reduction** — CBAM Reg. (EU) 2023/956 Art.9 знижує обов'язок імпортера лише вуглецевою ціною, СПЛАЧЕНОЮ виробником у країні походження (ETS-еквівалент), НЕ купівлею/retirement voluntary-credits (поширена плутанина compliance-ринку з добровільним). → Позиціонувати SCC як **voluntary Scope 1-3 / net-zero-disclosure**, НЕ CBAM-compliance; **не пітчити CBAM Азоту до юр-звірки** (репутаційний ризик — юр-неправда CFO). Аналіз + reframe у каноні done → [`cbam_offset_analysis.md`](../protocols/business/cbam_offset_analysis.md) + ⚠️-caveat у `07_01 §8`.
+- **P2** · 👤 · 🟡 · → `07_01 §8`
+- **Стан:** 🤖-присуд (висока впевненість, потребує юр-підтвердження): **SCC-retirement ≠ CBAM-reduction** — CBAM Reg. (EU) 2023/956 Art.9 знижує обов'язок імпортера лише вуглецевою ціною, СПЛАЧЕНОЮ виробником у країні походження (ETS-еквівалент), НЕ купівлею/retirement voluntary-credits (поширена плутанина compliance-ринку з добровільним). → Позиціонувати SCC як **voluntary Scope 1-3 / net-zero-disclosure**, НЕ CBAM-compliance; **не пітчити CBAM Азоту до юр-звірки** (репутаційний ризик — юр-неправда CFO). Аналіз + reframe у каноні done → [`cbam_offset_analysis.md`](../protocols/business/cbam_offset_analysis.md) + ⚠️-caveat у `07_01 §8`.
 - [ ] 👤 юр-підтвердження (Аблязов, ~30 хв — Art.9 + UA-ETS-статус + SCC-як-Scope-3, на UNI.14/16-консультації) → повний reframe caveat→resolved + оновити Азот-пітч
 
 #### BIZ.21 — Немає company-level E&O / liability-страхування (≠ INS.1 параметричний продукт)
@@ -1519,96 +1520,85 @@
 - [ ] 🤖 чернетка E&O/liability coverage-spec (D-MRV-accuracy · anchor-install · credit-dispute) → живить брокера
 - [ ] 👤 отримати E&O/general-liability поліс (post-BIZ.20-entity) — гейт BIZ.2 signing
 
-#### BIZ.14 — SFC Vote-Escrow during breach→slash lag (07_01 SFC vote-escrow residual)
-- **P3** · 🤖 · 🟢 · → `07_01 §8`
-- **Стан:** Core закрито — `SilkenForestCoin.slash()` (SLASHER_ROLE) зменшує voting power при slashing → атака «купити SFC + навмисне порушення NaaS» неможлива. Residual: ~1–5 хв lag (`web3_critical` черга) між SCC-slash і SFC-slash — у вікні учасник технічно ще може проголосувати. Канон `07_01 §8`.
-- [ ] 🔗 Vote-Escrow (veToken) при `breached`-контрактах — опціонально, gated на повний DAO governance launch (SEC.1)
-
-## §07a · Академічна інтеграція
-
-> **Поточний стан:** 5 академічних установ — ЧНУ (фіз-хім + ФОТІУС; Спрягайло-якір), ЧДТУ (Data Science + RF + акустика; Гончаров-якір), ЧІПБ (пожежна безпека), ЧМА (біохімія + токсикологія), СЄУ (право + економіка). Режим: **лаб-MoU ЧНУ/ЧДТУ** (розблокують лабораторії) + **персональні контакти СЄУ/ЧІПБ/ЧМА** (люди, не лаби); жоден ще не законтрактований.
-
-#### UNI.1 — Вхід у ФОТІУС-раунд (ChNU FOTIUS) — post-MoU
-- **P1** · 👤 · ⚪ · → `07_03`
-- **Стан:** Не почато — вхід у ФОТІУС-раунд (Ярмілко/Косенюк/Любченко), ПІСЛЯ ректорського MoU (passive — рішення на боці ЧНУ, UNI.18 §🗄️). Лаб-доступ = рамковий MoU через Спрягайла (`07_03 §1.1`); далі прямий контакт з викладачами. Канон `07_03`.
-- [ ] 👤 ініціювати ФОТІУС-раунд після ректорського MoU → поіменні зустрічі (UNI.2)
-
-#### UNI.14 — СЄУ: персональний контакт (Аблязов legal/RWA + Ус/Гедз облік)
-- **P1** · 🤖+👤 · ⚪ · → `07_03 §1.5`
-- **Стан:** Не почато (консолідує legacy UNI.8). **СЄУ = economics+law — 3 фахівці, персональний контакт:** Аблязов **Денис Едуардович** (віцепрезидент, к.ю.н. — господарське право/протидія рейдерству; MSA/інкорпорація), Гедз (проректор якості — фінансовий облік криптоактивів 2025), Ус (цифрова економіка + матем. моделювання). Глибина крипто-права → профільний TBD. Канон `07_03 §1.5`.
-- [ ] 👤 персональний контакт: workshop Аблязов (UA-legal/MSA/інкорпорація) + Ус/Гедз (облік SCC); глибина крипто-права/carbon → профільні TBD
-- [ ] 🤖+👤 [gap-pass §07] tax-posture: grant-income + personal-income-on-receipt (UA SCC-holders) + `dynamic_tax`×UA-податкове — 🤖 складе питання-меморандум → 👤 Ус Г.О.
-
-#### UNI.2 — зустрічі з факультетом ФОТІУС
-- **P1** · 👤 · ⚪ · → `07_03`
-- **Стан:** Не почато — зустрічі з факультетом ФОТІУС (по кафедрах; поіменний склад ↓ — рухається за портфелем `07_03`, UNI.19). Канон `07_03`.
-- [ ] 👤 Ярмілко (engaged — крипто/embedded консультації, PQC far-horizon · Ст.23) · Косенюк (RF/антена, [`02_01 §5`](02_01_Hardware_Architecture_and_BOM) · Ст.23) · Любченко (NSGA-II TinyML · Ст.24a)
-
-#### UNI.3 — Defensive-publication + open-license execution (IP-постава)
-- **P1** · 🤖+👤 · 🟡 · → `07_03 §3`
-- **Стан:** Постава = **defensive-publication-first** (`07_03 §3`; патент НЕ подаємо). Ліцензії застосовано (AGPL / CERN-OHL-S / CC-BY-SA + `/NOTICE`); disclosure готовий ([`defensive_disclosure.md`](protocols/anchor/defensive_disclosure.md)) + landscape ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)) → **Стаття 1 розблокована** (publish-to-protect).
-- [ ] 👤 TDCommons-постинг disclosure (prior-art якір)
-- [ ] 👤 trademark-заявка SilkenNet™/GaiaNexus™/SCC™ через повіреного УкрНОІВІ (UNI.15)
-- [ ] 👤 Кафедра-ІВ open-license + AF3 legal review (UNI.16)
-- [ ] 🤖 SPDX-headers по source (`app`/`lib`/`firmware`[крім `extern`]/`contracts`/`tools` = `AGPL-3.0-or-later`; CERN-OHL-S для hw-design) — скриптом, ідемпотентно (skip-if-present); великий механічний diff → deferred (plan Phase 7)
-
 #### UNI.4 — ChNU школа Мінаєва: DFT-моделювання EBFC
-- **P1** · 👤 · ⚪ · → `07_03 Стаття 1`, `07_03 §1.1`
+- **P2** · 👤 · ⚪ · → `07_03 Стаття 1`, `07_03 §1.1`
 - **Стан:** Не почато — DFT електрон-трансферна енергетика EBFC Gen 2.0 (dgrFAD-GDH/Os, Laccase-ZIF, PSBMA; школа Мінаєва); журнали-цілі = дім [`07_03`](07_03_Academic_Integration_and_IP) Стаття 1 (primary *J. Phys. Chem. B*). Стаття 1 submission-ready як defensive-pub (own in-silico, `L3_quantum_chemistry`) — Мінаєв = co-validation/co-authorship credibility, НЕ блокер (стара Gen 1.0 «streaming potential» відкинута). Real-fit кут школи = **spin-forbidden активація O₂** (SOC — світовий фах, той що наш L3 не рахує); ground-state slab-DFT TiO₂ + QM/MM Os = власний follow-up (не їхній unique edge — `07_03 Стаття 1`/`01_03`). Канон `07_03 Стаття 1`, `07_03 §1.1`.
 - [ ] 👤 зустріч (через декана хімії) + NDA/IP + спільний грант MES
 
 #### UNI.5 — ChNU школа Гусака: дифузійна деградація 20-років (Kirkendall effect)
-- **P1** · 👤 · ⚪ · → `07_03 Стаття 2`, `07_03 §1.1`
+- **P2** · 👤 · ⚪ · → `07_03 Стаття 2`, `07_03 §1.1`
 - **Стан:** Не почато — моделювання Kirkendall на Ti-6Al-4V/xylem + Arrhenius 12-тижн (школа Гусака, diffusion-controlled corrosion); ціль Q1 *Corrosion Science*, 20+ years claim; залежить HW.3. Канон `07_03 Стаття 2`, `07_03 §1.1`.
 - [ ] 👤 зустріч + спільний експеримент HW.3 + co-authored paper
-
-#### UNI.9 — ChDTU Карапетян: Data Science колаборація
-- **P1** · 🤖+👤 · ⚪ · → `07_03 §1.2`
-- **Стан:** Не почато — ChDTU R-кластер для ML; А.Р. Карапетян — статистика телеметрії (anomaly/fraud), магістерські. Канон `07_03 §1.2`.
-- [ ] 👤 зустріч (ChDTU rectorat) + кафедральна тема «Statistics of Bio-IoT Telemetry» + 2-3 магістерські (2026-2027)
-- [ ] 🤖 SLA R-кластеру (тренування `silken_forest.marshal`, post-TRL 7)
-
-#### UNI.10 — ChDTU Гончаров (перший проректор, каф. РТРС): RF верифікація + EMC pre-compliance [поглинув E.40 2026-07-14]
-- **P1** · 👤 · ⚪ · → `07_03 §1.2`
-- **Стан:** Не почато — **А.В. Гончаров, перший проректор ЧДТУ** (каф. РТРС; він же **інституційний якір / MoU-підписант ЧДТУ** — `07_03 §1.2`): VNA + анехоїчна камера для (a) SMD-антена під PEEK (HW.17), (b) Link Budget у лісі (SF7-9, 50-250м), (c) EMC pre-compliance CE/FCC (E.11). Канон `07_03 §1.2`.
-- [ ] 👤 зустріч + RF-лаб access + VNA-вимір PEEK-кришки (1.5/2.0/2.5 мм; ціль VSWR <1.5 @ 868 МГц, сухий/вологий стан + 3D Keep-Out з Ti-фланцем: Z-clearance 5/8/12 мм, з/без overhang — ex-E.53, вимога [`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM)) + Link Budget field test
-- [ ] 👤 A/B **Ignion NN02-310** (Virtual Antenna™) vs incumbent Yageo/Taoglas у тій самій VNA-сесії (eval-kit + VSWR під PEEK) — ex-E.40, far-horizon vendor-swap
-- [ ] 🔗 залежить HW.9 + HW.17
-
-#### UNI.12 — ChIPB-NUTSU: ДСНС SOP + пожежна безпека
-- **P1** · 👤 · ⚪ · → `07_03 §1.3`
-- **Стан:** Не почато — ChIPB + НУЦЗУ (2 real-fit-експерти: Биченко тактика гасіння→диспетчеризація/drones, Ротар правова компетентність ЦЗ→SOP): (1) SOP для всіх EwsAlert-типів (drought/insect/vandalism/fire/seismic/fault/entropy/field_audit [INS.1]), (2) ДСНС API. Канон `07_03 §1.3`.
-- [ ] 👤 cold contact ЧІПБ (Биченко + Ротар — real-fit фах verified) + joint SOP workshop (ARCH.31)
-
-#### UNI.15 — Trademark (повірений УкрНОІВІ) + TISC-консультація (public, no MoU)
-- **P1** · 👤 · 🔗 · → `07_03 §4`
-- **Стан:** prior-art landscape готовий ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)); далі торгові марки SilkenNet™/GaiaNexus™/SCC™ через **прямого повіреного УкрНОІВІ** (~5-10k UAH) + опційна TISC-консультація (prior-art / open-license, public — MoU не вимагає). Канон `07_03 §4`.
-- [ ] 👤 trademark-заявка через повіреного УкрНОІВІ (SilkenNet™/GaiaNexus™/SCC™) + опційна TISC-консультація
-
-#### UNI.16 — UA-юр-review (RWA/токеноміка/open-license) → Аблязов + крипто-юрист TBD
-- **P1** · 👤 · 🔗 · → `07_03 §4`
-- **Стан:** Точковий UA-юрисдикційний review → **Аблязов** (СЄУ, персонально — UNI.14) + профільний крипто/IP-юрист TBD: (1) RWA ERC-3643 vs Лісовий Кодекс/ПЗФ, (2) SCC/SFC за ЗУ «Про віртуальні активи» 2022 + MiCA 2024, (3) NaaS у UA Civil Code, (4) авторське право `bio_contract.rb`/`Attractor` (основа enforcement копілефту), (5) open-license review (AGPL/CERN-OHL-S/CC-BY-SA + AF3 non-commercial × комерц-вимір). Ціль: 2 меморандуми. Канон `07_03 §4`.
-- [ ] 👤 workshop Аблязов (UA×MiCA) + крипто/IP-юрист TBD → меморандум RWA (розблок `07_01`) + меморандум SCC + open-license/AF3 review
-
-#### UNI.11 — ChDTU Базіло+Бондаренко (ПМКТ): акустична валідація фононної лінзи [кластер:fauna:важіль]
-- **P2** · 👤 · ⚪ · → `07_03 §1.2`, `03_03 §10`
-- **Стан:** Не почато (**P1 у fauna-треку**, E.59 both/and) — ПМКТ (п'єзоелектрика + акуст. метаматеріали): EIS п'єзодиска 25-150кГц (cavitation) + верифікація гіроїдного phonon lens; журнали-цілі = дім [`07_03`](07_03_Academic_Integration_and_IP) Ст.24/24a (*J. Sound & Vibration* / *Ultrasonics* / *Applied Acoustics*). Частота кавітації = 25-150 кГц (ультразвукова AE, Tyree&Dixon 1983); поточний 16 кГц/Nyquist-8 audible-тракт її **не оцифровує** → cavitation-клас TinyML reframed до **low-freq structural water-stress proxy** (клас лишено, перейменовано наміром); справжня ultrasonic-детекція = цей UNI.11-канал / v3 AI-chip. Канон `07_03 §1.2`, `03_03 §10` + `03_03 §4.2` (reframe-дім).
-- [ ] 👤 зустріч Базіло+Бондаренко + EIS-протокол + acoustic стенд (HW.1)
-- [ ] 🌿 Mongabay: dawn/dusk Cherkasy Soundscape Library для 5-class TinyML «Fauna» (`07_03 Стаття 24a`) — recordings з UNI.13a (Спрягайло-Гаврилюк): AudioMoth, 4 сезони, ≥30хв dawn+dusk/ділянку, labeled таксони
 
 #### UNI.13 — ChMA: біохімія EBFC + токсикологія
 - **P2** · 👤 · ⚪ · → `07_03 §1.4`
 - **Стан:** ЧМА = 3 реальні фахівці: Суховий (токсиколог, к.фарм.н. ЗДМФУ/ЧМА-2024), Глущенко (Алла Володимирівна, фітотерапія), Бушуєва (фармтех ЗДМФУ). Глибока EBFC-ензимологія (лакказа/Nafion) → профільний біохімік (TBD). Канон `07_03 §1.4`.
 - [ ] 👤 cold contact ЧМА (Суховий/Глущенко/Бушуєва) → joint protocol; глибока EBFC-ензимологія → профільний біохімік (HW.5)
 
+#### UNI.15 — Trademark (повірений УкрНОІВІ) + TISC-консультація (public, no MoU)
+- **P2** · 👤 · 🔗 · → `07_03 §4`
+- **Стан:** prior-art landscape готовий ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)); ™ SilkenNet™/GaiaNexus™/SCC™ через **прямого повіреного УкрНОІВІ** (~5-10k UAH) + опційна TISC-консультація (prior-art / open-license, public — MoU не вимагає). 🔗 заявник: entity (BIZ.20) АБО фіз-особа Oleksii Lukin зараз (⚖️); тайминг — закрити ПЕРЕД UNI.3 TDCommons-splash. Канон `07_03 §4`.
+- [ ] 👤 trademark-заявка через повіреного УкрНОІВІ (SilkenNet™/GaiaNexus™/SCC™) + опційна TISC-консультація
+
+#### UNI.16 — UA-юр-review (RWA/токеноміка/open-license) → Аблязов + крипто-юрист TBD
+- **P2** · 👤 · 🔗 · → `07_03 §4`
+- **Стан:** Заблоковано на UNI.14 (Аблязов-контакт) — точковий UA-юрисдикційний review → **Аблязов** (СЄУ, персонально — UNI.14) + профільний крипто/IP-юрист TBD: (1) RWA ERC-3643 vs Лісовий Кодекс/ПЗФ, (2) SCC/SFC за ЗУ «Про віртуальні активи» 2022 + MiCA 2024, (3) NaaS у UA Civil Code, (4) авторське право `bio_contract.rb`/`Attractor` (основа enforcement копілефту), (5) open-license review (AGPL/CERN-OHL-S/CC-BY-SA + AF3 non-commercial × комерц-вимір). Ціль: 2 меморандуми. Канон `07_03 §4`.
+- [ ] 👤 workshop Аблязов (UA×MiCA) + крипто/IP-юрист TBD → меморандум RWA (розблок `07_01`) + меморандум SCC + open-license/AF3 review
+
 #### UNI.17 — CNC post-DMLS механообробка (fab-infra / procurement, не публікаційний партнер)
 - **P2** · 👤 · ⚪ · → `07_03 §1.2`
 - **Стан:** Не почато — **fab-infra, не наукова валідація** (manufacturing-крок, процес відомий). Прецизійна CNC-обробка post-DMLS (PEEK Zone 2 фрезерування, bayonet-геометрія, катод Zone 3) + різальна геометрія анкера (`01_01`/`01_02`/`02_02`). Виконавець TBD (не контактовано) — ЧДТУ machine-shop АБО комерційний CNC-цех (RFQ). Канон `07_03 §1.2` (fab-infra нота).
 - [ ] 👤 RFQ CNC-цеху АБО контакт ЧДТУ machine-shop + прототип різальної геометрії post-DMLS
 
+#### STK.3 — Tier 1 B2G: Заслужений юрист — Legal Wrapper для SCC
+- **P2** · 👤 · 🔗 · → `07_03 §1.5`
+- **Стан:** Заблоковано на UNI.16 (UA-юр-review Аблязов) + UNI.14 (СЄУ Аблязов) — Заслужений юрист для Legal Wrapper SCC: перекласифікація анкера «втручання»→«науково-вимірювальний прилад» до прокуратури; кандидати через ННІ права ЧНУ (доступ через Спрягайла) + СЄУ Аблязов. Канон `07_03 §1.5` (Аблязов legal).
+- [ ] 👤 identify candidate (через Спрягайла + Аблязов) → узгодити legal opinion з UNI.16
+
+#### BIZ.11 — RWA pilot реєстрація лісової ділянки через Polygon Hadron
+- **P3** · 🤖+👤 · 🟡 · → `07_01 §8`
+- **Стан:** Інфраструктура частково існує (verified) — `Polygon::HadronComplianceService` + `HadronAssetRegistrationWorker` + `HadronKycVerification/ReverifyWorker` реалізовані ✅; діра = `TokenizeForestPlotService` (plot-tokenize orchestration поверх наявного `register_asset!` — механізм `04_02`/`05_01`) + реальний партнер-лісокористувач/кадастр (ланцюг: STK.1 land-access + BIZ.20 entity + UNI.16 RWA-меморандум). Канон `07_01 §8`.
+- [ ] ⚖️ партнер-лісокористувач (post-war/Carpathian) + кадастр/biomass appraisal
+- [ ] 🤖 `Hadron::TokenizeForestPlotService` (plot-tokenize orchestration — KYC-flow вже існує, розширює `register_asset!`)
+- [ ] 🔗 після BIZ.2 (MSA)
+
+#### BIZ.14 — SFC Vote-Escrow during breach→slash lag (07_01 SFC vote-escrow residual)
+- **P3** · 🤖 · 🟢 · → `07_01 §8`
+- **Стан:** Core закрито — `SilkenForestCoin.slash()` (SLASHER_ROLE) зменшує voting power при slashing → атака «купити SFC + навмисне порушення NaaS» неможлива. Residual: ~1–5 хв lag (`web3_critical` черга) між SCC-slash і SFC-slash — у вікні учасник технічно ще може проголосувати. Канон `07_01 §8`.
+- [ ] 🔗 Vote-Escrow (veToken) при `breached`-контрактах — опціонально, gated на повний DAO governance launch (SEC.1)
+
+#### UNI.2 — зустрічі з факультетом ФОТІУС
+- **P3** · 👤 · ⚪ · → `07_03`
+- **Стан:** Не почато — прямі зустрічі з викладачами ФОТІУС (Косенюк/Любченко), напряму без формального «раунду» (absorbed UNI.1). Поіменний склад рухається за портфелем `07_03`. Канон `07_03`.
+- [ ] 👤 Косенюк (RF/антена, [`02_01 §5`](02_01_Hardware_Architecture_and_BOM) · Ст.23) · Любченко (NSGA-II TinyML · Ст.24a)
+
+#### UNI.9 — ChDTU Карапетян: Data Science колаборація
+- **P3** · 🤖+👤 · ⚪ · → `07_03 §1.2`
+- **Стан:** Не почато — ChDTU R-кластер для ML; А.Р. Карапетян — статистика телеметрії (anomaly/fraud), магістерські. Канон `07_03 §1.2`.
+- [ ] 👤 зустріч (ChDTU rectorat) + кафедральна тема «Statistics of Bio-IoT Telemetry» + 2-3 магістерські (2026-2027)
+- [ ] 🤖 SLA R-кластеру (тренування `silken_forest.marshal`, post-TRL 7)
+
+#### UNI.10 — ChDTU Гончаров (перший проректор, каф. РТРС): RF верифікація + EMC pre-compliance [поглинув E.40 2026-07-14]
+- **P3** · 👤 · ⚪ · → `07_03 §1.2`
+- **Стан:** Не почато — **А.В. Гончаров, перший проректор ЧДТУ** (каф. РТРС; він же **інституційний якір / MoU-підписант ЧДТУ** — `07_03 §1.2`): VNA + анехоїчна камера для (a) SMD-антена під PEEK (HW.17), (b) Link Budget у лісі (SF7-9, 50-250м), (c) EMC pre-compliance CE/FCC (E.11). Канон `07_03 §1.2`.
+- [ ] 👤 зустріч + RF-лаб access + VNA-вимір PEEK-кришки (1.5/2.0/2.5 мм; ціль VSWR <1.8 @ 868 МГц, сухий/вологий стан + 3D Keep-Out з Ti-фланцем: Z-clearance 5/8/12 мм, з/без overhang — ex-E.53, вимога [`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM)) + Link Budget field test
+- [ ] 👤 A/B **Ignion NN02-310** (Virtual Antenna™) vs incumbent Yageo/Taoglas у тій самій VNA-сесії (eval-kit + VSWR під PEEK) — ex-E.40, far-horizon vendor-swap
+- [ ] 🔗 залежить HW.9 + HW.17
+
+#### UNI.11 — ChDTU Базіло+Бондаренко (ПМКТ): акустична валідація фононної лінзи [кластер:fauna:важіль]
+- **P3** · 👤 · ⚪ · → `07_03 §1.2`, `03_03 §10`
+- **Стан:** Не почато — ПМКТ (п'єзоелектрика + акуст. метаматеріали): EIS п'єзодиска 25-150кГц (cavitation) + верифікація гіроїдного phonon lens; журнали-цілі = дім [`07_03`](07_03_Academic_Integration_and_IP) Ст.24/24a (*J. Sound & Vibration* / *Ultrasonics* / *Applied Acoustics*). Частота кавітації = 25-150 кГц (ультразвукова AE, Tyree&Dixon 1983); поточний 16 кГц/Nyquist-8 audible-тракт її **не оцифровує** → cavitation-клас TinyML reframed до **low-freq structural water-stress proxy** (клас лишено, перейменовано наміром); справжня ultrasonic-детекція = цей UNI.11-канал / v3 AI-chip. Канон `07_03 §1.2`, `03_03 §10` + `03_03 §4.2` (reframe-дім).
+- [ ] 👤 зустріч Базіло+Бондаренко + EIS-протокол + acoustic стенд (HW.1)
+- [ ] 🌿 Mongabay: dawn/dusk Cherkasy Soundscape Library для 5-class TinyML «Fauna» (`07_03 Стаття 24a`) — recordings з UNI.13a (Спрягайло-Гаврилюк): AudioMoth, 4 сезони, ≥30хв dawn+dusk/ділянку, labeled таксони
+
+#### UNI.12 — ChIPB-NUTSU: ДСНС SOP + пожежна безпека
+- **P3** · 👤 · ⚪ · → `07_03 §1.3`
+- **Стан:** Не почато — ChIPB + НУЦЗУ (2 real-fit-експерти: Биченко тактика гасіння→диспетчеризація/drones, Ротар правова компетентність ЦЗ→SOP): (1) SOP для всіх EwsAlert-типів (drought/insect/vandalism/fire/seismic/fault/entropy/field_audit [INS.1]), (2) ДСНС API. Канон `07_03 §1.3`.
+- [ ] 👤 cold contact ЧІПБ (Биченко + Ротар — real-fit фах verified) + joint SOP workshop (ARCH.31)
+
 #### 🌿 UNI.13a — ChNU Біо-хаб (Спрягайло+Гаврилюк): Acoustic Biodiversity Baseline (Mongabay) [кластер:fauna:важіль]
 - **P3** · 👤 · 🌿 · → `07_03 §2.1/§3`, `07_03 Стаття 24a`
-- **Стан:** Far-horizon (fauna-вимір E.59, both/and) — Delgado et al. (Nicoya, 119 ділянок, 16k год; Mongabay 2026): dawn/dusk fauna-піки = маркер біорізноманіття (NDVI бачить покрив, не функцію). UA-аналог: **Cherkasy Soundscape Library** (4 сезони, з ЧДТУ ПМКТ UNI.11) → ground truth для 5-class TinyML (FW.4-EXT) + Q1. Канон `07_03 §2.1/§3`, `07_03 Стаття 24a`.
+- **Стан:** Far-horizon — Delgado et al. (Nicoya, 119 ділянок, 16k год; Mongabay 2026): dawn/dusk fauna-піки = маркер біорізноманіття (NDVI бачить покрив, не функцію). UA-аналог: **Cherkasy Soundscape Library** (4 сезони, з ЧДТУ ПМКТ UNI.11) → ground truth для 5-class TinyML (FW.4-EXT) + Q1. Канон `07_03 §2.1/§3`, `07_03 Стаття 24a`.
 - [ ] 👤 зустріч Спрягайло (проректор) + Гаврилюк (ННІ природничих) + студенти-біологи + joint methodology workshop (з ЧДТУ ПМКТ) + expedition runs (4 ділянки × 4 сезони × dawn/dusk ≈ 32 записи)
 - [ ] 🔗 manual labeling (комахи/птахи/амфібії 0-63) → GA-оптимізація Любченко (E.52-EXT) + cross-val 10-річні дані (Спрягайло)
 
@@ -1618,27 +1608,18 @@
 - [ ] 🤖 (post-gates) Sentinel-2 NDVI-адаптер (STAC по `cluster.geo_center`, cloud-mask → biodiversity_trend confirm) — open-data, будувати коли є з чим fusion'ити
 - [ ] ⚖️ fusion-методологія (ANN+RF+GA) — партнерська голова (Любченко/Карапетян, після угоди)
 
-## §07b · External Stakeholders (B2G / B2B / Cultural)
-
-> **Поточний стан:** Зовнішні залежності — не операційний hot-path, а outreach pool, що активується за TRL-тригерами. Після дисолюції `08_03`: B2G-гейткіпери (Дзюбенко/Сегеда) — ноти в [`07_03`](07_03_Academic_Integration_and_IP); культурний шар (митці) — `cultural_layer.md` (ненумерований, поза wiki); метрологія (Чорней) — переїхала в §05 (accuracy-нога trust-ladder). Імена нижче — публічна інформація; контакти живуть у gitignored CRM.
-
 #### STK.1 — Tier 1 B2G: Дзюбенко (ДП "Ліси України") — легальний доступ до Черкаського бору
-- **P1** · 👤 · ⚪ · → `07_03 §1.2`
+- **P3** · 👤 · ⚪ · → `07_03 §1.2`
 - **Стан:** Не почато (trigger: TRL 5 у `01_01`) — Дзюбенко (ДП «Ліси України»), Заслужений лісівник + д.е.н. + проф. ЧДТУ; підпис → експериментальний полігон у держлісі (канал через `07_03 §1.2` ЧДТУ MoU). Канон-профіль `07_03 §1.2` (нота під ЧДТУ).
 - [ ] 👤 verify title/contact (ChDTU rector) → first-meeting brief (NaaS+ESG/FSC) → Pilot Site MoU → координація зі Спрягайлом (ПЗФ-сумісність, `07_03 §1.1`)
 
 #### STK.2 — Tier 1 B2G: Сегеда (ДП "Смілянське ЛГ") — еко-аудит + Геронимівка
-- **P1** · 👤 · ⚪ · → `07_03 §1.1`
+- **P3** · 👤 · ⚪ · → `07_03 §1.1`
 - **Стан:** Не почато (trigger: після STK.1) — Сегеда (ДП «Смілянське ЛГ»), Заслужений природоохоронець у Геронимівці (центр Genesis-кластера); еко-аудит + розширення в Смілянщину. Канон-профіль `07_03 §1.1` (нота під ЧНУ біо-хаб).
 - [ ] 👤 first-contact (cross-link Спрягайло ПЗФ, `07_03 §1.1`) → біосумісність (LoRaWAN+CODIT) → DAO advisory (PoG oracle validation)
 
-#### STK.3 — Tier 1 B2G: Заслужений юрист — Legal Wrapper для SCC
-- **P1** · 👤 · 🔗 · → `07_03 §1.5`
-- **Стан:** Заблоковано на UNI.16 (UA-юр-review Аблязов) + UNI.14 (СЄУ Аблязов) — Заслужений юрист для Legal Wrapper SCC: перекласифікація анкера «втручання»→«науково-вимірювальний прилад» до прокуратури; кандидати через ННІ права ЧНУ (доступ через Спрягайла) + СЄУ Аблязов. Канон `07_03 §1.5` (Аблязов legal; §2.4-профіль 08_03 злито 2026-07-23).
-- [ ] 👤 identify candidate (через Спрягайла + Аблязов) → узгодити legal opinion з UNI.16
-
 #### STK.10 — Cultural Tier C (Media): Калініченко / Душок (ТРК Ільдана) — PR shield
-- **P2** · 👤 · ⚪ · → `07_03 §1.1`
+- **P3** · 👤 · ⚪ · → `07_03 §1.1`
 - **Стан:** Не почато (trigger: перед першою публічною інсталяцією) — Калініченко/Душок (ТРК Ільдана): превентивний інфо-фон проти екопанік («чіпують дерева»); Калініченко — викладач ЧНУ, міст із `07_03`. Канон `07_03 §1.1`.
 - [ ] 👤 через ЧНУ (Спрягайло) перший контакт → документальний міні-сюжет про DMLS-друк (post-prototype)
 
@@ -1665,10 +1646,12 @@ _Активних DOC-T немає — усі закриті мігровані 
 |----|-------|-------|
 | BIZ.12 | Horizon Europe CLUSTER 6 biodiversity-grant заявка (fauna-вимір) — ⚫ грант-вектор знято (founder 2026-07-23: Horizon прибрано з проєкту, `07_03` retired; Web3/академ-грант-трек = opportunistic-passive). Fauna-D-MRV наукова цінність лишається (НЕ грант-gated): acoustic biodiversity → 07_03 Стаття 24a, 03_03 §10, E.59 both/and-вимір | [`07_03 §2.1`](07_03_Academic_Integration_and_IP) · [`03_03 §10`](03_03_TinyML_Acoustic_Inference) |
 | STK.7 | Tier 5 Social-Inclusion outreach (Кучер, соц. сфера) — ⚫ Horizon-грант-тригер знято (founder 2026-07-23); Кучер-профіль + Tier 5 вилучено; Eco-Therapy 4.0 (цифрова лісотерапія) → 07_01 §1.2 | [`07_01 §1.2`](07_01_Nature_as_a_Service_Contracts) |
-| BIZ.10 | Multi-party co-authorship + open-license MoU framework — ⚫ надлишковий під open-поставою (founder 2026-07-23): co-authorship + open-license acknowledgment (AGPL/CERN-OHL-S/CC-BY-SA) уже дають tech-sharing без формального 5-стороннього Master Collaboration Agreement; лаб-доступ = per-item UNI.1 (ЧНУ парасоль); NDA лише для нерозкритого (ключі/production-дані) | [`07_03 §3`](07_03_Academic_Integration_and_IP) |
+| BIZ.10 | Multi-party co-authorship + open-license MoU framework — ⚫ надлишковий під open-поставою (founder 2026-07-23): co-authorship + open-license acknowledgment (AGPL/CERN-OHL-S/CC-BY-SA) уже дають tech-sharing без формального 5-стороннього Master Collaboration Agreement; лаб-доступ = per-item UNI.2 (ЧНУ парасоль); NDA лише для нерозкритого (ключі/production-дані) | [`07_03 §3`](07_03_Academic_Integration_and_IP) |
 | STK.8 | Cultural Tier A (черкаські митці) pre-Genesis NFT outreach — ⚫ deferred (founder 2026-07-23: «як треба буде — розбереться»); профілі → `cultural_layer.md`, re-opens при TRL 7 + Genesis onchain | `cultural_layer.md` |
 | STK.9 | Cultural Tier B (національні митці) pre-launch outreach — ⚫ deferred (founder 2026-07-23); профілі → `cultural_layer.md`, re-opens при TRL 8 | `cultural_layer.md` |
 | UNI.18 | ЧНУ ректорат follow-up + рамковий MoU — ⚫ closed (founder 2026-07-23: не дотискати; зустрічі відбулися тр.2026, рішення/MoU на боці ЧНУ). MoU-канал = Спрягайло (07_03 §1.1); re-opens якщо ЧНУ відповість | [`07_03`](07_03_Academic_Integration_and_IP) |
+| UNI.1 | Вхід у ФОТІУС-раунд post-MoU — absorbed у живий **UNI.2** (прямі зустрічі Косенюк/Любченко; формальний «раунд» не потрібен, Ярмілко engaged) | [`07_03`](07_03_Academic_Integration_and_IP) |
+| BIZ.6 | Supply chain war-zone mitigation — Contingency Plan EU Backup DMLS Hubs готовий ([`07_02 §8.1.1`](07_02_Unit_Economics_and_BOM): 4 EU-кандидати + triggers + ~20% payback); EU-quotes = deferred **BIZ.8** (self-fund UA-фокус) | [`07_02 §8.1.1`](07_02_Unit_Economics_and_BOM) |
 | BIZ.8 | EU DMLS quotes → Frame Agreement (procurement) — ⚫ deferred (founder 2026-07-23: «не треба поки що іноземні»); 4 EU-кандидати ідентифіковані (BIZ.6 ✅), self-fund UA-фокус наразі; re-opens при scale/EU-need | [`07_02 §8.1.1`](07_02_Unit_Economics_and_BOM) |
 | ARCH.12 | Merkle Tree state-root (partial verification / ISO 14064 / L2 device-voice foundation) — ✅ обидві фази SHIPPED 2026-07-19, архівовано 2026-07-19 (deep-archival: код-verify повний, канон вичерпний). **Фаза 1а:** спільний примітив `lib/merkle_tree.rb` (sha256 · RFC-6962 domain-sep 0x00/0x01 · promotion непарного вузла анти-CVE-2012-2459 · hash-of-hex) + `Mrv::TelemetryLeaf` (leaf One-Home; drift-fix `tree.device_uid`→`tree.did`) + weekly Merkle `state_root` (`root_version:1` · персистовані `window_from/to` · GRACE · `subtree_roots`-самодостатній verify) + MRV.1 lineage-вікна (watermark-курсор · fail-open корінь) + `Mrv::LineageReportService` bundle + офлайн-верифікатор `scripts/verify_lineage_bundle.rb`; ⚖️-присуд founder 07-19: перший inclusion-proof-споживач = **ISO-звіт/MRV.1** (API/UI/subgraph — потім поверх того ж примітиву). **Фаза 1б:** mint-anchored батч → `mint/batchMint(+bytes32 archiveRoot)` симетрично SCC+SFC (SCC-alias `mintForTree` — той самий параметр) + архів-тракт + `scripts/verify_archive_bundle.rb` — повний стан/механіка = дім E.60. **Вісь:** ARCH.12 = *структура* кореня (flat→Merkle), ARCH.13 = *транспорт* (куди писати) — незалежні. **Власних residuals НЕМА**; живі 🔗-gated (leaf-v2 · weekly-archive) — дім E.60. **ЖИВЕ поверх примітиву:** L2 device-voice (SE050-MIGRATION — device підписуватиме per-tree корінь, НЕ кластерний ярус) · Auto-Immune inclusion-witness (INS.1) · scale-upgrade per-cluster субкорінь-воркери (ARCH.52) | [`05_04 §Merkle`](05_04_Ethereum_L1_State_Anchor) (структура/вікно/verify) · [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline) (leaf One-Home) · [`04_01`](04_01_Data_Models_and_Entities)/[`04_02`](04_02_Business_Logic_and_Services) |
 | ARCH.13 | EigenLayer AVS як дешевша L1-anchor альтернатива — ⚫ won't-do ✅ 2026-07-19 (🤖 розвідка + founder-присуд разом, по pin). Присуд «не робити AVS» за трьома незалежними осями: (1) **economics зникла** — стара теза «$5-15/тиждень L1 vs $0.01 AVS» стояла на 40-100 gwei; у 2026 direct-L1 weekly = порядок кількох $/**рік** (ETH ~$1.9k, gas ~0.5 gwei, 50k gas) → оптимізувати нічого; (2) **attestation theater** — `state_root` = SHA-256 приватної Postgres, AVS-оператори даних не бачать → слешинг засвідчує «запостили байти», не «байти=правда»; додав би лише бренд «restaked-ETH» поверх недоведеного (суперечить чесності про залізо); готового anchoring-AVS нема, будувати власний = operator-set + slashing-контракти + аудит + вічний ops; (3) **аудитори/реєстри AVS не визнають** (Verra/GS/ISO 14064 ланцюг не мандатують; Eth L1 = найзрозуміліший наратив). Вісь структура(ARCH.12 done)/транспорт лишається: baseline = direct-L1. Founder-ідея «два корені» → окремі far-horizon треки: незалежний-домен якір **ARCH.72** (OTS→Bitcoin, НЕ Polygon-дубль) + renewal-у-часі **ARCH.73** (ERS + qualified-TS проти старіння хеша). | [`05_04`](05_04_Ethereum_L1_State_Anchor) |

@@ -344,7 +344,7 @@ bin/setup_github_project.sh
 # 3. Створити перший Betting Table milestone
 gh api repos/Alexey-Lukin/silken_net/milestones \
   -f title="Cycle 2026.Q2" \
-  -f description="First betting cycle after UNI.1 & UNI.14 onboarding"
+  -f description="First betting cycle after UNI.2 & UNI.14 onboarding"
 
 # 4. Створити baseline shaping documents
 mkdir -p docs/shaping

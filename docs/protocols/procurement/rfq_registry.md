@@ -43,7 +43,7 @@ Stage-2 coin-bake-off = **R&D-шар**; 100-партія = **Production-шар**
 ## 3. Cross-cutting procurement-політики (вказівники на доми)
 
 - **IP / CDA / NDA:** [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) — **defensive-publication** → RFQ-specs **відкриті** (вже prior art); CDA = **стандартні комерц-умови** (ціни/строки/QC), НЕ для новизни; NDA **лише** для нерозкритого (prod-keys/telemetry/ML-ваги). RFQ-аркуші це наслідують у §IP.
-- **Академічний канал** ([`07_03`](../../07_03_Academic_Integration_and_IP.md)): co-pub (ЧНУ/ЧМА/ЧДТУ) = $0 + Q1-публікація, але темп-партнер-залежний; commercial CRO = $ + швидше + стандартний CDA. **Гібрид** на критичному шляху (HW.5: academ-валідація архітектури + commercial-експресія). Партнер-MoU гейт = **UNI.1** (СЄУ Аблязов legal).
+- **Академічний канал** ([`07_03`](../../07_03_Academic_Integration_and_IP.md)): co-pub (ЧНУ/ЧМА/ЧДТУ) = $0 + Q1-публікація, але темп-партнер-залежний; commercial CRO = $ + швидше + стандартний CDA. **Гібрид** на критичному шляху (HW.5: academ-валідація архітектури + commercial-експресія). Партнер-MoU гейт = ЧНУ лаб-доступ (**UNI.2**, passive) + CDA/NDA legal (**UNI.14** СЄУ Аблязов).
 - **Фінансування-гейти** ([`00_07` BIZ.20](../../00_07_Action_Plan_Tracker.md)): procurement-authority вивільняється поетапно з self-fund + інкорпорацією юр-особи (перша 100-партія CAPEX gated на BIZ.20).
 
 ---
