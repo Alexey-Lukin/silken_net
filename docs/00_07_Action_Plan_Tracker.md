@@ -1196,6 +1196,12 @@
 - **Стан:** Far-horizon (TRL 9+) — bonding curves для динамічного SCC-ціноутворення (монетарне рішення: форма кривої = ⚖️). Канон `05_06 §6` (Bonding Curves; **не** `05_03`, що тримає ФІКСОВану 10 000 gp/SCC модель).
 - [ ] ⚖️ bonding-curve дизайн (TRL 9+)
 
+#### STK.5 — ЗВТ-метрологія: accuracy-нога (Чорней / ДП «Черкасистандартметрологія»)
+- **P3** · 👤 · 🌿 · → `05_02`
+- **Стан:** Не почато (far-horizon — метрологія не повіряє in-silico прилад; gated на фізичний анкер, System TRL 3→≥4, [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond)). Accuracy-нога trust-ladder ([`05_02`](05_02_Proof_of_Growth_Pipeline) §Trust-origin ladder: origin-крипта L0-L2 + **accuracy-ЗВТ** + skin-in-game operator-bond BIZ.13). **Дві чесні тези (adversarial-verified):** (1) *досяжне — стандартна метрологія:* поканальна traceable-калібрація (internal_temp → термометр-еталон, вже 2-точкова factory-cal TSENSE_CAL1/2; vcap-VDDA → VREFINT-вольтметр; delta_t/RTC → частотний/часовий еталон) + поканальний uncertainty budget + дрейф-компенсація (гачки вже в `DeviceCalibration`); (2) *category-обмежене:* сертифікація КОМПОЗИТНОГО carbon-measurand (метаболічна жвавість → SCC) як єдиного legal-ЗВТ = **можливий category-error** (indirect measurand без нац-еталона — expert-питання, не founder-дія). UA-scope: ДСТУ / нац-реєстр ЗВТ (НЕ BIPM/OIML). Dormant 👤-контакт, НЕ дотискати — outreach передчасний до internal uncertainty-budget. CBAM-прийнятність = окрема хибна преміса [BIZ.19] (метрологія робить цифру точною, не робить SCC офсетом).
+- [ ] 👤 (self-ownable ЗАРАЗ, папір) internal GUM uncertainty-budget `delta_t→GP→SCC→tCO₂` — агрегатор 5 наявних компонентів (`DeviceCalibration`-пороги · vcap VDDA-proxy · FW.57 raw-vs-display · `valid_sensor_data?` · EMA FW.21 ±8%→±2.7% [апріорні, не bench]); keystone, що робить розмову з метрологом предметною
+- [ ] 👤 (після uncertainty-budget + фіз-анкер) розвідка з expert-метрологом: чи існує повірочний шлях для indirect bio-derived measurand, чи це category-error
+
 ## §06 · Deploy / Observability / Secrets / Ops
 
 > Деплой, спостережуваність, секрети, DR — канон `06_xx`.
@@ -1504,7 +1510,7 @@
 
 #### BIZ.19 — «SCC = CBAM-офсет» стоїть на неперевіреній (ймовірно хибній) регуляторній премісі
 - **P2** · 👤 · 🟡 · → `07_01 §8`, `07_01 §8`
-- **Стан:** 🤖-присуд (2026-07-14, висока впевненість, потребує юр-підтвердження): **SCC-retirement ≠ CBAM-reduction** — CBAM Reg. (EU) 2023/956 Art.9 знижує обов'язок імпортера лише вуглецевою ціною, СПЛАЧЕНОЮ виробником у країні походження (ETS-еквівалент), НЕ купівлею/retirement voluntary-credits (поширена плутанина compliance-ринку з добровільним). → Позиціонувати SCC як **voluntary Scope 1-3 / net-zero-disclosure**, НЕ CBAM-compliance; **не пітчити CBAM Азоту до юр-звірки** (репутаційний ризик — юр-неправда CFO). Аналіз + reframe у каноні done → [`cbam_offset_analysis.md`](../protocols/business/cbam_offset_analysis.md) + ⚠️-caveat у `07_01 §8` / `07_01 §8`.
+- **Стан:** 🤖-присуд (2026-07-14, висока впевненість, потребує юр-підтвердження): **SCC-retirement ≠ CBAM-reduction** — CBAM Reg. (EU) 2023/956 Art.9 знижує обов'язок імпортера лише вуглецевою ціною, СПЛАЧЕНОЮ виробником у країні походження (ETS-еквівалент), НЕ купівлею/retirement voluntary-credits (поширена плутанина compliance-ринку з добровільним). → Позиціонувати SCC як **voluntary Scope 1-3 / net-zero-disclosure**, НЕ CBAM-compliance; **не пітчити CBAM Азоту до юр-звірки** (репутаційний ризик — юр-неправда CFO). Аналіз + reframe у каноні done → [`cbam_offset_analysis.md`](../protocols/business/cbam_offset_analysis.md) + ⚠️-caveat у `07_01 §8`.
 - [ ] 👤 юр-підтвердження (Аблязов, ~30 хв — Art.9 + UA-ETS-статус + SCC-як-Scope-3, на UNI.14/16-консультації) → повний reframe caveat→resolved + оновити Азот-пітч
 
 #### BIZ.21 — Немає company-level E&O / liability-страхування (≠ INS.1 параметричний продукт)
@@ -1614,27 +1620,22 @@
 
 ## §08b · External Stakeholders (B2G / B2B / Cultural)
 
-> **Поточний стан:** Зовнішні залежності виокремлені в [`08_03`](08_03_External_Stakeholders_Registry) (Cultural Layer) та [`08_03`](08_03_External_Stakeholders_Registry) (B2G/B2B Matrix). Це не операційні залежності hot-path — це outreach pool, що активується за TRL-тригерами у відповідних модулях. Імена нижче — публічна інформація; контакти живуть у gitignored CRM.
+> **Поточний стан:** Зовнішні залежності — не операційний hot-path, а outreach pool, що активується за TRL-тригерами. Після дисолюції `08_03`: B2G-гейткіпери (Дзюбенко/Сегеда) — ноти в [`08_02`](08_02_Academic_Institutions_Registry); культурний шар (митці) — `cultural_layer.md` (ненумерований, поза wiki); метрологія (Чорней) — переїхала в §05 (accuracy-нога trust-ladder). Імена нижче — публічна інформація; контакти живуть у gitignored CRM.
 
 #### STK.1 — Tier 1 B2G: Дзюбенко (ДП "Ліси України") — легальний доступ до Черкаського бору
-- **P1** · 👤 · ⚪ · → `08_03 §2.1`
-- **Стан:** Не почато (trigger: TRL 5 у `01_01`) — Дзюбенко (ДП «Ліси України»), Заслужений лісівник + д.е.н. + проф. ЧДТУ; підпис → експериментальний полігон у держлісі (канал через `08_02 §2` ЧДТУ MoU). Канон `08_03 §2.1`.
+- **P1** · 👤 · ⚪ · → `08_02 §2`
+- **Стан:** Не почато (trigger: TRL 5 у `01_01`) — Дзюбенко (ДП «Ліси України»), Заслужений лісівник + д.е.н. + проф. ЧДТУ; підпис → експериментальний полігон у держлісі (канал через `08_02 §2` ЧДТУ MoU). Канон-профіль `08_02 §2` (нота під ЧДТУ).
 - [ ] 👤 verify title/contact (ChDTU rector) → first-meeting brief (NaaS+ESG/FSC) → Pilot Site MoU → координація зі Спрягайлом (ПЗФ-сумісність, `08_02 §1`)
 
 #### STK.2 — Tier 1 B2G: Сегеда (ДП "Смілянське ЛГ") — еко-аудит + Геронимівка
-- **P1** · 👤 · ⚪ · → `08_03 §2.2`
-- **Стан:** Не почато (trigger: після STK.1) — Сегеда (ДП «Смілянське ЛГ»), Заслужений природоохоронець у Геронимівці (центр Genesis-кластера); еко-аудит + розширення в Смілянщину. Канон `08_03 §2.2`.
+- **P1** · 👤 · ⚪ · → `08_02 §1`
+- **Стан:** Не почато (trigger: після STK.1) — Сегеда (ДП «Смілянське ЛГ»), Заслужений природоохоронець у Геронимівці (центр Genesis-кластера); еко-аудит + розширення в Смілянщину. Канон-профіль `08_02 §1` (нота під ЧНУ біо-хаб).
 - [ ] 👤 first-contact (cross-link Спрягайло ПЗФ, `08_02 §1`) → біосумісність (LoRaWAN+CODIT) → DAO advisory (PoG oracle validation)
 
 #### STK.3 — Tier 1 B2G: Заслужений юрист — Legal Wrapper для SCC
 - **P1** · 👤 · 🔗 · → `08_02 §5`
 - **Стан:** Заблоковано на UNI.16 (UA-юр-review Аблязов) + UNI.14 (СЄУ Аблязов) — Заслужений юрист для Legal Wrapper SCC: перекласифікація анкера «втручання»→«науково-вимірювальний прилад» до прокуратури; кандидати через ННІ права ЧНУ (доступ через Спрягайла) + СЄУ Аблязов. Канон `08_02 §5` (Аблязов legal; §2.4-профіль 08_03 злито 2026-07-23).
 - [ ] 👤 identify candidate (через Спрягайла + Аблязов) → узгодити legal opinion з UNI.16
-
-#### STK.5 — Tier 3 Certification: Чорней (ДП "Черкасистандартметрологія") — SCC certification
-- **P1** · 👤 · ⚪ · → `08_03 §4.1`
-- **Стан:** Не почато (trigger: TRL 6 у `05_02`; критичний gate для метрологічного статусу SCC; ⚠️ CBAM-прийнятність = окрема неперевірена преміса [BIZ.19]) — Чорней (ДП «Черкасистандартметрологія»): сертифікація Soldier як ЗВТ + дрейф-компенсація + audit похибки D-MRV (інакше SCC = «цифри з інтернету»). Канон `08_03 §4.1`.
-- [ ] 👤 verify Chorney status → first-meeting (SCC↔ДСТУ↔BIPM/OIML) → ЗВТ registration roadmap
 
 #### STK.10 — Cultural Tier C (Media): Калініченко / Душок (ТРК Ільдана) — PR shield
 - **P2** · 👤 · ⚪ · → `08_02 §1`
@@ -1663,10 +1664,10 @@ _Активних DOC-T немає — усі закриті мігровані 
 | ID | Пункт | Канон |
 |----|-------|-------|
 | BIZ.12 | Horizon Europe CLUSTER 6 biodiversity-grant заявка (fauna-вимір) — ⚫ грант-вектор знято (founder 2026-07-23: Horizon прибрано з проєкту, `07_03` retired; Web3/академ-грант-трек = opportunistic-passive). Fauna-D-MRV наукова цінність лишається (НЕ грант-gated): acoustic biodiversity → 08_01 Стаття 24a, 03_03 §10, E.59 both/and-вимір | [`08_01 §1`](08_01_Joint_Publications_and_IP_Strategy) · [`03_03 §10`](03_03_TinyML_Acoustic_Inference) |
-| STK.7 | Tier 5 Social-Inclusion outreach (Кучер, соц. сфера) — ⚫ Horizon-грант-тригер знято (founder 2026-07-23); Кучер-профіль + Tier 5 вилучено з 08_03; Eco-Therapy 4.0 (цифрова лісотерапія) → 07_01 §1.2 | [`08_03`](08_03_External_Stakeholders_Registry) |
+| STK.7 | Tier 5 Social-Inclusion outreach (Кучер, соц. сфера) — ⚫ Horizon-грант-тригер знято (founder 2026-07-23); Кучер-профіль + Tier 5 вилучено; Eco-Therapy 4.0 (цифрова лісотерапія) → 07_01 §1.2 | [`07_01 §1.2`](07_01_Nature_as_a_Service_Contracts) |
 | BIZ.10 | Multi-party co-authorship + open-license MoU framework — ⚫ надлишковий під open-поставою (founder 2026-07-23): co-authorship + open-license acknowledgment (AGPL/CERN-OHL-S/CC-BY-SA) уже дають tech-sharing без формального 5-стороннього Master Collaboration Agreement; лаб-доступ = per-item UNI.1 (ЧНУ парасоль); NDA лише для нерозкритого (ключі/production-дані) | [`08_01 §2`](08_01_Joint_Publications_and_IP_Strategy) |
-| STK.8 | Cultural Tier A (7 черкаських митців) pre-Genesis NFT outreach — ⚫ deferred (founder 2026-07-23: «як треба буде — розбереться»); профілі лишаються 08_03 §11, re-opens при TRL 7 + Genesis onchain | [`08_03 §11`](08_03_External_Stakeholders_Registry) |
-| STK.9 | Cultural Tier B (7 національних митців) pre-launch outreach — ⚫ deferred (founder 2026-07-23); профілі лишаються 08_03 §11, re-opens при TRL 8 | [`08_03 §11`](08_03_External_Stakeholders_Registry) |
+| STK.8 | Cultural Tier A (черкаські митці) pre-Genesis NFT outreach — ⚫ deferred (founder 2026-07-23: «як треба буде — розбереться»); профілі → `cultural_layer.md`, re-opens при TRL 7 + Genesis onchain | `cultural_layer.md` |
+| STK.9 | Cultural Tier B (національні митці) pre-launch outreach — ⚫ deferred (founder 2026-07-23); профілі → `cultural_layer.md`, re-opens при TRL 8 | `cultural_layer.md` |
 | UNI.18 | ЧНУ ректорат follow-up + рамковий MoU — ⚫ closed (founder 2026-07-23: не дотискати; зустрічі відбулися тр.2026, рішення/MoU на боці ЧНУ). MoU-канал = Спрягайло (08_02 §1); re-opens якщо ЧНУ відповість | [`08_02`](08_02_Academic_Institutions_Registry) |
 | BIZ.8 | EU DMLS quotes → Frame Agreement (procurement) — ⚫ deferred (founder 2026-07-23: «не треба поки що іноземні»); 4 EU-кандидати ідентифіковані (BIZ.6 ✅), self-fund UA-фокус наразі; re-opens при scale/EU-need | [`07_02 §8.1.1`](07_02_Unit_Economics_and_BOM) |
 | ARCH.12 | Merkle Tree state-root (partial verification / ISO 14064 / L2 device-voice foundation) — ✅ обидві фази SHIPPED 2026-07-19, архівовано 2026-07-19 (deep-archival: код-verify повний, канон вичерпний). **Фаза 1а:** спільний примітив `lib/merkle_tree.rb` (sha256 · RFC-6962 domain-sep 0x00/0x01 · promotion непарного вузла анти-CVE-2012-2459 · hash-of-hex) + `Mrv::TelemetryLeaf` (leaf One-Home; drift-fix `tree.device_uid`→`tree.did`) + weekly Merkle `state_root` (`root_version:1` · персистовані `window_from/to` · GRACE · `subtree_roots`-самодостатній verify) + MRV.1 lineage-вікна (watermark-курсор · fail-open корінь) + `Mrv::LineageReportService` bundle + офлайн-верифікатор `scripts/verify_lineage_bundle.rb`; ⚖️-присуд founder 07-19: перший inclusion-proof-споживач = **ISO-звіт/MRV.1** (API/UI/subgraph — потім поверх того ж примітиву). **Фаза 1б:** mint-anchored батч → `mint/batchMint(+bytes32 archiveRoot)` симетрично SCC+SFC (SCC-alias `mintForTree` — той самий параметр) + архів-тракт + `scripts/verify_archive_bundle.rb` — повний стан/механіка = дім E.60. **Вісь:** ARCH.12 = *структура* кореня (flat→Merkle), ARCH.13 = *транспорт* (куди писати) — незалежні. **Власних residuals НЕМА**; живі 🔗-gated (leaf-v2 · weekly-archive) — дім E.60. **ЖИВЕ поверх примітиву:** L2 device-voice (SE050-MIGRATION — device підписуватиме per-tree корінь, НЕ кластерний ярус) · Auto-Immune inclusion-witness (INS.1) · scale-upgrade per-cluster субкорінь-воркери (ARCH.52) | [`05_04 §Merkle`](05_04_Ethereum_L1_State_Anchor) (структура/вікно/verify) · [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline) (leaf One-Home) · [`04_01`](04_01_Data_Models_and_Entities)/[`04_02`](04_02_Business_Logic_and_Services) |

@@ -83,9 +83,9 @@ Slashing: лише за доведену халатність (cause-gate A/B/C;
 
 ---
 
-## 🌐 Social API Registry (Зовнішні Стейкхолдери)
+## 🌐 Зовнішні Стейкхолдери
 
-Окрім академічних партнерів ([`08_01`](docs/08_01_Joint_Publications_and_IP_Strategy.md)–[`08_03`](docs/08_03_External_Stakeholders_Registry.md)), проєкт залежить від зовнішніх **non-operational** стейкхолдерів: B2G-гейткіпери (лісівник Дзюбенко, природоохоронець Сегеда), B2B-клієнти (CBAM-офсет, лісосмуги агросектора), метрологія (Чорней — сертифікація SCC) та культурний шар (митці національного/локального рівня для Genesis NFT + Data Sonification). Жоден із записів не блокує merge — це outreach pool, що активується за TRL-тригерами. Принцип Zero-Trust: матриця інтерфейсів `(API In, API Out, SSOT-link, Status)` замість сюжетів. Деталі: [`docs/08_03_External_Stakeholders_Registry.md`](docs/08_03_External_Stakeholders_Registry.md) (B2G/B2B Matrix + Cultural Layer). Outreach tasks: [`docs/00_07`](docs/00_07_Action_Plan_Tracker.md) § STK.x.
+Окрім академічних партнерів ([`08_01`](docs/08_01_Joint_Publications_and_IP_Strategy.md)–[`08_02`](docs/08_02_Academic_Institutions_Registry.md)), проєкт залежить від зовнішніх **non-operational** стейкхолдерів: B2G-гейткіпери (лісівник Дзюбенко, природоохоронець Сегеда) — ноти в [`08_02`](docs/08_02_Academic_Institutions_Registry.md); метрологія (Чорней — сертифікація SCC) — [`00_07`](docs/00_07_Action_Plan_Tracker.md) § STK.5; культурний шар (митці національного/локального рівня для Genesis NFT + Data Sonification) — `docs/cultural_layer.md`. Жоден із записів не блокує merge — це outreach pool, що активується за TRL-тригерами.
 
 ---
 
@@ -348,7 +348,6 @@ kamal deploy
 **Академічна Інтеграція / Academic & Partnerships (Модуль 08)** — 5 ВНЗ-партнерів
 - [`08_01`](docs/08_01_Joint_Publications_and_IP_Strategy.md) — спільні публікації (Статті 1–29) + стратегія IP
 - [`08_02`](docs/08_02_Academic_Institutions_Registry.md) — Реєстр Академічних Інституцій (ЧНУ+ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ: хто → що валідує → канон-дім)
-- [`08_03`](docs/08_03_External_Stakeholders_Registry.md) — External Stakeholders (B2G/B2B + культурний шар; non-hot-path outreach pool)
 
 ---
 

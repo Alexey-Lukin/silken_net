@@ -6,7 +6,7 @@
 
 > **Принцип партнерства:** Silken Net надає інноваційний R&D-полігон. ЧНУ надає академічну легітимність та лабораторну інфраструктуру.
 
-> **Карта документа** (cluster head Модуля 08, ~3 блоки): **§1–§1E** план публікацій (per-ВНЗ; нумерація рідка — діри = вилучені статті, номери НЕ перевикористовуються заради crossref-стабільності) · **§2–§2.1** IP-рамка (розподіл прав + TISC/trademark/юр-review). Реєстр самих ВНЗ-партнерів (хто / що валідує) — [`08_02`](08_02_Academic_Institutions_Registry); зовнішні стейкхолдери — [`08_03`](08_03_External_Stakeholders_Registry).
+> **Карта документа** (cluster head Модуля 08, ~3 блоки): **§1–§1E** план публікацій (per-ВНЗ; нумерація рідка — діри = вилучені статті, номери НЕ перевикористовуються заради crossref-стабільності) · **§2–§2.1** IP-рамка (розподіл прав + TISC/trademark/юр-review). Реєстр самих ВНЗ-партнерів (хто / що валідує; несе й ноти B2G-гейткіперів) — [`08_02`](08_02_Academic_Institutions_Registry); метрологія (Чорней) — [`00_07`](00_07_Action_Plan_Tracker) STK.5; культурний шар — `cultural_layer.md`.
 
 ---
 
@@ -23,7 +23,6 @@
 | Ресурс | Зв'язок |
 |---|---|
 | [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Реєстр 5 ВНЗ-партнерів (хто / що валідує) — автори цих публікацій |
-| [`08_03` — External Stakeholders Registry](08_03_External_Stakeholders_Registry) | Зовнішні B2G/B2B + культурний шар |
 | [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | UNI.* |

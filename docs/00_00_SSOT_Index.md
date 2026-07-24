@@ -160,7 +160,7 @@ _Деплой, моніторинг, секрети та децентраліз�
 
 ## 💰 Модуль 07: Економіка та Фінансування (Economics & Funding)
 
-_NaaS-контракти та юніт-економіка. Зовнішні стейкхолдери (B2G/B2B + культурний шар) переїхали у Модуль 08 ([`08_03`](08_03_External_Stakeholders_Registry)). Візія/місія/дорожня карта — у Фундаменті [`00_01`](00_01_Vision_Mission_and_Roadmap)._
+_NaaS-контракти та юніт-економіка. Зовнішні стейкхолдери (B2G/B2B) — ноти в [`08_02`](08_02_Academic_Institutions_Registry); культурний шар (митці) — `cultural_layer.md`. Візія/місія/дорожня карта — у Фундаменті [`00_01`](00_01_Vision_Mission_and_Roadmap)._
 
 - [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) (NaaS контракти + параметричне страхування + фінансові константи)
 - [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) (Юніт-економіка + ROI через SCC + Supply Chain Ukraine)
@@ -171,4 +171,3 @@ _Партнерства ВНЗ (ЧНУ+ФОТІУС, ЧДТУ, ЧІПБ, ЧМА,
 
 - [`08_01` — Joint Publications and IP Strategy](08_01_Joint_Publications_and_IP_Strategy) (спільні публікації + IP-постава: defensive publication + open-license)
 - [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) (Реєстр 5 ВНЗ: хто/кафедра → що валідує [канон-дім] → публікація)
-- [`08_03` — External Stakeholders Registry](08_03_External_Stakeholders_Registry) (Social API Registry: B2G/B2B + культурний шар — лісники, ДСНС, митці; non-hot-path)

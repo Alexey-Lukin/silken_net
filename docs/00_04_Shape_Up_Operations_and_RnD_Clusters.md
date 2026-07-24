@@ -233,6 +233,6 @@ TRL-матриця крокує "квартально-функціональни
 | TRL 4-5 (lab validation) | Fall (вересень — січень) | Лабораторні протоколи, перший draft публікації | UNI.1 (вхід ФОТІУС) + UNI.4 (школа Мінаєва) + UNI.5 (школа Гусака) |
 | TRL 5-6 (relevant environment) | Spring (лютий — травень) | Магістерські та дипломні **захисти у червні** | UNI.13 / UNI.14 верифікація науковців |
 | TRL 6-7 (pilot deploy) | Літня перерва + Fall | Pilot installation, conference paper draft | UNI.14 СЄУ MSA |
-| TRL 7-8 (operational) | Spring | Peer-reviewed публікація | UNI.* IP strategy ([`08_03`](08_03_External_Stakeholders_Registry)) |
+| TRL 7-8 (operational) | Spring | Peer-reviewed публікація | UNI.* IP strategy ([`08_01`](08_01_Joint_Publications_and_IP_Strategy)) |
 
 > Фінальні захисти у червні — **hard deadline** для TRL freeze поточного циклу. Будь-яка картка з `Target TRL ≥ 6` повинна бути закрита **до 15 червня**, інакше прив'язка зсувається у `Fall {Y}-{Y+1}`.
