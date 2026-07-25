@@ -39,7 +39,7 @@ lv:
         active_contracts_sub: NaaS
         total_contracts: Kopā līgumi
         total_contracts_sub: Mūža laikā
-        total_invested: Kopā ieguldīts
+        total_invested: Kopā līgumos
         total_invested_sub: SCC
       title: "💎 Finanšu kopsavilkuma atskaite"
     index:
@@ -58,7 +58,7 @@ lv:
         biological_assets: Uzraudzītie koki
         biological_assets_sub: Koki
         capital_injected: Līgumu summa
-        capital_injected_sub: SCC ieguldīts
+        capital_injected_sub: SCC līgumos
         carbon_yield: Kalts SCC
         carbon_yield_sub: SCC kopā
         health_score: Veselības rādītājs

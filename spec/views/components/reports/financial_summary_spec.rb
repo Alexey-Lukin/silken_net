@@ -38,8 +38,11 @@ RSpec.describe Reports::FinancialSummary do
   end
 
   describe "stat cards" do
-    it "renders Total Invested stat card" do
-      expect(html).to include("Total Invested")
+    it "renders Total Contracted stat card" do
+      # Service wording, not investment wording — BIZ.22 / 07_01 §1. The label moved
+      # from "Total Invested"; the i18n KEY (`metrics.total_invested`) deliberately did
+      # not, since keys are never shown to a user.
+      expect(html).to include("Total Contracted")
     end
 
     it "renders Active Contracts stat card" do

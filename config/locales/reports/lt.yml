@@ -39,7 +39,7 @@ lt:
         active_contracts_sub: NaaS
         total_contracts: Iš viso sutarčių
         total_contracts_sub: Per visą laiką
-        total_invested: Iš viso investuota
+        total_invested: Iš viso sutarta
         total_invested_sub: SCC
       title: "💎 Finansinės suvestinės ataskaita"
     index:
@@ -58,7 +58,7 @@ lt:
         biological_assets: Stebimi medžiai
         biological_assets_sub: Medžiai
         capital_injected: Sutarčių suma
-        capital_injected_sub: SCC investuota
+        capital_injected_sub: SCC pagal sutartis
         carbon_yield: Nukalta SCC
         carbon_yield_sub: SCC iš viso
         health_score: Sveikatos rodiklis
@@ -69,5 +69,5 @@ lt:
         threat_clear: SAUGU
         threat_level: Grėsmės lygis
       organization: 'Organizacija:'
-      subtitle: 'Konsoliduotos ataskaitos investuotojams: aplinkos auditai ir finansinis našumas.'
+      subtitle: 'Konsoliduotos ataskaitos klientams: aplinkos auditai ir finansinis našumas.'
       title: "📊 Archyvas — Ataskaitų centras"

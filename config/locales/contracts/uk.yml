@@ -46,14 +46,14 @@ uk:
         burn_points: Спалити накопичені пункти
         burn_yes: Так
         cancellation_title: Умови розірвання
-        early_exit_fee: Комісія за достроковий вихід
+        early_exit_fee: Плата за дострокове розірвання
         early_exit_value: "%{value}%"
-        min_days: Мін. днів до виходу
+        min_days: Мін. днів до розірвання
         title: Дані смартконтракту
         verified: Перевірено Silken Net Oracle. Емісія індексована до верифікованого гомеостазу.
       organization: 'Організація: %{name}'
       period: 'Період: %{start} → %{end}'
       status: 'Статус: %{value}'
       title: "#%{id} // СЕК_%{sector}"
-      total_funding: 'Загальне фінансування: %{amount} SCC'
+      total_funding: 'Загальна плата за послугу: %{amount} SCC'
       yield_unit: SCC

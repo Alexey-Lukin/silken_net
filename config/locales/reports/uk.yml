@@ -39,7 +39,7 @@ uk:
         active_contracts_sub: NaaS
         total_contracts: Всього контрактів
         total_contracts_sub: За весь час
-        total_invested: Всього інвестовано
+        total_invested: Всього законтрактовано
         total_invested_sub: SCC
       title: "💎 Звіт фінансового зведення"
     index:
@@ -58,7 +58,7 @@ uk:
         biological_assets: Дерева під моніторингом
         biological_assets_sub: Дерева
         capital_injected: Сума контрактів
-        capital_injected_sub: Інвестовано SCC
+        capital_injected_sub: Законтрактовано SCC
         carbon_yield: Нараховано SCC
         carbon_yield_sub: Всього SCC
         health_score: Індекс здоров'я
@@ -69,5 +69,5 @@ uk:
         threat_clear: ЧИСТО
         threat_level: Рівень загрози
       organization: 'Організація:'
-      subtitle: 'Зведена звітність для інвесторів: екологічні аудити та фінансова ефективність.'
+      subtitle: 'Зведена звітність для клієнтів: екологічні аудити та фінансова ефективність.'
       title: "📊 Архів — Центр звітів"

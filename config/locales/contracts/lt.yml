@@ -46,14 +46,14 @@ lt:
         burn_points: Sukauptų taškų deginimas
         burn_yes: Taip
         cancellation_title: Atšaukimo sąlygos
-        early_exit_fee: Išankstinio išėjimo mokestis
+        early_exit_fee: Išankstinio nutraukimo mokestis
         early_exit_value: "%{value}%"
-        min_days: Min. dienos prieš išėjimą
+        min_days: Min. dienos prieš nutraukimą
         title: Išmaniosios sutarties duomenys
         verified: Patikrinta Silken Net Oracle. Emisija indeksuota pagal patvirtintą homeostazę.
       organization: 'Organizacija: %{name}'
       period: 'Laikotarpis: %{start} → %{end}'
       status: 'Būsena: %{value}'
       title: "#%{id} // SEC_%{sector}"
-      total_funding: 'Bendras finansavimas: %{amount} SCC'
+      total_funding: 'Paslaugos mokestis iš viso: %{amount} SCC'
       yield_unit: SCC

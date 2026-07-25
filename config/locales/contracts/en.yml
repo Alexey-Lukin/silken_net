@@ -46,14 +46,14 @@ en:
         burn_points: Burn Accrued Points
         burn_yes: 'Yes'
         cancellation_title: Cancellation Terms
-        early_exit_fee: Early Exit Fee
+        early_exit_fee: Early Termination Charge
         early_exit_value: "%{value}%"
-        min_days: Min Days Before Exit
+        min_days: Min Days Before Termination
         title: Smart Contract Data
         verified: Verified by Silken Net Oracle. Emission indexed to verified homeostasis.
       organization: 'Organization: %{name}'
       period: 'Period: %{start} → %{end}'
       status: 'Status: %{value}'
       title: "#%{id} // SEC_%{sector}"
-      total_funding: 'Total Funding: %{amount} SCC'
+      total_funding: 'Total Service Fee: %{amount} SCC'
       yield_unit: SCC

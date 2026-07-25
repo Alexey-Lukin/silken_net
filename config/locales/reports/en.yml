@@ -39,7 +39,7 @@ en:
         active_contracts_sub: NaaS
         total_contracts: Total Contracts
         total_contracts_sub: Lifetime
-        total_invested: Total Invested
+        total_invested: Total Contracted
         total_invested_sub: SCC
       title: "💎 Financial Summary Report"
     index:
@@ -58,7 +58,7 @@ en:
         biological_assets: Monitored Trees
         biological_assets_sub: Trees
         capital_injected: Contracted Amount
-        capital_injected_sub: SCC Invested
+        capital_injected_sub: SCC Contracted
         carbon_yield: SCC Minted
         carbon_yield_sub: SCC Total
         health_score: Health Score
