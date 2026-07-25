@@ -1482,7 +1482,7 @@
 
 #### UNI.14 — СЄУ: персональний контакт (Аблязов legal/RWA + Ус/Гедз облік)
 - **P1** · 👤 · 🟡 · → `07_03 §1.5`
-- **Стан:** 🤖 tax/фіат питання-пакети готові ([`tax_posture_ua.md`](protocols/legal/tax_posture_ua.md); консолідує legacy UNI.8); 👤-workshop ще не проведено. **Юр-хаб §07** — один воркшоп Аблязова фанається в BIZ.20 (co-founder IP-carve-out), BIZ.2 (MSA), BIZ.15 (SPV), UNI.16, STK.3. **СЄУ = economics+law, 3 фахівці, персональний контакт:** Аблязов **Денис Едуардович** (віцепрезидент, к.ю.н. — господарське право/протидія рейдерству; MSA/інкорпорація), Гедз (проректор якості — фінансовий облік криптоактивів 2025), Ус (цифрова економіка + матем. моделювання). Глибина крипто-права → профільний TBD. Канон `07_03 §1.5`.
+- **Стан:** 🤖 tax/фіат питання-пакети готові ([`tax_posture_ua.md`](protocols/legal/tax_posture_ua.md); консолідує legacy UNI.8); 👤-workshop ще не проведено. **Юр-хаб §07** — один воркшоп Аблязова фанається в BIZ.20 (co-founder IP-carve-out — юр-форму обрано 2026-07-24), BIZ.2 (MSA), BIZ.15 (SPV), UNI.16, STK.3. **СЄУ = economics+law, 3 фахівці, персональний контакт:** Аблязов **Денис Едуардович** (віцепрезидент, к.ю.н. — господарське право/протидія рейдерству; MSA/інкорпорація), Гедз (проректор якості — фінансовий облік криптоактивів 2025), Ус (цифрова економіка + матем. моделювання). Глибина крипто-права → профільний TBD. Канон `07_03 §1.5`.
 - [ ] 👤 персональний контакт: workshop Аблязов (UA-legal/MSA/інкорпорація) + Ус/Гедз (облік SCC); глибина крипто-права/carbon → профільні TBD
 - [ ] 👤 sit-down з Ус/Гедз — податкова постава SCC-доходу + 90%-тест Дія.City (питання-пакет готовий, див. Стан)
 - [ ] 👤 sit-down з Ус/Аблязов — фіат-операційка B2B: ПДВ на carbon-послугу (потребує ІПК) + 🔴 банк/крипто on-off-ramp (НБУ №14) + крос-бордер інвойсинг (питання-пакет готовий, див. Стан)
@@ -1495,9 +1495,10 @@
 #### UNI.3 — Defensive-publication + open-license execution (IP-постава)
 - **P1** · 🤖+👤 · 🟡 · → `07_03 §3`
 - **Стан:** Постава = **defensive-publication-first** (`07_03 §3`; патент НЕ подаємо). Ліцензії застосовано (AGPL / CERN-OHL-S / CC-BY-SA + `/NOTICE`); disclosure готовий ([`defensive_disclosure.md`](protocols/anchor/defensive_disclosure.md)) + landscape ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)) → **Стаття 1 розблокована** (publish-to-protect). Тайминг: ™-заявка (UNI.15) + домени ПЕРЕД/РАЗОМ з TDCommons-splash (розкриття експонує назву).
-- [ ] 👤 TDCommons-постинг disclosure (prior-art якір)
+- [ ] 🤖 прогнати Query Set 1–5 ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)) + залогувати кожен hit — **ПЕРЕД** TDCommons-постингом: зараз документ несе лише план пошуку, а висновок «анти-захоплення підтверджено» умовний
+- [ ] 👤 TDCommons-постинг disclosure (prior-art якір) — після прогону вище
 - [ ] 👤 trademark-заявка SilkenNet™/GaiaNexus™/SCC™ через повіреного УкрНОІВІ (UNI.15)
-- [ ] 👤 Кафедра-ІВ open-license + AF3 legal review (UNI.16)
+- [ ] 👤 open-license + AF3 legal review — профільна кафедра ІВ (ВНЗ/контакт TBD, не визначено) або крипто/IP-юрист (UNI.16)
 - [ ] 🤖 SPDX-headers по source (`app`/`lib`/`firmware`[крім `extern`]/`tools`[крім `cad/extern`]=`AGPL-3.0-or-later`; CERN-OHL-S для hw-design) — скриптом, ідемпотентно; винятки РАТИФІКОВАНО [DOC-T.47]: `contracts`=MIT · `tools/cad/src|tests`=AGPL (наш код) · `tools/cad/extern`=Apache (LEAP-submodule); audit + rollout-план готовий ([`spdx_rollout_plan.md`](protocols/legal/spdx_rollout_plan.md) — `git ls-files`-only enumeration, dry-run-first, 4 відкриті scope-рішення), сам mass-прохід → deferred (Phase 7)
 
 #### BIZ.20 — Юр-структура SilkenNet: operational-форма обрана, IP-carve-out + token-контур відкриті
@@ -1510,7 +1511,7 @@
 #### BIZ.2 — B2B MSA (Master Service Agreement)
 - **P2** · 👤 · 🟡 · → `07_01`, `07_03 §1.5`
 - **Стан:** 🤖 MSA-каркас готовий ([`msa_skeleton.md`](protocols/legal/msa_skeleton.md) — Term Sheet + MSA-body + Carbon-Rider + exhibits + securities-safe checklist проти UNI.16 fact-pattern; **НЕ** готовий контракт — під юр-review); партнер СЄУ (Аблязов Д.Е., к.ю.н.). Канон `07_01`, `07_03 §1.5`.
-- [ ] 👤 юр-консультація (MiCA/ERC-3643/RWA) → MSA template (Term Sheet + Carbon Credit Purchase Agreement) → review практикуючим юристом
+- [ ] 👤 юр-консультація (MiCA/ERC-3643/RWA) → MSA template (Term Sheet + Carbon-Related Services Rider — назву «Carbon Credit Purchase Agreement» свідомо покинуто: «purchase agreement» + «SCC» підсилює securities-fact-pattern BIZ.22) → review практикуючим юристом
 
 #### BIZ.17 — Procurement-workflow operational gaps (post-RFQ-layer dig)
 - **P2** · 👤+⚖️ · 🟡 · → `07_02 §8`
@@ -1529,7 +1530,7 @@
 
 #### BIZ.9 — Незалежний carbon credit методолог (Verra/Gold Standard)
 - **P3** · 👤+⚖️ · 🟡 · → `07_01 §3`, `07_02 §7.3`
-- **Стан:** 🤖 registry-matrix + buyer-integrity-планка готові ([`carbon_registry_matrix.md`](protocols/business/carbon_registry_matrix.md) + [`carbon_integrity_standards.md`](protocols/business/carbon_integrity_standards.md)) — конвертація SCC utility-token → сертифіковані kg CO₂ для institutional buyers потребує independent methodology audit (Verra/Gold Standard/Puro.earth). Канон `07_01 §3`, `07_02 §7.3`.
+- **Стан:** 🤖 registry-matrix + buyer-integrity-планка готові ([`carbon_registry_matrix.md`](protocols/business/carbon_registry_matrix.md) + [`carbon_integrity_standards.md`](protocols/business/carbon_integrity_standards.md)) — конвертація SCC utility-token → сертифіковані kg CO₂ для institutional buyers потребує independent methodology audit (Verra / Gold Standard — Puro.earth окремо, лише death-path біочар). Канон `07_01 §3`, `07_02 §7.3`.
 - [ ] ⚖️ вибір реєстру + integrity-планка (ICVCM CCP / VCMI) — матриця й metrology-присуд готові (див. Стан)
 - [ ] 👤 engagement methodologist (~$50-100k) → PDD — gated на реальний ліс + MRV-дані + VVB (роки downstream)
 - [ ] 🔗 залежить від HW.3 (Arrhenius) + UNI.4/UNI.5 (DFT+diffusion)

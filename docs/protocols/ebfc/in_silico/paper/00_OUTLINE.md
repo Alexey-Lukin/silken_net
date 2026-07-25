@@ -41,7 +41,7 @@ problem (autonomous EBFC sensing; ET is the bottleneck) → gap (field models EB
 
 ## 4. Figure & table plan
 
-> Data figures are built by [`tools/in_silico/scripts/60_paper_figures.py`](../../../../tools/in_silico/scripts/60_paper_figures.py)
+> Data figures are built by [`tools/in_silico/scripts/60_paper_figures.py`](../../../../../tools/in_silico/scripts/60_paper_figures.py)
 > (cache-only, no DFT recompute; every headline number asserted vs SUMMARY at build time) → `paper/figures/`.
 > Captions drafted in [`03_results.md §Figures`](03_results.md). The two molecular/art figures (Fig 1, Fig 2)
 > are **not** cache-derivable → separate visualisation pass.

@@ -23,6 +23,8 @@
 
 ---
 
+> ⏳ **СТАТУС: query-set написано, пошуки ще НЕ прогнані.** Таблиці hit-логу порожні, а висновок нижче сформульований **умовно** («очікуваний результат… якщо нема чинного блокуючого патенту»). Це **план FTO-перевірки**, а не її результат — не цитувати як «новизну підтверджено». Прогін + hit-лог = residual у [`00_07`](../../00_07_Action_Plan_Tracker.md) UNI.3, і він має передувати публічному disclosure.
+
 ## Query Set 1 — Coaxial Gyroid Anchor (геометрія + матеріал)
 ```
 ("gyroid" OR "TPMS" OR "triply periodic minimal surface") NEAR15 ("titanium" OR "Ti-6Al-4V" OR "Ti alloy") AND (implant* OR anchor* OR scaffold*)

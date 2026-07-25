@@ -358,7 +358,7 @@ SilkenNet не подає й не assert-итиме патентів на цю �
 
 | Сервіс TISC (консультативний) | Кейс SilkenNet |
 |---|---|
-| Prior-art landscape (Espacenet / PATENTSCOPE / Google Patents) | верифікація новизни Статті 1 + анти-захоплення (база вже є → [`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)) |
+| Prior-art landscape (Espacenet / PATENTSCOPE / Google Patents) | верифікація новизни Статті 1 + анти-захоплення (query-set готовий, прогін — residual → [`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)) |
 | Консультація з **торгових марок** | напрям заявки SilkenNet™ / GaiaNexus™ / SCC™ (подача — повірений, ↓) |
 | Консультація з **open-license** сумісності у UA-юрисдикції | AGPL / CERN-OHL-S / CC-BY-SA legal sanity |
 
@@ -372,7 +372,7 @@ SilkenNet не подає й не assert-итиме патентів на цю �
 
 | Етап | Дія | Власник |
 |---|---|---|
-| 1 | Prior-art landscape ✅ ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)) | 🤖 done |
+| 1 | Prior-art **query-set** готовий ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)); самі пошуки ще НЕ прогнані, hit-лог порожній, висновок умовний | 🤖 residual → [`00_07`](00_07_Action_Plan_Tracker) UNI.3 |
 | 2 | Заявка на ™ (прямий повірений УкрНОІВІ) — пріоритет-дата ДО disclosure-splash (squatting-guard; режими юридично незалежні, порядок = risk-management) | 👤 повірений |
 | 3 | Публікація disclosure (TDCommons) + LICENSE-файли → [`defensive_disclosure.md`](protocols/anchor/defensive_disclosure.md) | 👤 + 🤖 |
 | 4 | UA-юр-review (Аблязов + крипто/IP-юрист TBD) | 👤 |
