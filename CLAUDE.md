@@ -31,7 +31,7 @@
 | SSOT-доки / drift-hunt / wiki-sync | `ssot-maintenance` | `00_02` + `00_06` |
 | Персистентна пам'ять | `memory-maintenance` | `memory/` |
 
-**SSOT one-home (`00_06 §2`):** `docs/NN_NN_*.md` = canon; **`docs/00_07` = дім УСІХ відкритих робіт + блокерів** — ніколи не вважай «resolved» без реального code+canon (не вір TODO/коментарю). Канон / drift / wiki — лише через `ssot-maintenance`. Не дублюй факти між домами.
+**SSOT one-home (`00_06 §2`):** `docs/NN_NN_*.md` = canon; **`docs/00_07` = дім УСІХ відкритих робіт + блокерів** — ніколи не вважай «resolved» без реального code+canon (не вір TODO/коментарю); **дзеркально — тоншаючи/архівуючи пункт, ПЕРШ прочитай повну канон-секцію: grep-hit ≠ канонізовано** (гейти самі grep-based → тиха втрата факту проходить зеленою). Канон / drift / wiki — лише через `ssot-maintenance`. Не дублюй факти між домами.
 
 **Verify / commit:** тести (§3) перед коммітом, full-suite перед push. `db/structure.sql` (НЕ `schema.rb`); dump потребує **pg17 `pg_dump`** + **strip pg17-only `transaction_timeout` рядок** (CI-Postgres <17 інакше падає). Коміт-меседж → `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>` (trailer = поточна модель сесії — звіряй, не хардкодь наосліп); гілка від `main` лише якщо просять. Перед edit широко-вживаного символу — простеж викликачів/blast-radius (auth/money = критичний шлях); перед commit — звір scope діфу проти очікуваного (не find-replace-rename наосліп).
 
