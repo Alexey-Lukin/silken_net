@@ -1,0 +1,166 @@
+# Securities / Legal-Review Question Memo — SilkenNet (UNI.16 · BIZ.22)
+
+> **Що це:** структурований пакет **питань до юриста** за as-built securities/RWA/IP-fact-pattern SilkenNet — робочий вхід у платну консультацію, не правова позиція проєкту.
+> **Concern-шар** (як [`procurement/`](../procurement/rfq_registry.md) / [`paper/`](../paper/self_review_checklist.md)) — **НЕ канон**: усе тут — робоча чернетка й вказівники на канон; правити факт у його домі ([`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)), не тут.
+> **⏳ Станом на 2026-07-24.** Спирається на зовнішнє право/ринок, що рухається незалежно від нас — перед використанням звіряй актуальність.
+> **⚠️ Не юридична / податкова / фінансова порада.** Робочий вхід у платну консультацію з фахівцем, не її заміна.
+> **Дім стану:** [`00_07`](../../00_07_Action_Plan_Tracker.md) — **UNI.16** (канал консультації) + **BIZ.22** (product-присуд / redesign).
+
+---
+
+> **Призначення memo.** Мета — заощадити дорогий час фахівця: fact-pattern уже зібрано й **верифіковано проти реального коду** (не абстракція), питання згруповано за пріоритетом. Усі твердження про «як воно є» — з посиланням на **файл/символ** або на канон-doc; усі твердження про «як це кваліфікується правом» — **відкриті питання для вас**, не наші відповіді.
+>
+> **Регістр документа (той самий, що в трекері — [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.22):** нижче фіксується, що **as-built fact-pattern збігається з пронгами** відповідних тестів і що **консультація + product-redesign гейтять перший live-mint**. Це тригер для кваліфікованої оцінки, а не самостійна кваліфікація проєкту.
+>
+> **Дата підготовки:** 2026-07-24 · **Статус проєкту:** System TRL 3 (anchor/EBFC-гейт); контракти code-complete, **ще НЕ задеплоєні** (placeholder-адреси — [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md)), **першого live-mint ще не було** — це вікно, коли redesign найдешевший.
+>
+> **Джерела орієнтаційного дослідження (наші, public web-research, НЕ юр-порада):** [`R2_offshore_token_securities.md`](../research/R2_offshore_token_securities.md) (securities/MiCA/RWA), [`R5_trademark_ip.md`](../research/R5_trademark_ip.md) (AGPL/open-license). Посилання на них у тексті як **[R2 §X]** / **[R5 §X]**.
+
+## Адресати та розподіл
+
+| Блок | Тема | Первинний адресат |
+|---|---|---|
+| **1** 🔴 | Securities (Howey US + MiFID/AIFMD EU + UA інвест-договір) | **Профільний crypto/securities-IP-юрист (TBD)** — це його поле, найвищі ставки |
+| **2** | RWA vs UA лісове право (`hadron_asset_id`) | **Аблязов Д.Е.** (UA господарське/речове право) + crypto-юрист на ERC-3643/RWA-межу |
+| **3** | Класифікація SCC/SFC (ЗУ №10225-д + MiCA) | Обидва — Аблязов (UA ЗУ віртуальні активи) + crypto-юрист (MiCA/ESMA) |
+| **4** | Авторське право `bio_contract.rb`/`Attractor` як база enforcement копілефту + IP-структурування | Аблязов (UA ЦК/право ІВ) + IP-юрист |
+| **5** | Open-license review (AGPL §13 SaaS, AF3 non-commercial) | IP/crypto-юрист + Аблязов (UA-sanity AGPL-enforceability) |
+
+Аблязов Д.Е. — к.ю.н., віцепрезидент СЄУ; його фах = UA господарське/комерційне право ([`07_03 §1.5`](../../07_03_Academic_Integration_and_IP.md), [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md)). EU/MiCA/US-Howey складова свідомо винесена на профільного crypto-юриста TBD.
+
+---
+
+## 📁 FACT-PATTERN DOSSIER — верифіковано проти коду (читати перед блоками)
+
+Це ядро цінності memo: юристу не треба копати репозиторій — нижче кожен факт із точним code-site (символ, не номер рядка). **Верифікація виконана read-only проти `main`; повторно звірена 2026-07-25.** Головний висновок нашого research [R2 §3.4], який ці факти підтверджують: **продукт NaaS ВЖЕ описаний мовою інвестиційного контракту в самому коді — центр ваги питання у продуктовому дизайні, а не в тому, як названо токен.**
+
+| # | Факт (як є в коді) | Code-site (verified) | Чому релевантно securities-тесту |
+|---|---|---|---|
+| F1 | **Роль `investor` — дефолтна для КОЖНОГО нового користувача** | `User` — `enum :role, { investor: 0, forester: 1, admin: 2, super_admin: 3 }, prefix: true, default: :investor` (`app/models/user.rb`) | «Investor» не метафора — це literal enum і **значення за замовчуванням**. Howey оперує економічною реальністю, але явний self-label «investor» — прямий доказ наміру (пор. Kik-урок [R2 §3.1]) |
+| F2 | Роль investor = **пасивна** (`:read_only`, лише перегляд власних ресурсів) | `User#access_level` (коментар у коді: «`:read_only` — лише перегляд власних ресурсів (investor)») | Howey prong 4 «прибуток від зусиль ІНШИХ»: investor нічим не керує — платформа робить усе. Пасивність підсилює investment-contract read |
+| F3 | `total_funding` документовано як **«Загальна сума інвестиції (USDC/USD)»**; `alias :total_value` | [`07_01 §5`](../../07_01_Nature_as_a_Service_Contracts.md) (data model); `NaasContract` — `alias_attribute :total_value, :total_funding` | Howey prong 1 «інвестиція грошей» — слово «інвестиція» в самому каноні |
+| F4 | Життєвий цикл контракту описаний як інвесторський: draft = «очікування транзакції **інвестора**», cancel = «Достроково розірвано **інвестором** (Early Exit)» | `NaasContract` — `enum :status` (коментарі станів) + AASM-події `cancel`/`activate`; канон [`07_01 §4`](../../07_01_Nature_as_a_Service_Contracts.md) | Знову self-label; AASM-стани іменовані інвест-мовою |
+| F5 | **Early-exit fee** = `total_funding × early_exit_fee_percent/100` | `NaasContract#calculate_early_exit_fee` | Financial-instrument redemption-механіка. Купівля carbon-credit НЕ має «exit fee» |
+| F6 | **Пропорційний refund** = `total_funding × (remaining_days/total_days) − fee` | `NaasContract#calculate_prorated_refund` | Bond/fund early-redemption profile. **Purchase не має refund** — це найсильніший «investment note»-сигнал |
+| F7 | ⚠️ **`current_yield_performance`** — «yield» (дохідність) baked у назву методу: `emitted_tokens / total_funding × 100` як «індикатор прогресу» | `NaasContract#current_yield_performance` | *R2 цього явно не називав — знайдено при верифікації.* «Yield» = мова доходу на інвестицію → Howey prong 3 profit-expectation |
+| F8 | **Pooled-структура:** 5% `total_funding` → DAO Treasury Insurance Pool, 95% → форестер; агрегат по всіх контрактах | `NaasContract::INSURANCE_PREMIUM_RATE` + `#insurance_premium_amount` / `#forester_share_amount` / `.total_insurance_premiums` | «Common enterprise» (Howey prong 2) + AIFMD «pooled investor money → managed forestry returns» [R2 §3.5] |
+| F9 | **Floating DEX-ціна SCC:** запит 1 SCC→USDC до Uniswap V3 Quoter (on-chain метод `quoteExactInputSingle` — Solidity-сторона); при збої RPC — **governance-керований** fallback | Ruby: `PriceOracleService.current_scc_price` (публічний) → приватний `#fetch_price_from_uniswap`; fallback = `PriceOracleService.fallback_price` → `SystemParameter.current(:scc_fallback_price_usd, default: 25.5)`. **Раніше $25.50 було хардкодом — уже ні** (`[S6.9 FIX]` у коді): значення лишилось лише *дефолтом*, а сам параметр керується адмін-панеллю / DAO-governance (`ProtocolParameters.sol` → `Governance::ParameterSyncWorker` → `SystemParameter`) | Активний secondary-market price-discovery — класичний Howey-фактор «ринок, де токен зростає завдяки зусиллям promoter'а». **Не лікується термінологією.** Governance-керованість fallback'у тут **не пом'якшує, а загострює** питання: змінюється відповідь на «хто контролює ціну» — див. Блок 1.5.13 |
+| F10 | Early-exit **спалює нараховане** (enqueue burn ПІСЛЯ commit транзакції) — форфейтура як умова контракту (`cancellation_terms.burn_accrued_points`), не як санкція за провину | `ContractTerminationService#perform` → `BurnCarbonTokensWorker` (4-й арг `contractual: true` — [SLASH-1] обходить positive-A gate саме тому, що це погоджена умова) | Forfeiture-механіка форсує financial-instrument-профіль контракту. NB: те, що форфейтура — **договірна умова**, а не штраф, робить її ще ближчою до redemption-terms фінансового інструмента, ніж до purchase |
+| F11 | **Custodial-гаманець:** без власної адреси успадковує KYC-статус організації; mint-адреса = власна АБО org's | `Wallet#kyc_approved_for_minting?`, `Wallet#lock_and_mint!` (`target_address = crypto_public_address.presence \|\| organization&.crypto_public_address`); гейт-канон [`05_02`](../../05_02_Proof_of_Growth_Pipeline.md) (KYC.1) | Платформа тримає/контролює токени від імені частини когорти → **окрема CASP custody-послуга** (MiCA Title V) [R2 §2.3] |
+| F12 | **B2C DePIN-style «заробіток за участь»:** Solana мікро-USDC 0.01–0.1/LoRa-пакет + Celo ReFi 5 cUSD/кластер/добу | [`07_01 §1.2`](../../07_01_Nature_as_a_Service_Contracts.md) + Financial Constants [`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md) (`SolanaMicroRewardWorker`, `CeloRewardWorker`) | Helium-подібний DePIN fact-pattern, що привертав SEC-увагу [R2 §3.4 п.5] |
+| F13 | **SCC+SFC bundling:** SFC мінтиться за ті самі кластери через той самий pipeline (`TokenomicsEvaluatorWorker`/`BlockchainMintingService`) | [`07_01 §1.3`](../../07_01_Nature_as_a_Service_Contracts.md) («SFC мінтується за ті ж самі кластери, що генерують SCC»); [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md) (Потік Мінтингу) | Kik-урок [R2 §3.1]: integrated offerings аналізуються РАЗОМ — «чистіший» SFC імпортує SCC-ризик |
+| F14 | **RWA-токенізація UA-лісу:** `hadron_asset_id` = «ID лісової ділянки як RWA в Polygon Hadron» (ERC-3643 KYC-шар) | [`07_01 §5`](../../07_01_Nature_as_a_Service_Contracts.md); `Polygon::HadronComplianceService#register_asset!` (пише `naas_contracts.hadron_asset_id`) | Блок 2 (лісове право) |
+| F15 | **Copyright-об'єкти під копілефт:** Lorenz-реалізація + on-device mruby-контракт | `SilkenNet::Attractor` (`app/services/silken_net/attractor.rb`); `firmware/bio_contracts/bio_contract.rb`; постава — [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) пілар 2 | Блок 4 (база enforcement AGPL) |
+
+**Що знижує ризик у коді (за R2, чесний баланс):** SFC — чисте governance (`ERC20Votes`), **без** revenue-share/dividend/buyback/staking-yield (перевірено в `contracts/SilkenForestCoin.sol` — жодного механізму розподілу Treasury на SFC-холдерів; Dynamic Tax — `BlockchainMintingService::DEFAULT_DYNAMIC_TAX_RATE` = 2%, governance-aware через `SystemParameter` — іде в страховий пул (`::DEFAULT_INSURANCE_POOL_THRESHOLD`), **не холдерам**) → SFC сам по собі менш security-подібний [R2 §3.4 п.7]. АЛЕ це нівелюється bundling'ом F13.
+
+---
+
+## 🔴 БЛОК 1 — SECURITIES (найвищі ставки, primary: crypto/securities-юрист)
+
+**Контекст:** сукупність F1–F13 вище. Наш research-орієнтир [R2 Bottom Line]: fact-pattern «особа/організація платить `total_funding` → отримує SCC+SFC → може вийти достроково зі штрафом/refund → SCC торгується на DEX з ринковою ціною → B2C «заробляє» мікронагороди» **збігається з пронгами** investment-contract-тесту (Howey US) та ознаками collective investment scheme (MiFID/AIFMD EU) — **до** вибору будь-якої офшорної юрисдикції. Юрисдикція-шопінг не лікує security-shaped transaction, лише переміщує регулятора. Кваліфікація — ваша; наш висновок обмежений тим, що **збіг достатній, аби гейтити перший live-mint консультацією + product-присудом** ([`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.22).
+
+### 1.1 Кваліфікація (US Howey)
+1. Чи утворює сукупність F1–F10 **investment contract** за Howey (2026 SEC/CFTC interpretive framework — «транзакція, не токен, є одиницею аналізу» [R2 §3.1])? Які саме з елементів F1–F10 ви вважаєте **вирішальними**, а які — косметичними?
+2. Наскільки токсичні для prong-3 (profit-expectation) саме **`current_yield_performance` (F7)** та early-exit refund-механіка **(F5/F6)** — тобто фінансово-інструментальні риси, яких у «купівлі carbon-credit» не буває?
+3. Чи рятує «utility/governance»-лейбл, враховуючи прецедент **Kik** (pooled funds + заяви про зростання ціни + integrated offering) [R2 §3.1]? Чи є `current_yield_performance`/floating DEX-ціна аналогом «management-заяв про зростання», що потопили Kik?
+
+### 1.2 Кваліфікація (EU)
+4. Чи є SCC **MiFID II financial instrument** (тоді MiCA **взагалі не застосовується** — повний MiFID-режим: проспект, ліцензування, Art 2(4) MiCA [R2 §3.2])? Чи floating-DEX-ціна + профіль F5–F9 схиляють до цього?
+5. Чи є NaaS-модель з pooled-структурою **(F8)** та «forestry returns» **collective investment scheme під AIFMD** — окрема, незалежна від MiCA експозиція (unauthorized AIF management), враховуючи, що forestry явно визнаний asset-класом під AIFMD [R2 §3.5]?
+6. Чи створює **прецедент EU ETS** (carbon allowances = вже фінансовий інструмент за MiFID Annex I C(11) [R2 §3.2/§4.2]) тиск на класифікацію нашого VCM-токена, попри те що ми у voluntary-ринку?
+
+### 1.3 Кваліфікація (UA)
+7. За чинним UA-правом (Закон про ринки капіталу — спец-режим віртуальних активів ще не чинний, ціль 01.2027 [R2 §3.3]) — чи підпадає NaaS-транзакція F1–F10 під визначення **«цінний папір» / «інвестиційний договір»**? Це прогалина нашого research — прямого Howey-аналога в UA-праві ми не знайшли; це питання саме до вас.
+
+### 1.4 Custodial-послуга
+8. Чи є custodial-гаманець **(F11)** — коли платформа тримає/контролює SCC/SFC від імені когорти без власної on-chain адреси — **окремою ліцензованою CASP-послугою** (MiCA Title V, custody & administration, ~€125k капітал [R2 §2.3])? Чи це «issuer-side bookkeeping до моменту, коли клієнт claim-ить власну адресу» (не CASP), чи «custody-as-a-service» (CASP-тригер)? Межа факт-специфічна — потрібен ваш call.
+
+### 1.5 Опції de-risk — ПИТАННЯ (не наші рішення)
+Наш research [R2 §3.4] припускає, що дешевше виправити продукт ЗАРАЗ (pre-live-mint), ніж ретроактивно захищати вже випущені токени. Просимо оцінити КОЖНУ опцію: чи матеріально знижує ризик, чи це косметика?
+
+9. **Термінологія** `investor → subscriber/service-client/offtaker`, `total_funding → subscription/service-fee`: чи змінює перейменування реальну класифікацію, чи Kik-урок каже «лейбли не рятують, якщо механіка інвестиційна» — тобто треба міняти саму механіку, а не назви?
+10. **Розв'язати «money-in» від «token-out»:** оформити SCC-видачу як «оплата за послугу D-MRV-моніторингу» (a purchase), а не «інвестиція в токен». Чи це матеріальна різниця для Howey prong 1/3?
+11. **Прибрати refund/exit-fee (F5/F6/F10):** carbon-credit purchase не має refund. Чи це найдешевший високоефективний хід? Що ламається юридично, якщо ми залишаємо early-exit БЕЗ прораховуваного refund?
+12. **Розв'язати SCC↔SFC bundling (F13):** видавати governance-SFC окремою транзакцією/подією від carbon-SCC, щоб «чистіший» SFC не імпортував SCC-ризик. Чи це працює, чи суди все одно інтегрують offering?
+13. **Floating DEX-ціна (F9):** чи сама присутність SCC на Uniswap (secondary market з price-appreciation) — вирішальний Howey-фактор, який НЕ лікується жодною термінологією? Якщо так — які опції (не лістити на DEX? fixed redemption price? заборона promo-заяв про ціну — Kik-твіт-урок)?
+14. **Свідомо прийняти security-статус:** якщо redesign недоцільний — чи розумніше з самого початку структуруватись під security (ERC-3643 з transfer-restriction — наразі SCC/SFC це **plain OpenZeppelin ERC-20 без whitelist-transfer** [R2 §4.1], тобто НЕ готові до compliant-security-режиму)?
+15. **Мета-питання:** чи згодні ви з тезою, що центр ваги — у продуктовому дизайні (F1–F10), а не в токен-лейблінгу, і що виправлення ДО першого live-mint кратно дешевше за ретроактивне?
+
+---
+
+## БЛОК 2 — RWA vs UA лісове право (primary: Аблязов + crypto-юрист)
+
+**Контекст:** `hadron_asset_id` **(F14)** реєструє лісову ділянку як RWA через Polygon Hadron (ERC-3643). Полігон — держліси Черкащини (Черкаський бір, land-access через академічно-партнерський канал, [`07_03 §1.1`](../../07_03_Academic_Integration_and_IP.md) / [`07_03 §1.2`](../../07_03_Academic_Integration_and_IP.md)), частина — потенційно ПЗФ. Канон прямо фіксує відкриті питання: «Юридична особа, що може бути власником RWA токена» + «правовстановлюючі документи на ділянку» ([`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md)).
+
+1. Чи допустима **токенізація UA-лісу / лісової ділянки** як RWA за **Лісовим Кодексом України** та **ЗУ «Про природно-заповідний фонд»**? Чи є категоричні заборони на «оцифрування прав» щодо держлісу / ПЗФ-території?
+2. Хто **юридично може бути власником RWA-токена** на держлісову ділянку, якщо земля — державна? Чи створює SCC-«backing реальним лісом» речове право / заставу / інший реєстрований інтерес, чи це суто off-chain claim без речево-правових наслідків?
+3. Правова кваліфікація **фізичного анкера** в держлісі: «втручання в ліс» vs «науково-вимірювальний прилад» (перекласифікація — ключ до land-access, [`07_03 §1.2`](../../07_03_Academic_Integration_and_IP.md) STK.1). Який SOP / дозвіл потрібен для встановлення в ПЗФ?
+4. Чи потрібна окрема **UA-ліцензія на роботу з вуглецевими активами** для SPV, що купує+ретайрить SCC від імені корпорацій (Fiat-to-Retirement, [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md) BIZ.15)?
+5. Чи сумісний **ERC-3643 KYC-registry-шар** (Hadron) з UA-вимогами щодо ідентифікації власників земельних/лісових прав?
+
+---
+
+## БЛОК 3 — Класифікація SCC/SFC (primary: обидва)
+
+**Контекст:** SCC = «Utility Token», SFC = «Governance Token» за каноном [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md). Обидва — plain OpenZeppelin ERC-20 (SFC +`ERC20Votes`), MAX_SUPPLY 1B/100M, mint/slash через розділені oracle-ключі. Наш research [R2 §2.2] знайшов **неоднозначність ART-межі** для carbon-backed non-pegged токена.
+
+1. **UA:** як готуватись до режиму **ЗУ «Про віртуальні активи» №10225-д** (не чинний, ціль 01.2027, НКЦПФР MiCA-aligned [R2 §3.3])? Чи варто структурувати SCC/SFC уже зараз під очікуваний режим, чи чекати фіналізації тексту (серпень 2026)?
+2. **MiCA-класифікація SCC:** формально SCC НЕ ART (ціна floating, не «purports to maintain stable value»), АЛЕ економічно **референсує carbon underlying** (2000 SCC = 1 tCO₂ фіксований `scc_per_tonne_co2` — дзеркало SSOT → [`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md), правити там; KlimaDAO-retirement) — саме той профіль, що ESMA схильна перекваліфіковувати в **ART** [R2 §2.2]. Як ESMA Token Taxonomy Tool читає carbon-backed non-pegged токен? (Це наш explicit gap — жодне джерело прямо не адресує цей клас.)
+   - ⚠️ **Матеріальний нюанс для цього питання (✅ канонізовано):** канон уже прямо каже, що цей курс — **внутрішня облікова конвенція** Proof-of-Growth, а **НЕ registry-визнаний tCO₂e-кредит** ([`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md) + [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md)); продаваний кредит — лише через незалежну методологію ([`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.9). Питання до вас: чи послаблює це «reference to an asset» у розумінні ART, чи регулятор дивиться на економічний ефект незалежно від нашого disclaimer'а?
+3. **Utility-exemption (Art 4 MiCA):** чи блокує **присутність SCC на Uniswap V3 (F9)** small-offer/utility-exemptions через Art 4(4) («offeror seeking admission to trading»)? Тобто чи рахується **DEX-ліквідність** як «admission to trading», що робить повний whitepaper обов'язковим незалежно від розміру офера [R2 §2.4]? (Наш open question — межа DEX-liquidity vs formal-listing.)
+4. **SFC:** чи достатньо відсутності revenue-share/dividend/buyback (перевірено — немає) для утримання SFC поза security/ART, ЧИ bundling із SCC (F13) це нівелює?
+5. **CASP:** cross-ref Блок 1.4 (custodial = Title V?).
+
+---
+
+## БЛОК 4 — Авторське право `bio_contract.rb`/`Attractor` + IP-структурування (primary: Аблязов + IP)
+
+**Контекст:** IP-постава = defensive-publication, **НЕ патент**; код під **AGPL-3.0-or-later**; смарт-контракти `contracts/*.sol` — **MIT** (per-file SPDX, ратифіковано DOC-T.47); copyright **утримується заради enforcement копілефту**, не пропрієтарності ([`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) пілар 2). Названі об'єкти: Lorenz-реалізація (`SilkenNet::Attractor`) + on-device mruby-контракт (`firmware/bio_contracts/bio_contract.rb`) **(F15)**. IP/™ утримується **фізособою founder'а** — solo-mission-шар тришарового entity-присуду ([`07_03 §3`](../../07_03_Academic_Integration_and_IP.md); [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20).
+
+1. Чи є конкретна **реалізація** Lorenz-атрактора (`SilkenNet::Attractor`) та mruby-`bio_contract.rb` достатньо оригінальним твором для **авторсько-правового захисту за UA правом** (ЦК України, право ІВ на комп'ютерну програму)? Застереження: математичний алгоритм/формула сам по собі не охороняється — чи охороняється конкретний **вираз** (реалізація-код)?
+2. Чи **enforceable AGPL-3.0** в UA-юрисдикції як ліцензійний договір? Чи визнають UA-суди copyleft-механіку (share-alike, network-clause §13)?
+3. Чи достатньо **фізособи-founder'а як єдиного copyright-holder** для standing to enforce копілефт (позов проти порушника share-alike)?
+4. Для майбутніх контриб'юторів (студенти ЧНУ): **DCO** (`Signed-off-by`, легкий, AGPL-native — прецедент Nextcloud [R5 §5]) vs **CLA** — чи достатньо DCO для UA-standing? **Флаг [R5 §5.3]:** якщо контрибуція виникає в контексті **формального ЧНУ-гранту/thesis** (не вільний PR) — чи перекриває студентський DCO потенційну **інституційну IP-претензію ЧНУ** за UA-законодавством про службові твори (ЦК, твори у зв'язку з навчанням/трудовим договором)? Це наш explicit gap — US-university-policies як proxy, UA-норми не досліджені.
+5. **IP-структурування «operational-vehicle ⊥ IP-owner»** (стандартна двостороння практика, не конфліктний сценарій). Розробка SilkenNet ведеться через **operational-vehicle** — наявну UA-компанію, Дія.City-резидента, співзасновником якої є founder ([`07_03 §3`](../../07_03_Academic_Integration_and_IP.md), [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20), тоді як IP/™ належить founder'у як фізособі. Питання про **форму документа**, що робить цю межу однозначною для обох сторін:
+   - (а) яка форма угоди за UA ЦК коректно виключає default-режим «службового твору» / work-product і закріплює авторські права за founder'ом;
+   - (б) яка структура **license-back** operational-vehicle'у (scope / термін / revocability / sublicensing / доля deliverable-IP за грантовими роботами) дає йому достатню й безспірну підставу виконувати delivery;
+   - (в) який порядок оформлення потрібен на боці компанії (згода органу управління / кожного співзасновника окремо), щоб домовленість була дійсною й не оспорюваною згодом;
+   - (г) взаємодія з п.4 вище: чи однакова механіка працює для студентських/грантових контрибуцій.
+   Це виконавчий гейт, який трекер прямо адресує саме сюди ([`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20 → «UNI.16 Блок 4»). Мета структурування — **однозначність титулу**, а не перерозподіл цінності: operational-vehicle отримує чистий license-back без двозначності, founder — чисту власність solo-місії для Phase-2.
+
+---
+
+## БЛОК 5 — Open-license review: AGPL §13 SaaS + AF3 non-commercial (primary: IP/crypto + Аблязов UA-sanity)
+
+**Контекст:** SilkenNet сама хостить SaaS для B2B-клієнтів (не роздає self-hosted копії). Ліцензійна матриця [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md): код AGPL, смарт-контракти MIT, залізо CERN-OHL-S-2.0, доки CC-BY-SA-4.0; `/NOTICE` містить **третьосторонній виняток «AF3 non-commercial!»** (AlphaFold-3 у in-silico L1 EBFC-pipeline).
+
+1. **AGPL §13 SaaS-обов'язок [R5 §4.2]:** SilkenNet як оператор мережевого сервісу зобов'язана розкривати Corresponding Source **модифікованого** коду навіть одному приватному B2B-клієнту (privacy деплою не звільняє). Наскільки далеко біжить обов'язок — лише до **прямого API-клієнта**, чи **наскрізь** до кінцевих users клієнта? (R5 прямо називає це in-flux/vague — «скільки network-hops відділяє end-user від AGPL-софту» — для money-критичних рішень потрібен ваш call, не наш research.)
+2. Чи конфліктує §13-обов'язок з **комерційною SaaS-моделлю**? (R5 §4.4: сумісно — open-core/dual-license стандартний патерн, MongoDB/Nextcloud/Grafana; головний ризик — не конкурент-hoster, а обов'язок розкрити код власному B2B-клієнту на вимогу.) Чи підтверджуєте, що це не блокер комерціалізації?
+3. Чи **legit поза Corresponding Source** [R5 §4.3]: криптоключі / production-дані / ваги ML-моделі / governance-treasury-токеноміка (утримувані активи [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) пілар 4)? Ми виводимо це з визначення «Corresponding Source» (код, не дані/секрети), але не з authoritative UA-прецеденту — потрібне ваше підтвердження, що постава «код відкритий, ключі/дані/бренд утримуємо» внутрішньо несуперечлива за UA-правом.
+4. ⚠️ **AF3 non-commercial × комерційний вимір:** AlphaFold-3 має **non-commercial ліцензію**, а його виходи (структури білків) використані в R&D-pipeline (in-silico L1), що живить **комерційну** платформу. Чи «заражає» AF3-non-commercial-обмеження комерційний продукт, якщо AF3 використано лише на дослідницькій стадії (не в runtime-продукті)? Де межа «research use» vs «commercial use» для AF3-виходів? (R5 флагує це в ліцензійній матриці, глибоко не досліджено — потребує вашого review.)
+5. **Trademark-незалежність:** підтвердіть, що видача коду під AGPL **не** дає права використовувати «SilkenNet™/GaiaNexus™/SCC™» на форку (стандартний Mozilla/WordPress-патерн [R5 §4.3]) — тобто бренд захищається окремим trademark-режимом, не покривається open-license.
+6. **MIT-зона смарт-контрактів:** `contracts/*.sol` свідомо під MIT (on-chain composability / audit-tooling / OpenZeppelin-consistency — [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md)), тоді як решта коду AGPL. Чи створює змішана матриця (MIT-контракти ↔ AGPL-backend, що з ними інтегрується) ризик для copyleft-цілісності — і чи достатньо per-file SPDX як розмежування?
+
+---
+
+## Підсумок пріоритезації для консультації
+
+1. **🔴 Блок 1 (securities) — витратити тут максимум оплаченого часу.** Fact-pattern сидить у коді (F1–F13), не в абстракції. Ключове рішення: **redesign продукту ДО першого live-mint** (дешево) чи свідомий compliance-шлях під security (дорого, але чесно). Питання 1.5.11 (прибрати refund) + 1.5.13 (DEX-ціна) + 1.5.15 (мета) — найважливіші.
+2. **Блоки 2–3** — UA-специфіка (лісове право + режим 01.2027), розподіляються між Аблязовим (UA) і crypto-юристом (MiCA/RWA).
+3. **Блоки 4–5** — IP/open-license, нижчі ставки, але Блок 4 п.5 (IP-структурування — виконавчий гейт), Блок 5 п.4 (AF3 non-commercial) і п.1 (§13 chain-of-users) — реальні відкриті питання для money-критичних рішень.
+
+**Наш research explicit gaps (чесно):** (а) прямий UA-Howey-аналог не знайдено (Блок 1.3); (б) ART-межа carbon-backed токена не адресована жодним джерелом (Блок 3.2); (в) DEX-liquidity vs admission-to-trading межа (Блок 3.3); (г) custodial=CASP факт-специфічність (Блок 1.4); (д) AF3-non-commercial зараження (Блок 5.4); (е) UA службові твори студентів (Блок 4.4); (є) форма IP-carve-out / license-back за UA ЦК (Блок 4.5). Це саме те, де ваш платний час незамінний.
+
+---
+
+## Cross-references
+
+| Ресурс | Що бере |
+|---|---|
+| [`00_07`](../../00_07_Action_Plan_Tracker.md) | **UNI.16** (канал консультації) + **BIZ.22** (product-присуд / redesign, гейт Web3 mainnet) — дім стану |
+| [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md) | юридичні/бізнес-передумови NaaS (RWA, MSA, SPV, KYC) — канон |
+| [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md) | SCC/SFC контракт-спека, ролі, MAX_SUPPLY, потік мінтингу |
+| [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) | IP-постава (defensive-publication, ліцензійна матриця, тришар «хто оперує ≠ хто володіє ≠ хто емітує») |
+| [`entity_structure`](entity_structure.md) | фазована драбина юр-структури (Phase-1/2/3, SPV-вісь) — паралельний артефакт BIZ.20 |
+| [`R2_offshore_token_securities.md`](../research/R2_offshore_token_securities.md) · [`R5_trademark_ip.md`](../research/R5_trademark_ip.md) | орієнтаційний research, на який спираються [R2 §X] / [R5 §X] |

@@ -1,0 +1,83 @@
+# Legal/Business Outreach — dispatch-карта пакетів §07
+
+> **Що це:** карта «пакет → жива людина → що просимо → що отримуємо → що розблокує» для ~14 робочих документів §07-кампанії (2026-07-24). Concern-шар, **НЕ канон** ([`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)): статуси/залежності item'ів — дім [`00_07`](../../00_07_Action_Plan_Tracker.md) (оновлюй трекер першим); люди та їх фах — [`07_03 §1.5`](../../07_03_Academic_Integration_and_IP.md) + [`07_03 §4.2`](../../07_03_Academic_Integration_and_IP.md); meeting-prep конкретної зустрічі — сусід [`owner_meeting_briefs.md`](owner_meeting_briefs.md).
+> ⏳ **станом на 2026-07-24.** Шляхи пакетів = їхні доми в repo (`docs/protocols/{legal,business,procurement}/`); вхідні web-знімки — `docs/protocols/research/`.
+> **Правило чесності:** імена — ТІЛЬКИ ті, що називає канон; де виконавця немає — «TBD, не контактовано». Аблязов/Гедз/Ус названі каноном, але контакту ще НЕ БУЛО (UNI.14 «Не почато») — це адресати, не домовленості.
+
+---
+
+## 1. Головна таблиця
+
+Мітки вартості: 🟡 = MEDIUM confidence (web/research-оцінка, не прайс-лист) · «н/о» = не оцінено ніде в пакеті · «0» = грошей не потребує.
+
+| Пакет (repo-дім) | Адресат (роль · ім'я за каноном) | Що просимо | Що отримуємо назад | Розблоковує | Передумова | Вартість |
+|---|---|---|---|---|---|---|
+| `legal/securities_review.md` | Блоки 2–4: **Аблязов Д.Е.** (к.ю.н., госп. право — [`07_03 §1.5`](../../07_03_Academic_Integration_and_IP.md)); Блоки 1+5: крипто/securities-юрист **TBD** ([`07_03 §4.2`](../../07_03_Academic_Integration_and_IP.md)) | платну консультацію за готовим питальником (fact-pattern F1–F15 верифіковано проти коду) | **2 меморандуми** (RWA vs Лісовий Кодекс · SCC-класифікація UA/MiCA) + open-license/AF3-review + **securities-присуд** → рішення про product-redesign | BIZ.22 (гейт Web3 mainnet) · BIZ.11 (RWA-нога) · STK.3 · BIZ.20 Phase-2 · UNI.20 (IP-пункт MoU) | UNI.14-контакт (Аблязов-половина); вакансія юриста (Блок 1) | н/о |
+| `legal/msa_skeleton.md` | Аблязов + той самий крипто-юрист TBD | юр-ревю каркаса + заповнення `[⚖️ TBD]`-полів + фіналізація | підписний B2B MSA (counterparty = ActiveBridge, за BIZ.20-присудом) | перший B2B-підпис; за ним крок BIZ.11 | BIZ.20 ✅ · UNI.16-присуд ПЕРЕД підписом · BIZ.21-CoI · BIZ.18-числа · product-redesign (Consistency Gate — §2 п.7) | н/о |
+| `business/sla_exhibit.md` | Аблязов (юр-мова, в складі MSA-ревю) + ⚖️ founder (числа) | ревю + вставити availability-числа | Exhibit A до MSA (uptime-% / service-credits / incident-comms) | повноту BIZ.2 | перші live-SLO-вікна (= після деплою); зовнішнє число ≤ internal SLO | 0 |
+| `legal/b2c_tos_privacy.md` | Аблязов (UA-господарське) + privacy/GDPR-юрист TBD (EU-складова) | юр-ревю ToS + Privacy + Cookie; підстановка named counterparty | публікабельні B2C-документи | B2C-онбординг (передумова [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md)) | BIZ.20 ✅; публікація — не пізніше live-deploy | н/о |
+| `legal/entity_structure.md` | співзасновники ActiveBridge + Аблязов (оформлення = UNI.16 Блок 4) | письмовий **co-founder IP-carve-out** (SilkenNet-IP/™ = власність фізособи founder; license-back, НЕ assignment; ≠ службовий твір) + carve-out у gig-договорах | підписана carve-out угода | безпечний дотик SilkenNet-IP до ActiveBridge-контуру · вхід у Phase-2 token-контур | немає — можна зараз (той самий воркшоп) | н/о |
+| `legal/tax_posture_ua.md` | **Гедз М.Й.** (фін. облік криптоактивів) + **Ус Г.О.** (цифрова економіка) — [`07_03 §1.5`](../../07_03_Academic_Integration_and_IP.md) | відповіді на пріоритет-питання a/b/c + **90%-тест Дія.City** (чи token/carbon-виручка не б'є кваліфікований дохід) | tax-позиція: фізособа/ФОП vs ТОВ · токен-емісія · фіат-ПДВ → вхід у BIZ.20 Phase-2 | 90%-тест-чекбокс BIZ.20 · закриття UNI.14 | UNI.14-контакт | н/о |
+| `legal/trademark_brief.md` | повірений УкрНОІВІ — **особа TBD** + TISC (опційно; консультативний, САМ не подає — [`07_03 §4.1`](../../07_03_Academic_Integration_and_IP.md)) | clearance-search + подача 3 марок: SilkenNet 9+42(+36) · GaiaNexus 42 · SCC 36+9 ([`07_03 §5`](../../07_03_Academic_Integration_and_IP.md)) | **пріоритет-дата** (одразу при подачі) → свідоцтва ~18 міс | UNI.3 TDCommons-splash (™ ПЕРЕД розкриттям — [`07_03 §4.3`](../../07_03_Academic_Integration_and_IP.md)) | немає: заявник = фізособа (знято BIZ.20-присудом) | ~19–28 тис. грн зборів + ~5–10 тис. грн повірений 🟡 |
+| `business/eo_insurance_spec.md` | ліцензований страховий брокер — **TBD, не контактовано** | intake-дзвінок за coverage-спекою → котирування | поліси **Tech E&O** ($1–2M ліміт) + **CGL + products-completed-ops** + Cyber → **CoI** | підписання BIZ.2 (CoI = типовий signing-exhibit); CGL — перед першою фіз-інсталяцією анкера | BIZ.20 ✅ (юрисдикція страхувальника); **тригер покупки = перший B2B-signing, НЕ календар** | E&O ~$0.5–9k/рік · CGL ~$0.5–1.5k/рік · Cyber ~$0.4–9.5k/рік 🟡 |
+| `business/carbon_registry_matrix.md` | ⚖️ founder (вибір треку) · нац-focal-point-point **Міндовкілля** (запит Article-6 / double-count) · [далеко] carbon-методолог TBD | founder: присуд «MRV-data-provider-трек vs власний credit-мінт»; focal-point: прямий письмовий запит | registry-рішення + UA-Article-6-позиція; [далеко] PDD від методолога | E2-план · ARCH.5 (format-адаптери після PDD) · реальний carbon-revenue-трек | методолог gated на реальний ліс + MRV-дані (роки) | методолог ~$50–100k 🟡 · Verra $100–300k+ vs Isometric buyer-pays 🟡 · запит focal-point 0 |
+| `business/carbon_integrity_standards.md` | internal (founder-стратегія); пізніше carbon/ESG-юрист TBD; акредитаційні двері GCC / Verra-vetted-DSP / Isometric | зараз — нічого зовнішнього: вирівняти наратив під CCP/VCMI; далі — акредитація dMRV-provider | enterprise-credible позиція MRV-data-треку (demand-side) | купівельну готовність BIZ.9-треку | BIZ.9-вибір треку | 0 зараз; акредитаційні збори н/о |
+| `procurement/vendor_templates.md` | (A/B) DMLS-бюро — вендори TBD (RFQ-розсилка); (C) ВНЗ-контрагенти MoU; NDA-ревю = Аблязов | заповнені котирування у scoring-матрицю; підписані CDA/NDA | vendor down-select (Ti-coin/anchor друк, суміжно HW.24) + лаб-доступ | UNI.2 (лаб-MoU) · RFQ-dispatch coin bake-off | немає для шаблонів; розсилка = 👤 | 0 (шаблони); сам друк — за RFQ, н/о |
+| `legal/spdx_rollout_plan.md` | ⚖️ founder САМ (4 scope-питання) → 🤖 виконання | рішення по 4 питаннях scope | SPDX-теговане дерево (свідомо DEFERRED, Phase 7) | ліцензійну чистоту під CRA/enterprise-DD; фікс NOTICE-drift | свідомо відкладено — не гейтить нічого зараз | 0 |
+| `business/b2b_readiness.md` | internal roadmap; зовнішні адресати за фазами (SOC 2-auditor ⚪ later · pentest-вендор ⚪) | нічого зовнішнього зараз — фазовий план «що НЕ купувати» | готові відповіді на security-questionnaire + DPIA/GDPR-план live-deploy | enterprise-DD без паніки; сусідить SEC.18 | справжній найближчий гейт = перший live-deploy (GDPR), не enterprise-угода | SOC 2 Type II $20–35k+ ⚪ пізніше 🟡 |
+| `business/oss_web3_standards.md` | internal + крипто-юрист TBD (Phase-2: Token Transparency) | 🟢-кроки зараз (DCO `CONTRIBUTING` → UNI.20); патерни securities-safe design у redesign | best-practice вектор «substance over form» | UNI.20 · контекст DOC-T.47 · опору BIZ.22-redesign | 🟢 нічого; 🟡 gated на UNI.16 | 0 |
+
+**Гроші одним поглядом:** єдина витрата, доступна і доцільна ЗАРАЗ, — ™-подача (~25–38 тис. грн all-in 🟡). Решта — тригер-gated: поліси на B2B-signing, методолог на реальний ліс, SOC 2 на запит покупця. Вартість юр-консультацій (Аблязов · крипто-юрист · carbon-юрист · GDPR-юрист) ніде в пакеті не оцінена — чесне «н/о».
+
+---
+
+## 2. Порядок і залежності (звідки взято — позначено)
+
+1. **[`00_07`-прямий]** «Перед першим B2B-продажем: BIZ.20 гейтить решту → BIZ.2 · BIZ.21 · BIZ.9 · SEC.18 · BIZ.18». Присуд BIZ.20 (✅ 2026-07-24, тришар) **уже розблокував**: MSA-counterparty (ActiveBridge) · ™-заявника (фізособа) · liability-щит.
+2. **[`00_07`-прямий]** UNI.14 = **юр-хаб**: один воркшоп Аблязова фанається в BIZ.20-carve-out · BIZ.2 · BIZ.15 · UNI.16 · STK.3.
+3. **[`00_07`-прямий + [`07_03 §4.3`](../../07_03_Academic_Integration_and_IP.md)]** UNI.15 ™ **ПЕРЕД** UNI.3 TDCommons-splash: подача фіксує пріоритет-дату до публічного розкриття (squatting-guard; режими юридично незалежні — порядок = risk-management).
+4. **[`00_07`-прямий]** BIZ.22: «вікно закривається першим mint'ом», гейтить Web3 mainnet → securities-консультація ДО емісії. **[наш висновок]** Тому пошук крипто-юриста — найтерміновіша вакансія, хоч сам mint далекий: присуд дешевший за ретроактивний redesign.
+5. **[`00_07`-прямий]** BIZ.21-CoI = гейт підписання BIZ.2. **[артефакт eo_insurance_spec]** Тригер покупки = перший B2B-signing (купувати раніше = палити премію pre-revenue).
+6. **[`00_07`-прямий]** BIZ.18-exhibit живить BIZ.2. **[артефакт sla_exhibit]** Числа — ТІЛЬКИ з перших live-SLO-вікон → серіалізовано за деплоєм.
+7. **[артефакт msa_skeleton §0]** Products-Contract Consistency Gate: каркас пише securities-safe мову, але КОД досі несе investor/total_funding/yield-механіку (F1–F10) → реальний підпис MSA лише ПІСЛЯ product-redesign за BIZ.22-присудом. **[наш висновок]** Інакше contract-vs-product розбіжність, яку юрист покупця побачить на DD.
+8. **[`00_07`-прямий]** STK.3 заблоковано на UNI.16 + UNI.14; кандидат-канал = Спрягайло (ННІ права ЧНУ) + Аблязов.
+9. **[`00_07`-прямий]** BIZ.11: ланцюг STK.1 (land-access) + BIZ.20 ✅ + UNI.16-RWA-меморандум; крок «після BIZ.2».
+10. **[`00_07`-прямий]** BIZ.15 (SPV) — вісь усередині entity-matrix; gated BIZ.20-Phase-2 + securities-присуд BIZ.22.
+
+---
+
+## 3. Паралель vs серія (solo-founder економія)
+
+**Можна ЗАРАЗ, паралельно (ні від чого не залежать):**
+
+- **P1 — ™-подача** (повірений УкрНОІВІ): єдиний зовнішній крок без передумов; пріоритет-дата страхує весь подальший публічний трек (splash, Стаття 1).
+- **P2 — UNI.14-контакт СЄУ** (лист Аблязову): відкриває хаб п.2 — без нього стоять 5 items.
+- **P3 — scouting крипто/securities-юриста**: пошук кандидата ≠ консультація; можна вести паралельно з P2.
+- **P4 — запит нац-focal-point-point Міндовкілля** (Article-6/double-count): лист, 0 грн, найдешевший de-risk carbon-треку.
+- **P5 — internal-хвости**: DCO `CONTRIBUTING` (🤖) · SPDX-scope-рішення (⚖️) · чернетка carve-out угоди до воркшопу.
+
+**Серіалізовано (НЕ починати зараз — тригер названо):**
+
+- **S1** брокер/поліси → тригер = перший B2B-signing (п.5 §2).
+- **S2** MSA-фіналізація → після UNI.16-присуду + product-redesign (п.7 §2).
+- **S3** SLA-числа → після перших live-SLO-вікон (п.6 §2).
+- **S4** carbon-методолог → після реального лісу + MRV-даних (роки).
+- **S5** SOC 2 → після першого enterprise-buyer hard-gate-запиту.
+
+**[наш висновок] Максимальний leverage одного дня:** воркшоп Аблязова покриває одразу UNI.16 Блоки 2–4 + ревю MSA-каркаса + NDA-шаблон (C) + оформлення IP-carve-out + STK.3-скаутинг → на зустріч нести ВЕСЬ підпакет (`securities_review` + `msa_skeleton` + `entity_structure` + NDA-частину `vendor_templates`), а не по одному документу за раз. Meeting-prep — [`owner_meeting_briefs.md`](owner_meeting_briefs.md).
+
+---
+
+## 4. Чесні порожнечі (відкриті вакансії, НЕ план)
+
+| Роль (немає людини) | Що гейтить | Стан |
+|---|---|---|
+| **Крипто/securities-юрист** | BIZ.22 (= гейт Web3 mainnet) · UNI.16 Блоки 1+5 · Phase-2 token-контур | 🔴 TBD, не контактовано — **найгостріша вакансія пакета** |
+| **Страховий брокер** (ліцензований) | BIZ.21 → підписання BIZ.2 | TBD, не контактовано |
+| **Повірений УкрНОІВІ** | UNI.15 (™-подача) | роль канонізована ([`07_03 §4.1`](../../07_03_Academic_Integration_and_IP.md)), особа не обрана |
+| **Незалежний carbon-методолог** (Verra/GS) | BIZ.9-PDD → реєстровий кредит | TBD; далекий (реальний ліс), ~$50–100k 🟡 |
+| **Carbon/ESG-юрист** (UA registry-контракти) | реальні contracts BIZ.9-треку | TBD (флаг у шапці registry-matrix) |
+| **Privacy/GDPR-юрист** (EU-складова B2C) | фіналізація `b2c_tos_privacy` | TBD |
+| **Заслужений юрист** (Legal Wrapper SCC) | STK.3 | кандидата немає; канал пошуку = Спрягайло + Аблязов |
+
+NB: Аблязов, Гедз, Ус — адресати за каноном ([`07_03 §1.5`](../../07_03_Academic_Integration_and_IP.md)), але UNI.14 «Не почато»: жодної зустрічі/згоди ще немає. Біохімічна вісь (ЧМА) — поза цим пакетом: §07-артефакти біохіміку не адресовані.

@@ -44,7 +44,7 @@ Stage-2 coin-bake-off = **R&D-шар**; 100-партія = **Production-шар**
 
 - **IP / CDA / NDA:** [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) — **defensive-publication** → RFQ-specs **відкриті** (вже prior art); CDA = **стандартні комерц-умови** (ціни/строки/QC), НЕ для новизни; NDA **лише** для нерозкритого (prod-keys/telemetry/ML-ваги). RFQ-аркуші це наслідують у §IP.
 - **Академічний канал** ([`07_03`](../../07_03_Academic_Integration_and_IP.md)): co-pub (ЧНУ/ЧМА/ЧДТУ) = $0 + Q1-публікація, але темп-партнер-залежний; commercial CRO = $ + швидше + стандартний CDA. **Гібрид** на критичному шляху (HW.5: academ-валідація архітектури + commercial-експресія). Партнер-MoU гейт = ЧНУ лаб-доступ (**UNI.2**, passive) + CDA/NDA legal (**UNI.14** СЄУ Аблязов).
-- **Фінансування-гейти** ([`00_07` BIZ.20](../../00_07_Action_Plan_Tracker.md)): procurement-authority вивільняється поетапно з self-fund + інкорпорацією юр-особи (перша 100-партія CAPEX gated на BIZ.20).
+- **Фінансування-гейти** ([`00_07` BIZ.20](../../00_07_Action_Plan_Tracker.md)): procurement-authority вивільняється поетапно з self-fund (operational-особа вже існує) (перша 100-партія CAPEX gated на BIZ.20).
 
 ---
 
@@ -63,6 +63,8 @@ Stage-2 coin-bake-off = **R&D-шар**; 100-партія = **Production-шар**
 ## 5. Стандартна RFQ-аркуш-конвенція (шаблон)
 
 Кожен `<domain>_<scope>_rfq.md`: **Header** («Що це» · статус 🟡 · One-Home-disclaimer · cross-ref) → **§0 cover-note** (CDA · мета · послідовність критичним шляхом) → **per-component spec-table** (`Поле | Специфікація`: Продукт · Метод · QC/acceptance · Цільові-показники-дзеркало · Партнер-опція · IP) → **dispatch-checklist** (👤, критичний шлях першим) → **§Cross-references**.
+
+**Крос-доменні шаблони** (не per-component аркуш → не рядок §1): [`vendor_templates.md`](vendor_templates.md) — DMLS vendor-scoring matrix + ESG-screening checklist + взаємний CDA/NDA під ВНЗ-MoU ([`00_07` BIZ.17](../../00_07_Action_Plan_Tracker.md)); застосовуються поверх будь-якого аркуша, IP/CDA-політика — §3.
 
 ---
 
