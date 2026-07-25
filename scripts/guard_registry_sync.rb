@@ -82,7 +82,8 @@ DOCS_RAKE_LABELS = {
   "dangling #anchors (fragment ≠ heading slug)"                                            => "#anchor resolution",
   "stale external docs/NN_NN refs (.github / root *.md / source)"                          => "external doc-path",
   "volatile source line-refs `*.c`/`*.h`/`*.rb` (DOC-T.15 — cite symbol/#define)"          => "source line-ref drift",
-  "magic-marker hex ≠ BE/LE ASCII of its quoted name (DOC-T.46)"                            => "magic-marker hex"
+  "magic-marker hex ≠ BE/LE ASCII of its quoted name (DOC-T.46)"                            => "magic-marker hex",
+  "§-section label ≠ any heading in its linked target (DOC-T.48)"                            => "§-section label drift"
 }.freeze
 
 # tracker.rake guard method (Tracker::Dashboard.<name>) → §3-row anchor.

@@ -183,6 +183,15 @@ jobs:
         # ARCH.10) and nothing blinked.
         run: ruby scripts/code_tracker_id_check.rb
 
+      - name: code→doc §-ref resolution (DOC-T.48 — the doc gates never read code comments)
+        # Pure Ruby, no Rails. `docs:check_refs` scans docs/** ONLY, so a `NN_NN §X`
+        # cited in a code comment or a .claude routing file rots silently through a
+        # canon renumber (proof-case: ~18 stale `00_01 §6.x` refs in app/+spec/ after
+        # slashing moved to 05_05). Report-only 2026-06-16 → HARD 2026-07-25 on its own
+        # stated condition (0 violations across the 926-file scan). Its inputs — app/**,
+        # spec/**, lib/**, .claude/** — are all inside this workflow's `changes` filter.
+        run: ruby scripts/code_doc_section_refs.rb
+
       - name: Offering-lexicon gate (BIZ.22 — investment wording on customer-facing surfaces)
         # Pure Ruby, no Rails. HARD on the storefront (locale VALUES, manifest,
         # README) — the surfaces the 2026-07-25 sweep cleaned and nothing kept

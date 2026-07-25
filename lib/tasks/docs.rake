@@ -292,9 +292,15 @@ namespace :docs do
       puts "  DANGLING doc links (#{dangling.size}):"
       dangling.sort.uniq.each { |d| puts "    ✗ #{d}" }
     end
-    unless suspect.empty?
-      puts "  ⚠️ §-section labels with no matching heading (#{suspect.uniq.size}) — advisory:"
-      suspect.sort.uniq.first(40).each { |s| puts "    · #{s}" }
+    # [DOC-T.48] HARD since 2026-07-25 (was advisory since 2026-05-30). It was the LAST
+    # advisory item of the 34 `docs:check_refs` categories, sat at 0 hits across all docs,
+    # and its own week-mates (bare_section_ref / bare_doc_ref, 2026-05-31) went HARD long
+    # ago with no recorded reason for the exception. Precedent: DOC-T.46.
+    if suspect.empty?
+      puts "  §-section labels: every linked `§X` label resolves to a heading in its target ✓"
+    else
+      puts "  §-section labels with no matching heading (#{suspect.uniq.size}):"
+      suspect.sort.uniq.first(40).each { |s| puts "    ✗ #{s}" }
     end
     if magic_drift.empty?
       puts "  magic-marker:   every 4-byte magic literal = BE/LE ASCII of its quoted name ✓"
@@ -527,6 +533,7 @@ namespace :docs do
     failed << "stale external docs/NN_NN refs (.github / root *.md / source)" unless ext_drift.empty?
     failed << "volatile source line-refs `*.c`/`*.h`/`*.rb` (DOC-T.15 — cite symbol/#define)" unless src_line_refs.empty?
     failed << "magic-marker hex ≠ BE/LE ASCII of its quoted name (DOC-T.46)" unless magic_drift.empty?
+    failed << "§-section label ≠ any heading in its linked target (DOC-T.48)" unless suspect.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
   end
 

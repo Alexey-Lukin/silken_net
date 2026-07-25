@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 #
-# [SSOT anti-drift] code→doc §-ref RESOLUTION audit — manual/periodic, REPORT-ONLY (NOT a CI gate).
+# [SSOT anti-drift] code→doc §-ref RESOLUTION audit — HARD CI gate (docs.yml) since 2026-07-25.
 #
 # Code comments reference canon sections by `NN_NN §X` (e.g. "05_05 §3" in a service
 # comment). The doc gates (`docs:check_refs`) scan only `docs/**` — they NEVER look at
@@ -16,12 +16,15 @@
 # (`Tracker::Dashboard.file_section_dangling_refs`) over the source trees and reports any
 # `NN_NN §X` that no longer resolves to a real heading in its target doc.
 #
-# 🔴 REPORT-ONLY by intent — deliberately NOT wired into `docs.yml` / `ci.yml`. Code
-# comments legitimately carry informal / historical / illustrative refs that a HARD gate
-# would false-positive on; a renumber is rare. Run it periodically (like
-# `scripts/doc_structure_map.rb`), or right before a canon renumber/section-move, to catch
-# the drift class early. Exits 0 always (pure report); promote to a gate only if the
-# false-positive rate proves to be zero across the codebase.
+# 🟢 PROMOTED to a HARD gate 2026-07-25 [DOC-T.48], on the condition this header itself
+# set: "promote only if the false-positive rate proves to be zero across the codebase" —
+# 0 violations across the full 926-file scan, sustained. The FP class the report-only era
+# feared ("informal / historical / illustrative refs") is largely structurally dead: the
+# resolver (`DOC_SECTION_REF`) only matches a `§` followed by a DIGIT, so illustrative
+# `§X` / `§NN` / `§SomeName` placeholders never match, and a `.x` tail is skipped as a
+# wildcard. What CAN still false-positive is a deliberately HISTORICAL digit-led ref
+# ("this used to live in `00_01 §6`") — if one ever legitimately needs to stay, add it to
+# EXEMPT with a reason, do NOT weaken the resolver.
 #
 # Pure Ruby, no Rails. Run from repo root: `ruby scripts/code_doc_section_refs.rb`.
 require_relative "../lib/tracker/dashboard"
@@ -53,6 +56,7 @@ end
 if violations.empty?
   puts "code_doc_section_refs — #{files.size} source + .claude routing files scanned; every `NN_NN §X` ref resolves ✓"
 else
-  puts "code_doc_section_refs — #{violations.size} stale code→doc §-refs (report-only, not a CI gate):"
+  puts "code_doc_section_refs — #{violations.size} stale code→doc §-refs:"
   violations.uniq.sort.each { |v| puts "  ✗ #{v}" }
+  abort("code_doc_section_refs FAILED — a canon §-ref in code/routing no longer resolves")
 end
