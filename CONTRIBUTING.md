@@ -70,8 +70,8 @@ In addition:
   behaviour, update the relevant canon doc — see
   [`docs/00_06`](docs/00_06_SSOT_Documentation_Standard.md). Open or in-progress
   work is tracked in [`docs/00_07`](docs/00_07_Action_Plan_Tracker.md).
-- Write a clear commit message; AI-assisted commits should carry the appropriate
-  `Co-Authored-By` trailer.
+- Write a clear commit message; AI-assisted commits carry attribution trailers
+  (see [AI-assisted contributions](#ai-assisted-contributions) below).
 
 ## Developer Certificate of Origin (DCO)
 
@@ -85,8 +85,22 @@ with the `-s` flag, which adds a `Signed-off-by: Your Name <you@example.com>` tr
 git commit -s -m "your message"
 ```
 
-(AI-assisted commits are signed off by the human contributor who directs and owns the
-change.)
+### AI-assisted contributions
+
+AI assistance is **allowed, with attribution** — the position the Linux kernel
+takes, rather than a blanket ban.
+
+- Add an `Assisted-by: AGENT:MODEL` trailer (for example
+  `Assisted-by: Claude Code:claude-opus-5`) next to the usual `Co-Authored-By`.
+- **An AI never signs off.** `Signed-off-by` may only be added by the human
+  contributor who directs and owns the change: the DCO is a legal certification
+  of provenance and licence compatibility, and only a person can make it. Our
+  DCO check enforces this structurally, by matching the sign-off against the
+  commit author.
+
+Why this project permits AI assistance instead of prohibiting it — and what that
+means for copyright in our jurisdiction — is recorded under `UNI.20` in
+[`docs/00_07`](docs/00_07_Action_Plan_Tracker.md).
 
 ## License of contributions
 

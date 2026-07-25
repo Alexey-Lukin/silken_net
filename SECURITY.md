@@ -10,6 +10,19 @@ Report it privately through
 acknowledge within **72 hours** and to ship a fix or mitigation for high-severity
 issues within **14 days**.
 
+## Support period
+
+Security updates for a released version are provided for **at least five years**
+from the date that version is made available. For field-deployed anchor nodes we
+intend to track the physical service life of the hardware rather than that
+minimum — the anchor is designed for a 20–25 year deployment.
+
+Five years is the floor set for products with digital elements by the EU Cyber
+Resilience Act (Regulation (EU) 2024/2847, Art. 13(8)). SilkenNet has **not been
+placed on any market yet**, so this is a stated policy, not a conformity
+declaration; the regulatory perimeter itself is tracked openly as `BIZ.24` in
+`docs/00_07`.
+
 ## Credit
 
 When a reported vulnerability is fixed, we credit the reporter(s) in the security
