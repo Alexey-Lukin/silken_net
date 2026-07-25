@@ -26,6 +26,7 @@
 | Code-as-CAD (анкер/coin/radome) | `picogk` | `01_01/01_02/02_01/02_02` + `tools/cad` |
 | Hardware §02 (BOM · BQ25570-power · pogo-механіка · Queen-HW) | — (bench-важка, скілу НЕМА) · machine-half: механіка→`in-silico` (5x-скрипти), CAD→`picogk`, energy/SCC-гейти `tools/firmware/*.rb`; bench-збірка → `02_04` | `02_01`–`02_05` |
 | Деплой / Akash / Kamal / observability | `deploy` | `06_01`–`06_08` |
+| §07 Юр/бізнес/академ/IP (NaaS-умови · юніт-економіка · партнер-реєстр · IP-постава й бренд · робочі чернетки `protocols/{legal,business,outreach,research}`) | `legal-business` | `07_01`–`07_03` (+ стан `00_07 §07`) |
 | Оновлення залежностей (будь-який домен) | `dependency-update` | (polyglot) |
 | SSOT-доки / drift-hunt / wiki-sync | `ssot-maintenance` | `00_02` + `00_06` |
 | Персистентна пам'ять | `memory-maintenance` | `memory/` |
