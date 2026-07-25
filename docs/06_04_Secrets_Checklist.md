@@ -168,7 +168,7 @@
 >
 > **Рекомендований workflow:** використовувати `deploy/akash/deploy.yaml.tpl` Terraform-шаблон — секрети підставляються автоматично з `terraform.tfvars`.
 >
-> **Принцип:** SDL `web` та `job` сервіси повинні мати **ідентичні** ENV-блоки (окрім `WEB_CONCURRENCY` / `PORT` — web-specific). Sidekiq у `job`-сервісі ходить через ті ж Rails initializers, що вимагають boot-critical guards.
+> **Принцип:** SDL `web` та `job` сервіси мають **ідентичні** ENV-блоки з **двома** класами винятків: (1) web-specific `WEB_CONCURRENCY` / `PORT`; (2) 🔴 **money/signing-п'ятірка — JOB-ONLY** (INF.22, 2026-07-04): `ORACLE_MINTER_PRIVATE_KEY` · `ORACLE_SLASHER_PRIVATE_KEY` · `ORACLE_CELO_PRIVATE_KEY` · `ETHEREUM_ANCHOR_PRIVATE_KEY` · `SOLANA_WALLET_KEYPAIR` **не заводяться у `web` взагалі**. Причина несуча: Akash SDL ENV — **plaintext для провайдера**, а кожен signing-call-site = Sidekiq-воркер, тож інтернет-обернена web-поверхня не має підстав нести ключі (`deploy/akash/deploy.yaml` несе цей інваріант коментарем у web-сервісі; boot-guard scoped через `Security::Web3NetworkGuard`, `signer_process: Sidekiq.server?`). Решта — Sidekiq у `job`-сервісі ходить через ті ж Rails initializers, що вимагають boot-critical guards.
 
 ### 3.1. Web service env (та дзеркало в Job service env)
 
@@ -191,11 +191,7 @@
 - [ ] `RELEASE_VERSION` — git SHA / release tag для Sentry release tracking
 - [ ] `PROMETHEUS_AUTH_USER` / `PROMETHEUS_AUTH_PASSWORD` — Basic Auth для `/metrics`
 
-**Web3 oracle keys (dual-key split, B-02 — без них Sidekiq DeadSet; legacy `ORACLE_PRIVATE_KEY` retired INF.22):**
-- [ ] `ORACLE_CELO_PRIVATE_KEY` — **[ARCH.50]** dedicated Celo cUSD-підписант (no fallback); ізолює blast-radius Celo від Polygon-флоту (ARCH.49)
-- [ ] `ORACLE_MINTER_PRIVATE_KEY` — MINTER_ROLE на SCC/SFC (`BlockchainMintingService`)
-- [ ] `ORACLE_SLASHER_PRIVATE_KEY` — SLASHER_ROLE (`BlockchainBurningService`)
-- [ ] `ETHEREUM_ANCHOR_PRIVATE_KEY` — окремий wallet для weekly L1 anchor (`Ethereum::StateAnchorService`)
+> 🔴 **Web3 money/signing-ключі тут НЕ заводяться** — вони JOB-ONLY (§3.2, INF.22). Не «продзеркалюй» їх у web, навіть якщо решта блоку дзеркалиться: web-ENV видимий Akash-провайдеру plaintext.
 
 **RPC endpoints (`Web3::RpcConnectionPool` — `ENV.fetch` raises KeyError без значення):**
 - [ ] `ALCHEMY_POLYGON_RPC_URL`
@@ -216,9 +212,16 @@
 ### 3.2. Job (Sidekiq) service env
 
 - [ ] **Усе з §3.1** (Sidekiq потребує boot-critical guards так само як Puma) — окрім `PORT` / `WEB_CONCURRENCY`.
+
+**🔴 Money/signing-п'ятірка — ЛИШЕ тут, ніколи у web** (INF.22, 2026-07-04; dual-key split B-02 — без них Sidekiq DeadSet; legacy `ORACLE_PRIVATE_KEY` retired). Кожен signing-call-site — Sidekiq-воркер, тож web-копія не давала б нічого, крім зайвої експозиції:
+- [ ] `ORACLE_MINTER_PRIVATE_KEY` — MINTER_ROLE на SCC/SFC (`BlockchainMintingService`)
+- [ ] `ORACLE_SLASHER_PRIVATE_KEY` — SLASHER_ROLE (`BlockchainBurningService`)
+- [ ] `ORACLE_CELO_PRIVATE_KEY` — **[ARCH.50]** dedicated Celo cUSD-підписант (no fallback); ізолює blast-radius Celo від Polygon-флоту (ARCH.49)
+- [ ] `ETHEREUM_ANCHOR_PRIVATE_KEY` — окремий wallet для weekly L1 anchor (`Ethereum::StateAnchorService`)
+- [ ] `SOLANA_WALLET_KEYPAIR` — Ed25519 keypair мікро-виплат (`Solana::*`)
 - [ ] `DB_POOL` — **лише job-роль.** Sidekiq concurrency=15 (`config/sidekiq.yml`); дефолтна `database.yml` формула (`RAILS_MAX_THREADS+2 = 5`) → `ActiveRecord::ConnectionTimeoutError` під навантаженням. Встанови `DB_POOL=17` (concurrency + 2 headroom). Заведено в `config/deploy.yml` job env + Akash `deploy.yaml` job (INF.13). **НЕ** виставляй на web-ролі (Puma threads = `RAILS_MAX_THREADS+2`, коректно).
 
-> **⚠️ AKASH ENV plaintext exposure:** Akash не шифрує ENV-блок SDL — значення видимі провайдеру через `lease-logs`/kubectl. Mitigation: scoped on-chain roles (MINTER/SLASHER only, ніколи DEFAULT_ADMIN), 90-day key rotation, audited providers (`signedBy.anyOf`). Детальніше: [`06_02 §Секрети SDL (Akash ENV plaintext)`](06_02_Akash_Network_Integration).
+> **⚠️ AKASH ENV plaintext exposure:** Akash не шифрує ENV-блок SDL — значення видимі провайдеру через `lease-logs`/kubectl. Mitigation, у порядку сили: (1) 🔴 **surface-minimization — money-п'ятірка взагалі відсутня у `web`** (INF.22; ключ, якого немає в контейнері, не витікає з нього — решта пунктів лише зменшують наслідки, цей прибирає поверхню); (2) scoped on-chain roles (MINTER/SLASHER only, ніколи DEFAULT_ADMIN); (3) 90-day key rotation; (4) audited providers (`signedBy.anyOf`). Детальніше: [`06_02 §Секрети SDL (Akash ENV plaintext)`](06_02_Akash_Network_Integration).
 
 ### 3.3. Grafana Alloy sidecar (observability)
 
