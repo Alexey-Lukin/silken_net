@@ -406,6 +406,28 @@ module Tracker
       end
     end
 
+    # --- pre-section orphan guard [DOC-T.49] ---
+    # `parse` only sees `#### ` items INSIDE a registry section (`## §NN` / `## 🔀`), so an
+    # item sitting ABOVE the first `## ` heading — or under a SKIP section — is invisible to
+    # EVERY other tracker gate (dup-ID, meta-form, canon-ref, section-home, verdict-lead all
+    # iterate the PARSED set). They then check blind and stay GREEN on a corrupted file — the
+    # same false-green shape a glued table row produces. Not hypothetical: an editing accident
+    # glued away 00_07's H1 and left DOC-T.48 stranded above every section for a whole commit
+    # (225 of 226 items parsed; both doc gates green). Mirror-guard: re-scans with the SAME
+    # `####` predicate `parse` uses, so it stays self-consistent with what it protects.
+    def self.orphan_item_violations(markdown = File.read(DEFAULT_PATH))
+      seen = parse(markdown).map(&:id)
+      in_fence = false
+      markdown.each_line.with_object([]) do |line, bad|
+        in_fence = !in_fence if line.lstrip.start_with?("```")
+        next if in_fence
+        next unless (m = line.match(ANY_ITEM_HEAD))
+        next if seen.include?(m[1])
+
+        bad << "#{m[1]} — `#### ` item outside any `## §NN`/`## 🔀` registry section → invisible to every tracker gate"
+      end
+    end
+
     # --- inline residual run-on guard [founder 2026-06-14] ---
     # The item-form standard (00_07 intro) requires open residuals as a VERTICAL list —
     # «≥2 residual'и — завжди список; НЕ паковати кілька `· [ ]` в один рядок». A body line

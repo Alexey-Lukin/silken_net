@@ -103,9 +103,18 @@ module DocsLinter
 
   def conformance_violations(basename, text)
     return [] unless basename.match?(/\A\d\d_\d\d_/)
-    return [] if basename.match?(CONFORMANCE_EXEMPT)
 
     miss = []
+    # [DOC-T.49] H1 is checked BEFORE the exempt-return: the skeleton exemptions exist
+    # because 00_00/00_07/appendix legitimately lack ✅ Статус — none of them may lack a
+    # TITLE. A lost H1 is the one skeleton defect no other gate can see, and it un-anchors
+    # the file wholesale: an editing accident glued 00_07's H1 into a preceding paragraph
+    # (`#🔴 …` — no space after `#`, so CommonMark reads a plain paragraph, not a heading)
+    # and every doc gate stayed green for a whole commit. First NON-BLANK line, so leading
+    # blank lines are tolerated; `#x` without a space correctly fails (it is not a heading).
+    miss << "# H1 heading (first non-blank line)" unless text.lines.find { |l| !l.strip.empty? }&.start_with?("# ")
+    return miss if basename.match?(CONFORMANCE_EXEMPT)
+
     miss << "## ✅ Статус" unless text.include?("## ✅ Статус")
     miss << "## 🔗 Cross-references" unless text.include?("## 🔗 Cross-references")
     miss << "📑 auto-ToC markers" unless text.include?("<!-- TOC:AUTO:START -->")

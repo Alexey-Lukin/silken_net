@@ -93,6 +93,7 @@ TRACKER_GUARDS = {
   "section_dangling_refs"        => "§-section resolution",
   "file_section_dangling_refs"   => "whole-file 00_07 §-ref",
   "section_home_violations"      => "section↔canon-home",
+  "orphan_item_violations"       => "item visibility",
   "inbound_ref_violations"       => "inbound 00_07 item-ref",
   "inbound_prose_ref_violations" => "prose 00_07 ID-ref",
   "chem_note_ref_violations"     => "CHEM.N in-silico note-ref",

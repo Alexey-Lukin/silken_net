@@ -463,6 +463,51 @@ RSpec.describe Tracker::Dashboard do
     end
   end
 
+  # [DOC-T.49] pre-section orphan guard — an item outside every registry section is
+  # invisible to `parse`, so EVERY other tracker gate iterates a set that silently
+  # lacks it and stays green on a corrupted file.
+  describe ".orphan_item_violations" do
+    let(:md) do
+      <<~MD
+        # 00_07: Action Plan Tracker
+
+        ## §06 · Deploy
+        #### S1.1 — visible, inside a registry section
+        - **P0** · 👤 · ⚪ · → `06_04`
+        ## 🔀 Cross-cutting · Doc-drift (DOC)
+        #### DOC.9 — visible, cross-cutting counts as a registry section
+        - **P2** · 🤖 · ⚪ · → `04_02`
+      MD
+    end
+
+    it "passes when every #### item sits inside a registry section" do
+      expect(described_class.orphan_item_violations(md)).to be_empty
+    end
+
+    # The real defect: a glued H1 left DOC-T.48 stranded above the first section —
+    # 225 of 226 items parsed and every gate reported green.
+    it "flags an item stranded ABOVE the first section" do
+      stranded = md.sub("## §06 · Deploy\n", "#### DOC-T.48 — orphan above every section\n- **P3** · 🤖 · ⚪ · → `00_06 §3`\n## §06 · Deploy\n")
+      expect(described_class.orphan_item_violations(stranded))
+        .to contain_exactly(a_string_matching(/DOC-T\.48.*invisible/))
+    end
+
+    it "flags an item buried under a SKIP section (🎯/🚦/📌/🗄️)" do
+      buried = "#{md}## 🗄️ Архів\n#### GHOST.1 — under a skipped section\n- **P3** · 🤖 · ⚪ · → `00_06 §3`\n"
+      expect(described_class.orphan_item_violations(buried))
+        .to contain_exactly(a_string_matching(/GHOST\.1.*invisible/))
+    end
+
+    it "ignores a #### heading inside a fenced code block" do
+      fenced = "#{md}## §06 · Deploy\n```\n#### FAKE.1 — example inside a fence\n```\n"
+      expect(described_class.orphan_item_violations(fenced)).to be_empty
+    end
+
+    it "holds the live tracker at zero" do
+      expect(described_class.orphan_item_violations).to be_empty
+    end
+  end
+
   # [inline residual run-on guard, founder 2026-06-14] residuals must be a VERTICAL list;
   # ≥2 inline `· [ ]` on one body line is flagged (00_07 intro standard). Skips intro
   # blockquote examples, fenced code, and table rows.

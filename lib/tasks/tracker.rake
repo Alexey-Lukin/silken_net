@@ -29,6 +29,7 @@ namespace :tracker do
     sect     = Tracker::Dashboard.section_dangling_refs(items)
     filesect = Tracker::Dashboard.file_section_dangling_refs(md)
     home     = Tracker::Dashboard.section_home_violations(items)
+    orphan   = Tracker::Dashboard.orphan_item_violations(md)
     inbound  = Tracker::Dashboard.inbound_ref_violations
     prose    = Tracker::Dashboard.inbound_prose_ref_violations
     chem     = Tracker::Dashboard.chem_note_ref_violations
@@ -71,6 +72,14 @@ namespace :tracker do
     else
       puts "  section↔home mismatches (#{home.size}) — item canon-ref ≠ its §NN section module:"
       home.each { |h| puts "    - #{h}" }
+    end
+    # [DOC-T.49] pre-section orphan — HARD: an item outside every registry section is
+    # invisible to the parser, so all gates above it check blind and stay green. (00_06 §3.)
+    if orphan.empty?
+      puts "  item visibility:  every #### item sits inside a registry section (parser sees all) ✓"
+    else
+      puts "  ORPHANED items (#{orphan.size}) — outside any registry section, INVISIBLE to every gate above:"
+      orphan.each { |o| puts "    - #{o}" }
     end
     if inbound.empty?
       puts "  inbound refs:     every `00_07 — ID` ref resolves to a real item ✓"
@@ -134,6 +143,6 @@ namespace :tracker do
       puts "  bench-tag violations (#{bench.size}) — tag↔registry asymmetry (RUNBOOK §6):"
       bench.each { |b| puts "    - #{b}" }
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || metaform.any? || cluster.any? || bench.any?
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || orphan.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || metaform.any? || cluster.any? || bench.any?
   end
 end
