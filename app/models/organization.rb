@@ -78,8 +78,8 @@ class Organization < ApplicationRecord
     clusters.count
   end
 
-  # Загальна сума інвестицій за всіма контрактами
-  def total_invested
+  # Загальна законтрактована сума за всіма контрактами
+  def total_contracted
     naas_contracts.sum(:total_funding).to_f
   end
 

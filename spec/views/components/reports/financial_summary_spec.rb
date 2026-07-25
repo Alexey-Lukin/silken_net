@@ -7,10 +7,10 @@ RSpec.describe Reports::FinancialSummary do
     OpenStruct.new(name: name)
   end
 
-  def mock_data(total_invested: 75_000, active_contracts: 12, total_contracts: 20,
+  def mock_data(total_contracted: 75_000, active_contracts: 12, total_contracts: 20,
                 blockchain_transactions: nil)
     {
-      total_invested: total_invested,
+      total_contracted: total_contracted,
       active_contracts: active_contracts,
       total_contracts: total_contracts,
       blockchain_transactions: blockchain_transactions || {

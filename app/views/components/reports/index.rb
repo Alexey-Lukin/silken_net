@@ -37,7 +37,7 @@ module Reports
         render Views::Shared::UI::StatCard.new(label: t(".hero.carbon_yield"), value: @summary[:total_carbon_points], sub: t(".hero.carbon_yield_sub"))
       end
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6 mt-6") do
-        render Views::Shared::UI::StatCard.new(label: t(".hero.capital_injected"), value: @summary[:total_invested], sub: t(".hero.capital_injected_sub"))
+        render Views::Shared::UI::StatCard.new(label: t(".hero.capital_injected"), value: @summary[:total_contracted], sub: t(".hero.capital_injected_sub"))
         render Views::Shared::UI::StatCard.new(label: t(".hero.sectors"), value: @summary[:total_clusters], sub: t(".hero.sectors_sub"))
         render Views::Shared::UI::StatCard.new(label: t(".hero.threat_level"), value: @summary[:under_threat] ? t(".hero.threat_active") : t(".hero.threat_clear"), danger: @summary[:under_threat])
       end

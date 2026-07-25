@@ -874,14 +874,14 @@ Policy-хелпер `admin_or_above?` (`ApplicationPolicy` + `Scope`) = `admin` 
       "recommendation": { "priority": "high", "action_required": "..." }
     }
   ],
-  "yield_forecast": 12.5
+  "emission_forecast": 12.5
 }
 ```
 
 | Поле | Тип | Опис |
 |---|---|---|
 | `visions` | Array | Масив `AiInsight` (до 10 записів, `upcoming`, сортування за `target_date asc`) |
-| `yield_forecast` | Float | Прогнозована SCC-врожайність організації |
+| `emission_forecast` | Float | Прогнозована SCC-врожайність організації |
 
 ---
 

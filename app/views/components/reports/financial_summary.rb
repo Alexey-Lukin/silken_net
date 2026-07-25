@@ -31,7 +31,7 @@ module Reports
 
     def render_metrics
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
-        render Views::Shared::UI::StatCard.new(label: t(".metrics.total_invested"), value: @data[:total_invested], sub: t(".metrics.total_invested_sub"))
+        render Views::Shared::UI::StatCard.new(label: t(".metrics.total_invested"), value: @data[:total_contracted], sub: t(".metrics.total_invested_sub"))
         render Views::Shared::UI::StatCard.new(label: t(".metrics.active_contracts"), value: @data[:active_contracts], sub: t(".metrics.active_contracts_sub"))
         render Views::Shared::UI::StatCard.new(label: t(".metrics.total_contracts"), value: @data[:total_contracts], sub: t(".metrics.total_contracts_sub"))
       end

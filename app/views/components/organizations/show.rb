@@ -56,7 +56,7 @@ module Organizations
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
         render Views::Shared::UI::StatCard.new(label: t(".performance.biological_assets"), value: @performance[:total_trees], sub: t(".performance.biological_assets_sub"))
         render Views::Shared::UI::StatCard.new(label: t(".performance.carbon_yield"), value: @performance[:carbon_minted], sub: t(".performance.carbon_yield_sub"))
-        render Views::Shared::UI::StatCard.new(label: t(".performance.capital_injected"), value: @organization.total_invested, sub: t(".performance.capital_injected_sub"))
+        render Views::Shared::UI::StatCard.new(label: t(".performance.capital_injected"), value: @organization.total_contracted, sub: t(".performance.capital_injected_sub"))
       end
     end
 

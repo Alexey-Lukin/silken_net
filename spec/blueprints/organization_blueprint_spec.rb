@@ -30,8 +30,8 @@ RSpec.describe OrganizationBlueprint, type: :model do
       expect(parsed["total_clusters"]).to be(0)
     end
 
-    it "includes computed total_invested" do
-      expect(parsed["total_invested"]).to eq(0.0)
+    it "includes computed total_contracted" do
+      expect(parsed["total_contracted"]).to eq(0.0)
     end
 
     it "excludes show-only fields" do
@@ -60,7 +60,7 @@ RSpec.describe OrganizationBlueprint, type: :model do
 
     it "excludes computed index fields" do
       expect(parsed).not_to have_key("total_clusters")
-      expect(parsed).not_to have_key("total_invested")
+      expect(parsed).not_to have_key("total_contracted")
     end
   end
 

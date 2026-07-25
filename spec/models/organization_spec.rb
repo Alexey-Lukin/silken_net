@@ -78,19 +78,19 @@ RSpec.describe Organization, type: :model do
     end
   end
 
-  describe "#total_invested" do
+  describe "#total_contracted" do
     it "returns the sum of all contract funding" do
       organization = create(:organization)
       cluster = create(:cluster, organization: organization)
       create(:naas_contract, organization: organization, cluster: cluster, total_funding: 30_000)
       create(:naas_contract, organization: organization, cluster: cluster, total_funding: 20_000)
 
-      expect(organization.total_invested).to eq(50_000.0)
+      expect(organization.total_contracted).to eq(50_000.0)
     end
 
     it "returns 0.0 when no contracts exist" do
       organization = create(:organization)
-      expect(organization.total_invested).to eq(0.0)
+      expect(organization.total_contracted).to eq(0.0)
     end
   end
 

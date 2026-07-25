@@ -2,9 +2,9 @@
 
 module OracleVisions
   class Index < ApplicationComponent
-    def initialize(visions:, yield_forecast:, clusters:)
+    def initialize(visions:, emission_forecast:, clusters:)
       @visions = visions
-      @yield_forecast = yield_forecast
+      @emission_forecast = emission_forecast
       @clusters = clusters
     end
 
@@ -38,7 +38,7 @@ module OracleVisions
           h4(class: "text-tiny uppercase tracking-widest text-emerald-800 mb-1") { t(".expected_yield") }
           div(class: "flex items-baseline justify-end gap-2") do
             span(class: "text-3xl font-mono text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]") do
-              @yield_forecast
+              @emission_forecast
             end
             span(class: "text-xs text-emerald-600 font-light italic") { t(".yield_unit") }
           end

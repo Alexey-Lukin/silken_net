@@ -3,13 +3,13 @@
 require "rails_helper"
 
 RSpec.describe Organizations::Index do
-  def mock_org(id: 1, name: "EcoInvest DAO", total_clusters: 5, total_invested: 12_000,
+  def mock_org(id: 1, name: "EcoInvest DAO", total_clusters: 5, total_contracted: 12_000,
                crypto_public_address: "0xAbCd1234AbCd1234AbCd1234AbCd1234AbCd1234")
     org = OpenStruct.new(
       id: id,
       name: name,
       total_clusters: total_clusters,
-      total_invested: total_invested,
+      total_contracted: total_contracted,
       crypto_public_address: crypto_public_address
     )
     org.define_singleton_method(:model_name) { ActiveModel::Name.new(Organization) }
@@ -19,7 +19,7 @@ RSpec.describe Organizations::Index do
   end
 
   let(:org)           { mock_org }
-  let(:organizations) { [ org, mock_org(id: 2, name: "GreenFund Ltd", total_invested: 5_000) ] }
+  let(:organizations) { [ org, mock_org(id: 2, name: "GreenFund Ltd", total_contracted: 5_000) ] }
   let(:html)          { render_component(organizations: organizations, pagy: mock_pagy(count: 63)) }
 
   describe "header section" do
@@ -55,7 +55,7 @@ RSpec.describe Organizations::Index do
       expect(html).to include("EcoInvest DAO")
     end
 
-    it "renders total invested with SCC suffix" do
+    it "renders total contracted with SCC suffix" do
       expect(html).to include("12000 SCC")
     end
 

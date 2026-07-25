@@ -23,16 +23,16 @@ RSpec.describe OracleVisions::Index do
     c
   end
 
-  def render_component(visions:, yield_forecast:, clusters:)
+  def render_component(visions:, emission_forecast:, clusters:)
     ApplicationController.renderer.render(
-      component_class.new(visions: visions, yield_forecast: yield_forecast, clusters: clusters),
+      component_class.new(visions: visions, emission_forecast: emission_forecast, clusters: clusters),
       layout: false
     )
   end
 
   let(:clusters) { [ mock_cluster(id: 1, name: "Carpathian-Alpha") ] }
   let(:visions) { [ mock_insight, mock_insight(insight_type: "frost_risk", probability_score: 88) ] }
-  let(:html) { render_component(visions: visions, yield_forecast: "12.45", clusters: clusters) }
+  let(:html) { render_component(visions: visions, emission_forecast: "12.45", clusters: clusters) }
 
   describe "header section" do
     it "renders the Strategic Forecast Matrix heading" do
@@ -48,8 +48,8 @@ RSpec.describe OracleVisions::Index do
     end
   end
 
-  describe "yield_forecast display" do
-    it "renders the yield forecast value" do
+  describe "emission_forecast display" do
+    it "renders the emission forecast value" do
       expect(html).to include("12.45")
     end
 
@@ -90,7 +90,7 @@ RSpec.describe OracleVisions::Index do
 
   describe "empty visions list" do
     it "renders without errors when visions is empty" do
-      html = render_component(visions: [], yield_forecast: "0.00", clusters: clusters)
+      html = render_component(visions: [], emission_forecast: "0.00", clusters: clusters)
       expect(html).to include("Strategic Forecast Matrix")
     end
   end

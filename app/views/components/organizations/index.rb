@@ -41,7 +41,7 @@ module Organizations
       tr(class: "hover:bg-emerald-950/10 transition-colors group") do
         td(class: "p-4 text-emerald-400 font-bold") { org.name }
         td(class: "p-4 text-gray-400") { org.total_clusters }
-        td(class: "p-4 text-emerald-100") { t(".investment_value", amount: org.total_invested) }
+        td(class: "p-4 text-emerald-100") { t(".investment_value", amount: org.total_contracted) }
         td(class: "p-4 text-tiny text-gray-600 font-mono") do
           render Views::Shared::Web3::Address.new(address: org.crypto_public_address)
         end

@@ -36,8 +36,8 @@ RSpec.describe Contracts::Index do
     c
   end
 
-  def mock_stats(total_invested: 50_000, total_minted: 1234.5, avg_health: 87)
-    { total_invested: total_invested, total_minted: total_minted, avg_health: avg_health }
+  def mock_stats(total_contracted: 50_000, total_minted: 1234.5, avg_health: 87)
+    { total_contracted: total_contracted, total_minted: total_minted, avg_health: avg_health }
   end
 
   def render_component(contracts:, stats:, pagy:)

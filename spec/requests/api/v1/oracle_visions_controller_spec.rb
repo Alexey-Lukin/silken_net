@@ -30,13 +30,13 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
     end
 
     context "when as JSON" do
-      it "returns visions and yield forecast for forester" do
+      it "returns visions and emission forecast for forester" do
         get "/api/v1/oracle_visions", headers: forester_headers, as: :json
         expect(response).to have_http_status(:ok)
 
         body = response.parsed_body
         expect(body).to have_key("visions")
-        expect(body).to have_key("yield_forecast")
+        expect(body).to have_key("emission_forecast")
       end
 
       it "returns visions for admin (who is also a forest_commander)" do
@@ -73,7 +73,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
 
         get "/api/v1/oracle_visions", headers: forester_headers, as: :json
         expect(response).to have_http_status(:ok)
-        expect(response.parsed_body["yield_forecast"]).to be_a(Numeric)
+        expect(response.parsed_body["emission_forecast"]).to be_a(Numeric)
       end
 
       it "uses sap_flow from latest telemetry when present" do
@@ -85,7 +85,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
 
         get "/api/v1/oracle_visions", headers: forester_headers, as: :json
         expect(response).to have_http_status(:ok)
-        expect(response.parsed_body["yield_forecast"]).to be_a(Numeric)
+        expect(response.parsed_body["emission_forecast"]).to be_a(Numeric)
       end
     end
   end
@@ -221,7 +221,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       expect(ids).not_to include(foreign_vision.id)
     end
 
-    it "caches yield forecast under a per-org key" do
+    it "caches emission forecast under a per-org key" do
       allow(Rails.cache).to receive(:fetch).and_call_original
       allow(Rails.cache).to receive(:fetch)
         .with("oracle_expected_yield_24h_org_#{organization.id}", expires_in: 1.hour)
@@ -229,7 +229,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
 
       get "/api/v1/oracle_visions", headers: forester_headers, as: :json
       expect(response).to have_http_status(:ok)
-      expect(response.parsed_body["yield_forecast"].to_f).to eq(2.5)
+      expect(response.parsed_body["emission_forecast"].to_f).to eq(2.5)
 
       # `allow` + `have_received` separates stub setup (test fixture) from
       # the behavioural assertion (the per-org key was used, the legacy
@@ -261,8 +261,8 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
 
       get "/api/v1/oracle_visions", headers: forester_headers, as: :json
       expect(response).to have_http_status(:ok)
-      # yield_forecast may be a string or numeric depending on JSON serialization
-      forecast = response.parsed_body["yield_forecast"]
+      # emission_forecast may be a string or numeric depending on JSON serialization
+      forecast = response.parsed_body["emission_forecast"]
       expect(forecast.to_f).to be_a(Float)
     ensure
       Prosopite.resume if defined?(Prosopite)
@@ -275,7 +275,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
 
       get "/api/v1/oracle_visions", headers: forester_headers, as: :json
       expect(response).to have_http_status(:ok)
-      expect(response.parsed_body["yield_forecast"]).to be_a(Numeric)
+      expect(response.parsed_body["emission_forecast"]).to be_a(Numeric)
     end
   end
 end

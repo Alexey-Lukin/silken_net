@@ -64,10 +64,10 @@ RSpec.describe Api::V1::ReportsController, type: :request do
 
       body = response.parsed_body
       expect(body["report"]).to eq("financial_summary")
-      expect(body["data"]).to include("total_invested", "blockchain_transactions")
+      expect(body["data"]).to include("total_contracted", "blockchain_transactions")
     end
 
-    it "includes real_yield data in JSON response (premiums DB-sourced from NaaS contracts)" do
+    it "includes network_emission data in JSON response (premiums DB-sourced from NaaS contracts)" do
       # [SEC.1] total_premiums_usdc now comes from the DB (5% of activated NaaS funding),
       # not a never-emitted on-chain PremiumPaid event. 600_000 funding × 5% = 30_000.
       create(:naas_contract, status: :active, organization: organization,
@@ -76,7 +76,7 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       get "/api/v1/reports/financial_summary", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
-      ry = response.parsed_body.dig("data", "real_yield")
+      ry = response.parsed_body.dig("data", "network_emission")
       expect(ry).to include(
         "total_minted_scc" => 500_000,
         "total_burned_scc" => 150_000,
@@ -95,14 +95,14 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       expect(rows[1][0]).to eq("Organization")
       expect(rows[1][1]).to eq(organization.name)
       expect(rows[4]).to eq(%w[Metric Value])
-      expect(rows[5][0]).to eq("Total Invested")
+      expect(rows[5][0]).to eq("Total Contracted")
     end
 
-    it "includes real_yield data in CSV response" do
+    it "includes network_emission data in CSV response" do
       get "/api/v1/reports/financial_summary.csv", headers: headers
 
       csv_text = response.body
-      expect(csv_text).to include("Real Yield (DePIN/ReFi)")
+      expect(csv_text).to include("Network Emission (DePIN/ReFi)")
       expect(csv_text).to include("Total Minted SCC")
       expect(csv_text).to include("Total Burned SCC")
       expect(csv_text).to include("Total Premiums USDC")
@@ -122,11 +122,11 @@ RSpec.describe Api::V1::ReportsController, type: :request do
           .and_raise(TheGraph::QueryService::QueryError, "connection refused")
       end
 
-      it "returns zero defaults for real_yield" do
+      it "returns zero defaults for network_emission" do
         get "/api/v1/reports/financial_summary", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
-        ry = response.parsed_body.dig("data", "real_yield")
+        ry = response.parsed_body.dig("data", "network_emission")
         expect(ry).to include(
           "total_minted_scc" => 0,
           "total_burned_scc" => 0,
@@ -136,17 +136,17 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       end
     end
 
-    context "when real yield fetch raises a generic StandardError" do
+    context "when network emission fetch raises a generic StandardError" do
       before do
         allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_protocol_financials)
           .and_raise(StandardError, "network timeout")
       end
 
-      it "returns zero defaults for real_yield on generic error" do
+      it "returns zero defaults for network_emission on generic error" do
         get "/api/v1/reports/financial_summary", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
-        ry = response.parsed_body.dig("data", "real_yield")
+        ry = response.parsed_body.dig("data", "network_emission")
         expect(ry).to include(
           "total_minted_scc" => 0,
           "total_burned_scc" => 0,
@@ -171,7 +171,7 @@ RSpec.describe Api::V1::ReportsController, type: :request do
         get "/api/v1/reports/financial_summary", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
-        ry = response.parsed_body.dig("data", "real_yield")
+        ry = response.parsed_body.dig("data", "network_emission")
         expect(ry).to include(
           "total_minted_scc" => 0,
           "total_burned_scc" => 0,

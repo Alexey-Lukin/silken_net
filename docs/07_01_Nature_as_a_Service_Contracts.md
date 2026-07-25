@@ -471,7 +471,7 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 |---|---|---|---|
 | `GET` | `/api/v1/contracts` | Required | Перелік NaaS контрактів клієнта (Pagy) |
 | `GET` | `/api/v1/contracts/:id` | Required | Деталі контракту |
-| `GET` | `/api/v1/contracts/stats` | Required | `total_invested`, `tokens_minted`, `portfolio_health`, `market_value_usd` |
+| `GET` | `/api/v1/contracts/stats` | Required | `total_contracted`, `tokens_minted`, `cluster_health`, `attested_value_usd` |
 
 ---
 

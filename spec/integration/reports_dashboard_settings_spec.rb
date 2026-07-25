@@ -199,7 +199,7 @@ RSpec.describe "Reports, dashboard, and settings API" do
 
       expect(response).to have_http_status(:ok)
       json = response.parsed_body
-      expect(json).to include("total_invested", "portfolio_health", "market_value_usd")
+      expect(json).to include("total_contracted", "cluster_health", "attested_value_usd")
     end
   end
 end

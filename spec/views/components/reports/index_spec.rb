@@ -8,12 +8,12 @@ RSpec.describe Reports::Index do
   end
 
   def mock_summary(total_trees: 300, health_score: 0.88, total_carbon_points: 12_500,
-                   total_invested: 50_000, total_clusters: 7, under_threat: false)
+                   total_contracted: 50_000, total_clusters: 7, under_threat: false)
     {
       total_trees: total_trees,
       health_score: health_score,
       total_carbon_points: total_carbon_points,
-      total_invested: total_invested,
+      total_contracted: total_contracted,
       total_clusters: total_clusters,
       under_threat: under_threat
     }

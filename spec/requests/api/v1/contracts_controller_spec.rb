@@ -124,10 +124,10 @@ RSpec.describe Api::V1::ContractsController, type: :request do
       expect(response).to have_http_status(:ok)
 
       body = response.parsed_body
-      expect(body).to have_key("total_invested")
+      expect(body).to have_key("total_contracted")
       expect(body).to have_key("total_tokens_minted")
-      expect(body).to have_key("portfolio_health")
-      expect(body).to have_key("market_value_usd")
+      expect(body).to have_key("cluster_health")
+      expect(body).to have_key("attested_value_usd")
     end
 
     it "returns 403 when user has no organization" do
@@ -145,7 +145,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
     end
 
     context "when organization has no clusters" do
-      it "returns portfolio_health as 1.0" do
+      it "returns cluster_health as 1.0" do
         allow(PriceOracleService).to receive(:current_scc_price).and_return(25.5)
 
         # Create a fresh user/org with no clusters or contracts
@@ -155,11 +155,11 @@ RSpec.describe Api::V1::ContractsController, type: :request do
 
         get "/api/v1/contracts/stats", headers: fresh_headers, as: :json
         expect(response).to have_http_status(:ok)
-        expect(response.parsed_body["portfolio_health"]).to eq(1.0)
+        expect(response.parsed_body["cluster_health"]).to eq(1.0)
       end
     end
 
-    context "when portfolio_health calculation raises" do
+    context "when cluster_health calculation raises" do
       it "returns 1.0 as fallback" do
         allow(PriceOracleService).to receive(:current_scc_price).and_return(25.5)
         # Stub average to raise an error, triggering the rescue fallback
@@ -167,7 +167,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
 
         get "/api/v1/contracts/stats", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
-        expect(response.parsed_body["portfolio_health"]).to eq(1.0)
+        expect(response.parsed_body["cluster_health"]).to eq(1.0)
       end
     end
   end

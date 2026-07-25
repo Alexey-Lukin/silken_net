@@ -343,13 +343,13 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
   # OracleVisionsController
   # ---------------------------------------------------------------------------
   describe "Oracle Visions API" do
-    it "GET /api/v1/oracle_visions returns visions and yield forecast" do
+    it "GET /api/v1/oracle_visions returns visions and emission forecast" do
       get "/api/v1/oracle_visions",
           headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
       json = response.parsed_body
-      expect(json).to include("visions", "yield_forecast")
+      expect(json).to include("visions", "emission_forecast")
     end
 
     it "GET /api/v1/oracle_visions/stream_config returns config" do

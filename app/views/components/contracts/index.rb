@@ -47,7 +47,7 @@ module Contracts
 
     def render_stats_hero
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
-        render Views::Shared::UI::StatCard.new(label: t(".stats.portfolio_capital"), value: "#{@stats[:total_invested].to_f.round(2)} SCC", sub: t(".stats.total_injected"))
+        render Views::Shared::UI::StatCard.new(label: t(".stats.portfolio_capital"), value: "#{@stats[:total_contracted].to_f.round(2)} SCC", sub: t(".stats.total_injected"))
         render Views::Shared::UI::StatCard.new(label: t(".stats.biogenic_yield"), value: "#{@stats[:total_minted].to_f.round(2)} SCC", sub: t(".stats.total_minted"))
         render Views::Shared::UI::StatCard.new(label: t(".stats.network_health"), value: "#{@stats[:avg_health]}%", sub: t(".stats.portfolio_avg"))
       end

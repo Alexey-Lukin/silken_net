@@ -6,7 +6,7 @@ class OrganizationBlueprint < Blueprinter::Base
   view :index do
     fields :name, :crypto_public_address, :created_at
     field(:total_clusters) { |org| org.total_clusters }
-    field(:total_invested) { |org| org.total_invested }
+    field(:total_contracted) { |org| org.total_contracted }
   end
 
   view :show do

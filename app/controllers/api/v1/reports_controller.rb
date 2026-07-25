@@ -15,7 +15,7 @@ module Api
           total_clusters: org.total_clusters,
           health_score: org.health_score,
           total_carbon_points: org.total_carbon_points,
-          total_invested: org.total_invested,
+          total_contracted: org.total_contracted,
           under_threat: org.under_threat?
         }
 
@@ -89,7 +89,7 @@ module Api
                          .where(clusters: { organization_id: org.id })
 
         @data = {
-          total_invested: org.total_invested,
+          total_contracted: org.total_contracted,
           active_contracts: org.naas_contracts.active.count,
           total_contracts: org.naas_contracts.count,
           blockchain_transactions: {
@@ -98,7 +98,7 @@ module Api
             pending: transactions.where(status: :pending).count,
             failed: transactions.where(status: :failed).count
           },
-          real_yield: fetch_real_yield
+          network_emission: fetch_network_emission
         }
 
         respond_to do |format|
@@ -132,19 +132,19 @@ module Api
 
       private
 
-      REAL_YIELD_DEFAULTS = { total_minted_scc: 0, total_burned_scc: 0, total_premiums_usdc: 0, net_deflation: 0 }.freeze
+      NETWORK_EMISSION_DEFAULTS = { total_minted_scc: 0, total_burned_scc: 0, total_premiums_usdc: 0, net_deflation: 0 }.freeze
 
       # [SEC.1] Премія — off-chain USDC-факт (NaasContract), береться з БД і мерджиться
       # сюди, тож збій subgraph НЕ обнуляє відому премію. Minted/burned/net_deflation —
       # з subgraph (кеш 5 хв). Раніше total_premiums_usdc читав ніколи-не-емітовану
       # on-chain подію PremiumPaid → вічний 0 (знято, канон 05_03).
-      def fetch_real_yield
-        cached_subgraph_real_yield.merge(total_premiums_usdc: NaasContract.total_insurance_premiums.to_i)
+      def fetch_network_emission
+        cached_subgraph_network_emission.merge(total_premiums_usdc: NaasContract.total_insurance_premiums.to_i)
       end
 
       # SCC-показники з subgraph (minted/burned/net_deflation), кеш 5 хв — щоб не блокувати
       # HTTP-запит GraphQL-раундтрипом. Премії тут НЕ беруться (DB-джерело — див. вище).
-      def cached_subgraph_real_yield
+      def cached_subgraph_network_emission
         Rails.cache.fetch("reports_real_yield", expires_in: 5.minutes) do
           financials = Timeout.timeout(10) do
             TheGraph::QueryService.new.fetch_protocol_financials
@@ -157,10 +157,10 @@ module Api
         end
       rescue TheGraph::QueryService::QueryError => e
         Rails.logger.warn("Real yield fetch failed: #{e.message}")
-        REAL_YIELD_DEFAULTS.except(:total_premiums_usdc)
+        NETWORK_EMISSION_DEFAULTS.except(:total_premiums_usdc)
       rescue StandardError => e
         Rails.logger.warn("Real yield fetch timeout: #{e.message}")
-        REAL_YIELD_DEFAULTS.except(:total_premiums_usdc)
+        NETWORK_EMISSION_DEFAULTS.except(:total_premiums_usdc)
       end
 
       # --- CSV Streaming ---
@@ -193,7 +193,7 @@ module Api
 
       def generate_financial_csv_enum(org, data)
         tx = data[:blockchain_transactions]
-        ry = data[:real_yield]
+        ry = data[:network_emission]
 
         Enumerator.new do |yielder|
           yielder << CSV.generate_line([ "Financial Summary Report" ])
@@ -201,7 +201,7 @@ module Api
           yielder << CSV.generate_line([ "Generated At", Time.current.iso8601 ])
           yielder << CSV.generate_line([])
           yielder << CSV.generate_line(%w[Metric Value])
-          yielder << CSV.generate_line([ "Total Invested", data[:total_invested] ])
+          yielder << CSV.generate_line([ "Total Contracted", data[:total_contracted] ])
           yielder << CSV.generate_line([ "Active Contracts", data[:active_contracts] ])
           yielder << CSV.generate_line([ "Total Contracts", data[:total_contracts] ])
           yielder << CSV.generate_line([])
@@ -211,7 +211,7 @@ module Api
           yielder << CSV.generate_line([ "Pending", tx[:pending] ])
           yielder << CSV.generate_line([ "Failed", tx[:failed] ])
           yielder << CSV.generate_line([])
-          yielder << CSV.generate_line([ "Real Yield (DePIN/ReFi)" ])
+          yielder << CSV.generate_line([ "Network Emission (DePIN/ReFi)" ])
           yielder << CSV.generate_line([ "Total Minted SCC", ry[:total_minted_scc] ])
           yielder << CSV.generate_line([ "Total Burned SCC", ry[:total_burned_scc] ])
           yielder << CSV.generate_line([ "Total Premiums USDC", ry[:total_premiums_usdc] ])
@@ -254,7 +254,7 @@ module Api
 
       def generate_financial_pdf(org, data)
         tx = data[:blockchain_transactions]
-        ry = data[:real_yield]
+        ry = data[:network_emission]
 
         Prawn::Document.new do |pdf|
           pdf.text "Financial Summary Report", size: 20, style: :bold
@@ -266,7 +266,7 @@ module Api
           pdf.table(
             [
               [ "Metric", "Value" ],
-              [ "Total Invested", data[:total_invested].to_s ],
+              [ "Total Contracted", data[:total_contracted].to_s ],
               [ "Active Contracts", data[:active_contracts].to_s ],
               [ "Total Contracts", data[:total_contracts].to_s ]
             ],
@@ -301,7 +301,7 @@ module Api
           end
 
           pdf.move_down 20
-          pdf.text "Real Yield (DePIN/ReFi)", size: 14, style: :bold
+          pdf.text "Network Emission (DePIN/ReFi)", size: 14, style: :bold
           pdf.move_down 10
 
           pdf.table(

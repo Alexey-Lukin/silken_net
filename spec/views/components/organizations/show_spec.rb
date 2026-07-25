@@ -18,13 +18,13 @@ RSpec.describe Organizations::Show do
 
   def mock_org(name: "Cherkasy Forest Fund", created_at: 2.years.ago,
                crypto_public_address: "0xABCD1234", billing_email: "billing@forest.org",
-               total_invested: "50000")
+               total_contracted: "50000")
     OpenStruct.new(
       name: name,
       created_at: created_at,
       crypto_public_address: crypto_public_address,
       billing_email: billing_email,
-      total_invested: total_invested
+      total_contracted: total_contracted
     )
   end
 

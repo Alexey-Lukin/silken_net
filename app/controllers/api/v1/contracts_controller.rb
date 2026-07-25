@@ -13,10 +13,10 @@ module Api
 
         # Агрегуємо дані для Phlex-дашборду, використовуючи твою логіку
         @stats = {
-          total_invested: scope.sum(:total_value),
+          total_contracted: scope.sum(:total_value),
           total_minted: scope.sum(:emitted_tokens),
           # [ОПТИМІЗАЦІЯ]: SQL агрегація замість перебору масиву в Ruby
-          portfolio_health: calculate_portfolio_health_for_scope(scope)
+          cluster_health: calculate_cluster_health_for_scope(scope)
         }
 
         respond_to do |format|
@@ -82,10 +82,10 @@ module Api
         return render_forbidden unless organization
 
         render json: {
-          total_invested: organization.naas_contracts.sum(:total_value),
+          total_contracted: organization.naas_contracts.sum(:total_value),
           total_tokens_minted: organization.naas_contracts.sum(:emitted_tokens),
-          portfolio_health: calculate_portfolio_health(organization),
-          market_value_usd: calculate_market_value(organization)
+          cluster_health: calculate_cluster_health(organization),
+          attested_value_usd: calculate_attested_value(organization)
         }
       end
 
@@ -96,7 +96,7 @@ module Api
       end
 
       # [ОПТИМІЗАЦІЯ]: Використовуємо SQL average для економії RAM
-      def calculate_portfolio_health(org)
+      def calculate_cluster_health(org)
         return 1.0 if org.clusters.empty?
         org.clusters.average(:health_index) || 1.0
       rescue
@@ -104,14 +104,14 @@ module Api
       end
 
       # [ОПТИМІЗАЦІЯ]: SQL агрегація для вибірки контрактів (joins + average)
-      def calculate_portfolio_health_for_scope(contracts)
+      def calculate_cluster_health_for_scope(contracts)
         return 100 if contracts.empty?
         # Розрахунок середнього здоров'я через SQL для уникнення N+1 та забиття пам'яті
         (contracts.joins(:cluster).average("clusters.health_index") || 100.0).round(1)
       end
 
       # [DYNAMIC PRICE]: Заміна хардкоду на Oracle Service
-      def calculate_market_value(org)
+      def calculate_attested_value(org)
         # Ціна SCC тепер динамічна, підтягується з DEX через наш сервіс
         current_price = PriceOracleService.current_scc_price
         org.naas_contracts.sum(:emitted_tokens) * current_price
