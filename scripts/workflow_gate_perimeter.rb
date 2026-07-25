@@ -3,7 +3,7 @@
 
 # Gate-perimeter meta-guard (OPS.14).
 #
-# `main`'s branch protection requires all seven deterministic PR-gates —
+# `main`'s branch protection requires all eight deterministic PR-gates —
 # `CI passed` (ci-ok), `Docs passed` (docs-ok), `Solidity passed` (money-path
 # SCC/SFC/Governor), and the `CAD passed` / `ML passed` / `In-silico passed` /
 # `IaC passed` smokes. Only `ssot_guard.yml` stays advisory-by-design (path-gated
