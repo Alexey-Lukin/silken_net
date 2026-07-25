@@ -1,93 +1,141 @@
 # Defensive Disclosure — SilkenNet self-powered tree-health monitor (prior art)
 
-> **Що це:** **публічне технічне розкриття** інвентивного ядра SilkenNet, оприлюднене **навмисно** як
-> **prior art**. Мета — НЕ патент, а протилежне: зафіксувати винахід у публічному домені, щоб (a) він
-> лишався **вільним для всіх лісів і спільнот** і (b) **ніхто не зміг його запатентувати** й заблокувати
-> мережу (анти-захоплення). Це чесна реалізація постави **defensive-publication-first**.
-> **Статус:** 🟢 disclosure-ready (для TDCommons + публічний repo + наукова стаття = три prior-art-якорі).
-> **Канон постави:** [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) ·
-> ландшафт новизни → [`prior_art_landscape.md`](prior_art_landscape.md) ·
-> EBFC → [`01_03`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) ·
-> gyroid → [`01_01`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md).
+> **Author / discloser:** Oleksii Lukin (SilkenNet) · **Public repository:** `github.com/Alexey-Lukin/silken_net`
+> **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-07-25
+> **Status:** disclosure-ready for submission to Technical Disclosure Commons.
 >
-> **Чому публікуємо, а не патентуємо** ([`07_03 §3`](../../07_03_Academic_Integration_and_IP.md)): для місія-first проєкту з публічним repo, solo-UA
-> enforcement-реальністю та open/DePIN-ДНК **defensive publication досягає анти-захоплення без вартості
-> й виключності патенту** — опублікований винахід стає prior art, тож його не можна монополізувати, а
-> мережа лишається спільним надбанням. Дата цього розкриття + публічний git-історія + наукова стаття =
-> докази пріоритету розкриття.
+> **What this is:** a deliberate **public technical disclosure** of the inventive core of SilkenNet,
+> published **as prior art**. The goal is the opposite of a patent: to place the invention in the public
+> record so that (a) it stays **free for every forest and community** to use, and (b) a third party cannot
+> obtain valid claims over it and lock the network out. This is the honest execution of a
+> **defensive-publication-first** posture.
+>
+> **Why publish rather than patent:** for a mission-first project with a public repository, the
+> enforcement reality of a solo Ukrainian rights-holder, and open/DePIN DNA, defensive publication
+> achieves anti-capture without the cost and exclusivity of a patent. Disclosure posture is owned by
+> [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md); novelty landscape →
+> [`prior_art_landscape.md`](prior_art_landscape.md); technical canon →
+> [`01_03`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) (EBFC) ·
+> [`01_01`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) (gyroid).
+>
+> **Language note.** This document is written wholly in English, unlike the rest of this repository.
+> That is deliberate: prior art only defeats a later claim if an examiner actually **finds** it, and
+> patent examination is conducted through English full-text and CPC classification search. A disclosure
+> nobody retrieves is legally public and practically useless. State home → [`00_07`](../../00_07_Action_Plan_Tracker.md) UNI.3.
 
 ---
 
-## 1. Інвентивне ядро — дві синергії
+## 1. Inventive core — two synergies
 
-Кожен **окремий** компонент (gyroid-Ti-імплант, FAD-GDH/Os EBFC, laccase/ZIF-катод, LoRa-mesh,
-blockchain-MRV) має prior art (`prior_art_landscape.md`). Сутність — **не деталі, а дві синергії, яких
-не вчить жодне джерело**; саме їх ми розкриваємо публічно, щоб закріпити як спільне надбання:
+Every component **taken separately** — gyroid titanium implant, FAD-GDH/Os enzymatic biofuel cell,
+laccase/ZIF cathode, LoRa mesh, blockchain-anchored MRV — already has prior art
+([`prior_art_landscape.md`](prior_art_landscape.md)). The substance of this disclosure is therefore **not
+the components but two synergies that no single source teaches**, and it is precisely those that are
+placed here into the public record:
 
-- **СИНЕРГІЯ A — EBFC подвійної функції:** один і той самий ензимний біопаливний елемент **ОДНОЧАСНО**
-  (a) живить електроніку *і* (b) є біосенсором з **нульовим інструментальним шумом** — сам час заряду
-  `delta_t` суперконденсатора Є вимірювальним сигналом фізіології дерева (немає окремого сенсора → немає
-  його шуму, живлення чи дрейфу). Інженерія зазвичай *додає* сенсор; тут його *усунуто*.
-- **СИНЕРГІЯ B — gyroid потрійної функції:** одна triply-periodic-minimal-surface (gyroid) геометрія
-  **ОДНОЧАСНО** (a) впускає ксилемний сік у пористий об'єм, (b) дає isoelastic stress-matching до живої
-  деревини, (c) формує **електрод інтерфейсу метал↔ксилема** того самого EBFC.
-
----
-
-## 2. Розкрита система (опис, не претензії)
-
-Саможивний пристрій *in-situ* моніторингу фізіологічного стану живої деревної тканини, що містить:
-
-- **(a) пористий металевий анкер** з адитивно-виготовленого титанового сплаву (Ti-6Al-4V) з **gyroid**
-  (TPMS) архітектурою для імплантації у ксилему живого дерева, де gyroid **одночасно** (i) впускає
-  ксилемний сік у пористий об'єм, (ii) дає isoelastic градієнт жорсткості, узгоджений із живою
-  деревиною, (iii) утворює електрод інтерфейсу метал↔ксилема (≈65% пористість; вісь комірки ∥ потоку соку);
-- **(b) ензимний біопаливний елемент (EBFC)** на цьому інтерфейсі: анод із іммобілізованою флавін-
-  залежною оксидоредуктазою (dgrFAD-GDH), що окислює ксилемну глюкозу через редокс-медіатор (Os-bis-
-  bipyridyl полівінілімідазол у genipin-зшитій хітозан/CNC матриці); катод відновлення O₂ (laccase /
-  трьохметалевий Cu-Co-Ce ZIF-нанозим, DET);
-- **(c) накопичувач енергії** (суперконденсатор), що заряджається від EBFC і живить електроніку;
-- **(d) обчислювальний вузол**, що виводить сигнал здоров'я **з самої динаміки заряду накопичувача** —
-  тобто EBFC **одночасно** живить пристрій і слугує його сенсором без окремого вимірювального перетворювача;
-
-де **час `delta_t`**, потрібний EBFC для заряду накопичувача через визначене вікно напруги, обробляється
-як **первинний фізіологічний показник**, а стан здоров'я класифікується з **нелінійної (хаотичної)
-часової динаміки** ряду таких інтервалів (детермінований атрактор Лоренца, параметризований `delta_t` +
-температурою + акустичною емісією — [`03_04`](../../03_04_mruby_Lorenz_Attractor.md)).
-
-**Розширення:** LoRa-mesh, де кожен вузол живиться **виключно власним EBFC**; класифікації фіксуються у
-розподіленому реєстрі як верифікаційний шар MRV; зональне захисне покриття на поверхнях, **інших** за
-enzyme-несучу gyroid-стінку (щоб не пасивувати EBFC-інтерфейс).
+- **SYNERGY A — dual-function EBFC.** One and the same enzymatic biofuel cell **simultaneously**
+  (a) powers the electronics *and* (b) acts as the biosensor with **zero instrumental noise**: the
+  supercapacitor charge time `delta_t` **is itself** the measurement of tree physiology. Because there is
+  no separate sensor, there is no separate sensor noise, sensor power draw, or sensor drift. Conventional
+  engineering *adds* a sensor; here the sensor is *eliminated*.
+- **SYNERGY B — triple-function gyroid.** A single triply-periodic-minimal-surface (gyroid) geometry
+  **simultaneously** (a) admits xylem sap into its porous volume, (b) provides isoelastic stress matching
+  to living wood, and (c) forms the metal↔xylem interface electrode of that same EBFC.
 
 ---
 
-## 3. Розкритий метод (опис)
+## 2. Disclosed system (description, not claims)
 
-Спосіб моніторингу здоров'я живого дерева: імплантувати у ксилему пористий gyroid Ti-сплав-анкер, що
-**одночасно** інтегрується з потоком соку, пружно узгоджується з деревиною і формує EBFC-електрод
-метал↔ксилема; генерувати електроенергію з ксилемної глюкози на цьому EBFC; зберігати її в накопичувачі;
-і виводити сигнал здоров'я **з динаміки часу заряду того самого елемента** — так, що один ензимний
-біопаливний елемент і живить моніторинг, і є його сенсором з нульовим інструментальним шумом.
+A self-powered device for *in-situ* monitoring of the physiological state of living woody tissue,
+comprising:
+
+- **(a) a porous metal anchor** of additively manufactured titanium alloy (Ti-6Al-4V) with a **gyroid**
+  (TPMS) architecture, for implantation into the xylem of a living tree, wherein the gyroid
+  **simultaneously** (i) admits xylem sap into the porous volume, (ii) provides a stiffness gradient
+  isoelastic with living wood, and (iii) constitutes the metal↔xylem interface electrode (≈65% porosity;
+  unit-cell axis parallel to sap flow);
+- **(b) an enzymatic biofuel cell (EBFC)** at that interface: an anode carrying an immobilised
+  flavin-dependent oxidoreductase (deglycosylated FAD-dependent glucose dehydrogenase, dgrFAD-GDH) that
+  oxidises xylem glucose via a redox mediator (an osmium bis-bipyridyl polyvinylimidazole complex in a
+  genipin-crosslinked chitosan/cellulose-nanocrystal matrix); and an oxygen-reduction cathode (laccase, or
+  a trimetallic Cu-Co-Ce zeolitic-imidazolate-framework nanozyme operating by direct electron transfer);
+- **(c) an energy store** (supercapacitor) charged by the EBFC and powering the electronics;
+- **(d) a compute node** that derives a health signal **from the charge dynamics of that energy store
+  itself** — so that the EBFC **simultaneously** powers the device and serves as its sensor, with no
+  separate measurement transducer;
+
+wherein the **time `delta_t`** required by the EBFC to charge the energy store across a defined voltage
+window is treated as the **primary physiological indicator**, and health state is classified from the
+**non-linear (chaotic) temporal dynamics** of a series of such intervals — a deterministic Lorenz
+attractor parameterised by `delta_t`, temperature and acoustic emission
+([`03_04`](../../03_04_mruby_Lorenz_Attractor.md)).
+
+**Extensions.** A LoRa mesh in which every node is powered **solely by its own EBFC**; classifications
+committed to a distributed ledger as the verification layer of a measurement-reporting-verification
+system; and zonal protective coating applied to surfaces **other than** the enzyme-bearing gyroid wall, so
+as not to passivate the EBFC interface.
 
 ---
 
-## 4. Як це опубліковано (prior-art якорі)
+## 3. Disclosed method (description)
 
-- **TDCommons** (technical disclosure commons) — безкоштовна платформа defensive publication → індексується патентними офісами.
-- **Публічний git-репозиторій** SilkenNet (цей файл) — датоване публічне розкриття.
-- **Наукова стаття** (Стаття 1, [`07_03 §2.1`](../../07_03_Academic_Integration_and_IP.md)) — рецензований prior art механізму.
-
-Разом вони роблять інвентивне ядро **неможливим для патентування третіми сторонами** і назавжди
-вільним для використання у моніторингу здоров'я лісів. Жоден патент SilkenNet не подається
-(patent non-assertion pledge — `NOTICE`, [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md)).
+A method of monitoring the health of a living tree: implanting into its xylem a porous gyroid titanium
+alloy anchor that **simultaneously** integrates with sap flow, matches the elastic response of the wood,
+and forms the metal↔xylem electrode of an enzymatic biofuel cell; generating electrical energy from xylem
+glucose at that cell; storing that energy in an energy store; and deriving a health signal **from the
+charge-time dynamics of that same cell** — such that a single enzymatic biofuel cell both powers the
+monitoring and constitutes its sensor, with zero instrumental noise.
 
 ---
 
-## 5. Cross-references
+## 4. Enablement and incorporation by reference
 
-| Ресурс | Що бере |
+This document discloses the **combination**. The quantitative and procedural detail that makes it
+reproducible by a person skilled in the art — enzyme loading and immobilisation protocol, mediator
+synthesis, gyroid wall parameter and unit-cell period, the defined charge voltage window, energy-store
+capacitance, and the Lorenz parameterisation and thresholds — is **published in the same public
+repository, on and since the dates above**, and is incorporated here by reference:
+
+| Referenced disclosure | Supplies |
 |---|---|
-| [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) | **owner** IP-постави (defensive-publication-first + ліцензії + pledge) |
-| [`prior_art_landscape.md`](prior_art_landscape.md) | ландшафт новизни (доказ + анти-захоплення FTO-lite) |
-| [`01_03`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) · [`01_01`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) | EBFC / gyroid технічний канон |
-| [`03_04`](../../03_04_mruby_Lorenz_Attractor.md) | хаотична класифікація `delta_t` (Lorenz) |
+| [`01_03`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) | EBFC chemistry: enzyme, mediator, matrix, membrane, cathode |
+| [`01_01`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) | Gyroid geometry, porosity, zonal architecture |
+| [`03_04`](../../03_04_mruby_Lorenz_Attractor.md) | Chaotic classification of `delta_t` (Lorenz parameterisation) |
+| [`02_03`](../../02_03_BQ25570_MPPT_Nano_Power.md) | Energy-store charging path and voltage window |
+
+Those documents are part of the same dated, publicly accessible repository; together with this disclosure
+they constitute an enabling publication of the combination described in §2 and §3.
+
+---
+
+## 5. Publication anchors
+
+- **Technical Disclosure Commons** — a no-fee defensive-publication venue whose records are indexed and
+  consulted by patent offices.
+- **The public SilkenNet git repository** — this file, with a verifiable commit date.
+- **A peer-reviewed article** (Article 1, [`07_03 §2.1`](../../07_03_Academic_Integration_and_IP.md)) —
+  peer-reviewed prior art for the mechanism.
+
+Together these create **citable prior art** for the combination disclosed above, which should prevent a
+third party from obtaining *valid* claims over it and keep it free for use in forest-health monitoring.
+Stated precisely, and deliberately not more strongly than is true: prior art does not make patenting
+impossible — an application may still issue if the art is never retrieved, and defeating it then requires
+opposition or invalidation. That is exactly why the venue, the English text and the indexed commit date
+matter, and why the anti-capture search remains a separate open task
+([`00_07`](../../00_07_Action_Plan_Tracker.md) UNI.3).
+
+**Non-assertion.** SilkenNet files no patents on this technology; should any ever be obtained
+defensively, an irrevocable non-assertion pledge applies to all good-faith users — see `/NOTICE` and
+[`07_03 §3`](../../07_03_Academic_Integration_and_IP.md).
+
+---
+
+## 6. Cross-references
+
+| Resource | Role |
+|---|---|
+| [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) | **owner** of the IP posture (defensive-publication-first, licences, pledge) |
+| [`prior_art_landscape.md`](prior_art_landscape.md) | novelty landscape and anti-capture (FTO-lite) scan plan |
+| [`01_03`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) · [`01_01`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) | EBFC / gyroid technical canon |
+| [`03_04`](../../03_04_mruby_Lorenz_Attractor.md) | chaotic classification of `delta_t` (Lorenz) |
+| [`00_07`](../../00_07_Action_Plan_Tracker.md) | state: UNI.3 (disclosure execution), UNI.15 (trademark timing) |
