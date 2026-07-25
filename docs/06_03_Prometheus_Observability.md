@@ -657,7 +657,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 
 1. **Lean** — Один gem, нуль транзитивного bloat. Gemfile залишається чистим.
 2. **Офіційний** — Підтримується самою організацією Prometheus (не community wrapper).
-3. **Thread-safe** — Критично для Sidekiq workers (16 потоків × 9 черг).
+3. **Thread-safe** — Критично для Sidekiq workers (15 потоків × 9 черг; SSOT числа — `config/sidekiq.yml`).
 4. **Кастомні метрики** — Нам потрібні domain-specific counters (`scc_minted_total`, `rpc_errors_total`), а не generic Rails request histograms. Авто-інструментація Yabeda додає шум.
 5. **Rails 8.1 native** — Працює з `ActiveSupport::Notifications`. Немає конфліктів з framework.
 6. **Без Redis залежності** — Метрики живуть у пам'яті процесу. Без зайвої інфраструктури.
