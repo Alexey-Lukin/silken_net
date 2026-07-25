@@ -6,9 +6,9 @@
 # `main`'s branch protection requires all eight deterministic PR-gates —
 # `CI passed` (ci-ok), `Docs passed` (docs-ok), `Solidity passed` (money-path
 # SCC/SFC/Governor), and the `CAD passed` / `ML passed` / `In-silico passed` /
-# `IaC passed` smokes. Only `ssot_guard.yml` stays advisory-by-design (path-gated
-# red-X informs, does not block). One entry is flip-pending: `dco.yml` (UNI.20) —
-# its aggregate is in place, the branch-protection flip is a founder action.
+# `IaC passed` smokes + `DCO passed`. Only `ssot_guard.yml` stays
+# advisory-by-design (path-gated red-X informs, does not block); the flip-pending
+# bucket is EMPTY — `dco.yml` was the last tenant and the founder flipped it.
 # Nothing watched the gate PERIMETER itself: a new deterministic PR-gate can be
 # born outside the required
 # set and nobody notices — exactly how the money-path Solidity audit stayed
@@ -83,7 +83,128 @@ module WorkflowGatePerimeter
 
   CLASSES = %i[required advisory_by_design flip_pending].freeze
 
+  # ── (d)+(e) prose-claim consistency [DOC-T.51] ───────────────────────────────
+  # The required-gate COUNT settles into a dozen prose homes (canon, PR template,
+  # assurance case, skills, this file's own header) and no guard watched it: the
+  # only thing that knew the truth was `--live`, which cannot run in CI. These two
+  # checks need no token — they compare prose against the PERIMETER hash above,
+  # which `--live` independently verifies against the API on a manual run.
+  CLAIM_TREES = %w[docs .github .claude scripts].freeze
+  CLAIM_EXTS  = %w[.md .yml .yaml .rb].freeze
+  # release-please generates CHANGELOG.md from commit subjects — not a claim surface.
+  CLAIM_SKIP  = /(^|\/)CHANGELOG\.md$/.freeze
+
+  # The anchor is a COLLOCATION, not a word. `required` and `deterministic` alone
+  # are among the commonest words in this canon — anchoring on them made the check
+  # ~19% precise (a noisy gate is a disabled gate). It must be `required` + a
+  # gate-noun, or an explicit PR/CI-gate compound.
+  GATE_ANCHOR = /
+      required[\s\-]*(?:status[\s\-]*check\w*|aggregate\w*|чек\w*|контекст\w*|gate\w*|гейт\w*)
+    | (?:PR|CI)[\s\-]?(?:гейт\w*|gate\w*)
+    | status[\s\-]check\w*
+  /xi
+  # Spelled-out forms actually used in this corpus (uk declensions + en).
+  WORD_NUMS = { "сім" => 7, "семи" => 7, "сьом" => 7, "seven" => 7,
+                "вісім" => 8, "восьм" => 8, "вісьм" => 8, "eight" => 8,
+                "шість" => 6, "шести" => 6, "six" => 6,
+                "дев'ять" => 9, "дев'яти" => 9, "nine" => 9 }.freeze
+  PLAUSIBLE = (5..12)
+  PROXIMITY = 45 # chars between numeral and gate word for it to read as a claim
+
   module_function
+
+  # Strip tokens that carry digits but are NOT counts: code spans (`06_07 §2`,
+  # `ci.yml`), doc-ids, §-refs, ISO dates, ordinals in parens.
+  def scrub_numerals(line)
+    line.gsub(/`[^`]*`/, " ")
+        .gsub(/\d\d_\d\d/, " ")
+        .gsub(/§\s*\d+(?:\.\d+)*/, " ")
+        .gsub(/\(\d+\)/, " ")
+        .gsub(/\bTRL[\s-]*\d+/i, " ") # "TRL 9" sits next to gate words in 00_04
+        .gsub(/~?\d+\+/, " ")         # "~150+ питань"
+  end
+
+  # (d) Every live prose claim about HOW MANY gates are required must equal the
+  #     :required count in PERIMETER.
+  # ⚠️ Declared ceiling: a line carrying an ISO date is read as a HISTORICAL
+  #    record ("завершено 2026-07-19: усі 7") and skipped — so a stale claim that
+  #    happens to carry a date stays invisible. Undated prose = a live claim.
+  def count_claim_violations(root: ROOT, perimeter: PERIMETER)
+    expected = perimeter.count { |_b, (cls, _m)| cls == :required }
+    each_claim_line(root).filter_map do |rel, lineno, line|
+      next unless line.match?(GATE_ANCHOR)
+      next if line.match?(/\d{4}-\d{2}-\d{2}/) # historical record, see ceiling above
+
+      text    = scrub_numerals(line)
+      anchors = text.enum_for(:scan, GATE_ANCHOR).map { Regexp.last_match.begin(0) }
+      next if anchors.empty? # the anchor lived inside a scrubbed code span
+
+      # Proximity is what separates a CLAIM from a coincidence: the numeral must
+      # sit next to the gate word, not merely on the same line.
+      found = text.enum_for(:scan, /(?<![\d.])(\d{1,2})(?![\d.])/)
+                  .map { [ Regexp.last_match[1].to_i, Regexp.last_match.begin(0) ] }
+      WORD_NUMS.each do |stem, v|
+        text.enum_for(:scan, /(?<!\p{L})#{Regexp.escape(stem)}/i)
+            .each { found << [ v, Regexp.last_match.begin(0) ] }
+      end
+      bad = found.select { |n, pos|
+        PLAUSIBLE.cover?(n) && n != expected &&
+          anchors.any? { |a| (a - pos).abs <= PROXIMITY }
+      }.map(&:first).uniq
+      next if bad.empty?
+
+      "#{rel}:#{lineno} claims #{bad.join('/')} required gate(s) — PERIMETER has " \
+        "#{expected}: #{line.strip[0, 100]}"
+    end
+  end
+
+  # (e) Prose that names a workflow as flip-pending must agree with its PERIMETER
+  #     class. Catches this file's OWN header, which claimed `dco.yml` was
+  #     flip-pending four lines under a sentence saying all eight are required.
+  def flip_claim_violations(root: ROOT, perimeter: PERIMETER)
+    each_claim_line(root).filter_map do |rel, lineno, line|
+      next if line.match?(/\d{4}-\d{2}-\d{2}/) # dated = historical record (same ceiling as (d))
+
+      m = line.match(/flip[-\s_]?pending/i)
+      next unless m
+
+      # A CLAIM names ONE workflow after the phrase ("flip-pending: <one>.yml").
+      # A line listing several is DEFINITIONAL (it enumerates all three classes) —
+      # declared ceiling: a stale definitional line stays invisible to this check.
+      names = line[m.end(0)..].to_s.scan(/([a-z0-9_]+\.yml)/).flatten.uniq
+      next unless names.size == 1
+
+      wf  = names.first
+      cls = perimeter[wf]&.first
+      next if cls == :flip_pending
+
+      "#{rel}:#{lineno} calls `#{wf}` flip-pending, but PERIMETER classifies it " \
+        "#{cls ? ":#{cls}" : "not at all"}: #{line.strip[0, 100]}"
+    end
+  end
+
+  def each_claim_line(root)
+    return enum_for(:each_claim_line, root) unless block_given?
+
+    CLAIM_TREES.each do |tree|
+      Dir.glob(File.join(root, tree, "**", "*")).sort.each do |path|
+        next unless File.file?(path) && CLAIM_EXTS.include?(File.extname(path))
+
+        rel = path.delete_prefix("#{root}/")
+        next if rel.match?(CLAIM_SKIP)
+
+        File.readlines(path, chomp: true).each_with_index do |line, i|
+          yield rel, i + 1, line
+        end
+      end
+    end
+    Dir.glob(File.join(root, "*.md")).sort.each do |path|
+      rel = path.delete_prefix("#{root}/")
+      next if rel.match?(CLAIM_SKIP)
+
+      File.readlines(path, chomp: true).each_with_index { |line, i| yield rel, i + 1, line }
+    end
+  end
 
   # pull_request-trigger detection, robust to the YAML-1.1 bare-`on:`→boolean
   # quirk (`on:` parses to the key `true`, not "on"). Deliberately does NOT count
@@ -243,14 +364,26 @@ if __FILE__ == $PROGRAM_NAME
     live_violations = lr[:violations]
   end
 
-  if result[:errors].empty? && live_violations.empty?
+  # (d)+(e) prose-claim consistency — no token needed, so these DO run in CI.
+  claim_violations = WorkflowGatePerimeter.count_claim_violations +
+                     WorkflowGatePerimeter.flip_claim_violations
+  required_n = WorkflowGatePerimeter::PERIMETER.count { |_b, (c, _m)| c == :required }
+  if claim_violations.empty?
+    puts "\nprose-claim consistency ✓ — every live claim agrees with PERIMETER " \
+         "(#{required_n} required)."
+  else
+    puts "\nprose-claim consistency ✗ — #{claim_violations.size} site(s) disagree " \
+         "with PERIMETER (#{required_n} required):"
+  end
+
+  if result[:errors].empty? && live_violations.empty? && claim_violations.empty?
     puts "\nworkflow_gate_perimeter ✓ — perimeter sound: every PR-gate classified, " \
          "no dead entry, every :required aggregate present" \
          "#{live ? " (+ live branch-protection verified)" : ""}."
     exit 0
   else
-    warn "\nworkflow_gate_perimeter ✗ — gate-perimeter drift (OPS.14):"
-    (result[:errors] + live_violations).each { |e| warn "  · #{e}" }
+    warn "\nworkflow_gate_perimeter ✗ — gate-perimeter drift (OPS.14 / DOC-T.51):"
+    (result[:errors] + live_violations + claim_violations).each { |e| warn "  · #{e}" }
     exit 1
   end
 end
