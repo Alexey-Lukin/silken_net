@@ -43,12 +43,12 @@
 					"failOnAssertion": true,
 					"failOnArithmeticUnderflow": false,
 					"failOnDivideByZero": false,
-					"failOnEnumTypeConversionOutOfBounds": false,
-					"failOnIncorrectStorageAccess": false,
-					"failOnPopEmptyArray": false,
-					"failOnOutOfBoundsArrayAccess": false,
-					"failOnAllocateTooMuchMemory": false,
-					"failOnCallUninitializedVariable": false
+					"failOnEnumTypeConversionOutOfBounds": true,
+					"failOnIncorrectStorageAccess": true,
+					"failOnPopEmptyArray": true,
+					"failOnOutOfBoundsArrayAccess": true,
+					"failOnAllocateTooMuchMemory": true,
+					"failOnCallUninitializedVariable": true
 				}
 			},
 			"propertyTesting": {

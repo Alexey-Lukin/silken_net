@@ -844,6 +844,12 @@ aderyn . --skip-update-check -o aderyn-report.sarif            # aderyn.toml
 medusa fuzz --config medusa-scc.json && medusa fuzz --config medusa-sfc.json
 ```
 
+> **Medusa `panicCodeConfig` — що ловимо і ЧОМУ саме так** [CONTRACT.2, 2026-07-25]. JSON коментарів не тримає, тож рішення живе тут. Увімкнено `failOnAssertion` + **шість logic-error панік**: `0x21` enum-конверсія · `0x22` incorrect storage access · `0x31` pop порожнього масиву · `0x32` вихід за межі масиву · `0x41` надмірне виділення пам'яті · `0x51` виклик неініціалізованої змінної. Це справжні логічні помилки, і на money-path вони мусять валити білд.
+>
+> **`failOnArithmeticUnderflow` (0x11) і `failOnDivideByZero` (0x12) лишаються `false` СВІДОМО** — на Solidity 0.8+ це не баги, а навмисні safety-реверти самого компілятора; фейл на них позначав би КОЖЕН інтенційний revert як знахідку й утопив би сигнал. `failOnCompilerInsertedPanic` off із тієї ж причини (він вмикає весь клас гуртом).
+>
+> ⚠️ **Чесна межа цього гейта.** Обидва конфіги мають `targetContracts: ["SCCMedusaTest"]` + `testAllContracts: false`, тобто Medusa набирає ABI **обгортки**, а не SCC/SFC. У харнесі — чотири функції, і кожна знезброює вхід фаззера ще до контракту (`amount = (amount % remaining) + 1`, `amount % (bal + 1)`). Тому **сьогодні жоден із шести кодів не має досяжного шляху**: вмикання — defense-in-depth на майбутнє (спрацює в мить, коли харнес розшириться), а не активний детектор. Найгостріший наслідок цієї межі — `batchMint` (єдина money-path функція з масивами під контролем фаззера) **взагалі поза фаззингом** → відкрите в [`00_07`](00_07_Action_Plan_Tracker) CONTRACT.2.
+
 **Operational Security (production) [SEC.1] — деталі §Admin-Role Split вище:**
 - `DEFAULT_ADMIN_ROLE` (токени + `ProtocolParameters`) → **SilkenTimelock** (48h) — ✅ `Deploy.s.sol`; видача будь-якої ролі за 48h
 - `PAUSER_ROLE` → **Gnosis Safe** (3/5 або 2/3) — миттєва пауза поза Timelock; 👤 **TODO**: реальний Safe + зовнішні co-signer'и
