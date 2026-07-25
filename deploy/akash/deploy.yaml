@@ -477,12 +477,13 @@ profiles:
   # ---------------------------------------------------------------------------
   # Compute Profile — Resource Allocation
   # ---------------------------------------------------------------------------
-  # Maps to: Terraform compute.tf → web_machine_type = "n2-standard-2"
+  # Akash IS the production Rails host — there is no GCP web machine to map to.
+  # terraform/compute.tf provisions exactly one instance, the e2-small Ingress
+  # Anchor (CoAP daemon + HAProxy); web/money-path stay decentralized by design.
   #
-  # Kamal/GCP production uses n2-standard-2 (2 vCPU, 8 GB RAM, 30 GB SSD).
-  # Akash allocation is set to 4 vCPU, 8 GB RAM, 50 GB ephemeral + 10 GB
-  # persistent — higher CPU to compensate for variable provider performance
-  # on a decentralized network.
+  # Akash allocation is 4 vCPU, 8 GB RAM, 50 GB ephemeral + 10 GB persistent —
+  # CPU is set high to absorb variable provider performance on a decentralized
+  # network, not to match some GCP baseline.
   compute:
     web:
       resources:

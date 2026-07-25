@@ -430,12 +430,14 @@ profiles:
               class: beta3
 ```
 
-| Ресурс | Akash | GCP Production | Пояснення |
+| Ресурс | Akash (production) | GCP Kamal (fallback) | Пояснення |
 |--------|-------|---------------|-----------|
-| **CPU** | 4 vCPU | 2 vCPU (n2-standard-2) | +2 vCPU для компенсації варіативності децентралізованих провайдерів |
+| **CPU** | 4 vCPU | 2 vCPU | +2 vCPU для компенсації варіативності децентралізованих провайдерів |
 | **RAM** | 8 GiB | 8 GB | Однаково |
 | **Ephemeral Disk** | 50 GiB | 30 GB SSD | Більше — контейнер включає gems, assets, tmp |
 | **Persistent Disk** | 10 GiB (`class: beta3`) | Docker volume `silken_net_storage` | Active Storage uploads + Rails logs |
+
+> ⚠️ **Колонка «GCP» = Kamal-fallback, а НЕ провіжений хост** [DOC-T.50]. Після інфра-півоту `terraform/compute.tf` піднімає рівно **один** інстанс — Ingress Anchor **`e2-small` (2 GB)** під CoAP-демон + HAProxy; Rails web/job живуть на Akash (`config/deploy.yml` шапка). Числа GCP-колонки = розмір, який обирає оператор при fallback-деплої, не специфікація наявної машини.
 
 **`class: beta3`** — клас персистентного зберігання Akash Network. Еквівалент SSD-блочного сховища. Перживає перезапуск контейнера на тому ж провайдері, але **не переноситься** при зміні провайдера.
 
@@ -645,6 +647,9 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 | Змінна | Значення в SDL | Required for | Опис |
 |--------|---------------|-------------|------|
 | `PROVISIONING_MASTER_KEY` | `REQUIRED_SECRET_NOT_SET` | **boot** | HKDF root key. `config/initializers/master_key_strength_check.rb` raises `SecurityError` у `after_initialize` → Puma crash. Generate: `SecureRandom.hex(32)` |
+| `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY` | `REQUIRED_SECRET_NOT_SET` | **boot** | AR-encryption at-rest (`hardware_keys` / `identities`). `Security::EncryptionKeyGuard::REQUIRED_ENVS` → `config/initializers/active_record_encryption_keys_check.rb` raises fail-closed. Свідомо **ENV, не credentials** — інакше вертається runtime-залежність від `RAILS_MASTER_KEY` (SEC.22). Generate: `bin/rails db:encryption:init` |
+| `ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY` | `REQUIRED_SECRET_NOT_SET` | **boot** | ↑ той самий guard (min 32 символи) |
+| `ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT` | `REQUIRED_SECRET_NOT_SET` | **boot** | ↑ той самий guard (min 32 символи) |
 
 ### 2.3 Observability
 
@@ -673,6 +678,8 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 | `ALCHEMY_POLYGON_RPC_URL` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Усі SCC/SFC операції на Polygon |
 | `ALCHEMY_ETHEREUM_RPC_URL` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Weekly L1 state-root anchor |
 | `SOLANA_RPC_URL` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Solana мікро-винагороди |
+| `CELO_RPC_URL` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Celo ReFi винагороди (`Celo::CommunityRewardService`) |
+| `HELIUM_WEBHOOK_SECRET` | `REQUIRED_SECRET_NOT_SET` | **runtime** | HMAC inbound-вебхука Helium (fail-closed у prod) |
 
 ### 2.6 Solana minting
 
@@ -972,9 +979,11 @@ akash tx deployment close \
 
 ## 5. Порівняння: Akash vs GCP Production
 
-| Параметр | GCP Production 🌲 | Akash ☁️ | Статус |
+> ⚠️ Колонка «GCP» тут — той самий **Kamal-fallback**, не провіжений веб-хост (див. ноту під таблицею ресурсів вище, [DOC-T.50]).
+
+| Параметр | GCP Kamal fallback 🌲 | Akash ☁️ (production) | Статус |
 |----------|-------------------|----------|--------|
-| **CPU** | 2 vCPU (n2-standard-2) | 4 vCPU | ✅ Більше для компенсації |
+| **CPU** | 2 vCPU | 4 vCPU | ✅ Більше для компенсації |
 | **RAM** | 8 GB | 8 GiB | ✅ Однаково |
 | **Ephemeral Disk** | 30 GB SSD | 50 GiB | ✅ Більше |
 | **Persistent Disk** | Docker volume | 10 GiB (`beta3`) | ✅ Аналогічно |
@@ -1039,6 +1048,9 @@ Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/s
 | Kamal `env.secret` | Akash SDL (web + job) | Terraform variable |
 |-------------------|----------------------|---------------------|
 | `PROVISIONING_MASTER_KEY` | `PROVISIONING_MASTER_KEY=${provisioning_master_key}` | `var.provisioning_master_key` |
+| `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY` | `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=${active_record_encryption_primary_key}` | `var.active_record_encryption_primary_key` |
+| `ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY` | `ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=${active_record_encryption_deterministic_key}` | `var.active_record_encryption_deterministic_key` |
+| `ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT` | `ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=${active_record_encryption_key_derivation_salt}` | `var.active_record_encryption_key_derivation_salt` |
 
 **Observability:**
 

@@ -142,7 +142,10 @@ env:
     # Mailer link host (config/environments/production.rb action_mailer.default_url_options).
     APP_HOST: silkennet.com
     # Puma clustered mode — number of forked worker processes.
-    # GCP n2-standard-2 has 2 vCPUs, so 2 workers saturate both cores.
+    # Fallback path only (see the `servers:` note above — Rails runs on Akash at
+    # WEB_CONCURRENCY=4). 2 is a conservative default for a small 2-vCPU fallback
+    # host; it is NOT the spec of a provisioned machine — the only GCP instance is
+    # the e2-small Ingress Anchor, which runs no Puma.
     # Combined with preload_app! + jemalloc, CoW sharing cuts memory ~30-40%.
     WEB_CONCURRENCY: 2
 

@@ -11,8 +11,11 @@
 # Copy-on-Write (CoW) across forked workers, cutting per-worker RSS by ~30-40%.
 #
 # Infrastructure targets:
-#   GCP (Kamal):  n2-standard-2 → 2 vCPU, 8 GB RAM  → WEB_CONCURRENCY=2
-#   Akash (SDL):  4 CPU units,   8 GB RAM             → WEB_CONCURRENCY=4
+#   Akash (SDL):  4 CPU units, 8 GB RAM → WEB_CONCURRENCY=4   ← Rails runs HERE
+#   Kamal (GCP):  fallback path only. After the infra pivot GCP hosts just the
+#                 e2-small Ingress Anchor (CoAP daemon + HAProxy, no Puma —
+#                 terraform/compute.tf); deploy.yml pins WEB_CONCURRENCY=2 as a
+#                 conservative default for that path, not a machine spec.
 #
 # For DSL reference see: https://puma.io/puma/Puma/DSL.html
 # =============================================================================

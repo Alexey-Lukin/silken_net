@@ -68,7 +68,7 @@ workers ENV.fetch("WEB_CONCURRENCY", default_workers)
 | Platform | vCPU | `WEB_CONCURRENCY` | RSS budget |
 |---|---|---|---|
 | Akash SDL | 4 CPU units | 4 | ~4 × 300 MB = 1.2 GB |
-| GCP Kamal (n2-standard-2) | 2 vCPU | 2 | ~2 × 300 MB = 600 MB |
+| GCP Kamal (fallback) | 2 vCPU | 2 | ~2 × 300 MB = 600 MB |
 | Local dev | 8–16 cores | 0 (single-mode) | ~300 MB |
 
 **Development (workers=0):** У development Puma запускається в single-mode (без fork). Це відповідає блоку `cluster do … end` в `puma.rb`, чиї хуки reconnect-after-fork **ніколи** не виконуються в single mode. Single-mode спрощує debugging (`binding.irb`, `debug` gem) та уникає master/worker fork-танцю.
