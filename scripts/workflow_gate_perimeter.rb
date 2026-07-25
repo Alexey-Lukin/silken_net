@@ -71,13 +71,14 @@ module WorkflowGatePerimeter
     "ml_smoke.yml"        => [ :required,           "ML passed" ],
     "in_silico_smoke.yml" => [ :required,           "In-silico passed" ],
     "iac_scan.yml"        => [ :required,           "IaC passed" ],
-    # DCO sign-off on inbound PRs. :flip_pending, not :required — the aggregate
-    # exists and carries the exact context name, but branch protection is a
-    # founder action this repo's CI token cannot perform, so claiming :required
-    # here would be precisely the "canon says gating, nothing gates" drift this
-    # guard was built to catch. Flip → :required once `DCO passed` is added to
-    # the required set (👤 checkbox in 00_07 UNI.20).
-    "dco.yml"             => [ :flip_pending,       "UNI.20" ]
+    # DCO sign-off on inbound PRs. :flip_pending until 2026-07-25, when the founder
+    # added `DCO passed` to the required set — verified live against the API, not
+    # assumed (`gh api …/branches/main/protection/required_status_checks` returns it
+    # among 8 contexts). Held at :flip_pending before that on purpose: branch
+    # protection is a founder action this repo's CI token cannot perform, and
+    # claiming :required early would be exactly the "canon says gating, nothing
+    # gates" drift this guard exists to catch.
+    "dco.yml"             => [ :required,           "DCO passed" ]
   }.freeze
 
   CLASSES = %i[required advisory_by_design flip_pending].freeze
