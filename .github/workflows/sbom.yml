@@ -1,0 +1,122 @@
+name: Sec · SBOM
+
+# [BIZ.24] Aggregated CycloneDX-1.6 SBOM of the whole polyglot dependency surface.
+#
+# WHY. EU CRA Annex I Part II point (1) requires a machine-readable SBOM "covering
+# at the very least the top-level dependencies"; enterprise procurement asks for one
+# before it asks about CRA. Two SBOMs already exist and neither is the product:
+# `mirror-ghcr.yml` attaches a BuildKit SBOM of the CONTAINER IMAGE (Ruby runtime
+# surface only), and `cad_smoke.yml` emits a CycloneDX of the .NET CAD tool. Neither
+# sees the firmware's vendored C, the conda pins the EBFC paper ran on, or the gems.
+#
+# NOT a merge gate — deliberately no `pull_request` trigger. An SBOM is an artefact,
+# not a correctness claim, and adding a PR trigger would pull this into the OPS.14
+# required-check perimeter for zero safety gain.
+#
+# 🔴 WHY OUR OWN SCRIPTS instead of one scanner. Verified empirically (2026-07-25),
+# not read from docs:
+#   · git submodules — invisible to Syft, to Trivy, AND to GitHub's own
+#     dependency-graph SBOM (0 of our 10). Yet `firmware/extern/` is third-party C
+#     compiled INTO the Soldier/Queen binary. → `sbom_submodules.rb`
+#   · `tools/in_silico/conda-lock.yml` — no tool reads it at all (cyclonedx-python
+#     dropped conda in v4). Trivy reads `environment.yml` but yields names WITHOUT
+#     versions, because our env pins ranges. → `sbom_conda_lock.rb` (exact versions
+#     + sha256 from the lock)
+#   · the merge — `cyclonedx-cli` works, but defaults to specVersion **1.7** and
+#     demotes each fragment's `metadata.component` into `components[]` (10 + 517
+#     → 529, not 527). Ours asserts 1.6 and keeps scan subjects out. → `sbom_merge.rb`
+#
+# NAMED CEILINGS [BIZ.24] — what this job does NOT cover, stated so a green run is
+# not misread as full coverage:
+#   · Ruby/npm layers come from Trivy `fs`; it misses a git-sourced npm dep that
+#     Syft catches, and it does not read our non-standard `requirements-*.txt` names.
+#     Adding Syft needs a verified action pin — not fabricated here.
+#   · `tools/ml/environment.yml` has NO lock file, so its versions are ranges. The
+#     real fix is a conda-lock for that env, not a smarter scanner.
+#   · importmap has no lockfile; the one CDN pin (leaflet) is unlisted.
+#   · NuGet: direct packages only, via Trivy reading Central Package Management.
+#     Transitives live in `cad_smoke.yml`'s own CycloneDX.
+#   · Flat merge — no `dependencies[]` graph (conda-lock carries ranges, not
+#     resolved refs; a faked graph is worse than a declared absence).
+#
+# Canon: 07_02 §8 · CI inventory 06_07 §1 · guard registry 00_06 §3.
+
+on:
+  release:
+    types: [ published ]
+  schedule:
+    - cron: '23 4 * * 1' # Monday — drift-visibility without release traffic
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sbom:
+    name: SBOM aggregate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      # NO submodules on purpose: an uninitialised submodule still yields its pinned
+      # SHA from the superproject index (that is what sbom_submodules.rb reads), while
+      # checking them out would drag vendored gemspecs and third-party workflow files
+      # into every scanner's surface as phantom components.
+      - name: Checkout code (without submodules)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@d45b1a4e94b71acab930e56e79c6aa188764e7f9 # v1
+        with:
+          bundler-cache: false # stdlib-only scripts; a bundle install here is waste
+
+      # Trivy writes to a path, it does not create the directory.
+      - name: Prepare output dir
+        run: mkdir -p sbom
+
+      - name: Trivy → gems · npm · conda names · NuGet (CPM)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: cyclonedx
+          output: sbom/trivy.cdx.json
+          skip-dirs: 'firmware/extern,tools/cad/extern,node_modules,coverage,tmp,log'
+
+      - name: Our own fragments (submodules · conda-lock)
+        run: |
+          ruby scripts/sbom_submodules.rb --assert --output sbom/submodules.cdx.json
+          ruby scripts/sbom_conda_lock.rb --assert --output sbom/conda-lock.cdx.json
+
+      # Trivy emits whatever spec version its build defaults to; the merger asserts
+      # 1.6 on every input, so a Trivy upgrade that changes it fails HERE, loudly,
+      # instead of silently producing a mixed-version aggregate.
+      - name: Merge → one CycloneDX 1.6 aggregate
+        env:
+          SOURCE_DATE_EPOCH: ${{ github.event.repository.pushed_at }}
+        run: |
+          ruby scripts/sbom_merge.rb sbom/*.cdx.json \
+            --name silken_net \
+            --version "${GITHUB_REF_NAME:-$GITHUB_SHA}" \
+            --output sbom/silken_net.cdx.json \
+            --assert
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: sbom-cyclonedx
+          path: sbom/
+          if-no-files-found: error
+          retention-days: 90
+
+      # Attach to the release only on a real release — a scheduled run has no tag.
+      # `gh release upload` needs no action pin.
+      - name: Attach to release
+        if: ${{ github.event_name == 'release' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" sbom/silken_net.cdx.json --clobber
