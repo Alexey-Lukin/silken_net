@@ -279,6 +279,87 @@
 ---
 ---
 
+## 📤 Dispatch block (EN) — paste into vendor email
+
+> Ready-to-send English text for a **laser-PBF (DMLS) bureau**: the capability/documentation half of §A and the E1–E5 questions of §B, turned into asks. Working body above stays Ukrainian.
+> Anything our side must NOT disclose is deliberately absent — **немає:** ваг §A.1, rubric §A.2 і порогів §A.3/§B.2 (сам документ це забороняє: вендор, що бачить шкалу, оптимізує відповідь під неї — просимо ФАКТИ: сертифікат-№, lead-time, dimensional-report), вердикт-таблиць §A.5/§B.2 (DISQUALIFY/HOLD/ESCALATE), слова «hard-gate»/«дискваліфікація» (ті самі вимоги йдуть як mandatory confirmations), нашої dual-source-політики й імен кандидат-пулу, оцінки «дрібний spot-CRO» (§B.3), порогу поруватості як цифри (просимо **виміряне** as-built, не декларацію), трекер-ID/канон-рефів, статус-маркерів.
+> 🔴 **§C (mutual CDA/NDA) не відправляється нікому** — там імʼя нашого юриста й невирішений підписант; іде на юр-review, не вендору.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-нота (що саме прибрано й чому), у лист вона НЕ йде.
+
+### Subject line
+
+Vendor pre-qualification — implant-grade titanium laser-PBF, thin-wall lattice parts (R&D batches now, possible production follow-on)
+
+### Scope of request
+
+Before we issue detailed part RFQs we ask candidate suppliers for a short pre-qualification covering two things: manufacturing capability with the quality and material documentation you can supply, and a supply-chain sustainability questionnaire that our funding and reporting obligations require us to keep on file. Answering commits neither side to anything. If it is easier for you, answer inline in this email — attachments only where a document is asked for.
+
+### Item specification
+
+What we will be asking you to quote:
+
+- **(a) Thin-wall TPMS (gyroid) lattice structural parts in titanium**, and **(b) flat coupons** of the same alloys for surface and electrochemical characterisation.
+- **Geometry is always supplied by us as STL plus a dimensioned DXF** drawing with title block, and the supplied geometry is the **dimensional authority** — we do not ask you to re-model or re-interpret it.
+- **Material for the structural part: Ti-6Al-4V Grade 23 ELI** to **ASTM F3001** (AM powder-bed-fusion ELI) or **ASTM F136**, with full powder traceability. **Grade 5 is acceptable for coupons only**, not for the final structural part.
+
+### Processing / QC requirements
+
+These are mandatory process requirements for the structural part. **Please confirm each in writing, or say plainly that you cannot** — we would rather know now than after an award.
+
+1. **Laser powder-bed fusion (SLM / DMLS / LPBF), powder 15–45 µm.** Electron-beam melting is not suitable for this part.
+2. **HIP is mandatory: 920 °C / 100–150 MPa argon / 2–4 h** — in-house or through a named qualified partner (name them, include cost and time).
+3. **Build orientation with the build direction parallel to the part axis** (anisotropy control).
+4. **Dehydrogenation bake after the etch rinse — two independent parameters, both mandatory:** bake **2–4 h** (3 h nominal) at **250 °C ± 25 °C under 10⁻³ mbar**, and the bake must **start no later than 2 h after the rinse** (a deadline for the start, not a duration). Acceptance: **hydrogen < 100 ppm** by vacuum hot extraction, one coupon per batch. You may perform this step or accept it as a defined post-step.
+5. **No ZnO-Ta (tantalum-doped zinc oxide) or comparable antibacterial oxide coating** on functional surfaces — it blocks electron transfer.
+6. **You accept our STL + dimensioned DXF as the geometry authority**, one set per alloy.
+7. **Thin-wall lattice capability.** The required porosity and wall thickness are defined by the supplied geometry, not by a separate number we hand you. Confirm you can hold the wall thickness of a TPMS lattice at that scale, and that you can report **measured as-built** values — dimensional report, and CT or SEM of internal features if you have that capability. We buy measured values, not declared ones.
+
+### What we ask you to provide
+
+**Capability and quality documentation**
+
+1. Machine models and count, how many are dedicated to titanium, and your powder handling and reuse policy.
+2. **Certifications with certificate number, issuing body, scope and validity:** ISO 13485, AS9100, ISO 9001 — whichever you hold; if a certification is in progress, say so with the expected date.
+3. **Material documentation per alloy:** powder specification, lot/heat traceability, O/N/H chemistry, virgin-to-reused ratio declared, CoC per batch.
+4. **Evidence of comparable work:** a dimensional or CT report from a previous thin-wall lattice job (redacted is fine).
+5. **Continuity for our order:** backup site or machine, power arrangements, and the logistics route you would use to us.
+
+**Commercial**
+
+6. **Unit price** at the quantities in the part RFQ, and the price break points above them.
+7. **Setup, build-plate and tooling charges itemised separately** from unit price.
+8. **MOQ**, and the price of a **first-article single-part or single-coupon trial build** before a full batch.
+9. **Lead time from purchase order to shipment**, stating explicitly whether HIP, surface activation, the bake and QC are inside that lead time or added to it.
+10. **Capacity:** parts per week in titanium, and whether a follow-on production batch would require re-qualification of the process.
+11. **Quote format:** currency, validity period, payment terms, technical point of contact.
+
+**Supply-chain sustainability questionnaire.** Please attach documents rather than statements — a certificate, report or policy URL. Where something is in progress, say so with a date; we would rather have an honest gap than a claim we cannot verify.
+
+| # | Topic | What we ask for |
+|---|---|---|
+| E1 | Environmental management | Current **ISO 14001 or EMAS** certificate — number, scope, validity. Scope must cover the production site doing our work. |
+| E2 | Energy source | Your electricity grid mix or renewable share, **with evidence**: supplier disclosure, green-tariff certificate, PPA, or on-site generation. |
+| E3 | Labour practices | **SA8000** or an equivalent third-party audit, or your code of conduct plus the most recent audit report; confirmation of ILO core-convention compliance. |
+| E4 | Materials origin | OECD due-diligence or 3TG declaration where applicable · **titanium powder origin traceability** · REACH and RoHS statements. |
+| E5 | Your own climate position | Published **LCA or carbon footprint**, and any net-zero or SBTi-validated target together with the plan behind it. |
+
+### Commercial & logistics
+
+- Ship-to: Ukraine (Cherkasy region); we can nominate an **EU forwarding address** instead if that simplifies export or customs — state your preference.
+- Incoterms you quote on, HS code, and any export-control classification applicable to titanium powder-bed parts.
+- **Packaging:** parts individually pouched, functional surfaces protected, no contact with oils or adhesives.
+- Tell us what you need from us to proceed (end-use statement, entity details, preferred drawing format).
+
+### Attachments
+
+Nothing is needed from you to answer this pre-qualification beyond the documents named above. Part geometry (STL + dimensioned DXF) and the QC acceptance definition follow with the part RFQ once pre-qualification is complete.
+
+---
+---
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
 ## Cross-references
 
 | Ресурс | Що бере |

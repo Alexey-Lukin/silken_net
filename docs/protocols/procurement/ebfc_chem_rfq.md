@@ -127,6 +127,122 @@
 
 ---
 
+## 📤 Dispatch block (EN) — paste into vendor email
+
+> Ready-to-send English text. Working body above stays Ukrainian. Anything our side
+> must NOT disclose is deliberately absent — **немає:** приклад-ціни й наших lead-time-оцінок
+> (§3/§1/§4 — price/time anchor проти нас), імен постачальників і академ-каналу (кожен адресат
+> сліпий щодо решти), позицій 11 N→Q і gate-контексту §1 (послідовність ще не заморожена),
+> трекер-ID/канон-рефів, статус-маркерів. **Цільові показники §2/§4 стоять окремою
+> informational-рамкою, НЕ як acceptance.**
+> **Один item = один лист** — беремо потрібний sub-блок §Item specification + спільні секції.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-нота (що саме прибрано й чому), у лист вона НЕ йде.
+
+### Subject line
+
+| Item | Subject |
+|---|---|
+| A enzyme | RFQ — recombinant deglycosylated FAD-dependent glucose dehydrogenase, *Pichia* expression (R&D pilot) |
+| B nanozyme | RFQ — tri-metallic Co/Cu/Ce ZIF laccase-mimic nanozyme, solvothermal synthesis, 40–80 nm |
+| C genipin | RFQ — genipin >98%, gram scale, cold-chain |
+| D membrane | RFQ — Nafion surface-grafted with PSBMA via SI-ATRP (fluoropolymer chemistry) |
+| E CNC | RFQ — cellulose nanocrystals, R&D quantity (purchase or acid hydrolysis) |
+
+### Scope of request
+
+We are an R&D group developing a tree-integrated enzymatic bio-fuel cell for forest monitoring, and we are requesting a quotation for the item specified below. Volumes are R&D-scale, with possible repeat orders once the design is validated. The technical specification is openly published, so no confidentiality agreement is required to discuss it; we are happy to sign your standard mutual CDA covering commercial terms (prices, schedules, QC data).
+
+### Item specification
+
+**A — recombinant deglycosylated FAD-dependent glucose dehydrogenase (dgrGcGDH), ~600 aa**
+
+- Source organism: *Glomerella cingulata*, UniProt **G8E4B5** as the baseline; an *Aspergillus* homologue is an acceptable alternative if you have an established construct.
+- Expression host: ***Pichia pastoris*, secretory. *E. coli* is not acceptable** for this target (inclusion bodies).
+- Deglycosylation, preferred route: a **synthetic gene carrying 11 N→Q substitutions**, so the host does not glycosylate the protein and no PNGase F step is needed. Fallback route: enzymatic deglycosylation (PNGase F / Endo-H) under **native conditions only** — no SDS, no DTT.
+- Sequence: **sequence to be finalized; quote against capability & timeline.** The final coding sequence is supplied at order placement.
+- Cofactor: FAD, native — flavinylation by the expression host.
+- Not acceptable as a substitute: glucose **oxidase** (generates H₂O₂, incompatible with our application).
+- Quantity: milligram scale for a pilot round — please quote the mg tiers you normally offer so we can size the order.
+- Delivery form: lyophilised powder or stabilised buffer; CoA and QC report required.
+- QC / acceptance: SDS-PAGE showing a single band at the aglycosylated molecular weight · specific activity by glucose-dehydrogenase assay in U/mg with the assay conditions stated · evidence that the enzyme does not generate H₂O₂ (dehydrogenase, not oxidase) · MS confirmation of the N→Q substitution sites.
+
+**B — tri-metallic Co/Cu/Ce ZIF laccase-mimic nanozyme**
+
+- Product: tri-metallic zeolitic-imidazolate-framework nanozyme (Co/Cu/Ce) acting as a laccase mimic for oxygen reduction and direct electron transfer. A Cu/Ce/Au ZIF composition is an acceptable alternative if that is your established route.
+- Method: solvothermal synthesis.
+- **Particle size 40–80 nm — a contractual requirement, SEM-verified.** Macrocrystalline product is unusable on our electrode.
+- Optional add-on: a hybrid formulation with laccase supported on MWCNT — quote separately if you offer it.
+- Quantity: R&D scale — please quote your minimum synthesis batch plus one scale-up tier.
+- QC / acceptance: SEM (size distribution and morphology) · XRD (ZIF phase) · ICP-OES or EDS (Cu:Co:Ce stoichiometry) · BET specific surface area.
+
+**C — genipin**
+
+- Product: genipin, purity **>98%** (used as a non-toxic crosslinker for chitosan; glutaraldehyde is not an acceptable substitute for our application).
+- Quantity: gram scale — please quote the pack sizes you stock and the per-gram price at each.
+- Storage and shipping: must be shipped protected from light and held at 4 °C — state your cold-chain packaging and the temperature excursion it tolerates.
+- QC / acceptance: CoA stating purity and lot. We run an incoming functional check (chitosan crosslinking at pH 4.5) on receipt.
+
+**D — Nafion grafted with poly(sulfobetaine methacrylate) (PSBMA) via SI-ATRP**
+
+- Product: Nafion membrane surface-grafted with PSBMA by surface-initiated ATRP, for anti-biofouling performance.
+- **Required capability:** attaching the ATRP initiator requires converting the Nafion sulfonic groups to the **sulfonyl chloride** form — please describe your prior hands-on experience with fluoropolymer chemistry, as this step governs feasibility.
+- Quantity and format: coupon-scale pieces for R&D — state the minimum area and format you can supply.
+- QC / acceptance: proton conductivity by EIS · anti-fouling assessment against resin acids (abietic acid) · a rehydration cycle across the UCST transition (−10 °C → +25 °C).
+- We recognise this is a development-type job rather than a catalogue item; quote development effort and material separately.
+
+**E — cellulose nanocrystals (CNC)**
+
+- Product: cellulose nanocrystals, used as a rheology modifier at 2–6 wt% loading in our matrix (loading given as context, so you can recommend a grade).
+- Route: either supply of CNC (suspension or spray-dried powder), or production by acid hydrolysis from alpha-cellulose if that is a service you offer — quote whichever applies.
+- QC / acceptance: particle size and aspect ratio (TEM or AFM) · crystallinity index · CoA.
+
+### Processing / QC requirements
+
+Applies to whichever item you quote:
+
+- **CoA per batch/lot** plus the QC report listed for the item. Third-party analytical reports are acceptable; self-declaration without data is not.
+- **No substitutions without written agreement** — in particular the host organism (A), the crosslinker chemistry (C) and the graft chemistry (D) are not interchangeable in our application.
+- **Documentation:** SDS/MSDS, and REACH/RoHS or equivalent statements where applicable to the material.
+- **Packaging:** state the packaging, the storage conditions on arrival, and the shelf life you guarantee. Light protection and cold chain are mandatory where the item specification says so.
+- **Incoming inspection:** we perform an incoming functional check and will report any deviation with data; state your policy for non-conforming lots.
+
+### Target performance envelope (informational, not acceptance)
+
+The figures below are our **design and literature targets for the finished device**. They are given so you can judge fit — they are **not acceptance criteria for this order and not a performance guarantee we ask you to underwrite.** Acceptance is exclusively the QC list under each item.
+
+| Item | Target envelope (informational) |
+|---|---|
+| B nanozyme | ~10× the power density of unmodified laccase · ≥75% activity retained after 10 days · activity gain rather than loss in 0.25 M NaCl (unmodified laccase loses roughly 40% under the same condition) |
+| D membrane | proton conductivity of order 45 mS/cm · about 8 water molecules per chain · UCST transition near 5 °C |
+
+### What we ask you to provide
+
+Please reply with:
+
+1. **Unit price** at the quantities/tiers named in the item specification, and the price break points above them.
+2. **Setup, synthesis-development, gene-synthesis or tooling charges itemised separately** from unit price.
+3. **Lead time from purchase order to shipment**, stating explicitly whether purification, QC and any post-processing are inside that lead time or added to it.
+4. **MOQ** and available pack sizes.
+5. **Certifications and documents you can supply:** CoA, ISO 9001 or GMP-grade status where applicable, SDS, REACH/RoHS statements, and animal-free / GMO-status statements where relevant to the item.
+6. Whether a **sample, first-article or small pilot batch** is possible before a larger order, and at what price.
+7. **Quote format:** currency, validity period, payment terms, and the point of contact for technical questions.
+
+### Commercial & logistics
+
+- Ship-to: Ukraine (Cherkasy region). We can nominate an **EU forwarding address** instead if that simplifies export or customs for you — state your preference.
+- Incoterms you quote on, HS code, and any export-control or dual-use classification that applies.
+- Cold-chain and light-protection handling per the item specification; state the courier and transit time you would use.
+- Tell us what documentation you need from us (end-use statement, entity details, import permits).
+
+### Attachments
+
+Nothing is required from us for an initial quotation. On request we supply the incoming-test protocol we use for acceptance; for item A, the final coding sequence is provided at order placement.
+
+---
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
 ## 7. Cross-references
 
 | Ресурс | Що бере |
