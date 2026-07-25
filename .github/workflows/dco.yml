@@ -1,0 +1,54 @@
+name: Sec · DCO
+
+# Developer Certificate of Origin sign-off gate for INBOUND pull requests (UNI.20).
+#
+# `CONTRIBUTING.md` §DCO already asks contributors for `git commit -s`, but nothing
+# enforced it — a PR without a `Signed-off-by` trailer merged silently, leaving the
+# copyright-origin certification the AGPL posture leans on (07_03 §3) as a request
+# rather than a gate. This closes that. DCO over CLA is a ratified choice (CNCF
+# recommendation, OpenInfra CLA→DCO 2025, Nextcloud's AGPL precedent) — rationale and
+# the two honest caveats (university thesis/grant IP; dual-license tension) live in
+# docs/protocols/business/oss_web3_standards.md §4; state in 00_07 UNI.20.
+#
+# NO paths-filter, deliberately: unlike every other gate here, DCO is about WHO wrote
+# a commit, not WHICH files it touched — a docs-only PR needs the same certification as
+# a firmware one. Because nothing path-gates it, the check job itself is the always-on
+# branch-protection status; `if: always()` is kept so the OPS.14 gate-perimeter guard
+# (scripts/workflow_gate_perimeter.rb) recognises `DCO passed` as the required context
+# once branch protection is flipped. Until that flip it is classified :flip_pending.
+#
+# Bot commits are exempt, and the reason is verified rather than assumed: Dependabot
+# DOES sign off, but as `support@github.com` while authoring as
+# `…+dependabot[bot]@users.noreply.github.com` — so a strict author-match check (the
+# semantically correct one) would fail every Dependabot PR across all five weekly
+# ecosystems. Bots hold no copyright, so there is no origin to certify. Full note →
+# scripts/dco_check.rb header.
+#
+# Canon: contribution policy = 07_03 §3, CI inventory = 06_07 §1. Tracker: UNI.20.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dco:
+    name: DCO passed
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+      # Full history: the check walks base..head, so the PR's commits must be present.
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+      - name: Verify DCO sign-off on every non-bot commit
+        env:
+          DCO_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+        run: ruby scripts/dco_check.rb

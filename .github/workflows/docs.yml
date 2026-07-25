@@ -182,6 +182,14 @@ jobs:
         # ARCH.10) and nothing blinked.
         run: ruby scripts/code_tracker_id_check.rb
 
+      - name: Offering-lexicon gate (BIZ.22 — investment wording on customer-facing surfaces)
+        # Pure Ruby, no Rails. HARD on the storefront (locale VALUES, manifest,
+        # README) — the surfaces the 2026-07-25 sweep cleaned and nothing kept
+        # clean; ADVISORY (never fatal) on the response layer still awaiting the
+        # securities verdict. Its inputs — config/**, app/**, **.md — are all
+        # inside this workflow's `changes` filter, so the gate is not decorative.
+        run: ruby scripts/offering_lexicon_check.rb
+
   docs-ok:
     # Single required status check for the SSOT gates on `main`. Always runs so a
     # code-only PR — where docs_check is path-skipped — still emits a green status;

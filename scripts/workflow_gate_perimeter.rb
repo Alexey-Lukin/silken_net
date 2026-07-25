@@ -7,7 +7,8 @@
 # `CI passed` (ci-ok), `Docs passed` (docs-ok), `Solidity passed` (money-path
 # SCC/SFC/Governor), and the `CAD passed` / `ML passed` / `In-silico passed` /
 # `IaC passed` smokes. Only `ssot_guard.yml` stays advisory-by-design (path-gated
-# red-X informs, does not block). The flip-pending migration is complete (0 left).
+# red-X informs, does not block). One entry is flip-pending: `dco.yml` (UNI.20) —
+# its aggregate is in place, the branch-protection flip is a founder action.
 # Nothing watched the gate PERIMETER itself: a new deterministic PR-gate can be
 # born outside the required
 # set and nobody notices — exactly how the money-path Solidity audit stayed
@@ -69,7 +70,14 @@ module WorkflowGatePerimeter
     "cad_smoke.yml"       => [ :required,           "CAD passed" ],
     "ml_smoke.yml"        => [ :required,           "ML passed" ],
     "in_silico_smoke.yml" => [ :required,           "In-silico passed" ],
-    "iac_scan.yml"        => [ :required,           "IaC passed" ]
+    "iac_scan.yml"        => [ :required,           "IaC passed" ],
+    # DCO sign-off on inbound PRs. :flip_pending, not :required — the aggregate
+    # exists and carries the exact context name, but branch protection is a
+    # founder action this repo's CI token cannot perform, so claiming :required
+    # here would be precisely the "canon says gating, nothing gates" drift this
+    # guard was built to catch. Flip → :required once `DCO passed` is added to
+    # the required set (👤 checkbox in 00_07 UNI.20).
+    "dco.yml"             => [ :flip_pending,       "UNI.20" ]
   }.freeze
 
   CLASSES = %i[required advisory_by_design flip_pending].freeze
