@@ -61,24 +61,24 @@ RSpec.describe Organizations::Show do
   end
 
   describe "StatCards for 3 metrics" do
-    it "renders Biological Assets stat card" do
-      expect(html).to include("Biological Assets")
+    it "renders Monitored Trees stat card" do
+      expect(html).to include("Monitored Trees")
     end
 
     it "renders Soldier Trees sub-label" do
       expect(html).to include("Soldier Trees")
     end
 
-    it "renders Carbon Yield stat card" do
-      expect(html).to include("Carbon Yield")
+    it "renders SCC Minted stat card" do
+      expect(html).to include("SCC Minted")
     end
 
     it "renders Carbon minted value" do
       expect(html).to include("1234 SCC")
     end
 
-    it "renders Capital Injected stat card" do
-      expect(html).to include("Capital Injected")
+    it "renders Contracted Amount stat card" do
+      expect(html).to include("Contracted Amount")
     end
 
     it "renders total_trees count" do

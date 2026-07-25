@@ -55,11 +55,11 @@ uk:
         description: Фінансова ефективність та блокчейн-транзакції.
         title: Звіт фінансового зведення
       hero:
-        biological_assets: Біологічні активи
+        biological_assets: Дерева під моніторингом
         biological_assets_sub: Дерева
-        capital_injected: Внесений капітал
+        capital_injected: Сума контрактів
         capital_injected_sub: Інвестовано SCC
-        carbon_yield: Вуглецева віддача
+        carbon_yield: Нараховано SCC
         carbon_yield_sub: Всього SCC
         health_score: Індекс здоров'я
         health_score_sub: Індекс

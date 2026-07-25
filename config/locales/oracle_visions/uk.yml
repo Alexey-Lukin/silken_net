@@ -12,7 +12,7 @@ uk:
     index:
       active_simulations: Активні симуляції
       confidence: 'Впевненість ШІ: %{value}'
-      expected_yield: Очікуваний 24-год врожай
+      expected_yield: Прогноз емісії за 24 год
       title: Стратегічна матриця прогнозів
       yield_unit: SCC
     simulation_panel:

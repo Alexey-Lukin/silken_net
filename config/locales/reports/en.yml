@@ -55,11 +55,11 @@ en:
         description: Financial performance and blockchain transactions.
         title: Financial Summary Report
       hero:
-        biological_assets: Biological Assets
+        biological_assets: Monitored Trees
         biological_assets_sub: Trees
-        capital_injected: Capital Injected
+        capital_injected: Contracted Amount
         capital_injected_sub: SCC Invested
-        carbon_yield: Carbon Yield
+        carbon_yield: SCC Minted
         carbon_yield_sub: SCC Total
         health_score: Health Score
         health_score_sub: Index
@@ -69,5 +69,5 @@ en:
         threat_clear: CLEAR
         threat_level: Threat Level
       organization: 'Organization:'
-      subtitle: 'Consolidated reporting for investors: environmental audits and financial performance.'
+      subtitle: 'Consolidated reporting for clients: environmental audits and financial performance.'
       title: "📊 The Archive — Reports Hub"

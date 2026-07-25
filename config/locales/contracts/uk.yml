@@ -6,20 +6,20 @@ uk:
       audit_details: АУДИТ_ДЕТАЛЕЙ →
       columns:
         command: Команда
-        current_yield: Поточний врожай
+        current_yield: Прогрес емісії
         id_status: ID / Статус
-        investment: Інвестиція
+        investment: Плата за послугу
         organization: Організація
-        performance: Ефективність
+        performance: Стан кластера
         period: Період
         target_cluster: Цільовий кластер
-      portfolio_title: Активний портфель активів
+      portfolio_title: Кластери під моніторингом
       stats:
-        biogenic_yield: Біогенний врожай
+        biogenic_yield: Нараховано SCC
         network_health: Здоров'я мережі
-        portfolio_avg: Середнє по портфелю
-        portfolio_capital: Капітал портфеля
-        total_injected: Всього інвестовано
+        portfolio_avg: Середній стан кластерів
+        portfolio_capital: Сума плат за послугу
+        total_injected: Законтрактовано всього
         total_minted: Всього створено
       unassigned: НЕ ПРИЗНАЧЕНО
     show:
@@ -30,7 +30,7 @@ uk:
         threat_status: Статус загрози
         title: Здоров'я забезпечуючого активу
         vitality: Життєздатність кластера
-      current_yield: Поточний врожай
+      current_yield: Прогрес емісії
       decoration: NaaS
       identity: Ідентичність контракту
       ledger:
@@ -50,7 +50,7 @@ uk:
         early_exit_value: "%{value}%"
         min_days: Мін. днів до виходу
         title: Дані смартконтракту
-        verified: Перевірено Silken Net Oracle. Ефективність індексована до стабільності атрактора Lorenz.
+        verified: Перевірено Silken Net Oracle. Емісія індексована до верифікованого гомеостазу.
       organization: 'Організація: %{name}'
       period: 'Період: %{start} → %{end}'
       status: 'Статус: %{value}'

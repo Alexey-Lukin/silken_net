@@ -91,6 +91,6 @@ change.)
 ## License of contributions
 
 By contributing, you agree that your contributions are licensed under the
-project's licenses: **AGPL-3.0-or-later** (code), **CERN-OHL-S-2.0** (hardware),
+project's licenses: **AGPL-3.0-or-later** (code), **MIT** (`contracts/*.sol` — per-file SPDX), **CERN-OHL-S-2.0** (hardware),
 and **CC-BY-SA-4.0** (documentation). See [`LICENSE`](LICENSE) and
 [`NOTICE`](NOTICE) for the full zone map and third-party exceptions.

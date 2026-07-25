@@ -5,7 +5,7 @@ lt:
       columns:
         audit: Auditas
         identity: Grandinės tapatybė
-        investment: Investicija (SCC)
+        investment: Pagal sutartis (SCC)
         name: Organizacijos pavadinimas
         sectors: Sektoriai
       investment_value: "%{amount} SCC"
@@ -39,9 +39,9 @@ lt:
       member_since: 'Narys nuo: %{date}'
       operational_status: Veiklos būsena
       performance:
-        biological_assets: Biologinis turtas
+        biological_assets: Stebimi medžiai
         biological_assets_sub: Karių medžiai
-        capital_injected: Investuotas kapitalas
+        capital_injected: Sutarčių suma
         capital_injected_sub: SCC iš viso
-        carbon_yield: Anglies derlius
+        carbon_yield: Nukalta SCC
         carbon_yield_sub: Nukalinta SCC

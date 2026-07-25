@@ -26,7 +26,7 @@ lt:
       headings:
         biometrics: Tiesioginės biometrinės matricos
         deployment_matrix: Diegimo matrica
-        economic_yield: Ekonominis derlius
+        economic_yield: Sukaupta SCC
         hardware_vault: Aparatūros saugumo saugykla
         impedance_flux: Impedanso svyravimai (paskutiniai 10 ciklų)
         maintenance: Priežiūros ritualai ir gydymo istorija

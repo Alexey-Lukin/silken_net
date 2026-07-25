@@ -6,20 +6,20 @@ lv:
       audit_details: AUDITA_DETAĻAS →
       columns:
         command: Komanda
-        current_yield: Pašreizējā raža
+        current_yield: Emisijas progress
         id_status: ID / Statuss
-        investment: Investīcija
+        investment: Pakalpojuma maksa
         organization: Organizācija
-        performance: Veiktspēja
+        performance: Klastera stāvoklis
         period: Periods
         target_cluster: Mērķa klasteris
-      portfolio_title: Aktīvais aktīvu portfelis
+      portfolio_title: Uzraudzītie klasteri
       stats:
-        biogenic_yield: Biogēnā raža
+        biogenic_yield: Izsniegts SCC
         network_health: Tīkla veselība
-        portfolio_avg: Portfeļa vid.
-        portfolio_capital: Portfeļa kapitāls
-        total_injected: Kopā ieguldīts
+        portfolio_avg: Vid. klastera stāvoklis
+        portfolio_capital: Pakalpojumu maksas kopā
+        total_injected: Kopā līgumos
         total_minted: Kopā kalts
       unassigned: NEPIESAISTĪTS
     show:
@@ -30,7 +30,7 @@ lv:
         threat_status: Draudu statuss
         title: Nodrošinājuma aktīvu veselība
         vitality: Klastera vitalitāte
-      current_yield: Pašreizējā raža
+      current_yield: Emisijas progress
       decoration: NaaS
       identity: Līguma identitāte
       ledger:
@@ -50,7 +50,7 @@ lv:
         early_exit_value: "%{value}%"
         min_days: Min. dienas pirms izstāšanās
         title: Viedlīguma dati
-        verified: Verificēts ar Silken Net Oracle. Veiktspēja indeksēta pēc Lorenz atraktora stabilitātes.
+        verified: Verificēts ar Silken Net Oracle. Emisija indeksēta pēc verificētas homeostāzes.
       organization: 'Organizācija: %{name}'
       period: 'Periods: %{start} → %{end}'
       status: 'Statuss: %{value}'

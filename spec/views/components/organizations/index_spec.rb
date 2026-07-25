@@ -37,8 +37,8 @@ RSpec.describe Organizations::Index do
       expect(html).to include("Organization Name")
     end
 
-    it "renders Investment column" do
-      expect(html).to include("Investment")
+    it "renders Contracted column" do
+      expect(html).to include("Contracted")
     end
 
     it "renders On-Chain Identity column" do

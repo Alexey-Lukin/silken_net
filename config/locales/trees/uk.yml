@@ -26,7 +26,7 @@ uk:
       headings:
         biometrics: Жива біометрична матриця
         deployment_matrix: Матриця розгортання
-        economic_yield: Економічна віддача
+        economic_yield: Нараховано SCC
         hardware_vault: Апаратне сховище безпеки
         impedance_flux: Імпедансний потік (останні 10 циклів)
         maintenance: Ритуали обслуговування та історія зцілення

@@ -12,7 +12,7 @@ en:
     index:
       active_simulations: Active Simulations
       confidence: 'AI Confidence: %{value}'
-      expected_yield: Expected 24h Yield
+      expected_yield: Projected 24h Emission
       title: Strategic Forecast Matrix
       yield_unit: SCC
     simulation_panel:

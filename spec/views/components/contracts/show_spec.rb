@@ -73,8 +73,8 @@ RSpec.describe Contracts::Show do
       expect(html).to include("ACTIVE")
     end
 
-    it "renders Current Yield label" do
-      expect(html).to include("Current Yield")
+    it "renders Emission Progress label" do
+      expect(html).to include("Emission Progress")
     end
 
     it "renders emitted_tokens value" do

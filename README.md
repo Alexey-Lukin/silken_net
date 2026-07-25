@@ -385,7 +385,8 @@ SilkenNet — **mission-first, defensive-publication-first**: ми **не пат
 
 | Зона | Ліцензія | Файл |
 |------|----------|------|
-| **Код** (backend / firmware / contracts / tooling) | **GNU AGPL-3.0-or-later** | [`LICENSE`](LICENSE) |
+| **Код** (backend / firmware / tooling) | **GNU AGPL-3.0-or-later** |
+| **Смарт-контракти** (`contracts/*.sol`) | **MIT** — per-file SPDX (on-chain composability / audit-tooling; ратифіковано DOC-T.47) | [`LICENSE`](LICENSE) |
 | **Залізо** (гіроїд / EBFC / PCB-дизайн) | **CERN-OHL-S-2.0** | [`LICENSE-HARDWARE.txt`](LICENSE-HARDWARE.txt) |
 | **Документація** (`docs/**`) | **CC-BY-SA-4.0** | [`LICENSE-DOCS.txt`](LICENSE-DOCS.txt) |
 

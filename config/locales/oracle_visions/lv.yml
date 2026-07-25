@@ -12,7 +12,7 @@ lv:
     index:
       active_simulations: Aktīvās simulācijas
       confidence: 'MI ticamība: %{value}'
-      expected_yield: Paredzamā 24h raža
+      expected_yield: Prognozētā 24h emisija
       title: Stratēģiskās prognozes matrica
       yield_unit: SCC
     simulation_panel:

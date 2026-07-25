@@ -500,7 +500,7 @@ module DocsLinter
     # Retired project codename (BIZ.16, 2026-06-16): dissolved by altitude →
     # SilkenNet (product) / GaiaNexus (planetary federation). Distinct literal from
     # the LIVE "Gen 2.0" EBFC biochem axis (substring match → no false positive).
-    "Gaia 2.0" => "retired project codename → SilkenNet (product) / GaiaNexus (planetary federation), 08_01 §2"
+    "Gaia 2.0" => "retired project codename → SilkenNet (product) / GaiaNexus (planetary federation), 07_03 §5"
   }.freeze
 
   DEPRECATED_EXEMPT = %w[00_06 00_07].freeze

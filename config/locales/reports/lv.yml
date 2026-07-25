@@ -55,11 +55,11 @@ lv:
         description: Finanšu veiktspēja un blokķēdes darījumi.
         title: Finanšu kopsavilkuma atskaite
       hero:
-        biological_assets: Bioloģiskie aktīvi
+        biological_assets: Uzraudzītie koki
         biological_assets_sub: Koki
-        capital_injected: Ieguldītais kapitāls
+        capital_injected: Līgumu summa
         capital_injected_sub: SCC ieguldīts
-        carbon_yield: Oglekļa raža
+        carbon_yield: Kalts SCC
         carbon_yield_sub: SCC kopā
         health_score: Veselības rādītājs
         health_score_sub: Indekss
@@ -69,5 +69,5 @@ lv:
         threat_clear: DROŠS
         threat_level: Draudu līmenis
       organization: 'Organizācija:'
-      subtitle: 'Konsolidētas atskaites investoriem: vides auditi un finanšu veiktspēja.'
+      subtitle: 'Konsolidētas atskaites klientiem: vides auditi un finanšu veiktspēja.'
       title: "📊 Arhīvs — Atskaišu centrs"

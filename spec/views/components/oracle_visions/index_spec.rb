@@ -57,8 +57,8 @@ RSpec.describe OracleVisions::Index do
       expect(html).to include("SCC")
     end
 
-    it "shows the Expected 24h Yield label" do
-      expect(html).to include("Expected 24h Yield")
+    it "shows the Projected 24h Emission label" do
+      expect(html).to include("Projected 24h Emission")
     end
   end
 

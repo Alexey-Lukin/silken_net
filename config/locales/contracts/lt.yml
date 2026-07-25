@@ -6,20 +6,20 @@ lt:
       audit_details: AUDITO_DETALĖS →
       columns:
         command: Komanda
-        current_yield: Dabartinis derlius
+        current_yield: Emisijos eiga
         id_status: ID / Būsena
-        investment: Investicija
+        investment: Paslaugos mokestis
         organization: Organizacija
-        performance: Našumas
+        performance: Klasterio būklė
         period: Laikotarpis
         target_cluster: Tikslinis klasteris
-      portfolio_title: Aktyvus turto portfelis
+      portfolio_title: Stebimi klasteriai
       stats:
-        biogenic_yield: Biogeninis derlius
+        biogenic_yield: Išleista SCC
         network_health: Tinklo sveikata
-        portfolio_avg: Portfelio vid.
-        portfolio_capital: Portfelio kapitalas
-        total_injected: Iš viso investuota
+        portfolio_avg: Vid. klasterio būklė
+        portfolio_capital: Paslaugų mokesčiai iš viso
+        total_injected: Iš viso pagal sutartis
         total_minted: Iš viso nukalinta
       unassigned: NEPRISKIRTA
     show:
@@ -30,7 +30,7 @@ lt:
         threat_status: Grėsmės būsena
         title: Pagrindinio turto sveikata
         vitality: Klasterio gyvybingumas
-      current_yield: Dabartinis derlius
+      current_yield: Emisijos eiga
       decoration: NaaS
       identity: Sutarties tapatybė
       ledger:
@@ -50,7 +50,7 @@ lt:
         early_exit_value: "%{value}%"
         min_days: Min. dienos prieš išėjimą
         title: Išmaniosios sutarties duomenys
-        verified: Patikrinta Silken Net Oracle. Našumas indeksuotas pagal Lorenz atraktoriaus stabilumą.
+        verified: Patikrinta Silken Net Oracle. Emisija indeksuota pagal patvirtintą homeostazę.
       organization: 'Organizacija: %{name}'
       period: 'Laikotarpis: %{start} → %{end}'
       status: 'Būsena: %{value}'

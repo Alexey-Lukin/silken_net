@@ -51,18 +51,18 @@ RSpec.describe Contracts::Index do
   let(:html) { render_component(contracts: [ contract ], stats: mock_stats, pagy: mock_pagy(last: 1)) }
 
   describe "header" do
-    it "renders Active Asset Portfolio heading" do
-      expect(html).to include("Active Asset Portfolio")
+    it "renders Monitored Clusters heading" do
+      expect(html).to include("Monitored Clusters")
     end
   end
 
   describe "StatCards" do
-    it "renders Portfolio Capital stat card" do
-      expect(html).to include("Portfolio Capital")
+    it "renders Total Service Fees stat card" do
+      expect(html).to include("Total Service Fees")
     end
 
-    it "renders Biogenic Yield stat card" do
-      expect(html).to include("Biogenic Yield")
+    it "renders SCC Issued stat card" do
+      expect(html).to include("SCC Issued")
     end
 
     it "renders Network Health stat card" do
@@ -129,7 +129,7 @@ RSpec.describe Contracts::Index do
   describe "empty state" do
     it "renders table even with no contracts" do
       html = render_component(contracts: [], stats: mock_stats, pagy: mock_pagy(count: 0, last: 1))
-      expect(html).to include("Active Asset Portfolio")
+      expect(html).to include("Monitored Clusters")
     end
   end
 

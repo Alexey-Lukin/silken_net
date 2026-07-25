@@ -5,7 +5,7 @@ lv:
       columns:
         audit: Audits
         identity: Ķēdes identitāte
-        investment: Investīcija (SCC)
+        investment: Līgumos (SCC)
         name: Organizācijas nosaukums
         sectors: Sektori
       investment_value: "%{amount} SCC"
@@ -39,9 +39,9 @@ lv:
       member_since: 'Dalībnieks kopš: %{date}'
       operational_status: Darbības statuss
       performance:
-        biological_assets: Bioloģiskie aktīvi
+        biological_assets: Uzraudzītie koki
         biological_assets_sub: Karavīru koki
-        capital_injected: Ieguldītais kapitāls
+        capital_injected: Līgumu summa
         capital_injected_sub: SCC kopā
-        carbon_yield: Oglekļa raža
+        carbon_yield: Kalts SCC
         carbon_yield_sub: Kalts SCC

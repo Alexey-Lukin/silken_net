@@ -5,11 +5,11 @@ uk:
       columns:
         audit: Аудит
         identity: On-Chain ідентичність
-        investment: Інвестиції (SCC)
+        investment: Законтрактовано (SCC)
         name: Назва організації
         sectors: Сектори
       investment_value: "%{amount} SCC"
-      subtitle: Управління multi-tenant сутностями та їхнім екологічним капіталом.
+      subtitle: Управління multi-tenant сутностями та їхніми екологічними програмами.
       title: Глобальний реєстр кланів
       view_aria: Переглянути профіль %{name}
       view_profile: ВІДКРИТИ_ПРОФІЛЬ →
@@ -39,9 +39,9 @@ uk:
       member_since: 'Учасник з: %{date}'
       operational_status: Операційний статус
       performance:
-        biological_assets: Біологічні активи
+        biological_assets: Дерева під моніторингом
         biological_assets_sub: Дерева-солдати
-        capital_injected: Внесений капітал
+        capital_injected: Сума контрактів
         capital_injected_sub: Всього SCC
-        carbon_yield: Вуглецева віддача
+        carbon_yield: Нараховано SCC
         carbon_yield_sub: Створено SCC

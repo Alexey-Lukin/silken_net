@@ -12,7 +12,7 @@ lt:
     index:
       active_simulations: Aktyvios simuliacijos
       confidence: 'DI pasitikėjimas: %{value}'
-      expected_yield: Tikėtinas 24h derlius
+      expected_yield: Prognozuojama 24h emisija
       title: Strateginių prognozių matrica
       yield_unit: SCC
     simulation_panel:

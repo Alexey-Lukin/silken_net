@@ -6,20 +6,20 @@ en:
       audit_details: AUDIT_DETAILS →
       columns:
         command: Command
-        current_yield: Current Yield
+        current_yield: Emission Progress
         id_status: ID / Status
-        investment: Investment
+        investment: Service Fee
         organization: Organization
-        performance: Performance
+        performance: Cluster Health
         period: Period
         target_cluster: Target Cluster
-      portfolio_title: Active Asset Portfolio
+      portfolio_title: Monitored Clusters
       stats:
-        biogenic_yield: Biogenic Yield
+        biogenic_yield: SCC Issued
         network_health: Network Health
-        portfolio_avg: Portfolio Avg
-        portfolio_capital: Portfolio Capital
-        total_injected: Total Injected
+        portfolio_avg: Avg Cluster Health
+        portfolio_capital: Total Service Fees
+        total_injected: Total Contracted
         total_minted: Total Minted
       unassigned: UNASSIGNED
     show:
@@ -30,7 +30,7 @@ en:
         threat_status: Threat Status
         title: Backing Asset Health
         vitality: Cluster Vitality
-      current_yield: Current Yield
+      current_yield: Emission Progress
       decoration: NaaS
       identity: Contract Identity
       ledger:
@@ -50,7 +50,7 @@ en:
         early_exit_value: "%{value}%"
         min_days: Min Days Before Exit
         title: Smart Contract Data
-        verified: Verified by Silken Net Oracle. Performance indexed to Lorenz attractor stability.
+        verified: Verified by Silken Net Oracle. Emission indexed to verified homeostasis.
       organization: 'Organization: %{name}'
       period: 'Period: %{start} → %{end}'
       status: 'Status: %{value}'

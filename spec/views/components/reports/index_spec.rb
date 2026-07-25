@@ -34,20 +34,20 @@ RSpec.describe Reports::Index do
   end
 
   describe "performance stats" do
-    it "renders Biological Assets stat card" do
-      expect(html).to include("Biological Assets")
+    it "renders Monitored Trees stat card" do
+      expect(html).to include("Monitored Trees")
     end
 
     it "renders Health Score stat card" do
       expect(html).to include("Health Score")
     end
 
-    it "renders Carbon Yield stat card" do
-      expect(html).to include("Carbon Yield")
+    it "renders SCC Minted stat card" do
+      expect(html).to include("SCC Minted")
     end
 
-    it "renders Capital Injected stat card" do
-      expect(html).to include("Capital Injected")
+    it "renders Contracted Amount stat card" do
+      expect(html).to include("Contracted Amount")
     end
 
     it "renders Sectors stat card" do

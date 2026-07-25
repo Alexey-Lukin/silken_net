@@ -26,7 +26,7 @@ lv:
       headings:
         biometrics: Tiešraides biometrijas matrica
         deployment_matrix: Izvietojuma matrica
-        economic_yield: Ekonomiskā raža
+        economic_yield: Uzkrāts SCC
         hardware_vault: Aparatūras drošības glabātuve
         impedance_flux: Impedances svārstības (pēdējie 10 cikli)
         maintenance: Apkopes rituāli un dziedināšanas vēsture

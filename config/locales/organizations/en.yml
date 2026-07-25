@@ -5,11 +5,11 @@ en:
       columns:
         audit: Audit
         identity: On-Chain Identity
-        investment: Investment (SCC)
+        investment: Contracted (SCC)
         name: Organization Name
         sectors: Sectors
       investment_value: "%{amount} SCC"
-      subtitle: Management of multi-tenant entities and their environmental capital.
+      subtitle: Management of multi-tenant entities and their environmental programmes.
       title: Global Clan Registry
       view_aria: View %{name} profile
       view_profile: VIEW_PROFILE →
@@ -39,9 +39,9 @@ en:
       member_since: 'Member Since: %{date}'
       operational_status: Operational Status
       performance:
-        biological_assets: Biological Assets
+        biological_assets: Monitored Trees
         biological_assets_sub: Soldier Trees
-        capital_injected: Capital Injected
+        capital_injected: Contracted Amount
         capital_injected_sub: SCC Total
-        carbon_yield: Carbon Yield
+        carbon_yield: SCC Minted
         carbon_yield_sub: SCC Minted

@@ -132,7 +132,7 @@ Crucially, **slashing is not collective punishment**. Our v2 policy categorizes 
 - **Category B (Force majeure / acts of nature)** — lightning, wildfire of natural origin, severe drought (dClimate drought-index — specified, routed through Field Audit today), earthquake (NOAA ≥ M6 — a feed we have specified but not yet wired). Slashing is **disabled**. Funds are frozen and an **Etherisc parametric-insurance payout** is dispatched to the wallet. The insurance pool is replenished by a 2% Dynamic Tax on minting whenever its balance falls below 100,000 SCC.
 - **Category C (Indeterminate)** — connectivity loss, insufficient sample. Funds are frozen pending a 30-day DAO peer-review window; if the DAO does not vote, they **stay** frozen and the cluster escalates to field audit. An earlier draft auto-thawed on timeout, and that was an attack surface, not a safety bias: jam the radio, and deliberate fraud (A) launders itself into "no data" (C), then waits out a quorum that voter fatigue guarantees will never arrive. Presumption of innocence is not auto-release in the absence of telemetry.
 
-This matters. A protocol that burns its investors' tokens because lightning struck the cluster is a protocol that has no investors. We treat slashing as the cryptoeconomic instrument it is: a punishment for malice and inaction, *not* a tax on geographic risk.
+This matters. A protocol that burns its clients' tokens because lightning struck the cluster is a protocol that has no clients. We treat slashing as the cryptoeconomic instrument it is: a punishment for malice and inaction, *not* a tax on geographic risk.
 
 ---
 
