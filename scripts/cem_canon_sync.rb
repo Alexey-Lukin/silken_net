@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 # CEM↔canon geometry drift guard (HW.33 anchor-geometry audit; sibling of DocsLinter.anchor_dimension_drift).
-# ADVISORY→HARD once green; run on cement/vilize + wire into docs.yml. Pure Ruby stdlib (json) — no .NET,
+# HARD gate, wired into docs.yml (promoted from advisory once green). Pure Ruby stdlib (json) — no .NET,
 # no conda → CI-safe.
 #
 # The shipped `tools/cad/cem/*.json` geometry numbers are a MIRROR of their canon owner (01_01/01_02/01_04);

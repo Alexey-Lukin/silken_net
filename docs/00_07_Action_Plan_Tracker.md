@@ -1321,6 +1321,7 @@
 - [ ] 🔗 attest-lapse: окремий alert-тип замість warn-метрики — коли L1 QATT стане mandatory (зараз L0 приймається; свідома стеля)
 - [ ] 🔗 vcap/температура Королеви у health-блоці — при ADC-тракті на платі (wire має headroom: rsv-байти конверта; не брешемо нулями до заліза)
 - [ ] 🌿 DePIN-місток: підписана health-історія = evidence для operator-bond/uptime-SLA (BIZ.13; не блокер)
+- [ ] 🤖 multi-Queen дедуп: `create_offline_alert` тримає guard лише на `cluster_id` (`EwsAlert.unresolved.alert_type_queen_offline.exists?(cluster_id:)`), без прив'язки до gateway — друга Королева ТОГО Ж кластера, що падає ПІД активним алертом першої, власного `EwsAlert` не отримує (сам `faulty` у БД ставиться коректно, глушиться лише сповіщення). Схема це вже дозволяє (`Cluster has_many :gateways`), стримує лише практика ~1 Queen/кластер. Стеля задокументована й тестована in-place, але дому не мала
 
 #### INF.21 — Image-pin: SDL + анкор-systemd тягнуть мутабельний `:latest`
 - **P1** · 👤 · 🟢 · → [`06_02`](06_02_Akash_Network_Integration)
@@ -1345,6 +1346,7 @@
 - [ ] ⚖️ поріг тиші Soldier'а: значення/схема (flat-24h vs per-species) — рішення потребує bench-даних про реальний розкид `delta_t` (E.63), інакше = вгадування; transitional-механізм SHIPPED (`SystemParameter :tree_silence_threshold_hours`, default 24h) — ⚖️ лишається: bench-калібрування + чи per-species
 - [ ] 🤖+👤 signed daily heartbeat-контракт (Soldier «тихий, але живий» pulse + backend verify) — firmware-нога [`03_01`](03_01_Firmware_Lifecycle_and_DMA), gated bench
 - [ ] ⚖️ GP-кредит vs pulse: не мінтити за НЕспостережувану тишу без живого heartbeat (money-path, з ARCH.8 time-weighted → [`05_02`](05_02_Proof_of_Growth_Pipeline))
+- [ ] 🤖 source-дискримінатор у `resolve_returned_trees`: резолв бере БУДЬ-ЯКИЙ unresolved per-tree `field_audit` без перевірки джерела. Сьогодні безпечно **лише тому**, що цей воркер — єдиний викликач `escalate_field_audit!` із `tree:` (решта call-sites cluster-scoped, `tree: nil`). Тригер = поява ДРУГОГО per-tree продюсера `field_audit`: тоді цей resolve тихо закриє й чужу ескалацію, щойно дерево заговорить, хоч її причина не зникла. Не баг сьогодні — латентна пастка з названим тригером
 
 #### S6.14 — peaq_signing_key: rotation & revocation
 - **P2** · 👤 · 🟢 · → `06_04 §5.4`, `04_02 §S6.14`

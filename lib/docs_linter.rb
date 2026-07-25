@@ -589,7 +589,7 @@ module DocsLinter
     end
   end
 
-  # [SSOT anti-drift] Bare section-ref FORMAT guard (ADVISORY → HARD). The
+  # [SSOT anti-drift] Bare section-ref FORMAT guard (HARD). The
   # canonical cross-ref form (00_06 §1) is the full link `[`NN_NN §X`](DocName)`;
   # a *bare* code-span `NN_NN §X` (not wrapped in a link) is both non-standard AND
   # a blind spot — section_label_drift only validates LINKED refs, so a bare `§7.2`

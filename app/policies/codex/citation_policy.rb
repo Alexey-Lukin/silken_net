@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
-# Codex::CitationPolicy — Phase 1 stub; full surface lands in Phase 6.
+# Codex::CitationPolicy — full RBAC for the citations surface (create/destroy via
+# API; reads happen inline in target view components, no dedicated read endpoint).
+# `update?` has no live caller yet — no admin edit route exists for citations.
 #
 # Read: any authenticated user.
 # Create: forester+ (operational citation = treats lore as production data).

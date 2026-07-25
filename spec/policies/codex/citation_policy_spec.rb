@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-# Codex::CitationPolicy — Phase 1 stub used for both API and admin surfaces.
+# Codex::CitationPolicy — RBAC-матриця поверхні цитат:
 #
 #   read    : any authenticated user
 #   create  : forester+ (operational citation = treats lore as production data)
@@ -51,7 +51,7 @@ RSpec.describe Codex::CitationPolicy, type: :policy do
     end
 
     it "raises NoMethodError for nil user (documents controller-level auth gate)" do
-      # Phase 1 policy assumes an authenticated user is always present;
+      # Policy assumes an authenticated user is always present;
       # `forester_or_above?` calls `user.forest_commander?` which fails on nil.
       # The controller's `before_action :authenticate_user!` prevents this path.
       expect { described_class.new(nil, Codex::Citation.new).create? }

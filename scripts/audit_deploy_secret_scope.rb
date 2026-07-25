@@ -71,7 +71,7 @@ def audit(repo_secrets:, env_secrets:, variables:, org_secrets: [])
 
   AUTODERIVE.each do |k|
     warnings << "#{k} заведений — переконайся, що вказує на ОКРЕМИЙ Redis-інстанс; порожній/placeholder перебив би " \
-                "auto-derive з REDIS_URL (KREDIS-B1). Наразі workflow-unmapped = інертний." if repo_secrets.include?(k)
+                "auto-derive з REDIS_URL (config/redis/shared.yml). Наразі workflow-unmapped = інертний." if repo_secrets.include?(k)
   end
 
   [ errors, warnings ]
