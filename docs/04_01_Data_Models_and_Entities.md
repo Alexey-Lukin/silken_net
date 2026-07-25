@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 36 моделей (27 ядра + 9 шар Codex / Lore — Realm, Node, Citation у Phase 1; Comment, Attunement у Phase 2; Fraction у Phase 3; Match у Phase 4; Discovery, DiscoveryRule у Phase 5), 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу SilkenNet.
+Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 37 моделей (28 ядра + 9 шар Codex / Lore — Realm, Node, Citation у Phase 1; Comment, Attunement у Phase 2; Fraction у Phase 3; Match у Phase 4; Discovery, DiscoveryRule у Phase 5), 7 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу SilkenNet.
 
 ---
 
@@ -798,7 +798,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 |-------|------|
 | `total_carbon_points` | `wallets.sum(:balance)` — прямий SELECT |
 | `health_score` | `clusters.average(:health_index)` — SQL AVG |
-| `total_invested` | `naas_contracts.sum(:total_funding)` |
+| `total_contracted` | `naas_contracts.sum(:total_funding)` |
 | `cached_trees_count` | 1 год кеш `organization_#{id}_trees_count` |
 | `under_threat?` | `ews_alerts.unresolved.critical.exists?` |
 
@@ -1031,7 +1031,7 @@ active/draft ──cancel──► cancelled
 | `active_threats?` | Загрози в кластері |
 | `insurance_premium_amount` | `total_funding * INSURANCE_PREMIUM_RATE` (5%) — обчислювальний метод |
 | `forester_share_amount` | `total_funding * 0.95` — частка лісника (обчислювальний метод) |
-| `self.total_insurance_premiums` | Σ премій (5%) по активованих (active/fulfilled/breached) контрактах — DB-джерело premium-показника Real-Yield звіту ([`04_03`](04_03_REST_API_v1_Reference) `reports#financial_summary`); off-chain USDC-факт, НЕ on-chain подія |
+| `self.total_insurance_premiums` | Σ премій (5%) по активованих (active/fulfilled/breached) контрактах — DB-джерело premium-показника Network-Emission звіту ([`04_03`](04_03_REST_API_v1_Reference) `reports#financial_summary`); off-chain USDC-факт, НЕ on-chain подія |
 
 **Scopes:** `active`, `pending_completion` (active + end_date < now).
 

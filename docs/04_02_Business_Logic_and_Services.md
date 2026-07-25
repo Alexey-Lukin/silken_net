@@ -765,7 +765,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 |---|---|
 | **Файл** | `app/services/codex/node_import_service.rb` |
 | **Вхід** | `root:` (Pathname, default `Rails.root.join("db/seeds/codex")`), `logger:` (default `Rails.logger`) |
-| **Що робить** | Idempotent UPSERT seed-корпусу: 4 `Codex::Realm` + 79 `Codex::Node` з YAML-файлів. Ключ — `slug`. Зберігає DAO-промотовані `seed_origin`. Помилки на одному файлі не зривають весь імпорт (per-file `transaction` + isolated rescue). |
+| **Що робить** | Idempotent UPSERT seed-корпусу: 4 `Codex::Realm` + 118 `Codex::Node` з YAML-файлів (дзеркало — дім числа [`04_01`](04_01_Data_Models_and_Entities)). Ключ — `slug`. Зберігає DAO-промотовані `seed_origin`. Помилки на одному файлі не зривають весь імпорт (per-file `transaction` + isolated rescue). |
 | **Зовнішні виклики** | — (file I/O + DB) |
 | **Вихід** | `Result` (Struct) з полями `realms_upserted`, `nodes_upserted`, `errors` + `success?` |
 | **Інвокери** | `bin/rails codex:seed` (rake), `db/seeds.rb` (dev only) |

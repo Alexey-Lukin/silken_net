@@ -164,7 +164,7 @@ Enterprise-credible **та** securities-safe одночасно — це не к
 **🟢 ЗАРАЗ (Phase-1, усе дешеве, нічого не гейтиться токеном):**
 1. **BIZ.22-redesign** — найвищий пріоритет усього списку: інверсувати мову + refund/exit-fee/yield-механіку поки контракти не задеплоєні (мапа → [`securities_review`](../legal/securities_review.md)); «no-price-talk» у публічних доках — настанова вже зараз.
 2. ✅ **DOC-T.47 — закрито 2026-07-24** (contracts = MIT ратифіковано; `/NOTICE` + [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) вирівняні) — знято зі списку.
-3. **DCO** — CONTRIBUTING.md + dcoapp + ЧНУ-MoU-IP-шаблон (= UNI.20; підсилює OpenSSF contribution-policy-вісь).
+3. ✅ **DCO — зроблено 2026-07-25:** `CONTRIBUTING.md` §DCO + власний гейт `dco.yml` (не `dcoapp`, причина — §4). Лишається 👤-флип branch-protection + ВНЗ-MoU IP-пункт (= UNI.20).
 4. **Multi-lock SBOM-CI-job** (CycloneDX/SPDX з lock-файлів; BIZ.24 🤖-half — image-SBOM уже є, OPS.10) + решта SPDX-scope-питань founder'ом ([`spdx_rollout_plan`](../legal/spdx_rollout_plan.md) §6). Scorecard-action ✅ уже live — дій не потребує.
 5. UNI.16-консультація = гейт-подія, що відкриває все 🟡.
 

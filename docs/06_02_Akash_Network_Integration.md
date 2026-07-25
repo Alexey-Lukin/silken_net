@@ -726,7 +726,7 @@ resource "local_file" "akash_sdl" {
 ```
 terraform/akash/
 ├── main.tf                   # SDL rendering + null_resource Akash CLI provisioner
-├── variables.tf              # 14 вхідних змінних (мережа, ресурси, ціна, секрети)
+├── variables.tf              # вхідні змінні (мережа, ресурси, ціна, секрети) — к-сть: `grep -c '^variable' `
 ├── outputs.tf                # SDL path, SHA-256 hash, deployment notes
 └── terraform.tfvars.example  # Приклад заповнення (для копіювання в terraform.tfvars)
 ```

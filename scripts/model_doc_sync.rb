@@ -126,6 +126,29 @@ svc_doc = File.read(DOC_SVC)
   end
 end
 
+# ── 5. prose COUNT ⟷ the truth this script already computed ────────────────
+# The 1:1 heading checks above catch a model added in code but missing from the
+# doc — they do NOT catch the doc's own PROSE saying "всіх 36 моделей … 6
+# concerns" while the code has 37 and 7. That number sat wrong for weeks, three
+# lines above a green gate, because nothing compared it to what the gate already
+# knew. This is the cheapest possible closure of that whole class: the truth is
+# already in local variables, so it costs a regex.
+# NAMED CEILING: blockquote lines are skipped. Provenance in this repo lives in
+# `>` callouts, and a past-tense note ("протух — заявляв 35 моделей при 36
+# файлах") is a record of a FIXED drift, not a current claim; flagging it would
+# force deleting the history that explains why this gate exists. Verified: that
+# is the only blockquote count in 04_01 today.
+current_claim_lines = doc_lines.reject { |l| l.lstrip.start_with?(">") }.join("\n")
+
+{ "моделей" => model_classes.size, "concerns" => concern_classes.size }.each do |noun, truth|
+  current_claim_lines.scan(/(\d+)\s+#{Regexp.escape(noun)}/) do |(claimed)|
+    next if claimed.to_i == truth
+
+    errors << "04_01 prose says #{claimed} #{noun}, code has #{truth} " \
+              "(prose count drifts silently — reference the gate, or keep it correct)"
+  end
+end
+
 # ── report ─────────────────────────────────────────────────────────────────
 svc_count = Dir.glob(File.join(SERVICES_DIR, "**/*.rb")).reject { |p| NON_SERVICE_BASENAMES.include?(File.basename(p)) }.size
 wrk_count = Dir.glob(File.join(WORKERS_DIR, "**/*.rb")).reject { |p| NON_SERVICE_BASENAMES.include?(File.basename(p)) }.size

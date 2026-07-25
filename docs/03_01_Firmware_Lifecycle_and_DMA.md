@@ -808,7 +808,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 **Група B — ефемерне (per-wake, втрата НЕ важлива).** Scratch-буфери, що наповнюються щоциклу до використання й не несуть сенсу між пробудженнями: `raw_audio_buffer`/`audio_buffer` (DMA), `lora_payload`/`encrypted_payload` (TX), `incoming_lora_payload`/`decrypted_rx_payload` (RX), ISR-прапорці (`vibration_detected`, `audio_ready`, `lora_rx_flag`), `ml_event_id`/`ml_confidence`, `delta_t_seconds` (рахується щоциклу), `current_lorenz_bytecode` (вказівник, ставиться на boot), `g_node_role`/`lorenz_seed[]` (читаються з Protected Flash на boot — §1.11/SEC.11). Персистити нічого.
 
-**Група C — must-survive, але RAM-only → Flash-KV ключі.** Стан, що мусить нести значення **між** циклами, але якому нема місця у RTC (DR0..DR19 повні):
+**Група C — must-survive, але RAM-only → Flash-KV ключі.** Стан, що мусить нести значення **між** циклами, але якому нема місця у RTC (DR0..DR19 практично повні — вільний лише DR7, §2):
 
 | Ключ | Поле(я) | Пакування (u32) | Споживач | Статус |
 |------|---------|-----------------|----------|--------|

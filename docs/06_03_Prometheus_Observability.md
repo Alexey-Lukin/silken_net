@@ -315,9 +315,9 @@ end
 > При зміні реєстру в коді — **регенерувати ЛИШЕ цю таблицю** (команда в кінці).
 > Де інкрементується/оновлюється кожна — `grep -rn "SilkenNet::Metrics::<CONST>" app/`.
 >
-> **Разом: 75 метрик = 42 counters + 31 gauges + 2 histograms** (звірено регенерацією нижче).
+> **Разом: 78 метрик = 44 counters + 32 gauges + 2 histograms** (звірено регенерацією нижче).
 
-**Counters (42):**
+**Counters (44):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -337,6 +337,7 @@ end
 | `silkennet_helium_sos_received_total` | `outcome` | Queen SOS frames received via the Helium webhook, by processing outcome |
 | `silkennet_insurance_payout_attempts_total` | — | Parametric insurance payouts attempted by InsurancePayoutWorker (SLO denominator) |
 | `silkennet_insurance_payout_success_total` | — | Parametric insurance payouts executed — Etherisc claim sent / mint initiated (SLO numerator) |
+| `silkennet_lineage_root_failures_total` | — | Mint lineage Merkle-root computation failures (fail-open, root left NULL) |
 | `silkennet_m2m_nonce_fallback_total` | — | Total M2M nonce checks falling back from Redis to DB-backed cache (Redis outage indicator) |
 | `silkennet_mint_attempts_total` | `token_type` | Mint transactions attempted by BlockchainMintingService (SLO denominator) |
 | `silkennet_mint_success_total` | `token_type` | Mint transactions successfully broadcast to mempool — status→sent (SLO numerator) |
@@ -365,7 +366,7 @@ end
 | `silkennet_tree_silence_total` | — | Total tree silence transitions detected by the staleness sweeper (per-tree field_audit escalations) |
 | `silkennet_w3bstream_signature_fallback_total` | `reason` | Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature |
 
-**Gauges (31):**
+**Gauges (32):**
 
 | Metric | Labels | Призначення |
 |---|---|---|

@@ -501,7 +501,7 @@ fauna (§10): Input(mean‖std log-mel) → … → Dense(5) → Softmax
 uint8_t Run_Inference(const float* buffer, float* confidence);
 
 // Виклик у main.c (Phase 1.5, ✅ розкоментований — FW.4):
-// ml_event_id = Run_Inference(logmel_features, &ml_confidence);  // Path B: 40 log-mel від Compute_LogMel
+ml_event_id = Run_Inference(logmel_features, &ml_confidence);  // Path B: 40 log-mel від Compute_LogMel
 ```
 
 | Параметр | Тип | Зміст |
