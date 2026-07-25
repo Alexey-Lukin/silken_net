@@ -1574,9 +1574,9 @@
 - [ ] 🔗 після BIZ.2 (MSA)
 
 #### BIZ.14 — SFC Vote-Escrow during breach→slash lag (07_01 SFC vote-escrow residual)
-- **P3** · 🤖 · 🟢 · → `07_01 §8`
-- **Стан:** Core закрито — `SilkenForestCoin.slash()` (SLASHER_ROLE) зменшує voting power при slashing → атака «купити SFC + навмисне порушення NaaS» неможлива. Residual: ~1–5 хв lag (`web3_critical` черга) між SCC-slash і SFC-slash — у вікні учасник технічно ще може проголосувати. Канон `07_01 §8`.
-- [ ] 🔗 Vote-Escrow (veToken) при `breached`-контрактах — опціонально, gated на повний DAO governance launch (SEC.1)
+- **P3** · 🤖 · 🔗 · → `07_01 §8`
+- **Стан:** Core закрито — `SilkenForestCoin.slash()` (SLASHER_ROLE) зменшує voting power при slashing → атака «купити SFC + навмисне порушення NaaS» неможлива. **Residual — реальне, хоч і вузьке, вікно:** ~1–5 хв між SCC-slash і SFC-slash (`web3_critical` черга), і в ньому вже-слешнутий учасник ще може проголосувати. Канон [`07_01 §8`](07_01_Nature_as_a_Service_Contracts) називає Vote-Escrow **рекомендованим** доп-захистом (не «опціональним») — але сам механізм має сенс лише при живому DAO, тому дія інертна до SEC.1, а не знята. Канон `07_01 §8`.
+- [ ] 🔗 Vote-Escrow (veToken) для `breached`-контрактів — gated на DAO governance launch (SEC.1); доти вікно лишається прийнятим ризиком
 
 #### BIZ.15 — B2B Fiat-to-Retirement SPV (corporate carbon on-ramp)
 - **P3** · 👤 · ⚪ · → `07_01 §8`
@@ -1688,6 +1688,7 @@ _Активних DOC-T немає — усі закриті мігровані 
 | DOC-T.47 | contracts-ліцензія drift: `/NOTICE`+`07_03 §3` казали contracts=AGPL, реально 21 `.sol` = MIT SPDX → **ратифіковано MIT** (on-chain composability / audit-tooling / OpenZeppelin-consistency; AGPL-on-chain юридично невизначений — E3-research), зонні мапи вирівняно + stale `08_01`→`07_03 §3` fix; суміжне: `tools/cad/src\|tests`=AGPL (наш код), `tools/cad/extern`=Apache (LEAP-submodule) | [`07_03 §3`](07_03_Academic_Integration_and_IP) |
 | BIZ.12 | Horizon Europe CLUSTER 6 biodiversity-grant заявка (fauna-вимір) — ⚫ грант-вектор знято (founder 2026-07-23: Horizon прибрано з проєкту, `07_03` retired; Web3/академ-грант-трек = opportunistic-passive). Fauna-D-MRV наукова цінність лишається (НЕ грант-gated): acoustic biodiversity → 07_03 Стаття 24a, 03_03 §10, E.59 both/and-вимір | [`07_03 §2.1`](07_03_Academic_Integration_and_IP) · [`03_03 §10`](03_03_TinyML_Acoustic_Inference) |
 | STK.7 | Tier 5 Social-Inclusion outreach (Кучер, соц. сфера) — ⚫ Horizon-грант-тригер знято (founder 2026-07-23); Кучер-профіль + Tier 5 вилучено; Eco-Therapy 4.0 (цифрова лісотерапія) → 07_01 §1.2 | [`07_01 §1.2`](07_01_Nature_as_a_Service_Contracts) |
+| BIZ.7 | Replacement OPEX + деградація обладнання — ✅ канонізовано (Soldier blended failure ~2%/рік на Gen 2.0 — домінує механіка, не біохімія; Queen LiFePO4 calendar-limited 8–10 р; realistic life-cycle OPEX і payback перераховані). Дому в §07 не мав від початку — **orphan-ID**, хоч канон цитує його пʼять разів, включно із заголовком секції | [`07_02 §8a`](07_02_Unit_Economics_and_BOM) |
 | BIZ.10 | Multi-party co-authorship + open-license MoU framework — ⚫ надлишковий під open-поставою (founder 2026-07-23): co-authorship + open-license acknowledgment (AGPL/CERN-OHL-S/CC-BY-SA) уже дають tech-sharing без формального 5-стороннього Master Collaboration Agreement; лаб-доступ = per-item UNI.2 (ЧНУ парасоль); NDA лише для нерозкритого (ключі/production-дані) | [`07_03 §3`](07_03_Academic_Integration_and_IP) |
 | STK.8 | Cultural Tier A (черкаські митці) pre-Genesis NFT outreach — ⚫ deferred (founder 2026-07-23: «як треба буде — розбереться»); профілі → `cultural_layer.md`, re-opens при TRL 7 + Genesis onchain | `cultural_layer.md` |
 | STK.9 | Cultural Tier B (національні митці) pre-launch outreach — ⚫ deferred (founder 2026-07-23); профілі → `cultural_layer.md`, re-opens при TRL 8 | `cultural_layer.md` |
