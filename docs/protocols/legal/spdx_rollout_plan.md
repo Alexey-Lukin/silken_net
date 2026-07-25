@@ -80,7 +80,7 @@ pragma solidity <pinned>;   // версія — One-Home 05_03
 **`tools/cad/` = Apache/CC0 — ЧАСТКОВО НЕТОЧНО.**
 Ці теги реальні, але живуть ВИКЛЮЧНО всередині двох git-submodules (`tools/cad/extern/LEAP71_ShapeKernel`, `LEAP71_LatticeLibrary`) — тобто в ЧУЖОМУ git-репозиторії, structurally invisible для `git ls-files` на рівні супер-проєкту (підтверджено: `git ls-files -s tools/cad/extern` показує лише 2 gitlink-записи mode `160000`, жодного окремого файлу). Наш ВЛАСНИЙ код у `tools/cad/src/` і `tools/cad/tests/` (`.cs`) — **0 файлів із SPDX-тегом взагалі**. Уявлення «в `tools/cad` уже теговано» описує submodule-вміст (правда, але нерелевантно — цей код ми ніколи не редагуємо і скрипт його ніколи не побачить через `git ls-files`), а не наш код (який насправді чистий аркуш).
 
-**Наслідок:** ризик «перезаписати правильні теги» в `tools/cad/` **структурно дорівнює нулю** (submodule-межа = природний захист). Натомість тут ІНША задача — не «зберегти виняток», а **нове рішення**: чи наш `tools/cad/{src,tests}` отримує AGPL (як решта «tooling») чи Apache-2.0/CC0-1.0 (щоб відповідати екосистемі LEAP71, яку він розширює)? Це відкрите питання, не факт для збереження.
+**Наслідок:** ризик «перезаписати правильні теги» в `tools/cad/` **структурно дорівнює нулю** (submodule-межа = природний захист). Натомість тут ІНША задача — не «зберегти виняток», а **зафіксувати рішення**: наш `tools/cad/{src,tests}` отримує **AGPL-3.0-or-later** (як решта tooling) — ✅ **ратифіковано [DOC-T.47]** 2026-07-24 разом із `contracts`=MIT; Apache/CC0 стосується лише LEAP71-submodule за межею нашого дерева. Тобто це вже НЕ відкрите питання, і scope-лічильник нижче це враховує.
 
 ---
 
@@ -99,7 +99,7 @@ pragma solidity <pinned>;   // версія — One-Home 05_03
 | `firmware/{bio_contracts,mruby,scripts}/**/*.{rb,py,sh}` | Ruby/Python/sh, `#` | AGPL-3.0-or-later | 0 tagged |
 | `tools/{in_silico,ml,firmware}/**/*.{py,rb,sh}` | Python/Ruby/sh, `#` | AGPL-3.0-or-later | 0 tagged |
 | `contracts/**/*.sol` | Solidity, `//` перед `pragma` | **MIT** (ратифікований виняток, DOC-T.47) | **усі теговані — ГОТОВО, тільки skip-logic** |
-| `tools/cad/{src,tests}/**/*.cs` + `render_gallery.sh` | C#, `//` | ✅ **РАТИФІКОВАНО [DOC-T.47]: AGPL-3.0-or-later** (наш власний код; Apache/CC0 стосується лише LEAP71-submodule за межею нашого дерева) (CLAUDE.md §2 «tools/ крім tools/cad» натякає, що cad ВЖЕ виняток — але для чого саме?) | 0 tagged — founder має вибрати ID |
+| `tools/cad/{src,tests}/**/*.cs` + `render_gallery.sh` | C#, `//` | ✅ **РАТИФІКОВАНО [DOC-T.47]: AGPL-3.0-or-later** (наш власний код; Apache/CC0 стосується лише LEAP71-submodule за межею нашого дерева) (CLAUDE.md §2 «tools/ крім tools/cad» натякає, що cad ВЖЕ виняток — але для чого саме?) | 0 tagged — ID ратифіковано [DOC-T.47], лишився сам прохід |
 | native hw-design (gerber/STEP/KiCad/.scad/.dxf) | — | CERN-OHL-S-2.0 | **0 файлів існує в репо** — зона порожня, суто «future» (`/NOTICE` сама це каже: «and any future CAD/gerbers») |
 | `docs/**/*.md` | Markdown | CC-BY-SA-4.0, **рекомендація: БЕЗ per-file SPDX** | N/A за конвенцією (§4) |
 | `config/**/*.yml` + `config/**/*.rb` (мінус `.enc`) | YAML/Ruby, `#` | ⚠️ **ГЕП у мапі** — не згадано в задачі взагалі | потребує рішення |
@@ -191,7 +191,7 @@ git ls-files -z | while read -d '' -r path; do ... done
 **DEFERRED (Phase 7), не робити зараз.** Підстави:
 
 1. **Diff завеликий і розкиданий**: ~1200–1400 файлів по 8+ деревах, різні мови — не «керований» one-shot.
-2. **4 нерозв'язані scope-питання** мають бути вирішені founder ПЕРЕД будь-яким скриптом: (a) `config/` — включати чи ні (геп в оригінальній мапі), (b) `tools/cad/` — Apache/CC0 чи AGPL для нашого коду, (c) `terraform/`+`subgraph/` — включати чи ні, (d) `spec/` — тести теж під SPDX чи ні.
+2. **3 нерозвʼязані scope-питання** мають бути вирішені founder ПЕРЕД будь-яким скриптом: (a) `config/` — включати чи ні (геп в оригінальній мапі), (b) `terraform/`+`subgraph/` — включати чи ні, (c) `spec/` — тести теж під SPDX чи ні. *(Колишнє питання про `tools/cad/` закрито ратифікацією DOC-T.47 — AGPL для нашого коду; звідси 4→3, і TL;DR §0 тепер збігається з цим переліком.)*
 3. **CubeMX-маркер нюанс** (§5.3) у `firmware/{soldier,queen}` вимагає акуратної, протестованої insertion-логіки, не «просто echo рядок на початок файлу» — інакше тихий regen-ризик.
 
 **Що вже НЕ блокує:** SSOT-drift «мапа каже AGPL, код каже MIT» був четвертою підставою на момент аудиту — **закритий того ж дня ратифікацією DOC-T.47** (§1). Обидва документи-доми тепер описують реальний стан коду; скрипту лишається detect-and-skip.
