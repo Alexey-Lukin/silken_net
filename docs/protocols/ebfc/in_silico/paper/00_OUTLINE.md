@@ -3,7 +3,7 @@
 > **This is the writing plan / skeleton**, not a number source. All numerical results
 > live in [`SUMMARY.md`](../SUMMARY.md) (One-Home) — this doc *references* them, never
 > restates. The canonical publication plan (title, journals, authors, IP posture) lives in
-> [`07_03 Стаття 1`](../../../07_03_Academic_Integration_and_IP.md); keep them in sync.
+> [`07_03 Стаття 1`](../../../../07_03_Academic_Integration_and_IP.md); keep them in sync.
 > Built 2026-06-05 while ① runs; sections tagged **[READY]** / **[PENDING ②/③/④]**.
 
 ## 0. Front matter

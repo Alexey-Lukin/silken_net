@@ -39,13 +39,22 @@ protocols.each do |f|
   rel  = f.sub("#{DOCS}/", "")
   text = File.read(f)
 
-  # (1)+(3) relative-href canon links: target exists, optional #anchor resolves.
-  # `.md` is optional-but-usual: the protocols/ subtree writes the extension, and
-  # without this the scan matched 1 link of 142 (silent since DOC-T.26 landed).
-  text.scan(%r{\]\((?:\.\./)+(\d\d_\d\d_[A-Za-z0-9_]+)(?:\.md)?(#[^)]*)?\)}).each do |base, frag|
+  # (1)+(3) relative-href canon links: target exists, the `../`-DEPTH actually lands
+  # on docs/, optional #anchor resolves. `.md` is optional-but-usual: the protocols/
+  # subtree writes the extension, and without this the scan matched 1 link of 142
+  # (silent since DOC-T.26 landed).
+  # The depth half closes the sibling blind spot: the check was NAME-only, so a wrong
+  # `../` count passed while rendering a dead link — `paper/` (4 levels deep) carried
+  # `../../../07_03_…`, resolving to docs/protocols/07_03_… i.e. nowhere, and CI stayed
+  # green because the BASENAME was a real canon doc (found 2026-07-25, 2 live hits).
+  text.scan(%r{\]\(((?:\.\./)+)(\d\d_\d\d_[A-Za-z0-9_]+)(?:\.md)?(#[^)]*)?\)}).each do |ups, base, frag|
     unless existing.include?(base)
       violations << "#{rel}: dangling canon link → `#{base}` (no such doc)"
       next
+    end
+    landed = File.dirname(File.expand_path("#{ups}#{base}", File.dirname(f)))
+    unless landed == DOCS
+      violations << "#{rel}: wrong `../`-depth → `#{ups}#{base}` resolves into #{landed.sub(File.dirname(DOCS) + '/', '')}/, not docs/"
     end
     if frag
       slug = frag.delete_prefix("#").downcase
