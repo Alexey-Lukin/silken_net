@@ -45,8 +45,29 @@ RSpec.describe SpdxHeaders do
         "terraform/main.tf" => agpl,
         "subgraph/src/mapping.ts" => agpl,
         "deploy/grafana/import.rb" => agpl,
-        "bin/bootstrap_github.sh" => agpl
+        "bin/bootstrap_github.sh" => agpl,
+        # 🔴 Extensionless and named-by-basename files. The first of these is the one that
+        # matters: it was written as `%w[.rb .rake ""]`, where `""` is a two-character
+        # string and not the empty one, so the extensionless rule matched NOTHING and the
+        # single file the plan names by hand was silently skipped. One composed assertion
+        # here — licence_for, not just comment_prefix — kills that class at birth.
+        "lib/daemons/coap_listener" => agpl,
+        "bin/coap_load" => agpl,
+        "bin/forest_simulator" => agpl,
+        "firmware/test/Makefile" => agpl,
+        "firmware/CMakeLists.txt" => agpl,
+        "firmware/cmake/arm-none-eabi.cmake" => agpl,
+        "firmware/sim/wle5_bench/stm32wle5.ld" => agpl,
+        "app/assets/tailwind/application.css" => agpl,
+        "lib/canonical_block_pins.yml" => agpl,
+        "subgraph/schema.graphql" => agpl,
+        "subgraph/subgraph.yaml" => agpl
       }.each { |path, want| expect(described_class.licence_for(path)).to eq(want), "#{path} should be #{want}" }
+    end
+
+    it "leaves the generated bin/ binstubs alone — bin membership is enumerated, not patterned" do
+      %w[bin/rails bin/rake bin/rspec bin/rubocop bin/setup bin/dev bin/docker-entrypoint]
+        .each { |path| expect(described_class.licence_for(path)).to be_nil, "#{path} is generated" }
     end
 
     it "keeps contracts/ on the ratified MIT exception (DOC-T.47)" do
@@ -65,8 +86,11 @@ RSpec.describe SpdxHeaders do
         "config/credentials.yml.enc",                # encrypted blob
         "config/credentials/production.key",         # key material
         "db/structure.sql",                          # pg_dump regenerates it
+        "db/cable_schema.rb",                        # SchemaDumper rewrites it — tag not durable
+        "db/cache_schema.rb",                        # ditto
         "config/locales/en.yml",                     # i18n-tasks re-renders byte-for-byte
         "config/locales/codex/uk.yml",               # ditto, at any depth
+        "tools/in_silico/conda-lock.yml",            # third-party lock output
         "app/views/layouts/application.html.erb",    # emits into rendered output
         "spec/components/previews/x/all.html.erb",   # ditto
         "public/404.html",
@@ -76,7 +100,7 @@ RSpec.describe SpdxHeaders do
         ".kamal/hooks/pre-deploy",
         "tools/cad/cem/anchor.json",                 # JSON has no comment syntax
         "bin/rails",                                 # generated binstub, not our work
-        "firmware/CMakeLists.txt",                   # build plumbing
+        "firmware/.cppcheck/stm32wle5.xml",           # tool platform definition
         "README.md"
       ].each { |path| expect(described_class.licence_for(path)).to be_nil, "#{path} must stay untouched" }
     end
@@ -84,7 +108,7 @@ RSpec.describe SpdxHeaders do
     it "is an allow-list: an unlisted extension in a listed tree is still out of scope" do
       expect(described_class.licence_for("app/assets/images/logo.svg")).to be_nil
       expect(described_class.licence_for("tools/in_silico/data/geom.xyz")).to be_nil
-      expect(described_class.licence_for("firmware/sim/wle5_bench/stm32wle5.ld")).to be_nil
+      expect(described_class.licence_for("firmware/notes.md")).to be_nil
     end
 
     it "is an allow-list: a listed extension in an unlisted tree is still out of scope" do
@@ -191,6 +215,27 @@ RSpec.describe SpdxHeaders do
       expect(described_class.insertion_index("firmware/common/silken_crc.h", [ "/*\n", " * banner\n", " */\n" ])).to eq(0)
     end
 
+    it "uses line 1 for every language with no leading-line ceremony" do
+      %w[a.sol a.ts a.js a.cs a.tf a.graphql a.css a.ld].each do |name|
+        expect(described_class.insertion_index(name, [ "first line\n" ])).to eq(0), "#{name} should insert at 0"
+      end
+    end
+
+    # The idempotency invariant, stated once instead of implied by two separate examples:
+    # a tag placed at or beyond the detection window would be invisible to the next run,
+    # which would then insert a second one.
+    it "never returns an index at or beyond the tag-detection window" do
+      cubemx = Array.new(30) { |i| i == 20 ? "/* USER CODE BEGIN Header */\n" : "x\n" }
+      [ [ "firmware/x.c", cubemx ], [ "a.rb", [ "#!/x\n" ] ], [ "a.yml", [ "---\n" ] ] ].each do |path, lines|
+        expect(described_class.insertion_index(path, lines)).to be < described_class::SCAN_LINES
+      end
+    end
+
+    it "sees past a UTF-8 BOM so a shebang keeps line 1" do
+      expect(described_class.insertion_index("a.sh", [ "﻿#!/bin/sh\n", "x\n" ])).to eq(1)
+      expect(described_class.insertion_index("a.yml", [ "﻿---\n", "x\n" ])).to eq(1)
+    end
+
     it "keeps a YAML document-start or directive first" do
       expect(described_class.insertion_index("config/database.yml", [ "---\n", "en:\n" ])).to eq(1)
       expect(described_class.insertion_index("config/x.yml", [ "%YAML 1.2\n", "---\n" ])).to eq(1)
@@ -220,6 +265,53 @@ RSpec.describe SpdxHeaders do
     it "does not look past its scan window" do
       lines = Array.new(described_class::SCAN_LINES, "# filler\n") + [ "# SPDX-License-Identifier: MIT\n" ]
       expect(described_class.existing_tag(lines)).to be_nil
+    end
+  end
+
+  # ------------------------------------------------------------ third-party notices
+
+  # 🔴 The second load-bearing guard. Stamping our identifier above someone else's
+  # copyright is a false licence claim on third-party code — the most expensive error
+  # available in a defensive-publication posture, and invisible to `existing_tag`
+  # because a prose vendor notice contains no `SPDX-License-Identifier` string.
+  describe ".foreign_notice" do
+    it "catches the real vendor notices present in this repo" do
+      [
+        " * Copyright (c) 2020 STMicroelectronics.\n",
+        " *              (C)2020 Semtech\n",
+        " *          Portions COPYRIGHT 2020 STMicroelectronics\n",
+        " * \\copyright Revised BSD License, see section \\ref LICENSE.\n",
+        " * All rights reserved.\n"
+      ].each { |line| expect(described_class.foreign_notice([ line ])).not_to be_nil, "should flag: #{line.strip}" }
+    end
+
+    it "scans past a leading ASCII-art logo" do
+      lines = [ "/*!\n" ] + Array.new(12) { " *   ___\n" } + [ " *   (C)2020 Semtech\n" ]
+      expect(described_class.foreign_notice(lines)).to include("Semtech")
+    end
+
+    # The word alone must not trip it: scripts/dco_check.rb discusses copyright in prose.
+    it "does not trip on the word 'copyright' without an attribution" do
+      [
+        "# copyright-origin certification the AGPL posture leans on (07_03 §3)\n",
+        "# Every contributor certifies copyright origin via the DCO.\n",
+        "# See the copyright section of NOTICE.\n"
+      ].each { |line| expect(described_class.foreign_notice([ line ])).to be_nil, "false positive on: #{line.strip}" }
+    end
+
+    it "stops looking after its window" do
+      lines = Array.new(described_class::NOTICE_SCAN_LINES, "# filler\n") + [ "# Copyright (c) 2020 Acme\n" ]
+      expect(described_class.foreign_notice(lines)).to be_nil
+    end
+
+    # Without this, adding our OWN copyright header to a file would drop it out of the
+    # rollout and out of the gate in the same motion — the guard turning on its owner.
+    it "does not treat OUR copyright as foreign" do
+      [
+        "# Copyright (c) 2026 Oleksii Lukin / SilkenNet\n",
+        "# Copyright 2026 Silken Net. All rights reserved.\n",
+        "// © 2026 GaiaNexus\n"
+      ].each { |line| expect(described_class.foreign_notice([ line ])).to be_nil, "ours, not foreign: #{line.strip}" }
     end
   end
 
@@ -301,6 +393,17 @@ RSpec.describe SpdxHeaders do
       end
     end
 
+    it "refuses to stamp a file carrying a third-party copyright, leaving it byte-identical" do
+      vendor = "/*\n * hal_conf.h — our preamble\n */\n/**\n  * Copyright (c) 2020 STMicroelectronics.\n  */\n"
+      with_repo("firmware/hal_glue/vendor.h" => vendor) do |root|
+        action = described_class.plan(root:, paths: []).first
+
+        expect(action[:status]).to eq(:foreign_notice)
+        expect(action[:notice]).to include("STMicroelectronics")
+        expect(File.read(File.join(root, "firmware/hal_glue/vendor.h"))).to eq(vendor)
+      end
+    end
+
     it "reports a foreign identifier as a mismatch and never rewrites it" do
       with_repo("app/models/tree.rb" => "# SPDX-License-Identifier: Apache-2.0\nclass Tree; end\n") do |root|
         action = described_class.plan(root:, paths: []).first
@@ -328,6 +431,45 @@ RSpec.describe SpdxHeaders do
       with_repo("app/models/blob.rb" => "\x00\x01\x02binary") do |root|
         expect(described_class.plan(root:, paths: [])).to be_empty
       end
+    end
+
+    # apply! carries its own status guard rather than trusting the caller's filter: on an
+    # :ok record it would double the tag, on :mismatch / :foreign_notice it would write our
+    # licence directly above somebody else's.
+    it "is a no-op on any record that is not :insert" do
+      tree = {
+        "app/models/ok.rb" => "# SPDX-License-Identifier: #{agpl}\nclass A; end\n",
+        "app/models/other.rb" => "# SPDX-License-Identifier: Apache-2.0\nclass B; end\n",
+        "firmware/v.h" => "/* Copyright (c) 2020 Acme Corp. */\n#define X 1\n"
+      }
+      with_repo(tree) do |root|
+        before = tree.keys.to_h { |rel| [ rel, File.read(File.join(root, rel)) ] }
+        actions = described_class.plan(root:, paths: [])
+
+        expect(actions.map { |a| a[:status] }).to match_array(%i[ok mismatch foreign_notice])
+        actions.each { |a| expect(described_class.apply!(root, a)).to be_nil }
+        expect(tree.keys.to_h { |rel| [ rel, File.read(File.join(root, rel)) ] }).to eq(before)
+      end
+    end
+
+    it "does not glue the tag onto a final line that has no newline" do
+      with_repo("bin/coap_load" => "#!/usr/bin/env ruby") do |root|
+        action = described_class.plan(root:, paths: []).first
+        described_class.apply!(root, action)
+
+        expect(File.readlines(File.join(root, "bin/coap_load")))
+          .to eq([ "#!/usr/bin/env ruby\n", "# SPDX-License-Identifier: #{agpl}\n" ])
+      end
+    end
+
+    it "survives an invalid UTF-8 byte instead of aborting the whole run" do
+      with_repo("app/models/tree.rb" => "# caf\xE9 in a comment\nclass Tree; end\n") do |root|
+        expect { described_class.plan(root:, paths: []) }.not_to raise_error
+      end
+    end
+
+    it "refuses to enumerate outside a git repository rather than reporting an empty tree" do
+      Dir.mktmpdir { |root| expect { described_class.plan(root:, paths: []) }.to raise_error(/git ls-files failed/) }
     end
 
     it "preserves CRLF line endings when a file uses them" do
