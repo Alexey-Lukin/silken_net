@@ -21,7 +21,11 @@ module Views
             title: @datetime.strftime("%d.%m.%Y %H:%M:%S UTC"),
             class: @css_class
           ) do
-            plain "#{@prefix}#{time_ago_in_words(@datetime)} ago"
+            # Шаблон, а не суфікс: «ago»/«тому» стоять ПІСЛЯ проміжку, а латиське
+            # «pirms»/литовське «prieš» — ПЕРЕД ним, тож конкатенацією це не
+            # виражається. Сам проміжок локалізує `time_ago_in_words`
+            # (`datetime.distance_in_words` з `rails-i18n`, `04_04 §12.2`).
+            plain "#{@prefix}#{t('ui.relative_time.ago', time: time_ago_in_words(@datetime))}"
           end
         end
       end

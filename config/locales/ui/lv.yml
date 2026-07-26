@@ -7,6 +7,8 @@ lv:
       confirm_remove: Noņemt šo fotogrāfiju no pierādījumu ieraksta?
       remove_photo: 'Noņemt fotogrāfiju: %{filename}'
       view_photo: 'Skatīt fotogrāfiju: %{filename}'
+    relative_time:
+      ago: pirms %{time}
     skeleton:
       loading: Ielādē…
     status:

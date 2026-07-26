@@ -7,6 +7,8 @@ uk:
       confirm_remove: Видалити це фото з документації обслуговування?
       remove_photo: 'Видалити фото: %{filename}'
       view_photo: 'Переглянути фото: %{filename}'
+    relative_time:
+      ago: "%{time} тому"
     skeleton:
       loading: Завантаження…
     status:

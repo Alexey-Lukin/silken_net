@@ -28,6 +28,26 @@ RSpec.describe Views::Shared::UI::RelativeTime do
     it "uses design system text-muted token" do
       expect(html).to include("text-gaia-text-muted")
     end
+
+    # Регресія, яку ця спека не бачила: суфікс `" ago"` був сирим Ruby-літералом,
+    # приклеєним до ЛОКАЛІЗОВАНОГО `time_ago_in_words`. Поки `rails-i18n` не
+    # вантажився, обидві половини були англійські й дефект виглядав послідовним;
+    # щойно проміжок став перекладатись — вийшло «3 хвилини ago». Тож перевіряти
+    # треба не наявність «ago», а ВІДСУТНІСТЬ англійського хвоста в чужій локалі.
+    it "carries no English suffix in a non-English locale" do
+      uk_html = I18n.with_locale(:uk) { render_component(datetime: datetime) }
+
+      expect(uk_html).not_to include("ago")
+      expect(uk_html).to include("тому")
+    end
+
+    # Прийменникові мови ставлять маркер ПЕРЕД проміжком — конкатенацією це не
+    # виражається, тому ключ шаблонний. Пін ловить регрес у бік «суфікса».
+    it "renders the marker before the interval in a preposition-first locale" do
+      lv_html = I18n.with_locale(:lv) { render_component(datetime: datetime) }
+
+      expect(lv_html).to match(/>\s*pirms .+</)
+    end
   end
 
   describe "with a nil datetime" do

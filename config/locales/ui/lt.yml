@@ -7,6 +7,8 @@ lt:
       confirm_remove: Pašalinti šią nuotrauką iš įrodymų įrašo?
       remove_photo: 'Pašalinti nuotrauką: %{filename}'
       view_photo: 'Peržiūrėti nuotrauką: %{filename}'
+    relative_time:
+      ago: prieš %{time}
     skeleton:
       loading: Kraunama…
     status:
