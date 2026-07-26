@@ -40,7 +40,7 @@ contract SFCMedusaTest {
     address internal constant MINTER = address(0x1002);
     address internal constant SLASHER = address(0x1003);
 
-    uint256 internal constant POOL = 4;   // general pool: mint / slash / transfer
+    uint256 internal constant POOL = 4; // general pool: mint / slash / transfer
     uint256 internal constant ACTORS = 6; // + [4..5] batch-only, deliberately undelegated
     address[ACTORS] internal actors;
 
@@ -197,8 +197,12 @@ contract SFCMedusaTest {
                 c[i] = _cid(h, cidLen);
             }
         }
-        for (uint256 i = len; i < aLen; i++) a[i] = 1;
-        for (uint256 i = len; i < cLen; i++) c[i] = "X";
+        for (uint256 i = len; i < aLen; i++) {
+            a[i] = 1;
+        }
+        for (uint256 i = len; i < cLen; i++) {
+            c[i] = "X";
+        }
     }
 
     function _cid(uint256 h, uint256 len) internal pure returns (string memory) {

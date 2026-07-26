@@ -215,14 +215,18 @@ contract SCCMedusaTest {
             }
             if (i < dLen) {
                 uint256 didLen = 1 + ((h >> 16) % 32);
-                if (corrupt == 1 && i == victim) didLen = 0;   // require(didLen > 0)
+                if (corrupt == 1 && i == victim) didLen = 0; // require(didLen > 0)
                 if (corrupt == 2 && i == victim) didLen = 257; // require(didLen <= 256)
                 d[i] = _did(h, didLen);
             }
         }
         // Surplus slots of a mismatched array still need well-formed content.
-        for (uint256 i = len; i < aLen; i++) a[i] = 1;
-        for (uint256 i = len; i < dLen; i++) d[i] = "X";
+        for (uint256 i = len; i < aLen; i++) {
+            a[i] = 1;
+        }
+        for (uint256 i = len; i < dLen; i++) {
+            d[i] = "X";
+        }
     }
 
     function _did(uint256 h, uint256 len) internal pure returns (string memory) {
