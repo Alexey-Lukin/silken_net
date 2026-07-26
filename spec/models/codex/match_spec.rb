@@ -12,6 +12,23 @@ RSpec.describe Codex::Match, type: :model do
     expect(build(:codex_match, realm: realm, left: left, right: right)).to be_valid
   end
 
+  # [ARCH.56] Composite partition-PK (id, created_at) is a DB requirement; ActiveRecord must
+  # still expose the SCALAR id. Declaring the composite PK here made `match.id` an array,
+  # which wrote an array into the bigint `codex_discoveries.trigger_ref_id` (StatementInvalid
+  # past the rescue → DeadSet) and rendered `"id": [42, …]` into the public POST /matches
+  # response via MatchBlueprint#identifier. Mirrors TelemetryLog / GatewayTelemetryLog.
+  describe "primary key" do
+    it "exposes a scalar id despite the composite partition PK" do
+      match = create(:codex_match, realm: realm, left: left, right: right)
+      expect(match.id).to be_an(Integer)
+    end
+
+    it "serialises a scalar id through MatchBlueprint (public API contract)" do
+      match = create(:codex_match, realm: realm, left: left, right: right)
+      expect(Codex::MatchBlueprint.render_as_hash(match)[:id]).to be_an(Integer)
+    end
+  end
+
   describe "validations" do
     it "requires winner to be one of the pair" do
       stranger = create(:codex_node, realm: realm)

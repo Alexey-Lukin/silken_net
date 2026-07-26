@@ -3,8 +3,16 @@
 
 # Codex::Match — a single Battle Arena duel.
 #
-# Storage: RANGE-partitioned by `created_at`. Composite PK `(id, created_at)`
-# matches the project standard (`BlockchainTransaction.find_with_partition_pruning`).
+# Storage: RANGE-partitioned by `created_at`, so Postgres REQUIRES the partition
+# key in the primary key — `codex_matches_pkey PRIMARY KEY (id, created_at)`, the
+# same shape `blockchain_transactions` and `telemetry_logs` carry. The project
+# standard is that this stays a DB-level fact: ActiveRecord declares the SCALAR
+# `id` (below), and pruning is added back explicitly where it matters
+# (`BlockchainTransaction.find_with_partition_pruning`). Declaring the composite
+# PK in AR instead makes `record.id` an ARRAY, which silently poisons every
+# downstream consumer that expects a scalar — the Discovery probe wrote it into a
+# bigint column (StatementInvalid, past the rescue → DeadSet) and `MatchBlueprint`
+# rendered `"id": [42, "…"]` into the public POST /matches response. [00_07 ARCH.56]
 #
 # Lifecycle:
 #   1. `Api::V1::Codex::MatchesController#new` issues a pair via
@@ -23,8 +31,8 @@
 module Codex
   class Match < ApplicationRecord
     self.table_name = "codex_matches"
-    # Composite PK — Rails 7+ supports it natively for partitioned tables.
-    self.primary_key = [ :id, :created_at ]
+    # Scalar `id` — the composite PK lives in the DB (see the note above), not here.
+    self.primary_key = "id"
 
     belongs_to :user
     belongs_to :realm,
