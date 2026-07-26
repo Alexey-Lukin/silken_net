@@ -1210,7 +1210,28 @@ config.i18n.load_path        += Dir[Rails.root.join("config/locales/**/*.yml")]
 > **Чому `uk`, а не `ua`?** `uk` — IETF BCP 47 / ISO 639-1 код **мови**
 > (Ukrainian). `ua` — ISO 3166-1 код **країни** Україна. `<html lang="uk">`
 > — єдиний валідний варіант для browser/screen-reader negotiation. UI-label
-> для користувача — `UA / Українська` (див. `locale.short` у YAML).
+> для користувача — `UA · Українська`, де довга назва береться з
+> `locale.available.<code>` у YAML, а дволітерний префікс — з Ruby-мапи в
+> `locale_switcher.rb` (з фолбеком `code.upcase`).
+
+> 🧱 **Базовий шар перекладів дає гем `rails-i18n` — і він МУСИТЬ лишатись у
+> головній групі `Gemfile`.** Власні YAML під `config/locales/` покривають лише
+> НАШІ рядки; усе, що малює сам Rails — `errors.messages.*` (валідація),
+> `date.*`/`time.*` (формати, назви днів і місяців), `number.*` (роздільники,
+> валютний символ), `helpers.submit.*`, `datetime.distance_in_words.*` — живе в
+> цьому гемі, і він же вмикає **правила плюралізації** (без них українська йде
+> за дефолтним `one/other`, тож форми `few`/`many` не можуть бути обрані ніколи,
+> хоч би скільки їх було в YAML).
+>
+> ⚠️ **Пастка, що вже спрацювала (2026-07-26).** Гем був у `Gemfile.lock` —
+> але лише **транзитивно**, як залежність `i18n-tasks`, оголошеного в групі
+> `development, test` та ще й з `require: false`. `Bundler.require` не брав його
+> в ЖОДНОМУ середовищі → `RailsI18n::Railtie` не спрацьовував → локалі гема не
+> доїжджали в `I18n.load_path`, і uk/lv/lt мовчки падали на англійський fallback:
+> українець бачив `can't be blank`, `Sunday` і символ `$`. Присутність у
+> lock-файлі **не означає завантаження** — умова саме `Bundler.require`, тож
+> перевіряти треба рантаймом (`I18n.load_path.grep(/rails-i18n/)`), не грепом по
+> `Gemfile.lock`.
 
 ### 12.3 Структура локалей (per-domain, не файли-портянки)
 
@@ -1286,24 +1307,33 @@ Cross-scope keys (потрібен ключ із сусіднього компо
 
 ### 12.7 Pluralization
 
+**Набір форм визначає МОВА, не ми** — CLDR-правила, а не наша домовленість. Живий
+приклад у репо, `maintenance.index.photo_count` (той самий ключ, чотири файли):
+
 ```yaml
-en:
-  alerts:
-    badge:
-      count:
-        one:   "1 alert"
-        other: "%{count} alerts"
-uk:
-  alerts:
-    badge:
-      count:
-        one:   "1 тривога"
-        few:   "%{count} тривоги"     # 2-4
-        many:  "%{count} тривог"      # 5-20, 25-30, ...
-        other: "%{count} тривоги"
+en:  { one: "1 Photo",        other: "%{count} Photos" }        # 2 форми
+lv:  { one: "1 fotogrāfija",  other: "%{count} fotogrāfijas" }  # 2 форми
+lt:  { one: "1 nuotrauka",    few: "%{count} nuotraukos",       # 3 форми
+       other: "%{count} nuotraukų" }
+uk:  { one: "1 фото", few: "%{count} фото",                     # 4 форми
+       many: "%{count} фото", other: "%{count} фото" }
 ```
 
-`uk` має 4 plural форми (one/few/many/other) проти 2 у EN — це нормально, `i18n-tasks check-consistent-interpolations` цього не валить.
+Різна кількість форм між локалями — нормально й **не валить** гейт парності:
+`i18n-tasks` знає про plural-піддерева, а `check-consistent-interpolations` дивиться
+на `%{}`, не на набір ключів. Обов'язок локалі — покрити форми **своєї** мови.
+
+> ⚠️ **Правила плюралізації приходять із `rails-i18n` (§12.2) — без нього форми
+> `few`/`many` НЕДОСЯЖНІ.** Дефолтний бекенд I18n знає рівно два випадки
+> (`one` для `count == 1`, `other` для решти), тож українські `few`/`many` лежать
+> у YAML мертвим вантажем, а `t(count: 3)` віддає `other`. Помилка тиха: ключ
+> існує, гейт парності зелений, рендериться просто не та форма. Саме так воно й
+> жило до 2026-07-26 — гем був у lock-файлі, але не завантажувався.
+>
+> Перевірка — рантайм, не греп: `I18n.t("...", count: 3, locale: :uk)` мусить
+> дати САМЕ `few`-рядок. Побічний доказ, що бекенд живий:
+> `I18n.t("datetime.distance_in_words.x_minutes", count: 3, locale: :uk)` →
+> `"3 хвилини"` (не `"3 хвилин"`).
 
 ### 12.8 Backend localization
 

@@ -29,6 +29,10 @@ gem "propshaft"
 gem "puma"
 gem "pundit"
 gem "rack-attack"
+# Базовий шар перекладів Rails (errors/date/number + правила плюралізації).
+# Мусить лишатись у ГОЛОВНІЙ групі: транзитивна присутність у Gemfile.lock ≠
+# завантаження — деталь і пастка в `docs/04_04 §12.2`.
+gem "rails-i18n"
 gem "rumale"
 gem "sentry-rails"
 gem "sentry-ruby"
