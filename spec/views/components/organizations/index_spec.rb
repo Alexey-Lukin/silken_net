@@ -5,7 +5,7 @@ require "rails_helper"
 
 RSpec.describe Organizations::Index do
   def mock_org(id: 1, name: "EcoInvest DAO", total_clusters: 5, total_contracted: 12_000,
-               crypto_public_address: "0xAbCd1234AbCd1234AbCd1234AbCd1234AbCd1234")
+               crypto_public_address: "0xAbCD1234ABCD1234AbCD1234ABcD1234ABCD1234")
     org = OpenStruct.new(
       id: id,
       name: name,

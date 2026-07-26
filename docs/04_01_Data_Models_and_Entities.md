@@ -120,15 +120,17 @@ Money-інваріант застраховано CHECK-констрейнтом
 ---
 
 ### `EthAddressValidatable`
-**Використовується:** `Organization`, `Wallet`, `BlockchainTransaction`
+**Використовується:** `Organization`, `Wallet`, `BlockchainTransaction` (+ boot-guard `Security::Web3NetworkGuard` реюзає предикат)
 
-Валідація Ethereum/Polygon-адрес формату EIP-55.
+Два шари валідації Ethereum/Polygon-адрес: **форма** + **EIP-55 контрольна сума** [ARCH.56].
 
 ```
 ETH_ADDRESS_FORMAT = /\A0x[a-fA-F0-9]{40}\z/
 ```
 
-Метод: `validates_eth_address(attribute, presence:, allow_blank:)` — додає валідацію формату до поля.
+Метод: `validates_eth_address(attribute, presence:, allow_blank:)` — додає обидва шари до поля.
+
+**Правило суми** (сам EIP-55; рахує гем `eth`): адреса в ОДНОМУ регістрі — все-нижньому або все-верхньому — суми не несе, тож приймається як є; **mixed-case суму НЕСЕ**, тож вона мусить збігтися, інакше `EIP55_MESSAGE`. Форма й сума — ОКРЕМІ валідації: зламаний рядок дає одну причину, не дві. Сам shape-regex друкарську помилку побачити не може (40 hex лишаються 40 hex після підміни символа — кошти пішли б на неіснуючу адресу), і саме тому предикат `EthAddressValidatable.eip55_valid?` = One-Home правила: ним же boot-guard звіряє env-адреси (`DAO_TREASURY_ADDRESS`, контракти SCC/SFC) — там мис-пейст інакше лишається тихим до першої транзакції.
 
 ---
 

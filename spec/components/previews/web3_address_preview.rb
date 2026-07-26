@@ -31,7 +31,7 @@ class Web3AddressPreview < Lookbook::Preview
   # @label Interactive
   # @param address text "Ethereum hex address (0x...)"
   # @param fallback text "Fallback text when address is nil"
-  def interactive(address: "0xDeadBeef1234567890abcdef1234567890abcdef", fallback: "NOT_PROVISIONED")
+  def interactive(address: "0xdeADbEEf1234567890AbCdeF1234567890ABCdEF", fallback: "NOT_PROVISIONED")
     addr = address.presence
     render Views::Shared::Web3::Address.new(address: addr, fallback: fallback)
   end

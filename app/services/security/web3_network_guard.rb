@@ -205,6 +205,12 @@ module Security
           "[address] #{var} is set but is not a 0x-prefixed 40-hex address (value not " \
             "echoed — it could be a mispasted secret; the REQUIRED_SECRET_NOT_SET deploy " \
             "placeholder trips this too) — #{cost}."
+        elsif !EthAddressValidatable.eip55_valid?(value)
+          # [ARCH.56] Well-formed but self-inconsistent: a mixed-case address CARRIES its
+          # own EIP-55 checksum, so a mismatch is a mistyped/mispasted character, never a
+          # style choice. Shape alone cannot see it — 40 hex stay 40 hex.
+          "[address] #{var} is a well-formed address whose EIP-55 checksum does not match, " \
+            "i.e. a mistyped or truncated-and-repadded value (value not echoed) — #{cost}."
         end
       end
     end

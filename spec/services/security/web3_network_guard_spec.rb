@@ -157,6 +157,18 @@ RSpec.describe Security::Web3NetworkGuard do
       expect(described_class.violations(env)).to include(a_string_matching(/\[address\].*40-hex/))
     end
 
+    # [ARCH.56] The shape check cannot see this one: 40 hex stay 40 hex after a typo.
+    it "flags a well-formed address whose EIP-55 checksum does not match (mistyped char)" do
+      env = clean_env.merge("DAO_TREASURY_ADDRESS" => "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9A")
+      expect(described_class.violations(env))
+        .to include(a_string_matching(/\[address\].*DAO_TREASURY_ADDRESS.*EIP-55/))
+    end
+
+    it "accepts an all-lowercase address (unchecksummed by design, not a misconfig)" do
+      env = clean_env.merge("DAO_TREASURY_ADDRESS" => "0xab5801a7d398351b8be11c439e05c5b3259aec9b")
+      expect(described_class.violations(env)).not_to include(a_string_matching(/DAO_TREASURY_ADDRESS/))
+    end
+
     it "never echoes the malformed value into the violation (could be a mispasted secret)" do
       env = clean_env.merge("DAO_TREASURY_ADDRESS" => "deadbeef-mispasted-value")
       expect(described_class.violations(env).join).not_to include("deadbeef")
