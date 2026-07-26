@@ -309,7 +309,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 
 ### Відсутній юридичний шаблон NaaS угоди (Master Service Agreement)
 
-**Статус:** Не розроблено. Блокує B2B продажі.
+**Статус:** Робочий каркас-чернетка існує ([`msa_skeleton.md`](protocols/legal/msa_skeleton.md) — Term Sheet + MSA-body + Carbon-Rider + exhibits); **підписаного документа й пройденого юр-review немає**. Блокує B2B продажі. Стан → [`00_07`](00_07_Action_Plan_Tracker) BIZ.2.
 
 Код реалізує повний lifecycle NaaS контракту (`draft → active → fulfilled / breached / cancelled`), проте **жодного юридично обов'язкового документа не існує**. Перед підписанням будь-якого корпоративного контракту необхідно:
 
@@ -317,13 +317,13 @@ NaasContract (status: cancelled, cancelled_at: now)
 - **Service Level Agreement (SLA)** — параметри якості: час реакції на інциденти, uptime гарантії, умови відшкодування при недоступності системи.
 - **Subscription Order Form** — документ на конкретний `NaasContract` (кластер, тривалість, `total_funding`, `cancellation_terms`).
 
-**Дія:** Залучення юридичного консультанта (бажано з досвідом Web3 / ReFi) для підготовки шаблонів. **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович, к.ю.н., віцепрезидент СЄУ — господарське/комерційне право) — розробка шаблонів MSA, Term Sheet та Carbon Credit Purchase Agreement згідно з **українським господарським правом** (його фах); EU/MiCA-складова → профільний крипто/IP-юрист TBD. Детально: [`07_03 §1.5`](07_03_Academic_Integration_and_IP).
+**Дія:** Залучення юридичного консультанта (бажано з досвідом Web3 / ReFi) для підготовки шаблонів. **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович, к.ю.н., віцепрезидент СЄУ — господарське/комерційне право) — розробка шаблонів MSA, Term Sheet і **Carbon-Related Services Rider** згідно з **українським господарським правом** (його фах); EU/MiCA-складова → профільний крипто/IP-юрист TBD. ⚠️ Назву «Carbon Credit Purchase Agreement» **свідомо покинуто** — «purchase agreement» + «SCC» підсилює investment-contract-прочитання (BIZ.22). Детально: [`07_03 §1.5`](07_03_Academic_Integration_and_IP).
 
 ---
 
 ### Відсутні Terms of Service та Privacy Policy для B2C
 
-**Статус:** Не розроблено. Блокує публічний онбординг.
+**Статус:** Чернетки ToS + Privacy + Cookie існують ([`b2c_tos_privacy.md`](protocols/legal/b2c_tos_privacy.md), DRAFT); **юр-review і named counterparty — ні**. Сам онбординг-флоу теж ще без дроту (OmniAuth → [`00_07`](00_07_Action_Plan_Tracker) ARCH.69), тож блокер наразі не активний. Стан → [`00_07`](00_07_Action_Plan_Tracker) BIZ.3.
 
 Для залучення B2C клієнтів (приватних власників дерев) через публічний лендинг необхідні:
 
@@ -339,14 +339,9 @@ NaasContract (status: cancelled, cancelled_at: now)
 
 **Статус:** Технічна інфраструктура є (`hadron_kyc_status` на `Wallet`), юридичний процес — відсутній.
 
-Polygon Hadron Identity Platform надає технічну верифікацію (ERC-3643), але **регуляторний KYC/AML процес** для юридичних осіб не визначений:
+Polygon Hadron Identity Platform надає технічну верифікацію (ERC-3643), але **регуляторний KYC/AML процес** для юридичних осіб не визначений — питання «хто проводить · які документи · яка юрисдикція · яка ліцензія · який провайдер» тепер живуть **одним пакетом** у [`00_07`](00_07_Action_Plan_Tracker) BIZ.20 (перенесено 2026-07-26: доти вони існували тільки в цьому абзаці, хоча сам текст уже маршрутизував рішення туди — реф без цілі).
 
-- Хто проводить KYC/KYB для корпорацій?
-- Які документи збираються (виписка з реєстру, ID директора, proof of funds)?
-- Яка юрисдикція? (ЄС — AMLD5, США — BSA, міжнародні — FATF)
-- Скільки коштує ліцензія на надання таких послуг?
-
-**Дія:** ⚖️ вибір KYC-провайдера (Sumsub / Veriff / Polygon Hadron) + юрисдикції (AMLD5/BSA/FATF) = рішення у [`00_07`](00_07_Action_Plan_Tracker) BIZ.20 (entity+KYC-counterparty) та BIZ.11 (Hadron KYC-flow) — не окремий item. Консультація compliance + **академічний шлях:** СЄУ (Аблязов Денис Едуардович) — **UA-правова** рамка KYC/AML для B2B клієнтів; EU-складова (ERC-3643 / AMLD5 / FATF) → профільний крипто-юрист TBD; облік KYC-витрат — СЄУ (Гедз М.Й., фінансовий облік криптоактивів). Детально: [`07_03 §1.5`](07_03_Academic_Integration_and_IP).
+**Дія:** UA-правова рамка → СЄУ (Аблязов, UNI.14); EU-складова (ERC-3643 / AMLD5 / FATF) → профільний крипто-юрист TBD; облік KYC-витрат → СЄУ. Детально: [`07_03 §1.5`](07_03_Academic_Integration_and_IP).
 
 ---
 
@@ -360,22 +355,18 @@ Polygon Hadron Identity Platform надає технічну верифікац�
 - Bridge фіат → купівля SCC → `esg_retired_balance` (незворотно) → сертифікат.
 - Audit-trail ретайрменту (Filecoin immutable archive — нот.18) для регуляторного звіту.
 
-**Дія:** юридична рамка SPV — СЄУ (Аблязов Д., UA господарське право; MiCA/EU-складова → крипто-юрист TBD) + облік — СЄУ (Гедз М.Й., фінансовий облік криптоактивів). Cross-ref [`07_03 §1.5`](07_03_Academic_Integration_and_IP).
+**Дія:** юридична рамка SPV — СЄУ (Аблязов Д., UA господарське право; MiCA/EU-складова → крипто-юрист TBD) + бухгалтерська класифікація й сертифікат-флоу — СЄУ (**Ус Г.**; трекер називає саме її, розбіжність із попереднім «Гедз М.Й.» знято 2026-07-26). Audit-trail-нога трекається окремим residual у [`00_07`](00_07_Action_Plan_Tracker) BIZ.15. Cross-ref [`07_03 §1.5`](07_03_Academic_Integration_and_IP).
 
 ---
 
 
-### Відсутній DAO Governance процес для SFC
+### DAO Governance для SFC — механізм обрано, відкрита лише юр-оболонка
 
-**Статус:** SFC контракт code-complete (ще не задеплоєно), механізм голосування — не визначено.
+**Статус:** SFC контракт code-complete (ще не задеплоєно). ⚠️ **Технічна половина цієї секції знята як застаріла** (звірено 2026-07-26): тут роками стояли відкритими питання «де голосування / які рішення / який quorum», тоді як відповідь канонізована в [`05_06`](05_06_Governance_and_DAO) — власна реалізація `SilkenGovernor` (OpenZeppelin Governor + GovernorVotes + TimelockControl), перелік governance-параметрів ([`05_06 §7`](05_06_Governance_and_DAO)) і **quorum 4%** ([`05_06 §4`](05_06_Governance_and_DAO)). Механіка живе там; тут не дублюємо.
 
-SilkenForestCoin має `ERC20Votes` (checkpoint-based voting power), але:
+Відкритою лишається **юридична** оболонка: DAO як юридична особа (DAO LLC / Swiss Verein / Wyoming DUNA) — питання Phase-3 entity-структури, не технічне.
 
-- **Голосування відбувається де?** — Snapshot.org, Governor Bravo, або власна реалізація?
-- **Які рішення підлягають голосуванню?** — Зміна параметра слешингу (20%)? Схвалення нових кластерів? Зміна курсу емісії ([`05_03`](05_03_Tokenomics_SCC_and_SFC))?
-- **Quorum?** — Яка мінімальна частка SFC для валідного рішення?
-
-**Дія:** Технічне рішення (Governor contract або Snapshot) + юридичне оформлення DAO як юридичної особи (DAO LLC, Swiss Verein, або інша структура).
+**Дія:** юр-оформлення DAO-wrapper при активації governance → [`00_07`](00_07_Action_Plan_Tracker) BIZ.20 (Phase-2/3 контур), гейт SEC.1.
 
 ---
 
@@ -405,17 +396,18 @@ SilkenForestCoin має `ERC20Votes` (checkpoint-based voting power), але:
 **Залишковий ризик — ширший, ніж стояло тут раніше** (звірено з кодом 2026-07-26): SFC-slash **не має бекенд-автоматизації взагалі**. Жоден Ruby-воркер чи сервіс не викликає `SilkenForestCoin.slash()`/`slashUpTo()` (перевірено по `app/`/`lib/`/`config/`), і сам контракт це фіксує коментарем «Manual DAO/Timelock-шлях — без бекенд-інтенту» ([`05_03`](05_03_Tokenomics_SCC_and_SFC)). Тому вікно, у якому вже-слешнутий за SCC учасник зберігає **повну** voting power, — це **не «~1–5 хв черги `web3_critical`»** (той опис припускав автоматизацію, якої немає), а проміжок **до ручного DAO/Timelock-втручання**, тобто за конструкцією необмежений. Vote Escrow (veToken) для `breached`-контрактів лишається **рекомендованим** доп-захистом; він інертний до живого DAO → [`00_07`](00_07_Action_Plan_Tracker) BIZ.14.
 
 При порушенні NaaS контракту спрацьовує Slashing Protocol:
-1. `BurnCarbonTokensWorker` → `BlockchainBurningService` → `SilkenCarbonCoin.slash(investor, amount)` — SCC зловмисника **спалюються**.
-2. ✅ `SilkenForestCoin.sol` **має `SLASHER_ROLE`** та `slash()` функцію — реалізовано в `[B-06]`.
+1. `BurnCarbonTokensWorker` → `BlockchainBurningService` → **`SilkenCarbonCoin.slashUpTo(investor, maxAmount, contextHash)`** — SCC зловмисника **спалюються**. ⚠️ Саме `slashUpTo`, НЕ строгий `slash()`: той тихо revert-ить через pre-tax/post-tax розбіжність ([`05_03`](05_03_Tokenomics_SCC_and_SFC)).
+2. ✅ `SilkenForestCoin.sol` **має `SLASHER_ROLE`**, `slash()` і `slashUpTo()` — реалізовано в `[B-06]`. Виклик обох — **ручний DAO/Timelock**, бекенд їх не кличе (див. «Залишковий ризик» вище).
 3. Результат: зловмисник **втрачає voting power** пропорційно обсягу slash.
 
 **Поточний стан коду** (`contracts/SilkenForestCoin.sol`):
 ```solidity
 bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
-function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE) nonReentrant { ... }
+function slash(address investor, uint256 amount)      external nonReentrant onlyRole(SLASHER_ROLE) { ... }
+function slashUpTo(address investor, uint256 maxAmount) external nonReentrant onlyRole(SLASHER_ROLE) { ... }
 ```
 
-**Дія:** Vote Escrow — опціональне покращення для повного DAO governance launch.
+**Дія:** Vote Escrow — **рекомендоване** (не опційне) покращення до повного DAO governance launch; інертне, доки DAO не активовано ([`00_07`](00_07_Action_Plan_Tracker) BIZ.14 / SEC.1).
 
 ---
 
@@ -485,6 +477,6 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 | **B2B продажі** | 🔴 Заблоковано: MSA, SLA, KYC відсутні |
 | **B2C онбординг** | 🔴 Заблоковано: ToS, Privacy Policy відсутні |
 | **CO₂ методологія** | ✅ 2000 SCC = 1 tCO₂ (1 SCC = 0.5 kg CO₂) — on-chain + SystemParameter. **Внутрішня облікова конвенція**, НЕ registry-визнаний кредит (§3) |
-| **DAO Governance** | 🟡 SFC slash() реалізовано; Vote Escrow — опціонально |
+| **DAO Governance** | 🟡 SFC `slash()`/`slashUpTo()` реалізовано, але кличе їх **лише ручний DAO/Timelock** (бекенд-автоматизації немає) → vote-power-вікно необмежене; Vote Escrow — **рекомендований** доп-захист (§8) |
 | **RWA реєстрація** | 🟡 Інфраструктура є, процес не відпрацьований |
 | **DB schema** | ✅ Узгоджено (`signed_at` прибрано з коду) |
