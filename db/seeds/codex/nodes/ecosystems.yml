@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Codex::Node corpus — Realm: ecosystem (52 records).
 # Source-of-truth: doc plan §1 (lore appendix). Idempotent UPSERT by slug.
 # `cyber_meaning_md` is the verbatim canonical interpretation from the lore

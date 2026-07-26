@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # docs:graph — read-only reference-graph audit of the SSOT canon (00_06 §3

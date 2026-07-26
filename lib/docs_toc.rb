@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # [SSOT anti-drift] Auto-generated per-doc Table of Contents for docs/*.md

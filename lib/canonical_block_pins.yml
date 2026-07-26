@@ -1,4 +1,5 @@
 ---
+# SPDX-License-Identifier: AGPL-3.0-or-later
 lorenz_core:
   source: firmware/bio_contracts/bio_contract.rb
   consts:

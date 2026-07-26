@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # [INF.23] Load-harness CLI. Boot Rails (drain/provision потребують DB+Sidekiq;

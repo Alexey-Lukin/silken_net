@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # GitHub deploy-secret SCOPE auditor (S1.1 verify-half). Read-only preflight over

@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # [BIZ.24] Flat merge of CycloneDX-1.6 fragments into one aggregate SBOM.

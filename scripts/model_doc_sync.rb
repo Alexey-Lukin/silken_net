@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # Doc↔code sync gate for the registry docs 04_01 (data models) + 04_02 (services).

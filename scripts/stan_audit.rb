@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # [DOC-T.35 + DOC-T.36 + DOC-T.37] On-demand «Стан-лід» audit — ADVISORY, НЕ CI-gate.

@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # Governance-bounds sync gate (GOV.3) — sibling of governance_key_sync (GOV.2).

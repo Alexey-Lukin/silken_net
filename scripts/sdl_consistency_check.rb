@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # SDL-consistency gate (CI: ci.yml). Catches the INF.17 class of dead paths

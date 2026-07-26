@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # CEM↔canon geometry drift guard (HW.33 anchor-geometry audit; sibling of DocsLinter.anchor_dimension_drift).

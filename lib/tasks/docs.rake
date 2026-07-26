@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # [SSOT anti-drift] `rake docs:check_refs` — lints cross-references in docs/*.md:

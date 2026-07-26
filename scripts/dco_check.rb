@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # [UNI.20] DCO sign-off gate for INBOUND pull requests (CI `dco.yml`).
