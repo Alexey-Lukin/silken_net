@@ -4,7 +4,6 @@ en:
     badge:
       severities:
         critical: critical
-        high: high
         low: low
         medium: medium
       statuses:

@@ -28,7 +28,9 @@ module BlockchainTransactions
           p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
         end
         div(class: "flex gap-2") do
-          %w[carbon_coin forest_coin].each do |token_type|
+          # Список бере enum, а не рукопис: раніше тут стояло `%w[carbon_coin
+          # forest_coin]`, і `cusd` (третє значення) з легенди мовчки випав.
+          BlockchainTransaction.token_types.keys.each do |token_type|
             span(class: "px-2 py-0.5 border border-emerald-900 text-mini text-emerald-900 uppercase", role: "status") { token_type }
           end
         end

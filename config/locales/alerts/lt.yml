@@ -4,7 +4,6 @@ lt:
     badge:
       severities:
         critical: kritinis
-        high: aukštas
         low: žemas
         medium: vidutinis
       statuses:

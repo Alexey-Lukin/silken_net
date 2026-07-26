@@ -4,7 +4,6 @@ lv:
     badge:
       severities:
         critical: kritisks
-        high: augsts
         low: zems
         medium: vidējs
       statuses:
