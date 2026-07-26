@@ -14,7 +14,7 @@
 
 | Артефакт | Про що | Канон-дім (правити там) | 00_07 |
 |---|---|---|---|
-| [`../outreach/legal_business_outreach.md`](../outreach/legal_business_outreach.md) | Dispatch-карта: пакет → людина → що просимо → що розблокує |
+| [`../outreach/legal_business_outreach.md`](../outreach/legal_business_outreach.md) | Dispatch-карта: пакет → людина → що просимо → що розблокує | — (сама карта; канон-домів не дзеркалить) | **§07 загалом** (маршрутизує до items, власного не має) |
 | [`sla_exhibit.md`](sla_exhibit.md) | Шаблон customer-facing availability-SLA (exhibit до MSA) | [`06_06 §3`](../../06_06_Disaster_Recovery_and_Backup.md) (RTO/RPO) · [`06_08 §2.4`](../../06_08_Resilience_and_Failover_Policy.md) (internal SLO) | **BIZ.18** (живить BIZ.2 → [`legal/`](../legal/legal_registry.md)) |
 | [`carbon_registry_matrix.md`](carbon_registry_matrix.md) | Порівняння carbon/biodiversity-реєстрів + метрологічний розрив | [`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md) (фін-константи) · [`07_02 §7.3`](../../07_02_Unit_Economics_and_BOM.md) | **BIZ.9** (вибір реєстру = ⚖️) |
 | [`eo_insurance_spec.md`](eo_insurance_spec.md) | Спека coverage-вимог для страхового брокера (E&O / CGL) | [`07_01 §7`](../../07_01_Nature_as_a_Service_Contracts.md) (параметричне страхування **клієнта** — сусіднє, не це) · [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md) | **BIZ.21** (поліс gated на BIZ.20-entity) |

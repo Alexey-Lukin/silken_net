@@ -909,4 +909,83 @@ RSpec.describe Tracker::Dashboard do
       expect(described_class.meta_form_violations(md)).to include(a_string_matching(/E\.2: malformed meta-line/))
     end
   end
+
+  describe ".stale_machine_who" do
+    # meta-line WHO = UNION of OPEN residuals (00_07 intro), so a shipped machine-half
+    # must drop its 🤖. meta_form_violations checks only the token's SHAPE — this guard
+    # checks it still MATCHES the checkboxes. [DOC-T.52]
+    let(:md) do
+      <<~MD
+        ## §07 · Бізнес
+        #### BIZ.1 — machine half shipped, meta still advertises 🤖
+        - **P1** · 🤖+👤 · 🟡 · → `07_01 §8`
+        - **Стан:** артефакт написано, лишився юрист.
+        - [ ] 👤 юр-review
+        #### BIZ.2 — meta 🤖 backed by a live 🤖 residual
+        - **P1** · 🤖+👤 · 🟡 · → `07_01 §8`
+        - **Стан:** x.
+        - [ ] 👤 зустріч
+        - [ ] 🤖 написати скрипт
+        #### BIZ.3 — 🔗-led residual: delegated, eventual WHO lives elsewhere
+        - **P2** · 🤖 · 🔗 · → `07_01 §8`
+        - **Стан:** x.
+        - [ ] 🔗 gated на SEC.1 — Vote-Escrow
+        #### BIZ.4 — residual with NO explicit WHO (🌿-led): WHO undeclared, not "done"
+        - **P3** · 🤖+👤 · 🌿 · → `07_01 §8`
+        - **Стан:** x.
+        - [ ] 🌿 far-horizon rewrite (post-TRL 8)
+        #### BIZ.5 — no 🤖 in meta at all
+        - **P3** · 👤 · ⚪ · → `07_01 §8`
+        - **Стан:** x.
+        - [ ] 👤 зустріч
+      MD
+    end
+
+    it "flags ONLY the item whose meta 🤖 no open residual backs" do
+      expect(described_class.stale_machine_who(md)).to eq(["BIZ.1"])
+    end
+
+    it "exempts a 🔗-led residual — its eventual WHO lives in the item it is gated on" do
+      expect(described_class.stale_machine_who(md)).not_to include("BIZ.3")
+    end
+
+    it "exempts a residual with no WHO glyph — undeclared ≠ machine half done" do
+      expect(described_class.stale_machine_who(md)).not_to include("BIZ.4")
+    end
+
+    it "ignores an item with a closed 🤖 residual only, since [x] is not open work" do
+      done_only = <<~MD
+        ## §07 · Бізнес
+        #### BIZ.9 — 🤖 residual already checked off
+        - **P1** · 🤖+👤 · 🟡 · → `07_01 §8`
+        - **Стан:** x.
+        - [x] 🤖 скрипт написано
+        - [ ] 👤 юр-review
+      MD
+      expect(described_class.stale_machine_who(done_only)).to eq(["BIZ.9"])
+    end
+
+    it "stays silent on an item with no open residuals at all" do
+      none = <<~MD
+        ## §07 · Бізнес
+        #### BIZ.8 — nothing open
+        - **P1** · 🤖+👤 · 🟢 · → `07_01 §8`
+        - **Стан:** все закрито.
+      MD
+      expect(described_class.stale_machine_who(none)).to be_empty
+    end
+
+    it "never reads the intro blockquote's example lines as real items" do
+      intro = <<~MD
+        > **Форма пункту:** `- [ ] 🤖 …` — приклад у преамбулі, не справжній residual.
+
+        ## §07 · Бізнес
+        #### BIZ.7 — real item
+        - **P1** · 🤖+👤 · 🟡 · → `07_01 §8`
+        - **Стан:** x.
+        - [ ] 👤 юр-review
+      MD
+      expect(described_class.stale_machine_who(intro)).to eq(["BIZ.7"])
+    end
+  end
 end

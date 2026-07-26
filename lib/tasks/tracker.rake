@@ -40,6 +40,7 @@ namespace :tracker do
     metaform = Tracker::Dashboard.meta_form_violations(md)
     cluster  = Tracker::Dashboard.cluster_marker_violations(md)
     bench    = Tracker::Dashboard.bench_tag_violations(md)
+    stalewho = Tracker::Dashboard.stale_machine_who(md)
 
     puts "00_07 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(items).size} actionable)"
     puts "  duplicate IDs:    #{dups.empty? ? 'none ✓' : dups.inspect}"
@@ -143,6 +144,17 @@ namespace :tracker do
       puts "  bench-tag violations (#{bench.size}) — tag↔registry asymmetry (RUNBOOK §6):"
       bench.each { |b| puts "    - #{b}" }
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || orphan.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || metaform.any? || cluster.any? || bench.any?
+    # [DOC-T.52] stale machine-WHO — HARD: meta-line WHO must stay the UNION of OPEN
+    # residuals, so a shipped machine-half drops its 🤖. `meta_form_violations` only checks
+    # the token's SHAPE, never whether it still matches the checkboxes — that blind spot let
+    # 3 items advertise free 🤖 work that no longer existed, making a "what's machine-doable"
+    # scan lie. Exempts 🔗-led (delegated elsewhere) and WHO-less (🌿-led) residuals. (00_06 §3.)
+    if stalewho.empty?
+      puts "  machine-WHO:      every meta 🤖 backed by an open 🤖 residual ✓"
+    else
+      puts "  stale machine-WHO (#{stalewho.size}) — meta claims 🤖 but no open 🤖 residual (machine half shipped?):"
+      stalewho.each { |s| puts "    - #{s}" }
+    end
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || orphan.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || metaform.any? || cluster.any? || bench.any? || stalewho.any?
   end
 end

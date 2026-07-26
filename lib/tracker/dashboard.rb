@@ -493,6 +493,68 @@ module Tracker
       end
     end
 
+    # --- stale machine-WHO guard [DOC-T.52, 2026-07-26] ---
+    # The item-form standard (00_07 intro) defines the meta-line WHO as the UNION of
+    # every OPEN residual's WHO — «закрита половина туди не входить». So once an
+    # item's machine half ships, `🤖` must LEAVE its meta-line. It silently doesn't:
+    # `meta_form_violations` validates only the WHO token's SHAPE, never whether it
+    # still matches the open checkboxes, so a shipped machine-half keeps advertising
+    # free 🤖 work that no longer exists — the second-commonest tracker drift after
+    # STAGE 🟡→🟢, and the one that makes a "what's machine-doable now" scan lie.
+    # Flags a registry item whose meta-line claims 🤖 while NO open `- [ ]` residual
+    # carries it. Two exemptions hold false positives at zero (both empirically
+    # derived — each was a real hit that turned out honest):
+    #   • a 🔗-led residual — delegated/gated into another item, whose eventual WHO
+    #     lives THERE, so the meta 🤖 is an honest forward-claim (BIZ.14);
+    #   • a residual carrying NO explicit WHO glyph (e.g. a 🌿-led far-horizon line)
+    #     — WHO is simply undeclared, so "machine half is done" does not follow
+    #     (ARCH.18 / E.31 — both genuinely machine work, just far-horizon).
+    # Pure (caller may pass markdown).
+    # `\Z` (not `\z`) — each_line keeps the trailing "\n", which `\z` never matches.
+    OPEN_RESIDUAL = /\A-\s+\[ \]\s*(.+)\Z/
+    WHO_GLYPH     = /[🤖👤⚖]/
+
+    def self.stale_machine_who(markdown = File.read(DEFAULT_PATH))
+      in_registry = false
+      in_fence = false
+      current = nil
+      items = []
+
+      markdown.each_line do |line|
+        in_fence = !in_fence if line.lstrip.start_with?("```")
+        next if in_fence || line.lstrip.start_with?(">") # intro blockquote examples
+
+        if line.start_with?("## ")
+          in_registry = line.match?(REGISTRY_SECTION) && !line.match?(SKIP_SECTION)
+          current = nil
+          next
+        end
+        next unless in_registry
+
+        if (m = line.match(ITEM_HEAD))
+          current = { id: m[1], machine: false, seen_meta: false, open: [] }
+          items << current
+          next
+        end
+        next unless current
+
+        if !current[:seen_meta] && line.match?(/\*\*P[0-3]\*\*/)
+          current[:seen_meta] = true
+          # WHO is the 2nd `·`-separated meta segment (shape already HARD-enforced)
+          current[:machine] = line.split("·")[1].to_s.include?("🤖")
+        elsif (r = line.match(OPEN_RESIDUAL))
+          current[:open] << r[1]
+        end
+      end
+
+      items.select do |it|
+        it[:machine] && !it[:open].empty? &&
+          it[:open].none? { |b| b.include?("🤖") } &&
+          it[:open].none? { |b| b.lstrip.start_with?("🔗") } &&
+          it[:open].all? { |b| b.match?(WHO_GLYPH) }
+      end.map { |it| it[:id] }
+    end
+
     # --- bench-session tag symmetry [DOC-T.34 ①] ---
     # Bench work is organized in NAMED SESSIONS (one coherent stand-day block);
     # the session registry is SSOT in firmware/scripts/bench/RUNBOOK.md §6
