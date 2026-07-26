@@ -28,7 +28,13 @@ module SilkenNet
     config.i18n.load_path += Dir[Rails.root.join("config/locales/**/*.{rb,yml}")]
     config.i18n.available_locales = %i[uk en lv lt]
     config.i18n.default_locale    = :en
-    config.i18n.fallbacks         = { uk: %i[uk en], en: %i[en], lv: %i[lv en], lt: %i[lt en] }
+    # Локаль-НЕЗАЛЕЖНИЙ ланцюг: `true` → railtie будує `Fallbacks.new(default_locale)`,
+    # тобто хвіст `[:en]` для БУДЬ-ЯКОЇ локалі — і наявної, і майбутньої, і
+    # регіональної (`pt-BR` → `[:pt-BR, :pt, :en]` через parent-ланцюг). Поіменний
+    # хеш, що стояв тут раніше, був єдиною формою з ПОРОЖНІМ `defaults`: нова
+    # локаль не діставала `:en` взагалі, а `production.rb` це мовчки перекривав
+    # своїм `= true` — тобто dev/test і прод розходились. Дім пояснення — `04_04 §12.2`.
+    config.i18n.fallbacks         = true
 
     # [GAIA SHIELD]: Rack::Attack — DDoS / brute-force / bot-scanner protection.
     # Inserted early in the middleware stack so malicious traffic is dropped

@@ -1196,10 +1196,26 @@ Layout-компоненти (`AuthLayout`, `DashboardLayout`) використо
 ```ruby
 config.i18n.available_locales = %i[uk en lv lt]
 config.i18n.default_locale    = :en
-config.i18n.fallbacks         = { uk: %i[uk en], en: %i[en], lv: %i[lv en], lt: %i[lt en] }
+config.i18n.fallbacks         = true    # локаль-НЕЗАЛЕЖНИЙ ланцюг, див. нижче
 config.i18n.load_path        += Dir[Rails.root.join("config/locales/**/*.yml")]
 ```
 
+**`fallbacks = true` — не «увімкнути», а САМЕ локаль-незалежна форма.** Railtie
+(`ActiveSupport::I18nRailtie#init_fallbacks`) приймає чотири форми — `true`,
+Array, Hash і `OrderedOptions`; з `true` він будує `Fallbacks.new(default_locale)`,
+тобто хвіст `[:en]` для **будь-якої** локалі, зокрема ще не існуючої, а
+регіональні дістають ще й parent-ланку: `pt-BR → [:pt-BR, :pt, :en]`. Саме це
+й означає обіцянка «розширюваний до N мов додаванням рядка» — жодна нова мова
+не потребує запису у fallback-конфізі.
+
+> ⚠️ **Чому НЕ поіменний хеш** (стояв тут до 2026-07-26). Hash — єдина з чотирьох
+> форм, яка кладе всі локалі в `@map` і лишає `defaults` **порожнім**: п'ята
+> локаль не діставала `:en` взагалі. І гірше — `production.rb` (Rails-скаффолд)
+> мав власний `config.i18n.fallbacks = true`, а environment-файли вантажаться
+> ПІСЛЯ тіла `Application`, тож railtie бачив лише останнє значення: прод жив на
+> локаль-незалежному ланцюгу, dev/test — на хеші. Розбіжність тиха, але кусюча:
+> у test ще й `raise_on_missing_translations`, тож нова локаль валила б спеки там,
+> де прод спокійно віддавав би англійську. Дім тепер один — `application.rb`.
 > **Пріоритет вибору мови (без збереженої cookie):**
 > `request.preferred_language(available_locales)` читає `Accept-Language`
 > браузера — `uk` → `:uk`, `lv` → `:lv`, `lt` → `:lt`, будь-що інше → `:en`.

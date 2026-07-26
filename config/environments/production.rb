@@ -125,9 +125,9 @@ Rails.application.configure do
   #   authentication: :plain
   # }
 
-  # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
-  # the I18n.default_locale when a translation cannot be found).
-  config.i18n.fallbacks = true
+  # NB: `config.i18n.fallbacks` тут НЕ дублюємо — дім один, `application.rb`
+  # (Rails-скаффолд ставив сюди `= true`, і воно тихо перекривало інший тамтешній
+  # ланцюг; розбіжність dev/test↔prod знято 2026-07-26, `04_04 §12.2`).
 
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
