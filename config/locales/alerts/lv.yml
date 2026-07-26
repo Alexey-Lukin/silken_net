@@ -34,3 +34,18 @@ lv:
       severity: Smagums
       source: Avots
       timestamp: Laika zīmogs
+    types:
+      chainsaw_detected: Konstatēts motorzāģis
+      entropy_anomaly: Entropijas anomālija
+      field_audit: Lauka audits
+      fire_detected: Konstatēts ugunsgrēks
+      firmware_canary_trip: Programmaparatūras kanārijsignāls
+      firmware_fault: Programmaparatūras kļūme
+      firmware_reverted: Programmaparatūra atgriezta
+      insect_epidemic: Kukaiņu epidēmija
+      queen_offline: Queen bezsaistē
+      queen_uplink_lost: Zaudēta Queen augšupsaite
+      seismic_anomaly: Seismiskā anomālija
+      severe_drought: Smags sausums
+      system_fault: Sistēmas kļūme
+      vandalism_breach: Vandālisma ielaušanās

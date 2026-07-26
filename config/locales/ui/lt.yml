@@ -44,3 +44,7 @@ lt:
       triggered: suaktyvinta
       unknown: nežinoma
       updating: atnaujinama
+    web3_address:
+      copy: Kopijuoti adresą
+      copy_aria: Kopijuoti adresą %{address} į iškarpinę
+      not_provisioned: NEPRISKIRTA

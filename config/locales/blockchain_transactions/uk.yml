@@ -2,6 +2,7 @@
 uk:
   blockchain_transactions:
     index:
+      explorer_aria: Переглянути транзакцію в оглядачі блокчейну
       subtitle: Minting, slashing та всі on-chain події вашої Організації.
       table:
         amount: Сума

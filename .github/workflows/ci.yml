@@ -468,11 +468,17 @@ jobs:
       # Hard gate: PR fails if a key exists in one locale but not another,
       # or if any locale YAML file isn't normalized (sorted, consistent
       # indentation, no duplicate keys). `unused` is intentionally NOT
-      # gated — several components use a private `t_(key)` helper that
-      # i18n-tasks cannot statically resolve, which would cause false
-      # positives. The runtime safety net is
-      # `config.i18n.raise_on_missing_translations = true` in test env
-      # (already set) — any spec touching a missing key fails the build.
+      # gated — dynamic lookups (`t("ui.status.#{status}")`) cannot be
+      # statically resolved and would raise false positives.
+      #
+      # ⚠️ Two axes this job does NOT cover — do not read green as "i18n is fine":
+      #  * It compares locales to EACH OTHER, never a locale to a model. An
+      #    enum can grow while the YAML stays put and this stays green.
+      #    That axis is guarded by spec/services/tree_chronicle/
+      #    text_formatter_parity_spec.rb (00_07 I18N.1).
+      #  * `raise_on_missing_translations` (test env) is NOT a net for the
+      #    Phlex tree: ApplicationComponent#t resolves absolute keys through
+      #    bare `I18n.t`, which that setting does not hook.
       - name: Check translations parity (i18n-tasks missing)
         run: bundle exec i18n-tasks missing
 

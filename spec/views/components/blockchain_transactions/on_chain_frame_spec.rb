@@ -49,8 +49,11 @@ RSpec.describe BlockchainTransactions::OnChainFrame do
       expect(html).to include("https://polygonscan.com/tx/0xabc")
     end
 
-    it "includes aria-label on explorer link" do
-      expect(html).to include("aria-label")
+    # [I18N.1] Свідомо БЕЗ aria-label: видимий текст лінка сам описовий, а
+    # aria перекривав би його англійською в усіх локалях (04_04 §9, виняток UI.3).
+    it "relies on the localised visible text, not an aria-label" do
+      expect(html).to include("View on Polygonscan →")
+      expect(html).not_to include("aria-label")
     end
 
     it "includes focus-visible accessibility ring" do

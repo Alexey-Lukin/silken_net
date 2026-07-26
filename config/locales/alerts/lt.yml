@@ -34,3 +34,18 @@ lt:
       severity: Sunkumas
       source: Šaltinis
       timestamp: Laiko žyma
+    types:
+      chainsaw_detected: Aptiktas grandininis pjūklas
+      entropy_anomaly: Entropijos anomalija
+      field_audit: Lauko auditas
+      fire_detected: Aptiktas gaisras
+      firmware_canary_trip: Programinės įrangos kanarėlės signalas
+      firmware_fault: Programinės įrangos gedimas
+      firmware_reverted: Programinė įranga atstatyta
+      insect_epidemic: Vabzdžių epidemija
+      queen_offline: Queen neprisijungęs
+      queen_uplink_lost: Prarastas Queen ryšys
+      seismic_anomaly: Seisminė anomalija
+      severe_drought: Didelė sausra
+      system_fault: Sistemos gedimas
+      vandalism_breach: Vandalizmo įsilaužimas

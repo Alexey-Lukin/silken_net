@@ -77,7 +77,9 @@ module BlockchainTransactions
         td(class: "p-4 text-emerald-500") { tx.wallet&.tree&.did || "—" }
         td(class: "p-4 text-gray-600 truncate max-w-[150px] font-mono text-tiny") do
           if tx.tx_hash.present?
-            a(href: tx.explorer_url, target: "_blank", rel: "noopener noreferrer", aria_label: "View transaction on blockchain explorer", class: "hover:text-emerald-500 underline decoration-emerald-900") { tx.tx_hash.first(16) + "..." }
+            # Тут aria_label НЕСУЧИЙ (на відміну від OnChainFrame): видимий текст —
+            # обрізаний hex, скрінрідеру він нічого не каже. Тому перекладаємо, а не знімаємо.
+            a(href: tx.explorer_url, target: "_blank", rel: "noopener noreferrer", aria_label: t(".explorer_aria"), class: "hover:text-emerald-500 underline decoration-emerald-900") { tx.tx_hash.first(16) + "..." }
           else
             span(class: "italic text-zinc-800") { "PENDING_BLOCK" }
           end

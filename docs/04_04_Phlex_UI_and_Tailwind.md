@@ -825,6 +825,9 @@ Canvas-ефект Matrix digital rain з hex-символами (`0-9A-F`). Canv
 | `"telemetry_stream"` | `Telemetry::LiveStream` | `UnpackTelemetryWorker` (черга: `uplink`) |
 | `@wallet, :transactions` | `Wallets::Show` | `BlockchainMintingService` / TX workers |
 | `"ota_channel_{uid}"` | `Gateways::Show` · `Firmwares::Index` (секція активних кампаній) | `Downlink::PendingQueueService` [SEC.20] (FW.60 poll-тракт, coap-демон) |
+| `"ews_updates_{cluster_id}"` · `"ews_live_feed"` | ⚠️ **ніким** | `EwsAlert#broadcast_status_change` — мертвий тракт, реєстр решти таких → [`00_07`](00_07_Action_Plan_Tracker) UI.4 |
+
+> ⚠️ Таблиця **неповна** — живих `turbo_stream_from` у репо більше, ніж рядків тут; звірка обох таблиць (§8.1 і §8.3) із реальністю — відкритий пункт UI.4. Перед тим як покластися на цей реєстр, перевір грепом.
 
 **Патерн:**
 
@@ -841,6 +844,22 @@ Turbo::StreamsChannel.broadcast_replace_later_to(
 ```
 
 > ⚠️ **`partial:`/`locals:` тут не спрацюють — і голий `Turbo::Broadcastable` теж.** Партіалів моделей у репо НЕМА (`app/views/` тримає лише мейлери, layouts і Phlex-компоненти), тому успадковані `model.broadcast_update`/`broadcast_replace`, які дефолтяться на `to_partial_path`, кидають `ActionView::MissingTemplate` — синхронно, у виклику. Броадкастити лише явним `Turbo::StreamsChannel.broadcast_*_to` з `html:`. Прецедент — [`00_07`](00_07_Action_Plan_Tracker) ARCH.67: такий виклик у money-path-сервісі обривав батч-цикл, лишаючи `locked_balance` решти транзакцій замороженим.
+
+> ⚠️ **Broadcast не має локалі глядача — і структурно не може мати (⊥, не баг).** `html:` — звичайний аргумент, тож Phlex-рендер відбувається **eagerly в процесі-продюсері**; `_later_` відкладає лише доставку. `LocaleSettable` — це `before_action`, тож у Sidekiq його нема, а `ApplicationController.renderer` `before_action`-ланцюг не проганяє: рендер бере `I18n.locale` **поточного треда**. Наслідок двоякий — продюсер із контролера (`resolve!` → `after_update_commit` → `broadcast_alert_update`) віддає локаль **того, хто клацнув** («латвієць бачить український рядок, бо українець натиснув Підтвердити»), а з воркера — `default_locale`. Глибше: один HTML летить у **спільний** stream N підписникам із різними локалями, тож єдиної правильної локалі там не існує в принципі. Reload лікує.
+
+### 8.1а Правило: payload броадкасту не несе локаль-залежної прози
+
+> 🧱 **Інваріант (фундамент, не оптимізація): вартість live-оновлення масштабується ПОПИТОМ (глядачі), НІКОЛИ каталогом (локалі).**
+>
+> Кількість локалей — це число, яке ми хочемо нарощувати вільно й дешево; кількість глядачів — реальний попит, за який платити не шкода. Будь-який дизайн, у якому додавання **невживаної** мови робить кожну наступну подію дорожчою, оподатковує саму амбіцію бути багатомовними.
+>
+> Тому «розкласти broadcast по локалях» (по стріму на мову) — **заборонений клас**, а не дорогий варіант. Ціна: на кожну подію — по Phlex-рендеру, по `INSERT` у `solid_cable_messages` і по `NOTIFY` **на кожну локаль каталогу**, з `message_retention: 1.day`. Solid Cable — Postgres, і хоч БД окрема (`_cable`), інстанс той самий, що обслуговує money-path: фан-аут по каталогу = множник на записи, що ділять IOPS і пул зʼєднань із мінтингом. І головне — переважна більшість тих рядків не доставляється **нікому**: робота не просто дорога, вона доказово змарнована.
+>
+> **Два дозволені класи:**
+> 1. **Locale-invariant payload** (найкращий) — броадкаст несе лише те, що однакове в усіх мовах: числа, ID, хеші, timestamp, `data-*`. Еталон уже в репо — `Dashboard::MapNode` (нуль `t()`). Підписи живуть у хромі сторінки, відрендереному один раз у запиті, де локаль відома.
+> 2. **Viewer-driven pull** — броадкаст несе локаль-вільну заглушку (`turbo_frame` зі `src`), і кожен клієнт тягне фрагмент **своїм** запитом, де `LocaleSettable` уже відпрацював. Ціна — O(фактичних глядачів), нуль залежності від каталогу. Для рідкісних подій (OTA-прогрес) це прийнятно; для firehose (телеметрія) обовʼязковий клас 1.
+>
+> **Гейт, що це тримає** (форма — «курована мапа як tripwire»): узяти компоненти, які РЕАЛЬНО рендеряться в `broadcast_*`-сайтах, і для кожного зрендерити двічі у двох різних локалях — вивід мусить бути байт-у-байт однаковий. Дві локалі доводять інваріантність, тож сам гейт теж не залежить від каталогу. Новий broadcast-компонент потрапляє під перевірку **за замовчуванням**; свідомий виняток — іменований запис зі списку, що тільки скорочується. Міграція наявних поверхонь і вмикання гейта → [`00_07`](00_07_Action_Plan_Tracker) I18N.2 (той самий ratchet-порядок, що в UI.1: спершу migrate-to-green, потім HARD).
 
 ### 8.2 Turbo Frames (Lazy Loading)
 
@@ -872,7 +891,7 @@ end
 | `transactions_ledger` | `Wallets::Show` | TX confirmation workers |
 | `telemetry_feed` | `Telemetry::LiveStream` | `UnpackTelemetryWorker` |
 | `ota_progress_{uid}` | `Firmwares::OtaProgressBar` | `Downlink::PendingQueueService` [SEC.20]: hint → 0% · chunk-fetch → `ch+1/total` · `fw=` → COMPLETE (Rails бачить кожен fetch Королеви; initial-render = `Gateways::Show` + `Firmwares::Index`) |
-| `alert_badge_{id}` | `Alerts::Badge` | `EwsAlertWorker` |
+| `alert_badge_{id}` | `Alerts::Badge` | `EwsAlert#broadcast_status_change` — ⚠️ класу `EwsAlertWorker` у репо НЕМАЄ, а реальний стрім `ews_updates_{cluster_id}` **не має жодного підписника** → тракт мертвий; реєстр решти таких → [`00_07`](00_07_Action_Plan_Tracker) UI.4 |
 
 ---
 
@@ -1343,10 +1362,39 @@ bundle exec i18n-tasks unused       # довідково: не gated у CI (fals
 
 ### 12.13 Backlog: що ще не локалізовано (інкрементально)
 
-CI-гейт ловить майбутні regressions. Поточний backlog (поза скоупом цього merge):
-- `app/views/<mailer>/*.{erb,text.erb}` — `password_mailer/reset_instructions.text.erb`, `alert_mailer/critical_notification.text.erb`
+CI-гейт ловить майбутні regressions. Класи, що лишаються нелокалізованими (пооб'єктний реєстр — [`00_07`](00_07_Action_Plan_Tracker) I18N.1, тут лише класи):
+- `app/views/<mailer>/*.{erb,text.erb}` + mailer-`subject` — уся пошта мономовна **українською**, тобто навіть не `default_locale`
 - `app/views/pwa/service-worker.js` — manifest + offline сторінка JS-string'и (не через Rails I18n)
+- **Сирі enum'и як видимий текст** — `severity`, `action_type`, `token_type`, `status`, `AuditLog#action`, breadcrumb-сегменти: клас, який §12.14 закрив для `alert_type` і який лишається відкритим для решти
+- **Проза, записана в БД сервісом** (`EwsAlert#message`, `resolution_notes`, `MaintenanceRecord#notes`, `*.error_message`) — не `t()`-заміна, а редизайн «ключ + параметри замість готового рядка»
 - Окремі inline UA коментарі у `.rb` файлах — не user-facing, не блокують гейт
+
+### 12.14 Enum-мітки: контракт «модель ↔ локаль»
+
+Значення enum'а, показане користувачеві (`alert_type`, `status`, `action_type`), — це **мітка**, і її дім — локаль-файл, а не `case` у Ruby й не `.humanize` (останній — англійський Rails-метод: він мовчки віддає англійську в усіх чотирьох локалях).
+
+Еталон — `EwsAlert#alert_type` (дім реалізації [`04_02`](04_02_Business_Logic_and_Services), `TreeChronicle::TextFormatter`):
+
+```ruby
+ALERT_TYPE_SCOPE = "alerts.types"        # ← ОДНА деривація ключа на застосунок
+
+def alert_title(alert)
+  type = alert.alert_type.to_s
+  I18n.t("#{ALERT_TYPE_SCOPE}.#{type}", default: type.humanize)   # fail-open
+end
+```
+
+Викликачі (`Alerts::Row` тощо) ходять **через цей метод**, а не будують ключ самі: дві деривації означають, що друкарська помилка в одній із них лишається зеленою назавжди.
+
+**Locale-інваріантні значення (емодзі, гліфи) у YAML НЕ кладуться.** `i18n-tasks missing` — HARD-гейт парності, тож один емодзі перетворився б на по копії в **кожній** локалі каталогу, які перекладач може «виправити». Аргумент масштабується в гірший бік: чим більше локалей, тим дорожча помилка. Їхній дім — заморожена Ruby-мапа поруч зі scope-константою.
+
+**Гейт свідомо перевіряє ЛИШЕ базову локаль — і саме тому масштабується.** Вартість перевірки не залежить від розміру каталогу локалей, а нова локаль із ще-порожнім YAML **не робить спеку червоною**: fallback-ланцюг (§12.2) віддає базову мітку, UI лишається справним. Обов'язок «мати мітку» лежить на базовій локалі, обов'язок «наздогнати переклад» — на самій локалі. Це поділ, який тримає і на чотирьох мовах, і на ста п'ятдесяти.
+
+> ⚠️ **Чого CI тут НЕ бачить — і чому вісь тримає спека.** `i18n-tasks missing` звіряє **локаль з локаллю** і структурно сліпий до «enum виріс, YAML лишився» (саме так `alert_type` доріс до 14 значень, поки формат знав 9). `raise_on_missing_translations` (test-env) **не покриває Phlex**: `ApplicationComponent#t` для абсолютних ключів кличе голий `I18n.t`, якого цей конфіг не хукає. А `default:` глушить залишок. Тож вісь «модель → базова локаль» тримає **лише** `spec/services/tree_chronicle/text_formatter_parity_spec.rb` — двобічно (немає мітки для значення ⊕ є мітка без значення) плюс покриття icon-мапи. Нова enum-мітка без рядка в цій спеці = гейта немає.
+>
+> ⚠️ **`I18n.exists?` у такій спеці — ОБОВ'ЯЗКОВО з `fallback: false`.** `config.i18n.fallbacks` (§12.2) діє в **усіх** середовищах, тож без прапорця порожня `lv` «існує» через `en`, і перевірка мовчки стає вакуумною на трьох локалях із чотирьох.
+>
+> ⚠️ **`check-normalized` завжди виходить з нульовим кодом** (upstream-quirk) — CI гейтить грепом по виводу (`ci.yml`). Локально перевіряй так само, exit-code тут нічого не доводить.
 
 ---
 

@@ -34,3 +34,18 @@ en:
       severity: Severity
       source: Source
       timestamp: Timestamp
+    types:
+      chainsaw_detected: Chainsaw Detected
+      entropy_anomaly: Entropy Anomaly
+      field_audit: Field Audit
+      fire_detected: Fire Detected
+      firmware_canary_trip: Firmware Canary Trip
+      firmware_fault: Firmware Fault
+      firmware_reverted: Firmware Reverted
+      insect_epidemic: Insect Epidemic
+      queen_offline: Queen Offline
+      queen_uplink_lost: Queen Uplink Lost
+      seismic_anomaly: Seismic Anomaly
+      severe_drought: Severe Drought
+      system_fault: System Fault
+      vandalism_breach: Vandalism Breach

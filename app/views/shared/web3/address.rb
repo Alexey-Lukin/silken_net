@@ -8,7 +8,11 @@ module Views
         PREFIX_LENGTH = 6
         SUFFIX_LENGTH = 4
 
-        def initialize(address:, fallback: "NOT_PROVISIONED")
+        # Абсолютні ключі, як у решті `shared/` — autoscope дав би незручний
+        # `views.shared.web3.address.*` (див. Pagination/DataTable).
+        # `fallback` резолвиться при рендері, а не в сигнатурі: конструювання і
+        # рендер компонента можуть розійтися в часі (Turbo-броадкаст).
+        def initialize(address:, fallback: nil)
           @address  = address
           @fallback = fallback
         end
@@ -26,13 +30,15 @@ module Views
               button(
                 type: "button",
                 class: copy_button_classes,
-                title: "Copy address",
-                aria_label: "Copy address #{truncated_address} to clipboard",
+                title: t("ui.web3_address.copy"),
+                aria_label: t("ui.web3_address.copy_aria", address: truncated_address),
                 data: { action: "clipboard#copy", clipboard_target: "button" }
               ) { copy_icon }
             end
           else
-            span(class: "text-compact font-mono text-gaia-text-muted italic") { @fallback }
+            span(class: "text-compact font-mono text-gaia-text-muted italic") do
+              @fallback || t("ui.web3_address.not_provisioned")
+            end
           end
         end
 

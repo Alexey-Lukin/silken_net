@@ -2,6 +2,7 @@
 lt:
   blockchain_transactions:
     index:
+      explorer_aria: Peržiūrėti operaciją blokų grandinės naršyklėje
       subtitle: Kalimas, baudos ir visi grandinės įvykiai jūsų organizacijai.
       table:
         amount: Suma

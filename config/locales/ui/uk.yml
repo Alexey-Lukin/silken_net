@@ -44,3 +44,7 @@ uk:
       triggered: спрацьовано
       unknown: невідомо
       updating: оновлення
+    web3_address:
+      copy: Копіювати адресу
+      copy_aria: Копіювати адресу %{address} у буфер обміну
+      not_provisioned: НЕ ПРИЗНАЧЕНО

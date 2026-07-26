@@ -24,11 +24,13 @@ module BlockchainTransactions
             p(class: "text-tiny font-mono text-emerald-500 break-all leading-relaxed") { @tx.tx_hash }
           end
           div(class: "mt-4") do
+            # Без aria_label свідомо: видимий текст («View on Polygonscan →») сам
+            # описовий, а aria перекривав би його англійською в усіх локалях —
+            # виняток [UI.3] чекліста доступності (04_04 §9).
             a(
               href: @tx.explorer_url,
               target: "_blank",
-              class: explorer_link_classes,
-              aria_label: "View transaction on blockchain explorer"
+              class: explorer_link_classes
             ) { t(".view_on", explorer: explorer_name) }
           end
         else

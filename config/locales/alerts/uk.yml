@@ -34,3 +34,18 @@ uk:
       severity: Рівень
       source: Джерело
       timestamp: Час
+    types:
+      chainsaw_detected: Виявлено бензопилу
+      entropy_anomaly: Аномалія ентропії
+      field_audit: Польовий аудит
+      fire_detected: Виявлено пожежу
+      firmware_canary_trip: Спрацювала канарка прошивки
+      firmware_fault: Збій прошивки
+      firmware_reverted: Відкат прошивки
+      insect_epidemic: Епідемія шкідників
+      queen_offline: Королева офлайн
+      queen_uplink_lost: Втрачено зв'язок Королеви
+      seismic_anomaly: Сейсмічна аномалія
+      severe_drought: Сильна посуха
+      system_fault: Збій системи
+      vandalism_breach: Розкриття корпусу

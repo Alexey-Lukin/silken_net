@@ -2,6 +2,7 @@
 en:
   blockchain_transactions:
     index:
+      explorer_aria: View transaction on blockchain explorer
       subtitle: Minting, slashing, and all on-chain events for your Organization.
       table:
         amount: Amount

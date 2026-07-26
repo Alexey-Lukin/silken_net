@@ -36,19 +36,24 @@ lt:
       target_type: Taikinio tipas
     index:
       filter:
+        by_aria: Filtruoti pagal %{type}
         clear: Valyti
+        clear_aria: Išvalyti visus filtrus
         verified: "✓ Tik patikrinti"
+        verified_aria: Rodyti tik patvirtintus įrašus
       heading: Priežiūros įrašai
       hw_pending_title: Laukia patikrinimo
       hw_verified_title: Aparatūra patikrinta
       page_info: "%{count} įsikišimų · Puslapis %{page} iš %{total}"
       register: "+ Registruoti įsikišimą"
+      register_aria: Registruoti naują priežiūros intervenciją
       table:
         action: Veiksmas
         cost: Kaina
         empty: Nėra įrašytų įsikišimų
         hw: APR
         open: ATIDARYTI →
+        open_aria: Atverti priežiūros įrašo detales
         photos: Nuotr.
         technician: Technikas
         timestamp: Laiko žyma

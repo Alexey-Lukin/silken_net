@@ -32,7 +32,7 @@ module Maintenance
         end
         a(
           href: new_api_v1_maintenance_record_path,
-          aria_label: "Register new maintenance intervention",
+          aria_label: t(".register_aria"),
           class: register_button_classes
         ) { t(".register") }
       end
@@ -44,18 +44,20 @@ module Maintenance
         action_types.each do |type|
           a(
             href: api_v1_maintenance_records_path(action_type: type),
-            aria_label: "Filter by #{type}",
+            # `type` лишається сирим enum'ом — міток action_type у локалях ще
+            # немає (окремий пункт I18N.1, той самий клас, що був у alert_type).
+            aria_label: t(".filter.by_aria", type: type),
             class: filter_link_classes
           ) { type }
         end
         a(
           href: api_v1_maintenance_records_path(verified: "1"),
-          aria_label: "Show only verified records",
+          aria_label: t(".filter.verified_aria"),
           class: filter_verified_classes
         ) { t(".filter.verified") }
         a(
           href: api_v1_maintenance_records_path,
-          aria_label: "Clear all filters",
+          aria_label: t(".filter.clear_aria"),
           class: filter_clear_classes
         ) { t(".filter.clear") }
       end
@@ -121,7 +123,7 @@ module Maintenance
         td(class: "p-4 text-right") do
           a(
             href: api_v1_maintenance_record_path(record),
-            aria_label: "Open maintenance record details",
+            aria_label: t(".table.open_aria"),
             class: "text-emerald-700 hover:text-white text-tiny focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors"
           ) { t(".table.open") }
         end

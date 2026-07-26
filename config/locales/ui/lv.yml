@@ -44,3 +44,7 @@ lv:
       triggered: aktivizēts
       unknown: nezināms
       updating: atjaunina
+    web3_address:
+      copy: Kopēt adresi
+      copy_aria: Kopēt adresi %{address} starpliktuvē
+      not_provisioned: NAV PIEŠĶIRTS

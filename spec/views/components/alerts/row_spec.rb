@@ -58,8 +58,10 @@ RSpec.describe Alerts::Row do
   describe "alert content" do
     let(:html) { render_component(alert: mock_alert) }
 
-    it "displays the alert type humanized" do
-      expect(html).to include("Fire detected")
+    # [I18N.1] Мітка типу тепер із `alerts.types.*` через TextFormatter —
+    # раніше тут був locale-сліпий `.humanize` ("Fire detected").
+    it "displays the localised alert type label" do
+      expect(html).to include("Fire Detected")
     end
 
     it "displays cluster and tree source" do

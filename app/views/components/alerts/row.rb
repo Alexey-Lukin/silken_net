@@ -22,8 +22,11 @@ module Alerts
         # the column header in `Alerts::Index` so the visible text matches
         # what a desktop user would see in the <th>.
         td(class: "p-4", data_label: t("alerts.table.severity")) { severity_badge }
+        # Мітка типу — через TextFormatter, а не власний лукап: одна деривація
+        # ключа на застосунок (див. `ALERT_TYPE_SCOPE`), тож спека покриває оби́два
+        # шляхи рендеру. Раніше тут жив locale-сліпий `.humanize`.
         td(class: "p-4 text-mini uppercase text-gaia-text-subtle tracking-widest", data_label: t("alerts.table.alert_type")) do
-          @alert.alert_type.to_s.humanize
+          TreeChronicle::TextFormatter.alert_title(@alert)
         end
         td(class: "p-4 text-gaia-primary", data_label: t("alerts.table.source")) do
           "#{@alert.cluster&.name} // #{@alert.tree&.did || 'System'}"

@@ -36,19 +36,24 @@ en:
       target_type: Target Type
     index:
       filter:
+        by_aria: Filter by %{type}
         clear: Clear
+        clear_aria: Clear all filters
         verified: "✓ Verified Only"
+        verified_aria: Show only verified records
       heading: Maintenance Records
       hw_pending_title: Pending Verification
       hw_verified_title: Hardware Verified
       page_info: "%{count} interventions · Page %{page} of %{total}"
       register: "+ Register Intervention"
+      register_aria: Register new maintenance intervention
       table:
         action: Action
         cost: Cost
         empty: No interventions recorded
         hw: HW
         open: OPEN →
+        open_aria: Open maintenance record details
         photos: Photos
         technician: Technician
         timestamp: Timestamp

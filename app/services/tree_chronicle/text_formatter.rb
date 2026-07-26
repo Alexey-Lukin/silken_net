@@ -6,9 +6,8 @@ module TreeChronicle
   # 📝 TEXT FORMATTER (i18n-Ready Chronicle Text Templates)
   # = ===================================================================
   # Централізує всі текстові шаблони хроніки дерева.
-  # [i18n-READY]: Кожен метод повертає рядок. При додаванні I18n достатньо
-  # замінити рядки на I18n.t("chronicle.homeostasis", z_value: ...) без зміни
-  # інтерфейсу або архітектури.
+  # Мітки alert_type локалізовані (`alerts.types.*`, 4 локалі) — решта шаблонів
+  # ще англомовні рядки; їхня локалізація трекається в 00_07 I18N.1.
   module TextFormatter
     module_function
 
@@ -49,34 +48,43 @@ module TreeChronicle
     end
 
     # --- EwsAlert ---
+    # \u0414\u0456\u043C \u043C\u0456\u0442\u043E\u043A alert_type \u2014 `config/locales/alerts/*.yml`. \u041A\u043B\u044E\u0447 \u0434\u0435\u0440\u0438\u0432\u0443\u0454\u0442\u044C\u0441\u044F
+    # \u0427\u0415\u0420\u0415\u0417 \u0446\u044E \u043A\u043E\u043D\u0441\u0442\u0430\u043D\u0442\u0443 \u0432 \u0443\u0441\u0456\u0445 \u0432\u0438\u043A\u043B\u0438\u043A\u0430\u0447\u0430\u0445 \u0456 \u0432 \u0441\u043F\u0435\u0446\u0456, \u0442\u043E\u0436 \u0434\u0440\u0443\u043A\u0430\u0440\u0441\u044C\u043A\u0430 \u043F\u043E\u043C\u0438\u043B\u043A\u0430 \u0432
+    # \u043D\u0435\u0439\u043C\u0441\u043F\u0435\u0439\u0441\u0456 \u0432\u0430\u043B\u0438\u0442\u044C \u0433\u0435\u0439\u0442, \u0430 \u043D\u0435 \u043F\u0440\u043E\u0445\u043E\u0434\u0438\u0442\u044C \u0437\u0435\u043B\u0435\u043D\u043E\u044E.
+    ALERT_TYPE_SCOPE = "alerts.types"
+
+    # \u0413\u043B\u0456\u0444\u0438 locale-\u0456\u043D\u0432\u0430\u0440\u0456\u0430\u043D\u0442\u043D\u0456 \u2192 \u0434\u0456\u043C \u0442\u0443\u0442, \u043D\u0435 \u0432 YAML: parity-\u0433\u0435\u0439\u0442 `i18n-tasks
+    # missing` \u0456\u043D\u0430\u043A\u0448\u0435 \u0437\u043C\u0443\u0441\u0438\u0432 \u0431\u0438 \u0442\u0440\u0438\u043C\u0430\u0442\u0438 \u0447\u043E\u0442\u0438\u0440\u0438 \u043E\u0434\u043D\u0430\u043A\u043E\u0432\u0456 \u043A\u043E\u043F\u0456\u0457 \u043A\u043E\u0436\u043D\u043E\u0433\u043E \u0435\u043C\u043E\u0434\u0437\u0456.
+    ALERT_ICONS = {
+      "severe_drought"       => "\u{1F4A7}",
+      "insect_epidemic"      => "\u{1F41B}",
+      "vandalism_breach"     => "\u{1F6A8}",
+      "fire_detected"        => "\u{1F525}",
+      "seismic_anomaly"      => "\u{1F30D}",
+      "system_fault"         => "\u26A0",
+      "entropy_anomaly"      => "\u{1F4C9}",
+      "field_audit"          => "\u{1F50D}",
+      "queen_offline"        => "\u{1F4F4}",
+      "queen_uplink_lost"    => "\u{1F4E1}",
+      "chainsaw_detected"    => "\u{1FA9A}",
+      "firmware_fault"       => "\u2699",
+      "firmware_reverted"    => "\u23EE",
+      "firmware_canary_trip" => "\u{1F424}"
+    }.freeze
+
+    # Fail-open: \u043D\u0435\u0432\u0456\u0434\u043E\u043C\u0438\u0439 \u0442\u0438\u043F \u043C\u0430\u043B\u044E\u0454 generic-\u043F\u043E\u043F\u0435\u0440\u0435\u0434\u0436\u0435\u043D\u043D\u044F, \u0430 \u043D\u0435 \u0432\u0430\u043B\u0438\u0442\u044C \u0441\u0442\u043E\u0440\u0456\u043D\u043A\u0443.
+    # \u0421\u0442\u0435\u043B\u044F \u0441\u0432\u0456\u0434\u043E\u043C\u0430 \u2014 \u043F\u043E\u0432\u043D\u043E\u0442\u0443 \u043C\u0430\u043F\u0438 \u043F\u0440\u043E\u0442\u0438 enum'\u0430 \u0441\u0442\u0435\u0440\u0435\u0436\u0435 \u0441\u043F\u0435\u043A\u0430, \u0431\u043E \u0436\u043E\u0434\u0435\u043D CI-\u0433\u0435\u0439\u0442
+    # \u0446\u0456\u0454\u0457 \u043E\u0441\u0456 \u043D\u0435 \u0431\u0430\u0447\u0438\u0442\u044C (`i18n-tasks` \u0437\u0432\u0456\u0440\u044F\u0454 \u043B\u043E\u043A\u0430\u043B\u044C \u0437 \u043B\u043E\u043A\u0430\u043B\u043B\u044E, \u043D\u0435 \u0437 \u043C\u043E\u0434\u0435\u043B\u043B\u044E).
+    ALERT_ICON_FALLBACK = "\u26A0"
+
     def alert_icon(alert_type)
-      case alert_type.to_s
-      when "fire_detected"     then "\u{1F525}"
-      when "chainsaw_detected" then "\u{1FA9A}"
-      when "severe_drought"    then "\u{1F4A7}"
-      when "insect_epidemic"   then "\u{1F41B}"
-      when "vandalism_breach"  then "\u{1F6A8}"
-      when "seismic_anomaly"   then "\u{1F30D}"
-      when "system_fault"      then "\u26A0"
-      when "field_audit"       then "\u{1F50D}"
-      when "firmware_fault"    then "\u2699"
-      else "\u26A0"
-      end
+      ALERT_ICONS.fetch(alert_type.to_s, ALERT_ICON_FALLBACK)
     end
 
+    # `default:` \u0442\u0440\u0438\u043C\u0430\u0454 \u0442\u043E\u0439 \u0441\u0430\u043C\u0438\u0439 fail-open \u043A\u043E\u043D\u0442\u0440\u0430\u043A\u0442, \u0449\u043E \u0439 ALERT_ICON_FALLBACK.
     def alert_title(alert)
-      case alert.alert_type.to_s
-      when "fire_detected"     then "Fire Detected"
-      when "chainsaw_detected" then "Chainsaw Detected"
-      when "severe_drought"    then "Severe Drought"
-      when "insect_epidemic"   then "Insect Epidemic"
-      when "vandalism_breach"  then "Vandalism Breach"
-      when "seismic_anomaly"   then "Seismic Anomaly"
-      when "system_fault"      then "System Fault"
-      when "field_audit"       then "Field Audit"
-      when "firmware_fault"    then "Firmware Fault"
-      else alert.alert_type.to_s.humanize
-      end
+      type = alert.alert_type.to_s
+      I18n.t("#{ALERT_TYPE_SCOPE}.#{type}", default: type.humanize)
     end
 
     def alert_description(alert)

@@ -194,7 +194,7 @@
 | **Файл** | `app/services/tree_chronicle/text_formatter.rb` |
 | **Вхід** | Модельні об'єкти (AiInsight, EwsAlert, MaintenanceRecord, BlockchainTransaction) |
 | **Що робить** | Централізує всі текстові шаблони хроніки. Методи: `homeostasis_title/description`, `stress_title/description`, `fraud_title/description`, `alert_icon/title/description`, `recovery_title/description`, `maintenance_title/description`, `minting_title/description`. |
-| **i18n** | Усі методи повертають рядки. При додаванні I18n достатньо замінити рядки на `I18n.t(...)` без зміни архітектури. |
+| **i18n** | **Мітки `alert_type` локалізовані** — `alert_title` резолвить `alerts.types.<type>` (4 локалі) через єдину scope-константу `ALERT_TYPE_SCOPE`, яку реюзає й `Alerts::Row`: одна деривація ключа на застосунок. Іконки лишаються Ruby-мапою `ALERT_ICONS` (гліфи locale-інваріантні; у YAML parity-гейт вимагав би 4 однакові копії кожного емодзі). Обидва — fail-open (`humanize` / `⚠`), тож повноту проти enum'а тримає **спека**, а не CI: `i18n-tasks` звіряє локаль з локаллю, ніколи з моделлю ([`04_04 §12.14`](04_04_Phlex_UI_and_Tailwind)). Решта методів — ще англомовні рядки → [`00_07`](00_07_Action_Plan_Tracker) I18N.1. |
 | **Вихід** | Рядки (String). |
 
 ---

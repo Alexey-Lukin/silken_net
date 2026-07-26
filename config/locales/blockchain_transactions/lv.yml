@@ -2,6 +2,7 @@
 lv:
   blockchain_transactions:
     index:
+      explorer_aria: Skatīt darījumu blokķēdes pārlūkā
       subtitle: Kalšana, sodīšana un visi ķēdes notikumi jūsu organizācijai.
       table:
         amount: Summa

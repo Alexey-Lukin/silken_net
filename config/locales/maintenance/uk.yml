@@ -36,19 +36,24 @@ uk:
       target_type: Тип цілі
     index:
       filter:
+        by_aria: Фільтрувати за %{type}
         clear: Очистити
+        clear_aria: Очистити всі фільтри
         verified: "✓ Тільки верифіковані"
+        verified_aria: Показати лише підтверджені записи
       heading: Журнал обслуговування
       hw_pending_title: Очікує верифікації
       hw_verified_title: Обладнання верифіковано
       page_info: "%{count} втручань · Сторінка %{page} з %{total}"
       register: "+ Реєстрація втручання"
+      register_aria: Зареєструвати нове втручання
       table:
         action: Дія
         cost: Вартість
         empty: Жодного втручання не зафіксовано
         hw: ОБЛ
         open: ВІДКРИТИ →
+        open_aria: Відкрити деталі запису обслуговування
         photos: Фото
         technician: Технік
         timestamp: Час

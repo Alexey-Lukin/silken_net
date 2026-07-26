@@ -44,3 +44,7 @@ en:
       triggered: triggered
       unknown: unknown
       updating: updating
+    web3_address:
+      copy: Copy address
+      copy_aria: Copy address %{address} to clipboard
+      not_provisioned: NOT_PROVISIONED
