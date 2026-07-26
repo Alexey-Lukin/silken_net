@@ -2,10 +2,6 @@
 lt:
   alerts:
     badge:
-      severities:
-        critical: kritinis
-        low: žemas
-        medium: vidutinis
       statuses:
         active: aktyvus
         ignored: ignoruotas
@@ -26,6 +22,10 @@ lt:
       resolve_confirm: 'Patvirtinti grėsmės lokalizavimą įspėjimui #%{id}?'
       resolved: "✓ Išspręsta"
       severity_aria: 'Sunkumas: %{severity}'
+    severities:
+      critical: kritinis
+      low: žemas
+      medium: vidutinis
     table:
       alert_type: Įspėjimo tipas
       command: Komanda

@@ -102,8 +102,9 @@ RSpec.describe Clusters::Show do
     context "with active alerts" do
       let(:recent_alerts) { [ mock_alert(id: 5, alert_type: "fire_detected", severity: "critical") ] }
 
-      it "displays alert type" do
-        expect(html).to include("fire_detected")
+      it "displays the localized alert-type label, not the raw enum value" do
+        expect(html).to include("Fire Detected")
+        expect(html).not_to include("fire_detected")
       end
 
       it "uses dom_id for alert elements" do

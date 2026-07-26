@@ -15,8 +15,13 @@ RSpec.describe AlertMailer, type: :mailer do
       expect(mail.to).to eq([ "ops@forest.ua" ])
     end
 
-    it "includes alert type and cluster name in the subject" do
-      expect(mail.subject).to include(alert.alert_type.humanize)
+    # Літерал навмисний. Раніше тут стояло `alert.alert_type.humanize` — тобто
+    # спека рахувала очікування ТИМ САМИМ методом, що й код, і тому не бачила,
+    # що тема листа взагалі не ходить через локаль. Пін доводить, що мітка
+    # приходить із `alerts.types.*`, а не з `humanize`-фолбеку.
+    it "includes the localized alert-type label and cluster name in the subject" do
+      expect(mail.subject).to include("Fire Detected")
+      expect(mail.subject).not_to include("Fire detected")
       expect(mail.subject).to include(cluster.name)
     end
 

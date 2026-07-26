@@ -158,7 +158,9 @@ module Clusters
               div(id: dom_id(alert), class: "flex justify-between items-center py-2 border-b border-emerald-900/20 font-mono text-tiny") do
                 div(class: "flex items-center gap-3") do
                   div(class: tokens("h-2 w-2 rounded-full", alert_severity_class(alert)))
-                  span(class: "text-emerald-400 uppercase") { alert.alert_type }
+                  # Через TextFormatter, як `Alerts::Row` — інакше тут жила б
+                  # друга деривація тієї самої мітки (див. `04_04 §12.14`).
+                  span(class: "text-emerald-400 uppercase") { TreeChronicle::TextFormatter.alert_title(alert) }
                 end
                 span(class: "text-gray-600") { alert.created_at.strftime("%d.%m.%y %H:%M") }
               end

@@ -20,7 +20,10 @@ module Dashboard
 
     def event_summary
       case @event
-      when EwsAlert then t(".threat", type: @event.alert_type, cluster: @event.cluster&.name || t(".unknown_cluster"))
+      # Сире значення enum'а, інтерпольоване в ПЕРЕКЛАДЕНЕ речення, — гірший
+      # різновид промаху: фраза виглядає локалізованою, а всередині англійський
+      # токен. Мітку бере той самий TextFormatter, що й `Alerts::Row`.
+      when EwsAlert then t(".threat", type: TreeChronicle::TextFormatter.alert_title(@event), cluster: @event.cluster&.name || t(".unknown_cluster"))
       when BlockchainTransaction then blockchain_transaction_summary
       when MaintenanceRecord then t(".maintenance", action: @event.action_type&.capitalize, user: @event.user&.first_name || t(".system_user"))
       else t(".system_pulse")

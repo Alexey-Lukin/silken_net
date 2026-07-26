@@ -37,7 +37,7 @@ registry = [
   },
   {
     name:   "EwsAlert#severity",
-    scope:  "alerts.badge.severities",
+    scope:  TreeChronicle::TextFormatter::SEVERITY_SCOPE,
     values: -> { EwsAlert.severities.keys }
   },
   {

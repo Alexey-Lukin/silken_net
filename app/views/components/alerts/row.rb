@@ -69,11 +69,16 @@ module Alerts
       when "low" then "bg-status-info text-status-info-text"
       else "bg-status-neutral text-status-neutral-text"
       end
+      # Та сама деривація, що в `Alerts::Badge` — через `SEVERITY_SCOPE`.
+      # Раніше сюди летіло сире значення enum'а, ще й двічі: у видимий текст і
+      # в перекладений aria-шаблон, тобто скрін-рідер читав англійське слово
+      # всередині української фрази.
+      label = TreeChronicle::TextFormatter.alert_severity_label(@alert)
       span(
         role: "status",
-        aria_label: t(".severity_aria", severity: @alert.severity),
+        aria_label: t(".severity_aria", severity: label),
         class: tokens("px-2 py-0.5 rounded-sm text-mini uppercase font-bold", color)
-      ) { @alert.severity }
+      ) { label }
     end
 
     def action_button

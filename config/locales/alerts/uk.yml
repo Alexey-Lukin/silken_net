@@ -2,10 +2,6 @@
 uk:
   alerts:
     badge:
-      severities:
-        critical: критична
-        low: низька
-        medium: середня
       statuses:
         active: активна
         ignored: ігнорована
@@ -26,6 +22,10 @@ uk:
       resolve_confirm: Підтверджуєте локалізацію загрози №%{id}?
       resolved: "✓ Локалізовано"
       severity_aria: 'Рівень небезпеки: %{severity}'
+    severities:
+      critical: критична
+      low: низька
+      medium: середня
     table:
       alert_type: Тип
       command: Дія

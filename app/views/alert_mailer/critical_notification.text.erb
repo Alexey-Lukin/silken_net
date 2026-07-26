@@ -1,6 +1,6 @@
 🚨 КРИТИЧНА ТРИВОГА — S-NET
 
-Тип: <%= @alert.alert_type.humanize %>
+Тип: <%= TreeChronicle::TextFormatter.alert_title(@alert) %>
 Кластер: <%= @cluster.name %>
 Повідомлення: <%= @alert.message %>
 Час: <%= @alert.created_at %>

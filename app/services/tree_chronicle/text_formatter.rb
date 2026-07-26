@@ -53,6 +53,12 @@ module TreeChronicle
     # \u043D\u0435\u0439\u043C\u0441\u043F\u0435\u0439\u0441\u0456 \u0432\u0430\u043B\u0438\u0442\u044C \u0433\u0435\u0439\u0442, \u0430 \u043D\u0435 \u043F\u0440\u043E\u0445\u043E\u0434\u0438\u0442\u044C \u0437\u0435\u043B\u0435\u043D\u043E\u044E.
     ALERT_TYPE_SCOPE = "alerts.types"
 
+    # Дім міток severity — поруч із типами, а НЕ під `alerts.badge.*`: власник
+    # значень — модель, не компонент, а викликачів двоє (`Alerts::Badge` і
+    # `Alerts::Row`). Саме двоє й вимагають спільної константи: доки деривацій
+    # дві, друкарська помилка в одній лишається зеленою назавжди.
+    SEVERITY_SCOPE = "alerts.severities"
+
     # \u0413\u043B\u0456\u0444\u0438 locale-\u0456\u043D\u0432\u0430\u0440\u0456\u0430\u043D\u0442\u043D\u0456 \u2192 \u0434\u0456\u043C \u0442\u0443\u0442, \u043D\u0435 \u0432 YAML: parity-\u0433\u0435\u0439\u0442 `i18n-tasks
     # missing` \u0456\u043D\u0430\u043A\u0448\u0435 \u0437\u043C\u0443\u0441\u0438\u0432 \u0431\u0438 \u0442\u0440\u0438\u043C\u0430\u0442\u0438 \u0447\u043E\u0442\u0438\u0440\u0438 \u043E\u0434\u043D\u0430\u043A\u043E\u0432\u0456 \u043A\u043E\u043F\u0456\u0457 \u043A\u043E\u0436\u043D\u043E\u0433\u043E \u0435\u043C\u043E\u0434\u0437\u0456.
     ALERT_ICONS = {
@@ -85,6 +91,11 @@ module TreeChronicle
     def alert_title(alert)
       type = alert.alert_type.to_s
       I18n.t("#{ALERT_TYPE_SCOPE}.#{type}", default: type.humanize)
+    end
+
+    def alert_severity_label(alert)
+      severity = alert.severity.to_s
+      I18n.t("#{SEVERITY_SCOPE}.#{severity}", default: severity.humanize)
     end
 
     def alert_description(alert)

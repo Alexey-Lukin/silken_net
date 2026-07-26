@@ -2,10 +2,6 @@
 lv:
   alerts:
     badge:
-      severities:
-        critical: kritisks
-        low: zems
-        medium: vidējs
       statuses:
         active: aktīvs
         ignored: ignorēts
@@ -26,6 +22,10 @@ lv:
       resolve_confirm: 'Apstiprināt draudu lokalizāciju brīdinājumam #%{id}?'
       resolved: "✓ Atrisināts"
       severity_aria: 'Smagums: %{severity}'
+    severities:
+      critical: kritisks
+      low: zems
+      medium: vidējs
     table:
       alert_type: Brīdinājuma veids
       command: Komanda

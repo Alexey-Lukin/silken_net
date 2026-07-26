@@ -16,7 +16,10 @@ RSpec.describe Dashboard::EventRow do
     let(:event) do
       mock_cluster = OpenStruct.new(name: "Carpathian-7")
       alert = EwsAlert.allocate
-      alert.define_singleton_method(:alert_type) { "Thermal Anomaly" }
+      # Реальне значення enum'а, а не вигаданий display-рядок: із «Thermal
+      # Anomaly» компонент їхав fail-open гілкою `humanize`, тож спека перевіряла
+      # шлях, якого в проді не буває.
+      alert.define_singleton_method(:alert_type) { "fire_detected" }
       alert.define_singleton_method(:cluster) { mock_cluster }
       alert.define_singleton_method(:created_at) { 30.seconds.ago }
       alert
@@ -25,7 +28,7 @@ RSpec.describe Dashboard::EventRow do
 
     it "renders the threat summary" do
       expect(html).to include("Threat:")
-      expect(html).to include("Thermal Anomaly")
+      expect(html).to include("Fire Detected")
       expect(html).to include("Carpathian-7")
     end
 

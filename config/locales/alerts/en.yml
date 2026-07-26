@@ -2,10 +2,6 @@
 en:
   alerts:
     badge:
-      severities:
-        critical: critical
-        low: low
-        medium: medium
       statuses:
         active: active
         ignored: ignored
@@ -26,6 +22,10 @@ en:
       resolve_confirm: 'Confirm threat localisation for alert #%{id}?'
       resolved: "✓ Resolved"
       severity_aria: 'Severity: %{severity}'
+    severities:
+      critical: critical
+      low: low
+      medium: medium
     table:
       alert_type: Alert Type
       command: Command

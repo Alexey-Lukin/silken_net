@@ -9,7 +9,12 @@ class AlertMailer < ApplicationMailer
 
     mail(
       to: @organization.billing_email,
-      subject: "🚨 [S-NET] Критична тривога: #{@alert.alert_type.humanize} — #{@cluster.name}"
+      # Мітка типу — через TextFormatter, як в UI. Пошта поки рендериться в
+      # `default_locale` (Sidekiq не має ні запиту, ні `LocaleSettable`), тож
+      # видимого ефекту сьогодні нема — але `.humanize` віддавав би англійську
+      # НАВІТЬ після того, як межа доставки навчиться ставити локаль отримувача.
+      # Сам тіло листа лишається українським хардкодом → `00_07` I18N.1.
+      subject: "🚨 [S-NET] Критична тривога: #{TreeChronicle::TextFormatter.alert_title(@alert)} — #{@cluster.name}"
     )
   end
 end

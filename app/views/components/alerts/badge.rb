@@ -23,7 +23,11 @@ module Alerts
       severity_class = SEVERITY_STYLES.fetch(@alert.severity.to_s, "bg-zinc-800 text-zinc-300")
       status_class   = STATUS_STYLES.fetch(@alert.status.to_s, "")
 
-      severity_label = t(".severities.#{@alert.severity}", default: @alert.severity.to_s)
+      # Мітка severity — через TextFormatter (`SEVERITY_SCOPE`), а не власний
+      # лукап: та сама деривація, що в `Alerts::Row`. Статус лишається локальним
+      # ключем, бо викликач у нього поки ОДИН — спільна константа потрібна там,
+      # де деривацій дві й більше.
+      severity_label = TreeChronicle::TextFormatter.alert_severity_label(@alert)
       status_label   = t(".statuses.#{@alert.status}", default: @alert.status.to_s)
 
       span(
