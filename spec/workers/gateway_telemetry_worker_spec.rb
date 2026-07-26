@@ -85,7 +85,7 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
 
         alert = EwsAlert.last
         expect(alert.severity).to eq("critical")
-        expect(alert.message).to include("Слабкий сигнал")
+        I18n.with_locale(:uk) { expect(alert.message).to include("Слабкий сигнал") }
       end
 
       it "creates EwsAlert for degraded uplink (coap_fail_count ≥ поріг)" do
@@ -95,7 +95,7 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
           described_class.new.perform(gateway.uid, stats)
         }.to change(EwsAlert, :count).by(1)
 
-        expect(EwsAlert.last.message).to include("провалених")
+        I18n.with_locale(:uk) { expect(EwsAlert.last.message).to include("провалених") }
       end
 
       it "не плодить дублікат при активному system_fault кластера (анти-спам)" do
@@ -111,7 +111,7 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
         tree = create(:tree, cluster: cluster)
         create(:ews_alert, cluster: cluster, tree: tree,
                            alert_type: :system_fault, severity: :critical,
-                           message: "🚨 ФРОД: аномалія Z-розподілу.")
+                           message_key: "fraud_telemetry_detected", message_params: { target_date: "2026-03-14" })
 
         stats = valid_stats.merge("cellular_signal_csq" => 2)
         expect {
@@ -119,27 +119,28 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
         }.to change(EwsAlert, :count).by(1)
 
         expect(EwsAlert.last.tree_id).to be_nil
-        expect(EwsAlert.last.message).to include("Слабкий сигнал")
+        expect(EwsAlert.last.message_key).to eq("gateway_weak_signal")
+        I18n.with_locale(:uk) { expect(EwsAlert.last.message).to include("Слабкий сигнал") }
       end
 
       it "fallback-повідомлення для battery-critical (voltage поза thermal/signal-гілками; майбутній ADC-шлях)" do
         # Пульс v2 напруги не несе, але модель дозволяє legacy/ADC-рядки
         # (insert_all-ера): voltage-critical лог мусить дати чесний вердикт.
         log = gateway.gateway_telemetry_logs.create!(gateway_id: gateway.id, voltage_mv: 3000)
-        message = described_class.new.send(:format_health_message, gateway, log)
-        expect(message).to include("Апаратний збій")
+        key, = described_class.new.send(:health_message_key, gateway, log)
+        expect(key).to eq("gateway_hardware_fault")
       end
 
       it "❄️-вердикт для замерзання (temperature_c < LOW_TEMPERATURE_THRESHOLD; charge-protect зона, HW.16)" do
         log = gateway.gateway_telemetry_logs.create!(gateway_id: gateway.id, temperature_c: -25)
-        message = described_class.new.send(:format_health_message, gateway, log)
-        expect(message).to include("ЗАМЕРЗАННЯ")
+        key, = described_class.new.send(:health_message_key, gateway, log)
+        expect(key).to eq("gateway_freezing")
       end
 
       it "🔥-вердикт для перегріву (temperature_c > OVERHEAT_THRESHOLD)" do
         log = gateway.gateway_telemetry_logs.create!(gateway_id: gateway.id, temperature_c: 70)
-        message = described_class.new.send(:format_health_message, gateway, log)
-        expect(message).to include("ПЕРЕГРІВ")
+        key, = described_class.new.send(:health_message_key, gateway, log)
+        expect(key).to eq("gateway_overheat")
       end
 
       it "no_signal (csq 99) не тригерить алерт (за специфікацією 3GPP)" do

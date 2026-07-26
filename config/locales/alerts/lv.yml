@@ -17,16 +17,40 @@ lv:
       subtitle: Reāllaika telemetrijas uzraudzība anomālijām un bāzlīnijas novirzēm.
       title: Aktīvo draudu matrica
     messages:
+      actuator_fault: 'Izpildmehānisma “%{name}” kļūme (%{endpoint}). Iemesls: %{reason}. Nepieciešams patruļas izbraukums.'
       attractor_destabilised: "🌀 ATRAKTORS: Destabilizācija (Z: %{z_value})."
-      chainsaw_detected: "🪚 MEŽIZSTRĀDE: Akustiska anomālija bez termālā signāla. DID: %{did}"
-      chainsaw_detected_panic: "🪚 MEŽIZSTRĀDE: Akustiska anomālija bez termālā signāla (PANIC-TX). DID: %{did}"
+      burn_failure: 'Kritiska %{amount} SCC sadedzināšanas kļūme. Iespējams kontroles zudums pār investora aktīviem. Error: %{error}'
+      canary_trip: "🐦 KANĀRIJPUTNS: __stack_chk_fail mezglā (pārrakstīts steka kadrs — iespējams uzbrukums LoRa/AT parserim; mezgls pārstartējās pats). DID: %{did}, seq: %{seq}"
+      chainsaw_detected: "🪚 MEŽIZSTRĀDE: Akustiska anomālija bez termiskā signāla. DID: %{did}"
+      chainsaw_detected_panic: "🪚 MEŽIZSTRĀDE: Akustiska anomālija bez termiskā signāla (PANIC-TX). DID: %{did}"
+      cluster_data_blackout: 'Klastera mēroga datu pārtraukums (%{target_date}): iespējama vārtejas kļūme / Starlink pārtraukums (force-majeure). Slashing NAV piemērots — nepieciešams Field Audit (C kategorija, 05_05 §5).'
+      entropy_pre_stress: "🎲 PIRMSSTRESA SIGNĀLS: klastera %{cluster_name} Z sadalījuma entropija nokritusies līdz %{entropy_score} (slieksnis: %{threshold}). %{sample_count} mērījumu analīze pēdējās 24 stundās norāda uz koku atbilžu homogenizāciju — iespējams meža stresa sākums."
       fire_detected: "🔥 KATASTROFA: Temperatūra %{temperature_c}°C (slieksnis: %{fire_limit}). Ugunsgrēka risks!"
-      firmware_fault: "⚙️ PROGRAMMAPARATŪRAS KĻŪME: mruby VM kļūda / ierīce nav sagatavota — nepieciešams re-flash/OTA. DID: %{did}"
+      firmware_fault: "⚙️ PROGRAMMAPARATŪRAS KĻŪME: mruby VM kļūda / ierīce nav nodrošināta — nepieciešams re-flash/OTA. DID: %{did}"
       firmware_reverted: "⏮️ PROGRAMMAPARATŪRA ATGRIEZTA: mezgls uz embedded bāzes, OTA versija %{burned_version} sadedzināta ar fallback — atkārtota izdošana tikai ar augstāku versiju. DID: %{did}"
+      fraud_telemetry_detected: "🚨 KRĀPŠANA: konstatēta krāpnieciska telemetrija par %{target_date}."
+      gateway_freezing: "❄️ SASALŠANA: Queen %{uid} (%{temperature_c}°C). LiFePO4 bezsaistes risks — uzlāde zem 0°C ir bīstama."
+      gateway_hardware_fault: "🛠️ Queen %{uid} aparatūras kļūme. Nepieciešama apskate."
+      gateway_overheat: "🔥 PĀRKARŠANA: Queen %{uid} (%{temperature_c}°C). SIM7070G degradācijas risks."
+      gateway_uplink_degraded: "📵 AUGŠUPSAITE: Queen %{uid} uzkrāja %{fail_count} neizdevušās flush sarunas — LTE/Starlink degradē, telemetrija turas uz atkārtotiem mēģinājumiem."
+      gateway_weak_signal: "📡 SAKARI: Vājš signāls uz %{uid} (CSQ: %{csq}). Partiju zuduma risks."
+      global_blackout: "🛰️ GLOBĀLS PĀRTRAUKUMS: par %{target_date} nav saņemti nekādi telemetrijas dati. Iespējama Starlink avārija vai masveida vārteju atteice — Field Audit (C kat.), slashing NAV piemērots."
+      hardware_decay: 'Aparatūras nolietojums: mezglam %{did} nepieciešama nomaiņa.'
       hydrological_stress: "💧 SAUSUMS: Hidroloģiskais stress."
       insect_epidemic: "🪲 BIO-DRAUDI: Akustiska kaitēkļu aktivitāte (%{acoustic_events})."
+      insurance_candidate_armed: 'Apdrošināšanas kandidāts #%{id}: AI orākuls redz %{percentage}% kritisku koku — pirms izmaksas nepieciešams NEATKARĪGS apstiprinājums (dClimate satelīts / Field Audit) (dual-trigger, 05_05 §6).'
+      insurance_no_data: 'Apdrošināšanas orākuls #%{id}: par %{target_date} nulle AiInsight, kamēr koki ir aktīvi (iespējama katastrofa / iznīcināti sensori). Izmaksa NAV anulēta — nepieciešams Field Audit (C kategorija, 05_05 §5/§6).'
+      insurance_reserve_hold: 'Insurance reserve-gate HOLD [INS.2] priekš #%{id} (%{reason}): %{detail}. Internal-mint izmaksa apturēta — pārbaudi apdrošināšanas ekspozīciju / DAO_TREASURY papildināšanu pirms manuālas atrisināšanas.'
+      mint_volume_anomaly: 'Mint-volume anomaly [ARCH.62] %{token_type}: %{volume} kalts pēdējās %{window}, kas pārsniedz konfigurēto griestu (%{ceiling}). Iespējama programmaparatūras/konveijera kļūda vai ļaunprātīgi izmantota MINTER atslēga. Pārbaudi nesenos mint tx pirms griestu celšanas.'
+      oracle_balance_low: "%{network} %{signer}: Orākula maka atlikums (%{balance} %{currency}) ir zem minimālā sliekšņa (%{min_threshold} %{currency}). Ratio: %{ratio}x. Blokķēdes transakcijas neizdosies bez papildināšanas."
       power_loss: "🚨 KRITISKI: Barošanas zudums (%{voltage_mv} mV)! DID: %{did}"
+      queen_silent: "👑 Queen %{uid} klusē %{silent_for_min} min (pēdējais kontakts %{last_seen_at}). Klasteris bez augšupsaites — koku telemetrija nepienāk."
+      queen_uplink_lost: "🆘 Queen %{uid} zaudēja VISAS augšupsaites (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min). Sauciens atnāca caur Helium — telemetrija buferizējas, nepieciešams izbraukums."
+      queen_uplink_lost_reported: "🆘 Queen %{uid} zaudēja VISAS augšupsaites (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min, reported_at=%{reported_at}). Sauciens atnāca caur Helium — telemetrija buferizējas, nepieciešams izbraukums."
       seismic_anomaly: "🌋 SEISMIKA: Anomāla rezonanse (%{acoustic_events}). DID: %{did}"
+      slash_evasion: 'Slash izvairīšanās (%{context}): A kategorijas pierādījums pastāv, bet pārkāpējs izņēma visus SCC pirms sprieduma izpildes (pieprasīts %{requested_burn} SCC, on-chain atlikums ≈0). Sadedzināšana nav iespējama — nepieciešams juridisks/manuāls ceļš (05_05 §3.2).'
+      slashing_blocked: 'Slashing bloķēts (%{context}): %{detail}. Līdzekļi NAV sadedzināti — nepieciešams Field Audit (C kategorija, 05_05 §3.2/§5).'
+      tree_silent: "🌳 Mezgls %{did} klusē ~%{silent_for_h} h (pēdējā pārraide %{last_seen_at}, slieksnis %{threshold_h} h). Klusa veselība un nāve/zādzība nav atšķiramas līdz heartbeat — jāizbrauc klausīties."
     row:
       acknowledge: Apstiprināt un atrisināt →
       resolve_aria: 'Atrisināt brīdinājumu #%{id}'

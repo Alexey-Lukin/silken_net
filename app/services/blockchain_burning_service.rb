@@ -336,7 +336,8 @@ class BlockchainBurningService < ApplicationService
     # Хелпер дедуплікує: щоденний cron при тривалій деградації не плодить дублі.
     EwsAlert.escalate_field_audit!(
       cluster: @cluster,
-      message: "Слешинг заблоковано (#{context}): #{detail}. Кошти НЕ спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5)."
+      message_key: "slashing_blocked",
+      message_params: { context: context, detail: detail }
     )
 
     # [ARCH.57] Freeze — теж привілейований вирок (кошти утримано без burn) → ланцюг.
@@ -368,7 +369,8 @@ class BlockchainBurningService < ApplicationService
 
     EwsAlert.escalate_field_audit!(
       cluster: @cluster,
-      message: "Slash-ухилення (#{context}): доказ Категорії A є, але порушник вивів усі SCC до виконання вироку (запит #{requested_burn} SCC, on-chain баланс ≈0). Спалення неможливе — потрібен юридичний/ручний трек (позов, off-chain clawback; 05_05 §3.2)."
+      message_key: "slash_evasion",
+      message_params: { context: context, requested_burn: requested_burn }
     )
 
     # [ARCH.57] Evasion-вердикт → ланцюг (chain-only): доказ A є, активи виведено —
@@ -567,7 +569,8 @@ class BlockchainBurningService < ApplicationService
       cluster: @cluster,
       severity: :critical,
       alert_type: :system_fault,
-      message: "Критичний збій спалювання #{amount} SCC. Можлива втрата контролю над активами інвестора. Error: #{error_msg}"
+      message_key: "burn_failure",
+      message_params: { amount: amount, error: error_msg }
     )
   end
 end

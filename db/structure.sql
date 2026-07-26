@@ -1438,7 +1438,6 @@ CREATE TABLE public.ews_alerts (
     tree_id bigint,
     severity integer,
     alert_type integer,
-    message text,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     resolved_at timestamp(6) without time zone,
@@ -8536,6 +8535,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260726165258'),
 ('20260726161614'),
 ('20260719200000');
 

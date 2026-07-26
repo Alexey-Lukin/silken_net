@@ -77,7 +77,7 @@ class GatewayTelemetryWorker
     return unless log.critical_fault?
 
     # Формуємо вердикт для патрульного
-    message = format_health_message(gateway, log)
+    message_key, message_params = health_message_key(gateway, log)
 
     # Анти-спам: активний cluster-level system_fault вже кличе патрульного —
     # кожен наступний пульс не повинен плодити дублікати (log-створення
@@ -94,25 +94,26 @@ class GatewayTelemetryWorker
       cluster_id: gateway.cluster_id,
       severity: :critical,
       alert_type: :system_fault,
-      message: message
+      message_key: message_key, message_params: message_params
     )
 
     # Notification відбувається через EwsAlert.after_create_commit :dispatch_notifications!
   end
 
-  def format_health_message(gateway, log)
+  # Повертає пару [ключ, параметри] замість готового рядка: гілка обирає, ЩО
+  # сталося, а не якими словами це сказати (дім фраз — `alerts.messages.*`).
+  def health_message_key(gateway, log)
     if log.cellular_signal_csq.present? &&
        log.cellular_signal_csq < GatewayTelemetryLog::LOW_SIGNAL_THRESHOLD
-      "📡 ЗВ'ЯЗОК: Слабкий сигнал на #{gateway.uid} (CSQ: #{log.cellular_signal_csq}). Ризик втрати батчів."
+      [ "gateway_weak_signal", { uid: gateway.uid, csq: log.cellular_signal_csq } ]
     elsif log.coap_fail_count.to_i >= GatewayTelemetryLog::COAP_FAIL_ALERT_THRESHOLD
-      "📵 UPLINK: Королева #{gateway.uid} накопичила #{log.coap_fail_count} провалених " \
-        "flush-розмов — LTE/Starlink деградує, телеметрія тримається на retry."
+      [ "gateway_uplink_degraded", { uid: gateway.uid, fail_count: log.coap_fail_count } ]
     elsif log.temperature_c.present? && log.temperature_c > GatewayTelemetryLog::OVERHEAT_THRESHOLD
-      "🔥 ПЕРЕГРІВ: Королева #{gateway.uid} (#{log.temperature_c}°C). Ризик деградації SIM7070G."
+      [ "gateway_overheat", { uid: gateway.uid, temperature_c: log.temperature_c } ]
     elsif log.temperature_c.present? && log.temperature_c < GatewayTelemetryLog::LOW_TEMPERATURE_THRESHOLD
-      "❄️ ЗАМЕРЗАННЯ: Королева #{gateway.uid} (#{log.temperature_c}°C). LiFePO4 offline-ризик — заряд <0°C небезпечний."
+      [ "gateway_freezing", { uid: gateway.uid, temperature_c: log.temperature_c } ]
     else
-      "🛠️ Апаратний збій Королеви #{gateway.uid}. Потрібен огляд."
+      [ "gateway_hardware_fault", { uid: gateway.uid } ]
     end
   end
 

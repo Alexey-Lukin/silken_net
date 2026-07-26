@@ -151,7 +151,8 @@ class ParametricInsurance < ApplicationRecord
       # аудит-виїзд спільний, дубль не створюємо; insurance-контекст лишається в лозі.
       EwsAlert.escalate_field_audit!(
         cluster: cluster,
-        message: "Страховий кандидат ##{id}: AI-оракул бачить #{percentage}% критичних дерев — потрібне НЕЗАЛЕЖНЕ підтвердження (dClimate satellite / Field Audit) перед виплатою (dual-trigger, 05_05 §6)."
+        message_key: "insurance_candidate_armed",
+        message_params: { id: id, percentage: percentage }
       )
       Rails.logger.warn "🎯 [INSURANCE] Кандидат ##{id} озброєно (#{percentage}% за AI-оракулом) — чекаємо НЕЗАЛЕЖНОГО підтвердження (Trigger-2); payout НЕ запускаємо."
     end
@@ -166,7 +167,8 @@ class ParametricInsurance < ApplicationRecord
 
     EwsAlert.escalate_field_audit!(
       cluster: cluster,
-      message: "Страховий оракул ##{id}: за #{target_date} нуль AiInsight при активних деревах (можлива катастрофа / знищені сенсори). Виплату НЕ обнулено — потрібен Field Audit (Категорія C, 05_05 §5/§6)."
+      message_key: "insurance_no_data",
+      message_params: { id: id, target_date: target_date }
     )
   end
 end

@@ -73,7 +73,7 @@ RSpec.describe TreeChronicleService do
       it "formats alert events" do
         create(:ews_alert, tree: tree, cluster: cluster,
                alert_type: :fire_detected, severity: :critical,
-               message: "Temperature threshold exceeded")
+               message_key: "hydrological_stress")
 
         result = described_class.call(tree: tree)
         alert_entry = result[:entries].find { |e| e.event_type == :alert }
@@ -86,7 +86,7 @@ RSpec.describe TreeChronicleService do
       it "includes recovery events for resolved alerts" do
         alert = create(:ews_alert, tree: tree, cluster: cluster,
                        alert_type: :severe_drought, severity: :medium,
-                       message: "Drought detected")
+                       message_key: "hydrological_stress")
         alert.update_columns(status: "resolved", resolved_at: Time.current,
                              resolution_notes: "Rain restored moisture")
 
@@ -182,7 +182,7 @@ RSpec.describe TreeChronicleService do
       it "does not include recovery entry for unresolved alert" do
         create(:ews_alert, tree: tree, cluster: cluster,
                alert_type: :severe_drought, severity: :medium,
-               message: "Drought detected")
+               message_key: "hydrological_stress")
 
         result = described_class.call(tree: tree)
         recovery_entries = result[:entries].select { |e| e.event_type == :recovery }
@@ -195,7 +195,7 @@ RSpec.describe TreeChronicleService do
       it "does not include recovery entry when resolved_at is nil" do
         alert = create(:ews_alert, tree: tree, cluster: cluster,
                        alert_type: :severe_drought, severity: :medium,
-                       message: "Drought detected")
+                       message_key: "hydrological_stress")
         alert.update_columns(status: "resolved", resolved_at: nil)
 
         result = described_class.call(tree: tree)
@@ -318,7 +318,7 @@ RSpec.describe TreeChronicleService do
                target_date: 4.days.ago, stress_index: 0.1, model_source: "mixed_test")
         create(:ews_alert, tree: tree, cluster: cluster,
                alert_type: :fire_detected, severity: :critical,
-               message: "Fire!", created_at: 3.days.ago)
+               message_key: "hydrological_stress", created_at: 3.days.ago)
         user = create(:user, organization: organization)
         create(:maintenance_record, maintainable: tree, user: user,
                action_type: :inspection, performed_at: 2.days.ago)

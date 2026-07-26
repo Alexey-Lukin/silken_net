@@ -81,7 +81,8 @@ class ContractHealthCheckService < ApplicationService
     # Хелпер дедуплікує: багатоденний блекаут не плодить дубль щодоби.
     EwsAlert.escalate_field_audit!(
       cluster: @cluster,
-      message: "Cluster-wide data blackout (#{@target_date}): можлива відмова шлюзу / Starlink-блекаут (force-majeure). Slashing НЕ застосовано — потрібен Field Audit (Category C, 05_05 §5)."
+      message_key: "cluster_data_blackout",
+      message_params: { target_date: @target_date }
     )
 
     :blackout

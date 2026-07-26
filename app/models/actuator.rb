@@ -86,7 +86,8 @@ class Actuator < ApplicationRecord
             cluster: gateway.cluster,
             alert_type: :system_fault,
             severity: :critical,
-            message: "Збій актуатора '#{name}' (#{endpoint}). Причина: #{reason}. Потрібен виїзд патруля."
+            message_key: "actuator_fault",
+            message_params: { name: name, endpoint: endpoint, reason: reason }
           )
         end
         Rails.logger.error "🛠️ [ACTUATOR] #{name} ВИЙШОВ З ЛАДУ. Система EWS сповіщена."

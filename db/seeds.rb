@@ -502,7 +502,8 @@ drought_alert = EwsAlert.create!(
   alert_type: :severe_drought,
   severity: :medium,
   status: :active,
-  message: "Гідрологічний стрес: Z-value перевищив критичні межі Атрактора Лоренца для #{anomaly_tree.tree_family.name}."
+  message_key: "attractor_destabilised",
+  message_params: { z_value: 3.4 }
 )
 
 EwsAlert.create!(
@@ -514,7 +515,8 @@ EwsAlert.create!(
   resolved_at: 1.day.ago,
   resolved_by: forester.id,
   resolution_notes: "Пастки встановлено. Короїд локалізовано.",
-  message: "TinyML виявив акустичний паттерн короїда."
+  message_key: "insect_epidemic",
+  message_params: { acoustic_events: 120 }
 )
 
 fire_alert = EwsAlert.create!(
@@ -522,7 +524,8 @@ fire_alert = EwsAlert.create!(
   alert_type: :fire_detected,
   severity: :critical,
   status: :active,
-  message: "Температурний стрибок >60°C зафіксовано на периферії сектора."
+  message_key: "fire_detected",
+  message_params: { temperature_c: 63.5, fire_limit: 60 }
 )
 
 # [SLASH-1] Акустичний детект без термального сигналу — вирубка, не вогонь.
@@ -532,7 +535,8 @@ EwsAlert.create!(
   alert_type: :chainsaw_detected,
   severity: :critical,
   status: :active,
-  message: "🪚 ВИРУБКА: Акустична аномалія без термального сигналу (PANIC-TX). DID: #{cherkasy_trees[7].did}"
+  message_key: "chainsaw_detected_panic",
+  message_params: { did: cherkasy_trees[7].did }
 )
 
 # =========================================================================

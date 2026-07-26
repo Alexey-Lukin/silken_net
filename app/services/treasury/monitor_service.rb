@@ -198,9 +198,9 @@ module Treasury
           EwsAlert.create(
             alert_type: :system_fault,
             severity: :critical,
-            message: "Mint-volume anomaly [ARCH.62] #{token_type}: #{volume.round(2)} minted in the last " \
-                     "#{MINT_VOLUME_WINDOW.inspect} exceeds the configured ceiling (#{max_scc.round(2)}). " \
-                     "Possible firmware/pipeline bug or misused MINTER key. Verify recent mint tx before topping the ceiling."
+            message_key: "mint_volume_anomaly",
+            message_params: { token_type: token_type, volume: volume.round(2),
+                              window: MINT_VOLUME_WINDOW.inspect, ceiling: max_scc.round(2) }
           )
         end
         # Inert circuit-break: per-token HOLD нових mint-батчів, поки людина не звірить причину.
@@ -212,11 +212,15 @@ module Treasury
     end
 
     # Активний mint-volume-алерт для цього token_type уже висить? (dedup — див. detector).
-    # sanitize_sql_like екранує `_` у token_type (інакше LIKE-wildcard).
+    # 🔴 Раніше тут стояв `message LIKE "Mint-volume anomaly …"` — тобто РЕНДЕРЕНИЙ
+    # ТЕКСТ виконував роль ключа дедупу. Переведення прози на `message_key` без
+    # цієї правки зламало б дедуп ТИХО: запит перестав би щось знаходити, і
+    # critical-алерт сипався б щоцикла (~4/год/токен) у ops-чергу. Тепер ключ —
+    # це ключ, а token_type — параметр, і `sanitize_sql_like` більше не потрібен
+    # (нема LIKE-патерну, є рівність).
     def active_mint_volume_alert?(token_type)
-      safe = ActiveRecord::Base.sanitize_sql_like(token_type)
-      EwsAlert.where(alert_type: :system_fault, status: :active)
-              .where("message LIKE ?", "Mint-volume anomaly [ARCH.62] #{safe}:%")
+      EwsAlert.where(alert_type: :system_fault, status: :active, message_key: "mint_volume_anomaly")
+              .where("message_params ->> 'token_type' = ?", token_type)
               .exists?
     end
 
@@ -358,12 +362,10 @@ module Treasury
         EwsAlert.create(
           alert_type: :system_fault,
           severity: :critical,
-          message: "#{result[:network]} #{result[:signer]} Oracle wallet balance " \
-                   "(#{result[:balance_human]} #{result[:currency]}) " \
-                   "is below minimum threshold " \
-                   "(#{result[:min_threshold_human]} #{result[:currency]}). " \
-                   "Ratio: #{result[:ratio]}x. " \
-                   "Blockchain transactions will fail without top-up."
+          message_key: "oracle_balance_low",
+          message_params: { network: result[:network], signer: result[:signer],
+                            balance: result[:balance_human], currency: result[:currency],
+                            min_threshold: result[:min_threshold_human], ratio: result[:ratio] }
         )
       end
     end

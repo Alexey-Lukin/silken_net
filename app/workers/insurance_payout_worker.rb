@@ -161,9 +161,8 @@ class InsurancePayoutWorker
           EwsAlert.create(
             alert_type: :system_fault,
             severity: :critical,
-            message: "Insurance reserve-gate HOLD [INS.2] для ##{insurance.id} (#{reserve_gate.reason}): " \
-                     "#{reserve_gate.detail}. Internal-mint виплату зупинено — звір страхову експозицію / " \
-                     "поповнення DAO_TREASURY перед ручним resolve."
+            message_key: "insurance_reserve_hold",
+            message_params: { id: insurance.id, reason: reserve_gate.reason, detail: reserve_gate.detail }
           )
           Rails.logger.warn "🛡️ [Insurance] ##{insurance.id}: reserve-gate HOLD (#{reserve_gate.reason}) → manual_review (без mint)."
           return

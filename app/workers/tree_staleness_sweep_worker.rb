@@ -75,9 +75,9 @@ class TreeStalenessSweepWorker
       silent_for_h = ((Time.current - tree.last_seen_at) / 1.hour).round
       alert = EwsAlert.escalate_field_audit!(
         cluster: tree.cluster, tree: tree,
-        message: "🌳 Вузол #{tree.did} мовчить ~#{silent_for_h} год " \
-                 "(останній ефір #{tree.last_seen_at.utc.iso8601}, поріг #{threshold.in_hours.round} год). " \
-                 "Мовчазне здоров'я і смерть/крадіжка нерозрізнимі до heartbeat — виїхати слухати."
+        message_key: "tree_silent",
+        message_params: { did: tree.did, silent_for_h: silent_for_h,
+                          last_seen_at: tree.last_seen_at.utc.iso8601, threshold_h: threshold.in_hours.round }
       )
       if alert
         SilkenNet::Metrics::TREE_SILENCE_TOTAL.increment

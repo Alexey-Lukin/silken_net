@@ -17,16 +17,40 @@ en:
       subtitle: Monitoring live telemetry for anomalies and baseline deviations.
       title: Active Threats Matrix
     messages:
+      actuator_fault: 'Actuator ‘%{name}’ failed (%{endpoint}). Reason: %{reason}. A patrol visit is required.'
       attractor_destabilised: "🌀 ATTRACTOR: Destabilisation (Z: %{z_value})."
+      burn_failure: 'Critical burn failure for %{amount} SCC. Possible loss of control over investor assets. Error: %{error}'
+      canary_trip: "🐦 CANARY: __stack_chk_fail on the node (stack frame overwritten — possible attack on the LoRa/AT parser; the node reincarnated itself). DID: %{did}, seq: %{seq}"
       chainsaw_detected: "🪚 LOGGING: Acoustic anomaly without a thermal signal. DID: %{did}"
       chainsaw_detected_panic: "🪚 LOGGING: Acoustic anomaly without a thermal signal (PANIC-TX). DID: %{did}"
+      cluster_data_blackout: 'Cluster-wide data blackout (%{target_date}): possible gateway failure / Starlink blackout (force-majeure). Slashing NOT applied — Field Audit required (Category C, 05_05 §5).'
+      entropy_pre_stress: "🎲 PRE-STRESS SIGNAL: Z-distribution entropy of cluster %{cluster_name} dropped to %{entropy_score} (threshold: %{threshold}). Analysis of %{sample_count} measurements over the last 24 hours points to homogenisation of tree responses — forest stress may be starting."
       fire_detected: "🔥 CATASTROPHE: Temperature %{temperature_c}°C (threshold: %{fire_limit}). Fire risk!"
       firmware_fault: "⚙️ FIRMWARE FAULT: mruby VM error / device unprovisioned — re-flash/OTA required. DID: %{did}"
       firmware_reverted: "⏮️ FIRMWARE REVERTED: node on embedded baseline, OTA version %{burned_version} burned by fallback — re-issue only with a version above it. DID: %{did}"
+      fraud_telemetry_detected: "🚨 FRAUD: fraudulent telemetry detected for %{target_date}."
+      gateway_freezing: "❄️ FREEZING: Queen %{uid} (%{temperature_c}°C). LiFePO4 offline risk — charging below 0°C is unsafe."
+      gateway_hardware_fault: "🛠️ Hardware fault on Queen %{uid}. Inspection required."
+      gateway_overheat: "🔥 OVERHEAT: Queen %{uid} (%{temperature_c}°C). Risk of SIM7070G degradation."
+      gateway_uplink_degraded: "📵 UPLINK: Queen %{uid} accumulated %{fail_count} failed flush conversations — LTE/Starlink is degrading, telemetry is holding on retry."
+      gateway_weak_signal: "📡 LINK: Weak signal on %{uid} (CSQ: %{csq}). Risk of batch loss."
+      global_blackout: "🛰️ GLOBAL BLACKOUT: no telemetry arrived for %{target_date}. Possible Starlink outage or mass gateway failure — Field Audit (Cat-C), slashing NOT applied."
+      hardware_decay: 'Hardware Decay: node %{did} requires replacement.'
       hydrological_stress: "💧 DROUGHT: Hydrological stress."
       insect_epidemic: "🪲 BIO-THREAT: Acoustic pest activity (%{acoustic_events})."
+      insurance_candidate_armed: 'Insurance candidate #%{id}: the AI oracle sees %{percentage}% critical trees — INDEPENDENT confirmation (dClimate satellite / Field Audit) is required before payout (dual-trigger, 05_05 §6).'
+      insurance_no_data: 'Insurance oracle #%{id}: zero AiInsight for %{target_date} while trees are active (possible catastrophe / destroyed sensors). Payout NOT zeroed — Field Audit required (Category C, 05_05 §5/§6).'
+      insurance_reserve_hold: 'Insurance reserve-gate HOLD [INS.2] for #%{id} (%{reason}): %{detail}. Internal-mint payout stopped — reconcile insurance exposure / top up DAO_TREASURY before a manual resolve.'
+      mint_volume_anomaly: 'Mint-volume anomaly [ARCH.62] %{token_type}: %{volume} minted in the last %{window} exceeds the configured ceiling (%{ceiling}). Possible firmware/pipeline bug or misused MINTER key. Verify recent mint tx before topping the ceiling.'
+      oracle_balance_low: "%{network} %{signer} Oracle wallet balance (%{balance} %{currency}) is below the minimum threshold (%{min_threshold} %{currency}). Ratio: %{ratio}x. Blockchain transactions will fail without a top-up."
       power_loss: "🚨 CRITICAL: Power loss (%{voltage_mv} mV)! DID: %{did}"
+      queen_silent: "👑 Queen %{uid} has been silent for %{silent_for_min} min (last contact %{last_seen_at}). Cluster without uplink — tree telemetry is not arriving."
+      queen_uplink_lost: "🆘 Queen %{uid} lost ALL uplinks (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min). The cry arrived via Helium — telemetry is buffering, a visit is required."
+      queen_uplink_lost_reported: "🆘 Queen %{uid} lost ALL uplinks (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min, reported_at=%{reported_at}). The cry arrived via Helium — telemetry is buffering, a visit is required."
       seismic_anomaly: "🌋 SEISMIC: Anomalous resonance (%{acoustic_events}). DID: %{did}"
+      slash_evasion: 'Slash evasion (%{context}): Category A evidence exists, but the offender withdrew all SCC before the verdict was executed (requested %{requested_burn} SCC, on-chain balance ≈0). Burning is impossible — a legal/manual track is required (05_05 §3.2).'
+      slashing_blocked: 'Slashing blocked (%{context}): %{detail}. Funds NOT burned — Field Audit required (Category C, 05_05 §3.2/§5).'
+      tree_silent: "🌳 Node %{did} has been silent for ~%{silent_for_h} h (last transmission %{last_seen_at}, threshold %{threshold_h} h). Silent health and death/theft are indistinguishable until a heartbeat — go and listen."
     row:
       acknowledge: Acknowledge & Resolve →
       resolve_aria: 'Resolve alert #%{id}'

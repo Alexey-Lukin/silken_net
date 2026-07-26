@@ -8,18 +8,20 @@ FactoryBot.define do
     severity { :medium }
     alert_type { :severe_drought }
     status { :active }
-    message { "Alert detected." }
+    message_key { "hydrological_stress" }
 
     trait :drought do
       severity { :medium }
       alert_type { :severe_drought }
-      message { "Severe drought detected. Z-value exceeded critical bounds." }
+      message_key { "attractor_destabilised" }
+      message_params { { z_value: 3.1 } }
     end
 
     trait :fire do
       severity { :critical }
       alert_type { :fire_detected }
-      message { "Fire detected. Temperature spike above 60C threshold." }
+      message_key { "fire_detected" }
+      message_params { { temperature_c: 61.0, fire_limit: 60 } }
     end
 
     # [SLASH-1] Аудит на місці — cluster-level (tree nil), причина невизначена.
@@ -27,7 +29,8 @@ FactoryBot.define do
       severity { :critical }
       alert_type { :field_audit }
       tree { nil }
-      message { "Аудит на місці: причину деградації не визначено — потрібна перевірка (Категорія C)." }
+      message_key { "cluster_data_blackout" }
+      message_params { { target_date: "2026-03-14" } }
     end
   end
 end

@@ -81,10 +81,9 @@ class ClusterEntropyAnalyzerWorker
       cluster: cluster,
       severity: :medium,
       alert_type: :entropy_anomaly,
-      message: "🎲 ПЕРЕДСТРЕСОВИЙ СИГНАЛ: Ентропія Z-розподілу кластера #{cluster.name} " \
-               "знизилась до #{entropy_score} (поріг: #{CRITICAL_ENTROPY_THRESHOLD}). " \
-               "Аналіз #{sample_count} вимірювань за останні 24 години вказує на " \
-               "гомогенізацію відповідей дерев — можливий початок лісового стресу."
+      message_key: "entropy_pre_stress",
+      message_params: { cluster_name: cluster.name, entropy_score: entropy_score,
+                        threshold: CRITICAL_ENTROPY_THRESHOLD, sample_count: sample_count }
     )
 
     Rails.cache.write(silence_key, true, expires_in: SILENCE_PERIOD)

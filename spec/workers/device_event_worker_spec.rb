@@ -49,7 +49,8 @@ RSpec.describe DeviceEventWorker do
     expect(alert.alert_type).to eq("firmware_canary_trip")
     expect(alert.severity).to eq("critical")
     expect(alert.tree).to eq(tree)
-    expect(alert.message).to include("КАНАРКА")
+    expect(alert.message_key).to eq("canary_trip")
+      I18n.with_locale(:uk) { expect(alert.message).to include("КАНАРКА") }
   end
 
   it "drops an envelope signed by the WRONG key (gateway-origin fails)" do

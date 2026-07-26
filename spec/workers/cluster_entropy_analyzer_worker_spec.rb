@@ -81,7 +81,7 @@ RSpec.describe ClusterEntropyAnalyzerWorker, type: :worker do
         expect(alert.alert_type).to eq("entropy_anomaly")
         expect(alert.severity).to eq("medium")
         expect(alert.cluster_id).to eq(cluster.id)
-        expect(alert.message).to include("ПЕРЕДСТРЕСОВИЙ СИГНАЛ")
+        I18n.with_locale(:uk) { expect(alert.message).to include("ПЕРЕДСТРЕСОВИЙ СИГНАЛ") }
         expect(alert.message).to include(cluster.name)
       end
 

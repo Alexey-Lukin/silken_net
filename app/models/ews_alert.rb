@@ -109,7 +109,10 @@ class EwsAlert < ApplicationRecord
   end
 
   # --- ВАЛІДАЦІЇ ---
-  validates :severity, :alert_type, :message, presence: true
+  # `message_key`, а не `message`: після зняття колонки `message` — це рендер,
+  # тож валідація на ньому гнала б I18n-лукап на кожен save заради того самого
+  # висновку. Несе присутність саме ключ.
+  validates :severity, :alert_type, :message_key, presence: true
 
   # [STORM PROTECTION]: Захист від каскадних дублікатів.
   # Якщо один кластер накриває задимлення, сотні дерев згенерують fire_detected.
@@ -131,7 +134,7 @@ class EwsAlert < ApplicationRecord
   # правок, і щоб `validates :message, presence: true` вище працювала для
   # обох шляхів сама: вона читає саме цей метод, а не колонку.
   def message
-    return self[:message] if message_key.blank? # [transitional] до кінця переведення писальників
+    return nil if message_key.blank?
 
     I18n.t(
       "#{MESSAGE_SCOPE}.#{message_key}",
@@ -176,7 +179,7 @@ class EwsAlert < ApplicationRecord
   # Resolve відкриває наступну. Race-safety = часткові unique-index'и.
   # Повертає алерт або nil (dedup-skip) — виклик-сайти на nil НЕ реагують
   # (аудит-виїзд спільний, контекст лишається у їхніх логах).
-  def self.escalate_field_audit!(cluster:, message:, tree: nil)
+  def self.escalate_field_audit!(cluster:, message_key:, message_params: {}, tree: nil)
     existing = tree ? active_tree_field_audit_for(tree) : active_cluster_field_audit_for(cluster)
     if existing
       Rails.logger.info "🔍 [SLASH-1] Field-Audit по #{tree ? "дереву #{tree.did}" : "кластеру ##{cluster.id}"} вже активний (##{existing.id}) — дубль не створюємо."
@@ -189,7 +192,8 @@ class EwsAlert < ApplicationRecord
     # Ruby-rescue її не лікує, імпліцитний COMMIT тихо стає ROLLBACK і trigger!
     # зникає без жодного ексепшена.
     transaction(requires_new: true) do
-      create!(cluster: cluster, tree: tree, severity: :critical, alert_type: :field_audit, message: message)
+      create!(cluster: cluster, tree: tree, severity: :critical, alert_type: :field_audit,
+              message_key: message_key, message_params: message_params)
     end
   rescue ActiveRecord::RecordNotUnique
     Rails.logger.info "🔍 [SLASH-1] Field-Audit dedup-гонку по #{tree ? "дереву #{tree.did}" : "кластеру ##{cluster.id}"} програно — активна ескалація вже існує."

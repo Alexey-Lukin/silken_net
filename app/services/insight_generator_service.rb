@@ -218,7 +218,7 @@ class InsightGeneratorService < ApplicationService
     # Ми більше не "вбиваємо" дерево миттєво. Створюємо критичну тривогу для перевірки.
     # Це захищає інвестора від помилок ШІ, але зупиняє виплати до вердикту людини.
     if is_fraud
-      AlertDispatchService.create_fraud_alert!(tree, "Виявлено фрод-телеметрію за #{@date}")
+      AlertDispatchService.create_fraud_alert!(tree, @date)
     end
 
     true

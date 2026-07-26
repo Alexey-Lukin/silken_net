@@ -83,7 +83,8 @@ class DeviceCalibration < ApplicationRecord
       severity: :medium
     ) do |alert|
       alert.cluster_id = tree.cluster_id
-      alert.message = "Hardware Decay: Вузол #{tree.did} вимагає заміни."
+      alert.message_key = "hardware_decay"
+      alert.message_params = { did: tree.did }
     end
   end
 end

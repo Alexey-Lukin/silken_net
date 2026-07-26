@@ -96,7 +96,7 @@ RSpec.describe TreeStalenessSweepWorker, type: :worker do
     end
 
     it "активний cluster-level field_audit (blackout) глушить per-tree fan-out" do
-      EwsAlert.escalate_field_audit!(cluster: cluster, message: "Blackout кластера")
+      EwsAlert.escalate_field_audit!(cluster: cluster, message_key: "cluster_data_blackout")
       silent_tree
 
       expect { sweep }
@@ -129,7 +129,7 @@ RSpec.describe TreeStalenessSweepWorker, type: :worker do
     end
 
     it "НЕ резолвить cluster-level field_audit (tree_id nil — не наш сигнал)" do
-      EwsAlert.escalate_field_audit!(cluster: cluster, message: "Blackout кластера")
+      EwsAlert.escalate_field_audit!(cluster: cluster, message_key: "cluster_data_blackout")
       tree = create(:tree, cluster: cluster)
       tree.mark_seen! # свіже дерево в кластері ≠ спростування blackout-ескалації
 

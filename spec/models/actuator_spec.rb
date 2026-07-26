@@ -229,7 +229,7 @@ RSpec.describe Actuator, type: :model do
 
       actuator.require_maintenance!
 
-      expect(EwsAlert.last.message).to include("Невідома помилка CoAP")
+      I18n.with_locale(:uk) { expect(EwsAlert.last.message).to include("Невідома помилка CoAP") }
     end
   end
 

@@ -17,16 +17,40 @@ uk:
       subtitle: Моніторинг живої телеметрії на аномалії та відхилення від базової лінії.
       title: Матриця активних загроз
     messages:
+      actuator_fault: 'Збій актуатора «%{name}» (%{endpoint}). Причина: %{reason}. Потрібен виїзд патруля.'
       attractor_destabilised: "🌀 АТРАКТОР: Дестабілізація (Z: %{z_value})."
+      burn_failure: 'Критичний збій спалювання %{amount} SCC. Можлива втрата контролю над активами інвестора. Error: %{error}'
+      canary_trip: "🐦 КАНАРКА: __stack_chk_fail на вузлі (переписаний кадр стека — потенційна атака на LoRa/AT-парсер; вузол перевтілився сам). DID: %{did}, seq: %{seq}"
       chainsaw_detected: "🪚 ВИРУБКА: Акустична аномалія без термального сигналу. DID: %{did}"
       chainsaw_detected_panic: "🪚 ВИРУБКА: Акустична аномалія без термального сигналу (PANIC-TX). DID: %{did}"
+      cluster_data_blackout: 'Cluster-wide data blackout (%{target_date}): можлива відмова шлюзу / Starlink-блекаут (force-majeure). Slashing НЕ застосовано — потрібен Field Audit (Category C, 05_05 §5).'
+      entropy_pre_stress: "🎲 ПЕРЕДСТРЕСОВИЙ СИГНАЛ: Ентропія Z-розподілу кластера %{cluster_name} знизилась до %{entropy_score} (поріг: %{threshold}). Аналіз %{sample_count} вимірювань за останні 24 години вказує на гомогенізацію відповідей дерев — можливий початок лісового стресу."
       fire_detected: "🔥 КАТАСТРОФА: Температура %{temperature_c}°C (поріг: %{fire_limit}). Ризик пожежі!"
       firmware_fault: "⚙️ ЗБІЙ ПРОШИВКИ: mruby VM error / device unprovisioned — потрібен re-flash/OTA. DID: %{did}"
       firmware_reverted: "⏮️ ВІДКАТ ПРОШИВКИ: вузол на embedded baseline, OTA-версія %{burned_version} спалена fallback’ом — re-issue лише вищою версією. DID: %{did}"
+      fraud_telemetry_detected: "🚨 ФРОД: Виявлено фрод-телеметрію за %{target_date}."
+      gateway_freezing: "❄️ ЗАМЕРЗАННЯ: Королева %{uid} (%{temperature_c}°C). LiFePO4 offline-ризик — заряд <0°C небезпечний."
+      gateway_hardware_fault: "🛠️ Апаратний збій Королеви %{uid}. Потрібен огляд."
+      gateway_overheat: "🔥 ПЕРЕГРІВ: Королева %{uid} (%{temperature_c}°C). Ризик деградації SIM7070G."
+      gateway_uplink_degraded: "📵 UPLINK: Королева %{uid} накопичила %{fail_count} провалених flush-розмов — LTE/Starlink деградує, телеметрія тримається на retry."
+      gateway_weak_signal: "📡 ЗВ’ЯЗОК: Слабкий сигнал на %{uid} (CSQ: %{csq}). Ризик втрати батчів."
+      global_blackout: "🛰️ ГЛОБАЛЬНИЙ БЛЕКАУТ: За %{target_date} не надійшло жодних даних телеметрії. Можлива аварія Starlink або масовий відказ шлюзів — Field Audit (Кат-C), slashing НЕ застосовано."
+      hardware_decay: 'Hardware Decay: Вузол %{did} вимагає заміни.'
       hydrological_stress: "💧 ПОСУХА: Гідрологічний стрес."
       insect_epidemic: "🪲 БІО-ЗАГРОЗА: Акустична активність шкідників (%{acoustic_events})."
+      insurance_candidate_armed: 'Страховий кандидат #%{id}: AI-оракул бачить %{percentage}% критичних дерев — потрібне НЕЗАЛЕЖНЕ підтвердження (dClimate satellite / Field Audit) перед виплатою (dual-trigger, 05_05 §6).'
+      insurance_no_data: 'Страховий оракул #%{id}: за %{target_date} нуль AiInsight при активних деревах (можлива катастрофа / знищені сенсори). Виплату НЕ обнулено — потрібен Field Audit (Категорія C, 05_05 §5/§6).'
+      insurance_reserve_hold: 'Insurance reserve-gate HOLD [INS.2] для #%{id} (%{reason}): %{detail}. Internal-mint виплату зупинено — звір страхову експозицію / поповнення DAO_TREASURY перед ручним resolve.'
+      mint_volume_anomaly: 'Mint-volume anomaly [ARCH.62] %{token_type}: %{volume} намінтовано за %{window}, що перевищує стелю (%{ceiling}). Можливий баг прошивки/пайплайну або зловжитий MINTER-ключ. Звір останні mint-tx перед підняттям стелі.'
+      oracle_balance_low: "%{network} %{signer}: баланс гаманця Оракула (%{balance} %{currency}) нижчий за мінімальний поріг (%{min_threshold} %{currency}). Ratio: %{ratio}x. Блокчейн-транзакції провалюватимуться без поповнення."
       power_loss: "🚨 КРИТИЧНО: Втрата живлення (%{voltage_mv} мВ)! DID: %{did}"
+      queen_silent: "👑 Королева %{uid} мовчить %{silent_for_min} хв (останній зв’язок %{last_seen_at}). Кластер без uplink — телеметрія дерев не надходить."
+      queen_uplink_lost: "🆘 Королева %{uid} втратила ВСІ uplink’и (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min). Крик дійшов через Helium — телеметрія буферизується, потрібен виїзд."
+      queen_uplink_lost_reported: "🆘 Королева %{uid} втратила ВСІ uplink’и (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min, reported_at=%{reported_at}). Крик дійшов через Helium — телеметрія буферизується, потрібен виїзд."
       seismic_anomaly: "🌋 СЕЙСМІКА: Аномальний резонанс (%{acoustic_events}). DID: %{did}"
+      slash_evasion: 'Slash-ухилення (%{context}): доказ Категорії A є, але порушник вивів усі SCC до виконання вироку (запит %{requested_burn} SCC, on-chain баланс ≈0). Спалення неможливе — потрібен юридичний/ручний трек (05_05 §3.2).'
+      slashing_blocked: 'Слешинг заблоковано (%{context}): %{detail}. Кошти НЕ спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5).'
+      tree_silent: "🌳 Вузол %{did} мовчить ~%{silent_for_h} год (останній ефір %{last_seen_at}, поріг %{threshold_h} год). Мовчазне здоров’я і смерть/крадіжка нерозрізнимі до heartbeat — виїхати слухати."
     row:
       acknowledge: Підтвердити та локалізувати →
       resolve_aria: Локалізувати попередження №%{id}

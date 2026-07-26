@@ -93,10 +93,10 @@ class HeliumSosWorker
       cluster_id: gateway.cluster_id,
       severity: :critical,
       alert_type: :queen_uplink_lost,
-      message: "🆘 Королева #{gateway.uid} втратила ВСІ uplink'и (#{reason}; " \
-               "vcap=#{sos[:vcap_mv]}mV, uptime=#{sos[:uptime_min]}min" \
-               "#{reported_at ? ", reported_at=#{reported_at}" : ''}). " \
-               "Крик дійшов через Helium — телеметрія буферизується, потрібен виїзд."
+      # Два ключі, а не булевий параметр: reported_at — прозовий фрагмент.
+      message_key: reported_at ? "queen_uplink_lost_reported" : "queen_uplink_lost",
+      message_params: { uid: gateway.uid, reason: reason, vcap_mv: sos[:vcap_mv],
+                        uptime_min: sos[:uptime_min], reported_at: reported_at }
     )
   end
 end

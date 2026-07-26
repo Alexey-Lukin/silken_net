@@ -83,9 +83,9 @@ class GatewayStalenessSweepWorker
       cluster_id: gateway.cluster_id,
       severity: :critical,
       alert_type: :queen_offline,
-      message: "👑 Королева #{gateway.uid} мовчить #{silent_for} хв " \
-               "(останній зв'язок #{gateway.last_seen_at.utc.iso8601}). " \
-               "Кластер без uplink — телеметрія дерев не надходить."
+      message_key: "queen_silent",
+      message_params: { uid: gateway.uid, silent_for_min: silent_for,
+                        last_seen_at: gateway.last_seen_at.utc.iso8601 }
     )
   end
 

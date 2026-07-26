@@ -131,7 +131,7 @@ RSpec.describe "Insight generation and daily aggregation flow" do
       # (05_05 §6), а :system_fault накручував би penalty_factor обома гілками.
       alert = EwsAlert.last
       expect(alert.alert_type).to eq("field_audit")
-      expect(alert.message).to include("БЛЕКАУТ")
+      I18n.with_locale(:uk) { expect(alert.message).to include("БЛЕКАУТ") }
     end
   end
 

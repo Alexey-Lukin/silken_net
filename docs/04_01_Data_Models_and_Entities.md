@@ -1140,7 +1140,7 @@ active/draft ──cancel──► cancelled
 | `severity` | enum | `low(0) / medium(1) / critical(2)` |
 | `message_key` | string | **Який саме інцидент** — ключ у `alerts.messages.*` (усі локалі). Проза НЕ зберігається: алерт народжується у воркері, де локалі глядача не існує, тож готовий рядок замерзав би однією мовою назавжди |
 | `message_params` | jsonb | **Виміряні значення** для інтерполяції (`did`, `voltage_mv`, `temperature_c`, `acoustic_events`, `z_value`, …) — те, що від мови не залежить |
-| `message` | text | ⚠️ **[transitional]** депрекована колонка. Читач `EwsAlert#message` перевизначений: рендерить із `message_key` + `message_params` у момент ПОКАЗУ, а на колонку падає лише поки ключа нема. Знімається окремою міграцією, коли переведено всіх писальників → [`00_07`](00_07_Action_Plan_Tracker) I18N.1 |
+| ~~`message`~~ | — | **Колонки НЕМА** (знята 2026-07-26). `EwsAlert#message` — це МЕТОД-рендер: `I18n.t("alerts.messages.<key>", **params, default: key.humanize)`. Fail-open на невідомий ключ, `nil` за порожнього. Присутність несе валідація на `message_key` — не на `message`, інакше кожен `save` гнав би I18n-лукап заради того самого висновку |
 | `resolved_at` | datetime | Час вирішення |
 | `dclimate_ref` | string | Посилання на dClimate для супутникової верифікації |
 

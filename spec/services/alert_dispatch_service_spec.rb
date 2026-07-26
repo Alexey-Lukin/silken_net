@@ -679,21 +679,22 @@ RSpec.describe AlertDispatchService, type: :service do
 
     it "creates a critical fraud alert for the tree" do
       expect {
-        described_class.create_fraud_alert!(tree, "Виявлено фрод-телеметрію")
+        described_class.create_fraud_alert!(tree, Date.new(2026, 3, 14))
       }.to change(EwsAlert, :count).by(1)
 
       alert = EwsAlert.last
       expect(alert.severity).to eq("critical")
       expect(alert.alert_type).to eq("system_fault")
-      expect(alert.message).to include("ФРОД")
+      expect(alert.message_key).to eq("fraud_telemetry_detected")
+      I18n.with_locale(:uk) { expect(alert.message).to include("ФРОД").and include("2026-03-14") }
       expect(alert.tree).to eq(tree)
     end
 
     it "is silenced by cache on second call within 30 minutes" do
-      described_class.create_fraud_alert!(tree, "First fraud")
+      described_class.create_fraud_alert!(tree, Date.new(2026, 3, 14))
 
       expect {
-        described_class.create_fraud_alert!(tree, "Second fraud")
+        described_class.create_fraud_alert!(tree, Date.new(2026, 3, 15))
       }.not_to change(EwsAlert, :count)
     end
 

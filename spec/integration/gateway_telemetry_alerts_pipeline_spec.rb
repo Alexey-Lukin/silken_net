@@ -48,7 +48,7 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
       expect(alert).to be_present
       expect(alert.severity).to eq("critical")
       expect(alert.alert_type).to eq("system_fault")
-      expect(alert.message).to include("Слабкий сигнал")
+      I18n.with_locale(:uk) { expect(alert.message).to include("Слабкий сигнал") }
     end
 
     it "creates critical alert for degraded uplink (coap_fail ≥ поріг)" do
@@ -56,7 +56,7 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
 
       alert = EwsAlert.last
       expect(alert).to be_present
-      expect(alert.message).to include("провалених")
+      I18n.with_locale(:uk) { expect(alert.message).to include("провалених") }
     end
 
     it "rejects pulse without uptime_min (KENOSIS-гейт)" do

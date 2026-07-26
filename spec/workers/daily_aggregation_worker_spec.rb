@@ -76,7 +76,7 @@ RSpec.describe DailyAggregationWorker, type: :worker do
         alert = EwsAlert.last
         expect(alert.severity).to eq("critical")
         expect(alert.alert_type).to eq("field_audit")
-        expect(alert.message).to include("БЛЕКАУТ")
+        I18n.with_locale(:uk) { expect(alert.message).to include("БЛЕКАУТ") }
       end
 
       # Багатоденний блекаут (Starlink лежить тиждень) не плодить рядок щодоби —

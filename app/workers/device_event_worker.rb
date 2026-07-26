@@ -112,9 +112,8 @@ class DeviceEventWorker
       EwsAlert.create!(
         cluster: tree.cluster, tree: tree, severity: :critical,
         alert_type: :firmware_canary_trip, status: :active,
-        message: "🐦 КАНАРКА: __stack_chk_fail на вузлі (переписаний кадр стека — " \
-                 "потенційна атака на LoRa/AT-парсер; вузол перевтілився сам). " \
-                 "DID: #{hex_did}, seq: #{seq}"
+        message_key: "canary_trip",
+        message_params: { did: hex_did, seq: seq }
       )
     else
       # Невідомий/зарезервований код (0x01 baseline-revert їде state-report'ом)

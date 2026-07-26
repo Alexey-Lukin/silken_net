@@ -54,8 +54,8 @@ class DailyAggregationWorker
         Cluster.joins(:naas_contracts).merge(NaasContract.status_active).distinct.find_each do |cluster|
           EwsAlert.escalate_field_audit!(
             cluster: cluster,
-            message: "🛰️ ГЛОБАЛЬНИЙ БЛЕКАУТ: За #{target_date} не надійшло жодних даних телеметрії. " \
-                     "Можлива аварія Starlink або масовий відказ шлюзів — Field Audit (Кат-C), slashing НЕ застосовано."
+            message_key: "global_blackout",
+            message_params: { target_date: target_date }
           )
         end
       end

@@ -69,7 +69,12 @@ ignore_unused:
   # (e.g. `t("alerts.index.filter_#{s}")`) — same pattern, fully defined.
   - 'alerts.index.filter_*'
 
-# Don't flag these as missing in non-base locales — they're intentionally
-# only set where needed (e.g. UK has pluralisation forms en does not need).
-ignore_inconsistent_interpolations:
-  - '*'
+# 🔴 Тут стояла маска `- '*'`, тобто CI-крок `check-consistent-interpolations`
+# не міг почервоніти НІКОДИ. Коментар виправдовував її плюральними формами —
+# але плюралізація це про набір КЛЮЧІВ (`one`/`few`/`many`), а не про змінні
+# `%{}`, тож пояснення описувало іншу проблему, ніж вимикало налаштування.
+# Знято 2026-07-26, коли гейт мовчки пропустив реальний баг: в `uk` замість
+# `#%{id}` опинилось літеральне `#id` (Ruby зінтерполював `%{id}` ще на етапі
+# генерації), і номер страховки не відрендерився б ніколи. Зі знятою маскою
+# корпус чистий — мутація-перевірено, що гейт ловить саме цей випадок.
+ignore_inconsistent_interpolations: []

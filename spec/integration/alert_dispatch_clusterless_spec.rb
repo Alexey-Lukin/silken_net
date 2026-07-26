@@ -81,23 +81,23 @@ RSpec.describe "AlertDispatchService with clusterless trees" do
     let(:tree) { create(:tree, cluster: cluster, tree_family: tree_family) }
 
     it "creates a fraud alert" do
-      expect { AlertDispatchService.create_fraud_alert!(tree, "Test fraud") }
+      expect { AlertDispatchService.create_fraud_alert!(tree, Date.new(2026, 3, 14)) }
         .to change(EwsAlert, :count).by(1)
 
       alert = EwsAlert.last
-      expect(alert.message).to include("ФРОД")
+      I18n.with_locale(:uk) { expect(alert.message).to include("ФРОД") }
       expect(alert.severity).to eq("critical")
     end
 
     it "respects silence window" do
-      AlertDispatchService.create_fraud_alert!(tree, "First")
-      expect { AlertDispatchService.create_fraud_alert!(tree, "Second") }
+      AlertDispatchService.create_fraud_alert!(tree, Date.new(2026, 3, 14))
+      expect { AlertDispatchService.create_fraud_alert!(tree, Date.new(2026, 3, 15)) }
         .not_to change(EwsAlert, :count)
     end
 
     it "works for clusterless tree" do
       clusterless_tree = create(:tree, cluster: nil, tree_family: tree_family)
-      expect { AlertDispatchService.create_fraud_alert!(clusterless_tree, "Fraud") }
+      expect { AlertDispatchService.create_fraud_alert!(clusterless_tree, Date.new(2026, 3, 14)) }
         .to change(EwsAlert, :count).by(1)
     end
   end

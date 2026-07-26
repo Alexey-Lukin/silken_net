@@ -185,7 +185,7 @@ RSpec.describe Treasury::MonitorService do
         expect(alert.severity).to eq("critical")
         expect(alert.message).to include("polygon")
         expect(alert.message).to match(/minter|slasher/)
-        expect(alert.message).to include("below minimum threshold")
+        expect(alert.message_key).to eq("oracle_balance_low")
       end
     end
 

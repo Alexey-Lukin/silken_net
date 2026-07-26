@@ -150,7 +150,12 @@ class AlertDispatchService
   # [FIX]: Публічний метод для створення fraud-алертів з InsightGeneratorService.
   # Окремий від create_and_dispatch_alert!, бо fraud вимагає manual review
   # і не повинен тригерити автоматичну EmergencyResponseService.
-  def self.create_fraud_alert!(tree, message)
+  # Приймає ДАТУ, а не готовий рядок. Сигнатура «будь-який текст» була ширшою
+  # за реальність (єдиний продовий викликач передавав фіксований шаблон із
+  # датою) — і саме та ширина впускала прозу: сирий український рядок сідав
+  # усередину локалізованої рамки, даючи «FRAUD: Виявлено фрод-телеметрію»
+  # англійському глядачеві. Вузька сигнатура робить це неможливим за побудовою.
+  def self.create_fraud_alert!(tree, target_date)
     cluster = tree.cluster
     silence_key = "ews_silence:#{tree.id}:fraud"
     return if Rails.cache.exist?(silence_key)
@@ -158,12 +163,12 @@ class AlertDispatchService
     alert = EwsAlert.create!(
       cluster: cluster, tree: tree, severity: :critical,
       alert_type: :system_fault,
-      message: "🚨 ФРОД: #{message}"
+      message_key: "fraud_telemetry_detected", message_params: { target_date: target_date.to_s }
     )
 
     Rails.cache.write(silence_key, true, expires_in: 30.minutes)
     Rails.cache.delete("oracle_expected_yield_24h")
-    Rails.logger.warn "🚨 [FRAUD ALERT] #{tree.did}: #{message}"
+    Rails.logger.warn "🚨 [FRAUD ALERT] #{tree.did}: фрод-телеметрія за #{target_date}"
 
     # [A-1 FIX: Transactional Outbox — Wiki 04_02 §2 AlertDispatchService]
     # AlertNotificationWorker.perform_async видалено.
