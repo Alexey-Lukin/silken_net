@@ -119,6 +119,27 @@ class EwsAlert < ApplicationRecord
             uniqueness: { scope: [ :tree_id, :status ], message: "вже є активним для цього вузла" },
             if: -> { tree_id.present? && status_active? }
 
+  # --- ПРОЗА АЛЕРТА: ключ + параметри, рендер у момент ПОКАЗУ ---
+  # Алерти народжуються у воркерах, де локалі глядача не існує. Готовий рядок,
+  # записаний там, замерзав однією мовою назавжди. Тому в БД лежить те, що від
+  # мови НЕ залежить: який інцидент (`message_key`) і які числа виміряно
+  # (`message_params`), а фраза збирається щоразу під того, хто дивиться.
+  MESSAGE_SCOPE = "alerts.messages"
+
+  # Перевизначення читача, а не окремий метод — щоб УСІ наявні читачі
+  # (`Alerts::Row`, мейлер, `TextFormatter`, API) дістали локалізацію без
+  # правок, і щоб `validates :message, presence: true` вище працювала для
+  # обох шляхів сама: вона читає саме цей метод, а не колонку.
+  def message
+    return self[:message] if message_key.blank? # [transitional] до кінця переведення писальників
+
+    I18n.t(
+      "#{MESSAGE_SCOPE}.#{message_key}",
+      **message_params.to_h.symbolize_keys,
+      default: message_key.to_s.humanize
+    )
+  end
+
   # Троттлінг WebSocket-трансляцій: не частіше ніж раз на N секунд,
   # щоб уникнути "шторму" повідомлень при масових інцидентах.
   BROADCAST_THROTTLE_SECONDS = 5

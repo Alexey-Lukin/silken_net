@@ -16,6 +16,17 @@ uk:
       filter_medium: середні
       subtitle: Моніторинг живої телеметрії на аномалії та відхилення від базової лінії.
       title: Матриця активних загроз
+    messages:
+      attractor_destabilised: "🌀 АТРАКТОР: Дестабілізація (Z: %{z_value})."
+      chainsaw_detected: "🪚 ВИРУБКА: Акустична аномалія без термального сигналу. DID: %{did}"
+      chainsaw_detected_panic: "🪚 ВИРУБКА: Акустична аномалія без термального сигналу (PANIC-TX). DID: %{did}"
+      fire_detected: "🔥 КАТАСТРОФА: Температура %{temperature_c}°C (поріг: %{fire_limit}). Ризик пожежі!"
+      firmware_fault: "⚙️ ЗБІЙ ПРОШИВКИ: mruby VM error / device unprovisioned — потрібен re-flash/OTA. DID: %{did}"
+      firmware_reverted: "⏮️ ВІДКАТ ПРОШИВКИ: вузол на embedded baseline, OTA-версія %{burned_version} спалена fallback’ом — re-issue лише вищою версією. DID: %{did}"
+      hydrological_stress: "💧 ПОСУХА: Гідрологічний стрес."
+      insect_epidemic: "🪲 БІО-ЗАГРОЗА: Акустична активність шкідників (%{acoustic_events})."
+      power_loss: "🚨 КРИТИЧНО: Втрата живлення (%{voltage_mv} мВ)! DID: %{did}"
+      seismic_anomaly: "🌋 СЕЙСМІКА: Аномальний резонанс (%{acoustic_events}). DID: %{did}"
     row:
       acknowledge: Підтвердити та локалізувати →
       resolve_aria: Локалізувати попередження №%{id}

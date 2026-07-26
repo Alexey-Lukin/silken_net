@@ -63,7 +63,8 @@ RSpec.describe AlertDispatchService, type: :service do
       alert = EwsAlert.last
       expect(alert.alert_type).to eq("firmware_reverted")
       expect(alert.severity).to eq("critical")
-      expect(alert.message).to include("ВІДКАТ ПРОШИВКИ").and include("42")
+      expect(alert.message_key).to eq("firmware_reverted")
+      I18n.with_locale(:uk) { expect(alert.message).to include("ВІДКАТ ПРОШИВКИ").and include("42") }
       expect(EwsAlert.alert_type_vandalism_breach).to be_empty
     end
 
@@ -98,7 +99,8 @@ RSpec.describe AlertDispatchService, type: :service do
       alert = EwsAlert.last
       expect(alert.alert_type).to eq("firmware_fault")
       expect(alert.severity).to eq("critical")
-      expect(alert.message).to include("ЗБІЙ ПРОШИВКИ")
+      expect(alert.message_key).to eq("firmware_fault")
+      I18n.with_locale(:uk) { expect(alert.message).to include("ЗБІЙ ПРОШИВКИ") }
       expect(EwsAlert.alert_type_vandalism_breach).to be_empty
     end
 
@@ -191,7 +193,8 @@ RSpec.describe AlertDispatchService, type: :service do
       alert = EwsAlert.last
       expect(alert.alert_type).to eq("chainsaw_detected")
       expect(alert.severity).to eq("critical")
-      expect(alert.message).to include("Акустична аномалія")
+      expect(alert.message_key).to eq("chainsaw_detected")
+      I18n.with_locale(:uk) { expect(alert.message).to include("Акустична аномалія") }
     end
 
     it "keeps thermal breach as fire_detected even when anomaly flag is set" do
@@ -224,7 +227,8 @@ RSpec.describe AlertDispatchService, type: :service do
 
       described_class.analyze_and_trigger!(log)
 
-      expect(EwsAlert.last.message).to include("PANIC-TX")
+      expect(EwsAlert.last.message_key).to eq("chainsaw_detected_panic")
+      I18n.with_locale(:uk) { expect(EwsAlert.last.message).to include("PANIC-TX") }
     end
 
     # [SLASH-1] РЕАЛЬНА пилка: Trigger_Emergency_LoRa_TX шле status=homeostasis +
@@ -248,7 +252,8 @@ RSpec.describe AlertDispatchService, type: :service do
 
       alert = EwsAlert.last
       expect(alert.alert_type).to eq("chainsaw_detected")
-      expect(alert.message).to include("PANIC-TX")
+      expect(alert.message_key).to eq("chainsaw_detected_panic")
+      I18n.with_locale(:uk) { expect(alert.message).to include("PANIC-TX") }
       expect(EwsAlert.alert_type_system_fault).to be_empty # vcap=0 panic ≠ «втрата живлення»
       expect(EwsAlert.alert_type_seismic_anomaly).to be_empty
     end
@@ -324,7 +329,8 @@ RSpec.describe AlertDispatchService, type: :service do
       alert = EwsAlert.last
       expect(alert.alert_type).to eq("seismic_anomaly")
       expect(alert.severity).to eq("critical")
-      expect(alert.message).to include("СЕЙСМІКА")
+      expect(alert.message_key).to eq("seismic_anomaly")
+      I18n.with_locale(:uk) { expect(alert.message).to include("СЕЙСМІКА") }
     end
   end
 
@@ -398,7 +404,8 @@ RSpec.describe AlertDispatchService, type: :service do
 
       alert = EwsAlert.last
       expect(alert.alert_type).to eq("severe_drought")
-      expect(alert.message).to include("АТРАКТОР")
+      expect(alert.message_key).to eq("attractor_destabilised")
+      I18n.with_locale(:uk) { expect(alert.message).to include("АТРАКТОР") }
     end
   end
 
@@ -660,7 +667,8 @@ RSpec.describe AlertDispatchService, type: :service do
       )
 
       described_class.analyze_and_trigger!(log)
-      expect(EwsAlert.last.message).to include("ПОСУХА")
+      expect(EwsAlert.last.message_key).to eq("hydrological_stress")
+      I18n.with_locale(:uk) { expect(EwsAlert.last.message).to include("ПОСУХА") }
     end
   end
 

@@ -16,6 +16,17 @@ en:
       filter_medium: medium
       subtitle: Monitoring live telemetry for anomalies and baseline deviations.
       title: Active Threats Matrix
+    messages:
+      attractor_destabilised: "🌀 ATTRACTOR: Destabilisation (Z: %{z_value})."
+      chainsaw_detected: "🪚 LOGGING: Acoustic anomaly without a thermal signal. DID: %{did}"
+      chainsaw_detected_panic: "🪚 LOGGING: Acoustic anomaly without a thermal signal (PANIC-TX). DID: %{did}"
+      fire_detected: "🔥 CATASTROPHE: Temperature %{temperature_c}°C (threshold: %{fire_limit}). Fire risk!"
+      firmware_fault: "⚙️ FIRMWARE FAULT: mruby VM error / device unprovisioned — re-flash/OTA required. DID: %{did}"
+      firmware_reverted: "⏮️ FIRMWARE REVERTED: node on embedded baseline, OTA version %{burned_version} burned by fallback — re-issue only with a version above it. DID: %{did}"
+      hydrological_stress: "💧 DROUGHT: Hydrological stress."
+      insect_epidemic: "🪲 BIO-THREAT: Acoustic pest activity (%{acoustic_events})."
+      power_loss: "🚨 CRITICAL: Power loss (%{voltage_mv} mV)! DID: %{did}"
+      seismic_anomaly: "🌋 SEISMIC: Anomalous resonance (%{acoustic_events}). DID: %{did}"
     row:
       acknowledge: Acknowledge & Resolve →
       resolve_aria: 'Resolve alert #%{id}'

@@ -16,6 +16,17 @@ lv:
       filter_medium: vidējs
       subtitle: Reāllaika telemetrijas uzraudzība anomālijām un bāzlīnijas novirzēm.
       title: Aktīvo draudu matrica
+    messages:
+      attractor_destabilised: "🌀 ATRAKTORS: Destabilizācija (Z: %{z_value})."
+      chainsaw_detected: "🪚 MEŽIZSTRĀDE: Akustiska anomālija bez termālā signāla. DID: %{did}"
+      chainsaw_detected_panic: "🪚 MEŽIZSTRĀDE: Akustiska anomālija bez termālā signāla (PANIC-TX). DID: %{did}"
+      fire_detected: "🔥 KATASTROFA: Temperatūra %{temperature_c}°C (slieksnis: %{fire_limit}). Ugunsgrēka risks!"
+      firmware_fault: "⚙️ PROGRAMMAPARATŪRAS KĻŪME: mruby VM kļūda / ierīce nav sagatavota — nepieciešams re-flash/OTA. DID: %{did}"
+      firmware_reverted: "⏮️ PROGRAMMAPARATŪRA ATGRIEZTA: mezgls uz embedded bāzes, OTA versija %{burned_version} sadedzināta ar fallback — atkārtota izdošana tikai ar augstāku versiju. DID: %{did}"
+      hydrological_stress: "💧 SAUSUMS: Hidroloģiskais stress."
+      insect_epidemic: "🪲 BIO-DRAUDI: Akustiska kaitēkļu aktivitāte (%{acoustic_events})."
+      power_loss: "🚨 KRITISKI: Barošanas zudums (%{voltage_mv} mV)! DID: %{did}"
+      seismic_anomaly: "🌋 SEISMIKA: Anomāla rezonanse (%{acoustic_events}). DID: %{did}"
     row:
       acknowledge: Apstiprināt un atrisināt →
       resolve_aria: 'Atrisināt brīdinājumu #%{id}'

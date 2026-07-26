@@ -37,7 +37,7 @@ class AlertDispatchService
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
         alert_type: :firmware_fault,
-        message: "⚙️ ЗБІЙ ПРОШИВКИ: mruby VM error / device unprovisioned — потрібен re-flash/OTA. DID: #{tree.did}"
+        message_key: "firmware_fault", message_params: { did: tree.did }
       )
     end
 
@@ -51,9 +51,8 @@ class AlertDispatchService
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
         alert_type: :firmware_reverted,
-        message: "⏮️ ВІДКАТ ПРОШИВКИ: вузол на embedded baseline, OTA-версія " \
-                 "#{telemetry_log.firmware_report_contract_id} спалена fallback'ом — " \
-                 "re-issue лише версією > спаленої. DID: #{tree.did}"
+        message_key: "firmware_reverted",
+        message_params: { did: tree.did, burned_version: telemetry_log.firmware_report_contract_id }
       )
     end
 
@@ -64,7 +63,7 @@ class AlertDispatchService
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
         alert_type: :system_fault,
-        message: "🚨 КРИТИЧНО: Втрата живлення (#{telemetry_log.voltage_mv} мВ)! DID: #{tree.did}"
+        message_key: "power_loss", message_params: { did: tree.did, voltage_mv: telemetry_log.voltage_mv }
       )
       # НЕ робимо return — продовжуємо аналіз пожежі/сейсміки,
       # бо низький вольтаж може бути розрядом батареї, а не вандалізмом.
@@ -76,7 +75,8 @@ class AlertDispatchService
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
         alert_type: :fire_detected,
-        message: "🔥 КАТАСТРОФА: Температура #{telemetry_log.temperature_c}°C (Поріг: #{fire_limit}). Ризик пожежі!"
+        message_key: "fire_detected",
+        message_params: { temperature_c: telemetry_log.temperature_c, fire_limit: fire_limit }
       )
       return
     end
@@ -94,7 +94,10 @@ class AlertDispatchService
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
         alert_type: :chainsaw_detected,
-        message: "🪚 ВИРУБКА: Акустична аномалія без термального сигналу#{' (PANIC-TX)' if telemetry_log.panic?}. DID: #{tree.did}"
+        # Два ключі, а не булевий параметр: умовний фрагмент — це ПРОЗА, і в
+        # іншій мові він може стояти в іншому місці речення.
+        message_key: telemetry_log.panic? ? "chainsaw_detected_panic" : "chainsaw_detected",
+        message_params: { did: tree.did }
       )
       return
     end
@@ -104,7 +107,8 @@ class AlertDispatchService
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
         alert_type: :seismic_anomaly,
-        message: "🌋 СЕЙСМІКА: Аномальний резонанс (#{telemetry_log.acoustic_events}). DID: #{tree.did}"
+        message_key: "seismic_anomaly",
+        message_params: { did: tree.did, acoustic_events: telemetry_log.acoustic_events }
       )
     end
 
@@ -117,11 +121,15 @@ class AlertDispatchService
     is_out_of_homeostasis = !SilkenNet::Attractor.homeostatic?(telemetry_log.z_value, family, raw_temp)
 
     if telemetry_log.bio_status_stress? || is_out_of_homeostasis
-      msg = is_out_of_homeostasis ? "🌀 АТРАКТОР: Дестабілізація (Z: #{telemetry_log.z_value})." : "💧 ПОСУХА: Гідрологічний стрес."
+      key, params = if is_out_of_homeostasis
+        [ "attractor_destabilised", { z_value: telemetry_log.z_value } ]
+      else
+        [ "hydrological_stress", {} ]
+      end
 
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :medium,
-        alert_type: :severe_drought, message: msg
+        alert_type: :severe_drought, message_key: key, message_params: params
       )
     end
 
@@ -133,7 +141,8 @@ class AlertDispatchService
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: pest_severity,
         alert_type: :insect_epidemic,
-        message: "🪲 БІО-ЗАГРОЗА: Акустична активність шкідників (#{telemetry_log.acoustic_events})."
+        message_key: "insect_epidemic",
+        message_params: { acoustic_events: telemetry_log.acoustic_events }
       )
     end
   end
@@ -165,7 +174,10 @@ class AlertDispatchService
     alert
   end
 
-  private_class_method def self.create_and_dispatch_alert!(cluster:, tree:, severity:, alert_type:, message:)
+  # `message_key` + `message_params` замість готового рядка: алерт народжується
+  # у воркері, де локалі глядача не існує, тож фраза мусить збиратись у момент
+  # показу (дім механізму — `EwsAlert#message`, ключі — `alerts.messages.*`).
+  private_class_method def self.create_and_dispatch_alert!(cluster:, tree:, severity:, alert_type:, message_key:, message_params: {})
     # --- ⚡ [ОПТИМІЗАЦІЯ]: REDIS SILENCE FILTER ---
     # Використовуємо Rails.cache (Redis) замість SQL .exists?, щоб не "вбити" Postgres
     silence_key = "ews_silence:#{tree.id}:#{alert_type}"
@@ -196,7 +208,7 @@ class AlertDispatchService
 
     alert = EwsAlert.create!(
       cluster: cluster, tree: tree, severity: severity,
-      alert_type: alert_type, message: message
+      alert_type: alert_type, message_key: message_key, message_params: message_params
     )
 
     # Встановлюємо "режим тиші" на 5 хвилин для цього типу тривоги

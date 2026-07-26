@@ -16,6 +16,17 @@ lt:
       filter_medium: vidutinis
       subtitle: Realiojo laiko telemetrijos stebėjimas anomalijoms ir bazinės linijos nukrypimams.
       title: Aktyvių grėsmių matrica
+    messages:
+      attractor_destabilised: "🌀 ATRAKTORIUS: Destabilizacija (Z: %{z_value})."
+      chainsaw_detected: "🪚 KIRTIMAS: Akustinė anomalija be terminio signalo. DID: %{did}"
+      chainsaw_detected_panic: "🪚 KIRTIMAS: Akustinė anomalija be terminio signalo (PANIC-TX). DID: %{did}"
+      fire_detected: "🔥 KATASTROFA: Temperatūra %{temperature_c}°C (riba: %{fire_limit}). Gaisro rizika!"
+      firmware_fault: "⚙️ PROGRAMINĖS ĮRANGOS GEDIMAS: mruby VM klaida / įrenginys neparuoštas — reikalingas re-flash/OTA. DID: %{did}"
+      firmware_reverted: "⏮️ PROGRAMINĖ ĮRANGA ATSTATYTA: mazgas ant embedded bazės, OTA versija %{burned_version} sudeginta fallback — pakartotinis išleidimas tik su aukštesne versija. DID: %{did}"
+      hydrological_stress: "💧 SAUSRA: Hidrologinis stresas."
+      insect_epidemic: "🪲 BIO-GRĖSMĖ: Akustinis kenkėjų aktyvumas (%{acoustic_events})."
+      power_loss: "🚨 KRITIŠKA: Maitinimo praradimas (%{voltage_mv} mV)! DID: %{did}"
+      seismic_anomaly: "🌋 SEISMIKA: Anomalus rezonansas (%{acoustic_events}). DID: %{did}"
     row:
       acknowledge: Patvirtinti ir išspręsti →
       resolve_aria: 'Išspręsti įspėjimą #%{id}'
