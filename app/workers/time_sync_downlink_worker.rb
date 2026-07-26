@@ -6,7 +6,9 @@ require "timeout"
 # [FW.20 / ARCH.41] Sends a time-sync-only CoAP downlink to the cluster's
 # best-available gateway. The payload is empty — CoapEncryption prepends the
 # CMD_TIME_SYNC envelope ([0x9C][ts_be:4]) automatically. Queen firmware
-# (firmware/queen/main.c:1203-1204) detects inner_aligned == 0 and returns
+# (firmware/queen/main.c, the `inner_aligned == 0` branch — cited by symbol, not by
+# line: the previous line-number citation had already drifted onto an unrelated
+# HAL_Delay) detects the empty inner payload and returns
 # after updating its RTC, then broadcasts a time beacon to Soldiers via LoRa.
 #
 # Enqueued by TelemetryUnpackerService#check_z_divergence! whenever a warm

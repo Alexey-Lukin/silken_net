@@ -854,7 +854,8 @@ TEST(test_vm_error_wire_byte_is_tamper_with_zero_growth) {
  *   (a) Дублікат з ІНШИМ payload — anti-tamper guard. Зловмисник
  *       може спробувати переписати уже отриманий чанк іншим вмістом,
  *       сподіваючись що Солдат «оновиться». Production guard
- *       `!ota_chunk_received[chunk_idx]` (main.c:1628) це блокує —
+ *       `!ota_chunk_received[chunk_idx]` (main.c — за символом, не за номером
+ *       рядка: попереднє посилання вже вказувало не туди) це блокує —
  *       але донині не було тесту, який би перевіряв БАЙТНУ
  *       незмінність попередньо записаного payload'у.
  *   (b) STOP2 між OTA-чанками: bitmap-стан ota_chunk_received[]

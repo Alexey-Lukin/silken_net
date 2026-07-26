@@ -22,7 +22,6 @@
 | [`securities_review.md`](securities_review.md) | As-built fact-pattern продукту проти інвестконтракт-ознак; питання крипто-юристу | [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md) · [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md) | **UNI.16** (канал) / **BIZ.22** (product-присуд) |
 | [`ip_carve_out_draft.md`](ip_carve_out_draft.md) | Каркас co-founder IP-carve-out: дефолти службового твору (ЦК 440 ч.3 / ЗУ 2811-IX 14 ч.2), **пастка майбутніх творів**, корпоративний шар (конфлікт інтересів + non-compete — імперативні), форма під страхом нікчемності + 10 питань юристу | [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) (IP-постава, правовий актор) | **BIZ.20** (carve-out-гейт) → UNI.14/UNI.16 Блок 4; ™-нога → UNI.15 |
 | [`export_control_ua.md`](export_control_ua.md) | UA-половина режиму подвійного використання (AES у прошивці): 5A002.a.2-відповідники, **відсутність аналогів Note 2.j / Note 4**, межа «софт ≠ залізо», ширше UA-визначення експорту + 9 питань до Держекспортконтролю | [`03_05`](../../03_05_Hardware_Symmetric_Crypto_and_Security.md) (що саме шифрується) · [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) (IP-постава — **ортогональна** вісь) | **BIZ.25** (маршрут деконтролю = ⚖️; anti-modification-нога → SEC.24) |
-| [`spdx_rollout_plan.md`](spdx_rollout_plan.md) | План ідемпотентного проставляння SPDX-заголовків по дереву | [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) (ліцензійна матриця = дзеркало кореневих LICENSE) | **UNI.3** / DOC-T.47 (зонні винятки ратифіковано) |
 
 ---
 

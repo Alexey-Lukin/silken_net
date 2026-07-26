@@ -10,7 +10,7 @@
 # GitHub's detector, an enterprise buyer's SCA pass) read per-file identifiers; without
 # them ~1400 tracked source files read as *unlicensed*, which is the opposite of what a
 # defensive-publication, copyleft-enforcement posture needs. Posture → docs/07_03 §3;
-# audit + ratified scope → docs/protocols/legal/spdx_rollout_plan.md; state → 00_07 UNI.3.
+# scope + named ceilings → THIS HEADER (it cannot drift from the code); state → 00_07 UNI.3.
 #
 # ENUMERATION IS `git ls-files`, NEVER `find` / `grep -r`. This is the single most
 # important guardrail from the audit. A raw filesystem walk sees ~1440 files already
@@ -21,7 +21,7 @@
 # overwrites. Through `git ls-files` a submodule is a single gitlink entry, so its
 # contents are structurally invisible and cannot be reached by accident.
 #
-# 🔴 THE FINDING THAT REVERSED THE WRITTEN PLAN. spdx_rollout_plan.md §5.3 prescribed
+# 🔴 THE FINDING THAT REVERSED THE WRITTEN PLAN. The retired rollout audit prescribed
 # inserting the tag *after* Ruby magic comments ("НІКОЛИ перед ними"), on the theory
 # that a line above `# frozen_string_literal: true` silently disables it. Measured on
 # Ruby 4.0.5 with a negative control, that theory is false: the magic comment is honoured
@@ -74,6 +74,20 @@
 # written in Ukrainian prose and encode the real STM32WLE5JC memory map. That exclusion had
 # borrowed the rationale for generated binstubs and misapplied it to hand-authored build
 # logic; excluding a 367-line test harness while tagging Terraform was not defensible.
+#
+# 🔴 THE LESSON THIS CAMPAIGN ACTUALLY TAUGHT, kept here because the audit document that
+# preceded it has been retired and this header is now the home of its reasoning. The
+# written audit was thorough about OUR language and blind to everyone else's: all three of
+# the expensive findings came from running the OTHER gates, not from reading the plan.
+# i18n-tasks re-renders 136 locale files byte-for-byte (a tag there does not merely fail
+# CI — `normalize` deletes it later, silently). Four generator drift-gates compare their
+# output byte-for-byte, so the fix was to teach the generator, never to exclude its
+# output. Two firmware headers carry a third party's copyright, where our tag would have
+# been a false licence claim. None of the three is a Ruby problem, and none was visible
+# from inside the tree being changed. Before the next repo-wide sweep: enumerate EVERY
+# gate in the project, take a green baseline of all of them BEFORE the first write (you
+# cannot tell "I broke it" from "it was already red" without one), and rehearse the whole
+# thing on a throwaway clone.
 #
 # SELF-BLINDNESS, named because it is real: detection scans the first 15 lines for the
 # literal `SPDX-License-Identifier`, so a source file that merely *discusses* the string

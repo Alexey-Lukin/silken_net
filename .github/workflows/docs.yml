@@ -69,6 +69,13 @@ jobs:
               - '.rvmrc'
               - 'Dockerfile'
               - '.ruby-version'
+              # SPDX-header gate (UNI.3) scopes these three too. Without them a PR that
+              # touches ONLY terraform/subgraph/deploy would skip docs_check entirely —
+              # i.e. the gate would sleep on exactly the diffs most able to add an
+              # untagged file there. Same decorative-guard class as the bio_contract.rb hole.
+              - 'terraform/**'
+              - 'subgraph/**'
+              - 'deploy/**'
 
   docs_check:
     needs: changes
@@ -199,6 +206,16 @@ jobs:
         # securities verdict. Its inputs — config/**, app/**, **.md — are all
         # inside this workflow's `changes` filter, so the gate is not decorative.
         run: ruby scripts/offering_lexicon_check.rb
+
+      - name: SPDX per-file licence headers (UNI.3 — every in-scope source file tagged)
+        # Pure Ruby, no Rails. The SAME engine that performed the rollout, run in
+        # --check mode — so the gate cannot drift from what it guards, which is the
+        # failure mode every hand-written mirror-gate in this repo has had. Exit 1 on
+        # a missing tag, a foreign identifier, or an in-scope file whose language the
+        # engine has no comment syntax for. A NEW vendored file carrying somebody
+        # else's copyright is reported and never stamped — resolve it by hand, then
+        # record the verdict in the script's DENY list.
+        run: ruby scripts/spdx_headers.rb --check
 
   docs-ok:
     # Single required status check for the SSOT gates on `main`. Always runs so a

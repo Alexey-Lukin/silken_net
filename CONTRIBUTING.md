@@ -105,6 +105,11 @@ means for copyright in our jurisdiction — is recorded under `UNI.20` in
 ## License of contributions
 
 By contributing, you agree that your contributions are licensed under the
-project's licenses: **AGPL-3.0-or-later** (code), **MIT** (`contracts/*.sol` — per-file SPDX), **CERN-OHL-S-2.0** (hardware),
-and **CC-BY-SA-4.0** (documentation). See [`LICENSE`](LICENSE) and
+project's licenses: **AGPL-3.0-or-later** (code), **MIT** (`contracts/*.sol`), **CERN-OHL-S-2.0** (hardware),
+and **CC-BY-SA-4.0** (documentation). Code and contracts carry **per-file SPDX
+identifiers**; a new source file needs one, and CI enforces that
+(`ruby scripts/spdx_headers.rb --check` — run it with `--write` and it adds the
+line for you, at the position each language actually requires). If a file you
+add carries someone else's copyright, leave it untagged and say so in the PR —
+we make no licence claim over third-party code. See [`LICENSE`](LICENSE) and
 [`NOTICE`](NOTICE) for the full zone map and third-party exceptions.
