@@ -942,7 +942,7 @@ RSpec.describe Tracker::Dashboard do
     end
 
     it "flags ONLY the item whose meta 🤖 no open residual backs" do
-      expect(described_class.stale_machine_who(md)).to eq(["BIZ.1"])
+      expect(described_class.stale_machine_who(md)).to eq([ "BIZ.1" ])
     end
 
     it "exempts a 🔗-led residual — its eventual WHO lives in the item it is gated on" do
@@ -962,7 +962,7 @@ RSpec.describe Tracker::Dashboard do
         - [x] 🤖 скрипт написано
         - [ ] 👤 юр-review
       MD
-      expect(described_class.stale_machine_who(done_only)).to eq(["BIZ.9"])
+      expect(described_class.stale_machine_who(done_only)).to eq([ "BIZ.9" ])
     end
 
     it "stays silent on an item with no open residuals at all" do
@@ -985,7 +985,7 @@ RSpec.describe Tracker::Dashboard do
         - **Стан:** x.
         - [ ] 👤 юр-review
       MD
-      expect(described_class.stale_machine_who(intro)).to eq(["BIZ.7"])
+      expect(described_class.stale_machine_who(intro)).to eq([ "BIZ.7" ])
     end
   end
 end
