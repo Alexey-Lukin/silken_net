@@ -18,8 +18,10 @@ en:
       title: Active Threats Matrix
     messages:
       actuator_fault: 'Actuator ‘%{name}’ failed (%{endpoint}). Reason: %{reason}. A patrol visit is required.'
+      actuator_fault_unknown: Actuator ‘%{name}’ failed (%{endpoint}). Cause unknown (no CoAP reply). A patrol visit is required.
       attractor_destabilised: "🌀 ATTRACTOR: Destabilisation (Z: %{z_value})."
-      burn_failure: 'Critical burn failure for %{amount} SCC. Possible loss of control over investor assets. Error: %{error}'
+      burn_failure: 'Critical burn failure for %{amount} SCC. Possible loss of control over the contracted balance. Error: %{error}'
+      burn_failure_ambiguous: 'Critical burn failure for %{amount} SCC — the transaction may have landed; DO NOT retry automatically, reconcile on the explorer first. Possible loss of control over the contracted balance. Error: %{error}'
       canary_trip: "🐦 CANARY: __stack_chk_fail on the node (stack frame overwritten — possible attack on the LoRa/AT parser; the node reincarnated itself). DID: %{did}, seq: %{seq}"
       chainsaw_detected: "🪚 LOGGING: Acoustic anomaly without a thermal signal. DID: %{did}"
       chainsaw_detected_panic: "🪚 LOGGING: Acoustic anomaly without a thermal signal (PANIC-TX). DID: %{did}"
@@ -40,7 +42,9 @@ en:
       insect_epidemic: "🪲 BIO-THREAT: Acoustic pest activity (%{acoustic_events})."
       insurance_candidate_armed: 'Insurance candidate #%{id}: the AI oracle sees %{percentage}% critical trees — INDEPENDENT confirmation (dClimate satellite / Field Audit) is required before payout (dual-trigger, 05_05 §6).'
       insurance_no_data: 'Insurance oracle #%{id}: zero AiInsight for %{target_date} while trees are active (possible catastrophe / destroyed sensors). Payout NOT zeroed — Field Audit required (Category C, 05_05 §5/§6).'
-      insurance_reserve_hold: 'Insurance reserve-gate HOLD [INS.2] for #%{id} (%{reason}): %{detail}. Internal-mint payout stopped — reconcile insurance exposure / top up DAO_TREASURY before a manual resolve.'
+      insurance_reserve_hold_aggregate_cap: 'Insurance reserve-gate HOLD [INS.2] for #%{id}: 24h internal insurance emission %{window_sum} %{token_type} exceeds the cap %{cap}. Payout stopped — reconcile exposure before a manual resolve.'
+      insurance_reserve_hold_eval_error: 'Insurance reserve-gate HOLD [INS.2] for #%{id}: the reserve could not be evaluated, so the gate failed closed. Error: %{error}'
+      insurance_reserve_hold_reserve_inadequate: 'Insurance reserve-gate HOLD [INS.2] for #%{id}: 30d internal insurance emission %{outstanding} exceeds reserve %{reserve} × %{ratio}. Payout stopped — top up DAO_TREASURY before a manual resolve.'
       mint_volume_anomaly: 'Mint-volume anomaly [ARCH.62] %{token_type}: %{volume} minted in the last %{window} exceeds the configured ceiling (%{ceiling}). Possible firmware/pipeline bug or misused MINTER key. Verify recent mint tx before topping the ceiling.'
       oracle_balance_low: "%{network} %{signer} Oracle wallet balance (%{balance} %{currency}) is below the minimum threshold (%{min_threshold} %{currency}). Ratio: %{ratio}x. Blockchain transactions will fail without a top-up."
       power_loss: "🚨 CRITICAL: Power loss (%{voltage_mv} mV)! DID: %{did}"
@@ -48,8 +52,12 @@ en:
       queen_uplink_lost: "🆘 Queen %{uid} lost ALL uplinks (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min). The cry arrived via Helium — telemetry is buffering, a visit is required."
       queen_uplink_lost_reported: "🆘 Queen %{uid} lost ALL uplinks (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min, reported_at=%{reported_at}). The cry arrived via Helium — telemetry is buffering, a visit is required."
       seismic_anomaly: "🌋 SEISMIC: Anomalous resonance (%{acoustic_events}). DID: %{did}"
-      slash_evasion: 'Slash evasion (%{context}): Category A evidence exists, but the offender withdrew all SCC before the verdict was executed (requested %{requested_burn} SCC, on-chain balance ≈0). Burning is impossible — a legal/manual track is required (05_05 §3.2).'
-      slashing_blocked: 'Slashing blocked (%{context}): %{detail}. Funds NOT burned — Field Audit required (Category C, 05_05 §3.2/§5).'
+      slash_evasion_cluster: 'Slash evasion (cluster #%{cluster_id}): Category A evidence exists, but the holder moved out all SCC before the verdict was executed (requested %{requested_burn} SCC, on-chain balance ≈0). Burning is impossible — a legal/manual track is required (05_05 §3.2).'
+      slash_evasion_tree: 'Slash evasion (tree %{tree_did}): Category A evidence exists, but the holder moved out all SCC before the verdict was executed (requested %{requested_burn} SCC, on-chain balance ≈0). Burning is impossible — a legal/manual track is required (05_05 §3.2).'
+      slash_frozen_indeterminate_cluster: 'Slashing blocked (cluster #%{cluster_id}): Category A evidence exists, but the MAGNITUDE of the damage is indeterminate (no AiInsight data for the date). Nothing burned — Field Audit required (Category C, 05_05 §3.2/§5).'
+      slash_frozen_indeterminate_tree: 'Slashing blocked (tree %{tree_did}): Category A evidence exists, but the MAGNITUDE of the damage is indeterminate (no AiInsight data for the date). Nothing burned — Field Audit required (Category C, 05_05 §3.2/§5).'
+      slash_frozen_no_evidence_cluster: 'Slashing blocked (cluster #%{cluster_id}): no direct Category A evidence. Nothing burned — Field Audit required (Category C, 05_05 §3.2/§5).'
+      slash_frozen_no_evidence_tree: 'Slashing blocked (tree %{tree_did}): no direct Category A evidence. Nothing burned — Field Audit required (Category C, 05_05 §3.2/§5).'
       tree_silent: "🌳 Node %{did} has been silent for ~%{silent_for_h} h (last transmission %{last_seen_at}, threshold %{threshold_h} h). Silent health and death/theft are indistinguishable until a heartbeat — go and listen."
     row:
       acknowledge: Acknowledge & Resolve →

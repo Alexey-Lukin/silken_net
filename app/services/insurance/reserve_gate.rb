@@ -35,8 +35,13 @@ module Insurance
     # НЕ мають прослизнути повз cap через незавершений стан.
     OUTSTANDING_STATUSES = %i[pending processing sent confirmed manual_review].freeze
 
-    Result = Struct.new(:ok, :reason, :detail, keyword_init: true) do
+    # `params` — скаляри поруч із готовим `detail`. `detail` лишається для ЛОГУ
+    # оператора (англійська там доречна), а `params` іде в locale-рендер алерта:
+    # без них у повідомлення сідала готова фраза з ЧУЖОГО сервісу, і локалізована
+    # рамка отримувала англійську середину назавжди.
+    Result = Struct.new(:ok, :reason, :detail, :params, keyword_init: true) do
       def ok? = ok
+      def params = self[:params] || {}
     end
 
     def initialize(insurance, current_tx_id: nil)
@@ -56,7 +61,8 @@ module Insurance
         window_sum = internal_mint_sum(token_type, AGGREGATE_WINDOW) + payout
         if window_sum > cap
           return breach(:aggregate_cap,
-                        "24h Internal insurance-mint #{window_sum.round(2)} > cap #{cap.round(2)} #{token_type}")
+                        "24h Internal insurance-mint #{window_sum.round(2)} > cap #{cap.round(2)} #{token_type}",
+                        { window_sum: window_sum.round(2), cap: cap.round(2), token_type: token_type })
         end
       end
 
@@ -67,20 +73,21 @@ module Insurance
         outstanding = internal_mint_sum(token_type, RESERVE_WINDOW) + payout
         if outstanding > reserve * ratio
           return breach(:reserve_inadequate,
-                        "30d Internal insurance-mint #{outstanding.round(2)} > reserve #{reserve.round(2)} × #{ratio}")
+                        "30d Internal insurance-mint #{outstanding.round(2)} > reserve #{reserve.round(2)} × #{ratio}",
+                        { outstanding: outstanding.round(2), reserve: reserve.round(2), ratio: ratio })
         end
       end
 
       Result.new(ok: true, reason: :ok)
     rescue StandardError => e
       Rails.logger.error "🛑 [INS.2] ReserveGate eval failed (fail-closed → hold): #{e.message}"
-      breach(:eval_error, e.message.truncate(200))
+      breach(:eval_error, e.message.truncate(200), { error: e.message.truncate(200) })
     end
 
     private
 
-    def breach(reason, detail)
-      Result.new(ok: false, reason: reason, detail: detail)
+    def breach(reason, detail, params = {})
+      Result.new(ok: false, reason: reason, detail: detail, params: params)
     end
 
     # Σ amount Internal-mint виплат (sourceable=ParametricInsurance, etherisc_policy_id NULL)

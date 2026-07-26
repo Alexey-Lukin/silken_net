@@ -482,7 +482,13 @@ RSpec.describe BlockchainBurningService do
         result = described_class.call(organization.id, naas_contract.id)
 
         expect(result).to eq(:evaded)
-        expect(EwsAlert.where(alert_type: :field_audit).last.message).to include("кластер ##{cluster.id}")
+        # Раніше тут стояв `include("кластер #N")` БЕЗ обгортки локалі — і саме
+        # тому проходив: український фрагмент їхав параметром і рендерився в
+        # будь-якій мові. Тепер суб'єкт у КЛЮЧІ, а спека це і фіксує.
+        alert = EwsAlert.where(alert_type: :field_audit).last
+        expect(alert.message_key).to eq("slash_evasion_cluster")
+        expect(alert.message_params["cluster_id"]).to eq(cluster.id)
+        I18n.with_locale(:uk) { expect(alert.message).to include("кластер ##{cluster.id}") }
       end
     end
   end

@@ -161,8 +161,11 @@ class InsurancePayoutWorker
           EwsAlert.create(
             alert_type: :system_fault,
             severity: :critical,
-            message_key: "insurance_reserve_hold",
-            message_params: { id: insurance.id, reason: reserve_gate.reason, detail: reserve_gate.detail }
+            # Ключ від reason (він УЖЕ машинний символ), параметри — скаляри з
+            # gate'а. Раніше сюди їхав `detail` — готове АНГЛІЙСЬКЕ речення з
+            # чужого сервісу, тобто локалізована рамка з незмінною серединою.
+            message_key: "insurance_reserve_hold_#{reserve_gate.reason}",
+            message_params: reserve_gate.params.merge(id: insurance.id)
           )
           Rails.logger.warn "🛡️ [Insurance] ##{insurance.id}: reserve-gate HOLD (#{reserve_gate.reason}) → manual_review (без mint)."
           return

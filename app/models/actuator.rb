@@ -80,13 +80,17 @@ class Actuator < ApplicationRecord
     # Критичний збій (The Hardware Fault)
     event :report_fault do
       after do |reason|
-        reason ||= "Невідома помилка CoAP"
+        # Дефолт СВІДОМО прибрано: український літерал тут означав, що
+        # «невідома помилка» їде в будь-яку локаль незмінною. Тепер відсутність
+        # причини — це ІНШИЙ ключ, а не інший рядок.
         if gateway.cluster_id.present?
           EwsAlert.create!(
             cluster: gateway.cluster,
             alert_type: :system_fault,
             severity: :critical,
-            message_key: "actuator_fault",
+            # Дефолт `reason` — теж проза, тож окремий ключ замість українського
+            # літерала «Невідома помилка CoAP», що їхав би в будь-яку локаль.
+            message_key: reason.present? ? "actuator_fault" : "actuator_fault_unknown",
             message_params: { name: name, endpoint: endpoint, reason: reason }
           )
         end
@@ -113,7 +117,9 @@ class Actuator < ApplicationRecord
     deactivate!
   end
 
-  def require_maintenance!(reason = "Невідома помилка CoAP")
+  # `nil` = причина невідома; фразу для цього випадку добирає локаль
+  # (`actuator_fault_unknown`), а не дефолт аргумента.
+  def require_maintenance!(reason = nil)
     report_fault!(reason)
   end
 end

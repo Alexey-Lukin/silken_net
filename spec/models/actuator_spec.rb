@@ -229,7 +229,10 @@ RSpec.describe Actuator, type: :model do
 
       actuator.require_maintenance!
 
-      I18n.with_locale(:uk) { expect(EwsAlert.last.message).to include("Невідома помилка CoAP") }
+      # Відсутність причини — ОКРЕМИЙ ключ, а не український дефолт-літерал,
+      # який раніше їхав у будь-яку локаль незмінним.
+      expect(EwsAlert.last.message_key).to eq("actuator_fault_unknown")
+      I18n.with_locale(:uk) { expect(EwsAlert.last.message).to include("Причина невідома") }
     end
   end
 

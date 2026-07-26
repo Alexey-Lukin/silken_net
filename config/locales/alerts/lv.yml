@@ -18,8 +18,10 @@ lv:
       title: Aktīvo draudu matrica
     messages:
       actuator_fault: 'Izpildmehānisma “%{name}” kļūme (%{endpoint}). Iemesls: %{reason}. Nepieciešams patruļas izbraukums.'
+      actuator_fault_unknown: Izpildmehānisma “%{name}” kļūme (%{endpoint}). Iemesls nezināms (nav CoAP atbildes). Nepieciešams patruļas izbraukums.
       attractor_destabilised: "🌀 ATRAKTORS: Destabilizācija (Z: %{z_value})."
-      burn_failure: 'Kritiska %{amount} SCC sadedzināšanas kļūme. Iespējams kontroles zudums pār investora aktīviem. Error: %{error}'
+      burn_failure: 'Kritiska %{amount} SCC sadedzināšanas kļūme. Iespējams kontroles zudums pār līgumā noteikto atlikumu. Error: %{error}'
+      burn_failure_ambiguous: 'Kritiska %{amount} SCC sadedzināšanas kļūme — transakcija varēja tikt izpildīta; NEATKĀRTOT automātiski, vispirms pārbaudi pārlūkā. Iespējams kontroles zudums pār līgumā noteikto atlikumu. Error: %{error}'
       canary_trip: "🐦 KANĀRIJPUTNS: __stack_chk_fail mezglā (pārrakstīts steka kadrs — iespējams uzbrukums LoRa/AT parserim; mezgls pārstartējās pats). DID: %{did}, seq: %{seq}"
       chainsaw_detected: "🪚 MEŽIZSTRĀDE: Akustiska anomālija bez termiskā signāla. DID: %{did}"
       chainsaw_detected_panic: "🪚 MEŽIZSTRĀDE: Akustiska anomālija bez termiskā signāla (PANIC-TX). DID: %{did}"
@@ -40,7 +42,9 @@ lv:
       insect_epidemic: "🪲 BIO-DRAUDI: Akustiska kaitēkļu aktivitāte (%{acoustic_events})."
       insurance_candidate_armed: 'Apdrošināšanas kandidāts #%{id}: AI orākuls redz %{percentage}% kritisku koku — pirms izmaksas nepieciešams NEATKARĪGS apstiprinājums (dClimate satelīts / Field Audit) (dual-trigger, 05_05 §6).'
       insurance_no_data: 'Apdrošināšanas orākuls #%{id}: par %{target_date} nulle AiInsight, kamēr koki ir aktīvi (iespējama katastrofa / iznīcināti sensori). Izmaksa NAV anulēta — nepieciešams Field Audit (C kategorija, 05_05 §5/§6).'
-      insurance_reserve_hold: 'Insurance reserve-gate HOLD [INS.2] priekš #%{id} (%{reason}): %{detail}. Internal-mint izmaksa apturēta — pārbaudi apdrošināšanas ekspozīciju / DAO_TREASURY papildināšanu pirms manuālas atrisināšanas.'
+      insurance_reserve_hold_aggregate_cap: 'Insurance reserve-gate HOLD [INS.2] priekš #%{id}: 24h iekšējā apdrošināšanas emisija %{window_sum} %{token_type} pārsniedz griestus %{cap}. Izmaksa apturēta — pārbaudi ekspozīciju pirms manuālas atrisināšanas.'
+      insurance_reserve_hold_eval_error: 'Insurance reserve-gate HOLD [INS.2] priekš #%{id}: rezervi neizdevās novērtēt, tāpēc vārti nostrādāja fail-closed. Error: %{error}'
+      insurance_reserve_hold_reserve_inadequate: 'Insurance reserve-gate HOLD [INS.2] priekš #%{id}: 30 dienu iekšējā apdrošināšanas emisija %{outstanding} pārsniedz rezervi %{reserve} × %{ratio}. Izmaksa apturēta — papildini DAO_TREASURY pirms manuālas atrisināšanas.'
       mint_volume_anomaly: 'Mint-volume anomaly [ARCH.62] %{token_type}: %{volume} kalts pēdējās %{window}, kas pārsniedz konfigurēto griestu (%{ceiling}). Iespējama programmaparatūras/konveijera kļūda vai ļaunprātīgi izmantota MINTER atslēga. Pārbaudi nesenos mint tx pirms griestu celšanas.'
       oracle_balance_low: "%{network} %{signer}: Orākula maka atlikums (%{balance} %{currency}) ir zem minimālā sliekšņa (%{min_threshold} %{currency}). Ratio: %{ratio}x. Blokķēdes transakcijas neizdosies bez papildināšanas."
       power_loss: "🚨 KRITISKI: Barošanas zudums (%{voltage_mv} mV)! DID: %{did}"
@@ -48,8 +52,12 @@ lv:
       queen_uplink_lost: "🆘 Queen %{uid} zaudēja VISAS augšupsaites (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min). Sauciens atnāca caur Helium — telemetrija buferizējas, nepieciešams izbraukums."
       queen_uplink_lost_reported: "🆘 Queen %{uid} zaudēja VISAS augšupsaites (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min, reported_at=%{reported_at}). Sauciens atnāca caur Helium — telemetrija buferizējas, nepieciešams izbraukums."
       seismic_anomaly: "🌋 SEISMIKA: Anomāla rezonanse (%{acoustic_events}). DID: %{did}"
-      slash_evasion: 'Slash izvairīšanās (%{context}): A kategorijas pierādījums pastāv, bet pārkāpējs izņēma visus SCC pirms sprieduma izpildes (pieprasīts %{requested_burn} SCC, on-chain atlikums ≈0). Sadedzināšana nav iespējama — nepieciešams juridisks/manuāls ceļš (05_05 §3.2).'
-      slashing_blocked: 'Slashing bloķēts (%{context}): %{detail}. Līdzekļi NAV sadedzināti — nepieciešams Field Audit (C kategorija, 05_05 §3.2/§5).'
+      slash_evasion_cluster: 'Slash izvairīšanās (klasteris #%{cluster_id}): A kategorijas pierādījums pastāv, bet turētājs izņēma visus SCC pirms sprieduma izpildes (pieprasīts %{requested_burn} SCC, on-chain atlikums ≈0). Sadedzināšana nav iespējama — nepieciešams juridisks/manuāls ceļš (05_05 §3.2).'
+      slash_evasion_tree: 'Slash izvairīšanās (koks %{tree_did}): A kategorijas pierādījums pastāv, bet turētājs izņēma visus SCC pirms sprieduma izpildes (pieprasīts %{requested_burn} SCC, on-chain atlikums ≈0). Sadedzināšana nav iespējama — nepieciešams juridisks/manuāls ceļš (05_05 §3.2).'
+      slash_frozen_indeterminate_cluster: 'Slashing bloķēts (klasteris #%{cluster_id}): A kategorijas pierādījums pastāv, bet kaitējuma APJOMS nav nosakāms (nav AiInsight datu par datumu). Nekas nav sadedzināts — nepieciešams Field Audit (C kategorija, 05_05 §3.2/§5).'
+      slash_frozen_indeterminate_tree: 'Slashing bloķēts (koks %{tree_did}): A kategorijas pierādījums pastāv, bet kaitējuma APJOMS nav nosakāms (nav AiInsight datu par datumu). Nekas nav sadedzināts — nepieciešams Field Audit (C kategorija, 05_05 §3.2/§5).'
+      slash_frozen_no_evidence_cluster: 'Slashing bloķēts (klasteris #%{cluster_id}): nav tieša A kategorijas pierādījuma. Nekas nav sadedzināts — nepieciešams Field Audit (C kategorija, 05_05 §3.2/§5).'
+      slash_frozen_no_evidence_tree: 'Slashing bloķēts (koks %{tree_did}): nav tieša A kategorijas pierādījuma. Nekas nav sadedzināts — nepieciešams Field Audit (C kategorija, 05_05 §3.2/§5).'
       tree_silent: "🌳 Mezgls %{did} klusē ~%{silent_for_h} h (pēdējā pārraide %{last_seen_at}, slieksnis %{threshold_h} h). Klusa veselība un nāve/zādzība nav atšķiramas līdz heartbeat — jāizbrauc klausīties."
     row:
       acknowledge: Apstiprināt un atrisināt →

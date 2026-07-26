@@ -18,8 +18,10 @@ lt:
       title: Aktyvių grėsmių matrica
     messages:
       actuator_fault: 'Vykdiklio „%{name}“ gedimas (%{endpoint}). Priežastis: %{reason}. Reikalingas patrulio išvykimas.'
+      actuator_fault_unknown: Vykdiklio „%{name}“ gedimas (%{endpoint}). Priežastis nežinoma (nėra CoAP atsakymo). Reikalingas patrulio išvykimas.
       attractor_destabilised: "🌀 ATRAKTORIUS: Destabilizacija (Z: %{z_value})."
-      burn_failure: 'Kritinis %{amount} SCC sudeginimo gedimas. Galimas investuotojo turto kontrolės praradimas. Error: %{error}'
+      burn_failure: 'Kritinis %{amount} SCC sudeginimo gedimas. Galimas sutartinio likučio kontrolės praradimas. Error: %{error}'
+      burn_failure_ambiguous: 'Kritinis %{amount} SCC sudeginimo gedimas — operacija galėjo įvykti; NEKARTOTI automatiškai, pirma patikrink naršyklėje. Galimas sutartinio likučio kontrolės praradimas. Error: %{error}'
       canary_trip: "🐦 KANARĖLĖ: __stack_chk_fail mazge (perrašytas steko kadras — galima ataka prieš LoRa/AT analizatorių; mazgas persikrovė pats). DID: %{did}, seq: %{seq}"
       chainsaw_detected: "🪚 KIRTIMAS: Akustinė anomalija be šiluminio signalo. DID: %{did}"
       chainsaw_detected_panic: "🪚 KIRTIMAS: Akustinė anomalija be šiluminio signalo (PANIC-TX). DID: %{did}"
@@ -40,7 +42,9 @@ lt:
       insect_epidemic: "🪲 BIO-GRĖSMĖ: Akustinis kenkėjų aktyvumas (%{acoustic_events})."
       insurance_candidate_armed: 'Draudimo kandidatas #%{id}: AI orakulas mato %{percentage}% kritinių medžių — prieš išmoką reikalingas NEPRIKLAUSOMAS patvirtinimas (dClimate palydovas / Field Audit) (dual-trigger, 05_05 §6).'
       insurance_no_data: 'Draudimo orakulas #%{id}: už %{target_date} nulis AiInsight, nors medžiai aktyvūs (galima katastrofa / sunaikinti jutikliai). Išmoka NEANULIUOTA — reikalingas Field Audit (C kategorija, 05_05 §5/§6).'
-      insurance_reserve_hold: 'Insurance reserve-gate HOLD [INS.2] dėl #%{id} (%{reason}): %{detail}. Internal-mint išmoka sustabdyta — patikrink draudimo ekspoziciją / DAO_TREASURY papildymą prieš rankinį išsprendimą.'
+      insurance_reserve_hold_aggregate_cap: 'Insurance reserve-gate HOLD [INS.2] dėl #%{id}: 24 val. vidinė draudimo emisija %{window_sum} %{token_type} viršija lubas %{cap}. Išmoka sustabdyta — patikrink ekspoziciją prieš rankinį išsprendimą.'
+      insurance_reserve_hold_eval_error: 'Insurance reserve-gate HOLD [INS.2] dėl #%{id}: rezervo nepavyko įvertinti, todėl vartai suveikė fail-closed. Error: %{error}'
+      insurance_reserve_hold_reserve_inadequate: 'Insurance reserve-gate HOLD [INS.2] dėl #%{id}: 30 dienų vidinė draudimo emisija %{outstanding} viršija rezervą %{reserve} × %{ratio}. Išmoka sustabdyta — papildyk DAO_TREASURY prieš rankinį išsprendimą.'
       mint_volume_anomaly: 'Mint-volume anomaly [ARCH.62] %{token_type}: %{volume} nukalta per %{window}, o tai viršija nustatytas lubas (%{ceiling}). Galimas programinės įrangos/konvejerio gedimas arba piktnaudžiavimas MINTER raktu. Patikrink naujausias mint tx prieš keliant lubas.'
       oracle_balance_low: "%{network} %{signer}: Orakulo piniginės likutis (%{balance} %{currency}) žemiau minimalaus slenksčio (%{min_threshold} %{currency}). Ratio: %{ratio}x. Blokų grandinės operacijos nepavyks be papildymo."
       power_loss: "🚨 KRITIŠKA: Maitinimo praradimas (%{voltage_mv} mV)! DID: %{did}"
@@ -48,8 +52,12 @@ lt:
       queen_uplink_lost: "🆘 Queen %{uid} prarado VISUS ryšius aukštyn (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min). Šauksmas atėjo per Helium — telemetrija buferizuojama, reikalingas išvykimas."
       queen_uplink_lost_reported: "🆘 Queen %{uid} prarado VISUS ryšius aukštyn (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min, reported_at=%{reported_at}). Šauksmas atėjo per Helium — telemetrija buferizuojama, reikalingas išvykimas."
       seismic_anomaly: "🌋 SEISMIKA: Anomalus rezonansas (%{acoustic_events}). DID: %{did}"
-      slash_evasion: 'Slash vengimas (%{context}): A kategorijos įrodymas yra, bet pažeidėjas išvedė visus SCC prieš nuosprendžio vykdymą (prašyta %{requested_burn} SCC, on-chain likutis ≈0). Sudeginti neįmanoma — reikalingas teisinis/rankinis kelias (05_05 §3.2).'
-      slashing_blocked: 'Slashing užblokuotas (%{context}): %{detail}. Lėšos NESUDEGINTOS — reikalingas Field Audit (C kategorija, 05_05 §3.2/§5).'
+      slash_evasion_cluster: 'Slash vengimas (klasteris #%{cluster_id}): A kategorijos įrodymas yra, bet turėtojas išvedė visus SCC prieš nuosprendžio vykdymą (prašyta %{requested_burn} SCC, on-chain likutis ≈0). Sudeginti neįmanoma — reikalingas teisinis/rankinis kelias (05_05 §3.2).'
+      slash_evasion_tree: 'Slash vengimas (medis %{tree_did}): A kategorijos įrodymas yra, bet turėtojas išvedė visus SCC prieš nuosprendžio vykdymą (prašyta %{requested_burn} SCC, on-chain likutis ≈0). Sudeginti neįmanoma — reikalingas teisinis/rankinis kelias (05_05 §3.2).'
+      slash_frozen_indeterminate_cluster: 'Slashing užblokuotas (klasteris #%{cluster_id}): A kategorijos įrodymas yra, bet žalos MASTAS neapibrėžtas (nėra AiInsight duomenų tai datai). Nieko nesudeginta — reikalingas Field Audit (C kategorija, 05_05 §3.2/§5).'
+      slash_frozen_indeterminate_tree: 'Slashing užblokuotas (medis %{tree_did}): A kategorijos įrodymas yra, bet žalos MASTAS neapibrėžtas (nėra AiInsight duomenų tai datai). Nieko nesudeginta — reikalingas Field Audit (C kategorija, 05_05 §3.2/§5).'
+      slash_frozen_no_evidence_cluster: 'Slashing užblokuotas (klasteris #%{cluster_id}): nėra tiesioginio A kategorijos įrodymo. Nieko nesudeginta — reikalingas Field Audit (C kategorija, 05_05 §3.2/§5).'
+      slash_frozen_no_evidence_tree: 'Slashing užblokuotas (medis %{tree_did}): nėra tiesioginio A kategorijos įrodymo. Nieko nesudeginta — reikalingas Field Audit (C kategorija, 05_05 §3.2/§5).'
       tree_silent: "🌳 Mazgas %{did} tyli ~%{silent_for_h} h (paskutinis siuntimas %{last_seen_at}, slenkstis %{threshold_h} h). Tyli sveikata ir mirtis/vagystė neatskiriamos iki heartbeat — reikia išvykti klausytis."
     row:
       acknowledge: Patvirtinti ir išspręsti →

@@ -18,8 +18,10 @@ uk:
       title: Матриця активних загроз
     messages:
       actuator_fault: 'Збій актуатора «%{name}» (%{endpoint}). Причина: %{reason}. Потрібен виїзд патруля.'
+      actuator_fault_unknown: Збій актуатора «%{name}» (%{endpoint}). Причина невідома (немає відповіді CoAP). Потрібен виїзд патруля.
       attractor_destabilised: "🌀 АТРАКТОР: Дестабілізація (Z: %{z_value})."
-      burn_failure: 'Критичний збій спалювання %{amount} SCC. Можлива втрата контролю над активами інвестора. Error: %{error}'
+      burn_failure: 'Критичний збій спалювання %{amount} SCC. Можлива втрата контролю над законтрактованим балансом. Error: %{error}'
+      burn_failure_ambiguous: 'Критичний збій спалювання %{amount} SCC — транзакція могла приземлитись; НЕ повторювати автоматично, спершу звірити в експлорері. Можлива втрата контролю над законтрактованим балансом. Error: %{error}'
       canary_trip: "🐦 КАНАРКА: __stack_chk_fail на вузлі (переписаний кадр стека — потенційна атака на LoRa/AT-парсер; вузол перевтілився сам). DID: %{did}, seq: %{seq}"
       chainsaw_detected: "🪚 ВИРУБКА: Акустична аномалія без термального сигналу. DID: %{did}"
       chainsaw_detected_panic: "🪚 ВИРУБКА: Акустична аномалія без термального сигналу (PANIC-TX). DID: %{did}"
@@ -40,7 +42,9 @@ uk:
       insect_epidemic: "🪲 БІО-ЗАГРОЗА: Акустична активність шкідників (%{acoustic_events})."
       insurance_candidate_armed: 'Страховий кандидат #%{id}: AI-оракул бачить %{percentage}% критичних дерев — потрібне НЕЗАЛЕЖНЕ підтвердження (dClimate satellite / Field Audit) перед виплатою (dual-trigger, 05_05 §6).'
       insurance_no_data: 'Страховий оракул #%{id}: за %{target_date} нуль AiInsight при активних деревах (можлива катастрофа / знищені сенсори). Виплату НЕ обнулено — потрібен Field Audit (Категорія C, 05_05 §5/§6).'
-      insurance_reserve_hold: 'Insurance reserve-gate HOLD [INS.2] для #%{id} (%{reason}): %{detail}. Internal-mint виплату зупинено — звір страхову експозицію / поповнення DAO_TREASURY перед ручним resolve.'
+      insurance_reserve_hold_aggregate_cap: 'Insurance reserve-gate HOLD [INS.2] для #%{id}: добова внутрішня емісія %{window_sum} %{token_type} перевищує стелю %{cap}. Виплату зупинено — звір експозицію перед ручним resolve.'
+      insurance_reserve_hold_eval_error: 'Insurance reserve-gate HOLD [INS.2] для #%{id}: резерв не вдалося оцінити, тож гейт спрацював fail-closed. Error: %{error}'
+      insurance_reserve_hold_reserve_inadequate: 'Insurance reserve-gate HOLD [INS.2] для #%{id}: 30-денна внутрішня емісія %{outstanding} перевищує резерв %{reserve} × %{ratio}. Виплату зупинено — поповни DAO_TREASURY перед ручним resolve.'
       mint_volume_anomaly: 'Mint-volume anomaly [ARCH.62] %{token_type}: %{volume} намінтовано за %{window}, що перевищує стелю (%{ceiling}). Можливий баг прошивки/пайплайну або зловжитий MINTER-ключ. Звір останні mint-tx перед підняттям стелі.'
       oracle_balance_low: "%{network} %{signer}: баланс гаманця Оракула (%{balance} %{currency}) нижчий за мінімальний поріг (%{min_threshold} %{currency}). Ratio: %{ratio}x. Блокчейн-транзакції провалюватимуться без поповнення."
       power_loss: "🚨 КРИТИЧНО: Втрата живлення (%{voltage_mv} мВ)! DID: %{did}"
@@ -48,8 +52,12 @@ uk:
       queen_uplink_lost: "🆘 Королева %{uid} втратила ВСІ uplink’и (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min). Крик дійшов через Helium — телеметрія буферизується, потрібен виїзд."
       queen_uplink_lost_reported: "🆘 Королева %{uid} втратила ВСІ uplink’и (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min, reported_at=%{reported_at}). Крик дійшов через Helium — телеметрія буферизується, потрібен виїзд."
       seismic_anomaly: "🌋 СЕЙСМІКА: Аномальний резонанс (%{acoustic_events}). DID: %{did}"
-      slash_evasion: 'Slash-ухилення (%{context}): доказ Категорії A є, але порушник вивів усі SCC до виконання вироку (запит %{requested_burn} SCC, on-chain баланс ≈0). Спалення неможливе — потрібен юридичний/ручний трек (05_05 §3.2).'
-      slashing_blocked: 'Слешинг заблоковано (%{context}): %{detail}. Кошти НЕ спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5).'
+      slash_evasion_cluster: 'Slash-ухилення (кластер #%{cluster_id}): доказ Категорії A є, але власник вивів усі SCC до виконання вироку (запит %{requested_burn} SCC, on-chain баланс ≈0). Спалення неможливе — потрібен юридичний/ручний трек (05_05 §3.2).'
+      slash_evasion_tree: 'Slash-ухилення (дерево %{tree_did}): доказ Категорії A є, але власник вивів усі SCC до виконання вироку (запит %{requested_burn} SCC, on-chain баланс ≈0). Спалення неможливе — потрібен юридичний/ручний трек (05_05 §3.2).'
+      slash_frozen_indeterminate_cluster: 'Слешинг заблоковано (кластер #%{cluster_id}): доказ Категорії A є, але РОЗМІР шкоди невизначений (нема AiInsight-даних за дату). Нічого не спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5).'
+      slash_frozen_indeterminate_tree: 'Слешинг заблоковано (дерево %{tree_did}): доказ Категорії A є, але РОЗМІР шкоди невизначений (нема AiInsight-даних за дату). Нічого не спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5).'
+      slash_frozen_no_evidence_cluster: 'Слешинг заблоковано (кластер #%{cluster_id}): немає прямого доказу Категорії A. Нічого не спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5).'
+      slash_frozen_no_evidence_tree: 'Слешинг заблоковано (дерево %{tree_did}): немає прямого доказу Категорії A. Нічого не спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5).'
       tree_silent: "🌳 Вузол %{did} мовчить ~%{silent_for_h} год (останній ефір %{last_seen_at}, поріг %{threshold_h} год). Мовчазне здоров’я і смерть/крадіжка нерозрізнимі до heartbeat — виїхати слухати."
     row:
       acknowledge: Підтвердити та локалізувати →

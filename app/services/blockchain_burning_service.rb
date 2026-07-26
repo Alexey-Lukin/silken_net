@@ -298,7 +298,7 @@ class BlockchainBurningService < ApplicationService
       # Контракт лишається `:active` (НЕ :breached); :manual_review блокує re-slash (in-flight guard вгорі).
       # НЕ raise → без Sidekiq retry; повертаємо :manual_review → людська звірка на Polygonscan.
       audit&.escalate_to_review!("Slash міг піти в мемпул до збою — звір на Polygonscan ПЕРЕД повтором: #{e.message}")
-      handle_slashing_failure("AMBIGUOUS (можливо-landed — НЕ авто-повтор): #{e.message}", total_minted_amount)
+      handle_slashing_failure(e.message, total_minted_amount, ambiguous: true)
       :manual_review
     end
   end
@@ -328,6 +328,16 @@ class BlockchainBurningService < ApplicationService
                "немає прямого доказу Категорії A"
     end
 
+    # Ключ несе ОБИДВІ осі (привід × суб'єкт), бо і привід, і слово «дерево»/
+    # «кластер» — це проза. Раніше вони їхали параметрами `context`/`detail`,
+    # і українські фрагменти сідали всередину локалізованої рамки: англієць
+    # читав «Slashing blocked (дерево SNET-…): немає прямого доказу…».
+    # `context`/`detail` вище лишаються — вони для логу оператора, не для UI.
+    subject = @source_tree ? "tree" : "cluster"
+    magnitude = reason == :indeterminate_magnitude ? "indeterminate" : "no_evidence"
+    audit_key = "slash_frozen_#{magnitude}_#{subject}"
+    audit_params = @source_tree ? { tree_did: @source_tree.did } : { cluster_id: @cluster.id }
+
     Rails.logger.warn "🧊 [SLASH-1] NaasContract ##{@naas_contract.id} (#{context}): спалення заблоковано — #{detail} (05_05 §3.2) → Field Audit, без burn/breach."
 
     # [SLASH-1] :field_audit (не :system_fault): freeze — це НАШ вирок «слухай, не карай»,
@@ -336,8 +346,8 @@ class BlockchainBurningService < ApplicationService
     # Хелпер дедуплікує: щоденний cron при тривалій деградації не плодить дублі.
     EwsAlert.escalate_field_audit!(
       cluster: @cluster,
-      message_key: "slashing_blocked",
-      message_params: { context: context, detail: detail }
+      message_key: audit_key,
+      message_params: audit_params
     )
 
     # [ARCH.57] Freeze — теж привілейований вирок (кошти утримано без burn) → ланцюг.
@@ -369,8 +379,10 @@ class BlockchainBurningService < ApplicationService
 
     EwsAlert.escalate_field_audit!(
       cluster: @cluster,
-      message_key: "slash_evasion",
-      message_params: { context: context, requested_burn: requested_burn }
+      # Та сама причина, що у freeze: «дерево»/«кластер» — проза, тож вона в ключі.
+      message_key: @source_tree ? "slash_evasion_tree" : "slash_evasion_cluster",
+      message_params: (@source_tree ? { tree_did: @source_tree.did } : { cluster_id: @cluster.id })
+                        .merge(requested_burn: requested_burn)
     )
 
     # [ARCH.57] Evasion-вердикт → ланцюг (chain-only): доказ A є, активи виведено —
@@ -561,7 +573,7 @@ class BlockchainBurningService < ApplicationService
     @penalty_factor_max ||= SystemParameter.current(:slash_penalty_factor_max, default: DEFAULT_PENALTY_FACTOR_MAX).to_f
   end
 
-  def handle_slashing_failure(error_msg, amount)
+  def handle_slashing_failure(error_msg, amount, ambiguous: false)
     Rails.logger.error "🛑 [Slashing Failure] ##{@naas_contract.id}: #{error_msg}"
 
     # Створюємо критичний алерт для ручного втручання Оракула
@@ -569,7 +581,12 @@ class BlockchainBurningService < ApplicationService
       cluster: @cluster,
       severity: :critical,
       alert_type: :system_fault,
-      message_key: "burn_failure",
+      # `ambiguous` — окремий КЛЮЧ, а не префікс у рядку: «можливо-landed, НЕ
+      # авто-повтор» — це проза, і раніше вона приклеювалась українською до
+      # тексту виключення просто на місці виклику. `error` лишається сирим
+      # текстом ЧУЖОГО виключення — його не локалізує жодна схема, це
+      # діагностичний додаток, і так і має бути.
+      message_key: ambiguous ? "burn_failure_ambiguous" : "burn_failure",
       message_params: { amount: amount, error: error_msg }
     )
   end
