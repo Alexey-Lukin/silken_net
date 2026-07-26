@@ -134,7 +134,7 @@ HTTP Request (Dashboard pages)
 HTTP Request (Auth pages — login, forgot/reset password, no-organization quarantine)
     └─► Controller
             └─► render_auth_page(title:, component:, status: :ok)
-                    └─► render AuthLayout.new(content: component)
+                    └─► render AuthLayout.new(title:, content: component)
                             └─► AuthLayout.view_template
                                     └─► render @content  ← Auth Component (Sessions::New, Errors::NoOrganization, etc.)
 ```

@@ -1,6 +1,7 @@
 ---
 en:
   sessions:
+    login_title: Login Portal
     new:
       access_code_label: Access Code (Password)
       access_code_placeholder: "● ● ● ● ● ● ● ●"

@@ -1,6 +1,7 @@
 ---
 lv:
   sessions:
+    login_title: Pieteikšanās portāls
     new:
       access_code_label: Piekļuves kods (Parole)
       access_code_placeholder: "● ● ● ● ● ● ● ●"

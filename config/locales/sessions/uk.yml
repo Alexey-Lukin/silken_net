@@ -1,6 +1,7 @@
 ---
 uk:
   sessions:
+    login_title: Портал входу
     new:
       access_code_label: Код доступу (пароль)
       access_code_placeholder: "● ● ● ● ● ● ● ●"

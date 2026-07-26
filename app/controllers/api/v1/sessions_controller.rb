@@ -15,7 +15,7 @@ module Api
       # --- ПОРТАЛ ВХОДУ ---
       def new
         respond_to do |format|
-          format.html { render_auth_page(title: "Login Portal", component: Sessions::New.new) }
+          format.html { render_auth_page(title: I18n.t("sessions.login_title"), component: Sessions::New.new) }
         end
       end
 
@@ -116,9 +116,12 @@ module Api
         respond_to do |format|
           format.json { render json: { error: I18n.t("flash.sessions.invalid_credentials") }, status: :unauthorized }
           format.html do
+            # Той самий ключ, що й у JSON-гілці двома рядками вище. Раніше тут
+            # стояв окремий сирий літерал — тобто одна й та сама невдача входу
+            # мала ДВА різні тексти, і лише один із них перекладався.
             render_auth_page(
-              title: "Login Portal",
-              component: Sessions::New.new(flash_alert: "Access Denied: Invalid Credentials."),
+              title: I18n.t("sessions.login_title"),
+              component: Sessions::New.new(flash_alert: I18n.t("flash.sessions.invalid_credentials")),
               status: :unauthorized
             )
           end

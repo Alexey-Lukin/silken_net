@@ -23,7 +23,7 @@ uk:
       esg_retired: ESG погашено
       locked_balance: Заблокований баланс
       network: Мережа
-      not_provisioned: НЕ_ПРОВІЖНОВАНО
+      not_provisioned: НЕ_ПРИЗНАЧЕНО
       polygon_address: Адреса Polygon
       polygon_mainnet: Polygon PoS (Mainnet)
       title: Блокчейн-ідентичність

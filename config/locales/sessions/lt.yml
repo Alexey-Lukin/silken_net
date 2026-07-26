@@ -1,6 +1,7 @@
 ---
 lt:
   sessions:
+    login_title: Prisijungimo portalas
     new:
       access_code_label: Prieigos kodas (Slaptažodis)
       access_code_placeholder: "● ● ● ● ● ● ● ●"

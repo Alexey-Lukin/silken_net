@@ -9,7 +9,7 @@ class AuthLayout < ApplicationComponent
 
   # @param title [String] page title
   # @param content [Phlex::HTML] page content component
-  def initialize(title: "Access Portal", content: nil)
+  def initialize(title:, content: nil)
     @title = title
     @content = content
   end

@@ -128,7 +128,10 @@ module Api
 
       # Метод для рендерингу standalone auth-сторінок (login, forgot/reset password).
       # Забезпечує повний HTML-документ з CSS/JS includes без sidebar/DashboardLayout.
-      def render_auth_page(title: "Access Portal", component:, status: :ok)
+      # `title:` обов'язковий: усі сім викликачів і так передають його явно, тож
+      # англійський дефолт «Access Portal» був недосяжним рядком, який мовчки
+      # чекав першого викликача, що його забуде. Видалення дешевше за переклад.
+      def render_auth_page(title:, component:, status: :ok)
         render AuthLayout.new(title: title, content: component), status: status
       end
 

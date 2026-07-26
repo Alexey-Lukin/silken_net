@@ -22,6 +22,26 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
+    # Обидві гілки однієї невдачі мусять нести ОДИН текст. Раніше JSON віддавав
+    # `flash.sessions.invalid_credentials`, а HTML — окремий сирий літерал
+    # «Access Denied: Invalid Credentials.», тобто повідомлення розходились і
+    # лише одне з них перекладалось. Спека дивилась тільки на статус JSON-гілки,
+    # тому й не бачила цього.
+    it "renders the same localized failure message on both the JSON and HTML branches" do
+      expected = I18n.t("flash.sessions.invalid_credentials")
+
+      post "/api/v1/login", params: { email: user.email_address, password: "wrong_password" }, as: :json
+      expect(response.parsed_body["error"]).to eq(expected)
+
+      post "/api/v1/login",
+           params: { email: user.email_address, password: "wrong_password" },
+           headers: { "Accept" => "text/html" }
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(response.body).to include(expected)
+      expect(response.body).not_to include("Access Denied")
+    end
+
     it "resets session before establishing new one (session fixation protection)" do
       # First login to establish a session
       post "/api/v1/login", params: { email: user.email_address, password: "password12345" }, as: :json
