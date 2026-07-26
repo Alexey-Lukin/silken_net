@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # =============================================================================
 # [OPS.11] FinOps guard №1 — GCP billing budget with email thresholds.
 #

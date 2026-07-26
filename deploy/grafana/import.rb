@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # [S2.2/S2.3/FW.18b] One-command імпорт Grafana IaC у Grafana Cloud.

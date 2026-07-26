@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 variable "project_id" {
   description = "GCP project ID"
   type        = string

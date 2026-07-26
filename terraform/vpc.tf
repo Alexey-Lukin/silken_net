@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # VPC Network
 resource "google_compute_network" "silken_net_vpc" {
   name                    = "silken-net-vpc"

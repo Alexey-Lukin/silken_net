@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # =============================================================================
 # Ingress Anchor — Static IP entry + PRIMARY CoAP intake host (INF.17)
 # =============================================================================

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # = =====================================================================
 # 🛠 setup_github_project.sh — Projects V2 fields (idempotent)
 # = =====================================================================

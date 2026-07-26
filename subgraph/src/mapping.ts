@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { BigInt } from "@graphprotocol/graph-ts";
 import {
   CarbonMinted,

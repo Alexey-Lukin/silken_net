@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # = =====================================================================
 # 🛠 bootstrap_github.sh — full IaC bootstrap for the silken_net repo
 # = =====================================================================

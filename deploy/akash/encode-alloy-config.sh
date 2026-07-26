@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # =============================================================================
 # encode-alloy-config.sh — Base64-encode deploy/akash/config.alloy for SDL
 # =============================================================================
@@ -39,7 +40,7 @@ for arg in "$@"; do
   case "$arg" in
     --check) CHECK_ONLY=1 ;;
     -h|--help)
-      sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '3,31p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *)

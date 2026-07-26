@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Service account for deployment and application runtime
 resource "google_service_account" "deploy" {
   account_id   = "silken-net-deploy"

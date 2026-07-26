@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 output "ingress_ip" {
   description = "Static external IP of the Ingress Anchor — point IoT Queens (CoAP) and DNS here"
   value       = google_compute_address.ingress_ip.address

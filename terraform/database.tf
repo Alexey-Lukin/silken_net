@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Cloud SQL PostgreSQL instance
 resource "google_sql_database_instance" "silken_db" {
   name             = "silken-db"
