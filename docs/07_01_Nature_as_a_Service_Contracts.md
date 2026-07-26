@@ -402,7 +402,7 @@ SilkenForestCoin має `ERC20Votes` (checkpoint-based voting power), але:
 
 **Статус:** 🟡 ЧАСТКОВО ВИРІШЕНО — `SilkenForestCoin.sol` реалізує `SLASHER_ROLE` + `slash()`. Голосування токени SFC тепер зменшуються при slashing (ERC20Votes `_update` → `_transferVotingUnits` → checkpoint update). Атака через купівлю SFC + навмисне порушення NaaS більше неможлива.
 
-**Залишковий ризик:** Між нарахуванням SCC slash-події та обробкою `SilkenForestCoin.slash()` існує часовий лаг (бекенд-pipeline + Web3 черга `web3_critical`). Протягом цього вікна (~1–5 хв) учасник технічно може проголосувати. Для додаткового захисту рекомендується Vote Escrow (veToken) при активних NaaS контрактах зі статусом `breached`.
+**Залишковий ризик — ширший, ніж стояло тут раніше** (звірено з кодом 2026-07-26): SFC-slash **не має бекенд-автоматизації взагалі**. Жоден Ruby-воркер чи сервіс не викликає `SilkenForestCoin.slash()`/`slashUpTo()` (перевірено по `app/`/`lib/`/`config/`), і сам контракт це фіксує коментарем «Manual DAO/Timelock-шлях — без бекенд-інтенту» ([`05_03`](05_03_Tokenomics_SCC_and_SFC)). Тому вікно, у якому вже-слешнутий за SCC учасник зберігає **повну** voting power, — це **не «~1–5 хв черги `web3_critical`»** (той опис припускав автоматизацію, якої немає), а проміжок **до ручного DAO/Timelock-втручання**, тобто за конструкцією необмежений. Vote Escrow (veToken) для `breached`-контрактів лишається **рекомендованим** доп-захистом; він інертний до живого DAO → [`00_07`](00_07_Action_Plan_Tracker) BIZ.14.
 
 При порушенні NaaS контракту спрацьовує Slashing Protocol:
 1. `BurnCarbonTokensWorker` → `BlockchainBurningService` → `SilkenCarbonCoin.slash(investor, amount)` — SCC зловмисника **спалюються**.
