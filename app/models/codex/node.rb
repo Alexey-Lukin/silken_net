@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # Codex::Node — central lore entity. Hosts all 79 seed records (ecosystems,

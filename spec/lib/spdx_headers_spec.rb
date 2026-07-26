@@ -91,6 +91,8 @@ RSpec.describe SpdxHeaders do
         "config/locales/en.yml",                     # i18n-tasks re-renders byte-for-byte
         "config/locales/codex/uk.yml",               # ditto, at any depth
         "tools/in_silico/conda-lock.yml",            # third-party lock output
+        "firmware/hal_glue/stm32wlxx_hal_conf.h",    # © STMicroelectronics — adjudicated
+        "firmware/queen/lorawan_glue/se-identity.h", # Semtech BSD — adjudicated
         "app/views/layouts/application.html.erb",    # emits into rendered output
         "spec/components/previews/x/all.html.erb",   # ditto
         "public/404.html",

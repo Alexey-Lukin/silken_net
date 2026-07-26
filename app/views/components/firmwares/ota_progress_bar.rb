@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 module Firmwares
   class OtaProgressBar < ApplicationComponent
     def initialize(uid:, percent:, current:, total:, status:)

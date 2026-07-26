@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # [ARCH.57] Привілейовані дії → tamper-evident SHA-256 AuditLog-ланцюг (дзеркало MRV.1

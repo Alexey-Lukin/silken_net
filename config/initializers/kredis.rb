@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # Extends Kredis with a Redis-based distributed lock using SET NX EX pattern.

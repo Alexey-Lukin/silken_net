@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Name of your application. Used to uniquely configure containers.
 service: silken_net
 

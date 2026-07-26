@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # Codex::Fractions::ProfileBadge — compact 1-row teaser for embedding in

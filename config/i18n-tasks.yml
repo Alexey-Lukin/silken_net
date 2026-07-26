@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # i18n-tasks SSOT configuration.
 # Docs: https://github.com/glebm/i18n-tasks
 # Runs in CI via `.github/workflows/ci.yml` → job `i18n_check`.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Canopy destination — deployed automatically from main branch after CI passes.
 # The forest canopy is the first layer that meets the sun and rain,
 # protecting the forest floor (production) below. 🌿

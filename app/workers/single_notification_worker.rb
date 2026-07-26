@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # Атомарний воркер для відправки одного повідомлення одному користувачу по одному каналу.

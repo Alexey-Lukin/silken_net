@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # Standalone Phlex page rendered inside AuthLayout when an authenticated user

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # [FW.54/SEC.3] UID → DID → Tree: one-pass прив'язка кремнію до identity.

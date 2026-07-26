@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # [SEC.9] Refuse to boot production / canopy with a weak PROVISIONING_MASTER_KEY.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Be sure to restart your server when you modify this file.
 
 # Add new inflection rules using the following format. Inflections

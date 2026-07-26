@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 :concurrency: 15
 # Explicit graceful-shutdown window (was the implicit default). On SIGTERM Sidekiq
 # re-enqueues jobs still running after this deadline — the orchestrator's grace

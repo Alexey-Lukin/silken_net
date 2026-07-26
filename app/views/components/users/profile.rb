@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # app/views/components/users/profile.rb
 module Users
   class Profile < ApplicationComponent

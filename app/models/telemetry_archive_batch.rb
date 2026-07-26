@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # [E.60 Фаза 1б] Реєстр телеметрія-батчів mint-anchored архівації: один рядок =

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 module Provisioning
   class Success < ApplicationComponent
     # [SEC.11] `aes_key` kwarg retained for backwards-spec-compat but

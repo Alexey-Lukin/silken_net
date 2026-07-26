@@ -1,4 +1,5 @@
 ---
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Brakeman is a Rails static-analysis scanner run from the repo root (bin/brakeman).
 # Skip firmware/ — NONE of it is a Rails attack surface:
 #   - firmware/extern/mruby — pinned C-interpreter submodule; its build tooling uses

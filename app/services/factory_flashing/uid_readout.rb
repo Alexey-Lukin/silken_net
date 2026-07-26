@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # [FW.54] Парсер виводу `STM32_Programmer_CLI -r32 0x1FFF7590 12` — рядок

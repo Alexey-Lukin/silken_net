@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # Refuse to boot a strict/mainnet deployment with unsafe Web3 wiring:

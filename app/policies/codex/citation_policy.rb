@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # Codex::CitationPolicy — full RBAC for the citations surface (create/destroy via

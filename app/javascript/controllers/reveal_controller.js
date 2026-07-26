@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { Controller } from "@hotwired/stimulus"
 
 // Reveal-on-scroll using IntersectionObserver — drops `opacity-0` and

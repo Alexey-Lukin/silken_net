@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { Controller } from "@hotwired/stimulus"
 
 // Thin shim around the native <dialog> element for the mobile sidebar drawer.

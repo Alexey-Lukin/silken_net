@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # SimpleCov — аналіз покриття тестами.
 # Має бути на самому початку, до завантаження будь-якого коду додатка.
 require "simplecov"

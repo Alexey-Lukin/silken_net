@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # app/views/components/clusters/item.rb
 # frozen_string_literal: true
 

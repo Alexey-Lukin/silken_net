@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # [ARCH.54 Шар 0] Dead-man switch Королеви: Rails сам детектить тишу шлюзу,

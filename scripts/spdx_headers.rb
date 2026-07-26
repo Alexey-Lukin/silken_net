@@ -158,6 +158,12 @@ module SpdxHeaders
     %r{\Adb/(?:structure\.sql|c(?:able|ache)_schema\.rb)\z}, # schema dumps: regenerated, tag not durable
     %r{\Aconfig/locales/},                     # i18n-tasks re-renders these — see below
     %r{\Atools/in_silico/conda-lock\.yml\z},   # third-party lock output; cannot teach conda-lock
+    # Vendor-derived headers, adjudicated 2026-07-26: no tag rather than an inexact one.
+    # They sit in DENY rather than relying on FOREIGN_NOTICE_RE because a decided case must
+    # not keep the gate red forever — a permanently failing gate stops being read. The
+    # guard stays armed for what it is actually for: a NEW vendored file nobody has judged.
+    %r{\Afirmware/hal_glue/stm32wlxx_hal_conf\.h\z},        # © 2020 STMicroelectronics
+    %r{\Afirmware/queen/lorawan_glue/se-identity\.h\z},     # Semtech Revised BSD + ST portions
     %r{\.erb\z},                               # emits into rendered output — named ceiling
     %r{\.enc\z}, %r{\.key\z},                  # encrypted blobs: never touched
     %r{\Acontracts/(?:node_modules|out|cache|crytic-export|medusa-corpus)}

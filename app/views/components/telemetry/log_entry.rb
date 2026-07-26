@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # Telemetry::LogEntry — single row appended to the live HUD via Turbo Stream.

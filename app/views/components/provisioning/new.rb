@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 module Provisioning
   class New < ApplicationComponent
     def initialize(clusters:, families:, device: nil)

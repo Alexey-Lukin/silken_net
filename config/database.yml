@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # PostgreSQL connection (all environments) via discrete ENV components — the Rails-8
 # default style (no URL parsing in this file; Rails owns it). Production runs 3 logical
 # DBs on ONE Cloud SQL instance (primary + Solid Cache/Cable — Solid Queue pruned,

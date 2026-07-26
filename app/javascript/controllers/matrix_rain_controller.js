@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { Controller } from "@hotwired/stimulus"
 
 // Frame interval in ms (~16 fps is enough for decorative rain effect;

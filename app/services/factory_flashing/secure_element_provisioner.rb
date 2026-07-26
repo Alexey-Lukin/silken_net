@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # [SEC.3 + SEC.6] Factory Flashing — Гілка B Secure Element provisioning skeleton.

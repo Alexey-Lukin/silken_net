@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Pin npm packages by running ./bin/importmap
 
 pin "application"

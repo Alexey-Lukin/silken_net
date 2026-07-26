@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Kredis Redis configuration — used for distributed locks (Web3 nonce management).
 #
 # DB ISOLATION STRATEGY:

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 module Maintenance
   class Form < ApplicationComponent
     # @param record [MaintenanceRecord] the record to edit/create

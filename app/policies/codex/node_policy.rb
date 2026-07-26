@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # Codex::NodePolicy — RBAC matrix per docs/04_05_Codex_Lore_Module.md §5.

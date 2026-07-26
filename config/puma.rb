@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # =============================================================================
 # Puma Configuration — SilkenNet IoT/Web3 Production Server
 # =============================================================================

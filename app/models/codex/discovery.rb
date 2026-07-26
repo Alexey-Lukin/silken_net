@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # Codex::Discovery — fact: "User U unlocked Node N via trigger T at time t".
