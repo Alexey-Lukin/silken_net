@@ -42,6 +42,7 @@ namespace :tracker do
     cluster  = Tracker::Dashboard.cluster_marker_violations(md)
     bench    = Tracker::Dashboard.bench_tag_violations(md)
     stalewho = Tracker::Dashboard.stale_machine_who(md)
+    thinwho  = Tracker::Dashboard.understated_who(md)
 
     puts "00_07 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(items).size} actionable)"
     puts "  duplicate IDs:    #{dups.empty? ? 'none ✓' : dups.inspect}"
@@ -156,6 +157,20 @@ namespace :tracker do
       puts "  stale machine-WHO (#{stalewho.size}) — meta claims 🤖 but no open 🤖 residual (machine half shipped?):"
       stalewho.each { |s| puts "    - #{s}" }
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || orphan.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || metaform.any? || cluster.any? || bench.any? || stalewho.any?
+    # [DOC-T.54] understated WHO — HARD: the REVERSE axis of DOC-T.52. That guard catches
+    # meta OVERSTATING; nothing caught meta UNDERSTATING — an open residual whose executor
+    # the meta-line never declares. This direction costs more: the meta-line IS the scan
+    # layer, so a pure-👤 meta over a body of 🤖 residuals reads as "nothing machine-doable
+    # here" (HW.1, a P0 critical-path item, hid six). Exempts 🔗-led + glyph-less residuals
+    # like its sibling — and needs NO three-executor exemption, since ⚖️ ⊂ 👤 collapses
+    # {🤖,👤,⚖️} onto the legal pair 🤖+👤. Executors are read from the residual's LEADING
+    # token: a 👤 line citing 🤖 work in prose is closed work, not an open claim. (00_06 §3.)
+    if thinwho.empty?
+      puts "  understated WHO:  every open residual's executor declared on its meta-line ✓"
+    else
+      puts "  understated WHO (#{thinwho.size}) — meta-line omits an executor its open residuals carry:"
+      thinwho.each { |s| puts "    - #{s}" }
+    end
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || orphan.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || metaform.any? || cluster.any? || bench.any? || stalewho.any? || thinwho.any?
   end
 end

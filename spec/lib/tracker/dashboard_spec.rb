@@ -989,4 +989,110 @@ RSpec.describe Tracker::Dashboard do
       expect(described_class.stale_machine_who(intro)).to eq([ "BIZ.7" ])
     end
   end
+
+  describe ".understated_who" do
+    # Reverse axis of .stale_machine_who [DOC-T.54]: that guard catches meta
+    # OVERSTATING (claims 🤖 nobody backs); this one catches meta UNDERSTATING — open
+    # work the meta-line never declares. The meta-line IS the scan layer, so a pure-👤
+    # meta over a body full of 🤖 residuals reads as "nothing here for the machine".
+    let(:md) do
+      <<~MD
+        ## §01a · Anchor
+        #### HW.1 — meta says 👤 while six machine residuals sit in the body
+        - **P0** · 👤 · 🟡 · → `01_01 §1`
+        - **Стан:** x.
+        - [ ] 👤 фіз-друк
+        - [ ] 🤖 генератор креслення
+        #### HW.2 — meta already the honest union
+        - **P1** · 🤖+👤 · 🟡 · → `01_01 §1`
+        - **Стан:** x.
+        - [ ] 👤 передати на завод
+        - [ ] 🤖 дописати CEM-поле
+        #### HW.3 — all three executors open: the pair 🤖+👤 satisfies the union (⚖️ ⊂ 👤)
+        - **P1** · 🤖+👤 · 🟡 · → `01_01 §1`
+        - **Стан:** x.
+        - [ ] 👤 лаба
+        - [ ] 🤖 розрахунок
+        - [ ] ⚖️ присуд
+        #### HW.4 — meta 👤 covers an open ⚖️ residual (⚖️ ⊂ 👤)
+        - **P2** · 👤 · ⚪ · → `01_01 §1`
+        - **Стан:** x.
+        - [ ] ⚖️ присуд
+        #### HW.5 — 🔗-led residual delegates its WHO to the gating item
+        - **P2** · 👤 · 🔗 · → `01_01 §1`
+        - **Стан:** x.
+        - [ ] 👤 руки
+        - [ ] 🔗 gated на HW.24 — машинна нога живе там
+      MD
+    end
+
+    it "flags ONLY the item whose meta-line omits an executor its open residuals carry" do
+      expect(described_class.understated_who(md).map { |v| v.split(":").first }).to eq([ "HW.1" ])
+    end
+
+    it "names the missing glyph and how many open residuals carry it" do
+      expect(described_class.understated_who(md).first).to include("misses 🤖×1")
+    end
+
+    it "needs no three-executor exemption — {🤖,👤,⚖️} collapses onto the legal pair 🤖+👤" do
+      expect(described_class.understated_who(md).join).not_to include("HW.3")
+    end
+
+    it "reads the LEADING token only — a 👤 residual citing 🤖 work in prose is not open 🤖" do
+      prose = <<~MD
+        ## §02a · Node
+        #### HW.9 — hands-work whose text cites an already-shipped machine check
+        - **P1** · 👤 · ⚪ · → `02_01 §8`
+        - **Стан:** x.
+        - [ ] 👤 RF Keep-Out DRC — 3D-геометрія вже 🤖-verified (`Assembly.RfClearanceMm`)
+      MD
+      expect(described_class.understated_who(prose)).to be_empty
+    end
+
+    it "treats a meta 👤 as covering an open ⚖️ residual, since ⚖️ ⊂ 👤" do
+      expect(described_class.understated_who(md).join).not_to include("HW.4")
+    end
+
+    it "does NOT treat a meta ⚖️ as covering open 👤 hands-work — the subset runs one way" do
+      inverted = <<~MD
+        ## §07 · Бізнес
+        #### BIZ.30 — meta ⚖️ over an open 👤 residual
+        - **P1** · ⚖️ · 🟡 · → `07_01 §8`
+        - **Стан:** x.
+        - [ ] 👤 зустріч із юристом
+      MD
+      expect(described_class.understated_who(inverted).first).to include("misses 👤×1")
+    end
+
+    it "exempts a 🔗-led residual — its eventual WHO lives in the item it is gated on" do
+      expect(described_class.understated_who(md).join).not_to include("HW.5")
+    end
+
+    it "collects residuals at all (positive scope proof — an empty scope reads as clean)" do
+      one = <<~MD
+        ## §01a · Anchor
+        #### HW.9 — single undeclared machine residual
+        - **P1** · 👤 · 🟡 · → `01_01 §1`
+        - **Стан:** x.
+        - [ ] 🤖 скрипт
+      MD
+      expect(described_class.understated_who(one).size).to eq(1)
+    end
+
+    it "never reads a fenced example or the intro blockquote as a real residual" do
+      noise = <<~MD
+        > **Форма:** `- [ ] 🤖 …` — приклад у преамбулі.
+
+        ## §01a · Anchor
+        #### HW.10 — body quotes a machine residual inside a fence
+        - **P1** · 👤 · 🟡 · → `01_01 §1`
+        - **Стан:** x.
+        ```
+        - [ ] 🤖 приклад у фенсі
+        ```
+        - [ ] 👤 руки
+      MD
+      expect(described_class.understated_who(noise)).to be_empty
+    end
+  end
 end

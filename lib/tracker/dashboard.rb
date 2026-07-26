@@ -514,6 +514,16 @@ module Tracker
     # `\Z` (not `\z`) — each_line keeps the trailing "\n", which `\z` never matches.
     OPEN_RESIDUAL = /\A-\s+\[ \]\s*(.+)\Z/
     WHO_GLYPH     = /[🤖👤⚖]/
+    # LEADING WHO run of a residual body — one glyph or a `+`-joined combo. Both WHO gates
+    # anchor here instead of scanning the whole line: a 👤 residual may CITE closed machine
+    # work in prose ("§5.3 вже 🤖-verified"), and counting that as an open 🤖 blinds both
+    # directions at once (proven on HW.9, 2026-07-26). [DOC-T.54]
+    # 🔴 CEILING both WHO gates share: the executor is read ONLY from the leading token, so a
+    # residual with a DECORATIVE lead (`- [ ] ✨ 🤖 …`, `- [ ] 🧹 🤖 …`) is invisible to both —
+    # `understated_who` will not flag its machine work, and `stale_machine_who` can FALSELY flag
+    # the item as advertising 🤖 nobody backs. Widening the anchor to skip a non-WHO prefix would
+    # reopen the prose-mention hole this replaced, so the ceiling is declared, not papered over.
+    WHO_LEAD      = /\A(?:🤖|👤|⚖️)(?:\+(?:🤖|👤|⚖️))*/
 
     def self.stale_machine_who(markdown = File.read(DEFAULT_PATH))
       in_registry = false
@@ -550,10 +560,91 @@ module Tracker
 
       items.select do |it|
         it[:machine] && !it[:open].empty? &&
-          it[:open].none? { |b| b.include?("🤖") } &&
+          # LEADING token, never `include?` over the line: a 👤 residual that CITES closed
+          # machine work ("§5.3 вже 🤖-verified") would otherwise read as an open 🤖 and
+          # keep this gate silent about a meta 🤖 nobody backs — proven on HW.9, where it
+          # masked exactly that drift being introduced. Mirrors `understated_who`. [DOC-T.54]
+          it[:open].none? { |b| b[WHO_LEAD].to_s.include?("🤖") } &&
           it[:open].none? { |b| b.lstrip.start_with?("🔗") } &&
           it[:open].all? { |b| b.match?(WHO_GLYPH) }
       end.map { |it| it[:id] }
+    end
+
+    # --- meta-WHO understates its own open work [DOC-T.54 — reverse axis of DOC-T.52] ---
+    # `stale_machine_who` enforces ONE direction of a contract its own comment states as
+    # a UNION ("meta-line WHO must stay the UNION of OPEN residuals"): it catches meta
+    # OVERSTATING (claims 🤖 nobody backs) and is structurally blind to meta
+    # UNDERSTATING — an open 🤖 residual the meta-line never mentions. That direction is
+    # the costlier one: the meta-line IS the scan layer, so a pure-👤 meta reads as
+    # "nothing here for the machine" while the body holds machine work (HW.1 — a P0
+    # critical-path item — hid SIX open 🤖 residuals this way; 17 items corpus-wide, 7 of them
+    # in §01a — measured with THIS version against the pre-fix tracker, since the first cut's
+    # own tally was suppressed by its own two bugs).
+    # Same two exemptions as the sibling: 🔗-led (delegated — eventual WHO lives in the
+    # gating item) and glyph-less (🌿-led — WHO simply undeclared).
+    # ⚖️ ⊂ 👤 (00_07 §розмітка), so a meta 👤 legitimately covers an open ⚖️ residual;
+    # the reverse is not true — 👤 work is not covered by a meta ⚖️. That subset relation
+    # is also why an item spanning all THREE executors needs NO exemption: {🤖,👤,⚖️}
+    # collapses onto the legal pair `🤖+👤`, so "union of open" is always satisfiable in
+    # two slots. (A first cut exempted `kinds.size > 2` on a "physically unsatisfiable"
+    # premise its own ⚖️⊂👤 line refuted — the exemption silenced the gate on ~12% of the
+    # corpus, including three items carrying the exact pure-👤-over-machine-work pathology
+    # this guard exists to catch. Adversarial review, 2026-07-26.)
+    # 🔴 Executors are read from the residual's LEADING token, never `include?` over the
+    # whole line: a 👤 checkbox may MENTION 🤖 in prose ("§5.3 вже 🤖-verified") — that is
+    # closed work being cited, not open machine work, and counting it makes the meta-line
+    # advertise 🤖 nobody backs, i.e. manufactures the very DOC-T.52 drift this guards.
+    # Pure (caller may pass markdown). Returns human-readable violation strings.
+    EXECUTOR_GLYPHS = %w[🤖 👤 ⚖].freeze
+
+    def self.understated_who(markdown = File.read(DEFAULT_PATH))
+      in_registry = false
+      in_fence = false
+      current = nil
+      items = []
+
+      markdown.each_line do |line|
+        in_fence = !in_fence if line.lstrip.start_with?("```")
+        next if in_fence || line.lstrip.start_with?(">") # intro blockquote examples
+
+        if line.start_with?("## ")
+          in_registry = line.match?(REGISTRY_SECTION) && !line.match?(SKIP_SECTION)
+          current = nil
+          next
+        end
+        next unless in_registry
+
+        if (m = line.match(ITEM_HEAD))
+          current = { id: m[1], who: nil, seen_meta: false, open: [] }
+          items << current
+          next
+        end
+        next unless current
+
+        if !current[:seen_meta] && line.match?(/\*\*P[0-3]\*\*/)
+          current[:seen_meta] = true
+          current[:who] = line.split("·")[1].to_s
+        elsif (r = line.match(OPEN_RESIDUAL))
+          current[:open] << r[1]
+        end
+      end
+
+      items.filter_map do |it|
+        next unless it[:who]
+
+        # 🔗-led residuals delegate their WHO to the gating item — same exemption the
+        # overstate axis makes, and for the same reason.
+        live = it[:open].filter_map { |b| b[WHO_LEAD] }
+        kinds = EXECUTOR_GLYPHS.select { |g| live.any? { |lead| lead.include?(g) } }
+
+        missing = kinds.reject do |g|
+          it[:who].include?(g) || (g == "⚖" && it[:who].include?("👤"))
+        end
+        next if missing.empty?
+
+        counts = missing.map { |g| "#{g}×#{live.count { |b| b.include?(g) }}" }.join(" ")
+        "#{it[:id]}: meta WHO «#{it[:who].strip}» misses #{counts} (open residuals it never declares)"
+      end
     end
 
     # --- bench-session tag symmetry [DOC-T.34 ①] ---
