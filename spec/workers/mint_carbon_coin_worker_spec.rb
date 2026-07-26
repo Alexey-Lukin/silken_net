@@ -96,8 +96,6 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
                                            locked_points: 10_000, tx_hash: nil)
       original_balance = wallet.balance
 
-      allow_any_instance_of(Wallet).to receive(:broadcast_update)
-
       job = {
         "args" => [ telemetry_log.id_value, telemetry_log.created_at.iso8601(6) ],
         "error_message" => "Permanent RPC failure"
@@ -122,8 +120,6 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       original_balance = wallet.balance
       original_locked = wallet.locked_balance
 
-      allow_any_instance_of(Wallet).to receive(:broadcast_update)
-
       job = {
         "args" => [ telemetry_log.id_value, telemetry_log.created_at.iso8601(6) ],
         "error_message" => "Failure"
@@ -140,8 +136,6 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       it "finds all pending/processing transactions when telemetry_log_id is nil" do
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 5_000, tx_hash: nil)
         wallet.update!(balance: 5_000, locked_balance: 5_000)
-
-        allow_any_instance_of(Wallet).to receive(:broadcast_update)
 
         job = { "args" => [ nil, nil ], "error_message" => "Permanent failure" }
 
@@ -160,8 +154,6 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
                                              locked_points: 10_000, tx_hash: nil)
 
-        allow_any_instance_of(Wallet).to receive(:broadcast_update)
-
         job = {
           "args" => [ telemetry_log.id_value, telemetry_log.created_at.iso8601(6) ],
           "error_message" => "Permanent RPC failure"
@@ -178,8 +170,6 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
         wallet.update!(balance: 20_000, locked_balance: 0)
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
                                              locked_points: 10_000, tx_hash: nil)
-
-        allow_any_instance_of(Wallet).to receive(:broadcast_update)
 
         job = {
           "args" => [ telemetry_log.id_value, telemetry_log.created_at.iso8601(6) ],
@@ -200,8 +190,6 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
                                              locked_points: 5_000, tx_hash: nil)
 
-        allow_any_instance_of(Wallet).to receive(:broadcast_update)
-
         job = {
           "args" => [ telemetry_log.id_value, nil ],
           "error_message" => "Permanent failure"
@@ -216,8 +204,6 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
 
     context "when telemetry_log not found" do
       it "skips processing via next guard" do
-        allow_any_instance_of(Wallet).to receive(:broadcast_update)
-
         job = {
           "args" => [ -999, Time.current.iso8601(6) ],
           "error_message" => "Permanent failure"
@@ -252,8 +238,6 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
                                              locked_points: 5_000, tx_hash: nil)
 
-        allow_any_instance_of(Wallet).to receive(:broadcast_update)
-
         job = {
           "args" => [ telemetry_log.id_value, "not-a-valid-iso-date" ],
           "error_message" => "Permanent failure"
@@ -266,15 +250,14 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       end
     end
 
-    context "when broadcast_update is not available" do
-      it "handles wallet without broadcast_update responding false" do
+    context "when the rollback broadcasts the wallet balance" do
+      # Broadcast НЕ стабимо свідомо: саме незастабнутий шлях ловить ARCH.67-клас
+      # (сервіс кликав Turbo-дефолт `broadcast_update` → MissingTemplate у rollback'у).
+      it "completes the rollback without raising" do
         telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
         wallet.update!(balance: 20_000, locked_balance: 10_000)
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
                                              locked_points: 10_000, tx_hash: nil)
-
-        # Stub broadcast_update to just do nothing
-        allow_any_instance_of(Wallet).to receive(:broadcast_update)
 
         job = {
           "args" => [ telemetry_log.id_value, telemetry_log.created_at.iso8601(6) ],
@@ -390,7 +373,6 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
 
     it "skips via next when tree.wallet is nil" do
       allow_any_instance_of(Tree).to receive(:wallet).and_return(nil)
-      allow_any_instance_of(Wallet).to receive(:broadcast_update)
 
       job = {
         "args" => [ telemetry_log.id_value, telemetry_log.created_at.iso8601(6) ],
@@ -403,14 +385,12 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
     end
   end
 
-  describe "broadcast_update after retry exhaustion" do
+  describe "rollback after retry exhaustion" do
     let!(:telemetry_log) { create(:telemetry_log, :verified_telemetry, tree: tree) }
 
-    it "calls broadcast_update on wallet after rollback" do
+    it "marks the transaction :failed" do
       wallet.update!(balance: 20_000, locked_balance: 10_000)
       tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000, tx_hash: nil)
-
-      allow_any_instance_of(Wallet).to receive(:broadcast_update)
 
       job = {
         "args" => [ telemetry_log.id_value, telemetry_log.created_at.iso8601(6) ],

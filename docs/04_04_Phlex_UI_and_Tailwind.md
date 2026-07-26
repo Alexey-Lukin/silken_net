@@ -832,14 +832,15 @@ Canvas-ефект Matrix digital rain з hex-символами (`0-9A-F`). Canv
 # Підписка (у view_template компонента)
 turbo_stream_from @wallet, :transactions
 
-# Broadcast (у worker/service)
-Turbo::StreamsChannel.broadcast_prepend_to(
-  [@wallet, :transactions],
-  target: "transactions_ledger",
-  partial: "wallets/transaction_row",
-  locals: { tx: new_tx }
+# Broadcast (у worker/service) — рендер ЗАВЖДИ через `html:` + Phlex-компонент
+Turbo::StreamsChannel.broadcast_replace_later_to(
+  [ @wallet, :transactions ],
+  target: ActionView::RecordIdentifier.dom_id(tx),
+  html: Wallets::TransactionRow.new(tx: tx).call
 )
 ```
+
+> ⚠️ **`partial:`/`locals:` тут не спрацюють — і голий `Turbo::Broadcastable` теж.** Партіалів моделей у репо НЕМА (`app/views/` тримає лише мейлери, layouts і Phlex-компоненти), тому успадковані `model.broadcast_update`/`broadcast_replace`, які дефолтяться на `to_partial_path`, кидають `ActionView::MissingTemplate` — синхронно, у виклику. Броадкастити лише явним `Turbo::StreamsChannel.broadcast_*_to` з `html:`. Прецедент — [`00_07`](00_07_Action_Plan_Tracker) ARCH.67: такий виклик у money-path-сервісі обривав батч-цикл, лишаючи `locked_balance` решти транзакцій замороженим.
 
 ### 8.2 Turbo Frames (Lazy Loading)
 

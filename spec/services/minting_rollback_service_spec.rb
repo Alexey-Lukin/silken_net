@@ -11,9 +11,6 @@ RSpec.describe MintingRollbackService do
 
   before do
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
-    # Wallet отримує #broadcast_update від Turbo::Broadcastable (авто-mixin у кожну AR-модель);
-    # без стабу воно рендерить неіснуючий wallets/_wallet партіал → MissingTemplate.
-    allow_any_instance_of(Wallet).to receive(:broadcast_update)
   end
 
   describe ".call with telemetry_log_id (oracle-driven flow)" do
@@ -132,14 +129,32 @@ RSpec.describe MintingRollbackService do
     end
   end
 
-  describe "broadcast_update after rollback" do
-    it "calls broadcast_update on wallet when method is available" do
+  describe "balance broadcast after rollback" do
+    it "leaves the balance broadcast to the AR callback — never double-broadcasts" do
       wallet.update!(balance: 20_000, locked_balance: 10_000)
       tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000, tx_hash: nil)
 
-      expect_any_instance_of(Wallet).to receive(:broadcast_update).at_least(:once)
+      broadcasts = 0
+      allow_any_instance_of(Wallet).to receive(:broadcast_balance_update) { broadcasts += 1 }
 
       described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+      # Рівно одна — `after_update_commit :broadcast_status_change` на :failed (файрить і на
+      # сирий `update!`). Власного виклику в сервісі немає: інакше було б дві.
+      expect(broadcasts).to eq(1)
+    end
+
+    it "rolls back EVERY transaction in the batch — no locked_balance left frozen" do
+      wallet.update!(balance: 40_000, locked_balance: 20_000)
+      tx1 = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000, tx_hash: nil)
+      tx2 = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000, tx_hash: nil)
+
+      described_class.call(transactions: BlockchainTransaction.where(id: [ tx1.id, tx2.id ]))
+
+      # Regression: raise на першій tx обривав `txs.each` → tx2 лишалась :pending із
+      # замороженими балами, і Sidekiq глушив виняток retries_exhausted-блоку — тихо.
+      expect([ tx1.reload.status, tx2.reload.status ]).to eq(%w[failed failed])
+      expect(wallet.reload.locked_balance).to be_zero
     end
   end
 
@@ -579,15 +594,13 @@ RSpec.describe MintingRollbackService do
     end
   end
 
-  describe "perform_safe_rollback with detached tree / no broadcast_update" do
+  describe "perform_safe_rollback with detached tree" do
     it "falls back to 'N/A' tree DID when wallet.tree is nil" do
       wallet.update!(balance: 20_000, locked_balance: 10_000)
       tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
                   tx_hash: nil, locked_points: 10_000)
 
       # Simulate a wallet whose underlying tree has gone (soft-deleted / missing).
-      # (broadcast_update is Turbo::Broadcastable's — стабнуте глобально; його else-гілка
-      # мертва, бо respond_to? завжди true. Тут перевіряємо лише tree-nil → "DID: N/A".)
       allow_any_instance_of(Wallet).to receive(:tree).and_return(nil)
 
       described_class.call(transactions: BlockchainTransaction.where(id: tx.id))

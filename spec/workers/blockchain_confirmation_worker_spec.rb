@@ -109,10 +109,6 @@ RSpec.describe BlockchainConfirmationWorker, type: :worker do
   describe "sidekiq_retries_exhausted" do
     let(:msg) { { "args" => [ tx_hash ] } }
 
-    before do
-      allow_any_instance_of(Wallet).to receive(:broadcast_update)
-    end
-
     context "when sent transactions exist for the tx_hash" do
       it "delegates to MintingRollbackService" do
         expect(MintingRollbackService).to receive(:call) do |transactions:|

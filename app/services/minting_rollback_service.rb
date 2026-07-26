@@ -195,12 +195,11 @@ class MintingRollbackService < ApplicationService
       end
     end
 
-    # `respond_to?`-else dead: broadcast_update = Turbo::Broadcastable (авто-mixin у КОЖНУ
-    # AR-модель) → respond_to? завжди true для реального Wallet (§B.4 leave).
-    # ⚠️ [BUG] проте Turbo#broadcast_update рендерить неіснуючий wallets/_wallet партіал →
-    # ActionView::MissingTemplate у prod. Намір — broadcast_balance_update (як credit!/
-    # lock_and_mint!); фікс = окрема зміна (blast: 4 специ стабають broadcast_update).
-    tx.wallet.broadcast_update if tx.wallet.respond_to?(:broadcast_update)
+    # Трансляції балансу тут НЕМАЄ свідомо: її вже несе `after_update_commit` на
+    # BlockchainTransaction (`broadcast_status_change` → `broadcast_balance_update` при
+    # :failed), який файрить і на сирий `update!` вище. Не повертати власний виклик —
+    # голий Turbo `broadcast_update` рендерив дефолтний неіснуючий партіал `wallets/_wallet`
+    # → MissingTemplate обривав `txs.each`, лишаючи locked_balance решти батчу замороженим.
   end
 
   # Ескалація до ручної перевірки: кошти залишаються заблокованими,

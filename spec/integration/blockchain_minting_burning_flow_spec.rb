@@ -36,7 +36,6 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     allow(Kredis).to receive(:lock).and_yield
 
     allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-    allow_any_instance_of(Wallet).to receive(:broadcast_update)
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
     allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to)
     allow(ActionCable.server).to receive(:broadcast)
