@@ -1,6 +1,6 @@
 ---
 name: ssot-maintenance
-description: "Use when working on the SSOT docs (docs/NN_NN_*.md) — editing or creating a canon doc, hunting or fixing SSOT drift, adding a docs linter / CI gate, checking where a fact canonically lives, or publishing canon to the GitHub wiki. Operational playbook for docs:check_refs / docs:toc / tracker:check / wiki:sync; defers the STANDARD itself to 00_02 + 00_06. Examples: \"edit 03_05\", \"is this value consistent across the docs?\", \"add a drift linter\", \"publish the docs to the wiki\", \"where does the Lorenz constant live?\""
+description: "Use when working on the SSOT docs (docs/NN_NN_*.md) — editing or creating a canon doc, hunting or fixing SSOT drift, adding or hardening a docs linter / CI gate, checking where a fact canonically lives, or publishing canon to the GitHub wiki. Operational playbook for docs:check_refs / docs:toc / tracker:check / wiki:sync, plus §Guard-craft — the home of how to build a gate that actually catches (what a gate cannot see, the four blindness shapes, precision-in-the-anchor, mutation-verify pitfalls, hardening checklist). Defers the STANDARD itself to 00_02 + 00_06. Examples: \"edit 03_05\", \"is this value consistent across the docs?\", \"add a drift linter\", \"why is my guard green when it shouldn't be\", \"publish the docs to the wiki\", \"where does the Lorenz constant live?\""
 ---
 
 # SSOT Maintenance
@@ -83,11 +83,62 @@ This is the point: the skill stays small, but it lets you turn **any** newly-fou
    - Unicode-letter boundaries `(?<!\p{L})…(?![\p{L}])` so `звільнило`/`зарезервовано:` don't match a `вільн`/`резерв` rule.
    - Skip table rows (`line.lstrip.start_with?("|")`) and ```` ``` ```` fenced code.
    - **Exempt the owner doc** — it's *allowed* to state the fact.
-4. **Unit-test it** in `spec/lib/docs_linter_spec.rb`: a positive (catches the real drift), a clean pass, and the near-misses that must *not* trip. Run `bin/rspec spec/lib/docs_linter_spec.rb`. **Then mutation-verify** (break it → FAIL → revert): the spec proves it catches the INTENDED, nothing about what it CAN'T see — ask "what does this regex NOT match?" A symmetry / false-green-prone guard goes through a 2-agent review before it silences a class (`[[project_doc_t33_t34_seed]]`; a freshly-written gate is the worst-tested code in the repo — `[[feedback_vilize_sweep_method]]` F4).
+4. **Unit-test it** in `spec/lib/docs_linter_spec.rb`: a positive (catches the real drift), a clean pass, and the near-misses that must *not* trip. Run `bin/rspec spec/lib/docs_linter_spec.rb`. **Then mutation-verify** (break it → FAIL → revert). A symmetry / false-green-prone guard goes through a 2-agent review before it silences a class (`[[project_doc_t33_t34_seed]]`). Full craft → **§Guard-craft** below.
 5. **Wire it into** `lib/tasks/docs.rake` `check_refs`: accumulate hits, print a report block, push a label into `failed` (advisory while you clean the existing drift → flip to **HARD** once it's at 0).
 6. **Record it** in the `00_06 §3` guard table and the campaign memory — **not in this skill**. This is now *enforced*, not remembered: `guard_registry_sync` (DOC-T.40) fails CI if a new gate has no §3 row, if a §3 row names a file that no longer exists, **or if a §3 row claims a command/workflow the CI never runs** (reverse axis E — write the §3 command column exactly as the workflow runs it, and mark non-CI rows `advisory`/`on-demand`). Cross-file / code-reading gates go in `scripts/*.rb`, not `lib/docs_linter.rb` (which is pure-doc text); wire the new script into `docs.yml` **and** confirm its inputs are inside the `changes` filter — a gate outside it is decorative. (For an *unambiguous* retired string with no legit current use, skip the bespoke linter: add it to `DocsLinter::DEPRECATED_TERMS` — the general "any retired token's return is blocked" net.)
 
 > When the **standard itself** changes (skeleton, home registry), edit `00_06` (the home) — this skill's pointers stay valid by design.
+
+## 🛡️ Guard-craft — a gate that actually catches
+
+**This is the home of guard-craft.** `00_06 §3` is the *registry* (which guards exist), a script's own header is the home of *why that guard is shaped the way it is* (it rots together with the code, so it cannot drift), and this section is the *craft* — what to ask before, during and after writing one. Instances/demonstrations live in the session memories that found them.
+
+### The question that matters
+
+Not "is there a gate?" but **"WHAT DOES THIS GATE NOT SEE?"** A green gate is evidence only about the class it actually inspects. Two consequences worth internalising:
+
+- **Guards skew away from money.** Pure-doc surfaces end up well fenced while the doc⟷code *value* surface is held together by hand. The cheapest real gap is a **mirror declared in a code comment** ("edit it THERE") with no pin — most money-path holes closed by adding a row to `canonical_block_pins.yml` without touching the engine. Grep for comment-declared mirrors and ask: does each have a pin?
+- **Cite a gate only for the class it truly catches.** `model_doc_sync` exiting 0 says nothing about prose — it compares *class names*. A green run quoted as proof of something adjacent is a counterfeit coin.
+
+### A freshly-written gate is the worst-tested code in the repo
+
+Mutation-verify proves it catches the INTENDED — nothing about what it cannot see. Two failure shapes are worse than "blind to a class", and both have shipped here **in the same session the gate was born**:
+
+- **Dead scope under a green label.** `Tracker::Dashboard.stale_machine_who` anchored on `\z` while `each_line` keeps the trailing `\n` → the match failed on EVERY line, the HARD check did not exist, and the run printed "clean". An empty scope is indistinguishable from success. **In any line-scanning linter use `\Z` (or `chomp`), never `\z`** — and write a positive spec *for every scope*, otherwise "zero violations" means "zero checks".
+- **A term that is a substring of the project's most frequent noun.** `ROI` ⊂ **gyroid** made the public manifesto read as three violations. Ask both "what does this regex NOT match?" and **"what does it match that it shouldn't — judged on the real hits, not on the intent."**
+
+**Precision is measured in hits and lives in the ANCHOR.** Anchoring on individual words (`required`, `deterministic` — among the most common words in this canon) yielded 19% precision: 16 hits, 3 real. Narrowing to a **collocation** (`required status check` / `required-чек` / `PR-гейт`), demanding a number adjacent to the anchor, and scrubbing `TRL`/`§`/doc-ids took it to 100%. **A noisy advisory is a disabled gate**, so triaging every hit by eye is not optional.
+
+### Four ways a gate cannot see its own surface
+
+1. **Decorative** — its INPUT sits outside the workflow's `changes:` filter, so it only ever fires on somebody else's PR (the `bio_contract.rb` hole; `.claude/**` repeated it later on a different gate). Reflex: **input ⊆ trigger-filter?** `guard_registry_sync` CHECK D now enforces this for pinned sources and mirror trees — but it is scoped to those, not to every guard tree.
+2. **A whole GENRE outside every linter's namespace** — "Стаття N" headings; `08_03` carried `§1.1–§1.5` pointing at subsections that never existed, green for years. A genre exempt **by design** (`manifest.md`) is where drift is densest.
+3. **A noisy advisory** — functionally off. Fix by narrowing the scope to one unit of work and grouping output (one line per file, detail behind `--verbose`), and by **naming the ceiling in the script header**: a semantic gate must declare what it cannot see, or green reads as "not checked".
+4. **Blind to its own prose.** `workflow_gate_perimeter` read the workflows and its own Ruby constant, so its header comment could contradict that constant ("all eight" on line 6 vs "flip-pending" on line 10) and live that way until a prose-check was added. A gate sees data; it does not see what it says about itself.
+
+### Design rules
+
+- **Self-consistency, not hardcode** — derive interdependent numbers from one parameter.
+- **Context-anchor, never a bare number** — the same value is legitimate against different owners (provenance-mix at meV).
+- **Pin an invariant, not a growing counter.** "8 Lorenz constants" is mathematics; "9 economic ones" grows, so the gate flags honest additions and gets switched off.
+- **Two sets with an element MIGRATING between them → compare each separately, never their union** (GOV.2: a migration leaves the union unchanged, so a union-check is blind exactly on its own class).
+- **A pin is one-directional** — `canonical_block_drift` hashes only `source:`; `mirrors:` is prose, so editing a mirror does not move the gate. Ceiling recorded in `00_06 §3`.
+- **The gate form prescribed inside a tracker item is itself revisable** — do not implement a bad shape because an item named it.
+
+### Mutation-verify: the pitfalls
+
+- `git checkout` also reverts an UNCOMMITTED fix → mutate with a reverse `Edit`, not a checkout.
+- **A money-path constant is its own hazard**: editing `GAMMA` tripped the permission classifier, and rightly — an interrupted session would have left the tree broken. Make the pin engine a **pure function** and mutate **in memory**.
+- A mutation that fails to apply, or breaks syntax, proves **nothing** — check that it landed (and that the file still parses) before reading the result.
+- **Verify by EXIT CODE after every batch**, never by `| tail` (a cut-off FAILED header reads green).
+
+### Hardening checklist
+
+`tolerance = 1 display digit, NOT 0.5` · `encoding=utf-8` · `findall == 1` ambiguity guard · coverage gaps · **a guard's CI job must be import-free stdlib** (a bare runner without numpy breaks CI in a way the author never sees locally; lib-importing guards belong in the conda job) · **propagation twins** — pinning only `SUMMARY` leaves stale twins when the path-filter never fires for them.
+
+### Odds and ends that earned their line
+
+A guard does not pin its own reason for existing · a golden test that validates DEFAULTS cements an off-spec number · a curated map is a tripwire (a dead entry must go RED) · science surfaces need a real guard, not `stan_audit` (symbols vs numbers — prove ingestion) · an honesty-pass that comes back POSITIVE is a preventive guard · **a skill mirror rots more quietly than canon → sweep the skills in every closing pass** · the best sort of mutation-proof is **a gate that catches its own author** (`DOC-T.15` line-refs and the vertical-list linter both bit the person writing them).
 
 ### Worked example (a real loop, 2026-05-30)
 
