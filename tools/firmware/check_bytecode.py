@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """[FW.46] Light stdlib drift gate for firmware/common/lorenz_bytecode.h.
 
 Recomputes sha256(firmware/bio_contracts/bio_contract.rb) and compares it to

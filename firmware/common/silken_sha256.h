@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * silken_sha256.h — Pure-C SHA-256 (FIPS 180-4) + HMAC-SHA256 (RFC 2104).
  *

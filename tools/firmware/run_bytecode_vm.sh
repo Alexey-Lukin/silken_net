@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/firmware/run_bytecode_vm.sh — [FW.46] Build + run the minimal-VM bytecode
 # harness (firmware/test/test_bytecode_vm.c). Builds the minimal-gembox host
 # mruby on demand, links the harness against it, and runs the committed bytecode

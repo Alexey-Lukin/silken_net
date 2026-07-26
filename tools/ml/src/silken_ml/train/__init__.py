@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Training + evaluation for the baseline per-frame acoustic classifier.
 
 Enterprise conventions (explicitly NOT the MVP shape of ``lib/tasks/ai_train.rake``):

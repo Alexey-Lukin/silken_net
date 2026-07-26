@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """29c — outer-sphere (solvent) reorganization energy λ_o for the anode FAD→Os ET.
 
 Closes the "total anode λ" loop: script 29b computed the *inner-sphere* λ_i = 0.389 eV

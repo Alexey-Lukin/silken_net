@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * logmel_main.c — [FW.4] QEMU-M4 нога log-mel DSP (qemu-system-arm mps2-an386).
  *

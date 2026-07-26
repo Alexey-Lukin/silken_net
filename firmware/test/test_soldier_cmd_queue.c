@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_soldier_cmd_queue.c — [FW.20-Q2] черга Soldier-bound команд (host).
  *

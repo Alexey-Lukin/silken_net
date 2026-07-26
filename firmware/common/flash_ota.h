@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * flash_ota.h — [FW.52-г] OTA contract blob writer for STM32WLE5JC.
  *

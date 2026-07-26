@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Log-mel DSP front-end — FW.25 / ``docs/03_03 §3.4``.
 
 ``contract`` is the single Python home for the numeric contract (mirror of the

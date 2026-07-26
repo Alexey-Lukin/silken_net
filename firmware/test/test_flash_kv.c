@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_flash_kv.c — [ARCH.28/FW.54] host-тести журнального Flash-KV.
  *

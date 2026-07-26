@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * systime.c — [ARCH.34] тіло owned-systime (контракт у .h).
  * Арифметика — нормалізація SubSeconds у 0..999 (класичне гніздо помилок

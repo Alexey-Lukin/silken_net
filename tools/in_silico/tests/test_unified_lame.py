@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Unit gates for the unified thick-wall Lamé core (lib.mechanics) — HW.3.IS.
 

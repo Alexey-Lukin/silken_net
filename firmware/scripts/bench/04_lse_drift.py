@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """04_lse_drift.py — [bench] LSE/RTC drift проти host-годинника (FW.49/FW.20).
 
 pyOCD читає RTC-календар (TR/DR/SSR) через SWD без зупинки ядра і порівнює

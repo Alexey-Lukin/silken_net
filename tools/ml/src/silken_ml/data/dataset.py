@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Assemble the 5-class per-frame dataset with a CLIP-level, stratified, seeded split.
 
 **Anti-leakage rule:** frames from one clip NEVER straddle the train/val/test boundary —

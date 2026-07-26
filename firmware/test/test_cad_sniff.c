@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_cad_sniff.c — [ARCH.26 L3] host-тести CAD-нюху + PANIC-преамбули.
  *

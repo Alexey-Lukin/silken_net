@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * device_event.h — [SEC.21] uplink device-event 0x57: рідкісні security-події,
  *                  що не є станом. Два шари, дві довіри:

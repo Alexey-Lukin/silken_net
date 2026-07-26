@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * startup.c — [FW.55] мінімальний bare-metal старт для QEMU mps2-an386.
  *

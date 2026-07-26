@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * ccm_selftest.h — On-target AES-128-CCM Power-On Self-Test (POST).
  *

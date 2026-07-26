@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L2 — xylem sap composition sweep: test enzyme stability across tree species.
 

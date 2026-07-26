@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_audio_model.c — host-тест згенерованої INT8 акустичної моделі (FW.4).
  *

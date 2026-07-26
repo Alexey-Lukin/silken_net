@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_ccm_selftest.c — Host verification of the on-target CCM self-test.
  *

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Verify integrity of committed in-silico cache and ligand files.
 

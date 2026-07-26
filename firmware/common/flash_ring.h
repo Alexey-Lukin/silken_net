@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * flash_ring.h — [ARCH.35] sector-based ring телеметрії на SPI NOR W25Q32JV.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 namespace SilkenCad.Tests;
 
 // Pure-logic tests for the Zone-2 PEEK sleeve (Деталь 2, 01_01 §1) — CEM parse + the frozen-dim

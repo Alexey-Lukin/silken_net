@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * adc_convert.h — VREFINT-калібрована конверсія ADC-відліків у мілівольти
  * (One-Home: компілюється у Soldier-прошивку ТА host-тести — без копій).

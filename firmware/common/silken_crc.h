@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * silken_crc.h — CRC-примітиви wire-рівня SilkenNet (One-Home).
  *

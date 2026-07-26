@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_flash_ring.c — [ARCH.35] sector-ring W25Q32 (host).
  *

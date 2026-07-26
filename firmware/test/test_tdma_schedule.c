@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_tdma_schedule.c — [ARCH.26 L2] host-тести слот-розкладки TDMA.
  *

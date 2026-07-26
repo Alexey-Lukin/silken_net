@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_flash_ota.c — [FW.52-г] host-тести Flash_Write_Contract (flash_ota.c).
  *

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """L3 — adiabatic ΔSCF generator for the FADH₂→Os cascade (OS-RECOMPUTE 2026-06-17).
 
 Closes the ORPHAN cache `delta_scf_corrections.json` (commit 2f49cde added the JSON

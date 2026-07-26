@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * main.h — [FW.46] CubeMX-контракт для soldier/main.c + queen/main.c
  * (owned-замінник, поки .ioc/board-freeze 👤 не народить справжній).

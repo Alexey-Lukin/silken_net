@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_queen_attest.c — [L1 QATT] host-тести Queen-attestation батч-конверта.
  *

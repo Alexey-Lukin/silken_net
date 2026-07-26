@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L3b step 1 — build bimetallic ZIF cluster models for hopping integral calculations.
 

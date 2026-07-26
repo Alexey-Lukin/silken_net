@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Codegen determinism + the committed-firmware-headers drift gate (stdlib only)."""
 
 from silken_ml.codegen import emit_c

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L3 / CHEM.16 — dynamic electron-tunnelling over the MD ensemble.
 

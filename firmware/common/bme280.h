@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * bme280.h — [HW.32] кліматичне чуття Солдата: компенсація BME280 +
  *            квантизація VPD-confounder'а (One-Home, pure).

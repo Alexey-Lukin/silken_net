@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * at_engine.h — [FW.3] байтовий AT-токенайзер + транзакційний цикл (pure).
  *

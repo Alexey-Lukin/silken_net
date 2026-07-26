@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * stack_canary.h — [SEC.21] сів вартової канарки: цінність guard'а рівно
  *                  така, наскільки він непередбачуваний.

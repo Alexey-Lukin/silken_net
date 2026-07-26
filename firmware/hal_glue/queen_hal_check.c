@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * queen_hal_check.c — [FW.46] HAL compile-lane: ПЕРШИЙ справжній компайл
  * queen/main.c проти vendored stm32wlxx-hal-driver (ARM, soft-float).

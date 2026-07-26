@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_logmel.c — Host parity test for Compute_LogMel (FW.25, docs/03_03 §3.4).
  *

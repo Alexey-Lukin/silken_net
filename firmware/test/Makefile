@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # firmware/test/Makefile — Host-based unit tests for SilkenNet firmware.
 #
 # Compiles extracted firmware logic with gcc on x86/x64.

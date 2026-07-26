@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * fc_hiwater.h — [FW.2 TRL-7] монотонна "верхня межа" Frame Counter
  *                у Flash-KV: безумовна унікальність nonce через cold-boot.

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 /*
  * stm32wle5.ld — [FW.55] лінкер-карта РЕАЛЬНОГО STM32WLE5JC (bench-нога,
  * RUNBOOK 2.3). FLASH 256K @ 0x08000000, SRAM 64K @ 0x20000000 (SRAM1+SRAM2

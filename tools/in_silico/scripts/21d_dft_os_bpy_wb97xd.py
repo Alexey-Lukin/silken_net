@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L3 step 2d — publication-grade DFT: ωB97X-D / def2-TZVP for Os complex.
 

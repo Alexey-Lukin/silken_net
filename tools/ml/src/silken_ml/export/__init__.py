@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """INT8 TFLite → ``silken_net_audio_model.h`` export — fold, quantize, emit, parity.
 
 Pipeline (when a trained model exists, ``silken_ml.train``):

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Unit tests for the INT8 export fixed-point arithmetic (no TensorFlow needed).
 
 These exercise the gemmlowp requantize helpers that the emitted C

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L3 step 3 — aggregate frontier orbital energies from scripts 20 and 21.
 

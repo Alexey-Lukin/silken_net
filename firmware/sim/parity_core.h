@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * parity_core.h — [FW.55] спільне ядро біт-parity прогону mruby Lorenz.
  *

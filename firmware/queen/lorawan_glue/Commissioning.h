@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 #ifndef SILKEN_COMMISSIONING_H
 #define SILKEN_COMMISSIONING_H
 

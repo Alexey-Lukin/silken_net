@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender).
 
 NOT the final art: a matplotlib block diagram that fixes the LAYOUT, the elements,

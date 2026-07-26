@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L2/HW.3.IS — Cyclic strain MD for genipin-chitosan-CNC matrix.
 

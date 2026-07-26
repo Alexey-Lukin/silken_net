@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """L3b task ③ — computed inner-sphere reorganization energy λ for the ZIF metal hops.
 
 WHY. Script 24's Marcus rates used a blanket λ = 0.7 eV — too small for first-row /

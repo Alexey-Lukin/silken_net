@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * rx_route.h — [FW.2] Маршрутизація вхідних LoRa-кадрів Королеви +
  *              29-байтний CoAP-запис CCM-телеметрії (wire-rev2).

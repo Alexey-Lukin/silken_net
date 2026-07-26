@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 namespace SilkenCad.Tests;
 
 // Pure-logic golden tests for the Ti-coin coupon (01_01 §6.1) — CEM parsing + the projected

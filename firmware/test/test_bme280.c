@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_bme280.c — [HW.32] компенсація BME280 + квантизація VPD (host).
  *

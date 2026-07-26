@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Canonical librosa log-mel oracle (training-side) — ``docs/03_03 §3.4``.
 
 This is the *heavy* path (numpy + librosa, conda ``silken_ml`` env). It is the

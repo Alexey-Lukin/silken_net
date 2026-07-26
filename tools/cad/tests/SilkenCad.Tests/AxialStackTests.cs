@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 namespace SilkenCad.Tests;
 
 // Pure-logic press-fit mate-audit tests for the full axial stack (Zone 1↔2↔3↔4, 01_01 §1+§3) — CEM parse

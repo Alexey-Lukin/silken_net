@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L4b — Monte Carlo uncertainty analysis for delta_t predictions.
 

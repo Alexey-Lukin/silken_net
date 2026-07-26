@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L3 — Nelsen 4-point reorganization energy λ for the FADH•/FADH⁻ anode couple.
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """C code generation — emit the committed ``firmware/common/logmel_*.h`` tables.
 
 The single source for the Hann window, the HTK mel filter bank (sparse triplet),

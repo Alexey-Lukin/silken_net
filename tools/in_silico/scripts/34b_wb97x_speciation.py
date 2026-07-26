@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L3 — ωB97X ΔSCF cross-check of the ② mediator speciation (chloro → aqua → bis-Im).
 

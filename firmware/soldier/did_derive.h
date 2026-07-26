@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 #ifndef DID_DERIVE_H
 #define DID_DERIVE_H
 

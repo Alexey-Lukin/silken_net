@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_tinyml_pipeline.c — Host-based unit tests for TinyML acoustic pipeline.
  *

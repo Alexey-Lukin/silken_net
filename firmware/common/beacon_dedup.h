@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * beacon_dedup.h — [FW.20-S2 4/5] anti-storm журнал поколінь Time Beacon.
  *

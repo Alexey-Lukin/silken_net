@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Shared MD utility functions for L2 molecular dynamics scripts."""
 from __future__ import annotations
 

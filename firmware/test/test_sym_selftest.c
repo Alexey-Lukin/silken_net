@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_sym_selftest.c — Host verification of the on-target ECB/CBC self-test.
  *

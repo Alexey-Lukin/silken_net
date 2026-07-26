@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 #ifndef OTA_WINDOW_H
 #define OTA_WINDOW_H
 

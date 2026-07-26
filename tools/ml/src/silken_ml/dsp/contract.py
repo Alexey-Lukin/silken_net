@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Log-mel feature contract — **mirror** of the SSOT in ``docs/03_03 §3.4``.
 
 One-Home rule: the *values* are owned by ``docs/03_03 §3.4``. This file and the

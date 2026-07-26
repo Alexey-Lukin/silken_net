@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * lorenz_thresholds.h — [FW.8] persist пер-деревних Z-порогів у Flash-KV.
  *

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 HW.3.IS — Unified thick-wall Lamé: press-fit interference + thermal mismatch in ONE model.
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L3 — PCET redox potential of FAD/FADH₂ via the thermodynamic proton reference.
 

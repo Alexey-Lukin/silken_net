@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """24c — Cu–Ru DET coupling (CHEM.32, the Ru "double-whammy" test).
 
 Hypothesis (CHEM.32): swapping the Co ZIF node for Ru raises the electronic

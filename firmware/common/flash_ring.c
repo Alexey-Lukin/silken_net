@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * flash_ring.c — [ARCH.35] sector-based ring на SPI NOR (дизайн — flash_ring.h).
  *

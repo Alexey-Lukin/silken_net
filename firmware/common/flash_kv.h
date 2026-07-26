@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * flash_kv.h — [ARCH.28 шлях A] журнальний key-value у Flash STM32WLE5JC.
  *

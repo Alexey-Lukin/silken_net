@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """L3 task ② — cluster-continuum micro-solvation of the Os(III/II) couple.
 
 WHY. The raw FADH₂→Os cascade is uphill in *every* implicit-solvent method

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * cad_sniff.h — [ARCH.26 L3] CAD-нюх Провідника + PANIC extended-preamble
  * (One-Home: Soldier-глю та host-тести компілюють цей самий код — без копій).

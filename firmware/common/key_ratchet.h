@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * key_ratchet.h — [FW.17] Hash-Ratchet ротація LoRa-ключа (freeze-contract).
  *

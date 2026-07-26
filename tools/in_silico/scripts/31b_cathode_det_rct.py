@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """31b — cathode DET charge-transfer resistance band (③ borderline, INDICATIVE).
 
 Script 31 models the ANODE EIS (Rct from enzyme j_max). The cathode story is

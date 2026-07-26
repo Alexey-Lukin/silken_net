@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Shared geometry utilities for placing molecules in MD boxes."""
 from __future__ import annotations
 

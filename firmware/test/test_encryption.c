@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_encryption.c — Host-based unit tests for AES-256 ECB/CBC mode switching.
  *

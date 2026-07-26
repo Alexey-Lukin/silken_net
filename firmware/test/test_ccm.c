@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_ccm.c — Host-based unit tests for [FW.2 / ARCH.42 Variant B]
  *              AES-128-CCM LoRa packet emission and reception (wire-rev2 28B).

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # [FW.26] RAM budget verification — static RAM (.data+.bss) проти леджера.
 #
 # Леджер Солдата (виміряно 2026-06-11, не «оцінки»):

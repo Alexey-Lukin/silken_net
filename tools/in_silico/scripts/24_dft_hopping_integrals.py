@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L3b step 2 — ΔSCF hopping integrals for DET through ZIF nanozyme cathode.
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * syscalls.c — [FW.55] newlib-ретаргет для QEMU mps2-an386: stdout → CMSDK
  * APB UART0, куп(а) → bump-алокатор від `end` (mruby живе на malloc),

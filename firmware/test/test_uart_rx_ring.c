@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_uart_rx_ring.c — [FW.3] host-тести кільця-виду поверх circular-DMA RX.
  *

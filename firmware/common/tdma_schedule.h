@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * tdma_schedule.h — [ARCH.26 L2] слот-розкладка синхронних TDMA-вікон
  * (One-Home: Queen пакує байти 5..8 маяка, Soldier парсить, host-тести

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # 00_flash.sh — [bench] прошивка .elf/.bin через STM32_Programmer_CLI.
 # Той самий бінарник, що у SEC.3 pipeline (шим-інтеграція довела софт-шлях;
 # тут — фізичний SWD). Без --execute лише друкує план (узгоджено з

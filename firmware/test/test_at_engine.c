@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_at_engine.c — [FW.3/FW.56] host-тести AT-токенайзера, CoAP PDU та
  * повної CoAP-PUT розмови з SIM7070G на скриптованому модемі.

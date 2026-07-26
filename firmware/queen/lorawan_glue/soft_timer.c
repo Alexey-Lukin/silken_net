@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * soft_timer.c — [ARCH.34] тіло м'якого таймер-движка (дизайн у .h).
  * Спільний стан між TU LoRaMac (створюють таймери) і adapter'ом

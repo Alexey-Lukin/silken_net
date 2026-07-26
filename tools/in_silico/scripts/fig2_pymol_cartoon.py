@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path.
 
 Upgrades the 60_paper_figures.py DRAFT (2D PCA projection) to a real PyMOL cartoon:

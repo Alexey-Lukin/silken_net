@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Clip → device-domain per-frame log-mel features — THE SAME contract as the device.
 
 Pipeline mirrors the firmware ``audio_buffer[]``: AC signal → (peak-ref) → +DC bias

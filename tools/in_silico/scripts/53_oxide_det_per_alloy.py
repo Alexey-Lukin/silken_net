@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 HW.24 bake-off — per-alloy native-oxide DET feasibility (Ta DET-risk pre-coin).
 

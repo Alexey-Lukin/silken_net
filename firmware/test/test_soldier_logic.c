@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_soldier_logic.c — Comprehensive host-based unit tests for Soldier firmware.
  *

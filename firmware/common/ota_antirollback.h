@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * ota_antirollback.h — [SEC.20] високий приплив версії OTA: bytecode тече
  *                       лише вперед, старе слово не воскресає.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * logmel_contract.h — Log-mel feature contract (MIRROR of docs/03_03 §3.4).
  *

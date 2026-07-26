@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L2 step 2c — parameterize a chitosan trimer (3 × D-glucosamine) for GAFF.
 

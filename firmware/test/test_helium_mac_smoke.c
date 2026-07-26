@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_helium_mac_smoke.c — [ARCH.34] host-smoke СПРАВЖНЬОГО LoRaMac-node:
  * лінкує vendored MAC (EU868, soft-se, LmHandler) + owned glue і жене

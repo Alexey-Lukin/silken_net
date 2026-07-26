@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_bio_contract.c — Host-based unit tests for bio-contract logic.
  *

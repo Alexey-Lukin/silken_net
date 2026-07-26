@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L2 step 2b — parameterize genipin (the natural crosslinker) for GAFF.
 

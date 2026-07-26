@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/firmware/dci_epsilon_sweep.sh — [FW.31] Gate L: |Δz|-розподіл
 # справжній mruby-VM ↔ справжній контракт у CRuby на N зчеплених кейсів.
 #

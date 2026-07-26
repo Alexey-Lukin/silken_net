@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Pure-stdlib log-mel oracle — the dependency-free reference (``math``/``cmath``).
 
 This is the *fast local* path: it runs anywhere (no numpy/librosa), generates the

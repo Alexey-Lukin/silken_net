@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L3 — PCET-corrected anode oxidation via the neutral semiquinone (FADH•).
 

@@ -1,4 +1,5 @@
 /* USER CODE BEGIN Header */
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
   ******************************************************************************
   * @file           : main.c

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Ti-coin Stage 2 — compare in-silico predictions vs experimental data.
 

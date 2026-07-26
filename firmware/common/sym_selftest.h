@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * sym_selftest.h — On-target AES-128-ECB + AES-256-CBC Power-On Self-Test.
  *

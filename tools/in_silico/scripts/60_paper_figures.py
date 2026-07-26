@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Стаття 1 publication figures — built entirely from the cached DFT results.
 

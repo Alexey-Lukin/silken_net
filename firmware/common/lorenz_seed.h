@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * lorenz_seed.h — SEC.11 / FW.30 cold-start деривація стану Лоренца.
  *

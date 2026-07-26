@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 namespace SilkenCad.Tests;
 
 // Pure-logic mate-audit tests for the capsule-end assembly (Деталь 3 ↔ Деталь 4, 02_02 §4) — CEM parse +

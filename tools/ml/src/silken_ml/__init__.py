@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """SilkenNet ML engineering toolkit (``silken_ml``).
 
 The "set up once" home for the project's machine-learning surface. Domains:

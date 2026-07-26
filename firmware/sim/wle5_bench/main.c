@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * main.c — [FW.55] bench-нога parity-прогону: реальний STM32WLE5JC (клас C,
  * RUNBOOK 2.3). Той самий parity_core.h і той самий libmruby.a (soft-double

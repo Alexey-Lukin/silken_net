@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 #ifndef SILKEN_QUEEN_HELIUM_SOS_H
 #define SILKEN_QUEEN_HELIUM_SOS_H
 

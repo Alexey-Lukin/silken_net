@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * fauna_session.h — [ARCH.40] монолітна fauna-сесія: Welford-акумулятор +
  * сесійний драйвер (One-Home, freeze-contract).

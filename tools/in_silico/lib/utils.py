@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Shared utility functions for the in-silico pipeline."""
 from __future__ import annotations
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 HW.34 — Mechanical check of the central bus rod (buckling + sway fatigue), the second-half de-risk of
 the monolithic-bus idea after the thermal bridge (script 54).

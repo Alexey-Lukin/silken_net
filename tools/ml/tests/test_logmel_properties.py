@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Property tests for the pure-stdlib log-mel oracle (no heavy deps)."""
 
 import math

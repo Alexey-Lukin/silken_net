@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # firmware/scripts/qemu_parity.sh — [FW.55] біт-parity mruby Lorenz:
 # host-голден ↔ реальний Cortex-M4 код-шлях на qemu-system-arm (mps2-an386).
 #

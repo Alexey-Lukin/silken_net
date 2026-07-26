@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Parity gate: pure-stdlib oracle ≡ canonical librosa oracle (tol 1e-6).
 
 This is the bridge that lets the dependency-free local path stand in for the

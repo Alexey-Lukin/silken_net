@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Shared mechanics helpers for the anchor Ti↔PEEK press-fit (HW.3.IS).
 
 Thick-wall (Lamé) relations for a compliant sleeve (PEEK) shrink-/press-fit on a much stiffer

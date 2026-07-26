@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_soft_timer.c — [ARCH.34] owned таймер-движок під LoRaMac-node
  * (queen/lorawan_glue/soft_timer.c) + systime-арифметика.

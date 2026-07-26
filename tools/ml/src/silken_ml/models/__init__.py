@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Model architecture for the baseline per-frame acoustic classifier.
 
 Path B (docs/03_03 §4.3) — but the DEPLOYED ``Run_Inference`` contract is **per-frame**

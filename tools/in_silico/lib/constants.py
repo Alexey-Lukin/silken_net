@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Shared physical and project constants for the in-silico pipeline."""
 from pathlib import Path
 

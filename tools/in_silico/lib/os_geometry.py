@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Parameterized octahedral Os-complex geometry builder (shared SSOT).
 
 Generalizes the programmatic cis-[Os(bpy)₂(L)(X)]ⁿ⁺ assembly originally inlined

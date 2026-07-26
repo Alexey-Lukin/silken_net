@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """61 — Стаття 1 Tables T1–T4, generated from the cache (drift-safe).
 
 Reads cache/dft + cache/kinetics JSON only (no DFT), asserts the headline numbers

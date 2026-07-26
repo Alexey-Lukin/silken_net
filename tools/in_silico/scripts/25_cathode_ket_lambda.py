@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """③ Cathode DET k_ET vs reorganization energy λ — honest margin analysis.
 
 Combines the geometry-corrected hopping integrals t_ij (script 24, on the

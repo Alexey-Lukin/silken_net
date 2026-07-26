@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_logmel_cmsis.c — [FW.46] Host packing-parity for the CMSIS RFFT path.
  *

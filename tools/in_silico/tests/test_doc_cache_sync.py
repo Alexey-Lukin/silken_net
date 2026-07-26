@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Doc↔cache numeric-drift guard for the EBFC in-silico pipeline.
 

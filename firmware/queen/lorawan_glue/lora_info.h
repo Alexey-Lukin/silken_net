@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 #ifndef SILKEN_LORA_INFO_H
 #define SILKEN_LORA_INFO_H
 

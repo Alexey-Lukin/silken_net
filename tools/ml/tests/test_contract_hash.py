@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Contract invariants + drift tripwire (stdlib only)."""
 
 import dataclasses

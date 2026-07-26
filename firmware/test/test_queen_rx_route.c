@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_queen_rx_route.c — [FW.2] Маршрутизація RX Королеви + 29B-запис.
  *

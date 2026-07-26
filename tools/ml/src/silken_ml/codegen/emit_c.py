@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Emit the committed firmware log-mel tables + golden vectors (C headers).
 
 Generates three headers into ``firmware/common/`` from the pure-stdlib oracle:

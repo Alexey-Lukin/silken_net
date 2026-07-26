@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # firmware/CMakeLists.txt — [FW.46] Reproducible ARM build for SilkenNet firmware.
 #
 # Owned-code foundation (docs/03_01 §12.4): cross-compiles the portable code we

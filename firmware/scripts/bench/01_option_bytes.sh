@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # 01_option_bytes.sh — [bench] option bytes чеклист SEC.15 + SEC.2.
 #
 #   IWDG_SW=1   (IWDG software-керований — наш MX_IWDG_Init)

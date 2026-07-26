@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L3 step 2b — frontier orbitals of the FULL Os redox mediator.
 

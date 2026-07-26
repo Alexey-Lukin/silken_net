@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * ttl_byte.h — [FW.18b] бітфілд байта 11 LoRa-плейну (One-Home).
  *

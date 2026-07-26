@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Synthetic generators for the two classes with no honest open-data analog.
 
 - **silence(0)** — low-amplitude broadband noise: genuinely quiet, lands near the log

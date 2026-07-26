@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_seed_derivation.c — Host-based parity tests for SEC.11
  * Lorenz Seed Provenance derivation primitives.

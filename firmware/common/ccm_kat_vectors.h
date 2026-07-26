@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * ccm_kat_vectors.h — Known-Answer Test (KAT) vectors for AES-128-CCM.
  *

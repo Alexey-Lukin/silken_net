@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L4b — EIS (Electrochemical Impedance Spectroscopy) model for Gen 2.0 EBFC.
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * hal_mock.h — Minimal STM32 HAL stubs for host-based unit testing.
  *

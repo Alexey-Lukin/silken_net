@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Stdlib-only drift check for firmware/common/logmel_*.h.
 
 Runs in the LIGHT firmware CI job (`ci.yml › firmware_test`) — no conda, no

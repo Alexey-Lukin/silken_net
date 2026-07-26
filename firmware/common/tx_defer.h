@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * tx_defer.h — [FW.10] Зимовий кенозис передачі (One-Home: Soldier-глю
  * та host-тести компілюють цей самий предикат — без копій).

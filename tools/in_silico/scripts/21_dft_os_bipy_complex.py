@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L3 step 2 — frontier orbitals of the Os redox mediator (minimal d-orbital model).
 

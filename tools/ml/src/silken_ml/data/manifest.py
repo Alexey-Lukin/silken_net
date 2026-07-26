@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Committed corpus manifest — pins the dataset for reproducibility (sha256, not a folder).
 
 ESC-50 real files are pinned by ``sha256`` + license; the synthetic classes are pinned by

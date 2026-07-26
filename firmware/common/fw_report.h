@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * fw_report.h — [SEC.20] wire-звіт contract-стану: що РЕАЛЬНО біжить у вузлі.
  *

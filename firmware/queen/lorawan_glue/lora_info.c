@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * lora_info.c — [ARCH.34] owned мінімум (шаблон template: лише те, що
  * профіль реально вмикає — EU868, без Kms/ClassB/CtxMgmt/dual-core).

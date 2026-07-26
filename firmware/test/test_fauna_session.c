@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_fauna_session.c — [ARCH.40] host-тести монолітної fauna-сесії.
  *

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 /*
  * mps2_an386.ld — [FW.55] лінкер-карта QEMU mps2-an386 (Cortex-M4 SMM, AN386).
  *

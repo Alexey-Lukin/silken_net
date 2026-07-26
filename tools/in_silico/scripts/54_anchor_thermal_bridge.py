@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 HW.34 — Axial thermal-bridge analysis of the central bus conductor through the Zone-2 PEEK break.
 

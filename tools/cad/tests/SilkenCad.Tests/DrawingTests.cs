@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 namespace SilkenCad.Tests;
 
 // Pure-logic tests for the CEM-native drawing generator (tools/cad/docs/drawings_program.md). String-

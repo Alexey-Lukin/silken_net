@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """05_parity_dump.py — [bench] FW.55 silicon-confirm: parity-дамп плати ↔ host-голден.
 
 QEMU-нога вже довела byte-exact ARM↔x86 на ISA-рівні + фіт у 64КБ SRAM

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * logmel_parity_core.h — [FW.4] спільне ядро перевірки CMSIS-шляху Compute_LogMel.
  *

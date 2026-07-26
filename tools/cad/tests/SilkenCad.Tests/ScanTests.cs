@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 namespace SilkenCad.Tests;
 
 // wallParam scan golden tests (ARCH.25 / HW.33) — pure-managed (Connectivity, no PicoGK Library.Go),

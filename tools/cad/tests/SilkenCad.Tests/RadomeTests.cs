@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 namespace SilkenCad.Tests;
 
 // Pure-logic golden tests for the PEEK Radome (Деталь 4, 02_01 §5.2) — CEM parse + bayonet mate-fit

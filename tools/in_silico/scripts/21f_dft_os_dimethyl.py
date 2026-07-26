@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """L3 — Os mediator on the REAL 4,4'-dimethyl-bpy ligand (OS-RECOMPUTE 2026-06-17).
 
 The verified device mediator is Zafar 2012's [Os(4,4'-dimethyl-2,2'-bipyridine)₂(PVI)Cl]⁺

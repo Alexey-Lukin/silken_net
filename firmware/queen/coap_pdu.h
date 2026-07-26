@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * coap_pdu.h — [FW.56] мінімальний CoAP PDU builder/parser (RFC 7252, pure).
  *

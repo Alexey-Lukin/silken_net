@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * soldier_cmd_queue.h — [FW.20-Q2] черга Soldier-bound команд (0x9A, 0x9E).
  *

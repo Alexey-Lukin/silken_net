@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """24d — FO-DFT coupling t_ij for the Cu–Ru ZIF hop (CHEM.32 rigour upgrade).
 
 Same two-state Mulliken–Hush diabatisation as 24b (FO-DFT for Cu–Co), applied to the

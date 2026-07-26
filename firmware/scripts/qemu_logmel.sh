@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # firmware/scripts/qemu_logmel.sh — [FW.4] QEMU-M4 нога log-mel DSP:
 # CMSIS-шлях Compute_LogMel (arm_rfft_fast_f32, soft-float = ABI WLE5 без FPU)
 # на qemu-system-arm (mps2-an386): golden-parity (спільне ядро з host-ctest,

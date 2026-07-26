@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """06_uart_dma_ears.py — [bench] FW.3 silicon-confirm: DMA-вуха UART RX-кільця.
 
 Логіка кільця host-доведена (test_uart_rx_ring.c: гонки знімка, wrap,

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * stack_paint.h — [FW.55/FW.4] спільний paint/scan стек-вотермарки для
  * bare-metal ніг (QEMU mps2-an386 + WLE5 bench).

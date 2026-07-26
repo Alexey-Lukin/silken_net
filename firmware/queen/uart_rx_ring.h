@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * uart_rx_ring.h — [FW.3] кільце-вид поверх circular-DMA UART RX (pure).
  *

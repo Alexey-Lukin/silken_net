@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * helium_mac.c — [ARCH.34] adapter: Helium_Mac_SendSos поверх vendored
  * LoRaMac-node (LmHandler). Викликач — queen_helium_lorawan_uplink()

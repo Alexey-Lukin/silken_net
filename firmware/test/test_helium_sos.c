@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_helium_sos.c — [ARCH.34 L3] Pure-половина Helium SOS-маяка Королеви.
  *

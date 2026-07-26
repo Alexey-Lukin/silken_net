@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
 # [E.63/SCC-rate] SCC-generation rate — параметрична модель, single-source.

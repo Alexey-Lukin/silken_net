@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * main.c — [FW.55] QEMU-M4 нога parity-прогону (qemu-system-arm -M mps2-an386).
  *

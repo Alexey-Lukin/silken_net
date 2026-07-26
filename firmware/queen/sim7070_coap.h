@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * sim7070_coap.h — [FW.3/FW.56] CoAP-PUT розмова з SIM7070G (pure-оркестратор).
  *

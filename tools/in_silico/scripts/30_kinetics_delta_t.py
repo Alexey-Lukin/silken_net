@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 L4 — EBFC kinetics: predict delta_t (supercapacitor charge time) from
 glucose concentration and temperature.

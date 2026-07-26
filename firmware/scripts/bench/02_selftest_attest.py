@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """02_selftest_attest.py — [bench] крипто-атестація кремнію (FW.2 CCM + sym KAT).
 
 Host-сторона selftest'ів уже доведена (test_ccm_selftest/test_sym_selftest:

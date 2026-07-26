@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /* flash_ota.c — [FW.52-г] OTA contract blob writer. Деталі — flash_ota.h. */
 #include "flash_ota.h"
 #include <string.h>

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """03_power_profile.py — [bench] PPK2 power-профілі: STOP2 floor / E_cycle / Vcap recharge.
 
 Артефакти CSV → bench_artifacts/: пряме паливо для E.63 (медіана перезаряду →

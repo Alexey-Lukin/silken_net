@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * syscalls.c — [FW.55] newlib-ретаргет bench-ноги: РЕАЛЬНИЙ STM32WLE5JC.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * wall_time.h — wall-clock delta/elapsed helpers (One-Home: Soldier firmware
  * ТА host-тести компілюють цей самий код — без копій).

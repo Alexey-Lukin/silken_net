@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * sym_kat_vectors.h — NIST SP 800-38A Known-Answer вектори для ECB/CBC POST.
  *

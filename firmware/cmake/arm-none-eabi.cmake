@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # firmware/cmake/arm-none-eabi.cmake — CMake toolchain file for STM32WLE5JC.
 #
 # [FW.46] Pinned bare-metal cross-compile toolchain for the SilkenNet firmware

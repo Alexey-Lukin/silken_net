@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * soldier_hal_check.c — [FW.46] HAL compile-lane: ПЕРШИЙ справжній компайл
  * soldier/main.c проти vendored stm32wlxx-hal-driver (ARM, soft-float).

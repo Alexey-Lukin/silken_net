@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/firmware/gen_bytecode.sh — [FW.46] regenerate the committed mruby
 # bytecode mirror firmware/common/lorenz_bytecode.h from bio_contract.rb.
 #

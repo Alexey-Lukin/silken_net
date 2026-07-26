@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * logmel.h — Compute_LogMel: акустичний DSP-фронтенд Солдата (FW.25).
  *

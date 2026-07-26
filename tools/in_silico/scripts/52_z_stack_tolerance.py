@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 HW.8.7 — Axial Z-stack tolerance analysis (3-spring) for the Soldier capsule ↔ anchor blind-mate.
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Build the committed presentation gallery (docs/images/cad/) — deterministic, re-runnable.
 #
 #   CEM-native drawings → SVG (vector; GitHub renders inline, wiki:sync carries it)

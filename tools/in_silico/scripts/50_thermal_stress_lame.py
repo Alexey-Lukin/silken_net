@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 HW.3.IS — Lamé thermal stress analysis for Ti↔PEEK press-fit.
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # firmware/mruby/build_config.rb — [FW.46] SilkenNet mruby build configuration.
 #
 # Builds:

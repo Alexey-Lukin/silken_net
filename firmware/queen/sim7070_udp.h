@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * sim7070_udp.h — [FW.60] сира UDP-розмова CA*-сім'ї SIM7070G (pure-оркестратор).
  *

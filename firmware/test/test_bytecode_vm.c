@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_bytecode_vm.c — [FW.46] Run the committed mruby bytecode in a MINIMAL VM.
  *

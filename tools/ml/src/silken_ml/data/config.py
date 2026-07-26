@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Configuration for the baseline acoustic dataset + model — config-driven, no magic numbers.
 
 Every knob lives here so a run is reproducible from a single frozen object (its ``hash()``

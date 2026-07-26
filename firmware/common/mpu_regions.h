@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * mpu_regions.h — [SEC.21] MPU region-config: NX-stack + RO-code (draft).
  *
