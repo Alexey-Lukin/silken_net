@@ -1159,7 +1159,7 @@ Layout-компоненти (`AuthLayout`, `DashboardLayout`) використо
 
 ### 12.1 Архітектурні правила (foundational)
 
-1. **Жодних hardcoded user-facing strings.** Все, що користувач бачить (UI текст, flash, error JSON, mailer body) — через `I18n.t`. Hardcoded UA/EN рядки у `app/views/components/**/*.rb` та `app/controllers/api/v1/**/*.rb` блокуються CI.
+1. **Жодних hardcoded user-facing strings.** Все, що користувач бачить (UI текст, flash, error JSON, mailer body) — через `I18n.t`. Hardcoded UA/EN рядки у `app/views/components/**/*.rb` та `app/controllers/api/v1/**/*.rb` **мають** блокуватись CI. ⚠️ **Фактично не блокуються:** job `i18n_check` (`ci.yml`) ганяє лише `i18n-tasks missing` / `check-consistent-interpolations` / `check-normalized` — усі три звіряють **парність ІСНУЮЧИХ `t()`-ключів** між локалями; сканера сирих строкових літералів у репо немає, тож хардкод у «захищеній» зоні проходить зеленим. Робота → [`00_07`](00_07_Action_Plan_Tracker) I18N.1.
 2. **Per-domain YAML layout.** Файли локалізації лежать як `config/locales/<domain>/{uk,en}.yml`. Кожен «домен» = верхньокореневий namespace (`wallets`, `codex`, `actuators`, `flash`, `errors`, ...). Масштабовано до десятків доменів без monolithic `en.yml`. Детальна структура — §12.3.
 3. **Class-name autoscope для Phlex.** `ApplicationComponent` override'ить `t` (від `Phlex::Rails::Helpers::Translate`):
    - `t(".key")` всередині `Codex::Show` резолвить у `I18n.t("codex.show.key")`
@@ -1529,7 +1529,7 @@ Stimulus controller, який скидає `opacity-0 translate-y-2` коли е
 | Tool | Purpose |
 |---|---|
 | `bin/migrate-tailwind-tokens` | Word-boundary `gsub` codemod with `--dry-run` and `--report` modes. Mapping table mirrors § 3.1 (4-tier surfaces + 3-level text + primary tokens). |
-| `bundle exec rake gaia:lint_tokens` | CI-grade compliance check. Exits 1 if any raw Tailwind colour utility is found in `app/views/components/`. Brand-glow allowlist baked in (see source). |
+| `bundle exec rake gaia:lint_tokens` | **Локальна** compliance-перевірка — `exit 1`, якщо в `app/views/components/` знайдено сиру Tailwind-утиліту кольору; brand-glow allowlist усередині (див. джерело). ⚠️ **НЕ підключена до `.github/workflows/`** (нуль згадок), тож правило документоване, а не enforced — стан і робота живуть у [`00_07`](00_07_Action_Plan_Tracker) UI.1. Дзеркалить чесне формулювання у ✅ Статус вище; попереднє «CI-grade» суперечило власному Статусу того ж документа. |
 
 ### 16.2 Migration workflow per domain
 
