@@ -1474,7 +1474,7 @@
 
 > Юридично-бізнесовий + академ-валідаційний + партнер-outreach work-stream — канон `07_01`/`07_02`/`07_03`. Партнер-режим **passive** (рішення на боці ВНЗ, не дотискати): лаб-MoU ЧНУ/ЧДТУ (Спрягайло/Гончаров-якорі) + персональні контакти СЄУ/ЧІПБ/ЧМА. STK = B2G/media outreach pool, TRL-trigger-gated. NB: пов'язані BIZ за канон-домом живуть у `§05` (BIZ.13 slashing); юр-хаб §07 = UNI.14 (Аблязов).
 
-> **🧭 Орієнтир (для не-юриста).** Машинну половину юр/бізнес-домашки написано — але це **чернетки й спеки, не підписані документи, не куплені поліси й не пройдений юр-review**. Майже кожен наступний хід = віддати готовий пакет конкретній людині. Індекси: [`legal_registry.md`](protocols/legal/legal_registry.md) · [`business_registry.md`](protocols/business/business_registry.md); маршрути «пакет → людина» — [`legal_business_outreach.md`](protocols/outreach/legal_business_outreach.md).
+> **🧭 Орієнтир (для не-юриста).** Машинну половину юр/бізнес-домашки здебільшого написано — але написане тут це **чернетки й спеки, а не підписані документи, куплені поліси чи пройдений юр-review**: майже кожен наступний хід = віддати готовий пакет конкретній людині. **Виняток — те, що вже тримається CI-гейтом** (SPDX-заголовки UNI.3 · storefront-лексика BIZ.22 · DCO UNI.20 · SBOM-звітність BIZ.24): це не чернетка, а самозастосовний код, і людини воно не чекає — тож не шукай там своєї дії. Індекси: [`legal_registry.md`](protocols/legal/legal_registry.md) · [`business_registry.md`](protocols/business/business_registry.md); маршрути «пакет → людина» — [`legal_business_outreach.md`](protocols/outreach/legal_business_outreach.md).
 >
 > **👤 Особиста черга** (усе інше — машинне, чуже або ще не час):
 > 1. **™-заявка** через повіреного УкрНОІВІ (UNI.15) — єдиний крок без передумов. **Вікно:** пріоритет-дата має лягти ДО публічного disclosure (UNI.3), бо назви вже світяться в публічному repo.
@@ -1550,6 +1550,7 @@
 - **P3** · 👤+⚖️ · 🟡 · → `07_01 §3`, `07_02 §7.3`
 - **Стан:** 🤖 registry-matrix + buyer-integrity-планка готові ([`carbon_registry_matrix.md`](protocols/business/carbon_registry_matrix.md) + [`carbon_integrity_standards.md`](protocols/business/carbon_integrity_standards.md)) — конвертація SCC utility-token → сертифіковані kg CO₂ для institutional buyers потребує independent methodology audit (Verra / Gold Standard — Puro.earth окремо, лише death-path біочар). Канон `07_01 §3`, `07_02 §7.3`.
 - [ ] ⚖️ вибір реєстру + integrity-планка (ICVCM CCP / VCMI) — матриця й metrology-присуд готові (див. Стан)
+- [ ] 👤 запит до Міндовкілля (нац-focal-point) — Article 6 / corresponding adjustment · double-counting для UA-проєкту; нуль вартості, не гейтований нічим, питання виписані в [`carbon_registry_matrix.md`](protocols/business/carbon_registry_matrix.md)
 - [ ] 👤 engagement methodologist (~$50-100k) → PDD — gated на реальний ліс + MRV-дані + VVB (роки downstream)
 - [ ] 🔗 залежить від HW.3 (Arrhenius) + UNI.4/UNI.5 (DFT+diffusion)
 

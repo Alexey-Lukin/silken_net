@@ -40,5 +40,5 @@
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | §07 BIZ.*/UNI.* — **дім стану** кожного артефакта (що зроблено, що 👤/⚖️) |
 | [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md) | Відкриті юр/бізнес-передумови NaaS (SLA · страхування · RWA) — дім присудів |
 | [`07_03`](../../07_03_Academic_Integration_and_IP.md) | IP/ліцензійна постава (§3) + академ-канал, на який спираються OSS-стандарти |
-| [`legal/legal_registry.md`](../legal/legal_registry.md) | Сусідній реєстр — право (MSA/ToS · entity · податки · ™ · securities · SPDX) |
+| [`legal/legal_registry.md`](../legal/legal_registry.md) | Сусідній реєстр — право (MSA/ToS · entity · податки · ™ · securities) |
 | [`../research/`](../research/R3_carbon_registries.md) | Вхідні web-знімки (R1–R6) — сировина цих артефактів, **не** джерело істини |

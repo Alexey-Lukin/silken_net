@@ -64,9 +64,14 @@
 #   · third-party notices — a file carrying somebody else's copyright is reported and
 #     NEVER stamped (FOREIGN_NOTICE_RE); two vendor-derived firmware headers are in that
 #     state today. Founder call 2026-07-26: no tag at all rather than an inexact one.
+#   · encrypted / key material (*.enc, *.key) — not text, corrupting it is unrecoverable.
+#   · tools/in_silico/conda-lock.yml — a third-party tool's output; conda-lock cannot be
+#     taught to emit the tag, and it rewrites the file wholesale.
 #   · docs/**, .github/.claude/.kamal, public/, vendor/, *.tfvars.example (templates a
 #     user copies into their own private config), *.toml manifests (tool config, the same
-#     class as Gemfile), and the generated bin/ binstubs.
+#     class as Gemfile), and the generated bin/ binstubs — of which exactly three are
+#     hand-written and therefore IN scope, enumerated in BIN_OWNED because no regex can
+#     tell authored-by-us from generated-for-us.
 #
 # BUILD LOGIC IS IN SCOPE, and that reverses an earlier call of mine. CMakeLists.txt, the
 # cmake toolchain file, both linker scripts and the host-test Makefile were first excluded
@@ -180,7 +185,8 @@ module SpdxHeaders
     %r{\Afirmware/queen/lorawan_glue/se-identity\.h\z},     # Semtech Revised BSD + ST portions
     %r{\.erb\z},                               # emits into rendered output — named ceiling
     %r{\.enc\z}, %r{\.key\z},                  # encrypted blobs: never touched
-    %r{\Acontracts/(?:node_modules|out|cache|crytic-export|medusa-corpus)}
+    %r{\Acontracts/(?:node_modules|out|cache|crytic-export|medusa-corpus)},
+    %r{\A\.[^/]+\z}                            # root dotfiles (.rubocop.yml, .rspec…) — tool config, Gemfile class
   ].freeze
 
   # Allow-list: a file is touched ONLY if some rule names its tree AND its extension.
@@ -195,10 +201,10 @@ module SpdxHeaders
     [ "db/",        %w[.rb .yml],                    AGPL ],
     [ "config/",    %w[.rb .yml .yaml],              AGPL ],
     [ "firmware/",  [ ".c", ".h", ".rb", ".py", ".sh", ".cmake", ".ld" ], AGPL ],
-    [ "tools/",     %w[.py .rb .sh .cs],             AGPL ],
+    [ "tools/",     %w[.py .rb .sh .cs .yml],        AGPL ],
     [ "terraform/", %w[.tf .sh],                     AGPL ],
     [ "subgraph/",  %w[.ts .sh .yaml .graphql],      AGPL ],
-    [ "deploy/",    %w[.rb .sh],                     AGPL ],
+    [ "deploy/",    %w[.rb .sh .yaml],               AGPL ],
     [ "bin/",       %w[.sh],                         AGPL ]
   ].freeze
 
@@ -322,6 +328,23 @@ module SpdxHeaders
     end
   end
 
+  # 🔴 The allow-list's blind spot, converted into a tripwire. `licence_for` answers nil
+  # for a path no ALLOW prefix covers — so a source file dropped into a BRAND-NEW top-level
+  # directory is not flagged, not counted, not mentioned: the gate is silent about a tree
+  # it has never heard of. That is the honest boundary of "we watch new files" and it was
+  # found by probing the gate rather than by reading it. Instead of documenting the hole,
+  # this reports it: a file whose extension IS a language we know, that no rule admits and
+  # no rule denies, means somebody added a tree nobody has licensed yet. Decide it, then
+  # record the decision in ALLOW or DENY — the gate refuses to guess.
+  def unclassified(root, paths = [])
+    tracked_files(root, paths).select do |rel|
+      next false if DENY.any? { |re| re.match?(rel) }
+      next false unless LINE_COMMENT.key?(File.extname(rel)) || NAMED_BUILD_FILES.include?(File.basename(rel))
+
+      licence_for(rel).nil?
+    end
+  end
+
   # Applies one :insert action; any other status is a no-op. Returns the resulting leading
   # lines, or nil when nothing was written. The status guard lives HERE and not only in the
   # caller: applied to an :ok record this doubles the tag, and to a :mismatch or
@@ -382,8 +405,15 @@ if __FILE__ == $PROGRAM_NAME
     # `git ls-files` return nothing with exit 0, which would otherwise read as "all clean".
     abort "spdx_headers ✗ — no in-scope files found (wrong path argument?)" if actions.empty?
 
+    stray = SpdxHeaders.unclassified(root, paths)
+    unless stray.empty?
+      warn "spdx_headers ✗ — #{stray.size} source file(s) in a tree no rule covers (neither ALLOW nor DENY):"
+      stray.each { |p| warn "  ? #{p}" }
+      warn "Decide the licence, then record it in ALLOW or DENY — the gate will not guess.\n\n"
+    end
+
     if inserts.empty?
-      held = foreign.size + unsupported.size + mismatch.size
+      held = foreign.size + unsupported.size + mismatch.size + stray.size
       puts "spdx_headers #{held.zero? ? '✓' : '✗'} — #{ok} in-scope file(s) tagged, #{held} held back."
       # foreign / unsupported / mismatch are ALL failures here. Leaving them out of the exit
       # code was a live silent lie: the warnings go to stderr, which CI folds away, while the

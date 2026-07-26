@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Conda environment for the SilkenNet ML toolkit (`silken_ml`).
 #
 # Mirrors the `tools/in_silico/environment.yml` pattern (conda-forge, pinned,

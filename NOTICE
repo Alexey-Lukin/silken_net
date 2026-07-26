@@ -23,13 +23,19 @@ CERN-OHL-S-2.0 even if the surrounding prose is CC-BY-SA-4.0.
 
 Every in-scope source file carries its own SPDX-License-Identifier line; the
 zone map above stays the authority, and the per-file tags mirror it so that a
-licence scanner reaches the same answer without reading this file. A handful of
-files are deliberately untagged and each exclusion is reasoned in the header of
-scripts/spdx_headers.rb: data that a generator re-renders (locale YAML, schema
-dumps), formats with no comment syntax (JSON), and — importantly — files that
-carry a THIRD PARTY's copyright notice. On the last group we make no licence
-claim at all: their own notices govern, and the vendored components are listed
-in ./THIRD_PARTY_NOTICES.
+licence scanner reaches the same answer without reading this file. Several
+classes of file are deliberately left untagged — together a few hundred of them,
+so absence of a tag is never evidence of absence of a licence. The reason for
+each exclusion is recorded in the header of scripts/spdx_headers.rb, which is
+the authoritative list; the classes are, in brief: data a generator re-renders
+(locale YAML, schema dumps, lock files), formats with no comment syntax (JSON),
+templates that emit into rendered output (ERB), documentation (covered by
+LICENSE-DOCS.txt), generated binstubs, tool config — and files carrying a
+THIRD PARTY's copyright.
+
+On that last class we make no licence claim at all: the upstream notice inside
+each file governs. Those files, and the vendored submodules and packages they
+come from, are inventoried in ./THIRD_PARTY_NOTICES.
 
 ================================================================================
 PATENT NON-ASSERTION PLEDGE

@@ -322,7 +322,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 
 | Зона | Ліцензія | Дім |
 |---|---|---|
-| Код (backend / firmware / tooling) | **GNU AGPL-3.0-or-later** | `/LICENSE` |
+| Код (backend / firmware / tooling / IaC) | **GNU AGPL-3.0-or-later** — per-file SPDX (гейт `spdx_headers.rb --check`, [`00_06 §3`](00_06_SSOT_Documentation_Standard)) | `/LICENSE` |
 | Смарт-контракти (`contracts/*.sol`) | **MIT** — per-file SPDX (on-chain composability / audit-tooling / OpenZeppelin-consistency; ратифіковано DOC-T.47) | SPDX headers |
 | Залізо (gyroid / EBFC / PCB-дизайн) | **CERN-OHL-S-2.0** | `/LICENSE-HARDWARE.txt` |
 | Документація (`docs/**`) | **CC-BY-SA-4.0** | `/LICENSE-DOCS.txt` |

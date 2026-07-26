@@ -9,10 +9,32 @@ conda / `pip-licenses` (tools).
 
 BUNDLED IN THE PRODUCT (must be AGPL-3.0-compatible)
 ---------------------------------------------------
-Firmware (firmware/extern/, git submodules):
+Firmware (firmware/extern/, all 8 git submodules; licences read from each
+submodule's own LICENSE file, 2026-07-26):
   - ARM CMSIS-DSP ............ Apache-2.0
   - ARM CMSIS_6 .............. Apache-2.0
   - mruby .................... MIT
+  - monocypher ............... BSD-2-Clause OR CC0-1.0 (dual; public-domain first,
+                               BSD as the fallback option)
+  - cmsis-device-wl .......... Apache-2.0 (STMicroelectronics CMSIS device layer)
+  - stm32wlxx-hal-driver ..... BSD-3-Clause (Copyright 2020-2021 STMicroelectronics)
+  - subghz-phy ............... BSD-3-Clause-Clear (Copyright Semtech Corporation 2021)
+  - stm32-mw-lorawan ......... BSD-3-Clause (Revised BSD; Copyright Semtech
+                               Corporation 2013)
+
+Vendor-derived firmware headers kept IN our tree (not submodules) — these carry the
+upstream copyright, we make no licence claim over them, and they are deliberately
+excluded from our per-file SPDX tagging (see NOTICE and scripts/spdx_headers.rb):
+  - firmware/hal_glue/stm32wlxx_hal_conf.h ... Copyright (c) 2020 STMicroelectronics
+  - firmware/queen/lorawan_glue/se-identity.h  Revised BSD; (C)2020 Semtech,
+                                               portions Copyright 2020 STMicroelectronics
+
+Code-as-CAD tooling (tools/cad/):
+  - LEAP71 ShapeKernel ....... Apache-2.0 (git submodule)
+  - LEAP71 LatticeLibrary .... Apache-2.0 (git submodule)
+  - PicoGK ................... Apache-2.0 (NuGet; read from package .nuspec)
+  - netDxf.netstandard ....... MIT (NuGet; read from package .nuspec)
+  - SkiaSharp ................ MIT (transitive NuGet; read from package .nuspec)
 
 Backend (Ruby gems — Gemfile; key direct deps, full transitive via license_finder):
   - Rails & most gems ........ MIT / BSD / Apache-2.0

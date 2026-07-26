@@ -227,7 +227,7 @@
 
 **Не є Конфіденційною інформацією** (жодне зобов'язання §C.3 не застосовується), зокрема:
 
-- (1) 🔓 **Вже-публічне ядро SilkenNet:** код backend/firmware/tooling під **AGPL-3.0-or-later**, смарт-контракти `contracts/*.sol` під **MIT** (per-file SPDX; ратифіковано DOC-T.47), hardware-специфікації під **CERN-OHL-S-2.0**, документація під **CC-BY-SA-4.0**, а також **defensive-published** інвентивне ядро (Synergy A/B — TDCommons + публічний repo + Стаття 1). Формат пакета, lightweight-crypto-інтеграція, RFQ-specs, креслення — **prior art, не secret**. Ліцензійна мапа зон — дім [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) (дзеркало кореневих LICENSE-файлів; правити там);
+- (1) 🔓 **Вже-публічне ядро SilkenNet:** код backend/firmware/tooling під **AGPL-3.0-or-later** (per-file SPDX), смарт-контракти `contracts/*.sol` під **MIT** (per-file SPDX; ратифіковано DOC-T.47), hardware-специфікації під **CERN-OHL-S-2.0**, документація під **CC-BY-SA-4.0**, а також **defensive-published** інвентивне ядро (Synergy A/B — TDCommons + публічний repo + Стаття 1). Формат пакета, lightweight-crypto-інтеграція, RFQ-specs, креслення — **prior art, не secret**. Ліцензійна мапа зон — дім [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) (дзеркало кореневих LICENSE-файлів; правити там);
 - (2) інформація, що стала публічною **не з вини** Одержувача;
 - (3) вже правомірно відома Одержувачу до розкриття (з доказом);
 - (4) незалежно розроблена Одержувачем без використання Конфіденційної інформації;
@@ -271,7 +271,7 @@
 ### §C.7 Юр-review checklist (ДО підпису, 👤)
 
 - [ ] 👤 **UA-юр-review** — Аблязов Д.Е. (СЄУ) + IP-юрист: звірити з ЦК України + ЗУ про комерц-таємницю (**UNI.14**).
-- [ ] 👤 Підтвердити §C.2(1) carve-out проти актуальних кореневих ліцензій (`/LICENSE` AGPL · SPDX-MIT у `contracts/*.sol` · `/LICENSE-HARDWARE.txt` · `/LICENSE-DOCS.txt` · `/NOTICE`) — щоб NDA не суперечив open-license.
+- [ ] 👤 Підтвердити §C.2(1) carve-out проти актуальних кореневих ліцензій (`/LICENSE` AGPL + per-file SPDX по source-дереву · SPDX-MIT у `contracts/*.sol` · `/LICENSE-HARDWARE.txt` · `/LICENSE-DOCS.txt` · `/NOTICE`) — щоб NDA не суперечив open-license.
 - [ ] 👤 Заповнити всі `PLACEHOLDER`: сторони, тема MoU, строки (N/M), forum спорів, поріг need-to-know.
 - [ ] 👤 Узгодити з **co-authorship**-частиною MoU (§C.5(d)) — щоб конфіденційність не блокувала спільну публікацію.
 - [ ] 👤 Зафіксувати підписанта per-engagement: operational-vehicle (наявна UA-компанія, Дія.City-резидент) або founder як фізична особа — юр-звірити правочинність та відповідність тришару «оперує / володіє / емітує» ([`07_03 §3`](../../07_03_Academic_Integration_and_IP.md); residual — [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20).

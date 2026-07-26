@@ -474,6 +474,31 @@ RSpec.describe SpdxHeaders do
       Dir.mktmpdir { |root| expect { described_class.plan(root:, paths: []) }.to raise_error(/git ls-files failed/) }
     end
 
+    # The allow-list's blind spot, made loud. Probing the gate (not reading it) showed a
+    # source file in a brand-new top-level directory was invisible: not flagged, not
+    # counted, not mentioned. `unclassified` turns that silence into a decision request.
+    describe ".unclassified" do
+      it "reports a source file in a tree no rule covers" do
+        with_repo("newmodule/orphan.rb" => "class Orphan; end\n") do |root|
+          expect(described_class.plan(root:, paths: [])).to be_empty
+          expect(described_class.unclassified(root)).to eq([ "newmodule/orphan.rb" ])
+        end
+      end
+
+      it "stays quiet for a covered tree, a denied path, and a non-code extension" do
+        with_repo(
+          "app/models/tree.rb" => "class Tree; end\n",
+          "docs/x.md" => "# doc\n",
+          "config/locales/en.yml" => "---\nen:\n",
+          "newmodule/data.xyz" => "0 0 0\n"
+        ) { |root| expect(described_class.unclassified(root)).to be_empty }
+      end
+
+      it "is empty for the real repository — every tree is adjudicated" do
+        expect(described_class.unclassified(File.expand_path("../..", __dir__))).to be_empty
+      end
+    end
+
     it "preserves CRLF line endings when a file uses them" do
       with_repo("app/models/tree.rb" => "# frozen_string_literal: true\r\nclass Tree; end\r\n") do |root|
         action = described_class.plan(root:, paths: []).first
