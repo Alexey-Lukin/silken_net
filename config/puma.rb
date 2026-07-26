@@ -65,8 +65,11 @@ max_io_threads ENV.fetch("PUMA_MAX_IO_THREADS", 16).to_i
 # Total DB connections per database = WEB_CONCURRENCY × pool (see database.yml).
 #
 # Defaults:
-#   GCP  (2 vCPU):  WEB_CONCURRENCY=2 → 2 workers × 3 threads = 6 threads
-#   Akash (4 CPU):  WEB_CONCURRENCY=4 → 4 workers × 3 threads = 12 threads
+#   Akash (4 CPU):      WEB_CONCURRENCY=4 → 4 workers × 3 threads = 12 threads  ← live path
+#   Kamal/GCP fallback: WEB_CONCURRENCY=2 → 2 workers × 3 threads = 6 threads
+#     — deploy.yml default for the fallback path only, NOT a spec of any live host:
+#       post-pivot GCP runs just the e2-small Ingress Anchor, which hosts no Puma
+#       (see the header above; terraform/compute.tf). [DOC-T.50]
 #
 # In development we run single-mode (workers=0) by default, which matches the
 # `cluster do … end` block below — the connection-lifecycle hooks intentionally
