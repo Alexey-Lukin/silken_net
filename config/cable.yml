@@ -26,7 +26,7 @@ test:
 #
 # Turbo Stream channels using this:
 #   - "geospatial_matrix" (map updates)
-#   - "telemetry_stream" (live telemetry feed)
+#   - "telemetry_stream_org_#{id}" (live telemetry feed)
 #   - [@wallet, :transactions] (wallet balance)
 #   - "ews_alerts_org_#{id}" (alert notifications)
 #   - [@cluster, :alerts] (cluster alerts)

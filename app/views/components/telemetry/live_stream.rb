@@ -3,12 +3,23 @@
 
 module Telemetry
   class LiveStream < ApplicationComponent
+    # Організація глядача — НЕ декорація: вона і є скоуп стріму. Голий
+    # `"telemetry_stream"` віддавав кожному автентифікованому користувачу
+    # телеметрію шлюзів УСІХ організацій, і жоден REST/Pundit-аудит цього не
+    # бачив: HTTP-відповідь тенант-даних не несе взагалі, витік приїжджав
+    # вебсокетом уже після підписки.
+    def initialize(organization:)
+      @organization = organization
+    end
+
     def view_template
       div(class: "space-y-6 animate-in fade-in duration-1000") do
         header_section
 
-        # Підписка на SolidCable / Turbo Streams.
-        turbo_stream_from "telemetry_stream"
+        # Підписка на SolidCable / Turbo Streams. Без організації підписки
+        # немає зовсім (fail-closed): сторінка лишається читабельною, живих
+        # оновлень просто не надходить — дзеркало `Alerts::Index`.
+        turbo_stream_from "telemetry_stream_org_#{@organization.id}" if @organization
 
         # Контейнер з відносною позицією для накладання Canvas та таблиці.
         div(class: "relative border border-gaia-border bg-gaia-surface min-h-[400px] md:min-h-[600px] overflow-hidden rounded-sm shadow-[0_0_40px_rgba(6,78,59,0.2)]") do

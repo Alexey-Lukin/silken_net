@@ -582,7 +582,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 
 | Компонент | Файл | Props | Опис |
 |---|---|---|---|
-| `Telemetry::LiveStream` | `telemetry/live_stream.rb` | — | Live telemetry HUD: Matrix Rain canvas (Stimulus), sticky `<thead>`, `turbo_stream_from "telemetry_stream"` |
+| `Telemetry::LiveStream` | `telemetry/live_stream.rb` | `organization:` | Live telemetry HUD: Matrix Rain canvas (Stimulus), sticky `<thead>`, `turbo_stream_from "telemetry_stream_org_{id}"` (org — це скоуп стріму, не декорація; §8.1) |
 | `Telemetry::LogEntry` | `telemetry/log_entry.rb` | `log:` | Один декодований рядок телеметрії, вставлений `UnpackTelemetryWorker` |
 
 #### Oracle Visions
@@ -816,11 +816,15 @@ Canvas-ефект Matrix digital rain з hex-символами (`0-9A-F`). Canv
 
 Оновлення DOM в реальному часі через `ActionCable` (Solid Cable).
 
-Реєстр звірено з кодом ПОВНІСТЮ (UI.4, 2026-07-27) — обидва боки, і продюсери, і підписники.
+Реєстр звірено з кодом по ОБИДВА боки — і продюсери, і підписники (UI.4, 2026-07-27).
+
+> 🔴 **Двох боків НЕ досить — є третя вісь, і саме вона пропустила дефект.** «Продюсер існує» ⊕ «підписник існує» обидва резолвляться чисто для тракту, чия сторінка **недосяжна жодним маршрутом**: компонент-підписник просто ніхто не рендерить. Так прожив `"geospatial_matrix"` — `Dashboard::Map` не рендерився ЖОДНОГО разу за всю історію репо, а `Dashboard::Home` малює на його місці вічний спінер. Тобто повний контракт живого тракту — **продюсер ⟷ підписник ⟷ маршрут**, і третю ланку не бачить ані звірка реєстру, ані планований гейт пари. Стан → [`00_07`](00_07_Action_Plan_Tracker) UI.4.
+>
+> 🔴 **І вісь СКОУПУ ортогональна всім трьом.** `"telemetry_stream"` був голим глобальним рядком: продюсер є, підписник є, маршрут є — тракт «здоровий» за будь-якою з осей вище, і при цьому віддавав кожному автентифікованому глядачу `uid`, IP та сирий payload шлюзів УСІХ організацій. Полагоджено org-скоупом (2026-07-27, [`00_07`](00_07_Action_Plan_Tracker) SEC.25). Чому цього не бачить REST/Pundit-аудит: HTTP-відповідь `/telemetry/live` тенант-даних не несе взагалі — це хром сторінки й порожній плейсхолдер, а витік приїжджає вебсокетом **після** підписки. Тож перевіряти скоуп стріму мусить окремий гейт, і `SEC.16` тут не сусід, а інша вісь.
 
 | Stream | Підписка у | Продюсер(и) |
 |---|---|---|
-| `"telemetry_stream"` | `Telemetry::LiveStream` | `UnpackTelemetryWorker` (черга `uplink` — firehose) |
+| `"telemetry_stream_org_{id}"` | `Telemetry::LiveStream` | `UnpackTelemetryWorker` (черга `uplink` — firehose) |
 | `[wallet, :transactions]` | `Wallets::Show` | `BlockchainTransaction#broadcast_status_change` (рядок tx) · `Wallet#broadcast_balance_update` (frame-заглушка балансу, клас 2 §8.1а) |
 | `"ota_channel_{uid}"` | `Gateways::Show` · `Firmwares::Index` | `Downlink::PendingQueueService` [SEC.20] — живий FW.60 poll-тракт; `OtaTransmissionWorker` теж пише сюди, але сам **не має енкʼюера** (superseded) |
 | `[cluster, :alerts]` | `Clusters::Show` | `EwsAlert#broadcast_new_alert` · `#broadcast_alert_update` |

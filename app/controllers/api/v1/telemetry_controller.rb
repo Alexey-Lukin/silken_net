@@ -25,7 +25,7 @@ module Api
           format.html do
             render_dashboard(
               title: I18n.t("telemetry.live_title"),
-              component: Telemetry::LiveStream.new
+              component: Telemetry::LiveStream.new(organization: current_user.organization)
             )
           end
         end

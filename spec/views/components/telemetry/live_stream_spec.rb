@@ -7,8 +7,42 @@ RSpec.describe Telemetry::LiveStream do
   # Component is i18n-aware. Existing assertions match the English copy.
   around { |ex| I18n.with_locale(:en) { ex.run } }
 
+  let(:organization) { mock_model(Organization, id: 42) }
+
+  # Стрім скоуплений організацією глядача. Пін іде по РОЗПАКОВАНОМУ імені, а не
+  # по підписаному рядку (`04_06` BP #22): підпис ДЕТЕРМІНОВАНИЙ (чистий HMAC),
+  # тож асершн на сам токен був би не крихким, а гіршим — він пінив би
+  # `secret_key_base` і серіалізатор Turbo замість НАШОГО скоупу, і мовчки
+  # порвався б на ротації ключа. До цього блоку жоден приклад цього файлу не
+  # пінив підписку взагалі — ані ціль, ані сам факт.
+  describe "stream scoping" do
+    def subscribed_streams(markup)
+      markup.scan(/signed-stream-name="([^"]+)"/).flatten
+            .map { |s| Turbo::StreamsChannel.verified_stream_name(s) }
+    end
+
+    it "subscribes to the viewer's organization stream, never a global one" do
+      expect(subscribed_streams(render_component(organization: organization)))
+        .to eq([ "telemetry_stream_org_42" ])
+    end
+
+    it "gives two organizations two different streams" do
+      other = mock_model(Organization, id: 7)
+
+      expect(subscribed_streams(render_component(organization: organization)))
+        .not_to eq(subscribed_streams(render_component(organization: other)))
+    end
+
+    it "subscribes to nothing at all when the viewer has no organization" do
+      markup = render_component(organization: nil)
+
+      expect(markup).not_to include("turbo-cable-stream-source")
+      expect(markup).to include("telemetry_feed") # сторінка лишається читабельною
+    end
+  end
+
   describe "rendering" do
-    let(:html) { render_component }
+    let(:html) { render_component(organization: organization) }
 
     it "renders with fade-in animation" do
       expect(html).to include("animate-in")
@@ -48,7 +82,7 @@ RSpec.describe Telemetry::LiveStream do
   end
 
   describe "table structure" do
-    let(:html) { render_component }
+    let(:html) { render_component(organization: organization) }
 
     it "renders table with role=table for accessibility" do
       expect(html).to include('role="table"')
@@ -72,7 +106,7 @@ RSpec.describe Telemetry::LiveStream do
   end
 
   describe "visual effects" do
-    let(:html) { render_component }
+    let(:html) { render_component(organization: organization) }
 
     it "renders with GPU compositing hints on canvas" do
       expect(html).to include("transform-gpu")
@@ -93,7 +127,7 @@ RSpec.describe Telemetry::LiveStream do
   end
 
   describe "best practices compliance" do
-    let(:html) { render_component }
+    let(:html) { render_component(organization: organization) }
 
     it "uses text-tiny for table body text" do
       expect(html).to include("text-tiny")

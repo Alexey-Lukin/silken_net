@@ -19,6 +19,28 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
         get "/api/v1/telemetry/live", headers: headers
         expect(response).to have_http_status(:ok)
       end
+
+      # Єдиний рядок, що вирішує ЧИЯ організація, — у контролері, і компонентні
+      # та воркерні специ його не бачать: перші дістають організацію моком,
+      # другі дивляться з боку продюсера. Без цього піна підміна на
+      # `Organization.first` лишила б усю сюїту зеленою, а крос-тенант — живим.
+      def subscribed_stream_for(who)
+        get "/api/v1/telemetry/live",
+            headers: { "Authorization" => "Bearer #{who.generate_token_for(:api_access)}" }
+        response.body.scan(/signed-stream-name="([^"]+)"/).flatten
+                .map { |s| Turbo::StreamsChannel.verified_stream_name(s) }
+      end
+
+      # ⚠️ Двоє юзерів обовʼязкові, і це не надмірність: із одним пін мовчить на
+      # найправдоподібнішій підміні. `organization` створюється в цьому файлі
+      # першою, тож `Organization.first` їй ДОРІВНЮЄ — мутація на неї лишає
+      # однокористувацький приклад зеленим (перевірено). Ловить лише різниця.
+      it "subscribes each viewer to their OWN organization stream" do
+        stranger = create(:user, organization: other_organization)
+
+        expect(subscribed_stream_for(user)).to eq([ "telemetry_stream_org_#{organization.id}" ])
+        expect(subscribed_stream_for(stranger)).to eq([ "telemetry_stream_org_#{other_organization.id}" ])
+      end
     end
 
     it "returns 401 without authentication" do

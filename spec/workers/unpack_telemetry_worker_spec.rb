@@ -53,14 +53,33 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       expect(gateway.ip_address).to eq("10.0.0.99")
     end
 
-    it "broadcasts decrypted data to Turbo Stream" do
+    # Пін на СКОУП, не на факт виклику: до цієї правки тут стояв голий
+    # `"telemetry_stream"`, і саме він робив стрічку крос-тенантною —
+    # кожен автентифікований глядач діставав payload і IP чужих Королев.
+    it "broadcasts into the owning organization's stream, not a global one" do
       raw_data = "BROADCAST_TEST"
       encrypted = encrypt_payload(raw_data, key_record.binary_key)
       encoded = Base64.strict_encode64(encrypted)
+      expected = "telemetry_stream_org_#{gateway.cluster.organization_id}"
 
       described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 
-      expect(Turbo::StreamsChannel).to have_received(:broadcast_prepend_to).with("telemetry_stream", anything)
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_prepend_to).with(expected, anything)
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_remove_to).with(expected, anything)
+      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_prepend_to).with("telemetry_stream", anything)
+    end
+
+    # «Краще без live-стрічки, ніж у глобальний ефір» — але ЗБЕРЕЖЕННЯ мусить
+    # тривати. Без другого асершна перенесення гарду в `perform` тихо з'їло б
+    # телеметрію осиротілих кластерів, а приклад лишився б зеленим.
+    it "stays silent rather than going global when the cluster has no organization" do
+      gateway.cluster.update_columns(organization_id: nil)
+      encoded = Base64.strict_encode64(encrypt_payload("ORPHAN", key_record.binary_key))
+
+      described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
+
+      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_prepend_to)
+      expect(TelemetryUnpackerService).to have_received(:call)
     end
 
 

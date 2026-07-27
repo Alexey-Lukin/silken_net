@@ -350,11 +350,19 @@ class UnpackTelemetryWorker
   end
 
   def broadcast_to_matrix(gateway, binary_data)
+    # Стрім скоуплений організацією ВЛАСНИКА шлюзу — інакше кожен глядач
+    # діставав би сирий payload і IP чужих Королев. Ціна в firehose — один
+    # SELECT кластера на конверт (метод кличеться раз на `perform`, не на
+    # запис); саму Organization не вантажимо, `organization_id` беремо з FK.
+    org_id = gateway.cluster.organization_id
+    return unless org_id # осиротілий кластер: краще без live-стрічки, ніж у глобальний ефір
+
+    stream = "telemetry_stream_org_#{org_id}"
     hex_payload = binary_data.unpack1("H*").upcase
 
     # Turbo Stream трансляція для "живого" дашборду телеметрії
     Turbo::StreamsChannel.broadcast_prepend_to(
-      "telemetry_stream",
+      stream,
       target: "telemetry_feed",
       html: Telemetry::LogEntry.new(
         gateway: gateway,
@@ -363,6 +371,6 @@ class UnpackTelemetryWorker
       ).call
     )
 
-    Turbo::StreamsChannel.broadcast_remove_to("telemetry_stream", target: "feed_placeholder")
+    Turbo::StreamsChannel.broadcast_remove_to(stream, target: "feed_placeholder")
   end
 end
