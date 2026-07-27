@@ -724,6 +724,15 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 
 **AASM:** `activate` (idle→active), `deactivate` (→idle), `go_offline` (→offline), `report_fault` (→maintenance_needed).
 
+**Ключові поля:**
+
+| Поле | Тип | Опис |
+|------|-----|------|
+| `endpoint` | string | Шлях CoAP на конкретній Королеві (unique у скоупі `gateway_id`) |
+| `max_active_duration_s` | integer | Safety envelope: фізична стеля безперервної роботи; валідує `duration_seconds` команди |
+| `last_activated_at` | datetime | Мітка останнього `activate` (пише `before`-хук події) |
+| `estimated_mj_per_action` | decimal | Орієнтовна витрата енергії за активацію (мДж) |
+
 **Методи:** `ready_for_deployment?`, `mark_active!`, `mark_idle!`, `require_maintenance!(reason)`.
 
 ---
@@ -753,10 +762,13 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 
 | Поле | Тип | Опис |
 |------|-----|------|
-| `command_payload` | jsonb | Команда (action, params) |
-| `idempotency_token` | string | UUID для захисту від дублів |
-| `duration_seconds` | integer | Тривалість дії (safety envelope) |
-| `expires_at` | datetime | Термін придатності |
+| `command_payload` | text | Скалярна команда `ACTION` або `ACTION:value` (`ALLOWED_PAYLOAD_FORMAT`) — **НЕ** jsonb: дротова форма `CMD:<payload>:<duration>:<actuator_id>:<token>` ([`03_02 §6`](03_02_Queen_Gateway_Firmware)) тримається на скалярності, а двокрапка всередині payload зсуває вікно дедупу Королеви |
+| `idempotency_token` | uuid | Захист від дублів; Королева дедуплікує за ним ([`03_02 §6`](03_02_Queen_Gateway_Firmware)) |
+| `duration_seconds` | integer | Тривалість дії (safety envelope, ≤ `actuator.max_active_duration_s`) |
+| `sent_at` | datetime | Мітка `dispatch` — момент видачі в downlink |
+| `executed_at` | datetime | Мітка `acknowledge` — момент, з якого дія вважається початою (колонка UI «Started») |
+| `completed_at` | datetime | Мітка `confirm` — закриття наказу |
+| `expires_at` | datetime | Термін придатності (TTL); команда від контролера його НЕ отримує |
 | `priority` | enum | Рівень пріоритету |
 
 **Методи:** `estimated_completion_at`, `expired?`, `dispatch_to_edge!`, `cancel_pending_for_actuator!`.
