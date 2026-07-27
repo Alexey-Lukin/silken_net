@@ -4,7 +4,6 @@ lt:
     index:
       nodes_online: 'Mazgai prisijungę:'
       subtitle: Miško tinklo neuralinių sinapsių stebėjimas.
-      title: Queen registras // Globalūs relės
     index_title: Queen registras
     item:
       cluster: 'Klasteris: %{name}'

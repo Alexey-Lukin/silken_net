@@ -4,7 +4,6 @@ lv:
     index:
       nodes_online: 'Mezgli tiešsaistē:'
       subtitle: Meža tīkla neirālo sinapšu uzraudzība.
-      title: Queen reģistrs // Globālie relēji
     index_title: Queen reģistrs
     item:
       cluster: 'Klasteris: %{name}'

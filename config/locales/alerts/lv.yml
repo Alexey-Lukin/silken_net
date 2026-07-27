@@ -1,12 +1,6 @@
 ---
 lv:
   alerts:
-    badge:
-      statuses:
-        active: aktīvs
-        ignored: ignorēts
-        resolved: atrisināts
-      summary: "%{severity} — %{status}"
     index:
       filter_all: visi
       filter_aria_all: Rādīt visus brīdinājumus
@@ -15,7 +9,6 @@ lv:
       filter_low: zems
       filter_medium: vidējs
       subtitle: Reāllaika telemetrijas uzraudzība anomālijām un bāzlīnijas novirzēm.
-      title: Aktīvo draudu matrica
     index_title: Brīdinājumu vadības centrs
     messages:
       actuator_fault: 'Izpildmehānisma “%{name}” kļūme (%{endpoint}). Iemesls: %{reason}. Nepieciešams patruļas izbraukums.'

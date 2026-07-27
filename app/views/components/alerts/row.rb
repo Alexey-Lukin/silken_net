@@ -69,7 +69,7 @@ module Alerts
       when "low" then "bg-status-info text-status-info-text"
       else "bg-status-neutral text-status-neutral-text"
       end
-      # Та сама деривація, що в `Alerts::Badge` — через `SEVERITY_SCOPE`.
+      # Деривація через `SEVERITY_SCOPE` — одна на застосунок.
       # Раніше сюди летіло сире значення enum'а, ще й двічі: у видимий текст і
       # в перекладений aria-шаблон, тобто скрін-рідер читав англійське слово
       # всередині української фрази.

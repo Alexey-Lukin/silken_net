@@ -89,7 +89,6 @@ module Alerts
     def header_section
       div(class: "flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 mb-4") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted") { t(".title") }
           p(class: "text-xs text-gaia-text-muted mt-1") { t(".subtitle") }
         end
         div(class: "flex flex-wrap gap-2") do

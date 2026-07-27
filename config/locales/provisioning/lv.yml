@@ -18,7 +18,6 @@ lv:
         soldier: Soldier (Koks)
       submit: SAISTĪT APARATŪRU AR MATRICU
       subtitle: Izveidot 40 gadu biometrisko saiti
-      title: Aparatūras iniciācija
     new_title: Aparatūras iniciācijas rituāls
     success:
       assigned_did: Piesaistītais DID

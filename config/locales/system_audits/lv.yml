@@ -16,5 +16,4 @@ lv:
         polygon: Polygon viedlīgums (totalSupply)
         postgres: Postgres DB (apstiprinātie darījumi)
       subtitle: Postgres DB SCC summas salīdzinājums ar kopējo emisiju Polygon viedlīgumā.
-      title: "⛓️ Ķēdes audits — Sistēmas integritāte"
     index_title: Sistēmas audits

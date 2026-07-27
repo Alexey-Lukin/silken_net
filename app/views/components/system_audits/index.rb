@@ -19,7 +19,6 @@ module SystemAudits
     def header_section
       div(class: "flex justify-between items-end mb-4") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".title") }
           p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
         end
         div(class: "flex gap-2") do

@@ -1,12 +1,6 @@
 ---
 lt:
   alerts:
-    badge:
-      statuses:
-        active: aktyvus
-        ignored: ignoruotas
-        resolved: išspręstas
-      summary: "%{severity} — %{status}"
     index:
       filter_all: visi
       filter_aria_all: Rodyti visus įspėjimus
@@ -15,7 +9,6 @@ lt:
       filter_low: žemas
       filter_medium: vidutinis
       subtitle: Realiojo laiko telemetrijos stebėjimas anomalijoms ir bazinės linijos nukrypimams.
-      title: Aktyvių grėsmių matrica
     index_title: Įspėjimų valdymo centras
     messages:
       actuator_fault: 'Vykdiklio „%{name}“ gedimas (%{endpoint}). Priežastis: %{reason}. Reikalingas patrulio išvykimas.'

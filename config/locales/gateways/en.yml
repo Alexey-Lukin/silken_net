@@ -4,7 +4,6 @@ en:
     index:
       nodes_online: 'Nodes Online:'
       subtitle: Monitoring neural synapses of the forest network.
-      title: Queen Registry // Global Relays
     index_title: Queen Registry
     item:
       cluster: 'Cluster: %{name}'

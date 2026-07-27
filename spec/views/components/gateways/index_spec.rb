@@ -28,8 +28,10 @@ RSpec.describe Gateways::Index do
   end
 
   describe "header" do
-    it "displays the registry title" do
-      expect(html).to include("Queen Registry // Global Relays")
+    # [I18N.1-нейминг] Заголовок секції був СУПЕРСЕТОМ заголовка сторінки
+    # («Queen Registry» + хвіст) — тобто ім'я малювалось двічі поспіль.
+    it "does not duplicate the page name the layout already renders" do
+      expect(html).not_to include("Queen Registry // Global Relays")
     end
 
     it "displays online count vs total" do
@@ -93,7 +95,6 @@ RSpec.describe Gateways::Index do
 
     it "renders without errors when no gateways" do
       rendered = render_component(gateways: [], pagy: mock_pagy(count: 0, last: 1), online_count: 0)
-      expect(rendered).to include("Queen Registry // Global Relays")
       expect(rendered).to include("0 / 0")
     end
   end

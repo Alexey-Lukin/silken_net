@@ -22,14 +22,17 @@ RSpec.describe SystemAudits::Index do
   let(:critical_audit) { mock_audit(db_total: 1000.0, chain_total: 998.5, delta: 1.5, critical: true) }
 
   describe "header" do
-    it "renders Chain Audit heading" do
+    # [I18N.1-нейминг] Заголовок секції знято: сторінка має ОДНУ секцію, тож
+    # її ім'я жило двічі й по-різному — «System Audit» у верхній панелі (h1 від
+    # layout) і «⛓️ Chain Audit — System Integrity» тут. Пін інвертовано.
+    it "does not duplicate the page name the layout already renders" do
       html = render_component(audit: ok_audit)
-      expect(html).to include("Chain Audit")
+      expect(html).not_to include("Chain Audit")
     end
 
-    it "renders System Integrity subtitle" do
+    it "renders the descriptive subtitle" do
       html = render_component(audit: ok_audit)
-      expect(html).to include("System Integrity")
+      expect(html).to include("Comparison of SCC sum")
     end
   end
 

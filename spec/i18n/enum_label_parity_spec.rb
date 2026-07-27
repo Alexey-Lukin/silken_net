@@ -41,11 +41,6 @@ registry = [
     values: -> { EwsAlert.severities.keys }
   },
   {
-    name:   "EwsAlert#status",
-    scope:  "alerts.badge.statuses",
-    values: -> { EwsAlert.statuses.keys }
-  },
-  {
     name:   "ActuatorCommand#status",
     scope:  "actuators.command_status_badge",
     values: -> { ActuatorCommand.statuses.keys }

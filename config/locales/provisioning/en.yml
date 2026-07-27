@@ -18,7 +18,6 @@ en:
         soldier: Soldier (Tree)
       submit: BIND HARDWARE TO MATRIX
       subtitle: Establishing 40-year biometric link
-      title: Hardware Initiation
     new_title: Hardware Initiation Ritual
     success:
       assigned_did: Assigned DID

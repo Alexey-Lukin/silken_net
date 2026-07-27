@@ -1,12 +1,6 @@
 ---
 uk:
   alerts:
-    badge:
-      statuses:
-        active: активна
-        ignored: ігнорована
-        resolved: вирішена
-      summary: "%{severity} — %{status}"
     index:
       filter_all: усі
       filter_aria_all: Показати всі попередження
@@ -15,7 +9,6 @@ uk:
       filter_low: низькі
       filter_medium: середні
       subtitle: Моніторинг живої телеметрії на аномалії та відхилення від базової лінії.
-      title: Матриця активних загроз
     index_title: Командний центр тривог
     messages:
       actuator_fault: 'Збій актуатора «%{name}» (%{endpoint}). Причина: %{reason}. Потрібен виїзд патруля.'

@@ -51,7 +51,6 @@ module Provisioning
 
     def header_section
       div(class: "text-center mb-10 space-y-2") do
-        h2(class: "text-3xl font-extralight text-emerald-400 tracking-widest uppercase") { t(".title") }
         p(class: "text-tiny font-mono text-emerald-900 uppercase tracking-[0.5em]") { t(".subtitle") }
       end
     end

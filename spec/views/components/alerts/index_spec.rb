@@ -41,8 +41,10 @@ RSpec.describe Alerts::Index do
   end
 
   describe "header section" do
-    it "renders the matrix header" do
-      expect(html).to include("Active Threats Matrix")
+    # [I18N.1-нейминг] Див. system_audits: сторінка з однією секцією не повторює
+    # власне ім'я — воно приходить із layout (h1), а не з компонента.
+    it "does not duplicate the page name the layout already renders" do
+      expect(html).not_to include("Active Threats Matrix")
     end
 
     it "renders the monitoring subtitle" do

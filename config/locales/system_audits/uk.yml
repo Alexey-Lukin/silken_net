@@ -16,5 +16,4 @@ uk:
         polygon: Polygon смартконтракт (totalSupply)
         postgres: Postgres DB (підтверджені транзакції)
       subtitle: Порівняння суми SCC у БД Postgres та загальної емісії в смартконтракті Polygon.
-      title: "⛓️ Аудит ланцюга — Цілісність системи"
     index_title: Системний аудит

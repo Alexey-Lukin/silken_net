@@ -1,12 +1,6 @@
 ---
 en:
   alerts:
-    badge:
-      statuses:
-        active: active
-        ignored: ignored
-        resolved: resolved
-      summary: "%{severity} — %{status}"
     index:
       filter_all: all
       filter_aria_all: Show all alerts
@@ -15,7 +9,6 @@ en:
       filter_low: low
       filter_medium: medium
       subtitle: Monitoring live telemetry for anomalies and baseline deviations.
-      title: Active Threats Matrix
     index_title: Alerts Command
     messages:
       actuator_fault: 'Actuator ‘%{name}’ failed (%{endpoint}). Reason: %{reason}. A patrol visit is required.'

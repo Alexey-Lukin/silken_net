@@ -30,8 +30,10 @@ RSpec.describe Provisioning::New do
   let(:html)     { render_component(clusters: clusters, families: families) }
 
   describe "header section" do
-    it "renders Hardware Initiation heading" do
-      expect(html).to include("Hardware Initiation")
+    # [I18N.1-нейминг] Заголовок компонента був підмножиною заголовка сторінки
+    # («Hardware Initiation» проти «Hardware Initiation Ritual»).
+    it "does not duplicate the page name the layout already renders" do
+      expect(html).not_to include("Hardware Initiation")
     end
 
     it "renders biometric link subtitle" do
