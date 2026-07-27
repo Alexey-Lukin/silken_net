@@ -34,10 +34,6 @@ lv:
       subtitle: Sagatavot bināro artefaktu OTA izvietošanai
       title: Jauna koda injekcija
     new_title: Augšupielādēt jaunu evolūciju
-    ota_progress_bar:
-      chunk: 'GABALS: %{current} / %{total}'
-      complete: "%{percent}% PABEIGTS"
-      link_label: 'OTA_SAITE: %{uid}'
     row:
       confirm: Inicializēt evolūciju uz v%{version} izvēlētajai aparatūrai?
       not_available: Nav

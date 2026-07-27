@@ -1,5 +1,20 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 module Firmwares
+  # [I18N.2 · клас 1] Тут НЕМАЄ жодного `t()` — і це навмисно, а не недогляд.
+  #
+  # Компонент рендериться всередині `broadcast_*` (Sidekiq / coap-демон), де
+  # `LocaleSettable` не відпрацьовує, тож будь-який `t()` тут віддав би локаль
+  # ПРОДЮСЕРА всім глядачам (`04_04 §8.1а`). Раніше саме так і було: контролер
+  # малював бар локаллю глядача, а перший же broadcast переписував його
+  # `default_locale` і назад не вертав.
+  #
+  # Чому саме інваріантні токени, а не розщеплення на «сторінкова обгортка +
+  # meter»: панель уже за дизайном — mono-readout, у якому `@status`
+  # (TRANSMITTING/COMPLETE/FAILED/IDLE) рендериться СИРОЮ англійською. Слово
+  # `COMPLETE` існувало тут одночасно в двох режимах — сире в статусі й
+  # перекладене рядком нижче. Це була суперечність, не дизайн. А переклади,
+  # які зникли, були транслітераціями того самого («ЧАНК», «OTA_ЛІНК»), тобто
+  # в українській стало ЧЕСНІШЕ, не бідніше.
   class OtaProgressBar < ApplicationComponent
     def initialize(uid:, percent:, current:, total:, status:)
       @uid = uid
@@ -12,7 +27,7 @@ module Firmwares
     def view_template
       div(id: "ota_progress_#{@uid}", class: "p-4 border border-emerald-900 bg-black font-mono") do
         div(class: "flex justify-between items-center mb-2") do
-          span(class: "text-mini text-emerald-700 uppercase tracking-widest") { t(".link_label", uid: @uid) }
+          span(class: "text-mini text-emerald-700 uppercase tracking-widest") { "OTA_LINK: #{@uid}" }
           span(class: tokens("text-mini", status_color)) { @status }
         end
 
@@ -24,8 +39,8 @@ module Firmwares
         # чанк-лічильник не має що показувати.
         if @total.positive?
           div(class: "flex justify-between mt-2 text-micro text-gray-600") do
-            span { t(".chunk", current: @current, total: @total) }
-            span { t(".complete", percent: @percent) }
+            span { "CHUNK: #{@current} / #{@total}" }
+            span { "#{@percent}% COMPLETE" }
           end
         end
       end

@@ -34,10 +34,6 @@ en:
       subtitle: Prepare the binary artifact for OTA deployment
       title: New Code Injection
     new_title: Upload New Evolution
-    ota_progress_bar:
-      chunk: 'CHUNK: %{current} / %{total}'
-      complete: "%{percent}% COMPLETE"
-      link_label: 'OTA_LINK: %{uid}'
     row:
       confirm: Initiate evolution to v%{version} for the selected hardware?
       not_available: N/A

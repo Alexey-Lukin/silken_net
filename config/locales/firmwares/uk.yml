@@ -34,10 +34,6 @@ uk:
       subtitle: Підготуйте бінарний артефакт для OTA-розгортання
       title: Введення нового коду
     new_title: Завантажити нову еволюцію
-    ota_progress_bar:
-      chunk: 'ЧАНК: %{current} / %{total}'
-      complete: "%{percent}% ЗАВЕРШЕНО"
-      link_label: 'OTA_ЛІНК: %{uid}'
     row:
       confirm: Ініціювати еволюцію до v%{version} для обраного обладнання?
       not_available: Н/Д

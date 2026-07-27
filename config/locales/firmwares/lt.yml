@@ -34,10 +34,6 @@ lt:
       subtitle: Paruošti dvejetainį artefaktą OTA diegimui
       title: Naujo kodo injekcija
     new_title: Įkelti naują evoliuciją
-    ota_progress_bar:
-      chunk: 'DALIS: %{current} / %{total}'
-      complete: "%{percent}% BAIGTA"
-      link_label: 'OTA_NUORODA: %{uid}'
     row:
       confirm: Inicijuoti evoliuciją iki v%{version} pasirinktai aparatūrai?
       not_available: Nėra
