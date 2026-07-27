@@ -13,6 +13,7 @@ lt:
         tree: Medis
         tx_hash: TX Kodas
         type: Tipas
+    index_title: Blokų grandinės knyga
     on_chain_frame:
       explorer:
         celo: Celo Explorer
@@ -53,3 +54,4 @@ lt:
         title: Susieta piniginė
         tree_did: Medžio DID
         wallet_balance: Piniginės balansas
+    show_title: 'Sandoris #%{id}'

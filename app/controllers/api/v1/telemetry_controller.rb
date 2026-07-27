@@ -24,7 +24,7 @@ module Api
         respond_to do |format|
           format.html do
             render_dashboard(
-              title: "Live Telemetry // The Pulse",
+              title: I18n.t("telemetry.live_title"),
               component: Telemetry::LiveStream.new
             )
           end

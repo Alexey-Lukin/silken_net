@@ -13,6 +13,7 @@ uk:
       header_population: Популяція
       header_population_unit: Солдати
       ionic_pulse: Іонний пульс
+    index_title: Матриця сектору // %{name}
     show:
       actions:
         locate_node: Локалізувати вузол →
@@ -61,3 +62,4 @@ uk:
         observations: Спостереження
         technician: Технік
         timestamp: Часова мітка
+    show_title: Ідентичність солдата // %{did}

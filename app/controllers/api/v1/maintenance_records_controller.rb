@@ -51,7 +51,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Maintenance Log // Records of Healing",
+              title: I18n.t("maintenance.index_title"),
               component: Maintenance::Index.new(records: @records, pagy: @pagy)
             )
           end
@@ -67,7 +67,7 @@ module Api
         )
 
         render_dashboard(
-          title: "New Maintenance Ritual",
+          title: I18n.t("maintenance.new_title"),
           component: Maintenance::Form.new(record: @record)
         )
       end
@@ -92,7 +92,7 @@ module Api
             format.json { render_validation_error(@record) }
             format.html do
               render_dashboard(
-                title: "Error in Ritual",
+                title: I18n.t("maintenance.create_error_title"),
                 component: Maintenance::Form.new(
                   record: @record,
                   # `@record` is freshly `.build`-ed above; a failed `save` never
@@ -113,7 +113,7 @@ module Api
           format.json { render json: MaintenanceRecordBlueprint.render_as_hash(@record, view: :show) }
           format.html do
             render_dashboard(
-              title: "Record // ##{@record.id}",
+              title: I18n.t("maintenance.show_title", id: @record.id),
               component: Maintenance::Show.new(
                 record: @record, photos: @photos, pagy_photos: @pagy_photos
               )
@@ -126,7 +126,7 @@ module Api
       # GET /api/v1/maintenance_records/:id/edit
       def edit
         render_dashboard(
-          title: "Edit Record // ##{@record.id}",
+          title: I18n.t("maintenance.edit_title", id: @record.id),
           component: Maintenance::Form.new(
             record: @record,
             existing_photos: @record.photos.limit(6).to_a
@@ -160,7 +160,7 @@ module Api
             format.json { render_validation_error(@record) }
             format.html do
               render_dashboard(
-                title: "Edit Record // ##{@record.id}",
+                title: I18n.t("maintenance.edit_title", id: @record.id),
                 component: Maintenance::Form.new(
                   record: @record,
                   existing_photos: @record.photos.limit(6).to_a

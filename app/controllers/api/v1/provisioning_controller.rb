@@ -15,7 +15,7 @@ module Api
         @families = TreeFamily.alphabetical
 
         render_dashboard(
-          title: "Hardware Initiation Ritual",
+          title: I18n.t("provisioning.new_title"),
           component: Provisioning::New.new(
             clusters: @clusters,
             families: @families
@@ -120,7 +120,7 @@ module Api
                 # [SEC.11] HKDF derivation is the only mode — UI never
                 # sees the raw AES key.
                 render_dashboard(
-                  title: "Initiation Successful",
+                  title: I18n.t("provisioning.success_title"),
                   component: Provisioning::Success.new(device: @device, aes_key: nil)
                 )
               end
@@ -147,7 +147,7 @@ module Api
         @clusters = current_user.organization.clusters
         @families = TreeFamily.alphabetical
         render_dashboard(
-          title: "Initiation Failed",
+          title: I18n.t("provisioning.failed_title"),
           component: Provisioning::New.new(
             clusters: @clusters,
             families: @families,

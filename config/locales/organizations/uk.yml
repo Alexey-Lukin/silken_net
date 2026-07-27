@@ -13,6 +13,7 @@ uk:
       title: Глобальний реєстр кланів
       view_aria: Переглянути профіль %{name}
       view_profile: ВІДКРИТИ_ПРОФІЛЬ →
+    index_title: Реєстр організацій // Клани
     show:
       activity:
         asset_expansion: Розширення активів
@@ -45,3 +46,4 @@ uk:
         capital_injected_sub: Всього SCC
         carbon_yield: Нараховано SCC
         carbon_yield_sub: Створено SCC
+    show_title: Профіль клану // %{name}

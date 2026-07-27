@@ -23,6 +23,7 @@ en:
         carbon_treasury: Carbon Treasury
         forest_vitality: Forest Vitality
         ionic_potential: Ionic Potential
+    index_title: Citadel Command // Global Overview
     map:
       heading: Geospatial Matrix
       live_nodes: 'Live Active Nodes: %{count}'

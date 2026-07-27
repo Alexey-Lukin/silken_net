@@ -28,7 +28,7 @@ module Api
           format.html do
             @clusters = current_user.organization.clusters.order(:name)
             render_dashboard(
-              title: "Oracle Visions // Future Matrix",
+              title: I18n.t("oracle_visions.index_title"),
               component: OracleVisions::Index.new(
                 visions: @visions,
                 emission_forecast: @scc_yield,

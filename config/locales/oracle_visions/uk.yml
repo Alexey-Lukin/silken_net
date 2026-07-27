@@ -15,6 +15,7 @@ uk:
       expected_yield: Прогноз емісії за 24 год
       title: Стратегічна матриця прогнозів
       yield_unit: SCC
+    index_title: Видіння Оракула // Матриця майбутнього
     simulation_panel:
       sector_option: 'Сектор: %{name}'
       sliders:

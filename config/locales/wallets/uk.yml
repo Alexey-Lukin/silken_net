@@ -18,6 +18,7 @@ uk:
       system_reserve: Системний резерв
       title: Скарбнична матриця
       total_liquidity: 'Загальна ліквідність:'
+    index_title: Скарбнична матриця
     metadata_frame:
       available_balance: Доступний баланс
       esg_retired: ESG погашено
@@ -41,3 +42,4 @@ uk:
       ledger_title: Реєстр On-Chain транзакцій
       sync_polygon: Синхронізувати з Polygon
       sync_polygon_aria: Синхронізувати гаманець з блокчейном Polygon
+    show_title: Гаманець // %{address}...

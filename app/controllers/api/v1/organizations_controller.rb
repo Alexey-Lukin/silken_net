@@ -20,7 +20,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Organization Registry // The Clans",
+              title: I18n.t("organizations.index_title"),
               component: Organizations::Index.new(organizations: @organizations, pagy: @pagy)
             )
           end
@@ -47,7 +47,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Clan Profile // #{@organization.name}",
+              title: I18n.t("organizations.show_title", name: @organization.name),
               component: Organizations::Show.new(
                 organization: @organization,
                 clusters: @clusters,

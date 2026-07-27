@@ -16,6 +16,7 @@ lt:
       filter_medium: vidutinis
       subtitle: Realiojo laiko telemetrijos stebėjimas anomalijoms ir bazinės linijos nukrypimams.
       title: Aktyvių grėsmių matrica
+    index_title: Įspėjimų valdymo centras
     messages:
       actuator_fault: 'Vykdiklio „%{name}“ gedimas (%{endpoint}). Priežastis: %{reason}. Reikalingas patrulio išvykimas.'
       actuator_fault_unknown: Vykdiklio „%{name}“ gedimas (%{endpoint}). Priežastis nežinoma (nėra CoAP atsakymo). Reikalingas patrulio išvykimas.
@@ -69,6 +70,7 @@ lt:
       critical: kritinis
       low: žemas
       medium: vidutinis
+    show_title: 'Įspėjimas #%{id}'
     table:
       alert_type: Įspėjimo tipas
       command: Komanda

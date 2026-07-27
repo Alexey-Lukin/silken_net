@@ -22,6 +22,7 @@ en:
         trees_online: Trees Currently Online
         value: Value
       title: "🌿 Carbon Absorption Report"
+    carbon_absorption_title: Carbon Absorption Report
     financial_summary:
       breakdown:
         category: Category
@@ -42,6 +43,7 @@ en:
         total_invested: Total Contracted
         total_invested_sub: SCC
       title: "💎 Financial Summary Report"
+    financial_summary_title: Financial Summary Report
     index:
       actions:
         csv: CSV ↓
@@ -71,3 +73,4 @@ en:
       organization: 'Organization:'
       subtitle: 'Consolidated reporting for clients: environmental audits and financial performance.'
       title: "📊 The Archive — Reports Hub"
+    index_title: Reports Archive

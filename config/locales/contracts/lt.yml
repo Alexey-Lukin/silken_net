@@ -22,6 +22,7 @@ lt:
         total_injected: Iš viso pagal sutartis
         total_minted: Iš viso nukalinta
       unassigned: NEPRISKIRTA
+    index_title: NaaS sutarčių registras
     show:
       backing:
         active_soldiers: Aktyvūs kariai
@@ -57,3 +58,4 @@ lt:
       title: "#%{id} // SEC_%{sector}"
       total_funding: 'Paslaugos mokestis iš viso: %{amount} SCC'
       yield_unit: SCC
+    show_title: 'Sutarties auditas // #%{id}'

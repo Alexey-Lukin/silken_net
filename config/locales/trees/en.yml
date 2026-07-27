@@ -13,6 +13,7 @@ en:
       header_population: Population
       header_population_unit: Soldiers
       ionic_pulse: Ionic Pulse
+    index_title: Sector Matrix // %{name}
     show:
       actions:
         locate_node: Locate Node →
@@ -61,3 +62,4 @@ en:
         observations: Observations
         technician: Technician
         timestamp: Timestamp
+    show_title: Soldier Identity // %{did}

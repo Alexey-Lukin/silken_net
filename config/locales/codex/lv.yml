@@ -9,6 +9,7 @@ lv:
         description: Mēģiniet plašāku jomu vai notīriet meklēšanu.
         title: Codex klusē. Neviens arhetips neatbilst šim filtram.
       kicker: Lore slānis
+      page_title: Codex atlants
       title: Arhetipa Codex
     attunements:
       attune: Saskaņot
@@ -103,6 +104,7 @@ lv:
     realm_tabs:
       all: Visi
       aria_label: Codex jomas filtrs
+      page_title: Codex · Jomas
     show:
       meta:
         archetype: Arhetips
@@ -113,6 +115,7 @@ lv:
         geo_region: Ģeogrāfiskais reģions
         lifecycle: 'Dzīves cikls:'
         realm: Joma
+      page_title: Codex · %{title}
       sections:
         context: Konteksts
         cyber_meaning: Kibermedijs

@@ -36,3 +36,4 @@ uk:
       subtitle: Статус CoAP listener, черг Sidekiq та з'єднання з базою даних.
       system_degraded: "🚨 СИСТЕМА ДЕГРАДОВАНА — Одна або кілька підсистем потребують уваги"
       title: "💓 Стан системи — Pulse Monitor"
+    show_title: Стан системи

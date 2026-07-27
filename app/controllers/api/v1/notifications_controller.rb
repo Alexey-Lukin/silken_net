@@ -21,7 +21,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Notification Channels",
+              title: I18n.t("notifications.settings_title"),
               component: Notifications::Settings.new(user: current_user)
             )
           end
@@ -51,7 +51,7 @@ module Api
             format.json { render json: { errors: current_user.errors.full_messages }, status: :unprocessable_content }
             format.html do
               render_dashboard(
-                title: "Notification Channels",
+                title: I18n.t("notifications.settings_title"),
                 component: Notifications::Settings.new(user: current_user)
               )
             end

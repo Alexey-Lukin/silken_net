@@ -56,7 +56,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Alerts Command",
+              title: I18n.t("alerts.index_title"),
               component: Alerts::Index.new(alerts: @alerts, pagy: @pagy, organization: current_user.organization)
             )
           end
@@ -79,7 +79,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Alert ##{@alert.id}",
+              title: I18n.t("alerts.show_title", id: @alert.id),
               component: Alerts::Row.new(alert: @alert)
             )
           end

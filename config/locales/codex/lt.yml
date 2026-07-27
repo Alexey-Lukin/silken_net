@@ -10,6 +10,7 @@ lt:
         description: Pabandykite platesnę sritį arba išvalykite paiešką.
         title: Codex tylus. Nė vienas archetipas neatitinka šio filtro.
       kicker: Lore sluoksnis
+      page_title: Codex atlasas
       title: Archetipų Codex
     attunements:
       attune: Derinti
@@ -104,6 +105,7 @@ lt:
     realm_tabs:
       all: Visi
       aria_label: Codex srities filtras
+      page_title: Codex · Sritys
     show:
       meta:
         archetype: Archetipas
@@ -114,6 +116,7 @@ lt:
         geo_region: Geografinis regionas
         lifecycle: 'Gyvavimo ciklas:'
         realm: Sritis
+      page_title: Codex · %{title}
       sections:
         context: Kontekstas
         cyber_meaning: Kiberreikšmė

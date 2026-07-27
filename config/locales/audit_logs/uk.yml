@@ -15,6 +15,7 @@ uk:
       subtitle: 'Журнал дій адміністраторів: хто, коли та що змінив.'
       system_user: Система
       title: "👁️ Спостерігач — Журнал аудиту"
+    index_title: Журнал аудиту
     show:
       actor:
         email: Email
@@ -42,3 +43,4 @@ uk:
         title: Об'єкт аудиту
         type: Тип
       tx_id_line: "#%{id} // %{at}"
+    show_title: Подія аудиту №%{id}

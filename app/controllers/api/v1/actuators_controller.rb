@@ -23,7 +23,7 @@ module Api
           format.html do
             active_count = @cluster.actuators.where(state: :active).count
             render_dashboard(
-              title: "Actuators // Sector: #{@cluster.name}",
+              title: I18n.t("actuators.index_title", name: @cluster.name),
               component: Actuators::Index.new(cluster: @cluster, actuators: @actuators, pagy: @pagy, active_count: active_count)
             )
           end
@@ -38,7 +38,7 @@ module Api
           format.json { render json: { actuator: @actuator, history: @commands } }
           format.html do
             render_dashboard(
-              title: "Actuator Hub // #{@actuator.device_type.upcase}",
+              title: I18n.t("actuators.show_title", device_type: @actuator.device_type.upcase),
               component: Actuators::Show.new(actuator: @actuator, commands: @commands)
             )
           end

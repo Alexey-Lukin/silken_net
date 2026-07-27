@@ -1,6 +1,8 @@
 ---
 en:
   maintenance:
+    create_error_title: Error in Ritual
+    edit_title: 'Edit Record // #%{id}'
     form:
       action_prompt: "— Select intervention type —"
       action_type: Action Type
@@ -58,6 +60,8 @@ en:
         technician: Technician
         timestamp: Timestamp
         unit: Unit
+    index_title: Maintenance Log // Records of Healing
+    new_title: New Maintenance Ritual
     photo_gallery:
       empty:
         description: Upload evidence to begin documentation.
@@ -118,3 +122,4 @@ en:
         updated: Updated
       notes:
         heading: Field Notes
+    show_title: 'Record // #%{id}'

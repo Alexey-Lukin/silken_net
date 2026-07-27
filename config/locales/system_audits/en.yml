@@ -17,3 +17,4 @@ en:
         postgres: Postgres DB (confirmed transactions)
       subtitle: Comparison of SCC sum in Postgres DB vs total emission in Polygon smart contract.
       title: "⛓️ Chain Audit — System Integrity"
+    index_title: System Audit

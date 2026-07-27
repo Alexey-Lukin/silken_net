@@ -13,6 +13,7 @@ uk:
         tree: Дерево
         tx_hash: TX Хеш
         type: Тип
+    index_title: Реєстр блокчейну
     on_chain_frame:
       explorer:
         celo: Celo Explorer
@@ -53,3 +54,4 @@ uk:
         title: Прив'язаний гаманець
         tree_did: DID дерева
         wallet_balance: Баланс гаманця
+    show_title: Транзакція №%{id}

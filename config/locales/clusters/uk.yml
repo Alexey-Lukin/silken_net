@@ -4,6 +4,7 @@ uk:
     grid:
       empty_description: Розгорніть сенсори для ініціалізації кластерної сітки.
       empty_title: Матриця порожня. Кластери не виявлено.
+    index_title: Атлас кластерів
     item:
       health: Здоров'я
       id: 'ID: %{id}'
@@ -48,3 +49,4 @@ uk:
         queen_gateways: Шлюзи-королеви
         seismic_sensitivity: Сейсмічна чутливість
         timezone: Часовий пояс
+    show_title: 'Сектор: %{name}'

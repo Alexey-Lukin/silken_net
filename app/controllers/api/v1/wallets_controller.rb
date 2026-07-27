@@ -20,7 +20,7 @@ module Api
           format.html do
             total_liquidity = scope.sum(:scc_balance)
             render_dashboard(
-              title: "Treasury Matrix",
+              title: I18n.t("wallets.index_title"),
               component: Wallets::Index.new(wallets: @wallets, pagy: @pagy, total_liquidity: total_liquidity)
             )
           end
@@ -44,7 +44,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Wallet // #{@wallet.crypto_public_address&.first(8)}...",
+              title: I18n.t("wallets.show_title", address: @wallet.crypto_public_address&.first(8)),
               component: Wallets::Show.new(wallet: @wallet, transactions: @transactions, pagy: @pagy_tx)
             )
           end

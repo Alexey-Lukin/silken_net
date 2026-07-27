@@ -15,6 +15,7 @@ lt:
       expected_yield: Prognozuojama 24h emisija
       title: Strateginių prognozių matrica
       yield_unit: SCC
+    index_title: Oracle vizijos // Ateities matrica
     simulation_panel:
       sector_option: 'Sektorius: %{name}'
       sliders:

@@ -22,6 +22,7 @@ lv:
         trees_online: Pašlaik tiešsaistes koki
         value: Vērtība
       title: "🌿 Oglekļa absorbcijas atskaite"
+    carbon_absorption_title: Oglekļa absorbcijas atskaite
     financial_summary:
       breakdown:
         category: Kategorija
@@ -42,6 +43,7 @@ lv:
         total_invested: Kopā līgumos
         total_invested_sub: SCC
       title: "💎 Finanšu kopsavilkuma atskaite"
+    financial_summary_title: Finanšu kopsavilkuma atskaite
     index:
       actions:
         csv: CSV ↓
@@ -71,3 +73,4 @@ lv:
       organization: 'Organizācija:'
       subtitle: 'Konsolidētas atskaites klientiem: vides auditi un finanšu veiktspēja.'
       title: "📊 Arhīvs — Atskaišu centrs"
+    index_title: Atskaišu arhīvs

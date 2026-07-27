@@ -6,6 +6,7 @@ en:
       carrier_label: 'Carrier: Direct-to-Cell'
       header_eyebrow: Neural Link Output
       header_title: Global Telemetry Stream
+    live_title: Live Telemetry // The Pulse
     log_entry:
       batch_received: BATCH_RECEIVED
       ip_label: 'IP: %{ip}'

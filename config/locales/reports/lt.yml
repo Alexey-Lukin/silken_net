@@ -22,6 +22,7 @@ lt:
         trees_online: Šiuo metu prisijungę medžiai
         value: Vertė
       title: "🌿 Anglies absorbcijos ataskaita"
+    carbon_absorption_title: Anglies absorbcijos ataskaita
     financial_summary:
       breakdown:
         category: Kategorija
@@ -42,6 +43,7 @@ lt:
         total_invested: Iš viso sutarta
         total_invested_sub: SCC
       title: "💎 Finansinės suvestinės ataskaita"
+    financial_summary_title: Finansinės suvestinės ataskaita
     index:
       actions:
         csv: CSV ↓
@@ -71,3 +73,4 @@ lt:
       organization: 'Organizacija:'
       subtitle: 'Konsoliduotos ataskaitos klientams: aplinkos auditai ir finansinis našumas.'
       title: "📊 Archyvas — Ataskaitų centras"
+    index_title: Ataskaitų archyvas

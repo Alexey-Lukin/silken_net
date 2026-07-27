@@ -23,6 +23,7 @@ lt:
         carbon_treasury: Anglies iždas
         forest_vitality: Miško gyvybingumas
         ionic_potential: Joninis potencialas
+    index_title: Citadelės vadovybė // Globali apžvalga
     map:
       heading: Geospatinė matrica
       live_nodes: 'Aktyvūs tiesioginiai mazgai: %{count}'

@@ -27,7 +27,7 @@ module Api
           # 2. Dashboard Response (Phlex + Hotwire)
           format.html do
             render_dashboard(
-              title: "Cluster Atlas",
+              title: I18n.t("clusters.index_title"),
               component: Clusters::Grid.new(clusters: @clusters, pagy: @pagy)
             )
           end
@@ -50,7 +50,7 @@ module Api
             @gateways = @cluster.gateways.order(:uid).limit(50)
             @recent_alerts = @cluster.ews_alerts.unresolved.order(created_at: :desc).limit(5)
             render_dashboard(
-              title: "Sector: #{@cluster.name}",
+              title: I18n.t("clusters.show_title", name: @cluster.name),
               component: Clusters::Show.new(
                 cluster: @cluster,
                 gateways: @gateways,

@@ -15,6 +15,7 @@ en:
       subtitle: 'Log of administrator actions: who, when and what changed.'
       system_user: System
       title: "👁️ The Watcher — Audit Log"
+    index_title: Audit Log
     show:
       actor:
         email: Email
@@ -42,3 +43,4 @@ en:
         title: Auditable Target
         type: Type
       tx_id_line: "#%{id} // %{at}"
+    show_title: 'Audit Event #%{id}'

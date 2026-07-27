@@ -13,6 +13,7 @@ lt:
       header_population: Populiacija
       header_population_unit: Kariai
       ionic_pulse: Joninis impulsas
+    index_title: Sektoriaus matrica // %{name}
     show:
       actions:
         locate_node: Surasti mazgą →
@@ -61,3 +62,4 @@ lt:
         observations: Stebėjimai
         technician: Technikas
         timestamp: Laiko žyma
+    show_title: Kario tapatybė // %{did}

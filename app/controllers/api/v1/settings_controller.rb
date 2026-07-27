@@ -28,7 +28,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Organization Settings",
+              title: I18n.t("settings.show_title"),
               component: Settings::Show.new(organization: org)
             )
           end
@@ -63,7 +63,7 @@ module Api
             format.json { render json: { errors: org.errors.full_messages }, status: :unprocessable_content }
             format.html do
               render_dashboard(
-                title: "Organization Settings",
+                title: I18n.t("settings.show_title"),
                 component: Settings::Show.new(organization: org)
               )
             end

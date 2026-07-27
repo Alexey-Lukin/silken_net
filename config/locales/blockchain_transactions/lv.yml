@@ -13,6 +13,7 @@ lv:
         tree: Koks
         tx_hash: TX Kods
         type: Veids
+    index_title: Blokķēdes virsgrāmata
     on_chain_frame:
       explorer:
         celo: Celo Explorer
@@ -53,3 +54,4 @@ lv:
         title: Saistītais maks
         tree_did: Koka DID
         wallet_balance: Maka atlikums
+    show_title: 'Darījums #%{id}'

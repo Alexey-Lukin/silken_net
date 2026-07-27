@@ -1,6 +1,7 @@
 ---
 uk:
   firmwares:
+    create_error_title: Помилка еволюції
     form:
       binary_label: Бінарний артефакт (.bin)
       notes_label: Нотатки релізу / Логічні зміни
@@ -28,9 +29,11 @@ uk:
       upload: "+ Ввести новий код"
       upload_aria: Завантажити нову бінарну прошивку
       version_label: v%{version}
+    index_title: Еволюція прошивки
     new:
       subtitle: Підготуйте бінарний артефакт для OTA-розгортання
       title: Введення нового коду
+    new_title: Завантажити нову еволюцію
     ota_progress_bar:
       chunk: 'ЧАНК: %{current} / %{total}'
       complete: "%{percent}% ЗАВЕРШЕНО"

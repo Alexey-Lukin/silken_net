@@ -13,6 +13,7 @@ en:
         tree: Tree
         tx_hash: TX Hash
         type: Type
+    index_title: Blockchain Ledger
     on_chain_frame:
       explorer:
         celo: Celo Explorer
@@ -53,3 +54,4 @@ en:
         title: Linked Wallet
         tree_did: Tree DID
         wallet_balance: Wallet Balance
+    show_title: 'Transaction #%{id}'

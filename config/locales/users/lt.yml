@@ -12,6 +12,7 @@ lt:
         neural_link: Neuralinio ryšio būsena
         role_access: Vaidmuo / Prieiga
         view_logs: ŽURNALAS
+    index_title: Įgulos valdymas // Klanas
     profile:
       access:
         command_execution: Komandų vykdymas
@@ -44,3 +45,4 @@ lt:
         password: Slaptažodis
         providers: Tiekėjai
         set: Nustatyta
+    show_title: Profilis // %{name}

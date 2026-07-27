@@ -22,7 +22,7 @@ module Api
           format.json { render json: @health }
           format.html do
             render_dashboard(
-              title: "System Health",
+              title: I18n.t("system_health.show_title"),
               component: SystemHealth::Show.new(health: @health)
             )
           end

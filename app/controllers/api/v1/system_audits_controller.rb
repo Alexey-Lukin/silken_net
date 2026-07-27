@@ -26,7 +26,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "System Audit",
+              title: I18n.t("system_audits.index_title"),
               component: SystemAudits::Index.new(audit: @audit)
             )
           end

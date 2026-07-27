@@ -16,6 +16,7 @@ uk:
       filter_medium: середні
       subtitle: Моніторинг живої телеметрії на аномалії та відхилення від базової лінії.
       title: Матриця активних загроз
+    index_title: Командний центр тривог
     messages:
       actuator_fault: 'Збій актуатора «%{name}» (%{endpoint}). Причина: %{reason}. Потрібен виїзд патруля.'
       actuator_fault_unknown: Збій актуатора «%{name}» (%{endpoint}). Причина невідома (немає відповіді CoAP). Потрібен виїзд патруля.
@@ -69,6 +70,7 @@ uk:
       critical: критична
       low: низька
       medium: середня
+    show_title: Тривога №%{id}
     table:
       alert_type: Тип
       command: Дія

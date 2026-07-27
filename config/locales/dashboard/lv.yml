@@ -23,6 +23,7 @@ lv:
         carbon_treasury: Oglekļa kase
         forest_vitality: Meža vitalitāte
         ionic_potential: Joniskais potenciāls
+    index_title: Citadeles pavēlniecība // Globālais pārskats
     map:
       heading: Ģeotelpiskā matrica
       live_nodes: 'Aktīvie tiešraides mezgli: %{count}'

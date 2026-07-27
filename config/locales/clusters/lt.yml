@@ -4,6 +4,7 @@ lt:
     grid:
       empty_description: Įdiekite jutiklius, kad inicializuotumėte klasterio tinklelį.
       empty_title: Matrica tuščia. Nerasta klasterių.
+    index_title: Klasterių atlasas
     item:
       health: Sveikata
       id: 'ID: %{id}'
@@ -48,3 +49,4 @@ lt:
         queen_gateways: Queen šliuzai
         seismic_sensitivity: Seisminis jautrumas
         timezone: Laiko juosta
+    show_title: 'Sektorius: %{name}'

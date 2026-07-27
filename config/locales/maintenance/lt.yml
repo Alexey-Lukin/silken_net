@@ -1,6 +1,8 @@
 ---
 lt:
   maintenance:
+    create_error_title: Klaida rituale
+    edit_title: 'Redaguoti įrašą // #%{id}'
     form:
       action_prompt: "— Pasirinkite įsikišimo tipą —"
       action_type: Veiksmo tipas
@@ -58,6 +60,8 @@ lt:
         technician: Technikas
         timestamp: Laiko žyma
         unit: Vienetas
+    index_title: Priežiūros žurnalas // Gydymo įrašai
+    new_title: Naujas priežiūros ritualas
     photo_gallery:
       empty:
         description: Įkelkite įrodymus, kad pradėtumėte dokumentavimą.
@@ -119,3 +123,4 @@ lt:
         updated: Atnaujinta
       notes:
         heading: Lauko pastabos
+    show_title: 'Įrašas // #%{id}'

@@ -13,6 +13,7 @@ lv:
       header_population: Populācija
       header_population_unit: Karavīri
       ionic_pulse: Joniskais impulss
+    index_title: Sektora matrica // %{name}
     show:
       actions:
         locate_node: Atrast mezglu →
@@ -61,3 +62,4 @@ lv:
         observations: Novērojumi
         technician: Tehniķis
         timestamp: Laika zīmogs
+    show_title: Karavīra identitāte // %{did}

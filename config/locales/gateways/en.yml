@@ -5,6 +5,7 @@ en:
       nodes_online: 'Nodes Online:'
       subtitle: Monitoring neural synapses of the forest network.
       title: Queen Registry // Global Relays
+    index_title: Queen Registry
     item:
       cluster: 'Cluster: %{name}'
       label: Queen // %{uid}
@@ -44,3 +45,4 @@ en:
         signal_strength: Signal Strength
         thermal_state: Thermal State
         voltage_matrix: Voltage Matrix
+    show_title: Queen // %{uid}

@@ -22,6 +22,7 @@ lv:
         total_injected: Kopā līgumos
         total_minted: Kopā kalts
       unassigned: NEPIESAISTĪTS
+    index_title: NaaS līgumu reģistrs
     show:
       backing:
         active_soldiers: Aktīvie karavīri
@@ -57,3 +58,4 @@ lv:
       title: "#%{id} // SEC_%{sector}"
       total_funding: 'Pakalpojuma maksa kopā: %{amount} SCC'
       yield_unit: SCC
+    show_title: 'Līguma audits // #%{id}'

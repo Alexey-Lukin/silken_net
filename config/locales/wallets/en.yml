@@ -18,6 +18,7 @@ en:
       system_reserve: System Reserve
       title: Treasury Matrix
       total_liquidity: 'Total Liquidity:'
+    index_title: Treasury Matrix
     metadata_frame:
       available_balance: Available Balance
       esg_retired: ESG Retired
@@ -41,3 +42,4 @@ en:
       ledger_title: On-Chain Transaction Ledger
       sync_polygon: Sync with Polygon
       sync_polygon_aria: Sync wallet with Polygon blockchain
+    show_title: Wallet // %{address}...

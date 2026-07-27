@@ -4,6 +4,7 @@ lv:
     grid:
       empty_description: Izvietojiet sensorus, lai inicializētu klastera režģi.
       empty_title: Matrica ir tukša. Nav atklātu klasteru.
+    index_title: Klasteru atlants
     item:
       health: Veselība
       id: 'ID: %{id}'
@@ -48,3 +49,4 @@ lv:
         queen_gateways: Queen vārtejas
         seismic_sensitivity: Seismiskā jutība
         timezone: Laika zona
+    show_title: 'Sektors: %{name}'

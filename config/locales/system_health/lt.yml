@@ -36,3 +36,4 @@ lt:
       subtitle: CoAP klausytojo, Sidekiq eilių ir duomenų bazės ryšio būsena.
       system_degraded: "🚨 SISTEMA DEGRADAVUSI — Viena ar daugiau posistemių reikalauja dėmesio"
       title: "💓 Sistemos sveikata — Pulso monitorius"
+    show_title: Sistemos sveikata

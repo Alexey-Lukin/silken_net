@@ -1,6 +1,7 @@
 ---
 lv:
   firmwares:
+    create_error_title: Evolūcijas kļūda
     form:
       binary_label: Binārais artefakts (.bin)
       notes_label: Laidiena piezīmes / Loģiskās izmaiņas
@@ -28,9 +29,11 @@ lv:
       upload: "+ Injicēt jaunu kodu"
       upload_aria: Augšupielādēt jaunu programmaparatūras bināro failu
       version_label: v%{version}
+    index_title: Programmaparatūras evolūcija
     new:
       subtitle: Sagatavot bināro artefaktu OTA izvietošanai
       title: Jauna koda injekcija
+    new_title: Augšupielādēt jaunu evolūciju
     ota_progress_bar:
       chunk: 'GABALS: %{current} / %{total}'
       complete: "%{percent}% PABEIGTS"

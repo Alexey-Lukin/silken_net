@@ -28,7 +28,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Audit Log",
+              title: I18n.t("audit_logs.index_title"),
               component: AuditLogs::Index.new(logs: @logs, pagy: @pagy)
             )
           end
@@ -47,7 +47,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Audit Event ##{@log.id}",
+              title: I18n.t("audit_logs.show_title", id: @log.id),
               component: AuditLogs::Show.new(log: @log)
             )
           end

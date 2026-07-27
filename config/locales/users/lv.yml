@@ -12,6 +12,7 @@ lv:
         neural_link: Neirālā savienojuma stāvoklis
         role_access: Loma / Piekļuve
         view_logs: ŽURNĀLS
+    index_title: Apkalpes pārvaldība // Klans
     profile:
       access:
         command_execution: Komandu izpilde
@@ -44,3 +45,4 @@ lv:
         password: Parole
         providers: Pakalpojumu sniedzēji
         set: Iestatīts
+    show_title: Profils // %{name}

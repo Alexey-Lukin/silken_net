@@ -31,6 +31,7 @@ uk:
       sector_matrix: Матриця сектору // %{name}
       title: Шар взаємодії з обладнанням
       total_units: Всього юнітів
+    index_title: 'Актуатори // Сектор: %{name}'
     show:
       columns:
         executed_at: Час виконання
@@ -41,3 +42,4 @@ uk:
       log_title: Журнал виконання команд
       not_executed: "---"
       system_operator: СИСТЕМА
+    show_title: Хаб актуатора // %{device_type}

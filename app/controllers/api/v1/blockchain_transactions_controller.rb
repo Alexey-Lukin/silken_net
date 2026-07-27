@@ -45,7 +45,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Blockchain Ledger",
+              title: I18n.t("blockchain_transactions.index_title"),
               component: BlockchainTransactions::Index.new(transactions: @transactions, pagy: @pagy)
             )
           end
@@ -62,7 +62,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Transaction ##{@transaction.id}",
+              title: I18n.t("blockchain_transactions.show_title", id: @transaction.id),
               component: BlockchainTransactions::Show.new(transaction: @transaction)
             )
           end

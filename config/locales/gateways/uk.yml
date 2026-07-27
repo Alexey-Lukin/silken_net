@@ -5,6 +5,7 @@ uk:
       nodes_online: 'Вузлів онлайн:'
       subtitle: Моніторинг нейронних синапсів лісової мережі.
       title: Реєстр Королев // Глобальні ретранслятори
+    index_title: Реєстр Королев
     item:
       cluster: 'Кластер: %{name}'
       label: Королева // %{uid}
@@ -44,3 +45,4 @@ uk:
         signal_strength: Потужність сигналу
         thermal_state: Тепловий стан
         voltage_matrix: Матриця напруги
+    show_title: Королева // %{uid}

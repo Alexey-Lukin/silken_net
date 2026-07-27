@@ -1,6 +1,7 @@
 ---
 en:
   firmwares:
+    create_error_title: Evolution Error
     form:
       binary_label: Binary Artifact (.bin)
       notes_label: Release Notes / Logical Changes
@@ -28,9 +29,11 @@ en:
       upload: "+ Inject New Code"
       upload_aria: Upload new firmware binary
       version_label: v%{version}
+    index_title: Firmware Evolution
     new:
       subtitle: Prepare the binary artifact for OTA deployment
       title: New Code Injection
+    new_title: Upload New Evolution
     ota_progress_bar:
       chunk: 'CHUNK: %{current} / %{total}'
       complete: "%{percent}% COMPLETE"

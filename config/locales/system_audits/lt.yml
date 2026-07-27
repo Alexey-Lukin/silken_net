@@ -17,3 +17,4 @@ lt:
         postgres: Postgres DB (patvirtinti sandoriai)
       subtitle: Postgres DB SCC sumos palyginimas su bendrąja emisija Polygon išmaniosios sutarties.
       title: "⛓️ Grandinės auditas — Sistemos vientisumas"
+    index_title: Sistemos auditas

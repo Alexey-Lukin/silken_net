@@ -37,7 +37,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Nature-as-a-Service Registry",
+              title: I18n.t("contracts.index_title"),
               component: Contracts::Index.new(contracts: @contracts, stats: @stats, pagy: @pagy)
             )
           end
@@ -69,7 +69,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Contract Audit // ##{@contract.id}",
+              title: I18n.t("contracts.show_title", id: @contract.id),
               component: Contracts::Show.new(contract: @contract, history: @emission_history)
             )
           end

@@ -29,3 +29,4 @@ en:
         system_health: System Health
         warning_alerts: Warning Alerts
       subtitle: Configure notification channels — where to deliver alerts and events.
+    settings_title: Notification Channels

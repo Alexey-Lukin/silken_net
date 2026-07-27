@@ -22,6 +22,7 @@ uk:
         trees_online: Дерев онлайн зараз
         value: Значення
       title: "🌿 Звіт про поглинання вуглецю"
+    carbon_absorption_title: Звіт про поглинання вуглецю
     financial_summary:
       breakdown:
         category: Категорія
@@ -42,6 +43,7 @@ uk:
         total_invested: Всього законтрактовано
         total_invested_sub: SCC
       title: "💎 Звіт фінансового зведення"
+    financial_summary_title: Звіт фінансового зведення
     index:
       actions:
         csv: CSV ↓
@@ -71,3 +73,4 @@ uk:
       organization: 'Організація:'
       subtitle: 'Зведена звітність для клієнтів: екологічні аудити та фінансова ефективність.'
       title: "📊 Архів — Центр звітів"
+    index_title: Архів звітів

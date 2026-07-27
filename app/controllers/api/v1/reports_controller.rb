@@ -31,7 +31,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Reports Archive",
+              title: I18n.t("reports.index_title"),
               component: Reports::Index.new(organization: org, summary: @summary)
             )
           end
@@ -73,7 +73,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Carbon Absorption Report",
+              title: I18n.t("reports.carbon_absorption_title"),
               component: Reports::CarbonAbsorption.new(organization: org, data: @data)
             )
           end
@@ -124,7 +124,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Financial Summary Report",
+              title: I18n.t("reports.financial_summary_title"),
               component: Reports::FinancialSummary.new(organization: org, data: @data)
             )
           end

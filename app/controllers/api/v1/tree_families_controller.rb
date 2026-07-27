@@ -27,7 +27,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Biological Constants // The Genomes",
+              title: I18n.t("tree_families.index_title"),
               component: TreeFamilies::Index.new(families: @families, pagy: @pagy)
             )
           end
@@ -40,7 +40,7 @@ module Api
           format.json { render json: @family }
           format.html do
             render_dashboard(
-              title: "Genome Architecture // #{@family.name}",
+              title: I18n.t("tree_families.show_title", name: @family.name),
               component: TreeFamilies::Show.new(family: @family)
             )
           end
@@ -50,7 +50,7 @@ module Api
       def new
         @family = TreeFamily.new
         render_dashboard(
-          title: "Define New Species",
+          title: I18n.t("tree_families.new_title"),
           component: TreeFamilies::Form.new(family: @family)
         )
       end
@@ -65,14 +65,14 @@ module Api
         else
           respond_to do |format|
             format.json { render_validation_error(@family) }
-            format.html { render_dashboard(title: "DNA Sequence Error", component: TreeFamilies::Form.new(family: @family)) }
+            format.html { render_dashboard(title: I18n.t("tree_families.create_error_title"), component: TreeFamilies::Form.new(family: @family)) }
           end
         end
       end
 
       def edit
         render_dashboard(
-          title: "Refine Genome // #{@family.name}",
+          title: I18n.t("tree_families.edit_title", name: @family.name),
           component: TreeFamilies::Form.new(family: @family)
         )
       end
@@ -86,7 +86,7 @@ module Api
         else
           respond_to do |format|
             format.json { render_validation_error(@family) }
-            format.html { render_dashboard(title: "Recalibration Error", component: TreeFamilies::Form.new(family: @family)) }
+            format.html { render_dashboard(title: I18n.t("tree_families.update_error_title"), component: TreeFamilies::Form.new(family: @family)) }
           end
         end
       end

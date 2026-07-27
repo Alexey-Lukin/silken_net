@@ -1,6 +1,8 @@
 ---
 lv:
   tree_families:
+    create_error_title: DNS sekvences kļūda
+    edit_title: Precizēt genomu // %{name}
     form:
       bark_thickness: Mizas biezums (mm)
       baseline_impedance: Bāzes impedance (kΩ)
@@ -32,6 +34,8 @@ lv:
       range_value: "%{min} - %{max} kΩ"
       soldiers_count: "%{count} karavīri"
       title: Globālās sugas konstantes
+    index_title: Bioloģiskās konstantes // Genomi
+    new_title: Definēt jaunu sugu
     show:
       baseline_info: 'Bāzes impedance: %{baseline} kOhm // CO₂ koeficients: %{coef}'
       defaults:
@@ -53,3 +57,5 @@ lv:
         sap_flow: Sulas plūsmas indekss
       props_title: TinyML bioloģiskās pazīmes
       scale_title: Homeostāzes skala
+    show_title: Genoma arhitektūra // %{name}
+    update_error_title: Rekalibrēšanas kļūda

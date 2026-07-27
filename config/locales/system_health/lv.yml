@@ -36,3 +36,4 @@ lv:
       subtitle: CoAP klausītāja, Sidekiq rindu un datubāzes savienojuma statuss.
       system_degraded: "🚨 SISTĒMA DEGRADĒTA — Viena vai vairākas apakšsistēmas prasa uzmanību"
       title: "💓 Sistēmas veselība — Pulsa monitors"
+    show_title: Sistēmas veselība

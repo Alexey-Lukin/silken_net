@@ -13,6 +13,7 @@ en:
       title: Global Clan Registry
       view_aria: View %{name} profile
       view_profile: VIEW_PROFILE →
+    index_title: Organization Registry // The Clans
     show:
       activity:
         asset_expansion: Asset Expansion
@@ -45,3 +46,4 @@ en:
         capital_injected_sub: SCC Total
         carbon_yield: SCC Minted
         carbon_yield_sub: SCC Minted
+    show_title: Clan Profile // %{name}

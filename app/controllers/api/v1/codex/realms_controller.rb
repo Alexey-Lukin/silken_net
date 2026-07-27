@@ -24,7 +24,7 @@ module Api
             end
             format.html do
               render_dashboard(
-                title: "Codex · Realms",
+                title: I18n.t("codex.realm_tabs.page_title"),
                 component: ::Codex::RealmTabs.new(realms: realms, nodes_counts: counts)
               )
             end

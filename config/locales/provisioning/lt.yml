@@ -1,6 +1,7 @@
 ---
 lt:
   provisioning:
+    failed_title: Inicijavimas nepavyko
     new:
       errors_title: 'Inicijavimas nepavyko:'
       fields:
@@ -18,6 +19,7 @@ lt:
       submit: SUSIETI APARATŪRĄ SU MATRICA
       subtitle: Sukurti 40 metų biometrinį ryšį
       title: Aparatūros inicijavimas
+    new_title: Aparatūros inicijavimo ritualas
     success:
       assigned_did: Priskirtas DID
       hardware_uid: Aparatūros UID
@@ -31,3 +33,4 @@ lt:
       ritual_complete: Ritualas baigtas
       view_in_matrix: Peržiūrėti mazgą matricoje →
       woven: Mazgas įaustas į Silken Net.
+    success_title: Inicijavimas sėkmingas

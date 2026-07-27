@@ -1393,7 +1393,14 @@ uk:  { one: "1 фото", few: "%{count} фото",                     # 4 фо
 | Error JSON | `errors/{en,uk}.yml` | `errors.api.forbidden` |
 | Account Security | `account_security/{en,uk}.yml` | `account_security.mfa.enabled` |
 | Passwords | `passwords/{en,uk}.yml` | `passwords.reset.email_sent` |
-| M2M auth | `m2m_auth/{en,uk}.yml` | `m2m_auth.token.issued` |
+| M2M auth | `m2m_auth/<locale>.yml` | `m2m_auth.token.issued` |
+| **Заголовок сторінки** | `<domain>/<locale>.yml` | `wallets.index_title` · `trees.show_title` (інтерполяція — `%{name}`/`%{uid}`/`%{id}`) |
+
+> 🧱 **`title:` — не «рядок десь у кутку», а ім'я сторінки.** Аргумент `render_dashboard(title:)` стає ОДРАЗУ двома речами: `<title>` вкладки (а отже й запис в історії браузера) і видимий `<h1>` (`DashboardLayout`). Тому конвенція жорстка: плоский ключ `<domain>.<action>_title` (виняток — домен `codex`, який уже має власні під-скоупи й лишається на `page_title` усередині них).
+>
+> ⚠️ **Інтерпольований заголовок мусить лишати змінну в НАЗИВНОМУ.** У ній сидить власна назва або ID, які не відмінюються, тож рамка «Профіль %{name}» у відмінюваних мовах ламається, а «Профіль // %{name}» — ні. Усі 52 мігровані заголовки тримають змінну після роздільника (`//`, `:`, `#`) саме з цієї причини.
+>
+> Клас стереже `spec/i18n/controller_title_literals_spec.rb`: **жодного строкового літерала одразу після `title:`** у `app/controllers/**`. Гейта на це не мав ніхто, і не випадково — `i18n-tasks` бачить лише ІСНУЮЧІ `t()`-ключі, а сирий літерал для нього не існує взагалі; `raise_on_missing_translations` теж мовчить, бо ніхто нічого не шукає. Саме тому клас доріс до 56 сайтів у 25 контролерах непоміченим.
 
 ### 12.9 Spec convention
 

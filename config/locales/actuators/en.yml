@@ -31,6 +31,7 @@ en:
       sector_matrix: Sector Matrix // %{name}
       title: Hardware Interaction Layer
       total_units: Total Units
+    index_title: 'Actuators // Sector: %{name}'
     show:
       columns:
         executed_at: Executed At
@@ -41,3 +42,4 @@ en:
       log_title: Command Execution Log
       not_executed: "---"
       system_operator: SYSTEM
+    show_title: Actuator Hub // %{device_type}

@@ -51,7 +51,7 @@ module Api
           # Dashboard Response (Phlex)
           format.html do
             render_dashboard(
-              title: "Firmware Evolution",
+              title: I18n.t("firmwares.index_title"),
               component: Firmwares::Index.new(
                 firmwares: @firmwares,
                 inventory_stats: @inventory_stats,
@@ -69,7 +69,7 @@ module Api
         @firmware = BioContractFirmware.new
 
         render_dashboard(
-          title: "Upload New Evolution",
+          title: I18n.t("firmwares.new_title"),
           component: Firmwares::New.new(firmware: @firmware)
         )
       end
@@ -118,7 +118,7 @@ module Api
             format.json { render_validation_error(@firmware) }
             format.html do
               render_dashboard(
-                title: "Evolution Error",
+                title: I18n.t("firmwares.create_error_title"),
                 component: Firmwares::New.new(firmware: @firmware)
               )
             end

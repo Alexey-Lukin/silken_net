@@ -12,6 +12,7 @@ uk:
         neural_link: Стан нейронного зв'язку
         role_access: Роль / Доступ
         view_logs: ЖУРНАЛ
+    index_title: Керування персоналом // Клан
     profile:
       access:
         command_execution: Виконання команд
@@ -44,3 +45,4 @@ uk:
         password: Пароль
         providers: Провайдери
         set: Встановлено
+    show_title: Профіль // %{name}

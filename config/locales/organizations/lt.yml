@@ -13,6 +13,7 @@ lt:
       title: Globalus klanų registras
       view_aria: Peržiūrėti %{name} profilį
       view_profile: PERŽIŪRĖTI_PROFILĮ →
+    index_title: Organizacijų registras // Klanai
     show:
       activity:
         asset_expansion: Turto plėtra
@@ -45,3 +46,4 @@ lt:
         capital_injected_sub: SCC iš viso
         carbon_yield: Nukalta SCC
         carbon_yield_sub: Nukalinta SCC
+    show_title: Klano profilis // %{name}

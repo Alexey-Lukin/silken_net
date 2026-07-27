@@ -11,6 +11,7 @@ uk:
         description: Спробуйте обрати ширший realm або очистити пошук.
         title: Кодекс мовчить. Жоден архетип не підходить під цей фільтр.
       kicker: Шар Лору
+      page_title: Атлас Кодексу
       title: Кодекс Архетипів
     attunements:
       attune: Резонувати
@@ -105,6 +106,7 @@ uk:
     realm_tabs:
       all: Усі
       aria_label: Фільтр realm Кодексу
+      page_title: Кодекс · Realms
     show:
       meta:
         archetype: Архетип
@@ -115,6 +117,7 @@ uk:
         geo_region: Геозона
         lifecycle: 'Життєвий цикл:'
         realm: Realm
+      page_title: Кодекс · %{title}
       sections:
         context: Контекст
         cyber_meaning: Кіберзначення

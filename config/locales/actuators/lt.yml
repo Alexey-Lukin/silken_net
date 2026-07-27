@@ -31,6 +31,7 @@ lt:
       sector_matrix: Sektoriaus matrica // %{name}
       title: Aparatūros sąveikos sluoksnis
       total_units: Iš viso vienetų
+    index_title: 'Aktuatoriai // Sektorius: %{name}'
     show:
       columns:
         executed_at: Įvykdyta
@@ -41,3 +42,4 @@ lt:
       log_title: Komandų vykdymo žurnalas
       not_executed: "---"
       system_operator: SISTEMA
+    show_title: Aktuatoriaus centras // %{device_type}

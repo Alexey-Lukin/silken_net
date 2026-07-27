@@ -1,6 +1,7 @@
 ---
 lt:
   firmwares:
+    create_error_title: Evoliucijos klaida
     form:
       binary_label: Dvejetainis artefaktas (.bin)
       notes_label: Leidimo pastabos / Loginiai pakeitimai
@@ -28,9 +29,11 @@ lt:
       upload: "+ Injekuoti naują kodą"
       upload_aria: Įkelti naują programinės įrangos dvejetainį failą
       version_label: v%{version}
+    index_title: Programinės įrangos evoliucija
     new:
       subtitle: Paruošti dvejetainį artefaktą OTA diegimui
       title: Naujo kodo injekcija
+    new_title: Įkelti naują evoliuciją
     ota_progress_bar:
       chunk: 'DALIS: %{current} / %{total}'
       complete: "%{percent}% BAIGTA"

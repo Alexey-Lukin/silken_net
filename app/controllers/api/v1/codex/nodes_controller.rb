@@ -32,7 +32,7 @@ module Api
                                .group(:codex_realm_id)
                                .count
               render_dashboard(
-                title: "Codex Atlas",
+                title: I18n.t("codex.atlas.page_title"),
                 component: ::Codex::Index.new(
                   nodes: @nodes,
                   pagy: @pagy,
@@ -69,7 +69,7 @@ module Api
                           .exists?(user_id: current_user.id, codex_node_id: @node.id)
 
               render_dashboard(
-                title: "Codex · #{@node.title}",
+                title: I18n.t("codex.show.page_title", title: @node.title),
                 component: ::Codex::Show.new(
                   node: @node,
                   current_user: current_user,

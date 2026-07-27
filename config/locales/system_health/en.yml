@@ -36,3 +36,4 @@ en:
       subtitle: Status of CoAP listener, Sidekiq queues and database connection.
       system_degraded: "🚨 SYSTEM DEGRADED — One or more subsystems require attention"
       title: "💓 System Health — Pulse Monitor"
+    show_title: System Health

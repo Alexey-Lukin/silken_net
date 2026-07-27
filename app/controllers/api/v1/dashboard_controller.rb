@@ -50,7 +50,7 @@ module Api
           format.json { render json: @stats }
           format.html do
             render_dashboard(
-              title: "Citadel Command // Global Overview",
+              title: I18n.t("dashboard.index_title"),
               component: Dashboard::Home.new(stats: @stats, events: @recent_events)
             )
           end

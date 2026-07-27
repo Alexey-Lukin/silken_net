@@ -16,6 +16,7 @@ en:
       filter_medium: medium
       subtitle: Monitoring live telemetry for anomalies and baseline deviations.
       title: Active Threats Matrix
+    index_title: Alerts Command
     messages:
       actuator_fault: 'Actuator ‘%{name}’ failed (%{endpoint}). Reason: %{reason}. A patrol visit is required.'
       actuator_fault_unknown: Actuator ‘%{name}’ failed (%{endpoint}). Cause unknown (no CoAP reply). A patrol visit is required.
@@ -69,6 +70,7 @@ en:
       critical: critical
       low: low
       medium: medium
+    show_title: 'Alert #%{id}'
     table:
       alert_type: Alert Type
       command: Command

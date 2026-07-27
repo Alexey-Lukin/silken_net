@@ -23,7 +23,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Sector Matrix // #{@cluster.name}",
+              title: I18n.t("trees.index_title", name: @cluster.name),
               component: Trees::Index.new(cluster: @cluster, trees: @trees, pagy: @pagy)
             )
           end
@@ -56,7 +56,7 @@ module Api
             @recent_logs = @tree.telemetry_logs.order(created_at: :desc).limit(10)
             @maintenance_records = @tree.maintenance_records.includes(:user).order(performed_at: :desc).limit(20)
             render_dashboard(
-              title: "Soldier Identity // #{@tree.did}",
+              title: I18n.t("trees.show_title", did: @tree.did),
               component: Trees::Show.new(
                 tree: @tree,
                 latest_log: @latest_log,

@@ -4,6 +4,7 @@ en:
     grid:
       empty_description: Deploy sensors to initialize cluster grid.
       empty_title: Matrix is empty. No clusters detected.
+    index_title: Cluster Atlas
     item:
       health: Health
       id: 'ID: %{id}'
@@ -48,3 +49,4 @@ en:
         queen_gateways: Queen Gateways
         seismic_sensitivity: Seismic Sensitivity
         timezone: Timezone
+    show_title: 'Sector: %{name}'

@@ -9,6 +9,7 @@ en:
         description: Try a broader realm or clear the search.
         title: Codex is silent. No archetypes match this filter.
       kicker: Lore Layer
+      page_title: Codex Atlas
       title: Codex of Archetypes
     attunements:
       attune: Attune
@@ -103,6 +104,7 @@ en:
     realm_tabs:
       all: All
       aria_label: Codex realm filter
+      page_title: Codex · Realms
     show:
       meta:
         archetype: Archetype
@@ -113,6 +115,7 @@ en:
         geo_region: Geo Region
         lifecycle: 'Lifecycle:'
         realm: Realm
+      page_title: Codex · %{title}
       sections:
         context: Context
         cyber_meaning: Cyber Meaning

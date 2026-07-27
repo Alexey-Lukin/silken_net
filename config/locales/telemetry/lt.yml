@@ -6,6 +6,7 @@ lt:
       carrier_label: 'Operatorius: Tiesiogiai į ląstelę'
       header_eyebrow: Neuralinio ryšio išvestis
       header_title: Globalus telemetrijos srautas
+    live_title: Tiesioginė telemetrija // Pulsas
     log_entry:
       batch_received: PARTIJA_GAUTA
       ip_label: 'IP: %{ip}'

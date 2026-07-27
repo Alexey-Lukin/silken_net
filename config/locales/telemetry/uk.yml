@@ -6,6 +6,7 @@ uk:
       carrier_label: 'Канал: Direct-to-Cell'
       header_eyebrow: Вихідний нейроканал
       header_title: Глобальний потік телеметрії
+    live_title: Жива телеметрія // Пульс
     log_entry:
       batch_received: ПАКЕТ_ОТРИМАНО
       ip_label: 'IP: %{ip}'

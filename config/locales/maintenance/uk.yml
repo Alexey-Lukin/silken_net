@@ -1,6 +1,8 @@
 ---
 uk:
   maintenance:
+    create_error_title: Помилка в ритуалі
+    edit_title: Редагування запису // №%{id}
     form:
       action_prompt: "— Оберіть тип втручання —"
       action_type: Тип дії
@@ -58,6 +60,8 @@ uk:
         technician: Технік
         timestamp: Час
         unit: Об'єкт
+    index_title: Журнал обслуговування // Записи зцілення
+    new_title: Новий ритуал обслуговування
     photo_gallery:
       empty:
         description: Завантажте докази для початку документування.
@@ -120,3 +124,4 @@ uk:
         updated: Оновлено
       notes:
         heading: Польові нотатки
+    show_title: Запис // №%{id}

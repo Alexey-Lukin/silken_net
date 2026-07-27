@@ -5,6 +5,7 @@ lv:
       nodes_online: 'Mezgli tiešsaistē:'
       subtitle: Meža tīkla neirālo sinapšu uzraudzība.
       title: Queen reģistrs // Globālie relēji
+    index_title: Queen reģistrs
     item:
       cluster: 'Klasteris: %{name}'
       label: Queen // %{uid}
@@ -44,3 +45,4 @@ lv:
         signal_strength: Signāla stiprums
         thermal_state: Termiskais stāvoklis
         voltage_matrix: Sprieguma matrica
+    show_title: Queen // %{uid}

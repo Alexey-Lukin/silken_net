@@ -21,7 +21,7 @@ module Api
           format.html do
             @pagy, @users = pagy(scope)
             render_dashboard(
-              title: "Crew Management // The Clan",
+              title: I18n.t("users.index_title"),
               component: Users::Index.new(users: @users, pagy: @pagy)
             )
           end
@@ -40,7 +40,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Profile // #{@user.first_name}",
+              title: I18n.t("users.show_title", name: @user.first_name),
               component: Users::Profile.new(
                 user: @user,
                 maintenance_count: @user.maintenance_records.count,
@@ -64,7 +64,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Profile // #{@user.first_name}",
+              title: I18n.t("users.show_title", name: @user.first_name),
               component: Users::Profile.new(
                 user: @user,
                 maintenance_count: @user.maintenance_records.count,

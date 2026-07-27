@@ -24,3 +24,4 @@ en:
         address: Public Crypto Address
         billing: Billing Contact
         heading: On-Chain Identity Vault
+    show_title: Organization Settings

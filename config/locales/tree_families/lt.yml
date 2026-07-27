@@ -1,6 +1,8 @@
 ---
 lt:
   tree_families:
+    create_error_title: DNR sekos klaida
+    edit_title: Tikslinti genomą // %{name}
     form:
       bark_thickness: Žievės storis (mm)
       baseline_impedance: Bazinis impedansas (kΩ)
@@ -32,6 +34,8 @@ lt:
       range_value: "%{min} - %{max} kΩ"
       soldiers_count: "%{count} kariai"
       title: Globalios rūšių konstantos
+    index_title: Biologinės konstantos // Genomai
+    new_title: Apibrėžti naują rūšį
     show:
       baseline_info: 'Bazinis impedansas: %{baseline} kOhm // CO₂ koeficientas: %{coef}'
       defaults:
@@ -53,3 +57,5 @@ lt:
         sap_flow: Sulų srauto indeksas
       props_title: TinyML biologiniai požymiai
       scale_title: Homeostazės skalė
+    show_title: Genomo architektūra // %{name}
+    update_error_title: Perkalibravimo klaida

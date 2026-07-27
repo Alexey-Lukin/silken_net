@@ -22,6 +22,7 @@ en:
         total_injected: Total Contracted
         total_minted: Total Minted
       unassigned: UNASSIGNED
+    index_title: Nature-as-a-Service Registry
     show:
       backing:
         active_soldiers: Active Soldiers
@@ -57,3 +58,4 @@ en:
       title: "#%{id} // SEC_%{sector}"
       total_funding: 'Total Service Fee: %{amount} SCC'
       yield_unit: SCC
+    show_title: 'Contract Audit // #%{id}'

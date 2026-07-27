@@ -22,7 +22,7 @@ module Api
             online_count = current_user.organization.gateways
                              .where("last_seen_at > ?", 5.minutes.ago).count
             render_dashboard(
-              title: "Queen Registry",
+              title: I18n.t("gateways.index_title"),
               component: Gateways::Index.new(gateways: @gateways, pagy: @pagy, online_count: online_count)
             )
           end
@@ -39,7 +39,7 @@ module Api
             @latest_log = @gateway.latest_gateway_telemetry_log
             @active_soldiers = @gateway.trees.where(status: :active).limit(200)
             render_dashboard(
-              title: "Queen // #{@gateway.uid}",
+              title: I18n.t("gateways.show_title", uid: @gateway.uid),
               component: Gateways::Show.new(
                 gateway: @gateway,
                 latest_log: @latest_log,

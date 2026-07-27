@@ -1,6 +1,8 @@
 ---
 lv:
   maintenance:
+    create_error_title: Kļūda rituālā
+    edit_title: 'Rediģēt ierakstu // #%{id}'
     form:
       action_prompt: "— Izvēlēties iejaukšanās veidu —"
       action_type: Darbības veids
@@ -58,6 +60,8 @@ lv:
         technician: Tehniķis
         timestamp: Laika zīmogs
         unit: Vienība
+    index_title: Apkopes žurnāls // Dziedināšanas ieraksti
+    new_title: Jauns apkopes rituāls
     photo_gallery:
       empty:
         description: Augšupielādējiet pierādījumus, lai sāktu dokumentēšanu.
@@ -118,3 +122,4 @@ lv:
         updated: Atjaunināts
       notes:
         heading: Lauka piezīmes
+    show_title: 'Ieraksts // #%{id}'

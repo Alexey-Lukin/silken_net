@@ -31,6 +31,7 @@ lv:
       sector_matrix: Sektora matrica // %{name}
       title: Aparatūras mijiedarbības slānis
       total_units: Kopā vienību
+    index_title: 'Aktuatori // Sektors: %{name}'
     show:
       columns:
         executed_at: Izpildīts
@@ -41,3 +42,4 @@ lv:
       log_title: Komandu izpildes žurnāls
       not_executed: "---"
       system_operator: SISTĒMA
+    show_title: Aktuatora centrs // %{device_type}

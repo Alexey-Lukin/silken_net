@@ -16,6 +16,7 @@ lv:
       filter_medium: vidējs
       subtitle: Reāllaika telemetrijas uzraudzība anomālijām un bāzlīnijas novirzēm.
       title: Aktīvo draudu matrica
+    index_title: Brīdinājumu vadības centrs
     messages:
       actuator_fault: 'Izpildmehānisma “%{name}” kļūme (%{endpoint}). Iemesls: %{reason}. Nepieciešams patruļas izbraukums.'
       actuator_fault_unknown: Izpildmehānisma “%{name}” kļūme (%{endpoint}). Iemesls nezināms (nav CoAP atbildes). Nepieciešams patruļas izbraukums.
@@ -69,6 +70,7 @@ lv:
       critical: kritisks
       low: zems
       medium: vidējs
+    show_title: 'Brīdinājums #%{id}'
     table:
       alert_type: Brīdinājuma veids
       command: Komanda

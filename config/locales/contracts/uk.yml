@@ -22,6 +22,7 @@ uk:
         total_injected: Законтрактовано всього
         total_minted: Всього створено
       unassigned: НЕ ПРИЗНАЧЕНО
+    index_title: Реєстр NaaS-контрактів
     show:
       backing:
         active_soldiers: Активних солдатів
@@ -57,3 +58,4 @@ uk:
       title: "#%{id} // СЕК_%{sector}"
       total_funding: 'Загальна плата за послугу: %{amount} SCC'
       yield_unit: SCC
+    show_title: Аудит контракту // №%{id}

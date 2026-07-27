@@ -1,6 +1,7 @@
 ---
 en:
   provisioning:
+    failed_title: Initiation Failed
     new:
       errors_title: 'Initiation Failed:'
       fields:
@@ -18,6 +19,7 @@ en:
       submit: BIND HARDWARE TO MATRIX
       subtitle: Establishing 40-year biometric link
       title: Hardware Initiation
+    new_title: Hardware Initiation Ritual
     success:
       assigned_did: Assigned DID
       hardware_uid: Hardware UID
@@ -31,3 +33,4 @@ en:
       ritual_complete: Ritual Complete
       view_in_matrix: View Node in Matrix →
       woven: Node has been woven into the Silken Net.
+    success_title: Initiation Successful

@@ -13,6 +13,7 @@ lv:
       title: Globālais klanu reģistrs
       view_aria: Skatīt %{name} profilu
       view_profile: SKATĪT_PROFILU →
+    index_title: Organizāciju reģistrs // Klani
     show:
       activity:
         asset_expansion: Aktīvu paplašināšana
@@ -45,3 +46,4 @@ lv:
         capital_injected_sub: SCC kopā
         carbon_yield: Kalts SCC
         carbon_yield_sub: Kalts SCC
+    show_title: Klana profils // %{name}
