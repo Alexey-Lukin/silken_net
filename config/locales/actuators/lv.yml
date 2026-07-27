@@ -18,8 +18,8 @@ lv:
       never: NEKAD
       physical_state: 'Fiziskais stāvoklis:'
     command_status_badge:
-      acknowledged: apstiprināts
-      confirmed: apstiprināts
+      acknowledged: izpildē
+      confirmed: pabeigts
       failed: neizdevās
       issued: izdots
       sent: nosūtīts

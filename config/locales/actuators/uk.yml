@@ -18,8 +18,8 @@ uk:
       never: НІКОЛИ
       physical_state: 'Фізичний стан:'
     command_status_badge:
-      acknowledged: підтверджено
-      confirmed: підтверджено
+      acknowledged: виконується
+      confirmed: завершено
       failed: невдало
       issued: видано
       sent: надіслано

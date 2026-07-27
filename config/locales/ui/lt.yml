@@ -14,7 +14,7 @@ lt:
     skeleton:
       loading: Kraunama…
     status:
-      acknowledged: patvirtinta
+      acknowledged: vykdoma
       active: aktyvus
       aria_label: 'Būsena: %{status}'
       breached: pažeista

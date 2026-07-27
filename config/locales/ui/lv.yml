@@ -14,7 +14,7 @@ lv:
     skeleton:
       loading: Ielādē…
     status:
-      acknowledged: apstiprināts
+      acknowledged: izpildē
       active: aktīvs
       aria_label: 'Statuss: %{status}'
       breached: pārkāpts

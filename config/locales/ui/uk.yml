@@ -14,7 +14,7 @@ uk:
     skeleton:
       loading: Завантаження…
     status:
-      acknowledged: підтверджено
+      acknowledged: виконується
       active: активний
       aria_label: 'Статус: %{status}'
       breached: порушено

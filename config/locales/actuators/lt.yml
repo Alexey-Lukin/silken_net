@@ -18,8 +18,8 @@ lt:
       never: NIEKADA
       physical_state: 'Fizinė būsena:'
     command_status_badge:
-      acknowledged: patvirtinta
-      confirmed: patvirtinta
+      acknowledged: vykdoma
+      confirmed: baigta
       failed: nepavyko
       issued: išduota
       sent: išsiųsta
