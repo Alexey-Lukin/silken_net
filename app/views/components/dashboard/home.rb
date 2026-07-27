@@ -3,13 +3,11 @@
 
 module Dashboard
   class Home < ApplicationComponent
-    # Default Citadel coordinates shown over the geo matrix until the map
-    # tiles load. Sourced from the project HQ in Cherkasy, UA.
-    DEFAULT_COORDINATES = { lat: "49.4447", lon: "32.0588", alt: "112" }.freeze
-
-    def initialize(stats:, events:)
+    def initialize(stats:, events:, trees:, organization:)
       @stats = stats
       @events = events
+      @trees = trees
+      @organization = organization
     end
 
     def view_template
@@ -36,22 +34,11 @@ module Dashboard
 
     private
 
-    # Lazy-lookup helper scoped to the `dashboard.home.*` namespace.
-
+    # Обгортка несе ЛИШЕ позицію в сітці: рамку, висоту й фон тримає сам
+    # `Dashboard::Map`, інакше вийшла б рамка в рамці й подвійні 500px.
     def render_geospatial_matrix
-      div(class: "lg:col-span-2 p-1 border border-gaia-border bg-gaia-surface h-[500px] relative group overflow-hidden") do
-        # Фоновий растр — декоративний бренд-акцент.
-        div(class: "absolute inset-0 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:30px_30px] opacity-10", aria_hidden: "true")
-
-        div(class: "absolute inset-0 flex flex-col items-center justify-center gap-4") do
-          div(class: "h-12 w-12 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin", aria_hidden: "true")
-          p(class: "text-gaia-text-subtle font-mono text-tiny uppercase tracking-[0.5em]") { t(".map.loading") }
-        end
-
-        # Overlay для координат
-        div(class: "absolute bottom-4 left-4 font-mono text-micro text-gaia-text-subtle") do
-          t(".map.coordinates_label", **DEFAULT_COORDINATES)
-        end
+      div(class: "lg:col-span-2") do
+        render Dashboard::Map.new(trees: @trees, organization: @organization)
       end
     end
 

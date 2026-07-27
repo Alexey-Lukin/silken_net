@@ -328,6 +328,36 @@ RSpec.describe Tree, type: :model do
     end
   end
 
+  # Стрім мапи несе координати й DID — ім'я стріму і є межею тенанта.
+  # Пін саме на АРГУМЕНТ: «броадкаст стався» лишався б зеленим і для
+  # голого `"geospatial_matrix"`, тобто для крос-тенант витоку.
+  describe "#broadcast_map_update stream scoping" do
+    before { allow_any_instance_of(described_class).to receive(:broadcast_map_update).and_call_original }
+
+    it "broadcasts into the stream of the owning organization" do
+      organization = create(:organization)
+      cluster = create(:cluster, organization: organization)
+      tree = create(:tree, cluster: cluster, latitude: 49.44, longitude: 32.06)
+
+      allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+      tree.broadcast_map_update
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to)
+        .with("geospatial_matrix_org_#{organization.id}", hash_including(target: "map_node_#{tree.id}"))
+    end
+
+    # `Cluster has_many :trees, dependent: :nullify`, тож дерево без кластера —
+    # не крайній випадок, а звичайний стан після видалення сектора. Адреси
+    # стріму в нього нема, і глобальний ефір тут не запасний варіант.
+    it "does not broadcast at all when the tree has no cluster" do
+      tree = create(:tree, latitude: 49.44, longitude: 32.06, cluster: nil)
+
+      allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+      expect(tree.broadcast_map_update).to be_nil
+      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_replace_to)
+    end
+  end
+
   describe "ensure_calibration when calibration already exists" do
     it "does not create a new calibration if one exists" do
       tree = create(:tree)

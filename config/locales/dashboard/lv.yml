@@ -15,9 +15,6 @@ lv:
         empty: Nav nesenās aktivitātes
         title: Tiešraides pārraides plūsma
         view_all: Atvērt misijas žurnālu →
-      map:
-        coordinates_label: 'PLAT: %{lat} // GAR: %{lon} // ALT: %{alt}m'
-        loading: Inicializē ģeotelpisko matricu...
       stats:
         active_soldiers: Aktīvie karavīri
         carbon_treasury: Oglekļa kase

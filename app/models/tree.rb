@@ -203,12 +203,20 @@ class Tree < ApplicationRecord
     @latest_telemetry_log ||= telemetry_logs.order(created_at: :desc).first
   end
 
-  # ⚡ [ГЕОПРОСТОРОВА МАТРИЦЯ]: Трансляція вузла в Stimulus контролер
+  # ⚡ [ГЕОПРОСТОРОВА МАТРИЦЯ]: Трансляція вузла в Stimulus контролер.
+  # Стрім скоуплений організацією ВЛАСНИКА дерева — голий `"geospatial_matrix"`
+  # роздавав би координати й DID чужого флоту кожному, хто відкрив дашборд
+  # (той самий клас, що SEC.25 на телеметрії). `cluster` тут optional і ще й
+  # `dependent: :nullify` з боку Cluster, тож дерево без кластера — не крайній
+  # випадок, а звичайний стан: адреси стріму в нього нема.
   def broadcast_map_update
     return unless latitude.present? && longitude.present?
 
+    org_id = cluster&.organization_id
+    return unless org_id # осиротіле дерево: краще без live-вузла, ніж у глобальний ефір
+
     Turbo::StreamsChannel.broadcast_replace_to(
-      "geospatial_matrix",
+      "geospatial_matrix_org_#{org_id}",
       target: "map_node_#{id}",
       html: Dashboard::MapNode.new(tree: self).call
     )

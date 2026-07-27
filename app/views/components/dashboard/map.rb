@@ -3,20 +3,27 @@
 
 module Dashboard
   class Map < ApplicationComponent
-    def initialize(trees:)
+    def initialize(trees:, organization:)
       @trees = trees
+      @organization = organization
     end
 
     def view_template
       # Підключаємо CSS Leaflet прямо тут для капсуляції
       link(rel: "stylesheet", href: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css", crossorigin: "")
 
-      div(class: "w-full h-[500px] border border-emerald-900 bg-black/50 rounded relative z-0 overflow-hidden shadow-[0_0_30px_rgba(6,78,59,0.2)]") do
-        # Підписка на глобальний канал оновлення мапи
-        turbo_stream_from "geospatial_matrix"
+      div(class: "w-full h-[500px] border border-gaia-border bg-gaia-surface relative z-0 overflow-hidden shadow-[0_0_30px_rgba(6,78,59,0.2)]") do
+        # Підписка скоуплена організацією глядача: ім'я стріму детерміноване,
+        # тож голий рядок посадив би весь застосунок в ОДИН канал і роздав
+        # координати чужого флоту. Без організації підписки нема (fail-closed).
+        turbo_stream_from "geospatial_matrix_org_#{@organization.id}" if @organization
 
-        # Основний контейнер карти з підключеним Stimulus
-        div(data: { controller: "map" }, class: "w-full h-full z-0") do
+        # Основний контейнер карти з підключеним Stimulus.
+        # `turbo-permanent`: Leaflet будує свій DOM усередині цього вузла, а
+        # сервер віддає його порожнім — тож morph-рефреш (увімкнений у layout
+        # заради `broadcast_refresh_to`) вирізав би плитки й маркери, лишивши
+        # контролер живим і без `connect()`, який міг би їх відновити.
+        div(id: "geospatial_map_canvas", data: { controller: "map", turbo_permanent: "" }, class: "w-full h-full z-0") do
           # Прихований блок даних. Stimulus "зчитує" звідси.
           div(id: "map_data_nodes", class: "hidden") do
             @trees.each { |tree| render Dashboard::MapNode.new(tree: tree) }

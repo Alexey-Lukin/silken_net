@@ -21,9 +21,9 @@ RSpec.describe Dashboard::Map do
     t
   end
 
-  def render_component(trees:)
+  def render_component(trees:, organization: OpenStruct.new(id: 42))
     ApplicationController.renderer.render(
-      component_class.new(trees: trees),
+      component_class.new(trees: trees, organization: organization),
       layout: false
     )
   end
@@ -46,8 +46,33 @@ RSpec.describe Dashboard::Map do
   end
 
   describe "turbo stream subscription" do
+    def subscribed_streams(rendered)
+      rendered.scan(/signed-stream-name="([^"]+)"/).flatten
+              .map { |s| Turbo::StreamsChannel.verified_stream_name(s) }
+    end
+
     it "renders a turbo cable stream source for live updates" do
       expect(html).to include("turbo-cable-stream-source")
+    end
+
+    # Ім'я стріму детерміноване, тож голий літерал посадив би ВСІХ глядачів
+    # у той самий канал і роздав координати й DID чужого флоту (клас SEC.25).
+    # Дві різні організації обов'язкові: з однією пін мовчить на найправдо-
+    # подібнішій підміні (будь-який фіксований id дорівнював би єдиному).
+    it "scopes the stream to the viewer's own organization" do
+      expect(subscribed_streams(html)).to eq([ "geospatial_matrix_org_42" ])
+
+      other = render_component(trees: trees, organization: OpenStruct.new(id: 99))
+      expect(subscribed_streams(other)).to eq([ "geospatial_matrix_org_99" ])
+    end
+
+    # Глядач без організації адреси не має — підписки не існує (fail-closed),
+    # решта мапи рендериться нормально.
+    it "renders no subscription at all when the viewer has no organization" do
+      orphan = render_component(trees: trees, organization: nil)
+
+      expect(orphan).not_to include("turbo-cable-stream-source")
+      expect(orphan).to include('id="map_data_nodes"')
     end
   end
 

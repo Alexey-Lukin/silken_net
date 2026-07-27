@@ -15,9 +15,6 @@ uk:
         empty: Немає недавньої активності
         title: Стрічка передач у реальному часі
         view_all: Відкрити журнал місій →
-      map:
-        coordinates_label: 'LAT: %{lat} // LON: %{lon} // ALT: %{alt}м'
-        loading: Ініціалізація геопросторової матриці...
       stats:
         active_soldiers: Активні солдати
         carbon_treasury: Вуглецева скарбниця

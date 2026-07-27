@@ -15,9 +15,6 @@ lt:
         empty: Nėra naujausio aktyvumo
         title: Tiesioginės transliacijos srautas
         view_all: Atidaryti misijų žurnalą →
-      map:
-        coordinates_label: 'PLAT: %{lat} // ILG: %{lon} // AUKŠT: %{alt}m'
-        loading: Inicializuojama geospatinė matrica...
       stats:
         active_soldiers: Aktyvūs kariai
         carbon_treasury: Anglies iždas

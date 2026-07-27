@@ -37,9 +37,13 @@ RSpec.describe Dashboard::Home do
     tx
   end
 
-  def render_component(stats:, events:)
+  def mock_organization(id: 7)
+    OpenStruct.new(id: id)
+  end
+
+  def render_component(stats:, events:, trees: [], organization: mock_organization)
     ApplicationController.renderer.render(
-      component_class.new(stats: stats, events: events),
+      component_class.new(stats: stats, events: events, trees: trees, organization: organization),
       layout: false
     )
   end
@@ -116,6 +120,29 @@ RSpec.describe Dashboard::Home do
   describe "empty events state" do
     it "renders without errors when events list is empty" do
       expect(html).to include("Live Transmission Feed")
+    end
+  end
+
+  # Третя ланка контракту живого тракту (`04_04 §8.1`): продюсер і підписник
+  # обидва існували роками, а `Dashboard::Map` не рендерився ЖОДНИМ маршрутом —
+  # на його місці стояв вічний спінер. Пін саме на РЕНДЕР підписника, бо
+  # пара «продюсер ⟷ підписник» цю вісь не бачить за побудовою.
+  describe "geospatial matrix" do
+    let(:tree) do
+      t = OpenStruct.new(id: 5, did: "SNET-00000005", latitude: 49.44, longitude: 32.06,
+                         status: "active", current_stress: 0.1, charge_percentage: 90)
+      t.define_singleton_method(:model_name) { ActiveModel::Name.new(Tree) }
+      t.define_singleton_method(:to_key) { [ 5 ] }
+      t.define_singleton_method(:to_param) { "5" }
+      t
+    end
+
+    it "renders the live map instead of a placeholder spinner" do
+      rendered = render_component(stats: stats, events: [], trees: [ tree ])
+
+      expect(rendered).to include('data-controller="map"')
+      expect(rendered).to include("map_node_5")
+      expect(rendered).not_to include("animate-spin")
     end
   end
 end

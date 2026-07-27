@@ -82,6 +82,45 @@ RSpec.describe Api::V1::DashboardController, type: :request do
         get "/api/v1/dashboard", headers: headers
         expect(response).to have_http_status(:ok)
       end
+
+      # Геопросторова матриця віддає координати й DID живого флоту. Рядок, що
+      # вирішує ЧИЙ це флот, живе в контролері — компонентна спека його не
+      # бачить (там організація приходить моком). Без цього піна підміна на
+      # `Organization.first` лишила б усю сюїту зеленою, а крос-тенант — живим.
+      def subscribed_streams_for(who)
+        get "/api/v1/dashboard",
+            headers: { "Authorization" => "Bearer #{who.generate_token_for(:api_access)}" }
+        response.body.scan(/signed-stream-name="([^"]+)"/).flatten
+                .map { |s| Turbo::StreamsChannel.verified_stream_name(s) }
+      end
+
+      # ⚠️ Двоє юзерів обовʼязкові: `organization` створюється в цьому файлі
+      # першою, тож `Organization.first` їй ДОРІВНЮЄ — з одним прикладом
+      # мутація на неї лишається зеленою. Ловить лише різниця відповідей.
+      it "subscribes each viewer to their OWN organization map stream" do
+        other_organization = create(:organization)
+        stranger = create(:user, organization: other_organization)
+
+        expect(subscribed_streams_for(user))
+          .to eq([ "geospatial_matrix_org_#{organization.id}" ])
+        expect(subscribed_streams_for(stranger))
+          .to eq([ "geospatial_matrix_org_#{other_organization.id}" ])
+      end
+
+      it "renders map nodes only for the viewer's own geolocated trees" do
+        other_organization = create(:organization)
+        other_cluster = create(:cluster, organization: other_organization)
+        own = create(:tree, cluster: cluster, latitude: 49.44, longitude: 32.06)
+        foreign = create(:tree, cluster: other_cluster, latitude: 50.45, longitude: 30.52)
+        ungeolocated = create(:tree, cluster: cluster, latitude: nil, longitude: nil)
+
+        get "/api/v1/dashboard", headers: headers
+
+        expect(response.body).to include("map_node_#{own.id}")
+        expect(response.body).not_to include("map_node_#{foreign.id}")
+        expect(response.body).not_to include("map_node_#{ungeolocated.id}")
+        expect(response.body).not_to include(foreign.did)
+      end
     end
 
     context "with global_onchain_carbon from The Graph" do

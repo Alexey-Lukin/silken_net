@@ -15,9 +15,6 @@ en:
         empty: No recent activity
         title: Live Transmission Feed
         view_all: Open Mission Log →
-      map:
-        coordinates_label: 'LAT: %{lat} // LON: %{lon} // ALT: %{alt}m'
-        loading: Initializing Geospatial Matrix...
       stats:
         active_soldiers: Active Soldiers
         carbon_treasury: Carbon Treasury

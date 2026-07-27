@@ -51,13 +51,34 @@ module Api
           format.html do
             render_dashboard(
               title: I18n.t("dashboard.index_title"),
-              component: Dashboard::Home.new(stats: @stats, events: @recent_events)
+              component: Dashboard::Home.new(
+                stats: @stats,
+                events: @recent_events,
+                trees: map_trees(org),
+                organization: org
+              )
             )
           end
         end
       end
 
       private
+
+      # Стеля першого рендеру геопросторової матриці. Leaflet тримає таку кількість
+      # маркерів без кластеризації; понад неї сторінка показує ПІДМНОЖИНУ флоту —
+      # свідомий борг, бо кластеризація маркерів = нова JS-залежність (→ 00_07 UI.4).
+      # Живі оновлення ліміту не знають: broadcast_replace у ціль, якої нема в DOM,
+      # Turbo тихо ігнорує.
+      MAP_NODE_LIMIT = 500
+
+      # Лише геолоковані дерева організації — і лише для html-гілки: JSON-споживач
+      # мапи не рендерить, тож не платить за цей SELECT. N+1 тут немає за
+      # побудовою: `Dashboard::MapNode` читає виключно колонки `trees`
+      # (latitude/longitude/status + денормалізовані latest_stress_index,
+      # latest_voltage_mv), жодної асоціації.
+      def map_trees(org)
+        org.trees.geolocated.limit(MAP_NODE_LIMIT)
+      end
 
       # [ВИПРАВЛЕНО: Sync RPC Trap]: Кешуємо GraphQL результат з TheGraph на 5 хвилин,
       # щоб не блокувати кожен запит дашборду на 2-10 секунд.
