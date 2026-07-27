@@ -34,7 +34,7 @@ lt:
     index_title: 'Aktuatoriai // Sektorius: %{name}'
     show:
       columns:
-        executed_at: Įvykdyta
+        executed_at: Pradžia
         id: ID
         operator: Operatorius
         payload: Duomenys

@@ -34,7 +34,7 @@ lv:
     index_title: 'Aktuatori // Sektors: %{name}'
     show:
       columns:
-        executed_at: Izpildīts
+        executed_at: Sākums
         id: ID
         operator: Operators
         payload: Dati

@@ -34,7 +34,7 @@ uk:
     index_title: 'Актуатори // Сектор: %{name}'
     show:
       columns:
-        executed_at: Час виконання
+        executed_at: Початок
         id: ID
         operator: Оператор
         payload: Дані

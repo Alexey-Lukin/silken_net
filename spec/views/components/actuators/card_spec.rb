@@ -70,9 +70,38 @@ RSpec.describe Actuators::Card do
       expect(html).to include("IDLE")
     end
 
-    it "highlights failed command status with danger accent" do
+    # 🔴 Обидва наступні приклади мусять жити в НЕ-базовій локалі, і це не
+    # прискіпливість. В `en` мітка дорівнює сирому токену (`confirmed:
+    # confirmed`, `active: active`), тож англійський `include("confirmed")`
+    # зелений і для перекладеної мітки, і для сирого enum'а — тобто не
+    # здатний побачити рівно той дефект, заради якого написаний.
+    it "resolves the physical state through the locale file, not the raw enum" do
+      html = I18n.with_locale(:uk) { render_component(actuator: mock_actuator(state: "active")) }
+
+      expect(html).to include("активний")
+      expect(html).not_to match(/>\s*active\s*</)
+    end
+
+    it "resolves the last command status through the locale file" do
+      html = I18n.with_locale(:uk) do
+        render_component(actuator: mock_actuator, last_command: mock_command(status: "confirmed"))
+      end
+
+      expect(html).to include("завершено")
+    end
+
+    # ⚠️ Стара версія цього прикладу пінила `text-status-danger-accent` — а це
+    # клас hover/focus кнопки OFF (`card.rb`), не статусу. Вона лишалась би
+    # зеленою, навіть якби статус не рендерився взагалі. Пін мусить бути на
+    # стилі САМОГО бейджа, який тепер єдиний дім кольорів усіх п'яти станів.
+    it "renders a failed command through the shared status badge" do
       html = render_component(actuator: mock_actuator, last_command: mock_command(status: "failed"))
-      expect(html).to include("text-status-danger-accent")
+
+      # ⚠️ Пін саме на `text-red-200`, і це не примха: `bg-red-900` картка
+      # вживає САМА в `status_led_class` для `offline`, тож на ньому приклад
+      # був би зелений через сусідній елемент — та сама вада, що в прикладі,
+      # який цей замінює. `text-red-200` у картці не існує ніде.
+      expect(html).to include("text-red-200")
     end
   end
 

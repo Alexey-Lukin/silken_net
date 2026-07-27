@@ -32,7 +32,13 @@ RSpec.describe Actuators::Show do
       expect(html).to include("Operator")
       expect(html).to include("Payload")
       expect(html).to include("Status")
-      expect(html).to include("Executed At")
+      # Колонка показує `executed_at`, який модель ставить у `acknowledge` —
+      # момент, коли дія ФІЗИЧНО ПОЧИНАЄТЬСЯ (клапан відкривається, сирена
+      # вмикається). Стара мітка «Executed At» / lv «Izpildīts» / lt «Įvykdyta»
+      # називала завершення, тобто журнал казав «виконано 14:32» поруч із
+      # бейджем «виконується». Справжнє завершення — це `completed_at`, і воно
+      # в UI не показується взагалі (→ 00_07 UI.4).
+      expect(html).to include("Started")
     end
 
     it "renders command IDs" do

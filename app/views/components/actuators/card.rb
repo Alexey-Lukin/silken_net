@@ -36,7 +36,7 @@ module Actuators
       div(class: "space-y-2 mb-6 font-mono text-tiny uppercase tracking-tighter") do
         div(class: "flex justify-between border-b border-gaia-border pb-1") do
           span(class: "text-gaia-text-muted") { t(".physical_state") }
-          span(class: "text-gaia-primary") { @actuator.state }
+          span(class: "text-gaia-primary") { t("ui.status.#{@actuator.state}", default: @actuator.state) }
         end
         div(class: "flex justify-between border-b border-gaia-border pb-1") do
           span(class: "text-gaia-text-muted") { t(".endpoint") }
@@ -58,11 +58,16 @@ module Actuators
           span(class: "text-gaia-text-muted") { t(".last_activated") }
           span(class: "text-gaia-primary") { @actuator.last_activated_at&.strftime("%d.%m.%y %H:%M") || t(".never") }
         end
-        div(class: "flex justify-between") do
+        div(class: "flex justify-between items-center") do
           span(class: "text-gaia-text-muted") { t(".last_sync_status") }
-          failed = @last_command&.status == "failed"
-          span(class: tokens("text-status-danger-accent": failed, "text-gaia-text-muted": !failed)) do
-            @last_command&.status || t(".idle")
+          # Реюз бейджа замість власної мітки: він єдиний дім і перекладу
+          # (`actuators.command_status_badge.*`), і кольорів усіх п'яти станів —
+          # тут же жила друга, вужча копія, що знала лише `failed` і рендерила
+          # решту сирим англійським enum'ом навіть українцю.
+          if @last_command
+            render Actuators::CommandStatusBadge.new(command: @last_command)
+          else
+            span(class: "text-gaia-text-muted") { t(".idle") }
           end
         end
       end
