@@ -102,6 +102,21 @@ RSpec.describe Api::V1::AlertsController, type: :request do
       expect(response).to have_http_status(:unprocessable_content)
     end
 
+    # 🔴 Ця гілка не була покрита ЖОДНИМ прикладом — усі решта йдуть `as: :json` —
+    # і саме тому вона роками цілила в `alert_{id}`, тоді як `Alerts::Row`
+    # рендериться з `dom_id` = `ews_alert_{id}`. Ціль не існувала в жодній
+    # сторінці, replace був тихим no-op, а видимість тримав асинхронний
+    # броадкаст (який ця ж спека глушить рядком вище). Пін саме на ЦІЛЬ:
+    # «віддав turbo_stream» лишався б зеленим і з мертвим ідентифікатором.
+    it "targets the row's real dom_id in the turbo_stream response" do
+      patch resolve_api_v1_alert_path(own_alert),
+            headers: headers.merge("Accept" => "text/vnd.turbo-stream.html")
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(%(target="ews_alert_#{own_alert.id}"))
+      expect(response.body).not_to include(%(target="alert_#{own_alert.id}"))
+    end
+
     it "redirects on successful HTML resolve" do
       patch resolve_api_v1_alert_path(own_alert),
             headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }

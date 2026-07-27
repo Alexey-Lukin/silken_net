@@ -71,6 +71,13 @@ class DashboardLayout < ApplicationComponent
     head do
       title { "Silken Net // #{@title}" }
       meta(name: "viewport", content: "width=device-width,initial-scale=1")
+      # Turbo page-refresh = morph, а не reload. Це умова, за якої
+      # `broadcast_refresh_to` придатний як транспорт живих оновлень:
+      # інакше сторінка кластера перезавантажувалась би цілком і скидала
+      # скрол на кожну тривогу (тротл — 5 с). Вузли зі станом, який сервер
+      # не віддає (Leaflet-полотно), позначені `data-turbo-permanent`.
+      meta(name: "turbo-refresh-method", content: "morph")
+      meta(name: "turbo-refresh-scroll", content: "preserve")
       link(rel: "icon", href: "/icon.png", type: "image/png")
       link(rel: "icon", href: "/icon.svg", type: "image/svg+xml")
       link(rel: "apple-touch-icon", href: "/icon.png")

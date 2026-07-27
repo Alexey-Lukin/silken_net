@@ -681,6 +681,7 @@ RSpec.describe EwsAlert, type: :model do
       tree = create(:tree, cluster: cluster_bc)
       allow_any_instance_of(described_class).to receive(:broadcast_alert_update).and_call_original
       allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+      allow(Turbo::StreamsChannel).to receive(:broadcast_refresh_later_to)
       alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
 
       Rails.cache.delete("ews_alert_broadcast_throttle:#{alert.id}")
@@ -689,23 +690,35 @@ RSpec.describe EwsAlert, type: :model do
       allow(alert).to receive(:render_phlex).and_return("<div>alert</div>")
 
       alert.send(:broadcast_alert_update)
-      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).at_least(:twice)
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).once
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to).once
     end
 
-    it "broadcasts to [cluster, :alerts] stream with dom_id target" do
+    # Дві поверхні дістають РІЗНЕ, і саме це тут пінується: список алертів —
+    # готовий `<tr>` у свою `dom_id`-ціль, панель кластера — беззмістовний
+    # сигнал, бо в неї власна `<div>`-форма й власне дієслово («прибрати
+    # розвʼязану, підтягнути наступну»). Пін саме на АРГУМЕНТИ: «броадкаст
+    # стався» лишався б зеленим і тоді, коли `<tr>` знову летить у `<div>`.
+    it "pushes the row only to the list stream, and a signal to the cluster panel" do
       tree = create(:tree, cluster: cluster_bc)
       allow_any_instance_of(described_class).to receive(:broadcast_alert_update).and_call_original
       allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+      allow(Turbo::StreamsChannel).to receive(:broadcast_refresh_later_to)
       alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
 
       Rails.cache.delete("ews_alert_broadcast_throttle:#{alert.id}")
-      allow(alert).to receive(:render_phlex).and_return("<div>alert</div>")
+      allow(alert).to receive(:render_phlex).and_return("<tr>alert</tr>")
 
       alert.send(:broadcast_alert_update)
+
       expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).with(
-        [ cluster_bc, :alerts ],
+        "ews_alerts_org_#{cluster_bc.organization_id}",
         hash_including(target: "ews_alert_#{alert.id}")
       )
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to)
+        .with([ cluster_bc, :alerts ])
+      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_replace_to)
+        .with([ cluster_bc, :alerts ], anything)
     end
   end
 
@@ -717,27 +730,39 @@ RSpec.describe EwsAlert, type: :model do
 
     before do
       allow_any_instance_of(described_class).to receive(:broadcast_new_alert).and_call_original
+      allow(Turbo::StreamsChannel).to receive(:broadcast_refresh_later_to)
       allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_later_to)
       allow_any_instance_of(described_class).to receive(:render_phlex).and_return("<tr>alert</tr>")
     end
 
-    it "prepends new alert to [cluster, :alerts] stream" do
+    it "signals the cluster panel instead of pushing a row into it" do
       tree = create(:tree, cluster: cluster_bc)
 
-      alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
+      create(:ews_alert, cluster: cluster_bc, tree: tree)
 
-      expect(Turbo::StreamsChannel).to have_received(:broadcast_prepend_later_to).with(
-        [ cluster_bc, :alerts ],
-        hash_including(target: "alerts_list")
-      )
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to)
+        .with([ cluster_bc, :alerts ])
+      # Негативна половина несуча: панель тримає список як `<div>`-и, тож
+      # будь-який повернутий сюди prepend знову вставляв би `<tr>` у `<div>`.
+      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_prepend_later_to)
+    end
+
+    # Регресія на дірку, що прожила непоміченою: сторінка списку підписана на
+    # ОРГ-стрім, а продюсер слав лише в cluster-стрім — обидва кінці існували,
+    # адреси не збігались, і нова тривога не з'являлась без перезавантаження.
+    it "also signals the organization-wide alert list" do
+      tree = create(:tree, cluster: cluster_bc)
+
+      create(:ews_alert, cluster: cluster_bc, tree: tree)
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to)
+        .with("ews_alerts_org_#{cluster_bc.organization_id}")
     end
 
     it "skips broadcast when cluster is nil" do
-      allow_any_instance_of(Alerts::Row).to receive(:call).and_return("<tr>alert</tr>")
-
       create(:ews_alert, cluster: nil, tree: nil)
 
-      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_prepend_later_to)
+      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_refresh_later_to)
     end
   end
 

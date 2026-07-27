@@ -92,8 +92,14 @@ module Api
           respond_to do |format|
             format.json { render json: { message: I18n.t("flash.alerts.acknowledged", id: @alert.id), alert: @alert } }
             format.turbo_stream do
+              # `dom_id`, а НЕ рукописний `alert_#{id}`: рядок рендериться як
+              # `ews_alert_{id}`, тож стара ціль не існувала в жодній сторінці
+              # застосунку і replace був тихим no-op. UX тримався виключно на
+              # асинхронному броадкасті, у якого 5-секундний тротл — тобто при
+              # збігу оператор не бачив нічого й тиснув «Вирішити» вдруге,
+              # дістаючи вже відмову AASM.
               render turbo_stream: turbo_stream.replace(
-                "alert_#{@alert.id}",
+                ActionView::RecordIdentifier.dom_id(@alert),
                 Alerts::Row.new(alert: @alert).call
               )
             end

@@ -287,20 +287,29 @@ class EwsAlert < ApplicationRecord
   end
 
   # [REAL-TIME]: Новий алерт з'являється у стрічці кластера миттєво.
-  # broadcast_prepend_later_to вставляє рядок на початок списку тривог.
-  #
-  # Codex citations: a freshly-created alert has zero citations yet — pass
-  # an empty array so `Alerts::Row` skips the per-broadcast lookup. This
-  # also keeps Prosopite happy when many alerts broadcast in sequence
-  # (e.g. fraud-detection batch in `InsightGeneratorService`).
+  # Сторінка кластера дістає СИГНАЛ, а не готовий фрагмент, і це не стиль —
+  # це єдина форма, за якої тракт взагалі коректний. Панель `Clusters::Show`
+  # має власну компактну розмітку (`<div>`, три поля) і показує лише
+  # НЕРОЗВʼЯЗАНІ тривоги, тоді як `Alerts::Row` — це `<tr>` на шість колонок
+  # для повносторінкового списку. Тому: (1) push сюди вставляв `<tr>` усередину
+  # `<div>` — структурно невалідно; (2) правильне дієслово для цієї панелі при
+  # розвʼязанні тривоги — не «замінити рядок», а «прибрати й підтягнути
+  # наступну», чого фіксований HTML не виражає в принципі. Refresh лишає
+  # форму власникові сторінки: він переграє власний запит, дістає свій
+  # `unresolved.limit(5)` — і, як побічний наслідок, рендерить у локалі
+  # ГЛЯДАЧА, а не продюсера (`04_04 §8.1а`, тому цієї поверхні нема в I18N.2).
   def broadcast_new_alert
     return unless cluster
 
-    Turbo::StreamsChannel.broadcast_prepend_later_to(
-      [ cluster, :alerts ],
-      target: "alerts_list",
-      html: render_phlex(Alerts::Row.new(alert: self, citations: []))
-    )
+    Turbo::StreamsChannel.broadcast_refresh_later_to([ cluster, :alerts ])
+
+    # 🔴 Сторінка списку алертів досі не бачила НОВИХ тривог узагалі: вона
+    # підписана на org-стрім, а цей продюсер слав лише в cluster-стрім —
+    # продюсер і підписник існували обидва, просто на різних адресах.
+    # Тут теж сигнал, а не рядок: `Alerts::Index` має фільтри й пагінацію,
+    # тож сліпий prepend вставив би нагору тривогу, що не відповідає
+    # активному фільтру (і на другій сторінці — не в те місце).
+    Turbo::StreamsChannel.broadcast_refresh_later_to("ews_alerts_org_#{cluster.organization_id}")
   end
 
   # [ОПТИМІЗАЦІЯ]: Очищення Redis-блокувальника
@@ -330,21 +339,16 @@ class EwsAlert < ApplicationRecord
     return unless cluster
     return unless should_broadcast?
 
-    alert_html = render_phlex(Alerts::Row.new(alert: self))
-    alert_dom_id = ActionView::RecordIdentifier.dom_id(self)
-
+    # Список алертів (`Alerts::Index`) — власник форми `<tr>`, тож сюди
+    # їде готовий рядок у свою ж ціль `dom_id`.
     Turbo::StreamsChannel.broadcast_replace_to(
       "ews_alerts_org_#{cluster.organization_id}",
-      target: alert_dom_id,
-      html: alert_html
+      target: ActionView::RecordIdentifier.dom_id(self),
+      html: render_phlex(Alerts::Row.new(alert: self))
     )
 
-    # Оновлення рядка алерту на сторінці кластера
-    Turbo::StreamsChannel.broadcast_replace_to(
-      [ cluster, :alerts ],
-      target: alert_dom_id,
-      html: alert_html
-    )
+    # Панель кластера — інша форма й інше дієслово (див. `broadcast_new_alert`).
+    Turbo::StreamsChannel.broadcast_refresh_later_to([ cluster, :alerts ])
   end
 
   # Троттлінг: не частіше ніж раз на BROADCAST_THROTTLE_SECONDS.
