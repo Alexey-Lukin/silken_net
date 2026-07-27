@@ -7,11 +7,6 @@ lt:
     unsupported_locale: Nepalaikoma kalba
   locale:
     apply: Taikyti
-    available:
-      en: English
-      lt: Lietuvių
-      lv: Latviešu
-      uk: Українська
     switcher_label: Kalba
   theme:
     toggle_label: Perjungti šviesią / tamsią temą

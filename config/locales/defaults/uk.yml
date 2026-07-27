@@ -7,11 +7,6 @@ uk:
     unsupported_locale: Непідтримувана мова
   locale:
     apply: Застосувати
-    available:
-      en: English
-      lt: Lietuvių
-      lv: Latviešu
-      uk: Українська
     switcher_label: Мова
   theme:
     toggle_label: Перемкнути світлу / темну тему

@@ -7,11 +7,6 @@ lv:
     unsupported_locale: Neatbalstīta valoda
   locale:
     apply: Lietot
-    available:
-      en: English
-      lt: Lietuvių
-      lv: Latviešu
-      uk: Українська
     switcher_label: Valoda
   theme:
     toggle_label: Pārslēgt gaišo / tumšo tēmu
