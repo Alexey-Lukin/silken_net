@@ -425,13 +425,12 @@ end
         to_address: wallet.crypto_public_address, locked_points: 1000
       )
       allow(mock_client).to receive(:transact).and_return(fake_tx_hash) # mint lands
-      # broadcast_tx_update fires on :processing (call 1) then on finalize after mark_as_sent!
-      # (call 2 = tx already :sent) → crash there to hit the :sent-branch of the rescue.
-      call_n = 0
-      allow_any_instance_of(described_class).to receive(:broadcast_tx_update) do
-        call_n += 1
-        raise StandardError, "broadcast crash" if call_n == 2
-      end
+      # Шов ін'єкції краху = перший виклик ПІСЛЯ `mark_as_sent!` у `finalize_sent_transaction`,
+      # тобто в момент, коли tx уже `:sent`. Метрика для цього надійніша за лічильник
+      # викликів: вона стоїть буквально наступним рядком і в застосунку єдина, тож
+      # «другий виклик» неможливо зсунути рефактором сусіднього коду.
+      # (Раніше шов сидів на `broadcast_tx_update` — його знято як надлишковий, UI.4.)
+      allow(SilkenNet::Metrics::SCC_MINTED_TOTAL).to receive(:increment).and_raise(StandardError, "post-send crash")
 
       expect { described_class.call(tx.id) }.not_to raise_error
       expect(tx.reload.status).to eq("manual_review")   # :sent → escalate (not fail!)

@@ -8,8 +8,13 @@ module BlockchainTransactions
     end
 
     def view_template
-      # ⚡ [СИНХРОНІЗАЦІЯ]: Підписка на потік оновлень транзакції через канал гаманця
-      turbo_stream_from @tx.wallet if @tx.wallet
+      # [UI.4] Підписки тут НЕМА свідомо. Вона стояла на голий `wallet`-стрім, у який
+      # після зняття надлишкового `broadcast_tx_update` не пише ЖОДЕН продюсер; а сама
+      # сторінка не рендерить ані `blockchain_transaction_#{id}`, ані `wallet_balance_#{id}`,
+      # тож цілитись у неї теж не було чим. Живий оновлювач рядка транзакції —
+      # `BlockchainTransaction#broadcast_status_change` → `[wallet, :transactions]`, і його
+      # слухає `Wallets::Show`. Щоб оживити ЦЮ сторінку, треба спершу дати їй ціль
+      # (`<tr>`-рядок сюди не вставиш — тут не таблиця) → рішення в `00_07` UI.4.
 
       div(class: "space-y-8 animate-in slide-in-from-bottom-4 duration-700") do
         render_header

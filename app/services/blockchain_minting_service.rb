@@ -229,7 +229,6 @@ class BlockchainMintingService < ApplicationService
         next if tx.status_sent? || tx.status_manual_review? || tx.status_confirmed?
 
         tx.fail!(e.message.truncate(200))
-        broadcast_tx_update(tx)
       end
       Rails.logger.error "🛑 [Web3 Failure] Lock timeout (#{token_type}): #{e.message}"
       raise e
@@ -260,7 +259,6 @@ class BlockchainMintingService < ApplicationService
     # Переводимо транзакції підгрупи в статус обробки
     txs.each do |tx|
       tx.update!(status: :processing)
-      broadcast_tx_update(tx)
     end
 
     if txs.size == 1
@@ -325,7 +323,6 @@ class BlockchainMintingService < ApplicationService
       else
         tx.escalate_to_review!("Ambiguous mint broadcast — звір Polygonscan ПЕРЕД re-mint: #{e.message}")
       end
-      broadcast_tx_update(tx)
     end
     Rails.logger.error "🛑 [Web3 Failure] Підгрупа (root #{group.root[0, 12]}…) впала " \
                        "(#{safe_fail ? 'pre-broadcast' : 'AMBIGUOUS→manual_review'}): #{e.message}"
@@ -534,7 +531,6 @@ class BlockchainMintingService < ApplicationService
                          "→ manual_review (no blind re-mint — batchMint міг landed)."
       txs.each do |tx|
         tx.escalate_to_review!("batchMint ambiguous broadcast — звір Polygonscan ПЕРЕД re-mint: #{e.message}") if tx.may_escalate_to_review?
-        broadcast_tx_update(tx)
       end
     end
   end
@@ -573,7 +569,6 @@ class BlockchainMintingService < ApplicationService
       Rails.logger.error "🛑 [Web3] Individual mint AMBIGUOUS broadcast TX ##{tx.id}: #{e.message} → manual_review."
       tx.escalate_to_review!("Individual mint ambiguous broadcast — звір Polygonscan: #{e.message}") if tx.may_escalate_to_review?
     end
-    broadcast_tx_update(tx)
   end
 
   # Фіналізує транзакцію після успішної відправки (shared logic для batch та individual).
@@ -586,7 +581,6 @@ class BlockchainMintingService < ApplicationService
       tx.zk_proof_ref = @telemetry_log.zk_proof_ref
     end
     tx.mark_as_sent!(tx_hash)
-    broadcast_tx_update(tx)
 
     SilkenNet::Metrics::SCC_MINTED_TOTAL.increment(labels: { token_type: token_type })
     # SLO numerator (06_08 §2.4) — successful broadcast (status→sent).
@@ -629,24 +623,6 @@ class BlockchainMintingService < ApplicationService
       contract_env_key: "CARBON_COIN_CONTRACT_ADDRESS",
       holder: ENV.fetch("DAO_TREASURY_ADDRESS"),
       cache_key: TREASURY_BALANCE_CACHE_KEY, ttl: TREASURY_CACHE_TTL, timeout: TREASURY_RPC_TIMEOUT
-    )
-  end
-
-  def broadcast_tx_update(transaction)
-    wallet = transaction.wallet
-
-    # Оновлення рядка в таблиці через Hotwire
-    Turbo::StreamsChannel.broadcast_replace_to(
-      wallet,
-      target: "transaction_#{transaction.id}",
-      html: Wallets::TransactionRow.new(tx: transaction).call
-    )
-
-    # Оновлення балансу (тільки при успіху або старті)
-    Turbo::StreamsChannel.broadcast_replace_to(
-      wallet,
-      target: "wallet_balance_#{wallet.id}",
-      html: Wallets::BalanceDisplay.new(wallet: wallet).call
     )
   end
 

@@ -238,15 +238,12 @@ RSpec.describe BlockchainTransactions::Show do
     end
   end
 
+  # [UI.4] Підписку знято: голий `wallet`-стрім лишився без продюсерів, а цілі на
+  # цій сторінці не було ніколи. Пін інвертовано — він тепер стереже, щоб хтось не
+  # повернув підписку-в-нікуди, не давши сторінці спершу ціль.
   describe "turbo stream subscription" do
-    it "includes turbo-cable-stream-source for wallet" do
-      expect(html).to include("turbo-cable-stream-source")
-    end
-
-    it "does not include turbo stream when wallet is nil" do
-      tx = mock_transaction(has_wallet: false)
-      rendered = render_component(transaction: tx)
-      expect(rendered).not_to include("turbo-cable-stream-source")
+    it "does not subscribe to a stream it has no target for" do
+      expect(html).not_to include("turbo-cable-stream-source")
     end
   end
 
