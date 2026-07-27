@@ -4,8 +4,10 @@
 require "rails_helper"
 
 RSpec.describe Trees::Show do
-  # Component is i18n-aware. Assertions reference English copy, so render
-  # under :en. UA fallback is exercised in the `default locale` describe-block.
+  # Component is i18n-aware and every assertion here references English copy,
+  # so the whole file is pinned to the base locale (04_04 §12.2). No non-base
+  # locale is exercised in this file — a `:uk` render belongs in its own
+  # `I18n.with_locale(:uk)` example, named after the locale it pins.
   around { |ex| I18n.with_locale(:en) { ex.run } }
 
   let(:tree) { mock_tree }

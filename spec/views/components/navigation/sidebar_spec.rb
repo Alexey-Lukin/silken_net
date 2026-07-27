@@ -4,9 +4,10 @@
 require "rails_helper"
 
 RSpec.describe Navigation::Sidebar do
-  # All hardcoded English strings come from `config/locales/navigation/en.yml`
-  # since UA is the application default. Wrap render calls in
-  # `I18n.with_locale(:en)` whenever asserting on English copy.
+  # English copy lives in `config/locales/navigation/en.yml`. `:en` is already the
+  # application default (04_04 §12.2), so this wrapper is belt-and-braces — it keeps
+  # the assertions true even if a leaked locale or a future default change moves the
+  # ambient one. Assert on a non-base locale only inside an explicit `with_locale`.
   def render_en(**kwargs)
     I18n.with_locale(:en) { render_component(**kwargs) }
   end
@@ -22,7 +23,7 @@ RSpec.describe Navigation::Sidebar do
       expect(html).to include("Central Command Citadel")
     end
 
-    it "renders the subtitle in Ukrainian by default" do
+    it "renders the subtitle in Ukrainian when locale is :uk" do
       expect(I18n.with_locale(:uk) { render_component }).to include("Центральна Цитадель Управління")
     end
 
@@ -209,7 +210,7 @@ RSpec.describe Navigation::Sidebar do
       expect(html).to include("Full Access Link")
     end
 
-    it "translates the footer role into Ukrainian by default" do
+    it "translates the footer role into Ukrainian when locale is :uk" do
       expect(I18n.with_locale(:uk) { render_component }).to include("Архітектор")
     end
   end

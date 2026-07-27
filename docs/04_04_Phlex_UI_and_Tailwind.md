@@ -1180,7 +1180,7 @@ Layout-компоненти (`AuthLayout`, `DashboardLayout`) використо
 ### 12.1 Архітектурні правила (foundational)
 
 1. **Жодних hardcoded user-facing strings.** Все, що користувач бачить (UI текст, flash, error JSON, mailer body) — через `I18n.t`. Hardcoded UA/EN рядки у `app/views/components/**/*.rb` та `app/controllers/api/v1/**/*.rb` **мають** блокуватись CI. ⚠️ **Фактично не блокуються:** job `i18n_check` (`ci.yml`) ганяє лише `i18n-tasks missing` / `check-consistent-interpolations` / `check-normalized` — усі три звіряють **парність ІСНУЮЧИХ `t()`-ключів** між локалями; сканера сирих строкових літералів у репо немає, тож хардкод у «захищеній» зоні проходить зеленим. Робота → [`00_07`](00_07_Action_Plan_Tracker) I18N.1.
-2. **Per-domain YAML layout.** Файли локалізації лежать як `config/locales/<domain>/{uk,en}.yml`. Кожен «домен» = верхньокореневий namespace (`wallets`, `codex`, `actuators`, `flash`, `errors`, ...). Масштабовано до десятків доменів без monolithic `en.yml`. Детальна структура — §12.3.
+2. **Per-domain YAML layout.** Файли локалізації лежать як `config/locales/<domain>/<locale>.yml`. Кожен «домен» = верхньокореневий namespace (`wallets`, `codex`, `actuators`, `flash`, `errors`, ...). Масштабовано до десятків доменів без monolithic `en.yml`. Детальна структура — §12.3.
 3. **Class-name autoscope для Phlex.** `ApplicationComponent` override'ить `t` (від `Phlex::Rails::Helpers::Translate`):
    - `t(".key")` всередині `Codex::Show` резолвить у `I18n.t("codex.show.key")`
    - Абсолютний ключ (`t("flash.errors.unauthorized")`) працює без autoscope
@@ -1253,18 +1253,20 @@ Array, Hash і `OrderedOptions`; з `true` він будує `Fallbacks.new(defa
 
 ```
 config/locales/
-├── defaults/{uk,en}.yml       # app-shell: name, theme, locale-switcher, accessibility
-├── components/{uk,en}.yml     # cross-cutting UI components
-├── navigation/{uk,en}.yml     # sidebar, top bar, breadcrumb
-├── sessions/{uk,en}.yml       # login screen
-├── dashboard/{uk,en}.yml      # dashboard home
-├── trees/{uk,en}.yml          # tree show page
-├── wallets/{uk,en}.yml        # wallet page
-├── flash/{uk,en}.yml          # controller flash messages
-└── errors/{uk,en}.yml         # error JSON
+├── defaults/<locale>.yml       # app-shell: name, theme, locale-switcher, accessibility
+├── components/<locale>.yml     # cross-cutting UI components
+├── navigation/<locale>.yml     # sidebar, top bar, breadcrumb
+├── sessions/<locale>.yml       # login screen
+├── dashboard/<locale>.yml      # dashboard home
+├── trees/<locale>.yml          # tree show page
+├── wallets/<locale>.yml        # wallet page
+├── flash/<locale>.yml          # controller flash messages
+└── errors/<locale>.yml         # error JSON
 ```
 
-Один домен = одна папка × чотири мови (`uk.yml` + `en.yml` + `lv.yml` + `lt.yml`). Nesting тримати shallow (≤ 4 рівнів). Fallback-ланцюжок (`lv/lt → en`) гарантує, що частково перекладений файл не ламає UI. Додавання нового домену — створіть повний набір `{uk,en,lv,lt}.yml`, `i18n-tasks missing` має лишатися зеленим.
+Один домен = одна папка × **по файлу на кожну налаштовану локаль**. Nesting тримати shallow (≤ 4 рівнів). Fallback-ланцюжок (§12.2) гарантує, що частково перекладений файл не ламає UI. Додавання нового домену — повний набір файлів, `i18n-tasks missing` має лишатися зеленим.
+
+> 🧱 **Роздрібнення локалей у цьому документі НЕ повторюється — і це навмисно.** Єдиний дім переліку — `config.i18n.available_locales` (§12.2); канон називає **правило** («по файлу на локаль»), а не **реєстр**. Причина емпірична: коли документ носив `{uk,en}`, роздрібнення застаріло мовчки при доданні lv/lt — і рецепт §16.2 почав радити створити два файли там, де HARD-гейт парності вимагає всі. Реєстр, скопійований у прозу, старіє рівно тоді, коли каталог росте, тобто саме тоді, коли на нього дивляться. Це той самий one-home-борг, що трекається [`00_07`](00_07_Action_Plan_Tracker) I18N.3 — тут він закритий тим, що дублю просто немає.
 
 ### 12.4 Resolution priority (`LocaleSettable` concern)
 
@@ -1365,13 +1367,15 @@ uk:  { one: "1 фото", few: "%{count} фото",                     # 4 фо
 
 ### 12.9 Spec convention
 
-Default locale у production = `:uk`, але component specs пишемо англійською (як код). У `spec/rails_helper.rb`:
+**Базова локаль застосунку — `:en` (§12.2), тож специ рендеряться англійською без жодного хука.** Єдине, що для цього робить `spec/rails_helper.rb`, — гасить *витік*: ендпоінт `LocalesController#update` мутує `I18n.locale` глобально (thread-local), тож без скидання один POST-спек фарбував би всі наступні приклади.
 
 ```ruby
-config.before(:each, file_path: %r{spec/views/components/}) { I18n.locale = :en }
+config.after { I18n.locale = I18n.default_locale }   # after, НЕ before — щоб per-example `around { I18n.with_locale(:uk) }` лишався чинним
 ```
 
-Спеки, які явно перевіряють UK-default — обгортають у `I18n.with_locale(:uk) { … }`. Це задокументовано у топ-комменті sidebar spec як приклад.
+Спека, що перевіряє НЕ базову локаль, обгортається в `I18n.with_locale(:uk) { … }` явно.
+
+> ⚠️ **Назва прикладу мусить казати, що він реально пінить.** `it "… in Ukrainian by default"` з тілом `I18n.with_locale(:uk) { … }` — самосуперечність: ім'я обіцяє пін на **дефолтну поведінку**, а тіло фіксує поведінку **конкретної локалі**. Такий приклад лишиться зеленим, якщо `default_locale` завтра стане будь-чим іншим, тобто читається як сторож і ним не є. Сам дефолт пінить один рядок у `spec/requests/api/v1/locales_controller_spec.rb` — і це правильний дім для нього. (Формулювання «дефолт = `:uk`» пережило в цьому документі перемикання дефолту на `:en`; клас — той самий, що в §12.3: скопійований у прозу стан старіє мовчки.)
 
 ### 12.10 CI-гейт
 
@@ -1400,7 +1404,7 @@ bundle exec i18n-tasks unused       # довідково: не gated у CI (fals
 ### 12.12 Чек-ліст для нових компонентів
 
 - [ ] Всі user-facing strings проходять через `t(".key")` (relative-lookup), `tr()` helper не використовувати
-- [ ] YAML-ключі є для **обох** локалей (`uk` + `en`)
+- [ ] YAML-ключ є в **кожній** налаштованій локалі — `i18n-tasks missing` сьогодні HARD-гейт парності по всьому каталогу (§12.10). ⚠️ Саме це й робить його блокатором онбордингу нової мови; політика «завершені проти тих, що наздоганяють» — відкрите ⚖️ [`00_07`](00_07_Action_Plan_Tracker) I18N.3, доти правило вище чинне без винятків
 - [ ] ARIA-label з `t(...)` (бо screen-reader читає його)
 - [ ] Зарезервовані ключі не перетинаються (`:locale`, `:scope`, `:default` — не використовувати як interpolation)
 - [ ] Pluralization через `t(..., count:)` + CLDR rules (UA — 4 форми, EN — 2)
@@ -1643,13 +1647,15 @@ bin/migrate-tailwind-tokens --dry-run app/views/components/wallets/
 # 2. apply
 bin/migrate-tailwind-tokens app/views/components/wallets/
 
-# 3. add i18n
-mkdir -p config/locales/wallets && touch config/locales/wallets/{uk,en}.yml
-# … use t(".key") in each component (see § 12.5)
+# 3. add i18n — по файлу на КОЖНУ налаштовану локаль (перелік: available_locales, §12.2).
+#    Створювати підмножину = червоний `i18n-tasks missing` (§12.10).
+mkdir -p config/locales/wallets
+for f in config/locales/defaults/*.yml; do touch "config/locales/wallets/$(basename "$f")"; done
+# … use t(".key") in each component (see § 12.6)
 
 # 4. update specs
-# wrap English assertions in `around { |ex| I18n.with_locale(:en) { ex.run } }`
-# add `default locale (uk)` describe-block
+# базова локаль = :en, тож англійські assertions працюють без обгортки (§12.9)
+# перевіряєш ІНШУ локаль — явний `I18n.with_locale(:uk) { … }`, і назви приклад по локалі, не «by default»
 
 # 5. verify
 bundle exec rspec spec/views/components/wallets/
@@ -1796,7 +1802,7 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 
 ### 18.2 Internationalization — Rails I18n + Unicode CLDR
 
-- **Файлова структура** за доменом (`config/locales/<domain>/{uk,en}.yml`) — Rails Guide "Lazy Lookup" pattern, § 12.2.
+- **Файлова структура** за доменом (`config/locales/<domain>/<locale>.yml`) — Rails Guide "Lazy Lookup" pattern, § 12.3.
 - **Pluralization:** `t(..., count:)` + CLDR rules (UA — 4 форми: one/few/many/other; EN — one/other).
 - **Інтерполяція:** ніяких зарезервованих ключів (`:locale`, `:scope`, `:default`).
 - **`<html lang>`:** SEO + screen readers (W3C HTML 5.2). Виставляється у `dashboard_layout`/`auth_layout` через `I18n.locale`.
