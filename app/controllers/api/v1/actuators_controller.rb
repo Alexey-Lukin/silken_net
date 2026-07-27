@@ -75,7 +75,10 @@ module Api
         # «дві команди в польоті» тут не виникає. Дзеркало винятку в
         # `ActuatorCommand#dispatch_to_edge!`; без обох половин STOP лишався
         # недосяжним — модельну ми відкрили, а контролер віддавав 409.
-        if @actuator.commands.pending.exists? && !override_payload?
+        # `live_pending`, а НЕ `pending`: протермінований наказ матеріалізує свій
+        # кінець лише при poll-видачі, тож на мертвому шлюзі труп інакше тримав би
+        # 409 назавжди — і TTL цього не лікує, бо гард його не бачить.
+        if @actuator.commands.live_pending.exists? && !override_payload?
           return render json: { error: I18n.t("flash.actuators.command_in_flight") },
                         status: :conflict
         end

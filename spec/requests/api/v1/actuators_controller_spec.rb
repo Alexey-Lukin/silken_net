@@ -75,6 +75,24 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       expect(response).to have_http_status(:conflict)
     end
 
+    # [ARCH.58] Протермінований наказ матеріалізує свій кінець лише при
+    # poll-видачі, тож на мертвому шлюзі він лежить у `.pending` вічно — і без
+    # `live_pending` тримав би 409 для всіх нових наказів назавжди. Сам TTL цього
+    # НЕ лікує: гард його просто не бачив.
+    it "протермінований наказ більше не тримає 409" do
+      cmd = own_actuator.commands.create!(
+        user: user, command_payload: "OPEN_VALVE", duration_seconds: 10,
+        status: :issued, expires_at: 5.minutes.from_now
+      )
+      cmd.update_columns(expires_at: 1.minute.ago)
+
+      post "/api/v1/actuators/#{own_actuator.id}/execute",
+           params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
+           headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
+
+      expect(response).to have_http_status(:accepted)
+    end
+
     # [ARCH.58] In-flight гард НЕ сміє блокувати аварійну зупинку: інакше
     # оператор не може подати STOP саме тоді, коли в черзі щось є — тобто в
     # єдиному сценарії, заради якого override існує. Модельний виняток

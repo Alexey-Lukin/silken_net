@@ -123,6 +123,12 @@ class ActuatorCommand < ApplicationRecord
 
   scope :recent, -> { order(created_at: :desc).limit(10) }
   scope :pending, -> { where(status: [ :issued, :sent ]) }
+  # [ARCH.58] «Живий» = ще може бути виданий. Протермінований наказ матеріалізує
+  # свій кінець ЛИШЕ в момент poll-видачі (`Downlink::PendingQueueService`), тож
+  # на мертвому шлюзі труп лежить у `.pending` вічно — і без цього скоупа він
+  # тримав би 409 для всіх нових наказів назавжди, а sweep'у глушив би ногу STOP.
+  # Один дім для обох викликачів: два різні розуміння «живого» розійшлись би.
+  scope :live_pending, -> { pending.where("expires_at IS NULL OR expires_at > ?", Time.current) }
   scope :expired, -> { pending.where("expires_at IS NOT NULL AND expires_at < ?", Time.current) }
   scope :by_priority, -> { order(priority: :desc, created_at: :asc) }
 

@@ -126,10 +126,33 @@ RSpec.describe ActuatorSafetySweepWorker, type: :worker do
         .to change { ActuatorCommand.where(command_payload: "STOP").count }.by(1)
     end
 
-    it "STOP минає readiness-гейт: не фейлиться на ще-активному актуаторі" do
-      actuator, = stuck
+    # ⚠️ Перевіряємо на ОФЛАЙН-шлюзі свідомо. Наївна форма («на ще-активному
+    # актуаторі») стала вакуумною, щойно `recover!` обгорнули транзакцією:
+    # `dispatch_to_edge!` — це `after_commit`, тож він тепер біжить ПІСЛЯ
+    # `deactivate!`, коли актуатор уже `idle` і гейт пропустив би STOP і без
+    # винятку. Мертвий шлюз тримає `ready_for_deployment?` хибним незалежно від
+    # стану актуатора — і це саме той продовий випадок, заради якого sweep існує.
+    it "STOP минає readiness-гейт навіть на мертвому шлюзі (де гейт закритий і для idle)" do
+      dead_gateway = create(:gateway, cluster: cluster, last_seen_at: Time.current)
+      actuator, = stuck(actuator: create(:actuator, gateway: dead_gateway))
+      # Шлюз помирає ПІСЛЯ видачі — саме так і виглядає залипання в полі.
+      # (Мертвий від початку не пустив би навіть підготовчий наказ — що вже
+      # доводить, наскільки гейт закритий.)
+      dead_gateway.update_columns(last_seen_at: 2.hours.ago)
+
       sweep
+
       expect(actuator.commands.find_by(command_payload: "STOP").status_issued?).to be(true)
+    end
+
+    # Вік-межа поверх `live_pending`: наказ БЕЗ `expires_at` (а такою є кожна
+    # команда від контролера) протермінуватись не може, тож на мертвому шлюзі
+    # він інакше глушив би ногу STOP вічно.
+    it "наказ, старший за власний TTL нашого STOP, більше не лічиться живим" do
+      actuator, = stuck { |a| create(:actuator_command, actuator: a, duration_seconds: 60) }
+      actuator.commands.status_issued.update_all(created_at: (described_class::STOP_TTL + 1.hour).ago)
+
+      expect { sweep }.to change { actuator.commands.where(command_payload: "STOP").count }.by(1)
     end
   end
 
