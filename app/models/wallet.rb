@@ -209,13 +209,24 @@ class Wallet < ApplicationRecord
     SilkenNet::Metrics::LINEAGE_ROOT_FAILURES_TOTAL.increment
   end
 
-  # Трансляція оновленого стану гаманця через Turbo Streams
+  # Трансляція оновленого балансу через Turbo Streams.
+  #
+  # 🔴 Стрім — `[self, :transactions]`, а НЕ голий `self`. Голий стрім не слухала
+  # жодна сторінка (`Wallets::Show` підписана саме на композитний), тож ця
+  # трансляція не доходила НІКУДИ з дня написання. Наслідок був не косметичний:
+  # баланс тягнеться лінивим turbo-frame'ом рівно ОДИН раз, нічого його потім не
+  # перечитує — тобто цифра протухала після завантаження сторінки назавжди.
+  #
+  # Payload — локаль-вільна заглушка (клас 2, `04_04 §8.1а`): див. `BalanceFrameStub`,
+  # там же й причина, чому не можна слати сам `BalanceDisplay`.
   def broadcast_balance_update
-    # Оновлення великої цифри балансу в UI
     Turbo::StreamsChannel.broadcast_replace_to(
-      self,
-      target: "wallet_balance_#{id}",
-      html: Wallets::BalanceDisplay.new(wallet: self).call
+      [ self, :transactions ],
+      target: "wallet_balance_frame_#{id}",
+      html: Wallets::BalanceFrameStub.new(
+        wallet_id: id,
+        src: Rails.application.routes.url_helpers.balance_api_v1_wallet_path(self)
+      ).call
     )
   end
 

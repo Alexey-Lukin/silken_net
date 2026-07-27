@@ -8,6 +8,50 @@ RSpec.describe Wallet, type: :model do
     allow_any_instance_of(described_class).to receive(:broadcast_balance_update)
   end
 
+  # [UI.4 · I18N.2] Контракт трансляції балансу. Кожен із трьох прикладів пінить
+  # окремий баг, який тут уже жив: (1) стрім був голий `wallet`, якого не слухала
+  # жодна сторінка, тож баланс не оновлювався живим НІКОЛИ; (2) ціль була
+  # `wallet_balance_#{id}` — елемент усередині фрейму, а не сам фрейм; (3) payload
+  # ніс `BalanceDisplay` з шістьма `t()`, тобто локаль ПРОДЮСЕРА розліталась усім
+  # глядачам (`04_04 §8.1а`). Глобальний мок вимикається `and_call_original`.
+  describe "#broadcast_balance_update" do
+    let(:wallet)   { create(:tree).wallet }
+    let(:captured) { [] }
+
+    before do
+      allow_any_instance_of(described_class).to receive(:broadcast_balance_update).and_call_original
+      allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to) { |*args, **kwargs| captured << [ args, kwargs ] }
+    end
+
+    it "broadcasts to the composite stream Wallets::Show actually subscribes to" do
+      wallet.broadcast_balance_update
+
+      expect(captured.first[0].first).to eq([ wallet, :transactions ])
+    end
+
+    it "targets the turbo-frame id, not the inner balance div" do
+      wallet.broadcast_balance_update
+
+      expect(captured.first[1][:target]).to eq("wallet_balance_frame_#{wallet.id}")
+    end
+
+    it "renders a locale-invariant payload — byte-identical in two locales" do
+      uk = I18n.with_locale(:uk) { wallet.broadcast_balance_update; captured.pop[1][:html] }
+      lv = I18n.with_locale(:lv) { wallet.broadcast_balance_update; captured.pop[1][:html] }
+
+      expect(uk).to eq(lv)
+      # І це саме порожня заглушка, а не відрендерений фрагмент: інакше «однаково
+      # у двох локалях» могло б означати лише «переклад ще не додано».
+      expect(uk).to match(%r{\A<turbo-frame [^>]*></turbo-frame>\z})
+    end
+
+    it "points the stub at the balance endpoint each viewer re-fetches for itself" do
+      wallet.broadcast_balance_update
+
+      expect(captured.first[1][:html]).to include(%(src="/api/v1/wallets/#{wallet.id}/balance"))
+    end
+  end
+
   describe "#credit!" do
     it "atomically increments balance" do
       wallet = create(:tree).wallet
