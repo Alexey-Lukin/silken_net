@@ -76,10 +76,15 @@ module Downlink
 
     # ── CMD (найпріоритетніший — сирена/клапан) ──────────────────────────
     # Видача в 2.05 = семантичний аналог push-успіху (Queen запитала і
-    # отримує відповідь на власний свіжий NAT-pinhole; втрату відповіді
-    # покриває CON-ретрансміт Королеви + MID-кеш CoapGate — та сама відповідь
-    # повторюється байт-у-байт). Тому тут повне дзеркало success-гілки
-    # ActuatorCommandWorker: dispatch→acknowledge→mark_active→Reset-план.
+    # отримує відповідь на власний свіжий NAT-pinhole). Тому тут повне дзеркало
+    # success-гілки ActuatorCommandWorker: dispatch→acknowledge→mark_active→Reset-план.
+    #
+    # 🔴 [FW.63] Раніше тут стояло, що «втрату відповіді покриває CON-ретрансміт
+    # Королеви + MID-кеш CoapGate». Це НЕПРАВДА: poll-тракт прошивки ретрансміту
+    # не має (`coap_mid++` на кожну спробу, `Sim7070_Udp_Fetch` — одна розмова),
+    # same-MID retry живе лише в uplink-PUT. Отже стан просувається при ПОБУДОВІ
+    # відповіді, а не при її отриманні, і загублена 2.05 губить наказ назавжди —
+    # причому слід БРЕШЕ: Reset через `duration_seconds` допише `confirmed`.
     def actuator_command_payload
       loop do
         command = pending_commands.first
