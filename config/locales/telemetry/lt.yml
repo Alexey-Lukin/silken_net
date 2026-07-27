@@ -2,7 +2,7 @@
 lt:
   telemetry:
     live_stream:
-      awaiting: Laukiama Starlink įkėlimo... CoAP:5683 klauso...
+      awaiting: Laukiama Starlink ryšio aukštyn... CoAP:5683 klauso...
       carrier_label: 'Operatorius: Tiesiogiai į ląstelę'
       header_eyebrow: Neuralinio ryšio išvestis
       header_title: Globalus telemetrijos srautas

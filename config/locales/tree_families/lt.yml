@@ -3,7 +3,7 @@ lt:
   tree_families:
     form:
       bark_thickness: Žievės storis (mm)
-      baseline_impedance: Bazinė impedansas (kΩ)
+      baseline_impedance: Bazinis impedansas (kΩ)
       co2_coefficient: CO₂ sekvestracijos koeficientas
       co2_placeholder: '1.0'
       critical_z_max: Kritinis Z maks.

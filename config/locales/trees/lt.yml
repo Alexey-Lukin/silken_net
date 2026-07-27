@@ -37,7 +37,7 @@ lt:
       labels:
         family: 'Šeima: %{name}'
         family_unknown: Nežinoma
-        uplink_state: Įkėlimo būsena
+        uplink_state: Ryšio aukštyn būsena
         verified_balance: Patikrintas balansas
       metadata:
         cluster: Klasteris

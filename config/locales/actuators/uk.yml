@@ -2,7 +2,7 @@
 uk:
   actuators:
     card:
-      endpoint: 'Endpoint:'
+      endpoint: 'Кінцева точка:'
       energy_budget: 'Енергетичний бюджет:'
       energy_budget_value: "%{mj} мДж"
       execute_off: ВИКОНАТИ_ВИМКНУТИ
@@ -36,7 +36,7 @@ uk:
         executed_at: Час виконання
         id: ID
         operator: Оператор
-        payload: Payload
+        payload: Дані
         status: Статус
       log_title: Журнал виконання команд
       not_executed: "---"

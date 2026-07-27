@@ -33,7 +33,7 @@ uk:
         field: Поле
         gas_price: Ціна газу
         gas_used: Використано газу
-        locked_points: Заблоковані пункти
+        locked_points: Заблоковані бали
         nonce: Nonce
         sent_at: Надіслано
         status: Статус

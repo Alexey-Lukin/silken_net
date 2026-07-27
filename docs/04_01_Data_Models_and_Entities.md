@@ -550,7 +550,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `queen_uid` | string | UID Королеви-ретранслятора |
 | `oracle_status` | enum | **[BLOCKER-12 FIX]** `pending / dispatched / fulfilled / failed` (string-backed Rails enum з prefix `oracle_status_`). Забезпечує type safety, валідацію та автоматичні scope-методи (`oracle_status_dispatched`, `oracle_status_fulfilled` тощо). Default: `pending`. |
 | `firmware_version_id` | integer | Версія прошивки з padding-байтів |
-| `growth_points` | numeric | Нараховані очки зростання (raw) |
+| `growth_points` | numeric | Нараховані бали зростання (raw) |
 | `metabolism_s` | integer | Час метаболічного циклу (с) |
 | `rssi` | integer | RSSI LoRa-каналу (дБм) |
 | `sap_flow` | numeric | Потік соку ксилеми |
@@ -1104,7 +1104,7 @@ active/draft ──cancel──► cancelled
 | `prediction_data` | jsonb | Структуровані прогнозні метрики (`yield_impact`, `confidence_interval`, тощо). Споживається `OracleVisions::ForecastCard` для рендеру `forecast?` карток. Окремо від `reasoning` (raw chain-of-thought) і `recommendation` (action). |
 | `analyzed_date` | date | Reserve-стовпець для майбутнього партиціонування за датою аналізу. Зараз у коді не читається — канонічна дата інсайту лежить у `target_date`. Лишається у схемі як точка розширення для багатоосей партиціонування post-TRL 8 (cross-ref E.37 TimescaleDB roadmap). |
 | `average_temperature` | decimal | Середня температура за аналізований день |
-| `total_growth_points` | bigint | Загальні очки зростання за день |
+| `total_growth_points` | bigint | Загальні бали зростання за день |
 | `summary` | text | Текстовий підсумок (human-readable) |
 
 **Ключові методи:** `contract_breach?`, `confidence_level`, `forecast?`, `source_logs`, `attach_evidence!(log_ids)`, `status_label`.

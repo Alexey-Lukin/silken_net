@@ -13,6 +13,6 @@ uk:
       unknown_relay: НЕВІДОМИЙ_ШЛЮЗ
     table:
       gateway: Королева / Шлюз
-      payload: Сирий CoAP-пейлоад (HEX-потік)
+      payload: Сирий вміст CoAP (HEX-потік)
       status: Статус
       timestamp: Час

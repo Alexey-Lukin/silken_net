@@ -10,14 +10,14 @@ uk:
         active_trees_sub: Онлайн
         active_wallets: Активні гаманці
         active_wallets_sub: Гаманці
-        total_carbon_points: Всього вуглецевих пунктів
+        total_carbon_points: Всього вуглецевих балів
         total_carbon_points_sub: SCC
         total_trees: Всього дерев
         total_trees_sub: Розгорнуто
       table:
-        active_wallets: Активних гаманців, що генерують пункти
+        active_wallets: Активних гаманців, що генерують бали
         metric: Метрика
-        total_points: Накопичено вуглецевих пунктів
+        total_points: Накопичено вуглецевих балів
         trees_deployed: Розгорнутих дерев (всі статуси)
         trees_online: Дерев онлайн зараз
         value: Значення

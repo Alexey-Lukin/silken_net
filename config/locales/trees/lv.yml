@@ -37,7 +37,7 @@ lv:
       labels:
         family: 'Dzimta: %{name}'
         family_unknown: Nezināms
-        uplink_state: Augšupielādes stāvoklis
+        uplink_state: Augšupsaites stāvoklis
         verified_balance: Verificētais atlikums
       metadata:
         cluster: Klasteris
