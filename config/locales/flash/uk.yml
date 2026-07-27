@@ -12,6 +12,8 @@ uk:
     blockchain_transactions:
       invalid_status: 'Невірний фільтр status: %{value}.'
       invalid_token_type: 'Невірний фільтр token_type: %{value}.'
+    codex:
+      idempotency_required: Заголовок Idempotency-Key обов'язковий для JSON-записів.
     firmwares:
       deployment_dispatched: Наказ на еволюцію v%{version} поставлено в чергу — Королеви заберуть його власним poll-ом після наступного флашу.
       deployment_no_targets: 'OTA відхилено: немає придатних шлюзів для розгортання.'

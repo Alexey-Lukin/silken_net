@@ -2,6 +2,8 @@
 en:
   trees:
     chronicle:
+      empty_description: Events will appear here as the tree generates telemetry data
+      empty_title: No chronicle events recorded
       events: "%{count} events"
       heading: Digital Chronicle
     index:
@@ -34,11 +36,13 @@ en:
         current: Current
         sampling: Real-time Sampling
         t10: T-10 Cycles
+      impedance_tooltip: "%{value} kΩ at %{at}"
       labels:
         family: 'Family: %{name}'
         family_unknown: Unknown
         uplink_state: Uplink State
         verified_balance: Verified Balance
+      locate_aria: Locate tree node on Google Maps
       metadata:
         cluster: Cluster
         coordinates: Coordinates

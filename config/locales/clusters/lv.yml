@@ -38,6 +38,7 @@ lv:
         eyebrow: Klastera matrica
         nominal: Normāls
         threat_detected: Draudi konstatēti
+      map_link_aria: Skatīt klastera atrašanās vietu Google Maps
       vitals:
         active_trees: Aktīvie koki
         env_config: Vides konfigurācija

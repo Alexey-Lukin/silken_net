@@ -25,7 +25,7 @@ module Api
         # POST /api/v1/codex/citations
         def create
           if request.format.json? && idempotency_key.blank?
-            return render json: { error: "Idempotency-Key header is required for JSON writes." },
+            return render json: { error: I18n.t("flash.codex.idempotency_required") },
                           status: :bad_request
           end
 

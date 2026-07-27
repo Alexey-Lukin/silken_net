@@ -33,6 +33,9 @@ lt:
         heading: Karių flotilė komandoje
       header:
         heartbeat: Širdies plakimas
+      push_config_aria: Siųsti naują konfigūraciją šliuzui
+      soldier_active_aria: 'Karys %{did}: aktyvus'
+      soldier_inactive_aria: 'Karys %{did}: neaktyvus'
       telemetry:
         heading: Sistemos telemetrija (Queen diagnostika)
         internal_core: Vidinis branduolys

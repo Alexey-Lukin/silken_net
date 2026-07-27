@@ -38,6 +38,7 @@ en:
         eyebrow: Cluster Matrix
         nominal: Nominal
         threat_detected: Threat Detected
+      map_link_aria: View cluster location on Google Maps
       vitals:
         active_trees: Active Trees
         env_config: Environmental Config

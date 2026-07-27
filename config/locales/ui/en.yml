@@ -3,6 +3,8 @@ en:
   ui:
     data_table:
       empty: No records found.
+    metric_value:
+      no_data: No data
     photo_card:
       confirm_remove: Remove this photo from the evidence record?
       remove_photo: 'Remove photo: %{filename}'

@@ -3,6 +3,8 @@ lt:
   ui:
     data_table:
       empty: Įrašų nerasta.
+    metric_value:
+      no_data: Nėra duomenų
     photo_card:
       confirm_remove: Pašalinti šią nuotrauką iš įrodymų įrašo?
       remove_photo: 'Pašalinti nuotrauką: %{filename}'

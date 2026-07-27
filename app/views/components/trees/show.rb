@@ -132,7 +132,7 @@ module Trees
             div(
               class: "flex-1 bg-emerald-500/20 border-t border-gaia-primary hover:bg-emerald-500 transition-all",
               style: "height: #{height}%",
-              title: "#{log.z_value} kΩ at #{log.created_at.to_fs(:short)}"
+              title: t(".impedance_tooltip", value: log.z_value, at: log.created_at.to_fs(:short))
             )
           end
         end
@@ -228,7 +228,7 @@ module Trees
             href: "https://www.google.com/maps?q=#{@tree.latitude},#{@tree.longitude}",
             target: "_blank",
             class: "block mt-4 text-center p-2 border border-gaia-border-strong text-gaia-primary-hover hover:bg-gaia-surface-sunken hover:text-gaia-text-strong transition-all uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary",
-            aria_label: "Locate tree node on Google Maps"
+            aria_label: t(".locate_aria")
           ) { t(".actions.locate_node") }
         end
       end

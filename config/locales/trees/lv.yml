@@ -2,6 +2,8 @@
 lv:
   trees:
     chronicle:
+      empty_description: Notikumi parādīsies šeit, tiklīdz koks sāks sūtīt telemetriju
+      empty_title: Nav reģistrētu hronikas notikumu
       events: "%{count} notikumi"
       heading: Digitālā hronika
     index:
@@ -34,11 +36,13 @@ lv:
         current: Pašreizējais
         sampling: Reāllaika mērīšana
         t10: T-10 cikli
+      impedance_tooltip: "%{value} kΩ, %{at}"
       labels:
         family: 'Dzimta: %{name}'
         family_unknown: Nezināms
         uplink_state: Augšupsaites stāvoklis
         verified_balance: Verificētais atlikums
+      locate_aria: Atrast koka mezglu Google Maps
       metadata:
         cluster: Klasteris
         coordinates: Koordinātas

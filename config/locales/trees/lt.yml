@@ -2,6 +2,8 @@
 lt:
   trees:
     chronicle:
+      empty_description: Įvykiai atsiras čia, kai medis pradės siųsti telemetriją
+      empty_title: Kronikos įvykių neužfiksuota
       events: "%{count} įvykiai"
       heading: Skaitmeninė kronika
     index:
@@ -34,11 +36,13 @@ lt:
         current: Dabartinis
         sampling: Realiojo laiko matavimai
         t10: T-10 ciklai
+      impedance_tooltip: "%{value} kΩ, %{at}"
       labels:
         family: 'Šeima: %{name}'
         family_unknown: Nežinoma
         uplink_state: Ryšio aukštyn būsena
         verified_balance: Patikrintas balansas
+      locate_aria: Rasti medžio mazgą Google Maps
       metadata:
         cluster: Klasteris
         coordinates: Koordinatės

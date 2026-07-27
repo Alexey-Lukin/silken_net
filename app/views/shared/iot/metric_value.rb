@@ -34,7 +34,7 @@ module Views
         end
 
         def full_value_text
-          return "No data" if @value.nil?
+          return t("ui.metric_value.no_data") if @value.nil?
 
           full = @value.is_a?(BigDecimal) ? @value.to_s("F") : @value.to_s
           @unit ? "#{full} #{@unit}" : full

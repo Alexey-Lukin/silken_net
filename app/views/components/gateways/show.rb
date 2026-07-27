@@ -123,7 +123,7 @@ module Gateways
           button(
             class: "w-full mt-4 p-2 border border-emerald-800 text-tiny uppercase text-emerald-600 hover:bg-emerald-900 " \
                    "hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all",
-            aria_label: "Push new configuration to gateway"
+            aria_label: t(".push_config_aria")
           ) do
             t(".config.push")
           end
@@ -181,7 +181,7 @@ module Gateways
       div(
         title: tree.did,
         role: "img",
-        aria_label: "Soldier #{tree.did}: #{tree.active? ? 'active' : 'inactive'}",
+        aria_label: tree.active? ? t(".soldier_active_aria", did: tree.did) : t(".soldier_inactive_aria", did: tree.did),
         class: tokens(
           "h-4 w-4 border transition-colors",
           "border-emerald-500 bg-emerald-950/50": tree.active?,

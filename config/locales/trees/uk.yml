@@ -2,6 +2,8 @@
 uk:
   trees:
     chronicle:
+      empty_description: Події з'являтимуться тут, щойно дерево почне надсилати телеметрію
+      empty_title: Подій хроніки ще не записано
       events: "%{count} подій"
       heading: Цифровий хронограф
     index:
@@ -34,11 +36,13 @@ uk:
         current: Поточний
         sampling: Вимірювання в реальному часі
         t10: T-10 Циклів
+      impedance_tooltip: "%{value} kΩ, %{at}"
       labels:
         family: 'Родина: %{name}'
         family_unknown: Невідома
         uplink_state: Стан зв'язку
         verified_balance: Підтверджений баланс
+      locate_aria: Знайти вузол дерева на Google Maps
       metadata:
         cluster: Кластер
         coordinates: Координати

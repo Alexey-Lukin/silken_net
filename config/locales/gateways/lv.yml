@@ -33,6 +33,9 @@ lv:
         heading: Karavīru flote komandā
       header:
         heartbeat: Sirdsdarbība
+      push_config_aria: Nosūtīt jaunu konfigurāciju vārtejai
+      soldier_active_aria: 'Karavīrs %{did}: aktīvs'
+      soldier_inactive_aria: 'Karavīrs %{did}: neaktīvs'
       telemetry:
         heading: Sistēmas telemetrija (Queen diagnostika)
         internal_core: Iekšējais kodols

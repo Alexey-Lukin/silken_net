@@ -38,6 +38,7 @@ uk:
         eyebrow: Матриця кластера
         nominal: Норма
         threat_detected: Загрозу виявлено
+      map_link_aria: Переглянути розташування кластера на Google Maps
       vitals:
         active_trees: Активні дерева
         env_config: Конфігурація середовища

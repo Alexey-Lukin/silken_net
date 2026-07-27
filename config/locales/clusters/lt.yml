@@ -38,6 +38,7 @@ lt:
         eyebrow: Klasterio matrica
         nominal: Normalus
         threat_detected: Aptikta grėsmė
+      map_link_aria: Peržiūrėti klasterio vietą Google Maps
       vitals:
         active_trees: Aktyvūs medžiai
         env_config: Aplinkos konfigūracija

@@ -47,8 +47,8 @@ module Trees
     def render_entries
       if @entries.empty?
         render Views::Shared::UI::EmptyState.new(
-          title: "No chronicle events recorded",
-          description: "Events will appear here as the tree generates telemetry data",
+          title: t(".empty_title"),
+          description: t(".empty_description"),
           icon: "📜"
         )
       else

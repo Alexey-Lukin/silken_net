@@ -33,6 +33,9 @@ en:
         heading: Soldier Fleet Under Command
       header:
         heartbeat: Heartbeat
+      push_config_aria: Push new configuration to gateway
+      soldier_active_aria: 'Soldier %{did}: active'
+      soldier_inactive_aria: 'Soldier %{did}: inactive'
       telemetry:
         heading: System Telemetry (Queen Diagnostics)
         internal_core: Internal Core

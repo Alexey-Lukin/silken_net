@@ -33,6 +33,9 @@ uk:
         heading: Флот солдатів під командою
       header:
         heartbeat: Пульс
+      push_config_aria: Надіслати нову конфігурацію на шлюз
+      soldier_active_aria: 'Солдат %{did}: активний'
+      soldier_inactive_aria: 'Солдат %{did}: неактивний'
       telemetry:
         heading: Системна телеметрія (Діагностика Королеви)
         internal_core: Внутрішнє ядро
