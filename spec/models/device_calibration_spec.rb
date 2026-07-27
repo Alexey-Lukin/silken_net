@@ -7,7 +7,6 @@ RSpec.describe DeviceCalibration, type: :model do
   before do
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
     allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
-    allow_any_instance_of(EwsAlert).to receive(:broadcast_status_change)
     allow_any_instance_of(EwsAlert).to receive(:broadcast_alert_update)
   end
 

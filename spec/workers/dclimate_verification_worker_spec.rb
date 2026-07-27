@@ -9,7 +9,6 @@ RSpec.describe DclimateVerificationWorker, type: :worker do
 
   before do
     allow(AlertNotificationWorker).to receive(:perform_async)
-    allow_any_instance_of(EwsAlert).to receive(:broadcast_status_change)
     allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
     allow_any_instance_of(EwsAlert).to receive(:broadcast_alert_update)
     allow_any_instance_of(EwsAlert).to receive(:broadcast_new_alert)

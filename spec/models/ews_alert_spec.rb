@@ -6,7 +6,6 @@ require "rails_helper"
 RSpec.describe EwsAlert, type: :model do
   before do
     allow(AlertNotificationWorker).to receive(:perform_async)
-    allow_any_instance_of(described_class).to receive(:broadcast_status_change)
     allow_any_instance_of(described_class).to receive(:dispatch_notifications!)
     allow_any_instance_of(described_class).to receive(:broadcast_alert_update)
     allow_any_instance_of(described_class).to receive(:broadcast_new_alert)
@@ -626,53 +625,6 @@ RSpec.describe EwsAlert, type: :model do
       alert = create(:ews_alert, cluster: cluster_coord, tree: nil)
       allow(cluster_coord).to receive(:geo_center).and_return(nil)
       expect(alert.coordinates).to eq([ 0.0, 0.0 ])
-    end
-  end
-
-  describe "broadcast_status_change when status is NOT resolved" do
-    let(:cluster_bc) { create(:cluster) }
-
-    before do
-      allow_any_instance_of(described_class).to receive(:broadcast_status_change).and_call_original
-      allow_any_instance_of(described_class).to receive(:render_phlex).and_return("<div>badge</div>")
-      allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
-      allow(Turbo::StreamsChannel).to receive(:broadcast_remove_to)
-    end
-
-    it "replaces badge but does not broadcast remove_to" do
-      tree = create(:tree, cluster: cluster_bc)
-      allow_any_instance_of(described_class).to receive(:broadcast_alert_update)
-      alert = create(:ews_alert, cluster: cluster_bc, tree: tree, status: :active)
-
-      alert.update!(status: :ignored)
-      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).at_least(:once)
-      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_remove_to)
-          .with("ews_live_feed", hash_including(target: "alert_row_#{alert.id}"))
-    end
-  end
-
-  describe "broadcast_status_change when status IS resolved" do
-    let(:cluster_bc) { create(:cluster) }
-
-    before do
-      allow_any_instance_of(described_class).to receive(:broadcast_status_change).and_call_original
-      allow_any_instance_of(described_class).to receive(:render_phlex).and_return("<div>badge</div>")
-      allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
-      allow(Turbo::StreamsChannel).to receive(:broadcast_remove_to)
-    end
-
-    it "broadcasts both replace and remove" do
-      tree = create(:tree, cluster: cluster_bc)
-      allow_any_instance_of(described_class).to receive(:broadcast_alert_update)
-      alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
-
-      alert.update!(
-        status: :resolved,
-        resolved_at: Time.current,
-        resolution_notes: "Fixed"
-      )
-      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).at_least(:once)
-      expect(Turbo::StreamsChannel).to have_received(:broadcast_remove_to).at_least(:once)
     end
   end
 

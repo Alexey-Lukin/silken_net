@@ -40,7 +40,6 @@ RSpec.describe BlockchainBurningService do
 
     allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
-    allow_any_instance_of(EwsAlert).to receive(:broadcast_status_change)
     allow_any_instance_of(EwsAlert).to receive(:broadcast_new_alert)
     allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
 

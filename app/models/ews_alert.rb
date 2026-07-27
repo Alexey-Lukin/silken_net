@@ -157,9 +157,6 @@ class EwsAlert < ApplicationRecord
   # Real-time: новий алерт з'являється у стрічці кластера миттєво
   after_create_commit :broadcast_new_alert
 
-  # Миттєве оновлення мапи та стрічки новин у Цитаделі
-  after_update_commit :broadcast_status_change, if: :saved_change_to_status?
-
   # Real-time broadcast: оновлюємо дашборди всіх операторів при будь-яких змінах алерту
   after_update_commit :broadcast_alert_update
 
@@ -312,27 +309,6 @@ class EwsAlert < ApplicationRecord
 
     silence_key = "ews_silence:#{tree_id}:#{alert_type}"
     Rails.cache.delete(silence_key)
-  end
-
-  # [ВИПРАВЛЕНО]: Turbo Transmission.
-  # Видаляємо тривогу зі стрічки новин (Live Feed), як тільки вона вирішена.
-  def broadcast_status_change
-    alert_dom_id = ActionView::RecordIdentifier.dom_id(self)
-
-    # Оновлення бейджа статусу на карті/деталях
-    Turbo::StreamsChannel.broadcast_replace_to(
-      "ews_updates_#{cluster_id}",
-      target: alert_dom_id,
-      html: render_phlex(Alerts::Badge.new(alert: self))
-    )
-
-    # Повне видалення вирішеного інциденту з Live Feed Архітектора
-    if status_resolved?
-      Turbo::StreamsChannel.broadcast_remove_to(
-        "ews_live_feed",
-        target: "alert_row_#{id}"
-      )
-    end
   end
 
   # [ВИПРАВЛЕНО]: MaintenanceRecord не має колонки status.
