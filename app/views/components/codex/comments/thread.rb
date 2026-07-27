@@ -2,8 +2,12 @@
 # frozen_string_literal: true
 
 # Codex::Comments::Thread — chronological list of visible comments on a
-# node, with an inline composer at the bottom. Subscribes to the
-# `codex_node_<id>_comments` Turbo Stream channel for live appends.
+# node, with an inline composer at the bottom.
+#
+# 🔴 NOT live. This docstring used to claim a `codex_node_<id>_comments` Turbo
+# Stream subscription; the producer was raw ActionCable (never Turbo), nothing
+# ever subscribed, and it was removed 2026-07-27 (UI.2 + SEC). New comments
+# appear on reload.
 module Codex
   module Comments
     class Thread < ApplicationComponent

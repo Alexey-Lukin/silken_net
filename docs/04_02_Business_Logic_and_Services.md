@@ -781,22 +781,14 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | **Вихід** | `ActiveSupport::SafeBuffer` (html_safe) |
 | **Інвокери** | `Codex::Show` Phlex компонент (для `context_md`/`cyber_meaning_md`/`lore_md`), `Codex::Comments::Item` (для `body_md`), `Codex::CommentBlueprint#body_html`. |
 
-### `Codex::AttunementBroadcastWorker` (Phase 2)
+### ~~`Codex::AttunementBroadcastWorker`~~ (знято 2026-07-27)
 
-| | |
-|---|---|
-| **Файл** | `app/workers/codex/attunement_broadcast_worker.rb` |
-| **Черга** | `default` (#5) — ADR-CDX-4 (UI broadcasts ніколи не на hot path) |
-| **Retry** | 3 |
-| **Вхід** | `node_id` (Integer), `user_id` (Integer) |
-| **Що робить** | Re-load Node (post-commit `attunement_count`) → `ActionCable.server.broadcast` на public `codex_node_<id>_attunements` (з лічильником) + private `codex_node_<id>_attunements_user_<uid>` (з `attuned: bool`). |
-| **Інвокери** | `Codex::AttunementsController#create / #destroy` |
-| **Тригер** | toggle attunement → live counter via Solid Cable |
+Воркер знято разом із усім сирим ActionCable (UI.2 descope + SEC): підписника не існувало ніколи, а без броадкастів клас ставав no-op, що робив два запити в БД на КОЖЕН attune/unattune заради нічого. Лічильник attunement не живий — він приходить із контролера в момент рендеру. Заборону на сирий ActionCable тримає `spec/security/no_raw_action_cable_spec.rb`.
 
 ### Phase 2 controllers (без окремого Service-шару — логіка тонка)
 
 - `Api::V1::Codex::AttunementsController` — `find_or_initialize_by` + counter cache + worker enqueue. Idempotent toggle: re-POST оновлює `intensity`/`quote`, ніколи не дублює.
-- `Api::V1::Codex::CommentsController` — `Idempotency-Key` обов'язковий для JSON writes (24h TTL у `Rails.cache`); inline `ActionCable.server.broadcast` на `codex_node_<id>_comments` з `Codex::CommentBlueprint`-серіалізацією.
+- `Api::V1::Codex::CommentsController` — `Idempotency-Key` обов'язковий для JSON writes (24h TTL у `Rails.cache`); інлайн-broadcast знято 2026-07-27 (сирий ActionCable — підписника не було ніколи; SEC + UI.2).
 
 ### `Codex::FractionChangeService` (Phase 3)
 

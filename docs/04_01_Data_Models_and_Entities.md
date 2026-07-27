@@ -1410,7 +1410,7 @@ Lore-шар SilkenNet — read-only бібліотека "архетипів" (�
 
 **Валідації:** `parent_must_be_top_level` (rejects reply-to-reply), `parent_must_share_commentable` (rejects cross-node parent).
 
-**ActionCable:** `Codex::CommentsController#create` після `comment.save` робить `ActionCable.server.broadcast("codex_node_<id>_comments", { node_id, comment_id, data: serialized })` через `Codex::CommentBlueprint`.
+**Realtime:** інлайн-broadcast знято 2026-07-27 — сирий ActionCable не мав підписника ніколи (UI.2 + SEC).
 
 **Модерація:** автор може edit/destroy ≤ 24h, admin+ може **hide** (`hidden_at` set), але **не destroy** — журнал модерації лишається tamper-evident.
 
@@ -1474,7 +1474,7 @@ Lore-шар SilkenNet — read-only бібліотека "архетипів" (�
 **Workflow:**
 1. Trigger fires (TelemetryUnpackerService finalizer / EloRecomputeWorker / FractionChangeService / AttunementsController) → `Codex::DiscoveryProbeWorker.perform_async(user_id, trigger_type, payload)`.
 2. Worker → `Codex::DiscoveryEngine.evaluate(user:, trigger_type:, payload:)` → `Array<Codex::Node>` (skips already-unlocked).
-3. Worker `find_or_create_by(user_id:, codex_node_id:)` + `previously_new_record?` → ActionCable broadcast тільки на справжньому create (race-safe).
+3. Worker `find_or_create_by(user_id:, codex_node_id:)` — персистить розблокування; broadcast знято 2026-07-27 (UI.2 + SEC).
 
 ### `Codex::DiscoveryRule` — DAO Rule Registry (Phase 5) — `codex_discovery_rules`
 

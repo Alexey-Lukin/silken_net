@@ -625,19 +625,15 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Codex::Discoveries::Toast` | `codex/discoveries/toast.rb` | `node:`, `trigger_type:`, `unlocked_at:` | **Phase 5.** Single-card toast рендериться `Codex::DiscoveryProbeWorker` через ActionCable broadcast `codex:discoveries:user:<user_id>`. Stimulus `codex--reveal` data-attribute (matrix-rain JS controller — Phase 6 batch). Trigger-type label dispatch: Observed / Battle / Pact / Streak / Oracle / Granted. gaia-* tokens only. **Namespacing під `Codex::Discoveries::*` (plural)** — необхідно щоб уникнути Zeitwerk const-clash з `Codex::Discovery` AR class. |
 | `Codex::Discoveries::List` | `codex/discoveries/list.rb` | `discoveries:`, `pagy:` | **Phase 5.** Paginated 3-col grid of own unlocked nodes (rendered by `GET /api/v1/codex/discoveries/me` HTML format). Empty-state copy "Nothing unlocked yet — observe a tree, vote in the Arena, choose a fraction." Кожна card показує title / archetype_key / `trigger_type · unlocked_at`. gaia-* tokens only. |
 | `Codex::Citations::Pill` | `codex/citations/pill.rb` | `citation:` | **Phase 6.** Single inline citation chip — `« Title · archetype_key »`. Slug-href anchor до `/api/v1/codex/nodes/:slug`, hover-title зі 140-char note, `aria-label` для screen readers, `focus-visible:ring-2`. gaia-* tokens (`bg-gaia-surface-sunken`, `border-gaia-border`, `hover:border-gaia-primary`). Defensive nil-safe — рендерить порожньо якщо `citation.node` зник. |
-| `Codex::Citations::Strip` | `codex/citations/strip.rb` | `target:`, `citations:`, `current_user:` | **Phase 6.** Wrap-flex container з усіма pills прив'язаними до операційної цілі (`Tree`/`Cluster`/`AiInsight`/`EwsAlert`/`OracleVision`/`NaasContract`). DOM id `codex_citations_<type_underscore>_<id>` — таргет ActionCable broadcast `codex_citations:<Type>:<id>` envelope `{op: "append" \| "remove"}`. Empty-state copy "No lore citations yet." щоб freshly-cited entity мав стабільний DOM target. Інтегровано в `Trees::Show`, `Clusters::Show`, `Alerts::Row`, `OracleVisions::ForecastCard` через приватний `render_codex_citations` що early-return'ить на `defined?(Codex::Citation)` гарду + `for_target(target).includes(:node)`. |
+| `Codex::Citations::Strip` | `codex/citations/strip.rb` | `target:`, `citations:`, `current_user:` | **Phase 6.** Wrap-flex container з усіма pills прив'язаними до операційної цілі (`Tree`/`Cluster`/`AiInsight`/`EwsAlert`/`OracleVision`/`NaasContract`). DOM id `codex_citations_<type_underscore>_<id>` (продюсера НЕМА — сирий ActionCable знято 2026-07-27; живим тракт стане лише через підписаний Turbo-стрім). Empty-state copy "No lore citations yet." щоб freshly-cited entity мав стабільний DOM target. Інтегровано в `Trees::Show`, `Clusters::Show`, `Alerts::Row`, `OracleVisions::ForecastCard` через приватний `render_codex_citations` що early-return'ить на `defined?(Codex::Citation)` гарду + `for_target(target).includes(:node)`. |
 
-**ActionCable топіки (Phase 2):**
-
-- `codex_node_<id>_comments` — public broadcast нових коментарів (з `Codex::CommentBlueprint` payload).
-- `codex_node_<id>_attunements` — public broadcast лічильника attunement.
-- `codex_node_<id>_attunements_user_<uid>` — private envelope з `attuned: bool` для конкретного користувача.
+> ⚠️ **Сирий ActionCable знято 2026-07-27** (UI.2 descope + SEC). Підписника не існувало ніколи, а `/cable` монтується движком САМ (`after_initialize`, `internal: true` — його не видно в `bin/rails routes`), тож канал без авторизації підписки був латентним крос-тенантним IDOR при послідовних ID. Realtime — лише через ПІДПИСАНІ Turbo-стріми, бо їх ім'я дістається тільки тому, кому сторінка вже відрендерилась. Заборону тримає `spec/security/no_raw_action_cable_spec.rb`.
 
 #### Інші Доменні Компоненти
 
 | Простір імен | Компоненти | Ключові Props |
 |---|---|---|
-| `Alerts` | `Index`, `Row`, `Badge` | `alert:` (матриця severity × status) |
+| `Alerts` | `Index`, `Row` | `alert:` (`Badge` знято 2026-07-27 — UI без жодного рендерера) |
 | `Clusters` | `Grid`, `Item`, `Show` | `cluster:`, `trees:` |
 | `Gateways` | `Index`, `Item`, `Show` | `gateway:` |
 | `Actuators` | `Index`, `Show`, `Card`, `CommandRow`, `CommandStatusBadge` | `actuator:`, `command:` |

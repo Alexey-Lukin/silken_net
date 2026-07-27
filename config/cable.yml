@@ -30,7 +30,6 @@ test:
 #   - [@wallet, :transactions] (wallet balance)
 #   - "ews_alerts_org_#{id}" (alert notifications)
 #   - [@cluster, :alerts] (cluster alerts)
-#   - "telemetry_live_stream" (raw hex broadcast)
 #
 # See: docs/06_02_Akash_Network_Integration.md (GCS bootstrap, resolved → INF.*)
 # =============================================================================

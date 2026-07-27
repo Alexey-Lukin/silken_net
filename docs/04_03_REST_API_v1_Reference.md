@@ -1219,7 +1219,7 @@ if (days_until_token_expiry() < 7) {
    → НЕ використовувати GET для передачі телеметрії.
 
 4. [За потребою] GET /api/v1/oracle_visions/stream_config?cluster_id=7
-   → Отримати токен підписки на ActionCable/SolidCable стрім.
+   → Отримати токен підписки на ПІДПИСАНИЙ Turbo-стрім (сирий ActionCable знято 2026-07-27 — SEC).
 
 5. [Автоматично] POST /api/v1/oracle_callbacks
    → Chainlink викликає цей endpoint після on-chain верифікації.

@@ -4,10 +4,15 @@
 # Codex::Citations::Strip — wrap-flex container of citation pills attached
 # to a single operational target (Tree / Cluster / EwsAlert / OracleVision).
 #
-# Subscribes to the `codex_citations:<Type>:<ID>` ActionCable stream so a
-# pill posted by a forester appears live for any open viewer. We mark the
-# container `aria-live="polite"` so a screen reader announces a fresh
-# citation instead of silently rerendering it.
+# 🔴 NOT live, despite what this docstring used to claim. It said the strip
+# "subscribes to the `codex_citations:<Type>:<ID>` ActionCable stream" — but
+# nothing ever subscribed, and the producer was raw ActionCable rather than a
+# Turbo stream. Producer removed 2026-07-27 (UI.2 descope + SEC: `/cable` is
+# auto-mounted by the engine, so an unauthorized channel name was a latent
+# cross-tenant IDOR). A genuinely live strip needs a SIGNED Turbo stream first.
+#
+# `aria-live="polite"` below is kept on purpose: it still serves the in-request
+# render path, where the container is repopulated by a normal page load.
 #
 # Render contract:
 #   render Codex::Citations::Strip.new(target: @tree, citations: citations)
