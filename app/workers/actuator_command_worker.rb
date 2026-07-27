@@ -36,17 +36,31 @@ class ActuatorCommandWorker
   # Rescue-ізоляція: викликається і з синхронного poll-тракту coap-демона
   # (Downlink::PendingQueueService CMD-видача) — збій cable-транспорту там
   # губив би acknowledged-команду (сирену) назавжди; UI-декорація ≠ доставка.
+  # [UI.4] Стрім — `[actuator, :commands]`, а НЕ голий `Organization`: сторінка
+  # показує команди одного актуатора, ширший стрім = зайва адресна книга. Голий
+  # `Organization` до 2026-07-27 не слухала жодна сторінка взагалі.
+  #
+  # [I18N.2 · клас 2] Payload — locale-ВІЛЬНА заглушка зі `src`; бейдж несе `t()`,
+  # тож рендер тут віддав би локаль процесу-продюсера всім підписникам одразу.
   def self.broadcast_command_state_static(command)
-    org = command.organization || command.actuator.gateway.cluster.organization
-    return unless org
-
     Turbo::StreamsChannel.broadcast_replace_to(
-      org,
-      target: "command_status_#{command.id}",
-      html: Actuators::CommandStatusBadge.new(command: command).call
+      [ command.actuator, :commands ],
+      target: Actuators::CommandStatusFrame.dom_id(command.id),
+      html: Actuators::CommandStatusFrameStub.new(
+        command_id: command.id,
+        src: Rails.application.routes.url_helpers.api_v1_actuator_command_status_path(command)
+      ).call
     )
   rescue StandardError => e
-    Rails.logger.warn "⚠️ [FW.60] CMD-статус broadcast не пройшов для наказу ##{command.id}: #{e.message}"
+    # 🔒 Стеля, названа свідомо (UI.4): цей rescue тепер накриває і Reset-шлях,
+    # який РАНІШЕ мав власний, не-ізольований броадкаст. Різниця в поведінці
+    # реальна: там `raise` піднімався в Sidekiq, джоба ретраїлась, а `perform`
+    # ідемпотентний по стейту й наприкінці ре-броадкастив — тобто збій cable
+    # чесно повторював доставку UI-пульсу. Тепер втрачений пульс НЕ повторюється:
+    # бейдж висить у старому стані до перезавантаження сторінки.
+    # Обрано свідомо (UI-декорація ≠ доставка команди — сирена не сміє загинути
+    # через cable), але це трейд, а не безкоштовне покращення.
+    Rails.logger.warn "⚠️ CMD-статус broadcast не пройшов для наказу ##{command.id}: #{e.message}"
   end
 
   def perform(command_id, explicit_key = nil)

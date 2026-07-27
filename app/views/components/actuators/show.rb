@@ -7,6 +7,12 @@ module Actuators
     end
 
     def view_template
+      # [UI.4] Стрім вузький навмисно: сторінка показує команди ОДНОГО актуатора,
+      # тож `[actuator, :commands]`, а не голий `Organization` — ширший стрім був
+      # би зайвою адресною книгою, і саме на цій осі UI.4 знайшов крос-тенант-витік
+      # («global_events» ніс страхові виплати всіх організацій).
+      turbo_stream_from @actuator, :commands
+
       div(class: "space-y-10 animate-in fade-in duration-700") do
         div(class: "grid grid-cols-1 lg:grid-cols-3 gap-8") do
           # Головна картка стану
@@ -44,7 +50,7 @@ module Actuators
                 td(class: "p-4 text-emerald-100") { cmd.user&.first_name || t(".system_operator") }
                 td(class: "p-4 font-bold text-white") { cmd.command_payload }
                 td(class: "p-4") do
-                  render Actuators::CommandStatusBadge.new(command: cmd)
+                  render Actuators::CommandStatusFrame.new(command: cmd)
                 end
                 td(class: "p-4 text-right text-gray-600") { cmd.executed_at&.strftime("%d.%m.%y // %H:%M:%S") || t(".not_executed") }
               end

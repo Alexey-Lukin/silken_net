@@ -86,14 +86,24 @@ module Downlink
         return nil unless command
 
         if command.expired?
-          command.fail!("⏱️ Команда протермінована (TTL: #{command.expires_at})") if command.may_fail?
+          if command.may_fail?
+            command.fail!("⏱️ Команда протермінована (TTL: #{command.expires_at})")
+            # [UI.4] Fail теж мусить доїхати до UI. Поки бейдж був статичним, німий
+            # fail-шлях не мав симптому; з живою підпискою він застигав би на
+            # «виконується» до перезавантаження — живість, що бреше, гірша за
+            # чесну статику.
+            ActuatorCommandWorker.broadcast_command_state_static(command)
+          end
           next
         end
 
         inner = "CMD:#{command.command_payload}:#{command.duration_seconds}:" \
                 "#{command.actuator_id}:#{command.idempotency_token}"
         if oversized?(inner)
-          command.fail!("Конверт понад стелю Queen (#{MAX_ENVELOPE_BYTES} Б)") if command.may_fail?
+          if command.may_fail?
+            command.fail!("Конверт понад стелю Queen (#{MAX_ENVELOPE_BYTES} Б)")
+            ActuatorCommandWorker.broadcast_command_state_static(command)
+          end
           next
         end
 

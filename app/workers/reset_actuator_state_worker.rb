@@ -17,10 +17,8 @@ class ResetActuatorStateWorker
     end
 
     actuator = command.actuator
-    # gateway — обов'язковий (has_many :actuators dependent: :destroy → без сироти),
-    # gateway.cluster_id — NOT NULL → gateway.cluster non-nil. Термінальний .organization
-    # (як і в оригіналі) без guard'а: nil-org дає nil-broadcast-таргет, не NPE.
-    organization = actuator.gateway.cluster.organization
+    # Ланцюг gateway→cluster→organization більше не потрібен: стрім тепер вузький
+    # (`[actuator, :commands]`, UI.4), тож організацію обчислювати нема для чого.
 
     # Перевіряємо, чи актуатор все ще активний
     if actuator.active?
@@ -42,7 +40,7 @@ class ResetActuatorStateWorker
     end
 
     # ⚡ [СИНХРОНІЗАЦІЯ З UI]: Відправляємо фінальний імпульс Архітектору
-    broadcast_final_state(command, organization)
+    broadcast_final_state(command)
   end
 
   private
@@ -52,11 +50,17 @@ class ResetActuatorStateWorker
   # рендерить `actuator_{id}`, тож ціль не існувала ніде. І сам фікс рядка був би
   # пасткою: `Card#render_controls` має гард на відсутність request-контексту, тож
   # картка з воркера приходить БЕЗ кнопок Execute — регресія у вигляді фічі.
-  def broadcast_final_state(command, organization)
-    Turbo::StreamsChannel.broadcast_replace_to(
-      organization,
-      target: "command_status_#{command.id}",
-      html: Actuators::CommandStatusBadge.new(command: command).call
-    )
+  #
+  # Реюз статичного методу свідомий: до 2026-07-27 тут жила ДРУГА, незалежна
+  # реалізація того самого броадкасту (з іншим обчисленням organization), тож
+  # будь-яка правка форми мусила лягати у два місця й одного разу не лягла б.
+  # Тепер стрім, ціль і payload описані рівно один раз.
+  #
+  # ⚠️ Разом із формою успадковано й rescue-ізоляцію — і це ЗМІНА ПОВЕДІНКИ, не
+  # лише дедуп: раніше збій cable тут піднімався в Sidekiq і джоба ретраїлась,
+  # чесно повторюючи пульс (perform ідемпотентний). Тепер збій лише логується.
+  # Обґрунтування — у самому `broadcast_command_state_static`.
+  def broadcast_final_state(command)
+    ActuatorCommandWorker.broadcast_command_state_static(command)
   end
 end

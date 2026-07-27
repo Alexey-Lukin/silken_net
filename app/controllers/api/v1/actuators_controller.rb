@@ -120,6 +120,11 @@ module Api
       # Documented as endpoint #48 in 04_03 §4 but was missing from the controller
       # before this fix. The route resolved to NoMethodError at runtime.
       def command_status
+        # ⚠️ Порядок гілок НЕ косметика: на `Accept: */*` (дефолт curl і багатьох
+        # SDK) Rails віддає ПЕРШИЙ оголошений формат. JSON тут первинний — це
+        # документований API-ендпоінт (#48 у `04_03 §4`), і `index`/`show` цього
+        # ж контролера теж ведуть з json. Turbo-frame шле явний `Accept: text/html`,
+        # тож від порядку не залежить.
         respond_to do |format|
           format.json do
             render json: {
@@ -135,6 +140,19 @@ module Api
               error_message: @command.error_message,
               expires_at: @command.expires_at
             }
+          end
+
+          # [I18N.2 · клас 2] Turbo-frame тягне СВІЙ фрагмент власним запитом —
+          # тобто вже з локаллю глядача (`LocaleSettable` тут відпрацював) і його
+          # ж авторизацією (`set_command` org-скоупований). Саме це дозволяє
+          # броадкасту не нести жодного перекладеного слова.
+          #
+          # ⚠️ Фрейм у відповіді — БЕЗ `src`. Не «щоб не було циклу»: Turbo ловить
+          # self-referencing src, кидає в консоль `references itself` і лишає фрейм
+          # ПОРОЖНІМ — тобто ціна помилки не нескінченний трафік, а назавжди порожня
+          # клітинка й тиха помилка, яку ніхто не побачить.
+          format.html do
+            render Actuators::CommandStatusFrame.new(command: @command), layout: false
           end
         end
       end

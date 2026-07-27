@@ -40,11 +40,27 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
       # Пін на ЦІЛЬ, не лише на факт виклику: усі специ цієї поверхні асертили
       # `have_received(:broadcast_replace_to)` без таргета — саме тому промах
       # `actuator_card_{id}` замість `actuator_{id}` прожив місяці (UI.4).
-      it "broadcasts the command status badge to its own DOM target" do
+      #
+      # [UI.4/I18N.2] Тепер пін тримає ОБИДВІ осі, бо кожна ламається окремо:
+      # ЦІЛЬ — turbo-frame (`command_status_frame_{id}`), а не бейдж усередині;
+      # СТРІМ — вузький `[actuator, :commands]`, а не голий `Organization`, якого
+      # не слухала жодна сторінка.
+      it "broadcasts to the actuator-scoped stream, targeting the frame" do
         described_class.new.perform(command.id)
 
         expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to)
-          .with(anything, hash_including(target: "command_status_#{command.id}")).once
+          .with([ command.actuator, :commands ],
+                hash_including(target: "command_status_frame_#{command.id}")).once
+      end
+
+      # Payload мусить лишатись locale-ВІЛЬНИМ: заглушка зі `src`, нуль перекладеної
+      # прози. Без цього піна міграція класу 2 могла б тихо відкотитись назад до
+      # рендеру бейджа в процесі-продюсера.
+      it "ships a locale-free stub, not the translated badge" do
+        described_class.new.perform(command.id)
+
+        expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to)
+          .with(anything, hash_including(html: /turbo-frame[^>]+src=/)).once
       end
     end
 
@@ -81,44 +97,6 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
       expect(Rails.logger).to receive(:warn).with(/не знайдено/)
 
       described_class.new.perform(-1)
-    end
-
-    context "when gateway has no cluster (nil organization chain)" do
-      it "broadcasts without error when organization is nil" do
-        allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
-        cmd = create(:actuator_command, actuator: actuator, status: :acknowledged, sent_at: 1.minute.ago)
-        cmd.update_column(:status, :acknowledged)
-
-        # Simulate nil in the gateway -> cluster -> organization chain
-        allow(actuator).to receive(:gateway).and_return(nil)
-
-        expect {
-          described_class.new.perform(cmd.id)
-        }.not_to raise_error
-
-        actuator.reload
-        expect(actuator.state).to eq("idle")
-      end
-    end
-  end
-
-  describe "gateway/cluster/organization nil chain" do
-    it "handles gateway with cluster that has no organization" do
-      # Verifies graceful handling when the safe navigation chain (gateway&.cluster&.organization) returns nil
-      org_for_test = create(:organization)
-      cluster_for_test = create(:cluster, organization: org_for_test)
-      gateway_with_cluster = create(:gateway, cluster: cluster_for_test)
-      actuator = create(:actuator, gateway: gateway_with_cluster, state: :active)
-      command = create(:actuator_command, actuator: actuator, status: :issued)
-
-      # Stub the chain to return nil at organization level
-      allow_any_instance_of(Gateway).to receive(:cluster).and_return(
-        double("cluster", organization_id: nil, organization: nil)
-      )
-
-      expect {
-        described_class.new.perform(command.id)
-      }.not_to raise_error
     end
   end
 end

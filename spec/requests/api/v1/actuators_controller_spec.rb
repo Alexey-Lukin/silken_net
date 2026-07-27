@@ -221,6 +221,35 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
           headers: { "Authorization" => "Bearer #{token}" }, as: :json
       expect(response).to have_http_status(:forbidden)
     end
+
+    # [I18N.2 · клас 2] HTML-гілки тут не існувало взагалі — запит із
+    # `Accept: text/html` (а саме такий шле `<turbo-frame src=...>`) падав у
+    # `UnknownFormat`. Це друга половина контракту: броадкаст несе locale-вільну
+    # заглушку, і саме цей ендпоінт віддає кожному глядачеві фрагмент ЙОГО мовою.
+    describe "html branch (turbo-frame pull)" do
+      # Без `src`, бо self-referencing src Turbo не зациклює, а ГАСИТЬ: пише
+      # `references itself` у консоль і лишає фрейм порожнім. Симптом тихий.
+      it "renders the frame WITHOUT src" do
+        get "/api/v1/actuator_commands/#{own_command.id}", headers: headers
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("command_status_frame_#{own_command.id}")
+        expect(response.body).not_to include("src=")
+      end
+
+      it "renders the badge in the VIEWER's locale, not the producer's" do
+        get "/api/v1/actuator_commands/#{own_command.id}?locale=uk", headers: headers
+
+        expect(response.body).to include("видано")
+      end
+
+      # Той самий org-scope, що й у JSON-гілці: обидві їдуть через `set_command`.
+      it "keeps the tenant guard on the html branch too" do
+        get "/api/v1/actuator_commands/#{other_command.id}", headers: headers
+
+        expect(response).to have_http_status(:not_found)
+      end
+    end
   end
 
   context "with turbo_stream format" do
