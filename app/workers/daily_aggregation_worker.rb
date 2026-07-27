@@ -61,7 +61,7 @@ class DailyAggregationWorker
       end
     end
 
-  rescue Date::Error => e
+  rescue Date::Error
     Rails.logger.error "🛑 [Хронометрист] Невірний формат дати: #{date_string}"
   rescue StandardError => e
     # Ми не використовуємо raise тут, якщо не хочемо, щоб Sidekiq нескінченно
