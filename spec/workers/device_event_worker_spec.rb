@@ -27,8 +27,10 @@ RSpec.describe DeviceEventWorker do
 
   # Дзеркало firmware/queen/main.c L1-sign: [ver][ts][count][records][sig],
   # msg = "SLKN-QEVT1"‖uid_len‖uid‖body.
-  def signed_envelope(seed_hex:, uid:, records:, ts: 1_750_000_000, ver: 0x01)
-    header  = [ ver, ts, records.size ].pack("CNC")
+  # `count:` окремо від `records.size` — щоб можна було підписати конверт, чий
+  # header БРЕШЕ про кількість записів (межовий guard читає саме цей байт).
+  def signed_envelope(seed_hex:, uid:, records:, ts: 1_750_000_000, ver: 0x01, count: records.size)
+    header  = [ ver, ts, count ].pack("CNC")
     body    = header + records.join
     message = DeviceEventWorker::DEVENV_DOMAIN_TAG + [ uid.bytesize ].pack("C") + uid.b + body
     body + [ Ed25519Crypto::SigningService.sign(seed_hex, message) ].pack("H*")
@@ -83,6 +85,22 @@ RSpec.describe DeviceEventWorker do
   it "treats an unregistered gateway pubkey as non-verifiable (skip, no crash)" do
     key_record.update_columns(ed25519_public_key_hex: nil)
     expect { perform(valid_payload) }.not_to change(EwsAlert, :count)
+  end
+
+  # Сусід попереднього, але ІНШИЙ стан registry: там рядок ключа є з порожнім
+  # pubkey, тут його немає ЗОВСІМ (шлюз заведено, але жодного разу не провіжено).
+  it "drops an envelope from a gateway with NO hardware-key row at all" do
+    payload = valid_payload # будує підпис ДОКИ ключ ще існує
+    key_record.destroy!
+    expect { perform(payload) }.not_to change(EwsAlert, :count)
+  end
+
+  # count у ПІДПИСАНОМУ header'і довірений за походженням, але не за величиною:
+  # бита Королева з валідним підписом не сміє вивести читання за буфер.
+  it "drops an envelope whose count byte over-claims the record block" do
+    payload = signed_envelope(seed_hex: keypair[:seed_hex], uid: gateway.uid,
+                              records: [ record(tree) ], count: 3)
+    expect { perform(payload) }.not_to change(EwsAlert, :count)
   end
 
   it "skips an unknown gateway" do

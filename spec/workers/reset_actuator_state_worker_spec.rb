@@ -37,6 +37,19 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
         expect(command.completed_at).to be_present
       end
 
+      # Дзеркало «skips confirmation if command is not acknowledged» з неактивної
+      # вітки — але тут актуатор ЖИВИЙ, тож гілка інша. `perform` ідемпотентний
+      # (Sidekiq ретраїть після часткового збою), і повторний прохід не сміє
+      # впасти на вже-неможливому confirm!.
+      it "still returns the actuator to idle when the command can no longer confirm" do
+        command.update_column(:status, :failed)
+
+        expect { described_class.new.perform(command.id) }.not_to raise_error
+
+        expect(actuator.reload.state).to eq("idle")
+        expect(command.reload.status).to eq("failed")
+      end
+
       # Пін на ЦІЛЬ, не лише на факт виклику: усі специ цієї поверхні асертили
       # `have_received(:broadcast_replace_to)` без таргета — саме тому промах
       # `actuator_card_{id}` замість `actuator_{id}` прожив місяці (UI.4).

@@ -39,6 +39,18 @@ RSpec.describe TreeStalenessSweepWorker, type: :worker do
         .not_to change { EwsAlert.alert_type_field_audit.count }
     end
 
+    # Програна dedup-гонка (`escalate_field_audit!` → nil на RecordNotUnique/
+    # RecordInvalid) НЕ рахується як флаг. Гонку двох одночасних проходів у
+    # однопотоковому тесті не відтворити, тож пін іде по контракту колаборанта:
+    # анти-джойн скоупу дерево пропустив, а створення все одно не відбулось.
+    it "не лічить дерево флагнутим, коли ескалацію програно в гонці" do
+      silent_tree
+      allow(EwsAlert).to receive(:escalate_field_audit!).and_return(nil)
+
+      expect(SilkenNet::Metrics::TREE_SILENCE_TOTAL).not_to receive(:increment)
+      expect { sweep }.not_to change { EwsAlert.alert_type_field_audit.count }
+    end
+
     # ⊥ dedup-скоупів (SILENCE-1 факт (2)) живе на рівні моделі — тест
     # «coexists in BOTH directions» в ews_alert_spec; ВОРКЕР же по темному
     # кластеру свідомо не ескалює (dark-cluster suppression нижче).
