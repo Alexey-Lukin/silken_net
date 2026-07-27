@@ -8,9 +8,23 @@
 # (class names, error keys, comments) are all in English — keeping the
 # base aligned with the source minimises diff noise.
 base_locale: en
-# [I18N.1] Всі shipped-локалі: без lv/lt тут CI-parity їх НЕ бачив —
-# PR, що ламає lv/lt, проходив зеленим.
-locales: [en, uk, lv, lt]
+# [I18N.3] 🧱 Перелік локалей тут НЕ дублюється — він деривується з єдиного дому,
+# `config.i18n.available_locales` у `config/application.rb`. Раніше список стояв
+# другим екземпляром, і два доми розійшлись би тихо: локаль, додана в Rails, але
+# не вписана сюди, просто випадала б з парності — рівно той клас, через який lv/lt
+# колись не перевірялись узагалі [I18N.1].
+#
+# i18n-tasks проганяє цей файл через Erubi (`I18n::Tasks::Configuration#file_config`),
+# тож деривація не потребує буту Rails. **Fail-closed за побудовою:** якщо форма
+# рядка в application.rb зміниться, регексп дасть `nil`, `.split` кине NoMethodError
+# і CI почервоніє — гейт не може тихо звузити свій периметр. Пін на саму деривацію
+# (тут ⟷ `I18n.available_locales`) — `spec/i18n/i18n_tasks_config_spec.rb`.
+#
+# ⚠️ ПОЛІТИКА ПАРНОСТІ (founder 2026-07-27): цей список = усі НАЛАШТОВАНІ локалі,
+# і саме він живить зворотний diff (ключ, доданий лише в одну мову, ловиться).
+# Обов'язок ПОВНОТИ лежить окремо — на «завершених» локалях, і звужується прапорцем
+# `-l` на боці CI, не тут. Механіку й пастку описує `04_04 §12.10`.
+locales: [<%= File.read("config/application.rb")[/available_locales\s*=\s*%i\[([^\]]+)\]/, 1].split.join(", ") %>]
 
 # YAML files live under config/locales/**/*.yml. The pattern below
 # matches the sub-directory layout we already use (per-domain folders).
@@ -51,8 +65,13 @@ search:
 # Suppress noise — these are dynamic interpolated lookups that i18n-tasks
 # can't statically resolve, but we know they exist.
 ignore_missing:
-  # locale.available.<locale_code> — populated for every entry in
-  # I18n.available_locales by the LocaleSwitcher component.
+  # locale.available.<locale_code> — динамічний ключ (`t("locale.available.#{locale}")`
+  # у LocaleSwitcher + LocalesController), який i18n-tasks не резолвить статично.
+  # 🔴 З 2026-07-27 цей рядок НЕСЕ ще одну функцію, і зняти його вже не безкоштовно:
+  # ендоніми навмисно живуть ЛИШЕ в базовій локалі (locale-інваріантні дані, `04_04 §12.2`),
+  # тож без цього виключення парність репортувала б їх як «missing» в uk/lv/lt —
+  # тобто гейт вимагав би назад ті самі N×N копії, які ми щойно прибрали.
+  # Вісь стереже `spec/i18n/locale_catalog_invariance_spec.rb`, не цей рядок.
   - 'locale.available.*'
   # Trigger labels are looked up dynamically by Codex::Discoveries::Toast.
   - 'codex.discoveries.toast.triggers.*'
