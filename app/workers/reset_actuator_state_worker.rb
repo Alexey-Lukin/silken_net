@@ -47,19 +47,16 @@ class ResetActuatorStateWorker
 
   private
 
+  # Оновлюємо статус самої команди. Друга половина — заміна великої картки
+  # актуатора — знята (UI.4): вона цілила в `actuator_card_{id}`, а `Actuators::Card`
+  # рендерить `actuator_{id}`, тож ціль не існувала ніде. І сам фікс рядка був би
+  # пасткою: `Card#render_controls` має гард на відсутність request-контексту, тож
+  # картка з воркера приходить БЕЗ кнопок Execute — регресія у вигляді фічі.
   def broadcast_final_state(command, organization)
-    # 1. Оновлюємо статус самої команди в списку недавніх активностей
     Turbo::StreamsChannel.broadcast_replace_to(
       organization,
       target: "command_status_#{command.id}",
       html: Actuators::CommandStatusBadge.new(command: command).call
-    )
-
-    # 2. Оновлюємо велику картку актуатора, знімаючи з неї пульсуючий ефект "Active"
-    Turbo::StreamsChannel.broadcast_replace_to(
-      organization,
-      target: "actuator_card_#{command.actuator.id}",
-      html: Actuators::Card.new(actuator: command.actuator).call
     )
   end
 end

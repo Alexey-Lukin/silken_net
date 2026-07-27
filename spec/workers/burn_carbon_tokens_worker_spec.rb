@@ -12,10 +12,8 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
 
   before do
     # [SLASH-1] Сервіс тепер повертає outcome (:slashed/:frozen/nil); за замовч. :slashed,
-    # щоб тести «надгробка»/broadcast/метрики йшли slash-шляхом. Freeze-шлях — окремо нижче.
+    # щоб тести «надгробка»/метрик йшли slash-шляхом. Freeze-шлях — окремо нижче.
     allow(BlockchainBurningService).to receive(:call).and_return(:slashed)
-    allow(ActionCable.server).to receive(:broadcast)
-    allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
   end
 
   describe "#perform" do
@@ -51,12 +49,6 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
       expect(record.notes).to include("Загальна деградація кластера")
     end
 
-    it "broadcasts the slashing event to the contract Turbo stream" do
-      described_class.new.perform(organization.id, naas_contract.id, tree.id)
-
-      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to)
-    end
-
     it "returns early when contract is not found" do
       expect(Rails.logger).to receive(:error).with(/не знайдено/)
 
@@ -82,16 +74,16 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
     end
 
     # [SLASH-1 §3.2] Freeze: cause-gate found no Category-A evidence → service returns
-    # :frozen (Field-Audit alert raised THERE). The worker must NOT write the
-    # decommissioning tombstone nor broadcast CONTRACT_SLASHED.
-    it "does NOT write a tombstone or broadcast when the service freezes (:frozen)" do
+    # :frozen (Field-Audit alert raised THERE) і воркер виходить ДО «надгробка».
+    # Раніше приклад асертив ще й «не броадкастить CONTRACT_SLASHED» — обидва
+    # броадкасти цього воркера знято (UI.4: жодна сторінка не рендерила
+    # `contract_status_badge_{id}`), тож та половина стала б вакуумною.
+    it "does NOT write a tombstone when the service freezes (:frozen)" do
       allow(BlockchainBurningService).to receive(:call).and_return(:frozen)
 
       expect {
         described_class.new.perform(organization.id, naas_contract.id, tree.id)
       }.not_to change(MaintenanceRecord, :count)
-
-      expect(ActionCable.server).not_to have_received(:broadcast)
     end
 
     it "parses a present target_date string and forwards the Date (ARCH.46 backfill)" do

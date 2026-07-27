@@ -277,10 +277,9 @@ RSpec.describe "Blockchain minting and burning pipeline" do
 
     before do
       executioner # ensure user exists
-      # [SLASH-1] outcome :slashed → воркер пише «надгробок» + транслює CONTRACT_SLASHED.
+      # [SLASH-1] outcome :slashed → воркер пише «надгробок». Броадкастів у нього
+      # більше немає (UI.4, 2026-07-27), тож стаби на них теж зняті.
       allow(BlockchainBurningService).to receive(:call).and_return(:slashed)
-      allow(ActionCable.server).to receive(:broadcast)
-      allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
     end
 
     it "calls burning service and creates maintenance record" do

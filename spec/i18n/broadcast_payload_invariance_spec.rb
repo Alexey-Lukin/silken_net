@@ -42,10 +42,7 @@ RSpec.describe "broadcast payload carries no locale-dependent prose" do # ruboco
     %w[
       Alerts::Row
       Telemetry::LogEntry
-      Dashboard::EventRow
-      Actuators::Card
       Actuators::CommandStatusBadge
-      Views::Shared::UI::StatusBadge
     ]
   end
 

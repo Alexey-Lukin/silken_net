@@ -225,9 +225,6 @@ class ActuatorCommand < ApplicationRecord
       return
     end
 
-    # Транслюємо створення в UI
-    broadcast_prepend_to_activity_feed
-
     unless actuator.ready_for_deployment?
       update_columns(status: self.class.statuses[:failed], error_message: "Актуатор недоступний")
       record_pre_dispatch_failure_audit!("actuator_not_ready")
@@ -238,17 +235,5 @@ class ActuatorCommand < ApplicationRecord
     # (Downlink::PendingQueueService, пріоритет CMD найвищий). Push у
     # CGNAT-egress не лише не долітав — його швидкі ретраї fail!'или команду
     # ДО того, як Queen могла її запитати.
-  end
-
-  # 📈 Використовуємо денормалізований organization_id замість глибокого JOIN
-  def broadcast_prepend_to_activity_feed
-    org = organization || actuator.gateway&.cluster&.organization
-    return unless org
-
-    Turbo::StreamsChannel.broadcast_prepend_to(
-      org,
-      target: "recent_commands_feed",
-      html: Actuators::CommandRow.new(command: self).call
-    )
   end
 end

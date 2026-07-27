@@ -20,8 +20,6 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
 
   before do
     allow(BlockchainMintingService).to receive(:call)
-    allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
-    allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to)
     # [INS.1 kill-switch] Прапор УВІМКНЕНО за замовчуванням (інакше воркер no-op); окремий тест нижче перевіряє flip-off.
     allow(SystemParameter).to receive(:current).and_call_original
     allow(SystemParameter).to receive(:current)
@@ -110,13 +108,6 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
         expect { described_class.new.perform(insurance.id) }.to raise_error(/reserve-gate transient/)
         expect(BlockchainMintingService).not_to have_received(:call)
       end
-    end
-
-    it "broadcasts insurance update via Turbo" do
-      described_class.new.perform(insurance.id)
-
-      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).at_least(:once)
-      expect(Turbo::StreamsChannel).to have_received(:broadcast_prepend_to)
     end
 
     it "returns nil for non-existent insurance" do
@@ -423,13 +414,6 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
         described_class.new.perform(etherisc_insurance.id)
 
         expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash, kind_of(String)) # [ARCH.52] +created_at
-      end
-
-      it "broadcasts insurance update via Turbo" do
-        described_class.new.perform(etherisc_insurance.id)
-
-        expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).at_least(:once)
-        expect(Turbo::StreamsChannel).to have_received(:broadcast_prepend_to)
       end
 
       context "when an orphaned :pending Etherisc tx is recovered (claim may already be sent) [ARCH.45]" do

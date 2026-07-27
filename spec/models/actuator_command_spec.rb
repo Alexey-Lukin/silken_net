@@ -6,7 +6,6 @@ require "rails_helper"
 RSpec.describe ActuatorCommand, type: :model do
   before do
     allow(ActuatorCommandWorker).to receive(:perform_async)
-    allow_any_instance_of(described_class).to receive(:broadcast_prepend_to_activity_feed)
   end
 
   let(:gateway) { create(:gateway, :online) }
@@ -405,8 +404,6 @@ RSpec.describe ActuatorCommand, type: :model do
   # =========================================================================
   describe "dispatch_to_edge! expiration check" do
     it "marks expired command as failed instead of dispatching" do
-      allow_any_instance_of(described_class).to receive(:broadcast_prepend_to_activity_feed)
-
       command = create(:actuator_command, actuator: actuator, expires_at: 5.minutes.from_now)
       # Simulate time passing so the command expires before dispatch
       command.update_columns(expires_at: 1.second.ago)
@@ -470,31 +467,6 @@ RSpec.describe ActuatorCommand, type: :model do
     end
   end
 
-  describe "broadcast_prepend_to_activity_feed" do
-    let(:organization) { gateway.cluster.organization }
-
-    before do
-      allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to)
-    end
-
-    it "broadcasts when organization is present via denormalization" do
-      allow_any_instance_of(described_class).to receive(:broadcast_prepend_to_activity_feed).and_call_original
-
-      command = create(:actuator_command, actuator: actuator)
-      expect(command.organization).to eq(organization)
-      expect(Turbo::StreamsChannel).to have_received(:broadcast_prepend_to).at_least(:once)
-    end
-
-    it "returns nil when organization is nil and actuator chain is nil" do
-      command = build(:actuator_command, actuator: actuator)
-      command.organization = nil
-      allow(actuator).to receive(:gateway).and_return(nil)
-
-      result = command.send(:broadcast_prepend_to_activity_feed)
-      expect(result).to be_nil
-    end
-  end
-
   describe "denormalize_organization — actuator with no gateway" do
     it "sets organization_id to nil when gateway is nil" do
       orphan_actuator = build(:actuator, gateway: nil)
@@ -535,32 +507,6 @@ RSpec.describe ActuatorCommand, type: :model do
     end
   end
 
-  describe "broadcast_prepend_to_activity_feed — fallback through gateway chain" do
-    before do
-      allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to)
-    end
-
-    it "falls back to actuator.gateway.cluster.organization when organization is nil" do
-      allow_any_instance_of(described_class).to receive(:broadcast_prepend_to_activity_feed).and_call_original
-      command = create(:actuator_command, actuator: actuator)
-      command.update_columns(organization_id: nil)
-      command.reload
-
-      command.send(:broadcast_prepend_to_activity_feed)
-      expect(Turbo::StreamsChannel).to have_received(:broadcast_prepend_to).at_least(:once)
-    end
-
-    it "returns nil when both organization and gateway chain are nil" do
-      allow_any_instance_of(described_class).to receive(:broadcast_prepend_to_activity_feed).and_call_original
-      command = create(:actuator_command, actuator: actuator)
-      command.update_columns(organization_id: nil)
-      command.reload
-
-      allow(command.actuator).to receive(:gateway).and_return(nil)
-      result = command.send(:broadcast_prepend_to_activity_feed)
-      expect(result).to be_nil
-    end
-  end
 
   # =========================================================================
   # AASM STATE MACHINE

@@ -1134,7 +1134,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Тригер** | `ContractHealthCheckService`, `Dclimate::VerificationService` (fraud), `ContractTerminationService` |
 | **Вхід** | `organization_id`, `naas_contract_id`, `tree_id` (опц.), `contractual` (опц., default false — early-exit форфейтура пропускає positive-A gate), `target_date` (опц. String ISO8601 — прокидається з `ContractHealthCheckService`, парситься назад у Date + forward у сервіс для damage за ту ж добу [ARCH.46]) |
 | **Сервіси** | `BlockchainBurningService.call` (повертає `:slashed`/`:frozen`/`nil`; **[ARCH.45]** intent-marker + in-flight slash guard проти double-burn — деталі §4) |
-| **Side Effects** | **Лише на `:slashed`:** `MaintenanceRecord` (decommissioning) + ActionCable/Turbo `CONTRACT_SLASHED`. На `:frozen` (positive-A gate АБО no-data magnitude [ARCH.46], SLASH-1 §3.2) — без надгробка/broadcast (Field-Audit алерт уже піднято сервісом). |
+| **Side Effects** | **Лише на `:slashed`:** `MaintenanceRecord` (decommissioning). На `:frozen` (positive-A gate АБО no-data magnitude [ARCH.46], SLASH-1 §3.2) — без надгробка (Field-Audit алерт уже піднято сервісом). ⚠️ Броадкастів воркер більше не має: `CONTRACT_SLASHED` слався в `contract_status_badge_{id}`, якого не рендерить жодна сторінка (UI.4, знято 2026-07-27). |
 
 #### `InsurancePayoutWorker`
 
@@ -1203,7 +1203,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Тригер** | `Downlink::PendingQueueService#actuator_command_payload` → `ResetActuatorStateWorker.perform_in(duration_seconds, ...)` при видачі CMD у poll-відповідь. ⚠️ Раніше тут стояв `ActuatorCommandWorker` — той самий документ за 19 рядків вище ([FW.60 superseded]) уже казав, що цей воркер більше не enqueue'иться, тож рядок суперечив сусідньому |
 | **Вхід** | `command_id` (Integer) |
 | **Сервіси** | — |
-| **Side Effects** | `actuator.mark_idle!`, `command.confirm!`. Turbo Stream broadcast кард актуатора. |
+| **Side Effects** | `actuator.mark_idle!`, `command.confirm!`. Turbo broadcast `command_status_{id}` (`Actuators::CommandStatusBadge`) — ЄДИНИЙ; друга половина (кард актуатора) знята UI.4 2026-07-27: цілила в `actuator_card_{id}`, а `Actuators::Card` рендерить `actuator_{id}`. |
 
 ---
 

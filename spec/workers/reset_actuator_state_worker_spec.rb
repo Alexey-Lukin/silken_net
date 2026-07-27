@@ -37,10 +37,14 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
         expect(command.completed_at).to be_present
       end
 
-      it "broadcasts final state via Turbo" do
+      # Пін на ЦІЛЬ, не лише на факт виклику: усі специ цієї поверхні асертили
+      # `have_received(:broadcast_replace_to)` без таргета — саме тому промах
+      # `actuator_card_{id}` замість `actuator_{id}` прожив місяці (UI.4).
+      it "broadcasts the command status badge to its own DOM target" do
         described_class.new.perform(command.id)
 
-        expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).at_least(:twice)
+        expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to)
+          .with(anything, hash_including(target: "command_status_#{command.id}")).once
       end
     end
 

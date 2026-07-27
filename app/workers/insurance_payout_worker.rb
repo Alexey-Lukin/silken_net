@@ -87,7 +87,6 @@ class InsurancePayoutWorker
     if tx
       # [INS.1 SLO] Лічимо спробу виплати (знаменник success-rate SLO, 06_03 §2.8).
       SilkenNet::Metrics::INSURANCE_PAYOUT_ATTEMPTS_TOTAL.increment
-      broadcast_insurance_update(insurance, tx)
 
       if insurance.uses_etherisc?
         # [ARCH.45] Double-claim crash-window guard: recovery-шлях + :pending = claim! міг бути
@@ -231,21 +230,5 @@ class InsurancePayoutWorker
 
     Rails.logger.info "🛡️ [Insurance] Кластер ##{cluster.id}: незалежний алерт є, але НЕ verified (можливо rejected) — тримаємо, payout НЕ запущено."
     true
-  end
-
-  def broadcast_insurance_update(insurance, transaction)
-    # Оновлюємо статус картки страхування на Dashboard
-    Turbo::StreamsChannel.broadcast_replace_to(
-      insurance.cluster.organization,
-      target: "insurance_card_#{insurance.id}",
-      html: ::Views::Shared::UI::StatusBadge.new(status: insurance.status, id: "insurance_card_#{insurance.id}").call
-    )
-
-    # Додаємо запис у глобальний потік подій
-    Turbo::StreamsChannel.broadcast_prepend_to(
-      "global_events",
-      target: "events_feed",
-      html: Dashboard::EventRow.new(event: transaction).call
-    )
   end
 end
