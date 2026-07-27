@@ -104,6 +104,9 @@ module BlockchainTransactions
       when "processing", "sent" then "text-status-warning-text animate-pulse"
       when "pending" then "text-gray-400"
       when "failed" then "text-red-500"
+      # Див. `BlockchainTransactions::Show#status_badge_styles` — той самий
+      # double-spend guard, що падав у `else` тьмянішим за `pending`.
+      when "manual_review" then "text-status-warning-text animate-pulse"
       else "text-gray-600"
       end
     end

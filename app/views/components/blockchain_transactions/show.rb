@@ -139,6 +139,11 @@ module BlockchainTransactions
       when "processing", "sent" then "bg-status-warning text-status-warning-text"
       when "pending" then "bg-zinc-800 text-zinc-300"
       when "failed" then "bg-red-900 text-red-200"
+      # `manual_review` = double-spend guard (CLAUDE §6): tx_hash є, стан
+      # невідомий, кошти ЗАБЛОКОВАНІ. Він падав у `else` і діставав стиль
+      # ТЬМЯНІШИЙ за доброякісний `pending` — тобто стан, що найбільше
+      # потребує ока оператора, малювався як «тут нема на що дивитись».
+      when "manual_review" then "bg-status-warning text-status-warning-text animate-pulse"
       else "bg-zinc-900 text-zinc-400"
       end
     end

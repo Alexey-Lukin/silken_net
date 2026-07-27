@@ -182,11 +182,15 @@ RSpec.describe BlockchainTransactions::Index do
     end
   end
 
-  describe "status color else branch" do
-    it "renders unknown status with default gray text" do
-      txs = [ mock_transaction(status: "manual_review") ]
-      rendered = render_component(transactions: txs, pagy: pagy)
-      expect(rendered).to include("text-gray-600")
+  # Раніше цей приклад називав `manual_review` «unknown status» і пінив сірий
+  # фолбек — тобто фіксував дефект як норму. Це реальний AASM-стан грошового
+  # шляху, і він був тьмянішим за доброякісний `pending`.
+  describe "manual_review — double-spend guard" do
+    it "renders more prominently than a benign pending transaction" do
+      rendered = render_component(transactions: [ mock_transaction(status: "manual_review") ], pagy: pagy)
+
+      expect(rendered).to include("text-status-warning-text")
+      expect(rendered).to include("animate-pulse")
     end
   end
 

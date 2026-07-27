@@ -73,9 +73,21 @@ RSpec.describe Wallets::TransactionRow do
       expect(html).to include("text-red-500")
     end
 
-    it "renders an unrecognized status with the gray fallback" do
+    # Раніше цей приклад називав `manual_review` «unrecognized» і пінив сірий
+    # фолбек — тобто фіксував дефект як норму. Це реальний AASM-стан
+    # грошового шляху, і він був тьмянішим за доброякісний `pending`.
+    # ⚠️ Негативної половини на `text-gray-600` тут бути НЕ може: цей клас
+    # носить ще й комірка хеша (`transaction_row.rb`), тож приклад проходив
+    # би через сусідній елемент — та сама вада, яку цей блок виправляє.
+    it "renders manual_review more prominently than a benign pending row" do
       html = render_component(tx: mock_tx(status: "manual_review"))
-      expect(html).to include("text-gray-600")
+      pending_html = render_component(tx: mock_tx(status: "pending"))
+
+      expect(html).to include("text-status-warning-text")
+      expect(html).to include("animate-pulse")
+      # Порівняння з доброякісним станом — те, що робить пін не-вакуумним:
+      # обидва рендери проходять той самий шлях, різнитись мусить лише стиль.
+      expect(pending_html).not_to include("animate-pulse")
     end
   end
 

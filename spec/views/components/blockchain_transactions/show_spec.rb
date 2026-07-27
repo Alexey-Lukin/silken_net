@@ -257,11 +257,37 @@ RSpec.describe BlockchainTransactions::Show do
     end
   end
 
-  describe "status badge else branch" do
-    it "renders unknown status with zinc fallback style" do
-      tx = mock_transaction(status: "manual_review")
-      rendered = render_component(transaction: tx)
-      expect(rendered).to include("bg-zinc-900")
+  # 🔴 Цей блок раніше називав `manual_review` «unknown status» і стверджував,
+  # що він дістає zinc-фолбек — тобто СПЕКА ЦЕМЕНТУВАЛА ДЕФЕКТ. Насправді це
+  # реальний AASM-стан грошового шляху (double-spend guard: tx_hash є, кошти
+  # заблоковані, стан невідомий), і він малювався тьмянішим за доброякісний
+  # `pending`. Приклад мусить пінити ВИДИМІСТЬ, а не факт існування гілки.
+  describe "manual_review — double-spend guard" do
+    it "renders more prominently than a benign pending transaction" do
+      rendered = render_component(transaction: mock_transaction(status: "manual_review"))
+
+      expect(rendered).to include("bg-status-warning")
+      expect(rendered).to include("animate-pulse")
+      expect(rendered).not_to include("bg-zinc-900")
+    end
+  end
+
+  # Гейт на КЛАС: ітеруємо реальні стани AASM, а не власний перелік — саме
+  # розрив між ними й пропустив `manual_review` у дефолтну гілку. Новий стан
+  # у моделі зробить цей приклад червоним, а не тихо тьмяним.
+  describe "status style coverage" do
+    it "gives every BlockchainTransaction state a style of its own" do
+      fallback = render_component(transaction: mock_transaction(status: "__not_a_state__"))
+      fallback_style = fallback[/bg-zinc-900[^"]*/]
+      # Без цього приклад був би вакуумним: якби фолбек не знайшовся,
+      # `not_to include(nil)` не перевіряло б нічого.
+      expect(fallback_style).to be_present
+
+      BlockchainTransaction.aasm.states.map(&:name).each do |state|
+        rendered = render_component(transaction: mock_transaction(status: state.to_s))
+        expect(rendered).not_to include(fallback_style),
+                                "стан #{state} падає в дефолтну гілку — його не видно як окремий"
+      end
     end
   end
 end
