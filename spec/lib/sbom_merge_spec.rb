@@ -63,6 +63,47 @@ RSpec.describe SbomMerge do
       expect(r[:collisions]).to be_empty
     end
 
+    it "collapses twins differing ONLY by bom-ref — the shape that actually occurs" do
+      # The example above copies a body literally, which no scanner ever emits:
+      # `bom-ref` is a document-local pointer and Trivy mints a fresh UUID per row,
+      # so a real duplicate ALWAYS differs somewhere. Comparing it compared the
+      # pointer instead of the artefact and failed `--assert` on benign input — the
+      # 7 conda packages shared by tools/in_silico and tools/ml, all from ONE Trivy
+      # fragment, bodies identical in everything but the UUID.
+      a = comp("numpy", purl: "pkg:conda/numpy", extra: { "bom-ref" => "uuid-1" })
+      b = comp("numpy", purl: "pkg:conda/numpy", extra: { "bom-ref" => "uuid-2" })
+      r = described_class.build([ fragment([ a, b ]) ], name: "x", version: "1")
+      expect(r[:collisions]).to be_empty
+      expect(r[:document]["components"].size).to eq(1)
+    end
+
+    it "collapses one scanner reaching a package through two analysers" do
+      # Same name+version+purl, differing only in the tool's own `properties`:
+      # Trivy finds a NuGet package both in the resolved `.deps.json` graph and in
+      # Central Package Management. That is provenance — both true at once — not two
+      # scanners disagreeing. Observed on a newer Trivy than the CI pin, so this
+      # example is what keeps the next `trivy-action` bump from failing a release.
+      props = ->(v) { [ { "name" => "aquasecurity:trivy:PkgType", "value" => v } ] }
+      a = comp("PicoGK", purl: "pkg:nuget/PicoGK@2.2.0", version: "2.2.0",
+               extra: { "bom-ref" => "uuid-1", "properties" => props.call("dotnet-core") })
+      b = comp("PicoGK", purl: "pkg:nuget/PicoGK@2.2.0", version: "2.2.0",
+               extra: { "bom-ref" => "uuid-2", "properties" => props.call("packages-props") })
+      r = described_class.build([ fragment([ a, b ]) ], name: "x", version: "1")
+      expect(r[:collisions]).to be_empty
+      expect(r[:document]["components"].size).to eq(1)
+    end
+
+    it "still reports a real conflict even when bom-refs also differ" do
+      # The other direction: excluding `bom-ref` must not blind the guard. Same key,
+      # genuinely different content (differing hashes) stays a reported collision.
+      a = comp("a", purl: "pkg:conda/a@1",
+               extra: { "bom-ref" => "uuid-1", "hashes" => [ { "alg" => "SHA-256", "content" => "aa" } ] })
+      b = comp("a", purl: "pkg:conda/a@1",
+               extra: { "bom-ref" => "uuid-2", "hashes" => [ { "alg" => "SHA-256", "content" => "bb" } ] })
+      r = described_class.build([ fragment([ a ]), fragment([ b ]) ], name: "x", version: "1")
+      expect(r[:collisions]).to eq([ "pkg:conda/a@1" ])
+    end
+
     it "reports a collision when one key carries two different bodies" do
       # Two scanners describing the same artefact differently is a fact worth
       # surfacing — collapsing it would pick a winner at random.

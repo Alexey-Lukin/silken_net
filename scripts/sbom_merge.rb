@@ -20,11 +20,17 @@
 #      metadata-components are dropped — they are descriptions of a scan, not
 #      dependencies of the product.
 #
-# Dedup key = `purl` when present, else `bom-ref`, else `name@version`. Fragments
-# are disjoint by construction (different purl namespaces), so a collision means
-# two scanners claimed the same artefact — that is worth REPORTING, not silently
-# collapsing: `--assert` fails on any conflicting duplicate (same key, different
-# content) while identical duplicates collapse quietly.
+# Dedup key = `purl` when present, else `bom-ref`, else `name@version`. A collision
+# means one key carries two DIFFERENT bodies — worth REPORTING, not silently
+# collapsing, because collapsing picks a winner at random: `--assert` fails on any
+# conflicting duplicate while identical ones collapse quietly.
+#
+# 🔴 Duplicates are NOT only cross-fragment. This merge walks every component of
+# every fragment, and one scanner reading two manifests produces them on its own:
+# Trivy emits a row per `environment.yml` entry, so the 7 packages shared by
+# `tools/in_silico` and `tools/ml` arrive twice from a single Trivy fragment. An
+# earlier note here claimed fragments were "disjoint by construction" and that a
+# collision therefore meant two scanners disagreeing — both halves were false.
 #
 # NAMED CEILING [BIZ.24]: this is a FLAT merge. No `dependencies[]` graph is
 # produced or preserved — conda-lock carries ranges, not resolved bom-refs, and
@@ -51,6 +57,35 @@ module SbomMerge
       [ component["group"], component["name"], component["version"] ].compact.join("/")
   end
 
+  # What makes two rows THE SAME ARTEFACT — i.e. what a collision must ignore.
+  # Both excluded fields are TOOL BOOKKEEPING, not properties of the thing:
+  #
+  #   · `bom-ref` — a document-local pointer. Trivy mints a fresh UUID per row, so
+  #     two rows for one package are never `==` even when otherwise byte-identical.
+  #     Comparing it compares the pointer instead of the thing, which made the
+  #     "identical duplicates collapse quietly" promise unreachable for any such
+  #     scanner. Verified, not assumed: one Trivy run over our two `environment.yml`
+  #     files produced exactly 7 pairs — the intersection of the two envs — differing
+  #     in `bom-ref` and NOTHING else, and `--assert` failed the release on them.
+  #   · `properties` — CycloneDX's explicit vendor-extension store. One scanner can
+  #     reach one package through two analysers and disagree only with itself there:
+  #     `PkgType=dotnet-core` (resolved `.deps.json`) vs `packages-props` (Central
+  #     Package Management) for the same name+version+purl. That is provenance, not
+  #     disagreement — both are true at once.
+  #
+  # NAMED CEILING: a scanner that encodes a load-bearing fact ONLY in `properties`
+  # would have a genuine disagreement collapse silently here. Accepted, because every
+  # identity-bearing field — `purl`, `version`, `name`, `type`, `hashes`, `licenses` —
+  # is still compared; `properties` is by spec the place tools put their own notes.
+  #
+  # Dropping a twin is safe because the aggregate carries no `dependencies[]` graph
+  # (NAMED CEILING above) — no surviving ref can dangle.
+  IGNORED_IN_COMPARISON = %w[bom-ref properties].freeze
+
+  def semantic_body(component)
+    component.reject { |k, _| IGNORED_IN_COMPARISON.include?(k) }
+  end
+
   # Returns { components:, collisions: } — collisions = same key, different body.
   def combine(fragments)
     seen = {}
@@ -60,7 +95,7 @@ module SbomMerge
       (frag["components"] || []).each do |c|
         k = dedup_key(c)
         if seen.key?(k)
-          collisions << k unless seen[k] == c
+          collisions << k unless semantic_body(seen[k]) == semantic_body(c)
         else
           seen[k] = c
         end
