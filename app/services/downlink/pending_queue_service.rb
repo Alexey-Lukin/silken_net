@@ -124,7 +124,37 @@ module Downlink
         ActuatorCommandWorker.broadcast_command_state_static(command)
 
         return inner
+      rescue ActiveRecord::RecordInvalid => e
+        # 🔴 [ARCH.75] Наказ, який НЕ МОЖЕ бути збережений, не сміє вбити тракт.
+        # `EmergencyResponseService` пише `insert_all` (валідації обходить) і ріже
+        # тривалість за ВЛАСНОЮ константою, не за стелею актуатора — тож при
+        # `max_active_duration_s < 3600` (сіди: клапан 300, сирена 120) кожна
+        # пожежна команда лягає невалідною. Тоді БУДЬ-який AASM-перехід б'ється
+        # об `duration_within_safety_envelope` — включно з TTL-прибиранням, тож
+        # рядок не вміє навіть померти, — а виняток летить повз rescue демона:
+        # poll лишається БЕЗ ВІДПОВІДІ назавжди, і разом із CMD вмирають ratchet,
+        # OTA-hint і time-sync цього шлюза. Force-fail через `update_columns`
+        # (дзеркало `dispatch_to_edge!`) — єдиний спосіб винести такий рядок із
+        # черги. Виміряно, не виведено. Політика чанкування — ⚖️ в ARCH.75.
+        force_fail_unpersistable!(command, e)
+        next
       end
+    end
+
+    # `update_columns` свідомо: рядок невалідний, тож будь-який шлях через
+    # валідації (`fail!`, `update!`) кинув би той самий виняток удруге. Ланцюг
+    # ARCH.57 закриваємо ручним викликом — дзеркало
+    # `record_pre_dispatch_failure_audit!`, який робить те саме з тієї ж причини.
+    def force_fail_unpersistable!(command, error)
+      reason = error.record&.errors&.full_messages&.first || error.message
+      command.update_columns(
+        status: ActuatorCommand.statuses[:failed],
+        error_message: "Наказ не проходить власну валідацію: #{reason}".truncate(200)
+      )
+      command.send(:record_pre_dispatch_failure_audit!, "unpersistable")
+      ActuatorCommandWorker.broadcast_command_state_static(command)
+      Rails.logger.error "🛑 [ARCH.75] Наказ ##{command.id} невалідний (#{reason}) — " \
+                         "винесено з черги, poll-тракт живий"
     end
 
     def pending_commands

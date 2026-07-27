@@ -103,6 +103,49 @@ RSpec.describe Downlink::PendingQueueService do
 
       expect(decrypt_inner(poll).bytes).to all(eq(0))
     end
+
+    # 🔴 [ARCH.75] Найгостріший клас, знайдений виміром: `EmergencyResponseService`
+    # пише `insert_all` (валідації обходить) і ріже тривалість за власною
+    # константою 3600, не за `actuator.max_active_duration_s` — а сіди везуть
+    # клапан зі стелею 300 і сирену зі 120. Тоді КОЖЕН AASM-перехід такого
+    # наказу б'ється об валідацію, включно з TTL-прибиранням, і виняток летить
+    # повз rescue демона: poll назавжди без відповіді, разом із ним мертві
+    # ratchet, OTA-hint і time-sync шлюза.
+    describe "наказ, який неможливо зберегти" do
+      let(:capped) { create(:actuator, gateway: gateway, max_active_duration_s: 60) }
+
+      before do
+        ActuatorCommand.insert_all([ {
+          actuator_id: capped.id, command_payload: "OPEN_VALVE", duration_seconds: 3600,
+          status: ActuatorCommand.statuses[:issued], priority: ActuatorCommand.priorities[:high],
+          idempotency_token: SecureRandom.uuid, expires_at: 15.minutes.from_now,
+          created_at: Time.current, updated_at: Time.current
+        } ])
+      end
+
+      it "не валить poll — конверт віддається" do
+        expect { poll }.not_to raise_error
+      end
+
+      it "виносить невалідний наказ із черги як failed із причиною" do
+        poll
+
+        bad = capped.commands.sole
+        expect(bad.reload.status).to eq("failed")
+        expect(bad.error_message).to include("не проходить власну валідацію")
+      end
+
+      it "не блокує видачу ВАЛІДНОГО наказу того ж шлюза" do
+        expect(decrypt_inner(poll)).to include("CMD:#{command.command_payload}")
+      end
+
+      it "протермінований невалідний наказ теж виноситься (fail! інакше б'ється об ту саму валідацію)" do
+        capped.commands.sole.update_columns(expires_at: 1.minute.ago)
+
+        expect { poll }.not_to raise_error
+        expect(capped.commands.sole.reload.status).to eq("failed")
+      end
+    end
   end
 
   describe "0x9E ratchet (gated FW.17)" do
