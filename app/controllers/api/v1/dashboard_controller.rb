@@ -76,8 +76,11 @@ module Api
       # побудовою: `Dashboard::MapNode` читає виключно колонки `trees`
       # (latitude/longitude/status + денормалізовані latest_stress_index,
       # latest_voltage_mv), жодної асоціації.
+      # `order(:id)` не косметика: без нього `limit` віддає НЕДЕТЕРМІНОВАНУ
+      # підмножину — понад стелею глядач бачив би різні дерева між
+      # перезавантаженнями, а це виглядає як зникання вузлів, не як ліміт.
       def map_trees(org)
-        org.trees.geolocated.limit(MAP_NODE_LIMIT)
+        org.trees.geolocated.order(:id).limit(MAP_NODE_LIMIT)
       end
 
       # [ВИПРАВЛЕНО: Sync RPC Trap]: Кешуємо GraphQL результат з TheGraph на 5 хвилин,

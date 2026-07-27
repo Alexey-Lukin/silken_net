@@ -353,7 +353,12 @@ RSpec.describe Tree, type: :model do
       tree = create(:tree, latitude: 49.44, longitude: 32.06, cluster: nil)
 
       allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
-      expect(tree.broadcast_map_update).to be_nil
+      tree.broadcast_map_update
+
+      # Пін лише на ФАКТ відсутності броадкасту. `expect(...).to be_nil` тут
+      # стояло б декоративно: стаб і так повертає nil, тож приклад був би
+      # зеленим в обох світах — той самий клас, що «спека стверджує факт
+      # виклику замість його аргументу».
       expect(Turbo::StreamsChannel).not_to have_received(:broadcast_replace_to)
     end
   end

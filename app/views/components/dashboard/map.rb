@@ -19,11 +19,17 @@ module Dashboard
         turbo_stream_from "geospatial_matrix_org_#{@organization.id}" if @organization
 
         # Основний контейнер карти з підключеним Stimulus.
-        # `turbo-permanent`: Leaflet будує свій DOM усередині цього вузла, а
-        # сервер віддає його порожнім — тож morph-рефреш (увімкнений у layout
-        # заради `broadcast_refresh_to`) вирізав би плитки й маркери, лишивши
-        # контролер живим і без `connect()`, який міг би їх відновити.
-        div(id: "geospatial_map_canvas", data: { controller: "map", turbo_permanent: "" }, class: "w-full h-full z-0") do
+        # ⚠️ `data-turbo-permanent` тут пробували й ЗНЯЛИ — він шкодив більше,
+        # ніж рятував. Атрибут вмикається на будь-якому Turbo-рендері, не лише
+        # на morph (`preservingPermanentElements`), а морф вимагає ще й
+        # `action === "replace"` — тобто звичайний клік по «Dashboard» його не
+        # дає. На такому візиті Turbo ПЕРЕСАДЖУЄ вузол → Stimulus кличе
+        # `disconnect()` → той робить `replaceChildren()` і зносить разом із
+        # плитками Leaflet ще й `#map_data_nodes` НИЖЧЕ, який рендерить сервер;
+        # мапа лишається порожньою, а наступні `broadcast_replace` летять у
+        # неіснуючі id. Дашборд refresh-сигналів не отримує, тож морфу тут
+        # нема від чого захищати.
+        div(id: "geospatial_map_canvas", data: { controller: "map" }, class: "w-full h-full z-0") do
           # Прихований блок даних. Stimulus "зчитує" звідси.
           div(id: "map_data_nodes", class: "hidden") do
             @trees.each { |tree| render Dashboard::MapNode.new(tree: tree) }
@@ -36,7 +42,10 @@ module Dashboard
             div(class: "w-2 h-2 rounded-full bg-emerald-500 animate-pulse")
             plain t(".heading")
           end
-          p(class: "text-mini text-gray-400 font-mono") { t(".live_nodes", count: @trees.count) }
+          # `.size`, а не `.count`: колекція вже завантажена рендером вузлів
+          # вище, тож `.count` слав би ДРУГИЙ SQL (обгорнутий COUNT) на кожен
+          # показ дашборду.
+          p(class: "text-mini text-gray-400 font-mono") { t(".live_nodes", count: @trees.size) }
         end
       end
     end
