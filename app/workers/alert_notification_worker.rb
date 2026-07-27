@@ -11,55 +11,25 @@ class AlertNotificationWorker
     alert = EwsAlert.find_by(id: ews_alert_id)
     return unless alert
 
+    # 🔴 `cluster` у EwsAlert — `optional: true`, а цей воркер енкʼюїться БЕЗУМОВНО
+    # (`after_create_commit :dispatch_notifications!`), і безкластерні алерти реально
+    # створюються (AlertDispatchService, гілка одинокого дерева). Маршрут до адресатів
+    # веде ЛИШЕ через організацію кластера — у дерева `cluster` теж optional, іншого
+    # шляху нема. Без цього гарда `cluster.organization` кидав NoMethodError на КОЖНОМУ
+    # такому алерті: 5 ретраїв → morgue, тихо й назавжди.
     cluster = alert.cluster
-    organization = cluster.organization
+    unless cluster
+      Rails.logger.warn "📢 [Notification] Алерт ##{alert.id} без кластера — адресата сповіщень не існує, пропускаю."
+      return
+    end
 
-    # 1. ЦЕНТРАЛЬНА НЕРВОВА СИСТЕМА (ActionCable)
-    # Миттєве оновлення дашбордів у реальному часі
-    broadcast_to_dashboards(alert)
-
-    # 2. ДИФЕРЕНЦІЙОВАНА ДОСТАВКА (Smart Routing)
-    # Оповіщення відповідальних осіб через зовнішні канали
-    notify_stakeholders(alert, organization)
+    # ДИФЕРЕНЦІЙОВАНА ДОСТАВКА (Smart Routing) — оповіщення відповідальних осіб
+    notify_stakeholders(alert, cluster.organization)
 
     Rails.logger.info "📢 [Notification] Тривогу #{alert.alert_type} розіслано для кластера #{cluster.name}."
   end
 
   private
-
-  def broadcast_to_dashboards(alert)
-    # [БЕЗПЕКА]: Визначаємо координати з урахуванням того, що тривога може бути системною.
-    # Пріоритет: конкретне дерево → центроїд кластера (geo_center) → шлюз-запасний варіант.
-    # Це запобігає дезорієнтації патруля, якщо шлюз стоїть за 5 км від епіцентру.
-    location = if alert.tree
-      { lat: alert.tree.latitude, lng: alert.tree.longitude }
-    elsif (center = alert.cluster.geo_center)
-      center
-    elsif (fallback = alert.cluster.gateways.first)
-      { lat: fallback.latitude, lng: fallback.longitude }
-    else
-      { lat: nil, lng: nil }
-    end
-
-    payload = {
-      id: alert.id,
-      target_did: alert.tree&.did || "SYSTEM_CLUSTER",
-      severity: alert.severity,
-      alert_type: alert.alert_type,
-      message: alert.message,
-      lat: location[:lat],
-      lng: location[:lng],
-      timestamp: alert.created_at.to_i
-    }
-
-    # Канал для конкретного кластера (для патрульних на місці)
-    ActionCable.server.broadcast("cluster_#{alert.cluster_id}_alerts", payload)
-
-    # Канал для всієї організації (для центрального офісу)
-    ActionCable.server.broadcast("org_#{alert.cluster.organization_id}_alerts", payload)
-  rescue StandardError => e
-    Rails.logger.error "🛑 [ActionCable] WebSocket Error: #{e.message}"
-  end
 
   def notify_stakeholders(alert, organization)
     # А. Email для Організації (Формальна звітність)

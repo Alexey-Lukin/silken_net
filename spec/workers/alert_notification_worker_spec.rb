@@ -10,27 +10,10 @@ RSpec.describe AlertNotificationWorker, type: :worker do
   let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
 
   before do
-    allow(ActionCable.server).to receive(:broadcast)
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
   end
 
   describe "#perform" do
-    it "broadcasts alert to cluster and organization ActionCable channels" do
-      described_class.new.perform(alert.id)
-
-      expect(ActionCable.server).to have_received(:broadcast)
-        .with("cluster_#{cluster.id}_alerts", hash_including(id: alert.id, severity: "critical"))
-      expect(ActionCable.server).to have_received(:broadcast)
-        .with("org_#{organization.id}_alerts", hash_including(id: alert.id, severity: "critical"))
-    end
-
-    it "uses tree coordinates when tree is present" do
-      described_class.new.perform(alert.id)
-
-      expect(ActionCable.server).to have_received(:broadcast)
-        .with("cluster_#{cluster.id}_alerts", hash_including(lat: tree.latitude, lng: tree.longitude))
-    end
-
     it "enqueues SingleNotificationWorker for each admin/forester" do
       admin = create(:user, :admin, organization: organization)
       forester = create(:user, :forester, organization: organization)
@@ -92,46 +75,19 @@ RSpec.describe AlertNotificationWorker, type: :worker do
       expect(AlertMailer).not_to have_received(:with)
     end
 
-    it "falls back to cluster geo_center when tree has no coordinates" do
-      no_tree_alert = create(:ews_alert, :fire, cluster: cluster, tree: nil)
-      allow_any_instance_of(Cluster).to receive(:geo_center).and_return({ lat: 50.0, lng: 30.0 })
+    # [UI.4-суміжне] Регресія живого бага: `EwsAlert.belongs_to :cluster, optional: true`,
+    # а воркер енкʼюїться безумовно з `after_create_commit`. До гарда кожен безкластерний
+    # алерт валив NoMethodError на `cluster.organization` → 5 ретраїв → morgue.
+    it "skips a clusterless alert instead of raising" do
+      clusterless = create(:ews_alert, :fire, cluster: nil, tree: nil)
+      allow(Sidekiq::Client).to receive(:push_bulk)
 
-      described_class.new.perform(no_tree_alert.id)
-
-      expect(ActionCable.server).to have_received(:broadcast)
-        .with("cluster_#{cluster.id}_alerts", hash_including(lat: 50.0, lng: 30.0))
-    end
-
-    it "falls back to first gateway when cluster has no geo_center" do
-      gw = create(:gateway, cluster: cluster, latitude: 48.5, longitude: 31.5)
-      no_tree_alert = create(:ews_alert, :fire, cluster: cluster, tree: nil)
-      allow_any_instance_of(Cluster).to receive(:geo_center).and_return(nil)
-
-      described_class.new.perform(no_tree_alert.id)
-
-      expect(ActionCable.server).to have_received(:broadcast).at_least(:once)
-    end
-
-    it "sends nil coordinates when no location sources available" do
-      empty_cluster = create(:cluster, organization: organization)
-      no_loc_alert = create(:ews_alert, :fire, cluster: empty_cluster, tree: nil)
-      allow_any_instance_of(Cluster).to receive(:geo_center).and_return(nil)
-
-      described_class.new.perform(no_loc_alert.id)
-
-      expect(ActionCable.server).to have_received(:broadcast)
-        .with("cluster_#{empty_cluster.id}_alerts", hash_including(lat: nil, lng: nil))
+      expect { described_class.new.perform(clusterless.id) }.not_to raise_error
+      expect(Sidekiq::Client).not_to have_received(:push_bulk)
     end
 
     it "returns nil when alert not found" do
       expect(described_class.new.perform(-1)).to be_nil
-    end
-
-    it "handles ActionCable broadcast errors gracefully" do
-      allow(ActionCable.server).to receive(:broadcast).and_raise(StandardError, "WebSocket error")
-
-      # Should not raise — error is logged internally
-      expect { described_class.new.perform(alert.id) }.not_to raise_error
     end
   end
 end
