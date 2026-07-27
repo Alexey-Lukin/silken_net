@@ -42,4 +42,4 @@ uk:
       log_title: Журнал виконання команд
       not_executed: "---"
       system_operator: СИСТЕМА
-    show_title: Хаб актуатора // %{device_type}
+    show_title: Центр актуатора // %{device_type}

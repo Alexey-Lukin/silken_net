@@ -1,7 +1,7 @@
 ---
 uk:
   provisioning:
-    failed_title: Ініціалізація не вдалася
+    failed_title: Ініціацію не завершено
     new:
       errors_title: 'Ініціалізація не вдалася:'
       fields:
@@ -19,7 +19,7 @@ uk:
       submit: ПРИВ'ЯЗАТИ ОБЛАДНАННЯ ДО МАТРИЦІ
       subtitle: Встановлення 40-річного біометричного зв'язку
       title: Ініціалізація обладнання
-    new_title: Ритуал ініціалізації обладнання
+    new_title: Ритуал ініціації обладнання
     success:
       assigned_did: Призначений DID
       hardware_uid: Hardware UID
@@ -33,4 +33,4 @@ uk:
       ritual_complete: Ритуал завершено
       view_in_matrix: Переглянути вузол у матриці →
       woven: Вузол вплетено у Silken Net.
-    success_title: Ініціалізація успішна
+    success_title: Ініціацію завершено

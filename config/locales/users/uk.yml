@@ -12,7 +12,7 @@ uk:
         neural_link: Стан нейронного зв'язку
         role_access: Роль / Доступ
         view_logs: ЖУРНАЛ
-    index_title: Керування персоналом // Клан
+    index_title: Керування екіпажем // Клан
     profile:
       access:
         command_execution: Виконання команд
