@@ -51,11 +51,9 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
       expect(record.notes).to include("Загальна деградація кластера")
     end
 
-    it "broadcasts slashing event via ActionCable and Turbo" do
+    it "broadcasts the slashing event to the contract Turbo stream" do
       described_class.new.perform(organization.id, naas_contract.id, tree.id)
 
-      expect(ActionCable.server).to have_received(:broadcast)
-        .with("org_#{organization.id}_alerts", hash_including(event: "CONTRACT_SLASHED"))
       expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to)
     end
 

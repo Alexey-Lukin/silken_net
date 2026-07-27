@@ -69,9 +69,6 @@ class UnpackTelemetryWorker
       return
     end
 
-    # 2.1 ЖИВИЙ ПОТІК У МАТРИЦЮ (ActionCable — raw hex stream)
-    # [BUG FIX]: перенесено після верифікації шлюзу — невідомі IP не повинні заповнювати UI.
-    broadcast_raw_hex(binary_payload, sender_ip)
 
     # Оновлюємо поточну IP-адресу (важливо для динамічних Starlink/LTE модемів)
     gateway.mark_seen!(new_ip: sender_ip)
@@ -367,14 +364,5 @@ class UnpackTelemetryWorker
     )
 
     Turbo::StreamsChannel.broadcast_remove_to("telemetry_stream", target: "feed_placeholder")
-  end
-
-  def broadcast_raw_hex(binary_payload, sender_ip)
-    ActionCable.server.broadcast("telemetry_live_stream", {
-      hex: binary_payload.unpack1("H*").scan(/../).join(" "),
-      ip: sender_ip,
-      size: binary_payload.bytesize,
-      at: Time.current.strftime("%H:%M:%S.%L")
-    })
   end
 end

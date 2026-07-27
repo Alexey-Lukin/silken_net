@@ -26,7 +26,6 @@ module Api
           attunement.intensity ||= 3
 
           if attunement.save
-            ::Codex::AttunementBroadcastWorker.perform_async(@node.id, current_user.id)
             enqueue_discovery_probe(attunement)
             respond_to do |format|
               format.json do
@@ -45,7 +44,6 @@ module Api
           if attunement
             authorize attunement, :destroy?
             attunement.destroy
-            ::Codex::AttunementBroadcastWorker.perform_async(@node.id, current_user.id)
           end
 
           respond_to do |format|

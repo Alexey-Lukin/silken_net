@@ -2,10 +2,16 @@
 # frozen_string_literal: true
 
 # Codex::Attunement::Toggle — single button reflecting whether the current
-# user is currently attuned to the host node. The live counter rerenders via
-# the `codex_node_<id>_attunements` Turbo Stream channel published by
-# `Codex::AttunementBroadcastWorker`. No Stimulus controller needed — Turbo
-# Stream broadcast handles the state update within ~100ms.
+# user is currently attuned to the host node.
+#
+# 🔴 The counter is NOT live, and the previous docstring's claim that it was
+# is the reason this note is long. It promised a "Turbo Stream channel
+# published by Codex::AttunementBroadcastWorker" — but that worker used raw
+# `ActionCable.server.broadcast`, not Turbo; nothing ever subscribed; and the
+# same commit that wrote the promise DELETED the Stimulus fallback that had
+# actually worked, on the strength of the promise. The worker was removed
+# 2026-07-27 (UI.2 descope). The count you see is the one the controller
+# passed in at render time; it refreshes on reload.
 module Codex
   module Attunements
     class Toggle < ApplicationComponent

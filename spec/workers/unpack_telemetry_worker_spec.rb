@@ -63,18 +63,6 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       expect(Turbo::StreamsChannel).to have_received(:broadcast_prepend_to).with("telemetry_stream", anything)
     end
 
-    it "broadcasts raw hex payload to telemetry_live_stream via ActionCable" do
-      raw_data = "HEX_STREAM_TEST"
-      encrypted = encrypt_payload(raw_data, key_record.binary_key)
-      encoded = Base64.strict_encode64(encrypted)
-
-      described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
-
-      expect(ActionCable.server).to have_received(:broadcast).with(
-        "telemetry_live_stream",
-        hash_including(ip: "10.0.0.1", size: encrypted.bytesize)
-      )
-    end
 
     context "when dual-key rotation (grace period)" do
       it "decrypts with previous key when current key fails" do
@@ -309,23 +297,6 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
   # -----------------------------------------------------------------------
   # BROADCAST_RAW_HEX FORMAT
   # -----------------------------------------------------------------------
-  describe "broadcast_raw_hex" do
-    it "broadcasts hex payload with space-separated byte pairs" do
-      raw_data = "\xDE\xAD\xBE\xEF"
-      encrypted = encrypt_payload(raw_data, key_record.binary_key)
-      encoded = Base64.strict_encode64(encrypted)
-
-      described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
-
-      expect(ActionCable.server).to have_received(:broadcast).with(
-        "telemetry_live_stream",
-        hash_including(
-          hex: a_string_matching(/\A[0-9a-f]{2}( [0-9a-f]{2})+\z/),
-          at: a_string_matching(/\d{2}:\d{2}:\d{2}\.\d{3}/)
-        )
-      )
-    end
-  end
 
   # -----------------------------------------------------------------------
   # GATEWAY MARK_SEEN! IP UPDATE

@@ -21,7 +21,7 @@ RSpec.describe "Api::V1::Codex::Comments", type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
-    it "creates a comment, increments comments_count and broadcasts on the node channel" do
+    it "creates a comment and increments comments_count" do
       received = []
       allow(ActionCable.server).to receive(:broadcast) { |topic, payload| received << [ topic, payload ] }
 
@@ -34,7 +34,6 @@ RSpec.describe "Api::V1::Codex::Comments", type: :request do
       expect(response).to have_http_status(:created)
       expect(response.parsed_body.dig("data", "body_md")).to eq("Hello **world**.")
       expect(response.parsed_body.dig("data", "body_html")).to include("<strong>world</strong>")
-      expect(received.first.first).to eq("codex_node_#{node.id}_comments")
     end
 
     it "rejects JSON writes without an Idempotency-Key" do
@@ -96,19 +95,6 @@ RSpec.describe "Api::V1::Codex::Comments", type: :request do
       }.to change { node.reload.comments_count }.by(1)
 
       expect(response).to redirect_to(api_v1_codex_node_path(node.slug))
-    end
-
-    it "swallows broadcast errors so the comment still saves" do
-      allow(ActionCable.server).to receive(:broadcast).and_raise(StandardError, "boom")
-      expect(Rails.logger).to receive(:error).with(/CommentsController#broadcast/).at_least(:once)
-
-      expect {
-        post "/api/v1/codex/nodes/#{node.slug}/comments",
-             params: { comment: { body_md: "survive" } },
-             headers: headers, as: :json
-      }.to change { node.reload.comments_count }.by(1)
-
-      expect(response).to have_http_status(:created)
     end
   end
 end

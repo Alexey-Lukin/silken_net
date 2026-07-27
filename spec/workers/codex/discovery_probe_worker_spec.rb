@@ -21,11 +21,8 @@ RSpec.describe Codex::DiscoveryProbeWorker, type: :worker do
     }.not_to change(Codex::Discovery, :count)
   end
 
-  it "creates a Discovery + broadcasts when Engine returns nodes" do
+  it "creates a Discovery when the Engine returns nodes" do
     allow(::Codex::DiscoveryEngine).to receive(:evaluate).and_return([ node ])
-    expect(ActionCable.server).to receive(:broadcast).with(
-      "codex:discoveries:user:#{user.id}", hash_including(slug: node.slug)
-    )
     expect {
       described_class.new.perform(user.id, "match_milestone",
                                   { "trigger_ref_type" => "Codex::Match", "trigger_ref_id" => 42 })
@@ -41,7 +38,6 @@ RSpec.describe Codex::DiscoveryProbeWorker, type: :worker do
   it "is idempotent on the unique-violation race (no double-broadcast)" do
     create(:codex_discovery, user: user, node: node)
     allow(::Codex::DiscoveryEngine).to receive(:evaluate).and_return([ node ])
-    expect(ActionCable.server).not_to receive(:broadcast)
     expect {
       described_class.new.perform(user.id, "match_milestone", {})
     }.not_to change(Codex::Discovery, :count)
@@ -59,7 +55,6 @@ RSpec.describe Codex::DiscoveryProbeWorker, type: :worker do
     allow(::Codex::Discovery).to receive(:create_with).and_call_original
     allow_any_instance_of(ActiveRecord::Relation).to receive(:find_or_create_by)
       .and_raise(ActiveRecord::RecordNotUnique)
-    expect(ActionCable.server).not_to receive(:broadcast)
     expect { described_class.new.perform(user.id, "match_milestone", {}) }.not_to raise_error
   end
 
@@ -69,17 +64,6 @@ RSpec.describe Codex::DiscoveryProbeWorker, type: :worker do
     # value reaches the DB layer (e.g. ActiveRecord rejects unknown enum values).
     allow_any_instance_of(ActiveRecord::Relation).to receive(:find_or_create_by)
       .and_raise(ArgumentError, "bad enum value")
-    expect(ActionCable.server).not_to receive(:broadcast)
     expect { described_class.new.perform(user.id, "match_milestone", {}) }.not_to raise_error
-  end
-
-  it "swallows a broadcast StandardError so the DB record is not rolled back" do
-    allow(::Codex::DiscoveryEngine).to receive(:evaluate).and_return([ node ])
-    allow(ActionCable.server).to receive(:broadcast).and_raise(StandardError, "cable error")
-    expect {
-      described_class.new.perform(user.id, "match_milestone", {})
-    }.not_to raise_error
-    # Discovery record was still created
-    expect(Codex::Discovery.where(user_id: user.id, codex_node_id: node.id)).to exist
   end
 end

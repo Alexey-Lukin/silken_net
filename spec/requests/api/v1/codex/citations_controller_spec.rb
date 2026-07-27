@@ -32,7 +32,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
       expect(response).to have_http_status(:forbidden)
     end
 
-    it "creates a citation, increments node.citation_count and broadcasts" do
+    it "creates a citation and increments node.citation_count" do
       received = []
       allow(ActionCable.server).to receive(:broadcast) { |topic, payload| received << [ topic, payload ] }
 
@@ -51,7 +51,6 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
         "note"          => "see lore_md",
         "node_slug"     => node.slug
       )
-      expect(received.first.first).to eq("codex_citations:Tree:#{tree.id}")
     end
 
     it "rejects JSON writes without Idempotency-Key" do
@@ -171,17 +170,6 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
       expect(response.parsed_body["error"]).to eq("Unsupported citable_type")
     end
 
-    it "swallows ActionCable broadcast errors and still returns 201" do
-      allow(ActionCable.server).to receive(:broadcast).and_raise(StandardError, "redis down")
-      expect(Rails.logger).to receive(:warn).with(a_string_matching(/broadcast failed: StandardError: redis down/))
-
-      post "/api/v1/codex/citations",
-           params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: tree.id },
-           headers: headers, as: :json
-
-      expect(response).to have_http_status(:created)
-      expect(Codex::Citation.exists?(codex_node_id: node.id, citable_id: tree.id)).to be(true)
-    end
 
     # Non-JSON requests bypass the Idempotency-Key gate; the cache helpers
     # all early-return `nil` for blank keys (covers L124/L131/L137 branches).
@@ -202,13 +190,10 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
     end
 
     it "lets the author delete within the 24 h grace" do
-      received = []
-      allow(ActionCable.server).to receive(:broadcast) { |topic, payload| received << [ topic, payload ] }
-
       delete "/api/v1/codex/citations/#{citation.id}", headers: headers
+
       expect(response).to have_http_status(:no_content)
       expect(Codex::Citation.find_by(id: citation.id)).to be_nil
-      expect(received.first.first).to eq("codex_citations:Tree:#{tree.id}")
     end
 
     it "blocks a non-author forester" do
@@ -233,15 +218,6 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
 
       delete "/api/v1/codex/citations/#{citation.id}", headers: headers
       expect(response).to have_http_status(:no_content)
-    end
-
-    it "swallows ActionCable broadcast errors during destroy" do
-      allow(ActionCable.server).to receive(:broadcast).and_raise(StandardError, "boom")
-      expect(Rails.logger).to receive(:warn).with(a_string_matching(/broadcast remove failed: StandardError: boom/))
-
-      delete "/api/v1/codex/citations/#{citation.id}", headers: headers
-      expect(response).to have_http_status(:no_content)
-      expect(Codex::Citation.find_by(id: citation.id)).to be_nil
     end
   end
 end

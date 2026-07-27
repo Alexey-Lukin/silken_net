@@ -40,8 +40,7 @@ module Codex
       return if unlocked_nodes.empty?
 
       unlocked_nodes.each do |node|
-        record = create_discovery!(user, node, trigger_type, payload)
-        broadcast(user, record) if record
+        create_discovery!(user, node, trigger_type, payload)
       end
     end
 
@@ -67,20 +66,6 @@ module Codex
     rescue ArgumentError => e
       Rails.logger.warn "[Codex::DiscoveryProbeWorker] #{e.class}: #{e.message}"
       nil
-    end
-
-    def broadcast(user, discovery)
-      payload = {
-        slug:           discovery.node.slug,
-        title_en:       discovery.node.title_en,
-        title_uk:       discovery.node.title_uk,
-        archetype_key:  discovery.node.archetype_key,
-        trigger_type:   discovery.trigger_type,
-        unlocked_at:    discovery.unlocked_at.iso8601
-      }
-      ActionCable.server.broadcast("codex:discoveries:user:#{user.id}", payload)
-    rescue StandardError => e
-      Rails.logger.warn "[Codex::DiscoveryProbeWorker] broadcast failed: #{e.class}"
     end
   end
 end

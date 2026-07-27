@@ -24,7 +24,6 @@ RSpec.describe "Api::V1::Codex::Attunements", type: :request do
              params: { attunement: { intensity: 4 } },
              headers: headers, as: :json
       }.to change { node.reload.attunement_count }.by(1)
-        .and change(Codex::AttunementBroadcastWorker.jobs, :size).by(1)
 
       expect(response).to have_http_status(:created)
       expect(response.parsed_body.dig("data", "intensity")).to eq(4)
@@ -77,7 +76,6 @@ RSpec.describe "Api::V1::Codex::Attunements", type: :request do
       expect {
         delete "/api/v1/codex/nodes/#{node.slug}/attunements/me", headers: headers, as: :json
       }.to change { node.reload.attunement_count }.by(-1)
-        .and change(Codex::AttunementBroadcastWorker.jobs, :size).by(1)
       expect(response).to have_http_status(:no_content)
     end
 

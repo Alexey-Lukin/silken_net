@@ -50,7 +50,6 @@ module Api
           if citation.save
             payload = { data: ::Codex::CitationBlueprint.render_as_hash(citation) }
             cache_idempotent_response(payload)
-            broadcast_citation(citation, target)
 
             render json: payload, status: :created
           else
@@ -64,9 +63,7 @@ module Api
           citation = ::Codex::Citation.find(params[:id])
           authorize citation, :destroy?
 
-          target = citation.citable
           citation.destroy!
-          broadcast_citation_removed(citation, target) if target
           head :no_content
         end
 
@@ -137,33 +134,6 @@ module Api
           key = idempotency_cache_key
           return if key.blank?
           Rails.cache.write(key, payload, expires_in: IDEMPOTENCY_TTL)
-        end
-
-        # Broadcast a Turbo Stream `append` so any open viewer of the
-        # cited target sees the new pill instantly. Topic key includes
-        # type+id so that two open tabs on different targets don't
-        # cross-pollinate. Failure here must NOT roll back the citation.
-        def broadcast_citation(citation, target)
-          stream = "codex_citations:#{target.class.base_class.name}:#{target.id}"
-          ActionCable.server.broadcast(
-            stream,
-            {
-              op:   "append",
-              data: ::Codex::CitationBlueprint.render_as_hash(citation)
-            }
-          )
-        rescue StandardError => e
-          Rails.logger.warn "[Codex::CitationsController] broadcast failed: #{e.class}: #{e.message}"
-        end
-
-        def broadcast_citation_removed(citation, target)
-          stream = "codex_citations:#{target.class.base_class.name}:#{target.id}"
-          ActionCable.server.broadcast(
-            stream,
-            { op: "remove", id: citation.id }
-          )
-        rescue StandardError => e
-          Rails.logger.warn "[Codex::CitationsController] broadcast remove failed: #{e.class}: #{e.message}"
         end
       end
     end

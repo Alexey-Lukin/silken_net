@@ -100,9 +100,6 @@ class BurnCarbonTokensWorker
       timestamp: Time.current.to_i
     }
 
-    # Повідомляємо конкретну організацію через ActionCable
-    ActionCable.server.broadcast("org_#{contract.organization_id}_alerts", payload)
-
     # Також оновлюємо UI контракту через Turbo Streams, якщо Архітектор дивиться на нього
     Turbo::StreamsChannel.broadcast_replace_to(
       contract,
