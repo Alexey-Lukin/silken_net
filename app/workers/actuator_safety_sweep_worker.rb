@@ -9,11 +9,16 @@
 # (Redis), крах між комітом видачі та `perform_in`, вичерпані ретраї воркера.
 #
 # 🔒 Що цей sweep РЕАЛЬНО дає сьогодні — і чого НЕ дає (чесна стеля):
-#   ✅ Розчакловує актуатор. До нього єдиний вихід із залипання — акт ремонту
-#      (`MaintenanceRecord` action_type=repair → EcosystemHealingWorker), тобто
-#      виїзд у ліс заради бухгалтерської втрати.
-#   ✅ Чесний слід: наказ дістає термінальний стан із причиною, а не висить
-#      `acknowledged` вічно (ARCH.57-ланцюг отримує `actuator_to_failed`).
+#   ✅ Розчакловує актуатор ДЕТЕРМІНОВАНО. Без нього виходів було два, і обидва
+#      випадкові: акт ремонту (`MaintenanceRecord` repair → EcosystemHealingWorker)
+#      або наступний EWS-інцидент — `EmergencyResponseService` таргетить
+#      `state: [:idle, :active]`, тож його `insert_all` минає readiness-гейт, і
+#      Reset тієї команди закриє актуатор. Тобто залипання «самолікувалось»
+#      чужим трафіком; команда ВІД ЛЮДИНИ цього не вміла (гине при створенні).
+#   ✅ Чесний слід: загублений наказ дістає термінальний стан із причиною
+#      (ARCH.57-ланцюг отримує `actuator_to_failed`). ⚠️ Стеля: наказ, витіснений
+#      пізнішим, sweep НЕ закриє — актуатор до того вже `idle`, а прохід сканує
+#      лише `Actuator.active`; такий рядок лишається `:acknowledged`.
 #   ⚠️ Фізичного закриття НЕ дає: актуаторної прошивки не існує взагалі
 #      (`queen/main.c` після «передаємо на виконання актуатору» не має жодного
 #      рядка драйвера), тож `CMD:STOP` — forward-контракт, як і `duration_seconds`.
@@ -21,11 +26,13 @@
 #   ⚠️ Клас «БД чиста, а фізики не було» (втрачена 2.05) цей sweep НЕ ловить —
 #      там `confirmed` виглядає бездоганно. Дім того класу — FW.63.
 #
-# Черга `downlink`(4), а не `alerts`(2) як у сусідніх dead-man switch'ів:
-# продукт проходу — downlink-наказ (STOP), і він мусить дренажитись разом з
-# рештою downlink-роботи; алерт тут побічний. Каденс — кожні 30 хв: флаш
-# Королеви йде щонайбільше раз на годину (ARCH.75), тож частіший прохід нічого
-# не пришвидшив би.
+# Черга `downlink`(4), а не `alerts`(2) як у сусідніх dead-man switch'ів —
+# доменна приналежність, НЕ механіка доставки: STOP їде не Sidekiq-чергою, а
+# рядком БД, який синхронно віддає CoAP-демон при poll'і, тож черга воркера на
+# швидкість доставки не впливає ніяк. Каденс 30 хв — прагматика, не стеля:
+# флаш Королеви йде НЕ РІДШЕ ніж раз на годину (кеш 45/50 АБО таймер
+# година+джиттер), тож на завантаженому кластері частіший прохід справді
+# доставляв би STOP раніше; 30 хв обрано як дешевий компроміс.
 class ActuatorSafetySweepWorker
   include Sidekiq::Job
   sidekiq_options queue: "downlink", retry: 2
@@ -45,7 +52,10 @@ class ActuatorSafetySweepWorker
   def perform
     recovered = 0
 
-    Actuator.active.includes(:gateway, :commands).find_each do |actuator|
+    # `includes(:commands)` тут БУВ би марним: усі три споживачі додають власні
+    # скоупи, тож прелоад не реюзається, а на великому флоті тягнув би в RAM усю
+    # історію команд. Прелоадимо лише `:gateway` (читається як є).
+    Actuator.active.includes(:gateway).find_each do |actuator|
       newest = newest_acknowledged(actuator)
       # Активний актуатор БЕЗ жодного підтвердженого наказу — вікна для присуду
       # не існує, тож мовчимо. Продовим шляхом це недосяжно (`mark_active!`
@@ -76,14 +86,25 @@ class ActuatorSafetySweepWorker
     command.sent_at + command.duration_seconds.seconds + STUCK_MARGIN
   end
 
-  # Порядок несучий: спершу ФІЗИЧНА спроба, потім бухгалтерія. Крах між ногами
-  # лишає STOP у черзі, а не порожнечу — голий force-idle відновив би лише
-  # БД-правду й дав нуль фізичної безпеки.
+  # 🔴 Атомарність тут не стиль, а лік від реального дефекту: `close_lost_commands!`
+  # спалює ПАЛИВО ВЛАСНОГО ПРЕДИКАТА (усі прострочені `:acknowledged`), тож крах
+  # між ним і `deactivate!` лишив би актуатор `active` БЕЗ жодного підтвердженого
+  # наказу — `newest_acknowledged` віддав би nil, і прохід мовчки скіпав би його
+  # НАЗАВЖДИ. Дзеркально крах перед алертом лишив би idle-актуатор без сліду (idle
+  # не сканується взагалі). Транзакція робить обидва стани недосяжними: або весь
+  # набір, або нічого й повтор наступним проходом.
+  #
+  # Порядок усередині лишається змістовним (спершу фізична спроба, потім
+  # бухгалтерія), але вже не несе гарантії — її несе транзакція.
   def recover!(actuator, newest)
-    stop_queued = queue_stop_override!(actuator)
-    close_lost_commands!(actuator)
-    actuator.deactivate! if actuator.may_deactivate?
-    raise_stuck_alert(actuator, newest, stop_queued)
+    stop_queued = false
+
+    ActiveRecord::Base.transaction do
+      stop_queued = queue_stop_override!(actuator)
+      close_lost_commands!(actuator)
+      actuator.deactivate! if actuator.may_deactivate?
+      raise_stuck_alert(actuator, newest, stop_queued)
+    end
 
     SilkenNet::Metrics::ACTUATOR_STUCK_RECOVERED_TOTAL.increment(
       labels: { device_type: actuator.device_type }
@@ -107,12 +128,18 @@ class ActuatorSafetySweepWorker
     true
   end
 
-  # `.pending` МІНУС протерміновані: протермінований наказ фейлиться лише в
-  # момент poll-видачі, тож без цього фільтра мертві трупи в черзі глушили б
-  # ногу STOP назавжди саме там, де Королева перестала питати.
+  # «Живий» = `.pending` МІНУС протерміновані МІНУС старші за `STOP_TTL`.
+  # Перший фільтр: протермінований наказ фейлиться лише в момент poll-видачі, тож
+  # без нього трупи в черзі глушили б ногу STOP саме там, де Королева перестала
+  # питати. Другий: наказ БЕЗ `expires_at` протермінуватись не може взагалі —
+  # а таким є КОЖНА команда від контролера (TTL там не ставиться, [ARCH.75]),
+  # тож людський STOP на мертвому шлюзі інакше глушив би цю ногу ВІЧНО. Якщо
+  # наказ чекає довше, ніж прожив би наш власний STOP, він більше не є сигналом
+  # «черга ось-ось переозброїть Reset».
   def live_pending?(actuator)
     actuator.commands.pending
             .where("expires_at IS NULL OR expires_at > ?", Time.current)
+            .where(created_at: STOP_TTL.ago..)
             .exists?
   end
 

@@ -11,12 +11,12 @@ RSpec.describe ActuatorSafetySweepWorker, type: :worker do
 
   # Актуатор, що числиться active довше за вікно свого наказу.
   #
-  # Порядок несучий і сам є фактом про систему: УСІ накази мусять народитись,
-  # доки актуатор ще `idle` — на активному `dispatch_to_edge!` вбиває нову
-  # команду як «Актуатор недоступний» ще до того, як вона стане pending. У
-  # проді живий pending опиняється на активному актуаторі лише через
-  # `insert_all` аварійного шляху, який колбеки обходить. Тому блок (де тест
-  # створює решту наказів) виконується ПЕРЕД активацією.
+  # Порядок несучий і сам є фактом про систему: звичайні накази мусять
+  # народитись, доки актуатор ще `idle` — на активному `dispatch_to_edge!`
+  # вбиває нову команду як «Актуатор недоступний» ще до того, як вона стане
+  # pending. (Виняток — override: він гейт минає, і саме тому власний STOP
+  # sweep'а створюється на ще-активному актуаторі без проблем.) Тому блок, де
+  # тест створює решту наказів, виконується ПЕРЕД активацією.
   def stuck(duration: 60, elapsed: 2.hours, actuator: nil)
     actuator ||= create(:actuator, gateway: gateway)
     command = create(:actuator_command, actuator: actuator, duration_seconds: duration)
@@ -26,6 +26,24 @@ RSpec.describe ActuatorSafetySweepWorker, type: :worker do
     command.acknowledge!
     command.update_columns(sent_at: elapsed.ago, executed_at: elapsed.ago)
     [ actuator.reload, command.reload ]
+  end
+
+  # Повторне залипання ПІСЛЯ проходу. Без нього тести дедупу зеленіли б
+  # безпідставно: sweep повертає актуатор у `idle`, а прохід сканує лише
+  # `Actuator.active` — тобто другий `perform` таку ціль не бачить узагалі, і
+  # обидва гарди (self-STOP-як-pending, `stuck_alert_exists?`) можна було б
+  # стерти без жодного червоного. Механізм, який вони стережуть, живе саме тут.
+  def re_stick(actuator, elapsed: 2.hours)
+    # `reload` ОБОВ'ЯЗКОВИЙ і саме тут: фабрика присвоює переданий ЕКЗЕМПЛЯР в
+    # асоціацію, тож `dispatch_to_edge!` прочитав би стан із памʼяті («active»
+    # з часів до проходу) і мовчки зафейлив би новий наказ як «недоступний».
+    actuator.reload
+    command = create(:actuator_command, actuator: actuator, duration_seconds: 60)
+    actuator.mark_active!
+    command.dispatch!
+    command.acknowledge!
+    command.update_columns(sent_at: elapsed.ago, executed_at: elapsed.ago)
+    command.reload
   end
 
   describe "предикат залипання" do
@@ -87,11 +105,25 @@ RSpec.describe ActuatorSafetySweepWorker, type: :worker do
       expect { sweep }.to change { actuator.commands.where(command_payload: "STOP").count }.by(1)
     end
 
-    it "не плодить другий STOP на наступному проході (власний STOP = живий pending)" do
-      stuck
+    it "не плодить другий STOP при ПОВТОРНОМУ залипанні (власний STOP = живий pending)" do
+      actuator, = stuck
       sweep
+      re_stick(actuator)
+
       expect { described_class.new.perform }
         .not_to change { ActuatorCommand.where(command_payload: "STOP").count }
+    end
+
+    # Дзеркальний бік того самого гарду: коли власний STOP уже протермінувався,
+    # він більше не «живий», і наступне залипання має право на новий.
+    it "видає новий STOP, коли попередній уже протермінувався" do
+      actuator, = stuck
+      sweep
+      actuator.commands.find_by(command_payload: "STOP").update_columns(expires_at: 1.minute.ago)
+      re_stick(actuator)
+
+      expect { described_class.new.perform }
+        .to change { ActuatorCommand.where(command_payload: "STOP").count }.by(1)
     end
 
     it "STOP минає readiness-гейт: не фейлиться на ще-активному актуаторі" do
@@ -139,11 +171,23 @@ RSpec.describe ActuatorSafetySweepWorker, type: :worker do
       expect(alert.message_params["command_id"]).to eq(command.id)
     end
 
-    it "не дублює алерт по тому самому актуатору на другому проході" do
-      stuck
+    it "не дублює алерт по тому самому актуатору при ПОВТОРНОМУ залипанні" do
+      actuator, = stuck
       sweep
+      re_stick(actuator)
+
       expect { described_class.new.perform }
         .not_to change { EwsAlert.alert_type_actuator_stuck.count }
+    end
+
+    it "піднімає новий алерт, коли попередній уже розвʼязано людиною" do
+      actuator, = stuck
+      sweep
+      EwsAlert.alert_type_actuator_stuck.last.resolve!(user: create(:user), notes: "Оглянув клапан.")
+      re_stick(actuator)
+
+      expect { described_class.new.perform }
+        .to change { EwsAlert.alert_type_actuator_stuck.count }.by(1)
     end
 
     it "дедуп per-actuator, НЕ per-cluster: сусідній актуатор того ж кластера отримує свій алерт" do
@@ -168,14 +212,36 @@ RSpec.describe ActuatorSafetySweepWorker, type: :worker do
   end
 
   describe "стійкість проходу" do
-    it "збій на одному актуаторі не обриває решту флоту" do
+    # Дві властивості за один тест, і вони РІЗНІ: (1) збій відкочує роботу по
+    # СВОЄМУ актуатору цілком — не лишає напів-стану; (2) прохід іде далі.
+    # Стуб падає лише на першому виклику, інакше довести (2) неможливо: він
+    # завалив би обидва однаково.
+    it "збій відкочує СВІЙ актуатор, але не обриває решту флоту" do
       first, = stuck
       second, = stuck(actuator: create(:actuator, gateway: gateway))
-      allow(EwsAlert).to receive(:create!).and_raise(ActiveRecord::RecordInvalid.new(EwsAlert.new))
+      call = 0
+      allow(EwsAlert).to receive(:create!).and_wrap_original do |orig, *args, **kwargs|
+        call += 1
+        raise ActiveRecord::RecordInvalid, EwsAlert.new if call == 1
+
+        orig.call(*args, **kwargs)
+      end
 
       sweep
 
-      expect([ first.reload.state, second.reload.state ]).to all(eq("idle"))
+      states = [ first.reload.state, second.reload.state ].sort
+      expect(states).to eq([ "active", "idle" ])
+      expect(EwsAlert.alert_type_actuator_stuck.count).to eq(1)
+    end
+
+    it "відкочений актуатор дожинається наступним проходом" do
+      actuator, = stuck
+      allow(EwsAlert).to receive(:create!).and_raise(ActiveRecord::RecordInvalid.new(EwsAlert.new))
+      sweep
+      expect(actuator.reload.state).to eq("active")
+
+      RSpec::Mocks.space.proxy_for(EwsAlert).reset
+      expect { described_class.new.perform }.to change { actuator.reload.state }.to("idle")
     end
   end
 
