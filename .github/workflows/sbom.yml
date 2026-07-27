@@ -74,6 +74,23 @@ jobs:
         with:
           bundler-cache: false # stdlib-only scripts; a bundle install here is waste
 
+      # Reproducible-builds `SOURCE_DATE_EPOCH` — an INTEGER by spec, honoured by all
+      # three of our scripts. The commit time is the only source that actually delivers
+      # what they promise: it is immutable for a given commit, so re-running the same
+      # release is byte-identical.
+      #
+      # 🔴 It was `${{ github.event.repository.pushed_at }}`, which is wrong TWICE.
+      # Type: that field is an epoch int only in `push` payloads — a trigger this
+      # workflow does not have — and an ISO-8601 string in release/schedule/
+      # workflow_dispatch, so `Integer()` raised and the job failed on every trigger it
+      # can actually fire on. Semantics: `pushed_at` moves with any unrelated push, so
+      # it could never make a rerun reproducible even with the right type.
+      #
+      # Set at job scope, not on the merge step alone: the fragment scripts make the
+      # same reproducibility promise, and only the aggregate was honouring it.
+      - name: Pin reproducible timestamp
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
+
       # Trivy writes to a path, it does not create the directory.
       - name: Prepare output dir
         run: mkdir -p sbom
@@ -96,8 +113,6 @@ jobs:
       # 1.6 on every input, so a Trivy upgrade that changes it fails HERE, loudly,
       # instead of silently producing a mixed-version aggregate.
       - name: Merge → one CycloneDX 1.6 aggregate
-        env:
-          SOURCE_DATE_EPOCH: ${{ github.event.repository.pushed_at }}
         run: |
           ruby scripts/sbom_merge.rb sbom/*.cdx.json \
             --name silken_net \
