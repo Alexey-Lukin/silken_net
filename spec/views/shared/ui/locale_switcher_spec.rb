@@ -71,6 +71,28 @@ RSpec.describe Views::Shared::UI::LocaleSwitcher do
     end
   end
 
+  # [I18N.3] Мапа коротких кодів — курована tripwire, а не реєстр локалей.
+  # Обидва приклади ловлять різні рецидиви одного класу: перший — повернення
+  # записів, що дублюють власну деривацію (саме так хеш колись ніс усі чотири
+  # локалі), другий — запис, що пережив свою локаль. Без них «мапа маленька»
+  # трималося б лише на пам'яті автора.
+  describe "short-code overrides" do
+    it "keeps no override that merely repeats the derived code" do
+      redundant = described_class::SHORT_CODE_OVERRIDES.select { |code, short| short == code.to_s.upcase }
+
+      expect(redundant).to be_empty,
+        "надлишковий запис #{redundant.inspect}: `code.upcase` уже дає це значення, " \
+        "а зайвий рядок запрошує вписати сюди й наступні локалі"
+    end
+
+    it "has no override left for a locale that is no longer configured" do
+      orphans = described_class::SHORT_CODE_OVERRIDES.keys - I18n.available_locales
+
+      expect(orphans).to be_empty,
+        "override для неналаштованої локалі: #{orphans.inspect} — мертвий запис мусить червоніти"
+    end
+  end
+
   describe "locale-aware initialization" do
     it "selects the explicit current_locale option" do
       html = render_component(current_locale: :en)

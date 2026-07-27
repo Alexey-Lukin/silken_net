@@ -25,6 +25,19 @@ module Views
       # JS is disabled the visible submit button takes over — the form still
       # works end-to-end.
       class LocaleSwitcher < ApplicationComponent
+        # [I18N.3] Дволітерний префікс деривується як `code.upcase` для БУДЬ-ЯКОЇ
+        # локалі — включно з тією, якої ще немає. Поіменний запис потрібен рівно
+        # там, де код мови розходиться з тим, що людина очікує побачити, і такий
+        # випадок один: `uk` (ISO 639-1, мова) проти «UA», яку впізнає українець
+        # (ISO 3166-1, країна). У `<html lang>` лишається саме `uk` — чому, каже
+        # `04_04 §12.2`.
+        #
+        # 🔴 Тут БІЛЬШЕ НІЧОГО не вписується. Раніше хеш ніс усі чотири локалі,
+        # і три з них дослівно дорівнювали власному фолбеку — тобто це був другий
+        # реєстр локалей, який на орієнтирі 150+ мов запрошував дописувати кожну
+        # нову. Дім списку один: `config.i18n.available_locales`.
+        SHORT_CODE_OVERRIDES = { uk: "UA" }.freeze
+
         # @param current_locale [Symbol] the active locale (defaults to I18n.locale)
         def initialize(current_locale: nil)
           @current_locale = (current_locale || I18n.locale).to_sym
@@ -97,7 +110,7 @@ module Views
         end
 
         def option_label(locale)
-          short = { uk: "UA", en: "EN", lv: "LV", lt: "LT" }[locale.to_sym] || locale.to_s.upcase
+          short = SHORT_CODE_OVERRIDES.fetch(locale.to_sym, locale.to_s.upcase)
           long  = t("locale.available.#{locale}", default: locale.to_s)
           "#{short} · #{long}"
         end
