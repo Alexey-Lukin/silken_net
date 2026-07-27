@@ -1200,7 +1200,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 |----------|----------|
 | **Черга** | `downlink` |
 | **Retry** | 3 |
-| **Тригер** | `ActuatorCommandWorker.perform_in(duration_seconds, ...)` |
+| **Тригер** | `Downlink::PendingQueueService#actuator_command_payload` → `ResetActuatorStateWorker.perform_in(duration_seconds, ...)` при видачі CMD у poll-відповідь. ⚠️ Раніше тут стояв `ActuatorCommandWorker` — той самий документ за 19 рядків вище ([FW.60 superseded]) уже казав, що цей воркер більше не enqueue'иться, тож рядок суперечив сусідньому |
 | **Вхід** | `command_id` (Integer) |
 | **Сервіси** | — |
 | **Side Effects** | `actuator.mark_idle!`, `command.confirm!`. Turbo Stream broadcast кард актуатора. |
