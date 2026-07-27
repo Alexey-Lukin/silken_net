@@ -97,6 +97,34 @@ RSpec.describe TreeChronicleService do
         expect(recovery_entry.title).to eq("Incident Resolved")
         expect(recovery_entry.severity).to eq(:stable)
       end
+
+      # 🔴 Ітеруємо РЕАЛЬНІ значення enum'а, а не власний перелік: саме
+      # розрив між ними й був дефектом — `EwsAlert` веде словник
+      # `low/medium/critical`, а хроніка малює за `stable/info/warning/
+      # critical`, тож `:medium` падав у той самий дефолт, що й `:stable`,
+      # і тривога середньої тяжкості виглядала як «усе гаразд».
+      # Нове значення в enum'і зробить цей приклад червоним — що й треба.
+      describe "alert severity translation" do
+        # Словник, який ЗНАЄ `Trees::Chronicle` — усе поза ним падає в його
+        # дефолтну гілку, тобто малюється як «усе гаразд».
+        let(:chronicle_vocabulary) { %i[stable info warning critical] }
+
+        EwsAlert.severities.each_key do |alert_severity|
+          it "maps EwsAlert severity #{alert_severity.inspect} into the chronicle vocabulary" do
+            create(:ews_alert, tree: tree, cluster: cluster,
+                   alert_type: :severe_drought, severity: alert_severity,
+                   message_key: "hydrological_stress")
+
+            entry = described_class.call(tree: tree)[:entries]
+                                   .find { |e| e.source_type == "EwsAlert" }
+
+            expect(chronicle_vocabulary).to include(entry.severity)
+            # Негативна половина несуча: без неї приклад був би зеленим і
+            # тоді, коли КОЖНА тяжкість мапиться в один і той самий колір.
+            expect(entry.severity).not_to eq(:stable)
+          end
+        end
+      end
     end
 
     context "with MaintenanceRecord events" do

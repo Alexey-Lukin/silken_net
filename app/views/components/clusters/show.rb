@@ -221,12 +221,21 @@ module Clusters
       end
     end
 
+    # Точка тяжкості. Спільним із бейджем `Alerts::Row` є не рядок класів
+    # (крапці потрібен лише фон, бейджу — ще й колір тексту), а СЕМАНТИКА:
+    # та сама тяжкість мусить читатись тим самим рівнем на обох поверхнях.
+    # `low` тут був `bg-emerald-500` — зелений «усе гаразд», тоді як у рядку
+    # та сама тривога синя; `else` дублював ту саму зелень для значення,
+    # якого enum не має, тобто ховав би майбутнє поповнення в «усе гаразд».
+    # ⚠️ `critical`/`medium` лишені як були навмисно: `--status-danger` — це
+    # СВІТЛИЙ фон бейджа (#fee2e2), а крапці потрібен насичений колір, тож
+    # «перевести все на токени» зробило б найгучніший стан найблідішим.
     def alert_severity_class(alert)
       case alert.severity.to_s
       when "critical" then "bg-red-500 animate-pulse"
       when "medium" then "bg-status-warning"
-      when "low" then "bg-emerald-500"
-      else "bg-emerald-500"
+      when "low" then "bg-status-info"
+      else "bg-status-neutral"
       end
     end
   end

@@ -119,7 +119,7 @@ class TreeChronicleService < ApplicationService
       icon: TreeChronicle::TextFormatter.alert_icon(alert.alert_type),
       title: TreeChronicle::TextFormatter.alert_title(alert),
       description: TreeChronicle::TextFormatter.alert_description(alert),
-      severity: alert.severity.to_sym,
+      severity: chronicle_severity(alert),
       source_type: "EwsAlert",
       source_id: alert.id
     )
@@ -185,5 +185,18 @@ class TreeChronicleService < ApplicationService
       source_type: "BlockchainTransaction",
       source_id: tx.id
     )
+  end
+
+  # Хроніка веде ВЛАСНИЙ словник тяжкості (`:stable`/`:info`/`:warning`/
+  # `:critical`) — його розуміє `Trees::Chronicle`. `EwsAlert#severity` веде
+  # інший (`:low`/`:medium`/`:critical`), і сирий `to_sym` вливав чужі
+  # значення просто так: `:medium` і `:low` не збігались із жодною гілкою
+  # й діставали ту саму дефолтну зелень, що й `:stable`, — тобто тривога
+  # середньої тяжкості малювалась як «усе гаразд». Перекладаємо на межі,
+  # де обидва словники ще видно, а не в CSS-хелпері, який їх не знає.
+  ALERT_SEVERITY_TO_CHRONICLE = { "low" => :info, "medium" => :warning, "critical" => :critical }.freeze
+
+  def chronicle_severity(alert)
+    ALERT_SEVERITY_TO_CHRONICLE.fetch(alert.severity.to_s, :warning)
   end
 end
