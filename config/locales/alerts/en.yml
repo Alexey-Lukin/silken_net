@@ -13,6 +13,8 @@ en:
     messages:
       actuator_fault: 'Actuator ‘%{name}’ failed (%{endpoint}). Reason: %{reason}. A patrol visit is required.'
       actuator_fault_unknown: Actuator ‘%{name}’ failed (%{endpoint}). Cause unknown (no CoAP reply). A patrol visit is required.
+      actuator_stuck: 'Actuator ‘%{name}’ (%{endpoint}) has been recorded active for %{stuck_for_min} min past the window of command #%{command_id}. Rails lost track of it and reset the record. The physical state is unknown — verify the device on site.'
+      actuator_stuck_stop_queued: 'Actuator ‘%{name}’ (%{endpoint}) has been recorded active for %{stuck_for_min} min past the window of command #%{command_id}. Rails lost track of it, queued a STOP for the next gateway poll and reset the record. The physical state is unknown — verify the device on site.'
       attractor_destabilised: "🌀 ATTRACTOR: Destabilisation (Z: %{z_value})."
       burn_failure: 'Critical burn failure for %{amount} SCC. Possible loss of control over the contracted balance. Error: %{error}'
       burn_failure_ambiguous: 'Critical burn failure for %{amount} SCC — the transaction may have landed; DO NOT retry automatically, reconcile on the explorer first. Possible loss of control over the contracted balance. Error: %{error}'
@@ -72,6 +74,7 @@ en:
       source: Source
       timestamp: Timestamp
     types:
+      actuator_stuck: Actuator Stuck
       chainsaw_detected: Chainsaw Detected
       entropy_anomaly: Entropy Anomaly
       field_audit: Field Audit

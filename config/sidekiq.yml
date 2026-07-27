@@ -184,6 +184,18 @@
       cron: '*/5 * * * *'
       class: TreeStalenessSweepWorker
 
+    # --- [ARCH.58] СТОРОЖ ЗАГУБЛЕНОГО СЛІДУ (The Lost-Track Watchdog) ---
+    # Актуатор числиться active довше за вікно своєї найновішої команди =
+    # Rails загубив слід власного наказу (втрачена scheduled-джоба Reset,
+    # крах між комітом видачі та perform_in). До цього sweep'а єдиний вихід із
+    # залипання — акт ремонту через EcosystemHealingWorker, тобто виїзд у ліс
+    # заради бухгалтерської втрати. Кожні 30 хв: флаш Королеви йде щонайбільше
+    # раз на годину (ARCH.75), тож частіший прохід нічого не пришвидшить;
+    # :12/:42 вільні від іменованих слотів і не кратні 5 (не колізять з */5).
+    actuator_safety_sweep:
+      cron: '12,42 * * * *'
+      class: ActuatorSafetySweepWorker
+
     # --- ЦИКЛ CELO-ВІДНОВЛЕННЯ (The Silent Underpay Net) [ARCH.64] ---
     # Celo reward-intent, що застряг у :pending (transient RPC-timeout → dedup-skip
     # на Sidekiq-retry, job "успішний"), не озброює жодного reconcile (CeloConfirmationWorker

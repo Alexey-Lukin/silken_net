@@ -668,6 +668,23 @@ RSpec.describe BlockchainBurningService do
         expect(service.send(:critical_unmaintained?)).to be(true)
       end
 
+      # [ARCH.58] `actuator_stuck` = Rails загубив слід ВЛАСНОЇ команди. Той
+      # самий vendor-attributable клас, що firmware_fault: виїзд лісника нашого
+      # bookkeeping-збою не лікує. Обидва боки предиката перевіряються окремо —
+      # blacklist мовчазний, тож без пари «виключений / не виключений» тест
+      # зеленів би й на порожньому наборі.
+      it "excludes actuator_stuck: our own lost-track bug is not operator negligence" do
+        create(:ews_alert, cluster: cluster, severity: :critical,
+                           alert_type: :actuator_stuck, status: :active, created_at: 1.hour.ago)
+        expect(service.send(:critical_unmaintained?)).to be(false)
+      end
+
+      it "keeps actuator_stuck out of the comms_no_ack? whitelist too (no double penalty)" do
+        create(:ews_alert, cluster: cluster, severity: :critical,
+                           alert_type: :actuator_stuck, status: :active, created_at: 1.hour.ago)
+        expect(service.send(:comms_no_ack?)).to be(false)
+      end
+
       it "clears physical negligence once a MaintenanceRecord exists for the alert" do
         alert = create(:ews_alert, cluster: cluster, severity: :critical,
                                    alert_type: :fire_detected, status: :active, created_at: 1.hour.ago)

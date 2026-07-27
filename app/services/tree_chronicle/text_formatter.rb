@@ -77,7 +77,8 @@ module TreeChronicle
       "chainsaw_detected"    => "\u{1FA9A}",
       "firmware_fault"       => "\u2699",
       "firmware_reverted"    => "\u23EE",
-      "firmware_canary_trip" => "\u{1F424}"
+      "firmware_canary_trip" => "\u{1F424}",
+      "actuator_stuck"       => "\u{1F527}"
     }.freeze
 
     # Fail-open: \u043D\u0435\u0432\u0456\u0434\u043E\u043C\u0438\u0439 \u0442\u0438\u043F \u043C\u0430\u043B\u044E\u0454 generic-\u043F\u043E\u043F\u0435\u0440\u0435\u0434\u0436\u0435\u043D\u043D\u044F, \u0430 \u043D\u0435 \u0432\u0430\u043B\u0438\u0442\u044C \u0441\u0442\u043E\u0440\u0456\u043D\u043A\u0443.

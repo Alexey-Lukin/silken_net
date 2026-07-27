@@ -315,12 +315,13 @@ end
 > При зміні реєстру в коді — **регенерувати ЛИШЕ цю таблицю** (команда в кінці).
 > Де інкрементується/оновлюється кожна — `grep -rn "SilkenNet::Metrics::<CONST>" app/`.
 >
-> **Разом: 78 метрик = 44 counters + 32 gauges + 2 histograms** (звірено регенерацією нижче).
+> **Разом: 79 метрик = 45 counters + 32 gauges + 2 histograms** (звірено регенерацією нижче).
 
-**Counters (44):**
+**Counters (45):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
+| `silkennet_actuator_stuck_recovered_total` | `device_type` | Actuators found recorded active past their command window and reset by the safety sweep |
 | `silkennet_anchor_missed_weeks_total` | — | Total missed Ethereum L1 anchor weeks detected (gap > 8 days) |
 | `silkennet_circuit_breaker_rejections_total` | `service` | Web3 requests fast-failed because a provider circuit breaker was open |
 | `silkennet_coap_packets_received_total` | `status` | Total CoAP UDP packets received by the telemetry daemon |

@@ -92,6 +92,14 @@ class ActuatorCommand < ApplicationRecord
 
   ALLOWED_PAYLOAD_FORMAT = /\A[A-Z_]+(?::\d+)?\z/
 
+  # [ARCH.58] Один дім деривації «це override?»: `enforce_override_priority`
+  # ставить пріоритет ПІСЛЯ валідації, а контролеру треба знати відповідь ДО
+  # створення запису (in-flight гард). Без спільного методу правило жило б у
+  # двох місцях і розійшлось би на першій же зміні `OVERRIDE_COMMANDS`.
+  def self.override_payload?(payload)
+    OVERRIDE_COMMANDS.include?(payload.to_s.split(":").first)
+  end
+
   # 🛡️ Idempotency: UUID генерується автоматично перед валідацією
   before_validation :assign_idempotency_token, on: :create
   # 📈 Денормалізація: organization_id заповнюється з ланцюжка actuator->gateway->cluster
@@ -187,8 +195,7 @@ class ActuatorCommand < ApplicationRecord
 
   # 🛑 Auto-override: команди STOP/EMERGENCY_SHUTDOWN завжди отримують override-пріоритет
   def enforce_override_priority
-    base_command = command_payload.to_s.split(":").first
-    self.priority = :override if OVERRIDE_COMMANDS.include?(base_command)
+    self.priority = :override if self.class.override_payload?(command_payload)
   end
 
   # 🛑 Override: скасовуємо ВСІ pending-команди для цього актуатора (крім поточної).
@@ -224,6 +231,17 @@ class ActuatorCommand < ApplicationRecord
       Rails.logger.warn "⏱️ [COMMAND] Команда ##{id} протермінована до відправки."
       return
     end
+
+    # [ARCH.58] Override (STOP/EMERGENCY_*) СВІДОМО минає readiness-гейт.
+    # `ready_for_deployment?` вимагає `idle?`, тож аварійна зупинка гинула саме
+    # на ПРАЦЮЮЧОМУ актуаторі — рівно в тому стані, заради якого override існує.
+    # Виміряно: команда лишалась `failed` «Актуатор недоступний», а
+    # `cancel_pending_for_actuator!` (той самий after_commit) встигав знести
+    # решту черги — нетто гірше за бездіяльність. Ширше: гейт — артефакт
+    # push-ери, коли «зайнято» справді означало «не доставимо»; під
+    # poll-семантикою [FW.60] команда просто чекає в `.pending`, а чесний
+    # строк життя дає `expires_at`.
+    return if priority_override?
 
     unless actuator.ready_for_deployment?
       update_columns(status: self.class.statuses[:failed], error_message: "Актуатор недоступний")

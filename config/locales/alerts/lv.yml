@@ -13,6 +13,8 @@ lv:
     messages:
       actuator_fault: 'Izpildmehānisma “%{name}” kļūme (%{endpoint}). Iemesls: %{reason}. Nepieciešams patruļas izbraukums.'
       actuator_fault_unknown: Izpildmehānisma “%{name}” kļūme (%{endpoint}). Iemesls nezināms (nav CoAP atbildes). Nepieciešams patruļas izbraukums.
+      actuator_stuck: 'Izpildmehānisms “%{name}” (%{endpoint}) ir reģistrēts kā aktīvs %{stuck_for_min} min pēc komandas #%{command_id} loga beigām. Rails zaudēja tā pēdas un atgrieza ierakstu miera stāvoklī. Fiziskais stāvoklis nav zināms — pārbaudiet ierīci uz vietas.'
+      actuator_stuck_stop_queued: 'Izpildmehānisms “%{name}” (%{endpoint}) ir reģistrēts kā aktīvs %{stuck_for_min} min pēc komandas #%{command_id} loga beigām. Rails zaudēja tā pēdas, ierindoja STOP uz nākamo vārtejas aptauju un atgrieza ierakstu miera stāvoklī. Fiziskais stāvoklis nav zināms — pārbaudiet ierīci uz vietas.'
       attractor_destabilised: "🌀 ATRAKTORS: Destabilizācija (Z: %{z_value})."
       burn_failure: 'Kritiska %{amount} SCC sadedzināšanas kļūme. Iespējams kontroles zudums pār līgumā noteikto atlikumu. Error: %{error}'
       burn_failure_ambiguous: 'Kritiska %{amount} SCC sadedzināšanas kļūme — transakcija varēja tikt izpildīta; NEATKĀRTOT automātiski, vispirms pārbaudi pārlūkā. Iespējams kontroles zudums pār līgumā noteikto atlikumu. Error: %{error}'
@@ -72,6 +74,7 @@ lv:
       source: Avots
       timestamp: Laika zīmogs
     types:
+      actuator_stuck: Izpildmehānisms iestrēdzis
       chainsaw_detected: Konstatēts motorzāģis
       entropy_anomaly: Entropijas anomālija
       field_audit: Lauka audits

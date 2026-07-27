@@ -415,6 +415,60 @@ RSpec.describe ActuatorCommand, type: :model do
     end
   end
 
+  # =========================================================================
+  # [ARCH.58] OVERRIDE МИНАЄ READINESS-ГЕЙТ
+  # =========================================================================
+  # `ready_for_deployment?` вимагає `idle?`, тож аварійна зупинка гинула саме
+  # на працюючому актуаторі — у стані, заради якого override існує.
+  describe "override vs readiness-гейт" do
+    let(:running_actuator) { create(:actuator, gateway: gateway, state: :active) }
+
+    it "STOP на активному актуаторі НЕ фейлиться" do
+      stop = create(:actuator_command, actuator: running_actuator, command_payload: "STOP", duration_seconds: 1)
+
+      expect(stop.reload.status).to eq("issued")
+      expect(stop.priority).to eq("override")
+    end
+
+    it "EMERGENCY_SHUTDOWN так само минає гейт" do
+      cmd = create(:actuator_command, actuator: running_actuator,
+                                      command_payload: "EMERGENCY_SHUTDOWN", duration_seconds: 1)
+
+      expect(cmd.reload.status).to eq("issued")
+    end
+
+    it "звичайний наказ на активному актуаторі досі фейлиться (гейт живий)" do
+      cmd = create(:actuator_command, actuator: running_actuator, command_payload: "OPEN", duration_seconds: 60)
+
+      expect(cmd.reload.status).to eq("failed")
+      expect(cmd.error_message).to include("недоступний")
+    end
+
+    it "протермінований override усе одно фейлиться — TTL перевіряється ПЕРШИМ" do
+      stop = create(:actuator_command, actuator: running_actuator, command_payload: "STOP",
+                                       duration_seconds: 1, expires_at: 5.minutes.from_now)
+      stop.update_columns(expires_at: 1.second.ago)
+      stop.send(:dispatch_to_edge!)
+
+      expect(stop.reload.status).to eq("failed")
+      expect(stop.error_message).to include("протермінована")
+    end
+
+    describe ".override_payload?" do
+      it "розпізнає базову команду з аргументом" do
+        expect(described_class.override_payload?("STOP:5")).to be(true)
+      end
+
+      it "не бере звичайні команди" do
+        expect(described_class.override_payload?("OPEN_VALVE")).to be(false)
+      end
+
+      it "переживає nil" do
+        expect(described_class.override_payload?(nil)).to be(false)
+      end
+    end
+  end
+
   describe "#estimated_completion_at" do
     it "returns nil when sent_at is nil" do
       command = create(:actuator_command, actuator: actuator)

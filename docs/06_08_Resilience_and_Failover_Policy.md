@@ -79,6 +79,14 @@
 
 Статус дерева воркер НЕ чіпає (dormant = людське рішення, removed/deceased запускають slashing). Grafana: `silkennet_trees_silent` / `silkennet_tree_silence_total` ([`06_03 §2.8`](06_03_Prometheus_Observability)) + P1-правило `sn-alert-trees-silent` (warning, for 30m — масовий кейс несе P0 `sn-alert-gateway-faulty`, сюди не дублюється). ⚠️ Це sweeper-**нога** розрізнювача: «мовчазне здоров'я ↔ смерть/крадіжка» остаточно розділяє лише signed daily heartbeat (firmware-нога, bench-gated) — стан і ⚖️-пороги → [`00_07` SILENCE-1](00_07_Action_Plan_Tracker); ARCH.8 event-triggered TX лишається гейтованим до heartbeat-ноги.
 
+**Третій сторож — актуаторний [ARCH.58, ✅ 2026-07-27]:** `ActuatorSafetySweepWorker` (cron `12,42`, черга `downlink`). Два перші стережуть **тишу пристрою**; цей — **загублений слід власної команди**: актуатор числиться `active` довше за вікно найновішої своєї команди (втрачена scheduled-джоба Reset у Redis, крах між комітом видачі та `perform_in`, вичерпані ретраї). Три свідомі відмінності від сусідів:
+
+- **Черга `downlink`, не `alerts`** — продукт проходу є downlink-наказ (override-`STOP`), алерт побічний.
+- **Counter без gauge-двійника** — sweep стан УСУВАЄ тим самим проходом, тож «скільки зараз залипло» читалось би вічним нулем (на відміну від `gateways_faulty`, де faulty персистентний).
+- **Носій = ВЛАСНИЙ тип `actuator_stuck`, не `system_fault` і не `field_audit`** — дзеркало того самого міркування, що й у tree-половині вище, але обидва «очевидні» кандидати отруєні по-різному: `system_fault` сидить у whitelist `comms_no_ack?` **І** поза виключеннями `critical_unmaintained?` (при активації cause-uplift — ПОДВІЙНИЙ штраф операторові за наш bookkeeping-збій), а cluster-level `field_audit` входить у `dark_cluster_ids` ↑ і **осліпив би per-tree dead-man switch на весь кластер**. Класифікація нового типу — дзеркало `firmware_fault`: vendor-attributable, не A-сет, не `comms_no_ack?`, виключений з `critical_unmaintained?` ([`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)).
+
+Машинного resolve НЕМА свідомо (фізичний стан пристрою невідомий — закрити алерт може лише людина, що подивилась на залізо); дедуп — per-actuator, бо на кластері їх кілька. ⚠️ **Стеля:** фізичного закриття не дає — актуаторної прошивки не існує ([`03_02 §6`](03_02_Queen_Gateway_Firmware)), `CMD:STOP` = forward-контракт, як і `duration_seconds`. Клас «БД чиста, а фізики не було» (втрачена 2.05-відповідь) цей sweeper НЕ ловить — дім [`00_07` FW.63](00_07_Action_Plan_Tracker). Механіка картки → [`04_02 §11`](04_02_Business_Logic_and_Services).
+
 ### 1.4 Dynamic Mesh Rerouting (Soldier-side)
 
 Soldier'и **не знають**, що "їх" Queen впала. Вони продовжують TX. Але mesh-relay алгоритм (DEFAULT_TTL=3) природно прокидує пакет до сусідньої Queen, якщо вона у радіусі. Конкретно:

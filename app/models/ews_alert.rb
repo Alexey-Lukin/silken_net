@@ -75,7 +75,20 @@ class EwsAlert < ApplicationRecord
     # (виїзд не лікує софт-атаку; тріаж = security-ревізія + Field-Audit
     # ескалація вручну). Trust L0-observational (ECB без MIC) — подія
     # ніколи не рухає money-path.
-    firmware_canary_trip: 13
+    firmware_canary_trip: 13,
+    # [ARCH.58] Rails загубив слід власної команди: актуатор числиться active
+    # довше за вікно своєї найновішої команди (втрачена scheduled-джоба Reset,
+    # крах між комітом видачі та плануванням, вичерпані ретраї). Носій СВІДОМО
+    # новий, бо обидва «очевидні» кандидати отруєні: `system_fault` сидить у
+    # whitelist `comms_no_ack?` І поза виключеннями `critical_unmaintained?`
+    # (при активації cause-uplift дав би ПОДВІЙНИЙ штраф оператору за наш баг),
+    # а cluster-level `field_audit` входить у `dark_cluster_ids` і осліпив би
+    # per-tree dead-man switch на весь кластер (06_08 §1.3). Класифікація —
+    # дзеркало firmware_fault: vendor-attributable, не A-сет, не comms_no_ack?
+    # (радіо живе), виключений з critical_unmaintained?. Машинного resolve НЕМА
+    # свідомо: фізичний стан пристрою нам невідомий, тож закрити алерт може
+    # лише людина, що подивилась на залізо.
+    actuator_stuck: 14
   }, prefix: true
 
   # [COSMIC EYE]: Статус супутникової верифікації через dClimate.

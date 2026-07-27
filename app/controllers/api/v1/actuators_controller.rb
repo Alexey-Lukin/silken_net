@@ -68,7 +68,14 @@ module Api
           end
         end
 
-        if @actuator.commands.pending.exists?
+        # [ARCH.58] In-flight гард НЕ поширюється на override (STOP/EMERGENCY_*):
+        # інакше оператор не може подати аварійну зупинку саме тоді, коли в черзі
+        # щось є — тобто в єдиному сценарії, заради якого override існує. Сам
+        # override далі скасовує pending (`cancel_pending_for_actuator!`), тож
+        # «дві команди в польоті» тут не виникає. Дзеркало винятку в
+        # `ActuatorCommand#dispatch_to_edge!`; без обох половин STOP лишався
+        # недосяжним — модельну ми відкрили, а контролер віддавав 409.
+        if @actuator.commands.pending.exists? && !override_payload?
           return render json: { error: I18n.t("flash.actuators.command_in_flight") },
                         status: :conflict
         end
@@ -158,6 +165,12 @@ module Api
       end
 
       private
+
+      # [ARCH.58] Дім деривації — модель (`ActuatorCommand.override_payload?`),
+      # тут лише читання params до створення запису.
+      def override_payload?
+        ActuatorCommand.override_payload?(params[:action_payload])
+      end
 
       def set_command
         @command = ActuatorCommand.joins(actuator: { gateway: :cluster })

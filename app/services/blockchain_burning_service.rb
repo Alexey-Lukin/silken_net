@@ -550,9 +550,15 @@ class BlockchainBurningService < ApplicationService
     # Дискримінатор: `resolve!(user:)` лишає `resolved_by` NULL лише на машинному шляху —
     # обидва людські сайти передають user. Звуження свідоме: оператор, що полагодив Королеву
     # без paperwork, штрафу уникне — false-negative, а burn необоротний (05_05 §3.2 асиметрія).
+    # [ARCH.58] І :actuator_stuck — Rails загубив слід ВЛАСНОЇ команди (втрачена
+    # scheduled-джоба / крах між комітом видачі та плануванням). Той самий
+    # vendor-attributable клас, що firmware_fault: виїзд лісника нашого
+    # bookkeeping-збою не лікує, а карати оператора за нього — те саме, що
+    # штрафувати за mruby-crash.
     stale_critical = @cluster.ews_alerts.severity_critical
                              .where.not(alert_type: [ :field_audit, :vandalism_breach, :firmware_fault,
-                                                      :firmware_reverted, :firmware_canary_trip ])
+                                                      :firmware_reverted, :firmware_canary_trip,
+                                                      :actuator_stuck ])
                              .where.not(status: :resolved, resolved_by: nil)
                              .where(created_at: ..30.minutes.ago)
     return false unless stale_critical.exists?

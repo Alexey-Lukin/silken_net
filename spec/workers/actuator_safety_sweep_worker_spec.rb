@@ -1,0 +1,196 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# frozen_string_literal: true
+
+require "rails_helper"
+
+RSpec.describe ActuatorSafetySweepWorker, type: :worker do
+  subject(:sweep) { described_class.new.perform }
+
+  let(:cluster) { create(:cluster) }
+  let(:gateway) { create(:gateway, cluster: cluster, last_seen_at: Time.current) }
+
+  # Актуатор, що числиться active довше за вікно свого наказу.
+  #
+  # Порядок несучий і сам є фактом про систему: УСІ накази мусять народитись,
+  # доки актуатор ще `idle` — на активному `dispatch_to_edge!` вбиває нову
+  # команду як «Актуатор недоступний» ще до того, як вона стане pending. У
+  # проді живий pending опиняється на активному актуаторі лише через
+  # `insert_all` аварійного шляху, який колбеки обходить. Тому блок (де тест
+  # створює решту наказів) виконується ПЕРЕД активацією.
+  def stuck(duration: 60, elapsed: 2.hours, actuator: nil)
+    actuator ||= create(:actuator, gateway: gateway)
+    command = create(:actuator_command, actuator: actuator, duration_seconds: duration)
+    yield(actuator) if block_given?
+    actuator.mark_active!
+    command.dispatch!
+    command.acknowledge!
+    command.update_columns(sent_at: elapsed.ago, executed_at: elapsed.ago)
+    [ actuator.reload, command.reload ]
+  end
+
+  describe "предикат залипання" do
+    it "розчакловує актуатор, що пережив вікно свого наказу" do
+      actuator, = stuck
+      expect { sweep }.to change { actuator.reload.state }.from("active").to("idle")
+    end
+
+    it "НЕ чіпає актуатор, вікно якого ще триває" do
+      actuator, = stuck(duration: 300, elapsed: 1.minute)
+      expect { sweep }.not_to change { actuator.reload.state }
+    end
+
+    it "НЕ чіпає актуатор рівно на межі вікна (люфт ще не вичерпано)" do
+      actuator, = stuck(duration: 60, elapsed: 60.seconds + described_class::STUCK_MARGIN - 30.seconds)
+      expect { sweep }.not_to change { actuator.reload.state }
+    end
+
+    it "НЕ чіпає idle-актуатор із давнім наказом" do
+      actuator, = stuck
+      actuator.mark_idle!
+      expect { sweep }.not_to change { actuator.reload.state }
+    end
+
+    it "мовчить про активний актуатор без жодного підтвердженого наказу (вікна нема)" do
+      actuator = create(:actuator, gateway: gateway)
+      actuator.mark_active!
+      expect { sweep }.not_to change(EwsAlert, :count)
+      expect(actuator.reload.state).to eq("active")
+    end
+
+    it "бере ВІКНО НАЙНОВІШОГО наказу, а не найстарішого" do
+      fresh = nil
+      actuator, = stuck(duration: 60, elapsed: 3.hours) do |a|
+        fresh = create(:actuator_command, actuator: a, duration_seconds: 300)
+      end
+      fresh.dispatch!
+      fresh.acknowledge!
+      expect { sweep }.not_to change { actuator.reload.state }
+    end
+  end
+
+  describe "нога STOP" do
+    it "ставить override-STOP у чергу, коли живих наказів немає" do
+      actuator, = stuck
+      expect { sweep }.to change { actuator.commands.where(command_payload: "STOP").count }.by(1)
+      stop = actuator.commands.find_by(command_payload: "STOP")
+      expect(stop.priority_override?).to be(true)
+      expect(stop.expires_at).to be > Time.current
+    end
+
+    it "НЕ ставить STOP, коли в черзі є живий наказ (його видача переозброїть Reset)" do
+      actuator, = stuck { |a| create(:actuator_command, :with_ttl, actuator: a, duration_seconds: 60) }
+      expect { sweep }.not_to change { actuator.commands.where(command_payload: "STOP").count }
+    end
+
+    it "протермінований наказ НЕ лічиться живим — STOP усе одно їде" do
+      actuator, = stuck { |a| create(:actuator_command, :expired, actuator: a, duration_seconds: 60) }
+      expect { sweep }.to change { actuator.commands.where(command_payload: "STOP").count }.by(1)
+    end
+
+    it "не плодить другий STOP на наступному проході (власний STOP = живий pending)" do
+      stuck
+      sweep
+      expect { described_class.new.perform }
+        .not_to change { ActuatorCommand.where(command_payload: "STOP").count }
+    end
+
+    it "STOP минає readiness-гейт: не фейлиться на ще-активному актуаторі" do
+      actuator, = stuck
+      sweep
+      expect(actuator.commands.find_by(command_payload: "STOP").status_issued?).to be(true)
+    end
+  end
+
+  describe "бухгалтерія наказів" do
+    it "закриває загублений наказ як failed, а НЕ confirmed (виконання не доведене)" do
+      _actuator, command = stuck
+      sweep
+      expect(command.reload.status_failed?).to be(true)
+      expect(command.error_message).to include("Слід наказу загублено")
+    end
+
+    it "не чіпає наказ, вікно якого ще не вичерпане" do
+      fresh = nil
+      stuck(elapsed: 3.hours) { |a| fresh = create(:actuator_command, actuator: a, duration_seconds: 300) }
+      fresh.dispatch!
+      fresh.acknowledge!
+      sweep
+      expect(fresh.reload.status_acknowledged?).to be(true)
+    end
+
+    it "не чіпає наказ у :sent — він лежить у .pending і залікується наступною видачею" do
+      pending_cmd = nil
+      stuck { |a| pending_cmd = create(:actuator_command, actuator: a, duration_seconds: 60) }
+      pending_cmd.dispatch!
+      pending_cmd.update_columns(sent_at: 3.hours.ago)
+      sweep
+      expect(pending_cmd.reload.status_sent?).to be(true)
+    end
+  end
+
+  describe "алерт" do
+    it "піднімає критичний actuator_stuck із дедупом по актуатору" do
+      actuator, command = stuck
+      expect { sweep }.to change { EwsAlert.alert_type_actuator_stuck.count }.by(1)
+      alert = EwsAlert.alert_type_actuator_stuck.last
+      expect(alert.severity_critical?).to be(true)
+      expect(alert.cluster_id).to eq(cluster.id)
+      expect(alert.message_params["actuator_id"]).to eq(actuator.id)
+      expect(alert.message_params["command_id"]).to eq(command.id)
+    end
+
+    it "не дублює алерт по тому самому актуатору на другому проході" do
+      stuck
+      sweep
+      expect { described_class.new.perform }
+        .not_to change { EwsAlert.alert_type_actuator_stuck.count }
+    end
+
+    it "дедуп per-actuator, НЕ per-cluster: сусідній актуатор того ж кластера отримує свій алерт" do
+      stuck
+      sweep
+      stuck(actuator: create(:actuator, gateway: gateway))
+      expect { described_class.new.perform }
+        .to change { EwsAlert.alert_type_actuator_stuck.count }.by(1)
+    end
+
+    it "несе ключ зі STOP, коли STOP поставлено" do
+      stuck
+      sweep
+      expect(EwsAlert.alert_type_actuator_stuck.last.message_key).to eq("actuator_stuck_stop_queued")
+    end
+
+    it "несе ключ без STOP, коли черга зайнята живим наказом" do
+      stuck { |a| create(:actuator_command, :with_ttl, actuator: a, duration_seconds: 60) }
+      sweep
+      expect(EwsAlert.alert_type_actuator_stuck.last.message_key).to eq("actuator_stuck")
+    end
+  end
+
+  describe "стійкість проходу" do
+    it "збій на одному актуаторі не обриває решту флоту" do
+      first, = stuck
+      second, = stuck(actuator: create(:actuator, gateway: gateway))
+      allow(EwsAlert).to receive(:create!).and_raise(ActiveRecord::RecordInvalid.new(EwsAlert.new))
+
+      sweep
+
+      expect([ first.reload.state, second.reload.state ]).to all(eq("idle"))
+    end
+  end
+
+  describe "метрика" do
+    it "інкрементить лічильник відновлень із типом пристрою" do
+      stuck
+      expect(SilkenNet::Metrics::ACTUATOR_STUCK_RECOVERED_TOTAL)
+        .to receive(:increment).with(labels: { device_type: "water_valve" })
+      sweep
+    end
+
+    it "не інкрементить, коли нічого не залипло" do
+      stuck(duration: 300, elapsed: 1.minute)
+      expect(SilkenNet::Metrics::ACTUATOR_STUCK_RECOVERED_TOTAL).not_to receive(:increment)
+      sweep
+    end
+  end
+end

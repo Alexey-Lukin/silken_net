@@ -273,6 +273,18 @@ module SilkenNet
       docstring: "Current number of active trees silent beyond the silence threshold (set on each staleness sweep)"
     )
 
+    # [ARCH.58] Safety-sweep актуаторів (ActuatorSafetySweepWorker). СВІДОМО
+    # лише counter, без gauge-двійника сусідів вище: цей sweep стан УСУВАЄ
+    # (повертає актуатор у `idle` тим самим проходом), тож «скільки зараз
+    # залипло» читалось би вічним нулем — на відміну від `gateways_faulty`,
+    # де faulty-стан персистентний. Сліпе копіювання сусіда дало б мертву
+    # метрику.
+    ACTUATOR_STUCK_RECOVERED_TOTAL = REGISTRY.counter(
+      :silkennet_actuator_stuck_recovered_total,
+      docstring: "Actuators found recorded active past their command window and reset by the safety sweep",
+      labels: [ :device_type ]
+    )
+
     # [ARCH.34 L3] Helium SOS intake (HeliumSosWorker):
     # accepted / unknown_dev_eui / did_mismatch / malformed.
     HELIUM_SOS_RECEIVED_TOTAL = REGISTRY.counter(

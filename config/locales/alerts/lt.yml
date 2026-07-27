@@ -13,6 +13,8 @@ lt:
     messages:
       actuator_fault: 'Vykdiklio „%{name}“ gedimas (%{endpoint}). Priežastis: %{reason}. Reikalingas patrulio išvykimas.'
       actuator_fault_unknown: Vykdiklio „%{name}“ gedimas (%{endpoint}). Priežastis nežinoma (nėra CoAP atsakymo). Reikalingas patrulio išvykimas.
+      actuator_stuck: 'Vykdiklis „%{name}“ (%{endpoint}) laikomas aktyviu %{stuck_for_min} min po komandos #%{command_id} lango pabaigos. Rails prarado jo pėdsaką ir grąžino įrašą į ramybės būseną. Fizinė būsena nežinoma — patikrinkite įrenginį vietoje.'
+      actuator_stuck_stop_queued: 'Vykdiklis „%{name}“ (%{endpoint}) laikomas aktyviu %{stuck_for_min} min po komandos #%{command_id} lango pabaigos. Rails prarado jo pėdsaką, įtraukė STOP į eilę iki kito šliuzo užklausimo ir grąžino įrašą į ramybės būseną. Fizinė būsena nežinoma — patikrinkite įrenginį vietoje.'
       attractor_destabilised: "🌀 ATRAKTORIUS: Destabilizacija (Z: %{z_value})."
       burn_failure: 'Kritinis %{amount} SCC sudeginimo gedimas. Galimas sutartinio likučio kontrolės praradimas. Error: %{error}'
       burn_failure_ambiguous: 'Kritinis %{amount} SCC sudeginimo gedimas — operacija galėjo įvykti; NEKARTOTI automatiškai, pirma patikrink naršyklėje. Galimas sutartinio likučio kontrolės praradimas. Error: %{error}'
@@ -72,6 +74,7 @@ lt:
       source: Šaltinis
       timestamp: Laiko žyma
     types:
+      actuator_stuck: Vykdiklis įstrigo
       chainsaw_detected: Aptiktas grandininis pjūklas
       entropy_anomaly: Entropijos anomalija
       field_audit: Lauko auditas

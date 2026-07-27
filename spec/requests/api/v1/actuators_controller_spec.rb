@@ -75,6 +75,35 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       expect(response).to have_http_status(:conflict)
     end
 
+    # [ARCH.58] In-flight гард НЕ сміє блокувати аварійну зупинку: інакше
+    # оператор не може подати STOP саме тоді, коли в черзі щось є — тобто в
+    # єдиному сценарії, заради якого override існує. Модельний виняток
+    # (`dispatch_to_edge!`) без цього лишався б недосяжним із API.
+    it "override-STOP проходить попри pending-наказ у черзі" do
+      own_actuator.commands.create!(
+        user: user, command_payload: "OPEN_VALVE", duration_seconds: 10, status: :issued
+      )
+
+      post "/api/v1/actuators/#{own_actuator.id}/execute",
+           params: { action_payload: "STOP", duration_seconds: 1 },
+           headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
+
+      expect(response).to have_http_status(:accepted)
+      expect(ActuatorCommand.find(response.parsed_body["command_id"]).priority).to eq("override")
+    end
+
+    it "STOP з аргументом (STOP:5) теж розпізнається як override" do
+      own_actuator.commands.create!(
+        user: user, command_payload: "OPEN_VALVE", duration_seconds: 10, status: :issued
+      )
+
+      post "/api/v1/actuators/#{own_actuator.id}/execute",
+           params: { action_payload: "STOP:5", duration_seconds: 1 },
+           headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
+
+      expect(response).to have_http_status(:accepted)
+    end
+
     context "with idempotency key" do
       it "returns 400 when Idempotency-Key header is missing for JSON requests" do
         post "/api/v1/actuators/#{own_actuator.id}/execute",

@@ -106,6 +106,53 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
       end
     end
 
+    # [ARCH.58] Під poll-семантикою кілька наказів на один актуатор видаються
+    # підряд, кожен переозброює власний Reset — і найстаріший таймер приходить
+    # ПЕРШИМ. Без гарду він обривав вікно найновішого.
+    describe "наказ, витіснений пізнішим" do
+      let(:superseded) do
+        allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+        cmd = create(:actuator_command, actuator: actuator, duration_seconds: 60)
+        cmd.update_columns(status: ActuatorCommand.statuses[:acknowledged], sent_at: 10.minutes.ago)
+        cmd
+      end
+
+      let!(:newer) do
+        allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+        cmd = create(:actuator_command, actuator: actuator, duration_seconds: 60)
+        cmd.update_columns(status: ActuatorCommand.statuses[:acknowledged], sent_at: 1.minute.ago)
+        cmd
+      end
+
+      it "НЕ закриває актуатор — вікном володіє пізніший наказ" do
+        described_class.new.perform(superseded.id)
+
+        expect(actuator.reload.state).to eq("active")
+      end
+
+      it "все одно закриває САМ витіснений наказ" do
+        described_class.new.perform(superseded.id)
+
+        expect(superseded.reload.status).to eq("confirmed")
+      end
+
+      it "власник вікна закриває актуатор, коли надходить його черга" do
+        described_class.new.perform(newer.id)
+
+        expect(actuator.reload.state).to eq("idle")
+      end
+
+      # Рівні мітки — не «пізніший». При включному порівнянні кожен вважав би
+      # одне одного витісненим, і актуатор не закрив би ЖОДЕН.
+      it "однакові sent_at не роблять накази взаємно витісненими" do
+        newer.update_columns(sent_at: superseded.sent_at)
+
+        described_class.new.perform(superseded.id)
+
+        expect(actuator.reload.state).to eq("idle")
+      end
+    end
+
     it "returns early when command not found" do
       expect(Rails.logger).to receive(:warn).with(/не знайдено/)
 
