@@ -1,0 +1,22 @@
+---
+lv:
+  alert_mailer:
+    critical_notification:
+      cluster: 'Klasteris: %{value}'
+      heading: "🚨 KRITISKS BRĪDINĀJUMS — S-NET"
+      message: 'Ziņojums: %{value}'
+      subject: "🚨 [S-NET] Kritisks brīdinājums: %{type} — %{cluster}"
+      time: 'Laiks: %{value}'
+      type: 'Veids: %{value}'
+  password_mailer:
+    reset_instructions:
+      action: 'Izmantojiet šo saiti, lai iestatītu jaunu paroli:'
+      expiry:
+        one: Saite ir derīga %{count} minūti.
+        other: Saite ir derīga %{count} minūtes.
+        zero: Saite ir derīga %{count} minūšu.
+      greeting: Sveiki, %{name}!
+      ignore: Ja jūs to nepieprasījāt, vienkārši ignorējiet šo vēstuli.
+      intro: Jūs saņēmāt šo vēstuli, jo jūsu kontam tika pieprasīta paroles atiestatīšana.
+      subject: "🔐 [Silken Net] Paroles atiestatīšana"
+      title: Silken Net // Paroles atiestatīšana

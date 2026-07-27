@@ -145,8 +145,13 @@ RSpec.describe "filter_parameter_logging initializer" do # rubocop:disable RSpec
     let(:non_pii_allowed) do
       {
         "users" => %w[role locale time_zone],
+        # `locale` — мовна вподоба, не PII: код мови з `available_locales`, який
+        # нічого не каже про особу (на відміну від `data_region`, що теж лишається
+        # тут свідомо). Класифікація потрібна ОБОМ таблицям окремо — саме тому
+        # гейт і почервонів: `users.locale` був у списку наперед, `organizations`
+        # — ні, і асиметрія вилізла рівно на міграції [I18N.1].
         "organizations" => %w[name registry_id data_region hadron_kyc_status
-                              crypto_public_address solana_public_address]
+                              crypto_public_address solana_public_address locale]
       }
     end
 

@@ -24,6 +24,7 @@ module Api
             secure: Rails.env.production?
           }
           I18n.locale = requested
+          remember_choice_for_signed_in_user(requested)
           flash[:notice] = I18n.t("flash.locale_changed", lang: I18n.t("locale.available.#{requested}"))
         else
           flash[:alert] = I18n.t("flash.unsupported_locale")
@@ -33,6 +34,33 @@ module Api
       end
 
       private
+
+      # [I18N.1] Cookie тримає вибір для БРАУЗЕРА; колонка — для того, що з
+      # браузера не видно. Пошта відправляється з Sidekiq (`deliver_later`), де
+      # ані cookie, ані сесії немає, тож без цього запису `users.locale` лишався б
+      # NULL назавжди, а `ApplicationMailer#in_locale_of` — декоративним.
+      #
+      # Гість лишається гостем: анонімний перемикач і далі працює (він і має —
+      # перемикач стоїть на сторінці входу), просто нічого не персистить.
+      #
+      # ⚠️ Guard дзеркалить [SEC.16] з `Api::V1::BaseController#authenticate_user!`
+      # (`session[:ps]` = хвіст `password_salt`), а не просто вірить `session[:user_id]`:
+      # цей контролер успадковує `ApplicationController` — СЕСТРУ, не предка
+      # `BaseController`, — тож власного `current_user` тут немає, і послабити
+      # перевірку було б тихим обходом salt-прив'язки.
+      #
+      # `update_column` свідомо: значення вже провалідоване проти
+      # `I18n.available_locales` вище, а мовна вподоба не мусить ані запускати
+      # audit-ланцюг, ані падати через невалідне legacy-поле деінде в записі.
+      def remember_choice_for_signed_in_user(locale)
+        return if session[:user_id].blank?
+
+        user = User.find_by(id: session[:user_id])
+        return unless user && session[:ps].to_s == user.password_salt.to_s.last(10)
+        return if user.locale == locale.to_s
+
+        user.update_column(:locale, locale.to_s)
+      end
 
       # Helper: redirect back when safe, otherwise to fallback. Manual impl
       # so we don't depend on `redirect_back` exact behaviour across versions

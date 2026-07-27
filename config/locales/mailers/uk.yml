@@ -1,0 +1,23 @@
+---
+uk:
+  alert_mailer:
+    critical_notification:
+      cluster: 'Кластер: %{value}'
+      heading: "🚨 КРИТИЧНА ТРИВОГА — S-NET"
+      message: 'Повідомлення: %{value}'
+      subject: "🚨 [S-NET] Критична тривога: %{type} — %{cluster}"
+      time: 'Час: %{value}'
+      type: 'Тип: %{value}'
+  password_mailer:
+    reset_instructions:
+      action: 'Скористайтеся цим посиланням, щоб встановити новий пароль:'
+      expiry:
+        few: Посилання дійсне протягом %{count} хвилин.
+        many: Посилання дійсне протягом %{count} хвилин.
+        one: Посилання дійсне протягом %{count} хвилини.
+        other: Посилання дійсне протягом %{count} хвилини.
+      greeting: Вітаємо, %{name}!
+      ignore: Якщо ви не запитували скидання, просто проігноруйте цей лист.
+      intro: Ви отримали цей лист, бо для вашого акаунту запросили скидання пароля.
+      subject: "🔐 [Silken Net] Скидання пароля"
+      title: Silken Net // Скидання пароля

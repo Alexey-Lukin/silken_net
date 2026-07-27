@@ -339,7 +339,7 @@ Policy-хелпер `admin_or_above?` (`ApplicationPolicy` + `Scope`) = `admin` 
 | 109 | PATCH/PUT | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#update` | 🛡️ Admin+ | **Phase 6:** часткове оновлення (publish toggle, geo correction, lore copy). Invalid `lifecycle_status` → 422 (Rails 8 enum ArgumentError ловиться). 200 / 403 / 422. |
 | 110 | DELETE | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#destroy` | 👑 Super Admin only | **Phase 6:** retire Node; cascades through `dependent: :destroy` на `citations`/`comments`/`attunements`/`discoveries`/`fractions`. 204 / 403 (admin). |
 | **🌐 Локалізація** | | | | | |
-| 111 | POST | `/api/v1/locale` | `locales#update` | 🌐 Public | Переключення локалі сесії (`I18n.locale`, Thread-local) — body `{ locale: uk\|en }`; редірект `back` |
+| 111 | POST | `/api/v1/locale` | `locales#update` | 🌐 Public | Переключення локалі: cookie (постійна) + `I18n.locale` на поточний запит; значення валідується проти `available_locales` — перелік НЕ дублюється тут (він росте, [`04_04 §12.2`](04_04_Phlex_UI_and_Tailwind)). Залогіненому ще й **персиститься** в `users.locale` (guard дзеркалить [SEC.16] salt-stamp), бо пошта рендериться в Sidekiq, куди cookie не доїжджає. Редірект `back` |
 | **🩺 Health-проби (root-level, поза `/api/v1`)** | | | | | |
 | — | GET | `/up` | `rails/health#show` | 🌐 Public | **Liveness** — процес живий (без перевірки залежностей). Виключено з `force_ssl`/host-auth redirect + Rack::Attack throttle. |
 | — | GET | `/ready` | `readiness#show` | 🌐 Public | **Readiness** — DB + Redis (Sidekiq + Kredis) round-trip → 200 `ready` / 503 `not_ready` (ops: [`06_05`](06_05_Puma_Configuration)). Ті самі виключення, що `/up`. |

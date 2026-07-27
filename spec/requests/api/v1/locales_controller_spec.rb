@@ -22,6 +22,52 @@ RSpec.describe Api::V1::LocalesController, type: :request do
       expect(flash[:alert]).to be_present
     end
 
+    # [I18N.1] Cookie тримає вибір для БРАУЗЕРА; колонка — для того, що з браузера
+    # не видно. Пошта йде з Sidekiq, де ані cookie, ані сесії немає, тож без цього
+    # запису `users.locale` лишався б NULL назавжди, а `in_locale_of` у мейлері —
+    # декоративним. Саме цей клас («колонка є, заповнювати нікому») тут і пінимо.
+    describe "persisting the choice for a signed-in user" do
+      let(:user) { create(:user, locale: nil) }
+
+      def sign_in!
+        post "/api/v1/login", params: { email: user.email_address, password: "password12345" }
+      end
+
+      it "stores the chosen locale on the user record" do
+        sign_in!
+
+        expect { post "/api/v1/locale", params: { locale: "uk" } }
+          .to change { user.reload.locale }.from(nil).to("uk")
+      end
+
+      it "leaves an anonymous visitor's switch working without persisting anything" do
+        expect { post "/api/v1/locale", params: { locale: "uk" } }
+          .not_to change(User, :count)
+
+        expect(cookies[:locale]).to eq("uk")
+        expect(user.reload.locale).to be_nil
+      end
+
+      # Guard дзеркалить [SEC.16]: сам по собі `session[:user_id]` не є доказом —
+      # salt-stamp гасне при зміні пароля. Без цієї перевірки запис у БД став би
+      # тихим обходом salt-прив'язки.
+      it "does not persist when the session salt-stamp no longer matches" do
+        sign_in!
+        user.update!(password: "brand-new-password-123", password_confirmation: "brand-new-password-123")
+
+        expect { post "/api/v1/locale", params: { locale: "lv" } }
+          .not_to change { user.reload.locale }
+      end
+
+      it "does not write when the choice already matches the stored one" do
+        user.update!(locale: "uk")
+        sign_in!
+
+        expect { post "/api/v1/locale", params: { locale: "uk" } }
+          .not_to change { user.reload.updated_at }
+      end
+    end
+
     it "redirects back to the referer when same-host" do
       post "/api/v1/locale",
            params: { locale: "en" },

@@ -7,14 +7,19 @@ class AlertMailer < ApplicationMailer
     @cluster = @alert.cluster
     @organization = @cluster.organization
 
-    mail(
-      to: @organization.billing_email,
-      # Мітка типу — через TextFormatter, як в UI. Пошта поки рендериться в
-      # `default_locale` (Sidekiq не має ні запиту, ні `LocaleSettable`), тож
-      # видимого ефекту сьогодні нема — але `.humanize` віддавав би англійську
-      # НАВІТЬ після того, як межа доставки навчиться ставити локаль отримувача.
-      # Сам тіло листа лишається українським хардкодом → `00_07` I18N.1.
-      subject: "🚨 [S-NET] Критична тривога: #{TreeChronicle::TextFormatter.alert_title(@alert)} — #{@cluster.name}"
-    )
+    # [I18N.1] Локаль ОРГАНІЗАЦІЇ, не користувача: лист іде на `billing_email`,
+    # за яким може не стояти жоден User-запис. Усередині блоку локалізується все —
+    # включно з `alert_title` і `@alert.message`, які самі резолвляться через
+    # `I18n.t` у момент читання (раніше вони мовчки виходили англійськими
+    # всередині українського тіла).
+    in_locale_of(@organization) do
+      mail(
+        to: @organization.billing_email,
+        subject: default_i18n_subject(
+          type: TreeChronicle::TextFormatter.alert_title(@alert),
+          cluster: @cluster.name
+        )
+      )
+    end
   end
 end

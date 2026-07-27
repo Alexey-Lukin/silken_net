@@ -10,6 +10,8 @@ uk:
         billing_email: Платіжний Email
         crypto_address: Публічна крипто-адреса
         current_logo: 'Поточний: %{filename}'
+        locale: Мова листів
+        locale_unset: За замовчуванням
         logo: Логотип організації
         org_name: Назва організації
       heading: "🧠 Карта мозку — Налаштування організації"

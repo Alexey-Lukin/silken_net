@@ -1,9 +1,14 @@
-🚨 КРИТИЧНА ТРИВОГА — S-NET
+<%# [I18N.1] Кожен рядок — ЦІЛИЙ ключ з інтерполяцією, а не «мітка» + значення поруч:
+    у відмінюваних мовах маркер може стояти в іншому місці фрази, і конкатенацією
+    це не виражається. Бренд-рядок нижче свідомо лишається літералом — тагляйн
+    однаковий у всіх мовах, а в YAML parity-гейт вимагав би копію в КОЖНІЙ локалі
+    каталогу (`04_04 §12.14`). -%>
+<%= t(".heading") %>
 
-Тип: <%= TreeChronicle::TextFormatter.alert_title(@alert) %>
-Кластер: <%= @cluster.name %>
-Повідомлення: <%= @alert.message %>
-Час: <%= @alert.created_at %>
+<%= t(".type", value: TreeChronicle::TextFormatter.alert_title(@alert)) %>
+<%= t(".cluster", value: @cluster.name) %>
+<%= t(".message", value: @alert.message) %>
+<%= t(".time", value: @alert.created_at) %>
 
 ---
 Silken Net — Nature as a Service

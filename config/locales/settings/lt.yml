@@ -10,6 +10,8 @@ lt:
         billing_email: Atsiskaitymo el. paštas
         crypto_address: Kriptografijos viešasis adresas
         current_logo: 'Dabartinis: %{filename}'
+        locale: El. laiškų kalba
+        locale_unset: Numatytoji
         logo: Organizacijos logotipas
         org_name: Organizacijos pavadinimas
       heading: "🧠 Smegenų žemėlapis — Organizacijos nustatymai"

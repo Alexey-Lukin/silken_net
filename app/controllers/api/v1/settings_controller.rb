@@ -73,9 +73,13 @@ module Api
 
       private
 
+      # [I18N.1] `:locale` — мова, якою організація отримує ПОШТУ (`AlertMailer`
+      # шле на `billing_email`, за яким може не стояти жоден User, тож локаль
+      # користувача тут не підходить). Валідацію значення тримає модель.
       def settings_params
         params.require(:organization).permit(:name, :billing_email, :crypto_public_address,
-                                             :alert_threshold_critical_z, :ai_sensitivity, :logo)
+                                             :alert_threshold_critical_z, :ai_sensitivity, :logo,
+                                             :locale)
       end
     end
   end

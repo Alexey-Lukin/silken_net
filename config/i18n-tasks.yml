@@ -54,10 +54,21 @@ search:
     - app/
     - config/locales/
     - lib/
+  # [I18N.1] `app/views` — другим коренем, для mailer-шаблонів: ActionMailer
+  # деривує scope так само з шляху (`app/views/alert_mailer/critical_notification`
+  # → `alert_mailer.critical_notification`), тож relative-ключі в `.text.erb`
+  # резолвляться тим самим механізмом. Порядок несучий: вужчий корінь
+  # (`components`) стоїть ПЕРШИМ, інакше компонентні ключі отримали б зайвий
+  # сегмент `components.` у scope.
+  #
+  # 🔴 До цього рядка сканер писав «Cannot resolve relative key» — і **виходив з
+  # кодом 0**, тобто помилка сканування виглядала як успішна перевірка.
   relative_roots:
     - app/views/components
+    - app/views
   relative_exclude_method_name_paths:
     - app/views/components
+    - app/views
   exclude:
     - app/assets
     - app/javascript

@@ -46,6 +46,7 @@ module Settings
           render_field(t(".fields.crypto_address"), "organization[crypto_public_address]", @organization.crypto_public_address, placeholder: "0x...")
           render_field(t(".fields.alert_threshold"), "organization[alert_threshold_critical_z]", @organization.alert_threshold_critical_z, placeholder: "2.5")
           render_field(t(".fields.ai_sensitivity"), "organization[ai_sensitivity]", @organization.ai_sensitivity, placeholder: "0.7")
+          render_locale_field
           render_logo_field
 
           div(class: "pt-4 border-t border-emerald-900/30") do
@@ -65,6 +66,34 @@ module Settings
           placeholder: placeholder,
           class: "w-full bg-zinc-950 border border-emerald-900/50 text-compact font-mono text-emerald-400 px-4 py-3 focus-visible:border-emerald-500 focus-visible:outline-none transition-colors"
         )
+      end
+    end
+
+    # [I18N.1] Мова, якою організація ОТРИМУЄ ПОШТУ (`AlertMailer` шле на
+    # `billing_email`). Без цього поля колонка `organizations.locale` не мала б
+    # жодного шляху заповнення й лишилась би декоративною назавжди.
+    #
+    # Перелік ітерує `I18n.available_locales` — п'ята мова з'явиться тут сама,
+    # без правки компонента. Ендоніми беруться з базової локалі (їхній єдиний
+    # дім, `04_04 §12.2`) і однакові в будь-якому UI за визначенням.
+    def render_locale_field
+      div(class: "space-y-2") do
+        label(class: "text-mini text-gray-600 uppercase tracking-widest block", for: "organization_locale") { t(".fields.locale") }
+        select(
+          id: "organization_locale",
+          name: "organization[locale]",
+          class: "w-full bg-zinc-950 border border-emerald-900/50 text-compact font-mono text-emerald-400 px-4 py-3 focus-visible:border-emerald-500 focus-visible:outline-none transition-colors"
+        ) do
+          # Порожнє значення — «не обрано»: пошта піде базовою локаллю. Це не те
+          # саме, що явно обрана англійська, і колонка тримає цю різницю.
+          option(value: "", selected: @organization.locale.blank?) { t(".fields.locale_unset") }
+
+          I18n.available_locales.each do |code|
+            option(value: code.to_s, selected: @organization.locale == code.to_s) do
+              I18n.t("locale.available.#{code}")
+            end
+          end
+        end
       end
     end
 

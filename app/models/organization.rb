@@ -65,6 +65,12 @@ class Organization < ApplicationRecord
   SUPPORTED_DATA_REGIONS = %w[eu-west eu-central us-east us-west ap-southeast].freeze
   validates :data_region, inclusion: { in: SUPPORTED_DATA_REGIONS }, allow_nil: true
 
+  # [I18N.1] Мова, якою організація отримує ПОШТУ. Це не дубль `users.locale`:
+  # `AlertMailer` шле на `billing_email` — скриньку, за якою може не стояти
+  # жоден User-запис, тож локаль користувача сюди не підходить у принципі.
+  # `nil` = «не обрано» → базова локаль. Перелік деривується з єдиного дому.
+  validates :locale, inclusion: { in: ->(_org) { I18n.available_locales.map(&:to_s) } }, allow_nil: true
+
   # --- БІЗНЕС-ЛОГІКА (Value Extraction) ---
 
   # Кешований лічильник дерев для масштабування (уникає повільного COUNT на мільйонах записів)

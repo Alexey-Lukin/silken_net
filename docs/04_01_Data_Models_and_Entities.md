@@ -793,6 +793,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `data_region` | string | `eu-west / eu-central / us-east / us-west / ap-southeast` (GDPR sharding) |
 | `alert_threshold_critical_z` | decimal | Поріг Z для власних тривог (0..10) |
 | `ai_sensitivity` | decimal | Чутливість AI (0..1) |
+| `locale` | string | [I18N.1] Мова, якою організація отримує **пошту** (`AlertMailer` → `billing_email`). Не дубль `users.locale`: за цією скринькою може не стояти жоден User. `nil` = «не обрано» → базова локаль; валідація деривує перелік з `available_locales` ([`04_04 §12.8`](04_04_Phlex_UI_and_Tailwind)) |
 
 **Ключові методи:**
 
@@ -840,6 +841,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `otp_required_for_login` | boolean | MFA активовано |
 | `recovery_codes` | text | JSON масив 10 одноразових кодів |
 | `telegram_chat_id` | string | Для Telegram сповіщень |
+| `locale` | string | [I18N.1] Мовна вподоба для НЕ-веб-контекстів: у запиті локаль дає cookie, але вона не переживає переходу в Sidekiq, де рендериться пошта. Пишеться при явному виборі в перемикачі (`LocalesController`, guard дзеркалить [SEC.16]); `nil` = «не обрано» → базова локаль |
 | `last_seen_at` | datetime | Оновлюється через Session |
 
 **Системний бот:** `User.oracle_executioner` — `oracle.executioner@system.silken.net` (super_admin без org). Використовується для автоматичних операцій системи.

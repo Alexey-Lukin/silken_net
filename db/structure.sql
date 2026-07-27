@@ -1922,7 +1922,8 @@ CREATE TABLE public.organizations (
     ai_sensitivity numeric(3,2) DEFAULT 0.7,
     data_region character varying DEFAULT 'eu-west'::character varying,
     solana_public_address character varying,
-    hadron_kyc_status character varying DEFAULT 'pending'::character varying NOT NULL
+    hadron_kyc_status character varying DEFAULT 'pending'::character varying NOT NULL,
+    locale character varying
 );
 
 
@@ -2730,7 +2731,8 @@ CREATE TABLE public.users (
     telegram_chat_id character varying,
     push_token character varying,
     otp_required_for_login boolean DEFAULT false NOT NULL,
-    recovery_codes text
+    recovery_codes text,
+    locale character varying
 );
 
 
@@ -8535,6 +8537,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260727130640'),
 ('20260726165258'),
 ('20260726161614'),
 ('20260719200000');

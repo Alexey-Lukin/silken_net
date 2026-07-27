@@ -10,6 +10,8 @@ lv:
         billing_email: Norēķinu e-pasts
         crypto_address: Kriptogrāfijas publiskā adrese
         current_logo: 'Pašreizējais: %{filename}'
+        locale: E-pasta valoda
+        locale_unset: Noklusējuma
         logo: Organizācijas logotips
         org_name: Organizācijas nosaukums
       heading: "🧠 Smadzeņu karte — Organizācijas iestatījumi"

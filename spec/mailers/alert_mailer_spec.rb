@@ -32,5 +32,28 @@ RSpec.describe AlertMailer, type: :mailer do
     it "renders the body" do
       expect(mail.body.encoded).to be_present
     end
+
+    # [I18N.1] Тут локаль ОРГАНІЗАЦІЇ, а не користувача: лист іде на
+    # `billing_email`, за яким може не стояти жоден User-запис. Це не дублювання
+    # `users.locale` — це інший адресат.
+    describe "recipient locale" do
+      it "falls back to the default locale when the organization has no preference" do
+        organization.update!(locale: nil)
+
+        expect(mail.subject).to include("Critical alert")
+        expect(mail.body.encoded).to include("CRITICAL ALERT")
+      end
+
+      # Заразом доводить, що локаль дістає й `alert_title`: він резолвиться через
+      # `I18n.t` у момент рендеру, тож до цієї роботи виходив АНГЛІЙСЬКИМ усередині
+      # українського тіла — двомовний лист, у якому симптом видно лише цілком.
+      it "renders subject AND the alert-type label in the organization's locale" do
+        organization.update!(locale: "uk")
+
+        expect(mail.subject).to include("Критична тривога")
+        expect(mail.subject).to include("Виявлено пожежу")
+        expect(mail.body.encoded).to include("КРИТИЧНА ТРИВОГА")
+      end
+    end
   end
 end

@@ -1,0 +1,22 @@
+---
+lt:
+  alert_mailer:
+    critical_notification:
+      cluster: 'Klasteris: %{value}'
+      heading: "🚨 KRITINIS ĮSPĖJIMAS — S-NET"
+      message: 'Pranešimas: %{value}'
+      subject: "🚨 [S-NET] Kritinis įspėjimas: %{type} — %{cluster}"
+      time: 'Laikas: %{value}'
+      type: 'Tipas: %{value}'
+  password_mailer:
+    reset_instructions:
+      action: 'Naudokite šią nuorodą naujam slaptažodžiui nustatyti:'
+      expiry:
+        few: Nuoroda galioja %{count} minutes.
+        one: Nuoroda galioja %{count} minutę.
+        other: Nuoroda galioja %{count} minučių.
+      greeting: Sveiki, %{name}!
+      ignore: Jei to neprašėte, tiesiog ignoruokite šį laišką.
+      intro: Gavote šį laišką, nes jūsų paskyrai buvo pateiktas slaptažodžio atkūrimo prašymas.
+      subject: "🔐 [Silken Net] Slaptažodžio atkūrimas"
+      title: Silken Net // Slaptažodžio atkūrimas

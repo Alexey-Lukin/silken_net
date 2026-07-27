@@ -1,0 +1,21 @@
+---
+en:
+  alert_mailer:
+    critical_notification:
+      cluster: 'Cluster: %{value}'
+      heading: "🚨 CRITICAL ALERT — S-NET"
+      message: 'Message: %{value}'
+      subject: "🚨 [S-NET] Critical alert: %{type} — %{cluster}"
+      time: 'Time: %{value}'
+      type: 'Type: %{value}'
+  password_mailer:
+    reset_instructions:
+      action: 'Use this link to set a new password:'
+      expiry:
+        one: The link is valid for %{count} minute.
+        other: The link is valid for %{count} minutes.
+      greeting: Hello, %{name}!
+      ignore: If you did not request a reset, simply ignore this email.
+      intro: You are receiving this email because a password reset was requested for your account.
+      subject: "🔐 [Silken Net] Password reset"
+      title: Silken Net // Password Reset

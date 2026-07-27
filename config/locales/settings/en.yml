@@ -10,6 +10,8 @@ en:
         billing_email: Billing Email
         crypto_address: Crypto Public Address
         current_logo: 'Current: %{filename}'
+        locale: Email Language
+        locale_unset: Default
         logo: Organization Logo
         org_name: Organization Name
       heading: "🧠 Brain Map — Organization Settings"

@@ -82,9 +82,16 @@ class User < ApplicationRecord
   }, prefix: true, default: :investor
 
   # --- Series C (Privacy & Localization) ---
-  # TODO: Додати поля timezone та locale при розширенні на міжнародні ринки.
-  # validates :timezone, presence: true, inclusion: { in: ActiveSupport::TimeZone.all.map(&:name) }
-  # validates :locale, presence: true, inclusion: { in: %w[uk en es] }
+  # [I18N.1] Мовна вподоба для НЕ-веб-контекстів: пошта відправляється з Sidekiq,
+  # де ані cookie, ані сесії немає. `nil` = «не обрано» → базова локаль (саме тому
+  # НЕ `presence: true`: дефолт-значення брехало б, що користувач зробив вибір).
+  # Перелік деривується з єдиного дому — `config.i18n.available_locales`.
+  #
+  # ⚠️ Тут стояв TODO «додати поле locale колись» з власним списком `%w[uk en es]`,
+  # у якому не було ні `lv`, ні `lt`, зате був `es`, якого нема в каталозі. Такий
+  # коментар не просто застаріває — він **суперечить** конфігу й пережив би ще
+  # кілька мов. Timezone справді лишається невзятим.
+  validates :locale, inclusion: { in: ->(_user) { I18n.available_locales.map(&:to_s) } }, allow_nil: true
 
   # --- СКОУПИ ---
   scope :notifiable, -> { where.not(phone_number: [ nil, "" ]).or(where.not(telegram_chat_id: nil)) }
@@ -92,7 +99,12 @@ class User < ApplicationRecord
   scope :mfa_enabled, -> { where(otp_required_for_login: true) }
 
   # --- ТОКЕНИ (The Magic of Rails 8) ---
-  generates_token_for :password_reset, expires_in: 15.minutes do
+  # [I18N.1] Константа, бо це число видно КОРИСТУВАЧЕВІ: лист про скидання пароля
+  # називає термін дії словами. Поки воно жило літералом у двох місцях, текст і
+  # реальний TTL могли розійтись мовчки — тепер лист інтерполює це саме значення.
+  PASSWORD_RESET_TTL = 15.minutes
+
+  generates_token_for :password_reset, expires_in: PASSWORD_RESET_TTL do
     password_salt&.last(10)
   end
 
