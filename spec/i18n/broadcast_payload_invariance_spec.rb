@@ -40,7 +40,6 @@ RSpec.describe "broadcast payload carries no locale-dependent prose" do # ruboco
   # Стан і план по кожному → `00_07` I18N.2. Список ТІЛЬКИ скорочується.
   let(:pending) do
     %w[
-      Alerts::Row
       Telemetry::LogEntry
     ]
   end

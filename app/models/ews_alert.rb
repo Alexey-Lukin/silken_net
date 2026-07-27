@@ -339,15 +339,17 @@ class EwsAlert < ApplicationRecord
     return unless cluster
     return unless should_broadcast?
 
-    # Список алертів (`Alerts::Index`) — власник форми `<tr>`, тож сюди
-    # їде готовий рядок у свою ж ціль `dom_id`.
-    Turbo::StreamsChannel.broadcast_replace_to(
-      "ews_alerts_org_#{cluster.organization_id}",
-      target: ActionView::RecordIdentifier.dom_id(self),
-      html: render_phlex(Alerts::Row.new(alert: self))
-    )
-
-    # Панель кластера — інша форма й інше дієслово (див. `broadcast_new_alert`).
+    # Обидві поверхні дістають СИГНАЛ. Для панелі кластера причина — форма й
+    # дієслово (див. `broadcast_new_alert`); для списку алертів — локаль і
+    # фільтри. `Alerts::Row` несе десять `t()` ПЛЮС `TextFormatter`, тобто
+    # це єдиний броадкаст-компонент у репо, чия локаль-залежність частково
+    # схована в СЕРВІСІ — там, куди гейт `broadcast_payload_invariance` не
+    # ходить за побудовою. А `<tr>` не можна перевести на клас-2 заглушку:
+    # `<tbody>` не приймає `<turbo-frame>` (`04_04 §8.1а`). Лишався клас 1,
+    # тобто ампутація прози з рядка тривоги, — або сигнал. Сигнал ще й
+    # дає сторінці застосувати ВЛАСНІ фільтр і пагінацію, чого сліпий
+    # replace не вміє, і знімає `citations`-запит із процесу-продюсера.
+    Turbo::StreamsChannel.broadcast_refresh_later_to("ews_alerts_org_#{cluster.organization_id}")
     Turbo::StreamsChannel.broadcast_refresh_later_to([ cluster, :alerts ])
   end
 
@@ -358,10 +360,5 @@ class EwsAlert < ApplicationRecord
 
     Rails.cache.write(cache_key, true, expires_in: BROADCAST_THROTTLE_SECONDS.seconds)
     true
-  end
-
-  # Рендеринг Phlex-компонента через контролерний контекст (потрібен для route helpers)
-  def render_phlex(component)
-    ApplicationController.renderer.render(component, layout: false)
   end
 end

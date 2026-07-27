@@ -687,19 +687,19 @@ RSpec.describe EwsAlert, type: :model do
       Rails.cache.delete("ews_alert_broadcast_throttle:#{alert.id}")
 
       # Stub Phlex component rendering to avoid URL helper issues in test
-      allow(alert).to receive(:render_phlex).and_return("<div>alert</div>")
 
       alert.send(:broadcast_alert_update)
-      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).once
-      expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to).once
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to).twice
+      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_replace_to)
     end
 
-    # Дві поверхні дістають РІЗНЕ, і саме це тут пінується: список алертів —
-    # готовий `<tr>` у свою `dom_id`-ціль, панель кластера — беззмістовний
-    # сигнал, бо в неї власна `<div>`-форма й власне дієслово («прибрати
-    # розвʼязану, підтягнути наступну»). Пін саме на АРГУМЕНТИ: «броадкаст
-    # стався» лишався б зеленим і тоді, коли `<tr>` знову летить у `<div>`.
-    it "pushes the row only to the list stream, and a signal to the cluster panel" do
+    # Пін саме на АДРЕСИ обох сигналів: «броадкаст стався» лишався б зеленим
+    # і тоді, коли одна з двох поверхонь випала (саме так `Alerts::Index`
+    # роками не бачила нових тривог — продюсер і підписник були на різних
+    # стрімах). Плюс негативна половина: жодного рендереного HTML — рядок
+    # несе десять `t()` і `TextFormatter`, тож push повернув би локаль
+    # продюсера всім підписникам.
+    it "signals BOTH surfaces and pushes no rendered markup to either" do
       tree = create(:tree, cluster: cluster_bc)
       allow_any_instance_of(described_class).to receive(:broadcast_alert_update).and_call_original
       allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
@@ -707,18 +707,14 @@ RSpec.describe EwsAlert, type: :model do
       alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
 
       Rails.cache.delete("ews_alert_broadcast_throttle:#{alert.id}")
-      allow(alert).to receive(:render_phlex).and_return("<tr>alert</tr>")
 
       alert.send(:broadcast_alert_update)
 
-      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).with(
-        "ews_alerts_org_#{cluster_bc.organization_id}",
-        hash_including(target: "ews_alert_#{alert.id}")
-      )
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to)
+        .with("ews_alerts_org_#{cluster_bc.organization_id}")
       expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to)
         .with([ cluster_bc, :alerts ])
       expect(Turbo::StreamsChannel).not_to have_received(:broadcast_replace_to)
-        .with([ cluster_bc, :alerts ], anything)
     end
   end
 
@@ -732,7 +728,6 @@ RSpec.describe EwsAlert, type: :model do
       allow_any_instance_of(described_class).to receive(:broadcast_new_alert).and_call_original
       allow(Turbo::StreamsChannel).to receive(:broadcast_refresh_later_to)
       allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_later_to)
-      allow_any_instance_of(described_class).to receive(:render_phlex).and_return("<tr>alert</tr>")
     end
 
     it "signals the cluster panel instead of pushing a row into it" do
