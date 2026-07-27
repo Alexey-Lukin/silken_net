@@ -63,40 +63,49 @@ RSpec.describe Actuators::Show do
     end
   end
 
-  describe "command status classes" do
-    it "renders emerald border for confirmed status" do
+  # [I18N.1] Тут раніше жили сім пінів на ВЛАСНУ палітру `cmd_status_class` —
+  # другий, розійдений рендерер того самого стану: рукописний `<span>` із сирим
+  # enum'ом і власними `border-*`-класами, тоді як `CommandStatusBadge` малює ті
+  # самі стани через `bg-*` і локалізовану мітку. Тобто спека сумлінно пінила
+  # дублікат. Тепер вісь інша: сторінка мусить ходити ЧЕРЕЗ спільний компонент —
+  # це те, що не сміє зламатись, а конкретні класи належать спеці бейджа.
+  describe "command status rendering" do
+    it "delegates the status cell to the shared CommandStatusBadge" do
       html = render_component(actuator: mock_actuator, commands: [ mock_command(status: "confirmed") ])
-      expect(html).to include("border-emerald-500")
-      expect(html).to include("text-emerald-500")
+
+      # DOM-id ставить саме компонент — його ж чекає broadcast-таргет.
+      expect(html).to include("command_status_")
+      expect(html).to include("bg-emerald-800")
     end
 
-    it "renders emerald border for acknowledged status" do
-      html = render_component(actuator: mock_actuator, commands: [ mock_command(status: "acknowledged") ])
-      expect(html).to include("border-emerald-500")
+    it "renders the localized label, not the raw enum value" do
+      html = I18n.with_locale(:uk) do
+        render_component(actuator: mock_actuator, commands: [ mock_command(status: "acknowledged") ])
+      end
+
+      expect(html).to include("виконується")
+      expect(html).not_to include(">acknowledged<")
     end
 
-    it "renders blue border for sent status" do
-      html = render_component(actuator: mock_actuator, commands: [ mock_command(status: "sent") ])
-      expect(html).to include("border-blue-800")
-      expect(html).to include("text-blue-400")
+    # Найгостріший випадок класу: два фізично різні стани мусять читатись різними
+    # словами, інакше оператор не відрізнить «сирена виє» від «сирена замовкла».
+    it "renders acknowledged and confirmed as DIFFERENT words" do
+      html = I18n.with_locale(:uk) do
+        render_component(
+          actuator: mock_actuator,
+          commands: [ mock_command(status: "acknowledged"), mock_command(status: "confirmed") ]
+        )
+      end
+
+      expect(html).to include("виконується")
+      expect(html).to include("завершено")
     end
 
-    it "renders red border for failed status" do
-      html = render_component(actuator: mock_actuator, commands: [ mock_command(status: "failed") ])
-      expect(html).to include("border-red-900")
-      expect(html).to include("text-red-500")
-    end
-
-    it "renders warning border for issued status" do
-      html = render_component(actuator: mock_actuator, commands: [ mock_command(status: "issued") ])
-      expect(html).to include("border-status-warning")
-      expect(html).to include("text-status-warning-text")
-    end
-
-    it "renders zinc border for unknown status" do
+    it "falls back to the raw value for a status with no label" do
       html = render_component(actuator: mock_actuator, commands: [ mock_command(status: "unknown_status") ])
-      expect(html).to include("border-zinc-800")
-      expect(html).to include("text-zinc-600")
+
+      expect(html).to include("unknown_status")
+      expect(html).to include("bg-zinc-800")
     end
   end
 

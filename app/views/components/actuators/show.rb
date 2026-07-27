@@ -44,23 +44,13 @@ module Actuators
                 td(class: "p-4 text-emerald-100") { cmd.user&.first_name || t(".system_operator") }
                 td(class: "p-4 font-bold text-white") { cmd.command_payload }
                 td(class: "p-4") do
-                  span(class: tokens("px-2 py-0.5 border text-micro uppercase", cmd_status_class(cmd))) { cmd.status }
+                  render Actuators::CommandStatusBadge.new(command: cmd)
                 end
                 td(class: "p-4 text-right text-gray-600") { cmd.executed_at&.strftime("%d.%m.%y // %H:%M:%S") || t(".not_executed") }
               end
             end
           end
         end
-      end
-    end
-
-    def cmd_status_class(cmd)
-      case cmd.status
-      when "confirmed", "acknowledged" then "border-emerald-500 text-emerald-500"
-      when "sent" then "border-blue-800 text-blue-400"
-      when "failed" then "border-red-900 text-red-500"
-      when "issued" then "border-status-warning text-status-warning-text"
-      else "border-zinc-800 text-zinc-600"
       end
     end
   end
