@@ -125,15 +125,29 @@ module Downlink
 
         return inner
       rescue ActiveRecord::RecordInvalid => e
+        # Невалідним може виявитись НЕ наказ: у транзакції нижче зберігається ще
+        # й `actuator` (`mark_active!` — AASM `whiny_persistence`). Маркувати
+        # тоді команду «невалідною» = брехати про винуватця й по одній вигасити
+        # цілком доставну чергу хворого актуатора. Пропускаємо лише CMD-сходинку:
+        # драбина віддасть ratchet/OTA-hint/time-only, тракт лишається живим, а
+        # причина видно в логу під власним іменем.
+        unless e.record.is_a?(ActuatorCommand)
+          Rails.logger.error "🛑 [ARCH.75] #{e.record.class} ##{e.record.id} невалідний " \
+                             "(#{e.record.errors.full_messages.first}) — CMD-сходинку пропущено"
+          return nil
+        end
+
         # 🔴 [ARCH.75] Наказ, який НЕ МОЖЕ бути збережений, не сміє вбити тракт.
         # `EmergencyResponseService` пише `insert_all` (валідації обходить) і ріже
         # тривалість за ВЛАСНОЮ константою, не за стелею актуатора — тож при
         # `max_active_duration_s < 3600` (сіди: клапан 300, сирена 120) кожна
         # пожежна команда лягає невалідною. Тоді БУДЬ-який AASM-перехід б'ється
         # об `duration_within_safety_envelope` — включно з TTL-прибиранням, тож
-        # рядок не вміє навіть померти, — а виняток летить повз rescue демона:
-        # poll лишається БЕЗ ВІДПОВІДІ назавжди, і разом із CMD вмирають ratchet,
-        # OTA-hint і time-sync цього шлюза. Force-fail через `update_columns`
+        # рядок не вміє навіть померти. Демон виняток ЛОВИТЬ (`rescue StandardError`
+        # у `lib/daemons/coap_listener` — на відміну від `SecurityError` нижче,
+        # що справді летить повз), але `reply` лишається непризначеним, тож
+        # `socket.send` не відбувається: poll БЕЗ ВІДПОВІДІ назавжди, і разом із
+        # CMD мертві ratchet, OTA-hint і time-sync шлюза. Force-fail через `update_columns`
         # (дзеркало `dispatch_to_edge!`) — єдиний спосіб винести такий рядок із
         # черги. Виміряно, не виведено. Політика чанкування — ⚖️ в ARCH.75.
         force_fail_unpersistable!(command, e)

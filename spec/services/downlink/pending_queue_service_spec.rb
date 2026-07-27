@@ -108,9 +108,10 @@ RSpec.describe Downlink::PendingQueueService do
     # пише `insert_all` (валідації обходить) і ріже тривалість за власною
     # константою 3600, не за `actuator.max_active_duration_s` — а сіди везуть
     # клапан зі стелею 300 і сирену зі 120. Тоді КОЖЕН AASM-перехід такого
-    # наказу б'ється об валідацію, включно з TTL-прибиранням, і виняток летить
-    # повз rescue демона: poll назавжди без відповіді, разом із ним мертві
-    # ratchet, OTA-hint і time-sync шлюза.
+    # наказу б'ється об валідацію, включно з TTL-прибиранням. Демон виняток
+    # ЛОВИТЬ (`rescue StandardError`), але `reply` лишається непризначеним —
+    # `socket.send` не відбувається: poll назавжди без відповіді, разом із ним
+    # мертві ratchet, OTA-hint і time-sync шлюза.
     describe "наказ, який неможливо зберегти" do
       let(:capped) { create(:actuator, gateway: gateway, max_active_duration_s: 60) }
 
@@ -137,6 +138,27 @@ RSpec.describe Downlink::PendingQueueService do
 
       it "не блокує видачу ВАЛІДНОГО наказу того ж шлюза" do
         expect(decrypt_inner(poll)).to include("CMD:#{command.command_payload}")
+      end
+
+      # Невалідним у транзакції може виявитись АКТУАТОР (`mark_active!` — AASM
+      # `whiny_persistence` → save! з валідаціями). Маркувати тоді команду
+      # «невалідною» = брехати про винуватця й вигасити цілком доставну чергу
+      # хворого актуатора по одній.
+      it "не звинувачує наказ, коли невалідний сам актуатор" do
+        sick = create(:actuator, gateway: gateway)
+        good = create(:actuator_command, actuator: sick, duration_seconds: 30, priority: :high)
+        sick.update_columns(name: nil)
+
+        expect { poll }.not_to raise_error
+        expect(good.reload.status).to eq("issued")
+      end
+
+      it "хворий актуатор не валить тракт — драбина віддає конверт нижчої сходинки" do
+        sick = create(:actuator, gateway: gateway)
+        create(:actuator_command, actuator: sick, duration_seconds: 30, priority: :high)
+        sick.update_columns(name: nil)
+
+        expect(decrypt_inner(poll).bytes).to all(eq(0))
       end
 
       it "протермінований невалідний наказ теж виноситься (fail! інакше б'ється об ту саму валідацію)" do
