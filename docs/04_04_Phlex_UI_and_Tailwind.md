@@ -820,14 +820,25 @@ Canvas-ефект Matrix digital rain з hex-символами (`0-9A-F`). Canv
 
 Оновлення DOM в реальному часі через `ActionCable` (Solid Cable).
 
-| Stream | Підписка у | Оновлюється ким |
-|---|---|---|
-| `"telemetry_stream"` | `Telemetry::LiveStream` | `UnpackTelemetryWorker` (черга: `uplink`) |
-| `@wallet, :transactions` | `Wallets::Show` | `BlockchainMintingService` / TX workers |
-| `"ota_channel_{uid}"` | `Gateways::Show` · `Firmwares::Index` (секція активних кампаній) | `Downlink::PendingQueueService` [SEC.20] (FW.60 poll-тракт, coap-демон) |
-| `"ews_updates_{cluster_id}"` · `"ews_live_feed"` | ⚠️ **ніким** | `EwsAlert#broadcast_status_change` — мертвий тракт, реєстр решти таких → [`00_07`](00_07_Action_Plan_Tracker) UI.4 |
+Реєстр звірено з кодом ПОВНІСТЮ (UI.4, 2026-07-27) — обидва боки, і продюсери, і підписники.
 
-> ⚠️ Таблиця **неповна** — живих `turbo_stream_from` у репо більше, ніж рядків тут; звірка обох таблиць (§8.1 і §8.3) із реальністю — відкритий пункт UI.4. Перед тим як покластися на цей реєстр, перевір грепом.
+| Stream | Підписка у | Продюсер(и) |
+|---|---|---|
+| `"telemetry_stream"` | `Telemetry::LiveStream` | `UnpackTelemetryWorker` (черга `uplink` — firehose) |
+| `[wallet, :transactions]` | `Wallets::Show` | `BlockchainTransaction#broadcast_status_change` (рядок tx) · `Wallet#broadcast_balance_update` (frame-заглушка балансу, клас 2 §8.1а) |
+| `"ota_channel_{uid}"` | `Gateways::Show` · `Firmwares::Index` | `Downlink::PendingQueueService` [SEC.20] — живий FW.60 poll-тракт; `OtaTransmissionWorker` теж пише сюди, але сам **не має енкʼюера** (superseded) |
+| `[cluster, :alerts]` | `Clusters::Show` | `EwsAlert#broadcast_new_alert` · `#broadcast_alert_update` |
+| `"ews_alerts_org_{id}"` | `Alerts::Index` | `EwsAlert#broadcast_alert_update` |
+| `"geospatial_matrix"` | `Dashboard::Map` | `Tree#broadcast_map_update` |
+| голий `Organization` | ⚠️ **ніхто** | 4 продюсери: `ActuatorCommand` · `ResetActuatorStateWorker` (×2) · `ActuatorCommandWorker` · `InsurancePayoutWorker` |
+| голий `NaasContract` | ⚠️ **ніхто** | `BurnCarbonTokensWorker` |
+| `"global_events"` | ⚠️ **ніхто** | `InsurancePayoutWorker` |
+
+> 🔴 **Стріми з підписником ≠ робочий тракт — ціль теж мусить існувати в DOM тієї сторінки.** Саме тут ховались усі знайдені дефекти, і жоден із них не був видимий із коду продюсера. Три приклади, кожен іншого роду: `Wallet#broadcast_balance_update` слав у голий `wallet`-стрім (підписник був — на ІНШИЙ, композитний); `BlockchainMintingService` цілив у `transaction_{id}`, тоді як `Wallets::TransactionRow` рендерить `dom_id` = `blockchain_transaction_{id}`; `ResetActuatorStateWorker` цілить у `actuator_card_{id}`, а `Actuators::Card` рендерить `actuator_{id}` (і той самий контролер у синхронному шляху вживає ПРАВИЛЬНИЙ id).
+>
+> ⚠️ **Три останні рядки — живі продюсери в порожнечу**, свідомо лишені до продуктового рішення «дотягнути чи знести» ([`00_07`](00_07_Action_Plan_Tracker) UI.4). П'ять із них б'ють у голий `Organization`-стрім — це **одна архітектурна діра, не п'ять недоглядів**: жодна сторінка не підписана на `turbo_stream_from(@organization)`, і `"ews_alerts_org_{id}"` тут не рахується (це рукописний РЯДОК, структурно інший стрім).
+>
+> ⚠️ `[cluster, :alerts]` має **розбіжність форми**: `Alerts::Row` віддає `<tr>`, а `Clusters::Show` тримає список як `<div>`-и, не таблицю. Тракт «живий» за парою стрім+ціль, але вставка структурно невалідна — окремий відкритий пункт UI.4.
 
 **Патерн:**
 
@@ -887,11 +898,16 @@ end
 
 | Target ID | Компонент | Оновлюється ким |
 |---|---|---|
-| `wallet_balance_{id}` | `Wallets::BalanceDisplay` | `BlockchainMintingService` |
-| `transactions_ledger` | `Wallets::Show` | TX confirmation workers |
-| `telemetry_feed` | `Telemetry::LiveStream` | `UnpackTelemetryWorker` |
+| `wallet_balance_frame_{id}` | `Wallets::BalanceFrameStub` → після фетчу `Wallets::BalanceFrame` | `Wallet#broadcast_balance_update`. ⚠️ Ціль — сам **turbo-frame**, а не `wallet_balance_{id}` усередині нього: payload = локаль-вільна заглушка зі `src`, фрагмент кожен глядач тягне своїм запитом (клас 2, §8.1а) |
+| `blockchain_transaction_{id}` | `Wallets::TransactionRow` | `BlockchainTransaction#broadcast_status_change` (`dom_id`, не рукописний рядок) |
+| `telemetry_feed` · `feed_placeholder` | `Telemetry::LiveStream` | `UnpackTelemetryWorker` |
+| `alerts_list` · `ews_alert_{id}` | `Alerts::Row` | `EwsAlert#broadcast_new_alert` (prepend) · `#broadcast_alert_update` (replace) |
+| `map_node_{id}` | `Dashboard::MapNode` | `Tree#broadcast_map_update` — **еталон класу 1** (нуль `t()`) |
 | `ota_progress_{uid}` | `Firmwares::OtaProgressBar` | `Downlink::PendingQueueService` [SEC.20]: hint → 0% · chunk-fetch → `ch+1/total` · `fw=` → COMPLETE (Rails бачить кожен fetch Королеви; initial-render = `Gateways::Show` + `Firmwares::Index`) |
-| `alert_badge_{id}` | `Alerts::Badge` | `EwsAlert#broadcast_status_change` — ⚠️ класу `EwsAlertWorker` у репо НЕМАЄ, а реальний стрім `ews_updates_{cluster_id}` **не має жодного підписника** → тракт мертвий; реєстр решти таких → [`00_07`](00_07_Action_Plan_Tracker) UI.4 |
+
+> ⚠️ **Цілі БЕЗ сторінки, що їх рендерить** (продюсер живий, вставляти нема куди): `recent_commands_feed` · `command_status_{id}` · `actuator_card_{id}` (реальний id — `actuator_{id}`) · `insurance_card_{id}` · `contract_status_badge_{id}` · `events_feed`. Реєстр і рішення по кожному → [`00_07`](00_07_Action_Plan_Tracker) UI.4.
+>
+> `Alerts::Badge` тут більше немає: його єдиний продовий рендерер (`EwsAlert#broadcast_status_change`) знято 2026-07-27 як тракт, ціль якого не існувала в DOM жодної сторінки. Сам компонент лишається змонтованим лише в Lookbook — доля як design-system-активу відкрита в UI.4.
 
 ---
 

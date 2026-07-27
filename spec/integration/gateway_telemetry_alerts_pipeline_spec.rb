@@ -100,9 +100,11 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
       allow(AlertMailer).to receive(:with).and_return(mailer_with)
     end
 
-    it "broadcasts alert to cluster and organization channels" do
-      expect(ActionCable.server).to receive(:broadcast).with("cluster_#{cluster.id}_alerts", hash_including(:id, :severity))
-      expect(ActionCable.server).to receive(:broadcast).with("org_#{organization.id}_alerts", hash_including(:id, :severity))
+    # [UI.4] Обидва raw-ActionCable знято 2026-07-27 — вони були недосяжні структурно
+    # (`app/channels/` у репо не існує). Пін інвертовано: він тепер стереже, щоб
+    # недосяжний канал не повернувся замість Turbo-тракту.
+    it "does not reach for raw ActionCable — the app has no channel layer" do
+      expect(ActionCable.server).not_to receive(:broadcast)
 
       AlertNotificationWorker.new.perform(alert.id)
     end
