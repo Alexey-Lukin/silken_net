@@ -151,7 +151,10 @@ module Clusters
     def render_alerts_panel
       div(class: "p-6 border border-emerald-900 bg-black") do
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".alerts.heading") }
-        # ⚡ [СИНХРОНІЗАЦІЯ]: alerts_list — контейнер для broadcast_prepend нових алертів
+        # ⚡ [СИНХРОНІЗАЦІЯ]: alerts_list — ВЛАСНИЙ якір списку цієї сторінки, а
+        # НЕ приймач броадкасту. Обидва продюсери `EwsAlert` шлють сигнал
+        # (`broadcast_refresh_later_to`), тож сторінка переграє власний запит і
+        # сама вирішує форму та дієслово — `04_04 §8.1б`.
         div(id: "alerts_list", class: "space-y-2") do
           if @recent_alerts.any?
             @recent_alerts.each do |alert|

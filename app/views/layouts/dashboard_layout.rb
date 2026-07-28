@@ -74,8 +74,11 @@ class DashboardLayout < ApplicationComponent
       # Turbo page-refresh = morph, а не reload. Це умова, за якої
       # `broadcast_refresh_to` придатний як транспорт живих оновлень:
       # інакше сторінка кластера перезавантажувалась би цілком і скидала
-      # скрол на кожну тривогу (тротл — 5 с). Вузли зі станом, який сервер
-      # не віддає (Leaflet-полотно), позначені `data-turbo-permanent`.
+      # скрол на кожну тривогу (тротл — 5 с). ⚠️ `data-turbo-permanent` для
+      # клієнтського стану тут НЕ вживається: на Leaflet-полотні його пробували
+      # й зняли (`dashboard/map.rb` — атрибут спрацьовує на БУДЬ-якому Turbo-
+      # рендері, не лише morph, і зносить серверний контент, вкладений усередину
+      # позначеного вузла). Периметр наслідків morph — `00_07` UI.4.
       meta(name: "turbo-refresh-method", content: "morph")
       meta(name: "turbo-refresh-scroll", content: "preserve")
       link(rel: "icon", href: "/icon.png", type: "image/png")
