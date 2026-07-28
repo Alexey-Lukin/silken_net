@@ -17,6 +17,33 @@ RSpec.describe Api::V1::AuditLogsController, type: :request do
   let!(:own_log) { create(:audit_log, user: admin_user, organization: organization) }
   let!(:other_log) { create(:audit_log, user: other_admin, organization: other_organization) }
 
+  # [SEC.25 Ф2] `organization_id: nil` в audit_logs — не «запис без організації», а
+  # окремий СИСТЕМНИЙ ланцюг (org-less дії, зокрема зміни SystemParameter). Доти
+  # super_admin бачив саме його — випадково, бо його власний organization_id теж nil.
+  # Під acting-org він дістав би id організації й тихо втратив би governance-журнал,
+  # і жоден тест не почервонів би: `AuditLogPolicy` тут не викликається (скоуп ручний).
+  describe "системний ланцюг (organization_id: nil)" do
+    let!(:system_log) { create(:audit_log, user: admin_user, organization: nil) }
+    let(:super_admin) { create(:user, :super_admin, organization: organization) }
+    let(:super_headers) { { "Authorization" => "Bearer #{super_admin.generate_token_for(:api_access)}" } }
+
+    it "видно super_admin разом із журналом його acting-організації" do
+      get "/api/v1/audit_logs", headers: super_headers, as: :json
+
+      ids = response.parsed_body["data"].map { |l| l["id"] }
+      expect(ids).to include(system_log.id, own_log.id)
+      expect(ids).not_to include(other_log.id)
+    end
+
+    it "НЕ видно звичайному адміністраторові організації" do
+      get "/api/v1/audit_logs", headers: admin_headers, as: :json
+
+      ids = response.parsed_body["data"].map { |l| l["id"] }
+      expect(ids).to include(own_log.id)
+      expect(ids).not_to include(system_log.id)
+    end
+  end
+
   describe "GET /api/v1/audit_logs" do
     it "returns only audit logs belonging to the user's organization" do
       get "/api/v1/audit_logs", headers: admin_headers, as: :json

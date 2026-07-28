@@ -69,7 +69,9 @@ Rails.application.routes.draw do
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       get "users/me", to: "users#me"
       resources :users, only: [ :index, :show ]
-      resources :organizations, only: [ :index, :show ]
+      resources :organizations, only: [ :index, :show ] do
+        post :switch, on: :member
+      end
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 🌳 ВІЙСЬКО ТА СЕКТОРИ (Clusters & Trees)
