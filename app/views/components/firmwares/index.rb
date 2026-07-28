@@ -29,7 +29,7 @@ module Firmwares
         h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-6") { t(".active_evolutions") }
         div(class: "space-y-4") do
           @active_ota_gateways.each do |gateway|
-            turbo_stream_from "ota_channel_#{gateway.uid}"
+            turbo_stream_from TurboStreams::Name.gateway_ota(gateway)
             render Firmwares::OtaProgressBar.new(
               uid: gateway.uid,
               percent: 0, current: 0, total: 0,

@@ -322,7 +322,7 @@ class EwsAlert < ApplicationRecord
     # Тут теж сигнал, а не рядок: `Alerts::Index` має фільтри й пагінацію,
     # тож сліпий prepend вставив би нагору тривогу, що не відповідає
     # активному фільтру (і на другій сторінці — не в те місце).
-    Turbo::StreamsChannel.broadcast_refresh_later_to("ews_alerts_org_#{cluster.organization_id}")
+    Turbo::StreamsChannel.broadcast_refresh_later_to(TurboStreams::Name.org(:alerts, cluster.organization_id))
   end
 
   # [ОПТИМІЗАЦІЯ]: Очищення Redis-блокувальника
@@ -362,7 +362,7 @@ class EwsAlert < ApplicationRecord
     # тобто ампутація прози з рядка тривоги, — або сигнал. Сигнал ще й
     # дає сторінці застосувати ВЛАСНІ фільтр і пагінацію, чого сліпий
     # replace не вміє, і знімає `citations`-запит із процесу-продюсера.
-    Turbo::StreamsChannel.broadcast_refresh_later_to("ews_alerts_org_#{cluster.organization_id}")
+    Turbo::StreamsChannel.broadcast_refresh_later_to(TurboStreams::Name.org(:alerts, cluster.organization_id))
     Turbo::StreamsChannel.broadcast_refresh_later_to([ cluster, :alerts ])
   end
 

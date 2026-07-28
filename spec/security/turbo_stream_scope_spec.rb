@@ -20,14 +20,22 @@ require Rails.root.join("lib/turbo_stream_inventory")
 # каже лише, ЯКИЙ доказ мусить існувати:
 #   · `record_ref`/`record_array` (AR-запис) → імʼя не несе org-токена взагалі,
 #     тож потрібна спека крос-фетч-ВІДМОВИ (чужа сутність → 404/403);
-#   · `scoped_string` (org-токен в імені) → потрібен two-subject пін ІМЕНІ
-#     (двоє глядачів дістають РІЗНІ стріми — з одним підміна на `Organization.first`
-#     лишає приклад зеленим);
-#   · `unscoped_interpolation` (напр. `ota_channel_{uid}`) → безпечний лише
-#     транзитивно, тож потрібен пін РІВНОСТІ МНОЖИНИ (відрендерено рівно своє);
+#   · `derived_org` (`TurboStreams::Name.org(...)`) → потрібен two-subject пін
+#     ІМЕНІ (двоє глядачів дістають РІЗНІ стріми — з одним підміна на
+#     `Organization.first` лишає приклад зеленим);
+#   · `derived_gateway` (`TurboStreams::Name.gateway_ota(...)`) → імʼя org-токена
+#     не несе, безпечне лише ТРАНЗИТИВНО, тож потрібен пін РІВНОСТІ МНОЖИНИ;
 #   · `bare_string`/`bare_symbol` (голе глобальне імʼя) → червоне за
 #     замовчуванням. Саме цим був `"telemetry_stream"`, і саме так витік
 #     віддавав payload чужих Королев кожному автентифікованому глядачу.
+#
+# 🧱 Рядкове імʼя стріму більше не пишеться руками НІ НА ЯКОМУ боці тракту — його
+# виводить один дім `lib/turbo_streams/name.rb`, який кличуть і підписники, і
+# продюсери. Це прибирає клас «продюсер і підписник на РІЗНИХ АДРЕСАХ»
+# конструктивно, а не ловить постфактум: до дому кожне з чотирьох імен було
+# написане руками 11 разів через два шари, і репо вже тричі ловило цей клас уже
+# після того, як він відвантажився. Тому `scoped_string`/`unscoped_interpolation`
+# на підписці тепер ЧЕРВОНІ як форма, а не лише як скоуп.
 #
 # 🔒 Три стелі, названі чесно — інакше зелене читається як «перевірено»:
 #   1. Реєстр пінить ІМʼЯ приклада-доказу, не його доказовість. Перейменований
@@ -58,27 +66,27 @@ RSpec.describe "Turbo stream scope axis" do # rubocop:disable RSpec/DescribeClas
   let(:obligations) do
     {
       "app/views/components/telemetry/live_stream.rb" => {
-        kind: :scoped_string,
+        kind: :derived_org,
         proof: "spec/requests/api/v1/telemetry_controller_spec.rb",
         example: "subscribes each viewer to their OWN organization stream"
       },
       "app/views/components/alerts/index.rb" => {
-        kind: :scoped_string,
+        kind: :derived_org,
         proof: "spec/requests/api/v1/alerts_controller_spec.rb",
         example: "subscribes each viewer to their OWN organization alert stream"
       },
       "app/views/components/dashboard/map.rb" => {
-        kind: :scoped_string,
+        kind: :derived_org,
         proof: "spec/requests/api/v1/dashboard_controller_spec.rb",
         example: "subscribes each viewer to their OWN organization map stream"
       },
       "app/views/components/firmwares/index.rb" => {
-        kind: :unscoped_interpolation,
+        kind: :derived_gateway,
         proof: "spec/requests/api/v1/firmwares_controller_spec.rb",
         example: "subscribes only to the viewer's OWN gateways' OTA channels"
       },
       "app/views/components/gateways/show.rb" => {
-        kind: :unscoped_interpolation,
+        kind: :derived_gateway,
         proof: "spec/requests/api/v1/gateways_controller_spec.rb",
         example: "subscribes only to the gateway's OWN OTA channel"
       },
@@ -102,6 +110,20 @@ RSpec.describe "Turbo stream scope axis" do # rubocop:disable RSpec/DescribeClas
 
   # Голе глобальне імʼя — це той самий клас, що дав живий крос-тенант витік.
   let(:unscoped_kinds) { %i[bare_string bare_symbol] }
+
+  # Рукописне імʼя, що НЕ є голим глобальним: скоуп у ньому, може, і правильний,
+  # але виведене воно окремою копією, тож розійтись із другим боком може будь-коли.
+  # Свідомо НЕ перетинається з `unscoped_kinds` — щоб одна поломка світилась в
+  # одному прикладі з правильною інструкцією, а не в двох.
+  let(:handwritten_kinds) { %i[scoped_string unscoped_interpolation] }
+
+  # На боці ПІДПИСКИ (де мінтиться capability-токен) легальні лише два джерела
+  # імені: благословенний дім або сам AR-запис. `:indirect` — це локал/чужий
+  # метод, тобто саме та невидимість, за яку гейт критикували: статично не
+  # скажеш, чи ім'я взагалі скоуплене. На боці ПРОДЮСЕРА `:indirect` лишається
+  # легальним — там локал, що тримає виведене ім'я, є нормальною формою
+  # (`unpack_telemetry_worker` саме так і робить).
+  let(:opaque_kinds) { %i[indirect] }
 
   let(:app_files) { Dir[Rails.root.join("app/**/*.rb")].sort }
   let(:subscriptions) { TurboStreamInventory.subscriptions(app_files) }
@@ -199,6 +221,34 @@ RSpec.describe "Turbo stream scope axis" do # rubocop:disable RSpec/DescribeClas
       місці виклику (партіалів моделей нема), а `broadcast_refresh` тихо створює
       стрім, якого не знає ані реєстр §8.1, ані цей гейт. Використовуй явний
       `Turbo::StreamsChannel.broadcast_*_to` з `html:`. Знайдено: #{implicit.join(', ')}
+    MSG
+  end
+
+  it "mints no stream name by hand — every string name comes from TurboStreams::Name" do
+    offenders = (subscriptions + producers)
+                .select { |s| handwritten_kinds.include?(s.arg_kind) }
+                .map { |s| "#{rel(s.file)}:#{s.line} (#{s.arg_pattern.inspect})" }
+
+    expect(offenders).to be_empty, <<~MSG
+      рукописне імʼя стріму. Скоуп у ньому може бути й правильний — проблема в
+      тому, що воно ВИВЕДЕНЕ ОКРЕМОЮ КОПІЄЮ, тож розійтись із другим боком тракту
+      може будь-коли, а виглядатиме це як тихо мертвий стрім (репо ловило цей клас
+      тричі — уже після відвантаження). Проведи через `lib/turbo_streams/name.rb`:
+      `TurboStreams::Name.org(:kind, org)` або `.gateway_ota(gateway)`. Знайдено:
+      #{offenders.join(', ')}
+    MSG
+  end
+
+  it "accepts only the blessed home or an AR record on the SUBSCRIBE side" do
+    offenders = subscriptions
+                .select { |s| opaque_kinds.include?(s.arg_kind) }
+                .map { |s| "#{rel(s.file)}:#{s.line}" }
+
+    expect(offenders).to be_empty, <<~MSG
+      непрозоре джерело імені на боці підписки (локал або чужий метод). Саме тут
+      мінтиться capability-токен, тож статична невидимість «а чи скоуплене це
+      імʼя взагалі» тут неприйнятна: або `TurboStreams::Name`, або сам AR-запис.
+      Знайдено: #{offenders.join(', ')}
     MSG
   end
 

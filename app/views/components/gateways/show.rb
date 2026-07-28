@@ -134,7 +134,7 @@ module Gateways
     # [SEC.20] Живий OTA-прогрес: підписка на персональний канал шлюзу;
     # broadcast'ить Downlink::PendingQueueService (FW.60 poll-тракт).
     def render_ota_evolution
-      turbo_stream_from "ota_channel_#{@gateway.uid}"
+      turbo_stream_from TurboStreams::Name.gateway_ota(@gateway)
       render Firmwares::OtaProgressBar.new(
         uid: @gateway.uid,
         percent: 0, current: 0, total: 0,

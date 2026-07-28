@@ -25,6 +25,17 @@ module TurboStreamInventory
   # Токени, що роблять імʼя стріму самоочевидно тенант-скоупленим.
   SCOPE_TOKENS = %w[_org_ _organization_].freeze
 
+  # Благословенний дім імен (`lib/turbo_streams/name.rb`) — єдине легальне
+  # джерело РЯДКОВОГО імені стріму по обидва боки тракту.
+  #
+  # 🔴 Клас читається з ІМЕНІ МЕТОДУ, не з форми аргументу, і це не стиль:
+  # аргумент після переїзду в дім став би просто `:indirect`, тобто два різні
+  # обовʼязки доказу («org-токен в імені» проти «токена немає, безпечно лише
+  # транзитивно») злились би в один клас — і гейт перестав би бачити зміну класу,
+  # найгіршу подію на цій осі.
+  BLESSED_RECEIVER = %w[TurboStreams Name].freeze
+  BLESSED_KINDS = { "org" => :derived_org, "gateway_ota" => :derived_gateway }.freeze
+
   Site = Struct.new(:file, :line, :method, :arg_kind, :arg_pattern, keyword_init: true)
 
   class << self
@@ -117,12 +128,20 @@ module TurboStreamInventory
       list&.first
     end
 
+    # 🔴 ТРЕТЯ сліпота форми виклику в цьому файлі, і знайдена так само — пробою,
+    # не читанням (сиблінги: безаргументний `:vcall` у `shape`; `var_ref` ≠ запис
+    # у `ref_kind`). Коли ВКЛАДЕНИЙ виклик іде без дужок — `f X.m a, b` — він
+    # зʼїдає список аргументів собі, і вузол аргументів зовнішнього `:command`
+    # приходить ГОЛИМ масивом arg-вузлів, без обгортки `:args_add_block`, яку
+    # єдино й розпізнавала ця функція. Наслідок був `:absent`, тобто «аргументу
+    # немає» на виклику, що його явно має.
     def args_list(node)
       return nil unless node.is_a?(Array)
 
       case node[0]
       when :arg_paren      then args_list(node[1])
       when :args_add_block then node[1]
+      when Array           then node
       end
     end
 
@@ -132,6 +151,9 @@ module TurboStreamInventory
     def classify(node)
       return [ :absent, nil ] if node.nil?
 
+      blessed = blessed_kind(node)
+      return [ blessed, nil ] if blessed
+
       case node[0]
       when :string_literal  then string_kind(node)
       when :array           then [ :record_array, nil ]
@@ -139,6 +161,29 @@ module TurboStreamInventory
       when :var_ref, :vcall then ref_kind(node[1])
       else [ :indirect, nil ]
       end
+    end
+
+    # `TurboStreams::Name.org(...)` проти `.gateway_ota(...)`. Обидві форми
+    # виклику з ресівером зводяться до однієї пари (`X.m(a)` = `:method_add_arg`
+    # над `:call`; `X.m a` = `:command_call`) — той самий урок, що з
+    # безаргументним `:vcall` у `shape`: форм виклику більше, ніж здається.
+    # Ресівер звіряється як ПОВНИЙ набір const-токенів, тож `::TurboStreams::Name`
+    # проходить, а однойменний `Name` з іншого простору імен — ні.
+    def blessed_kind(node)
+      call = node[0] == :method_add_arg ? node[1] : node
+      return nil unless call.is_a?(Array) && %i[call command_call].include?(call[0])
+
+      kind = BLESSED_KINDS[ident_token(call[3])&.first]
+      return nil unless kind
+
+      const_tokens(call[1]) == BLESSED_RECEIVER ? kind : nil
+    end
+
+    def const_tokens(node)
+      return [] unless node.is_a?(Array)
+      return [ node[1] ] if node[0] == :@const
+
+      node.flat_map { |child| const_tokens(child) }
     end
 
     # ⚠️ `var_ref` НЕ означає «запис»: `@wallet` — запис, а локал `stream`, що

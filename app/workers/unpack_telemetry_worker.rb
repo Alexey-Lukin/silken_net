@@ -357,7 +357,7 @@ class UnpackTelemetryWorker
     org_id = gateway.cluster.organization_id
     return unless org_id # осиротілий кластер: краще без live-стрічки, ніж у глобальний ефір
 
-    stream = "telemetry_stream_org_#{org_id}"
+    stream = TurboStreams::Name.org(:telemetry, org_id)
     hex_payload = binary_data.unpack1("H*").upcase
 
     # Turbo Stream трансляція для "живого" дашборду телеметрії

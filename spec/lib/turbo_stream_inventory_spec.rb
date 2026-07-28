@@ -59,6 +59,35 @@ RSpec.describe TurboStreamInventory do
       expect(subscription_kind("@wallet, :transactions").arg_kind).to eq(:record_ref)
     end
 
+    # Благословенний дім імен. Клас читається з ІМЕНІ МЕТОДУ, не з форми
+    # аргументу — інакше два різні обовʼязки доказу злились би в `:indirect`.
+    it "reads the proof class off the blessed home's METHOD name" do
+      expect(subscription_kind("TurboStreams::Name.org(:telemetry, @organization)").arg_kind)
+        .to eq(:derived_org)
+      expect(subscription_kind("TurboStreams::Name.gateway_ota(@gateway)").arg_kind)
+        .to eq(:derived_gateway)
+    end
+
+    # 🔴 Форма, що вкусила при написанні цього класу, і третя така в цьому файлі
+    # (сиблінги: безаргументний `:vcall`, `var_ref` ≠ запис). Коли ВКЛАДЕНИЙ
+    # виклик іде без дужок, він зʼїдає список аргументів собі, тож вузол
+    # аргументів зовнішнього виклику приходить голим масивом — і давав `:absent`,
+    # тобто «аргументу немає» там, де він явно є.
+    it "sees the blessed call written WITHOUT parens (the nested-command shape)" do
+      expect(subscription_kind("TurboStreams::Name.org :telemetry, @organization").arg_kind)
+        .to eq(:derived_org)
+    end
+
+    it "does not bless a look-alike receiver" do
+      expect(subscription_kind("Other::Name.org(:telemetry, @organization)").arg_kind).to eq(:indirect)
+      expect(subscription_kind("TurboStreams::Other.org(:telemetry, @organization)").arg_kind).to eq(:indirect)
+    end
+
+    it "blesses the fully-qualified receiver" do
+      expect(subscription_kind("::TurboStreams::Name.gateway_ota(gateway)").arg_kind)
+        .to eq(:derived_gateway)
+    end
+
     it "treats an array literal as a record reference" do
       expect(subscription_kind("[ @cluster, :alerts ]").arg_kind).to eq(:record_array)
     end

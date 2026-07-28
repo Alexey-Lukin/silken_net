@@ -15,7 +15,7 @@ module Alerts
 
     def view_template
       # ⚡ Підписка на потік оновлень алертів організації.
-      turbo_stream_from "ews_alerts_org_#{@organization.id}" if @organization
+      turbo_stream_from TurboStreams::Name.org(:alerts, @organization) if @organization
 
       div(class: "space-y-6 animate-in fade-in duration-500") do
         header_section

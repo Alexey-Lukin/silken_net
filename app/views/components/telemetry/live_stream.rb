@@ -19,7 +19,7 @@ module Telemetry
         # Підписка на SolidCable / Turbo Streams. Без організації підписки
         # немає зовсім (fail-closed): сторінка лишається читабельною, живих
         # оновлень просто не надходить — дзеркало `Alerts::Index`.
-        turbo_stream_from "telemetry_stream_org_#{@organization.id}" if @organization
+        turbo_stream_from TurboStreams::Name.org(:telemetry, @organization) if @organization
 
         # Контейнер з відносною позицією для накладання Canvas та таблиці.
         div(class: "relative border border-gaia-border bg-gaia-surface min-h-[400px] md:min-h-[600px] overflow-hidden rounded-sm shadow-[0_0_40px_rgba(6,78,59,0.2)]") do

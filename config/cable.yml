@@ -35,12 +35,11 @@ test:
 #   · ціна броадкасту платиться НА ЗАПИСІ — рядок вставляється навіть якщо
 #     підписників нуль (на відміну від pub/sub, де такий броадкаст безкоштовний).
 #
-# Turbo Stream channels using this (звірено з кодом; реєстр — `04_04 §8.1`):
-#   - "telemetry_stream_org_#{id}" (live telemetry feed)
-#   - "ews_alerts_org_#{id}" (alert notifications)
-#   - "geospatial_matrix_org_#{id}" (map updates)
-#   - "ota_channel_#{gateway_uid}" (OTA progress)
-#   - [@wallet, :transactions] · [@cluster, :alerts] · [@actuator, :commands]
+# Turbo Stream channels using this — імена НЕ перелічуються тут навмисно.
+# Дім рядкових імен = `lib/turbo_streams/name.rb` (кличуть обидві сторони
+# тракту); читабельний реєстр із продюсерами й підписниками = `04_04 §8.1`.
+# ⚠️ Раніше тут стояла копія переліку «звірено з кодом» — саме та форма, що
+# гниє першим же перейменуванням, і саме проти неї той дім і зроблено.
 #
 # See: docs/06_02_Akash_Network_Integration.md (GCS bootstrap, resolved → INF.*)
 # =============================================================================

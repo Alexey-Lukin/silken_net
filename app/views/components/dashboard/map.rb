@@ -16,7 +16,7 @@ module Dashboard
         # Підписка скоуплена організацією глядача: ім'я стріму детерміноване,
         # тож голий рядок посадив би весь застосунок в ОДИН канал і роздав
         # координати чужого флоту. Без організації підписки нема (fail-closed).
-        turbo_stream_from "geospatial_matrix_org_#{@organization.id}" if @organization
+        turbo_stream_from TurboStreams::Name.org(:map, @organization) if @organization
 
         # Основний контейнер карти з підключеним Stimulus.
         # ⚠️ `data-turbo-permanent` тут пробували й ЗНЯЛИ — він шкодив більше,

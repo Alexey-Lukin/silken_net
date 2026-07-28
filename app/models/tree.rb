@@ -216,7 +216,7 @@ class Tree < ApplicationRecord
     return unless org_id # осиротіле дерево: краще без live-вузла, ніж у глобальний ефір
 
     Turbo::StreamsChannel.broadcast_replace_to(
-      "geospatial_matrix_org_#{org_id}",
+      TurboStreams::Name.org(:map, org_id),
       target: "map_node_#{id}",
       html: Dashboard::MapNode.new(tree: self).call
     )
