@@ -37,7 +37,21 @@ require Rails.root.join("lib/turbo_stream_inventory")
 #      однаково, чи прийшла організація з сесії, чи з параметра запиту.
 #   3. Гейт бачить `turbo_stream_from` у `app/views/**`. Підписка, зібрана в
 #      обхід хелпера (руками через `tag.turbo_cable_stream_source`), сюди не
-#      потрапить — а саме так її доведеться писати, якщо колись додаватимемо TTL.
+#      потрапить. ⚠️ Раніше тут стояло «а саме так її доведеться писати, якщо
+#      колись додаватимемо TTL» — TTL відкинуто виміром (прострочений токен на
+#      реконекті = безшумна назавжди смерть живості: `Subscription` ctor
+#      заморожує ідентифікатор, а елемент не визначає `rejected`-колбека), тож
+#      обхід хелпера більше не запланований і стеля лишається чисто теоретичною.
+#   4. 🔴 КЛАС виводиться з форми ІМЕНІ, а потрібна форма доказу залежить від
+#      КАРДИНАЛЬНОСТІ сторінки — цього екстрактор не бачить у принципі, тож це
+#      декларація, не виведення. `unscoped_interpolation` накриває два різні
+#      випадки: власний атрибут ОДНОГО запису (`Gateways::Show` — скоуп
+#      транзитивно доведений спільним фетчем ПЕРЕД `respond_to`, недоведеним
+#      лишалось саме імʼя) і цикл по КОЛЕКЦІЇ (`Firmwares::Index` — там дефект
+#      виглядає як ЗАЙВИЙ стрім, тому рівність множини несуча). Обидва тепер
+#      пінені рівністю множини на HTML-гілці; якщо додаватимеш третій сайт цього
+#      класу — питай не «яка форма імені», а «скільки стрімів сторінка може
+#      відрендерити».
 RSpec.describe "Turbo stream scope axis" do # rubocop:disable RSpec/DescribeClass
   # Обовʼязок доказу на кожен сайт підписки. Ключ — ФАЙЛ (не `file:line`:
   # номери рядків зсуваються, а підписка у файлі рівно одна).
@@ -66,7 +80,7 @@ RSpec.describe "Turbo stream scope axis" do # rubocop:disable RSpec/DescribeClas
       "app/views/components/gateways/show.rb" => {
         kind: :unscoped_interpolation,
         proof: "spec/requests/api/v1/gateways_controller_spec.rb",
-        example: "returns 404 for a gateway from another organization"
+        example: "subscribes only to the gateway's OWN OTA channel"
       },
       "app/views/components/clusters/show.rb" => {
         kind: :record_ref,

@@ -71,5 +71,29 @@ RSpec.describe Api::V1::GatewaysController, type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
+
+    # Пін на ІМʼЯ стріму, а не на скоуп — і різницю варто тримати в голові.
+    # Скоуп цього сайту доведений сусіднім прикладом («returns 404 for a gateway
+    # from another organization»), і доведений ТРАНЗИТИВНО: org-скоуплений `find`
+    # стоїть ПЕРЕД `respond_to`, тож чужий шлюз кидає `RecordNotFound` до
+    # розгалуження форматів і HTML-гілки не досягає жодним шляхом.
+    #
+    # 🔴 Недоведеним лишалось саме імʼя: `ota_channel_{uid}` org-токена не несе,
+    # а жоден приклад цього файлу HTML-гілку зі стрімом не читав (усі йшли
+    # `as: :json`). Тобто інтерполяція не того атрибута або зашите константне
+    # імʼя лишились би зеленими — та сама `as: :json`-сліпота, що вже коштувала
+    # тихого no-op'а на `AlertsController#resolve` (`00_07` UI.4).
+    #
+    # ⚠️ Форма — РІВНІСТЬ МНОЖИНИ (`eq`, не `include`): дефект імені без
+    # org-токена виглядає як ЗАЙВИЙ стрім на сторінці, а не як відсутній свій,
+    # тож `include` пройшов би. `other_gateway` існує в БД (`let!` вище), отже
+    # зайвому стріму реально є звідки взятись.
+    it "subscribes only to the gateway's OWN OTA channel" do
+      get "/api/v1/gateways/#{own_gateway.id}", headers: html_headers
+
+      streams = response.body.scan(/signed-stream-name="([^"]+)"/).flatten
+                        .map { |name| Turbo::StreamsChannel.verified_stream_name(name) }
+      expect(streams).to eq([ "ota_channel_#{own_gateway.uid}" ])
+    end
   end
 end
