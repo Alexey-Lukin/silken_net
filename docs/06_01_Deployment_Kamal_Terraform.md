@@ -255,7 +255,7 @@ terraform apply
 | **Grafana Alloy (metrics agent)** | ❌ | ✅ | — | — | `alloy` сервіс в Akash SDL, пушить у Grafana Cloud |
 | **CoAP UDP daemon (:5683)** | ✅ **PRIMARY** | fallback | — | — | **PRIMARY = демон на Ingress Anchor** (docker + systemd `coap-daemon`, VPC → Cloud SQL приватним IP без Auth Proxy — founder 2026-07-04); fallback = socat-релей → Akash `coap`-сервіс (лишається задеплоєним) + Kamal `coap`-роль. Свідомо НЕ puma-thread — UDP у web-процесі сплітає lifecycle (INF.17) |
 | **Cloud SQL PostgreSQL 17** | ✅ | — | — | — | Приватна IP, доступ через Auth Proxy |
-| **ActionCable (Solid Cable)** | ✅ | ✅ | — | — | Спільна Cloud SQL БД `cable`, LISTEN/NOTIFY (без sticky sessions) |
+| **ActionCable (Solid Cable)** | ✅ | ✅ | — | — | Спільна Cloud SQL БД `cable`, **POLLING** (`polling_interval`), НЕ LISTEN/NOTIFY — механіка й наслідки для ємності в `config/cable.yml` (без sticky sessions) |
 | **Redis** | ❌ | — | ✅ | — | Upstash Serverless, TLS (`rediss://`) |
 | **Prometheus + Grafana + Alerting** | ❌ | — | — | ✅ | SaaS, Alloy → remote_write |
 | **Ingress Anchor** | ✅ | — | — | — | `e2-small`, статична IP: CoAP-демон (PRIMARY) + HAProxy 80/443→Akash + socat (fallback) |
@@ -289,7 +289,7 @@ terraform apply
 ┌──────────────────────────────────┬──────────────────────────────┐
 │  PostgreSQL: Solid Cache         │  PostgreSQL: Solid Cable     │
 │  Rails.cache (domain caching)    │  ActionCable adapter         │
-│  Web3 circuit breaker state      │  LISTEN/NOTIFY pub/sub       │
+│  Web3 circuit breaker state      │  POLLING (не pub/sub)        │
 │  Alert silence windows           │  Multi-replica safe          │
 │  Dashboard stats                 │  No sticky sessions          │
 └──────────────────────────────────┴──────────────────────────────┘
@@ -341,7 +341,7 @@ ENV.fetch("RACK_ATTACK_REDIS_URL") {
 2. **Kredis (DB 1)**: Критичні distributed locks для Web3 nonce management (`BlockchainMintingService`, `BlockchainBurningService`, `CeloRewardService`), M2M nonce anti-replay. Lock TTL 30 sec = **concurrent** guard; **[ARCH.45]** durable money-path idempotency тепер тримає DB intent-marker + `BlockchainTransaction.in_flight` guard (не лише ephemeral lock) для slash/Solana payout — витіснення локу більше не єдина лінія проти double-spend ([`04_02 §4/§10`](04_02_Business_Logic_and_Services)).
 3. **Rack::Attack (DB 2)**: Rate-limit counters з TTL 10 min. Менший обсяг, але потребує ізоляції від Sidekiq щоб counters не губились при spike-ах.
 4. **Solid Cache (PostgreSQL)**: Rails.cache для Web3 circuit breaker state, dashboard stats, alert silence windows. PostgreSQL гарантує durability — circuit breaker state не зникає при Redis restart.
-5. **Solid Cable (PostgreSQL)**: ActionCable через PostgreSQL LISTEN/NOTIFY — zero Redis dependency, multi-replica safe без sticky sessions.
+5. **Solid Cable (PostgreSQL)**: ActionCable через PostgreSQL — zero Redis dependency, multi-replica safe без sticky sessions. ⚠️ Механізм — **опитування**, не `LISTEN/NOTIFY`: кожен web-процес тримає listener-тред, що `SELECT`-ить нові рядки кожні `polling_interval`. Три наслідки для ємності (дім — `config/cable.yml`): латентність має підлогу ~`polling_interval`; вартість опитування росте з кількістю процесів, не подій; ціна броадкасту платиться НА ЗАПИСІ, навіть за нуля підписників. ⚠️ Метод адаптера НАЗВАНИЙ `listen`, тож греп по «listen» дає хибне підтвердження pub/sub — усередині це `loop { … sleep polling_interval }`.
 6. **In-Process RAM**: AES hardware keys — Zero Network Exposure. Ключі ніколи не серіалізуються і не передаються по мережі.
 
 ### Масштабування (мільйони → мільярди → трильйони дерев)
