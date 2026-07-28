@@ -134,6 +134,29 @@ RSpec.describe Api::V1::AlertsController, type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
+
+    # Дзеркало піна `telemetry_controller_spec` / `dashboard_controller_spec`:
+    # єдиний рядок, що вирішує ЧИЯ організація, живе в контролері, і компонентна
+    # спека його не бачить (вона дістає організацію моком). Підписане імʼя стріму —
+    # це capability-токен, тож видача чужого = крос-тенант живих тривог, якого
+    # HTTP-відповідь не показує: витік їде вебсокетом уже після підписки.
+    # ⚠️ Двоє глядачів обовʼязкові: `organization` створюється в цьому файлі
+    # першою, тож підміна на `Organization.first` дорівнює їй і однокористувацький
+    # приклад лишився б зеленим. Ловить лише РІЗНИЦЯ. `eq` (не `include`) тримає
+    # заразом і другу половину — жодного ЗАЙВОГО стріму на сторінці.
+    def subscribed_streams_for(who)
+      get "/api/v1/alerts",
+          headers: { "Authorization" => "Bearer #{who.generate_token_for(:api_access)}", "Accept" => "text/html" }
+      response.body.scan(/signed-stream-name="([^"]+)"/).flatten
+              .map { |name| Turbo::StreamsChannel.verified_stream_name(name) }
+    end
+
+    it "subscribes each viewer to their OWN organization alert stream" do
+      stranger = create(:user, :forester, organization: other_organization)
+
+      expect(subscribed_streams_for(user)).to eq([ "ews_alerts_org_#{organization.id}" ])
+      expect(subscribed_streams_for(stranger)).to eq([ "ews_alerts_org_#{other_organization.id}" ])
+    end
   end
 
   context "with turbo_stream format" do

@@ -149,6 +149,33 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
+
+    # Секція «Active Evolutions» рендерить `turbo_stream_from "ota_channel_{uid}"` —
+    # єдиний стрім застосунку, чиє імʼя НЕ несе org-токена, тобто безпечний лише
+    # транзитивно: рівно настільки, наскільки `@active_ota_gateways` скоуплений.
+    # Досі жодна request-спека цієї гілки не проходила — приклади не створювали
+    # ані `updating`, ані затаргеченого шлюзу, тож секція не рендерилась узагалі
+    # і скидання префікса `org.` лишалось би зеленим.
+    # ⚠️ Форма піна — РІВНІСТЬ МНОЖИНИ, не «містить свій»: імʼя без org-токена
+    # означає, що дефект виглядає як ЗАЙВИЙ стрім на сторінці, а не як
+    # відсутній свій. Тому потрібен і чужий шлюз у тому ж стані.
+    context "when OTA campaigns are live" do
+      let(:own_gateway) { create(:gateway, cluster: create(:cluster, organization: organization), state: :updating) }
+      let(:foreign_gateway) do
+        create(:gateway, cluster: create(:cluster, organization: create(:organization)), state: :updating)
+      end
+
+      it "subscribes only to the viewer's OWN gateways' OTA channels" do
+        own_gateway
+        foreign_gateway
+
+        get "/api/v1/firmwares", headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+
+        streams = response.body.scan(/signed-stream-name="([^"]+)"/).flatten
+                          .map { |name| Turbo::StreamsChannel.verified_stream_name(name) }
+        expect(streams).to eq([ "ota_channel_#{own_gateway.uid}" ])
+      end
+    end
   end
 
   describe "GET /api/v1/firmwares/new" do
