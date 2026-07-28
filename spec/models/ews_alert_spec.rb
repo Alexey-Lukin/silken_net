@@ -716,6 +716,33 @@ RSpec.describe EwsAlert, type: :model do
         .with([ cluster_bc, :alerts ])
       expect(Turbo::StreamsChannel).not_to have_received(:broadcast_replace_to)
     end
+
+    # Осиротілий кластер. Досяжний лише не-AR записом (`belongs_to :organization`
+    # обовʼязковий), АЛЕ два інші продюсери цієї осі його гасять явно, а тут ціна
+    # мовчазно змінилась із переїздом на дім імен: до — броадкаст у мертве
+    # СПІЛЬНЕ імʼя `ews_alerts_org_`, після — виняток усередині `after_*_commit`,
+    # тобто Sidekiq-retry на вже закоміченій тривозі (їх створює й money-шлях).
+    # Пін саме на fail-closed: панель кластера жива, org-сигнал просто мовчить.
+    it "stays silent on the org stream when the cluster lost its organization" do
+      tree = create(:tree, cluster: cluster_bc)
+      # ⚠️ `and_call_original` тут ОБОВʼЯЗКОВИЙ, як і в сусідньому прикладі: у
+      # цьому файлі метод заглушено, тож без нього `send` бʼє в заглушку й
+      # приклад «проходить», не виконавши нічого — саме так він і збрехав під
+      # час написання (0 викликів при цілком живому стані).
+      allow_any_instance_of(described_class).to receive(:broadcast_alert_update).and_call_original
+      alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
+      cluster_bc.update_columns(organization_id: nil)
+      alert.cluster.reload
+
+      allow(Turbo::StreamsChannel).to receive(:broadcast_refresh_later_to)
+      Rails.cache.delete("ews_alert_broadcast_throttle:#{alert.id}")
+
+      expect { alert.send(:broadcast_alert_update) }.not_to raise_error
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to)
+        .with([ alert.cluster, :alerts ])
+      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_refresh_later_to)
+        .with(a_string_matching(/\Aews_alerts_org_/))
+    end
   end
 
   # =========================================================================

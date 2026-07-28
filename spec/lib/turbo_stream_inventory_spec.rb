@@ -83,6 +83,14 @@ RSpec.describe TurboStreamInventory do
       expect(subscription_kind("TurboStreams::Other.org(:telemetry, @organization)").arg_kind).to eq(:indirect)
     end
 
+    # `const_tokens` сплощує все піддерево ресівера, тож без перевірки самої ФОРМИ
+    # вузла ланцюжок через проміжний виклик давав ті самі токени й благословлявся,
+    # хоч значення повертає щось інше. Знайдено adversarial-проходом, Ripper'ом.
+    it "does not bless the blessed constant reached through an intermediate call" do
+      expect(subscription_kind("TurboStreams::Name.dup.org(:telemetry, @organization)").arg_kind)
+        .to eq(:indirect)
+    end
+
     it "blesses the fully-qualified receiver" do
       expect(subscription_kind("::TurboStreams::Name.gateway_ota(gateway)").arg_kind)
         .to eq(:derived_gateway)

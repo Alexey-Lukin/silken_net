@@ -322,7 +322,22 @@ class EwsAlert < ApplicationRecord
     # Тут теж сигнал, а не рядок: `Alerts::Index` має фільтри й пагінацію,
     # тож сліпий prepend вставив би нагору тривогу, що не відповідає
     # активному фільтру (і на другій сторінці — не в те місце).
-    Turbo::StreamsChannel.broadcast_refresh_later_to(TurboStreams::Name.org(:alerts, cluster.organization_id))
+    broadcast_org_refresh
+  end
+
+  # Осиротілий кластер (`clusters.organization_id` — nullable у схемі) уже
+  # вважається реальним станом двома іншими продюсерами цієї осі: і `Tree`, і
+  # `UnpackTelemetryWorker` мають `return unless org_id`. Тут його не гасив ніхто,
+  # і ціна мовчазно змінилась із міграцією на дім імен: ДО — броадкаст у мертве
+  # СПІЛЬНЕ імʼя `ews_alerts_org_` (те саме для всіх тенантів), ПІСЛЯ — виняток
+  # усередині `after_*_commit`, тобто retry-шторм Sidekiq на вже закоміченій
+  # тривозі, включно з money-шляхом, що ці тривоги створює. Fail-closed:
+  # панель кластера лишається живою, org-список просто не сигналиться.
+  def broadcast_org_refresh
+    org_id = cluster.organization_id
+    return if org_id.blank?
+
+    Turbo::StreamsChannel.broadcast_refresh_later_to(TurboStreams::Name.org(:alerts, org_id))
   end
 
   # [ОПТИМІЗАЦІЯ]: Очищення Redis-блокувальника
@@ -362,7 +377,7 @@ class EwsAlert < ApplicationRecord
     # тобто ампутація прози з рядка тривоги, — або сигнал. Сигнал ще й
     # дає сторінці застосувати ВЛАСНІ фільтр і пагінацію, чого сліпий
     # replace не вміє, і знімає `citations`-запит із процесу-продюсера.
-    Turbo::StreamsChannel.broadcast_refresh_later_to(TurboStreams::Name.org(:alerts, cluster.organization_id))
+    broadcast_org_refresh
     Turbo::StreamsChannel.broadcast_refresh_later_to([ cluster, :alerts ])
   end
 

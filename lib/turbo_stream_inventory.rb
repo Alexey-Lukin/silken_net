@@ -36,6 +36,9 @@ module TurboStreamInventory
   BLESSED_RECEIVER = %w[TurboStreams Name].freeze
   BLESSED_KINDS = { "org" => :derived_org, "gateway_ota" => :derived_gateway }.freeze
 
+  # Форми, у яких Ripper віддає ЧИСТЕ const-посилання: `Name` · `A::Name` · `::A::Name`.
+  CONST_REF_NODES = %i[const_path_ref var_ref top_const_ref].freeze
+
   Site = Struct.new(:file, :line, :method, :arg_kind, :arg_pattern, keyword_init: true)
 
   class << self
@@ -175,6 +178,11 @@ module TurboStreamInventory
 
       kind = BLESSED_KINDS[ident_token(call[3])&.first]
       return nil unless kind
+      # ⚠️ Ресівер мусить бути САМИМ const-посиланням, не викликом на ньому:
+      # `const_tokens` сплощує все піддерево, тож без цієї перевірки
+      # `TurboStreams::Name.dup.org(...)` дає ті самі токени й благословляється,
+      # хоч значення повертає проміжний виклик (перевірено Ripper'ом).
+      return nil unless CONST_REF_NODES.include?(call[1].is_a?(Array) && call[1][0])
 
       const_tokens(call[1]) == BLESSED_RECEIVER ? kind : nil
     end

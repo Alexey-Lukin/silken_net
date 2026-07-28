@@ -32,10 +32,12 @@ require Rails.root.join("lib/turbo_stream_inventory")
 # 🧱 Рядкове імʼя стріму більше не пишеться руками НІ НА ЯКОМУ боці тракту — його
 # виводить один дім `lib/turbo_streams/name.rb`, який кличуть і підписники, і
 # продюсери. Це прибирає клас «продюсер і підписник на РІЗНИХ АДРЕСАХ»
-# конструктивно, а не ловить постфактум: до дому кожне з чотирьох імен було
-# написане руками 11 разів через два шари, і репо вже тричі ловило цей клас уже
-# після того, як він відвантажився. Тому `scoped_string`/`unscoped_interpolation`
-# на підписці тепер ЧЕРВОНІ як форма, а не лише як скоуп.
+# конструктивно, а не ловить постфактум: до дому чотири імені жили в 11 рукописних
+# копіях через два шари. ⚠️ Прецедентів розходження самого ІМЕНІ репо не має —
+# три відомі катастрофи цього роду були на СУСІДНІЙ осі (target-id / record-форма),
+# і дім їх не накриває. Виправдання інше: втрата `_org_` дає ВИТІК, а не мертвий
+# стрім. Тому `scoped_string`/`unscoped_interpolation` на підписці тепер ЧЕРВОНІ
+# як форма, а не лише як скоуп.
 #
 # 🔒 Три стелі, названі чесно — інакше зелене читається як «перевірено»:
 #   1. Реєстр пінить ІМʼЯ приклада-доказу, не його доказовість. Перейменований
@@ -138,13 +140,38 @@ RSpec.describe "Turbo stream scope axis" do # rubocop:disable RSpec/DescribeClas
      Turbo::Broadcastable.public_instance_methods(false))
       .map(&:to_s).grep(/\Abroadcast_/).uniq
   end
+  # Курований перелік ФАЙЛІВ-продюсерів. 🔴 Тут раніше стояла підлога на КІЛЬКІСТЬ
+  # викликів (`>= 12`), і вона впала на першому ж чесному рефакторі: виніс дубльований
+  # org-броадкаст `EwsAlert` у власний метод — викликів стало 11, гейт почервонів на
+  # покращенні. Це рівно та вада, про яку попереджає власне design-правило
+  # (`ssot-maintenance` §Guard-craft, «пінь інваріант, а не лічильник, що росте»):
+  # лічильник карає за видалення й ремонт. Файлове покриття стабільне до внутрішніх
+  # рефакторів і лишається tripwire'ом у два боки — зникнення файла тут червоніє.
+  # (Бік ПІДПИСКИ власного канарка не потребує: реєстр обовʼязків звіряється в
+  # обидва боки нижче, тож осліплий екстрактор дає 8 мертвих обовʼязків = червоне.)
+  let(:producer_files) do
+    %w[
+      app/models/blockchain_transaction.rb
+      app/models/ews_alert.rb
+      app/models/tree.rb
+      app/models/wallet.rb
+      app/services/downlink/pending_queue_service.rb
+      app/workers/actuator_command_worker.rb
+      app/workers/ota_transmission_worker.rb
+      app/workers/unpack_telemetry_worker.rb
+    ]
+  end
 
   def rel(path) = Pathname.new(path).relative_path_from(Rails.root).to_s
 
-  # Без цього «0 порушень» могло б означати «екстрактор дивиться не туди».
-  it "is a live check (both sides of the tract are discovered)" do
-    expect(subscriptions.size).to be >= 8, "підписок знайдено замало — екстрактор осліп"
-    expect(producers.size).to be >= 12, "продюсерів знайдено замало — екстрактор осліп"
+
+  it "is a live check (every known producer file is still discovered)" do
+    missing = producer_files - producers.map { |p| rel(p.file) }.uniq
+
+    expect(missing).to be_empty, <<~MSG
+      продюсера більше не видно — або броадкаст свідомо знято (тоді приберіть файл
+      із переліку тим самим комітом), або екстрактор осліп. Знайдено: #{missing.join(', ')}
+    MSG
   end
 
   it "collects the single-line call form the regex extractor cannot see" do

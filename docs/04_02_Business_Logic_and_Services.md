@@ -940,7 +940,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 |---|---|---|
 | `Codex::EloRecomputeWorker#perform` | `match_milestone` | `match_id`, `trigger_ref_type: "Codex::Match"`, `trigger_ref_id`. Resolves the most-recent Match referencing either node (delta-only `perform` doesn't carry `user_id`). |
 | `Codex::FractionChangeService#enqueue_discovery_probe` | `fraction_choice` | `fraction_id`, `codex_node_id`, `previous_node_id`, `trigger_ref_type: "Codex::Fraction"`, `trigger_ref_id`. Initial pick → `previous_node_id: nil`. |
-| `Api::V1::Codex::AttunementsController#enqueue_discovery_probe` | `attunement_streak` | `codex_node_id`, `trigger_ref_type: "Codex::Attunement"`, `trigger_ref_id`. Fired alongside `AttunementBroadcastWorker`. |
+| `Api::V1::Codex::AttunementsController#enqueue_discovery_probe` | `attunement_streak` | `codex_node_id`, `trigger_ref_type: "Codex::Attunement"`, `trigger_ref_id`. ⚠️ Колись їхав поряд з `AttunementBroadcastWorker` — того воркера знято 2026-07-27 ([`UI.2`](00_07_Action_Plan_Tracker)), тож зараз це ЄДИНИЙ ефект екшена понад сам запис. |
 
 ### `Codex::Citation` model helpers (Phase 6)
 

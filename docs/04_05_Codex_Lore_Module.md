@@ -106,7 +106,6 @@ archetype_key` замість наслідування. Додавання 5-г�
 
 | Воркер | Черга |
 |---|---|
-| `Codex::AttunementBroadcastWorker` | `default (#5)` |
 | `Codex::FractionAuditWorker` | `default (#5)` |
 | `Codex::DiscoveryProbeWorker` | `default (#5)` |
 | `Codex::EloRecomputeWorker` | `low (#9)` |
@@ -182,7 +181,7 @@ ORM. Це закриває object-injection / arbitrary-class-lookup векто�
 
 ### ADR-CDX-10 — Codex терпить Sidekiq Pro shim (fire-and-forget воркери)
 
-Усі чотири Codex-воркери (`AttunementBroadcast`, `FractionAudit`, `DiscoveryProbe`,
+Усі три Codex-воркери (`FractionAudit`, `DiscoveryProbe`,
 `EloRecompute`) — **fire-and-forget**: жоден не залежить від `Sidekiq::Batch`
 `on(:success)` callback. Тому Codex **байдужий** до того, що `sidekiq-pro` поки не в
 Gemfile, а `config/initializers/sidekiq_pro.rb` робить `on(:success)` no-op — Codex
