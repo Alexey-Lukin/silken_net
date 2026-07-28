@@ -27,6 +27,14 @@ require "rails_helper"
 # сюди не потрапляє; так само не покрито власний `ApplicationCable::Channel`,
 # якби його завели — саме він і був би реальною активацією IDOR (тоді потрібен
 # інший гейт: `stream_from` з інтерпольованим параметром).
+#
+# ⚠️ Статус цієї стелі уточнено 2026-07-28 (SEC.25 Ф1): `ApplicationCable::`
+# namespace тепер ІСНУЄ, але містить лише `Connection` — він встановлює особу
+# зʼєднання й `stream_from` не викликає взагалі, тож стеля вище ще не настала.
+# Вона настане в мить, коли в `app/channels/` зʼявиться перший КАНАЛ; читай цей
+# абзац як тригер, а не як опис минулого. Чому власний канал із авторизацією на
+# `subscribe` при цьому НЕ є формою, що закриває SEC.25 (клас каналу вибирає
+# клієнт, а `reject` бʼє легітимного глядача) — `04_04 §8.1`.
 RSpec.describe "no raw ActionCable broadcasts" do # rubocop:disable RSpec/DescribeClass
   let(:scanned_files) { Dir[Rails.root.join("{app,lib}/**/*.rb")].sort }
 

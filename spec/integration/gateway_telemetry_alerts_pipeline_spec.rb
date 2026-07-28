@@ -100,10 +100,15 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
       allow(AlertMailer).to receive(:with).and_return(mailer_with)
     end
 
-    # [UI.4] Обидва raw-ActionCable знято 2026-07-27 — вони були недосяжні структурно
-    # (`app/channels/` у репо не існує). Пін інвертовано: він тепер стереже, щоб
-    # недосяжний канал не повернувся замість Turbo-тракту.
-    it "does not reach for raw ActionCable — the app has no channel layer" do
+    # [UI.4] Обидва raw-ActionCable знято 2026-07-27. ⚠️ Тут стояло, що вони були
+    # недосяжні структурно, «бо `app/channels/` у репо не існує» — це вже НЕПРАВДА
+    # (SEC.25 Ф1 завела `ApplicationCable::Connection` 2026-07-28), і сама підстава
+    # була хибною ще тоді: `ActionCable::Engine` монтує `/cable` сам, без рядка в
+    # `routes.rb` (див. шапку `spec/security/no_raw_action_cable_spec.rb`). Пін від
+    # цього не слабшає, лише міняє причину: raw-broadcast заборонений не через
+    # недосяжність, а тому що імʼя каналу там — довільний рядок без жодної
+    # поверхні авторизації, на відміну від підписаного Turbo-тракту.
+    it "does not reach for raw ActionCable — the alert rides the signed Turbo tract" do
       expect(ActionCable.server).not_to receive(:broadcast)
 
       AlertNotificationWorker.new.perform(alert.id)
