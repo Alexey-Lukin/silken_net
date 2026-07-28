@@ -178,18 +178,53 @@ RSpec.describe Api::V1::BaseController, type: :request do
     end
   end
 
-  describe "ews_alert_count_cached" do
-    before { Rails.cache.delete("ews_alert_count_unresolved") }
+  # Бейдж «Threat Alerts» рендериться на КОЖНІЙ сторінці дашборда, тож його число —
+  # найширше розповсюджений тенант-факт у застосунку.
+  # ⚠️ Раніше тут стояв приклад `allow(EwsAlert).to receive(:unresolved) → double(count: 7)`
+  # з очікуванням `eq(7)`. Він був ВАКУУМНИЙ: стабив саме те, що перевіряв, тобто
+  # стверджував лише «хелпер повертає те, що повертає його ж реалізація». Саме тому
+  # відсутність org-скоупу була невидима — приклад не міг її виразити в принципі.
+  describe "ews_alert_count_cached (sidebar badge)" do
+    let(:org_a) { create(:organization) }
+    let(:org_b) { create(:organization) }
+    let(:user_a) { create(:user, :forester, organization: org_a) }
+    let(:user_b) { create(:user, :forester, organization: org_b) }
 
-    it "returns the unresolved alert count via Rails.cache" do
+    before do
+      allow(AlertNotificationWorker).to receive(:perform_async)
+      allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+      Rails.cache.clear
+      # Pause: `Tree.after_create` тягне wallet+calibration на кожне дерево фабрики —
+      # це N+1 У ФІКСТУРІ, не в коді під тестом.
+      Prosopite.pause if defined?(Prosopite)
+      create(:ews_alert, cluster: create(:cluster, organization: org_a), status: :active)
+      3.times { create(:ews_alert, cluster: create(:cluster, organization: org_b), status: :active) }
+      Prosopite.resume if defined?(Prosopite)
+    end
+
+    def count_for(user)
       controller = described_class.new
-      allow(EwsAlert).to receive(:unresolved).and_return(double(count: 7))
-      expect(controller.send(:ews_alert_count_cached)).to eq(7)
+      allow(controller).to receive(:current_user).and_return(user)
+      controller.send(:ews_alert_count_cached)
+    end
+
+    # Один приклад ловить ДВІ незалежні мутації, і порядок викликів тут несучий:
+    # A прогріває кеш, перевіряється B. Скинути org-скоуп ЗАПИТУ → A віддасть 4;
+    # повернути глобальний КЛЮЧ кешу → B віддасть закешоване число A. Двоє
+    # глядачів обовʼязкові — з одним «4 замість 1» не відрізнити від правильного.
+    it "counts only the viewer's own organization, and does not cache across organizations" do
+      expect(count_for(user_a)).to eq(1)
+      expect(count_for(user_b)).to eq(3)
+    end
+
+    it "returns zero for a viewer without an organization (fail-closed, not a global sum)" do
+      expect(count_for(create(:user, :super_admin, organization: nil))).to eq(0)
     end
 
     it "swallows any backend error and returns 0 so the sidebar never breaks" do
       controller = described_class.new
-      allow(Rails.cache).to receive(:fetch).and_raise(StandardError, "redis down")
+      allow(controller).to receive(:current_user).and_return(user_a)
+      allow(Rails.cache).to receive(:fetch).and_raise(StandardError, "cache down")
       expect(controller.send(:ews_alert_count_cached)).to eq(0)
     end
   end

@@ -202,9 +202,19 @@ module Api
       end
 
       # 6. EWS ALERT COUNT (pre-computed for Sidebar — Rule 3: Zero DB queries in views)
+      # Скоуп організації тримають ОБА шари: і запит, і ключ кешу. Раніше не тримав
+      # жоден — `EwsAlert.unresolved.count` під глобальним ключем показував бейджем
+      # інцидентну активність УСІЄЇ платформи кожному автентифікованому глядачу
+      # (виміряно: власних 1, у бейджі 4). Org-сліпий ключ тут не «менша половина»
+      # дефекту, а окрема його половина: навіть зі скоупленим запитом перший, хто
+      # прогріє кеш, роздав би своє число всім іншим на хвилину.
+      # Без організації — 0, а не глобальна сума (fail-closed).
       def ews_alert_count_cached
-        Rails.cache.fetch("ews_alert_count_unresolved", expires_in: 1.minute) do
-          EwsAlert.unresolved.count
+        org = current_user&.organization
+        return 0 unless org
+
+        Rails.cache.fetch("ews_alert_count_unresolved/org/#{org.id}", expires_in: 1.minute) do
+          org.ews_alerts.unresolved.count
         end
       rescue StandardError
         0
