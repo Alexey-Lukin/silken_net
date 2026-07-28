@@ -14,22 +14,33 @@ test:
 # =============================================================================
 # Multi-replica safe: all Puma replicas (deployment.web.count = N on Akash)
 # connect to the same Cloud SQL database `silken_net_production_cable`.
-# PostgreSQL LISTEN/NOTIFY ensures broadcasts reach ALL replicas instantly.
 #
 # NO sticky sessions required — any replica can serve any WebSocket client.
 # NO Redis dependency — ActionCable uses the same Cloud SQL instance as the app.
 #
-# Architecture:
-#   Sidekiq (job service) → broadcast(...) → INSERT into solid_cable_messages
-#   PostgreSQL → LISTEN/NOTIFY → All Puma workers on all replicas
-#   Each Puma worker → delivers to its connected WebSocket clients
+# ⚠️ Механізм — POLLING, не LISTEN/NOTIFY. Тут довго стояло «PostgreSQL
+# LISTEN/NOTIFY ensures broadcasts reach ALL replicas instantly»; у solid_cable
+# такого механізму НЕМА взагалі (нуль згадок на весь гем — перевірено джерелом).
+# Це не косметика: планувати ємність і латентність проти «instantly» замість
+# «10 Hz опитування на процес» означає мис-моделювати систему.
 #
-# Turbo Stream channels using this:
-#   - "geospatial_matrix" (map updates)
+# Architecture (як воно є):
+#   Sidekiq/Puma → broadcast(...) → один INSERT у solid_cable_messages
+#   Кожен web-процес → listener-тред → SELECT ... WHERE id > last_id
+#                       кожні `polling_interval` (нижче) → своїм WS-клієнтам
+#
+# Два наслідки, що з цього випливають:
+#   · латентність має ПІДЛОГУ ~polling_interval; вартість опитування росте з
+#     кількістю web-процесів, не з кількістю подій;
+#   · ціна броадкасту платиться НА ЗАПИСІ — рядок вставляється навіть якщо
+#     підписників нуль (на відміну від pub/sub, де такий броадкаст безкоштовний).
+#
+# Turbo Stream channels using this (звірено з кодом; реєстр — `04_04 §8.1`):
 #   - "telemetry_stream_org_#{id}" (live telemetry feed)
-#   - [@wallet, :transactions] (wallet balance)
 #   - "ews_alerts_org_#{id}" (alert notifications)
-#   - [@cluster, :alerts] (cluster alerts)
+#   - "geospatial_matrix_org_#{id}" (map updates)
+#   - "ota_channel_#{gateway_uid}" (OTA progress)
+#   - [@wallet, :transactions] · [@cluster, :alerts] · [@actuator, :commands]
 #
 # See: docs/06_02_Akash_Network_Integration.md (GCS bootstrap, resolved → INF.*)
 # =============================================================================
