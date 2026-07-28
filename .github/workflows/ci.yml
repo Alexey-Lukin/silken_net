@@ -474,8 +474,11 @@ jobs:
       # ⚠️ Two axes this job does NOT cover — do not read green as "i18n is fine":
       #  * It compares locales to EACH OTHER, never a locale to a model. An
       #    enum can grow while the YAML stays put and this stays green.
-      #    That axis is guarded by spec/services/tree_chronicle/
-      #    text_formatter_parity_spec.rb (00_07 I18N.1).
+      #    That axis is guarded by spec/i18n/enum_label_parity_spec.rb — the
+      #    curated source->scope registry (04_04 §12.14). Its sibling
+      #    text_formatter_parity_spec.rb owns a narrower slice (icon map +
+      #    "resolves through YAML, not the humanize fallback"), so citing that
+      #    one alone points the reader at the smaller net (00_07 I18N.1).
       #  * `raise_on_missing_translations` (test env) is NOT a net for the
       #    Phlex tree: ApplicationComponent#t resolves absolute keys through
       #    bare `I18n.t`, which that setting does not hook.
