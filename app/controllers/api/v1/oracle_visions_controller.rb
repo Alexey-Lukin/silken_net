@@ -39,19 +39,6 @@ module Api
         end
       end
 
-      # --- ПОВЕРНЕНО: Конфігурація для зовнішніх стрімів ---
-      # GET /api/v1/oracle_visions/stream_config?cluster_id=5
-      def stream_config
-        @cluster = current_user.organization.clusters.find(params[:cluster_id])
-
-        render json: {
-          stream_name: "oracle_visions_cluster_#{@cluster.id}",
-          # Використовуємо вбудований у Rails 8 механізм підпису токенів
-          auth_token: current_user.generate_token_for(:stream_access),
-          provider: "SolidCable"
-        }
-      end
-
       # POST /api/v1/oracle_visions/simulate
       def simulate
         # [TENANT-ISOLATION]: cluster_id must belong to the caller's organization.
@@ -59,7 +46,7 @@ module Api
         # unguarded admin from org A could trigger a simulation against org B's
         # cluster. `find` raises ActiveRecord::RecordNotFound which BaseController
         # renders as 404 — keeping the response shape identical to other IDOR
-        # guards (e.g. firmware deploy, stream_config).
+        # guards (e.g. firmware deploy).
         cluster = current_user.organization.clusters.find(params[:cluster_id])
 
         permitted_variables = params.permit(variables: [ :sigma, :rho, :beta ])[:variables]

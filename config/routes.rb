@@ -151,8 +151,7 @@ Rails.application.routes.draw do
       # ⊙ ВИДІННЯ ОРАКУЛА (Strategic Intelligence)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       resources :oracle_visions, only: [ :index ] do
-        post :simulate,      on: :collection
-        get  :stream_config, on: :collection
+        post :simulate, on: :collection
       end
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

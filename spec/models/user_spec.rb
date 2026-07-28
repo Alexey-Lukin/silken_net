@@ -479,24 +479,10 @@ RSpec.describe User, type: :model do
       expect(found).to eq(user)
     end
 
-    it "generates stream_access token using password_salt" do
-      token = user.generate_token_for(:stream_access)
-      expect(token).to be_present
-      found = described_class.find_by_token_for(:stream_access, token)
-      expect(found).to eq(user)
-    end
-
     it "invalidates password_reset token after password change" do
       token = user.generate_token_for(:password_reset)
       user.update!(password: "new_password_12345")
       found = described_class.find_by_token_for(:password_reset, token)
-      expect(found).to be_nil
-    end
-
-    it "invalidates stream_access token after password change" do
-      token = user.generate_token_for(:stream_access)
-      user.update!(password: "new_password_12345")
-      found = described_class.find_by_token_for(:stream_access, token)
       expect(found).to be_nil
     end
   end
@@ -516,13 +502,6 @@ RSpec.describe User, type: :model do
         expect(token).to be_present
         expect(described_class.find_by_token_for(:api_access, token)).to eq(user)
       end
-
-      it "generates a stream_access token" do
-        user = create(:user)
-        token = user.generate_token_for(:stream_access)
-        expect(token).to be_present
-        expect(described_class.find_by_token_for(:stream_access, token)).to eq(user)
-      end
     end
 
     context "when password_salt is nil" do
@@ -530,13 +509,6 @@ RSpec.describe User, type: :model do
         user = create(:user)
         allow(user).to receive(:password_salt).and_return(nil)
         token = user.generate_token_for(:password_reset)
-        expect(token).to be_present
-      end
-
-      it "generates a stream_access token even with nil salt" do
-        user = create(:user)
-        allow(user).to receive(:password_salt).and_return(nil)
-        token = user.generate_token_for(:stream_access)
         expect(token).to be_present
       end
     end

@@ -529,7 +529,7 @@ Cross-ref: [`00_07`](00_07_Action_Plan_Tracker) SEC.22, §5.2 (rotation entangle
 1. **Detection:** сесії/дії без відповідних login-подій (session-forge) · валідні `generates_token_for`-токени, яких ніхто не видавав · Sentry CSRF-аномалії.
 2. **Containment — два ключі, дві половини:**
    - Re-encrypt vault: `bin/rails credentials:edit` з новим master (commit нового `.enc`) — закриває ЧИТАННЯ vault'а, але **НЕ** revoke: той самий `secret_key_base` лишається → session/token-forge триває.
-   - Справжній revoke = **ротація `secret_key_base`** (інжект нового `SECRET_KEY_BASE` у deploy-ENV — механіка Phase-2 §5.7) = one-shot інвалідація **всіх**: dashboard-сесій · `password_reset` (15 хв) · `email_verification` (24 год) · **`api_access` (30 днів — найбільший операційний хвіст: усі API-клієнти re-issue)** · `stream_access` (1 год) · Codex battle-pairing HMAC (`Codex::PairSelectorService`, 5-хв TTL — найм'якший) · CSRF · ActiveStorage signed IDs.
+   - Справжній revoke = **ротація `secret_key_base`** (інжект нового `SECRET_KEY_BASE` у deploy-ENV — механіка Phase-2 §5.7) = one-shot інвалідація **всіх**: dashboard-сесій · `password_reset` (15 хв) · `email_verification` (24 год) · **`api_access` (30 днів — найбільший операційний хвіст: усі API-клієнти re-issue)** · Codex battle-pairing HMAC (`Codex::PairSelectorService`, 5-хв TTL — найм'якший) · CSRF · ActiveStorage signed IDs.
 3. **Recovery:** користувачі re-login (очікуваний support-сплеск), API-інтеграції перевипускають токени; даних не втрачено (AR-encryption ключі — ОКРЕМІ ENV-секрети §5.7, цим інцидентом не зачеплені).
 4. **Post-Incident:** як A.4 + якщо вектор = витік із running-process на Akash — аргумент прискорити Phase-2 drop `RAILS_MASTER_KEY` (§5.7).
 

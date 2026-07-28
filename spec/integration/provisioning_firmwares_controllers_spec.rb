@@ -352,16 +352,6 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
       json = response.parsed_body
       expect(json).to include("visions", "emission_forecast")
     end
-
-    it "GET /api/v1/oracle_visions/stream_config returns config" do
-      get "/api/v1/oracle_visions/stream_config",
-          params: { cluster_id: cluster.id },
-          headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
-      json = response.parsed_body
-      expect(json["stream_name"]).to include(cluster.id.to_s)
-    end
   end
 
   # ---------------------------------------------------------------------------

@@ -839,7 +839,6 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `password_reset` | 15 хв | `password_salt.last(10)` |
 | `email_verification` | 24 год | `email_address` |
 | `api_access` | 30 днів | `password_salt.last(10)` (згорає при зміні пароля) |
-| `stream_access` | 1 год | `password_salt.last(10)` |
 
 **Ключові поля:**
 

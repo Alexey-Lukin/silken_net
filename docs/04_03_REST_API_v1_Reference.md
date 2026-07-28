@@ -296,59 +296,58 @@ Policy-хелпер `admin_or_above?` (`ApplicationPolicy` + `Scope`) = `admin` 
 | **⊙ Оракул (AI Insights)** | | | | | |
 | 66 | GET | `/api/v1/oracle_visions` | `oracle_visions#index` | 🌿 Forester | AI-прогнози та SCC-врожайність |
 | 67 | POST | `/api/v1/oracle_visions/simulate` | `oracle_visions#simulate` | 👑 Admin | Запустити Lorenz-симуляцію |
-| 68 | GET | `/api/v1/oracle_visions/stream_config?cluster_id=:id` | `oracle_visions#stream_config` | 🌿 Forester | Конфіг підписки на стрім. `cluster_id` — обов'язковий query param. 404 при невідомому `cluster_id`. |
 | **⛓️ Блокчейн** | | | | | |
-| 69 | GET | `/api/v1/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій. Query: `?token_type=` (allow-list з `BlockchainTransaction.token_types.keys`: `carbon_coin`, `forest_coin`, `cusd`), `?status=` (allow-list з `.statuses.keys`). Невідомі значення → `400 Bad Request`. |
-| 70 | GET | `/api/v1/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції |
-| 71 | GET | `/api/v1/blockchain_transactions/:id/on_chain` | `blockchain_transactions#on_chain` | 🔑 Auth | On-chain верифікація (Turbo Frame) |
-| 72 | POST | `/api/v1/oracle_callbacks` | `oracle_callbacks#create` | 🌐 Public (HMAC) | Chainlink Oracle callback — захищено `X-Chainlink-Signature` HMAC-SHA256 |
+| 68 | GET | `/api/v1/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій. Query: `?token_type=` (allow-list з `BlockchainTransaction.token_types.keys`: `carbon_coin`, `forest_coin`, `cusd`), `?status=` (allow-list з `.statuses.keys`). Невідомі значення → `400 Bad Request`. |
+| 69 | GET | `/api/v1/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції |
+| 70 | GET | `/api/v1/blockchain_transactions/:id/on_chain` | `blockchain_transactions#on_chain` | 🔑 Auth | On-chain верифікація (Turbo Frame) |
+| 71 | POST | `/api/v1/oracle_callbacks` | `oracle_callbacks#create` | 🌐 Public (HMAC) | Chainlink Oracle callback — захищено `X-Chainlink-Signature` HMAC-SHA256 |
 | **🔔 Сповіщення** | | | | | |
-| 73 | GET | `/api/v1/notifications/settings` | `notifications#settings` | 🔑 Auth | Поточні канали сповіщень |
-| 74 | PATCH | `/api/v1/notifications/settings` | `notifications#update_settings` | 🔑 Auth | Оновити канали сповіщень |
+| 72 | GET | `/api/v1/notifications/settings` | `notifications#settings` | 🔑 Auth | Поточні канали сповіщень |
+| 73 | PATCH | `/api/v1/notifications/settings` | `notifications#update_settings` | 🔑 Auth | Оновити канали сповіщень |
 | **📊 Звіти** | | | | | |
-| 75 | GET | `/api/v1/reports` | `reports#index` | 🔑 Auth | Зведена аналітика організації |
-| 76 | GET | `/api/v1/reports/carbon_absorption` | `reports#carbon_absorption` | 🔑 Auth | Звіт CO₂-поглинання (JSON/CSV/PDF) |
-| 77 | GET | `/api/v1/reports/financial_summary` | `reports#financial_summary` | 🔑 Auth | Фінансовий звіт (JSON/CSV/PDF) |
+| 74 | GET | `/api/v1/reports` | `reports#index` | 🔑 Auth | Зведена аналітика організації |
+| 75 | GET | `/api/v1/reports/carbon_absorption` | `reports#carbon_absorption` | 🔑 Auth | Звіт CO₂-поглинання (JSON/CSV/PDF) |
+| 76 | GET | `/api/v1/reports/financial_summary` | `reports#financial_summary` | 🔑 Auth | Фінансовий звіт (JSON/CSV/PDF) |
 | **🧠 Налаштування** | | | | | |
-| 78 | GET | `/api/v1/settings` | `settings#show` | 👑 Admin | Налаштування організації |
-| 79 | PATCH | `/api/v1/settings` | `settings#update` | 👑 Admin | Оновити налаштування |
+| 77 | GET | `/api/v1/settings` | `settings#show` | 👑 Admin | Налаштування організації |
+| 78 | PATCH | `/api/v1/settings` | `settings#update` | 👑 Admin | Оновити налаштування |
 | **👁️ Аудит** | | | | | |
-| 80 | GET | `/api/v1/audit_logs` | `audit_logs#index` | 👑 Admin | Журнал дій (AuditLog) |
-| 81 | GET | `/api/v1/audit_logs/:id` | `audit_logs#show` | 👑 Admin | Деталі події аудиту |
+| 79 | GET | `/api/v1/audit_logs` | `audit_logs#index` | 👑 Admin | Журнал дій (AuditLog) |
+| 80 | GET | `/api/v1/audit_logs/:id` | `audit_logs#show` | 👑 Admin | Деталі події аудиту |
 | **⚡ Ініціація Пристроїв** | | | | | |
-| 82 | GET | `/api/v1/provisioning/new` | `provisioning#new` | 🌿 Forester | Форма реєстрації пристрою |
-| 83 | POST | `/api/v1/provisioning/register` | `provisioning#register` | 🌿 Forester | **Реєстрація нового вузла (Tree/Gateway) — HKDF key derivation** |
+| 81 | GET | `/api/v1/provisioning/new` | `provisioning#new` | 🌿 Forester | Форма реєстрації пристрою |
+| 82 | POST | `/api/v1/provisioning/register` | `provisioning#register` | 🌿 Forester | **Реєстрація нового вузла (Tree/Gateway) — HKDF key derivation** |
 | **⚙️ Системний Моніторинг** | | | | | |
-| 84 | GET | `/api/v1/system_health` | `system_health#show` | 👑 Admin | Стан CoAP/Sidekiq/DB |
-| 85 | GET | `/api/v1/system_audits` | `system_audits#index` | 🔑 Auth | Аудит синхронізації DB↔Blockchain |
+| 83 | GET | `/api/v1/system_health` | `system_health#show` | 👑 Admin | Стан CoAP/Sidekiq/DB |
+| 84 | GET | `/api/v1/system_audits` | `system_audits#index` | 🔑 Auth | Аудит синхронізації DB↔Blockchain |
 | **📖 Codex (Lore Layer)** | | | | | |
-| 86 | GET | `/api/v1/codex/realms` | `codex/realms#index` | 🔑 Auth | Список 4 шарів Codex (ecosystem / unique_tree / protocol / mythos), упорядкованих за `position` |
-| 87 | GET | `/api/v1/codex/nodes` | `codex/nodes#index` | 🔑 Auth | Каталог lore-вузлів. Фільтри: `?realm=`, `?lifecycle_status=`, `?archetype=`, `?q=` (trigram-fuzzy ILIKE по обох locale). Пагінація Pagy `?page=&limit=21`. Сортування: `attunement_elo DESC, id ASC`. |
-| 88 | GET | `/api/v1/codex/nodes/:slug` | `codex/nodes#show` | 🔑 Auth | Деталі lore-вузла за `slug` (не за `id`). Атомарно інкрементить `view_count` через `update_all`. Чернетки (`published_at IS NULL`) приховані для не-super_admin. |
-| 89 | POST | `/api/v1/codex/nodes/:slug/attunements` | `codex/attunements#create` | 🔑 Auth | **Phase 2:** toggle ON. `attunement[intensity]` (1..5, default 3), `attunement[quote]` (≤ 280). Idempotent (UNIQUE per user+node) — re-POST оновлює, не дублює. ⚠️ **Броадкасту НЕМА:** `Codex::AttunementBroadcastWorker` видалено 2026-07-27 ([`UI.2`](00_07_Action_Plan_Tracker) — сирий ActionCable без жодного підписника), лічильник приходить із рендером і освіжається перезавантаженням. Rack::Attack: 120 / 1h / actor. |
-| 90 | DELETE | `/api/v1/codex/nodes/:slug/attunements/me` | `codex/attunements#destroy` | 🔑 Auth | **Phase 2:** toggle OFF. Безпечний no-op якщо attunement відсутній. ⚠️ Броадкасту немає (див. ↑). |
-| 91 | POST | `/api/v1/codex/nodes/:slug/comments` | `codex/comments#create` | 🔑 Auth | **Phase 2:** новий коментар (≤ 2 KiB markdown). `Idempotency-Key` обов'язковий для `Content-Type: application/json` (24h TTL). Підтримує `comment[parent_id]` для одного рівня вкладеності. ⚠️ **Inline-броадкаст знято 2026-07-27** ([`UI.2`](00_07_Action_Plan_Tracker)) — новий коментар видно після перезавантаження; `codex_node_<id>_comments` лишається лише DOM-якорем списку. Rack::Attack: 60 / 10min / actor. |
-| 92 | POST | `/api/v1/codex/fractions` | `codex/fractions#create` | 🔑 Auth | **Phase 3:** обрати/змінити фракцію. Body: `{ fraction: { node_slug } }`. Success → 201 + `FractionBlueprint`. Cooldown active (7 днів) → 429 + `cooldown_until`. Lifecycle `destroyed`/`extinct` → 422. Тригерить `Codex::FractionAuditWorker` (queue `default`). Rack::Attack: 60 / 1day / actor. |
-| 93 | GET | `/api/v1/codex/fractions/me` | `codex/fractions#show` | 🔑 Auth | **Phase 3:** поточна фракція caller'а. JSON: `FractionBlueprint` або 204 коли немає; HTML: `Codex::Fractions::Card` Phlex компонент (для Turbo Frame embed). |
-| 94 | GET | `/api/v1/codex/fractions/picker` | `codex/fractions#picker` | 🔑 Auth | **Phase 3:** Turbo Frame фрагмент з grid pickable nodes (`?realm=<slug>`). Виключає `destroyed`/`extinct` lifecycle. Підсвічує current fraction; disable-кнопки під час cooldown. |
-| 95 | GET | `/api/v1/codex/matches/new` | `codex/matches#new` | 🔑 Auth | **Phase 4:** Turbo Frame Arena з парою + HMAC-signed `pair_seed` (TTL 5 хв у Redis). `?realm=<slug>`. Підбір через `Codex::PairSelectorService` (anchor weighted by inverse match_count, opponent у Elo bucket ±200). 422 коли в realm < 2 pickable nodes. |
-| 96 | POST | `/api/v1/codex/matches` | `codex/matches#create` | 🔑 Auth | **Phase 4:** body `{ pair_seed, winner_slug?, skip? }`. `Codex::VoteRecorderService` consume'ить seed (atomic GETDEL → replay-proof) + створює Match + enqueue `EloRecomputeWorker` (queue `low`). 201 + Blueprint при успіху; 403 `seed_invalid_or_consumed` при replay; 422 при `winner_not_in_pair`. Rack::Attack: 60 / 1min / actor. |
-| 97 | GET | `/api/v1/codex/leaderboard` | `codex/leaderboard#index` | 🌐 Public | **Phase 4:** top-N Elo для realm (`?realm=<slug>&limit=<N≤100, default 25>`). HTML — `Codex::Leaderboard::Table` Phlex; JSON — масив `{slug, title_uk, title_en, attunement_elo, match_count, lifecycle_status}`. Виключає `destroyed`/`extinct`. |
-| 98 | GET | `/api/v1/codex/discoveries/me` | `codex/discoveries#index` | 🔑 Auth | **Phase 5:** paginated own unlock collection (`?page=N&limit≤21`). HTML — `Codex::Discoveries::List` Phlex (3-col grid + empty-state); JSON — `{ data: [DiscoveryBlueprint], meta: { count, page, pages } }`. Pundit-scoped до own user. |
-| 99 | GET | `/api/v1/codex/admin/discovery_rules` | `codex/admin/discovery_rules#index` | 🛡️ Admin+ | **Phase 5:** список усіх DAO-правил unlock'у. JSON масив `DiscoveryRuleBlueprint`. 403 для `forester`/`investor`. |
-| 100 | POST | `/api/v1/codex/admin/discovery_rules` | `codex/admin/discovery_rules#create` | 🛡️ Admin+ | **Phase 5:** body `{name, codex_node_id, condition_type, threshold_value, params: {...}, active}`. Зберігає `created_by_user_id = current_user.id`; busts engine cache на `after_commit`. 201 / 422. |
-| 101 | GET | `/api/v1/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#show` | 🛡️ Admin+ | **Phase 5:** показує одне правило. |
-| 102 | PATCH/PUT | `/api/v1/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#update` | 🛡️ Admin+ | **Phase 5:** часткове оновлення (`active`, threshold, params); busts engine cache → DAO change visible to workers ≤ 1 sec. 200 / 422. |
-| 103 | DELETE | `/api/v1/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#destroy` | 🛡️ Admin+ | **Phase 5:** 204; busts engine cache. |
-| 104 | POST | `/api/v1/codex/citations` | `codex/citations#create` | 🌿 Forester+ | **Phase 6:** body `{codex_node_slug, citable_type, citable_id, note?}`. `citable_type ∈ {Tree, Cluster, AiInsight, EwsAlert, OracleVision, NaasContract}`. Idempotency-Key обов'язкова для JSON; replay → 200 з тим самим payload. DB-UNIQUE → 422 для дублікатів. Bogus type → 400. ⚠️ **Броадкасту немає** — знято 2026-07-27 ([`UI.2`](00_07_Action_Plan_Tracker)); `codex_citations_<type>_<id>` = стабільний DOM-якір без продюсера ([`04_04 §6`](04_04_Phlex_UI_and_Tailwind)). 201 / 200 (replay) / 400 / 403 / 422. |
-| 105 | DELETE | `/api/v1/codex/citations/:id` | `codex/citations#destroy` | 🌿 Forester+ | **Phase 6:** видалення власної цитати у 24-год вікні; admin+ обходить grace. ⚠️ Броадкасту немає (див. ↑). 204 / 403 / 404. |
-| 106 | GET | `/api/v1/codex/admin/nodes` | `codex/admin/nodes#index` | 🛡️ Admin+ | **Phase 6:** усі Node-рядки (включно з draft `published_at IS NULL`) для DAO-модерації. JSON `{ data: [NodeBlueprint] }`. 403 для forester/investor. |
-| 107 | GET | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#show` | 🛡️ Admin+ | **Phase 6:** один Node з full `:show` view (lore, external_refs, view_count). |
-| 108 | POST | `/api/v1/codex/admin/nodes` | `codex/admin/nodes#create` | 👑 Super Admin only | **Phase 6:** мінтить новий DAO Node з `seed_origin: :dao_proposal`. Атомарне створення; `archetype_key` має бути в `Codex::ARCHETYPES`, `codex_uid` має формат `CDX-(ECO\|TRE\|PRT\|MYT)-NNNN`. 201 / 403 (admin) / 422. |
-| 109 | PATCH/PUT | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#update` | 🛡️ Admin+ | **Phase 6:** часткове оновлення (publish toggle, geo correction, lore copy). Invalid `lifecycle_status` → 422 (Rails 8 enum ArgumentError ловиться). 200 / 403 / 422. |
-| 110 | DELETE | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#destroy` | 👑 Super Admin only | **Phase 6:** retire Node; cascades through `dependent: :destroy` на `citations`/`comments`/`attunements`/`discoveries`/`fractions`. 204 / 403 (admin). |
+| 85 | GET | `/api/v1/codex/realms` | `codex/realms#index` | 🔑 Auth | Список 4 шарів Codex (ecosystem / unique_tree / protocol / mythos), упорядкованих за `position` |
+| 86 | GET | `/api/v1/codex/nodes` | `codex/nodes#index` | 🔑 Auth | Каталог lore-вузлів. Фільтри: `?realm=`, `?lifecycle_status=`, `?archetype=`, `?q=` (trigram-fuzzy ILIKE по обох locale). Пагінація Pagy `?page=&limit=21`. Сортування: `attunement_elo DESC, id ASC`. |
+| 87 | GET | `/api/v1/codex/nodes/:slug` | `codex/nodes#show` | 🔑 Auth | Деталі lore-вузла за `slug` (не за `id`). Атомарно інкрементить `view_count` через `update_all`. Чернетки (`published_at IS NULL`) приховані для не-super_admin. |
+| 88 | POST | `/api/v1/codex/nodes/:slug/attunements` | `codex/attunements#create` | 🔑 Auth | **Phase 2:** toggle ON. `attunement[intensity]` (1..5, default 3), `attunement[quote]` (≤ 280). Idempotent (UNIQUE per user+node) — re-POST оновлює, не дублює. ⚠️ **Броадкасту НЕМА:** `Codex::AttunementBroadcastWorker` видалено 2026-07-27 ([`UI.2`](00_07_Action_Plan_Tracker) — сирий ActionCable без жодного підписника), лічильник приходить із рендером і освіжається перезавантаженням. Rack::Attack: 120 / 1h / actor. |
+| 89 | DELETE | `/api/v1/codex/nodes/:slug/attunements/me` | `codex/attunements#destroy` | 🔑 Auth | **Phase 2:** toggle OFF. Безпечний no-op якщо attunement відсутній. ⚠️ Броадкасту немає (див. ↑). |
+| 90 | POST | `/api/v1/codex/nodes/:slug/comments` | `codex/comments#create` | 🔑 Auth | **Phase 2:** новий коментар (≤ 2 KiB markdown). `Idempotency-Key` обов'язковий для `Content-Type: application/json` (24h TTL). Підтримує `comment[parent_id]` для одного рівня вкладеності. ⚠️ **Inline-броадкаст знято 2026-07-27** ([`UI.2`](00_07_Action_Plan_Tracker)) — новий коментар видно після перезавантаження; `codex_node_<id>_comments` лишається лише DOM-якорем списку. Rack::Attack: 60 / 10min / actor. |
+| 91 | POST | `/api/v1/codex/fractions` | `codex/fractions#create` | 🔑 Auth | **Phase 3:** обрати/змінити фракцію. Body: `{ fraction: { node_slug } }`. Success → 201 + `FractionBlueprint`. Cooldown active (7 днів) → 429 + `cooldown_until`. Lifecycle `destroyed`/`extinct` → 422. Тригерить `Codex::FractionAuditWorker` (queue `default`). Rack::Attack: 60 / 1day / actor. |
+| 92 | GET | `/api/v1/codex/fractions/me` | `codex/fractions#show` | 🔑 Auth | **Phase 3:** поточна фракція caller'а. JSON: `FractionBlueprint` або 204 коли немає; HTML: `Codex::Fractions::Card` Phlex компонент (для Turbo Frame embed). |
+| 93 | GET | `/api/v1/codex/fractions/picker` | `codex/fractions#picker` | 🔑 Auth | **Phase 3:** Turbo Frame фрагмент з grid pickable nodes (`?realm=<slug>`). Виключає `destroyed`/`extinct` lifecycle. Підсвічує current fraction; disable-кнопки під час cooldown. |
+| 94 | GET | `/api/v1/codex/matches/new` | `codex/matches#new` | 🔑 Auth | **Phase 4:** Turbo Frame Arena з парою + HMAC-signed `pair_seed` (TTL 5 хв у Redis). `?realm=<slug>`. Підбір через `Codex::PairSelectorService` (anchor weighted by inverse match_count, opponent у Elo bucket ±200). 422 коли в realm < 2 pickable nodes. |
+| 95 | POST | `/api/v1/codex/matches` | `codex/matches#create` | 🔑 Auth | **Phase 4:** body `{ pair_seed, winner_slug?, skip? }`. `Codex::VoteRecorderService` consume'ить seed (atomic GETDEL → replay-proof) + створює Match + enqueue `EloRecomputeWorker` (queue `low`). 201 + Blueprint при успіху; 403 `seed_invalid_or_consumed` при replay; 422 при `winner_not_in_pair`. Rack::Attack: 60 / 1min / actor. |
+| 96 | GET | `/api/v1/codex/leaderboard` | `codex/leaderboard#index` | 🌐 Public | **Phase 4:** top-N Elo для realm (`?realm=<slug>&limit=<N≤100, default 25>`). HTML — `Codex::Leaderboard::Table` Phlex; JSON — масив `{slug, title_uk, title_en, attunement_elo, match_count, lifecycle_status}`. Виключає `destroyed`/`extinct`. |
+| 97 | GET | `/api/v1/codex/discoveries/me` | `codex/discoveries#index` | 🔑 Auth | **Phase 5:** paginated own unlock collection (`?page=N&limit≤21`). HTML — `Codex::Discoveries::List` Phlex (3-col grid + empty-state); JSON — `{ data: [DiscoveryBlueprint], meta: { count, page, pages } }`. Pundit-scoped до own user. |
+| 98 | GET | `/api/v1/codex/admin/discovery_rules` | `codex/admin/discovery_rules#index` | 🛡️ Admin+ | **Phase 5:** список усіх DAO-правил unlock'у. JSON масив `DiscoveryRuleBlueprint`. 403 для `forester`/`investor`. |
+| 99 | POST | `/api/v1/codex/admin/discovery_rules` | `codex/admin/discovery_rules#create` | 🛡️ Admin+ | **Phase 5:** body `{name, codex_node_id, condition_type, threshold_value, params: {...}, active}`. Зберігає `created_by_user_id = current_user.id`; busts engine cache на `after_commit`. 201 / 422. |
+| 100 | GET | `/api/v1/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#show` | 🛡️ Admin+ | **Phase 5:** показує одне правило. |
+| 101 | PATCH/PUT | `/api/v1/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#update` | 🛡️ Admin+ | **Phase 5:** часткове оновлення (`active`, threshold, params); busts engine cache → DAO change visible to workers ≤ 1 sec. 200 / 422. |
+| 102 | DELETE | `/api/v1/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#destroy` | 🛡️ Admin+ | **Phase 5:** 204; busts engine cache. |
+| 103 | POST | `/api/v1/codex/citations` | `codex/citations#create` | 🌿 Forester+ | **Phase 6:** body `{codex_node_slug, citable_type, citable_id, note?}`. `citable_type ∈ {Tree, Cluster, AiInsight, EwsAlert, OracleVision, NaasContract}`. Idempotency-Key обов'язкова для JSON; replay → 200 з тим самим payload. DB-UNIQUE → 422 для дублікатів. Bogus type → 400. ⚠️ **Броадкасту немає** — знято 2026-07-27 ([`UI.2`](00_07_Action_Plan_Tracker)); `codex_citations_<type>_<id>` = стабільний DOM-якір без продюсера ([`04_04 §6`](04_04_Phlex_UI_and_Tailwind)). 201 / 200 (replay) / 400 / 403 / 422. |
+| 104 | DELETE | `/api/v1/codex/citations/:id` | `codex/citations#destroy` | 🌿 Forester+ | **Phase 6:** видалення власної цитати у 24-год вікні; admin+ обходить grace. ⚠️ Броадкасту немає (див. ↑). 204 / 403 / 404. |
+| 105 | GET | `/api/v1/codex/admin/nodes` | `codex/admin/nodes#index` | 🛡️ Admin+ | **Phase 6:** усі Node-рядки (включно з draft `published_at IS NULL`) для DAO-модерації. JSON `{ data: [NodeBlueprint] }`. 403 для forester/investor. |
+| 106 | GET | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#show` | 🛡️ Admin+ | **Phase 6:** один Node з full `:show` view (lore, external_refs, view_count). |
+| 107 | POST | `/api/v1/codex/admin/nodes` | `codex/admin/nodes#create` | 👑 Super Admin only | **Phase 6:** мінтить новий DAO Node з `seed_origin: :dao_proposal`. Атомарне створення; `archetype_key` має бути в `Codex::ARCHETYPES`, `codex_uid` має формат `CDX-(ECO\|TRE\|PRT\|MYT)-NNNN`. 201 / 403 (admin) / 422. |
+| 108 | PATCH/PUT | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#update` | 🛡️ Admin+ | **Phase 6:** часткове оновлення (publish toggle, geo correction, lore copy). Invalid `lifecycle_status` → 422 (Rails 8 enum ArgumentError ловиться). 200 / 403 / 422. |
+| 109 | DELETE | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#destroy` | 👑 Super Admin only | **Phase 6:** retire Node; cascades through `dependent: :destroy` на `citations`/`comments`/`attunements`/`discoveries`/`fractions`. 204 / 403 (admin). |
 | **🌐 Локалізація** | | | | | |
-| 111 | POST | `/api/v1/locale` | `locales#update` | 🌐 Public | Переключення локалі: cookie (постійна) + `I18n.locale` на поточний запит; значення валідується проти `available_locales` — перелік НЕ дублюється тут (він росте, [`04_04 §12.2`](04_04_Phlex_UI_and_Tailwind)). Залогіненому ще й **персиститься** в `users.locale` (guard дзеркалить [SEC.16] salt-stamp), бо пошта рендериться в Sidekiq, куди cookie не доїжджає. Редірект `back` |
+| 110 | POST | `/api/v1/locale` | `locales#update` | 🌐 Public | Переключення локалі: cookie (постійна) + `I18n.locale` на поточний запит; значення валідується проти `available_locales` — перелік НЕ дублюється тут (він росте, [`04_04 §12.2`](04_04_Phlex_UI_and_Tailwind)). Залогіненому ще й **персиститься** в `users.locale` (guard дзеркалить [SEC.16] salt-stamp), бо пошта рендериться в Sidekiq, куди cookie не доїжджає. Редірект `back` |
 | **🩺 Health-проби (root-level, поза `/api/v1`)** | | | | | |
 | — | GET | `/up` | `rails/health#show` | 🌐 Public | **Liveness** — процес живий (без перевірки залежностей). Виключено з `force_ssl`/host-auth redirect + Rack::Attack throttle. |
 | — | GET | `/ready` | `readiness#show` | 🌐 Public | **Readiness** — DB + Redis (Sidekiq + Kredis) round-trip → 200 `ready` / 503 `not_ready` (ops: [`06_05`](06_05_Puma_Configuration)). Ті самі виключення, що `/up`. |
@@ -1231,10 +1230,7 @@ if (days_until_token_expiry() < 7) {
    → Base64-encoded бінарний батч у тілі запиту (якщо CoAP/UDP недоступний).
    → НЕ використовувати GET для передачі телеметрії.
 
-4. [За потребою] GET /api/v1/oracle_visions/stream_config?cluster_id=7
-   → Отримати токен підписки на ПІДПИСАНИЙ Turbo-стрім (сирий ActionCable знято 2026-07-27 — SEC).
-
-5. [Автоматично] POST /api/v1/oracle_callbacks
+4. [Автоматично] POST /api/v1/oracle_callbacks
    → Chainlink викликає цей endpoint після on-chain верифікації.
    → Авторизація через HMAC-SHA256 підпис в заголовку X-Chainlink-Signature.
    → Встановіть CHAINLINK_HMAC_SECRET в ENV для Production режиму.
