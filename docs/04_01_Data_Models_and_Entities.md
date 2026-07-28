@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 37 моделей (28 ядра + 9 шар Codex / Lore — Realm, Node, Citation у Phase 1; Comment, Attunement у Phase 2; Fraction у Phase 3; Match у Phase 4; Discovery, DiscoveryRule у Phase 5), 7 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу SilkenNet.
+Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** усіх моделей (ядро + шар Codex / Lore — Realm, Node, Citation у Phase 1; Comment, Attunement у Phase 2; Fraction у Phase 3; Match у Phase 4; Discovery, DiscoveryRule у Phase 5), concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Повнота реєстру гейтована `scripts/model_doc_sync.rb`, тому лічильники тут свідомо не наводяться — попередній ручний лічильник уже мовчки протухав (§12). Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу SilkenNet.
 
 ---
 
@@ -895,6 +895,35 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `locked_at` | datetime | Час блокування (Account Takeover Protection) |
 
 **Ключові методи:** `find_or_create_from_auth_hash(auth_hash, user:)`, `token_expired?`, `locked?`, `lock!`, `unlock!`, `make_primary!`.
+
+---
+
+### `Current` — Контекст Виконавця Запиту [SEC.25 Ф2]
+
+**Не AR-модель** — `ActiveSupport::CurrentAttributes` (живе в `app/models/`, звідси й місце
+в цьому реєстрі). Per-request, скидається Rails-екзекутором між запитами; поза HTTP
+(Sidekiq) не виставляється взагалі.
+
+| Атрибут | Опис |
+|---------|------|
+| `acting_organization_id` | Організація, в контексті якої виконується запит |
+| `home_organization_id` | Власна організація виконавця (колонка `users.organization_id`) |
+
+**Ключовий метод:** `switched_context?` — істина, коли super_admin працює в чужій
+організації. Єдиний споживач — `Auditable#record_audit_trail!`, який за цією ознакою
+дописує в `metadata` мітку `acting_organization_id` + `actor_home_organization_id`.
+Без неї організація бачила б наслідок привілейованої дії (OTA-деплой, команда
+актуатору, зміна налаштувань) без сліду, що виконавець прийшов ззовні — сам факт
+перемикання лежить окремим записом, і зшивати їх довелося б руками по часу.
+
+🔴 **Чого сюди класти НЕ можна — і це головне про цей клас.** Тут немає й не повинно
+бути організації як **джерела скоупу**. Скоуп даних живе в
+`Api::V1::BaseController#acting_organization` і доїжджає до Pundit явним `UserContext`,
+тобто передається аргументом. Амбієнтна організація була б доступна і в моделі, і в
+воркері, і всередині `Turbo::StreamsChannel.broadcast_*` — а там діє ПРОТИЛЕЖНЕ
+правило: броадкаст іде в організацію **власника ресурсу** (`cluster.organization_id`),
+не глядача. Один `Current.organization` у продюсері — і оновлення чужої організації
+поїхали б у стрім того, хто щойно перемкнув контекст. Тому тут лише id, лише для сліду.
 
 ---
 

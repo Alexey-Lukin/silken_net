@@ -56,4 +56,41 @@ RSpec.describe Auditable do
       expect(Rails.logger).to have_received(:warn).with(/AuditLog skip probe/)
     end
   end
+
+  # [SEC.25 Ф2] Дія з перемкнутого контексту (super_admin працює в чужій організації)
+  # мусить нести це в сліді — інакше організація бачить наслідок без запису про те,
+  # що виконавець прийшов ззовні.
+  describe "мітка перемкнутого контексту" do
+    let(:human) { create(:user) }
+
+    after { Current.reset }
+
+    it "додає acting-контекст, коли організації різні" do
+      Current.acting_organization_id = 42
+      Current.home_organization_id = 7
+
+      host.record_audit_trail!(action: "probe", organization_id: 42, auditable: nil, user_id: human.id)
+
+      metadata = AuditLogWorker.jobs.last["args"].first["metadata"]
+      expect(metadata["acting_organization_id"]).to eq(42)
+      expect(metadata["actor_home_organization_id"]).to eq(7)
+    end
+
+    it "НЕ додає мітки, коли людина працює у власній організації" do
+      Current.acting_organization_id = 7
+      Current.home_organization_id = 7
+
+      host.record_audit_trail!(action: "probe", organization_id: 7, auditable: nil, user_id: human.id)
+
+      expect(AuditLogWorker.jobs.last["args"].first["metadata"]).to be_empty
+    end
+
+    # Sidekiq `Current` не виставляє: відсутність мітки має читатись як «системна
+    # дія», а не як загублений слід.
+    it "НЕ додає мітки на системному шляху, де контексту немає взагалі" do
+      host.record_audit_trail!(action: "probe", organization_id: nil, auditable: nil, user_id: human.id)
+
+      expect(AuditLogWorker.jobs.last["args"].first["metadata"]).to be_empty
+    end
+  end
 end

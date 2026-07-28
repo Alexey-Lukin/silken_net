@@ -43,9 +43,31 @@ module Auditable
         auditable_id: auditable&.id,
         ip_address: ip_address,
         user_agent: user_agent,
-        metadata: metadata
+        metadata: with_acting_context(metadata)
       },
       archive: archive
+    )
+  end
+
+  private
+
+  # [SEC.25 Ф2] Дія, виконана з ПЕРЕМКНУТОГО контексту, мусить нести це в сліді.
+  # Інакше організація бачить наслідок (OTA-деплой, команду актуатору, зміну
+  # налаштувань) і не бачить, що виконавець прийшов ззовні: сам факт перемикання
+  # лежить окремим записом, і зшивати його з дією довелося б руками по часу.
+  #
+  # Мітка ставиться ТУТ, а не в п'ятьох названих екшенах, бо перелік «записуючих
+  # дій» дрейфує з кожним новим ендпоінтом, а цей хук — єдиний спільний шов усіх
+  # привілейованих мутацій.
+  #
+  # Порожньо для системних шляхів: Sidekiq `Current` не виставляє, тож відсутність
+  # мітки читається як «системна дія», а не як загублений слід.
+  def with_acting_context(metadata)
+    return metadata unless Current.switched_context?
+
+    metadata.merge(
+      acting_organization_id: Current.acting_organization_id,
+      actor_home_organization_id: Current.home_organization_id
     )
   end
 end

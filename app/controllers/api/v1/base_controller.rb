@@ -37,6 +37,9 @@ module Api
 
       # --- ПОРЯДОК ЗАХИСТУ ---
       before_action :authenticate_user!
+      # Слід для ARCH.57: ставиться ПІСЛЯ автентифікації (раніше немає кого писати)
+      # і несе лише id — див. застереження в `Current`.
+      before_action :expose_acting_context
 
       # --- ОБРОБКА ПОМИЛОК (The Safety Net) ---
       # Ми не даємо хакеру зрозуміти природу помилки, але даємо розробнику чіткий JSON
@@ -184,6 +187,14 @@ module Api
       # у браузері. Тепер шлях один і керований.
       def acting_organization!
         acting_organization || raise(NoActingOrganization)
+      end
+
+      # Читання org тут навмисне НЕ-bang: контролери, що організації не потребують
+      # (codex, платформені, webhook'и), не мусять падати лише через те, що ми
+      # ставимо слід для аудиту.
+      def expose_acting_context
+        Current.acting_organization_id = acting_organization&.id
+        Current.home_organization_id = current_user&.organization_id
       end
 
       def resolve_acting_organization
