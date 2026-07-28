@@ -328,8 +328,8 @@ dormant ──reactivate──► active
 | Зв'язок | Тип | Опис |
 |---------|-----|------|
 | `organization` | `belongs_to` | Власник |
-| `trees` | `has_many, dependent: :nullify` | Солдати |
-| `gateways` | `has_many, dependent: :nullify` | Королеви |
+| `trees` | `has_many, dependent: :nullify` | Солдати (`trees.cluster_id` **нульабельний** + `belongs_to :cluster, optional: true` → каскад справді виконується) |
+| `gateways` | `has_many, dependent: :nullify` | Королеви. ⚠️ **Ця декларація виконатись НЕ МОЖЕ** — `gateways.cluster_id` це `NOT NULL`, тож єдиний можливий вихід каскаду це `PG::NotNullViolation` (виміряно рантаймом). Латентно лише тому, що жоден живий шлях не видаляє кластер із живим шлюзом. Присуд (`:restrict_with_error` проти нульабельної колонки) — [`00_07`](00_07_Action_Plan_Tracker) ARCH.76 |
 | `naas_contracts` | `has_many, dependent: :restrict_with_error` | Захист фінансової історії |
 | `parametric_insurances` | `has_many, dependent: :restrict_with_error` | Захист страхової історії |
 | `ews_alerts` | `has_many, dependent: :delete_all` | Тривоги сектора |
@@ -1594,7 +1594,7 @@ Organization
   │     │     ├── EwsAlerts (delete_all)
   │     │     ├── MaintenanceRecords (delete_all)
   │     │     └── AiInsights polymorphic (delete_all)
-  │     ├── Gateways (nullify)
+  │     ├── Gateways (nullify ⚠️ НЕВИКОНУВАНИЙ — cluster_id NOT NULL → ARCH.76)
   │     │     ├── HardwareKey (destroy)
   │     │     ├── GatewayTelemetryLogs (delete_all) ← PARTITION
   │     │     ├── Actuators (destroy)
