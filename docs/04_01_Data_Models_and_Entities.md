@@ -306,7 +306,7 @@ dormant ──reactivate──► active
 | `charge_percentage` | `(voltage - MIN) / (MAX - MIN) * 100` |
 | `low_power?` | `voltage > 0 && voltage < 3300` |
 | `under_threat?` | `ews_alerts.unresolved.exists?` |
-| `broadcast_map_update` | Turbo Stream → `geospatial_matrix` |
+| `broadcast_map_update` | Turbo Stream → `geospatial_matrix_org_{cluster.organization_id}` — імʼя **org-скоуплене** (SEC.25); дерево без кластера не броадкастить узагалі (fail-closed, `dependent: :nullify` робить це звичайним станом) |
 | `effective_lorenz_thresholds` | [FW.8] `{ min:, max:, optimal: }` з 3-рівневим пріоритетом: Cluster override → TreeFamily → Global default. Використовується `TelemetryUnpackerService#check_z_divergence!` та `OtaPackagerService.build_threshold_config_block`. |
 
 **Callbacks:**
