@@ -304,14 +304,28 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
     end
 
-    it "exercises turbo_stream response path for execute" do
+    # 🔴 Тут стояло `be_in([200, 202, 406, 500])` з коментарем «rendering may fail
+    # in test env due to Phlex components, but the code path is exercised
+    # (coverage)». Твердження, що приймає 500, не може впасти в принципі — і сам
+    # коментар виявився ХИБНИМ: виміряно, шлях стабільно віддає 200 з
+    # `text/vnd.turbo-stream.html`. Тобто це був coverage-заради-coverage.
+    #
+    # 🧱 І заразом тут пінується інваріант ОСІ target-id, яку в асинхронному
+    # тракті не тримає жоден гейт (`00_07` UI.4): у синхронній відповіді обидві
+    # половини пари приїжджають РАЗОМ, тож їхню згоду можна порівняти самою
+    # відповіддю, без машинерії. Саме розходження цих двох рядків дало три
+    # історичні баги цієї осі, і `actuator_{id}` — вижила половина третього.
+    it "renders a turbo_stream whose target matches the id it actually renders" do
       post "/api/v1/actuators/#{own_actuator.id}/execute",
            params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
            headers: headers.merge("Accept" => "text/vnd.turbo-stream.html")
 
-      # Turbo stream rendering may fail in test env due to Phlex components,
-      # but the code path is exercised (coverage)
-      expect(response.status).to be_in([ 200, 202, 406, 500 ])
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq("text/vnd.turbo-stream.html")
+
+      target = response.body[/<turbo-stream[^>]*\btarget="([^"]+)"/, 1]
+      expect(target).to eq("actuator_#{own_actuator.id}")
+      expect(response.body).to include(%(id="#{target}"))
     end
   end
 end

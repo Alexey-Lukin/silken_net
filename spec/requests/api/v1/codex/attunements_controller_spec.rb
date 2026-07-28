@@ -69,7 +69,7 @@ RSpec.describe "Api::V1::Codex::Attunements", type: :request do
   end
 
   describe "DELETE /api/v1/codex/nodes/:slug/attunements/me" do
-    it "removes the caller's attunement and broadcasts" do
+    it "removes the caller's attunement" do
       create(:codex_attunement, user: user, node: node)
       expect(node.reload.attunement_count).to eq(1)
 
@@ -92,7 +92,7 @@ RSpec.describe "Api::V1::Codex::Attunements", type: :request do
   end
 
   describe "Phase 6 — Discovery probe wire-up on attune" do
-    it "enqueues an attunement_streak probe alongside the broadcast" do
+    it "enqueues an attunement_streak probe — the action's only side effect beyond the row" do
       expect(Codex::DiscoveryProbeWorker).to receive(:perform_async).with(
         user.id, "attunement_streak",
         hash_including("codex_node_id" => node.id, "trigger_ref_type" => "Codex::Attunement")

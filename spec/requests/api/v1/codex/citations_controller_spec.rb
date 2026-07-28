@@ -33,9 +33,6 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
     end
 
     it "creates a citation and increments node.citation_count" do
-      received = []
-      allow(ActionCable.server).to receive(:broadcast) { |topic, payload| received << [ topic, payload ] }
-
       expect {
         post "/api/v1/codex/citations",
              params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: tree.id, note: "see lore_md" },
@@ -212,9 +209,13 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
       expect(response).to have_http_status(:no_content)
     end
 
-    it "returns 204 and skips broadcast when the citable target has been destroyed" do
+    # ⚠️ Тут стояло `expect(ActionCable.server).not_to receive(:broadcast)` —
+    # вакуумне НАЗАВЖДИ, бо сирий ActionCable заборонений репо-широко
+    # (`spec/security/no_raw_action_cable_spec.rb`, UI.2 descope). Назва обіцяла
+    # перевірку «skips broadcast», а довести приклад може лише 204 на знищеному
+    # citable — тепер вона це й каже.
+    it "returns 204 when the citable target has been destroyed" do
       tree.destroy!
-      expect(ActionCable.server).not_to receive(:broadcast)
 
       delete "/api/v1/codex/citations/#{citation.id}", headers: headers
       expect(response).to have_http_status(:no_content)

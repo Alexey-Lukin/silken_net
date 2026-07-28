@@ -36,8 +36,6 @@ module TurboStreamInventory
   BLESSED_RECEIVER = %w[TurboStreams Name].freeze
   BLESSED_KINDS = { "org" => :derived_org, "gateway_ota" => :derived_gateway }.freeze
 
-  # Форми, у яких Ripper віддає ЧИСТЕ const-посилання: `Name` · `A::Name` · `::A::Name`.
-  CONST_REF_NODES = %i[const_path_ref var_ref top_const_ref].freeze
 
   Site = Struct.new(:file, :line, :method, :arg_kind, :arg_pattern, keyword_init: true)
 
@@ -178,13 +176,28 @@ module TurboStreamInventory
 
       kind = BLESSED_KINDS[ident_token(call[3])&.first]
       return nil unless kind
-      # ⚠️ Ресівер мусить бути САМИМ const-посиланням, не викликом на ньому:
-      # `const_tokens` сплощує все піддерево, тож без цієї перевірки
-      # `TurboStreams::Name.dup.org(...)` дає ті самі токени й благословляється,
-      # хоч значення повертає проміжний виклик (перевірено Ripper'ом).
-      return nil unless CONST_REF_NODES.include?(call[1].is_a?(Array) && call[1][0])
+      # ⚠️ Ресівер мусить бути ЧИСТИМ const-шляхом на ВСЮ глибину, не лише
+      # зовнішнім вузлом: `const_tokens` сплощує піддерево, тож будь-який виклик
+      # усередині дає ті самі токени й благословляється, хоч значення повертає
+      # той виклик. Перша редакція перевіряла лише зовнішній вузол — і пропускала
+      # `TurboStreams.dup::Name.org(...)` (перевірено Ripper'ом), тобто гейт
+      # недо-імплементував власний коментар. Рекурсія закриває обидві форми.
+      return nil unless pure_const_path?(call[1])
 
       const_tokens(call[1]) == BLESSED_RECEIVER ? kind : nil
+    end
+
+    # Приймає рівно `Name` · `A::Name` · `::A::Name`; відкидає все, де в дорозі
+    # трапляється виклик, індексація чи будь-який інший вузол.
+    def pure_const_path?(node)
+      return false unless node.is_a?(Array)
+
+      case node[0]
+      when :@const                  then true
+      when :var_ref, :top_const_ref then pure_const_path?(node[1])
+      when :const_path_ref          then pure_const_path?(node[1]) && pure_const_path?(node[2])
+      else false
+      end
     end
 
     def const_tokens(node)

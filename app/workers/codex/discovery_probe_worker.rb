@@ -20,8 +20,12 @@
 #   * `Discovery` has UNIQUE `(user_id, codex_node_id)` — concurrent
 #     workers may both try to insert; one wins, the other gets a
 #     RecordNotUnique we silently swallow.
-#   * Broadcast is fired only on actual create (after the `find_or_create_by`
-#     branch returns a fresh record) — no double-toast on retry.
+#   * The winner is distinguished from the loser on actual create (after the
+#     `find_or_create_by` branch returns a fresh record). ⚠️ This used to say
+#     "broadcast is fired only on actual create — no double-toast on retry";
+#     there is no broadcast and no toast since the UI.2 descope (2026-07-27
+#     removed every raw `ActionCable.server.broadcast`), so the distinction
+#     currently feeds nothing but this method's return value.
 module Codex
   class DiscoveryProbeWorker
     include Sidekiq::Worker
@@ -57,9 +61,11 @@ module Codex
         unlocked_at:      Time.current
       ).find_or_create_by(user_id: user.id, codex_node_id: node.id)
 
-      # Only broadcast when *we* are the creator. `previously_new_record?`
-      # is true exactly once per row across concurrent workers — it stays
-      # false for the loser of the find-or-create race.
+      # Return the record only when *we* are the creator: `previously_new_record?`
+      # is true exactly once per row across concurrent workers — it stays false
+      # for the loser of the find-or-create race. ⚠️ Раніше тут стояло «only
+      # BROADCAST when we are the creator» — броадкасту немає з UI.2-descope,
+      # тож наразі це чистий сигнал переможця гонки без жодного споживача.
       record.previously_new_record? ? record : nil
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
       nil

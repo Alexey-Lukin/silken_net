@@ -22,9 +22,6 @@ RSpec.describe "Api::V1::Codex::Comments", type: :request do
     end
 
     it "creates a comment and increments comments_count" do
-      received = []
-      allow(ActionCable.server).to receive(:broadcast) { |topic, payload| received << [ topic, payload ] }
-
       expect {
         post "/api/v1/codex/nodes/#{node.slug}/comments",
              params: { comment: { body_md: "Hello **world**." } },
@@ -85,7 +82,6 @@ RSpec.describe "Api::V1::Codex::Comments", type: :request do
     end
 
     it "allows HTML writes without an Idempotency-Key (skips idempotency cache)" do
-      allow(ActionCable.server).to receive(:broadcast)
       html_headers = { "Authorization" => "Bearer #{token}" }
 
       expect {

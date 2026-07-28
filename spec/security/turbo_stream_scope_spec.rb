@@ -165,12 +165,33 @@ RSpec.describe "Turbo stream scope axis" do # rubocop:disable RSpec/DescribeClas
   def rel(path) = Pathname.new(path).relative_path_from(Rails.root).to_s
 
 
+  # 🔒 Стеля, названа чесно, бо файлове покриття купило стабільність ЦІНОЮ
+  # чутливості: воно бачить «файл узагалі видний», а не «всі його виклики видні».
+  # `ews_alert.rb` тримає три броадкасти, тож втрата ОДНОГО з них лишила б цей
+  # приклад зеленим (стара підлога на кількість почервоніла б — і саме тому
+  # `unpack_telemetry_worker` окремо пінований ТОЧНОЮ двійкою нижче: там цю
+  # сліпоту виміряно). Тобто вибір свідомий: канарок стереже орієнтацію
+  # екстрактора, а повноту в межах файла — окремі спеки продюсерів.
   it "is a live check (every known producer file is still discovered)" do
     missing = producer_files - producers.map { |p| rel(p.file) }.uniq
 
     expect(missing).to be_empty, <<~MSG
       продюсера більше не видно — або броадкаст свідомо знято (тоді приберіть файл
       із переліку тим самим комітом), або екстрактор осліп. Знайдено: #{missing.join(', ')}
+    MSG
+  end
+
+  # Зворотний напрямок — дзеркало «assigns every subscription site a proof
+  # obligation». Без нього перелік гниє МОВЧКИ: новий продюсер-файл ніде не
+  # реєструється, і канарок вище лишається зеленим, стережучи лише старе.
+  it "forces a NEW producer file into the curated list" do
+    unlisted = producers.map { |p| rel(p.file) }.uniq - producer_files
+
+    expect(unlisted).to be_empty, <<~MSG
+      новий файл-продюсер. Додайте його в `producer_files` — це не бюрократія:
+      перелік і є тим, що робить канарок вище здатним побачити зникнення. Плюс
+      перевірте, чи імʼя стріму йде через `TurboStreams::Name`. Знайдено:
+      #{unlisted.join(', ')}
     MSG
   end
 

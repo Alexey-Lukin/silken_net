@@ -31,7 +31,7 @@ RSpec.describe Codex::Comments::Thread do
     end
   end
 
-  it "renders the canonical DOM id used by the Turbo Stream broadcaster" do
+  it "renders the canonical DOM id — a stable list anchor with no producer (UI.2)" do
     html = render_thread(node: node, comments: [], current_user: nil)
     expect(html).to include('id="codex_node_9_comments"')
   end

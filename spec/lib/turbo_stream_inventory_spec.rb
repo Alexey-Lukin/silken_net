@@ -86,8 +86,14 @@ RSpec.describe TurboStreamInventory do
     # `const_tokens` сплощує все піддерево ресівера, тож без перевірки самої ФОРМИ
     # вузла ланцюжок через проміжний виклик давав ті самі токени й благословлявся,
     # хоч значення повертає щось інше. Знайдено adversarial-проходом, Ripper'ом.
+    # Обидві форми обходу, і другу знайдено ЛИШЕ четвертим adversarial-раундом:
+    # перша редакція перевіряла тільки ЗОВНІШНІЙ вузол ресівера, тож виклик,
+    # засунутий у ЛІВУ ногу const-шляху, проходив — гейт недо-імплементував
+    # власний коментар рівно через добу після того, як цей клас був headline'ом.
     it "does not bless the blessed constant reached through an intermediate call" do
       expect(subscription_kind("TurboStreams::Name.dup.org(:telemetry, @organization)").arg_kind)
+        .to eq(:indirect)
+      expect(subscription_kind("TurboStreams.dup::Name.org(:telemetry, @organization)").arg_kind)
         .to eq(:indirect)
     end
 

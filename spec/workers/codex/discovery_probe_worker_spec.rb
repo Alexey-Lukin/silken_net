@@ -35,7 +35,7 @@ RSpec.describe Codex::DiscoveryProbeWorker, type: :worker do
     expect(d.triggered_by_match_milestone?).to be(true)
   end
 
-  it "is idempotent on the unique-violation race (no double-broadcast)" do
+  it "is idempotent on the unique-violation race (no duplicate Discovery)" do
     create(:codex_discovery, user: user, node: node)
     allow(::Codex::DiscoveryEngine).to receive(:evaluate).and_return([ node ])
     expect {
