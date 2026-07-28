@@ -263,8 +263,14 @@ RSpec.describe AlertDispatchService, type: :service do
       allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
     end
 
-    it "clears oracle yield cache when a critical alert is created" do
-      Rails.cache.write("oracle_expected_yield_24h", 42.0)
+    # Другий суб'єкт тут несучий: з ОДНІЄЮ організацією приклад не відрізняє
+    # org-скоуплений ключ від глобального, і саме тому попередня версія цієї
+    # спеки роками була зеленою на мертвій інвалідації — вона писала й читала
+    # той самий застарілий глобальний ключ, що й код (`00_07` SEC.25).
+    it "clears the alerting organization's yield cache and leaves other orgs alone" do
+      other_org = create(:organization)
+      Rails.cache.write(Organization.expected_yield_cache_key(cluster.organization_id), 42.0)
+      Rails.cache.write(Organization.expected_yield_cache_key(other_org.id), 42.0)
 
       log = instance_double(TelemetryLog,
         tree: tree,
@@ -281,11 +287,12 @@ RSpec.describe AlertDispatchService, type: :service do
 
       described_class.analyze_and_trigger!(log)
 
-      expect(Rails.cache.read("oracle_expected_yield_24h")).to be_nil
+      expect(Rails.cache.read(Organization.expected_yield_cache_key(cluster.organization_id))).to be_nil
+      expect(Rails.cache.read(Organization.expected_yield_cache_key(other_org.id))).to eq(42.0)
     end
 
     it "does not clear oracle yield cache for non-critical alerts" do
-      Rails.cache.write("oracle_expected_yield_24h", 42.0)
+      Rails.cache.write(Organization.expected_yield_cache_key(cluster.organization_id), 42.0)
 
       log = instance_double(TelemetryLog,
         tree: tree,
@@ -302,7 +309,7 @@ RSpec.describe AlertDispatchService, type: :service do
 
       described_class.analyze_and_trigger!(log)
 
-      expect(Rails.cache.read("oracle_expected_yield_24h")).to eq(42.0)
+      expect(Rails.cache.read(Organization.expected_yield_cache_key(cluster.organization_id))).to eq(42.0)
     end
   end
 

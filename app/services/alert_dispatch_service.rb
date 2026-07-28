@@ -167,7 +167,7 @@ class AlertDispatchService
     )
 
     Rails.cache.write(silence_key, true, expires_in: 30.minutes)
-    Rails.cache.delete("oracle_expected_yield_24h")
+    Organization.invalidate_expected_yield_cache(cluster&.organization_id)
     Rails.logger.warn "🚨 [FRAUD ALERT] #{tree.did}: фрод-телеметрія за #{target_date}"
 
     # [A-1 FIX: Transactional Outbox — Wiki 04_02 §2 AlertDispatchService]
@@ -221,7 +221,7 @@ class AlertDispatchService
 
     # [ІНВАЛІДАЦІЯ КЕШУ]: Критичні аномалії мають негайно оновити прогноз Оракула,
     # щоб Dashboard не показував застарілий "оптимістичний" прогноз під час катастрофи.
-    Rails.cache.delete("oracle_expected_yield_24h") if severity == :critical
+    Organization.invalidate_expected_yield_cache(cluster&.organization_id) if severity == :critical
 
     Rails.logger.warn "🚨 [EWS ALERT] #{alert_type} | #{tree.did}"
 

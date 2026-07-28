@@ -80,6 +80,22 @@ class Organization < ApplicationRecord
     end
   end
 
+  # Дім ключа кешу прогнозу Оракула — і причина, чому дім, а не рядок на місці.
+  # Ключ був рукописним у чотирьох місцях; коли tenant-isolation додав `_org_`,
+  # переїхав лише той, що ЧИТАЄ, а три інвалідатори лишились на старому імені —
+  # тобто скидали ключ, якого вже не існує, і застарілий прогноз переживав
+  # критичну тривогу цілу годину. Скоупінг має ТРИ половини: запит, ключ і ті,
+  # хто цей ключ скидає (`00_07` SEC.25; сиблінг SEC.16-бейджа).
+  def self.expected_yield_cache_key(org_id) = "oracle_expected_yield_24h_org_#{org_id}"
+
+  # Fail-closed: дерево без кластера — звичайний стан (`dependent: :nullify`),
+  # адреси кешу в нього немає, і мовчазний no-op тут правильніший за виняток.
+  def self.invalidate_expected_yield_cache(org_id)
+    return if org_id.blank?
+
+    Rails.cache.delete(expected_yield_cache_key(org_id))
+  end
+
   # Кількість кластерів організації
   def total_clusters
     clusters.count

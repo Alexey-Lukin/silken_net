@@ -95,7 +95,7 @@ module Api
       # tenants — an investor at org A would see org B's yield. Cache is now
       # keyed by org id; the inner Tree scope is also restricted to the org.
       def calculate_expected_yield(org)
-        Rails.cache.fetch("oracle_expected_yield_24h_org_#{org.id}", expires_in: 1.hour) do
+        Rails.cache.fetch(Organization.expected_yield_cache_key(org.id), expires_in: 1.hour) do
           threshold = TokenomicsEvaluatorWorker.emission_threshold
           total_potential = 0.0
 

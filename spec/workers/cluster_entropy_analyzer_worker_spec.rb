@@ -98,12 +98,18 @@ RSpec.describe ClusterEntropyAnalyzerWorker, type: :worker do
         expect { described_class.new.perform(cluster.id) }.not_to change(EwsAlert, :count)
       end
 
-      it "invalidates oracle yield cache" do
-        Rails.cache.write("oracle_expected_yield_24h", 42)
+      # Двосуб'єктно свідомо: з однією організацією приклад проходить і для
+      # глобального ключа, і для мертвого — саме так він і був зеленим, поки
+      # інвалідатор скидав ключ, якого вже не існувало (`00_07` SEC.25).
+      it "invalidates the cluster organization's yield cache, not everyone's" do
+        other_org = create(:organization)
+        Rails.cache.write(Organization.expected_yield_cache_key(organization.id), 42)
+        Rails.cache.write(Organization.expected_yield_cache_key(other_org.id), 42)
 
         described_class.new.perform(cluster.id)
 
-        expect(Rails.cache.read("oracle_expected_yield_24h")).to be_nil
+        expect(Rails.cache.read(Organization.expected_yield_cache_key(organization.id))).to be_nil
+        expect(Rails.cache.read(Organization.expected_yield_cache_key(other_org.id))).to eq(42)
       end
     end
 

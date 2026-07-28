@@ -89,7 +89,7 @@ class ClusterEntropyAnalyzerWorker
     Rails.cache.write(silence_key, true, expires_in: SILENCE_PERIOD)
 
     # Інвалідація кешу прогнозу Оракула (аналогічно AlertDispatchService)
-    Rails.cache.delete("oracle_expected_yield_24h")
+    Organization.invalidate_expected_yield_cache(cluster.organization_id)
 
     Rails.logger.warn(
       "🚨 [EWS Entropy] entropy_anomaly | Cluster #{cluster.name} | " \
