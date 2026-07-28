@@ -9,8 +9,20 @@
 #   1. `render_component(**kwargs)` — universal entry point.
 #      Detects whether the component under test needs a full Rails rendering
 #      context (route helpers, Turbo tags, form builders) or can be rendered
-#      with a bare `.call`. The decision is based on the component class
-#      hierarchy — any class including Phlex::Rails helpers gets the renderer.
+#      with a bare `.call`.
+#      ⚠️ The decision is a TEXT match, not a class-hierarchy walk — this line
+#      claimed the latter for a long time, and the difference has consequences.
+#      `compute_needs_renderer` reads the file returned by
+#      `Object.const_source_location(klass.name)` and matches
+#      RENDERER_HELPER_REGEX against its source. Therefore:
+#        · a matching token inside a COMMENT flips the decision (no AST, no
+#          comment stripping);
+#        · helpers INHERITED from ApplicationComponent do not count — only what
+#          is written in the component's own file;
+#        · editing application_component.rb cannot change any subclass's verdict.
+#      Which is fine, because a false «needs renderer» is merely slower, and a
+#      false «doesn't» is caught: the `.call` path rescues NoMethodError and
+#      falls back to the renderer anyway (see below).
 #
 #   2. `component_class` — shorthand for `described_class`.
 #

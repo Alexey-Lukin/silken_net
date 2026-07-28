@@ -48,6 +48,16 @@ module ApplicationCable
     # і на телефоні.
     identified_by :current_user, :session_id
 
+    # ⚠️ Цей метод робить cookie носієм ідентичності на сокеті — а отже НЕСУЧОЮ
+    # стає перевірка, якої тут не видно: `allow_request_origin?` в
+    # `ActionCable::Connection::Base`. Доти сокет не ніс жодної ідентичності, і
+    # cross-site WebSocket hijacking не давав атакеру нічого; тепер чужа сторінка,
+    # відкрита жертвою, ходила б на `/cable` з її cookie. Захист стоїть за
+    # замовчуванням (`allow_same_origin_as_host` = true, forgery protection
+    # увімкнена, `production.rb` не задає `allowed_request_origins` взагалі й
+    # покладається саме на same-origin, а `assume_ssl` вирівнює схему) — але це
+    # означає, що `disable_request_forgery_protection = true` чи широкий
+    # `allowed_request_origins` перестали бути нешкідливим послабленням.
     def connect
       data = session_data
       self.current_user = verified_user(data)
