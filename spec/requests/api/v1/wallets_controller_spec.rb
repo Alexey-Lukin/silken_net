@@ -61,6 +61,31 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       expect(response.parsed_body).to have_key("transactions")
       expect(response.parsed_body).to have_key("pagy")
     end
+
+    # Крос-org відмова. Це ЄДИНИЙ ендпоінт-показ у застосунку, чий `find` НЕ
+    # скоуплений організацією (`Wallet.find(params[:id])`) — tenancy тримає лише
+    # `authorize @wallet`, а `wallets.id` послідовний, тобто перебирається. Сусіди
+    # (clusters/gateways/actuators/alerts) дзеркальний приклад мають, гаманці — ні,
+    # і policy-спека його не замінює: вона кличе політику напряму, минаючи контролер,
+    # тож зняття `authorize` лишало б зеленим і її, і решту сюїти.
+    # HTML-гілку пінимо окремо (SEC.25): саме вона віддає ПІДПИСАНЕ ім'я стріму
+    # `[wallet, :transactions]`, а підписане ім'я — безстроковий capability-токен,
+    # тож витік їде вебсокетом уже ПІСЛЯ того, як HTTP-відповідь закрилась.
+    context "when the wallet belongs to another organization" do
+      let(:other_tree) { create(:tree, cluster: create(:cluster, organization: create(:organization))) }
+      let!(:foreign_wallet) { other_tree.wallet || create(:wallet, tree: other_tree) }
+
+      it "denies the JSON read" do
+        get "/api/v1/wallets/#{foreign_wallet.id}", headers: headers, as: :json
+        expect(response).to have_http_status(:forbidden)
+      end
+
+      it "denies the HTML read and hands out no live subscription" do
+        get "/api/v1/wallets/#{foreign_wallet.id}", headers: headers.merge("Accept" => "text/html")
+        expect(response).to have_http_status(:forbidden)
+        expect(response.body).not_to include("turbo-cable-stream-source")
+      end
+    end
   end
 
   context "with format.html responses" do
