@@ -1,0 +1,203 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# frozen_string_literal: true
+
+require "rails_helper"
+require Rails.root.join("lib/turbo_stream_inventory")
+
+# Вісь СКОУПУ Turbo-стріму — окрема від осі існування («чи є кому слухати»),
+# і до цього гейта її не тримав ніщо. `00_07` SEC.25 / UI.4, канон `04_04 §8.1`.
+#
+# 🔴 Чому підписка, а не продюсер, є точкою істини. Підписане імʼя стріму —
+# непідробний HMAC (перевірено рантаймом), тож ЄДИНИЙ спосіб його дістати —
+# щоб сторінка тобі його відрендерила. Отже тенант-ізоляція вирішується на боці
+# ПІДПИСНИКА: чи контролер, що рендерить `turbo_stream_from`, віддає це імʼя лише
+# членам організації-власника.
+#
+# 🔴 Класифікація першого аргументу — ДИСПЕТЧЕР, а не перевірка. Це важливо
+# сформулювати точно, бо я спершу спроектував гейт навпаки й помилився:
+# пʼять правдивих замірів про токен стосувалися обох класів ОДНАКОВО, тож
+# ранжувати ними класи неможливо (`ssot-maintenance` §Guard-craft #22). Клас
+# каже лише, ЯКИЙ доказ мусить існувати:
+#   · `record_ref`/`record_array` (AR-запис) → імʼя не несе org-токена взагалі,
+#     тож потрібна спека крос-фетч-ВІДМОВИ (чужа сутність → 404/403);
+#   · `scoped_string` (org-токен в імені) → потрібен two-subject пін ІМЕНІ
+#     (двоє глядачів дістають РІЗНІ стріми — з одним підміна на `Organization.first`
+#     лишає приклад зеленим);
+#   · `unscoped_interpolation` (напр. `ota_channel_{uid}`) → безпечний лише
+#     транзитивно, тож потрібен пін РІВНОСТІ МНОЖИНИ (відрендерено рівно своє);
+#   · `bare_string`/`bare_symbol` (голе глобальне імʼя) → червоне за
+#     замовчуванням. Саме цим був `"telemetry_stream"`, і саме так витік
+#     віддавав payload чужих Королев кожному автентифікованому глядачу.
+#
+# 🔒 Три стелі, названі чесно — інакше зелене читається як «перевірено»:
+#   1. Реєстр пінить ІМʼЯ приклада-доказу, не його доказовість. Перейменований
+#      або вихолощений приклад із тією ж назвою пройде. Це слабше, ніж звучить
+#      (`ssot-maintenance` §Guard-craft #5), але сильніше за «файл існує».
+#   2. ПОХОДЖЕННЯ org-токена статично невидиме: `@organization.id` виглядає
+#      однаково, чи прийшла організація з сесії, чи з параметра запиту.
+#   3. Гейт бачить `turbo_stream_from` у `app/views/**`. Підписка, зібрана в
+#      обхід хелпера (руками через `tag.turbo_cable_stream_source`), сюди не
+#      потрапить — а саме так її доведеться писати, якщо колись додаватимемо TTL.
+RSpec.describe "Turbo stream scope axis" do # rubocop:disable RSpec/DescribeClass
+  # Обовʼязок доказу на кожен сайт підписки. Ключ — ФАЙЛ (не `file:line`:
+  # номери рядків зсуваються, а підписка у файлі рівно одна).
+  let(:obligations) do
+    {
+      "app/views/components/telemetry/live_stream.rb" => {
+        kind: :scoped_string,
+        proof: "spec/requests/api/v1/telemetry_controller_spec.rb",
+        example: "subscribes each viewer to their OWN organization stream"
+      },
+      "app/views/components/alerts/index.rb" => {
+        kind: :scoped_string,
+        proof: "spec/requests/api/v1/alerts_controller_spec.rb",
+        example: "subscribes each viewer to their OWN organization alert stream"
+      },
+      "app/views/components/dashboard/map.rb" => {
+        kind: :scoped_string,
+        proof: "spec/requests/api/v1/dashboard_controller_spec.rb",
+        example: "subscribes each viewer to their OWN organization map stream"
+      },
+      "app/views/components/firmwares/index.rb" => {
+        kind: :unscoped_interpolation,
+        proof: "spec/requests/api/v1/firmwares_controller_spec.rb",
+        example: "subscribes only to the viewer's OWN gateways' OTA channels"
+      },
+      "app/views/components/gateways/show.rb" => {
+        kind: :unscoped_interpolation,
+        proof: "spec/requests/api/v1/gateways_controller_spec.rb",
+        example: "returns 404 for a gateway from another organization"
+      },
+      "app/views/components/clusters/show.rb" => {
+        kind: :record_ref,
+        proof: "spec/requests/api/v1/clusters_controller_spec.rb",
+        example: "returns 404 for a cluster from another organization"
+      },
+      "app/views/components/actuators/show.rb" => {
+        kind: :record_ref,
+        proof: "spec/requests/api/v1/actuators_controller_spec.rb",
+        example: "returns 404 for an actuator from another organization"
+      },
+      "app/views/components/wallets/show.rb" => {
+        kind: :record_ref,
+        proof: "spec/requests/api/v1/wallets_controller_spec.rb",
+        example: "when the wallet belongs to another organization"
+      }
+    }
+  end
+
+  # Голе глобальне імʼя — це той самий клас, що дав живий крос-тенант витік.
+  let(:unscoped_kinds) { %i[bare_string bare_symbol] }
+
+  let(:app_files) { Dir[Rails.root.join("app/**/*.rb")].sort }
+  let(:subscriptions) { TurboStreamInventory.subscriptions(app_files) }
+  let(:producers) { TurboStreamInventory.producers(app_files, methods: gem_broadcast_methods) }
+
+  # Джерело істини для «що є броадкаст» — САМ гем, не наш патерн. Патерн хибний
+  # в обидва боки (виміряно): `broadcast_\w*_to` пропускає не-`_to` форми,
+  # `broadcast_\w+` ловить 22 власні хелпери застосунку. Дериваний набір ще й
+  # переживає апгрейд turbo-rails без правки гейта.
+  let(:gem_broadcast_methods) do
+    (Turbo::Streams::Broadcasts.public_instance_methods(false) +
+     Turbo::Broadcastable.public_instance_methods(false))
+      .map(&:to_s).grep(/\Abroadcast_/).uniq
+  end
+
+  def rel(path) = Pathname.new(path).relative_path_from(Rails.root).to_s
+
+  # Без цього «0 порушень» могло б означати «екстрактор дивиться не туди».
+  it "is a live check (both sides of the tract are discovered)" do
+    expect(subscriptions.size).to be >= 8, "підписок знайдено замало — екстрактор осліп"
+    expect(producers.size).to be >= 12, "продюсерів знайдено замало — екстрактор осліп"
+  end
+
+  it "collects the single-line call form the regex extractor cannot see" do
+    single_line = producers.select { |p| p.file.end_with?("unpack_telemetry_worker.rb") }
+
+    expect(single_line.size).to eq(2), <<~MSG
+      саме тут виміряно провал регекс-екстрактора (`spec/i18n/broadcast_payload_invariance_spec.rb`
+      бачить 1 із 2, бо вимагає багаторядкової форми). Якщо тут знову 1 — AST-екстрактор
+      деградував до тієї ж сліпоти, і гейт, якому потрібен ПОВНИЙ набір, став хибно-зеленим.
+    MSG
+  end
+
+  it "assigns every subscription site a proof obligation" do
+    unregistered = subscriptions.map { |s| rel(s.file) }.uniq - obligations.keys
+
+    expect(unregistered).to be_empty, <<~MSG
+      новий Turbo-стрім без обовʼязку доказу. Додай запис у `obligations`: клас
+      першого аргументу диктує форму доказу (див. шапку). Знайдено: #{unregistered.join(', ')}
+    MSG
+  end
+
+  it "has no dead obligation (a registry row is a tripwire, not a list)" do
+    dead = obligations.keys - subscriptions.map { |s| rel(s.file) }
+
+    expect(dead).to be_empty,
+      "підписки більше немає, а обовʼязок лишився — приберіть: #{dead.join(', ')}"
+  end
+
+  # ЦЕ і є вісь скоупу: звуження/розширення імені стріму мусить стати видимим.
+  it "keeps every stream name in the class its proof was written for" do
+    drifted = subscriptions.filter_map do |site|
+      expected = obligations[rel(site.file)]&.dig(:kind)
+      next if expected.nil? || expected == site.arg_kind
+
+      "#{rel(site.file)}:#{site.line} — реєстр каже #{expected}, код дає #{site.arg_kind}"
+    end
+
+    expect(drifted).to be_empty, <<~MSG
+      клас імені стріму змінився, а доказ лишився написаним під старий клас —
+      найгірший напрямок цієї осі (`scoped_string` → `bare_string` = повернення
+      витоку SEC.25). Перепиши доказ під новий клас, потім онови реєстр:
+      #{drifted.join('; ')}
+    MSG
+  end
+
+  it "keeps every named proof example alive" do
+    missing = obligations.filter_map do |site, duty|
+      path = Rails.root.join(duty[:proof])
+      next "#{site} → #{duty[:proof]} (файла немає)" unless File.exist?(path)
+      next if File.read(path).include?(duty[:example])
+
+      "#{site} → #{duty[:proof]} не містить «#{duty[:example]}»"
+    end
+
+    expect(missing).to be_empty, <<~MSG
+      названий доказ зник або перейменований — обовʼязок став вказівником у порожнечу:
+      #{missing.join('; ')}
+    MSG
+  end
+
+  # Інваріант, який канон (`04_04 §8.1`) і скіл `frontend` декларували ПРОЗОЮ, а
+  # не тримало ніщо: успадкований `broadcast_*` без `_to` адресує стрім самим
+  # записом і дефолтиться на `to_partial_path` — а партіалів моделей у репо НЕМА
+  # взагалі, тож рендер-форми кидають `ActionView::MissingTemplate` СИНХРОННО у
+  # місці виклику (прецедент ARCH.67: такий виклик у money-сервісі обірвав
+  # батч-цикл, лишивши `locked_balance` замороженим). `broadcast_refresh` не
+  # впаде — але створить стрім без імені й без обовʼязку доказу.
+  it "never calls a model's inherited broadcast_* (implicit self-stream)" do
+    implicit = producers.select { |p| p.arg_kind == :implicit_self }
+                        .map { |p| "#{rel(p.file)}:#{p.line} — #{p.method}" }
+
+    expect(implicit).to be_empty, <<~MSG
+      успадкований `broadcast_*` моделі: рендер-форми кидають MissingTemplate у
+      місці виклику (партіалів моделей нема), а `broadcast_refresh` тихо створює
+      стрім, якого не знає ані реєстр §8.1, ані цей гейт. Використовуй явний
+      `Turbo::StreamsChannel.broadcast_*_to` з `html:`. Знайдено: #{implicit.join(', ')}
+    MSG
+  end
+
+  it "has no bare global stream name on either side of the tract" do
+    offenders = (subscriptions + producers)
+                .select { |s| unscoped_kinds.include?(s.arg_kind) }
+                .map { |s| "#{rel(s.file)}:#{s.line} (#{s.arg_pattern.inspect})" }
+
+    expect(offenders).to be_empty, <<~MSG
+      голе глобальне імʼя стріму: підписатись може будь-хто, кому сторінка
+      відрендерилась, а сторінка не звужена нічим. Саме цим був `"telemetry_stream"`
+      (`00_07` SEC.25 — живий крос-тенант витік). Скоупни імʼя або доведи скоуп
+      спекою й заведи явний обовʼязок. Знайдено: #{offenders.join(', ')}
+    MSG
+  end
+end

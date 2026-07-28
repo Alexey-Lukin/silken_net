@@ -1,0 +1,165 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# frozen_string_literal: true
+
+require "ripper"
+
+# Інвентар Turbo-стрім-тракту, знятий з AST (`Ripper`), а не регексом.
+#
+# 🔴 Чому AST, і це виміряно, не estetika: регекс наявного гейта
+# (`spec/i18n/broadcast_payload_invariance_spec.rb`) вимагає БАГАТОРЯДКОВОГО
+# виклику, тож однорядковий `broadcast_*_to(...)` для нього не існує — у
+# `unpack_telemetry_worker.rb` він бачить 1 виклик із 2. Для гейта, якому
+# потрібен ПОВНИЙ набір, пропущений виклик = хибно-зелений.
+#
+# 🔴 І друга причина, чому якір — ІМʼЯ МЕТОДУ, а не ресівер: turbo-rails
+# домішує `Turbo::Broadcastable` у КОЖНУ AR-модель, тож `broadcast_refresh_later_to`
+# легально викликається як instance-метод, без жодного `Turbo::StreamsChannel.`
+# Екстрактор, прив'язаний до ресівера, пропустив би найідіоматичніший спосіб
+# додати новий стрім.
+#
+# Pure Ruby: без Rails, без I/O понад читання переданих шляхів. Два консюмери
+# за дизайном (вісь скоупу + вісь локалі payload'а) — тому й окремий модуль.
+module TurboStreamInventory
+  SUBSCRIBE_METHOD = "turbo_stream_from"
+
+  # Токени, що роблять імʼя стріму самоочевидно тенант-скоупленим.
+  SCOPE_TOKENS = %w[_org_ _organization_].freeze
+
+  Site = Struct.new(:file, :line, :method, :arg_kind, :arg_pattern, keyword_init: true)
+
+  class << self
+    # Місця ПІДПИСКИ (`turbo_stream_from`) — саме вони мінтять capability-токен.
+    def subscriptions(paths)
+      scan(paths) { |name| name == SUBSCRIBE_METHOD }
+    end
+
+    # Місця БРОАДКАСТУ. Набір імен передає ВИКЛИКАЧ, і це свідомо:
+    # 🔴 будь-який патерн тут хибний в обидва боки, і я зробив обидві помилки
+    # по черзі, зміряв кожну. `broadcast_\w*_to` пропускає не-`_to` форми
+    # (`broadcast_refresh` шле у ВЛАСНИЙ стрім моделі — стрім без імені й без
+    # реєстру), а `broadcast_\w+` ловить 22 ВЛАСНІ приватні хелпери застосунку
+    # (`broadcast_ota_progress`, `broadcast_command_state_static`…), що до API
+    # гема не належать. Єдине незгниване джерело — сам гем:
+    # `Turbo::Streams::Broadcasts` ∪ `Turbo::Broadcastable`, дериване у виклику,
+    # тож апгрейд гема з новим методом покривається без правки цього файлу.
+    def producers(paths, methods:)
+      allowed = Array(methods).map(&:to_s)
+      scan(paths) { |name| allowed.include?(name) }
+    end
+
+    private
+
+    def scan(paths)
+      Array(paths).flat_map do |path|
+        src = File.read(path)
+        sexp = Ripper.sexp(src)
+        next [] if sexp.nil? # синтаксично битий файл — не наша відповідальність
+
+        calls(sexp).filter_map do |(name, line, first_arg)|
+          next unless yield(name)
+
+          # Не-`_to` форма адресує не аргументом, а САМИМ записом (`[self]`),
+          # тож її перший аргумент — не імʼя стріму, і класифікувати його хибно.
+          kind, pattern = name.end_with?("_to") || name == SUBSCRIBE_METHOD ? classify(first_arg) : [ :implicit_self, nil ]
+          Site.new(file: path, line: line, method: name, arg_kind: kind, arg_pattern: pattern)
+        end
+      end
+    end
+
+    # ШІСТЬ форм виклику, які Ripper розрізняє, і всі шість тут перелічені
+    # свідомо: `foo(a)` · `foo a` · `X.foo(a)` · `X.foo a` · `foo` · `X.foo`.
+    # 🔴 Дві останні — БЕЗАРГУМЕНТНІ, і спершу я їх пропустив. Ціна була
+    # виміряна мутацією: `broadcast_refresh` (успадкований, найідіоматичніша
+    # форма того, що гейт забороняє) давав `:vcall`, тож приклад лишався
+    # ЗЕЛЕНИМ при приземленій мутації — гейт не бачив рівно свого класу.
+    # `consumed` не дає порахувати `X.foo(a)` двічі: внутрішній `:call`-вузол
+    # уже спожитий обгорткою `:method_add_arg` (та відвідується раніше).
+    def calls(node, acc = [], consumed = {})
+      name_node, args_node = shape(node, consumed)
+      ident = name_node && ident_token(name_node)
+      acc << [ ident[0], ident[1], first_arg(args_node) ] if ident
+
+      node.each { |child| calls(child, acc, consumed) if child.is_a?(Array) }
+      acc
+    end
+
+    # Кожна форма зводиться до пари (вузол-імені, вузол-аргументів) — рівно
+    # ОДИН emit-шлях вище. Це не косметика: пʼять дубльованих emit'ів давали
+    # пʼять окремих недосяжних гілок «а якщо імені немає».
+    def shape(node, consumed)
+      case node[0]
+      when :method_add_arg
+        consumed[node[1].object_id] = true
+        [ target_name(node[1]), node[2] ]
+      when :command      then [ node[1], node[2] ]
+      when :command_call then [ node[3], node[4] ]
+      when :vcall        then [ node[1], nil ]
+      when :call         then [ consumed[node.object_id] ? nil : node[3], nil ]
+      else [ nil, nil ]
+      end
+    end
+
+    # `[:fcall, ident]` (без ресівера) або `[:call, recv, period, ident]` (з ним).
+    def target_name(target)
+      target[0] == :fcall ? target[1] : target[3]
+    end
+
+    # ⚠️ Guard РЕАЛЬНО досяжний, не перестраховка: у proc-виклику `obj.()`
+    # Ripper ставить на місце імені СИМВОЛ `:call`, не ident-вузол.
+    def ident_token(node)
+      return nil unless node.is_a?(Array) && node[0] == :@ident
+
+      [ node[1], node[2][0] ] # [name, line]
+    end
+
+    def first_arg(args)
+      list = args_list(args)
+      list&.first
+    end
+
+    def args_list(node)
+      return nil unless node.is_a?(Array)
+
+      case node[0]
+      when :arg_paren      then args_list(node[1])
+      when :args_add_block then node[1]
+      end
+    end
+
+    # Класифікація ПЕРШОГО аргументу — вона ж диспетчер proof-обовʼязку.
+    # ⚠️ Класифікатор НЕ є перевіркою безпеки: він лише каже, який доказ
+    # мусить існувати для цього сайту. Скоуп доводиться спекою, не формою імені.
+    def classify(node)
+      return [ :absent, nil ] if node.nil?
+
+      case node[0]
+      when :string_literal  then string_kind(node)
+      when :array           then [ :record_array, nil ]
+      when :symbol_literal  then [ :bare_symbol, nil ]
+      when :var_ref, :vcall then ref_kind(node[1])
+      else [ :indirect, nil ]
+      end
+    end
+
+    # ⚠️ `var_ref` НЕ означає «запис»: `@wallet` — запис, а локал `stream`, що
+    # тримає рядок, — ні. Розрізняє саме тип токена, і це знайшлось заміром
+    # проти ручного підрахунку (`unpack_telemetry_worker` маркувався `record_ref`,
+    # хоч там локальна змінна з інтерполяцією) — тобто екстрактор ПЕРЕОЦІНЮВАВ
+    # безпеку сайту, а це найгірший напрямок помилки для диспетчера.
+    def ref_kind(inner)
+      inner[0] == :@ivar ? [ :record_ref, nil ] : [ :indirect, nil ]
+    end
+
+    def string_kind(node)
+      parts = node[1][1..] || []
+      literal = parts.select { |p| p.is_a?(Array) && p[0] == :@tstring_content }.map { |p| p[1] }.join
+      interpolated = parts.any? { |p| p.is_a?(Array) && p[0] == :string_embexpr }
+      pattern = interpolated ? "#{literal}\#{…}" : literal
+
+      return [ :bare_string, pattern ] unless interpolated
+      return [ :scoped_string, pattern ] if SCOPE_TOKENS.any? { |t| literal.include?(t) }
+
+      [ :unscoped_interpolation, pattern ]
+    end
+  end
+end
