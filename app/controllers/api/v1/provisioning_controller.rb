@@ -8,7 +8,7 @@ module Api
 
       # --- ТЕРМІНАЛ ІНІЦІАЦІЇ ---
       def new
-        @clusters = current_user.organization.clusters
+        @clusters = acting_organization!.clusters
         # [ВИПРАВЛЕНО: Unbounded Query]: Використовуємо alphabetical скоуп замість .all.
         # TreeFamily — довідник видів (~100-1000 записів), але .all не має ORDER BY
         # та не обмежує вибірку. alphabetical забезпечує детермінований порядок.
@@ -61,7 +61,7 @@ module Api
         # належить організації форестера (дзеркало firmwares#deploy /
         # oracle_visions#simulate, які цей клас багу вже закрили). Без цього
         # форестер org-A провізіонить пристрій + HardwareKey + DID у кластер org-B.
-        unless current_user.organization.clusters.exists?(id: provisioning_params[:cluster_id])
+        unless acting_organization!.clusters.exists?(id: provisioning_params[:cluster_id])
           render json: { error: I18n.t("errors.api.not_found", model: "Cluster") }, status: :not_found
           return
         end
@@ -144,7 +144,7 @@ module Api
       private
 
       def render_new_with_errors
-        @clusters = current_user.organization.clusters
+        @clusters = acting_organization!.clusters
         @families = TreeFamily.alphabetical
         render_dashboard(
           title: I18n.t("provisioning.failed_title"),

@@ -229,54 +229,43 @@ RSpec.describe Api::V1::BaseController, type: :request do
     end
   end
 
-  describe "ensure_organization!" do
-    let(:controller) { described_class.new }
+  # [SEC.25 Ф2] Доти ці приклади конструювали контролер напряму й стабали `render`,
+  # `respond_to` і `current_user`, тобто перевіряли приватний метод у вакуумі —
+  # вони лишались би зеленими, навіть якби гард узагалі не був підключений до
+  # жодного запиту. Тепер це справжній HTTP-шлях: гард живе в ТОЧЦІ ЧИТАННЯ
+  # організації, тож єдиний спосіб довести, що він працює, — прийти по-справжньому.
+  describe "коли організації немає" do
+    let(:user_without_org) { create(:user, :admin, organization: nil) }
 
-    it "is a no-op when current_user has an organization" do
-      org = create(:organization)
-      user = create(:user, organization: org)
-      allow(controller).to receive(:current_user).and_return(user)
-      allow(controller).to receive(:render)
-      allow(controller).to receive(:render_auth_page)
-
-      controller.send(:ensure_organization!)
-      expect(controller).not_to have_received(:render)
-      expect(controller).not_to have_received(:render_auth_page)
+    def sign_in_headers(user)
+      { "Authorization" => "Bearer #{user.generate_token_for(:api_access)}" }
     end
 
-    it "renders JSON 422 for json-format requests when org is missing" do
-      user = build_stubbed(:user, organization: nil)
-      allow(controller).to receive(:current_user).and_return(user)
-      allow(controller).to receive(:render)
+    it "віддає 422 з машинним кодом на JSON-запит" do
+      get "/api/v1/dashboard", headers: sign_in_headers(user_without_org), as: :json
 
-      mime_negotiator = instance_double(ActionController::MimeResponds::Collector)
-      allow(mime_negotiator).to receive(:json).and_yield
-      allow(mime_negotiator).to receive(:html)
-      allow(controller).to receive(:respond_to).and_yield(mime_negotiator)
-
-      controller.send(:ensure_organization!)
-      expect(controller).to have_received(:render).with(
-        hash_including(
-          json: hash_including(:error, code: "no_organization"),
-          status: :unprocessable_content
-        )
-      )
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["code"]).to eq("no_organization")
     end
 
-    it "renders an HTML auth page for browser requests when org is missing" do
-      user = build_stubbed(:user, organization: nil)
-      allow(controller).to receive(:current_user).and_return(user)
-      allow(controller).to receive(:render_auth_page)
+    it "віддає HTML-сторінку з поясненням на браузерний запит" do
+      get "/api/v1/dashboard", headers: sign_in_headers(user_without_org).merge("Accept" => "text/html")
 
-      mime_negotiator = instance_double(ActionController::MimeResponds::Collector)
-      allow(mime_negotiator).to receive(:json)
-      allow(mime_negotiator).to receive(:html).and_yield
-      allow(controller).to receive(:respond_to).and_yield(mime_negotiator)
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.media_type).to eq("text/html")
+      # 🔴 Саме цей рядок відрізняє полагоджене від зламаного: доти ця сторінка
+      # віддавала JSON-блоб у браузері (`render_internal_server_error` без
+      # `respond_to`), і глядач бачив сирий `{"error":...}` замість сторінки.
+      expect(response.body).to include("<html")
+    end
 
-      controller.send(:ensure_organization!)
-      expect(controller).to have_received(:render_auth_page).with(
-        hash_including(component: an_instance_of(Errors::NoOrganization), status: :unprocessable_content)
-      )
+    it "не заважає сторінкам, які організації не читають" do
+      # Гард у точці читання не має списку винятків — сторінка, що org не питає,
+      # його просто не тригерить. Мутація «повернути класовий before_action»
+      # червонить саме цей приклад.
+      get "/api/v1/codex/leaderboard", as: :json
+
+      expect(response).to have_http_status(:ok)
     end
   end
 end

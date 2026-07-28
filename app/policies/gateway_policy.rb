@@ -12,12 +12,8 @@ class GatewayPolicy < ApplicationPolicy
 
   class Scope < ApplicationPolicy::Scope
     def resolve
-      if super_admin?
-        scope.all
-      else
-        scope.left_joins(:cluster)
-             .where("clusters.organization_id = ? OR gateways.cluster_id IS NULL", user.organization_id)
-      end
+      scope.left_joins(:cluster)
+           .where("clusters.organization_id = ? OR gateways.cluster_id IS NULL", organization_id)
     end
   end
 end

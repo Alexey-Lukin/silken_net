@@ -63,12 +63,22 @@ RSpec.describe "Pundit authorization integration" do
       expect(ids).not_to include(other_tree.wallet.id)
     end
 
-    it "returns all wallets for super_admin (platform-wide)" do
+    # [SEC.25 Ф2] Єдиний приклад цієї осі, що йде РЕАЛЬНИМ HTTP-шляхом, тож він і несе
+    # присуд: платформена роль сама по собі більше не відмикає чужі гаманці. Раніше
+    # тут стояло «returns all wallets for super_admin (platform-wide)» — і це було
+    # правдою.
+    #
+    # Bearer-запит cookie-сесії не носить, тобто acting-організації не обрано, і
+    # контекст деградує до власної організації super_admin'а. Фабрика дає йому ВЛАСНУ,
+    # третю організацію — тому чесна відповідь тут порожня, а не «усі». Саме ця
+    # порожнеча і є доказом: доти той самий запит віддавав обидва чужі гаманці.
+    it "не віддає super_admin чужих гаманців лише за роллю" do
       get "/api/v1/wallets", headers: super_admin_headers, as: :json
       expect(response).to have_http_status(:ok)
 
       ids = response.parsed_body["data"].map { |w| w["id"] }
-      expect(ids).to include(own_tree.wallet.id, other_tree.wallet.id)
+      expect(ids).not_to include(own_tree.wallet.id)
+      expect(ids).not_to include(other_tree.wallet.id)
     end
   end
 end

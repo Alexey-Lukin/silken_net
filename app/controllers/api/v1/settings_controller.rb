@@ -9,7 +9,7 @@ module Api
       # GET /api/v1/settings
       # Поточна конфігурація Організації
       def show
-        org = current_user.organization
+        org = acting_organization!
 
         respond_to do |format|
           format.json do
@@ -38,7 +38,7 @@ module Api
       # PATCH /api/v1/settings
       # Оновлення конфігурації Організації (логотип, пороги тривоги, AI-чутливість)
       def update
-        org = current_user.organization
+        org = acting_organization!
 
         if org.update(settings_params)
           respond_to do |format|

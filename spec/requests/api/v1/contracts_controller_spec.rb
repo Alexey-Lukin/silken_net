@@ -131,13 +131,18 @@ RSpec.describe Api::V1::ContractsController, type: :request do
       expect(body).to have_key("attested_value_usd")
     end
 
-    it "returns 403 when user has no organization" do
+    # [SEC.25 Ф2] Доти цей екшен мав ВЛАСНУ відповідь на «нема організації» (403 через
+    # ручний гард), тоді як сусідні сторінки того самого дашборду відповідали 500, або
+    # 422, або 200 із порожнім станом. Тепер шлях один: 422 + машинний код.
+    it "returns 422 with a machine-readable code when the user has no organization" do
       user_without_org = create(:user, organization: nil)
       token = user_without_org.generate_token_for(:api_access)
       no_org_headers = { "Authorization" => "Bearer #{token}" }
 
       get "/api/v1/contracts/stats", headers: no_org_headers, as: :json
-      expect(response).to have_http_status(:forbidden)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["code"]).to eq("no_organization")
     end
 
     it "returns 401 without authentication" do

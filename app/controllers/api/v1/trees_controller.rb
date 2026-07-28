@@ -7,7 +7,7 @@ module Api
       # --- ШЕРЕНГА СОЛДАТІВ (Sector Grid) ---
       # GET /api/v1/clusters/:cluster_id/trees
       def index
-        @cluster = current_user.organization.clusters.find(params[:cluster_id])
+        @cluster = acting_organization!.clusters.find(params[:cluster_id])
         @pagy, @trees = pagy(
           @cluster.trees
                   .includes(:wallet, :tree_family, :hardware_key)
@@ -33,7 +33,7 @@ module Api
       # --- ПАСПОРТ СОЛДАТА (Deep Audit) ---
       # GET /api/v1/trees/:id
       def show
-        @tree = current_user.organization.trees
+        @tree = acting_organization!.trees
                   .includes(:tree_family, :hardware_key, :wallet, :cluster)
                   .find(params[:id])
         @latest_log = @tree.telemetry_logs.order(created_at: :desc).first
@@ -72,7 +72,7 @@ module Api
       # HTML: Turbo Frame для lazy-loading у Trees::Show
       # JSON: Масив хронологічних подій
       def chronicle
-        @tree = current_user.organization.trees.find(params[:id])
+        @tree = acting_organization!.trees.find(params[:id])
         result = TreeChronicleService.call(tree: @tree, page: params[:page], per_page: 20)
 
         respond_to do |format|

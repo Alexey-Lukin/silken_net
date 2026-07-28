@@ -24,7 +24,7 @@ module Api
         @pagy, @firmwares = pagy(BioContractFirmware.order(version: :desc))
 
         # Збираємо статистику інвентаря для дашборду (org-scoped)
-        org = current_user.organization
+        org = acting_organization!
         @inventory_stats = {
           trees: org.trees.group(:firmware_version).count,
           gateways: org.gateways.group(:firmware_version).count
@@ -129,7 +129,7 @@ module Api
       # --- ПРОВЕРКА ІНВЕНТАРЯ (Who has what?) ---
       # GET /api/v1/firmwares/inventory
       def inventory
-        org = current_user.organization
+        org = acting_organization!
         stats = {
           trees: org.trees.group(:firmware_version).count,
           gateways: org.gateways.group(:firmware_version).count
@@ -171,14 +171,14 @@ module Api
         # The dispatcher re-scopes through organization.clusters as well —
         # belt-and-suspenders on the cross-tenant OTA vector.
         cluster_id = params[:cluster_id].presence
-        if cluster_id && !current_user.organization.clusters.exists?(id: cluster_id)
+        if cluster_id && !acting_organization!.clusters.exists?(id: cluster_id)
           render json: { error: I18n.t("errors.api.not_found", model: "Cluster") }, status: :not_found
           return
         end
 
         result = Ota::DeploymentDispatcherService.call(
           firmware: @firmware,
-          organization: current_user.organization,
+          organization: acting_organization!,
           cluster_id: cluster_id,
           canary_percentage: canary_percentage
         )

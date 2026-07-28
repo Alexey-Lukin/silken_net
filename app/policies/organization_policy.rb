@@ -15,7 +15,7 @@ class OrganizationPolicy < ApplicationPolicy
       if super_admin?
         scope.all
       else
-        scope.where(id: user.organization_id)
+        scope.where(id: organization_id)
       end
     end
   end

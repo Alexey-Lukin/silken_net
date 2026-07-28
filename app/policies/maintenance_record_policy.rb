@@ -28,7 +28,7 @@ class MaintenanceRecordPolicy < ApplicationPolicy
 
   class Scope < ApplicationPolicy::Scope
     def resolve
-      org_cluster_ids = Cluster.where(organization_id: user.organization_id).select(:id)
+      org_cluster_ids = Cluster.where(organization_id: organization_id).select(:id)
       tree_ids = Tree.where(cluster_id: org_cluster_ids).select(:id)
       gateway_ids = Gateway.where(cluster_id: org_cluster_ids).select(:id)
 

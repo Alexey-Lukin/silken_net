@@ -12,11 +12,7 @@ class ClusterPolicy < ApplicationPolicy
 
   class Scope < ApplicationPolicy::Scope
     def resolve
-      if super_admin?
-        scope.all
-      else
-        scope.where(organization_id: user.organization_id)
-      end
+      scope.where(organization_id: organization_id)
     end
   end
 end

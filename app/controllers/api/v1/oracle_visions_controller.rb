@@ -9,7 +9,7 @@ module Api
 
       # GET /api/v1/oracle_visions
       def index
-        org = current_user.organization
+        org = acting_organization!
 
         # Використовуємо upcoming для прогнозів, оскільки strategic_forecasts може бути відсутнім.
         # [SCOPE FIX]: Раніше повертали глобальні AiInsight — інвестор з org A
@@ -26,7 +26,7 @@ module Api
         respond_to do |format|
           format.json { render json: { visions: @visions, emission_forecast: @scc_yield } }
           format.html do
-            @clusters = current_user.organization.clusters.order(:name)
+            @clusters = acting_organization!.clusters.order(:name)
             render_dashboard(
               title: I18n.t("oracle_visions.index_title"),
               component: OracleVisions::Index.new(
@@ -47,7 +47,7 @@ module Api
         # cluster. `find` raises ActiveRecord::RecordNotFound which BaseController
         # renders as 404 — keeping the response shape identical to other IDOR
         # guards (e.g. firmware deploy).
-        cluster = current_user.organization.clusters.find(params[:cluster_id])
+        cluster = acting_organization!.clusters.find(params[:cluster_id])
 
         permitted_variables = params.permit(variables: [ :sigma, :rho, :beta ])[:variables]
         job_id = SimulationWorker.perform_async(cluster.id, permitted_variables&.to_h)

@@ -4,10 +4,8 @@
 module Api
   module V1
     class DashboardController < BaseController
-      before_action :ensure_organization!, only: :index
-
       def index
-        org = current_user.organization
+        org = acting_organization!
 
         @stats = Rails.cache.fetch("dashboard_stats_org_#{org.id}", expires_in: 2.minutes) do
           # Агрегація Війська (scoped to organization)
@@ -96,7 +94,7 @@ module Api
       end
 
       def fetch_recent_events
-        org = current_user.organization
+        org = acting_organization!
 
         # Збираємо мікс з останніх алертів, транзакцій та реєстрацій (scoped to organization)
         [

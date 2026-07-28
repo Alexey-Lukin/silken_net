@@ -9,7 +9,7 @@ module Api
       # GET /api/v1/reports
       # Список доступних звітів та зведена інформація для інвесторів
       def index
-        org = current_user.organization
+        org = acting_organization!
 
         @summary = {
           total_trees: org.cached_trees_count,
@@ -41,7 +41,7 @@ module Api
       # GET /api/v1/reports/carbon_absorption
       # Звіт про поглинання CO₂ для екологічних аудитів
       def carbon_absorption
-        org = current_user.organization
+        org = acting_organization!
         wallets = org.wallets.includes(:tree)
 
         @data = {
@@ -83,7 +83,7 @@ module Api
       # GET /api/v1/reports/financial_summary
       # Фінансовий звіт для інвесторів Series C
       def financial_summary
-        org = current_user.organization
+        org = acting_organization!
 
         transactions = BlockchainTransaction
                          .joins(wallet: { tree: :cluster })

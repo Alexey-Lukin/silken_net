@@ -41,9 +41,13 @@ RSpec.describe UserPolicy do
       expect(described_class.new(admin, other_org_user).show?).to be false
     end
 
-    it "allows super_admin to view any user (show? mirrors Scope.all)" do
+    # [SEC.25 Ф2] Дзеркалення `Scope` лишилось — але дзеркалиться вже acting-org,
+    # а не `scope.all`.
+    it "дозволяє super_admin бачити користувача лише в контексті його організації" do
       other_org_user = create(:user, :forester, organization: other_org)
-      expect(described_class.new(super_admin, other_org_user).show?).to be true
+
+      expect(described_class.new(UserContext.new(super_admin, other_org), other_org_user).show?).to be true
+      expect(described_class.new(UserContext.new(super_admin, organization), other_org_user).show?).to be false
     end
 
     it "allows investor to view users in the same org" do
@@ -106,9 +110,14 @@ RSpec.describe UserPolicy do
       expect(scope).not_to include(other_user)
     end
 
-    it "returns all for super_admin" do
-      scope = described_class::Scope.new(super_admin, User).resolve
-      expect(scope).to include(org_user, other_user)
+    it "звужує super_admin до acting-організації, і перемикання її змінює" do
+      in_own = described_class::Scope.new(UserContext.new(super_admin, organization), User).resolve
+      in_other = described_class::Scope.new(UserContext.new(super_admin, other_org), User).resolve
+
+      expect(in_own).to include(org_user)
+      expect(in_own).not_to include(other_user)
+      expect(in_other).to include(other_user)
+      expect(in_other).not_to include(org_user)
     end
   end
 end

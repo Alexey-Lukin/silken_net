@@ -6,12 +6,11 @@ class UserPolicy < ApplicationPolicy
     admin_or_above?
   end
 
+  # [SEC.25 Ф2] Дзеркалить `Scope` — і саме тому знімається ПАРОЮ з ним. Доти обидва
+  # робили виняток для платформеної ролі; тепер обидва питають одне: чи запис
+  # належить організації, в контексті якої виконується запит.
   def show?
-    # super_admin? дзеркалить Scope (super_admin → scope.all): без нього
-    # super_admin бачить увесь список, але individual authorize кидав би 403
-    # (org_id = nil ⇒ same_organization? завжди false). admin лишається
-    # обмеженим своєю org — це навмисно (Scope: admin → where(org)).
-    super_admin? || same_organization?(record.organization_id)
+    same_organization?(record.organization_id)
   end
 
   def me?
@@ -20,11 +19,7 @@ class UserPolicy < ApplicationPolicy
 
   class Scope < ApplicationPolicy::Scope
     def resolve
-      if super_admin?
-        scope.all
-      else
-        scope.where(organization_id: user.organization_id)
-      end
+      scope.where(organization_id: organization_id)
     end
   end
 end

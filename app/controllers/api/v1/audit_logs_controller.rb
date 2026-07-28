@@ -9,9 +9,9 @@ module Api
       # GET /api/v1/audit_logs
       # Журнал дій адміністраторів для запобігання фроду та помилкам
       def index
-        @logs = AuditLog.where(organization_id: current_user.organization_id)
-                        .includes(:user)
-                        .recent
+        @logs = readable_audit_logs
+                  .includes(:user)
+                  .recent
 
         # Фільтрація
         @logs = @logs.by_action(params[:action_type])
@@ -37,9 +37,9 @@ module Api
 
       # GET /api/v1/audit_logs/:id
       def show
-        @log = AuditLog.where(organization_id: current_user.organization_id)
-                       .includes(:user)
-                       .find(params[:id])
+        @log = readable_audit_logs
+                 .includes(:user)
+                 .find(params[:id])
 
         respond_to do |format|
           format.json do
@@ -52,6 +52,28 @@ module Api
             )
           end
         end
+      end
+
+      private
+
+      # [SEC.25 Ф2] Журнал acting-організації — ПЛЮС глобальний системний ланцюг для
+      # super_admin.
+      #
+      # `organization_id: nil` в `audit_logs` не «запис без організації», а окремий
+      # ланцюг: туди `Auditable` пише org-less дії, зокрема зміни `SystemParameter`
+      # (governance-константи). Доти super_admin бачив саме його — не порожнечу й не
+      # крос-тенант, — бо його власний `organization_id` теж `nil`, тож фільтр збігався
+      # випадково. Під acting-org він дістав би id організації й **тихо втратив би
+      # доступ до системного ланцюга**: жоден тест не почервонів би, бо `AuditLogPolicy`
+      # тут не викликається взагалі (скоуп ручний), а super_admin-спеки на цей
+      # контролер немає.
+      #
+      # Org-admin глобального ланцюга не бачить — як і раніше.
+      def readable_audit_logs
+        org_ids = [ acting_organization!.id ]
+        org_ids << nil if current_user.role_super_admin?
+
+        AuditLog.where(organization_id: org_ids)
       end
     end
   end

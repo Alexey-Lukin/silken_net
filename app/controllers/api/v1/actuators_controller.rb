@@ -177,17 +177,17 @@ module Api
 
       def set_command
         @command = ActuatorCommand.joins(actuator: { gateway: :cluster })
-                                  .where(clusters: { organization_id: current_user.organization_id })
+                                  .where(clusters: { organization_id: acting_organization!.id })
                                   .find(params[:id])
       end
 
       def set_cluster
-        @cluster = current_user.organization.clusters.find(params[:cluster_id])
+        @cluster = acting_organization!.clusters.find(params[:cluster_id])
       end
 
       def set_actuator
         @actuator = Actuator.joins(gateway: :cluster)
-                            .where(clusters: { organization_id: current_user.organization_id })
+                            .where(clusters: { organization_id: acting_organization!.id })
                             .find(params[:id])
       end
     end

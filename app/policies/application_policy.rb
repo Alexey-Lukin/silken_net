@@ -2,10 +2,30 @@
 # frozen_string_literal: true
 
 class ApplicationPolicy
-  attr_reader :user, :record
+  # [SEC.25 Ф2] Розпаковує `UserContext` → (справжній `User`, id acting-організації).
+  # Приймає й голий `User` — так політику конструюють спеки, і так вона поводилась
+  # до acting-org. Для всіх, крім super_admin, обидва входи дають те саме, бо
+  # acting-організація тотожна власній.
+  module ContextUnpacking
+    attr_reader :user, :organization_id
+
+    def unpack_actor(actor)
+      if actor.is_a?(UserContext)
+        @user = actor.user
+        @organization_id = actor.organization_id
+      else
+        @user = actor
+        @organization_id = actor&.organization_id
+      end
+    end
+  end
+
+  include ContextUnpacking
+
+  attr_reader :record
 
   def initialize(user, record)
-    @user = user
+    unpack_actor(user)
     @record = record
   end
 
@@ -44,14 +64,16 @@ class ApplicationPolicy
   end
 
   def same_organization?(resource_org_id)
-    user.organization_id.present? && user.organization_id == resource_org_id
+    organization_id.present? && organization_id == resource_org_id
   end
 
   class Scope
-    attr_reader :user, :scope
+    include ContextUnpacking
+
+    attr_reader :scope
 
     def initialize(user, scope)
-      @user = user
+      unpack_actor(user)
       @scope = scope
     end
 

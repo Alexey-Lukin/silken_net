@@ -21,7 +21,7 @@ module Api
       private
 
       def set_record
-        org_cluster_ids = current_user.organization.clusters.select(:id)
+        org_cluster_ids = acting_organization!.clusters.select(:id)
 
         @record = MaintenanceRecord.where(
           "(maintainable_type = 'Tree' AND maintainable_id IN (?)) OR " \

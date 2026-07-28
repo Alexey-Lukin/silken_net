@@ -59,9 +59,14 @@ RSpec.describe ClusterPolicy do
       expect(scope).not_to include(other_cluster)
     end
 
-    it "returns all clusters for super_admins" do
-      scope = described_class::Scope.new(super_admin, Cluster).resolve
-      expect(scope).to include(own_cluster, other_cluster)
+    it "звужує super_admin до acting-організації, і перемикання її змінює" do
+      in_own = described_class::Scope.new(UserContext.new(super_admin, organization), Cluster).resolve
+      in_other = described_class::Scope.new(UserContext.new(super_admin, other_org), Cluster).resolve
+
+      expect(in_own).to include(own_cluster)
+      expect(in_own).not_to include(other_cluster)
+      expect(in_other).to include(other_cluster)
+      expect(in_other).not_to include(own_cluster)
     end
   end
 end

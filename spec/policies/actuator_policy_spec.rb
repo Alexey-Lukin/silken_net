@@ -66,10 +66,14 @@ RSpec.describe ActuatorPolicy do
     let(:other_gateway) { create(:gateway, cluster: other_cluster) }
     let!(:other_actuator) { create(:actuator, gateway: other_gateway) }
 
-    it "returns all actuators for super_admin" do
-      scope = described_class::Scope.new(super_admin, Actuator).resolve
-      expect(scope).to include(own_actuator)
-      expect(scope).to include(other_actuator)
+    it "звужує super_admin до acting-організації, і перемикання її змінює" do
+      in_own = described_class::Scope.new(UserContext.new(super_admin, organization), Actuator).resolve
+      in_other = described_class::Scope.new(UserContext.new(super_admin, other_org), Actuator).resolve
+
+      expect(in_own).to include(own_actuator)
+      expect(in_own).not_to include(other_actuator)
+      expect(in_other).to include(other_actuator)
+      expect(in_other).not_to include(own_actuator)
     end
 
     it "scopes to org actuators for non-super_admin" do

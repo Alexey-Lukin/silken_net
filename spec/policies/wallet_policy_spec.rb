@@ -38,8 +38,13 @@ RSpec.describe WalletPolicy do
         expect(described_class.new(investor, other_wallet).show?).to be false
       end
 
-      it "allows super_admin" do
-        expect(described_class.new(super_admin, other_wallet).show?).to be true
+      # [SEC.25 Ф2] Доти рядок звався «allows super_admin» і був правдою: платформена
+      # роль відмикала скарбницю будь-якої організації. Тепер вирішує КОНТЕКСТ, і
+      # перевіряти це треба двома суб'єктами — з одним не відрізнити «acting-організація»
+      # від «власна» чи «перша-ліпша».
+      it "дозволяє super_admin лише в контексті організації-власника" do
+        expect(described_class.new(UserContext.new(super_admin, other_org), other_wallet).show?).to be true
+        expect(described_class.new(UserContext.new(super_admin, organization), other_wallet).show?).to be false
       end
     end
   end
@@ -56,9 +61,14 @@ RSpec.describe WalletPolicy do
       expect(scope).not_to include(other_tree.wallet)
     end
 
-    it "returns all for super_admin" do
-      scope = described_class::Scope.new(super_admin, Wallet).resolve
-      expect(scope).to include(own_tree.wallet, other_tree.wallet)
+    it "звужує super_admin до acting-організації, і перемикання її змінює" do
+      in_own = described_class::Scope.new(UserContext.new(super_admin, organization), Wallet).resolve
+      in_other = described_class::Scope.new(UserContext.new(super_admin, other_org), Wallet).resolve
+
+      expect(in_own).to include(own_tree.wallet)
+      expect(in_own).not_to include(other_tree.wallet)
+      expect(in_other).to include(other_tree.wallet)
+      expect(in_other).not_to include(own_tree.wallet)
     end
 
     it "scopes admin to own org (org-scoped, not platform)" do

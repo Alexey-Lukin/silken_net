@@ -25,7 +25,7 @@ module Api
           format.html do
             render_dashboard(
               title: I18n.t("telemetry.live_title"),
-              component: Telemetry::LiveStream.new(organization: current_user.organization)
+              component: Telemetry::LiveStream.new(organization: acting_organization!)
             )
           end
         end
@@ -33,7 +33,7 @@ module Api
 
       # --- ДИХАННЯ СОЛДАТА (Існуючий метод) ---
       def tree_history
-        @tree = current_user.organization.trees.find(params[:id])
+        @tree = acting_organization!.trees.find(params[:id])
         days = clamp_history_days(params[:days])
         logs = @tree.telemetry_logs.where(created_at: days.days.ago..Time.current).order(:created_at)
 
@@ -65,7 +65,7 @@ module Api
       # mark_seen! is handled inside UnpackTelemetryWorker (line 42) to avoid
       # Connection Pool Exhaustion during mass gateway reconnects after blackouts.
       def gateway_uplink
-        @gateway = current_user.organization.gateways.find(params[:id])
+        @gateway = acting_organization!.gateways.find(params[:id])
 
         payload = params.require(:payload).to_s
 
@@ -99,7 +99,7 @@ module Api
 
       # --- ПУЛЬС КОРЛЕВИ (Існуючий метод) ---
       def gateway_history
-        @gateway = current_user.organization.gateways.find(params[:id])
+        @gateway = acting_organization!.gateways.find(params[:id])
         days = clamp_history_days(params[:days])
         logs = @gateway.gateway_telemetry_logs.where(created_at: days.days.ago..Time.current).order(:created_at)
 

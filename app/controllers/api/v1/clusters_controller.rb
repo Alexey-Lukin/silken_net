@@ -13,7 +13,7 @@ module Api
         # Скоупимо до організації поточного користувача (Security Scope)
         # active_threats? використовує EXISTS з composite index — includes не потрібен.
         # health_index та active_trees_count — денормалізовані колонки на clusters.
-        @pagy, @clusters = pagy(current_user.organization.clusters)
+        @pagy, @clusters = pagy(acting_organization!.clusters)
 
         respond_to do |format|
           # 1. API Response (Mobile / Externals)
@@ -37,7 +37,7 @@ module Api
       # --- ДЕТАЛІ СЕКТОРА (The Deep Dive / Sector Matrix) ---
       # GET /api/v1/clusters/:id
       def show
-        @cluster = current_user.organization.clusters.find(params[:id])
+        @cluster = acting_organization!.clusters.find(params[:id])
 
         respond_to do |format|
           # 1. API Response

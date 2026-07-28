@@ -9,7 +9,7 @@ module Api
       def index
         @transactions = BlockchainTransaction
                           .joins(wallet: { tree: :cluster })
-                          .where(clusters: { organization_id: current_user.organization_id })
+                          .where(clusters: { organization_id: acting_organization!.id })
                           .includes(wallet: :tree)
                           .order(created_at: :desc)
 
@@ -85,7 +85,7 @@ module Api
       def find_transaction
         scope = BlockchainTransaction
                   .joins(wallet: { tree: :cluster })
-                  .where(clusters: { organization_id: current_user.organization_id })
+                  .where(clusters: { organization_id: acting_organization!.id })
                   .includes(wallet: :tree)
 
         if params[:created_at].present?

@@ -61,9 +61,14 @@ RSpec.describe GatewayPolicy do
       expect(scope).not_to include(other_gateway)
     end
 
-    it "returns all gateways for super_admins" do
-      scope = described_class::Scope.new(super_admin, Gateway).resolve
-      expect(scope).to include(own_gateway, other_gateway)
+    it "звужує super_admin до acting-організації, і перемикання її змінює" do
+      in_own = described_class::Scope.new(UserContext.new(super_admin, organization), Gateway).resolve
+      in_other = described_class::Scope.new(UserContext.new(super_admin, other_org), Gateway).resolve
+
+      expect(in_own).to include(own_gateway)
+      expect(in_own).not_to include(other_gateway)
+      expect(in_other).to include(other_gateway)
+      expect(in_other).not_to include(own_gateway)
     end
 
     it "scopes gateways through cluster organization" do

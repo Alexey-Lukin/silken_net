@@ -6,12 +6,19 @@ class WalletPolicy < ApplicationPolicy
     true
   end
 
+  # [SEC.25 Ф2] Роль тут більше не дає доступу — лише організація, в контексті якої
+  # виконується запит. Раніше рядок вів `super_admin? ||`, тобто платформена роль
+  # відмикала скарбницю БУДЬ-ЯКОЇ організації; тепер super_admin бачить рівно ту, в
+  # яку перемкнувся, і по тому самому правилу, що всі.
+  #
+  # 🔴 Знімати цю гілку МОЖНА ЛИШЕ ПАРОЮ зі `Scope` — вони одна конструкція. Звузити
+  # сам `Scope` й лишити її тут = `wallets#index` віддає лише свою організацію, а
+  # `GET /wallets/:id` і далі будь-чию, бо контролер вантажить запис голим
+  # `Wallet.find(params[:id])` (три екшени: show/balance/metadata). Це фікс, що
+  # відвантажується з ілюзією ізоляції — рівно та форма, від якої цей файл уже
+  # лікували в SEC.16, тільки роллю вище.
   def show?
-    # super_admin? (platform :system access), NOT admin_or_above? — a plain admin is
-    # org-scoped (:organization access, user.rb#access_level / 04_01). Using
-    # admin_or_above? here leaked every org's treasury to any org-admin (SEC.16).
-    super_admin? ||
-      same_organization?(record.organization_id) ||
+    same_organization?(record.organization_id) ||
       same_organization?(record.tree&.cluster&.organization_id)
   end
 
@@ -25,11 +32,7 @@ class WalletPolicy < ApplicationPolicy
 
   class Scope < ApplicationPolicy::Scope
     def resolve
-      if super_admin? # platform-wide only; a plain admin is org-scoped (SEC.16)
-        scope.all
-      else
-        scope.where(organization_id: user.organization_id)
-      end
+      scope.where(organization_id: organization_id)
     end
   end
 end

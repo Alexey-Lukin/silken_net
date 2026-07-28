@@ -63,9 +63,14 @@ RSpec.describe EwsAlertPolicy do
     let!(:other_alert) { create(:ews_alert, cluster: other_cluster) }
     let(:super_admin_scope) { create(:user, :super_admin) }
 
-    it "returns all alerts for super_admin" do
-      scope = described_class::Scope.new(super_admin_scope, EwsAlert).resolve
-      expect(scope).to include(own_alert, other_alert)
+    it "звужує super_admin до acting-організації, і перемикання її змінює" do
+      in_own = described_class::Scope.new(UserContext.new(super_admin_scope, organization), EwsAlert).resolve
+      in_other = described_class::Scope.new(UserContext.new(super_admin_scope, other_org), EwsAlert).resolve
+
+      expect(in_own).to include(own_alert)
+      expect(in_own).not_to include(other_alert)
+      expect(in_other).to include(other_alert)
+      expect(in_other).not_to include(own_alert)
     end
 
     it "scopes to org alerts for non-super_admin" do

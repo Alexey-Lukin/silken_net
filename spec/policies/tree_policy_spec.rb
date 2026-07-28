@@ -33,9 +33,19 @@ RSpec.describe TreePolicy do
       expect(scope).to include(clusterless_tree)
     end
 
-    it "returns all trees for super_admin" do
-      scope = described_class::Scope.new(super_admin, Tree).resolve
-      expect(scope).to include(own_tree, other_tree, clusterless_tree)
+    it "звужує super_admin до acting-організації, і перемикання її змінює" do
+      in_own = described_class::Scope.new(UserContext.new(super_admin, organization), Tree).resolve
+      in_other = described_class::Scope.new(UserContext.new(super_admin, other_org), Tree).resolve
+
+      expect(in_own).to include(own_tree)
+      expect(in_own).not_to include(other_tree)
+      expect(in_other).to include(other_tree)
+      expect(in_other).not_to include(own_tree)
+      # Безкластерне дерево лишається видимим у будь-якому контексті — воно ще не
+      # належить жодній організації (`OR trees.cluster_id IS NULL`), і це не acting-org
+      # правило, а наявна семантика щойно заведеного вузла.
+      expect(in_own).to include(clusterless_tree)
+      expect(in_other).to include(clusterless_tree)
     end
 
     it "excludes trees from other organizations for forester" do

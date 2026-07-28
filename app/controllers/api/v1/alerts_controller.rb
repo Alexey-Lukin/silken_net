@@ -13,7 +13,7 @@ module Api
 
       # GET /api/v1/alerts
       def index
-        @alerts = current_user.organization.ews_alerts
+        @alerts = acting_organization!.ews_alerts
                               .includes(:cluster, :tree)
                               .order(created_at: :desc)
 
@@ -57,7 +57,7 @@ module Api
           format.html do
             render_dashboard(
               title: I18n.t("alerts.index_title"),
-              component: Alerts::Index.new(alerts: @alerts, pagy: @pagy, organization: current_user.organization)
+              component: Alerts::Index.new(alerts: @alerts, pagy: @pagy, organization: acting_organization!)
             )
           end
         end
@@ -113,7 +113,7 @@ module Api
       private
 
       def set_alert
-        @alert = current_user.organization.ews_alerts.find(params[:id])
+        @alert = acting_organization!.ews_alerts.find(params[:id])
       end
     end
   end

@@ -79,8 +79,11 @@ module Api
       # --- ФІНАНСОВА АНАЛІТИКА (Повністю відновлено) ---
       # GET /api/v1/contracts/stats
       def stats
-        organization = current_user.organization
-        return render_forbidden unless organization
+        # [SEC.25 Ф2] Ручний гард «нема організації → 403» тут стояв доти й тепер
+        # недосяжний: `acting_organization!` кидає раніше. Це не втрата, а вирівнювання
+        # — 403 означає «тобі заборонено», тоді як насправді користувач просто без
+        # організації, і решта дашборду відповідає на це 422 з `code: "no_organization"`.
+        organization = acting_organization!
 
         render json: {
           total_contracted: organization.naas_contracts.sum(:total_value),

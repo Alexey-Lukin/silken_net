@@ -219,7 +219,7 @@ module Api
 
       # Обмежуємо доступ до записів лише організацією поточного користувача
       def organization_scoped_records
-        org_cluster_ids = current_user.organization.clusters.select(:id)
+        org_cluster_ids = acting_organization!.clusters.select(:id)
 
         MaintenanceRecord.where(
           "(maintainable_type = 'Tree' AND maintainable_id IN (?)) OR " \
@@ -244,14 +244,14 @@ module Api
         owned =
           case target
           when Tree, Gateway
-            current_user.organization.clusters.exists?(id: target.cluster_id)
+            acting_organization!.clusters.exists?(id: target.cluster_id)
           else
             false
           end
         raise ActiveRecord::RecordNotFound unless owned
 
         if record.ews_alert_id.present? &&
-           !current_user.organization.ews_alerts.exists?(id: record.ews_alert_id)
+           !acting_organization!.ews_alerts.exists?(id: record.ews_alert_id)
           raise ActiveRecord::RecordNotFound
         end
       end

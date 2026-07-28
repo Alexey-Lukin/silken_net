@@ -51,8 +51,11 @@ RSpec.describe AuditLogPolicy do
       expect(described_class.new(admin, other_record).show?).to be false
     end
 
-    it "allows super_admin any org's log" do
-      expect(described_class.new(super_admin, other_record).show?).to be true
+    # [SEC.25 Ф2] Роль лишається умовою (журнал не для лісника/інвестора), але вже
+    # не дає крос-тенантного доступу.
+    it "дозволяє super_admin журнал лише тієї організації, в контексті якої він працює" do
+      expect(described_class.new(UserContext.new(super_admin, other_org), other_record).show?).to be true
+      expect(described_class.new(UserContext.new(super_admin, organization), other_record).show?).to be false
     end
   end
 
@@ -67,9 +70,14 @@ RSpec.describe AuditLogPolicy do
       expect(scope).not_to include(other_log)
     end
 
-    it "returns all logs for super_admins" do
-      scope = described_class::Scope.new(super_admin, AuditLog).resolve
-      expect(scope).to include(own_log, other_log)
+    it "звужує super_admin до acting-організації, і перемикання її змінює" do
+      in_own = described_class::Scope.new(UserContext.new(super_admin, organization), AuditLog).resolve
+      in_other = described_class::Scope.new(UserContext.new(super_admin, other_org), AuditLog).resolve
+
+      expect(in_own).to include(own_log)
+      expect(in_own).not_to include(other_log)
+      expect(in_other).to include(other_log)
+      expect(in_other).not_to include(own_log)
     end
   end
 end

@@ -7,7 +7,7 @@ module Api
       # GET /api/v1/gateways
       def index
         @pagy, @gateways = pagy(
-          current_user.organization.gateways
+          acting_organization!.gateways
             .includes(:cluster, :latest_gateway_telemetry_log)
         )
 
@@ -19,7 +19,7 @@ module Api
             }
           end
           format.html do
-            online_count = current_user.organization.gateways
+            online_count = acting_organization!.gateways
                              .where("last_seen_at > ?", 5.minutes.ago).count
             render_dashboard(
               title: I18n.t("gateways.index_title"),
@@ -31,7 +31,7 @@ module Api
 
       # GET /api/v1/gateways/:id
       def show
-        @gateway = current_user.organization.gateways.find(params[:id])
+        @gateway = acting_organization!.gateways.find(params[:id])
 
         respond_to do |format|
           format.json { render json: GatewayBlueprint.render_as_hash(@gateway) }

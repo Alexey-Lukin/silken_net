@@ -29,9 +29,13 @@ RSpec.describe NaasContractPolicy do
       expect(described_class.new(admin, contract).show?).to be false
     end
 
-    it "allows super_admin regardless of org" do
+    # [SEC.25 Ф2] «regardless of org» більше не діє: фінанси NaaS бачить лише
+    # acting-організація, і для super_admin теж.
+    it "дозволяє super_admin лише в контексті організації-власника" do
       contract = create(:naas_contract, organization: other_org, cluster: other_cluster)
-      expect(described_class.new(super_admin, contract).show?).to be true
+
+      expect(described_class.new(UserContext.new(super_admin, other_org), contract).show?).to be true
+      expect(described_class.new(UserContext.new(super_admin, organization), contract).show?).to be false
     end
   end
 
@@ -45,9 +49,12 @@ RSpec.describe NaasContractPolicy do
       expect(scope).not_to include(other_contract)
     end
 
-    it "returns all for super_admin" do
-      scope = described_class::Scope.new(super_admin, NaasContract).resolve
-      expect(scope).to include(own_contract, other_contract)
+    it "звужує super_admin до acting-організації, і перемикання її змінює" do
+      in_own = described_class::Scope.new(UserContext.new(super_admin, organization), NaasContract).resolve
+      in_other = described_class::Scope.new(UserContext.new(super_admin, other_org), NaasContract).resolve
+
+      expect(in_own).to contain_exactly(own_contract)
+      expect(in_other).to contain_exactly(other_contract)
     end
 
     it "scopes admin to own org (org-scoped, not platform)" do

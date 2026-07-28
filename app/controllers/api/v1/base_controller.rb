@@ -4,6 +4,18 @@
 module Api
   module V1
     class BaseController < ActionController::Base
+      # [SEC.25 Ф2] Кидається `acting_organization!` — тобто В ТОЧЦІ ЧИТАННЯ організації,
+      # а не `before_action`-гардом. Різниця несуча: від `BaseController` успадковують і
+      # ті, хто організації не має за побудовою — codex (lore глобальний), обидва
+      # webhook'и, обидва auth-шляхи, `m2m_auth` і платформені (`system_health`,
+      # `system_audits`, `organizations`). Класовий `before_action` вимагав би
+      # `skip_before_action` у кожному з них — тобто «однорідне правило», зібране зі
+      # списку винятків, який мусить рости з кожним новим контролером і який хтось
+      # забуде поповнити. Гард у точці читання списку не має взагалі: сторінка, що
+      # організації не читає, його не тригерить, а забути його неможливо, бо він НЕ
+      # окремий крок — він і є спосіб дістати організацію.
+      class NoActingOrganization < StandardError; end
+
       # Phlex components (DashboardLayout, AuthLayout) generate complete HTML documents,
       # so Rails must not wrap their output in application.html.erb.
       layout false
@@ -37,6 +49,7 @@ module Api
       # which is out of scope for a unit/request run. Mirrors the `defined?(dev-gem)`
       # env-conditional leave category (04_06 §B.4).
       rescue_from StandardError, with: :render_internal_server_error unless Rails.env.development?
+      rescue_from NoActingOrganization, with: :render_no_organization
       rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
       rescue_from ActionController::ParameterMissing, with: :render_parameter_missing
       rescue_from ActiveModel::ValidationError, with: :render_validation_error
@@ -44,7 +57,7 @@ module Api
 
       # --- ХЕЛПЕРИ ДОСТУПУ ---
       # Робимо методи доступними в Phlex-компонентах через хелпери Rails
-      helper_method :current_user, :signed_in?
+      helper_method :current_user, :signed_in?, :acting_organization
 
       private
 
@@ -88,9 +101,18 @@ module Api
         @current_user
       end
 
-      # Pundit використовує pundit_user для визначення поточного користувача.
-      # За замовчуванням це current_user, але ми визначаємо явно для ясності.
-      alias_method :pundit_user, :current_user
+      # [SEC.25 Ф2] Pundit дістає не користувача, а пару «хто + в контексті якої
+      # організації» — бо організація запиту більше не виводиться з користувача
+      # (super_admin її перемикає).
+      #
+      # ⚠️ `current_user &&` тут несуче, а не оборонний рефлекс: без нього анонімний
+      # запит (`skip_before_action :authenticate_user!` — публічний codex-leaderboard,
+      # webhook'и, логін) дістав би обгортку навколо `nil`, а обгортка — це об'єкт,
+      # тобто `present?` каже `true`. Кожен `return scope.none unless user` у
+      # codex-політиках перевернувся б на fail-OPEN. Нема користувача — нема пари.
+      def pundit_user
+        current_user && UserContext.new(current_user, acting_organization)
+      end
 
       def signed_in?
         current_user.present?
@@ -135,21 +157,47 @@ module Api
         render AuthLayout.new(title: title, content: component), status: status
       end
 
-      # Гарантує, що у поточного користувача є призначена організація.
-      # Усі ~18 dashboard-контролерів читають `current_user.organization` напряму;
-      # без цього guard'а NoMethodError на `nil.organization` ховає реальну проблему
-      # (системний бот / щойно створений акаунт без onboarding).
+      # [SEC.25 Ф2] Організація, в контексті якої виконується ЦЕЙ запит.
       #
-      # Контролер опт-ін через `before_action :ensure_organization!`.
+      # Для всіх, крім super_admin, це завжди власна організація — сесія тут свідомо
+      # ІГНОРУЄТЬСЯ, а не звіряється: інакше переведення користувача в іншу організацію
+      # лишало б його сесію дивитись на стару. Право перемикатись — платформена
+      # здатність super_admin'а, а не властивість членства.
+      #
+      # Носій — `session[:acting_org_id]` (per-device, гине з логаутом, сусідить із
+      # `:user_id`/`:ps`), а не колонка на `users`: стан ПЕРЕГЛЯДУ не є членством, і
+      # колонка пережила б і сесію, і пристрій (перемкнувся на ноуті — змінилось на
+      # телефоні; перемкнувся місяць тому — сьогодні тихо дивишся не туди).
+      #
+      # Bearer-запит cookie-сесії не несе → падає на власну організацію. Це і є
+      # правильна деградація: API-клієнт не має UI-контексту перегляду.
+      def acting_organization
+        return @acting_organization if defined?(@acting_organization)
+
+        @acting_organization = resolve_acting_organization
+      end
+
+      # Bang-форма: усе, що БЕЗ організації працювати не може, читає організацію ЧЕРЕЗ
+      # неї. Раніше ці ж місця робили `current_user.organization.trees` і на nil давали
+      # три різні поведінки в межах одного сімейства сторінок — 422 з HTML, 200 із
+      # фальшивим порожнім станом (не відрізнити від завантаження) і 500 з JSON-блобом
+      # у браузері. Тепер шлях один і керований.
+      def acting_organization!
+        acting_organization || raise(NoActingOrganization)
+      end
+
+      def resolve_acting_organization
+        return nil unless current_user
+        return current_user.organization unless current_user.role_super_admin?
+
+        switched = session[:acting_org_id] && Organization.find_by(id: session[:acting_org_id])
+        switched || current_user.organization
+      end
+
       # JSON клієнти отримують 422 з машинно-читабельним кодом помилки.
       # HTML клієнти бачать стилізовану Phlex-сторінку всередині AuthLayout
       # (узгоджено з docs/04_04_Phlex_UI_and_Tailwind.md — UI лише через Phlex).
-      def ensure_organization!
-        # `current_user` is guaranteed non-nil here: the only caller (`DashboardController`)
-        # does not skip the class-level `before_action :authenticate_user!` above, which
-        # halts the chain (`render_unauthorized`) before `ensure_organization!` ever runs.
-        return if current_user.organization
-
+      def render_no_organization(_exception = nil)
         respond_to do |format|
           format.json do
             render json: { error: I18n.t("errors.api.no_organization"), code: "no_organization" },
@@ -210,7 +258,7 @@ module Api
       # прогріє кеш, роздав би своє число всім іншим на хвилину.
       # Без організації — 0, а не глобальна сума (fail-closed).
       def ews_alert_count_cached
-        org = current_user&.organization
+        org = acting_organization
         return 0 unless org
 
         Rails.cache.fetch("ews_alert_count_unresolved/org/#{org.id}", expires_in: 1.minute) do
