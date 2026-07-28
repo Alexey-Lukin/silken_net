@@ -49,7 +49,7 @@ module TurboStreamInventory
     # 🔴 будь-який патерн тут хибний в обидва боки, і я зробив обидві помилки
     # по черзі, зміряв кожну. `broadcast_\w*_to` пропускає не-`_to` форми
     # (`broadcast_refresh` шле у ВЛАСНИЙ стрім моделі — стрім без імені й без
-    # реєстру), а `broadcast_\w+` ловить 22 ВЛАСНІ приватні хелпери застосунку
+    # реєстру), а `broadcast_\w+` загрібає ВЛАСНІ приватні хелпери застосунку
     # (`broadcast_ota_progress`, `broadcast_command_state_static`…), що до API
     # гема не належать. Єдине незгниване джерело — сам гем:
     # `Turbo::Streams::Broadcasts` ∪ `Turbo::Broadcastable`, дериване у виклику,

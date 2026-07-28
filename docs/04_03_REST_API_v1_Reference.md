@@ -165,6 +165,10 @@ POST /api/v1/auth/m2m_token
 
 > **Примітка:** у `development` середовищі `StandardError` не перехоплюється — Rails показує детальний backtrace.
 
+> 🔴 **Ця таблиця описує ЛИШЕ JSON-контракт, а рендерери помилок HTML-випадку не розглядають узагалі — тож на дашборді користувач бачить JSON-блоб замість сторінки помилки.** Усі сім хелперів `BaseController` (`render_unauthorized` · `render_forbidden` · `render_forbidden_pundit` · `render_not_found` · `render_parameter_missing` · `render_validation_error` · `render_internal_server_error`) — це голий `render json:` без жодного `respond_to`. Виняток рівно один, і він показує потрібну форму: `ensure_organization!` має повний `respond_to` з HTML-гілкою (`Errors::NoOrganization` — єдиний error-компонент у дереві).
+>
+> Клас ширший за винятки: `render_forbidden` досяжний зі звичайних before-action RBAC-гардів, а `render_unauthorized` — з `authenticate_user!` **без HTML-редиректу на логін**, тобто протермінована сесія в браузері віддає JSON першою ж дією реального користувача. Стан → [`00_07`](00_07_Action_Plan_Tracker) SEC.25.
+
 ### 2.3 Пагінація
 
 Всі list-ендпоінти підтримують стандартну пагінацію Pagy:
@@ -199,6 +203,10 @@ POST /api/v1/auth/m2m_token
 | `super_admin` | Суперадміністратор | + Organizations (глобальний доступ). `users#index` повертає **всіх** користувачів системи (`scope.all` через `UserPolicy::Scope`) — без фільтрації по org. |
 
 Policy-хелпер `admin_or_above?` (`ApplicationPolicy` + `Scope`) = `admin` ∪ `super_admin`. **[SEC.16]** Він **не** дає cross-tenant права: `show?`/`Scope` money/audit-політик = `super_admin? || same_org` (Wallet/NaasContract; AuditLog суворіший — same-org додатково вимагає `admin_or_above?`, лісник/інвестор журнал не бачить) — plain admin лишається `:organization`-scoped, лише `super_admin` = `:system` (`User#access_level`).
+
+> ⚠️ **SUPERSEDED рішенням (founder 2026-07-28): крос-тенант доступ super_admin'а по РОЛІ скасовується на користь acting-organization** — одна організація за раз для всіх, із перемиканням. Таблиця вище й абзац під нею описують **чинний код**, а не цільову модель, тож не будуй на них нового: сьогодні `super_admin` дістає `scope.all` не в трьох політиках, а в усіх, що визначають `Scope` під `if super_admin?`, і `User#access_level` віддає `:system` **незалежно від організації**. Під acting-org `access_level` розщеплюється на платформену **здатність** (може перемикати org) ⊥ **скоуп даних** (завжди acting-org). Архітектура, носій контексту й фазування — [`00_07`](00_07_Action_Plan_Tracker) SEC.25 (Ф2, gated на Ф1).
+>
+> 🔴 **І передумова, через яку це не косметика:** org-скоуп сьогодні тримається **звичкою, не механізмом**. Гард `ensure_organization!` — **опт-ін**, і опт-ін зробив рівно ОДИН контролер (`dashboard#index`); решта читає `current_user.organization` напряму, тобто user без організації падає на кожній сторінці по-різному — 422 з HTML, 200 з фальшивим порожнім станом або 500 з JSON-блобом (§2.2). Однорідне правило замість особливого випадку і є те, що acting-org купує.
 
 ---
 
