@@ -34,7 +34,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 - **Discovery fail-open (ADR-CDX-7):** збій enqueue probe НЕ відкочує user-facing операцію. Presence-gated (Redis TTL 10 хв) → O(active_users), не O(all_users).
 - **Markdown-санітизація (ADR-CDX-5):** через `Codex::MarkdownRenderer` allow-list; сирий HTML ніколи в DOM.
 - **Citation allow-list (ADR-CDX-9):** `citable_type` лише через `CITABLE_CLASS_MAP` — без `constantize` з params (object-injection guard).
-- **Stimulus-мінімалізм (ADR-CDX-8):** рівно 2 контролери (`codex--reveal`, `codex--comment`); решта — нативний `data-turbo-confirm`. ⚠️ **Broadcast-half живості (attunement-counter · live-comments · citation-pills · discovery-toast) наразі DEAD-on-arrival** — шлють сирий `ActionCable.server.broadcast` без жодного consumer'а (нема `@rails/actioncable`-pin / `app/channels/` / `subscriptions.create` у репо). Робочий патерн живості = `turbo_stream_from` + `Turbo::StreamsChannel.broadcast_*_to` (як telemetry/burn/wallet), НЕ raw broadcast. Wire-vs-descope = відкрите ⚖️ → [`00_07` UI.2](00_07_Action_Plan_Tracker).
+- **Stimulus-мінімалізм (ADR-CDX-8):** рівно 2 контролери (`codex--reveal`, `codex--comment`); решта — нативний `data-turbo-confirm`. ⚠️ **Живості немає ЗОВСІМ — і мова тут точна, бо була неточною.** Attunement-counter · live-comments · citation-pills · discovery-toast не «шлють сирий ActionCable без consumer'а» (так було до 2026-07-27) — вони **не шлють нічого**: усі 8 сирих `ActionCable.server.broadcast` знято разом із `AttunementBroadcastWorker`, і заборону тримає `spec/security/no_raw_action_cable_spec.rb`. Компоненти лишились зібраними, DOM-id на місці, продюсера немає. Робочий патерн живості = `turbo_stream_from` + `Turbo::StreamsChannel.broadcast_*_to`, і новий стрім одразу винен доказ скоупу (`spec/security/turbo_stream_scope_spec.rb` → скіл `frontend` #9). ⚠️ `app/channels/` досі не існує, тож `ApplicationCable::Connection` — відкрита передумова будь-якої авторизації на сокеті ([`00_07` UI.2](00_07_Action_Plan_Tracker) + SEC.25). Wire-vs-descope = відкрите ⚖️ там же.
 - **N+1:** citation-strip завжди через `Codex::Citation.bulk_for(targets)`.
 - **Партиціювання (ADR-CDX-6):** лише `codex_matches` (RANGE/місяць, write-heavy); `codex_nodes` ~10K → без партицій.
 - **bigint PK + `codex_uid` (ADR-CDX-1):** `CDX-XXX-####` — людино-читабельний, НЕ PK.
@@ -48,7 +48,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 | Namespace + моделі | `app/models/codex.rb` · `app/models/codex/` (Realm, Node, Citation, Comment, Attunement, Fraction, Match, Discovery, DiscoveryRule) |
 | Контролери | `app/controllers/api/v1/codex/` (+ `admin/`) |
 | Сервіси | `app/services/codex/` (DiscoveryEngine, EloMath, PairSelector, VoteRecorder, FractionChange, PresenceTracker, MarkdownRenderer, NodeImport, DiscoveryRuleImport) |
-| Воркери | `app/workers/codex/` (AttunementBroadcast, DiscoveryProbe, EloRecompute, FractionAudit) |
+| Воркери | `app/workers/codex/` (DiscoveryProbe, EloRecompute, FractionAudit) — `AttunementBroadcast` **видалено** 2026-07-27 (UI.2) |
 | Phlex | `app/views/components/codex/` |
 | Policies (Pundit) | `app/policies/codex/` |
 | Blueprints | `app/blueprints/codex/` |

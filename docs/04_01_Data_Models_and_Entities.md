@@ -1440,7 +1440,7 @@ Lore-шар SilkenNet — read-only бібліотека "архетипів" (�
 
 **Scopes:** `for_node(node)`, `for_user(user)`, `ordered` (за `created_at DESC`).
 
-**Workflow:** `Codex::AttunementsController` (create/destroy) → `Codex::AttunementBroadcastWorker.perform_async(node_id, user_id)` (queue: `default`) → broadcasts `attunement_count` на public-канал `codex_node_<id>_attunements` + `attuned: bool` на private-канал `codex_node_<id>_attunements_user_<uid>`.
+**Workflow:** `Codex::AttunementsController` (create/destroy) → запис/видалення, і все. **Realtime:** немає — `Codex::AttunementBroadcastWorker` видалено 2026-07-27 ([`UI.2`](00_07_Action_Plan_Tracker) descope): він слав сирий `ActionCable.server.broadcast` у канали, на які ніхто ніколи не підписувався, а без броадкастів клас ставав no-op'ом, що робив два запити в БД на кожен attune. Дзеркало сусіда — `Codex::Comment` ↑.
 
 ### `Codex::Fraction` — Особиста Ідентичність (Phase 3)
 
