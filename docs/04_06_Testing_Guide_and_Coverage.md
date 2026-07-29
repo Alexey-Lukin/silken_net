@@ -250,8 +250,10 @@ def subscribed_streams(markup)
         .map { |s| Turbo::StreamsChannel.verified_stream_name(s) }
 end
 
-# Скоуп несе саме ІМʼЯ → рівність множини, не `include`
-expect(subscribed_streams(html)).to eq([ "telemetry_stream_org_42" ])
+# Скоуп несе саме ІМʼЯ → рівність множини, не `include`.
+# `_e{epoch}` — покоління імені [SEC.25 Ф3]; у компонент-спеці бери епоху
+# НЕ-дефолтну (тут 7), інакше зашита в код одиниця лишила б пін зеленим.
+expect(subscribed_streams(html)).to eq([ "telemetry_stream_org_42_e7" ])
 ```
 
 ⚠️ **Голий `include("turbo-cable-stream-source")` — вакуумний пін**: він зелений і

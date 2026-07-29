@@ -211,8 +211,13 @@ class User < ApplicationRecord
 
   private
 
-  # [ARCH.57] Актор = система (oracle_executioner): request-контексту на model-рівні
-  # нема (Current-патерн не заведено — YAGNI до першого role-UI); суб'єкт зміни = auditable.
+  # [ARCH.57] Актор = система (oracle_executioner): ІНІЦІАТОРА на model-рівні не
+  # видно, суб'єкт зміни = auditable. ⚠️ Тут доти стояло «Current-патерн не
+  # заведено — YAGNI до першого role-UI»; перемикач організації [SEC.25 Ф2] і був
+  # тим role-UI, тож `Current` тепер існує — і `Auditable#with_acting_context`
+  # ним користується, домішуючи acting-контекст у метадані КОЖНОГО сліду, цього
+  # зокрема. Актором він при цьому не стає: `Current` — діагностична мітка, а не
+  # джерело авторства (`04_01 §5`).
   def record_role_change_audit
     from, to = saved_change_to_role
     record_audit_trail!(

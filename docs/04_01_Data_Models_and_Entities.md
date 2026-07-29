@@ -779,7 +779,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 
 ### `Organization` — Власник Лісових Активів
 
-**Включає:** `EthAddressValidatable`
+**Включає:** `EthAddressValidatable` · `Auditable` (ротація епохи стрімів = привілейована дія, [ARCH.57])
 
 **Асоціації:**
 
@@ -806,6 +806,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `alert_threshold_critical_z` | decimal | Поріг Z для власних тривог (0..10) |
 | `ai_sensitivity` | decimal | Чутливість AI (0..1) |
 | `locale` | string | [I18N.1] Мова, якою організація отримує **пошту** (`AlertMailer` → `billing_email`). Не дубль `users.locale`: за цією скринькою може не стояти жоден User. `nil` = «не обрано» → базова локаль; валідація деривує перелік з `available_locales` ([`04_04 §12.8`](04_04_Phlex_UI_and_Tailwind)) |
+| `stream_epoch` | integer | [SEC.25 Ф3] Покоління імен Turbo-стрімів (`..._org_{id}_e{epoch}`), default 1, NOT NULL. Єдиний механізм відкликання виданого capability-токена: підпис детермінований і без TTL, тож знецінити збережене імʼя можна лише **покинувши адресу**. Важіль — `#rotate_stream_epoch!` (bump → tombstone у стару адресу → слід ARCH.57); стелі й чому `:map` не гаситься — [`04_04 §8.1`](04_04_Phlex_UI_and_Tailwind) |
 
 **Ключові методи:**
 
@@ -816,6 +817,8 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `total_contracted` | `naas_contracts.sum(:total_funding)` |
 | `cached_trees_count` | 1 год кеш `organization_#{id}_trees_count` |
 | `under_threat?` | `ews_alerts.unresolved.critical.exists?` |
+| `rotate_stream_epoch!` | [SEC.25 Ф3] Відкликати всі видані імена стрімів організації: bump `stream_epoch` → tombstone у покинуту адресу → слід ARCH.57. Ручний ops-важіль (рецепт — [`06_08 §4.7`](06_08_Resilience_and_Failover_Policy)); автотригера немає свідомо, бо членство в цьому дереві незмінне |
+| `broadcast_stream_tombstone!(epoch)` | Повторно штовхнути минулу епоху на перезавантаження — **штатна** дія, не crash-recovery: tombstone доїжджає лише до підключених у ту мить сокетів ([`04_04 §8.1`](04_04_Phlex_UI_and_Tailwind)) |
 
 ---
 

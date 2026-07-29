@@ -107,6 +107,7 @@ release-PR merge ─→ GitHub Release vX.Y.Z ─→ Deploy · Production (verif
 | TLS / Cloudflare verification (8-step) | [`06_02 §TLS термінація`](06_02_Akash_Network_Integration) |
 | Secrets: pre-deploy checklist, rotation, audit | [`06_04 §5.1–5.3`](06_04_Secrets_Checklist) |
 | **Emergency:** `peaq_signing_key` compromise/revocation | [`06_04 §5.4`](06_04_Secrets_Checklist) |
+| **Emergency:** витік підписаного імені Turbo-стріму → per-tenant відкликання (епоха) | [`06_04 §5.9`](06_04_Secrets_Checklist) |
 | Puma: SIGPWR backtrace dump, IPv6 listen verify | [`06_05 §Runbooks`](06_05_Puma_Configuration) |
 | **DR:** Cloud SQL PITR restore, TF-state rollback, region rebuild | [`06_06 §5`](06_06_Disaster_Recovery_and_Backup) |
 | Runtime failover (circuit breakers, comms-loss) | [`06_08`](06_08_Resilience_and_Failover_Policy) |
