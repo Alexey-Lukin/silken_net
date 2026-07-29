@@ -99,6 +99,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 5. **keyless AUTH ≠ terraform-apply CAPABILITY** — CI імперсонує least-privilege deploy-SA БЕЗ IAM/WIF/serviceusage-admin → CI `terraform apply`/drift-`plan` рефреш IAM/WIF-ресурсів = **403**. Модель: `apply` founder-local (рек.) АБО SA-privesc (god-credential concern). → 00_07 INF.22.
 6. **`gh run watch --exit-status` бреше** (exit 0 on fail / 1 on empty) — щоб перевірити, чи Deploy·Canopy/Production реально пройшов, довіряй `gh run view --json conclusion`, не `watch`.
 7. **`gh attestation verify` рендерить TTY-only** → piped/`tail`/`grep` захоплюють ПОРОЖНЄ; довіряй **EXIT=0** або `--format json`.
+8. 🔴 **Console-доступ задокументований лише для FALLBACK-таргета** (виміряно 2026-07-29). `06_01` дає Kamal-шлях (`kamal app exec --interactive --reuse "bin/rails console"`); для Akash — а це **живий** шлях, так його називає `config/database.yml` — еквівалента в каноні немає взагалі. Наслідок несе не той документ, де діра: **інертними стають усі console-рецепти репо**, зокрема два money-path (`manual_review`-резолюція та ескалація Field-Audit C→A, що відчиняє ворота необоротного слешингу). Тож пишучи новий рецепт «виконай у консолі», не вважай доступ вирішеним питанням; спільна нота стоїть одним домом у шапці `06_07 §3`. Ключова технічна умова, яку треба довести на реальному lease: чи механізм провайдера execає саме в контейнер із уже піднятим Cloud SQL Auth Proxy — без нього `127.0.0.1:5432` не резолвиться й консоль до БД не дістанеться. → `00_07` OPS.20.
 
 ## Робочі правила
 

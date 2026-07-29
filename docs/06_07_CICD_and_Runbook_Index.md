@@ -100,6 +100,8 @@ release-PR merge ─→ GitHub Release vX.Y.Z ─→ Deploy · Production (verif
 
 ## 3. Operations Runbook Index (канонічні доми — НЕ дублювати тут)
 
+> 🔴 **Передумова, спільна для ВСІХ console-рецептів нижче, і документована вона лише наполовину.** Кожен із них починається з доступу до Rails-процесу, а канон описує цей доступ **тільки для Kamal/GCP-fallback** ([`06_01 §Deploy runbook`](06_01_Deployment_Kamal_Terraform) — `kamal app exec --interactive --reuse "bin/rails console"`). Для **живого** шляху (Akash — так його називає `config/database.yml`) еквівалента в каноні немає. Тобто рецепти коректні, а от дорога до них перевірена не на тому таргеті — і виявиться це в інциденті. Нота стоїть ТУТ одним домом, а не копією в кожному рецепті. Стан → [`00_07`](00_07_Action_Plan_Tracker) OPS.20.
+
 | Runbook | Дім (SSOT) |
 |---|---|
 | Перший деплой інфраструктури (GCS state → terraform → secrets → deploy) | [`06_01 §Quickstart`](06_01_Deployment_Kamal_Terraform) |
