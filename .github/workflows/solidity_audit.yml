@@ -184,6 +184,14 @@ jobs:
       - name: Build contracts (build-info for Slither)
         run: forge build --build-info
 
+      # Версію Slither пінимо явно: SHA-пін тримає обгортку дії, але її образ
+      # ставить slither-analyzer з PyPI щоразу свіжим. 0.11.6 підняв нижню межу
+      # crytic-compile до >=0.4.2, а той (PR #695, "disable Foundry dynamic test
+      # linking") кличе `forge` навіть під ignore-compile — forge же живе на
+      # раннері, не всередині контейнера дії, звідки FileNotFoundError: 'forge'.
+      # 0.11.5 капає crytic-compile <0.4.0 і повертає відомий-добрий шлях.
+      # Стеля: пін відстає від апстріму. Знімати, коли ignore-compile полагодять
+      # (перевірити на свіжому slither) → 00_07 OPS.21.
       - name: Run Slither
         uses: crytic/slither-action@b52cc1cbfee9ca3e8722dd5224299d16c9a6b80f # v0.4.2
         with:
@@ -191,6 +199,7 @@ jobs:
           ignore-compile: true
           slither-config: contracts/slither.config.json
           fail-on: high
+          slither-version: 0.11.5
 
   halmos:
     needs: changes
