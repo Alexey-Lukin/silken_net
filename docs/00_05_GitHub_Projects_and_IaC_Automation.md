@@ -167,6 +167,7 @@ jobs:
 - **Job 2: Slither Static Analysis** (`slither`, timeout: 10 хв):
   - Install Foundry + `npm ci` → `forge build --build-info` (компілюємо самі), далі `crytic/slither-action@v0.4.2` з `ignore-compile: true` — crytic читає Foundry build-info, а власний `forge install` екшена **не** запускається (deps з npm, не `lib/`-сабмодулі — рішення FW.47, [`03_01`](03_01_Firmware_Lifecycle_and_DMA))
   - `slither-config: contracts/slither.config.json` (фільтр `node_modules|test/` → аудит лише деплойних контрактів), solc (версія → [`05_03`](05_03_Tokenomics_SCC_and_SFC)), `fail-on: high`
+  - ⚠️ `slither-version` запінено явно (**SHA-пін екшена не тримає його начинку** — образ ставить `slither-analyzer` з PyPI свіжим щоразу; апстрим-реліз віком 1 доба поклав цей required-гейт 2026-07-29, бо новіший `crytic-compile` кличе `forge` навіть під `ignore-compile`, а forge живе на раннері, не в контейнері). Дзеркалить дисципліну сусідніх job-ів: halmos/medusa = `--require-hashes`, aderyn = sha256-verify. Стан + шлях зняття піна → [`00_07`](00_07_Action_Plan_Tracker) OPS.21
 - **Job 3: Halmos Symbolic Proofs** (`halmos`, timeout: 30 хв, **gating**):
   - `setup-python` (3.13) + `pip install --require-hashes -r requirements-halmos.txt` (hash-pinned) → `halmos --function "^check_" --solver-threads 1 --loop 3` — symbolic proof-и money-path інваріантів (`test/symbolic/*`; symbolic params + `vm.assume`, без halmos-cheatcodes) — доводить cap / last-admin / pause-allows-slash symbolically (не семпл)
 - **Job 4: Aderyn Static Analysis** (`aderyn`, timeout: 10 хв) — 2-й static-прохід, комплементарний до Slither:
@@ -232,7 +233,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/labeler@v6          # v6 — той самий schema (changed-files / *-glob-to-*-file), що й .github/labeler.yml
+      - uses: actions/labeler@v7          # v7 = ESM-міграція; schema (changed-files / *-glob-to-*-file) та сама, що й .github/labeler.yml
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           configuration-path: .github/labeler.yml
