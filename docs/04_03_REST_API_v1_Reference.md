@@ -219,6 +219,16 @@ Policy-хелпер `admin_or_above?` (`ApplicationPolicy` + `Scope`) = `admin` 
 | Гард відсутньої організації | `acting_organization!` кидає в ТОЧЦІ ЧИТАННЯ → 422 `code: "no_organization"` (JSON) або Phlex-сторінка (HTML) |
 | Перемикання | `POST /api/v1/organizations/:id/switch` — super_admin-only, сесійний запит (Bearer → 403) |
 
+🔴 **Чому контекст несе ЛИШЕ організацію, а `user` лишається справжнім `User`.** Природна
+форма обгортки — `delegate_missing_to :user` — виміряна як **шкідлива** і відкинута до коду:
+`present?`/`blank?`/`nil?` означені на `Object`, тобто для обгортки вони не «missing», і
+делегування їх не перехоплює. Обгортка навколо `nil`-користувача відповідала б
+`present? == true` — а на цьому предикаті стоїть базовий RBAC-примітив усієї codex-гілки
+(`return scope.none unless user`), тож дефолт перевернувся б на **fail-OPEN** у найширшому
+місці дерева. Тому `ApplicationPolicy::ContextUnpacking` розпаковує пару явно й приймає
+**обидва** входи — `UserContext` і голий `User` (так політику конструюють спеки, і так вона
+поводилась до Ф2).
+
 **Гард — у точці читання, а не `before_action`.** Класовий гард вимагав би
 `skip_before_action` у кожного, хто організації не має за побудовою (codex, обидва
 webhook'и, обидва auth-шляхи, `m2m_auth`, платформені) — тобто однорідне правило,
