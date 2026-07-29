@@ -711,7 +711,7 @@ RSpec.describe EwsAlert, type: :model do
       alert.send(:broadcast_alert_update)
 
       expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to)
-        .with("ews_alerts_org_#{cluster_bc.organization_id}")
+        .with("ews_alerts_org_#{cluster_bc.organization_id}_e#{cluster_bc.organization.stream_epoch}")
       expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to)
         .with([ cluster_bc, :alerts ])
       expect(Turbo::StreamsChannel).not_to have_received(:broadcast_replace_to)
@@ -778,7 +778,7 @@ RSpec.describe EwsAlert, type: :model do
       create(:ews_alert, cluster: cluster_bc, tree: tree)
 
       expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to)
-        .with("ews_alerts_org_#{cluster_bc.organization_id}")
+        .with("ews_alerts_org_#{cluster_bc.organization_id}_e#{cluster_bc.organization.stream_epoch}")
     end
 
     it "skips broadcast when cluster is nil" do

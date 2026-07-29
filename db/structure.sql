@@ -1923,7 +1923,8 @@ CREATE TABLE public.organizations (
     data_region character varying DEFAULT 'eu-west'::character varying,
     solana_public_address character varying,
     hadron_kyc_status character varying DEFAULT 'pending'::character varying NOT NULL,
-    locale character varying
+    locale character varying,
+    stream_epoch integer DEFAULT 1 NOT NULL
 );
 
 
@@ -8537,6 +8538,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260729052758'),
 ('20260727130640'),
 ('20260726165258'),
 ('20260726161614'),

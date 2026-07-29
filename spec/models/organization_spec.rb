@@ -256,4 +256,78 @@ RSpec.describe Organization, type: :model do
       expect(org.reload.hadron_kyc_status).to eq("approved")
     end
   end
+
+  # [SEC.25 Ф3] Відкликання виданих імен стрімів. Форма — «покинути адресу», а не
+  # «гейтити підписника»: клас каналу обирає клієнт, а `reject` тихий і
+  # незворотний, тож обидві альтернативи били б лише по чесних (`04_04 §8.1`).
+  describe "#rotate_stream_epoch! [SEC.25 Ф3]" do
+    let(:org) { create(:organization) }
+
+    # Ланцюг ARCH.57 вимагає актора; у ручної ops-дії людського ініціатора немає,
+    # тож ним стає системний `oracle_executioner`. Без цього запису
+    # `record_audit_trail!` WARN-скіпає — дію не валить, але й сліду не лишає.
+    let!(:oracle) do
+      create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+                                  first_name: "Oracle", last_name: "Executioner")
+    end
+
+    before { allow(Turbo::StreamsChannel).to receive(:broadcast_refresh_to) }
+
+    it "advances the epoch and persists it" do
+      expect { org.rotate_stream_epoch! }.to change { org.reload.stream_epoch }.by(1)
+    end
+
+    # 🔴 Несучий пін усієї фази, і саме напрямок тут головний. Tombstone мусить
+    # летіти в адресу, яку ми ЩОЙНО ПОКИНУЛИ — там сидять відкриті сторінки. Постав
+    # його в нову епоху, і сигнал піде в канал, на який ще ніхто не підписаний:
+    # ротація стала б тихою, а кожен глядач — глухим до наступної навігації.
+    it "pushes the tombstone into the OLD address, never the new one" do
+      previous = org.stream_epoch
+      org.rotate_stream_epoch!
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_to)
+        .with("telemetry_stream_org_#{org.id}_e#{previous}")
+      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_refresh_to)
+        .with("telemetry_stream_org_#{org.id}_e#{org.stream_epoch}")
+    end
+
+    # `:map` виключено СВІДОМО: `broadcast_refresh_to` туди вбив би Leaflet у
+    # кожного чесного глядача дашборда (morph зносить дітей вузла, а
+    # `disconnect()` не спрацьовує, бо сам вузол лишається — тобто мапа більше
+    # не переініціалізується). Пін тримає саме виняток: якщо хтось «полагодить»
+    # перелік, додавши `:map`, це почервоніє.
+    it "never tombstones the map stream — morph would kill Leaflet for honest viewers" do
+      previous = org.stream_epoch
+      org.rotate_stream_epoch!
+
+      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_refresh_to)
+        .with("geospatial_matrix_org_#{org.id}_e#{previous}")
+    end
+
+    it "leaves an audit trail of the revocation" do
+      previous = org.stream_epoch
+
+      expect { org.rotate_stream_epoch! }.to change { AuditLogWorker.jobs.size }.by(1)
+
+      attrs = AuditLogWorker.jobs.last["args"].first
+      expect(attrs["action"]).to eq("stream_epoch_rotated")
+      expect(attrs["organization_id"]).to eq(org.id)
+      expect(attrs["metadata"]).to include("from" => previous, "to" => previous + 1)
+    end
+
+    # Tombstone доїжджає лише до ПІДКЛЮЧЕНИХ у ту мить сокетів — Solid Cable
+    # ставить точку приєднання нової підписки на поточний максимум, тож backlog
+    # не реплеїться. Вкладка, що спала під час bump'а, лишиться на мертвій адресі
+    # й виглядатиме `connected`. Тому повторний поштовх — штатна дія оператора, і
+    # вона мусить бути викликом, а не інструкцією в коментарі.
+    it "can re-push a past epoch's tombstone without advancing the epoch again" do
+      org.rotate_stream_epoch!
+      previous = org.stream_epoch - 1
+
+      expect { org.broadcast_stream_tombstone!(previous) }
+        .not_to change { org.reload.stream_epoch }
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_to)
+        .with("ews_alerts_org_#{org.id}_e#{previous}").twice
+    end
+  end
 end

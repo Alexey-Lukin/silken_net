@@ -212,11 +212,13 @@ class Tree < ApplicationRecord
   def broadcast_map_update
     return unless latitude.present? && longitude.present?
 
-    org_id = cluster&.organization_id
-    return unless org_id # осиротіле дерево: краще без live-вузла, ніж у глобальний ефір
+    # Сам ЗАПИС, а не `organization_id`: імʼя несе ще й епоху [SEC.25 Ф3], а дім
+    # імен лишається чистою функцією й у БД не ходить.
+    organization = cluster&.organization
+    return unless organization # осиротіле дерево: краще без live-вузла, ніж у глобальний ефір
 
     Turbo::StreamsChannel.broadcast_replace_to(
-      TurboStreams::Name.org(:map, org_id),
+      TurboStreams::Name.org(:map, organization),
       target: "map_node_#{id}",
       html: Dashboard::MapNode.new(tree: self).call
     )

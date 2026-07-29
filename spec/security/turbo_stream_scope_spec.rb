@@ -154,6 +154,7 @@ RSpec.describe "Turbo stream scope axis" do # rubocop:disable RSpec/DescribeClas
     %w[
       app/models/blockchain_transaction.rb
       app/models/ews_alert.rb
+      app/models/organization.rb
       app/models/tree.rb
       app/models/wallet.rb
       app/services/downlink/pending_queue_service.rb

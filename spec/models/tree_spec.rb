@@ -343,7 +343,8 @@ RSpec.describe Tree, type: :model do
       tree.broadcast_map_update
 
       expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to)
-        .with("geospatial_matrix_org_#{organization.id}", hash_including(target: "map_node_#{tree.id}"))
+        .with("geospatial_matrix_org_#{organization.id}_e#{organization.stream_epoch}",
+              hash_including(target: "map_node_#{tree.id}"))
     end
 
     # `Cluster has_many :trees, dependent: :nullify`, тож дерево без кластера —

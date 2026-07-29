@@ -102,9 +102,9 @@ RSpec.describe Api::V1::DashboardController, type: :request do
         stranger = create(:user, organization: other_organization)
 
         expect(subscribed_streams_for(user))
-          .to eq([ "geospatial_matrix_org_#{organization.id}" ])
+          .to eq([ "geospatial_matrix_org_#{organization.id}_e#{organization.stream_epoch}" ])
         expect(subscribed_streams_for(stranger))
-          .to eq([ "geospatial_matrix_org_#{other_organization.id}" ])
+          .to eq([ "geospatial_matrix_org_#{other_organization.id}_e#{other_organization.stream_epoch}" ])
       end
 
       it "renders map nodes only for the viewer's own geolocated trees" do

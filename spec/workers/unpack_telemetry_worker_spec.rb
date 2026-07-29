@@ -60,7 +60,8 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       raw_data = "BROADCAST_TEST"
       encrypted = encrypt_payload(raw_data, key_record.binary_key)
       encoded = Base64.strict_encode64(encrypted)
-      expected = "telemetry_stream_org_#{gateway.cluster.organization_id}"
+      expected = "telemetry_stream_org_#{gateway.cluster.organization_id}" \
+                 "_e#{gateway.cluster.organization.stream_epoch}"
 
       described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 

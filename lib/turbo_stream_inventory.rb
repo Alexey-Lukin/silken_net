@@ -33,8 +33,17 @@ module TurboStreamInventory
   # обовʼязки доказу («org-токен в імені» проти «токена немає, безпечно лише
   # транзитивно») злились би в один клас — і гейт перестав би бачити зміну класу,
   # найгіршу подію на цій осі.
+  #
+  # `org_at` — той самий клас, що `org`, і навмисно: він будує імʼя ПОПЕРЕДНЬОЇ
+  # епохи для tombstone'а при ротації [SEC.25 Ф3]. Без цього запису єдиний виклик
+  # у дереві, що адресує щойно відкликане імʼя, падав би в `:indirect` — тобто
+  # ставав би для гейта непрозорим саме там, де прозорість найпотрібніша.
   BLESSED_RECEIVER = %w[TurboStreams Name].freeze
-  BLESSED_KINDS = { "org" => :derived_org, "gateway_ota" => :derived_gateway }.freeze
+  BLESSED_KINDS = {
+    "org" => :derived_org,
+    "org_at" => :derived_org,
+    "gateway_ota" => :derived_gateway
+  }.freeze
 
 
   Site = Struct.new(:file, :line, :method, :arg_kind, :arg_pattern, keyword_init: true)

@@ -7,7 +7,10 @@ RSpec.describe Telemetry::LiveStream do
   # Component is i18n-aware. Existing assertions match the English copy.
   around { |ex| I18n.with_locale(:en) { ex.run } }
 
-  let(:organization) { mock_model(Organization, id: 42) }
+  # `stream_epoch` НЕ дефолтний (1) навмисно [SEC.25 Ф3]: якби епоха десь була
+  # зашита константою замість того, щоб текти з організації, з одиницею це
+  # лишилось би зеленим.
+  let(:organization) { mock_model(Organization, id: 42, stream_epoch: 7) }
 
   # Стрім скоуплений організацією глядача. Пін іде по РОЗПАКОВАНОМУ імені, а не
   # по підписаному рядку (`04_06` BP #22): підпис ДЕТЕРМІНОВАНИЙ (чистий HMAC),
@@ -23,11 +26,11 @@ RSpec.describe Telemetry::LiveStream do
 
     it "subscribes to the viewer's organization stream, never a global one" do
       expect(subscribed_streams(render_component(organization: organization)))
-        .to eq([ "telemetry_stream_org_42" ])
+        .to eq([ "telemetry_stream_org_42_e7" ])
     end
 
     it "gives two organizations two different streams" do
-      other = mock_model(Organization, id: 7)
+      other = mock_model(Organization, id: 7, stream_epoch: 7)
 
       expect(subscribed_streams(render_component(organization: organization)))
         .not_to eq(subscribed_streams(render_component(organization: other)))

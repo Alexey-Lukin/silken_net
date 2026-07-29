@@ -37,8 +37,11 @@ RSpec.describe Dashboard::Home do
     tx
   end
 
-  def mock_organization(id: 7)
-    OpenStruct.new(id: id)
+  # `stream_epoch` несе адресу вкладеної мапи [SEC.25 Ф3]: `Dashboard::Home`
+  # рендерить `Dashboard::Map`, а той підписується через дім імен, який без
+  # епохи падає fail-closed.
+  def mock_organization(id: 7, stream_epoch: 7)
+    OpenStruct.new(id: id, stream_epoch: stream_epoch)
   end
 
   def render_component(stats:, events:, trees: [], organization: mock_organization)

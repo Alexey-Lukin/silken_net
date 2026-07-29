@@ -21,7 +21,10 @@ RSpec.describe Dashboard::Map do
     t
   end
 
-  def render_component(trees:, organization: OpenStruct.new(id: 42))
+  # `stream_epoch` НЕ дефолтний (1) навмисно [SEC.25 Ф3]: якби епоха десь була
+  # зашита константою замість того, щоб текти з організації, з одиницею це
+  # лишилось би зеленим.
+  def render_component(trees:, organization: OpenStruct.new(id: 42, stream_epoch: 7))
     ApplicationController.renderer.render(
       component_class.new(trees: trees, organization: organization),
       layout: false
@@ -60,10 +63,10 @@ RSpec.describe Dashboard::Map do
     # Дві різні організації обов'язкові: з однією пін мовчить на найправдо-
     # подібнішій підміні (будь-який фіксований id дорівнював би єдиному).
     it "scopes the stream to the viewer's own organization" do
-      expect(subscribed_streams(html)).to eq([ "geospatial_matrix_org_42" ])
+      expect(subscribed_streams(html)).to eq([ "geospatial_matrix_org_42_e7" ])
 
-      other = render_component(trees: trees, organization: OpenStruct.new(id: 99))
-      expect(subscribed_streams(other)).to eq([ "geospatial_matrix_org_99" ])
+      other = render_component(trees: trees, organization: OpenStruct.new(id: 99, stream_epoch: 7))
+      expect(subscribed_streams(other)).to eq([ "geospatial_matrix_org_99_e7" ])
     end
 
     # Глядач без організації адреси не має — підписки не існує (fail-closed),

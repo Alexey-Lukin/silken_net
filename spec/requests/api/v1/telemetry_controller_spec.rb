@@ -38,8 +38,22 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
       it "subscribes each viewer to their OWN organization stream" do
         stranger = create(:user, organization: other_organization)
 
-        expect(subscribed_stream_for(user)).to eq([ "telemetry_stream_org_#{organization.id}" ])
-        expect(subscribed_stream_for(stranger)).to eq([ "telemetry_stream_org_#{other_organization.id}" ])
+        expect(subscribed_stream_for(user))
+          .to eq([ "telemetry_stream_org_#{organization.id}_e#{organization.stream_epoch}" ])
+        expect(subscribed_stream_for(stranger))
+          .to eq([ "telemetry_stream_org_#{other_organization.id}_e#{other_organization.stream_epoch}" ])
+      end
+
+      # 🔴 Кінець-у-кінець доказ Ф3, і його не дає ЖОДЕН інший шар. `name_spec`
+      # доводить, що дім міняє рядок; цей приклад доводить, що після ротації
+      # СТОРІНКА мінтить уже інший capability-токен — тобто збережений старий
+      # указує в порожнечу. Без нього ротація могла б відвантажитись як зміна
+      # колонки, якої підписник не бачить.
+      it "mints a NEW stream token after the organization rotates its epoch" do
+        before_rotation = subscribed_stream_for(user)
+        organization.rotate_stream_epoch!
+
+        expect(subscribed_stream_for(user)).not_to eq(before_rotation)
       end
     end
 

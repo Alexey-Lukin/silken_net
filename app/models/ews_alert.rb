@@ -333,11 +333,14 @@ class EwsAlert < ApplicationRecord
   # усередині `after_*_commit`, тобто retry-шторм Sidekiq на вже закоміченій
   # тривозі, включно з money-шляхом, що ці тривоги створює. Fail-closed:
   # панель кластера лишається живою, org-список просто не сигналиться.
+  # ⚠️ Береться сам ЗАПИС, а не `organization_id`: імʼя стріму несе ще й епоху
+  # [SEC.25 Ф3], а дім імен лишається чистою функцією й у БД не ходить. Ціна —
+  # один індексований SELECT (per-request/job query-cache його з'їдає).
   def broadcast_org_refresh
-    org_id = cluster.organization_id
-    return if org_id.blank?
+    organization = cluster.organization
+    return if organization.blank?
 
-    Turbo::StreamsChannel.broadcast_refresh_later_to(TurboStreams::Name.org(:alerts, org_id))
+    Turbo::StreamsChannel.broadcast_refresh_later_to(TurboStreams::Name.org(:alerts, organization))
   end
 
   # [ОПТИМІЗАЦІЯ]: Очищення Redis-блокувальника

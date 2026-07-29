@@ -154,8 +154,10 @@ RSpec.describe Api::V1::AlertsController, type: :request do
     it "subscribes each viewer to their OWN organization alert stream" do
       stranger = create(:user, :forester, organization: other_organization)
 
-      expect(subscribed_streams_for(user)).to eq([ "ews_alerts_org_#{organization.id}" ])
-      expect(subscribed_streams_for(stranger)).to eq([ "ews_alerts_org_#{other_organization.id}" ])
+      expect(subscribed_streams_for(user))
+        .to eq([ "ews_alerts_org_#{organization.id}_e#{organization.stream_epoch}" ])
+      expect(subscribed_streams_for(stranger))
+        .to eq([ "ews_alerts_org_#{other_organization.id}_e#{other_organization.stream_epoch}" ])
     end
   end
 

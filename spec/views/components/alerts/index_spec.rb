@@ -15,8 +15,11 @@ RSpec.describe Alerts::Index do
     alert
   end
 
-  def mock_org(id: 42, name: "ForestCorp")
-    OpenStruct.new(id: id, name: name)
+  # `stream_epoch` несе саму адресу стріму [SEC.25 Ф3] — без нього дім імен
+  # падає fail-closed, і це правильно: `_e` без числа було б одним іменем на всі
+  # покоління.
+  def mock_org(id: 42, name: "ForestCorp", stream_epoch: 7)
+    OpenStruct.new(id: id, name: name, stream_epoch: stream_epoch)
   end
 
   let(:org)    { mock_org }
