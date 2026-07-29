@@ -78,6 +78,34 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   `json 2.20.0→2.21.1` (age **3d**) as a passenger. Read `gh pr diff <n>` and age **every changed
   line**, then weigh against the target's actual value (that pagy release only touched
   searchkick/elasticsearch paginators — `grep` said 0 uses → no-op, so zero cost to let it ripen).
+- **`@dependabot rebase` changes the TARGET, not just the base** (2026-07-29) — so the quarantine
+  clock **restarts**, and a PR that was ripe by its title is not. Seen the same session: `#477`
+  simplecov 1.0.2 (11d ✅) came back as **1.0.3 (3d ❌)**; `#472` carried rbs 4.0.3 (41d ✅) and came
+  back with **rbs 4.1.0 (0d ❌)**. This collides head-on with the row below: rebase is what ADDS a
+  newly-required check, yet rebase is also what pulls fresh passengers in. **Always re-read and
+  re-date `gh pr diff <n>` AFTER the rebase** — the title, and your earlier dating, are both stale.
+- **A required check added AFTER the PR opened is ABSENT, not red** (2026-07-29) — `gh pr checks`
+  shows all-pass and the aggregate count silently comes up short (7/8 vs 8/8). GitHub reports the
+  PR `BLOCKED` with nothing visibly failing. Seen: `DCO passed` became required 07-25; six PRs based
+  on 07-23 simply had no such check. Diagnose by counting the required aggregates against
+  `gh api repos/<o>/<r>/branches/main/protection --jq '.required_status_checks.contexts[]'`, not by
+  eyeballing for red. Fix = `@dependabot rebase` (then re-date the diff, per the row above).
+- **A SHA-pinned action does NOT pin its own contents** (2026-07-29 → `00_07` OPS.21). The pin
+  freezes the wrapper; a Docker-based action still installs its tool from PyPI/npm **fresh every
+  run**. `crytic/slither-action@b52cc1cb` (v0.4.2) broke the required `Solidity passed` gate when
+  `slither-analyzer 0.11.6` + `crytic-compile 0.4.2` shipped (both **1 day old**): 0.11.6 raised the
+  floor to `crytic-compile>=0.4.2`, whose "disable Foundry dynamic test linking" calls `forge` even
+  under `ignore-compile: true` — and `forge` lives on the runner, not inside the action's container
+  (`FileNotFoundError: 'forge'`). Fix = pin the tool (`slither-version: 0.11.5`, which transitively
+  caps `crytic-compile<0.4.0`). **The release-age quarantine has a structural blind spot here:** it
+  guards `Gemfile`/`package.json`/conda, but never sees an action's image contents — a day-old
+  package walked straight into the money-path gate. Prefer the shape already used elsewhere in this
+  repo: `pip install --require-hashes -r requirements-*.txt` (halmos, medusa) or curl+sha256 (aderyn).
+- **A gate that did not RUN is not green** (2026-07-29). `Solidity passed` showed green on most PRs
+  only because `dorny/paths-filter` skipped the job. The breakage above surfaced solely on the two
+  PRs that touched `solidity_audit.yml` — they did not break Slither, they **made it run**. Before
+  trusting an aggregate, ask whether its jobs actually executed on this diff (same family as the
+  OPS.13 "ask what builds the artifact, and on which trigger" row below).
 - **A green Dependabot PR can still break `main`** (2026-07-16 → OPS.13, now hard-gated). Ask what
   actually *builds* the changed artifact and on which trigger. The historical hole: the only docker
   build (`mirror-ghcr.yml`) runs on `workflow_run[branches: main]` — not `pull_request` — so a
