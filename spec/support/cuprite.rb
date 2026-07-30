@@ -5,6 +5,10 @@
 # 2-5x faster than Selenium because it talks directly to Chrome (no Java middleman).
 # https://github.com/rubycdp/cuprite
 require "capybara/cuprite"
+# Дає Capybara-DSL (`visit` / `fill_in` / `click_button`) прикладам `type: :feature`.
+# Доти не підключався жодного разу, бо `spec/features/` була порожня — тобто
+# CI-джоба `feature-test` піднімала Postgres+Redis і виконувала НУЛЬ прикладів.
+require "capybara/rspec"
 
 Capybara.register_driver(:cuprite) do |app|
   Capybara::Cuprite::Driver.new(
