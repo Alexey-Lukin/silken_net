@@ -54,6 +54,31 @@ module TurboStreamInventory
       scan(paths) { |name| name == SUBSCRIBE_METHOD }
     end
 
+    # Імена локалів, яким у цьому файлі присвоєно виведене з ДОМУ імʼя стріму
+    # (`stream = TurboStreams::Name.org(...)`).
+    #
+    # 🔴 Нащо це окремо, і чому саме воно, а не «пара продюсер⟷підписник».
+    # Продюсер, що передає стрім НЕПРОЗОРО (`:indirect`), — це не дрібниця форми,
+    # а фактична популяція дефектів цієї поверхні: пʼять продюсерів, знятих
+    # 2026-07-27 як «у порожнечу», адресували стрім **параметром методу**
+    # (`broadcast_slashing_event(contract, …)` → `contract`;
+    # `broadcast_final_state(command, organization)` → `organization`), тобто
+    # адресою, яку статично не бачить ніхто. Локал, присвоєний із дому, —
+    # протилежний випадок: адреса виведена там само, де й у підписника.
+    # Розрізнити їх коштує однієї передачі по AST; РЕЗОЛЬВИТИ значення не треба
+    # ніколи — треба лише знати, що воно НЕ з дому.
+    #
+    # 🔒 Стеля названа: скоуп тут ФАЙЛОВИЙ, не методний. Однойменний локал в
+    # іншому методі того ж файлу, присвоєний не з дому, пройде. Метод-скоуп
+    # коштував би обходу `:def`-меж заради випадку, якого в дереві нема; коли
+    # зʼявиться — звужувати сюди, а не в гейт.
+    def blessed_locals(path)
+      sexp = Ripper.sexp(File.read(path))
+      return [] if sexp.nil?
+
+      assigned_from_home(sexp)
+    end
+
     # Місця БРОАДКАСТУ. Набір імен передає ВИКЛИКАЧ, і це свідомо:
     # 🔴 будь-який патерн тут хибний в обидва боки, і я зробив обидві помилки
     # по черзі, зміряв кожну. `broadcast_\w*_to` пропускає не-`_to` форми
@@ -69,6 +94,19 @@ module TurboStreamInventory
     end
 
     private
+
+    # `[:assign, [:var_field, [:@ident, "stream", …]], <rhs>]` — беремо лише ті,
+    # де права частина є викликом благословенного дому. Рекурсія та сама, що в
+    # `calls`: одна передача, без стану.
+    def assigned_from_home(node, acc = [])
+      if node[0] == :assign && node[1].is_a?(Array) && node[1][0] == :var_field
+        name = ident_token(node[1][1])&.first
+        acc << name if name && blessed_kind(node[2])
+      end
+
+      node.each { |child| assigned_from_home(child, acc) if child.is_a?(Array) }
+      acc
+    end
 
     def scan(paths)
       Array(paths).flat_map do |path|
@@ -221,8 +259,15 @@ module TurboStreamInventory
     # проти ручного підрахунку (`unpack_telemetry_worker` маркувався `record_ref`,
     # хоч там локальна змінна з інтерполяцією) — тобто екстрактор ПЕРЕОЦІНЮВАВ
     # безпеку сайту, а це найгірший напрямок помилки для диспетчера.
+    #
+    # Для `:indirect` віддаємо ще й ІМʼЯ токена — без нього гейт не може відрізнити
+    # локал, що несе виведене з дому імʼя, від параметра методу. А різниця тут
+    # рівно та, що відділяє єдиний легітимний сайт від пʼяти історичних дефектів
+    # (див. `blessed_locals`). `self` та інші не-ident токени лишаються безіменні.
     def ref_kind(inner)
-      inner[0] == :@ivar ? [ :record_ref, nil ] : [ :indirect, nil ]
+      return [ :record_ref, nil ] if inner[0] == :@ivar
+
+      [ :indirect, inner[0] == :@ident ? inner[1] : nil ]
     end
 
     def string_kind(node)
