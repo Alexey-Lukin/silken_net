@@ -106,7 +106,16 @@ module Api
             format.html { redirect_to api_v1_alerts_path, notice: I18n.t("flash.alerts.resolved") }
           end
         else
-          render_validation_error(@alert)
+          # [SEC.25] Форма ВІДМОВИ мусить мати ті самі формати, що й форма успіху вище.
+          # Доти тут стояв голий `render_validation_error` — тобто оператор, який не зміг
+          # закрити тривогу з дашборда, діставав JSON-блоб замість сторінки: успіх
+          # відповідав трьома форматами, невдача — одним.
+          respond_to do |format|
+            format.json { render_validation_error(@alert) }
+            format.html do
+              redirect_to api_v1_alerts_path, alert: @alert.errors.full_messages.to_sentence
+            end
+          end
         end
       end
 

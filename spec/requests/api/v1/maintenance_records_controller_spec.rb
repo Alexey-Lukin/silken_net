@@ -163,6 +163,28 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       expect(other_record.reload.hardware_verified).to be_falsey
     end
 
+    # [SEC.25] Та сама відмова, але з БРАУЗЕРА. Доти `authorize_record_mutation!`
+    # віддавав голий `render_forbidden` (JSON) незалежно від формату, тож форестер
+    # діставав на дашборді JSON-блоб замість сторінки. Пін перевіряє САМЕ формат —
+    # інакше він був би зеленим і на старій, зламаній поведінці.
+    it "відмовляє в HTML-форматі сторінкою, а не JSON-блобом" do
+      other_forester = create(:user, :forester, organization: organization)
+      other_record = MaintenanceRecord.create!(
+        maintainable: own_tree,
+        user: other_forester,
+        action_type: :inspection,
+        performed_at: 1.hour.ago,
+        notes: "Inspection authored by a different forester in the same org."
+      )
+
+      patch "/api/v1/maintenance_records/#{other_record.id}/verify",
+            headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to redirect_to(api_v1_maintenance_records_path)
+      expect(response.media_type).not_to eq("application/json")
+      expect(other_record.reload.hardware_verified).to be_falsey
+    end
+
     it "lets admins override and verify any record in their org" do
       other_forester = create(:user, :forester, organization: organization)
       other_record = MaintenanceRecord.create!(

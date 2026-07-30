@@ -186,7 +186,15 @@ module Api
             format.html { redirect_to api_v1_maintenance_record_path(@record), notice: I18n.t("flash.maintenance.hardware_verified") }
           end
         else
-          render_validation_error(@record)
+          # [SEC.25] Дзеркало форми успіху вище — доти невдала верифікація віддавала
+          # патрульному JSON-блоб у браузер, тоді як успіх мав нормальний HTML-редирект.
+          respond_to do |format|
+            format.json { render_validation_error(@record) }
+            format.html do
+              redirect_to api_v1_maintenance_record_path(@record),
+                          alert: @record.errors.full_messages.to_sentence
+            end
+          end
         end
       end
 
@@ -208,7 +216,14 @@ module Api
         return if current_user.role_admin? || current_user.role_super_admin?
         return if @record.user_id == current_user.id
 
-        render_forbidden
+        # [SEC.25] Усі три гейтовані екшени (`edit`/`update`/`verify`) мають HTML-шлях,
+        # тож голий `render_forbidden` показував форестеру JSON-блоб замість відмови.
+        respond_to do |format|
+          format.json { render_forbidden }
+          format.html do
+            redirect_to api_v1_maintenance_records_path, alert: I18n.t("errors.api.forbidden")
+          end
+        end
       end
 
       def set_record
