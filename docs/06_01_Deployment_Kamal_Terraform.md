@@ -547,10 +547,12 @@ IAP-operator ролі (iam.tf, for_each `iap_admin_members` — люди-адм�
 ## 🐳 Docker — Multi-stage Build
 
 ```
-Stage 1: base          — ruby:4.0.5-slim + libjemalloc2, libvips, postgresql-client
+Stage 1: base          — ruby:4.0.5-slim + libjemalloc2, libvips (≥ 8.13), postgresql-client
 Stage 2: build         — bundle install, bootsnap, assets:precompile
 Stage 3: final         — COPY gems + app + Cloud SQL Auth Proxy, USER rails:1000, CMD: thrust ./bin/rails server
 ```
+
+> **`libvips ≥ 8.13` — несуча межа, не косметика (2026-07-30).** Active Storage при буті кличе `Vips.block_untrusted(true)`, щоб вимкнути «unfuzzed» лоадери libvips (CVE-2026-66066); на старішій бібліотеці метод відсутній і Rails **не стартує взагалі** — тобто відкат base-образу на давніший Debian ламає не картинки, а весь застосунок. Той самий пакет потрібен CI-джобам, які реально ініціалізують Rails (`.github/actions/setup-rails-test` → `test`/`feature-test`); гем `ruby-vips` стоїть `require: false`, тож `bin/rails`-гейти без `:environment` (docs/i18n-смуги) його не вантажать і libvips їм не потрібна. Trixie дає 8.16.1, ubuntu-24.04 — 8.15.1, ubuntu-26.04 — 8.18.0.
 
 > **Cloud SQL Auth Proxy** вбудовано у фінальний Docker-образ. Proxy запускається автоматично як фоновий процес при наявності ENV `CLOUD_SQL_INSTANCE_CONNECTION_NAME`. Він тунелює PostgreSQL-трафік через Google Cloud API (вихідний HTTPS на порт 443), тому Cloud SQL не потребує публічної IP. **Fail-loud (INF.13):** `bin/docker-entrypoint` чекає готовності proxy до 15 с; якщо не відповідає — `exit 1` (Rails не стартує, замість мовчазного boot без БД). **Post-boot supervisor (INF.22, 2026-07-05):** при активному proxy entrypoint далі НЕ `exec`-ає, а тримає app і proxy siblings-процесами: смерть proxy → TERM аппці + `exit 1` (Akash рестартить контейнер лише на вихід PID 1 — без цього мертвий proxy = вічний зомбі, що віддає DB-помилки); вихід аппки → її exit-код пропагується; TERM/INT форвардяться (graceful drain при `docker stop`). Kamal/VPC-шлях (без proxy) лишається чистим `exec`.
 
