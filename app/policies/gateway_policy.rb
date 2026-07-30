@@ -12,8 +12,10 @@ class GatewayPolicy < ApplicationPolicy
 
   class Scope < ApplicationPolicy::Scope
     def resolve
-      scope.left_joins(:cluster)
-           .where("clusters.organization_id = ? OR gateways.cluster_id IS NULL", organization_id)
+      # [SEC.26] `OR gateways.cluster_id IS NULL` знято — і тут воно було ще й
+      # ДОКАЗОВО мертвим SQL: `gateways.cluster_id` має `NOT NULL` у схемі, тож гілка
+      # не могла відпрацювати жодного разу. Копі-пейст із `TreePolicy`, а не позиція.
+      scope.joins(:cluster).where(clusters: { organization_id: organization_id })
     end
   end
 end

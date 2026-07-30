@@ -293,6 +293,40 @@ RSpec.describe Cluster, type: :model do
       expect(assoc.macro).to eq(:has_many)
     end
 
+    # [SEC.26/ARCH.76] Доти `dependent:` для trees/gateways не пінив ЖОДЕН приклад —
+    # тобто мовчазна зміна каскаду не почервонила б нічого. Пінимо не декларацію, а
+    # ПОВЕДІНКУ: кластер із живим залізом мусить відмовлятись помирати.
+    describe "кластер із залізом незнищенний" do
+      it "відмовляє в destroy, поки в кластері є дерево, і НЕ занулює його cluster_id" do
+        cluster = create(:cluster)
+        tree = create(:tree, cluster: cluster)
+
+        expect(cluster.destroy).to be(false)
+        expect(cluster.errors[:base]).to be_present
+        expect(described_class.exists?(cluster.id)).to be(true)
+        # Несуче: `nullify` тут занулив би координату, яка є HKDF-salt прошитих ключів
+        # і координатою історичних MRV-груп — дерево лишилось би живим і безпруфним.
+        expect(tree.reload.cluster_id).to eq(cluster.id)
+      end
+
+      it "відмовляє в destroy, поки в кластері є шлюз" do
+        cluster = create(:cluster)
+        gateway = create(:gateway, cluster: cluster)
+
+        expect(cluster.destroy).to be(false)
+        expect(gateway.reload.cluster_id).to eq(cluster.id)
+      end
+
+      # Дзеркало: порожній кластер видаляється — присуд забороняє не видалення,
+      # а знищення координати, на яку ще посилається залізо.
+      it "дозволяє destroy порожнього кластера" do
+        cluster = create(:cluster)
+
+        expect(cluster.destroy).to be_truthy
+        expect(described_class.exists?(cluster.id)).to be(false)
+      end
+    end
+
     it "has many naas_contracts with restrict_with_error" do
       assoc = described_class.reflect_on_association(:naas_contracts)
       expect(assoc.macro).to eq(:has_many)

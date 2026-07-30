@@ -16,8 +16,9 @@ class ActuatorPolicy < ApplicationPolicy
 
   class Scope < ApplicationPolicy::Scope
     def resolve
-      scope.left_joins(gateway: :cluster)
-           .where("clusters.organization_id = ? OR gateways.cluster_id IS NULL", organization_id)
+      # [SEC.26] Те саме, що в `GatewayPolicy`: гілка `IS NULL` на `NOT NULL`-колонці
+      # була недосяжною за побудовою.
+      scope.joins(gateway: :cluster).where(clusters: { organization_id: organization_id })
     end
   end
 end

@@ -28,9 +28,15 @@ RSpec.describe TreePolicy do
       expect(scope).not_to include(other_tree)
     end
 
-    it "includes clusterless trees for regular user" do
-      scope = described_class::Scope.new(investor, Tree).resolve
-      expect(scope).to include(clusterless_tree)
+    # [SEC.26, присуд 2026-07-30] Доти цей приклад називався «includes clusterless trees»
+    # і був ЄДИНИМ у репо місцем, де семантика «сирота видимий КОЖНІЙ організації» ставала
+    # виконуваним твердженням. Присуд її скасував: безкластерне дерево не має екстенсіоналу
+    # (заведення вимагає кластер криптографічно — без нього не деривується K_ota), а
+    # `Cluster has_many :trees` став `restrict_with_error`, тож координата не зануляється
+    # й на destroy. Тепер пін тримає ПРОТИЛЕЖНЕ — і саме він стереже, щоб `OR ... IS NULL`
+    # не повернувся копі-пейстом.
+    it "НЕ показує безкластерне дерево жодній організації" do
+      expect(described_class::Scope.new(investor, Tree).resolve).not_to include(clusterless_tree)
     end
 
     it "звужує super_admin до acting-організації, і перемикання її змінює" do
@@ -41,11 +47,11 @@ RSpec.describe TreePolicy do
       expect(in_own).not_to include(other_tree)
       expect(in_other).to include(other_tree)
       expect(in_other).not_to include(own_tree)
-      # Безкластерне дерево лишається видимим у будь-якому контексті — воно ще не
-      # належить жодній організації (`OR trees.cluster_id IS NULL`), і це не acting-org
-      # правило, а наявна семантика щойно заведеного вузла.
-      expect(in_own).to include(clusterless_tree)
-      expect(in_other).to include(clusterless_tree)
+      # Безкластерне дерево не належить нікому — і super_admin не є винятком у ЖОДНОМУ
+      # з контекстів [SEC.26]. Доти тут стояло дзеркальне `include` з поясненням про
+      # «щойно заведений вузол» — продюсера, якого не існувало жодного дня.
+      expect(in_own).not_to include(clusterless_tree)
+      expect(in_other).not_to include(clusterless_tree)
     end
 
     it "excludes trees from other organizations for forester" do
@@ -60,7 +66,7 @@ RSpec.describe TreePolicy do
       scope = described_class::Scope.new(admin, Tree).resolve
       expect(scope).to include(own_tree)
       expect(scope).not_to include(other_tree)
-      expect(scope).to include(clusterless_tree)
+      expect(scope).not_to include(clusterless_tree)
     end
   end
 

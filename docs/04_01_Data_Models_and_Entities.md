@@ -306,7 +306,7 @@ dormant ──reactivate──► active
 | `charge_percentage` | `(voltage - MIN) / (MAX - MIN) * 100` |
 | `low_power?` | `voltage > 0 && voltage < 3300` |
 | `under_threat?` | `ews_alerts.unresolved.exists?` |
-| `broadcast_map_update` | Turbo Stream → `geospatial_matrix_org_{cluster.organization_id}` — імʼя **org-скоуплене** (SEC.25); дерево без кластера не броадкастить узагалі (fail-closed, `dependent: :nullify` робить це звичайним станом) |
+| `broadcast_map_update` | Turbo Stream → `geospatial_matrix_org_{cluster.organization_id}` — імʼя **org-скоуплене** (SEC.25); дерево без кластера не броадкастить узагалі (fail-closed; ⚠️ це вже НЕ «звичайний стан» — каскад став `restrict_with_error`, ⚖️ 2026-07-30, і гард лишається як defense-in-depth) |
 | `effective_lorenz_thresholds` | [FW.8] `{ min:, max:, optimal: }` з 3-рівневим пріоритетом: Cluster override → TreeFamily → Global default. Використовується `TelemetryUnpackerService#check_z_divergence!` та `OtaPackagerService.build_threshold_config_block`. |
 
 **Callbacks:**
@@ -328,8 +328,8 @@ dormant ──reactivate──► active
 | Зв'язок | Тип | Опис |
 |---------|-----|------|
 | `organization` | `belongs_to` | Власник |
-| `trees` | `has_many, dependent: :nullify` | Солдати (`trees.cluster_id` **нульабельний** + `belongs_to :cluster, optional: true` → каскад справді виконується) |
-| `gateways` | `has_many, dependent: :nullify` | Королеви. ⚠️ **Ця декларація виконатись НЕ МОЖЕ** — `gateways.cluster_id` це `NOT NULL`, тож єдиний можливий вихід каскаду це `PG::NotNullViolation` (виміряно рантаймом). Латентно лише тому, що жоден живий шлях не видаляє кластер із живим шлюзом. Присуд (`:restrict_with_error` проти нульабельної колонки) — [`00_07`](00_07_Action_Plan_Tracker) ARCH.76 |
+| `trees` | `has_many, dependent: :restrict_with_error` | Солдати. ⚠️ Було `:nullify` — знято присудом ⚖️ 2026-07-30: `clusters.id` є **фабрично-заморожена координата** (HKDF-salt прошитих `K_ota`/`KEYB` + координата історичних MRV-груп), тож занулення стирало б реєстр salt і робило `unprovable` минулі якорі. Розбір — [`00_07`](00_07_Action_Plan_Tracker) SEC.26/ARCH.76 |
+| `gateways` | `has_many, dependent: :restrict_with_error` | Королеви. ⚠️ Було `:nullify` при `gateways.cluster_id NOT NULL` — тобто декларація, чий єдиний можливий вихід був `PG::NotNullViolation` (ARCH.76, виміряно рантаймом). Знято тим самим присудом, що й `trees` |
 | `naas_contracts` | `has_many, dependent: :restrict_with_error` | Захист фінансової історії |
 | `parametric_insurances` | `has_many, dependent: :restrict_with_error` | Захист страхової історії |
 | `ews_alerts` | `has_many, dependent: :delete_all` | Тривоги сектора |
@@ -1617,7 +1617,7 @@ bin/rails governance:seed_parameters  # UPSERT dynamic_tax_rate + insurance_pool
 Organization
   ├── Users (restrict_with_error)
   ├── Clusters (destroy)
-  │     ├── Trees (nullify)
+  │     ├── Trees (restrict_with_error)
   │     │     ├── Wallet (destroy)
   │     │     ├── HardwareKey (destroy)
   │     │     ├── DeviceCalibration (destroy)
@@ -1625,7 +1625,7 @@ Organization
   │     │     ├── EwsAlerts (delete_all)
   │     │     ├── MaintenanceRecords (delete_all)
   │     │     └── AiInsights polymorphic (delete_all)
-  │     ├── Gateways (nullify ⚠️ НЕВИКОНУВАНИЙ — cluster_id NOT NULL → ARCH.76)
+  │     ├── Gateways (restrict_with_error)
   │     │     ├── HardwareKey (destroy)
   │     │     ├── GatewayTelemetryLogs (delete_all) ← PARTITION
   │     │     ├── Actuators (destroy)

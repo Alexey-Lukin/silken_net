@@ -64,6 +64,68 @@ RSpec.describe ContractHealthCheckService do
       end
     end
 
+    # [SLASH-1, ⚖️ 2026-07-30] Межа виродження порога. При `N < 1/slash_fraction`
+    # добуток `N * f` менший за одиницю, тобто БУДЬ-ЯКЕ одне критичне дерево перетинає
+    # поріг — «понад 20%» перестає бути статистичним твердженням. Пінимо ОБИДВА боки
+    # межі, щоб зсув константи (чи DAO-зміна `slash_threshold`) не пройшов тихо.
+    context "when the cluster is below the degeneracy threshold (N < 1/f)" do
+      it "НЕ палить автоматично, а ескалює у Field Audit (N=4, одне критичне)" do
+        trees = create_list(:tree, 4, cluster: cluster, status: :active)
+        create(:ai_insight, analyzable: trees[0], target_date: target_date, stress_index: 1.0)
+        trees[1..3].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1) }
+        cluster.reload
+
+        expect {
+          expect(described_class.call(contract, target_date)).to eq(:insufficient_sample)
+        }.not_to change { BurnCarbonTokensWorker.jobs.size }
+
+        expect(EwsAlert.where(cluster: cluster, alert_type: :field_audit)).to exist
+        expect(contract.reload).to be_status_active
+      end
+
+      # Дзеркало: рівно на межі формула вже працює — при N=5 одне дерево (20%) не
+      # перетинає `> 5 * 0.2`, тож це здоровий кластер, а не недостатній семпл.
+      it "на N=5 одне критичне дерево вже НЕ перетинає поріг → :healthy" do
+        trees = create_list(:tree, 5, cluster: cluster, status: :active)
+        create(:ai_insight, analyzable: trees[0], target_date: target_date, stress_index: 1.0)
+        trees[1..4].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1) }
+        cluster.reload
+
+        expect(described_class.call(contract, target_date)).to eq(:healthy)
+      end
+
+      # 🔴 [⚖️ 2026-07-30] Два інсайти ОДНОГО дерева ≠ два дерева. Unique-індекс
+      # `idx_ai_insights_unique_report` включає `model_source`, тож два рядки на дерево
+      # за ту саму добу легальні (oracle-consensus), а генератор пише NULL — і PG unique
+      # NULL-и не дедуплікує. Голий `.count` давав critical=2 і перетинав поріг кластера
+      # N=5 САМЕ, тобто гарантія «від N=5 потрібні два ДЕРЕВА» була б хибною. Пін
+      # червоніє, якщо `.distinct` у `critical_count` зникне.
+      it "не рахує два інсайти одного дерева як два дерева" do
+        trees = create_list(:tree, 5, cluster: cluster, status: :active)
+        create(:ai_insight, analyzable: trees[0], target_date: target_date,
+                            stress_index: 1.0, model_source: "oracle_a")
+        create(:ai_insight, analyzable: trees[0], target_date: target_date,
+                            stress_index: 1.0, model_source: "oracle_b")
+        trees[1..4].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1) }
+        cluster.reload
+
+        expect {
+          expect(described_class.call(contract, target_date)).to eq(:healthy)
+        }.not_to change { BurnCarbonTokensWorker.jobs.size }
+      end
+
+      # Здоровий малий кластер НЕ має щодоби плодити Field Audit — гілка стоїть після
+      # підрахунку критичних саме тому.
+      it "здоровий малий кластер лишається :healthy без жодного алерту" do
+        trees = create_list(:tree, 3, cluster: cluster, status: :active)
+        trees.each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1) }
+        cluster.reload
+
+        expect(described_class.call(contract, target_date)).to eq(:healthy)
+        expect(EwsAlert.where(cluster: cluster, alert_type: :field_audit)).not_to exist
+      end
+    end
+
     # [SLASH-1] >20% критичних → :degraded + enqueue burn-воркера, БЕЗ pre-breach.
     # Breach ставить лише BlockchainBurningService на реальному positive-A слешингу;
     # cause-gate чокпоінта вирішує slash-vs-freeze. Це й полагодило латентний баг

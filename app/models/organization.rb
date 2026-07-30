@@ -17,7 +17,14 @@ class Organization < ApplicationRecord
   has_many :naas_contracts, dependent: :restrict_with_error
 
   # Лісові масиви, якими володіє або керує організація
-  has_many :clusters, dependent: :destroy
+  # [SEC.26/ARCH.76, ⚖️ 2026-07-30] `restrict_with_error`, а не `destroy` — інакше
+  # присуд про незнищенність кластера відтворював би ARCH.76 на рівень вище: кластер із
+  # залізом тепер відмовляє (`throw :abort` → `false`), але `destroy_all` у каскаді на
+  # `false` НЕ реагує й іде далі, тож `DELETE` організації бився б об реальний FK
+  # `clusters.organization_id` — сирий `ActiveRecord::InvalidForeignKey` повз усю
+  # драбину `rescue_from`. Тобто це не «ще одне обмеження», а умова несуперечливості
+  # каскаду. Узгоджено з рештою родини (`users` · `naas_contracts` · `audit_logs`).
+  has_many :clusters, dependent: :restrict_with_error
 
   # [ARCH.57] Compliance-журнал переживає організацію: delete_all стирав
   # integrity-chain разом із Org (carbon-registry вимагає незнищенність).
@@ -92,8 +99,11 @@ class Organization < ApplicationRecord
   # хто цей ключ скидає (`00_07` SEC.25; сиблінг SEC.16-бейджа).
   def self.expected_yield_cache_key(org_id) = "oracle_expected_yield_24h_org_#{org_id}"
 
-  # Fail-closed: дерево без кластера — звичайний стан (`dependent: :nullify`),
-  # адреси кешу в нього немає, і мовчазний no-op тут правильніший за виняток.
+  # Fail-closed на порожньому `org_id`. ⚠️ Обґрунтування переписано ⚖️ 2026-07-30: доти
+  # тут стояло «дерево без кластера — звичайний стан (`dependent: :nullify`)», а каскад
+  # став `restrict_with_error` і безкластерне дерево більше не є станом домену. No-op
+  # лишається правильним, але з іншої причини — метод беруть і зі шляхів, де організація
+  # легально невідома, і виняток там був би гучнішим за користь.
   def self.invalidate_expected_yield_cache(org_id)
     return if org_id.blank?
 

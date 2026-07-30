@@ -55,6 +55,15 @@ class DailyHealthRouter
   # Кількість критично стресованих дерев за заданим порогом (consumer-specific:
   # A передає AiInsight.slash_stress_threshold — DAO-live, default 0.83; GOV.1).
   def critical_count(threshold)
-    insights.where("stress_index >= ?", threshold).count
+    # 🔴 `.distinct` по `analyzable_id` — рахуємо ДЕРЕВА, а не РЯДКИ. Доти був голий
+    # `.count`, і це тихо ламало інваріант «частка дерев»: unique-індекс
+    # `idx_ai_insights_unique_report` включає `model_source`, тобто ДВА інсайти на одне
+    # дерево за ту саму добу легальні за дизайном (oracle-consensus), а генератор пише
+    # `model_source` NULL — і PG unique NULL-и не дедуплікує. Отже одне дерево з двома
+    # рядками давало critical=2 і перетинало поріг кластера N=5..9 САМЕ.
+    # Сусідній споживач того ж роутера (insurance, `ParametricInsurance`) уже рахував
+    # `.select(:analyzable_id).distinct.count` — тобто загроза була відома репо, і
+    # захищена була лише одна з двох гілок. [⚖️ 2026-07-30]
+    insights.where("stress_index >= ?", threshold).select(:analyzable_id).distinct.count
   end
 end

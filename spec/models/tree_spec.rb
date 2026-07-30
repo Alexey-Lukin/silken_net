@@ -347,9 +347,11 @@ RSpec.describe Tree, type: :model do
               hash_including(target: "map_node_#{tree.id}"))
     end
 
-    # `Cluster has_many :trees, dependent: :nullify`, тож дерево без кластера —
-    # не крайній випадок, а звичайний стан після видалення сектора. Адреси
-    # стріму в нього нема, і глобальний ефір тут не запасний варіант.
+    # ⚠️ Обґрунтування переписано ⚖️ 2026-07-30: доти тут стояло «звичайний стан після
+    # видалення сектора (`dependent: :nullify`)», а каскад став `restrict_with_error` —
+    # безкластерне дерево більше не є станом домену. Приклад лишається як РЕГРЕСІЙНИЙ
+    # захист гарда (колонка ще nullable), а не як модель штатного сценарію: адреси
+    # стріму в такого дерева нема, і глобальний ефір тут не запасний варіант.
     it "does not broadcast at all when the tree has no cluster" do
       tree = create(:tree, latitude: 49.44, longitude: 32.06, cluster: nil)
 

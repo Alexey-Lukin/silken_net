@@ -45,6 +45,31 @@ class ContractHealthCheckService < ApplicationService
     critical_insights_count = router.critical_count(AiInsight.slash_stress_threshold)
 
     slash_fraction = Rational(SystemParameter.current(:slash_threshold, default: 0.2).to_s)
+
+    # [SLASH-1] Поріг ВИРОДЖУЄТЬСЯ на малих кластерах, і межа тут не смакова, а
+    # арифметична: при `N < 1/slash_fraction` добуток `N * f` менший за одиницю, тобто
+    # БУДЬ-ЯКЕ одне критичне дерево перетинає поріг, і «понад 20%» перестає бути
+    # статистичним твердженням. Для дефолтних 0.2 це N ∈ {1..4}; від N=5 потрібні вже
+    # щонайменше два дерева, тож одиничний шум не спрацьовує. Межа деривується з самого
+    # порога, а не хардкодиться — DAO-зміна `slash_threshold` рухає її автоматично.
+    #
+    # Наслідок для B2C (⚖️ 2026-07-30: одиноке дерево = власний кластер із одного): там
+    # N=1 завжди, тож приватний власник ніколи не дістає АВТОМАТИЧНОГО спалення за одну
+    # аномальну добу на одному сенсорі — але й без нагляду не лишається.
+    #
+    # Дорога та сама, що для blackout: Field Audit, ніколи авто-burn — дзеркалить
+    # доктрину «незворотний slash лише за прямого доказу» (§3.2). Гілка живе ПІСЛЯ
+    # підрахунку критичних: здоровий малий кластер не має щодоби плодити алерт.
+    #
+    # ⚠️ МЕЖА ЗАСТОСОВНОСТІ, щоб її не «полагодили» помилково: це стосується ЛИШЕ
+    # статистичного шляху (частка стресованих дерев). Шлях `Tree#trigger_slashing_protocol`
+    # (deceased/removed) розміру кластера НЕ питає — і не повинен: смерть дерева це прямий
+    # факт, а не висновок із вибірки, тож вироджуватись там нічому. Причину там однаково
+    # зважує чокпоінт `BlockchainBurningService` (cause-gate slash-vs-freeze).
+    if critical_insights_count.positive? && router.total_active_trees < (1 / slash_fraction)
+      return flag_insufficient_sample!(critical_insights_count, router.total_active_trees)
+    end
+
     if critical_insights_count > router.total_active_trees * slash_fraction
       flag_degradation!
     else
@@ -73,6 +98,22 @@ class ContractHealthCheckService < ApplicationService
   # would be a false slash (05_05 §1/§6). Raise a :field_audit escalation (NOT
   # :system_fault — see gap-D); the contract stays :active pending human
   # classification (Category C). «Тиша замовклого дерева — теж його голос».
+  # [SLASH-1] Малий кластер із критичним деревом — семпл, статистично недостатній для
+  # АВТОМАТИЧНОГО присуду (розбір межі — у `perform`). Гроші однаково зупиняються через
+  # Field Audit, слід у журналі лишається, рішення бере людина.
+  def flag_insufficient_sample!(critical_count, total_trees)
+    Rails.logger.warn "🔬 [D-MRV] NaasContract ##{@contract.id}: #{critical_count}/#{total_trees} критичних " \
+                      "на кластері, меншому за поріг виродження — Field Audit, NO auto-slash (05_05 §6)."
+
+    EwsAlert.escalate_field_audit!(
+      cluster: @cluster,
+      message_key: "cluster_small_sample_degradation",
+      message_params: { critical_count: critical_count, total_trees: total_trees, target_date: @target_date }
+    )
+
+    :insufficient_sample
+  end
+
   def flag_data_blackout!
     Rails.logger.warn "🌐 [D-MRV] NaasContract ##{@contract.id}: cluster-wide data blackout (#{@target_date}) — gateway-fault signature → Field Audit, NO slash (05_05 §6)."
 

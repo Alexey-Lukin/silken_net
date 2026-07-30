@@ -35,9 +35,11 @@ RSpec.describe EwsAlertPolicy do
       expect(scope).not_to include(other_alert)
     end
 
-    it "includes clusterless alerts for user" do
-      scope = described_class::Scope.new(investor, EwsAlert).resolve
-      expect(scope).to include(clusterless_alert)
+    # [SEC.26, присуд 2026-07-30] Дзеркало `TreePolicy` — раніше пін стверджував
+    # «безкластерна тривога видима кожній організації». Скасовано: скоуп вирівняно з
+    # `Organization#ews_alerts` (through `:clusters`), яка вже так поводилась.
+    it "НЕ показує безкластерну тривогу жодній організації" do
+      expect(described_class::Scope.new(investor, EwsAlert).resolve).not_to include(clusterless_alert)
     end
   end
 

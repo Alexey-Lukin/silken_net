@@ -5,8 +5,26 @@ class Cluster < ApplicationRecord
   # --- ЗВ'ЯЗКИ (The Fabric of the Forest) ---
   belongs_to :organization
 
-  has_many :trees, dependent: :nullify
-  has_many :gateways, dependent: :nullify
+  # [SEC.26/ARCH.76] `restrict_with_error`, а НЕ `nullify` — і підстава тут не «щоб діти
+  # не осиротіли», а те, чим `clusters.id` насправді є: **фабрично-заморожена координата
+  # юніта**. Він служить HKDF-salt для `K_ota` і `KEYB`, прошитих у кремній і незмінних
+  # після RDP-lock (епохи в salt немає, тож «ротація кластерного ключа» без зміни master
+  # неможлива в принципі), і водночас координатою історичних MRV-груп — Merkle-субкорені
+  # групуються по ПОТОЧНОМУ `trees.cluster_id`, тож занулення зробило б `unprovable` всі
+  # минулі якорі групи. Головний потерпілий від знищення рядка — не дерева, а ПРУФ і КЛЮЧ.
+  #
+  # Тенансі · контракт · крипто-домен · MRV-група — не чотири сутності, а чотири проєкції
+  # ЦІЄЇ координати в різні моменти часу (зараз · строк дії · фабрика · момент якоря).
+  #
+  # ⚠️ `nullify` тут ніколи не був рішенням: він прийшов першим bulk-скафолдом, а для
+  # `:gateways` був фізично невиконуваним (`gateways.cluster_id NOT NULL` → каскад мав
+  # єдиний можливий вихід — `PG::NotNullViolation`). Осиротілий вузол не має екстенсіоналу:
+  # заведення вимагає кластер КРИПТОГРАФІЧНО (без нього не деривується `K_ota`),
+  # `decommission!`/`declare_deceased!` міняють лише AASM-статус, а «перемістити дерево в
+  # інший кластер» не існує як software-операція й існувати не може — канон це робить
+  # парою «decommission старого юніта + factory-provision нового з новим DID».
+  has_many :trees, dependent: :restrict_with_error
+  has_many :gateways, dependent: :restrict_with_error
   has_many :actuators, through: :gateways
 
   # [ВИПРАВЛЕНО]: Захист Фінансової Історії (Immutable Audit Trail).

@@ -12,9 +12,10 @@ class EwsAlertPolicy < ApplicationPolicy
 
   class Scope < ApplicationPolicy::Scope
     def resolve
-      # Включаємо алерти кластерів організації ТА безкластерні алерти
-      scope.left_joins(:cluster)
-           .where("clusters.organization_id = ? OR ews_alerts.cluster_id IS NULL", organization_id)
+      # [SEC.26] Дзеркало `TreePolicy::Scope` — `OR ews_alerts.cluster_id IS NULL` знято
+      # тим самим присудом (розбір там же). Вирівняно з `Organization#ews_alerts`,
+      # яка вже йде through `:clusters`.
+      scope.joins(:cluster).where(clusters: { organization_id: organization_id })
     end
   end
 end

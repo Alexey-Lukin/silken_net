@@ -38,7 +38,11 @@ class ClusterHealthCheckWorker
         verdict = contract.check_cluster_health!(audit_date)
 
         case verdict
-        when :degraded, :blackout
+        # `:insufficient_sample` [SLASH-1] іде сюди свідомо: кластер ФЛАГОВАНО (Field Audit
+        # створено), просто адъюдикація людська, а не автоматична. Якби він падав у
+        # default-гілку, малий кластер із критичним деревом зник би зі зведення — і виглядав
+        # би як «нічого не сталось». Celo-винагороди він при цьому не дістає (не `:healthy`).
+        when :degraded, :blackout, :insufficient_sample
           summary[:flagged] += 1
           Rails.logger.warn "🚨 [D-MRV] Контракт ##{contract.id} (Кластер: #{contract.cluster.name}) ФЛАГОВАНО (#{verdict}) за станом на #{audit_date} — на адъюдикацію слешингу."
         when :healthy

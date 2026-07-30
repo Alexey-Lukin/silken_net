@@ -13,7 +13,8 @@ class AlertNotificationWorker
 
     # 🔴 `cluster` у EwsAlert — `optional: true`, а цей воркер енкʼюїться БЕЗУМОВНО
     # (`after_create_commit :dispatch_notifications!`), і безкластерні алерти реально
-    # створюються (AlertDispatchService, гілка одинокого дерева). Маршрут до адресатів
+    # створюються (AlertDispatchService — ⚠️ НЕ «гілка одинокого дерева»: ⚖️ 2026-07-30
+    # одиноке дерево B2C дістає власний кластер із одного, а не NULL). Маршрут до адресатів
     # веде ЛИШЕ через організацію кластера — у дерева `cluster` теж optional, іншого
     # шляху нема. Без цього гарда `cluster.organization` кидав NoMethodError на КОЖНОМУ
     # такому алерті: 5 ретраїв → morgue, тихо й назавжди.

@@ -154,7 +154,12 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
     it "відкочується на власну організацію, якщо acting-організації більше немає" do
       post "/api/v1/organizations/#{other_organization.id}/switch", as: :json
 
+      # [⚖️ 2026-07-30] Порядок тепер несучий: `Cluster has_many :trees` і
+      # `Organization has_many :clusters` — обидва `restrict_with_error`, тож розбирати
+      # треба знизу вгору. Це й є доказ присуду в дії: організацію з живим залізом
+      # знищити не можна навіть штучно.
       other_tree.destroy!
+      other_cluster.destroy!
       AuditLog.where(organization_id: other_organization.id).delete_all
       other_organization.destroy!
 

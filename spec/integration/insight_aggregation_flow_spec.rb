@@ -156,8 +156,23 @@ RSpec.describe "Insight generation and daily aggregation flow" do
       create(:ai_insight, analyzable: tree3, insight_type: :daily_health_summary,
                           target_date: yesterday, stress_index: 0.2)
 
+      # [SLASH-1, ⚖️ 2026-07-30] Кластер мусить бути НЕ МЕНШИМ за поріг виродження
+      # (N ≥ 1/f = 5) — інакше вердикт `:insufficient_sample` (Field Audit), і предмет
+      # цієї спеки, сам слешинг, не перевіряється взагалі. Тому добираємо до 5 дерев:
+      # 2 критичних із 5 = 40% > 20%, тобто те саме твердження, але на валідному семплі.
+      # `Prosopite.pause` — це фікстурна підготовка, а не поведінка під тестом:
+      # `Tree` має `build_default_wallet`/`ensure_calibration` в `after_create`, тож
+      # створення двох дерев поспіль виглядає для детектора як N+1.
+      Prosopite.pause
+      2.times do
+        healthy = create(:tree, cluster: cluster, tree_family: tree_family)
+        create(:ai_insight, analyzable: healthy, insight_type: :daily_health_summary,
+                            target_date: yesterday, stress_index: 0.1)
+      end
+      Prosopite.resume
+
       # Set counter cache to match actual active trees
-      Cluster.where(id: cluster.id).update_all(active_trees_count: 3)
+      Cluster.where(id: cluster.id).update_all(active_trees_count: 5)
 
       # Reload contract so it picks up fresh cluster state
       contract.reload

@@ -22,6 +22,7 @@ lt:
       chainsaw_detected: "🪚 KIRTIMAS: Akustinė anomalija be šiluminio signalo. DID: %{did}"
       chainsaw_detected_panic: "🪚 KIRTIMAS: Akustinė anomalija be šiluminio signalo (PANIC-TX). DID: %{did}"
       cluster_data_blackout: 'Viso klasterio duomenų pertrūkis (%{target_date}): galimas šliuzo gedimas / Starlink pertrūkis (force-majeure). Slashing NETAIKYTAS — reikalingas Field Audit (C kategorija, 05_05 §5).'
+      cluster_small_sample_degradation: 'Mažos imties degradacija (%{target_date}): %{critical_count} iš %{total_trees} medžių kritiniai. Procentinis slenkstis išsigimsta esant mažiau nei 5 medžiams — jį kerta vienas medis — todėl auto-slash NETAIKYTAS; sprendžia Field Audit (C kategorija, 05_05 §6).'
       entropy_pre_stress: "🎲 PRIEŠSTRESINIS SIGNALAS: klasterio %{cluster_name} Z pasiskirstymo entropija nukrito iki %{entropy_score} (slenkstis: %{threshold}). %{sample_count} matavimų analizė per pastarąsias 24 valandas rodo medžių atsakų homogenizaciją — galima miško streso pradžia."
       fire_detected: "🔥 KATASTROFA: Temperatūra %{temperature_c}°C (slenkstis: %{fire_limit}). Gaisro rizika!"
       firmware_fault: "⚙️ PROGRAMINĖS ĮRANGOS GEDIMAS: mruby VM klaida / įrenginys neaprūpintas — reikalingas re-flash/OTA. DID: %{did}"

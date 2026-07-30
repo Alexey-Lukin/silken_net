@@ -152,9 +152,13 @@ RSpec.describe "Parametric insurance payout flow" do
 
       ClusterHealthCheckWorker.new.perform(yesterday.to_s)
 
-      # [SLASH-1] 100% critical > 20% → :degraded → enqueues burn worker (chokepoint adjudicates);
-      # contract is NOT pre-breached. The orchestration iterated this active contract.
-      expect(BurnCarbonTokensWorker).to have_received(:perform_async)
+      # [SLASH-1, ⚖️ 2026-07-30] Предмет цієї спеки — ОРКЕСТРАЦІЯ (воркер дійшов до
+      # активного контракту й виніс вердикт), а не сам слешинг. Кластер тут N=1, тобто
+      # нижче порога виродження (`N * 0.2 < 1` — одне дерево перетинає поріг механічно),
+      # тож авто-burn свідомо НЕ ставиться: одна аномальна доба на єдиному сенсорі не є
+      # доказом. Замість нього — Field Audit, тією ж дорогою, що й blackout.
+      expect(BurnCarbonTokensWorker).not_to have_received(:perform_async)
+      expect(EwsAlert.where(cluster: cluster, alert_type: :field_audit)).to exist
       expect(contract.reload.status).to eq("active")
     end
   end
