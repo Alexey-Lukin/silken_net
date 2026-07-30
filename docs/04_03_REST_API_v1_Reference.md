@@ -350,7 +350,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | **⚠️ Тривоги та Обслуговування** | | | | | |
 | 55 | GET | `/api/v1/alerts` | `alerts#index` | 🔑 Auth | Список EWS-тривог |
 | 56 | GET | `/api/v1/alerts/:id` | `alerts#show` | 🔑 Auth | Деталі EWS-тривоги (з cluster, tree, coordinates, actionable?) |
-| 57 | PATCH | `/api/v1/alerts/:id/resolve` | `alerts#resolve` | 🔑 Auth | Закрити тривогу |
+| 57 | PATCH | `/api/v1/alerts/:id/resolve` | `alerts#resolve` | 🔑 Auth | Закрити тривогу. **409** на вже закритій (гонка подвійного кліку — броадкаст тротлений 5 с, тож оператор не бачить оновлення й тисне вдруге). Доти цей шлях кидав `AASM::InvalidTransition` у catch-all і віддавав **500**; `if @alert.resolve!` обіцяв булеву гілку, якої метод не має — він завершується `true` або кидає [SEC.25, 2026-07-30] |
 | 58 | GET | `/api/v1/maintenance_records` | `maintenance_records#index` | 🌿 Forester | Журнал технічного обслуговування. Query: `?action_type=`, `?verified=1`, `?maintainable_type=`, `?maintainable_id=`, `?from=<ISO8601>`, `?to=<ISO8601>`. Невалідні `from`/`to` → `400 Bad Request` (`flash.maintenance.invalid_date`). |
 | 59 | GET | `/api/v1/maintenance_records/new` | `maintenance_records#new` | 🌿 Forester | Форма нового запису |
 | 60 | POST | `/api/v1/maintenance_records` | `maintenance_records#create` | 🌿 Forester | Створити запис обслуговування |
