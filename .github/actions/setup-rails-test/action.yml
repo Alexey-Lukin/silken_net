@@ -1,15 +1,21 @@
 name: 'Setup Rails test environment'
 description: >-
-  Installs libpq, sets up Ruby via ruby/setup-ruby (with bundler cache), and
-  builds Tailwind CSS. Shared between the `test` and `feature-test` jobs to
-  keep their step lists in lockstep.
+  Installs libpq + libvips, sets up Ruby via ruby/setup-ruby (with bundler
+  cache), and builds Tailwind CSS. Shared between the `test` and `feature-test`
+  jobs to keep their step lists in lockstep.
 
 runs:
   using: composite
   steps:
     - name: Install packages
       shell: bash
-      run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev
+      # libvips несе Active-Storage-трансформер: щойно ініціалізатори біжать,
+      # `require "ruby-vips"` шукає системну бібліотеку, і без неї помилку
+      # перепаковують так, що Rails її не розпізнає й падає на буті (не warn).
+      # Потрібна ≥ 8.13 — інакше Active Storage не вимкне unfuzzed-лоадери.
+      # Периметр саме тут: `bin/rails` без `:environment` (docs/i18n-гейти) vips
+      # НЕ вантажить — гем стоїть `require: false`.
+      run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips
 
     - name: Set up Ruby
       uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
