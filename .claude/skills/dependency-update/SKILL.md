@@ -101,6 +101,36 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   guards `Gemfile`/`package.json`/conda, but never sees an action's image contents — a day-old
   package walked straight into the money-path gate. Prefer the shape already used elsewhere in this
   repo: `pip install --require-hashes -r requirements-*.txt` (halmos, medusa) or curl+sha256 (aderyn).
+- 🔴 **Identical failure on N INDEPENDENT PRs ⇒ the root is in the BASE, not in the PRs** (2026-07-30).
+  Four Dependabot PRs (aws-sdk-s3, httpx, csv, simplecov) all red on `scan_ruby`; I opened their
+  diffs first and that cost the most time of the sweep. The cause was one: `main` carried
+  **CVE-2026-66066** (activestorage), so `bundler-audit` failed for everyone. **One unfixed advisory
+  blocks the WHOLE Ruby perimeter** — and each PR's red is then somebody else's. Reflex: with ≥2
+  identical failures, ask what they SHARE before reading any diff; fix `main` first, then rebase.
+  Corollary on the quarantine: it has exactly **one** exception — a security fix you actually need.
+  `rails 8.1.3.1` was taken at age 1 day, deliberately, and that is the rule working, not bending.
+- 🔴 **A security patch can EXPOSE a latent debt rather than break you — read the failure that way first**
+  (2026-07-30). `rails 8.1.3.1` "broke" boot; in truth we had `variant_processor = :vips`, libvips in
+  the Dockerfile and `.variant()` in three live places — and **no `ruby-vips` gem**, so variant
+  generation in prod had been dead *silently*. Upstream made it loud on purpose. Note the shape that
+  hid it: `image_processing` **repackages** any LoadError into `"ImageProcessing::Vips requires the
+  ruby-vips gem"`, and `engine.rb` matches `case error.message` on `/libvips/` and `/image_processing/`
+  — neither matches (capitalised) → `else raise`, i.e. boot-crash instead of the intended warn.
+  Reflex: when a bump fails, ask "what does this prove was already broken?" before reverting.
+- 🔴 **Adding a NATIVE gem can make require ORDER load-bearing** (2026-07-30 → `config/application.rb`).
+  glib (via `ruby-vips`) loaded BEFORE `argon2id` ⇒ `__stack_chk_fail` in `initial_hash`, **SIGABRT
+  (134)**, macOS-only, CI green. Reverse order is clean — a 3-line repro without Rails settles it.
+  Why Rails hit the bad branch although `argon2id` is Gemfile line 8: **`require "rails/all"` (line 4
+  of `application.rb`) runs BEFORE `Bundler.require` (line 8)**, and `activestorage/engine.rb`
+  mentions `ImageAnalyzer::Vips` in the class body → autoload beats Gemfile order. Diagnose order via
+  `$LOADED_FEATURES` **indices** — a `Kernel#require` prepend is blind to `Bundler.require` (it calls
+  the `Kernel.require` singleton). And measure a native crash from the crash report, not from an
+  upstream comment: `.ips` is **JSON**, `usedImages[imageIndex]` names the exact library (here
+  `argon2id.bundle` — my libxml2/nokogiri theory, borrowed from the Rails patch's own comment, was
+  wrong). Take the crash report BEFORE the theory.
+- **SHA==tag verification has a wrong endpoint that reads as a mismatch** (2026-07-30):
+  `git/ref/tags/<tag>` returns the SHA of the **tag OBJECT** for an annotated tag. Use
+  `gh api repos/<o>/<r>/commits/<tag> --jq .sha` (or deref `git/tags/<sha>`).
 - **A gate that did not RUN is not green** (2026-07-29). `Solidity passed` showed green on most PRs
   only because `dorny/paths-filter` skipped the job. The breakage above surfaced solely on the two
   PRs that touched `solidity_audit.yml` — they did not break Slither, they **made it run**. Before
