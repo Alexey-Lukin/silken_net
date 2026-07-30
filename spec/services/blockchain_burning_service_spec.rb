@@ -159,6 +159,122 @@ RSpec.describe BlockchainBurningService do
         expect(mock_client).not_to have_received(:transact)
       end
 
+      # 🔴 [⚖️ 2026-07-30] Два інсайти ОДНОГО дерева ≠ два дерева — тут це РОЗМІР спалення.
+      # Дзеркало піна в `contract_health_check_service_spec` (той самий клас на тригер-половині):
+      # без `.distinct` critical=2 із двох рядків одного дерева дає damage 2/2 = 1.0 замість 0.5,
+      # і `.min`-clamp маскує це як «повна загибель» замість «половина».
+      it "не рахує два інсайти одного дерева як два дерева (розмір спалення)" do
+        other_tree = create(:tree, cluster: cluster)
+        other_tree.wallet.blockchain_transactions.create!(
+          amount: 1000, token_type: :carbon_coin, status: :confirmed,
+          to_address: organization.crypto_public_address, tx_hash: "0x#{'c' * 64}"
+        )
+        # Одне дерево, ДВА легальні oracle-consensus рядки → одне критичне дерево з двох.
+        create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+               target_date: cluster.local_yesterday, stress_index: 1.0, model_source: "oracle_a")
+        create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+               target_date: cluster.local_yesterday, stress_index: 1.0, model_source: "oracle_b")
+        create(:ai_insight, analyzable: other_tree, insight_type: :daily_health_summary,
+               target_date: cluster.local_yesterday, stress_index: 0.1)
+
+        described_class.call(organization.id, naas_contract.id)
+
+        expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
+          burn_amount = (2000 * (0.5**1.3)).ceil # damage 1/2, НЕ 2/2
+          expect(amount_in_wei).to eq((burn_amount.to_f * (10**18)).to_i)
+        end
+      end
+
+      # 🔴 [⚖️ 2026-07-30 · GOV.1] Поріг РОЗМІРУ мусить рухатись за DAO-голосом так само, як
+      # поріг ТРИГЕРА — інакше `AiInsight::SLASH_STRESS_THRESHOLD`-константа тихо розводить
+      # половини інваріанта ARCH.46. Дзеркало «respects a raised stress_threshold» на тригер-боці.
+      it "сайзить damage за DAO-live порогом, не за константою (ARCH.46 тригер ≡ розмір)" do
+        create(:system_parameter, key: "stress_threshold", value: "0.9",
+                                  value_type: "float", category: "alerts")
+        other_tree = create(:tree, cluster: cluster)
+        other_tree.wallet.blockchain_transactions.create!(
+          amount: 1000, token_type: :carbon_coin, status: :confirmed,
+          to_address: organization.crypto_public_address, tx_hash: "0x#{'c' * 64}"
+        )
+        # 0.85 — ВИЩЕ константи 0.83, НИЖЧЕ DAO-порога 0.9 → з константою це був би burn.
+        create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+               target_date: cluster.local_yesterday, stress_index: 0.85)
+        create(:ai_insight, analyzable: other_tree, insight_type: :daily_health_summary,
+               target_date: cluster.local_yesterday, stress_index: 0.1)
+
+        result = described_class.call(organization.id, naas_contract.id)
+
+        expect(result).to be_nil
+        expect(mock_client).not_to have_received(:transact)
+      end
+
+      # 🔴 [⚖️ 2026-07-30] Знаменник мусить читати ЖИВИЙ COUNT, а не денормалізований
+      # `active_trees_count`: колонку тримають Tree-колбеки, а `update_columns`/`update_all`/
+      # `insert_all` їх обходять. Пін ловить відкат «назад на лічильник заради оптимізації» —
+      # на ньому цей приклад дав би `2.0/0 = Infinity` → `.min` → тихі 100% замість чесних 1/2.
+      it "сайзить damage живим COUNT, а не денормалізованим active_trees_count" do
+        other_tree = create(:tree, cluster: cluster)
+        other_tree.wallet.blockchain_transactions.create!(
+          amount: 1000, token_type: :carbon_coin, status: :confirmed,
+          to_address: organization.crypto_public_address, tx_hash: "0x#{'c' * 64}"
+        )
+        create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+               target_date: cluster.local_yesterday, stress_index: 1.0)
+        # Дрейф колонки: обидва дерева ЖИВІ, а лічильник каже 0.
+        cluster.update_column(:active_trees_count, 0)
+
+        described_class.call(organization.id, naas_contract.id)
+
+        expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
+          burn_amount = (2000 * (0.5**1.3)).ceil # 1/2 живого лісу, НЕ Infinity→100%
+          expect(amount_in_wei).to eq((burn_amount.to_f * (10**18)).to_i)
+        end
+      end
+
+      # 🔴 [⚖️ 2026-07-30] Змішаний випадок: є І критичні живі дерева, І свіжий труп. Гілка
+      # `critical_count` перехоплює source_tree-тракт, тож труп у цьому вироку не карається
+      # взагалі — і НЕ сміє ще й розбавляти знаменник (глобальний += 1 давав 2/11 замість 2/10,
+      # тобто розходився з канон-формулою §3 «мертвих нема ні в чисельнику, ні в знаменнику»).
+      it "не розбавляє статистичну частку свіжим трупом (2/10, не 2/11)" do
+        others = create_list(:tree, 9, cluster: cluster)
+        others.first.wallet.blockchain_transactions.create!(
+          amount: 1000, token_type: :carbon_coin, status: :confirmed,
+          to_address: organization.crypto_public_address, tx_hash: "0x#{'c' * 64}"
+        )
+        create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+               target_date: cluster.local_yesterday, stress_index: 1.0)
+        create(:ai_insight, analyzable: others.first, insight_type: :daily_health_summary,
+               target_date: cluster.local_yesterday, stress_index: 1.0)
+        dead = create(:tree, cluster: cluster)
+        dead.update!(status: :deceased)
+
+        described_class.call(organization.id, naas_contract.id, source_tree: dead)
+
+        expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
+          burn_amount = (2000 * ((2.0 / 10)**1.3)).ceil # 2 критичні з 10 ЖИВИХ
+          expect(amount_in_wei).to eq((burn_amount.to_f * (10**18)).to_i)
+        end
+      end
+
+      # 🔴 [⚖️ 2026-07-30] Знаменник source_tree-гілки = ліс ДО події. Дерево, за смерть якого
+      # караємо, вже вибуло з активних (хук статусу спрацьовує до воркера), тож наївний перехід
+      # на «лише активні» дав би кластеру з двох дерев 1/1 = 100% замість чесних 1/2.
+      it "міряє смерть дерева від лісу ДО події, не після (2 дерева → 1/2, не 1/1)" do
+        other_tree = create(:tree, cluster: cluster)
+        other_tree.wallet.blockchain_transactions.create!(
+          amount: 1000, token_type: :carbon_coin, status: :confirmed,
+          to_address: organization.crypto_public_address, tx_hash: "0x#{'c' * 64}"
+        )
+        tree.update!(status: :deceased)
+
+        described_class.call(organization.id, naas_contract.id, source_tree: tree)
+
+        expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
+          burn_amount = (2000 * (0.5**1.3)).ceil # 1/2 живого лісу, НЕ 1/1
+          expect(amount_in_wei).to eq((burn_amount.to_f * (10**18)).to_i)
+        end
+      end
+
       # [ARCH.46] Date threading: damage is queried on the PASSED target_date, not a re-derived local_yesterday.
       it "queries AiInsight on the passed target_date, not local_yesterday (ARCH.46 date-threading)" do
         explicit_date = cluster.local_yesterday - 1.day
@@ -802,8 +918,13 @@ RSpec.describe BlockchainBurningService do
       end
     end
 
-    context "when cluster has zero trees" do
-      it "returns damage_ratio of 1.0 (full burn)" do
+    # 🔴 [⚖️ 2026-07-30] Порожній ЖИВИЙ ліс → розмір indeterminate → FREEZE, не 100%.
+    # Доти стояло `return 1.0 if total_trees.zero?` — необоротне спалення за арифметику на
+    # порожній множині. Пін тримає й другу half: знаменник читається реальним `trees.active.count`,
+    # а не денормалізованим лічильником (той обходиться `update_columns`, і занижений до нуля
+    # давав би `1.0/0 = Infinity` → `.min` → тихі 100%).
+    context "when the cluster has no living trees" do
+      it "freezes for Field Audit instead of burning 100%" do
         tree = create(:tree, cluster: cluster)
         tree.wallet.blockchain_transactions.create!(
           amount: 500,
@@ -812,16 +933,12 @@ RSpec.describe BlockchainBurningService do
           to_address: organization.crypto_public_address,
           tx_hash: "0x#{'a' * 64}"
         )
+        tree.update!(status: :deceased)
 
-        # Use send to directly test calculate_damage_ratio
-        service = described_class.new(organization.id, naas_contract.id)
-        trees_relation = double("trees_relation", count: 0)
-        allow(cluster).to receive(:trees).and_return(trees_relation)
-        # Set the @cluster instance variable
-        service.instance_variable_set(:@cluster, cluster)
+        result = described_class.call(organization.id, naas_contract.id)
 
-        result = service.send(:calculate_damage_ratio)
-        expect(result).to eq(1.0)
+        expect(result).to eq(:frozen)
+        expect(mock_client).not_to have_received(:transact)
       end
     end
 
@@ -910,16 +1027,25 @@ RSpec.describe BlockchainBurningService do
     let(:tree_burn) { create(:tree, cluster: cluster) }
     let!(:wallet_burn) { tree_burn.wallet || create(:wallet, tree: tree_burn) }
 
-    it "creates transaction with cluster instead of wallet when all trees dead" do
+    # «Пастка Останнього дерева» — audit_wallet nil → інтент чіпляється до КЛАСТЕРА (MRV.1:
+    # cluster-sourced гроші пишуть audit-рядок через `cluster`, бо гаманця-носія нема).
+    # [⚖️ 2026-07-30] Сценарій переписано на ДОСЯЖНИЙ: доти тест ліпив «усі дерева мертві +
+    # burn БЕЗ source_tree» через `update_columns`, а в проді такого шляху нема — `DailyHealthRouter#skipped?`
+    # відсікає мертвий кластер ще до burn'у, тож статистична гілка туди не доходить у принципі.
+    # Реальний носій nil-гаманця — дерево-сирота (`has_one :wallet` знищений як порожній,
+    # ARCH.57), що вмирає останнім: source_tree є, гаманця в нього нема, живих сусідів теж.
+    it "creates transaction with cluster instead of wallet when the dying tree has no wallet" do
       create(:blockchain_transaction, wallet: wallet_burn, amount: 100, status: :confirmed)
-      # [ARCH.46] critical AiInsight → burns via critical_count (no source_tree).
-      create(:ai_insight, analyzable: tree_burn, insight_type: :daily_health_summary,
-             target_date: cluster.local_yesterday, stress_index: 1.0)
-      tree_burn.update_columns(status: Tree.statuses[:deceased])
+      orphan = create(:tree, cluster: cluster)
+      orphan.wallet&.destroy
+      orphan.reload
+
+      tree_burn.update!(status: :deceased)
+      orphan.update!(status: :deceased)
 
       allow(mock_client).to receive(:transact).and_return("0xdead")
 
-      described_class.call(organization.id, naas_contract.id)
+      described_class.call(organization.id, naas_contract.id, source_tree: orphan)
 
       audit_tx = BlockchainTransaction.where(sourceable: naas_contract).last
       expect(audit_tx.wallet).to be_nil

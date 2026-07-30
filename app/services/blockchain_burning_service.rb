@@ -420,34 +420,73 @@ class BlockchainBurningService < ApplicationService
 
   # Розраховує частку біомаси, що підлягає вилученню (damage_ratio ∈ [0,1], або nil). Гілки:
   #   • contractual          → погоджене повне вилучення (early-exit форфейтура; ПЕРШОЮ — не damage-based)
-  #   • critical>0           → пропорційно (stressed+dead / total — канон §3)
-  #   • source_tree          → загибель конкретного дерева (1/total)
+  #   • critical>0           → пропорційно (частка АКТИВНИХ дерев ≥ порога — канон §3)
+  #   • source_tree          → загибель конкретного дерева (1/ліс-на-момент-події)
   #   • дані Є, 0 critical    → ліс здоровий → 0 шкоди → 0 slash
   #   • genuine no-data → nil → magnitude indeterminate → `perform` робить freeze (§3.2 асиметрія,
   #     дзеркало `flag_data_blackout!`), НЕ 100% worst-case
   # [ARCH.46] Поріг = `AiInsight.slash_stress_threshold` (той САМИЙ DAO-live поріг, що ТРИГЕРИТЬ
   # слеш у `ContractHealthCheckService` — GOV.1; раніше хибне `≥ 1.0` → помірний стрес давав
   # critical=0 → 100% over-burn). Дата прокинута від health-check (`effective_target_date`).
+  #
+  # [⚖️ 2026-07-30] Третя вісь того ж інваріанта — МНОЖИНА дерев. Тригер міряє частку від
+  # АКТИВНИХ (`DailyHealthRouter`), а розмір міряв від УСІХ, вкл. `deceased`/`removed`. Мертве
+  # дерево телеметрії не шле → інсайту не має → в чисельник не входило, лише в знаменник, тобто
+  # кладовище РОЗБАВЛЯЛО шкоду: що більше вирубано, то менший відсоток за решту — напрямок,
+  # протилежний наміру §3. Тепер обидві половини міряють один ліс. Мертвих свідомо НЕМА і в
+  # чисельнику: смерть має власний тракт (`Tree#trigger_slashing_protocol` → `source_tree`), і
+  # тримати її ще й у статистичній частці = подвійний рахунок за ту саму подію.
   def calculate_damage_ratio
-    total_trees = @cluster.trees.count
-    return 1.0 if total_trees.zero?
-    # Contractual — ПЕРШОЮ: повне погоджене вилучення, не залежить від damage; AiInsight-запит зайвий.
+    # Contractual — ПЕРШОЮ: повне погоджене вилучення, не залежить ані від damage, ані від
+    # наявності дерев; AiInsight-запит зайвий.
     return 1.0 if @contractual
+
+    # Знаменник = живий ліс на МОМЕНТ ПОДІЇ, і читається РЕАЛЬНИМ COUNT, а не денормалізованим
+    # `active_trees_count`: лічильник тримають Tree-колбеки, а `update_columns`/`update_all` їх
+    # обходять. Розбіжність тут не косметична — чисельник іде живим запитом, тож занижений
+    # лічильник МНОЖИТЬ damage, а занижений до нуля дав би `1.0/0 = Infinity` → `.min` → рівно
+    # 100% тихого спалення (той самий over-burn клас, що ARCH.46 і закривав). Тригер лишається
+    # на денормалізованому свідомо: він щодня обходить УСІ кластери, а тут — один контракт і
+    # необоротні гроші, тож точність дорожча за COUNT(*).
+    total_trees = @cluster.trees.active.count
 
     # [SQL Optimization]: Підзапит замість масиву об'єктів (The Polymorphic IN Trap).
     daily_insights = AiInsight.daily_health_summary.where(
-      analyzable_type: "Tree", analyzable_id: @cluster.trees.select(:id), target_date: effective_target_date
+      analyzable_type: "Tree", analyzable_id: @cluster.trees.active.select(:id), target_date: effective_target_date
     )
-    critical_count = daily_insights.where("stress_index >= ?", AiInsight::SLASH_STRESS_THRESHOLD).count
+    # 🔴 Дві осі ОДНОГО інваріанта «тригер ≡ розмір» — міряти ТИМ САМИМ порогом і рахувати
+    # ДЕРЕВА, а не РЯДКИ. (1) Поріг — DAO-live метод, не константа: константа = лише
+    # default-fallback, тож будь-який голос за `:stress_threshold` (bounds 0.5..1.0) розводив
+    # поріг спрацювання і поріг розміру, а обидва доми стверджували протилежне.
+    # (2) `.distinct` по `analyzable_id`: unique-індекс `idx_ai_insights_unique_report` включає
+    # `model_source`, тобто два інсайти на одне дерево за добу легальні за дизайном
+    # (oracle-consensus), а генератор пише `model_source` NULL — PG unique NULL-и не дедуплікує.
+    # Голий `.count` давав одному дереву вагу двох; від 100% рятував лише `.min`-clamp нижче,
+    # тобто симптом маскувався. Дзеркало `DailyHealthRouter#critical_count`. [⚖️ 2026-07-30]
+    critical_count = daily_insights.where("stress_index >= ?", AiInsight.slash_stress_threshold)
+                                   .select(:analyzable_id).distinct.count
 
+    # Ділення в обох гілках безпечне БЕЗ zero-guard, і доказ тримається лише тому, що чисельник
+    # і знаменник тепер з ОДНОГО джерела (жива `trees.active`): `critical > 0` ⇒ у скоупі є
+    # активні дерева ⇒ `total_trees > 0`. З денормалізованим лічильником ця імплікація була б
+    # НЕдоведеною — два джерела правди не дають виводити одне з одного.
     if critical_count.positive?
-      [ critical_count.to_f / total_trees, 1.0 ].min   # пропорційно (stressed+dead / total)
+      [ critical_count.to_f / total_trees, 1.0 ].min   # частка живого лісу
     elsif @source_tree.present?
-      [ 1.0 / total_trees, 1.0 ].min                   # загибель конкретного дерева
+      # «Ліс ДО події» — і ТІЛЬКИ тут: жертву додаємо в знаменник, якщо її вже нема серед
+      # активних (інакше кластер із двох дерев дав би 1/1 = 100% замість чесних 1/2, а останнє
+      # дерево — ділення на нуль). Предикат саме `!active?`, а не «вмерло»: сенс += 1 —
+      # «включи жертву в ліс», щоб знаменник збігався з множиною чисельника, тож він однаково
+      # правильний для dormant-джерела (dClimate шле `@alert.tree_id`, який може бути живим —
+      # тоді дерево ВЖЕ в `total_trees` і += 1 не спрацьовує).
+      # ⚠️ Свідомо НЕ глобально: у статистичній гілці труп не рахується ні тут, ні в чисельнику
+      # (канон §3), бо смерть має власний тракт. Глобальний += 1 розбавляв би частку живого лісу.
+      [ 1.0 / (total_trees + (@source_tree.active? ? 0 : 1)), 1.0 ].min
     elsif daily_insights.exists?
       0.0                                              # дані Є, ліс здоровий → 0 шкоди → 0 slash
     end
-    # else: нуль AiInsight-записів → nil (genuine no-data) → perform → freeze_for_field_audit!
+    # else: нуль AiInsight-записів (вкл. кластер без жодного живого дерева) → nil (genuine
+    # no-data) → perform → freeze_for_field_audit!, а НЕ старе `total_trees.zero? → 1.0`.
   end
 
   # [ARCH.46] Дата для AiInsight-запиту: прокинута від `ContractHealthCheckService` (де порахована
