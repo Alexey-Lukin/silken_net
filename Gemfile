@@ -33,6 +33,11 @@ gem "rack-attack"
 # Мусить лишатись у ГОЛОВНІЙ групі: транзитивна присутність у Gemfile.lock ≠
 # завантаження — деталь і пастка в `docs/04_04 §12.2`.
 gem "rails-i18n"
+# Двигун vips-трансформера (`config.active_storage.variant_processor = :vips`):
+# image_processing тримає ruby-vips опціональним, тож без явного гема трансформера
+# просто не існує. Active Storage требує його при буті, щоб вимкнути unfuzzed-лоадери
+# libvips — потрібні libvips ≥ 8.13 (Dockerfile, CI) та ruby-vips ≥ 2.2.1.
+gem "ruby-vips", require: false
 gem "rumale"
 gem "sentry-rails"
 gem "sentry-ruby"
