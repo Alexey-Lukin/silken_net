@@ -27,7 +27,16 @@ class Gateway < ApplicationRecord
 
   # [ВИПРАВЛЕНО]: Знищення Журналу Обслуговування (Аудит).
   # Використовуємо :restrict_with_error, щоб зберегти історію витрат та ремонтів.
-  # Королеву можна списати (status: :retired), але не можна видалити її минуле.
+  #
+  # ⚠️ Тут стояло «Королеву можна списати (`status: :retired`)» — такого стану НЕМАЄ:
+  # `state` несе лише операційні значення (`idle`/`active`/`updating`/`maintenance`/
+  # `faulty`), і петля між ними замкнена без точки виходу. У Дерева життєвий цикл є
+  # (AASM `decommission!` → `removed`), у Королеви — ні, і `EcosystemHealingWorker`
+  # гейтує ту гілку на `target.is_a?(Tree)`, тож `MaintenanceRecord(decommissioning)`
+  # на шлюз створюється, валідується й НЕ РОБИТЬ НІЧОГО — журнал стверджує дію, якої
+  # не сталося. Потрібен один термінальний trust-revocation стан (вкрадена Королева
+  # тримає у флеші CoAP-ключ, QATT-seed і KEYB усього кластера, а Dual-Key Grace без
+  # фізичного re-provision не гасне ніколи) → `00_07` ARCH.76.
   has_many :maintenance_records, as: :maintainable, dependent: :restrict_with_error
 
   has_many :actuators, dependent: :destroy
