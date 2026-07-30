@@ -208,7 +208,7 @@ jobs:
 
 Routes PRs автоматично у відповідні кластери на основі шляхів файлів.
 
-> **Конфіг = SSOT у [`.github/labeler.yml`](../.github/labeler.yml); тут — лише політика.** Дзеркало глобів раніше жило в цьому §, розійшлося з файлом у 5 місцях і навіть іменувало неіснуючий `module:06-infra` (живий — `module:06-matrix`, §4.4) — прибрано за One-Home, як solc-pragma. Правки застосовані (OPS.9 — вже в архіві [`00_07`](00_07_Action_Plan_Tracker)); coverage-residual → [`00_07`](00_07_Action_Plan_Tracker) OPS.3.
+> **Конфіг = SSOT у [`.github/labeler.yml`](../.github/labeler.yml); тут — лише політика.** Дзеркало глобів раніше жило в цьому §, розійшлося з файлом у 5 місцях і навіть іменувало неіснуючий `module:06-infra` (живий — `module:06-matrix`, §4.4) — прибрано за One-Home, як solc-pragma. Правки застосовані (OPS.9 — вже в архіві [`00_07`](00_07_Action_Plan_Tracker)); coverage-діри самі закрито 2026-07-16 (§4.1 нижче), але **машинного** coverage-гейта ще НЕМА — residual → [`00_07`](00_07_Action_Plan_Tracker) OPS.3.
 
 **Політика роутингу (durable):**
 
