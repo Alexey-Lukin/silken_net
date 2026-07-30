@@ -268,4 +268,35 @@ RSpec.describe Api::V1::BaseController, type: :request do
       expect(response).to have_http_status(:ok)
     end
   end
+
+  # [SEC.25] Дзеркало блоку вище, на найширшому гарді застосунку: `authenticate_user!`
+  # — `before_action` для всього дашборда, тож його форма відмови видима кожному
+  # реальному користувачеві, чия сесія протермінувалась.
+  #
+  # ⚠️ Приклади ходять справжнім HTTP свідомо: решта цього файла будує контролер через
+  # `described_class.new` і стабить `render`, а `respond_to` лізе в `request.formats` —
+  # у такому харнесі він упав би `NoMethodError` на nil, тобто «доводив» би відсутність
+  # диспетчера, а не поведінку.
+  describe "коли автентифікації немає" do
+    it "віддає 401 JSON на API-запит" do
+      get "/api/v1/dashboard", as: :json
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(response.media_type).to eq("application/json")
+      expect(response.parsed_body["error"]).to be_present
+    end
+
+    it "віддає сторінку ЛОГІНУ на браузерний запит, зберігаючи 401" do
+      get "/api/v1/dashboard", headers: { "Accept" => "text/html" }
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(response.media_type).to eq("text/html")
+      # 🔴 Пін саме на ФОРМУ входу, не на «якийсь HTML»: доти браузер діставав сирий
+      # `{"error":...}` першою ж дією після протермінування сесії. І не на статус —
+      # він тут НЕ змінювався, тож пін на 401 лишався б зеленим і на зламаній
+      # поведінці (рівно та вакуумна форма, яку цей пакет виполює деінде).
+      expect(response.body).to include("<html").and include(api_v1_login_path)
+      expect(response.body).not_to include('{"error"')
+    end
+  end
 end

@@ -229,8 +229,37 @@ module Api
       end
 
       # 4. СТАНДАРТИ ВІДПОВІДЕЙ (The Oracle's Voice)
+      #
+      # [SEC.25] HTML-гілка тут несуча, бо `authenticate_user!` — `before_action` для
+      # ВСЬОГО дашборда: без неї протермінована сесія віддавала реальному користувачеві
+      # сирий JSON-блоб замість сторінки логіну, першою ж його дією.
+      #
+      # 🔴 Чому РЕНДЕР на місці, а не редирект на `/login` — вибір виміряний, не
+      # смаковий, і вимір інвертував початкове припущення пункту:
+      #   · шість request-прикладів, які «мали б почервоніти» від редиректу, виявились
+      #     не недбалими API-тестами, а сигналом: два роблять справжній cookie-логін
+      #     через `POST /api/v1/login`, а три б'ють у дії (`codex/matches#new`,
+      #     `telemetry#live`, `codex/fractions#picker`), що взагалі не мають
+      #     `format.json` — там нема чого «забути попросити»;
+      #   · `redirect_to` без `return_to` губить намір: у цьому дереві
+      #     `sessions#create` завжди веде на дашборд, тож користувача телепортувало б
+      #     геть зі сторінки, яку він відкривав (механізму «повернись назад» немає);
+      #   · рендер узгоджений із власним прецедентом — `render_login_failure` нижче
+      #     по файлу вже відповідає на «автентифікація не вдалася» саме так: сторінка
+      #     логіну на місці, статус 401 в ОБОХ форматах.
+      # Наслідок для сумісності: статус лишається 401 і для HTML, тож жоден наявний
+      # приклад не змінює поведінки — вони пінять рівно статус.
       def render_unauthorized
-        render json: { error: I18n.t("errors.api.unauthorized") }, status: :unauthorized
+        respond_to do |format|
+          format.json { render json: { error: I18n.t("errors.api.unauthorized") }, status: :unauthorized }
+          format.html do
+            render_auth_page(
+              title: I18n.t("sessions.login_title"),
+              component: Sessions::New.new(flash_alert: I18n.t("errors.api.unauthorized")),
+              status: :unauthorized
+            )
+          end
+        end
       end
 
       def render_forbidden
