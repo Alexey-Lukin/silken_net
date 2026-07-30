@@ -92,18 +92,12 @@ class ContractHealthCheckService < ApplicationService
     :degraded
   end
 
-  # [SLASH-1] Absence-of-data → freeze for Field Audit, NEVER slash. A
-  # cluster-wide blackout (stolen/destroyed gateway, Starlink outage, storm) is
-  # force-majeure, not the forester's negligence — burning investor tokens on it
-  # would be a false slash (05_05 §1/§6). Raise a :field_audit escalation (NOT
-  # :system_fault — see gap-D); the contract stays :active pending human
-  # classification (Category C). «Тиша замовклого дерева — теж його голос».
   # [SLASH-1] Малий кластер із критичним деревом — семпл, статистично недостатній для
   # АВТОМАТИЧНОГО присуду (розбір межі — у `perform`). Гроші однаково зупиняються через
   # Field Audit, слід у журналі лишається, рішення бере людина.
   def flag_insufficient_sample!(critical_count, total_trees)
     Rails.logger.warn "🔬 [D-MRV] NaasContract ##{@contract.id}: #{critical_count}/#{total_trees} критичних " \
-                      "на кластері, меншому за поріг виродження — Field Audit, NO auto-slash (05_05 §6)."
+                      "на кластері, меншому за поріг виродження — Field Audit, NO auto-slash (05_05 §5)."
 
     EwsAlert.escalate_field_audit!(
       cluster: @cluster,
@@ -114,8 +108,14 @@ class ContractHealthCheckService < ApplicationService
     :insufficient_sample
   end
 
+  # [SLASH-1] Absence-of-data → freeze for Field Audit, NEVER slash. A
+  # cluster-wide blackout (stolen/destroyed gateway, Starlink outage, storm) is
+  # force-majeure, not the forester's negligence — burning investor tokens on it
+  # would be a false slash (05_05 §1/§5). Raise a :field_audit escalation (NOT
+  # :system_fault — see gap-D); the contract stays :active pending human
+  # classification (Category C). «Тиша замовклого дерева — теж його голос».
   def flag_data_blackout!
-    Rails.logger.warn "🌐 [D-MRV] NaasContract ##{@contract.id}: cluster-wide data blackout (#{@target_date}) — gateway-fault signature → Field Audit, NO slash (05_05 §6)."
+    Rails.logger.warn "🌐 [D-MRV] NaasContract ##{@contract.id}: cluster-wide data blackout (#{@target_date}) — gateway-fault signature → Field Audit, NO slash (05_05 §5)."
 
     # [SLASH-1] :field_audit (не :system_fault): дерево замовкло — це НАШ виклик «слухай», окремий
     # від comms-fault, щоб не накручувати penalty_factor (gap-D) і не маскувати сигнали при дедупі.

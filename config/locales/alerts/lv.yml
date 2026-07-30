@@ -22,7 +22,7 @@ lv:
       chainsaw_detected: "🪚 MEŽIZSTRĀDE: Akustiska anomālija bez termiskā signāla. DID: %{did}"
       chainsaw_detected_panic: "🪚 MEŽIZSTRĀDE: Akustiska anomālija bez termiskā signāla (PANIC-TX). DID: %{did}"
       cluster_data_blackout: 'Klastera mēroga datu pārtraukums (%{target_date}): iespējama vārtejas kļūme / Starlink pārtraukums (force-majeure). Slashing NAV piemērots — nepieciešams Field Audit (C kategorija, 05_05 §5).'
-      cluster_small_sample_degradation: 'Maza parauga degradācija (%{target_date}): %{critical_count} no %{total_trees} kokiem kritiski. Procentuālais slieksnis deģenerējas zem 5 kokiem — to šķērso viens vienīgs koks — tāpēc auto-slash NAV piemērots; lemj Field Audit (C kategorija, 05_05 §6).'
+      cluster_small_sample_degradation: 'Maza parauga degradācija (%{target_date}): %{critical_count} no %{total_trees} kokiem kritiski. Procentuālais slieksnis deģenerējas zem 5 kokiem — to šķērso viens vienīgs koks — tāpēc auto-slash NAV piemērots; lemj Field Audit (C kategorija, 05_05 §5).'
       entropy_pre_stress: "🎲 PIRMSSTRESA SIGNĀLS: klastera %{cluster_name} Z sadalījuma entropija nokritusies līdz %{entropy_score} (slieksnis: %{threshold}). %{sample_count} mērījumu analīze pēdējās 24 stundās norāda uz koku atbilžu homogenizāciju — iespējams meža stresa sākums."
       fire_detected: "🔥 KATASTROFA: Temperatūra %{temperature_c}°C (slieksnis: %{fire_limit}). Ugunsgrēka risks!"
       firmware_fault: "⚙️ PROGRAMMAPARATŪRAS KĻŪME: mruby VM kļūda / ierīce nav nodrošināta — nepieciešams re-flash/OTA. DID: %{did}"

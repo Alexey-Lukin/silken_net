@@ -22,7 +22,7 @@ en:
       chainsaw_detected: "🪚 LOGGING: Acoustic anomaly without a thermal signal. DID: %{did}"
       chainsaw_detected_panic: "🪚 LOGGING: Acoustic anomaly without a thermal signal (PANIC-TX). DID: %{did}"
       cluster_data_blackout: 'Cluster-wide data blackout (%{target_date}): possible gateway failure / Starlink blackout (force-majeure). Slashing NOT applied — Field Audit required (Category C, 05_05 §5).'
-      cluster_small_sample_degradation: 'Small-sample degradation (%{target_date}): %{critical_count} of %{total_trees} trees critical. The percentage threshold degenerates below 5 trees — a single tree crosses it — so NO auto-slash; Field Audit decides (Category C, 05_05 §6).'
+      cluster_small_sample_degradation: 'Small-sample degradation (%{target_date}): %{critical_count} of %{total_trees} trees critical. The percentage threshold degenerates below 5 trees — a single tree crosses it — so NO auto-slash; Field Audit decides (Category C, 05_05 §5).'
       entropy_pre_stress: "🎲 PRE-STRESS SIGNAL: Z-distribution entropy of cluster %{cluster_name} dropped to %{entropy_score} (threshold: %{threshold}). Analysis of %{sample_count} measurements over the last 24 hours points to homogenisation of tree responses — forest stress may be starting."
       fire_detected: "🔥 CATASTROPHE: Temperature %{temperature_c}°C (threshold: %{fire_limit}). Fire risk!"
       firmware_fault: "⚙️ FIRMWARE FAULT: mruby VM error / device unprovisioned — re-flash/OTA required. DID: %{did}"

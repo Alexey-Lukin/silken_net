@@ -22,7 +22,7 @@ uk:
       chainsaw_detected: "🪚 ВИРУБКА: Акустична аномалія без термального сигналу. DID: %{did}"
       chainsaw_detected_panic: "🪚 ВИРУБКА: Акустична аномалія без термального сигналу (PANIC-TX). DID: %{did}"
       cluster_data_blackout: 'Cluster-wide data blackout (%{target_date}): можлива відмова шлюзу / Starlink-блекаут (force-majeure). Slashing НЕ застосовано — потрібен Field Audit (Category C, 05_05 §5).'
-      cluster_small_sample_degradation: 'Деградація на малому семплі (%{target_date}): %{critical_count} з %{total_trees} дерев критичні. Відсотковий поріг вироджується на кластері, меншому за 5 дерев — його перетинає одне-єдине дерево, — тож авто-slash НЕ застосовано; вирішує Field Audit (Category C, 05_05 §6).'
+      cluster_small_sample_degradation: 'Деградація на малому семплі (%{target_date}): %{critical_count} з %{total_trees} дерев критичні. Відсотковий поріг вироджується на кластері, меншому за 5 дерев — його перетинає одне-єдине дерево, — тож авто-slash НЕ застосовано; вирішує Field Audit (Category C, 05_05 §5).'
       entropy_pre_stress: "🎲 ПЕРЕДСТРЕСОВИЙ СИГНАЛ: Ентропія Z-розподілу кластера %{cluster_name} знизилась до %{entropy_score} (поріг: %{threshold}). Аналіз %{sample_count} вимірювань за останні 24 години вказує на гомогенізацію відповідей дерев — можливий початок лісового стресу."
       fire_detected: "🔥 КАТАСТРОФА: Температура %{temperature_c}°C (поріг: %{fire_limit}). Ризик пожежі!"
       firmware_fault: "⚙️ ЗБІЙ ПРОШИВКИ: mruby VM error / device unprovisioned — потрібен re-flash/OTA. DID: %{did}"
