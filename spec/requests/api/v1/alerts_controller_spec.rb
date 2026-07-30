@@ -95,11 +95,27 @@ RSpec.describe Api::V1::AlertsController, type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
-    it "renders validation error when resolve! fails" do
-      allow_any_instance_of(EwsAlert).to receive(:resolve!).and_return(false)
+    # 🔴 Тут стояло `allow(...).to receive(:resolve!).and_return(false)` + очікування 422.
+    # Приклад був ВАКУУМНИЙ: `EwsAlert#resolve!` завершується літеральним `true`, а
+    # `mark_resolved!` і `whiny_persistence: true` не повертають `false` — вони КИДАЮТЬ.
+    # Тобто спека пінила стан, якого не існує, і давала хибну впевненість, що гілка
+    # відмови покрита. Реальний шлях — повторний клік (тротл броадкасту 5 с) — летів
+    # у `rescue_from StandardError` і віддавав 500. Тепер пінимо саме його.
+    it "повертає 409 на повторному закритті, а не 500" do
+      patch resolve_api_v1_alert_path(own_alert), headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
 
       patch resolve_api_v1_alert_path(own_alert), headers: headers, as: :json
-      expect(response).to have_http_status(:unprocessable_content)
+      expect(response).to have_http_status(:conflict)
+    end
+
+    it "на повторному закритті з браузера редиректить, а не віддає JSON" do
+      patch resolve_api_v1_alert_path(own_alert), headers: headers, as: :json
+
+      patch resolve_api_v1_alert_path(own_alert), headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to redirect_to(api_v1_alerts_path)
+      expect(response.media_type).not_to eq("application/json")
     end
 
     # 🔴 Ця гілка не була покрита ЖОДНИМ прикладом — усі решта йдуть `as: :json` —

@@ -6,6 +6,7 @@ en:
       idempotency_required: Idempotency-Key header is required for actuator command execution.
     alerts:
       acknowledged: 'Alert #%{id} acknowledged.'
+      already_resolved: 'Alert #%{id} was already resolved.'
       invalid_severity: 'Invalid severity filter: %{value}.'
       invalid_status: 'Invalid status filter: %{value}.'
       resolved: Threat localised.

@@ -6,6 +6,7 @@ lv:
       idempotency_required: Aktuatora komandas izpildei nepieciešama Idempotency-Key galvene.
     alerts:
       acknowledged: 'Brīdinājums #%{id} apstiprināts.'
+      already_resolved: 'Brīdinājums #%{id} jau ir atrisināts.'
       invalid_severity: 'Nederīgs smaguma filtrs: %{value}.'
       invalid_status: 'Nederīgs statusa filtrs: %{value}.'
       resolved: Draudi lokalizēti.

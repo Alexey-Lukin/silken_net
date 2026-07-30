@@ -6,6 +6,7 @@ uk:
       idempotency_required: Заголовок Idempotency-Key обов'язковий для виконання команд актуатора.
     alerts:
       acknowledged: 'Тривогу #%{id} втихомирено.'
+      already_resolved: 'Тривогу #%{id} вже закрито.'
       invalid_severity: 'Невірний фільтр severity: %{value}.'
       invalid_status: 'Невірний фільтр status: %{value}.'
       resolved: Загрозу локалізовано.

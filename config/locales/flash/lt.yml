@@ -6,6 +6,7 @@ lt:
       idempotency_required: Aktuatoriaus komandos vykdymui reikalinga Idempotency-Key antraštė.
     alerts:
       acknowledged: 'Įspėjimas #%{id} patvirtintas.'
+      already_resolved: 'Įspėjimas #%{id} jau išspręstas.'
       invalid_severity: 'Neteisingas sunkumo filtras: %{value}.'
       invalid_status: 'Neteisingas būsenos filtras: %{value}.'
       resolved: Grėsmė lokalizuota.

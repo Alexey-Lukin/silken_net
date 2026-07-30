@@ -87,9 +87,16 @@ module Api
       end
 
       # PATCH /api/v1/alerts/:id/resolve
+      # 🔴 [SEC.25] `if @alert.resolve!` тут БУЛО оманою, і фікс 2026-07-30 спершу полатав
+      # саме її: `EwsAlert#resolve!` завершується літеральним `true`, а `mark_resolved!`
+      # (AASM bang) і `whiny_persistence: true` не повертають `false` — вони КИДАЮТЬ.
+      # Тобто `else`-гілка була недосяжна, а живий шлях відмови — повторний клік, який
+      # описує коментар нижче, — летів у `rescue_from StandardError` і давав операторові
+      # JSON-500 у браузері. Тепер відмова обробляється там, де вона реально виникає.
       def resolve
-        if @alert.resolve!(user: current_user, notes: params[:notes])
-          respond_to do |format|
+        @alert.resolve!(user: current_user, notes: params[:notes])
+
+        respond_to do |format|
             format.json { render json: { message: I18n.t("flash.alerts.acknowledged", id: @alert.id), alert: @alert } }
             format.turbo_stream do
               # `dom_id`, а НЕ рукописний `alert_#{id}`: рядок рендериться як
@@ -103,18 +110,18 @@ module Api
                 Alerts::Row.new(alert: @alert).call
               )
             end
-            format.html { redirect_to api_v1_alerts_path, notice: I18n.t("flash.alerts.resolved") }
+          format.html { redirect_to api_v1_alerts_path, notice: I18n.t("flash.alerts.resolved") }
+        end
+      rescue AASM::InvalidTransition
+        # Тривогу вже закрито — типово другим кліком по кнопці, поки перший ще летів
+        # (див. тротл броадкасту вище). Це НЕ помилка сервера: 409 замість 500, і
+        # формати ті самі, що в успіху.
+        respond_to do |format|
+          format.json do
+            render json: { error: I18n.t("flash.alerts.already_resolved", id: @alert.id) }, status: :conflict
           end
-        else
-          # [SEC.25] Форма ВІДМОВИ мусить мати ті самі формати, що й форма успіху вище.
-          # Доти тут стояв голий `render_validation_error` — тобто оператор, який не зміг
-          # закрити тривогу з дашборда, діставав JSON-блоб замість сторінки: успіх
-          # відповідав трьома форматами, невдача — одним.
-          respond_to do |format|
-            format.json { render_validation_error(@alert) }
-            format.html do
-              redirect_to api_v1_alerts_path, alert: @alert.errors.full_messages.to_sentence
-            end
+          format.html do
+            redirect_to api_v1_alerts_path, notice: I18n.t("flash.alerts.already_resolved", id: @alert.id)
           end
         end
       end
