@@ -13,9 +13,12 @@ RSpec.describe ApplicationPolicy do
 
   let(:record) { double("Record") }
 
+  # [SEC.16] Deny-default: база ЗАБОРОНЯЄ читання, поки політика не дозволить явно.
+  # Доти тут стояло `index?`/`show? == true` по чотирьох ролях — тобто спека
+  # цементувала fail-open як задуману поведінку бази, і жодна мутація її не вбивала.
   describe "#index?" do
-    it "allows all authenticated users" do
-      expect(described_class.new(investor, record).index?).to be true
+    it "denies by default — читання дозволяє лише політика, що визначила його явно" do
+      expect(described_class.new(investor, record).index?).to be false
     end
   end
 
@@ -38,20 +41,12 @@ RSpec.describe ApplicationPolicy do
   end
 
   describe "#show?" do
-    it "returns true for investor" do
-      expect(described_class.new(investor, record).show?).to be true
-    end
-
-    it "returns true for forester" do
-      expect(described_class.new(forester, record).show?).to be true
-    end
-
-    it "returns true for admin" do
-      expect(described_class.new(admin, record).show?).to be true
-    end
-
-    it "returns true for super_admin" do
-      expect(described_class.new(super_admin, record).show?).to be true
+    # Роль тут свідомо НЕ вісь: дефолт відмовляє КОЖНОМУ, включно з super_admin —
+    # інакше «база нічого не вирішує» знову означало б «база вирішує найширше».
+    it "denies every role by default" do
+      [ investor, forester, admin, super_admin ].each do |actor|
+        expect(described_class.new(actor, record).show?).to be(false), "#{actor.role} пройшов дефолт"
+      end
     end
   end
 
@@ -204,14 +199,20 @@ RSpec.describe ApplicationPolicy do
         allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
       end
 
-      it "returns scope.all for any user" do
-        scope = described_class::Scope.new(investor, Tree).resolve
-        expect(scope).to be_a(ActiveRecord::Relation)
+      # 🔴 Доти обидва приклади звалися «returns scope.all» і асертили лише
+      # `be_a(ActiveRecord::Relation)` — а `scope.none` теж Relation, тож вони
+      # проходили б за БУДЬ-ЯКОЇ поведінки й не могли виразити дефект, який нібито
+      # стерегли. Тепер пінимо ВМІСТ: забутий `Scope` віддає порожньо, не всю таблицю.
+      it "resolves to NOTHING by default — навіть коли в таблиці є рядки" do
+        create(:tree)
+
+        expect(described_class::Scope.new(investor, Tree).resolve).to be_empty
       end
 
-      it "returns scope.all for super_admin" do
-        scope = described_class::Scope.new(super_admin, Tree).resolve
-        expect(scope).to be_a(ActiveRecord::Relation)
+      it "denies super_admin the same way — роль не обходить дефолт" do
+        create(:tree)
+
+        expect(described_class::Scope.new(super_admin, Tree).resolve).to be_empty
       end
     end
 
