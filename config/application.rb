@@ -1,6 +1,16 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 require_relative "boot"
 
+# ⚠️ ПОРЯДОК НЕСУЧИЙ, не алфавіт. `rails/all` тягне activestorage/engine.rb, а той
+# у тілі класу згадує `ImageAnalyzer::Vips` → autoload → ruby-vips → glib. Якщо glib
+# заходить ПЕРШОЮ, нативний argon2id ламається на arm64-darwin: `__stack_chk_fail`
+# у `initial_hash`, SIGABRT (134) на ~50 хешах. Зворотний порядок чистий, тож
+# argon2id вантажимо до rails/all. Мінімальний репро (без Rails):
+#   ruby -e 'require "ruby-vips"; require "argon2id"; 50.times { Argon2id::Password.create("p") }'  → 134
+#   ruby -e 'require "argon2id"; require "ruby-vips"; …'                                            → 0
+# Linux (CI/Docker) не відтворює — тримаємо рядок для локальної сюїти на macOS.
+require "argon2id"
+
 require "rails/all"
 
 # Require the gems listed in Gemfile, including any gems
