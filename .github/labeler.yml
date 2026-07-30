@@ -1,4 +1,7 @@
-# PR Auto-Labeler config (actions/labeler@v6).
+# PR Auto-Labeler config (actions/labeler — schema stable since v5; the pinned
+# release lives in .github/workflows/labeler.yml, not here, so it can't drift).
+# Form is gated: scripts/labeler_config_check.rb (negative globs must sit in a
+# conjunction with a positive one; keys ⊆ .github/labels.yml).
 # Drives cluster routing per docs/00_05_GitHub_Projects_and_IaC_Automation.md §2.6.
 
 "cluster:A-hardware":

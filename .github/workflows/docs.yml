@@ -158,6 +158,17 @@ jobs:
         # The Cross-cluster option survived its own retirement 37 days here.
         run: ruby scripts/field_canon_sync.rb
 
+      - name: PR-labeler config gate (OPS.3 — negative-glob AND-form + label existence)
+        # Pure Ruby, no Rails — actions/labeler defaults every matcher list to
+        # `any:` (OR), so a negative glob that can satisfy a label ALONE sticks
+        # it to every PR. That was live here until 2026-07-16 (cluster:C-scaling
+        # on all PRs). The gate expands the rules into a disjunction of
+        # conjunctions and demands a positive glob in every branch carrying a
+        # negative — "is there an `all:` above it" would pass two real holes.
+        # Second axis: labeler keys ⊆ labels.yml (a phantom key is inert).
+        # Input `.github/**` already in the changes-filter, so not decorative.
+        run: ruby scripts/labeler_config_check.rb
+
       - name: Governance-key sync (GOV.2 — ProtocolParameters.sol ⟷ ParameterSyncWorker)
         # Pure Ruby, no Rails — the on-chain↔backend bridge rests entirely on
         # keccak256(param_key) string equality. Economic and Lorenz sets are
