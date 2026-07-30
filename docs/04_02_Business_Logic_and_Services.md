@@ -920,9 +920,9 @@ The finalizer `commit_telemetry` ends with a fire-and-forget `enqueue_codex_disc
 |---|---|
 | **Файл** | `app/controllers/api/v1/codex/citations_controller.rb` |
 | **POST** | `forester+` (Pundit `Codex::CitationPolicy#create?`). Required body: `codex_node_slug`, `citable_type`, `citable_id`. Optional: `note` (≤140). `Idempotency-Key` обов'язкова для JSON; replay returns the cached payload. DB-UNIQUE on `(codex_node_id, citable_type, citable_id, created_by_user_id)` is the second line of defence — duplicate → 422. |
-| **DELETE** | own ≤ 24 h grace (`record.created_by_user_id == user.id && created_at >= 24.hours.ago`), admin+ bypass. |
-| **Type whitelist** | `CITABLE_CLASS_MAP` lambda registry inside the controller — Brakeman-clean (no `safe_constantize` on user input). Bogus `citable_type` → 400. Allowed: `Tree`, `Cluster`, `AiInsight`, `EwsAlert`, `OracleVision` (falls back to `AiInsight` if `OracleVision` const missing), `NaasContract`. |
-| **Broadcast** | `codex_citations:<Type>:<id>` envelope `{ op: "append" \| "remove", data \| id }`. Failure rescued — never rolls back the write. |
+| **DELETE** | own ≤ 24 h grace (`record.created_by_user_id == user.id && created_at >= 24.hours.ago`), admin+ bypass **в межах організації АВТОРА** (`verify_citation_within_organization!` перед `authorize` → 404, не 403). Вісь автора, а не цілі — [`04_05`](04_05_Codex_Lore_Module) ADR-CDX-11. |
+| **Type whitelist** | `CITABLE_CLASS_MAP` lambda registry inside the controller — Brakeman-clean (no `safe_constantize` on user input). Bogus `citable_type` → 400. Allowed: `Tree`, `Cluster`, `AiInsight`, `EwsAlert`, `OracleVision` (lore-фасад `AiInsight`; окремого STI-класу немає й бути не може — в `ai_insights` немає колонки `type`), `NaasContract`. ⚠️ Кожен запис віддає **org-скоуплений relation**, а не клас [SEC.26] — інваріант і його стелі в ADR-CDX-11. |
+| **Broadcast** | **Немає.** ⚠️ Тут доти описувався envelope `codex_citations:<Type>:<id>` — його знято 2026-07-27 разом з усіма сирими `ActionCable.server.broadcast` (UI.2 descope; заборону тримає `spec/security/no_raw_action_cable_spec.rb`). Підписника він не мав ніколи, а незахищене імʼя каналу було латентним крос-тенант IDOR. Живість цитат = відкрите ⚖️ у [`00_07`](00_07_Action_Plan_Tracker) UI.2; вмикати її можна лише підписаним Turbo-стрімом із доказом скоупу. |
 
 ### `Api::V1::Codex::Admin::NodesController` (Phase 6)
 

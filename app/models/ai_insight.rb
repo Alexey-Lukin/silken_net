@@ -57,6 +57,24 @@ class AiInsight < ApplicationRecord
   # Evidence Persistence: знайти інсайти, що посилаються на конкретний telemetry log
   scope :referencing_log, ->(log_id) { where("source_log_ids @> ARRAY[?]::bigint[]", log_id.to_i) }
 
+  # [SEC.26] Тенант-скоуп: `ai_insights` не має ані `organization_id`, ані `cluster_id`
+  # — належність виводиться ЛИШЕ через поліморфний `analyzable`, і гілок рівно три
+  # (Cluster організації · Tree в її кластерах · сама Organization). Тому це scope на
+  # моделі, а не `where` у контролері: правило потрібне двом непов'язаним поверхням —
+  # списку прогнозів (`OracleVisionsController#index`) і скоупу цитованої цілі
+  # (`Codex::CitationsController`), — а два рукописи одного 3-гілкового OR розійшлися б
+  # мовчки: зайва гілка = крос-тенант, забута = зникла ціль, і жоден тест не червоніє.
+  scope :for_organization, ->(org) {
+    cluster_ids = org.clusters.select(:id)
+
+    where(
+      "(analyzable_type = 'Cluster' AND analyzable_id IN (?)) OR " \
+      "(analyzable_type = 'Tree' AND analyzable_id IN (?)) OR " \
+      "(analyzable_type = 'Organization' AND analyzable_id = ?)",
+      cluster_ids, Tree.where(cluster_id: cluster_ids).select(:id), org.id
+    )
+  }
+
   # Full-text search in reasoning JSONB (uses tsvector GIN index).
   # The idx_ai_insights_reasoning_gin (plain JSONB GIN) only supports @> containment.
   # This scope uses the dedicated tsvector GIN index idx_ai_insights_reasoning_fts

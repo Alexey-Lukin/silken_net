@@ -61,6 +61,7 @@ module Api
         # DELETE /api/v1/codex/citations/:id
         def destroy
           citation = ::Codex::Citation.find(params[:id])
+          verify_citation_within_organization!(citation)
           authorize citation, :destroy?
 
           citation.destroy!
@@ -69,49 +70,70 @@ module Api
 
         private
 
+        # [SEC.26] Друга половина класу: `Codex::CitationPolicy#destroy?` пускає
+        # `admin_or_above?` без жодної org-умови, тож admin будь-якої організації
+        # зносив би будь-яку цитату на платформі.
+        #
+        # Вісь тут — АВТОР, а не цитована ціль, і це не смак: ціль може бути вже
+        # знищена (`citable` — поліморфний `optional: true`, FK-каскаду немає), а
+        # скоуп по цілі зробив би осиротілу цитату НЕВИДАЛИМОЮ назавжди — тобто
+        # вдарив би рівно по чесному власнику, лишивши атакера недоторканим.
+        # `created_by_user_id` — NOT NULL, тож вісь автора визначена завжди; а після
+        # скоупу `create` обидві осі збігаються, бо цитату вже не народити на чужій цілі.
+        #
+        # Власний запис пропускаємо ДО читання організації — інакше автор без
+        # acting-організації не прибрав би навіть власну цитату.
+        #
+        # Гард стоїть ПЕРЕД `authorize`: чужа цитата має давати 404, а не 403,
+        # інакше різниця кодів лишається existence-оракулом саме для тієї
+        # популяції, проти якої гард і написаний.
+        def verify_citation_within_organization!(citation)
+          return if citation.created_by_user_id == current_user.id
+          return if acting_organization!.users.exists?(id: citation.created_by_user_id)
+
+          raise ActiveRecord::RecordNotFound
+        end
+
         # `?citable_type=Tree&citable_id=123` query/body parameters. We re-validate
         # against `Codex::Citation::ALLOWED_CITABLE_TYPES` to resist arbitrary
-        # constantize attempts, and resolve the class via an explicit allow-map
+        # constantize attempts, and resolve the target through an explicit allow-map
         # so static analysers (Brakeman) don't have to reason about runtime
         # `safe_constantize` calls. Returns `:bad_request` (400) on bogus type
         # so the client can distinguish from auth (401) / authorization (403)
         # / validation (422) failures.
+        # [SEC.26] Кожен запис мапи віддає вже ОРГ-СКОУПЛЕНИЙ relation, а не клас.
+        # Доти тут стояв голий `klass`, і `find` по ньому робив ціль глобальною:
+        # forester організації А писав цитату на запис Б, і вона проступала на
+        # дашборді ВЛАСНИКА — `Clusters::Show` · `Trees::Show` · `Alerts::Row` ·
+        # `OracleVisions::ForecastCard` рендерять `Citation.for_target` без власного
+        # org-фільтра, бо покладаються на те, що ціль уже скоупив контролер вище.
+        # Скоуп живе в САМІЙ мапі, а не окремою перевіркою після `find`, і це несуче:
+        # так «не існує» і «чуже» дають ОДНУ відповідь (404), інакше різниця кодів
+        # лишалась би existence-оракулом по всій платформі.
         CITABLE_CLASS_MAP = {
-          "Tree"         => -> { Tree },
-          "Cluster"      => -> { Cluster },
-          "AiInsight"    => -> { AiInsight },
-          "EwsAlert"     => -> { EwsAlert },
-          # `OracleVision` is the lore-facing rename of `AiInsight` (see
-          # `Views::Components::OracleVisions::*`). The class itself was not
-          # extracted — Phlex components alias the AR record at the view
-          # boundary. The lambda checks `defined?(::OracleVision)` so the
-          # day someone DOES extract a real `OracleVision < AiInsight` STI
-          # subclass, this entry starts pointing to it without a code change.
-          "OracleVision" => -> { defined?(::OracleVision) ? ::OracleVision : AiInsight },
-          "NaasContract" => -> { NaasContract }
+          "Tree"         => ->(org) { org.trees },
+          "Cluster"      => ->(org) { org.clusters },
+          "AiInsight"    => ->(org) { AiInsight.for_organization(org) },
+          "EwsAlert"     => ->(org) { org.ews_alerts },
+          # `OracleVision` — lore-фасад того самого `AiInsight` (Phlex-компоненти
+          # перейменовують запис на межі в'ю). Окремого STI-підкласу тут не буде:
+          # `ai_insights` не має колонки `type`, тож Rails не додав би type-умову
+          # навіть існуй такий клас, а `base_class` однаково лишається `AiInsight`
+          # — саме його й пише `citable_type` нижче.
+          "OracleVision" => ->(org) { AiInsight.for_organization(org) },
+          "NaasContract" => ->(org) { org.naas_contracts }
         }.freeze
         private_constant :CITABLE_CLASS_MAP
 
         def resolve_target!
-          type   = params.require(:citable_type)
-          loader = CITABLE_CLASS_MAP[type]
-          if loader.nil?
+          type  = params.require(:citable_type)
+          scope = CITABLE_CLASS_MAP[type]
+          if scope.nil?
             render json: { error: "Unsupported citable_type" }, status: :bad_request
             return nil
           end
 
-          klass =
-            begin
-              loader.call
-            rescue NameError
-              nil
-            end
-          if klass.nil?
-            render json: { error: "Unsupported citable_type" }, status: :bad_request
-            return nil
-          end
-
-          klass.find(params.require(:citable_id))
+          scope.call(acting_organization!).find(params.require(:citable_id))
         end
 
         def idempotency_key

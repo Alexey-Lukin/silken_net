@@ -9,7 +9,12 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
   let(:investor)  { create(:user, organization: org, role: :investor) }
   let(:admin)     { create(:user, :admin, organization: org) }
   let(:node)      { create(:codex_node) }
-  let(:tree)      { create(:tree) }
+  # [SEC.26] Ціль МУСИТЬ належати організації актора — інакше приклад стверджує
+  # рівно той крос-тенант запис, який ця поверхня тепер забороняє. Доти тут стояло
+  # голе `create(:tree)`, а фабрика тягне власні cluster+organization, тож майже
+  # кожен позитивний приклад файлу мовчки був крос-org і пінив 201 на чужій цілі.
+  let(:cluster)   { create(:cluster, organization: org) }
+  let(:tree)      { create(:tree, cluster: cluster) }
   let(:token)     { forester.generate_token_for(:api_access) }
   let(:headers) do
     { "Authorization" => "Bearer #{token}",
@@ -88,7 +93,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
     end
 
     it "resolves OracleVision citable_type to AiInsight when no STI subclass is defined" do
-      insight = create(:ai_insight)
+      insight = create(:ai_insight, analyzable: cluster)
       expect(defined?(::OracleVision)).to be_nil
 
       post "/api/v1/codex/citations",
@@ -100,7 +105,6 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
     end
 
     it "supports citable_type=Cluster" do
-      cluster = create(:cluster)
       post "/api/v1/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "Cluster", citable_id: cluster.id },
            headers: headers, as: :json
@@ -109,7 +113,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
     end
 
     it "supports citable_type=AiInsight" do
-      insight = create(:ai_insight)
+      insight = create(:ai_insight, analyzable: cluster)
       post "/api/v1/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "AiInsight", citable_id: insight.id },
            headers: headers, as: :json
@@ -118,7 +122,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
     end
 
     it "supports citable_type=EwsAlert" do
-      alert = create(:ews_alert)
+      alert = create(:ews_alert, cluster: cluster, tree: tree)
       post "/api/v1/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "EwsAlert", citable_id: alert.id },
            headers: headers, as: :json
@@ -127,7 +131,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
     end
 
     it "supports citable_type=NaasContract" do
-      contract = create(:naas_contract)
+      contract = create(:naas_contract, organization: org, cluster: cluster)
       post "/api/v1/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "NaasContract", citable_id: contract.id },
            headers: headers, as: :json
@@ -137,7 +141,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
 
     it "honors an OracleVision STI subclass when present" do
       stub_const("OracleVision", Class.new(AiInsight))
-      insight = OracleVision.create!(analyzable: create(:tree), insight_type: :daily_health_summary,
+      insight = OracleVision.create!(analyzable: tree, insight_type: :daily_health_summary,
                                      target_date: Date.current - 1, stress_index: 0.1, summary: "x")
 
       post "/api/v1/codex/citations",
@@ -148,23 +152,62 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
       expect(response.parsed_body.dig("data", "citable_type")).to eq("AiInsight")
     end
 
-    it "returns 400 when a CITABLE_CLASS_MAP lambda raises NameError" do
-      bogus_map = {
-        "Tree" => -> { Tree },
-        "Cluster" => -> { Cluster },
-        "AiInsight" => -> { AiInsight },
-        "EwsAlert" => -> { EwsAlert },
-        "OracleVision" => -> { raise NameError, "uninitialized constant ImaginaryClass" },
-        "NaasContract" => -> { NaasContract }
-      }.freeze
-      stub_const("Api::V1::Codex::CitationsController::CITABLE_CLASS_MAP", bogus_map)
+    # [SEC.26] Тенант-ізоляція запису. Доти пінів тут було НУЛЬ, і майже кожен
+    # позитивний приклад файлу мовчки стверджував протилежне — 201 на чужій цілі.
+    describe "крос-тенант ізоляція цілі" do
+      let(:foreign_cluster) { create(:cluster) }
+      let(:foreign_tree)    { create(:tree, cluster: foreign_cluster) }
 
-      post "/api/v1/codex/citations",
-           params: { codex_node_slug: node.slug, citable_type: "OracleVision", citable_id: 1 },
-           headers: headers, as: :json
+      it "відмовляє в цитуванні дерева чужої організації" do
+        expect {
+          post "/api/v1/codex/citations",
+               params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: foreign_tree.id },
+               headers: headers, as: :json
+        }.not_to change(Codex::Citation, :count)
 
-      expect(response).to have_http_status(:bad_request)
-      expect(response.parsed_body["error"]).to eq("Unsupported citable_type")
+        expect(response).to have_http_status(:not_found)
+      end
+
+      # Приклад НА ТИП, а не цикл усередині одного: шість однакових SELECT в межах
+      # одного прикладу — це N+1 за визначенням Prosopite, тож спільний цикл падав би
+      # на харнесі замість перевіряти ізоляцію. Дрібніша гранулярність ще й називає,
+      # ЯКИЙ саме тип лишився відкритим.
+      %w[Cluster EwsAlert AiInsight OracleVision NaasContract].each do |type|
+        it "відмовляє в цитуванні чужого #{type}" do
+          post "/api/v1/codex/citations",
+               params: { codex_node_slug: node.slug, citable_type: type,
+                         citable_id: foreign_target_id_for(type) },
+               headers: headers, as: :json
+
+          expect(response).to have_http_status(:not_found)
+        end
+      end
+
+      def foreign_target_id_for(type)
+        case type
+        when "Cluster"                 then foreign_cluster.id
+        when "EwsAlert"                then create(:ews_alert, cluster: foreign_cluster, tree: foreign_tree).id
+        when "AiInsight", "OracleVision" then create(:ai_insight, analyzable: foreign_cluster).id
+        when "NaasContract"            then create(:naas_contract, organization: foreign_cluster.organization,
+                                                                   cluster: foreign_cluster).id
+        end
+      end
+
+      # Чужий і неіснуючий id мусять бути НЕВІДРІЗНЯЛЬНІ: інакше 404-проти-іншого-коду
+      # відповідає на питання «чи існує такий запис на платформі» — тобто ендпоінт
+      # лишається existence-оракулом навіть із закритим записом.
+      it "не відрізняє чужу ціль від неіснуючої" do
+        post "/api/v1/codex/citations",
+             params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: foreign_tree.id },
+             headers: headers, as: :json
+        foreign = [ response.status, response.parsed_body ]
+
+        post "/api/v1/codex/citations",
+             params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: 0 },
+             headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
+
+        expect([ response.status, response.parsed_body ]).to eq(foreign)
+      end
     end
 
 
@@ -207,6 +250,20 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
       delete "/api/v1/codex/citations/#{citation.id}",
              headers: headers.merge("Authorization" => "Bearer #{admin_token}")
       expect(response).to have_http_status(:no_content)
+    end
+
+    # [SEC.26] Дзеркальна половина: `admin_or_above?` не ніс org-умови, тож admin
+    # будь-якої організації зносив би будь-яку цитату на платформі.
+    it "не дає admin'у чужої організації знести цитату" do
+      foreign_admin = create(:user, :admin, organization: create(:organization))
+
+      expect {
+        delete "/api/v1/codex/citations/#{citation.id}",
+               headers: headers.merge("Authorization" => "Bearer #{foreign_admin.generate_token_for(:api_access)}")
+      }.not_to change(Codex::Citation, :count)
+
+      # 404, а не 403 — інакше код відповіді сам відповідає, чи цитата існує.
+      expect(response).to have_http_status(:not_found)
     end
 
     # ⚠️ Тут стояло `expect(ActionCable.server).not_to receive(:broadcast)` —

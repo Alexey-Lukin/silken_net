@@ -10,11 +10,17 @@ require "rails_helper"
 #   update  : own ≤ 24h, or admin+
 #   destroy : own ≤ 24h, or admin+
 RSpec.describe Codex::CitationPolicy, type: :policy do
-  let(:investor)    { create(:user, :investor) }
-  let(:forester)    { create(:user, :forester) }
-  let(:other_forester) { create(:user, :forester) }
-  let(:admin)       { create(:user, :admin) }
-  let(:super_admin) { create(:user, :super_admin) }
+  # [SEC.26] Організація тепер НЕСУЧА для `update?`/`destroy?`, тож акторів треба
+  # заводити явно. Доти кожна фабрика тягла власну organization, і приклад
+  # «permits admin on a foreign citation» насправді стверджував крос-ТЕНАНТ
+  # видалення — тобто пінив дефект як задуману поведінку.
+  let(:organization)   { create(:organization) }
+  let(:investor)       { create(:user, :investor, organization: organization) }
+  let(:forester)       { create(:user, :forester, organization: organization) }
+  let(:other_forester) { create(:user, :forester, organization: organization) }
+  let(:admin)          { create(:user, :admin, organization: organization) }
+  let(:super_admin)    { create(:user, :super_admin, organization: organization) }
+  let(:foreign_admin)  { create(:user, :admin, organization: create(:organization)) }
 
   let(:fresh_own_citation) do
     create(:codex_citation, created_by_user: forester)
@@ -104,10 +110,27 @@ RSpec.describe Codex::CitationPolicy, type: :policy do
       expect(policy.destroy?).to be(true)
     end
 
-    it "permits admin on a foreign citation" do
+    it "permits admin on another author's citation WITHIN the organization" do
       policy = described_class.new(admin, foreign_citation)
       expect(policy.update?).to  be(true)
       expect(policy.destroy?).to be(true)
+    end
+
+    # [SEC.26] Межа override'у — організація АВТОРА. Доти її не було зовсім, тож
+    # admin будь-якої організації модерував увесь лор платформи. Вісь саме автор, а
+    # не цитована ціль: ціль може бути вже знищена, і скоуп по ній лишив би
+    # осиротілу цитату невидалимою (розбір — `Codex::CitationsController`).
+    it "denies an admin from ANOTHER organization" do
+      policy = described_class.new(foreign_admin, fresh_own_citation)
+      expect(policy.update?).to  be(false)
+      expect(policy.destroy?).to be(false)
+    end
+
+    it "denies an admin whose acting organization was switched away from the author's" do
+      context = UserContext.new(admin, create(:organization))
+      policy  = described_class.new(context, fresh_own_citation)
+
+      expect(policy.destroy?).to be(false)
     end
   end
 end

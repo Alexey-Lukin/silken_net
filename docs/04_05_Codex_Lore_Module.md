@@ -40,7 +40,7 @@ Codex Lore Layer — пояснити *чому* схема, черги й ме�
 
 <!-- TOC:AUTO:START -->
 - [1. Навіщо існує Шар Лору](#1-навіщо-існує-шар-лору)
-- [2. Architecture Decision Records (ADR-CDX-1 … ADR-CDX-10)](#2-architecture-decision-records-adr-cdx-1--adr-cdx-10)
+- [2. Architecture Decision Records (ADR-CDX-1 … ADR-CDX-11)](#2-architecture-decision-records-adr-cdx-1--adr-cdx-11)
 - [3. Майбутні напрями (поза TRL 8, не заплановані)](#3-майбутні-напрями-поза-trl-8-не-заплановані)
 <!-- TOC:AUTO:END -->
 
@@ -70,7 +70,7 @@ Codex перетворює операційний стек телеметрії 
 
 ---
 
-## 2. Architecture Decision Records (ADR-CDX-1 … ADR-CDX-10)
+## 2. Architecture Decision Records (ADR-CDX-1 … ADR-CDX-11)
 
 Це несучі рішення. Будь-хто, хто чіпає `codex_*`, МУСИТЬ прочитати їх
 перед зміною схеми або призначення черг.
@@ -175,9 +175,14 @@ Codex-UI тримає рівно **два** Stimulus-контролери, ко�
 `Codex::Citation#citable_type` НЕ резолвиться вільним `constantize` з params — лише
 через явний `Codex::CitationsController::CITABLE_CLASS_MAP` allow-list
 (джерело істини = `Codex::Citation::ALLOWED_CITABLE_TYPES`: Tree / Cluster / AiInsight /
-EwsAlert / OracleVision / NaasContract). Тип поза мапою → 422, ніколи не торкається
+EwsAlert / OracleVision / NaasContract). Тип поза мапою → **400**, ніколи не торкається
 ORM. Це закриває object-injection / arbitrary-class-lookup вектор (Brakeman-clean)
 і робить набір citable-моделей **свідомим** рішенням, а не наслідком user-input.
+
+⚠️ **Цей ADR захищає КЛАС цілі, і рівно тому довго читався як повний.** Про скоуп
+самого ЗАПИСУ він не казав нічого — і поверхня півтора місяця приймала чужий
+`citable_id`. Інваріант тенант-ізоляції цитати живе в сусідньому **ADR-CDX-11**;
+розділяй ці два питання, бо allow-list на них не відповідає.
 
 ### ADR-CDX-10 — Codex терпить Sidekiq Pro shim (fire-and-forget воркери)
 
@@ -193,6 +198,40 @@ Gemfile, а `config/initializers/sidekiq_pro.rb` робить `on(:success)` no-
 **Межа:** перша Codex-фіча, що зламає це припущення — **multi-step Battle settlement**
 (наступна ітерація поза TRL 8): вона **вимагатиме** справжнього Batch `on(:success)`.
 Саме тоді — і не раніше — Codex-merge слід ув'язати з Pro-hardening треком (DOC-R.10).
+
+### ADR-CDX-11 — Цитата org-скоуплена, хоч лор глобальний [SEC.26]
+
+Лор **читається** глобально (ADR-CDX-2), але цитата — не читання: вона **пише в
+операційний простір** і проступає на дашборді власника цілі (`Clusters::Show`,
+`Trees::Show`, `Alerts::Row`, `OracleVisions::ForecastCard` рендерять
+`Citation.for_target`). Тому `Codex::CitationsController` — **єдиний** codex-контролер,
+що читає `acting_organization!`, і це не виняток із правила, а наслідок того, що
+організація тут визначається **дією**, а не шаром.
+
+**Форма (`create`):** `CITABLE_CLASS_MAP` віддає не клас, а вже **org-скоуплений
+relation** (`org.trees` · `org.clusters` · `org.ews_alerts` · `org.naas_contracts` ·
+`AiInsight.for_organization`). Скоуп живе в САМІЙ мапі, а не окремою перевіркою після
+`find` — інакше «не існує» і «чуже» дали б різні коди, тобто ендпоінт лишався б
+**existence-оракулом** по всій платформі навіть із закритим записом.
+
+**Форма (`destroy`) — вісь АВТОР, а не ціль,** і це не симетрія заради симетрії:
+`citable` поліморфний і FK-каскаду не має, тож ціль може бути вже знищена. Скоуп по
+цілі зробив би осиротілу цитату **невидалимою назавжди** — тобто вдарив би по
+чесному власнику, лишивши атакера недоторканим. `created_by_user_id` — `NOT NULL`,
+тож вісь автора визначена завжди, а після скоупу `create` обидві осі збігаються.
+Гард стоїть **перед** `authorize` (404, не 403 — та сама причина, що вище).
+
+**Чому це не забирає модерацію:** сусідній `Codex::CommentPolicy` уже зафіксував, що
+глобальне втручання в чужий лор — це `hide?`, **ніколи** `destroy`. У цитат
+прихованого стану немає, тож глобального дієслова тут просто нема чого успадковувати.
+
+**Дві названі стелі.** (1) **Читання не фільтрує** — `for_target`/`bulk_for` не несуть
+org-умови й тримаються на тому, що ціль уже скоупив контролер вище; після закриття
+запису живого вектора немає, але додавання нової поверхні рендеру цю передумову
+успадковує мовчки. (2) **`TreePolicy::Scope`/`EwsAlertPolicy::Scope` кажуть
+протилежне** — `OR cluster_id IS NULL`, тобто «сирота видимий КОЖНІЙ організації»
+(свідома семантика щойно заведеного вузла, обидві політики нині мертві). Дві
+семантики сироти співіснують; присуд — [`00_07`](00_07_Action_Plan_Tracker) SEC.26.
 
 ---
 

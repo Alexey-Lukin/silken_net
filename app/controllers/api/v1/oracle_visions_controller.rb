@@ -12,12 +12,11 @@ module Api
         org = acting_organization!
 
         # Використовуємо upcoming для прогнозів, оскільки strategic_forecasts може бути відсутнім.
-        # [SCOPE FIX]: Раніше повертали глобальні AiInsight — інвестор з org A
-        # бачив прогнози для org B. AiInsight зберігає прив'язку через polymorphic
-        # `analyzable` (Cluster / Tree / Organization), а не через колонку
-        # `cluster_id` (її немає в схемі ai_insights — див. `db/structure.sql`).
-        # Тому фільтруємо по всіх трьох типах analyzable.
-        @visions = scope_visions_for(org).upcoming.order(target_date: :asc).limit(10)
+        # [SCOPE FIX]: Раніше повертали глобальні AiInsight — інвестор з org A бачив
+        # прогнози для org B. Саме правило належності живе на моделі
+        # (`AiInsight.for_organization` — три гілки поліморфного `analyzable`), бо
+        # [SEC.26] дало йому другого споживача поза цим контролером.
+        @visions = AiInsight.for_organization(org).upcoming.order(target_date: :asc).limit(10)
 
         # [FINANCIAL ENGINE]: Розрахунок "Очікуваного врожаю" (SCC Yield)
         # Оракул обчислює потенційну емісію на наступні 24 години на основі живого пульсу лісу.
@@ -59,22 +58,6 @@ module Api
       end
 
       private
-
-      # Polymorphic scope: an AiInsight belongs to this org when its analyzable
-      # is one of the org's Clusters, an org-owned Tree, or the Organization
-      # row itself. Returning an ActiveRecord::Relation lets callers chain
-      # additional scopes (`upcoming`, `order`, `limit`).
-      def scope_visions_for(org)
-        cluster_ids = org.clusters.select(:id)
-        tree_ids = Tree.where(cluster_id: cluster_ids).select(:id)
-
-        AiInsight.where(
-          "(analyzable_type = 'Cluster' AND analyzable_id IN (?)) OR " \
-          "(analyzable_type = 'Tree' AND analyzable_id IN (?)) OR " \
-          "(analyzable_type = 'Organization' AND analyzable_id = ?)",
-          cluster_ids, tree_ids, org.id
-        )
-      end
 
       # 🧬 Алгоритм Кенозису для фінансового прогнозування
       # [TENANT-ISOLATION FIX]: Cache key per-org. Previously a single global
