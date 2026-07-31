@@ -78,7 +78,14 @@ integrity_check() {
   done
   for f in "$MEM_DIR"/*.md; do
     fn=$(basename "$f"); [ "$fn" = "MEMORY.md" ] && continue
-    grep -q "($fn)" "$IDX" || echo "ORPHAN  $fn is in no index row"
+    case $fn in
+      # A journal is deliberately absent from the index — it is reached by
+      # string. Demanding an index row here would make the gate shout at the
+      # very design it exists to protect.
+      log_*) grep -rlq "\[\[${fn%.md}\]\]" "$MEM_DIR"/*.md 2>/dev/null ||
+               echo "UNSTRUNG $fn is a journal nothing links to — it is unreachable" ;;
+      *)     grep -q "($fn)" "$IDX" || echo "ORPHAN  $fn is in no index row" ;;
+    esac
     { grep -q '^name:' "$f" && grep -q 'type:' "$f"; } || echo "FORMAT  $fn lacks name/type frontmatter"
   done
   # Character class keeps `-` and A-Z on purpose: the dash-form slug is exactly
@@ -91,6 +98,30 @@ integrity_check() {
     ls "$MEM_DIR" | grep -qix "$l.md" || { echo "DANGLING [[$l]] resolves to nothing"; continue; }
     [ -f "$MEM_DIR/$l.md" ] || echo "CASE    [[$l]] only resolves on a case-insensitive filesystem"
   done
+  return 0
+}
+
+# Routing check for a freshly written file. Deliberately a function: a `case`
+# written inline inside $( ) breaks on the bash 3.2 that ships with macOS — the
+# `)` closing a pattern is read as closing the substitution. shellcheck parses
+# as bash 4+ and stays green on it, so only a real run catches this.
+route_check() {
+  local bn slug
+  bn=$(basename "$1"); slug=${bn%.md}
+  case $bn in
+    # A journal is reached by string, not by an index row — that is the whole
+    # point of it being cheap to append to. So demand the string instead.
+    log_*)
+      grep -rlq "\[\[$slug\]\]" "$MEM_DIR"/*.md 2>/dev/null ||
+        echo "NEW   $bn is a journal nothing links to — hang it off its rule file or it is unreachable"
+      ;;
+    *)
+      grep -q "($bn)" "$IDX" || {
+        echo "NEW   $bn is not in the index — route it (own row only if it opens a NEW surface;"
+        echo "      otherwise inline it under a hub row) and give it at least one inbound [[string]]"
+      }
+      ;;
+  esac
   return 0
 }
 
@@ -118,10 +149,8 @@ case "${1:-}" in
               # place the question "does this fact already have a home?" can be
               # put while it still matters.
               if [ "$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null)" = "Write" ] &&
-                 [ "$(basename "$fp")" != "MEMORY.md" ] &&
-                 ! grep -q "($(basename "$fp"))" "$IDX"; then
-                echo "NEW   $(basename "$fp") is not in the index — route it (own row only if it opens a NEW surface;"
-                echo "      otherwise inline it under a hub row) and give it at least one inbound [[string]]"
+                 [ "$(basename "$fp")" != "MEMORY.md" ]; then
+                route_check "$fp"
               fi; } )
     [ -z "$msgs" ] && exit 0
     jq -n --arg ctx "[memory-gate]
