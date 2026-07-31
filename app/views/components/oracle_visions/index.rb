@@ -3,10 +3,15 @@
 
 module OracleVisions
   class Index < ApplicationComponent
-    def initialize(visions:, emission_forecast:, clusters:)
+    # [UI.6] Сторінка відкрита forester+ (`authorize_forester!`), а `#simulate` стоїть
+    # за `authorize_admin!, only: [:simulate]` — тобто форестер бачив цілий пульт
+    # симуляції, заповнював його й діставав 403 у turbo-frame без пояснення. Дефолт
+    # `nil` fail-CLOSED.
+    def initialize(visions:, emission_forecast:, clusters:, current_user: nil)
       @visions = visions
       @emission_forecast = emission_forecast
       @clusters = clusters
+      @current_user = current_user
     end
 
     def view_template
@@ -19,7 +24,9 @@ module OracleVisions
 
         # ПРАВА ПАНЕЛЬ: Пульт Симуляції
         div(class: "space-y-6") do
-          render OracleVisions::SimulationPanel.new(clusters: @clusters)
+          # [UI.6] Пульт симуляції веде в `#simulate` (admin+), тож форестеру його не
+          # показуємо: стрічку прогнозів він бачить далі — вона під гардом сторінки.
+          render OracleVisions::SimulationPanel.new(clusters: @clusters) if @current_user&.admin_or_above?
           render_active_simulations_feed
         end
       end

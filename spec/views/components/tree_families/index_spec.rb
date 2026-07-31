@@ -23,7 +23,13 @@ RSpec.describe TreeFamilies::Index do
 
   let(:family)   { mock_family }
   let(:families) { [ family, mock_family(id: 2, name: "Pine", scientific_name: "Pinus sylvestris", trees_count: 55) ] }
-  let(:html)     { render_component(families: families, pagy: mock_pagy(count: 63)) }
+
+  # [UI.6] «Define DNA»/«Edit» ведуть в екшени під `authorize_super_admin!, only:`,
+  # тож дефолтний актор цих прикладів — super_admin: вони пінять ПОВНОТУ сторінки.
+  # Сам фільтр пінить окрема група нижче — інакше ці приклади мовчки перетворились
+  # би на пін звуженого вигляду.
+  let(:full_access_actor) { build_stubbed(:user, :super_admin) }
+  let(:html) { render_component(families: families, pagy: mock_pagy(count: 63), current_user: full_access_actor) }
 
   describe "header" do
     it "renders Biological Matrix label" do
@@ -40,6 +46,31 @@ RSpec.describe TreeFamilies::Index do
 
     it "renders Define DNA button text" do
       expect(html).to include("+ Define DNA")
+    end
+  end
+
+  # [UI.6] Сторінка відкрита admin+, а мутації — super_admin-only, тобто гард сидить
+  # ГЛИБШЕ за саму сторінку. Доти обидві кнопки бачив admin і діставав на клік сирий
+  # JSON-блоб 403 — найгірший випадок класу, бо страждала найвища роль із можливих.
+  describe "роле-фільтр мутаційних дій [UI.6]" do
+    def render_for(actor)
+      render_component(families: families, pagy: mock_pagy(count: 63), current_user: actor)
+    end
+
+    it "ховає мутаційні дії від admin — вони super_admin-only" do
+      html = render_for(build_stubbed(:user, :admin))
+
+      expect(html).to include("Species Name")           # сторінка сама відрендерилась
+      expect(html).not_to include("+ Define DNA")
+      expect(html).not_to include("/tree_families/1/edit")
+    end
+
+    # Сторож проводки: без актора компонент мусить звузитись, а не роздати дії.
+    it "без актора звужується fail-CLOSED" do
+      html = render_for(nil)
+
+      expect(html).to include("Species Name")
+      expect(html).not_to include("+ Define DNA")
     end
   end
 

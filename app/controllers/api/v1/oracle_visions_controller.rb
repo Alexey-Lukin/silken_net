@@ -31,7 +31,8 @@ module Api
               component: OracleVisions::Index.new(
                 visions: @visions,
                 emission_forecast: @scc_yield,
-                clusters: @clusters
+                clusters: @clusters,
+                current_user: current_user
               )
             )
           end

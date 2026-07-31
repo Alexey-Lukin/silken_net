@@ -28,7 +28,7 @@ module Api
           format.html do
             render_dashboard(
               title: I18n.t("tree_families.index_title"),
-              component: TreeFamilies::Index.new(families: @families, pagy: @pagy)
+              component: TreeFamilies::Index.new(families: @families, pagy: @pagy, current_user: current_user)
             )
           end
         end

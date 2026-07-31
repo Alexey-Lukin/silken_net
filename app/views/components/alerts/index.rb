@@ -7,10 +7,14 @@ module Alerts
     # first so it gets keyboard focus on Tab traversal.
     FILTER_SEVERITIES = %w[critical medium low].freeze
 
-    def initialize(alerts:, pagy:, organization: nil)
+    # [UI.6] `current_user` тут транзитний — сам список його не вживає, але веде далі
+    # в `Alerts::Row`, де від нього залежить видимість «Acknowledge». Проводка мусить
+    # пройти ОБИДВА щаблі: контролер → Index → Row.
+    def initialize(alerts:, pagy:, organization: nil, current_user: nil)
       @alerts = alerts
       @pagy = pagy
       @organization = organization
+      @current_user = current_user
     end
 
     def view_template
@@ -72,7 +76,8 @@ module Alerts
 
           render Alerts::Row.new(
             alert: alert,
-            citations: row_citations
+            citations: row_citations,
+            current_user: @current_user
           )
         end
       end

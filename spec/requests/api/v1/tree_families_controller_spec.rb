@@ -34,6 +34,20 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
         get "/api/v1/tree_families", headers: headers
         expect(response).to have_http_status(:ok)
       end
+
+      # [UI.6] Роле-фільтр дій живе в компоненті, а ПРОВОДКА актора — у контролері.
+      # Компонентна спека другої половини не бачить (конструює компонент напряму),
+      # тож забутий kwarg лишив би її зеленою при повністю відкритих кнопках.
+      # Негативний приклад для цього НЕ годиться: дефолт fail-closed ховає дії від
+      # усіх, тож стереже проводку лише ПОЗИТИВНЕ твердження.
+      it "показує мутаційні дії super_admin, але не звичайному admin" do
+        get "/api/v1/tree_families", headers: super_admin_headers
+        expect(response.body).to include("+ Define DNA")
+
+        get "/api/v1/tree_families", headers: headers
+        expect(response.body).to include("Species Name")     # сторінка та сама
+        expect(response.body).not_to include("+ Define DNA")
+      end
     end
 
     it "returns 403 for non-admin users" do

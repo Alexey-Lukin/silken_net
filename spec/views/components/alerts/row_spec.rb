@@ -87,7 +87,9 @@ RSpec.describe Alerts::Row do
   end
 
   describe "active state" do
-    let(:html) { render_component(alert: mock_alert(status: "active")) }
+    # [UI.6] Гасити тривогу може лише forester+, тож приклади, що пінять кнопку,
+    # ведуть саме такого актора. Видимість для нижчої ролі — окрема група нижче.
+    let(:html) { render_component(alert: mock_alert(status: "active"), current_user: build_stubbed(:user, :forester)) }
 
     it "renders the resolve button" do
       expect(html).to include("Acknowledge")
@@ -95,6 +97,30 @@ RSpec.describe Alerts::Row do
 
     it "includes hover transition styles" do
       expect(html).to include("hover:bg-gaia-surface-sunken")
+    end
+  end
+
+  # [UI.6] Список тривог відкритий УСІМ ролям (гард стоїть лише на `#resolve`), тож
+  # investor бачив бойову кнопку, тиснув її — і turbo-submission мовчки вмирала в
+  # JSON-403. Це найбуденніша точка класу: кнопка на кожному нерозвʼязаному рядку
+  # головного операційного розділу.
+  describe "роле-фільтр дії [UI.6]" do
+    def render_for(actor)
+      render_component(alert: mock_alert(status: "active"), current_user: actor)
+    end
+
+    it "ховає Acknowledge від investor" do
+      html = render_for(build_stubbed(:user, :investor))
+
+      expect(html).to include("Carpathian-7")   # рядок сам відрендерився
+      expect(html).not_to include("Acknowledge")
+    end
+
+    it "без актора звужується fail-CLOSED" do
+      html = render_for(nil)
+
+      expect(html).to include("Carpathian-7")
+      expect(html).not_to include("Acknowledge")
     end
   end
 

@@ -3,9 +3,15 @@
 
 module TreeFamilies
   class Index < ApplicationComponent
-    def initialize(families:, pagy:)
+    # [UI.6] `current_user` потрібен ЛИШЕ для видимості мутаційних дій: сторінка
+    # відкрита admin+ (`authorize_admin!`), а «Define DNA»/«Edit» ведуть в екшени під
+    # `authorize_super_admin!, only:` — тобто гард сидить ГЛИБШЕ за саму сторінку, і
+    # доти обидві кнопки бачив admin, дістаючи на клік сирий JSON-блоб 403.
+    # Дефолт `nil` fail-CLOSED, як і в `Navigation::Sidebar` (04_04 §6.4).
+    def initialize(families:, pagy:, current_user: nil)
       @families = families
       @pagy = pagy
+      @current_user = current_user
     end
 
     def view_template
@@ -44,11 +50,13 @@ module TreeFamilies
           h3(class: "text-tiny uppercase tracking-[0.5em] text-emerald-700") { t(".kicker") }
           h2(class: "text-2xl font-light text-emerald-400 mt-1") { t(".title") }
         end
-        a(
-          href: new_api_v1_tree_family_path,
-          class: "px-4 py-2 border border-emerald-500 text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all uppercase text-tiny tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
-          aria_label: t(".define_aria")
-        ) { t(".define_dna") }
+        if @current_user&.super_admin?
+          a(
+            href: new_api_v1_tree_family_path,
+            class: "px-4 py-2 border border-emerald-500 text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all uppercase text-tiny tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+            aria_label: t(".define_aria")
+          ) { t(".define_dna") }
+        end
       end
     end
 
@@ -66,7 +74,9 @@ module TreeFamilies
         td(class: "p-4 text-emerald-900") { t(".soldiers_count", count: family.trees_count) }
         td(class: "p-4 text-right space-x-4") do
           a(href: api_v1_tree_family_path(family), class: "text-emerald-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t(".audit_aria", name: family.name)) { t(".audit") }
-          a(href: edit_api_v1_tree_family_path(family), class: "text-zinc-700 hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t(".edit_aria", name: family.name)) { t(".edit") }
+          if @current_user&.super_admin?
+            a(href: edit_api_v1_tree_family_path(family), class: "text-zinc-700 hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t(".edit_aria", name: family.name)) { t(".edit") }
+          end
         end
       end
     end

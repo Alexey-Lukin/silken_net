@@ -58,7 +58,8 @@ module Api
           format.html do
             render_dashboard(
               title: I18n.t("alerts.index_title"),
-              component: Alerts::Index.new(alerts: @alerts, pagy: @pagy, organization: acting_organization!)
+              component: Alerts::Index.new(alerts: @alerts, pagy: @pagy, organization: acting_organization!,
+                                           current_user: current_user)
             )
           end
         end
@@ -81,7 +82,7 @@ module Api
           format.html do
             render_dashboard(
               title: I18n.t("alerts.show_title", id: @alert.id),
-              component: Alerts::Row.new(alert: @alert)
+              component: Alerts::Row.new(alert: @alert, current_user: current_user)
             )
           end
         end
@@ -108,7 +109,7 @@ module Api
               # дістаючи вже відмову AASM.
               render turbo_stream: turbo_stream.replace(
                 ActionView::RecordIdentifier.dom_id(@alert),
-                Alerts::Row.new(alert: @alert).call
+                Alerts::Row.new(alert: @alert, current_user: current_user).call
               )
             end
           format.html { redirect_to api_v1_alerts_path, notice: I18n.t("flash.alerts.resolved") }

@@ -10,9 +10,14 @@ module Alerts
     # in here, eliminating the N+1 that Prosopite caught. When `citations`
     # is nil (single-row Turbo Stream replace, e.g. resolve action) we fall
     # back to a per-row query — that's at most one extra round-trip.
-    def initialize(alert:, citations: nil)
+    # [UI.6] `current_user` — лише для видимості «Acknowledge»: список тривог відкритий
+    # УСІМ ролям (investor теж), а `alerts#resolve` стоїть за `authorize_forester!,
+    # only: :resolve`, тож read-only глядач бачив бойову кнопку, яка після
+    # turbo-confirm мовчки вмирала в 403. Дефолт `nil` fail-CLOSED.
+    def initialize(alert:, citations: nil, current_user: nil)
       @alert = alert
       @citations = citations
+      @current_user = current_user
     end
 
     def view_template
@@ -87,6 +92,11 @@ module Alerts
           t(".resolved")
         end
       else
+        # [UI.6] Гасити тривогу може лише forester+ (`authorize_forester!, only: :resolve`).
+        # Нижчій ролі кнопку не показуємо взагалі: доти investor її бачив, тиснув, і
+        # turbo-submission помирала в JSON-403 без жодного пояснення.
+        return unless @current_user&.forest_commander?
+
         # Acknowledge form posts via Turbo Stream — single-row replace.
         button_to(
           t(".acknowledge"),
