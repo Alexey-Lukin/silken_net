@@ -14,6 +14,7 @@ set -uo pipefail
 
 MEM_DIR="${MEMORY_GATE_DIR:-/Users/oleksiilukin/.claude/projects/-Users-oleksiilukin-silken-net/memory}"
 IDX="$MEM_DIR/MEMORY.md"
+REPO="${MEMORY_GATE_REPO:-/Users/oleksiilukin/silken_net}"
 
 # --- Curated thresholds. Bumping one is a deliberate, git-visible decision. ---
 # Ratchet, not an absolute cap: the index is already past the 24 kB working cap,
@@ -58,6 +59,26 @@ check_file() {
   return 0
 }
 
+# A backticked path that CLAIMS our tree (starts with a real repo root) is a
+# checkable assertion; anything else — gem internals (`aasm/base.rb`), a bare
+# `queen/main.c` shorthand — is not, and checking those only yields noise the
+# gate gets muted for. Measured on the live corpus: 81 claims, 2 dead.
+#
+# A dead path is one of two things, and the difference is what matters:
+# it MOVED (a stale mirror — cheap), or it was RETRACTED — the repo deleted the
+# claim as untrue and memory is now the last living copy of a deleted untruth.
+# Only the commit body can tell them apart, so the message says so.
+PATH_ROOTS='app|lib|scripts|docs|firmware|contracts|config|db|spec|tools|bin|deploy|terraform|subgraph|\.claude|\.github'
+
+path_check() {
+  local f=$1 p
+  for p in $(grep -ohE '`('"$PATH_ROOTS"')/[a-zA-Z0-9_./-]+\.[a-z]{1,4}`' "$f" 2>/dev/null |
+               tr -d '`' | sort -u); do
+    [ -e "$REPO/$p" ] || echo "DEADPATH $(basename "$f") cites \`$p\` — gone from the repo; \`git log --diff-filter=D -- $p\` says whether it MOVED or was RETRACTED"
+  done
+  return 0
+}
+
 index_check() {
   local sz n
   sz=$(wc -c <"$IDX" | tr -d ' ')
@@ -71,6 +92,21 @@ index_check() {
   return 0
 }
 
+# Reachability of every journal, extracted so BOTH stances can run it. Living
+# only in --audit was a real hole, proven by probe: an Edit that severs a
+# journal's last string is SILENT at the moment of action — and rewriting a rule
+# file is exactly when that happens, which is the operation this gate exists for.
+journals_reachable() {
+  local f s
+  for f in "$MEM_DIR"/log_*.md; do
+    [ -e "$f" ] || continue
+    s=$(basename "$f" .md)
+    grep -rlq "\[\[$s\]\]" "$MEM_DIR"/*.md 2>/dev/null ||
+      echo "UNSTRUNG $(basename "$f") is a journal nothing links to — it is unreachable"
+  done
+  return 0
+}
+
 integrity_check() {
   local fn f l
   for fn in $(grep -oE '\]\([a-z0-9_]+\.md\)' "$IDX" | tr -d ']()' | sort -u); do
@@ -81,9 +117,9 @@ integrity_check() {
     case $fn in
       # A journal is deliberately absent from the index — it is reached by
       # string. Demanding an index row here would make the gate shout at the
-      # very design it exists to protect.
-      log_*) grep -rlq "\[\[${fn%.md}\]\]" "$MEM_DIR"/*.md 2>/dev/null ||
-               echo "UNSTRUNG $fn is a journal nothing links to — it is unreachable" ;;
+      # very design it exists to protect. Its reachability is NOT unchecked:
+      # journals_reachable() owns it, so that both stances run the same test.
+      log_*) ;;
       *)     grep -q "($fn)" "$IDX" || echo "ORPHAN  $fn is in no index row" ;;
     esac
     { grep -q '^name:' "$f" && grep -q 'type:' "$f"; } || echo "FORMAT  $fn lacks name/type frontmatter"
@@ -127,8 +163,8 @@ route_check() {
 
 case "${1:-}" in
   --audit)
-    out=$( { index_check; integrity_check
-             for f in "$MEM_DIR"/*.md; do check_file "$f"; done; } )
+    out=$( { index_check; integrity_check; journals_reachable
+             for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; done; } )
     printf '%s\n' "${out:-OK — index within ratchet, corpus intact, no chronicle in a rule file}"
     [ -z "$out" ]
     ;;
@@ -144,6 +180,8 @@ case "${1:-}" in
     case "$fp" in "$MEM_DIR"/*.md) ;; *) exit 0 ;; esac
     msgs=$( { index_check
               check_file "$fp"
+              path_check "$fp"
+              journals_reachable
               # A brand-new file is where the registry grows. Nothing reads at
               # this moment except the tool call itself, so this is the only
               # place the question "does this fact already have a home?" can be
