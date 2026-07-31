@@ -408,7 +408,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | 78 | GET | `/api/v1/settings` | `settings#show` | 👑 Admin | Налаштування організації |
 | 79 | PATCH | `/api/v1/settings` | `settings#update` | 👑 Admin | Оновити налаштування |
 | **👁️ Аудит** | | | | | |
-| 80 | GET | `/api/v1/audit_logs` | `audit_logs#index` | 👑 Admin | Журнал дій (AuditLog) |
+| 80 | GET | `/api/v1/audit_logs` | `audit_logs#index` | 👑 Admin | Журнал дій (AuditLog). Query: `?user_id=`, `?action_type=`, `?limit=` (1..100, default 50). ⚠️ HTML-гілка мусить **проводити активні фільтри у в'ю** (`filters:`): інакше пагінація губить їх на сторінці 2, тихо повертаючи повний журнал, а відфільтрована видача візуально невідрізнима від повної — порожній результат читається як «журнал порожній» ([UI.7]). Вхід із UI — «View logs» у [`Users::Index`](04_04_Phlex_UI_and_Tailwind); аудиторії збігаються (обидві сторони `admin_or_above?`), тож роле-гейт на лінку не потрібен. |
 | 81 | GET | `/api/v1/audit_logs/:id` | `audit_logs#show` | 👑 Admin | Деталі події аудиту |
 | **⚡ Ініціація Пристроїв** | | | | | |
 | 82 | GET | `/api/v1/provisioning/new` | `provisioning#new` | 🌿 Forester | Форма реєстрації пристрою |
