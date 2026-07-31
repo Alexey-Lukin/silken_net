@@ -11,6 +11,17 @@
             "statusMessage": "Checking doc drift..."
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/oleksiilukin/silken_net/.claude/hooks/memory_gate.sh",
+            "timeout": 10,
+            "statusMessage": "Checking memory growth..."
+          }
+        ]
       }
     ]
   }

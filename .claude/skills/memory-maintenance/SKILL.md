@@ -23,9 +23,12 @@ Full step-by-step playbook + founder's principles + the zero-loss scripts → **
 ## Core principle — NO AMNESIA
 **Preserve beats cleanup.** Before removing ANY content, verify it lives elsewhere (the file, git, canon, `00_07`). Improve/relocate, never delete what's valuable. When "remove cruft" conflicts with "don't lose what's needed" → keep. A well-curated memory's housekeeping is mostly **de-bloat + structure + stale-hook fixes**, not mass-deletion — say so honestly, don't manufacture deletions (the `ssot-maintenance` "don't manufacture moves" lesson, applied to memory).
 
+## The gate is the home of the mechanics — not this file, not the prompt
+`.claude/hooks/memory_gate.sh` runs the whole step-1 battery (`--audit`, exit 0 = clean; `--genre` = chronicle detector alone) **and** rides `PostToolUse` on every write into the corpus, so it fires at the moment a wall gets built rather than when someone remembers to clean. Found a new blindness class? **Patch the script** — it is live on the next write, and the separate "carry the lesson into the gate" step that failed before no longer exists. Thresholds are curated constants inside it; the corpus is outside git but the gate is not, so a bump is a visible decision.
+
 ## The loop (detail → prompt)
 ```
-1. INVENTORY  list files (size/lines/type) + 1:1 index↔files integrity (0 broken / 0 orphan).
+1. INVENTORY  memory_gate.sh --audit (index ratchet · file ceiling · chronicle · integrity).
 2. INDEX=HOOKS  trim any bloated index line — but VERIFY the detail is in the file FIRST.
 3. STRUCTURE  group MEMORY.md by kind via a verbatim-reorder script; prove zero-loss
               (sorted entry-set diff == IDENTICAL).
