@@ -12,6 +12,23 @@ RSpec.describe "Api::V1::Codex::Attunements", type: :request do
   let(:token)   { user.generate_token_for(:api_access) }
   let(:headers) { { "Authorization" => "Bearer #{token}", "Content-Type" => "application/json" } }
 
+  # ⚠️ HTML-гілка обох екшенів доти не мала жодного прикладу — усі йшли `as: :json`.
+  # Саме тому 302 на `destroy` пережив: `fetch` конвертує 301/302 у GET лише для
+  # POST, а DELETE зберігає, тож браузер перевидав би DELETE на сторінку вузла,
+  # де такого маршруту немає — привʼязку знято, а користувач бачить помилку.
+  describe "HTML branch (the Dashboard toggle)" do
+    it "answers a successful un-attune with 303 See Other, not 302" do
+      create(:codex_attunement, user: user, node: node)
+
+      delete "/api/v1/codex/nodes/#{node.slug}/attunements/me",
+             headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:see_other)
+      expect(response).to redirect_to(api_v1_codex_node_path(node.slug))
+      expect(Codex::Attunement.find_by(user_id: user.id, codex_node_id: node.id)).to be_nil
+    end
+  end
+
   describe "POST /api/v1/codex/nodes/:slug/attunements" do
     it "rejects unauthenticated requests" do
       post "/api/v1/codex/nodes/#{node.slug}/attunements", as: :json

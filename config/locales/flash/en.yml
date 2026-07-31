@@ -14,6 +14,8 @@ en:
       invalid_status: 'Invalid status filter: %{value}.'
       invalid_token_type: 'Invalid token_type filter: %{value}.'
     codex:
+      attunement_removed: Attunement removed.
+      attunement_saved: Attunement saved.
       idempotency_required: Idempotency-Key header is required for JSON writes.
     firmwares:
       deployment_dispatched: Evolution order for v%{version} queued — Queens will fetch it on their next post-flush poll.

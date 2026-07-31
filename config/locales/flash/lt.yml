@@ -14,6 +14,8 @@ lt:
       invalid_status: 'Neteisingas būsenos filtras: %{value}.'
       invalid_token_type: 'Neteisingas token_type filtras: %{value}.'
     codex:
+      attunement_removed: Derinimas pašalintas.
+      attunement_saved: Derinimas išsaugotas.
       idempotency_required: JSON įrašams reikalinga Idempotency-Key antraštė.
     firmwares:
       deployment_dispatched: Diegimo užsakymas v%{version} įtrauktas į eilę — Karalienės jį paims kitame poll užklausime.

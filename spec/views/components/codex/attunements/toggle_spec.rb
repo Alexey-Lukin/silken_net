@@ -4,12 +4,19 @@
 require "rails_helper"
 
 RSpec.describe Codex::Attunements::Toggle do
+  # Рендер через `renderer`, а не `.call`: `button_to` потребує справжнього
+  # view-контексту ([`04_06 §A.3`]).
+  #
+  # ⚠️ Стаб маршрут-хелпера знято СВІДОМО. Доти він визначав рівно ОДИН із двох
+  # потрібних шляхів — той, яким компонент помилково слав обидві дії, — тобто
+  # робив правильний маршрут невиразним у принципі: спека не могла почервоніти
+  # навіть теоретично. Це сусідній підвид до §A.10а: стаб не вигадував метод,
+  # якого нема, а покривав ПІДМНОЖИНУ реальної поверхні ([UI.7]).
   def render_toggle(node:, attuned:, count:)
-    helpers = ActionController::Base.helpers
-    Class.new(Codex::Attunements::Toggle) do
-      define_method(:helpers) { helpers }
-      define_method(:api_v1_codex_node_attunements_path) { |slug| "/api/v1/codex/nodes/#{slug}/attunements" }
-    end.new(node: node, current_user_attuned: attuned, count: count).call
+    ApplicationController.renderer.render(
+      component_class.new(node: node, current_user_attuned: attuned, count: count),
+      layout: false
+    )
   end
 
   let(:node) do
@@ -18,6 +25,11 @@ RSpec.describe Codex::Attunements::Toggle do
     end
   end
 
+  # Справжні хелпери — не літерали: пін мусить упасти, якщо маршрут перейменують.
+  let(:routes)         { Rails.application.routes.url_helpers }
+  let(:attune_path)    { routes.api_v1_codex_node_attunements_path(node.slug) }
+  let(:un_attune_path) { routes.api_v1_codex_node_my_attunement_path(node.slug) }
+
   describe "rendering" do
     it "renders the count using the public DOM id" do
       html = render_toggle(node: node, attuned: false, count: 7)
@@ -25,18 +37,22 @@ RSpec.describe Codex::Attunements::Toggle do
       expect(html).to include(">7<")
     end
 
-    it "shows 'Attune' label and POST verb when the user is not attuned" do
+    it "aims an attune at the POST collection route" do
       html = render_toggle(node: node, attuned: false, count: 0)
       expect(html).to include(">Attune<")
+      expect(html).to include(%(action="#{attune_path}"))
       expect(html).to include('method="post"')
-      expect(html).to include('value="post"')
     end
 
-    it "shows 'Attuned' label and DELETE verb when the user is attuned" do
+    # Пін КЛАСУ UI.7: дві дії не ділять адресу. Доти обидві гілки цілили в
+    # колекційний маршрут, де зареєстровано лише POST, тож зняття резонансу
+    # летіло в 404 — а спека лишалась зеленою, бо перевіряла дієслово, а не ЦІЛЬ.
+    it "aims the un-attune at the dedicated attunements/me route, not the POST-only collection" do
       html = render_toggle(node: node, attuned: true, count: 1)
       expect(html).to include(">Attuned<")
-      expect(html).to include('method="delete"')
+      expect(html).to include(%(action="#{un_attune_path}"))
       expect(html).to include('value="delete"')
+      expect(html).not_to include(%(action="#{attune_path}"))
     end
 
     it "does not wire any Stimulus controller (Turbo Stream handles live updates)" do
@@ -70,6 +86,12 @@ RSpec.describe Codex::Attunements::Toggle do
       expect(html).to include("<button")
       expect(html).to include('type="submit"')
     end
+
+    # ⚠️ CSRF-токена тут НЕ пінимо, і це виміряна межа, а не пропуск: форгері-захист
+    # у test-env вимкнено (`config/environments/test.rb`), а `ApplicationController
+    # .renderer` не має справжньої сесії — тож `button_to` токена не рендерить навіть
+    # при примусово ввімкненому захисті (перевірено). Половина «працює без JS» живе
+    # в request-спеці вузла, разом із пінами цілі — тим самим правилом, що й §A.10а.
   end
 
   describe "design system compliance" do

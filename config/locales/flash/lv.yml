@@ -14,6 +14,8 @@ lv:
       invalid_status: 'Nederīgs statusa filtrs: %{value}.'
       invalid_token_type: 'Nederīgs token_type filtrs: %{value}.'
     codex:
+      attunement_removed: Saskaņošana noņemta.
+      attunement_saved: Saskaņošana saglabāta.
       idempotency_required: JSON ierakstiem nepieciešama Idempotency-Key galvene.
     firmwares:
       deployment_dispatched: Izvietošanas rīkojums v%{version} ierindots — Karalienes to paņems nākamajā poll pieprasījumā.

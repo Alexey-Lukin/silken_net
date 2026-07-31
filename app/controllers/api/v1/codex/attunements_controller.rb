@@ -32,7 +32,10 @@ module Api
                 render json: { data: ::Codex::AttunementBlueprint.render_as_hash(attunement) },
                        status: :created
               end
-              format.html { redirect_to api_v1_codex_node_path(@node.slug), notice: "Attunement saved." }
+              format.html do
+                redirect_to api_v1_codex_node_path(@node.slug),
+                            notice: I18n.t("flash.codex.attunement_saved")
+              end
             end
           else
             render_validation(attunement)
@@ -48,7 +51,15 @@ module Api
 
           respond_to do |format|
             format.json { head :no_content }
-            format.html { redirect_to api_v1_codex_node_path(@node.slug), notice: "Attunement removed." }
+            # 303, не 302: fetch конвертує 301/302 у GET лише для POST, а DELETE
+            # зберігає — тобто браузер перевидав би DELETE на сторінку вузла, де
+            # такого маршруту немає. Симптом найпідступніший з можливих: привʼязку
+            # знято, а користувач бачить помилку.
+            format.html do
+              redirect_to api_v1_codex_node_path(@node.slug),
+                          status: :see_other,
+                          notice: I18n.t("flash.codex.attunement_removed")
+            end
           end
         end
 

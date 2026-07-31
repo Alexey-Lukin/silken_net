@@ -30,31 +30,25 @@ module Codex
         ) do
           div(class: "space-y-0.5") do
             p(class: "text-mini uppercase tracking-[0.3em] text-gaia-text-muted") { t("codex.attunements.title") }
-            p(
-              class: "text-tiny text-gaia-text-muted font-mono",
-              id: dom_count_id,
-
-            ) { @count.to_s }
+            p(class: "text-tiny text-gaia-text-muted font-mono", id: dom_count_id) { @count.to_s }
           end
 
-          form(
-            action: api_v1_codex_node_attunements_path(@node.slug),
-            method: @attuned ? "delete" : "post"
-          ) do
-            # Rails recognises _method override for non-POST verbs.
-            input(type: "hidden", name: "_method", value: @attuned ? "delete" : "post")
-            button(
-              type: "submit",
-              class: tokens(
-                "inline-flex items-center gap-2 px-3 py-1 border focus-visible:ring-2 focus-visible:ring-gaia-primary",
-                button_state_classes
-              )
-            ) do
-              span(class: "text-tiny uppercase tracking-[0.3em]") do
-                @attuned ? t("codex.attunements.attuned") : t("codex.attunements.attune")
-              end
-            end
-          end
+          # ДВІ дії — ДВА маршрути. Attune і un-attune не ділять адресу: колекційний
+          # шлях зареєстровано лише під POST, а зняття живе окремим `attunements/me`.
+          # `button_to` тут не стиль, а три виправлення разом: він бере ціль з гілки,
+          # кладе `authenticity_token` (рукописна `<form>` його не мала, тож без JS
+          # гілка attune падала на CSRF) і робить валідний `method="post"` + `_method`
+          # (`method="delete"` на `<form>` — невалідне значення, браузер відкочується в GET).
+          button_to(
+            @attuned ? t("codex.attunements.attuned") : t("codex.attunements.attune"),
+            @attuned ? api_v1_codex_node_my_attunement_path(@node.slug) : api_v1_codex_node_attunements_path(@node.slug),
+            method: @attuned ? :delete : :post,
+            class: tokens(
+              "inline-flex items-center gap-2 px-3 py-1 border text-tiny uppercase tracking-[0.3em]",
+              "focus-visible:ring-2 focus-visible:ring-gaia-primary",
+              button_state_classes
+            )
+          )
         end
       end
 

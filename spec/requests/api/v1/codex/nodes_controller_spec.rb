@@ -102,5 +102,18 @@ RSpec.describe "Api::V1::Codex::Nodes", type: :request do
       expect(response.media_type).to eq("text/html")
       expect(response.body).to include(node1.title_en)
     end
+
+    # 🔴 Пін КЛАСУ UI.7, і жити він мусить саме тут. Компонентна спека рендерить
+    # повз маршрутизатор, тож ціль, яка існує, але дії не приймає, її не червонить:
+    # обидві гілки тумблера цілили в колекційний шлях (зареєстрований лише під POST),
+    # тож зняття резонансу летіло в 404 при повністю зеленій сюїті.
+    it "aims the un-attune button at the DELETE route once the viewer is attuned" do
+      create(:codex_attunement, user: user, node: node1)
+
+      get "/api/v1/codex/nodes/#{node1.slug}", headers: headers.merge("Accept" => "text/html")
+
+      expect(response.body).to include(%(action="#{api_v1_codex_node_my_attunement_path(node1.slug)}"))
+      expect(response.body).not_to include(%(action="#{api_v1_codex_node_attunements_path(node1.slug)}"))
+    end
   end
 end
