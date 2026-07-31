@@ -430,6 +430,3 @@ R_interface < 50 мОм + 1 мОм + 50 мОм + 1 мОм ≈ 102 мОм (гір
 | 10 | Захист плати (conformal vs potting) | 🟡 Рекомендація | **Parylene C 10 µm (CVD) для серії** + acrylic для прототипів. Sylgard 184 full-potting ❌ — глушить TinyML акустику ([`02_02 §3.4`](02_02_Blind_Mate_Pogo_Pin_Interface)) |
 
 > Усі 🔴 (відкриті + CRITICAL центральна площадка) — канонічний трекер [`00_07` — HW.8](00_07_Action_Plan_Tracker) (Pogo pin specification); conformal-coating 🟡 — [`00_07` — HW.11](00_07_Action_Plan_Tracker).
-
----
-

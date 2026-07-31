@@ -1254,6 +1254,3 @@ make -C firmware/test at_engine   # [FW.3/FW.56] AT-двигун + CoAP PDU + р
 - verbatim-звірка граматики SIM7070-ноти V1.03 + реальні таймінги/URC реального модему (bench-runbook)
 - Повна async UART DMA flush — наступна ітерація FW.3 (вимагає DMA controller hardware)
 - Реальні LTE-M / Starlink DTC мережеві помилки (скриптовані ERROR/+CME/тиша — покриті)
-
----
-

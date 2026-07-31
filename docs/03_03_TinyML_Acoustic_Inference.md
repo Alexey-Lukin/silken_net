@@ -944,6 +944,3 @@ OtaPackagerService → 512-byte chunks → Queen poll-fetch [FW.60] → LoRa →
 > **Безпекова прірва:** self-evolution + Web3-economic rewards = attack surface для adversarial reward poisoning. Mitigation — Auto-Immune Sentinel ([`05_06 §5`](05_06_Governance_and_DAO) + [`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap)).
 >
 > **Деталі повної R&D-програми:** [`00_08 §1.2`](00_08_Beyond_TRL9_Planetary_Roadmap) — Self-Evolving Behaviour Gap.
-
----
-
