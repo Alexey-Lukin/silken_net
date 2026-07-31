@@ -8,8 +8,14 @@ RSpec.describe Navigation::Sidebar do
   # application default (04_04 §12.2), so this wrapper is belt-and-braces — it keeps
   # the assertions true even if a leaked locale or a future default change moves the
   # ambient one. Assert on a non-base locale only inside an explicit `with_locale`.
+  # [UI.5] Пункти меню роле-гейтовані, тож дефолтний актор цих прикладів —
+  # super_admin: вони пінять ПОВНОТУ меню (всі мітки, всі іконки, aria), а не
+  # «що видно будь-кому». Сам фільтр пінить окрема група «роле-фільтр» нижче —
+  # інакше ці приклади мовчки перетворились би на пін звуженого меню.
+  let(:full_access_actor) { build_stubbed(:user, :super_admin) }
+
   def render_en(**kwargs)
-    I18n.with_locale(:en) { render_component(**kwargs) }
+    I18n.with_locale(:en) { render_component(current_user: full_access_actor, **kwargs) }
   end
 
   describe "logo section" do
@@ -102,6 +108,58 @@ RSpec.describe Navigation::Sidebar do
       expect(html).to include("Audit Log")
       expect(html).to include("System Audits")
       expect(html).to include("System Health")
+    end
+  end
+
+  # [UI.5] Доти сайдбар не приймав користувача взагалі, тож investor бачив повне меню
+  # платформи й на кожен гейтований пункт діставав сирий JSON-блоб (`render_forbidden`).
+  # Рівень пункту вказує на предикат `User` — той самий, який читає гард контролера,
+  # тож ці приклади стережуть саме ЗБІГ меню з гардом.
+  describe "роле-фільтр пунктів [UI.5]" do
+    def render_for(actor)
+      I18n.with_locale(:en) { render_component(current_user: actor) }
+    end
+
+    # Усі 11 пунктів, закритих рольовим гардом контролера (вимір 2026-07-31).
+    let(:gated_labels) do
+      [ "Oracle Visions", "Maintenance Log", "Crew Registry", "Clan Hierarchy",
+        "Species DNA", "Firmware OTA", "Initiate Node", "Org Settings",
+        "Audit Log", "System Audits", "System Health" ]
+    end
+
+    it "ховає від investor кожен гейтований пункт" do
+      html = render_for(build_stubbed(:user, :investor))
+
+      gated_labels.each { |label| expect(html).not_to include(label) }
+    end
+
+    it "лишає investor пункти, доступні його ролі" do
+      html = render_for(build_stubbed(:user, :investor))
+
+      expect(html).to include("Treasury Matrix", "Threat Alerts", "Account Security")
+    end
+
+    it "відкриває forester польові пункти, але не адмінські" do
+      html = render_for(build_stubbed(:user, :forester))
+
+      expect(html).to include("Maintenance Log", "Initiate Node", "Oracle Visions")
+      expect(html).not_to include("Org Settings", "System Health", "Clan Hierarchy")
+    end
+
+    it "відкриває admin адмінські пункти, крім super_admin-ексклюзиву" do
+      html = render_for(build_stubbed(:user, :admin))
+
+      expect(html).to include("Org Settings", "System Health", "Species DNA")
+      expect(html).not_to include("Clan Hierarchy")
+    end
+
+    # Сторож дефолту: без актора компонент мусить звужуватись, а не роздавати
+    # гейтоване. Забутий kwarg у шарі вище тоді дає видиме звуження, а не тиху діру.
+    it "без актора звужується fail-CLOSED" do
+      html = render_for(nil)
+
+      gated_labels.each { |label| expect(html).not_to include(label) }
+      expect(html).to include("Treasury Matrix")
     end
   end
 

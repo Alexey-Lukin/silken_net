@@ -68,7 +68,7 @@ class ApplicationPolicy
   private
 
   def admin_or_above?
-    user.role_admin? || user.role_super_admin?
+    user.admin_or_above?
   end
 
   def super_admin?
@@ -106,7 +106,7 @@ class ApplicationPolicy
     private
 
     def admin_or_above?
-      user.role_admin? || user.role_super_admin?
+      user.admin_or_above?
     end
 
     def super_admin?

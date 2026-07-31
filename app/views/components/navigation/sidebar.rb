@@ -6,9 +6,16 @@ module Navigation
     # All data must be passed explicitly — no DB queries, no request/session access.
     # @param current_path [String] current request path for active-nav highlighting
     # @param ews_alert_count [Integer] pre-computed count of unresolved EWS alerts (eager-load in controller/layout)
-    def initialize(current_path: "/", ews_alert_count: 0)
+    # @param current_user [User, nil] актор — потрібен ЛИШЕ для роле-фільтра пунктів [UI.5]
+    #
+    # Дефолт `nil` навмисно fail-CLOSED: якщо шар вище забуде передати актора, меню
+    # звузиться до відкритих пунктів, а не роздасть гейтовані. Компонент-спека такої
+    # помилки не побачила б у принципі — вона конструює компонент повз `DashboardLayout`,
+    # тож сторожем проводки є request-спека.
+    def initialize(current_path: "/", ews_alert_count: 0, current_user: nil)
       @current_path = current_path
       @ews_alert_count = ews_alert_count
+      @current_user = current_user
     end
 
     def view_template
@@ -27,7 +34,7 @@ module Navigation
 
         nav(class: "flex-1 px-4 py-8 space-y-10") do
           section_group(:strategic_insight) do
-            nav_item(:oracle_visions,    api_v1_oracle_visions_path,           "eye")
+            nav_item(:oracle_visions,    api_v1_oracle_visions_path,           "eye", min_role: :forester)
             nav_item(:treasury_matrix,   api_v1_wallets_path,                  "bank")
             nav_item(:naas_contracts,    api_v1_contracts_path,                "clipboard")
             nav_item(:blockchain_ledger, api_v1_blockchain_transactions_path,  "bank")
@@ -45,26 +52,26 @@ module Navigation
           section_group(:forest_operations) do
             nav_item(:threat_alerts,   api_v1_alerts_path,                "zap", badge: @ews_alert_count)
             nav_item(:soldier_fleet,   api_v1_clusters_path,              "tree")
-            nav_item(:maintenance_log, api_v1_maintenance_records_path,   "clipboard")
-            nav_item(:crew_registry,   api_v1_users_path,                 "users")
-            nav_item(:clan_hierarchy,  api_v1_organizations_path,         "users")
+            nav_item(:maintenance_log, api_v1_maintenance_records_path,   "clipboard", min_role: :forester)
+            nav_item(:crew_registry,   api_v1_users_path,                 "users",     min_role: :admin)
+            nav_item(:clan_hierarchy,  api_v1_organizations_path,         "users",     min_role: :super_admin)
           end
 
           section_group(:neural_network) do
             nav_item(:queen_relays,   api_v1_gateways_path,                     "radio")
-            nav_item(:species_dna,    api_v1_tree_families_path,                "activity")
-            nav_item(:firmware_ota,   api_v1_firmwares_path,                    "cpu")
+            nav_item(:species_dna,    api_v1_tree_families_path,                "activity", min_role: :admin)
+            nav_item(:firmware_ota,   api_v1_firmwares_path,                    "cpu",      min_role: :admin)
             nav_item(:live_telemetry, live_stream_api_v1_telemetry_index_path,  "activity", pulse: true)
-            nav_item(:initiate_node,  new_api_v1_provisioning_path,             "zap")
+            nav_item(:initiate_node,  new_api_v1_provisioning_path,             "zap",      min_role: :forester)
           end
 
           section_group(:administration) do
             nav_item(:account_security, api_v1_account_security_path,        "eye")
             nav_item(:notifications,    api_v1_notifications_settings_path,  "radio")
-            nav_item(:org_settings,     api_v1_settings_path,                "cpu")
-            nav_item(:audit_log,        api_v1_audit_logs_path,              "eye")
-            nav_item(:system_audits,    api_v1_system_audits_path,           "clipboard")
-            nav_item(:system_health,    api_v1_system_health_path,           "activity")
+            nav_item(:org_settings,     api_v1_settings_path,                "cpu",       min_role: :admin)
+            nav_item(:audit_log,        api_v1_audit_logs_path,              "eye",       min_role: :admin)
+            nav_item(:system_audits,    api_v1_system_audits_path,           "clipboard", min_role: :admin)
+            nav_item(:system_health,    api_v1_system_health_path,           "activity",  min_role: :admin)
           end
         end
 
@@ -99,7 +106,13 @@ module Navigation
       end
     end
 
-    def nav_item(key, path, icon, badge: nil, pulse: false)
+    # [UI.5] `min_role:` стоїть у РЯДКУ самого пункту навмисно: розходження меню з
+    # гардом контролера має бути видно оком, а не вишукуватись у таблиці десь нижче.
+    # Значення — не власне правило, а вказівник на предикат `User`, тобто те саме
+    # джерело, яке читають `authorize_admin!`/`authorize_forester!`/`authorize_super_admin!`.
+    def nav_item(key, path, icon, badge: nil, pulse: false, min_role: nil)
+      return unless visible_to_actor?(min_role)
+
       label  = t("navigation.items.#{key}")
       active = @current_path.start_with?(path.split("?").first)
 
@@ -131,6 +144,24 @@ module Navigation
         elsif pulse
           div(class: "h-1 w-1 rounded-full bg-gaia-primary animate-ping", aria_hidden: "true")
         end
+      end
+    end
+
+    # Диспетчер, а не правило: кожна гілка кличе предикат `User` — той самий, який
+    # читає відповідний гард контролера. Власної умови тут немає навмисно, інакше
+    # меню стало б четвертим домом RBAC-формул. Невідомий рівень і відсутній актор
+    # дають `false` — fail-closed.
+    def visible_to_actor?(min_role)
+      return true if min_role.nil?
+
+      # Найвужчий рівень стоїть в `else` навмисно, і це не стиль: окрема гілка під
+      # невідомий рівень була б НЕДОСЯЖНОЮ (метод приватний, значення задають тут же),
+      # тобто мертвим кодом, який per-group branch-coverage чесно ловить. Так само
+      # тримається й fail-closed: незнайомий рівень читається як найсуворіший.
+      case min_role
+      when :forester then @current_user&.forest_commander?
+      when :admin    then @current_user&.admin_or_above?
+      else                @current_user&.super_admin?
       end
     end
 

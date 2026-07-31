@@ -161,6 +161,15 @@ class User < ApplicationRecord
     role_super_admin?
   end
 
+  # Дім формули «admin і вище». Її дзеркалили `authorize_admin!` і два приватні
+  # предикати `ApplicationPolicy`, а роле-фільтр сайдбара [UI.5] став би четвертою
+  # копією — і саме розходження меню з гардом він мусить робити неможливим.
+  # ⚠️ НЕ плутати з `organization_admin?`: там `role_admin? && organization_id`,
+  # тобто super_admin під неї не підпадає.
+  def admin_or_above?
+    role_admin? || role_super_admin?
+  end
+
   def organization_admin?
     role_admin? && organization_id.present?
   end

@@ -83,6 +83,37 @@ RSpec.describe Api::V1::DashboardController, type: :request do
         expect(response).to have_http_status(:ok)
       end
 
+      # [UI.5] Роле-фільтр меню живе в компоненті, а ПРОВОДКА актора — у
+      # `DashboardLayout`. Компонентна спека другої половини не бачить у принципі
+      # (вона конструює сайдбар повз layout), тож забутий kwarg лишив би її зеленою
+      # при повністю відкритому меню. Позитивна половина обовʼязкова: без неї
+      # приклад проходив би й на порожній сторінці, тобто не доводив би нічого.
+      it "ховає від investor пункти меню, закриті рольовим гардом" do
+        investor = create(:user, :investor, organization: organization)
+
+        get "/api/v1/dashboard",
+            headers: { "Authorization" => "Bearer #{investor.generate_token_for(:api_access)}" }
+
+        expect(response.body).to include(%(href="#{api_v1_wallets_path}"))
+        expect(response.body).not_to include(%(href="#{api_v1_settings_path}"))
+        expect(response.body).not_to include(%(href="#{api_v1_audit_logs_path}"))
+        expect(response.body).not_to include(%(href="#{api_v1_organizations_path}"))
+      end
+
+      # 🔴 Дзеркальна половина, без якої пін вище НЕ стереже проводку: дефолт
+      # fail-closed, тож забутий `current_user:` у layout ховає гейтоване від УСІХ —
+      # і негативний приклад лишається зеленим. Забуту проводку ловить лише
+      # позитивне твердження про роль, якій пункт належить.
+      it "показує admin пункти, закриті для нижчих ролей" do
+        admin = create(:user, :admin, organization: organization)
+
+        get "/api/v1/dashboard",
+            headers: { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" }
+
+        expect(response.body).to include(%(href="#{api_v1_settings_path}"))
+        expect(response.body).to include(%(href="#{api_v1_audit_logs_path}"))
+      end
+
       # Геопросторова матриця віддає координати й DID живого флоту. Рядок, що
       # вирішує ЧИЙ це флот, живе в контролері — компонентна спека його не
       # бачить (там організація приходить моком). Без цього піна підміна на

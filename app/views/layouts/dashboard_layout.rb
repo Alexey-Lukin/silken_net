@@ -170,7 +170,8 @@ class DashboardLayout < ApplicationComponent
     div(class: "hidden md:block", id: "sidebar-navigation", data: { turbo_permanent: "" }) do
       render Navigation::Sidebar.new(
         current_path: @current_path,
-        ews_alert_count: @ews_alert_count
+        ews_alert_count: @ews_alert_count,
+        current_user: @current_user
       )
     end
   end
@@ -202,7 +203,8 @@ class DashboardLayout < ApplicationComponent
     ) do
       render Navigation::Sidebar.new(
         current_path: @current_path,
-        ews_alert_count: @ews_alert_count
+        ews_alert_count: @ews_alert_count,
+        current_user: @current_user
       )
     end
   end
