@@ -12,6 +12,7 @@ lt:
         neural_link: Neuralinio ryšio būsena
         role_access: Vaidmuo / Prieiga
         view_logs: ŽURNALAS
+        view_logs_aria: Peržiūrėti %{name} žurnalą
     index_title: Įgulos valdymas // Klanas
     profile:
       access:

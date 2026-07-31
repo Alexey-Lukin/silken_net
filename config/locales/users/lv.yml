@@ -12,6 +12,7 @@ lv:
         neural_link: Neirālā savienojuma stāvoklis
         role_access: Loma / Piekļuve
         view_logs: ŽURNĀLS
+        view_logs_aria: Skatīt %{name} žurnālu
     index_title: Apkalpes pārvaldība // Klans
     profile:
       access:

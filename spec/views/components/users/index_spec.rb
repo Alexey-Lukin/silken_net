@@ -25,6 +25,21 @@ RSpec.describe Users::Index do
   let(:users)         { [ admin_user, forester_user, investor_user ] }
   let(:html)          { render_component(users: users) }
 
+  # 🔴 Ціль, а не наявність кнопки. Доти тут стояв `href: "#"` — «AUDIT»-колонка
+  # рендерилась, лінк був видимий і клікабельний, і не вів НІКУДИ. Жодна спека
+  # цього не пінила, бо всі перевіряли текст, а не адресу. [UI.7]
+  describe "audit link target" do
+    it "points each row at that user's own slice of the audit log" do
+      expect(html).to include(
+        %(href="#{Rails.application.routes.url_helpers.api_v1_audit_logs_path(user_id: forester_user.id)}")
+      )
+    end
+
+    it "leaves no placeholder targets behind" do
+      expect(html).not_to include(%(href="#"))
+    end
+  end
+
   describe "header section" do
     it "renders the registry header text" do
       expect(html).to include("Organization Crew Registry")

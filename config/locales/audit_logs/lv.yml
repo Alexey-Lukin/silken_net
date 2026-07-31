@@ -2,6 +2,7 @@
 lv:
   audit_logs:
     index:
+      clear_filter: Rādīt visus
       columns:
         action: Darbība
         details: Detaļas
@@ -9,6 +10,7 @@ lv:
         timestamp: Laika zīmogs
         user: Lietotājs
       empty_title: Nav reģistrētu audita notikumu.
+      filtered: Filtrēts skats
       inspect: Pārbaudīt →
       inspect_aria: 'Pārbaudīt audita žurnālu #%{id}'
       records: 'Ieraksti:'

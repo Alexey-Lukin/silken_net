@@ -29,7 +29,12 @@ module Api
           format.html do
             render_dashboard(
               title: I18n.t("audit_logs.index_title"),
-              component: AuditLogs::Index.new(logs: @logs, pagy: @pagy)
+              component: AuditLogs::Index.new(
+              logs: @logs, pagy: @pagy,
+              # Фільтри проводяться у в'ю ЯВНО: інакше пагінація губить їх на
+              # другій сторінці, а відфільтрована видача невідрізнима від повної.
+              filters: { user_id: params[:user_id].presence, action_type: params[:action_type].presence }
+            )
             )
           end
         end

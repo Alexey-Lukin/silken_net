@@ -2,6 +2,7 @@
 en:
   audit_logs:
     index:
+      clear_filter: Show all
       columns:
         action: Action
         details: Details
@@ -9,6 +10,7 @@ en:
         timestamp: Timestamp
         user: User
       empty_title: No audit events recorded.
+      filtered: Filtered view
       inspect: Inspect →
       inspect_aria: 'Inspect audit log #%{id}'
       records: 'Records:'

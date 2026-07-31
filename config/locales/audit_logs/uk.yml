@@ -2,6 +2,7 @@
 uk:
   audit_logs:
     index:
+      clear_filter: Показати всі
       columns:
         action: Дія
         details: Деталі
@@ -9,6 +10,7 @@ uk:
         timestamp: Час
         user: Користувач
       empty_title: Подій аудиту не зафіксовано.
+      filtered: Відфільтрований журнал
       inspect: Переглянути →
       inspect_aria: 'Переглянути запис аудиту #%{id}'
       records: 'Записів:'

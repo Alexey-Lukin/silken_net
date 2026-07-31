@@ -71,7 +71,13 @@ module Users
            end
         end
         td(class: "p-4 text-right") do
-          a(href: "#", class: "text-emerald-700 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "View logs for #{user.first_name} #{user.last_name}") { t(".table.view_logs") }
+          # Аудиторії збігаються точно, тож роле-гейт тут не потрібен: `UserPolicy#index?`
+          # і `AuditLogsController#authorize_admin!` обидва питають `admin_or_above?`.
+          a(
+            href: api_v1_audit_logs_path(user_id: user.id),
+            class: "text-emerald-700 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+            aria_label: t(".table.view_logs_aria", name: "#{user.first_name} #{user.last_name}")
+          ) { t(".table.view_logs") }
         end
       end
     end

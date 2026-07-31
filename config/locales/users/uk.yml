@@ -12,6 +12,7 @@ uk:
         neural_link: Стан нейронного зв'язку
         role_access: Роль / Доступ
         view_logs: ЖУРНАЛ
+        view_logs_aria: Переглянути журнал користувача %{name}
     index_title: Керування екіпажем // Клан
     profile:
       access:

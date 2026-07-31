@@ -95,5 +95,27 @@ RSpec.describe AuditLogs::Index do
     it "renders pagination" do
       expect(html).to include("page=")
     end
+
+    # 🔴 Фільтр мусить пережити перехід на сторінку 2. Інакше «View logs for X»
+    # приводить на відфільтровану першу сторінку, а другий клік тихо повертає
+    # ПОВНИЙ журнал організації — той самий клас UI.7, лише на клік глибше.
+    it "carries the active filters into every page link" do
+      html = render_component(logs: logs, pagy: mock_pagy(count: 63), filters: { user_id: 7 })
+      expect(html).to include("user_id=7")
+    end
+  end
+
+  describe "filter notice" do
+    # Без цього індикатора відфільтрована сторінка візуально невідрізнима від
+    # повної, тож порожній результат читається як «журнал аудиту порожній».
+    it "announces a filtered view and offers a way back to the full log" do
+      html = render_component(logs: logs, pagy: mock_pagy(count: 1), filters: { user_id: 7 })
+      expect(html).to include("Filtered view")
+      expect(html).to include("Show all")
+    end
+
+    it "stays silent when no filter is active" do
+      expect(html).not_to include("Filtered view")
+    end
   end
 end

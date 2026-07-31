@@ -12,6 +12,7 @@ en:
         neural_link: Neural Link State
         role_access: Role / Access
         view_logs: VIEW_LOGS
+        view_logs_aria: View logs for %{name}
     index_title: Crew Management // The Clan
     profile:
       access:

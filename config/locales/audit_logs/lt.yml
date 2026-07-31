@@ -2,6 +2,7 @@
 lt:
   audit_logs:
     index:
+      clear_filter: Rodyti visus
       columns:
         action: Veiksmas
         details: Detalės
@@ -9,6 +10,7 @@ lt:
         timestamp: Laiko žyma
         user: Naudotojas
       empty_title: Nėra įrašytų audito įvykių.
+      filtered: Filtruotas rodinys
       inspect: Patikrinti →
       inspect_aria: 'Patikrinti audito žurnalą #%{id}'
       records: 'Įrašai:'
