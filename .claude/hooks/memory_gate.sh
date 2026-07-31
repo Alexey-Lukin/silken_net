@@ -79,6 +79,30 @@ path_check() {
   return 0
 }
 
+# Every other check iterates "$MEM_DIR"/*.md, so a file WITHOUT that extension
+# receives nothing: no format check, no cap, no reachability — and a backticked
+# mention of it from the md side resolves against nothing either. At least one
+# such resident is deliberate (a toolchain-repair copy kept here precisely
+# because transcripts get purged), which is exactly why a housekeeping sweep
+# must not quietly take it along with the .bak files. Both directions, because
+# the expensive failure is the silent one: the asset disappearing unnoticed.
+# Measured on the live corpus: 0 firings in either direction.
+asset_check() {
+  local f bn
+  for f in "$MEM_DIR"/*; do
+    bn=$(basename "$f")
+    case $bn in *.md|.*) continue ;; esac
+    grep -qF "$bn" "$MEM_DIR"/*.md 2>/dev/null ||
+      echo "RESIDENT $bn — a non-.md file no memory mentions: leftover, or an asset a sweep is about to take"
+  done
+  for bn in $(grep -ohE 'memory-dir[^`]*`[A-Za-z0-9._-]+\.[a-z]{2,7}`' "$MEM_DIR"/*.md 2>/dev/null |
+                grep -oE '`[A-Za-z0-9._-]+\.[a-z]{2,7}`$' | tr -d '`' | sort -u); do
+    [ -f "$MEM_DIR/$bn" ] ||
+      echo "GONE    $bn — memory says this asset lives in the corpus; it does not"
+  done
+  return 0
+}
+
 index_check() {
   local sz n
   sz=$(wc -c <"$IDX" | tr -d ' ')
@@ -163,7 +187,7 @@ route_check() {
 
 case "${1:-}" in
   --audit)
-    out=$( { index_check; integrity_check; journals_reachable
+    out=$( { index_check; integrity_check; journals_reachable; asset_check
              for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; done; } )
     printf '%s\n' "${out:-OK — index within ratchet, corpus intact, no chronicle in a rule file}"
     [ -z "$out" ]
@@ -182,6 +206,7 @@ case "${1:-}" in
               check_file "$fp"
               path_check "$fp"
               journals_reachable
+              asset_check
               # A brand-new file is where the registry grows. Nothing reads at
               # this moment except the tool call itself, so this is the only
               # place the question "does this fact already have a home?" can be
