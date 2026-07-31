@@ -33,11 +33,14 @@ en:
   errors:
     api:
       forbidden: Insufficient privileges for this evolution.
+      forbidden_title: Access Denied
       internal: Core fault in the Ocean. Notify the Architect.
+      internal_title: Core Fault
       missing_parameter: 'Missing required parameter: %{param}'
       no_organization: No organization assigned to this account.
       no_organization_title: Access Denied
       not_found: "%{model} not found in the forest matrix."
+      not_found_title: Not Found
       unauthorized: Authentication required. The Gate is closed.
     no_organization:
       body_1: Your account is not currently linked to any organization in the Forest Matrix. Without a Cluster, the Citadel cannot scope telemetry, wallets, or alerts.

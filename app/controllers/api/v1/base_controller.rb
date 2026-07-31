@@ -266,12 +266,46 @@ module Api
         render json: { error: I18n.t("errors.api.forbidden") }, status: :forbidden
       end
 
+      # [SEC.25] HTML-гілка в DASHBOARD-шаблоні, не в auth: усі 17 досяжних із браузера
+      # `authorize`-викликів живуть у діях, де користувач гарантовано автентифікований
+      # (жоден не в `skip_before_action :authenticate_user!`-контролері). Тобто це не
+      # «чужий системі» глядач, як у `render_unauthorized`, а свій, якому не можна САМЕ
+      # це — і сайдбар йому чесний та корисний, а не бутафорія.
       def render_forbidden_pundit(_exception)
-        render json: { error: I18n.t("errors.api.forbidden") }, status: :forbidden
+        respond_to do |format|
+          format.json { render json: { error: I18n.t("errors.api.forbidden") }, status: :forbidden }
+          format.html do
+            render_dashboard(
+              title: I18n.t("errors.api.forbidden_title"),
+              component: Errors::Page.new(
+                heading: I18n.t("errors.api.forbidden_title"),
+                message: I18n.t("errors.api.forbidden"),
+                tone: :warning
+              ),
+              status: :forbidden
+            )
+          end
+        end
       end
 
+      # [SEC.25] Так само дашборд: 31 із 43 `find`-сайтів сидять у діях із `format.html`,
+      # тобто типовий шлях сюди — протухле посилання або чужий id, а не поламана сесія.
+      # `exception.model` лишається в обох гілках — воно й формує людське речення.
       def render_not_found(exception)
-        render json: { error: I18n.t("errors.api.not_found", model: exception.model) }, status: :not_found
+        respond_to do |format|
+          format.json { render json: { error: I18n.t("errors.api.not_found", model: exception.model) }, status: :not_found }
+          format.html do
+            render_dashboard(
+              title: I18n.t("errors.api.not_found_title"),
+              component: Errors::Page.new(
+                heading: I18n.t("errors.api.not_found_title"),
+                message: I18n.t("errors.api.not_found", model: exception.model),
+                tone: :info
+              ),
+              status: :not_found
+            )
+          end
+        end
       end
 
       def render_parameter_missing(exception)
@@ -282,10 +316,29 @@ module Api
         render json: { errors: record.errors.full_messages }, status: :unprocessable_content
       end
 
+      # [SEC.25] 🔴 ЄДИНИЙ із трьох, що йде в AUTH-шаблон, і це не смак: тут catch-all
+      # для всієї поверхні застосунку, включно зі шляхами, де `current_user` ще НЕ
+      # присвоєний (CSRF-виняток летить із `handle_unverified_request`, тобто ДО
+      # `authenticate_user!`), і зі сценарієм «помилка зродилась усередині спроби щось
+      # відрендерити». `AuthLayout` не залежить ні від користувача, ні від сайдбара, ні
+      # від бейджа — останній рубіж тримаємо максимально тонким.
       def render_internal_server_error(exception)
         # Логуємо детальну помилку в консоль/файл, але не показуємо її клієнту
         Rails.logger.fatal "🚨 [API CRITICAL] #{exception.message}\n#{exception.backtrace.first(5).join("\n")}"
-        render json: { error: I18n.t("errors.api.internal") }, status: :internal_server_error
+        respond_to do |format|
+          format.json { render json: { error: I18n.t("errors.api.internal") }, status: :internal_server_error }
+          format.html do
+            render_auth_page(
+              title: I18n.t("errors.api.internal_title"),
+              component: Errors::Page.new(
+                heading: I18n.t("errors.api.internal_title"),
+                message: I18n.t("errors.api.internal"),
+                tone: :danger
+              ),
+              status: :internal_server_error
+            )
+          end
+        end
       end
 
       # 5. PAGINATION METADATA (Pagy Helper)

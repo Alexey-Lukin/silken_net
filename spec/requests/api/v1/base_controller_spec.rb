@@ -61,17 +61,51 @@ RSpec.describe Api::V1::BaseController, type: :request do
     end
   end
 
+  # [SEC.25] Приклади ходять справжнім HTTP свідомо: доти вони будували контролер через
+  # `described_class.new` і стабили `render`, а `respond_to` лізе в `request.formats` —
+  # у такому харнесі він падає `NoMethodError` на nil, тобто «доводив» би відсутність
+  # диспетчера, а не поведінку. Той самий прецедент, що в блоках нижче.
   describe "render_internal_server_error" do
-    it "logs and renders 500 error" do
-      controller = described_class.new
-      allow(controller).to receive(:render)
-      exception = StandardError.new("test failure")
-      exception.set_backtrace([ "line1", "line2" ])
+    let(:user) { create(:user, :forester, organization: create(:organization)) }
+    let(:headers) { { "Authorization" => "Bearer #{user.generate_token_for(:api_access)}" } }
 
-      controller.send(:render_internal_server_error, exception)
-      expect(controller).to have_received(:render).with(
-        hash_including(json: hash_including(:error), status: :internal_server_error)
-      )
+    before do
+      # Стаб на дію, а не на модель: `dashboard#index` не має record-гардів у
+      # `before_action`, тож виняток долітає саме до `rescue_from StandardError`,
+      # а не перехоплюється раніше (на `trees#index` він давав 404 від `set_cluster`).
+      allow_any_instance_of(Api::V1::DashboardController)
+        .to receive(:index).and_raise(StandardError, "test failure")
+      allow(Rails.logger).to receive(:fatal)
+    end
+
+    it "віддає 500 JSON на API-запит і логує деталі" do
+      get "/api/v1/dashboard", headers: headers, as: :json
+
+      expect(response).to have_http_status(:internal_server_error)
+      expect(response.media_type).to eq("application/json")
+      expect(response.parsed_body["error"]).to be_present
+      expect(Rails.logger).to have_received(:fatal).with(/API CRITICAL/)
+    end
+
+    it "віддає HTML-сторінку на браузерний запит, не JSON-блоб" do
+      get "/api/v1/dashboard", headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:internal_server_error)
+      expect(response.media_type).to eq("text/html")
+      # 🔴 Пін на ФОРМУ, не на статус: статус не змінювався, тож пін на 500 лишався б
+      # зеленим і на старій, зламаній поведінці. Плюс негативна половина — саме сирий
+      # блоб був симптомом.
+      expect(response.body).to include("<html")
+      expect(response.body).not_to include('{"error"')
+    end
+
+    # ⚠️ Цей рендерер — ЄДИНИЙ із трьох в auth-шаблоні, і причина в тому, що сюди
+    # приходять і запити БЕЗ `current_user`. Пін тримає саме цю властивість: сторінка
+    # мусить домалюватись без сайдбара й бейджа, тобто без залежностей від користувача.
+    it "не тягне дашборд-хром, бо сюди приходять і запити без користувача" do
+      get "/api/v1/dashboard", headers: headers.merge("Accept" => "text/html")
+
+      expect(response.body).not_to include("sidebar-navigation")
     end
   end
 
@@ -144,28 +178,56 @@ RSpec.describe Api::V1::BaseController, type: :request do
     end
   end
 
+  # [SEC.25] Обидва блоки нижче — на справжньому HTTP з тієї самої причини, що й 500-блок.
+  # Обидва рендерери йдуть у ДАШБОРД-шаблон (не в auth): сюди приходить автентифікований
+  # користувач, якому просто не можна саме це або який вклацав протухле посилання, —
+  # сайдбар йому чесний. Пін це й тримає, інакше «HTML» нічого не каже про те, ЯКИЙ HTML.
   describe "render_not_found" do
-    it "interpolates the model name into the error message" do
-      controller = described_class.new
-      allow(controller).to receive(:render)
-      exception = ActiveRecord::RecordNotFound.new("not found")
-      exception.instance_variable_set(:@model, "Tree")
+    let(:user) { create(:user, :forester, organization: create(:organization)) }
+    let(:headers) { { "Authorization" => "Bearer #{user.generate_token_for(:api_access)}" } }
 
-      controller.send(:render_not_found, exception)
-      expect(controller).to have_received(:render).with(
-        hash_including(status: :not_found)
-      )
+    it "віддає 404 JSON з іменем моделі на API-запит" do
+      get "/api/v1/trees/999999", headers: headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+      expect(response.media_type).to eq("application/json")
+      expect(response.parsed_body["error"]).to be_present
+    end
+
+    it "віддає HTML-сторінку в дашборд-шаблоні на браузерний запит" do
+      get "/api/v1/trees/999999", headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:not_found)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include("<html")
+      expect(response.body).not_to include('{"error"')
+      # Саме дашборд, а не auth-шаблон — навігація тут доречна й це вимір, не смак.
+      expect(response.body).to include("sidebar-navigation")
     end
   end
 
   describe "render_forbidden_pundit" do
-    it "returns 403 regardless of the Pundit policy raised" do
-      controller = described_class.new
-      allow(controller).to receive(:render)
-      controller.send(:render_forbidden_pundit, instance_double(Pundit::NotAuthorizedError))
-      expect(controller).to have_received(:render).with(
-        hash_including(status: :forbidden)
-      )
+    let(:user) { create(:user, :forester, organization: create(:organization)) }
+    let(:headers) { { "Authorization" => "Bearer #{user.generate_token_for(:api_access)}" } }
+
+    # `users#index` — живий Pundit-шлях: `UserPolicy#index?` = `admin_or_above?`,
+    # тож форестер отримує `Pundit::NotAuthorizedError` без жодного стабу.
+    it "віддає 403 JSON на API-запит" do
+      get "/api/v1/users", headers: headers, as: :json
+
+      expect(response).to have_http_status(:forbidden)
+      expect(response.media_type).to eq("application/json")
+      expect(response.parsed_body["error"]).to be_present
+    end
+
+    it "віддає HTML-сторінку в дашборд-шаблоні на браузерний запит" do
+      get "/api/v1/users", headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:forbidden)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include("<html")
+      expect(response.body).not_to include('{"error"')
+      expect(response.body).to include("sidebar-navigation")
     end
   end
 

@@ -33,11 +33,14 @@ lt:
   errors:
     api:
       forbidden: Nepakankamos privilegijos šiai evoliucijai.
+      forbidden_title: Prieiga uždrausta
       internal: Branduolio gedimas Vandenyne. Pranešte Architektui.
+      internal_title: Branduolio triktis
       missing_parameter: 'Trūksta privalomo parametro: %{param}'
       no_organization: Šiai paskyrai nepriskirta organizacija.
       no_organization_title: Prieiga uždrausta
       not_found: "%{model} nerastas miško matricoje."
+      not_found_title: Nerasta
       unauthorized: Reikalinga autentifikacija. Vartai uždaryti.
     no_organization:
       body_1: Jūsų paskyra šiuo metu nesusieta su jokia organizacija Miško matricoje. Be klasterio Citadelė negali apriboti telemetrijos, piniginių ar įspėjimų.

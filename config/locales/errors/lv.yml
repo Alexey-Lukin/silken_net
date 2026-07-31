@@ -33,11 +33,14 @@ lv:
   errors:
     api:
       forbidden: Nepietiekamas privilēģijas šai evolūcijai.
+      forbidden_title: Piekļuve liegta
       internal: Kodola kļūme Okeānā. Paziņojiet Arhitektam.
+      internal_title: Kodola kļūme
       missing_parameter: 'Trūkst obligātā parametra: %{param}'
       no_organization: Šim kontam nav piesaistītas organizācijas.
       no_organization_title: Piekļuve liegta
       not_found: "%{model} nav atrasts meža matricā."
+      not_found_title: Nav atrasts
       unauthorized: Nepieciešama autentifikācija. Vārti ir slēgti.
     no_organization:
       body_1: Jūsu konts pašlaik nav saistīts ar nevienu organizāciju Meža matricā. Bez klastera Citadele nevar norobežot telemetriju, makus vai brīdinājumus.

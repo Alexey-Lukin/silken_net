@@ -675,6 +675,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Sessions` | `New` | `flash_alert:`, `flash_notice:` — рендериться через `AuthLayout` |
 | `Passwords` | `Forgot`, `Reset` | `token:`, `flash_alert:` — рендериться через `AuthLayout` |
 | `Errors` | `NoOrganization` | Quarantine-сторінка для користувачів без організації — рендериться через `AuthLayout` |
+| `Errors` | `Page` | `heading:`, `message:`, `tone:` — спільна сторінка для error-рендерерів `BaseController` (404 · Pundit-403 · 500). 🔴 **Свідомо БЕЗ власних `t()`:** працює зсередини `rescue_from`, а `raise_on_missing_translations` перетворив би забутий ключ на виняток, якого Rails там уже не переловить — тобто сторінка помилки впала б від власної. Лягає в ОБИДВА layout'и: 404/403 → `DashboardLayout` (глядач автентифікований, навігація чесна), 500 → `AuthLayout` (єдиний шлях із `current_user = nil`) |
 
 ### 6.5 Namespacing Convention — Куди Розмістити Новий Компонент [DOC.6]
 
