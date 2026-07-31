@@ -213,7 +213,7 @@ module Api
       # record within the same org — the only check was `authorize_forester!`.
       # Restrict mutations to the author; admin+ keep the override for audit.
       def authorize_record_mutation!
-        return if current_user.role_admin? || current_user.role_super_admin?
+        return if current_user.admin_or_above?
         return if @record.user_id == current_user.id
 
         # [SEC.25] Усі три гейтовані екшени (`edit`/`update`/`verify`) мають HTML-шлях,

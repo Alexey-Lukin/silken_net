@@ -21,7 +21,9 @@ RSpec.describe Api::V1::AuditLogsController, type: :request do
   # окремий СИСТЕМНИЙ ланцюг (org-less дії, зокрема зміни SystemParameter). Доти
   # super_admin бачив саме його — випадково, бо його власний organization_id теж nil.
   # Під acting-org він дістав би id організації й тихо втратив би governance-журнал,
-  # і жоден тест не почервонів би: `AuditLogPolicy` тут не викликається (скоуп ручний).
+  # і жоден тест не почервонів би: Pundit тут не викликається (скоуп ручний), а власна
+  # політика була мертвим кодом і знята ⚖️ 2026-07-31. Саме тому цей describe і є
+  # єдиним сторожем системного ланцюга.
   describe "системний ланцюг (organization_id: nil)" do
     let!(:system_log) { create(:audit_log, user: admin_user, organization: nil) }
     let(:super_admin) { create(:user, :super_admin, organization: organization) }

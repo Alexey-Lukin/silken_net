@@ -165,8 +165,10 @@ exact crypto modes and the deployment hardening) in `SECURITY.md` and canon
 - **Fail-safe / deny-by-default** — minting and slashing refuse unless every precondition holds (§3 E/F);
   in production `WEB3_STRICT_MODE` turns missing security config into a hard failure rather than a silent
   fallback; `Security::Web3NetworkGuard` refuses to boot against a testnet/misconfigured RPC.
-- **Complete mediation** — per-resource Pundit policies (`app/policies/`) + role gates in the API base
-  controller; thin controllers and AASM state machines make state changes non-bypassable.
+- **Complete mediation** — tenant isolation is enforced *inside the query*
+  (`acting_organization!.trees.find(...)`), so a foreign record never materialises; Pundit policies
+  (`app/policies/`) cover the predicate surfaces (funds, PII, authorship, lore) and role gates guard the
+  API base controller; thin controllers and AASM state machines make state changes non-bypassable.
 - **Least privilege / separation of privilege** — on-chain roles gated by `onlyRole(...)`, admin actions
   routed through `SilkenTimelock` (48h delay; flash-loan defense, E.35), `mint()`/`slash()` on separate
   keys.
@@ -184,7 +186,7 @@ with a per-request nonce, a full security-header set, and `httponly`/`secure`/`s
 
 | # | Category | How it is countered | Where |
 |---|---|---|---|
-| **A01** | Broken Access Control | Per-resource **Pundit** policies + role gates (`authorize_admin!/forester!`); on-chain **AccessControl** roles + 48h **Timelock**; org scoping | `app/policies/`, `app/controllers/api/v1/base_controller.rb`, `contracts/*.sol` |
+| **A01** | Broken Access Control | Tenant scope enforced **inside the query** (`acting_organization!.<assoc>.find`); **Pundit** policies on predicate surfaces (funds/PII/authorship/lore) + role gates (`authorize_admin!/forester!`); on-chain **AccessControl** roles + 48h **Timelock** | `app/controllers/api/v1/`, `app/policies/`, `app/controllers/api/v1/base_controller.rb`, `contracts/*.sol` |
 | **A02** | Cryptographic Failures | **Argon2id** passwords; AES-256-CBC/AES-128-CCM, HMAC-SHA256, HKDF, **Ed25519**; **no MD5/SHA-1/DES/RC4**; `force_ssl`+HSTS; secret scrubbing | `app/models/concerns/has_argon2_password.rb`, `config/initializers/{filter_parameter_logging,sentry}.rb` |
 | **A03** | Injection | Strong-parameter **allowlists**; ActiveRecord parameterized queries; **SafeListSanitizer** + HTML-escape for rendered markdown; URI allowlist | `app/controllers/**`, `app/services/codex/markdown_renderer.rb` |
 | **A04** | Insecure Design | Fail-safe minting guard clauses; `manual_review` double-spend guard; boot-time `Web3NetworkGuard`; positive-A-evidence slashing gate | `app/services/blockchain_minting_service.rb`, `app/services/security/web3_network_guard.rb`, `app/services/slashing/` |

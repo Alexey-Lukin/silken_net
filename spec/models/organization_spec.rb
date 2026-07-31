@@ -34,6 +34,37 @@ RSpec.describe Organization, type: :model do
       reflection = described_class.reflect_on_association(:wallets)
       expect(reflection.options[:dependent]).to eq(:nullify)
     end
+
+    # [SEC.26 / ARCH.76] «Безкластерний запис не належить НІКОМУ» — це продуктовий
+    # присуд (⚖️ 2026-07-30), а не властивість ActiveRecord: він тримається на тому,
+    # що обидві асоціації йдуть `through: :clusters`, а не прямою колонкою. Доти
+    # єдиними виконуваними твердженнями про це були приклади `TreePolicy::Scope` /
+    # `EwsAlertPolicy::Scope`; політики знято як мертвий код, і присуд лишився б без
+    # жодного сторожа. ⚠️ Сирота конструйована СЬОГОДНІ (`cluster_id` штатно nullable,
+    # `AlertDispatchService` створює тривогу для безкластерного дерева), тож ці два
+    # приклади не гіпотетичні — вони стережуть, щоб `OR cluster_id IS NULL` не
+    # повернувся копі-пейстом у будь-який майбутній скоуп.
+    # ⚠️ Позитивна половина в кожному прикладі обовʼязкова: без неї порожня асоціація
+    # (напр. зламане `through:`) давала б зелений негатив, тобто пін не міг би впасти.
+    it "не показує безкластерне дерево жодній організації" do
+      organization = create(:organization)
+      cluster = create(:cluster, organization: organization)
+      own = create(:tree, cluster: cluster)
+      clusterless = create(:tree, cluster: nil)
+
+      expect(organization.trees).to include(own)
+      expect(organization.trees).not_to include(clusterless)
+    end
+
+    it "не показує безкластерну тривогу жодній організації" do
+      organization = create(:organization)
+      cluster = create(:cluster, organization: organization)
+      own = create(:ews_alert, cluster: cluster)
+      clusterless = create(:ews_alert, cluster: nil)
+
+      expect(organization.ews_alerts).to include(own)
+      expect(organization.ews_alerts).not_to include(clusterless)
+    end
   end
 
   describe "#total_carbon_points" do

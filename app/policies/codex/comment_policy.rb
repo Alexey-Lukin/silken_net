@@ -32,7 +32,7 @@ module Codex
 
     class Scope < ::ApplicationPolicy::Scope
       def resolve
-        return scope.all if user&.role_admin? || user&.role_super_admin?
+        return scope.all if user&.admin_or_above?
         scope.visible
       end
     end

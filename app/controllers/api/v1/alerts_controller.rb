@@ -6,9 +6,10 @@ module Api
     class AlertsController < BaseController
       before_action :set_alert, only: [ :show, :resolve ]
       # [SEC]: resolve = операційна дія (закрити бойову тривогу пожежі/tamper) —
-      # лише forester+. EwsAlertPolicy#resolve? декларував саме цей намір, але
-      # контролер його не викликав, тож investor (read-only роль) міг гасити
-      # активну EWS-тривогу.
+      # лише forester+. Намір колись декларувала `EwsAlertPolicy#resolve?`, якої
+      # контролер ніколи не викликав, тож investor (read-only роль) міг гасити активну
+      # EWS-тривогу. Політику знято як мертвий код ⚖️ 2026-07-31, і цей гард лишився
+      # ЄДИНИМ носієм правила — не прибирай його «бо десь є політика».
       before_action :authorize_forester!, only: :resolve
 
       # GET /api/v1/alerts
