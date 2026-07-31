@@ -5,7 +5,7 @@ description: "Use when curating the persistent file-based memory (…/memory/MEM
 
 # Memory Maintenance
 
-Executable playbook for keeping the persistent memory (`~/.claude/projects/…/memory/`) **clean, structured, dedup'd — without amnesia**. This skill is the **HOW**; it does **not** restate the memory FORMAT (frontmatter / types / Why+How-to-apply / `[[name]]` links / one-fact-per-file — that's in the system prompt), nor the live state (that's in the memories themselves).
+Executable playbook for keeping the persistent memory (`~/.claude/projects/…/memory/`) **clean, structured, dedup'd — without amnesia**. This skill is the **HOW**; it does **not** restate the memory FORMAT (frontmatter / types / Why+How-to-apply / `[[<slug>]]` links / one-fact-per-file — that's in the system prompt), nor the live state (that's in the memories themselves).
 
 ## 📖 The method lives in one place (don't restate it here)
 
@@ -41,7 +41,7 @@ Full step-by-step playbook + founder's principles + the zero-loss scripts → **
 - **Edit can't match a ~7000-char index line** → use a Ruby `lines[i] = …` replace with an `abort unless lines[i].include?("marker")` guard; `cp` backup first, `diff` after.
 - **Memory is OUTSIDE the git repo** (`~/.claude/…`) → no `git revert`; your backup + zero-loss diff is the only safety net.
 - **Verify-before-delete** ([[feedback_verify_canon_before_delete]]) and **no-volatile-counts** ([[feedback_no_volatile_counts]]) apply to memory too (a hook must not hold drift-prone counts; trimmed detail must already live in the file).
-- **De-dup is rare** — memories cross-link via `[[name]]`, not restate; the big duplication is usually index-vs-file. Two distinct facts of the same kind are NOT a duplicate.
+- **De-dup is rare** — memories cross-link via `[[<slug>]]`, not restate; the big duplication is usually index-vs-file. Two distinct facts of the same kind are NOT a duplicate.
 - **The prompt's own §Durable-уроки = a 6-family frame (auto-consolidate — the method applies to itself):** a new lesson gets **melted into the fitting family as a line**, NOT glued on as a fresh date-stamped paragraph (the section already bloated into a wall once and had to be refactored). New family only if it fits none (keep ≤~7); a family past ~6 lines → compress that family the same way.
 
 > If you're tempted to add the memory FORMAT rules or live state here, stop — format → system prompt; state → the memories; the full method → `.claude/prompts/memory_housekeeping.md`. Keep this skill a thin pointer.
