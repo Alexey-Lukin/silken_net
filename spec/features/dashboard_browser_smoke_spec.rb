@@ -12,21 +12,28 @@ require "rails_helper"
 # Бракувало навіть `require "capybara/rspec"` — DSL не був підключений, бо нікому
 # не був потрібен.
 #
-# 🔒 **Межа, знайдена виміром при написанні цього файлу, і вона більша за нього.**
-# У test-середовищі сторінки **не несуть asset-тегів узагалі** — ні
-# `javascript_importmap_tags`, ні `stylesheet_link_tag` не потрапляють у HTML
-# (перевірено і браузером, і звичайною request-спекою; ті самі хелпери, викликані
-# з `bin/rails runner` у RAILS_ENV=test, повертають коректні теги, тож розходження
-# саме в рендер-шляху запиту). Наслідок: **наш JS у feature-тестах не виконується**
-# — `window.Stimulus` там `undefined`. Прод це не зачіпає (assets precompiled), але
-# будь-який сценарій, що пінить поведінку Stimulus/Turbo/Leaflet, сьогодні
-# НЕМОЖЛИВИЙ, і CI-джоба цього б не сказала — вона просто лишалась би зеленою.
-# Стан і план → `00_07` TEST.7.
+# 🔴 **[TEST.7] Тут доти стояло, що «наш JS у feature-тестах не виконується», а
+# причина — рендер-шлях запиту Rails. Обидві половини спростовано виміром
+# 2026-07-31, і винне було НЕ Rails.** Глушив `spec/support/layout_asset_stubs.rb`:
+# він БЕЗУМОВНО повертав `""` замість `stylesheet_link_tag` /
+# `javascript_importmap_tags`, тож сторінка приїжджала без importmap і
+# `window.Stimulus` лишався `undefined`. Діагноз тричі шукали в чужому коді, бо
+# `bin/rails runner` віддавав теги коректно — рівно тому, що НЕ вантажить
+# `spec/support/`. Тепер фолбек ловить лише реальний `Propshaft::MissingAssetError`,
+# і при зібраних assets (`rails assets:precompile`, ~1 c — крок є у CI-джобі
+# `feature-test`) Stimulus і Turbo в браузері живі: `typeof window.Stimulus`
+# = `"object"`, `turbo:morph` відтворюється керовано.
 #
-# Тому цей файл свідомо пінить те, що від JS не залежить: серверний рендер у
-# справжньому браузері. Це вже не нуль — і саме той сценарій, що інакше
-# недоказовий: request-спека бачить `media_type` і тіло, браузер бачить, що з тим
-# тілом сталося.
+# ⚠️ Що лишається недоказовним і ЧОМУ — межа тепер інша й вужча: `leaflet`
+# пінниться на ЗОВНІШНІЙ CDN (`config/importmap.rb` → `ga.jspm.io`), тож у
+# тестовому середовищі модуль не приїжджає, `map#connect()` не спрацьовує і
+# `.leaflet-pane` лишається нуль. Тобто сценарії на МАПУ й далі неможливі, але
+# вже через один конкретний пін, а не через увесь харнес.
+#
+# Тому цей файл пінить дві речі: серверний рендер у справжньому браузері (те, що
+# інакше недоказовне — request-спека бачить `media_type` і тіло, браузер бачить,
+# що з тим тілом сталося) і той факт, що НАШ Stimulus-контролер справді
+# виконується.
 RSpec.describe "Dashboard in a real browser", :js do
   let(:organization) { create(:organization) }
   let!(:user) { create(:user, :admin, organization: organization, password: "browser-smoke-pass-1") }
@@ -57,5 +64,38 @@ RSpec.describe "Dashboard in a real browser", :js do
     expect(page).to have_field("email")
     expect(page).to have_css("form[action='/api/v1/login']")
     expect(page).to have_no_text('{"error"')
+  end
+
+  # [TEST.7] Перший приклад у цьому дереві, що доводить виконання ВЛАСНОГО
+  # Stimulus-контролера, а не лише присутність Stimulus.
+  #
+  # 🔒 Пін навмисно тримається за ІКОНКУ, а не за клас на `<html>`, і це обходить
+  # обидві пастки, виміряні при першій спробі: Capybara скоупить пошук у
+  # `/html/body`, тож `have_css("html.dark")` не матчить НІКОЛИ; а `toggle()` іде
+  # через `document.startViewTransition`, тобто застосування асинхронне й
+  # миттєвий `evaluate_script` читає стан ДО транзиції. `theme#updateIcon`
+  # переписує `iconTarget.innerHTML` — а той у body, отже Capybara вміє його
+  # дочекатись штатно. Пряму перевірку класу лишаємо ДРУГОЮ: після того, як
+  # іконка доїхала, транзиція вже завершена, і гонки немає.
+  it "runs OUR Stimulus controller in the browser, not just boots Stimulus" do
+    sign_in_through_the_form
+    expect(page).to have_current_path(%r{/api/v1/dashboard})
+
+    moon = "#theme-switcher svg path[d^='M20.354']" # світла тема → пропонує темну
+    sun  = "#theme-switcher svg path[d^='M12 3v1']"  # темна тема → пропонує світлу
+
+    # ⚠️ Пін тримається за ПЕРЕХІД, а не за абсолютний стан: стартова тема
+    # залежить від середовища (збережений `localStorage` і те, що саме рапортує
+    # `prefers-color-scheme` у headless-Chrome), тож зафіксований старт зробив би
+    # приклад крихким до конфігурації браузера, а не до нашого коду.
+    was_dark = page.evaluate_script("document.documentElement.classList.contains('dark')")
+    expect(page).to have_css(was_dark ? sun : moon)
+
+    find("#theme-switcher button").click
+
+    # Якби Stimulus не виконувався, іконка лишилась би серверним місяцем
+    # назавжди — саме цей приклад червонів, поки asset-теги глушив stub.
+    expect(page).to have_css(was_dark ? moon : sun)
+    expect(page.evaluate_script("document.documentElement.classList.contains('dark')")).to be(!was_dark)
   end
 end

@@ -700,7 +700,17 @@ jobs:
           FEATURE_TEST: "1"
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           REDIS_URL: redis://localhost:6379/0
-        run: bin/rails db:test:prepare && bundle exec rspec spec/features
+        # [TEST.7] `assets:precompile` тут — рівність CI та локального прогону, а
+        # НЕ умова роботи JS. Вимір 2026-07-31: importmap резолвиться з
+        # `app/javascript/**` і в чистому checkout, тож Stimulus/Turbo живі й без
+        # цього кроку (це робить фолбек у `spec/support/layout_asset_stubs.rb`,
+        # який тепер глушить лише реальний `Propshaft::MissingAssetError`).
+        # Несе крок інше: без зібраного Tailwind у сторінки НЕМА CSS, а отже
+        # `class="hidden"` нічого не ховає — Capybara вважає видимим те, чого
+        # користувач не бачить (напр. `#map_data_nodes`). Тобто без цього кроку
+        # тести на видимість дали б РІЗНИЙ результат локально й у CI, причому
+        # мовчки. Ціна ~1 c.
+        run: bin/rails db:test:prepare && bin/rails assets:precompile && bundle exec rspec spec/features
 
       - name: Keep screenshots from failed feature tests
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
