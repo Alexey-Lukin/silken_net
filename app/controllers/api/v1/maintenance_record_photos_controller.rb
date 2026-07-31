@@ -22,7 +22,15 @@ module Api
         @photo.purge_later # async — не блокуємо запит, S3 deletion в Sidekiq
         respond_to do |format|
           format.json { render json: { message: I18n.t("flash.maintenance.photo_deleted") }, status: :ok }
-          format.html { redirect_to api_v1_maintenance_record_path(@record), notice: I18n.t("flash.maintenance.photo_deleted") }
+          # 303, не 302 [UI.7]: `fetch` конвертує 301/302 у GET лише для POST, а
+          # DELETE зберігає — тож браузер перевидавав би DELETE на сторінку запису,
+          # де зареєстровано лише GET. Найгірша форма симптому саме тут: фото вже
+          # знищене НЕЗВОРОТНО (`purge_later` → S3), а користувач бачить помилку.
+          format.html do
+            redirect_to api_v1_maintenance_record_path(@record),
+                        status: :see_other,
+                        notice: I18n.t("flash.maintenance.photo_deleted")
+          end
         end
       end
 

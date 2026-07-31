@@ -68,6 +68,17 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       expect(response.parsed_body["message"]).to be_present
     end
 
+    # 🔴 HTML-гілка logout'а доти не мала прикладу взагалі. Вихід приходить
+    # `button_to`-ом (DELETE), а `fetch` зберігає метод на 301/302 — тобто на 302
+    # браузер перевидавав би DELETE на `/api/v1/login`, де є лише GET, уже ПІСЛЯ
+    # того, як сесію знято. [UI.7]
+    it "redirects the browser with 303 See Other, not 302" do
+      delete "/api/v1/logout", headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:see_other)
+      expect(response).to redirect_to(api_v1_login_path)
+    end
+
     it "returns 401 without authentication" do
       delete "/api/v1/logout", as: :json
 

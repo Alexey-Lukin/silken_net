@@ -60,7 +60,11 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
     end
 
     context "when as HTML" do
-      it "redirects after purging the photo" do
+      # ⚠️ Доти тут стояло `have_http_status(:redirect)`, тобто БУДЬ-ЯКИЙ 3xx — і воно
+      # лишалось зеленим при 302, на якому `fetch` перевидає DELETE на сторінку запису
+      # (там лише GET). Найгірша форма симптому: фото вже знищене незворотно, а
+      # користувач бачить помилку. Пінимо конкретний код. [UI.7]
+      it "redirects with 303 See Other after purging the photo" do
         record.photos.attach(
           io: StringIO.new("fake-image-data"),
           filename: "evidence.jpg",
@@ -71,7 +75,8 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
         delete "/api/v1/maintenance_records/#{record.id}/photos/#{photo.id}",
                headers: headers
 
-        expect(response).to have_http_status(:redirect)
+        expect(response).to have_http_status(:see_other)
+        expect(response).to redirect_to(api_v1_maintenance_record_path(record))
       end
     end
 

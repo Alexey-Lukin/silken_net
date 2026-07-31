@@ -71,7 +71,14 @@ module Api
 
         respond_to do |format|
           format.json { render json: { message: I18n.t("flash.sessions.logout_success") }, status: :ok }
-          format.html { redirect_to api_v1_login_path, notice: I18n.t("flash.sessions.neural_link_severed") }
+          # 303, не 302 [UI.7]: logout приходить `button_to`-ом (DELETE), а `fetch`
+          # зберігає метод на 301/302 — тобто браузер перевидавав би DELETE на
+          # `/api/v1/login`, де зареєстровано лише GET. Сесію на той момент уже знято.
+          format.html do
+            redirect_to api_v1_login_path,
+                        status: :see_other,
+                        notice: I18n.t("flash.sessions.neural_link_severed")
+          end
         end
       end
 
