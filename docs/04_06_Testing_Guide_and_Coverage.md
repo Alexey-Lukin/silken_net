@@ -432,6 +432,20 @@ it "test that status works" do
 
 **Load/throughput bench-harness (INF.23) — coverage boundary (свідоме, не геп).** `lib/silken_net/load_test/*` **у gate-скоупі** (НЕ фільтрується, як `/lib/tasks/`) — але покриття цілить у **pure-детектори**, що несуть INF.23 honesty-інваріант «dev-число ≠ capacity»: `LoadReport.classify_redis`/`environment_class` (io-bound prod-like gate), `CoapFlood.parse_linux_udp_rcvbuf_errors` (авторитетний Linux-CI drop-лічильник /proc/net/snmp), `DrainBench.diverging?` (backlog-divergence) + input-guards. Самі drain/flood-**цикли** (`run_backlog`/`run_arrival`/`wait_for_drain`/`flood_worker`) РЕАЛЬНО дренажать → потрібен живий Sidekiq/UDP-стек (`bin/coap_load` проти dev/staging) → **integration-class, поза host-unit скоупом** (той самий клас, що firmware DMA-timing §B.1.1): specs лишають живі цикли integration-leave, покриваючи детектори.
 
+### B.1.4 Browser / feature-шар (`spec/features/`)
+
+| Ризик | Серйозність | Опис |
+|-------|------------|------|
+| JS не виконується у feature-специ | 🔴 HIGH | asset-теги не потрапляють у HTML тестового рендеру → `window.Stimulus` = `undefined`; будь-який Stimulus/Turbo/Leaflet-сценарій сьогодні недоказовий |
+
+**Шар існує з 2026-07-30 і доти був порожнім — при повністю зібраній машинерії.** `spec/features/` містила лише `.gitkeep`, а CI-джоба `feature-test` піднімала Postgres+Redis на КОЖНОМУ ruby-PR, виконувала `rspec spec/features` над порожньою множиною й повідомляла успіх. 🔴 Клас, вартий запам'ятовування ширше за цей випадок: **гейт, що перевіряє порожню множину, зелений НАЗАВЖДИ і не має симптому** — він не падає, не попереджає, і жоден лічильник не показує «0 прикладів» як проблему. Ціна входу виявилась не в інфраструктурі (cuprite · capybara · `spec/support/cuprite.rb` · скріншоти-на-падінні — усе стояло), а у **відсутньому `require "capybara/rspec"`**: DSL не був підключений, бо порожній директорії він не потрібен.
+
+🔒 **Чесна межа шару, виміряна при написанні першого тесту.** У тестовому середовищі сторінки **не несуть asset-тегів узагалі** — ані `javascript_importmap_tags`, ані `stylesheet_link_tag` не потрапляють у HTML (перевірено і браузером, і звичайною request-спекою). При цьому ті самі хелпери, викликані з `bin/rails runner` у `RAILS_ENV=test`, повертають коректні теги — тобто розходження в рендер-шляху запиту, а не в конфізі assets. Прод не зачеплений (там assets precompiled). **Наслідок для планування:** усі канон-заяви про поведінку браузера лишаються «сильною підставою, а не власним виміром» — зокрема foster-parenting `<tbody>` ([`04_04 §8.1а`](04_04_Phlex_UI_and_Tailwind)) і морф-стійкість Leaflet ([`§8.1`](04_04_Phlex_UI_and_Tailwind)). Стан і план зняття → [`00_07`](00_07_Action_Plan_Tracker) TEST.7.
+
+⚠️ **Що це означає для нового feature-спека сьогодні:** пиши сценарії, які **не залежать від нашого JS** (серверний рендер, редиректи, форми, статуси). Приклад на живий Stimulus писати передчасно — і **не «лагодь» його моком**: замоканий Stimulus доводив би, що працює мок, а не застосунок. Дві пастки вже виміряні й записані в TEST.7, щоб не переміряти: Capybara скоупить пошук у `/html/body` (тож `have_css("html.dark")` не матчить НІКОЛИ, хоч селектор коректний), а `theme#toggle` іде через `document.startViewTransition` — застосування класу асинхронне, миттєвий `evaluate_script` читає стан до транзиції.
+
+⚠️ **Гейт покриття:** `FEATURE_TEST=1` (як і `COVERAGE=0`) повністю вимикає SimpleCov-поріг — feature-специ міряються окремою CI-джобою, а їхній власний прогін дає ≈0% глобального покриття, тож гейт хибно впав би (§B.3).
+
 ---
 
 ## B.2 Рекомендації для нових фіч
