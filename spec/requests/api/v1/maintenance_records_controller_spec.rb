@@ -292,6 +292,46 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       expect(response.body).to include("/photos/")
     end
 
+    # 🔴 Дзеркало позитивних пінів, і воно НЕ зайве — вони покривають рівно одну мутацію
+    # (забутий kwarg), а не клас. Проводка НЕ ТОГО актора — `current_user: @record.user`
+    # замість `current_user` — повністю відновлює вихідну вразливість і лишає обидва
+    # позитивні приклади зеленими, бо ті дивляться очима автора. Так само `editable: true`
+    # літералом у `photos` — рівно той літерал, який цей пакет викорінює з `show.rb`.
+    # Тобто позитив стереже ДРІТ, негатив — те, що по дроту їде правильний актор.
+    it "не пропонує мутаційних дій іншому форестеру тієї ж організації" do
+      other_forester = create(:user, :forester, organization: organization)
+      other_token = other_forester.generate_token_for(:api_access)
+      record.photos.attach(
+        io: StringIO.new("fake-image-data"),
+        filename: "evidence.jpg",
+        content_type: "image/jpeg"
+      )
+
+      get "/api/v1/maintenance_records/#{record.id}",
+          headers: { "Authorization" => "Bearer #{other_token}", "Accept" => "text/html" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(verify_api_v1_maintenance_record_path(record))
+      expect(response.body).not_to include(edit_api_v1_maintenance_record_path(record))
+      expect(response.body).not_to include("/photos/")
+    end
+
+    it "не пропонує видалення у Turbo-фреймі пагінації іншому форестеру" do
+      other_forester = create(:user, :forester, organization: organization)
+      other_token = other_forester.generate_token_for(:api_access)
+      record.photos.attach(
+        io: StringIO.new("fake-image-data"),
+        filename: "evidence.jpg",
+        content_type: "image/jpeg"
+      )
+
+      get "/api/v1/maintenance_records/#{record.id}/photos",
+          headers: { "Authorization" => "Bearer #{other_token}", "Accept" => "text/html" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include("/photos/")
+    end
+
     it "рендерить галерею доказів, а не падає на маршрут-хелпері" do
       record.photos.attach(
         io: StringIO.new("fake-image-data"),

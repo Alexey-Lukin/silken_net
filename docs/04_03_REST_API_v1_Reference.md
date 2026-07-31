@@ -384,11 +384,11 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | 59 | GET | `/api/v1/maintenance_records/new` | `maintenance_records#new` | 🌿 Forester | Форма нового запису |
 | 60 | POST | `/api/v1/maintenance_records` | `maintenance_records#create` | 🌿 Forester | Створити запис обслуговування |
 | 61 | GET | `/api/v1/maintenance_records/:id` | `maintenance_records#show` | 🌿 Forester | Деталі запису |
-| 62 | GET | `/api/v1/maintenance_records/:id/edit` | `maintenance_records#edit` | 🌿 Forester | Форма редагування запису (HTML) |
+| 62 | GET | `/api/v1/maintenance_records/:id/edit` | `maintenance_records#edit` | 🌿 Forester | Форма редагування запису (HTML). **Тільки автор або admin+** |
 | 63 | PATCH | `/api/v1/maintenance_records/:id` | `maintenance_records#update` | 🌿 Forester | Оновити запис. **Тільки автор або admin+** (запобігає cross-forester tampering). |
 | 64 | PATCH | `/api/v1/maintenance_records/:id/verify` | `maintenance_records#verify` | 🌿 Forester | Підтвердити hardware-стан (STM32). **Тільки автор або admin+** (запобігає cross-forester tampering). |
 | 65 | GET | `/api/v1/maintenance_records/:id/photos` | `maintenance_records#photos` | 🌿 Forester | Фото запису (пагінація) |
-| 66 | DELETE | `/api/v1/maintenance_records/:maintenance_record_id/photos/:id` | `maintenance_record_photos#destroy` | 🌿 Forester | Видалити фото |
+| 66 | DELETE | `/api/v1/maintenance_records/:maintenance_record_id/photos/:id` | `maintenance_record_photos#destroy` | 🌿 Forester | Видалити фото. **Тільки автор або admin+** [UI.6] — доти гарда не було зовсім, хоч шлях мутує той самий запис, що рядки 63/64 |
 | **⊙ Оракул (AI Insights)** | | | | | |
 | 67 | GET | `/api/v1/oracle_visions` | `oracle_visions#index` | 🌿 Forester | AI-прогнози та SCC-врожайність |
 | 68 | POST | `/api/v1/oracle_visions/simulate` | `oracle_visions#simulate` | 👑 Admin | Запустити Lorenz-симуляцію |
