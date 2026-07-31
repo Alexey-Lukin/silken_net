@@ -313,6 +313,3 @@ Slashing::CauseEvidence.new(cluster).positive_a?   # → true (ворота ві
 - **Repaired-`build_failed`** (пізній rebuild вдався — `repair!` → пін): root живе off-chain-only, chain на той мінт уже поїхав zero32 — легально за семантикою «zero32 = без witness-клейму»; артефакт = off-chain доказ, аудитор бачить розбіжність чесно.
 - **Abandoned-`build_failed`** (repair неможливий: усі tx уже в інших батчах / вікна порожні — `abandon_repair!` → `superseded`): доказ невиправний, root лишається NULL, рядок виходить із `.reconcilable` (daily-backstop більше не чіпає). НЕ інцидент — dead-end слід; chain на той мінт уже поїхав zero32.
 - **zero32-мінт при непорожніх персистованих вікнах** (алерт `reason="build"`): тракт зламався, гроші течуть (fail-open за дизайном) — лагодити тракт, НЕ зупиняти мінт; вікна персистовані → пізній repair намагається відновити доказ (успіх/неможливість → два буллети вище).
-
----
-
