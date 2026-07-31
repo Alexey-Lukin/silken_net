@@ -700,17 +700,19 @@ jobs:
           FEATURE_TEST: "1"
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           REDIS_URL: redis://localhost:6379/0
-        # [TEST.7] `assets:precompile` тут — рівність CI та локального прогону, а
-        # НЕ умова роботи JS. Вимір 2026-07-31: importmap резолвиться з
-        # `app/javascript/**` і в чистому checkout, тож Stimulus/Turbo живі й без
-        # цього кроку (це робить фолбек у `spec/support/layout_asset_stubs.rb`,
-        # який тепер глушить лише реальний `Propshaft::MissingAssetError`).
-        # Несе крок інше: без зібраного Tailwind у сторінки НЕМА CSS, а отже
-        # `class="hidden"` нічого не ховає — Capybara вважає видимим те, чого
-        # користувач не бачить (напр. `#map_data_nodes`). Тобто без цього кроку
-        # тести на видимість дали б РІЗНИЙ результат локально й у CI, причому
-        # мовчки. Ціна ~1 c.
-        run: bin/rails db:test:prepare && bin/rails assets:precompile && bundle exec rspec spec/features
+        # [TEST.7] ⚠️ `assets:precompile` тут пробували й ЗНЯЛИ того ж дня —
+        # не додавай назад без нового виміру. Мотив був «без зібраного Tailwind
+        # `class="hidden"` не ховає, тож видимість розходиться з локальним
+        # прогоном», і він ХИБНИЙ: Tailwind тут збирається ДВІЧІ ще до цього
+        # рядка — `bin/rails tailwindcss:build` у спільній дії
+        # `setup-rails-test`, і вдруге через `db:test:prepare`, який гем
+        # enhance-ить тим самим таском. Вимір, що нібито це доводив, насправді
+        # міряв наявність `app/assets/builds/tailwind.css`, а не precompile.
+        # Ціна ж реальна: манифест перемикає Propshaft на Static-резолвер, тож
+        # ця джоба стала б відрізнятись від головної (яка ганяє ті самі
+        # `spec/features` під Dynamic), а протухлий дайджест давав би 404 на
+        # модуль — тобто «Stimulus мовчки мертвий» під виглядом падіння тесту.
+        run: bin/rails db:test:prepare && bundle exec rspec spec/features
 
       - name: Keep screenshots from failed feature tests
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

@@ -145,6 +145,24 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       expect(data["scc_balance"].to_d).to eq(wallet.scc_balance)
       expect(data["available_balance"].to_d).to eq(wallet.available_balance)
     end
+
+    # [SEC.25] `balance?` делегує `show?`, тобто захист СПІЛЬНИЙ — і саме тому
+    # доказ був лише в `show`, а тут його не було: контролер вантажить запис голим
+    # `Wallet.find(params[:id])` у ВСІХ трьох екшенах, тож будь-яке звуження, зроблене
+    # у `show?`, мовчки визначає й ці два. Пін на екшен, а не на політику: класифікація
+    # по ФАЙЛУ склеїла б їх із `show` і показала б поверхню покритою.
+    context "when the wallet belongs to another organization" do
+      let(:other_tree) { create(:tree, cluster: create(:cluster, organization: create(:organization))) }
+      let!(:foreign_wallet) { other_tree.wallet || create(:wallet, tree: other_tree) }
+
+      it "denies the balance read in both formats" do
+        get "/api/v1/wallets/#{foreign_wallet.id}/balance", headers: headers, as: :json
+        expect(response).to have_http_status(:forbidden)
+
+        get "/api/v1/wallets/#{foreign_wallet.id}/balance", headers: headers.merge("Accept" => "text/html")
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
   end
 
   describe "GET /api/v1/wallets/:id/metadata" do
@@ -165,6 +183,27 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       expect(data).to include("id", "crypto_public_address", "locked_balance", "available_balance", "esg_retired_balance", "network")
       expect(data["network"]).to eq("Polygon PoS (Mainnet)")
       expect(data["crypto_public_address"]).to eq(wallet.crypto_public_address)
+    end
+
+    # [SEC.25] Дзеркало піна на `balance` — і тут ставка вища: цей екшен віддає
+    # `crypto_public_address` чужої організації, тобто адресу гаманця на публічному
+    # ланцюзі. Захист той самий (`metadata?` → `show?`), доказ доти був відсутній.
+    context "when the wallet belongs to another organization" do
+      let(:other_tree) { create(:tree, cluster: create(:cluster, organization: create(:organization))) }
+      let!(:foreign_wallet) { other_tree.wallet || create(:wallet, tree: other_tree) }
+
+      it "denies the metadata read in both formats" do
+        get "/api/v1/wallets/#{foreign_wallet.id}/metadata", headers: headers, as: :json
+        expect(response).to have_http_status(:forbidden)
+        # ⚠️ НЕ `not_to include(foreign_wallet.crypto_public_address)`: гаманець
+        # створює колбек `Tree#build_default_wallet`, а не фабрика, тож адреса там
+        # `nil` → `.to_s` = `""` → `include("")` істинне ЗАВЖДИ, і пін падав би
+        # незалежно від поведінки коду. Пінимо відсутність корисного навантаження.
+        expect(response.parsed_body).not_to have_key("data")
+
+        get "/api/v1/wallets/#{foreign_wallet.id}/metadata", headers: headers.merge("Accept" => "text/html")
+        expect(response).to have_http_status(:forbidden)
+      end
     end
   end
 end
