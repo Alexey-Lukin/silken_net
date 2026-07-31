@@ -289,11 +289,11 @@ dependent: :restrict_with_error`, а перемикання контексту *
 
 ## A.6 Pagination
 
-### 23. `mock_pagy(last: 3)` для тестування пагінації
+### 24. `mock_pagy(last: 3)` для тестування пагінації
 `last: 1` — пагінація не рендериться (Pagination returns early).
 Завжди використовуй `last: 3` або вище.
 
-### 24. Тестуй і наявність, і відсутність пагінації
+### 25. Тестуй і наявність, і відсутність пагінації
 ```ruby
 describe "pagination" do
   it "renders pagination when pagy.last > 1" do ...
@@ -305,7 +305,7 @@ end
 
 ## A.7 Performance & DRY
 
-### 25. Один `let(:html)` на describe-блок
+### 26. Один `let(:html)` на describe-блок
 Не рендери компонент у кожному `it`. Шаріть через `let`.
 ```ruby
 describe "header" do
@@ -316,12 +316,12 @@ describe "header" do
 end
 ```
 
-### 26. Не дублюй mock helpers між спеками одного namespace
+### 27. Не дублюй mock helpers між спеками одного namespace
 Якщо `Trees::Show` і `Trees::Index` шарять `mock_tree` — DRY це не потрібно.
 Кожна спека автономна. Дублювання моків між файлами — ОК.
 DRY застосовується ВСЕРЕДИНІ одного файлу.
 
-### 27. Не тестуй дочірні компоненти через батьківські
+### 28. Не тестуй дочірні компоненти через батьківські
 ```ruby
 # ❌ Trees::Index spec не повинен тестувати деталі Pagination
 # ✅ Trees::Index spec перевіряє "pagination renders", деталі — в Pagination spec
@@ -331,10 +331,10 @@ DRY застосовується ВСЕРЕДИНІ одного файлу.
 
 ## A.8 Документація та стиль
 
-### 28. `# frozen_string_literal: true` + `require "rails_helper"` — завжди
+### 29. `# frozen_string_literal: true` + `require "rails_helper"` — завжди
 Перші два рядки кожного файлу. Без виключень.
 
-### 29. Опис `it` — англійською, декларативно
+### 30. Опис `it` — англійською, декларативно
 ```ruby
 # ✅
 it "renders the gateway UID" do
@@ -346,7 +346,7 @@ it "should render gateway UID" do
 it "test that status works" do
 ```
 
-### 30. Мінімум 8 examples на компонент
+### 31. Мінімум 8 examples на компонент
 Менше — означає недостатнє покриття. Виняток: тривіальні wrapper-компоненти
 (BalanceFrame) можуть мати 5-7.
 
@@ -361,9 +361,9 @@ it "test that status works" do
 - [ ] Assertions через `include`, не повні HTML-рядки (BP #16-18)
 - [ ] Gaia токени в shared components (BP #19)
 - [ ] Turbo frame/stream перевірено (BP #21-22)
-- [ ] Пагінація з `mock_pagy(last: 3)` (BP #23-24)
-- [ ] `let(:html)` шариться в describe-блоці (BP #25)
-- [ ] Мінімум 8 examples (BP #30)
+- [ ] Пагінація з `mock_pagy(last: 3)` (BP #24-25)
+- [ ] `let(:html)` шариться в describe-блоці (BP #26)
+- [ ] Мінімум 8 examples (BP #31)
 
 ---
 
