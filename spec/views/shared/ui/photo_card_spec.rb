@@ -3,13 +3,15 @@
 
 require "rails_helper"
 
-# Stub ActiveStorage and route helpers that require real blobs/routes during rendering.
-unless Views::Shared::UI::PhotoCard.method_defined?(:_test_route_helpers_stubbed)
+# [UI.6] Стабимо лише БЛОБИ (мок-об'єкти замість файлів ActiveStorage) — маршрут-хелпер
+# кнопки видалення тепер справжній. Доти він теж був стабом, і саме тому не існував:
+# зайвий `as:` подвоював префікс, а стаб дописував відсутній метод, тож 500 на сторінці
+# запису з фото лишалась невидимою для всіх чотирьох спек цієї родини.
+unless Views::Shared::UI::PhotoCard.method_defined?(:_test_blob_helpers_stubbed)
   Views::Shared::UI::PhotoCard.prepend(Module.new do
-    def _test_route_helpers_stubbed = true
+    def _test_blob_helpers_stubbed = true
     def rails_blob_path(*, **) = "/rails/blobs/mock"
     def rails_representation_path(*, **) = "/rails/representations/mock"
-    def api_v1_maintenance_record_photo_path(*, **) = "/api/v1/maintenance_records/42/photos/1"
   end)
 end
 

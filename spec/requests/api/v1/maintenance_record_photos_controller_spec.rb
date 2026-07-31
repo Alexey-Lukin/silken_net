@@ -114,5 +114,92 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
       delete "/api/v1/maintenance_records/#{record.id}/photos/999", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
+
+    # [UI.6] Дзеркало `authorize_record_mutation!` із батьківського контролера, якого
+    # тут бракувало: коміт `52bae82b` закрив «Forester #2 within the same org» на
+    # `edit`/`update`/`verify` і не торкнувся вкладеного photos-шляху, що мутує ТОЙ
+    # САМИЙ запис. Наслідок був важчий за батьківський: там посадка мʼяка (403), тут
+    # дія ПРОХОДИЛА — безповоротно (`purge_later` → S3) і безслідно
+    # (`MaintenanceRecord` не `Auditable`).
+    #
+    # 🔴 Пін на ЕНКВЬЮ, не на `photos.count`: `queue_adapter = :test`, тож
+    # `ActiveStorage::PurgeJob` у сюїті не виконується — лічильник лишався б `1` і
+    # при 200, тобто був би зеленим на зламаній поведінці.
+    it "forbids deleting another forester's evidence photo (same org)" do
+      other_forester = create(:user, :forester, organization: organization)
+      other_record = MaintenanceRecord.create!(
+        maintainable: own_tree,
+        user: other_forester,
+        action_type: :inspection,
+        performed_at: 1.hour.ago,
+        notes: "Inspection authored by a different forester in the same org."
+      )
+      other_record.photos.attach(
+        io: StringIO.new("fake-image-data"),
+        filename: "evidence.jpg",
+        content_type: "image/jpeg"
+      )
+      photo = other_record.photos.first
+
+      expect do
+        delete "/api/v1/maintenance_records/#{other_record.id}/photos/#{photo.id}",
+               headers: headers, as: :json
+      end.not_to have_enqueued_job(ActiveStorage::PurgeJob)
+
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    # 🔴 Дзеркало прикладу вище В HTML, і саме воно несуче: кнопка «×» — це `button_to`
+    # з браузера, тож відмова йде HTML-шляхом. Пін на JSON лишався б зеленим, навіть якби
+    # гард віддавав форестеру сирий блоб замість сторінки ([SEC.25]-клас). Перевіряємо
+    # ЦІЛЬ редиректу — на запис, не на index: кнопка живе на `show`, і викидати з неї
+    # того, кому просто відмовили, було б регресом.
+    it "відмовляє в HTML-форматі редиректом на сам запис, а не JSON-блобом" do
+      other_forester = create(:user, :forester, organization: organization)
+      other_record = MaintenanceRecord.create!(
+        maintainable: own_tree,
+        user: other_forester,
+        action_type: :inspection,
+        performed_at: 1.hour.ago,
+        notes: "Inspection authored by a different forester in the same org."
+      )
+      other_record.photos.attach(
+        io: StringIO.new("fake-image-data"),
+        filename: "evidence.jpg",
+        content_type: "image/jpeg"
+      )
+      photo = other_record.photos.first
+
+      delete "/api/v1/maintenance_records/#{other_record.id}/photos/#{photo.id}",
+             headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to redirect_to(api_v1_maintenance_record_path(other_record))
+      expect(response.media_type).not_to eq("application/json")
+    end
+
+    it "lets an admin delete any record's photo within the organization" do
+      other_forester = create(:user, :forester, organization: organization)
+      other_record = MaintenanceRecord.create!(
+        maintainable: own_tree,
+        user: other_forester,
+        action_type: :inspection,
+        performed_at: 1.hour.ago,
+        notes: "Inspection that an administrator needs to curate afterwards."
+      )
+      other_record.photos.attach(
+        io: StringIO.new("fake-image-data"),
+        filename: "evidence.jpg",
+        content_type: "image/jpeg"
+      )
+      photo = other_record.photos.first
+
+      admin = create(:user, :admin, organization: organization)
+      admin_headers = { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" }
+
+      delete "/api/v1/maintenance_records/#{other_record.id}/photos/#{photo.id}",
+             headers: admin_headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+    end
   end
 end

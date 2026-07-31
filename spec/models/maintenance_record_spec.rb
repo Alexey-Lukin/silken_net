@@ -326,4 +326,44 @@ RSpec.describe MaintenanceRecord, type: :model do
       expect(build(:maintenance_record, :hardware_verified)).to be_valid
     end
   end
+
+  # [UI.6] Дім правила «хто може мутувати запис». Доти воно жило приватним методом
+  # контролера — тож ані UI, ані вкладений photos-контролер його не бачили, і обидва
+  # через це його не мали. Тут пінимо саму ФОРМУЛУ; що компонент її слухається —
+  # `spec/views`, що актор доїжджає з контролера — request-спеки.
+  describe "#mutable_by?" do
+    let(:organization) { create(:organization) }
+    let(:author) { create(:user, :forester, organization: organization) }
+    let(:record) { create(:maintenance_record, user: author) }
+
+    it "дозволяє авторові" do
+      expect(record.mutable_by?(author)).to be(true)
+    end
+
+    it "відмовляє іншому форестеру тієї ж організації" do
+      other = create(:user, :forester, organization: organization)
+
+      expect(record.mutable_by?(other)).to be(false)
+    end
+
+    it "дозволяє admin+ як override для аудиту" do
+      admin = create(:user, :admin, organization: organization)
+
+      expect(record.mutable_by?(admin)).to be(true)
+    end
+
+    it "відмовляє без актора (fail-closed)" do
+      expect(record.mutable_by?(nil)).to be(false)
+    end
+
+    # ⚠️ Свідома межа предиката, а не прогалина: приналежність тримає асоціативний скоуп
+    # у викликача (`acting_organization!.clusters` → `set_record`), тобто чужий запис до
+    # предиката просто не доїжджає. Пін фіксує КОНТРАКТ — хто кличе цей метод, той
+    # зобовʼязаний був дістати запис org-скоупленим запитом.
+    it "про організацію не питає — це обовʼязок викликача" do
+      foreign_admin = create(:user, :admin, organization: create(:organization))
+
+      expect(record.mutable_by?(foreign_admin)).to be(true)
+    end
+  end
 end

@@ -3,11 +3,20 @@
 
 module Maintenance
   class Show < ApplicationComponent
-    def initialize(record:, photos:, pagy_photos:)
-      @record      = record
-      @user        = record.user
-      @photos      = photos
-      @pagy_photos = pagy_photos
+    # [UI.6] `current_user` — лише для видимості МУТАЦІЙНИХ дій. Сторінку запису бачить
+    # будь-який форестер організації (`show` не гейтований), а `verify`/`edit` стоять за
+    # `authorize_record_mutation!` — тобто гард ГЛИБШЕ за дію, якою сторінка відкривається.
+    # Доти всі чотири кнопки рендерились кожному глядачеві.
+    #
+    # Дефолт `nil` fail-CLOSED, як у `Navigation::Sidebar` (`04_04 §6.4`). Наслідок для
+    # тестів: негативний приклад тут СЛІПИЙ до забутої проводки (без актора кнопки
+    # сховані від усіх), тож проводку стереже позитивний request-пін, не компонентний.
+    def initialize(record:, photos:, pagy_photos:, current_user: nil)
+      @record       = record
+      @user         = record.user
+      @photos       = photos
+      @pagy_photos  = pagy_photos
+      @current_user = current_user
     end
 
     def view_template
@@ -29,6 +38,14 @@ module Maintenance
     end
 
     private
+
+    # [UI.6] Диспетчер видимості, а не друге місце, де живе правило: єдине джерело —
+    # `MaintenanceRecord#mutable_by?`, той самий предикат, що читає гард контролера.
+    # Інакше UI став би другим домом формули «автор-або-admin» і розійшовся б із гардом
+    # тихо (кнопка є → 403, або кнопки нема → людина не може зробити те, на що має право).
+    def mutable?
+      @record.mutable_by?(@current_user)
+    end
 
     # =========================================================================
     # HEADER
@@ -63,7 +80,7 @@ module Maintenance
                    "hover:text-emerald-500 transition-all uppercase text-mini tracking-widest"
           ) { t(".header.new_record") }
 
-          unless @record.hardware_verified
+          if !@record.hardware_verified && mutable?
             button_to(
               t(".header.verify_hardware"),
               verify_api_v1_maintenance_record_path(@record),
@@ -85,8 +102,11 @@ module Maintenance
         h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-6") { t(".evidence.heading") }
 
         if @pagy_photos.count > 0
+          # `editable:` — не оформлення: воно вмикає кнопку видалення фотодоказу, дію
+          # за тим самим гардом «автор-або-admin». Доти стояло літеральне `true`, тож
+          # «×» бачив і МІГ натиснути кожен форестер організації.
           render Maintenance::PhotoGallery.new(
-            record: @record, photos: @photos, pagy: @pagy_photos, editable: true
+            record: @record, photos: @photos, pagy: @pagy_photos, editable: mutable?
           )
         else
           render_no_photos_placeholder
@@ -102,11 +122,13 @@ module Maintenance
             t(".evidence.trust_protocol", action_type: @record.action_type)
           end
         end
-        a(
-          href: edit_api_v1_maintenance_record_path(@record),
-          class: "inline-block mt-4 px-4 py-2 border border-emerald-900 text-emerald-900 " \
-                 "hover:border-emerald-500 hover:text-emerald-500 uppercase text-mini tracking-widest transition-all"
-        ) { t(".evidence.attach") }
+        if mutable?
+          a(
+            href: edit_api_v1_maintenance_record_path(@record),
+            class: "inline-block mt-4 px-4 py-2 border border-emerald-900 text-emerald-900 " \
+                   "hover:border-emerald-500 hover:text-emerald-500 uppercase text-mini tracking-widest transition-all"
+          ) { t(".evidence.attach") }
+        end
       end
     end
 
@@ -171,12 +193,14 @@ module Maintenance
           meta_row(t(".metadata.updated"), @record.updated_at&.strftime("%d.%m.%Y %H:%M"))
         end
 
-        div(class: "pt-4 border-t border-emerald-900/30") do
-          a(
-            href: edit_api_v1_maintenance_record_path(@record),
-            class: "block w-full text-center py-2 border border-emerald-900 text-mini uppercase " \
-                   "text-emerald-700 hover:border-emerald-500 hover:text-emerald-500 transition-all"
-          ) { t(".edit") }
+        if mutable?
+          div(class: "pt-4 border-t border-emerald-900/30") do
+            a(
+              href: edit_api_v1_maintenance_record_path(@record),
+              class: "block w-full text-center py-2 border border-emerald-900 text-mini uppercase " \
+                     "text-emerald-700 hover:border-emerald-500 hover:text-emerald-500 transition-all"
+            ) { t(".edit") }
+          end
         end
       end
     end
@@ -255,7 +279,7 @@ module Maintenance
           meta_row(t(".hardware.record_type"), @record.action_type.to_s.upcase)
         end
 
-        unless @record.hardware_verified
+        if !@record.hardware_verified && mutable?
           div(class: "pt-4 border-t border-emerald-900/30") do
             button_to(
               t(".hardware.verify_now"),

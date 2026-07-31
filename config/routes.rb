@@ -144,9 +144,13 @@ Rails.application.routes.draw do
       resources :maintenance_records, only: [ :index, :new, :create, :show, :edit, :update ] do
         patch :verify,  on: :member
         get   :photos,  on: :member
-        resources :photos, only: [ :destroy ],
-                  controller: "maintenance_record_photos",
-                  as: :maintenance_record_photo
+        # [UI.6] БЕЗ `as:` — вкладений `resources` уже дає префікс `api_v1_maintenance_record_`,
+        # тож `as: :maintenance_record_photo` доклеював його ВДРУГЕ й давав хелпер
+        # `api_v1_maintenance_record_maintenance_record_photo_path`, якого не кликав ніхто.
+        # Єдиний викликач (`PhotoCard#render_delete_button`) писався під природне ім'я і був
+        # правий — тобто ламав маршрут, а не компонент, і сторінка запису з будь-яким фото
+        # падала в `NoMethodError` → 500.
+        resources :photos, only: [ :destroy ], controller: "maintenance_record_photos"
       end
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

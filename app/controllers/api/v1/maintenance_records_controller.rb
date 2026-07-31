@@ -114,8 +114,11 @@ module Api
           format.html do
             render_dashboard(
               title: I18n.t("maintenance.show_title", id: @record.id),
+              # [UI.6] Актор проводиться явно: `show` бачить будь-який форестер org'и, а
+              # `verify`/`edit`/видалення фото стоять за `authorize_record_mutation!`.
               component: Maintenance::Show.new(
-                record: @record, photos: @photos, pagy_photos: @pagy_photos
+                record: @record, photos: @photos, pagy_photos: @pagy_photos,
+                current_user: current_user
               )
             )
           end
@@ -138,8 +141,12 @@ module Api
       # GET /api/v1/maintenance_records/:id/photos?page=N
       def photos
         @pagy_photos, @photos = pagy(@record.photos, items: 6)
+        # [UI.6] `editable:` проводиться сюди ТЕЖ, і це найпідступніший із сайтів: без
+        # нього дефолт `false` мовчки знімав би кнопку видалення на сторінках 2+ у самого
+        # АВТОРА — тобто fail-closed бив би не по чужому, а по тому, хто має право.
         render Maintenance::PhotosPage.new(
-          record: @record, photos: @photos, pagy: @pagy_photos
+          record: @record, photos: @photos, pagy: @pagy_photos,
+          editable: @record.mutable_by?(current_user)
         )
       end
 
@@ -212,9 +219,12 @@ module Api
       # [AUTHZ FIX]: Forester could edit/verify another forester's maintenance
       # record within the same org — the only check was `authorize_forester!`.
       # Restrict mutations to the author; admin+ keep the override for audit.
+      #
+      # [UI.6] Саму формулу перенесено в `MaintenanceRecord#mutable_by?`: доти вона жила
+      # приватним методом контролера, тож ані компонент (кнопки `verify`/`edit`), ані
+      # вкладений photos-контролер дістати її не могли — і обидва через це її не мали.
       def authorize_record_mutation!
-        return if current_user.admin_or_above?
-        return if @record.user_id == current_user.id
+        return if @record.mutable_by?(current_user)
 
         # [SEC.25] Усі три гейтовані екшени (`edit`/`update`/`verify`) мають HTML-шлях,
         # тож голий `render_forbidden` показував форестеру JSON-блоб замість відмови.

@@ -3,13 +3,12 @@
 
 require "rails_helper"
 
-# Ensure PhotoCard route helpers are stubbed for rendering through PhotosPage.
-unless Views::Shared::UI::PhotoCard.method_defined?(:_test_route_helpers_stubbed)
+# [UI.6] Лише блоб-стаби — маршрут-хелпер справжній (див. `photo_card_spec`).
+unless Views::Shared::UI::PhotoCard.method_defined?(:_test_blob_helpers_stubbed)
   Views::Shared::UI::PhotoCard.prepend(Module.new do
-    def _test_route_helpers_stubbed = true
+    def _test_blob_helpers_stubbed = true
     def rails_blob_path(*, **) = "/rails/blobs/mock"
     def rails_representation_path(*, **) = "/rails/representations/mock"
-    def api_v1_maintenance_record_photo_path(*, **) = "/api/v1/maintenance_records/42/photos/1"
   end)
 end
 

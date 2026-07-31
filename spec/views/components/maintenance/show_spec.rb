@@ -3,23 +3,20 @@
 
 require "rails_helper"
 
-# The Maintenance::Show component references `edit_api_v1_maintenance_record_path` but
-# the routes do not expose an :edit action for maintenance_records. We patch it here.
-unless Maintenance::Show.method_defined?(:edit_api_v1_maintenance_record_path)
-  Maintenance::Show.prepend(Module.new do
-    def edit_api_v1_maintenance_record_path(record = nil, **_opts)
-      "/api/v1/maintenance_records/#{record&.to_param}/edit"
-    end
-  end)
-end
-
-# Ensure PhotoCard route helpers are stubbed for rendering through PhotoGallery.
-unless Views::Shared::UI::PhotoCard.method_defined?(:_test_route_helpers_stubbed)
+# [UI.6] Стаби МАРШРУТ-ХЕЛПЕРІВ знято — вони підміняли справжню поверхню й через це
+# ховали живий дефект. Два різні випадки однієї шкоди:
+#   · `edit_api_v1_maintenance_record_path` — існує (`only: [… :edit …]`), тобто стаб
+#     маскував РЕАЛЬНИЙ маршрут, а його коментар стверджував протилежне;
+#   · `api_v1_maintenance_record_photo_path` — НЕ існував, бо зайвий `as:` подвоював
+#     префікс, і стаб дописував застосунку метод, якого в ньому не було: сторінка
+#     запису з фото падала в 500, а компонентні спеки лишались зелені.
+# Стаби ActiveStorage лишаються — вони підміняють БЛОБИ (мок-об'єкти замість файлів),
+# а не наші маршрути.
+unless Views::Shared::UI::PhotoCard.method_defined?(:_test_blob_helpers_stubbed)
   Views::Shared::UI::PhotoCard.prepend(Module.new do
-    def _test_route_helpers_stubbed = true
+    def _test_blob_helpers_stubbed = true
     def rails_blob_path(*, **) = "/rails/blobs/mock"
     def rails_representation_path(*, **) = "/rails/representations/mock"
-    def api_v1_maintenance_record_photo_path(*, **) = "/api/v1/maintenance_records/42/photos/1"
   end)
 end
 
@@ -51,7 +48,7 @@ RSpec.describe Maintenance::Show do
                   notes: "Routine check of the node connections.",
                   latitude: nil, longitude: nil, maintainable_type: "Tree",
                   maintainable: nil, user: nil, ews_alert_id: nil,
-                  created_at: 2.hours.ago, updated_at: 1.hour.ago)
+                  created_at: 2.hours.ago, updated_at: 1.hour.ago, mutable: true)
     rec_user = user || mock_user
     rec_maintainable = maintainable || mock_maintainable
 
@@ -76,12 +73,20 @@ RSpec.describe Maintenance::Show do
     r.define_singleton_method(:to_key) { [ id ] }
     r.define_singleton_method(:to_param) { id.to_s }
     r.define_singleton_method(:total_cost) { (labor_hours.to_f * 50) + parts_cost.to_f }
+    # [UI.6] Предикат — ВХІД компонентної спеки, а не її копія формули. Три шари пінять
+    # різне й не заміняють одне одного: формулу «автор-або-admin» — `spec/models`,
+    # послух компонента предикату — тут, а те, що актор реально доїжджає з контролера, —
+    # request-спека. Дублювати тут формулу означало б, що компонент і спека розійдуться
+    # з моделлю разом і тихо.
+    r.define_singleton_method(:mutable_by?) { |_actor| mutable }
     r
   end
 
-  def render_component(record:, photos:, pagy_photos:)
+  def render_component(record:, photos:, pagy_photos:, current_user: mock_user)
     ApplicationController.renderer.render(
-      component_class.new(record: record, photos: photos, pagy_photos: pagy_photos),
+      component_class.new(
+        record: record, photos: photos, pagy_photos: pagy_photos, current_user: current_user
+      ),
       layout: false
     )
   end
@@ -367,4 +372,63 @@ RSpec.describe Maintenance::Show do
       expect(out).not_to match(/drift_m|drift\s*[:=]/i)
     end
   end
+
+  # [UI.6] Гейтовані дії: сторінку бачить будь-який форестер організації, а мутації
+  # стоять за `authorize_record_mutation!` — тобто гард ГЛИБШЕ за дію, якою сторінка
+  # відкривається. Тут пінимо, що компонент СЛУХАЄТЬСЯ предиката; що предикат каже
+  # правду — `spec/models`, що актор доїжджає з контролера — request-спека.
+  describe "мутаційні дії за предикатом запису" do
+    it "показує verify/edit/attach тому, кому запис підвладний" do
+      out = render_component(record: mock_record(mutable: true), photos: [], pagy_photos: mock_pagy_photos)
+
+      expect(out).to include(verify_path, edit_path)
+    end
+
+    it "ховає їх від глядача, якому запис не підвладний" do
+      out = render_component(record: mock_record(mutable: false), photos: [], pagy_photos: mock_pagy_photos)
+
+      expect(out).not_to include(verify_path)
+      expect(out).not_to include(edit_path)
+    end
+
+    # 🔴 `editable:` галереї — не оформлення: воно вмикає кнопку видалення фотодоказу,
+    # дію за тим самим гардом. Доти стояло літеральне `true`, тож «×» бачив і МІГ
+    # натиснути кожен форестер організації — а видалення незворотне ([SEC.28]).
+    #
+    # ⚠️ Фото тут СПРАВЖНЄ (не лише `pagy.count`): із порожнім `photos:` галерея не має
+    # по чому ітерувати, жодної `PhotoCard` не виникає — і `not_to include` стає істинним
+    # при будь-якому `editable`. Перша редакція цього приклада була саме такою й пережила
+    # мутацію фільтра зеленою; тобто пін вимірював не те, чого стосувалась його назва.
+    it "не пропонує видалення фотодоказу тому, кому запис не підвладний" do
+      out = render_component(
+        record: mock_record(mutable: false), photos: [ mock_photo ],
+        pagy_photos: mock_pagy_photos(count: 1)
+      )
+
+      expect(out).not_to include("/photos/")
+    end
+
+    it "пропонує видалення фотодоказу тому, кому запис підвладний" do
+      out = render_component(
+        record: mock_record(mutable: true), photos: [ mock_photo ],
+        pagy_photos: mock_pagy_photos(count: 1)
+      )
+
+      expect(out).to include("/photos/")
+    end
+  end
+
+  def mock_photo
+    photo = OpenStruct.new(
+      id: 99,
+      filename: ActiveStorage::Filename.new("evidence.jpg"),
+      byte_size: 1_024_000,
+      representable?: true
+    )
+    photo.define_singleton_method(:variant) { |_style| "variant_thumb" }
+    photo
+  end
+
+  def verify_path = "/api/v1/maintenance_records/7/verify"
+  def edit_path   = "/api/v1/maintenance_records/7/edit"
 end

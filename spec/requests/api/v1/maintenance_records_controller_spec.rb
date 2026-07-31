@@ -248,6 +248,65 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
     end
   end
 
+  # [UI.6] Єдиний приклад у дереві, що рендерить сторінку запису З ФОТО справжнім HTTP.
+  # Доти галерея існувала лише в компонентних спеках, а ті `prepend`-ять модуль, який
+  # ВИЗНАЧАЄ маршрут-хелпер кнопки видалення — тобто дописують застосунку метод, якого
+  # в ньому немає. Через це `NoMethodError` на живому шляху лишався невидимим: спеки
+  # перевіряли світ, у якому баг неможливий.
+  describe "GET /api/v1/maintenance_records/:id (HTML, запис із фотодоказом)" do
+    let(:record) do
+      MaintenanceRecord.create!(
+        maintainable: own_tree,
+        user: forester,
+        action_type: :inspection,
+        performed_at: 1.hour.ago,
+        notes: "Routine inspection with photographic evidence attached."
+      )
+    end
+
+    # 🔴 Пін на ПРОВОДКУ актора, і він мусить бути ПОЗИТИВНИЙ. Дефолт `current_user: nil`
+    # fail-closed, тож забута проводка ховає кнопки від УСІХ — і негативний приклад
+    # («чужому не видно») лишається зеленим на зламаному дроті. Компонентна спека теж
+    # безсила: вона конструює компонент повз контролер, тобто проводки не бачить.
+    it "проводить актора у сторінку: автор бачить свої мутаційні дії" do
+      get "/api/v1/maintenance_records/#{record.id}",
+          headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+
+      expect(response.body).to include(verify_api_v1_maintenance_record_path(record))
+      expect(response.body).to include(edit_api_v1_maintenance_record_path(record))
+    end
+
+    # Найпідступніший сайт проводки: `editable:` тут окремий kwarg із дефолтом `false`,
+    # тож без нього автор мовчки втрачав би кнопку видалення на сторінках 2+ після
+    # «Load more» — fail-closed бив би саме по тому, хто має право.
+    it "проводить право у Turbo-фрейм пагінації фото" do
+      record.photos.attach(
+        io: StringIO.new("fake-image-data"),
+        filename: "evidence.jpg",
+        content_type: "image/jpeg"
+      )
+
+      get "/api/v1/maintenance_records/#{record.id}/photos",
+          headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+
+      expect(response.body).to include("/photos/")
+    end
+
+    it "рендерить галерею доказів, а не падає на маршрут-хелпері" do
+      record.photos.attach(
+        io: StringIO.new("fake-image-data"),
+        filename: "evidence.jpg",
+        content_type: "image/jpeg"
+      )
+
+      get "/api/v1/maintenance_records/#{record.id}",
+          headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq("text/html")
+    end
+  end
+
   context "with format.html responses" do
     let(:html_headers) do
       { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
