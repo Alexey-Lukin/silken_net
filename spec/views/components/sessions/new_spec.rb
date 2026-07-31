@@ -49,25 +49,15 @@ RSpec.describe Sessions::New do
     end
   end
 
-  describe "OAuth provider buttons" do
-    it "renders Google provider button" do
-      expect(html).to include("Google")
-    end
-
-    it "renders Facebook provider button" do
-      expect(html).to include("Facebook")
-    end
-
-    it "renders LinkedIn provider button" do
-      expect(html).to include("LinkedIn")
-    end
-
-    it "renders Twitter provider button" do
-      expect(html).to include("Twitter")
-    end
-
-    it "renders provider auth paths" do
-      expect(html).to include("/auth/google_oauth2")
+  # 🔴 Тут стояли пʼять прикладів, які пінили ЧОТИРИ кнопки в 404 — включно з
+  # прямим `include("/auth/google_oauth2")`, тобто спека стверджувала існування
+  # цілі, якої в маршрутах немає (і гема OmniAuth теж). Interim-присуд ARCH.69
+  # («сховати 404-кнопки до дротування + ключів») ратифіковано 2026-07-16 і
+  # застосовано лише до `AccountSecurity::Show` — сюди коміт не дійшов, а пункт
+  # рахувався закритим. Пін тепер стереже САМ interim, а не його порушення.
+  describe "OAuth provider buttons (ARCH.69 interim: hidden until wired)" do
+    it "renders no dead /auth/:provider targets" do
+      expect(html).not_to include("/auth/")
     end
   end
 

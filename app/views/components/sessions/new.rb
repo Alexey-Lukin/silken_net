@@ -97,28 +97,14 @@ module Sessions
       end
     end
 
+    # [ARCH.69] Interim-stub — ДРУГИЙ сайт того самого рішення. OmniAuth не
+    # задротований (гемів і роуту `/auth/:provider` немає), тож чотири провайдер-
+    # кнопки на сторінці входу вели в 404. Дзеркало `AccountSecurity::Show
+    # #render_available_providers`, яке зробили ще 2026-07-16 — сюди той коміт не
+    # дійшов, і пункт лишився позначеним закритим при живій половині. Повне тіло —
+    # у git; повертається разом із дротуванням + ключами.
     def render_social_providers
-      div(class: "space-y-4 pt-4 border-t border-gaia-border") do
-        p(class: "text-mini uppercase tracking-widest text-gaia-text-subtle text-center") { t(".provider_separator") }
-
-        div(class: "grid grid-cols-2 gap-3") do
-          provider_button("google_oauth2", "Google", "🔵")
-          provider_button("facebook", "Facebook", "🟦")
-          provider_button("linkedin", "LinkedIn", "🔷")
-          provider_button("twitter", "Twitter", "🐦")
-        end
-      end
-    end
-
-    def provider_button(provider, label, icon)
-      a(
-        href: "/auth/#{provider}",
-        aria_label: t(".provider_aria", provider: label),
-        class: "flex items-center justify-center gap-2 py-3 border border-gaia-border-strong text-gaia-text-muted text-tiny uppercase tracking-widest hover:border-gaia-primary hover:text-gaia-text hover:bg-gaia-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-all"
-      ) do
-        span(aria_hidden: "true") { icon }
-        span { label }
-      end
+      nil
     end
 
     def render_footer_seal
