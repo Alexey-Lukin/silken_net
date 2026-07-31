@@ -37,8 +37,13 @@ RSpec.describe Contracts::Index do
     c
   end
 
-  def mock_stats(total_contracted: 50_000, total_minted: 1234.5, avg_health: 87)
-    { total_contracted: total_contracted, total_minted: total_minted, avg_health: avg_health }
+  # ⚠️ Ключі — це КОНТРАКТ із `Api::V1::ContractsController#index`, а не вигадка спеки.
+  # Доти тут стояв `avg_health:`, якого контролер не кладе ніде: фікстура вигадувала
+  # рівно той ключ, що читав зламаний компонент, тож обидві половини узгоджувались
+  # між собою й лишались зеленими, поки картка рендерила голе «%» ([UI.7]).
+  # `cluster_health` — шкала 0..1 (`health_index` = 1.0 - stress_index), відсоток робить в'ю.
+  def mock_stats(total_contracted: 50_000, total_minted: 1234.5, cluster_health: 0.873)
+    { total_contracted: total_contracted, total_minted: total_minted, cluster_health: cluster_health }
   end
 
   def render_component(contracts:, stats:, pagy:)
@@ -70,8 +75,12 @@ RSpec.describe Contracts::Index do
       expect(html).to include("Network Health")
     end
 
-    it "displays the avg_health value with percent" do
-      expect(html).to include("87%")
+    # Один пін тримає ОБИДВІ осі, і це виміряно двома мутаціями: підміна ключа
+    # (`avg_health`) і зняття множника (`* 100`) червонять саме його. Негативна
+    # половина `not_to include("0.873%")` тут була б декорацією — вона падає рівно
+    # на тих самих мутаціях і не додає жодної, тому її знято.
+    it "renders cluster_health as a percentage, not the raw 0..1 index" do
+      expect(html).to include("87.3%")
     end
   end
 

@@ -8,7 +8,11 @@ RSpec.describe Dashboard::Home do
   # so we render under :en across this file.
   around { |ex| I18n.with_locale(:en) { ex.run } }
 
-  def mock_stats(health_avg: 92, active_trees: 38, total_trees: 40,
+  # ⚠️ Значення — контракт із `Api::V1::DashboardController#index`, не вигадка спеки.
+  # `health_avg` там = `org.clusters.average(:health_index).to_f.round(2)`, тобто
+  # шкала 0..1. Доти фікстура підставляла `92` — ключ правильний, ШКАЛА вигадана,
+  # і саме тому «0%» на живій головній сторінці лишалось невидимим ([UI.7]).
+  def mock_stats(health_avg: 0.92, active_trees: 38, total_trees: 40,
                  total_scc: "1250 SCC", avg_voltage: 3800)
     {
       trees: { health_avg: health_avg, active: active_trees, total: total_trees },

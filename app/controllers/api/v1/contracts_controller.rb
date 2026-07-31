@@ -108,10 +108,14 @@ module Api
       end
 
       # [ОПТИМІЗАЦІЯ]: SQL агрегація для вибірки контрактів (joins + average)
+      #
+      # Шкала — 0..1, як у `health_index` (`1.0 - stress_index`, `04_01 §3`), і як у
+      # сусіднього `calculate_cluster_health`. Доти два fallback'и стояли на 100/100.0,
+      # тобто ОДИН метод повертав дві різні шкали; сама середня — завжди 0..1, тож
+      # «100» не було ні досяжним максимумом, ні нейтральним дефолтом. Обидва гарди
+      # надлишкові: `average` на порожній релації вже віддає nil.
       def calculate_cluster_health_for_scope(contracts)
-        return 100 if contracts.empty?
-        # Розрахунок середнього здоров'я через SQL для уникнення N+1 та забиття пам'яті
-        (contracts.joins(:cluster).average("clusters.health_index") || 100.0).round(1)
+        contracts.joins(:cluster).average("clusters.health_index")&.to_f || 1.0
       end
 
       # [DYNAMIC PRICE]: Заміна хардкоду на Oracle Service

@@ -50,8 +50,16 @@ module Contracts
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
         render Views::Shared::UI::StatCard.new(label: t(".stats.portfolio_capital"), value: "#{@stats[:total_contracted].to_f.round(2)} SCC", sub: t(".stats.total_injected"))
         render Views::Shared::UI::StatCard.new(label: t(".stats.biogenic_yield"), value: "#{@stats[:total_minted].to_f.round(2)} SCC", sub: t(".stats.total_minted"))
-        render Views::Shared::UI::StatCard.new(label: t(".stats.network_health"), value: "#{@stats[:avg_health]}%", sub: t(".stats.portfolio_avg"))
+        render Views::Shared::UI::StatCard.new(label: t(".stats.network_health"), value: "#{network_health_percent}%", sub: t(".stats.portfolio_avg"))
       end
+    end
+
+    # Контролер кладе `cluster_health` — те саме ім'я, що в `show` і `stats`; доти тут
+    # читалось `avg_health`, якого не існує, тож картка рендерила голе «%».
+    # Шкала джерела — 0..1 (`health_index`), у відсоток переводить в'ю: «%» — форма
+    # подачі, а не одиниця даних.
+    def network_health_percent
+      (@stats[:cluster_health].to_f * 100).round(1)
     end
 
     def render_contract_row(contract)

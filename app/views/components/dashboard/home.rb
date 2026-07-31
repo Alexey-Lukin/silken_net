@@ -14,7 +14,12 @@ module Dashboard
       div(class: "space-y-10 animate-in fade-in duration-1000") do
         # Ряд головних метрик (The Four Pillars)
         div(class: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6") do
-          render Views::Shared::UI::StatCard.new(label: t(".stats.forest_vitality"), value: "#{@stats[:trees][:health_avg].to_i}%")
+          # `health_avg` — середнє `health_index`, шкала 0..1 (`04_01 §3`). Доти тут
+          # стояло `.to_i`, тобто 0.92 → **0**: здорова організація бачила «0%»
+          # життєздатності на головній сторінці. Переведення у відсоток робить в'ю —
+          # так само, як `clusters/show`, `clusters/item`, `organizations/show`,
+          # `contracts/show`.
+          render Views::Shared::UI::StatCard.new(label: t(".stats.forest_vitality"), value: "#{(@stats[:trees][:health_avg].to_f * 100).round}%")
           render Views::Shared::UI::StatCard.new(label: t(".stats.active_soldiers"), value: @stats[:trees][:active], sub: "/ #{@stats[:trees][:total]}")
           render Views::Shared::UI::StatCard.new(label: t(".stats.carbon_treasury"), value: @stats[:economy][:total_scc], sub: "SCC")
           render Views::Shared::UI::StatCard.new(
