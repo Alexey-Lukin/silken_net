@@ -139,7 +139,7 @@ RSpec.describe Maintenance::Form do
   describe "edit form with existing photos" do
     let(:record) { create(:maintenance_record) }
 
-    it "renders existing photo gallery in edit mode" do
+    def render_with_photo
       photo = OpenStruct.new(
         filename: ActiveStorage::Filename.new("existing.jpg"),
         byte_size: 500_000,
@@ -153,11 +153,32 @@ RSpec.describe Maintenance::Form do
       original_new = Pagy.method(:new)
       Pagy.define_singleton_method(:new) { |**_kwargs| mock_pg }
       begin
-        html = render_component(record: record, existing_photos: [ photo ])
-        expect(html).to include("Edit Intervention Record")
+        render_component(record: record, existing_photos: [ photo ])
       ensure
         Pagy.define_singleton_method(:new, original_new)
       end
+    end
+
+    it "renders existing photo gallery in edit mode" do
+      html = render_with_photo
+      expect(html).to include("Edit Intervention Record")
+      # Доти приклад із ЦІЄЮ назвою асертив лише заголовок форми — тобто лишався
+      # зеленим і з галереєю, і без неї.
+      expect(html).to include("existing.jpg")
+    end
+
+    # 🔴 Інваріант, не компонування: галерея мусить стояти ПОЗА формою запису.
+    # Вкладений `<form>` (кожне фото — `button_to`) HTML5-парсер викидає, а його
+    # `_method=delete` переносить у ЗОВНІШНЮ форму, де при Rack-парсингу виграє
+    # ОСТАННЄ значення — і «Update» летить у `DELETE`, якого в маршрутах немає.
+    # Міряємо тим самим spec-сумісним парсером, яким дефект і знайдено; звичайний
+    # `include`-асерт цього класу не бачить у принципі.
+    it "keeps the photo gallery outside the record form (no nested <form> hijacking _method)" do
+      doc = Nokogiri::HTML5(render_with_photo)
+
+      record_form = doc.css("form").find { |f| f["action"].to_s.match?(%r{/maintenance_records/\d+\z}) }
+      expect(record_form).to be_present
+      expect(record_form.css('input[name="_method"]').map { |i| i["value"] }).to eq([ "patch" ])
     end
   end
 end

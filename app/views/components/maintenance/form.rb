@@ -11,6 +11,8 @@ module Maintenance
 
     def view_template
       div(class: "max-w-3xl mx-auto animate-in zoom-in duration-500") do
+        render_existing_photos
+
         form_with(
           model: [ :api, :v1, @record ],
           multipart: true,
@@ -108,15 +110,6 @@ module Maintenance
               t(".evidence.hint")
             end
 
-            # Існуючі фото при редагуванні (перша сторінка, без load more в формі)
-            if @editing && @existing_photos.any?
-              pagy   = Pagy.new(count: @existing_photos.size, items: 6, page: 1)
-              render Maintenance::PhotoGallery.new(
-                record: @record, photos: @existing_photos, pagy: pagy, editable: true
-              )
-              div(class: "mt-3")
-            end
-
             # Direct upload — файли йдуть напряму на S3, не через Rails
             field_container(t(".evidence.attach_photos")) do
               f.file_field :photos,
@@ -177,6 +170,34 @@ module Maintenance
     end
 
     private
+
+    # Галерея стоїть ПОЗА `form_with`, і це несуче, а не компонування.
+    #
+    # Кожна картка фото рендерить `button_to`, тобто `<form>` усередині `<form>`.
+    # HTML такого не допускає: парсер викидає внутрішню форму, а її дітей —
+    # `_method=delete` і токен — переносить у ЗОВНІШНЮ. Далі зовнішня форма несе
+    # `_method` двічі («patch», «delete»), і при Rack-парсингу виграє останнє.
+    # Наслідок був подвійний: кнопка «Update» летіла в `DELETE /maintenance_records/:id`,
+    # якого не існує (`only:` без `:destroy`) — тобто форма редагування запису
+    # З БУДЬ-ЯКИМ ФОТО не зберігалась узагалі, — а «×» сабмітив зовнішню форму
+    # замість власної. Виміряно spec-сумісним HTML5-парсером, не виведено. [UI.7]
+    #
+    # ⚠️ `editable: true` літералом безпечний ТРАНЗИТИВНО, а не сам собою: галерею
+    # дістають лише `edit` і невдалий `update`, обидва за `authorize_record_mutation!`
+    # (= `mutable_by?`). Незахищеного шляху рендеру немає; вирівняти форму на явний
+    # предикат, як у `Maintenance::Show`, — гігієна [UI.6], не діра.
+    def render_existing_photos
+      return unless @editing && @existing_photos.any?
+
+      div(class: "mb-8") do
+        render Maintenance::PhotoGallery.new(
+          record: @record,
+          photos: @existing_photos,
+          pagy: Pagy.new(count: @existing_photos.size, items: PhotoGallery::PHOTOS_PER_PAGE, page: 1),
+          editable: true
+        )
+      end
+    end
 
     def render_form_header(f)
       div(class: "flex justify-between items-center mb-2") do
