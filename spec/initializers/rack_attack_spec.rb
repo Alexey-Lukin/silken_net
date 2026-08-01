@@ -126,6 +126,25 @@ RSpec.describe "Rack::Attack", type: :request do
 
       expect(response).to have_http_status(:too_many_requests)
     end
+
+    # 🔴 [SEC.29] Фінальний крок ланцюга зареєстровано як **PATCH** (`routes.rb`), а
+    # правило доти читало лише `request.post?` — тобто єдиний крок, що реально
+    # МІНЯЄ пароль, не лімітувався взагалі. Пін саме на дієслові: сусідній
+    # `account_security`-throttle цю вісь уже знає (його список — `%w[PATCH DELETE]`),
+    # тож розходження сиділо в межах одного файла.
+    #
+    # ⚠️ Цей приклад — не дублікат гейта `spec/security/path_literal_route_consistency`:
+    # той доводить, що ШЛЯХ живий, а цей — що ПРАВИЛО на нього реагує. Перший
+    # лишався зеленим на цьому дефекті, бо Rack::Attack працює до роутера.
+    it "throttles password-reset PATCHes, not just POSTs" do
+      11.times do
+        patch "/api/v1/reset_password",
+          params: { token: "irrelevant", user: { password: "x" } },
+          headers: { "REMOTE_ADDR" => "9.8.7.5" }
+      end
+
+      expect(response).to have_http_status(:too_many_requests)
+    end
   end
 
   # -----------------------------------------------------------------------

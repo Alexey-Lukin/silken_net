@@ -88,8 +88,15 @@ end
 # ---------------------------------------------------------------------------
 # 5. LOGIN / AUTH THROTTLE — protect sessions & passwords endpoints
 # ---------------------------------------------------------------------------
+# [SEC.29] Дієслова — обидва, і це не «про всяк випадок»: `reset_password`
+# зареєстровано як **PATCH** (`routes.rb`), тож умова `post?` мовчки виводила
+# з-під ліміту єдиний крок ланцюга, що реально МІНЯЄ пароль. Сусідній
+# `account_security`-throttle цю вісь уже знав (`%w[PATCH DELETE]`) — розходження
+# сиділо в межах одного файла. Over-inclusive тут безпечне: зайве дієслово на
+# живому шляху лише рахує запит, якого роутер однаково не прийме.
 Rack::Attack.throttle("logins/ip", limit: 10, period: 1.minute) do |request|
-  if request.path.match?(%r{\A/api/v1/(login|forgot_password|reset_password)\z}) && request.post?
+  if request.path.match?(%r{\A/api/v1/(login|forgot_password|reset_password)\z}) &&
+     (request.post? || request.patch?)
     request.ip
   end
 end
@@ -110,8 +117,13 @@ end
 # ---------------------------------------------------------------------------
 # 5a. M2M AUTH THROTTLE — prevent DID enumeration & Ed25519 DoS
 # ---------------------------------------------------------------------------
+# [SEC.29] Префікс, а не `==`: `/auth/m2m_token/refresh` — окремий POST-маршрут
+# ТІЄЇ САМОЇ Ed25519/DID-поверхні, тобто рівно те, від чого правило й ставили
+# («DID enumeration & Ed25519 DoS»), — а точне порівняння його не бачило. Клас
+# сусідній до дієслівного: там правило дивилось не на те дієслово, тут — не на
+# весь шлях, який саме́ ж і декларує захищати.
 Rack::Attack.throttle("m2m_auth/ip", limit: 15, period: 1.minute) do |request|
-  if request.path == "/api/v1/auth/m2m_token" && request.post?
+  if request.path.start_with?("/api/v1/auth/m2m_token") && request.post?
     request.ip
   end
 end
