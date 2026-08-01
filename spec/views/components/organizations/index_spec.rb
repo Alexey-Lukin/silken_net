@@ -92,8 +92,20 @@ RSpec.describe Organizations::Index do
       expect(html).to include("Switch acting context to GreenFund Ltd")
     end
 
-    it "вимикає Turbo на кнопці — інакше permanent-сайдбар лишиться з чужим лічильником" do
-      expect(html).to include('data-turbo="false"')
+    # [UI.11] Дзеркальна зміна 2026-08-01: доти цей приклад вимагав
+    # `data-turbo="false"` з причиною «інакше permanent-сайдбар лишиться з чужим
+    # лічильником». Причину знято — `data-turbo-permanent` більше не стоїть на
+    # сайдбарі, тож Turbo-візит віддає свіжу розмітку сам, і повне перезавантаження
+    # стало чистим надміром. Пін лишається, але з протилежним знаком: він стереже,
+    # щоб атрибут не повернувся «про всяк випадок», коли його підстава вже мертва.
+    #
+    # ⚠️ Ризик, який довелось перевірити окремо, бо він неочевидний: `switch` кличе
+    # `drop_open_sockets!` → `disconnect(reconnect: false)`. Джерело `actioncable`:
+    # `Subscriptions#add` кличе `ensureActiveConnection` → `connection.open()`, якщо
+    # зʼєднання неактивне — тобто новий `<turbo-cable-stream-source>` у заміненому
+    # body піднімає сокет сам, і живі оновлення не гинуть.
+    it "НЕ вимикає Turbo — підстава (permanent-сайдбар) знята разом з атрибутом" do
+      expect(html).not_to include('data-turbo="false"')
     end
 
     it "на поточному контексті показує маркер замість кнопки" do

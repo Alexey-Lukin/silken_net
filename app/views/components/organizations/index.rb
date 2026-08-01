@@ -79,21 +79,23 @@ module Organizations
         return
       end
 
-      # `turbo: "false"` обов'язковий: сайдбар несе `data-turbo-permanent`
-      # (`dashboard_layout.rb`), тож при Turbo-візиті він переживає навігацію разом
-      # зі своїм org-скоупленим лічильником тривог — і показав би число ПОПЕРЕДНЬОГО
-      # тенанта. Той самий патерн, що в `locale_switcher`: сесійний контекст із
-      # хрому міняють повним перезавантаженням.
+      # 🔴 [UI.11] `turbo: "false"` ЗНЯТО 2026-08-01 разом із його причиною. Тут доти
+      # стояло «обовʼязковий: сайдбар несе `data-turbo-permanent`, тож при Turbo-візиті
+      # він переживе навігацію разом зі своїм org-скоупленим лічильником і покаже число
+      # ПОПЕРЕДНЬОГО тенанта» — правда рівно доти, доки сайдбар був permanent. Атрибут
+      # із сайдбара знято, тож Turbo-візит тепер віддає свіжу розмітку сам, і повне
+      # перезавантаження було б чистим надміром.
       #
-      # ⚠️ Атрибут іде через `form:`, а не в `html_options`, і це не стиль: `button_to`
-      # кладе решту опцій на `<button>`, тоді як прецедент (`locale_switcher`) ставить
-      # його на `<form>`. Сьогодні працюють обидва (Turbo 8 перевіряє ще й submitter),
-      # але «той самий патерн» має бути тим самим НОСІЄМ, інакше збіг випадковий.
+      # ⚠️ Перевірено окремо, бо ризик був неочевидний: `switch` кличе
+      # `drop_open_sockets!` → `disconnect(reconnect: false)`, і без перезавантаження
+      # могло здатися, що живі оновлення помруть. Джерело `actioncable` каже інше —
+      # `Subscriptions#add` кличе `ensureActiveConnection`, а той робить
+      # `connection.open()`, якщо зʼєднання неактивне. Тобто новий
+      # `<turbo-cable-stream-source>` у заміненому body піднімає сокет сам.
       button_to(
         t(".switch"),
         switch_organization_path(org),
         method: :post,
-        form: { data: { turbo: "false" } },
         aria: { label: t(".switch_aria", name: org.name) },
         class: "text-mini uppercase tracking-widest border border-emerald-700 text-emerald-400 " \
                "px-3 py-1 hover:bg-emerald-600 hover:text-black transition-colors cursor-pointer " \

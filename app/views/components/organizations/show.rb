@@ -37,8 +37,9 @@ module Organizations
 
     private
 
-    # Дзеркало клітинки реєстру: маркер, коли вже тут, кнопка — коли ні. Носій
-    # `turbo: "false"` — `form:`, як у прецеденті `locale_switcher`.
+    # Дзеркало клітинки реєстру: маркер, коли вже тут, кнопка — коли ні.
+    # [UI.11] `turbo: "false"` знято разом із причиною — деталь у дзеркалі
+    # (`organizations/index.rb`).
     def render_context_action
       if @acting_organization&.id == @organization.id
         span(
@@ -52,7 +53,6 @@ module Organizations
         t(".switch"),
         switch_organization_path(@organization),
         method: :post,
-        form: { data: { turbo: "false" } },
         aria: { label: t(".switch_aria", name: @organization.name) },
         class: "text-mini uppercase tracking-widest border border-emerald-700 text-emerald-400 " \
                "px-3 py-1 hover:bg-emerald-600 hover:text-black transition-colors cursor-pointer " \
