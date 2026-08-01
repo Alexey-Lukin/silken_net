@@ -193,10 +193,24 @@ case "${1:-}" in
     [ -z "$out" ]
     ;;
   --genre)
-    for f in "$MEM_DIR"/*.md; do
+    # Journals are exempt HERE too, and the omission was not cosmetic: a journal
+    # is the sanctioned home of dated chronicle, so every hit it produced was
+    # false BY CONSTRUCTION — and for a while all of them were. A detector whose
+    # entire output is known-benign is one a reader learns to skim, which costs
+    # exactly the live hit it exists to surface. check_file already skips them;
+    # both stances must run the same test (the UNSTRUNG lesson, one level up).
+    # Prefix test via parameter expansion, NOT `case`: a `case` inside $( ) is
+    # the macOS bash-3.2 trap route_check already documents — and a syntax error
+    # here is total, because bash parses the whole file before running any
+    # stance, so a broken --genre silently disarms the PostToolUse hook too.
+    out=$(for f in "$MEM_DIR"/*.md; do
+      bn=$(basename "$f")
+      [ "${bn#log_}" != "$bn" ] && continue
       g=$(genre_count "$f"); sum=${g%% *}
-      [ "$sum" -ge "$GENRE_MIN" ] && printf '%3d  %-46s %s\n' "$sum" "$(basename "$f")" "${g##* }"
-    done | sort -rn
+      [ "$sum" -ge "$GENRE_MIN" ] && printf '%3d  %-46s %s\n' "$sum" "$bn" "${g##* }"
+    done | sort -rn)
+    printf '%s\n' "${out:-OK — no dated chronicle in a rule file (journals exempt by design)}"
+    [ -z "$out" ]
     ;;
   *)
     input=$(cat)
