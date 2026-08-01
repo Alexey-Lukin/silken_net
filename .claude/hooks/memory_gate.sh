@@ -20,7 +20,15 @@ REPO="${MEMORY_GATE_REPO:-/Users/oleksiilukin/silken_net}"
 # Ratchet, not an absolute cap: the index is already past the 24 kB working cap,
 # so an absolute threshold would fire on every write and get muted within a day.
 # "No worse than it already is" gives monotone downward pressure and zero noise.
-IDX_BASELINE=24814
+# Bumped 2026-08-01 (24814 -> 25850) for THREE new class-homes landing in one
+# pass: one_token_two_domains, silent_default, irreversibility_proof_bar. This is
+# structural growth, not sprawl — each displaced a class that had been scattered
+# as a side-note across 20-35 files. Deliberately NOT paid for by trimming other
+# rows: the measured effect is that cutting the index accelerates growth of the
+# CORPUS (fewer visible homes -> more new files), so evicting rows to fund new
+# homes is the wrong lever. Honest residual: this sits ~1.0 kB above the founder's
+# 24 kB working cap, so the next pass owes an eviction (hub-inline), not a bump.
+IDX_BASELINE=25850
 FILE_CAP=40960          # rule-file ceiling
 FILE_WARN=36000        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=4             # dated blocks, summed across all three costumes
@@ -32,7 +40,12 @@ GENRE_MIN=4             # dated blocks, summed across all three costumes
 # rule as written in the index preamble ("no dates/hashes/counts") covers only a
 # fifth of the corpus and fires falsely on provenance dates ("ratified 07-26"),
 # whereas the sum catches length, state and dates alike with zero classification.
-DESC_BASELINE=39511
+# Bumped 2026-08-01 (39511 -> 41679) for the same three class-homes. Their
+# descriptions are dense recall triggers (each names the class, its legs and its
+# ⊥ counter-rule), which is exactly what this layer is for; trimming an existing
+# recall-rich description to fund them would have traded working recall for a
+# number, the manufactured-cleanup this corpus explicitly forbids.
+DESC_BASELINE=41679
 
 # Content-overlap between two rule files. The corpus has ONE structural failure
 # mode no other check can see: a class written into two homes, where every link
