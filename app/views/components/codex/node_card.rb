@@ -15,7 +15,7 @@ module Codex
 
     def view_template
       a(
-        href: api_v1_codex_node_path(@node),
+        href: codex_node_path(@node),
         aria_label: t(".aria_label", title: @node.title_en),
         class: tokens(card_classes)
       ) do

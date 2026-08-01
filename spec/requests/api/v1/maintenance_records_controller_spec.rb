@@ -20,7 +20,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
     allow(EcosystemHealingWorker).to receive(:perform_async)
   end
 
-  describe "GET /api/v1/maintenance_records" do
+  describe "GET /maintenance_records" do
     let!(:own_record) do
       MaintenanceRecord.create!(
         maintainable: own_tree,
@@ -43,7 +43,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
     end
 
     it "returns only maintenance records from the user's organization" do
-      get "/api/v1/maintenance_records", headers: headers, as: :json
+      get "/maintenance_records", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
       record_ids = response.parsed_body["data"].map { |r| r["id"] }
@@ -52,7 +52,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
     end
 
     it "includes pagination metadata" do
-      get "/api/v1/maintenance_records", headers: headers, as: :json
+      get "/maintenance_records", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
       expect(response.parsed_body).to have_key("pagy")
@@ -60,7 +60,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
     end
 
     it "filters by action_type" do
-      get "/api/v1/maintenance_records", params: { action_type: "inspection" },
+      get "/maintenance_records", params: { action_type: "inspection" },
                                          headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       types = response.parsed_body["data"].map { |r| r["action_type"] }.uniq
@@ -69,7 +69,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
 
     it "filters by hardware_verified" do
       own_record.update!(hardware_verified: true)
-      get "/api/v1/maintenance_records", params: { verified: "1" },
+      get "/maintenance_records", params: { verified: "1" },
                                          headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       ids = response.parsed_body["data"].map { |r| r["id"] }
@@ -77,14 +77,14 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
     end
 
     it "filters by maintainable_type and maintainable_id" do
-      get "/api/v1/maintenance_records",
+      get "/maintenance_records",
           params: { maintainable_type: "Tree", maintainable_id: own_tree.id },
           headers: headers, as: :json
       expect(response).to have_http_status(:ok)
     end
 
     it "filters by date range (from/to)" do
-      get "/api/v1/maintenance_records",
+      get "/maintenance_records",
           params: { from: 2.days.ago.iso8601, to: Time.current.iso8601 },
           headers: headers, as: :json
       expect(response).to have_http_status(:ok)
@@ -95,21 +95,21 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
     # PG::InvalidDatetimeFormat (HTTP 500). Now it fails fast with 400.
     # =========================================================================
     it "rejects malformed `from` date with 400" do
-      get "/api/v1/maintenance_records",
+      get "/maintenance_records",
           params: { from: "yesterday" }, headers: headers, as: :json
       expect(response).to have_http_status(:bad_request)
       expect(response.parsed_body["error"]).to include("yesterday")
     end
 
     it "rejects malformed `to` date with 400" do
-      get "/api/v1/maintenance_records",
+      get "/maintenance_records",
           params: { to: "next-tuesday" }, headers: headers, as: :json
       expect(response).to have_http_status(:bad_request)
       expect(response.parsed_body["error"]).to include("next-tuesday")
     end
   end
 
-  describe "PATCH /api/v1/maintenance_records/:id/verify" do
+  describe "PATCH /maintenance_records/:id/verify" do
     let(:record) do
       MaintenanceRecord.create!(
         maintainable: own_tree,
@@ -121,7 +121,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
     end
 
     it "marks the record as hardware_verified" do
-      patch "/api/v1/maintenance_records/#{record.id}/verify",
+      patch "/maintenance_records/#{record.id}/verify",
             headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["hardware_verified"]).to be true
@@ -138,7 +138,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
         notes: "External inspection outside the organization boundary."
       )
 
-      patch "/api/v1/maintenance_records/#{other_record.id}/verify",
+      patch "/maintenance_records/#{other_record.id}/verify",
             headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
@@ -157,7 +157,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
         notes: "Inspection authored by a different forester in the same org."
       )
 
-      patch "/api/v1/maintenance_records/#{other_record.id}/verify",
+      patch "/maintenance_records/#{other_record.id}/verify",
             headers: headers, as: :json
       expect(response).to have_http_status(:forbidden)
       expect(other_record.reload.hardware_verified).to be_falsey
@@ -177,10 +177,10 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
         notes: "Inspection authored by a different forester in the same org."
       )
 
-      patch "/api/v1/maintenance_records/#{other_record.id}/verify",
+      patch "/maintenance_records/#{other_record.id}/verify",
             headers: headers.merge("Accept" => "text/html")
 
-      expect(response).to redirect_to(api_v1_maintenance_records_path)
+      expect(response).to redirect_to(maintenance_records_path)
       expect(response.media_type).not_to eq("application/json")
       expect(other_record.reload.hardware_verified).to be_falsey
     end
@@ -198,14 +198,14 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       admin = create(:user, :admin, organization: organization)
       admin_headers = { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" }
 
-      patch "/api/v1/maintenance_records/#{other_record.id}/verify",
+      patch "/maintenance_records/#{other_record.id}/verify",
             headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(other_record.reload.hardware_verified).to be true
     end
   end
 
-  describe "DELETE /api/v1/maintenance_records/:maintenance_record_id/photos/:id" do
+  describe "DELETE /maintenance_records/:maintenance_record_id/photos/:id" do
     let(:record) do
       MaintenanceRecord.create!(
         maintainable: own_tree,
@@ -225,7 +225,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       )
       photo = record.photos.first
 
-      delete "/api/v1/maintenance_records/#{record.id}/photos/#{photo.id}",
+      delete "/maintenance_records/#{record.id}/photos/#{photo.id}",
              headers: headers, as: :json
 
       expect(response).to have_http_status(:ok)
@@ -242,7 +242,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
         notes: "Inspection in a different organizational forest sector."
       )
 
-      delete "/api/v1/maintenance_records/#{other_record.id}/photos/999",
+      delete "/maintenance_records/#{other_record.id}/photos/999",
              headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
@@ -253,7 +253,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
   # ВИЗНАЧАЄ маршрут-хелпер кнопки видалення — тобто дописують застосунку метод, якого
   # в ньому немає. Через це `NoMethodError` на живому шляху лишався невидимим: спеки
   # перевіряли світ, у якому баг неможливий.
-  describe "GET /api/v1/maintenance_records/:id (HTML, запис із фотодоказом)" do
+  describe "GET /maintenance_records/:id (HTML, запис із фотодоказом)" do
     let(:record) do
       MaintenanceRecord.create!(
         maintainable: own_tree,
@@ -269,11 +269,11 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
     # («чужому не видно») лишається зеленим на зламаному дроті. Компонентна спека теж
     # безсила: вона конструює компонент повз контролер, тобто проводки не бачить.
     it "проводить актора у сторінку: автор бачить свої мутаційні дії" do
-      get "/api/v1/maintenance_records/#{record.id}",
+      get "/maintenance_records/#{record.id}",
           headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
 
-      expect(response.body).to include(verify_api_v1_maintenance_record_path(record))
-      expect(response.body).to include(edit_api_v1_maintenance_record_path(record))
+      expect(response.body).to include(verify_maintenance_record_path(record))
+      expect(response.body).to include(edit_maintenance_record_path(record))
     end
 
     # Найпідступніший сайт проводки: `editable:` тут окремий kwarg із дефолтом `false`,
@@ -286,7 +286,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
         content_type: "image/jpeg"
       )
 
-      get "/api/v1/maintenance_records/#{record.id}/photos",
+      get "/maintenance_records/#{record.id}/photos",
           headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
 
       expect(response.body).to include("/photos/")
@@ -307,12 +307,12 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
         content_type: "image/jpeg"
       )
 
-      get "/api/v1/maintenance_records/#{record.id}",
+      get "/maintenance_records/#{record.id}",
           headers: { "Authorization" => "Bearer #{other_token}", "Accept" => "text/html" }
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).not_to include(verify_api_v1_maintenance_record_path(record))
-      expect(response.body).not_to include(edit_api_v1_maintenance_record_path(record))
+      expect(response.body).not_to include(verify_maintenance_record_path(record))
+      expect(response.body).not_to include(edit_maintenance_record_path(record))
       expect(response.body).not_to include("/photos/")
     end
 
@@ -325,7 +325,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
         content_type: "image/jpeg"
       )
 
-      get "/api/v1/maintenance_records/#{record.id}/photos",
+      get "/maintenance_records/#{record.id}/photos",
           headers: { "Authorization" => "Bearer #{other_token}", "Accept" => "text/html" }
 
       expect(response).to have_http_status(:ok)
@@ -339,7 +339,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
         content_type: "image/jpeg"
       )
 
-      get "/api/v1/maintenance_records/#{record.id}",
+      get "/maintenance_records/#{record.id}",
           headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
 
       expect(response).to have_http_status(:ok)
@@ -363,30 +363,30 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
     end
 
     it "renders HTML for index" do
-      get "/api/v1/maintenance_records", headers: html_headers
+      get "/maintenance_records", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
 
     it "renders HTML for show" do
-      get "/api/v1/maintenance_records/#{record.id}", headers: html_headers
+      get "/maintenance_records/#{record.id}", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
 
     it "renders photos pagination page" do
-      get "/api/v1/maintenance_records/#{record.id}/photos", headers: html_headers
+      get "/maintenance_records/#{record.id}/photos", headers: html_headers
       expect(response).to have_http_status(:ok)
     end
 
     it "exercises the new maintenance record form path" do
-      get "/api/v1/maintenance_records/new", headers: html_headers
+      get "/maintenance_records/new", headers: html_headers
       # Phlex component may not fully render in test env, but code path is exercised
       expect(response.status).to be_in([ 200, 500 ])
     end
 
     it "exercises HTML error on create failure" do
-      post "/api/v1/maintenance_records",
+      post "/maintenance_records",
            params: { maintenance_record: { maintainable_type: "Tree", maintainable_id: own_tree.id, action_type: nil, performed_at: nil } },
            headers: html_headers
       # Code path exercised even if Phlex fails
@@ -394,7 +394,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
     end
 
     it "exercises HTML error on update failure" do
-      patch "/api/v1/maintenance_records/#{record.id}",
+      patch "/maintenance_records/#{record.id}",
             params: { maintenance_record: { action_type: nil } },
             headers: html_headers
       expect(response.status).to be_in([ 200, 422, 500 ])
@@ -402,7 +402,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
 
     it "rejects creating a record against another organization's tree (IDOR)" do
       expect {
-        post "/api/v1/maintenance_records", headers: headers, as: :json, params: {
+        post "/maintenance_records", headers: headers, as: :json, params: {
           maintenance_record: {
             maintainable_type: "Tree", maintainable_id: other_tree.id,
             action_type: :inspection, performed_at: Time.current
@@ -420,7 +420,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
     # =========================================================================
     it "rejects a maintainable_type outside {Tree, Gateway} (IDOR default-deny)" do
       expect {
-        post "/api/v1/maintenance_records", headers: headers, as: :json, params: {
+        post "/maintenance_records", headers: headers, as: :json, params: {
           maintenance_record: {
             maintainable_type: "User", maintainable_id: forester.id,
             action_type: :inspection, performed_at: Time.current
@@ -439,7 +439,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       foreign_alert = create(:ews_alert, cluster: other_cluster, tree: other_tree)
 
       expect {
-        post "/api/v1/maintenance_records", headers: headers, as: :json, params: {
+        post "/maintenance_records", headers: headers, as: :json, params: {
           maintenance_record: {
             maintainable_type: "Tree", maintainable_id: own_tree.id,
             ews_alert_id: foreign_alert.id,

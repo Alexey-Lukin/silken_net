@@ -25,7 +25,7 @@ RSpec.describe Errors::NoOrganization do
 
     it "renders a sign-out form" do
       expect(html).to include("Sign Out")
-      expect(html).to include('action="/api/v1/logout"')
+      expect(html).to include('action="/logout"')
       expect(html).to include('name="_method" value="delete"')
     end
 
@@ -42,7 +42,7 @@ RSpec.describe Errors::NoOrganization do
 
       # Повний шлях, не префікс: пін на початок рядка пропустив би будь-яку
       # сусідню адресу, що з нього починається.
-      expect(html).to include(%(href="#{Rails.application.routes.url_helpers.api_v1_organizations_path}"))
+      expect(html).to include(%(href="#{Rails.application.routes.url_helpers.organizations_path}"))
       expect(html).to include("Choose an organization")
     end
 
@@ -56,7 +56,7 @@ RSpec.describe Errors::NoOrganization do
     it "не пропонує реєстр звичайному користувачеві — там 403" do
       html = render_component(current_user: build_stubbed(:user))
 
-      expect(html).not_to include(%(href="#{Rails.application.routes.url_helpers.api_v1_organizations_path}"))
+      expect(html).not_to include(%(href="#{Rails.application.routes.url_helpers.organizations_path}"))
       expect(html).to include("Contact your administrator")
     end
 

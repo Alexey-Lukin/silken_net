@@ -86,7 +86,7 @@ module Alerts
     def render_pagination
       render Views::Shared::UI::Pagination.new(
         pagy: @pagy,
-        url_helper: ->(page:) { api_v1_alerts_path(page: page) },
+        url_helper: ->(page:) { alerts_path(page: page) },
         sticky_mobile: true
       )
     end
@@ -98,13 +98,13 @@ module Alerts
         end
         div(class: "flex flex-wrap gap-2") do
           a(
-            href: api_v1_alerts_path,
+            href: alerts_path,
             aria_label: t(".filter_aria_all"),
             class: filter_link_classes
           ) { t(".filter_all") }
           FILTER_SEVERITIES.each do |s|
             a(
-              href: api_v1_alerts_path(severity: s),
+              href: alerts_path(severity: s),
               aria_label: t(".filter_aria_severity", severity: s),
               class: filter_link_classes
             ) { t("alerts.index.filter_#{s}") }

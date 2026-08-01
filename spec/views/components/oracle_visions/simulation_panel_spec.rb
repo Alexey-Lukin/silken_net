@@ -100,7 +100,7 @@ RSpec.describe OracleVisions::SimulationPanel do
 
   describe "form action" do
     it "posts to the simulate oracle visions path" do
-      expect(html).to include("/api/v1/oracle_visions/simulate")
+      expect(html).to include("/oracle_visions/simulate")
     end
 
     it "targets the simulation_results turbo frame" do

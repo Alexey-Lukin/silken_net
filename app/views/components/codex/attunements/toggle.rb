@@ -41,7 +41,7 @@ module Codex
           # (`method="delete"` на `<form>` — невалідне значення, браузер відкочується в GET).
           button_to(
             @attuned ? t("codex.attunements.attuned") : t("codex.attunements.attune"),
-            @attuned ? api_v1_codex_node_my_attunement_path(@node.slug) : api_v1_codex_node_attunements_path(@node.slug),
+            @attuned ? codex_node_my_attunement_path(@node.slug) : codex_node_attunements_path(@node.slug),
             method: @attuned ? :delete : :post,
             class: tokens(
               "inline-flex items-center gap-2 px-3 py-1 border text-tiny uppercase tracking-[0.3em]",

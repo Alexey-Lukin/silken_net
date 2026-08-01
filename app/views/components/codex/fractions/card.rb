@@ -52,7 +52,7 @@ module Codex
           span { t("codex.fractions.updated", date: @fraction.last_changed_at.to_date.iso8601) }
         end
         a(
-          href: api_v1_codex_fraction_picker_path,
+          href: codex_fraction_picker_path,
           class: tokens(
             "inline-flex items-center gap-2 px-3 py-1 border border-gaia-border",
             "text-tiny uppercase tracking-[0.3em] text-gaia-text",
@@ -66,7 +66,7 @@ module Codex
         h3(class: "text-mini uppercase tracking-[0.3em] text-gaia-text-muted") { t("codex.fractions.my_heading") }
         p(class: "text-tiny text-gaia-text") { t("codex.fractions.empty") }
         a(
-          href: api_v1_codex_fraction_picker_path,
+          href: codex_fraction_picker_path,
           class: tokens(
             "inline-flex items-center gap-2 px-3 py-1 border border-gaia-border bg-gaia-surface-sunken",
             "text-tiny uppercase tracking-[0.3em] text-gaia-text",

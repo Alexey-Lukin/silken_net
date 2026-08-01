@@ -24,10 +24,10 @@ RSpec.describe Api::V1::SystemAuditsController, type: :request do
     allow(ChainAuditService).to receive(:call).and_return(audit_result)
   end
 
-  describe "GET /api/v1/system_audits" do
+  describe "GET /system_audits" do
     context "when as JSON" do
       it "returns the audit results" do
-        get "/api/v1/system_audits", headers: headers, as: :json
+        get "/system_audits", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
         body = response.parsed_body
@@ -48,19 +48,19 @@ RSpec.describe Api::V1::SystemAuditsController, type: :request do
         )
         allow(ChainAuditService).to receive(:call).and_return(critical_audit)
 
-        get "/api/v1/system_audits", headers: headers, as: :json
+        get "/system_audits", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body["critical"]).to be true
       end
 
       it "includes all expected fields in the response" do
-        get "/api/v1/system_audits", headers: headers, as: :json
+        get "/system_audits", headers: headers, as: :json
         body = response.parsed_body
         expect(body.keys).to contain_exactly("db_total", "chain_total", "delta", "critical", "checked_at")
       end
 
       it "returns correct types for all fields" do
-        get "/api/v1/system_audits", headers: headers, as: :json
+        get "/system_audits", headers: headers, as: :json
         body = response.parsed_body
         expect(body["db_total"]).to be_a(Numeric)
         expect(body["chain_total"]).to be_a(Numeric)
@@ -72,24 +72,24 @@ RSpec.describe Api::V1::SystemAuditsController, type: :request do
 
     context "when as HTML" do
       it "renders the dashboard page" do
-        get "/api/v1/system_audits", headers: headers
+        get "/system_audits", headers: headers
         expect(response).to have_http_status(:ok)
       end
 
       it "includes text/html content type" do
-        get "/api/v1/system_audits", headers: { **headers, "Accept" => "text/html" }
+        get "/system_audits", headers: { **headers, "Accept" => "text/html" }
         expect(response).to have_http_status(:ok)
         expect(response.content_type).to include("text/html")
       end
     end
 
     it "returns 401 without authentication" do
-      get "/api/v1/system_audits", as: :json
+      get "/system_audits", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
 
     it "delegates to ChainAuditService.call" do
-      get "/api/v1/system_audits", headers: headers, as: :json
+      get "/system_audits", headers: headers, as: :json
       expect(ChainAuditService).to have_received(:call)
     end
   end

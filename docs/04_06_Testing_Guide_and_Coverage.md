@@ -96,7 +96,7 @@ View спеки тестують HTML-розмітку, не ORM. `OpenStruct` �
 Виняток: `Maintenance::Form` потребує валідну AR-модель для `form_with`.
 
 ### 7. `mock_model(klass, id:, **attrs)` для моделей з route helpers
-Якщо компонент використовує `api_v1_tree_path(tree)` або `dom_id(tx)` —
+Якщо компонент використовує `tree_path(tree)` або `dom_id(tx)` —
 mock ПОВИНЕН мати `model_name`, `to_key`, `to_param`. Використовуй `mock_model`.
 
 ### 8. Кожен mock-метод — іменований за domain entity
@@ -134,7 +134,7 @@ OpenStruct не генерує `?`-методи автоматично.
 
 ```ruby
 Views::Shared::UI::PhotoCard.prepend(Module.new do
-  def api_v1_maintenance_record_photo_path(*, **) = "/api/v1/…/photos/1"   # ❌ метод НЕ існував
+  def maintenance_record_photo_path(*, **) = "/…/photos/1"   # ❌ метод НЕ існував
 end)
 ```
 
@@ -150,15 +150,15 @@ end)
 
 **Межа проходить по КОНТРАКТУ АРГУМЕНТІВ, не по «маршрут ⊥ зовнішній ресурс».**
 `rails_blob_path` теж маршрут-хелпер; стабити його доводиться тому, що він вимагає від
-мока `signed_id`, а не тому, що він «зовнішній». `api_v1_…_photo_path` вимагає лише
+мока `signed_id`, а не тому, що він «зовнішній». `…_photo_path` вимагає лише
 `to_param`, який `Object` дає безкоштовно, — тому й працює без стабу. Питання завжди
 одне: **чи задовольняє мок контракт аргументів цього хелпера**.
 
 ⚠️ **Що саме купує зняття стабу — ІМ'Я, а не URL.** Хелпер із голим `OpenStruct`
 резолвиться, але підставляє `inspect`-рядок у сегмент:
-`/api/v1/maintenance_records/7/photos/%23%3COpenStruct%20id=99%3E`. Тобто спека
+`/maintenance_records/7/photos/%23%3COpenStruct%20id=99%3E`. Тобто спека
 доводить «метод існує», а не «шлях правильний». Наслідок для пінів: перевіряй
-**повний** шлях (`include(api_v1_maintenance_record_photo_path(record, photo))`),
+**повний** шлях (`include(maintenance_record_photo_path(record, photo))`),
 ніколи не префікс на кшталт `include("/photos/")` — префікс істинний при будь-якому
 сміттєвому аргументі.
 

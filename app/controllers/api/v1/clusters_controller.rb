@@ -8,7 +8,7 @@ module Api
       # (Інвестори бачать фінанси, Патрульні — загрози)
 
       # --- СПИСОК СЕКТОРІВ (The Map View / Dashboard Grid) ---
-      # GET /api/v1/clusters
+      # GET /clusters
       def index
         # Скоупимо до організації поточного користувача (Security Scope)
         # active_threats? використовує EXISTS з composite index — includes не потрібен.
@@ -35,7 +35,7 @@ module Api
       end
 
       # --- ДЕТАЛІ СЕКТОРА (The Deep Dive / Sector Matrix) ---
-      # GET /api/v1/clusters/:id
+      # GET /clusters/:id
       def show
         @cluster = acting_organization!.clusters.find(params[:id])
 

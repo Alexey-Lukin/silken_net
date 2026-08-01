@@ -346,7 +346,7 @@ grep -E "^\s+[A-Z_]+:" deploy/akash/deploy.yaml | head -50
 #### Крок 1: Detection (моніторинг)
 
 Ознаки компрометації:
-- Аномальні `POST /api/v1/provisioning/register` запити без відповідного hardware provisioning flow
+- Аномальні `POST /provisioning/register` запити без відповідного hardware provisioning flow
 - DIDs зареєстровані в peaq мережі, які не мають відповідних `Tree` записів у БД
 - Незвичні патерни: масова реєстрація DIDs, реєстрація з невідомих IP
 

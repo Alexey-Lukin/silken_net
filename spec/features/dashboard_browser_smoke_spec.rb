@@ -39,7 +39,7 @@ RSpec.describe "Dashboard in a real browser", :js do
   let!(:user) { create(:user, :admin, organization: organization, password: "browser-smoke-pass-1") }
 
   def sign_in_through_the_form
-    visit "/api/v1/login"
+    visit "/login"
     # ⚠️ Колонка зветься `email_address`, а поле форми — `email`: форма йде через
     # `form_with url:` без моделі, тож імена полів свої. Розбіжність реальна, не описка.
     fill_in "email", with: user.email_address
@@ -54,15 +54,15 @@ RSpec.describe "Dashboard in a real browser", :js do
   # показує як plain text.
   it "shows the login PAGE (not a JSON blob) when the session is gone" do
     sign_in_through_the_form
-    expect(page).to have_current_path(%r{/api/v1/dashboard})
+    expect(page).to have_current_path(%r{/dashboard})
 
     # Найчесніша симуляція «сесія протухла»: салт-стемп у cookie перестає збігатися
     # (SEC.16) — рівно те, що робить зміна пароля з іншого пристрою.
     user.update!(password: "rotated-elsewhere-pass-2")
-    visit "/api/v1/dashboard"
+    visit "/dashboard"
 
     expect(page).to have_field("email")
-    expect(page).to have_css("form[action='/api/v1/login']")
+    expect(page).to have_css("form[action='/login']")
     expect(page).to have_no_text('{"error"')
   end
 
@@ -79,7 +79,7 @@ RSpec.describe "Dashboard in a real browser", :js do
   # іконка доїхала, транзиція вже завершена, і гонки немає.
   it "runs OUR Stimulus controller in the browser, not just boots Stimulus" do
     sign_in_through_the_form
-    expect(page).to have_current_path(%r{/api/v1/dashboard})
+    expect(page).to have_current_path(%r{/dashboard})
 
     moon = "#theme-switcher svg path[d^='M20.354']" # світла тема → пропонує темну
     sun  = "#theme-switcher svg path[d^='M12 3v1']"  # темна тема → пропонує світлу

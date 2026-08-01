@@ -20,7 +20,7 @@ RSpec.describe Api::V1::OracleCallbacksController, type: :request do
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
   end
 
-  describe "POST /api/v1/oracle_callbacks" do
+  describe "POST /oracle_callbacks" do
     context "when successful callback" do
       it "updates oracle_status to fulfilled and enqueues MintCarbonCoinWorker and SolanaMicroRewardWorker" do
         post "/api/v1/oracle_callbacks",

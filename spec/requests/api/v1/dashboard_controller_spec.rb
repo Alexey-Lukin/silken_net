@@ -11,14 +11,14 @@ RSpec.describe Api::V1::DashboardController, type: :request do
 
   let!(:cluster) { create(:cluster, organization: organization) }
 
-  describe "GET /api/v1/dashboard" do
+  describe "GET /dashboard" do
     context "when as JSON" do
       before do
         allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_total_carbon_minted).and_return(0)
       end
 
       it "returns dashboard stats" do
-        get "/api/v1/dashboard", headers: headers, as: :json
+        get "/dashboard", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
         body = response.parsed_body
@@ -33,7 +33,7 @@ RSpec.describe Api::V1::DashboardController, type: :request do
         tree = create(:tree, cluster: cluster, status: :active)
         create(:telemetry_log, tree: tree, voltage_mv: 4200, created_at: 30.minutes.ago)
 
-        get "/api/v1/dashboard", headers: headers, as: :json
+        get "/dashboard", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
         trees = response.parsed_body["trees"]
@@ -45,7 +45,7 @@ RSpec.describe Api::V1::DashboardController, type: :request do
         tree = create(:tree, cluster: cluster)
         create(:wallet, tree: tree, balance: 100.0)
 
-        get "/api/v1/dashboard", headers: headers, as: :json
+        get "/dashboard", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
         economy = response.parsed_body["economy"]
@@ -56,7 +56,7 @@ RSpec.describe Api::V1::DashboardController, type: :request do
         tree = create(:tree, cluster: cluster)
         create(:ews_alert, cluster: cluster, tree: tree, status: :active)
 
-        get "/api/v1/dashboard", headers: headers, as: :json
+        get "/dashboard", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
         security = response.parsed_body["security"]
@@ -64,7 +64,7 @@ RSpec.describe Api::V1::DashboardController, type: :request do
       end
 
       it "returns energy stats" do
-        get "/api/v1/dashboard", headers: headers, as: :json
+        get "/dashboard", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
         energy = response.parsed_body["energy"]
@@ -79,7 +79,7 @@ RSpec.describe Api::V1::DashboardController, type: :request do
       end
 
       it "renders the dashboard page" do
-        get "/api/v1/dashboard", headers: headers
+        get "/dashboard", headers: headers
         expect(response).to have_http_status(:ok)
       end
 
@@ -91,13 +91,13 @@ RSpec.describe Api::V1::DashboardController, type: :request do
       it "ховає від investor пункти меню, закриті рольовим гардом" do
         investor = create(:user, :investor, organization: organization)
 
-        get "/api/v1/dashboard",
+        get "/dashboard",
             headers: { "Authorization" => "Bearer #{investor.generate_token_for(:api_access)}" }
 
-        expect(response.body).to include(%(href="#{api_v1_wallets_path}"))
-        expect(response.body).not_to include(%(href="#{api_v1_settings_path}"))
-        expect(response.body).not_to include(%(href="#{api_v1_audit_logs_path}"))
-        expect(response.body).not_to include(%(href="#{api_v1_organizations_path}"))
+        expect(response.body).to include(%(href="#{wallets_path}"))
+        expect(response.body).not_to include(%(href="#{settings_path}"))
+        expect(response.body).not_to include(%(href="#{audit_logs_path}"))
+        expect(response.body).not_to include(%(href="#{organizations_path}"))
       end
 
       # 🔴 Дзеркальна половина, без якої пін вище НЕ стереже проводку: дефолт
@@ -107,11 +107,11 @@ RSpec.describe Api::V1::DashboardController, type: :request do
       it "показує admin пункти, закриті для нижчих ролей" do
         admin = create(:user, :admin, organization: organization)
 
-        get "/api/v1/dashboard",
+        get "/dashboard",
             headers: { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" }
 
-        expect(response.body).to include(%(href="#{api_v1_settings_path}"))
-        expect(response.body).to include(%(href="#{api_v1_audit_logs_path}"))
+        expect(response.body).to include(%(href="#{settings_path}"))
+        expect(response.body).to include(%(href="#{audit_logs_path}"))
       end
 
       # Геопросторова матриця віддає координати й DID живого флоту. Рядок, що
@@ -119,7 +119,7 @@ RSpec.describe Api::V1::DashboardController, type: :request do
       # бачить (там організація приходить моком). Без цього піна підміна на
       # `Organization.first` лишила б усю сюїту зеленою, а крос-тенант — живим.
       def subscribed_streams_for(who)
-        get "/api/v1/dashboard",
+        get "/dashboard",
             headers: { "Authorization" => "Bearer #{who.generate_token_for(:api_access)}" }
         response.body.scan(/signed-stream-name="([^"]+)"/).flatten
                 .map { |s| Turbo::StreamsChannel.verified_stream_name(s) }
@@ -145,7 +145,7 @@ RSpec.describe Api::V1::DashboardController, type: :request do
         foreign = create(:tree, cluster: other_cluster, latitude: 50.45, longitude: 30.52)
         ungeolocated = create(:tree, cluster: cluster, latitude: nil, longitude: nil)
 
-        get "/api/v1/dashboard", headers: headers
+        get "/dashboard", headers: headers
 
         expect(response.body).to include("map_node_#{own.id}")
         expect(response.body).not_to include("map_node_#{foreign.id}")
@@ -158,7 +158,7 @@ RSpec.describe Api::V1::DashboardController, type: :request do
       it "returns the minted amount from The Graph" do
         allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_total_carbon_minted).and_return(1_450_000)
 
-        get "/api/v1/dashboard", headers: headers, as: :json
+        get "/dashboard", headers: headers, as: :json
 
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body["global_onchain_carbon"]).to eq(1_450_000)
@@ -168,7 +168,7 @@ RSpec.describe Api::V1::DashboardController, type: :request do
         allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_total_carbon_minted)
           .and_raise(TheGraph::QueryService::QueryError, "The Graph node is syncing")
 
-        get "/api/v1/dashboard", headers: headers, as: :json
+        get "/dashboard", headers: headers, as: :json
 
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body["global_onchain_carbon"]).to eq(0)
@@ -176,7 +176,7 @@ RSpec.describe Api::V1::DashboardController, type: :request do
     end
 
     it "returns 401 without authentication" do
-      get "/api/v1/dashboard", as: :json
+      get "/dashboard", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
 
@@ -186,7 +186,7 @@ RSpec.describe Api::V1::DashboardController, type: :request do
       end
 
       it "returns LOW_RESERVE when no telemetry data exists" do
-        get "/api/v1/dashboard", headers: headers, as: :json
+        get "/dashboard", headers: headers, as: :json
 
         expect(response).to have_http_status(:ok)
         energy = response.parsed_body["energy"]
@@ -197,7 +197,7 @@ RSpec.describe Api::V1::DashboardController, type: :request do
       it "returns STABLE when average voltage exceeds 3300 mV" do
         create(:tree, cluster: cluster, status: :active, latest_voltage_mv: 4100)
 
-        get "/api/v1/dashboard", headers: headers, as: :json
+        get "/dashboard", headers: headers, as: :json
 
         expect(response).to have_http_status(:ok)
         energy = response.parsed_body["energy"]

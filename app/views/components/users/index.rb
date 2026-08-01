@@ -31,7 +31,7 @@ module Users
         if @pagy
           render Views::Shared::UI::Pagination.new(
             pagy: @pagy,
-            url_helper: ->(page:) { api_v1_users_path(page: page) }
+            url_helper: ->(page:) { users_path(page: page) }
           )
         end
       end
@@ -74,7 +74,7 @@ module Users
           # Аудиторії збігаються точно, тож роле-гейт тут не потрібен: `UserPolicy#index?`
           # і `AuditLogsController#authorize_admin!` обидва питають `admin_or_above?`.
           a(
-            href: api_v1_audit_logs_path(user_id: user.id),
+            href: audit_logs_path(user_id: user.id),
             class: "text-emerald-700 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
             aria_label: t(".table.view_logs_aria", name: "#{user.first_name} #{user.last_name}")
           ) { t(".table.view_logs") }

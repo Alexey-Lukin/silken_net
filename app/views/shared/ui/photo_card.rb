@@ -77,7 +77,7 @@ module Views
           div(class: "absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200") do
             button_to(
               "×",
-              api_v1_maintenance_record_photo_path(@record, @photo),
+              maintenance_record_photo_path(@record, @photo),
               method: :delete,
               aria: { label: t("ui.photo_card.remove_photo", filename: @photo.filename) },
               class: delete_button_classes,

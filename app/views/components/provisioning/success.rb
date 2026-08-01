@@ -26,7 +26,7 @@ module Provisioning
           end
 
           div(class: "pt-10") do
-            a(href: api_v1_cluster_path(@device.cluster), class: "text-emerald-500 underline underline-offset-8 text-xs uppercase tracking-widest") { t(".view_in_matrix") }
+            a(href: cluster_path(@device.cluster), class: "text-emerald-500 underline underline-offset-8 text-xs uppercase tracking-widest") { t(".view_in_matrix") }
           end
         end
       end

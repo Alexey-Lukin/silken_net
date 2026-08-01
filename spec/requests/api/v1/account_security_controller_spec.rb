@@ -10,11 +10,11 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
   let(:headers) { { "Authorization" => "Bearer #{token}" } }
 
   # =========================================================================
-  # GET /api/v1/account_security
+  # GET /account_security
   # =========================================================================
-  describe "GET /api/v1/account_security" do
+  describe "GET /account_security" do
     it "returns security status as JSON" do
-      get "/api/v1/account_security", headers: headers, as: :json
+      get "/account_security", headers: headers, as: :json
 
       expect(response).to have_http_status(:ok)
       body = response.parsed_body
@@ -25,7 +25,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
     end
 
     it "returns 401 without authentication" do
-      get "/api/v1/account_security", as: :json
+      get "/account_security", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
 
@@ -33,7 +33,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
       create(:identity, user: user, provider: "google_oauth2")
       create(:identity, :facebook, user: user)
 
-      get "/api/v1/account_security", headers: headers, as: :json
+      get "/account_security", headers: headers, as: :json
 
       identities = response.parsed_body["identities"]
       expect(identities.size).to eq(2)
@@ -41,17 +41,17 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
     end
 
     it "renders the HTML dashboard page" do
-      get "/api/v1/account_security", headers: headers
+      get "/account_security", headers: headers
       expect(response).to have_http_status(:ok)
     end
   end
 
   # =========================================================================
-  # PATCH /api/v1/account_security/mfa — Toggle MFA
+  # PATCH /account_security/mfa — Toggle MFA
   # =========================================================================
-  describe "PATCH /api/v1/account_security/mfa" do
+  describe "PATCH /account_security/mfa" do
     it "enables MFA and returns recovery codes" do
-      patch "/api/v1/account_security/mfa", headers: headers, as: :json
+      patch "/account_security/mfa", headers: headers, as: :json
 
       expect(response).to have_http_status(:ok)
       body = response.parsed_body
@@ -65,7 +65,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
     it "disables MFA when already enabled (with valid current_password)" do
       user.update!(otp_required_for_login: true, recovery_codes: %w[a b c].to_json)
 
-      patch "/api/v1/account_security/mfa",
+      patch "/account_security/mfa",
             params: { current_password: "password12345" },
             headers: headers, as: :json
 
@@ -83,7 +83,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
     it "rejects MFA disable when current_password is wrong" do
       user.update!(otp_required_for_login: true, recovery_codes: %w[a b c].to_json)
 
-      patch "/api/v1/account_security/mfa",
+      patch "/account_security/mfa",
             params: { current_password: "wrong-password" },
             headers: headers, as: :json
 
@@ -94,7 +94,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
     it "rejects MFA disable when current_password is missing" do
       user.update!(otp_required_for_login: true, recovery_codes: %w[a b c].to_json)
 
-      patch "/api/v1/account_security/mfa", headers: headers, as: :json
+      patch "/account_security/mfa", headers: headers, as: :json
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(user.reload.otp_required_for_login).to be true
@@ -104,7 +104,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
       user.update!(otp_required_for_login: true, recovery_codes: %w[a b c].to_json)
       user.update_columns(password_digest: nil)
 
-      patch "/api/v1/account_security/mfa", headers: headers, as: :json
+      patch "/account_security/mfa", headers: headers, as: :json
 
       expect(response).to have_http_status(:ok)
       expect(user.reload.otp_required_for_login).to be false
@@ -112,11 +112,11 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
   end
 
   # =========================================================================
-  # PATCH /api/v1/account_security/password — Change Password
+  # PATCH /account_security/password — Change Password
   # =========================================================================
-  describe "PATCH /api/v1/account_security/password" do
+  describe "PATCH /account_security/password" do
     it "changes password with correct current password" do
-      patch "/api/v1/account_security/password", headers: headers, params: {
+      patch "/account_security/password", headers: headers, params: {
         current_password: "password12345",
         new_password: "new_secure_pass_1",
         new_password_confirmation: "new_secure_pass_1"
@@ -127,7 +127,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
     end
 
     it "rejects wrong current password" do
-      patch "/api/v1/account_security/password", headers: headers, params: {
+      patch "/account_security/password", headers: headers, params: {
         current_password: "wrong_password",
         new_password: "new_secure_pass_1",
         new_password_confirmation: "new_secure_pass_1"
@@ -137,7 +137,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
     end
 
     it "rejects too short new password" do
-      patch "/api/v1/account_security/password", headers: headers, params: {
+      patch "/account_security/password", headers: headers, params: {
         current_password: "password12345",
         new_password: "short",
         new_password_confirmation: "short"
@@ -148,7 +148,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
     end
 
     it "rejects mismatched confirmation" do
-      patch "/api/v1/account_security/password", headers: headers, params: {
+      patch "/account_security/password", headers: headers, params: {
         current_password: "password12345",
         new_password: "new_secure_pass_1",
         new_password_confirmation: "different_password"
@@ -161,7 +161,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
       # Simulate OAuth-only user (no password digest)
       user.update_columns(password_digest: nil)
 
-      patch "/api/v1/account_security/password", headers: headers, params: {
+      patch "/account_security/password", headers: headers, params: {
         new_password: "first_password_1",
         new_password_confirmation: "first_password_1"
       }, as: :json
@@ -192,7 +192,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
 
       it "revokes other sessions and keeps the matching IP+UA session alive" do
         # Match the Rack test default IP/UA to current_request_session
-        patch "/api/v1/account_security/password",
+        patch "/account_security/password",
               headers: headers.merge("User-Agent" => current_request_session.user_agent),
               params: {
                 current_password: "password12345",
@@ -208,7 +208,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
       it "falls back to keeping the newest session row when IP+UA does not match" do
         # No IP/UA match → fallback keeps the newest row (current_request_session
         # is the most recently created and therefore preserved).
-        patch "/api/v1/account_security/password",
+        patch "/account_security/password",
               headers: headers.merge("User-Agent" => "MismatchedClient/3.0"),
               params: {
                 current_password: "password12345",
@@ -227,32 +227,32 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
     # session[:user_id] і викрадений cookie переживав password-reset 14 днів.
     context "with a salt-bound dashboard cookie [SEC.16]" do
       it "invalidates a stale cookie after the password changes elsewhere" do
-        post "/api/v1/login", params: { email: user.email_address, password: "password12345" }
+        post "/login", params: { email: user.email_address, password: "password12345" }
 
-        get "/api/v1/account_security"
+        get "/account_security"
         expect(response).to have_http_status(:ok)
 
         # Зміна пароля «з іншого пристрою» (поза цим cookie-jar)
         user.update!(password: "hijack-survivor-pass-1")
 
-        get "/api/v1/account_security"
+        get "/account_security"
         expect(response).to have_http_status(:unauthorized)
       end
 
       it "rejects a cookie whose user no longer exists" do
-        post "/api/v1/login", params: { email: user.email_address, password: "password12345" }
+        post "/login", params: { email: user.email_address, password: "password12345" }
 
         user.sessions.delete_all
         user.reload.destroy!
 
-        get "/api/v1/account_security"
+        get "/account_security"
         expect(response).to have_http_status(:unauthorized)
       end
 
       it "keeps the initiating session alive across its own password change" do
-        post "/api/v1/login", params: { email: user.email_address, password: "password12345" }
+        post "/login", params: { email: user.email_address, password: "password12345" }
 
-        patch "/api/v1/account_security/password",
+        patch "/account_security/password",
               params: {
                 current_password: "password12345",
                 new_password: "fresh_secure_pass_3",
@@ -260,20 +260,20 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
               }, as: :json
         expect(response).to have_http_status(:ok)
 
-        get "/api/v1/account_security"
+        get "/account_security"
         expect(response).to have_http_status(:ok)
       end
     end
   end
 
   # =========================================================================
-  # DELETE /api/v1/account_security/identities/:id — Unlink Identity
+  # DELETE /account_security/identities/:id — Unlink Identity
   # =========================================================================
-  describe "DELETE /api/v1/account_security/identities/:id" do
+  describe "DELETE /account_security/identities/:id" do
     it "unlinks an identity when user has a password" do
       identity = create(:identity, user: user, provider: "google_oauth2")
 
-      delete "/api/v1/account_security/identities/#{identity.id}", headers: headers, as: :json
+      delete "/account_security/identities/#{identity.id}", headers: headers, as: :json
 
       expect(response).to have_http_status(:ok)
       expect(Identity.find_by(id: identity.id)).to be_nil
@@ -283,7 +283,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
       user.update_columns(password_digest: nil)
       identity = create(:identity, user: user, provider: "google_oauth2")
 
-      delete "/api/v1/account_security/identities/#{identity.id}", headers: headers, as: :json
+      delete "/account_security/identities/#{identity.id}", headers: headers, as: :json
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(Identity.find_by(id: identity.id)).to be_present
@@ -294,7 +294,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
       google = create(:identity, user: user, provider: "google_oauth2")
       _facebook = create(:identity, :facebook, user: user)
 
-      delete "/api/v1/account_security/identities/#{google.id}", headers: headers, as: :json
+      delete "/account_security/identities/#{google.id}", headers: headers, as: :json
 
       expect(response).to have_http_status(:ok)
       expect(Identity.find_by(id: google.id)).to be_nil
@@ -302,13 +302,13 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
   end
 
   # =========================================================================
-  # PATCH /api/v1/account_security/identities/:id/lock — Lock Identity
+  # PATCH /account_security/identities/:id/lock — Lock Identity
   # =========================================================================
-  describe "PATCH /api/v1/account_security/identities/:id/lock" do
+  describe "PATCH /account_security/identities/:id/lock" do
     it "locks an identity" do
       identity = create(:identity, user: user)
 
-      patch "/api/v1/account_security/identities/#{identity.id}/lock", headers: headers, as: :json
+      patch "/account_security/identities/#{identity.id}/lock", headers: headers, as: :json
 
       expect(response).to have_http_status(:ok)
       expect(identity.reload.locked?).to be true
@@ -316,13 +316,13 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
   end
 
   # =========================================================================
-  # PATCH /api/v1/account_security/identities/:id/unlock — Unlock Identity
+  # PATCH /account_security/identities/:id/unlock — Unlock Identity
   # =========================================================================
-  describe "PATCH /api/v1/account_security/identities/:id/unlock" do
+  describe "PATCH /account_security/identities/:id/unlock" do
     it "unlocks a locked identity" do
       identity = create(:identity, :locked, user: user)
 
-      patch "/api/v1/account_security/identities/#{identity.id}/unlock", headers: headers, as: :json
+      patch "/account_security/identities/#{identity.id}/unlock", headers: headers, as: :json
 
       expect(response).to have_http_status(:ok)
       expect(identity.reload.locked?).to be false

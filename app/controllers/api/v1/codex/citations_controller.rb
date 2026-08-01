@@ -22,7 +22,7 @@ module Api
       class CitationsController < BaseController
         IDEMPOTENCY_TTL = 24.hours
 
-        # POST /api/v1/codex/citations
+        # POST /codex/citations
         def create
           if request.format.json? && idempotency_key.blank?
             return render json: { error: I18n.t("flash.codex.idempotency_required") },
@@ -58,7 +58,7 @@ module Api
           end
         end
 
-        # DELETE /api/v1/codex/citations/:id
+        # DELETE /codex/citations/:id
         def destroy
           citation = ::Codex::Citation.find(params[:id])
           verify_citation_within_organization!(citation)

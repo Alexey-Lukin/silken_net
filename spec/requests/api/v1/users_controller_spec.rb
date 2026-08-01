@@ -12,12 +12,12 @@ RSpec.describe Api::V1::UsersController, type: :request do
   let(:admin_headers) { { "Authorization" => "Bearer #{admin_token}" } }
   let(:investor_headers) { { "Authorization" => "Bearer #{investor_token}" } }
 
-  describe "GET /api/v1/users" do
+  describe "GET /users" do
     let!(:extra_user) { create(:user, :forester, organization: organization) }
 
     context "when as JSON" do
       it "returns org users for admin" do
-        get "/api/v1/users", headers: admin_headers, as: :json
+        get "/users", headers: admin_headers, as: :json
         expect(response).to have_http_status(:ok)
 
         body = response.parsed_body
@@ -29,7 +29,7 @@ RSpec.describe Api::V1::UsersController, type: :request do
       end
 
       it "includes pagination metadata" do
-        get "/api/v1/users", headers: admin_headers, as: :json
+        get "/users", headers: admin_headers, as: :json
         expect(response).to have_http_status(:ok)
 
         meta = response.parsed_body["pagy"]
@@ -43,35 +43,35 @@ RSpec.describe Api::V1::UsersController, type: :request do
       # СТАТУС не є піном на вміст — саме тому ціль дії потребує окремого
       # твердження ([UI.7], `04_06 §A.2` правило 10а).
       it "renders the dashboard page" do
-        get "/api/v1/users", headers: admin_headers
+        get "/users", headers: admin_headers
         expect(response).to have_http_status(:ok)
       end
 
       it "points the audit link at that user's own slice of the log" do
-        get "/api/v1/users", headers: admin_headers.merge("Accept" => "text/html")
+        get "/users", headers: admin_headers.merge("Accept" => "text/html")
 
-        expect(response.body).to include(api_v1_audit_logs_path(user_id: extra_user.id))
+        expect(response.body).to include(audit_logs_path(user_id: extra_user.id))
         expect(response.body).not_to include('href="#"')
       end
     end
 
     it "returns 403 for non-admin users" do
-      get "/api/v1/users", headers: investor_headers, as: :json
+      get "/users", headers: investor_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
 
     it "returns 401 without authentication" do
-      get "/api/v1/users", as: :json
+      get "/users", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
   end
 
-  describe "GET /api/v1/users/:id" do
+  describe "GET /users/:id" do
     let!(:extra_user) { create(:user, :forester, organization: organization) }
 
     context "when as JSON" do
       it "returns a specific user from the same organization" do
-        get "/api/v1/users/#{extra_user.id}", headers: admin_headers, as: :json
+        get "/users/#{extra_user.id}", headers: admin_headers, as: :json
         expect(response).to have_http_status(:ok)
 
         body = response.parsed_body
@@ -80,7 +80,7 @@ RSpec.describe Api::V1::UsersController, type: :request do
       end
 
       it "works for non-admin users viewing org members" do
-        get "/api/v1/users/#{admin.id}", headers: investor_headers, as: :json
+        get "/users/#{admin.id}", headers: investor_headers, as: :json
         expect(response).to have_http_status(:ok)
 
         body = response.parsed_body
@@ -90,7 +90,7 @@ RSpec.describe Api::V1::UsersController, type: :request do
 
     context "when as HTML" do
       it "renders the dashboard page" do
-        get "/api/v1/users/#{extra_user.id}", headers: admin_headers
+        get "/users/#{extra_user.id}", headers: admin_headers
         expect(response).to have_http_status(:ok)
       end
     end
@@ -99,20 +99,20 @@ RSpec.describe Api::V1::UsersController, type: :request do
       other_org = create(:organization)
       other_user = create(:user, organization: other_org)
 
-      get "/api/v1/users/#{other_user.id}", headers: investor_headers, as: :json
+      get "/users/#{other_user.id}", headers: investor_headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
 
     it "returns 401 without authentication" do
-      get "/api/v1/users/#{admin.id}", as: :json
+      get "/users/#{admin.id}", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
   end
 
-  describe "GET /api/v1/users/me" do
+  describe "GET /users/me" do
     context "when as JSON" do
       it "returns the current user's profile" do
-        get "/api/v1/users/me", headers: investor_headers, as: :json
+        get "/users/me", headers: investor_headers, as: :json
         expect(response).to have_http_status(:ok)
 
         body = response.parsed_body
@@ -120,7 +120,7 @@ RSpec.describe Api::V1::UsersController, type: :request do
       end
 
       it "works for admin users too" do
-        get "/api/v1/users/me", headers: admin_headers, as: :json
+        get "/users/me", headers: admin_headers, as: :json
         expect(response).to have_http_status(:ok)
 
         body = response.parsed_body
@@ -130,13 +130,13 @@ RSpec.describe Api::V1::UsersController, type: :request do
 
     context "when as HTML" do
       it "renders the dashboard page" do
-        get "/api/v1/users/me", headers: investor_headers
+        get "/users/me", headers: investor_headers
         expect(response).to have_http_status(:ok)
       end
     end
 
     it "returns 401 without authentication" do
-      get "/api/v1/users/me", as: :json
+      get "/users/me", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
   end

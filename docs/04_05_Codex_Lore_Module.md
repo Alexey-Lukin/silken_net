@@ -26,7 +26,7 @@ Codex Lore Layer — пояснити *чому* схема, черги й ме�
 |--------|------|
 | [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | DB-таблиці / моделі / enum / партиціювання (§7b) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Сервіси / воркери / призначення черг Sidekiq (§10b) |
-| [`04_03` — REST API v1 Reference](04_03_REST_API_v1_Reference) | REST API `/api/v1/codex/*` (§4, таблиця ендпоінтів) |
+| [`04_03` — REST API v1 Reference](04_03_REST_API_v1_Reference) | REST API `/codex/*` (§4, таблиця ендпоінтів) |
 | [`04_04` — Phlex UI and Tailwind](04_04_Phlex_UI_and_Tailwind) | Phlex-компоненти / дизайн-токени (§6.4) · Turbo/ActionCable (§8.1) |
 | [`05_04` — Ethereum L1 State Anchor](05_04_Ethereum_L1_State_Anchor) | Cultural state-root anchor — майбутній напрям (§3) |
 

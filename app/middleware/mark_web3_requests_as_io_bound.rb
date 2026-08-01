@@ -18,17 +18,27 @@
 #     `&.call` is a no-op — fully backward-compatible.
 #
 # Endpoint allowlist:
-#   POST /api/v1/oracle_callbacks       — Chainlink callback (HMAC + DB)
-#   POST /api/v1/provisioning/register  — peaq DID + Hadron KYC HTTP
+#   POST /api/v1/oracle_callbacks  — Chainlink callback (HMAC + DB)
+#   POST /provisioning/register    — forester provisioning form (see caveat)
 #
-# Why ONLY these two:
-#   1. Both perform synchronous outbound HTTPS to third-party RPC/HTTP APIs
-#      with p95 latency in the hundreds of ms to multiple seconds.
-#   2. Both are called by external systems (Chainlink DON, Queen gateway)
-#      that we cannot easily make async.
+# Why `oracle_callbacks`:
+#   1. Synchronous outbound HTTPS to a third-party RPC with p95 latency in the
+#      hundreds of ms to multiple seconds.
+#   2. Called by an external system (Chainlink DON) we cannot make async.
 #   3. Other Web3-touching endpoints either (a) enqueue Sidekiq and return
 #      immediately (e.g. `actuators#execute`, `firmwares#deploy`) or (b)
 #      read from Solid Cache (e.g. `wallets#balance`).
+#
+# ⚠️ `provisioning/register` — CAVEAT, its stated rationale is dead on both legs
+# (measured 2026-08-01, [ARCH.77] adversarial pass). It used to read "peaq DID +
+# Hadron KYC HTTP … synchronous outbound HTTPS … called by external systems
+# (Queen gateway)". Neither holds: peaq goes through `PeaqRegistrationWorker`,
+# Hadron through `HadronKycVerificationWorker` (both `perform_async`), so the
+# request path makes ZERO synchronous outbound calls — and the caller is a
+# forester's browser form (`authorize_forester!` + `format.html`), not a device.
+# The path stays listed pending a verdict (→ `00_07` ARCH.80), because removing
+# it changes Puma thread accounting and that is a behaviour change, not a
+# comment fix. Do NOT add a third path "by analogy" with this one.
 #
 # Future opt-in:
 #   Add a path here, OR set `env["silken_net.io_bound"] = true` from a
@@ -47,7 +57,7 @@ class MarkWeb3RequestsAsIoBound
   IO_BOUND_PATHS = Set.new(
     %w[
       /api/v1/oracle_callbacks
-      /api/v1/provisioning/register
+      /provisioning/register
     ]
   ).freeze
 

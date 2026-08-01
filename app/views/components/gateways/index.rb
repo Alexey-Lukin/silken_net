@@ -21,7 +21,7 @@ module Gateways
 
         render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
-          url_helper: ->(page:) { api_v1_gateways_path(page: page) }
+          url_helper: ->(page:) { gateways_path(page: page) }
         )
       end
     end
@@ -69,7 +69,7 @@ module Gateways
         div(class: "flex justify-between items-center mt-4 pt-4 border-t border-emerald-900/50") do
           p(class: "text-mini font-mono text-gray-600") { gateway.last_seen_at&.strftime("%H:%M // %d.%m") || t("gateways.item.silent") }
           a(
-            href: api_v1_gateway_path(gateway),
+            href: gateway_path(gateway),
             aria_label: t("gateways.item.open_aria", uid: gateway.uid),
             class: "text-tiny uppercase tracking-widest text-emerald-600 hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors"
           ) { t("gateways.item.open") }

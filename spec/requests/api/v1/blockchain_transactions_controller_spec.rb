@@ -20,9 +20,9 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
   let!(:own_tx) { create(:blockchain_transaction, wallet: own_wallet) }
   let!(:other_tx) { create(:blockchain_transaction, wallet: other_wallet) }
 
-  describe "GET /api/v1/blockchain_transactions" do
+  describe "GET /blockchain_transactions" do
     it "returns only transactions belonging to the user's organization" do
-      get "/api/v1/blockchain_transactions", headers: headers, as: :json
+      get "/blockchain_transactions", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
       ids = response.parsed_body["data"].map { |t| t["id"] }
@@ -31,13 +31,13 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
     end
 
     it "filters by token_type (carbon_coin)" do
-      get "/api/v1/blockchain_transactions",
+      get "/blockchain_transactions",
           params: { token_type: "carbon_coin" }, headers: headers, as: :json
       expect(response).to have_http_status(:ok)
     end
 
     it "filters by status (pending)" do
-      get "/api/v1/blockchain_transactions",
+      get "/blockchain_transactions",
           params: { status: "pending" }, headers: headers, as: :json
       expect(response).to have_http_status(:ok)
     end
@@ -48,29 +48,29 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
     # (HTTP 500). Both branches now respond 400 with an i18n message.
     # =========================================================================
     it "rejects bogus token_type with 400" do
-      get "/api/v1/blockchain_transactions",
+      get "/blockchain_transactions",
           params: { token_type: "SCC" }, headers: headers, as: :json
       expect(response).to have_http_status(:bad_request)
       expect(response.parsed_body["error"]).to include("SCC")
     end
 
     it "rejects bogus status with 400" do
-      get "/api/v1/blockchain_transactions",
+      get "/blockchain_transactions",
           params: { status: "garbled" }, headers: headers, as: :json
       expect(response).to have_http_status(:bad_request)
       expect(response.parsed_body["error"]).to include("garbled")
     end
   end
 
-  describe "GET /api/v1/blockchain_transactions/:id" do
+  describe "GET /blockchain_transactions/:id" do
     it "returns a transaction belonging to the user's organization" do
-      get "/api/v1/blockchain_transactions/#{own_tx.id}", headers: headers, as: :json
+      get "/blockchain_transactions/#{own_tx.id}", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["id"]).to eq(own_tx.id)
     end
 
     it "returns 404 for a transaction from another organization" do
-      get "/api/v1/blockchain_transactions/#{other_tx.id}", headers: headers, as: :json
+      get "/blockchain_transactions/#{other_tx.id}", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
 
@@ -82,14 +82,14 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
       # `find_transaction` matches `created_at` by EXACT equality — round-trip
       # with microsecond precision (iso8601(6)) or the default (whole-second)
       # `iso8601` truncates the stored sub-second timestamp and matches nothing.
-      get "/api/v1/blockchain_transactions/#{own_tx.id}",
+      get "/blockchain_transactions/#{own_tx.id}",
           params: { created_at: own_tx.created_at.iso8601(6) }, headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["id"]).to eq(own_tx.id)
     end
 
     it "falls back to a full scan when created_at is not valid ISO 8601" do
-      get "/api/v1/blockchain_transactions/#{own_tx.id}",
+      get "/blockchain_transactions/#{own_tx.id}",
           params: { created_at: "not-a-date" }, headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["id"]).to eq(own_tx.id)
@@ -102,21 +102,21 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
     end
 
     it "renders HTML for index" do
-      get "/api/v1/blockchain_transactions", headers: html_headers
+      get "/blockchain_transactions", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
 
     it "renders HTML for show" do
-      get "/api/v1/blockchain_transactions/#{own_tx.id}", headers: html_headers
+      get "/blockchain_transactions/#{own_tx.id}", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
   end
 
-  describe "GET /api/v1/blockchain_transactions/:id/on_chain" do
+  describe "GET /blockchain_transactions/:id/on_chain" do
     it "renders on-chain verification Turbo Frame" do
-      get "/api/v1/blockchain_transactions/#{own_tx.id}/on_chain", headers: headers
+      get "/blockchain_transactions/#{own_tx.id}/on_chain", headers: headers
       expect(response).to have_http_status(:ok)
     end
   end

@@ -151,8 +151,10 @@ Puma 8.0+ виставляє `env["puma.mark_as_io_bound"]` → лямбду Д�
 
 ```
 POST /api/v1/oracle_callbacks       — Chainlink HMAC + Polygon eth_call dry-run
-POST /api/v1/provisioning/register  — peaq DID registration + Hadron KYC HTTP
+POST /provisioning/register         — peaq DID registration + Hadron KYC HTTP
 ```
+
+**[ARCH.77]** Один шлях лишився `/api/v1/…`, інший — ні: межа проходить не за форматом відповіді (обидва JSON), а за тим, **хто відвантажує клієнта** — Chainlink DON нам не підконтрольний (версія в шляху щось важить), forester приходить власним браузером (клієнт оновлюється з кожним деплоєм).
 
 Після виклику лямбди Puma переводить цей thread у IO-bound режим і може породжувати нові threads понад `max_threads` (до `max_threads + max_io_threads`).
 
@@ -168,7 +170,7 @@ before_action { request.env["silken_net.io_bound"] = true }
 # app/middleware/mark_web3_requests_as_io_bound.rb
 IO_BOUND_PATHS = Set.new(%w[
   /api/v1/oracle_callbacks
-  /api/v1/provisioning/register
+  /provisioning/register
   /api/v1/new_io_heavy_endpoint   # ← додати тут
 ]).freeze
 ```

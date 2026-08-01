@@ -81,7 +81,7 @@ module Actuators
       div(class: "grid grid-cols-2 gap-2") do
         # Кнопка Увімкнення/Відкриття (Execute Open/ON)
         button_to(
-          execute_api_v1_actuator_path(@actuator, action_payload: "open"),
+          execute_actuator_path(@actuator, action_payload: "open"),
           method: :post,
           aria: { label: t(".execute_on_aria", device_type: @actuator.device_type) },
           class: execute_on_classes
@@ -89,7 +89,7 @@ module Actuators
 
         # Кнопка Вимкнення/Закриття (Execute Close/OFF)
         button_to(
-          execute_api_v1_actuator_path(@actuator, action_payload: "close"),
+          execute_actuator_path(@actuator, action_payload: "close"),
           method: :post,
           aria: { label: t(".execute_off_aria", device_type: @actuator.device_type) },
           class: execute_off_classes

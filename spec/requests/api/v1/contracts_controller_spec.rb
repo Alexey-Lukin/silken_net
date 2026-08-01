@@ -34,10 +34,10 @@ RSpec.describe Api::V1::ContractsController, type: :request do
     EwsAlert.define_singleton_method(:active) { status_active } unless EwsAlert.respond_to?(:active)
   end
 
-  describe "GET /api/v1/contracts" do
+  describe "GET /contracts" do
     context "when as JSON" do
       it "returns only contracts belonging to the user's organization" do
-        get "/api/v1/contracts", headers: headers, as: :json
+        get "/contracts", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
         ids = response.parsed_body["data"].map { |c| c["id"] }
@@ -51,13 +51,13 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         fresh_token = fresh_user.generate_token_for(:api_access)
         fresh_headers = { "Authorization" => "Bearer #{fresh_token}" }
 
-        get "/api/v1/contracts", headers: fresh_headers, as: :json
+        get "/contracts", headers: fresh_headers, as: :json
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body["data"]).to be_empty
       end
 
       it "scopes admin to own-org contracts (org-scoped, not platform)" do
-        get "/api/v1/contracts", headers: admin_headers, as: :json
+        get "/contracts", headers: admin_headers, as: :json
         expect(response).to have_http_status(:ok)
 
         ids = response.parsed_body["data"].map { |c| c["id"] }
@@ -72,7 +72,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
       # нічого не кидав — nil тихо інтерполювався в порожнечу. Тобто дві половини
       # контракту тут зустрічались, і НІХТО їх не порівнював ([UI.7], BP #14).
       it "renders the dashboard page" do
-        get "/api/v1/contracts", headers: headers
+        get "/contracts", headers: headers
         expect(response).to have_http_status(:ok)
       end
 
@@ -82,7 +82,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
       it "renders the portfolio average as a percentage, not the raw 0..1 index" do
         own_cluster.update!(health_index: 0.873)
 
-        get "/api/v1/contracts", headers: headers.merge("Accept" => "text/html")
+        get "/contracts", headers: headers.merge("Accept" => "text/html")
 
         expect(response.body).to include("87.3%")
       end
@@ -93,7 +93,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
       it "falls back to a full-health reading for an organization with no contracts yet" do
         fresh_user = create(:user, organization: create(:organization))
 
-        get "/api/v1/contracts",
+        get "/contracts",
             headers: { "Authorization" => "Bearer #{fresh_user.generate_token_for(:api_access)}",
                        "Accept" => "text/html" }
 
@@ -102,31 +102,31 @@ RSpec.describe Api::V1::ContractsController, type: :request do
     end
 
     it "returns 401 without authentication" do
-      get "/api/v1/contracts", as: :json
+      get "/contracts", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
   end
 
-  describe "GET /api/v1/contracts/:id" do
+  describe "GET /contracts/:id" do
     context "when as JSON" do
       it "returns a contract belonging to the user's organization" do
-        get "/api/v1/contracts/#{own_contract.id}", headers: headers, as: :json
+        get "/contracts/#{own_contract.id}", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body["contract"]["id"]).to eq(own_contract.id)
       end
 
       it "returns 404 for a contract from another organization" do
-        get "/api/v1/contracts/#{other_contract.id}", headers: headers, as: :json
+        get "/contracts/#{other_contract.id}", headers: headers, as: :json
         expect(response).to have_http_status(:not_found)
       end
 
       it "denies admin a contract from another org (org-scoped, not platform)" do
-        get "/api/v1/contracts/#{other_contract.id}", headers: admin_headers, as: :json
+        get "/contracts/#{other_contract.id}", headers: admin_headers, as: :json
         expect(response).to have_http_status(:not_found)
       end
 
       it "includes backing_asset data" do
-        get "/api/v1/contracts/#{own_contract.id}", headers: headers, as: :json
+        get "/contracts/#{own_contract.id}", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body).to have_key("backing_asset")
       end
@@ -134,22 +134,22 @@ RSpec.describe Api::V1::ContractsController, type: :request do
 
     context "when as HTML" do
       it "renders the dashboard page" do
-        get "/api/v1/contracts/#{own_contract.id}", headers: headers
+        get "/contracts/#{own_contract.id}", headers: headers
         expect(response).to have_http_status(:ok)
       end
     end
 
     it "returns 401 without authentication" do
-      get "/api/v1/contracts/#{own_contract.id}", as: :json
+      get "/contracts/#{own_contract.id}", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
   end
 
-  describe "GET /api/v1/contracts/stats" do
+  describe "GET /contracts/stats" do
     it "returns financial analytics for the user's organization" do
       allow(PriceOracleService).to receive(:current_scc_price).and_return(25.5)
 
-      get "/api/v1/contracts/stats", headers: headers, as: :json
+      get "/contracts/stats", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
       body = response.parsed_body
@@ -167,14 +167,14 @@ RSpec.describe Api::V1::ContractsController, type: :request do
       token = user_without_org.generate_token_for(:api_access)
       no_org_headers = { "Authorization" => "Bearer #{token}" }
 
-      get "/api/v1/contracts/stats", headers: no_org_headers, as: :json
+      get "/contracts/stats", headers: no_org_headers, as: :json
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["code"]).to eq("no_organization")
     end
 
     it "returns 401 without authentication" do
-      get "/api/v1/contracts/stats", as: :json
+      get "/contracts/stats", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
 
@@ -187,7 +187,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         fresh_user = create(:user, organization: fresh_org)
         fresh_headers = { "Authorization" => "Bearer #{fresh_user.generate_token_for(:api_access)}" }
 
-        get "/api/v1/contracts/stats", headers: fresh_headers, as: :json
+        get "/contracts/stats", headers: fresh_headers, as: :json
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body["cluster_health"]).to eq(1.0)
       end
@@ -199,7 +199,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         # Stub average to raise an error, triggering the rescue fallback
         allow_any_instance_of(ActiveRecord::Associations::CollectionProxy).to receive(:average).and_raise(StandardError, "DB error")
 
-        get "/api/v1/contracts/stats", headers: headers, as: :json
+        get "/contracts/stats", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body["cluster_health"]).to eq(1.0)
       end

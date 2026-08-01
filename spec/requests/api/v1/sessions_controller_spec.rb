@@ -8,16 +8,16 @@ RSpec.describe Api::V1::SessionsController, type: :request do
   let(:organization) { create(:organization) }
   let(:user) { create(:user, organization: organization, password: "password12345") }
 
-  describe "POST /api/v1/login" do
+  describe "POST /login" do
     it "authenticates with valid credentials" do
-      post "/api/v1/login", params: { email: user.email_address, password: "password12345" }, as: :json
+      post "/login", params: { email: user.email_address, password: "password12345" }, as: :json
 
       expect(response).to have_http_status(:created)
       expect(response.parsed_body["token"]).to be_present
     end
 
     it "returns unauthorized with invalid credentials" do
-      post "/api/v1/login", params: { email: user.email_address, password: "wrong_password" }, as: :json
+      post "/login", params: { email: user.email_address, password: "wrong_password" }, as: :json
 
       expect(response).to have_http_status(:unauthorized)
     end
@@ -30,10 +30,10 @@ RSpec.describe Api::V1::SessionsController, type: :request do
     it "renders the same localized failure message on both the JSON and HTML branches" do
       expected = I18n.t("flash.sessions.invalid_credentials")
 
-      post "/api/v1/login", params: { email: user.email_address, password: "wrong_password" }, as: :json
+      post "/login", params: { email: user.email_address, password: "wrong_password" }, as: :json
       expect(response.parsed_body["error"]).to eq(expected)
 
-      post "/api/v1/login",
+      post "/login",
            params: { email: user.email_address, password: "wrong_password" },
            headers: { "Accept" => "text/html" }
 
@@ -44,25 +44,25 @@ RSpec.describe Api::V1::SessionsController, type: :request do
 
     it "resets session before establishing new one (session fixation protection)" do
       # First login to establish a session
-      post "/api/v1/login", params: { email: user.email_address, password: "password12345" }, as: :json
+      post "/login", params: { email: user.email_address, password: "password12345" }, as: :json
       expect(response).to have_http_status(:created)
       first_token = response.parsed_body["token"]
 
       # Second login should reset the old session and create a new one
       expect {
-        post "/api/v1/login", params: { email: user.email_address, password: "password12345" }, as: :json
+        post "/login", params: { email: user.email_address, password: "password12345" }, as: :json
       }.to change(user.sessions, :count).by(1)
       expect(response).to have_http_status(:created)
       expect(response.parsed_body["token"]).not_to eq(first_token)
     end
   end
 
-  describe "DELETE /api/v1/logout" do
+  describe "DELETE /logout" do
     let(:api_token) { user.generate_token_for(:api_access) }
     let(:headers) { { "Authorization" => "Bearer #{api_token}" } }
 
     it "logs out the user and returns success message" do
-      delete "/api/v1/logout", headers: headers, as: :json
+      delete "/logout", headers: headers, as: :json
 
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["message"]).to be_present
@@ -70,32 +70,32 @@ RSpec.describe Api::V1::SessionsController, type: :request do
 
     # 🔴 HTML-гілка logout'а доти не мала прикладу взагалі. Вихід приходить
     # `button_to`-ом (DELETE), а `fetch` зберігає метод на 301/302 — тобто на 302
-    # браузер перевидавав би DELETE на `/api/v1/login`, де є лише GET, уже ПІСЛЯ
+    # браузер перевидавав би DELETE на `/login`, де є лише GET, уже ПІСЛЯ
     # того, як сесію знято. [UI.7]
     it "redirects the browser with 303 See Other, not 302" do
-      delete "/api/v1/logout", headers: headers.merge("Accept" => "text/html")
+      delete "/logout", headers: headers.merge("Accept" => "text/html")
 
       expect(response).to have_http_status(:see_other)
-      expect(response).to redirect_to(api_v1_login_path)
+      expect(response).to redirect_to(login_path)
     end
 
     it "returns 401 without authentication" do
-      delete "/api/v1/logout", as: :json
+      delete "/logout", as: :json
 
       expect(response).to have_http_status(:unauthorized)
     end
 
     it "destroys the current session record when session exists" do
       # First login to create a session
-      post "/api/v1/login", params: { email: user.email_address, password: "password12345" }, as: :json
+      post "/login", params: { email: user.email_address, password: "password12345" }, as: :json
       token = response.parsed_body["token"]
 
-      delete "/api/v1/logout", headers: { "Authorization" => "Bearer #{token}" }, as: :json
+      delete "/logout", headers: { "Authorization" => "Bearer #{token}" }, as: :json
       expect(response).to have_http_status(:ok)
     end
 
     it "redirects to login page for HTML format" do
-      delete "/api/v1/logout",
+      delete "/logout",
         headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
       expect(response).to have_http_status(:redirect)
     end
@@ -111,12 +111,12 @@ RSpec.describe Api::V1::SessionsController, type: :request do
     end
 
     it "returns true when user is authenticated" do
-      get "/api/v1/trees", headers: auth_headers
+      get "/trees", headers: auth_headers
       expect(response).not_to have_http_status(:unauthorized)
     end
 
     it "returns false when user is not authenticated" do
-      get "/api/v1/organizations", headers: json_headers
+      get "/organizations", headers: json_headers
       expect(response).to have_http_status(:unauthorized)
     end
   end
@@ -131,32 +131,32 @@ RSpec.describe Api::V1::SessionsController, type: :request do
 
     it "returns the most recent session when current_user exists" do
       # Login to create a session, then logout to exercise current_session lookup
-      post "/api/v1/login", params: { email: user.email_address, password: "password12345" }, as: :json
+      post "/login", params: { email: user.email_address, password: "password12345" }, as: :json
       token = response.parsed_body["token"]
 
       # The destroy action calls current_session internally, exercising lines 80-82
-      delete "/api/v1/logout", headers: { "Authorization" => "Bearer #{token}" }, as: :json
+      delete "/logout", headers: { "Authorization" => "Bearer #{token}" }, as: :json
       expect(response).to have_http_status(:ok)
     end
   end
 
-  describe "GET /api/v1/login (HTML format)" do
+  describe "GET /login (HTML format)" do
     it "renders the login page" do
-      get "/api/v1/login", headers: { "Accept" => "text/html" }
+      get "/login", headers: { "Accept" => "text/html" }
       expect(response).to have_http_status(:ok)
     end
   end
 
-  describe "POST /api/v1/login (HTML format)" do
+  describe "POST /login (HTML format)" do
     it "redirects on successful HTML login" do
-      post "/api/v1/login",
+      post "/login",
         params: { email: user.email_address, password: "password12345" },
         headers: { "Accept" => "text/html" }
       expect(response).to have_http_status(:redirect)
     end
 
     it "handles HTML login failure" do
-      post "/api/v1/login",
+      post "/login",
         params: { email: user.email_address, password: "wrong_password" },
         headers: { "Accept" => "text/html" }
       # Phlex component may not fully render in test env, but the code path is exercised
@@ -203,8 +203,8 @@ RSpec.describe Api::V1::SessionsController, type: :request do
         reset_session: nil,
         session: {},
         redirect_to: nil,
-        api_v1_login_path: "/api/v1/login",
-        api_v1_dashboard_index_path: "/api/v1/dashboard"
+        login_path: "/login",
+        dashboard_index_path: "/dashboard"
       )
       controller
     end
@@ -264,7 +264,7 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       controller = build_controller_with_auth(auth_hash)
       controller.send(:omniauth_create)
 
-      expect(controller).to have_received(:redirect_to).with("/api/v1/login", hash_including(:alert))
+      expect(controller).to have_received(:redirect_to).with("/login", hash_including(:alert))
     end
 
     it "handles existing user with non-locked identity" do
@@ -277,13 +277,13 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       controller = build_controller_with_auth(auth_hash)
       controller.send(:omniauth_create)
 
-      expect(controller).to have_received(:redirect_to).with("/api/v1/dashboard", hash_including(:notice))
+      expect(controller).to have_received(:redirect_to).with("/dashboard", hash_including(:notice))
     end
   end
 
   describe "HTML login failure" do
     it "exercises HTML login failure code path and sets flash.now" do
-      post "/api/v1/login",
+      post "/login",
         params: { email: user.email_address, password: "wrong_password" },
         headers: { "Accept" => "text/html" }
 
@@ -296,7 +296,7 @@ RSpec.describe Api::V1::SessionsController, type: :request do
     it "returns 429 after exceeding login rate limit" do
       Prosopite.pause if defined?(Prosopite)
       6.times do
-        post "/api/v1/login", params: { email: user.email_address, password: "wrong" }, as: :json
+        post "/login", params: { email: user.email_address, password: "wrong" }, as: :json
       end
 
       expect(response).to have_http_status(:too_many_requests)

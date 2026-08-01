@@ -81,7 +81,7 @@ RSpec.describe Api::V1::BaseController, type: :request do
     end
 
     it "віддає 500 JSON на API-запит і логує деталі" do
-      get "/api/v1/dashboard", headers: headers, as: :json
+      get "/dashboard", headers: headers, as: :json
 
       expect(response).to have_http_status(:internal_server_error)
       expect(response.media_type).to eq("application/json")
@@ -90,7 +90,7 @@ RSpec.describe Api::V1::BaseController, type: :request do
     end
 
     it "віддає HTML-сторінку на браузерний запит, не JSON-блоб" do
-      get "/api/v1/dashboard", headers: headers.merge("Accept" => "text/html")
+      get "/dashboard", headers: headers.merge("Accept" => "text/html")
 
       expect(response).to have_http_status(:internal_server_error)
       expect(response.media_type).to eq("text/html")
@@ -105,7 +105,7 @@ RSpec.describe Api::V1::BaseController, type: :request do
     # приходять і запити БЕЗ `current_user`. Пін тримає саме цю властивість: сторінка
     # мусить домалюватись без сайдбара й бейджа, тобто без залежностей від користувача.
     it "не тягне дашборд-хром, бо сюди приходять і запити без користувача" do
-      get "/api/v1/dashboard", headers: headers.merge("Accept" => "text/html")
+      get "/dashboard", headers: headers.merge("Accept" => "text/html")
 
       expect(response.body).not_to include("sidebar-navigation")
     end
@@ -199,7 +199,7 @@ RSpec.describe Api::V1::BaseController, type: :request do
     let(:headers) { { "Authorization" => "Bearer #{user.generate_token_for(:api_access)}" } }
 
     it "віддає 404 JSON з іменем моделі на API-запит" do
-      get "/api/v1/trees/999999", headers: headers, as: :json
+      get "/trees/999999", headers: headers, as: :json
 
       expect(response).to have_http_status(:not_found)
       expect(response.media_type).to eq("application/json")
@@ -207,7 +207,7 @@ RSpec.describe Api::V1::BaseController, type: :request do
     end
 
     it "віддає HTML-сторінку в дашборд-шаблоні на браузерний запит" do
-      get "/api/v1/trees/999999", headers: headers.merge("Accept" => "text/html")
+      get "/trees/999999", headers: headers.merge("Accept" => "text/html")
 
       expect(response).to have_http_status(:not_found)
       expect(response.media_type).to eq("text/html")
@@ -225,7 +225,7 @@ RSpec.describe Api::V1::BaseController, type: :request do
     # `users#index` — живий Pundit-шлях: `UserPolicy#index?` = `admin_or_above?`,
     # тож форестер отримує `Pundit::NotAuthorizedError` без жодного стабу.
     it "віддає 403 JSON на API-запит" do
-      get "/api/v1/users", headers: headers, as: :json
+      get "/users", headers: headers, as: :json
 
       expect(response).to have_http_status(:forbidden)
       expect(response.media_type).to eq("application/json")
@@ -233,7 +233,7 @@ RSpec.describe Api::V1::BaseController, type: :request do
     end
 
     it "віддає HTML-сторінку в дашборд-шаблоні на браузерний запит" do
-      get "/api/v1/users", headers: headers.merge("Accept" => "text/html")
+      get "/users", headers: headers.merge("Accept" => "text/html")
 
       expect(response).to have_http_status(:forbidden)
       expect(response.media_type).to eq("text/html")
@@ -316,14 +316,14 @@ RSpec.describe Api::V1::BaseController, type: :request do
     end
 
     it "віддає 422 з машинним кодом на JSON-запит" do
-      get "/api/v1/dashboard", headers: sign_in_headers(user_without_org), as: :json
+      get "/dashboard", headers: sign_in_headers(user_without_org), as: :json
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["code"]).to eq("no_organization")
     end
 
     it "віддає HTML-сторінку з поясненням на браузерний запит" do
-      get "/api/v1/dashboard", headers: sign_in_headers(user_without_org).merge("Accept" => "text/html")
+      get "/dashboard", headers: sign_in_headers(user_without_org).merge("Accept" => "text/html")
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.media_type).to eq("text/html")
@@ -342,17 +342,17 @@ RSpec.describe Api::V1::BaseController, type: :request do
     it "дає super_admin без організації двері в реєстр, а не лише вихід" do
       homeless_admin = create(:user, :super_admin, organization: nil)
 
-      get "/api/v1/dashboard", headers: sign_in_headers(homeless_admin).merge("Accept" => "text/html")
+      get "/dashboard", headers: sign_in_headers(homeless_admin).merge("Accept" => "text/html")
 
       expect(response).to have_http_status(:unprocessable_content)
-      expect(response.body).to include(%(href="#{api_v1_organizations_path}"))
+      expect(response.body).to include(%(href="#{organizations_path}"))
     end
 
     it "не заважає сторінкам, які організації не читають" do
       # Гард у точці читання не має списку винятків — сторінка, що org не питає,
       # його просто не тригерить. Мутація «повернути класовий before_action»
       # червонить саме цей приклад.
-      get "/api/v1/codex/leaderboard", as: :json
+      get "/codex/leaderboard", as: :json
 
       expect(response).to have_http_status(:ok)
     end
@@ -367,7 +367,7 @@ RSpec.describe Api::V1::BaseController, type: :request do
       org = create(:organization, name: "Cherkasy Forest Union")
       admin = create(:user, :super_admin, organization: org)
 
-      get "/api/v1/dashboard",
+      get "/dashboard",
           headers: { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}",
                      "Accept" => "text/html" }
 
@@ -386,7 +386,7 @@ RSpec.describe Api::V1::BaseController, type: :request do
   # диспетчера, а не поведінку.
   describe "коли автентифікації немає" do
     it "віддає 401 JSON на API-запит" do
-      get "/api/v1/dashboard", as: :json
+      get "/dashboard", as: :json
 
       expect(response).to have_http_status(:unauthorized)
       expect(response.media_type).to eq("application/json")
@@ -394,7 +394,7 @@ RSpec.describe Api::V1::BaseController, type: :request do
     end
 
     it "віддає сторінку ЛОГІНУ на браузерний запит, зберігаючи 401" do
-      get "/api/v1/dashboard", headers: { "Accept" => "text/html" }
+      get "/dashboard", headers: { "Accept" => "text/html" }
 
       expect(response).to have_http_status(:unauthorized)
       expect(response.media_type).to eq("text/html")
@@ -402,7 +402,7 @@ RSpec.describe Api::V1::BaseController, type: :request do
       # `{"error":...}` першою ж дією після протермінування сесії. І не на статус —
       # він тут НЕ змінювався, тож пін на 401 лишався б зеленим і на зламаній
       # поведінці (рівно та вакуумна форма, яку цей пакет виполює деінде).
-      expect(response.body).to include("<html").and include(api_v1_login_path)
+      expect(response.body).to include("<html").and include(login_path)
       expect(response.body).not_to include('{"error"')
     end
   end

@@ -23,7 +23,7 @@ RSpec.describe Codex::Battle::Arena, type: :view_component do
     expect(html).to include("Elo: 1550")
     expect(html).to include("Elo: 1450")
     expect(html).to include('value="deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"')
-    expect(html).to include('action="/api/v1/codex/matches"')
+    expect(html).to include('action="/codex/matches"')
   end
 
   it "shows the error pill when service signals 'not enough nodes'" do

@@ -8,9 +8,9 @@ RSpec.describe "Api::V1::Codex::Discoveries", type: :request do
   let(:token) { user.generate_token_for(:api_access) }
   let(:headers) { { "Authorization" => "Bearer #{token}" } }
 
-  describe "GET /api/v1/codex/discoveries/me" do
+  describe "GET /codex/discoveries/me" do
     it "401s anonymous" do
-      get "/api/v1/codex/discoveries/me"
+      get "/codex/discoveries/me"
       expect(response).to have_http_status(:unauthorized)
     end
 
@@ -21,7 +21,7 @@ RSpec.describe "Api::V1::Codex::Discoveries", type: :request do
       create(:codex_discovery, user: user, node: n2, unlocked_at: 1.minute.ago)
       _other_user = create(:codex_discovery, node: n1)
 
-      get "/api/v1/codex/discoveries/me", headers: headers, as: :json
+      get "/codex/discoveries/me", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       titles = response.parsed_body["data"].map { |d| d["node_title_en"] }
       expect(titles).to eq([ "Newer", "Older" ])
@@ -31,13 +31,13 @@ RSpec.describe "Api::V1::Codex::Discoveries", type: :request do
     it "renders an HTML list" do
       n = create(:codex_node)
       create(:codex_discovery, user: user, node: n)
-      get "/api/v1/codex/discoveries/me", headers: headers
+      get "/codex/discoveries/me", headers: headers
       expect(response.body).to include("codex_discoveries_collection")
       expect(response.body).to include(n.title_en)
     end
 
     it "shows empty-state copy" do
-      get "/api/v1/codex/discoveries/me", headers: headers
+      get "/codex/discoveries/me", headers: headers
       expect(response.body).to include("Nothing unlocked yet")
     end
   end

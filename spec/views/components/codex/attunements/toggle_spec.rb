@@ -27,8 +27,8 @@ RSpec.describe Codex::Attunements::Toggle do
 
   # Справжні хелпери — не літерали: пін мусить упасти, якщо маршрут перейменують.
   let(:routes)         { Rails.application.routes.url_helpers }
-  let(:attune_path)    { routes.api_v1_codex_node_attunements_path(node.slug) }
-  let(:un_attune_path) { routes.api_v1_codex_node_my_attunement_path(node.slug) }
+  let(:attune_path)    { routes.codex_node_attunements_path(node.slug) }
+  let(:un_attune_path) { routes.codex_node_my_attunement_path(node.slug) }
 
   describe "rendering" do
     it "renders the count using the public DOM id" do

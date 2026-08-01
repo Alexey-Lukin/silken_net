@@ -34,44 +34,44 @@ module Navigation
 
         nav(class: "flex-1 px-4 py-8 space-y-10") do
           section_group(:strategic_insight) do
-            nav_item(:oracle_visions,    api_v1_oracle_visions_path,           "eye", min_role: :forester)
-            nav_item(:treasury_matrix,   api_v1_wallets_path,                  "bank")
-            nav_item(:naas_contracts,    api_v1_contracts_path,                "clipboard")
-            nav_item(:blockchain_ledger, api_v1_blockchain_transactions_path,  "bank")
-            nav_item(:reports_archive,   api_v1_reports_path,                  "clipboard")
+            nav_item(:oracle_visions,    oracle_visions_path,           "eye", min_role: :forester)
+            nav_item(:treasury_matrix,   wallets_path,                  "bank")
+            nav_item(:naas_contracts,    contracts_path,                "clipboard")
+            nav_item(:blockchain_ledger, blockchain_transactions_path,  "bank")
+            nav_item(:reports_archive,   reports_path,                  "clipboard")
           end
 
           section_group(:library) do
-            nav_item(:codex_atlas,  api_v1_codex_nodes_path,           "book")
-            nav_item(:battle_arena, new_api_v1_codex_match_path,       "swords")
-            nav_item(:leaderboard,  api_v1_codex_leaderboard_path,     "trophy")
-            nav_item(:my_codex,     api_v1_codex_my_discoveries_path,  "book")
-            nav_item(:my_fraction,  api_v1_codex_my_fraction_path,     "shield")
+            nav_item(:codex_atlas,  codex_nodes_path,           "book")
+            nav_item(:battle_arena, new_codex_match_path,       "swords")
+            nav_item(:leaderboard,  codex_leaderboard_path,     "trophy")
+            nav_item(:my_codex,     codex_my_discoveries_path,  "book")
+            nav_item(:my_fraction,  codex_my_fraction_path,     "shield")
           end
 
           section_group(:forest_operations) do
-            nav_item(:threat_alerts,   api_v1_alerts_path,                "zap", badge: @ews_alert_count)
-            nav_item(:soldier_fleet,   api_v1_clusters_path,              "tree")
-            nav_item(:maintenance_log, api_v1_maintenance_records_path,   "clipboard", min_role: :forester)
-            nav_item(:crew_registry,   api_v1_users_path,                 "users",     min_role: :admin)
-            nav_item(:clan_hierarchy,  api_v1_organizations_path,         "users",     min_role: :super_admin)
+            nav_item(:threat_alerts,   alerts_path,                "zap", badge: @ews_alert_count)
+            nav_item(:soldier_fleet,   clusters_path,              "tree")
+            nav_item(:maintenance_log, maintenance_records_path,   "clipboard", min_role: :forester)
+            nav_item(:crew_registry,   users_path,                 "users",     min_role: :admin)
+            nav_item(:clan_hierarchy,  organizations_path,         "users",     min_role: :super_admin)
           end
 
           section_group(:neural_network) do
-            nav_item(:queen_relays,   api_v1_gateways_path,                     "radio")
-            nav_item(:species_dna,    api_v1_tree_families_path,                "activity", min_role: :admin)
-            nav_item(:firmware_ota,   api_v1_firmwares_path,                    "cpu",      min_role: :admin)
-            nav_item(:live_telemetry, live_stream_api_v1_telemetry_index_path,  "activity", pulse: true)
-            nav_item(:initiate_node,  new_api_v1_provisioning_path,             "zap",      min_role: :forester)
+            nav_item(:queen_relays,   gateways_path,                     "radio")
+            nav_item(:species_dna,    tree_families_path,                "activity", min_role: :admin)
+            nav_item(:firmware_ota,   firmwares_path,                    "cpu",      min_role: :admin)
+            nav_item(:live_telemetry, live_stream_telemetry_index_path,  "activity", pulse: true)
+            nav_item(:initiate_node,  new_provisioning_path,             "zap",      min_role: :forester)
           end
 
           section_group(:administration) do
-            nav_item(:account_security, api_v1_account_security_path,        "eye")
-            nav_item(:notifications,    api_v1_notifications_settings_path,  "radio")
-            nav_item(:org_settings,     api_v1_settings_path,                "cpu",       min_role: :admin)
-            nav_item(:audit_log,        api_v1_audit_logs_path,              "eye",       min_role: :admin)
-            nav_item(:system_audits,    api_v1_system_audits_path,           "clipboard", min_role: :admin)
-            nav_item(:system_health,    api_v1_system_health_path,           "activity",  min_role: :admin)
+            nav_item(:account_security, account_security_path,        "eye")
+            nav_item(:notifications,    notifications_settings_path,  "radio")
+            nav_item(:org_settings,     settings_path,                "cpu",       min_role: :admin)
+            nav_item(:audit_log,        audit_logs_path,              "eye",       min_role: :admin)
+            nav_item(:system_audits,    system_audits_path,           "clipboard", min_role: :admin)
+            nav_item(:system_health,    system_health_path,           "activity",  min_role: :admin)
           end
         end
 

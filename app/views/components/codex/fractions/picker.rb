@@ -47,7 +47,7 @@ module Codex
         nav(class: "flex flex-wrap gap-2") do
           @realms.each do |realm|
             a(
-              href: api_v1_codex_fraction_picker_path(realm: realm.slug),
+              href: codex_fraction_picker_path(realm: realm.slug),
               class: realm_tab_classes(realm)
             ) { realm.name_en }
           end
@@ -110,7 +110,7 @@ module Codex
         end
 
         form(
-          action: api_v1_codex_fractions_path,
+          action: codex_fractions_path,
           method: "post"
         ) do
           input(type: "hidden", name: "fraction[node_slug]", value: node.slug)

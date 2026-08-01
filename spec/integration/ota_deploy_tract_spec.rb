@@ -66,7 +66,7 @@ RSpec.describe "OTA deploy tract (FW.60 poll-ера)", type: :request do
   end
 
   def deploy!
-    post "/api/v1/firmwares/#{firmware.id}/deploy",
+    post "/firmwares/#{firmware.id}/deploy",
          params: { cluster_id: cluster.id }, headers: headers, as: :json
   end
 
@@ -130,7 +130,7 @@ RSpec.describe "OTA deploy tract (FW.60 poll-ера)", type: :request do
   end
 
   it "answers a CON retransmit (same MID) with byte-identical reply without re-derivation" do
-    post "/api/v1/firmwares/#{firmware.id}/deploy",
+    post "/firmwares/#{firmware.id}/deploy",
          params: { cluster_id: cluster.id }, headers: headers, as: :json
 
     first  = poll(fw: 0, mid: 0x3333)
@@ -140,12 +140,12 @@ RSpec.describe "OTA deploy tract (FW.60 poll-ера)", type: :request do
   end
 
   it "replaying the same campaign after completion is rejected by the hiwater guard" do
-    post "/api/v1/firmwares/#{firmware.id}/deploy",
+    post "/firmwares/#{firmware.id}/deploy",
          params: { cluster_id: cluster.id }, headers: headers, as: :json
     poll(fw: 0, mid: 0x4001)               # hint → updating
     poll(fw: firmware.id, mid: 0x4002)     # зібрано → confirmed
 
-    post "/api/v1/firmwares/#{firmware.id}/deploy",
+    post "/firmwares/#{firmware.id}/deploy",
          params: { cluster_id: cluster.id }, headers: headers, as: :json
 
     expect(response).to have_http_status(:unprocessable_content)

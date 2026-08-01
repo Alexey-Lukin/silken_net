@@ -6,7 +6,7 @@ require "csv"
 module Api
   module V1
     class ReportsController < BaseController
-      # GET /api/v1/reports
+      # GET /reports
       # Список доступних звітів та зведена інформація для інвесторів
       def index
         org = acting_organization!
@@ -38,7 +38,7 @@ module Api
         end
       end
 
-      # GET /api/v1/reports/carbon_absorption
+      # GET /reports/carbon_absorption
       # Звіт про поглинання CO₂ для екологічних аудитів
       def carbon_absorption
         org = acting_organization!
@@ -80,7 +80,7 @@ module Api
         end
       end
 
-      # GET /api/v1/reports/financial_summary
+      # GET /reports/financial_summary
       # Фінансовий звіт для інвесторів Series C
       def financial_summary
         org = acting_organization!

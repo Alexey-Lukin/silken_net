@@ -6,7 +6,7 @@ module Api
     class AuditLogsController < BaseController
       before_action :authorize_admin!
 
-      # GET /api/v1/audit_logs
+      # GET /audit_logs
       # Журнал дій адміністраторів для запобігання фроду та помилкам
       def index
         @logs = readable_audit_logs
@@ -40,7 +40,7 @@ module Api
         end
       end
 
-      # GET /api/v1/audit_logs/:id
+      # GET /audit_logs/:id
       def show
         @log = readable_audit_logs
                  .includes(:user)

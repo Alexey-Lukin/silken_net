@@ -66,7 +66,7 @@ module Maintenance
       return unless @pagy.next
 
       remaining = @pagy.count - (@pagy.page * PHOTOS_PER_PAGE)
-      next_url  = photos_api_v1_maintenance_record_path(@record, page: @pagy.next)
+      next_url  = photos_maintenance_record_path(@record, page: @pagy.next)
 
       div(class: "mt-4 text-center") do
         a(

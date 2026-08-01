@@ -5,7 +5,7 @@ module Api
   module V1
     class WalletsController < BaseController
       # --- ЗАГАЛЬНИЙ ОГЛЯД СКАРБНИЦІ (The Treasury Matrix) ---
-      # GET /api/v1/wallets
+      # GET /wallets
       def index
         scope = policy_scope(Wallet).includes(:organization, :tree)
         @pagy, @wallets = pagy(scope)
@@ -28,7 +28,7 @@ module Api
       end
 
       # --- ДЕТАЛІ ГАМАНЦЯ (On-Chain Audit) ---
-      # GET /api/v1/wallets/:id
+      # GET /wallets/:id
       def show
         @wallet = Wallet.find(params[:id])
         authorize @wallet
@@ -52,7 +52,7 @@ module Api
       end
 
       # --- БАЛАНС ГАМАНЦЯ (Lazy-Loaded Turbo Frame) ---
-      # GET /api/v1/wallets/:id/balance
+      # GET /wallets/:id/balance
       def balance
         @wallet = Wallet.find(params[:id])
         authorize @wallet
@@ -68,7 +68,7 @@ module Api
       end
 
       # --- БЛОКЧЕЙН ІДЕНТИЧНІСТЬ (Lazy-Loaded Turbo Frame) ---
-      # GET /api/v1/wallets/:id/metadata
+      # GET /wallets/:id/metadata
       def metadata
         @wallet = Wallet.find(params[:id])
         authorize @wallet

@@ -14,7 +14,7 @@ module BlockchainTransactions
         transactions_table
         render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
-          url_helper: ->(page:) { api_v1_blockchain_transactions_path(page: page) }
+          url_helper: ->(page:) { blockchain_transactions_path(page: page) }
         )
       end
     end

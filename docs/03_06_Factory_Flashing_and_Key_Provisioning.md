@@ -237,8 +237,9 @@ STEP 2: Factory Flashing (конвеєр на заводі)
      STM32_Programmer_CLI -ob RDP=1    # Pilot batch
      # (Level 2 після верифікації OTA — SEC.2)
 
-  # Польова альтернатива (одно-вузловий шлях форестера, НЕ фабрика):
-  # POST /api/v1/provisioning/register (04_03 §5.2) — той самий wire_did
+  # [ARCH.77] Польова альтернатива — БРАУЗЕРНИЙ контур (forester, НЕ фабрика;
+  # межа = хто відвантажує клієнта, не формат відповіді):
+  # POST /provisioning/register (04_03 §5.2) — той самий wire_did
   # від 24-hex UID; координати + peaq DID заводяться там.
 
 ═══════════════════════════════════════════════════════════════════════
@@ -779,7 +780,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 
 ## 5. Factory Flashing Operations Security 🤖 (SEC.3, 2026-05-17)
 
-> ⚠️ **Internal Admin Tool — поза публічним REST API.** Цей розділ описує **окремий канал** доставки ключів від Rails Backend до програматора (SWD/JTAG). Він НЕ є описом `POST /api/v1/provisioning/register` (реєстрація після деплою, Zero-Trust, без ключа у відповіді — [`04_03 §5.2`](04_03_REST_API_v1_Reference) залишається незмінним). Threat model нижче розроблений з нуля з урахуванням фізичного доступу на заводі.
+> ⚠️ **Internal Admin Tool — поза публічним REST API.** Цей розділ описує **окремий канал** доставки ключів від Rails Backend до програматора (SWD/JTAG). Він НЕ є описом `POST /provisioning/register` (реєстрація після деплою, Zero-Trust, без ключа у відповіді — [`04_03 §5.2`](04_03_REST_API_v1_Reference) залишається незмінним). Threat model нижче розроблений з нуля з урахуванням фізичного доступу на заводі.
 
 **Cross-ref:** [`00_07` — SEC.3](00_07_Action_Plan_Tracker) | §1 (pipeline design) | §2 (HKDF derivation) | 03_05 §3.6 (RDP Level 2) | 03_05 §3.7 (ATECC608B) | SEC.1 (Gnosis Safe multisig) | SEC.2 (RDP activation) | SEC.6 (Secure Element) | SEC.9 (WeakKeyDetector)
 
@@ -950,7 +951,7 @@ MaintenanceRecord.create!(
 |-------------|----------------------------------|-----------------------------------|
 | **Фізичне вилучення ключа з чіпа** | RDP Level 1: ускладнено (voltage glitching можливий на старих ревізіях); RDP Level 2: практично неможливо | ATECC data zone lock + DPA-hardened silicon: key never leaves chip в plaintext; fault injection → self-erase |
 | **Chip swap (ворог замінює STM32/ATECC на інший)** | STM32 не має унікального hardware ID прив'язаного до DB — swap непомітний до першого uplink (DID mismatch детектує Rails) | ATECC serial (9 байт, factory-burned) pin'ується у `(device_uid, atecc_serial)` парі в `HardwareKey`. Чужий ATECC → provisioning API reject з 409 |
-| **Replay provisioning request** | `POST /api/v1/provisioning/register` — ідемпотентний через duplicate DID check (409) | Те саме + ATECC serial pinning |
+| **Replay provisioning request** | `POST /provisioning/register` — ідемпотентний через duplicate DID check (409) | Те саме + ATECC serial pinning |
 | **Factory insider attack (оператор копіює ключ)** | Ризик: SWD adapter може перехопити байти під час write якщо не використовується HSM injection | Ризик нижчий: ATECC write через I²C, ключ загружається через `atcab_write_zone()` — не проходить через user-space буфер у стандартній реалізації |
 | **Cold-boot attack на factory laptop RAM** | Ризик: `device_key` у RAM до wipe (~мс) | Ризик нижчий: HSM injection → `device_key` ніколи не в laptop RAM |
 | **Перехід Гілка A → Гілка B** | Можливо (re-flash MCU + добавити ATECC до PCBA = новий PCB revision) | — |

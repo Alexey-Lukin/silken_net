@@ -4,7 +4,7 @@
 module Api
   module V1
     # Видалення окремого фото з MaintenanceRecord.
-    # DELETE /api/v1/maintenance_records/:maintenance_record_id/photos/:id
+    # DELETE /maintenance_records/:maintenance_record_id/photos/:id
     class MaintenanceRecordPhotosController < BaseController
       before_action :authorize_forester!
       before_action :set_record
@@ -27,7 +27,7 @@ module Api
           # де зареєстровано лише GET. Найгірша форма симптому саме тут: фото вже
           # знищене НЕЗВОРОТНО (`purge_later` → S3), а користувач бачить помилку.
           format.html do
-            redirect_to api_v1_maintenance_record_path(@record),
+            redirect_to maintenance_record_path(@record),
                         status: :see_other,
                         notice: I18n.t("flash.maintenance.photo_deleted")
           end
@@ -56,7 +56,7 @@ module Api
         respond_to do |format|
           format.json { render_forbidden_json }
           format.html do
-            redirect_to api_v1_maintenance_record_path(@record), alert: I18n.t("errors.api.forbidden")
+            redirect_to maintenance_record_path(@record), alert: I18n.t("errors.api.forbidden")
           end
         end
       end

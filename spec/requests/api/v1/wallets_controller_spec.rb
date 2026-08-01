@@ -14,13 +14,13 @@ RSpec.describe Api::V1::WalletsController, type: :request do
   let(:tree) { create(:tree, cluster: cluster) }
   let!(:wallet) { tree.wallet || create(:wallet, tree: tree) }
 
-  describe "GET /api/v1/wallets" do
+  describe "GET /wallets" do
     context "when as admin" do
       let(:admin) { create(:user, :admin, organization: organization) }
       let(:headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
 
       it "returns paginated wallets" do
-        get "/api/v1/wallets", headers: headers, as: :json
+        get "/wallets", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body).to have_key("pagy")
         expect(response.parsed_body["pagy"]).to include("page", "count", "pages")
@@ -32,7 +32,7 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       let(:headers) { { "Authorization" => "Bearer #{super_admin.generate_token_for(:api_access)}" } }
 
       it "returns paginated wallets" do
-        get "/api/v1/wallets", headers: headers, as: :json
+        get "/wallets", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body).to have_key("pagy")
       end
@@ -43,19 +43,19 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       let(:headers) { { "Authorization" => "Bearer #{user.generate_token_for(:api_access)}" } }
 
       it "returns only organization wallets with pagination" do
-        get "/api/v1/wallets", headers: headers, as: :json
+        get "/wallets", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body).to have_key("pagy")
       end
     end
   end
 
-  describe "GET /api/v1/wallets/:id" do
+  describe "GET /wallets/:id" do
     let(:user) { create(:user, organization: organization) }
     let(:headers) { { "Authorization" => "Bearer #{user.generate_token_for(:api_access)}" } }
 
     it "returns wallet with paginated transactions" do
-      get "/api/v1/wallets/#{wallet.id}", headers: headers, as: :json
+      get "/wallets/#{wallet.id}", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body).to have_key("data")
       expect(response.parsed_body).to have_key("transactions")
@@ -76,12 +76,12 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       let!(:foreign_wallet) { other_tree.wallet || create(:wallet, tree: other_tree) }
 
       it "denies the JSON read" do
-        get "/api/v1/wallets/#{foreign_wallet.id}", headers: headers, as: :json
+        get "/wallets/#{foreign_wallet.id}", headers: headers, as: :json
         expect(response).to have_http_status(:forbidden)
       end
 
       it "denies the HTML read and hands out no live subscription" do
-        get "/api/v1/wallets/#{foreign_wallet.id}", headers: headers.merge("Accept" => "text/html")
+        get "/wallets/#{foreign_wallet.id}", headers: headers.merge("Accept" => "text/html")
         expect(response).to have_http_status(:forbidden)
         expect(response.body).not_to include("turbo-cable-stream-source")
       end
@@ -95,14 +95,14 @@ RSpec.describe Api::V1::WalletsController, type: :request do
     end
 
     it "renders HTML for index" do
-      get "/api/v1/wallets", headers: html_headers
+      get "/wallets", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
 
     it "renders HTML for show with crypto_public_address present" do
       wallet.update!(crypto_public_address: "0xABCDEF1234567890ABCDEF1234567890ABCDEF12")
-      get "/api/v1/wallets/#{wallet.id}", headers: html_headers
+      get "/wallets/#{wallet.id}", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
@@ -114,7 +114,7 @@ RSpec.describe Api::V1::WalletsController, type: :request do
     it "renders HTML for show when crypto_public_address is nil" do
       wallet.update!(crypto_public_address: nil)
 
-      get "/api/v1/wallets/#{wallet.id}",
+      get "/wallets/#{wallet.id}",
         headers: {
           "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}",
           "Accept" => "text/html"
@@ -125,19 +125,19 @@ RSpec.describe Api::V1::WalletsController, type: :request do
     end
   end
 
-  describe "GET /api/v1/wallets/:id/balance" do
+  describe "GET /wallets/:id/balance" do
     let(:admin) { create(:user, :admin, organization: organization) }
     let(:headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
 
     it "renders balance Turbo Frame for HTML" do
       allow_any_instance_of(Wallets::BalanceFrame).to receive(:template) { |c| c.plain "balance" }
 
-      get "/api/v1/wallets/#{wallet.id}/balance", headers: headers
+      get "/wallets/#{wallet.id}/balance", headers: headers
       expect(response).to have_http_status(:ok)
     end
 
     it "returns JSON with balance data" do
-      get "/api/v1/wallets/#{wallet.id}/balance", headers: headers, as: :json
+      get "/wallets/#{wallet.id}/balance", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       data = response.parsed_body["data"]
       expect(data).to include("id", "scc_balance", "locked_balance", "available_balance", "esg_retired_balance")
@@ -156,28 +156,28 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       let!(:foreign_wallet) { other_tree.wallet || create(:wallet, tree: other_tree) }
 
       it "denies the balance read in both formats" do
-        get "/api/v1/wallets/#{foreign_wallet.id}/balance", headers: headers, as: :json
+        get "/wallets/#{foreign_wallet.id}/balance", headers: headers, as: :json
         expect(response).to have_http_status(:forbidden)
 
-        get "/api/v1/wallets/#{foreign_wallet.id}/balance", headers: headers.merge("Accept" => "text/html")
+        get "/wallets/#{foreign_wallet.id}/balance", headers: headers.merge("Accept" => "text/html")
         expect(response).to have_http_status(:forbidden)
       end
     end
   end
 
-  describe "GET /api/v1/wallets/:id/metadata" do
+  describe "GET /wallets/:id/metadata" do
     let(:admin) { create(:user, :admin, organization: organization) }
     let(:headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
 
     it "renders metadata Turbo Frame for HTML" do
       allow_any_instance_of(Wallets::MetadataFrame).to receive(:template) { |c| c.plain "metadata" }
 
-      get "/api/v1/wallets/#{wallet.id}/metadata", headers: headers
+      get "/wallets/#{wallet.id}/metadata", headers: headers
       expect(response).to have_http_status(:ok)
     end
 
     it "returns JSON with metadata" do
-      get "/api/v1/wallets/#{wallet.id}/metadata", headers: headers, as: :json
+      get "/wallets/#{wallet.id}/metadata", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       data = response.parsed_body["data"]
       expect(data).to include("id", "crypto_public_address", "locked_balance", "available_balance", "esg_retired_balance", "network")
@@ -193,7 +193,7 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       let!(:foreign_wallet) { other_tree.wallet || create(:wallet, tree: other_tree) }
 
       it "denies the metadata read in both formats" do
-        get "/api/v1/wallets/#{foreign_wallet.id}/metadata", headers: headers, as: :json
+        get "/wallets/#{foreign_wallet.id}/metadata", headers: headers, as: :json
         expect(response).to have_http_status(:forbidden)
         # ⚠️ НЕ `not_to include(foreign_wallet.crypto_public_address)`: гаманець
         # створює колбек `Tree#build_default_wallet`, а не фабрика, тож адреса там
@@ -201,7 +201,7 @@ RSpec.describe Api::V1::WalletsController, type: :request do
         # незалежно від поведінки коду. Пінимо відсутність корисного навантаження.
         expect(response.parsed_body).not_to have_key("data")
 
-        get "/api/v1/wallets/#{foreign_wallet.id}/metadata", headers: headers.merge("Accept" => "text/html")
+        get "/wallets/#{foreign_wallet.id}/metadata", headers: headers.merge("Accept" => "text/html")
         expect(response).to have_http_status(:forbidden)
       end
     end

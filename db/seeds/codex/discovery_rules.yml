@@ -7,7 +7,7 @@
 # falls back to `User.oracle_executioner` when the email is unknown.
 #
 # Adding a rule here is the *editing-by-PR* equivalent of the DAO
-# CRUD endpoint at `POST /api/v1/codex/admin/discovery_rules`.
+# CRUD endpoint at `POST /codex/admin/discovery_rules`.
 #
 # Tip: keep `params` keys snake_case strings — they round-trip through
 # JSONB and are already consumed by the per-condition adapters in

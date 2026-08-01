@@ -4,11 +4,6 @@
 class DashboardLayout < ApplicationComponent
   include Phlex::Rails::Layout
 
-  # Префікс браузерного контуру — зрізається з крихт. Один дім: коли контур
-  # переїде на кореневі шляхи ([ARCH.77]), тут лишиться порожній рядок, і крихти
-  # не доведеться перечитувати.
-  API_PATH_PREFIX = "/api/v1"
-
   # @param title [String] page title
   # @param current_user [User] authenticated user (passed from controller)
   # @param current_path [String] request path for nav highlighting + breadcrumbs
@@ -138,17 +133,19 @@ class DashboardLayout < ApplicationComponent
       ol(class: "flex items-center gap-2") do
         li do
           a(
-            href: api_v1_dashboard_index_path,
+            href: dashboard_index_path,
             class: "hover:text-gaia-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-colors duration-200"
           ) { t("navigation.breadcrumb.root") }
         end
 
         # Парсинг шляху для крихт — використовуємо @current_path замість request.path.
-        # ⚠️ Зрізаємо ПРЕФІКС, а не «два перші сегменти» [ARCH.77]: `drop(2)` мовчки
-        # зʼїдав би змістовні сегменти будь-якого шляху, що цього префікса не має,
-        # і крихти показували б хвіст без голови — без жодної помилки й без
-        # червоного тесту, бо спека передає `current_path` літералом.
-        path_segments = @current_path.delete_prefix(API_PATH_PREFIX).split("/").reject(&:empty?)
+        # ⚠️ Жодного зрізання [ARCH.77]: браузерний контур живе на кореневих шляхах,
+        # тож КОЖЕН сегмент змістовний. Історія тут несуча — доти стояв `drop(2)`
+        # («виключаємо api/v1»), який на шляху без того префікса мовчки зʼїдав би
+        # голову крихт: без помилки й без червоного тесту, бо спека передає
+        # `current_path` літералом. Якщо префікс колись повернеться — зрізати його
+        # треба ІМЕНЕМ, а не позицією.
+        path_segments = @current_path.split("/").reject(&:empty?)
 
         path_segments.each_with_index do |segment, index|
           li(class: "flex items-center gap-2") do
@@ -183,7 +180,7 @@ class DashboardLayout < ApplicationComponent
     current = @acting_organization&.name || t("navigation.top_bar.context_none")
 
     a(
-      href: api_v1_organizations_path,
+      href: organizations_path,
       # 🔴 Назва ВСЕРЕДИНІ мітки, бо `aria-label` на `<a>` замінює доступне імʼя
       # цілком і глушить дітей — рівно дефект, який [UI.3] полагодив у сайдбарі
       # (там aria_label з'їдав EWS-badge). Без інтерполяції незрячий чув би

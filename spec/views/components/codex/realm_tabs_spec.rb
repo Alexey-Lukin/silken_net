@@ -4,7 +4,7 @@
 require "rails_helper"
 
 RSpec.describe Codex::RealmTabs do
-  # The component uses `api_v1_codex_nodes_path` directly. We subclass the
+  # The component uses `codex_nodes_path` directly. We subclass the
   # component to inject a stub helper so the spec doesn't need a full
   # Rails request context (mirrors the pattern in
   # spec/views/components/codex/attunements/toggle_spec.rb).
@@ -43,9 +43,9 @@ RSpec.describe Codex::RealmTabs do
     end
 
     it "links each tab to the filtered index using realm slug" do
-      expect(html).to include('href="/api/v1/codex/nodes"')
-      expect(html).to include('href="/api/v1/codex/nodes?realm=ecosystem"')
-      expect(html).to include('href="/api/v1/codex/nodes?realm=trees"')
+      expect(html).to include('href="/codex/nodes"')
+      expect(html).to include('href="/codex/nodes?realm=ecosystem"')
+      expect(html).to include('href="/codex/nodes?realm=trees"')
     end
 
     it "exposes a labelled <nav> for assistive tech" do
@@ -57,7 +57,7 @@ RSpec.describe Codex::RealmTabs do
     it "marks the matching realm tab as `aria-current=page` and applies active token classes" do
       html = render_tabs(realms: realms, nodes_counts: counts, active_realm_slug: "trees")
       # Find the <a> for the trees realm
-      trees_anchor = html[/<a[^>]*href="\/api\/v1\/codex\/nodes\?realm=trees"[^>]*>/]
+      trees_anchor = html[/<a[^>]*href="\/codex\/nodes\?realm=trees"[^>]*>/]
       expect(trees_anchor).to include('aria-current="page"')
       expect(trees_anchor).to include("border-gaia-primary")
       expect(trees_anchor).to include("text-gaia-primary")
@@ -65,13 +65,13 @@ RSpec.describe Codex::RealmTabs do
 
     it "marks the `All` tab as active when no realm slug is supplied" do
       html = render_tabs(realms: realms, nodes_counts: counts, active_realm_slug: nil)
-      all_anchor = html[/<a[^>]*href="\/api\/v1\/codex\/nodes"[^>]*>/]
+      all_anchor = html[/<a[^>]*href="\/codex\/nodes"[^>]*>/]
       expect(all_anchor).to include('aria-current="page"')
     end
 
     it "does not mark inactive tabs as `aria-current`" do
       html = render_tabs(realms: realms, nodes_counts: counts, active_realm_slug: "trees")
-      eco_anchor = html[/<a[^>]*href="\/api\/v1\/codex\/nodes\?realm=ecosystem"[^>]*>/]
+      eco_anchor = html[/<a[^>]*href="\/codex\/nodes\?realm=ecosystem"[^>]*>/]
       expect(eco_anchor).not_to include('aria-current="page"')
       expect(eco_anchor).to include("text-gaia-text-muted")
     end

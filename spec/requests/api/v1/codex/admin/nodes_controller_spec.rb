@@ -13,38 +13,38 @@ RSpec.describe "Api::V1::Codex::Admin::Nodes", type: :request do
   let(:headers)     { { "Authorization" => "Bearer #{token}", "Content-Type" => "application/json" } }
   let(:token)       { admin.generate_token_for(:api_access) }
 
-  describe "GET /api/v1/codex/admin/nodes" do
+  describe "GET /codex/admin/nodes" do
     it "is forbidden for non-admins" do
       bad = forester.generate_token_for(:api_access)
-      get "/api/v1/codex/admin/nodes", headers: headers.merge("Authorization" => "Bearer #{bad}")
+      get "/codex/admin/nodes", headers: headers.merge("Authorization" => "Bearer #{bad}")
       expect(response).to have_http_status(:forbidden)
     end
 
     it "lists all nodes for admin+" do
-      get "/api/v1/codex/admin/nodes", headers: headers
+      get "/codex/admin/nodes", headers: headers
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["data"].map { |n| n["slug"] }).to include(node.slug)
     end
   end
 
-  describe "GET /api/v1/codex/admin/nodes/:slug" do
+  describe "GET /codex/admin/nodes/:slug" do
     it "is forbidden for foresters" do
       bad = forester.generate_token_for(:api_access)
-      get "/api/v1/codex/admin/nodes/#{node.slug}",
+      get "/codex/admin/nodes/#{node.slug}",
           headers: headers.merge("Authorization" => "Bearer #{bad}")
       expect(response).to have_http_status(:forbidden)
     end
 
     it "renders a single node payload for admin+" do
-      get "/api/v1/codex/admin/nodes/#{node.slug}", headers: headers
+      get "/codex/admin/nodes/#{node.slug}", headers: headers
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body.dig("data", "slug")).to eq(node.slug)
     end
   end
 
-  describe "PATCH /api/v1/codex/admin/nodes/:slug" do
+  describe "PATCH /codex/admin/nodes/:slug" do
     it "updates the node for admin+" do
-      patch "/api/v1/codex/admin/nodes/#{node.slug}",
+      patch "/codex/admin/nodes/#{node.slug}",
             params: { node: { title_en: "New Title" } },
             headers: headers, as: :json
       expect(response).to have_http_status(:ok)
@@ -52,7 +52,7 @@ RSpec.describe "Api::V1::Codex::Admin::Nodes", type: :request do
     end
 
     it "rejects an invalid lifecycle_status with 422" do
-      patch "/api/v1/codex/admin/nodes/#{node.slug}",
+      patch "/codex/admin/nodes/#{node.slug}",
             params: { node: { lifecycle_status: "imaginary" } },
             headers: headers, as: :json
       expect(response).to have_http_status(:unprocessable_content)
@@ -60,7 +60,7 @@ RSpec.describe "Api::V1::Codex::Admin::Nodes", type: :request do
 
     it "returns 422 with model validation errors on update failure" do
       other_node = create(:codex_node, realm: realm)
-      patch "/api/v1/codex/admin/nodes/#{node.slug}",
+      patch "/codex/admin/nodes/#{node.slug}",
             params: { node: { slug: other_node.slug } },
             headers: headers, as: :json
       expect(response).to have_http_status(:unprocessable_content)
@@ -69,7 +69,7 @@ RSpec.describe "Api::V1::Codex::Admin::Nodes", type: :request do
 
     it "accepts external_refs JSONB array on update" do
       refs = [ { "label" => "Wikipedia", "url" => "https://en.wikipedia.org/wiki/Foo" } ]
-      patch "/api/v1/codex/admin/nodes/#{node.slug}",
+      patch "/codex/admin/nodes/#{node.slug}",
             params: { node: { external_refs: refs } },
             headers: headers, as: :json
       expect(response).to have_http_status(:ok)
@@ -77,7 +77,7 @@ RSpec.describe "Api::V1::Codex::Admin::Nodes", type: :request do
     end
 
     it "passes a non-array external_refs through (validator rejects with 422)" do
-      patch "/api/v1/codex/admin/nodes/#{node.slug}",
+      patch "/codex/admin/nodes/#{node.slug}",
             params: { node: { external_refs: "not-an-array" } },
             headers: headers, as: :json
       expect(response).to have_http_status(:unprocessable_content)
@@ -86,7 +86,7 @@ RSpec.describe "Api::V1::Codex::Admin::Nodes", type: :request do
 
     it "is forbidden for foresters" do
       bad = forester.generate_token_for(:api_access)
-      patch "/api/v1/codex/admin/nodes/#{node.slug}",
+      patch "/codex/admin/nodes/#{node.slug}",
             params: { node: { title_en: "X" } },
             headers: headers.merge("Authorization" => "Bearer #{bad}"), as: :json
       expect(response).to have_http_status(:forbidden)
@@ -119,7 +119,7 @@ RSpec.describe "Api::V1::Codex::Admin::Nodes", type: :request do
     end
   end
 
-  describe "POST /api/v1/codex/admin/nodes" do
+  describe "POST /codex/admin/nodes" do
     let(:payload) do
       {
         node: {
@@ -135,13 +135,13 @@ RSpec.describe "Api::V1::Codex::Admin::Nodes", type: :request do
     end
 
     it "is forbidden for plain admin (super_admin only)" do
-      post "/api/v1/codex/admin/nodes", params: payload, headers: headers, as: :json
+      post "/codex/admin/nodes", params: payload, headers: headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
 
     it "creates a node with seed_origin = dao_proposal for super_admin" do
       sa_token = super_admin.generate_token_for(:api_access)
-      post "/api/v1/codex/admin/nodes",
+      post "/codex/admin/nodes",
            params: payload,
            headers: headers.merge("Authorization" => "Bearer #{sa_token}"), as: :json
       expect(response).to have_http_status(:created)
@@ -154,7 +154,7 @@ RSpec.describe "Api::V1::Codex::Admin::Nodes", type: :request do
       sa_token = super_admin.generate_token_for(:api_access)
       bad_payload = payload.deep_dup
       bad_payload[:node][:slug] = node.slug  # duplicate slug → validation error
-      post "/api/v1/codex/admin/nodes",
+      post "/codex/admin/nodes",
            params: bad_payload,
            headers: headers.merge("Authorization" => "Bearer #{sa_token}"), as: :json
       expect(response).to have_http_status(:unprocessable_content)
@@ -162,16 +162,16 @@ RSpec.describe "Api::V1::Codex::Admin::Nodes", type: :request do
     end
   end
 
-  describe "DELETE /api/v1/codex/admin/nodes/:slug" do
+  describe "DELETE /codex/admin/nodes/:slug" do
     it "is forbidden for plain admin" do
-      delete "/api/v1/codex/admin/nodes/#{node.slug}", headers: headers
+      delete "/codex/admin/nodes/#{node.slug}", headers: headers
       expect(response).to have_http_status(:forbidden)
     end
 
     it "destroys the node and returns 204 for super_admin" do
       sa_token = super_admin.generate_token_for(:api_access)
       expect {
-        delete "/api/v1/codex/admin/nodes/#{node.slug}",
+        delete "/codex/admin/nodes/#{node.slug}",
                headers: headers.merge("Authorization" => "Bearer #{sa_token}")
       }.to change(Codex::Node, :count).by(-1)
       expect(response).to have_http_status(:no_content)

@@ -24,7 +24,7 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
     allow(EcosystemHealingWorker).to receive(:perform_async)
   end
 
-  describe "DELETE /api/v1/maintenance_records/:maintenance_record_id/photos/:id" do
+  describe "DELETE /maintenance_records/:maintenance_record_id/photos/:id" do
     let(:record) do
       MaintenanceRecord.create!(
         maintainable: own_tree,
@@ -44,7 +44,7 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
         )
         photo = record.photos.first
 
-        delete "/api/v1/maintenance_records/#{record.id}/photos/#{photo.id}",
+        delete "/maintenance_records/#{record.id}/photos/#{photo.id}",
                headers: headers, as: :json
 
         expect(response).to have_http_status(:ok)
@@ -52,7 +52,7 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
       end
 
       it "returns 404 for a non-existent photo" do
-        delete "/api/v1/maintenance_records/#{record.id}/photos/999999",
+        delete "/maintenance_records/#{record.id}/photos/999999",
                headers: headers, as: :json
 
         expect(response).to have_http_status(:not_found)
@@ -72,11 +72,11 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
         )
         photo = record.photos.first
 
-        delete "/api/v1/maintenance_records/#{record.id}/photos/#{photo.id}",
+        delete "/maintenance_records/#{record.id}/photos/#{photo.id}",
                headers: headers
 
         expect(response).to have_http_status(:see_other)
-        expect(response).to redirect_to(api_v1_maintenance_record_path(record))
+        expect(response).to redirect_to(maintenance_record_path(record))
       end
     end
 
@@ -90,7 +90,7 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
         notes: "Inspection in a different organizational forest sector."
       )
 
-      delete "/api/v1/maintenance_records/#{other_record.id}/photos/999",
+      delete "/maintenance_records/#{other_record.id}/photos/999",
              headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
@@ -110,13 +110,13 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
       )
       photo = test_record.photos.first
 
-      delete "/api/v1/maintenance_records/#{test_record.id}/photos/#{photo.id}",
+      delete "/maintenance_records/#{test_record.id}/photos/#{photo.id}",
              headers: investor_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
 
     it "returns 401 without authentication" do
-      delete "/api/v1/maintenance_records/#{record.id}/photos/999", as: :json
+      delete "/maintenance_records/#{record.id}/photos/999", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
 
@@ -147,7 +147,7 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
       photo = other_record.photos.first
 
       expect do
-        delete "/api/v1/maintenance_records/#{other_record.id}/photos/#{photo.id}",
+        delete "/maintenance_records/#{other_record.id}/photos/#{photo.id}",
                headers: headers, as: :json
       end.not_to have_enqueued_job(ActiveStorage::PurgeJob)
 
@@ -175,10 +175,10 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
       )
       photo = other_record.photos.first
 
-      delete "/api/v1/maintenance_records/#{other_record.id}/photos/#{photo.id}",
+      delete "/maintenance_records/#{other_record.id}/photos/#{photo.id}",
              headers: headers.merge("Accept" => "text/html")
 
-      expect(response).to redirect_to(api_v1_maintenance_record_path(other_record))
+      expect(response).to redirect_to(maintenance_record_path(other_record))
       expect(response.media_type).not_to eq("application/json")
     end
 
@@ -201,7 +201,7 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
       admin = create(:user, :admin, organization: organization)
       admin_headers = { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" }
 
-      delete "/api/v1/maintenance_records/#{other_record.id}/photos/#{photo.id}",
+      delete "/maintenance_records/#{other_record.id}/photos/#{photo.id}",
              headers: admin_headers, as: :json
 
       expect(response).to have_http_status(:ok)

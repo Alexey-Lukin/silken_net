@@ -6,8 +6,8 @@ module Api
     module Codex
       # `Codex::Match` is the resource (a single Battle Arena duel). REST
       # actions:
-      #   GET  /api/v1/codex/matches/new   → Turbo Frame Arena with the next pair
-      #   POST /api/v1/codex/matches       → record vote / skip
+      #   GET  /codex/matches/new   → Turbo Frame Arena with the next pair
+      #   POST /codex/matches       → record vote / skip
       #
       # The "Battle Arena" naming is preserved at the UX layer (Phlex
       # `Codex::Battle::Arena` component) — it's a UI label, not a REST noun.

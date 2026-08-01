@@ -18,7 +18,7 @@ RSpec.describe Codex::Citations::Pill, type: :view_component do
 
   it "renders a slug-href anchor with the title and archetype glyph" do
     html = render_pill(citation: citation)
-    expect(html).to include("/api/v1/codex/nodes/mafusail")
+    expect(html).to include("/codex/nodes/mafusail")
     expect(html).to include("Mafusail")
     expect(html).to include("relict_oracle")
     expect(html).to include("codex_citation_#{citation.id}")

@@ -18,7 +18,7 @@ RSpec.describe Codex::Fractions::Card, type: :view_component do
   it "renders the empty-state CTA when the user has no fraction" do
     html = render_card(fraction: nil, current_user: user)
     expect(html).to include("Choose a Fraction")
-    expect(html).to include("/api/v1/codex/fractions/picker")
+    expect(html).to include("/codex/fractions/picker")
     expect(html).to include("codex_fraction_card")
   end
 

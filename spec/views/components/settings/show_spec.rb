@@ -38,8 +38,8 @@ RSpec.describe Settings::Show do
       expect(html).to include("Configuration")
     end
 
-    it "renders the form action to api_v1_settings_path" do
-      expect(html).to include("/api/v1/settings")
+    it "renders the form action to settings_path" do
+      expect(html).to include("/settings")
     end
 
     it "renders a PATCH form via hidden method" do

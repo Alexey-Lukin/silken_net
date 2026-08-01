@@ -5,7 +5,7 @@ require "rails_helper"
 
 RSpec.describe Codex::Index do
   # Index renders sub-components (RealmTabs, NodeCard, Pagination, EmptyState).
-  # We need a real Rails view context for `api_v1_codex_nodes_path` lookups
+  # We need a real Rails view context for `codex_nodes_path` lookups
   # inside Pagination and RealmTabs. The `render_component` helper auto-detects
   # this and routes through `ApplicationController.renderer`.
 

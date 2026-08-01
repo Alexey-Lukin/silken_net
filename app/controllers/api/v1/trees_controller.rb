@@ -5,7 +5,7 @@ module Api
   module V1
     class TreesController < BaseController
       # --- ШЕРЕНГА СОЛДАТІВ (Sector Grid) ---
-      # GET /api/v1/clusters/:cluster_id/trees
+      # GET /clusters/:cluster_id/trees
       def index
         @cluster = acting_organization!.clusters.find(params[:cluster_id])
         @pagy, @trees = pagy(
@@ -31,7 +31,7 @@ module Api
       end
 
       # --- ПАСПОРТ СОЛДАТА (Deep Audit) ---
-      # GET /api/v1/trees/:id
+      # GET /trees/:id
       def show
         @tree = acting_organization!.trees
                   .includes(:tree_family, :hardware_key, :wallet, :cluster)
@@ -68,7 +68,7 @@ module Api
         end
       end
       # --- ЦИФРОВИЙ ЖИТТЄПИС (Tree Chronicle) ---
-      # GET /api/v1/trees/:id/chronicle
+      # GET /trees/:id/chronicle
       # HTML: Turbo Frame для lazy-loading у Trees::Show
       # JSON: Масив хронологічних подій
       def chronicle

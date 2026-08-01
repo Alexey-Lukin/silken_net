@@ -770,7 +770,7 @@ Load_AES_Key();  // reads from FLASH_KEY_ADDR, validates magic "KEYL",
 
 ```
 Factory Flashing (поточна Гілка A, TRL 6/7 — pilot ≤ 10k):
-  Rails Backend → POST /api/v1/provisioning/register → {device_uid}
+  Rails Backend → POST /provisioning/register → {device_uid}
                   (Zero-Trust: aes_key НЕ повертається у відповіді)
   STM32 ← HKDF(PROVISIONING_MASTER_KEY, device_uid, "silken-aes-128-lora-key") → aes_key[4]
   ST-Link/SWD → Flash aes_key до Protected Sector → RDP Level 2 Lock
@@ -1087,7 +1087,7 @@ atca_status_t status = atcab_aes_encrypt(
 [Завод]
   1. Reflow PCBA (ATECC608B запаяний, але config zone не locked)
   2. Power-up → STM32 talks to ATECC608B over I²C
-  3. STM32 → backend: POST /api/v1/provisioning/register {device_uid}
+  3. STM32 → backend: POST /provisioning/register {device_uid}
   4. Backend → returns: {aes_key, ecc_keypair, cert_chain}
   5. STM32 → ATECC608B: write Slot 0 (AES), Slot 1 (ECC), Slot 2 (cert)
   6. STM32 → ATECC608B: LOCK config zone + data zone (irreversible на ASIC рівні)

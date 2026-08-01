@@ -30,7 +30,7 @@ RSpec.describe Api::V1::AuditLogsController, type: :request do
     let(:super_headers) { { "Authorization" => "Bearer #{super_admin.generate_token_for(:api_access)}" } }
 
     it "видно super_admin разом із журналом його acting-організації" do
-      get "/api/v1/audit_logs", headers: super_headers, as: :json
+      get "/audit_logs", headers: super_headers, as: :json
 
       ids = response.parsed_body["data"].map { |l| l["id"] }
       expect(ids).to include(system_log.id, own_log.id)
@@ -38,7 +38,7 @@ RSpec.describe Api::V1::AuditLogsController, type: :request do
     end
 
     it "НЕ видно звичайному адміністраторові організації" do
-      get "/api/v1/audit_logs", headers: admin_headers, as: :json
+      get "/audit_logs", headers: admin_headers, as: :json
 
       ids = response.parsed_body["data"].map { |l| l["id"] }
       expect(ids).to include(own_log.id)
@@ -46,9 +46,9 @@ RSpec.describe Api::V1::AuditLogsController, type: :request do
     end
   end
 
-  describe "GET /api/v1/audit_logs" do
+  describe "GET /audit_logs" do
     it "returns only audit logs belonging to the user's organization" do
-      get "/api/v1/audit_logs", headers: admin_headers, as: :json
+      get "/audit_logs", headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
 
       ids = response.parsed_body["data"].map { |l| l["id"] }
@@ -57,27 +57,27 @@ RSpec.describe Api::V1::AuditLogsController, type: :request do
     end
 
     it "returns 403 for non-admin users" do
-      get "/api/v1/audit_logs", headers: regular_headers, as: :json
+      get "/audit_logs", headers: regular_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
   end
 
-  describe "GET /api/v1/audit_logs/:id" do
+  describe "GET /audit_logs/:id" do
     it "returns a specific audit log from the user's organization" do
-      get "/api/v1/audit_logs/#{own_log.id}", headers: admin_headers, as: :json
+      get "/audit_logs/#{own_log.id}", headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["id"]).to eq(own_log.id)
     end
 
     it "returns 404 for an audit log from another organization" do
-      get "/api/v1/audit_logs/#{other_log.id}", headers: admin_headers, as: :json
+      get "/audit_logs/#{other_log.id}", headers: admin_headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
   end
 
-  describe "GET /api/v1/audit_logs with filtering" do
+  describe "GET /audit_logs with filtering" do
     it "filters by action_type" do
-      get "/api/v1/audit_logs", params: { action_type: own_log.action }, headers: admin_headers, as: :json
+      get "/audit_logs", params: { action_type: own_log.action }, headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
 
       data = response.parsed_body["data"]
@@ -85,7 +85,7 @@ RSpec.describe Api::V1::AuditLogsController, type: :request do
     end
 
     it "filters by user_id" do
-      get "/api/v1/audit_logs", params: { user_id: admin_user.id }, headers: admin_headers, as: :json
+      get "/audit_logs", params: { user_id: admin_user.id }, headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
 
       data = response.parsed_body["data"]
@@ -93,7 +93,7 @@ RSpec.describe Api::V1::AuditLogsController, type: :request do
     end
 
     it "returns empty results for non-matching action_type filter" do
-      get "/api/v1/audit_logs", params: { action_type: "nonexistent_action" }, headers: admin_headers, as: :json
+      get "/audit_logs", params: { action_type: "nonexistent_action" }, headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
 
       data = response.parsed_body["data"]
@@ -101,27 +101,27 @@ RSpec.describe Api::V1::AuditLogsController, type: :request do
     end
   end
 
-  describe "GET /api/v1/audit_logs with pagination" do
+  describe "GET /audit_logs with pagination" do
     it "respects custom limit parameter" do
-      get "/api/v1/audit_logs", params: { limit: 1 }, headers: admin_headers, as: :json
+      get "/audit_logs", params: { limit: 1 }, headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["pagy"]).to be_present
     end
 
     it "clamps limit to minimum of 1" do
-      get "/api/v1/audit_logs", params: { limit: 0 }, headers: admin_headers, as: :json
+      get "/audit_logs", params: { limit: 0 }, headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
     end
 
     it "clamps limit to maximum of 100" do
-      get "/api/v1/audit_logs", params: { limit: 999 }, headers: admin_headers, as: :json
+      get "/audit_logs", params: { limit: 999 }, headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
     end
   end
 
   describe "authentication" do
     it "returns 401 without authentication" do
-      get "/api/v1/audit_logs", as: :json
+      get "/audit_logs", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
   end
@@ -132,13 +132,13 @@ RSpec.describe Api::V1::AuditLogsController, type: :request do
     end
 
     it "renders HTML for index" do
-      get "/api/v1/audit_logs", headers: html_headers
+      get "/audit_logs", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
 
     it "renders HTML for show" do
-      get "/api/v1/audit_logs/#{own_log.id}", headers: html_headers
+      get "/audit_logs/#{own_log.id}", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end

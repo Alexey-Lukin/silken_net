@@ -56,7 +56,7 @@ RSpec.describe Organizations::Show do
   # профіль клану — саме те місце, де super_admin вирішує, чи входити в цей контекст.
   describe "перемикач контексту" do
     it "дає кнопку, коли дивимось на чужий клан" do
-      switch_path = Rails.application.routes.url_helpers.switch_api_v1_organization_path(1)
+      switch_path = Rails.application.routes.url_helpers.switch_organization_path(1)
 
       expect(html).to include(%(action="#{switch_path}"))
       expect(html).to include("SWITCH_TO")
@@ -67,7 +67,7 @@ RSpec.describe Organizations::Show do
       html = render_component(
         organization: org, clusters: clusters, performance: performance, acting_organization: org
       )
-      switch_path = Rails.application.routes.url_helpers.switch_api_v1_organization_path(1)
+      switch_path = Rails.application.routes.url_helpers.switch_organization_path(1)
 
       expect(html).to include("ACTIVE_CONTEXT")
       expect(html).to include('aria-current="true"')

@@ -9,7 +9,7 @@ module TreeFamilies
 
     def view_template
       div(class: "max-w-2xl mx-auto animate-in zoom-in duration-500") do
-        form_with(model: [ :api, :v1, @family ], class: "space-y-8 p-10 border border-gaia-border bg-gaia-surface shadow-sm dark:shadow-none") do |f|
+        form_with(model: @family, class: "space-y-8 p-10 border border-gaia-border bg-gaia-surface shadow-sm dark:shadow-none") do |f|
           div(class: "grid grid-cols-1 md:grid-cols-2 gap-6") do
             field_container(f, :name, t(".species_identity")) { f.text_field :name, class: input_classes, placeholder: t(".species_placeholder") }
             field_container(f, :scientific_name, t(".scientific_name")) { f.text_field :scientific_name, class: input_classes, placeholder: t(".scientific_placeholder") }

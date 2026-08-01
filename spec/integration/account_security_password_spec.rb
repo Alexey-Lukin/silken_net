@@ -12,10 +12,10 @@ RSpec.describe "Account security and password management" do
   # AccountSecurityController
   # ---------------------------------------------------------------------------
   describe "Account Security API" do
-    it "GET /api/v1/account_security shows MFA status and identities" do
+    it "GET /account_security shows MFA status and identities" do
       identity = create(:identity, user: user, provider: "google_oauth2")
 
-      get "/api/v1/account_security",
+      get "/account_security",
           headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -25,8 +25,8 @@ RSpec.describe "Account security and password management" do
       expect(json["identities"].first["provider"]).to eq("google_oauth2")
     end
 
-    it "PATCH /api/v1/account_security/mfa enables MFA with recovery codes" do
-      patch "/api/v1/account_security/mfa",
+    it "PATCH /account_security/mfa enables MFA with recovery codes" do
+      patch "/account_security/mfa",
             headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -35,10 +35,10 @@ RSpec.describe "Account security and password management" do
       expect(json["recovery_codes"]).to be_present
     end
 
-    it "PATCH /api/v1/account_security/mfa disables MFA when already enabled (with step-up password)" do
+    it "PATCH /account_security/mfa disables MFA when already enabled (with step-up password)" do
       user.update!(otp_required_for_login: true, recovery_codes: [ "code1", "code2" ])
 
-      patch "/api/v1/account_security/mfa",
+      patch "/account_security/mfa",
             params: { current_password: "securepass1234" },
             headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
@@ -47,10 +47,10 @@ RSpec.describe "Account security and password management" do
       expect(json["mfa_enabled"]).to be false
     end
 
-    it "DELETE /api/v1/account_security/identities/:id unlinks provider" do
+    it "DELETE /account_security/identities/:id unlinks provider" do
       identity = create(:identity, user: user)
 
-      delete "/api/v1/account_security/identities/#{identity.id}",
+      delete "/account_security/identities/#{identity.id}",
              headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -61,7 +61,7 @@ RSpec.describe "Account security and password management" do
       user.update_columns(password_digest: nil)
       identity = create(:identity, user: user)
 
-      delete "/api/v1/account_security/identities/#{identity.id}",
+      delete "/account_security/identities/#{identity.id}",
              headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:unprocessable_content)
@@ -71,19 +71,19 @@ RSpec.describe "Account security and password management" do
     it "PATCH lock/unlock identity" do
       identity = create(:identity, user: user)
 
-      patch "/api/v1/account_security/identities/#{identity.id}/lock",
+      patch "/account_security/identities/#{identity.id}/lock",
             headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
       expect(response).to have_http_status(:ok)
       expect(identity.reload.locked?).to be true
 
-      patch "/api/v1/account_security/identities/#{identity.id}/unlock",
+      patch "/account_security/identities/#{identity.id}/unlock",
             headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
       expect(response).to have_http_status(:ok)
       expect(identity.reload.locked?).to be false
     end
 
-    it "PATCH /api/v1/account_security/password changes password" do
-      patch "/api/v1/account_security/password",
+    it "PATCH /account_security/password changes password" do
+      patch "/account_security/password",
             params: {
               current_password: "securepass1234",
               new_password: "newsecurepass12",
@@ -96,7 +96,7 @@ RSpec.describe "Account security and password management" do
     end
 
     it "rejects wrong current password" do
-      patch "/api/v1/account_security/password",
+      patch "/account_security/password",
             params: {
               current_password: "wrong_password",
               new_password: "newsecurepass12",
@@ -108,7 +108,7 @@ RSpec.describe "Account security and password management" do
     end
 
     it "rejects too-short new password" do
-      patch "/api/v1/account_security/password",
+      patch "/account_security/password",
             params: {
               current_password: "securepass1234",
               new_password: "short",
@@ -120,7 +120,7 @@ RSpec.describe "Account security and password management" do
     end
 
     it "rejects mismatched password confirmation" do
-      patch "/api/v1/account_security/password",
+      patch "/account_security/password",
             params: {
               current_password: "securepass1234",
               new_password: "newsecurepass12",
@@ -136,12 +136,12 @@ RSpec.describe "Account security and password management" do
   # PasswordsController
   # ---------------------------------------------------------------------------
   describe "Password Reset API" do
-    it "POST /api/v1/forgot_password sends reset email" do
+    it "POST /forgot_password sends reset email" do
       mailer_double = double(deliver_later: nil)
       mailer_with = double(reset_instructions: mailer_double)
       allow(PasswordMailer).to receive(:with).and_return(mailer_with)
 
-      post "/api/v1/forgot_password",
+      post "/forgot_password",
            params: { email: user.email_address },
            headers: { "Accept" => "application/json" }
 
@@ -150,18 +150,18 @@ RSpec.describe "Account security and password management" do
       expect(json["message"]).to include("email")
     end
 
-    it "POST /api/v1/forgot_password protects against email enumeration" do
-      post "/api/v1/forgot_password",
+    it "POST /forgot_password protects against email enumeration" do
+      post "/forgot_password",
            params: { email: "nonexistent@example.com" },
            headers: { "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
-    it "PATCH /api/v1/reset_password updates password with valid token" do
+    it "PATCH /reset_password updates password with valid token" do
       reset_token = user.generate_token_for(:password_reset)
 
-      patch "/api/v1/reset_password",
+      patch "/reset_password",
             params: {
               token: reset_token,
               password: "newpassword1234",
@@ -173,28 +173,28 @@ RSpec.describe "Account security and password management" do
       expect(user.reload.authenticate("newpassword1234")).to be_truthy
     end
 
-    it "PATCH /api/v1/reset_password rejects invalid token" do
-      patch "/api/v1/reset_password",
+    it "PATCH /reset_password rejects invalid token" do
+      patch "/reset_password",
             params: { token: "invalid_token", password: "newpassword1234", password_confirmation: "newpassword1234" },
             headers: { "Accept" => "application/json" }
 
       expect(response).to have_http_status(:unprocessable_content)
     end
 
-    it "PATCH /api/v1/reset_password rejects short password" do
+    it "PATCH /reset_password rejects short password" do
       reset_token = user.generate_token_for(:password_reset)
 
-      patch "/api/v1/reset_password",
+      patch "/reset_password",
             params: { token: reset_token, password: "short", password_confirmation: "short" },
             headers: { "Accept" => "application/json" }
 
       expect(response).to have_http_status(:unprocessable_content)
     end
 
-    it "PATCH /api/v1/reset_password rejects mismatched confirmation" do
+    it "PATCH /reset_password rejects mismatched confirmation" do
       reset_token = user.generate_token_for(:password_reset)
 
-      patch "/api/v1/reset_password",
+      patch "/reset_password",
             params: { token: reset_token, password: "newpassword1234", password_confirmation: "different1234" },
             headers: { "Accept" => "application/json" }
 

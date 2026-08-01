@@ -94,7 +94,7 @@ RSpec.describe Provisioning::Success do
 
     it "links to the correct cluster path" do
       html = render_component(device: device, aes_key: nil)
-      expect(html).to include("/api/v1/clusters/10")
+      expect(html).to include("/clusters/10")
     end
   end
 end

@@ -48,7 +48,7 @@ class ActuatorCommandWorker
       target: Actuators::CommandStatusFrame.dom_id(command.id),
       html: Actuators::CommandStatusFrameStub.new(
         command_id: command.id,
-        src: Rails.application.routes.url_helpers.api_v1_actuator_command_status_path(command)
+        src: Rails.application.routes.url_helpers.actuator_command_status_path(command)
       ).call
     )
   rescue StandardError => e

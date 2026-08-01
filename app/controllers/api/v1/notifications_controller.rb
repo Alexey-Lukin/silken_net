@@ -4,7 +4,7 @@
 module Api
   module V1
     class NotificationsController < BaseController
-      # GET /api/v1/notifications/settings
+      # GET /notifications/settings
       # Поточні налаштування каналів зв'язку для поточного користувача
       def settings
         respond_to do |format|
@@ -28,7 +28,7 @@ module Api
         end
       end
 
-      # PATCH /api/v1/notifications/settings
+      # PATCH /notifications/settings
       # Оновлення каналів зв'язку (Telegram, SMS, Push, Email)
       def update_settings
         if current_user.update(notification_params)
@@ -44,7 +44,7 @@ module Api
                 }
               }
             end
-            format.html { redirect_to api_v1_notifications_settings_path, notice: I18n.t("flash.settings.updated") }
+            format.html { redirect_to notifications_settings_path, notice: I18n.t("flash.settings.updated") }
           end
         else
           respond_to do |format|

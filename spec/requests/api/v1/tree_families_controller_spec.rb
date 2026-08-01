@@ -18,10 +18,10 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
   let!(:scots_pine) { create(:tree_family, :scots_pine) }
   let!(:common_oak) { create(:tree_family, :common_oak) }
 
-  describe "GET /api/v1/tree_families" do
+  describe "GET /tree_families" do
     context "when as JSON" do
       it "returns all tree families for admin" do
-        get "/api/v1/tree_families", headers: headers, as: :json
+        get "/tree_families", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
         names = response.parsed_body["data"].map { |f| f["name"] }
@@ -31,7 +31,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
 
     context "when as HTML" do
       it "renders the dashboard page" do
-        get "/api/v1/tree_families", headers: headers
+        get "/tree_families", headers: headers
         expect(response).to have_http_status(:ok)
       end
 
@@ -41,30 +41,30 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
       # Негативний приклад для цього НЕ годиться: дефолт fail-closed ховає дії від
       # усіх, тож стереже проводку лише ПОЗИТИВНЕ твердження.
       it "показує мутаційні дії super_admin, але не звичайному admin" do
-        get "/api/v1/tree_families", headers: super_admin_headers
+        get "/tree_families", headers: super_admin_headers
         expect(response.body).to include("+ Define DNA")
 
-        get "/api/v1/tree_families", headers: headers
+        get "/tree_families", headers: headers
         expect(response.body).to include("Species Name")     # сторінка та сама
         expect(response.body).not_to include("+ Define DNA")
       end
     end
 
     it "returns 403 for non-admin users" do
-      get "/api/v1/tree_families", headers: investor_headers, as: :json
+      get "/tree_families", headers: investor_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
 
     it "returns 401 without authentication" do
-      get "/api/v1/tree_families", as: :json
+      get "/tree_families", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
   end
 
-  describe "GET /api/v1/tree_families/:id" do
+  describe "GET /tree_families/:id" do
     context "when as JSON" do
       it "returns a specific tree family" do
-        get "/api/v1/tree_families/#{scots_pine.id}", headers: headers, as: :json
+        get "/tree_families/#{scots_pine.id}", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body["name"]).to eq("Scots Pine")
       end
@@ -72,32 +72,32 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
 
     context "when as HTML" do
       it "renders the dashboard page" do
-        get "/api/v1/tree_families/#{scots_pine.id}", headers: headers
+        get "/tree_families/#{scots_pine.id}", headers: headers
         expect(response).to have_http_status(:ok)
       end
     end
 
     it "returns 403 for non-admin users" do
-      get "/api/v1/tree_families/#{scots_pine.id}", headers: investor_headers, as: :json
+      get "/tree_families/#{scots_pine.id}", headers: investor_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
   end
 
-  describe "GET /api/v1/tree_families/new" do
+  describe "GET /tree_families/new" do
     let(:headers) { super_admin_headers }
 
     it "renders the new family form for super_admin" do
-      get "/api/v1/tree_families/new", headers: headers
+      get "/tree_families/new", headers: headers
       expect(response).to have_http_status(:ok)
     end
 
     it "returns 403 for non-admin users" do
-      get "/api/v1/tree_families/new", headers: investor_headers
+      get "/tree_families/new", headers: investor_headers
       expect(response).to have_http_status(:forbidden)
     end
   end
 
-  describe "POST /api/v1/tree_families" do
+  describe "POST /tree_families" do
     let(:headers) { super_admin_headers }
 
     let(:valid_params) do
@@ -127,7 +127,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
 
     it "creates a new tree family with valid params" do
       expect {
-        post "/api/v1/tree_families", params: valid_params, headers: headers
+        post "/tree_families", params: valid_params, headers: headers
       }.to change(TreeFamily, :count).by(1)
 
       expect(response).to have_http_status(:redirect)
@@ -135,7 +135,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
 
     context "when as JSON" do
       it "returns 201 with JSON body on success" do
-        post "/api/v1/tree_families", params: valid_params, headers: headers, as: :json
+        post "/tree_families", params: valid_params, headers: headers, as: :json
         expect(response).to have_http_status(:created)
 
         body = response.parsed_body
@@ -143,7 +143,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
       end
 
       it "returns validation errors on failure" do
-        post "/api/v1/tree_families", params: invalid_params, headers: headers, as: :json
+        post "/tree_families", params: invalid_params, headers: headers, as: :json
         expect(response).to have_http_status(:unprocessable_content)
         expect(response.parsed_body).to have_key("errors")
       end
@@ -151,43 +151,43 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
 
     it "does not create with invalid params and re-renders form" do
       expect {
-        post "/api/v1/tree_families", params: invalid_params, headers: headers
+        post "/tree_families", params: invalid_params, headers: headers
       }.not_to change(TreeFamily, :count)
 
       expect(response).to have_http_status(:ok)
     end
 
     it "returns 403 for non-admin users" do
-      post "/api/v1/tree_families", params: valid_params, headers: investor_headers
+      post "/tree_families", params: valid_params, headers: investor_headers
       expect(response).to have_http_status(:forbidden)
     end
 
     it "returns 403 for a plain org admin — species mutations require super_admin" do
-      post "/api/v1/tree_families", params: valid_params,
+      post "/tree_families", params: valid_params,
            headers: { "Authorization" => "Bearer #{admin_token}" }
       expect(response).to have_http_status(:forbidden)
     end
   end
 
-  describe "GET /api/v1/tree_families/:id/edit" do
+  describe "GET /tree_families/:id/edit" do
     let(:headers) { super_admin_headers }
 
     it "renders the edit form for super_admin" do
-      get "/api/v1/tree_families/#{scots_pine.id}/edit", headers: headers
+      get "/tree_families/#{scots_pine.id}/edit", headers: headers
       expect(response).to have_http_status(:ok)
     end
 
     it "returns 403 for non-admin users" do
-      get "/api/v1/tree_families/#{scots_pine.id}/edit", headers: investor_headers
+      get "/tree_families/#{scots_pine.id}/edit", headers: investor_headers
       expect(response).to have_http_status(:forbidden)
     end
   end
 
-  describe "PATCH /api/v1/tree_families/:id" do
+  describe "PATCH /tree_families/:id" do
     let(:headers) { super_admin_headers }
 
     it "updates the tree family with valid params" do
-      patch "/api/v1/tree_families/#{scots_pine.id}",
+      patch "/tree_families/#{scots_pine.id}",
             params: { tree_family: { name: "Updated Pine" } },
             headers: headers
 
@@ -196,7 +196,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
     end
 
     it "re-renders form with invalid params" do
-      patch "/api/v1/tree_families/#{scots_pine.id}",
+      patch "/tree_families/#{scots_pine.id}",
             params: { tree_family: { name: "" } },
             headers: headers
 
@@ -205,7 +205,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
     end
 
     it "returns 403 for non-admin users" do
-      patch "/api/v1/tree_families/#{scots_pine.id}",
+      patch "/tree_families/#{scots_pine.id}",
             params: { tree_family: { name: "Hacked" } },
             headers: investor_headers
 
@@ -214,7 +214,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
 
     context "when as JSON" do
       it "returns 200 with JSON body on success" do
-        patch "/api/v1/tree_families/#{scots_pine.id}",
+        patch "/tree_families/#{scots_pine.id}",
               params: { tree_family: { name: "Updated Pine" } },
               headers: headers, as: :json
 
@@ -223,7 +223,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
       end
 
       it "returns validation errors on failure" do
-        patch "/api/v1/tree_families/#{scots_pine.id}",
+        patch "/tree_families/#{scots_pine.id}",
               params: { tree_family: { name: "" } },
               headers: headers, as: :json
 
@@ -233,9 +233,9 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
     end
   end
 
-  describe "DELETE /api/v1/tree_families/:id" do
+  describe "DELETE /tree_families/:id" do
     it "is not routable because destroy route is not defined" do
-      delete "/api/v1/tree_families/#{scots_pine.id}", headers: headers, as: :json
+      delete "/tree_families/#{scots_pine.id}", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
       expect(TreeFamily.exists?(scots_pine.id)).to be true
     end

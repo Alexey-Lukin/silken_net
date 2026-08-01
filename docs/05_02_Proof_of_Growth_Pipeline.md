@@ -158,7 +158,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║    └──► StreamrBroadcastWorker.perform_async(id, created_at_iso)    ║
 ║                                                                      ║
 ║  ─────────── КРОК A: peaq DID (одноразово при Provisioning) ─────── ║
-║  [ProvisioningController#register] POST /api/v1/provisioning         ║
+║  [ProvisioningController#register] POST /provisioning                ║
 ║    PeaqRegistrationWorker.perform_async(tree.id)                    ║
 ║    ▼ Peaq::DidRegistryService#register!                              ║
 ║    DID = "did:peaq:0x" + SHA256(did:id:created_at)[0:40]           ║
@@ -446,7 +446,9 @@ Soldier:
 
 ### Крок A: peaq DID Provisioning
 
-**Тригер:** `POST /api/v1/provisioning` → `ProvisioningController#register`
+**[ARCH.77]** Тригер — форестерська POST-форма в браузері (не фабрика, не пристрій): межа проходить не за форматом відповіді, а за тим, хто відвантажує клієнта.
+
+**Тригер:** `POST /provisioning` → `ProvisioningController#register`
 
 **Файли:**
 - `app/controllers/api/v1/provisioning_controller.rb`
@@ -916,7 +918,7 @@ telemetry_log.update!(
 
 **Після SEC.11** — обидві сторони мають однакову початкову точку, тому Float vs Float drift між ARM та x86 IEEE-754 за 250 ітерацій < 1e-12 (емпірично після FW.7 closure). `check_z_divergence!` зберігає категоричну невідповідність як safety net і отримує hook для числового tolerance band (`(server_z - device_z).abs > 0.001`) — flip під feature-flag після інструментального вимірювання реального drift у польових умовах. Атакер без знання `K_seed` не може передбачити очікуваний Z → fake-телеметрія falls within `< 0.001` band з ймовірністю ~`6/45000` → детекція ≈ 99.99%.
 
-> **Свідомо НЕ робимо** (pre-prod, no field devices, no prototypes, no firmware in flight): `POST /api/v1/provisioning/upgrade_seed` field-migration endpoint, TRL4 lab-mode response з `lorenz_seed` в JSON, SecureRandom fallback в `Rails.env != production`. SEC.9 (rotation `PROVISIONING_MASTER_KEY`) — окрема задача, не блокує SEC.11.
+> **Свідомо НЕ робимо** (pre-prod, no field devices, no prototypes, no firmware in flight): `POST /provisioning/upgrade_seed` field-migration endpoint, TRL4 lab-mode response з `lorenz_seed` в JSON, SecureRandom fallback в `Rails.env != production`. SEC.9 (rotation `PROVISIONING_MASTER_KEY`) — окрема задача, не блокує SEC.11.
 
 ---
 

@@ -30,7 +30,7 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
     )
   end
 
-  describe "POST /api/v1/auth/m2m_token" do
+  describe "POST /auth/m2m_token" do
     let(:timestamp) { Time.current.iso8601 }
     let(:message) { "#{gateway.uid}:#{timestamp}" }
     let(:signature) { Ed25519Crypto::SigningService.sign(seed_hex, message) }
@@ -254,7 +254,7 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
     end
   end
 
-  describe "POST /api/v1/auth/m2m_token/refresh" do
+  describe "POST /auth/m2m_token/refresh" do
     context "with valid Bearer token" do
       it "issues a new token" do
         token = admin_user.generate_token_for(:api_access)
@@ -319,7 +319,7 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
         new_token = response.parsed_body["token"]
 
         # Verify the new token works for an authenticated endpoint
-        get "/api/v1/users/me",
+        get "/users/me",
             headers: { "Authorization" => "Bearer #{new_token}" },
             as: :json
 

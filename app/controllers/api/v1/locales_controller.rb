@@ -30,7 +30,7 @@ module Api
           flash[:alert] = I18n.t("flash.unsupported_locale")
         end
 
-        redirect_back_or_to api_v1_root_path, status: :see_other
+        redirect_back_or_to root_path, status: :see_other
       end
 
       private

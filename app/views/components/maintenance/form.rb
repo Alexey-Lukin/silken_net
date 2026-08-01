@@ -14,7 +14,7 @@ module Maintenance
         render_existing_photos
 
         form_with(
-          model: [ :api, :v1, @record ],
+          model: @record,
           multipart: true,
           class: "space-y-8 p-8 border border-gaia-border bg-gaia-surface shadow-sm dark:shadow-none"
         ) do |f|
@@ -157,7 +157,7 @@ module Maintenance
             )
             if @editing
               a(
-                href: api_v1_maintenance_record_path(@record),
+                href: maintenance_record_path(@record),
                 class: "px-4 py-4 border border-gaia-border text-gaia-text-muted hover:text-gaia-primary " \
                        "uppercase text-mini tracking-widest transition-all"
               ) { t(".cancel") }

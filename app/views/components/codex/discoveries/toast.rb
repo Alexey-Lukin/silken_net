@@ -69,7 +69,7 @@ module Codex
           # роутером і не почервоніє — а парний пін у спеці цементував би саме
           # його, тобто пара «літерал у коді + літерал у спеці» лишалась би
           # самосинхронно зеленою на мертвій адресі.
-          href: api_v1_codex_node_path(@node.slug),
+          href: codex_node_path(@node.slug),
           class: tokens(
             "inline-block text-mini uppercase tracking-[0.3em]",
             "text-gaia-primary hover:underline focus-visible:ring-2 focus-visible:ring-gaia-primary"

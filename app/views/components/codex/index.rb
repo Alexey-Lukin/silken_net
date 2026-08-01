@@ -30,7 +30,7 @@ module Codex
 
           render Views::Shared::UI::Pagination.new(
             pagy: @pagy,
-            url_helper: ->(page:) { api_v1_codex_nodes_path(page: page, realm: @active_realm_slug) }
+            url_helper: ->(page:) { codex_nodes_path(page: page, realm: @active_realm_slug) }
           )
         else
           render Views::Shared::UI::EmptyState.new(

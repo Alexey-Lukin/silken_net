@@ -33,7 +33,7 @@ module Codex
 
     def render_tab(label:, slug:, count:)
       active = (@active_realm_slug == slug)
-      href   = slug.nil? ? api_v1_codex_nodes_path : api_v1_codex_nodes_path(realm: slug)
+      href   = slug.nil? ? codex_nodes_path : codex_nodes_path(realm: slug)
 
       a(
         href: href,

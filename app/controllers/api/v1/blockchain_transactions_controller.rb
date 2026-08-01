@@ -4,7 +4,7 @@
 module Api
   module V1
     class BlockchainTransactionsController < BaseController
-      # GET /api/v1/blockchain_transactions
+      # GET /blockchain_transactions
       # Глобальний аудит блокчейн-подій (Minting/Slashing) для Організації
       def index
         @transactions = BlockchainTransaction
@@ -52,7 +52,7 @@ module Api
         end
       end
 
-      # GET /api/v1/blockchain_transactions/:id
+      # GET /blockchain_transactions/:id
       def show
         @transaction = find_transaction
 
@@ -70,7 +70,7 @@ module Api
       end
 
       # --- ON-CHAIN ВЕРИФІКАЦІЯ (Lazy-Loaded Turbo Frame) ---
-      # GET /api/v1/blockchain_transactions/:id/on_chain
+      # GET /blockchain_transactions/:id/on_chain
       def on_chain
         @transaction = find_transaction
 

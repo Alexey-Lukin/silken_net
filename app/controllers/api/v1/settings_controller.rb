@@ -6,7 +6,7 @@ module Api
     class SettingsController < BaseController
       before_action :authorize_admin!
 
-      # GET /api/v1/settings
+      # GET /settings
       # Поточна конфігурація Організації
       def show
         org = acting_organization!
@@ -35,7 +35,7 @@ module Api
         end
       end
 
-      # PATCH /api/v1/settings
+      # PATCH /settings
       # Оновлення конфігурації Організації (логотип, пороги тривоги, AI-чутливість)
       def update
         org = acting_organization!
@@ -56,7 +56,7 @@ module Api
                 }
               }
             end
-            format.html { redirect_to api_v1_settings_path, notice: I18n.t("flash.settings.updated") }
+            format.html { redirect_to settings_path, notice: I18n.t("flash.settings.updated") }
           end
         else
           respond_to do |format|

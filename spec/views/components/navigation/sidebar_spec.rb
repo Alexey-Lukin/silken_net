@@ -181,12 +181,12 @@ RSpec.describe Navigation::Sidebar do
 
   describe "active nav highlighting" do
     it "sets aria_current='page' on the active item" do
-      html = render_en(current_path: "/api/v1/alerts")
+      html = render_en(current_path: "/alerts")
       expect(html).to include('aria-current="page"')
     end
 
     it "applies the active token classes to the matching nav item" do
-      html = render_en(current_path: "/api/v1/alerts")
+      html = render_en(current_path: "/alerts")
       expect(html).to include("bg-gaia-primary-soft")
       expect(html).to include("border-gaia-primary")
     end
@@ -200,14 +200,14 @@ RSpec.describe Navigation::Sidebar do
     # `aria-current` десь Є — тобто лишились би зеленими, якби префіксний матч
     # підсвітив ДВА пункти одразу. Саме цю вісь голий `start_with?` і відкривав.
     it "підсвічує рівно ОДИН пункт, а не всі з тим самим префіксом" do
-      html = render_en(current_path: api_v1_alerts_path)
+      html = render_en(current_path: alerts_path)
 
       expect(html.scan('aria-current="page"').size).to eq(1)
     end
 
     # Шлях глибше за пункт меню лишається його дочірнім — межа сегмента, не рядок.
     it "тримає підсвітку на вкладеній сторінці розділу" do
-      html = render_en(current_path: "#{api_v1_clusters_path}/42")
+      html = render_en(current_path: "#{clusters_path}/42")
 
       expect(html.scan('aria-current="page"').size).to eq(1)
     end
@@ -218,7 +218,7 @@ RSpec.describe Navigation::Sidebar do
     # обидві реалізації невідрізненні, і пін вище доводив би лише відсутність
     # колізії, а не механізм.
     it "не підсвічує пункт на сусідньому шляху зі спільним префіксом" do
-      html = render_en(current_path: "#{api_v1_clusters_path}-archive")
+      html = render_en(current_path: "#{clusters_path}-archive")
 
       expect(html).not_to include('aria-current="page"')
     end

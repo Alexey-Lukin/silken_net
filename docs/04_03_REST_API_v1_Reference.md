@@ -2,15 +2,16 @@
 
 ## 🎯 Мета
 
-Зафіксувати повний контракт REST API v1 як Єдине Джерело Істини (SSOT). Документ описує всі **ендпоінти**, механізми автентифікації, ролеву модель доступу, формати запитів/відповідей та типовий lifecycle взаємодії прошивки Gateway з бекендом.
+Зафіксувати повний контракт REST API v1 як Єдине Джерело Істини (SSOT). Документ описує всі **ендпоінти** обох контурів — браузерний (кореневі шляхи) і машинний (`/api/v1`), розведені за тим, ХТО відвантажує клієнта [ARCH.77] — а також механізми автентифікації, ролеву модель доступу, формати запитів/відповідей та типовий lifecycle взаємодії прошивки Gateway з бекендом.
 
 ---
 
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 (System Qualified / Production Ready). Впроваджено Zero-Trust (HKDF, Ed25519, HMAC), асинхронну розшифровку телеметрії та Rate Limiting (Rack::Attack).
-- **Ендпоінти:** повний канонічний перелік — §4 (таблиця ендпоінтів); усі під `/api/v1` (core + Codex Phase 2-6 групи).
-- **Базовий URL:** `https://<host>/api/v1`
+- **Два контури [ARCH.77]:** браузерний (кореневі шляхи — Dashboard, форми, Turbo) і машинний (`/api/v1` — рівно 5 маршрутів: M2M auth + refresh, `oracle_callbacks`, Helium SOS webhook, HTTP telemetry uplink). Межа — ХТО відвантажує клієнта, НЕ формат відповіді (обидва контури віддають і HTML, і JSON). Критерій + детальний список → §1; повний перелік обох контурів → §4.
+- **Ендпоінти:** повний канонічний перелік — §4 (таблиця ендпоінтів, дві підсекції: браузерний контур §4.1 + машинний контур §4.2).
+- **Базовий URL:** браузерний контур — `https://<host>` (корінь); машинний контур — `https://<host>/api/v1`.
 - **Формат відповідей:** JSON (якщо не вказано інше)
 ---
 
@@ -50,13 +51,35 @@ API підтримує **два паралельні механізми** авт
 > Bearer-token запити обходять CSRF через `handle_unverified_request` — браузери ніколи не прикріплюють
 > `Authorization` header автоматично при cross-origin запитах, тому Bearer-token запити імунні до CSRF за дизайном.
 
+> **[ARCH.77] Два контури, один `BaseController`.** Маршрутизація розведена на браузерний контур
+> (кореневі шляхи — `/login`, `/dashboard`, `/trees/:id`…) і машинний контур (`/api/v1` — рівно
+> п'ять маршрутів: M2M auth + refresh, `oracle_callbacks`, Helium SOS webhook, HTTP-uplink телеметрії).
+> Критерій поділу — **ХТО відвантажує клієнта**, не формат відповіді (браузерний контур теж рясно
+> віддає JSON): браузерний клієнт приходить із кожною відповіддю сервера — синхронізований за
+> побудовою, версія в шляху нічого не версіонує; машинний клієнт — прошивка в полі або чужа
+> консоль/оракул, що НЕ оновлюється разом із деплоєм, тож версія реальна. Контролери обох контурів
+> фізично лишаються в `app/controllers/api/v1/**` (`scope module: "api/v1"`) — це внутрішня
+> організація файлів, не адреса. `v2` тут не планується (⚖️ founder 2026-08-01, won't-do): за
+> потреби версіонується ФОРМАТ (як у CoAP-тракті — `QATT_VERSION_2`, `wire-rev2.1`), а не
+> переписується дерево маршрутів.
+>
+> ⚠️ **Чому won't-do, а не «поки що ні»** — щоб наступний прохід не перевідкривав питання:
+> монолітний URL-бамп `/v1`→`/v2` — це форма, від якої відмовились усі, хто тримає реальні
+> зовнішні інтеграції (дата-версія в заголовку у Stripe/GitHub/Shopify; Microsoft REST
+> guidelines забороняють версійний сегмент у шляху прямо; Zalando — так само; Fielding для
+> справді несумісної системи пропонує новий ДОМЕН, а не `/v2`). Протилежна настанова
+> (Google AIP-185, MAJOR у шляху) адресує публічний multi-tenant продукт із зовнішніми
+> клієнтами — не наш профіль, доки їх нуль. Найближчий прецедент нашої форми — Discourse:
+> server-rendered Rails, HTML і JSON з тих самих екшенів, без `/api/v1`, і при цьому власний
+> нативний мобільний застосунок.
+
 ### 1.1 Bearer Token (для API-клієнтів та прошивки Gateway)
 
 ```
 Authorization: Bearer <token>
 ```
 
-- Токен генерується при успішному POST `/api/v1/login` (поле `token` у відповіді).
+- Токен генерується при успішному POST `/login` (поле `token` у відповіді).
 - Реалізація: `User.find_by_token_for(:api_access, token)` — Rails 8 `generates_token_for`.
 - Токен має термін дії 30 днів.
 - **Обмеження на вхід:** rate limit — 5 спроб за 1 хвилину (HTTP 429 при перевищенні).
@@ -64,24 +87,24 @@ Authorization: Bearer <token>
 
 ### 1.2 Session Cookie (для браузерного Dashboard)
 
-- Встановлюється автоматично при вході через форму `POST /api/v1/login` (формат HTML).
+- Встановлюється автоматично при вході через форму `POST /login` (формат HTML).
 - Cookie-based session — ставиться єдиною точкою логіну `establish_session` (`SessionsController`; OAuth-шлях ARCH.69 реюзить саме її, а `/sidekiq`-constraint ARCH.61 реюзить READ-бік salt-stamp'а): `session[:user_id]` + **[SEC.16]** salt-stamp `session[:ps]` = `password_salt.last(10)`; `authenticate_user!` звіряє stamp — зміна пароля миттєво гасить усі інші cookie-сесії (дзеркало salt-bound `api_access`-токена; раніше викрадений cookie переживав password-reset до 14 днів).
 - Захист від Session Fixation: `reset_session` перед встановленням нової сесії.
-- Rack::Attack `account_security/ip` (10/хв на PATCH/DELETE `/api/v1/account_security*`) — step-up brute-force guard підбору `current_password` **[SEC.16]**.
+- Rack::Attack `account_security/ip` (10/хв на PATCH/DELETE `/account_security*`) — step-up brute-force guard підбору `current_password` **[SEC.16]**.
 - 🔌 **Той самий cookie обслуговує ТРЕТІЙ шлях, і він живе поза `BaseController`** (SEC.25 Ф1, 2026-07-28): WebSocket-зʼєднання на `/cable` автентифікується в `ApplicationCable::Connection#connect`, який читає ту саму сесію й звіряє **той самий** salt-stamp — тобто зміна пароля гасить і відкритий сокет, а не лише HTTP-сесію. ⚠️ Дзеркальність тут несуча: розходження цих двох перевірок означало б, що вебсокет переживає ревокацію, яку HTTP уже застосував. Bearer-шляху там **немає** свідомо (WebSocket-handshake із браузера не несе `Authorization`), і зʼєднання встановлює лише ОСОБУ — авторизації підписки на конкретний стрім воно не робить. Механіка, гранулярність відкликання (per-device) і чому subscribe-авторизація не будувалась — [`04_04 §8.1`](04_04_Phlex_UI_and_Tailwind).
 
 ### 1.3 Публічні ендпоінти (без автентифікації)
 
 | Маршрут | Метод | Опис |
 |---|---|---|
-| `/api/v1/login` | GET, POST | Форма та обробка входу |
-| `/api/v1/logout` | DELETE | Вихід |
-| `/api/v1/forgot_password` | GET, POST | Запит скидання пароля |
-| `/api/v1/reset_password` | GET, PATCH | Форма та обробка нового пароля |
-| `/api/v1/oracle_callbacks` | POST | Chainlink DON callback (HMAC-SHA256 валідація через `X-Chainlink-Signature`) |
-| `/api/v1/telemetry/helium` | POST | [ARCH.34 L3] Helium SOS webhook (HMAC-SHA256 через `X-Helium-Signature`, ENV `HELIUM_WEBHOOK_SECRET`; той самий SEC.5-патерн: dev-пропуск з warn, `WEB3_STRICT_MODE=true` → fail-fast) → `HeliumSosWorker` → `EwsAlert(queen_uplink_lost)`. Wire 12B — [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy) |
-| `/api/v1/auth/m2m_token` | POST | M2M автентифікація (Ed25519-підпис, без Bearer token) |
-| `/api/v1/locale` | POST | Переключення локалі сесії (`I18n.locale`, Thread-local) |
+| `/login` | GET, POST | Форма та обробка входу |
+| `/logout` | DELETE | Вихід |
+| `/forgot_password` | GET, POST | Запит скидання пароля |
+| `/reset_password` | GET, PATCH | Форма та обробка нового пароля |
+| `/api/v1/oracle_callbacks` | POST | **[ARCH.77 машинний контур]** Chainlink DON callback (HMAC-SHA256 валідація через `X-Chainlink-Signature`) |
+| `/api/v1/telemetry/helium` | POST | **[ARCH.77 машинний контур]** [ARCH.34 L3] Helium SOS webhook (HMAC-SHA256 через `X-Helium-Signature`, ENV `HELIUM_WEBHOOK_SECRET`; той самий SEC.5-патерн: dev-пропуск з warn, `WEB3_STRICT_MODE=true` → fail-fast) → `HeliumSosWorker` → `EwsAlert(queen_uplink_lost)`. Wire 12B — [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy) |
+| `/api/v1/auth/m2m_token` | POST | **[ARCH.77 машинний контур]** M2M автентифікація (Ed25519-підпис, без Bearer token) |
+| `/locale` | POST | Переключення локалі сесії (`I18n.locale`, Thread-local) |
 | `/up` | GET | Liveness — Rails `rails/health#show` (процес живий, без перевірки залежностей) |
 | `/ready` | GET | Readiness — `ReadinessController` (root-level); DB + Redis (Sidekiq + Kredis) round-trip → 200 `ready` / 503 `not_ready` (ops/семантика: [`06_05`](06_05_Puma_Configuration)) |
 
@@ -89,7 +112,7 @@ Authorization: Bearer <token>
 
 ### 1.4 M2M Auth (для прошивки Gateway)
 
-Gateway-пристрої використовують **Ed25519-підпис** для отримання та оновлення Bearer-токену без логіна/пароля:
+Gateway-пристрої використовують **Ed25519-підпис** для отримання та оновлення Bearer-токену без логіна/пароля. **[ARCH.77]** Один із п'яти машинних маршрутів — лишається під `/api/v1` (клієнт тут прошивка в полі, не браузер):
 
 ```
 POST /api/v1/auth/m2m_token
@@ -168,7 +191,7 @@ POST /api/v1/auth/m2m_token
 
 > 🔴 **Ця таблиця описує ЛИШЕ JSON-контракт, а більшість рендерерів помилок HTML-випадку не розглядає — тож на дашборді користувач бачить JSON-блоб замість сторінки помилки.** Шість із семи хелперів `BaseController` (`render_forbidden` · `render_forbidden_pundit` · `render_not_found` · `render_parameter_missing` · `render_validation_error` · `render_internal_server_error`) — це голий `render json:` без жодного `respond_to`. ⚠️ Тут доти стояло «п'ять» **над переліком із шести**, тоді як абзац нижче вже казав «шести»: частковий фікс оновив одне число й лишив сусіднє, і блок суперечив сам собі. Форму, яку треба повторити, показують ДВА: `render_no_organization` (`Errors::NoOrganization`) і — з 2026-07-30 — **`render_unauthorized`**, найширший гард застосунку. ✅ **Станом на 2026-07-31 голими лишились ТРИ, і жоден із них не борг:** `render_not_found` · `render_forbidden_pundit` · `render_internal_server_error` дістали HTML-гілки (дім тексту — `Errors::Page`); `render_parameter_missing` і `render_validation_error` — свідоме won't-do (перший суто API-шлях, у другого всі сім прямих викликів уже всередині `format.json`); `render_forbidden` лишається страховкою після того, як роле-фільтр дій зняв його штатні шляхи ([`04_04 §6.4`](04_04_Phlex_UI_and_Tailwind)).
 >
-> ✅ **`render_unauthorized` полагоджено [SEC.25]: HTML-гілка рендерить сторінку логіну (`Sessions::New`) НА МІСЦІ, зберігаючи статус 401.** Вибір між «редирект на логін» і «сторінка на місці» вирішено виміром, і воно інвертувало початкове припущення трекера: шість request-прикладів, які «мали б почервоніти» від редиректу, виявились не недбалими API-тестами, а сигналом — два роблять справжній cookie-логін через `POST /api/v1/login`, а три б'ють у дії (`codex/matches#new` · `telemetry#live` · `codex/fractions#picker`), що взагалі не мають `format.json`, тож «забути `as: :json`» там неможливо. Плюс редирект без `return_to` (механізму в дереві немає — `sessions#create` завжди веде на дашборд) викинув би користувача зі сторінки, яку він відкривав. Рішення узгоджене з власним прецедентом: `render_login_failure` уже відповідає на невдалу автентифікацію саме так — сторінка на місці, 401 в обох форматах. Наслідок для сумісності: **статус не змінився**, тож жоден наявний приклад не зрушив.
+> ✅ **`render_unauthorized` полагоджено [SEC.25]: HTML-гілка рендерить сторінку логіну (`Sessions::New`) НА МІСЦІ, зберігаючи статус 401.** Вибір між «редирект на логін» і «сторінка на місці» вирішено виміром, і воно інвертувало початкове припущення трекера: шість request-прикладів, які «мали б почервоніти» від редиректу, виявились не недбалими API-тестами, а сигналом — два роблять справжній cookie-логін через `POST /login`, а три б'ють у дії (`codex/matches#new` · `telemetry#live` · `codex/fractions#picker`), що взагалі не мають `format.json`, тож «забути `as: :json`» там неможливо. Плюс редирект без `return_to` (механізму в дереві немає — `sessions#create` завжди веде на дашборд) викинув би користувача зі сторінки, яку він відкривав. Рішення узгоджене з власним прецедентом: `render_login_failure` уже відповідає на невдалу автентифікацію саме так — сторінка на місці, 401 в обох форматах. Наслідок для сумісності: **статус не змінився**, тож жоден наявний приклад не зрушив.
 >
 > Клас ширший за винятки й лишається відкритим для решти **шести** (⚠️ тут доти стояло «п'яти» — арифметична помилка, що перекочувала з commit-меседжа й тиражувалась як цитата себе; перерахунок по коду 2026-07-31): `render_forbidden` досяжний зі звичайних before-action RBAC-гардів, `render_not_found` — з будь-якого `find`, а `render_internal_server_error` ловить `StandardError` на всьому дашборді. ⚠️ І ціна їхнього полагодження **не в самих рендерерах**: `base_controller_spec` будує контролер через `described_class.new` без Rails-диспетчера й стабить лише `render`, а `respond_to` лізе в `request.formats` — тож додавання HTML-гілки впаде там `NoMethodError` на nil, тобто вісім прикладів треба переписати на справжній HTTP. `render_unauthorized` закрився дешево саме тому, що прямого приклада в тому харнесі не мав узагалі. Стан → [`00_07`](00_07_Action_Plan_Tracker) SEC.25.
 >
@@ -266,7 +289,7 @@ Pundit, тобто або skip-list на всю асоціативну част�
 | Для не-super_admin | Завжди власна організація; сесія **ігнорується** — інакше переведення користувача в іншу організацію лишало б його сесію дивитись на стару |
 | Передача в Pundit | `pundit_user` → `UserContext` (пара «користувач + організація»); `ApplicationPolicy` розпаковує й тримає `user` справжнім `User` |
 | Гард відсутньої організації | `acting_organization!` кидає в ТОЧЦІ ЧИТАННЯ → 422 `code: "no_organization"` (JSON) або Phlex-сторінка (HTML) |
-| Перемикання | `POST /api/v1/organizations/:id/switch` — super_admin-only, сесійний запит (Bearer → 403) |
+| Перемикання | `POST /organizations/:id/switch` — super_admin-only, сесійний запит (Bearer → 403) |
 
 🔴 **Чому контекст несе ЛИШЕ організацію, а `user` лишається справжнім `User`.** Природна
 форма обгортки — `delegate_missing_to :user` — виміряна як **шкідлива** і відкинута до коду:
@@ -308,145 +331,160 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ## 4. Повна Таблиця Ендпоінтів
 
+**[ARCH.77]** Таблицю розділено на два контури за тим, ХТО відвантажує клієнта (критерій — §1):
+§4.1 браузерний (кореневі шляхи, без префіксу) і §4.2 машинний (`/api/v1`, рівно 5 маршрутів).
+Нумерація рядків наскрізна й НЕ перевпорядкована між контурами — крос-посилання на кшталт «(#48)»
+лишаються чинними в обох підсекціях.
+
+### 4.1 Браузерний контур (кореневі шляхи)
+
 | # | Метод | Шлях | Controller#Action | Доступ | Опис |
 |---|---|---|---|---|---|
 | **🔐 Автентифікація** | | | | | |
-| 1 | GET | `/api/v1/login` | `sessions#new` | 🌐 Public | Форма входу (HTML) |
-| 2 | POST | `/api/v1/login` | `sessions#create` | 🌐 Public | Вхід (JSON: повертає Bearer token) |
-| 3 | DELETE | `/api/v1/logout` | `sessions#destroy` | 🔑 Auth | Вихід |
-| 4 | GET | `/api/v1/forgot_password` | `passwords#new` | 🌐 Public | Форма скидання пароля (HTML) |
-| 5 | POST | `/api/v1/forgot_password` | `passwords#create` | 🌐 Public | Запит email скидання |
-| 6 | GET | `/api/v1/reset_password` | `passwords#edit` | 🌐 Public | Форма нового пароля (HTML, `?token=`) |
-| 7 | PATCH | `/api/v1/reset_password` | `passwords#update` | 🌐 Public | Встановити новий пароль |
-| 8 | POST | `/api/v1/auth/m2m_token` | `m2m_auth#create` | 🌐 Public (Ed25519) | **M2M Auth:** Gateway отримує Bearer token через Ed25519-підпис DID |
-| 8a | POST | `/api/v1/auth/m2m_token/refresh` | `m2m_auth#refresh` | 🔑 Auth (Bearer) | **M2M Refresh:** Оновлення Bearer token без Ed25519 re-auth |
+| 1 | GET | `/login` | `sessions#new` | 🌐 Public | Форма входу (HTML) |
+| 2 | POST | `/login` | `sessions#create` | 🌐 Public | Вхід (JSON: повертає Bearer token) |
+| 3 | DELETE | `/logout` | `sessions#destroy` | 🔑 Auth | Вихід |
+| 4 | GET | `/forgot_password` | `passwords#new` | 🌐 Public | Форма скидання пароля (HTML) |
+| 5 | POST | `/forgot_password` | `passwords#create` | 🌐 Public | Запит email скидання |
+| 6 | GET | `/reset_password` | `passwords#edit` | 🌐 Public | Форма нового пароля (HTML, `?token=`) |
+| 7 | PATCH | `/reset_password` | `passwords#update` | 🌐 Public | Встановити новий пароль |
 | **🛡️ Безпека Акаунту** | | | | | |
-| 9 | GET | `/api/v1/account_security` | `account_security#show` | 🔑 Auth | MFA-стан, прив'язані identity |
-| 10 | PATCH | `/api/v1/account_security/mfa` | `account_security#toggle_mfa` | 🔑 Auth | Увімкнути/вимкнути MFA-прапорець. **Disable вимагає `current_password` (step-up auth)**, окрім OAuth-only акаунтів. ⚠️ **[S6.21]** прапорець поки НЕ enforced на login (verify-on-login відсутній) — dashboard-toggle прибрано, лишився чесний wip-caveat; повний TOTP-контур → [`00_07` S6.21](00_07_Action_Plan_Tracker). |
-| 11 | PATCH | `/api/v1/account_security/password` | `account_security#change_password` | 🔑 Auth | Змінити пароль. **Усі інші Session-row відкликаються**, поточний request session виживає (IP+UA match → fallback на newest). **[SEC.16]** усі інші cookie-сесії гаснуть миттєво (salt-stamp §1); ініціаторова оновлює stamp і живе. |
-| 12 | DELETE | `/api/v1/account_security/identities/:id` | `account_security#unlink_identity` | 🔑 Auth | Відв'язати OAuth-провайдера |
-| 13 | PATCH | `/api/v1/account_security/identities/:id/lock` | `account_security#lock_identity` | 🔑 Auth | Заблокувати OAuth-ідентичність |
-| 14 | PATCH | `/api/v1/account_security/identities/:id/unlock` | `account_security#unlock_identity` | 🔑 Auth | Розблокувати OAuth-ідентичність |
+| 9 | GET | `/account_security` | `account_security#show` | 🔑 Auth | MFA-стан, прив'язані identity |
+| 10 | PATCH | `/account_security/mfa` | `account_security#toggle_mfa` | 🔑 Auth | Увімкнути/вимкнути MFA-прапорець. **Disable вимагає `current_password` (step-up auth)**, окрім OAuth-only акаунтів. ⚠️ **[S6.21]** прапорець поки НЕ enforced на login (verify-on-login відсутній) — dashboard-toggle прибрано, лишився чесний wip-caveat; повний TOTP-контур → [`00_07` S6.21](00_07_Action_Plan_Tracker). |
+| 11 | PATCH | `/account_security/password` | `account_security#change_password` | 🔑 Auth | Змінити пароль. **Усі інші Session-row відкликаються**, поточний request session виживає (IP+UA match → fallback на newest). **[SEC.16]** усі інші cookie-сесії гаснуть миттєво (salt-stamp §1); ініціаторова оновлює stamp і живе. |
+| 12 | DELETE | `/account_security/identities/:id` | `account_security#unlink_identity` | 🔑 Auth | Відв'язати OAuth-провайдера |
+| 13 | PATCH | `/account_security/identities/:id/lock` | `account_security#lock_identity` | 🔑 Auth | Заблокувати OAuth-ідентичність |
+| 14 | PATCH | `/account_security/identities/:id/unlock` | `account_security#unlock_identity` | 🔑 Auth | Розблокувати OAuth-ідентичність |
 | **🏰 Dashboard** | | | | | |
-| 15 | GET | `/api/v1/dashboard` | `dashboard#index` | 🔑 Auth | Зведена статистика організації |
+| 15 | GET | `/dashboard` | `dashboard#index` | 🔑 Auth | Зведена статистика організації. **[ARCH.77]** Той самий `dashboard#index` віддає й корінь застосунку — `root_path` існує. |
 | **👤 Користувачі та Організації** | | | | | |
-| 16 | GET | `/api/v1/users/me` | `users#me` | 🔑 Auth | Профіль поточного користувача |
-| 17 | GET | `/api/v1/users` | `users#index` | 👑 Admin | Список користувачів організації |
-| 18 | GET | `/api/v1/users/:id` | `users#show` | 🔑 Auth | Профіль учасника організації (UserBlueprint `:crew`) |
-| 19 | GET | `/api/v1/organizations` | `organizations#index` | 👑👑 SuperAdmin | Список усіх організацій |
-| 20 | GET | `/api/v1/organizations/:id` | `organizations#show` | 👑👑 SuperAdmin | Деталі організації |
-| 21 | POST | `/api/v1/organizations/:id/switch` | `organizations#switch` | 👑👑 SuperAdmin | Перемкнути acting-організацію [SEC.25 Ф2]. Лише сесійний запит — Bearer → `403` (носій контексту = cookie-сесія). Синхронний аудит ПЕРЕД мутацією сесії. |
+| 16 | GET | `/users/me` | `users#me` | 🔑 Auth | Профіль поточного користувача |
+| 17 | GET | `/users` | `users#index` | 👑 Admin | Список користувачів організації |
+| 18 | GET | `/users/:id` | `users#show` | 🔑 Auth | Профіль учасника організації (UserBlueprint `:crew`) |
+| 19 | GET | `/organizations` | `organizations#index` | 👑👑 SuperAdmin | Список усіх організацій |
+| 20 | GET | `/organizations/:id` | `organizations#show` | 👑👑 SuperAdmin | Деталі організації |
+| 21 | POST | `/organizations/:id/switch` | `organizations#switch` | 👑👑 SuperAdmin | Перемкнути acting-організацію [SEC.25 Ф2]. Лише сесійний запит — Bearer → `403` (носій контексту = cookie-сесія). Синхронний аудит ПЕРЕД мутацією сесії. |
 | **🌳 Кластери та Дерева** | | | | | |
-| 22 | GET | `/api/v1/clusters` | `clusters#index` | 🔑 Auth | Список кластерів організації |
-| 23 | GET | `/api/v1/clusters/:id` | `clusters#show` | 🔑 Auth | Деталі кластера |
-| 24 | GET | `/api/v1/clusters/:cluster_id/trees` | `trees#index` | 🔑 Auth | Дерева кластера |
-| 25 | GET | `/api/v1/clusters/:cluster_id/actuators` | `actuators#index` | 🌿 Forester | Актуатори кластера |
-| 26 | GET | `/api/v1/trees/:id` | `trees#show` | 🔑 Auth | Паспорт дерева (солдата) |
-| 27 | GET | `/api/v1/trees/:id/chronicle` | `trees#chronicle` | 🔑 Auth | Цифровий життєпис дерева (HTML Turbo Frame / JSON) |
-| 28 | GET | `/api/v1/trees/:id/telemetry` | `telemetry#tree_history` | 🔑 Auth | Телеметрія дерева |
+| 22 | GET | `/clusters` | `clusters#index` | 🔑 Auth | Список кластерів організації |
+| 23 | GET | `/clusters/:id` | `clusters#show` | 🔑 Auth | Деталі кластера |
+| 24 | GET | `/clusters/:cluster_id/trees` | `trees#index` | 🔑 Auth | Дерева кластера |
+| 25 | GET | `/clusters/:cluster_id/actuators` | `actuators#index` | 🌿 Forester | Актуатори кластера |
+| 26 | GET | `/trees/:id` | `trees#show` | 🔑 Auth | Паспорт дерева (солдата) |
+| 27 | GET | `/trees/:id/chronicle` | `trees#chronicle` | 🔑 Auth | Цифровий життєпис дерева (HTML Turbo Frame / JSON) |
+| 28 | GET | `/trees/:id/telemetry` | `telemetry#tree_history` | 🔑 Auth | Телеметрія дерева |
 | **🧬 Біологічні Константи** | | | | | |
-| 29 | GET | `/api/v1/tree_families` | `tree_families#index` | 👑 Admin | Список порід дерев |
-| 30 | GET | `/api/v1/tree_families/:id` | `tree_families#show` | 👑 Admin | Деталі породи |
-| 31 | GET | `/api/v1/tree_families/new` | `tree_families#new` | 👑 Admin | Форма нової породи |
-| 32 | POST | `/api/v1/tree_families` | `tree_families#create` | 👑 Admin | Створити породу |
-| 33 | GET | `/api/v1/tree_families/:id/edit` | `tree_families#edit` | 👑 Admin | Форма редагування |
-| 34 | PATCH | `/api/v1/tree_families/:id` | `tree_families#update` | 👑 Admin | Оновити породу |
+| 29 | GET | `/tree_families` | `tree_families#index` | 👑 Admin | Список порід дерев |
+| 30 | GET | `/tree_families/:id` | `tree_families#show` | 👑 Admin | Деталі породи |
+| 31 | GET | `/tree_families/new` | `tree_families#new` | 👑 Admin | Форма нової породи |
+| 32 | POST | `/tree_families` | `tree_families#create` | 👑 Admin | Створити породу |
+| 33 | GET | `/tree_families/:id/edit` | `tree_families#edit` | 👑 Admin | Форма редагування |
+| 34 | PATCH | `/tree_families/:id` | `tree_families#update` | 👑 Admin | Оновити породу |
 | **📡 Шлюзи та Телеметрія** | | | | | |
-| 35 | GET | `/api/v1/gateways` | `gateways#index` | 🔑 Auth | Список Gateway (Queens) |
-| 36 | GET | `/api/v1/gateways/:id` | `gateways#show` | 🔑 Auth | Деталі Gateway |
-| 37 | GET | `/api/v1/gateways/:id/telemetry` | `telemetry#gateway_history` | 🔑 Auth | **Читання** збереженої телеметрії Gateway (Dashboard) |
-| 38 | POST | `/api/v1/gateways/:id/telemetry` | `telemetry#gateway_uplink` | 🔑 Auth | **HTTP Uplink:** передати зашифрований батч телеметрії від Gateway |
-| 39 | GET | `/api/v1/telemetry/live` | `telemetry#live` | 🔑 Auth | Live-стрім телеметрії (HTML/Turbo) |
-| 38a | POST | `/api/v1/telemetry/helium` | `helium_sos#create` | 🌐 Public (HMAC) | **[ARCH.34 L3]** Helium SOS webhook (`X-Helium-Signature` HMAC-SHA256, ENV `HELIUM_WEBHOOK_SECRET`) → `HeliumSosWorker` → `EwsAlert(queen_uplink_lost)`. Wire 12B — [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy) |
+| 35 | GET | `/gateways` | `gateways#index` | 🔑 Auth | Список Gateway (Queens) |
+| 36 | GET | `/gateways/:id` | `gateways#show` | 🔑 Auth | Деталі Gateway |
+| 37 | GET | `/gateways/:id/telemetry` | `telemetry#gateway_history` | 🔑 Auth | **Читання** збереженої телеметрії Gateway (Dashboard). ⚠️ **[ARCH.77]** Той самий шлях, інший метод: `POST` цього ж `/gateways/:id/telemetry` — машинний HTTP-uplink, §4.2 row 38. |
+| 39 | GET | `/telemetry/live` | `telemetry#live` | 🔑 Auth | Live-стрім телеметрії (HTML/Turbo) |
 | **💎 Гаманці та Контракти** | | | | | |
-| 40 | GET | `/api/v1/wallets` | `wallets#index` | 🔑 Auth | Список гаманців організації |
-| 41 | GET | `/api/v1/wallets/:id` | `wallets#show` | 🔑 Auth | Деталі гаманця + транзакції |
-| 42 | GET | `/api/v1/wallets/:id/balance` | `wallets#balance` | 🔑 Auth | Баланс гаманця (JSON + Turbo Frame) |
-| 43 | GET | `/api/v1/wallets/:id/metadata` | `wallets#metadata` | 🔑 Auth | Блокчейн-метадані (JSON + Turbo Frame) |
-| 44 | GET | `/api/v1/contracts` | `contracts#index` | 🔑 Auth | Список NaaS-контрактів |
-| 45 | GET | `/api/v1/contracts/:id` | `contracts#show` | 🔑 Auth | Деталі NaaS-контракту |
-| 46 | GET | `/api/v1/contracts/stats` | `contracts#stats` | 🔑 Auth | Фінансова аналітика |
+| 40 | GET | `/wallets` | `wallets#index` | 🔑 Auth | Список гаманців організації |
+| 41 | GET | `/wallets/:id` | `wallets#show` | 🔑 Auth | Деталі гаманця + транзакції |
+| 42 | GET | `/wallets/:id/balance` | `wallets#balance` | 🔑 Auth | Баланс гаманця (JSON + Turbo Frame) |
+| 43 | GET | `/wallets/:id/metadata` | `wallets#metadata` | 🔑 Auth | Блокчейн-метадані (JSON + Turbo Frame) |
+| 44 | GET | `/contracts` | `contracts#index` | 🔑 Auth | Список NaaS-контрактів |
+| 45 | GET | `/contracts/:id` | `contracts#show` | 🔑 Auth | Деталі NaaS-контракту |
+| 46 | GET | `/contracts/stats` | `contracts#stats` | 🔑 Auth | Фінансова аналітика |
 | **⚙️ Актуатори** | | | | | |
-| 47 | GET | `/api/v1/actuators/:id` | `actuators#show` | 🌿 Forester | Деталі актуатора + історія команд |
-| 48 | POST | `/api/v1/actuators/:id/execute` | `actuators#execute` | 🌿 Forester | Виконати команду на актуаторі |
-| 49 | GET | `/api/v1/actuator_commands/:id` | `actuators#command_status` | 🌿 Forester | Статус команди актуатора. Скоупиться через `actuator → gateway → cluster` до org caller-а (404 для чужої команди). Повертає `id`, `actuator_id`, `status`, `priority`, `command_payload`, `duration_seconds`, `issued_at`, `sent_at`, `executed_at`, `error_message`, `expires_at`. |
+| 47 | GET | `/actuators/:id` | `actuators#show` | 🌿 Forester | Деталі актуатора + історія команд |
+| 48 | POST | `/actuators/:id/execute` | `actuators#execute` | 🌿 Forester | Виконати команду на актуаторі |
+| 49 | GET | `/actuator_commands/:id` | `actuators#command_status` | 🌿 Forester | Статус команди актуатора. Скоупиться через `actuator → gateway → cluster` до org caller-а (404 для чужої команди). Повертає `id`, `actuator_id`, `status`, `priority`, `command_payload`, `duration_seconds`, `issued_at`, `sent_at`, `executed_at`, `error_message`, `expires_at`. |
 | **🚀 Прошивка (OTA)** | | | | | |
-| 50 | GET | `/api/v1/firmwares` | `firmwares#index` | 👑 Admin | Список версій прошивки |
-| 51 | GET | `/api/v1/firmwares/new` | `firmwares#new` | 👑 Admin | Форма завантаження прошивки |
-| 52 | POST | `/api/v1/firmwares` | `firmwares#create` | 👑 Admin | Завантажити нову прошивку |
-| 53 | GET | `/api/v1/firmwares/inventory` | `firmwares#inventory` | 👑 Admin | Статистика версій на пристроях |
-| 54 | POST | `/api/v1/firmwares/:id/deploy` | `firmwares#deploy` | 👑 Admin | Запустити OTA-оновлення |
+| 50 | GET | `/firmwares` | `firmwares#index` | 👑 Admin | Список версій прошивки |
+| 51 | GET | `/firmwares/new` | `firmwares#new` | 👑 Admin | Форма завантаження прошивки |
+| 52 | POST | `/firmwares` | `firmwares#create` | 👑 Admin | Завантажити нову прошивку |
+| 53 | GET | `/firmwares/inventory` | `firmwares#inventory` | 👑 Admin | Статистика версій на пристроях |
+| 54 | POST | `/firmwares/:id/deploy` | `firmwares#deploy` | 👑 Admin | Запустити OTA-оновлення |
 | **⚠️ Тривоги та Обслуговування** | | | | | |
-| 55 | GET | `/api/v1/alerts` | `alerts#index` | 🔑 Auth | Список EWS-тривог |
-| 56 | GET | `/api/v1/alerts/:id` | `alerts#show` | 🔑 Auth | Деталі EWS-тривоги (з cluster, tree, coordinates, actionable?) |
-| 57 | PATCH | `/api/v1/alerts/:id/resolve` | `alerts#resolve` | 🔑 Auth | Закрити тривогу. **409** на вже закритій (гонка подвійного кліку — броадкаст тротлений 5 с, тож оператор не бачить оновлення й тисне вдруге). Доти цей шлях кидав `AASM::InvalidTransition` у catch-all і віддавав **500**; `if @alert.resolve!` обіцяв булеву гілку, якої метод не має — він завершується `true` або кидає [SEC.25, 2026-07-30] |
-| 58 | GET | `/api/v1/maintenance_records` | `maintenance_records#index` | 🌿 Forester | Журнал технічного обслуговування. Query: `?action_type=`, `?verified=1`, `?maintainable_type=`, `?maintainable_id=`, `?from=<ISO8601>`, `?to=<ISO8601>`. Невалідні `from`/`to` → `400 Bad Request` (`flash.maintenance.invalid_date`). |
-| 59 | GET | `/api/v1/maintenance_records/new` | `maintenance_records#new` | 🌿 Forester | Форма нового запису |
-| 60 | POST | `/api/v1/maintenance_records` | `maintenance_records#create` | 🌿 Forester | Створити запис обслуговування |
-| 61 | GET | `/api/v1/maintenance_records/:id` | `maintenance_records#show` | 🌿 Forester | Деталі запису |
-| 62 | GET | `/api/v1/maintenance_records/:id/edit` | `maintenance_records#edit` | 🌿 Forester | Форма редагування запису (HTML). **Тільки автор або admin+** |
-| 63 | PATCH | `/api/v1/maintenance_records/:id` | `maintenance_records#update` | 🌿 Forester | Оновити запис. **Тільки автор або admin+** (запобігає cross-forester tampering). |
-| 64 | PATCH | `/api/v1/maintenance_records/:id/verify` | `maintenance_records#verify` | 🌿 Forester | Підтвердити hardware-стан (STM32). **Тільки автор або admin+** (запобігає cross-forester tampering). |
-| 65 | GET | `/api/v1/maintenance_records/:id/photos` | `maintenance_records#photos` | 🌿 Forester | Фото запису (пагінація) |
-| 66 | DELETE | `/api/v1/maintenance_records/:maintenance_record_id/photos/:id` | `maintenance_record_photos#destroy` | 🌿 Forester | Видалити фото. **Тільки автор або admin+** [UI.6] — доти гарда не було зовсім, хоч шлях мутує той самий запис, що рядки 63/64 |
+| 55 | GET | `/alerts` | `alerts#index` | 🔑 Auth | Список EWS-тривог |
+| 56 | GET | `/alerts/:id` | `alerts#show` | 🔑 Auth | Деталі EWS-тривоги (з cluster, tree, coordinates, actionable?) |
+| 57 | PATCH | `/alerts/:id/resolve` | `alerts#resolve` | 🔑 Auth | Закрити тривогу. **409** на вже закритій (гонка подвійного кліку — броадкаст тротлений 5 с, тож оператор не бачить оновлення й тисне вдруге). Доти цей шлях кидав `AASM::InvalidTransition` у catch-all і віддавав **500**; `if @alert.resolve!` обіцяв булеву гілку, якої метод не має — він завершується `true` або кидає [SEC.25, 2026-07-30] |
+| 58 | GET | `/maintenance_records` | `maintenance_records#index` | 🌿 Forester | Журнал технічного обслуговування. Query: `?action_type=`, `?verified=1`, `?maintainable_type=`, `?maintainable_id=`, `?from=<ISO8601>`, `?to=<ISO8601>`. Невалідні `from`/`to` → `400 Bad Request` (`flash.maintenance.invalid_date`). |
+| 59 | GET | `/maintenance_records/new` | `maintenance_records#new` | 🌿 Forester | Форма нового запису |
+| 60 | POST | `/maintenance_records` | `maintenance_records#create` | 🌿 Forester | Створити запис обслуговування |
+| 61 | GET | `/maintenance_records/:id` | `maintenance_records#show` | 🌿 Forester | Деталі запису |
+| 62 | GET | `/maintenance_records/:id/edit` | `maintenance_records#edit` | 🌿 Forester | Форма редагування запису (HTML). **Тільки автор або admin+** |
+| 63 | PATCH | `/maintenance_records/:id` | `maintenance_records#update` | 🌿 Forester | Оновити запис. **Тільки автор або admin+** (запобігає cross-forester tampering). |
+| 64 | PATCH | `/maintenance_records/:id/verify` | `maintenance_records#verify` | 🌿 Forester | Підтвердити hardware-стан (STM32). **Тільки автор або admin+** (запобігає cross-forester tampering). |
+| 65 | GET | `/maintenance_records/:id/photos` | `maintenance_records#photos` | 🌿 Forester | Фото запису (пагінація) |
+| 66 | DELETE | `/maintenance_records/:maintenance_record_id/photos/:id` | `maintenance_record_photos#destroy` | 🌿 Forester | Видалити фото. **Тільки автор або admin+** [UI.6] — доти гарда не було зовсім, хоч шлях мутує той самий запис, що рядки 63/64 |
 | **⊙ Оракул (AI Insights)** | | | | | |
-| 67 | GET | `/api/v1/oracle_visions` | `oracle_visions#index` | 🌿 Forester | AI-прогнози та SCC-врожайність |
-| 68 | POST | `/api/v1/oracle_visions/simulate` | `oracle_visions#simulate` | 👑 Admin | Запустити Lorenz-симуляцію |
+| 67 | GET | `/oracle_visions` | `oracle_visions#index` | 🌿 Forester | AI-прогнози та SCC-врожайність |
+| 68 | POST | `/oracle_visions/simulate` | `oracle_visions#simulate` | 👑 Admin | Запустити Lorenz-симуляцію |
 | **⛓️ Блокчейн** | | | | | |
-| 69 | GET | `/api/v1/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій. Query: `?token_type=` (allow-list з `BlockchainTransaction.token_types.keys`: `carbon_coin`, `forest_coin`, `cusd`), `?status=` (allow-list з `.statuses.keys`). Невідомі значення → `400 Bad Request`. |
-| 70 | GET | `/api/v1/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції |
-| 71 | GET | `/api/v1/blockchain_transactions/:id/on_chain` | `blockchain_transactions#on_chain` | 🔑 Auth | On-chain верифікація (Turbo Frame) |
-| 72 | POST | `/api/v1/oracle_callbacks` | `oracle_callbacks#create` | 🌐 Public (HMAC) | Chainlink Oracle callback — захищено `X-Chainlink-Signature` HMAC-SHA256 |
+| 69 | GET | `/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій. Query: `?token_type=` (allow-list з `BlockchainTransaction.token_types.keys`: `carbon_coin`, `forest_coin`, `cusd`), `?status=` (allow-list з `.statuses.keys`). Невідомі значення → `400 Bad Request`. |
+| 70 | GET | `/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції |
+| 71 | GET | `/blockchain_transactions/:id/on_chain` | `blockchain_transactions#on_chain` | 🔑 Auth | On-chain верифікація (Turbo Frame) |
 | **🔔 Сповіщення** | | | | | |
-| 73 | GET | `/api/v1/notifications/settings` | `notifications#settings` | 🔑 Auth | Поточні канали сповіщень |
-| 74 | PATCH | `/api/v1/notifications/settings` | `notifications#update_settings` | 🔑 Auth | Оновити канали сповіщень |
+| 73 | GET | `/notifications/settings` | `notifications#settings` | 🔑 Auth | Поточні канали сповіщень |
+| 74 | PATCH | `/notifications/settings` | `notifications#update_settings` | 🔑 Auth | Оновити канали сповіщень |
 | **📊 Звіти** | | | | | |
-| 75 | GET | `/api/v1/reports` | `reports#index` | 🔑 Auth | Зведена аналітика організації |
-| 76 | GET | `/api/v1/reports/carbon_absorption` | `reports#carbon_absorption` | 🔑 Auth | Звіт CO₂-поглинання (JSON/CSV/PDF) |
-| 77 | GET | `/api/v1/reports/financial_summary` | `reports#financial_summary` | 🔑 Auth | Фінансовий звіт (JSON/CSV/PDF) |
+| 75 | GET | `/reports` | `reports#index` | 🔑 Auth | Зведена аналітика організації |
+| 76 | GET | `/reports/carbon_absorption` | `reports#carbon_absorption` | 🔑 Auth | Звіт CO₂-поглинання (JSON/CSV/PDF) |
+| 77 | GET | `/reports/financial_summary` | `reports#financial_summary` | 🔑 Auth | Фінансовий звіт (JSON/CSV/PDF) |
 | **🧠 Налаштування** | | | | | |
-| 78 | GET | `/api/v1/settings` | `settings#show` | 👑 Admin | Налаштування організації |
-| 79 | PATCH | `/api/v1/settings` | `settings#update` | 👑 Admin | Оновити налаштування |
+| 78 | GET | `/settings` | `settings#show` | 👑 Admin | Налаштування організації |
+| 79 | PATCH | `/settings` | `settings#update` | 👑 Admin | Оновити налаштування |
 | **👁️ Аудит** | | | | | |
-| 80 | GET | `/api/v1/audit_logs` | `audit_logs#index` | 👑 Admin | Журнал дій (AuditLog). Query: `?user_id=`, `?action_type=`, `?limit=` (1..100, default 50). ⚠️ HTML-гілка мусить **проводити активні фільтри у в'ю** (`filters:`): інакше пагінація губить їх на сторінці 2, тихо повертаючи повний журнал, а відфільтрована видача візуально невідрізнима від повної — порожній результат читається як «журнал порожній» ([UI.7]). Вхід із UI — «View logs» у [`Users::Index`](04_04_Phlex_UI_and_Tailwind); аудиторії збігаються (обидві сторони `admin_or_above?`), тож роле-гейт на лінку не потрібен. |
-| 81 | GET | `/api/v1/audit_logs/:id` | `audit_logs#show` | 👑 Admin | Деталі події аудиту |
+| 80 | GET | `/audit_logs` | `audit_logs#index` | 👑 Admin | Журнал дій (AuditLog). Query: `?user_id=`, `?action_type=`, `?limit=` (1..100, default 50). ⚠️ HTML-гілка мусить **проводити активні фільтри у в'ю** (`filters:`): інакше пагінація губить їх на сторінці 2, тихо повертаючи повний журнал, а відфільтрована видача візуально невідрізнима від повної — порожній результат читається як «журнал порожній» ([UI.7]). Вхід із UI — «View logs» у [`Users::Index`](04_04_Phlex_UI_and_Tailwind); аудиторії збігаються (обидві сторони `admin_or_above?`), тож роле-гейт на лінку не потрібен. |
+| 81 | GET | `/audit_logs/:id` | `audit_logs#show` | 👑 Admin | Деталі події аудиту |
 | **⚡ Ініціація Пристроїв** | | | | | |
-| 82 | GET | `/api/v1/provisioning/new` | `provisioning#new` | 🌿 Forester | Форма реєстрації пристрою |
-| 83 | POST | `/api/v1/provisioning/register` | `provisioning#register` | 🌿 Forester | **Реєстрація нового вузла (Tree/Gateway) — HKDF key derivation** |
+| 82 | GET | `/provisioning/new` | `provisioning#new` | 🌿 Forester | Форма реєстрації пристрою |
+| 83 | POST | `/provisioning/register` | `provisioning#register` | 🌿 Forester | **Реєстрація нового вузла (Tree/Gateway) — HKDF key derivation.** ⚠️ **[ARCH.77]** Браузерний попри назву — `authorize_forester!` + `format.html`; машинного клієнта нема (фабричний тракт [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) ходить rake-задачами у власному процесі, не HTTP). |
 | **⚙️ Системний Моніторинг** | | | | | |
-| 84 | GET | `/api/v1/system_health` | `system_health#show` | 👑 Admin | Стан CoAP/Sidekiq/DB |
-| 85 | GET | `/api/v1/system_audits` | `system_audits#index` | 🔑 Auth | Аудит синхронізації DB↔Blockchain |
+| 84 | GET | `/system_health` | `system_health#show` | 👑 Admin | Стан CoAP/Sidekiq/DB |
+| 85 | GET | `/system_audits` | `system_audits#index` | 🔑 Auth | Аудит синхронізації DB↔Blockchain |
 | **📖 Codex (Lore Layer)** | | | | | |
-| 86 | GET | `/api/v1/codex/realms` | `codex/realms#index` | 🔑 Auth | Список 4 шарів Codex (ecosystem / unique_tree / protocol / mythos), упорядкованих за `position` |
-| 87 | GET | `/api/v1/codex/nodes` | `codex/nodes#index` | 🔑 Auth | Каталог lore-вузлів. Фільтри: `?realm=`, `?lifecycle_status=`, `?archetype=`, `?q=` (trigram-fuzzy ILIKE по обох locale). Пагінація Pagy `?page=&limit=21`. Сортування: `attunement_elo DESC, id ASC`. |
-| 88 | GET | `/api/v1/codex/nodes/:slug` | `codex/nodes#show` | 🔑 Auth | Деталі lore-вузла за `slug` (не за `id`). Атомарно інкрементить `view_count` через `update_all`. Чернетки (`published_at IS NULL`) приховані для не-super_admin. |
-| 89 | POST | `/api/v1/codex/nodes/:slug/attunements` | `codex/attunements#create` | 🔑 Auth | **Phase 2:** toggle ON. `attunement[intensity]` (1..5, default 3), `attunement[quote]` (≤ 280). Idempotent (UNIQUE per user+node) — re-POST оновлює, не дублює. ⚠️ **Броадкасту НЕМА:** `Codex::AttunementBroadcastWorker` видалено 2026-07-27 ([`UI.2`](00_07_Action_Plan_Tracker) — сирий ActionCable без жодного підписника), лічильник приходить із рендером і освіжається перезавантаженням. Rack::Attack: 120 / 1h / actor. |
-| 90 | DELETE | `/api/v1/codex/nodes/:slug/attunements/me` | `codex/attunements#destroy` | 🔑 Auth | **Phase 2:** toggle OFF. Безпечний no-op якщо attunement відсутній. ⚠️ Броадкасту немає (див. ↑). |
-| 91 | POST | `/api/v1/codex/nodes/:slug/comments` | `codex/comments#create` | 🔑 Auth | **Phase 2:** новий коментар (≤ 2 KiB markdown). `Idempotency-Key` обов'язковий для `Content-Type: application/json` (24h TTL). Підтримує `comment[parent_id]` для одного рівня вкладеності. ⚠️ **Inline-броадкаст знято 2026-07-27** ([`UI.2`](00_07_Action_Plan_Tracker)) — новий коментар видно після перезавантаження; `codex_node_<id>_comments` лишається лише DOM-якорем списку. Rack::Attack: 60 / 10min / actor. |
-| 92 | POST | `/api/v1/codex/fractions` | `codex/fractions#create` | 🔑 Auth | **Phase 3:** обрати/змінити фракцію. Body: `{ fraction: { node_slug } }`. Success → 201 + `FractionBlueprint`. Cooldown active (7 днів) → 429 + `cooldown_until`. Lifecycle `destroyed`/`extinct` → 422. Тригерить `Codex::FractionAuditWorker` (queue `default`). Rack::Attack: 60 / 1day / actor. |
-| 93 | GET | `/api/v1/codex/fractions/me` | `codex/fractions#show` | 🔑 Auth | **Phase 3:** поточна фракція caller'а. JSON: `FractionBlueprint` або 204 коли немає; HTML: `Codex::Fractions::Card` Phlex компонент (для Turbo Frame embed). |
-| 94 | GET | `/api/v1/codex/fractions/picker` | `codex/fractions#picker` | 🔑 Auth | **Phase 3:** Turbo Frame фрагмент з grid pickable nodes (`?realm=<slug>`). Виключає `destroyed`/`extinct` lifecycle. Підсвічує current fraction; disable-кнопки під час cooldown. |
-| 95 | GET | `/api/v1/codex/matches/new` | `codex/matches#new` | 🔑 Auth | **Phase 4:** Turbo Frame Arena з парою + HMAC-signed `pair_seed` (TTL 5 хв у Redis). `?realm=<slug>`. Підбір через `Codex::PairSelectorService` (anchor weighted by inverse match_count, opponent у Elo bucket ±200). 422 коли в realm < 2 pickable nodes. |
-| 96 | POST | `/api/v1/codex/matches` | `codex/matches#create` | 🔑 Auth | **Phase 4:** body `{ pair_seed, winner_slug?, skip? }`. `Codex::VoteRecorderService` consume'ить seed (atomic GETDEL → replay-proof) + створює Match + enqueue `EloRecomputeWorker` (queue `low`). 201 + Blueprint при успіху; 403 `seed_invalid_or_consumed` при replay; 422 при `winner_not_in_pair`. Rack::Attack: 60 / 1min / actor. |
-| 97 | GET | `/api/v1/codex/leaderboard` | `codex/leaderboard#index` | 🌐 Public | **Phase 4:** top-N Elo для realm (`?realm=<slug>&limit=<N≤100, default 25>`). HTML — `Codex::Leaderboard::Table` Phlex; JSON — масив `{slug, title_uk, title_en, attunement_elo, match_count, lifecycle_status}`. Виключає `destroyed`/`extinct`. |
-| 98 | GET | `/api/v1/codex/discoveries/me` | `codex/discoveries#index` | 🔑 Auth | **Phase 5:** paginated own unlock collection (`?page=N&limit≤21`). HTML — `Codex::Discoveries::List` Phlex (3-col grid + empty-state); JSON — `{ data: [DiscoveryBlueprint], meta: { count, page, pages } }`. Pundit-scoped до own user. |
-| 99 | GET | `/api/v1/codex/admin/discovery_rules` | `codex/admin/discovery_rules#index` | 🛡️ Admin+ | **Phase 5:** список усіх DAO-правил unlock'у. JSON масив `DiscoveryRuleBlueprint`. 403 для `forester`/`investor`. |
-| 100 | POST | `/api/v1/codex/admin/discovery_rules` | `codex/admin/discovery_rules#create` | 🛡️ Admin+ | **Phase 5:** body `{name, codex_node_id, condition_type, threshold_value, params: {...}, active}`. Зберігає `created_by_user_id = current_user.id`; busts engine cache на `after_commit`. 201 / 422. |
-| 101 | GET | `/api/v1/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#show` | 🛡️ Admin+ | **Phase 5:** показує одне правило. |
-| 102 | PATCH/PUT | `/api/v1/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#update` | 🛡️ Admin+ | **Phase 5:** часткове оновлення (`active`, threshold, params); busts engine cache → DAO change visible to workers ≤ 1 sec. 200 / 422. |
-| 103 | DELETE | `/api/v1/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#destroy` | 🛡️ Admin+ | **Phase 5:** 204; busts engine cache. |
-| 104 | POST | `/api/v1/codex/citations` | `codex/citations#create` | 🌿 Forester+ | **Phase 6:** body `{codex_node_slug, citable_type, citable_id, note?}`. `citable_type ∈ {Tree, Cluster, AiInsight, EwsAlert, OracleVision, NaasContract}`. Idempotency-Key обов'язкова для JSON; replay → 200 з тим самим payload. DB-UNIQUE → 422 для дублікатів. Bogus type → 400. ⚠️ **Броадкасту немає** — знято 2026-07-27 ([`UI.2`](00_07_Action_Plan_Tracker)); `codex_citations_<type>_<id>` = стабільний DOM-якір без продюсера ([`04_04 §6`](04_04_Phlex_UI_and_Tailwind)). 201 / 200 (replay) / 400 / 403 / 422. |
-| 105 | DELETE | `/api/v1/codex/citations/:id` | `codex/citations#destroy` | 🌿 Forester+ | **Phase 6:** видалення власної цитати у 24-год вікні; admin+ обходить grace. ⚠️ Броадкасту немає (див. ↑). 204 / 403 / 404. |
-| 106 | GET | `/api/v1/codex/admin/nodes` | `codex/admin/nodes#index` | 🛡️ Admin+ | **Phase 6:** усі Node-рядки (включно з draft `published_at IS NULL`) для DAO-модерації. JSON `{ data: [NodeBlueprint] }`. 403 для forester/investor. |
-| 107 | GET | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#show` | 🛡️ Admin+ | **Phase 6:** один Node з full `:show` view (lore, external_refs, view_count). |
-| 108 | POST | `/api/v1/codex/admin/nodes` | `codex/admin/nodes#create` | 👑 Super Admin only | **Phase 6:** мінтить новий DAO Node з `seed_origin: :dao_proposal`. Атомарне створення; `archetype_key` має бути в `Codex::ARCHETYPES`, `codex_uid` має формат `CDX-(ECO\|TRE\|PRT\|MYT)-NNNN`. 201 / 403 (admin) / 422. |
-| 109 | PATCH/PUT | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#update` | 🛡️ Admin+ | **Phase 6:** часткове оновлення (publish toggle, geo correction, lore copy). Invalid `lifecycle_status` → 422 (Rails 8 enum ArgumentError ловиться). 200 / 403 / 422. |
-| 110 | DELETE | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#destroy` | 👑 Super Admin only | **Phase 6:** retire Node; cascades through `dependent: :destroy` на `citations`/`comments`/`attunements`/`discoveries`/`fractions`. 204 / 403 (admin). |
+| 86 | GET | `/codex/realms` | `codex/realms#index` | 🔑 Auth | Список 4 шарів Codex (ecosystem / unique_tree / protocol / mythos), упорядкованих за `position` |
+| 87 | GET | `/codex/nodes` | `codex/nodes#index` | 🔑 Auth | Каталог lore-вузлів. Фільтри: `?realm=`, `?lifecycle_status=`, `?archetype=`, `?q=` (trigram-fuzzy ILIKE по обох locale). Пагінація Pagy `?page=&limit=21`. Сортування: `attunement_elo DESC, id ASC`. |
+| 88 | GET | `/codex/nodes/:slug` | `codex/nodes#show` | 🔑 Auth | Деталі lore-вузла за `slug` (не за `id`). Атомарно інкрементить `view_count` через `update_all`. Чернетки (`published_at IS NULL`) приховані для не-super_admin. |
+| 89 | POST | `/codex/nodes/:slug/attunements` | `codex/attunements#create` | 🔑 Auth | **Phase 2:** toggle ON. `attunement[intensity]` (1..5, default 3), `attunement[quote]` (≤ 280). Idempotent (UNIQUE per user+node) — re-POST оновлює, не дублює. ⚠️ **Броадкасту НЕМА:** `Codex::AttunementBroadcastWorker` видалено 2026-07-27 ([`UI.2`](00_07_Action_Plan_Tracker) — сирий ActionCable без жодного підписника), лічильник приходить із рендером і освіжається перезавантаженням. Rack::Attack: 120 / 1h / actor. |
+| 90 | DELETE | `/codex/nodes/:slug/attunements/me` | `codex/attunements#destroy` | 🔑 Auth | **Phase 2:** toggle OFF. Безпечний no-op якщо attunement відсутній. ⚠️ Броадкасту немає (див. ↑). |
+| 91 | POST | `/codex/nodes/:slug/comments` | `codex/comments#create` | 🔑 Auth | **Phase 2:** новий коментар (≤ 2 KiB markdown). `Idempotency-Key` обов'язковий для `Content-Type: application/json` (24h TTL). Підтримує `comment[parent_id]` для одного рівня вкладеності. ⚠️ **Inline-броадкаст знято 2026-07-27** ([`UI.2`](00_07_Action_Plan_Tracker)) — новий коментар видно після перезавантаження; `codex_node_<id>_comments` лишається лише DOM-якорем списку. Rack::Attack: 60 / 10min / actor. |
+| 92 | POST | `/codex/fractions` | `codex/fractions#create` | 🔑 Auth | **Phase 3:** обрати/змінити фракцію. Body: `{ fraction: { node_slug } }`. Success → 201 + `FractionBlueprint`. Cooldown active (7 днів) → 429 + `cooldown_until`. Lifecycle `destroyed`/`extinct` → 422. Тригерить `Codex::FractionAuditWorker` (queue `default`). Rack::Attack: 60 / 1day / actor. |
+| 93 | GET | `/codex/fractions/me` | `codex/fractions#show` | 🔑 Auth | **Phase 3:** поточна фракція caller'а. JSON: `FractionBlueprint` або 204 коли немає; HTML: `Codex::Fractions::Card` Phlex компонент (для Turbo Frame embed). |
+| 94 | GET | `/codex/fractions/picker` | `codex/fractions#picker` | 🔑 Auth | **Phase 3:** Turbo Frame фрагмент з grid pickable nodes (`?realm=<slug>`). Виключає `destroyed`/`extinct` lifecycle. Підсвічує current fraction; disable-кнопки під час cooldown. |
+| 95 | GET | `/codex/matches/new` | `codex/matches#new` | 🔑 Auth | **Phase 4:** Turbo Frame Arena з парою + HMAC-signed `pair_seed` (TTL 5 хв у Redis). `?realm=<slug>`. Підбір через `Codex::PairSelectorService` (anchor weighted by inverse match_count, opponent у Elo bucket ±200). 422 коли в realm < 2 pickable nodes. |
+| 96 | POST | `/codex/matches` | `codex/matches#create` | 🔑 Auth | **Phase 4:** body `{ pair_seed, winner_slug?, skip? }`. `Codex::VoteRecorderService` consume'ить seed (atomic GETDEL → replay-proof) + створює Match + enqueue `EloRecomputeWorker` (queue `low`). 201 + Blueprint при успіху; 403 `seed_invalid_or_consumed` при replay; 422 при `winner_not_in_pair`. Rack::Attack: 60 / 1min / actor. |
+| 97 | GET | `/codex/leaderboard` | `codex/leaderboard#index` | 🌐 Public | **Phase 4:** top-N Elo для realm (`?realm=<slug>&limit=<N≤100, default 25>`). HTML — `Codex::Leaderboard::Table` Phlex; JSON — масив `{slug, title_uk, title_en, attunement_elo, match_count, lifecycle_status}`. Виключає `destroyed`/`extinct`. |
+| 98 | GET | `/codex/discoveries/me` | `codex/discoveries#index` | 🔑 Auth | **Phase 5:** paginated own unlock collection (`?page=N&limit≤21`). HTML — `Codex::Discoveries::List` Phlex (3-col grid + empty-state); JSON — `{ data: [DiscoveryBlueprint], meta: { count, page, pages } }`. Pundit-scoped до own user. |
+| 99 | GET | `/codex/admin/discovery_rules` | `codex/admin/discovery_rules#index` | 🛡️ Admin+ | **Phase 5:** список усіх DAO-правил unlock'у. JSON масив `DiscoveryRuleBlueprint`. 403 для `forester`/`investor`. |
+| 100 | POST | `/codex/admin/discovery_rules` | `codex/admin/discovery_rules#create` | 🛡️ Admin+ | **Phase 5:** body `{name, codex_node_id, condition_type, threshold_value, params: {...}, active}`. Зберігає `created_by_user_id = current_user.id`; busts engine cache на `after_commit`. 201 / 422. |
+| 101 | GET | `/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#show` | 🛡️ Admin+ | **Phase 5:** показує одне правило. |
+| 102 | PATCH/PUT | `/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#update` | 🛡️ Admin+ | **Phase 5:** часткове оновлення (`active`, threshold, params); busts engine cache → DAO change visible to workers ≤ 1 sec. 200 / 422. |
+| 103 | DELETE | `/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#destroy` | 🛡️ Admin+ | **Phase 5:** 204; busts engine cache. |
+| 104 | POST | `/codex/citations` | `codex/citations#create` | 🌿 Forester+ | **Phase 6:** body `{codex_node_slug, citable_type, citable_id, note?}`. `citable_type ∈ {Tree, Cluster, AiInsight, EwsAlert, OracleVision, NaasContract}`. Idempotency-Key обов'язкова для JSON; replay → 200 з тим самим payload. DB-UNIQUE → 422 для дублікатів. Bogus type → 400. ⚠️ **Броадкасту немає** — знято 2026-07-27 ([`UI.2`](00_07_Action_Plan_Tracker)); `codex_citations_<type>_<id>` = стабільний DOM-якір без продюсера ([`04_04 §6`](04_04_Phlex_UI_and_Tailwind)). 201 / 200 (replay) / 400 / 403 / 422. |
+| 105 | DELETE | `/codex/citations/:id` | `codex/citations#destroy` | 🌿 Forester+ | **Phase 6:** видалення власної цитати у 24-год вікні; admin+ обходить grace. ⚠️ Броадкасту немає (див. ↑). 204 / 403 / 404. |
+| 106 | GET | `/codex/admin/nodes` | `codex/admin/nodes#index` | 🛡️ Admin+ | **Phase 6:** усі Node-рядки (включно з draft `published_at IS NULL`) для DAO-модерації. JSON `{ data: [NodeBlueprint] }`. 403 для forester/investor. |
+| 107 | GET | `/codex/admin/nodes/:slug` | `codex/admin/nodes#show` | 🛡️ Admin+ | **Phase 6:** один Node з full `:show` view (lore, external_refs, view_count). |
+| 108 | POST | `/codex/admin/nodes` | `codex/admin/nodes#create` | 👑 Super Admin only | **Phase 6:** мінтить новий DAO Node з `seed_origin: :dao_proposal`. Атомарне створення; `archetype_key` має бути в `Codex::ARCHETYPES`, `codex_uid` має формат `CDX-(ECO\|TRE\|PRT\|MYT)-NNNN`. 201 / 403 (admin) / 422. |
+| 109 | PATCH/PUT | `/codex/admin/nodes/:slug` | `codex/admin/nodes#update` | 🛡️ Admin+ | **Phase 6:** часткове оновлення (publish toggle, geo correction, lore copy). Invalid `lifecycle_status` → 422 (Rails 8 enum ArgumentError ловиться). 200 / 403 / 422. |
+| 110 | DELETE | `/codex/admin/nodes/:slug` | `codex/admin/nodes#destroy` | 👑 Super Admin only | **Phase 6:** retire Node; cascades through `dependent: :destroy` на `citations`/`comments`/`attunements`/`discoveries`/`fractions`. 204 / 403 (admin). |
 | **🌐 Локалізація** | | | | | |
-| 111 | POST | `/api/v1/locale` | `locales#update` | 🌐 Public | Переключення локалі: cookie (постійна) + `I18n.locale` на поточний запит; значення валідується проти `available_locales` — перелік НЕ дублюється тут (він росте, [`04_04 §12.2`](04_04_Phlex_UI_and_Tailwind)). Залогіненому ще й **персиститься** в `users.locale` (guard дзеркалить [SEC.16] salt-stamp), бо пошта рендериться в Sidekiq, куди cookie не доїжджає. Редірект `back` |
-| **🩺 Health-проби (root-level, поза `/api/v1`)** | | | | | |
+| 111 | POST | `/locale` | `locales#update` | 🌐 Public | Переключення локалі: cookie (постійна) + `I18n.locale` на поточний запит; значення валідується проти `available_locales` — перелік НЕ дублюється тут (він росте, [`04_04 §12.2`](04_04_Phlex_UI_and_Tailwind)). Залогіненому ще й **персиститься** в `users.locale` (guard дзеркалить [SEC.16] salt-stamp), бо пошта рендериться в Sidekiq, куди cookie не доїжджає. Редірект `back` |
+| **🩺 Health-проби (без автентифікації)** | | | | | |
 | — | GET | `/up` | `rails/health#show` | 🌐 Public | **Liveness** — процес живий (без перевірки залежностей). Виключено з `force_ssl`/host-auth redirect + Rack::Attack throttle. |
 | — | GET | `/ready` | `readiness#show` | 🌐 Public | **Readiness** — DB + Redis (Sidekiq + Kredis) round-trip → 200 `ready` / 503 `not_ready` (ops: [`06_05`](06_05_Puma_Configuration)). Ті самі виключення, що `/up`. |
+
+### 4.2 Машинний контур (`/api/v1`)
+
+**[ARCH.77]** Рівно п'ять маршрутів. Кожен обслуговує клієнта, якого відвантажуємо НЕ ми —
+прошивка в полі, чужа консоль Helium, чужий оракул — тож версія в шляху тут реальна (§1).
+
+| # | Метод | Шлях | Controller#Action | Доступ | Опис |
+|---|---|---|---|---|---|
+| 8 | POST | `/api/v1/auth/m2m_token` | `m2m_auth#create` | 🌐 Public (Ed25519) | **M2M Auth:** Gateway отримує Bearer token через Ed25519-підпис DID |
+| 8a | POST | `/api/v1/auth/m2m_token/refresh` | `m2m_auth#refresh` | 🔑 Auth (Bearer) | **M2M Refresh:** Оновлення Bearer token без Ed25519 re-auth |
+| 38 | POST | `/api/v1/gateways/:id/telemetry` | `telemetry#gateway_uplink` | 🔑 Auth | **HTTP Uplink:** передати зашифрований батч телеметрії від Gateway. ⚠️ Той самий шлях, інший метод: `GET` цього ж `/gateways/:id/telemetry` — браузерне читання, §4.1 row 37. |
+| 38a | POST | `/api/v1/telemetry/helium` | `helium_sos#create` | 🌐 Public (HMAC) | **[ARCH.34 L3]** Helium SOS webhook (`X-Helium-Signature` HMAC-SHA256, ENV `HELIUM_WEBHOOK_SECRET`) → `HeliumSosWorker` → `EwsAlert(queen_uplink_lost)`. Wire 12B — [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy) |
+| 72 | POST | `/api/v1/oracle_callbacks` | `oracle_callbacks#create` | 🌐 Public (HMAC) | Chainlink Oracle callback — захищено `X-Chainlink-Signature` HMAC-SHA256 |
 
 **Легенда:**
 
@@ -464,7 +502,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ## 5. Ключові Ендпоінти: Детальний Опис
 
-### 5.1 POST `/api/v1/login` — Вхід та отримання Bearer Token
+### 5.1 POST `/login` — Вхід та отримання Bearer Token
 
 **Призначення:** Першочерговий ендпоінт для API-клієнтів та прошивки Gateway.
 
@@ -505,9 +543,12 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ---
 
-### 5.2 POST `/api/v1/provisioning/register` — Реєстрація Вузла (Ключовий для Gateway)
+### 5.2 POST `/provisioning/register` — Реєстрація Вузла (Ключовий для Gateway)
 
 **Призначення:** Ініціація нового Soldier (дерева) або Queen (шлюзу). Повертає DID для прошивки.
+**[ARCH.77]** Браузерний ендпоінт попри апаратну тему — форма форестера (`authorize_forester!` +
+`format.html`); машинного клієнта немає, фабричний тракт ([`03_06`](03_06_Factory_Flashing_and_Key_Provisioning)) ходить rake-задачами у власному
+процесі, поза HTTP.
 
 **Доступ:** `Authorization: Bearer <token>` з роллю `forester` або вище.
 
@@ -582,7 +623,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ---
 
-### 5.3 GET `/api/v1/trees/:id/chronicle` — Цифровий Життєпис Дерева
+### 5.3 GET `/trees/:id/chronicle` — Цифровий Життєпис Дерева
 
 **Доступ:** `Authorization: Bearer <token>`
 
@@ -642,7 +683,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ---
 
-### 5.4 GET `/api/v1/trees/:id/telemetry` — Телеметрія Дерева
+### 5.4 GET `/trees/:id/telemetry` — Телеметрія Дерева
 
 **Доступ:** `Authorization: Bearer <token>`
 
@@ -674,7 +715,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ---
 
-### 5.5 GET `/api/v1/gateways/:id/telemetry` — Читання Телеметрії Gateway (Queen)
+### 5.5 GET `/gateways/:id/telemetry` — Читання Телеметрії Gateway (Queen)
 
 > **Важливо:** Цей ендпоінт призначений **лише для читання** збереженої телеметрії (Dashboard / Monitoring). Основний канал uplink — **CoAP/UDP на порт 5683** (CoAP listener daemon). Для HTTP fallback використовується `POST /api/v1/gateways/:id/telemetry` (§5.16).
 
@@ -704,7 +745,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ---
 
-### 5.5b GET `/api/v1/wallets/:id/balance` — Баланс Гаманця
+### 5.5b GET `/wallets/:id/balance` — Баланс Гаманця
 
 **Доступ:** 🔑 Auth (будь-яка роль, Pundit scope).
 
@@ -735,7 +776,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ---
 
-### 5.5c GET `/api/v1/wallets/:id/metadata` — Блокчейн-Метадані Гаманця
+### 5.5c GET `/wallets/:id/metadata` — Блокчейн-Метадані Гаманця
 
 **Доступ:** 🔑 Auth (будь-яка роль, Pundit scope).
 
@@ -768,7 +809,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ---
 
-### 5.6 POST `/api/v1/actuators/:id/execute` — Виконати Команду
+### 5.6 POST `/actuators/:id/execute` — Виконати Команду
 
 **Доступ:** Роль `forester` або вище.
 
@@ -817,11 +858,11 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 > **[ARCH.58] Override-команди 409 НЕ отримують.** `STOP` / `EMERGENCY_SHUTDOWN` / `EMERGENCY_STOP` (`ActuatorCommand::OVERRIDE_COMMANDS`, розпізнаються за базовою частиною до `:`) проходять in-flight гард навіть коли черга зайнята — інакше оператор не подасть аварійну зупинку рівно тоді, коли вона потрібна. Override дорогою скасовує решту pending для цього актуатора (`cancel_pending_for_actuator!`) і минає readiness-перевірку `dispatch_to_edge!`, яка вимагає `idle?`.
 >
-> ⚠️ **`202 accepted` ≠ «виконається».** Команда може мовчки згаснути ще до видачі: (а) звичайна (не-override) команда на актуаторі в стані `active` одразу стає `failed` («Актуатор недоступний»); (б) команда з `expires_at` гине по TTL, якщо наступний poll шлюза не встиг у вікно ([`00_07`](00_07_Action_Plan_Tracker) ARCH.75). Реальний стан читається лише через `GET /api/v1/actuator_commands/:id` (#48) — не з коду відповіді.
+> ⚠️ **`202 accepted` ≠ «виконається».** Команда може мовчки згаснути ще до видачі: (а) звичайна (не-override) команда на актуаторі в стані `active` одразу стає `failed` («Актуатор недоступний»); (б) команда з `expires_at` гине по TTL, якщо наступний poll шлюза не встиг у вікно ([`00_07`](00_07_Action_Plan_Tracker) ARCH.75). Реальний стан читається лише через `GET /actuator_commands/:id` (#48) — не з коду відповіді.
 
 ---
 
-### 5.7 POST `/api/v1/firmwares/:id/deploy` — OTA-розгортання Прошивки
+### 5.7 POST `/firmwares/:id/deploy` — OTA-розгортання Прошивки
 
 **Доступ:** Роль `admin`.
 
@@ -866,7 +907,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ---
 
-### 5.8 POST `/api/v1/firmwares` — Завантаження Нової Прошивки
+### 5.8 POST `/firmwares` — Завантаження Нової Прошивки
 
 **Доступ:** Роль `admin`.  
 **Content-Type:** `multipart/form-data`
@@ -964,7 +1005,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ---
 
-### 5.9b GET `/api/v1/oracle_visions` — AI Прогнози (Oracle Visions Index)
+### 5.9b GET `/oracle_visions` — AI Прогнози (Oracle Visions Index)
 
 **Доступ:** Роль `forester` або вище.
 
@@ -993,7 +1034,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ---
 
-### 5.10 POST `/api/v1/oracle_visions/simulate` — Lorenz Симуляція
+### 5.10 POST `/oracle_visions/simulate` — Lorenz Симуляція
 
 **Доступ:** Роль `admin`.
 
@@ -1025,7 +1066,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ---
 
-### 5.11 POST `/api/v1/maintenance_records` — Фіксація Обслуговування
+### 5.11 POST `/maintenance_records` — Фіксація Обслуговування
 
 **Доступ:** Роль `forester` або вище.  
 **Content-Type:** `multipart/form-data` (підтримка завантаження фото)
@@ -1056,7 +1097,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ---
 
-### 5.12 GET `/api/v1/alerts` — EWS-Тривоги
+### 5.12 GET `/alerts` — EWS-Тривоги
 
 **Query Parameters:**
 
@@ -1088,7 +1129,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ---
 
-### 5.13 GET `/api/v1/system_health` — Стан Системи
+### 5.13 GET `/system_health` — Стан Системи
 
 **Доступ:** Роль `admin`.
 
@@ -1120,7 +1161,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ---
 
-### 5.14 GET `/api/v1/reports/carbon_absorption` — CO₂ Звіт
+### 5.14 GET `/reports/carbon_absorption` — CO₂ Звіт
 
 Підтримує мультиформатну відповідь через HTTP `Accept` заголовок:
 
@@ -1308,7 +1349,7 @@ if (days_until_token_expiry() < 7) {
 > **Примітка:** Основний канал **передачі телеметрії** від Queen до Backend — **CoAP/UDP на порт 5683** (CoAP listener daemon). HTTP API використовується для управління, реєстрації та звітності. HTTP fallback uplink реалізовано як `POST /api/v1/gateways/:id/telemetry`.
 
 ```text
-1. [Одноразово] POST /api/v1/provisioning/register
+1. [Одноразово] POST /provisioning/register (браузерний контур, форма форестера — [ARCH.77])
    → Передає STM32 UID + Ed25519 public key (опційно).
    → Відповідь містить DID та key_derivation: "hkdf-sha256".
    → Обидві сторони математично деривують AES-ключ через HKDF без передачі по мережі.
@@ -1341,5 +1382,5 @@ if (days_until_token_expiry() < 7) {
 | `Authorization` | ✅ (для захищених ендпоінтів) | `Bearer <token>` |
 | `Content-Type` | ✅ (для POST/PATCH з body) | `application/json` або `multipart/form-data` |
 | `Accept` | Опційно | `application/json` (за замовчуванням) |
-| `X-Chainlink-Signature` | ✅ (Production) для `/oracle_callbacks` | `HMAC-SHA256(raw_body, CHAINLINK_HMAC_SECRET)` — підпис від Chainlink DON |
+| `X-Chainlink-Signature` | ✅ (Production) для `/api/v1/oracle_callbacks` (машинний контур) | `HMAC-SHA256(raw_body, CHAINLINK_HMAC_SECRET)` — підпис від Chainlink DON |
 | `Idempotency-Key` | ✅ (JSON) для `POST /actuators/:id/execute`, `POST /codex/nodes/:slug/comments`, `POST /codex/citations` | Унікальний клієнтський ключ (UUID рекомендовано). Запобігає дублюванню фізичних команд та доменних мутацій при retry. Replay JSON-запиту з тим самим ключем повертає закешовану відповідь (TTL 24 год). Турбо-стрім запити (`format.turbo_stream`) виключені. |

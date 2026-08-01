@@ -50,7 +50,7 @@ module Organizations
 
       button_to(
         t(".switch"),
-        switch_api_v1_organization_path(@organization),
+        switch_organization_path(@organization),
         method: :post,
         form: { data: { turbo: "false" } },
         aria: { label: t(".switch_aria", name: @organization.name) },
@@ -121,7 +121,7 @@ module Organizations
                   td(class: "p-4 text-gray-400") { t(".clusters.soldiers_count", count: cluster.total_active_trees) }
                   td(class: "p-4 text-right") do
                     a(
-                      href: api_v1_cluster_path(cluster),
+                      href: cluster_path(cluster),
                       class: "text-emerald-600 hover:text-white transition-all uppercase text-mini focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
                       aria_label: t(".clusters.open_aria", name: cluster.name)
                     ) { t(".clusters.open_matrix") }

@@ -225,7 +225,7 @@ class Wallet < ApplicationRecord
       target: "wallet_balance_frame_#{id}",
       html: Wallets::BalanceFrameStub.new(
         wallet_id: id,
-        src: Rails.application.routes.url_helpers.balance_api_v1_wallet_path(self)
+        src: Rails.application.routes.url_helpers.balance_wallet_path(self)
       ).call
     )
   end

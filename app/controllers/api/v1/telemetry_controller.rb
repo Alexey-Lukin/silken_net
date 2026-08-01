@@ -19,7 +19,7 @@ module Api
       DEFAULT_HISTORY_DAYS = 7
 
       # --- ЖИВИЙ ПОТІК ІСТИНИ (The Pulse) ---
-      # GET /api/v1/telemetry/live
+      # GET /telemetry/live
       def live
         respond_to do |format|
           format.html do

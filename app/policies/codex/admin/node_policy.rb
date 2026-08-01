@@ -4,7 +4,7 @@
 # Codex::Admin::NodePolicy — Phase 6 RBAC for the admin Node CRUD surface.
 #
 # Read access to the registry is admin+ (UI for moderation lives behind
-# `/api/v1/codex/admin/nodes`). End-user read happens via the public
+# `/codex/admin/nodes`). End-user read happens via the public
 # `Codex::NodePolicy`, which scopes to published rows.
 #
 # Asymmetric write surface:

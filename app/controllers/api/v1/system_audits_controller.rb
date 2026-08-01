@@ -10,7 +10,7 @@ module Api
       # у реальному часі сигнал десинхронізації/можливого фроду всієї платформи.
       before_action :authorize_admin!
 
-      # GET /api/v1/system_audits
+      # GET /system_audits
       def index
         @audit = ChainAuditService.call
 

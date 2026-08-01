@@ -21,7 +21,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 | **Чому** так — філософія + 10 ADR (CDX-1…10) | `docs/04_05_Codex_Lore_Module.md` ← read-first |
 | Моделі / таблиці / enum / партиціювання | `04_01 §7b` |
 | Сервіси / воркери / призначення черг | `04_02 §10b` (+ DOC-R.10/DOC-R.11) |
-| REST `/api/v1/codex/*` | `04_03 §4` |
+| REST `/codex/*` | `04_03 §4` |
 | Phlex-компоненти / токени / Turbo-ActionCable | `04_04 §6.4`, §8.1 |
 | Seed-корпус (4 Realm + Node) | `db/seeds/codex/` (`realms.yml` · `discovery_rules.yml` · `nodes/`) |
 
@@ -47,7 +47,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 | Шар | Шлях |
 |---|---|
 | Namespace + моделі | `app/models/codex.rb` · `app/models/codex/` (Realm, Node, Citation, Comment, Attunement, Fraction, Match, Discovery, DiscoveryRule) |
-| Контролери | `app/controllers/api/v1/codex/` (+ `admin/`) |
+| Контролери | `app/controllers/api/v1/codex/` (+ `admin/`; каталог ≠ адреса — REST-шлях вище, ARCH.77 → `04_03 §1`) |
 | Сервіси | `app/services/codex/` (DiscoveryEngine, EloMath, PairSelector, VoteRecorder, FractionChange, PresenceTracker, MarkdownRenderer, NodeImport, DiscoveryRuleImport) |
 | Воркери | `app/workers/codex/` (DiscoveryProbe, EloRecompute, FractionAudit) — `AttunementBroadcast` **видалено** 2026-07-27 (UI.2) |
 | Phlex | `app/views/components/codex/` |

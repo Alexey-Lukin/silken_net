@@ -4,7 +4,7 @@
 module Api
   module V1
     class GatewaysController < BaseController
-      # GET /api/v1/gateways
+      # GET /gateways
       def index
         @pagy, @gateways = pagy(
           acting_organization!.gateways
@@ -29,7 +29,7 @@ module Api
         end
       end
 
-      # GET /api/v1/gateways/:id
+      # GET /gateways/:id
       def show
         @gateway = acting_organization!.gateways.find(params[:id])
 

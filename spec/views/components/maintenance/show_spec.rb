@@ -5,9 +5,9 @@ require "rails_helper"
 
 # [UI.6] Стаби МАРШРУТ-ХЕЛПЕРІВ знято — вони підміняли справжню поверхню й через це
 # ховали живий дефект. Два різні випадки однієї шкоди:
-#   · `edit_api_v1_maintenance_record_path` — існує (`only: [… :edit …]`), тобто стаб
+#   · `edit_maintenance_record_path` — існує (`only: [… :edit …]`), тобто стаб
 #     маскував РЕАЛЬНИЙ маршрут, а його коментар стверджував протилежне;
-#   · `api_v1_maintenance_record_photo_path` — НЕ існував, бо зайвий `as:` подвоював
+#   · `maintenance_record_photo_path` — НЕ існував, бо зайвий `as:` подвоював
 #     префікс, і стаб дописував застосунку метод, якого в ньому не було: сторінка
 #     запису з фото падала в 500, а компонентні спеки лишались зелені.
 # Стаби ActiveStorage лишаються — вони підміняють БЛОБИ (мок-об'єкти замість файлів),
@@ -429,6 +429,6 @@ RSpec.describe Maintenance::Show do
     photo
   end
 
-  def verify_path = "/api/v1/maintenance_records/7/verify"
-  def edit_path   = "/api/v1/maintenance_records/7/edit"
+  def verify_path = "/maintenance_records/7/verify"
+  def edit_path   = "/maintenance_records/7/edit"
 end

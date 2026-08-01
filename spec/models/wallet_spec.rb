@@ -48,7 +48,7 @@ RSpec.describe Wallet, type: :model do
     it "points the stub at the balance endpoint each viewer re-fetches for itself" do
       wallet.broadcast_balance_update
 
-      expect(captured.first[1][:html]).to include(%(src="/api/v1/wallets/#{wallet.id}/balance"))
+      expect(captured.first[1][:html]).to include(%(src="/wallets/#{wallet.id}/balance"))
     end
   end
 

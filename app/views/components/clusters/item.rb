@@ -52,7 +52,7 @@ module Clusters
       div(class: "flex justify-between items-center mt-4 pt-4 border-t border-emerald-900/50") do
         # Кнопка переходу через Turbo (без рефрешу сторінки)
         a(
-          href: api_v1_cluster_path(@cluster),
+          href: cluster_path(@cluster),
           class: "text-tiny uppercase tracking-widest text-emerald-600 hover:text-emerald-300 transition-colors"
         ) { t(".open_matrix") }
       end

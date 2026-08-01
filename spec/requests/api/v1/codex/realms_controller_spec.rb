@@ -14,14 +14,14 @@ RSpec.describe "Api::V1::Codex::Realms", type: :request do
     create(:codex_realm, slug: "unique_tree", position: 2, name_uk: "Дерева",       name_en: "Unique Trees")
   end
 
-  describe "GET /api/v1/codex/realms" do
+  describe "GET /codex/realms" do
     it "returns 401 without a token" do
-      get "/api/v1/codex/realms", as: :json
+      get "/codex/realms", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
 
     it "returns the realm collection ordered by position" do
-      get "/api/v1/codex/realms", headers: headers, as: :json
+      get "/codex/realms", headers: headers, as: :json
 
       expect(response).to have_http_status(:ok)
       slugs = response.parsed_body["data"].map { |r| r["slug"] }
@@ -29,7 +29,7 @@ RSpec.describe "Api::V1::Codex::Realms", type: :request do
     end
 
     it "exposes the bilingual names in the JSON payload" do
-      get "/api/v1/codex/realms", headers: headers, as: :json
+      get "/codex/realms", headers: headers, as: :json
       first = response.parsed_body["data"].first
       expect(first.keys).to include("name_uk", "name_en", "glyph", "accent_token")
     end

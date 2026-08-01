@@ -9,9 +9,9 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
   let(:api_token) { user.generate_token_for(:api_access) }
   let(:headers) { { "Authorization" => "Bearer #{api_token}" } }
 
-  describe "GET /api/v1/notifications/settings" do
+  describe "GET /notifications/settings" do
     it "returns the current notification channel settings" do
-      get "/api/v1/notifications/settings", headers: headers, as: :json
+      get "/notifications/settings", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
       body = response.parsed_body
@@ -22,9 +22,9 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
     end
   end
 
-  describe "PATCH /api/v1/notifications/settings" do
+  describe "PATCH /notifications/settings" do
     it "updates notification channel settings" do
-      patch "/api/v1/notifications/settings",
+      patch "/notifications/settings",
             headers: headers,
             params: { phone_number: "+380509876543", telegram_chat_id: "99999" },
             as: :json
@@ -36,7 +36,7 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
     end
 
     it "updates push_token" do
-      patch "/api/v1/notifications/settings",
+      patch "/notifications/settings",
             headers: headers,
             params: { push_token: "fcm_token_abc123" },
             as: :json
@@ -48,7 +48,7 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
     end
 
     it "returns unprocessable_content when update fails with invalid params" do
-      patch "/api/v1/notifications/settings",
+      patch "/notifications/settings",
             headers: headers,
             params: { phone_number: "0123" },
             as: :json
@@ -64,13 +64,13 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
     end
 
     it "renders HTML for settings" do
-      get "/api/v1/notifications/settings", headers: html_headers
+      get "/notifications/settings", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
 
     it "renders HTML for update_settings error" do
-      patch "/api/v1/notifications/settings",
+      patch "/notifications/settings",
             headers: html_headers,
             params: { phone_number: "0123" }
 

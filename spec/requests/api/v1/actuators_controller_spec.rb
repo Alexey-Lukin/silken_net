@@ -17,9 +17,9 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
   let!(:own_actuator) { create(:actuator, gateway: own_gateway) }
   let!(:other_actuator) { create(:actuator, gateway: other_gateway) }
 
-  describe "GET /api/v1/clusters/:cluster_id/actuators" do
+  describe "GET /clusters/:cluster_id/actuators" do
     it "returns actuators for the user's organization cluster" do
-      get "/api/v1/clusters/#{own_cluster.id}/actuators", headers: headers, as: :json
+      get "/clusters/#{own_cluster.id}/actuators", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
       ids = response.parsed_body["data"].map { |a| a["id"] }
@@ -27,31 +27,31 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
     end
 
     it "returns 404 for a cluster from another organization" do
-      get "/api/v1/clusters/#{other_cluster.id}/actuators", headers: headers, as: :json
+      get "/clusters/#{other_cluster.id}/actuators", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
   end
 
-  describe "GET /api/v1/actuators/:id" do
+  describe "GET /actuators/:id" do
     it "returns an actuator belonging to the user's organization" do
-      get "/api/v1/actuators/#{own_actuator.id}", headers: headers, as: :json
+      get "/actuators/#{own_actuator.id}", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["actuator"]["id"]).to eq(own_actuator.id)
     end
 
     it "returns 404 for an actuator from another organization" do
-      get "/api/v1/actuators/#{other_actuator.id}", headers: headers, as: :json
+      get "/actuators/#{other_actuator.id}", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
   end
 
-  describe "POST /api/v1/actuators/:id/execute" do
+  describe "POST /actuators/:id/execute" do
     before do
       allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
     end
 
     it "creates and returns a command for the actuator" do
-      post "/api/v1/actuators/#{own_actuator.id}/execute",
+      post "/actuators/#{own_actuator.id}/execute",
            params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
            headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
 
@@ -68,7 +68,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
         status: :issued
       )
 
-      post "/api/v1/actuators/#{own_actuator.id}/execute",
+      post "/actuators/#{own_actuator.id}/execute",
            params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
            headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
 
@@ -86,7 +86,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       )
       cmd.update_columns(expires_at: 1.minute.ago)
 
-      post "/api/v1/actuators/#{own_actuator.id}/execute",
+      post "/actuators/#{own_actuator.id}/execute",
            params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
            headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
 
@@ -102,7 +102,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
         user: user, command_payload: "OPEN_VALVE", duration_seconds: 10, status: :issued
       )
 
-      post "/api/v1/actuators/#{own_actuator.id}/execute",
+      post "/actuators/#{own_actuator.id}/execute",
            params: { action_payload: "STOP", duration_seconds: 1 },
            headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
 
@@ -115,7 +115,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
         user: user, command_payload: "OPEN_VALVE", duration_seconds: 10, status: :issued
       )
 
-      post "/api/v1/actuators/#{own_actuator.id}/execute",
+      post "/actuators/#{own_actuator.id}/execute",
            params: { action_payload: "STOP:5", duration_seconds: 1 },
            headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
 
@@ -124,7 +124,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
 
     context "with idempotency key" do
       it "returns 400 when Idempotency-Key header is missing for JSON requests" do
-        post "/api/v1/actuators/#{own_actuator.id}/execute",
+        post "/actuators/#{own_actuator.id}/execute",
              params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
              headers: headers, as: :json
 
@@ -135,7 +135,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       it "returns cached response on duplicate request with same Idempotency-Key" do
         idempotency_key = SecureRandom.uuid
 
-        post "/api/v1/actuators/#{own_actuator.id}/execute",
+        post "/actuators/#{own_actuator.id}/execute",
              params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
              headers: headers.merge("Idempotency-Key" => idempotency_key), as: :json
 
@@ -147,7 +147,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
         Array(request.env["rack.response_finished"]).each { |cb| cb.call(request.env, response.status, response.headers, nil) }
 
         # Retry with same Idempotency-Key — should return cached response
-        post "/api/v1/actuators/#{own_actuator.id}/execute",
+        post "/actuators/#{own_actuator.id}/execute",
              params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
              headers: headers.merge("Idempotency-Key" => idempotency_key), as: :json
 
@@ -159,7 +159,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
         idempotency_key = SecureRandom.uuid
         cache_key = "idempotency:actuator:#{own_actuator.id}:#{Digest::SHA256.hexdigest(idempotency_key)}"
 
-        post "/api/v1/actuators/#{own_actuator.id}/execute",
+        post "/actuators/#{own_actuator.id}/execute",
              params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
              headers: headers.merge("Idempotency-Key" => idempotency_key), as: :json
 
@@ -180,7 +180,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       end
 
       it "creates separate commands for different Idempotency-Keys" do
-        post "/api/v1/actuators/#{own_actuator.id}/execute",
+        post "/actuators/#{own_actuator.id}/execute",
              params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
              headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
 
@@ -190,7 +190,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
         # Clear the pending command so second request doesn't get conflict
         own_actuator.commands.update_all(status: :delivered)
 
-        post "/api/v1/actuators/#{own_actuator.id}/execute",
+        post "/actuators/#{own_actuator.id}/execute",
              params: { action_payload: "CLOSE_VALVE", duration_seconds: 15 },
              headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
 
@@ -206,19 +206,19 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
     end
 
     it "renders HTML for actuator index" do
-      get "/api/v1/clusters/#{own_cluster.id}/actuators", headers: html_headers
+      get "/clusters/#{own_cluster.id}/actuators", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
 
     it "renders HTML for actuator show" do
-      get "/api/v1/actuators/#{own_actuator.id}", headers: html_headers
+      get "/actuators/#{own_actuator.id}", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
   end
 
-  describe "GET /api/v1/actuator_commands/:id" do
+  describe "GET /actuator_commands/:id" do
     let(:own_command) do
       allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
       own_actuator.commands.create!(
@@ -240,7 +240,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
     end
 
     it "returns the command status when the actuator belongs to the user's org" do
-      get "/api/v1/actuator_commands/#{own_command.id}", headers: headers, as: :json
+      get "/actuator_commands/#{own_command.id}", headers: headers, as: :json
 
       expect(response).to have_http_status(:ok)
       body = response.parsed_body
@@ -252,19 +252,19 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
     end
 
     it "returns 404 for a command from another organization" do
-      get "/api/v1/actuator_commands/#{other_command.id}", headers: headers, as: :json
+      get "/actuator_commands/#{other_command.id}", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
 
     it "returns 404 for an unknown command id" do
-      get "/api/v1/actuator_commands/9999999", headers: headers, as: :json
+      get "/actuator_commands/9999999", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
 
     it "requires forester role" do
       investor = create(:user, organization: organization, role: :investor)
       token = investor.generate_token_for(:api_access)
-      get "/api/v1/actuator_commands/#{own_command.id}",
+      get "/actuator_commands/#{own_command.id}",
           headers: { "Authorization" => "Bearer #{token}" }, as: :json
       expect(response).to have_http_status(:forbidden)
     end
@@ -277,7 +277,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       # Без `src`, бо self-referencing src Turbo не зациклює, а ГАСИТЬ: пише
       # `references itself` у консоль і лишає фрейм порожнім. Симптом тихий.
       it "renders the frame WITHOUT src" do
-        get "/api/v1/actuator_commands/#{own_command.id}", headers: headers
+        get "/actuator_commands/#{own_command.id}", headers: headers
 
         expect(response).to have_http_status(:ok)
         expect(response.body).to include("command_status_frame_#{own_command.id}")
@@ -285,14 +285,14 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       end
 
       it "renders the badge in the VIEWER's locale, not the producer's" do
-        get "/api/v1/actuator_commands/#{own_command.id}?locale=uk", headers: headers
+        get "/actuator_commands/#{own_command.id}?locale=uk", headers: headers
 
         expect(response.body).to include("видано")
       end
 
       # Той самий org-scope, що й у JSON-гілці: обидві їдуть через `set_command`.
       it "keeps the tenant guard on the html branch too" do
-        get "/api/v1/actuator_commands/#{other_command.id}", headers: headers
+        get "/actuator_commands/#{other_command.id}", headers: headers
 
         expect(response).to have_http_status(:not_found)
       end
@@ -316,7 +316,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
     # відповіддю, без машинерії. Саме розходження цих двох рядків дало три
     # історичні баги цієї осі, і `actuator_{id}` — вижила половина третього.
     it "renders a turbo_stream whose target matches the id it actually renders" do
-      post "/api/v1/actuators/#{own_actuator.id}/execute",
+      post "/actuators/#{own_actuator.id}/execute",
            params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
            headers: headers.merge("Accept" => "text/vnd.turbo-stream.html")
 

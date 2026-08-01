@@ -12,7 +12,7 @@ module Api
       # ЄДИНИМ носієм правила — не прибирай його «бо десь є політика».
       before_action :authorize_forester!, only: :resolve
 
-      # GET /api/v1/alerts
+      # GET /alerts
       def index
         @alerts = acting_organization!.ews_alerts
                               .includes(:cluster, :tree)
@@ -65,7 +65,7 @@ module Api
         end
       end
 
-      # GET /api/v1/alerts/:id
+      # GET /alerts/:id
       def show
         respond_to do |format|
           format.json do
@@ -88,7 +88,7 @@ module Api
         end
       end
 
-      # PATCH /api/v1/alerts/:id/resolve
+      # PATCH /alerts/:id/resolve
       # 🔴 [SEC.25] `if @alert.resolve!` тут БУЛО оманою, і фікс 2026-07-30 спершу полатав
       # саме її: `EwsAlert#resolve!` завершується літеральним `true`, а `mark_resolved!`
       # (AASM bang) і `whiny_persistence: true` не повертають `false` — вони КИДАЮТЬ.
@@ -112,7 +112,7 @@ module Api
                 Alerts::Row.new(alert: @alert, current_user: current_user).call
               )
             end
-          format.html { redirect_to api_v1_alerts_path, notice: I18n.t("flash.alerts.resolved") }
+          format.html { redirect_to alerts_path, notice: I18n.t("flash.alerts.resolved") }
         end
       rescue AASM::InvalidTransition
         # Тривогу вже закрито — типово другим кліком по кнопці, поки перший ще летів
@@ -123,7 +123,7 @@ module Api
             render json: { error: I18n.t("flash.alerts.already_resolved", id: @alert.id) }, status: :conflict
           end
           format.html do
-            redirect_to api_v1_alerts_path, notice: I18n.t("flash.alerts.already_resolved", id: @alert.id)
+            redirect_to alerts_path, notice: I18n.t("flash.alerts.already_resolved", id: @alert.id)
           end
         end
       end

@@ -4,8 +4,8 @@
 module Api
   module V1
     module Codex
-      # POST   /api/v1/codex/nodes/:slug/attunements        — toggle ON
-      # DELETE /api/v1/codex/nodes/:slug/attunements/me     — toggle OFF
+      # POST   /codex/nodes/:slug/attunements        — toggle ON
+      # DELETE /codex/nodes/:slug/attunements/me     — toggle OFF
       #
       # Idempotent by design: re-POSTing for an existing pair updates only
       # the supplied attributes (intensity/quote) and never duplicates the
@@ -33,7 +33,7 @@ module Api
                        status: :created
               end
               format.html do
-                redirect_to api_v1_codex_node_path(@node.slug),
+                redirect_to codex_node_path(@node.slug),
                             notice: I18n.t("flash.codex.attunement_saved")
               end
             end
@@ -56,7 +56,7 @@ module Api
             # такого маршруту немає. Симптом найпідступніший з можливих: привʼязку
             # знято, а користувач бачить помилку.
             format.html do
-              redirect_to api_v1_codex_node_path(@node.slug),
+              redirect_to codex_node_path(@node.slug),
                           status: :see_other,
                           notice: I18n.t("flash.codex.attunement_removed")
             end

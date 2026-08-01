@@ -31,7 +31,7 @@ RSpec.describe Users::Index do
   describe "audit link target" do
     it "points each row at that user's own slice of the audit log" do
       expect(html).to include(
-        %(href="#{Rails.application.routes.url_helpers.api_v1_audit_logs_path(user_id: forester_user.id)}")
+        %(href="#{Rails.application.routes.url_helpers.audit_logs_path(user_id: forester_user.id)}")
       )
     end
 

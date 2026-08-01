@@ -68,7 +68,7 @@ module Api
       end
 
       # --- ПЕРЕМИКАННЯ КОНТЕКСТУ (SEC.25 Ф2) ---
-      # POST /api/v1/organizations/:id/switch
+      # POST /organizations/:id/switch
       #
       # Привілейована дія: super_admin входить у контекст чужої організації й далі
       # працює в ньому як звичайний її адміністратор. Права при цьому НЕ ростуть —
@@ -88,17 +88,18 @@ module Api
 
         respond_to do |format|
           format.json { render json: { acting_organization_id: organization.id } }
-          # `api_v1_root_path`, не `root_path`: кореневий маршрут оголошено ВСЕРЕДИНІ
-          # `namespace :api → :v1`, тож top-level хелпера не існує взагалі. Доти ця
-          # гілка кидала `NoMethodError`, який ловив `rescue_from StandardError` —
-          # тобто перемикання відбувалось (аудит, сесія, сокети), а користувач бачив
-          # 500. Невидимо це було рівно тому, що жоден приклад її не виконував.
+          # `root_path` тепер СПРАВЖНІЙ [ARCH.77]: корінь оголошено на верхньому
+          # рівні, а не всередині `namespace :api → :v1`. Доти top-level хелпера не
+          # існувало взагалі, і ця гілка кидала `NoMethodError`, який ловив
+          # `rescue_from StandardError` — тобто перемикання відбувалось (аудит,
+          # сесія, сокети), а користувач бачив 500. Невидимо це було рівно тому, що
+          # жоден приклад її не виконував.
           # 303, не 302 [UI.7]. ⚠️ Не тому, що 302 тут зламався б — для POST і
           # браузер, і `fetch` віддають GET на обох кодах; правило [UI.7] купувалось
           # на DELETE, який метод зберігає. Причина вужча й чесна: дієслово екшена
           # може змінитись, а `see_other` — єдина конвенція редиректу після мутації,
           # записана в цьому дереві (`sessions#destroy`, `photos#destroy`).
-          format.html { redirect_to api_v1_root_path, status: :see_other }
+          format.html { redirect_to root_path, status: :see_other }
         end
       end
 

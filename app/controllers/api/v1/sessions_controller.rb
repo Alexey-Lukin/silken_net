@@ -28,7 +28,7 @@ module Api
 
           respond_to do |format|
             format.json { render_api_login_success(user) }
-            format.html { redirect_to api_v1_dashboard_index_path, notice: I18n.t("flash.sessions.neural_link_established") }
+            format.html { redirect_to dashboard_index_path, notice: I18n.t("flash.sessions.neural_link_established") }
           end
         else
           render_login_failure
@@ -51,7 +51,7 @@ module Api
         # 2. Перевіряємо чи ідентичність заблокована (Account Takeover Protection)
         existing_identity = Identity.find_by(provider: auth.provider, uid: auth.uid)
         if existing_identity&.locked?
-          redirect_to api_v1_login_path, alert: I18n.t("flash.sessions.blocked_provider")
+          redirect_to login_path, alert: I18n.t("flash.sessions.blocked_provider")
           return
         end
 
@@ -60,7 +60,7 @@ module Api
 
         establish_session(user)
 
-        redirect_to api_v1_dashboard_index_path, notice: I18n.t("flash.sessions.authenticated_via", provider: auth.provider.titleize)
+        redirect_to dashboard_index_path, notice: I18n.t("flash.sessions.authenticated_via", provider: auth.provider.titleize)
       end
 
       # --- ВИХІД (Logout) ---
@@ -73,9 +73,9 @@ module Api
           format.json { render json: { message: I18n.t("flash.sessions.logout_success") }, status: :ok }
           # 303, не 302 [UI.7]: logout приходить `button_to`-ом (DELETE), а `fetch`
           # зберігає метод на 301/302 — тобто браузер перевидавав би DELETE на
-          # `/api/v1/login`, де зареєстровано лише GET. Сесію на той момент уже знято.
+          # `/login`, де зареєстровано лише GET. Сесію на той момент уже знято.
           format.html do
-            redirect_to api_v1_login_path,
+            redirect_to login_path,
                         status: :see_other,
                         notice: I18n.t("flash.sessions.neural_link_severed")
           end

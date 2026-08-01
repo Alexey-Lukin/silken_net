@@ -78,7 +78,7 @@ RSpec.describe Clusters::Item do
     end
 
     it "links to the cluster path" do
-      expect(html).to include("/api/v1/clusters/1")
+      expect(html).to include("/clusters/1")
     end
   end
 end

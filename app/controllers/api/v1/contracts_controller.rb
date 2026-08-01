@@ -7,7 +7,7 @@ module Api
       # Тільки автентифіковані користувачі (Інвестори бачать свої, Адміни — всі)
 
       # --- ПОРТФЕЛЬ КОНТРАКТІВ (Registry + Dashboard) ---
-      # GET /api/v1/contracts
+      # GET /contracts
       def index
         scope = policy_scope(NaasContract).includes(:organization, cluster: :ews_alerts)
         @pagy, @contracts = pagy(scope)
@@ -45,7 +45,7 @@ module Api
       end
 
       # --- ДЕТАЛІ КРЕДИТНОЇ ЛІНІЇ (Deep Audit) ---
-      # GET /api/v1/contracts/:id
+      # GET /contracts/:id
       def show
         @contract = find_contract(params[:id])
         @emission_history = BlockchainTransaction
@@ -77,7 +77,7 @@ module Api
       end
 
       # --- ФІНАНСОВА АНАЛІТИКА (Повністю відновлено) ---
-      # GET /api/v1/contracts/stats
+      # GET /contracts/stats
       def stats
         # [SEC.25 Ф2] Ручний гард «нема організації → 403» тут стояв доти й тепер
         # недосяжний: `acting_organization!` кидає раніше. Це не втрата, а вирівнювання

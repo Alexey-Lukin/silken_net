@@ -61,7 +61,7 @@ RSpec.describe Codex::NodeCard do
     end
 
     it "links to the show route by slug" do
-      expect(html).to include("/api/v1/codex/nodes/cherkasy-bir")
+      expect(html).to include("/codex/nodes/cherkasy-bir")
     end
 
     it "renders Elo and geo_region in the footer" do
@@ -95,7 +95,7 @@ RSpec.describe Codex::NodeCard do
       # маршрутизатор — і саме тому маршрут-хелпер серед стабів більше не стоїть.
       comp = Class.new(Codex::NodeCard) do
         define_method(:helpers) { ActionController::Base.helpers }
-        define_method(:api_v1_codex_node_path) { |_n| Rails.application.routes.url_helpers.api_v1_codex_node_path(_n) }
+        define_method(:codex_node_path) { |_n| Rails.application.routes.url_helpers.codex_node_path(_n) }
         define_method(:rails_representation_path) { |_v, **| "/rails/img.webp" }
       end.new(node: node_with_cover)
 

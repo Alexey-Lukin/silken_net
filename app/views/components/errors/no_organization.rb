@@ -81,7 +81,7 @@ module Errors
 
       div(class: "text-center") do
         a(
-          href: api_v1_organizations_path,
+          href: organizations_path,
           class: "inline-block px-6 py-3 border border-emerald-500 text-emerald-400 text-tiny uppercase " \
                  "tracking-[0.3em] hover:bg-emerald-500 hover:text-black transition-colors " \
                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
@@ -99,7 +99,7 @@ module Errors
       div(class: "pt-4 border-t border-emerald-900/30 text-center") do
         button_to(
           t(".sign_out"),
-          api_v1_logout_path,
+          logout_path,
           method: :delete,
           aria: { label: "Sign out" },
           class: "text-tiny text-emerald-900 uppercase tracking-widest hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors bg-transparent border-0 cursor-pointer"

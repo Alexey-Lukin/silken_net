@@ -16,7 +16,7 @@ module Firmwares
 
         td(class: "p-4 text-right") do
           # Форма для ініціації OTA оновлення
-          form(action: deploy_api_v1_firmware_path(@firmware), method: "post") do
+          form(action: deploy_firmware_path(@firmware), method: "post") do
             authenticity_token_input
             button(
               type: "submit",

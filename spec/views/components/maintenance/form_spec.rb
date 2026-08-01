@@ -25,7 +25,7 @@ RSpec.describe Maintenance::Form do
     let(:html) { render_component(record: record) }
 
     it "renders the form action URL for new record" do
-      expect(html).to include("/api/v1/maintenance_records")
+      expect(html).to include("/maintenance_records")
     end
 
     it "renders the form heading for new record" do

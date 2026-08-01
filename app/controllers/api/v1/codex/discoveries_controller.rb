@@ -4,7 +4,7 @@
 module Api
   module V1
     module Codex
-      # GET /api/v1/codex/discoveries/me — paginated list of own unlocks.
+      # GET /codex/discoveries/me — paginated list of own unlocks.
       #
       # Routes to `#index` (RESTful: returns a *collection* scoped to the
       # current user). The `/me` path segment is a URL-level convention for

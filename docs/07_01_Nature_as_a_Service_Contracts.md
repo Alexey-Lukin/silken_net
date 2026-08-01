@@ -463,9 +463,9 @@ function slashUpTo(address investor, uint256 maxAmount) external nonReentrant on
 
 | Метод | URL | Авт. | Опис |
 |---|---|---|---|
-| `GET` | `/api/v1/contracts` | Required | Перелік NaaS контрактів клієнта (Pagy) |
-| `GET` | `/api/v1/contracts/:id` | Required | Деталі контракту |
-| `GET` | `/api/v1/contracts/stats` | Required | `total_contracted`, `total_tokens_minted`, `cluster_health` (шкала **0..1**, не відсоток — `health_index` = `1.0 - stress_index`), `attested_value_usd` |
+| `GET` | `/contracts` | Required | Перелік NaaS контрактів клієнта (Pagy) |
+| `GET` | `/contracts/:id` | Required | Деталі контракту |
+| `GET` | `/contracts/stats` | Required | `total_contracted`, `total_tokens_minted`, `cluster_health` (шкала **0..1**, не відсоток — `health_index` = `1.0 - stress_index`), `attested_value_usd` |
 
 ---
 

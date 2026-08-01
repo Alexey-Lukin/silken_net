@@ -9,7 +9,7 @@ module Firmwares
 
     def view_template
       # Тільки логіка взаємодії з моделлю
-      form_with(model: [ :api, :v1, @firmware ], multipart: true, class: "space-y-8 p-10 border border-gaia-border bg-gaia-surface shadow-sm dark:shadow-none") do |f|
+      form_with(model: @firmware, multipart: true, class: "space-y-8 p-10 border border-gaia-border bg-gaia-surface shadow-sm dark:shadow-none") do |f|
         div(class: "space-y-6") do
           field_container(t(".version_label")) do
             f.text_field :version, class: input_classes, placeholder: t(".version_placeholder"), required: true

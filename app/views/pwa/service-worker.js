@@ -67,7 +67,7 @@ self.addEventListener('activate', (event) => {
 // =========================================================================
 self.addEventListener('fetch', (event) => {
   // Ловимо тільки POST-запити до нашого API створення записів обслуговування
-  if (event.request.method === 'POST' && event.request.url.includes('/api/v1/maintenance_records')) {
+  if (event.request.method === 'POST' && event.request.url.includes('/maintenance_records')) {
     event.respondWith(handleOfflinePost(event.request));
   } else {
     // Стандартна логіка для інших запитів: Network-first, fallback to Cache

@@ -42,7 +42,7 @@ module Organizations
 
         render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
-          url_helper: ->(page:) { api_v1_organizations_path(page: page) }
+          url_helper: ->(page:) { organizations_path(page: page) }
         )
       end
     end
@@ -58,7 +58,7 @@ module Organizations
           render Views::Shared::Web3::Address.new(address: org.crypto_public_address)
         end
         td(class: "p-4 text-right") do
-          a(href: api_v1_organization_path(org), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t(".view_aria", name: org.name)) { t(".view_profile") }
+          a(href: organization_path(org), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t(".view_aria", name: org.name)) { t(".view_profile") }
         end
         td(class: "p-4 text-right") { render_context_cell(org) }
       end
@@ -91,7 +91,7 @@ module Organizations
       # але «той самий патерн» має бути тим самим НОСІЄМ, інакше збіг випадковий.
       button_to(
         t(".switch"),
-        switch_api_v1_organization_path(org),
+        switch_organization_path(org),
         method: :post,
         form: { data: { turbo: "false" } },
         aria: { label: t(".switch_aria", name: org.name) },

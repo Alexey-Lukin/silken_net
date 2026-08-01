@@ -60,7 +60,7 @@ module Api
         if @family.save
           respond_to do |format|
             format.json { render json: { data: @family }, status: :created }
-            format.html { redirect_to api_v1_tree_families_path, notice: "New species DNA woven into the network." }
+            format.html { redirect_to tree_families_path, notice: "New species DNA woven into the network." }
           end
         else
           respond_to do |format|
@@ -81,7 +81,7 @@ module Api
         if @family.update(family_params)
           respond_to do |format|
             format.json { render json: { data: @family } }
-            format.html { redirect_to api_v1_tree_family_path(@family), notice: "Biological constants recalibrated." }
+            format.html { redirect_to tree_family_path(@family), notice: "Biological constants recalibrated." }
           end
         else
           respond_to do |format|

@@ -15,7 +15,7 @@ module Passwords
         div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10") do
           render_header
 
-          form(action: api_v1_reset_password_path, method: "post", class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do
+          form(action: reset_password_path, method: "post", class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do
             input(type: "hidden", name: "_method", value: "patch")
             input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
             input(type: "hidden", name: "token", value: @token)
@@ -79,7 +79,7 @@ module Passwords
 
     def render_back_link
       div(class: "text-center pt-2") do
-        a(href: api_v1_login_path, class: "text-tiny text-emerald-900 uppercase tracking-widest hover:text-emerald-500 transition-colors") do
+        a(href: login_path, class: "text-tiny text-emerald-900 uppercase tracking-widest hover:text-emerald-500 transition-colors") do
           t(".back_link")
         end
       end

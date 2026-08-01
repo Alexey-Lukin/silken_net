@@ -46,7 +46,7 @@ module Api
       end
 
       # --- ПРЯМЕ ВИКОНАННЯ КОМАНДИ ---
-      # [IDEMPOTENCY FIX]: POST /api/v1/actuators/:id/execute requires Idempotency-Key header
+      # [IDEMPOTENCY FIX]: POST /actuators/:id/execute requires Idempotency-Key header
       # for JSON requests. This prevents duplicate physical actuations caused by network retries
       # (e.g., ranger's mobile app in forest with poor connectivity).
       # Cached responses are stored in Redis with 24h TTL — subsequent requests with the
@@ -126,7 +126,7 @@ module Api
       end
 
       # --- СТАТУС КОМАНДИ (Audit Trail) ---
-      # GET /api/v1/actuator_commands/:id
+      # GET /actuator_commands/:id
       # Documented as endpoint #48 in 04_03 §4 but was missing from the controller
       # before this fix. The route resolved to NoMethodError at runtime.
       def command_status

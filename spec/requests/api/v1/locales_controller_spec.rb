@@ -4,20 +4,20 @@
 require "rails_helper"
 
 RSpec.describe Api::V1::LocalesController, type: :request do
-  describe "POST /api/v1/locale" do
+  describe "POST /locale" do
     it "persists a valid locale into a permanent cookie" do
-      post "/api/v1/locale", params: { locale: "en" }
+      post "/locale", params: { locale: "en" }
       expect(response).to have_http_status(:see_other)
       expect(cookies[:locale]).to eq("en")
     end
 
     it "accepts the secondary locale (uk → en switch)" do
-      post "/api/v1/locale", params: { locale: "uk" }
+      post "/locale", params: { locale: "uk" }
       expect(cookies[:locale]).to eq("uk")
     end
 
     it "rejects an unknown locale and does not write a cookie" do
-      post "/api/v1/locale", params: { locale: "ru" }
+      post "/locale", params: { locale: "ru" }
       expect(cookies[:locale]).to be_blank
       expect(flash[:alert]).to be_present
     end
@@ -30,18 +30,18 @@ RSpec.describe Api::V1::LocalesController, type: :request do
       let(:user) { create(:user, locale: nil) }
 
       def sign_in!
-        post "/api/v1/login", params: { email: user.email_address, password: "password12345" }
+        post "/login", params: { email: user.email_address, password: "password12345" }
       end
 
       it "stores the chosen locale on the user record" do
         sign_in!
 
-        expect { post "/api/v1/locale", params: { locale: "uk" } }
+        expect { post "/locale", params: { locale: "uk" } }
           .to change { user.reload.locale }.from(nil).to("uk")
       end
 
       it "leaves an anonymous visitor's switch working without persisting anything" do
-        expect { post "/api/v1/locale", params: { locale: "uk" } }
+        expect { post "/locale", params: { locale: "uk" } }
           .not_to change(User, :count)
 
         expect(cookies[:locale]).to eq("uk")
@@ -55,7 +55,7 @@ RSpec.describe Api::V1::LocalesController, type: :request do
         sign_in!
         user.update!(password: "brand-new-password-123", password_confirmation: "brand-new-password-123")
 
-        expect { post "/api/v1/locale", params: { locale: "lv" } }
+        expect { post "/locale", params: { locale: "lv" } }
           .not_to change { user.reload.locale }
       end
 
@@ -63,53 +63,53 @@ RSpec.describe Api::V1::LocalesController, type: :request do
         user.update!(locale: "uk")
         sign_in!
 
-        expect { post "/api/v1/locale", params: { locale: "uk" } }
+        expect { post "/locale", params: { locale: "uk" } }
           .not_to change { user.reload.updated_at }
       end
     end
 
     it "redirects back to the referer when same-host" do
-      post "/api/v1/locale",
+      post "/locale",
            params: { locale: "en" },
-           headers: { "HTTP_REFERER" => "http://www.example.com/api/v1/dashboard" }
-      expect(response).to redirect_to("http://www.example.com/api/v1/dashboard")
+           headers: { "HTTP_REFERER" => "http://www.example.com/dashboard" }
+      expect(response).to redirect_to("http://www.example.com/dashboard")
     end
 
     it "falls back to root_path for missing referer" do
-      post "/api/v1/locale", params: { locale: "en" }
-      expect(response).to redirect_to(api_v1_root_path)
+      post "/locale", params: { locale: "en" }
+      expect(response).to redirect_to(root_path)
     end
 
     it "ignores cross-host referers (open-redirect guard)" do
-      post "/api/v1/locale",
+      post "/locale",
            params: { locale: "en" },
            headers: { "HTTP_REFERER" => "http://attacker.example.com/phish" }
-      expect(response).to redirect_to(api_v1_root_path)
+      expect(response).to redirect_to(root_path)
     end
 
     it "handles array locale param without crashing" do
-      post "/api/v1/locale", params: { locale: %w[en uk] }
+      post "/locale", params: { locale: %w[en uk] }
       expect(response).not_to have_http_status(:internal_server_error)
       expect(cookies[:locale]).to be_blank
     end
 
     it "handles hash locale param without crashing" do
-      post "/api/v1/locale", params: { locale: { foo: "bar" } }
+      post "/locale", params: { locale: { foo: "bar" } }
       expect(response).not_to have_http_status(:internal_server_error)
       expect(cookies[:locale]).to be_blank
     end
 
     it "rejects javascript: scheme referer (open-redirect guard)" do
-      post "/api/v1/locale",
+      post "/locale",
            params: { locale: "en" },
            headers: { "HTTP_REFERER" => "javascript:alert(1)" }
-      expect(response).to redirect_to(api_v1_root_path)
+      expect(response).to redirect_to(root_path)
     end
   end
 
   describe "LocaleSettable concern (resolution priority)" do
     # Drives the concern via the only public endpoint that is part of this
-    # change set — POST /api/v1/locale itself. The POST always passes through
+    # change set — POST /locale itself. The POST always passes through
     # `set_locale` before `update`, so `I18n.locale` is observable via the
     # cookie behaviour we already cover above. We additionally assert the
     # default-locale wiring directly from configuration to avoid coupling
@@ -133,7 +133,7 @@ RSpec.describe Api::V1::LocalesController, type: :request do
 
     it "honours an explicit ?locale= param over the cookie" do
       cookies[:locale] = "uk"
-      post "/api/v1/locale", params: { locale: "en" }
+      post "/locale", params: { locale: "en" }
       expect(cookies[:locale]).to eq("en")
     end
 

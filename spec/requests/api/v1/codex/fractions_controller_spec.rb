@@ -14,16 +14,16 @@ RSpec.describe "Api::V1::Codex::Fractions", type: :request do
 
   before { Sidekiq::Worker.clear_all }
 
-  describe "POST /api/v1/codex/fractions" do
+  describe "POST /codex/fractions" do
     it "rejects unauthenticated requests" do
-      post "/api/v1/codex/fractions",
+      post "/codex/fractions",
            params: { fraction: { node_slug: node.slug } }, as: :json
       expect(response).to have_http_status(:unauthorized)
     end
 
     it "creates a new fraction on first POST and enqueues audit" do
       expect {
-        post "/api/v1/codex/fractions",
+        post "/codex/fractions",
              params: { fraction: { node_slug: node.slug } },
              headers: headers, as: :json
       }.to change(Codex::Fraction, :count).by(1)
@@ -39,7 +39,7 @@ RSpec.describe "Api::V1::Codex::Fractions", type: :request do
     it "returns 429 with cooldown_until when re-pick is within 7 days" do
       Codex::FractionChangeService.call(user: user, node: node)
 
-      post "/api/v1/codex/fractions",
+      post "/codex/fractions",
            params: { fraction: { node_slug: other_node.slug } },
            headers: headers, as: :json
 
@@ -50,7 +50,7 @@ RSpec.describe "Api::V1::Codex::Fractions", type: :request do
     end
 
     it "404s on unknown slug" do
-      post "/api/v1/codex/fractions",
+      post "/codex/fractions",
            params: { fraction: { node_slug: "does-not-exist" } },
            headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
@@ -58,26 +58,26 @@ RSpec.describe "Api::V1::Codex::Fractions", type: :request do
 
     it "422s when picking an extinct node" do
       dead = create(:codex_node, realm: realm, lifecycle_status: :extinct)
-      post "/api/v1/codex/fractions",
+      post "/codex/fractions",
            params: { fraction: { node_slug: dead.slug } },
            headers: headers, as: :json
       expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "redirects with notice on HTML format success" do
-      post "/api/v1/codex/fractions",
+      post "/codex/fractions",
            params: { fraction: { node_slug: node.slug } },
            headers: { "Authorization" => "Bearer #{token}", "Accept" => "text/html" }
 
       expect(response).to have_http_status(:redirect)
-      expect(response).to redirect_to("/api/v1/codex/nodes/#{node.slug}")
+      expect(response).to redirect_to("/codex/nodes/#{node.slug}")
       expect(flash[:notice]).to include("Fraction set")
     end
 
     it "redirects with alert on HTML format cooldown" do
       Codex::FractionChangeService.call(user: user, node: node)
 
-      post "/api/v1/codex/fractions",
+      post "/codex/fractions",
            params: { fraction: { node_slug: other_node.slug } },
            headers: { "Authorization" => "Bearer #{token}", "Accept" => "text/html" }
 
@@ -86,20 +86,20 @@ RSpec.describe "Api::V1::Codex::Fractions", type: :request do
     end
   end
 
-  describe "GET /api/v1/codex/fractions/me" do
+  describe "GET /codex/fractions/me" do
     it "rejects unauthenticated requests" do
-      get "/api/v1/codex/fractions/me", as: :json
+      get "/codex/fractions/me", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
 
     it "returns 204 when the user has no fraction yet" do
-      get "/api/v1/codex/fractions/me", headers: headers, as: :json
+      get "/codex/fractions/me", headers: headers, as: :json
       expect(response).to have_http_status(:no_content)
     end
 
     it "returns the caller's fraction with full Blueprint payload" do
       Codex::FractionChangeService.call(user: user, node: node)
-      get "/api/v1/codex/fractions/me", headers: headers, as: :json
+      get "/codex/fractions/me", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       data = response.parsed_body["data"]
       expect(data["user_id"]).to eq(user.id)
@@ -108,22 +108,22 @@ RSpec.describe "Api::V1::Codex::Fractions", type: :request do
 
     it "renders the My Fraction dashboard as HTML" do
       Codex::FractionChangeService.call(user: user, node: node)
-      get "/api/v1/codex/fractions/me",
+      get "/codex/fractions/me",
           headers: { "Authorization" => "Bearer #{token}", "Accept" => "text/html" }
       expect(response).to have_http_status(:ok)
       expect(response.media_type).to eq("text/html")
     end
   end
 
-  describe "GET /api/v1/codex/fractions/picker" do
+  describe "GET /codex/fractions/picker" do
     it "rejects unauthenticated requests" do
-      get "/api/v1/codex/fractions/picker"
+      get "/codex/fractions/picker"
       expect(response).to have_http_status(:unauthorized)
     end
 
     it "returns the picker frame for the active realm" do
       node # ensure pickable node exists
-      get "/api/v1/codex/fractions/picker",
+      get "/codex/fractions/picker",
           params: { realm: realm.slug },
           headers: { "Authorization" => "Bearer #{token}" }
       expect(response).to have_http_status(:ok)
@@ -133,7 +133,7 @@ RSpec.describe "Api::V1::Codex::Fractions", type: :request do
 
     it "falls back to the first ordered realm when ?realm= is omitted" do
       node
-      get "/api/v1/codex/fractions/picker",
+      get "/codex/fractions/picker",
           headers: { "Authorization" => "Bearer #{token}" }
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("codex_fraction_picker")
@@ -142,7 +142,7 @@ RSpec.describe "Api::V1::Codex::Fractions", type: :request do
     it "renders gracefully when no realms exist at all (active_realm is nil)" do
       Codex::Node.delete_all
       Codex::Realm.delete_all
-      get "/api/v1/codex/fractions/picker",
+      get "/codex/fractions/picker",
           headers: { "Authorization" => "Bearer #{token}" }
       expect(response).to have_http_status(:ok)
     end

@@ -15,9 +15,9 @@ RSpec.describe Api::V1::GatewaysController, type: :request do
   let!(:own_gateway) { create(:gateway, cluster: own_cluster) }
   let!(:other_gateway) { create(:gateway, cluster: other_cluster) }
 
-  describe "GET /api/v1/gateways" do
+  describe "GET /gateways" do
     it "returns only gateways belonging to the user's organization" do
-      get "/api/v1/gateways", headers: headers, as: :json
+      get "/gateways", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
       ids = response.parsed_body["data"].map { |g| g["id"] }
@@ -26,31 +26,31 @@ RSpec.describe Api::V1::GatewaysController, type: :request do
     end
 
     it "returns pagination metadata" do
-      get "/api/v1/gateways", headers: headers, as: :json
+      get "/gateways", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["pagy"]).to be_present
     end
 
     it "returns 401 without authentication" do
-      get "/api/v1/gateways", as: :json
+      get "/gateways", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
   end
 
-  describe "GET /api/v1/gateways/:id" do
+  describe "GET /gateways/:id" do
     it "returns a gateway belonging to the user's organization" do
-      get "/api/v1/gateways/#{own_gateway.id}", headers: headers, as: :json
+      get "/gateways/#{own_gateway.id}", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["id"]).to eq(own_gateway.id)
     end
 
     it "returns 404 for a gateway from another organization" do
-      get "/api/v1/gateways/#{other_gateway.id}", headers: headers, as: :json
+      get "/gateways/#{other_gateway.id}", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
 
     it "returns 404 for a non-existent gateway" do
-      get "/api/v1/gateways/999999", headers: headers, as: :json
+      get "/gateways/999999", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
   end
@@ -61,13 +61,13 @@ RSpec.describe Api::V1::GatewaysController, type: :request do
     end
 
     it "renders HTML for index" do
-      get "/api/v1/gateways", headers: html_headers
+      get "/gateways", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
 
     it "renders HTML for show" do
-      get "/api/v1/gateways/#{own_gateway.id}", headers: html_headers
+      get "/gateways/#{own_gateway.id}", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
@@ -89,7 +89,7 @@ RSpec.describe Api::V1::GatewaysController, type: :request do
     # тож `include` пройшов би. `other_gateway` існує в БД (`let!` вище), отже
     # зайвому стріму реально є звідки взятись.
     it "subscribes only to the gateway's OWN OTA channel" do
-      get "/api/v1/gateways/#{own_gateway.id}", headers: html_headers
+      get "/gateways/#{own_gateway.id}", headers: html_headers
 
       streams = response.body.scan(/signed-stream-name="([^"]+)"/).flatten
                         .map { |name| Turbo::StreamsChannel.verified_stream_name(name) }

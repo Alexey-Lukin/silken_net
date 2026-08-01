@@ -22,15 +22,15 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
       "Idempotency-Key" => SecureRandom.uuid }
   end
 
-  describe "POST /api/v1/codex/citations" do
+  describe "POST /codex/citations" do
     it "rejects unauthenticated requests" do
-      post "/api/v1/codex/citations", as: :json
+      post "/codex/citations", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
 
     it "rejects investors (forester+ only)" do
       bad_token = investor.generate_token_for(:api_access)
-      post "/api/v1/codex/citations",
+      post "/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: tree.id },
            headers: headers.merge("Authorization" => "Bearer #{bad_token}"),
            as: :json
@@ -39,7 +39,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
 
     it "creates a citation and increments node.citation_count" do
       expect {
-        post "/api/v1/codex/citations",
+        post "/codex/citations",
              params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: tree.id, note: "see lore_md" },
              headers: headers, as: :json
       }.to change { node.reload.citation_count }.by(1)
@@ -56,19 +56,19 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
     end
 
     it "rejects JSON writes without Idempotency-Key" do
-      post "/api/v1/codex/citations",
+      post "/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: tree.id },
            headers: headers.except("Idempotency-Key"), as: :json
       expect(response).to have_http_status(:bad_request)
     end
 
     it "returns the cached response on Idempotency-Key replay" do
-      post "/api/v1/codex/citations",
+      post "/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: tree.id },
            headers: headers, as: :json
       first = response.parsed_body
       expect {
-        post "/api/v1/codex/citations",
+        post "/codex/citations",
              params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: tree.id },
              headers: headers, as: :json
       }.not_to change(Codex::Citation, :count)
@@ -77,7 +77,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
     end
 
     it "rejects an unsupported citable_type" do
-      post "/api/v1/codex/citations",
+      post "/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "User", citable_id: 1 },
            headers: headers, as: :json
       expect(response).to have_http_status(:bad_request)
@@ -86,7 +86,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
     it "returns 422 on duplicate (DB UNIQUE)" do
       create(:codex_citation, node: node, created_by_user: forester,
              citable_type: "Tree", citable_id: tree.id)
-      post "/api/v1/codex/citations",
+      post "/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: tree.id },
            headers: headers, as: :json
       expect(response).to have_http_status(:unprocessable_content)
@@ -96,7 +96,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
       insight = create(:ai_insight, analyzable: cluster)
       expect(defined?(::OracleVision)).to be_nil
 
-      post "/api/v1/codex/citations",
+      post "/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "OracleVision", citable_id: insight.id },
            headers: headers, as: :json
 
@@ -105,7 +105,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
     end
 
     it "supports citable_type=Cluster" do
-      post "/api/v1/codex/citations",
+      post "/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "Cluster", citable_id: cluster.id },
            headers: headers, as: :json
       expect(response).to have_http_status(:created)
@@ -114,7 +114,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
 
     it "supports citable_type=AiInsight" do
       insight = create(:ai_insight, analyzable: cluster)
-      post "/api/v1/codex/citations",
+      post "/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "AiInsight", citable_id: insight.id },
            headers: headers, as: :json
       expect(response).to have_http_status(:created)
@@ -123,7 +123,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
 
     it "supports citable_type=EwsAlert" do
       alert = create(:ews_alert, cluster: cluster, tree: tree)
-      post "/api/v1/codex/citations",
+      post "/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "EwsAlert", citable_id: alert.id },
            headers: headers, as: :json
       expect(response).to have_http_status(:created)
@@ -132,7 +132,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
 
     it "supports citable_type=NaasContract" do
       contract = create(:naas_contract, organization: org, cluster: cluster)
-      post "/api/v1/codex/citations",
+      post "/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "NaasContract", citable_id: contract.id },
            headers: headers, as: :json
       expect(response).to have_http_status(:created)
@@ -144,7 +144,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
       insight = OracleVision.create!(analyzable: tree, insight_type: :daily_health_summary,
                                      target_date: Date.current - 1, stress_index: 0.1, summary: "x")
 
-      post "/api/v1/codex/citations",
+      post "/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "OracleVision", citable_id: insight.id },
            headers: headers, as: :json
 
@@ -160,7 +160,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
 
       it "відмовляє в цитуванні дерева чужої організації" do
         expect {
-          post "/api/v1/codex/citations",
+          post "/codex/citations",
                params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: foreign_tree.id },
                headers: headers, as: :json
         }.not_to change(Codex::Citation, :count)
@@ -174,7 +174,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
       # ЯКИЙ саме тип лишився відкритим.
       %w[Cluster EwsAlert AiInsight OracleVision NaasContract].each do |type|
         it "відмовляє в цитуванні чужого #{type}" do
-          post "/api/v1/codex/citations",
+          post "/codex/citations",
                params: { codex_node_slug: node.slug, citable_type: type,
                          citable_id: foreign_target_id_for(type) },
                headers: headers, as: :json
@@ -197,12 +197,12 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
       # відповідає на питання «чи існує такий запис на платформі» — тобто ендпоінт
       # лишається existence-оракулом навіть із закритим записом.
       it "не відрізняє чужу ціль від неіснуючої" do
-        post "/api/v1/codex/citations",
+        post "/codex/citations",
              params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: foreign_tree.id },
              headers: headers, as: :json
         foreign = [ response.status, response.parsed_body ]
 
-        post "/api/v1/codex/citations",
+        post "/codex/citations",
              params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: 0 },
              headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
 
@@ -214,7 +214,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
     # Non-JSON requests bypass the Idempotency-Key gate; the cache helpers
     # all early-return `nil` for blank keys (covers L124/L131/L137 branches).
     it "creates the citation without Idempotency-Key for form-encoded requests" do
-      post "/api/v1/codex/citations",
+      post "/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: tree.id },
            headers: { "Authorization" => "Bearer #{token}" }
 
@@ -223,14 +223,14 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
     end
   end
 
-  describe "DELETE /api/v1/codex/citations/:id" do
+  describe "DELETE /codex/citations/:id" do
     let!(:citation) do
       create(:codex_citation, node: node, created_by_user: forester,
              citable_type: "Tree", citable_id: tree.id)
     end
 
     it "lets the author delete within the 24 h grace" do
-      delete "/api/v1/codex/citations/#{citation.id}", headers: headers
+      delete "/codex/citations/#{citation.id}", headers: headers
 
       expect(response).to have_http_status(:no_content)
       expect(Codex::Citation.find_by(id: citation.id)).to be_nil
@@ -239,7 +239,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
     it "blocks a non-author forester" do
       other = create(:user, organization: org, role: :forester)
       other_token = other.generate_token_for(:api_access)
-      delete "/api/v1/codex/citations/#{citation.id}",
+      delete "/codex/citations/#{citation.id}",
              headers: headers.merge("Authorization" => "Bearer #{other_token}")
       expect(response).to have_http_status(:forbidden)
     end
@@ -247,7 +247,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
     it "lets admin+ delete past the grace window" do
       citation.update_columns(created_at: 25.hours.ago)
       admin_token = admin.generate_token_for(:api_access)
-      delete "/api/v1/codex/citations/#{citation.id}",
+      delete "/codex/citations/#{citation.id}",
              headers: headers.merge("Authorization" => "Bearer #{admin_token}")
       expect(response).to have_http_status(:no_content)
     end
@@ -258,7 +258,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
       foreign_admin = create(:user, :admin, organization: create(:organization))
 
       expect {
-        delete "/api/v1/codex/citations/#{citation.id}",
+        delete "/codex/citations/#{citation.id}",
                headers: headers.merge("Authorization" => "Bearer #{foreign_admin.generate_token_for(:api_access)}")
       }.not_to change(Codex::Citation, :count)
 
@@ -274,7 +274,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
     it "returns 204 when the citable target has been destroyed" do
       tree.destroy!
 
-      delete "/api/v1/codex/citations/#{citation.id}", headers: headers
+      delete "/codex/citations/#{citation.id}", headers: headers
       expect(response).to have_http_status(:no_content)
     end
   end

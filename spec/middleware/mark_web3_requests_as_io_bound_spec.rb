@@ -27,7 +27,7 @@ RSpec.describe MarkWeb3RequestsAsIoBound do
   end
 
   describe "Web3 IO-bound endpoints" do
-    it "marks POST /api/v1/oracle_callbacks as IO-bound" do
+    it "marks POST /oracle_callbacks as IO-bound" do
       expect(io_bound_callback).to receive(:call).once
 
       status, _, _ = middleware.call(env_for(method: "POST", path: "/api/v1/oracle_callbacks"))
@@ -35,10 +35,10 @@ RSpec.describe MarkWeb3RequestsAsIoBound do
       expect(status).to eq(200)
     end
 
-    it "marks POST /api/v1/provisioning/register as IO-bound" do
+    it "marks POST /provisioning/register as IO-bound" do
       expect(io_bound_callback).to receive(:call).once
 
-      status, _, _ = middleware.call(env_for(method: "POST", path: "/api/v1/provisioning/register"))
+      status, _, _ = middleware.call(env_for(method: "POST", path: "/provisioning/register"))
 
       expect(status).to eq(200)
     end
@@ -48,7 +48,7 @@ RSpec.describe MarkWeb3RequestsAsIoBound do
     it "does NOT mark unrelated POST endpoints" do
       expect(io_bound_callback).not_to receive(:call)
 
-      middleware.call(env_for(method: "POST", path: "/api/v1/dashboard"))
+      middleware.call(env_for(method: "POST", path: "/dashboard"))
     end
 
     it "does NOT mark GET requests on IO-bound paths (method is part of the match)" do
@@ -80,7 +80,7 @@ RSpec.describe MarkWeb3RequestsAsIoBound do
     it "marks any request when env['silken_net.io_bound'] is truthy" do
       expect(io_bound_callback).to receive(:call).once
 
-      env = env_for(method: "GET", path: "/api/v1/wallets/42/balance")
+      env = env_for(method: "GET", path: "/wallets/42/balance")
       env["silken_net.io_bound"] = true
 
       middleware.call(env)

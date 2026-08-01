@@ -7,7 +7,7 @@
 # `Codex::Fraction` row yet — selecting one flips this off permanently.
 #
 # Server-rendered, no Stimulus, no JS — clicking the CTA is a plain
-# Turbo-Drive navigation to `GET /api/v1/codex/fractions/picker`. This keeps
+# Turbo-Drive navigation to `GET /codex/fractions/picker`. This keeps
 # the wizard within ADR-CDX-4 (Codex never blocks the hot path) and matches
 # the Phase-8 Stimulus audit (`docs/04_05_Codex_Lore_Module.md` § 3.1) which
 # explicitly removed `codex--fraction-picker` in favour of native
@@ -61,7 +61,7 @@ module Codex
       def render_actions
         div(class: "flex items-center gap-3 shrink-0") do
           a(
-            href: api_v1_codex_fraction_picker_path,
+            href: codex_fraction_picker_path,
             class: tokens(
               "inline-flex items-center gap-2 px-4 py-2 border border-gaia-primary",
               "bg-gaia-primary text-gaia-primary-text",
@@ -72,7 +72,7 @@ module Codex
           ) { t("codex.fractions.onboarding.cta_primary") }
 
           a(
-            href: api_v1_codex_realms_path,
+            href: codex_realms_path,
             class: tokens(
               "inline-flex items-center gap-2 px-3 py-2 border border-gaia-border",
               "text-tiny uppercase tracking-[0.3em] text-gaia-text-muted",

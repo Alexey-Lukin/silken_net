@@ -13,10 +13,10 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
   let!(:own_cluster) { create(:cluster, organization: organization) }
   let!(:other_cluster) { create(:cluster, organization: other_organization) }
 
-  describe "GET /api/v1/telemetry/live" do
+  describe "GET /telemetry/live" do
     context "when as HTML" do
       it "renders the live telemetry dashboard" do
-        get "/api/v1/telemetry/live", headers: headers
+        get "/telemetry/live", headers: headers
         expect(response).to have_http_status(:ok)
       end
 
@@ -25,7 +25,7 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
       # другі дивляться з боку продюсера. Без цього піна підміна на
       # `Organization.first` лишила б усю сюїту зеленою, а крос-тенант — живим.
       def subscribed_stream_for(who)
-        get "/api/v1/telemetry/live",
+        get "/telemetry/live",
             headers: { "Authorization" => "Bearer #{who.generate_token_for(:api_access)}" }
         response.body.scan(/signed-stream-name="([^"]+)"/).flatten
                 .map { |s| Turbo::StreamsChannel.verified_stream_name(s) }
@@ -58,12 +58,12 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
     end
 
     it "returns 401 without authentication" do
-      get "/api/v1/telemetry/live"
+      get "/telemetry/live"
       expect(response).to have_http_status(:unauthorized)
     end
   end
 
-  describe "GET /api/v1/trees/:id/telemetry (tree_history)" do
+  describe "GET /trees/:id/telemetry (tree_history)" do
     let(:tree_family) { create(:tree_family) }
     let(:own_tree) { create(:tree, cluster: own_cluster, tree_family: tree_family) }
     let(:other_tree) { create(:tree, cluster: other_cluster, tree_family: tree_family) }
@@ -74,7 +74,7 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
     end
 
     it "returns telemetry history for a tree in the user's organization" do
-      get "/api/v1/trees/#{own_tree.id}/telemetry",
+      get "/trees/#{own_tree.id}/telemetry",
           params: { tree_id: own_tree.id },
           headers: headers, as: :json
       expect(response).to have_http_status(:ok)
@@ -90,21 +90,21 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
     end
 
     it "supports days parameter" do
-      get "/api/v1/trees/#{own_tree.id}/telemetry",
+      get "/trees/#{own_tree.id}/telemetry",
           params: { tree_id: own_tree.id, days: 1 },
           headers: headers, as: :json
       expect(response).to have_http_status(:ok)
     end
 
     it "returns 404 for a tree from another organization" do
-      get "/api/v1/trees/#{other_tree.id}/telemetry",
+      get "/trees/#{other_tree.id}/telemetry",
           params: { tree_id: other_tree.id },
           headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
 
     it "returns 401 without authentication" do
-      get "/api/v1/trees/#{own_tree.id}/telemetry", as: :json
+      get "/trees/#{own_tree.id}/telemetry", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
 
@@ -113,7 +113,7 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
     # bogus or absurd values gracefully degrade to a manageable window.
     # =========================================================================
     it "clamps `days` parameter to MAX_HISTORY_DAYS (365)" do
-      get "/api/v1/trees/#{own_tree.id}/telemetry",
+      get "/trees/#{own_tree.id}/telemetry",
           params: { days: 99_999 }, headers: headers, as: :json
 
       expect(response).to have_http_status(:ok)
@@ -122,7 +122,7 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
     end
 
     it "treats non-numeric `days` as the default (7) instead of 0" do
-      get "/api/v1/trees/#{own_tree.id}/telemetry",
+      get "/trees/#{own_tree.id}/telemetry",
           params: { days: "yesterday" }, headers: headers, as: :json
 
       expect(response).to have_http_status(:ok)
@@ -131,7 +131,7 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
     end
   end
 
-  describe "POST /api/v1/gateways/:id/telemetry (gateway_uplink)" do
+  describe "POST /gateways/:id/telemetry (gateway_uplink)" do
     let(:own_gateway) { create(:gateway, cluster: own_cluster) }
 
     before do
@@ -190,7 +190,7 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
     end
   end
 
-  describe "GET /api/v1/gateways/:id/telemetry (gateway_history)" do
+  describe "GET /gateways/:id/telemetry (gateway_history)" do
     let(:own_gateway) { create(:gateway, cluster: own_cluster) }
     let(:other_gateway) { create(:gateway, cluster: other_cluster) }
 
@@ -202,7 +202,7 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
     end
 
     it "returns telemetry history for a gateway in the user's organization" do
-      get "/api/v1/gateways/#{own_gateway.id}/telemetry",
+      get "/gateways/#{own_gateway.id}/telemetry",
           params: { gateway_id: own_gateway.id },
           headers: headers, as: :json
       expect(response).to have_http_status(:ok)
@@ -217,21 +217,21 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
     end
 
     it "supports days parameter" do
-      get "/api/v1/gateways/#{own_gateway.id}/telemetry",
+      get "/gateways/#{own_gateway.id}/telemetry",
           params: { gateway_id: own_gateway.id, days: 1 },
           headers: headers, as: :json
       expect(response).to have_http_status(:ok)
     end
 
     it "returns 404 for a gateway from another organization" do
-      get "/api/v1/gateways/#{other_gateway.id}/telemetry",
+      get "/gateways/#{other_gateway.id}/telemetry",
           params: { gateway_id: other_gateway.id },
           headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
 
     it "returns 401 without authentication" do
-      get "/api/v1/gateways/#{own_gateway.id}/telemetry", as: :json
+      get "/gateways/#{own_gateway.id}/telemetry", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
   end

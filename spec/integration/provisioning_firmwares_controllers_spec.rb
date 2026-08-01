@@ -23,9 +23,9 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
   # ProvisioningController
   # ---------------------------------------------------------------------------
   describe "Provisioning API" do
-    it "POST /api/v1/provisioning/register provisions a tree" do
+    it "POST /provisioning/register provisions a tree" do
       expect {
-        post "/api/v1/provisioning/register",
+        post "/provisioning/register",
              params: {
                provisioning: {
                  hardware_uid: "0039002F313851150000BB02", # [FW.54] 24-hex UID
@@ -49,9 +49,9 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
       expect(json["aes_key"]).to be_nil
     end
 
-    it "POST /api/v1/provisioning/register provisions a gateway" do
+    it "POST /provisioning/register provisions a gateway" do
       expect {
-        post "/api/v1/provisioning/register",
+        post "/provisioning/register",
              params: {
                provisioning: {
                  hardware_uid: "SNET-Q-FF001122",
@@ -71,7 +71,7 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
       # [FW.54] guard живе на деривованому DID
       create(:hardware_key, device_uid: SilkenNet::DidDerivation.wire_did_from_uid_hex("0039002F3138511538323634"))
 
-      post "/api/v1/provisioning/register",
+      post "/provisioning/register",
            params: {
              provisioning: {
                hardware_uid: "0039002F3138511538323634",
@@ -91,7 +91,7 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
       investor = create(:user, :investor, organization: organization)
       inv_token = investor.generate_token_for(:api_access)
 
-      post "/api/v1/provisioning/register",
+      post "/provisioning/register",
            params: { provisioning: { hardware_uid: "TEST", device_type: "tree", cluster_id: cluster.id } },
            headers: { "Authorization" => "Bearer #{inv_token}", "Accept" => "application/json" }
 
@@ -105,8 +105,8 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
   describe "Firmwares API" do
     let!(:firmware) { create(:bio_contract_firmware, version: "5.0.0") }
 
-    it "GET /api/v1/firmwares returns paginated list" do
-      get "/api/v1/firmwares",
+    it "GET /firmwares returns paginated list" do
+      get "/firmwares",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -115,9 +115,9 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
       expect(json["pagy"]).to include("page")
     end
 
-    it "POST /api/v1/firmwares creates firmware" do
+    it "POST /firmwares creates firmware" do
       expect {
-        post "/api/v1/firmwares",
+        post "/firmwares",
              params: { firmware: { version: "6.0.0", bytecode_payload: "AABB0011" } },
              headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
       }.to change(BioContractFirmware, :count).by(1)
@@ -125,8 +125,8 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
       expect(response).to have_http_status(:created)
     end
 
-    it "GET /api/v1/firmwares/inventory returns distribution" do
-      get "/api/v1/firmwares/inventory",
+    it "GET /firmwares/inventory returns distribution" do
+      get "/firmwares/inventory",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -134,11 +134,11 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
       expect(json).to include("trees", "gateways")
     end
 
-    it "POST /api/v1/firmwares/:id/deploy targets gateways for the poll-тракт (FW.60)" do
+    it "POST /firmwares/:id/deploy targets gateways for the poll-тракт (FW.60)" do
       gateway = create(:gateway, cluster: cluster)
       OtaTransmissionWorker.clear
 
-      post "/api/v1/firmwares/#{firmware.id}/deploy",
+      post "/firmwares/#{firmware.id}/deploy",
            params: { cluster_id: cluster.id, target_type: "Tree", canary_percentage: 10 },
            headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
@@ -148,7 +148,7 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
     end
 
     it "returns 403 for non-admin" do
-      get "/api/v1/firmwares",
+      get "/firmwares",
           headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:forbidden)
@@ -161,8 +161,8 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
   describe "Alerts API" do
     let!(:alert) { create(:ews_alert, cluster: cluster, severity: :critical, status: :active) }
 
-    it "GET /api/v1/alerts returns filtered alerts" do
-      get "/api/v1/alerts",
+    it "GET /alerts returns filtered alerts" do
+      get "/alerts",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -170,8 +170,8 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
       expect(json["data"]).to be_an(Array)
     end
 
-    it "PATCH /api/v1/alerts/:id/resolve resolves alert" do
-      patch "/api/v1/alerts/#{alert.id}/resolve",
+    it "PATCH /alerts/:id/resolve resolves alert" do
+      patch "/alerts/#{alert.id}/resolve",
             params: { notes: "Threat neutralized" },
             headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
@@ -188,94 +188,94 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
     let!(:wallet) { tree.wallet || create(:wallet, tree: tree) }
     let!(:gateway) { create(:gateway, cluster: cluster) }
 
-    it "GET /api/v1/clusters returns clusters" do
-      get "/api/v1/clusters",
+    it "GET /clusters returns clusters" do
+      get "/clusters",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
-    it "GET /api/v1/clusters/:id returns cluster details" do
-      get "/api/v1/clusters/#{cluster.id}",
+    it "GET /clusters/:id returns cluster details" do
+      get "/clusters/#{cluster.id}",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
-    it "GET /api/v1/trees/:id returns tree" do
-      get "/api/v1/trees/#{tree.id}",
+    it "GET /trees/:id returns tree" do
+      get "/trees/#{tree.id}",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
-    it "GET /api/v1/gateways returns gateways" do
-      get "/api/v1/gateways",
+    it "GET /gateways returns gateways" do
+      get "/gateways",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
-    it "GET /api/v1/gateways/:id returns gateway" do
-      get "/api/v1/gateways/#{gateway.id}",
+    it "GET /gateways/:id returns gateway" do
+      get "/gateways/#{gateway.id}",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
-    it "GET /api/v1/wallets returns wallets" do
-      get "/api/v1/wallets",
+    it "GET /wallets returns wallets" do
+      get "/wallets",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
-    it "GET /api/v1/wallets/:id returns wallet details" do
-      get "/api/v1/wallets/#{wallet.id}",
+    it "GET /wallets/:id returns wallet details" do
+      get "/wallets/#{wallet.id}",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
-    it "GET /api/v1/organizations returns organizations" do
+    it "GET /organizations returns organizations" do
       super_admin = create(:user, :super_admin, organization: organization)
       sa_token = super_admin.generate_token_for(:api_access)
 
-      get "/api/v1/organizations",
+      get "/organizations",
           headers: { "Authorization" => "Bearer #{sa_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
-    it "GET /api/v1/organizations/:id returns org details" do
+    it "GET /organizations/:id returns org details" do
       super_admin = create(:user, :super_admin, organization: organization)
       sa_token = super_admin.generate_token_for(:api_access)
 
-      get "/api/v1/organizations/#{organization.id}",
+      get "/organizations/#{organization.id}",
           headers: { "Authorization" => "Bearer #{sa_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
-    it "GET /api/v1/blockchain_transactions returns transactions" do
+    it "GET /blockchain_transactions returns transactions" do
       create(:blockchain_transaction, wallet: wallet)
 
-      get "/api/v1/blockchain_transactions",
+      get "/blockchain_transactions",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
-    it "GET /api/v1/audit_logs returns logs" do
+    it "GET /audit_logs returns logs" do
       create(:audit_log, user: admin, organization: organization)
 
-      get "/api/v1/audit_logs",
+      get "/audit_logs",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
-    it "GET /api/v1/system_audits returns chain audit data" do
+    it "GET /system_audits returns chain audit data" do
       allow(ChainAuditService).to receive(:call).and_return(
         ChainAuditService::Result.new(
           db_total: 100.0, chain_total: 100.0, delta: 0.0,
@@ -283,7 +283,7 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
         )
       )
 
-      get "/api/v1/system_audits",
+      get "/system_audits",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -297,10 +297,10 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
     let!(:tree) { create(:tree, cluster: cluster, tree_family: tree_family) }
     let!(:gateway) { create(:gateway, cluster: cluster) }
 
-    it "GET /api/v1/trees/:id/telemetry returns tree history" do
+    it "GET /trees/:id/telemetry returns tree history" do
       create(:telemetry_log, tree: tree, voltage_mv: 3800, temperature_c: 22, z_value: 25.0)
 
-      get "/api/v1/trees/#{tree.id}/telemetry",
+      get "/trees/#{tree.id}/telemetry",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -309,10 +309,10 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
       expect(json["impedance"]).to be_an(Array)
     end
 
-    it "GET /api/v1/gateways/:id/telemetry returns gateway history" do
+    it "GET /gateways/:id/telemetry returns gateway history" do
       create(:gateway_telemetry_log, gateway: gateway)
 
-      get "/api/v1/gateways/#{gateway.id}/telemetry",
+      get "/gateways/#{gateway.id}/telemetry",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -325,15 +325,15 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
   # TreeFamiliesController
   # ---------------------------------------------------------------------------
   describe "Tree Families API" do
-    it "GET /api/v1/tree_families returns families" do
-      get "/api/v1/tree_families",
+    it "GET /tree_families returns families" do
+      get "/tree_families",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
-    it "GET /api/v1/tree_families/:id returns family" do
-      get "/api/v1/tree_families/#{tree_family.id}",
+    it "GET /tree_families/:id returns family" do
+      get "/tree_families/#{tree_family.id}",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -344,8 +344,8 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
   # OracleVisionsController
   # ---------------------------------------------------------------------------
   describe "Oracle Visions API" do
-    it "GET /api/v1/oracle_visions returns visions and emission forecast" do
-      get "/api/v1/oracle_visions",
+    it "GET /oracle_visions returns visions and emission forecast" do
+      get "/oracle_visions",
           headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -361,8 +361,8 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
     let!(:gateway) { create(:gateway, cluster: cluster) }
     let!(:actuator) { create(:actuator, gateway: gateway) }
 
-    it "GET /api/v1/clusters/:cluster_id/actuators returns list" do
-      get "/api/v1/clusters/#{cluster.id}/actuators",
+    it "GET /clusters/:cluster_id/actuators returns list" do
+      get "/clusters/#{cluster.id}/actuators",
           headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -370,16 +370,16 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
       expect(json["data"]).to be_an(Array)
     end
 
-    it "GET /api/v1/actuators/:id returns actuator detail" do
-      get "/api/v1/actuators/#{actuator.id}",
+    it "GET /actuators/:id returns actuator detail" do
+      get "/actuators/#{actuator.id}",
           headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
-    it "POST /api/v1/actuators/:id/execute creates a command" do
+    it "POST /actuators/:id/execute creates a command" do
       expect {
-        post "/api/v1/actuators/#{actuator.id}/execute",
+        post "/actuators/#{actuator.id}/execute",
              params: { action_payload: "OPEN", duration_seconds: 60 },
              headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json",
                         "Idempotency-Key" => SecureRandom.uuid }
@@ -391,7 +391,7 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
     it "rejects execute when command already pending" do
       create(:actuator_command, actuator: actuator, status: :issued)
 
-      post "/api/v1/actuators/#{actuator.id}/execute",
+      post "/actuators/#{actuator.id}/execute",
            params: { action_payload: "OPEN", duration_seconds: 60 },
            headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json",
                       "Idempotency-Key" => SecureRandom.uuid }
@@ -407,23 +407,23 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
     let!(:tree) { create(:tree, cluster: cluster, tree_family: tree_family) }
     let!(:record) { create(:maintenance_record, user: forester, maintainable: tree) }
 
-    it "GET /api/v1/maintenance_records returns records" do
-      get "/api/v1/maintenance_records",
+    it "GET /maintenance_records returns records" do
+      get "/maintenance_records",
           headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
-    it "GET /api/v1/maintenance_records/:id returns record detail" do
-      get "/api/v1/maintenance_records/#{record.id}",
+    it "GET /maintenance_records/:id returns record detail" do
+      get "/maintenance_records/#{record.id}",
           headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
-    it "POST /api/v1/maintenance_records creates a record" do
+    it "POST /maintenance_records creates a record" do
       expect {
-        post "/api/v1/maintenance_records",
+        post "/maintenance_records",
              params: {
                maintenance_record: {
                  maintainable_type: "Tree",

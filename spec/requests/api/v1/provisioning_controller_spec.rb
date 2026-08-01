@@ -25,7 +25,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
   end
 
-  describe "POST /api/v1/provisioning/register" do
+  describe "POST /provisioning/register" do
     let(:valid_params) do
       {
         provisioning: {
@@ -41,7 +41,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
     it "rejects registration into another organization's cluster (IDOR)" do
       params = valid_params.deep_merge(provisioning: { cluster_id: other_cluster.id })
       expect {
-        post "/api/v1/provisioning/register", params: params, headers: headers, as: :json
+        post "/provisioning/register", params: params, headers: headers, as: :json
       }.not_to change(Gateway, :count)
       expect(response).to have_http_status(:not_found)
     end
@@ -53,7 +53,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         lorenz_seed_hex: SecureRandom.hex(32).upcase
       )
 
-      post "/api/v1/provisioning/register", params: valid_params, headers: headers, as: :json
+      post "/provisioning/register", params: valid_params, headers: headers, as: :json
 
       expect(response).to have_http_status(:conflict)
       expect(response.parsed_body["error"]).to include("already registered")
@@ -71,7 +71,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         magic_params = valid_params.deep_merge(
           provisioning: { hardware_uid: "SNET-Q-511CEE01" }
         )
-        post "/api/v1/provisioning/register", params: magic_params, headers: headers, as: :json
+        post "/provisioning/register", params: magic_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:created)
         expect(response.body.to_s).not_to include("fallback")
@@ -92,7 +92,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       end
 
       it "successfully registers a gateway device" do
-        post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
+        post "/provisioning/register", params: gateway_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:created)
         body = response.parsed_body
@@ -104,7 +104,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       # returned over the network — both are derived independently on
       # firmware via HKDF from PROVISIONING_MASTER_KEY.
       it "never returns aes_key, lorenz_seed, or warning in response [SEC.11]" do
-        post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
+        post "/provisioning/register", params: gateway_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:created)
         body = response.parsed_body
@@ -118,7 +118,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       it "persists deterministic K_seed on HardwareKey [SEC.11]" do
         allow(HardwareKeyService).to receive(:provision).and_call_original
 
-        post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
+        post "/provisioning/register", params: gateway_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:created)
         body = response.parsed_body
@@ -145,7 +145,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       end
 
       it "реєструє дерево з ДЕРИВОВАНИМ DID (murmur3-fmix32) + кремнієвим паспортом" do
-        post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
+        post "/provisioning/register", params: tree_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:created)
         body = response.parsed_body
@@ -159,7 +159,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       end
 
       it "enqueues PeaqRegistrationWorker for tree registration" do
-        post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
+        post "/provisioning/register", params: tree_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:created)
         expect(PeaqRegistrationWorker).to have_received(:perform_async).with(Tree.last.id)
@@ -169,7 +169,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         bad = tree_params.deep_merge(provisioning: { hardware_uid: "AABB11223344CCDD" })
 
         expect {
-          post "/api/v1/provisioning/register", params: bad, headers: headers, as: :json
+          post "/provisioning/register", params: bad, headers: headers, as: :json
         }.not_to change(Tree, :count)
 
         expect(response).to have_http_status(:unprocessable_content)
@@ -198,7 +198,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       end
 
       it "stores the Ed25519 public key on the hardware key" do
-        post "/api/v1/provisioning/register", params: ed25519_gateway_params, headers: headers, as: :json
+        post "/provisioning/register", params: ed25519_gateway_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:created)
         hw_key = HardwareKey.find_by(device_uid: "SNET-Q-ED250001")
@@ -219,7 +219,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
           }
         }
 
-        post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
+        post "/provisioning/register", params: gateway_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:created)
         expect(PeaqRegistrationWorker).not_to have_received(:perform_async)
@@ -240,7 +240,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       end
 
       it "returns internal server error" do
-        post "/api/v1/provisioning/register", params: bad_type_params, headers: headers, as: :json
+        post "/provisioning/register", params: bad_type_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:internal_server_error)
         expect(response.parsed_body["error"]).to include("Core fault in the Ocean")
@@ -253,7 +253,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       let(:investor_headers) { { "Authorization" => "Bearer #{investor_token}" } }
 
       it "returns forbidden" do
-        post "/api/v1/provisioning/register", params: valid_params, headers: investor_headers, as: :json
+        post "/provisioning/register", params: valid_params, headers: investor_headers, as: :json
 
         expect(response).to have_http_status(:forbidden)
       end
@@ -273,7 +273,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       end
 
       it "returns validation errors" do
-        post "/api/v1/provisioning/register", params: invalid_gateway_params, headers: headers, as: :json
+        post "/provisioning/register", params: invalid_gateway_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:unprocessable_content)
         expect(response.parsed_body["errors"]).to be_present
@@ -287,7 +287,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
     end
 
     it "exercises the new provisioning page path" do
-      get "/api/v1/provisioning/new", headers: html_headers
+      get "/provisioning/new", headers: html_headers
       # Phlex component may not fully render in test env, but code path is exercised
       expect(response.status).to be_in([ 200, 500 ])
     end
@@ -303,7 +303,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         }
       }
 
-      post "/api/v1/provisioning/register", params: gateway_params, headers: html_headers
+      post "/provisioning/register", params: gateway_params, headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
@@ -319,7 +319,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         }
       }
 
-      post "/api/v1/provisioning/register", params: invalid_params, headers: html_headers
+      post "/provisioning/register", params: invalid_params, headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end

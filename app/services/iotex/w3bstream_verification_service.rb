@@ -63,7 +63,7 @@ module Iotex
           raise VerificationError,
                 "HardwareKey відсутній для Tree #{@tree.did} (reason=#{reason}). " \
                 "SHA256 fallback заборонений у production / WEB3_STRICT_MODE=true — " \
-                "потрібно provision'ити пристрій через POST /api/v1/provisioning/register."
+                "потрібно provision'ити пристрій через POST /provisioning/register."
         end
 
         Rails.logger.warn "⚠️ [W3bstream] HardwareKey відсутній для Tree #{@tree.did} (#{reason}). " \

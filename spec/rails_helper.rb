@@ -61,7 +61,7 @@ RSpec.configure do |config|
 
   # Reset I18n.locale between examples — the LocalesController#update endpoint
   # mutates I18n.locale globally (Thread-local), so without this reset a single
-  # POST /api/v1/locale spec leaks the locale into every subsequent example
+  # POST /locale spec leaks the locale into every subsequent example
   # that doesn't explicitly wrap itself in I18n.with_locale.
   #
   # Use `after` (not `before`) so per-example `around { I18n.with_locale(:uk) }`

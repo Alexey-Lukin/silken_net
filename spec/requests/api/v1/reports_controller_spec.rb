@@ -10,9 +10,9 @@ RSpec.describe Api::V1::ReportsController, type: :request do
   let(:api_token) { user.generate_token_for(:api_access) }
   let(:headers) { { "Authorization" => "Bearer #{api_token}" } }
 
-  describe "GET /api/v1/reports" do
+  describe "GET /reports" do
     it "returns a summary report for the organization" do
-      get "/api/v1/reports", headers: headers, as: :json
+      get "/reports", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
       body = response.parsed_body
@@ -22,9 +22,9 @@ RSpec.describe Api::V1::ReportsController, type: :request do
     end
   end
 
-  describe "GET /api/v1/reports/carbon_absorption" do
+  describe "GET /reports/carbon_absorption" do
     it "returns a carbon absorption report as JSON" do
-      get "/api/v1/reports/carbon_absorption", headers: headers, as: :json
+      get "/reports/carbon_absorption", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
       body = response.parsed_body
@@ -33,7 +33,7 @@ RSpec.describe Api::V1::ReportsController, type: :request do
     end
 
     it "returns a carbon absorption report as CSV" do
-      get "/api/v1/reports/carbon_absorption.csv", headers: headers
+      get "/reports/carbon_absorption.csv", headers: headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/csv")
 
@@ -46,21 +46,21 @@ RSpec.describe Api::V1::ReportsController, type: :request do
     end
 
     it "returns a carbon absorption report as PDF" do
-      get "/api/v1/reports/carbon_absorption.pdf", headers: headers
+      get "/reports/carbon_absorption.pdf", headers: headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("application/pdf")
       expect(response.body).to start_with("%PDF")
     end
   end
 
-  describe "GET /api/v1/reports/financial_summary" do
+  describe "GET /reports/financial_summary" do
     before do
       allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_protocol_financials)
         .and_return(total_minted: 500_000, total_burned: 150_000)
     end
 
     it "returns a financial summary report as JSON" do
-      get "/api/v1/reports/financial_summary", headers: headers, as: :json
+      get "/reports/financial_summary", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
       body = response.parsed_body
@@ -74,7 +74,7 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       create(:naas_contract, status: :active, organization: organization,
                              cluster: create(:cluster, organization: organization), total_funding: 600_000)
 
-      get "/api/v1/reports/financial_summary", headers: headers, as: :json
+      get "/reports/financial_summary", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
       ry = response.parsed_body.dig("data", "network_emission")
@@ -87,7 +87,7 @@ RSpec.describe Api::V1::ReportsController, type: :request do
     end
 
     it "returns a financial summary report as CSV" do
-      get "/api/v1/reports/financial_summary.csv", headers: headers
+      get "/reports/financial_summary.csv", headers: headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/csv")
 
@@ -100,7 +100,7 @@ RSpec.describe Api::V1::ReportsController, type: :request do
     end
 
     it "includes network_emission data in CSV response" do
-      get "/api/v1/reports/financial_summary.csv", headers: headers
+      get "/reports/financial_summary.csv", headers: headers
 
       csv_text = response.body
       expect(csv_text).to include("Network Emission (DePIN/ReFi)")
@@ -111,7 +111,7 @@ RSpec.describe Api::V1::ReportsController, type: :request do
     end
 
     it "returns a financial summary report as PDF" do
-      get "/api/v1/reports/financial_summary.pdf", headers: headers
+      get "/reports/financial_summary.pdf", headers: headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("application/pdf")
       expect(response.body).to start_with("%PDF")
@@ -124,7 +124,7 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       end
 
       it "returns zero defaults for network_emission" do
-        get "/api/v1/reports/financial_summary", headers: headers, as: :json
+        get "/reports/financial_summary", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
         ry = response.parsed_body.dig("data", "network_emission")
@@ -144,7 +144,7 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       end
 
       it "returns zero defaults for network_emission on generic error" do
-        get "/api/v1/reports/financial_summary", headers: headers, as: :json
+        get "/reports/financial_summary", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
         ry = response.parsed_body.dig("data", "network_emission")
@@ -169,7 +169,7 @@ RSpec.describe Api::V1::ReportsController, type: :request do
         create(:naas_contract, status: :active, organization: organization,
                                cluster: create(:cluster, organization: organization), total_funding: 200_000)
 
-        get "/api/v1/reports/financial_summary", headers: headers, as: :json
+        get "/reports/financial_summary", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
         ry = response.parsed_body.dig("data", "network_emission")
@@ -189,19 +189,19 @@ RSpec.describe Api::V1::ReportsController, type: :request do
     end
 
     it "renders HTML for index" do
-      get "/api/v1/reports", headers: html_headers
+      get "/reports", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
 
     it "renders HTML for carbon_absorption" do
-      get "/api/v1/reports/carbon_absorption", headers: html_headers
+      get "/reports/carbon_absorption", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
 
     it "renders HTML for financial_summary" do
-      get "/api/v1/reports/financial_summary", headers: html_headers
+      get "/reports/financial_summary", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end

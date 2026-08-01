@@ -9,7 +9,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
   let(:api_token) { admin.generate_token_for(:api_access) }
   let(:headers) { { "Authorization" => "Bearer #{api_token}" } }
 
-  describe "POST /api/v1/firmwares/:id/deploy" do
+  describe "POST /firmwares/:id/deploy" do
     let!(:firmware) do
       BioContractFirmware.create!(version: "2.0.0", bytecode_payload: "AABBCCDD")
     end
@@ -19,7 +19,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     before { OtaTransmissionWorker.clear }
 
     it "targets the gateway via pending_firmware_id (FW.60 poll-тракт, без push-enqueue)" do
-      post "/api/v1/firmwares/#{firmware.id}/deploy",
+      post "/firmwares/#{firmware.id}/deploy",
            params: { cluster_id: cluster.id, canary_percentage: 5 }, headers: headers, as: :json
 
       expect(response).to have_http_status(:accepted)
@@ -30,7 +30,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     end
 
     it "defaults canary_percentage to 100 when not specified" do
-      post "/api/v1/firmwares/#{firmware.id}/deploy",
+      post "/firmwares/#{firmware.id}/deploy",
            headers: headers, as: :json
 
       expect(response).to have_http_status(:accepted)
@@ -38,7 +38,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     end
 
     it "clamps canary_percentage to valid range" do
-      post "/api/v1/firmwares/#{firmware.id}/deploy",
+      post "/firmwares/#{firmware.id}/deploy",
            params: { canary_percentage: 200 }, headers: headers, as: :json
 
       expect(response).to have_http_status(:accepted)
@@ -52,7 +52,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     it "rejects a stale deploy with 422 and enqueues nothing" do
       cluster.update!(ota_version_hiwater: firmware.id)
 
-      post "/api/v1/firmwares/#{firmware.id}/deploy",
+      post "/firmwares/#{firmware.id}/deploy",
            params: { cluster_id: cluster.id }, headers: headers, as: :json
 
       expect(response).to have_http_status(:unprocessable_content)
@@ -64,7 +64,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     it "rejects a deploy with no eligible gateways with 422" do
       gateway.update!(state: :maintenance)
 
-      post "/api/v1/firmwares/#{firmware.id}/deploy",
+      post "/firmwares/#{firmware.id}/deploy",
            params: { cluster_id: cluster.id }, headers: headers, as: :json
 
       expect(response).to have_http_status(:unprocessable_content)
@@ -76,7 +76,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
       cluster.update!(ota_version_hiwater: firmware.id) # rollback-skip
       empty_cluster = create(:cluster, organization: organization) # no_gateways-skip
 
-      post "/api/v1/firmwares/#{firmware.id}/deploy", headers: headers, as: :json
+      post "/firmwares/#{firmware.id}/deploy", headers: headers, as: :json
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["error"]).to include("anti-rollback")
@@ -90,7 +90,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     # the dispatcher re-scopes tenancy as belt-and-suspenders.
     # =========================================================================
     it "rejects unknown target_type with 400 and does not enqueue" do
-      post "/api/v1/firmwares/#{firmware.id}/deploy",
+      post "/firmwares/#{firmware.id}/deploy",
            params: { target_type: "Quantum" }, headers: headers, as: :json
 
       expect(response).to have_http_status(:bad_request)
@@ -101,7 +101,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     it "rejects target_type contradicting the firmware hardware type with 400" do
       firmware.update!(target_hardware_type: "Tree")
 
-      post "/api/v1/firmwares/#{firmware.id}/deploy",
+      post "/firmwares/#{firmware.id}/deploy",
            params: { target_type: "Gateway", cluster_id: cluster.id }, headers: headers, as: :json
 
       expect(response).to have_http_status(:bad_request)
@@ -112,7 +112,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     it "accepts a matching target_type and reports the cluster target" do
       firmware.update!(target_hardware_type: "Tree")
 
-      post "/api/v1/firmwares/#{firmware.id}/deploy",
+      post "/firmwares/#{firmware.id}/deploy",
            params: { target_type: "Tree", cluster_id: cluster.id, canary_percentage: 25 },
            headers: headers, as: :json
 
@@ -125,7 +125,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
       other_org = create(:organization)
       other_cluster = create(:cluster, organization: other_org)
 
-      post "/api/v1/firmwares/#{firmware.id}/deploy",
+      post "/firmwares/#{firmware.id}/deploy",
            params: { cluster_id: other_cluster.id }, headers: headers, as: :json
 
       expect(response).to have_http_status(:not_found)
@@ -133,19 +133,19 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     end
   end
 
-  describe "GET /api/v1/firmwares (index)" do
+  describe "GET /firmwares (index)" do
     let!(:firmware) do
       BioContractFirmware.create!(version: "3.0.0", bytecode_payload: "AABBCCDD")
     end
 
     it "returns firmware list as JSON" do
-      get "/api/v1/firmwares", headers: headers, as: :json
+      get "/firmwares", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["data"]).to be_an(Array)
     end
 
     it "renders HTML dashboard for firmware index" do
-      get "/api/v1/firmwares", headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+      get "/firmwares", headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
@@ -169,7 +169,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
         own_gateway
         foreign_gateway
 
-        get "/api/v1/firmwares", headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+        get "/firmwares", headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
 
         streams = response.body.scan(/signed-stream-name="([^"]+)"/).flatten
                           .map { |name| Turbo::StreamsChannel.verified_stream_name(name) }
@@ -178,24 +178,24 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     end
   end
 
-  describe "GET /api/v1/firmwares/new" do
+  describe "GET /firmwares/new" do
     it "exercises the new firmware form path" do
-      get "/api/v1/firmwares/new", headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+      get "/firmwares/new", headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
       # Phlex component may not fully render in test env, but code path is exercised
       expect(response.status).to be_in([ 200, 500 ])
     end
   end
 
-  describe "POST /api/v1/firmwares (create)" do
+  describe "POST /firmwares (create)" do
     it "creates firmware successfully as JSON" do
-      post "/api/v1/firmwares",
+      post "/firmwares",
            params: { firmware: { version: "4.0.0", bytecode_payload: "DEADBEEF" } },
            headers: headers, as: :json
       expect(response).to have_http_status(:created)
     end
 
     it "exercises HTML error path on validation failure" do
-      post "/api/v1/firmwares",
+      post "/firmwares",
            params: { firmware: { version: "", bytecode_payload: "" } },
            headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
       # Phlex component may not fully render in test env, but code path is exercised
@@ -209,7 +209,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     # =========================================================================
     it "rejects oversized bytecode_payload with 422" do
       huge_hex = "AA" * (Api::V1::FirmwaresController::MAX_BYTECODE_PAYLOAD_HEX_SIZE / 2 + 1)
-      post "/api/v1/firmwares",
+      post "/firmwares",
            params: { firmware: { version: "9.9.9", bytecode_payload: huge_hex } },
            headers: headers, as: :json
       expect(response).to have_http_status(:unprocessable_content)
@@ -217,7 +217,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     end
   end
 
-  describe "POST /api/v1/firmwares/:id/deploy (HTML format)" do
+  describe "POST /firmwares/:id/deploy (HTML format)" do
     let!(:firmware) do
       BioContractFirmware.create!(version: "5.0.0", bytecode_payload: "AABBCCDD")
     end
@@ -228,7 +228,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     it "redirects with a notice on successful HTML deploy (the UI one-click path)" do
       gw = create(:gateway, cluster: cluster)
 
-      post "/api/v1/firmwares/#{firmware.id}/deploy",
+      post "/firmwares/#{firmware.id}/deploy",
            headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
 
       expect(response).to have_http_status(:redirect)
@@ -237,7 +237,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     end
 
     it "redirects with an alert when nothing was dispatched" do
-      post "/api/v1/firmwares/#{firmware.id}/deploy",
+      post "/firmwares/#{firmware.id}/deploy",
            headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
 
       expect(response).to have_http_status(:redirect)

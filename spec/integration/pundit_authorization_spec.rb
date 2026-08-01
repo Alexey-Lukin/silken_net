@@ -20,33 +20,33 @@ RSpec.describe "Pundit authorization integration" do
     allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
   end
 
-  describe "GET /api/v1/users" do
+  describe "GET /users" do
     it "returns 403 for investors (not admin)" do
-      get "/api/v1/users", headers: investor_headers, as: :json
+      get "/users", headers: investor_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
 
     it "returns 200 for admin" do
-      get "/api/v1/users", headers: admin_headers, as: :json
+      get "/users", headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
     end
   end
 
-  describe "GET /api/v1/users/me" do
+  describe "GET /users/me" do
     it "returns 200 for any authenticated user" do
-      get "/api/v1/users/me", headers: investor_headers, as: :json
+      get "/users/me", headers: investor_headers, as: :json
       expect(response).to have_http_status(:ok)
     end
   end
 
-  describe "GET /api/v1/wallets" do
+  describe "GET /wallets" do
     let(:cluster) { create(:cluster, organization: organization) }
     let(:other_cluster) { create(:cluster, organization: other_org) }
     let!(:own_tree) { create(:tree, cluster: cluster) }
     let!(:other_tree) { create(:tree, cluster: other_cluster) }
 
     it "scopes wallets to org for investor" do
-      get "/api/v1/wallets", headers: investor_headers, as: :json
+      get "/wallets", headers: investor_headers, as: :json
       expect(response).to have_http_status(:ok)
 
       ids = response.parsed_body["data"].map { |w| w["id"] }
@@ -55,7 +55,7 @@ RSpec.describe "Pundit authorization integration" do
     end
 
     it "scopes wallets to own org for admin (org-scoped, not platform)" do
-      get "/api/v1/wallets", headers: admin_headers, as: :json
+      get "/wallets", headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
 
       ids = response.parsed_body["data"].map { |w| w["id"] }
@@ -73,7 +73,7 @@ RSpec.describe "Pundit authorization integration" do
     # третю організацію — тому чесна відповідь тут порожня, а не «усі». Саме ця
     # порожнеча і є доказом: доти той самий запит віддавав обидва чужі гаманці.
     it "не віддає super_admin чужих гаманців лише за роллю" do
-      get "/api/v1/wallets", headers: super_admin_headers, as: :json
+      get "/wallets", headers: super_admin_headers, as: :json
       expect(response).to have_http_status(:ok)
 
       ids = response.parsed_body["data"].map { |w| w["id"] }

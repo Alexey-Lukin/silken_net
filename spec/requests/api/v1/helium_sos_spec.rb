@@ -6,7 +6,7 @@ require "rails_helper"
 # [ARCH.34 L3] Helium SOS webhook — auth-клон oracle_callbacks-патерну:
 # публічний POST + HMAC-SHA256(raw_body) у X-Helium-Signature +
 # WEB3_STRICT_MODE fail-fast. Тонкий контролер: валідне → 202 + enqueue.
-RSpec.describe "POST /api/v1/telemetry/helium", type: :request do
+RSpec.describe "POST /telemetry/helium", type: :request do
   let(:secret)  { "helium-shared-secret" }
   let(:body)    { { dev_eui: "AABBCCDDEEFF0011", payload: Base64.strict_encode64("x" * 12) } }
   let(:raw)     { body.to_json }

@@ -41,12 +41,12 @@ RSpec.describe Actuators::CommandStatusFrame do
 
   describe Actuators::CommandStatusFrameStub do
     let(:stub_html) do
-      described_class.new(command_id: 7, src: "/api/v1/actuator_commands/7").call
+      described_class.new(command_id: 7, src: "/actuator_commands/7").call
     end
 
     it "renders an eager turbo-frame with the same id and a src" do
       expect(stub_html).to include('id="command_status_frame_7"')
-      expect(stub_html).to include('src="/api/v1/actuator_commands/7"')
+      expect(stub_html).to include('src="/actuator_commands/7"')
       expect(stub_html).to include('loading="eager"')
     end
 

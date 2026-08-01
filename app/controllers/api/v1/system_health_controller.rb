@@ -8,7 +8,7 @@ module Api
     class SystemHealthController < BaseController
       before_action :authorize_admin!
 
-      # GET /api/v1/system_health
+      # GET /system_health
       # Моніторинг стану системи: CoAP listener, Sidekiq, UDP
       def show
         @health = {

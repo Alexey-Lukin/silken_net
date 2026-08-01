@@ -11,9 +11,13 @@ class HardwareKey < ApplicationRecord
   # два однакові ключі в базі виглядатимуть по-різному.
   encrypts :aes_key_hex
   encrypts :previous_aes_key_hex
-  # [SEC.11] Lorenz K_seed — same shielding as the AES key. Optional
-  # only because pre-SEC.11 records were provisioned without it; field
-  # migration via POST /api/v1/provisioning/upgrade_seed back-fills.
+  # [SEC.11] Lorenz K_seed — same shielding as the AES key. Optional only
+  # because pre-SEC.11 records were provisioned without it. ⚠️ There is no
+  # migration endpoint and there will not be one: `upgrade_seed` was an
+  # explicit won't-do in SEC.11 (a seed lives in flash behind RDP — it is
+  # re-provisioned at the bench, not back-filled over HTTP). The comment that
+  # promised it survived here for months and got its path rewritten by the
+  # [ARCH.77] sweep, which is how a fiction ends up looking freshly maintained.
   encrypts :lorenz_seed_hex
 
   # ---------------------------------------------------------------------------

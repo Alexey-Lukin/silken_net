@@ -5,7 +5,7 @@ module Api
   module V1
     module Codex
       class NodesController < BaseController
-        # GET /api/v1/codex/nodes
+        # GET /codex/nodes
         # Filters: ?realm=ecosystem&lifecycle_status=thriving&q=foo&archetype=cold_wallet
         def index
           scope = policy_scope(::Codex::Node)
@@ -45,7 +45,7 @@ module Api
           end
         end
 
-        # GET /api/v1/codex/nodes/:slug
+        # GET /codex/nodes/:slug
         def show
           @node = policy_scope(::Codex::Node).find_by!(slug: params[:slug])
           authorize @node

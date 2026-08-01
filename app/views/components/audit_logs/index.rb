@@ -21,7 +21,7 @@ module AuditLogs
         audit_table
         render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
-          url_helper: ->(page:) { api_v1_audit_logs_path(**@filters, page: page) }
+          url_helper: ->(page:) { audit_logs_path(**@filters, page: page) }
         )
       end
     end
@@ -34,7 +34,7 @@ module AuditLogs
       div(class: "flex items-center gap-3 border border-emerald-900 bg-emerald-950/20 px-4 py-2") do
         span(class: "text-mini uppercase tracking-widest text-emerald-700") { t(".filtered") }
         a(
-          href: api_v1_audit_logs_path,
+          href: audit_logs_path,
           class: "text-mini uppercase tracking-widest text-emerald-500 hover:text-white " \
                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
         ) { t(".clear_filter") }
@@ -96,7 +96,7 @@ module AuditLogs
           end
         end
         td(class: "p-4 text-right") do
-          a(href: api_v1_audit_log_path(log), class: "text-emerald-600 hover:text-white transition-all text-mini uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t(".inspect_aria", id: log.id)) { t(".inspect") }
+          a(href: audit_log_path(log), class: "text-emerald-600 hover:text-white transition-all text-mini uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t(".inspect_aria", id: log.id)) { t(".inspect") }
         end
       end
     end

@@ -38,7 +38,7 @@ module Contracts
 
           render Views::Shared::UI::Pagination.new(
             pagy: @pagy,
-            url_helper: ->(page:) { api_v1_contracts_path(page: page) }
+            url_helper: ->(page:) { contracts_path(page: page) }
           )
         end
       end
@@ -83,7 +83,7 @@ module Contracts
           render_performance_gauge(contract.current_yield_performance)
         end
         td(class: "p-4 text-right") do
-          a(href: api_v1_contract_path(contract), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t(".audit_aria", id: contract.id)) { t(".audit_details") }
+          a(href: contract_path(contract), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t(".audit_aria", id: contract.id)) { t(".audit_details") }
         end
       end
     end

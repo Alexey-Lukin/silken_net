@@ -100,7 +100,7 @@ module Alerts
         # Acknowledge form posts via Turbo Stream — single-row replace.
         button_to(
           t(".acknowledge"),
-          resolve_api_v1_alert_path(@alert),
+          resolve_alert_path(@alert),
           method: :patch,
           aria: { label: t(".resolve_aria", id: @alert.id) },
           class: resolve_button_classes,

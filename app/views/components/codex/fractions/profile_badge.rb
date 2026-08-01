@@ -27,7 +27,7 @@ module Codex
             render Codex::Fractions::Cooldown.new(fraction: @fraction)
           else
             a(
-              href: api_v1_codex_fraction_picker_path,
+              href: codex_fraction_picker_path,
               class: tokens(
                 "text-mini uppercase tracking-[0.3em] underline",
                 "hover:text-gaia-primary focus-visible:ring-2 focus-visible:ring-gaia-primary"

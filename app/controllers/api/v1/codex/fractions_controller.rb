@@ -4,9 +4,9 @@
 module Api
   module V1
     module Codex
-      # POST /api/v1/codex/fractions          — initial pick or re-pick (idempotency-key required for JSON)
-      # GET  /api/v1/codex/fractions/me       — caller's current fraction (or 204 when none)
-      # GET  /api/v1/codex/fractions/picker?realm=… — Turbo Frame fragment with picker grid
+      # POST /codex/fractions          — initial pick or re-pick (idempotency-key required for JSON)
+      # GET  /codex/fractions/me       — caller's current fraction (or 204 when none)
+      # GET  /codex/fractions/picker?realm=… — Turbo Frame fragment with picker grid
       #
       # `GET /me` routes to `#show` (REST: a single user-singleton resource).
       # The `/me` path segment is a URL-level convention for self-resources.
@@ -31,7 +31,7 @@ module Api
                        status: :created
               end
               format.html do
-                redirect_to api_v1_codex_node_path(node.slug),
+                redirect_to codex_node_path(node.slug),
                             notice: "Fraction set: #{node.title_en}."
               end
             end
@@ -45,7 +45,7 @@ module Api
                 }, status: :too_many_requests
               end
               format.html do
-                redirect_to api_v1_codex_node_path(node.slug),
+                redirect_to codex_node_path(node.slug),
                             alert: "Fraction cooldown active until #{result.cooldown_until.iso8601}."
               end
             end

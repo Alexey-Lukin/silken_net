@@ -15,7 +15,7 @@ module OracleVisions
           plain t(".title")
         end
 
-        form(action: simulate_api_v1_oracle_visions_path, method: "post", data: { turbo_frame: "simulation_results" }) do
+        form(action: simulate_oracle_visions_path, method: "post", data: { turbo_frame: "simulation_results" }) do
           authenticity_token_input
 
           # Вибір контексту симуляції (Кластер)

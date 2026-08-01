@@ -36,7 +36,7 @@ module Notifications
       div(class: "p-6 border border-emerald-900 bg-black") do
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".channels.heading") }
 
-        form(action: api_v1_notifications_settings_path, method: "post", class: "space-y-6") do
+        form(action: notifications_settings_path, method: "post", class: "space-y-6") do
           input(type: "hidden", name: "_method", value: "patch")
           input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
 

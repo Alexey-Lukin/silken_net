@@ -85,7 +85,7 @@ module Api
                 record: MaintenanceRecordBlueprint.render_as_hash(@record, view: :show)
               }, status: :created
             end
-            format.html { redirect_to api_v1_maintenance_record_path(@record), notice: I18n.t("flash.maintenance.record_created") }
+            format.html { redirect_to maintenance_record_path(@record), notice: I18n.t("flash.maintenance.record_created") }
           end
         else
           respond_to do |format|
@@ -126,7 +126,7 @@ module Api
       end
 
       # --- ФОРМА РЕДАГУВАННЯ ---
-      # GET /api/v1/maintenance_records/:id/edit
+      # GET /maintenance_records/:id/edit
       def edit
         render_dashboard(
           title: I18n.t("maintenance.edit_title", id: @record.id),
@@ -138,7 +138,7 @@ module Api
       end
 
       # --- ПАГІНАЦІЯ ФОТО (Turbo Frame Load More) ---
-      # GET /api/v1/maintenance_records/:id/photos?page=N
+      # GET /maintenance_records/:id/photos?page=N
       def photos
         @pagy_photos, @photos = pagy(@record.photos, items: 6)
         # [UI.6] `editable:` проводиться сюди ТЕЖ, і це найпідступніший із сайтів: без
@@ -160,7 +160,7 @@ module Api
                 record: MaintenanceRecordBlueprint.render_as_hash(@record, view: :show)
               }
             end
-            format.html { redirect_to api_v1_maintenance_record_path(@record), notice: I18n.t("flash.maintenance.record_updated") }
+            format.html { redirect_to maintenance_record_path(@record), notice: I18n.t("flash.maintenance.record_updated") }
           end
         else
           respond_to do |format|
@@ -190,7 +190,7 @@ module Api
                 record_id: @record.id
               }
             end
-            format.html { redirect_to api_v1_maintenance_record_path(@record), notice: I18n.t("flash.maintenance.hardware_verified") }
+            format.html { redirect_to maintenance_record_path(@record), notice: I18n.t("flash.maintenance.hardware_verified") }
           end
         else
           # [SEC.25] Дзеркало форми успіху вище — доти невдала верифікація віддавала
@@ -198,7 +198,7 @@ module Api
           respond_to do |format|
             format.json { render_validation_error(@record) }
             format.html do
-              redirect_to api_v1_maintenance_record_path(@record),
+              redirect_to maintenance_record_path(@record),
                           alert: @record.errors.full_messages.to_sentence
             end
           end
@@ -233,7 +233,7 @@ module Api
         respond_to do |format|
           format.json { render_forbidden_json }
           format.html do
-            redirect_to api_v1_maintenance_records_path, alert: I18n.t("errors.api.forbidden")
+            redirect_to maintenance_records_path, alert: I18n.t("errors.api.forbidden")
           end
         end
       end

@@ -11,12 +11,12 @@ module Api
       rate_limit to: 3, within: 5.minutes, only: :create, with: -> {
         respond_to do |format|
           format.json { render json: { error: I18n.t("passwords.rate_limited") }, status: :too_many_requests }
-          format.html { redirect_to api_v1_forgot_password_path, alert: I18n.t("passwords.rate_limited") }
+          format.html { redirect_to forgot_password_path, alert: I18n.t("passwords.rate_limited") }
         end
       }
 
       # --- ФОРМА "ЗАБУВ ПАРОЛЬ" ---
-      # GET /api/v1/forgot_password
+      # GET /forgot_password
       def new
         respond_to do |format|
           format.html { render_auth_page(title: I18n.t("passwords.forgot_title"), component: Passwords::Forgot.new) }
@@ -24,7 +24,7 @@ module Api
       end
 
       # --- ВІДПРАВКА EMAIL ДЛЯ СКИДАННЯ ---
-      # POST /api/v1/forgot_password
+      # POST /forgot_password
       def create
         user = User.find_by(email_address: params[:email])
 
@@ -35,12 +35,12 @@ module Api
 
         respond_to do |format|
           format.json { render json: { message: I18n.t("passwords.forgot_sent_json") }, status: :ok }
-          format.html { redirect_to api_v1_login_path, notice: I18n.t("passwords.forgot_sent_flash") }
+          format.html { redirect_to login_path, notice: I18n.t("passwords.forgot_sent_flash") }
         end
       end
 
       # --- ФОРМА НОВОГО ПАРОЛЯ ---
-      # GET /api/v1/reset_password?token=xxx
+      # GET /reset_password?token=xxx
       def edit
         respond_to do |format|
           format.html { render_auth_page(title: I18n.t("passwords.reset_title"), component: Passwords::Reset.new(token: params[:token])) }
@@ -48,14 +48,14 @@ module Api
       end
 
       # --- ВСТАНОВЛЕННЯ НОВОГО ПАРОЛЯ ---
-      # PATCH /api/v1/reset_password
+      # PATCH /reset_password
       def update
         user = User.find_by_token_for(:password_reset, params[:token])
 
         if user.nil?
           respond_to do |format|
             format.json { render json: { error: I18n.t("passwords.reset.invalid_token_json") }, status: :unprocessable_content }
-            format.html { redirect_to api_v1_forgot_password_path, alert: I18n.t("passwords.reset.invalid_token_flash") }
+            format.html { redirect_to forgot_password_path, alert: I18n.t("passwords.reset.invalid_token_flash") }
           end
           return
         end
@@ -95,7 +95,7 @@ module Api
 
         respond_to do |format|
           format.json { render json: { message: I18n.t("passwords.reset.updated_json") }, status: :ok }
-          format.html { redirect_to api_v1_login_path, notice: I18n.t("passwords.reset.updated_flash") }
+          format.html { redirect_to login_path, notice: I18n.t("passwords.reset.updated_flash") }
         end
       end
     end

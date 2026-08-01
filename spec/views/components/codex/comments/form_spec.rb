@@ -20,7 +20,7 @@ RSpec.describe Codex::Comments::Form do
   describe "rendering" do
     it "posts to the node-scoped comments endpoint" do
       html = render_form(node: node)
-      expect(html).to include('action="/api/v1/codex/nodes/cherkasy-bir/comments"')
+      expect(html).to include('action="/codex/nodes/cherkasy-bir/comments"')
       expect(html).to include('method="post"')
     end
 

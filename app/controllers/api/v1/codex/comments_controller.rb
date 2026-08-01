@@ -4,7 +4,7 @@
 module Api
   module V1
     module Codex
-      # POST /api/v1/codex/nodes/:slug/comments
+      # POST /codex/nodes/:slug/comments
       #
       # Idempotency-Key required for JSON writes (per docs/04_03 §7) — keeps
       # mobile-network retries from creating duplicate posts.
@@ -35,7 +35,7 @@ module Api
 
             respond_to do |format|
               format.json { render json: payload, status: :created }
-              format.html { redirect_to api_v1_codex_node_path(@node.slug), notice: "Comment posted." }
+              format.html { redirect_to codex_node_path(@node.slug), notice: "Comment posted." }
             end
           else
             render json: { errors: comment.errors.full_messages },

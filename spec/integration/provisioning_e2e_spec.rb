@@ -9,7 +9,7 @@ require "rails_helper"
 # Exercises the full Factory-Flashing-equivalent provisioning chain WITHOUT
 # stubbing `HardwareKeyService` (unlike the controller request spec, which
 # mocks `.provision`). Goal: prove that the API contract documented in
-# `docs/04_03_REST_API_v1_Reference.md` §POST /api/v1/provisioning/register
+# `docs/04_03_REST_API_v1_Reference.md` §POST /provisioning/register
 # and the HKDF design in `docs/03_06_Factory_Flashing_and_Key_Provisioning.md` §2
 # hold true end-to-end across controller → service → AR Encryption → DB.
 #
@@ -100,7 +100,7 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
 
       it "creates Tree, HardwareKey, MaintenanceRecord atomically and returns Zero-Trust JSON body" do
         expect {
-          post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
+          post "/provisioning/register", params: tree_params, headers: headers, as: :json
         }.to change(Tree, :count).by(1)
          .and change(HardwareKey, :count).by(1)
          .and change(MaintenanceRecord, :count).by(1)
@@ -117,7 +117,7 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
       end
 
       it "enqueues PeaqRegistrationWorker and records the installation MaintenanceRecord" do
-        post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
+        post "/provisioning/register", params: tree_params, headers: headers, as: :json
         expect(response).to have_http_status(:created)
 
         tree = Tree.find_by!(did: expected_did)
@@ -131,7 +131,7 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
       end
 
       it "persists the LoRa AES-128 key derived deterministically from PROVISIONING_MASTER_KEY + DID [post-ARCH.42]" do
-        post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
+        post "/provisioning/register", params: tree_params, headers: headers, as: :json
         expect(response).to have_http_status(:created)
 
         hw_key = HardwareKey.find_by!(device_uid: expected_did)
@@ -180,7 +180,7 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
 
       it "creates Gateway + HardwareKey, persists Ed25519 key, and does NOT enqueue PeaqRegistrationWorker" do
         expect {
-          post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
+          post "/provisioning/register", params: gateway_params, headers: headers, as: :json
         }.to change(Gateway, :count).by(1)
          .and change(HardwareKey, :count).by(1)
 
@@ -233,7 +233,7 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
       # no peaq enqueue.
       expect {
         expect {
-          post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
+          post "/provisioning/register", params: tree_params, headers: headers, as: :json
         }.to raise_error(SecurityError, /PROVISIONING_MASTER_KEY/)
       }.to not_change(Tree, :count)
        .and not_change(HardwareKey, :count)
@@ -270,7 +270,7 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
 
     it "creates Tree + HardwareKey and enqueues Web3 registration" do
       expect {
-        post "/api/v1/provisioning/register", params: magic_params, headers: headers, as: :json
+        post "/provisioning/register", params: magic_params, headers: headers, as: :json
       }.to change(Tree, :count).by(1)
        .and change(HardwareKey, :count).by(1)
 
@@ -314,7 +314,7 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
 
     it "returns 409 Conflict and creates no Tree/MaintenanceRecord, enqueues no worker" do
       expect {
-        post "/api/v1/provisioning/register", params: dup_params, headers: headers, as: :json
+        post "/provisioning/register", params: dup_params, headers: headers, as: :json
       }.to not_change(Tree, :count)
        .and not_change(HardwareKey, :count)
        .and not_change(MaintenanceRecord, :count)

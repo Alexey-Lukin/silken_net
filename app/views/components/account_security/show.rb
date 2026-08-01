@@ -50,7 +50,7 @@ module AccountSecurity
           p(class: "text-tiny text-status-warning-text mb-4") { t(".password.not_set") }
         end
 
-        form(action: api_v1_account_security_password_path, method: "post", class: "space-y-4") do
+        form(action: account_security_password_path, method: "post", class: "space-y-4") do
           input(type: "hidden", name: "_method", value: "patch")
           input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
 
@@ -119,13 +119,13 @@ module AccountSecurity
 
     def render_lock_toggle(identity)
       if identity.locked?
-        form(action: api_v1_unlock_account_security_identity_path(identity), method: "post", class: "inline") do
+        form(action: unlock_account_security_identity_path(identity), method: "post", class: "inline") do
           input(type: "hidden", name: "_method", value: "patch")
           input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
           button(type: "submit", class: "px-3 py-1 border border-emerald-900 text-micro text-emerald-700 uppercase hover:text-emerald-400 transition-all") { t(".identities.unlock") }
         end
       else
-        form(action: api_v1_lock_account_security_identity_path(identity), method: "post", class: "inline") do
+        form(action: lock_account_security_identity_path(identity), method: "post", class: "inline") do
           input(type: "hidden", name: "_method", value: "patch")
           input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
           button(type: "submit", class: "px-3 py-1 border border-status-warning text-micro text-status-warning-text uppercase hover:text-status-warning-text transition-all") { t(".identities.lock") }
@@ -137,7 +137,7 @@ module AccountSecurity
       can_unlink = @user.password_digest.present? || @identities.count { |i| i.active? } > 1
 
       if can_unlink
-        form(action: api_v1_account_security_identity_path(identity), method: "post", class: "inline") do
+        form(action: account_security_identity_path(identity), method: "post", class: "inline") do
           input(type: "hidden", name: "_method", value: "delete")
           input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
           button(type: "submit", class: "px-3 py-1 border border-red-900 text-micro text-red-700 uppercase hover:text-red-400 transition-all",

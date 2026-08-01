@@ -26,7 +26,7 @@ RSpec.describe Codex::Fractions::Picker, type: :view_component do
     expect(html).to include(realm.name_en)
     expect(html).to include(other_realm.name_en)
     expect(html).to include(node.title_en)
-    expect(html).to include('action="/api/v1/codex/fractions"')
+    expect(html).to include('action="/codex/fractions"')
     expect(html).to include('value="' + node.slug + '"')
     expect(html).to include('id="codex_fraction_picker"')
   end

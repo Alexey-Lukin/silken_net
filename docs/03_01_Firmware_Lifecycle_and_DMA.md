@@ -1168,7 +1168,7 @@ golden-вектори заморожені обабіч (`test_soldier_logic.c` 
 `trees.silicon_uid_hex` відрізняє re-flash того самого чипа від
 birthday-колізії → quarantine) → Tree + HardwareKey + K_seed
 **однопрохідно**; live wrong-board guard звіряє паспорт плати до першого
-`-w32`. Польовий `POST /api/v1/provisioning/register` — той самий
+`-w32`. Польовий `POST /provisioning/register` — той самий
 `wire_did` від 24-hex UID (старий `last(8)`-DID, якого кремній ніколи не
 оголосив би, і мертвий для дерев double-init guard — виправлено).
 Механіка конвеєра — [`03_06 §2/§5`](03_06_Factory_Flashing_and_Key_Provisioning).

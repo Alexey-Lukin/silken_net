@@ -4,7 +4,7 @@
 module Api
   module V1
     module Codex
-      # GET /api/v1/codex/leaderboard?realm=<slug>&limit=<N>
+      # GET /codex/leaderboard?realm=<slug>&limit=<N>
       #
       # Public read-only top-N Elo board scoped to a single realm. HTML
       # response is a Phlex `Codex::Leaderboard::Table`; JSON is a thin

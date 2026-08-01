@@ -46,7 +46,7 @@ RSpec.describe "Rack::Attack", type: :request do
   describe "global throttle (req/ip)" do
     it "allows up to 300 requests per IP within 5 minutes" do
       300.times do
-        get "/api/v1/login", headers: { "REMOTE_ADDR" => "1.2.3.4" }
+        get "/login", headers: { "REMOTE_ADDR" => "1.2.3.4" }
       end
 
       # 300th request should still succeed (not 429)
@@ -55,7 +55,7 @@ RSpec.describe "Rack::Attack", type: :request do
 
     it "throttles the 301st request from the same IP" do
       301.times do
-        get "/api/v1/login", headers: { "REMOTE_ADDR" => "1.2.3.5" }
+        get "/login", headers: { "REMOTE_ADDR" => "1.2.3.5" }
       end
 
       expect(response).to have_http_status(:too_many_requests)
@@ -79,7 +79,7 @@ RSpec.describe "Rack::Attack", type: :request do
   describe "telemetry throttle (telemetry/uid)" do
     it "blocks sustained telemetry requests via throttle or fail2ban" do
       61.times do
-        get "/api/v1/telemetry/live", headers: { "REMOTE_ADDR" => "5.6.7.8" }
+        get "/telemetry/live", headers: { "REMOTE_ADDR" => "5.6.7.8" }
       end
 
       # Unauthenticated requests return 401, which triggers Fail2Ban (403)
@@ -90,7 +90,7 @@ RSpec.describe "Rack::Attack", type: :request do
     it "uses X-Gateway-UID as discriminator when present" do
       # Requests with UID-A
       10.times do
-        get "/api/v1/telemetry/live", headers: {
+        get "/telemetry/live", headers: {
           "REMOTE_ADDR" => "5.6.7.9",
           "HTTP_X_GATEWAY_UID" => "UID-A"
         }
@@ -98,7 +98,7 @@ RSpec.describe "Rack::Attack", type: :request do
 
       # Request with a different UID from the same IP shares the IP's global
       # counter but has a separate telemetry throttle bucket.
-      get "/api/v1/telemetry/live", headers: {
+      get "/telemetry/live", headers: {
         "REMOTE_ADDR" => "5.6.7.9",
         "HTTP_X_GATEWAY_UID" => "UID-B"
       }
@@ -119,7 +119,7 @@ RSpec.describe "Rack::Attack", type: :request do
   describe "login throttle (logins/ip)" do
     it "throttles login attempts after 10 POSTs per minute" do
       11.times do
-        post "/api/v1/login",
+        post "/login",
           params: { email: "a@b.com", password: "wrong" },
           headers: { "REMOTE_ADDR" => "9.8.7.6" }
       end
@@ -138,7 +138,7 @@ RSpec.describe "Rack::Attack", type: :request do
     # лишався зеленим на цьому дефекті, бо Rack::Attack працює до роутера.
     it "throttles password-reset PATCHes, not just POSTs" do
       11.times do
-        patch "/api/v1/reset_password",
+        patch "/reset_password",
           params: { token: "irrelevant", user: { password: "x" } },
           headers: { "REMOTE_ADDR" => "9.8.7.5" }
       end
@@ -200,11 +200,11 @@ RSpec.describe "Rack::Attack", type: :request do
     it "blocks an IP after accumulating too many 401/404 responses" do
       # Generate 15+ failures (401 from unauthenticated requests)
       16.times do
-        get "/api/v1/users/me", headers: { "REMOTE_ADDR" => "6.6.6.6" }
+        get "/users/me", headers: { "REMOTE_ADDR" => "6.6.6.6" }
       end
 
       # The IP should now be banned — next request gets 403
-      get "/api/v1/users/me", headers: { "REMOTE_ADDR" => "6.6.6.6" }
+      get "/users/me", headers: { "REMOTE_ADDR" => "6.6.6.6" }
       expect(response).to have_http_status(:forbidden)
 
       body = JSON.parse(response.body)
@@ -223,7 +223,7 @@ RSpec.describe "Rack::Attack", type: :request do
       # counter stays at 10 < FAIL2BAN_MAXRETRY=15). Request 11 is intercepted
       # by Rack::Attack before reaching the app and returns 429.
       11.times do
-        post "/api/v1/login",
+        post "/login",
           params: { email: "test@example.com", password: "wrong" },
           headers: { "REMOTE_ADDR" => "2.3.4.5" }
       end

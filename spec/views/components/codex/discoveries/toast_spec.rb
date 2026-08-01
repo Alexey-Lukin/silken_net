@@ -19,7 +19,7 @@ RSpec.describe Codex::Discoveries::Toast, type: :view_component do
     expect(html).to include("relict_oracle")
     expect(html).to include("Battle")
     expect(html).to include('data-controller="codex--reveal"')
-    expect(html).to include("/api/v1/codex/nodes/#{node.slug}")
+    expect(html).to include("/codex/nodes/#{node.slug}")
     expect(html).to include("14:30 UTC")
   end
 

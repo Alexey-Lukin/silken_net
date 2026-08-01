@@ -19,7 +19,7 @@ module Api
       DEPLOY_TARGET_TYPES = %w[Tree Gateway].freeze
 
       # --- РЕЄСТР ЕВОЛЮЦІЙ (The Evolution Hub) ---
-      # GET /api/v1/firmwares
+      # GET /firmwares
       def index
         @pagy, @firmwares = pagy(BioContractFirmware.order(version: :desc))
 
@@ -64,7 +64,7 @@ module Api
       end
 
       # --- ПОРТАЛ ЗАВАНТАЖЕННЯ (The Gateway to New Intellect) ---
-      # GET /api/v1/firmwares/new
+      # GET /firmwares/new
       def new
         @firmware = BioContractFirmware.new
 
@@ -75,7 +75,7 @@ module Api
       end
 
       # --- ЗАВАНТАЖЕННЯ НОВОГО ІНТЕЛЕКТУ ---
-      # POST /api/v1/firmwares
+      # POST /firmwares
       def create
         @firmware = BioContractFirmware.new(firmware_params.except(:binary_file, :bytecode_payload))
 
@@ -111,7 +111,7 @@ module Api
                 firmware: @firmware
               }, status: :created
             end
-            format.html { redirect_to api_v1_firmwares_path, notice: I18n.t("flash.firmwares.uploaded", version: @firmware.version) }
+            format.html { redirect_to firmwares_path, notice: I18n.t("flash.firmwares.uploaded", version: @firmware.version) }
           end
         else
           respond_to do |format|
@@ -127,7 +127,7 @@ module Api
       end
 
       # --- ПРОВЕРКА ІНВЕНТАРЯ (Who has what?) ---
-      # GET /api/v1/firmwares/inventory
+      # GET /firmwares/inventory
       def inventory
         org = acting_organization!
         stats = {
@@ -138,7 +138,7 @@ module Api
       end
 
       # --- НАКАЗ НА ОНОВЛЕННЯ (The Deployment) ---
-      # POST /api/v1/firmwares/:id/deploy
+      # POST /firmwares/:id/deploy
       # Параметри: { cluster_id: 5, target_type: 'Tree', canary_percentage: 1 }
       # canary_percentage (0–100): відсоток шлюзів КОЖНОГО кластера для Canary
       # Deployment. Якщо не вказано — оновлення піде на ВСІ пристрої (100%).
@@ -195,7 +195,7 @@ module Api
               }, status: :accepted
             end
             format.html do
-              redirect_to api_v1_firmwares_path, notice: I18n.t("flash.firmwares.deployment_dispatched", version: @firmware.version)
+              redirect_to firmwares_path, notice: I18n.t("flash.firmwares.deployment_dispatched", version: @firmware.version)
             end
           end
         else
@@ -216,7 +216,7 @@ module Api
               }, status: :unprocessable_content
             end
             format.html do
-              redirect_to api_v1_firmwares_path, alert: I18n.t("flash.firmwares.#{reason_key}")
+              redirect_to firmwares_path, alert: I18n.t("flash.firmwares.#{reason_key}")
             end
           end
         end

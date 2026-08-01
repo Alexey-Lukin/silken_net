@@ -7,13 +7,13 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
   let(:organization) { create(:organization) }
   let(:other_organization) { create(:organization) }
 
-  describe "GET /api/v1/organizations" do
+  describe "GET /organizations" do
     context "when as a super_admin" do
       let(:super_admin) { create(:user, :super_admin, organization: organization) }
       let(:headers) { { "Authorization" => "Bearer #{super_admin.generate_token_for(:api_access)}" } }
 
       it "returns organizations list" do
-        get "/api/v1/organizations", headers: headers, as: :json
+        get "/organizations", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
       end
     end
@@ -23,7 +23,7 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
       let(:headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
 
       it "returns forbidden" do
-        get "/api/v1/organizations", headers: headers, as: :json
+        get "/organizations", headers: headers, as: :json
         expect(response).to have_http_status(:forbidden)
       end
     end
@@ -33,18 +33,18 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
       let(:headers) { { "Authorization" => "Bearer #{user.generate_token_for(:api_access)}" } }
 
       it "returns forbidden" do
-        get "/api/v1/organizations", headers: headers, as: :json
+        get "/organizations", headers: headers, as: :json
         expect(response).to have_http_status(:forbidden)
       end
     end
   end
 
-  describe "GET /api/v1/organizations/:id" do
+  describe "GET /organizations/:id" do
     let(:super_admin) { create(:user, :super_admin, organization: organization) }
     let(:headers) { { "Authorization" => "Bearer #{super_admin.generate_token_for(:api_access)}" } }
 
     it "uses cached_trees_count for performance" do
-      get "/api/v1/organizations/#{organization.id}", headers: headers, as: :json
+      get "/organizations/#{organization.id}", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["performance"]["total_trees"]).to be_a(Integer)
     end
@@ -57,13 +57,13 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
     end
 
     it "renders HTML for index" do
-      get "/api/v1/organizations", headers: html_headers
+      get "/organizations", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
 
     it "renders HTML for show" do
-      get "/api/v1/organizations/#{organization.id}", headers: html_headers
+      get "/organizations/#{organization.id}", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
@@ -79,23 +79,23 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
     # перевіряв лише 200 + content-type. Тобто заява «кожна проводка
     # mutation-verified» була ширша за зроблене рівно на цей екшен.
     it "позначає профіль клану, в контексті якого super_admin працює" do
-      get "/api/v1/organizations/#{organization.id}", headers: html_headers
+      get "/organizations/#{organization.id}", headers: html_headers
 
       expect(response.body).to include("ACTIVE_CONTEXT")
     end
 
     it "позначає рядок організації, в контексті якої super_admin працює" do
-      get "/api/v1/organizations", headers: html_headers
+      get "/organizations", headers: html_headers
 
       expect(response.body).to include("ACTIVE_CONTEXT")
-      expect(response.body).not_to include(%(action="#{switch_api_v1_organization_path(organization)}"))
+      expect(response.body).not_to include(%(action="#{switch_organization_path(organization)}"))
     end
   end
 
   # [SEC.25 Ф2] Ці приклади ходять cookie-СЕСІЄЮ, а не Bearer'ом, і це не стиль:
   # носій acting-організації — сесія, тож Bearer-запит її не має за побудовою, і
   # перемикання на ньому не перевіряється взагалі.
-  describe "POST /api/v1/organizations/:id/switch" do
+  describe "POST /organizations/:id/switch" do
     let!(:super_admin) { create(:user, :super_admin, organization: organization) }
     let(:other_cluster) { create(:cluster, organization: other_organization) }
     let!(:other_tree) { create(:tree, cluster: other_cluster) }
@@ -103,7 +103,7 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
     before do
       allow_any_instance_of(Tree).to receive(:broadcast_map_update)
       allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-      post "/api/v1/login",
+      post "/login",
            params: { email: super_admin.email_address, password: "password12345" },
            as: :json
     end
@@ -114,19 +114,19 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
     # сюїту зеленою: у фікстурах super_admin має власну організацію, тож хибний
     # вибір і правильний дають однакову — порожню — відповідь. Тут вони РІЗНІ.
     it "перемикає те, що користувач реально бачить" do
-      get "/api/v1/wallets", as: :json
+      get "/wallets", as: :json
       expect(response.parsed_body["data"].map { |w| w["id"] }).not_to include(other_tree.wallet.id)
 
-      post "/api/v1/organizations/#{other_organization.id}/switch", as: :json
+      post "/organizations/#{other_organization.id}/switch", as: :json
       expect(response).to have_http_status(:ok)
 
-      get "/api/v1/wallets", as: :json
+      get "/wallets", as: :json
       expect(response.parsed_body["data"].map { |w| w["id"] }).to include(other_tree.wallet.id)
     end
 
     it "лишає слід у журналі організації, КУДИ входять — синхронно, до мутації сесії" do
       expect {
-        post "/api/v1/organizations/#{other_organization.id}/switch", as: :json
+        post "/organizations/#{other_organization.id}/switch", as: :json
       }.to change(AuditLog, :count).by(1)
 
       log = AuditLog.order(:id).last
@@ -145,11 +145,11 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
     # перемикання йде «нізвідки».
     it "працює для super_admin без домашньої організації" do
       homeless = create(:user, :super_admin, organization: nil)
-      post "/api/v1/login",
+      post "/login",
            params: { email: homeless.email_address, password: "password12345" },
            as: :json
 
-      post "/api/v1/organizations/#{other_organization.id}/switch", as: :json
+      post "/organizations/#{other_organization.id}/switch", as: :json
 
       expect(response).to have_http_status(:ok)
       expect(AuditLog.order(:id).last.metadata["from_organization_id"]).to be_nil
@@ -162,17 +162,17 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
     # код і ТОЧНУ ціль: `have_http_status(:redirect)` пропустив би будь-який 3xx, а
     # префікс — будь-який шлях, що з нього починається.
     it "віддає браузеру 303 на корінь дашборда" do
-      post "/api/v1/organizations/#{other_organization.id}/switch",
+      post "/organizations/#{other_organization.id}/switch",
            headers: { "Accept" => "text/html" }
 
       expect(response).to have_http_status(:see_other)
-      expect(response.headers["Location"]).to end_with(api_v1_root_path)
+      expect(response.headers["Location"]).to end_with(root_path)
     end
 
     # Bearer сесії не носить, тож запис у неї нікуди б не поїхав: клієнт дістав би
     # 200 і нульовий ефект. Чесна відмова замість no-op'у, що виглядає як успіх.
     it "відмовляє на Bearer-запиті, бо носій контексту — сесія" do
-      post "/api/v1/organizations/#{other_organization.id}/switch",
+      post "/organizations/#{other_organization.id}/switch",
            headers: { "Authorization" => "Bearer #{super_admin.generate_token_for(:api_access)}" },
            as: :json
 
@@ -189,7 +189,7 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
     # страхування на випадок ручного втручання в БД, і саме тому перевіряється
     # штучно, а не через `destroy!`.
     it "відкочується на власну організацію, якщо acting-організації більше немає" do
-      post "/api/v1/organizations/#{other_organization.id}/switch", as: :json
+      post "/organizations/#{other_organization.id}/switch", as: :json
 
       # [⚖️ 2026-07-30] Порядок тепер несучий: `Cluster has_many :trees` і
       # `Organization has_many :clusters` — обидва `restrict_with_error`, тож розбирати
@@ -200,18 +200,18 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
       AuditLog.where(organization_id: other_organization.id).delete_all
       other_organization.destroy!
 
-      get "/api/v1/wallets", as: :json
+      get "/wallets", as: :json
 
       expect(response).to have_http_status(:ok)
     end
 
     it "не дає перемкнутись звичайному адміністраторові" do
       admin = create(:user, :admin, organization: organization)
-      post "/api/v1/login",
+      post "/login",
            params: { email: admin.email_address, password: "password12345" },
            as: :json
 
-      post "/api/v1/organizations/#{other_organization.id}/switch", as: :json
+      post "/organizations/#{other_organization.id}/switch", as: :json
 
       expect(response).to have_http_status(:forbidden)
     end

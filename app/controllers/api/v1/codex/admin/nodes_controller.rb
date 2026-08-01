@@ -5,7 +5,7 @@ module Api
   module V1
     module Codex
       module Admin
-        # Phase 6 — DAO Node CRUD surface (`/api/v1/codex/admin/nodes`).
+        # Phase 6 — DAO Node CRUD surface (`/codex/admin/nodes`).
         #
         # End-users read Nodes through the public `Codex::NodesController`;
         # this controller exists for moderators / DAO operators who need to
@@ -19,7 +19,7 @@ module Api
         class NodesController < BaseController
           before_action :set_node, only: [ :show, :update, :destroy ]
 
-          # GET /api/v1/codex/admin/nodes
+          # GET /codex/admin/nodes
           def index
             authorize ::Codex::Node, policy_class: ::Codex::Admin::NodePolicy
             scope = policy_scope(::Codex::Node, policy_scope_class: ::Codex::Admin::NodePolicy::Scope)
@@ -28,13 +28,13 @@ module Api
             render json: { data: ::Codex::NodeBlueprint.render_as_hash(scope) }
           end
 
-          # GET /api/v1/codex/admin/nodes/:slug
+          # GET /codex/admin/nodes/:slug
           def show
             authorize @node, policy_class: ::Codex::Admin::NodePolicy
             render json: { data: ::Codex::NodeBlueprint.render_as_hash(@node, view: :show) }
           end
 
-          # POST /api/v1/codex/admin/nodes  — super_admin only
+          # POST /codex/admin/nodes  — super_admin only
           def create
             authorize ::Codex::Node, policy_class: ::Codex::Admin::NodePolicy
             node = ::Codex::Node.new(node_params.merge(seed_origin: :dao_proposal))
@@ -47,7 +47,7 @@ module Api
             end
           end
 
-          # PATCH/PUT /api/v1/codex/admin/nodes/:slug
+          # PATCH/PUT /codex/admin/nodes/:slug
           def update
             authorize @node, policy_class: ::Codex::Admin::NodePolicy
 
@@ -63,7 +63,7 @@ module Api
             render json: { errors: [ e.message ] }, status: :unprocessable_content
           end
 
-          # DELETE /api/v1/codex/admin/nodes/:slug — super_admin only
+          # DELETE /codex/admin/nodes/:slug — super_admin only
           def destroy
             authorize @node, policy_class: ::Codex::Admin::NodePolicy
             @node.destroy!

@@ -107,7 +107,7 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5) > web3_critical(6
 ## 7. Де що живе (repo map)
 
 ```
-app/{controllers/api/v1, services/<domain>, workers, views/components}   # Rails моноліт
+app/{controllers/api/v1, services/<domain>, workers, views/components}   # Rails моноліт; api/v1 = каталог, НЕ адреса (ARCH.77 → backend-скіл)
 firmware/{soldier,queen}/main.c · queen/lorawan_glue/ (ARCH.34 glue до LoRaMac-node) · bio_contracts/ (mruby) · common/ (header-libs) · test/ (host x86)
 contracts/*.sol + test/*.t.sol            # Solidity (Foundry) — §8
 docs/NN_NN_*.md                           # SSOT canon (00→07); відкрите/блокери → 00_07

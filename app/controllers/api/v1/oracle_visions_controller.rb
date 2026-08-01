@@ -7,7 +7,7 @@ module Api
       before_action :authorize_forester!
       before_action :authorize_admin!, only: [ :simulate ]
 
-      # GET /api/v1/oracle_visions
+      # GET /oracle_visions
       def index
         org = acting_organization!
 
@@ -39,7 +39,7 @@ module Api
         end
       end
 
-      # POST /api/v1/oracle_visions/simulate
+      # POST /oracle_visions/simulate
       def simulate
         # [TENANT-ISOLATION]: cluster_id must belong to the caller's organization.
         # SimulationWorker walks Trees by cluster_id without re-checking org, so an

@@ -36,7 +36,7 @@ RSpec.describe DashboardLayout do
   end
   let(:html) { render_layout(content: content_stub) }
 
-  def render_layout(title: "Dashboard", current_path: "/api/v1/dashboard",
+  def render_layout(title: "Dashboard", current_path: "/dashboard",
                     ews_alert_count: 0, user: nil, acting_organization: nil, content: nil)
     current_user = user || mock_user
     ApplicationController.renderer.render(
@@ -124,7 +124,7 @@ RSpec.describe DashboardLayout do
     end
 
     it "renders path segments from current_path" do
-      html = render_layout(current_path: "/api/v1/trees")
+      html = render_layout(current_path: "/trees")
       expect(html).to include("Trees")
     end
 
@@ -133,19 +133,19 @@ RSpec.describe DashboardLayout do
     # хвостом `Api // V1 // Trees`. Саме цю половину зрізав перехід із `drop(2)`
     # на `delete_prefix` — мутація префікса на порожній рядок червонить рівно тут.
     it "не показує службовий префікс контуру серед крихт" do
-      html = render_layout(current_path: "/api/v1/trees")
+      html = render_layout(current_path: "/trees")
 
       expect(html).not_to include(">Api<")
       expect(html).not_to include(">V1<")
     end
 
     it "renders nested path segments" do
-      html = render_layout(current_path: "/api/v1/maintenance_records")
+      html = render_layout(current_path: "/maintenance_records")
       expect(html).to include("Maintenance records")
     end
 
     it "only styles the last of several path segments as muted (breadcrumb tail)" do
-      html = render_layout(current_path: "/api/v1/trees/42")
+      html = render_layout(current_path: "/trees/42")
       expect(html).to include("Trees")
       expect(html).to include("42")
       # Only the trailing segment ("42") gets the muted "last-crumb" class.
@@ -268,7 +268,7 @@ RSpec.describe DashboardLayout do
     it "skips the wizard and renders top-bar fallbacks when current_user is nil" do
       html = ApplicationController.renderer.render(
         component_class.new(
-          title: "Dashboard", current_user: nil, current_path: "/api/v1/dashboard",
+          title: "Dashboard", current_user: nil, current_path: "/dashboard",
           ews_alert_count: 0, content: content_stub
         ),
         layout: false

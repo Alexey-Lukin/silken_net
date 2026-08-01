@@ -69,15 +69,25 @@ end
 # 4. TELEMETRY INGESTION THROTTLE — protect high-value IoT endpoints
 #
 # Scanned endpoints (from config/routes.rb & controllers):
-#   GET /api/v1/trees/:id/telemetry    → TelemetryController#tree_history
-#   GET /api/v1/gateways/:id/telemetry → TelemetryController#gateway_history
-#   GET /api/v1/telemetry/live          → TelemetryController#live
-#   POST /api/v1/provisioning/register  → ProvisioningController#register
+#   GET  /trees/:id/telemetry           → TelemetryController#tree_history
+#   GET  /gateways/:id/telemetry        → TelemetryController#gateway_history
+#   GET  /telemetry/live                → TelemetryController#live
+#   POST /provisioning/register         → ProvisioningController#register
+#   POST /api/v1/gateways/:id/telemetry → TelemetryController#gateway_uplink
+#
+# ⚠️ [ARCH.77] Це ЄДИНЕ правило, крізь яке поділ дерева проходить усередині —
+# але лише на ОДНОМУ зі своїх шляхів: `gateways/:id/telemetry` живе в обох
+# контурах (GET-читання на корені, POST-uplink під `/api/v1`), решта три —
+# одноконтурні. Саме через ту одну пару потрібна опційна префікс-група, а не
+# два правила: дискримінатор спільний (UID/IP), тож окреме правило дало б тій
+# самій поверхні другі 60 запитів на хвилину — тихе подвоєння стелі. Для трьох
+# інших шляхів жодного подвоєння не існує; група накриває їхні `/api/v1`-форми
+# як мертві дзеркала (404 → лише fail2ban-шум від сканерів).
 #
 # Allows bursts (60 req/min) but blocks sustained spamming.
 # Discriminator: Gateway UID (from "X-Gateway-UID" header) or IP.
 # ---------------------------------------------------------------------------
-TELEMETRY_PATH_PATTERN = %r{\A/api/v1/(trees/\d+/telemetry|gateways/\d+/telemetry|telemetry/live|provisioning/register)}
+TELEMETRY_PATH_PATTERN = %r{\A(?:/api/v1)?/(trees/\d+/telemetry|gateways/\d+/telemetry|telemetry/live|provisioning/register)}
 
 Rack::Attack.throttle("telemetry/uid", limit: 60, period: 1.minute) do |request|
   if request.path.match?(TELEMETRY_PATH_PATTERN)
@@ -95,7 +105,7 @@ end
 # сиділо в межах одного файла. Over-inclusive тут безпечне: зайве дієслово на
 # живому шляху лише рахує запит, якого роутер однаково не прийме.
 Rack::Attack.throttle("logins/ip", limit: 10, period: 1.minute) do |request|
-  if request.path.match?(%r{\A/api/v1/(login|forgot_password|reset_password)\z}) &&
+  if request.path.match?(%r{\A/(login|forgot_password|reset_password)\z}) &&
      (request.post? || request.patch?)
     request.ip
   end
@@ -108,7 +118,7 @@ end
 # IP = actor-проксі, дзеркало logins/ip вище).
 # ---------------------------------------------------------------------------
 Rack::Attack.throttle("account_security/ip", limit: 10, period: 1.minute) do |request|
-  if request.path.start_with?("/api/v1/account_security") &&
+  if request.path.start_with?("/account_security") &&
      %w[PATCH DELETE].include?(request.request_method)
     request.ip
   end
@@ -157,7 +167,7 @@ end
 # but throttling on IP is a cheap defence in depth).
 # ---------------------------------------------------------------------------
 Rack::Attack.throttle("codex/attunements", limit: 120, period: 1.hour) do |request|
-  if request.path =~ %r{\A/api/v1/codex/nodes/[^/]+/attunements} && (request.post? || request.delete?)
+  if request.path =~ %r{\A/codex/nodes/[^/]+/attunements} && (request.post? || request.delete?)
     request.env["HTTP_AUTHORIZATION"].presence || request.ip
   end
 end
@@ -165,7 +175,7 @@ end
 # Comments: more permissive than attunements (people type slowly) but still
 # capped to deflect bot-driven spam. 60 comments / 10 minutes / actor.
 Rack::Attack.throttle("codex/comments", limit: 60, period: 10.minutes) do |request|
-  if request.path =~ %r{\A/api/v1/codex/nodes/[^/]+/comments\z} && request.post?
+  if request.path =~ %r{\A/codex/nodes/[^/]+/comments\z} && request.post?
     request.env["HTTP_AUTHORIZATION"].presence || request.ip
   end
 end
@@ -175,7 +185,7 @@ end
 # scoping bugs. 60 attempts / 24 hours / actor — generous enough that real
 # users never hit it but tight enough to dampen abuse.
 Rack::Attack.throttle("codex/fractions", limit: 60, period: 1.day) do |request|
-  if request.path == "/api/v1/codex/fractions" && request.post?
+  if request.path == "/codex/fractions" && request.post?
     request.env["HTTP_AUTHORIZATION"].presence || request.ip
   end
 end
@@ -185,7 +195,7 @@ end
 # consumed on first vote); this throttle prevents bot-driven scrubbing
 # of the rate-limited Elo surface.
 Rack::Attack.throttle("codex/matches/create", limit: 60, period: 1.minute) do |request|
-  if request.path == "/api/v1/codex/matches" && request.post?
+  if request.path == "/codex/matches" && request.post?
     request.env["HTTP_AUTHORIZATION"].presence || request.ip
   end
 end

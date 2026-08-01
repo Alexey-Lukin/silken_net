@@ -7,8 +7,8 @@ RSpec.describe Views::Shared::UI::LocaleSwitcher do
   describe "rendering" do
     let(:html) { render_component }
 
-    it "renders a <form> that submits to api_v1_locale_path" do
-      expect(html).to include('action="/api/v1/locale"')
+    it "renders a <form> that submits to locale_path" do
+      expect(html).to include('action="/locale"')
       expect(html).to include('method="post"')
     end
 

@@ -110,7 +110,7 @@ RSpec.describe "User authentication and session lifecycle" do
     let(:headers) { { "Authorization" => "Bearer #{token}", "Accept" => "application/json" } }
 
     it "authenticates with valid bearer token" do
-      get "/api/v1/users/me", headers: headers
+      get "/users/me", headers: headers
       expect(response).to have_http_status(:ok)
 
       json = response.parsed_body
@@ -118,12 +118,12 @@ RSpec.describe "User authentication and session lifecycle" do
     end
 
     it "rejects invalid bearer token" do
-      get "/api/v1/users/me", headers: { "Authorization" => "Bearer invalid_token", "Accept" => "application/json" }
+      get "/users/me", headers: { "Authorization" => "Bearer invalid_token", "Accept" => "application/json" }
       expect(response).to have_http_status(:unauthorized)
     end
 
     it "rejects missing authorization header" do
-      get "/api/v1/users/me", headers: { "Accept" => "application/json" }
+      get "/users/me", headers: { "Accept" => "application/json" }
       expect(response).to have_http_status(:unauthorized)
     end
   end
@@ -132,13 +132,13 @@ RSpec.describe "User authentication and session lifecycle" do
     let(:user) { create(:user, organization: organization) }
 
     it "creates session on login" do
-      post "/api/v1/login", params: { email: user.email_address, password: "password12345" },
+      post "/login", params: { email: user.email_address, password: "password12345" },
                             headers: { "Accept" => "application/json" }
       expect(response).to have_http_status(:created)
     end
 
     it "rejects invalid credentials" do
-      post "/api/v1/login", params: { email: user.email_address, password: "wrong_password" },
+      post "/login", params: { email: user.email_address, password: "wrong_password" },
                             headers: { "Accept" => "application/json" }
       expect(response).to have_http_status(:unauthorized)
     end

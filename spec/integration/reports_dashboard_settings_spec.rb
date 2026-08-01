@@ -23,8 +23,8 @@ RSpec.describe "Reports, dashboard, and settings API" do
     let!(:tree) { create(:tree, cluster: cluster, tree_family: tree_family) }
     let!(:wallet) { tree.wallet || create(:wallet, tree: tree) }
 
-    it "GET /api/v1/reports returns summary data" do
-      get "/api/v1/reports",
+    it "GET /reports returns summary data" do
+      get "/reports",
           headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -34,8 +34,8 @@ RSpec.describe "Reports, dashboard, and settings API" do
       expect(json["available_reports"]).to include("carbon_absorption", "financial_summary")
     end
 
-    it "GET /api/v1/reports/carbon_absorption returns carbon data as JSON" do
-      get "/api/v1/reports/carbon_absorption",
+    it "GET /reports/carbon_absorption returns carbon data as JSON" do
+      get "/reports/carbon_absorption",
           headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -44,19 +44,19 @@ RSpec.describe "Reports, dashboard, and settings API" do
       expect(json["data"]).to include("total_carbon_points", "wallets_count")
     end
 
-    it "GET /api/v1/reports/carbon_absorption returns CSV" do
-      get "/api/v1/reports/carbon_absorption",
+    it "GET /reports/carbon_absorption returns CSV" do
+      get "/reports/carbon_absorption",
           headers: { "Authorization" => "Bearer #{token}", "Accept" => "text/csv" }
 
       expect(response).to have_http_status(:ok)
       expect(response.headers["Content-Type"]).to include("text/csv")
     end
 
-    it "GET /api/v1/reports/financial_summary returns financial data" do
+    it "GET /reports/financial_summary returns financial data" do
       naas = create(:naas_contract, organization: organization, cluster: cluster)
       create(:blockchain_transaction, wallet: wallet, status: :confirmed, amount: 10.0)
 
-      get "/api/v1/reports/financial_summary",
+      get "/reports/financial_summary",
           headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -65,8 +65,8 @@ RSpec.describe "Reports, dashboard, and settings API" do
       expect(json["data"]["blockchain_transactions"]).to include("total", "confirmed", "pending", "failed")
     end
 
-    it "GET /api/v1/reports/financial_summary returns CSV" do
-      get "/api/v1/reports/financial_summary",
+    it "GET /reports/financial_summary returns CSV" do
+      get "/reports/financial_summary",
           headers: { "Authorization" => "Bearer #{token}", "Accept" => "text/csv" }
 
       expect(response).to have_http_status(:ok)
@@ -80,8 +80,8 @@ RSpec.describe "Reports, dashboard, and settings API" do
   describe "Dashboard API" do
     let!(:tree) { create(:tree, cluster: cluster, tree_family: tree_family, status: :active) }
 
-    it "GET /api/v1/dashboard returns aggregated stats" do
-      get "/api/v1/dashboard",
+    it "GET /dashboard returns aggregated stats" do
+      get "/dashboard",
           headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -97,8 +97,8 @@ RSpec.describe "Reports, dashboard, and settings API" do
   # SettingsController
   # ---------------------------------------------------------------------------
   describe "Settings API" do
-    it "GET /api/v1/settings returns organization config" do
-      get "/api/v1/settings",
+    it "GET /settings returns organization config" do
+      get "/settings",
           headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -107,8 +107,8 @@ RSpec.describe "Reports, dashboard, and settings API" do
       expect(json["organization"]["billing_email"]).to eq(organization.billing_email)
     end
 
-    it "PATCH /api/v1/settings updates organization" do
-      patch "/api/v1/settings",
+    it "PATCH /settings updates organization" do
+      patch "/settings",
             params: { organization: { name: "Updated Forest Corp", billing_email: "new@forest.org" } },
             headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
@@ -122,7 +122,7 @@ RSpec.describe "Reports, dashboard, and settings API" do
       investor = create(:user, :investor, organization: organization)
       inv_token = investor.generate_token_for(:api_access)
 
-      get "/api/v1/settings",
+      get "/settings",
           headers: { "Authorization" => "Bearer #{inv_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:forbidden)
@@ -133,8 +133,8 @@ RSpec.describe "Reports, dashboard, and settings API" do
   # NotificationsController
   # ---------------------------------------------------------------------------
   describe "Notifications API" do
-    it "GET /api/v1/notifications/settings returns channels" do
-      get "/api/v1/notifications/settings",
+    it "GET /notifications/settings returns channels" do
+      get "/notifications/settings",
           headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -142,8 +142,8 @@ RSpec.describe "Reports, dashboard, and settings API" do
       expect(json["channels"]).to include("email", "phone")
     end
 
-    it "PATCH /api/v1/notifications/settings updates phone" do
-      patch "/api/v1/notifications/settings",
+    it "PATCH /notifications/settings updates phone" do
+      patch "/notifications/settings",
             params: { phone_number: "+380501234567" },
             headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
@@ -156,8 +156,8 @@ RSpec.describe "Reports, dashboard, and settings API" do
   # SystemHealthController
   # ---------------------------------------------------------------------------
   describe "System Health API" do
-    it "GET /api/v1/system_health returns health status" do
-      get "/api/v1/system_health",
+    it "GET /system_health returns health status" do
+      get "/system_health",
           headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -174,8 +174,8 @@ RSpec.describe "Reports, dashboard, and settings API" do
   describe "Contracts API" do
     let!(:naas) { create(:naas_contract, organization: organization, cluster: cluster) }
 
-    it "GET /api/v1/contracts returns paginated list" do
-      get "/api/v1/contracts",
+    it "GET /contracts returns paginated list" do
+      get "/contracts",
           headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -184,8 +184,8 @@ RSpec.describe "Reports, dashboard, and settings API" do
       expect(json["pagy"]).to include("page", "count")
     end
 
-    it "GET /api/v1/contracts/:id returns contract details" do
-      get "/api/v1/contracts/#{naas.id}",
+    it "GET /contracts/:id returns contract details" do
+      get "/contracts/#{naas.id}",
           headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
@@ -194,8 +194,8 @@ RSpec.describe "Reports, dashboard, and settings API" do
       expect(json["backing_asset"]).to include("cluster_health")
     end
 
-    it "GET /api/v1/contracts/stats returns portfolio stats" do
-      get "/api/v1/contracts/stats",
+    it "GET /contracts/stats returns portfolio stats" do
+      get "/contracts/stats",
           headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)

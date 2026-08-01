@@ -83,9 +83,9 @@ RSpec.describe Organizations::Index do
   # request-пін на маркер.
   describe "перемикач контексту" do
     it "дає кнопку на організацію, в якій зараз не стоїмо" do
-      switch_path = Rails.application.routes.url_helpers.switch_api_v1_organization_path(2)
+      switch_path = Rails.application.routes.url_helpers.switch_organization_path(2)
 
-      # Повний шлях, не префікс: `switch_api_v1_organization_path(1)` — теж
+      # Повний шлях, не префікс: `switch_organization_path(1)` — теж
       # валідний початок для будь-якого сусіднього id.
       expect(html).to include(%(action="#{switch_path}"))
       expect(html).to include("SWITCH_TO")
@@ -102,7 +102,7 @@ RSpec.describe Organizations::Index do
         pagy: mock_pagy(count: 63),
         acting_organization: org
       )
-      own_switch = Rails.application.routes.url_helpers.switch_api_v1_organization_path(1)
+      own_switch = Rails.application.routes.url_helpers.switch_organization_path(1)
 
       expect(html).to include("ACTIVE_CONTEXT")
       expect(html).to include('aria-current="true"')
@@ -111,7 +111,7 @@ RSpec.describe Organizations::Index do
       # дало б маркер у ВСІХ рядках і кнопку в жодному, а три асерти вище лишились
       # би зеленими. Твердження «не пропонуй перемкнутись туди, де стоїш» має
       # ДРУГУ половину — «пропонуй там, де не стоїш», і пінити треба обидві.
-      other_switch = Rails.application.routes.url_helpers.switch_api_v1_organization_path(2)
+      other_switch = Rails.application.routes.url_helpers.switch_organization_path(2)
       expect(html).to include(%(action="#{other_switch}"))
     end
 

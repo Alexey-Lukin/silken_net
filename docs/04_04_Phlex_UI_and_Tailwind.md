@@ -597,7 +597,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | Компонент | Файл | Props | Опис |
 |---|---|---|---|
 | `Trees::Index` | `trees/index.rb` | `trees:`, `pagy:` | Пагінований список дерев |
-| `Trees::Show` | `trees/show.rb` | `tree:`, `latest_log:`, `recent_logs:`, `maintenance_history:` | Повна деталізація дерева: біометрична матриця (радіальний SVG), графік історії імпедансу, економічна панель, сховище безпеки обладнання, журнал технічного обслуговування. Містить lazy-loading Turbo Frame `tree_chronicle_{id}`, що підвантажує `Trees::Chronicle` з `/api/v1/trees/:id/chronicle`. |
+| `Trees::Show` | `trees/show.rb` | `tree:`, `latest_log:`, `recent_logs:`, `maintenance_history:` | Повна деталізація дерева: біометрична матриця (радіальний SVG), графік історії імпедансу, економічна панель, сховище безпеки обладнання, журнал технічного обслуговування. Містить lazy-loading Turbo Frame `tree_chronicle_{id}`, що підвантажує `Trees::Chronicle` з `/trees/:id/chronicle`. |
 | `Trees::Chronicle` | `trees/chronicle.rb` | `tree:`, `entries:` (Array\<TreeChronicleService::Entry>), `pagy:` | Хронологічний список подій дерева. Рендериться у Turbo Frame (`tree_chronicle_{id}`). Підтримує пагінацію `Shared::UI::Pagination`, порожній стан `Shared::UI::EmptyState`. Стилізація severity через inline CSS-класи (`stable/info/warning/critical`). Skeleton-завантаження через `Shared::UI::Skeleton`. |
 
 #### Гаманці
@@ -624,7 +624,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 |---|---|---|---|
 | `OracleVisions::Index` | `oracle_visions/index.rb` | `forecasts:`, `clusters:` | Список AI-прогнозів + панель симуляції |
 | `OracleVisions::ForecastCard` | `oracle_visions/forecast_card.rb` | `forecast:` | Окрема картка прогнозу атрактора Лоренца |
-| `OracleVisions::SimulationPanel` | `oracle_visions/simulation_panel.rb` | `clusters:` | What-If форма симуляції з повзунками діапазону; надсилає до `simulate_api_v1_oracle_visions_path` у Turbo Frame |
+| `OracleVisions::SimulationPanel` | `oracle_visions/simulation_panel.rb` | `clusters:` | What-If форма симуляції з повзунками діапазону; надсилає до `simulate_oracle_visions_path` у Turbo Frame |
 
 #### Firmware OTA
 
@@ -643,7 +643,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Codex::Index` | `codex/index.rb` | `nodes:`, `pagy:`, `realms:`, `active_realm_slug:` | Сторінка-каталог lore-вузлів (Atlas). Сітка карток (`NodeCard`), вкладки шарів (`RealmTabs`), пагінація `Shared::UI::Pagination`, порожній стан `Shared::UI::EmptyState` |
 | `Codex::Show` | `codex/show.rb` | `node:`, `current_user:`, `comments:`, `current_user_attuned:` | Детальна сторінка lore-вузла. Bilingual title/subtitle, 3 markdown-блоки (`context_md` → `Codex::MarkdownRenderer`), `Shared::UI::StatusBadge` для `lifecycle_status`, зовнішні посилання, мета-рядки (Elo, view_count). Phase 2: рендерить `Codex::Attunements::Toggle` + `Codex::Comments::Thread`. |
 | `Codex::RealmTabs` | `codex/realm_tabs.rb` | `realms:`, `active_slug:` | Горизонтальні вкладки шарів. Active token: `bg-gaia-primary text-gaia-primary-text` |
-| `Codex::NodeCard` | `codex/node_card.rb` | `node:` | Картка одного lore-вузла. ActiveStorage `cover_image` з placeholder-гліфом per realm, lifecycle-бейдж, footer з Elo+geo_region. Linkable до `/api/v1/codex/nodes/:slug`. |
+| `Codex::NodeCard` | `codex/node_card.rb` | `node:` | Картка одного lore-вузла. ActiveStorage `cover_image` з placeholder-гліфом per realm, lifecycle-бейдж, footer з Elo+geo_region. Linkable до `/codex/nodes/:slug`. |
 | `Codex::Attunements::Toggle` | `codex/attunements/toggle.rb` | `node:`, `current_user_attuned:`, `count:` | **Phase 2.** Кнопка "Attune"/"Attuned" + лічильник. 🔴 **ДВІ дії — ДВА маршрути, і цей рядок доти стверджував протилежне** («POST/DELETE на nested-route»): колекційний шлях зареєстровано лише під `POST`, зняття живе окремим `attunements/me`, а компонент слав обидві гілки на перший — тобто «відвʼязатись» летіло в 404 назавжди, і канон-дім описував дефект як робочу поведінку ([UI.7], 2026-07-31). Форма — `button_to`, і це не стиль: він бере ціль із гілки, кладе `authenticity_token` (рукописна `<form>` його не мала → без JS гілка attune падала на CSRF; Turbo маскував це тим, що додає заголовок сам) і дає валідний `method="post"`+`_method` замість невалідного `method="delete"`. Успішний un-attune віддає **303**, не 302 — `fetch` конвертує 301/302 у GET лише для POST, тож на 302 браузер перевидав би DELETE на сторінку вузла. 🔴 **Лічильник НЕ живий** — приходить із рендером контролера й освіжається перезавантаженням. Обіцяний «Turbo Stream broadcast» ним ніколи не був (сирий ActionCable без підписника), а на силі тієї обіцянки видалили робочий Stimulus-фолбек `codex--attune`; воркер знято 2026-07-27 ([`UI.2`](00_07_Action_Plan_Tracker), присуд ADR-CDX-8 → [`04_05 §2`](04_05_Codex_Lore_Module)). |
 | `Codex::Comments::Thread` | `codex/comments/thread.rb` | `node:`, `comments:`, `current_user:` | **Phase 2.** Список коментарів (хронологічно) + composer (тільки для авторизованих). DOM id `codex_node_<id>_comments` — стабільний **якір списку**, продюсера НЕМА (inline-броадкаст знято 2026-07-27, [`UI.2`](00_07_Action_Plan_Tracker)). Stimulus `codex--comment`. |
 | `Codex::Comments::Item` | `codex/comments/item.rb` | `comment:` | **Phase 2.** Один рядок коментаря (sanitised markdown через `MarkdownRenderer`, ISO timestamp). Hidden-state — italic + opacity-50 + повідомлення модератора. DOM id `codex_comment_<id>`. |
@@ -652,12 +652,12 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Codex::Fractions::Cooldown` | `codex/fractions/cooldown.rb` | `fraction:` | **Phase 3.** Status pill ("Open" / "Locked · Nd Mh"). Tokens: `status-success` / `status-warning`. |
 | `Codex::Fractions::Picker` | `codex/fractions/picker.rb` | `realms:`, `active_realm:`, `nodes:`, `current_fraction:` | **Phase 3.** Turbo Frame grid pickable nodes для активного realm. Realm tabs (active = `bg-gaia-primary`), node cards з POST формою на `/codex/fractions`, disable button під час cooldown. DOM id `codex_fraction_picker`. |
 | `Codex::Fractions::ProfileBadge` | `codex/fractions/profile_badge.rb` | `fraction:` | **Phase 3.** 1-row teaser для `Users::Profile`. Embed live в `render_codex_fraction` секцію. Стоїть на gaia-* tokens — не торкає legacy emerald palette профілю. |
-| `Codex::Fractions::OnboardingWizard` | `codex/fractions/onboarding_wizard.rb` | `current_user:` | **Phase 8.** First-login банер у `DashboardLayout` — рендериться лише коли `current_user.codex_fraction.blank?`, з двома CTA: «Choose your Fraction →» (`/api/v1/codex/fractions/picker`) та «Browse the Codex» (`/api/v1/codex/realms`). Без Stimulus — нативна Turbo-Drive навігація (узгоджено з § 15 Native HTML over Stimulus). Layout-хук обгорнутий у `rescue StandardError` (ADR-CDX-7 fail-open). DOM id `codex_onboarding_wizard`. |
+| `Codex::Fractions::OnboardingWizard` | `codex/fractions/onboarding_wizard.rb` | `current_user:` | **Phase 8.** First-login банер у `DashboardLayout` — рендериться лише коли `current_user.codex_fraction.blank?`, з двома CTA: «Choose your Fraction →» (`/codex/fractions/picker`) та «Browse the Codex» (`/codex/realms`). Без Stimulus — нативна Turbo-Drive навігація (узгоджено з § 15 Native HTML over Stimulus). Layout-хук обгорнутий у `rescue StandardError` (ADR-CDX-7 fail-open). DOM id `codex_onboarding_wizard`. |
 | `Codex::Battle::Arena` | `codex/battle/arena.rb` | `left:`, `right:`, `pair_seed:`, `realm:`, `error:` | **Phase 4.** Turbo Frame `id="codex_battle_arena"` з двома cards (Title + Archetype + `Elo: N · Mm`) + VS-divider + Skip. POST форми на `/codex/matches` (`MatchesController#create`; один winner_slug per форма + окрема skip-форма). UI-назва "Battle Arena" — UX label, REST-ресурс — `Codex::Match`. Error-state pill при `not enough nodes`. |
 | `Codex::Leaderboard::Table` | `codex/leaderboard/table.rb` | `realm:`, `nodes:`, `limit:` | **Phase 4.** Read-only top-N Elo board. HTML `<table>` з колонками rank / Title / Elo / Matches / Lifecycle. Рендериться публічно (`/codex/leaderboard` без auth). Empty-state copy коли `nodes.empty?`. |
 | `Codex::Discoveries::Toast` | `codex/discoveries/toast.rb` | `node:`, `trigger_type:`, `unlocked_at:` | **Phase 5.** Single-card toast — компонент **зібраний, але не дротований**: `Codex::DiscoveryProbeWorker` більше не броадкастить нічого (сирий ActionCable знято 2026-07-27, [`UI.2`](00_07_Action_Plan_Tracker); у воркері лишився тільки вестигіальний коментар про намір). Живим це стане ЛИШЕ через підписаний Turbo-стрім — тобто це продуктове «чи треба», не технічне «чи можна». Stimulus `codex--reveal` data-attribute (matrix-rain JS controller — Phase 6 batch). Trigger-type label dispatch: Observed / Battle / Pact / Streak / Oracle / Granted. gaia-* tokens only. **Namespacing під `Codex::Discoveries::*` (plural)** — необхідно щоб уникнути Zeitwerk const-clash з `Codex::Discovery` AR class. |
-| `Codex::Discoveries::List` | `codex/discoveries/list.rb` | `discoveries:`, `pagy:` | **Phase 5.** Paginated 3-col grid of own unlocked nodes (rendered by `GET /api/v1/codex/discoveries/me` HTML format). Empty-state copy "Nothing unlocked yet — observe a tree, vote in the Arena, choose a fraction." Кожна card показує title / archetype_key / `trigger_type · unlocked_at`. gaia-* tokens only. |
-| `Codex::Citations::Pill` | `codex/citations/pill.rb` | `citation:` | **Phase 6.** Single inline citation chip — `« Title · archetype_key »`. Slug-href anchor до `/api/v1/codex/nodes/:slug`, hover-title зі 140-char note, `aria-label` для screen readers, `focus-visible:ring-2`. gaia-* tokens (`bg-gaia-surface-sunken`, `border-gaia-border`, `hover:border-gaia-primary`). Defensive nil-safe — рендерить порожньо якщо `citation.node` зник. |
+| `Codex::Discoveries::List` | `codex/discoveries/list.rb` | `discoveries:`, `pagy:` | **Phase 5.** Paginated 3-col grid of own unlocked nodes (rendered by `GET /codex/discoveries/me` HTML format). Empty-state copy "Nothing unlocked yet — observe a tree, vote in the Arena, choose a fraction." Кожна card показує title / archetype_key / `trigger_type · unlocked_at`. gaia-* tokens only. |
+| `Codex::Citations::Pill` | `codex/citations/pill.rb` | `citation:` | **Phase 6.** Single inline citation chip — `« Title · archetype_key »`. Slug-href anchor до `/codex/nodes/:slug`, hover-title зі 140-char note, `aria-label` для screen readers, `focus-visible:ring-2`. gaia-* tokens (`bg-gaia-surface-sunken`, `border-gaia-border`, `hover:border-gaia-primary`). Defensive nil-safe — рендерить порожньо якщо `citation.node` зник. |
 | `Codex::Citations::Strip` | `codex/citations/strip.rb` | `target:`, `citations:`, `current_user:` | **Phase 6.** Wrap-flex container з усіма pills прив'язаними до операційної цілі (`Tree`/`Cluster`/`AiInsight`/`EwsAlert`/`OracleVision`/`NaasContract`). DOM id `codex_citations_<type_underscore>_<id>` (продюсера НЕМА — сирий ActionCable знято 2026-07-27; живим тракт стане лише через підписаний Turbo-стрім). Empty-state copy "No lore citations yet." щоб freshly-cited entity мав стабільний DOM target. Інтегровано в `Trees::Show`, `Clusters::Show`, `Alerts::Row`, `OracleVisions::ForecastCard` через приватний `render_codex_citations` що early-return'ить на `defined?(Codex::Citation)` гарду + `for_target(target).includes(:node)`. |
 
 > ⚠️ **Сирий ActionCable знято 2026-07-27** (UI.2 descope + SEC). Підписника не існувало ніколи, а `/cable` монтується движком САМ (`after_initialize`, `internal: true` — його не видно в `bin/rails routes`), тож канал без авторизації підписки був латентним крос-тенантним IDOR при послідовних ID. Realtime — лише через ПІДПИСАНІ Turbo-стріми, бо їх ім'я дістається тільки тому, кому сторінка вже відрендерилась. Заборону тримає `spec/security/no_raw_action_cable_spec.rb`.
@@ -998,15 +998,15 @@ Turbo::StreamsChannel.broadcast_replace_later_to(
 
 | Frame | Використовується у | URL джерела |
 |---|---|---|
-| `wallet_balance_frame_{id}` | `Wallets::Show` | `balance_api_v1_wallet_path(@wallet)` |
-| `wallet_metadata_frame_{id}` | `Wallets::Show` | `metadata_api_v1_wallet_path(@wallet)` |
+| `wallet_balance_frame_{id}` | `Wallets::Show` | `balance_wallet_path(@wallet)` |
+| `wallet_metadata_frame_{id}` | `Wallets::Show` | `metadata_wallet_path(@wallet)` |
 | `simulation_results` | `OracleVisions::SimulationPanel` | Turbo form target |
 
 **Патерн Skeleton:**
 
 ```ruby
 turbo_frame_tag "wallet_balance_frame_#{@wallet.id}",
-                src: balance_api_v1_wallet_path(@wallet),
+                src: balance_wallet_path(@wallet),
                 loading: :lazy do
   render Views::Shared::UI::Skeleton.new(variant: :balance)
 end
@@ -1169,7 +1169,7 @@ end
 # View
 render Views::Shared::UI::Pagination.new(
   pagy: @pagy,
-  url_helper: ->(page:) { helpers.api_v1_cluster_trees_path(@cluster, page: page) }
+  url_helper: ->(page:) { helpers.cluster_trees_path(@cluster, page: page) }
 )
 ```
 
@@ -1291,8 +1291,8 @@ end
 |-----------|-----|-------------|
 | `Gateways::Show` | (1) `@gateway.firmware_hash` — колонка не існує; (2) `hardware_key&.uid` — HardwareKey має `device_uid`, не `uid` | (1) `try(:firmware_hash)` safe fallback; (2) `.device_uid` |
 | `Provisioning::Success` | `@device.did` — Gateway має `uid`, не `did` | Замінено на `@device.try(:did) \|\| @device.try(:uid)` |
-| `Maintenance::Show` | `edit_api_v1_maintenance_record_path` — маршрут `:edit` не існував | Додано маршрут `:edit` та дію контролера `edit` |
-| `Views::Shared::UI::PhotoCard` | `api_v1_maintenance_record_photo_path` не існував: зайвий `as:` у вкладеному `resources` подвоював префікс, тож сторінка запису **з будь-яким фото** падала в 500 | Знято `as:` (природне ім'я вкладеного ресурсу). 🔴 Чому пережило рядок вище: чотири спеки `prepend`-или модуль, який ВИЗНАЧАВ відсутній хелпер, а request-приклада на HTML-`show` із фото не існувало — стаби знято, приклад додано |
+| `Maintenance::Show` | `edit_maintenance_record_path` — маршрут `:edit` не існував | Додано маршрут `:edit` та дію контролера `edit` |
+| `Views::Shared::UI::PhotoCard` | `maintenance_record_photo_path` не існував: зайвий `as:` у вкладеному `resources` подвоював префікс, тож сторінка запису **з будь-яким фото** падала в 500 | Знято `as:` (природне ім'я вкладеного ресурсу). 🔴 Чому пережило рядок вище: чотири спеки `prepend`-или модуль, який ВИЗНАЧАВ відсутній хелпер, а request-приклада на HTML-`show` із фото не існувало — стаби знято, приклад додано |
 
 ### CI: Компіляція Tailwind CSS
 
@@ -1457,7 +1457,7 @@ config/locales/
 params[:locale] → cookies[:locale] → request.preferred_language → I18n.default_locale
 ```
 
-Усі джерела whitelist'яться проти `I18n.available_locales` — adversarial input просто провалюється на default. Concern підмішаний у **обидва** `ApplicationController` і `Api::V1::BaseController` — інакше після POST `/api/v1/locale` + redirect Dashboard ігнорує щойно записану cookie і відкочується на `default_locale` (legacy 2-кліки-щоб-змінити-locale bug, фікснутий саме інклудом у обох контролерах).
+Усі джерела whitelist'яться проти `I18n.available_locales` — adversarial input просто провалюється на default. Concern підмішаний у **обидва** `ApplicationController` і `Api::V1::BaseController` — інакше після POST `/locale` + redirect Dashboard ігнорує щойно записану cookie і відкочується на `default_locale` (legacy 2-кліки-щоб-змінити-locale bug, фікснутий саме інклудом у обох контролерах).
 
 ### 12.5 LocaleSwitcher (`Views::Shared::UI::LocaleSwitcher`)
 
@@ -1468,7 +1468,7 @@ Native `<form>` + `<select>` + `onchange="this.form.requestSubmit()"` — Rails-
 render Views::Shared::UI::LocaleSwitcher.new
 ```
 
-Endpoint: `POST /api/v1/locale` → cookie `locale=<en|uk|lv|lt>` (httponly, same_site=lax, secure-in-prod), open-redirect guard перевіряє `request.host == referer.host`. Форма сабмітить `data-turbo="false"` — повний page reload гарантує, що `data-turbo-permanent` sidebar теж перерендериться новою мовою.
+Endpoint: `POST /locale` → cookie `locale=<en|uk|lv|lt>` (httponly, same_site=lax, secure-in-prod), open-redirect guard перевіряє `request.host == referer.host`. Форма сабмітить `data-turbo="false"` — повний page reload гарантує, що `data-turbo-permanent` sidebar теж перерендериться новою мовою.
 
 > **Історія еволюції (для контексту, не для повторення).** Ранні ітерації використовували `<details>`+`<summary>` + Stimulus `locale` controller (outside-click/Escape handlers), потім HTML Popover API. Popover був видалений, бо він промотує dropdown у top-layer і відриває його від нормального containing block — CSS `position: relative` на wrapper'і не може анкорити dropdown поруч з тригером без re-positioning JS (Stimulus з `getBoundingClientRect`). Це fragile (resize/scroll handlers, z-index edge cases, focus quirks) для меню з 2 опцій. Натомість нативний `<select>` — obvious correct primitive. Повний rationale-блок зафіксовано у `app/views/shared/ui/locale_switcher.rb`. Cross-ref у §15.1 (Native HTML over Stimulus) — Popover API лишається рекомендацією для майбутніх dropdown patterns, але в проекті ще не застосований.
 
@@ -2006,7 +2006,7 @@ Pair the responsive table with `Views::Shared::UI::Pagination.new(sticky_mobile:
 ```ruby
 render Views::Shared::UI::Pagination.new(
   pagy: @pagy,
-  url_helper: ->(page:) { api_v1_alerts_path(page: page) },
+  url_helper: ->(page:) { alerts_path(page: page) },
   sticky_mobile: true   # adds `gaia-pagination-sticky` CSS class
 )
 ```

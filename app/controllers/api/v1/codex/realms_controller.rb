@@ -5,7 +5,7 @@ module Api
   module V1
     module Codex
       class RealmsController < BaseController
-        # GET /api/v1/codex/realms
+        # GET /codex/realms
         # Returns all 4 active realms with node counters. Cached briefly to
         # absorb sidebar/landing-page traffic without DB pressure.
         def index

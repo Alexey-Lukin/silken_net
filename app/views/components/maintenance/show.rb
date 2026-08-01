@@ -72,7 +72,7 @@ module Maintenance
 
         div(class: "mt-6 md:mt-0 flex items-center gap-4") do
           a(
-            href: new_api_v1_maintenance_record_path(
+            href: new_maintenance_record_path(
               maintainable_type: @record.maintainable_type,
               maintainable_id: @record.maintainable_id
             ),
@@ -83,7 +83,7 @@ module Maintenance
           if !@record.hardware_verified && mutable?
             button_to(
               t(".header.verify_hardware"),
-              verify_api_v1_maintenance_record_path(@record),
+              verify_maintenance_record_path(@record),
               method: :patch,
               class: "px-4 py-2 border border-status-warning text-status-warning-text hover:bg-status-warning " \
                      "hover:text-black transition-all uppercase text-mini tracking-widest",
@@ -124,7 +124,7 @@ module Maintenance
         end
         if mutable?
           a(
-            href: edit_api_v1_maintenance_record_path(@record),
+            href: edit_maintenance_record_path(@record),
             class: "inline-block mt-4 px-4 py-2 border border-emerald-900 text-emerald-900 " \
                    "hover:border-emerald-500 hover:text-emerald-500 uppercase text-mini tracking-widest transition-all"
           ) { t(".evidence.attach") }
@@ -196,7 +196,7 @@ module Maintenance
         if mutable?
           div(class: "pt-4 border-t border-emerald-900/30") do
             a(
-              href: edit_api_v1_maintenance_record_path(@record),
+              href: edit_maintenance_record_path(@record),
               class: "block w-full text-center py-2 border border-emerald-900 text-mini uppercase " \
                      "text-emerald-700 hover:border-emerald-500 hover:text-emerald-500 transition-all"
             ) { t(".edit") }
@@ -283,7 +283,7 @@ module Maintenance
           div(class: "pt-4 border-t border-emerald-900/30") do
             button_to(
               t(".hardware.verify_now"),
-              verify_api_v1_maintenance_record_path(@record),
+              verify_maintenance_record_path(@record),
               method: :patch,
               class: "w-full py-2 border border-status-warning text-mini uppercase text-status-warning-text " \
                      "hover:bg-status-warning hover:text-white transition-all",

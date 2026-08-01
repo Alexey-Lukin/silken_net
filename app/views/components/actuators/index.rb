@@ -26,7 +26,7 @@ module Actuators
 
         render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
-          url_helper: ->(page:) { api_v1_cluster_actuators_path(@cluster, page: page) }
+          url_helper: ->(page:) { cluster_actuators_path(@cluster, page: page) }
         )
       end
     end

@@ -15,7 +15,7 @@ module Maintenance
         records_table
         render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
-          url_helper: ->(page:) { api_v1_maintenance_records_path(page: page) }
+          url_helper: ->(page:) { maintenance_records_path(page: page) }
         )
       end
     end
@@ -31,7 +31,7 @@ module Maintenance
           end
         end
         a(
-          href: new_api_v1_maintenance_record_path,
+          href: new_maintenance_record_path,
           aria_label: t(".register_aria"),
           class: register_button_classes
         ) { t(".register") }
@@ -43,7 +43,7 @@ module Maintenance
         action_types = MaintenanceRecord.action_types.keys
         action_types.each do |type|
           a(
-            href: api_v1_maintenance_records_path(action_type: type),
+            href: maintenance_records_path(action_type: type),
             # `type` лишається сирим enum'ом — міток action_type у локалях ще
             # немає (окремий пункт I18N.1, той самий клас, що був у alert_type).
             aria_label: t(".filter.by_aria", type: type),
@@ -51,12 +51,12 @@ module Maintenance
           ) { type }
         end
         a(
-          href: api_v1_maintenance_records_path(verified: "1"),
+          href: maintenance_records_path(verified: "1"),
           aria_label: t(".filter.verified_aria"),
           class: filter_verified_classes
         ) { t(".filter.verified") }
         a(
-          href: api_v1_maintenance_records_path,
+          href: maintenance_records_path,
           aria_label: t(".filter.clear_aria"),
           class: filter_clear_classes
         ) { t(".filter.clear") }
@@ -122,7 +122,7 @@ module Maintenance
         td(class: "p-4 text-gray-600 text-tiny") { record.performed_at&.strftime("%d.%m.%y // %H:%M") }
         td(class: "p-4 text-right") do
           a(
-            href: api_v1_maintenance_record_path(record),
+            href: maintenance_record_path(record),
             aria_label: t(".table.open_aria"),
             class: "text-emerald-700 hover:text-white text-tiny focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors"
           ) { t(".table.open") }

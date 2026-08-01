@@ -45,7 +45,7 @@ module Views
 
         def view_template
           form_with(
-            url: api_v1_locale_path,
+            url: locale_path,
             method: :post,
             data: { turbo: "false" },
             class: "inline-flex items-center gap-2"

@@ -5,7 +5,7 @@ module Api
   module V1
     class UsersController < BaseController
       # --- СПИСОК ЕКІПАЖУ (The Crew) ---
-      # GET /api/v1/users
+      # GET /users
       def index
         authorize User
         scope = policy_scope(User).order(last_seen_at: :desc, id: :desc)
@@ -29,7 +29,7 @@ module Api
       end
 
       # --- ПРОФІЛЬ УЧАСНИКА ---
-      # GET /api/v1/users/:id
+      # GET /users/:id
       def show
         @user = policy_scope(User).find(params[:id])
         authorize @user
@@ -53,7 +53,7 @@ module Api
       end
 
       # --- ПРОФІЛЬ "Я" (Neural Link) ---
-      # GET /api/v1/users/me
+      # GET /users/me
       def me
         @user = current_user
         authorize @user

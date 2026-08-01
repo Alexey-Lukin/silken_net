@@ -13,7 +13,7 @@ module Codex
 
       def view_template
         form(
-          action: api_v1_codex_node_comments_path(@node.slug),
+          action: codex_node_comments_path(@node.slug),
           method: "post",
           class: "space-y-2",
           data: { "codex--comment-target": "form" }

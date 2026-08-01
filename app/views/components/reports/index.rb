@@ -51,13 +51,13 @@ module Reports
           report_card(
             t(".carbon.title"),
             t(".carbon.description"),
-            carbon_absorption_api_v1_reports_path,
+            carbon_absorption_reports_path,
             "🌿"
           )
           report_card(
             t(".financial.title"),
             t(".financial.description"),
-            financial_summary_api_v1_reports_path,
+            financial_summary_reports_path,
             "💎"
           )
         end

@@ -13,14 +13,14 @@ RSpec.describe "Api::V1::Codex::Matches", type: :request do
 
   before { Sidekiq::Worker.clear_all }
 
-  describe "GET /api/v1/codex/matches/new" do
+  describe "GET /codex/matches/new" do
     it "rejects unauthenticated requests" do
-      get "/api/v1/codex/matches/new"
+      get "/codex/matches/new"
       expect(response).to have_http_status(:unauthorized)
     end
 
     it "renders an Arena frame with two cards and a hidden pair_seed" do
-      get "/api/v1/codex/matches/new", params: { realm: realm.slug }, headers: headers
+      get "/codex/matches/new", params: { realm: realm.slug }, headers: headers
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("codex_battle_arena")
       expect(response.body).to include(I18n.t("codex.battle_arena.vs"))
@@ -29,25 +29,25 @@ RSpec.describe "Api::V1::Codex::Matches", type: :request do
 
     it "renders an empty-state when realm has too few nodes" do
       ::Codex::Node.where(codex_realm_id: realm.id).update_all(lifecycle_status: "extinct")
-      get "/api/v1/codex/matches/new", params: { realm: realm.slug }, headers: headers
+      get "/codex/matches/new", params: { realm: realm.slug }, headers: headers
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("not enough nodes")
     end
 
     it "falls back to the first ordered realm when ?realm= is omitted" do
-      get "/api/v1/codex/matches/new", headers: headers
+      get "/codex/matches/new", headers: headers
       expect(response).to have_http_status(:ok)
       expect(response.body).to match(/name="pair_seed" value="[0-9a-f]{64}"/)
     end
 
     it "falls back to the first ordered realm when ?realm= is an unknown slug" do
-      get "/api/v1/codex/matches/new", params: { realm: "totally-fake-slug" }, headers: headers
+      get "/codex/matches/new", params: { realm: "totally-fake-slug" }, headers: headers
       expect(response).to have_http_status(:ok)
       expect(response.body).to match(/name="pair_seed" value="[0-9a-f]{64}"/)
     end
   end
 
-  describe "POST /api/v1/codex/matches" do
+  describe "POST /codex/matches" do
     def issue_seed
       r = Kredis.redis(config: :shared)
       seed = SecureRandom.hex(32)
@@ -60,14 +60,14 @@ RSpec.describe "Api::V1::Codex::Matches", type: :request do
     end
 
     it "rejects unauthenticated requests" do
-      post "/api/v1/codex/matches", params: { pair_seed: "x", winner_slug: left.slug }, as: :json
+      post "/codex/matches", params: { pair_seed: "x", winner_slug: left.slug }, as: :json
       expect(response).to have_http_status(:unauthorized)
     end
 
     it "creates a match, enqueues recompute worker, returns 201 + Blueprint" do
       seed = issue_seed
       expect {
-        post "/api/v1/codex/matches",
+        post "/codex/matches",
              params: { pair_seed: seed, winner_slug: left.slug },
              headers: headers, as: :json
       }.to change(Codex::Match, :count).by(1)
@@ -81,7 +81,7 @@ RSpec.describe "Api::V1::Codex::Matches", type: :request do
 
     it "returns 422 for a winner_slug that matches neither node in the pair" do
       seed = issue_seed
-      post "/api/v1/codex/matches",
+      post "/codex/matches",
            params: { pair_seed: seed, winner_slug: "not-in-this-pair" },
            headers: headers, as: :json
       expect(response).to have_http_status(:unprocessable_content)
@@ -90,10 +90,10 @@ RSpec.describe "Api::V1::Codex::Matches", type: :request do
 
     it "returns 403 on replay (seed already consumed)" do
       seed = issue_seed
-      post "/api/v1/codex/matches",
+      post "/codex/matches",
            params: { pair_seed: seed, winner_slug: left.slug },
            headers: headers, as: :json
-      post "/api/v1/codex/matches",
+      post "/codex/matches",
            params: { pair_seed: seed, winner_slug: right.slug },
            headers: headers, as: :json
       expect(response).to have_http_status(:forbidden)
@@ -102,7 +102,7 @@ RSpec.describe "Api::V1::Codex::Matches", type: :request do
 
     it "supports skip=true" do
       seed = issue_seed
-      post "/api/v1/codex/matches",
+      post "/codex/matches",
            params: { pair_seed: seed, skip: "true" },
            headers: headers, as: :json
       expect(response).to have_http_status(:created)
@@ -115,7 +115,7 @@ RSpec.describe "Api::V1::Codex::Matches", type: :request do
       4.times { create(:codex_node, realm: realm, lifecycle_status: :thriving) }
 
       seed = issue_seed
-      post "/api/v1/codex/matches",
+      post "/codex/matches",
            params: { pair_seed: seed, winner_slug: left.slug },
            headers: headers.merge("Accept" => "text/html")
 
@@ -151,7 +151,7 @@ RSpec.describe "Api::V1::Codex::Matches", type: :request do
         end
       end
 
-      post "/api/v1/codex/matches",
+      post "/codex/matches",
            params: { pair_seed: seed, winner_slug: left.slug },
            headers: headers.merge("Accept" => "text/html")
 

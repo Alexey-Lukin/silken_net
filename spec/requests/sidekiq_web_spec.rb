@@ -9,7 +9,7 @@ RSpec.describe "Sidekiq Web UI mount", type: :request do
   let(:organization) { create(:organization) }
 
   def login_as(user)
-    post "/api/v1/login", params: { email: user.email_address, password: "password12345" }
+    post "/login", params: { email: user.email_address, password: "password12345" }
   end
 
   it "returns 404 for anonymous visitors (path not revealed)" do

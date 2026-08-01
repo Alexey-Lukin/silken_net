@@ -17,7 +17,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
 
   let!(:cluster) { create(:cluster, organization: organization) }
 
-  describe "GET /api/v1/oracle_visions" do
+  describe "GET /oracle_visions" do
     before do
       Rails.cache.clear
       allow(Rails.cache).to receive(:fetch).and_call_original
@@ -32,7 +32,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
 
     context "when as JSON" do
       it "returns visions and emission forecast for forester" do
-        get "/api/v1/oracle_visions", headers: forester_headers, as: :json
+        get "/oracle_visions", headers: forester_headers, as: :json
         expect(response).to have_http_status(:ok)
 
         body = response.parsed_body
@@ -41,25 +41,25 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       end
 
       it "returns visions for admin (who is also a forest_commander)" do
-        get "/api/v1/oracle_visions", headers: admin_headers, as: :json
+        get "/oracle_visions", headers: admin_headers, as: :json
         expect(response).to have_http_status(:ok)
       end
     end
 
     context "when as HTML" do
       it "renders the dashboard page" do
-        get "/api/v1/oracle_visions", headers: forester_headers
+        get "/oracle_visions", headers: forester_headers
         expect(response).to have_http_status(:ok)
       end
     end
 
     it "returns 403 for investor users" do
-      get "/api/v1/oracle_visions", headers: investor_headers, as: :json
+      get "/oracle_visions", headers: investor_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
 
     it "returns 401 without authentication" do
-      get "/api/v1/oracle_visions", as: :json
+      get "/oracle_visions", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
 
@@ -72,7 +72,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
         tree = create(:tree, cluster: cluster, status: :active)
         create(:ai_insight, analyzable: tree)
 
-        get "/api/v1/oracle_visions", headers: forester_headers, as: :json
+        get "/oracle_visions", headers: forester_headers, as: :json
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body["emission_forecast"]).to be_a(Numeric)
       end
@@ -84,14 +84,14 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
                acoustic_events: 2, growth_points: 10,
                bio_status: :homeostasis, metabolism_s: 1000)
 
-        get "/api/v1/oracle_visions", headers: forester_headers, as: :json
+        get "/oracle_visions", headers: forester_headers, as: :json
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body["emission_forecast"]).to be_a(Numeric)
       end
     end
   end
 
-  describe "POST /api/v1/oracle_visions/simulate" do
+  describe "POST /oracle_visions/simulate" do
     before do
       stub_const("SimulationWorker", Class.new do
         def self.perform_async(*args)
@@ -101,7 +101,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
     end
 
     it "starts a simulation for admin" do
-      post "/api/v1/oracle_visions/simulate",
+      post "/oracle_visions/simulate",
            params: { cluster_id: cluster.id, variables: { temp: 25 } },
            headers: admin_headers, as: :json
 
@@ -110,7 +110,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
     end
 
     it "starts a simulation for admin when variables is omitted entirely" do
-      post "/api/v1/oracle_visions/simulate",
+      post "/oracle_visions/simulate",
            params: { cluster_id: cluster.id },
            headers: admin_headers, as: :json
 
@@ -119,21 +119,21 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
     end
 
     it "returns 403 for forester (simulate requires admin)" do
-      post "/api/v1/oracle_visions/simulate",
+      post "/oracle_visions/simulate",
            params: { cluster_id: cluster.id },
            headers: forester_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
 
     it "returns 403 for investor users" do
-      post "/api/v1/oracle_visions/simulate",
+      post "/oracle_visions/simulate",
            params: { cluster_id: cluster.id },
            headers: investor_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
 
     it "returns 401 without authentication" do
-      post "/api/v1/oracle_visions/simulate", as: :json
+      post "/oracle_visions/simulate", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
 
@@ -146,7 +146,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       other_org = create(:organization)
       other_cluster = create(:cluster, organization: other_org)
 
-      post "/api/v1/oracle_visions/simulate",
+      post "/oracle_visions/simulate",
            params: { cluster_id: other_cluster.id, variables: { sigma: 10 } },
            headers: admin_headers, as: :json
 
@@ -159,7 +159,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
   # Previously the index leaked global AiInsight + cached the protocol-wide
   # yield total under a single key.
   # ===========================================================================
-  describe "GET /api/v1/oracle_visions — cross-tenant scoping" do
+  describe "GET /oracle_visions — cross-tenant scoping" do
     let(:foreign_org) { create(:organization) }
     let(:foreign_cluster) { create(:cluster, organization: foreign_org) }
 
@@ -171,7 +171,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       own_vision = create(:ai_insight, analyzable: own_tree, target_date: 1.day.from_now)
       foreign_vision = create(:ai_insight, analyzable: foreign_tree, target_date: 1.day.from_now)
 
-      get "/api/v1/oracle_visions", headers: forester_headers, as: :json
+      get "/oracle_visions", headers: forester_headers, as: :json
       expect(response).to have_http_status(:ok)
 
       ids = response.parsed_body["visions"].map { |v| v["id"] }
@@ -185,7 +185,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
         .with("oracle_expected_yield_24h_org_#{organization.id}", expires_in: 1.hour)
         .and_return(2.5)
 
-      get "/api/v1/oracle_visions", headers: forester_headers, as: :json
+      get "/oracle_visions", headers: forester_headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["emission_forecast"].to_f).to eq(2.5)
 
@@ -217,7 +217,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
              acoustic_events: 2, growth_points: 10,
              bio_status: :homeostasis, metabolism_s: 1000)
 
-      get "/api/v1/oracle_visions", headers: forester_headers, as: :json
+      get "/oracle_visions", headers: forester_headers, as: :json
       expect(response).to have_http_status(:ok)
       # emission_forecast may be a string or numeric depending on JSON serialization
       forecast = response.parsed_body["emission_forecast"]
@@ -231,7 +231,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
 
       create(:tree, cluster: cluster, status: :active)
 
-      get "/api/v1/oracle_visions", headers: forester_headers, as: :json
+      get "/oracle_visions", headers: forester_headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["emission_forecast"]).to be_a(Numeric)
     end

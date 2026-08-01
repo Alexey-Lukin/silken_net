@@ -12,9 +12,9 @@ RSpec.describe Api::V1::SystemHealthController, type: :request do
   let(:admin_headers) { { "Authorization" => "Bearer #{admin_token}" } }
   let(:regular_headers) { { "Authorization" => "Bearer #{regular_token}" } }
 
-  describe "GET /api/v1/system_health" do
+  describe "GET /system_health" do
     it "returns system health status for admin users" do
-      get "/api/v1/system_health", headers: admin_headers, as: :json
+      get "/system_health", headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
 
       body = response.parsed_body
@@ -24,14 +24,14 @@ RSpec.describe Api::V1::SystemHealthController, type: :request do
     end
 
     it "returns 403 for non-admin users" do
-      get "/api/v1/system_health", headers: regular_headers, as: :json
+      get "/system_health", headers: regular_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
 
     it "handles Sidekiq stats errors gracefully" do
       allow(Sidekiq::Stats).to receive(:new).and_raise(RuntimeError, "Connection refused")
 
-      get "/api/v1/system_health", headers: admin_headers, as: :json
+      get "/system_health", headers: admin_headers, as: :json
 
       expect(response).to have_http_status(:ok)
       body = response.parsed_body
@@ -41,7 +41,7 @@ RSpec.describe Api::V1::SystemHealthController, type: :request do
     it "handles database connection failures gracefully" do
       allow(ActiveRecord::Base.connection).to receive(:active?).and_raise(RuntimeError, "could not connect")
 
-      get "/api/v1/system_health", headers: admin_headers, as: :json
+      get "/system_health", headers: admin_headers, as: :json
 
       expect(response).to have_http_status(:ok)
       body = response.parsed_body
@@ -53,7 +53,7 @@ RSpec.describe Api::V1::SystemHealthController, type: :request do
       stats = instance_double(Sidekiq::Stats, enqueued: 0, processed: 100, failed: 2, workers_size: 4, queues: {})
       allow(Sidekiq::Stats).to receive(:new).and_return(stats)
 
-      get "/api/v1/system_health", headers: admin_headers, as: :json
+      get "/system_health", headers: admin_headers, as: :json
 
       expect(response).to have_http_status(:ok)
       body = response.parsed_body
@@ -63,7 +63,7 @@ RSpec.describe Api::V1::SystemHealthController, type: :request do
 
     context "with format.html" do
       it "renders HTML dashboard for system health" do
-        get "/api/v1/system_health",
+        get "/system_health",
             headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "text/html" }
         expect(response).to have_http_status(:ok)
         expect(response.content_type).to include("text/html")
@@ -74,7 +74,7 @@ RSpec.describe Api::V1::SystemHealthController, type: :request do
       it "returns alive: false with error message" do
         allow(TCPSocket).to receive(:new).and_raise(Errno::ECONNREFUSED)
 
-        get "/api/v1/system_health", headers: admin_headers, as: :json
+        get "/system_health", headers: admin_headers, as: :json
 
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body["coap_listener"]["alive"]).to be(false)
@@ -84,7 +84,7 @@ RSpec.describe Api::V1::SystemHealthController, type: :request do
         allow(ENV).to receive(:fetch).and_call_original
         allow(ENV).to receive(:fetch).with("COAP_PORT", 5683).and_raise(StandardError, "port config error")
 
-        get "/api/v1/system_health", headers: admin_headers, as: :json
+        get "/system_health", headers: admin_headers, as: :json
 
         expect(response).to have_http_status(:ok)
         coap = response.parsed_body["coap_listener"]

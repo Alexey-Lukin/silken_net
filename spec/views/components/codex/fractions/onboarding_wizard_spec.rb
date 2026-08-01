@@ -17,8 +17,8 @@ RSpec.describe Codex::Fractions::OnboardingWizard, type: :view_component do
     user = build_stubbed(:user, first_name: "Alyona")
     html = render_wizard(current_user: user)
     expect(html).to include("codex_onboarding_wizard")
-    expect(html).to include("/api/v1/codex/fractions/picker")
-    expect(html).to include("/api/v1/codex/realms")
+    expect(html).to include("/codex/fractions/picker")
+    expect(html).to include("/codex/realms")
     expect(html).to include("Choose your Fraction")
     expect(html).to include("Browse the Codex")
   end

@@ -4,7 +4,7 @@
 require "rails_helper"
 
 RSpec.describe Codex::Fractions::ProfileBadge do
-  # ProfileBadge uses `api_v1_codex_fraction_picker_path` which requires
+  # ProfileBadge uses `codex_fraction_picker_path` which requires
   # a Rails view context. We subclass + stub like other Codex component specs.
   def render_badge(fraction:)
     # [ARCH.77] Справжній renderer замість стабу маршрут-хелпера.
@@ -51,7 +51,7 @@ RSpec.describe Codex::Fractions::ProfileBadge do
 
     it "renders the 'Choose' CTA link pointing to the picker path" do
       expect(html).to include("Choose")
-      expect(html).to include('href="/api/v1/codex/fractions/picker"')
+      expect(html).to include('href="/codex/fractions/picker"')
     end
 
     it "applies focus-visible:ring-2 on the CTA link for a11y" do

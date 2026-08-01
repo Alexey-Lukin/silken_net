@@ -18,7 +18,7 @@ module Clusters
 
         render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
-          url_helper: ->(page:) { api_v1_clusters_path(page: page) }
+          url_helper: ->(page:) { clusters_path(page: page) }
         )
       else
         render_empty_state

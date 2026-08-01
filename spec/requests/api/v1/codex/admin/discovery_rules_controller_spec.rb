@@ -12,22 +12,22 @@ RSpec.describe "Api::V1::Codex::Admin::DiscoveryRules", type: :request do
   let(:headers_user)  { { "Authorization" => "Bearer #{token}" } }
   let(:headers_admin) { { "Authorization" => "Bearer #{admin_tok}" } }
 
-  describe "GET /api/v1/codex/admin/discovery_rules" do
+  describe "GET /codex/admin/discovery_rules" do
     it "403 for non-admin" do
-      get "/api/v1/codex/admin/discovery_rules", headers: headers_user, as: :json
+      get "/codex/admin/discovery_rules", headers: headers_user, as: :json
       expect(response).to have_http_status(:forbidden)
     end
 
     it "200 for admin, lists rules" do
       create(:codex_discovery_rule, node: node, created_by_user: admin, name: "ouch-ten-hours")
-      get "/api/v1/codex/admin/discovery_rules", headers: headers_admin, as: :json
+      get "/codex/admin/discovery_rules", headers: headers_admin, as: :json
       expect(response).to have_http_status(:ok)
       names = response.parsed_body["data"].map { |r| r["name"] }
       expect(names).to include("ouch-ten-hours")
     end
   end
 
-  describe "POST /api/v1/codex/admin/discovery_rules" do
+  describe "POST /codex/admin/discovery_rules" do
     let(:valid_payload) do
       {
         name: "ten-matches-mythos",
@@ -40,7 +40,7 @@ RSpec.describe "Api::V1::Codex::Admin::DiscoveryRules", type: :request do
     end
 
     it "403 for non-admin" do
-      post "/api/v1/codex/admin/discovery_rules", params: valid_payload,
+      post "/codex/admin/discovery_rules", params: valid_payload,
                                                   headers: headers_user, as: :json
       expect(response).to have_http_status(:forbidden)
     end
@@ -48,7 +48,7 @@ RSpec.describe "Api::V1::Codex::Admin::DiscoveryRules", type: :request do
     it "201 for admin and persists JSONB params + created_by_user_id" do
       Rails.cache.clear
       expect {
-        post "/api/v1/codex/admin/discovery_rules",
+        post "/codex/admin/discovery_rules",
              params: valid_payload, headers: headers_admin, as: :json
       }.to change(Codex::DiscoveryRule, :count).by(1)
 
@@ -60,7 +60,7 @@ RSpec.describe "Api::V1::Codex::Admin::DiscoveryRules", type: :request do
     end
 
     it "422 on invalid payload" do
-      post "/api/v1/codex/admin/discovery_rules",
+      post "/codex/admin/discovery_rules",
            params: valid_payload.merge(threshold_value: 0),
            headers: headers_admin, as: :json
       expect(response).to have_http_status(:unprocessable_content)
@@ -68,27 +68,27 @@ RSpec.describe "Api::V1::Codex::Admin::DiscoveryRules", type: :request do
     end
   end
 
-  describe "GET /api/v1/codex/admin/discovery_rules/:id" do
+  describe "GET /codex/admin/discovery_rules/:id" do
     it "renders a single rule for admin+" do
       rule = create(:codex_discovery_rule, node: node, created_by_user: admin, name: "show-me")
-      get "/api/v1/codex/admin/discovery_rules/#{rule.id}", headers: headers_admin, as: :json
+      get "/codex/admin/discovery_rules/#{rule.id}", headers: headers_admin, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body.dig("data", "name")).to eq("show-me")
     end
 
     it "is forbidden for non-admin" do
       rule = create(:codex_discovery_rule, node: node, created_by_user: admin)
-      get "/api/v1/codex/admin/discovery_rules/#{rule.id}", headers: headers_user, as: :json
+      get "/codex/admin/discovery_rules/#{rule.id}", headers: headers_user, as: :json
       expect(response).to have_http_status(:forbidden)
     end
   end
 
-  describe "PATCH /api/v1/codex/admin/discovery_rules/:id" do
+  describe "PATCH /codex/admin/discovery_rules/:id" do
     it "updates active flag and busts the engine cache" do
       rule = create(:codex_discovery_rule, node: node, created_by_user: admin)
       Codex::DiscoveryRule.cached_active_by_condition # warm cache
 
-      patch "/api/v1/codex/admin/discovery_rules/#{rule.id}",
+      patch "/codex/admin/discovery_rules/#{rule.id}",
             params: { active: false }, headers: headers_admin, as: :json
       expect(response).to have_http_status(:ok)
       expect(rule.reload.active).to be(false)
@@ -98,7 +98,7 @@ RSpec.describe "Api::V1::Codex::Admin::DiscoveryRules", type: :request do
 
     it "returns 422 with model errors when update validation fails" do
       rule = create(:codex_discovery_rule, node: node, created_by_user: admin)
-      patch "/api/v1/codex/admin/discovery_rules/#{rule.id}",
+      patch "/codex/admin/discovery_rules/#{rule.id}",
             params: { threshold_value: 0 }, headers: headers_admin, as: :json
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["errors"]).to be_present
@@ -133,10 +133,10 @@ RSpec.describe "Api::V1::Codex::Admin::DiscoveryRules", type: :request do
     end
   end
 
-  describe "DELETE /api/v1/codex/admin/discovery_rules/:id" do
+  describe "DELETE /codex/admin/discovery_rules/:id" do
     it "204 for admin" do
       rule = create(:codex_discovery_rule, node: node, created_by_user: admin)
-      delete "/api/v1/codex/admin/discovery_rules/#{rule.id}",
+      delete "/codex/admin/discovery_rules/#{rule.id}",
              headers: headers_admin, as: :json
       expect(response).to have_http_status(:no_content)
       expect(Codex::DiscoveryRule.where(id: rule.id)).to be_empty

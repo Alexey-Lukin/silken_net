@@ -43,19 +43,23 @@ require "rails_helper"
 # не розрізняє, тож перевіряються всі.
 THROTTLE_PATH_REGISTRY = {
   "req/ip" => { paths: [], verbs: nil },
+  # [ARCH.77] Єдине правило, що накриває ОБИДВА контури: читання телеметрії шлюза
+  # браузерне (корінь), запис — машинний (`/api/v1`). Обидві адреси перелічені
+  # явно, бо ліміт стереже РЕСУРС; розвівши їх, ми подвоїли б стелю на ту саму
+  # поверхню, і жоден приклад не почервонів би.
   "telemetry/uid" => {
-    paths: %w[/api/v1/trees/1/telemetry /api/v1/gateways/1/telemetry /api/v1/telemetry/live
-              /api/v1/provisioning/register],
+    paths: %w[/trees/1/telemetry /gateways/1/telemetry /telemetry/live
+              /provisioning/register /api/v1/gateways/1/telemetry],
     verbs: nil
   },
   "logins/ip" => {
-    paths: %w[/api/v1/login /api/v1/forgot_password /api/v1/reset_password],
+    paths: %w[/login /forgot_password /reset_password],
     verbs: %w[POST PATCH]
   },
   # Правило матчить ПРЕФІКСОМ, тож накриває сімʼю підшляхів: базовий — GET-сторінка,
   # а мутації, заради яких throttle і стоїть, живуть глибше. Перелічуємо саме їх.
   "account_security/ip" => {
-    paths: %w[/api/v1/account_security/password /api/v1/account_security/mfa],
+    paths: %w[/account_security/password /account_security/mfa],
     verbs: %w[PATCH DELETE]
   },
   # `/refresh` — окремий POST-маршрут ТІЄЇ САМОЇ Ed25519/DID-поверхні, тобто рівно
@@ -71,12 +75,12 @@ THROTTLE_PATH_REGISTRY = {
   # (`.../attunements/me`) — реєстр доти казав лише POST, тобто брехав про
   # правило з дня народження. Обидві дії перелічені явно.
   "codex/attunements" => {
-    paths: %w[/api/v1/codex/nodes/some-slug/attunements /api/v1/codex/nodes/some-slug/attunements/me],
+    paths: %w[/codex/nodes/some-slug/attunements /codex/nodes/some-slug/attunements/me],
     verbs: %w[POST DELETE]
   },
-  "codex/comments" => { paths: %w[/api/v1/codex/nodes/some-slug/comments], verbs: %w[POST] },
-  "codex/fractions" => { paths: %w[/api/v1/codex/fractions], verbs: %w[POST] },
-  "codex/matches/create" => { paths: %w[/api/v1/codex/matches], verbs: %w[POST] }
+  "codex/comments" => { paths: %w[/codex/nodes/some-slug/comments], verbs: %w[POST] },
+  "codex/fractions" => { paths: %w[/codex/fractions], verbs: %w[POST] },
+  "codex/matches/create" => { paths: %w[/codex/matches], verbs: %w[POST] }
 }.freeze
 
 # Правило дієслова не розрізняє → перевіряємо всі, інакше дефолт `GET` червонив би
@@ -126,12 +130,28 @@ RSpec.describe "path literals vs router", type: :request do
   # колонку реєстру. Без нього гейт доводив би лише «шлях живий», тобто був би
   # зелений на дефекті, заради якого його поставили: `reset_password` існував
   # увесь час, а правило дивилось на POST при PATCH-маршруті.
+  # 🔴 `verbs: nil` пробує КОЖНЕ дієслово, яке приймає роутер, — не літеральний
+  # GET. Дефолт `%w[GET]` був сліпотою рівно на тому правилі, заради якого гейт
+  # і оновлювався [ARCH.77]: обидва POST-шляхи `telemetry/uid` (машинний uplink
+  # + `provisioning/register`) не породжували ЖОДНОГО прикладу, тож зняття
+  # опційної префікс-групи з регексу лишало всю сюїту зеленою. Доведено
+  # мутацією: без цього фіксу перереєстрація правила без `(?:/api/v1)?` —
+  # 40 examples, 0 failures. Клас той самий, що founding-дефект SEC.29
+  # («гейт міряв ДЕКЛАРАЦІЮ, не правило»), лише на сусідній осі: там брехала
+  # колонка `verbs`, тут — дефолт, яким гейт її підміняв.
+  def self.live_verbs_for(path, declared)
+    (declared || ANY_VERB).select do |verb|
+      Rails.application.routes.recognize_path(path, method: verb)
+      true
+    rescue ActionController::RoutingError
+      false
+    end
+  end
+
   describe "правило реально спрацьовує на кожен свій шлях" do
     THROTTLE_PATH_REGISTRY.each do |name, config|
       config[:paths].each do |path|
-        (config[:verbs] || %w[GET]).each do |verb|
-          next unless Rails.application.routes.recognize_path(path, method: verb) rescue next
-
+        live_verbs_for(path, config[:verbs]).each do |verb|
           it "#{name}: #{verb} #{path}" do
             expect(rule_fires?(name, path, verb))
               .to be(true), "#{name} не матчить #{verb} #{path} — правило розійшлося з реєстром"
@@ -145,11 +165,11 @@ RSpec.describe "path literals vs router", type: :request do
   # і мовчки не спрацьовує, бо дієслово інше.
   describe "дієслово правила збігається з маршрутом" do
     it "logins/ip накриває обидва дієслова ланцюга скидання пароля" do
-      expect(route_exists?("/api/v1/login", "POST")).to be(true)
-      expect(route_exists?("/api/v1/forgot_password", "POST")).to be(true)
+      expect(route_exists?("/login", "POST")).to be(true)
+      expect(route_exists?("/forgot_password", "POST")).to be(true)
       # Фінальний крок зареєстровано як PATCH — правило мусить читати і його.
-      expect(route_exists?("/api/v1/reset_password", "PATCH")).to be(true)
-      expect(route_exists?("/api/v1/reset_password", "POST")).to be(false)
+      expect(route_exists?("/reset_password", "PATCH")).to be(true)
+      expect(route_exists?("/reset_password", "POST")).to be(false)
     end
   end
 

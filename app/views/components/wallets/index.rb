@@ -25,7 +25,7 @@ module Wallets
         if @pagy
           render Views::Shared::UI::Pagination.new(
             pagy: @pagy,
-            url_helper: ->(page:) { api_v1_wallets_path(page: page) }
+            url_helper: ->(page:) { wallets_path(page: page) }
           )
         end
       end
@@ -78,7 +78,7 @@ module Wallets
         div(class: "flex justify-between items-center pt-4 border-t border-gaia-border") do
           render Views::Shared::Web3::Address.new(address: wallet.crypto_public_address)
           a(
-            href: api_v1_wallet_path(wallet),
+            href: wallet_path(wallet),
             class: "text-tiny uppercase tracking-widest text-gaia-primary-hover hover:text-gaia-text-strong transition-colors"
           ) { t(".audit_link") }
         end

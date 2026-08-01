@@ -22,9 +22,9 @@ RSpec.describe Api::V1::AlertsController, type: :request do
   let!(:own_alert) { create(:ews_alert, :drought, cluster: own_cluster) }
   let!(:other_alert) { create(:ews_alert, :fire, cluster: other_cluster) }
 
-  describe "GET /api/v1/alerts" do
+  describe "GET /alerts" do
     it "returns only alerts belonging to the user's organization" do
-      get "/api/v1/alerts", headers: headers, as: :json
+      get "/alerts", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
       ids = response.parsed_body["data"].map { |a| a["id"] }
@@ -33,12 +33,12 @@ RSpec.describe Api::V1::AlertsController, type: :request do
     end
 
     it "filters by severity" do
-      get "/api/v1/alerts", params: { severity: "critical" }, headers: headers, as: :json
+      get "/alerts", params: { severity: "critical" }, headers: headers, as: :json
       expect(response).to have_http_status(:ok)
     end
 
     it "filters by cluster_id" do
-      get "/api/v1/alerts", params: { cluster_id: own_cluster.id }, headers: headers, as: :json
+      get "/alerts", params: { cluster_id: own_cluster.id }, headers: headers, as: :json
       expect(response).to have_http_status(:ok)
     end
 
@@ -48,29 +48,29 @@ RSpec.describe Api::V1::AlertsController, type: :request do
     # 500 + Sentry spam). Both branches now respond 400 with an i18n message.
     # =========================================================================
     it "rejects bogus status with 400" do
-      get "/api/v1/alerts", params: { status: "bogus_status_xx" }, headers: headers, as: :json
+      get "/alerts", params: { status: "bogus_status_xx" }, headers: headers, as: :json
       expect(response).to have_http_status(:bad_request)
       expect(response.parsed_body["error"]).to include("bogus_status_xx")
     end
 
     it "rejects bogus severity with 400" do
-      get "/api/v1/alerts", params: { severity: "nuclear" }, headers: headers, as: :json
+      get "/alerts", params: { severity: "nuclear" }, headers: headers, as: :json
       expect(response).to have_http_status(:bad_request)
       expect(response.parsed_body["error"]).to include("nuclear")
     end
 
     it "accepts the 'resolved' status keyword" do
       own_alert.update!(status: :resolved, resolved_at: Time.current, resolved_by: user)
-      get "/api/v1/alerts", params: { status: "resolved" }, headers: headers, as: :json
+      get "/alerts", params: { status: "resolved" }, headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       ids = response.parsed_body["data"].map { |a| a["id"] }
       expect(ids).to include(own_alert.id)
     end
   end
 
-  describe "GET /api/v1/alerts/:id" do
+  describe "GET /alerts/:id" do
     it "returns a specific alert from the user's organization" do
-      get "/api/v1/alerts/#{own_alert.id}", headers: headers, as: :json
+      get "/alerts/#{own_alert.id}", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
       body = response.parsed_body["data"]
@@ -79,19 +79,19 @@ RSpec.describe Api::V1::AlertsController, type: :request do
     end
 
     it "returns 404 for an alert from another organization" do
-      get "/api/v1/alerts/#{other_alert.id}", headers: headers, as: :json
+      get "/alerts/#{other_alert.id}", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
   end
 
-  describe "PATCH /api/v1/alerts/:id/resolve" do
+  describe "PATCH /alerts/:id/resolve" do
     it "resolves an alert belonging to the user's organization" do
-      patch resolve_api_v1_alert_path(own_alert), headers: headers, as: :json
+      patch resolve_alert_path(own_alert), headers: headers, as: :json
       expect(response).to have_http_status(:ok)
     end
 
     it "returns 404 for an alert from another organization" do
-      patch resolve_api_v1_alert_path(other_alert), headers: headers, as: :json
+      patch resolve_alert_path(other_alert), headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
 
@@ -102,19 +102,19 @@ RSpec.describe Api::V1::AlertsController, type: :request do
     # відмови покрита. Реальний шлях — повторний клік (тротл броадкасту 5 с) — летів
     # у `rescue_from StandardError` і віддавав 500. Тепер пінимо саме його.
     it "повертає 409 на повторному закритті, а не 500" do
-      patch resolve_api_v1_alert_path(own_alert), headers: headers, as: :json
+      patch resolve_alert_path(own_alert), headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
-      patch resolve_api_v1_alert_path(own_alert), headers: headers, as: :json
+      patch resolve_alert_path(own_alert), headers: headers, as: :json
       expect(response).to have_http_status(:conflict)
     end
 
     it "на повторному закритті з браузера редиректить, а не віддає JSON" do
-      patch resolve_api_v1_alert_path(own_alert), headers: headers, as: :json
+      patch resolve_alert_path(own_alert), headers: headers, as: :json
 
-      patch resolve_api_v1_alert_path(own_alert), headers: headers.merge("Accept" => "text/html")
+      patch resolve_alert_path(own_alert), headers: headers.merge("Accept" => "text/html")
 
-      expect(response).to redirect_to(api_v1_alerts_path)
+      expect(response).to redirect_to(alerts_path)
       expect(response.media_type).not_to eq("application/json")
     end
 
@@ -125,7 +125,7 @@ RSpec.describe Api::V1::AlertsController, type: :request do
     # броадкаст (який ця ж спека глушить рядком вище). Пін саме на ЦІЛЬ:
     # «віддав turbo_stream» лишався б зеленим і з мертвим ідентифікатором.
     it "targets the row's real dom_id in the turbo_stream response" do
-      patch resolve_api_v1_alert_path(own_alert),
+      patch resolve_alert_path(own_alert),
             headers: headers.merge("Accept" => "text/vnd.turbo-stream.html")
 
       expect(response).to have_http_status(:ok)
@@ -134,7 +134,7 @@ RSpec.describe Api::V1::AlertsController, type: :request do
     end
 
     it "redirects on successful HTML resolve" do
-      patch resolve_api_v1_alert_path(own_alert),
+      patch resolve_alert_path(own_alert),
             headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
       expect(response).to have_http_status(:redirect)
     end
@@ -146,7 +146,7 @@ RSpec.describe Api::V1::AlertsController, type: :request do
     end
 
     it "renders HTML for index" do
-      get "/api/v1/alerts", headers: html_headers
+      get "/alerts", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
@@ -161,7 +161,7 @@ RSpec.describe Api::V1::AlertsController, type: :request do
     # приклад лишився б зеленим. Ловить лише РІЗНИЦЯ. `eq` (не `include`) тримає
     # заразом і другу половину — жодного ЗАЙВОГО стріму на сторінці.
     def subscribed_streams_for(who)
-      get "/api/v1/alerts",
+      get "/alerts",
           headers: { "Authorization" => "Bearer #{who.generate_token_for(:api_access)}", "Accept" => "text/html" }
       response.body.scan(/signed-stream-name="([^"]+)"/).flatten
               .map { |name| Turbo::StreamsChannel.verified_stream_name(name) }
@@ -179,7 +179,7 @@ RSpec.describe Api::V1::AlertsController, type: :request do
 
   context "with turbo_stream format" do
     it "exercises turbo_stream response path for resolve" do
-      patch resolve_api_v1_alert_path(own_alert),
+      patch resolve_alert_path(own_alert),
             headers: headers.merge("Accept" => "text/vnd.turbo-stream.html")
       # Turbo stream rendering may fail in test env due to Phlex components,
       # but the code path is exercised (coverage)
