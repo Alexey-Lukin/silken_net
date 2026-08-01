@@ -25,6 +25,24 @@ FILE_CAP=40960          # rule-file ceiling
 FILE_WARN=36000        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=4             # dated blocks, summed across all three costumes
 
+# The `description:` layer is a THIRD ratchet nobody was watching: it is loaded
+# for recall, it is one of the three hand-synced mirrors, and it grew 29 kB ->
+# 39.5 kB in two days while both watched surfaces (index, file size) stayed flat.
+# A ratchet on the SUM is deliberately chosen over a per-file length rule: the
+# rule as written in the index preamble ("no dates/hashes/counts") covers only a
+# fifth of the corpus and fires falsely on provenance dates ("ratified 07-26"),
+# whereas the sum catches length, state and dates alike with zero classification.
+DESC_BASELINE=39511
+
+# Content-overlap between two rule files. The corpus has ONE structural failure
+# mode no other check can see: a class written into two homes, where every link
+# resolves and only the prose contradicts (proven live — one commit was called
+# "the single living record" by two files at once). A home CITING its sources is
+# the normal state and measures 40-70 shared 6-grams; the threshold sits above
+# that band so the check means "this class now lives twice", not "this file
+# quotes". Journals are exempt: holding the chronicle verbatim is their job.
+OVERLAP_MIN=120
+
 # Dated-chronicle detector. The header-only version was blind to two live
 # mutations — dash-lead and bold-lead — which is how two files reached 7-8 dated
 # blocks while reading as clean. A fourth costume gets patched HERE, in one
@@ -123,6 +141,57 @@ privacy_check() {
   return 0
 }
 
+# Sum of every `description:` field, in bytes. Cheap enough for the write path.
+desc_check() {
+  local tot
+  # Counted in ruby, not awk, and that is a finding rather than a preference:
+  # the identical logic in BSD awk under-reported this layer by ~7% across the
+  # multi-file run while agreeing to the byte on any single file — so the number
+  # was wrong in exactly the way that never looks wrong. Whatever counts this
+  # must agree with `bytesize`; verify a new implementation against one file AND
+  # the whole corpus before trusting it.
+  command -v ruby >/dev/null 2>&1 || return 0
+  tot=$(ruby - "$MEM_DIR" <<'RUBY'
+dir = ARGV[0]
+total = 0
+Dir.chdir(dir) { Dir["*.md"] }.each do |f|
+  next if f == "MEMORY.md"
+  fm = File.read(File.join(dir, f))[/\A---\n(.*?)\n---\n/m, 1] || ""
+  total += fm[/^description:\s*(.*(?:\n\s+.*)*)/, 1].to_s.strip.bytesize
+end
+puts total
+RUBY
+)
+  [ "$tot" -gt "$DESC_BASELINE" ] &&
+    echo "DESC  description layer = ${tot}B, past its ${DESC_BASELINE}B ratchet (+$((tot - DESC_BASELINE))) — a description is a recall TRIGGER, not a log; trim one before adding one"
+  [ "$tot" -lt $((DESC_BASELINE - 800)) ] &&
+    echo "DESC  description layer = ${tot}B, well below the ${DESC_BASELINE}B ratchet — lower DESC_BASELINE here to lock the gain in"
+  return 0
+}
+
+# One class living in two homes. --audit only: O(n^2) over shingle sets is far
+# too slow for a PostToolUse hook, and this failure mode is not introduced by a
+# single write anyway — it accumulates.
+overlap_check() {
+  command -v ruby >/dev/null 2>&1 || return 0
+  ruby - "$MEM_DIR" "$OVERLAP_MIN" <<'RUBY'
+require "set"
+dir, floor = ARGV[0], ARGV[1].to_i
+files = Dir.chdir(dir) { Dir["*.md"] }
+         .reject { |f| f == "MEMORY.md" || f.start_with?("log_") }
+sh = files.to_h do |f|
+  words = File.read(File.join(dir, f)).downcase.gsub(/[^\p{L}\p{N}\s]/, " ").split
+  [f, words.each_cons(6).map { |c| c.join(" ").hash }.to_set]
+end
+files.combination(2) do |a, b|
+  n = (sh[a] & sh[b]).size
+  next if n < floor
+  puts "OVERLAP #{a} and #{b} share #{n} 6-grams — one class, two homes: move the prose to ONE and leave a pointer in the other"
+end
+RUBY
+  return 0
+}
+
 index_check() {
   local sz n
   sz=$(wc -c <"$IDX" | tr -d ' ')
@@ -207,7 +276,8 @@ route_check() {
 
 case "${1:-}" in
   --audit)
-    out=$( { index_check; integrity_check; journals_reachable; asset_check; privacy_check
+    out=$( { index_check; desc_check; integrity_check; journals_reachable; asset_check
+             privacy_check; overlap_check
              for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; done; } )
     printf '%s\n' "${out:-OK — index within ratchet, corpus intact, no chronicle in a rule file}"
     [ -z "$out" ]
@@ -237,6 +307,7 @@ case "${1:-}" in
     fp=$(printf '%s' "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
     case "$fp" in "$MEM_DIR"/*.md) ;; *) exit 0 ;; esac
     msgs=$( { index_check
+              desc_check
               check_file "$fp"
               path_check "$fp"
               journals_reachable
