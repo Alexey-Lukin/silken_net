@@ -36,16 +36,11 @@ require "rails_helper"
 # виконується.
 RSpec.describe "Dashboard in a real browser", :js do
   let(:organization) { create(:organization) }
-  let!(:user) { create(:user, :admin, organization: organization, password: "browser-smoke-pass-1") }
+  let(:password)     { "browser-smoke-pass-1" }
+  let!(:user) { create(:user, :admin, organization: organization, password: password) }
 
-  def sign_in_through_the_form
-    visit "/login"
-    # ⚠️ Колонка зветься `email_address`, а поле форми — `email`: форма йде через
-    # `form_with url:` без моделі, тож імена полів свої. Розбіжність реальна, не описка.
-    fill_in "email", with: user.email_address
-    fill_in "password", with: "browser-smoke-pass-1"
-    click_button type: "submit"
-  end
+  # Логін живе в `spec/support/feature_helper.rb` — там же конвенція шару й
+  # виміряні стелі. Локальна копія була б першою дуплікацією на новій поверхні.
 
   # [SEC.25] Дзеркало request-піна, але в середовищі, де він і має значення. Доти
   # реальний користувач після протермінування сесії діставав сирий
@@ -53,8 +48,7 @@ RSpec.describe "Dashboard in a real browser", :js do
   # видно, що тепер це справжня сторінка з формою входу, а не текст, який Chrome
   # показує як plain text.
   it "shows the login PAGE (not a JSON blob) when the session is gone" do
-    sign_in_through_the_form
-    expect(page).to have_current_path(%r{/dashboard})
+    sign_in_as(user, password: password)
 
     # Найчесніша симуляція «сесія протухла»: салт-стемп у cookie перестає збігатися
     # (SEC.16) — рівно те, що робить зміна пароля з іншого пристрою.
@@ -78,8 +72,7 @@ RSpec.describe "Dashboard in a real browser", :js do
   # дочекатись штатно. Пряму перевірку класу лишаємо ДРУГОЮ: після того, як
   # іконка доїхала, транзиція вже завершена, і гонки немає.
   it "runs OUR Stimulus controller in the browser, not just boots Stimulus" do
-    sign_in_through_the_form
-    expect(page).to have_current_path(%r{/dashboard})
+    sign_in_as(user, password: password)
 
     moon = "#theme-switcher svg path[d^='M20.354']" # світла тема → пропонує темну
     sun  = "#theme-switcher svg path[d^='M12 3v1']"  # темна тема → пропонує світлу
