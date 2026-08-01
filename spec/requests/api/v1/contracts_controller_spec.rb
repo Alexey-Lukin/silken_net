@@ -67,9 +67,37 @@ RSpec.describe Api::V1::ContractsController, type: :request do
     end
 
     context "when as HTML" do
+      # 🔴 Цей блок ІСНУВАВ і був зелений увесь час, поки картка «Network Health»
+      # рендерила голе «%»: він перевіряв лише код 200, а зламаний `@stats[:avg_health]`
+      # нічого не кидав — nil тихо інтерполювався в порожнечу. Тобто дві половини
+      # контракту тут зустрічались, і НІХТО їх не порівнював ([UI.7], BP #14).
       it "renders the dashboard page" do
         get "/api/v1/contracts", headers: headers
         expect(response).to have_http_status(:ok)
+      end
+
+      # ⚠️ `health_index` мусить бути ЯВНО ненульовим: фабрика лишає колонку NULL,
+      # а `AVG(NULL)` = NULL, тож без цього не-nil гілка агрегації не бралась ніколи
+      # — happy-path картки не проходив наскрізь у жодному прикладі.
+      it "renders the portfolio average as a percentage, not the raw 0..1 index" do
+        own_cluster.update!(health_index: 0.873)
+
+        get "/api/v1/contracts", headers: headers.merge("Accept" => "text/html")
+
+        expect(response.body).to include("87.3%")
+      end
+
+      # Порожній скоуп — не екзотика, а типовий перший вхід: `belongs_to :cluster`
+      # обов'язковий, тож nil-агрегація приходить саме звідси, а не з контракту
+      # без кластера. Картка мусить читатись як «повне здоров'я», не як «0%».
+      it "falls back to a full-health reading for an organization with no contracts yet" do
+        fresh_user = create(:user, organization: create(:organization))
+
+        get "/api/v1/contracts",
+            headers: { "Authorization" => "Bearer #{fresh_user.generate_token_for(:api_access)}",
+                       "Accept" => "text/html" }
+
+        expect(response.body).to include("100.0%")
       end
     end
 

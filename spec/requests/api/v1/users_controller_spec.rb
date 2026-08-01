@@ -38,9 +38,20 @@ RSpec.describe Api::V1::UsersController, type: :request do
     end
 
     context "when as HTML" do
+      # 🔴 Цей приклад ІСНУВАВ і був зелений усі ті роки, поки «View logs» стояв
+      # `href: "#"`: мертвий лінк сторінку не ламає, тож 200 був чесний. Пін на
+      # СТАТУС не є піном на вміст — саме тому ціль дії потребує окремого
+      # твердження ([UI.7], `04_06 §A.2` правило 10а).
       it "renders the dashboard page" do
         get "/api/v1/users", headers: admin_headers
         expect(response).to have_http_status(:ok)
+      end
+
+      it "points the audit link at that user's own slice of the log" do
+        get "/api/v1/users", headers: admin_headers.merge("Accept" => "text/html")
+
+        expect(response.body).to include(api_v1_audit_logs_path(user_id: extra_user.id))
+        expect(response.body).not_to include('href="#"')
       end
     end
 
