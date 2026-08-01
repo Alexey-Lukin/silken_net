@@ -4,6 +4,11 @@
 class DashboardLayout < ApplicationComponent
   include Phlex::Rails::Layout
 
+  # Префікс браузерного контуру — зрізається з крихт. Один дім: коли контур
+  # переїде на кореневі шляхи ([ARCH.77]), тут лишиться порожній рядок, і крихти
+  # не доведеться перечитувати.
+  API_PATH_PREFIX = "/api/v1"
+
   # @param title [String] page title
   # @param current_user [User] authenticated user (passed from controller)
   # @param current_path [String] request path for nav highlighting + breadcrumbs
@@ -138,8 +143,12 @@ class DashboardLayout < ApplicationComponent
           ) { t("navigation.breadcrumb.root") }
         end
 
-        # Парсинг шляху для крихт — використовуємо @current_path замість request.path
-        path_segments = @current_path.split("/").reject(&:empty?).drop(2) # Виключаємо api/v1
+        # Парсинг шляху для крихт — використовуємо @current_path замість request.path.
+        # ⚠️ Зрізаємо ПРЕФІКС, а не «два перші сегменти» [ARCH.77]: `drop(2)` мовчки
+        # зʼїдав би змістовні сегменти будь-якого шляху, що цього префікса не має,
+        # і крихти показували б хвіст без голови — без жодної помилки й без
+        # червоного тесту, бо спека передає `current_path` літералом.
+        path_segments = @current_path.delete_prefix(API_PATH_PREFIX).split("/").reject(&:empty?)
 
         path_segments.each_with_index do |segment, index|
           li(class: "flex items-center gap-2") do

@@ -7,9 +7,8 @@ RSpec.describe Codex::Fractions::ProfileBadge do
   # ProfileBadge uses `api_v1_codex_fraction_picker_path` which requires
   # a Rails view context. We subclass + stub like other Codex component specs.
   def render_badge(fraction:)
-    Class.new(described_class) do
-      define_method(:api_v1_codex_fraction_picker_path) { "/api/v1/codex/fractions/picker" }
-    end.new(fraction: fraction).call
+    # [ARCH.77] Справжній renderer замість стабу маршрут-хелпера.
+    render_component(fraction: fraction)
   end
 
   def mock_fraction(archetype_key: "relict_oracle", cooldown_active: false)

@@ -9,11 +9,9 @@ RSpec.describe Codex::Battle::Arena, type: :view_component do
   let(:right) { create(:codex_node, realm: realm, attunement_elo: 1450, match_count: 7) }
 
   def render_arena(**kwargs)
-    helpers = ActionController::Base.helpers
-    Class.new(described_class) do
-      define_method(:helpers) { helpers }
-      define_method(:api_v1_codex_matches_path) { "/api/v1/codex/matches" }
-    end.new(**kwargs).call
+    # [ARCH.77] Справжній renderer — стаб замороженого маршрут-хелпера робив пін
+    # твердженням про фікстуру, а не про роутер.
+    render_component(**kwargs)
   end
 
   it "renders Arena frame, two cards with Elo & match counters, and hidden seed inputs" do

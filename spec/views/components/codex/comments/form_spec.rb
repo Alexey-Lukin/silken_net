@@ -5,11 +5,10 @@ require "rails_helper"
 
 RSpec.describe Codex::Comments::Form do
   def render_form(node:)
-    helpers = ActionController::Base.helpers
-    Class.new(Codex::Comments::Form) do
-      define_method(:helpers) { helpers }
-      define_method(:api_v1_codex_node_comments_path) { |slug| "/api/v1/codex/nodes/#{slug}/comments" }
-    end.new(node: node).call
+    # [ARCH.77] Справжній renderer замість підкласу зі стабом маршрут-хелпера:
+    # стаб заморожував адресу літералом, тож пін на неї був твердженням про
+    # фікстуру, а не про роутер — і пережив би зміну маршруту мовчки.
+    render_component(node: node)
   end
 
   let(:node) do

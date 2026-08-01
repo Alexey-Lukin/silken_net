@@ -5,12 +5,8 @@ require "rails_helper"
 
 RSpec.describe Codex::Fractions::OnboardingWizard, type: :view_component do
   def render_wizard(current_user:)
-    helpers = ActionController::Base.helpers
-    Class.new(described_class) do
-      define_method(:helpers) { helpers }
-      define_method(:api_v1_codex_fraction_picker_path) { "/api/v1/codex/fractions/picker" }
-      define_method(:api_v1_codex_realms_path) { "/api/v1/codex/realms" }
-    end.new(current_user: current_user).call
+    # [ARCH.77] Справжній renderer — два стаби заморожували адреси літералами.
+    render_component(current_user: current_user)
   end
 
   it "renders nothing when current_user is nil" do

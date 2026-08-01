@@ -7,11 +7,13 @@ RSpec.describe Codex::Citations::Pill, type: :view_component do
   let(:node)     { create(:codex_node, slug: "mafusail", title_en: "Mafusail", archetype_key: "relict_oracle") }
   let(:citation) { create(:codex_citation, node: node, note: "centennial") }
 
+  # [ARCH.77] Через СПРАВЖНІЙ renderer, а не `.call` на підкласі з підміненим
+  # `helpers`: компонент будує `href` маршрут-хелпером, і той потребує реального
+  # view-контексту. Стара форма рендерила повз роутер — тобто пін на шлях був
+  # твердженням про фікстуру, а не про застосунок, і пережив би будь-яку зміну
+  # маршруту мовчки.
   def render_pill(citation:)
-    helpers = ActionController::Base.helpers
-    Class.new(described_class) do
-      define_method(:helpers) { helpers }
-    end.new(citation: citation).call
+    render_component(citation: citation)
   end
 
   it "renders a slug-href anchor with the title and archetype glyph" do

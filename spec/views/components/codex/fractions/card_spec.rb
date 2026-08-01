@@ -9,22 +9,10 @@ RSpec.describe Codex::Fractions::Card, type: :view_component do
   let(:user)  { create(:user) }
 
   def render_card(fraction:, current_user:)
-    helpers = ActionController::Base.helpers
-    Class.new(described_class) do
-      define_method(:helpers) { helpers }
-      define_method(:api_v1_codex_fraction_picker_path) { "/api/v1/codex/fractions/picker" }
-      define_method(:render) do |component|
-        if component.is_a?(Codex::Fractions::Cooldown)
-          super(
-            Class.new(Codex::Fractions::Cooldown) do
-              define_method(:helpers) { helpers }
-            end.new(fraction: component.instance_variable_get(:@fraction))
-          )
-        else
-          super(component)
-        end
-      end
-    end.new(fraction: fraction, current_user: current_user).call
+    # [ARCH.77] Справжній renderer знімає ВЕСЬ цей риштунок: стаб `render` існував
+    # лише щоб протягнути `helpers` вкладеному `Cooldown` — у реальному контексті
+    # Phlex робить це сам, а маршрут-хелпер більше не заморожений літералом.
+    render_component(fraction: fraction, current_user: current_user)
   end
 
   it "renders the empty-state CTA when the user has no fraction" do

@@ -10,17 +10,11 @@ RSpec.describe Codex::Fractions::Picker, type: :view_component do
   let(:user)  { create(:user) }
 
   def render_picker(realms:, active_realm:, nodes:, current_fraction: nil)
-    helpers = ActionController::Base.helpers
-    Class.new(described_class) do
-      define_method(:helpers) { helpers }
-      define_method(:api_v1_codex_fractions_path) { "/api/v1/codex/fractions" }
-      define_method(:api_v1_codex_fraction_picker_path) do |opts = {}|
-        opts.empty? ? "/api/v1/codex/fractions/picker" : "/api/v1/codex/fractions/picker?realm=#{opts[:realm]}"
-      end
-    end.new(
+    # [ARCH.77] Справжній renderer — два стаби заморожували адреси літералами.
+    render_component(
       realms: realms, active_realm: active_realm, nodes: nodes,
       current_fraction: current_fraction
-    ).call
+    )
   end
 
   it "renders header, realm tabs and node pick forms" do

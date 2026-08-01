@@ -5,24 +5,11 @@ require "rails_helper"
 
 RSpec.describe Codex::Comments::Thread do
   def render_thread(node:, comments:, current_user:)
-    helpers = ActionController::Base.helpers
-    Class.new(Codex::Comments::Thread) do
-      define_method(:helpers) { helpers }
-      define_method(:api_v1_codex_node_comments_path) { |slug| "/api/v1/codex/nodes/#{slug}/comments" }
-      # When `current_user` is present the Thread renders Codex::Comments::Form
-      # — patch the same routing helper on Form's instance via a subclass.
-      define_method(:render) do |component|
-        if component.is_a?(Codex::Comments::Form)
-          form = Class.new(Codex::Comments::Form) do
-            define_method(:helpers) { helpers }
-            define_method(:api_v1_codex_node_comments_path) { |slug| "/api/v1/codex/nodes/#{slug}/comments" }
-          end.new(node: node)
-          super(form)
-        else
-          super(component)
-        end
-      end
-    end.new(node: node, comments: comments, current_user: current_user).call
+    # [ARCH.77] Справжній renderer знімає подвійний риштунок: стаб `render` існував
+    # лише щоб перебудувати вкладений `Form` із тим самим замороженим хелпером.
+    # У реальному контексті обидва компоненти беруть маршрут із роутера, тож пін
+    # на адресу став твердженням про застосунок, а не про фікстуру.
+    render_component(node: node, comments: comments, current_user: current_user)
   end
 
   let(:node) do

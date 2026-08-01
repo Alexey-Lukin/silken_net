@@ -6,11 +6,10 @@ require "rails_helper"
 RSpec.describe Codex::Discoveries::Toast, type: :view_component do
   let(:node) { create(:codex_node, title_en: "Mafusail", archetype_key: "relict_oracle") }
 
+  # [ARCH.77] Справжній renderer — компонент будує CTA маршрут-хелпером; рендер
+  # повз роутер робив пін на шлях твердженням про фікстуру, а не про застосунок.
   def render_toast(**kwargs)
-    helpers = ActionController::Base.helpers
-    Class.new(described_class) do
-      define_method(:helpers) { helpers }
-    end.new(**kwargs).call
+    render_component(**kwargs)
   end
 
   it "renders a Stimulus-wrapped toast with title, archetype, link" do

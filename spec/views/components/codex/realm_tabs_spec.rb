@@ -9,15 +9,13 @@ RSpec.describe Codex::RealmTabs do
   # Rails request context (mirrors the pattern in
   # spec/views/components/codex/attunements/toggle_spec.rb).
   def render_tabs(realms:, nodes_counts: {}, active_realm_slug: nil)
-    Class.new(described_class) do
-      define_method(:api_v1_codex_nodes_path) do |opts = {}|
-        opts[:realm] ? "/api/v1/codex/nodes?realm=#{opts[:realm]}" : "/api/v1/codex/nodes"
-      end
-    end.new(
+    # [ARCH.77] Справжній renderer замість стабу маршрут-хелпера: той заморожував
+    # адресу літералом, тож пін був твердженням про фікстуру, а не про роутер.
+    render_component(
       realms: realms,
       nodes_counts: nodes_counts,
       active_realm_slug: active_realm_slug
-    ).call
+    )
   end
 
   def mock_realm(id:, slug:, name_en:)

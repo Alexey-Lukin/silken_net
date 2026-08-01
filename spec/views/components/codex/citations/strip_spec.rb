@@ -7,11 +7,10 @@ RSpec.describe Codex::Citations::Strip, type: :view_component do
   let(:node) { create(:codex_node, slug: "mafusail", title_en: "Mafusail") }
   let(:tree) { create(:tree) }
 
+  # [ARCH.77] Справжній renderer: `Strip` рендерить `Pill`, а той будує `href`
+  # маршрут-хелпером — повз роутер цей ланцюг мовчки віддавав би мертву адресу.
   def render_strip(target:, citations:)
-    helpers = ActionController::Base.helpers
-    Class.new(described_class) do
-      define_method(:helpers) { helpers }
-    end.new(target: target, citations: citations).call
+    render_component(target: target, citations: citations)
   end
 
   it "renders an empty-state when no citations attached" do

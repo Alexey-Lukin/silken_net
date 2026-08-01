@@ -88,9 +88,14 @@ RSpec.describe Codex::NodeCard do
       allow(cover).to receive(:variant).and_return(variant)
       node_with_cover = mock_node(cover_image: cover)
 
+      # ⚠️ ЄДИНИЙ приклад цього файла повз `render_component`, і виняток названий:
+      # `cover` — double, а не справжнє вкладення, тож реальний
+      # `rails_representation_path` шляху з нього не побудує. Решта прикладів іде
+      # через справжній renderer [ARCH.77]; тут стаб компенсує ФІКСТУРУ, а не
+      # маршрутизатор — і саме тому маршрут-хелпер серед стабів більше не стоїть.
       comp = Class.new(Codex::NodeCard) do
         define_method(:helpers) { ActionController::Base.helpers }
-        define_method(:api_v1_codex_node_path) { |_n| "/api/v1/codex/nodes/stub" }
+        define_method(:api_v1_codex_node_path) { |_n| Rails.application.routes.url_helpers.api_v1_codex_node_path(_n) }
         define_method(:rails_representation_path) { |_v, **| "/rails/img.webp" }
       end.new(node: node_with_cover)
 

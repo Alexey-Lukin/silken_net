@@ -62,7 +62,9 @@ module Codex
         return if node.nil?
 
         a(
-          href:       "/api/v1/codex/nodes/#{node.slug}",
+          # Хелпер, не літерал [ARCH.77] — див. `Discoveries::Toast`: рукописний
+          # шлях переживає зміну роутера мовчки.
+          href:       api_v1_codex_node_path(node.slug),
           id:         dom_id,
           class:      pill_classes(node),
           aria_label: aria_label(node),
