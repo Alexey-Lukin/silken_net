@@ -153,8 +153,12 @@ RSpec.describe Api::V1::BaseController, type: :request do
 
   # [UI.9] Обидва рендерери дістали `respond_to`, тож контролеру потрібен реальний
   # `request` — інакше диспетчер лізе в `request.formats` на nil. `TestRequest`
-  # дешевший за повний HTTP там, де живого шляху до винятку немає
-  # (`ActiveModel::ValidationError` у цьому дереві кидають лише сервіси).
+  # дешевший за повний HTTP там, де живого шляху до винятку немає.
+  #
+  # ⚠️ Тут доти стояло, що `ActiveModel::ValidationError` «кидають лише сервіси» —
+  # грепом це неправда: `validate!` не зустрічається в дереві ЖОДНОГО разу, тож
+  # виняток не кидає ніхто. `rescue_from` на нього знято [SEC.25]; сам рендерер
+  # живий і викликається прямо, тому приклад лишається.
   describe "render_parameter_missing" do
     it "returns 400 with the missing param name" do
       controller = described_class.new

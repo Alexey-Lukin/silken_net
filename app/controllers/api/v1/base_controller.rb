@@ -59,8 +59,19 @@ module Api
       rescue_from NoActingOrganization, with: :render_no_organization
       rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
       rescue_from ActionController::ParameterMissing, with: :render_parameter_missing
-      rescue_from ActiveModel::ValidationError, with: :render_validation_error
       rescue_from Pundit::NotAuthorizedError, with: :render_forbidden_pundit
+
+      # ⚠️ `ActiveModel::ValidationError` тут БУВ і знятий свідомо: його кидає лише
+      # `validate!`, якого в дереві нема жодного, а сам виняток несе `#model`, не
+      # `#record`, тож хендлер упав би `NoMethodError` ще до рендера. Сам
+      # `render_validation_error` живий — його кличуть прямо, зсередини `format.json`.
+      #
+      # 🔴 І сусіда — `ActiveRecord::RecordInvalid` (у нього `#record` є, тобто
+      # сигнатура збіглася б) — сюди свідомо НЕ додаємо. Він летить у
+      # `StandardError` → 500, і це правильно: користувацький ввід контролери
+      # гардять явно ДО bang-мутації (див. обидва шляхи зміни пароля), тож
+      # `RecordInvalid`, що долетів сюди, означає пропущений гард — наш баг, а не
+      # помилку людини. М'яка 422 його б замаскувала.
 
       # --- ХЕЛПЕРИ ДОСТУПУ ---
       # Робимо методи доступними в Phlex-компонентах через хелпери Rails
