@@ -7,7 +7,8 @@ require "rails_helper"
 
 RSpec.describe DashboardLayout do
   def mock_user(first_name: "Olena", last_name: "Kovalenko",
-                role: "admin", email_address: "olena@example.org")
+                role: "admin", email_address: "olena@example.org",
+                super_admin: false)
     u = OpenStruct.new(
       first_name: first_name,
       last_name: last_name,
@@ -15,6 +16,13 @@ RSpec.describe DashboardLayout do
       email_address: email_address
     )
     u.define_singleton_method(:full_name) { "#{first_name} #{last_name}" }
+    # ОБИДВА предикати, і це не надмірність: `super_admin?` читає індикатор
+    # контексту, `role_super_admin?` — делегат під ним, а сайдбар питає перший.
+    # Визначити лише один означало б змоделювати актора, який одночасно
+    # super_admin і ні — стан, неможливий у застосунку, крізь який пін тихо
+    # проходить.
+    u.define_singleton_method(:role_super_admin?) { super_admin }
+    u.define_singleton_method(:super_admin?) { super_admin }
     u
   end
 
@@ -29,7 +37,7 @@ RSpec.describe DashboardLayout do
   let(:html) { render_layout(content: content_stub) }
 
   def render_layout(title: "Dashboard", current_path: "/api/v1/dashboard",
-                    ews_alert_count: 0, user: nil, content: nil)
+                    ews_alert_count: 0, user: nil, acting_organization: nil, content: nil)
     current_user = user || mock_user
     ApplicationController.renderer.render(
       component_class.new(
@@ -37,12 +45,51 @@ RSpec.describe DashboardLayout do
         current_user: current_user,
         current_path: current_path,
         ews_alert_count: ews_alert_count,
+        acting_organization: acting_organization,
         content: content
       ),
       layout: false
     )
   end
 
+
+  # [UI.6] Індикатор робочого контексту. Він же — єдиний канал підтвердження
+  # перемикання: цей layout `flash` не рендерить, і `switch` його не ставить.
+  describe "індикатор робочого контексту" do
+    let(:acting_org) { OpenStruct.new(id: 7, name: "GreenFund Ltd") }
+
+    it "показує super_admin, у чиєму контексті він працює" do
+      html = render_layout(user: mock_user(super_admin: true), acting_organization: acting_org)
+
+      expect(html).to include("GreenFund Ltd")
+      # 🔴 Пінимо `context_label`, а НЕ `href` реєстру: той самий href віддає пункт
+      # сайдбара `clan_hierarchy` (super_admin-only), тож пін на нього був би
+      # задоволений сусіднім елементом — класика «пін проходить через сусіда».
+      expect(html).to include("Context")
+    end
+
+    it "несе назву організації в доступному імені, а не глушить її" do
+      html = render_layout(user: mock_user(super_admin: true), acting_organization: acting_org)
+
+      # [UI.3] `aria-label` на `<a>` замінює доступне імʼя цілком. Якщо назва не
+      # інтерпольована в мітку, SR-користувач ніколи не почує, В ЯКІЙ організації
+      # він працює — тобто «єдиний канал підтвердження» для нього мовчить.
+      expect(html).to include(%(aria-label="Acting context: GreenFund Ltd. Change organization"))
+    end
+
+    it "каже «не обрано», коли контексту ще немає — це типовий перший вхід" do
+      html = render_layout(user: mock_user(super_admin: true))
+
+      expect(html).to include("NOT_SELECTED")
+    end
+
+    it "не показує індикатора іншим ролям — контекст для них незмінний" do
+      html = render_layout(user: mock_user, acting_organization: acting_org)
+
+      expect(html).not_to include("NOT_SELECTED")
+      expect(html).not_to include("Acting context:")
+    end
+  end
 
   describe "page title in head" do
     it "renders the title with Silken Net prefix" do

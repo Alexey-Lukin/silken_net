@@ -4,12 +4,16 @@ en:
     index:
       columns:
         audit: Audit
+        context: Context
         identity: On-Chain Identity
         investment: Contracted (SCC)
         name: Organization Name
         sectors: Sectors
+      current_context: ACTIVE_CONTEXT
       investment_value: "%{amount} SCC"
       subtitle: Management of multi-tenant entities and their environmental programmes.
+      switch: SWITCH_TO →
+      switch_aria: Switch acting context to %{name}
       title: Global Clan Registry
       view_aria: View %{name} profile
       view_profile: VIEW_PROFILE →
@@ -30,6 +34,7 @@ en:
         soldiers_count: "%{count} Soldiers"
         title: Assigned Sectors (Clusters)
         vitality: Vitality
+      current_context: ACTIVE_CONTEXT
       fully_synced: FULLY_SYNCED
       hero_decoration: CLAN
       identity_vault:
@@ -46,4 +51,6 @@ en:
         capital_injected_sub: SCC Total
         carbon_yield: SCC Minted
         carbon_yield_sub: SCC Minted
+      switch: SWITCH_TO →
+      switch_aria: Switch acting context to %{name}
     show_title: Clan Profile // %{name}

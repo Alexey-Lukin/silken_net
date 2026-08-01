@@ -4,12 +4,16 @@ uk:
     index:
       columns:
         audit: Аудит
+        context: Контекст
         identity: On-Chain ідентичність
         investment: Законтрактовано (SCC)
         name: Назва організації
         sectors: Сектори
+      current_context: АКТИВНИЙ_КОНТЕКСТ
       investment_value: "%{amount} SCC"
       subtitle: Управління multi-tenant сутностями та їхніми екологічними програмами.
+      switch: ПЕРЕМКНУТИСЬ →
+      switch_aria: Перемкнути робочий контекст на %{name}
       title: Глобальний реєстр кланів
       view_aria: Переглянути профіль %{name}
       view_profile: ВІДКРИТИ_ПРОФІЛЬ →
@@ -30,6 +34,7 @@ uk:
         soldiers_count: "%{count} солдатів"
         title: Призначені сектори (кластери)
         vitality: Життєздатність
+      current_context: АКТИВНИЙ_КОНТЕКСТ
       fully_synced: СИНХРОНІЗОВАНО
       hero_decoration: КЛАН
       identity_vault:
@@ -46,4 +51,6 @@ uk:
         capital_injected_sub: Всього SCC
         carbon_yield: Нараховано SCC
         carbon_yield_sub: Створено SCC
+      switch: ПЕРЕМКНУТИСЬ →
+      switch_aria: Перемкнути робочий контекст на %{name}
     show_title: Профіль клану // %{name}

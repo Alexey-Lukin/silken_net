@@ -4,12 +4,16 @@ lt:
     index:
       columns:
         audit: Auditas
+        context: Kontekstas
         identity: Grandinės tapatybė
         investment: Pagal sutartis (SCC)
         name: Organizacijos pavadinimas
         sectors: Sektoriai
+      current_context: AKTYVUS_KONTEKSTAS
       investment_value: "%{amount} SCC"
       subtitle: Daugianuomininkių entitetų ir jų aplinkos kapitalo valdymas.
+      switch: PERJUNGTI →
+      switch_aria: Perjungti darbo kontekstą į %{name}
       title: Globalus klanų registras
       view_aria: Peržiūrėti %{name} profilį
       view_profile: PERŽIŪRĖTI_PROFILĮ →
@@ -30,6 +34,7 @@ lt:
         soldiers_count: "%{count} kariai"
         title: Priskirti sektoriai (klasteriai)
         vitality: Gyvybingumas
+      current_context: AKTYVUS_KONTEKSTAS
       fully_synced: VISIŠKAI_SINCHRONIZUOTA
       hero_decoration: KLANAS
       identity_vault:
@@ -46,4 +51,6 @@ lt:
         capital_injected_sub: SCC iš viso
         carbon_yield: Nukalta SCC
         carbon_yield_sub: Nukalinta SCC
+      switch: PERJUNGTI →
+      switch_aria: Perjungti darbo kontekstą į %{name}
     show_title: Klano profilis // %{name}

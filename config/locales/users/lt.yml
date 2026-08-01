@@ -20,7 +20,7 @@ lt:
         encryption: Šifravimo lygis
         full: Pilna
         limited: Ribota
-        organization: Organizacijos prieiga
+        organization: Namų organizacija
       activity:
         last_sync: Paskutinė sinchronizacija
         offline: NEPRISIJUNGĘS

@@ -20,7 +20,7 @@ en:
         encryption: Encryption Level
         full: Full
         limited: Limited
-        organization: Organization Access
+        organization: Home Organization
       activity:
         last_sync: Last Sync
         offline: OFFLINE

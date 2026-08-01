@@ -45,6 +45,8 @@ en:
     no_organization:
       body_1: Your account is not currently linked to any organization in the Forest Matrix. Without a Cluster, the Citadel cannot scope telemetry, wallets, or alerts.
       body_2: Contact your administrator to be onboarded into a cluster.
+      body_2_super_admin: You have no home organization. Choose the context you want to act in.
+      choose_organization: Choose an organization →
       heading: Quarantine
       sign_out: "← Sign Out"
       subtitle: No Organization Assigned

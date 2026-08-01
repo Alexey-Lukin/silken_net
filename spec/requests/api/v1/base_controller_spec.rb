@@ -321,6 +321,21 @@ RSpec.describe Api::V1::BaseController, type: :request do
       expect(response.body).to include("<html")
     end
 
+    # [UI.6] ПОЗИТИВНЕ твердження, і воно тут єдине можливе: при fail-closed
+    # дефолті (`current_user: nil` → виходу немає) негативний приклад лишається
+    # зеленим і тоді, коли контролер перестав передавати актора взагалі. А
+    # компонентна спека конструює сторінку повз `render_no_organization`, тож
+    # проводки не бачить у принципі. Мутація «прибрати `current_user:`» червонить
+    # рівно цей приклад.
+    it "дає super_admin без організації двері в реєстр, а не лише вихід" do
+      homeless_admin = create(:user, :super_admin, organization: nil)
+
+      get "/api/v1/dashboard", headers: sign_in_headers(homeless_admin).merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include(%(href="#{api_v1_organizations_path}"))
+    end
+
     it "не заважає сторінкам, які організації не читають" do
       # Гард у точці читання не має списку винятків — сторінка, що org не питає,
       # його просто не тригерить. Мутація «повернути класовий before_action»
@@ -328,6 +343,24 @@ RSpec.describe Api::V1::BaseController, type: :request do
       get "/api/v1/codex/leaderboard", as: :json
 
       expect(response).to have_http_status(:ok)
+    end
+  end
+
+  # [UI.6] Проводка `acting_organization:` у `render_dashboard` — один вузол на всі
+  # дашборд-рендери, тож і пін потрібен один. Але саме ПОЗИТИВНИЙ і саме на
+  # сторінці, де організація гарантовано є: на реєстрі кланів `nil` — легітимний
+  # стан, тож там забута проводка невідрізненна від правди.
+  describe "індикатор контексту в layout" do
+    it "доїжджає до топ-бара дашборда" do
+      org = create(:organization, name: "Cherkasy Forest Union")
+      admin = create(:user, :super_admin, organization: org)
+
+      get "/api/v1/dashboard",
+          headers: { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}",
+                     "Accept" => "text/html" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Cherkasy Forest Union")
     end
   end
 

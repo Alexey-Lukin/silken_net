@@ -3,9 +3,19 @@
 
 module Organizations
   class Index < ApplicationComponent
-    def initialize(organizations:, pagy:)
+    # @param acting_organization [Organization, nil] організація, в контексті якої
+    #   виконується запит — потрібна ЛИШЕ щоб не пропонувати перемкнутись туди,
+    #   де вже стоїш [UI.6]
+    #
+    # ⚠️ Роле-предиката тут свідомо НЕМАЄ, і це не пропуск: гард контролера
+    # КЛАСОВИЙ (`before_action :authorize_super_admin!` без `only:`), тобто дія не
+    # глибша за сторінку — умова класу UI.6 не виконується. Порівняй з
+    # `Alerts::Row`, де гард стоїть `only: :resolve` і тому кнопку треба гейтувати
+    # окремо.
+    def initialize(organizations:, pagy:, acting_organization: nil)
       @organizations = organizations
       @pagy = pagy
+      @acting_organization = acting_organization
     end
 
     def view_template
@@ -21,6 +31,7 @@ module Organizations
                 th(scope: "col", class: "p-4") { t(".columns.investment") }
                 th(scope: "col", class: "p-4") { t(".columns.identity") }
                 th(scope: "col", class: "p-4 text-right") { t(".columns.audit") }
+                th(scope: "col", class: "p-4 text-right") { t(".columns.context") }
               end
             end
             tbody(class: "divide-y divide-emerald-900/30") do
@@ -49,7 +60,45 @@ module Organizations
         td(class: "p-4 text-right") do
           a(href: api_v1_organization_path(org), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t(".view_aria", name: org.name)) { t(".view_profile") }
         end
+        td(class: "p-4 text-right") { render_context_cell(org) }
       end
+    end
+
+    # Поточний рядок дістає МАРКЕР, а не дизейблену кнопку. Це не те саме, що
+    # присуд «ховати, а не дизейблити» ([`04_04 §6.4`]): там ішлося про дію,
+    # недоступну за РОЛЛЮ, і ховали саме тому, що показане меню розкриває мапу
+    # можливостей платформи. Тут дія недоступна не за правом, а тому що вже
+    # виконана, і порожня клітинка лишила б питання «чому тут нічого». Ідіома в
+    # дереві вже є — `aria-current` на активному пункті сайдбара.
+    def render_context_cell(org)
+      if @acting_organization&.id == org.id
+        span(
+          aria_current: "true",
+          class: "text-mini uppercase tracking-widest text-emerald-500 border border-emerald-800 px-3 py-1"
+        ) { t(".current_context") }
+        return
+      end
+
+      # `turbo: "false"` обов'язковий: сайдбар несе `data-turbo-permanent`
+      # (`dashboard_layout.rb`), тож при Turbo-візиті він переживає навігацію разом
+      # зі своїм org-скоупленим лічильником тривог — і показав би число ПОПЕРЕДНЬОГО
+      # тенанта. Той самий патерн, що в `locale_switcher`: сесійний контекст із
+      # хрому міняють повним перезавантаженням.
+      #
+      # ⚠️ Атрибут іде через `form:`, а не в `html_options`, і це не стиль: `button_to`
+      # кладе решту опцій на `<button>`, тоді як прецедент (`locale_switcher`) ставить
+      # його на `<form>`. Сьогодні працюють обидва (Turbo 8 перевіряє ще й submitter),
+      # але «той самий патерн» має бути тим самим НОСІЄМ, інакше збіг випадковий.
+      button_to(
+        t(".switch"),
+        switch_api_v1_organization_path(org),
+        method: :post,
+        form: { data: { turbo: "false" } },
+        aria: { label: t(".switch_aria", name: org.name) },
+        class: "text-mini uppercase tracking-widest border border-emerald-700 text-emerald-400 " \
+               "px-3 py-1 hover:bg-emerald-600 hover:text-black transition-colors cursor-pointer " \
+               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+      )
     end
 
     def header_section

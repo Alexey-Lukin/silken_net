@@ -20,7 +20,7 @@ lv:
         encryption: Šifrēšanas līmenis
         full: Pilna
         limited: Ierobežota
-        organization: Organizācijas piekļuve
+        organization: Mājas organizācija
       activity:
         last_sync: Pēdējā sinhronizācija
         offline: BEZSAISTĒ

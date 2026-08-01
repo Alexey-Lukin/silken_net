@@ -45,6 +45,8 @@ lv:
     no_organization:
       body_1: Jūsu konts pašlaik nav saistīts ar nevienu organizāciju Meža matricā. Bez klastera Citadele nevar norobežot telemetriju, makus vai brīdinājumus.
       body_2: Sazinieties ar administratoru, lai tiktu iekļauts klasterī.
+      body_2_super_admin: Jums nav savas organizācijas. Izvēlieties kontekstu, kurā strādāsiet.
+      choose_organization: Izvēlēties organizāciju →
       heading: Karantīna
       sign_out: "← Iziet"
       subtitle: Nav piesaistītas organizācijas

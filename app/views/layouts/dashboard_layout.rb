@@ -8,12 +8,21 @@ class DashboardLayout < ApplicationComponent
   # @param current_user [User] authenticated user (passed from controller)
   # @param current_path [String] request path for nav highlighting + breadcrumbs
   # @param ews_alert_count [Integer] pre-computed unresolved alert count (eager-load in controller)
+  # @param acting_organization [Organization, nil] організація, в контексті якої
+  #   виконується запит [UI.6]
   # @param content [Phlex::HTML, nil] page content component to render inside layout
-  def initialize(title:, current_user:, current_path: "/", ews_alert_count: 0, content: nil)
+  #
+  # 🔴 Індикатор контексту тут — не оздоба, а ЄДИНИЙ канал підтвердження: цей
+  # layout не рендерить `flash` узагалі, а `organizations#switch` його й не ставить.
+  # Без індикатора успішне перемикання не має жодного видимого сліду, і super_admin
+  # читає чужі дані без сигналу про те, чиї вони.
+  def initialize(title:, current_user:, current_path: "/", ews_alert_count: 0,
+                 acting_organization: nil, content: nil)
     @title = title
     @current_user = current_user
     @current_path = current_path
     @ews_alert_count = ews_alert_count
+    @acting_organization = acting_organization
     @content = content
   end
 
@@ -105,6 +114,7 @@ class DashboardLayout < ApplicationComponent
       end
 
       div(class: "flex items-center gap-3 md:gap-6") do
+        render_acting_context
         render Views::Shared::UI::LocaleSwitcher.new
         render Views::Shared::UI::ThemeSwitcher.new
         render_system_telemetry
@@ -138,6 +148,49 @@ class DashboardLayout < ApplicationComponent
           end
         end
       end
+    end
+  end
+
+  # [UI.6] Індикатор рендериться ЛИШЕ super_admin'у, і це не роле-гейт заради
+  # приховування: для решти ролей контекст неможливо відрізнити від членства —
+  # `resolve_acting_organization` ігнорує сесію для всіх, крім super_admin, тож
+  # індикатор говорив би їм те, що вони й так знають.
+  #
+  # ⚠️ Станів свідомо ДВА («обрано X» / «не обрано»), а не три — і підстава тут
+  # НЕ «формула розходження вже має дім»: виклик наявного дому не є другим домом,
+  # тож той аргумент доводив би протилежне. Чинних дві. (1) Дім цієї формули —
+  # `Current#switched_context?` — амбієнтний, а шапка `current.rb` прямо забороняє
+  # читати `Current` як джерело даних у в'ю. (2) Третій стан («своя проти чужої»)
+  # має сенс лише для super_admin, що МАЄ домашню організацію; коли такий
+  # зʼявиться, порівняння додається одним рядком із двох уже переданих величин.
+  # Тобто це відкладене YAGNI, а не архітектурна відмова.
+  def render_acting_context
+    # `super_admin?`, а не `role_super_admin?`: [UI.5] канонізував саме делегат як
+    # «вказівник на предикат `User`, той самий, що читають гарди», і сайдбар за
+    # сорок рядків нижче вживає його. Дві форми одного питання в одному layout —
+    # рівно те розходження, яке UI.5 робив неможливим.
+    return unless @current_user&.super_admin?
+
+    current = @acting_organization&.name || t("navigation.top_bar.context_none")
+
+    a(
+      href: api_v1_organizations_path,
+      # 🔴 Назва ВСЕРЕДИНІ мітки, бо `aria-label` на `<a>` замінює доступне імʼя
+      # цілком і глушить дітей — рівно дефект, який [UI.3] полагодив у сайдбарі
+      # (там aria_label з'їдав EWS-badge). Без інтерполяції незрячий чув би
+      # «змінити організацію» й НІКОЛИ — яку саме.
+      aria_label: t("navigation.top_bar.context_aria", name: current),
+      class: "flex flex-col px-2 md:px-4 py-1.5 border border-gaia-border bg-gaia-surface-sunken " \
+             "hover:border-gaia-primary transition-colors duration-300 " \
+             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary"
+    ) do
+      # Ховається лише ПІДПИС: сам контекст мусить лишатись видимим і на телефоні,
+      # інакше «єдиний канал підтвердження» зникає рівно там, де кнопка
+      # перемикання доступна (таблиця реєстру скролиться горизонтально).
+      span(class: "hidden md:block text-micro text-gaia-text-subtle uppercase tracking-widest") do
+        t("navigation.top_bar.context_label")
+      end
+      span(class: "text-tiny text-gaia-text-strong truncate max-w-[8rem] md:max-w-[12rem]") { current }
     end
   end
 

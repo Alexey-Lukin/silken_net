@@ -17,21 +17,32 @@ RSpec.describe Organizations::Show do
     c
   end
 
-  def mock_org(name: "Cherkasy Forest Fund", created_at: 2.years.ago,
+  def mock_org(id: 1, name: "Cherkasy Forest Fund", created_at: 2.years.ago,
                crypto_public_address: "0xABCD1234", billing_email: "billing@forest.org",
                total_contracted: "50000")
-    OpenStruct.new(
+    o = OpenStruct.new(
+      id: id,
       name: name,
       created_at: created_at,
       crypto_public_address: crypto_public_address,
       billing_email: billing_email,
       total_contracted: total_contracted
     )
+    # Потрібні перемикачу контексту: `button_to` будує шлях через `to_param`.
+    o.define_singleton_method(:model_name) { ActiveModel::Name.new(Organization) }
+    o.define_singleton_method(:to_key) { [ id ] }
+    o.define_singleton_method(:to_param) { id.to_s }
+    o
   end
 
-  def render_component(organization:, clusters:, performance:)
+  def render_component(organization:, clusters:, performance:, acting_organization: nil)
     ApplicationController.renderer.render(
-      component_class.new(organization: organization, clusters: clusters, performance: performance),
+      component_class.new(
+        organization: organization,
+        clusters: clusters,
+        performance: performance,
+        acting_organization: acting_organization
+      ),
       layout: false
     )
   end
@@ -40,6 +51,29 @@ RSpec.describe Organizations::Show do
   let(:clusters) { [ mock_cluster ] }
   let(:performance) { { total_trees: 42, carbon_minted: "1234 SCC" } }
   let(:html) { render_component(organization: org, clusters: clusters, performance: performance) }
+
+  # [UI.6] Четверта посадка «права без переходу»: з рядка реєстру ведуть ДВІ дії, а
+  # профіль клану — саме те місце, де super_admin вирішує, чи входити в цей контекст.
+  describe "перемикач контексту" do
+    it "дає кнопку, коли дивимось на чужий клан" do
+      switch_path = Rails.application.routes.url_helpers.switch_api_v1_organization_path(1)
+
+      expect(html).to include(%(action="#{switch_path}"))
+      expect(html).to include("SWITCH_TO")
+      expect(html).to include("Switch acting context to Cherkasy Forest Fund")
+    end
+
+    it "на власному контексті показує маркер замість кнопки" do
+      html = render_component(
+        organization: org, clusters: clusters, performance: performance, acting_organization: org
+      )
+      switch_path = Rails.application.routes.url_helpers.switch_api_v1_organization_path(1)
+
+      expect(html).to include("ACTIVE_CONTEXT")
+      expect(html).to include('aria-current="true"')
+      expect(html).not_to include(%(action="#{switch_path}"))
+    end
+  end
 
   describe "org name display" do
     it "renders the organization name" do

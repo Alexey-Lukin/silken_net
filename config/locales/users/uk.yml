@@ -20,7 +20,7 @@ uk:
         encryption: Рівень шифрування
         full: Повний
         limited: Обмежений
-        organization: Доступ до організації
+        organization: Домашня організація
       activity:
         last_sync: Остання синхронізація
         offline: ОФЛАЙН

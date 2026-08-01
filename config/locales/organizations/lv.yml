@@ -4,12 +4,16 @@ lv:
     index:
       columns:
         audit: Audits
+        context: Konteksts
         identity: Ķēdes identitāte
         investment: Līgumos (SCC)
         name: Organizācijas nosaukums
         sectors: Sektori
+      current_context: AKTĪVAIS_KONTEKSTS
       investment_value: "%{amount} SCC"
       subtitle: Daudzvadītāju entītiju un to vides kapitāla pārvaldība.
+      switch: PĀRSLĒGT →
+      switch_aria: Pārslēgt darba kontekstu uz %{name}
       title: Globālais klanu reģistrs
       view_aria: Skatīt %{name} profilu
       view_profile: SKATĪT_PROFILU →
@@ -30,6 +34,7 @@ lv:
         soldiers_count: "%{count} karavīri"
         title: Piesaistītie sektori (klasteri)
         vitality: Vitalitāte
+      current_context: AKTĪVAIS_KONTEKSTS
       fully_synced: PILNĪGI_SINHRONIZĒTS
       hero_decoration: KLANS
       identity_vault:
@@ -46,4 +51,6 @@ lv:
         capital_injected_sub: SCC kopā
         carbon_yield: Kalts SCC
         carbon_yield_sub: Kalts SCC
+      switch: PĀRSLĒGT →
+      switch_aria: Pārslēgt darba kontekstu uz %{name}
     show_title: Klana profils // %{name}

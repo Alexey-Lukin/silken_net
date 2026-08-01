@@ -67,6 +67,19 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
+
+    # [UI.6] ПОЗИТИВНИЙ пін проводки `acting_organization:` — і він тут єдиний
+    # можливий. Дефолт `nil` у компонента означає легітимне «контекст не обрано»
+    # (перший вхід super_admin іде без організації), тобто забута проводка
+    # невідрізненна від правди: кнопки просто з'являються на всіх рядках, і жоден
+    # НЕГАТИВНИЙ приклад не червоніє. Червоніє лише твердження, що маркер Є там,
+    # де він мусить бути.
+    it "позначає рядок організації, в контексті якої super_admin працює" do
+      get "/api/v1/organizations", headers: html_headers
+
+      expect(response.body).to include("ACTIVE_CONTEXT")
+      expect(response.body).not_to include(%(action="#{switch_api_v1_organization_path(organization)}"))
+    end
   end
 
   # [SEC.25 Ф2] Ці приклади ходять cookie-СЕСІЄЮ, а не Bearer'ом, і це не стиль:
@@ -130,6 +143,20 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(AuditLog.order(:id).last.metadata["from_organization_id"]).to be_nil
+    end
+
+    # 🔴 Браузерна гілка — доти не виконана ЖОДНИМ прикладом, і саме тому в ній жив
+    # `root_path`, якого в цьому застосунку не існує (корінь оголошено всередині
+    # `namespace :api → :v1`). `rescue_from StandardError` перетворював це на 500:
+    # перемикання відбувалось, а користувач бачив помилку. Пін навмисно на ТОЧНИЙ
+    # код і ТОЧНУ ціль: `have_http_status(:redirect)` пропустив би будь-який 3xx, а
+    # префікс — будь-який шлях, що з нього починається.
+    it "віддає браузеру 303 на корінь дашборда" do
+      post "/api/v1/organizations/#{other_organization.id}/switch",
+           headers: { "Accept" => "text/html" }
+
+      expect(response).to have_http_status(:see_other)
+      expect(response.headers["Location"]).to end_with(api_v1_root_path)
     end
 
     # Bearer сесії не носить, тож запис у неї нікуди б не поїхав: клієнт дістав би

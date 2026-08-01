@@ -45,6 +45,8 @@ lt:
     no_organization:
       body_1: Jūsų paskyra šiuo metu nesusieta su jokia organizacija Miško matricoje. Be klasterio Citadelė negali apriboti telemetrijos, piniginių ar įspėjimų.
       body_2: Susisiekite su administratoriumi, kad būtumėte prijungti prie klasterio.
+      body_2_super_admin: Neturite savo organizacijos. Pasirinkite kontekstą, kuriame dirbsite.
+      choose_organization: Pasirinkti organizaciją →
       heading: Karantinas
       sign_out: "← Atsijungti"
       subtitle: Nepriskirta organizacija

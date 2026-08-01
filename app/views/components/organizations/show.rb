@@ -3,10 +3,16 @@
 
 module Organizations
   class Show < ApplicationComponent
-    def initialize(organization:, clusters:, performance:)
+    # @param acting_organization [Organization, nil] контекст запиту [UI.6]
+    #
+    # Профіль клану — четверта посадка того самого класу «право без переходу»:
+    # саме тут super_admin вирішує, чи входити в цей контекст, і саме звідси
+    # здатність зникала (з рядка реєстру вели ДВІ дії, а на сторінці лишалась одна).
+    def initialize(organization:, clusters:, performance:, acting_organization: nil)
       @organization = organization
       @clusters = clusters
       @performance = performance
+      @acting_organization = acting_organization
     end
 
     def view_template
@@ -31,6 +37,29 @@ module Organizations
 
     private
 
+    # Дзеркало клітинки реєстру: маркер, коли вже тут, кнопка — коли ні. Носій
+    # `turbo: "false"` — `form:`, як у прецеденті `locale_switcher`.
+    def render_context_action
+      if @acting_organization&.id == @organization.id
+        span(
+          aria_current: "true",
+          class: "text-mini uppercase tracking-widest text-emerald-500 border border-emerald-800 px-3 py-1"
+        ) { t(".current_context") }
+        return
+      end
+
+      button_to(
+        t(".switch"),
+        switch_api_v1_organization_path(@organization),
+        method: :post,
+        form: { data: { turbo: "false" } },
+        aria: { label: t(".switch_aria", name: @organization.name) },
+        class: "text-mini uppercase tracking-widest border border-emerald-700 text-emerald-400 " \
+               "px-3 py-1 hover:bg-emerald-600 hover:text-black transition-colors cursor-pointer " \
+               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+      )
+    end
+
     def render_header
       div(class: "flex flex-col md:flex-row justify-between items-start md:items-center p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
         # Декоративний фон для ідентифікації
@@ -44,6 +73,8 @@ module Organizations
         end
 
         div(class: "mt-6 md:mt-0 flex items-center gap-4") do
+          render_context_action
+
           div(class: "text-right") do
             p(class: "text-mini text-gray-600 uppercase tracking-widest") { t(".operational_status") }
             p(class: "text-sm font-mono text-emerald-500") { t(".fully_synced") }

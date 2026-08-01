@@ -21,7 +21,15 @@ module Api
           format.html do
             render_dashboard(
               title: I18n.t("organizations.index_title"),
-              component: Organizations::Index.new(organizations: @organizations, pagy: @pagy)
+              # [UI.6] Не-bang свідомо: цей реєстр — єдина сторінка, досяжна
+              # super_admin'у ще ДО того, як він обрав контекст (перший вхід за
+              # seeds іде без організації). Bang тут зачинив би саме ті двері,
+              # заради яких сторінку й відкривають.
+              component: Organizations::Index.new(
+                organizations: @organizations,
+                pagy: @pagy,
+                acting_organization: acting_organization
+              )
             )
           end
         end
@@ -51,7 +59,8 @@ module Api
               component: Organizations::Show.new(
                 organization: @organization,
                 clusters: @clusters,
-                performance: @performance
+                performance: @performance,
+                acting_organization: acting_organization
               )
             )
           end
@@ -79,7 +88,17 @@ module Api
 
         respond_to do |format|
           format.json { render json: { acting_organization_id: organization.id } }
-          format.html { redirect_to root_path }
+          # `api_v1_root_path`, не `root_path`: кореневий маршрут оголошено ВСЕРЕДИНІ
+          # `namespace :api → :v1`, тож top-level хелпера не існує взагалі. Доти ця
+          # гілка кидала `NoMethodError`, який ловив `rescue_from StandardError` —
+          # тобто перемикання відбувалось (аудит, сесія, сокети), а користувач бачив
+          # 500. Невидимо це було рівно тому, що жоден приклад її не виконував.
+          # 303, не 302 [UI.7]. ⚠️ Не тому, що 302 тут зламався б — для POST і
+          # браузер, і `fetch` віддають GET на обох кодах; правило [UI.7] купувалось
+          # на DELETE, який метод зберігає. Причина вужча й чесна: дієслово екшена
+          # може змінитись, а `see_other` — єдина конвенція редиректу після мутації,
+          # записана в цьому дереві (`sessions#destroy`, `photos#destroy`).
+          format.html { redirect_to api_v1_root_path, status: :see_other }
         end
       end
 
