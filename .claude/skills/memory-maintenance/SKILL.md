@@ -28,7 +28,8 @@ Full step-by-step playbook + founder's principles + the zero-loss scripts → **
 
 ## The loop (detail → prompt)
 ```
-1. INVENTORY  memory_gate.sh --audit (index ratchet · file ceiling · chronicle · integrity).
+1. INVENTORY  memory_gate.sh --audit (index ratchet · description-layer ratchet ·
+              file ceiling · chronicle · integrity · content-OVERLAP between rule files).
 2. INDEX=HOOKS  trim any bloated index line — but VERIFY the detail is in the file FIRST.
 3. STRUCTURE  group MEMORY.md by kind via a verbatim-reorder script; prove zero-loss
               (sorted entry-set diff == IDENTICAL).
