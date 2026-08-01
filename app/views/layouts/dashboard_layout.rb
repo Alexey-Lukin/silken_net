@@ -229,9 +229,23 @@ class DashboardLayout < ApplicationComponent
 
   # ── Sidebar slots ──────────────────────────────────────────────────────────
 
-  # Static sidebar for `md+` viewports — Turbo-permanent so it survives navigations.
+  # Static sidebar for `md+` viewports.
+  #
+  # 🔴 [UI.11] `data-turbo-permanent` ЗНЯТО 2026-08-01 — він був не оптимізацією, а
+  # тим самим дефектом, що вже вбив Leaflet: permanent на вузлі, у який СЕРВЕР
+  # рендерить дані. Turbo пересаджує старий вузол (Bardo) і викидає свіжу розмітку,
+  # morph такі вузли пропускає взагалі — тож бейдж `ews_alert_count` і `aria-current`
+  # замерзали на першому завантаженні, і на десктопі лічильник ТРИВОГ показував
+  # застаріле число до повного перезавантаження. Мобільний drawer рендерить той
+  # самий компонент без атрибута й лишався свіжим — саме ця розбіжність між
+  # viewport'ами й довела, що атрибут тут успадкований, а не обраний (єдиний
+  # коментар був «so it survives navigations»).
+  #
+  # ⚠️ Що це НЕ лікує: бейдж кешується на 1 хвилину (`ews_alert_count_cached`) при
+  # тротлі броадкасту 5 с, тож «живим» він від цього не став — звʼязуюче обмеження
+  # тепер TTL кешу, і це окремий пункт `00_07` UI.11.
   def render_desktop_sidebar
-    div(class: "hidden md:block", id: "sidebar-navigation", data: { turbo_permanent: "" }) do
+    div(class: "hidden md:block", id: "sidebar-navigation") do
       render Navigation::Sidebar.new(
         current_path: @current_path,
         ews_alert_count: @ews_alert_count,
