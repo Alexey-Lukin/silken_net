@@ -1,5 +1,18 @@
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/oleksiilukin/silken_net/.claude/hooks/ssot_guard_hint.sh",
+            "timeout": 5,
+            "statusMessage": "SSOT discipline check..."
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
