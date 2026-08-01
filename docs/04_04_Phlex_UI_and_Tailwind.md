@@ -482,6 +482,7 @@ render Views::Shared::UI::StatusBadge.new(status: "confirmed", class: "mt-2")
 
 | Компонент | Файл | Ключові Props | Призначення |
 |---|---|---|---|
+| **FlashMessages** | `flash_messages.rb` | `messages:` | Два live-regions для `flash` (`notice`→`role=status`, `alert`→`role=alert`); рендериться в ОБОХ layoutʼах, дані приходять kwargʼом із `render_dashboard`/`render_auth_page`. ⚠️ Регіони присутні **завжди, навіть порожні** — умова оголошення скрінрідером; без таймера (WCAG 2.2.1 — критерій про часові ліміти) [SEC.25] |
 | **StatusBadge** | `status_badge.rb` | `status:`, `id:`, `class:` | AASM стан → семантичний кольоровий бейдж (20+ станів) |
 | **StatCard** | `stat_card.rb` | `label:`, `value:`, `sub:`, `danger:`, `class:` | Картка метрики дашборду з опціональним danger-виділенням |
 | **DataTable** | `data_table.rb` | `columns:`, `empty_message:`, `class:`, `&block` | Обгортка таблиці з налаштовуваними заголовками стовпців |
