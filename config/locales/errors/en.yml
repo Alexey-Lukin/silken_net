@@ -32,6 +32,8 @@ en:
               must_be_numeric: must be a valid numeric value
   errors:
     api:
+      bad_request: The request was missing something the Citadel needs. Go back and try again.
+      bad_request_title: Malformed Request
       forbidden: Insufficient privileges for this evolution.
       forbidden_title: Access Denied
       internal: Core fault in the Ocean. Notify the Architect.
@@ -42,6 +44,8 @@ en:
       not_found: "%{model} not found in the forest matrix."
       not_found_title: Not Found
       unauthorized: Authentication required. The Gate is closed.
+      validation_failed: The Citadel rejected these values. Return to the form and correct them.
+      validation_failed_title: Validation Failed
     no_organization:
       body_1: Your account is not currently linked to any organization in the Forest Matrix. Without a Cluster, the Citadel cannot scope telemetry, wallets, or alerts.
       body_2: Contact your administrator to be onboarded into a cluster.

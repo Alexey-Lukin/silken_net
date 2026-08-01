@@ -353,12 +353,46 @@ module Api
         end
       end
 
+      # [UI.9] Останні два JSON-only рендерери. Досяжні саме з БРАУЗЕРА і саме через
+      # форми: `params.require` стоїть у `settings`, `maintenance_records`,
+      # `tree_families`, `codex/comments` — усі під `format.html`-екшенами. Тобто
+      # сабміт форми з обрізаним полем віддавав користувачеві сирий JSON.
+      #
+      # ⚠️ Тут свідомо НЕ показуємо `exception.param` / `record.errors` у HTML: JSON
+      # тримає їх для клієнта, що вміє їх прочитати, а сторінка каже людською мовою.
+      # Це не втрата — деталь помилки форми належить самій формі, а сюди виняток
+      # долітає лише тоді, коли форму обійшли.
       def render_parameter_missing(exception)
-        render json: { error: I18n.t("errors.api.missing_parameter", param: exception.param) }, status: :bad_request
+        respond_to do |format|
+          format.json do
+            render json: { error: I18n.t("errors.api.missing_parameter", param: exception.param) },
+                   status: :bad_request
+          end
+          format.html { render_error_page(:bad_request_title, :bad_request, status: :bad_request) }
+        end
       end
 
       def render_validation_error(record)
-        render json: { errors: record.errors.full_messages }, status: :unprocessable_content
+        respond_to do |format|
+          format.json { render json: { errors: record.errors.full_messages }, status: :unprocessable_content }
+          format.html do
+            render_error_page(:validation_failed_title, :validation_failed, status: :unprocessable_content)
+          end
+        end
+      end
+
+      # Один дім HTML-половини для рендерерів, що ведуть у дашборд-шаблон: глядач
+      # автентифікований, тож навігація йому чесна й корисна.
+      def render_error_page(title_key, message_key, status:)
+        render_dashboard(
+          title: I18n.t("errors.api.#{title_key}"),
+          component: Errors::Page.new(
+            heading: I18n.t("errors.api.#{title_key}"),
+            message: I18n.t("errors.api.#{message_key}"),
+            tone: :warning
+          ),
+          status: status
+        )
       end
 
       # [SEC.25] 🔴 ЄДИНИЙ із трьох, що йде в AUTH-шаблон, і це не смак: тут catch-all

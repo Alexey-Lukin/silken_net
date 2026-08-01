@@ -34,6 +34,17 @@ RSpec.describe Api::V1::SettingsController, type: :request do
     # дев'яти запитів цього файла йшли `as: :json`, тож гілка, якою ходить БРАУЗЕР,
     # не виконувалась жодного разу — а голий `render_forbidden` `respond_to` не мав,
     # тобто віддавав користувачеві сирий JSON-блоб замість сторінки відмови.
+    # [UI.9] Живий HTML-шлях до `render_parameter_missing`: сабміт форми без
+    # кореневого ключа. Доти цей рендерер був JSON-only, тобто людина, що надіслала
+    # обрізану форму, бачила сирий `{"error":...}`.
+    it "віддає браузеру сторінку на форму без обовʼязкового ключа" do
+      patch "/api/v1/settings", headers: admin_headers.merge("Accept" => "text/html"), params: {}
+
+      expect(response).to have_http_status(:bad_request)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include(I18n.t("errors.api.bad_request_title"))
+    end
+
     it "віддає браузеру СТОРІНКУ відмови, а не JSON-блоб" do
       get "/api/v1/settings", headers: regular_headers.merge("Accept" => "text/html")
 

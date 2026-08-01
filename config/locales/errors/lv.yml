@@ -32,6 +32,8 @@ lv:
               must_be_numeric: jābūt derīgai skaitliskai vērtībai
   errors:
     api:
+      bad_request: Pieprasījumam trūkst kaut kā, kas nepieciešams Citadelei. Atgriezieties un mēģiniet vēlreiz.
+      bad_request_title: Nepareizs pieprasījums
       forbidden: Nepietiekamas privilēģijas šai evolūcijai.
       forbidden_title: Piekļuve liegta
       internal: Kodola kļūme Okeānā. Paziņojiet Arhitektam.
@@ -42,6 +44,8 @@ lv:
       not_found: "%{model} nav atrasts meža matricā."
       not_found_title: Nav atrasts
       unauthorized: Nepieciešama autentifikācija. Vārti ir slēgti.
+      validation_failed: Citadele noraidīja šīs vērtības. Atgriezieties formā un izlabojiet tās.
+      validation_failed_title: Pārbaude neizdevās
     no_organization:
       body_1: Jūsu konts pašlaik nav saistīts ar nevienu organizāciju Meža matricā. Bez klastera Citadele nevar norobežot telemetriju, makus vai brīdinājumus.
       body_2: Sazinieties ar administratoru, lai tiktu iekļauts klasterī.

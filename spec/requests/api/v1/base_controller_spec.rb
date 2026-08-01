@@ -151,9 +151,16 @@ RSpec.describe Api::V1::BaseController, type: :request do
     end
   end
 
+  # [UI.9] Обидва рендерери дістали `respond_to`, тож контролеру потрібен реальний
+  # `request` — інакше диспетчер лізе в `request.formats` на nil. `TestRequest`
+  # дешевший за повний HTTP там, де живого шляху до винятку немає
+  # (`ActiveModel::ValidationError` у цьому дереві кидають лише сервіси).
   describe "render_parameter_missing" do
     it "returns 400 with the missing param name" do
       controller = described_class.new
+      controller.request = ActionDispatch::TestRequest.create
+      controller.response = ActionDispatch::TestResponse.new
+      controller.request.format = :json
       allow(controller).to receive(:render)
       exception = ActionController::ParameterMissing.new(:codex_node_slug)
 
@@ -167,6 +174,9 @@ RSpec.describe Api::V1::BaseController, type: :request do
   describe "render_validation_error" do
     it "returns 422 with all validation messages" do
       controller = described_class.new
+      controller.request = ActionDispatch::TestRequest.create
+      controller.response = ActionDispatch::TestResponse.new
+      controller.request.format = :json
       allow(controller).to receive(:render)
       record = OpenStruct.new(errors: OpenStruct.new(full_messages: [ "Name can't be blank", "Email is invalid" ]))
 

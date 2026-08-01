@@ -32,6 +32,8 @@ lt:
               must_be_numeric: turi būti galiojanti skaitinė vertė
   errors:
     api:
+      bad_request: Užklausai trūksta to, ko reikia Citadelei. Grįžkite ir bandykite dar kartą.
+      bad_request_title: Netaisyklinga užklausa
       forbidden: Nepakankamos privilegijos šiai evoliucijai.
       forbidden_title: Prieiga uždrausta
       internal: Branduolio gedimas Vandenyne. Pranešte Architektui.
@@ -42,6 +44,8 @@ lt:
       not_found: "%{model} nerastas miško matricoje."
       not_found_title: Nerasta
       unauthorized: Reikalinga autentifikacija. Vartai uždaryti.
+      validation_failed: Citadelė atmetė šias reikšmes. Grįžkite į formą ir jas pataisykite.
+      validation_failed_title: Patikra nepavyko
     no_organization:
       body_1: Jūsų paskyra šiuo metu nesusieta su jokia organizacija Miško matricoje. Be klasterio Citadelė negali apriboti telemetrijos, piniginių ar įspėjimų.
       body_2: Susisiekite su administratoriumi, kad būtumėte prijungti prie klasterio.
