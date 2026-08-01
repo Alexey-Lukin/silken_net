@@ -103,6 +103,26 @@ asset_check() {
   return 0
 }
 
+# Two files hold the founder's personal circumstances (medical, psychological,
+# precise location). This gate CANNOT enforce read access — it sees writes, not
+# reads, and a subagent spawned for any memory task reads the whole corpus by
+# default. What it can do is notice the marker DISAPPEARING, which is the
+# realistic failure: a rewrite drops frontmatter silently, and the next curator
+# has nothing telling them this file must not travel into an agent brief.
+# Curated list, deliberately short — a long one would be a classification
+# scheme nobody maintains.
+PRIVATE_FILES='user_life_context.md user_location_cherkasy.md'
+
+privacy_check() {
+  local f
+  for f in $PRIVATE_FILES; do
+    [ -f "$MEM_DIR/$f" ] || continue
+    grep -q '^[[:space:]]*sensitivity: private' "$MEM_DIR/$f" ||
+      echo "PRIVACY $f lost its \`sensitivity: private\` marker — restore it; this file must stay out of subagent briefs"
+  done
+  return 0
+}
+
 index_check() {
   local sz n
   sz=$(wc -c <"$IDX" | tr -d ' ')
@@ -187,7 +207,7 @@ route_check() {
 
 case "${1:-}" in
   --audit)
-    out=$( { index_check; integrity_check; journals_reachable; asset_check
+    out=$( { index_check; integrity_check; journals_reachable; asset_check; privacy_check
              for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; done; } )
     printf '%s\n' "${out:-OK — index within ratchet, corpus intact, no chronicle in a rule file}"
     [ -z "$out" ]
@@ -221,6 +241,7 @@ case "${1:-}" in
               path_check "$fp"
               journals_reachable
               asset_check
+              privacy_check
               # A brand-new file is where the registry grows. Nothing reads at
               # this moment except the tool call itself, so this is the only
               # place the question "does this fact already have a home?" can be
