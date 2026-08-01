@@ -4,32 +4,17 @@
 require "rails_helper"
 
 RSpec.describe Firmwares::Form do
+  # 🔴 [SEC.25] Тут доти стояв OpenStruct із ВИГАДАНИМ `model_name`, який оголошував
+  # `route_key: "firmwares"` і `param_key: "firmware"`. Реальний
+  # `BioContractFirmware` не має ані першого (`bio_contract_firmwares`), ані другого
+  # (`bio_contract_firmware`) — тобто фікстура не маскувала баг, а **створювала світ,
+  # де баг неможливий**: сторінка завантаження прошивки віддавала 500 і не рендерила
+  # форми взагалі, а ця спека лишалась зеленою на всіх своїх прикладах.
+  #
+  # Тому модель тут ТІЛЬКИ справжня (`.new` — БД не потрібна), і саме вона робить
+  # приклад нижче здатним упасти.
   def mock_firmware
-    fw = OpenStruct.new(
-      id: nil,
-      version: nil,
-      target_hardware: nil,
-      notes: nil,
-      binary_file: nil,
-      errors: OpenStruct.new(any?: false),
-      new_record?: true,
-      to_param: nil,
-      persisted?: false
-    )
-    fw.define_singleton_method(:to_model) { self }
-    fw.define_singleton_method(:model_name) do
-      OpenStruct.new(
-        param_key: "firmware",
-        route_key: "firmwares",
-        singular_route_key: "firmware",
-        name: "Firmware",
-        human: "Firmware",
-        i18n_key: :firmware,
-        element: "firmware",
-        collection: "firmwares"
-      )
-    end
-    fw
+    BioContractFirmware.new
   end
 
   describe "form fields" do

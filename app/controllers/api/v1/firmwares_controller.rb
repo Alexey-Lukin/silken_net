@@ -83,7 +83,7 @@ module Api
         if params[:firmware][:binary_file].present?
           uploaded_file = params[:firmware][:binary_file]
           if uploaded_file.size > MAX_FIRMWARE_SIZE
-            render json: { error: I18n.t("flash.firmwares.file_too_large", limit: MAX_FIRMWARE_SIZE / 1.megabyte) }, status: :unprocessable_content
+            render_oversized_upload
             return
           end
 
@@ -97,6 +97,11 @@ module Api
           # than mass-assignment so the value goes through model validations.
           hex_payload = params[:firmware][:bytecode_payload].to_s
           if hex_payload.bytesize > MAX_BYTECODE_PAYLOAD_HEX_SIZE
+            # ⚠️ [SEC.25 Ф4] Ця гілка свідомо лишається JSON-only, на відміну від
+            # сусідньої: поля `bytecode_payload` у формі НЕМАЄ (`Firmwares::Form`
+            # має рівно version/target/binary_file/notes), тож браузер сюди не
+            # доходить у принципі — HTML-гілка була б мертвим кодом із дня
+            # написання. Це API-обхід multipart-ліміту, і він API-шляхом і лишається.
             render json: { error: I18n.t("flash.firmwares.file_too_large", limit: MAX_FIRMWARE_SIZE / 1.megabyte) }, status: :unprocessable_content
             return
           end
@@ -227,6 +232,30 @@ module Api
       end
 
       private
+
+      # 🔴 [SEC.25 Ф4] Доти — голий `render json:` у дії, чий успіх і чия валідаційна
+      # відмова обидва мають `format.html`: оператор, що завантажив завеликий бінар
+      # через справжню форму, діставав сирий блоб замість сторінки.
+      #
+      # Повідомлення кладеться в `errors` МОДЕЛІ, бо саме звідти його бере форма —
+      # інакше вона повернулась би без жодного пояснення (та сама хвороба «канал без
+      # споживача», яку цей пункт і лікує). JSON-половина віддає той самий текст у
+      # незмінній формі `{ error: … }` — контракт API не зрушено.
+      def render_oversized_upload
+        message = I18n.t("flash.firmwares.file_too_large", limit: MAX_FIRMWARE_SIZE / 1.megabyte)
+
+        respond_to do |format|
+          format.json { render json: { error: message }, status: :unprocessable_content }
+          format.html do
+            @firmware.errors.add(:base, message)
+            render_dashboard(
+              title: I18n.t("firmwares.create_error_title"),
+              component: Firmwares::New.new(firmware: @firmware),
+              status: :unprocessable_content
+            )
+          end
+        end
+      end
 
       def skipped_clusters_json(result)
         result.skipped_clusters.map { |sc| { id: sc.id, name: sc.name, reason: sc.reason } }

@@ -179,10 +179,20 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
   end
 
   describe "GET /firmwares/new" do
-    it "exercises the new firmware form path" do
+    # 🔴 Тут доти стояло `be_in([ 200, 500 ])` з підставою «Phlex component may not
+    # fully render in test env» — і воно ховало те, що сторінка віддавала рівно 500
+    # і не рендерила форми ВЗАГАЛІ: `form_with(model:)` виводив неіснуючий
+    # `bio_contract_firmwares_path`. Тобто завантажити прошивку через UI було
+    # неможливо, а сюїта лишалась зеленою [SEC.25 / TEST.10].
+    it "рендерить сторінку із ЖИВОЮ формою, що цілить у правильний маршрут" do
       get "/firmwares/new", headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
-      # Phlex component may not fully render in test env, but code path is exercised
-      expect(response.status).to be_in([ 200, 500 ])
+
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include('action="/firmwares"')
+      # Скоуп параметрів мусить збігтися з `params.require(:firmware)` у контролері —
+      # дефолтний вивів би `bio_contract_firmware[...]`.
+      expect(response.body).to include('name="firmware[version]"')
     end
   end
 
@@ -194,12 +204,39 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
       expect(response).to have_http_status(:created)
     end
 
-    it "exercises HTML error path on validation failure" do
+    # 🔴 Тут доти стояло `be_in([ 200, 500 ])`: множина навіть не містила 422, який
+    # ця гілка мала б віддавати після фіксу SEC.25 — тобто приклад був зелений САМЕ
+    # тому, що шлях падав у 500. Фраза-підстава про «Phlex may not render» ховала
+    # реальний `NoMethodError` на неіснуючому маршрут-хелпері [TEST.10].
+    it "повертає форму з 422 і ПОКАЗУЄ причину відмови" do
       post "/firmwares",
            params: { firmware: { version: "", bytecode_payload: "" } },
            headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
-      # Phlex component may not fully render in test env, but code path is exercised
-      expect(response.status).to be_in([ 200, 500 ])
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.media_type).to eq("text/html")
+      # Пін на СПОЖИВАЧА помилок, не лише на статус: форма роками поверталась без
+      # жодного пояснення, бо `errors` нікуди не рендерились.
+      expect(response.body).to include(I18n.t("errors.api.validation_failed_title"))
+    end
+
+    it "завеликий бінар віддає браузерові форму з поясненням, а не JSON-блоб" do
+      oversized = Rack::Test::UploadedFile.new(
+        StringIO.new("\x00" * (Api::V1::FirmwaresController::MAX_FIRMWARE_SIZE + 1)),
+        "application/octet-stream",
+        true,
+        original_filename: "huge.bin"
+      )
+
+      post "/firmwares",
+           params: { firmware: { version: "9.9.9", binary_file: oversized } },
+           headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include(
+        I18n.t("flash.firmwares.file_too_large", limit: Api::V1::FirmwaresController::MAX_FIRMWARE_SIZE / 1.megabyte)
+      )
     end
 
     # =========================================================================

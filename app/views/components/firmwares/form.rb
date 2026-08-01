@@ -8,8 +8,21 @@ module Firmwares
     end
 
     def view_template
-      # Тільки логіка взаємодії з моделлю
-      form_with(model: @firmware, multipart: true, class: "space-y-8 p-10 border border-gaia-border bg-gaia-surface shadow-sm dark:shadow-none") do |f|
+      # 🔴 [SEC.25] `url:` і `scope:` тут ОБИДВА несучі, і без них сторінка віддавала
+      # 500. `form_with(model:)` виводить і маршрут, і префікс параметрів із КЛАСУ
+      # моделі, а `BioContractFirmware` розходиться з нашими іменами двічі:
+      #   route_key  = `bio_contract_firmwares` → хелпера з такою назвою не існує
+      #                (маршрут зареєстровано як `firmwares`) → NoMethodError → 500
+      #   param_key  = `bio_contract_firmware`  → а контролер читає
+      #                `params.require(:firmware)`, тобто форма слала б не в те гніздо
+      # Сусідній `TreeFamilies::Form` живий саме тому, що там обидва імені збігаються
+      # природно — тобто працездатність була збігом імен, а не властивістю патерну.
+      form_with(model: @firmware, url: firmwares_path, scope: :firmware, multipart: true, class: "space-y-8 p-10 border border-gaia-border bg-gaia-surface shadow-sm dark:shadow-none") do |f|
+        # Без `&.`: `firmware:` — обовʼязковий kwarg, а `errors` на AR-моделі не буває
+        # nil, тож захисні гілки були б МЕРТВІ, не «нетестовані». (Сусідній
+        # `Provisioning::New` тримає `&.` законно — там `device:` дефолтить у nil.)
+        render_errors if @firmware.errors.any?
+
         div(class: "space-y-6") do
           field_container(t(".version_label")) do
             f.text_field :version, class: input_classes, placeholder: t(".version_placeholder"), required: true
@@ -35,6 +48,26 @@ module Firmwares
     end
 
     private
+
+    # 🔴 [SEC.25] Ця форма повертається з `status: :unprocessable_content` при кожній
+    # відмові — і доти не показувала ЖОДНОГО пояснення: помилки клались у
+    # `@firmware.errors`, а споживача в них не було. Тобто попередній фікс осі зняв
+    # проковтнутий Turbo 200, але лишив оператора з формою без причини. Сиблінг
+    # `Provisioning::New` таке має від початку.
+    #
+    # Заголовок — уже перекладений `errors.api.validation_failed_title` (усі чотири
+    # локалі), щоб не заводити новий i18n-борг заради одного рядка.
+    def render_errors
+      div(
+        class: "p-4 border border-status-danger bg-status-danger text-status-danger-text text-xs font-mono",
+        role: "alert"
+      ) do
+        p(class: "uppercase tracking-widest") { I18n.t("errors.api.validation_failed_title") }
+        ul(class: "list-disc ml-4 mt-2") do
+          @firmware.errors.full_messages.each { |message| li { message } }
+        end
+      end
+    end
 
     def field_container(label, &block)
       div(class: "space-y-2") do
