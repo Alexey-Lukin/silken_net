@@ -282,13 +282,18 @@ RSpec.describe Api::V1::SessionsController, type: :request do
   end
 
   describe "HTML login failure" do
-    it "exercises HTML login failure code path and sets flash.now" do
+    # ⚠️ Тут доти стояло `be_in([ 401, 500 ])` з підставою «Phlex rendering may 500
+    # in test env» — [TEST.10]: приклад був зелений і тоді, коли сторінка падає.
+    # Виміряно: шлях стабільно віддає 401 із HTML, тож твердження може бути точним.
+    it "рендерить сторінку входу НА МІСЦІ зі збереженим 401" do
       post "/login",
         params: { email: user.email_address, password: "wrong_password" },
         headers: { "Accept" => "text/html" }
 
-      # Phlex rendering may 500 in test env, but the HTML login failure and flash.now code path is exercised
-      expect(response.status).to be_in([ 401, 500 ])
+      expect(response).to have_http_status(:unauthorized)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include("<html")
+      expect(response.body).to include(I18n.t("flash.sessions.invalid_credentials"))
     end
   end
 
@@ -300,6 +305,24 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       end
 
       expect(response).to have_http_status(:too_many_requests)
+    ensure
+      Prosopite.resume if defined?(Prosopite)
+    end
+
+    # 🔴 [SEC.25] Пін на ФОРМУ, не на статус: статус 429 віддавала й зламана версія,
+    # тож пін на нього лишався б зеленим. Червоніє саме `media_type` — без
+    # `respond_to` браузер діставав сирий JSON-блоб на сторінці входу.
+    it "браузерові віддає сторінку входу з поясненням, а не JSON-блоб" do
+      Prosopite.pause if defined?(Prosopite)
+      6.times do
+        post "/login",
+          params: { email: user.email_address, password: "wrong" },
+          headers: { "Accept" => "text/html" }
+      end
+
+      expect(response).to have_http_status(:too_many_requests)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include(I18n.t("flash.sessions.rate_limited"))
     ensure
       Prosopite.resume if defined?(Prosopite)
     end

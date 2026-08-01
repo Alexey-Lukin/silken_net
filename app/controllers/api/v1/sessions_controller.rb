@@ -7,9 +7,29 @@ module Api
       # Дозволяємо доступ до входу без автентифікації
       skip_before_action :authenticate_user!, only: [ :new, :create, :omniauth_create ]
 
-      # Захист від перебору (Brute Force): обмеження кількості спроб входу
+      # Захист від перебору (Brute Force): обмеження кількості спроб входу.
+      #
+      # 🔴 [SEC.25] HTML-гілка тут несуча: без неї пʼять невдалих входів за хвилину
+      # віддавали сирий JSON-блоб на САМІЙ сторінці входу — найвидніша неавтентифікована
+      # поверхня дерева. Сиблінг `PasswordsController` цю ж лямбду мав із `respond_to`
+      # уже давно; периметр фіксу просто не дійшов сюди.
+      #
+      # Рендер НА МІСЦІ, а не редирект (на відміну від сиблінга): та сама форма, що й
+      # у `render_login_failure` двома методами нижче — статус зберігається, введений
+      # email не губиться. Лямбда виконується в контексті контролера
+      # (`ActionController::RateLimiting` — «evaluated within the context of the
+      # controller processing the request»), тож приватні рендерери їй доступні.
       rate_limit to: 5, within: 1.minute, only: :create, with: -> {
-        render json: { error: I18n.t("flash.sessions.rate_limited") }, status: :too_many_requests
+        respond_to do |format|
+          format.json { render json: { error: I18n.t("flash.sessions.rate_limited") }, status: :too_many_requests }
+          format.html do
+            render_auth_page(
+              title: I18n.t("sessions.login_title"),
+              component: Sessions::New.new(flash_alert: I18n.t("flash.sessions.rate_limited")),
+              status: :too_many_requests
+            )
+          end
+        end
       }
 
       # --- ПОРТАЛ ВХОДУ ---
