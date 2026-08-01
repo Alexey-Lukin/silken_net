@@ -145,12 +145,19 @@ module Api
       # Content component передається як параметр — НЕ через блок,
       # оскільки блок виконується в контексті контролера (Ruby closure),
       # і `render` всередині блоку викликає контролерний render (DoubleRenderError).
+      # [SEC.25] `flash:` передається ЯВНО, і це єдина точка його читання в дереві.
+      # Компонент навмисно не звертається до `helpers.flash`: поза request-контекстом
+      # (компонентні спеки йдуть через `ApplicationController.renderer`) `helpers`
+      # дорівнює nil, тож амбієнтне читання зробило б layout нерендерабельним там,
+      # де решта дерева рендериться нормально. Та сама причина, що в `current_user`
+      # і `ews_alert_count` — layout приймає дані, а не ходить по них сам.
       def render_dashboard(title:, component:, status: :ok)
         render DashboardLayout.new(
           title: title,
           current_user: current_user,
           current_path: request.path,
           ews_alert_count: ews_alert_count_cached,
+          flash: flash.to_hash,
           # [UI.6] Не-bang: цей хелпер обслуговує ВСІ 66 дашборд-рендерів, зокрема
           # сторінки, що організації не потребують. Bang перетворив би індикатор на
           # гард і поклав би карантин на платформені сторінки.
@@ -165,7 +172,7 @@ module Api
       # англійський дефолт «Access Portal» був недосяжним рядком, який мовчки
       # чекав першого викликача, що його забуде. Видалення дешевше за переклад.
       def render_auth_page(title:, component:, status: :ok)
-        render AuthLayout.new(title: title, content: component), status: status
+        render AuthLayout.new(title: title, flash: flash.to_hash, content: component), status: status
       end
 
       # [SEC.25 Ф2] Організація, в контексті якої виконується ЦЕЙ запит.

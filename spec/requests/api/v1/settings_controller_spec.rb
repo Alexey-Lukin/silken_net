@@ -68,6 +68,43 @@ RSpec.describe Api::V1::SettingsController, type: :request do
       expect(organization.billing_email).to eq("new@example.org")
     end
 
+    # [SEC.25] Пін на ПРОВОДКУ flash, а не на компонент.
+    #
+    # 🔴 Чому саме тут і саме так. `FlashMessages` має власну компонентну спеку, але
+    # та конструює компонент напряму — тобто доводить розмітку й нічого не каже про
+    # те, чи `render_dashboard` узагалі передає йому `flash` (`04_06 §B.2` #13:
+    # fail-closed дефолт `flash: {}` робить негативний пін сліпим до забутої
+    # проводки — без даних порожньо в усіх, і приклад лишається зеленим).
+    #
+    # ⚠️ Тому приклад ПЕРЕХОДИТЬ за редиректом: flash живе в сесії й видно його
+    # лише на НАСТУПНОМУ запиті. Перевірка на самій 302-відповіді нічого не
+    # доводить — саме так 42 сайти й лишались німими при зелених спеках, що
+    # пінили `redirect_to`. Це перший `follow_redirect!` у сюїті.
+    # 🔴 Логін ОБОВʼЯЗКОВО cookie-сесією, а не Bearer'ом, і це куплено вакуумним
+    # піном: `follow_redirect!` НЕ переносить заголовок `Authorization`, тож із
+    # Bearer'ом другий запит прилітає неавтентифікованим → 401 → сторінка логіну в
+    # `AuthLayout`. Усі три асерти при цьому проходили чесно — просто про іншу
+    # сторінку, — і мутація `render_dashboard` їх не чіпала. Плюс по суті: flash у
+    # браузері й живе саме в cookie-сесії, тож Bearer тут — не спрощення, а інший
+    # шлях.
+    it "показує повідомлення про успіх на сторінці, куди привів редирект" do
+      post "/login", params: { email: admin_user.email_address, password: admin_user.password }
+
+      patch "/settings", params: { organization: { name: "Ліс Тіней" } }
+
+      expect(response).to have_http_status(:redirect)
+      follow_redirect!
+
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq("text/html")
+      # Сайдбар доводить, що ми на ДАШБОРДІ, а не на сторінці логіну — саме цю
+      # підміну вакуумний пін і не бачив.
+      expect(response.body).to include("sidebar-navigation")
+      expect(response.body).to include(I18n.t("flash.settings.updated"))
+      # Саме в polite-регіоні: успіх не сміє перебивати мовлення скрінрідера.
+      expect(response.body).to include('id="flash_notice"')
+    end
+
     it "updates alert threshold and AI sensitivity" do
       patch "/settings",
             headers: admin_headers,

@@ -12,17 +12,21 @@ class DashboardLayout < ApplicationComponent
   #   виконується запит [UI.6]
   # @param content [Phlex::HTML, nil] page content component to render inside layout
   #
-  # 🔴 Індикатор контексту тут — не оздоба, а ЄДИНИЙ канал підтвердження: цей
-  # layout не рендерить `flash` узагалі, а `organizations#switch` його й не ставить.
-  # Без індикатора успішне перемикання не має жодного видимого сліду, і super_admin
-  # читає чужі дані без сигналу про те, чиї вони.
+  # 🔴 Індикатор контексту тут — не оздоба, а єдиний канал підтвердження ДЛЯ
+  # ПЕРЕМИКАННЯ: `organizations#switch` flash не ставить, тож без індикатора
+  # успішне перемикання не має жодного видимого сліду, і super_admin читає чужі
+  # дані без сигналу про те, чиї вони. ⚠️ Тут доти стояло ще й «цей layout не
+  # рендерить `flash` УЗАГАЛІ» — правда до [SEC.25]; тепер рендерить, і саме тому
+  # решта 42 сайтів `redirect_to … notice:/alert:` перестала бути німою.
+  # @param flash [Hash] повідомлення поточного запиту — див. `Shared::UI::FlashMessages`
   def initialize(title:, current_user:, current_path: "/", ews_alert_count: 0,
-                 acting_organization: nil, content: nil)
+                 acting_organization: nil, flash: {}, content: nil)
     @title = title
     @current_user = current_user
     @current_path = current_path
     @ews_alert_count = ews_alert_count
     @acting_organization = acting_organization
+    @flash = flash
     @content = content
   end
 
@@ -32,6 +36,7 @@ class DashboardLayout < ApplicationComponent
       render_head
       body(class: "h-full font-mono antialiased bg-gaia-surface-base text-gaia-text overflow-hidden transition-colors duration-300") do
         div(class: "flex h-full overflow-hidden", data: { controller: "mobile-nav" }) do
+          render Views::Shared::UI::FlashMessages.new(messages: @flash)
           render_desktop_sidebar
           render_mobile_drawer
 

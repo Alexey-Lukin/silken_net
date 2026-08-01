@@ -8,9 +8,17 @@ class AuthLayout < ApplicationComponent
   include Phlex::Rails::Layout
 
   # @param title [String] page title
+  # @param flash [Hash] повідомлення поточного запиту
   # @param content [Phlex::HTML] page content component
-  def initialize(title:, content: nil)
+  #
+  # 🔴 [SEC.25] `flash` тут несучий не менше, ніж на дашборді: три auth-компоненти
+  # мають власні kwarg'и `flash_alert:`/`flash_notice:`, але ті заповнюються ЛИШЕ
+  # прямим рендером із того ж екшена — після `redirect_to` їх не ставить ніхто.
+  # Тобто «лист із інструкціями надіслано» і «токен протермінований» були німі,
+  # хоч обидва ключі написані й перекладені в усі чотири локалі.
+  def initialize(title:, flash: {}, content: nil)
     @title = title
+    @flash = flash
     @content = content
   end
 
@@ -30,6 +38,7 @@ class AuthLayout < ApplicationComponent
       end
 
       body(class: "h-full font-mono antialiased bg-gaia-surface-base text-gaia-primary") do
+        render Views::Shared::UI::FlashMessages.new(messages: @flash)
         render @content if @content
       end
     end
