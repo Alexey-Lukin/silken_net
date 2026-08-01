@@ -75,6 +75,27 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       expect(response).to have_http_status(:conflict)
     end
 
+    # [SEC.25 Ф4] Той самий 409, але з браузера — і саме цей шлях буденний:
+    # `button_to` в картці не дебаунситься жодним Stimulus, а звичайний клік не
+    # несе `Idempotency-Key`, тож 400-гард його не перехоплює. Пін на ФОРМУ:
+    # статус не змінювався, тож пін на нього лишався б зеленим і на блобі.
+    it "redirects instead of blobbing JSON when the browser double-submits" do
+      allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+      own_actuator.commands.create!(
+        user: user, command_payload: "TEST", duration_seconds: 10, status: :issued
+      )
+
+      post "/actuators/#{own_actuator.id}/execute",
+           params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
+           headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:see_other)
+      expect(response).to redirect_to(actuator_path(own_actuator))
+      # Без цього рядка `error:` можна зняти — статус і ціль не змінились би.
+      expect(flash[:error]).to be_present
+      expect(response.media_type).not_to eq("application/json")
+    end
+
     # [ARCH.58] Протермінований наказ матеріалізує свій кінець лише при
     # poll-видачі, тож на мертвому шлюзі він лежить у `.pending` вічно — і без
     # `live_pending` тримав би 409 для всіх нових наказів назавжди. Сам TTL цього

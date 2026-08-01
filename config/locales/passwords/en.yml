@@ -22,6 +22,6 @@ en:
       submit: SET NEW PASSWORD
       subtitle: Set New Access Code
       too_short: Password must be at least 12 characters long.
-      updated_flash: Password updated. Sign in with your new password.
+      updated_flash: Password updated. All sessions have been signed out — sign in with your new password.
       updated_json: Password successfully updated.
     reset_title: Reset Password

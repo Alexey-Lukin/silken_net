@@ -85,7 +85,7 @@ module Api
                 record: MaintenanceRecordBlueprint.render_as_hash(@record, view: :show)
               }, status: :created
             end
-            format.html { redirect_to maintenance_record_path(@record), notice: I18n.t("flash.maintenance.record_created") }
+            format.html { redirect_to maintenance_record_path(@record), success: I18n.t("flash.maintenance.record_created") }
           end
         else
           respond_to do |format|
@@ -164,7 +164,7 @@ module Api
                 record: MaintenanceRecordBlueprint.render_as_hash(@record, view: :show)
               }
             end
-            format.html { redirect_to maintenance_record_path(@record), notice: I18n.t("flash.maintenance.record_updated") }
+            format.html { redirect_to maintenance_record_path(@record), status: :see_other, success: I18n.t("flash.maintenance.record_updated") }
           end
         else
           respond_to do |format|
@@ -195,7 +195,7 @@ module Api
                 record_id: @record.id
               }
             end
-            format.html { redirect_to maintenance_record_path(@record), notice: I18n.t("flash.maintenance.hardware_verified") }
+            format.html { redirect_to maintenance_record_path(@record), status: :see_other, success: I18n.t("flash.maintenance.hardware_verified") }
           end
         else
           # [SEC.25] Дзеркало форми успіху вище — доти невдала верифікація віддавала
@@ -204,7 +204,7 @@ module Api
             format.json { render_validation_error(@record) }
             format.html do
               redirect_to maintenance_record_path(@record),
-                          alert: @record.errors.full_messages.to_sentence
+                          error: @record.errors.full_messages.to_sentence
             end
           end
         end
@@ -238,7 +238,7 @@ module Api
         respond_to do |format|
           format.json { render_forbidden_json }
           format.html do
-            redirect_to maintenance_records_path, alert: I18n.t("errors.api.forbidden")
+            redirect_to maintenance_records_path, status: :see_other, error: I18n.t("errors.api.forbidden")
           end
         end
       end

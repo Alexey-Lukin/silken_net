@@ -19,7 +19,7 @@ en:
       mismatch: Passwords do not match.
       too_short_flash: Password must be at least 12 characters long.
       too_short_json: New password must be at least 12 characters long.
-      updated_flash: Password successfully updated.
+      updated_flash: Password updated. All your other sessions have been signed out.
       updated_json: Password updated.
     show:
       heading: "🔐 Account Security"

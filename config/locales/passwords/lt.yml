@@ -22,6 +22,6 @@ lt:
       submit: NUSTATYTI NAUJĄ SLAPTAŽODĮ
       subtitle: Nustatyti naują prieigos kodą
       too_short: Slaptažodis turi būti bent 12 simbolių ilgio.
-      updated_flash: Slaptažodis atnaujintas. Prisijunkite su nauju slaptažodžiu.
+      updated_flash: Slaptažodis atnaujintas. Visos sesijos baigtos — prisijunkite su nauju slaptažodžiu.
       updated_json: Slaptažodis sėkmingai atnaujintas.
     reset_title: Nustatyti slaptažodį

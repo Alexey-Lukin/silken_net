@@ -268,7 +268,9 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
            headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
 
       expect(response).to have_http_status(:redirect)
-      expect(flash[:notice]).to be_present
+      # `pending`, не `success`: на момент показу жоден пристрій ще нічого не
+      # отримав — наказ лише поставлено в чергу, і сам текст ключа це й каже.
+      expect(flash[:pending]).to be_present
       expect(gw.reload.pending_firmware_id).to eq(firmware.id)
     end
 
@@ -277,7 +279,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
            headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
 
       expect(response).to have_http_status(:redirect)
-      expect(flash[:alert]).to be_present
+      expect(flash[:error]).to be_present
       expect(OtaTransmissionWorker.jobs).to be_empty
     end
   end

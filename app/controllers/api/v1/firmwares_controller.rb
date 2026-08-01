@@ -116,7 +116,7 @@ module Api
                 firmware: @firmware
               }, status: :created
             end
-            format.html { redirect_to firmwares_path, notice: I18n.t("flash.firmwares.uploaded", version: @firmware.version) }
+            format.html { redirect_to firmwares_path, success: I18n.t("flash.firmwares.uploaded", version: @firmware.version) }
           end
         else
           respond_to do |format|
@@ -204,7 +204,7 @@ module Api
               }, status: :accepted
             end
             format.html do
-              redirect_to firmwares_path, notice: I18n.t("flash.firmwares.deployment_dispatched", version: @firmware.version)
+              redirect_to firmwares_path, pending: I18n.t("flash.firmwares.deployment_dispatched", version: @firmware.version)
             end
           end
         else
@@ -225,7 +225,7 @@ module Api
               }, status: :unprocessable_content
             end
             format.html do
-              redirect_to firmwares_path, alert: I18n.t("flash.firmwares.#{reason_key}")
+              redirect_to firmwares_path, error: I18n.t("flash.firmwares.#{reason_key}")
             end
           end
         end

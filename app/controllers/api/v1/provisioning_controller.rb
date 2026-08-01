@@ -41,8 +41,18 @@ module Api
           begin
             tree_did = SilkenNet::DidDerivation.wire_did_from_uid_hex(normalized_uid)
           rescue ArgumentError
-            render json: { error: I18n.t("flash.provisioning.invalid_uid", uid: normalized_uid) },
-                   status: :unprocessable_content
+            # [SEC.25 Ф4] Форма провізії — браузерна, тож голий `render json:` тут
+            # означав сирий блоб замість форми з поясненням. Гілку досяжно одним
+            # кліком: поле `hardware_uid` вільне, а лісник вводить UID з кремнію.
+            respond_to do |format|
+              format.json do
+                render json: { error: I18n.t("flash.provisioning.invalid_uid", uid: normalized_uid) },
+                       status: :unprocessable_content
+              end
+              format.html do
+                render_new_with_errors(message: I18n.t("flash.provisioning.invalid_uid", uid: normalized_uid))
+              end
+            end
             return
           end
         end
@@ -53,7 +63,19 @@ module Api
         # мертвий (provision зберігає "SNET-…", не 24-hex вхід).
         guard_identifier = tree_did || normalized_uid
         if HardwareKey.exists?(device_uid: guard_identifier)
-          render json: { error: I18n.t("flash.provisioning.uid_taken", uid: guard_identifier) }, status: :conflict
+          # [SEC.25 Ф4] Найбуденніший шлях сюди — повторна відправка тієї самої
+          # форми (подвійний клік / «назад» після успіху), тобто саме браузер.
+          respond_to do |format|
+            format.json do
+              render json: { error: I18n.t("flash.provisioning.uid_taken", uid: guard_identifier) }, status: :conflict
+            end
+            format.html do
+              render_new_with_errors(
+                message: I18n.t("flash.provisioning.uid_taken", uid: guard_identifier),
+                status: :conflict
+              )
+            end
+          end
           return
         end
 
@@ -62,7 +84,22 @@ module Api
         # oracle_visions#simulate, які цей клас багу вже закрили). Без цього
         # форестер org-A провізіонить пристрій + HardwareKey + DID у кластер org-B.
         unless acting_organization!.clusters.exists?(id: provisioning_params[:cluster_id])
-          render json: { error: I18n.t("errors.api.not_found", model: "Cluster") }, status: :not_found
+          # [SEC.25 Ф4] Досяжно БЕЗ підміни значення: `<select>` пропонує лише свої
+          # кластери, але організація запиту резолвиться щоразу наново, тож
+          # super_admin, який перемкнув контекст у сусідній вкладці й відправив уже
+          # відкриту форму, потрапляє сюди легітимно. Тому — форма з поясненням, а
+          # не сторінка «не знайдено»: помилку видно там, де її можна виправити.
+          respond_to do |format|
+            format.json do
+              render json: { error: I18n.t("errors.api.not_found", model: "Cluster") }, status: :not_found
+            end
+            format.html do
+              render_new_with_errors(
+                message: I18n.t("errors.api.not_found", model: "Cluster"),
+                status: :not_found
+              )
+            end
+          end
           return
         end
 
@@ -132,7 +169,7 @@ module Api
               format.html do
                 redirect_to device_path_after_provisioning(@device),
                             status: :see_other,
-                            notice: I18n.t("flash.provisioning.node_initiated",
+                            success: I18n.t("flash.provisioning.node_initiated",
                                            did: device_identifier,
                                            uid: provisioning_params[:hardware_uid])
               end
@@ -145,12 +182,15 @@ module Api
           end
         end
       rescue StandardError => e
-        # `e.backtrace` is always populated here — `e` reached this rescue via an
-        # actual `raise`, and `Api::V1::BaseController#render_internal_server_error`
-        # (the same StandardError net, wider scope) already calls `.first(5).join`
-        # with no safe-nav — mirrored here for consistency.
+        # [SEC.25 Ф4] Доти цей локальний перехоплювач стояв ПЕРЕД класовим
+        # `rescue_from` і віддавав голий JSON — тобто локально відтворював рівно
+        # той дефект, який глобально вже закрито (сира JSON у браузері).
+        # Рендер делегується — дублювати `respond_to` немає навіщо, у базового він
+        # повний. ⚠️ Доменний лог лишається СВІДОМО, хоч делегат теж логує (той
+        # пише `fatal` без доменного префікса): аварія провізії лягає в лог двічі,
+        # і це прийнята ціна за те, щоб її можна було грепнути за `[Provisioning]`.
         Rails.logger.error "🚨 [Provisioning] Збій ініціації: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
-        render json: { error: I18n.t("errors.api.internal") }, status: :internal_server_error
+        render_internal_server_error(e)
       end
 
       private
@@ -161,9 +201,16 @@ module Api
         device.is_a?(Tree) ? tree_path(device) : gateway_path(device)
       end
 
-      def render_new_with_errors
+      # `message:` — для ранніх гілок (`invalid_uid` · `uid_taken` · чужий кластер),
+      # де @device ще не збудовано: помилка мусить приїхати в те саме місце, що й
+      # модельна валідація, інакше вона для лісника виглядає інакшим класом події.
+      # `status:` параметризовано, бо ці гілки не 422 (409 / 404).
+      def render_new_with_errors(message: nil, status: :unprocessable_content)
         @clusters = acting_organization!.clusters
         @families = TreeFamily.alphabetical
+        @device ||= Tree.new
+        @device.errors.add(:base, message) if message
+
         render_dashboard(
           title: I18n.t("provisioning.failed_title"),
           component: Provisioning::New.new(
@@ -173,7 +220,7 @@ module Api
           ),
           # [SEC.25] Без цього Turbo викидав відповідь, і форма з помилками
           # валідації виглядала для лісника як мертва кнопка «Provision».
-          status: :unprocessable_content
+          status: status
         )
       end
 

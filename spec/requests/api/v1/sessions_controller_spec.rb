@@ -271,7 +271,7 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       controller = build_controller_with_auth(auth_hash)
       controller.send(:omniauth_create)
 
-      expect(controller).to have_received(:redirect_to).with("/login", hash_including(:alert))
+      expect(controller).to have_received(:redirect_to).with("/login", hash_including(:error))
     end
 
     it "handles existing user with non-locked identity" do
@@ -284,7 +284,7 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       controller = build_controller_with_auth(auth_hash)
       controller.send(:omniauth_create)
 
-      expect(controller).to have_received(:redirect_to).with("/dashboard", hash_including(:notice))
+      expect(controller).to have_received(:redirect_to).with("/dashboard", hash_including(:success))
     end
   end
 

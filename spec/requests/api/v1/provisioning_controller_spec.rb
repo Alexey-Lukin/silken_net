@@ -286,10 +286,16 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
     end
 
-    it "exercises the new provisioning page path" do
+    # [TEST.10] Доти приклад приймав як успіх і робочу сторінку, і аварію сервера —
+    # тобто не міг упасти в принципі, а фразу-виправдання про «шлях усе одно
+    # пройдено» скопіювали по файлах. Саме така форма приховала сусідню сторінку
+    # завантаження прошивки, яка віддавала аварію й не рендерила форми взагалі.
+    it "renders the provisioning form" do
       get "/provisioning/new", headers: html_headers
-      # Phlex component may not fully render in test env, but code path is exercised
-      expect(response.status).to be_in([ 200, 500 ])
+
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include("hardware_uid")
     end
 
     it "renders HTML success after registering a gateway" do
@@ -331,6 +337,56 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       # виглядає для лісника як мертва кнопка.
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.content_type).to include("text/html")
+    end
+
+    # [SEC.25 Ф4] Три ранні гілки `#register` віддавали голий JSON. Пін саме на
+    # ФОРМУ відповіді, не на статус: статуси не змінювались, тож пін на них лишався
+    # б зеленим і на зламаній поверхні. Наявні приклади цих гілок форсують
+    # `as: :json` і до HTML-половини сліпі за побудовою.
+    it "renders the form, not a JSON blob, when the hardware UID is malformed" do
+      post "/provisioning/register",
+           params: { provisioning: { hardware_uid: "NOT24HEX", device_type: "tree",
+                                     cluster_id: own_cluster.id, tree_family_id: tree_family.id,
+                                     latitude: 49.4285, longitude: 32.0620 } },
+           headers: html_headers
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include("hardware_uid")
+    end
+
+    it "renders the form, not a JSON blob, when the device is already provisioned" do
+      # ⚠️ Ключ створюємо ЯВНО: `HardwareKeyService.provision` тут замокано, тож
+      # звичайна повторна відправка форми впала б у модельну валідацію (422) і
+      # 409-гілки не дістала б узагалі — приклад був би зелений про інший шлях.
+      uid = "SNET-Q-AABBCCDD"
+      HardwareKey.create!(
+        device_uid: uid,
+        aes_key_hex: SecureRandom.hex(32).upcase,
+        lorenz_seed_hex: SecureRandom.hex(32).upcase
+      )
+
+      post "/provisioning/register",
+           params: { provisioning: { hardware_uid: uid, device_type: "gateway",
+                                     cluster_id: own_cluster.id,
+                                     latitude: 49.4285, longitude: 32.0620 } },
+           headers: html_headers
+
+      expect(response).to have_http_status(:conflict)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include("hardware_uid")
+    end
+
+    it "renders the form, not a JSON blob, for a cluster of another organization" do
+      post "/provisioning/register",
+           params: { provisioning: { hardware_uid: "SNET-Q-11223344", device_type: "gateway",
+                                     cluster_id: other_cluster.id,
+                                     latitude: 49.4285, longitude: 32.0620 } },
+           headers: html_headers
+
+      expect(response).to have_http_status(:not_found)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include("hardware_uid")
     end
   end
 end

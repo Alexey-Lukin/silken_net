@@ -19,7 +19,7 @@ lv:
       mismatch: Paroles nesakrīt.
       too_short_flash: Parolei jābūt vismaz 12 rakstzīmes garai.
       too_short_json: Jaunajai parolei jābūt vismaz 12 rakstzīmes garai.
-      updated_flash: Parole veiksmīgi atjaunināta.
+      updated_flash: Parole atjaunināta. Visas pārējās jūsu sesijas ir izbeigtas.
       updated_json: Parole atjaunināta.
     show:
       heading: "🔐 Konta drošība"

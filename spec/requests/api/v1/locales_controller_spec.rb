@@ -19,7 +19,7 @@ RSpec.describe Api::V1::LocalesController, type: :request do
     it "rejects an unknown locale and does not write a cookie" do
       post "/locale", params: { locale: "ru" }
       expect(cookies[:locale]).to be_blank
-      expect(flash[:alert]).to be_present
+      expect(flash[:error]).to be_present
     end
 
     # [I18N.1] Cookie тримає вибір для БРАУЗЕРА; колонка — для того, що з браузера

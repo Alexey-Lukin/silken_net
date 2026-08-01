@@ -79,8 +79,27 @@ module Api
         # кінець лише при poll-видачі, тож на мертвому шлюзі труп інакше тримав би
         # 409 назавжди — і TTL цього не лікує, бо гард його не бачить.
         if @actuator.commands.live_pending.exists? && !override_payload?
-          return render json: { error: I18n.t("flash.actuators.command_in_flight") },
-                        status: :conflict
+          # [SEC.25 Ф4] Тригер буденний — подвійний клік по `button_to` в
+          # `Actuators::Card` (жоден Stimulus його не дебаунсить), і браузерний
+          # клік НЕ несе `Idempotency-Key`, тож 400-гард його не перехоплює:
+          # цей 409 і був єдиною відмовою, яку форестер тут бачив — сирим JSON.
+          # ⚠️ Посадка на сторінку актуатора — свідомий компроміс, а не «там, де
+          # кнопка»: `Actuators::Card` рендериться у ДВОХ місцях (`show` і `index`),
+          # тож клік зі списку приземляється на картку одного пристрою. Це прийнятно
+          # (сторінка релевантна дії й показує стан наказу), але не «повернення на
+          # місце»; повернути точно можна лише через `redirect_back`, який тягне
+          # відкриту вісь open-redirect-санітизації.
+          respond_to do |format|
+            format.json do
+              render json: { error: I18n.t("flash.actuators.command_in_flight") }, status: :conflict
+            end
+            format.html do
+              redirect_to actuator_path(@actuator),
+                          status: :see_other,
+                          error: I18n.t("flash.actuators.command_in_flight")
+            end
+          end
+          return
         end
 
         @command = @actuator.commands.create!(

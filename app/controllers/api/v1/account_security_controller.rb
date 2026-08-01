@@ -51,21 +51,21 @@ module Api
              !current_user.authenticate(params[:current_password].to_s)
             return respond_to do |format|
               format.json { render json: { error: t("account_security.password.current_invalid") }, status: :unprocessable_content }
-              format.html { redirect_to account_security_path, alert: t("account_security.password.current_invalid") }
+              format.html { redirect_to account_security_path, status: :see_other, error: t("account_security.password.current_invalid") }
             end
           end
 
           current_user.update!(otp_required_for_login: false, recovery_codes: nil)
           respond_to do |format|
             format.json { render json: { message: t("account_security.mfa.disabled"), mfa_enabled: false }, status: :ok }
-            format.html { redirect_to account_security_path, notice: t("account_security.mfa.disabled") }
+            format.html { redirect_to account_security_path, status: :see_other, security: t("account_security.mfa.disabled") }
           end
         else
           codes = current_user.generate_recovery_codes!
           current_user.update!(otp_required_for_login: true)
           respond_to do |format|
             format.json { render json: { message: t("account_security.mfa.enabled"), mfa_enabled: true, recovery_codes: codes }, status: :ok }
-            format.html { redirect_to account_security_path, notice: t("account_security.mfa.enabled_with_codes") }
+            format.html { redirect_to account_security_path, status: :see_other, security: t("account_security.mfa.enabled_with_codes") }
           end
         end
       end
@@ -79,7 +79,7 @@ module Api
         if current_user.password_digest.blank? && current_user.identities.active.count <= 1
           respond_to do |format|
             format.json { render json: { error: t("account_security.identity.cannot_unlink_last") }, status: :unprocessable_content }
-            format.html { redirect_to account_security_path, alert: t("account_security.identity.set_password_first") }
+            format.html { redirect_to account_security_path, status: :see_other, error: t("account_security.identity.set_password_first") }
           end
           return
         end
@@ -88,7 +88,7 @@ module Api
 
         respond_to do |format|
           format.json { render json: { message: t("account_security.identity.unlinked_json", provider: identity.provider) }, status: :ok }
-          format.html { redirect_to account_security_path, notice: t("account_security.identity.unlinked_flash", provider: identity.provider.titleize) }
+          format.html { redirect_to account_security_path, status: :see_other, security: t("account_security.identity.unlinked_flash", provider: identity.provider.titleize) }
         end
       end
 
@@ -100,7 +100,7 @@ module Api
 
         respond_to do |format|
           format.json { render json: { message: t("account_security.identity.locked_json", provider: identity.provider) }, status: :ok }
-          format.html { redirect_to account_security_path, notice: t("account_security.identity.locked_flash", provider: identity.provider.titleize) }
+          format.html { redirect_to account_security_path, status: :see_other, security: t("account_security.identity.locked_flash", provider: identity.provider.titleize) }
         end
       end
 
@@ -112,7 +112,7 @@ module Api
 
         respond_to do |format|
           format.json { render json: { message: t("account_security.identity.unlocked_json", provider: identity.provider) }, status: :ok }
-          format.html { redirect_to account_security_path, notice: t("account_security.identity.unlocked_flash", provider: identity.provider.titleize) }
+          format.html { redirect_to account_security_path, status: :see_other, security: t("account_security.identity.unlocked_flash", provider: identity.provider.titleize) }
         end
       end
 
@@ -122,7 +122,7 @@ module Api
         if current_user.password_digest.present? && !current_user.authenticate(params[:current_password])
           respond_to do |format|
             format.json { render json: { error: t("account_security.password.current_invalid") }, status: :unprocessable_content }
-            format.html { redirect_to account_security_path, alert: t("account_security.password.current_invalid") }
+            format.html { redirect_to account_security_path, status: :see_other, error: t("account_security.password.current_invalid") }
           end
           return
         end
@@ -130,7 +130,7 @@ module Api
         if params[:new_password].to_s.length < 12
           respond_to do |format|
             format.json { render json: { error: t("account_security.password.too_short_json") }, status: :unprocessable_content }
-            format.html { redirect_to account_security_path, alert: t("account_security.password.too_short_flash") }
+            format.html { redirect_to account_security_path, status: :see_other, error: t("account_security.password.too_short_flash") }
           end
           return
         end
@@ -138,7 +138,7 @@ module Api
         if params[:new_password] != params[:new_password_confirmation]
           respond_to do |format|
             format.json { render json: { error: t("account_security.password.mismatch") }, status: :unprocessable_content }
-            format.html { redirect_to account_security_path, alert: t("account_security.password.mismatch") }
+            format.html { redirect_to account_security_path, status: :see_other, error: t("account_security.password.mismatch") }
           end
           return
         end
@@ -164,7 +164,7 @@ module Api
 
         respond_to do |format|
           format.json { render json: { message: t("account_security.password.updated_json") }, status: :ok }
-          format.html { redirect_to account_security_path, notice: t("account_security.password.updated_flash") }
+          format.html { redirect_to account_security_path, status: :see_other, security: t("account_security.password.updated_flash") }
         end
       end
 

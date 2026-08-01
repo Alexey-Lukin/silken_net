@@ -23,14 +23,19 @@ module Views
       # регіон приходить НОВИМ вузлом із текстом уже всередині, і для `role="status"`
       # оголошення не гарантоване. Рятує там лише спеціальна обробка `role="alert"`
       # (AT озвучує його й у початковій розмітці) — тобто ВІДМОВИ чутно завжди, а
-      # ПІДТВЕРДЖЕННЯ успіху для незрячого користувача на більшості шляхів мовчить.
-      # Конструкція від цього не стає марною (вона ніде не гірша за альтернативу), але
-      # закрити цю вісь до кінця може лише перенесення тексту в сам `role="alert"`
-      # або клієнтська вставка після завантаження → `00_07` SEC.25.
+      # буденне ПІДТВЕРДЖЕННЯ для незрячого на більшості шляхів лишається тихим.
       #
-      # 🔴 Ролі різні й не взаємозамінні: `alert` = assertive (перебиває мовлення) для
-      # відмов, `status` = polite для підтверджень. APG прямо вимагає вживати assertive
-      # ощадливо — «успішно збережено» не має права перебивати те, що людина читає.
+      # ✅ Саме тому категорій чотири, а не дві: розподіл по регіонах і Є формою
+      # закриття цієї a11y-осі. Усе, що МУСИТЬ бути почуте — відмова (`error`) і
+      # зміна безпекового стану (`security`), — їде в assertive, який AT озвучує
+      # незалежно від того, прийшов вузол новим чи пережив оновлення. Ціна названа
+      # чесно й прийнята: «збережено» може лишитись тихим, і це правильний обмін —
+      # інакше довелось би або перебивати мовлення на кожен успіх, або дротувати
+      # клієнтську вставку заради буденного підтвердження.
+      #
+      # 🔴 Ролі не взаємозамінні, і саме тому регіонів лишається ДВА при чотирьох
+      # категоріях: APG прямо вимагає вживати assertive ощадливо — «успішно
+      # збережено» не має права перебивати те, що людина читає.
       #
       # ⚠️ Свідомо БЕЗ таймера й без кнопки закриття. Це не спрощення: WCAG 2.2.1
       # («Timing Adjustable», рівень A) — критерій про ЧАСОВІ ЛІМІТИ, і поки ліміту
@@ -46,25 +51,46 @@ module Views
       # видалення вузла без пари Turbo назовні не дає. Там канал підтвердження —
       # СТАН (як `Alerts::Row` уже робить), не повідомлення → `00_07` SEC.25 Ф0.
       class FlashMessages < ApplicationComponent
-        # ⚠️ Дві категорії — СТАН, а не присуд: розширення до чотирьох
-        # (`success` · `error` · `pending` · `security`) ⚖️ ратифіковано 2026-08-01,
-        # разом із мапінгом у ці ж два регіони — `error`+`security` → assertive,
-        # `success`+`pending` → polite. Тут доти стояло «окреме рішення з власним
-        # доказом», тобто рішення ще нема — воно вже є; чекає лише міграції сайтів
-        # (атомарної: після перейменування невідома категорія дропається мовчки).
-        # Стан → `00_07` SEC.25 Ф3.
-        KINDS = {
-          "alert" => {
-            role: "alert",
-            live: "assertive",
-            tone: "border-status-danger bg-status-danger text-status-danger-text"
-          },
-          "notice" => {
-            role: "status",
-            live: "polite",
-            tone: "border-gaia-border bg-gaia-surface-sunken text-gaia-primary"
-          }
+        # 🔴 ДВА регіони, ЧОТИРИ категорії — і це не той самий список під двома
+        # іменами. Регіон тримає **a11y-контракт** (скільки live-region'ів знає
+        # скрінрідер і як голосно кожен говорить), категорія — **семантику й тон**.
+        # Розширювати треба саме категорії: четверо регіонів означали б четверо
+        # окремих оголошень і зробили б «ощадливе assertive» неможливим.
+        #
+        # ⚠️ Id називає РЕГІОН, не категорію (`flash_assertive`/`flash_polite`).
+        # Доти вони звались `flash_alert`/`flash_notice` — після розширення таке
+        # ім'я брехало б: у «notice»-регіоні сидів би `pending`, а в «alert» —
+        # `security`, яка помилкою не є.
+        #
+        # ⚠️ Порядок ЗНАЧУЩИЙ: assertive іде першим у DOM, і на цьому стоїть пін
+        # «текст потрапив у правильний регіон» — інакше він був би тавтологією
+        # (будь-який текст завжди після свого ж регіону).
+        REGIONS = {
+          "assertive" => { role: "alert",  live: "assertive", kinds: %w[error security] },
+          "polite"    => { role: "status", live: "polite",    kinds: %w[success pending] }
         }.freeze
+
+        # 🔴 Тон призначено так, щоб гучність і вигляд НЕ розходились. Найтонше
+        # місце — `security`: вона їде в assertive (перебиває мовлення), тож
+        # спокійний синій зробив би зрячому м'яку плашку там, де незрячому
+        # обривають фразу. Бурштин узгоджує обидва канали, лишаючись НЕ помилкою —
+        # зміна безпекового стану не є збоєм. Дзеркально `pending` дістає синій:
+        # «прийнято, результату ще нема» — нейтральна інформація, не тривога.
+        TONES = {
+          "error"    => "border-status-danger bg-status-danger text-status-danger-text",
+          "security" => "border-status-warning bg-status-warning text-status-warning-text",
+          "success"  => "border-status-success bg-status-success text-status-success-text",
+          "pending"  => "border-status-info bg-status-info text-status-info-text"
+        }.freeze
+
+        # 🔴 ОДИН список істини, і він виведений, а не переписаний. Доти `normalize`
+        # фільтрував по `TONES`, а рендер ішов по `REGIONS[:kinds]` — тобто дві
+        # незалежні мапи, розходження між якими давало б рівно ту тиху втрату,
+        # від якої ця поверхня й будувалась, лише з ВІДОМИМ ключем: категорія,
+        # додана в тони й забута в регіоні, проходила б нормалізацію й не
+        # рендерилась ніде. Тепер склад регіонів — єдине джерело, а відсутній тон
+        # падає гучно (`TONES.fetch` → `KeyError`), а не мовчки.
+        KNOWN_KINDS = REGIONS.values.flat_map { |config| config[:kinds] }.freeze
 
         # @param messages [Hash] `{"notice" => "…", "alert" => "…"}` — читає їх
         #   КОНТРОЛЕР (`render_dashboard`/`render_auth_page`) і передає сюди явно.
@@ -79,31 +105,38 @@ module Views
 
         def view_template
           div(class: "fixed inset-x-0 top-16 md:top-24 z-40 flex flex-col items-center gap-2 px-4 pointer-events-none") do
-            KINDS.each_key { |kind| render_region(kind) }
+            REGIONS.each { |name, config| render_region(name, config) }
           end
         end
 
         private
 
         # Порожній регіон теж рендериться — див. шапку.
-        def render_region(kind)
-          config = KINDS.fetch(kind)
-
+        #
+        # ⚠️ Регіон перебирає ВСІ свої категорії, а не одну: `flash` за побудовою
+        # може нести і змете з попереднього запиту, і поставлене в поточному, тож
+        # `success` разом із `pending` — легальний стан. Читання одного значення
+        # на регіон мовчки з'їло б друге повідомлення.
+        def render_region(name, config)
           div(
-            id: "flash_#{kind}",
+            id: "flash_#{name}",
             role: config[:role],
             aria_live: config[:live],
             aria_atomic: "true",
             class: "w-full max-w-xl"
           ) do
-            text = @messages[kind]
-            next if text.blank?
-
-            div(class: tokens(
-              "p-3 border text-tiny uppercase tracking-widest text-center pointer-events-auto",
-              config[:tone]
-            )) { text }
+            config[:kinds].each { |kind| render_message(kind) }
           end
+        end
+
+        def render_message(kind)
+          text = @messages[kind]
+          return if text.blank?
+
+          div(class: tokens(
+            "p-3 border text-tiny uppercase tracking-widest text-center pointer-events-auto",
+            TONES.fetch(kind)
+          )) { text }
         end
 
         # `flash` приїжджає з `FlashHash` або звичайного Hash; ключі — рядки або
@@ -111,12 +144,17 @@ module Views
         # тільки відомі категорії: невідомий ключ мовчки НЕ рендериться, бо для
         # нього немає ані ролі, ані тону — а вигадати їх означало б показати
         # повідомлення без семантики.
+        #
+        # 🔴 На цей мовчазний дроп НЕ можна покладатись як на сторожа міграції:
+        # незареєстрована категорія гине на два шари вище — `redirect_to` викидає
+        # невідомий kwarg ще до `flash`, тож сюди приїжджає порожньо, а не «щось
+        # невідоме». Реєстрація живе в `Api::V1::BaseController` (`add_flash_types`).
         def normalize(messages)
           return {} if messages.blank?
 
           messages.to_h.each_with_object({}) do |(kind, text), acc|
             key = kind.to_s
-            acc[key] = text.to_s if KINDS.key?(key) && text.present?
+            acc[key] = text.to_s if KNOWN_KINDS.include?(key) && text.present?
           end
         end
       end

@@ -112,7 +112,7 @@ module Api
                 Alerts::Row.new(alert: @alert, current_user: current_user).call
               )
             end
-          format.html { redirect_to alerts_path, notice: I18n.t("flash.alerts.resolved") }
+          format.html { redirect_to alerts_path, success: I18n.t("flash.alerts.resolved") }
         end
       rescue AASM::InvalidTransition
         # Тривогу вже закрито — типово другим кліком по кнопці, поки перший ще летів
@@ -123,7 +123,7 @@ module Api
             render json: { error: I18n.t("flash.alerts.already_resolved", id: @alert.id) }, status: :conflict
           end
           format.html do
-            redirect_to alerts_path, notice: I18n.t("flash.alerts.already_resolved", id: @alert.id)
+            redirect_to alerts_path, pending: I18n.t("flash.alerts.already_resolved", id: @alert.id)
           end
         end
       end

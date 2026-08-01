@@ -57,6 +57,21 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
 
         expect(response).to have_http_status(:not_found)
       end
+
+      # [SEC.25 Ф4] Той самий 404 із браузера. Тригер буденний: `purge_later`
+      # асинхронний, тож подвійний клік по «×» (або друга відкрита вкладка)
+      # приходить на вже знятий доказ — і доти бачив сирий JSON. Пін на ФОРМУ,
+      # бо статус не змінювався.
+      it "redirects instead of blobbing JSON when the photo is already gone" do
+        delete "/maintenance_records/#{record.id}/photos/999999",
+               headers: headers.merge("Accept" => "text/html")
+
+        expect(response).to have_http_status(:see_other)
+        expect(response).to redirect_to(maintenance_record_path(record))
+        # Без цього рядка `error:` можна зняти — статус і ціль не змінились би.
+        expect(flash[:error]).to be_present
+        expect(response.media_type).not_to eq("application/json")
+      end
     end
 
     context "when as HTML" do

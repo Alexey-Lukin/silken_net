@@ -48,7 +48,7 @@ module Api
 
           respond_to do |format|
             format.json { render_api_login_success(user) }
-            format.html { redirect_to dashboard_index_path, notice: I18n.t("flash.sessions.neural_link_established") }
+            format.html { redirect_to dashboard_index_path, success: I18n.t("flash.sessions.neural_link_established") }
           end
         else
           render_login_failure
@@ -71,7 +71,7 @@ module Api
         # 2. Перевіряємо чи ідентичність заблокована (Account Takeover Protection)
         existing_identity = Identity.find_by(provider: auth.provider, uid: auth.uid)
         if existing_identity&.locked?
-          redirect_to login_path, alert: I18n.t("flash.sessions.blocked_provider")
+          redirect_to login_path, error: I18n.t("flash.sessions.blocked_provider")
           return
         end
 
@@ -80,7 +80,7 @@ module Api
 
         establish_session(user)
 
-        redirect_to dashboard_index_path, notice: I18n.t("flash.sessions.authenticated_via", provider: auth.provider.titleize)
+        redirect_to dashboard_index_path, success: I18n.t("flash.sessions.authenticated_via", provider: auth.provider.titleize)
       end
 
       # --- ВИХІД (Logout) ---
@@ -97,7 +97,7 @@ module Api
           format.html do
             redirect_to login_path,
                         status: :see_other,
-                        notice: I18n.t("flash.sessions.neural_link_severed")
+                        success: I18n.t("flash.sessions.neural_link_severed")
           end
         end
       end

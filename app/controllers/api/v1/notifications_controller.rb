@@ -44,7 +44,11 @@ module Api
                 }
               }
             end
-            format.html { redirect_to notifications_settings_path, notice: I18n.t("flash.settings.updated") }
+            # [SEC.25 Ф3] Той самий ключ, що й у JSON-гілці вище. Доти HTML брав
+            # загальний ключ сусіднього settings-домену, тобто браузерний
+            # користувач — єдиний, хто повідомлення взагалі БАЧИТЬ, — діставав
+            # текст РОЗМИТІШИЙ за той, що йшов API-клієнтові.
+            format.html { redirect_to notifications_settings_path, success: I18n.t("flash.notifications.updated") }
           end
         else
           respond_to do |format|

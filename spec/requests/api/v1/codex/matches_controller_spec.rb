@@ -100,6 +100,25 @@ RSpec.describe "Api::V1::Codex::Matches", type: :request do
       expect(response.parsed_body["error"]).to eq("seed_invalid_or_consumed")
     end
 
+    # [SEC.25 Ф4] Той самий replay із браузера. Арена — справжні `<form>` без
+    # дебаунсу (компонент сам це документує), тож подвійний клік буденний, а
+    # відповіддю був сирий JSON. Пін на ФОРМУ: статус не змінювався.
+    it "redirects instead of blobbing JSON when the browser replays a seed" do
+      seed = issue_seed
+      post "/codex/matches",
+           params: { pair_seed: seed, winner_slug: left.slug },
+           headers: headers, as: :json
+      post "/codex/matches",
+           params: { pair_seed: seed, winner_slug: right.slug },
+           headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:see_other)
+      expect(response).to redirect_to(new_codex_match_path)
+      # Без цього рядка `error:` можна зняти — статус і ціль не змінились би.
+      expect(flash[:error]).to be_present
+      expect(response.media_type).not_to eq("application/json")
+    end
+
     it "supports skip=true" do
       seed = issue_seed
       post "/codex/matches",

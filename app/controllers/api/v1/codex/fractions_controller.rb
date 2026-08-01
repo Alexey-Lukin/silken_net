@@ -31,8 +31,11 @@ module Api
                        status: :created
               end
               format.html do
+                # ⚠️ `node.title`, а НЕ `title_en`: модель уже вміє обрати мову
+                # (`Codex::Node#title(locale)`), тож дефект тут був подвійний —
+                # англійське речення І англійська назва вузла українцеві.
                 redirect_to codex_node_path(node.slug),
-                            notice: "Fraction set: #{node.title_en}."
+                            success: I18n.t("flash.codex.fraction_set", node: node.title)
               end
             end
           elsif result.errors.include?("cooldown_active")
@@ -46,7 +49,7 @@ module Api
               end
               format.html do
                 redirect_to codex_node_path(node.slug),
-                            alert: "Fraction cooldown active until #{result.cooldown_until.iso8601}."
+                            error: I18n.t("flash.codex.fraction_cooldown", until: result.cooldown_until.iso8601)
               end
             end
           else

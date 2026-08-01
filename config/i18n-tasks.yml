@@ -88,8 +88,12 @@ ignore_missing:
   - 'codex.discoveries.toast.triggers.*'
 
 ignore_unused:
-  # Cross-cutting flash messages used from outside the static view tree.
-  - 'flash.*'
+  # ⚠️ Тут стояла маска `flash.*` — знято [SEC.25 Ф3]. Вона була ІНЕРТНОЮ, і це
+  # виміряно прогоном обома конфігами: 352 unused-ключі однаково з нею й без неї,
+  # flash-рядків нуль в обох. Причини дві — гем має власну поблажливість до
+  # патерну `t("prefix.#{var}")`, а сама команда `unused` у CI не гейтована.
+  # Знімаємо як ПАСТКУ на майбутнє (якщо `unused` колись зроблять гейтом, маска
+  # тихо вимкнула б нагляд над цілим доменом), а не як повернення нагляду.
   # Navigation items and section headers are looked up dynamically by key
   # (e.g. `t("navigation.items.#{key}")`) — i18n-tasks cannot statically
   # resolve symbol-keyed iterations, but the keys are exhaustively defined.

@@ -100,9 +100,13 @@ RSpec.describe Api::V1::SettingsController, type: :request do
       # Сайдбар доводить, що ми на ДАШБОРДІ, а не на сторінці логіну — саме цю
       # підміну вакуумний пін і не бачив.
       expect(response.body).to include("sidebar-navigation")
-      expect(response.body).to include(I18n.t("flash.settings.updated"))
+      expect(response.body).to include(I18n.t("flash.settings.org_updated"))
       # Саме в polite-регіоні: успіх не сміє перебивати мовлення скрінрідера.
-      expect(response.body).to include('id="flash_notice"')
+      # ⚠️ Пін ПОЗИЦІЙНИЙ, і це не педантизм: обидва регіони рендеряться завжди,
+      # навіть порожні, тож голе `include('id="flash_polite"')` було б істинним
+      # для будь-якої дашборд-сторінки — і доти саме таким і було.
+      expect(response.body.index(I18n.t("flash.settings.org_updated")))
+        .to be > response.body.index('id="flash_polite"')
     end
 
     it "updates alert threshold and AI sensitivity" do

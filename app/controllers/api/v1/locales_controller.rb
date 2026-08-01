@@ -25,9 +25,9 @@ module Api
           }
           I18n.locale = requested
           remember_choice_for_signed_in_user(requested)
-          flash[:notice] = I18n.t("flash.locale_changed", lang: I18n.t("locale.available.#{requested}"))
+          flash[:success] = I18n.t("flash.locale_changed", lang: I18n.t("locale.available.#{requested}"))
         else
-          flash[:alert] = I18n.t("flash.unsupported_locale")
+          flash[:error] = I18n.t("flash.unsupported_locale")
         end
 
         redirect_back_or_to root_path, status: :see_other

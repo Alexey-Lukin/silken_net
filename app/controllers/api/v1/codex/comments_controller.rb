@@ -35,7 +35,7 @@ module Api
 
             respond_to do |format|
               format.json { render json: payload, status: :created }
-              format.html { redirect_to codex_node_path(@node.slug), notice: "Comment posted." }
+              format.html { redirect_to codex_node_path(@node.slug), success: I18n.t("flash.codex.comment_posted") }
             end
           else
             render json: { errors: comment.errors.full_messages },

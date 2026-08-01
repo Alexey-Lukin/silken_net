@@ -167,6 +167,12 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
 
       expect(response).to have_http_status(:see_other)
       expect(response.headers["Location"]).to end_with(root_path)
+      # [SEC.25 Ф3] Доти перемикання було НІМИМ, тобто для скрінрідера зміна
+      # тенант-контексту не оголошувалась узагалі. Без цього рядка `success:`
+      # можна зняти й приклад лишиться зеленим — статус і ціль від нього не
+      # залежать. Категорія саме `success` (polite): assertive на рутинному
+      # перемиканні перебивав би мовлення.
+      expect(flash[:success]).to include(other_organization.name)
     end
 
     # Bearer сесії не носить, тож запис у неї нікуди б не поїхав: клієнт дістав би

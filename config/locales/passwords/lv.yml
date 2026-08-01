@@ -22,6 +22,6 @@ lv:
       submit: IESTATĪT JAUNU PAROLI
       subtitle: Iestatīt jauno piekļuves kodu
       too_short: Parolei jābūt vismaz 12 rakstzīmes garai.
-      updated_flash: Parole atjaunināta. Piesakieties ar jauno paroli.
+      updated_flash: Parole atjaunināta. Visas sesijas ir izbeigtas — piesakieties ar jauno paroli.
       updated_json: Parole veiksmīgi atjaunināta.
     reset_title: Atiestatīt paroli

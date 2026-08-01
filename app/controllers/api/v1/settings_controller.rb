@@ -56,7 +56,9 @@ module Api
                 }
               }
             end
-            format.html { redirect_to settings_path, notice: I18n.t("flash.settings.updated") }
+            # [SEC.25 Ф3] Дзеркало `notifications#update_settings`: HTML тепер каже
+            # те саме, що JSON («Налаштування Організації»), а не загальніше.
+            format.html { redirect_to settings_path, success: I18n.t("flash.settings.org_updated") }
           end
         else
           respond_to do |format|

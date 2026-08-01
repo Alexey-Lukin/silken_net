@@ -11,7 +11,7 @@ module Api
       rate_limit to: 3, within: 5.minutes, only: :create, with: -> {
         respond_to do |format|
           format.json { render json: { error: I18n.t("passwords.rate_limited") }, status: :too_many_requests }
-          format.html { redirect_to forgot_password_path, alert: I18n.t("passwords.rate_limited") }
+          format.html { redirect_to forgot_password_path, error: I18n.t("passwords.rate_limited") }
         end
       }
 
@@ -35,7 +35,7 @@ module Api
 
         respond_to do |format|
           format.json { render json: { message: I18n.t("passwords.forgot_sent_json") }, status: :ok }
-          format.html { redirect_to login_path, notice: I18n.t("passwords.forgot_sent_flash") }
+          format.html { redirect_to login_path, pending: I18n.t("passwords.forgot_sent_flash") }
         end
       end
 
@@ -55,7 +55,7 @@ module Api
         if user.nil?
           respond_to do |format|
             format.json { render json: { error: I18n.t("passwords.reset.invalid_token_json") }, status: :unprocessable_content }
-            format.html { redirect_to forgot_password_path, alert: I18n.t("passwords.reset.invalid_token_flash") }
+            format.html { redirect_to forgot_password_path, error: I18n.t("passwords.reset.invalid_token_flash") }
           end
           return
         end
@@ -101,7 +101,7 @@ module Api
 
         respond_to do |format|
           format.json { render json: { message: I18n.t("passwords.reset.updated_json") }, status: :ok }
-          format.html { redirect_to login_path, notice: I18n.t("passwords.reset.updated_flash") }
+          format.html { redirect_to login_path, security: I18n.t("passwords.reset.updated_flash") }
         end
       end
     end

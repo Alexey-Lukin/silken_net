@@ -16,7 +16,11 @@ uk:
     codex:
       attunement_removed: Резонанс знято.
       attunement_saved: Резонанс встановлено.
+      comment_posted: Коментар опубліковано.
+      fraction_cooldown: Зміна фракції доступна з %{until}.
+      fraction_set: 'Фракцію обрано: %{node}.'
       idempotency_required: Заголовок Idempotency-Key обов'язковий для JSON-записів.
+      match_rejected: Голос не зараховано — ось нова пара.
     firmwares:
       deployment_dispatched: Наказ на еволюцію v%{version} поставлено в чергу — Королеви заберуть його власним poll-ом після наступного флашу.
       deployment_no_targets: 'OTA відхилено: немає придатних шлюзів для розгортання.'
@@ -39,6 +43,8 @@ uk:
       updated: Налаштування сповіщень оновлено.
     oracle:
       simulation_started: Оракул почав симуляцію.
+    organizations:
+      context_switched: 'Робочий контекст перемкнуто: %{name}.'
     provisioning:
       invalid_uid: Невалідний hardware UID %{uid} — очікуються 24 hex символи (три 32-бітні слова кремнієвого UID STM32).
       node_initiated: 'Ініціація вузла завершена. DID: %{did}. Hardware UID: %{uid}'
@@ -53,6 +59,8 @@ uk:
       rate_limited: Забагато спроб входу. Спробуйте через хвилину.
     settings:
       org_updated: Налаштування Організації оновлено.
-      updated: Налаштування оновлено.
     telemetry:
       payload_too_large: Payload перевищує ліміт %{limit} KiB.
+    tree_families:
+      created: Нову ДНК виду вплетено в мережу.
+      updated: Біологічні константи перекалібровано.

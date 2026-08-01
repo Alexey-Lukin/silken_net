@@ -16,7 +16,11 @@ lt:
     codex:
       attunement_removed: Derinimas pašalintas.
       attunement_saved: Derinimas išsaugotas.
+      comment_posted: Komentaras paskelbtas.
+      fraction_cooldown: Frakcijos keitimas galimas nuo %{until}.
+      fraction_set: 'Frakcija pasirinkta: %{node}.'
       idempotency_required: JSON įrašams reikalinga Idempotency-Key antraštė.
+      match_rejected: Balsas neįskaitytas — štai nauja pora.
     firmwares:
       deployment_dispatched: Diegimo užsakymas v%{version} įtrauktas į eilę — Karalienės jį paims kitame poll užklausime.
       deployment_no_targets: 'OTA atmesta: nėra tinkamų šliuzų diegimui.'
@@ -39,6 +43,8 @@ lt:
       updated: Pranešimų nustatymai atnaujinti.
     oracle:
       simulation_started: Oracle pradėjo simuliaciją.
+    organizations:
+      context_switched: 'Darbo kontekstas perjungtas: %{name}.'
     provisioning:
       invalid_uid: Neteisingas aparatūros UID %{uid} — tikimasi 24 hex simbolių (trys STM32 silicio UID 32 bitų žodžiai).
       node_initiated: 'Mazgo inicijavimas baigtas. DID: %{did}. Aparatūros UID: %{uid}'
@@ -53,6 +59,8 @@ lt:
       rate_limited: Per daug prisijungimo bandymų. Bandykite dar kartą po minutės.
     settings:
       org_updated: Organizacijos nustatymai atnaujinti.
-      updated: Nustatymai atnaujinti.
     telemetry:
       payload_too_large: Naudingoji apkrova viršija %{limit} KiB limitą.
+    tree_families:
+      created: Naujos rūšies DNR įausta į tinklą.
+      updated: Biologinės konstantos perkalibruotos.

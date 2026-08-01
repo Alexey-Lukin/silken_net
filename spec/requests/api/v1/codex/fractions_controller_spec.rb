@@ -71,7 +71,7 @@ RSpec.describe "Api::V1::Codex::Fractions", type: :request do
 
       expect(response).to have_http_status(:redirect)
       expect(response).to redirect_to("/codex/nodes/#{node.slug}")
-      expect(flash[:notice]).to include("Fraction set")
+      expect(flash[:success]).to include("Fraction set")
     end
 
     it "redirects with alert on HTML format cooldown" do
@@ -82,7 +82,7 @@ RSpec.describe "Api::V1::Codex::Fractions", type: :request do
            headers: { "Authorization" => "Bearer #{token}", "Accept" => "text/html" }
 
       expect(response).to have_http_status(:redirect)
-      expect(flash[:alert]).to include("cooldown active")
+      expect(flash[:error]).to include("cooldown active")
     end
   end
 

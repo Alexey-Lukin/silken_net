@@ -19,7 +19,7 @@ lt:
       mismatch: Slaptažodžiai nesutampa.
       too_short_flash: Slaptažodis turi būti bent 12 simbolių ilgio.
       too_short_json: Naujas slaptažodis turi būti bent 12 simbolių ilgio.
-      updated_flash: Slaptažodis sėkmingai atnaujintas.
+      updated_flash: Slaptažodis atnaujintas. Visos kitos jūsų sesijos baigtos.
       updated_json: Slaptažodis atnaujintas.
     show:
       heading: "🔐 Paskyros saugumas"

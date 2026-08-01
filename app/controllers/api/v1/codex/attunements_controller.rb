@@ -34,7 +34,7 @@ module Api
               end
               format.html do
                 redirect_to codex_node_path(@node.slug),
-                            notice: I18n.t("flash.codex.attunement_saved")
+                            success: I18n.t("flash.codex.attunement_saved")
               end
             end
           else
@@ -58,7 +58,7 @@ module Api
             format.html do
               redirect_to codex_node_path(@node.slug),
                           status: :see_other,
-                          notice: I18n.t("flash.codex.attunement_removed")
+                          success: I18n.t("flash.codex.attunement_removed")
             end
           end
         end

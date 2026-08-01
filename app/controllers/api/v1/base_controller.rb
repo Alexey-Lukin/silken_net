@@ -39,6 +39,19 @@ module Api
       # GET ignored it.
       include LocaleSettable
 
+      # [SEC.25 Ф3] Без цього рядка `redirect_to …, success: "…"` НЕ ставить нічого —
+      # і мовчки. `ActionController::Flash#redirect_to` перебирає ЛИШЕ `_flash_types`
+      # і робить `delete` тільки для них; невідомий ключ їде далі в `Redirecting`,
+      # де читають самий `:status`. Ні винятку, ні логу, ні падіння.
+      #
+      # 🔴 Тому категорії реєструються ТУТ, а не в `ApplicationController`: цей клас
+      # успадковує `ActionController::Base` НАПРЯМУ, тож реєстрація в сестри його не
+      # покриває — а саме під ним живуть усі сайти kwarg-форми.
+      #
+      # ⚠️ Регіонів у `FlashMessages` лишається два (a11y-контракт), категорій —
+      # чотири (семантика й тон); мапінг тримає компонент, не цей список.
+      add_flash_types :success, :error, :pending, :security
+
       # --- ПОРЯДОК ЗАХИСТУ ---
       before_action :authenticate_user!
       # Слід для ARCH.57: ставиться ПІСЛЯ автентифікації (раніше немає кого писати)

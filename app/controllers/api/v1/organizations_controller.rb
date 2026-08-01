@@ -99,7 +99,18 @@ module Api
           # на DELETE, який метод зберігає. Причина вужча й чесна: дієслово екшена
           # може змінитись, а `see_other` — єдина конвенція редиректу після мутації,
           # записана в цьому дереві (`sessions#destroy`, `photos#destroy`).
-          format.html { redirect_to root_path, status: :see_other }
+          # [SEC.25 Ф3] Доти перемикання було НІМИМ: єдиним каналом підтвердження
+          # лишався індикатор у топ-барі, тобто для скрінрідера зміна тенант-контексту
+          # не оголошувалась узагалі. Категорія `success` (polite), не `security`:
+          # перемикання — рутинна дія super_admin'а, і assertive перебивав би мовлення
+          # на кожному кліку, всупереч APG-правилу «assertive ощадливо», яке тримає
+          # сам компонент. Індикатор лишається несучим — він показує стан ПОСТІЙНО,
+          # тоді як повідомлення живе один запит.
+          format.html do
+            redirect_to root_path,
+                        status: :see_other,
+                        success: I18n.t("flash.organizations.context_switched", name: organization.name)
+          end
         end
       end
 

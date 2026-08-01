@@ -85,7 +85,28 @@ module Api
             end
           else
             status = result.error == "seed_invalid_or_consumed" ? :forbidden : :unprocessable_content
-            render json: { error: result.error }, status: status
+            # [SEC.25 Ф4] Арена — справжні `<form>` без жодного дебаунсу (компонент
+            # сам це документує), тож повторний сабміт того самого `pair_seed`
+            # (подвійний клік або «назад» на застарілу рамку) — буденний шлях, і він
+            # віддавав сирий JSON. Посадка назад на арену: там людина й стоїть, а
+            # редирект дає їй свіжу пару замість спожитої.
+            #
+            # ⚠️ Дві названі стелі, обидві виміряні й свідомо лишені. (1) Realm
+            # ГУБИТЬСЯ: форма арени шле лише `pair_seed` + `winner_slug`/`skip`,
+            # тож `resolve_realm` відкотиться на перший упорядкований — людину
+            # може винести з реалму, в якому вона голосувала. Лік — hidden-поле в
+            # `Codex::Battle::Arena`, тобто зміна ФОРМИ, не контролера.
+            # (2) Обидва статуси (403 replay і 422 валідація) кладуть ОДИН текст:
+            # для replay він точний, для рідкої 422 — оптимістичний. Розводити
+            # варто разом із (1) — та сама поверхня → `00_07` SEC.25.
+            respond_to do |format|
+              format.json { render json: { error: result.error }, status: status }
+              format.html do
+                redirect_to new_codex_match_path,
+                            status: :see_other,
+                            error: I18n.t("flash.codex.match_rejected")
+              end
+            end
           end
         end
 

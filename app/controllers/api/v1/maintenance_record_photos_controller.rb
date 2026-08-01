@@ -29,7 +29,7 @@ module Api
           format.html do
             redirect_to maintenance_record_path(@record),
                         status: :see_other,
-                        notice: I18n.t("flash.maintenance.photo_deleted")
+                        success: I18n.t("flash.maintenance.photo_deleted")
           end
         end
       end
@@ -55,7 +55,7 @@ module Api
         respond_to do |format|
           format.json { render_forbidden_json }
           format.html do
-            redirect_to maintenance_record_path(@record), alert: I18n.t("errors.api.forbidden")
+            redirect_to maintenance_record_path(@record), status: :see_other, error: I18n.t("errors.api.forbidden")
           end
         end
       end
@@ -71,10 +71,21 @@ module Api
         ).find(params[:maintenance_record_id])
       end
 
+      # [SEC.25 Ф4] Досяжно подвійним кліком по «×»: `purge_later` асинхронний, тож
+      # другий клік (або друга відкрита вкладка) приходить на вже знятий доказ.
+      # Посадка та сама, що в сусіднього гарда цього ж контролера — сторінка
+      # запису, де живе кнопка.
       def set_photo
         @photo = @record.photos.find(params[:id])
       rescue ActiveRecord::RecordNotFound
-        render json: { error: I18n.t("flash.maintenance.photo_not_found") }, status: :not_found
+        respond_to do |format|
+          format.json { render json: { error: I18n.t("flash.maintenance.photo_not_found") }, status: :not_found }
+          format.html do
+            redirect_to maintenance_record_path(@record),
+                        status: :see_other,
+                        error: I18n.t("flash.maintenance.photo_not_found")
+          end
+        end
       end
     end
   end
