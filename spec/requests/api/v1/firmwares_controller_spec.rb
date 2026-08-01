@@ -179,11 +179,10 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
   end
 
   describe "GET /firmwares/new" do
-    # 🔴 Тут доти стояло `be_in([ 200, 500 ])` з підставою «Phlex component may not
-    # fully render in test env» — і воно ховало те, що сторінка віддавала рівно 500
-    # і не рендерила форми ВЗАГАЛІ: `form_with(model:)` виводив неіснуючий
-    # `bio_contract_firmwares_path`. Тобто завантажити прошивку через UI було
-    # неможливо, а сюїта лишалась зеленою [SEC.25 / TEST.10].
+    # 🔴 Доти цей приклад приймав як успіх і 200, і 500 — і саме це ховало те, що
+    # сторінка віддавала рівно 500 і не рендерила форми ВЗАГАЛІ: `form_with(model:)`
+    # виводив неіснуючий `bio_contract_firmwares_path`. Тобто завантажити прошивку
+    # через UI було неможливо, а сюїта лишалась зеленою [SEC.25 / TEST.10].
     it "рендерить сторінку із ЖИВОЮ формою, що цілить у правильний маршрут" do
       get "/firmwares/new", headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
 
@@ -204,9 +203,9 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
       expect(response).to have_http_status(:created)
     end
 
-    # 🔴 Тут доти стояло `be_in([ 200, 500 ])`: множина навіть не містила 422, який
-    # ця гілка мала б віддавати після фіксу SEC.25 — тобто приклад був зелений САМЕ
-    # тому, що шлях падав у 500. Фраза-підстава про «Phlex may not render» ховала
+    # 🔴 Доти приймалось 200 або 500 — множина, що навіть не містила 422, який ця
+    # гілка мала б віддавати після фіксу SEC.25. Тобто приклад був зелений САМЕ
+    # тому, що шлях падав. Фраза-підстава про «Phlex may not render» ховала
     # реальний `NoMethodError` на неіснуючому маршрут-хелпері [TEST.10].
     it "повертає форму з 422 і ПОКАЗУЄ причину відмови" do
       post "/firmwares",

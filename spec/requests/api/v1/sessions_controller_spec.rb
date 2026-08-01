@@ -155,12 +155,19 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       expect(response).to have_http_status(:redirect)
     end
 
-    it "handles HTML login failure" do
+    # ⚠️ [TEST.10] Доти цей приклад приймав і 401, і 500 — з підставою «Phlex may
+    # not fully render in test env», яку вимір спростував: шлях стабільно віддає
+    # 401 з HTML. Сюди ж зведено дубль, що жив окремим `describe` нижче: обидва
+    # міряли ТОЙ САМИЙ POST, тож дім лишається один — поруч із успішним входом.
+    it "рендерить сторінку входу НА МІСЦІ зі збереженим 401" do
       post "/login",
         params: { email: user.email_address, password: "wrong_password" },
         headers: { "Accept" => "text/html" }
-      # Phlex component may not fully render in test env, but the code path is exercised
-      expect(response.status).to be_in([ 401, 500 ])
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include("<html")
+      expect(response.body).to include(I18n.t("flash.sessions.invalid_credentials"))
     end
   end
 
@@ -278,22 +285,6 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       controller.send(:omniauth_create)
 
       expect(controller).to have_received(:redirect_to).with("/dashboard", hash_including(:notice))
-    end
-  end
-
-  describe "HTML login failure" do
-    # ⚠️ Тут доти стояло `be_in([ 401, 500 ])` з підставою «Phlex rendering may 500
-    # in test env» — [TEST.10]: приклад був зелений і тоді, коли сторінка падає.
-    # Виміряно: шлях стабільно віддає 401 із HTML, тож твердження може бути точним.
-    it "рендерить сторінку входу НА МІСЦІ зі збереженим 401" do
-      post "/login",
-        params: { email: user.email_address, password: "wrong_password" },
-        headers: { "Accept" => "text/html" }
-
-      expect(response).to have_http_status(:unauthorized)
-      expect(response.media_type).to eq("text/html")
-      expect(response.body).to include("<html")
-      expect(response.body).to include(I18n.t("flash.sessions.invalid_credentials"))
     end
   end
 

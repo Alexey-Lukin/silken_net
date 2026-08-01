@@ -17,7 +17,7 @@ class DashboardLayout < ApplicationComponent
   # успішне перемикання не має жодного видимого сліду, і super_admin читає чужі
   # дані без сигналу про те, чиї вони. ⚠️ Тут доти стояло ще й «цей layout не
   # рендерить `flash` УЗАГАЛІ» — правда до [SEC.25]; тепер рендерить, і саме тому
-  # решта 42 сайтів `redirect_to … notice:/alert:` перестала бути німою.
+  # решта 43 сайтів `redirect_to … notice:/alert:` перестала бути німою.
   # @param flash [Hash] повідомлення поточного запиту — див. `Shared::UI::FlashMessages`
   def initialize(title:, current_user:, current_path: "/", ews_alert_count: 0,
                  acting_organization: nil, flash: {}, content: nil)
