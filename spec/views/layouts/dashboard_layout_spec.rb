@@ -128,6 +128,17 @@ RSpec.describe DashboardLayout do
       expect(html).to include("Trees")
     end
 
+    # 🔴 [ARCH.77] НЕГАТИВНА половина, без якої всі приклади цього блоку вічно
+    # зелені: вони перевіряють, що змістовний сегмент Є, і задовольнились би
+    # хвостом `Api // V1 // Trees`. Саме цю половину зрізав перехід із `drop(2)`
+    # на `delete_prefix` — мутація префікса на порожній рядок червонить рівно тут.
+    it "не показує службовий префікс контуру серед крихт" do
+      html = render_layout(current_path: "/api/v1/trees")
+
+      expect(html).not_to include(">Api<")
+      expect(html).not_to include(">V1<")
+    end
+
     it "renders nested path segments" do
       html = render_layout(current_path: "/api/v1/maintenance_records")
       expect(html).to include("Maintenance records")

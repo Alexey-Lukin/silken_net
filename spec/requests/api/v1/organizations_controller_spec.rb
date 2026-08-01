@@ -74,6 +74,16 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
     # невідрізненна від правди: кнопки просто з'являються на всіх рядках, і жоден
     # НЕГАТИВНИЙ приклад не червоніє. Червоніє лише твердження, що маркер Є там,
     # де він мусить бути.
+    # [UI.6] Проводка в `show` — четверта поверхня, і доти вона була ЄДИНОЮ
+    # незапіненою: компонентна спека передає kwarg сама, а request-приклад
+    # перевіряв лише 200 + content-type. Тобто заява «кожна проводка
+    # mutation-verified» була ширша за зроблене рівно на цей екшен.
+    it "позначає профіль клану, в контексті якого super_admin працює" do
+      get "/api/v1/organizations/#{organization.id}", headers: html_headers
+
+      expect(response.body).to include("ACTIVE_CONTEXT")
+    end
+
     it "позначає рядок організації, в контексті якої super_admin працює" do
       get "/api/v1/organizations", headers: html_headers
 

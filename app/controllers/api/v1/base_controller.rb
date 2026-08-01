@@ -305,8 +305,17 @@ module Api
 
       # Один дім JSON-половини: локальні гарди, що вже мають власний `respond_to`
       # (м'яка посадка замість сторінки відмови — `maintenance_records`,
-      # `maintenance_record_photos`), кличуть саме його. Викликати звідти
-      # `render_forbidden` було б вкладеним `respond_to`.
+      # `maintenance_record_photos`), кличуть саме його.
+      #
+      # ⚠️ Тут довго стояло «інакше вийшов би вкладений `respond_to`, і це
+      # зламало б виклик» — НЕПРАВДА, знято adversarial-проходом 2026-08-01.
+      # `RespondToMismatchError` кидається лише коли формат УЖЕ відрендерено в
+      # інший тип; json-у-json проходить, і доказ поруч — `render_validation_error`
+      # має власний `respond_to`, а всі його викликачі сидять усередині
+      # `format.json` (`tree_families`, `maintenance_records`, `firmwares`,
+      # `provisioning`), і ці гілки виконуються зеленими прикладами.
+      # Чинна підстава вужча й чесна: окремий метод робить JSON-половину ОДНИМ
+      # домом — а не рятує від поломки, якої немає.
       def render_forbidden_json
         render json: { error: I18n.t("errors.api.forbidden") }, status: :forbidden
       end

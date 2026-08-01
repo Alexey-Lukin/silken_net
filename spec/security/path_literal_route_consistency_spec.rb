@@ -20,6 +20,16 @@ require "rails_helper"
 #     мусить бути окремою гілкою, а не цим проходом.
 #   · Він доводить УЗГОДЖЕНІСТЬ конфігу з роутером, а не те, що throttle реально
 #     зупиняє трафік — це інше твердження й інший приклад.
+#   · 🔴 **Колонка `verbs` — рукописна деклАРАЦІЯ, а не вимір самого правила.** Гейт
+#     звіряє її з РОУТЕРОМ, тож ловить «шлях помер» і «дієслово на шлях не
+#     зареєстроване» — але не «правило читає не те дієслово, яке тут написано».
+#     Тобто на founding-класі SEC.29 (шлях живий, правило дивиться на POST при
+#     PATCH-маршруті) цей гейт був би ЗЕЛЕНИЙ. Дієслівну вісь доводить лише
+#     поведінковий приклад у `spec/initializers/rack_attack_spec.rb`, і його треба
+#     писати ОКРЕМО для кожного правила, чиє дієслово несуче.
+#   · `recognize_path` доводить, що маршрут ОГОЛОШЕНО, а не що дія існує: сусідній
+#     випадок того ж свіпу (`codex/admin` `new`/`edit`) резолвився роутером і
+#     віддавав 404 з `ActionNotFound`.
 #   · `config/deploy.yml` / `.kamal/**` читає Kamal поза Rails-процесом; сюди вони
 #     не потрапляють за побудовою.
 #
@@ -48,10 +58,22 @@ THROTTLE_PATH_REGISTRY = {
     paths: %w[/api/v1/account_security/password /api/v1/account_security/mfa],
     verbs: %w[PATCH DELETE]
   },
-  "m2m_auth/ip" => { paths: %w[/api/v1/auth/m2m_token], verbs: %w[POST] },
+  # `/refresh` — окремий POST-маршрут ТІЄЇ САМОЇ Ed25519/DID-поверхні, тобто рівно
+  # те, від чого правило й ставили. Доти реєстр його не знав, і фікс `==`→префікс
+  # не мав жодного піна: мутація-реверт лишалась зеленою.
+  "m2m_auth/ip" => {
+    paths: %w[/api/v1/auth/m2m_token /api/v1/auth/m2m_token/refresh],
+    verbs: %w[POST]
+  },
   "oracle_callbacks/ip" => { paths: %w[/api/v1/oracle_callbacks], verbs: %w[POST] },
   "helium_sos/ip" => { paths: %w[/api/v1/telemetry/helium], verbs: %w[POST] },
-  "codex/attunements" => { paths: %w[/api/v1/codex/nodes/some-slug/attunements], verbs: %w[POST] },
+  # Правило читає `post? || delete?`, і DELETE живе на ОКРЕМОМУ підшляху
+  # (`.../attunements/me`) — реєстр доти казав лише POST, тобто брехав про
+  # правило з дня народження. Обидві дії перелічені явно.
+  "codex/attunements" => {
+    paths: %w[/api/v1/codex/nodes/some-slug/attunements /api/v1/codex/nodes/some-slug/attunements/me],
+    verbs: %w[POST DELETE]
+  },
   "codex/comments" => { paths: %w[/api/v1/codex/nodes/some-slug/comments], verbs: %w[POST] },
   "codex/fractions" => { paths: %w[/api/v1/codex/fractions], verbs: %w[POST] },
   "codex/matches/create" => { paths: %w[/api/v1/codex/matches], verbs: %w[POST] }
@@ -67,6 +89,14 @@ RSpec.describe "path literals vs router", type: :request do
     true
   rescue ActionController::RoutingError
     false
+  end
+
+  # Викликає САМ matcher правила, а не читає реєстр. `REMOTE_ADDR` обовʼязковий:
+  # блок повертає `request.ip` як дискримінатор, тож без нього результат nil
+  # завжди — проба «нічого не матчить» була б хибно-зеленою в обидва боки.
+  def rule_fires?(name, path, verb)
+    env = Rack::MockRequest.env_for(path, method: verb, "REMOTE_ADDR" => "203.0.113.7")
+    !Rack::Attack.throttles.fetch(name).block.call(Rack::Attack::Request.new(env)).nil?
   end
 
   describe "повнота реєстру" do
@@ -92,8 +122,27 @@ RSpec.describe "path literals vs router", type: :request do
     end
   end
 
-  # 🔴 Саме та вісь, на якій розійшовся `reset_password`: шлях існує, правило
-  # матчить його регексом — і мовчки не спрацьовує, бо дієслово інше.
+  # 🔴 ЦЕ — детектор founding-класу SEC.29, і він міряє САМЕ ПРАВИЛО, а не
+  # колонку реєстру. Без нього гейт доводив би лише «шлях живий», тобто був би
+  # зелений на дефекті, заради якого його поставили: `reset_password` існував
+  # увесь час, а правило дивилось на POST при PATCH-маршруті.
+  describe "правило реально спрацьовує на кожен свій шлях" do
+    THROTTLE_PATH_REGISTRY.each do |name, config|
+      config[:paths].each do |path|
+        (config[:verbs] || %w[GET]).each do |verb|
+          next unless Rails.application.routes.recognize_path(path, method: verb) rescue next
+
+          it "#{name}: #{verb} #{path}" do
+            expect(rule_fires?(name, path, verb))
+              .to be(true), "#{name} не матчить #{verb} #{path} — правило розійшлося з реєстром"
+          end
+        end
+      end
+    end
+  end
+
+  # Та сама вісь, але з боку роутера: шлях існує, правило матчить його регексом —
+  # і мовчки не спрацьовує, бо дієслово інше.
   describe "дієслово правила збігається з маршрутом" do
     it "logins/ip накриває обидва дієслова ланцюга скидання пароля" do
       expect(route_exists?("/api/v1/login", "POST")).to be(true)
