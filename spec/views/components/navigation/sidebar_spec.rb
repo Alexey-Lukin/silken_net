@@ -195,6 +195,33 @@ RSpec.describe Navigation::Sidebar do
       html = render_en(current_path: "/nonexistent")
       expect(html).not_to include('aria-current="page"')
     end
+
+    # 🔴 [ARCH.77] Одиничність, а не присутність. Три приклади вище перевіряють, що
+    # `aria-current` десь Є — тобто лишились би зеленими, якби префіксний матч
+    # підсвітив ДВА пункти одразу. Саме цю вісь голий `start_with?` і відкривав.
+    it "підсвічує рівно ОДИН пункт, а не всі з тим самим префіксом" do
+      html = render_en(current_path: api_v1_alerts_path)
+
+      expect(html.scan('aria-current="page"').size).to eq(1)
+    end
+
+    # Шлях глибше за пункт меню лишається його дочірнім — межа сегмента, не рядок.
+    it "тримає підсвітку на вкладеній сторінці розділу" do
+      html = render_en(current_path: "#{api_v1_clusters_path}/42")
+
+      expect(html.scan('aria-current="page"').size).to eq(1)
+    end
+
+    # 🔴 Саме цей приклад відрізняє сегментний матч від підрядкового: шлях, що
+    # ПОЧИНАЄТЬСЯ з адреси пункту, але не є його дочірнім (немає `/` на межі).
+    # На голому `start_with?` пункт підсвітився б — тобто без цього приклада
+    # обидві реалізації невідрізненні, і пін вище доводив би лише відсутність
+    # колізії, а не механізм.
+    it "не підсвічує пункт на сусідньому шляху зі спільним префіксом" do
+      html = render_en(current_path: "#{api_v1_clusters_path}-archive")
+
+      expect(html).not_to include('aria-current="page"')
+    end
   end
 
   describe "badge rendering" do

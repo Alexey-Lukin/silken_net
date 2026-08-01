@@ -265,11 +265,18 @@ Rails.application.routes.draw do
         resources :citations, only: [ :create, :destroy ]
 
         namespace :admin do
+          # ⚠️ `only:` тут несуче, а не гігієна [ARCH.77]: обидва контролери —
+          # чисто-JSON і форм не мають, тож без обмеження Rails генерував
+          # `new`/`edit`, які вели в `ActionNotFound`. Той виняток кидається в
+          # `AbstractController::Base#process` ДО `process_action`, тобто повз
+          # `rescue_from StandardError` — і Rails мапить його на 404, а не 500.
+          # Тихий наслідок: кожне таке звернення інкрементить fail2ban-лічильник
+          # (він рахує 401/404), тобто мертвий маршрут ще й годував бан.
           # DAO-editable unlock-rule registry. `admin_or_above?` only.
-          resources :discovery_rules
+          resources :discovery_rules, only: %i[index show create update destroy]
           # Phase 6 — DAO node curation. Create restricted to super_admin
           # in `Codex::Admin::NodePolicy`; update/destroy admin+.
-          resources :nodes, param: :slug,
+          resources :nodes, param: :slug, only: %i[index show create update destroy],
                     constraints: { slug: %r{[a-z0-9][a-z0-9-]*} }
         end
       end

@@ -114,7 +114,14 @@ module Navigation
       return unless visible_to_actor?(min_role)
 
       label  = t("navigation.items.#{key}")
-      active = @current_path.start_with?(path.split("?").first)
+      # Збіг по МЕЖІ СЕГМЕНТА, не по підрядку [ARCH.77]. Сьогодні колізії немає
+      # (жоден із коренів меню не є префіксом іншого — перевірено попарно), тож
+      # це профілактика: голий `start_with?` підсвітив би два пункти одразу в
+      # день, коли зʼявиться маршрут із рядковим, а не сегментним, збігом — і
+      # спека цього не побачила б, бо перевіряє ПРИСУТНІСТЬ `aria-current`,
+      # а не його одиничність.
+      target = path.split("?").first
+      active = @current_path == target || @current_path.start_with?("#{target}/")
 
       # [UI.3] Без aria_label: він ПЕРЕКРИВАВ дочірній текст для SR — незрячий
       # не чув EWS-badge («Threat Alerts 5» ставало «Threat Alerts»). Діти
