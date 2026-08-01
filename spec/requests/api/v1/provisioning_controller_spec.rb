@@ -304,8 +304,14 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       }
 
       post "/provisioning/register", params: gateway_params, headers: html_headers
-      expect(response).to have_http_status(:ok)
-      expect(response.content_type).to include("text/html")
+
+      # [SEC.25] 🔴 Доти тут стояв `:ok` — і саме він цементував найдорожчу німоту
+      # в дереві: успіх провізії рендерився `200` без редиректу, а Turbo такі
+      # відповіді на сабміт викидає мовчки. Лісник тиснув «Provision», пристрій
+      # створювався, і сторінка не ворушилась. Тепер PRG: 303 на сторінку самого
+      # пристрою, де `uid` уже в шапці, і повідомлення у flash.
+      expect(response).to have_http_status(:see_other)
+      expect(response).to redirect_to(gateway_path(Gateway.find_by(uid: "SNET-Q-FF99EE88")))
     end
 
     it "renders HTML errors when device validation fails" do
@@ -320,7 +326,10 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       }
 
       post "/provisioning/register", params: invalid_params, headers: html_headers
-      expect(response).to have_http_status(:ok)
+
+      # [SEC.25] 422, не 200 — інакше Turbo викидає відповідь і форма з помилками
+      # виглядає для лісника як мертва кнопка.
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.content_type).to include("text/html")
     end
   end

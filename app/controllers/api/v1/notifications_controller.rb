@@ -49,10 +49,13 @@ module Api
         else
           respond_to do |format|
             format.json { render json: { errors: current_user.errors.full_messages }, status: :unprocessable_content }
+            # [SEC.25] Дзеркалить статус JSON-гілки — на `200` без редиректу Turbo
+            # відповідь викидає, і сабміт виглядає як no-op.
             format.html do
               render_dashboard(
                 title: I18n.t("notifications.settings_title"),
-                component: Notifications::Settings.new(user: current_user)
+                component: Notifications::Settings.new(user: current_user),
+                status: :unprocessable_content
               )
             end
           end

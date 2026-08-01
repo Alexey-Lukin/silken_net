@@ -116,13 +116,25 @@ module Api
                   key_derivation: "hkdf-sha256"
                 }, status: :created
               end
+              # [SEC.25] 🔴 Тут був НАЙДОРОЖЧИЙ екземпляр класу: успіх провізії
+              # рендерився як `200` без редиректу, а Turbo такі відповіді на сабміт
+              # викидає мовчки. Тобто лісник тиснув «Provision», пристрій
+              # створювався, `HardwareKey` писався, `PeaqRegistrationWorker` летів —
+              # і сторінка не ворушилась. Найгірша форма німоти в дереві: не «дія не
+              # вдалась», а «дія вдалась, і про це не сказано».
+              #
+              # Лік — PRG на сторінку самого пристрою, а не окрема сторінка успіху:
+              # `trees/show` уже показує `did` заголовком і `device_uid` у
+              # hardware-vault, `gateways/show` — `uid` у шапці. Тобто все, що
+              # `Provisioning::Success` виводив, там уже є, і в контексті.
+              # `flash.provisioning.node_initiated` уже написаний у 4 локалях і тепер
+              # має де відрендеритись.
               format.html do
-                # [SEC.11] HKDF derivation is the only mode — UI never
-                # sees the raw AES key.
-                render_dashboard(
-                  title: I18n.t("provisioning.success_title"),
-                  component: Provisioning::Success.new(device: @device, aes_key: nil)
-                )
+                redirect_to device_path_after_provisioning(@device),
+                            status: :see_other,
+                            notice: I18n.t("flash.provisioning.node_initiated",
+                                           did: device_identifier,
+                                           uid: provisioning_params[:hardware_uid])
               end
             end
           else
@@ -143,6 +155,12 @@ module Api
 
       private
 
+      # Дерево і Королева мають різні сторінки; обидві вже показують ідентифікатор,
+      # який лісник звіряє з кремнієм.
+      def device_path_after_provisioning(device)
+        device.is_a?(Tree) ? tree_path(device) : gateway_path(device)
+      end
+
       def render_new_with_errors
         @clusters = acting_organization!.clusters
         @families = TreeFamily.alphabetical
@@ -152,7 +170,10 @@ module Api
             clusters: @clusters,
             families: @families,
             device: @device
-          )
+          ),
+          # [SEC.25] Без цього Turbo викидав відповідь, і форма з помилками
+          # валідації виглядала для лісника як мертва кнопка «Provision».
+          status: :unprocessable_content
         )
       end
 

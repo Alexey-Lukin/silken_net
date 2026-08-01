@@ -99,7 +99,11 @@ module Api
                   # persists anything (AR validation/callback failure = no DB write),
                   # so it is never `persisted?` here — no photos can exist yet.
                   existing_photos: []
-                )
+                ),
+                # [SEC.25] Дзеркалить статус JSON-гілки: на `200` без редиректу Turbo
+                # відповідь викидає, тож лісник у полі, чий запис не пройшов валідацію
+                # (найчастіше — бракує обовʼязкового фото), не бачив НІЧОГО.
+                status: :unprocessable_content
               )
             end
           end
@@ -171,7 +175,8 @@ module Api
                 component: Maintenance::Form.new(
                   record: @record,
                   existing_photos: @record.photos.limit(6).to_a
-                )
+                ),
+                status: :unprocessable_content
               )
             end
           end

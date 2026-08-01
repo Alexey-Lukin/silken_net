@@ -74,7 +74,9 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
             headers: html_headers,
             params: { phone_number: "0123" }
 
-      expect(response).to have_http_status(:ok)
+      # [SEC.25] 422 — дзеркало JSON-гілки; на 200 Turbo відповідь викидає, тож
+      # невалідний номер телефону не показував користувачеві нічого.
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.content_type).to include("text/html")
     end
   end

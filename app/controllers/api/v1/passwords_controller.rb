@@ -66,7 +66,12 @@ module Api
             format.html do
               render_auth_page(
                 title: I18n.t("passwords.reset_title"),
-                component: Passwords::Reset.new(token: params[:token], flash_alert: I18n.t("passwords.reset.too_short"))
+                component: Passwords::Reset.new(token: params[:token], flash_alert: I18n.t("passwords.reset.too_short")),
+                # [SEC.25] Дзеркалить статус JSON-гілки. Тут ціна найвища в дереві:
+                # без нього Turbo викидав відповідь, тобто людина, що скидає пароль,
+                # вводила закороткий і не бачила ЖОДНОЇ реакції — при тому, що
+                # компонент чесно приймав `flash_alert:` і чесно його рендерив.
+                status: :unprocessable_content
               )
             end
           end
@@ -79,7 +84,8 @@ module Api
             format.html do
               render_auth_page(
                 title: I18n.t("passwords.reset_title"),
-                component: Passwords::Reset.new(token: params[:token], flash_alert: I18n.t("passwords.reset.mismatch"))
+                component: Passwords::Reset.new(token: params[:token], flash_alert: I18n.t("passwords.reset.mismatch")),
+                status: :unprocessable_content
               )
             end
           end

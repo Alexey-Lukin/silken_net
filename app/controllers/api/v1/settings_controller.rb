@@ -61,10 +61,14 @@ module Api
         else
           respond_to do |format|
             format.json { render json: { errors: org.errors.full_messages }, status: :unprocessable_content }
+            # [SEC.25] Дзеркалить статус JSON-гілки рядком вище. Без нього Turbo
+            # мовчки викидає відповідь (`200` без редиректу на сабміт), і форма з
+            # помилкою виглядає для оператора як мертва кнопка.
             format.html do
               render_dashboard(
                 title: I18n.t("settings.show_title"),
-                component: Settings::Show.new(organization: org)
+                component: Settings::Show.new(organization: org),
+                status: :unprocessable_content
               )
             end
           end

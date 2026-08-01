@@ -65,7 +65,17 @@ module Api
         else
           respond_to do |format|
             format.json { render_validation_error(@family) }
-            format.html { render_dashboard(title: I18n.t("tree_families.create_error_title"), component: TreeFamilies::Form.new(family: @family)) }
+            # [SEC.25] `status:` тут несучий, а не косметика: Turbo Drive вимагає, щоб
+            # відповідь на сабміт була або редиректом, або 4xx/5xx — на `200` без
+            # редиректу воно кидає «Form responses must redirect to another location»
+            # у консоль і НЕ оновлює сторінку взагалі. Тобто без цього рядка форма з
+            # помилкою виглядає для оператора як мертва кнопка. Дзеркалить JSON-гілку
+            # рядком вище, яка 422 віддавала завжди.
+            format.html do
+              render_dashboard(title: I18n.t("tree_families.create_error_title"),
+                               component: TreeFamilies::Form.new(family: @family),
+                               status: :unprocessable_content)
+            end
           end
         end
       end
@@ -86,7 +96,11 @@ module Api
         else
           respond_to do |format|
             format.json { render_validation_error(@family) }
-            format.html { render_dashboard(title: I18n.t("tree_families.update_error_title"), component: TreeFamilies::Form.new(family: @family)) }
+            format.html do
+              render_dashboard(title: I18n.t("tree_families.update_error_title"),
+                               component: TreeFamilies::Form.new(family: @family),
+                               status: :unprocessable_content)
+            end
           end
         end
       end

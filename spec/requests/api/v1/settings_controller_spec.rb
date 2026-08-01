@@ -189,12 +189,18 @@ RSpec.describe Api::V1::SettingsController, type: :request do
       expect(response.content_type).to include("text/html")
     end
 
-    it "exercises HTML error on update failure" do
+    # [SEC.25/TEST.10] Доти тут стояло `be_in([200, 500])` з підставою «Phlex може
+    # не відрендеритись у test-env, але шлях виконано». Обидві половини хибні:
+    # шлях рендериться стабільно, а твердження, що приймає 500, не може впасти
+    # В ПРИНЦИПІ — і саме такі приклади робили невидимим те, що HTML-гілка віддає
+    # `200`, який Turbo мовчки викидає.
+    it "віддає 422 на невдалій валідації — інакше Turbo викине відповідь" do
       patch "/settings",
             headers: html_headers,
             params: { organization: { name: "", billing_email: "invalid" } }
-      # Phlex component may not fully render in test env, but code path is exercised
-      expect(response.status).to be_in([ 200, 500 ])
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.media_type).to eq("text/html")
     end
   end
 end

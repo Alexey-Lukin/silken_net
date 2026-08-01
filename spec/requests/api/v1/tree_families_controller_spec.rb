@@ -154,7 +154,9 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
         post "/tree_families", params: invalid_params, headers: headers
       }.not_to change(TreeFamily, :count)
 
-      expect(response).to have_http_status(:ok)
+      # [SEC.25] 422, не 200: Turbo викидає `200` без редиректу на сабміт, тож
+      # форма з помилками не показалась би зовсім.
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "returns 403 for non-admin users" do
@@ -200,7 +202,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
             params: { tree_family: { name: "" } },
             headers: headers
 
-      expect(response).to have_http_status(:ok)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(scots_pine.reload.name).to eq("Scots Pine")
     end
 

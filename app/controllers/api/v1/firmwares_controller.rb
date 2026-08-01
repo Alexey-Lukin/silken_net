@@ -116,10 +116,14 @@ module Api
         else
           respond_to do |format|
             format.json { render_validation_error(@firmware) }
+            # [SEC.25] Дзеркалить статус JSON-гілки — на `200` без редиректу Turbo
+            # відповідь викидає, тобто відхилений upload прошивки не показував
+            # оператору нічого.
             format.html do
               render_dashboard(
                 title: I18n.t("firmwares.create_error_title"),
-                component: Firmwares::New.new(firmware: @firmware)
+                component: Firmwares::New.new(firmware: @firmware),
+                status: :unprocessable_content
               )
             end
           end

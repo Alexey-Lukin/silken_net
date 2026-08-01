@@ -120,8 +120,7 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
           password_confirmation: "short"
         }, headers: { "Accept" => "text/html" }
 
-        # Phlex component may not fully render in test env, but code path is exercised
-        expect(response.status).to be_in([ 200, 500 ])
+        expect(response).to have_http_status(:unprocessable_content)
       end
 
       it "handles mismatched passwords in HTML format" do
@@ -133,7 +132,7 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
           password_confirmation: "different_password"
         }, headers: { "Accept" => "text/html" }
 
-        expect(response.status).to be_in([ 200, 500 ])
+        expect(response).to have_http_status(:unprocessable_content)
       end
 
       it "redirects on successful HTML password reset" do
@@ -203,8 +202,11 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
         params: { token: token, password: "short", password_confirmation: "short" },
         headers: { "Accept" => "text/html" }
 
-      # Phlex component may 500 in test env, but the flash.now validation error code path is exercised
-      expect(response.status).to be_in([ 200, 500 ])
+      # [SEC.25/TEST.10] Було `be_in([200, 500])` — твердження, що не може
+      # впасти. 422 тут несучий: на `200` без редиректу Turbo викидає відповідь,
+      # тобто людина, що скидає пароль, не бачила ЖОДНОЇ реакції на закороткий.
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include(I18n.t("passwords.reset.too_short"))
     end
 
     it "renders flash for mismatched passwords in HTML format" do
@@ -214,8 +216,8 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
         params: { token: token, password: "new_password_123", password_confirmation: "different_123" },
         headers: { "Accept" => "text/html" }
 
-      # Phlex component may 500 in test env, but the flash.now password mismatch code path is exercised
-      expect(response.status).to be_in([ 200, 500 ])
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include(I18n.t("passwords.reset.mismatch"))
     end
   end
 end
