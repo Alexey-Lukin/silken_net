@@ -29,6 +29,19 @@ RSpec.describe Api::V1::SettingsController, type: :request do
       get "/api/v1/settings", headers: regular_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
+
+    # [UI.9] HTML-близнюк того самого 403, і саме його бракувало класу: дев'ять із
+    # дев'яти запитів цього файла йшли `as: :json`, тож гілка, якою ходить БРАУЗЕР,
+    # не виконувалась жодного разу — а голий `render_forbidden` `respond_to` не мав,
+    # тобто віддавав користувачеві сирий JSON-блоб замість сторінки відмови.
+    it "віддає браузеру СТОРІНКУ відмови, а не JSON-блоб" do
+      get "/api/v1/settings", headers: regular_headers.merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:forbidden)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include("<html")
+      expect(response.body).to include(I18n.t("errors.api.forbidden_title"))
+    end
   end
 
   describe "PATCH /api/v1/settings" do

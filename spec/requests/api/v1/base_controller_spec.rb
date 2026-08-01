@@ -4,6 +4,14 @@
 require "rails_helper"
 
 RSpec.describe Api::V1::BaseController, type: :request do
+  # Ці приклади пінять ДИСПЕТЧЕР — «гард кличе відмову», — а не її форму. Форму
+  # (JSON проти сторінки) пінить request-рівень: `settings_controller_spec` має
+  # обидві гілки формату, відколи [UI.9] дав `render_forbidden` HTML-половину.
+  #
+  # ⚠️ `and_call_original` тут стояв і був знятий свідомо: він виконував справжній
+  # `render_forbidden` у контролері, зібраному через `described_class.new`, де
+  # `request` — nil, а `render` застабано. Тобто нічого не доводив, зате після
+  # [UI.9] почав падати на `respond_to`, який лізе в `request.formats`.
   describe "RBAC helpers" do
     let(:controller) { described_class.new }
 
@@ -15,8 +23,6 @@ RSpec.describe Api::V1::BaseController, type: :request do
     describe "authorize_admin! when current_user is nil" do
       it "calls render_forbidden" do
         allow(controller).to receive(:current_user).and_return(nil)
-        allow(controller).to receive(:render_forbidden).and_call_original
-        allow(controller).to receive(:render)
         controller.send(:authorize_admin!)
         expect(controller).to have_received(:render_forbidden)
       end
@@ -25,8 +31,6 @@ RSpec.describe Api::V1::BaseController, type: :request do
     describe "authorize_super_admin! when current_user is nil" do
       it "calls render_forbidden" do
         allow(controller).to receive(:current_user).and_return(nil)
-        allow(controller).to receive(:render_forbidden).and_call_original
-        allow(controller).to receive(:render)
         controller.send(:authorize_super_admin!)
         expect(controller).to have_received(:render_forbidden)
       end
@@ -35,8 +39,6 @@ RSpec.describe Api::V1::BaseController, type: :request do
     describe "authorize_forester! when current_user is nil" do
       it "calls render_forbidden" do
         allow(controller).to receive(:current_user).and_return(nil)
-        allow(controller).to receive(:render_forbidden).and_call_original
-        allow(controller).to receive(:render)
         controller.send(:authorize_forester!)
         expect(controller).to have_received(:render_forbidden)
       end

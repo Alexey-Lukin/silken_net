@@ -40,9 +40,9 @@ module Api
       # читає батьківський гард і що фільтрує кнопку в `PhotoCard`.
       #
       # ⚠️ Посадка ведеться на сторінку ЗАПИСУ, а не на index (як у батька): кнопка «×»
-      # живе саме на `show`, тож викидати з неї глядача не було б за що. HTML-гілка
-      # обовʼязкова, бо «×» — це `button_to` з браузера: голий `render_forbidden`
-      # віддав би форестеру JSON-блоб ([SEC.25]).
+      # живе саме на `show`, тож викидати з неї глядача не було б за що. Після [UI.9]
+      # базовий `render_forbidden` уже вміє HTML, але веде на СТОРІНКУ відмови —
+      # інше дієслово, тож локальний `respond_to` лишається; спільна лише JSON-половина.
       #
       # 🔴 Чесна межа: `alert:` тут НЕ бачить ніхто. `DashboardLayout` flash не приймає
       # й не рендерить (його показують лише три auth-компоненти через явні kwargs), тож
@@ -54,7 +54,7 @@ module Api
         return if @record.mutable_by?(current_user)
 
         respond_to do |format|
-          format.json { render_forbidden }
+          format.json { render_forbidden_json }
           format.html do
             redirect_to api_v1_maintenance_record_path(@record), alert: I18n.t("errors.api.forbidden")
           end

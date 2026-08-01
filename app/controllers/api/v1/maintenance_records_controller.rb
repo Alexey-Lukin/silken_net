@@ -226,10 +226,12 @@ module Api
       def authorize_record_mutation!
         return if @record.mutable_by?(current_user)
 
-        # [SEC.25] Усі три гейтовані екшени (`edit`/`update`/`verify`) мають HTML-шлях,
-        # тож голий `render_forbidden` показував форестеру JSON-блоб замість відмови.
+        # [SEC.25] Усі три гейтовані екшени (`edit`/`update`/`verify`) мають HTML-шлях.
+        # ⚠️ Цей `respond_to` НЕ став зайвим після [UI.9] (де базовий `render_forbidden`
+        # дістав власну HTML-гілку): там посадка — СТОРІНКА відмови, тут свідомо мʼяка,
+        # назад у список. Різні дієслова, тож і різні місця; спільна лише JSON-половина.
         respond_to do |format|
-          format.json { render_forbidden }
+          format.json { render_forbidden_json }
           format.html do
             redirect_to api_v1_maintenance_records_path, alert: I18n.t("errors.api.forbidden")
           end

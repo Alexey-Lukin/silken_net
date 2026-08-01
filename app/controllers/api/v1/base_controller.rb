@@ -276,7 +276,38 @@ module Api
         end
       end
 
+      # [UI.9] HTML-гілка тут така ж несуча, як у `render_forbidden_pundit` нижче, і
+      # відсутня вона була не за задумом, а тому, що ніхто нею не ходив: **12**
+      # контролерів тримають КЛАСОВИЙ `authorize_*!`, тож будь-хто, хто набрав їхню
+      # адресу з браузера, діставав сирий JSON-блоб замість сторінки відмови. Два
+      # контролери свого часу вже наткнулись і залатали локально — тобто симптом був
+      # відомий, а корінь лишався жити.
+      #
+      # Шаблон — dashboard, з тієї самої підстави, що й у pundit-близнюка: усі
+      # виклики стоять ПІСЛЯ `authenticate_user!`, тобто це свій автентифікований
+      # користувач, якому не можна САМЕ це, а не чужий системі глядач.
       def render_forbidden
+        respond_to do |format|
+          format.json { render_forbidden_json }
+          format.html do
+            render_dashboard(
+              title: I18n.t("errors.api.forbidden_title"),
+              component: Errors::Page.new(
+                heading: I18n.t("errors.api.forbidden_title"),
+                message: I18n.t("errors.api.forbidden"),
+                tone: :warning
+              ),
+              status: :forbidden
+            )
+          end
+        end
+      end
+
+      # Один дім JSON-половини: локальні гарди, що вже мають власний `respond_to`
+      # (м'яка посадка замість сторінки відмови — `maintenance_records`,
+      # `maintenance_record_photos`), кличуть саме його. Викликати звідти
+      # `render_forbidden` було б вкладеним `respond_to`.
+      def render_forbidden_json
         render json: { error: I18n.t("errors.api.forbidden") }, status: :forbidden
       end
 
@@ -287,7 +318,7 @@ module Api
       # це — і сайдбар йому чесний та корисний, а не бутафорія.
       def render_forbidden_pundit(_exception)
         respond_to do |format|
-          format.json { render json: { error: I18n.t("errors.api.forbidden") }, status: :forbidden }
+          format.json { render_forbidden_json }
           format.html do
             render_dashboard(
               title: I18n.t("errors.api.forbidden_title"),
