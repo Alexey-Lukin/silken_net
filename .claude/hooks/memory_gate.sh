@@ -26,9 +26,23 @@ REPO="${MEMORY_GATE_REPO:-/Users/oleksiilukin/silken_net}"
 # as a side-note across 20-35 files. Deliberately NOT paid for by trimming other
 # rows: the measured effect is that cutting the index accelerates growth of the
 # CORPUS (fewer visible homes -> more new files), so evicting rows to fund new
-# homes is the wrong lever. Honest residual: this sits ~1.0 kB above the founder's
-# 24 kB working cap, so the next pass owes an eviction (hub-inline), not a bump.
-IDX_BASELINE=25850
+# homes is the wrong lever.
+#
+# LOWERED 2026-08-03 (25850 -> 23773): that owed eviction was paid, by hub-inline
+# and not by prose. Thirteen rows became two hub rows — the "вісь помилки" family
+# (8 rows, 2397 B, now one row routing 9 files) and the §07 cluster (5 rows + a
+# redundant header). Zero files deleted or merged, zero link lost. Two measured
+# lessons are worth more than the number: (1) a hub's saving comes from HOOK
+# THICKNESS, not from how tightly the family is read — the tightest co-read
+# cluster left (Hardware/EBFC, lift 14.7) already runs 162 B/row and would have
+# repaid ~490 B while costing the scan layer its live 🔄/🔴 state; (2) demoted
+# files are carried by their inbound [[strings]], so the strings go in FIRST —
+# the three newest homes had only 3-4 external ones and zero direct reads, and
+# were strung up to 7-8 before losing their rows. Founder's working band is
+# ~21-22 kB; this sits at 23.2 kB, and the remaining gap has no candidate that
+# passes the "natural family, read together" test — closing it would mean
+# demoting commit-time reflexes (lift 2.5), which is a worse trade than the gap.
+IDX_BASELINE=23773
 FILE_CAP=40960          # rule-file ceiling
 FILE_WARN=36000        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=4             # dated blocks, summed across all three costumes
