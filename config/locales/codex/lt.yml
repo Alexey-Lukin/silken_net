@@ -44,17 +44,6 @@ lt:
       heading: Mano Codex
       meta: "%{trigger} · %{timestamp}"
       page_title: Codex · Mano atradimai
-      toast:
-        kicker: Codex Atrakinta
-        triggers:
-          attunement_streak: Serija
-          default: Atrakinta
-          fraction_choice: Paktas
-          manual_unlock: Suteikta
-          match_milestone: Mūšis
-          oracle_seasonal: Oracle
-          telemetry_observation: Stebėta
-        visit: "→ Apsilankyti"
     fractions:
       change: Keisti →
       choose: Pasirinkti frakciją

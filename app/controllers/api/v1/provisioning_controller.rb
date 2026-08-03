@@ -163,7 +163,7 @@ module Api
               # Лік — PRG на сторінку самого пристрою, а не окрема сторінка успіху:
               # `trees/show` уже показує `did` заголовком і `device_uid` у
               # hardware-vault, `gateways/show` — `uid` у шапці. Тобто все, що
-              # `Provisioning::Success` виводив, там уже є, і в контексті.
+              # виводила знята сторінка успіху, там уже є, і в контексті.
               # `flash.provisioning.node_initiated` уже написаний у 4 локалях і тепер
               # має де відрендеритись.
               format.html do

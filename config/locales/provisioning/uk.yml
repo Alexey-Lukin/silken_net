@@ -19,17 +19,3 @@ uk:
       submit: ПРИВ'ЯЗАТИ ОБЛАДНАННЯ ДО МАТРИЦІ
       subtitle: Встановлення 40-річного біометричного зв'язку
     new_title: Ритуал ініціації обладнання
-    success:
-      assigned_did: Призначений DID
-      hardware_uid: Hardware UID
-      hkdf:
-        algorithm: HKDF-SHA256
-        description_after: " і на бекенді, і на прошивці. Передача ключа не потрібна."
-        description_before: 'Ключ AES-256 та Lorenz K_seed виводяться незалежно через '
-        note: Переконайтесь, що PROVISIONING_MASTER_KEY запрограмовано в пристрій під час Factory Provisioning.
-        title: 'РЕЖИМ HKDF: ZERO-TRUST ДЕРИВАЦІЯ КЛЮЧІВ'
-      not_available: Н/Д
-      ritual_complete: Ритуал завершено
-      view_in_matrix: Переглянути вузол у матриці →
-      woven: Вузол вплетено у Silken Net.
-    success_title: Ініціацію завершено

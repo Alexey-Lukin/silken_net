@@ -84,8 +84,6 @@ ignore_missing:
   # тобто гейт вимагав би назад ті самі N×N копії, які ми щойно прибрали.
   # Вісь стереже `spec/i18n/locale_catalog_invariance_spec.rb`, не цей рядок.
   - 'locale.available.*'
-  # Trigger labels are looked up dynamically by Codex::Discoveries::Toast.
-  - 'codex.discoveries.toast.triggers.*'
 
 ignore_unused:
   # ⚠️ Тут стояла маска `flash.*` — знято [SEC.25 Ф3]. Вона була ІНЕРТНОЮ, і це

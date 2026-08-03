@@ -43,17 +43,6 @@ en:
       heading: My Codex
       meta: "%{trigger} · %{timestamp}"
       page_title: Codex · My Discoveries
-      toast:
-        kicker: Codex Unlocked
-        triggers:
-          attunement_streak: Streak
-          default: Unlocked
-          fraction_choice: Pact
-          manual_unlock: Granted
-          match_milestone: Battle
-          oracle_seasonal: Oracle
-          telemetry_observation: Observed
-        visit: "→ Visit"
     fractions:
       change: Change →
       choose: Choose a Fraction

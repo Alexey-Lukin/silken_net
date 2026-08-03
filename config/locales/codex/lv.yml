@@ -43,17 +43,6 @@ lv:
       heading: Mans Codex
       meta: "%{trigger} · %{timestamp}"
       page_title: Codex · Mani atklājumi
-      toast:
-        kicker: Codex Atbloķēts
-        triggers:
-          attunement_streak: Sērija
-          default: Atbloķēts
-          fraction_choice: Pakts
-          manual_unlock: Piešķirts
-          match_milestone: Cīņa
-          oracle_seasonal: Oracle
-          telemetry_observation: Novērots
-        visit: "→ Apmeklēt"
     fractions:
       change: Mainīt →
       choose: Izvēlēties frakciju

@@ -19,17 +19,3 @@ en:
       submit: BIND HARDWARE TO MATRIX
       subtitle: Establishing 40-year biometric link
     new_title: Hardware Initiation Ritual
-    success:
-      assigned_did: Assigned DID
-      hardware_uid: Hardware UID
-      hkdf:
-        algorithm: HKDF-SHA256
-        description_after: " on both backend and firmware. No key transmission required."
-        description_before: 'AES-256 key and Lorenz K_seed are derived independently via '
-        note: Ensure PROVISIONING_MASTER_KEY is programmed into device during Factory Provisioning.
-        title: 'HKDF MODE: ZERO-TRUST KEY DERIVATION'
-      not_available: N/A
-      ritual_complete: Ritual Complete
-      view_in_matrix: View Node in Matrix →
-      woven: Node has been woven into the Silken Net.
-    success_title: Initiation Successful

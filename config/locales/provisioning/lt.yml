@@ -19,17 +19,3 @@ lt:
       submit: SUSIETI APARATŪRĄ SU MATRICA
       subtitle: Sukurti 40 metų biometrinį ryšį
     new_title: Aparatūros inicijavimo ritualas
-    success:
-      assigned_did: Priskirtas DID
-      hardware_uid: Aparatūros UID
-      hkdf:
-        algorithm: HKDF-SHA256
-        description_after: " tiek galinėje sistemoje, tiek programinėje įrangoje. Rakto perdavimas nereikalingas."
-        description_before: 'AES-256 raktas ir Lorenz K_seed nepriklausomai išvedami per '
-        note: Užtikrinkite, kad PROVISIONING_MASTER_KEY būtų užprogramuotas įrenginyje gamyklos aprūpinimo metu.
-        title: 'HKDF REŽIMAS: NULINĖS PASITIKĖJIMO RAKTO IŠVEDIMAS'
-      not_available: Nėra
-      ritual_complete: Ritualas baigtas
-      view_in_matrix: Peržiūrėti mazgą matricoje →
-      woven: Mazgas įaustas į Silken Net.
-    success_title: Inicijavimas sėkmingas

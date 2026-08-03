@@ -403,7 +403,7 @@ end
 коли OS повідомляє про reduced-motion. Для CSS-анімації сторінкам нічого додавати
 не треба — правило діє автоматично. ⚠️ **Виняток — canvas/`requestAnimationFrame`:**
 CSS-гейт глушить лише `*-duration`, НЕ JS rAF-цикл, тож JS-контролери руху
-(`matrix-rain`, `reveal`, `codex--reveal`) мусять САМІ перевіряти
+(`matrix-rain`, `reveal`) мусять САМІ перевіряти
 `matchMedia("(prefers-reduced-motion: reduce)")` у `connect()` і виходити (реалізовано).
 
 **`@utility animate-fade-in`** — keyframe `gaia-fade-in` (translateY 4px → 0 +
@@ -494,6 +494,7 @@ render Views::Shared::UI::StatusBadge.new(status: "confirmed", class: "mt-2")
 | Компонент | Файл | Ключові Props | Призначення |
 |---|---|---|---|
 | **FlashMessages** | `flash_messages.rb` | `messages:` | **Два** live-regions (`flash_assertive`→`role=alert`, `flash_polite`→`role=status`) для **чотирьох** категорій (`error`+`security`→assertive, `success`+`pending`→polite); рендериться в ОБОХ layoutʼах, дані приходять kwargʼом із `render_dashboard`/`render_auth_page`. ⚠️ Регіони присутні **завжди, навіть порожні** — умова оголошення скрінрідером; без таймера (WCAG 2.2.1 — критерій про часові ліміти). ⚠️ Id називає РЕГІОН, не категорію; регіон перебирає ВСІ свої категорії (дві одночасно — легальний стан `flash`) [SEC.25] |
+| **ErrorSummary** | `error_summary.rb` | `messages:`, `title:` | Зведення причин відмови для форми, що перемалювалась на 422 (`role="alert"`). ⚠️ **Третій жанр повідомлення, не дубль двох інших:** `FlashMessages` несе те, що пережило редирект, `flash_alert:`/`password_error:` в auth-компонентах — ОДНУ наперед відому помилку сабміту, а це — СПИСОК причин від моделі, з якими людина лишається у формі. ⚠️ Рендер **умовний** (дзеркально до `FlashMessages`): відповідь на 422 є повним рендером, вузол приходить новим разом із текстом, і `role="alert"` AT озвучує саме так — порожня коробка тут чутності не додала б. ⚠️ Заголовок — параметр: `provisioning/new` називає інший АКТ («ініціалізація не вдалася»), бо більшість причин там не з валідації моделі, а з guard-клауз контролера [SEC.25] |
 | **StatusBadge** | `status_badge.rb` | `status:`, `id:`, `class:` | AASM стан → семантичний кольоровий бейдж (20+ станів) |
 | **StatCard** | `stat_card.rb` | `label:`, `value:`, `sub:`, `danger:`, `class:` | Картка метрики дашборду з опціональним danger-виділенням |
 | **DataTable** | `data_table.rb` | `columns:`, `empty_message:`, `class:`, `&block` | Обгортка таблиці з налаштовуваними заголовками стовпців |
@@ -677,7 +678,6 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Codex::Fractions::OnboardingWizard` | `codex/fractions/onboarding_wizard.rb` | `current_user:` | **Phase 8.** First-login банер у `DashboardLayout` — рендериться лише коли `current_user.codex_fraction.blank?`, з двома CTA: «Choose your Fraction →» (`/codex/fractions/picker`) та «Browse the Codex» (`/codex/realms`). Без Stimulus — нативна Turbo-Drive навігація (узгоджено з § 15 Native HTML over Stimulus). Layout-хук обгорнутий у `rescue StandardError` (ADR-CDX-7 fail-open). DOM id `codex_onboarding_wizard`. |
 | `Codex::Battle::Arena` | `codex/battle/arena.rb` | `left:`, `right:`, `pair_seed:`, `realm:`, `error:` | **Phase 4.** Turbo Frame `id="codex_battle_arena"` з двома cards (Title + Archetype + `Elo: N · Mm`) + VS-divider + Skip. POST форми на `/codex/matches` (`MatchesController#create`; один winner_slug per форма + окрема skip-форма). UI-назва "Battle Arena" — UX label, REST-ресурс — `Codex::Match`. Error-state pill при `not enough nodes`. |
 | `Codex::Leaderboard::Table` | `codex/leaderboard/table.rb` | `realm:`, `nodes:`, `limit:` | **Phase 4.** Read-only top-N Elo board. HTML `<table>` з колонками rank / Title / Elo / Matches / Lifecycle. Рендериться публічно (`/codex/leaderboard` без auth). Empty-state copy коли `nodes.empty?`. |
-| `Codex::Discoveries::Toast` | `codex/discoveries/toast.rb` | `node:`, `trigger_type:`, `unlocked_at:` | **Phase 5.** Single-card toast — компонент **зібраний, але не дротований**: `Codex::DiscoveryProbeWorker` більше не броадкастить нічого (сирий ActionCable знято 2026-07-27, [`UI.2`](00_07_Action_Plan_Tracker); у воркері лишився тільки вестигіальний коментар про намір). Живим це стане ЛИШЕ через підписаний Turbo-стрім — тобто це продуктове «чи треба», не технічне «чи можна». Stimulus `codex--reveal` data-attribute (matrix-rain JS controller — Phase 6 batch). Trigger-type label dispatch: Observed / Battle / Pact / Streak / Oracle / Granted. gaia-* tokens only. **Namespacing під `Codex::Discoveries::*` (plural)** — необхідно щоб уникнути Zeitwerk const-clash з `Codex::Discovery` AR class. |
 | `Codex::Discoveries::List` | `codex/discoveries/list.rb` | `discoveries:`, `pagy:` | **Phase 5.** Paginated 3-col grid of own unlocked nodes (rendered by `GET /codex/discoveries/me` HTML format). Empty-state copy "Nothing unlocked yet — observe a tree, vote in the Arena, choose a fraction." Кожна card показує title / archetype_key / `trigger_type · unlocked_at`. gaia-* tokens only. |
 | `Codex::Citations::Pill` | `codex/citations/pill.rb` | `citation:` | **Phase 6.** Single inline citation chip — `« Title · archetype_key »`. Slug-href anchor до `/codex/nodes/:slug`, hover-title зі 140-char note, `aria-label` для screen readers, `focus-visible:ring-2`. gaia-* tokens (`bg-gaia-surface-sunken`, `border-gaia-border`, `hover:border-gaia-primary`). Defensive nil-safe — рендерить порожньо якщо `citation.node` зник. |
 | `Codex::Citations::Strip` | `codex/citations/strip.rb` | `target:`, `citations:`, `current_user:` | **Phase 6.** Wrap-flex container з усіма pills прив'язаними до операційної цілі (`Tree`/`Cluster`/`AiInsight`/`EwsAlert`/`OracleVision`/`NaasContract`). DOM id `codex_citations_<type_underscore>_<id>` (продюсера НЕМА — сирий ActionCable знято 2026-07-27; живим тракт стане лише через підписаний Turbo-стрім). Empty-state copy "No lore citations yet." щоб freshly-cited entity мав стабільний DOM target. Інтегровано в `Trees::Show`, `Clusters::Show`, `Alerts::Row`, `OracleVisions::ForecastCard` через приватний `render_codex_citations` що early-return'ить на `defined?(Codex::Citation)` гарду + `for_target(target).includes(:node)`. |
@@ -782,7 +782,6 @@ START: Що це за компонент?
 | **matrix-rain** | `matrix_rain_controller.js` | `matrix-rain` | Canvas-ефект Matrix digital rain |
 | **mobile-nav** | `mobile_nav_controller.js` | `mobile-nav` | Шим `<dialog>` мобільної навігації (backdrop-click + scroll-lock Safari) — § 15.2 |
 | **codex--comment** | `codex/comment_controller.js` | `codex--comment` | Codex thread — inline reply / broadcast (`Codex::Comments::Thread`) |
-| **codex--reveal** | `codex/reveal_controller.js` | `codex--reveal` | Codex discovery-toast reveal (`Codex::Discoveries::Toast`) |
 | **reveal** ⚠️ | `reveal_controller.js` | `reveal` | Appear-on-scroll (IntersectionObserver) — § 14.3. **Наразі 0 консюмерів** (`data-controller="reveal"` ніде): scaffold, який авто-реєструється |
 
 > **⚠️ Важливо:** Будь-який `*_controller.js` у директорії автоматично реєструється через `eagerLoadControllersFrom` — **не залишайте scaffold-файли в production** (пор. `reveal` вище: авто-зареєстрований, але без жодного консюмера).
@@ -1079,6 +1078,7 @@ end
 | Контрастність кольорів | Семантичні токени гарантують WCAG AA в обох режимах (light та dark) |
 | `disabled:opacity-50 disabled:cursor-not-allowed` | Всі відключені кнопки (наприклад, видалення PhotoCard) |
 | `role="status" aria-label="Loading…"` | Компонент `Skeleton` |
+| Причина відмови форми оголошується | Форма, що рендериться на 422, віддає причини через `Views::Shared::UI::ErrorSummary` (`role="alert"`) — і блок стоїть **перед** полями. ⚠️ Роль тут несуча: сторінка просто перемальовується, тож без неї незряча людина не має жодного сигналу, що сабміт не пройшов. ⚠️ Дзеркальна вимога до контролера: HTML-гілка мусить віддати саме 4xx — на `200` Turbo відповідь викидає, і блок не доїде взагалі [SEC.25] |
 
 ### Стандартний Патерн Фокусу
 
@@ -1313,7 +1313,7 @@ end
 | Компонент | Баг | Виправлення |
 |-----------|-----|-------------|
 | `Gateways::Show` | (1) `@gateway.firmware_hash` — колонка не існує; (2) `hardware_key&.uid` — HardwareKey має `device_uid`, не `uid` | (1) `try(:firmware_hash)` safe fallback; (2) `.device_uid` |
-| `Provisioning::Success` | `@device.did` — Gateway має `uid`, не `did` | Замінено на `@device.try(:did) \|\| @device.try(:uid)` |
+| `Provisioning::Success` | `@device.did` — Gateway має `uid`, не `did` | Замінено на `@device.try(:did) \|\| @device.try(:uid)`. Компонент знято 2026-08-03 при переході на PRG-редирект; урок лишається живим у `device_path_after_provisioning` (`app/controllers/api/v1/provisioning_controller.rb`) |
 | `Maintenance::Show` | `edit_maintenance_record_path` — маршрут `:edit` не існував | Додано маршрут `:edit` та дію контролера `edit` |
 | `Views::Shared::UI::PhotoCard` | `maintenance_record_photo_path` не існував: зайвий `as:` у вкладеному `resources` подвоював префікс, тож сторінка запису **з будь-яким фото** падала в 500 | Знято `as:` (природне ім'я вкладеного ресурсу). 🔴 Чому пережило рядок вище: чотири спеки `prepend`-или модуль, який ВИЗНАЧАВ відсутній хелпер, а request-приклада на HTML-`show` із фото не існувало — стаби знято, приклад додано |
 

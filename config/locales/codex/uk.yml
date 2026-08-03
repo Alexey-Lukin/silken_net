@@ -45,17 +45,6 @@ uk:
       heading: Мій Кодекс
       meta: "%{trigger} · %{timestamp}"
       page_title: Кодекс · Мої відкриття
-      toast:
-        kicker: Кодекс розблоковано
-        triggers:
-          attunement_streak: Серія
-          default: Розблоковано
-          fraction_choice: Пакт
-          manual_unlock: Надано
-          match_milestone: Битва
-          oracle_seasonal: Оракул
-          telemetry_observation: Спостереження
-        visit: "→ Перейти"
     fractions:
       change: Змінити →
       choose: Обрати фракцію
