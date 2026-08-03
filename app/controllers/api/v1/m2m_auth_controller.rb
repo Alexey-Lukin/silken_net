@@ -21,6 +21,16 @@ module Api
       # create — публічний (Ed25519 auth); refresh — потребує Bearer token (BaseController default)
       skip_before_action :authenticate_user!, only: :create
 
+      # 🔴 [SEC.30] Найдорожчий член класу: без цього рядка ШЛЮЗИ НЕ МОГЛИ ОТРИМАТИ
+      # ТОКЕН узагалі — `verify_authenticity_token` лишався в ланцюгу, а Ed25519-підпис
+      # їде в тілі, не в `Authorization: Bearer`, тож `handle_unverified_request` його
+      # не впізнавав і валив запит у 500 до будь-якої криптоперевірки.
+      # ⚠️ `only: :create` — НЕ косметика: `refresh` автентифікується `authenticate_user!`,
+      # який приймає І cookie-сесію, а там ambient authority реальна й CSRF несучий.
+      # Знімати захист на весь контролер означало б полагодити машинний вхід ціною
+      # відкриття браузерного.
+      skip_forgery_protection only: :create
+
       # POST /api/v1/auth/m2m_token
       def create
         did = params.require(:did)

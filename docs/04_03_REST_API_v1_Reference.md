@@ -110,6 +110,16 @@ Authorization: Bearer <token>
 
 > **Примітка:** `/api/v1/oracle_callbacks` виключено з `authenticate_user!`, але захищено `before_action :verify_chainlink_signature!` — HMAC-SHA256 валідація заголовку `X-Chainlink-Signature` (ENV `CHAINLINK_HMAC_SECRET`). Якщо змінна не встановлена — HMAC пропускається з попередженням (dev/test). **При `WEB3_STRICT_MODE=true` (production) — відсутність `CHAINLINK_HMAC_SECRET` викликає `SecurityError` (fail-fast).**
 
+#### 1.3а Машинний вхід = ДВА зняття, не одне [SEC.30]
+
+> 🧱 **Інваріант: `skip_before_action :authenticate_user!` без `skip_forgery_protection` робить машинний ендпоінт мертвим у production.**
+
+`protect_from_forgery with: :exception` оголошено в `Api::V1::BaseController`, тож `verify_authenticity_token` лишається в ланцюгу навіть тоді, коли автентифікацію знято, а `handle_unverified_request` пропускає **лише** Bearer. Машинний клієнт свій доказ несе в заголовку (HMAC) або в тілі (Ed25519), отже запит падає `InvalidAuthenticityToken` → `rescue_from StandardError` → **500, ще до власного крипто-гарда**. Симптом читається як «інтеграція не працює», а не як помилка авторизації.
+
+Правило походить із того, **що саме стереже CSRF** — ambient authority, тобто повноваження, які браузер додає до запиту САМ (cookie). Машинний вхід її не має за побудовою: доказ там явний і в кожному запиті. Дзеркально — там, де ambient authority є, захист лишається, тому зняття мусить бути **вужчим за контролер**, якщо в ньому є хоч одна cookie-досяжна дія (`m2m_auth`: `skip_forgery_protection only: :create`, бо `refresh` іде через `authenticate_user!`, який приймає й сесію).
+
+🔴 **Ця вісь невидима для сюїти СТРУКТУРНО:** `config/environments/test.rb` вимикає `allow_forgery_protection` — рівно той прапорець, що створює дефект. Тому спека, яка доводить HMAC-логіку, зелена й одночасно неправдива про production. Пін мусить **сам вмикати** прапорець — дім доказу `spec/requests/api/v1/csrf_machine_contour_spec.rb`, і його форма: «запит дійшов до СВОГО гарда» (401/404), а не «не 500» — друге лишилося б зеленим на будь-якій іншій поломці. Стан і перелік уражених — [`00_07`](00_07_Action_Plan_Tracker) SEC.30.
+
 ### 1.4 M2M Auth (для прошивки Gateway)
 
 Gateway-пристрої використовують **Ed25519-підпис** для отримання та оновлення Bearer-токену без логіна/пароля. **[ARCH.77]** Один із п'яти машинних маршрутів — лишається під `/api/v1` (клієнт тут прошивка в полі, не браузер):

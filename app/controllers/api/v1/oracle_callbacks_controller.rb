@@ -7,6 +7,19 @@ module Api
       # Chainlink DON callbacks are machine-to-machine — no user session.
       skip_before_action :authenticate_user!
 
+      # 🔴 [SEC.30] Зняти `authenticate_user!` — ПОЛОВИНА роботи: `protect_from_forgery
+      # with: :exception` (BaseController) лишає `verify_authenticity_token` у ланцюгу,
+      # а `handle_unverified_request` пропускає ЛИШЕ Bearer. Вебхук несе HMAC-заголовок,
+      # не Bearer і не CSRF-токен, тож у проді він падав `InvalidAuthenticityToken` →
+      # 500 ще ДО `verify_chainlink_signature!` — тобто money-path callback не доходив
+      # до власного гарда взагалі. CSRF стереже ambient authority (cookie), якої тут
+      # немає за побудовою: автентифікація криптографічна й у тілі запиту.
+      # ⚠️ Сюїта була сліпа СТРУКТУРНО — `config/environments/test.rb` вимикає
+      # `allow_forgery_protection`, тобто рівно той прапорець, що створює дефект;
+      # усі webhook-спеки зелені й доводять HMAC-логіку, до якої прод не доходив.
+      # Пін мусить УВІМКНУТИ прапорець сам → `spec/requests/api/v1/csrf_machine_contour_spec.rb`.
+      skip_forgery_protection
+
       # [P1 WARNING FIX]: HMAC-SHA256 валідація підпису Chainlink DON.
       before_action :verify_chainlink_signature!
 

@@ -17,6 +17,13 @@ module Api
       # Helium Console webhook — machine-to-machine, без сесії користувача.
       skip_before_action :authenticate_user!
 
+      # 🔴 [SEC.30] Дзеркало `oracle_callbacks` — і клон патерну успадкував його ж
+      # дірку: без цього рядка `verify_authenticity_token` лишається в ланцюгу й
+      # валить SOS-крик Королеви у 500 ще до HMAC-перевірки. Тобто канал, який існує
+      # рівно для випадку «впали ВСІ інші uplink'и», був мертвий саме в проді.
+      # Механізм і чому сюїта сліпа — див. `oracle_callbacks_controller`.
+      skip_forgery_protection
+
       before_action :verify_helium_signature!
 
       # POST /api/v1/telemetry/helium
