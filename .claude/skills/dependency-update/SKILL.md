@@ -42,7 +42,7 @@ the per-domain recipes**; it does **not** restate versions or track which bump s
 | **Ruby itself** | `.ruby-version`·`Gemfile`·`Gemfile.lock`·`Dockerfile`(ARG)·README·CLAUDE.md·copilot·.cursorrules·.rvmrc·06_01 | `rvm install`; web changelog | `rvm use <v>` then full `bin/rspec` |
 | **bundler** | `Gemfile.lock` BUNDLED WITH | `gem list bundler --remote --exact` | `bundle update --bundler=<v>` |
 | **CI actions** | `.github/workflows/*.yml` | per action: `gh api repos/<org>/<repo>/releases/latest` (or `/tags`) vs our `@vN` | YAML parse; the action's changelog (breaking inputs) |
-| **JS / importmap** | `config/importmap.rb` | `bin/importmap outdated` + `bin/importmap audit` | boot + asset-compile |
+| **JS / importmap** | `config/importmap.rb` **+ `vendor/javascript/` + `vendor/assets/stylesheets/`** | `bin/importmap outdated` + `bin/importmap audit` — ⚠️ бачить лише JS-піни | boot + asset-compile + `bin/rspec spec/features` (Leaflet будується в браузері) |
 | **ML conda** | `tools/ml/environment.yml` + `pyproject.toml` | `pip list --outdated` in `silken_ml` | `pytest tools/ml/tests` (librosa≡stdlib parity) + `silken-ml-gen-logmel --check` + `make -C firmware/test logmel`; `ruff check` |
 | **in-silico** | `tools/in_silico/environment.yml` + **`conda-lock.yml`** (the real pin) | `pip list --outdated` in `silken_md`; `gh` latest | rebuild + **re-run DFT vs `docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md`**; `ruff check` |
 | **firmware C** | 6 git submodules in `firmware/extern/` | `gh api repos/<org>/<repo>/releases\|tags` vs `git submodule status` | host CMSIS-parity ctest (local) + `make -C firmware/test`; ARM build + QEMU parity (**CI-only** — arm-gcc/qemu not local) |
@@ -59,6 +59,7 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
 
 ## Hard-won gotchas
 
+- 🔴 **A vendored front-end package has its version in TWO places, and the tool sees only one** [TEST.7, 2026-08-03]. `leaflet` is pinned locally: JS in `vendor/javascript/leaflet.js` (visible to `bin/importmap outdated`) **plus** CSS and 5 PNGs in `vendor/assets/stylesheets/leaflet/` — ordinary files no inventory command knows about. So a bump must be **paired**, or the halves drift silently: a mismatched CSS raises nothing, it just breaks the map's layout. Three traps around it. (a) Re-pin with the **default jspm provider** — `--from unpkg` serves UMD with no ESM exports, so `import L from "leaflet"` dies. (b) The CSS ships **relative** `url(images/*.png)`, and Propshaft rewrites those to digested paths only while the images sit next to it — keep the `images/` subdir. (c) After ANY new pin, run `RAILS_ENV=test bin/rails assets:precompile` locally: a stale `public/assets/.manifest.json` keeps Propshaft on the **Static** resolver, and then every browser example fails **at login** (asset missing → the layout stub blanks the tags → page without JS). That symptom reads as broken authentication and costs an hour.
 - **Post-cutoff versions are real.** This repo runs ahead of the model's knowledge cutoff
   (Ruby 4.0.x, json 2.19.x, sentry 6.6.x…). Web *search* lags; fetch the gem's own
   `CHANGES.md` / `gh api .../releases` for the exact version, and trust `bundle outdated` /

@@ -72,7 +72,7 @@
 ### Repo / Project governance
 | Workflow (`file` → name) | Trigger | Призначення |
 |---|---|---|
-| `release-please.yml` → **Ops · Release** | push `main` | Тримає release-PR (semver bump + CHANGELOG з conventional commits); merge → tag `vX.Y.Z` + GitHub Release → годує **Deploy · Production** + **Deploy · GHCR Mirror** |
+| `release-please.yml` → **Ops · Release** | push `main` | Тримає release-PR (semver bump + CHANGELOG з conventional commits); merge → tag `vX.Y.Z` + GitHub Release → годує **Deploy · Production** + **Deploy · GHCR Mirror**. ⚠️ **Не в required-8**, тож його червоне мерджу не блокує. 🔴 Відомий режим відмови: падає з ПОРОЖНІМ `release-please failed:` (жодного стеку, жодного коду) — при довгій дистанції від останнього тегу дія бекфілить file-list покомітно (`release search depth: 400`), і на тій серії API-викликів зривається; `gh run rerun --failed` проходить. **Перш ніж діагностувати свій коміт, перевір саме це** — і не приймай гіпотезу «переповнене тіло PR» без виміру (`gh pr view <n> --json body \| wc -c` проти ліміту 65536: одного разу вона виглядала бездоганно й була хибною вдвічі) |
 | `trl_sync.yml` → **Ops · TRL Sync** | `issues` | GraphQL Projects v2 — TRL-stamping (OPS.1; [`00_05`](00_05_GitHub_Projects_and_IaC_Automation)) |
 | `labeler.yml` → **Ops · PR Labeler** | `pull_request_target` | Auto-label PR за шляхами |
 | `labels_sync.yml` → **Ops · Labels Sync** | push `.github/labels.yml` + dispatch | Labels-as-IaC sync |
