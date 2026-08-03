@@ -79,6 +79,8 @@ jobs:
               - 'config/importmap.rb'
               - 'app/javascript/**'
               - 'vendor/javascript/**'
+              # [TEST.7] Vendored CSS запінених пакетів (Leaflet + його images).
+              - 'vendor/assets/**'
             python:
               - '**/*.py'
               - 'ruff.toml'
@@ -628,9 +630,15 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/silken_net_test
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           REDIS_URL: redis://localhost:6379/0
+        # [TEST.7] `--exclude-pattern` стоїть саме ТУТ, у команді, а НЕ в
+        # `.rspec`: у конфізі він діяв би глобально, і тоді `rspec spec/features`
+        # у джобі `feature-test` побачив би нуль прикладів — рівно та
+        # декоративна зеленість, задля усунення якої той шар і заводили.
+        # Мета вужча: не піднімати Chrome двічі за один PR.
         run: >
           bin/rails db:test:prepare &&
           bundle exec rspec --format progress
+          --exclude-pattern "features/**/*_spec.rb"
           --format json --out tmp/rspec_results.json
 
       # [TEST.6] Durable failure-артефакт: невідтворюваний red-run (як
@@ -662,7 +670,12 @@ jobs:
 
   feature-test:
     needs: changes
-    if: ${{ needs.changes.outputs.ruby == 'true' || needs.changes.outputs.ci == 'true' }}
+    # [TEST.7] `js` у переліку не надлишковий: `ruby` ловить `app/javascript/**`
+    # лише транзитивно, через `app/**`, а vendored-модулі (`vendor/javascript/**`,
+    # `vendor/assets/**` — там живе локальний Leaflet) не покриті НІЯКИМ іншим
+    # фільтром. Без цього оновлення запіненого пакета проходило б повз єдину
+    # джобу, здатну помітити, що модуль більше не вантажиться.
+    if: ${{ needs.changes.outputs.ruby == 'true' || needs.changes.outputs.js == 'true' || needs.changes.outputs.ci == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
 

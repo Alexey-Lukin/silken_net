@@ -8,9 +8,10 @@
 #
 #   • Stack:    Phlex + Tailwind v4 + importmap-rails + Stimulus + Turbo
 #   • Realtime: ActionCable / Solid Cable (same-origin WSS only)
-#   • Maps:     Leaflet — JS module from ga.jspm.io, CSS from unpkg.com,
-#               tile images from *.basemaps.cartocdn.com (CartoDB Dark Matter,
-#               see app/javascript/controllers/map_controller.js).
+#   • Maps:     Leaflet — JS module and CSS are LOCAL (vendor/javascript +
+#               vendor/assets/stylesheets/leaflet); only the tile images come
+#               from *.basemaps.cartocdn.com (CartoDB Dark Matter, see
+#               app/javascript/controllers/map_controller.js). [TEST.7]
 #   • Decor:    transparenttextures.com (one carbon-fibre PNG used as a
 #               background-image in DashboardLayout).
 #   • Inline:   Leaflet sets style="" attributes on injected DOM nodes,
@@ -45,13 +46,13 @@ Rails.application.configure do
                            "https://www.transparenttextures.com"
     policy.media_src       :self, :data
 
-    # Importmap pins leaflet to ga.jspm.io; everything else is local.
-    # nonce is added below for any inline <script> we explicitly emit.
-    policy.script_src      :self, "https://ga.jspm.io"
+    # [TEST.7] Every module is local now — leaflet included (it was the last
+    # external pin). nonce is added below for any inline <script> we emit.
+    policy.script_src      :self
 
-    # Leaflet ships its CSS on unpkg; Tailwind/Phlex generate style="..."
-    # attributes which require 'unsafe-inline' (nonces do not cover them).
-    policy.style_src       :self, :unsafe_inline, "https://unpkg.com"
+    # Tailwind/Phlex generate style="..." attributes, which require
+    # 'unsafe-inline' (nonces do not cover inline attributes, only <style>).
+    policy.style_src       :self, :unsafe_inline
 
     # ActionCable over Solid Cable runs same-origin (wss:// to our host),
     # and all backend XHR/fetch is same-origin too. No external connect.

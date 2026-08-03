@@ -3,7 +3,10 @@
 
 FactoryBot.define do
   factory :tree_family do
-    sequence(:name) { |n| "Tree Family #{n}" }
+    # [TEST.11] `tree_families.name` — unique-індекс; суфікс розводить процеси.
+    # `scientific_name` (теж unique) фабрика лишає nil, а NULL-и індекс не
+    # конфліктує — рандомізувати нічого.
+    sequence(:name) { |n| "Tree Family #{n}-#{SecureRandom.hex(3)}" }
     baseline_impedance { 1200 }
     critical_z_min { 5.0 }
     critical_z_max { 45.0 }

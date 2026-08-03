@@ -9,8 +9,12 @@ module Dashboard
     end
 
     def view_template
-      # Підключаємо CSS Leaflet прямо тут для капсуляції
-      link(rel: "stylesheet", href: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css", crossorigin: "")
+      # Підключаємо CSS Leaflet прямо тут для капсуляції.
+      # ⚠️ [TEST.7] Локальна копія (`vendor/assets/stylesheets/leaflet/`), НЕ CDN:
+      # доки JS і CSS їхали з чужих доменів, мапа падала рівно тоді, коли той
+      # домен був недосяжний — і саме це робило браузерний сценарій на неї
+      # невідтворюваним (два прогони того самого коду давали 7 і 0 pane'ів).
+      link(rel: "stylesheet", href: asset_path("leaflet/leaflet.css"))
 
       div(class: "w-full h-[500px] border border-gaia-border bg-gaia-surface relative z-0 overflow-hidden shadow-[0_0_30px_rgba(6,78,59,0.2)]") do
         # Підписка скоуплена організацією глядача: ім'я стріму детерміноване,

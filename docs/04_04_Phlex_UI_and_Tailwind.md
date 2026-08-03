@@ -840,7 +840,8 @@ START: Що це за компонент?
 
 **Ключовий lifecycle:**
 
-- `connect()` — ініціалізує карту, встановлює центр за замовчуванням (Черкаси: 49.4444, 32.0598); ініціалізує `this.markers = {}` (DID рядок → `L.Marker` instance) та `this.markerLayer = L.layerGroup()`
+- `connect()` — делегує в `ensureMap()`; сама ініціалізація (центр за замовчуванням — Черкаси: 49.4444, 32.0598; `this.markers = {}` — DID рядок → `L.Marker` instance; `this.markerLayer = L.layerGroup()`) живе в `ensureMap()` і **ідемпотентна**
+- 🔴 `ensureMap()` — **не «зайва» обгортка, а лік реального дефекту** ([`TEST.7`](00_07_Action_Plan_Tracker), 2026-08-03). Stimulus піднімає `targetObserver` **ДО** виклику `controller.connect()`, тож для вузлів, уже присутніх у серверній розмітці, `nodeTargetConnected` приходить **першим**. Доки ініціалізація стояла просто в `connect()`, перше ж геолоковане дерево ловило `this.markers` як `undefined`, а виняток валив **реєстрацію всього контролера** — тобто мапа не будувалась саме тоді, коли їй було що показати, і в проді була зламана постійно. Тому ініціалізація кличеться з ОБОХ входів. **Клас ширший за Leaflet:** будь-який контролер, що тримає стан у `connect()` і має `*TargetConnected`, мусить бути стійким до зворотного порядку — інакше він працює лише на порожній сторінці
 - `disconnect()` — викликає `this.map.off()`, `this.map.remove()`, встановлює `this.map = null`, `this.markerLayer = null`, скидає `this.markers = {}`, очищає `this.resizeTimeout`. **Turbo Drive Cache fix:** видаляє всі дочірні вузли (`replaceChildren()`) та Leaflet CSS-класи (`leaflet-*`) зі свого DOM-елемента — гарантує, що `connect()` ініціалізує карту з повністю чистого стану після відновлення зі snapshot-кешу Turbo.
 - `nodeTargetConnected(element)` — викликається автоматично Turbo/Stimulus коли `<div data-map-target="node">` додається до DOM через Turbo Stream; витягує `data-lat/lng/did/stress/charge` та викликає `updateMarker()`
 

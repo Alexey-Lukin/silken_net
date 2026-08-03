@@ -3,7 +3,8 @@
 
 FactoryBot.define do
   factory :user do
-    sequence(:email_address) { |n| "user#{n}@example.com" }
+    # [TEST.11] `users.email_address` — unique-індекс; суфікс розводить процеси.
+    sequence(:email_address) { |n| "user#{n}-#{SecureRandom.hex(4)}@example.com" }
     password { "password12345" }
     first_name { "Test" }
     last_name { "User" }

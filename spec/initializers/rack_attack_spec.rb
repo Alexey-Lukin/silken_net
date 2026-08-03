@@ -179,6 +179,40 @@ RSpec.describe "Rack::Attack", type: :request do
   end
 
   # -----------------------------------------------------------------------
+  # ACCOUNT SECURITY THROTTLE (10 req / 1 min) [SEC.16]
+  # -----------------------------------------------------------------------
+  # 🔴 [TEST.11] Правило стерегло step-up brute-force (підбір `current_password`
+  # на зміні пароля й відв'язуванні ідентичностей) БЕЗ жодного поведінкового
+  # приклада — при тому, що сусідній `logins/ip` свій має. Досяжність тут не
+  # припущена, а перевірена за критерієм `04_06 §B.2` #17: ліміт (10) МЕНШИЙ за
+  # поріг Fail2Ban (15), а обидва механізми ключаться на ту саму IP, тож 429
+  # приходить на 11-му запиті — раніше, ніж бан на 15-му. (Саме цією перевіркою
+  # `m2m_auth/ip` виявився недосяжним: там ліміт 15 не менший за 15.)
+  describe "account security throttle (account_security/ip)" do
+    it "throttles password-change PATCHes after 10 per minute" do
+      11.times do
+        patch "/account_security/password",
+          params: { user: { current_password: "wrong", password: "x" } },
+          headers: { "REMOTE_ADDR" => "9.8.7.3" }
+      end
+
+      expect(response).to have_http_status(:too_many_requests)
+    end
+
+    # Друге дієслово списку — і воно не церемоніальне: `%w[PATCH DELETE]` живе
+    # в одному рядку, тож приклад лише на PATCH лишався б зеленим, якби DELETE
+    # звідти випав, а саме відв'язування ідентичності знімає фактор автентифікації.
+    it "throttles identity-unlink DELETEs on the same rule" do
+      11.times do
+        delete "/account_security/identities/1",
+          headers: { "REMOTE_ADDR" => "9.8.7.2" }
+      end
+
+      expect(response).to have_http_status(:too_many_requests)
+    end
+  end
+
+  # -----------------------------------------------------------------------
   # M2M AUTH THROTTLE (15 req / 1 min)
   # -----------------------------------------------------------------------
   describe "m2m auth throttle (m2m_auth/ip)" do

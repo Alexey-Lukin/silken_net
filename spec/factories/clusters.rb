@@ -3,7 +3,8 @@
 
 FactoryBot.define do
   factory :cluster do
-    sequence(:name) { |n| "Sector #{n}" }
+    # [TEST.11] `clusters.name` — unique-індекс; суфікс розводить процеси.
+    sequence(:name) { |n| "Sector #{n}-#{SecureRandom.hex(3)}" }
     region { "Cherkasy Oblast" }
     organization
   end

@@ -3,7 +3,9 @@
 
 FactoryBot.define do
   factory :gateway do
-    sequence(:uid, 900_000) { |n| "SNET-Q-%08X" % n }
+    # [TEST.11] Див. `trees.rb` — той самий патерн; `UID_FORMAT` теж вимагає
+    # рівно 8 hex у верхньому регістрі.
+    sequence(:uid, 900_000) { |n| "SNET-Q-#{format('%04X', n % 0x10000)}#{SecureRandom.hex(2).upcase}" }
     config_sleep_interval_s { 300 }
     state { :idle }
     last_seen_at { Time.current }

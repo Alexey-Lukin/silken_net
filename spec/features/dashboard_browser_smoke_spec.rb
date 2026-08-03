@@ -24,11 +24,18 @@ require "rails_helper"
 # `feature-test`) Stimulus і Turbo в браузері живі: `typeof window.Stimulus`
 # = `"object"`, `turbo:morph` відтворюється керовано.
 #
-# ⚠️ Що лишається недоказовним і ЧОМУ — межа тепер інша й вужча: `leaflet`
-# пінниться на ЗОВНІШНІЙ CDN (`config/importmap.rb` → `ga.jspm.io`), тож у
-# тестовому середовищі модуль не приїжджає, `map#connect()` не спрацьовує і
-# `.leaflet-pane` лишається нуль. Тобто сценарії на МАПУ й далі неможливі, але
-# вже через один конкретний пін, а не через увесь харнес.
+# ✅ **[TEST.7] Мапа більше НЕ виняток — і записана тут причина була хибна.**
+# Тут стояло, що `map#connect()` «не спрацьовує», бо модуль не приїжджає з CDN.
+# Механізм інший і ширший: `import L from "leaflet"` у `map_controller.js` —
+# СТАТИЧНИЙ імпорт верхнього рівня, тож недосяжний CDN валив завантаження всього
+# модуля, і Stimulus не реєстрував контролер узагалі (8 identifiers → 7, зникав
+# саме `map`). Звідси й невідтворюваність: результат визначала доступність
+# чужого домену в момент прогону, тому два прогони того самого коду давали
+# `.leaflet-pane` = 7 і 0. Leaflet тепер локальний (JS + CSS + images), що
+# доведено мутацією: із заблокованим `jspm.io` картина не змінюється.
+# Інваріант походження стереже `spec/security/importmap_locality_spec.rb` — пін
+# на «мапа будується» його НЕ замінює, бо при живому CDN він зелений і з
+# зовнішнім піном.
 #
 # Тому цей файл пінить дві речі: серверний рендер у справжньому браузері (те, що
 # інакше недоказовне — request-спека бачить `media_type` і тіло, браузер бачить,
@@ -90,5 +97,26 @@ RSpec.describe "Dashboard in a real browser", :js do
     # назавжди — саме цей приклад червонів, поки asset-теги глушив stub.
     expect(page).to have_css(was_dark ? moon : sun)
     expect(page.evaluate_script("document.documentElement.classList.contains('dark')")).to be(!was_dark)
+  end
+
+  # [TEST.7] Сценарій, який до локального піна був недоказовним У ПРИНЦИПІ.
+  #
+  # Пінить увесь ланцюг, а не факт завантаження модуля: сервер рендерить
+  # прихований `map_node_*` → Stimulus кличе `nodeTargetConnected` → контролер
+  # ставить маркер. `.leaflet-pane` існує лише після `L.map()`, а
+  # `.custom-tree-marker` — лише після `updateMarker`, тож ці два асерти
+  # розрізняють «Leaflet піднявся» і «наші дані до нього доїхали».
+  #
+  # ⚠️ `visible: :all` обов'язковий: контейнер мапи має нульову висоту, доки
+  # Tailwind не зібрано, а вузли даних свідомо `hidden` — без цього приклад
+  # ловив би стан CSS, а не роботу контролера.
+  it "boots Leaflet locally and plots a geolocated tree" do
+    tree = create(:tree, cluster: create(:cluster, organization: organization))
+
+    sign_in_as(user, password: password)
+
+    expect(page).to have_css("#map_node_#{tree.id}", visible: :all)
+    expect(page).to have_css(".leaflet-pane", visible: :all)
+    expect(page).to have_css(".custom-tree-marker", visible: :all)
   end
 end

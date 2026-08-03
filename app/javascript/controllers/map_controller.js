@@ -6,9 +6,21 @@ export default class extends Controller {
   static targets = ["node"]
 
   connect() {
+    this.ensureMap()
+  }
+
+  // ⚠️ Stimulus піднімає targetObserver РАНІШЕ за controller.connect(), тож для
+  // вузлів, уже присутніх у розмітці, `nodeTargetConnected` приходить ПЕРШИМ.
+  // Доки ініціалізація жила просто в `connect()`, перше ж геолоковане дерево
+  // ловило `this.markers` як undefined, виняток валив реєстрацію контролера
+  // цілком — і мапа не будувалась саме тоді, коли їй було що показати.
+  // Тому ініціалізація ідемпотентна й кличеться з обох входів. [TEST.7]
+  ensureMap() {
+    if (this.map) return
+
     // Ініціалізація карти. Координати за замовчуванням (Черкаси)
     this.map = L.map(this.element).setView([49.4444, 32.0598], 12)
-    
+
     // Використовуємо Dark Matter стиль для кіберпанк-естетики
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: 'Silken Net // Geospatial Oracle',
@@ -17,7 +29,7 @@ export default class extends Controller {
 
     this.markerLayer = L.layerGroup().addTo(this.map)
     this.markers = {} // Банк пам'яті: DID -> Marker
-    
+
     // Захист від багів рендерингу в прихованих вкладках
     this.resizeTimeout = setTimeout(() => this.map.invalidateSize(), 200)
   }
@@ -40,6 +52,7 @@ export default class extends Controller {
   // ⚡ [КЕНОЗИС]: Цей метод викликається АВТОМАТИЧНО, коли Turbo Stream
   // оновлює прихований <div> дерева в DOM. Ніякого ручного ActionCable!
   nodeTargetConnected(element) {
+    this.ensureMap()
     this.updateMarker(element.dataset)
   }
 

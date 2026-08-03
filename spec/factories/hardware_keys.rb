@@ -3,7 +3,10 @@
 
 FactoryBot.define do
   factory :hardware_key do
-    sequence(:device_uid, 900_000) { |n| "SNET-%08X" % n }
+    # [TEST.11] Див. `trees.rb`. ⚠️ Тут формат тримає не валідація моделі
+    # (`device_uid` має лише presence+uniqueness), а сумісність із DID/UID
+    # власника — саме за цим ключем ходять HKDF-деривації.
+    sequence(:device_uid, 900_000) { |n| "SNET-#{format('%04X', n % 0x10000)}#{SecureRandom.hex(2).upcase}" }
     # Post-ARCH.42: default — Gateway shape (32 bytes / 64 hex / AES-256 CoAP),
     # бо більшість legacy specs створюють :hardware_key без owner-traits. Trait :for_tree
     # перепакує до 16 bytes / 32 hex / AES-128 LoRa (вибір ARCH.42; SE = SE050 — 03_05 §3.7).
