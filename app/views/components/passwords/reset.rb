@@ -69,11 +69,22 @@ module Passwords
       "w-full py-4 bg-emerald-500/10 border border-emerald-500 text-emerald-500 uppercase text-xs tracking-[0.4em] hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.2)]"
     end
 
+    # [SEC.25] Плашка помилки ПОТОЧНОГО сабміту — свідомо тут, а не у `FlashMessages`:
+    # це інше дієслово. `FlashMessages` несе повідомлення, що пережило редирект;
+    # тут людина лишається у формі зі збереженим статусом (422/401), і помилка мусить
+    # стояти біля поля, яке треба перевводити.
+    #
+    # 🔴 Було німим для скрінрідера (жодного `role`) і на сирому Tailwind повз
+    # дизайн-токени — на відміну від дзеркального `Sessions::New`, який робив
+    # обидва правильно від початку.
     def render_flash_messages
-      if @flash_alert
-        div(class: "p-3 border border-red-900 bg-red-950/20 text-red-500 text-tiny uppercase tracking-widest text-center") do
-          @flash_alert
-        end
+      return if @flash_alert.blank?
+
+      div(class: tokens(
+        "p-3 border border-status-danger bg-status-danger text-status-danger-text",
+        "text-tiny uppercase tracking-widest text-center"
+      ), role: "alert") do
+        @flash_alert
       end
     end
 

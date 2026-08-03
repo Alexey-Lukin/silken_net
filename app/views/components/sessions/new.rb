@@ -3,11 +3,15 @@
 
 module Sessions
   class New < ApplicationComponent
-    # @param flash_alert [String, nil] alert message to display
-    # @param flash_notice [String, nil] notice message to display
-    def initialize(flash_alert: nil, flash_notice: nil)
+    # @param flash_alert [String, nil] помилка ПОТОЧНОГО сабміту (401/429), яку
+    #   сторінка показує на місці зі збереженим статусом — інше дієслово, ніж
+    #   `FlashMessages` у layout'і (той несе повідомлення, що пережило редирект).
+    #
+    # [SEC.25] Notice-kwarg знято: нуль викликачів у дереві. Успішні події цієї
+    # сторінки (лист надіслано, пароль змінено) приходять редиректом і рендеряться
+    # `FlashMessages`, тож notice-гілка була мертвою, а живою її тримала спека.
+    def initialize(flash_alert: nil)
       @flash_alert = flash_alert
-      @flash_notice = flash_notice
     end
 
     def view_template
@@ -77,15 +81,13 @@ module Sessions
     end
 
     def render_flash_messages
-      if @flash_alert
-        div(class: "p-3 border border-status-danger bg-status-danger text-status-danger-text text-tiny uppercase tracking-widest text-center", role: "alert") do
-          @flash_alert
-        end
-      end
-      if @flash_notice
-        div(class: "p-3 border border-gaia-border bg-gaia-surface-sunken text-gaia-primary text-tiny uppercase tracking-widest text-center", role: "status") do
-          @flash_notice
-        end
+      return if @flash_alert.blank?
+
+      div(class: tokens(
+        "p-3 border border-status-danger bg-status-danger text-status-danger-text",
+        "text-tiny uppercase tracking-widest text-center"
+      ), role: "alert") do
+        @flash_alert
       end
     end
 

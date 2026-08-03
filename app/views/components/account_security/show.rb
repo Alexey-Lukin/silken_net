@@ -3,9 +3,15 @@
 
 module AccountSecurity
   class Show < ApplicationComponent
-    def initialize(user:, identities:)
+    # @param password_error [String, nil] помилка ПОТОЧНОГО сабміту форми пароля.
+    #   [SEC.25] Доти ці три відмови (`current_invalid` · `too_short` · `mismatch`)
+    #   їхали `redirect_to … error:`, тобто викидали людину з форми зі стертими
+    #   полями — при тому, що сусідній `PasswordsController` ту саму задачу
+    #   розв'язував правильно: лишав у формі з 422. Асиметрія, не задум.
+    def initialize(user:, identities:, password_error: nil)
       @user = user
       @identities = identities
+      @password_error = password_error
     end
 
     def view_template
@@ -54,6 +60,8 @@ module AccountSecurity
           input(type: "hidden", name: "_method", value: "patch")
           input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
 
+          render_password_error
+
           if @user.password_digest.present?
             field_container(t(".password.current_label")) do
               input(type: "password", name: "current_password", class: input_classes, required: true)
@@ -72,6 +80,20 @@ module AccountSecurity
             @user.password_digest.present? ? t(".password.change_submit") : t(".password.set_submit")
           end
         end
+      end
+    end
+
+    # [SEC.25] Помилка сабміту стоїть У ФОРМІ, над полями — та сама форма, що вже
+    # вживається в `Sessions::New` і `Passwords::Reset`. `role="alert"` обов'язковий:
+    # вузол приходить разом із відповіддю, і без нього AT його не оголосить.
+    def render_password_error
+      return if @password_error.blank?
+
+      div(class: tokens(
+        "p-3 border border-status-danger bg-status-danger text-status-danger-text",
+        "text-tiny uppercase tracking-widest text-center"
+      ), role: "alert") do
+        @password_error
       end
     end
 

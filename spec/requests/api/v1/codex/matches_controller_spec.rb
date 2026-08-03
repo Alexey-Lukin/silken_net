@@ -119,6 +119,20 @@ RSpec.describe "Api::V1::Codex::Matches", type: :request do
       expect(response.media_type).not_to eq("application/json")
     end
 
+    # [SEC.25] Друга гілка тексту відмови: 422 (winner не з цієї пари) проти 403
+    # (seed спожитий). Доти обидва статуси клали ОДИН текст, тобто називали різні
+    # події однаково — для replay голос УЖЕ зараховано, для 422 не зараховано.
+    it "422 і 403 кажуть РІЗНЕ на браузерній гілці" do
+      seed = issue_seed
+      post "/codex/matches",
+           params: { pair_seed: seed, winner_slug: "not-in-this-pair", realm: realm.slug },
+           headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:see_other)
+      expect(flash[:error]).to eq(I18n.t("flash.codex.match_rejected"))
+      expect(flash[:error]).not_to eq(I18n.t("flash.codex.match_replay"))
+    end
+
     it "supports skip=true" do
       seed = issue_seed
       post "/codex/matches",

@@ -119,10 +119,15 @@ module Api
       # --- ЗМІНА ПАРОЛЯ ---
       # PATCH /account_security/password
       def change_password
+        # 🔴 [SEC.25] Усі три відмови нижче — ВАЛІДАЦІЯ поточного сабміту, тож людина
+        # лишається у формі з 422, а не летить редиректом на ту саму сторінку зі
+        # стертими полями. Форма запозичена не з чужої дизайн-системи, а в сусіда:
+        # `PasswordsController#update` на тій самій задачі (`too_short`/`mismatch`)
+        # робив так від початку — тут була асиметрія, не задум.
         if current_user.password_digest.present? && !current_user.authenticate(params[:current_password])
           respond_to do |format|
             format.json { render json: { error: t("account_security.password.current_invalid") }, status: :unprocessable_content }
-            format.html { redirect_to account_security_path, status: :see_other, error: t("account_security.password.current_invalid") }
+            format.html { render_password_error(t("account_security.password.current_invalid")) }
           end
           return
         end
@@ -130,7 +135,7 @@ module Api
         if params[:new_password].to_s.length < 12
           respond_to do |format|
             format.json { render json: { error: t("account_security.password.too_short_json") }, status: :unprocessable_content }
-            format.html { redirect_to account_security_path, status: :see_other, error: t("account_security.password.too_short_flash") }
+            format.html { render_password_error(t("account_security.password.too_short_flash")) }
           end
           return
         end
@@ -138,7 +143,7 @@ module Api
         if params[:new_password] != params[:new_password_confirmation]
           respond_to do |format|
             format.json { render json: { error: t("account_security.password.mismatch") }, status: :unprocessable_content }
-            format.html { redirect_to account_security_path, status: :see_other, error: t("account_security.password.mismatch") }
+            format.html { render_password_error(t("account_security.password.mismatch")) }
           end
           return
         end
@@ -169,6 +174,22 @@ module Api
       end
 
       private
+
+      # [SEC.25] Один дім посадки для валідаційних відмов форми пароля: та сама
+      # сторінка, те саме місце, 422 — дзеркало `PasswordsController#update`.
+      # `status:` тут несучий, а не косметика: на `200` без редиректу Turbo
+      # відповідь ВИКИДАЄ (`04_03 §2.2а`), тобто форма виглядала б мертвою.
+      def render_password_error(message)
+        render_dashboard(
+          title: t("account_security.title"),
+          component: AccountSecurity::Show.new(
+            user: current_user,
+            identities: current_user.identities.order(created_at: :asc),
+            password_error: message
+          ),
+          status: :unprocessable_content
+        )
+      end
 
       # We don't track the current-request Session id directly. Approximate by
       # the most recent row matching the request's IP+user-agent, falling back

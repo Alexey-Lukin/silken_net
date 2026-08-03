@@ -4,7 +4,7 @@
 require "rails_helper"
 
 RSpec.describe Passwords::Forgot do
-  let(:html) { render_component(flash_alert: nil, flash_notice: nil) }
+  let(:html) { render_component }
 
   describe "header" do
     it "renders Recovery heading" do
@@ -42,22 +42,10 @@ RSpec.describe Passwords::Forgot do
     end
   end
 
-  describe "flash messages" do
-    it "renders alert message when flash_alert is present" do
-      html = render_component(flash_alert: "Email not found", flash_notice: nil)
-      expect(html).to include("Email not found")
-    end
-
-    it "renders notice message when flash_notice is present" do
-      html = render_component(flash_alert: nil, flash_notice: "Reset link sent")
-      expect(html).to include("Reset link sent")
-    end
-
-    it "does not render flash div when both are nil" do
-      expect(html).not_to include("Reset link sent")
-      expect(html).not_to include("Email not found")
-    end
-  end
+  # ⚠️ Блок «flash messages» знято разом із предметом [SEC.25]. Компонент приймав
+  # два kwarg'и й чесно їх рендерив, але жоден викликач їх не передавав — обидві
+  # гілки були мертві з народження, і живими їх тримали саме ці три приклади.
+  # Повідомлення цієї сторінки приходять редиректом і належать `FlashMessages`.
 
   describe "form action" do
     it "posts to the forgot password path" do

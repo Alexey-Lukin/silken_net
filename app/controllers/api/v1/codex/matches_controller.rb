@@ -80,7 +80,10 @@ module Api
               # і він її вже робить; тут вона стояла другим викликом того самого
               # сервісу з власною гілкою помилки.
               format.html do
-                redirect_to new_codex_match_path(realm: result.match.realm&.slug),
+                # `&.` тут БУВ і знятий свідомо: `codex_matches.codex_realm_id`
+                # оголошено NOT NULL, тож nil-гілка недосяжна за побудовою —
+                # тобто це не захист, а мертва гілка, яку нічим покрити.
+                redirect_to new_codex_match_path(realm: result.match.realm.slug),
                             status: :see_other
               end
             end

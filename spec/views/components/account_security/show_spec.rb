@@ -42,6 +42,30 @@ RSpec.describe AccountSecurity::Show do
   let(:identities) { [] }
   let(:html) { render_component(user: user, identities: identities) }
 
+  # ⚠️ Не «покриття заради покриття»: гілки провайдерів чекають на дротування
+  # OmniAuth ([`ARCH.69`]), тобто це міна на запобіжнику, а не мертвий код —
+  # видаляти не можна, а непокритою вона тягне групову підлогу `Views` вниз.
+  # Приклад заразом фіксує, що іконки РІЗНІ: спільна мапа зі збігом значень
+  # зробила б провайдерів невідрізнюваними на екрані.
+  describe "provider icons" do
+    it "дає кожному відомому провайдеру власну іконку" do
+      known = %w[google_oauth2 facebook linkedin twitter]
+      rendered = render_component(
+        user: user,
+        identities: known.map { |p| mock_identity(provider: p, uid: "uid-#{p}") }
+      )
+
+      icons = %w[🔵 🟦 🔷 🐦]
+      icons.each { |icon| expect(rendered).to include(icon) }
+      expect(icons.uniq.size).to eq(known.size)
+    end
+
+    it "невідомий провайдер дістає запасну іконку" do
+      rendered = render_component(user: user, identities: [ mock_identity(provider: "mastodon") ])
+      expect(rendered).to include("🔗")
+    end
+  end
+
   describe "MFA section" do
     it "renders the Two-Factor Authentication heading" do
       expect(html).to include("Two-Factor Authentication")

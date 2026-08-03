@@ -9,7 +9,7 @@ RSpec.describe Sessions::New do
   # covers the Ukrainian fallback path explicitly.
   around { |ex| I18n.with_locale(:en) { ex.run } }
 
-  let(:html) { render_component(flash_alert: nil, flash_notice: nil) }
+  let(:html) { render_component }
 
   describe "portal header" do
     it "renders Citadel heading" do
@@ -61,15 +61,14 @@ RSpec.describe Sessions::New do
     end
   end
 
+  # [SEC.25] Помилка ПОТОЧНОГО сабміту (401/429) — інше дієслово, ніж `FlashMessages`.
+  # Приклад про notice-варіант знято разом із kwargом: нуль викликачів у дереві,
+  # тобто гілку тримала лише ця спека.
   describe "flash messages" do
     it "renders alert message when flash_alert is present" do
-      html = render_component(flash_alert: "Invalid credentials", flash_notice: nil)
+      html = render_component(flash_alert: "Invalid credentials")
       expect(html).to include("Invalid credentials")
-    end
-
-    it "renders notice message when flash_notice is present" do
-      html = render_component(flash_alert: nil, flash_notice: "Check your email")
-      expect(html).to include("Check your email")
+      expect(html).to include('role="alert"')
     end
 
     it "does not render alert div when flash_alert is nil" do
@@ -86,7 +85,7 @@ RSpec.describe Sessions::New do
   describe "default locale (uk)" do
     it "falls back to Ukrainian copy when no locale override is active" do
       I18n.with_locale(:uk) do
-        ua_html = render_component(flash_alert: nil, flash_notice: nil)
+        ua_html = render_component
         expect(ua_html).to include("Цитадель")
         expect(ua_html).to include("АВТЕНТИФІКУВАТИ")
         expect(ua_html).to include("Забули код доступу?")

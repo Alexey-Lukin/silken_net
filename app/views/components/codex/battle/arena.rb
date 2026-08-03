@@ -106,7 +106,7 @@ module Codex
           # [SEC.25] Реалм мусить повернутись у контролер: `#create` редиректить
           # назад на арену (PRG), і без цього поля редирект щоразу скидав би
           # людину в перший упорядкований реалм.
-          input(type: "hidden", name: "realm", value: @realm&.slug)
+          input(type: "hidden", name: "realm", value: @realm.slug)
           button(
             type: "submit",
             class: tokens(
@@ -130,7 +130,7 @@ module Codex
           input(type: "hidden", name: "pair_seed", value: @pair_seed)
           input(type: "hidden", name: "skip", value: "true")
           # Дзеркало pick-форми — див. коментар вище.
-          input(type: "hidden", name: "realm", value: @realm&.slug)
+          input(type: "hidden", name: "realm", value: @realm.slug)
           button(
             type: "submit",
             class: tokens(

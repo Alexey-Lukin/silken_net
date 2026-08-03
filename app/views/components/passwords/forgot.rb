@@ -3,13 +3,12 @@
 
 module Passwords
   class Forgot < ApplicationComponent
-    # @param flash_alert [String, nil] alert message to display
-    # @param flash_notice [String, nil] notice message to display
-    def initialize(flash_alert: nil, flash_notice: nil)
-      @flash_alert = flash_alert
-      @flash_notice = flash_notice
-    end
-
+    # [SEC.25] Kwarg'ів тут свідомо НЕМАЄ. Компонент приймав `flash_alert:`/
+    # notice-варіант і чесно їх рендерив — але жоден викликач їх не передавав
+    # (`passwords#new` конструює його порожнім, інших сайтів у дереві нема), тобто
+    # обидві гілки були мертві з народження, а живими їх тримала власна спека.
+    # Обидва шляхи цієї сторінки (rate-limit, протермінований токен) приходять
+    # РЕДИРЕКТОМ, тож їхнє повідомлення несе `FlashMessages` у layout'і.
     def view_template
       main(class: "min-h-screen bg-black flex items-center justify-center p-4 font-mono relative overflow-hidden") do
         div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]")
@@ -19,8 +18,6 @@ module Passwords
 
           form(action: forgot_password_path, method: "post", class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do
             input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
-
-            render_flash_messages
 
             div(class: "space-y-6") do
               field_container(t(".email_label")) do
@@ -63,19 +60,6 @@ module Passwords
 
     def submit_classes
       "w-full py-4 bg-token-forest/10 border border-token-forest text-token-forest uppercase text-xs tracking-[0.4em] hover:bg-token-forest hover:text-black transition-all cursor-pointer"
-    end
-
-    def render_flash_messages
-      if @flash_alert
-        div(class: "p-3 border border-red-900 bg-red-950/20 text-red-500 text-tiny uppercase tracking-widest text-center") do
-          @flash_alert
-        end
-      end
-      if @flash_notice
-        div(class: "p-3 border border-emerald-900 bg-emerald-950/20 text-emerald-500 text-tiny uppercase tracking-widest text-center") do
-          @flash_notice
-        end
-      end
     end
 
     def render_back_link

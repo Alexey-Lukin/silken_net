@@ -66,17 +66,20 @@ RSpec.describe "flash-категорії", type: :request do
   end
 
   describe "assertive-регіон" do
+    # ⚠️ Носій категорії тут змінено 2026-08-03 разом із предметом: доти приклад
+    # їздив через невдалу зміну пароля, але та відмова — ВАЛІДАЦІЯ поточного
+    # сабміту, і вона більше не редиректить, а лишає людину у формі з 422
+    # (inline-помилка, `account_security_controller_spec`). Категорію `error`
+    # тепер демонструє відмова, яка редиректом і є за суттю: протермінований
+    # токен скидання — виправити його вводом неможливо, тож людину відправляють
+    # на іншу сторінку.
     it "error доїжджає до сторінки й сідає в assertive" do
-      patch "/account_security/password",
+      patch "/reset_password",
             headers: { "Accept" => "text/html" },
-            params: {
-              current_password: "wrong_password",
-              new_password: "new_secure_pass_1",
-              new_password_confirmation: "new_secure_pass_1"
-            }
+            params: { token: "expired-or-forged", password: "irrelevant-1", password_confirmation: "irrelevant-1" }
       follow_redirect!
 
-      text = I18n.t("account_security.password.current_invalid")
+      text = I18n.t("passwords.reset.invalid_token_flash")
       expect(response.body).to include(text)
       expect(response.body.index(text)).to be < boundary
     end

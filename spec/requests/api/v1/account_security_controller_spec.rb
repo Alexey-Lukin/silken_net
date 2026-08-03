@@ -157,6 +157,28 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
       expect(response).to have_http_status(:unprocessable_content)
     end
 
+    # 🔴 [SEC.25] HTML-гілка цих трьох відмов не була пінена ЖОДНИМ прикладом — усі
+    # форсують `as: :json`, а статус не змінювався, тож перехід із редиректу на
+    # рендер пройшов би повз сюїту непоміченим в обидва боки. Пін тому на ФОРМУ
+    # відповіді: людина мусить лишитись У ФОРМІ з поясненням, а не поїхати
+    # редиректом на ту саму сторінку зі стертими полями.
+    it "лишає людину у формі з поясненням, а не редиректить (браузерна гілка)" do
+      patch "/account_security/password",
+            headers: headers.merge("Accept" => "text/html"),
+            params: {
+              current_password: "password12345",
+              new_password: "new_secure_pass_1",
+              new_password_confirmation: "different_password"
+            }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.media_type).to eq("text/html")
+      expect(response).not_to be_redirect
+      # Помилка озвучується скрінрідером і стоїть у тій самій формі.
+      expect(response.body).to include('role="alert"')
+      expect(response.body).to include("account_security/password")
+    end
+
     it "allows setting password without current_password when user has no password (OAuth-only)" do
       # Simulate OAuth-only user (no password digest)
       user.update_columns(password_digest: nil)
