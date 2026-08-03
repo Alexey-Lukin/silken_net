@@ -59,7 +59,15 @@ GENRE_MIN=4             # dated blocks, summed across all three costumes
 # ⊥ counter-rule), which is exactly what this layer is for; trimming an existing
 # recall-rich description to fund them would have traded working recall for a
 # number, the manufactured-cleanup this corpus explicitly forbids.
-DESC_BASELINE=41679
+# Bumped 2026-08-03 (41679 -> 41709, +30B) for two new classes earned by TEST.8:
+# a 7th substitution layer ("the symptom VARIES with a parameter" — a fact about
+# the symptom, not proof the cause depends on it) and a 3rd trigger-leg ("the
+# subject itself erases the trigger"). Note what the +30 actually is: the two
+# edited descriptions were compressed by ~530B first, so all but the last 30 of
+# the 558B added was self-funded — the residue is the new content itself, and
+# the alternative was gutting somebody else's trigger to buy back a rounding
+# error. Precedent and reasoning identical to the 2026-08-01 bump above.
+DESC_BASELINE=41709
 
 # Content-overlap between two rule files. The corpus has ONE structural failure
 # mode no other check can see: a class written into two homes, where every link
