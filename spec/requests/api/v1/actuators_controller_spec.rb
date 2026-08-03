@@ -96,6 +96,28 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       expect(response.media_type).not_to eq("application/json")
     end
 
+    # 🔴 [SEC.25] Дзеркало приклада вище з боку УСПІХУ — саме його й бракувало.
+    # Гілка відмови відповідала браузеру, а успішна оголошувала лише json і
+    # turbo_stream, тож клік без JS не матчив жодного формату й давав 500 ПІСЛЯ
+    # того, як наказ уже створено. Пін на форму + на КАТЕГОРІЮ: `pending`, бо
+    # команда тут лише поставлена в чергу, а не виконана.
+    it "відповідає редиректом, коли браузер шле звичайний text/html" do
+      allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+
+      expect {
+        post "/actuators/#{own_actuator.id}/execute",
+             params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
+             headers: headers.merge("Accept" => "text/html")
+      }.to change(ActuatorCommand, :count).by(1)
+
+      expect(response).to have_http_status(:see_other)
+      expect(response).to redirect_to(actuator_path(own_actuator))
+      expect(response.media_type).not_to eq("application/json")
+      # Категорія несуча: `success` стверджував би виконання, якого ще не було.
+      expect(flash[:pending]).to be_present
+      expect(flash[:success]).to be_blank
+    end
+
     # [ARCH.58] Протермінований наказ матеріалізує свій кінець лише при
     # poll-видачі, тож на мертвому шлюзі він лежить у `.pending` вічно — і без
     # `live_pending` тримав би 409 для всіх нових наказів назавжди. Сам TTL цього

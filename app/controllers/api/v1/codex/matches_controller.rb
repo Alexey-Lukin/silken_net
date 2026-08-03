@@ -63,48 +63,49 @@ module Api
                 render json: { data: ::Codex::MatchBlueprint.render_as_hash(result.match) },
                        status: :created
               end
+              # 🔴 [SEC.25] PRG, а не рендер сторінки. Доти тут стояв повний
+              # `render_dashboard(status: :created)`, і він ЛИШАВ БРАУЗЕР НА
+              # POST-ONLY АДРЕСІ: Turbo на успіху робить `proposeVisit(
+              # fetchResponse.location)`, а `location` = `expandURL(response.url)`,
+              # тобто `/codex/matches` — маршрут, зареєстрований лише як
+              # `only: [:new, :create]`. Отже після КОЖНОГО голосу Reload (і
+              # «Назад»→«Вперед») давав `RoutingError`.
+              #
+              # ⚠️ І тримався той рендер на випадковості: гард Turbo — рівно
+              # `statusCode == 200 && !redirected`, тож 201 його МИНАВ. Заміна
+              # 201 на 200 «для акуратності» мовчки вимкнула б оновлення арени,
+              # лишивши слід тільки в консолі.
+              #
+              # Побічно зникає дублювання: підбір наступної пари — робота `#new`,
+              # і він її вже робить; тут вона стояла другим викликом того самого
+              # сервісу з власною гілкою помилки.
               format.html do
-                # Echo a fresh Arena frame so Turbo can swap the next pair
-                # without a full reload. Fall back to an error state if the
-                # selector cannot produce a new pair (e.g. realm exhausted).
-                next_pair = ::Codex::PairSelectorService.call(
-                  user: current_user, realm: result.match.realm
-                )
-                render_dashboard(
-                  title: I18n.t("codex.battle_arena.page_title", default: "Codex · Battle Arena"),
-                  component: ::Codex::Battle::Arena.new(
-                    left: next_pair.success? ? next_pair.left  : nil,
-                    right: next_pair.success? ? next_pair.right : nil,
-                    pair_seed: next_pair.success? ? next_pair.pair_seed : nil,
-                    realm: next_pair.realm || result.match.realm,
-                    error: next_pair.success? ? nil : next_pair.error
-                  ),
-                  status: :created
-                )
+                redirect_to new_codex_match_path(realm: result.match.realm&.slug),
+                            status: :see_other
               end
             end
           else
-            status = result.error == "seed_invalid_or_consumed" ? :forbidden : :unprocessable_content
+            replay = result.error == "seed_invalid_or_consumed"
+            status = replay ? :forbidden : :unprocessable_content
             # [SEC.25 Ф4] Арена — справжні `<form>` без жодного дебаунсу (компонент
             # сам це документує), тож повторний сабміт того самого `pair_seed`
             # (подвійний клік або «назад» на застарілу рамку) — буденний шлях, і він
             # віддавав сирий JSON. Посадка назад на арену: там людина й стоїть, а
             # редирект дає їй свіжу пару замість спожитої.
             #
-            # ⚠️ Дві названі стелі, обидві виміряні й свідомо лишені. (1) Realm
-            # ГУБИТЬСЯ: форма арени шле лише `pair_seed` + `winner_slug`/`skip`,
-            # тож `resolve_realm` відкотиться на перший упорядкований — людину
-            # може винести з реалму, в якому вона голосувала. Лік — hidden-поле в
-            # `Codex::Battle::Arena`, тобто зміна ФОРМИ, не контролера.
-            # (2) Обидва статуси (403 replay і 422 валідація) кладуть ОДИН текст:
-            # для replay він точний, для рідкої 422 — оптимістичний. Розводити
-            # варто разом із (1) — та сама поверхня → `00_07` SEC.25.
+            # ✅ Обидві стелі, що тут стояли, знято. (1) Realm більше не губиться:
+            # форма несе його прихованим полем, і обидві гілки передають далі —
+            # це стало ОБОВʼЯЗКОВИМ, щойно успіх перейшов на PRG, бо інакше цикл
+            # «редирект → форма → редирект» скидав би реалм на першій же відмові.
+            # (2) Два статуси дістали ДВА тексти: для replay голос уже зараховано
+            # (дія відбулась), для 422 — не зараховано; один текст на обидва
+            # називав би різні події однаково.
             respond_to do |format|
               format.json { render json: { error: result.error }, status: status }
               format.html do
-                redirect_to new_codex_match_path,
+                redirect_to new_codex_match_path(realm: params[:realm].presence),
                             status: :see_other,
-                            error: I18n.t("flash.codex.match_rejected")
+                            error: I18n.t(replay ? "flash.codex.match_replay" : "flash.codex.match_rejected")
               end
             end
           end

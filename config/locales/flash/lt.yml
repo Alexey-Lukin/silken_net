@@ -3,6 +3,7 @@ lt:
   flash:
     actuators:
       command_in_flight: Aktuatorius jau turi aktyvią komandą. Palaukite, kol ji bus baigta.
+      command_queued: Komanda įtraukta į eilę — mazgas ją paims per kitą apklausą.
       idempotency_required: Aktuatoriaus komandos vykdymui reikalinga Idempotency-Key antraštė.
     alerts:
       acknowledged: 'Įspėjimas #%{id} patvirtintas.'
@@ -21,6 +22,7 @@ lt:
       fraction_set: 'Frakcija pasirinkta: %{node}.'
       idempotency_required: JSON įrašams reikalinga Idempotency-Key antraštė.
       match_rejected: Balsas neįskaitytas — štai nauja pora.
+      match_replay: Balsas už šią porą jau įskaitytas — štai nauja pora.
     firmwares:
       deployment_dispatched: Diegimo užsakymas v%{version} įtrauktas į eilę — Karalienės jį paims kitame poll užklausime.
       deployment_no_targets: 'OTA atmesta: nėra tinkamų šliuzų diegimui.'

@@ -128,54 +128,31 @@ RSpec.describe "Api::V1::Codex::Matches", type: :request do
       expect(response.parsed_body.dig("data", "is_skip")).to be(true)
     end
 
-    it "renders a fresh Arena frame on successful vote when client asks for HTML" do
-      # Spawn enough extra nodes so PairSelector can still return a fresh pair
-      # after the first one is consumed.
+    # 🔴 [SEC.25] Успіх відповідає РЕДИРЕКТОМ, не сторінкою — і пін мусить називати
+    # ЦІЛЬ разом із реалмом. Доти тут стояло очікування повної сторінки зі статусом
+    # `:created`, і саме воно цементувало дефект: Turbo на успіху йде в
+    # `proposeVisit(fetchResponse.location)`, а `location` — то URL відповіді, тобто
+    # адреса, зареєстрована лише під POST. Отже після кожного голосу перезавантаження
+    # сторінки давало `RoutingError`. Реалм у цілі — друга половина піна: без нього
+    # PRG-цикл мовчки скидав би людину в перший упорядкований реалм на кожен голос.
+    it "redirects to a fresh pair in the SAME realm after a successful vote" do
       4.times { create(:codex_node, realm: realm, lifecycle_status: :thriving) }
 
       seed = issue_seed
       post "/codex/matches",
-           params: { pair_seed: seed, winner_slug: left.slug },
+           params: { pair_seed: seed, winner_slug: left.slug, realm: realm.slug },
            headers: headers.merge("Accept" => "text/html")
 
-      expect(response).to have_http_status(:created)
-      expect(response.media_type).to eq("text/html")
-      expect(response.body).to include("codex_battle_arena")
-      expect(response.body).to match(/name="pair_seed" value="[0-9a-f]{64}"/)
+      expect(response).to have_http_status(:see_other)
+      expect(response).to redirect_to(new_codex_match_path(realm: realm.slug))
+      expect(response.media_type).not_to eq("application/json")
     end
 
-    it "renders an Arena error frame when next pair cannot be produced after the vote" do
-      seed = issue_seed
-      # Leave only the two original nodes so the next PairSelector call after
-      # winner is recorded can no longer find a fresh distinct pair from a
-      # depleted realm.
-      ::Codex::Node.where(codex_realm_id: realm.id)
-                   .where.not(id: [ left.id, right.id ])
-                   .delete_all
-      ::Codex::Node.where(id: [ left.id, right.id ]).update_all(lifecycle_status: "extinct")
-
-      # Bypass selector exhaustion check for the original pair by stubbing
-      # only the second (post-vote) PairSelectorService call to fail.
-      original_call = ::Codex::PairSelectorService.method(:call)
-      call_count = 0
-      allow(::Codex::PairSelectorService).to receive(:call) do |**kwargs|
-        call_count += 1
-        if call_count == 1
-          # Pretend the user already had a valid seed — the controller does
-          # not re-run selector on POST, only on the followup HTML render.
-          original_call.call(**kwargs)
-        else
-          OpenStruct.new(success?: false, error: "not enough nodes", left: nil, right: nil,
-                         pair_seed: nil, realm: realm)
-        end
-      end
-
-      post "/codex/matches",
-           params: { pair_seed: seed, winner_slug: left.slug },
-           headers: headers.merge("Accept" => "text/html")
-
-      expect(response).to have_http_status(:created)
-      expect(response.body).to include("not enough nodes")
-    end
+    # ⚠️ Приклад «error frame, коли наступна пара не будується» знято свідомо, а не
+    # загублено: після переходу на PRG підбір наступної пари належить `#new`, і його
+    # порожній стан уже запінений вище («renders an empty-state when realm has too
+    # few nodes»). Тримати обидва означало б пінити одну поведінку у двох місцях —
+    # причому другий робив це через подвійний стаб селектора з лічильником викликів,
+    # тобто моделював послідовність, якої в контролері більше немає.
   end
 end

@@ -1,11 +1,17 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-# Codex::Battle::Arena — Turbo Frame `id="codex_battle_arena"` containing
-# two pickable cards + VS divider.
+# Codex::Battle::Arena — блок `id="codex_battle_arena"` із двома картками
+# для вибору + VS-роздільник.
+#
+# ⚠️ Це НЕ `<turbo-frame>`, попри id: тут звичайний `div`, тож обидві форми
+# сабмітяться page-level (Turbo шукає ціль через `#findFrameElement`, який
+# вимагає `instanceof FrameElement`, і на `div` мовчки відкочується на повний
+# візит). Рядок доти казав «Turbo Frame» і саме тому ніхто не помічав, що
+# відповідь на голос — повна навігація, а не заміна фрагмента [SEC.25].
 #
 # No Stimulus controller — both cards are real `<form method="post">`
-# submissions, and Turbo handles the frame replacement on response.
+# submissions; відповідь на успіх — редирект (PRG), не заміна кадру.
 # Keyboard shortcuts (←/→/space) deferred until a visible affordance
 # (tooltip/legend) ships so users actually discover them.
 #
@@ -97,6 +103,10 @@ module Codex
         ) do
           input(type: "hidden", name: "pair_seed", value: @pair_seed)
           input(type: "hidden", name: "winner_slug", value: node.slug)
+          # [SEC.25] Реалм мусить повернутись у контролер: `#create` редиректить
+          # назад на арену (PRG), і без цього поля редирект щоразу скидав би
+          # людину в перший упорядкований реалм.
+          input(type: "hidden", name: "realm", value: @realm&.slug)
           button(
             type: "submit",
             class: tokens(
@@ -119,6 +129,8 @@ module Codex
         ) do
           input(type: "hidden", name: "pair_seed", value: @pair_seed)
           input(type: "hidden", name: "skip", value: "true")
+          # Дзеркало pick-форми — див. коментар вище.
+          input(type: "hidden", name: "realm", value: @realm&.slug)
           button(
             type: "submit",
             class: tokens(

@@ -3,6 +3,7 @@ en:
   flash:
     actuators:
       command_in_flight: Actuator already has an active command. Wait for it to complete.
+      command_queued: Command queued — the node will pick it up on its next poll.
       idempotency_required: Idempotency-Key header is required for actuator command execution.
     alerts:
       acknowledged: 'Alert #%{id} acknowledged.'
@@ -21,6 +22,7 @@ en:
       fraction_set: 'Fraction set: %{node}.'
       idempotency_required: Idempotency-Key header is required for JSON writes.
       match_rejected: Vote not recorded — here is a fresh pair.
+      match_replay: Vote for this pair is already counted — here is a fresh pair.
     firmwares:
       deployment_dispatched: Evolution order for v%{version} queued — Queens will fetch it on their next post-flush poll.
       deployment_no_targets: 'OTA rejected: no eligible gateways to deploy to.'

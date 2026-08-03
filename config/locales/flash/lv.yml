@@ -3,6 +3,7 @@ lv:
   flash:
     actuators:
       command_in_flight: Aktuatoram jau ir aktīva komanda. Pagaidiet, kamēr tā pabeigta.
+      command_queued: Komanda ievietota rindā — mezgls to saņems nākamajā aptaujā.
       idempotency_required: Aktuatora komandas izpildei nepieciešama Idempotency-Key galvene.
     alerts:
       acknowledged: 'Brīdinājums #%{id} apstiprināts.'
@@ -21,6 +22,7 @@ lv:
       fraction_set: 'Frakcija izvēlēta: %{node}.'
       idempotency_required: JSON ierakstiem nepieciešama Idempotency-Key galvene.
       match_rejected: Balsojums nav ieskaitīts — šeit ir jauns pāris.
+      match_replay: Balsojums par šo pāri jau ir ieskaitīts — šeit ir jauns pāris.
     firmwares:
       deployment_dispatched: Izvietošanas rīkojums v%{version} ierindots — Karalienes to paņems nākamajā poll pieprasījumā.
       deployment_no_targets: 'OTA noraidīta: nav piemērotu vārteju izvietošanai.'

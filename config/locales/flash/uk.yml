@@ -3,6 +3,7 @@ uk:
   flash:
     actuators:
       command_in_flight: Актуатор вже має активну команду. Зачекайте на її завершення.
+      command_queued: Наказ поставлено в чергу — вузол забере його на наступному опитуванні.
       idempotency_required: Заголовок Idempotency-Key обов'язковий для виконання команд актуатора.
     alerts:
       acknowledged: 'Тривогу #%{id} втихомирено.'
@@ -21,6 +22,7 @@ uk:
       fraction_set: 'Фракцію обрано: %{node}.'
       idempotency_required: Заголовок Idempotency-Key обов'язковий для JSON-записів.
       match_rejected: Голос не зараховано — ось нова пара.
+      match_replay: Голос за цю пару вже зараховано — ось нова пара.
     firmwares:
       deployment_dispatched: Наказ на еволюцію v%{version} поставлено в чергу — Королеви заберуть його власним poll-ом після наступного флашу.
       deployment_no_targets: 'OTA відхилено: немає придатних шлюзів для розгортання.'

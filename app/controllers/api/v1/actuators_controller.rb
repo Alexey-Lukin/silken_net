@@ -141,6 +141,22 @@ module Api
               Actuators::Card.new(actuator: @actuator, last_command: @command).call
             )
           end
+          # 🔴 [SEC.25] Гілка ВІДМОВИ вище відповідала браузеру, а гілка УСПІХУ — ні:
+          # без JS `button_to` шле звичайний `Accept: text/html`, який не матчив ні
+          # json, ні turbo_stream → `UnknownFormat` → `rescue_from StandardError` →
+          # 500. Тобто наказ створювався, залізо в лісі рушало, а людина бачила
+          # помилку — той самий клас «дія відбулась, і про це не сказано», що й
+          # мовчазний 200 (`04_03 §2.2а`), лише голоснішим боком.
+          #
+          # ⚠️ Категорія `pending`, НЕ `success`: команда тут лише `:issued`, а
+          # виконання асинхронне (edge забирає її поллом). `success` стверджував би
+          # завершення, якого ще не сталося, — це рівно та хвороба «твердження без
+          # доказу», яку ця вісь і лікує. Прецедент — `deployment_dispatched`.
+          format.html do
+            redirect_to actuator_path(@actuator),
+                        status: :see_other,
+                        pending: I18n.t("flash.actuators.command_queued")
+          end
         end
       end
 
