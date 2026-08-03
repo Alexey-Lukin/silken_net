@@ -85,24 +85,24 @@ RSpec.describe "CSRF на машинному контурі", type: :request do
   # 🔴 Негативний контроль: без нього піни вище доводили б лише «CSRF нікого не
   # турбує», і глобальне зняття захисту лишило б їх зеленими.
   #
-  # Механіка, на якій стоїть перевірка: БЕЗумовний `skip_forgery_protection`
-  # прибирає `verify_authenticity_token` із ланцюга зовсім, а УМОВНИЙ (`only:`)
-  # лишає його на місці з `unless`-фільтром. Отже присутність колбека і є
-  # підписом «скоуп звужений».
+  # ⚠️ Доти тут стояла СТРУКТУРНА перевірка — «колбек присутній у ланцюгу» — з
+  # поясненням «присутність і є підписом „скоуп звужений"». Це неправда [SEC.31]:
+  # `skip_callback` з умовою не видаляє колбек, а підміняє його умовним близнюком
+  # із тим самим символом, тож перевірка була однаково зелена для правильного
+  # `only: :create` і для ІНВЕРСІЇ `only: :refresh`, яка відкриває саме
+  # cookie-досяжну дію. Обсяг зняття тепер пінить `browser_contour_json_spec`
+  # порівнянням множин; тут лишається те, чого структурний гейт не вміє — реальний
+  # HTTP-запит із увімкненим forgery-protection, тобто ДРУГА, незалежна вісь.
   describe "звуження skip'а — не косметика" do
-    def forgery_callback?(controller)
-      controller._process_action_callbacks.map(&:filter).include?(:verify_authenticity_token)
-    end
+    it "refresh (cookie-досяжний) НЕ доходить до контролера без CSRF-токена" do
+      post "/api/v1/auth/m2m_token/refresh",
+           params: {}.to_json,
+           headers: { "CONTENT_TYPE" => "application/json" }
 
-    it "m2m_auth ЛИШАЄ захист поза :create (бо refresh приймає cookie-сесію)" do
-      expect(forgery_callback?(Api::V1::M2mAuthController)).to be(true),
-        "skip_forgery_protection у m2m_auth мусить бути `only: :create` — інакше " \
-        "разом із машинним входом відкривається браузерний `refresh`"
-    end
-
-    it "суто машинні контролери звільнені повністю" do
-      expect(forgery_callback?(Api::V1::OracleCallbacksController)).to be(false)
-      expect(forgery_callback?(Api::V1::HeliumSosController)).to be(false)
+      # `handle_unverified_request` пропускає лише Bearer; тут його нема, тож
+      # запит гине на CSRF ще до `authenticate_user!`. Саме це й означає, що
+      # зняття НЕ накрило `refresh`.
+      expect(response).to have_http_status(:internal_server_error)
     end
   end
 end

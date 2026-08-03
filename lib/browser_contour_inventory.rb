@@ -20,6 +20,13 @@ require "prism"
 module BrowserContourInventory
   Site = Struct.new(:file, :line, :action, :kind, keyword_init: true)
 
+  # 🔴 Нерозпарсений файл МУСИТЬ падати гучно, а не зникати зі скану. Мовчазний
+  # пропуск був би невидимий обом перевіркам спеки одразу: множина «нових сайтів»
+  # від зникнення файла лише порожніє, а перевірка на протухлий реєстр червоніє
+  # тільки для файлів, що вже мають у ньому рядок. Тобто чистий браузерний
+  # контролер міг би випасти зі скану, лишивши гейт зеленим на нулі сайтів.
+  class ParseFailure < StandardError; end
+
   RENDER_KINDS = %i[render head].freeze
 
   class Visitor < Prism::Visitor
@@ -70,8 +77,19 @@ module BrowserContourInventory
       @sites << Site.new(file: @path, line: node.location.start_line, action: @action, kind: kind)
     end
 
-    # `render json: …` — і форма без пробілу (`render(json:`) сюди теж потрапляє,
-    # бо ми дивимось на вузол, а не на текст.
+    # `render json: …` — форма без пробілу сюди теж потрапляє, бо ми дивимось на
+    # вузол, а не на текст.
+    #
+    # 🔴 Але «вузол, а не текст» НЕ означає «форма більше не має значення» — воно
+    # лише піднімає межу на рівень вище, і за нею лишається те саме сімейство
+    # промахів. Виміряно Prism-пробою (живих сайтів у дереві — нуль на кожну):
+    #   · хеш у дужках як ОДИН позиційний аргумент — це `HashNode`, а не
+    #     `KeywordHashNode`, тобто інший вузол і повна невидимість;
+    #   · подвійний сплат розкриває хеш у рантаймі, а ключів у дереві не лишає;
+    #   · рядковий ключ замість символьного не проходить `SymbolNode`-перевірку.
+    # Тобто це не «доведено безпечне», а «сьогодні порожнє»: перший же сайт такої
+    # форми буде невидимий мовчки, і саме тому межа названа тут, а не мається на
+    # увазі. Той самий клас, що греп без пробілу, — просто на щабель вище.
     def json_keyword?(args)
       args.any? do |arg|
         next false unless arg.is_a?(Prism::KeywordHashNode)
@@ -89,7 +107,7 @@ module BrowserContourInventory
   def scan(root: Rails.root.join("app/controllers"))
     Dir.glob("#{root}/**/*.rb").sort.filter_map do |path|
       result = Prism.parse_file(path)
-      next unless result.success?
+      raise ParseFailure, "#{path}: #{result.errors.first&.message}" unless result.success?
 
       relative = Pathname(path).relative_path_from(Rails.root).to_s
       visitor = Visitor.new(relative)
