@@ -66,4 +66,37 @@ Rails.application.configure do
   config.active_record.encryption.primary_key        = "test-primary-key-silken-net-32b!"
   config.active_record.encryption.deterministic_key  = "test-determin-key-silken-net-32!"
   config.active_record.encryption.key_derivation_salt = "test-derivation-salt-silknet32b!"
+
+  # 🔴 [TEST.8] Третій носій того ж класу — і він для процесу, який НЕ є сюїтою.
+  # Два гарди в `spec/rails_helper.rb` живуть у `before(:suite)`, тобто бачать
+  # лише rspec. А забруднювачем у цьому дереві двічі був `bin/rails runner`:
+  # він пише повз транзакційні фікстури (лишаючи записане навіть коли падає далі),
+  # а `Kredis…flushdb` сюїти вимиває ЙОГО ключі перед кожним прикладом — тож
+  # запущена під час прогону проба ще й БРЕШЕ у відповідь. Правило «обгортай
+  # runner у rollback-транзакцію» записане в `04_06 §B.2` #16, але записане
+  # правило не стріляє: воно існує лише там, де в момент дії стоїть перевірка.
+  #
+  # ⚠️ Свідомо WARN, не raise: на відміну від сюїти, разова проба може бути
+  # цілком легітимною (діагностика того самого прогону), і fail-closed тут бив би
+  # по тому, кого не захищає. Шумом це не стане — умова істинна лише поки реально
+  # біжить чужа сюїта.
+  config.after_initialize do
+    next if $PROGRAM_NAME.end_with?("rspec") || defined?(RSpec::Core::Runner)
+
+    owner = begin
+      Kredis.redis(config: :shared).get("rspec:suite_owner_pid")
+    rescue StandardError
+      nil
+    end
+    next if owner.blank?
+
+    warn <<~MSG
+      \e[33m⚠️  У цій же test-БД зараз біжить rspec-сюїта (pid #{owner}).\e[0m
+         · твої записи переживуть її прогін і зачервонять наступний
+           (гард брудної БД тоді назве таблиці, але ЦЕ вже сталося);
+         · `Kredis…flushdb` сюїти вимиває твої ключі перед кожним її прикладом,
+           тож усе, що ти зараз поміряєш у Redis, буде НЕПРАВДОЮ.
+         Безпечна форма: ActiveRecord::Base.transaction { …; raise ActiveRecord::Rollback }
+    MSG
+  end
 end

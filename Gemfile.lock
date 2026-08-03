@@ -404,8 +404,6 @@ GEM
       uri
       yaml
     parallel (2.1.0)
-    parallel_tests (5.7.0)
-      parallel
     parser (3.3.11.1)
       ast (~> 2.4.1)
       racc
@@ -813,7 +811,6 @@ DEPENDENCIES
   lookbook
   oj
   pagy
-  parallel_tests
   pg
   pg_query
   phlex-rails

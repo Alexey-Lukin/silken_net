@@ -77,14 +77,45 @@ RSpec.describe "Rack::Attack", type: :request do
   # TELEMETRY THROTTLE (60 req / 1 min)
   # -----------------------------------------------------------------------
   describe "telemetry throttle (telemetry/uid)" do
-    it "blocks sustained telemetry requests via throttle or fail2ban" do
+    # 🔴 [TEST.10] Доти тут стояла множина з двох кодів (бан і ліміт) під назвою
+    # «via throttle or fail2ban» — і хедж ховав те, що названий throttle не
+    # спрацьовував НІКОЛИ: неавтентифікований `/telemetry/live` віддає 401,
+    # Fail2Ban банить на 15-му, а ліміт цього правила — 60. Тобто `telemetry/uid`
+    # можна було зняти з ініціалізатора, і приклад лишався б зеленим (доведено
+    # мутацією 2026-08-03). ⚠️ Стару форму тут переказано, а не процитовано,
+    # свідомо: літерал у прозі тримає файл грепо-позитивним назавжди й отруює
+    # РУЧНИЙ лічильник класу (`04_06 §B.2` #15, пастка 2 — спрацювала вже тричі).
+    #
+    # Лік — розчепити механізми за їхніми ВЛАСНИМИ дискримінаторами: Fail2Ban
+    # рахує по IP, а цей throttle — по `X-Gateway-UID`. Розганяємо IP і тримаємо
+    # UID сталим: кожна адреса набирає одну відмову (далеко до 15), а лічильник
+    # правила добирає свої 60. Заразом це і є пін на сам дискримінатор — з
+    # IP-ключем приклад був би недосяжний за побудовою.
+    it "throttles a gateway UID at its own limit even across rotating IPs" do
+      limit = Rack::Attack.throttles["telemetry/uid"].limit
+
+      (limit + 1).times do |i|
+        get "/telemetry/live", headers: {
+          "REMOTE_ADDR" => "5.6.#{i / 250}.#{i % 250 + 1}",
+          "HTTP_X_GATEWAY_UID" => "UID-SUSTAINED"
+        }
+      end
+
+      expect(response).to have_http_status(:too_many_requests)
+      expect(response.media_type).to eq("application/json")
+      expect(JSON.parse(response.body)).to eq("error" => "Rate limit exceeded")
+    end
+
+    it "bans a single IP by Fail2Ban long before the telemetry limit is reached" do
       61.times do
         get "/telemetry/live", headers: { "REMOTE_ADDR" => "5.6.7.8" }
       end
 
-      # Unauthenticated requests return 401, which triggers Fail2Ban (403)
-      # before the telemetry throttle (429). Both are valid blocking mechanisms.
-      expect(response.status).to be_in([ 403, 429 ])
+      # 401 з кожного запиту годує Fail2Ban, і той банить на 15-му — тобто на
+      # ОДНІЙ адресі до ліміту 60 черга не доходить. Точний код, а не множина:
+      # два коди тут означали б два різні механізми, і статус їх не розрізняє.
+      expect(response).to have_http_status(:forbidden)
+      expect(JSON.parse(response.body)).to eq("error" => "Forbidden")
     end
 
     it "uses X-Gateway-UID as discriminator when present" do
@@ -156,7 +187,14 @@ RSpec.describe "Rack::Attack", type: :request do
       expect(throttle).to be_present
     end
 
-    it "throttles m2m auth attempts after 15 POSTs per minute" do
+    # 🔴 [TEST.10] Назва доти обіцяла throttle, а хедж приймав і 403 — тобто приклад
+    # не розрізняв двох механізмів і був би зелений зі знятим правилом. Тут ліміт
+    # (15) НЕ менший за поріг Fail2Ban (15), а дискримінатор у обох — та сама IP,
+    # тож на невдалій автентифікації названий throttle недосяжний У ПРИНЦИПІ:
+    # блок-лист у Rack::Attack виконується перед throttle'ами. Приклад тепер
+    # тверджує рівно те, що відбувається; сам throttle лишається осмисленим для
+    # УСПІШНОЇ автентифікації (200 не годує Fail2Ban) — саме від Ed25519-DoS.
+    it "bans a flood of failed m2m auth by Fail2Ban, not by the m2m throttle" do
       16.times do
         post "/api/v1/auth/m2m_token",
           params: { did: "SNET-Q-TEST0001", timestamp: Time.current.iso8601, signature: "a" * 128 },
@@ -164,9 +202,8 @@ RSpec.describe "Rack::Attack", type: :request do
           as: :json
       end
 
-      # Unauthenticated/not-found requests return 401/404, which triggers
-      # Fail2Ban (403) before the M2M throttle (429). Both are valid blocking.
-      expect(response.status).to be_in([ 403, 429 ])
+      expect(response).to have_http_status(:forbidden)
+      expect(JSON.parse(response.body)).to eq("error" => "Forbidden")
     end
   end
 
@@ -179,7 +216,9 @@ RSpec.describe "Rack::Attack", type: :request do
       expect(throttle).to be_present
     end
 
-    it "blocks sustained oracle callback requests" do
+    # 🔴 [TEST.10] Той самий розчеп, що й для m2m: ліміт 60 проти порогу Fail2Ban 15
+    # на тому самому IP-ключі — отже сканера відсікає бан, а не це правило.
+    it "bans an unauthenticated callback flood by Fail2Ban, not by the oracle throttle" do
       61.times do
         post "/api/v1/oracle_callbacks",
           params: { chainlink_request_id: SecureRandom.uuid, success: true },
@@ -187,9 +226,8 @@ RSpec.describe "Rack::Attack", type: :request do
           as: :json
       end
 
-      # Unauthenticated requests return 401, which triggers Fail2Ban (403)
-      # before the oracle throttle (429). Both are valid blocking mechanisms.
-      expect(response.status).to be_in([ 403, 429 ])
+      expect(response).to have_http_status(:forbidden)
+      expect(JSON.parse(response.body)).to eq("error" => "Forbidden")
     end
   end
 
@@ -262,6 +300,25 @@ RSpec.describe "Rack::Attack", type: :request do
   # CONFIGURATION
   # -----------------------------------------------------------------------
   describe "configuration" do
+    # 🔴 [TEST.10] Правила нижче не мають поведінкового приклада на власний ліміт,
+    # і причина записана прозою: на неавтентифікованому трафіку їх заступає
+    # Fail2Ban, бо дискримінатор у них той самий (IP), а поріг бану нижчий. Проза
+    # про МЕХАНІЗМ мусить бути фальсифіковною — інакше хтось опустить ліміт нижче
+    # порогу, пояснення стане хибним, і нічого не почервоніє. Цей приклад і є та
+    # фальсифіковність: щойно ліміт опускається під поріг, названий throttle стає
+    # досяжним, і йому потрібен СВІЙ поведінковий приклад, а не пояснення.
+    #
+    # ⚠️ Критерій членства (щоб наступний throttle класифікували, а не вгадали):
+    # дискримінатор = IP **І** ліміт ≥ порогу бану **І** шлях на невдалій спробі
+    # віддає 401/404, тобто сам годує Fail2Ban. `logins/ip` і `account_security/ip`
+    # сюди не входять (ліміт 10 < 15 — досяжні), `telemetry/uid` теж ні: він
+    # ключиться на `X-Gateway-UID`, і саме тому має власний поведінковий приклад.
+    # 🔴 `helium_sos/ip` доданий 2026-08-03 після adversarial-проходу: він підпадає
+    # під усі три умови (30 ≥ 15, IP-keyed, невдалий HMAC → 401), а список без
+    # нього суперечив власній назві «every» — рівно той розрив назви й твердження,
+    # який цей пункт і полює.
+    let(:shadowed_by_fail2ban) { %w[m2m_auth/ip oracle_callbacks/ip helium_sos/ip] }
+
     it "registers all expected throttle rules" do
       # Order doesn't matter — `contain_exactly` is set-equality.
       # The 4 codex/* throttles were added in Phase 2..4 to protect the
@@ -277,6 +334,17 @@ RSpec.describe "Rack::Attack", type: :request do
 
     it "uses MemoryStore for cache in test environment" do
       expect(Rack::Attack.cache.store).to be_a(ActiveSupport::Cache::MemoryStore)
+    end
+
+
+    it "keeps every Fail2Ban-shadowed throttle at or above the ban threshold" do
+      shadowed_by_fail2ban.each do |name|
+        limit = Rack::Attack.throttles.fetch(name).limit
+        expect(limit).to be >= FAIL2BAN_MAXRETRY,
+          "#{name}: ліміт #{limit} тепер нижчий за поріг Fail2Ban #{FAIL2BAN_MAXRETRY}, " \
+          "отже правило СТАЛО досяжним — напиши йому поведінковий приклад на 429 " \
+          "замість пояснення, чому його немає (`04_06 §B.2` #17)"
+      end
     end
   end
 end

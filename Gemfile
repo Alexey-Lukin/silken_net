@@ -82,6 +82,11 @@ end
 group :test do
   gem "capybara"
   gem "cuprite"
-  gem "parallel_tests"
+  # [TEST.8] `parallel_tests` знято 2026-08-03: гем приїхав ботом разом із Cuprite
+  # і НІКОЛИ не був задротований (нуль `TEST_ENV_NUMBER` у `database.yml`/CI/bin).
+  # Після того, як `rails_helper` зацементував «другий прогін = помилка», його
+  # присутність робила дерево двоголосим. Паралельність тут і не потрібна: повна
+  # сюїта ~1.5 хв при `timeout-minutes: 15`, а кожна CI-джоба має власні
+  # postgis+valkey. Знадобиться — вертати разом із БД-на-процес, не самим гемом.
   gem "simplecov", require: false
 end

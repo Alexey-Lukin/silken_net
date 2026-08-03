@@ -35,9 +35,13 @@ RSpec.describe "Single tree end-to-end flow" do
       expect(tree.latest_voltage_mv).to eq(3500)
     end
 
+    # [TEST.10] `be_between(0, 100)` тут не могло впасти: метод завершується
+    # `.clamp(0, 100)`, тобто твердження перевіряло власний кодомен. 4150 мВ —
+    # рівно середина робочого вікна (2800…5500), тож пін тепер на ЧИСЛО, і будь-яка
+    # зміна формули чи меж його червонить.
     it "calculates charge percentage" do
       tree.update_columns(latest_voltage_mv: 4150)
-      expect(tree.charge_percentage).to be_between(0, 100)
+      expect(tree.charge_percentage).to eq(50)
     end
 
     it "detects low power" do
