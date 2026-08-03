@@ -7,8 +7,6 @@ lt:
       action_prompt: "— Pasirinkite įsikišimo tipą —"
       action_type: Veiksmo tipas
       cancel: Atšaukti
-      errors:
-        heading: Validacijos klaidos
       evidence:
         attach_photos: Pridėti nuotraukas
         heading: Įrodymų protokolas // Nuotraukos

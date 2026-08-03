@@ -126,8 +126,16 @@ RSpec.describe Maintenance::Form do
       rec
     end
 
-    it "renders validation errors section when record has errors" do
-      expect(html_with_errors(record)).to include("Validation Errors")
+    # [SEC.25] Пін на ФОРМУ, не лише на присутність тексту: доти цей блок був
+    # третьою власною реалізацією зведення — без `role="alert"`, з власним ключем
+    # заголовка й нижче кнопки сабміту. Тепер спільний `ErrorSummary`, тож
+    # перевіряємо і те, що причина видима, і те, що вона оголошується.
+    it "renders the shared error summary with the message and an alert role" do
+      html = html_with_errors(record)
+
+      expect(html).to include("Validation Failed")
+      expect(html).to include("can&#39;t be blank")
+      expect(html).to include('role="alert"')
     end
 
     def html_with_errors(rec)

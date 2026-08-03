@@ -157,6 +157,13 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
       # [SEC.25] 422, не 200: Turbo викидає `200` без редиректу на сабміт, тож
       # форма з помилками не показалась би зовсім.
       expect(response).to have_http_status(:unprocessable_content)
+
+      # 🔴 Друга половина, якої бракувало саме тут: приклад звався «re-renders form»
+      # і був зелений, тоді як форма перемальовувалась НІМОЮ — `TreeFamilies::Form`
+      # не читав `.errors` взагалі, тож єдиним сигналом відмови лишалась зміна
+      # заголовка сторінки.
+      expect(response.body).to include(I18n.t("errors.api.validation_failed_title"))
+      expect(response.body).to include("Name can&#39;t be blank")
     end
 
     it "returns 403 for non-admin users" do

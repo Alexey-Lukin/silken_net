@@ -206,6 +206,13 @@ RSpec.describe Api::V1::SettingsController, type: :request do
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.media_type).to eq("text/html")
+
+      # 🔴 [SEC.25] Друга половина того самого дефекту, і вона пережила перший фікс:
+      # статус полагодили, а сторінка й далі не казала ЧОМУ — `org.errors` бачила
+      # тільки JSON-гілка. Цей приклад був зелений увесь той час, бо питав лише про
+      # статус і `media_type`, тобто вакуумний щодо самої причини.
+      expect(response.body).to include(I18n.t("errors.api.validation_failed_title"))
+      expect(response.body).to include("Billing email is invalid")
     end
   end
 end

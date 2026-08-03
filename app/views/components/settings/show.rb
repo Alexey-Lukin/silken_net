@@ -41,6 +41,11 @@ module Settings
           input(type: "hidden", name: "_method", value: "patch")
           input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
 
+          # [SEC.25] Контролер рендерить цю сторінку на 422 (кривий billing_email,
+          # зайнята назва, поріг поза діапазоном), і доти причина нікуди не їхала —
+          # `org.errors` бачила лише JSON-гілка.
+          render Views::Shared::UI::ErrorSummary.new(messages: @organization.errors.full_messages)
+
           render_field(t(".fields.org_name"), "organization[name]", @organization.name)
           render_field(t(".fields.billing_email"), "organization[billing_email]", @organization.billing_email, placeholder: "billing@example.org")
           render_field(t(".fields.crypto_address"), "organization[crypto_public_address]", @organization.crypto_public_address, placeholder: "0x...")

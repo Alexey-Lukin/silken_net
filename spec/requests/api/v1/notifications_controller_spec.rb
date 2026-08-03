@@ -78,6 +78,12 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
       # невалідний номер телефону не показував користувачеві нічого.
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.content_type).to include("text/html")
+
+      # 🔴 І друга половина: коментар вище казав «не показував нічого», але після
+      # фіксу статусу сторінка все одно мовчала — компонент не мав куди покласти
+      # причину. Пін на статус цього не бачив за побудовою.
+      expect(response.body).to include(I18n.t("errors.api.validation_failed_title"))
+      expect(response.body).to include("Phone number is invalid")
     end
   end
 end

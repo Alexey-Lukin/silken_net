@@ -5,8 +5,12 @@ require "rails_helper"
 
 RSpec.describe Notifications::Settings do
   def mock_user(id: 1, email_address: "ada@silken.net", phone_number: "+380501234567",
-               telegram_chat_id: "123456789", push_token: nil)
+               telegram_chat_id: "123456789", push_token: nil, error_messages: [])
     user = OpenStruct.new(
+      # [SEC.25] Дзеркало `Settings::Show`: контролер віддає сюди `current_user`
+      # після невдалого `update` (телефон не в E.164), тож `errors` — частина
+      # реального контракту, а не додаток до фікстури.
+      errors: double("errors", full_messages: error_messages),
       id: id,
       email_address: email_address,
       phone_number: phone_number,

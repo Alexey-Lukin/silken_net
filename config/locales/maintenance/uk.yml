@@ -7,8 +7,6 @@ uk:
       action_prompt: "— Оберіть тип втручання —"
       action_type: Тип дії
       cancel: Скасувати
-      errors:
-        heading: Помилки валідації
       evidence:
         attach_photos: Прикріпити фото
         heading: Протокол доказів // Фото

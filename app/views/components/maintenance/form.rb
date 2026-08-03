@@ -18,7 +18,12 @@ module Maintenance
           multipart: true,
           class: "space-y-8 p-8 border border-gaia-border bg-gaia-surface shadow-sm dark:shadow-none"
         ) do |f|
-          render_form_header(f)
+          render_form_header
+
+          # [SEC.25] Зведення стоїть ПЕРЕД полями. Доти воно рендерилось останнім —
+          # нижче кнопки «Update», тобто причина відмови лежала за межами екрана
+          # рівно тоді, коли людина дивиться на кнопку, яка щойно не спрацювала.
+          render Views::Shared::UI::ErrorSummary.new(messages: @record.errors.full_messages)
 
           # --- РЯДОК 1: Target + EWS ---
           div(class: "grid grid-cols-2 gap-6") do
@@ -163,8 +168,6 @@ module Maintenance
               ) { t(".cancel") }
             end
           end
-
-          render_errors if @record.errors.any?
         end
       end
     end
@@ -199,7 +202,7 @@ module Maintenance
       end
     end
 
-    def render_form_header(f)
+    def render_form_header
       div(class: "flex justify-between items-center mb-2") do
         h3(class: "text-tiny uppercase tracking-[0.5em] text-gaia-text-muted") do
           @editing ? t(".header.edit", id: @record.id) : t(".header.new")
@@ -207,17 +210,6 @@ module Maintenance
         span(class: "text-micro text-gaia-text-muted font-mono") { @record.maintainable_type&.upcase || "PENDING" }
       end
       hr(class: "border-gaia-border mb-6")
-    end
-
-    def render_errors
-      div(class: "mt-6 p-4 border border-status-danger-accent bg-status-danger") do
-        p(class: "text-mini uppercase tracking-widest text-status-danger-text mb-2") { t(".errors.heading") }
-        ul(class: "space-y-1") do
-          @record.errors.full_messages.each do |msg|
-            li(class: "text-tiny text-status-danger-accent font-mono") { "× #{msg}" }
-          end
-        end
-      end
     end
 
     def field_container(label, &)

@@ -40,6 +40,10 @@ module Notifications
           input(type: "hidden", name: "_method", value: "patch")
           input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
 
+          # [SEC.25] Дзеркало `settings#update`: телефон не в E.164 дає 422, і доти
+          # сторінка просто перемальовувалась із тим самим значенням у полі.
+          render Views::Shared::UI::ErrorSummary.new(messages: @user.errors.full_messages)
+
           render_field(t(".channels.email_address"), "email", @user.email_address, disabled: true, hint: t(".email_hint"))
           render_field(t(".channels.phone_number"), "phone_number", @user.phone_number, placeholder: "+380501234567")
           render_field(t(".channels.telegram_chat_id"), "telegram_chat_id", @user.telegram_chat_id, placeholder: "123456789")

@@ -8,9 +8,14 @@ RSpec.describe Settings::Show do
                crypto_public_address: "0xABCDEF1234",
                alert_threshold_critical_z: 2.5, ai_sensitivity: 0.7,
                id: 1, created_at: 2.years.ago, updated_at: 1.hour.ago,
-               logo_attached: false)
+               logo_attached: false, error_messages: [])
     logo = double("logo", attached?: logo_attached, filename: ActiveStorage::Filename.new("logo.png"))
     OpenStruct.new(
+      # [SEC.25] Контролер передає сюди справжню `Organization` — ту саму, чиї
+      # `errors` він щойно наповнив невдалим `update`. Доти фікстура цього не
+      # знала, тобто оголошувала світ, у якому дефект «форма мовчить на 422»
+      # неможливий за побудовою (`04_06 §B.2` BP #14).
+      errors: double("errors", full_messages: error_messages),
       name: name,
       billing_email: billing_email,
       crypto_public_address: crypto_public_address,

@@ -12,7 +12,14 @@ module Provisioning
         header_section
 
         form_with(url: register_provisioning_index_path, scope: :provisioning, class: "space-y-8 p-10 border border-emerald-900 bg-black/60 backdrop-blur-md shadow-2xl") do |f|
-          render_errors if @device&.errors&.any?
+          # [SEC.25] Заголовок ЛИШАЄТЬСЯ власним, а не спільним «перевірку не
+          # пройдено»: більшість причин тут не з валідації моделі, а з guard-клауз
+          # контролера (зайнятий UID → 409, чужий кластер → 404), які кладуться в
+          # `errors` лише щоб доїхати сюди. `&.` законний — `device:` дефолтить у nil.
+          render Views::Shared::UI::ErrorSummary.new(
+            messages: @device&.errors&.full_messages,
+            title:    t(".errors_title")
+          )
 
           div(class: "grid grid-cols-1 md:grid-cols-2 gap-8") do
             field_container(t(".fields.hardware_uid")) do
@@ -64,15 +71,6 @@ module Provisioning
 
     def input_classes
       "w-full bg-zinc-950 border border-emerald-900/50 text-emerald-100 p-3 font-mono text-xs focus-visible:border-emerald-500 outline-none transition-all"
-    end
-
-    def render_errors
-      div(class: "p-4 border border-red-900 bg-red-950/20 text-red-500 text-xs font-mono") do
-        p { t(".errors_title") }
-        ul(class: "list-disc ml-4 mt-2") do
-          @device.errors.full_messages.each { |msg| li { msg } }
-        end
-      end
     end
   end
 end

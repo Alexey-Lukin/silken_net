@@ -7,8 +7,6 @@ en:
       action_prompt: "— Select intervention type —"
       action_type: Action Type
       cancel: Cancel
-      errors:
-        heading: Validation Errors
       evidence:
         attach_photos: Attach Photos
         heading: Evidence Protocol // Photos

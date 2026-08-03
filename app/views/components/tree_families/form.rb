@@ -10,6 +10,11 @@ module TreeFamilies
     def view_template
       div(class: "max-w-2xl mx-auto animate-in zoom-in duration-500") do
         form_with(model: @family, class: "space-y-8 p-10 border border-gaia-border bg-gaia-surface shadow-sm dark:shadow-none") do |f|
+          # [SEC.25] Форма рендериться контролером на 422 у ДВОХ екшенах, і доти не
+          # мала куди покласти причину: єдиним сигналом відмови лишалась зміна
+          # заголовка сторінки. Канал (статус) полагодили раніше, споживача — тут.
+          render Views::Shared::UI::ErrorSummary.new(messages: @family.errors.full_messages)
+
           div(class: "grid grid-cols-1 md:grid-cols-2 gap-6") do
             field_container(f, :name, t(".species_identity")) { f.text_field :name, class: input_classes, placeholder: t(".species_placeholder") }
             field_container(f, :scientific_name, t(".scientific_name")) { f.text_field :scientific_name, class: input_classes, placeholder: t(".scientific_placeholder") }

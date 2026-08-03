@@ -7,8 +7,6 @@ lv:
       action_prompt: "— Izvēlēties iejaukšanās veidu —"
       action_type: Darbības veids
       cancel: Atcelt
-      errors:
-        heading: Validācijas kļūdas
       evidence:
         attach_photos: Pievienot fotogrāfijas
         heading: Pierādījumu protokols // Fotogrāfijas

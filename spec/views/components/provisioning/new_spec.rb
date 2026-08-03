@@ -21,7 +21,9 @@ RSpec.describe Provisioning::New do
   end
 
   def mock_device_with_errors(messages: [ "Hardware UID can't be blank" ])
-    errors = double("errors", any?: true, full_messages: messages)
+    # `any?` тут більше не потрібен: умову «чи є що показувати» тримає сам
+    # `ErrorSummary`, а не викликач — компонент читає лише `full_messages`.
+    errors = double("errors", full_messages: messages)
     OpenStruct.new(errors: errors)
   end
 

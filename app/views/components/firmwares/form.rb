@@ -21,7 +21,7 @@ module Firmwares
         # Без `&.`: `firmware:` — обовʼязковий kwarg, а `errors` на AR-моделі не буває
         # nil, тож захисні гілки були б МЕРТВІ, не «нетестовані». (Сусідній
         # `Provisioning::New` тримає `&.` законно — там `device:` дефолтить у nil.)
-        render_errors if @firmware.errors.any?
+        render Views::Shared::UI::ErrorSummary.new(messages: @firmware.errors.full_messages)
 
         div(class: "space-y-6") do
           field_container(t(".version_label")) do
@@ -48,26 +48,6 @@ module Firmwares
     end
 
     private
-
-    # 🔴 [SEC.25] Ця форма повертається з `status: :unprocessable_content` при кожній
-    # відмові — і доти не показувала ЖОДНОГО пояснення: помилки клались у
-    # `@firmware.errors`, а споживача в них не було. Тобто попередній фікс осі зняв
-    # проковтнутий Turbo 200, але лишив оператора з формою без причини. Сиблінг
-    # `Provisioning::New` таке має від початку.
-    #
-    # Заголовок — уже перекладений `errors.api.validation_failed_title` (усі чотири
-    # локалі), щоб не заводити новий i18n-борг заради одного рядка.
-    def render_errors
-      div(
-        class: "p-4 border border-status-danger bg-status-danger text-status-danger-text text-xs font-mono",
-        role: "alert"
-      ) do
-        p(class: "uppercase tracking-widest") { I18n.t("errors.api.validation_failed_title") }
-        ul(class: "list-disc ml-4 mt-2") do
-          @firmware.errors.full_messages.each { |message| li { message } }
-        end
-      end
-    end
 
     def field_container(label, &block)
       div(class: "space-y-2") do
