@@ -374,7 +374,11 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
 
       expect(response).to have_http_status(:conflict)
       expect(response.media_type).to eq("text/html")
-      expect(response.body).to include("hardware_uid")
+      # 🔴 [SEC.25] Доти тут стояло `include("hardware_uid")` — рядок, який є в тілі
+      # ЗАВЖДИ (це `name` інпута форми), тож пін не вмів упасти й не бачив би, що
+      # причина відмови до людини не доїхала. Гілки 409/404 кладуть текст у
+      # `@device.errors` вручну, тому саме його й треба міряти.
+      expect(response.body).to include(I18n.t("flash.provisioning.uid_taken", uid: uid))
     end
 
     it "renders the form, not a JSON blob, for a cluster of another organization" do
@@ -386,7 +390,8 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
 
       expect(response).to have_http_status(:not_found)
       expect(response.media_type).to eq("text/html")
-      expect(response.body).to include("hardware_uid")
+      # [SEC.25] Дзеркало сусіда вище: міряємо ПРИЧИНУ, не `name` інпута.
+      expect(response.body).to include(I18n.t("errors.api.not_found", model: "Cluster"))
     end
   end
 end
