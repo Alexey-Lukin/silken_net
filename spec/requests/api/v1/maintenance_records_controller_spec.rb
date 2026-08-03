@@ -379,25 +379,41 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       expect(response).to have_http_status(:ok)
     end
 
-    it "exercises the new maintenance record form path" do
+    # [TEST.10] Три приклади нижче приймали множину зі `500` під підставою, що
+    # Phlex «може не дорендеритись у тесті». Вимір її спростував: сторінки
+    # віддають 200/422 і повний HTML. Тому тверджувати треба те, заради чого ця
+    # гілка існує ([SEC.25]) — форма доїхала, і причина відмови ВИДНА в ній.
+    # ⚠️ Повідомлення валідації екрановані (`can't` → `can&#39;t`), тож рівняння
+    # на сирий `full_messages` дає хибний негатив — звідси `CGI.escapeHTML`.
+    it "renders the new-record form with the action_type field" do
       get "/maintenance_records/new", headers: html_headers
-      # Phlex component may not fully render in test env, but code path is exercised
-      expect(response.status).to be_in([ 200, 500 ])
+
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include("maintenance_record[action_type]")
+      expect(response.body).not_to include("Validation Errors")
     end
 
-    it "exercises HTML error on create failure" do
+    it "re-renders the form with visible reasons when create fails" do
       post "/maintenance_records",
            params: { maintenance_record: { maintainable_type: "Tree", maintainable_id: own_tree.id, action_type: nil, performed_at: nil } },
            headers: html_headers
-      # Code path exercised even if Phlex fails
-      expect(response.status).to be_in([ 200, 422, 500 ])
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include("maintenance_record[action_type]")
+      expect(response.body).to include(CGI.escapeHTML("can't be blank"))
     end
 
-    it "exercises HTML error on update failure" do
+    it "re-renders the form with visible reasons when update fails" do
       patch "/maintenance_records/#{record.id}",
             params: { maintenance_record: { action_type: nil } },
             headers: html_headers
-      expect(response.status).to be_in([ 200, 422, 500 ])
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include("maintenance_record[action_type]")
+      expect(response.body).to include(CGI.escapeHTML("can't be blank"))
     end
 
     it "rejects creating a record against another organization's tree (IDOR)" do

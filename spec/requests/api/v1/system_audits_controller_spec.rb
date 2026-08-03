@@ -65,6 +65,10 @@ RSpec.describe Api::V1::SystemAuditsController, type: :request do
         expect(body["db_total"]).to be_a(Numeric)
         expect(body["chain_total"]).to be_a(Numeric)
         expect(body["delta"]).to be_a(Numeric)
+        # [TEST.10] ЛИШАЄТЬСЯ свідомо: у Ruby немає класу `Boolean`, тож для
+        # прикладу, чия ціль — саме ТИПИ полів, це і є ідіоматична перевірка типу
+        # (сусіди — `be_a(Numeric)`/`be_a(String)`), і `nil` її ВАЛИТЬ. Значення
+        # тут не тверджується навмисно — його дім в іншому прикладі.
         expect(body["critical"]).to be_in([ true, false ])
         expect(body["checked_at"]).to be_a(String)
       end

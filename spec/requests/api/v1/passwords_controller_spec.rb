@@ -178,7 +178,15 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
       Prosopite.resume if defined?(Prosopite)
     end
 
-    it "redirects after exceeding rate limit for HTML format" do
+    # [TEST.10] Тут статус приймався множиною {302, 303, 429}, і вимір показав,
+    # що вона не могла впасти НІКОЛИ й з двох незалежних причин. (1) `429` для
+    # HTML недосяжний за дизайном: обробник `rate_limit` віддає JSON-гілці 429, а
+    # HTML-гілці — редірект. (2) Успішний сабміт ТЕЖ редіректить, тож сам по собі
+    # `302` не відрізняє «ліміт спрацював» від «ліміт не спрацював». Різнить їх
+    # ЦІЛЬ (`forgot_password_path` проти `login_path`) і флеш — саме їх і треба
+    # тверджувати. ⚠️ Ліміт тут контролерний (`rate_limit to: 3`), НЕ
+    # `rack_attack` «logins/ip» на 10 — плутати їх означає рахувати не ті запити.
+    it "redirects back to the form with a rate-limit notice once the HTML limit is hit" do
       Prosopite.pause if defined?(Prosopite)
       3.times do
         post "/forgot_password", params: { email: user.email_address }, as: :json
@@ -188,7 +196,9 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
         params: { email: user.email_address },
         headers: { "Accept" => "text/html" }
 
-      expect(response.status).to be_in([ 302, 303, 429 ])
+      expect(response).to have_http_status(:found)
+      expect(response).to redirect_to(forgot_password_path)
+      expect(flash[:error]).to eq("Too many attempts. Try again in 5 minutes.")
     ensure
       Prosopite.resume if defined?(Prosopite)
     end
@@ -202,8 +212,8 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
         params: { token: token, password: "short", password_confirmation: "short" },
         headers: { "Accept" => "text/html" }
 
-      # [SEC.25/TEST.10] Було `be_in([200, 500])` — твердження, що не може
-      # впасти. 422 тут несучий: на `200` без редиректу Turbo викидає відповідь,
+      # [SEC.25/TEST.10] Статус приймався множиною {200, 500} — твердження, що не
+      # може впасти. 422 тут несучий: на `200` без редиректу Turbo викидає відповідь,
       # тобто людина, що скидає пароль, не бачила ЖОДНОЇ реакції на закороткий.
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include(I18n.t("passwords.reset.too_short"))

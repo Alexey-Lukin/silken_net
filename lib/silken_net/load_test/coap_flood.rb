@@ -61,6 +61,9 @@ module SilkenNet
         end
         sent
       ensure
+        # `&.` несучий і ЛИШАЄТЬСЯ непокритим свідомо: якщо впаде сам
+        # `UDPSocket.new`, ensure все одно біжить, а `socket` тут ще nil. Покрити
+        # це можна лише стабом конструктора — контрив-white-box (`04_06 §A.16`).
         socket&.close
       end
 

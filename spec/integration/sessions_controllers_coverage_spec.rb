@@ -378,12 +378,39 @@ RSpec.describe "Controller coverage — uncovered paths" do
       end
     end
 
-    describe "POST /provisioning/register — validation error" do
-      it "returns validation errors for invalid tree data (missing family)" do
+    # [TEST.10] Обидва приклади тут приймали множину `{422, 500}` і хедж
+    # `json["errors"] || json["error"]`, тобто не могли сказати, ЯКА гілка
+    # відповіла. Вимір показав, що перший ніколи не доходив до валідації:
+    # `unique_hardware_uid` = "UID"+8hex, а `DidDerivation::UID_HEX_FORMAT`
+    # вимагає рівно 24 hex — спрацьовував UID-guard. Назва обіцяла «missing
+    # family», гілка була інша, і НІ ОДНА з двох не мала власного піна. Тепер
+    # ключ відповіді розрізняє гілки: `error` (однина) = guard, `errors`
+    # (множина) = валідація моделі.
+    describe "POST /provisioning/register — відмови" do
+      it "rejects a tree whose hardware_uid is not a 24-hex silicon UID" do
         post "/provisioning/register",
              params: {
                provisioning: {
-                 hardware_uid: unique_hardware_uid,
+                 hardware_uid: "UID00DEADBEEF",
+                 device_type: "tree",
+                 cluster_id: cluster.id,
+                 family_id: tree_family.id
+               }
+             },
+             headers: forester_headers
+
+        expect(response).to have_http_status(:unprocessable_content)
+        json = response.parsed_body
+        expect(json["error"]).to include("UID00DEADBEEF")
+        expect(json).not_to have_key("errors")
+        expect(Tree.count).to eq(0)
+      end
+
+      it "rejects a tree with a valid silicon UID but no family" do
+        post "/provisioning/register",
+             params: {
+               provisioning: {
+                 hardware_uid: "0039002F3138511538323634",
                  device_type: "tree",
                  cluster_id: cluster.id,
                  family_id: nil
@@ -391,13 +418,12 @@ RSpec.describe "Controller coverage — uncovered paths" do
              },
              headers: forester_headers
 
-        # Tree requires tree_family — should fail validation
-        expect(response.status).to be_in([ 422, 500 ])
-        json = response.parsed_body
-        expect(json["errors"] || json["error"]).to be_present
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body["errors"]).to include(a_string_matching(/family/i))
+        expect(Tree.count).to eq(0)
       end
 
-      it "returns validation errors for gateway with invalid data" do
+      it "rejects a gateway with a blank uid" do
         post "/provisioning/register",
              params: {
                provisioning: {
@@ -408,9 +434,9 @@ RSpec.describe "Controller coverage — uncovered paths" do
              },
              headers: forester_headers
 
-        expect(response.status).to be_in([ 422, 500 ])
-        json = response.parsed_body
-        expect(json["errors"] || json["error"]).to be_present
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body["errors"]).to include(a_string_matching(/uid/i))
+        expect(Gateway.count).to eq(0)
       end
     end
   end

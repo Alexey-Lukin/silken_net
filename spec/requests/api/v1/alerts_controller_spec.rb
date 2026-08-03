@@ -178,12 +178,21 @@ RSpec.describe Api::V1::AlertsController, type: :request do
   end
 
   context "with turbo_stream format" do
-    it "exercises turbo_stream response path for resolve" do
+    # [TEST.10] Приклад приймав `{200, 406, 500}` під підставою «Phlex може не
+    # дорендеритись», тобто не міг сказати навіть того, чи відповідь взагалі
+    # Turbo-стрім. А несуче тут саме ЦІЛЬ: доти контролер писав рукописний
+    # `alert_#{id}`, якого не існувало ні на одній сторінці, і `replace` був
+    # тихим no-op — тож пін мусить тримати `target`, а не факт виклику.
+    it "replaces the alert row in place with its resolved state" do
       patch resolve_alert_path(own_alert),
             headers: headers.merge("Accept" => "text/vnd.turbo-stream.html")
-      # Turbo stream rendering may fail in test env due to Phlex components,
-      # but the code path is exercised (coverage)
-      expect(response.status).to be_in([ 200, 406, 500 ])
+
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq("text/vnd.turbo-stream.html")
+      expect(response.body).to include(%(action="replace"))
+      expect(response.body).to include(%(target="ews_alert_#{own_alert.id}"))
+      expect(response.body).to include("✓ Resolved")
+      expect(response.body).not_to include("Acknowledge & Resolve")
     end
   end
 end

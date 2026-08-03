@@ -61,13 +61,23 @@ RSpec.describe TreeBlueprint, type: :model do
       expect(parsed).to have_key("last_seen_at")
     end
 
-    it "includes computed current_stress" do
-      expect(parsed).to have_key("current_stress")
+    it "carries the tree's actual current_stress" do
+      tree.update_columns(latest_stress_index: 0.73)
+      expect(parsed["current_stress"]).to eq(0.73)
     end
 
-    it "includes computed under_threat?" do
+    # [TEST.10] Доти тут стояла лише перевірка типу, тож поле лишалось `false`
+    # для дерева з непокритою тривогою і приклад цього не бачив. `under_threat?`
+    # = ЛЮБА нерозвʼязана тривога дерева (на відміну від кластерного
+    # `active_threats?`, який вимагає ще й critical).
+    it "reports under_threat? false for a tree with no unresolved alert" do
       expect(parsed).to have_key("under_threat?")
-      expect(parsed["under_threat?"]).to be_in([ true, false ])
+      expect(parsed["under_threat?"]).to be(false)
+    end
+
+    it "reports under_threat? true once the tree carries an unresolved alert" do
+      create(:ews_alert, :drought, tree: tree, cluster: cluster)
+      expect(parsed["under_threat?"]).to be(true)
     end
 
     it "includes nested wallet" do
@@ -102,12 +112,17 @@ RSpec.describe TreeBlueprint, type: :model do
       expect(parsed).to have_key("last_seen_at")
     end
 
-    it "includes computed current_stress" do
-      expect(parsed).to have_key("current_stress")
+    # [TEST.10] Тут `:show` — і саме він показав, що клас закривають ПО
+    # КОМПОНЕНТУ, а не по класу: обидва поля полагодили у `:index` view, а
+    # ідентичні `have_key`-твердження за пʼятдесят рядків нижче лишились.
+    it "carries the tree's actual current_stress" do
+      tree.update_columns(latest_stress_index: 0.73)
+      expect(parsed["current_stress"]).to eq(0.73)
     end
 
-    it "includes computed under_threat?" do
+    it "carries under_threat? for a tree with no unresolved alert" do
       expect(parsed).to have_key("under_threat?")
+      expect(parsed["under_threat?"]).to be(false)
     end
 
     it "includes nested wallet" do

@@ -22,20 +22,45 @@ RSpec.describe ClusterBlueprint, type: :model do
       expect(parsed["region"]).to eq("Cherkasy Oblast")
     end
 
-    it "includes computed health_index" do
-      expect(parsed["health_index"]).to be_a(Numeric)
+    # [TEST.10] Нижче — не тип, а ЗНАЧЕННЯ: обчислення, що завжди повертає
+    # константу, проходило перевірку типу й тому нічого не доводило.
+    it "carries the persisted health_index, not the default" do
+      cluster.update!(health_index: 0.42)
+      expect(parsed["health_index"]).to eq(0.42)
     end
 
-    it "includes computed total_active_trees" do
-      expect(parsed["total_active_trees"]).to be_a(Integer)
+    # `total_active_trees` читає counter_cache, а той не оновлює вже завантажений
+    # обʼєкт — без `reload` приклад побачив би 0 і спокушав би «послабити назад до
+    # перевірки типу», хоча правильна дія протилежна.
+    it "counts the cluster's active trees" do
+      2.times { create(:tree, cluster: cluster, status: :active) }
+      cluster.reload
+      expect(parsed["total_active_trees"]).to eq(2)
     end
 
-    it "includes computed geo_center" do
+    # Саме обчислення центроїда (Polygon/MultiPolygon, порожні координати,
+    # мемоїзація) належить моделі й вичерпно покрите в `spec/models/cluster_spec.rb`
+    # — тут тверджується лише, що поле ЕКСПОНОВАНЕ і несе значення моделі.
+    it "exposes geo_center as nil for an unmapped cluster" do
       expect(parsed).to have_key("geo_center")
+      expect(parsed["geo_center"]).to be_nil
     end
 
-    it "includes computed active_threats" do
-      expect(parsed["active_threats"]).to be_in([ true, false ])
+    # [TEST.10] Тип замість значення ховав саме те, чим цей предикат
+    # відрізняється від `Tree#under_threat?`: `Cluster#active_threats?` вимагає
+    # нерозвʼязану І **critical** тривогу, тож medium-тривога тут — НЕ загроза.
+    it "reports active_threats false for a cluster with no alert" do
+      expect(parsed["active_threats"]).to be(false)
+    end
+
+    it "reports active_threats false for an unresolved MEDIUM alert" do
+      create(:ews_alert, :drought, cluster: cluster)
+      expect(parsed["active_threats"]).to be(false)
+    end
+
+    it "reports active_threats true for an unresolved CRITICAL alert" do
+      create(:ews_alert, :fire, cluster: cluster)
+      expect(parsed["active_threats"]).to be(true)
     end
   end
 
