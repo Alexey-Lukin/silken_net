@@ -120,7 +120,7 @@ GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across a
 # false-positive measurement first, since any rephrase deletes a unique line.
 # (Write is genuinely too late — the file is already replaced — so that half
 # would need PreToolUse, a different question.)
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-123}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-125}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -171,7 +171,12 @@ index_reach_expected() {
 # description to buy it back is the manufactured-cleanup this corpus forbids, and
 # a DESC bump is structurally unavoidable for ANY new file, so the honest move is
 # to record the reason rather than to pretend the layer stayed flat.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-42164}
+# Bumped 2026-08-04 (42164 -> 42686, +522) for the two phase-2 twins
+# (log_cross_ref_dig, log_measurement_substitution) that finally gave the two
+# saturated rule-homes somewhere to evict into. Their two descriptions weigh
+# 582 B, i.e. the layer moved by LESS than the new content — the ratchet had
+# 60 B of slack over the actual layer, so this bump also removes that slack.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-42686}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
