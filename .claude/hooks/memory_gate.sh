@@ -85,19 +85,42 @@ GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across a
 # routing layer. Do not rebuild it.
 #
 # [ceiling] Deletion of a FILE is caught; gutting the CONTENTS of a file that
-# stays in place is not, and cannot be without storing previous sizes. Declared
-# rather than papered over — the honest fix there is the backup + zero-loss diff
-# the consolidation recipe already mandates, not a threshold.
+# stays in place is not — BY THIS PATH. An earlier draft of this comment said
+# "and cannot be without storing previous sizes", and that was a claim about a
+# MECHANISM made without opening the source: on the Edit path the previous state
+# already arrives in the same JSON this gate parses for `file_path`
+# (`tool_input.old_string` / `new_string`), so "how many bytes did this edit
+# remove" is answerable with no stored state at all — the event carries it.
+# Left unbuilt deliberately, and not out of modesty: a byte-delta threshold needs
+# a DISTRIBUTION of legitimate edit sizes before it can have a number, and this
+# corpus routinely ships 300-2000 B phase-2 excisions. Shipping a guessed floor
+# here would repeat overlap_check's original sin in a new costume. Measure first;
+# the hook is where it goes. (Write is genuinely too late — the file is already
+# replaced — so that half would need PreToolUse, a different question.)
 CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-123}
 
-# A SECOND floor, and it must not be folded into the first: the two count
-# different populations. `CORPUS_FLOOR` counts every .md; the index deliberately
-# holds no row for a `log_*` (a journal is reached by [[string]]), so index reach
-# is structurally 9 lower and always will be. Comparing a reach number against
-# the corpus count would fire on a perfectly healthy corpus forever — the same
-# one-token-two-scales error this file exists to catch, committed while writing
-# the catcher.
-INDEX_REACH_FLOOR=${MEMORY_GATE_INDEX_REACH_FLOOR:-114}
+# Index reach — DERIVED, never a constant, and the reason is a correction to an
+# earlier draft of this very block. Reach and corpus size count different
+# populations (the index deliberately holds no row for a `log_*` — a journal is
+# reached by [[string]]), so a reach number compared against the corpus count
+# fires on a healthy corpus forever. The first fix was a second constant, and it
+# carried two defects an adversarial pass found: (a) no message anywhere invited
+# raising it, so every new home widened its blind spot by one — an absolute count
+# that silently stops meaning anything, which is the class this file exists for;
+# (b) its stated arithmetic was WRONG while its value was right — there are eight
+# journals, not nine; the ninth term of the difference is MEMORY.md, which `ls`
+# counts and the index never links to itself. A curator "fixing" 114 to 123-8=115
+# would have bought a permanent false accusation.
+#
+# Deriving it removes the constant, the bump ritual and the arithmetic all at
+# once: whatever the corpus holds, reach must equal the non-journal files minus
+# the index itself.
+index_reach_expected() {
+  local total logs
+  total=$(ls "$MEM_DIR"/*.md 2>/dev/null | wc -l | tr -d ' ')
+  logs=$(ls "$MEM_DIR"/log_*.md 2>/dev/null | wc -l | tr -d ' ')
+  echo $((total - logs - 1))
+}
 
 # The `description:` layer is a THIRD ratchet nobody was watching: it is loaded
 # for recall, it is one of the three hand-synced mirrors, and it grew 29 kB ->
@@ -395,9 +418,18 @@ RUBY
   return 0
 }
 
-# The floor, and the only check here that fires on SHRINKAGE. Deliberately counts
-# files rather than bytes: bytes fall for three different reasons and only one of
-# them is a loss, while a .md disappearing is unambiguous.
+# The corpus-size pin: fires BOTH ways (under = loss, over = a new home that has
+# not been protected yet). Deliberately counts files rather than bytes: bytes fall
+# for three different reasons and only one of them is a loss, while a .md
+# disappearing is unambiguous.
+#
+# [ceiling] It is a NET count, and that blindness is structural: a deletion inside
+# a session that also adds a file is invisible, and the over-branch will even
+# invite raising the floor — cementing the loss it was built to catch. Nothing
+# stateless fixes this; what does is procedure, so the housekeeping recipe ends
+# with a final `--audit` rather than opening with one. Note also that the loss
+# EVENT is unobservable here in the common case: files are removed with `rm`,
+# and the hook matcher is Edit|Write, so the floor speaks at the next write.
 corpus_floor_check() {
   local n
   n=$(ls "$MEM_DIR"/*.md 2>/dev/null | wc -l | tr -d ' ')
@@ -416,6 +448,23 @@ corpus_floor_check() {
 # and links measure reach. The routing layer is what a byte drop can quietly cost.
 index_links() { grep -oE '\]\([a-z0-9_]+\.md\)' "$IDX" | sort -u | wc -l | tr -d ' '; }
 
+# Every threshold is env-overridable so --selftest can build a fixture, and that
+# convenience quietly made the verdict unfalsifiable: an exported
+# MEMORY_GATE_CORPUS_FLOOR=1 disarms the floor forever with no indication, and
+# "OK" would still print. A green verdict computed against somebody else's
+# thresholds is exactly the self-attestation this file polices, so it is reported
+# — and it is reported as a FINDING (non-zero exit), because a run whose numbers
+# did not come from the file cannot be read as the file's verdict. The self-test
+# announces itself and is exempt; nothing else is.
+override_check() {
+  [ "${MEMORY_GATE_SELFTEST:-0}" = "1" ] && return 0
+  local v
+  v=$(env | grep '^MEMORY_GATE_' | grep -v '^MEMORY_GATE_SELFTEST=' | cut -d= -f1 | tr '\n' ' ')
+  [ -n "$v" ] &&
+    echo "OVERRIDE thresholds came from the environment, not this file: ${v}— the verdict below is not the corpus's, unset them and re-run"
+  return 0
+}
+
 index_check() {
   local sz n links
   sz=$(wc -c <"$IDX" | tr -d ' ')
@@ -428,7 +477,7 @@ index_check() {
     # "Smaller" is not "better" until you know WHICH of the three events it was.
     # Reach is the discriminator the old wording never asked for: compression and
     # hub-inlining both hold the link count, only eviction drops it.
-    if [ "$links" -lt "$INDEX_REACH_FLOOR" ]; then
+    if [ "$links" -lt "$(index_reach_expected)" ]; then
       echo "INDEX MEMORY.md = ${sz}B, below the ${IDX_BASELINE}B ratchet — but it routes to only ${links} files"
       echo "      that is eviction, not compression: do NOT lower the ratchet until every"
       echo "      dropped file is reachable again (a hub row, or an inbound [[string]])"
@@ -625,13 +674,28 @@ EOF
 
 _st_audit() {
   local d=$1; shift
-  env MEMORY_GATE_DIR="$d" \
+  env MEMORY_GATE_SELFTEST=1 \
+      MEMORY_GATE_DIR="$d" \
       MEMORY_GATE_IDX_BASELINE="$(wc -c <"$d/MEMORY.md" | tr -d ' ')" \
       MEMORY_GATE_DESC_BASELINE=800 \
       MEMORY_GATE_CORPUS_FLOOR="$(ls "$d"/*.md 2>/dev/null | wc -l | tr -d ' ')" \
-      MEMORY_GATE_INDEX_REACH_FLOOR="$(grep -oE '\]\([a-z0-9_]+\.md\)' "$d/MEMORY.md" |
-                                        sort -u | wc -l | tr -d ' ')" \
       "$@" bash "$SELF" --audit 2>&1
+}
+
+# The WRITE stance, which the first version of this battery did not touch at all —
+# fifteen cases, all of them --audit. That is a verbatim repeat of the UNSTRUNG
+# lesson this file already carries: a check living in one stance only is absent
+# from the moment of action, and the write path is where the corpus is actually
+# changed. Feeds the real hook contract (stdin JSON) and returns its output.
+_st_write() {
+  local d=$1 f=$2; shift 2
+  printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/%s"}}' "$d" "$f" |
+    env MEMORY_GATE_SELFTEST=1 \
+        MEMORY_GATE_DIR="$d" \
+        MEMORY_GATE_IDX_BASELINE="$(wc -c <"$d/MEMORY.md" | tr -d ' ')" \
+        MEMORY_GATE_DESC_BASELINE=800 \
+        MEMORY_GATE_CORPUS_FLOOR="$(ls "$d"/*.md 2>/dev/null | wc -l | tr -d ' ')" \
+        "$@" bash "$SELF" 2>&1
 }
 
 selftest() {
@@ -714,13 +778,60 @@ selftest() {
   _st_build "$d"; rm "$d/feedback_beta.md"; sed '/feedback_beta/d' "$d/MEMORY.md" >"$d/.t" && mv "$d/.t" "$d/MEMORY.md"
   _st_check "FLOOR on a deleted file" expect 'FLOOR corpus holds' MEMORY_GATE_CORPUS_FLOOR=4
 
-  _st_build "$d"; rm "$d/feedback_beta.md"; sed '/feedback_beta/d' "$d/MEMORY.md" >"$d/.t" && mv "$d/.t" "$d/MEMORY.md"
+  # 14 drops the index ROW while the file stays — the shape a hub-inlining pass
+  # gets wrong. (An earlier version deleted the file too, and once reach became
+  # derived that stopped being eviction at all: both sides fall together, so the
+  # honest verdict is loss, which FLOOR owns. The case was measuring the wrong
+  # event and only the derivation exposed it.)
+  _st_build "$d"; sed '/feedback_beta/d' "$d/MEMORY.md" >"$d/.t" && mv "$d/.t" "$d/MEMORY.md"
   _st_check "eviction is NOT offered as a gain to lock in" reject 'lock the gain in' \
-            MEMORY_GATE_CORPUS_FLOOR=4 MEMORY_GATE_INDEX_REACH_FLOOR=2 MEMORY_GATE_IDX_BASELINE=9000
+            MEMORY_GATE_IDX_BASELINE=9000
 
   # 15. The rule-file ceiling, with the cap lowered so the case costs no disk.
   _st_build "$d"; head -c 4000 /dev/zero | tr '\0' 'x' >>"$d/feedback_beta.md"
   _st_check "CAP on a rule file past its ceiling" expect 'CAP  ' MEMORY_GATE_FILE_CAP=3000
+
+  # 16-17. THE POSITIVE HALVES of the loss/gain discrimination. Cases 13-14 pinned
+  #        that the wrong advice is withheld; nothing pinned that the right advice
+  #        is GIVEN, so both branches could be deleted with the battery still green
+  #        — the gate-over-an-empty-set class, inside the test for it. Case 17's
+  #        branch was worse than untested: under the harness's own DESC_BASELINE
+  #        the condition read `tot < 0`, which a byte sum can never satisfy.
+  _st_build "$d"; sed '/feedback_beta/d' "$d/MEMORY.md" >"$d/.t" && mv "$d/.t" "$d/MEMORY.md"
+  _st_check "eviction IS named when reach drops" expect 'routes to only' MEMORY_GATE_IDX_BASELINE=9000
+
+  _st_build "$d"; rm "$d/feedback_beta.md"; sed '/feedback_beta/d' "$d/MEMORY.md" >"$d/.t" && mv "$d/.t" "$d/MEMORY.md"
+  _st_check "DESC drop is blamed on the missing file, not called a gain" expect 'settle FLOOR first' \
+            MEMORY_GATE_CORPUS_FLOOR=4 MEMORY_GATE_DESC_BASELINE=1000
+
+  # 17b. The OTHER side of the same fork, and it exists because a mutation slipped
+  #      through: breaking `index_links` to a constant 0 left every case green
+  #      while turning the gate into a permanent false accusation of eviction.
+  #      Cases 14 and 16 both pass under that break — one asserts an absence, the
+  #      other asserts the wrong-branch message — so only pinning the HEALTHY
+  #      branch makes the discriminator load-bearing in both directions.
+  _st_build "$d"
+  _st_check "compression with reach intact IS offered as a gain" expect 'lock the gain in' \
+            MEMORY_GATE_IDX_BASELINE=9000
+
+  # 18-19. THE WRITE STANCE. Fifteen cases and three mutations all rode --audit,
+  #        so the stance this gate exists as — the PostToolUse hook — had zero
+  #        coverage, which is the UNSTRUNG lesson repeated verbatim one level up.
+  _st_build "$d"
+  out=$(_st_write "$d" feedback_alpha.md)
+  if [ -z "$out" ]; then pass=$((pass+1)); printf '  ok    %s\n' "write stance is silent on a healthy corpus"
+  else fail=$((fail+1)); printf '  FAIL  %s\n%s\n' "write stance is silent on a healthy corpus" "$out"; fi
+
+  _st_build "$d"; rm "$d/feedback_beta.md"; sed '/feedback_beta/d' "$d/MEMORY.md" >"$d/.t" && mv "$d/.t" "$d/MEMORY.md"
+  out=$(_st_write "$d" feedback_alpha.md MEMORY_GATE_CORPUS_FLOOR=4)
+  if printf '%s' "$out" | grep -q 'FLOOR corpus holds'; then pass=$((pass+1)); printf '  ok    %s\n' "write stance reports a loss at the moment of action"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "write stance reports a loss at the moment of action" "$out"; fi
+
+  # 20. The verdict must not be quietly computed against foreign thresholds.
+  _st_build "$d"
+  out=$(env MEMORY_GATE_DIR="$d" MEMORY_GATE_CORPUS_FLOOR=1 bash "$SELF" --audit 2>&1)
+  if printf '%s' "$out" | grep -q 'OVERRIDE'; then pass=$((pass+1)); printf '  ok    %s\n' "env-overridden thresholds are declared, not silent"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "env-overridden thresholds are declared, not silent" "$out"; fi
 
   rm -rf "$root"
   printf 'selftest: %d passed, %d failed\n' "$pass" "$fail"
@@ -730,7 +841,7 @@ selftest() {
 case "${1:-}" in
   --selftest) selftest ;;
   --audit)
-    out=$( { index_check; desc_check; corpus_floor_check; integrity_check
+    out=$( { override_check; index_check; desc_check; corpus_floor_check; integrity_check
              journals_reachable; asset_check
              privacy_check; overlap_check; section_ref_check
              for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; done; } )
