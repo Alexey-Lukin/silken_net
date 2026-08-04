@@ -257,7 +257,11 @@ check_file() {
   if [ "$sz" -ge "$FILE_CAP" ]; then
     echo "CAP   $f = ${sz}B over ${FILE_CAP} — the rule stays, its instances move to log_*"
   elif [ "$sz" -ge "$FILE_WARN" ]; then
-    echo "WARN  $f = ${sz}B (ceiling ${FILE_CAP})"
+    # Say that this line IS the red, not that headroom remains. The old wording
+    # printed only the CAP, so a reader at 36 kB read "5 kB to go" while the
+    # battery had already gone EXIT 1 on this very line — the gate describing
+    # one quantity while measuring another. Both numbers, and which one bites.
+    echo "WARN  $f = ${sz}B — over the working ${FILE_WARN}, so this line alone makes --audit EXIT 1 (hard ceiling ${FILE_CAP}); evict instances to its log_* twin"
   fi
   [ "$sum" -ge "$GENRE_MIN" ] &&
     echo "GENRE $f carries $sum dated blocks (h/l/b = $shape) — chronicle inside a rule file"
@@ -1009,6 +1013,19 @@ selftest() {
   # 15. The rule-file ceiling, with the cap lowered so the case costs no disk.
   _st_build "$d"; head -c 4000 /dev/zero | tr '\0' 'x' >>"$d/feedback_beta.md"
   _st_check "CAP on a rule file past its ceiling" expect 'CAP  ' MEMORY_GATE_FILE_CAP=3000
+
+  # 15b-15c. THE WARN BAND, which had zero cases while being the band the corpus
+  #          actually lives in: five rule-homes sit within 300 B of it, so this is
+  #          the branch every phase-2 migration hits first. Two halves, because
+  #          "it fires" alone would pass for a detector that fires ALWAYS — and
+  #          the positive half pins the WORDING, since the failure this fixes was
+  #          a true WARN line that named only the far-off CAP and so read as
+  #          headroom while the battery was already red.
+  _st_check "WARN names its own EXIT 1, not just the distant cap" expect 'makes --audit EXIT 1' \
+            MEMORY_GATE_FILE_WARN=3000 MEMORY_GATE_FILE_CAP=99999
+  _st_build "$d"
+  _st_check "a file under the working ceiling stays silent" reject 'WARN  ' \
+            MEMORY_GATE_FILE_WARN=3000 MEMORY_GATE_FILE_CAP=99999
 
   # 16-17. THE POSITIVE HALVES of the loss/gain discrimination. Cases 13-14 pinned
   #        that the wrong advice is withheld; nothing pinned that the right advice
