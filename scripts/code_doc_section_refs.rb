@@ -61,9 +61,18 @@ CLAUDE_TREE = ".claude"
 # skipping the subtree's own filename-link convention. The ssot-maintenance SKILL is exempt
 # for the same reason: its "worked example" cites `05_03 §749` / `07_01 §6.5` as deliberate
 # renumber-drift teaching cases (a doc renumber MOVED those sections — that IS the lesson).
-EXEMPT = %r{\A(?:lib/docs_linter\.rb|lib/docs_graph\.rb|lib/tracker/dashboard\.rb|spec/lib/|\.claude/skills/ssot-maintenance/SKILL\.md\z)}
+# `lib/tasks/docs.rake` joins them for the same reason once `.rake` came into
+# scope: it is the gate's own rake body, and it cites `05_03 §749` twice while
+# EXPLAINING the blind spot that let a line-number-as-§ rot. Citing the drift is
+# the documentation; flagging it would make the gate red at its own author.
+EXEMPT = %r{\A(?:lib/docs_linter\.rb|lib/docs_graph\.rb|lib/tracker/dashboard\.rb|lib/tasks/docs\.rake|spec/lib/|\.claude/skills/ssot-maintenance/SKILL\.md\z)}
 
-files = (TREES.flat_map { |t| Dir[File.join(ROOT, t, "**", "*.rb")] } +
+# `.rake` was the remaining half of this gate's declared ceiling [DOC-T.60]: the
+# scan took `*.rb` only, while five rake files carry canon `NN_NN §X` refs — and
+# rake bodies are exactly where doc-gate prose lives, so a canon renumber rots
+# them as silently as any comment. Measured on the flip: 1 dead ref, and it was
+# the teaching citation now exempted above.
+files = (TREES.flat_map { |t| Dir[File.join(ROOT, t, "**", "*.{rb,rake}")] } +
          Dir[File.join(ROOT, CLAUDE_TREE, "**", "*.md")])
         .map { |f| f.sub("#{ROOT}/", "") }
         .reject { |rel| rel =~ EXEMPT }

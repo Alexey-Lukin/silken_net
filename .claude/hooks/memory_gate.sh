@@ -597,6 +597,54 @@ RUBY
   return 0
 }
 
+# ── canon `NN_NN §X` refs inside memory — the corpus nobody scanned ─────────
+# Memory cites canon sections exactly like code and skills do, and until
+# 2026-08-04 NO gate looked at them [DOC-T.60]: `code_doc_section_refs.rb`
+# walks app/spec/lib + .claude, and this corpus lives OUTSIDE the repo, so CI
+# cannot reach it by construction. That is precisely the surface an agent
+# quoted a dead `04_06 §A.10а` back from as canonical. So the check's home is
+# HERE rather than that script's TREES: this gate already knows $REPO, already
+# runs on both stances, and a wrong address is born at the moment of writing.
+# The resolver is REUSED, never reimplemented — a second §-resolver would drift
+# from the four gates sharing the first one, which is the whole failure mode
+# this family exists to prevent.
+canon_section_check() {
+  command -v ruby >/dev/null 2>&1 || return 0
+  [ -f "$REPO/lib/tracker/dashboard.rb" ] || return 0
+  ruby - "$MEM_DIR" "$REPO" <<'RUBY'
+dir, repo = ARGV
+begin
+  require File.join(repo, "lib", "tracker", "dashboard")
+rescue Exception
+  exit 0   # no repo / unloadable resolver → silent, never a false alarm
+end
+# Curated exemptions, same posture as the SPDX gate's DENY list: a DECIDED case
+# is recorded with its reason so the gate never sits permanently red on it, and
+# the detector stays live for every new ref. Keyed per file, so an exemption
+# never blinds a whole file the way a path-level EXEMPT would.
+exempt = {
+  # The renumber-drift teaching case: `§749` is a LINE number written as a
+  # section — citing it IS the lesson. `code_doc_section_refs.rb` exempts the
+  # ssot-maintenance skill for this same ref, for this same reason.
+  "project_ssot_campaign_history.md" => ["05_03 §749"]
+}
+# Resolve against the docs of the repo we were POINTED AT, never the one the
+# resolver happens to sit in — otherwise the fixture would silently answer with
+# the live tree, which is exactly the non-hermetic shape DEADPATH just outgrew.
+docs = File.join(repo, "docs")
+exit 0 unless Dir.exist?(docs)
+Dir.chdir(dir) { Dir["*.md"] }.sort.each do |f|
+  Tracker::Dashboard.file_section_dangling_refs(File.read(File.join(dir, f)), docs).each do |h|
+    ref = h.to_s.delete("`")
+    next if exempt.fetch(f, []).any? { |e| ref.include?(e) }
+    puts "CANONREF #{f} cites #{h} — that canon section does not exist: " \
+         "fix the ref, or add it to `exempt` with the reason it must stay"
+  end
+end
+RUBY
+  return 0
+}
+
 integrity_check() {
   local fn f l
   for fn in $(grep -oE '\]\([a-z0-9_]+\.md\)' "$IDX" | tr -d ']()' | sort -u); do
@@ -675,6 +723,24 @@ _st_build() {
   # detector. Two paths, so the fixture can prove both directions.
   rm -rf "$d.repo"; mkdir -p "$d.repo/app/services"
   : >"$d.repo/app/services/live_service.rb"
+  # A fixture DOCS tree + a copy of the §-resolver, for the same reason one step
+  # on: without them canon_section_check returns 0 for lack of a resolver, and
+  # the CANONREF case would "pass" on an ABSENCE — a green that proves nothing.
+  # Letter-led headings on purpose: that is the shape 04_06 uses and the one the
+  # resolver was blind to until DOC-T.60.
+  mkdir -p "$d.repo/lib/tracker" "$d.repo/docs"
+  [ -f "$REPO/lib/tracker/dashboard.rb" ] && cp "$REPO/lib/tracker/dashboard.rb" "$d.repo/lib/tracker/"
+  cat >"$d.repo/docs/04_06_Testing_Guide_and_Coverage.md" <<'EOF'
+# Testing Guide (fixture)
+
+## A.1 Перша секція
+
+Body.
+
+## A.2 Друга секція
+
+Body.
+EOF
   cat >"$d/MEMORY.md" <<'EOF'
 - [Alpha](feedback_alpha.md) — the naming rule
 - [Beta](feedback_beta.md) — the gateway note
@@ -808,6 +874,19 @@ selftest() {
   _st_build "$d"; printf '\nMethod: [[feedback_alpha]] §NoSuchSection covers it.\n' >>"$d/feedback_beta.md"
   _st_check "SECREF on a dead §-address" expect 'SECREF'
 
+  # 10b. The canon axis of the same idea [DOC-T.60]: a `NN_NN §X` ref into the
+  #      repo's docs, dead. Letter-led deliberately — that is the shape every
+  #      gate was blind to until the flip, and the shape an agent quoted back as
+  #      canonical after reading it here.
+  _st_build "$d"; printf '\nProof form → `04_06 §A.999`.\n' >>"$d/feedback_beta.md"
+  _st_check "CANONREF on a dead canon §-address" expect 'CANONREF'
+
+  # 10c. Its negative control. A check that fired on every `NN_NN §X` would pass
+  #      10b just as happily, and the corpus is full of legitimately live canon
+  #      refs — so the silent half is the half that proves it discriminates.
+  _st_build "$d"; printf '\nProof form → `04_06 §A.2`.\n' >>"$d/feedback_beta.md"
+  _st_check "CANONREF silent on a live canon §-address" reject 'CANONREF'
+
   # 11. A backticked path that claims our tree — now answered by the fixture repo.
   _st_build "$d"; printf '\nSee `app/services/no_such_service.rb` for the shape.\n' >>"$d/feedback_beta.md"
   _st_check "DEADPATH on a retracted repo path" expect 'DEADPATH'
@@ -894,7 +973,7 @@ case "${1:-}" in
   --audit)
     out=$( { override_check; index_check; desc_check; corpus_floor_check; integrity_check
              journals_reachable; asset_check
-             privacy_check; overlap_check; section_ref_check
+             privacy_check; overlap_check; section_ref_check; canon_section_check
              for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; done; } )
     printf '%s\n' "${out:-OK — index within ratchet, corpus intact, no chronicle in a rule file}"
     [ -z "$out" ]
@@ -937,6 +1016,10 @@ case "${1:-}" in
               # string points at happens WHILE rewriting, not while auditing. The
               # corpus is at zero here, so any output is this write's own trace.
               section_ref_check
+              # Same reasoning one axis over: a canon §-ref is written HERE, and
+              # this is the only moment the corpus can be told the address is
+              # already dead — nothing downstream ever re-reads it.
+              canon_section_check
               # A brand-new file is where the registry grows. Nothing reads at
               # this moment except the tool call itself, so this is the only
               # place the question "does this fact already have a home?" can be
