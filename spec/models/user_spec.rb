@@ -288,24 +288,6 @@ RSpec.describe User, type: :model do
 
   # --- СКОУПИ ---
 
-  describe ".notifiable" do
-    it "includes users with phone_number" do
-      user = create(:user, phone_number: "+380501234567")
-      expect(described_class.notifiable).to include(user)
-    end
-
-    it "includes users with telegram_chat_id" do
-      user = create(:user, phone_number: nil)
-      user.update_columns(telegram_chat_id: "12345")
-      expect(described_class.notifiable).to include(user)
-    end
-
-    it "excludes users without phone or telegram" do
-      user = create(:user, phone_number: nil, telegram_chat_id: nil)
-      expect(described_class.notifiable).not_to include(user)
-    end
-  end
-
   describe ".active_foresters" do
     it "includes foresters seen within the last hour" do
       user = create(:user, :forester)

@@ -9,11 +9,16 @@ RSpec.describe SingleNotificationWorker, type: :worker do
   let(:alert) { create(:ews_alert, :fire, cluster: cluster) }
 
   describe "#perform" do
+    # [ARCH.78] Транспорт не задротований, тож приклади пінять СТАН КАНАЛУ.
+    # Попередня редакція вимагала info-рядка «Надіслано»/«Доставлено» — тобто
+    # цементувала твердження про доставку, якої не буває, і не могла впасти на
+    # мертвому каналі. Пін на заперечення падає, щойно брехливий рядок повернуть.
     context "with SMS channel" do
-      it "logs SMS delivery for user with phone number" do
+      it "reports the SMS channel as unconfigured instead of claiming delivery" do
         user = create(:user, :forester, organization: organization, phone_number: "+380501234567")
 
-        expect(Rails.logger).to receive(:info).with(/SMS.*#{user.full_name}/)
+        expect(Rails.logger).to receive(:warn).with(/\[SMS\].*не сконфігуровано.*НЕ надіслано/)
+        expect(Rails.logger).not_to receive(:info)
 
         described_class.new.perform(user.id, alert.id, "sms")
       end
@@ -21,17 +26,18 @@ RSpec.describe SingleNotificationWorker, type: :worker do
       it "skips SMS when user has no phone number" do
         user = create(:user, :forester, organization: organization, phone_number: nil)
 
-        expect(Rails.logger).not_to receive(:info).with(/SMS/)
+        expect(Rails.logger).not_to receive(:warn).with(/\[SMS\]/)
 
         described_class.new.perform(user.id, alert.id, "sms")
       end
     end
 
     context "with push channel" do
-      it "logs push notification delivery" do
+      it "reports the push channel as unconfigured instead of claiming delivery" do
         user = create(:user, :admin, organization: organization)
 
-        expect(Rails.logger).to receive(:info).with(/Push.*#{user.email_address}/)
+        expect(Rails.logger).to receive(:warn).with(/\[Push\].*не сконфігуровано.*НЕ доставлено/)
+        expect(Rails.logger).not_to receive(:info)
 
         described_class.new.perform(user.id, alert.id, "push")
       end
@@ -51,11 +57,14 @@ RSpec.describe SingleNotificationWorker, type: :worker do
       expect(described_class.new.perform(-1, -1, "sms")).to be_nil
     end
 
+    # [ARCH.78] Раніше цей приклад пінив ТИШУ як бажану поведінку («does nothing»),
+    # тобто фіксував відсутність else-гілки як контракт. Невідомий канал на тракті
+    # критичних тривог мусить бути гучним: тиша тут невідрізненна від доставки.
     context "with unknown channel" do
-      it "does not raise error and does nothing" do
+      it "logs the unknown channel loudly instead of dying silently" do
         user = create(:user, :admin, organization: organization)
 
-        expect(Rails.logger).not_to receive(:info).with(/SMS|Push/)
+        expect(Rails.logger).to receive(:error).with(/Невідомий канал.*"email".*доставки НЕ буде/)
 
         expect {
           described_class.new.perform(user.id, alert.id, "email")

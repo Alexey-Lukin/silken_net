@@ -25,9 +25,15 @@ class AlertNotificationWorker
     end
 
     # ДИФЕРЕНЦІЙОВАНА ДОСТАВКА (Smart Routing) — оповіщення відповідальних осіб
-    notify_stakeholders(alert, cluster.organization)
+    queued = notify_stakeholders(alert, cluster.organization)
 
-    Rails.logger.info "📢 [Notification] Тривогу #{alert.alert_type} розіслано для кластера #{cluster.name}."
+    # [ARCH.78] Цей рядок читають ПЕРШИМ під час розбору інциденту, тому він
+    # називає рівно те, що воркер зробив: поставив у чергу. Доставку він не
+    # спостерігає — її стан живе в логах SingleNotificationWorker.
+    Rails.logger.info(
+      "[Notification] Тривогу #{alert.alert_type} поставлено в чергу для кластера " \
+      "#{cluster.name}: #{queued} сповіщень"
+    )
   end
 
   private
@@ -56,5 +62,7 @@ class AlertNotificationWorker
     end
 
     Sidekiq::Client.push_bulk("class" => SingleNotificationWorker, "args" => bulk_args) if bulk_args.any?
+
+    bulk_args.size
   end
 end

@@ -42,7 +42,17 @@ REPO="${MEMORY_GATE_REPO:-/Users/oleksiilukin/silken_net}"
 # ~21-22 kB; this sits at 23.2 kB, and the remaining gap has no candidate that
 # passes the "natural family, read together" test — closing it would mean
 # demoting commit-time reflexes (lift 2.5), which is a worse trade than the gap.
-IDX_BASELINE=23773
+# Bumped 2026-08-04 (23773 -> 23836, +63) for the tenth error-axis home,
+# `feedback_self_attestation`. It did NOT earn its own row: it is inlined into the
+# existing "вісь помилки" hub, so the +63 is one link inside a row that already
+# routes nine files — the cheapest shape available and the one DOC-T.57 proved.
+# Why it earns even that: the tracker had already named this class three times on
+# three independent tracts (ARCH.78 alerts, FW.63 money, UI.10 screen) with two
+# items still OPEN, while memory had no home for it at all — the class was being
+# re-derived from scratch every session. Displacing a row to fund it was rejected:
+# the remaining candidates are commit-time reflexes, and demoting those costs a
+# trigger at the moment of action.
+IDX_BASELINE=23836
 FILE_CAP=40960          # rule-file ceiling
 FILE_WARN=36000        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=4             # dated blocks, summed across all three costumes
@@ -67,7 +77,13 @@ GENRE_MIN=4             # dated blocks, summed across all three costumes
 # the 558B added was self-funded — the residue is the new content itself, and
 # the alternative was gutting somebody else's trigger to buy back a rounding
 # error. Precedent and reasoning identical to the 2026-08-01 bump above.
-DESC_BASELINE=41709
+# Bumped 2026-08-04 (41709 -> 42164, +455) for the same new home. Note what the
+# +455 is NOT: the description was written long, measured at +654, and compressed
+# by ~200B first — the residue is the new content itself. Trimming somebody else's
+# description to buy it back is the manufactured-cleanup this corpus forbids, and
+# a DESC bump is structurally unavoidable for ANY new file, so the honest move is
+# to record the reason rather than to pretend the layer stayed flat.
+DESC_BASELINE=42164
 
 # Content-overlap between two rule files. The corpus has ONE structural failure
 # mode no other check can see: a class written into two homes, where every link

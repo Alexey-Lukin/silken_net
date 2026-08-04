@@ -94,7 +94,6 @@ class User < ApplicationRecord
   validates :locale, inclusion: { in: ->(_user) { I18n.available_locales.map(&:to_s) } }, allow_nil: true
 
   # --- СКОУПИ ---
-  scope :notifiable, -> { where.not(phone_number: [ nil, "" ]).or(where.not(telegram_chat_id: nil)) }
   scope :active_foresters, -> { role_forester.where("last_seen_at >= ?", 1.hour.ago) }
   scope :mfa_enabled, -> { where(otp_required_for_login: true) }
 

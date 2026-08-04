@@ -22,20 +22,31 @@ class SingleNotificationWorker
       send_sms(user, alert)
     when :push
       send_push_notification(user, alert)
+    else
+      # [ARCH.78] Диспетчер знав рівно два канали й не мав else — будь-який інший
+      # гинув беззвучно. Тиша тут невідрізненна від доставки, тому гілка гучна.
+      Rails.logger.error(
+        "[Notification] Невідомий канал #{channel.inspect} — доставки НЕ буде (алерт ##{alert.id})"
+      )
     end
   end
 
   private
 
+  # [ARCH.78] Транспорт не задротований (див. 00_07 ARCH.78 — Twilio/FCM креденшели).
+  # Рядок називає СТАН КАНАЛУ, а не результат: журнал, що стверджує дію, якої не
+  # сталося, ховає мертвий канал доти, доки його не спитають у розборі пожежі.
   def send_sms(user, alert)
     return unless user.respond_to?(:phone_number) && user.phone_number.present?
 
-    # TwilioClient.send_sms(to: user.phone_number, body: "🚨 [S-NET] #{alert.message}")
-    Rails.logger.info "📱 [SMS] Надіслано патрульному: #{user.full_name} (#{user.phone_number})"
+    Rails.logger.warn(
+      "[SMS] Канал не сконфігуровано — патрульному #{user.full_name} НЕ надіслано (алерт ##{alert.id})"
+    )
   end
 
   def send_push_notification(user, alert)
-    # FcmClient.send_to_user(user, title: "Тривога: #{alert.alert_type}", body: alert.message)
-    Rails.logger.info "📲 [Push] Доставлено в додаток користувачу: #{user.email_address}"
+    Rails.logger.warn(
+      "[Push] Канал не сконфігуровано — користувачу #{user.email_address} НЕ доставлено (алерт ##{alert.id})"
+    )
   end
 end
