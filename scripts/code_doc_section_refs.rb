@@ -21,11 +21,30 @@
 # set: "promote only if the false-positive rate proves to be zero across the codebase" —
 # 0 violations across the full 926-file scan, sustained. The FP class the report-only era
 # feared ("informal / historical / illustrative refs") is largely structurally dead: the
-# resolver (`DOC_SECTION_REF`) only matches a `§` followed by a DIGIT, so illustrative
+# resolver (`DOC_SECTION_REF`) matches a `§` only when it carries a `NN_NN` doc-id AND the
+# token is a SECTION LABEL (digit-led, or one letter + `.` + digit), so illustrative
 # `§X` / `§NN` / `§SomeName` placeholders never match, and a `.x` tail is skipped as a
-# wildcard. What CAN still false-positive is a deliberately HISTORICAL digit-led ref
-# ("this used to live in `00_01 §6`") — if one ever legitimately needs to stay, add it to
-# EXEMPT with a reason, do NOT weaken the resolver.
+# wildcard. What CAN still false-positive is a deliberately HISTORICAL ref ("this used to
+# live in `00_01 §6`") — if one ever legitimately needs to stay, add it to EXEMPT with a
+# reason, do NOT weaken the resolver.
+#
+# ⚠️ [DOC-T.60, 2026-08-04] The digit-led half of that ceiling is GONE, because its reach
+# ran far past its intent. Taken to skip illustrative `§`, it silently exempted every doc
+# whose sections are letter-led — and 04_06 is entirely `§A.x`/`§B.x`, so the whole testing
+# canon went unchecked here and in `.claude/**`; a wrong `04_06 §A.10а` lived in a skill
+# long enough for an agent to quote it back as canonical. Mutation-proved both ways: the
+# old regex captured NOTHING on a planted `04_06 §A.999` (EXIT 0), the new one flags it.
+# The replacement discriminator is the LABEL SHAPE, not the `NN_NN` prefix — the prefix was
+# always required and does NOT separate the genres, since prose-shorthand named refs
+# (`05_02 §Модель`, `05_04 §Merkle`), placeholders (`03_04 §X.Y`, `00_07 §NN`) and
+# non-section IDs (`07_01 §B-02`, `03_05 §FW.2`) all carry one. Those 74 refs stay on the
+# weaker `section_label_drift` ADVISORY by design (00_06 §3). Measured before the flip
+# across all four corpora sharing this resolver: 46 refs newly in scope, 3 dead.
+#
+# ⚠️ Live ceiling: 04_06 addresses its 30 best practices as `§A.16` too (BP number, not a
+# section) — the same token space as its `§A.1`..`§A.10` sections. Cross-doc, only the
+# SECTION reading resolves; cite the section and name the BP in prose (`04_06 §A.4`, BP
+# 16–17). 04_06's own same-doc `§A.16` carries no `NN_NN`, so it is out of scope here.
 #
 # Pure Ruby, no Rails. Run from repo root: `ruby scripts/code_doc_section_refs.rb`.
 require_relative "../lib/tracker/dashboard"

@@ -177,6 +177,30 @@ RSpec.describe Tracker::Dashboard do
       # canon-ref existence guard's (`dangling_refs`) job, not this one's.
       expect(described_class.file_section_dangling_refs("ref `99_99 §1` here")).to be_empty
     end
+
+    # [DOC-T.60] letter-LABEL sections. The resolver used to be digit-led, which exempted
+    # every letter-led doc wholesale — 04_06 is entirely `§A.x`/`§B.x`, so the whole testing
+    # canon was unchecked in code and in `.claude/**` (planted `04_06 §A.999` → EXIT 0).
+    it "flags a DEAD letter-label §-ref (the DOC-T.60 blind spot)" do
+      expect(described_class.file_section_dangling_refs("skill says `04_06 §A.999`"))
+        .to include(a_string_matching(%r{04_06 §A\.999}))
+    end
+
+    # ⚠️ This one is VACUOUS against the pre-DOC-T.60 code by construction (the old regex saw
+    # nothing, so `be_empty` held for the wrong reason) — it guards the OTHER direction from
+    # here on: narrowing the token, or widening `heading_anchors` wrongly, turns it red. The
+    # flip itself is proved by the DEAD-ref example above.
+    it "resolves LIVE letter-label §-refs (04_06 §A.x/§B.x, 05_02 §E.60)" do
+      expect(described_class.file_section_dangling_refs("`04_06 §A.2` + `04_06 §B.1.4` + `05_02 §E.60`")).to be_empty
+    end
+
+    # The discriminator is the LABEL SHAPE (one letter + `.` + digit), NOT the `NN_NN`
+    # prefix: these all carry the prefix and must stay OUT of scope — prose-shorthand named
+    # refs and placeholders live on the weaker `section_label_drift` ADVISORY (00_06 §3).
+    it "still ignores NAMED / placeholder / non-section §-refs that DO carry a doc-id" do
+      named = "`05_02 §Модель` `05_04 §Merkle` `03_04 §X.Y` `00_07 §NN` `07_01 §B-02` `03_05 §FW.2`"
+      expect(described_class.file_section_dangling_refs(named)).to be_empty
+    end
   end
 
   describe ".heading_anchors" do
@@ -199,6 +223,17 @@ RSpec.describe Tracker::Dashboard do
 
     it "ignores a single-letter subsection that has no numbered parent" do
       expect(described_class.heading_anchors("## Мета\n### A. Orphan")).to be_empty
+    end
+
+    # [DOC-T.60] the REF side alone was not enough: 04_06's headings are letter-led too
+    # ("## A.4 Assertions"), so without this every real `04_06 §A.2` would read as dangling.
+    it "extracts leading single-letter LABEL anchors (A.4 / B.1.1 / E.60)" do
+      expect(described_class.heading_anchors("## A.4 Assertions\n### B.1.1 Firmware\n### 🔬 E.60 — Merkle"))
+        .to contain_exactly("a.4", "b.1.1", "e.60")
+    end
+
+    it "still skips a WORD-led heading (no digit after the letter)" do
+      expect(described_class.heading_anchors("## Модель довіри\n## Стаття 1: Bar")).to be_empty
     end
   end
 

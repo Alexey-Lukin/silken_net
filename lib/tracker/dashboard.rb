@@ -345,10 +345,28 @@ module Tracker
     # `` `03_05 §3.7`, §3.4 `` were a blind spot (the run stopped at the comma/backtick, so
     # the trailing §-ref rotted unseen). Only separator chars join consecutive § tokens; any
     # word/paren between them ends the run, so a later §X of a DIFFERENT doc is never swept in.
-    DOC_SECTION_REF = %r{(\d\d_\d\d)`?\s*((?:§\s*[0-9][\p{L}0-9.]*[\s,;`+/–—-]*)+)}
+    #
+    # [DOC-T.60] A §-token is digit-led OR a single-letter LABEL (`A.2`, `B.1.4`, `E.60`).
+    # The old token was digit-led only — a ceiling taken to skip *illustrative* `§` mentions,
+    # but its real reach was far wider: it silently exempted every doc whose sections are
+    # letter-led, and 04_06 is entirely `§A.x`/`§B.x`, so the whole testing canon went
+    # unchecked in code AND in `.claude/**` (a planted `04_06 §A.999` returned EXIT 0).
+    # The discriminator is NOT the character class — an illustrative `§` is excluded by the
+    # `NN_NN` prefix this regex already requires. It is the LABEL SHAPE: one letter + `.` +
+    # a digit. That keeps out the genre the ceiling actually meant to skip — prose-shorthand
+    # NAMED refs (`05_02 §Модель`, `05_04 §Merkle`, `06_02 §Security`), placeholders
+    # (`03_04 §X.Y`, `00_07 §NN`), and non-section IDs (`07_01 §B-02`, `03_05 §FW.2`) — all
+    # of which DO carry the NN_NN prefix and stay on the weaker `section_label_drift`
+    # ADVISORY by design (00_06 §3). Widening to any letter would sweep in 74 such refs.
+    DOC_SECTION_TOKEN = /(?:\p{L}\.)?[0-9][\p{L}0-9.]*/
+    DOC_SECTION_REF   = %r{(\d\d_\d\d)`?\s*((?:§\s*#{DOC_SECTION_TOKEN}[\s,;`+/–—-]*)+)}
 
     # The §-anchor token of a heading = its leading number ("## 🎓 1B. ФОТІУС" → "1b";
-    # "### 2.1.3. …" → "2.1.3"; "### Стаття 1: …" → none, letter-led). A single-letter
+    # "### 2.1.3. …" → "2.1.3"; "### Стаття 1: …" → none, word-led) or its leading
+    # single-letter LABEL ("## A.4 Assertions" → "a.4"; "### B.1.1 Firmware" → "b.1.1";
+    # "### 🔬 E.60 — Merkle …" → "e.60") — DOC-T.60, the ref side alone was not enough:
+    # 04_06's headings are letter-led too, so every real `04_06 §A.2` would have read as
+    # dangling. Strict superset of the old anchor set (verified across docs/**). A single-letter
     # subsection ("### A. …" / "### А. …") under a numbered parent additionally emits a
     # parent-qualified anchor ("## 5." → "### A." ⇒ "5.a"; "## 🧮 4." → "### А." ⇒ "4.а")
     # so a PRECISE `§5.A` / `§4.А` ref resolves to the real subsection, not just its
@@ -359,7 +377,7 @@ module Tracker
       text.lines.grep(/^\#{1,6}\s/).each_with_object([]) do |h, acc|
         level = h[/\A#+/].length
         body  = h.sub(/^#+\s*/, "").sub(/^[^\p{L}\p{N}]+/, "")
-        if body =~ /\A([0-9][\p{L}0-9.]*)/
+        if body =~ /\A((?:\p{L}\.)?[0-9][\p{L}0-9.]*)/
           anchor = Regexp.last_match(1).downcase.sub(/\.+\z/, "")
           acc << anchor
           num_at_level.reject! { |lvl, _| lvl >= level } # same/deeper levels are stale
@@ -379,7 +397,7 @@ module Tracker
       markdown.scan(DOC_SECTION_REF).flat_map do |doc, run|
         next [] unless anchors[doc]
 
-        run.scan(/[0-9][\p{L}0-9.]*/).filter_map do |raw|
+        run.scan(DOC_SECTION_TOKEN).filter_map do |raw|
           next if raw.match?(/\.x\z/) # lowercase ".x" tail = wildcard placeholder
 
           t = raw.downcase.sub(/\.+\z/, "")

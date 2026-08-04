@@ -95,7 +95,7 @@ jobs:
         with:
           bundler-cache: true
 
-      - name: Lint 00_08 tracker (DRY — duplicate IDs, meta-line, canon-ref resolution)
+      - name: Lint 00_07 tracker (DRY — duplicate IDs, meta-line, canon-ref resolution)
         run: bin/rails tracker:check
 
       - name: Lint docs cross-references (SSOT anti-drift — links, TRL, ToC sync, RTC reg-map)
