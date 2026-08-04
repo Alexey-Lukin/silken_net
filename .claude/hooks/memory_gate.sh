@@ -645,6 +645,62 @@ RUBY
   return 0
 }
 
+# ── `skill #N` refs — the address space no §-resolver can see ──────────────
+# A skill's numbered gotchas are cited as `frontend #13`, and that is NOT a
+# section: every §-resolver parses `NN_NN §Label`, so this form is invisible to
+# all four of them BY CONSTRUCTION [DOC-T.60]. Measured 2026-08-04 over the whole
+# population (55 refs with an unambiguous target): three were DEAD, all of the
+# same shape — `frontend #66` / `#78`, which are LINE numbers, not item numbers
+# (the skill defines 17). They resolved to the right text on the day they were
+# written, so nothing looked wrong; the first edit above line 66 would have
+# silently re-pointed them. The root is measurable and shared with the earlier
+# `§Guard-craft #9` miss: `frontend` carries 12 load-bearing paragraphs with no
+# number and `ssot-maintenance` 13, so a citation to one degrades either into a
+# neighbouring number or into a line number. `backend` has zero unnumbered — and
+# zero defects of this class. Ceiling, declared rather than pretended: this
+# catches a number OUT OF RANGE, never a number that exists and means something
+# else — that half is semantic and only a READ finds it.
+skill_item_check() {
+  command -v ruby >/dev/null 2>&1 || return 0
+  [ -d "$REPO/.claude/skills" ] || return 0
+  ruby - "$MEM_DIR" "$REPO" <<'RUBY'
+dir, repo = ARGV
+# Resolve against the skills of the repo we were POINTED AT — same hermetic
+# posture as canon_section_check: a fixture must never answer with the live tree.
+skills = Dir[File.join(repo, ".claude", "skills", "*", "SKILL.md")].to_h do |p|
+  [File.basename(File.dirname(p)),
+   File.readlines(p).filter_map { |l| l[/\A\#{0,4}\s*(\d+)[.)] /, 1] }.map(&:to_i).uniq]
+end
+skills.reject! { |_n, items| items.empty? }
+exit 0 if skills.empty?
+names = skills.keys.sort_by { |k| -k.length }
+
+exempt = {} # per-file DECIDED cases, keyed like canon_section_check's
+
+Dir.chdir(dir) { Dir["*.md"] }.sort.each do |f|
+  File.readlines(File.join(dir, f)).each_with_index do |line, ln|
+    names.each do |nm|
+      next unless line.include?(nm)
+      # A 40-char window: a citation puts the number right after the name, while
+      # a PR/issue number that merely shares the line does not.
+      line.split(nm)[1..].to_a.each do |seg|
+        w = seg[0, 40].to_s
+        next if w =~ /\b(PR|issue|pull|commit)\b/i
+        w.scan(/#(\d+)/) do |(n)|
+          next if skills[nm].include?(n.to_i)
+          next if exempt.fetch(f, []).include?("#{nm} ##{n}")
+          puts "NUMREF  #{f}:#{ln + 1} cites `#{nm} ##{n}` — that skill defines no item " \
+               "##{n} (max ##{skills[nm].max}). A line number is not an address: cite an " \
+               "unnumbered paragraph by its opening phrase"
+        end
+      end
+    end
+  end
+end
+RUBY
+  return 0
+}
+
 integrity_check() {
   local fn f l
   for fn in $(grep -oE '\]\([a-z0-9_]+\.md\)' "$IDX" | tr -d ']()' | sort -u); do
@@ -746,6 +802,20 @@ Body.
 ## A.2 Друга секція
 
 Body.
+EOF
+  # A fixture SKILL tree, for the third address space (NUMREF). Same hermetic
+  # reason as the docs tree above: keyed off the live skills, a case would pass
+  # or fail on whatever `frontend` happens to contain today. Two numbered items
+  # and one UNNUMBERED paragraph — that pairing is the whole point of the class,
+  # since it is the unnumbered one that has no address and gets cited by line.
+  mkdir -p "$d.repo/.claude/skills/fixtureskill"
+  cat >"$d.repo/.claude/skills/fixtureskill/SKILL.md" <<'EOF'
+# Fixture skill
+
+1. **First item** — body.
+2. **Second item** — body.
+
+🔴 **An unnumbered load-bearing paragraph** — the shape that has no address.
 EOF
   cat >"$d/MEMORY.md" <<'EOF'
 - [Alpha](feedback_alpha.md) — the naming rule
@@ -893,6 +963,19 @@ selftest() {
   _st_build "$d"; printf '\nProof form → `04_06 §A.2`.\n' >>"$d/feedback_beta.md"
   _st_check "CANONREF silent on a live canon §-address" reject 'CANONREF'
 
+  # 10d. Third address space [DOC-T.60]: `skill #N`, which NO §-resolver parses.
+  #      The live defect was a LINE number worn as an item number, so the fixture
+  #      cites one past the skill's last item.
+  _st_build "$d"; printf '\nOperational pair → `fixtureskill` #66.\n' >>"$d/feedback_beta.md"
+  _st_check "NUMREF on a skill item number out of range" expect 'NUMREF'
+
+  # 10e. Its negative control, and it is load-bearing here: a detector keyed on
+  #      `#N` near a skill name would fire on every legitimate gotcha citation in
+  #      the corpus, and 55 of them are live. Silence on a real item is the half
+  #      that proves it discriminates rather than shouts.
+  _st_build "$d"; printf '\nOperational pair → `fixtureskill` #2.\n' >>"$d/feedback_beta.md"
+  _st_check "NUMREF silent on a live skill item" reject 'NUMREF'
+
   # 11. A backticked path that claims our tree — now answered by the fixture repo.
   _st_build "$d"; printf '\nSee `app/services/no_such_service.rb` for the shape.\n' >>"$d/feedback_beta.md"
   _st_check "DEADPATH on a retracted repo path" expect 'DEADPATH'
@@ -980,6 +1063,7 @@ case "${1:-}" in
     out=$( { override_check; index_check; desc_check; corpus_floor_check; integrity_check
              journals_reachable; asset_check
              privacy_check; overlap_check; section_ref_check; canon_section_check
+             skill_item_check
              for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; done; } )
     printf '%s\n' "${out:-OK — index within ratchet, corpus intact, no chronicle in a rule file}"
     [ -z "$out" ]
@@ -1026,6 +1110,9 @@ case "${1:-}" in
               # this is the only moment the corpus can be told the address is
               # already dead — nothing downstream ever re-reads it.
               canon_section_check
+              # Same moment, third address space: a `skill #N` is written HERE,
+              # and no §-resolver downstream will ever look at it.
+              skill_item_check
               # A brand-new file is where the registry grows. Nothing reads at
               # this moment except the tool call itself, so this is the only
               # place the question "does this fact already have a home?" can be
