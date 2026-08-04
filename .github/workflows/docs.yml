@@ -228,6 +228,19 @@ jobs:
         # record the verdict in the script's DENY list.
         run: ruby scripts/spdx_headers.rb --check
 
+      - name: Memory-gate self-test (DOC-T.59 — the gate that guards memory had no tests)
+        # Pure bash, no Rails, no access to the real corpus: the battery builds a
+        # throwaway fixture in mktemp and points the gate at it via MEMORY_GATE_DIR.
+        # Why it is here rather than in spec/: the corpus lives OUTSIDE this repo, so
+        # a Rails spec would have nothing to assert against — but the gate itself is
+        # in-tree and inside this workflow's `.claude/**` change filter.
+        # Proof-case for its existence: this file once shipped an overlap check whose
+        # floor sat at 167% of the population maximum — green on every possible corpus
+        # state, for weeks, read as "blunt" rather than dead. Case 1 is a HEALTHY
+        # fixture that must stay silent, so the battery cannot be satisfied by a gate
+        # that fires unconditionally.
+        run: bash .claude/hooks/memory_gate.sh --selftest
+
   docs-ok:
     # Single required status check for the SSOT gates on `main`. Always runs so a
     # code-only PR — where docs_check is path-skipped — still emits a green status;

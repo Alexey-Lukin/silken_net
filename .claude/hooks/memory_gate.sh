@@ -15,6 +15,7 @@ set -uo pipefail
 MEM_DIR="${MEMORY_GATE_DIR:-/Users/oleksiilukin/.claude/projects/-Users-oleksiilukin-silken-net/memory}"
 IDX="$MEM_DIR/MEMORY.md"
 REPO="${MEMORY_GATE_REPO:-/Users/oleksiilukin/silken_net}"
+SELF=${BASH_SOURCE[0]:-$0}
 
 # --- Curated thresholds. Bumping one is a deliberate, git-visible decision. ---
 # Ratchet, not an absolute cap: the index is already past the 24 kB working cap,
@@ -52,10 +53,51 @@ REPO="${MEMORY_GATE_REPO:-/Users/oleksiilukin/silken_net}"
 # re-derived from scratch every session. Displacing a row to fund it was rejected:
 # the remaining candidates are commit-time reflexes, and demoting those costs a
 # trigger at the moment of action.
-IDX_BASELINE=23836
-FILE_CAP=40960          # rule-file ceiling
-FILE_WARN=36000        # set just under the known relapse file: it regrew 35->53 kB in 18h
-GENRE_MIN=4             # dated blocks, summed across all three costumes
+# Every threshold below is `${ENV:-default}` for ONE reason: --selftest builds a
+# five-file fixture corpus, and a constant calibrated against the 1.2 MB live one
+# fires on every fixture. The default stays in the file, so a real bump is still
+# a git-visible decision — the override exists for the test harness, not for use.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-23836}
+FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
+FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
+GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
+
+# --- The floor. Every other threshold here is a CEILING, and that asymmetry was
+# a hole the whole gate shared: growth was policed from three directions while
+# LOSS was not policed at all. Worse than unpoliced — actively rewarded: both
+# ratchets below answer a byte drop with "lower the baseline to lock the gain
+# in", so a curator who deleted five files got told to cement the deletion, and
+# restoring them afterwards would read as the regression.
+#
+# That is the measurement/verdict substitution in miniature: the byte drop is a
+# MEASUREMENT, "gain" is a VERDICT, and nothing checked the grounds. A drop is
+# three different events — prose compressed (a real gain), a row displaced into a
+# hub (legitimate, iff the strings hold), or a file deleted (amnesia) — and the
+# corpus's iron rule is that preservation beats cleanup.
+#
+# A file count is the one loss signal that needs no stored state: a file vanishes
+# only by deletion. The obvious richer detector was BUILT AND REJECTED BY
+# MEASUREMENT — "a file with many inbound strings but almost no bytes is a
+# gutted home" turns out to describe the corpus's HEALTHIEST genre, the
+# skill-pointer stub (`reference_ssot_skill.md` = 1872 B carrying 22 inbound, the
+# densest router in the corpus; the smallest file is 945 B and legitimate). Any
+# threshold under those numbers is dead, any threshold over them punishes the
+# routing layer. Do not rebuild it.
+#
+# [ceiling] Deletion of a FILE is caught; gutting the CONTENTS of a file that
+# stays in place is not, and cannot be without storing previous sizes. Declared
+# rather than papered over — the honest fix there is the backup + zero-loss diff
+# the consolidation recipe already mandates, not a threshold.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-123}
+
+# A SECOND floor, and it must not be folded into the first: the two count
+# different populations. `CORPUS_FLOOR` counts every .md; the index deliberately
+# holds no row for a `log_*` (a journal is reached by [[string]]), so index reach
+# is structurally 9 lower and always will be. Comparing a reach number against
+# the corpus count would fire on a perfectly healthy corpus forever — the same
+# one-token-two-scales error this file exists to catch, committed while writing
+# the catcher.
+INDEX_REACH_FLOOR=${MEMORY_GATE_INDEX_REACH_FLOOR:-114}
 
 # The `description:` layer is a THIRD ratchet nobody was watching: it is loaded
 # for recall, it is one of the three hand-synced mirrors, and it grew 29 kB ->
@@ -83,7 +125,7 @@ GENRE_MIN=4             # dated blocks, summed across all three costumes
 # description to buy it back is the manufactured-cleanup this corpus forbids, and
 # a DESC bump is structurally unavoidable for ANY new file, so the honest move is
 # to record the reason rather than to pretend the layer stayed flat.
-DESC_BASELINE=42164
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-42164}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
@@ -263,8 +305,18 @@ RUBY
 )
   [ "$tot" -gt "$DESC_BASELINE" ] &&
     echo "DESC  description layer = ${tot}B, past its ${DESC_BASELINE}B ratchet (+$((tot - DESC_BASELINE))) — a description is a recall TRIGGER, not a log; trim one before adding one"
-  [ "$tot" -lt $((DESC_BASELINE - 800)) ] &&
-    echo "DESC  description layer = ${tot}B, well below the ${DESC_BASELINE}B ratchet — lower DESC_BASELINE here to lock the gain in"
+  # Same discrimination as the index ratchet: this layer shrinks when descriptions
+  # are compressed (a gain) and equally when files are deleted (a loss), and the
+  # sum cannot tell them apart. So the invitation to cement is withheld while the
+  # corpus is short a file — otherwise the gate cements the amnesia.
+  if [ "$tot" -lt $((DESC_BASELINE - 800)) ]; then
+    if [ "$(ls "$MEM_DIR"/*.md 2>/dev/null | wc -l | tr -d ' ')" -lt "$CORPUS_FLOOR" ]; then
+      echo "DESC  description layer = ${tot}B, well below its ${DESC_BASELINE}B ratchet — but the corpus is short a file"
+      echo "      the drop is missing descriptions, not tighter ones: settle FLOOR first"
+    else
+      echo "DESC  description layer = ${tot}B, well below the ${DESC_BASELINE}B ratchet — lower DESC_BASELINE here to lock the gain in"
+    fi
+  fi
   return 0
 }
 
@@ -343,15 +395,46 @@ RUBY
   return 0
 }
 
+# The floor, and the only check here that fires on SHRINKAGE. Deliberately counts
+# files rather than bytes: bytes fall for three different reasons and only one of
+# them is a loss, while a .md disappearing is unambiguous.
+corpus_floor_check() {
+  local n
+  n=$(ls "$MEM_DIR"/*.md 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$n" -lt "$CORPUS_FLOOR" ]; then
+    echo "FLOOR corpus holds ${n} .md files, below its ${CORPUS_FLOOR} floor ($((CORPUS_FLOOR - n)) gone)"
+    echo "      preservation beats cleanup: restore them, or — if a merge genuinely"
+    echo "      absorbed them — lower CORPUS_FLOOR here, which makes the loss git-visible"
+  elif [ "$n" -gt "$CORPUS_FLOOR" ]; then
+    echo "FLOOR corpus grew to ${n} .md files (floor ${CORPUS_FLOOR}) — raise CORPUS_FLOOR here so the new homes are protected too"
+  fi
+  return 0
+}
+
+# Index links, counted as UNIQUE targets rather than rows: hub-inlining collapses
+# thirteen rows into two without dropping a single pointer, so rows measure layout
+# and links measure reach. The routing layer is what a byte drop can quietly cost.
+index_links() { grep -oE '\]\([a-z0-9_]+\.md\)' "$IDX" | sort -u | wc -l | tr -d ' '; }
+
 index_check() {
-  local sz n
+  local sz n links
   sz=$(wc -c <"$IDX" | tr -d ' ')
   n=$(grep -cE '^[[:space:]]*- .*\]\([a-z0-9_]+\.md\)' "$IDX")
+  links=$(index_links)
   if [ "$sz" -gt "$IDX_BASELINE" ]; then
     echo "INDEX MEMORY.md = ${sz}B, past its ${IDX_BASELINE}B ratchet (+$((sz - IDX_BASELINE)), ${n} entries)"
     echo "      a new entry earns its line only by displacing one; detail belongs in the file"
   elif [ "$sz" -lt $((IDX_BASELINE - 400)) ]; then
-    echo "INDEX MEMORY.md = ${sz}B, below the ${IDX_BASELINE}B ratchet — lower IDX_BASELINE here to lock the gain in"
+    # "Smaller" is not "better" until you know WHICH of the three events it was.
+    # Reach is the discriminator the old wording never asked for: compression and
+    # hub-inlining both hold the link count, only eviction drops it.
+    if [ "$links" -lt "$INDEX_REACH_FLOOR" ]; then
+      echo "INDEX MEMORY.md = ${sz}B, below the ${IDX_BASELINE}B ratchet — but it routes to only ${links} files"
+      echo "      that is eviction, not compression: do NOT lower the ratchet until every"
+      echo "      dropped file is reachable again (a hub row, or an inbound [[string]])"
+    else
+      echo "INDEX MEMORY.md = ${sz}B, below the ${IDX_BASELINE}B ratchet, reach intact (${links} files) — lower IDX_BASELINE here to lock the gain in"
+    fi
   fi
   return 0
 }
@@ -483,9 +566,172 @@ route_check() {
   return 0
 }
 
+# --- Self-test ---------------------------------------------------------------
+# This gate had no tests, and that is not a tidiness complaint: it has already
+# shipped a check that COULD NOT FIRE (overlap_check sat at 167% of the corpus's
+# physical maximum and was green on every possible state), and a counting layer
+# that silently disagreed with itself (BSD awk under-reported the description sum
+# by ~7% while agreeing to the byte on any single file). Both are one failure —
+# a green gate proves nothing until something proves the gate can go red.
+#
+# The constraint that shapes it: a bare "does it fire" battery passes for a gate
+# that fires ALWAYS. So case 1 is a HEALTHY corpus that must come back silent,
+# and the router case must come back silent too. Positive and negative controls.
+#
+# Fixture thresholds are derived from the fixture itself, so a case tests its own
+# detector rather than the ratchets — except where the ratchet IS the subject.
+_st_build() {
+  local d=$1
+  rm -rf "$d"; mkdir -p "$d"
+  cat >"$d/MEMORY.md" <<'EOF'
+- [Alpha](feedback_alpha.md) — the naming rule
+- [Beta](feedback_beta.md) — the gateway note
+EOF
+  cat >"$d/feedback_alpha.md" <<'EOF'
+---
+name: feedback_alpha
+description: "Alpha"
+metadata:
+  type: feedback
+---
+
+One word carrying two scales is the quietest defect there is, because both
+readings are locally correct and only their meeting point is wrong.
+
+Chronicle of this axis: [[log_gamma]]
+EOF
+  cat >"$d/feedback_beta.md" <<'EOF'
+---
+name: feedback_beta
+description: "Beta"
+metadata:
+  type: feedback
+---
+
+A gateway counts itself online against an interval it also publishes, so the
+two numbers drift apart without either side ever looking wrong on its own.
+EOF
+  cat >"$d/log_gamma.md" <<'EOF'
+---
+name: log_gamma
+description: "Gamma"
+metadata:
+  type: project
+---
+
+Chronicle body, dates and numbers live here by design.
+EOF
+}
+
+_st_audit() {
+  local d=$1; shift
+  env MEMORY_GATE_DIR="$d" \
+      MEMORY_GATE_IDX_BASELINE="$(wc -c <"$d/MEMORY.md" | tr -d ' ')" \
+      MEMORY_GATE_DESC_BASELINE=800 \
+      MEMORY_GATE_CORPUS_FLOOR="$(ls "$d"/*.md 2>/dev/null | wc -l | tr -d ' ')" \
+      MEMORY_GATE_INDEX_REACH_FLOOR="$(grep -oE '\]\([a-z0-9_]+\.md\)' "$d/MEMORY.md" |
+                                        sort -u | wc -l | tr -d ' ')" \
+      "$@" bash "$SELF" --audit 2>&1
+}
+
+selftest() {
+  local root d out pass=0 fail=0
+  root=$(mktemp -d) || { echo "selftest: cannot mktemp"; return 1; }
+  d="$root/mem"
+
+  # $1 = case name, $2 = expect|reject, $3 = token, then extra env for _st_audit.
+  # The mutation itself is applied by the caller between _st_build and _st_check.
+  _st_check() {
+    local name=$1 mode=$2 token=$3; shift 3
+    out=$(_st_audit "$d" "$@")
+    case $mode in
+      expect) printf '%s' "$out" | grep -q "$token" && { pass=$((pass+1)); printf '  ok    %s\n' "$name"; return 0; } ;;
+      reject) printf '%s' "$out" | grep -q "$token" || { pass=$((pass+1)); printf '  ok    %s\n' "$name"; return 0; } ;;
+    esac
+    fail=$((fail+1))
+    printf '  FAIL  %s\n         expected to %s /%s/, got:\n%s\n' "$name" "$mode" "$token" "$(printf '%s' "$out" | sed 's/^/         | /')"
+    return 1
+  }
+
+  # 1. NEGATIVE CONTROL. Without this every other case below is satisfied by a
+  #    gate that prints its whole battery unconditionally.
+  _st_build "$d"
+  _st_check "healthy corpus is silent" expect '^OK — '
+
+  # 2-3. Link integrity, both directions.
+  _st_build "$d"; printf '\nSee [[nowhere_at_all]] for more.\n' >>"$d/feedback_beta.md"
+  _st_check "DANGLING on an unresolvable [[string]]" expect 'DANGLING'
+
+  _st_build "$d"; printf -- '- [Ghost](feedback_ghost.md) — x\n' >>"$d/MEMORY.md"
+  _st_check "BROKEN on an index row pointing at nothing" expect 'BROKEN'
+
+  # 4-5. Registration of a new file.
+  _st_build "$d"; printf -- '---\nname: feedback_delta\ndescription: "D"\nmetadata:\n  type: feedback\n---\n\nBody.\n' >"$d/feedback_delta.md"
+  _st_check "ORPHAN on a file in no index row" expect 'ORPHAN'
+
+  _st_build "$d"; printf 'No frontmatter at all.\n' >"$d/feedback_delta.md"
+  printf -- '- [Delta](feedback_delta.md) — x\n' >>"$d/MEMORY.md"
+  _st_check "FORMAT on a file without name/type" expect 'FORMAT'
+
+  # 6. The journal's only lifeline. This one has fired in anger — rewriting a
+  #    rule file is exactly when its journal's last string gets severed.
+  _st_build "$d"; sed '/log_gamma/d' "$d/feedback_alpha.md" >"$d/.t" && mv "$d/.t" "$d/feedback_alpha.md"
+  _st_check "UNSTRUNG on a journal nothing links to" expect 'UNSTRUNG'
+
+  # 7. Chronicle inside a rule file, in the bullet costume.
+  _st_build "$d"
+  { echo; for i in 1 2 3 4; do echo "- 2026-08-0$i something happened that day"; done; } >>"$d/feedback_beta.md"
+  _st_check "GENRE on dated blocks in a rule file" expect 'GENRE'
+
+  # 8-9. THE PAIR THAT CARRIES THE MOST. A verbatim rule copied into another file
+  #      with no pointer is phase-2 debt; the same copy carrying [[home]] inside
+  #      the block is the recipe's prescribed shape and must stay silent. Case 9
+  #      is what proves the router test carries weight instead of decorating.
+  _st_build "$d"
+  printf '\nOne word carrying two scales is the quietest defect there is, because both\nreadings are locally correct and only their meeting point is wrong.\n' >>"$d/feedback_beta.md"
+  _st_check "OVERLAP on a duplicated rule with no router" expect 'OVERLAP'
+
+  _st_build "$d"
+  printf '\nOne word carrying two scales is the quietest defect there is, because both\nreadings are locally correct and only their meeting point is wrong. Rule lives\nin [[feedback_alpha]].\n' >>"$d/feedback_beta.md"
+  _st_check "OVERLAP silent when the copy carries its router" reject 'OVERLAP'
+
+  # 10. A string that resolves to a live file but promises a section that is not there.
+  _st_build "$d"; printf '\nMethod: [[feedback_alpha]] §NoSuchSection covers it.\n' >>"$d/feedback_beta.md"
+  _st_check "SECREF on a dead §-address" expect 'SECREF'
+
+  # 11. A backticked path that claims our tree.
+  _st_build "$d"; printf '\nSee `app/services/no_such_service.rb` for the shape.\n' >>"$d/feedback_beta.md"
+  _st_check "DEADPATH on a retracted repo path" expect 'DEADPATH'
+
+  # 12. The private marker disappearing under a rewrite.
+  _st_build "$d"; printf -- '---\nname: user_life_context\ndescription: "L"\nmetadata:\n  type: user\n---\n\nBody.\n' >"$d/user_life_context.md"
+  printf -- '- [Life](user_life_context.md) — x\n' >>"$d/MEMORY.md"
+  _st_check "PRIVACY on a lost sensitivity marker" expect 'PRIVACY'
+
+  # 13-14. THE FLOOR, and the reason it was added: deletion used to be silent,
+  #        and the index ratchet used to answer it with "lock the gain in".
+  #        Case 14 pins the wording, because the defect was never the number.
+  _st_build "$d"; rm "$d/feedback_beta.md"; sed '/feedback_beta/d' "$d/MEMORY.md" >"$d/.t" && mv "$d/.t" "$d/MEMORY.md"
+  _st_check "FLOOR on a deleted file" expect 'FLOOR corpus holds' MEMORY_GATE_CORPUS_FLOOR=4
+
+  _st_build "$d"; rm "$d/feedback_beta.md"; sed '/feedback_beta/d' "$d/MEMORY.md" >"$d/.t" && mv "$d/.t" "$d/MEMORY.md"
+  _st_check "eviction is NOT offered as a gain to lock in" reject 'lock the gain in' \
+            MEMORY_GATE_CORPUS_FLOOR=4 MEMORY_GATE_INDEX_REACH_FLOOR=2 MEMORY_GATE_IDX_BASELINE=9000
+
+  # 15. The rule-file ceiling, with the cap lowered so the case costs no disk.
+  _st_build "$d"; head -c 4000 /dev/zero | tr '\0' 'x' >>"$d/feedback_beta.md"
+  _st_check "CAP on a rule file past its ceiling" expect 'CAP  ' MEMORY_GATE_FILE_CAP=3000
+
+  rm -rf "$root"
+  printf 'selftest: %d passed, %d failed\n' "$pass" "$fail"
+  [ "$fail" -eq 0 ]
+}
+
 case "${1:-}" in
+  --selftest) selftest ;;
   --audit)
-    out=$( { index_check; desc_check; integrity_check; journals_reachable; asset_check
+    out=$( { index_check; desc_check; corpus_floor_check; integrity_check
+             journals_reachable; asset_check
              privacy_check; overlap_check; section_ref_check
              for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; done; } )
     printf '%s\n' "${out:-OK — index within ratchet, corpus intact, no chronicle in a rule file}"
@@ -517,6 +763,9 @@ case "${1:-}" in
     case "$fp" in "$MEM_DIR"/*.md) ;; *) exit 0 ;; esac
     msgs=$( { index_check
               desc_check
+              # Loss is silent at the moment of action too — a Write that replaces
+              # a corpus is the same tool call as a Write that grows one.
+              corpus_floor_check
               check_file "$fp"
               path_check "$fp"
               journals_reachable
