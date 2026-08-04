@@ -91,12 +91,35 @@ GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across a
 # already arrives in the same JSON this gate parses for `file_path`
 # (`tool_input.old_string` / `new_string`), so "how many bytes did this edit
 # remove" is answerable with no stored state at all — the event carries it.
-# Left unbuilt deliberately, and not out of modesty: a byte-delta threshold needs
-# a DISTRIBUTION of legitimate edit sizes before it can have a number, and this
-# corpus routinely ships 300-2000 B phase-2 excisions. Shipping a guessed floor
-# here would repeat overlap_check's original sin in a new costume. Measure first;
-# the hook is where it goes. (Write is genuinely too late — the file is already
-# replaced — so that half would need PreToolUse, a different question.)
+# Left unbuilt deliberately: a byte-delta threshold needs a DISTRIBUTION of
+# legitimate edit sizes before it can have a number, and shipping a guessed floor
+# would repeat overlap_check's original sin in a new costume.
+#
+# MEASURED 2026-08-04 — 1583 unique Edits into this corpus across 223 session
+# transcripts, which is the same old_string/new_string pair the hook receives.
+# The distribution CLOSES the question rather than supplying the number:
+#   * cuts (n=416): median 86 B, p90 612, p95 1034, p99 1789, MAX 3720.
+#     A floor must clear 3720 to stay quiet on legitimate work — and gutting is
+#     the SAME operation in SMALLER steps, so it never reaches that floor. Dead
+#     above, noisy below: no band exists. Exactly overlap_check's pathology, seen
+#     from the other side (there the threshold sat over the population maximum;
+#     here every threshold must).
+#   * the obvious second discriminator also failed: among the 71 deep (>=300 B)
+#     body cuts, 66% leave the [[router]] count UNCHANGED, 24% add one, 10% drop
+#     one. "A legitimate excision leaves a router behind" is simply not true of
+#     the corpus, so router-delta cannot rank the two either. (The 10% that drop
+#     a string are already caught — that is UNSTRUNG/DANGLING, not this.)
+#   * what the data DOES show is that hollowing arrives as a SERIES, not an
+#     event: -20794 B over 37 edits on one file, -29695 B over 176 on the index.
+#     No member of such a series is anomalous. Detecting it therefore requires
+#     stored state, which this gate does not keep by design — so the ceiling
+#     stands, now on measurement instead of assumption.
+# Do not rebuild a byte-delta floor. If this is ever reopened, the open question
+# is a different one: whether the excised text still exists ANYWHERE in the
+# corpus (a shingle lookup of old_string at write time) — and that needs its own
+# false-positive measurement first, since any rephrase deletes a unique line.
+# (Write is genuinely too late — the file is already replaced — so that half
+# would need PreToolUse, a different question.)
 CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-123}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
@@ -632,6 +655,13 @@ route_check() {
 _st_build() {
   local d=$1
   rm -rf "$d"; mkdir -p "$d"
+  # A fixture REPO, because path_check resolves backticked paths against $REPO
+  # and the battery never set it: the DEADPATH case was answered by the LIVE
+  # tree, so it passed on the accident that nobody had created that filename.
+  # A case whose verdict depends on a tree it does not own is not a test of the
+  # detector. Two paths, so the fixture can prove both directions.
+  rm -rf "$d.repo"; mkdir -p "$d.repo/app/services"
+  : >"$d.repo/app/services/live_service.rb"
   cat >"$d/MEMORY.md" <<'EOF'
 - [Alpha](feedback_alpha.md) — the naming rule
 - [Beta](feedback_beta.md) — the gateway note
@@ -676,6 +706,7 @@ _st_audit() {
   local d=$1; shift
   env MEMORY_GATE_SELFTEST=1 \
       MEMORY_GATE_DIR="$d" \
+      MEMORY_GATE_REPO="$d.repo" \
       MEMORY_GATE_IDX_BASELINE="$(wc -c <"$d/MEMORY.md" | tr -d ' ')" \
       MEMORY_GATE_DESC_BASELINE=800 \
       MEMORY_GATE_CORPUS_FLOOR="$(ls "$d"/*.md 2>/dev/null | wc -l | tr -d ' ')" \
@@ -692,6 +723,7 @@ _st_write() {
   printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/%s"}}' "$d" "$f" |
     env MEMORY_GATE_SELFTEST=1 \
         MEMORY_GATE_DIR="$d" \
+        MEMORY_GATE_REPO="$d.repo" \
         MEMORY_GATE_IDX_BASELINE="$(wc -c <"$d/MEMORY.md" | tr -d ' ')" \
         MEMORY_GATE_DESC_BASELINE=800 \
         MEMORY_GATE_CORPUS_FLOOR="$(ls "$d"/*.md 2>/dev/null | wc -l | tr -d ' ')" \
@@ -763,9 +795,15 @@ selftest() {
   _st_build "$d"; printf '\nMethod: [[feedback_alpha]] §NoSuchSection covers it.\n' >>"$d/feedback_beta.md"
   _st_check "SECREF on a dead §-address" expect 'SECREF'
 
-  # 11. A backticked path that claims our tree.
+  # 11. A backticked path that claims our tree — now answered by the fixture repo.
   _st_build "$d"; printf '\nSee `app/services/no_such_service.rb` for the shape.\n' >>"$d/feedback_beta.md"
   _st_check "DEADPATH on a retracted repo path" expect 'DEADPATH'
+
+  # 11b. Its negative control, absent until the fixture repo existed: a path that
+  #      IS there must stay silent. Without this half, a path_check that fired on
+  #      every backticked path would have passed case 11 just as happily.
+  _st_build "$d"; printf '\nSee `app/services/live_service.rb` for the shape.\n' >>"$d/feedback_beta.md"
+  _st_check "DEADPATH silent on a path that exists" reject 'DEADPATH'
 
   # 12. The private marker disappearing under a rewrite.
   _st_build "$d"; printf -- '---\nname: user_life_context\ndescription: "L"\nmetadata:\n  type: user\n---\n\nBody.\n' >"$d/user_life_context.md"
