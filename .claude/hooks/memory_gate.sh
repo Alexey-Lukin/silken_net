@@ -330,6 +330,19 @@ privacy_check() {
 
 # Sum of every `description:` field, in bytes. Cheap enough for the write path.
 desc_check() {
+  # [ceiling, measured 2026-08-04 — do NOT rebuild] This ratchet is SUM-only, and a
+  # per-file "fat description" threshold was designed and REJECTED by measurement.
+  # Distribution over all 122 files: median 321 · p75 467 · p90 632 · p95 684 · max 952.
+  # The tail is not the disease — it is `mechanism_vs_its_trigger` (952), the
+  # `measurement_substitution`/`irreversibility_proof_bar` pair (827/826), `silent_default`
+  # (777) and `founder_push_signals` (723), i.e. the error-axis homes, whose recall trigger
+  # legitimately carries several layers. Any threshold under those numbers punishes the
+  # richest homes in the corpus; any threshold above them is dead. Same shape as the
+  # rejected "many strings, few bytes = gutted home" detector, which described skill-pointer
+  # stubs — the healthiest genre. The sum ratchet is the right form precisely because it
+  # lets ONE home be fat while the rest stay tight. What a per-file rule cannot see, and
+  # no counter can, is whether the description DUPLICATES the body or is its only home —
+  # that verdict needs a READ (verify-before-delete), not a number.
   local tot
   # Counted in ruby, not awk, and that is a finding rather than a preference:
   # the identical logic in BSD awk under-reported this layer by ~7% across the

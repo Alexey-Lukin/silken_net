@@ -47,6 +47,7 @@
 ### 3. Структура по типу (reorder VERBATIM, нуль-втрата)
 - Згрупуй `MEMORY.md`: `## 👤 User` / `## 🛠 Feedback` / `## 📚 Reference` / `## 📦 Project`. Велику секцію (>~15) під-групуй (`### …`).
 - Роби **скриптом-reorder** (рядки переставляються байт-у-байт + заголовки), НЕ переписуй гачки руками. Класифікуй за префіксом імені файлу (`user_`/`feedback_`/`reference_`/`project_`).
+- ⚠️ **Префікс — початкове наближення, а ТЕМА має перевагу; розбіжність тут НЕ дефект.** Виміряно 2026-08-04: чотири `project_*` (`sentinelone_quarantine` · `rvm_env_repair` · `graphify_trial` · `quota_stretch_ponytail`) законно живуть у `## 🛠 Feedback → Tooling & environment`, бо там їхні сусіди по темі (`feedback_local_verify`, `feedback_zsh_bash_gotchas`), і читають їх саме звідти. Механічний аудит «префікс ⟷ секція» назве їх помилкою — **не переноси**: розрив тематичного кластера коштує дорожче за формальну чистоту, і це рівно той manufactured-cleanup, що заборонений. Скрипт-reorder застосовуй до НОВИХ записів, не до складених кластерів.
 - **Доведи нуль-втрату:** `diff <(grep '^- \[' BACKUP|sort) <(grep '^- \[' MEMORY.md|sort)` → `IDENTICAL`.
 
 ### 4. Прибрати сміття — але verify-before-delete (no amnesia)
