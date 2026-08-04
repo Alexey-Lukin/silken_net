@@ -728,8 +728,14 @@ _st_build() {
   # the CANONREF case would "pass" on an ABSENCE — a green that proves nothing.
   # Letter-led headings on purpose: that is the shape 04_06 uses and the one the
   # resolver was blind to until DOC-T.60.
+  # Source the resolver relative to THIS SCRIPT, never $REPO: $REPO defaults to a
+  # hard-coded developer path that does not exist on a CI runner, so keying the
+  # fixture off it made case 10b pass locally and fail in CI — and it failed in
+  # the one direction that looks like health, the detector silently going quiet.
+  # The script itself lives in the repo, so its own location is the honest root.
+  local _root; _root=$(cd "$(dirname "$SELF")/../.." 2>/dev/null && pwd)
   mkdir -p "$d.repo/lib/tracker" "$d.repo/docs"
-  [ -f "$REPO/lib/tracker/dashboard.rb" ] && cp "$REPO/lib/tracker/dashboard.rb" "$d.repo/lib/tracker/"
+  [ -f "$_root/lib/tracker/dashboard.rb" ] && cp "$_root/lib/tracker/dashboard.rb" "$d.repo/lib/tracker/"
   cat >"$d.repo/docs/04_06_Testing_Guide_and_Coverage.md" <<'EOF'
 # Testing Guide (fixture)
 
