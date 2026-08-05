@@ -492,7 +492,13 @@ corpus_floor_check() {
 # Index links, counted as UNIQUE targets rather than rows: hub-inlining collapses
 # thirteen rows into two without dropping a single pointer, so rows measure layout
 # and links measure reach. The routing layer is what a byte drop can quietly cost.
-index_links() { grep -oE '\]\([a-z0-9_]+\.md\)' "$IDX" | sort -u | wc -l | tr -d ' '; }
+# ONE definition of "an index row's markdown link to a corpus file". It had three
+# copies, and widening one of them alone is worse than widening none: a dash- or
+# capital-bearing name then reads as a LIVE link to integrity_check while the two
+# reach counters still miss it, so a healthy corpus gets accused of eviction —
+# the ratchet's own worst failure mode, advice on a false basis.
+IDX_LINK_RE='\]\([a-zA-Z0-9_-]+\.md\)'
+index_links() { grep -oE "$IDX_LINK_RE" "$IDX" | sort -u | wc -l | tr -d ' '; }
 
 # Every threshold is env-overridable so --selftest can build a fixture, and that
 # convenience quietly made the verdict unfalsifiable: an exported
@@ -514,7 +520,7 @@ override_check() {
 index_check() {
   local sz n links
   sz=$(wc -c <"$IDX" | tr -d ' ')
-  n=$(grep -cE '^[[:space:]]*- .*\]\([a-z0-9_]+\.md\)' "$IDX")
+  n=$(grep -cE "^[[:space:]]*- .*$IDX_LINK_RE" "$IDX")
   links=$(index_links)
   if [ "$sz" -gt "$IDX_BASELINE" ]; then
     echo "INDEX MEMORY.md = ${sz}B, past its ${IDX_BASELINE}B ratchet (+$((sz - IDX_BASELINE)), ${n} entries)"
@@ -760,7 +766,12 @@ RUBY
 
 integrity_check() {
   local fn f l
-  for fn in $(grep -oE '\]\([a-z0-9_]+\.md\)' "$IDX" | tr -d ']()' | sort -u); do
+  # Grammar lives in IDX_LINK_RE, not here — see the note at its definition for
+  # why a partial widening is worse than none. Deliberately NOT as wide as the
+  # string class below: a markdown link has no prose form to mistake it for, so
+  # `[^]]+` there and a slug class here are two different questions, not two
+  # settings of one.
+  for fn in $(grep -oE "$IDX_LINK_RE" "$IDX" | tr -d ']()' | sort -u); do
     [ -f "$MEM_DIR/$fn" ] || echo "BROKEN  index points at a missing $fn"
   done
   for f in "$MEM_DIR"/*.md; do
@@ -775,10 +786,40 @@ integrity_check() {
     esac
     { grep -q '^name:' "$f" && grep -q 'type:' "$f"; } || echo "FORMAT  $fn lacks name/type frontmatter"
   done
-  # Character class keeps `-` and A-Z on purpose: the dash-form slug is exactly
-  # the broken-link shape this check exists for, and macOS resolves case-only
-  # mismatches that Linux would not — so both are tested.
-  for l in $(grep -rhoE '\[\[[a-zA-Z0-9_-]+\]\]' "$MEM_DIR"/*.md | tr -d '[]' | sort -u); do
+  strings_check
+  return 0
+}
+
+# The string half, split out so BOTH stances can run it. Keeping it inside
+# integrity_check made the PROSE verdict audit-only — a bracketed term stayed
+# silent at the very moment it was typed, which is the two-stance divergence
+# this file already paid for once (the UNSTRUNG hole). The rest of
+# integrity_check cannot join the write stance: ORPHAN is EXPECTED on a
+# brand-new file, and route_check owns that moment instead.
+strings_check() {
+  local l
+  # Extraction is deliberately as WIDE as the graph's own parser (oneway_check),
+  # because a narrow class does not JUDGE a foreign string — it drops the string
+  # before any verdict can run. That is how `[[дім]]` stayed invisible here while
+  # oneway_check saw it and silently discarded it as "not present": two grammars
+  # over one corpus, and a string that belongs to no detector at all. The dash
+  # and A-Z still matter for the same reasons as before (dash-form slug is the
+  # broken-link shape; macOS resolves case-only mismatches Linux would not), they
+  # are just no longer the FILTER. Widening forces `while read` — a `for l in
+  # $(…)` splits multi-word content into phantom strings.
+  grep -rhoE '\[\[[^]]+\]\]' "$MEM_DIR"/*.md | sed 's/^\[\[//; s/\]\]$//' | sort -u |
+  while IFS= read -r l; do
+    case $l in
+      # Not slug-shaped => nobody intended a link; this is a prose term someone
+      # wrapped in brackets while quoting the convention. A distinct verdict on
+      # purpose: DANGLING advises fixing a target, and here the cure is to drop
+      # the brackets — the same wrong-advice-on-a-wrong-basis this file guards
+      # against elsewhere. The convention itself: quoting the IDEA of a link,
+      # never take it in double brackets.
+      *[!a-zA-Z0-9_-]*)
+        echo "PROSE   [[$l]] is a bracketed term, not a slug — drop the brackets"
+        continue ;;
+    esac
     # shellcheck disable=SC2010  # the ls|grep IS the test: -qix asks "does any
     # spelling of this name exist", which is precisely what [ -f ] cannot answer
     # on a case-insensitive filesystem. A glob would silently agree with macOS.
@@ -1141,6 +1182,45 @@ selftest() {
   if printf '%s' "$out" | grep -q 'ONEWAY log_gamma'; then fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "a reciprocated pair stops being reported" "$out"
   else pass=$((pass+1)); printf '  ok    %s\n' "a reciprocated pair stops being reported"; fi
 
+  # 23-24. THE PAIR FOR THE PROSE VERDICT, and case 24 is the load-bearing half.
+  #        A bracketed prose term used to be invisible: the old character class
+  #        dropped it before any branch ran, so the corpus carried three of them
+  #        under a green gate. Case 24 exists because widening the extractor is
+  #        exactly the change that could make the new branch SWALLOW the old one
+  #        — a real dangling slug must still read as DANGLING, or the fix trades
+  #        one blindness for another and the count alone would never show it.
+  _st_build "$d"; printf '\nQuoting the idea of a [[поняття]] is not a link.\n' >>"$d/feedback_beta.md"
+  _st_check "PROSE on a bracketed term that was never a slug" expect 'PROSE'
+
+  _st_build "$d"; printf '\nSee [[nowhere_at_all]] for more.\n' >>"$d/feedback_beta.md"
+  _st_check "a real dangling slug is NOT reclassified as PROSE" reject 'PROSE'
+
+  # 25. THE WRITE STANCE for the same verdict. Case 23 proves only that --audit
+  #     catches it, and audit-only is exactly the divergence this gate already
+  #     paid for once: the author is holding the sentence at WRITE time and
+  #     nowhere else. Without this case the split into strings_check() would be
+  #     refactor-shaped and prove nothing.
+  _st_build "$d"; printf '\nQuoting the idea of a [[поняття]] is not a link.\n' >>"$d/feedback_beta.md"
+  out=$(_st_write "$d" feedback_beta.md)
+  if printf '%s' "$out" | grep -q 'PROSE'; then pass=$((pass+1)); printf '  ok    %s\n' "write stance reports a bracketed term at the moment it is typed"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "write stance reports a bracketed term at the moment it is typed" "$out"; fi
+
+  # 26. ONE grammar, three consumers — pinned on the HEALTHY fork. A dash-bearing
+  #     name is the shape that splits them: widen only integrity_check and the
+  #     file reads as a live link there while both reach counters still miss it,
+  #     so a corpus that lost nothing gets told it evicted. The verdict to pin is
+  #     therefore the ABSENCE of that advice, not the presence of an error — the
+  #     failure mode here is a gate lying in the reassuring direction.
+  _st_build "$d"
+  printf -- '---\nname: feedback_dash-form\ndescription: "D"\nmetadata:\n  type: feedback\n---\n\nBody.\n' >"$d/feedback_dash-form.md"
+  printf -- '- [Dash](feedback_dash-form.md) — x\n' >>"$d/MEMORY.md"
+  #     The baseline override is what makes it non-vacuous: the eviction ⊥
+  #     compression discriminator only runs BELOW the ratchet, so without it the
+  #     case never reaches the branch it claims to pin — measured, first draft
+  #     survived the mutation and proved nothing.
+  _st_check "a dash-bearing name counts as reach in every consumer of the link grammar" \
+            expect 'lock the gain in' MEMORY_GATE_IDX_BASELINE=9000
+
   rm -rf "$root"
   printf 'selftest: %d passed, %d failed\n' "$pass" "$fail"
   [ "$fail" -eq 0 ]
@@ -1207,6 +1287,12 @@ case "${1:-}" in
               # Same moment, third address space: a `skill #N` is written HERE,
               # and no §-resolver downstream will ever look at it.
               skill_item_check
+              # A bracketed prose term is TYPED here, and this is the only moment
+              # its author is still holding the sentence. Audit-only was the same
+              # divergence the checks above exist to avoid — and it is safe to add
+              # precisely because this half is at zero on a healthy corpus, so any
+              # line is this write's own trace.
+              strings_check
               # A brand-new file is where the registry grows. Nothing reads at
               # this moment except the tool call itself, so this is the only
               # place the question "does this fact already have a home?" can be
