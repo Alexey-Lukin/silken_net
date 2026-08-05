@@ -106,7 +106,7 @@ TRACKER_GUARDS = {
   "meta_form_violations"         => "meta-line form",
   "cluster_marker_violations"    => "дім-кластер marker",
   "bench_tag_violations"         => "bench-session tag symmetry",
-  "stale_machine_who"            => "stale machine-WHO",
+  "stale_who"                    => "stale WHO",
   "understated_who"              => "understated WHO"
 }.freeze
 # Non-guard Dashboard calls in tracker.rake (parsing/reporting helpers).

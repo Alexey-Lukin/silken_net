@@ -946,10 +946,13 @@ RSpec.describe Tracker::Dashboard do
     end
   end
 
-  describe ".stale_machine_who" do
-    # meta-line WHO = UNION of OPEN residuals (00_07 intro), so a shipped machine-half
-    # must drop its 🤖. meta_form_violations checks only the token's SHAPE — this guard
-    # checks it still MATCHES the checkboxes. [DOC-T.52]
+  describe ".stale_who" do
+    # meta-line WHO = UNION of OPEN residuals (00_07 intro), so a shipped half must drop
+    # its glyph. meta_form_violations checks only the token's SHAPE — this guard checks it
+    # still MATCHES the checkboxes. [DOC-T.52; widened to all three glyphs + the empty set
+    # by DOC-T.55, which is why every glyph below gets its own positive example: a check
+    # covering ONE member of an enum reads, from its green run, exactly like one covering
+    # all of them.]
     let(:md) do
       <<~MD
         ## §07 · Бізнес
@@ -976,17 +979,41 @@ RSpec.describe Tracker::Dashboard do
         - [ ] 👤 зустріч
       MD
     end
+    # --- the other two glyphs [DOC-T.55] -------------------------------------------
+    # The first cut read `include?("🤖")`, so a meta advertising a ⚖️ verdict nobody awaits
+    # — the costliest executor to summon — passed green forever. One positive example per
+    # glyph, because the corpus population for any single one can (and does) shrink to zero.
+    let(:glyphs) do
+      <<~MD
+        ## §04 · Backend
+        #### ARCH.80 — meta ⚖️ over a body with no open ⚖️ residual
+        - **P3** · 🤖+⚖️ · ⚪ · → `04_01 §10`
+        - **Стан:** присуд ратифіковано, лишилась машинна нога.
+        - [ ] 🤖 дописати каскад
+        #### ARCH.81 — meta 👤 over a body with no open 👤 residual
+        - **P3** · 🤖+👤 · 🟡 · → `04_01 §10`
+        - **Стан:** руки відпрацювали, лишився скрипт.
+        - [ ] 🤖 дописати скрипт
+      MD
+    end
+
+    def ids(result) = result.map { |v| v.split(":").first }
+
 
     it "flags ONLY the item whose meta 🤖 no open residual backs" do
-      expect(described_class.stale_machine_who(md)).to eq([ "BIZ.1" ])
+      expect(ids(described_class.stale_who(md))).to eq([ "BIZ.1" ])
+    end
+
+    it "names the glyph the meta-line overstates" do
+      expect(described_class.stale_who(md).first).to include("claims 🤖")
     end
 
     it "exempts a 🔗-led residual — its eventual WHO lives in the item it is gated on" do
-      expect(described_class.stale_machine_who(md)).not_to include("BIZ.3")
+      expect(ids(described_class.stale_who(md))).not_to include("BIZ.3")
     end
 
-    it "exempts a residual with no WHO glyph — undeclared ≠ machine half done" do
-      expect(described_class.stale_machine_who(md)).not_to include("BIZ.4")
+    it "exempts a residual with no WHO glyph — undeclared ≠ that half is done" do
+      expect(ids(described_class.stale_who(md))).not_to include("BIZ.4")
     end
 
     it "ignores an item with a closed 🤖 residual only, since [x] is not open work" do
@@ -998,17 +1025,7 @@ RSpec.describe Tracker::Dashboard do
         - [x] 🤖 скрипт написано
         - [ ] 👤 юр-review
       MD
-      expect(described_class.stale_machine_who(done_only)).to eq([ "BIZ.9" ])
-    end
-
-    it "stays silent on an item with no open residuals at all" do
-      none = <<~MD
-        ## §07 · Бізнес
-        #### BIZ.8 — nothing open
-        - **P1** · 🤖+👤 · 🟢 · → `07_01 §8`
-        - **Стан:** все закрито.
-      MD
-      expect(described_class.stale_machine_who(none)).to be_empty
+      expect(ids(described_class.stale_who(done_only))).to eq([ "BIZ.9" ])
     end
 
     it "never reads the intro blockquote's example lines as real items" do
@@ -1021,12 +1038,92 @@ RSpec.describe Tracker::Dashboard do
         - **Стан:** x.
         - [ ] 👤 юр-review
       MD
-      expect(described_class.stale_machine_who(intro)).to eq([ "BIZ.7" ])
+      expect(ids(described_class.stale_who(intro))).to eq([ "BIZ.7" ])
+    end
+
+
+    it "flags a meta ⚖️ that no open ⚖️ residual backs — the decider axis, not just 🤖" do
+      expect(described_class.stale_who(glyphs)).to include(a_string_matching(/ARCH\.80.*claims ⚖/))
+    end
+
+    it "flags a meta 👤 that no open 👤 residual backs" do
+      expect(described_class.stale_who(glyphs)).to include(a_string_matching(/ARCH\.81.*claims 👤/))
+    end
+
+    it "treats an open ⚖️ residual as backing a meta 👤, since ⚖️ ⊂ 👤" do
+      subset = <<~MD
+        ## §04 · Backend
+        #### ARCH.82 — meta 👤 over an open ⚖️ residual
+        - **P2** · 👤 · ⚪ · → `04_01 §10`
+        - **Стан:** x.
+        - [ ] ⚖️ присуд
+      MD
+      expect(described_class.stale_who(subset)).to be_empty
+    end
+
+    it "does NOT treat an open 👤 residual as backing a meta ⚖️ — the subset runs one way" do
+      inverted = <<~MD
+        ## §04 · Backend
+        #### ARCH.83 — meta ⚖️ over an open 👤 residual
+        - **P2** · ⚖️ · ⚪ · → `04_01 §10`
+        - **Стан:** x.
+        - [ ] 👤 зустріч із юристом
+      MD
+      expect(described_class.stale_who(inverted)).to include(a_string_matching(/ARCH\.83.*claims ⚖/))
+    end
+
+    # --- the EMPTY SET [DOC-T.55] --------------------------------------------------
+    # The first cut exited on `open.empty?`, so a finished item kept a full WHO axis over
+    # nothing at all — the "a gate over an empty set is green forever" shape. The example
+    # that used to sit here («stays silent on an item with no open residuals») pinned that
+    # hole AS the intended behaviour, i.e. it cemented the bug rather than covering it.
+    it "flags a non-empty meta WHO over ZERO open residuals — the union is empty" do
+      none = <<~MD
+        ## §07 · Бізнес
+        #### BIZ.8 — nothing open, WHO axis still full
+        - **P1** · 🤖+👤 · 🟢 · → `07_01 §8`
+        - **Стан:** все закрито.
+      MD
+      expect(described_class.stale_who(none)).to include(a_string_matching(/BIZ\.8.*ZERO open residuals/))
+    end
+
+    it "exempts a 🌿 far-horizon item with nothing open — its WHO names a FUTURE executor" do
+      far = <<~MD
+        ## §07 · Бізнес
+        #### BIZ.10 — far-horizon, no checkbox by construction
+        - **P3** · 🤖 · 🌿 · → `07_01 §8`
+        - **Стан:** post-TRL, робота ще попереду.
+      MD
+      expect(described_class.stale_who(far)).to be_empty
+    end
+
+    it "exempts a ⚫ vacuous item with nothing open — it stays as a closed-canon note" do
+      vacuous = <<~MD
+        ## §07 · Бізнес
+        #### BIZ.11 — premise refuted, item kept in place as a note
+        - **P3** · ⚖️ · ⚫ · → `07_01 §8`
+        - **Стан:** нема-що-завершувати.
+      MD
+      expect(described_class.stale_who(vacuous)).to be_empty
+    end
+
+    it "does NOT exempt a 🔗 item with nothing open — a blocked item must name its trigger" do
+      blocked = <<~MD
+        ## §07 · Бізнес
+        #### BIZ.12 — blocked, but nothing open and no trigger residual
+        - **P2** · 👤 · 🔗 · → `07_01 §8`
+        - **Стан:** чекає.
+      MD
+      expect(described_class.stale_who(blocked)).to include(a_string_matching(/BIZ\.12.*ZERO open residuals/))
+    end
+
+    it "collects items at all (positive scope proof — an empty scope reads as clean)" do
+      expect(described_class.stale_who(md).size + described_class.stale_who(glyphs).size).to eq(3)
     end
   end
 
   describe ".understated_who" do
-    # Reverse axis of .stale_machine_who [DOC-T.54]: that guard catches meta
+    # Reverse axis of .stale_who [DOC-T.54]: that guard catches meta
     # OVERSTATING (claims 🤖 nobody backs); this one catches meta UNDERSTATING — open
     # work the meta-line never declares. The meta-line IS the scan layer, so a pure-👤
     # meta over a body full of 🤖 residuals reads as "nothing here for the machine".

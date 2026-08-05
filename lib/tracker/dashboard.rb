@@ -512,22 +512,45 @@ module Tracker
       end
     end
 
-    # --- stale machine-WHO guard [DOC-T.52, 2026-07-26] ---
+    # --- stale WHO guard — meta OVERSTATES its open work ---
+    # [DOC-T.52 2026-07-26 (🤖 only) · DOC-T.55 2026-08-05 (all three glyphs + empty set)]
     # The item-form standard (00_07 intro) defines the meta-line WHO as the UNION of
     # every OPEN residual's WHO — «закрита половина туди не входить». So once an
-    # item's machine half ships, `🤖` must LEAVE its meta-line. It silently doesn't:
+    # item's half ships, that glyph must LEAVE its meta-line. It silently doesn't:
     # `meta_form_violations` validates only the WHO token's SHAPE, never whether it
-    # still matches the open checkboxes, so a shipped machine-half keeps advertising
-    # free 🤖 work that no longer exists — the second-commonest tracker drift after
-    # STAGE 🟡→🟢, and the one that makes a "what's machine-doable now" scan lie.
-    # Flags a registry item whose meta-line claims 🤖 while NO open `- [ ]` residual
-    # carries it. Two exemptions hold false positives at zero (both empirically
-    # derived — each was a real hit that turned out honest):
+    # still matches the open checkboxes, so a shipped half keeps advertising
+    # free work that no longer exists — the second-commonest tracker drift after
+    # STAGE 🟡→🟢, and the one that makes a "what's doable now" scan lie.
+    #
+    # 🔴 The first cut guarded ONE glyph of a three-member enum and exited on the EMPTY
+    # SET — two holes its green runs could never show (DOC-T.55). Both are the same
+    # disease as the sibling's: a check that covers one member of an enum reads, from its
+    # name and its green run, exactly like one that covers all of them; and a gate whose
+    # subject can be empty is green forever. So the guard now ranges over all three
+    # executors AND over items with nothing open at all.
+    #
+    # ⚠️ Coverage is ASYMMETRIC because `⚖️ ⊂ 👤` (00_07 §розмітка), exactly as
+    # `understated_who` reads it in the mirror direction: a meta `👤` is backed by an open
+    # `👤` OR `⚖️`, while a meta `⚖️` needs an open `⚖️` — the subset runs one way. Measured
+    # on the live corpus: dropping the subset rule turns 4 honest items (HW.36 · E.59 ·
+    # UI.1 · INF.22) into false positives, i.e. the naive symmetrization is WRONG, not
+    # merely noisy.
+    #
+    # Two exemptions hold false positives at zero (both empirically derived — each was a
+    # real hit that turned out honest). Note they are **item-wide by construction, not by
+    # oversight**: an UNDETERMINED executor can back ANY meta glyph, so it cannot be
+    # narrowed per-glyph.
     #   • a 🔗-led residual — delegated/gated into another item, whose eventual WHO
-    #     lives THERE, so the meta 🤖 is an honest forward-claim (BIZ.14);
+    #     lives THERE, so the meta glyph is an honest forward-claim (BIZ.14);
     #   • a residual carrying NO explicit WHO glyph (e.g. a 🌿-led far-horizon line)
-    #     — WHO is simply undeclared, so "machine half is done" does not follow
+    #     — WHO is simply undeclared, so "that half is done" does not follow
     #     (ARCH.18 / E.31 — both genuinely machine work, just far-horizon).
+    # 🔴 CEILING, measured 2026-08-05 and materially WIDER after the three-glyph flip:
+    # these exemptions silence 27 of 29 literal hits (they silenced far fewer while the
+    # guard read one glyph). That is the honest price of "undetermined backs anything" —
+    # but it means a green run here is evidence about items whose residuals ALL declare an
+    # executor, and about nothing else. Narrowing it needs a canon decision on what a
+    # 🔗/🌿 residual may forward-claim, not a code change.
     # Pure (caller may pass markdown).
     # `\Z` (not `\z`) — each_line keeps the trailing "\n", which `\z` never matches.
     OPEN_RESIDUAL = /\A-\s+\[ \]\s*(.+)\Z/
@@ -538,12 +561,23 @@ module Tracker
     # directions at once (proven on HW.9, 2026-07-26). [DOC-T.54]
     # 🔴 CEILING both WHO gates share: the executor is read ONLY from the leading token, so a
     # residual with a DECORATIVE lead (`- [ ] ✨ 🤖 …`, `- [ ] 🧹 🤖 …`) is invisible to both —
-    # `understated_who` will not flag its machine work, and `stale_machine_who` can FALSELY flag
+    # `understated_who` will not flag its machine work, and `stale_who` can FALSELY flag
     # the item as advertising 🤖 nobody backs. Widening the anchor to skip a non-WHO prefix would
     # reopen the prose-mention hole this replaced, so the ceiling is declared, not papered over.
     WHO_LEAD      = /\A(?:🤖|👤|⚖️)(?:\+(?:🤖|👤|⚖️))*/
+    EXECUTOR_GLYPHS = %w[🤖 👤 ⚖].freeze
+    # STAGEs under which a non-empty meta-WHO over ZERO open residuals is HONEST — the
+    # WHO names a future executor rather than the union of open work. Both are read off
+    # the 00_07 §розмітка legend, and both are what the corpus actually carries:
+    #   🌿 far-horizon — the work is past the horizon, so it has no checkbox yet;
+    #   ⚫ vacuous — «нема-що-завершувати», the item stays in place as a closed-canon note.
+    # Deliberately NOT here: 🔗. A blocked item's trigger must be NAMED (legend: «🔗 без
+    # названої події = прихований ⚪»), so a 🔗 with nothing open is itself suspect. No
+    # corpus case exists for it either — inventing the exemption would be a rule from the
+    # head, and both existing exemptions were derived from real honest hits instead.
+    FORWARD_WHO_STAGES = %w[🌿 ⚫].freeze
 
-    def self.stale_machine_who(markdown = File.read(DEFAULT_PATH))
+    def self.stale_who(markdown = File.read(DEFAULT_PATH))
       in_registry = false
       in_fence = false
       current = nil
@@ -561,7 +595,7 @@ module Tracker
         next unless in_registry
 
         if (m = line.match(ITEM_HEAD))
-          current = { id: m[1], machine: false, seen_meta: false, open: [] }
+          current = { id: m[1], who: nil, stage: nil, seen_meta: false, open: [] }
           items << current
           next
         end
@@ -569,29 +603,48 @@ module Tracker
 
         if !current[:seen_meta] && line.match?(/\*\*P[0-3]\*\*/)
           current[:seen_meta] = true
-          # WHO is the 2nd `·`-separated meta segment (shape already HARD-enforced)
-          current[:machine] = line.split("·")[1].to_s.include?("🤖")
+          # WHO / STAGE are the 2nd / 3rd `·`-separated meta segments (shape HARD-enforced)
+          current[:who]   = line.split("·")[1].to_s
+          current[:stage] = line.split("·")[2].to_s
         elsif (r = line.match(OPEN_RESIDUAL))
           current[:open] << r[1]
         end
       end
 
-      items.select do |it|
-        it[:machine] && !it[:open].empty? &&
-          # LEADING token, never `include?` over the line: a 👤 residual that CITES closed
-          # machine work ("§5.3 вже 🤖-verified") would otherwise read as an open 🤖 and
-          # keep this gate silent about a meta 🤖 nobody backs — proven on HW.9, where it
-          # masked exactly that drift being introduced. Mirrors `understated_who`. [DOC-T.54]
-          it[:open].none? { |b| b[WHO_LEAD].to_s.include?("🤖") } &&
-          it[:open].none? { |b| b.lstrip.start_with?("🔗") } &&
-          it[:open].all? { |b| b.match?(WHO_GLYPH) }
-      end.map { |it| it[:id] }
+      items.filter_map do |it|
+        next unless it[:who]
+
+        # ZERO open residuals: the union is EMPTY, so any WHO overstates it. The standard
+        # has no empty WHO token (`WHO_CANON`), so the honest resolutions are «finished →
+        # §🗄️ Архів» or «the open work is missing — write the residual», never a blank axis.
+        if it[:open].empty?
+          next if FORWARD_WHO_STAGES.any? { |g| it[:stage].include?(g) }
+          next "#{it[:id]}: meta WHO «#{it[:who].strip}» over ZERO open residuals " \
+               "(done → §🗄️, or the open work is unwritten)"
+        end
+
+        # An UNDETERMINED executor backs any glyph → item-wide exemption (see ceiling above).
+        next if it[:open].any? { |b| b.lstrip.start_with?("🔗") || !b.match?(WHO_GLYPH) }
+
+        # LEADING token, never `include?` over the line: a 👤 residual that CITES closed
+        # machine work ("§5.3 вже 🤖-verified") would otherwise read as an open 🤖 and
+        # keep this gate silent about a meta 🤖 nobody backs — proven on HW.9, where it
+        # masked exactly that drift being introduced. Mirrors `understated_who`. [DOC-T.54]
+        leads = it[:open].map { |b| b[WHO_LEAD].to_s }
+        stale = EXECUTOR_GLYPHS.select do |g|
+          it[:who].include?(g) &&
+            leads.none? { |lead| lead.include?(g) || (g == "👤" && lead.include?("⚖")) }
+        end
+        next if stale.empty?
+
+        "#{it[:id]}: meta WHO «#{it[:who].strip}» claims #{stale.join(' ')} — no open residual backs it"
+      end
     end
 
     # --- meta-WHO understates its own open work [DOC-T.54 — reverse axis of DOC-T.52] ---
-    # `stale_machine_who` enforces ONE direction of a contract its own comment states as
+    # `stale_who` enforces ONE direction of a contract its own comment states as
     # a UNION ("meta-line WHO must stay the UNION of OPEN residuals"): it catches meta
-    # OVERSTATING (claims 🤖 nobody backs) and is structurally blind to meta
+    # OVERSTATING (claims an executor nobody backs) and is structurally blind to meta
     # UNDERSTATING — an open 🤖 residual the meta-line never mentions. That direction is
     # the costlier one: the meta-line IS the scan layer, so a pure-👤 meta reads as
     # "nothing here for the machine" while the body holds machine work (HW.1 — a P0
@@ -613,7 +666,9 @@ module Tracker
     # closed work being cited, not open machine work, and counting it makes the meta-line
     # advertise 🤖 nobody backs, i.e. manufactures the very DOC-T.52 drift this guards.
     # Pure (caller may pass markdown). Returns human-readable violation strings.
-    EXECUTOR_GLYPHS = %w[🤖 👤 ⚖].freeze
+    # `EXECUTOR_GLYPHS` is shared with the sibling above (one home) — note it spells ⚖
+    # WITHOUT the FE0F variation selector, which the `g == "👤"` / `g == "⚖"` comparisons
+    # in both guards depend on; swapping it for `EXECUTORS.keys` silently breaks ⚖️ ⊂ 👤.
 
     def self.understated_who(markdown = File.read(DEFAULT_PATH))
       in_registry = false

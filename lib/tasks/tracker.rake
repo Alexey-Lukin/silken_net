@@ -41,7 +41,7 @@ namespace :tracker do
     metaform = Tracker::Dashboard.meta_form_violations(md)
     cluster  = Tracker::Dashboard.cluster_marker_violations(md)
     bench    = Tracker::Dashboard.bench_tag_violations(md)
-    stalewho = Tracker::Dashboard.stale_machine_who(md)
+    stalewho = Tracker::Dashboard.stale_who(md)
     thinwho  = Tracker::Dashboard.understated_who(md)
 
     puts "00_07 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(items).size} actionable)"
@@ -146,15 +146,21 @@ namespace :tracker do
       puts "  bench-tag violations (#{bench.size}) — tag↔registry asymmetry (RUNBOOK §6):"
       bench.each { |b| puts "    - #{b}" }
     end
-    # [DOC-T.52] stale machine-WHO — HARD: meta-line WHO must stay the UNION of OPEN
-    # residuals, so a shipped machine-half drops its 🤖. `meta_form_violations` only checks
+    # [DOC-T.52 · widened DOC-T.55] stale WHO — HARD: meta-line WHO must stay the UNION of
+    # OPEN residuals, so a shipped half drops its glyph. `meta_form_violations` only checks
     # the token's SHAPE, never whether it still matches the checkboxes — that blind spot let
-    # 3 items advertise free 🤖 work that no longer existed, making a "what's machine-doable"
-    # scan lie. Exempts 🔗-led (delegated elsewhere) and WHO-less (🌿-led) residuals. (00_06 §3.)
+    # 3 items advertise free 🤖 work that no longer existed, making a "what's doable" scan
+    # lie. DOC-T.55 closed the two holes the first cut left: it read ONE glyph of a
+    # three-member enum (a meta ⚖️ nobody awaits — the costliest executor to summon —
+    # passed forever), and it exited on the EMPTY SET, so a finished item kept a full WHO
+    # axis with nothing open. Coverage is asymmetric: ⚖️ ⊂ 👤, so a meta 👤 is backed by an
+    # open 👤 OR ⚖️, never the reverse. Exempts 🔗-led (delegated elsewhere) and WHO-less
+    # (🌿-led) residuals — item-wide, since an undetermined executor backs any glyph; and
+    # exempts 🌿/⚫ items with nothing open, where WHO names a FUTURE executor. (00_06 §3.)
     if stalewho.empty?
-      puts "  machine-WHO:      every meta 🤖 backed by an open 🤖 residual ✓"
+      puts "  stale WHO:        every meta glyph backed by an open residual carrying it ✓"
     else
-      puts "  stale machine-WHO (#{stalewho.size}) — meta claims 🤖 but no open 🤖 residual (machine half shipped?):"
+      puts "  stale WHO (#{stalewho.size}) — meta-line claims an executor no open residual backs:"
       stalewho.each { |s| puts "    - #{s}" }
     end
     # [DOC-T.54] understated WHO — HARD: the REVERSE axis of DOC-T.52. That guard catches
