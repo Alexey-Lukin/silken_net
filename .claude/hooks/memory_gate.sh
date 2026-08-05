@@ -61,6 +61,7 @@ IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-23836}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
+ONEWAY_MIN=${MEMORY_GATE_ONEWAY_MIN:-2}          # homes citing a source that ignores them, before it is worth a router
 
 # --- The floor. Every other threshold here is a CEILING, and that asymmetry was
 # a hole the whole gate shared: growth was policed from three directions while
@@ -537,6 +538,53 @@ index_check() {
 # only in --audit was a real hole, proven by probe: an Edit that severs a
 # journal's last string is SILENT at the moment of action — and rewriting a rule
 # file is exactly when that happens, which is the operation this gate exists for.
+# --- One-way provenance. A rule-home cites a journal or a project file as the
+# instance that produced it, and the source carries nothing back. The reader of
+# the SOURCE therefore never learns the rule already has an address, so the next
+# consolidation pass re-derives the whole class from zero — which is exactly how
+# two consecutive waves each rediscovered the same classes, and why phase-2
+# numbers kept rising instead of converging.
+#
+# Deliberately OUTSIDE --audit, for the same reason --genre is: the live count
+# runs to dozens, so folding it into the battery would make EXIT 1 permanent and
+# train the reader to skim the one stance that must stay loud. This is a
+# WORKLIST, not a verdict — same stance as GENRE.
+#
+# Grouped by TARGET rather than by source, because the router is written into
+# the target: one edit there can answer several homes at once. And the unit is
+# COVERAGE (how many homes cite a file that ignores them), never bytes — adding
+# a router to a project_* source GROWS it, so a byte metric would score the
+# correct fix as a regression. That inversion is the whole reason this axis went
+# unmeasured: every other threshold in this file is a size.
+oneway_check() {
+  command -v ruby >/dev/null 2>&1 || return 0
+  ruby - "$MEM_DIR" "$ONEWAY_MIN" <<'RUBY'
+dir, min = ARGV[0], ARGV[1].to_i
+files = Dir["#{dir}/*.md"].map { |p| File.basename(p, ".md") } - ["MEMORY"]
+present = files.each_with_object({}) { |f, h| h[f] = true }
+links = files.each_with_object({}) do |f, h|
+  h[f] = File.read(File.join(dir, "#{f}.md"))
+          .scan(/\[\[([^\]\n]+)\]\]/).flatten.map(&:strip)
+          .select { |t| present[t] }.uniq
+end
+by_target = Hash.new { |h, k| h[k] = [] }
+files.each do |home|
+  next unless home.start_with?("feedback_", "reference_")
+  links[home].each do |src|
+    next unless src.start_with?("log_", "project_")
+    next if links[src].include?(home)   # reciprocated — not this class
+    by_target[src] << home
+  end
+end
+by_target.sort_by { |t, homes| [-homes.size, t] }.each do |t, homes|
+  next if homes.size < min
+  puts format("ONEWAY %-40s cited as provenance by %d home(s) it never points back at: %s",
+              t, homes.size, homes.join(", "))
+end
+RUBY
+  return 0
+}
+
 journals_reachable() {
   local f s
   for f in "$MEM_DIR"/log_*.md; do
@@ -1074,6 +1122,25 @@ selftest() {
   if printf '%s' "$out" | grep -q 'OVERRIDE'; then pass=$((pass+1)); printf '  ok    %s\n' "env-overridden thresholds are declared, not silent"
   else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "env-overridden thresholds are declared, not silent" "$out"; fi
 
+  # 21. ONEWAY fires on the fixture's own provenance string: feedback_alpha
+  #     cites [[log_gamma]] and gamma carries nothing back. Asserted at MIN=1,
+  #     because the live default of 2 exists to rank a worklist, not to define
+  #     the class — a threshold tuned for triage must not be able to hide the
+  #     detector's only proof that it works.
+  _st_build "$d"
+  out=$(env MEMORY_GATE_DIR="$d" MEMORY_GATE_ONEWAY_MIN=1 bash "$SELF" --oneway 2>&1)
+  if printf '%s' "$out" | grep -q 'ONEWAY log_gamma'; then pass=$((pass+1)); printf '  ok    %s\n' "one-way provenance string is detected"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "one-way provenance string is detected" "$out"; fi
+
+  # 22. And the mirror, which is the half that proves it measures RECIPROCITY
+  #     rather than merely the presence of a link: give gamma a string back and
+  #     the same pair must go quiet. Without this case the detector would pass
+  #     just as well if it flagged every citation.
+  printf '\nRule for this axis: [[feedback_alpha]]\n' >>"$d/log_gamma.md"
+  out=$(env MEMORY_GATE_DIR="$d" MEMORY_GATE_ONEWAY_MIN=1 bash "$SELF" --oneway 2>&1)
+  if printf '%s' "$out" | grep -q 'ONEWAY log_gamma'; then fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "a reciprocated pair stops being reported" "$out"
+  else pass=$((pass+1)); printf '  ok    %s\n' "a reciprocated pair stops being reported"; fi
+
   rm -rf "$root"
   printf 'selftest: %d passed, %d failed\n' "$pass" "$fail"
   [ "$fail" -eq 0 ]
@@ -1088,6 +1155,11 @@ case "${1:-}" in
              skill_item_check
              for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; done; } )
     printf '%s\n' "${out:-OK — index within ratchet, corpus intact, no chronicle in a rule file}"
+    [ -z "$out" ]
+    ;;
+  --oneway)
+    out=$(oneway_check)
+    printf '%s\n' "${out:-OK — no source is cited by ${ONEWAY_MIN}+ homes without pointing back}"
     [ -z "$out" ]
     ;;
   --genre)
