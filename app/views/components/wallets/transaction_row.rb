@@ -15,7 +15,11 @@ module Wallets
             @tx.token_type
           end
         end
-        td(class: "p-4 text-white font-bold") { "#{@tx.amount} SCC" }
+        # Тікер походить від `token_type`, а не зашитий: у леджері гаманця
+        # законно лежать і SFC-транзакції (страхова виплата бере тип із контракту
+        # — `insurance_payout_worker`), і доти вони підписувались «SCC». Мапа
+        # locale-ІНВАРІАНТНА, тож broadcast-payload лишається без прози.
+        td(class: "p-4 text-white font-bold") { "#{@tx.amount} #{@tx.ticker}" }
         td(class: "p-4") do
           span(class: tokens("text-micro uppercase tracking-widest", status_color)) { @tx.status }
         end

@@ -4,24 +4,24 @@
 require "rails_helper"
 
 RSpec.describe Wallets::TransactionRow do
+  # Реальний НЕЗБЕРЕЖЕНИЙ запис, а не `OpenStruct`. Попередній мок брехав двічі, і
+  # обидві брехні — того класу, що описує `04_06 §B.2` BP #14 (фікстура оголошує
+  # світ, у якому дефект неможливий): `amount` подавався РЯДКОМ, тоді як колонка
+  # `numeric(24,6)` віддає BigDecimal, а `token_type` приймав `"mystery_coin"` —
+  # значення, на якому справжній enum кидає `ArgumentError`. Саме тому «0.005»
+  # пінилось БЕЗ одиниці, і зашитий тікер «SCC» прожив непоміченим при трьох
+  # типах токена. Голий `.new` замість фабрики свідомо: фабрика тягне
+  # `wallet → tree → cluster → organization`, чого рядку таблиці не треба.
   def mock_tx(token_type: "carbon_coin", status: "confirmed", amount: "0.005",
-              tx_hash: "0xabcdef1234567890abcdef", explorer_url: "https://polygonscan.com/tx/0x123")
-    tx = OpenStruct.new(
-      id: 42,
+              tx_hash: "0xabcdef1234567890abcdef")
+    tx = BlockchainTransaction.new(
       token_type: token_type,
       status: status,
       amount: amount,
       tx_hash: tx_hash,
-      explorer_url: explorer_url,
       created_at: Time.current
     )
-    # Enable dom_id support for OpenStruct mock
-    def tx.model_name
-      ActiveModel::Name.new(BlockchainTransaction)
-    end
-    def tx.to_key
-      [ id ]
-    end
+    tx.id = 42
     tx
   end
 
@@ -38,8 +38,12 @@ RSpec.describe Wallets::TransactionRow do
       expect(html).to include("text-token-forest")
     end
 
-    it "renders unknown token type with zinc fallback" do
-      html = render_component(tx: mock_tx(token_type: "mystery_coin"))
+    # `cusd` — третє РЕАЛЬНЕ значення enum'а, для якого стилю не заведено; доти тут
+    # стояв вигаданий `"mystery_coin"`, на якому справжній enum кидає `ArgumentError`.
+    # Тобто фолбек перевірявся входом, неможливим у проді, а єдиний вхід, яким він
+    # досяжний насправді, не перевірявся ніяк.
+    it "renders cusd — the enum value with no dedicated style — with the zinc fallback" do
+      html = render_component(tx: mock_tx(token_type: "cusd"))
       expect(html).to include("bg-zinc-900")
       expect(html).to include("text-zinc-400")
     end
@@ -97,9 +101,11 @@ RSpec.describe Wallets::TransactionRow do
       expect(html).to include("0xabcdef12345678…")
     end
 
-    it "links to explorer URL" do
-      html = render_component(tx: mock_tx(explorer_url: "https://polygonscan.com/tx/0x123"))
-      expect(html).to include("https://polygonscan.com/tx/0x123")
+    # URL більше не ІН'ЄКТУЄТЬСЯ у фікстуру — його виводить сама модель із `tx_hash`
+    # і мережі. Ін'єкція означала, що приклад пінив власну константу, а не поведінку.
+    it "links to the explorer URL derived by the model" do
+      html = render_component(tx: mock_tx(tx_hash: "0xabc123"))
+      expect(html).to include("https://polygonscan.com/tx/0xabc123")
     end
 
     it "shows PENDING_BLOCK when hash is nil" do
@@ -125,8 +131,18 @@ RSpec.describe Wallets::TransactionRow do
       expect(html).to include("carbon_coin")
     end
 
-    it "displays the amount" do
-      expect(html).to include("0.005")
+    it "displays the amount with the ticker of its own token type" do
+      expect(html).to include("0.005 SCC")
+    end
+
+    # Регресійний гард на живий дефект: тікер був ЗАШИТИЙ як «SCC» при трьох
+    # значеннях `token_type`, тож страхова виплата в лісовій монеті (тип береться
+    # з контракту — `insurance_payout_worker.rb`) підписувалась чужою монетою.
+    # Негативна половина несуча: без неї пін проходив би й на зашитому рядку.
+    it "does not sign a forest_coin transaction with the carbon ticker" do
+      forest = render_component(tx: mock_tx(token_type: "forest_coin", amount: "5"))
+      expect(forest).to include("5.0 SFC")
+      expect(forest).not_to include("SCC")
     end
 
     it "uses text-micro for status instead of arbitrary sizes" do

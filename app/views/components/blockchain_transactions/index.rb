@@ -71,7 +71,7 @@ module BlockchainTransactions
         td(class: "p-4") do
           span(class: tokens("px-2 py-0.5 text-mini font-bold uppercase border", token_type_styles(tx.token_type))) { tx.token_type }
         end
-        td(class: "p-4 text-white font-bold") { "#{tx.amount} SCC" }
+        td(class: "p-4 text-white font-bold") { "#{tx.amount} #{tx.ticker}" }
         td(class: "p-4") do
           render Views::Shared::UI::StatusBadge.new(status: tx.status)
         end

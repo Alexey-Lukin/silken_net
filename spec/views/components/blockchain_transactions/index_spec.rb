@@ -26,7 +26,14 @@ RSpec.describe BlockchainTransactions::Index do
       explorer_url: explorer_url,
       blockchain_network: blockchain_network,
       wallet: wallet,
-      created_at: Time.current
+      created_at: Time.current,
+      # Тікер ДЕЛЕГУЄТЬСЯ реальній моделі, а не переписується тут: другий вивід тієї
+      # самої мапи означав би, що друкарська помилка в одному з них зелена назавжди
+      # (`04_04 §12.14`). ⚠️ Стеля: решта цього мока лишається `OpenStruct` із
+      # вигаданими типами (`amount` рядком; `blockchain_network: "polygon"` — значення,
+      # яке `validates inclusion: %w[evm solana celo]` відкидає). Повний перехід на
+      # реальний запис зроблено в `wallets/transaction_row_spec.rb`; тут борг → `00_07` TEST.12.
+      ticker: BlockchainTransaction.new(token_type: token_type).ticker
     )
     tx.define_singleton_method(:model_name) { ActiveModel::Name.new(BlockchainTransaction) }
     tx.define_singleton_method(:to_key) { [ id ] }
@@ -102,8 +109,11 @@ RSpec.describe BlockchainTransactions::Index do
       expect(rendered).to include("text-token-forest")
     end
 
-    it "renders unknown token with zinc style" do
-      txs = [ mock_transaction(token_type: "other_token") ]
+    # `cusd` — третє РЕАЛЬНЕ значення enum'а, якому стилю не заведено. Доти тут
+    # стояв вигаданий `"other_token"`: фолбек перевірявся входом, неможливим у
+    # проді, а єдиний вхід, яким він досяжний насправді, — ніяк.
+    it "renders cusd — the styleless enum value — with the zinc fallback" do
+      txs = [ mock_transaction(token_type: "cusd") ]
       rendered = render_component(transactions: txs, pagy: pagy)
       expect(rendered).to include("text-zinc-400")
     end

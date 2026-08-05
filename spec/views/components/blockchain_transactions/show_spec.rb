@@ -40,7 +40,11 @@ RSpec.describe BlockchainTransactions::Show do
       updated_at: 30.minutes.ago,
       notes: notes,
       error_message: error_message,
-      wallet: wallet
+      wallet: wallet,
+      # Тікер ДЕЛЕГУЄТЬСЯ реальній моделі (одна деривація на застосунок, `04_04 §12.14`).
+      # ⚠️ Стеля та сама, що в сусідньому `index_spec`: решта мока — `OpenStruct` із
+      # вигаданими типами; борг на реальний запис → `00_07` TEST.12.
+      ticker: BlockchainTransaction.new(token_type: token_type).ticker
     )
     tx.define_singleton_method(:model_name) { ActiveModel::Name.new(BlockchainTransaction) }
     tx.define_singleton_method(:to_key) { [ id ] }
@@ -114,10 +118,11 @@ RSpec.describe BlockchainTransactions::Show do
       expect(rendered).to include("text-token-forest")
     end
 
-    it "renders unknown token with zinc style" do
-      tx = mock_transaction(token_type: "unknown_coin")
+    # Реальне `cusd` замість вигаданого `"unknown_coin"` — див. сусідній `index_spec`.
+    it "renders cusd — the styleless enum value — with the zinc fallback" do
+      tx = mock_transaction(token_type: "cusd")
       rendered = render_component(transaction: tx)
-      expect(rendered).to include("unknown_coin")
+      expect(rendered).to include("cusd")
       expect(rendered).to include("text-zinc-400")
     end
   end

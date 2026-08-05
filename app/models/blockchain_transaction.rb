@@ -70,6 +70,27 @@ class BlockchainTransaction < ApplicationRecord
   # --- ТИПИ ТА СТАТУСИ (The Web3 State Machine) ---
   enum :token_type, { carbon_coin: 0, forest_coin: 1, cusd: 2 }, prefix: true
 
+  # Тікер, яким сума транзакції підписується в UI. Дім — заморожена Ruby-мапа, а
+  # НЕ локаль-файл: символ однаковий в усіх мовах, тож YAML змусив би тримати по
+  # копії на кожну локаль каталогу плюс стільки ж зобовʼязань парності, і кожну з
+  # них перекладач може «виправити» (`04_04 §12.14`, той самий клас, що емодзі-мапи).
+  # ⚠️ ВЕРХНІЙ дім символу — не тут, а в Solidity: `contracts/SilkenCarbonCoin.sol`
+  # (`ERC20(…, "SCC")`) і `contracts/SilkenForestCoin.sol` (`ERC20(…, "SFC")`), тож ця
+  # мапа — ДРУГИЙ дім чужого значення; розходження червонить
+  # `spec/quality/token_ticker_parity_spec.rb`. `cusd` контракту в цьому репо не має
+  # (зовнішній Celo-токен), тому парність його не стереже — і не може.
+  TOKEN_TICKERS = {
+    "carbon_coin" => "SCC",
+    "forest_coin" => "SFC",
+    "cusd" => "cUSD"
+  }.freeze
+
+  # Fail-open на сирому значенні — дзеркало `StatusBadge.label`: новий тип токена
+  # мусить рендеритись рівно, ще до того як тікер доїде в мапу.
+  def ticker
+    TOKEN_TICKERS.fetch(token_type.to_s, token_type.to_s.upcase)
+  end
+
   # [СИНХРОНІЗОВАНО]: Додано статус :sent для підтримки асинхронного Fire-and-Forget
   enum :status, {
     pending: 0,        # Очікує в черзі на обробку
