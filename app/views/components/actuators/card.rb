@@ -3,9 +3,14 @@
 
 module Actuators
   class Card < ApplicationComponent
+    # ⚠️ Дані приходять готовими — жодного запиту в конструкторі ([`04_04 §6.4`],
+    # CLAUDE §6). Доти тут стояв фолбек `@actuator.commands.last`, і він давав
+    # РІЗНУ «останню команду» на двох сторінках: на `index` асоціація приходить
+    # преloaded, тож `.last` брав останній елемент у порядку, яким її повернула
+    # БД, а на `show` преload'а немає, тож летів окремий SQL з `ORDER BY id DESC`.
     def initialize(actuator:, last_command: nil)
       @actuator = actuator
-      @last_command = last_command || @actuator.commands.last
+      @last_command = last_command
     end
 
     def view_template
@@ -36,7 +41,7 @@ module Actuators
       div(class: "space-y-2 mb-6 font-mono text-tiny uppercase tracking-tighter") do
         div(class: "flex justify-between border-b border-gaia-border pb-1") do
           span(class: "text-gaia-text-muted") { t(".physical_state") }
-          span(class: "text-gaia-primary") { t("ui.status.#{@actuator.state}", default: @actuator.state) }
+          span(class: "text-gaia-primary") { Views::Shared::UI::StatusBadge.label(@actuator.state) }
         end
         div(class: "flex justify-between border-b border-gaia-border pb-1") do
           span(class: "text-gaia-text-muted") { t(".endpoint") }

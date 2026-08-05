@@ -14,7 +14,6 @@ lt:
     skeleton:
       loading: Kraunama…
     status:
-      acknowledged: vykdoma
       active: aktyvus
       aria_label: 'Būsena: %{status}'
       breached: pažeista
@@ -25,27 +24,21 @@ lt:
       dormant: neaktyvus
       draft: juodraštis
       endangered: nykstantis
-      expired: pasibaigęs
       extinct: išnykęs
       failed: nepavyko
       faulty: sugedusi
       fulfilled: įvykdyta
       idle: laukimo režimas
-      ignored: ignoruota
-      issued: išduota
       maintenance: priežiūra
       maintenance_needed: reikalinga priežiūra
       manual_review: rankinis peržiūra
       mythical: mitinis
       offline: neprisijungęs
-      paid: apmokėta
       pending: laukiama
       processing: apdorojama
       removed: pašalinta
-      resolved: išspręsta
       sent: išsiųsta
       thriving: klestintis
-      triggered: suaktyvinta
       unknown: nežinoma
       updating: atnaujinama
     web3_address:

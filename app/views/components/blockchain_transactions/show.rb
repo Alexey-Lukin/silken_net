@@ -48,7 +48,7 @@ module BlockchainTransactions
             p(class: "text-tiny font-mono text-gray-600 mt-2") { t(".tx_id_line", id: @tx.id, at: @tx.created_at.strftime("%d.%m.%Y %H:%M:%S UTC")) }
           end
           div(class: "flex items-center gap-3") do
-            span(class: tokens("px-3 py-1 text-mini font-bold uppercase", status_badge_styles)) { @tx.status }
+            render Views::Shared::UI::StatusBadge.new(status: @tx.status)
             span(class: tokens("px-3 py-1 text-mini font-bold uppercase border", token_badge_styles)) { @tx.token_type }
           end
         end
@@ -67,7 +67,7 @@ module BlockchainTransactions
           tbody(class: "divide-y divide-emerald-900/30") do
             detail_row(t(".details.amount"), "#{@tx.amount} SCC")
             detail_row(t(".details.token_type"), @tx.token_type)
-            detail_row(t(".details.status"), @tx.status)
+            detail_row(t(".details.status"), Views::Shared::UI::StatusBadge.label(@tx.status))
             detail_row(t(".details.blockchain_network"), @tx.blockchain_network&.upcase || "—")
             detail_row(t(".details.locked_points"), @tx.locked_points || "—")
             detail_row(t(".details.to_address"), @tx.to_address)
@@ -130,21 +130,6 @@ module BlockchainTransactions
         else
           p(class: "text-compact text-gray-700 italic") { t(".wallet.no_wallet") }
         end
-      end
-    end
-
-    def status_badge_styles
-      case @tx.status
-      when "confirmed" then "bg-emerald-900 text-emerald-200"
-      when "processing", "sent" then "bg-status-warning text-status-warning-text"
-      when "pending" then "bg-zinc-800 text-zinc-300"
-      when "failed" then "bg-red-900 text-red-200"
-      # `manual_review` = double-spend guard (CLAUDE §6): tx_hash є, стан
-      # невідомий, кошти ЗАБЛОКОВАНІ. Він падав у `else` і діставав стиль
-      # ТЬМЯНІШИЙ за доброякісний `pending` — тобто стан, що найбільше
-      # потребує ока оператора, малювався як «тут нема на що дивитись».
-      when "manual_review" then "bg-status-warning text-status-warning-text animate-pulse"
-      else "bg-zinc-900 text-zinc-400"
       end
     end
 

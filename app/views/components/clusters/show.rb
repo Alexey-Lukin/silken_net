@@ -142,7 +142,7 @@ module Clusters
     def render_gateway_row(gw)
       tr(class: "hover:bg-emerald-950/10 transition-colors") do
         td(class: "p-4 text-emerald-400") { gw.uid }
-        td(class: "p-4 uppercase") { gw.state }
+        td(class: "p-4") { render Views::Shared::UI::StatusBadge.new(status: gw.state) }
         td(class: "p-4 text-gray-500") { "#{gw.latitude}, #{gw.longitude}" }
         td(class: "p-4 text-right text-gray-600") { gw.last_seen_at&.strftime("%H:%M:%S // %d.%m.%y") || "—" }
       end
@@ -180,7 +180,7 @@ module Clusters
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".contract.heading") }
         if @active_contract
           div(class: "space-y-3 font-mono text-tiny") do
-            contract_row(t(".contract.status"), @active_contract.status.upcase)
+            contract_row(t(".contract.status"), Views::Shared::UI::StatusBadge.label(@active_contract.status).upcase)
             contract_row(t(".contract.value"), @active_contract.total_value.to_s)
             contract_row(t(".contract.emitted"), @active_contract.emitted_tokens.to_s)
           end

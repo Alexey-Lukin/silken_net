@@ -64,38 +64,40 @@ RSpec.describe BlockchainTransactions::Show do
     end
   end
 
+  # Заголовок і рядок деталей ідуть через спільний `StatusBadge` / його
+  # `.label` (I18N.1, 2026-08-05) — приватна `status_badge_styles` знесена.
   describe "status badge" do
-    it "renders confirmed with emerald style" do
+    it "renders confirmed with the success token" do
       expect(html).to include("confirmed")
-      expect(html).to include("bg-emerald-900")
+      expect(html).to include("bg-status-success")
     end
 
-    it "renders processing with warning style" do
+    it "renders processing with the warning token" do
       tx = mock_transaction(status: "processing")
       rendered = render_component(transaction: tx)
       expect(rendered).to include("processing")
       expect(rendered).to include("bg-status-warning")
     end
 
-    it "renders sent with warning style" do
+    it "renders sent with the info token" do
       tx = mock_transaction(status: "sent")
       rendered = render_component(transaction: tx)
       expect(rendered).to include("sent")
-      expect(rendered).to include("bg-status-warning")
+      expect(rendered).to include("bg-status-info")
     end
 
-    it "renders pending with zinc style" do
+    it "renders pending with the warning token" do
       tx = mock_transaction(status: "pending")
       rendered = render_component(transaction: tx)
       expect(rendered).to include("pending")
-      expect(rendered).to include("bg-zinc-800")
+      expect(rendered).to include("bg-status-warning")
     end
 
-    it "renders failed with red style" do
+    it "renders failed with the danger token" do
       tx = mock_transaction(status: "failed")
       rendered = render_component(transaction: tx)
       expect(rendered).to include("failed")
-      expect(rendered).to include("bg-red-900")
+      expect(rendered).to include("bg-status-danger")
     end
   end
 
@@ -275,10 +277,16 @@ RSpec.describe BlockchainTransactions::Show do
   # Гейт на КЛАС: ітеруємо реальні стани AASM, а не власний перелік — саме
   # розрив між ними й пропустив `manual_review` у дефолтну гілку. Новий стан
   # у моделі зробить цей приклад червоним, а не тихо тьмяним.
+  # ⚠️ Після переходу на спільний бейдж фолбек — `StatusBadge::DEFAULT_STYLE`
+  # (`bg-status-neutral`), і він же легітимний стиль для `idle`/`draft`/`offline`/
+  # `cancelled`/`removed`. Для BlockchainTransaction це безпечно: ЖОДЕН із її
+  # шести станів не мапиться в neutral — тож попадання в цей клас і далі
+  # означає рівно «стан провалився у дефолт». Для родини, яка МАЄ neutral-стан,
+  # цей гейт довелось би будувати на іншому детекторі.
   describe "status style coverage" do
     it "gives every BlockchainTransaction state a style of its own" do
       fallback = render_component(transaction: mock_transaction(status: "__not_a_state__"))
-      fallback_style = fallback[/bg-zinc-900[^"]*/]
+      fallback_style = fallback[/bg-status-neutral[^"]*/]
       # Без цього приклад був би вакуумним: якби фолбек не знайшовся,
       # `not_to include(nil)` не перевіряло б нічого.
       expect(fallback_style).to be_present

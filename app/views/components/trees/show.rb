@@ -65,7 +65,7 @@ module Trees
         div do
           h2(class: "text-4xl font-extralight tracking-tighter text-gaia-text") { @tree.did }
           div(class: "flex items-center gap-3 mt-2") do
-            span(class: tokens("text-tiny px-2 py-0.5 border font-mono uppercase tracking-widest", status_color_class)) { @tree.status }
+            render Views::Shared::UI::StatusBadge.new(status: @tree.status)
             span(class: "text-tiny text-gaia-text-subtle font-mono") { t(".labels.family", name: @family&.name || t(".labels.family_unknown")) }
           end
           render_codex_citations
@@ -274,14 +274,6 @@ module Trees
           ),
           style: "stroke-dasharray: 552; stroke-dashoffset: #{offset};"
         )
-      end
-    end
-
-    def status_color_class
-      case @tree.status
-      when "active" then "border-gaia-primary text-gaia-primary"
-      when "dormant" then "border-status-warning text-status-warning-text"
-      else "border-red-800 text-red-800"
       end
     end
 

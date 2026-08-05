@@ -3,11 +3,15 @@
 
 module Actuators
   class Index < ApplicationComponent
-    def initialize(cluster:, actuators:, pagy:, active_count: 0)
+    # `last_commands` — мапа `actuator_id => ActuatorCommand`, зібрана
+    # контролером з уже преloaded асоціації (`04_04 §6.4`: компонент даних не
+    # добирає). Дефолт порожній, щоб картка чесно показала «немає команд».
+    def initialize(cluster:, actuators:, pagy:, active_count: 0, last_commands: {})
       @cluster = cluster
       @actuators = actuators
       @pagy = pagy
       @active_count = active_count
+      @last_commands = last_commands
     end
 
     def view_template
@@ -17,7 +21,7 @@ module Actuators
         div(class: "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6") do
           if @actuators.any?
             @actuators.each do |actuator|
-              render Actuators::Card.new(actuator: actuator)
+              render Actuators::Card.new(actuator: actuator, last_command: @last_commands[actuator.id])
             end
           else
             render_empty_state

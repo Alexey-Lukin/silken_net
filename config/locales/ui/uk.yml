@@ -14,38 +14,31 @@ uk:
     skeleton:
       loading: Завантаження…
     status:
-      acknowledged: виконується
-      active: активний
+      active: активність
       aria_label: 'Статус: %{status}'
       breached: порушено
       cancelled: скасовано
       confirmed: підтверджено
-      deceased: загинув
+      deceased: загибель
       destroyed: знищено
-      dormant: сплячий
+      dormant: спокій
       draft: чернетка
       endangered: під загрозою
-      expired: прострочено
       extinct: вимерлий
       failed: збій
-      faulty: несправний
+      faulty: несправність
       fulfilled: виконано
       idle: простій
-      ignored: проігноровано
-      issued: видано
       maintenance: обслуговування
       maintenance_needed: потрібне обслуговування
       manual_review: ручний розгляд
       mythical: міфічний
       offline: офлайн
-      paid: виплачено
       pending: очікування
       processing: обробка
       removed: видалено
-      resolved: локалізовано
       sent: надіслано
       thriving: процвітає
-      triggered: спрацьовано
       unknown: невідомо
       updating: оновлення
     web3_address:

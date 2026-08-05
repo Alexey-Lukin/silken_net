@@ -30,10 +30,17 @@ RSpec.describe Views::Shared::UI::StatusBadge do
       expect(html).to include("animate-pulse")
     end
 
-    it "maps acknowledged to active semantic token" do
-      html = render_component(status: "acknowledged")
-      expect(html).to include("bg-status-active")
-      expect(html).to include("text-status-active-text")
+    # 🔴 Несучий пін цієї осі: `active` означає ЗДОРОВʼЯ — так його вживають усі
+    # п'ять живих власників (Tree · Gateway · NaasContract · Actuator ·
+    # ParametricInsurance). Доти запис належав `EwsAlert`, де відкрита тривога =
+    # погано, і був `danger`; дротування бейджа пофарбувало б здорове дерево,
+    # живий шлюз і чинний контракт у червоне. Носія тієї колізії немає —
+    # `EwsAlert#status` як показане СЛОВО зник разом з `Alerts::Badge`.
+    it "maps active to the success token, never danger" do
+      html = render_component(status: "active")
+
+      expect(html).to include("bg-status-success")
+      expect(html).not_to include("bg-status-danger")
     end
   end
 
@@ -50,6 +57,17 @@ RSpec.describe Views::Shared::UI::StatusBadge do
     it "displays the status text" do
       html = render_component(status: "confirmed")
       expect(html).to include("confirmed")
+    end
+
+    # 🔴 Приклад вище НЕ здатен довести локалізацію: у базовій локалі мітка
+    # дорівнює власному токену (`confirmed: confirmed`), тож він зелений і тоді,
+    # коли компонент друкує сирий enum повз YAML. Доказ резолвінгу можливий лише
+    # в НЕ-базовій локалі, де слово відрізняється від ключа.
+    it "resolves the label through YAML, not by printing the raw enum" do
+      html = I18n.with_locale(:uk) { render_component(status: "confirmed") }
+
+      expect(html).to include("підтверджено")
+      expect(html).not_to include("confirmed")
     end
 
     it "accepts symbol statuses" do

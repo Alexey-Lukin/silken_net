@@ -70,7 +70,7 @@ module Codex
           td(class: "py-1 pr-2 text-gaia-text") { node.title_en }
           td(class: "py-1 pr-2 text-right") { node.attunement_elo.to_s }
           td(class: "py-1 pr-2 text-right text-gaia-text-muted") { node.match_count.to_s }
-          td(class: "py-1 text-right text-gaia-text-muted") { node.lifecycle_status.to_s }
+          td(class: "py-1 text-right text-gaia-text-muted") { Views::Shared::UI::StatusBadge.label(node.lifecycle_status) }
         end
       end
     end

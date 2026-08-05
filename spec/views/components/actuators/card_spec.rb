@@ -4,9 +4,16 @@
 require "rails_helper"
 
 RSpec.describe Actuators::Card do
+  # 🔴 `commands` НАВМИСНО вибухає. Доти фікстура віддавала `OpenStruct.new(last: nil)`
+  # — вона існувала рівно для того, щоб обслужити фолбек `@actuator.commands.last`
+  # у конструкторі, тобто описувала світ, у якому запит із Phlex-`initialize`
+  # виглядає нормою (`04_04 §6.4` це забороняє). Тепер картка дані ЛИШЕ приймає,
+  # і будь-яке повернення фолбека червонить кожен приклад цього файлу.
   def mock_actuator(id: 1, device_type: "valve", state: "active", gateway_uid: "QUEEN-01")
     gateway = OpenStruct.new(uid: gateway_uid)
-    commands = OpenStruct.new(last: nil)
+    commands = Object.new.tap do |o|
+      o.define_singleton_method(:last) { raise "Actuators::Card не сміє добирати команди — їх подає викликач" }
+    end
     OpenStruct.new(id: id, device_type: device_type, state: state, gateway: gateway, commands: commands)
   end
 
@@ -78,7 +85,7 @@ RSpec.describe Actuators::Card do
     it "resolves the physical state through the locale file, not the raw enum" do
       html = I18n.with_locale(:uk) { render_component(actuator: mock_actuator(state: "active")) }
 
-      expect(html).to include("активний")
+      expect(html).to include("активність")
       expect(html).not_to match(/>\s*active\s*</)
     end
 

@@ -38,18 +38,26 @@ RSpec.describe "operationally distinct labels stay distinct" do # rubocop:disabl
         scope: "actuators.command_status_badge",
         keys: -> { ActuatorCommand.statuses.keys }
       },
-      {
-        # `ui.status` — спільний bag на кілька моделей, тож повний набір там
-        # розрізняти НЕ зобов'язаний (різні доми можуть законно ділити слово).
-        # Але ці п'ять стоять поруч у житті однієї команди, і `StatusBadge` може
-        # показати будь-яку з них — отже між собою вони мусять різнитись.
-        # ⚠️ `confirmed` тут належить BlockchainTransaction («підтверджено
-        # мережею»), а не актуатору — саме тому переклади двох домів свідомо
-        # асиметричні, і саме тому цей набір заданий ЯВНО, а не з enum'а.
-        name: "спільний ui.status — життєвий цикл команди",
-        scope: "ui.status",
-        keys: -> { %w[issued sent acknowledged failed confirmed] }
-      }
+      # `ui.status` — спільний bag на кілька моделей, тож повний його набір
+      # розрізняти НЕ зобов'язаний: різні доми можуть законно ділити слово
+      # (`maintenance` у Gateway ⟷ `maintenance_needed` в Actuator — різні
+      # сутності). Розрізняти мусить кожна РОДИНА всередині себе: її стани
+      # стоять на одному екрані, і `StatusBadge` показує будь-який із них.
+      #
+      # ⚠️ Джерело — enum МОДЕЛІ, а не ручний список: коли родина виросте,
+      # гейт міряє нове значення сам. Доти тут стояв один ручний набір
+      # «життєвий цикл команди» (`issued/sent/acknowledged/failed/confirmed`) —
+      # він помер разом із записами `issued`/`acknowledged` у `STYLES`, бо
+      # `ActuatorCommand` обслуговується ВЛАСНИМ бейджем (перший рядок реєстру),
+      # а `ui.status` його станів більше не несе.
+      *{
+        "Tree#status"                  => -> { Tree.statuses.keys },
+        "Gateway#state"                => -> { Gateway.states.keys },
+        "NaasContract#status"          => -> { NaasContract.statuses.keys },
+        "Actuator#state"               => -> { Actuator.states.keys },
+        "Codex::Node#lifecycle_status" => -> { Codex::Node.lifecycle_statuses.keys },
+        "BlockchainTransaction#status" => -> { BlockchainTransaction.statuses.keys }
+      }.map { |model, keys| { name: "#{model} → спільний ui.status", scope: "ui.status", keys: keys } }
     ]
   end
 

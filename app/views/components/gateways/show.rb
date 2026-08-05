@@ -47,7 +47,7 @@ module Gateways
         div do
           h2(class: "text-3xl font-extralight tracking-tighter text-emerald-400") { "Queen Relay // #{@gateway.uid}" }
           div(class: "flex items-center mt-2 gap-3") do
-            span(class: tokens("text-tiny px-2 py-0.5 border font-mono uppercase tracking-widest", state_badge_classes)) { @gateway.state }
+            render Views::Shared::UI::StatusBadge.new(status: @gateway.state)
             span(class: "text-tiny text-emerald-900 font-mono") { "IP: #{@gateway.ip_address || '0.0.0.0'}" }
           end
         end
@@ -195,16 +195,6 @@ module Gateways
       div(class: "flex justify-between border-b border-emerald-900/30 pb-2") do
         span(class: "text-gray-600") { "#{label}:" }
         span(class: "text-emerald-300") { value }
-      end
-    end
-
-    def state_badge_classes
-      case @gateway.state
-      when "active" then "border-emerald-500 text-emerald-500"
-      when "updating" then "border-status-warning text-status-warning-text"
-      when "maintenance" then "border-blue-500 text-blue-500"
-      when "faulty" then "border-red-500 text-red-500"
-      else "border-gray-800 text-gray-700"
       end
     end
 

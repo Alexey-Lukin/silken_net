@@ -22,9 +22,15 @@ module Api
           end
           format.html do
             active_count = @cluster.actuators.where(state: :active).count
+            # Картка даних не добирає (`04_04 §6.4`), тож остання команда на
+            # актуатор збирається тут — із уже преloaded асоціації, без нового
+            # запиту. Ключ сортування складений: при однаковому `created_at`
+            # (bulk-`insert_all` ставить один `now` на весь чанк) порядок
+            # розсуджує `id`, інакше «остання команда» недетермінована.
+            last_commands = @actuators.to_h { |a| [ a.id, a.commands.max_by { |c| [ c.created_at, c.id ] } ] }
             render_dashboard(
               title: I18n.t("actuators.index_title", name: @cluster.name),
-              component: Actuators::Index.new(cluster: @cluster, actuators: @actuators, pagy: @pagy, active_count: active_count)
+              component: Actuators::Index.new(cluster: @cluster, actuators: @actuators, pagy: @pagy, active_count: active_count, last_commands: last_commands)
             )
           end
         end

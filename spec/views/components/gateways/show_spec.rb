@@ -87,39 +87,43 @@ RSpec.describe Gateways::Show do
     end
   end
 
+  # Стан іде через спільний `StatusBadge` (I18N.1, 2026-08-05) — приватна
+  # `state_badge_classes` знесена. Піни на семантичні токени бейджа.
   describe "state badge" do
-    it "renders active state with emerald style" do
+    # 🔴 `active` тут НЕСУЧИЙ: доти цей запис у спільній мапі належав `EwsAlert`
+    # і був `danger`, тож дротування пофарбувало б живий шлюз у червоне.
+    it "renders active state with the success token" do
       expect(html).to include("active")
-      expect(html).to include("border-emerald-500")
-      expect(html).to include("text-emerald-500")
+      expect(html).to include("bg-status-success")
+      expect(html).not_to include("bg-status-danger")
     end
 
-    it "renders updating state with warning style" do
+    it "renders updating state with the warning token" do
       gw = mock_gateway(state: "updating")
       rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
       expect(rendered).to include("updating")
-      expect(rendered).to include("border-status-warning")
+      expect(rendered).to include("bg-status-warning")
     end
 
-    it "renders maintenance state with blue style" do
+    it "renders maintenance state with the info token" do
       gw = mock_gateway(state: "maintenance")
       rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
       expect(rendered).to include("maintenance")
-      expect(rendered).to include("border-blue-500")
+      expect(rendered).to include("bg-status-info")
     end
 
-    it "renders faulty state with red style" do
+    it "renders faulty state with the danger token" do
       gw = mock_gateway(state: "faulty")
       rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
       expect(rendered).to include("faulty")
-      expect(rendered).to include("border-red-500")
+      expect(rendered).to include("bg-status-danger")
     end
 
-    it "renders an unrecognized state with the neutral gray fallback" do
+    it "renders an unrecognized state with the neutral fallback" do
       gw = mock_gateway(state: "quarantined")
       rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
       expect(rendered).to include("quarantined")
-      expect(rendered).to include("border-gray-800")
+      expect(rendered).to include("bg-status-neutral")
     end
   end
 

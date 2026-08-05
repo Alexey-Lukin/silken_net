@@ -114,25 +114,27 @@ RSpec.describe Trees::Show do
     end
   end
 
+  # Статус іде через спільний `StatusBadge` (I18N.1, 2026-08-05) — приватна
+  # `status_color_class` знесена; вона схлопувала `removed`+`deceased` в одну
+  # червону гілку, тоді як централізована мапа їх розрізняє.
   describe "status badge colors" do
-    it "renders active with the gaia primary token" do
-      expect(html).to include("border-gaia-primary")
-      expect(html).to include("text-gaia-primary")
+    it "renders active with the success token, never danger" do
+      expect(html).to include("bg-status-success")
+      expect(html).not_to include("bg-status-danger")
     end
 
-    it "renders dormant with warning style" do
+    it "renders dormant with the warning token" do
       t = mock_tree(status: "dormant")
       rendered = render_component(tree: t, latest_log: latest_log,
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
-      expect(rendered).to include("border-status-warning")
+      expect(rendered).to include("bg-status-warning")
     end
 
-    it "renders deceased with red style" do
+    it "renders deceased with the danger token" do
       t = mock_tree(status: "deceased")
       rendered = render_component(tree: t, latest_log: latest_log,
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
-      expect(rendered).to include("border-red-800")
-      expect(rendered).to include("text-red-800")
+      expect(rendered).to include("bg-status-danger")
     end
   end
 

@@ -109,34 +109,41 @@ RSpec.describe BlockchainTransactions::Index do
     end
   end
 
+  # Статус іде через спільний `Views::Shared::UI::StatusBadge` (I18N.1, 2026-08-05):
+  # приватна кольор-мапа цього компонента була побайтовою копією тієї, що в
+  # `Wallets::TransactionRow`, і обидві дублювали централізовану. Піни тепер на
+  # СЕМАНТИЧНІ токени бейджа, а не на сирі `text-gray-400`/`text-red-500`.
   describe "status colors" do
-    it "renders confirmed with emerald text" do
-      expect(html).to include("text-emerald-500")
+    # ⚠️ Доти цей приклад пінив `text-emerald-500` і був ЗЕЛЕНИЙ через сусідню
+    # колонку DID, яка носить той самий клас — тобто ловив правильну сторінку,
+    # але не той елемент. Пін на токен бейджа цього повторити не може.
+    it "renders confirmed with the success token" do
+      expect(html).to include("bg-status-success")
     end
 
-    it "renders processing with warning text and pulse" do
+    it "renders processing with the warning token and pulse" do
       txs = [ mock_transaction(status: "processing") ]
       rendered = render_component(transactions: txs, pagy: pagy)
-      expect(rendered).to include("text-status-warning-text")
+      expect(rendered).to include("bg-status-warning")
       expect(rendered).to include("animate-pulse")
     end
 
-    it "renders sent with warning text and pulse" do
+    it "renders sent with the info token" do
       txs = [ mock_transaction(status: "sent") ]
       rendered = render_component(transactions: txs, pagy: pagy)
-      expect(rendered).to include("text-status-warning-text")
+      expect(rendered).to include("bg-status-info")
     end
 
-    it "renders pending with gray text" do
+    it "renders pending with the warning token" do
       txs = [ mock_transaction(status: "pending") ]
       rendered = render_component(transactions: txs, pagy: pagy)
-      expect(rendered).to include("text-gray-400")
+      expect(rendered).to include("bg-status-warning")
     end
 
-    it "renders failed with red text" do
+    it "renders failed with the danger token" do
       txs = [ mock_transaction(status: "failed") ]
       rendered = render_component(transactions: txs, pagy: pagy)
-      expect(rendered).to include("text-red-500")
+      expect(rendered).to include("bg-status-danger")
     end
   end
 

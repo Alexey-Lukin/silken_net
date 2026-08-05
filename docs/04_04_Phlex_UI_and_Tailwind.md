@@ -511,22 +511,25 @@ render Views::Shared::UI::StatusBadge.new(status: "confirmed", class: "mt-2")
 
 | AASM Стани | Семантичний Стиль |
 |---|---|
-| `pending`, `issued`, `dormant`, `maintenance_needed`, `endangered` (Codex lifecycle) | `bg-status-warning text-status-warning-text` |
-| `processing`, `triggered`, `updating` | `+ animate-pulse` |
+| `pending`, `dormant`, `maintenance_needed`, `endangered` (Codex lifecycle) | `bg-status-warning text-status-warning-text` |
+| `processing`, `updating` | `+ animate-pulse` |
 | `manual_review` | `bg-status-warning text-status-warning-text + animate-pulse` — **[DOUBLE-SPEND GUARD]**: tx_hash існує або стан невідомий, потребує ручної звірки |
-| `confirmed`, `fulfilled`, `thriving` (Codex lifecycle) | `bg-status-success text-status-success-text` |
-| `sent`, `paid`, `maintenance` | `bg-status-info text-status-info-text` |
-| `failed`, `active` (EwsAlert), `breached`, `deceased`, `faulty`, `destroyed` (Codex lifecycle) | `bg-status-danger text-status-danger-text` |
-| `acknowledged`, `mythical` (Codex lifecycle) | `bg-status-active text-status-active-text` |
-| `idle`, `draft`, `expired`, `offline`, `resolved`, `cancelled`, `removed`, `unknown` (Codex lifecycle), `extinct` (Codex lifecycle) | `bg-status-neutral text-status-neutral-text` |
-| `ignored` | `bg-status-neutral text-status-neutral-text opacity-30 line-through` |
-| `resolved`, `cancelled`, `removed`, `extinct` (Codex) | `+ opacity-50` (застосовується через модифікатор) |
+| **`active`**, `confirmed`, `fulfilled`, `thriving` (Codex lifecycle) | `bg-status-success text-status-success-text` |
+| `sent`, `maintenance` | `bg-status-info text-status-info-text` |
+| `failed`, `breached`, `deceased`, `faulty`, `destroyed` (Codex lifecycle) | `bg-status-danger text-status-danger-text` |
+| `mythical` (Codex lifecycle) | `bg-status-active text-status-active-text` |
+| `idle`, `draft`, `offline`, `cancelled`, `removed`, `unknown` (Codex lifecycle), `extinct` (Codex lifecycle) | `bg-status-neutral text-status-neutral-text` |
+| `cancelled`, `removed`, `extinct` (Codex) | `+ opacity-50` (застосовується через модифікатор) |
 
 > 🔴 **Примітка щодо `active` — і виправлення того, що тут стояло раніше.** `STYLES` ключований **самим рядком-значенням**, тож фізично не може віддати два стилі на одне слово. `"active"` у ньому **явно перелічений** — як danger, бо його вписав `EwsAlert` (нерозвʼязаний сигнал = погано). Отже будь-яка сутність, передана в `StatusBadge` зі станом `active`, дістає **червоне** — включно зі здоровим `Tree`/`Gateway`/`NaasContract`/`Actuator`, для яких те саме слово означає «все гаразд».
 >
 > ⚠️ Доти тут писалось, що для них `active` «відповідає `DEFAULT_STYLE`, оскільки `StatusBadge` маппить лише явно перелічені стани». Передумова правдива, висновок — ні: слово перелічене, тому fallback не спрацьовує. Таблиця вище це знала (рядок danger прямо каже «`active` (EwsAlert)»), тобто док суперечив сам собі через дві лінійки — і саме ця примітка запевняла б виконавця дротування, що пастки немає. Доменні компоненти тримають власну inline-логіку кольорів **через цю колізію**, а не тому, що спільна мапа для них нейтральна.
 >
-> ✅ Носія колізії знесено: `EwsAlert#status` як показане СЛОВО зник разом із `Alerts::Badge` (§8.3), тож запис `active` тепер мертвий і його зняття безпечне — після чого `active` може стати зеленим, транскрибуючи одностайність чотирьох живих доменів. План дротування → [`00_07`](00_07_Action_Plan_Tracker) I18N.1.
+> ✅ **Колізію РОЗВʼЯЗАНО 2026-08-05 разом із дротуванням.** `active` = `bg-status-success`, бо всі пʼять живих власників слова (`Tree` · `Gateway` · `NaasContract` · `Actuator` · `ParametricInsurance`) кажуть ним «усе гаразд»; носій протилежного значення зник разом із `Alerts::Badge` (§8.3), а решта UI тривог ходить булевими предикатами (`status_resolved?`), не словом. Пін фальсифіковний і мутація-перевірений — `spec/views/shared/ui/status_badge_spec.rb`, «maps active to the success token, never danger».
+>
+> ⚠️ **«Мертвих записів 27 із 33» було фотографією стану, а не властивістю мапи** — і саме тому зняття треба було робити ОДНИМ проходом із дротуванням, а не перед ним. Двадцять шість із тридцяти трьох належали рівно тим шести родинам, які дротування й оживило; справді мертвих виявилось **сім**, і кожен помер із власної причини: `issued`/`acknowledged` — `ActuatorCommand` обслуговується ВЛАСНИМ бейджем (`actuators.command_status_badge`, свої мітки), `resolved`/`ignored` — `EwsAlert` не рендерить статус словом ніде, `triggered`/`paid`/`expired` — `ParametricInsurance` не рендериться взагалі. Знято разом із мітками `ui.status.*` у чотирьох локалях: `enum_label_parity_spec` двобічний, тож осиротіла мітка червонить так само, як відсутня.
+>
+> 🔴 **Урок, ширший за цей запис:** плаский bag, ключований самим ЗНАЧЕННЯМ, не може віддати два стилі на одне слово — тож перед дротуванням спільного рендерера питай не «чи є запис», а **чи не означає це слово протилежне в іншому домені** (клас → `CLAUDE.md §6`, механіка → §12.14). І окремо: примітка, яка ПОЯСНЮЄ, чому щось безпечне, гниє в бік заспокоєння — саме тут вона двічі поспіль запевняла виконавця, що пастки нема.
 
 #### Skeleton — Варіанти
 
@@ -691,7 +694,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Alerts` | `Index`, `Row` | `alert:` (`Badge` знято 2026-07-27 — UI без жодного рендерера) |
 | `Clusters` | `Grid`, `Item`, `Show` | `cluster:`, `trees:` |
 | `Gateways` | `Index`, `Item`, `Show` | `gateway:` |
-| `Actuators` | `Index`, `Show`, `Card`, `CommandRow`, `CommandStatusBadge` | `actuator:`, `command:` |
+| `Actuators` | `Index`, `Show`, `Card`, `CommandRow`, `CommandStatusBadge` | `actuator:`, `command:` · `Card` і `Index` беруть останню команду ПАРАМЕТРОМ (`last_command:` / `last_commands:` = мапа `actuator_id ⇒ команда`, яку збирає контролер із преloaded асоціації). Доти `Card` мала фолбек `@actuator.commands.last` у конструкторі — порушення §6.4, що ще й віддавало РІЗНУ «останню команду» на двох сторінках: на `index` асоціація преloaded, тож `.last` брав останній у порядку БД, а на `show` летів окремий `ORDER BY id DESC`. Фікстура спеки навмисно вибухає на `commands` — повернення фолбека червонить кожен приклад |
 | `Maintenance` | `Index`, `Show`, `Form`, `PhotoGallery`, `PhotosPage` | `record:`, `photos:` |
 | `Contracts` | `Index`, `Show` | `contract:` |
 | `BlockchainTransactions` | `Index`, `Show`, `OnChainFrame` | `tx:` |

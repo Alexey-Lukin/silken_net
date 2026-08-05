@@ -17,7 +17,9 @@ module Actuators
         div(class: "grid grid-cols-1 lg:grid-cols-3 gap-8") do
           # Головна картка стану
           div(class: "lg:col-span-1") do
-            render Actuators::Card.new(actuator: @actuator)
+            # `@commands` уже впорядковані `created_at DESC` контролером, тож
+            # найновіша — перша; окремий запит із картки більше не летить.
+            render Actuators::Card.new(actuator: @actuator, last_command: @commands.first)
           end
 
           # Реєстр команд

@@ -34,7 +34,10 @@ module Contracts
            p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { t(".identity") }
            h2(class: "text-5xl font-extralight text-white tracking-tighter") { t(".title", id: @contract.id, sector: @contract.cluster&.name&.upcase) }
            p(class: "mt-2 text-xs font-mono text-gaia-text-muted") { t(".organization", name: @contract.organization&.name) }
-           p(class: "mt-1 text-xs font-mono text-gaia-text-muted") { t(".status", value: @contract.status.upcase) }
+           # Сире значення enum'а, інтерпольоване в ПЕРЕКЛАДЕНЕ речення, — найгірший
+           # підвид класу (`04_04 §12.14`): фраза виглядає локалізованою, тож при
+           # вичитці її пропускають. Мітку резолвить єдиний дім деривації.
+           p(class: "mt-1 text-xs font-mono text-gaia-text-muted") { t(".status", value: Views::Shared::UI::StatusBadge.label(@contract.status).upcase) }
            p(class: "mt-1 text-xs font-mono text-gaia-text-muted") { t(".period", start: @contract.start_date&.strftime("%d.%m.%Y"), end: @contract.end_date&.strftime("%d.%m.%Y")) }
            p(class: "mt-1 text-xs font-mono text-gaia-text-muted") { t(".total_funding", amount: @contract.total_funding) }
          end

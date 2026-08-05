@@ -73,7 +73,7 @@ module BlockchainTransactions
         end
         td(class: "p-4 text-white font-bold") { "#{tx.amount} SCC" }
         td(class: "p-4") do
-          span(class: tokens("text-micro uppercase tracking-widest", status_color(tx.status))) { tx.status }
+          render Views::Shared::UI::StatusBadge.new(status: tx.status)
         end
         td(class: "p-4 text-gaia-text-muted text-mini uppercase") { tx.blockchain_network&.upcase || "—" }
         td(class: "p-4 text-emerald-500") { tx.wallet&.tree&.did || "—" }
@@ -95,19 +95,6 @@ module BlockchainTransactions
       when "carbon_coin" then "bg-emerald-900/20 text-emerald-400 border-emerald-500/30"
       when "forest_coin" then "bg-token-forest/20 text-token-forest border-token-forest/30"
       else "bg-zinc-900 text-zinc-400 border-zinc-700"
-      end
-    end
-
-    def status_color(status)
-      case status
-      when "confirmed" then "text-emerald-500"
-      when "processing", "sent" then "text-status-warning-text animate-pulse"
-      when "pending" then "text-gray-400"
-      when "failed" then "text-red-500"
-      # Див. `BlockchainTransactions::Show#status_badge_styles` — той самий
-      # double-spend guard, що падав у `else` тьмянішим за `pending`.
-      when "manual_review" then "text-status-warning-text animate-pulse"
-      else "text-gray-600"
       end
     end
   end

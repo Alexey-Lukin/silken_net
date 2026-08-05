@@ -96,27 +96,33 @@ RSpec.describe Trees::Index do
     end
   end
 
-  describe "status text colors" do
-    it "renders active status with emerald text" do
-      expect(html).to include("text-gaia-text-muted")
+  # Статус іде через спільний `StatusBadge` (I18N.1, 2026-08-05). ⚠️ Приватна
+  # мапа, яку він замінив, СХЛОПУВАЛА `active` і `dormant` в один клас — тобто
+  # здорове й спляче дерево виглядали однаково; централізована їх розрізняє.
+  # Доти піни стояли на `text-gaia-text-muted`, який носять і сусідні елементи
+  # плитки, тож два з них були зелені незалежно від статусу.
+  describe "status badge colors" do
+    it "renders active with the success token, never danger" do
+      expect(html).to include("bg-status-success")
+      expect(html).not_to include("bg-status-danger")
     end
 
-    it "renders dormant status with gray text" do
+    it "renders dormant with the warning token" do
       trees = [ mock_tree(status: "dormant") ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
-      expect(rendered).to include("text-gaia-text-muted")
+      expect(rendered).to include("bg-status-warning")
     end
 
-    it "renders removed status with red text" do
+    it "renders removed with the neutral token" do
       trees = [ mock_tree(status: "removed") ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
-      expect(rendered).to include("text-status-danger-text")
+      expect(rendered).to include("bg-status-neutral")
     end
 
-    it "renders deceased status with red text" do
+    it "renders deceased with the danger token" do
       trees = [ mock_tree(status: "deceased") ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
-      expect(rendered).to include("text-status-danger-text")
+      expect(rendered).to include("bg-status-danger")
     end
   end
 

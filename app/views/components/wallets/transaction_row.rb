@@ -42,14 +42,23 @@ module Wallets
       end
     end
 
+    # 🔴 НЕ дротувати сюди `Views::Shared::UI::StatusBadge` — цей компонент
+    # свідомо лишився з приватною мапою, коли решта родини `BlockchainTransaction`
+    # перейшла на спільний бейдж (I18N.1, 2026-08-05). Причина не стилістична:
+    # рядок рендериться ВСЕРЕДИНІ броадкасту (`BlockchainTransaction#broadcast_*`),
+    # тож будь-який `t()` віддав би локаль ПРОДЮСЕРА всім підписникам (`04_04 §8.1а`),
+    # а бейдж свою мітку саме перекладає. ⚠️ І гейт цього не спіймає:
+    # `broadcast_payload_invariance_spec` рахує `t()` лише у ВЛАСНОМУ джерелі
+    # компонента й не ходить у дочірні — тобто порушення було б ТИХИМ.
+    # Правильний шлях — міграція payload'а за `00_07` I18N.2, не заміна рендерера.
     def status_color
       case @tx.status
       when "confirmed" then "text-emerald-500"
       when "processing", "sent" then "text-status-warning-text animate-pulse"
       when "pending" then "text-gray-400"
       when "failed" then "text-red-500"
-      # Див. `BlockchainTransactions::Show#status_badge_styles` — той самий
-      # double-spend guard, що падав у `else` тьмянішим за `pending`.
+      # `manual_review` = double-spend guard: tx_hash є, кошти заблоковані. Свого
+      # часу він падав у `else` і діставав стиль ТЬМЯНІШИЙ за доброякісний `pending`.
       when "manual_review" then "text-status-warning-text animate-pulse"
       else "text-gray-600"
       end

@@ -13,17 +13,13 @@ module Views
           "confirmed"    => "bg-status-success text-status-success-text",
           "failed"       => "bg-status-danger text-status-danger-text",
           "manual_review" => "bg-status-warning text-status-warning-text animate-pulse",
-          # AASM: ActuatorCommand states
-          "issued"       => "bg-status-warning text-status-warning-text",
-          "acknowledged" => "bg-status-active text-status-active-text",
-          # AASM: EwsAlert states
-          "active"       => "bg-status-danger text-status-danger-text",
-          "resolved"     => "bg-status-neutral text-status-neutral-text opacity-50",
-          "ignored"      => "bg-status-neutral text-status-neutral-text opacity-30 line-through",
-          # AASM: ParametricInsurance states
-          "triggered"    => "bg-status-warning text-status-warning-text animate-pulse",
-          "paid"         => "bg-status-info text-status-info-text",
-          "expired"      => "bg-status-neutral text-status-neutral-text",
+          # Спільний «здоровий» стан п'яти доменів (Tree · Gateway · NaasContract ·
+          # Actuator · ParametricInsurance) — усі п'ять кажуть цим словом «усе гаразд».
+          # Доти запис належав `EwsAlert` і означав ПРОТИЛЕЖНЕ (відкрита тривога =
+          # погано), тож здорове дерево дістало б червоне. Носія тієї колізії немає:
+          # `EwsAlert#status` як показане СЛОВО зник разом з `Alerts::Badge`, а решта
+          # його UI ходить булевими предикатами (`status_resolved?`).
+          "active"       => "bg-status-success text-status-success-text",
           # AASM: NaasContract states
           "draft"        => "bg-status-neutral text-status-neutral-text",
           "fulfilled"    => "bg-status-success text-status-success-text",
@@ -52,6 +48,20 @@ module Views
 
         DEFAULT_STYLE = "bg-status-neutral text-status-neutral-text"
 
+        SCOPE = "ui.status"
+
+        # ОДНА деривація ключа на застосунок (`04_04 §12.14`). Поверхня, якій
+        # потрібна мітка БЕЗ бейджа (рядок таблиці деталей, матриця стану
+        # актуатора), кличе цей метод, а не будує `"ui.status.#{value}"` сама:
+        # друга деривація означає, що друкарська помилка в одній із них лишається
+        # зеленою назавжди — обидві сторони «present» для будь-якого parity-гейта.
+        # Fail-open на сирому значенні свідомий: новий AASM-стан має рендеритись
+        # рівно, ще до того як мітка доїде в локалі.
+        def self.label(status)
+          value = status.to_s
+          I18n.t("#{SCOPE}.#{value}", default: value)
+        end
+
         def initialize(status:, id: nil, **attrs)
           @status = status.to_s
           @id = id
@@ -60,9 +70,7 @@ module Views
 
         def view_template
           style = STYLES.fetch(@status, DEFAULT_STYLE)
-          # i18n with safe fallback to the raw status (so DB-stored or new
-          # AASM states render uniformly even before a translation lands).
-          label = t("ui.status.#{@status}", default: @status)
+          label = self.class.label(@status)
 
           span(
             id: @id,

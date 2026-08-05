@@ -67,7 +67,7 @@ module Contracts
         td(class: "p-4") do
           div(class: "flex flex-col") do
             span(class: "text-emerald-100") { "##{contract.id}" }
-            span(class: tokens("text-mini uppercase mt-1", status_color(contract.status))) { contract.status }
+            div(class: "mt-1") { render Views::Shared::UI::StatusBadge.new(status: contract.status) }
           end
         end
         td(class: "p-4 text-gaia-text-muted") { contract.organization&.name || "—" }
@@ -94,16 +94,6 @@ module Contracts
           div(class: "h-full bg-emerald-500 shadow-[0_0_8px_#10b981]", style: "width: #{performance}%")
         end
         span(class: "text-tiny text-emerald-500 font-mono") { "#{performance.to_i}%" }
-      end
-    end
-
-    def status_color(status)
-      case status
-      when "active" then "text-emerald-500"
-      when "fulfilled" then "text-blue-400"
-      when "breached" then "text-red-500"
-      when "cancelled" then "text-gray-500 line-through"
-      else "text-status-warning-text"
       end
     end
   end

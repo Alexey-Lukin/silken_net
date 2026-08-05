@@ -65,7 +65,7 @@ module Trees
         div(class: "flex justify-between items-start mb-3") do
           div do
             span(class: "text-mini font-mono text-gaia-text-subtle group-hover:text-gaia-text") { tree.did.last(6) }
-            span(class: tokens("ml-1 text-micro uppercase font-mono", tree_status_text_class(tree))) { tree.status }
+            span(class: "ml-1") { render Views::Shared::UI::StatusBadge.new(status: tree.status) }
           end
           div(class: tokens("h-1.5 w-1.5 rounded-full", tree_status_led(tree)))
         end
@@ -93,15 +93,6 @@ module Trees
       return "bg-status-danger animate-pulse shadow-[0_0_8px_red]" if tree.under_threat?
       return "bg-gaia-text-subtle" if tree.last_seen_at.nil? || tree.last_seen_at < 24.hours.ago
       "bg-emerald-500 shadow-[0_0_5px_#10b981]"
-    end
-
-    def tree_status_text_class(tree)
-      case tree.status
-      when "active" then "text-gaia-text-muted"
-      when "dormant" then "text-gaia-text-muted"
-      when "removed", "deceased" then "text-status-danger-text"
-      else "text-gaia-text"
-      end
     end
 
     def charge_color(percent)

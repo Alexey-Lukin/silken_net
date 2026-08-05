@@ -114,25 +114,29 @@ RSpec.describe Contracts::Index do
     end
   end
 
+  # Статус іде через спільний `StatusBadge` (I18N.1, 2026-08-05) — приватна
+  # `status_color` знесена. ⚠️ Її `draft` падав у `else` і фарбувався як
+  # warning; централізована мапа дає йому власний neutral.
   describe "status colors" do
-    it "colors active contracts with emerald" do
+    it "colors active contracts with the success token" do
       html = render_component(contracts: [ mock_contract(status: "active") ], stats: mock_stats, pagy: mock_pagy(last: 1))
-      expect(html).to include("text-emerald-500")
+      expect(html).to include("bg-status-success")
     end
 
-    it "colors fulfilled contracts with blue" do
+    it "colors fulfilled contracts with the success token" do
       html = render_component(contracts: [ mock_contract(status: "fulfilled") ], stats: mock_stats, pagy: mock_pagy(last: 1))
-      expect(html).to include("text-blue-400")
+      expect(html).to include("bg-status-success")
     end
 
-    it "colors breached contracts with red" do
+    it "colors breached contracts with the danger token" do
       html = render_component(contracts: [ mock_contract(status: "breached") ], stats: mock_stats, pagy: mock_pagy(last: 1))
-      expect(html).to include("text-red-500")
+      expect(html).to include("bg-status-danger")
     end
 
-    it "colors cancelled contracts with gray and line-through" do
+    it "dims cancelled contracts with the neutral token" do
       html = render_component(contracts: [ mock_contract(status: "cancelled") ], stats: mock_stats, pagy: mock_pagy(last: 1))
-      expect(html).to include("line-through")
+      expect(html).to include("bg-status-neutral")
+      expect(html).to include("opacity-50")
     end
   end
 
@@ -143,10 +147,13 @@ RSpec.describe Contracts::Index do
     end
   end
 
-  describe "status colors else branch" do
-    it "colors unknown status with warning text" do
+  # ⚠️ `expired` — значення ЧУЖОЇ родини (`ParametricInsurance`), тобто для
+  # контракту це справді нерозпізнаний стан; після переходу на спільну мапу він
+  # дістає `DEFAULT_STYLE`, а не бурштин попередньої `else`-гілки.
+  describe "unrecognised status" do
+    it "falls back to the neutral token" do
       html = render_component(contracts: [ mock_contract(status: "expired") ], stats: mock_stats, pagy: mock_pagy(last: 1))
-      expect(html).to include("text-status-warning-text")
+      expect(html).to include("bg-status-neutral")
     end
   end
 

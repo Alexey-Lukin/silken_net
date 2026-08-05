@@ -14,7 +14,6 @@ lv:
     skeleton:
       loading: Ielādē…
     status:
-      acknowledged: izpildē
       active: aktīvs
       aria_label: 'Statuss: %{status}'
       breached: pārkāpts
@@ -25,27 +24,21 @@ lv:
       dormant: neaktīvs
       draft: melnraksts
       endangered: apdraudēts
-      expired: beidzies
       extinct: izmirušais
       failed: neizdevās
       faulty: bojāts
       fulfilled: izpildīts
       idle: dīkstāvē
-      ignored: ignorēts
-      issued: izdots
       maintenance: apkope
       maintenance_needed: nepieciešama apkope
       manual_review: manuāla pārskatīšana
       mythical: mītisks
       offline: bezsaistē
-      paid: apmaksāts
       pending: gaida
       processing: apstrādā
       removed: noņemts
-      resolved: atrisināts
       sent: nosūtīts
       thriving: plaukstošs
-      triggered: aktivizēts
       unknown: nezināms
       updating: atjaunina
     web3_address:
