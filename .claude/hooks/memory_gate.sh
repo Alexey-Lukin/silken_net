@@ -573,10 +573,24 @@ links = files.each_with_object({}) do |f, h|
           .scan(/\[\[([^\]\n]+)\]\]/).flatten.map(&:strip)
           .select { |t| present[t] }.uniq
 end
+# A home's PROVENANCE strings only. A `Related:` / `See [[…]]` line is a PEER
+# cross-reference — one-way BY DESIGN, and the memory-maintenance skill already
+# declares it so. Counting those as provenance made this detector systematically
+# overstate: of the four pairs it reported on 2026-08-05, three sat on peer lines
+# and only one was a real rule-with-`→`-router. Measured over the whole corpus:
+# 25 of 316 home→source strings live on such lines, and a read of all 25 found
+# zero provenance among them, so the exclusion cannot hide a real pair.
+peer = /\A\s*(\*\*)?Related\b/i
+prov = files.each_with_object({}) do |f, h|
+  h[f] = File.readlines(File.join(dir, "#{f}.md"))
+          .reject { |l| l =~ peer || l.include?("See [[") }
+          .join.scan(/\[\[([^\]\n]+)\]\]/).flatten.map(&:strip)
+          .select { |t| present[t] }.uniq
+end
 by_target = Hash.new { |h, k| h[k] = [] }
 files.each do |home|
   next unless home.start_with?("feedback_", "reference_")
-  links[home].each do |src|
+  prov[home].each do |src|
     next unless src.start_with?("log_", "project_")
     next if links[src].include?(home)   # reciprocated — not this class
     by_target[src] << home
@@ -1181,6 +1195,33 @@ selftest() {
   out=$(env MEMORY_GATE_DIR="$d" MEMORY_GATE_ONEWAY_MIN=1 bash "$SELF" --oneway 2>&1)
   if printf '%s' "$out" | grep -q 'ONEWAY log_gamma'; then fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "a reciprocated pair stops being reported" "$out"
   else pass=$((pass+1)); printf '  ok    %s\n' "a reciprocated pair stops being reported"; fi
+
+  # 22b. The third stance of the same class: a `Related:` line is a PEER
+  #      cross-reference, one-way BY DESIGN, and counting it as provenance is
+  #      what made this detector overstate three of the four pairs it reported
+  #      on the live corpus (2026-08-05). Rebuild so gamma carries nothing back,
+  #      then move alpha's SAME citation onto a `Related:` line — the pair must
+  #      go quiet, while case 21 proves an ordinary line still fires. The pair
+  #      matters more than either half: widen the exclusion until it never fires
+  #      and case 21 goes red; drop it entirely and this one does. Written with
+  #      a full rewrite rather than `sed -i`, whose flag differs BSD vs GNU and
+  #      would pass here and break the CI runner.
+  _st_build "$d"
+  cat >"$d/feedback_alpha.md" <<'EOF'
+---
+name: feedback_alpha
+description: "Alpha"
+metadata:
+  type: feedback
+---
+
+One word carrying two scales is the quietest defect there is.
+
+Related: [[log_gamma]]
+EOF
+  out=$(env MEMORY_GATE_DIR="$d" MEMORY_GATE_ONEWAY_MIN=1 bash "$SELF" --oneway 2>&1)
+  if printf '%s' "$out" | grep -q 'ONEWAY log_gamma'; then fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "a Related: peer line is not counted as provenance" "$out"
+  else pass=$((pass+1)); printf '  ok    %s\n' "a Related: peer line is not counted as provenance"; fi
 
   # 23-24. THE PAIR FOR THE PROSE VERDICT, and case 24 is the load-bearing half.
   #        A bracketed prose term used to be invisible: the old character class

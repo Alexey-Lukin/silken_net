@@ -54,8 +54,11 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   --tunnel-through-iap` (доступ = tf-var `iap_admin_members`). Команда/роль-модель/(б)-клей → `06_01` / 00_07 INF.20.
 - **CI→GCP auth = keyless WIF (INF.22)** — без довгоживучого `GCP_SA_KEY` JSON (GitHub OIDC →
   GCP STS → impersonated deploy-SA). Provider+SA email = repo **Variables** (presence = deploy-gate).
-  Виняток = Akash `GCP_SA_KEY_BASE64` (зовн. провайдер не досягає GitHub-issuer'а). Механіка/case-safety
-  → `06_04 §1.1` / `06_02 §Security Exception`.
+  Виняток = Akash `GCP_SA_KEY_BASE64` (зовн. провайдер не досягає GitHub-issuer'а).
+  **Механіка/case-safety → `00_05 §2.7`** (`attribute_condition` owner-рівня ОБОВʼЯЗКОВИЙ +
+  owner-case нормалізовано `lowerAscii()`); реєстр самого секрету → `06_04 §1.1`;
+  виняток Akash → `06_02 §Security Exception`. ⚠️ Адреси РІЗНІ: обидві резолвляться, тож
+  `code_doc_section_refs` зелений і на хибній — механіка в реєстрі секретів не живе.
 - **Akash SDL ENV = plaintext, видимий провайдеру.** Реальні ключі **ніколи** в `deploy.yaml` —
   інжект через Console/`env.secret`. **Money/signing-п'ятірка = JOB-ONLY** (`ORACLE_MINTER/SLASHER/CELO`
   + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`); legacy `ORACLE_PRIVATE_KEY` **RETIRED** (guard-tripwire).
