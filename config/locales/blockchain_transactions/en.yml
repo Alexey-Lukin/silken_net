@@ -55,3 +55,7 @@ en:
         tree_did: Tree DID
         wallet_balance: Wallet Balance
     show_title: 'Transaction #%{id}'
+    token_types:
+      carbon_coin: Silken Carbon Coin
+      cusd: Celo Dollar
+      forest_coin: Silken Forest Coin

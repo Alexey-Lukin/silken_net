@@ -7,26 +7,26 @@ RSpec.describe BlockchainTransactions::Show do
   let(:transaction) { mock_transaction }
   let(:html) { render_component(transaction: transaction) }
 
+  # Реальний НЕЗБЕРЕЖЕНИЙ запис — дзеркало `wallets/transaction_row_spec.rb` [TEST.12].
+  # Старий `OpenStruct` оголошував світ, у якому дефект неможливий (`04_06 §B.2` BP #14):
+  # `amount` рядком при колонці `numeric(24,6)`, `blockchain_network: "polygon"` при
+  # `validates inclusion: %w[evm solana celo]`, плюс рукописні `solana_network?`/
+  # `celo_network?`/`model_name` — тобто спека сама визначала методи, чию поведінку
+  # мала перевіряти. Асоціація стабиться ТОЧКОВО: фабрика тягла б цілий ланцюг.
   def mock_transaction(id: 1, amount: "0.005", status: "confirmed", token_type: "carbon_coin",
                        tx_hash: "0xabcdef1234567890abcdef1234567890abcdef12",
-                       explorer_url: "https://polygonscan.com/tx/0xabc",
-                       blockchain_network: "polygon", locked_points: 10_000,
+                       blockchain_network: "evm", locked_points: 10_000,
                        to_address: "0x1234567890abcdef1234567890abcdef12345678",
                        gas_price: 30, gas_used: 21_000, block_number: 123_456,
                        nonce: 42, sent_at: 1.hour.ago, confirmed_at: 30.minutes.ago,
                        notes: nil, error_message: nil,
                        wallet_tree_did: "SNET-00000042", wallet_balance: 12.5,
                        has_wallet: true)
-    tree = OpenStruct.new(did: wallet_tree_did)
-    wallet = has_wallet ? OpenStruct.new(tree: tree, balance: wallet_balance) : nil
-
-    tx = OpenStruct.new(
-      id: id,
+    tx = BlockchainTransaction.new(
       amount: amount,
       status: status,
       token_type: token_type,
       tx_hash: tx_hash,
-      explorer_url: explorer_url,
       blockchain_network: blockchain_network,
       locked_points: locked_points,
       to_address: to_address,
@@ -39,18 +39,12 @@ RSpec.describe BlockchainTransactions::Show do
       created_at: 2.hours.ago,
       updated_at: 30.minutes.ago,
       notes: notes,
-      error_message: error_message,
-      wallet: wallet,
-      # Тікер ДЕЛЕГУЄТЬСЯ реальній моделі (одна деривація на застосунок, `04_04 §12.14`).
-      # ⚠️ Стеля та сама, що в сусідньому `index_spec`: решта мока — `OpenStruct` із
-      # вигаданими типами; борг на реальний запис → `00_07` TEST.12.
-      ticker: BlockchainTransaction.new(token_type: token_type).ticker
+      error_message: error_message
     )
-    tx.define_singleton_method(:model_name) { ActiveModel::Name.new(BlockchainTransaction) }
-    tx.define_singleton_method(:to_key) { [ id ] }
-    tx.define_singleton_method(:to_param) { id.to_s }
-    tx.define_singleton_method(:solana_network?) { blockchain_network == "solana" }
-    tx.define_singleton_method(:celo_network?) { blockchain_network == "celo" }
+    tx.id = id
+
+    wallet = has_wallet ? Wallet.new(tree: Tree.new(did: wallet_tree_did), balance: wallet_balance) : nil
+    tx.define_singleton_method(:wallet) { wallet }
     tx
   end
 
@@ -106,23 +100,24 @@ RSpec.describe BlockchainTransactions::Show do
   end
 
   describe "token badge" do
-    it "renders carbon_coin with emerald style" do
-      expect(html).to include("carbon_coin")
+    # Негативна половина несуча: бейдж доти друкував сире значення, тож пін лише на
+    # стиль лишався б зеленим і після повернення сирого enum'а.
+    it "renders carbon_coin as its label with the emerald style" do
+      expect(html).to include("Silken Carbon Coin")
       expect(html).to include("text-emerald-400")
+      expect(html).not_to include("carbon_coin")
     end
 
-    it "renders forest_coin with forest token style" do
-      tx = mock_transaction(token_type: "forest_coin")
-      rendered = render_component(transaction: tx)
-      expect(rendered).to include("forest_coin")
+    it "renders forest_coin as its label with the forest token style" do
+      rendered = render_component(transaction: mock_transaction(token_type: "forest_coin"))
+      expect(rendered).to include("Silken Forest Coin")
       expect(rendered).to include("text-token-forest")
     end
 
     # Реальне `cusd` замість вигаданого `"unknown_coin"` — див. сусідній `index_spec`.
-    it "renders cusd — the styleless enum value — with the zinc fallback" do
-      tx = mock_transaction(token_type: "cusd")
-      rendered = render_component(transaction: tx)
-      expect(rendered).to include("cusd")
+    it "renders cusd as its label with the zinc style" do
+      rendered = render_component(transaction: mock_transaction(token_type: "cusd"))
+      expect(rendered).to include("Celo Dollar")
       expect(rendered).to include("text-zinc-400")
     end
   end
@@ -133,14 +128,18 @@ RSpec.describe BlockchainTransactions::Show do
       expect(html).to include("0.005 SCC")
     end
 
-    it "displays token type" do
+    # 🔴 Найгірший підклас, який цей рядок ніс: сире значення всередині ПЕРЕКЛАДЕНОЇ
+    # мітки — фраза виглядає локалізованою, тож при вичитці її пропускають
+    # (`04_04 §12.14`). Сусідній рядок `Status` ішов через дім міток ще доти.
+    it "displays token type as its label, never the raw enum value" do
       expect(html).to include("Token Type")
-      expect(html).to include("carbon_coin")
+      expect(html).to include("Silken Carbon Coin")
+      expect(html).not_to include("carbon_coin")
     end
 
     it "displays blockchain network" do
       expect(html).to include("Blockchain Network")
-      expect(html).to include("POLYGON")
+      expect(html).to include("EVM")
     end
 
     it "displays locked points" do
@@ -153,9 +152,12 @@ RSpec.describe BlockchainTransactions::Show do
       expect(html).to include("0x1234567890abcdef1234567890abcdef12345678")
     end
 
+    # «30.0», а не «30»: колонка `numeric` віддає BigDecimal, і саме цю розбіжність
+    # ховав `OpenStruct` — питання «як тип рендериться в рядок» із сюїти було
+    # неможливо поставити [TEST.12].
     it "displays gas price with wei unit" do
       expect(html).to include("Gas Price")
-      expect(html).to include("30 wei")
+      expect(html).to include("30.0 wei")
     end
 
     it "displays gas used" do
@@ -290,7 +292,11 @@ RSpec.describe BlockchainTransactions::Show do
   # цей гейт довелось би будувати на іншому детекторі.
   describe "status style coverage" do
     it "gives every BlockchainTransaction state a style of its own" do
-      fallback = render_component(transaction: mock_transaction(status: "__not_a_state__"))
+      # Реальний enum відкидає невалідне значення ще в конструкторі, тож недосяжну
+      # гілку відкриває стаб РИДЕРА, а не підсунутий запис.
+      bogus = mock_transaction
+      bogus.define_singleton_method(:status) { "__not_a_state__" }
+      fallback = render_component(transaction: bogus)
       fallback_style = fallback[/bg-status-neutral[^"]*/]
       # Без цього приклад був би вакуумним: якби фолбек не знайшовся,
       # `not_to include(nil)` не перевіряло б нічого.

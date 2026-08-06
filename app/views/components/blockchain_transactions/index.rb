@@ -30,8 +30,14 @@ module BlockchainTransactions
         div(class: "flex gap-2") do
           # Список бере enum, а не рукопис: раніше тут стояло `%w[carbon_coin
           # forest_coin]`, і `cusd` (третє значення) з легенди мовчки випав.
+          # Стиль береться з тієї самої мапи, що й рядки таблиці — інакше це не
+          # легенда, а перелік: усі три чіпи були однаково зелені й нічого не
+          # пояснювали. `role="status"` знято — це статична розмітка, а не жива
+          # область (`04_04 §9`).
           BlockchainTransaction.token_types.keys.each do |token_type|
-            span(class: "px-2 py-0.5 border border-emerald-900 text-mini text-emerald-900 uppercase", role: "status") { token_type }
+            span(class: tokens("px-2 py-0.5 text-mini font-bold border", token_type_styles(token_type))) do
+              BlockchainTransaction.token_type_label(token_type)
+            end
           end
         end
       end
@@ -69,7 +75,9 @@ module BlockchainTransactions
     def render_transaction_row(tx)
       tr(class: "hover:bg-emerald-950/10 transition-colors") do
         td(class: "p-4") do
-          span(class: tokens("px-2 py-0.5 text-mini font-bold uppercase border", token_type_styles(tx.token_type))) { tx.token_type }
+          # `uppercase` знято разом із сирим значенням: воно робило машинний токен
+          # навмисним, а власну назву — криком, ще й ламало рядок у вузькій комірці.
+          span(class: tokens("px-2 py-0.5 text-mini font-bold border", token_type_styles(tx.token_type))) { tx.token_type_label }
         end
         td(class: "p-4 text-white font-bold") { "#{tx.amount} #{tx.ticker}" }
         td(class: "p-4") do
@@ -90,10 +98,16 @@ module BlockchainTransactions
       end
     end
 
+    # `cusd` названий ЯВНО, а не лишений у `else`: третє значення enum'а, що живе
+    # в мовчазному фолбеку, невідрізнимо від значення, якого ніхто не передбачив —
+    # рівно так `manual_review` колись діставав стиль тьмяніший за `pending`.
+    # `else` лишається fail-open для майбутнього члена (його поява червонить
+    # `token_ticker_parity_spec`, тож німою вона не буде).
     def token_type_styles(type)
       case type
       when "carbon_coin" then "bg-emerald-900/20 text-emerald-400 border-emerald-500/30"
       when "forest_coin" then "bg-token-forest/20 text-token-forest border-token-forest/30"
+      when "cusd" then "bg-zinc-900 text-zinc-400 border-zinc-700"
       else "bg-zinc-900 text-zinc-400 border-zinc-700"
       end
     end

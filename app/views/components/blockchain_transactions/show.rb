@@ -49,7 +49,7 @@ module BlockchainTransactions
           end
           div(class: "flex items-center gap-3") do
             render Views::Shared::UI::StatusBadge.new(status: @tx.status)
-            span(class: tokens("px-3 py-1 text-mini font-bold uppercase border", token_badge_styles)) { @tx.token_type }
+            span(class: tokens("px-3 py-1 text-mini font-bold border", token_badge_styles)) { @tx.token_type_label }
           end
         end
       end
@@ -66,7 +66,7 @@ module BlockchainTransactions
           end
           tbody(class: "divide-y divide-emerald-900/30") do
             detail_row(t(".details.amount"), "#{@tx.amount} #{@tx.ticker}")
-            detail_row(t(".details.token_type"), @tx.token_type)
+            detail_row(t(".details.token_type"), @tx.token_type_label)
             detail_row(t(".details.status"), Views::Shared::UI::StatusBadge.label(@tx.status))
             detail_row(t(".details.blockchain_network"), @tx.blockchain_network&.upcase || "—")
             detail_row(t(".details.locked_points"), @tx.locked_points || "—")
@@ -137,6 +137,7 @@ module BlockchainTransactions
       case @tx.token_type
       when "carbon_coin" then "bg-emerald-900/20 text-emerald-400 border-emerald-500/30"
       when "forest_coin" then "bg-token-forest/20 text-token-forest border-token-forest/30"
+      when "cusd" then "bg-zinc-900 text-zinc-400 border-zinc-700"
       else "bg-zinc-900 text-zinc-400 border-zinc-700"
       end
     end

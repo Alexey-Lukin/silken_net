@@ -14,7 +14,7 @@ uk:
       kind_soldier: Гаманець солдата
       locked_label: "🔒 %{amount} заблоковано"
       retired_label: "♻ %{amount} погашено"
-      subtitle: Моніторинг потоку Silken Carbon Coins у мережі.
+      subtitle: Моніторинг потоку Вуглецевих монет Silken у мережі.
       system_reserve: Системний резерв
       title: Скарбнична матриця
       total_liquidity: 'Загальна ліквідність:'

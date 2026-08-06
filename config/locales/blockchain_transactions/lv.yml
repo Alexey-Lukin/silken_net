@@ -55,3 +55,7 @@ lv:
         tree_did: Koka DID
         wallet_balance: Maka atlikums
     show_title: 'Darījums #%{id}'
+    token_types:
+      carbon_coin: Silken oglekļa monēta
+      cusd: Celo Dollar
+      forest_coin: Silken meža monēta

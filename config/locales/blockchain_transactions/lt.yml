@@ -55,3 +55,7 @@ lt:
         tree_did: Medžio DID
         wallet_balance: Piniginės balansas
     show_title: 'Sandoris #%{id}'
+    token_types:
+      carbon_coin: Silken anglies moneta
+      cusd: Celo Dollar
+      forest_coin: Silken miško moneta

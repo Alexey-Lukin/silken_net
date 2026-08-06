@@ -91,6 +91,36 @@ class BlockchainTransaction < ApplicationRecord
     TOKEN_TICKERS.fetch(token_type.to_s, token_type.to_s.upcase)
   end
 
+  # Дім МІТКИ типу токена — пара до `TOKEN_TICKERS` вище, і дім спільний не за
+  # аналогією: `ERC20(name, symbol)` оголошує назву й символ ОДНИМ конструктором,
+  # тож у них один верхній дім у Solidity. Різниця лише в тому, де живе наша
+  # копія: символ locale-інваріантний і лежить у Ruby-мапі, назва перекладається
+  # і лежить у локалях — базова мусить дослівно дорівнювати `ERC20("…")`, і це
+  # стереже `spec/quality/token_ticker_parity_spec.rb` разом із символом.
+  # Скоуп належить домену МОДЕЛІ, а не компоненту, який показав значення першим
+  # (`04_04 §12.14`).
+  TOKEN_TYPE_LABEL_SCOPE = "blockchain_transactions.token_types"
+
+  # ОДНА деривація ключа на застосунок: викликач бере цей метод, а не будує
+  # `"#{SCOPE}.#{value}"` сам — друга деривація означає, що друкарська помилка в
+  # одній із них лишається зеленою назавжди (обидві сторони «present» для
+  # будь-якого parity-гейта). Класовий, бо легенда реєстру рендерить мітки з
+  # `token_types.keys`, не маючи жодного запису під рукою.
+  # ⚠️ Сусідні моделі з тим самим іменем enum'а (`ParametricInsurance`,
+  # `TelemetryArchiveBatch` — обидві без `cusd`) цей скоуп можуть ПОЗИЧАТИ; це
+  # свідомо, бо мітка описує токен, а не транзакцію. Заводячи там власні мітки,
+  # спершу перетни множини значень — збіг слова в спільному bag'у і є дефектом.
+  def self.token_type_label(token_type)
+    value = token_type.to_s
+    I18n.t("#{TOKEN_TYPE_LABEL_SCOPE}.#{value}", default: value)
+  end
+
+  # Fail-open — дзеркало `#ticker`: новий член enum'а рендериться сирим значенням
+  # ще до того, як мітка доїде в локалі.
+  def token_type_label
+    self.class.token_type_label(token_type)
+  end
+
   # [СИНХРОНІЗОВАНО]: Додано статус :sent для підтримки асинхронного Fire-and-Forget
   enum :status, {
     pending: 0,        # Очікує в черзі на обробку

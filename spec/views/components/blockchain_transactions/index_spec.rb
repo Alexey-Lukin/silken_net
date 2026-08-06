@@ -9,35 +9,31 @@ RSpec.describe BlockchainTransactions::Index do
   let(:html) { render_component(transactions: transactions, pagy: pagy) }
 
 
+  # Реальний НЕЗБЕРЕЖЕНИЙ запис, а не `OpenStruct` — дзеркало
+  # `wallets/transaction_row_spec.rb` [TEST.12]. Старий мок оголошував світ, у якому
+  # дефект неможливий (`04_06 §B.2` BP #14): `amount` подавався РЯДКОМ при колонці
+  # `numeric(24,6)`, а `blockchain_network: "polygon"` — значення, яке
+  # `validates inclusion: %w[evm solana celo]` відкидає, тобто спека моделювала
+  # мережу, якої модель не приймає. Разом із ним зникають рукописні `model_name`/
+  # `to_key`/`to_param`: реальний запис віддає їх сам, і саме їхня вигаданість
+  # дозволяла `dom_id` розійтися з тим, що рендериться. Асоціації стабляться
+  # ТОЧКОВО — фабрика тягла б `wallet → tree → cluster → organization`.
   def mock_transaction(id: 1, amount: "0.005", status: "confirmed", token_type: "carbon_coin",
                        tx_hash: "0xabcdef1234567890abcdef1234567890abcdef12",
-                       explorer_url: "https://polygonscan.com/tx/0xabc",
-                       blockchain_network: "polygon", wallet_tree_did: "SNET-00000042",
+                       blockchain_network: "evm", wallet_tree_did: "SNET-00000042",
                        has_wallet: true)
-    tree = OpenStruct.new(did: wallet_tree_did)
-    wallet = has_wallet ? OpenStruct.new(tree: tree) : nil
-
-    tx = OpenStruct.new(
-      id: id,
+    tx = BlockchainTransaction.new(
       amount: amount,
       status: status,
       token_type: token_type,
       tx_hash: tx_hash,
-      explorer_url: explorer_url,
       blockchain_network: blockchain_network,
-      wallet: wallet,
-      created_at: Time.current,
-      # Тікер ДЕЛЕГУЄТЬСЯ реальній моделі, а не переписується тут: другий вивід тієї
-      # самої мапи означав би, що друкарська помилка в одному з них зелена назавжди
-      # (`04_04 §12.14`). ⚠️ Стеля: решта цього мока лишається `OpenStruct` із
-      # вигаданими типами (`amount` рядком; `blockchain_network: "polygon"` — значення,
-      # яке `validates inclusion: %w[evm solana celo]` відкидає). Повний перехід на
-      # реальний запис зроблено в `wallets/transaction_row_spec.rb`; тут борг → `00_07` TEST.12.
-      ticker: BlockchainTransaction.new(token_type: token_type).ticker
+      created_at: Time.current
     )
-    tx.define_singleton_method(:model_name) { ActiveModel::Name.new(BlockchainTransaction) }
-    tx.define_singleton_method(:to_key) { [ id ] }
-    tx.define_singleton_method(:to_param) { id.to_s }
+    tx.id = id
+
+    wallet = has_wallet ? Wallet.new(tree: Tree.new(did: wallet_tree_did)) : nil
+    tx.define_singleton_method(:wallet) { wallet }
     tx
   end
 
@@ -46,9 +42,12 @@ RSpec.describe BlockchainTransactions::Index do
       expect(html).to include("Blockchain Ledger")
     end
 
-    it "displays token type badges" do
-      expect(html).to include("carbon_coin")
-      expect(html).to include("forest_coin")
+    # Легенда рендерить МІТКИ, і негативна половина тут несуча: доти вона друкувала
+    # сирий `carbon_coin`, тож пін на саму присутність слова лишався б зеленим і
+    # після регресії.
+    it "renders the legend as labels, never the raw enum value" do
+      expect(html).to include("Silken Carbon Coin", "Silken Forest Coin", "Celo Dollar")
+      expect(html).not_to include("carbon_coin")
     end
   end
 
@@ -74,7 +73,7 @@ RSpec.describe BlockchainTransactions::Index do
     end
 
     it "displays network in uppercase" do
-      expect(html).to include("POLYGON")
+      expect(html).to include("EVM")
     end
 
     it "displays tree DID from wallet" do
@@ -233,7 +232,12 @@ RSpec.describe BlockchainTransactions::Index do
   # тут іде через спільний `StatusBadge`, тож фолбек той самий, що в зразку.
   describe "status style coverage" do
     it "gives every BlockchainTransaction state a style of its own" do
-      fallback = render_component(transactions: [ mock_transaction(status: "__not_a_state__") ], pagy: pagy)
+      # Реальний enum відкидає невалідне значення ще в конструкторі, тож недосяжну
+      # гілку відкриває стаб РИДЕРА, а не підсунутий запис: інакше зонд валить сам
+      # себе замість того, щоб виміряти фолбек.
+      bogus = mock_transaction
+      bogus.define_singleton_method(:status) { "__not_a_state__" }
+      fallback = render_component(transactions: [ bogus ], pagy: pagy)
       fallback_style = fallback[/bg-status-neutral[^"]*/]
       expect(fallback_style).to be_present
 

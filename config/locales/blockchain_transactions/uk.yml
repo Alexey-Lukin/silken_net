@@ -55,3 +55,7 @@ uk:
         tree_did: DID дерева
         wallet_balance: Баланс гаманця
     show_title: Транзакція №%{id}
+    token_types:
+      carbon_coin: Вуглецева монета Silken
+      cusd: Celo Dollar
+      forest_coin: Лісова монета Silken

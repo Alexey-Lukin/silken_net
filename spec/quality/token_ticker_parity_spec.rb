@@ -23,12 +23,17 @@ require "rails_helper"
 #   · Гейт судить РІВНІСТЬ рядків, не правильність символу: два однаково хибні
 #     написання він пропустить.
 RSpec.describe "token ticker parity: Ruby map ⟷ Solidity ERC20 symbol" do # rubocop:disable RSpec/DescribeClass
-  # `ERC20("Silken Carbon Coin", "SCC")` → "SCC", по всіх контрактах репо.
-  let(:declared_symbols) do
+  # `ERC20("Silken Carbon Coin", "SCC")` → ["Silken Carbon Coin", "SCC"], по всіх
+  # контрактах репо. Обидва аргументи беруться ОДНИМ проходом свідомо: назва й
+  # символ оголошені одним конструктором, тож два екстрактори розійшлися б тихо.
+  let(:declared_tokens) do
     Dir[Rails.root.join("contracts/*.sol")].sort.filter_map do |path|
-      File.read(path)[/ERC20\(\s*"[^"]*"\s*,\s*"([^"]+)"\s*\)/, 1]
+      File.read(path).match(/ERC20\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)/)&.captures
     end
   end
+
+  let(:declared_symbols) { declared_tokens.map(&:last) }
+  let(:declared_names)   { declared_tokens.map(&:first) }
 
   # Liveness. Без цього прикладу «0 порушень» означало б «0 перевірок»: щойно
   # конструктор перепишуть (або каталог переїде), екстрактор віддасть порожню
@@ -55,6 +60,55 @@ RSpec.describe "token ticker parity: Ruby map ⟷ Solidity ERC20 symbol" do # ru
   it "покриває КОЖНЕ значення enum'а — і не тримає запису для неіснуючого типу" do
     expect(BlockchainTransaction::TOKEN_TICKERS.keys)
       .to match_array(BlockchainTransaction.token_types.keys)
+  end
+
+  # Друга вісь того самого дому: НАЗВА токена. Символ locale-інваріантний і живе
+  # в Ruby-мапі; назва перекладається і живе в локалях — але БАЗОВА мітка є таким
+  # самим другим домом чужого значення, тож стереже її той самий гейт.
+  # 🔒 Стеля: перевіряється ЛИШЕ базова локаль. uk/lv/lt перекладають вільно — їхню
+  # парність тримає `i18n-tasks missing`, а не цей файл (`04_04 §12.14`: ціна не
+  # росте з каталогом, і нова неперекладена локаль гейт не червонить).
+  describe "базова мітка `token_type` ⟷ ERC20 name" do
+    let(:base_labels) do
+      BlockchainTransaction.token_types.keys.to_h do |value|
+        key = "#{BlockchainTransaction::TOKEN_TYPE_LABEL_SCOPE}.#{value}"
+        [ value, I18n.t(key, locale: I18n.default_locale, default: nil) ]
+      end
+    end
+
+    it "має базову мітку для КОЖНОГО значення enum'а" do
+      missing = base_labels.select { |_value, label| label.nil? }.keys
+
+      expect(missing).to be_empty,
+                         "нема мітки `#{BlockchainTransaction::TOKEN_TYPE_LABEL_SCOPE}.<value>` для: #{missing.join(', ')}"
+    end
+
+    it "тримає базову мітку ДОСЛІВНО рівною назві з контракту" do
+      drifted = declared_names - base_labels.values.compact
+
+      expect(drifted).to be_empty,
+                         "назва(и) #{drifted.join(', ')} оголошені в contracts/*.sol, але жодна базова мітка " \
+                         "`#{BlockchainTransaction::TOKEN_TYPE_LABEL_SCOPE}.*` їм не дорівнює — локаль відстала від Solidity"
+    end
+
+    # Shrink-list, дзеркало символьного вище: мітка без контракту. Щойно токен
+    # дістає власний `.sol`, рядок мусить зникнути звідси сам.
+    it "не має мітки без контракту, окрім зовнішнього Celo Dollar" do
+      expect(base_labels.values.compact - declared_names).to eq([ "Celo Dollar" ])
+    end
+  end
+
+  describe "#token_type_label" do
+    it "віддає базову мітку з локалі" do
+      tx = build(:blockchain_transaction, token_type: :forest_coin)
+      expect(tx.token_type_label).to eq("Silken Forest Coin")
+    end
+
+    # Fail-open — дзеркало `#ticker` нижче: тихий `nil` тут означав би бейдж без
+    # тексту на грошовому екрані.
+    it "фолбекає на сире значення для типу поза локаллю" do
+      expect(BlockchainTransaction.token_type_label("quantum_coin")).to eq("quantum_coin")
+    end
   end
 
   describe "#ticker" do

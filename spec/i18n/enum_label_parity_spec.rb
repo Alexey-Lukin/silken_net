@@ -24,8 +24,11 @@ require "rails_helper"
 #     ще-неперекладена локаль не робить гейт червоним (`04_04 §12.14`).
 #     Парність між локалями — інша вісь, її тримає `i18n-tasks missing`.
 #   · Лише ЗАРЕЄСТРОВАНІ пари. Enum, який рендериться сирим і скоупа не має
-#     взагалі (`action_type`, `token_type`, `AuditLog#action`, breadcrumb-
-#     сегменти), сюди не входить — він відкритий у `00_07` I18N.1.
+#     взагалі (`action_type`, `AuditLog#action`, breadcrumb-сегменти), сюди не
+#     входить — він відкритий у `00_07` I18N.1.
+#   · Для `token_type` цей гейт тримає ЛИШЕ повноту набору. Що базова мітка
+#     дорівнює назві з контракту (`ERC20("…")`) — інша вісь, і її тримає
+#     `spec/quality/token_ticker_parity_spec.rb` разом із символом.
 #   · Не перевіряє, що ВИКЛИКАЧ ходить через скоуп: сайт із `.humanize` повз
 #     спільну константу лишається тут зеленим (це вісь «одна деривація», і її
 #     тримає код-рев'ю + патерн `04_04 §12.14`).
@@ -44,6 +47,11 @@ registry = [
     name:   "ActuatorCommand#status",
     scope:  "actuators.command_status_badge",
     values: -> { ActuatorCommand.statuses.keys }
+  },
+  {
+    name:   "BlockchainTransaction#token_type",
+    scope:  BlockchainTransaction::TOKEN_TYPE_LABEL_SCOPE,
+    values: -> { BlockchainTransaction.token_types.keys }
   },
   {
     # Тут джерело — не одна модель, а сама курована мапа StatusBadge: вона

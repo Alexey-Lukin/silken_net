@@ -11,6 +11,14 @@ module Wallets
       # ⚡ [СИНХРОНІЗАЦІЯ]: target ID для оновлення статусу транзакції
       tr(id: dom_id(@tx), class: row_classes) do
         td(class: "p-4") do
+          # 🔴 Сире значення тут СВІДОМЕ, і `#token_type_label` сюди дротувати НЕ
+          # МОЖНА: рядок рендериться всередині броадкасту, тож мітка поїхала б
+          # усім підписникам локаллю ПРОДЮСЕРА (`04_04 §8.1а`). Заборона
+          # категорична — гейт `broadcast_payload_invariance_spec` її не спіймає,
+          # бо рахує `t()` лише у ВЛАСНОМУ джерелі компонента й не резолвить
+          # виклики моделі. Виняток рівно один і він виміряний: locale-ІНВАРІАНТНІ
+          # дані (тікер нижче, мапа стилів) payload'у прози не додають.
+          # Розблокує це міграція payload'а → `00_07` I18N.2.
           span(class: tokens("px-2 py-0.5 rounded-sm text-mini font-bold uppercase border", tx_type_styles)) do
             @tx.token_type
           end
@@ -42,6 +50,7 @@ module Wallets
       case @tx.token_type
       when "carbon_coin" then "bg-emerald-900/20 text-emerald-400 border-emerald-500/30"
       when "forest_coin" then "bg-token-forest/20 text-token-forest border-token-forest/30"
+      when "cusd" then "bg-zinc-900 text-zinc-400 border-zinc-700"
       else "bg-zinc-900 text-zinc-400 border-zinc-700"
       end
     end
