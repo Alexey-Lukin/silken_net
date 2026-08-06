@@ -2130,6 +2130,7 @@ _Нову SSOT doc-drift / tracker-tooling знахідку додавати р�
 | E.61 | Solana micro-rewards batch payouts (Kredis-акумуляція → `transferChecked`, годинний cron, поріг-gated) | `05_01 §8`, `04_02 §10` |
 | E.56 | DSP preprocessing для TinyML — RESOLVED: Path B log-mel (НЕ raw/MFCC); front-end `Compute_LogMel` | `03_03 §3.2/§3.4` |
 | E.57 | TENSOR_ARENA budget — **дубль, не окремий трек** (НЕ resolved): робота й мітигація живуть в активному FW.26 | `03_03 §4.3` (active FW.26) |
+| E.51 | **ID вийшов з ужитку — носив ДВА різні треки поспіль, обидва живі під іншими іменами.** Спершу oracle-gas-thresholds (code-теги `[E.51]`, 7 сайтів) → перенумеровано в **INF.22**; потім ID перехопив Monte-Carlo TTL-flood → перейменовано в **ARCH.74** (07-20), щоб зняти колізію. Рядок стоїть заради крос-реф цілісності: `CHANGELOG.md` (release-please-генерований, не переписується) цитує `E.51` двічі, і без цього дому `code_tracker_id_check` тримав його фантомом | активні `INF.22` · `ARCH.74` |
 | S6.4 | Per-service circuit breaker (web3 `ResilientClient`/`http_client.rb`) — resolved code-annotation, orphan-home (DOC-T.21) | `04_02`, `06_08` |
 | S6.6 | Anchor-gap alerting threshold 8d (`EthereumAnchorWorker`) — resolved code-annotation | `05_04` |
 | S6.8 | Weekend Telemetry Blackout — behaviour rationale — resolved code-annotation | `04_02` |

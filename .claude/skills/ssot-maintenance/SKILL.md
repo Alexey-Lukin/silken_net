@@ -238,6 +238,18 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 
 A guard does not pin its own reason for existing · a golden test that validates DEFAULTS cements an off-spec number · a curated map is a tripwire (a dead entry must go RED) · science surfaces need a real guard, not `stan_audit` (symbols vs numbers — prove ingestion) · an honesty-pass that comes back POSITIVE is a preventive guard · **a skill mirror rots more quietly than canon → sweep the skills in every closing pass** · the best sort of mutation-proof is **a gate that catches its own author** (`DOC-T.15` line-refs and the vertical-list linter both bit the person writing them).
 
+### Triaging a phantom tracker-ID — most are NOT ex-items
+
+`code_tracker_id_check` flags an ID cited in code/docs with no `00_07` home, and its own hint («give the ID a §🗄️ row if it deserves one») reads like an instruction to add rows. **Measured 2026-08-06 on six phantoms: exactly ONE deserved a row.** Dig each one's fate with `git log -G'<ID>\b'` on the tracker before writing anything — and note that a bare `git log -S` is a literal *substring* search, so a two-digit family member also matches every three-digit sibling; the word boundary is not optional. 🔴 **Write the surviving phantoms into this file and you red the gate — it scans `.claude/**` and cannot tell an illustrative citation from a live one.** (Learned twice in one hour: the paragraph documenting that trap was itself written with the tokens in it.) Hence the five shapes below carry **no ID literals** — the shapes are the lesson, and the concrete instances live in the memory files and in git:
+
+- **A regex artifact, never an ID.** One came from prose naming a subsystem after the item number with a hyphen; the extractor stopped at the first lowercase letter and invented an ID out of the word's first initial. Adding a row would canonise the gate's own parsing bug.
+- **A phantom the commit REMOVED.** Another is cited only in a CHANGELOG line that describes deleting a phantom reference — the release note *is* the record of its death.
+- **A row that already existed and was deliberately deleted.** One HAD an archive row; a dedup commit removed it because the content merged into a sibling that is itself archived. Re-adding undoes a deliberate merge — so check `git log -G` for a *removed* `| ID |` line before concluding it never had a home.
+- **Retracted content.** One was cut together with a claim the founder ordered removed everywhere. A tombstone row re-creates a hook back to the retraction; leave that record in memory, where a strikethrough plus its deletion date is self-limiting.
+- **A corrected mis-attribution.** One was never an item at all — a reference assigned to the wrong number and later corrected to a live sibling.
+
+The one that DID qualify (`E.51`) had the full shape: a real item, a real successor, and a citation in a file we cannot edit (release-please-generated `CHANGELOG.md`). Its row records **both** of its lives — the ID carried two unrelated tracks in sequence, so a single «renamed → X» would have been half the truth. Precedent form is already in the table (`E.5` merged into `ARCH.2`). ⚠️ And the advisory list is not a to-do: the gate marks CHANGELOG advisory-only *because* it is generated, so a permanently non-empty advisory tail is the designed state, not debt.
+
 ### Worked example (a real loop, 2026-05-30)
 
 ```
