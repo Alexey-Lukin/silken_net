@@ -67,6 +67,39 @@ module Api
         end
       end
 
+      # --- СТАТУС ТРАНЗАКЦІЇ (I18N.2 · клас 2 «viewer-driven pull») ---
+      # GET /wallets/:wallet_id/transactions/:id/status
+      #
+      # Turbo-frame тягне СВІЙ фрагмент власним запитом — тобто вже з локаллю
+      # глядача (`LocaleSettable` тут відпрацював) і його ж авторизацією. Саме це
+      # дозволяє броадкасту рядка не нести жодного перекладеного слова.
+      #
+      # ⚠️ Авторизація йде по ГАМАНЦЮ й тим самим предикатом, що сторінка
+      # (`transaction_status? = show?`). Це свідома відмова від власного правила
+      # для транзакції: `WalletPolicy#show?` приймає АБО `wallet.organization_id`,
+      # АБО `wallet.tree.cluster.organization_id`, а сусідній `find_transaction`
+      # у `BlockchainTransactionsController` скоупить лише другим шляхом — тобто
+      # два правила вже розходяться, і копія тут дала б сторінку, що рендериться,
+      # з комірками, які вічно пульсують на 404.
+      #
+      # ⚠️ `created_at` у запиті — не оздоблення, а ключ партиції: таблиця
+      # RANGE-партиційована, і без нього пошук сканує ВСІ партиції. Хелпер моделі
+      # сам тримає 1-секундне вікно (ISO-8601 має секундну точність, колонка —
+      # мікросекундну) і fail-safe на кривому форматі.
+      def transaction_status
+        @wallet = Wallet.find(params[:wallet_id])
+        authorize @wallet
+
+        transaction = @wallet.blockchain_transactions
+                             .find_with_partition_pruning(params[:id], params[:created_at])
+
+        # ⚠️ Фрейм у відповіді — БЕЗ `src`. Не «щоб не було циклу»: Turbo ловить
+        # self-referencing src, кидає в консоль `references itself` і лишає фрейм
+        # ПОРОЖНІМ — тобто ціна помилки не трафік, а назавжди порожня комірка й
+        # тиха помилка, якої ніхто не побачить.
+        render Wallets::TransactionStatusFrame.new(tx: transaction), layout: false
+      end
+
       # --- БЛОКЧЕЙН ІДЕНТИЧНІСТЬ (Lazy-Loaded Turbo Frame) ---
       # GET /wallets/:id/metadata
       def metadata

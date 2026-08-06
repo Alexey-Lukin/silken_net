@@ -385,7 +385,7 @@ class BlockchainTransaction < ApplicationRecord
     Turbo::StreamsChannel.broadcast_prepend_to(
       [ wallet, :transactions ],
       target: Wallets::Show::LEDGER_TARGET,
-      html: Wallets::TransactionRow.new(tx: self).call
+      html: Wallets::TransactionRow.new(tx: self, status_src: status_frame_src).call
     )
 
     # Плейсхолдер порожнього леджера зникає разом із першою транзакцією. Друга
@@ -406,6 +406,16 @@ class BlockchainTransaction < ApplicationRecord
     Rails.logger.warn "📡 [UI.4] broadcast_new_transaction ##{id}: #{e.message}"
   end
 
+  # [I18N.2 · клас 2] Адресу локаль-вільного стаба будує ПРОДЮСЕР, а не компонент:
+  # рядок рендериться через `.call`, де view-контексту (а отже й `*_path`-хелперів
+  # Phlex::Rails) не існує. `created_at` їде параметром як ключ партиції — без нього
+  # ендпоінт сканує всі партиції RANGE-таблиці.
+  def status_frame_src
+    Rails.application.routes.url_helpers.wallet_transaction_status_path(
+      wallet_id: wallet_id, id: id, created_at: created_at&.iso8601
+    )
+  end
+
   def broadcast_status_change
     return unless wallet
 
@@ -413,7 +423,7 @@ class BlockchainTransaction < ApplicationRecord
     Turbo::StreamsChannel.broadcast_replace_later_to(
       [ wallet, :transactions ],
       target: ActionView::RecordIdentifier.dom_id(self),
-      html: Wallets::TransactionRow.new(tx: self).call
+      html: Wallets::TransactionRow.new(tx: self, status_src: status_frame_src).call
     )
 
     # Оновлення балансу при фінальних статусах (confirmed/failed)

@@ -3,33 +3,49 @@
 
 module Wallets
   class TransactionRow < ApplicationComponent
-    def initialize(tx:)
+    # @param status_src [String, nil] контекст рендеру, а не оздоблення:
+    #   `nil` = сторінка (комірка статусу віддає бейдж одразу — дані вже в
+    #   `@transactions`), рядок = БРОАДКАСТ (комірка віддає locale-вільний стаб
+    #   зі `src`, і кожен глядач тягне свій фрагмент власним запитом).
+    #   Дім адреси — `Wallets::TransactionStatusFrame.dom_id`; сам URL будує
+    #   ПРОДЮСЕР (`04_04 §8.1а`, клас 2), щоб маршрут-хелпери не заходили в
+    #   компонент, який рендериться через `.call`.
+    def initialize(tx:, status_src: nil)
       @tx = tx
+      @status_src = status_src
     end
 
     def view_template
       # ⚡ [СИНХРОНІЗАЦІЯ]: target ID для оновлення статусу транзакції
       tr(id: dom_id(@tx), class: row_classes) do
         td(class: "p-4") do
-          # 🔴 Сире значення тут СВІДОМЕ, і `#token_type_label` сюди дротувати НЕ
-          # МОЖНА: рядок рендериться всередині броадкасту, тож мітка поїхала б
-          # усім підписникам локаллю ПРОДЮСЕРА (`04_04 §8.1а`). Заборона
-          # категорична — гейт `broadcast_payload_invariance_spec` її не спіймає,
-          # бо рахує `t()` лише у ВЛАСНОМУ джерелі компонента й не резолвить
-          # виклики моделі. Виняток рівно один і він виміряний: locale-ІНВАРІАНТНІ
-          # дані (тікер нижче, мапа стилів) payload'у прози не додають.
-          # Розблокує це міграція payload'а → `00_07` I18N.2.
+          # 🔴 Чіп несе ТІКЕР, а не сире `token_type` — і це не переклад, а
+          # виправлення ОДИНИЦІ (⚖️ founder 2026-08-06). Деномінація стояла в
+          # рядку ДВІЧІ: сирий enum тут і тікер у сумі поруч, тобто одне й те саме
+          # двома різними мовами. Тікер locale-ІНВАРІАНТНИЙ (його верхній дім —
+          # `ERC20(…, "SCC")` у контракті, звірку тримає `token_ticker_parity_spec`),
+          # тож payload лишається без прози, а сирий англійський enum зникає з
+          # екрана БЕЗ жодного перекладу. Мапа кольорів і далі ключується на
+          # `token_type` — вона теж locale-інваріантна.
           span(class: tokens("px-2 py-0.5 rounded-sm text-mini font-bold uppercase border", tx_type_styles)) do
-            @tx.token_type
+            @tx.ticker
           end
         end
-        # Тікер походить від `token_type`, а не зашитий: у леджері гаманця
-        # законно лежать і SFC-транзакції (страхова виплата бере тип із контракту
-        # — `insurance_payout_worker`), і доти вони підписувались «SCC». Мапа
-        # locale-ІНВАРІАНТНА, тож broadcast-payload лишається без прози.
-        td(class: "p-4 text-white font-bold") { "#{@tx.amount} #{@tx.ticker}" }
+        # Сума лишається голим числом: одиницю несе чіп ліворуч. Доти тут стояло
+        # `"#{amount} #{ticker}"`, і саме та пара дублювала деномінацію.
+        td(class: "p-4 text-white font-bold") { @tx.amount.to_s }
         td(class: "p-4") do
-          span(class: tokens("text-micro uppercase tracking-widest", status_color)) { @tx.status }
+          # [I18N.2] Єдина локаль-залежна комірка рядка — тому саме вона стала
+          # фреймом, а не весь рядок: `<tbody>` приймає лише `<tr>`, зате `<td>`
+          # приймає flow-контент (прецедент `Actuators::Show`). Решта комірок
+          # (тікер · сума · хеш · час) locale-інваріантні й їдуть у payload'і як є —
+          # тому РЯДОК лишається одиницею броадкасту, і комірка хеша, що змінюється
+          # разом зі статусом (`mark_as_sent` пише `tx_hash`), далі оновлюється.
+          if @status_src
+            render Wallets::TransactionStatusFrameStub.new(tx_id: @tx.id, src: @status_src)
+          else
+            render Wallets::TransactionStatusFrame.new(tx: @tx)
+          end
         end
         td(class: "p-4 text-gray-600 truncate max-w-[150px] font-mono text-tiny") do
           if @tx.tx_hash.present?

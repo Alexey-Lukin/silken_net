@@ -16,14 +16,19 @@ RSpec.describe Wallets::Show do
     wallet
   end
 
+  # [TEST.12] Реальний НЕЗБЕРЕЖЕНИЙ запис замість `OpenStruct`. Мок тут був того
+  # самого класу, який пункт і описує: він **вигадував метадані фреймворку**
+  # (`model_name`/`to_key` рукописні) і мовчки не мав полів, яких компонент іще не
+  # питав. Щойно рядок почав рендерити `#ticker`, мок віддав `nil` — тобто спека
+  # моделювала світ, у якому дефект неможливий. Реальний запис віддає і `ticker`,
+  # і `explorer_url`, і `dom_id` сам; БД не потрібна, бо нічого не зберігаємо.
   def mock_tx(id: 1, token_type: "carbon_coin", status: "confirmed", amount: "0.005",
-              tx_hash: "0xabcdef1234567890abcdef", explorer_url: "https://polygonscan.com/tx/0x123")
-    tx = OpenStruct.new(
-      id: id, token_type: token_type, status: status, amount: amount,
-      tx_hash: tx_hash, explorer_url: explorer_url, created_at: Time.current
+              tx_hash: "0xabcdef1234567890abcdef")
+    tx = BlockchainTransaction.new(
+      token_type: token_type, status: status, amount: amount,
+      tx_hash: tx_hash, blockchain_network: "evm", created_at: Time.current
     )
-    tx.define_singleton_method(:model_name) { ActiveModel::Name.new(BlockchainTransaction) }
-    tx.define_singleton_method(:to_key) { [ id ] }
+    tx.id = id
     tx
   end
 
@@ -42,9 +47,13 @@ RSpec.describe Wallets::Show do
       expect(html).to include("Timestamp")
     end
 
+    # [I18N.2] Рядок несе ТІКЕР, а не сире значення enum'а — деномінація в леджері
+    # стоїть один раз (⚖️ founder 2026-08-06). Негативна половина ловить рецидив
+    # у бік «повернути сире значення поруч».
     it "renders transaction rows" do
-      expect(html).to include("carbon_coin")
+      expect(html).to include("SCC")
       expect(html).to include("0.005")
+      expect(html).not_to include("carbon_coin")
     end
 
     it "uses dom_id for transaction rows" do

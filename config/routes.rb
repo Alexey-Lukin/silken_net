@@ -153,6 +153,16 @@ Rails.application.routes.draw do
       get :metadata, on: :member
     end
 
+    # [I18N.2 · клас 2] Комірка статусу транзакції, яку глядач тягне СВОЇМ запитом —
+    # тобто вже у своїй локалі. Пласка форма, як у сусіда `actuator_commands/:id`:
+    # вкладений `resources` дав би той самий шлях довшою дорогою. Скоуп навмисно
+    # через ГАМАНЕЦЬ: сторінка вже авторизувала саме цей обʼєкт, тож ендпоінт
+    # переспитує ТЕ САМЕ право (`WalletPolicy#transaction_status? = show?`) і не
+    # заводить другого правила тенантності, яке могло б розійтися зі сторінкою.
+    get "wallets/:wallet_id/transactions/:id/status",
+        to: "wallets#transaction_status",
+        as: :wallet_transaction_status
+
     resources :contracts, only: [ :index, :show ] do
       get :stats, on: :collection
     end

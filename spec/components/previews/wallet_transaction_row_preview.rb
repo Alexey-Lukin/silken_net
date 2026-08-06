@@ -43,17 +43,23 @@ class WalletTransactionRowPreview < Lookbook::Preview
 
   private
 
+  # [TEST.12] Реальний НЕЗБЕРЕЖЕНИЙ запис, а не `OpenStruct`. Мок тут не «м'якший
+  # варіант спеки» — він бреше саме тому глядачеві, заради якого превʼю існує:
+  # `OpenStruct` мовчки віддає `nil` на будь-яке поле, якого в ньому не оголосили,
+  # тож щойно рядок почав рендерити `#ticker`, чіп став би порожнім, і жоден тест
+  # цього не бачить за побудовою. Реальний запис віддає `ticker` та `explorer_url`
+  # сам, з тієї самої деривації, що й прод. БД не потрібна: нічого не зберігаємо.
   def mock_tx(token_type:, status:, amount:, tx_hash:)
-    OpenStruct.new(
-      id: 1,
+    tx = BlockchainTransaction.new(
       token_type: token_type,
       status: status,
       amount: amount,
       tx_hash: tx_hash,
       blockchain_network: "evm",
-      explorer_url: tx_hash ? "https://polygonscan.com/tx/#{tx_hash}" : nil,
       created_at: 2.hours.ago
     )
+    tx.id = 1
+    tx
   end
 
   def render_in_table(&block)

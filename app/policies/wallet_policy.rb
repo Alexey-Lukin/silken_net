@@ -30,6 +30,16 @@ class WalletPolicy < ApplicationPolicy
     show?
   end
 
+  # [I18N.2] Комірка статусу транзакції — той самий обʼєкт і те саме право, що
+  # сторінка гаманця. Окремого правила для транзакції СВІДОМО немає: воно було б
+  # другим означенням тенантності поруч із `show?`, а ці двоє вже мають прецедент
+  # розходження (`BlockchainTransactionsController#find_transaction` скоупить лише
+  # через `wallet → tree → cluster`, тоді як `show?` приймає ще й пряме
+  # `wallet.organization_id`).
+  def transaction_status?
+    show?
+  end
+
   class Scope < ApplicationPolicy::Scope
     def resolve
       scope.where(organization_id: organization_id)

@@ -49,49 +49,44 @@ RSpec.describe Wallets::TransactionRow do
     end
   end
 
-  describe "status color" do
-    it "renders confirmed status in emerald" do
-      html = render_component(tx: mock_tx(status: "confirmed"))
-      expect(html).to include("text-emerald-500")
+  # [I18N.2 · клас 2] Приватної кольор-мапи статусу тут БІЛЬШЕ НЕМАЄ — комірка
+  # віддає `TransactionStatusFrame` (сторінка) або `TransactionStatusFrameStub`
+  # (броадкаст). Тому й піни інші: не «який клас у спана», а «куди делеговано».
+  #
+  # 🔴 Заразом знято приклад, який був вакуумним ЩЕ ДО цієї правки: «renders
+  # confirmed status in emerald» пінив `text-emerald-500`, а той самий клас
+  # носить `hover:` посилання на хеш у сусідній комірці — тобто приклад проходив
+  # через сусідній елемент і лишався б зеленим, навіть якби статус не рендерився
+  # взагалі (`ssot-maintenance` §Guard-craft #17). Виявилось це тим, що при
+  # переході на бейдж він НЕ впав разом із рештою блоку.
+  describe "status cell" do
+    it "renders the status frame, not a private colour map" do
+      html = render_component(tx: mock_tx)
+      expect(html).to include(%(id="#{Wallets::TransactionStatusFrame.dom_id(42)}"))
     end
 
-    it "renders processing status with warning pulse" do
-      html = render_component(tx: mock_tx(status: "processing"))
-      expect(html).to include("text-status-warning-text")
+    # Пін на ДЕЛЕГАЦІЮ, і він же — гейт на КЛАС. Очікування береться з іншого
+    # боку контракту (рендер самого бейджа), а не перераховується тут руками:
+    # саме розрив між рукописним переліком і реальним AASM колись лишив
+    # `manual_review` — стан, де кошти заблоковані, — тьмянішим за доброякісний
+    # `pending`. Тепер будь-який стан, що втратить власний стиль, червонить тут.
+    it "delegates every AASM state's style to the shared badge" do
+      BlockchainTransaction.aasm.states.map(&:name).each do |state|
+        badge = Views::Shared::UI::StatusBadge.new(status: state.to_s).call
+
+        expect(render_component(tx: mock_tx(status: state.to_s))).to include(badge),
+                                                                     "стан #{state} не проходить через спільний бейдж"
+      end
+    end
+
+    # Броадкастна гілка тієї ж комірки. Негативна половина несуча: саме вона
+    # відрізняє «стаб відрендерився» від «стаб відрендерився ЗАМІСТЬ бейджа».
+    it "swaps the badge for a locale-free stub when a broadcast src is given" do
+      html = render_component(tx: mock_tx(status: "confirmed"), status_src: "/wallets/1/transactions/42/status")
+
+      expect(html).to include('src="/wallets/1/transactions/42/status"')
       expect(html).to include("animate-pulse")
-    end
-
-    it "renders sent status with warning pulse" do
-      html = render_component(tx: mock_tx(status: "sent"))
-      expect(html).to include("text-status-warning-text")
-      expect(html).to include("animate-pulse")
-    end
-
-    it "renders pending status in gray" do
-      html = render_component(tx: mock_tx(status: "pending"))
-      expect(html).to include("text-gray-400")
-    end
-
-    it "renders failed status in red" do
-      html = render_component(tx: mock_tx(status: "failed"))
-      expect(html).to include("text-red-500")
-    end
-
-    # Раніше цей приклад називав `manual_review` «unrecognized» і пінив сірий
-    # фолбек — тобто фіксував дефект як норму. Це реальний AASM-стан
-    # грошового шляху, і він був тьмянішим за доброякісний `pending`.
-    # ⚠️ Негативної половини на `text-gray-600` тут бути НЕ може: цей клас
-    # носить ще й комірка хеша (`transaction_row.rb`), тож приклад проходив
-    # би через сусідній елемент — та сама вада, яку цей блок виправляє.
-    it "renders manual_review more prominently than a benign pending row" do
-      html = render_component(tx: mock_tx(status: "manual_review"))
-      pending_html = render_component(tx: mock_tx(status: "pending"))
-
-      expect(html).to include("text-status-warning-text")
-      expect(html).to include("animate-pulse")
-      # Порівняння з доброякісним станом — те, що робить пін не-вакуумним:
-      # обидва рендери проходять той самий шлях, різнитись мусить лише стиль.
-      expect(pending_html).not_to include("animate-pulse")
+      expect(html).not_to include(Views::Shared::UI::StatusBadge.new(status: "confirmed").call)
     end
   end
 
@@ -127,12 +122,21 @@ RSpec.describe Wallets::TransactionRow do
       expect(html).to include("blockchain_transaction_42")
     end
 
-    it "displays the token type" do
-      expect(html).to include("carbon_coin")
+    # Чіп несе ТІКЕР, а не сире значення enum'а. Негативна половина несуча: без неї
+    # пін лишався б зеленим і на старій, сирій формі (`carbon_coin` містить «coin»,
+    # але не «SCC», тож позитив сам по собі відрізняє їх лише випадково).
+    it "renders the ticker in the chip, not the raw enum value" do
+      expect(html).to include("SCC")
+      expect(html).not_to include("carbon_coin")
     end
 
-    it "displays the amount with the ticker of its own token type" do
-      expect(html).to include("0.005 SCC")
+    # [I18N.2 ⚖️ founder 2026-08-06] Деномінація стоїть у рядку РІВНО ОДИН раз —
+    # у чіпі. Доти вона стояла двічі (сирий `carbon_coin` + «0.005 SCC»), тобто
+    # один факт двома мовами, і саме та пара робила переклад чіпа безглуздим:
+    # «Вуглецева монета» поруч із «SCC» читається гірше за сиру пару.
+    it "renders the amount as a bare number — the unit lives in the chip" do
+      expect(html).to include(">0.005<")
+      expect(html).not_to include("0.005 SCC")
     end
 
     # Регресійний гард на живий дефект: тікер був ЗАШИТИЙ як «SCC» при трьох
@@ -141,13 +145,8 @@ RSpec.describe Wallets::TransactionRow do
     # Негативна половина несуча: без неї пін проходив би й на зашитому рядку.
     it "does not sign a forest_coin transaction with the carbon ticker" do
       forest = render_component(tx: mock_tx(token_type: "forest_coin", amount: "5"))
-      expect(forest).to include("5.0 SFC")
+      expect(forest).to include("SFC")
       expect(forest).not_to include("SCC")
-    end
-
-    it "uses text-micro for status instead of arbitrary sizes" do
-      expect(html).to include("text-micro")
-      expect(html).not_to include("text-[")
     end
 
     it "uses extracted row_classes method" do
@@ -156,32 +155,10 @@ RSpec.describe Wallets::TransactionRow do
     end
   end
 
-  # Гейт на КЛАС — дзеркало `blockchain_transactions/show_spec`, якого на цій
-  # поверхні не було. Перелічувати стани руками тут не можна: саме розрив між
-  # рукописним переліком і реальним AASM колись лишив `manual_review` у дефолтній
-  # гілці, тобто найгучніший стан грошового шляху малювався найтихіше.
-  #
-  # Два уточнення проти дослівного копіювання зразка. (1) Мапа тут ПРИВАТНА, тож
-  # фолбек — не `bg-status-neutral` спільного бейджа, а `text-gray-600`; брати
-  # його літералом не можна — той самий клас носить комірка хеша, і пін був би
-  # вакуумним, тому детектор бере ВЕСЬ клас статус-спана (`text-micro` у цьому
-  # компоненті рівно один). (2) Запис тут РЕАЛЬНИЙ, тож фолбек треба ДІСТАВАТИ:
-  # неіснуюче значення enum кидає `ArgumentError`, а `status: nil` мовчки дає
-  # `pending` — AASM ставить `initial: true` уже в конструкторі, тож такий «зонд»
-  # рендерив би звичайний стан і робив приклад тавтологією (спіймано падінням).
-  # Єдиний чесний шлях до гілки — стабнути сам ридер на реальному записі.
-  describe "status style coverage" do
-    it "gives every BlockchainTransaction state a style of its own" do
-      probe = mock_tx
-      allow(probe).to receive(:status).and_return("__not_a_state__")
-      fallback_style = render_component(tx: probe)[/text-micro[^"]*/]
-      expect(fallback_style).to be_present
-
-      BlockchainTransaction.aasm.states.map(&:name).each do |state|
-        rendered = render_component(tx: mock_tx(status: state.to_s))
-        expect(rendered).not_to include(fallback_style),
-                                "стан #{state} падає в дефолтну гілку — його не видно як окремий"
-      end
-    end
-  end
+  # ⚠️ Тут стояв гейт «кожен стан має власний стиль», побудований на ПРИВАТНІЙ
+  # мапі цього компонента (зонд через стаб ридера + детектор `text-micro`). Мапи
+  # більше немає — статус іде через спільний бейдж, — тож гейт переїхав у
+  # `describe "status cell"` вище й змінив форму: він пінить ДЕЛЕГАЦІЮ, звіряючи
+  # рендер із рендером самого бейджа. Це строго сильніше за старий: старий довів
+  # би «стилі різні» навіть якби всі вони були чужого домену.
 end

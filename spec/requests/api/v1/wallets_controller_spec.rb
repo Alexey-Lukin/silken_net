@@ -206,4 +206,66 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       end
     end
   end
+
+  # [I18N.2 · клас 2] Ендпоінт існує рівно для того, щоб броадкаст рядка не ніс
+  # перекладеної прози: комірку статусу кожен глядач тягне СВОЇМ запитом, тобто
+  # у своїй локалі й зі своєю авторизацією.
+  #
+  # 🔴 Жоден гейт цієї поверхні не вимагає: `broadcast_payload_invariance_spec`
+  # до дочірніх компонентів сліпий, `turbo_stream_scope_spec` нових підписок не
+  # бачить (їх і немає). Тож доказ тут — не формальність, а єдине, що стоїть між
+  # цією коміркою й тихим крос-тенантним читанням.
+  describe "GET /wallets/:wallet_id/transactions/:id/status" do
+    let(:admin) { create(:user, :admin, organization: organization) }
+    let(:headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
+    let!(:transaction) { create(:blockchain_transaction, wallet: wallet, status: :confirmed) }
+
+    # ⚠️ Локаль ведемо COOKIE, а не заголовком `Accept-Language`, і це не смак:
+    # виміряно 2026-08-06, що третій щабель `LocaleSettable#resolve_locale` мертвий —
+    # `request.preferred_language` у цьому дереві не існує (гема немає), а гард
+    # `return nil unless request.respond_to?(:preferred_language)` ковтає це мовчки.
+    # Cookie — саме той шлях, яким локаль приходить у проді (її ставить перемикач).
+    it "renders the status frame with the badge in the VIEWER's locale" do
+      cookies[:locale] = "uk"
+
+      get "/wallets/#{wallet.id}/transactions/#{transaction.id}/status",
+          headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(%(id="tx_status_frame_#{transaction.id}"))
+      expect(response.body).to include(I18n.t("ui.status.confirmed", locale: :uk))
+      # Відповідь БЕЗ `src` — інакше Turbo впізнає self-referencing фрейм, тихо
+      # лишить його порожнім і напише `references itself` лише в консоль.
+      expect(response.body).not_to include("src=")
+    end
+
+    # Вісь тенантності: те саме право, що й сторінка (`transaction_status? = show?`).
+    context "when the wallet belongs to another organization" do
+      let(:other_tree) { create(:tree, cluster: create(:cluster, organization: create(:organization))) }
+      let!(:foreign_wallet) { other_tree.wallet || create(:wallet, tree: other_tree) }
+      let!(:foreign_tx) { create(:blockchain_transaction, wallet: foreign_wallet) }
+
+      it "denies the read" do
+        get "/wallets/#{foreign_wallet.id}/transactions/#{foreign_tx.id}/status",
+            headers: headers.merge("Accept" => "text/html")
+
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    # 🔴 Друга вісь, і вона НЕ покривається першою: гаманець свій, транзакція чужа.
+    # Скоуп тут дає асоціація (`@wallet.blockchain_transactions`), а не політика,
+    # тож пін мусить бити саме в неї — інакше id чужої транзакції рендерився б
+    # у власному фреймі глядача.
+    it "404s on a transaction that belongs to a different wallet" do
+      other_tree = create(:tree, cluster: cluster)
+      other_wallet = other_tree.wallet || create(:wallet, tree: other_tree)
+      foreign_tx = create(:blockchain_transaction, wallet: other_wallet)
+
+      get "/wallets/#{wallet.id}/transactions/#{foreign_tx.id}/status",
+          headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end
