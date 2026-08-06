@@ -547,7 +547,7 @@ IAP-operator ролі (iam.tf, for_each `iap_admin_members` — люди-адм�
 ## 🐳 Docker — Multi-stage Build
 
 ```
-Stage 1: base          — ruby:4.0.5-slim + libjemalloc2, libvips (≥ 8.13), postgresql-client
+Stage 1: base          — ruby:4.0.6-slim + libjemalloc2, libvips (≥ 8.13), postgresql-client
 Stage 2: build         — bundle install, bootsnap, assets:precompile
 Stage 3: final         — COPY gems + app + Cloud SQL Auth Proxy, USER rails:1000, CMD: thrust ./bin/rails server
 ```

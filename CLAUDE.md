@@ -4,7 +4,7 @@
 
 ## 1. Що це
 
-Планетарна Bio-IoT **D-MRV** платформа моніторингу лісів: Ti-6Al-4V гіроїдний анкер + **EBFC** (≈500 мВ з ксилеми, «zero-grid») → STM32 **«Soldier»** (sense→TinyML→Lorenz→encrypt→LoRa 868) → **«Queen»** gateway (CoAP) → Rails 8.1 / Ruby 4.0.5 / Postgres / Sidekiq → 12-chain Web3 **Proof-of-Growth** → mint SCC (**10 000 growth_points = 1 SCC**, Polygon ERC-20; слешинг при деградації).
+Планетарна Bio-IoT **D-MRV** платформа моніторингу лісів: Ti-6Al-4V гіроїдний анкер + **EBFC** (≈500 мВ з ксилеми, «zero-grid») → STM32 **«Soldier»** (sense→TinyML→Lorenz→encrypt→LoRa 868) → **«Queen»** gateway (CoAP) → Rails 8.1 / Ruby 4.0.6 / Postgres / Sidekiq → 12-chain Web3 **Proof-of-Growth** → mint SCC (**10 000 growth_points = 1 SCC**, Polygon ERC-20; слешинг при деградації).
 
 **Чесний стан** (TRL-дім `docs/00_03`; числа pipeline — `docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md`): firmware **TRL 6** · backend **TRL 8** · anchor/EBFC **TRL 3** (in-silico Zero-Lab ✅; фізичний TRL 4 = in-vitro Ti-coin pending — **in-silico ≠ TRL 4** за NASA/ISO). **System TRL = 3** (gated by anchor/EBFC). **Polyglot:** Rails (Ruby) · firmware-C (STM32) · mruby (`bio_contract`) · Solidity (Foundry) · in-silico Python (DFT/MD) · .NET C# (PicoGK CAD).
 
@@ -38,7 +38,7 @@
 ## 3. Середовище
 
 ```bash
-ruby --version            # 4.0.5
+ruby --version            # 4.0.6
 bin/rubocop -a            # lint (binstub; -a = автофікс)
 bin/rspec                 # backend suite (binstub; full ~1.5min)
 bin/brakeman              # security
