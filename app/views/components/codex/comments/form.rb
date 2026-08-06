@@ -12,9 +12,13 @@ module Codex
       end
 
       def view_template
-        form(
-          action: codex_node_comments_path(@node.slug),
-          method: "post",
+        # [UI.7] `form_with`, не рукописна `<form>`: та не несла `authenticity_token`,
+        # тож без JS сабміт давав 422 — працювало лише тому, що Turbo підставляє
+        # `X-CSRF-Token` зі свого мета-тега. Тіло лишається дослівним: контракт із
+        # `codex--comment`-контролером тримається на `data`-таргеті САМЕ на `<form>`.
+        form_with(
+          url: codex_node_comments_path(@node.slug),
+          method: :post,
           class: "space-y-2",
           data: { "codex--comment-target": "form" }
         ) do

@@ -95,53 +95,46 @@ module Codex
         end
       end
 
+      # [UI.7] `button_to` замість рукописної `<form>` — вона не несла
+      # `authenticity_token`. Три приховані поля переїхали в `params:`; Rails
+      # розкладає їх плоскими top-level input'ами, як контролер їх і читає.
+      # [SEC.25] `realm` мусить повернутись у контролер: `#create` редиректить
+      # назад на арену (PRG), і без цього поля редирект щоразу скидав би
+      # людину в перший упорядкований реалм.
       def render_pick_form(node)
-        form(
-          action: codex_matches_path,
-          method: "post",
-
-        ) do
-          input(type: "hidden", name: "pair_seed", value: @pair_seed)
-          input(type: "hidden", name: "winner_slug", value: node.slug)
-          # [SEC.25] Реалм мусить повернутись у контролер: `#create` редиректить
-          # назад на арену (PRG), і без цього поля редирект щоразу скидав би
-          # людину в перший упорядкований реалм.
-          input(type: "hidden", name: "realm", value: @realm.slug)
-          button(
-            type: "submit",
-            class: tokens(
-              "inline-flex items-center gap-2 px-3 py-1 border",
-              "bg-gaia-surface text-gaia-text border-gaia-border",
-              "hover:bg-gaia-primary hover:text-gaia-primary-text",
-              "text-tiny uppercase tracking-[0.3em]",
-              "focus-visible:ring-2 focus-visible:ring-gaia-primary"
-            )
-          ) { t("codex.battle_arena.pick") }
-        end
+        button_to(
+          t("codex.battle_arena.pick"),
+          codex_matches_path,
+          method: :post,
+          params: { pair_seed: @pair_seed, winner_slug: node.slug, realm: @realm.slug },
+          class: tokens(
+            "inline-flex items-center gap-2 px-3 py-1 border",
+            "bg-gaia-surface text-gaia-text border-gaia-border",
+            "hover:bg-gaia-primary hover:text-gaia-primary-text",
+            "text-tiny uppercase tracking-[0.3em]",
+            "focus-visible:ring-2 focus-visible:ring-gaia-primary"
+          )
+        )
       end
 
+      # Дзеркало pick-форми — див. коментар вище. ⚠️ `form_class:` тут несучий:
+      # `button_to` інакше перезаписує клас самої `<form>` своїм дефолтним
+      # `"button_to"`, і кнопка втратила б праве вирівнювання мовчки.
       def render_skip
-        form(
-          action: codex_matches_path,
-          method: "post",
-          class: "flex justify-end",
-
-        ) do
-          input(type: "hidden", name: "pair_seed", value: @pair_seed)
-          input(type: "hidden", name: "skip", value: "true")
-          # Дзеркало pick-форми — див. коментар вище.
-          input(type: "hidden", name: "realm", value: @realm.slug)
-          button(
-            type: "submit",
-            class: tokens(
-              "inline-flex items-center gap-2 px-3 py-1 border border-gaia-border",
-              "bg-gaia-surface text-gaia-text-muted",
-              "hover:bg-gaia-surface-sunken",
-              "text-mini uppercase tracking-[0.3em] font-mono",
-              "focus-visible:ring-2 focus-visible:ring-gaia-primary"
-            )
-          ) { t("codex.battle_arena.skip") }
-        end
+        button_to(
+          t("codex.battle_arena.skip"),
+          codex_matches_path,
+          method: :post,
+          params: { pair_seed: @pair_seed, skip: "true", realm: @realm.slug },
+          form_class: "flex justify-end",
+          class: tokens(
+            "inline-flex items-center gap-2 px-3 py-1 border border-gaia-border",
+            "bg-gaia-surface text-gaia-text-muted",
+            "hover:bg-gaia-surface-sunken",
+            "text-mini uppercase tracking-[0.3em] font-mono",
+            "focus-visible:ring-2 focus-visible:ring-gaia-primary"
+          )
+        )
       end
     end
   end

@@ -109,23 +109,25 @@ module Codex
           return
         end
 
-        form(
-          action: codex_fractions_path,
-          method: "post"
-        ) do
-          input(type: "hidden", name: "fraction[node_slug]", value: node.slug)
-          button(
-            type: "submit",
-            disabled: cooldown_locked,
-            class: tokens(
-              "inline-flex items-center gap-2 px-3 py-1 border",
-              "text-tiny uppercase tracking-[0.3em]",
-              "focus-visible:ring-2 focus-visible:ring-gaia-primary",
-              cooldown_locked ? locked_classes : open_classes
-            ),
-            data: cooldown_locked ? {} : { turbo_confirm: t(".confirm", slug: node.slug) }
-          ) { cooldown_locked ? t(".locked") : t(".pick") }
-        end
+        # [UI.7] `button_to` замість рукописної `<form>` — вона не несла
+        # `authenticity_token`. Приховане поле переїхало в `params:`, звідки Rails
+        # сам розкладає вкладений хеш у `fraction[node_slug]` (контролер читає
+        # саме його). `data:` лишається на КНОПЦІ — Turbo резолвить
+        # `data-turbo-confirm` спершу на submitter'і.
+        button_to(
+          cooldown_locked ? t(".locked") : t(".pick"),
+          codex_fractions_path,
+          method: :post,
+          params: { fraction: { node_slug: node.slug } },
+          disabled: cooldown_locked,
+          class: tokens(
+            "inline-flex items-center gap-2 px-3 py-1 border",
+            "text-tiny uppercase tracking-[0.3em]",
+            "focus-visible:ring-2 focus-visible:ring-gaia-primary",
+            cooldown_locked ? locked_classes : open_classes
+          ),
+          data: cooldown_locked ? {} : { turbo_confirm: t(".confirm", slug: node.slug) }
+        )
       end
 
       def open_classes
