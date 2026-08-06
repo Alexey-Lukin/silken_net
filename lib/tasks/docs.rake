@@ -559,7 +559,10 @@ namespace :docs do
     if changed.zero?
       puts "  canonical pins already current ✓"
     else
-      File.write(pins_path, YAML.dump(pins))
+      # YAML.dump serialises DATA only — every comment in the file is lost, and the
+      # SPDX header is a comment. Without this re-insert the rewrite silently strips
+      # it and `spdx_headers.rb --check` (separate HARD gate) reds the Docs lane.
+      File.write(pins_path, YAML.dump(pins).sub(/\A---\n/, "---\n# SPDX-License-Identifier: AGPL-3.0-or-later\n"))
       puts "  wrote #{changed} pin(s) → lib/canonical_block_pins.yml (verify diff before commit)"
     end
   end
