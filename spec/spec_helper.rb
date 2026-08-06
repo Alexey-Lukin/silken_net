@@ -2,7 +2,6 @@
 # SimpleCov — аналіз покриття тестами.
 # Має бути на самому початку, до завантаження будь-якого коду додатка.
 require "simplecov"
-require "simplecov_json_formatter"
 SimpleCov.start "rails" do
   enable_coverage :branch
 
@@ -14,12 +13,12 @@ SimpleCov.start "rails" do
     SimpleCov::Formatter::JSONFormatter
   ])
 
-  add_filter "/spec/"
-  add_filter "/config/"
-  add_filter "/db/"
-  add_filter "/vendor/"
-  add_filter "/firmware/"
-  add_filter "/lib/daemons/"
+  skip "/spec/"
+  skip "/config/"
+  skip "/db/"
+  skip "/vendor/"
+  skip "/firmware/"
+  skip "/lib/daemons/"
 
   # lib/tasks/*.rake — Rake tasks are ops/SSOT orchestration, not the running
   # production app. Their real logic is extracted into lib/*.rb engines
@@ -31,24 +30,24 @@ SimpleCov.start "rails" do
   # diluted the production-code gate (they were ~373 LOC / 155 branches of the
   # uncovered total). Same rationale as the /firmware/ and /lib/daemons/ filters
   # above. See 04_06 §B.3 for the coverage-scope policy.
-  add_filter "/lib/tasks/"
+  skip "/lib/tasks/"
   # Standalone CLI guard-scripts (workflow_gate_perimeter / guard_registry_sync /
   # docs_check / stan_audit …) — pure-Ruby drift-gates run via `ruby scripts/*.rb`
   # in docs.yml, NOT Rails-runtime code; their quality gate is their own spec +
   # mutation-verification, not the app coverage-floor. Same rationale as /lib/tasks/.
-  add_filter "/scripts/"
+  skip "/scripts/"
 
   # Boilerplate Rails-файли без бізнес-логіки
-  add_filter "app/jobs/application_job.rb"
-  add_filter "app/helpers/application_helper.rb"
-  add_filter "app/mailers/application_mailer.rb"
+  skip "app/jobs/application_job.rb"
+  skip "app/helpers/application_helper.rb"
+  skip "app/mailers/application_mailer.rb"
 
-  add_group "Models",      "app/models"
-  add_group "Controllers", "app/controllers"
-  add_group "Services",    "app/services"
-  add_group "Workers",     "app/workers"
-  add_group "Blueprints",  "app/blueprints"
-  add_group "Views",       "app/views"
+  group "Models",      "app/models"
+  group "Controllers", "app/controllers"
+  group "Services",    "app/services"
+  group "Workers",     "app/workers"
+  group "Blueprints",  "app/blueprints"
+  group "Views",       "app/views"
 
   # Feature-тести запускаються окремим CI job і мають свій скоуп.
   # Мінімальний кавередж застосовується тільки до unit/integration спеків.
@@ -61,12 +60,16 @@ SimpleCov.start "rails" do
   else
     minimum_coverage line: 99, branch: 98
   end
-  minimum_coverage_by_file 0
 end
 
-# Per-group coverage tripwire. SimpleCov ships with a global `minimum_coverage`
-# гейтом, але без per-group — отже падіння покриття у Services/Workers може
-# схуднути нижче критичного рівня, доки глобальний середній лишається ≈99%.
+# Per-group coverage tripwire — глобальний `minimum_coverage` не бачить, як
+# Services/Workers худнуть нижче критичного, доки середнє тримається ≈99%.
+# ⚠️ SimpleCov 1.0.3 має ВЛАСНИЙ per-group гейт (`coverage(:line) {
+# minimum_per_group N, only: "Models" }`), і цей блок його дублює СВІДОМО:
+# нативний рахує порожню групу як 0% і валить прогін, а тут порожні групи
+# пропускаються (`files.empty?`) — інакше будь-який subset-прогін
+# (`bin/rspec spec/models`) червонів би на решті пʼяти груп. Заміна = окреме
+# рішення з цією ціною → 00_07 OPS.22, не побічний ефект бампу.
 # Гейт відключаємо для feature-test run (там покриття вимірюється окремо)
 # та для pure-unit прогонів з COVERAGE=0 (subset спеків лінтерів у docs.yml).
 unless ENV["FEATURE_TEST"] || ENV["COVERAGE"] == "0"
