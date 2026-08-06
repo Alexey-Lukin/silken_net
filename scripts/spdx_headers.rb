@@ -67,6 +67,14 @@
 #   · encrypted / key material (*.enc, *.key) — not text, corrupting it is unrecoverable.
 #   · tools/in_silico/conda-lock.yml — a third-party tool's output; conda-lock cannot be
 #     taught to emit the tag, and it rewrites the file wholesale.
+#
+#   ⚠️ The "a YAML round-trip drops the header" class above has a SECOND carrier, and it is
+#   IN scope rather than excluded: `lib/canonical_block_pins.yml` is rewritten by our OWN
+#   `rake docs:repin` via `YAML.dump`, which cost a red `CI · Docs` on 2026-08-06. Where the
+#   generator is ours the cure is the opposite of an exclusion — teach it to re-insert the
+#   header (done, docs.rake) — because the file must stay licensed. So when adding any new
+#   generator that writes a tagged YAML/TOML file, ask which side of that line it falls on;
+#   an exclusion is only right when the writer is a third party we cannot change.
 #   · docs/**, .github/.claude/.kamal, public/, vendor/, *.tfvars.example (templates a
 #     user copies into their own private config), *.toml manifests (tool config, the same
 #     class as Gemfile), and the generated bin/ binstubs — of which exactly three are

@@ -92,6 +92,44 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   (`contracts/`), rubygems.org (gems), PyPI release history (ML/in-silico). A `@vN`-pinned CI action
   also floats to fresh patches that run in CI with secrets — SHA-pin the high-blast-radius ones
   (cf. tj-actions/changed-files, 2025).
+- 🔴 **The age rule cuts BOTH ways — a fresh PR can carry a long-ripe artifact** (2026-08-06). `#499`
+  (`library/ruby` digest) opened that morning, i.e. "an hour old" by its title — but the digest itself
+  had been pushed **23 days** earlier. Dating the artifact instead of the PR is what surfaced that we
+  were three weeks behind on Ruby, and turned a one-line digest bump into a full 4.0.5→4.0.6 recipe.
+  So the reflex is not only "don't take the young" but **"find out what's actually IN there"** —
+  a PR's age tells you nothing in either direction. For docker tags read `tag_last_pushed` from the
+  Hub API, and verify the digest **independently** via the registry manifest (`docker-content-digest`),
+  not from the Hub JSON you just read. Sibling check worth one command: compare the tag's digest against
+  its `-<suite>` variants (`4.0.6-slim` vs `4.0.6-slim-trixie`) — identical digests prove the base OS did
+  NOT shift under you, which is what would silently move `libvips`/glibc floors.
+- 🔴 **A version perimeter is WIDER than its gate, and half the hits must NOT be edited** (Ruby bump,
+  2026-08-06). `git grep 4.0.5` returned **15 files** while `ruby_version_sync.rb` guards **8** mirrors.
+  The rest were *historical narrative* — the PR #463 post-mortem quoted inside `ci.yml`/`docs.yml`/the
+  guard's own header ("образ 4.0.6 vs Gemfile 4.0.5"), plus two measurement records in the SPDX spec
+  ("measured on Ruby 4.0.5 with a negative control"). A blind `sed` would have corrupted the incident
+  write-up **and lied about the conditions a measurement was taken under.** Read every hit and ask
+  "is this a PIN or a STORY?" — only pins move.
+- 🔴 **An owner-only drift guard watches PROSE; tool config satellites are outside it forever** (solc
+  0.8.36, 2026-08-06). The tracker item warned that the 0.8.35 bump had left 9 stale `0.8.28` copies —
+  and a stale copy showed up again, in `contracts/aderyn.toml` ("reads foundry.toml for solc 0.8.35").
+  `solc_pragma_version_drift` only scans `docs/**`, so any `*.toml`/`*.json` that restates a version in
+  a comment is invisible to it **by construction, not by oversight**. Grepping the tool configs is a
+  manual step of the recipe, right next to the canon sweep.
+- 🔴 **After ANY generator writes, run the WHOLE lane — it touches files your diff never named**
+  (2026-08-06, reddened `main` twice). `rake docs:repin` writes via `YAML.dump`, which serialises DATA
+  only — every comment is dropped, and the SPDX header of `lib/canonical_block_pins.yml` **is** a
+  comment. `spdx_headers.rb --check` is a separate HARD gate in the `CI · Docs` lane, alongside
+  `model_doc_sync`, linter-specs and protocols-ref. Running `check_refs`+`tracker`, getting two honest
+  exit-0s and concluding "docs are green" is a perimeter substitution: the measurement was true, it just
+  covered a smaller set than I decided it did. (Fixed at the tool — repin now re-inserts the header.)
+- 🔴 **Measure a dependency's risk from the FILE DIFF against YOUR call path, not from the changelog**
+  (CMSIS-DSP 1.17.1, 2026-08-06). The release advertises "corrected MVE float-to-Q15/Q31 conversions" —
+  i.e. *numbers changing* — and the tracker rightly flagged it as a log-mel parity threat. But a
+  changelog describes the whole project: `git diff v1.17.0 v1.17.1 -- Source/ Include/` showed 16 files,
+  and **neither `arm_rfft_fast_f32.c` nor `arm_cfft_f32.c`** (our only call) was among them; the MVE
+  paths are unreachable on Cortex-M4; and the one shared file changed a single table by adding `f`
+  suffixes to literals already narrowed to `float32_t` — a table we never touch (log-mel calls libm
+  `logf()`). A submodule hands you an exact diff — use it *before* deciding to be afraid.
 - **Age the DIFF, not the PR title** (2026-07-16). A Dependabot PR is named for its *target* dep,
   but bundler re-resolves the target's own dependencies to latest in the same lock-diff — so a
   "ripe" PR smuggles fresh transitives past the gate. Seen: `pagy 43.5.6→43.6.0` (age 7d ✅) carried
