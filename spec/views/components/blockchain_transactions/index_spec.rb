@@ -226,4 +226,22 @@ RSpec.describe BlockchainTransactions::Index do
       expect(rendered).to include("page=2")
     end
   end
+
+  # Гейт на КЛАС — дзеркало `blockchain_transactions/show_spec`, якого на цій
+  # поверхні не було: статуси стерегли рукописним переліком, а саме розрив між
+  # ним і реальним AASM колись лишив `manual_review` у дефолтній гілці. Рядок
+  # тут іде через спільний `StatusBadge`, тож фолбек той самий, що в зразку.
+  describe "status style coverage" do
+    it "gives every BlockchainTransaction state a style of its own" do
+      fallback = render_component(transactions: [ mock_transaction(status: "__not_a_state__") ], pagy: pagy)
+      fallback_style = fallback[/bg-status-neutral[^"]*/]
+      expect(fallback_style).to be_present
+
+      BlockchainTransaction.aasm.states.map(&:name).each do |state|
+        rendered = render_component(transactions: [ mock_transaction(status: state.to_s) ], pagy: pagy)
+        expect(rendered).not_to include(fallback_style),
+                                "стан #{state} падає в дефолтну гілку — його не видно як окремий"
+      end
+    end
+  end
 end

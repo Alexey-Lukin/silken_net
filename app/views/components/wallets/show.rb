@@ -3,6 +3,13 @@
 
 module Wallets
   class Show < ApplicationComponent
+    # Спільний дім target-id леджера: обидва боки тракту — ця сторінка й
+    # `BlockchainTransaction#broadcast_new_transaction` — мусять називати ту саму
+    # ціль. Рукописний рядок по обидва боки вже давав у цьому репо мертві тракти
+    # (`04_04 §8.3`), тож адреса живе константою, як `telemetry_feed` мав би.
+    LEDGER_TARGET = "transactions_ledger"
+    EMPTY_PLACEHOLDER_TARGET = "empty_ledger"
+
     def initialize(wallet:, transactions:, pagy: nil)
       @wallet = wallet
       @transactions = transactions
@@ -44,6 +51,18 @@ module Wallets
 
     private
 
+    # Леджер відсортований `created_at: :desc`, тож продюсер робить `prepend` —
+    # а він коректний ЛИШЕ там, де рендериться початок списку. На сторінці ≥2
+    # адреси не віддаємо ВЗАГАЛІ (`nil` → Phlex опускає атрибут): свіжа
+    # транзакція сіла б у чужий зріз пагінації, ще й розсинхронивши лічильники.
+    # Саме `nil`, а не власне ім'я для кожної сторінки: друге народило б адресу,
+    # якої не кличе жоден продюсер, тобто новий екземпляр рівно того класу, що
+    # інвентаризує [UI.4]. Turbo мовчки ігнорує ціль, якої немає в DOM.
+    def ledger_target_id
+      page = @pagy&.page
+      LEDGER_TARGET if page.nil? || page == 1
+    end
+
     def render_transaction_ledger
       div(class: "space-y-4") do
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".ledger_title") }
@@ -59,12 +78,12 @@ module Wallets
                 th(scope: "col", class: "p-4 text-right") { t(".columns.timestamp") }
               end
             end
-            # ⚡ [СИНХРОНІЗАЦІЯ]: ID для вставки нових транзакцій
-            tbody(id: "transactions_ledger", class: "divide-y divide-emerald-900/30") do
+            # ⚡ [СИНХРОНІЗАЦІЯ]: ціль для вставки нових транзакцій
+            tbody(id: ledger_target_id, class: "divide-y divide-emerald-900/30") do
               if @transactions.any?
                 @transactions.each { |tx| render Wallets::TransactionRow.new(tx: tx) }
               else
-                tr(id: "empty_ledger") do
+                tr(id: EMPTY_PLACEHOLDER_TARGET) do
                   td(colspan: 5, class: "p-10 text-center text-gray-700 italic") { t(".empty") }
                 end
               end

@@ -609,6 +609,68 @@ RSpec.describe BlockchainTransaction, type: :model do
     end
   end
 
+  # [UI.4] Поява транзакції — окремий тракт від зміни статусу: `after_update_commit`
+  # створення не ловить, тож доти щойно намінтована транзакція не доїжджала до
+  # відкритого леджера жодного разу. Цілі тут пінені ЛІТЕРАЛАМИ свідомо: код
+  # обох боків ходить через `Wallets::Show`-константи, і якби спека брала ту саму
+  # константу, координоване перейменування лишилось би зеленим (`04_04 §8.3`).
+  describe "broadcast_new_transaction" do
+    before do
+      allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to)
+      allow(Turbo::StreamsChannel).to receive(:broadcast_remove_to)
+      allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_later_to)
+    end
+
+    it "prepends the new row into the ledger of the owning wallet" do
+      tx = create(:blockchain_transaction, status: :pending, tx_hash: nil)
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_prepend_to).with(
+        [ tx.wallet, :transactions ],
+        hash_including(target: "transactions_ledger")
+      )
+    end
+
+    it "carries the rendered row itself, not an empty frame" do
+      tx = create(:blockchain_transaction, status: :pending, tx_hash: nil)
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_prepend_to) do |_stream, **opts|
+        expect(opts[:html]).to include(%(id="blockchain_transaction_#{tx.id}"))
+      end
+    end
+
+    it "removes the empty-ledger placeholder in the same stream" do
+      tx = create(:blockchain_transaction, status: :pending, tx_hash: nil)
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_remove_to).with(
+        [ tx.wallet, :transactions ],
+        hash_including(target: "empty_ledger")
+      )
+    end
+
+    # Прикраса екрана не сміє вбити money-шлях: виняток із `after_create_commit`
+    # пролітає нагору з `create!` (у `commit_records` є `ensure`, але немає
+    # `rescue`), а на трьох сайтах створення це коштувало б необоротно.
+    it "never lets a broadcast failure escape into the money path" do
+      allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to).and_raise(StandardError, "cable down")
+      allow(Rails.logger).to receive(:warn)
+
+      expect { create(:blockchain_transaction, status: :pending, tx_hash: nil) }.not_to raise_error
+      expect(Rails.logger).to have_received(:warn).with(/broadcast_new_transaction/)
+    end
+
+    context "when the transaction has no wallet (cluster-sourced audit row)" do
+      it "broadcasts nothing at all" do
+        tx = build(:blockchain_transaction)
+        allow(tx).to receive(:wallet).and_return(nil)
+
+        tx.send(:broadcast_new_transaction)
+
+        expect(Turbo::StreamsChannel).not_to have_received(:broadcast_prepend_to)
+        expect(Turbo::StreamsChannel).not_to have_received(:broadcast_remove_to)
+      end
+    end
+  end
+
   # [MRV.1] Кожен money-перехід → tamper-evident AuditLog-ланцюг організації.
   describe "money audit-trail (MRV.1)" do
     let(:tx) { create(:blockchain_transaction, status: :pending, tx_hash: nil) }

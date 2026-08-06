@@ -266,6 +266,12 @@ class BlockchainTransaction < ApplicationRecord
   # Оновлюємо рядок у таблиці Wallet Ledger та на сторінці деталей TX.
   after_update_commit :broadcast_status_change, if: :saved_change_to_status?
 
+  # ⚡ [СИНХРОНІЗАЦІЯ]: поява транзакції в леджері гаманця. Окремий хук потрібен
+  # тому, що створення оновленням не є: доти щойно намінтована транзакція не
+  # з'являлась у відкритому леджері ЖОДНОГО разу, а порожній гаманець лишався з
+  # написом «транзакцій не виявлено» до перезавантаження сторінки [UI.4].
+  after_create_commit :broadcast_new_transaction
+
   private
 
   # [MRV.1] Tamper-evident слід money-переходів у SHA-256 AuditLog-ланцюг організації
@@ -330,6 +336,46 @@ class BlockchainTransaction < ApplicationRecord
     Rails.logger.error "🛑 [Web3] release_locked_points_on_fail! ##{id}: #{e.message}"
   end
 
+  # Леджер відсортований `created_at: :desc`, тому `prepend`, не `append`:
+  # свіжий запис належить угорі, інакше він сідає під п'ятдесятим рядком.
+  #
+  # СИНХРОННО — це умова коректності, а не стиль. У формі `_later_`, симетричній
+  # до сусіда нижче, обидва броадкасти стали б незалежними Sidekiq-джобами без
+  # гарантії порядку: при інверсії `replace` прилітає в ціль, якої ще немає
+  # (тихий no-op), а слідом `prepend` садить рядок, відрендерений на старому
+  # статусі — і той застрягає до наступного переходу, а після `confirmed`
+  # переходів не буває.
+  #
+  # Літерал стріму повторено свідомо: `turbo_stream_scope_spec` вимагає, щоб
+  # адреса на боці продюсера була видима статично (винесена в локал читається
+  # як `:indirect` і червоніє), а дім імен record-form стріми не покриває.
+  def broadcast_new_transaction
+    return unless wallet
+
+    Turbo::StreamsChannel.broadcast_prepend_to(
+      [ wallet, :transactions ],
+      target: Wallets::Show::LEDGER_TARGET,
+      html: Wallets::TransactionRow.new(tx: self).call
+    )
+
+    # Плейсхолдер порожнього леджера зникає разом із першою транзакцією. Друга
+    # половина безпечна сама по собі: `remove` у ціль, якої немає в DOM, Turbo
+    # тихо ігнорує, тож порядок доставки двох повідомлень значення не має.
+    Turbo::StreamsChannel.broadcast_remove_to(
+      [ wallet, :transactions ],
+      target: Wallets::Show::EMPTY_PLACEHOLDER_TARGET
+    )
+  rescue StandardError => e
+    # Прикраса екрана НЕ сміє вбити money-шлях. `commit_records` не має `rescue`
+    # (лише `ensure`), тож виняток із `after_*_commit` пролітає нагору з `create!`
+    # — а на трьох сайтах створення це коштувало б необоротно: KlimaDAO вже
+    # виконав on-chain `retire` ДО транзакції й пішов би на другий по Sidekiq-
+    # retry, а slash та Solana осіли б у `manual_review` через збій кабелю.
+    # Стеля названа: втрачений пульс не повторюється — глядач побачить рядок
+    # після перезавантаження, бо сама транзакція в БД уже є.
+    Rails.logger.warn "📡 [UI.4] broadcast_new_transaction ##{id}: #{e.message}"
+  end
+
   def broadcast_status_change
     return unless wallet
 
@@ -342,5 +388,11 @@ class BlockchainTransaction < ApplicationRecord
 
     # Оновлення балансу при фінальних статусах (confirmed/failed)
     wallet.broadcast_balance_update if status_confirmed? || status_failed?
+  rescue StandardError => e
+    # Дзеркало гарда вище, і поставлено ТИМ САМИМ проходом свідомо: дірка тут
+    # та сама (виняток із `after_update_commit` пролітає з `update!`/AASM-події,
+    # а всі три її пускачі — `mark_as_sent!`/`confirm!`/`fail!` — money-переходи),
+    # тож закрити лише новий продюсер означало б лишити асиметрію без причини.
+    Rails.logger.warn "📡 [UI.4] broadcast_status_change ##{id}: #{e.message}"
   end
 end

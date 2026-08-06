@@ -54,6 +54,26 @@ RSpec.describe Wallets::Show do
     it "includes transactions_ledger tbody ID" do
       expect(html).to include('id="transactions_ledger"')
     end
+
+    # [UI.4] Продюсер робить `prepend`, тож стабільна адреса легальна лише там,
+    # де рендериться ПОЧАТОК списку. Поза першою сторінкою вона мусить зникнути,
+    # інакше свіжа транзакція сідає в чужий зріз пагінації.
+    it "keeps the stable ledger target on the first page" do
+      html = render_component(wallet: wallet, transactions: transactions,
+                              pagy: mock_pagy(count: 120, page: 1, last: 3))
+
+      expect(html).to include('id="transactions_ledger"')
+    end
+
+    # Поза першою сторінкою адреси немає ВЗАГАЛІ — не власне ім'я для сторінки:
+    # те друге було б ціллю, якої не кличе жоден продюсер, тобто новим членом
+    # саме того класу мертвих target-id, що [UI.4] інвентаризує.
+    it "drops the ledger target entirely beyond the first page" do
+      html = render_component(wallet: wallet, transactions: transactions,
+                              pagy: mock_pagy(count: 120, page: 2, last: 3))
+
+      expect(html).not_to include("transactions_ledger")
+    end
   end
 
   describe "empty ledger" do
@@ -61,6 +81,12 @@ RSpec.describe Wallets::Show do
 
     it "shows empty state message" do
       expect(html).to include("No transactions detected")
+    end
+
+    # Ціль, яку знімає `BlockchainTransaction#broadcast_new_transaction`. Доти
+    # цей id не пінила жодна спека, хоча продюсер тепер на нього адресує.
+    it "marks the placeholder row with the id the producer removes" do
+      expect(html).to include('id="empty_ledger"')
     end
   end
 

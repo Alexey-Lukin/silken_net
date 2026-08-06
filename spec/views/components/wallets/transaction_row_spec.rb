@@ -155,4 +155,33 @@ RSpec.describe Wallets::TransactionRow do
       expect(html).to include("transition-colors")
     end
   end
+
+  # Гейт на КЛАС — дзеркало `blockchain_transactions/show_spec`, якого на цій
+  # поверхні не було. Перелічувати стани руками тут не можна: саме розрив між
+  # рукописним переліком і реальним AASM колись лишив `manual_review` у дефолтній
+  # гілці, тобто найгучніший стан грошового шляху малювався найтихіше.
+  #
+  # Два уточнення проти дослівного копіювання зразка. (1) Мапа тут ПРИВАТНА, тож
+  # фолбек — не `bg-status-neutral` спільного бейджа, а `text-gray-600`; брати
+  # його літералом не можна — той самий клас носить комірка хеша, і пін був би
+  # вакуумним, тому детектор бере ВЕСЬ клас статус-спана (`text-micro` у цьому
+  # компоненті рівно один). (2) Запис тут РЕАЛЬНИЙ, тож фолбек треба ДІСТАВАТИ:
+  # неіснуюче значення enum кидає `ArgumentError`, а `status: nil` мовчки дає
+  # `pending` — AASM ставить `initial: true` уже в конструкторі, тож такий «зонд»
+  # рендерив би звичайний стан і робив приклад тавтологією (спіймано падінням).
+  # Єдиний чесний шлях до гілки — стабнути сам ридер на реальному записі.
+  describe "status style coverage" do
+    it "gives every BlockchainTransaction state a style of its own" do
+      probe = mock_tx
+      allow(probe).to receive(:status).and_return("__not_a_state__")
+      fallback_style = render_component(tx: probe)[/text-micro[^"]*/]
+      expect(fallback_style).to be_present
+
+      BlockchainTransaction.aasm.states.map(&:name).each do |state|
+        rendered = render_component(tx: mock_tx(status: state.to_s))
+        expect(rendered).not_to include(fallback_style),
+                                "стан #{state} падає в дефолтну гілку — його не видно як окремий"
+      end
+    end
+  end
 end
