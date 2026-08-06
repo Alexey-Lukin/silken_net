@@ -64,10 +64,29 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   (Ruby 4.0.x, json 2.19.x, sentry 6.6.x…). Web *search* lags; fetch the gem's own
   `CHANGES.md` / `gh api .../releases` for the exact version, and trust `bundle outdated` /
   `gh` / rubygems over memory. If a changelog truly isn't retrievable, say so + classify.
+- 🔴 **`--upgrade-package` names a target; it does NOT bound the resolution** (2026-08-06). `uv pip
+  compile … --upgrade-package gitpython==3.1.57 --output-file <FRESH path>` bumped **twelve** packages,
+  including `cryptography 50.0.0` at age 6 days — i.e. straight past the quarantine, under a command
+  whose flag said "one package". The existing lock **is** the preference set: writing to a new path
+  discards it and re-resolves everything to latest. **Always point `--output-file` at the committed
+  lock** (or copy it there first), and verify by counting: `git diff <lock> | grep -E '^[+-][a-z0-9_.-]+=='`
+  must yield exactly as many version lines as packages you named. Same family as "age the DIFF, not the
+  PR title" — except here the stowaways come from your own command, not from Dependabot's.
 - **Release-age quarantine (supply-chain).** A version published in the last ~7 days is the prime
   window for a hijacked-maintainer / malicious-postinstall compromise — these get caught and yanked
   within days, so a short wait kills most of the class for free. Default: **don't auto-take a version
   younger than ~7 days; let it age** — a security fix you actually need is the exception (take it now).
+  🔴 **But the clock is a PROXY: what the quarantine actually measures is how UNEXAMINED the release is**
+  (2026-08-06, founder push). `cryptography 50.0.0` was taken deliberately at **age 6 days**, and that is
+  neither the exception nor a bend. The threat class (hijacked maintainer / malicious postinstall) is
+  ≈nil for pyca/cryptography: PyPI trusted publishing, wheels with no postinstall scripts (Rust/C
+  extension), one of the most-watched packages in the ecosystem — so 6 days there buys what 7 buys for a
+  random package. **The reasoning error to avoid is ASYMMETRY:** I had measured the CVE-exploitability
+  side carefully (≈0 — we never decrypt PKCS#7) and taken the release-risk side *on faith*, then let two
+  ≈0 quantities decide it — while never weighing the one non-zero cost, a second pass (re-installing the
+  toolchain, re-reading context, re-validating, a separate commit + CI run). And an open High alert has
+  the same cost you already accept for CodeQL noise: it buries the next real one. So: weigh **both**
+  sides with the same rigour, and let the package's publishing profile — not the calendar — set the bar.
   Nothing in bundler/npm enforces this out of the box (pnpm's `minimumReleaseAge` does, for pnpm
   projects) → eyeball the publish date for anything outside a trusted core dep: `npm view <pkg> time`
   (`contracts/`), rubygems.org (gems), PyPI release history (ML/in-silico). A `@vN`-pinned CI action
