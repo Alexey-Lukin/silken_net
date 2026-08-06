@@ -62,7 +62,7 @@
 | **Мережа** | Polygon (Amoy testnet → Mainnet) | Polygon (Amoy testnet → Mainnet) |
 | **Файл** | `contracts/SilkenCarbonCoin.sol` | `contracts/SilkenForestCoin.sol` |
 | **ENV адреса** | `CARBON_COIN_CONTRACT_ADDRESS` | `FOREST_COIN_CONTRACT_ADDRESS` |
-| **Pragma** | `0.8.35` (locked) | `0.8.35` (locked) |
+| **Pragma** | `0.8.36` (locked) | `0.8.36` (locked) |
 | **Максимальна емісія** | ✅ `MAX_SUPPLY = 1_000_000_000 SCC` — [CONTRACT.1] деривація: 10k GP=1 SCC · 2k SCC=1 tCO2 → ≈500k tCO2 ≈ 20M дерево-років (≈2M дерев × 10 р.) = свідомо-скромна launch-стеля pilot-горизонту; планетарний масштаб = новий деплой/L2, не підняття константи. **NB:** «2k SCC=1 tCO₂» = внутрішня облікова конвенція Proof-of-Growth/Condition-токена, НЕ registry-визнаний offset (продаваний кредит лише через незалежну методологію → [`07_01 §3`](07_01_Nature_as_a_Service_Contracts), [`00_07`](00_07_Action_Plan_Tracker) BIZ.9) | ✅ `MAX_SUPPLY = 100_000_000 SFC` |
 | **Slash / Burn** | ✅ `slash()` + `slashUpTo()` [SLASH.2] через `SLASHER_ROLE` | ✅ `slash()` + `slashUpTo()` [SLASH.2] через `SLASHER_ROLE` (B-06 виправлено) |
 | **Gasless approvals** | ✅ EIP-2612 / EIP-712 (PR #253) | ✅ EIP-2612 / EIP-712 |
@@ -727,7 +727,7 @@ type ProtocolFinancials @entity {
 |---|---|
 | **Мережа** | Polygon PoS (Amoy testnet → Mainnet) |
 | **Toolchain** | Foundry (forge, cast, anvil) |
-| **OpenZeppelin** | 5.6.x (`pragma solidity 0.8.35` — locked) |
+| **OpenZeppelin** | 5.6.x (`pragma solidity 0.8.36` — locked) |
 | **RPC** | `ALCHEMY_POLYGON_RPC_URL` (через `Web3::RpcConnectionPool`) |
 | **Oracle wallet** | `ORACLE_MINTER_PRIVATE_KEY` (MINTER_ROLE) + `ORACLE_SLASHER_PRIVATE_KEY` (SLASHER_ROLE) — окремі ключі (E.2; custody-поріг = GCP-KMS remote-signer → [`06_04 §5.5`](06_04_Secrets_Checklist)) |
 | **The Graph** | `subgraph/` — SCC та SFC events індексуються (⚠️ SFC: contract address placeholder) |
@@ -783,7 +783,7 @@ contracts/test/
 ├── SilkenTimelock.t.sol             # ✅ [ARCH.4] Foundry тести Timelock (delay, roles, scheduling)
 └── ProtocolParameters.t.sol         # ✅ [ARCH.4] Foundry тести registry (set, batch, access, defaults)
 
-contracts/foundry.toml               # ✅ Foundry config: solc 0.8.35, EVM cancun, profiles (default/production)
+contracts/foundry.toml               # ✅ Foundry config: solc 0.8.36, EVM cancun, profiles (default/production)
 ```
 
 ---
@@ -805,7 +805,7 @@ On-chain governance (SFC-голосування за протокольні па
 | **2. Manual Audit (Pre-Testnet)** | [Hacken](https://hacken.io/) або [Hashlock](https://hashlock.com/) | Платний аудит | Перед Amoy → Mainnet | 🔴 TODO |
 | **3. Runtime Monitoring** | [CertiK Skynet](https://skynet.certik.com/) | 24/7 моніторинг | Після Mainnet deploy | 🔴 TODO |
 
-> **Mythril знято** (раніше планований symbolic-tool, 1b): занедбаний (остання версія v0.24.8 / 2024, без EVM cancun, зависає на OZ-важких контрактах) → замінений на **Halmos** (foundry-native, читає наш `foundry.toml` solc 0.8.35 / cancun). 2025-26 enterprise-стек = static (Slither + Aderyn) → property-fuzz (Foundry + Medusa) → symbolic (Halmos) → manual audit (Hacken) → runtime (CertiK).
+> **Mythril знято** (раніше планований symbolic-tool, 1b): занедбаний (остання версія v0.24.8 / 2024, без EVM cancun, зависає на OZ-важких контрактах) → замінений на **Halmos** (foundry-native, читає наш `foundry.toml` solc 0.8.36 / cancun). 2025-26 enterprise-стек = static (Slither + Aderyn) → property-fuzz (Foundry + Medusa) → symbolic (Halmos) → manual audit (Hacken) → runtime (CertiK).
 
 **Scope аудиту (6 контрактів):**
 1. `SilkenCarbonCoin.sol` — mint/burn/batchMint, MINTER/SLASHER roles
@@ -819,7 +819,7 @@ On-chain governance (SFC-голосування за протокольні па
 ```yaml
 # .github/workflows/solidity_audit.yml
 # Тригер: зміни в contracts/ (або в самому workflow) на PR/push to main; + workflow_dispatch
-# Компілюємо самі: forge build --build-info (solc 0.8.35 з foundry.toml), далі
+# Компілюємо самі: forge build --build-info (solc 0.8.36 з foundry.toml), далі
 # crytic/slither-action@v0.4.2 з ignore-compile: true (читає build-info; forge install не потрібен — deps npm)
 # slither-version запінено: SHA-пін екшена НЕ тримає його начинку (образ тягне
 # slither-analyzer з PyPI свіжим щоразу) → 00_05 §2.4, стан 00_07 OPS.21

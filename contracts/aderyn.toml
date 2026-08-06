@@ -1,5 +1,5 @@
 # Aderyn (Cyfrin) — 2nd static-analysis pass alongside Slither.
-# Foundry-native: reads foundry.toml for solc 0.8.35 / evm cancun / remappings.
+# Foundry-native: reads foundry.toml for solc 0.8.36 / evm cancun / remappings.
 # Scope mirrors slither.config.json (audit only deployable contracts, not deps/tests).
 # Canon: docs/05_03 §Smart Contract Audit Roadmap.
 version = 1

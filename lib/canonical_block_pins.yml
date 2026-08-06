@@ -1,5 +1,4 @@
 ---
-# SPDX-License-Identifier: AGPL-3.0-or-later
 lorenz_core:
   source: firmware/bio_contracts/bio_contract.rb
   consts:
@@ -38,9 +37,9 @@ solc_pragma:
   source: contracts/foundry.toml
   consts:
   - solc_version
-  sha256: ca71e8486b1290b640743a16803fb44a8bfcc0a84302324b483de3307a564d2b
+  sha256: 3af9172ccaceeb0a3439ef9ffde91ebb1803ff789c223860de2d085451213753
   mirrors:
-  - docs/05_03_Tokenomics_SCC_and_SFC.md §Pragma-таблиця + OpenZeppelin-рядок («0.8.35
+  - docs/05_03_Tokenomics_SCC_and_SFC.md §Pragma-таблиця + OpenZeppelin-рядок («0.8.36
     locked» ×2)
   - contracts/*.sol — `pragma solidity` кожного контракту (не пінується — інший синтаксис;
     звіряй грепом на хіт)
@@ -49,7 +48,7 @@ solc_pragma:
     тож бамп лишав 05_03 stale і зеленим (прецедент: 9 stale-копій 0.8.28 пережили
     бамп на 0.8.35). TOML парситься тим самим `NAME = value`-регексом, що й Ruby —
     рушій не чіпано. On drift: reconcile 05_03 + pragma всіх *.sol, then `rake docs:repin`.'
-  repinned: '2026-07-16'
+  repinned: '2026-08-06'
 slashing_curve:
   source: app/services/blockchain_burning_service.rb
   consts:

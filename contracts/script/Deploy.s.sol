@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.35;
+pragma solidity 0.8.36;
 
 import "forge-std/Script.sol";
 import "../SilkenCarbonCoin.sol";
@@ -134,7 +134,7 @@ contract DeploySilkenNet is Script {
     }
 
     /// @dev Read a required, non-zero address from ENV (reverts if unset/zero).
-    function _envAddr(string memory name) internal returns (address a) {
+    function _envAddr(string memory name) internal view returns (address a) {
         a = vm.envAddress(name);
         require(a != address(0), string.concat("Deploy: ", name, " not set"));
     }
