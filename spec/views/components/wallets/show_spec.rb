@@ -102,21 +102,6 @@ RSpec.describe Wallets::Show do
     end
   end
 
-  describe "on-chain actions" do
-    it "renders sync button with aria-label" do
-      expect(html).to include("Sync with Polygon")
-      expect(html).to include("aria-label")
-    end
-
-    it "renders export CSV button" do
-      expect(html).to include("Export CSV Ledger")
-    end
-
-    it "includes focus-visible accessibility styles" do
-      expect(html).to include("focus-visible:ring-2")
-    end
-  end
-
   describe "lazy loading frames" do
     it "includes balance frame with lazy loading" do
       expect(html).to include("wallet_balance_frame_1")

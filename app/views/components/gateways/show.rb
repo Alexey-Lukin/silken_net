@@ -119,14 +119,6 @@ module Gateways
           config_row(t(".config.firmware_version"), @gateway.firmware_version || "—")
           config_row(t(".config.firmware_hash"), @gateway.try(:firmware_hash)&.first(16) || "—")
           config_row(t(".config.mesh_mode"), t(".config.mesh_enabled"))
-
-          button(
-            class: "w-full mt-4 p-2 border border-emerald-800 text-tiny uppercase text-emerald-600 hover:bg-emerald-900 " \
-                   "hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all",
-            aria_label: t(".push_config_aria")
-          ) do
-            t(".config.push")
-          end
         end
       end
     end

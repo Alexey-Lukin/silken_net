@@ -43,7 +43,6 @@ module Wallets
                             loading: :lazy do
               render Views::Shared::UI::Skeleton.new(variant: :card)
             end
-            render_on_chain_actions
           end
         end
       end
@@ -96,24 +95,6 @@ module Wallets
             pagy: @pagy,
             url_helper: ->(page:) { wallet_path(@wallet, page: page) }
           )
-        end
-      end
-    end
-
-    def render_on_chain_actions
-      div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".actions") }
-        div(class: "space-y-2") do
-          button(
-            aria_label: t(".sync_polygon_aria"),
-            class: "w-full py-2 border border-emerald-500 text-tiny uppercase text-emerald-500 hover:bg-emerald-500 " \
-                   "hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all"
-          ) { t(".sync_polygon") }
-          button(
-            aria_label: t(".export_csv_aria"),
-            class: "w-full py-2 border border-emerald-900 text-tiny uppercase text-emerald-900 hover:border-emerald-700 " \
-                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all"
-          ) { t(".export_csv") }
         end
       end
     end

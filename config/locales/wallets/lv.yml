@@ -29,7 +29,6 @@ lv:
       polygon_mainnet: Polygon PoS (Mainnet)
       title: Blokķēdes identitāte
     show:
-      actions: Darbības
       columns:
         amount: Summa
         status: Statuss
@@ -37,9 +36,5 @@ lv:
         tx_hash: TX Kods
         type: Veids
       empty: Nav konstatētu darījumu.
-      export_csv: Eksportēt CSV virsgrāmatu
-      export_csv_aria: Eksportēt darījumu virsgrāmatu kā CSV
       ledger_title: Ķēdes darījumu virsgrāmata
-      sync_polygon: Sinhronizēt ar Polygon
-      sync_polygon_aria: Sinhronizēt maku ar Polygon blokķēdi
     show_title: Maks // %{address}...

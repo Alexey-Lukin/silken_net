@@ -2,9 +2,7 @@
 lv:
   oracle_visions:
     forecast_card:
-      deploy_shield: Izvietot profilaktisko vairotu
       economic_impact: Ekonomiskā ietekme
-      ignore: Ignorēt singularitāti
       impact_value: "%{value} SCC"
       predicted_window: Prognozētais notikuma logs
       probability: "%{value}%"

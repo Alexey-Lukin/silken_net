@@ -14,7 +14,6 @@ lv:
       ews_association: EWS brīdinājuma asociācija (pēc izvēles)
       ews_placeholder: Atrisinātā draudu ID
       gps:
-        capture: "⊕ Fiksēt GPS"
         heading: Iejaukšanās koordinātas
         latitude: Platuma grādi
         longitude: Garuma grādi
@@ -92,7 +91,7 @@ lv:
         lng: Gar
         locate: Atrast patruļu →
         no_gps: GPS nav reģistrēts
-        no_gps_sub: Fiksēts ar mobilo lietotni ieraksta izveidošanas brīdī.
+        no_gps_sub: Koordinātas tiek ievadītas manuāli, izveidojot ierakstu.
       hardware:
         heading: Aparatūras stāvoklis
         pending: GAIDA

@@ -24,7 +24,6 @@
 |---|---|---|---|
 | `errors.api.internal` | `Pranešte Architektui.` | зламаний імператив | `Praneškite Architektui.` |
 | `wallets.index.total_liquidity` | `Bendra likvidumas:` | рід | `Bendras likvidumas:` |
-| `wallets.show.sync_polygon_aria` | `…su Polygon blokų grandinė` | після `su` — орудний | `…su Polygon blokų grandine` |
 | `ui.status.manual_review` | `rankinis peržiūra` | рід · **бейдж грошового шляху** | `rankinė peržiūra` |
 | `gateways.index.title` | `Globalūs relės` | рід/число | `Globalios relės` |
 | `account_security.show.subtitle` | `…ir susietų tiekėjus.` | відмінки вперемішку | `…ir susietus tiekėjus.` |
@@ -39,7 +38,6 @@
 |---|---|---|---|
 | `codex.show.sections.cyber_meaning` | `Kibermedijs` | «кібер-носій», не «значення» | `Kibernozīme` |
 | `activerecord.errors…version_must_be_non_blank_string` | `nepustukšai virknei` | `pustukšs` = напівпорожній | `netukšai virknei` |
-| `oracle_visions.forecast_card.deploy_shield` | `profilaktisko vairotu` | `vairot` = множити; щит = `vairogs` | `preventīvo vairogu` |
 | `system_health.show.all_systems_go` | `VISAS SISTĒMAS GATAVS` | жін. мн. + чол. одн. | `VISAS SISTĒMAS GATAVAS` |
 | `navigation.sections.strategic_insight` | `Stratēģiskā ieskats` | рід | `Stratēģiskais ieskats` |
 | `codex.atlas.title` | `Arhetipa Codex` | однина родового проти en «of Archetypes» | `Arhetipu Codex` |

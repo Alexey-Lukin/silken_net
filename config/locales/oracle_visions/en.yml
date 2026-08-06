@@ -2,9 +2,7 @@
 en:
   oracle_visions:
     forecast_card:
-      deploy_shield: Deploy Pre-emptive Shield
       economic_impact: Economic Impact
-      ignore: Ignore Singularity
       impact_value: "%{value} SCC"
       predicted_window: Predicted Event Window
       probability: "%{value}%"

@@ -22,7 +22,6 @@ en:
         heading: Network Configuration
         mesh_enabled: Enabled
         mesh_mode: Mesh Mode
-        push: Push New Configuration →
         sleep_interval: Sleep Interval
       crypto:
         aes_provisioned: AES-256 Provisioned
@@ -33,7 +32,6 @@ en:
         heading: Soldier Fleet Under Command
       header:
         heartbeat: Heartbeat
-      push_config_aria: Push new configuration to gateway
       soldier_active_aria: 'Soldier %{did}: active'
       soldier_inactive_aria: 'Soldier %{did}: inactive'
       telemetry:

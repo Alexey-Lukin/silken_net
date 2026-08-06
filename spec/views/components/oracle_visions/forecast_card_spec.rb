@@ -91,18 +91,6 @@ RSpec.describe OracleVisions::ForecastCard do
     end
   end
 
-  describe "action buttons" do
-    it "renders the shield deployment button" do
-      html = render_component(insight: mock_insight)
-      expect(html).to include("Deploy Pre-emptive Shield")
-    end
-
-    it "renders the ignore singularity button" do
-      html = render_component(insight: mock_insight)
-      expect(html).to include("Ignore Singularity")
-    end
-  end
-
   describe "confidence color" do
     it "uses green color for normal insights" do
       html = render_component(insight: mock_insight(insight_type: "drought", probability_score: 74))

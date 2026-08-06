@@ -22,7 +22,6 @@ lt:
         heading: Tinklo konfigūracija
         mesh_enabled: Įjungta
         mesh_mode: Tinklo režimas
-        push: Siųsti naują konfigūraciją →
         sleep_interval: Miego intervalas
       crypto:
         aes_provisioned: AES-256 aprūpinta
@@ -33,7 +32,6 @@ lt:
         heading: Karių flotilė komandoje
       header:
         heartbeat: Širdies plakimas
-      push_config_aria: Siųsti naują konfigūraciją šliuzui
       soldier_active_aria: 'Karys %{did}: aktyvus'
       soldier_inactive_aria: 'Karys %{did}: neaktyvus'
       telemetry:

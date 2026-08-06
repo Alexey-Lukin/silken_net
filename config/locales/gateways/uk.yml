@@ -22,7 +22,6 @@ uk:
         heading: Конфігурація мережі
         mesh_enabled: Увімкнено
         mesh_mode: Mesh-режим
-        push: Надіслати нову конфігурацію →
         sleep_interval: Інтервал сну
       crypto:
         aes_provisioned: AES-256 Налаштовано
@@ -33,7 +32,6 @@ uk:
         heading: Флот солдатів під командою
       header:
         heartbeat: Пульс
-      push_config_aria: Надіслати нову конфігурацію на шлюз
       soldier_active_aria: 'Солдат %{did}: активний'
       soldier_inactive_aria: 'Солдат %{did}: неактивний'
       telemetry:

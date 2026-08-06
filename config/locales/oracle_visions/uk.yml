@@ -2,9 +2,7 @@
 uk:
   oracle_visions:
     forecast_card:
-      deploy_shield: Розгорнути превентивний щит
       economic_impact: Економічний вплив
-      ignore: Ігнорувати сингулярність
       impact_value: "%{value} SCC"
       predicted_window: Прогнозоване вікно події
       probability: "%{value}%"

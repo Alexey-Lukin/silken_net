@@ -29,7 +29,6 @@ lt:
       polygon_mainnet: Polygon PoS (Mainnet)
       title: Blokų grandinės tapatybė
     show:
-      actions: Veiksmai
       columns:
         amount: Suma
         status: Būsena
@@ -37,9 +36,5 @@ lt:
         tx_hash: TX Kodas
         type: Tipas
       empty: Sandorių nerasta.
-      export_csv: Eksportuoti CSV knygą
-      export_csv_aria: Eksportuoti sandorių knygą kaip CSV
       ledger_title: Grandinės sandorių knyga
-      sync_polygon: Sinchronizuoti su Polygon
-      sync_polygon_aria: Sinchronizuoti piniginę su Polygon blokų grandinė
     show_title: Piniginė // %{address}...

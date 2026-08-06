@@ -29,7 +29,6 @@ en:
       polygon_mainnet: Polygon PoS (Mainnet)
       title: Blockchain Identity
     show:
-      actions: Actions
       columns:
         amount: Amount
         status: Status
@@ -37,9 +36,5 @@ en:
         tx_hash: TX Hash
         type: Type
       empty: No transactions detected.
-      export_csv: Export CSV Ledger
-      export_csv_aria: Export transaction ledger as CSV
       ledger_title: On-Chain Transaction Ledger
-      sync_polygon: Sync with Polygon
-      sync_polygon_aria: Sync wallet with Polygon blockchain
     show_title: Wallet // %{address}...

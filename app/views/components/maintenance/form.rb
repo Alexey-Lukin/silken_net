@@ -46,8 +46,7 @@ module Maintenance
               f.select :action_type,
                 MaintenanceRecord.action_types.keys.map { |k| [ k.humanize, k ] },
                 { prompt: t(".action_prompt") },
-                class: input_classes,
-                data: { action: "change->maintenance-form#togglePhotoRequired" }
+                class: input_classes
             end
             field_container(t(".performed_at")) do
               f.datetime_local_field :performed_at,
@@ -83,22 +82,15 @@ module Maintenance
           # GPS КООРДИНАТИ (Anti-Sofa-Repair Protocol)
           # -----------------------------------------------------------------------
           div(class: "border border-gaia-border p-4 space-y-4") do
-            div(class: "flex justify-between items-center mb-2") do
-              p(class: "text-mini uppercase tracking-widest text-gaia-text-muted") { t(".gps.heading") }
-              button(
-                type: "button",
-                class: "text-micro border border-gaia-border text-gaia-text-muted px-2 py-1 hover:border-gaia-primary hover:text-gaia-primary transition-all uppercase",
-                data: { action: "click->maintenance-form#captureGPS" }
-              ) { t(".gps.capture") }
-            end
+            p(class: "text-mini uppercase tracking-widest text-gaia-text-muted mb-2") { t(".gps.heading") }
             div(class: "grid grid-cols-2 gap-6") do
               field_container(t(".gps.latitude")) do
                 f.number_field :latitude, step: 0.000001, class: input_classes,
-                               placeholder: "49.428500", id: "record_latitude"
+                               placeholder: "49.428500"
               end
               field_container(t(".gps.longitude")) do
                 f.number_field :longitude, step: 0.000001, class: input_classes,
-                               placeholder: "32.062000", id: "record_longitude"
+                               placeholder: "32.062000"
               end
             end
           end

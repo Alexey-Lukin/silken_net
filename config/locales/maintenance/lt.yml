@@ -14,7 +14,6 @@ lt:
       ews_association: EWS įspėjimo sąsaja (neprivaloma)
       ews_placeholder: Sprendžiamos grėsmės ID
       gps:
-        capture: "⊕ Fiksuoti GPS"
         heading: Įsikišimo koordinatės
         latitude: Platuma
         longitude: Ilguma
@@ -93,7 +92,7 @@ lt:
         lng: Ilg
         locate: Surasti patruliavimą →
         no_gps: GPS neužregistruotas
-        no_gps_sub: Fiksuota mobiliąja programa įrašo sukūrimo metu.
+        no_gps_sub: Koordinatės įvedamos rankiniu būdu kuriant įrašą.
       hardware:
         heading: Aparatūros būsena
         pending: LAUKIAMA

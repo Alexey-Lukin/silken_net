@@ -191,11 +191,12 @@ module Trees
           security_item(t(".security.ota_status"), t(".security.ota_value"))
         end
 
-        div(class: "pt-4 border-t border-gaia-border") do
-          button(class: "w-full py-2 border border-gaia-border text-mini uppercase text-gaia-text-muted hover:border-gaia-primary hover:text-gaia-primary transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary", aria_label: t(".actions.rotate_key_aria")) do
-            t(".actions.rotate_key_label")
-          end
-        end
+        # [UI.7] Кнопка ротації схована до дротування — interim-форма ARCH.69
+        # (тіло в git, локаль-ключі лишаються). Підстава НЕ «сервіс за закритим
+        # гейтом»: маршруту `rotate` не існує, а `HardwareKeyService.rotate` має
+        # нуль продакшн-викликачів, тож це був голий `<button>` без цілі. Гейт
+        # `FW17_RATCHET_DOWNLINK_ENABLED` стосується того, що станеться ПІСЛЯ
+        # дротування, а не поточного кліку.
       end
     end
 

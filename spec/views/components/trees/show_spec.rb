@@ -286,10 +286,9 @@ RSpec.describe Trees::Show do
       expect(html).to include("AES-128-ECB")
     end
 
-    it "renders rotate key button with aria-label" do
-      expect(html).to include("Rotate Hardware Key")
-      expect(html).to include("aria-label")
-    end
+    # [UI.7] Приклад на кнопку ротації знято разом із самою кнопкою (interim-стаб
+    # ARCH.69): вона була голим `<button>` без маршруту й без викликача сервісу.
+    # Повертається разом із дротуванням.
   end
 
   describe "metadata panel" do

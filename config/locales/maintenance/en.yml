@@ -14,7 +14,6 @@ en:
       ews_association: EWS Alert Association (Optional)
       ews_placeholder: ID of the threat being resolved
       gps:
-        capture: "⊕ Capture GPS"
         heading: Intervention Coordinates
         latitude: Latitude
         longitude: Longitude
@@ -92,7 +91,7 @@ en:
         lng: Lng
         locate: Locate Patrol →
         no_gps: No GPS recorded
-        no_gps_sub: Captured via mobile app at time of record creation.
+        no_gps_sub: Coordinates are entered manually when the record is filed.
       hardware:
         heading: Hardware State
         pending: PENDING

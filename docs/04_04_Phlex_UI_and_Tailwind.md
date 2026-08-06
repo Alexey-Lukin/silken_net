@@ -631,7 +631,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | Компонент | Файл | Props | Опис |
 |---|---|---|---|
 | `Wallets::Index` | `wallets/index.rb` | `wallets:`, `pagy:` | Пагінований список гаманців |
-| `Wallets::Show` | `wallets/show.rb` | `wallet:`, `transactions:`, `pagy: nil` | Деталізація гаманця з lazy-завантаженим фреймом балансу, журналом транзакцій, on-chain діями |
+| `Wallets::Show` | `wallets/show.rb` | `wallet:`, `transactions:`, `pagy: nil` | Деталізація гаманця з lazy-завантаженими фреймами балансу й blockchain-identity + журнал транзакцій. ⚠️ Панель «on-chain дії» знято [UI.7] 2026-08-06: обидві її кнопки були голими `<button>` без цілі (`Sync Polygon` — сервісу не існує; `Export CSV` — патерн `ReportsController` є, але не дротований). Тіло в git; повертається разом із дротуванням CSV |
 | `Wallets::BalanceDisplay` | `wallets/balance_display.rb` | `wallet:` | Картка балансу SCC з розбивкою locked/available/ESG-retired; Turbo target `wallet_balance_{id}` |
 | `Wallets::BalanceFrame` | `wallets/balance_frame.rb` | `wallet:` | Turbo Frame обгортка для lazy-завантаження балансу |
 | `Wallets::MetadataFrame` | `wallets/metadata_frame.rb` | `wallet:` | Turbo Frame обгортка для метаданих blockchain-ідентичності |
@@ -648,8 +648,8 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 
 | Компонент | Файл | Props | Опис |
 |---|---|---|---|
-| `OracleVisions::Index` | `oracle_visions/index.rb` | `forecasts:`, `clusters:` | Список AI-прогнозів + панель симуляції |
-| `OracleVisions::ForecastCard` | `oracle_visions/forecast_card.rb` | `forecast:` | Окрема картка прогнозу атрактора Лоренца |
+| `OracleVisions::Index` | `oracle_visions/index.rb` | `visions:`, `emission_forecast:`, `clusters:`, `current_user: nil` | Список AI-прогнозів + панель симуляції (остання — лише `admin_or_above?`, [UI.6] fail-closed) |
+| `OracleVisions::ForecastCard` | `oracle_visions/forecast_card.rb` | `insight:` | Окрема картка прогнозу атрактора Лоренца. ⚠️ Футер із кнопками `Deploy Shield`/`Ignore` знято [UI.7] 2026-08-06 — бекенду під ними не існувало (слова «shield» немає в жодній моделі/сервісі; `AiInsight` не має ні `dismissed_at`, ні скоупа) |
 | `OracleVisions::SimulationPanel` | `oracle_visions/simulation_panel.rb` | `clusters:` | What-If форма симуляції з повзунками діапазону; надсилає до `simulate_oracle_visions_path` у Turbo Frame |
 
 #### Firmware OTA

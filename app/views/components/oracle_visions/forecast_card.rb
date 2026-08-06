@@ -18,7 +18,6 @@ module OracleVisions
         render_mini_trend
         impact_assessment # Новий блок оцінки впливу на SCC
         render_codex_citations
-        footer_actions
       end
     end
 
@@ -63,17 +62,6 @@ module OracleVisions
         span(class: "text-mini uppercase text-gray-600") { t(".economic_impact") }
         span(class: tokens("text-xs font-mono", impact_text_color)) do
           plain t(".impact_value", value: @insight.prediction_data&.dig("yield_impact") || t(".yield_impact_default"))
-        end
-      end
-    end
-
-    def footer_actions
-      div(class: "mt-6 flex gap-3") do
-        button(class: "px-4 py-1.5 border border-emerald-500 text-mini uppercase text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all font-bold") do
-          t(".deploy_shield")
-        end
-        button(class: "px-4 py-1.5 border border-zinc-700 text-mini uppercase text-zinc-500 hover:border-zinc-500 transition-all") do
-          t(".ignore")
         end
       end
     end

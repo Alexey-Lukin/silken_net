@@ -29,7 +29,6 @@ uk:
       polygon_mainnet: Polygon PoS (Mainnet)
       title: Блокчейн-ідентичність
     show:
-      actions: Дії
       columns:
         amount: Сума
         status: Статус
@@ -37,9 +36,5 @@ uk:
         tx_hash: TX Hash
         type: Тип
       empty: Транзакцій не виявлено.
-      export_csv: Експорт CSV реєстру
-      export_csv_aria: Експорт реєстру транзакцій у CSV
       ledger_title: Реєстр On-Chain транзакцій
-      sync_polygon: Синхронізувати з Polygon
-      sync_polygon_aria: Синхронізувати гаманець з блокчейном Polygon
     show_title: Гаманець // %{address}...

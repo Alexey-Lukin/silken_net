@@ -2,9 +2,7 @@
 lt:
   oracle_visions:
     forecast_card:
-      deploy_shield: Diegti prevencinį skydą
       economic_impact: Ekonominis poveikis
-      ignore: Ignoruoti singuliarumą
       impact_value: "%{value} SCC"
       predicted_window: Prognozuojamas įvykio langas
       probability: "%{value}%"

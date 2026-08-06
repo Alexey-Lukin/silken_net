@@ -22,7 +22,6 @@ lv:
         heading: Tīkla konfigurācija
         mesh_enabled: Iespējots
         mesh_mode: Tīkla režīms
-        push: Nosūtīt jaunu konfigurāciju →
         sleep_interval: Miega intervāls
       crypto:
         aes_provisioned: AES-256 nodrošināts
@@ -33,7 +32,6 @@ lv:
         heading: Karavīru flote komandā
       header:
         heartbeat: Sirdsdarbība
-      push_config_aria: Nosūtīt jaunu konfigurāciju vārtejai
       soldier_active_aria: 'Karavīrs %{did}: aktīvs'
       soldier_inactive_aria: 'Karavīrs %{did}: neaktīvs'
       telemetry:
