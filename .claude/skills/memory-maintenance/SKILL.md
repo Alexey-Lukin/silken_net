@@ -60,14 +60,21 @@ Full step-by-step playbook + founder's principles + the zero-loss scripts → **
 ```
 1. INVENTORY  memory_gate.sh --audit — run it, do NOT enumerate its axes here: a
               list-by-example rots with every axis added, while a pointer at the
-              live source stays true. TWO axes are worth knowing by name, on the
-              same grounds — each one's output IS a worklist rather than a
-              verdict: OVERLAP names phase-2 debt directly (silent when the copy
-              carries a router home, loud when it restates with no pointer), and
-              --oneway names the mirror half (a home cites a source that never
-              points back). Both sit OUTSIDE --audit deliberately; naming only
-              the first is how the second stayed a hand-grep for a day after it
-              shipped.
+              live source stays true. Then run the SEPARATE modes: the `case`
+              block is the roster, and it is short enough to read every time.
+              ⚠️ This paragraph itself rotted, in the direction that costs most
+              (measured 2026-08-06): it named OVERLAP and --oneway as the two
+              axes "OUTSIDE --audit", while `overlap_check` is called INSIDE the
+              --audit battery and no `--overlap` mode exists at all — so a reader
+              following this text would invoke nothing and read the silence as
+              "phase-2 debt unmeasured". The enumeration was added two sentences
+              after the rule forbidding enumeration, which is the whole lesson:
+              READ the case block, never this list. What is worth carrying is
+              not WHICH modes exist but WHY some are split out — a check whose
+              live yield is a handful belongs in the battery; one whose yield
+              runs to dozens is a worklist, and folding a worklist into --audit
+              makes EXIT 1 permanent, training the reader to skim the one stance
+              that must stay loud.
 2. INDEX=HOOKS  trim any bloated index line — but VERIFY the detail is in the file FIRST.
 3. STRUCTURE  group MEMORY.md by kind via a verbatim-reorder script; prove zero-loss
               (sorted entry-set diff == IDENTICAL).
