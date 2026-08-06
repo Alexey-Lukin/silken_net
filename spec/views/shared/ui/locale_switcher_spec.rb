@@ -25,6 +25,26 @@ RSpec.describe Views::Shared::UI::LocaleSwitcher do
       expect(html).not_to include('data-controller="locale"')
     end
 
+    # 🔴 [UI.11 крок 3] Форма більше не виходить з-під Turbo — але вона й не «просто
+    # під Turbo»: вона під ним із ЯВНОЮ дією візиту, і ця пара тримається разом.
+    # `data-turbo="false"` компенсував ЧУЖІ permanent-вузли (сайдбар, потім тумблер
+    # теми з локалізованим `aria-label`) — обидва зняті. А `turbo_action="advance"`
+    # компенсує іншу річ, і вона ВИМІРЯНА: ендпоінт редиректить на той самий шлях,
+    # а Turbo морфить рівно на парі «той самий pathname» + «`action == replace`».
+    # Морф `<body>` не заміняє, тож Stimulus не переграється, а Idiomorph зносить
+    # збудоване клієнтом полотно Leaflet.
+    #
+    # ⚠️ Обидва приклади нижче СТАТИЧНІ — пінять розмітку, не поведінку. Доказ
+    # самої поведінки (мапа переживає перемикання) живе там, де він узагалі
+    # можливий: у браузерному `dashboard_browser_smoke_spec`.
+    it "no longer opts out of Turbo — its reason (a permanent node upstream) is gone" do
+      expect(html).not_to include('data-turbo="false"')
+    end
+
+    it "pins the visit action to advance — `replace` on the same path morphs and kills Leaflet" do
+      expect(html).to include('data-turbo-action="advance"')
+    end
+
     it "renders one <option> per available locale" do
       I18n.available_locales.each do |locale|
         expect(html).to include("value=\"#{locale}\"")

@@ -44,10 +44,31 @@ module Views
         end
 
         def view_template
+          # 🔴 [UI.11 крок 3] `data: { turbo: "false" }` знято 2026-08-06 — але НЕ
+          # «разом із причиною», як планував пункт. Стара причина справді померла
+          # (обхід компенсував ЧУЖІ permanent-вузли: спершу сайдбар, потім
+          # `#theme-switcher` із локалізованим `aria-label` — обидва зняті), а на
+          # її місці ВИМІРЯНО іншу, живу.
+          #
+          # 🔒 `turbo_action: "advance"` — несуча умова, доведена обома кінцями.
+          # Ендпоінт редиректить НА ТОЙ САМИЙ шлях (`redirect_back_or_to`), а Turbo
+          # морфить рівно тоді, коли шлях той самий І дія `replace`:
+          #   isPageRefresh(v) { … pathname === v.location.pathname && v.action === "replace" }
+          # Морф, на відміну від звичайного рендеру, `<body>` не заміняє — тож
+          # Stimulus не переграється, а Idiomorph зносить дітей без пари в новій
+          # розмітці, тобто полотно Leaflet, збудоване клієнтом. Виміряно
+          # браузером: без цього атрибута після перемикання мови `.leaflet-pane`
+          # зникає ЦІЛКОМ. `getVisitAction(submitter, formElement)` має пріоритет
+          # над дефолтною дією, тож `advance` вимикає морф за побудовою. Ціна
+          # названа й прийнята: зайвий запис в історії на кожне перемикання.
+          #
+          # ⚠️ Носій умови — браузерний приклад у
+          # `spec/features/dashboard_browser_smoke_spec.rb`, не цей коментар:
+          # знімеш атрибут — приклад червоніє саме на мапі.
           form_with(
             url: locale_path,
             method: :post,
-            data: { turbo: "false" },
+            data: { turbo_action: "advance" },
             class: "inline-flex items-center gap-2"
           ) do |f|
             render_label(f)

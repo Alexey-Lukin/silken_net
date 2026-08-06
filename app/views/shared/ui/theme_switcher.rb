@@ -5,8 +5,23 @@ module Views
   module Shared
     module UI
       class ThemeSwitcher < ApplicationComponent
+        # 🔴 [UI.11 крок 3] `data-turbo-permanent` тут БУЛО й знято 2026-08-06 —
+        # це був останній permanent-вузол дерева. Правило, яке він порушував,
+        # записане в `04_04 §8`: permanent не ставлять на вузол, усередину якого
+        # СЕРВЕР рендерить дані. Тут «дані» — це `aria-label`: Turbo при
+        # Drive-візиті пересаджує старий вузол (Bardo), а morph permanent-вузли
+        # пропускає взагалі, тож ім'я тумблера застрягало мовою ПЕРШОГО візиту.
+        # Дефект був невидимий для зрячого QA (кнопка не має видимого тексту) і
+        # коштував сусідові обходу: `LocaleSwitcher` мусив ходити повним
+        # перезавантаженням, бо інакше перемикання мови лишало тумблер чужою.
+        #
+        # Ціна зняття названа чесно: іконку тепер відновлює Stimulus на кожному
+        # візиті (`theme#connect` → `applyTheme` → `updateIcon`), тоді як раніше
+        # її ніс пересаджений вузол. Сама ТЕМА від цього не блимає — клас `.dark`
+        # живе на `<html>`, який Turbo не чіпає (замінюється лише `<body>`), а на
+        # повному завантаженні його ставить блокуючий FOUC-скрипт у `<head>`.
         def view_template
-          div(id: "theme-switcher", data: { controller: "theme", turbo_permanent: "" }) do
+          div(id: "theme-switcher", data: { controller: "theme" }) do
             button(
               type: "button",
               aria_label: t("theme.toggle_label"),

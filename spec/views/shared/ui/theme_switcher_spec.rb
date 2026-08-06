@@ -24,12 +24,25 @@ RSpec.describe Views::Shared::UI::ThemeSwitcher do
       expect(html).to include("</svg>")
     end
 
-    it "includes id for turbo-permanent identification" do
+    it "keeps a stable id as the hook for browser-level pins" do
       expect(html).to include('id="theme-switcher"')
     end
 
-    it "includes data-turbo-permanent to persist across Turbo navigations" do
-      expect(html).to include("data-turbo-permanent")
+    # 🔴 [UI.11 крок 3] Атрибут ЗНЯТО, і пін перевернуто разом із ним. Причина не
+    # стилістична: Turbo при Drive-візиті ПЕРЕСАДЖУЄ permanent-вузол (Bardo) і
+    # викидає свіжу серверну розмітку, а всередині цього вузла стоїть
+    # `aria_label: t("theme.toggle_label")` — тобто локалізований рядок. Доки
+    # атрибут був на місці, перемикач мов мусив ходити повним перезавантаженням
+    # (`data-turbo="false"`), інакше ім'я тумблера застрягало б мовою першого
+    # візиту — і зрячий QA цього не побачив би, бо видимого тексту в кнопці немає.
+    #
+    # ⚠️ Пін на ВІДСУТНІСТЬ, а не на присутність: зворотний рецидив (хтось
+    # повертає атрибут «щоб не блимало») знову заморозить ім'я, і мовчки.
+    # Поведінкову половину — що ім'я справді їде за мовою сторінки — тримає
+    # браузерний приклад у `spec/features/dashboard_browser_smoke_spec.rb`,
+    # бо в компонентній спеці Turbo не існує за побудовою.
+    it "carries NO data-turbo-permanent — it wraps a localized aria-label" do
+      expect(html).not_to include("data-turbo-permanent")
     end
   end
 

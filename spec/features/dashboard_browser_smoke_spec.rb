@@ -119,4 +119,60 @@ RSpec.describe "Dashboard in a real browser", :js do
     expect(page).to have_css(".leaflet-pane", visible: :all)
     expect(page).to have_css(".custom-tree-marker", visible: :all)
   end
+
+  # 🔴 [UI.11 крок 3] Половина, недоказовна нижче В ПРИНЦИПІ: Turbo в компонентній
+  # спеці не існує, а весь дефект жив саме в тому, що робить Turbo з вузлом при
+  # візиті. `#theme-switcher` ніс `data-turbo-permanent` над локалізованим
+  # `aria-label`, тож перемикач мов мусив ходити повним перезавантаженням —
+  # інакше ім'я тумблера лишалось мовою першого візиту.
+  #
+  # ⚠️ Чесно про силу піна: ДО зміни він теж був би зелений (повне
+  # перезавантаження давало правильне ім'я), тобто він доводить не сам фікс, а
+  # ІНВАРІАНТ — і червоніє рівно на рецидиві, яким цей клас і повертається:
+  # хтось повертає permanent «щоб не блимало», обхід уже знято, і ім'я мовчки
+  # застрягає. Мутація-перевірено обома плечима.
+  #
+  # ⚠️ `document.documentElement` читаємо скриптом, а не `have_css`: Capybara
+  # скоупить пошук у `/html/body` (стеля 1 у `feature_helper`), тож `html[lang]`
+  # не зматчиться ніколи. Читання йде ПІСЛЯ `have_css`, коли візит уже доїхав.
+  it "carries the theme toggle's accessible name into the NEW locale after a Turbo language switch" do
+    sign_in_as(user, password: password)
+
+    en_label = I18n.t("theme.toggle_label", locale: :en)
+    uk_label = I18n.t("theme.toggle_label", locale: :uk)
+
+    expect(page).to have_css("#theme-switcher button[aria-label='#{en_label}']")
+
+    select "UA · Українська", from: "locale"
+
+    expect(page).to have_css("#theme-switcher button[aria-label='#{uk_label}']")
+    expect(page.evaluate_script("document.documentElement.lang")).to eq("uk")
+  end
+
+  # 🔴 [UI.11 крок 3] Найважливіший приклад цієї пари, і він існує через ПАМʼЯТЬ,
+  # а не через план: зняття `data-turbo="false"` з перемикача мов озброює тракт,
+  # який доти був інертним. Механізм морфу вже доведено джерелом (Idiomorph
+  # `morphChildren` знімає дітей без пари в новій розмітці, а Stimulus
+  # `processRemovedNodes` контейнер не бачить, тож `map#connect` не переграється) —
+  # відкинутий як won't-do рівно тому, що ПУСКАЧА не існувало: єдиний
+  # same-location redirect дерева стояв саме за цією формою.
+  #
+  # Тепер пускач можливий, тож інваріант мусить бути виміряним, а не виведеним:
+  # після перемикання мови мапа лишається побудованою.
+  it "keeps Leaflet alive across a language switch — the one same-location redirect in the tree" do
+    tree = create(:tree, cluster: create(:cluster, organization: organization))
+
+    sign_in_as(user, password: password)
+
+    expect(page).to have_css("#map_node_#{tree.id}", visible: :all)
+    expect(page).to have_css(".leaflet-pane", visible: :all)
+
+    select "UA · Українська", from: "locale"
+
+    # Спершу чекаємо, що візит доїхав (мова змінилась), і лише потім міряємо мапу —
+    # інакше прочитаємо стан ДО навігації й приклад стане тавтологією.
+    expect(page).to have_css("#theme-switcher button[aria-label='#{I18n.t('theme.toggle_label', locale: :uk)}']")
+    expect(page).to have_css(".leaflet-pane", visible: :all)
+    expect(page).to have_css(".custom-tree-marker", visible: :all)
+  end
 end
