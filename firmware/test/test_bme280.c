@@ -225,6 +225,7 @@ int main(void)
     RUN(test_pressure_int_matches_float);
     RUN(test_humidity_int_matches_float);
     RUN(test_pressure_in_physical_range);
+    RUN(test_pressure_zero_divisor_guard);
 
     printf("\n— VPD: FAO-56 Tetens + інваріанти —\n");
     RUN(test_vpd_hand_anchored);
