@@ -101,6 +101,14 @@ jobs:
       - name: Lint docs cross-references (SSOT anti-drift — links, TRL, ToC sync, RTC reg-map)
         run: bin/rails docs:check_refs
 
+      - name: Design-token compliance in shared primitives (UI.1)
+        # 04_04 §3.5 forbids raw Tailwind colours in app/views/shared/** and
+        # explicitly ALLOWS them in domain page-components. The task's default
+        # perimeter used to be the permissive tree, so it policed where the rule
+        # is soft and never looked where it is hard; flipped 2026-08-07, and the
+        # strict surface measured clean, which is what makes this gateable now.
+        run: bin/rails gaia:lint_tokens
+
       - name: Unit-test the doc linters (engine + ToC)
         # Pure-function specs (spec_helper, no Rails/DB). COVERAGE=0 skips the
         # whole-suite minimum_coverage gate — a 2-file subset measures ≈0% overall.
@@ -110,6 +118,13 @@ jobs:
         # Pure Ruby, no Rails — model files ⟷ `### `Model`` headings, concerns,
         # PARTITIONED_TABLES. Catches a model added in code but absent from 04_01.
         run: ruby scripts/model_doc_sync.rb
+
+      - name: 04_04 component↔code sync (UI.12 — the last registry with no gate)
+        # Pure Ruby, no Rails — app/views/components/** ⟷ §6.4 rows, shared/{ui,iot,
+        # web3} ⟷ §6.1–6.3, namespace dirs ⟷ the §1 hierarchy tree. The registry
+        # writes a component in THREE row forms; a parser that knows one reports a
+        # drift ~7× the real one, which is how this gate's own item was mis-sized.
+        run: ruby scripts/component_doc_sync.rb
 
       - name: docs/protocols/ canon-ref resolution (DOC-T.26 — relative-href blind spot)
         # Pure Ruby, no Rails — the protocols/ subtree refs canon by relative path,

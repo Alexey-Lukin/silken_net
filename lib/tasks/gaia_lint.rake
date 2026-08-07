@@ -1,24 +1,37 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-# Lints Phlex view components for raw Tailwind colour utilities that should
-# be replaced with gaia design tokens (see docs/04_04 § 3.1).
+# Lints Phlex views for raw Tailwind colour utilities that should be design
+# tokens (docs/04_04 § 3.1) — and its DEFAULT PERIMETER is the surface where
+# that rule is actually binding.
 #
-# Reports per-file violations with line numbers. Exits 1 if any violations
-# are found — wire into CI to keep the migration moving forward without
-# regressions.
+# 🔴 [UI.1] The default used to be `app/views/components/`, which inverted the
+# gate: `04_04 § 3.5` EXPLICITLY ALLOWS raw Tailwind in domain page-components
+# ("вони не переповикористовуються у різних контекстах") and FORBIDS it in
+# `app/views/shared/**`. So the linter scanned the permissive surface — where a
+# hit is not a violation — and was blind to the strict one, which it never
+# looked at at all. Measured at the flip: shared/ = 0 hits over every file,
+# components/ = several hundred legal ones.
 #
-#   bundle exec rake gaia:lint_tokens                  # all components
+#   bin/rails gaia:lint_tokens                          # shared/ — the HARD rule
 #   COMPONENTS=app/views/components/wallets/ \
-#     bundle exec rake gaia:lint_tokens                # subset
+#     bin/rails gaia:lint_tokens                        # any subtree, on demand
 #
-# Allowlist: see RAW_TAILWIND_ALLOWLIST below — small set of brand /
-# decorative colours that are intentionally raw (e.g. `bg-emerald-500/10`
-# for the brand-glow on the login button).
+# ⚠️ `app/views/layouts/` is deliberately OUT of the default: measured, its one
+# hit is `backdrop:bg-black/60` — the scrim behind the mobile drawer, which must
+# stay black in BOTH themes (a surface token there would make the light-theme
+# scrim pale). Adding layouts means adding that allowlist entry first.
+#
+# ⚠️ COMPONENTS= takes ONE path. The `.then` below branches on `directory?`, so a
+# space-separated pair yields a non-directory Pathname and silently lints one
+# nonexistent file — green with zero files scanned, the decorative-gate shape.
+#
+# Allowlist: see `allowlist` below — brand / decorative colours that are raw on
+# purpose (e.g. `bg-emerald-500/10` for the login button's brand-glow).
 namespace :gaia do
-  desc "Find raw Tailwind colour utilities in Phlex components (compliance check)"
+  desc "Find raw Tailwind colour utilities in shared Phlex primitives (compliance check)"
   task lint_tokens: :environment do
-    paths = (ENV["COMPONENTS"] || "app/views/components/").then do |p|
+    paths = (ENV["COMPONENTS"] || "app/views/shared/").then do |p|
       Pathname.new(p).directory? ? Pathname.glob("#{p}/**/*.rb") : [ Pathname.new(p) ]
     end
 

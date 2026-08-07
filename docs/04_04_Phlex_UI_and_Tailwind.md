@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — рушій (Phlex + `@theme`-токени + `tokens()`) production-grade; **дизайн-система ≠ повністю мігрована**: shared-компоненти чисті, але raw-Tailwind у прикладних компонентах лишається (токен-міграція UI.1-3), а `gaia:lint_tokens` — rake-таск **без CI-гейта** (тож правило не enforced, лише документоване). Потребує production verification.
+- **Поточний TRL:** TRL 8 — рушій (Phlex + `@theme`-токени + `tokens()`) production-grade; **дизайн-система ≠ повністю мігрована**: shared-компоненти чисті, але raw-Tailwind у прикладних компонентах лишається (токен-міграція UI.1-3), а `gaia:lint_tokens` **enforced у CI з 2026-08-07 — але рівно на shared-поверхні**, де §3.5 сиру Tailwind забороняє; доменні компоненти §3.5 явно дозволяє, тож їх міграція лишається косметичною роботою UI.1, не гейтом. Потребує production verification.
 - **Стек:** Rails 8.1 · Phlex · Tailwind CSS 4 · TailwindMerge · Stimulus · Turbo 8
 - **Відкрите:** production verification (UI на живому деплої) — [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform); UI-беклог (токен-міграція / a11y / i18n) → [`00_07`](00_07_Action_Plan_Tracker) UI.1/UI.2/UI.3, I18N.1.
 
@@ -70,53 +70,44 @@ ApplicationComponent (Phlex::HTML)
 │   └── AuthLayout              ← Легкий layout для login/password (без sidebar)
 │
 ├── app/views/shared/           # Reusable примітиви (рівень фреймворку)
-│   ├── ui/                     # Загальні UI-елементи
-│   │   ├── StatusBadge         ← AASM стан → семантичний колір
-│   │   ├── StatCard            ← Картка метрики дашборду
-│   │   ├── DataTable           ← Таблиця з налаштовуваними стовпцями
-│   │   ├── Pagination          ← Pagy-навігація prev/next
-│   │   ├── EmptyState          ← Плейсхолдер (grid або table-row режим)
-│   │   ├── MetaRow             ← Рядок відображення ключ-значення
-│   │   ├── ActionBadge         ← Бейдж типу дії аудиту
-│   │   ├── PhotoCard           ← Фото ActiveStorage з hover-оверлеєм
-│   │   ├── RelativeTime        ← "5 хвилин тому" з підказкою
-│   │   ├── Skeleton            ← Скелетон завантаження (6 варіантів)
-│   │   └── ThemeSwitcher       ← Перемикач темної/світлої теми
-│   ├── iot/
-│   │   └── MetricValue         ← Числове значення сенсора з точністю та одиницею
-│   └── web3/
-│       └── Address             ← Ethereum-адреса з обрізанням + копіюванням
+│   ├── ui/                     # Домен-агностичні елементи — ТІЛЬКИ токени, сирий Tailwind заборонено (§3.5)
+│   ├── iot/                    # Hardware-специфічні відображення (значення сенсора)
+│   └── web3/                   # Blockchain-специфічні відображення (адреса, tx)
 │
-└── app/views/components/       # Доменні компоненти рівня сторінки
-    ├── navigation/Sidebar
-    ├── dashboard/Home, Map, MapNode, EventRow
-    ├── trees/Index, Show, Chronicle
-    ├── wallets/Index, Show, BalanceDisplay, BalanceFrame, MetadataFrame, TransactionRow,
-    │            TransactionStatusFrame, TransactionStatusFrameStub
-    ├── alerts/Index, Row, Badge
-    ├── telemetry/LiveStream, LogEntry
-    ├── oracle_visions/Index, ForecastCard, SimulationPanel
-    ├── clusters/Grid, Item, Show
-    ├── gateways/Index, Item, Show
-    ├── actuators/Index, Show, Card, CommandRow, CommandStatusBadge
-    ├── firmwares/Index, New, Form, Row, OtaProgressBar
-    ├── maintenance/Index, Show, Form, PhotoGallery, PhotosPage
-    ├── contracts/Index, Show
-    ├── blockchain_transactions/Index, Show, OnChainFrame
-    ├── reports/Index, CarbonAbsorption, FinancialSummary
-    ├── tree_families/Index, Show, Form
-    ├── organizations/Index, Show
-    ├── users/Index, Profile
-    ├── audit_logs/Index, Show
-    ├── system_audits/Index
-    ├── system_health/Show
-    ├── provisioning/New, Success
-    ├── account_security/Show
-    ├── notifications/Settings
-    ├── settings/Show
-    ├── sessions/New
-    └── passwords/Forgot, Reset
+└── app/views/components/       # Доменні компоненти рівня сторінки — сирий Tailwind ДОЗВОЛЕНО (§3.5)
+    ├── navigation/             # Sidebar: меню, фільтроване роллю актора [UI.5]
+    ├── dashboard/              # Головна, Leaflet-мапа, стрічка подій
+    ├── trees/                  # Картка дерева, хроніка
+    ├── wallets/                # Баланс, журнал транзакцій, lazy-фрейми
+    ├── alerts/                 # EWS-тривоги
+    ├── telemetry/              # Live-HUD, декодований рядок пакета
+    ├── oracle_visions/         # Прогноз Лоренца, what-if симуляція
+    ├── clusters/               # Кластери дерев
+    ├── gateways/               # Королеви (шлюзи)
+    ├── actuators/              # Виконавчі механізми + черга команд
+    ├── firmwares/              # OTA: завантаження, викотка, прогрес
+    ├── maintenance/            # Записи обслуговування + фотодокази
+    ├── contracts/              # NaaS-контракти
+    ├── blockchain_transactions/ # Аудиторський on-chain леджер
+    ├── reports/                # Карбон, фінанси
+    ├── tree_families/          # Довідник видів
+    ├── codex/                  # Lore Layer (read-only наратив) — власний канон 04_05
+    ├── organizations/          # Реєстр кланів + перемикач контексту [UI.6]
+    ├── users/                  # Список, профіль
+    ├── audit_logs/             # Журнал привілейованих дій
+    ├── system_audits/          # Платформенні fraud-сигнали
+    ├── system_health/          # Стан підсистем
+    ├── provisioning/           # Реєстрація пристрою
+    ├── account_security/       # Пароль, сесії, MFA
+    ├── notifications/          # Налаштування сповіщень
+    ├── settings/               # Налаштування тенанта
+    ├── errors/                 # Сторінки помилок + карантин без організації
+    ├── sessions/               # Логін
+    └── passwords/              # Відновлення пароля
 ```
+
+> **Дерево показує ЯРУСИ й неймспейси, а не листки — це свідомо.** Поіменний реєстр компонентів має рівно один дім: §6.1–6.3 (shared) і §6.4 (доменні). Доти дерево дублювало обидва й тихо старіло швидше за них — на момент введення гейта воно рекламувало два вже видалені компоненти й мовчало про чотири нові. Звірку тримає `component_doc_sync` [UI.12]: **неймспейси** тут ⟷ директорії `app/views/components/*`, **листки** — у §6.
+
 
 ### Потік Рендерингу
 
@@ -507,6 +498,8 @@ render Views::Shared::UI::StatusBadge.new(status: "confirmed", class: "mt-2")
 | **RelativeTime** | `relative_time.rb` | `datetime:`, `css_class:`, `prefix:` | "5 хвилин тому" з повною міткою часу у `title`-підказці |
 | **Skeleton** | `skeleton.rb` | `variant:`, `lines:`, `class:` | Скелетон завантаження (6 варіантів: `:balance`, `:card`, `:stats`, `:table`, `:map`, `:text`) |
 | **ThemeSwitcher** | `theme_switcher.rb` | — | Кнопка перемикання темної/світлої теми (використовує Stimulus `theme` контролер) |
+| **LocaleSwitcher** | `locale_switcher.rb` | `current_locale: nil` | Вибір мови в top-bar: нативний `<select>` + auto-submit (`onchange="this.form.requestSubmit()"`), із видимою submit-кнопкою як progressive-enhancement для no-JS. Перелік мов має ОДИН дім — `config.i18n.available_locales`; `SHORT_CODE_OVERRIDES` тримає рівно ті коди, де мова розходиться з очікуваною країною (`uk`→«UA») [I18N.3]. Форма несе `data-turbo-action="advance"` — без нього same-path редирект став би morph-рефрешем і зніс би полотно Leaflet [UI.11] |
+| **MobileNavToggle** | `mobile_nav_toggle.rb` | `target_id: "mobile-nav-drawer"` | Мобільний гамбургер, що відкриває off-canvas-шухляду. Сама шухляда — нативний `<dialog>` у `DashboardLayout`, тож focus-trap, Escape і `::backdrop` дає браузер; Stimulus `mobile-nav` лишається тонким шимом на `showModal()` |
 
 #### StatusBadge — Маппінг Станів
 
@@ -634,7 +627,8 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Wallets::Index` | `wallets/index.rb` | `wallets:`, `pagy:` | Пагінований список гаманців |
 | `Wallets::Show` | `wallets/show.rb` | `wallet:`, `transactions:`, `pagy: nil` | Деталізація гаманця з lazy-завантаженими фреймами балансу й blockchain-identity + журнал транзакцій. ⚠️ Панель «on-chain дії» знято [UI.7] 2026-08-06: обидві її кнопки були голими `<button>` без цілі (`Sync Polygon` — сервісу не існує; `Export CSV` — патерн `ReportsController` є, але не дротований). Тіло в git; повертається разом із дротуванням CSV |
 | `Wallets::BalanceDisplay` | `wallets/balance_display.rb` | `wallet:` | Картка балансу SCC з розбивкою locked/available/ESG-retired; Turbo target `wallet_balance_{id}` |
-| `Wallets::BalanceFrame` | `wallets/balance_frame.rb` | `wallet:` | Turbo Frame обгортка для lazy-завантаження балансу |
+| `Wallets::BalanceFrame` | `wallets/balance_frame.rb` | `wallet:` | Turbo Frame обгортка для lazy-завантаження балансу — тут фрейм СТОРІНКИ несе `src` (баланс дорогий), на відміну від `Actuators::CommandStatusFrame` (§6.4 «Інші»), де дані вже в контролері |
+| `Wallets::BalanceFrameStub` | `wallets/balance_frame_stub.rb` | `wallet_id:`, `src:` | Locale-вільний payload броадкасту балансу: той самий id `wallet_balance_frame_{id}`, зі `src`, порожній. **Прецедент класу 2** — `BalanceDisplay` несе шість `t()`, тож надіслати його `html:` означало б розіслати всім підписникам локаль ТОГО, ХТО КЛАЦНУВ (рендер їде eagerly в процесі-продюсера, де `LocaleSettable` не відпрацював) |
 | `Wallets::MetadataFrame` | `wallets/metadata_frame.rb` | `wallet:` | Turbo Frame обгортка для метаданих blockchain-ідентичності |
 | `Wallets::TransactionRow` | `wallets/transaction_row.rb` | `tx:`, `status_src: nil` | Рядок on-chain транзакції. Чіп несе ТІКЕР (locale-інваріантний, дім — `ERC20(…, symbol)`), сума — голе число: деномінація стоїть один раз. `status_src` = контекст рендеру, не оздоблення: `nil` — сторінка (бейдж одразу), рядок — броадкаст (стаб зі `src`, §8.1а клас 2) |
 | `Wallets::TransactionStatusFrame` | `wallets/transaction_status_frame.rb` | `tx:` | Комірка статусу: `<turbo-frame>` БЕЗ `src` зі `StatusBadge` усередині. Дім target-id — `.dom_id(tx_id)`, який кличуть обидва боки тракту |
@@ -697,7 +691,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Alerts` | `Index`, `Row` | `alert:` (`Badge` знято 2026-07-27 — UI без жодного рендерера) |
 | `Clusters` | `Grid`, `Item`, `Show` | `cluster:`, `trees:` |
 | `Gateways` | `Index`, `Item`, `Show` | `gateway:` |
-| `Actuators` | `Index`, `Show`, `Card`, `CommandRow`, `CommandStatusBadge` | `actuator:`, `command:` · `Card` і `Index` беруть останню команду ПАРАМЕТРОМ (`last_command:` / `last_commands:` = мапа `actuator_id ⇒ команда`, яку збирає контролер із преloaded асоціації). Доти `Card` мала фолбек `@actuator.commands.last` у конструкторі — порушення §6.4, що ще й віддавало РІЗНУ «останню команду» на двох сторінках: на `index` асоціація преloaded, тож `.last` брав останній у порядку БД, а на `show` летів окремий `ORDER BY id DESC`. Фікстура спеки навмисно вибухає на `commands` — повернення фолбека червонить кожен приклад |
+| `Actuators` | `Index`, `Show`, `Card`, `CommandRow`, `CommandStatusBadge`, `CommandStatusFrame`, `CommandStatusFrameStub` | `actuator:`, `command:` · **`CommandStatusFrame`/`CommandStatusFrameStub` = пара класу 2 «viewer-driven pull» [I18N.2]** (`command_id:`+`src:` у стаба): id фрейма НАВМИСНО ≠ id бейджа всередині (`command_status_frame_{id}` обгортає `command_status_{id}`) — збіг дав би дубль id у DOM, а ціллю броадкасту мусить бути саме ФРЕЙМ, бо `src` несе він. ⚠️ Відхилення від прецеденту гаманця свідоме: там сторінка теж ставить `src` (lazy-load дорогого балансу), тут — НІ, бо дані вже в `@commands`, а рядків до 20, тобто двадцять GET на перше відкриття заради того, що вже в пам'яті. Стаб рендерить пульс-плейсхолдер, а не `Views::Shared::UI::Skeleton` — той локалізований (`t(".loading")`), тобто зламав би саме ту інваріантність, заради якої існує · `Card` і `Index` беруть останню команду ПАРАМЕТРОМ (`last_command:` / `last_commands:` = мапа `actuator_id ⇒ команда`, яку збирає контролер із преloaded асоціації). Доти `Card` мала фолбек `@actuator.commands.last` у конструкторі — порушення §6.4, що ще й віддавало РІЗНУ «останню команду» на двох сторінках: на `index` асоціація преloaded, тож `.last` брав останній у порядку БД, а на `show` летів окремий `ORDER BY id DESC`. Фікстура спеки навмисно вибухає на `commands` — повернення фолбека червонить кожен приклад |
 | `Maintenance` | `Index`, `Show`, `Form`, `PhotoGallery`, `PhotosPage` | `record:`, `photos:` |
 | `Contracts` | `Index`, `Show` | `contract:` |
 | `BlockchainTransactions` | `Index`, `Show`, `OnChainFrame` | `tx:` |
@@ -708,9 +702,10 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `AuditLogs` | `Index`, `Show` | `log:` |
 | `SystemAudits` | `Index` | `audits:` |
 | `SystemHealth` | `Show` | `health:` |
-| `Provisioning` | `New`, `Success` | `hardware_key:` |
+| `Provisioning` | `New` | `hardware_key:` (`Success` знято 2026-08-03 — мертвий компонент, нуль рендерерів; історія його `@device.did`-бага лишається в §11) |
 | `AccountSecurity` | `Show` | `user:` |
 | `Notifications` | `Settings` | `settings:` |
+| `Settings` | `Show` | `organization:` — налаштування тенанта. 🔴 **Рукописна `form(action: settings_path, method: "post")` з hidden `_method=patch` і РУКОПИСНИМ `authenticity_token`** — тобто рівно той тракт, де клас UI.7 уже стріляв, коли токен забули зовсім; тут він явний, і саме тому цю форму пінить браузерний приклад окремо від `form_with`-механізму ([`04_06 §B.1.4`](04_06_Testing_Guide_and_Coverage)). Причини відмови їдуть через `Views::Shared::UI::ErrorSummary` з `@organization.errors` — окремого kwarg'а немає, помилки приїжджають на самому записі |
 | `Sessions` | `New` | `flash_alert:` — рендериться через `AuthLayout`. 🔴 **Це ІНШЕ дієслово, ніж `FlashMessages` (§1), і паралельність тут свідома:** kwarg несе помилку **поточного сабміту** (401/429), яку сторінка показує НА МІСЦІ зі збереженим статусом і біля поля, що його треба перевводити; `FlashMessages` натомість несе повідомлення, яке **пережило редирект**. Плутати їх не можна в жоден бік: flash на 401 вимагав би редиректу (відкинуто — [`00_07`](00_07_Action_Plan_Tracker) SEC.25), а kwarg після редиректу не заповнює ніхто. ⚠️ `flash_notice:` знято 2026-08-03 — нуль викликачів у дереві, гілку тримала лише власна спека [SEC.25] |
 | `Passwords` | `Forgot`, `Reset` | `Reset` — `token:` + `flash_alert:` (валідація нового пароля: `too_short`/`mismatch`, 422 на місці; та сама inline-форма, що в `Sessions::New`). ⚠️ `Forgot` kwarg'ів **не має взагалі** — обидва його шляхи (rate-limit, протермінований токен) приходять **редиректом**, тож повідомлення несе `FlashMessages`; доти компонент мав обидва kwarg'и й чесно їх рендерив при нулі викликачів [SEC.25] |
 | `Errors` | `NoOrganization` | `current_user:` (fail-closed `nil`) — Quarantine-сторінка для користувачів без організації, рендериться через `AuthLayout`. ⚠️ Це не рідкісний кут, а **перший екран платформеного адміністратора**: за seeds обидва super_admin без організації, логін веде на `dashboard#index`, той кличе `acting_organization!`. Тому другий абзац і вихід роле-залежні [UI.6]: «зверніться до адміністратора» адресовано тому, кого забули додати, а super_admin і є той адміністратор — йому потрібен реєстр кланів, а не порада. Для решти ролей лінка немає й по суті: реєстр за `authorize_super_admin!` |
@@ -1928,7 +1923,7 @@ Stimulus controller, який скидає `opacity-0 translate-y-2` коли е
 | Tool | Purpose |
 |---|---|
 | `bin/migrate-tailwind-tokens` | Word-boundary `gsub` codemod with `--dry-run` and `--report` modes. Mapping table mirrors § 3.1 (4-tier surfaces + 3-level text + primary tokens). |
-| `bundle exec rake gaia:lint_tokens` | **Локальна** compliance-перевірка — `exit 1`, якщо в `app/views/components/` знайдено сиру Tailwind-утиліту кольору; brand-glow allowlist усередині (див. джерело). ⚠️ **НЕ підключена до `.github/workflows/`** (нуль згадок), тож правило документоване, а не enforced — стан і робота живуть у [`00_07`](00_07_Action_Plan_Tracker) UI.1. Дзеркалить чесне формулювання у ✅ Статус вище; попереднє «CI-grade» суперечило власному Статусу того ж документа. |
+| `bin/rails gaia:lint_tokens` | Compliance-перевірка — `exit 1` на сирій Tailwind-утиліті кольору; brand-glow allowlist усередині (див. джерело). **HARD-гейт у `docs.yml` з 2026-08-07**, і його периметр за замовчуванням — `app/views/shared/**`. 🔴 **Доти периметр був ІНВЕРТОВАНИЙ:** дефолт стояв на `app/views/components/`, де §3.5 сиру Tailwind явно ДОЗВОЛЯЄ, тобто сторож патрулював поверхню з м'яким правилом і на сувору не дивився взагалі — а та виявилась чистою, що й зробило гейт підключабельним без міграції. Міграційний бек-лог доменних компонентів лишається у [`00_07`](00_07_Action_Plan_Tracker) UI.1 і ганяється на вимогу через `COMPONENTS=`. |
 
 ### 16.2 Migration workflow per domain
 
@@ -1951,7 +1946,7 @@ for f in config/locales/defaults/*.yml; do touch "config/locales/wallets/$(basen
 
 # 5. verify
 bundle exec rspec spec/views/components/wallets/
-COMPONENTS=app/views/components/wallets/ bundle exec rake gaia:lint_tokens
+COMPONENTS=app/views/components/wallets/ bin/rails gaia:lint_tokens
 ```
 
 ### 16.3 Mapping table (codemod)
@@ -2162,7 +2157,7 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 - [ ] No open-redirect — `referer` валідується проти `request.host`
 - [ ] Conventional Commit message (`feat(scope):` / `fix(scope):` / `docs(scope):`)
 - [ ] `bundle exec rubocop && bundle exec rspec spec/views/ spec/requests/<changed>` зелено
-- [ ] `bundle exec rake gaia:lint_tokens` зелено для торкнутих файлів (§ 16)
+- [ ] `bin/rails gaia:lint_tokens` зелено (§ 16) — дефолт покриває `shared/`, а торкнуті доменні файли ганяй через `COMPONENTS=`
 - [ ] `parallel_validation` (Code Review + CodeQL) пройшов або addressed
 
 Sandbox-обмеження: автоматичний прогін axe-core / Lighthouse у CI потребує headless Chromium з мережевим доступом. Поки що це **manual gate** для рев'ювера. Коли `cuprite` тести отримають axe-runner — переведемо у автомат і відмітимо чек-бокс програмно.
