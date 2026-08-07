@@ -38,6 +38,22 @@ RSpec.describe Sessions::New do
       expect(html).to include("Access Code (Password)")
     end
 
+    # 🔴 Наявні приклади вище пінять ТЕКСТ мітки й нічого не кажуть про звʼязок
+    # із полем — саме тому голий `<label>` без `for` жив тут непоміченим: мітка
+    # рендерилась, приклади були зелені, а скрінрідер поля не називав (WCAG 1.3.1).
+    # Пін парсить розмітку, а не шукає рядок: перейменування атрибута чи ключа
+    # локалі його не обійде.
+    it "associates every label with a real form control" do
+      doc = Nokogiri::HTML5.fragment(html)
+      labels = doc.css("label")
+      control_ids = doc.css("input, select, textarea").filter_map { |n| n["id"] }
+
+      expect(labels).not_to be_empty, "no labels rendered — the pin would be vacuous"
+
+      orphans = labels.reject { |l| l["for"].present? && control_ids.include?(l["for"]) }
+      expect(orphans.map { |l| l.text.strip }).to be_empty
+    end
+
     it "renders AUTHENTICATE submit button" do
       expect(html).to include("AUTHENTICATE")
     end

@@ -27,11 +27,11 @@ module Sessions
             render_flash_messages
 
             div(class: "space-y-6") do
-              field_container(t(".identity_label")) do
+              field_container(f, :email, t(".identity_label")) do
                 f.email_field :email, class: input_classes, placeholder: t(".identity_placeholder"), required: true
               end
 
-              field_container(t(".access_code_label")) do
+              field_container(f, :password, t(".access_code_label")) do
                 f.password_field :password, class: input_classes, placeholder: t(".access_code_placeholder"), required: true
               end
             end
@@ -63,9 +63,13 @@ module Sessions
       end
     end
 
-    def field_container(text, &block)
+    # `form.label` (не голий `label`) — Rails виводить `for` із того самого
+    # form-builder'а, що й `id` поля, тож асоціація не може розійтися вручну.
+    # Голий `<label>` поруч із `<input>` — сиблінги, не вкладені: ні явного,
+    # ні неявного звʼязку, і скрінрідер не називає поле (WCAG 1.3.1).
+    def field_container(form, attribute, text, &block)
       div(class: "space-y-2") do
-        label(class: "text-mini uppercase tracking-widest text-gaia-text-subtle font-bold") { text }
+        form.label attribute, text, class: "text-mini uppercase tracking-widest text-gaia-text-subtle font-bold"
         yield
       end
     end
