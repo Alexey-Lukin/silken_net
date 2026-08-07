@@ -41,6 +41,18 @@ class TelemetryUnpackerService < ApplicationService
   SAFE_VOLTAGE_RANGE = (0..5000)      # 0 - 5В
   SAFE_TEMP_RANGE    = (-45..90)      # Від арктичних до тропічних пожеж
 
+  # [PERF.1] Вікно ШВИДКОГО ШЛЯХУ пошуку хвоста Лоренца — параметр ПРУНІНГУ,
+  # не поріг тиші. Число partition-shaped: партиції `telemetry_logs` місячні
+  # (`04_01 §0`), тож 30 діб торкаються щонайбільше двох місячних листів.
+  # Виміряно EXPLAIN'ом на порожній test-БД: без межі Merge Append по 9 листах
+  # (cost 1.39..73.74), з межею — по 3 (cost 0.43..24.53); `telemetry_logs_default`
+  # не прунить НІКОЛИ, тож одна проба — постійна підлога, а решта росте
+  # +1 щомісяця (retention/detach-політики не існує).
+  # ⚠️ Свідомо НЕ дорівнює порогу тиші дерева (`Tree.silent`, 24h [transitional]):
+  # той відповідає «чи дерево живе», цей — «де дешевше шукати першим». Промах
+  # вікна коштує один зайвий запит, ніколи — іншої відповіді.
+  LORENZ_TAIL_FAST_WINDOW = 30.days
+
   # --- DUAL COMPUTATION INTEGRITY ---
   # [SEC.11] Device (mruby, Float) and Server (Ruby, Float) both start
   # the Lorenz attractor from byte-identical (x₀, y₀, z₀) derived from
@@ -546,16 +558,44 @@ class TelemetryUnpackerService < ApplicationService
   # device has not sent a packet yet (cold start). We avoid loading
   # whole rows — pluck the three columns and reuse them as the next
   # iteration's initial state.
+  # [PERF.1] Пошук ДВОКРОКОВИЙ, і це оптимізація прунінгу, а НЕ зміна семантики:
+  # обмежене вікно питається першим, безмежний фолбек стоїть за ним, тож метод
+  # повертає рівно той самий рядок, що й доти. Якщо в вікні щось є — воно й є
+  # найновішим узагалі (вікно прилягає до «зараз»), тож фолбек іде лише коли
+  # дерево мовчало довше за вікно або не говорило ніколи.
+  #
+  # 🔴 Варіант із `00_07 PERF.1` («просто додати нижню межу `2.months.ago`»)
+  # СВІДОМО не реалізовано — він міняв би поведінку DCI, а не лише вартість:
+  # мовчазне дерево ставало б cold-start'ом, тоді як прошивка вирішує cold-start
+  # ВИКЛЮЧНО за маркером RTC (`DR19 == LORENZ_STATE_MAGIC`, firmware/soldier/main.c),
+  # без жодної часової компоненти — тобто доки живий VBAT, пристрій тягне теплий
+  # ланцюг після скільки завгодно довгої тиші, і серверне вікно розсинхронізувало б
+  # їх однобічно. Канон каже те саме прямим текстом: cold-derive належить дереву,
+  # у якого НЕМАЄ історії (`03_04 §2.1`). Плюс `2.months` було б ДРУГИМ порогом
+  # тиші в системі, у 60 разів більшим за наявний `Tree.silent` (SILENCE-1, сам
+  # ще не відкалібрований).
   def previous_lorenz_state_for(tree)
-    row = tree.telemetry_logs
-              .where.not(lorenz_state_x: nil, lorenz_state_y: nil, lorenz_state_z: nil)
-              .order(created_at: :desc)
-              .limit(1)
-              .pluck(:lorenz_state_x, :lorenz_state_y, :lorenz_state_z)
-              .first
+    # ⚠️ `where.not` із кількома ключами дає ЗАПЕРЕЧЕННЯ КОН'ЮНКЦІЇ, тобто
+    # `x IS NOT NULL OR y IS NOT NULL OR z IS NOT NULL` (видно в EXPLAIN), а не
+    # «всі три непорожні». Лишено свідомо: трійка пишеться атомарно, а частковий
+    # рядок мусить дати cold-start (його ловить finite-гард нижче), НЕ мовчазне
+    # продовження з давнішого хвоста через розрив ланцюга.
+    scope = tree.telemetry_logs
+                .where.not(lorenz_state_x: nil, lorenz_state_y: nil, lorenz_state_z: nil)
+
+    row = lorenz_tail_row(scope.where(created_at: LORENZ_TAIL_FAST_WINDOW.ago..)) ||
+          lorenz_tail_row(scope)
+
     return nil if row.nil?
     return nil if row.any? { |v| v.nil? || !v.finite? }
     row
+  end
+
+  def lorenz_tail_row(scope)
+    scope.order(created_at: :desc)
+         .limit(1)
+         .pluck(:lorenz_state_x, :lorenz_state_y, :lorenz_state_z)
+         .first
   end
 
   def interpret_status(code)

@@ -1181,6 +1181,36 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       )
       expect(second.z_value).to eq(expected.first)
     end
+
+    # [PERF.1] Двокроковий пошук хвоста: обмежене вікно — це ПРУНІНГ, а не поріг
+    # тиші. Дерево, що мовчало довше за вікно, мусить лишитись ТЕПЛИМ — прошивка
+    # вирішує cold-start за маркером RTC (`DR19 == LORENZ_STATE_MAGIC`), не за
+    # годинником сервера, тож серверна межа розсинхронізувала б їх однобічно
+    # (канон `03_04 §2.1`: cold-derive належить дереву БЕЗ історії).
+    # Мутація: прибери фолбек `|| lorenz_tail_row(scope)` — приклад червоніє
+    # і на `cold_start_flag`, і на z_value (той стає re-derive, не продовженням).
+    it "chains warm from a tail older than the fast window" do
+      described_class.call(build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3))
+      first = TelemetryLog.order(:id).last
+      first_tail = first.slice(:lorenz_state_x, :lorenz_state_y, :lorenz_state_z)
+
+      # Відсуваємо хвіст за межу швидкого вікна (update_columns — повз seal-guard
+      # і повз AR-колбеки; PostgreSQL сам переносить рядок між партиціями).
+      stale_at = described_class::LORENZ_TAIL_FAST_WINDOW.ago - 1.day
+      first.update_columns(created_at: stale_at)
+      expect(TelemetryLog.where(created_at: described_class::LORENZ_TAIL_FAST_WINDOW.ago..).count)
+        .to eq(0) # інакше приклад вакуумний: хвіст лишився б у швидкому вікні
+
+      described_class.call(build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3))
+      second = TelemetryLog.where.not(id: first.id).order(:id).last
+
+      expect(second.cold_start_flag).to be(false)
+      expected = SilkenNet::Attractor.calculate_z_from_state(
+        first_tail["lorenz_state_x"], first_tail["lorenz_state_y"],
+        first_tail["lorenz_state_z"], 25.0, 5, 100, 3500
+      )
+      expect(second.z_value).to eq(expected.first)
+    end
   end
 
   # [SEC.10] Frame Counter anti-replay для panic packets. Сторожовий пес
