@@ -75,17 +75,35 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
     end
 
     # =========================================================================
-    # PARTITION PRUNING: passing `created_at` scopes the query to a single
-    # partition instead of scanning all of them (see `find_transaction`).
+    # PARTITION PRUNING [S6.16]: `?created_at=` звужує запит до однієї партиції.
+    # Обидві форми ISO-8601 МУСЯТЬ знаходити запис — саме тут ховався дефект:
+    # рукописна копія в контролері звіряла created_at ТОЧНОЮ рівністю, а цей
+    # приклад передавав `iso8601(6)` і тому був зелений. Секундна форма — та,
+    # яку віддає `BlockchainTransaction#status_frame_src` і яку документує
+    # канон, — не збігалася з мікросекундною колонкою НІКОЛИ.
     # =========================================================================
-    it "finds the transaction when a matching created_at is supplied (partition pruning)" do
-      # `find_transaction` matches `created_at` by EXACT equality — round-trip
-      # with microsecond precision (iso8601(6)) or the default (whole-second)
-      # `iso8601` truncates the stored sub-second timestamp and matches nothing.
+    it "finds the transaction when created_at is supplied with microsecond precision" do
       get "/blockchain_transactions/#{own_tx.id}",
           params: { created_at: own_tx.created_at.iso8601(6) }, headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["id"]).to eq(own_tx.id)
+    end
+
+    it "finds the transaction when created_at is supplied with whole-second precision" do
+      # Мутація-перевірка: на рукописній точній рівності цей приклад давав 404.
+      expect(own_tx.created_at.usec).to be_positive # інакше приклад вакуумний
+      get "/blockchain_transactions/#{own_tx.id}",
+          params: { created_at: own_tx.created_at.iso8601 }, headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["id"]).to eq(own_tx.id)
+    end
+
+    it "still scopes to the organization when created_at is supplied" do
+      # Прунінг не сміє послабити тенант-ізоляцію: хелпер кличеться на вже
+      # скоупленому relation, тож чужий запис лишається 404 і з параметром.
+      get "/blockchain_transactions/#{other_tx.id}",
+          params: { created_at: other_tx.created_at.iso8601(6) }, headers: headers, as: :json
+      expect(response).to have_http_status(:not_found)
     end
 
     it "falls back to a full scan when created_at is not valid ISO 8601" do

@@ -79,24 +79,21 @@ module Api
 
       private
 
-      # [PARTITION PRUNING]: blockchain_transactions партиціоновано по created_at.
-      # Якщо клієнт передає ?created_at=..., запит потрапляє в одну партицію (O(log N)).
-      # Без нього — PostgreSQL сканує індекси всіх партицій (Global Partition Scan).
+      # [PARTITION PRUNING / S6.16]: blockchain_transactions партиціоновано по
+      # created_at, тож `?created_at=` звужує запит до однієї партиції. Форму
+      # звуження НЕ пишемо тут — її дім `BlockchainTransaction.find_with_partition_pruning`
+      # (⚡ PARTITION PRUNING INVARIANT, `04_01`: «контролери делегують сюди,
+      # НЕ дублюють»). Рукописна копія, що стояла на цьому місці, звіряла
+      # created_at ТОЧНОЮ рівністю — а ISO-8601 несе секундну точність проти
+      # мікросекундної колонки, тож збігалась лише випадково; хелпер бере
+      # 1-секундне вікно, яким PostgreSQL прунить так само до однієї партиції.
+      # Битий/відсутній created_at хелпер сам відкочує в lookup без прунінгу.
       def find_transaction
-        scope = BlockchainTransaction
-                  .joins(wallet: { tree: :cluster })
-                  .where(clusters: { organization_id: acting_organization!.id })
-                  .includes(wallet: :tree)
-
-        if params[:created_at].present?
-          begin
-            scope = scope.where(blockchain_transactions: { created_at: Time.iso8601(params[:created_at]) })
-          rescue ArgumentError
-            # Invalid ISO 8601 — skip partition pruning, fall back to full scan
-          end
-        end
-
-        scope.find(params[:id])
+        BlockchainTransaction
+          .joins(wallet: { tree: :cluster })
+          .where(clusters: { organization_id: acting_organization!.id })
+          .includes(wallet: :tree)
+          .find_with_partition_pruning(params[:id], params[:created_at])
       end
     end
   end
