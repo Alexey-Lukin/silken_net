@@ -287,8 +287,9 @@ expect(html).to include("border-gaia-border")
 # ❌ (дозволено тільки в domain-specific page components)
 expect(html).to include("text-emerald-500")
 ```
-Для shared UI компонентів — ТІЛЬКИ gaia-токени.
-Для page components (Trees::Show, etc.) — допускається raw Tailwind.
+Для shared UI компонентів — ТІЛЬКИ gaia-токени (HARD-гейт `gaia:lint_tokens`).
+
+🔴 **Доти тут стояло «Для page components (Trees::Show, etc.) — допускається raw Tailwind» — дозвіл ЗНЯТО 2026-08-07** разом із його домом ([`04_04 §3.5`](04_04_Phlex_UI_and_Tailwind), ⚖️ присуд «світла тема підтримувана»). Сире палітрове значення легальне лише тем-інваріантне **й оголошене** (бренд-глоу [`04_04 §16.4`](04_04_Phlex_UI_and_Tailwind) · scrim), решта — дефект теми. ⚠️ Наслідок саме для тестового шару, і він не косметичний: доменні компоненти сьогодні цим дозволом РЯСНО користуються (борг → [`00_07`](00_07_Action_Plan_Tracker) UI.1), тож `not_to include("bg-black")` у їхніх спеках зараз почервонів би масово. Тобто пін на токен-чистоту ставиться **разом із migrate-хвилею свого домену**, не наперед — а вже наявний хіт читай як борг, не як ліцензію.
 
 ### 20. Перевіряй data-атрибути для Stimulus/Turbo
 ```ruby

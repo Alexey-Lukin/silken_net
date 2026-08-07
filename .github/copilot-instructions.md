@@ -28,7 +28,7 @@ Not a restatement of facts (those live in `CLAUDE.md`) — just the traps + wher
 - **AES keys never leave the Ruby process** (`HardwareKey#cached_binary_key`, in-process LRU; no Redis-serialize).
 - **`oracle_status`** has a prefix → `oracle_status_fulfilled?` (NOT `fulfilled?`).
 - **`TelemetryLog` has no AR validations** (KENOSIS) — checks only in `TelemetryUnpackerService.valid_sensor_data?`; don't add them back → `§6`.
-- **Frontend = design-tokens only** in shared components (`bg-gaia-surface`…), `tokens(...)`, no DB in Phlex `initialize`, `focus-visible:` → `§6`.
+- **Frontend = design-tokens only** (`bg-gaia-surface`…), `tokens(...)`, no DB in Phlex `initialize`, `focus-visible:` — take the boundary where raw palette is still legal from `§6` (it narrowed 2026-08-07; do not keep a copy here).
 - **Minting guard-clauses** (oracle-гілка Path 1 + KYC бенефіціара на всіх шляхах) + `WEB3_STRICT_MODE`; Web3 logic only in service namespaces → `§6`.
 - **TRL honesty:** anchor/EBFC = TRL 3 (in-silico ≠ TRL 4); don't overclaim → `§1`. Style: lazy-senior / YAGNI-first → `§4`.
 

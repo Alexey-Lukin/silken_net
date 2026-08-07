@@ -32,7 +32,7 @@
 - **AES-ключі не покидають Ruby-процес** (`HardwareKey#cached_binary_key`, in-process LRU; без Redis-serialize).
 - **`oracle_status`** має prefix → `oracle_status_fulfilled?` (НЕ `fulfilled?`).
 - **`TelemetryLog` без AR-валідацій** (KENOSIS) — перевірка лише в `TelemetryUnpackerService.valid_sensor_data?`; не додавати назад (`§6`).
-- **Frontend = лише дизайн-токени** в shared-компонентах (`bg-gaia-surface`…), `tokens(...)`, без DB у Phlex `initialize`, `focus-visible:` (`§6`).
+- **Frontend = лише дизайн-токени** (`bg-gaia-surface`…), `tokens(...)`, без DB у Phlex `initialize`, `focus-visible:` — межу, де сира палітра ще легальна, бери в `§6` (вона звузилась 08-07; не тримай її копію тут).
 - **Мінтинг guard-clauses** + `WEB3_STRICT_MODE`; Web3-логіка лише в service-namespaces (`§6`).
 - **Стиль:** драбинка «лінивого сеньйора» / YAGNI-first (`§4`) — найкращий код той, що не написано.
 

@@ -1,6 +1,19 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 @import "tailwindcss";
 
+/* ── Одна шафа теми, не дві ──
+ * Тема в цьому застосунку перемикається класом `.dark` на `<html>` (ставить
+ * FOUC-скрипт у `dashboard_layout`, далі `theme_controller`). Семантичні токени
+ * нижче (`:root` / `.dark`) слухають саме його.
+ *
+ * Без цього рядка варіант `dark:` у Tailwind v4 компілюється в
+ * `@media (prefers-color-scheme: dark)`, тобто сирі `dark:`-утиліти слухали б
+ * ОПЕРАЦІЙНУ СИСТЕМУ, поки токени слухають тумблер — і розходились би рівно
+ * тоді, коли людина тумблером скористалась. `:where()` має нульову
+ * специфічність, тож каскад лишається таким самим, як був.
+ * Інваріант міряється браузером: `spec/features/theme_shaft_spec.rb`. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* ── Font Families ── */
   --font-family-mono: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code",
