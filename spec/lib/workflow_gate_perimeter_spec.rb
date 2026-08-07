@@ -45,6 +45,28 @@ RSpec.describe WorkflowGatePerimeter do
     YAML
   end
 
+  # An aggregate that DEPENDS on the `changes` path-filter. `assert: true` wires the
+  # OPS.23 step that keys a failure on the filter's own result; `false` leaves only
+  # the failure-only guard that reads a skipped filter as a legal path-skip.
+  def filtered_wf(label, assert:)
+    cond = assert ? "needs.changes.result != 'success'" : "contains(needs.*.result, 'failure')"
+    <<~YAML
+      on:
+        pull_request:
+      jobs:
+        changes:
+          runs-on: ubuntu-latest
+        agg:
+          name: #{label}
+          if: ${{ always() }}
+          needs: [changes]
+          runs-on: ubuntu-latest
+          steps:
+            - if: #{cond}
+              run: exit 1
+    YAML
+  end
+
   describe ".pr_triggered?" do
     it "detects the YAML-1.1 bare-`on:`→boolean-true quirk" do
       # Psych parses bare `on:` as the key `true`, not the string "on".
@@ -77,6 +99,40 @@ RSpec.describe WorkflowGatePerimeter do
     end
   end
 
+  # [OPS.23] The aggregate existing is not the same as the aggregate being able to
+  # tell. `changes` carries no `if:`, so `success` is its only legal result — while
+  # the jobs it gates may legally be `skipped`. Both halves of the predicate are
+  # pinned separately: a condition keyed on the filter, AND a step that actually fails.
+  describe ".filter_result_asserted?" do
+    it "accepts an aggregate whose failing step keys on the filter's own result" do
+      yaml = YAML.safe_load(filtered_wf("X passed", assert: true))
+      expect(described_class.filter_result_asserted?(yaml, "X passed")).to be(true)
+    end
+
+    it "rejects a failure-only guard — a SKIPPED filter reads there as a legal path-skip" do
+      yaml = YAML.safe_load(filtered_wf("X passed", assert: false))
+      expect(described_class.filter_result_asserted?(yaml, "X passed")).to be(false)
+    end
+
+    it "requires the step to actually FAIL, not merely to mention the filter" do
+      no_exit = YAML.safe_load(<<~YAML)
+        jobs:
+          agg:
+            name: X passed
+            needs: [changes]
+            steps:
+              - if: needs.changes.result != 'success'
+                run: echo "noted"
+      YAML
+      expect(described_class.filter_result_asserted?(no_exit, "X passed")).to be(false)
+    end
+
+    it "owes nothing when the aggregate does not depend on the filter (dco.yml shape)" do
+      no_filter = YAML.safe_load("jobs:\n  agg:\n    name: X passed\n    steps: []")
+      expect(described_class.filter_result_asserted?(no_filter, "X passed")).to be(true)
+    end
+  end
+
   describe ".audit — the real repo (regression guard)" do
     subject(:result) { described_class.audit }
 
@@ -86,6 +142,19 @@ RSpec.describe WorkflowGatePerimeter do
 
     it "classifies exactly the pull_request-triggered workflows" do
       expect(result[:pr_workflows]).to match_array(WorkflowGatePerimeter::PERIMETER.keys)
+    end
+
+    # A lantern on check (f)'s own subject: it only inspects aggregates that depend
+    # on the filter, so were those `needs:` to disappear, (f) would pass over an
+    # EMPTY set and stay green forever. `dco.yml` is the one legitimate exemption.
+    it "leaves check (f) a non-empty population to inspect" do
+      filtered = WorkflowGatePerimeter::PERIMETER.select { |_b, (c, _)| c == :required }
+                                                 .keys.count do |base|
+        yaml = YAML.safe_load_file(".github/workflows/#{base}", aliases: true)
+        job  = described_class.aggregate_job(yaml, WorkflowGatePerimeter::PERIMETER[base][1])
+        Array(job&.dig("needs")).include?(WorkflowGatePerimeter::FILTER_JOB)
+      end
+      expect(filtered).to be > 1
     end
 
     it "surfaces the flip_pending workflows as advisories (never errors)" do
@@ -128,6 +197,21 @@ RSpec.describe WorkflowGatePerimeter do
       with_workflows("req.yml" => pr_job, "flip.yml" => pr_job) do |root| # req has no aggregate
         errors = described_class.audit(root:, perimeter:)[:errors]
         expect(errors).to include(a_string_matching(/:required `req\.yml` has NO `if: always\(\)` aggregate/))
+      end
+    end
+
+    it "(f) a :required aggregate that depends on the filter but never asserts it → error" do
+      with_workflows("req.yml" => filtered_wf("Fixture passed", assert: false),
+                     "flip.yml" => pr_job) do |root|
+        errors = described_class.audit(root:, perimeter:)[:errors]
+        expect(errors).to include(a_string_matching(/`req\.yml`.*never asserts its RESULT/))
+      end
+    end
+
+    it "(f) the same aggregate WITH the filter assertion is clean" do
+      with_workflows("req.yml" => filtered_wf("Fixture passed", assert: true),
+                     "flip.yml" => pr_job) do |root|
+        expect(described_class.audit(root:, perimeter:)[:errors]).to be_empty
       end
     end
 
