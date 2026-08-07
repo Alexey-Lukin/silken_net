@@ -4,25 +4,24 @@
 require "rails_helper"
 
 RSpec.describe SystemHealth::Show do
-  def healthy_health(queues: { "uplink" => 0, "default" => 2 })
+  # Форма беруться з того, що будує контролер (`SystemHealthController#show`),
+  # а не вигадується: доти фікстура несла ключ `sidekiq[:alive]`, якого
+  # контролер не віддавав, і рядок помилки `"Connection refused"`, який він
+  # перестав емітити після SEC-фіксу — тобто спека стерегла контракт, якого
+  # вже не існувало.
+  def health(coap: { status: "alive", host: "api.silkennet.com", port: 5683 },
+             sidekiq: { alive: true, processes: 2, enqueued: 3, processed: 100,
+                        failed: 0, workers_size: 2, queues: { "uplink" => 0, "default" => 2 } },
+             database: { connected: true })
     {
-      coap_listener: { alive: true, port: 5683, error: nil },
-      sidekiq: { alive: true, error: nil, enqueued: 3, processed: 100, failed: 0, workers_size: 2, queues: queues },
-      database: { connected: true, error: nil },
+      coap_listener: coap,
+      sidekiq: sidekiq,
+      database: database,
       checked_at: "2024-01-15 12:00:00 UTC"
     }
   end
 
-  def degraded_health
-    {
-      coap_listener: { alive: false, port: 5683, error: "Connection refused" },
-      sidekiq: { alive: true, error: nil, enqueued: 0, processed: 0, failed: 0, workers_size: 0, queues: {} },
-      database: { connected: true, error: nil },
-      checked_at: "2024-01-15 12:00:00 UTC"
-    }
-  end
-
-  let(:html) { render_component(health: healthy_health) }
+  let(:html) { render_component(health: health) }
 
   describe "header section" do
     it "renders Pulse Monitor heading" do
@@ -33,59 +32,88 @@ RSpec.describe SystemHealth::Show do
       expect(html).to include("ALL SYSTEMS GO")
     end
 
-    it "renders DEGRADED when system is unhealthy" do
-      html = render_component(health: degraded_health)
-      expect(html).to include("DEGRADED")
+    it "renders DEGRADED when a subsystem is affirmatively down" do
+      rendered = render_component(health: health(coap: { status: "unreachable", host: "api.silkennet.com", port: 5683 }))
+      expect(rendered).to include("DEGRADED")
     end
   end
 
-  describe "overall status banner" do
-    it "renders operational banner when all systems go" do
+  describe "overall banner" do
+    it "renders the operational banner when all systems go" do
       expect(html).to include("ALL SUBSYSTEMS OPERATIONAL")
     end
 
-    it "renders degraded banner when system is degraded" do
-      html = render_component(health: degraded_health)
-      expect(html).to include("SYSTEM DEGRADED")
+    it "renders the degraded banner when a subsystem is down" do
+      rendered = render_component(health: health(database: { connected: false }))
+      expect(rendered).to include("SYSTEM DEGRADED")
+    end
+
+    # [ARCH.81] Несучий пін третього стану. «Не сконфігуровано» — це не «мертво»:
+    # якби вони світились однаково, панель знову навчала б ігнорувати червоне,
+    # лише поверхом вище за саму пробу. І це не «все добре» також.
+    it "renders neither GO nor DEGRADED when a probe cannot report at all" do
+      rendered = render_component(health: health(coap: { status: "not_configured", port: 5683 }))
+
+      expect(rendered).to include("INCOMPLETE PICTURE")
+      expect(rendered).not_to include("ALL SUBSYSTEMS OPERATIONAL")
+      expect(rendered).not_to include("SYSTEM DEGRADED")
     end
   end
 
   describe "CoAP card" do
-    it "renders CoAP Listener card" do
+    it "renders the card with the probed address" do
       expect(html).to include("CoAP Listener")
-    end
-
-    it "renders port 5683" do
+      expect(html).to include("api.silkennet.com")
       expect(html).to include("5683")
     end
 
-    it "renders LISTENING status when alive" do
+    it "renders LISTENING when the daemon answered with the expected bytes" do
       expect(html).to include("LISTENING")
     end
 
-    it "renders OFFLINE status when not alive" do
-      html = render_component(health: degraded_health)
-      expect(html).to include("OFFLINE")
+    it "renders NO REPLY when the datagram went unanswered" do
+      rendered = render_component(health: health(coap: { status: "unreachable", host: "api.silkennet.com", port: 5683 }))
+      expect(rendered).to include("NO REPLY")
     end
 
-    it "renders error message when CoAP has error" do
-      html = render_component(health: degraded_health)
-      expect(html).to include("Connection refused")
+    # Відповідь прийшла, але не тими байтами — тобто на порту хтось інший або
+    # граматика Брами розійшлась із freeze-contract. Це власний стан, а не
+    # різновид мовчання.
+    it "renders WIRE MISMATCH when the reply did not match the freeze-contract" do
+      rendered = render_component(health: health(coap: { status: "wire_mismatch", host: "api.silkennet.com", port: 5683 }))
+      expect(rendered).to include("WIRE MISMATCH")
+    end
+
+    it "renders a dash for the address when none is configured" do
+      rendered = render_component(health: health(coap: { status: "not_configured", port: 5683 }))
+      expect(rendered).to include("NOT CONFIGURED")
+      expect(rendered).to include("—")
     end
   end
 
   describe "Sidekiq card" do
-    it "renders Sidekiq Workers card" do
+    it "renders the process count, which is what the card's name asks" do
       expect(html).to include("Sidekiq Workers")
+      expect(html).to include("Processes")
     end
 
     it "renders queue distribution table when queues present" do
       expect(html).to include("Queue Distribution")
-    end
-
-    it "renders queue names" do
       expect(html).to include("uplink")
       expect(html).to include("default")
+    end
+
+    it "marks the card down when no worker process is registered" do
+      rendered = render_component(health: health(
+        sidekiq: { alive: false, processes: 0, enqueued: 3, processed: 100,
+                   failed: 0, workers_size: 0, queues: {} }
+      ))
+      expect(rendered).to include("SYSTEM DEGRADED")
+    end
+
+    it "renders the sidekiq error marker when the stats call failed" do
+      rendered = render_component(health: health(sidekiq: { alive: false, error: "check_failed" }))
+      expect(rendered).to include("check_failed")
     end
   end
 
@@ -98,29 +126,9 @@ RSpec.describe SystemHealth::Show do
       expect(html).to include("ACTIVE")
     end
 
-    it "renders DISCONNECTED status when the database is not connected" do
-      health = healthy_health
-      health[:database][:connected] = false
-      rendered = render_component(health: health)
+    it "renders DISCONNECTED status when the round-trip failed" do
+      rendered = render_component(health: health(database: { connected: false }))
       expect(rendered).to include("DISCONNECTED")
-    end
-  end
-
-  describe "Sidekiq error display" do
-    it "renders sidekiq error message when present" do
-      health = healthy_health
-      health[:sidekiq][:error] = "Redis connection lost"
-      html = render_component(health: health)
-      expect(html).to include("Redis connection lost")
-    end
-  end
-
-  describe "Database error display" do
-    it "renders database error message when present" do
-      health = healthy_health
-      health[:database][:error] = "Too many connections"
-      html = render_component(health: health)
-      expect(html).to include("Too many connections")
     end
   end
 

@@ -28,6 +28,9 @@ services:
       - WEB_CONCURRENCY=${web_concurrency}
       # Mailer link host (production.rb).
       - APP_HOST=silkennet.com
+      # [ARCH.81] CoAP intake address for the admin health probe — the same host
+      # a Queen dials; unset means the panel reports "not configured", never "dead".
+      - COAP_HOST=api.silkennet.com
 %{ if release_version != "" }      - RELEASE_VERSION=${release_version}
 %{ endif ~}
       # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb ---

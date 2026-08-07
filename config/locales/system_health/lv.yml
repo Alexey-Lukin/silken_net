@@ -5,12 +5,18 @@ lv:
       all_operational: "✓ VISAS APAKŠSISTĒMAS DARBOJAS — Pārbaudīts %{at}"
       all_systems_go: VISAS SISTĒMAS GATAVS
       coap:
-        listening: KLAUSĀS
+        host: Resursdators
+        host_unset: "—"
         name: CoAP klausītājs
-        offline: BEZSAISTĒ
         port: Ports
         protocol: Protokols
         protocol_value: UDP / RFC 7252
+        states:
+          alive: KLAUSĀS
+          check_failed: PĀRBAUDE NEIZDEVĀS
+          not_configured: NAV KONFIGURĒTS
+          unreachable: NAV ATBILDES
+          wire_mismatch: PROTOKOLA NESAKRITĪBA
         status: Statuss
       database:
         active: AKTĪVS
@@ -20,6 +26,7 @@ lv:
         engine_value: PostgreSQL
         name: PostgreSQL
       degraded: DEGRADĒTS
+      incomplete: NEPILNĪGA AINA
       last_checked: Pēdējo reizi pārbaudīts %{at}
       sidekiq:
         active_workers: Aktīvie darbinieki
@@ -28,12 +35,15 @@ lv:
         jobs_enqueued: Rindā esošie darbi
         name: Sidekiq darbinieki
         processed: Apstrādāts
+        processes: Procesi
         queue_name: Rindas nosaukums
         queues_title: Sidekiq rindas sadalījums
       status:
         down: NEDARBOJAS
         ok: LABI
+        unknown: NEZINĀMS
       subtitle: CoAP klausītāja, Sidekiq rindu un datubāzes savienojuma statuss.
       system_degraded: "🚨 SISTĒMA DEGRADĒTA — Viena vai vairākas apakšsistēmas prasa uzmanību"
+      system_incomplete: "⚠ NEPILNĪGA AINA — viena vai vairākas pārbaudes nevar ziņot"
       title: "💓 Sistēmas veselība — Pulsa monitors"
     show_title: Sistēmas veselība

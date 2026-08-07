@@ -10,6 +10,11 @@
 # whose DB or Redis vanished instead of sending it doomed requests. The rich,
 # admin-only `Api::V1::SystemHealthController` stays as the human dashboard.
 #
+# [ARCH.81] Both surfaces now share `SilkenNet::HealthProbes`. They used to hold
+# private copies, and the copies diverged: this one round-tripped, the dashboard
+# asked objects about themselves — i.e. the machine got the truth and the human
+# got a guess. A probe belongs to one home precisely because two of them drift.
+#
 # Inherits `ActionController::Base` directly (like `Rails::HealthController`) to
 # stay outside any `ApplicationController` auth/CSRF chain. `/ready` is exempt
 # from the Rack::Attack global throttle (see `config/initializers/rack_attack.rb`).
@@ -24,25 +29,18 @@ class ReadinessController < ActionController::Base
 
   private
 
+  # Primary connection. cache/queue/cable share host+credentials with primary
+  # (config/database.yml component style), so a reachable primary is a strong proxy
+  # for the whole Cloud SQL instance; per-DB probing is omitted to keep /ready fast
+  # and non-flaky.
   def database_ok?
-    # Primary connection. cache/queue/cable share host+credentials with primary
-    # (config/database.yml component style), so a reachable primary is a strong proxy
-    # for the whole Cloud SQL instance; per-DB probing is omitted to keep /ready fast
-    # and non-flaky.
-    ActiveRecord::Base.connection.execute("SELECT 1")
-    true
-  rescue StandardError
-    false
+    SilkenNet::HealthProbes.database_reachable?
   end
 
+  # Both Redis DBs: Sidekiq queues (DB 0) and Kredis (DB 1 — Web3 nonce + mint/burn
+  # locks). /ready must 503 if either is unreachable, so the orchestrator stops
+  # routing to a node that cannot safely mint/burn.
   def redis_ok?
-    sidekiq_ok = Sidekiq.redis { |conn| conn.call("PING") } == "PONG"
-    # Kredis (Redis DB 1) holds Web3 nonce + mint/burn locks — a money-path dependency
-    # separate from the Sidekiq queue DB (DB 0). /ready must 503 if these are unreachable,
-    # so the orchestrator stops routing to a node that cannot safely mint/burn.
-    kredis_ok = Kredis.redis(config: :shared).ping == "PONG"
-    sidekiq_ok && kredis_ok
-  rescue StandardError
-    false
+    SilkenNet::HealthProbes.redis_reachable?
   end
 end

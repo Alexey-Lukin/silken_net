@@ -23,8 +23,7 @@ uk:
         organization: Домашня організація
       activity:
         last_sync: Остання синхронізація
-        offline: ОФЛАЙН
-        online: ОНЛАЙН
+        never_seen: НЕ БАЧИЛИ ЖОДНОГО РАЗУ
         records: Записи
       id: 'ID: #%{id}'
       none: Немає

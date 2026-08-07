@@ -121,6 +121,12 @@ services:
       - WEB_CONCURRENCY=4
       # Mailer link host (production.rb action_mailer.default_url_options).
       - APP_HOST=silkennet.com
+      # [ARCH.81] Address the admin health panel probes over UDP — the SAME one a
+      # Queen dials (`COAP_SERVER_HOST` in firmware/queen/main.c, A-record to the
+      # Ingress Anchor per 06_01 step 1). The PRIMARY daemon does NOT live in this
+      # deployment, so an unset value makes the panel say "not configured" rather
+      # than claim the intake is dead.
+      - COAP_HOST=api.silkennet.com
 
       # ════════════════════════════════════════════════════════════════════════
       # 🛑 BOOT-CRITICAL — Rails refuses to boot in production without this

@@ -511,7 +511,7 @@ RSpec.describe "Controller coverage — uncovered paths" do
       end
 
       it "handles database connection error gracefully" do
-        allow(ActiveRecord::Base.connection).to receive(:active?).and_raise(StandardError.new("DB down"))
+        allow(ActiveRecord::Base.connection).to receive(:execute).and_raise(StandardError.new("DB down"))
 
         get "/system_health",
             headers: admin_headers
@@ -519,23 +519,24 @@ RSpec.describe "Controller coverage — uncovered paths" do
         expect(response).to have_http_status(:ok)
         json = response.parsed_body
         expect(json["database"]["connected"]).to be false
-        # [SEC]: сирий текст винятку не тече клієнту — лише generic-маркер.
-        expect(json["database"]["error"]).to eq("check_failed")
-        expect(json["database"]["error"]).not_to include("DB down")
+        # [SEC]: сирий текст винятку не тече клієнту.
+        expect(json["database"].to_s).not_to include("DB down")
       end
 
-      it "handles CoAP port check — port open path" do
-        # Stub TCPSocket to simulate an open port
-        socket_double = instance_double(TCPSocket)
-        allow(TCPSocket).to receive(:new).with("127.0.0.1", 5683).and_return(socket_double)
-        allow(socket_double).to receive(:close)
-
+      # [ARCH.81] Доти тут стояв «port open path», що підробляв `TCPSocket` і
+      # пінив `alive: true` — єдине місце в усій сюїті, де живий інтейк узагалі
+      # спостерігався, і спостерігався він лише тому, що сокет був фальшивий.
+      # Реальна проба — UDP-раунд-тріп із байт-точною звіркою; тут пінимо, що
+      # відповідь описує СТАН проби, а не булеву вигадку.
+      it "reports the CoAP intake by probe state, not by a faked socket" do
         get "/system_health",
             headers: admin_headers
 
         expect(response).to have_http_status(:ok)
         json = response.parsed_body
-        expect(json["coap_listener"]["alive"]).to be true
+        expect(json["coap_listener"]).to have_key("status")
+        expect(json["coap_listener"]).not_to have_key("alive")
+        expect(json["coap_listener"]["status"]).to be_in(%w[alive unreachable wire_mismatch not_configured check_failed])
       end
     end
   end

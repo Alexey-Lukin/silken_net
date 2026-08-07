@@ -4,31 +4,29 @@
 require "rails_helper"
 
 RSpec.describe Users::Profile do
+  # [TEST.12] Реальні незбережені записи, а не `OpenStruct`: мок оголошував
+  # `role` рядком і сам вигадував `full_name`/`mfa_enabled?`, тож роле-предикат
+  # (`admin_or_above?`) у ньому не існував — і рядкове порівняння `role == "admin"`,
+  # що казало super_admin'ові «доступ обмежений», сюїта виразити не могла.
   def mock_user(first_name: "Olena", last_name: "Kovalenko",
                 email_address: "olena@example.org", role: "admin",
                 id: 42, mfa_enabled: true, password_digest: "hashed",
                 last_seen_at: 5.minutes.ago, organization_name: "Forest Fund")
-    org = OpenStruct.new(name: organization_name)
-    u = OpenStruct.new(
+    User.new(
+      id: id,
       first_name: first_name,
       last_name: last_name,
       email_address: email_address,
       role: role,
-      id: id,
       password_digest: password_digest,
+      otp_required_for_login: mfa_enabled,
       last_seen_at: last_seen_at,
-      organization: org
+      organization: organization_name && Organization.new(name: organization_name)
     )
-    u.define_singleton_method(:mfa_enabled?) { mfa_enabled }
-    u.define_singleton_method(:full_name) { "#{first_name} #{last_name}" }
-    u
   end
 
-  def mock_identity(provider: "google_oauth2", primary: false, active: true)
-    i = OpenStruct.new(provider: provider, primary: primary)
-    i.define_singleton_method(:primary?) { primary }
-    i.define_singleton_method(:active?) { active }
-    i
+  def mock_identity(provider: "google_oauth2", primary: false)
+    Identity.new(provider: provider, primary: primary)
   end
 
   def render_component(user:, maintenance_count: 0, active_identities: [])
@@ -89,24 +87,44 @@ RSpec.describe Users::Profile do
 
   describe "access privileges" do
     it "shows the fallback none-label when the user has no organization" do
-      no_org_user = mock_user(organization_name: nil)
-      no_org_user.organization = nil
-      rendered = render_component(user: no_org_user)
+      rendered = render_component(user: mock_user(organization_name: nil))
       expect(rendered).to include("None")
     end
 
     it "shows Limited command execution for a non-admin role" do
-      forester = mock_user(role: "forester")
-      rendered = render_component(user: forester)
+      rendered = render_component(user: mock_user(role: "forester"))
       expect(rendered).to include("Limited")
+    end
+
+    # [UI.10] Рядкове порівняння `role == "admin"` казало super_admin'ові, що
+    # його доступ обмежений — тобто екран стверджував про глядача те, що модель
+    # спростовує (`admin_or_above?`).
+    it "shows Full command execution for a super_admin, who is above admin" do
+      rendered = render_component(user: mock_user(role: "super_admin"))
+      expect(rendered).to include("Full")
+      expect(rendered).not_to include("Limited")
     end
   end
 
   describe "activity stats" do
-    it "shows OFFLINE when the user has never been seen" do
-      never_seen = mock_user(last_seen_at: nil)
-      rendered = render_component(user: never_seen)
-      expect(rendered).to include("OFFLINE")
+    it "shows NEVER SEEN when the user has never been seen" do
+      rendered = render_component(user: mock_user(last_seen_at: nil))
+      expect(rendered).to include("NEVER SEEN")
+    end
+
+    # [UI.10] Мітка називається «Last Sync» — вона питає ЧАС. Доти в комірці
+    # стояв ВЕРДИКТ, обчислений як `last_seen_at.present?`, тож акаунт річної
+    # давнини лишався «ONLINE» назавжди. Рецидив цієї форми червонить цей пін.
+    it "renders when the user was last seen, not a verdict about being online" do
+      rendered = render_component(user: mock_user(last_seen_at: 1.year.ago))
+
+      expect(rendered).to include("year")
+      expect(rendered).not_to include("ONLINE")
+    end
+
+    it "renders a fresh visit as a recent relative time" do
+      rendered = render_component(user: mock_user(last_seen_at: 5.minutes.ago))
+      expect(rendered).to include("5 minutes ago")
     end
   end
 

@@ -23,8 +23,7 @@ en:
         organization: Home Organization
       activity:
         last_sync: Last Sync
-        offline: OFFLINE
-        online: ONLINE
+        never_seen: NEVER SEEN
         records: Records
       id: 'ID: #%{id}'
       none: None

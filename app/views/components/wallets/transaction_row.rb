@@ -66,30 +66,10 @@ module Wallets
       case @tx.token_type
       when "carbon_coin" then "bg-emerald-900/20 text-emerald-400 border-emerald-500/30"
       when "forest_coin" then "bg-token-forest/20 text-token-forest border-token-forest/30"
-      when "cusd" then "bg-zinc-900 text-zinc-400 border-zinc-700"
+      # `cusd` СВІДОМО падає в else: власного токена дизайн-системи в нього нема
+      # (зовнішній Celo-долар), а окрема гілка з тим самим рядком лише вдавала,
+      # що він її має — і робила сам else недосяжним.
       else "bg-zinc-900 text-zinc-400 border-zinc-700"
-      end
-    end
-
-    # 🔴 НЕ дротувати сюди `Views::Shared::UI::StatusBadge` — цей компонент
-    # свідомо лишився з приватною мапою, коли решта родини `BlockchainTransaction`
-    # перейшла на спільний бейдж (I18N.1, 2026-08-05). Причина не стилістична:
-    # рядок рендериться ВСЕРЕДИНІ броадкасту (`BlockchainTransaction#broadcast_*`),
-    # тож будь-який `t()` віддав би локаль ПРОДЮСЕРА всім підписникам (`04_04 §8.1а`),
-    # а бейдж свою мітку саме перекладає. ⚠️ І гейт цього не спіймає:
-    # `broadcast_payload_invariance_spec` рахує `t()` лише у ВЛАСНОМУ джерелі
-    # компонента й не ходить у дочірні — тобто порушення було б ТИХИМ.
-    # Правильний шлях — міграція payload'а за `00_07` I18N.2, не заміна рендерера.
-    def status_color
-      case @tx.status
-      when "confirmed" then "text-emerald-500"
-      when "processing", "sent" then "text-status-warning-text animate-pulse"
-      when "pending" then "text-gray-400"
-      when "failed" then "text-red-500"
-      # `manual_review` = double-spend guard: tx_hash є, кошти заблоковані. Свого
-      # часу він падав у `else` і діставав стиль ТЬМЯНІШИЙ за доброякісний `pending`.
-      when "manual_review" then "text-status-warning-text animate-pulse"
-      else "text-gray-600"
       end
     end
 

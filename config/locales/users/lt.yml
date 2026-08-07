@@ -23,8 +23,7 @@ lt:
         organization: Namų organizacija
       activity:
         last_sync: Paskutinė sinchronizacija
-        offline: NEPRISIJUNGĘS
-        online: PRISIJUNGĘS
+        never_seen: NIEKADA NEMATYTAS
         records: Įrašai
       id: 'ID: #%{id}'
       none: Nėra

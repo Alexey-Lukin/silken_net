@@ -142,6 +142,11 @@ env:
     POSTGRES_DATABASE: silken_net_production
     # Mailer link host (config/environments/production.rb action_mailer.default_url_options).
     APP_HOST: silkennet.com
+    # [ARCH.81] CoAP intake address the admin health panel probes over UDP — the
+    # same host a Queen dials (firmware `COAP_SERVER_HOST`; A-record → Ingress
+    # Anchor, checklist step 1). Unset ⇒ the panel says "not configured"; it never
+    # claims the intake is dead just because it could not look.
+    COAP_HOST: api.silkennet.com
     # Puma clustered mode — number of forked worker processes.
     # Fallback path only (see the `servers:` note above — Rails runs on Akash at
     # WEB_CONCURRENCY=4). 2 is a conservative default for a small 2-vCPU fallback

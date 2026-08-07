@@ -5,15 +5,18 @@ require "sidekiq/api"
 
 module Api
   module V1
+    # [ARCH.81] Панель, на яку дивляться під час інциденту. Кожна проба тут
+    # мусить доводити те, що обіцяє її ім'я — механіка й підстава живуть в
+    # одному домі, `SilkenNet::HealthProbes`, спільному з `/ready`.
     class SystemHealthController < BaseController
       before_action :authorize_admin!
 
       # GET /system_health
-      # Моніторинг стану системи: CoAP listener, Sidekiq, UDP
+      # Стан системи: CoAP-інтейк (UDP), процеси Sidekiq, база.
       def show
         @health = {
           checked_at: Time.current.iso8601,
-          coap_listener: coap_status,
+          coap_listener: SilkenNet::HealthProbes.coap_listener,
           sidekiq: sidekiq_status,
           database: database_status
         }
@@ -31,22 +34,16 @@ module Api
 
       private
 
-      # Перевірка статусу CoAP listener (UDP-сервіс на порту 5683)
-      def coap_status
-        port = ENV.fetch("COAP_PORT", 5683).to_i
-        alive = port_open?("127.0.0.1", port)
-
-        { alive: alive, port: port }
-      rescue => e
-        Rails.logger.warn "[SystemHealth] CoAP-перевірка впала: #{e.message}"
-        { alive: false, port: port, error: "check_failed" }
-      end
-
-      # Статистика черг Sidekiq
+      # Живість тут — це наявність ПРОЦЕСІВ, а не відповідь Redis: `Sidekiq::Stats`
+      # приходить і тоді, коли черги не дренує ніхто, тож картка з іменем
+      # «Sidekiq Workers» світила б зеленим над мертвим флотом воркерів.
       def sidekiq_status
         stats = Sidekiq::Stats.new
+        processes = SilkenNet::HealthProbes.sidekiq_process_count
 
         {
+          alive: processes.positive?,
+          processes: processes,
           enqueued: stats.enqueued,
           processed: stats.processed,
           failed: stats.failed,
@@ -55,23 +52,11 @@ module Api
         }
       rescue => e
         Rails.logger.warn "[SystemHealth] Sidekiq-статистика недоступна: #{e.message}"
-        { error: "check_failed" }
+        { alive: false, error: "check_failed" }
       end
 
-      # Перевірка з'єднання з базою даних
       def database_status
-        { connected: ActiveRecord::Base.connection.active? }
-      rescue => e
-        Rails.logger.warn "[SystemHealth] Перевірка БД впала: #{e.message}"
-        { connected: false, error: "check_failed" }
-      end
-
-      def port_open?(host, port)
-        socket = TCPSocket.new(host, port)
-        socket.close
-        true
-      rescue Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::ETIMEDOUT, SocketError
-        false
+        { connected: SilkenNet::HealthProbes.database_reachable? }
       end
     end
   end

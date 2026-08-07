@@ -57,7 +57,9 @@ module Users
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".sections.access_privileges") }
         div(class: "space-y-4 font-mono text-compact") do
           access_item(t(".access.organization"), @user.organization&.name || t(".none"))
-          access_item(t(".access.command_execution"), @user.role == "admin" ? t(".access.full") : t(".access.limited"))
+          # Через предикат, а не рядкове порівняння: `role == "admin"` казало
+          # super_admin'ові, що його доступ обмежений (`User#admin_or_above?`).
+          access_item(t(".access.command_execution"), @user.admin_or_above? ? t(".access.full") : t(".access.limited"))
           access_item(t(".access.encryption"), "AES-256-GCM")
         end
       end
@@ -68,7 +70,7 @@ module Users
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".sections.activity") }
         div(class: "grid grid-cols-2 gap-4 text-center") do
           stat_box(t(".activity.records"), @maintenance_count)
-          stat_box(t(".activity.last_sync"), @user.last_seen_at ? t(".activity.online") : t(".activity.offline"))
+          stat_box_last_seen
         end
       end
     end
@@ -144,10 +146,29 @@ module Users
       end
     end
 
-    def stat_box(label, value)
+    def stat_box(label, value = nil)
       div do
         p(class: "text-mini uppercase text-gray-600") { label }
-        p(class: "text-xl text-emerald-100 font-light mt-1") { value }
+        p(class: "text-xl text-emerald-100 font-light mt-1") { block_given? ? yield : value }
+      end
+    end
+
+    # [UI.10] Мітка питає ЧАС («Last Sync»), тож у комірці стоїть час.
+    # Вердикт «online» тут був presence-перевіркою: акаунт, що заходив торік,
+    # лишався «онлайн» назавжди. Recency-предикат за зразком `Gateway#online?`
+    # тут побудувати НІЧИМ — у людини немає задекларованої каденції, тож будь-яке
+    # вікно було б вигаданим порогом; сусідній `Users::Index` рівно тому й
+    # показує факт. Ніколи не баченого відрізняємо явно.
+    def stat_box_last_seen
+      stat_box(t(".activity.last_sync")) do
+        if @user.last_seen_at
+          render Views::Shared::UI::RelativeTime.new(
+            datetime: @user.last_seen_at,
+            css_class: "text-xl text-emerald-100 font-light"
+          )
+        else
+          plain t(".activity.never_seen")
+        end
       end
     end
 

@@ -117,7 +117,11 @@ module Gateways
           config_row(t(".config.cluster"), @gateway.cluster&.name || "UNASSIGNED")
           config_row(t(".config.sleep_interval"), "#{@gateway.config_sleep_interval_s || 60}s")
           config_row(t(".config.firmware_version"), @gateway.firmware_version || "—")
-          config_row(t(".config.firmware_hash"), @gateway.try(:firmware_hash)&.first(16) || "—")
+          # [UI.10] Джерела для цього значення в системі НЕМА: `firmware_hash` не
+          # існує на `Gateway` ні колонкою, ні методом, тож `try(:…)&.first(16)`
+          # малював тут гілку, недосяжну за побудовою (її «покривав» лише мок, що
+          # поле вигадував). Рядок лишається — присуд «дротувати чи зняти» → 00_07 UI.10.
+          config_row(t(".config.firmware_hash"), "—")
           config_row(t(".config.mesh_mode"), t(".config.mesh_enabled"))
         end
       end
@@ -191,7 +195,9 @@ module Gateways
     end
 
     def connection_led_classes
-      recently_seen = @gateway.last_seen_at&.after?(5.minutes.ago)
+      # `Gateway#online?` — один дім порога (`config_sleep_interval_s * 1.2`);
+      # локальні «5 хвилин» суперечили і сторожу, і сусідній сторінці.
+      recently_seen = @gateway.online?
       tokens("bg-emerald-500 shadow-[0_0_10px_#10b981]": recently_seen, "bg-red-900 animate-pulse": !recently_seen)
     end
 

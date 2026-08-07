@@ -11,7 +11,7 @@ require "optparse"
 require "coap_client"
 require "coap_smoke"
 
-options = { port: 5683, timeout: 10.0, retries: 3 }
+options = { port: CoapSmoke::DEFAULT_PORT, timeout: 10.0, retries: 3 }
 OptionParser.new do |o|
   o.banner = "Usage: bin/coap_smoke --host HOST [--port 5683] [--timeout 10] [--retries 3]"
   o.on("--host HOST", "CoAP-хост Брами (api.silkennet.com / canopy...)") { |v| options[:host] = v }

@@ -43,7 +43,7 @@ module Gateways
 
     def render_gateway_item(gateway)
       latest_log = gateway.latest_gateway_telemetry_log
-      recently_seen = gateway.last_seen_at&.after?(5.minutes.ago)
+      recently_seen = gateway.online?
       led_class = tokens("bg-emerald-500 shadow-[0_0_8px_#10b981]": recently_seen, "bg-red-900 animate-pulse": !recently_seen)
 
       div(class: "group relative p-6 border border-emerald-900 bg-black hover:bg-emerald-950 transition-all duration-500") do

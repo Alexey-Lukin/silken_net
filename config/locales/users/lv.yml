@@ -23,8 +23,7 @@ lv:
         organization: Mājas organizācija
       activity:
         last_sync: Pēdējā sinhronizācija
-        offline: BEZSAISTĒ
-        online: TIEŠSAISTĒ
+        never_seen: NEKAD NAV REDZĒTS
         records: Ieraksti
       id: 'ID: #%{id}'
       none: Nav

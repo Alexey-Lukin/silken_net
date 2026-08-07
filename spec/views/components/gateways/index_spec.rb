@@ -9,21 +9,24 @@ RSpec.describe Gateways::Index do
   let(:html) { render_component(gateways: gateways, pagy: pagy, online_count: 3) }
 
 
+  # [TEST.12] Реальний незбережений запис, а не `OpenStruct`: мок мусив би
+  # вигадати `online?`, тобто оголосити світ, у якому дефект «компонент рахує
+  # власне вікно» невиразимий. Реальний `Gateway` віддає і предикат, і
+  # метадані фреймворку (`model_name`/`to_key`/`to_param`) сам.
   def mock_gateway(uid: "SNET-Q-AAB01234", last_seen_at: 1.minute.ago,
+                   config_sleep_interval_s: 300,
                    cluster_name: "Carpathian-Alpha", active_trees_count: 12,
-                   signal_quality_percentage: 78)
-    latest_log = OpenStruct.new(signal_quality_percentage: signal_quality_percentage)
-    cluster = OpenStruct.new(name: cluster_name, active_trees_count: active_trees_count)
-
-    gw = OpenStruct.new(
+                   cellular_signal_csq: 24, latest_log: :derive)
+    gw = Gateway.new(
+      id: 1,
       uid: uid,
       last_seen_at: last_seen_at,
-      cluster: cluster,
-      latest_gateway_telemetry_log: latest_log
+      config_sleep_interval_s: config_sleep_interval_s,
+      cluster: Cluster.new(name: cluster_name, active_trees_count: active_trees_count)
     )
-    gw.define_singleton_method(:model_name) { ActiveModel::Name.new(Gateway) }
-    gw.define_singleton_method(:to_key) { [ 1 ] }
-    gw.define_singleton_method(:to_param) { "1" }
+    # Асоціація стабиться точково — реальний лог тягнув би партиційну таблицю.
+    log = latest_log == :derive ? GatewayTelemetryLog.new(cellular_signal_csq: cellular_signal_csq) : latest_log
+    allow(gw).to receive(:latest_gateway_telemetry_log).and_return(log)
     gw
   end
 
@@ -53,8 +56,8 @@ RSpec.describe Gateways::Index do
       expect(html).to include("12")
     end
 
-    it "renders signal percentage" do
-      expect(html).to include("78%")
+    it "renders signal percentage derived from the raw CSQ" do
+      expect(html).to include("77.4%")
     end
 
     it "renders Open Relay link with aria-label" do
@@ -74,11 +77,24 @@ RSpec.describe Gateways::Index do
 
     it "shows red pulsing LED for stale gateway" do
       rendered = render_component(
-        gateways: [ mock_gateway(last_seen_at: 10.minutes.ago) ],
+        gateways: [ mock_gateway(last_seen_at: 10.minutes.ago, config_sleep_interval_s: 300) ],
         pagy: pagy, online_count: 0
       )
       expect(rendered).to include("bg-red-900")
       expect(rendered).to include("animate-pulse")
+    end
+
+    # [UI.10] Несучий приклад: поріг належить Королеві, не сторінці. Шлюз, що
+    # спить годину, після десяти хвилин мовчання ОНЛАЙН — доти компонент рахував
+    # власні «5 хвилин» і малював його мертвим, розходячись і зі сторожем, і з
+    # `Gateway.online`-скоупом, яким той самий екран рахує підсумок.
+    it "keeps a long-sleeping gateway green well past five minutes" do
+      rendered = render_component(
+        gateways: [ mock_gateway(last_seen_at: 10.minutes.ago, config_sleep_interval_s: 3600) ],
+        pagy: pagy, online_count: 1
+      )
+      expect(rendered).to include("bg-emerald-500")
+      expect(rendered).not_to include("animate-pulse")
     end
   end
 
@@ -113,10 +129,8 @@ RSpec.describe Gateways::Index do
 
   describe "gateway with no cluster, telemetry or recent contact" do
     it "renders unassigned/zero/silent fallbacks and a stale LED" do
-      gw = mock_gateway
+      gw = mock_gateway(last_seen_at: nil, latest_log: nil)
       gw.cluster = nil
-      gw.latest_gateway_telemetry_log = nil
-      gw.last_seen_at = nil
       rendered = render_component(gateways: [ gw ], pagy: mock_pagy(count: 1, last: 1), online_count: 0)
       expect(rendered).to include("UNASSIGNED") # cluster&.name || unassigned
       expect(rendered).to include("SILENT")     # last_seen_at&.strftime || silent

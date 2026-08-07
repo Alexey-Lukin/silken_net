@@ -640,6 +640,7 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 | `RAILS_MAX_THREADS` | `3` | runtime | Puma threads/worker — узгоджено з `database.yml` pool |
 | `DB_POOL` | `17` (лише job) | runtime | ActiveRecord pool для job-сервісу — Sidekiq concurrency 15 (INF.13); web лишається default (io-aware `3+16+2=21` — формула-SSOT `config/database.yml`, INF.22) |
 | `APP_HOST` | `silkennet.com` | runtime | Action Mailer `default_url_options` host (`production.rb`); web+job (INF.13) |
+| `COAP_HOST` | `api.silkennet.com` | runtime | Адреса CoAP-інтейку, яку пробує адмін-панель здоров'я UDP-раундтріпом (ARCH.81); **web only** — та сама, що набирає Королева (`COAP_SERVER_HOST` прошивки). Незадана ⇒ панель каже «не сконфігуровано», а не «мертвий» |
 | `WEB_CONCURRENCY` | `4` | runtime | Puma worker processes (web only) |
 
 ### 2.2 🛑 Boot-critical security guards
@@ -1020,6 +1021,7 @@ Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/s
 | `env.clear WEB_CONCURRENCY=2` | `env: WEB_CONCURRENCY=4` (більше CPU на Akash) |
 | `env.clear RAILS_MAX_THREADS=3` | `env: RAILS_MAX_THREADS=3` |
 | `env.clear APP_HOST=silkennet.com` | `env: APP_HOST=silkennet.com` (web+job) |
+| `env.clear COAP_HOST=api.silkennet.com` | `env: COAP_HOST=api.silkennet.com` (web only — проба панелі, ARCH.81) |
 | `env.clear WEB3_STRICT_MODE=true` | `env: WEB3_STRICT_MODE=true` (web+job) |
 | `(job) DB_POOL=17` | `env: DB_POOL=17` (job-сервіс — Sidekiq pool) |
 | `volumes: silken_net_storage:/rails/storage` | `params.storage.data.mount: /rails/storage` |

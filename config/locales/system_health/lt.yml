@@ -5,12 +5,18 @@ lt:
       all_operational: "✓ VISOS POSISTEMOS VEIKIA — Patikrinta %{at}"
       all_systems_go: VISOS SISTEMOS PARUOŠTOS
       coap:
-        listening: KLAUSO
+        host: Serveris
+        host_unset: "—"
         name: CoAP klausytojas
-        offline: NEPRISIJUNGĘS
         port: Prievadas
         protocol: Protokolas
         protocol_value: UDP / RFC 7252
+        states:
+          alive: KLAUSO
+          check_failed: PATIKRA NEPAVYKO
+          not_configured: NESUKONFIGŪRUOTA
+          unreachable: NĖRA ATSAKO
+          wire_mismatch: PROTOKOLO NEATITIKIMAS
         status: Būsena
       database:
         active: AKTYVUS
@@ -20,6 +26,7 @@ lt:
         engine_value: PostgreSQL
         name: PostgreSQL
       degraded: DEGRADAVUSI
+      incomplete: NEPILNAS VAIZDAS
       last_checked: Paskutinį kartą patikrinta %{at}
       sidekiq:
         active_workers: Aktyvūs darbuotojai
@@ -28,12 +35,15 @@ lt:
         jobs_enqueued: Eilėje esantys darbai
         name: Sidekiq darbuotojai
         processed: Apdorota
+        processes: Procesai
         queue_name: Eilės pavadinimas
         queues_title: Sidekiq eilių pasiskirstymas
       status:
         down: NEVEIKIA
         ok: GERAI
+        unknown: NEŽINOMA
       subtitle: CoAP klausytojo, Sidekiq eilių ir duomenų bazės ryšio būsena.
       system_degraded: "🚨 SISTEMA DEGRADAVUSI — Viena ar daugiau posistemių reikalauja dėmesio"
+      system_incomplete: "⚠ NEPILNAS VAIZDAS — viena ar daugiau patikrų negali pateikti duomenų"
       title: "💓 Sistemos sveikata — Pulso monitorius"
     show_title: Sistemos sveikata

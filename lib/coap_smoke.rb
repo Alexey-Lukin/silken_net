@@ -27,6 +27,8 @@ require "socket"
 module CoapSmoke
   SMOKE_UID = "SNET-Q-SMOKETEST"
   MAX_REPLY = 2048
+  # Один дім порту CoAP: демон ним біндиться, CLI й панель — цілять.
+  DEFAULT_PORT = 5683
 
   Probe = Struct.new(:name, :datagram, :expect_hex, keyword_init: true)
 
@@ -39,12 +41,19 @@ module CoapSmoke
 
   module_function
 
+  # Єдиний зонд без побічних ефектів: сміття в опціях відкидається граматикою
+  # ДО маршрутизації, тож ні БД, ні черги він не торкається. Саме тому його —
+  # і тільки його — можна питати з веб-запиту (SilkenNet::HealthProbes).
+  def liveness_probe
+    Probe.new(name: "RST на сміття в опціях",
+              datagram: [ "4003ABCDF0" ].pack("H*"),
+              expect_hex: "7000ABCD")
+  end
+
   def probes
     pin_payload = "\xFF\x01\xFF".b
     [
-      Probe.new(name: "RST на сміття в опціях",
-                datagram: [ "4003ABCDF0" ].pack("H*"),
-                expect_hex: "7000ABCD"),
+      liveness_probe,
       Probe.new(name: "4.04 на невідомий маршрут (пін 0xFF-MID фантомної доставки)",
                 datagram: CoapClient.build_put(message_id: 0x00FF,
                                                path: "/smoke/freeze-contract",
@@ -73,7 +82,7 @@ module CoapSmoke
   end
 
   # true = всі зонди відповіли точними байтами; false — вердикт у io.
-  def run(host:, port: 5683, timeout: 10.0, retries: 3, io: $stdout)
+  def run(host:, port: DEFAULT_PORT, timeout: 10.0, retries: 3, io: $stdout)
     probes.map { |probe| run_probe(probe, host, port, timeout, retries, io) }.all?
   end
 

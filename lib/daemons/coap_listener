@@ -9,8 +9,8 @@ require "base64"
 # Налаштування для Kamal/Docker логів
 $stdout.sync = true
 
-# Порт за замовчуванням для CoAP
-PORT = ENV.fetch("COAP_PORT", 5683).to_i
+# Порт за замовчуванням для CoAP (один дім — CoapSmoke::DEFAULT_PORT)
+PORT = ENV.fetch("COAP_PORT", CoapSmoke::DEFAULT_PORT).to_i
 
 socket = UDPSocket.new
 socket.bind("0.0.0.0", PORT)

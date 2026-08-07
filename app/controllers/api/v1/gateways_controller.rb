@@ -19,8 +19,10 @@ module Api
             }
           end
           format.html do
-            online_count = acting_organization!.gateways
-                             .where("last_seen_at > ?", 5.minutes.ago).count
+            # Скоуп, а не власне вікно: поріг живе в `Gateway` і деривується з
+            # `config_sleep_interval_s` кожної Королеви. Хардкод «5 хвилин»
+            # називав офлайном шлюз, який за конфігом спить годину.
+            online_count = acting_organization!.gateways.online.count
             render_dashboard(
               title: I18n.t("gateways.index_title"),
               component: Gateways::Index.new(gateways: @gateways, pagy: @pagy, online_count: online_count)

@@ -12,24 +12,20 @@ RSpec.describe Gateways::Show do
   def mock_gateway(uid: "SNET-Q-AAB01234", state: "active", ip_address: "192.168.1.42",
                    last_seen_at: 1.minute.ago, cluster_name: "Carpathian-Alpha",
                    sleep_interval: 120, firmware_version: "2.1.0",
-                   firmware_hash: "a1b2c3d4e5f67890abcdef1234567890", hardware_key_uid: "HK-001")
-    cluster = OpenStruct.new(name: cluster_name)
-    hardware_key = OpenStruct.new(device_uid: hardware_key_uid)
-
-    gw = OpenStruct.new(
+                   hardware_key_uid: "HK-001")
+    # [TEST.12] Реальний незбережений запис: `OpenStruct` мовчки віддавав `nil`
+    # на `online?`, тож лампа зв'язку була невидима для сюїти в обидва боки.
+    gw = Gateway.new(
+      id: 1,
       uid: uid,
       state: state,
       ip_address: ip_address,
       last_seen_at: last_seen_at,
-      cluster: cluster,
+      cluster: Cluster.new(name: cluster_name),
       config_sleep_interval_s: sleep_interval,
-      firmware_version: firmware_version,
-      firmware_hash: firmware_hash,
-      hardware_key: hardware_key
+      firmware_version: firmware_version
     )
-    gw.define_singleton_method(:model_name) { ActiveModel::Name.new(Gateway) }
-    gw.define_singleton_method(:to_key) { [ 1 ] }
-    gw.define_singleton_method(:to_param) { "1" }
+    allow(gw).to receive(:hardware_key).and_return(HardwareKey.new(device_uid: hardware_key_uid))
     gw
   end
 
@@ -119,8 +115,12 @@ RSpec.describe Gateways::Show do
       expect(rendered).to include("bg-status-danger")
     end
 
+    # [TEST.12] Гілка досяжна лише стабом РИДЕРА: enum `state` кидає
+    # `ArgumentError` уже в конструкторі, тож приклад, що подавав «quarantined»
+    # як значення, ходив входом, якого в проді не буває.
     it "renders an unrecognized state with the neutral fallback" do
-      gw = mock_gateway(state: "quarantined")
+      gw = mock_gateway
+      allow(gw).to receive(:state).and_return("quarantined")
       rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
       expect(rendered).to include("quarantined")
       expect(rendered).to include("bg-status-neutral")
@@ -220,15 +220,14 @@ RSpec.describe Gateways::Show do
       expect(html).to include("2.1.0")
     end
 
-    it "displays truncated firmware hash" do
-      expect(html).to include("a1b2c3d4e5f67890")
-    end
-
-    it "shows a dash when firmware_hash is nil" do
-      gw = mock_gateway(firmware_hash: nil)
-      rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
-      expect(rendered).to include("Firmware Hash")
-      expect(rendered).not_to include("a1b2c3d4e5f67890")
+    # [UI.10] Рядок «Firmware Hash» не має джерела: `firmware_hash` не існує на
+    # `Gateway` ні колонкою, ні методом, тож `try(:…)` віддає nil ЗАВЖДИ. Доти
+    # це ховав мок, який поле вигадував — і сюїта стверджувала значення, якого
+    # прод видати не може. Пін фіксує РЕАЛЬНУ поведінку; чи рядок треба
+    # дротувати (через `pending_firmware`) чи знімати — присуд у `00_07`.
+    it "renders the firmware-hash row with no value, because the model has no such field" do
+      expect(Gateway.new).not_to respond_to(:firmware_hash)
+      expect(html).to include("Firmware Hash")
     end
   end
 
@@ -270,18 +269,29 @@ RSpec.describe Gateways::Show do
     end
   end
 
+  # Піни цілять у САМУ лампу (`rotate-45` не має інших носіїв на цій сторінці):
+  # голий `include("bg-emerald-500")` задовольнявся будь-яким зеленим елементом
+  # сторінки, тож був зелений при обох поведінках.
   describe "connection LED" do
     it "shows green LED when recently seen" do
       gw = mock_gateway(last_seen_at: 1.minute.ago)
       rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
-      expect(rendered).to include("bg-emerald-500")
+      expect(rendered).to include("rotate-45 bg-emerald-500")
     end
 
     it "shows red pulsing LED when not recently seen" do
       gw = mock_gateway(last_seen_at: 10.minutes.ago)
       rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
-      expect(rendered).to include("bg-red-900")
+      expect(rendered).to include("rotate-45 bg-red-900")
       expect(rendered).to include("animate-pulse")
+    end
+
+    # [UI.10] Поріг належить Королеві: при годинному сні десять хвилин мовчання —
+    # норма, і локальні «5 хвилин» називали такий шлюз мертвим.
+    it "keeps a long-sleeping gateway green well past five minutes" do
+      gw = mock_gateway(last_seen_at: 10.minutes.ago, sleep_interval: 3600)
+      rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
+      expect(rendered).to include("rotate-45 bg-emerald-500")
     end
   end
 end
