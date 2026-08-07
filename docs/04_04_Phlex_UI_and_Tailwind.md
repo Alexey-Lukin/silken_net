@@ -1327,7 +1327,7 @@ end
 
 | Компонент | Баг | Виправлення |
 |-----------|-----|-------------|
-| `Gateways::Show` | (1) `@gateway.firmware_hash` — колонка не існує; (2) `hardware_key&.uid` — HardwareKey має `device_uid`, не `uid` | (1) `try(:firmware_hash)` safe fallback; (2) `.device_uid` |
+| `Gateways::Show` | (1) `@gateway.firmware_hash` — колонка не існує; (2) `hardware_key&.uid` — HardwareKey має `device_uid`, не `uid` | (2) `.device_uid`. 🔴 **(1) `try(:firmware_hash)` було НЕ виправленням, а тихим замовчуванням**, і саме тому запис тут протух: fallback давав `nil` ЗАВЖДИ, тобто рядок стверджував спроможність, недосяжну за побудовою, а «покривав» її лише мок, що поле вигадував. Сьогодні компонент малює літеральне `—` з поіменним `[UI.10]`-коментарем; присуд «дротувати ХЕШ чи зняти рядок» відкритий у [`00_07`](00_07_Action_Plan_Tracker) UI.10 |
 | `Provisioning::Success` | `@device.did` — Gateway має `uid`, не `did` | Замінено на `@device.try(:did) \|\| @device.try(:uid)`. Компонент знято 2026-08-03 при переході на PRG-редирект; урок лишається живим у `device_path_after_provisioning` (`app/controllers/api/v1/provisioning_controller.rb`) |
 | `Maintenance::Show` | `edit_maintenance_record_path` — маршрут `:edit` не існував | Додано маршрут `:edit` та дію контролера `edit` |
 | `Views::Shared::UI::PhotoCard` | `maintenance_record_photo_path` не існував: зайвий `as:` у вкладеному `resources` подвоював префікс, тож сторінка запису **з будь-яким фото** падала в 500 | Знято `as:` (природне ім'я вкладеного ресурсу). 🔴 Чому пережило рядок вище: чотири спеки `prepend`-или модуль, який ВИЗНАЧАВ відсутній хелпер, а request-приклада на HTML-`show` із фото не існувало — стаби знято, приклад додано |
