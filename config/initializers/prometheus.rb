@@ -591,6 +591,21 @@ module SilkenNet
       labels: [ :caller ]
     )
 
+    # [S6.16 / 00_07 PERF.1]: the money-model twin of the counter above.
+    # `BlockchainTransaction` degraded exactly like `TelemetryLog` but did so
+    # SILENTLY — so the one event the telemetry counter exists to surface was
+    # invisible on the model where a full scan is most expensive. Two callers
+    # feed it straight from a URL parameter (`wallets#transaction_status`,
+    # `blockchain_transactions#show`), so a malformed client string is a real
+    # trigger, not only a forgotten worker argument. Same shape, same alerting
+    # posture: cold paths acceptable, hot paths page.
+    #     rate(silkennet_blockchain_transaction_unpruned_lookups_total[5m]) > 0
+    BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL = REGISTRY.counter(
+      :silkennet_blockchain_transaction_unpruned_lookups_total,
+      docstring: "Total BlockchainTransaction lookups without partition pruning (degraded path; missing or invalid created_at)",
+      labels: [ :caller ]
+    )
+
     # [06_03 §2.8 / 00_07 S2.5]: PartitionMaintenanceWorker run failures.
     # Each failure = a monthly partition may be missing → the first INSERT against
     # the affected RANGE table on day-1 of the new month crashes with

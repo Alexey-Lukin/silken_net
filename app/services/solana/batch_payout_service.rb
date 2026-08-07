@@ -55,7 +55,9 @@ module Solana
       service = Solana::MintingService.new(nil, wallet: wallet)
 
       # [ARCH.45] Будь-яка незавершена Solana-виплата звіряється on-chain, НЕ платимо наосліп.
-      # 7-денне вікно `unsettled_within` (модель) prunes RANGE-партиції + дає ~168 reconcile-шансів
+      # 7-денне вікно `unsettled_within` (модель) дає ~168 reconcile-шансів
+      # ⚠️ Прунінгу воно НЕ дає: `OR` у скоупі знімає партиційний відбір цілком (виміряно
+      # EXPLAIN'ом — усі 9 листів). Вартість тримає індекс `wallet_id`, не партиція.
       # (вузьке 2h дало б лише один → window-expiry double-pay). `:manual_review` теж блокує re-pay
       # (можливо-landed виплата під ручною звіркою).
       unsettled = wallet.blockchain_transactions

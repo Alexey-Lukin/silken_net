@@ -493,6 +493,88 @@ RSpec.describe BlockchainTransaction, type: :model do
       found = described_class.find_with_partition_pruning(tx.id, "not-a-date")
       expect(found).to eq(tx)
     end
+
+    # [S6.16 / PERF.1] Раніше цей шлях деградував МОВЧКИ, тоді як його близнюк на
+    # `TelemetryLog` рахувався лічильником — саме та подія, заради якої лічильник
+    # заводили, була невидима на грошовій моделі.
+    describe "degraded-path accounting" do
+      let(:counter) { SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL }
+
+      it "counts a lookup with no created_at at all" do
+        expect(counter).to receive(:increment).with(labels: { caller: "Spec:missing_created_at" })
+        described_class.find_with_partition_pruning(tx.id, nil, metric_caller: "Spec")
+      end
+
+      it "counts a lookup whose created_at cannot be parsed" do
+        expect(counter).to receive(:increment).with(labels: { caller: "Spec:invalid_created_at" })
+        described_class.find_with_partition_pruning(tx.id, "not-a-date", metric_caller: "Spec")
+      end
+
+      it "labels an undeclared caller rather than dropping the event" do
+        expect(counter).to receive(:increment).with(labels: { caller: "undeclared:missing_created_at" })
+        described_class.find_with_partition_pruning(tx.id)
+      end
+
+      it "stays silent on the pruned happy path" do
+        expect(counter).not_to receive(:increment)
+        described_class.find_with_partition_pruning(tx.id, tx.created_at, metric_caller: "Spec")
+      end
+    end
+  end
+
+  # [S6.16 / PERF.1] SET-форма One-Home. Її НЕСУЧА властивість — не швидкість
+  # (виміряти план у спеці нічого не варте), а те, що підказка НЕ міняє множину
+  # рядків: інакше «оптимізація» тихо перевизначила б, які транзакції мінтяться.
+  describe ".where_ids_pruned" do
+    let(:wallet) { create(:wallet) }
+    let!(:txs) { create_list(:blockchain_transaction, 3, wallet: wallet) }
+    let(:ids) { txs.map(&:id) }
+    let(:span) { txs.map(&:created_at) }
+
+    it "returns exactly the same rows as the unpruned form" do
+      expect(described_class.where_ids_pruned(ids, span).to_a)
+        .to match_array(described_class.where(id: ids).to_a)
+    end
+
+    it "accepts a Range span as well as a list of timestamps" do
+      as_range = described_class.where_ids_pruned(ids, span.min..span.max)
+      expect(as_range.to_a).to match_array(txs)
+    end
+
+    # 🔴 Регресія, знайдена adversarial-ревю: `InsurancePayoutWorker` — ЄДИНИЙ
+    # викликач, що передає СКАЛЯР (`tx.created_at`), і `Kernel#Array` розкладав
+    # `TimeWithZone` на десять компонентів → `.min` кидав ArgumentError на кожній
+    # внутрішній страховій виплаті. Жодна call-site-спека цього не бачила, бо всі
+    # стабили сам сервіс, тож значення не доходило до коду, що на ньому падав.
+    it "accepts a BARE timestamp — the form the only scalar caller passes" do
+      one = txs.first
+      expect(described_class.where_ids_pruned([ one.id ], one.created_at).to_a).to eq([ one ])
+    end
+
+    it "does not decompose a bare timestamp into its components" do
+      expect(described_class.send(:partition_span_for, txs.first.created_at))
+        .to eq(txs.first.created_at..txs.first.created_at)
+    end
+
+    it "is chainable — narrowing further still composes" do
+      # Фабрика дефолтить `:confirmed`, тож звужувати треба ПО ІНШОМУ значенню —
+      # інакше приклад «звузив» би до всіх трьох і був би зелений ні за що.
+      txs.first.update_columns(status: described_class.statuses[:pending])
+      expect(described_class.where_ids_pruned(ids, span).where(status: :pending).to_a)
+        .to eq([ txs.first ])
+    end
+
+    it "degrades to an unpruned relation, and says so, when no span is given" do
+      expect(SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL)
+        .to receive(:increment).with(labels: { caller: "Spec:missing_span" })
+      expect(described_class.where_ids_pruned(ids, nil, metric_caller: "Spec").to_a).to match_array(txs)
+    end
+
+    it "treats an all-nil span as no span rather than as an empty window" do
+      expect(SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL)
+        .to receive(:increment).with(labels: { caller: "Spec:missing_span" })
+      expect(described_class.where_ids_pruned(ids, [ nil, nil ], metric_caller: "Spec").to_a).to match_array(txs)
+    end
   end
 
   describe ".unsettled_within" do

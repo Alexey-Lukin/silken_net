@@ -101,7 +101,9 @@ module Treasury
         Rails.logger.info "📦 [BatchCollector] Dispatching #{ids.size} #{token_type} " \
                           "transactions (#{reason})"
 
-        BlockchainMintingService.call_batch(ids)
+        # [S6.16] Записи вже в руках — віддаємо їхні `created_at` як партиційну
+        # підказку; множина рядків та сама, звужується лише перебір партицій.
+        BlockchainMintingService.call_batch(ids, created_at_span: batch.map(&:created_at))
       end
     end
   end

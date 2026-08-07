@@ -25,8 +25,13 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
     it "finds TelemetryLog and calls BlockchainMintingService with telemetry_log" do
       described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
 
+      # [S6.16] `created_at_span` пінимо як ПРИСУТНІСТЬ партиційної підказки, не як
+      # точні мітки часу (Ruby тримає наносекунди, колонка — мікросекунди, тож
+      # рівність була б флейком). Що підказка НЕ міняє множину рядків — властивість
+      # `where_ids_pruned`, і доводиться вона у власній спеці моделі.
       expect(BlockchainMintingService).to have_received(:call_batch)
-        .with(array_including(tx1.id, tx2.id), telemetry_log: telemetry_log)
+        .with(array_including(tx1.id, tx2.id), telemetry_log: telemetry_log,
+              created_at_span: all(be_a(Time)).and(be_present))
     end
 
     it "does nothing when telemetry_log not found" do
@@ -324,7 +329,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
 
       # Call process_batch with IDs of non-pending transactions
       worker = described_class.new
-      worker.send(:process_batch, [ tx.id ])
+      worker.send(:process_batch, [ tx.id ], [ tx.created_at ])
 
       expect(BlockchainMintingService).not_to have_received(:call_batch)
     end

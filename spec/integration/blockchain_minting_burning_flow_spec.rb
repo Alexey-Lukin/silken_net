@@ -244,12 +244,13 @@ RSpec.describe "Blockchain minting and burning pipeline" do
 
     it "processes pending transactions via telemetry_log (oracle-driven flow)" do
       expect(BlockchainMintingService).to receive(:call_batch)
-        .with([ pending_tx.id ], telemetry_log: telemetry_log)
+        .with([ pending_tx.id ], telemetry_log: telemetry_log, created_at_span: all(be_a(Time)).and(be_present))
       MintCarbonCoinWorker.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
     end
 
     it "auto-discovers pending transactions when no IDs given" do
-      expect(BlockchainMintingService).to receive(:call_batch).with(array_including(pending_tx.id))
+      expect(BlockchainMintingService).to receive(:call_batch)
+        .with(array_including(pending_tx.id), created_at_span: all(be_a(Time)).and(be_present))
       MintCarbonCoinWorker.new.perform
     end
 

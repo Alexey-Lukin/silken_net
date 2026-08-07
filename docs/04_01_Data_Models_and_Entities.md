@@ -91,11 +91,11 @@
 
 Партиції створюються rolling-window'ом (`PartitionMaintenanceWorker` — поточний + наступний місяць, щодня), тож точний перелік росте й живе у `db/structure.sql`, не тут. Три core-таблиці стартують з `y2026m01`; `codex_matches` (Phase 4) — пізніше, з `y2026m04`. Усі + `_default`.
 
-**Автоматизація:** `PartitionMaintenanceWorker` (черга `default`) щодня о 02:30 UTC гарантує існування партицій для **поточного та наступного місяця** для всіх **чотирьох** партиційованих таблиць (`telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`, `codex_matches`). Назва партиції формується за шаблоном `<table>_y<YYYY>m<MM>` (напр. `blockchain_transactions_y2026m04`). Операція ідемпотентна — `CREATE TABLE IF NOT EXISTS`. SSOT константа: `PartitionMaintenanceWorker::PARTITIONED_TABLES`. При додаванні нової RANGE-таблиці — внесіть її **і сюди (§0)**, і у `PARTITIONED_TABLES`, і у `spec/workers/partition_maintenance_worker_spec.rb` (очікуване число OK-ліній = `tables × 2 months`).
+**Автоматизація:** `PartitionMaintenanceWorker` (черга `default`) щодня о 00:30 UTC гарантує існування партицій для **поточного та наступного місяця** для всіх **чотирьох** партиційованих таблиць (`telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`, `codex_matches`). Назва партиції формується за шаблоном `<table>_y<YYYY>m<MM>` (напр. `blockchain_transactions_y2026m04`). Операція ідемпотентна — `CREATE TABLE IF NOT EXISTS`. SSOT константа: `PartitionMaintenanceWorker::PARTITIONED_TABLES`. При додаванні нової RANGE-таблиці — внесіть її **і сюди (§0)**, і у `PARTITIONED_TABLES`, і у `spec/workers/partition_maintenance_worker_spec.rb` (очікуване число OK-ліній = `tables × 2 months`).
 
 > **📝 Розглянута альтернатива — TimescaleDB (E.37):**
 > Для IoT-телеметрії такого масштабу розглядалось розширення TimescaleDB (hypertables, continuous aggregates, автоматична компресія до 90% економії місця). **Чому відхилено для поточного TRL:**
-> - Нативний PostgreSQL RANGE partitioning повністю покриває потреби TRL 6-8 (мільйони рядків/місяць, partition pruning через `find_with_partition_pruning`)
+> - Нативний PostgreSQL RANGE partitioning повністю покриває потреби TRL 6-8 (мільйони рядків/місяць, partition pruning через One-Home цієї моделі — `TelemetryLog.partition_pruned`, НЕ `find_with_partition_pruning`: той живе на `BlockchainTransaction`)
 > - TimescaleDB-extension **недоступний на GCP Cloud SQL** (не в allow-list; вимагає `shared_preload_libraries`) — наш prod-Postgres ([`06_02`](06_02_Akash_Network_Integration)/[`06_06`](06_06_Disaster_Recovery_and_Backup)) його фізично не прийме; шлях = ClickHouse-OLAP / Timescale Cloud окремим інстансом / pg_partman
 > - Continuous Aggregates можна замінити `AiInsight` воркером (вже реалізовано: денна агрегація)
 > - При масштабуванні за 100M+ рядків/місяць — переглянути рішення (ClickHouse або Timescale Cloud)
@@ -588,13 +588,28 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 >
 > **Інваріант:** усі читачі `TelemetryLog` за PK повинні передавати `created_at_iso` (ISO 8601) разом з `id`. Sidekiq workers, що ставлять у чергу follow-up jobs, **зобов'язані** передавати `log.created_at.iso8601(6)` як аргумент.
 >
+> 🔴 **Родина — ЧОТИРИ моделі, а інструмент у них РІЗНИЙ; не вгадуй метод.** `PartitionMaintenanceWorker::PARTITIONED_TABLES` = `telemetry_logs` · `gateway_telemetry_logs` · `blockchain_transactions` · `codex_matches`. One-Home:
+>
+> | Модель | One-Home | Форма |
+> |--------|----------|-------|
+> | `TelemetryLog` | `.partition_pruned(iso, metric_caller:)` | chainable scope |
+> | `BlockchainTransaction` | `.find_with_partition_pruning(id, created_at, metric_caller:)` | фінідер ОДНОГО рядка |
+> | `BlockchainTransaction` | `.where_ids_pruned(ids, span, metric_caller:)` | chainable, набір за ВІДОМИМИ id |
+> | `GatewayTelemetryLog` · `Codex::Match` | немає — і це свідомо | у них немає жодного id-звертання, тож хелпер був би важелем без пускача |
+>
+> ⚠️ **Чому set-форма з'явилась окремо (PERF.1, 2026-08-07):** доти інваріант вимагав «делегуйте, не дублюйте», маючи для `BlockchainTransaction` лише фінідер ОДНОГО рядка — а мінт-тракт за побудовою працює батчами. Тобто кожен batch-сайт мусив писати `where(id: …)` руками не з недбалості, а тому що делегувати не було куди; форму винайшли рукою тричі незалежно. Правило, що оголошує обов'язок без інструмента для більшості своїх випадків, відтворює власне порушення.
+>
+> ⛔ **`status`-скан — НЕ цей клас, і межа там ШКІДЛИВА** (ратифіковано ARCH.52): `where(status: :pending)` без `created_at` коректний, бо reset-to-pending тримає СТАРИЙ `created_at`, і нижня межа осиротила б застряглі кошти. Важіль для скану — partial index `(status, created_at) WHERE status IN (0,1)`, він уже стоїть. Правило коротко: **`created_at`-вікно прунить звертання за ВІДОМИМ рядком (id/tx_hash); множину невідомого розміру прунить індекс.**
+>
+> 🔒 **Носій інваріанта — `spec/quality/partition_key_discipline_spec.rb`** (mutation-verified у два плечі: незадекларований `.reload` і незапрунене id-звертання червонять поіменно). До нього правило трималось лише на пам'яті автора й було порушене щонайменше тричі. Стеля гейта чесно названа в його шапці — зокрема він НЕ бачить preload асоціацій і НЕ читає прози.
+>
 > **Інвентар читачів:**
 >
 > | Читач | Файл | Шлях pruning | Source `created_at` |
 > |-------|------|--------------|---------------------|
-> | `IotexVerificationWorker#find_log` | `app/workers/iotex_verification_worker.rb` | ✅ manual `find_by(id:, created_at:)` | sidekiq arg `created_at_iso` |
-> | `ChainlinkDispatchWorker#find_log` | `app/workers/chainlink_dispatch_worker.rb` | ✅ manual `find_by(id:, created_at:)` | sidekiq arg `created_at_iso` |
-> | `StreamrBroadcastWorker` | `app/workers/streamr_broadcast_worker.rb` | ✅ manual `find_by(id:, created_at:)` | sidekiq arg `created_at_iso` |
+> | `IotexVerificationWorker` | `app/workers/iotex_verification_worker.rb` | ✅ через `ApplicationWeb3Worker#find_telemetry_log_with_pruning` | sidekiq arg `created_at_iso` |
+> | `ChainlinkDispatchWorker` | `app/workers/chainlink_dispatch_worker.rb` | ✅ через `ApplicationWeb3Worker#find_telemetry_log_with_pruning` | sidekiq arg `created_at_iso` |
+> | `StreamrBroadcastWorker` | `app/workers/streamr_broadcast_worker.rb` | ✅ через `ApplicationWeb3Worker#find_telemetry_log_with_pruning` | sidekiq arg `created_at_iso` |
 > | `MintCarbonCoinWorker#find_telemetry_log` | `app/workers/mint_carbon_coin_worker.rb` | ✅ через `ApplicationWeb3Worker#find_telemetry_log_with_pruning` | sidekiq arg |
 > | `SolanaMicroRewardWorker` | `app/workers/solana_micro_reward_worker.rb` | ✅ через `ApplicationWeb3Worker#find_telemetry_log_with_pruning` | sidekiq arg |
 > | `Api::V1::OracleCallbacksController#find_telemetry_log` | `app/controllers/api/v1/oracle_callbacks_controller.rb` | ⚠️ pruning якщо `params[:created_at]` присутній; інакше degraded scan | Chainlink DON callback param |
@@ -604,8 +619,12 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 >
 > **Observability (degraded path detector):** Counter `silkennet_telemetry_log_unpruned_lookups_total{caller}` інкрементується у трьох точках, де `created_at` може бути відсутнім або malformed:
 > - `ApplicationWeb3Worker:missing_created_at_iso` / `:invalid_iso8601` — sidekiq worker не передав argument; **hot path → ALERT**.
-> - `OracleCallbacksController:missing_created_at` / `:invalid_iso8601` — Chainlink DON callback без `created_at` query param; **hot path → ALERT** (виправити Chainlink Functions JS source).
+> - `OracleCallbacksController:missing_created_at_iso` / `:invalid_iso8601` — Chainlink DON callback без `created_at` query param; **hot path → ALERT** (виправити Chainlink Functions JS source).
 > - `MintingRollbackService:missing_created_at_iso` / `:invalid_iso8601` — admin manual rollback; **cold path, acceptable**, але трекати для прозорості.
+>
+> ⚠️ Суфікс `_iso` несе КОЖНА мітка blank-гілки — вона деривується одним рядком у `TelemetryLog.partition_pruned` (`"#{metric_caller}:missing_created_at_iso"`); тут доти стояла форма без нього, тобто точний PromQL по мітці нічого б не знайшов. Префіксний regex у прикладі нижче цим не зачеплений.
+>
+> 🔴 **Дзеркало на грошовій моделі з'явилось лише 2026-08-07** (PERF.1): `silkennet_blockchain_transaction_unpruned_lookups_total{caller}` — доти `BlockchainTransaction` деградувала так само, але **МОВЧКИ**, тобто рівно та подія, заради якої лічильник заводили, була невидима там, де скан коштує найдорожче. Мітки: `<caller>:missing_created_at` · `:invalid_created_at` · `:missing_span` · `undeclared:*`, коли викликач себе не назвав. Два викликачі годують її прямо з URL-параметра (`wallets#transaction_status`, `blockchain_transactions#show`), тож битий клієнтський рядок — реальний пускач, не лише забутий аргумент воркера.
 >
 > Grafana alert rule (приклад): `rate(silkennet_telemetry_log_unpruned_lookups_total{caller=~"ApplicationWeb3Worker.*|OracleCallbacksController.*"}[5m]) > 0`.
 
@@ -613,7 +632,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 
 ### `GatewayTelemetryLog` — Діагностика Королеви
 
-**Призначення:** Власна телеметрія шлюзу (батарея, температура, сигнал). Партиціонована.
+**Призначення:** Власна телеметрія шлюзу (батарея, температура, сигнал). Партиціонована — але One-Home-хелпера **не має, і це свідомо**: жодного id-звертання до неї не існує, тож хелпер був би важелем без пускача (розкладка інструмента — блок [S6.16] вище; поява першого id-звертання і є привід його завести).
 
 **Асоціації:** `belongs_to :gateway, foreign_key: :queen_uid, primary_key: :uid`
 > **Dual-key патерн:** AR-зв'язок використовує `queen_uid` → `gateways.uid` (бізнес-ключ). Колонка `gateway_id` (FK NOT NULL) існує в БД, але не використовується Rails — слугує для DB-level referential integrity. Запити через AR завжди йдуть через `uid`.
@@ -1439,7 +1458,7 @@ Lore-шар SilkenNet — read-only бібліотека "архетипів" (�
 
 **Helpers:** `title(locale)`, `subtitle(locale)`, `to_param` → `slug`.
 
-**Партиціонування:** немає (~118 базових записів + поступовий ріст; коли `codex_matches` досягне сотень тисяч у Phase 4 — партиціонується сам).
+**Партиціонування:** ✅ **є** — `codex_matches` RANGE-партиційована по `created_at` нарівні з рештою трійки (`PartitionMaintenanceWorker::PARTITIONED_TABLES`; `db/structure.sql` тримає `_default` + місячні листи). ⚠️ Тут доти стояло «немає… коли досягне сотень тисяч у Phase 4 — партиціонується сам» — умовне майбутнє, що пережило власне виконання, при тому що §0 і §11 цього ж документа кажуть протилежне. One-Home-хелпера в неї свідомо НЕМА (жодного id-звертання) — розкладка інструмента в блоці [S6.16] вище.
 
 ### `Codex::Citation` — Полі-морфне Посилання
 
@@ -1673,7 +1692,7 @@ Codex (Lore — read-only):
 | **GREATEST для race conditions** | `mark_seen!` в Tree та Gateway — атомарне оновлення без дублів |
 | **delete_all для масових таблиць** | Телеметрія, тривоги, логи, ActuatorCommands — уникнення OOM при DELETE |
 | **restrict_with_error для фінансів** | NaasContract, ParametricInsurance, Users — захист аудит-слідів |
-| **Партиціонування по місяцях** | telemetry_logs, gateway_telemetry_logs, blockchain_transactions, codex_matches — прунінг старих даних. SSOT — `PartitionMaintenanceWorker::PARTITIONED_TABLES` (4 таблиці) |
+| **Партиціонування по місяцях** | telemetry_logs, gateway_telemetry_logs, blockchain_transactions, codex_matches — **прунінг ЗАПИТІВ** (планувальник пропускає непотрібні листи). SSOT — `PartitionMaintenanceWorker::PARTITIONED_TABLES` (4 таблиці). ⚠️ Тут доти стояло «прунінг старих даних» — це інша спроможність, і її НЕМА: `DETACH`/`DROP PARTITION` у репо нуль, воркер партиції лише СТВОРЮЄ, retention-політики не існує ([`05_04`](05_04_Ethereum_L1_State_Anchor) це визнає). Тобто листів стає +1 щомісяця назавжди |
 | **Counter Cache** | `active_trees_count` в Cluster — уникнення COUNT на мільйонах рядків |
 | **Поліморфізм** | AiInsight, MaintenanceRecord, AuditLog, BlockchainTransaction |
 | **PostGIS GIST** | Cluster.geo_boundary — O(log n) геопросторовий пошук |

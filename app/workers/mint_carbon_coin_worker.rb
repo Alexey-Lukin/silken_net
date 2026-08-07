@@ -25,6 +25,8 @@ class MintCarbonCoinWorker
         created_at_iso: created_at_iso
       )
     else
+      # [S6.16] status-скан — свідомо без `created_at`-межі (підстава там сама, що
+      # в `process_pending_transactions`: reset-to-pending тримає старий created_at).
       txs = BlockchainTransaction.where(status: [ :pending, :processing ]).limit(1000)
       MintingRollbackService.call(transactions: txs)
     end
@@ -59,14 +61,20 @@ class MintCarbonCoinWorker
     wallet = log.tree.wallet
     return unless wallet
 
-    tx_ids = wallet.blockchain_transactions.status_pending.pluck(:id)
-    return if tx_ids.empty?
+    # [S6.16] `created_at` беремо тим самим SELECT'ом, що й id — не щоб фільтрувати
+    # (сам `status`-скан прунити НЕ можна, підстава в `process_pending_transactions`),
+    # а щоб віддати його далі партиційною підказкою. Без нього кожен батч перебирав
+    # усі партиції наново.
+    rows = wallet.blockchain_transactions.status_pending.pluck(:id, :created_at)
+    return if rows.empty?
 
-    Rails.logger.info "🔐 [Web3] Trustless мінтинг для TelemetryLog ##{telemetry_log_id}: #{tx_ids.size} транзакцій..."
+    Rails.logger.info "🔐 [Web3] Trustless мінтинг для TelemetryLog ##{telemetry_log_id}: #{rows.size} транзакцій..."
 
-    tx_ids.each_slice(100) do |batch|
+    rows.each_slice(100) do |slice|
       within_rpc_limit do
-        BlockchainMintingService.call_batch(batch, telemetry_log: log)
+        BlockchainMintingService.call_batch(
+          slice.map(&:first), telemetry_log: log, created_at_span: slice.map(&:last)
+        )
       end
     end
 
@@ -77,19 +85,25 @@ class MintCarbonCoinWorker
 
   # [FALLBACK]: Auto-discovery pending транзакцій (cron або ручний запуск).
   # Працює без telemetry_log — для існуючого TokenomicsEvaluatorWorker flow.
+  # [S6.16 / ARCH.52] Цей скан свідомо БЕЗ `created_at`-межі, і це не недогляд:
+  # reset-to-pending робить raw `update_all :processing→:pending`, лишаючи СТАРИЙ
+  # `created_at`, тож нижня межа осиротила б саме застряглі кошти. Правильний
+  # важіль для status-скану — partial index (`(status, created_at) WHERE status
+  # IN (0,1)`), він уже стоїть. Прунимо натомість усе, що ПІСЛЯ нього: там id
+  # уже відомі, тож несемо їхній `created_at`-span далі.
   def process_pending_transactions
-    tx_ids = BlockchainTransaction.status_pending.limit(1000).pluck(:id)
-    return if tx_ids.empty?
+    rows = BlockchainTransaction.status_pending.limit(1000).pluck(:id, :created_at)
+    return if rows.empty?
 
-    tx_ids.each_slice(100) do |batch|
-      process_batch(batch)
+    rows.each_slice(100) do |slice|
+      process_batch(slice.map(&:first), slice.map(&:last))
     end
   end
 
-  def process_batch(batch_ids)
+  def process_batch(batch_ids, span)
     # [Idempotency & Race Condition Guard]
     # Використовуємо спливаючий статус :processing для блокування батчу
-    txs = BlockchainTransaction.where(id: batch_ids).where(status: :pending)
+    txs = pruned_batch(batch_ids, span).where(status: :pending)
     return if txs.empty?
 
     Rails.logger.info "🚀 [Web3] Запуск батч-емісії для #{txs.size} транзакцій..."
@@ -98,22 +112,29 @@ class MintCarbonCoinWorker
     # BlockchainMintingService.call_batch працює через .transact (асинхронно),
     # цей виклик повернеться миттєво. Sidekiq не буде висіти в очікуванні від Alchemy.
     within_rpc_limit do
-      BlockchainMintingService.call_batch(txs.pluck(:id))
+      BlockchainMintingService.call_batch(txs.pluck(:id), created_at_span: span)
     end
 
   rescue StandardError => e
     # Якщо сталася помилка на рівні підключення до RPC, повертаємо статус у Pending,
     # щоб наступний ретрай Sidekiq спробував знову.
-    BlockchainTransaction.where(id: batch_ids, status: :processing)
-                         .update_all(status: :pending, notes: "Retry: #{e.message.truncate(150)}")
+    pruned_batch(batch_ids, span).where(status: :processing)
+                                 .update_all(status: :pending, notes: "Retry: #{e.message.truncate(150)}")
 
     # Оповіщаємо UI про поточну спробу, щоб користувач бачив прогрес у реальному часі
-    BlockchainTransaction.where(id: batch_ids).each do |tx|
+    pruned_batch(batch_ids, span).each do |tx|
       tx.wallet&.broadcast_balance_update
     end
 
     Rails.logger.error "🚨 [Web3] Batch RPC Error: #{e.message}. Планується повтор..."
     raise
+  end
+
+  # [S6.16] Свіжий relation на кожен виклик — не мемоїзований: rescue-гілка
+  # читає ті самі рядки ПІСЛЯ того, як сервіс міг змінити їхній статус, тож
+  # закешований load віддав би стару картину.
+  def pruned_batch(batch_ids, span)
+    BlockchainTransaction.where_ids_pruned(batch_ids, span, metric_caller: "MintCarbonCoinWorker")
   end
 
   # [COMPOSITE PK]: telemetry_logs партиціоновано по created_at.

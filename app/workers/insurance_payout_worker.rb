@@ -78,8 +78,9 @@ class InsurancePayoutWorker
     recovered_tx = tx.nil?
     # Явний live-tx lookup замість has_one (повертає найстаріший рядок за id): money-path
     # idempotency не сміє спиратись на ORDER BY id — stale :failed-рядок дав би false на
-    # status_pending? і пропустив escalation → re-claim. `unsettled_within` (модель) prunes
-    # RANGE-партиції. Fallback на has_one лишається для не-recovery шляхів.
+    # status_pending? і пропустив escalation → re-claim. ⚠️ `unsettled_within` (модель) партицій
+    # НЕ прунить — `OR` у скоупі знімає відбір цілком (виміряно EXPLAIN'ом); тут його беруть за
+    # семантику in-flight, не за вартість. Fallback на has_one лишається для не-recovery шляхів.
     tx ||= BlockchainTransaction.where(sourceable: insurance)
                                 .unsettled_within(7.days)
                                 .order(created_at: :desc).first || insurance.blockchain_transaction
@@ -173,7 +174,7 @@ class InsurancePayoutWorker
         Rails.logger.info "🚀 [Insurance] Ініціація виплати #{tx.amount} SCC для #{organization.name}..."
         # [RATE LIMITED]: RPC виклик захищений глобальним лімітером.
         within_rpc_limit do
-          BlockchainMintingService.call(tx.id)
+          BlockchainMintingService.call(tx.id, created_at_span: tx.created_at) # [S6.16] partition-prune
         end
         SilkenNet::Metrics::INSURANCE_PAYOUT_SUCCESS_TOTAL.increment
       end

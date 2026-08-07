@@ -28,7 +28,7 @@
 - **`db/structure.sql`**, ніколи `schema.rb` (Postgres-партиції; dump = pg17 + strip `transaction_timeout`).
 - **Thin controllers** — логіка лише в `app/services/` / `app/workers/`.
 - **Sidekiq `:strict: true`** — порядок черг незмінний (`§5`); не міняти чергу воркера без обґрунтування.
-- **Партиції** (`TelemetryLog`/`GatewayTelemetryLog`/`BlockchainTransaction`) → завжди `created_at_iso` + `find_with_partition_pruning` (`§6`).
+- **Партиції — моделей ЧОТИРИ, і One-Home у них РІЗНИЙ** (двоє хелпера не мають узагалі): завжди передавай `created_at_iso`, але метод не вгадуй — бери в `§6`.
 - **AES-ключі не покидають Ruby-процес** (`HardwareKey#cached_binary_key`, in-process LRU; без Redis-serialize).
 - **`oracle_status`** має prefix → `oracle_status_fulfilled?` (НЕ `fulfilled?`).
 - **`TelemetryLog` без AR-валідацій** (KENOSIS) — перевірка лише в `TelemetryUnpackerService.valid_sensor_data?`; не додавати назад (`§6`).

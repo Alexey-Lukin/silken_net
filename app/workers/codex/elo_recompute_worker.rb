@@ -46,10 +46,13 @@ module Codex
     # worker runs. Fail open: any error path here must NOT roll back
     # the Elo update (cosmetic).
     #
-    # Partition pruning: `codex_matches` is RANGE-partitioned by
-    # `created_at`. We bound the lookup to the last hour so PG only
-    # scans the live partition (Sidekiq picks up jobs within seconds;
-    # an hour window is forgiving even under retry backoff).
+    # Partition pruning: `codex_matches` is RANGE-partitioned by `created_at`.
+    # The one-hour bound drops every OLDER leaf — which is the win. ⚠️ It does
+    # NOT leave "only the live partition": the bound is open at the top, so the
+    # pre-created next-month leaf and `_default` stay candidates (measured on the
+    # same predicate shape elsewhere — an open upper end cannot prune them; only
+    # a CLOSED window collapses to one leaf). Sidekiq picks jobs up within
+    # seconds; an hour is forgiving even under retry backoff.
     def probe_for_match_milestone(left_id, right_id)
       return unless defined?(::Codex::DiscoveryProbeWorker)
 

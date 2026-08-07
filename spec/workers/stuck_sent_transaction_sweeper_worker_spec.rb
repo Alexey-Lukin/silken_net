@@ -92,17 +92,26 @@ RSpec.describe StuckSentTransactionSweeperWorker, type: :worker do
         expect(tx.reload.status).to eq("processing")
       end
 
-      it "skips a :processing orphan a live poller advanced past :processing (reload-race guard)" do
+      it "skips a :processing orphan a live poller advanced past :processing (re-read race guard)" do
         tx = create(:blockchain_transaction, wallet: wallet, status: :processing)
         tx.update_columns(updated_at: 20.minutes.ago)
-        # Stale in-memory :processing; reload reveals the poller's fresher non-:processing state.
-        allow_any_instance_of(BlockchainTransaction).to receive(:reload) do |inst|
-          inst.assign_attributes(status: "sent")
-          inst
+
+        # [S6.16] Гонку відтворюємо В БАЗІ, а не підміною значення в памʼяті. Доти цей
+        # приклад стабив `reload` і присвоював статус самому обʼєкту — тобто пінив ІМʼЯ
+        # методу, а не властивість «свіжий стан беремо з бази»; заміна `reload` на
+        # партиційно-звужене пере-читання лишила б його зеленим ні за що. Стаб тут —
+        # лише ГОДИННИК: він позначає мить між SELECT'ом свіпера й пере-читанням, а сам
+        # перехід робить справжній UPDATE, і читається він теж справжнім запитом.
+        allow(BlockchainTransaction).to receive(:find_with_partition_pruning).and_wrap_original do |orig, *args, **kwargs|
+          tx.update_columns(status: BlockchainTransaction.statuses[:sent])
+          orig.call(*args, **kwargs)
         end
 
-        expect_any_instance_of(BlockchainTransaction).not_to receive(:escalate_to_review!)
         described_class.new.perform
+
+        # Свіжий :sent не перетерто — саме це стереже гард (`escalate_to_review`
+        # приймає sent→manual_review, тож без гарда тут стояло б "manual_review").
+        expect(tx.reload.status).to eq("sent")
       end
     end
   end

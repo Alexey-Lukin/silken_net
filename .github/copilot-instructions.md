@@ -24,7 +24,7 @@ Not a restatement of facts (those live in `CLAUDE.md`) — just the traps + wher
 - **StatusByte changed post-FW.29** = `[PanicFlag:1 | status:2 | growth_points:5]` (don't assume 6-bit GP) → `§5`. Ruby unpack: `"N n c C n C C a4"`.
 - **`db/structure.sql`**, never `schema.rb`. Thin controllers — logic only in `app/services/` / `app/workers/`.
 - **Sidekiq `:strict: true`** strict queue-drain order → `§5` (don't change a worker's queue without justification).
-- **Partitioned tables** (`TelemetryLog`/`GatewayTelemetryLog`/`BlockchainTransaction`) → always pass `created_at_iso` + use `find_with_partition_pruning`.
+- **Partitioned models are FOUR, and their One-Home helper DIFFERS** (two have none at all) → always pass `created_at_iso`, but never guess the method — take it from `§6`.
 - **AES keys never leave the Ruby process** (`HardwareKey#cached_binary_key`, in-process LRU; no Redis-serialize).
 - **`oracle_status`** has a prefix → `oracle_status_fulfilled?` (NOT `fulfilled?`).
 - **`TelemetryLog` has no AR validations** (KENOSIS) — checks only in `TelemetryUnpackerService.valid_sensor_data?`; don't add them back → `§6`.

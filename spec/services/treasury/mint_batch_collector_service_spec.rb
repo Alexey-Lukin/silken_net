@@ -68,7 +68,8 @@ RSpec.describe Treasury::MintBatchCollectorService do
       end
 
       it "dispatches batch minting for transactions above threshold" do
-        expect(BlockchainMintingService).to receive(:call_batch).with(array_including(*transactions.map(&:id)))
+        expect(BlockchainMintingService).to receive(:call_batch)
+          .with(array_including(*transactions.map(&:id)), created_at_span: all(be_a(Time)).and(be_present))
         described_class.call
       end
 
@@ -128,7 +129,8 @@ RSpec.describe Treasury::MintBatchCollectorService do
       end
 
       it "dispatches urgent transactions even below threshold" do
-        expect(BlockchainMintingService).to receive(:call_batch).with(array_including(*transactions.map(&:id)))
+        expect(BlockchainMintingService).to receive(:call_batch)
+          .with(array_including(*transactions.map(&:id)), created_at_span: all(be_a(Time)).and(be_present))
         described_class.call
       end
     end

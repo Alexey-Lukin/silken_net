@@ -15,9 +15,12 @@
 # been :sent longer than STUCK_THRESHOLD. It resolves →:confirmed / :failed
 # (which now releases locked_points, M2) exactly as the original poll would have.
 #
-# Covers ALL rails on the shared BlockchainConfirmationWorker (mint / burn /
-# insurance / puro). Celo has its own CeloConfirmationWorker; Solana/anchor
-# reconcile via their own crons — out of scope here (see 00_07 ARCH.55).
+# Covers the rails that actually persist a `BlockchainTransaction` row: mint /
+# burn / insurance. ⚠️ NOT puro — this line used to claim it and could not have:
+# `PuroEarthPassportWorker` writes its hash to `MaintenanceRecord`, never to
+# `blockchain_transactions`, so nothing here can ever select it (00_07 PERF.1).
+# Celo has its own CeloConfirmationWorker; Solana/anchor reconcile via their own
+# crons — out of scope here (see 00_07 ARCH.55).
 #
 # [sent_at, NOT created_at] The threshold keys on broadcast time (sent_at),
 # because a reset-to-pending tx keeps an OLD created_at (ARCH.52 trap) — a
@@ -95,16 +98,27 @@ class StuckSentTransactionSweeperWorker
                                    .to_a
     return if orphans.empty?
 
+    escalated = 0
     orphans.each do |tx|
-      # Reload-guard: між SELECT'ом і цим рядком живий поллер міг довершити
+      # Guard пере-читанням: між SELECT'ом і цим рядком живий поллер міг довершити
       # mark_as_sent! — stale in-memory :processing перетер би свіжий :sent
       # (escalate дозволяє sent→manual_review). Мілісекундний залишок гонки
       # деградує лише в зайвий manual_review (безпечний напрямок), не в double-act.
-      next unless tx.reload.status_processing?
+      # [S6.16] Через One-Home, не голим `.reload`: той б'є по самому PK і сканує ВСІ
+      # партиції — до BATCH_LIMIT разів за прогін, хоч `created_at` уже в пам'яті
+      # з SELECT'а вище. Прецедент форми — CeloRewardReconcileWorker.
+      fresh = BlockchainTransaction.find_with_partition_pruning(tx.id, tx.created_at)
+      next unless fresh.status_processing?
 
-      tx.escalate_to_review!("[ARCH.45] :processing-orphan >#{STUCK_THRESHOLD.inspect} — крах між transact і mark_as_sent; мінт міг landed → звір на Polygonscan, НЕ re-mint.")
+      fresh.escalate_to_review!("[ARCH.45] :processing-orphan >#{STUCK_THRESHOLD.inspect} — крах між transact і mark_as_sent; мінт міг landed → звір на Polygonscan, НЕ re-mint.")
+      escalated += 1
     end
 
-    Rails.logger.warn "🧹 [ARCH.45] Escalated #{orphans.size} stuck-:processing orphan(s) to :manual_review."
+    # Лічимо ФАКТИЧНІ ескалації, не розмір вибірки: guard вище пропускає ті, що
+    # їх щойно довершив живий поллер, тож `orphans.size` звітував би про дію,
+    # якої не сталося.
+    return unless escalated.positive?
+
+    Rails.logger.warn "🧹 [ARCH.45] Escalated #{escalated} stuck-:processing orphan(s) to :manual_review."
   end
 end

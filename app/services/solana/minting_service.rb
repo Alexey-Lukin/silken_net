@@ -499,7 +499,9 @@ module Solana
 
     # Незавершена per-event Solana-винагорода ЦІЄЇ телеметрії. Ключ — `chainlink_request_id`
     # (унікальний per-reward, 1 винагорода/telemetry_log) + solana network; 7-денне вікно
-    # `unsettled_within` (як batch) prunes RANGE-партиції. ⚠️ На відміну від batch (cron re-drive
+    # `unsettled_within` (як batch). ⚠️ Партиції воно НЕ прунить — `OR` у скоупі знімає відбір
+    # цілком (виміряно EXPLAIN'ом); вартість тут тримають індекси, а не партиційний відбір.
+    # ⚠️ На відміну від batch (cron re-drive
     # SolanaBatchPayoutWorker), per-event reconcile спрацьовує лише на retry ЦІЄЇ job (retry:3) —
     # crash-after-broadcast звіряється на наступному retry, а 7д-вікно захищає від re-pay при reprocess.
     def unsettled_event_tx

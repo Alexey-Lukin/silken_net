@@ -621,12 +621,14 @@ log.update!(chainlink_request_id: request_id, oracle_status: "dispatched")
 **Авторизація:** `skip_before_action :authenticate_user!`
 — машинний ендпоінт (без сесійної автентифікації).
 
-**Пошук TelemetryLog з partition pruning:**
+**Пошук TelemetryLog з partition pruning** — делегуванням у One-Home, не власною арифметикою:
 ```ruby
-scope = TelemetryLog.where(chainlink_request_id: params[:chainlink_request_id])
-scope = scope.where(created_at: Time.iso8601(params[:created_at])) if params[:created_at].present?
-log = scope.first!
+log = TelemetryLog.where(chainlink_request_id: params[:chainlink_request_id])
+                  .partition_pruned(params[:created_at], metric_caller: "OracleCallbacksController")
+                  .order(created_at: :desc).first!
 ```
+
+> 🔴 **Тут доти стояла точна рівність** (`where(created_at: Time.iso8601(params[:created_at]))`) — саме та форма, яку [`S6.16`](04_01_Data_Models_and_Entities) винищив із коду 2026-08-07: ISO-8601 несе СЕКУНДИ, колонка — мікросекунди, тож збіг можливий лише випадково, і промах на цьому шляху ТИХИЙ. Прунити вона таки прунить — не знаходить. Після зачистки коду цей приклад лишався **останнім екземпляром забороненої форми в репо**, тобто канон учив копіювати дефект. Клас на майбутнє: коли правило винищує форму, свіп мусить іти й по ПРИКЛАДАХ у доках, а не лише по `app/`.
 
 **Успішний callback:**
 ```ruby

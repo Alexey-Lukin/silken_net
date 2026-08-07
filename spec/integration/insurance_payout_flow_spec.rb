@@ -108,7 +108,8 @@ RSpec.describe "Parametric insurance payout flow" do
       expect(tx.amount).to eq(50_000)
       expect(tx.status).to eq("pending")
       expect(tx.to_address).to eq(organization.crypto_public_address)
-      expect(BlockchainMintingService).to have_received(:call).with(tx.id)
+      expect(BlockchainMintingService).to have_received(:call)
+        .with(tx.id, created_at_span: kind_of(Time)) # [S6.16] partition-prune hint
     end
 
     it "skips if insurance is not in triggered state" do

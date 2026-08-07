@@ -89,15 +89,22 @@ module Api
                          .joins(wallet: { tree: :cluster })
                          .where(clusters: { organization_id: org.id })
 
+        # [S6.16] Один згрупований прохід замість чотирьох COUNT. Прунінгу тут не
+        # буває за побудовою: звіт агрегує ВСЮ історію організації, тож будь-яка
+        # `created_at`-межа змінила б відповідь, а не пришвидшила її. Знімається
+        # саме кратність — доти кожна з дев'яти партицій сканувалась ЧОТИРИ рази
+        # на один HTTP-запит. Ключі `group` — рядкові мітки enum'а.
+        by_status = transactions.group(:status).count
+
         @data = {
           total_contracted: org.total_contracted,
           active_contracts: org.naas_contracts.active.count,
           total_contracts: org.naas_contracts.count,
           blockchain_transactions: {
-            total: transactions.count,
-            confirmed: transactions.where(status: :confirmed).count,
-            pending: transactions.where(status: :pending).count,
-            failed: transactions.where(status: :failed).count
+            total: by_status.values.sum,
+            confirmed: by_status.fetch("confirmed", 0),
+            pending: by_status.fetch("pending", 0),
+            failed: by_status.fetch("failed", 0)
           },
           network_emission: fetch_network_emission
         }

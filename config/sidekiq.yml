@@ -76,8 +76,10 @@
       class: ClusterHealthCheckWorker
 
     # --- ЦИКЛ ПАРТИЦІЙ (The Partition Guardian) ---
-    # Автоматичне створення партицій для telemetry_logs, gateway_telemetry_logs
-    # та blockchain_transactions. Гарантує, що партиція на наступний місяць існує задовго до 1-го числа.
+    # Автоматичне створення партицій для ВСІХ таблиць із
+    # PartitionMaintenanceWorker::PARTITIONED_TABLES — перелік не дублюємо тут
+    # (доти проза називала три з чотирьох, проґавивши codex_matches).
+    # Гарантує, що партиція на наступний місяць існує задовго до 1-го числа.
     # [A-2 FIX: Wiki 04_02 Audit §14]: Запуск ДО DailyAggregationWorker (01:00 UTC).
     # Якщо партиція не існує на початку нового місяця — INSERT телеметрії падає з
     # "no partition of relation" PostgreSQL помилкою.

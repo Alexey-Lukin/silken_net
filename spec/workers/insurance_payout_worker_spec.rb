@@ -74,7 +74,8 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
     it "calls BlockchainMintingService to execute payout" do
       described_class.new.perform(insurance.id)
 
-      expect(BlockchainMintingService).to have_received(:call).with(kind_of(Integer))
+      expect(BlockchainMintingService).to have_received(:call)
+        .with(kind_of(Integer), created_at_span: kind_of(Time)) # [S6.16] partition-prune hint
     end
 
     context "with the INS.2 reserve gate" do

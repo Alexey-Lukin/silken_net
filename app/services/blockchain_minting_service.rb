@@ -57,18 +57,25 @@ class BlockchainMintingService < ApplicationService
   ].to_json
 
   # Поштучний виклик — делегується через ApplicationService.call → new.perform
-  def self.call(blockchain_transaction_id, telemetry_log: nil)
-    new([ blockchain_transaction_id ], telemetry_log: telemetry_log).perform
+  def self.call(blockchain_transaction_id, telemetry_log: nil, created_at_span: nil)
+    new([ blockchain_transaction_id ], telemetry_log: telemetry_log, created_at_span: created_at_span).perform
   end
 
   # Пакетний виклик для цілого сектора/кластера
-  def self.call_batch(blockchain_transaction_ids, telemetry_log: nil)
-    new(blockchain_transaction_ids, telemetry_log: telemetry_log).perform
+  def self.call_batch(blockchain_transaction_ids, telemetry_log: nil, created_at_span: nil)
+    new(blockchain_transaction_ids, telemetry_log: telemetry_log, created_at_span: created_at_span).perform
   end
 
-  def initialize(transaction_ids, telemetry_log: nil)
-    @transactions = BlockchainTransaction.where(id: transaction_ids)
-                                         .where.not(status: :confirmed)
+  # [S6.16] `created_at_span` — партиційна підказка, НЕ фільтр: викликач передає
+  # `created_at` тих самих рядків, чиї id передає, тож множина не змінюється (див.
+  # `BlockchainTransaction.where_ids_pruned`). Опційний свідомо — не кожен викликач
+  # тримає записи в руках; хто не передає, той обліковується лічильником degraded
+  # path, а не мовчить. Це ЛІЙКА всіх мінт-шляхів, тож саме тут звуження коштує
+  # найдешевше й діє на всі гілки одразу.
+  def initialize(transaction_ids, telemetry_log: nil, created_at_span: nil)
+    @transactions = BlockchainTransaction
+                      .where_ids_pruned(transaction_ids, created_at_span, metric_caller: "BlockchainMintingService")
+                      .where.not(status: :confirmed)
     @wallet_mapping = @transactions.includes(wallet: [ :tree, :organization ]).index_by(&:id)
     @telemetry_log = telemetry_log
   end
@@ -220,15 +227,18 @@ class BlockchainMintingService < ApplicationService
     rescue Kredis::LockTimeout => e
       # Лок не взято — ЦЕЙ джоб нічого не бродкастив. АЛЕ in-memory статуси
       # можуть бути stale: конкурентний джоб (той, що тримав лок >120s) міг уже
-      # змінтити спільні tx → reload + той самий sent/manual_review-guard, що й
+      # змінтити спільні tx → пере-читання + той самий sent/manual_review-guard, що й
       # у dispatch (сліпий fail! клоберив би :sent → release locked_points при
       # токенах on-chain = double-credit; lock_version на партиційованій таблиці
       # немає — optimistic-lock не рятує).
+      # [S6.16] Пере-читання — через One-Home: голий `.reload` б'є по самому PK і
+      # сканує ВСІ партиції, хоч `created_at` уже в пам'яті з SELECT'а. Прецедент
+      # форми — CeloRewardReconcileWorker.
       txs.each do |tx|
-        tx.reload
-        next if tx.status_sent? || tx.status_manual_review? || tx.status_confirmed?
+        fresh = BlockchainTransaction.find_with_partition_pruning(tx.id, tx.created_at)
+        next if fresh.status_sent? || fresh.status_manual_review? || fresh.status_confirmed?
 
-        tx.fail!(e.message.truncate(200))
+        fresh.fail!(e.message.truncate(200))
       end
       Rails.logger.error "🛑 [Web3 Failure] Lock timeout (#{token_type}): #{e.message}"
       raise e

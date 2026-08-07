@@ -361,6 +361,7 @@ end
 | `silkennet_telemetry_ccm_mic_fail_total` | — | FW.2 CCM packets rejected due to MIC verification failure |
 | `silkennet_telemetry_fraud_detected_total` | — | Total telemetry packets rejected (sensor noise, unknown DID, tamper) |
 | `silkennet_telemetry_log_unpruned_lookups_total` | `caller` | Total TelemetryLog lookups without partition pruning (degraded path; missing or invalid ISO8601 created_at_iso) |
+| `silkennet_blockchain_transaction_unpruned_lookups_total` | `caller` | Total BlockchainTransaction lookups without partition pruning (degraded path; missing or invalid created_at) |
 | `silkennet_telemetry_processed_total` | — | Total telemetry chunks processed by TelemetryUnpackerService |
 | `silkennet_tinyml_threshold_invalid_reports_total` | — | FW.18b telemetry packets reporting a nonzero rejected-OTA-thresholds counter (per-DID attribution in logs) |
 | `silkennet_treasury_check_errors_total` | `network`, `signer`, `error_type` | Total treasury monitoring RPC errors |

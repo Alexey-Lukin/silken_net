@@ -20,22 +20,79 @@ class BlockchainTransaction < ApplicationRecord
 
   # @param id [Integer] record ID
   # @param created_at [Time, String, nil] partition key for pruning
+  # @param metric_caller [String, nil] who is asking — labels the degraded-path counter
   # @return [BlockchainTransaction]
   # @raise [ActiveRecord::RecordNotFound] if not found
-  def self.find_with_partition_pruning(id, created_at = nil)
-    scope = where(id: id)
-    if created_at.present?
-      time = created_at.is_a?(String) ? Time.iso8601(created_at) : created_at.to_time
-      # Use a 1-second range to account for sub-second precision differences
-      # between ISO 8601 (second precision) and DB timestamps (microsecond).
-      # PostgreSQL still prunes to at most one partition for a 1-second window.
-      scope = scope.where(created_at: time...(time + 1))
+  def self.find_with_partition_pruning(id, created_at = nil, metric_caller: nil)
+    if created_at.blank?
+      record_unpruned_lookup(metric_caller, "missing_created_at")
+      return where(id: id).first!
     end
-    scope.first!
+
+    time = created_at.is_a?(String) ? Time.iso8601(created_at) : created_at.to_time
+    # Use a 1-second range to account for sub-second precision differences
+    # between ISO 8601 (second precision) and DB timestamps (microsecond).
+    # PostgreSQL still prunes to at most one partition for a 1-second window.
+    where(id: id).where(created_at: time...(time + 1)).first!
   rescue ArgumentError, TypeError, NoMethodError
     # Invalid format or unexpected type — fall back to unscoped lookup
+    record_unpruned_lookup(metric_caller, "invalid_created_at")
     where(id: id).first!
   end
+
+  # [S6.16 / PERF.1] SET-form of the One-Home. `find_with_partition_pruning` narrows
+  # ONE row; the mint tract works in batches by construction, so every batch site had
+  # to hand-roll `where(id: …)` — not carelessness, there was nowhere to delegate to.
+  # That missing shape is why the invariant kept being violated on the money path.
+  #
+  # `span` carries the `created_at` values of the SAME rows whose ids are passed (a
+  # Range, or any enumerable of timestamps we reduce to [min, max]). The row set is
+  # therefore identical with or without it — this is a hint to the planner, never a
+  # filter. `created_at` is the partition key and no code path mutates it, so the
+  # bounds cannot go stale between the SELECT that produced them and this call.
+  #
+  # @param ids [Array<Integer>]
+  # @param span [Range, Enumerable<Time>, nil]
+  # @param metric_caller [String, nil]
+  # @return [ActiveRecord::Relation] chainable
+  def self.where_ids_pruned(ids, span = nil, metric_caller: nil)
+    scope = where(id: ids)
+    bounds = partition_span_for(span)
+    return scope.where(created_at: bounds) if bounds
+
+    record_unpruned_lookup(metric_caller, "missing_span")
+    scope
+  end
+
+  # Range passes through; a bare timestamp or any list collapses to its [min, max].
+  # Returns nil when there is nothing to bound with — the caller then degrades
+  # loudly (counter) instead of silently.
+  #
+  # 🔴 `Array.wrap`, NEVER `Kernel#Array`: the latter calls `to_a`, and
+  # `Time`/`TimeWithZone` answer it with a ten-element decomposition
+  # (`[sec, min, hour, mday, mon, year, wday, yday, isdst, zone]`), so `.min`
+  # then raises `ArgumentError: comparison of Integer with false failed` on the
+  # `isdst` boolean. A single scalar caller (`InsurancePayoutWorker`) is enough
+  # to make that every internal insurance payout — caught by adversarial review,
+  # invisible to the suite because every call-site spec stubs the service.
+  def self.partition_span_for(span)
+    return span if span.is_a?(Range)
+
+    stamps = Array.wrap(span).compact
+    return nil if stamps.empty?
+
+    stamps.min..stamps.max
+  end
+  private_class_method :partition_span_for
+
+  # Degraded path = a full Global Partition Scan on the money model. It used to be
+  # SILENT here while its `TelemetryLog` twin counted — the asymmetry meant the one
+  # event worth alerting on was invisible exactly where a scan costs most.
+  def self.record_unpruned_lookup(metric_caller, reason)
+    SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL
+      .increment(labels: { caller: "#{metric_caller || 'undeclared'}:#{reason}" })
+  end
+  private_class_method :record_unpruned_lookup
 
   # --- ЗВ'ЯЗКИ ---
   # optional: true — для аудит-транзакцій slashing, коли весь кластер мертвий
@@ -165,7 +222,11 @@ class BlockchainTransaction < ApplicationRecord
 
   # [ARCH.45 / ARCH.51] ЄДИНИЙ живий money-path intent-marker guard: незавершена tx у `window`
   # (включно з `:manual_review` — можливо-landed виплата під ручною звіркою блокує re-pay).
-  # `window`-bound prunes RANGE-партиції. Покриває всю родину (burn 2h · Solana payout / insurance /
+  # ⚠️ `window`-bound тут НЕ прунить, і це вимір, а не оцінка: `OR` робить кандидатом КОЖНУ
+  # партицію, тож `created_at` лишається самим лише `Filter` (EXPLAIN 2026-08-07: 9 із 9 листів
+  # у плані). Доти цей рядок стверджував протилежне — і три call-site-коментарі успадкували
+  # заяву звідси. Ціна прийнятна свідомо (обґрунтування нижче), але вона Є. Покриває всю
+  # родину (burn 2h · Solana payout / insurance /
   # Etherisc 7d); `:manual_review` + configurable window роблять його суворо потужнішим за колишній
   # flat `in_flight`-scope (видалено в ARCH.51 як dead code — 0 callerів). DRY-джерело lookup-патерну
   # для BatchPayoutService + InsurancePayoutWorker + BurningService. Anchor має власний
@@ -176,7 +237,9 @@ class BlockchainTransaction < ApplicationRecord
   # погодинний Solana-payout інакше re-fire-ять ПІСЛЯ спливу вузького вікна (burn 2h, Solana 7d) →
   # детермінований double-burn / double-pay (не гонка — календар). manual_review надрідкісний
   # (потребує людської звірки) + `sourceable`/`wallet_id` індекси звужують lookup, тож втрата
-  # created_at-prune на цій гілці не б'є по гарячому шляху. SQL: (status=5) OR (status∈{0,4} ∧ у вікні).
+  # created_at-prune не б'є по гарячому шляху. ⚠️ Втрата ця — на ВСЬОМУ запиті, не «на цій гілці»:
+  # `OR` знімає прунінг цілком, а не лише для manual_review-диз'юнкта. Індекс, а не партиційний
+  # відбір, і є тим, що тримає вартість. SQL: (status=5) OR (status∈{0,4} ∧ у вікні).
   scope :unsettled_within, ->(window) {
     where(status: [ :pending, :sent, :manual_review ])
       .where("status = ? OR created_at > ?", statuses[:manual_review], window.ago)

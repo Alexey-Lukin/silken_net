@@ -68,6 +68,28 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       expect(body["data"]).to include("total_contracted", "blockchain_transactions")
     end
 
+    # [S6.16] Один згрупований прохід замінив чотири окремі COUNT — і доти ці ЧОТИРИ
+    # ЧИСЛА не пінував жоден приклад (перевірялась лише ПРИСУТНІСТЬ ключа). Небезпека
+    # конкретна: `by_status.fetch("confirmed", 0)` перетворює будь-яку регресію типу
+    # ключа на ТИХІ нулі в інвестор-звіті — `total` лишиться правильним, три інші
+    # стануть 0, винятку не буде, CI зелений.
+    it "counts each status correctly, and total as their sum" do
+      # Скоуп звіту — `joins(wallet: { tree: :cluster })`, тож кластер мусить належати
+      # ЦІЙ організації. `Tree.after_create` уже створює гаманець (ARCH.56) — беремо його.
+      wallet = create(:tree, cluster: create(:cluster, organization: organization)).wallet
+      create(:blockchain_transaction, wallet: wallet, status: :confirmed)
+      create(:blockchain_transaction, wallet: wallet, status: :pending)
+      create(:blockchain_transaction, wallet: wallet, status: :failed)
+      create(:blockchain_transaction, wallet: wallet, status: :manual_review)
+
+      get "/reports/financial_summary", headers: headers, as: :json
+
+      tx = response.parsed_body.dig("data", "blockchain_transactions")
+      expect(tx).to include("confirmed" => 1, "pending" => 1, "failed" => 1)
+      # `total` рахує ВСІ статуси, не лише три названі — `manual_review` теж усередині.
+      expect(tx["total"]).to eq(4)
+    end
+
     it "includes network_emission data in JSON response (premiums DB-sourced from NaaS contracts)" do
       # [SEC.1] total_premiums_usdc now comes from the DB (5% of activated NaaS funding),
       # not a never-emitted on-chain PremiumPaid event. 600_000 funding × 5% = 30_000.

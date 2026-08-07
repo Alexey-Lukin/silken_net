@@ -16,7 +16,14 @@
 # 1. On-chain anchoring via PuroEarth::PassportService → Polygon D-MRV Registry
 # 2. REST API submission via PuroEarth::RegistryApiService → Puro.earth CORC
 #
-# Transaction confirmation is tracked by BlockchainConfirmationWorker.
+# ⚠️ Confirmation is NOT tracked today, despite the enqueue below. `PassportService#anchor!`
+# broadcasts on-chain and returns a hash, but creates NO `BlockchainTransaction` row — the
+# hash lives only on `MaintenanceRecord#biomass_passport_tx_hash`. `BlockchainConfirmationWorker`
+# looks the hash up in `blockchain_transactions`, which never receives it, so the poll always
+# finds nothing: a never-fed pipe, not a slow query. Costless right now only because the
+# passport path is not activated (`ORACLE_PURO_PRIVATE_KEY` is injected at activation), which
+# is also exactly when it starts to matter. Verdict — build an intent-marker like every other
+# on-chain path, or drop the leg — is open in `00_07` PERF.1.
 # =============================================================================
 class PuroEarthPassportWorker
   include ApplicationWeb3Worker
