@@ -260,11 +260,15 @@ module WorkflowGatePerimeter
   # which that guard does catch, which is why "cancel the filter and watch" proves
   # nothing about this class.
   #
-  # ⚠️ Declared ceiling: this checks that a FAILING step is wired to the filter's
-  # result, not that its condition is exactly `!= 'success'` — the shapes are many
-  # (`!= 'success'`, `== 'skipped' || == 'cancelled'`), and pinning one spelling
-  # would reject a correct rewrite. It also owes nothing when the aggregate does not
-  # depend on the filter at all (dco.yml has no filter job).
+  # ⚠️ Declared ceiling, three parts. (1) This checks that a FAILING step is wired to
+  # the filter's result, not that its condition is exactly `!= 'success'` — the shapes
+  # are many (`!= 'success'`, `== 'skipped' || == 'cancelled'`), and pinning one
+  # spelling would reject a correct rewrite. (2) It owes nothing when the aggregate
+  # does not depend on the filter at all (dco.yml has no filter job). (3) It ranges
+  # over :required entries ONLY, so an aggregate born outside the perimeter is out of
+  # its reach — check (a) covers that for pull_request-triggered workflows, but a
+  # push-only one (sbom.yml) is seen by neither. Measured clean when (f) landed: every
+  # `contains(needs.*.result, …)` guard in the tree sits inside the required set.
   def filter_result_asserted?(yaml, label, filter: FILTER_JOB)
     job = aggregate_job(yaml, label)
     return true if job.nil? # absence is (c)'s finding, not this one's
