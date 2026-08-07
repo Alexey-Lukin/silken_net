@@ -67,11 +67,19 @@ RSpec.describe ChainlinkDispatchWorker, type: :worker do
     end
 
     context "when created_at_iso has invalid format" do
-      it "returns nil and does not dispatch" do
-        expect(Rails.logger).to receive(:error).with(/Некоректний формат created_at/)
-        expect(Chainlink::OracleDispatchService).not_to receive(:new)
+      # [PERF.1/S6.16] Дзеркало прикладу в IotexVerificationWorker: зіпсована
+      # підказка прунінгу не сміє коштувати диспетчеризації до оракула. Доти
+      # рукописний `find_log` віддавав nil, і воркер «успішно» не робив нічого.
+      it "falls back to an unpruned lookup and still dispatches" do
+        allow(Rails.logger).to receive(:warn)
+        service = instance_double(Chainlink::OracleDispatchService)
+        allow(Chainlink::OracleDispatchService).to receive(:new).with(telemetry_log).and_return(service)
+        allow(service).to receive(:dispatch!).and_return("chainlink-req-degraded")
 
         described_class.new.perform(telemetry_log.id_value, "not-a-valid-iso-date")
+
+        expect(service).to have_received(:dispatch!)
+        expect(Rails.logger).to have_received(:warn).with(/битий created_at_iso/)
       end
     end
   end

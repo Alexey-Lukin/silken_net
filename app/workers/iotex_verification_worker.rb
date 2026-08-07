@@ -7,7 +7,7 @@ class IotexVerificationWorker
   sidekiq_options queue: "web3_critical", retry: 5
 
   def perform(telemetry_log_id, created_at_iso)
-    log = find_log(telemetry_log_id, created_at_iso)
+    log = find_telemetry_log_with_pruning(telemetry_log_id, created_at_iso, log_prefix: "[IoTeX]")
     return unless log
 
     # [ARCH.53/B1] Recover lost Chainlink-dispatch enqueue: краш між update!(verified) і
@@ -42,19 +42,5 @@ class IotexVerificationWorker
   rescue Iotex::W3bstreamVerificationService::VerificationError => e
     Rails.logger.error "🚨 [IoTeX] Верифікація TelemetryLog ##{telemetry_log_id} зазнала невдачі: #{e.message}"
     raise
-  end
-
-  private
-
-  # [P1 FIX]: Аналогічно ChainlinkDispatchWorker — перехоплюємо ArgumentError
-  # від Time.iso8601 при некоректному форматі рядка, щоб не витрачати ретраї даремно.
-  def find_log(telemetry_log_id, created_at_iso)
-    created_at = Time.iso8601(created_at_iso)
-    log = TelemetryLog.find_by(id: telemetry_log_id, created_at: created_at)
-    Rails.logger.error "🛑 [IoTeX] TelemetryLog ##{telemetry_log_id} не знайдено." unless log
-    log
-  rescue ArgumentError => e
-    Rails.logger.error "🛑 [IoTeX] Некоректний формат created_at для TelemetryLog ##{telemetry_log_id}: #{e.message}"
-    nil
   end
 end

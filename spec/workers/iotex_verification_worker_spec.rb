@@ -77,11 +77,23 @@ RSpec.describe IotexVerificationWorker, type: :worker do
       described_class.new.perform(-1, Time.current.iso8601(6))
     end
 
-    it "returns early and logs error for invalid created_at_iso format" do
-      expect(Rails.logger).to receive(:error).with(/Некоректний формат created_at/)
-      expect(Iotex::W3bstreamVerificationService).not_to receive(:new)
+    # [PERF.1/S6.16] Битий created_at_iso — зіпсована ПІДКАЗКА прунінгу, а не
+    # підстава втратити мінт. Доти рукописний `find_log` ловив ArgumentError і
+    # віддавав nil, тож воркер завершувався «успішно», не зробивши НІЧОГО: лог
+    # існує, робота легітимна, а помилка в параметрі оптимізації з'їдала першу
+    # ланку мінт-ланцюга — мовчки, без ретраю й без DeadSet. One-Home
+    # `partition_pruned` відкочується в lookup без прунінгу (з обліком
+    # деградації лічильником) і роботу доводить до кінця.
+    it "falls back to an unpruned lookup and still verifies when created_at_iso is malformed" do
+      allow(Rails.logger).to receive(:warn)
+      service = instance_double(Iotex::W3bstreamVerificationService)
+      allow(Iotex::W3bstreamVerificationService).to receive(:new).with(telemetry_log).and_return(service)
+      allow(service).to receive(:verify!).and_return("zk-proof-degraded")
 
       described_class.new.perform(telemetry_log.id_value, "not-a-valid-iso-date")
+
+      expect(telemetry_log.reload.verified_by_iotex).to be true
+      expect(Rails.logger).to have_received(:warn).with(/битий created_at_iso/)
     end
 
     it "re-raises VerificationError for Sidekiq retry" do

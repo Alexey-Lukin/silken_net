@@ -23,8 +23,13 @@ RSpec.describe StreamrBroadcastWorker, type: :worker do
       expect(service).to have_received(:broadcast!)
     end
 
-    it "logs warning when telemetry_log is not found" do
-      expect(Rails.logger).to receive(:warn).with(/не знайдено/)
+    # [S6.16] Рівень підняли з warn до error разом із переходом на One-Home
+    # `find_telemetry_log_with_pruning`: сам ПРОВАЛ трансляції лишається м'яким
+    # (Streamr — потік присутності, не консенсус), але ВІДСУТНІЙ лог після
+    # lookup'а без прунінгу — це вже аномалія цілісності, спільна для всіх трьох
+    # воркерів тракту, тож і звучить вона однаково.
+    it "logs an error when telemetry_log is not found" do
+      expect(Rails.logger).to receive(:error).with(/не знайдено/)
       expect(Streamr::BroadcasterService).not_to receive(:new)
 
       described_class.new.perform(-1, Time.current.iso8601(6))

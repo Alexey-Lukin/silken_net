@@ -6,8 +6,12 @@ class StreamrBroadcastWorker
   sidekiq_options queue: "low", retry: 3
 
   def perform(telemetry_log_id, created_at_iso)
-    log = TelemetryLog.find_by(id: telemetry_log_id, created_at: Time.iso8601(created_at_iso))
-    return Rails.logger.warn "⚠️ [Streamr] TelemetryLog ##{telemetry_log_id} не знайдено." unless log
+    # [S6.16] Пошук — через One-Home `find_telemetry_log_with_pruning` (1с-вікно
+    # + облік degraded-шляху). Рукописна точна рівність, що стояла тут, збігалася
+    # лише з мікросекундним ISO і мовчки давала nil на секундному — а тут навіть
+    # rescue ArgumentError не було, тож битий рядок з'їдав усі три ретраї.
+    log = find_telemetry_log_with_pruning(telemetry_log_id, created_at_iso, log_prefix: "[Streamr]")
+    return unless log
 
     service = Streamr::BroadcasterService.new(log)
     service.broadcast!
