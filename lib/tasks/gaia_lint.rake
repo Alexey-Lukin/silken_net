@@ -28,9 +28,19 @@
 #
 # Allowlist: see `allowlist` below — brand / decorative colours that are raw on
 # purpose (e.g. `bg-emerald-500/10` for the login button's brand-glow).
+#
+# 🔴 NO `:environment` PREREQUISITE, and that is load-bearing rather than tidy.
+# The body is pure Ruby (Pathname + ENV), and its docs.yml neighbours —
+# `docs:check_refs`, `tracker:check` — declare no `:environment` either, so that
+# job has never booted the app and its runner carries no native libvips. With
+# the prerequisite in place the step died at `ActiveStorage::Transformers::Vips`
+# before the linter ran a single line: green locally, red in CI, for a reason
+# that has nothing to do with what the gate checks.
+require "pathname"
+
 namespace :gaia do
   desc "Find raw Tailwind colour utilities in shared Phlex primitives (compliance check)"
-  task lint_tokens: :environment do
+  task :lint_tokens do
     paths = (ENV["COMPONENTS"] || "app/views/shared/").then do |p|
       Pathname.new(p).directory? ? Pathname.glob("#{p}/**/*.rb") : [ Pathname.new(p) ]
     end
