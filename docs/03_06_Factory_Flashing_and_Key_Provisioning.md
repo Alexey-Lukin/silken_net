@@ -517,7 +517,7 @@ IF prev_telemetry_log.lorenz_state_(x|y|z) IS NULL:
   cold_start_flag = true
   K_seed_bin = hardware_key.binary_lorenz_seed
   epoch_day  = telemetry_log.created_at.to_i / 86400
-  (x₀,y₀,z₀) = SilkenNet::SeedDerivation.derive_initial_state(K_seed_bin, epoch_day)
+  (x₀,y₀,z₀) = SilkenNet::SeedDerivation.initial_state(K_seed_bin, epoch_day)
 ELSE:
   cold_start_flag = false
   (x₀,y₀,z₀) = (prev.lorenz_state_x, prev.lorenz_state_y, prev.lorenz_state_z)

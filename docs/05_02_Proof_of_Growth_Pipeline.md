@@ -147,7 +147,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║    SilkenNet::Attractor.calculate_z_from_state(x_prev,y_prev,z_prev, ║
 ║      temp, acust, delta_t_s, vcap_mv) → z_value [SEC.11 sole API]   ║
 ║      ├─ warm: (x_prev,y_prev,z_prev) ← prev TelemetryLog.lorenz_state║
-║      └─ cold: SeedDerivation.derive_initial_state(K_seed, epoch_day) ║
+║      └─ cold: SeedDerivation.initial_state(K_seed, epoch_day) ║
 ║              + telemetry_log.cold_start_flag = true                  ║
 ║    persist tail → telemetry_log.lorenz_state_x/y/z (mirror RTC)     ║
 ║    growth_points = (status_byte & 0x1F) * 2 (×2 upscale, FW.29-PACK)║
@@ -890,7 +890,7 @@ else
   # Cold path — лише після VBAT loss / провізіонування / повного reboot
   raise MissingLorenzSeedError unless tree.hardware_key&.binary_lorenz_seed.present?
   epoch_day  = telemetry_log.created_at.utc.to_i / 86_400
-  x0, y0, z0 = SilkenNet::SeedDerivation.derive_initial_state(
+  x0, y0, z0 = SilkenNet::SeedDerivation.initial_state(
                  seed_bin:  tree.hardware_key.binary_lorenz_seed,
                  epoch_day: epoch_day
                )
