@@ -795,6 +795,17 @@ jobs:
       - docker_smoke
     runs-on: ubuntu-latest
     steps:
+      # [OPS.23] `changes` carries no `if:`, so `success` is its ONLY legal result,
+      # while every job below it is path-gated, where `skipped` IS legal. The guard
+      # after this one asks only "did anything FAIL?", so a skipped FILTER reads as an
+      # ordinary path-skip — and then every skip beneath it happened for a FALSE
+      # reason. That is how this aggregate once reported `success` having run no job
+      # at all. Explicit-result form, as in_silico's `smoke` uses on its lock_sync dep.
+      - name: Fail if the change-filter itself did not run
+        if: ${{ needs.changes.result != 'success' }}
+        run: |
+          echo "::error::The change-filter job did not succeed (result: ${{ needs.changes.result }}) — every job below it was skipped for a FALSE reason, so a green aggregate would vouch for nothing. Infrastructure failure, not a code failure: re-run this workflow."
+          exit 1
       - name: Fail if any required job failed or was cancelled
         if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
         run: |

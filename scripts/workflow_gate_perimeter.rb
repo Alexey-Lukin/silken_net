@@ -38,6 +38,11 @@
 #   (c) every :required workflow actually HAS its `if: always()` aggregate job
 #       (parsed — a job whose resolved name == the label AND whose `if` carries
 #       always()).
+#   (f) every :required aggregate that DEPENDS on the `changes` path-filter also
+#       asserts that filter's own result (OPS.23). Existence of the aggregate is
+#       not enough: `changes` carries no `if:`, so `success` is its only legal
+#       result, and a guard asking merely "did anything fail/cancel?" reads a
+#       SKIPPED filter as a legal path-skip and goes green having run nothing.
 # ADVISORY (report, never exit 1): the :flip_pending list — a migration tracker.
 #
 # OPTIONAL --live: best-effort `gh api …/branches/main/protection/
@@ -83,6 +88,10 @@ module WorkflowGatePerimeter
   }.freeze
 
   CLASSES = %i[required advisory_by_design flip_pending].freeze
+
+  # The path-filter job every path-gated workflow here opens with. Named once
+  # because check (f) below keys on it.
+  FILTER_JOB = "changes"
 
   # ── (d)+(e) prose-claim consistency [DOC-T.51] ───────────────────────────────
   # The required-gate COUNT settles into a dozen prose homes (canon, PR template,
@@ -221,16 +230,50 @@ module WorkflowGatePerimeter
     end
   end
 
+  # The job whose resolved name (`name:` or, absent that, the job id) == the
+  # branch-protection label; nil when absent.
+  def aggregate_job(yaml, label)
+    (yaml["jobs"] || {}).each do |job_id, job|
+      next unless job.is_a?(Hash)
+      return job if (job["name"] || job_id).to_s.strip == label
+    end
+    nil
+  end
+
   # An `if: always()` aggregate job whose resolved name (`name:` or, absent that,
   # the job id) == the branch-protection label. Both halves load-bearing: the
   # aggregate exists AND it carries the exact context name that branch protection
   # requires. Matches `if: always()` and `if: ${{ always() }}`.
   def always_aggregate?(yaml, label)
-    (yaml["jobs"] || {}).any? do |job_id, job|
-      next false unless job.is_a?(Hash)
+    job = aggregate_job(yaml, label)
+    !job.nil? && job["if"].to_s.match?(/always\s*\(\s*\)/)
+  end
 
-      (job["name"] || job_id).to_s.strip == label &&
-        job["if"].to_s.match?(/always\s*\(\s*\)/)
+  # (f) [OPS.23] An aggregate that depends on the path-FILTER job must assert that
+  # the filter itself SUCCEEDED — not merely that nothing failed.
+  #
+  # The filter carries no `if:`, so `success` is its ONLY legal result, while every
+  # job it gates may legally be `skipped`. A guard shaped
+  # `contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')`
+  # therefore reads a skipped FILTER as an ordinary path-skip and reports green
+  # having run nothing at all. `skipped` is the discriminator — NOT `cancelled`,
+  # which that guard does catch, which is why "cancel the filter and watch" proves
+  # nothing about this class.
+  #
+  # ⚠️ Declared ceiling: this checks that a FAILING step is wired to the filter's
+  # result, not that its condition is exactly `!= 'success'` — the shapes are many
+  # (`!= 'success'`, `== 'skipped' || == 'cancelled'`), and pinning one spelling
+  # would reject a correct rewrite. It also owes nothing when the aggregate does not
+  # depend on the filter at all (dco.yml has no filter job).
+  def filter_result_asserted?(yaml, label, filter: FILTER_JOB)
+    job = aggregate_job(yaml, label)
+    return true if job.nil? # absence is (c)'s finding, not this one's
+    return true unless Array(job["needs"]).include?(filter)
+
+    Array(job["steps"]).any? do |step|
+      step.is_a?(Hash) &&
+        step["if"].to_s.include?("needs.#{filter}.result") &&
+        step["run"].to_s.include?("exit 1")
     end
   end
 
@@ -288,6 +331,14 @@ module WorkflowGatePerimeter
           errors << ":required `#{base}` has NO `if: always()` aggregate job named " \
                     "#{meta.inspect} — the merge-blocking check must exist as an " \
                     "aggregate (branch protection requires that exact context name)."
+        end
+
+        unless filter_result_asserted?(parsed[base], meta)
+          errors << ":required `#{base}` aggregate #{meta.inspect} depends on the " \
+                    "`#{FILTER_JOB}` filter job but never asserts its RESULT — a " \
+                    "`contains(needs.*.result, …)` guard reads a SKIPPED filter as an " \
+                    "ordinary path-skip and reports green having run nothing (OPS.23). " \
+                    "Add a failing step keyed on `needs.#{FILTER_JOB}.result`."
         end
       when :flip_pending
         advisories << "`#{base}` → SHOULD be required (→ #{meta}) — today job-gating " \

@@ -101,6 +101,15 @@ jobs:
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
           egress-policy: audit
+      # [OPS.23] `changes` carries no `if:`, so `success` is its ONLY legal result,
+      # while a path-gated job below it may legally be `skipped`. The guard after this
+      # one asks only "did anything FAIL?" — so a skipped FILTER would read as an
+      # ordinary path-skip, and every skip beneath it happened for a false reason.
+      - name: Fail if the change-filter itself did not run
+        if: ${{ needs.changes.result != 'success' }}
+        run: |
+          echo "::error::The change-filter job did not succeed (result: ${{ needs.changes.result }}) — every job below it was skipped for a FALSE reason, so a green aggregate would vouch for nothing. Infrastructure failure, not a code failure: re-run this workflow."
+          exit 1
       - name: Fail if the ML smoke job failed or was cancelled
         if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
         run: |
