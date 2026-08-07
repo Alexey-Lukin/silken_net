@@ -540,7 +540,7 @@ log.update!(lorenz_state_x: x_f, lorenz_state_y: y_f, lorenz_state_z: z_f,
 | Compromise одного `K_seed` (фізичний доступ до пристрою) | ⚠️ Один пристрій уразливий ≤ 24 год; інші — ні |
 | Compromise `PROVISIONING_MASTER_KEY` | 🚨 Каскадне — потрібна окрема rotation strategy (SEC.9) |
 | Replay вчорашнього валідного пакета | ❌ (`epoch_day` змінився, Z більше не валідний) |
-| Підроблений `cold_start_flag = true` від device | Mitigation: server відкидає `cold_start` якщо < 7 днів від попередньої телеметрії |
+| Підроблений `cold_start_flag = true` від device | ❌ Структурно неможливо: прапорця НЕМА на дроті (ані `PAYLOAD_FORMAT`, ані `CCM_SENSOR_PAYLOAD_FORMAT`) — сервер деривує його сам із наявності попереднього хвоста траєкторії (`TelemetryUnpackerService#compute_server_z`) |
 | ARM ↔ x86 IEEE-754 drift > 0.001 | Емпірично < 1e-12; tolerance band 9 порядків запасу при flip на numeric |
 
 ### Реалізація
