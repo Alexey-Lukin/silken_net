@@ -22,6 +22,7 @@
   --color-gaia-text-muted: var(--gaia-text-muted);
   --color-gaia-text-subtle: var(--gaia-text-subtle);
   --color-gaia-primary: var(--gaia-primary);
+  --color-gaia-primary-text: var(--gaia-primary-text);
   --color-gaia-primary-hover: var(--gaia-primary-hover);
   --color-gaia-primary-soft: var(--gaia-primary-soft);
   --color-gaia-border: var(--gaia-border);
@@ -101,6 +102,10 @@
   --gaia-text-subtle:  #9ca3af;
 
   --gaia-primary:        #10b981;
+  /* Text sitting ON --gaia-primary. Theme-invariant, because the brand emerald
+   * itself is (see .dark below): the pair must hold in both. 7.04:1 — the
+   * inherited body colour gave 1.98:1 in dark, i.e. unreadable. */
+  --gaia-primary-text:   #0f172a;
   --gaia-primary-hover:  #059669;
   --gaia-primary-soft:   #d1fae5;
 
@@ -158,6 +163,7 @@
   --gaia-text-subtle:  rgba(52, 211, 153, 0.55);
 
   --gaia-primary:        #10b981;
+  --gaia-primary-text:   #0f172a;  /* same as :root — the brand emerald does not flip */
   --gaia-primary-hover:  #34d399;
   --gaia-primary-soft:   rgba(16, 185, 129, 0.12);
 
