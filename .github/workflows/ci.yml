@@ -23,6 +23,9 @@ on:
 
 jobs:
   changes:
+    # [OPS.23 PROBE — DO NOT MERGE] Force the path-filter to SKIP, to measure what
+    # `needs.changes.result` actually reports and whether the aggregate goes green.
+    if: ${{ false }}
     # Per-area change detection so the heavy jobs below run ONLY when relevant:
     # a Ruby-only change skips the 25-min firmware ARM build; a firmware-only
     # change skips the 15-min RSpec suite. A change to ci.yml itself or to the
