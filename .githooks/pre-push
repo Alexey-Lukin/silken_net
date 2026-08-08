@@ -1,0 +1,28 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# [UNI.20] DCO sign-off carrier — at the MOMENT OF ACTION.
+#
+# Why a hook and not a note: the rule "always `git commit -s`" was written in two
+# places and relapsed twice anyway — three unsigned commits, then six. Per-commit
+# discipline is O(n) chances to forget; this is the O(1) point where forgetting
+# stops mattering. `dco.yml` does NOT cover it: that gate fires on INBOUND pull
+# requests, and the maintainer's authorized direct pushes to `main` never open one.
+#
+# Deliberately DCO-only. The full suite and the docs battery are the founder's
+# pre-push discipline and are CI-gated; putting ~1.5 min of tests on every push
+# buys a bypass habit, which costs more than it saves.
+#
+# Enabled by `git config core.hooksPath .githooks` (set by bin/setup; re-run it
+# after a fresh clone). Emergency bypass: `git push --no-verify`.
+
+root=$(git rev-parse --show-toplevel) || exit 0
+[ -f "$root/scripts/dco_check.rb" ] || exit 0
+
+if ! ruby "$root/scripts/dco_check.rb"; then
+  echo
+  echo "pre-push BLOCKED — commits above lack a matching Signed-off-by trailer."
+  echo "Fix in place:  git rebase --signoff origin/main"
+  echo "Then re-push.  (Emergency bypass: git push --no-verify)"
+  exit 1
+fi
