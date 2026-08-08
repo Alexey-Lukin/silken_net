@@ -1436,6 +1436,22 @@ case "${1:-}" in
     # It reports a BAND, not a figure, and that is the whole point: the split
     # turns on how two 100 kB journals are classified, and a single number would
     # be a verdict dressed as a measurement. Report both bounds or neither.
+    #
+    # 🔴 DEFECT FOUND IN THIS MODE ON THE DAY IT SHIPPED (2026-08-08), and it is
+    # the class this file exists to police. The line said "apparatus in git" while
+    # the set was hardcoded to three MEMORY-related files — so it priced the
+    # apparatus of the corpus and named it the apparatus of the practice, which is
+    # understated 3.7×: the real "how the work is done" layer in git is ~748 kB
+    # (15 skills 512 kB + prompts 98 kB + hooks 113 kB + CLAUDE.md 24 kB) against
+    # the 200 kB it declared. A measurement whose SCOPE is narrower than its LABEL
+    # reads as a fact about the world; that is measurement-substitution, and this
+    # mode walked into it while being written to expose it.
+    #
+    # The fix deliberately does NOT fold the new number into the ratio. That ratio
+    # was calibrated against the memory corpus and quoted in DOC-T.62; silently
+    # widening its inputs would move a published figure without moving its name —
+    # the same defect one level up. So the practice-wide number is reported as its
+    # OWN line, and the memory-apparatus subset keeps the ratio it earned.
     ruby - "$MEM_DIR" "$REPO" <<'RUBY'
 dir, repo = ARGV
 sz = Dir["#{dir}/*.md"].to_h { |p| [File.basename(p), File.size(p)] }
@@ -1450,8 +1466,22 @@ app = { "memory_gate.sh"         => "#{repo}/.claude/hooks/memory_gate.sh",
         "memory-maintenance"     => "#{repo}/.claude/skills/memory-maintenance/SKILL.md" }
        .filter_map { |n, p| [n, File.size(p)] if File.exist?(p) }.to_h
 tot, c, s, a = sz.values.sum, core.values.sum, swing.values.sum, app.values.sum
-puts "corpus #{tot} B in #{sz.size} files · apparatus in git #{a} B (#{app.map { |n, v| "#{n} #{v}" }.join(' · ')})"
+
+# The practice-wide layer, measured rather than assumed. Reported separately from
+# `a` on purpose — see the block comment above.
+wide = { "skills"  => Dir["#{repo}/.claude/skills/**/*.md"],
+         "prompts" => Dir["#{repo}/.claude/prompts/*.md"],
+         "hooks"   => Dir["#{repo}/.claude/hooks/*.sh"],
+         "CLAUDE"  => ["#{repo}/CLAUDE.md"] }
+       .transform_values { |ps| ps.select { |p| File.file?(p) }.sum { |p| File.size(p) } }
+biggest = Dir["#{repo}/.claude/skills/**/*.md"].max_by { |p| File.size(p) }
+
+puts "corpus #{tot} B in #{sz.size} files · MEMORY apparatus in git #{a} B (#{app.map { |n, v| "#{n} #{v}" }.join(' · ')})"
 puts "core META (feedback_* + method journals) = #{c} B — #{(100.0 * c / tot).round(1)}% of the corpus"
+puts
+puts "PRACTICE apparatus in git = #{wide.values.sum} B (#{wide.map { |n, v| "#{n} #{v}" }.join(' · ')})"
+puts "  — #{(wide.values.sum.to_f / a).round(1)}× the memory-apparatus subset above; NOT folded into the ratio (label ≠ scope, see source)"
+puts "  — heaviest single auto-invoked artifact: #{biggest&.sub("#{repo}/", '')} #{biggest ? File.size(biggest) : 0} B" if biggest
 puts
 [["LOW   swing → DOMAIN", 0], ["HIGH  swing → META", s]].each do |label, extra|
   m = c + extra

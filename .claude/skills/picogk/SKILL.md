@@ -46,7 +46,11 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 
 > Voxel/triangle counts + porosity drift with voxel size — don't hardcode them ([[feedback_no_volatile_counts]]); MEASURE via `verify`.
 
+**State** (what is built / open ⚖️ / curator lessons) lives in memory, not here: `[[project_picogk_code_as_cad]]` · `[[project_bus_monolithic_onehome]]` (bus topology + the PEEK-liner trap below) · `[[project_coin_bakeoff_trl4]]` (the Ti-coin keystone this CAD feeds). This pointer was **missing** until 2026-08-08 — every sibling skill (`ssot-maintenance`, `ml-engineering`, `web3-pipeline`) carried one and this file did not, so CAD state was reachable only by someone who already knew it existed.
+
 ## Gotchas Not Obvious From Docs
+
+0. 🔴 **`tools/cad/cem/*.json` is the parameter SSOT — but `cathode_flange.json` hard-codes a branch that is NOT decided, so do NOT "fix" the manifest.** Its `liner 0.15 mm` (with the Ø1.0 rod through a Ø1.3 channel) reads as if the PEEK-lining branch were settled; [`01_01 §1.4`](../../../docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md) says the implementation is still **open** (⚖️ HW.34 — Parylene ~10 µm and TiO₂ ~0.1–10 µm cannot reach 0.15 mm, so the frozen number silently elects PEEK). The contradiction is in the CANON PROSE and must be fixed there first; patching the JSON to match a different branch breaks the `AxialStack.BusRodClears` F3 gate (rod + 2×liner ≤ channel). The number lives in canon and the manifest, but the *warning* had no git home at all until now — JSON carries no comments, and a future tidy-up pass reads a frozen value as a decision.
 
 1. **Render lattices via `new Voxels(IImplicit, BBox3)` + `BoolIntersect`** — NOT
    `voxBounding.voxIntersectImplicit(impl)`. The convenience method yields a malformed
