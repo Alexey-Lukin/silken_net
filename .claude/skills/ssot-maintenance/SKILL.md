@@ -1,6 +1,6 @@
 ---
 name: ssot-maintenance
-description: "Use when working on the SSOT docs (docs/NN_NN_*.md) — editing or creating a canon doc, hunting or fixing SSOT drift, adding or hardening a docs linter / CI gate, checking where a fact canonically lives, or publishing canon to the GitHub wiki. Operational playbook for docs:check_refs / docs:toc / tracker:check / wiki:sync, plus §Guard-craft — the craft of building a gate that actually catches: its thesis, design rules, mutation-verify pitfalls and hardening checklist live here, while the **42 blindness shapes** (a gate that under-implements its declared contract, a One-Home invariant with no gate behind it, precision-in-the-anchor, …) are indexed here one line each and written in full in this skill's `guard-craft.md`, which loads on demand — open it when building, hardening or debugging a gate, and equally when writing a spec, mass-deleting, narrowing a rule or running a campaign. Defers the STANDARD itself to 00_02 + 00_06. Examples: \"edit 03_05\", \"is this value consistent across the docs?\", \"add a drift linter\", \"why is my guard green when it shouldn't be\", \"publish the docs to the wiki\", \"where does the Lorenz constant live?\""
+description: "Use when working on the SSOT docs (docs/NN_NN_*.md) — editing or creating a canon doc, hunting or fixing SSOT drift, adding or hardening a docs linter / CI gate, checking where a fact canonically lives, or publishing canon to the GitHub wiki. Operational playbook for docs:check_refs / docs:toc / tracker:check / wiki:sync, plus §Guard-craft — the craft of building a gate that actually catches: its thesis, design rules, mutation-verify pitfalls and hardening checklist live here, while the **blindness shapes** (a gate that under-implements its declared contract, a One-Home invariant with no gate behind it, precision-in-the-anchor, …) are indexed here one line each and written in full in this skill's `guard-craft.md`, which loads on demand — open it when building, hardening or debugging a gate, and equally when writing a spec, mass-deleting, narrowing a rule or running a campaign. Defers the STANDARD itself to 00_02 + 00_06. Examples: \"edit 03_05\", \"is this value consistent across the docs?\", \"add a drift linter\", \"why is my guard green when it shouldn't be\", \"publish the docs to the wiki\", \"where does the Lorenz constant live?\""
 ---
 
 # SSOT Maintenance
@@ -92,7 +92,7 @@ This is the point: the skill stays small, but it lets you turn **any** newly-fou
 
 ## 🛡️ Guard-craft — a gate that actually catches
 
-**Guard-craft is split across two files of this skill, and the split is the point.** `00_06 §3` is the *registry* (which guards exist); a script's own header is the home of *why that guard is shaped the way it is* (it rots together with the code, so it cannot drift); **this section carries the craft's THESIS and design rules, and [`guard-craft.md`](guard-craft.md) carries the 42 blindness shapes in full** — because those load on demand while this file loads on every SSOT session. Instances/demonstrations live in the session memories that found them.
+**Guard-craft is split across two files of this skill, and the split is the point.** `00_06 §3` is the *registry* (which guards exist); a script's own header is the home of *why that guard is shaped the way it is* (it rots together with the code, so it cannot drift); **this section carries the craft's THESIS and design rules, and [`guard-craft.md`](guard-craft.md) carries the blindness shapes in full — the count is deliberately absent, since it grows and `guard_craft_index.rb --check` is what keeps the two files in step** — because those load on demand while this file loads on every SSOT session. Instances/demonstrations live in the session memories that found them.
 
 ### The question that matters
 
@@ -168,6 +168,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 39. When you NARROW a rule, the mirrors to sweep are the statements of its EXCEPTION — and they contain none of the rule's vocabulary, so no grep aimed at the rule finds them — **after tightening a rule, grep for its PERMISSION language — «may», «allowed», «допускається», «виняток», «only in» — and check the test-layer canon separately, since a stale permission there converts into missing coverage rather than into a wrong sentence**
 40. Before a MASS campaign, baseline EVERY gate in the repo and rehearse on a throwaway clone — the expensive findings come from gates you were not thinking about
 41. A checklist, runbook, RFQ, pitch or locale file is CODE WITH NO COMPILER — nothing parses it, so its first execution is its first test, and that happens on deploy day or on a vendor's floor
+42. A mutation that fails to remove the mechanism makes a LIVE case look VACUOUS — and the wrong conclusion, delete the case, is the one that reads as rigour
 
 <!-- /GUARD-CRAFT-INDEX -->
 
