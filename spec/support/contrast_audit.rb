@@ -263,6 +263,15 @@ module ContrastAudit
     expect(page).to have_current_path(path, ignore_query: true),
                     "опинились на #{page.current_path} замість #{path} — ймовірно сторінка помилки, вимір недійсний"
 
+    # 🔴 Пін вище ловить лише РЕДИРЕКТ, і доти цього рядка бракувало: `render_forbidden`
+    # та `render_internal_server_error` рендерять `Errors::Page` **на тому самому
+    # шляху**, тож `have_current_path` проходить зеленим над сторінкою помилки —
+    # рівно над тими трьома випадками, заради яких сусідній пін і писався.
+    # Виміряно, не виведено: probe на `/tree_families/new` (гейтований
+    # `authorize_super_admin!`) віддав нуль пар цільового токена й ЗЕЛЕНИЙ шлях.
+    expect(page.status_code).to eq(200),
+                                "сторінка віддала #{page.status_code} — міряємо `Errors::Page`, а не #{path}"
+
     raw = page.evaluate_script(HARVEST_JS)
 
     expect(raw["reduced_motion"]).to be(true),

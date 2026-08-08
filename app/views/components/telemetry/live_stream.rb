@@ -27,7 +27,12 @@ module Telemetry
           canvas(data: { controller: "matrix-rain" }, class: "absolute inset-0 z-0 opacity-20 pointer-events-none w-full h-full transform-gpu will-change-transform")
 
           # Радіальний градієнт для глибини (decorative — raw classes allowed).
-          div(class: "absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/80 to-black pointer-events-none", aria_hidden: "true")
+          # Градієнт «затемнення до країв» тепер іде за темою: сирий `to-black`
+          # робив цю панель чорною і в СВІТЛІЙ, тобто був тем-інваріантною
+          # підлогою під токенізованим текстом — саме через нього світла половина
+          # `--gaia-text-subtle` була арифметично нездійсненна (`00_07` UI.3).
+          # Намір збережено симетрично: краї глибші за панель в ОБОХ темах.
+          div(class: "absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-gaia-surface-base/80 to-gaia-surface-base pointer-events-none", aria_hidden: "true")
 
           # HUD-таблиця, що "плаває" поверх дощу. Mobile рендериться як
           # стек карток через `gaia-responsive-table` (CSS-only flip).

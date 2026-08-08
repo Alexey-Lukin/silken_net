@@ -45,11 +45,21 @@ namespace :gaia do
       Pathname.new(p).directory? ? Pathname.glob("#{p}/**/*.rb") : [ Pathname.new(p) ]
     end
 
+    # 🔴 Tailwind має ПʼЯТЬ нейтральних родин, і доти regex знав рівно одну
+    # (`gray`) — тобто `bg-zinc-950` проходив навіть у `shared/`, де сира
+    # Tailwind заборонена HARD. Діра не теоретична: саме `bg-zinc-950` під
+    # токенізованим текстом робив світлу половину `--gaia-text-subtle`
+    # арифметично нездійсненною (`00_07` UI.3). Розширення безпечне для чинного
+    # периметра — виміряно перед внесенням: у `app/views/shared/**` нуль хітів
+    # чотирьох дописаних родин, тож ratchet «migrate-to-green ПЕРЕД гейтом»
+    # виконано без міграції.
+    neutrals = "gray|zinc|neutral|slate|stone"
+
     # Patterns that indicate a class slipped past gaia-token migration.
     raw_patterns = [
-      /\b(bg-(?:white|black|gray-\d+))\b/,
-      /\b(text-(?:white|gray-\d+|emerald-(?:400|500|600|700|800|900)))\b/,
-      /\b(border-(?:gray-\d+|emerald-(?:700|800|900)))\b/
+      /\b(bg-(?:white|black|(?:#{neutrals})-\d+))\b/,
+      /\b(text-(?:white|(?:#{neutrals})-\d+|emerald-(?:400|500|600|700|800|900)))\b/,
+      /\b(border-(?:(?:#{neutrals})-\d+|emerald-(?:700|800|900)))\b/
     ]
 
     # Decorative / brand allowlist — these are intentional and not migrated.

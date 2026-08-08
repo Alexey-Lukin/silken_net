@@ -112,7 +112,10 @@
   --gaia-text-strong:  #0f172a;
   --gaia-text:         #1f2937;
   --gaia-text-muted:   #52525b;
-  --gaia-text-subtle:  #9ca3af;
+  /* Проміжне між Tailwind-500 і -600 СВІДОМО: жоден палітровий «500» не тримає
+   * AA на `--gaia-surface-sunken` (найгірша світла поверхня), а «600» уже
+   * дорівнює `--gaia-text-muted`, тобто зламав би ієрархію. Число — у носії. */
+  --gaia-text-subtle:  #5f6875;
 
   --gaia-primary:        #10b981;
   /* Text sitting ON --gaia-primary. Theme-invariant, because the brand emerald
@@ -173,7 +176,13 @@
   --gaia-text-strong:  #e6fff4;
   --gaia-text:         #a7f3d0;
   --gaia-text-muted:   #6ee7b7;
-  --gaia-text-subtle:  rgba(52, 211, 153, 0.55);
+  /* Альфа несе КОНТРАСТ, не лише «приглушеність»: у темній усі поверхні
+   * майже-чорні, тож обмеження односпрямоване й одна цифра тримає AA і на
+   * `gaia-*`, і на сирих панелях (`bg-zinc-950`, `bg-black/40`). Число живе в
+   * носії — `spec/features/contrast_root_tokens_spec.rb`, не в цьому рядку.
+   * ⚠️ СВІТЛА половина цього ж токена лишається провальною свідомо: там смуга
+   * ПОРОЖНЯ, доки в дереві є сирі тем-інваріантні чорні панелі (`00_07` UI.3). */
+  --gaia-text-subtle:  rgba(52, 211, 153, 0.68);
 
   --gaia-primary:        #10b981;
   --gaia-primary-text:   #0f172a;  /* same as :root — the brand emerald does not flip */
@@ -216,7 +225,10 @@
   --gaia-input-bg: #09090b;
   --gaia-input-border: rgba(16, 185, 129, 0.3);
   --gaia-input-text: #d1fae5;
-  --gaia-label: #6b7280;
+  /* Доти цього рядка тут НЕ БУЛО — і саме тому мітка полів у темній читалась
+   * світлим значенням, що протекло з `:root`. Тобто дефект був не в значенні,
+   * а у ВІДСУТНОСТІ перевизначення; `:root` лишається як був. */
+  --gaia-label: #7d8590;
 }
 
 /* ── Typography Base ── */

@@ -50,7 +50,7 @@ module Trees
 
 
     def render_chronicle_frame
-      div(class: "p-8 border border-gaia-border bg-black/40") do
+      div(class: "p-8 border border-gaia-border bg-gaia-surface-sunken") do
         turbo_frame_tag("tree_chronicle", src: chronicle_tree_path(@tree), loading: :lazy) do
           render Views::Shared::UI::Skeleton.new(variant: :table)
         end
@@ -96,7 +96,7 @@ module Trees
     end
 
     def render_biometric_panel
-      div(class: "p-8 border border-gaia-border bg-zinc-950") do
+      div(class: "p-8 border border-gaia-border bg-gaia-surface-sunken") do
         h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted mb-10") { t(".headings.biometrics") }
 
         div(class: "grid grid-cols-1 md:grid-cols-2 gap-12 items-center") do
@@ -119,7 +119,7 @@ module Trees
     end
 
     def render_impedance_history
-      div(class: "p-8 border border-gaia-border bg-black/40") do
+      div(class: "p-8 border border-gaia-border bg-gaia-surface-sunken") do
         h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".headings.impedance_flux") }
 
         # Візуалізація міні-графіка через висоту барів

@@ -268,14 +268,18 @@ end
 | `--color-gaia-surface-elevated` | `bg-gaia-surface-elevated` | `#ffffff` (+`shadow-lg`) | `#11161a` | Modals, popovers, dropdowns |
 | `--color-gaia-surface-sunken` | `bg-gaia-surface-sunken` | `#f3f4f6` | `#070a09` | Table-row alt, code blocks, input bg, table headers |
 
-#### Text (3-level hierarchy)
+#### Text (4-рівнева ієрархія)
 
 | Токен | Tailwind Клас | Light `#` | Dark `#` | Призначення |
 |---|---|---|---|---|
 | `--color-gaia-text-strong` | `text-gaia-text-strong` | `#0f172a` | `#e6fff4` | Headings, primary numbers |
 | `--color-gaia-text` | `text-gaia-text` | `#1f2937` | `#a7f3d0` | Body |
 | `--color-gaia-text-muted` | `text-gaia-text-muted` | `#52525b` | `#6ee7b7` | Labels, metadata |
-| `--color-gaia-text-subtle` | `text-gaia-text-subtle` | `#9ca3af` | `rgba(52,211,153,0.55)` | Placeholders, watermarks, disabled |
+| `--color-gaia-text-subtle` | `text-gaia-text-subtle` | `#5f6875` | `rgba(52,211,153,0.68)` | Найтихіший рівень **живого контенту** — хлібні крихти, заголовки секцій меню, `thead`, підписи одиниць. ⚠️ **НЕ декорація:** доти тут стояло «Placeholders, watermarks, disabled», і цей опис **легалізував дефект** — декорація й `disabled` є нормативними винятками з 1.4.3, тож рядок читався як дозвіл стояти нижче AA. Реальні watermark'и несуть власний `text-emerald-900/5` + `aria-hidden`, а не цей токен |
+
+> 🔬 **Значення обох текстових «тихих» токенів (`text-subtle`, `gaia-label`) — не смак, а вимір.** Світлий `subtle` є проміжним між Tailwind-500 і -600 свідомо: жоден палітровий «500» не тримає AA на `--gaia-surface-sunken`, а «600» дорівнює `--gaia-text-muted` і зламав би ієрархію. У темній роль контрасту несе **альфа**, бо всі темні поверхні майже-чорні й обмеження односпрямоване. Числа живуть у носії `spec/features/contrast_root_tokens_spec.rb`, не в цій таблиці — тут лише значення.
+>
+> 🧱 **Передумова, без якої світла половина недосяжна В ПРИНЦИПІ:** доки під токенізованим текстом лежить **сира тем-інваріантна темна поверхня** (`bg-black`, `bg-zinc-950`, градієнт `to-black`), скаляр мусить бути одночасно темнішим за стелю світлих `gaia`-поверхонь і світлішим за підлогу чорної панелі — смуга порожня, значення **не існує**. Тому міграція таких поверхонь на `gaia-*` не є сусідньою прибиранкою: вона передумова. Це та сама арифметика, що зупинила `gaia-primary` (§1 ⚖️-блок), лише там суперечність несе роль, а тут — поверхня.
 
 #### Primary + borders
 
@@ -1977,7 +1981,7 @@ COMPONENTS=app/views/components/wallets/ bin/rails gaia:lint_tokens
 | `text-gray-900`, `text-white` | `text-gaia-text-strong` | Headings, primary copy |
 | `text-gray-700`, `text-emerald-400` | `text-gaia-text` | Body |
 | `text-gray-{500,600}`, `text-emerald-700` | `text-gaia-text-muted` | Labels, captions |
-| `text-gray-{300,400}`, `text-emerald-{800,900}` | `text-gaia-text-subtle` | Watermarks, placeholders |
+| `text-gray-{300,400}`, `text-emerald-{800,900}` | `text-gaia-text-subtle` | Найтихіший рівень живого контенту (НЕ декорація — §3.1) |
 | `text-emerald-500` | `text-gaia-primary` | Brand accent |
 | `text-emerald-600` | `text-gaia-primary-hover` | Brand hover |
 
