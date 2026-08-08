@@ -6,6 +6,16 @@ CI.run do
 
   step "Style: Ruby", "bin/rubocop"
 
+  # Omakase turns the whole Lint department off (154 cops, 5 enabled), so a green
+  # `bin/rubocop` is silent about dead code — that blindness already shipped an
+  # orphaned payload in a money-path worker. Perimeter is the one measured clean;
+  # `spec/` stays out on purpose (24 low-stakes hits; a gate born red gets removed).
+  step "Lint: dead code", "bin/rubocop --only " \
+    "Lint/UselessAssignment,Lint/UselessMethodDefinition,Lint/UnreachableCode," \
+    "Lint/UnreachableLoop,Lint/DuplicateMethods,Lint/Debugger,Lint/EmptyWhen," \
+    "Lint/DuplicateCaseCondition,Lint/ShadowedArgument,Lint/BinaryOperatorWithIdenticalOperands " \
+    "app lib scripts config"
+
   step "Security: Gem audit", "bin/bundler-audit"
   step "Security: Importmap vulnerability audit", "bin/importmap audit"
   step "Security: Brakeman code analysis", "bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error"
