@@ -30,7 +30,7 @@ class AuthLayout < ApplicationComponent
 
   def view_template
     doctype
-    html(class: "h-full dark", lang: I18n.locale.to_s) do
+    html(class: "h-full", lang: I18n.locale.to_s) do
       head do
         title { "Silken Net // #{@title}" }
         meta(name: "viewport", content: "width=device-width,initial-scale=1")

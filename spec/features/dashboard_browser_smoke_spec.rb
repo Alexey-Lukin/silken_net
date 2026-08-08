@@ -67,39 +67,14 @@ RSpec.describe "Dashboard in a real browser", :js do
     expect(page).to have_no_text('{"error"')
   end
 
-  # [TEST.7] Перший приклад у цьому дереві, що доводить виконання ВЛАСНОГО
-  # Stimulus-контролера, а не лише присутність Stimulus.
-  #
-  # 🔒 Пін навмисно тримається за ІКОНКУ, а не за клас на `<html>`, і це обходить
-  # обидві пастки, виміряні при першій спробі: Capybara скоупить пошук у
-  # `/html/body`, тож `have_css("html.dark")` не матчить НІКОЛИ; а `toggle()` іде
-  # через `document.startViewTransition`, тобто застосування асинхронне й
-  # миттєвий `evaluate_script` читає стан ДО транзиції. `theme#updateIcon`
-  # переписує `iconTarget.innerHTML` — а той у body, отже Capybara вміє його
-  # дочекатись штатно. Пряму перевірку класу лишаємо ДРУГОЮ: після того, як
-  # іконка доїхала, транзиція вже завершена, і гонки немає.
-  it "runs OUR Stimulus controller in the browser, not just boots Stimulus" do
-    sign_in_as(user, password: password)
-
-    moon = "#theme-switcher svg path[d^='M20.354']" # світла тема → пропонує темну
-    sun  = "#theme-switcher svg path[d^='M12 3v1']"  # темна тема → пропонує світлу
-
-    # ⚠️ Пін тримається за ПЕРЕХІД, а не за абсолютний стан: стартова тема
-    # залежить від середовища (збережений `localStorage` і те, що саме рапортує
-    # `prefers-color-scheme` у headless-Chrome), тож зафіксований старт зробив би
-    # приклад крихким до конфігурації браузера, а не до нашого коду.
-    was_dark = page.evaluate_script("document.documentElement.classList.contains('dark')")
-    expect(page).to have_css(was_dark ? sun : moon)
-
-    find("#theme-switcher button").click
-
-    # Якби Stimulus не виконувався, іконка лишилась би серверним місяцем
-    # назавжди — саме цей приклад червонів, поки asset-теги глушив stub.
-    expect(page).to have_css(was_dark ? moon : sun)
-    expect(page.evaluate_script("document.documentElement.classList.contains('dark')")).to be(!was_dark)
-  end
-
   # [TEST.7] Сценарій, який до локального піна був недоказовним У ПРИНЦИПІ.
+  #
+  # ⚠️ Він же несе роль, яку доти виконував окремий приклад на тумблері теми
+  # («доводить виконання ВЛАСНОГО Stimulus-контролера, а не лише присутність
+  # Stimulus»). Тумблер знято разом із клієнтським вибором теми, і предмет того
+  # прикладу зник — але роль лишилась тут, причому в сильнішій формі: там
+  # доводився обробник кліку, тут — увесь ланцюг від серверної розмітки до
+  # намальованого маркера.
   #
   # Пінить увесь ланцюг, а не факт завантаження модуля: сервер рендерить
   # прихований `map_node_*` → Stimulus кличе `nodeTargetConnected` → контролер
@@ -122,30 +97,34 @@ RSpec.describe "Dashboard in a real browser", :js do
 
   # 🔴 [UI.11 крок 3] Половина, недоказовна нижче В ПРИНЦИПІ: Turbo в компонентній
   # спеці не існує, а весь дефект жив саме в тому, що робить Turbo з вузлом при
-  # візиті. `#theme-switcher` ніс `data-turbo-permanent` над локалізованим
-  # `aria-label`, тож перемикач мов мусив ходити повним перезавантаженням —
-  # інакше ім'я тумблера лишалось мовою першого візиту.
+  # візиті — permanent-вузол пересаджується, і локалізований рядок В АТРИБУТІ
+  # застрягає мовою першого візиту, невидимо для зрячого QA.
   #
-  # ⚠️ Чесно про силу піна: ДО зміни він теж був би зелений (повне
-  # перезавантаження давало правильне ім'я), тобто він доводить не сам фікс, а
-  # ІНВАРІАНТ — і червоніє рівно на рецидиві, яким цей клас і повертається:
-  # хтось повертає permanent «щоб не блимало», обхід уже знято, і ім'я мовчки
-  # застрягає. Мутація-перевірено обома плечима.
+  # ⚠️ НОСІЙ ПЕРЕЇХАВ, інваріант — ні. Доти піном був `aria-label` тумблера
+  # теми; тумблер знято разом із клієнтським вибором теми, тож приклад цілиться
+  # в `LocaleSwitcher` — той несе рівно таку саму конструкцію (локалізований
+  # `aria-label` на вузлі, що переживає Turbo-візит) і при цьому САМ виконує
+  # дію, тобто пін став ще ближчим до місця відмови.
+  #
+  # ⚠️ Чесно про силу піна: ДО зміни він теж був би зелений, тобто він доводить
+  # не фікс, а ІНВАРІАНТ — і червоніє рівно на рецидиві, яким цей клас
+  # повертається: хтось ставить permanent «щоб не блимало», і ім'я мовчки
+  # застрягає. Статичну половину тримає `spec/quality/no_turbo_permanent_spec.rb`.
   #
   # ⚠️ `document.documentElement` читаємо скриптом, а не `have_css`: Capybara
   # скоупить пошук у `/html/body` (стеля 1 у `feature_helper`), тож `html[lang]`
   # не зматчиться ніколи. Читання йде ПІСЛЯ `have_css`, коли візит уже доїхав.
-  it "carries the theme toggle's accessible name into the NEW locale after a Turbo language switch" do
+  it "carries a localized aria-label into the NEW locale after a Turbo language switch" do
     sign_in_as(user, password: password)
 
-    en_label = I18n.t("theme.toggle_label", locale: :en)
-    uk_label = I18n.t("theme.toggle_label", locale: :uk)
+    en_label = I18n.t("locale.switcher_label", locale: :en)
+    uk_label = I18n.t("locale.switcher_label", locale: :uk)
 
-    expect(page).to have_css("#theme-switcher button[aria-label='#{en_label}']")
+    expect(page).to have_css("select[aria-label='#{en_label}']")
 
     select "UA · Українська", from: "locale"
 
-    expect(page).to have_css("#theme-switcher button[aria-label='#{uk_label}']")
+    expect(page).to have_css("select[aria-label='#{uk_label}']")
     expect(page.evaluate_script("document.documentElement.lang")).to eq("uk")
   end
 
@@ -171,7 +150,7 @@ RSpec.describe "Dashboard in a real browser", :js do
 
     # Спершу чекаємо, що візит доїхав (мова змінилась), і лише потім міряємо мапу —
     # інакше прочитаємо стан ДО навігації й приклад стане тавтологією.
-    expect(page).to have_css("#theme-switcher button[aria-label='#{I18n.t('theme.toggle_label', locale: :uk)}']")
+    expect(page).to have_css("select[aria-label='#{I18n.t('locale.switcher_label', locale: :uk)}']")
     expect(page).to have_css(".leaflet-pane", visible: :all)
     expect(page).to have_css(".custom-tree-marker", visible: :all)
   end

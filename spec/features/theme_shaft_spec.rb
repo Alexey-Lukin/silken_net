@@ -3,65 +3,58 @@
 
 require "rails_helper"
 
-# 🔴 [UI.1] Тема мусить перемикатися ОДНІЄЮ шафою — класом `.dark` на `<html>`.
+# 🔴 [UI.1] Тема має РІВНО одну шафу, і нею є середовище — `prefers-color-scheme`.
 #
-# Доти їх було дві, незалежні. Семантичні токени (`--gaia-*` у блоці `.dark`)
-# слухали ТУМБЛЕР, а сирі `dark:`-утиліти Tailwind — ОПЕРАЦІЙНУ СИСТЕМУ, бо у
-# Tailwind v4 варіант `dark:` за замовчуванням компілюється в
-# `@media (prefers-color-scheme: dark)`, і класовим його робить рядок
-# `@custom-variant dark (…)`, якого в `app/assets/tailwind/application.css` не
-# було взагалі. Розходились вони рівно тоді, коли людина тумблером
-# скористалась — тобто дефект був невидимий для всіх, хто лишався на дефолті.
+# Доти шаф було дві, і вони розходились: семантичні токени слухали клас `.dark`
+# (його ставив клієнтський скрипт із `localStorage`), а сирі `dark:`-утиліти
+# Tailwind — операційну систему. Тумблер знято, клас знято, скрипт знято: обидві
+# половини тепер компілюються в ОДИН медіа-запит, оголошений у
+# `app/assets/tailwind/application.css` (`@custom-variant` + блок токенів).
 #
-# Периметр — `dark:shadow-none` (8 сайтів: `shared/ui/{stat_card,photo_card,
-# data_table}`, `components/{tree_families,maintenance,firmwares}/form`,
-# `components/codex/node_card`, `components/actuators/card`) плюс
-# `dark:bg-[url(…)]` (текстура в `layouts/dashboard_layout`).
+# ⚠️ ФОРМА ПІНА ЗМІНИЛАСЬ РАЗОМ ІЗ МЕХАНІЗМОМ, і це не послаблення.
+# Доти інваріант доводився РОЗВЕДЕННЯМ: тумблер в один бік, ОС у другий, і
+# розбіжність було видно. Клієнтського важеля більше не існує, тож розводити
+# нічим — доводити треба ЗБІГ: при кожній емульованій перевазі ОС токен і
+# `dark:`-утиліта мусять опинитись в ОДНОМУ стані. Мутації, на яких це червоніє:
+#   · повернути `@custom-variant dark (&:where(.dark, .dark *))` → утиліта
+#     перестає діяти взагалі (класу в дереві немає) → падає приклад «темна»;
+#   · повернути токени під селектор `.dark` → токен застрягає на світлому
+#     значенні в обох прикладах;
+#   · зняти `screen and` з однієї з двох половин → розходження видно лише на
+#     друці, тож його стереже окремий приклад нижче.
 #
-# ⚠️ Тут доти стояло, що найдорожчий наслідок — `dark:prose-invert`, який
-# «давав світлий текст на білому». **Заява спростована виміром:**
-# `@tailwindcss/typography` не встановлений, тож `.prose` у зібраному CSS має
-# НУЛЬ входжень — чотири prose-сайти Codex не генерують нічого й у розходження
-# не входили ніколи. Тобто периметр був завищений на них, а справжній дефект
-# поруч зовсім інший (посилання в лор-Markdown немаркуються — `00_07` UI.3).
-#
-# ⚠️ Чому це неможливо довести нижче — і чому саме тут.
-#   · Статичний скан бачить лише РЯДОК у CSS, а не те, під яку шафу Tailwind його
-#     скомпілював; сам компільований `app/assets/builds/` у `.gitignore`, тож гейт
-#     по ньому був би зелений на порожній множині (та сама пастка, що названа в
-#     шапці `spec/quality/design_token_existence_spec.rb`).
-#   · Компонентна спека рендерить розмітку без CSS узагалі — вона бачить рядок
-#     `dark:shadow-none` у класі й нічого не знає про його чинність.
-#   Отже інструмент один: справжній браузер, який САМ вирішує, чи правило діє.
-#
-# 🔒 Форма піна — розвести ОС і тумблер у ПРОТИЛЕЖНІ боки, обидві комбінації.
-# Це не подвійна робота: до фіксу приклади падали в РІЗНІ боки (при світлій ОС
-# `dark:`-утиліта не діяла ніколи, при темній — діяла завжди), тобто одна
-# половина сліпа до половини дефекту. Асиметрія тут і є суттю.
-#
-# ⚠️ ОС емулюється через CDP (`Emulation.setEmulatedMedia`), а не приймається
-# такою, якою її рапортує headless-Chrome: інакше результат визначала б
-# конфігурація машини, і зелений колір нічого не доводив би.
-RSpec.describe "Theme: одна шафа (клас), не дві (клас + ОС)", :js do
+# ⚠️ Чому це неможливо довести статично — і чому саме браузером.
+#   · Скан бачить РЯДОК у CSS, а не те, під яку шафу Tailwind його скомпілював;
+#     зібраний `app/assets/builds/` у `.gitignore`, тож гейт по ньому був би
+#     зелений на порожній множині.
+#   · Компонентна спека рендерить розмітку без CSS узагалі.
+RSpec.describe "Theme: одна шафа, і нею є середовище", :js do
   let(:organization) { create(:organization) }
   let(:password)     { "theme-shaft-pass-1" }
   let!(:user) { create(:user, :admin, organization: organization, password: password) }
 
-  # `StatCard` — носій `shadow-sm dark:shadow-none`, і він стоїть на дашборді
-  # чотири рази. Пінимось за `role="group"` (стабільний контракт компонента), а
-  # не за клас: клас — це те, що ми й перевіряємо на чинність.
+  # `StatCard` — носій `shadow-sm dark:shadow-none`, стоїть на дашборді чотири
+  # рази. Пінимось за `role="group"` (стабільний контракт компонента), а не за
+  # клас: клас — це те, що ми й перевіряємо на чинність.
   let(:card) { 'div[role="group"]' }
 
-  # Значення `--tw-shadow`, яке ставить `shadow-none`. Чому оракул саме таке —
+  # Значення `--tw-shadow`, яке ставить `shadow-none`. Чому оракул саме такий —
   # у `card_shadow_token` нижче.
   let(:shadow_off) { "0 0 #0000" }
+
+  # Токенна половина. Читаємо ОБЧИСЛЕНИЙ фон `<body>`, а не сире значення
+  # змінної: `getPropertyValue('--gaia-surface-base')` віддає текст оголошення
+  # (`#050607`) і тому зелений навіть тоді, коли токен нікуди не доїхав. Ті самі
+  # оракули використовує `spec/support/contrast_audit.rb`.
+  let(:surface_dark)  { "rgb(5, 6, 7)" }
+  let(:surface_light) { "rgb(250, 250, 250)" }
 
   before { sign_in_as(user, password: password) }
 
   # ── інструменти виміру ──
 
-  # Емуляція ОС-переваги. Ставиться ДО візиту, бо FOUC-скрипт у `<head>` читає
-  # `prefers-color-scheme` на завантаженні.
+  # Емуляція переваги ОС. Ставиться ДО візиту: тема тепер застосовується чистим
+  # CSS, тобто вже на першому пейнті, без жодного кроку JS.
   def emulate_os(scheme)
     page.driver.browser.page.command(
       "Emulation.setEmulatedMedia",
@@ -69,65 +62,97 @@ RSpec.describe "Theme: одна шафа (клас), не дві (клас + О�
     )
   end
 
-  # Явна перевага застосунку. З нею FOUC-скрипт ігнорує ОС (`localStorage ||
-  # matchMedia`), тож ОС і тумблер справді розходяться.
-  def force_app_theme(theme)
-    page.execute_script("localStorage.setItem('theme', #{theme.to_json})")
-  end
-
-  def dark_class_present?
-    page.evaluate_script("document.documentElement.classList.contains('dark')")
-  end
-
-  # 🔴 Прилад мусить свідчити про СЕБЕ. Без цього приклад «при темній ОС» міряє
-  # наслідок, не довівши передумови: якщо CDP-емуляція мовчки не спрацювала, він
-  # зелений на порожній множині — тобто атестує рівно те, що мав ловити.
+  # 🔴 Прилад мусить свідчити про СЕБЕ, і після зняття тумблера це стало
+  # несучим, а не бажаним: CDP лишився ЄДИНИМ важелем, тож при його тихій
+  # відмові кожен приклад нижче зелений на порожній множині — тобто атестує
+  # рівно той клас, який мав ловити.
   def os_reports_dark?
     page.evaluate_script("window.matchMedia('(prefers-color-scheme: dark)').matches")
   end
 
-  # 🔴 Оракул читає `--tw-shadow`, а НЕ `boxShadow` — і це не педантизм, а
-  # виправлення підміни виміру, яка коштувала цьому файлу першої редакції.
-  # У Tailwind v4 `shadow-none` не дає `box-shadow: none`: він ставить
-  # `--tw-shadow: 0 0 #0000`, а `box-shadow` лишається композитом
-  # `var(--tw-inset-shadow), … , var(--tw-shadow)`, тобто обчислений рядок ЗАВЖДИ
-  # є довгим переліком `rgba(0,0,0,0) …` і НІКОЛИ не дорівнює `"none"`.
-  # Наслідок: пін `eq("none")` не здатен пройти, а `not_to eq("none")` — упасти.
-  # Одна половина була б вічно червона, друга — вічно зелена на порожній множині.
+  # 🔴 Оракул читає `--tw-shadow`, а НЕ `boxShadow`. У Tailwind v4 `shadow-none`
+  # не дає `box-shadow: none`: він ставить `--tw-shadow: 0 0 #0000`, а
+  # `box-shadow` лишається композитом `var(--tw-inset-shadow), … , var(--tw-shadow)`,
+  # тобто обчислений рядок ЗАВЖДИ є переліком `rgba(0,0,0,0) …` і НІКОЛИ не
+  # дорівнює `"none"`. Пін `eq("none")` не здатен пройти, а `not_to eq("none")` —
+  # упасти: одна половина вічно червона, друга вічно зелена на порожній множині.
   def card_shadow_token
     page.evaluate_script(
       "getComputedStyle(document.querySelector(#{card.to_json})).getPropertyValue('--tw-shadow').trim()"
     )
   end
 
-  # ── самий інваріант ──
-
-  it "вмикає `dark:`-утиліту при ТЕМНІЙ темі, навіть коли ОС світла" do
-    force_app_theme("dark")
-    emulate_os("light")
-    visit "/dashboard"
-
-    expect(page).to have_css(card, minimum: 1)
-    expect(os_reports_dark?).to be(false), "емуляція ОС не спрацювала — вимір недійсний"
-    expect(dark_class_present?).to be(true), "тумблер не поставив `.dark` — далі міряти нічого"
-
-    # До фіксу: `@media (prefers-color-scheme: dark)` не матчиться, тож
-    # `dark:shadow-none` не діє і тінь `shadow-sm` лишається.
-    expect(card_shadow_token).to eq(shadow_off)
+  def surface_base_token
+    page.evaluate_script("getComputedStyle(document.body).backgroundColor")
   end
 
-  it "НЕ вмикає `dark:`-утиліту при СВІТЛІЙ темі, навіть коли ОС темна" do
-    force_app_theme("light")
+  def dark_class_present?
+    page.evaluate_script("document.documentElement.classList.contains('dark')")
+  end
+
+  # ── сам інваріант ──
+
+  it "при ТЕМНІЙ перевазі ОС темніють ОБИДВІ половини — і токен, і `dark:`-утиліта" do
     emulate_os("dark")
     visit "/dashboard"
 
     expect(page).to have_css(card, minimum: 1)
     expect(os_reports_dark?).to be(true), "емуляція ОС не спрацювала — вимір недійсний"
-    expect(dark_class_present?).to be(false), "світла тема не встановилась — далі міряти нічого"
 
-    # До фіксу: media матчиться попри світлу тему, тож `dark:shadow-none`
-    # перемагає й тінь зникає у СВІТЛІЙ темі — саме там, де вона й потрібна,
-    # бо картка на світлій поверхні відділяється від тла тінню, а не рамкою.
+    expect(surface_base_token).to eq(surface_dark)
+    expect(card_shadow_token).to eq(shadow_off)
+  end
+
+  it "при СВІТЛІЙ перевазі ОС світлішають ОБИДВІ половини" do
+    emulate_os("light")
+    visit "/dashboard"
+
+    expect(page).to have_css(card, minimum: 1)
+    expect(os_reports_dark?).to be(false), "емуляція ОС не спрацювала — вимір недійсний"
+
+    expect(surface_base_token).to eq(surface_light)
     expect(card_shadow_token).not_to eq(shadow_off)
+  end
+
+  # 🔒 Посередника між середовищем і токеном більше немає. Пін на ВІДСУТНІСТЬ
+  # класу тримає саме це: щойно хтось поверне клієнтський перемикач теми (а з
+  # ним `localStorage` і недетермінований рендер), приклад почервоніє поіменно.
+  it "не ставить на <html> жодного класу теми — посередника не існує" do
+    emulate_os("dark")
+    visit "/dashboard"
+
+    expect(page).to have_css(card, minimum: 1)
+    expect(dark_class_present?).to be(false)
+  end
+
+  # 🔴 `screen and` мусить стояти в ОБОХ половинах шафи — у `@custom-variant`
+  # (утиліти) і в блоці токенів. Дефолт Tailwind — медіа-запит БЕЗ `screen`, тож
+  # варіант, з якого його знято, дав би темні `dark:`-утиліти на світлому
+  # друкованому аркуші: та сама «дві шафи», лише в print-контексті, і тому
+  # невидима для обох прикладів вище.
+  #
+  # ⚠️ ЧОМУ ПІН СТАТИЧНИЙ, А НЕ БРАУЗЕРНИЙ — виміряно, не вигадано.
+  # `Emulation.setEmulatedMedia` з `media: "print"` оновлює `matchMedia`
+  # (`print` → true, `screen` → false, і сам складений запит → false), але
+  # обчислені стилі вже відрендереної сторінки Chrome НЕ перераховує: фон
+  # `<body>` лишається темним при media-запиті, який більше не матчиться. Тобто
+  # браузерний приклад тут міряв би не наш CSS, а момент рестайлу в рушії, і
+  # був би червоним на правильному коді.
+  #
+  # Пін судить ДЖЕРЕЛО, а не `app/assets/builds/` — той у `.gitignore`, тож
+  # гейт по ньому був би зелений на порожній множині в CI.
+  it "тримає `screen and` у КОЖНОМУ media-запиті теми — інакше друк розколює шафу" do
+    css = Rails.root.join("app/assets/tailwind/application.css").read
+    queries = css.scan(/@media[^{]*prefers-color-scheme[^{]*|@custom-variant\s+dark[^;]*;/)
+
+    expect(queries).not_to be_empty, "у джерелі не знайдено жодного media-запиту теми — пін безпредметний"
+
+    unguarded = queries.reject { |q| q.include?("screen and") }
+
+    expect(unguarded).to be_empty, <<~MSG
+      Медіа-запит теми без `screen and` — на друці ця половина розійдеться з іншою:
+
+      #{unguarded.map(&:strip).join("\n")}
+    MSG
   end
 end

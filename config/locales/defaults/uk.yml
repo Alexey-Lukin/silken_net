@@ -8,5 +8,3 @@ uk:
   locale:
     apply: Застосувати
     switcher_label: Мова
-  theme:
-    toggle_label: Перемкнути світлу / темну тему

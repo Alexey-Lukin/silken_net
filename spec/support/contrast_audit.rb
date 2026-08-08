@@ -194,7 +194,7 @@ module ContrastAudit
       return {
         pairs: Array.from(pairs.values()),
         buckets: buckets,
-        dark_class: document.documentElement.classList.contains('dark'),
+        os_dark: window.matchMedia('(prefers-color-scheme: dark)').matches,
         reduced_motion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
         // Ліхтар на ІДЕНТИЧНІСТЬ, не на кількість — див. пояснення в Ruby нижче.
         body_bg: norm(getComputedStyle(document.body).backgroundColor),
@@ -208,13 +208,6 @@ module ContrastAudit
   # з `@theme`. Служить доказом, що стилі ДІЮТЬ, а не лише що вузли є.
   EXPECTED_BODY_BG = { dark: "rgb(5, 6, 7)", light: "rgb(250, 250, 250)" }.freeze
 
-  # Ставить тему ДО візиту: FOUC-скрипт у `<head>` читає `localStorage` на
-  # завантаженні (`dashboard_layout`), тож порядок несучий — той самий, що в
-  # `theme_shaft_spec`.
-  def force_theme(theme)
-    page.execute_script("localStorage.setItem('theme', #{theme.to_s.to_json})")
-  end
-
   # 🔴 Один важіль знімає ТРИ джерела недетермінізму, і всі три — рідні
   # механізми застосунку, а не наш хак поверх нього:
   #   · `reveal_controller` при reduce розкриває вузли одразу в `connect()`,
@@ -225,18 +218,17 @@ module ContrastAudit
   #     обчислену прозорість функцією МОМЕНТУ зчитування;
   #   · `matrix_rain` стає no-op.
   # Кольорів цей режим не міняє — перевірено в `application.css`.
-  # 🔴 ОС емулюється в ПРОТИЛЕЖНУ тему навмисно. Якби вона збігалася з бажаною,
-  # два важелі штовхали б в один бік — і пін на `.dark` пережив би видалення
-  # `force_theme` цілком (FOUC-скрипт узяв би ОС і дав ту саму відповідь).
-  # Розводячи їх, ми робимо пін здатним упасти: правильна тема тепер може
-  # прийти ЛИШЕ від `localStorage`. Та сама асиметрія, що в `theme_shaft_spec`.
+  #
+  # ⚠️ Доти тут стояв ДРУГИЙ важіль (`localStorage`), а ОС емулювалась у
+  # ПРОТИЛЕЖНУ тему навмисно — щоб пін на клас міг упасти. Обидві половини тієї
+  # конструкції зникли разом із тумблером: клієнтського стану теми не існує, а
+  # клас `.dark` більше не бере участі в ланцюгу. Тепер емулюється РІВНО та
+  # тема, яку просять, і вона ж є єдиним джерелом.
   def emulate_media(theme)
-    opposite = theme.to_sym == :dark ? "light" : "dark"
-
     page.driver.browser.page.command(
       "Emulation.setEmulatedMedia",
       features: [
-        { name: "prefers-color-scheme", value: opposite },
+        { name: "prefers-color-scheme", value: theme.to_s },
         { name: "prefers-reduced-motion", value: "reduce" }
       ]
     )
@@ -250,7 +242,6 @@ module ContrastAudit
   # який мав ловити (`ssot-maintenance` §Mutation-verify).
   def harvest_contrast(path, theme:)
     emulate_media(theme)
-    force_theme(theme)
     visit(path)
     expect(page).to have_css("body", wait: 5)
 
@@ -276,8 +267,10 @@ module ContrastAudit
 
     expect(raw["reduced_motion"]).to be(true),
                                      "CDP-емуляція не спрацювала — рух не заморожено, вимір недетермінований"
-    expect(raw["dark_class"]).to be(theme.to_sym == :dark),
-                                 "тема не застосувалась (`.dark`=#{raw['dark_class']}, просили #{theme}) — вимір недійсний"
+    expect(raw["os_dark"]).to be(theme.to_sym == :dark),
+                              "CDP не переставив `prefers-color-scheme` (маємо dark=#{raw['os_dark']}, просили #{theme}) — " \
+                              "вимір недійсний. Після зняття тумблера це ЄДИНИЙ важіль теми, тож без цього піна " \
+                              "весь звіт зелений на порожній множині"
 
     # 🔴 Ліхтар мусить пінити ІДЕНТИЧНІСТЬ, а не кількість вузлів, і причина
     # конкретна: `spec/support/layout_asset_stubs.rb` глушить asset-теги на

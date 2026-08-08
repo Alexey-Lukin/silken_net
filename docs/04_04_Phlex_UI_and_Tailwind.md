@@ -59,7 +59,7 @@ SilkenNet використовує підхід **Ruby-first, utility-CSS**: в�
 ⚖️ **Присуд founder-а 2026-08-07: dark — типова тема, але світла ПІДТРИМУВАНА, не факультативна.** Тумблер, що дає чорне на чорному, — зламана обіцянка в UI, і платформа, чия місія — свідчити правдиво, не має права возити такий тумблер. Тобто:
 
 - **Кожен екран, до якого тема дотягується, мусить працювати в обох.** Сира палітрова утиліта на поверхні чи тексті — дефект теми, а не естетичний вибір (§3.5).
-- **Екран має право бути свідомо однотемним, лише якщо він це ОГОЛОШУЄ** — хардкодом теми, як `Views::Layouts::AuthLayout` (`html(class: "h-full dark")`). Тихо ламатись — не «однотемність», а поломка.
+- **Екран має право бути свідомо однотемним, лише якщо він це ОГОЛОШУЄ.** Тихо ламатись — не «однотемність», а поломка. ⚠️ **Прикладом тут доти стояв `AuthLayout` (`html(class: "h-full dark")`) — його знято присудом 08-08 разом із тумблером,** бо після переходу на `prefers-color-scheme` цей хардкод лишався ЄДИНИМ місцем, що опиралось середовищу: людина зі світлою ОС діставала темний екран входу й світлу решту. Тобто оголошена однотемність лишається легальною формою, але **живих екземплярів у дереві зараз нуль**, і новий заводиться присудом, а не успадкуванням.
 - Доти тут стояло «Світлий режим — вторинний, **висококонтрастний** варіант». Друге слово **спростовано виміром** (2026-08-07): на гібридних панелях світла тема давала 1.11–1.13:1, тобто текст фізично невидимий. Стан міграції → [`00_07`](00_07_Action_Plan_Tracker) UI.1.
 
 ⚖️ **Присуд founder-а 2026-08-08 — ТУМБЛЕР ЗНЯТО, дві палітри лишаються під керуванням СЕРЕДОВИЩА (`prefers-color-scheme`).** Це не реверс присуду вище, а його уточнення: «світла підтримувана» лишається чинним, змінюється рівно те, **ХТО** її вмикає. Ухвалено після восьмивекторного дослідження (ціна · глядачі · доступність · рамка питання · масштаб · енергія · adversarial · форма).
@@ -72,9 +72,13 @@ SilkenNet використовує підхід **Ruby-first, utility-CSS**: в�
 - 🔴 **Що НЕ змінюється, і це половина присуду: токен-шар лишається ОБОВ'ЯЗКОВИМ.** «Тем менше» ≠ «токени зайві»: `status-*` мапують стани на **ролі**, `#10b981` уже стоїть літералом у ~24 місцях (ребренд без токенів = обхід 55+ файлів), вимірювач контрасту адресує **пари токенів**, `gaia-primary`/`gaia-primary-text` — контракт 7.04:1, а 4-tier глибина — граматика. **Легалізація сирої палітри є єдиною справді незворотною дією в цій темі** — усе інше git повертає за годину.
 - ⚠️ **Режим власної відмови — «невидима друга палітра»:** тему, на яку ніхто не дивиться щодня, ніхто й не помічає, коли вона гниє. Сторож проти цього — не дисципліна, а прилад: браузерний контраст-пін ходить **обома** темами (`spec/features/contrast_root_tokens_spec.rb`), і його вартість — єдина причина, чому дуальність лишається дешевою.
 
-**Тема перемикається РІВНО однією шафою — класом `.dark` на `<html>`**, який ставить FOUC-скрипт у `dashboard_layout`. Світла = відсутність класу. Механіка того, чому шафа саме одна, — §3.
+**Тема перемикається РІВНО однією шафою — медіа-запитом `prefers-color-scheme`**, і застосовує її чистий CSS. Класу теми на `<html>` немає, клієнтського стану немає, кроку JS у цьому ланцюгу немає взагалі. Механіка того, чому шафа саме одна, — §3.
 
-⚠️ **Присуд ухвалено, демонтаж НЕ відвантажено — читай стан, не рішення.** Станом на 2026-08-08 скрипт і далі питає `localStorage` ПЕРШИМ (`prefers-color-scheme` лише фолбек), а `theme_switcher` + `theme_controller#toggle` живі. Цільова форма — ОС як єдине джерело; робота відкрита ([`00_07`](00_07_Action_Plan_Tracker) UI.1). Секції, що описують тумблер як постійну архітектуру (§6.1, §7.1, §10, §14.2, §15.2), описують **чинний** код і мають термін придатності — не пиши проти них новий код, не звіривши з цим абзацом.
+✅ **Демонтаж ВІДВАНТАЖЕНО — присуд і код тепер збігаються.** Знято: `ThemeSwitcher`, `theme_controller.js`, FOUC-скрипт у `<head>`, ключ `theme.toggle_label` ×4 локалі, CSS-блок `::view-transition` (його єдиним тригером був `startViewTransition` у тому ж контролері) і хардкод теми в `AuthLayout`. Токени переїхали з селектора `.dark` у `@media screen and (prefers-color-scheme: dark)`, а `@custom-variant dark` перевизначено на ТОЙ САМИЙ запит — тобто обидві половини шафи (семантичні токени й сирі `dark:`-утиліти) тепер гейтуються одним рядком.
+
+- 🔴 **`screen and` в обох половинах — несуче, не косметика.** Дефолт Tailwind v4 — медіа-запит БЕЗ `screen`, тож варіант без нього дав би темні `dark:`-утиліти на світлому друкованому аркуші: та сама «дві шафи», лише в print-контексті, і невидима для будь-якого екранного піна. Носій — `spec/features/theme_shaft_spec.rb`, приклад про `screen and`; він судить ДЖЕРЕЛО, бо `app/assets/builds/` у `.gitignore` (гейт по ньому був би зелений на порожній множині).
+- 🔴 **Браузером цю половину довести НЕ можна, і це виміряно:** `Emulation.setEmulatedMedia` з `media: "print"` оновлює `matchMedia` (складений запит чесно стає `false`), але обчислені стилі вже відрендереної сторінки Chrome не перераховує — фон лишається темним при запиті, який більше не матчиться. Браузерний приклад тут міряв би момент рестайлу в рушії, а не наш CSS, і був би червоним на правильному коді.
+- ⚠️ **Зникнення FOUC-скрипта закрило суміжну міну:** він рендерився інлайном **без nonce**, тоді як `content_security_policy.rb` оголошує `script_src :self` і nonce-генератор. Під `CSP_ENFORCE=true` (плановий операторський тумблер — [`06_04 §1`](06_04_Secrets_Checklist)) скрипт було б заблоковано, клас не поставився б, і **весь флот отримав би світлу тему**, яку §3 описує як ще не мігровану. Тепер тема не залежить від виконання JS у принципі.
 
 ### Ієрархія Компонентів
 
@@ -259,7 +263,8 @@ end
 
 - **`@theme` блок** в `application.css` реєструє усі семантичні токени (`--color-*`, `--font-size-*`, `--font-family-*`) — Tailwind v4 генерує utility-класи напряму: `bg-gaia-surface`, `text-status-danger-text`, `font-mono` тощо.
 - **CSS custom properties** у `:root` / `.dark` задають фактичні значення токенів для light/dark режимів.
-- **`@custom-variant dark (&:where(.dark, .dark *))`** — рядок, що робить варіант `dark:` **класовим**. Без нього Tailwind v4 компілює `dark:` у `@media (prefers-color-scheme: dark)`, і тоді сирі `dark:`-утиліти слухають **операційну систему**, поки токени вище слухають **тумблер** — дві незалежні шафи, що розходяться рівно тоді, коли людина тумблером скористалась. `:where()` має нульову специфічність, тож каскад не змінюється. Інваріант міряється браузером: `spec/features/theme_shaft_spec.rb` (два приклади розводять ОС і тумблер у протилежні боки; статичний скан цього довести не може, а зібраний CSS у `.gitignore`).
+- **`@custom-variant dark (@media screen and (prefers-color-scheme: dark))`** — рядок, що прив'язує варіант `dark:` до ТОГО САМОГО медіа-запиту, під яким стоять семантичні токени. Дефолт Tailwind v4 (`@media (prefers-color-scheme: dark)`, без `screen`) відрізняється рівно на друк: без `screen and` утиліти лишились би темними на аркуші, поки токени світлішають — «дві шафи», що живуть лише в print-контексті. ⚠️ Доти тут стояла **класова** форма (`&:where(.dark, .dark *)`), потрібна, поки тему обирав тумблер; після присуду 08-08 клас із ланцюга зник, і класова форма зробила б `dark:`-утиліти мертвими (жоден вузол більше не несе `.dark`).
+  - **Носій — `spec/features/theme_shaft_spec.rb`**, і він дво­шаровий за потребою: два браузерні приклади доводять, що при кожній емульованій перевазі ОС токен і `dark:`-утиліта опиняються в ОДНОМУ стані (доводиться ЗБІГ, бо клієнтського важеля для розведення більше не існує), а третій — статичний — стереже `screen and` у кожному media-запиті теми. Статичний саме тому, що браузером ця половина недоказовна: `Emulation.setEmulatedMedia` з `media: "print"` оновлює `matchMedia`, але не перераховує стилі вже відрендереної сторінки (виміряно), тож поведінковий приклад червонів би на правильному коді.
 
 > `config/tailwind.config.js` видалено — він порушував SSOT, дублюючи кожен токен на рівні JS.
 
@@ -530,7 +535,6 @@ render Views::Shared::UI::StatusBadge.new(status: "confirmed", class: "mt-2")
 | **PhotoCard** | `photo_card.rb` | `photo:`, `record:`, `editable:` | Картка ActiveStorage blob з hover-оверлеєм |
 | **RelativeTime** | `relative_time.rb` | `datetime:`, `css_class:`, `prefix:` | "5 хвилин тому" з повною міткою часу у `title`-підказці |
 | **Skeleton** | `skeleton.rb` | `variant:`, `lines:`, `class:` | Скелетон завантаження (6 варіантів: `:balance`, `:card`, `:stats`, `:table`, `:map`, `:text`) |
-| **ThemeSwitcher** | `theme_switcher.rb` | — | Кнопка перемикання темної/світлої теми (використовує Stimulus `theme` контролер) |
 | **LocaleSwitcher** | `locale_switcher.rb` | `current_locale: nil` | Вибір мови в top-bar: нативний `<select>` + auto-submit (`onchange="this.form.requestSubmit()"`), із видимою submit-кнопкою як progressive-enhancement для no-JS. Перелік мов має ОДИН дім — `config.i18n.available_locales`; `SHORT_CODE_OVERRIDES` тримає рівно ті коди, де мова розходиться з очікуваною країною (`uk`→«UA») [I18N.3]. Форма несе `data-turbo-action="advance"` — без нього same-path редирект став би morph-рефрешем і зніс би полотно Leaflet [UI.11] |
 | **MobileNavToggle** | `mobile_nav_toggle.rb` | `target_id: "mobile-nav-drawer"` | Мобільний гамбургер, що відкриває off-canvas-шухляду. Сама шухляда — нативний `<dialog>` у `DashboardLayout`, тож focus-trap, Escape і `::backdrop` дає браузер; Stimulus `mobile-nav` лишається тонким шимом на `showModal()` |
 
@@ -810,7 +814,6 @@ START: Що це за компонент?
 
 | Контролер | Файл | `data-controller` | Призначення |
 |---|---|---|---|
-| **theme** | `theme_controller.js` | `theme` | Перемикач темного/світлого режиму |
 | **clipboard** | `clipboard_controller.js` | `clipboard` | Копіювання в буфер обміну для Web3-адрес |
 | **map** | `map_controller.js` | `map` | Геопросторова карта дерев Leaflet.js |
 | **matrix-rain** | `matrix_rain_controller.js` | `matrix-rain` | Canvas-ефект Matrix digital rain |
@@ -820,33 +823,7 @@ START: Що це за компонент?
 
 > **⚠️ Важливо:** Будь-який `*_controller.js` у директорії автоматично реєструється через `eagerLoadControllersFrom` — **не залишайте scaffold-файли в production** (пор. `reveal` вище: авто-зареєстрований, але без жодного консюмера).
 
-### 7.1 Контролер `theme`
-
-**Targets:** `icon`
-**Actions:** `toggle`
-
-Керує темою dark/light:
-
-1. Читає `localStorage.getItem("theme")` при `connect()`
-2. Fallback на `window.matchMedia("(prefers-color-scheme: dark)")`
-3. Перемикає клас `.dark` на `document.documentElement`
-4. Слухає зміни на рівні ОС через `mediaQuery.addEventListener("change", ...)`
-5. Оновлює target `icon` SVG-іконкою (☀ в dark-режимі, ☽ у light-режимі)
-
-```html
-<div data-controller="theme">
-  <button data-action="click->theme#toggle"
-          data-theme-target="icon">
-    <!-- SVG інжектується контролером -->
-  </button>
-</div>
-```
-
-**`disconnect()`:** Видаляє `mediaQuery.removeEventListener("change", ...)` — запобігає memory leak при Turbo Drive навігації між сторінками.
-
-**Phlex-використання:** Обгорнутий у `Views::Shared::UI::ThemeSwitcher`.
-
-### 7.2 Контролер `clipboard`
+### 7.1 Контролер `clipboard`
 
 **Values:** `content` (String — текст для копіювання)
 **Targets:** `button`
@@ -865,7 +842,7 @@ START: Що це за компонент?
 
 **Phlex-використання:** Вбудований у `Views::Shared::Web3::Address`.
 
-### 7.3 Контролер `map`
+### 7.2 Контролер `map`
 
 **Targets:** `node`
 
@@ -888,7 +865,7 @@ START: Що це за компонент?
 
 **Phlex-використання:** `data: { controller: "map" }` на map `<div>` у `Dashboard::Map`. Приховані `<div data-map-target="node">` елементи стрімляться через Turbo з `Dashboard::MapNode`.
 
-### 7.4 Контролер `matrix-rain`
+### 7.3 Контролер `matrix-rain`
 
 Canvas-ефект Matrix digital rain з hex-символами (`0-9A-F`). Canvas-елемент отримує `transform-gpu will-change-transform` для GPU-compositing (апаратне прискорення).
 
@@ -1164,7 +1141,6 @@ Lookbook надає живий попередній перегляд усіх к
 | `DataTablePreview` | With sample rows, Empty state |
 | `PaginationPreview` | First page, Middle page, Last page |
 | `RelativeTimePreview` | Recent, With prefix, Nil datetime |
-| `ThemeSwitcherPreview` | Default toggle button |
 | `SkeletonPreview` | Default (balance), Text, Card, Stats, Table, Map, Custom lines, Interactive |
 | `WalletTransactionRowPreview` | Confirmed carbon, Pending forest, Failed, Processing, Interactive |
 | `WalletBalanceDisplayPreview` | Tree wallet, Locked funds, Org wallet, Zero balance, Interactive |
@@ -1836,32 +1812,11 @@ h3 { font-size: clamp(1.125rem, 1vw + 0.5rem,   1.25rem);  }
 Для page-level hero-заголовків — використовуйте `text-display-*` токени
 (`display-sm/md/lg`, див. § 4) явно через клас.
 
-### 14.2 View Transitions API (Theme Switcher)
+### 14.2 View Transitions API — знято разом із тумблером
 
-`theme_controller.toggle()` обгортає зміну `.dark` класу у
-`document.startViewTransition()`. Браузер робить плавний crossfade між
-світлою і темною темами — без DOM-flicker, без необхідності CSS-transitions
-на кожному елементі.
+🗄️ **Секція описувала crossfade між темами й більше не має предмета.** Її єдиним тригером був `document.startViewTransition()` усередині `theme_controller.toggle()`; після присуду 08-08 (§1) тему обирає середовище, перемикання «в один момент» не існує, і парний CSS-блок `::view-transition-*` знято з `application.css` тим самим кроком.
 
-```js
-if (typeof document.startViewTransition === "function") {
-  document.startViewTransition(() => this.applyTheme(next))
-} else {
-  this.applyTheme(next)  // fallback для старих браузерів
-}
-```
-
-CSS у `application.css`:
-```css
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: var(--motion-base, 220ms);
-  animation-timing-function: var(--ease-out-soft, ease-out);
-}
-```
-
-Підтримка: Chromium 111+, Safari 18+. Fallback — миттєвий apply
-(існуюча поведінка). API сам поважає `prefers-reduced-motion`.
+⚠️ Сам API не відкинуто як інструмент — просто в цьому дереві він більше нічим не викликається. Заводити його наново варто лише під конкретний DOM-перехід із названим тригером, а не «щоб було плавно».
 
 ### 14.3 `reveal_controller` (appear-on-scroll)
 
@@ -1910,7 +1865,7 @@ Stimulus controller, який скидає `opacity-0 translate-y-2` коли е
 | **HTML Popover API** (`popover="auto"`, `popovertarget`) | Outside-click close, Escape close, top-layer стек, focus restore | Рекомендований default для нових dropdown / menu / tooltip patterns; **у проекті ще не застосований** — `locale_controller` був видалений, але locale switcher використовує нативний `<select>` (top-layer detachment Popover ламав CSS anchor positioning для 2-опцій-кейсу, див. §12.5) | Baseline 2024 — Chromium 114+, Safari 17+, Firefox 125+ |
 | **`<dialog>` + `.showModal()`** | Focus-trap, Escape, top-layer, `::backdrop`, inert page below, focus restore | Manual focus-trap код у `mobile_nav_controller` (~150→~25 рядків) | Baseline 2022 — всі evergreen |
 | **`@starting-style` CSS** | "From"-frame для transition без JS-flush reflow | Manual rAF в JS | Baseline 2024 |
-| **View Transitions API** (`document.startViewTransition`) | Smooth crossfade між DOM-станами | Manual CSS transitions на кожному елементі | Chromium 111+, Safari 18+ (graceful fallback) |
+| **View Transitions API** (`document.startViewTransition`) | Smooth crossfade між DOM-станами | Manual CSS transitions на кожному елементі | Chromium 111+, Safari 18+ (graceful fallback). ⚠️ У дереві **не вживається** — єдиний консюмер пішов разом із тумблером теми (§14.2) |
 | **`prefers-reduced-motion`** (CSS) | Глобально вимикає анімації | JS feature-detection у кожному компоненті | Baseline |
 | **`<details>` / `<summary>`** | Disclosure pattern + keyboard | Custom accordion JS | Baseline |
 
@@ -1918,7 +1873,6 @@ Stimulus controller, який скидає `opacity-0 translate-y-2` коли е
 
 | Controller | Чому не нативно |
 |---|---|
-| `theme_controller` | Stateful: localStorage + system preference listener + View Transitions wrapper + icon swap target. Це класичний Stimulus use-case. |
 | `mobile_nav_controller` (тонкий шим) | Native `<dialog>` не закривається на backdrop-click + scroll-lock у Safari через `.showModal()` не завжди — лишаємо ~25 рядків шіма. |
 | `reveal_controller` ⚠️ | CSS `animation-timeline: view()` ще НЕ Baseline (Safari/Firefox в роботі) — IntersectionObserver лишається оптимальним до ~2027. **Наразі 0 консюмерів** (`data-controller="reveal"` ніде) — scaffold-патерн задокументовано (§ 14.3), але ще не застосовано (дзеркало Popover-чесності § 15.1). |
 | `clipboard_controller`, `map_controller`, `matrix_rain_controller`, `codex/*` | Інтеграція з 3rd-party / Canvas / складна логіка. |

@@ -94,7 +94,8 @@ RSpec.describe "design tokens: every used token exists in @theme" do # rubocop:d
 
       Fix: declare `--color-<token>` in the `@theme` block of
       #{DesignTokenGate::CSS_PATH.relative_path_from(Rails.root)} (and give it a value in BOTH
-      `:root` and `.dark`), or drop the class from the component.
+      `:root` and the `prefers-color-scheme: dark` block), or drop the class from
+      the component.
 
       #{report.join("\n")}
     MSG

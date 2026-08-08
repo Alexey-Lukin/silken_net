@@ -1,18 +1,18 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 @import "tailwindcss";
 
-/* ── Одна шафа теми, не дві ──
- * Тема в цьому застосунку перемикається класом `.dark` на `<html>` (ставить
- * FOUC-скрипт у `dashboard_layout`, далі `theme_controller`). Семантичні токени
- * нижче (`:root` / `.dark`) слухають саме його.
+/* ── Одна шафа теми — і нею є СЕРЕДОВИЩЕ ──
+ * Тему обирає операційна система (`prefers-color-scheme`), і більше ніхто:
+ * органу вибору в застосунку немає, клієнтського стану немає, JS у цьому
+ * ланцюгу не бере участі взагалі. Семантичні токени нижче стоять у `:root`
+ * (світла) і в медіа-блоці (темна) — інших джерел теми в дереві немає.
  *
- * Без цього рядка варіант `dark:` у Tailwind v4 компілюється в
- * `@media (prefers-color-scheme: dark)`, тобто сирі `dark:`-утиліти слухали б
- * ОПЕРАЦІЙНУ СИСТЕМУ, поки токени слухають тумблер — і розходились би рівно
- * тоді, коли людина тумблером скористалась. `:where()` має нульову
- * специфічність, тож каскад лишається таким самим, як був.
+ * Цей рядок робить варіант `dark:` ТИМ САМИМ медіа-запитом, що й токени.
+ * Дефолт Tailwind v4 — `@media (prefers-color-scheme: dark)` без `screen`,
+ * тож без нього сирі `dark:`-утиліти лишались би темними на ДРУЦІ, поки
+ * токени світлішають: та сама «дві шафи», лише в print-контексті.
  * Інваріант міряється браузером: `spec/features/theme_shaft_spec.rb`. */
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (@media screen and (prefers-color-scheme: dark));
 
 @theme {
   /* ── Font Families ── */
@@ -102,6 +102,13 @@
 
 /* ── Light Mode (default) ── */
 :root {
+  /* Оголошує браузеру, що обидві теми підтримувані: нативні контроли,
+   * скролбари, autofill і форми беруть тему з середовища замість того, щоб
+   * вгадувати її за кольором фону. Без цього рядка світла сторінка отримує
+   * темні системні віджети (і навпаки) — єдине місце в дереві, де тему
+   * малює не наш CSS. */
+  color-scheme: light dark;
+
   /* Surface / Layout — 4-tier depth scale */
   --gaia-surface-base:     #fafafa;  /* page background */
   --gaia-surface:          #ffffff;  /* cards, panels */
@@ -119,8 +126,8 @@
 
   --gaia-primary:        #10b981;
   /* Text sitting ON --gaia-primary. Theme-invariant, because the brand emerald
-   * itself is (see .dark below): the pair must hold in both. 7.04:1 — the
-   * inherited body colour gave 1.98:1 in dark, i.e. unreadable. */
+   * itself is (see the dark block below): the pair must hold in both. 7.04:1 —
+   * the inherited body colour gave 1.98:1 in dark, i.e. unreadable. */
   --gaia-primary-text:   #0f172a;
   --gaia-primary-hover:  #059669;
   --gaia-primary-soft:   #d1fae5;
@@ -164,71 +171,75 @@
   --gaia-label: #6b7280;
 }
 
-/* ── Dark Mode ── */
-.dark {
-  /* Surface / Layout — 4-tier depth scale (cyber-emerald, with nuance) */
-  --gaia-surface-base:     #050607;
-  --gaia-surface:          #0b0f0e;
-  --gaia-surface-elevated: #11161a;
-  --gaia-surface-sunken:   #070a09;
-  --gaia-surface-overlay:  rgba(0, 0, 0, 0.85);  /* photo overlay, tooltip backdrop */
+/* ── Dark Mode — вмикає СЕРЕДОВИЩЕ, не застосунок ──
+ * `screen and` тут несуче: воно ж стоїть у `@custom-variant` вище, тож на
+ * друці темніють (точніше — НЕ темніють) обидві половини разом. */
+@media screen and (prefers-color-scheme: dark) {
+  :root {
+    /* Surface / Layout — 4-tier depth scale (cyber-emerald, with nuance) */
+    --gaia-surface-base:     #050607;
+    --gaia-surface:          #0b0f0e;
+    --gaia-surface-elevated: #11161a;
+    --gaia-surface-sunken:   #070a09;
+    --gaia-surface-overlay:  rgba(0, 0, 0, 0.85);  /* photo overlay, tooltip backdrop */
 
-  --gaia-text-strong:  #e6fff4;
-  --gaia-text:         #a7f3d0;
-  --gaia-text-muted:   #6ee7b7;
-  /* Альфа несе КОНТРАСТ, не лише «приглушеність»: у темній усі поверхні
-   * майже-чорні, тож обмеження односпрямоване й одна цифра тримає AA і на
-   * `gaia-*`, і на сирих панелях (`bg-zinc-950`, `bg-black/40`). Число живе в
-   * носії — `spec/features/contrast_root_tokens_spec.rb`, не в цьому рядку.
-   * ⚠️ СВІТЛА половина цього ж токена лишається провальною свідомо: там смуга
-   * ПОРОЖНЯ, доки в дереві є сирі тем-інваріантні чорні панелі (`00_07` UI.3). */
-  --gaia-text-subtle:  rgba(52, 211, 153, 0.68);
+    --gaia-text-strong:  #e6fff4;
+    --gaia-text:         #a7f3d0;
+    --gaia-text-muted:   #6ee7b7;
+    /* Альфа несе КОНТРАСТ, не лише «приглушеність»: у темній усі поверхні
+     * майже-чорні, тож обмеження односпрямоване й одна цифра тримає AA і на
+     * `gaia-*`, і на сирих панелях (`bg-zinc-950`, `bg-black/40`). Число живе в
+     * носії — `spec/features/contrast_root_tokens_spec.rb`, не в цьому рядку.
+     * ⚠️ СВІТЛА половина цього ж токена лишається провальною свідомо: там смуга
+     * ПОРОЖНЯ, доки в дереві є сирі тем-інваріантні чорні панелі (`00_07` UI.3). */
+    --gaia-text-subtle:  rgba(52, 211, 153, 0.68);
 
-  --gaia-primary:        #10b981;
-  --gaia-primary-text:   #0f172a;  /* same as :root — the brand emerald does not flip */
-  --gaia-primary-hover:  #34d399;
-  --gaia-primary-soft:   rgba(16, 185, 129, 0.12);
+    --gaia-primary:        #10b981;
+    --gaia-primary-text:   #0f172a;  /* same as :root — the brand emerald does not flip */
+    --gaia-primary-hover:  #34d399;
+    --gaia-primary-soft:   rgba(16, 185, 129, 0.12);
 
-  --gaia-border:         rgba(16, 185, 129, 0.18);
-  --gaia-border-strong:  rgba(16, 185, 129, 0.40);
+    --gaia-border:         rgba(16, 185, 129, 0.18);
+    --gaia-border-strong:  rgba(16, 185, 129, 0.40);
 
-  /* Status: danger — neon on dark red */
-  --status-danger: #7f1d1d;
-  --status-danger-text: #fecaca;
-  --status-danger-accent: #ef4444;
+    /* Status: danger — neon on dark red */
+    --status-danger: #7f1d1d;
+    --status-danger-text: #fecaca;
+    --status-danger-accent: #ef4444;
 
-  /* Status: warning — neon amber on dark amber */
-  --status-warning: #78350f;
-  --status-warning-text: #fde68a;
+    /* Status: warning — neon amber on dark amber */
+    --status-warning: #78350f;
+    --status-warning-text: #fde68a;
 
-  /* Status: info — neon blue on dark blue */
-  --status-info: #1e3a5f;
-  --status-info-text: #bfdbfe;
+    /* Status: info — neon blue on dark blue */
+    --status-info: #1e3a5f;
+    --status-info-text: #bfdbfe;
 
-  /* Status: success — neon green on dark emerald */
-  --status-success: #065f46;
-  --status-success-text: #d1fae5;
+    /* Status: success — neon green on dark emerald */
+    --status-success: #065f46;
+    --status-success-text: #d1fae5;
 
-  /* Status: active — neon teal on dark teal */
-  --status-active: #064e3b;
-  --status-active-text: #a7f3d0;
+    /* Status: active — neon teal on dark teal */
+    --status-active: #064e3b;
+    --status-active-text: #a7f3d0;
 
-  /* Status: neutral — muted on dark zinc */
-  --status-neutral: #27272a;
-  --status-neutral-text: #a1a1aa;
+    /* Status: neutral — muted on dark zinc */
+    --status-neutral: #27272a;
+    --status-neutral-text: #a1a1aa;
 
-  /* Blockchain tokens — glowing for dark surface */
-  --token-carbon: #059669;
-  --token-forest: #d97706;
+    /* Blockchain tokens — glowing for dark surface */
+    --token-carbon: #059669;
+    --token-forest: #d97706;
 
-  /* Form inputs */
-  --gaia-input-bg: #09090b;
-  --gaia-input-border: rgba(16, 185, 129, 0.3);
-  --gaia-input-text: #d1fae5;
-  /* Доти цього рядка тут НЕ БУЛО — і саме тому мітка полів у темній читалась
-   * світлим значенням, що протекло з `:root`. Тобто дефект був не в значенні,
-   * а у ВІДСУТНОСТІ перевизначення; `:root` лишається як був. */
-  --gaia-label: #7d8590;
+    /* Form inputs */
+    --gaia-input-bg: #09090b;
+    --gaia-input-border: rgba(16, 185, 129, 0.3);
+    --gaia-input-text: #d1fae5;
+    /* Доти цього рядка тут НЕ БУЛО — і саме тому мітка полів у темній читалась
+     * світлим значенням, що протекло з `:root`. Тобто дефект був не в значенні,
+     * а у ВІДСУТНОСТІ перевизначення; `:root` лишається як був. */
+    --gaia-label: #7d8590;
+  }
 }
 
 /* ── Typography Base ── */
@@ -307,17 +318,6 @@ dialog[open]::backdrop {
 
 [popover]:popover-open {
   animation: gaia-fade-in var(--motion-fast, 150ms) var(--ease-out-soft, ease-out);
-}
-
-/* ── View Transitions (theme switcher) ──
- * Smooth crossfade when document.startViewTransition() animates the
- * `dark` class swap on <html>. Disabled automatically by the browser
- * when prefers-reduced-motion is set. */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: var(--motion-base, 220ms);
-  animation-timing-function: var(--ease-out-soft, ease-out);
-  mix-blend-mode: normal;
 }
 
 @utility animate-fade-in {

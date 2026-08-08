@@ -30,7 +30,7 @@ RSpec.describe SpdxHeaders do
     it "assigns AGPL across every ratified code tree" do
       {
         "app/models/tree.rb" => agpl,
-        "app/javascript/controllers/theme_controller.js" => agpl,
+        "app/javascript/controllers/map_controller.js" => agpl,
         "lib/tasks/docs.rake" => agpl,
         "spec/models/tree_spec.rb" => agpl,
         "scripts/docs_check.rb" => agpl,

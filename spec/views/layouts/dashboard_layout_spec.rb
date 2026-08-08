@@ -104,13 +104,23 @@ RSpec.describe DashboardLayout do
     end
   end
 
-  describe "FOUC script" do
-    it "renders the anti-FOUC theme script in head" do
-      expect(html).to include("localStorage.getItem")
+  # 🔴 [UI.1] Тему ставить CSS і тільки CSS — inline-скрипта теми в `<head>` уже
+  # немає, клієнтського стану немає теж. Піни на ВІДСУТНІСТЬ, бо рецидив тут
+  # приходить під виглядом полагодження («поверну FOUC-скрипт, щоб не блимало»)
+  # і повертає одразу дві хвороби: недетермінований рендер (скріншот залежить
+  # від того, чи виконався JS) і залежність від CSP — той скрипт не ніс nonce,
+  # тож під `CSP_ENFORCE=true` він блокується й тема не застосовується взагалі.
+  #
+  # ⚠️ Тут доти стояв пін `include("dark")`. Він був хибно-зеленим за
+  # побудовою: слово «dark» живе в розмітці незалежно від скрипта, тож приклад
+  # не міг упасти й атестував наявність механізму, якого не перевіряв.
+  describe "theme has no client-side shaft" do
+    it "carries no client-side theme state" do
+      expect(html).not_to include("localStorage")
     end
 
-    it "includes dark class detection in the FOUC script" do
-      expect(html).to include("dark")
+    it "carries no inline theme script" do
+      expect(html).not_to include("classList.add")
     end
   end
 
@@ -168,13 +178,6 @@ RSpec.describe DashboardLayout do
     it "renders the user role" do
       html = render_layout(user: mock_user(role: "admin"))
       expect(html).to include("admin")
-    end
-  end
-
-  describe "theme switcher" do
-    it "renders the ThemeSwitcher component" do
-      # ThemeSwitcher renders with theme Stimulus controller
-      expect(html).to include("theme")
     end
   end
 

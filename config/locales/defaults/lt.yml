@@ -8,5 +8,3 @@ lt:
   locale:
     apply: Taikyti
     switcher_label: Kalba
-  theme:
-    toggle_label: Perjungti šviesią / tamsią temą

@@ -40,8 +40,15 @@ RSpec.describe AuthLayout do
       expect(html).to match(/<!doctype html>/i)
     end
 
-    it "renders the html element with the dark class" do
-      expect(html).to include("h-full dark")
+    # 🔴 [UI.1] Доти тут пінився хардкод `h-full dark` — auth-екрани були
+    # СВІДОМО однотемними, бо світла тема ламалась, і канон легалізував таку
+    # однотемність за умови, що вона ОГОЛОШЕНА. Тумблер знято, тему обирає
+    # середовище, і хардкод став єдиним місцем у дереві, яке цьому опиралось:
+    # людина зі світлою ОС отримувала темний екран входу й світлу решту.
+    # Пін перевернуто — він стереже, щоб клас не повернувся тихцем.
+    it "declares no hardcoded theme — auth pages follow the environment too" do
+      expect(html).to include("h-full")
+      expect(html).not_to include("h-full dark")
     end
 
     it "renders the viewport meta tag" do

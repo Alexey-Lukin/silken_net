@@ -8,5 +8,3 @@ lv:
   locale:
     apply: Lietot
     switcher_label: Valoda
-  theme:
-    toggle_label: Pārslēgt gaišo / tumšo tēmu

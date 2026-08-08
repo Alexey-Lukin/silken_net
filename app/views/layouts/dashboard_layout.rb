@@ -81,9 +81,6 @@ class DashboardLayout < ApplicationComponent
   end
 
   def render_head
-    fouc_script = 'var t=localStorage.getItem("theme")||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");' \
-                  'if(t==="dark")document.documentElement.classList.add("dark")'
-
     head do
       title { "Silken Net // #{@title}" }
       meta(name: "viewport", content: "width=device-width,initial-scale=1")
@@ -100,8 +97,6 @@ class DashboardLayout < ApplicationComponent
       link(rel: "icon", href: "/icon.png", type: "image/png")
       link(rel: "icon", href: "/icon.svg", type: "image/svg+xml")
       link(rel: "apple-touch-icon", href: "/icon.png")
-      # Prevent FOUC: apply dark class before first paint
-      script { raw Phlex::HTML::SafeValue.new(fouc_script) }
       csp_meta_tag
       csrf_meta_tags
       stylesheet_link_tag "application", "tailwind", "data-turbo-track": "reload"
@@ -123,7 +118,6 @@ class DashboardLayout < ApplicationComponent
       div(class: "flex items-center gap-3 md:gap-6") do
         render_acting_context
         render Views::Shared::UI::LocaleSwitcher.new
-        render Views::Shared::UI::ThemeSwitcher.new
         render_system_telemetry
         render_user_avatar
       end
