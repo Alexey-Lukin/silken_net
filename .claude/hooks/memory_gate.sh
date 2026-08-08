@@ -1309,6 +1309,33 @@ EOF
   if printf '%s' "$out" | grep -q 'OVERRIDE'; then pass=$((pass+1)); printf '  ok    %s\n' "write stance declares foreign thresholds instead of trusting them"
   else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "write stance declares foreign thresholds instead of trusting them" "$out"; fi
 
+  # 30. THE CLASS ITSELF GETS A CARRIER, because writing the rule down failed
+  #     three times. "Both stances must run the same battery" has been stated in
+  #     the playbook since the UNSTRUNG fix, and the stances diverged again
+  #     (PROSE), and again (BROKEN/FORMAT/override). A rule that relapses at a
+  #     written form needs an instrument, not a fourth sentence — so the
+  #     difference between the two stances is now COMPUTED and compared against
+  #     the declared exemptions. Add a check to one stance only, and this reds.
+  #
+  #     The two exemptions are deliberate, not debt:
+  #       overlap_check   — O(n²) over the corpus, and the class it finds
+  #                         ACCUMULATES rather than being born in one write.
+  #       integrity_check — its parts run in the write stance individually
+  #                         (broken_check · format_check_one · strings_check);
+  #                         only ORPHAN stays audit-only, because it is EXPECTED
+  #                         on a brand-new file and route_check owns that moment.
+  out=$(ruby - "$SELF" <<'RUBY' 2>/dev/null
+src   = File.read(ARGV[0])
+audit = src[/^  --audit\)\n(.*?)\n    ;;/m, 1].to_s
+write = src[/^  \*\)\n(.*?)\n    ;;/m, 1].to_s
+calls = ->(s) { s.scan(/\b([a-z_]+_check)\b/).flatten.uniq }
+drift = calls.call(audit) - calls.call(write) - %w[integrity_check overlap_check]
+puts drift.empty? ? "PARITY-OK" : "PARITY-DRIFT #{drift.sort.join(' ')}"
+RUBY
+)
+  if printf '%s' "$out" | grep -q 'PARITY-OK'; then pass=$((pass+1)); printf '  ok    %s\n' "no check is audit-only without being a declared exemption"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         %s — it runs in --audit but not at the moment of the write\n' "no check is audit-only without being a declared exemption" "$out"; fi
+
   rm -rf "$root"
   printf 'selftest: %d passed, %d failed\n' "$pass" "$fail"
   [ "$fail" -eq 0 ]
