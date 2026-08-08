@@ -64,7 +64,7 @@ warn() {
 
 # Already reading the pipeline's real status → silent. 222 calls do this, and
 # three of the first five false positives measured were exactly this case.
-if ! printf '%s' "$cmd" | grep -qE 'PIPESTATUS|pipefail'; then
+if ! printf '%s' "$cmd" | grep -qE 'PIPESTATUS|pipestatus|pipefail'; then
 
   # ── A · a GATE truncated into head/tail (9.09% naive→scoped, ~97% precise) ──
   # The discriminator is the PRODUCER, not the pipe: of 11,712 head/tail
@@ -79,7 +79,7 @@ if ! printf '%s' "$cmd" | grep -qE 'PIPESTATUS|pipefail'; then
   if printf '%s' "$cmd" | grep -qE "(^|[;&]|&&|\|\||^[[:space:]]*)[[:space:]]*(env [^|;]* )?${gate}" &&
      printf '%s' "$cmd" | grep -qE '\|[[:space:]]*(head|tail)([[:space:]]|$)' &&
      ! printf '%s' "$cmd" | grep -qE 'tail[[:space:]]+-[fF]|--dry-run|--help|--version|--tasks|--list' ; then
-    warn gate-truncated '[bash-guard] A gate is piped into head/tail. Truncating hides the verdict, and "0 failures" in the visible tail is not one — the run can fail after the lines you kept. Pin the object and grep the step'"'"'s own output, or keep the exit code with PIPESTATUS. (Fires once per session.)'
+    warn gate-truncated '[bash-guard] A gate is piped into head/tail. Truncating hides the verdict, and "0 failures" in the visible tail is not one — the run can fail after the lines you kept. Pin the object and grep the step'"'"'s own output, or keep the exit code with $pipestatus[1] (zsh; PIPESTATUS is a bash-ism and expands to EMPTY here). (Fires once per session.)'
   fi
 
   # ── B · `$?` read after a pipe or a background start (2.28%, 15/15 precise) ──
@@ -97,7 +97,7 @@ if ! printf '%s' "$cmd" | grep -qE 'PIPESTATUS|pipefail'; then
   if { printf '%s' "$cmd" | grep -qE '[^|]\|[^|][^;]*;[[:space:]]*echo[^;]*\$\?' ||
        printf '%s' "$cmd" | grep -qE '[^>&<]&[[:space:]]*;[[:space:]]*echo[^;]*\$\?' ; } &&
      ! printf '%s' "$cmd" | grep -qE '\|[[:space:]]*grep[^|;]*;[[:space:]]*echo[^;]*\$\?' ; then
-    warn exit-after-pipe '[bash-guard] `$?` after a pipe or a background start reports the LAST element, and head/tail/`&` always exit 0 — so this reads success no matter what happened upstream. Use ${PIPESTATUS[0]}, or run the command unpiped and echo $? on its own line. (Fires once per session.)'
+    warn exit-after-pipe '[bash-guard] `$?` after a pipe or a background start reports the LAST element, and head/tail/`&` always exit 0 — so this reads success no matter what happened upstream. Use $pipestatus[1] — this shell is zsh, where the array is lowercase and 1-INDEXED; ${PIPESTATUS[0]} expands to an empty string, so a check built on it silently compares against nothing. Or run the command unpiped and echo $? on its own line. (Fires once per session.)'
   fi
 fi
 
