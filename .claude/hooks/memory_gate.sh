@@ -1114,6 +1114,13 @@ strings_check() {
     # spelling of this name exist", which is precisely what [ -f ] cannot answer
     # on a case-insensitive filesystem. A glob would silently agree with macOS.
     ls "$MEM_DIR" | grep -qix "$l.md" || { echo "DANGLING [[$l]] resolves to nothing"; continue; }
+    # The worked example this verdict exists for, and it is not hypothetical:
+    # a sentence quoting the convention — "detail belongs in git, not in
+    # <double brackets around the word memory>" — parses as a link, and it
+    # RESOLVES, but only because macOS folds `memory.md` onto `MEMORY.md`.
+    # On a Linux checkout the same corpus is dangling. So a corpus that is
+    # green on the author's laptop can be broken everywhere else, which is why
+    # CASE is its own verdict rather than a footnote to DANGLING.
     [ -f "$MEM_DIR/$l.md" ] || echo "CASE    [[$l]] only resolves on a case-insensitive filesystem"
   done
   return 0
