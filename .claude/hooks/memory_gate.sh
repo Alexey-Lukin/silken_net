@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 # Growth gate for the persistent memory corpus.
 #
-# The corpus lives OUTSIDE the git repo: no `git revert`, no CI that can see it.
-# The only enforcement point left is the moment of writing — and that is exactly
-# where every previous rule failed, because its carrier stood somewhere else
-# (a skill that fires on "clean up", a prompt read during housekeeping).
+# The corpus lives OUTSIDE the git repo, so no CI can see it. The only
+# enforcement point left is the moment of writing — and that is exactly where
+# every previous rule failed, because its carrier stood somewhere else (a skill
+# that fires on "clean up", a prompt read during housekeeping).
+#
+# Since 2026-08-08 the corpus DOES carry its own local git (memory-dir, no
+# remote, `memory_git_commit.sh` commits every write), so `git revert` exists
+# here now — but that changes the curator's proof bar, NOT this gate's job.
+# Revert only ever helps a loss somebody NOTICED; the losses this file is built
+# to catch are the silent ones, and for those the write is still the last moment
+# anyone is looking.
 #
 # Three stances, one engine:
 #   (stdin JSON)  PostToolUse Edit|Write — silent unless this write makes it worse
@@ -1391,6 +1398,25 @@ case "${1:-}" in
              for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; mojibake_check "$f"; done; } )
     printf '%s\n' "${out:-OK — index within ratchet, corpus intact, no chronicle in a rule file}"
     [ -z "$out" ]
+    ;;
+  --routes)
+    # Єдина перевірка, що дивиться З БОКУ git: скіли/плейбуки/CLAUDE.md
+    # адресують memory-файли по імені, і цей напрямок не бачив ніхто —
+    # `code_tracker_id_check.rb` знає трекер-ID, а не слаги корпусу, а решта
+    # цього файлу живе всередині корпусу. Курація перейменовує й зливає доми,
+    # тож рвати маршрут вона може мовчки.
+    #
+    # СВІДОМО ПОЗА `--audit`, і причина технічна, а не смакова: батарея
+    # ганяється селфтестом на ТИМЧАСОВИХ корпусах, де жодного справжнього дому
+    # нема, тож усередині неї ця перевірка червонила б усі 41 адреси на кожному
+    # прогоні. Те саме, чому її не існує в CI: їй потрібні ОБИДВА корпуси, а на
+    # ранері є лише один.
+    if [ -f "$REPO/scripts/memory_route_check.rb" ]; then
+      MEMORY_GATE_DIR="$MEM_DIR" ruby "$REPO/scripts/memory_route_check.rb" "${2:-}"
+    else
+      echo "SKIP  scripts/memory_route_check.rb is gone — the git→memory direction is unguarded"
+      exit 1
+    fi
     ;;
   --oneway)
     out=$(oneway_check)

@@ -46,6 +46,17 @@
             "statusMessage": "Checking memory growth..."
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/oleksiilukin/silken_net/.claude/hooks/memory_git_commit.sh",
+            "timeout": 10,
+            "statusMessage": "Versioning memory..."
+          }
+        ]
       }
     ]
   }
