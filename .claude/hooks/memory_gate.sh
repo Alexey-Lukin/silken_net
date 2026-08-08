@@ -805,6 +805,20 @@ format_check_one() {
   return 0
 }
 
+# U+FFFD, the replacement character. In a bilingual corpus a multi-byte word can
+# arrive truncated through an editing tool, and the result is a plausible-looking
+# word with one glyph replaced — silent, because every other check treats the file
+# as valid text and the sentence still scans. Caught twice by eye in one session
+# (both times mid-word in Cyrillic) and zero times by any instrument, which is the
+# definition of a class that needs one. Runs in both stances: the moment of the
+# write is the only moment the author still knows what the word was.
+mojibake_check() {
+  local fn; fn=$(basename "$1")
+  grep -q '�' "$1" &&
+    echo "MOJIBAKE $fn carries U+FFFD — a multi-byte character was truncated in an edit; fix the word, do not re-encode the file"
+  return 0
+}
+
 integrity_check() {
   local fn f
   broken_check
@@ -1309,7 +1323,19 @@ EOF
   if printf '%s' "$out" | grep -q 'OVERRIDE'; then pass=$((pass+1)); printf '  ok    %s\n' "write stance declares foreign thresholds instead of trusting them"
   else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "write stance declares foreign thresholds instead of trusting them" "$out"; fi
 
-  # 30. THE CLASS ITSELF GETS A CARRIER, because writing the rule down failed
+  # 30-31. A truncated multi-byte character. Positive AND negative control,
+  #        because the negative is the load-bearing one here: this corpus is
+  #        bilingual and full of glyphs, so a detector that fires on ordinary
+  #        Cyrillic would be worse than none.
+  _st_build "$d"; printf '\nСлово з обірваним симво\xef\xbf\xbdлом.\n' >>"$d/feedback_beta.md"
+  out=$(_st_write "$d" feedback_beta.md)
+  if printf '%s' "$out" | grep -q 'MOJIBAKE'; then pass=$((pass+1)); printf '  ok    %s\n' "MOJIBAKE on a truncated multi-byte character, at the write"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "MOJIBAKE on a truncated multi-byte character, at the write" "$out"; fi
+
+  _st_build "$d"; printf '\nЗвичайна кирилиця, гліфи ⊥ ⛔ 🔴 — усе валідне.\n' >>"$d/feedback_beta.md"
+  _st_check "MOJIBAKE silent on healthy Cyrillic and glyphs" reject 'MOJIBAKE'
+
+  # 32. THE CLASS ITSELF GETS A CARRIER, because writing the rule down failed
   #     three times. "Both stances must run the same battery" has been stated in
   #     the playbook since the UNSTRUNG fix, and the stances diverged again
   #     (PROSE), and again (BROKEN/FORMAT/override). A rule that relapses at a
@@ -1348,7 +1374,7 @@ case "${1:-}" in
              journals_reachable; asset_check
              privacy_check; overlap_check; section_ref_check; canon_section_check
              skill_item_check
-             for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; done; } )
+             for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; mojibake_check "$f"; done; } )
     printf '%s\n' "${out:-OK — index within ratchet, corpus intact, no chronicle in a rule file}"
     [ -z "$out" ]
     ;;
@@ -1399,6 +1425,7 @@ case "${1:-}" in
               # Frontmatter is dropped by the same rewrite that drops anything
               # else — and the author is still holding the file here.
               format_check_one "$fp"
+              mojibake_check "$fp"
               check_file "$fp"
               path_check "$fp"
               journals_reachable
