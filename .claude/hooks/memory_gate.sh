@@ -778,16 +778,36 @@ RUBY
   return 0
 }
 
-integrity_check() {
-  local fn f l
+# Split out of integrity_check so BOTH stances run the same code rather than two
+# copies that drift apart unseen — the UNSTRUNG lesson, applied to the two checks
+# that were still audit-only. Both fire at the moment of the write that causes
+# them: BROKEN is caused by an Edit to MEMORY.md (the most-edited file in the
+# corpus), FORMAT by a Write/Edit that drops a frontmatter key. Auditing them
+# later means telling the author about a break they can no longer see the cause of.
+broken_check() {
+  local fn
   # Grammar lives in IDX_LINK_RE, not here — see the note at its definition for
   # why a partial widening is worse than none. Deliberately NOT as wide as the
-  # string class below: a markdown link has no prose form to mistake it for, so
-  # `[^]]+` there and a slug class here are two different questions, not two
-  # settings of one.
+  # string class in strings_check: a markdown link has no prose form to mistake
+  # it for, so `[^]]+` there and a slug class here are two different questions,
+  # not two settings of one.
   for fn in $(grep -oE "$IDX_LINK_RE" "$IDX" | tr -d ']()' | sort -u); do
     [ -f "$MEM_DIR/$fn" ] || echo "BROKEN  index points at a missing $fn"
   done
+  return 0
+}
+
+format_check_one() {
+  local fn; fn=$(basename "$1")
+  [ "$fn" = "MEMORY.md" ] && return 0
+  { grep -q '^name:' "$1" && grep -q 'type:' "$1"; } ||
+    echo "FORMAT  $fn lacks name/type frontmatter"
+  return 0
+}
+
+integrity_check() {
+  local fn f
+  broken_check
   for f in "$MEM_DIR"/*.md; do
     fn=$(basename "$f"); [ "$fn" = "MEMORY.md" ] && continue
     case $fn in
@@ -796,9 +816,11 @@ integrity_check() {
       # very design it exists to protect. Its reachability is NOT unchecked:
       # journals_reachable() owns it, so that both stances run the same test.
       log_*) ;;
+      # ORPHAN stays audit-only ON PURPOSE and that exemption is unchanged: it is
+      # EXPECTED on a brand-new file, and route_check owns that moment instead.
       *)     grep -q "($fn)" "$IDX" || echo "ORPHAN  $fn is in no index row" ;;
     esac
-    { grep -q '^name:' "$f" && grep -q 'type:' "$f"; } || echo "FORMAT  $fn lacks name/type frontmatter"
+    format_check_one "$f"
   done
   strings_check
   return 0
@@ -1262,6 +1284,31 @@ EOF
   _st_check "a dash-bearing name counts as reach in every consumer of the link grammar" \
             expect 'lock the gain in' MEMORY_GATE_IDX_BASELINE=9000
 
+  # 27-29. The three checks that were still audit-only, pinned on the stance that
+  #        matters. An inventory of what each stance ACTUALLY runs found these
+  #        three missing from the write half — the same divergence the UNSTRUNG
+  #        and PROSE cases above already paid for, twice. Each is pinned here so a
+  #        future refactor cannot quietly return them to audit-only.
+  _st_build "$d"; printf -- '- [Ghost](feedback_ghost.md) — x\n' >>"$d/MEMORY.md"
+  out=$(_st_write "$d" MEMORY.md)
+  if printf '%s' "$out" | grep -q 'BROKEN'; then pass=$((pass+1)); printf '  ok    %s\n' "write stance reports a broken index row as it is typed"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "write stance reports a broken index row as it is typed" "$out"; fi
+
+  _st_build "$d"; printf 'No frontmatter at all.\n' >"$d/feedback_beta.md"
+  out=$(_st_write "$d" feedback_beta.md)
+  if printf '%s' "$out" | grep -q 'FORMAT'; then pass=$((pass+1)); printf '  ok    %s\n' "write stance reports dropped frontmatter at the moment of the write"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "write stance reports dropped frontmatter at the moment of the write" "$out"; fi
+
+  # Deliberately NOT via _st_write: that helper sets MEMORY_GATE_SELFTEST=1, and
+  # override_check exempts itself under it — otherwise every case in this file
+  # would trip its own OVERRIDE. So the stance is invoked raw, exactly as the
+  # harness invokes it, which is also the only way this case can be honest.
+  _st_build "$d"
+  out=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/feedback_alpha.md"}}' "$d" |
+        env MEMORY_GATE_DIR="$d" MEMORY_GATE_CORPUS_FLOOR=1 bash "$SELF" 2>&1)
+  if printf '%s' "$out" | grep -q 'OVERRIDE'; then pass=$((pass+1)); printf '  ok    %s\n' "write stance declares foreign thresholds instead of trusting them"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "write stance declares foreign thresholds instead of trusting them" "$out"; fi
+
   rm -rf "$root"
   printf 'selftest: %d passed, %d failed\n' "$pass" "$fail"
   [ "$fail" -eq 0 ]
@@ -1307,11 +1354,24 @@ case "${1:-}" in
     input=$(cat)
     fp=$(printf '%s' "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
     case "$fp" in "$MEM_DIR"/*.md) ;; *) exit 0 ;; esac
-    msgs=$( { index_check
+    msgs=$( { # A green verdict computed against somebody else's thresholds is the
+              # self-attestation this file polices — and it was reported in ONE
+              # stance out of four, so an exported MEMORY_GATE_* disarmed the hook
+              # silently and permanently. The stance that runs on every write is
+              # the one that most needed to say whose thresholds it used.
+              override_check
+              index_check
               desc_check
               # Loss is silent at the moment of action too — a Write that replaces
               # a corpus is the same tool call as a Write that grows one.
               corpus_floor_check
+              # An Edit to MEMORY.md that names a file that does not exist breaks
+              # the index AT THIS MOMENT; MEMORY.md is the corpus's most-edited
+              # file, so audit-only left the likeliest break silent at its cause.
+              broken_check
+              # Frontmatter is dropped by the same rewrite that drops anything
+              # else — and the author is still holding the file here.
+              format_check_one "$fp"
               check_file "$fp"
               path_check "$fp"
               journals_reachable
