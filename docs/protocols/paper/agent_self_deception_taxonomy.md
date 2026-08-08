@@ -26,11 +26,13 @@ here; this document is intended to constitute prior art.*
 
 ---
 
-## Note on illustration: every example below is synthetic
+## Note on illustration: no example points at a live defect
 
-**All worked examples in this document are constructed, or drawn from published literature.
-None is a defect report about a running system.** This is a design decision, made for two
-reasons, and we state it up front because it changes how the examples should be read.
+**No worked example below is a defect report about a running system.** Each is constructed,
+drawn from published literature, or generalised from an incident already closed in this
+practice's public record — identifying particulars removed, mechanism and measured quantity
+kept. This is a design decision, made for two reasons, and we state it up front because it
+changes how the examples should be read.
 
 The first reason is that the practice which produced this corpus operates a live system, and a
 worked example drawn from a live system is a pointer to that system's open defects. Publication
@@ -45,6 +47,15 @@ belongs to three classes at once teaches none of them cleanly. Where the publish
 already carries a better-measured instance than anything we could offer (false success rates,
 supplementary-fix rates, visible-versus-held-out test gaps), we cite theirs rather than
 construct our own.
+
+Where the third mode is used it buys concreteness at exactly the price the paragraph above
+names: a generalised real incident arrives with the confounds it had, and the text does not
+tell the reader which membership test it was chosen to isolate. We take that trade only where
+the real mechanism is sharper than anything we could invent — a default that silently resolves
+to a queue which happens to exist, a boolean field that cannot express *not measured* — and we
+name the mode here rather than let *constructed* carry a load it was not built for. The safety
+property is the one stated above and it is unconditional: the incident is closed before it is
+written, so nothing in these pages is a pointer to an open defect.
 
 What this costs the reader: the examples are not evidence. They are definitions in worked form.
 The evidence in this document is confined to §3 (three negative results) and §4 (base rates),

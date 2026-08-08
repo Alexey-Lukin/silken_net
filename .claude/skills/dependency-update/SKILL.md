@@ -211,6 +211,16 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   PYSEC-2026-2462..66 fix lives only in 1.2.5 (documented blocker in requirements-conda-lock.in;
   Scorecard alert → owner dismiss-with-reason — re-check on every conda-lock bump). Detect with
   `bundle update <g>` "stayed the same" / `pip check`. Revert the over-bump to the capped version.
+- **Dismissing an alert via `gh api`, and the 280-char wall that eats a batch.** List:
+  `gh api repos/<owner>/<repo>/code-scanning/alerts?state=open`. Dismiss: `-X PATCH -f
+  state=dismissed -f dismissed_reason="won't fix" -f dismissed_comment="…"`; reopen with
+  `-f state=open` when the decision flips from *accept* to *FIX*. Fixed findings auto-close on
+  the tool's next scan — you dismiss only what you are deliberately **not** fixing.
+  🔴 **GitHub caps `dismissed_comment` at 280 characters and answers 422 — it does not truncate
+  silently.** So the failure is loud but *late*: in a batch it kills the alerts after the long
+  one, leaving the sweep half-applied and looking finished. Write the reason as a tweet with an
+  ID to follow (`SEC.30 / canon 04_03 §2.2б`), never as an essay, and length-check **before**
+  sending. Instances → memory `project_dependabot_sweep_2026_07`.
 - **Conda `>=` env vs lock.** ML env is a `>=` spec (raise floors to tested-current — esp. a
   DSP floor like `librosa>=0.11` that protects the parity contract). in-silico has a real
   `conda-lock.yml` — that's the reproducible pin the DFT ran on; the env.yml floors are loose
