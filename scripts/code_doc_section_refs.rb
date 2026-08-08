@@ -65,7 +65,27 @@ CLAUDE_TREE = ".claude"
 # scope: it is the gate's own rake body, and it cites `05_03 §749` twice while
 # EXPLAINING the blind spot that let a line-number-as-§ rot. Citing the drift is
 # the documentation; flagging it would make the gate red at its own author.
-EXEMPT = %r{\A(?:lib/docs_linter\.rb|lib/docs_graph\.rb|lib/tracker/dashboard\.rb|lib/tasks/docs\.rake|spec/lib/|\.claude/skills/ssot-maintenance/SKILL\.md\z)}
+# 🔴 БЛАНКЕТ ЗНЯТО З ДВОХ ФАЙЛІВ І ЗАМІНЕНО НА ПЕР-РЕФНИЙ (2026-08-08).
+# Шлях-виняток вимикає гейт для ВСЬОГО файлу, хоча підстава стосується трьох-
+# пʼятьох рядків. Ціна була невидима, поки §Guard-craft не поїхала в допоміжний
+# файл: тоді виявилось, що бланкет тримав неперевіреними ~104 kB живих канон-
+# рефів (`04_04 §8.1`, `00_06 §3`, `01_02 §2.4`, `06_07 §2`…) заради двох
+# навчальних цитат. Виміряно перед зміною: зняття бланкета підняло рівно ПʼЯТЬ
+# відомих навчальних реф-ів і ЖОДНОГО невідомого — тобто решта секції вже була
+# коректна й тепер уперше стереже́ться. Це рівно тест, який приписує пункт #7
+# цього ж скіла: «для кожного винятку спитай, що зламається, якщо цей рядок
+# видалити» — відповідь була «нічого, крім двох речень».
+EXEMPT = %r{\A(?:lib/docs_linter\.rb|lib/docs_graph\.rb|lib/tracker/dashboard\.rb|spec/lib/)}
+
+# Пер-рефні винятки: файл СКАНУЄТЬСЯ, але ці конкретні реф-и — навмисні
+# цитати дрейфу, і саме цитата є документацією («доc-renumber ПЕРЕСУНУВ ці
+# секції — це і є урок»; `§A.999` узагалі підсаджений як доказ мутації).
+# Прапорець на них червонив би гейт на його ж авторові.
+EXEMPT_REFS = {
+  ".claude/skills/ssot-maintenance/SKILL.md"       => [ "05_03 §749", "07_01 §6.5" ],
+  ".claude/skills/ssot-maintenance/guard-craft.md" => [ "04_06 §A.10а", "04_06 §A.999", "07_03 §7" ],
+  "lib/tasks/docs.rake"                            => [ "05_03 §749" ]
+}.freeze
 
 # `.rake` was the remaining half of this gate's declared ceiling [DOC-T.60]: the
 # scan took `*.rb` only, while five rake files carry canon `NN_NN §X` refs — and
@@ -79,7 +99,26 @@ files = (TREES.flat_map { |t| Dir[File.join(ROOT, t, "**", "*.{rb,rake}")] } +
         .sort
 
 violations = files.flat_map do |rel|
-  Tracker::Dashboard.file_section_dangling_refs(File.read(File.join(ROOT, rel))).map { |h| "#{rel}: #{h}" }
+  allowed = EXEMPT_REFS.fetch(rel, [])
+  Tracker::Dashboard.file_section_dangling_refs(File.read(File.join(ROOT, rel)))
+                    .reject { |h| allowed.any? { |r| h.include?(r) } }
+                    .map { |h| "#{rel}: #{h}" }
+end
+
+# Ліхтар на самі винятки: пер-рефний виняток «на всяк випадок» — це бланкет у
+# костюмі точності. Якщо реф перестав бути мертвим (секцію повернули), виняток
+# мовчки прикриває вже НІЩО, і наступний, хто його читає, вірить, що там досі
+# є що прикривати. Той самий тест, що приписує пункт #7: спитай, що зламається,
+# якщо цей рядок видалити.
+stale_exempts = EXEMPT_REFS.flat_map do |rel, refs|
+  next [] unless File.exist?(File.join(ROOT, rel))
+  live = Tracker::Dashboard.file_section_dangling_refs(File.read(File.join(ROOT, rel)))
+  refs.reject { |r| live.any? { |h| h.include?(r) } }.map { |r| "#{rel}: `#{r}`" }
+end
+unless stale_exempts.empty?
+  warn "code_doc_section_refs ✗ — #{stale_exempts.size} EXEMPT_REFS entr(y/ies) guard nothing:"
+  stale_exempts.each { |s| warn "  · #{s} — the ref resolves now; delete the exemption" }
+  exit 1
 end
 
 if violations.empty?

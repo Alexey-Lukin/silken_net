@@ -751,9 +751,20 @@ skill_item_check() {
 dir, repo = ARGV
 # Resolve against the skills of the repo we were POINTED AT — same hermetic
 # posture as canon_section_check: a fixture must never answer with the live tree.
-skills = Dir[File.join(repo, ".claude", "skills", "*", "SKILL.md")].to_h do |p|
-  [File.basename(File.dirname(p)),
-   File.readlines(p).filter_map { |l| l[/\A\#{0,4}\s*(\d+)[.)] /, 1] }.map(&:to_i).uniq]
+# 🔴 ГЛОБ РОЗШИРЕНО НА ВСІ .md СКІЛА (2026-08-08), і без цього патча операція
+# того ж дня осліпила б цей гейт: §Guard-craft виїхала з SKILL.md у
+# `guard-craft.md`, тож `ssot-maintenance` віддав би ПОРОЖНІЙ набір пунктів,
+# `reject! { items.empty? }` викинув би скіл із мапи — і 65 цитат `#N` у 33
+# файлах стали б неперевірюваними МОВЧКИ, при зеленому гейті. Пункти скіла
+# тепер збираються з УСІХ його файлів: адреса `skill #N` належить скілу, а не
+# конкретному файлу всередині нього.
+#
+# І номер лишається РЯДКОМ, не Integer: `10a` існує (вставка суфіксом, бо
+# перенумерація осиротила б цитати), а `to_i` схлопував би його в `10` — тобто
+# цитата `#10a` тихо резолвилась би в ЧУЖИЙ пункт, що гірше за фантом.
+skills = Dir[File.join(repo, ".claude", "skills", "*", "*.md")].group_by { |p| File.basename(File.dirname(p)) }
+                                                              .transform_values do |paths|
+  paths.flat_map { |p| File.readlines(p).filter_map { |l| l[/\A\#{0,4}\s*(\d+[a-z]?)[.)] /, 1] } }.uniq
 end
 skills.reject! { |_n, items| items.empty? }
 exit 0 if skills.empty?
@@ -770,11 +781,13 @@ Dir.chdir(dir) { Dir["*.md"] }.sort.each do |f|
       line.split(nm)[1..].to_a.each do |seg|
         w = seg[0, 40].to_s
         next if w =~ /\b(PR|issue|pull|commit)\b/i
-        w.scan(/#(\d+)/) do |(n)|
-          next if skills[nm].include?(n.to_i)
+        # Суфікс ловимо разом із числом (`#10a`), інакше цитата на нього
+        # зрізалась би до `#10` і резолвилась у сусідній пункт — тихо й хибно.
+        w.scan(/#(\d+[a-z]?)/) do |(n)|
+          next if skills[nm].include?(n)
           next if exempt.fetch(f, []).include?("#{nm} ##{n}")
           puts "NUMREF  #{f}:#{ln + 1} cites `#{nm} ##{n}` — that skill defines no item " \
-               "##{n} (max ##{skills[nm].max}). A line number is not an address: cite an " \
+               "##{n} (max ##{skills[nm].max_by { |x| x.to_i }}). A line number is not an address: cite an " \
                "unnumbered paragraph by its opening phrase"
         end
       end
