@@ -11,13 +11,22 @@
 # strictly worse than today. So every detector is anchored narrowly and every
 # known-legitimate idiom is excluded, even at the cost of missing real instances.
 #
-# Two rules were MEASURED AND DROPPED, and the measurement is the point:
-#   · zsh word-splitting — 9-15 candidates in a month, and whether a bare `$var`
-#     is a bug depends on the variable's runtime CONTENT, which no regex sees.
-#     Any pattern here is a coin-flip that trains the reader to ignore the hook.
+# One rule was MEASURED AND DROPPED and stays dropped:
 #   · `cd` persistence — real, but the harness ALREADY carries it: 95.7% of calls
 #     ending outside the repo print "Shell cwd was reset to …". A hook here would
 #     duplicate a live carrier and add ~1,272 firings of pure noise.
+#
+# A second was dropped and then OVERTURNED, and the reversal is the more useful
+# record than either verdict. The refusal read: "whether a bare `$var` is a bug
+# depends on the variable's runtime CONTENT, which no regex sees." That is true
+# of the BROAD form and false of a narrow one — `for x in $list` and
+# `set -- $pair` carry the defect in their SYNTAX, because zsh does not split an
+# unquoted scalar at all, so the multi-wordness never has to be guessed. Both
+# halves re-measured 2026-08-08 over 17,524 calls / 32.3 days: the broad anchor
+# yields ~975/month at ~2-3% precision (rightly refused, do not reopen it), the
+# narrow one 18 findings — ~17/month — every one confirmed against the RECORDED
+# OUTPUT of that same call rather than by reading its code. Rule C is that
+# anchor. It is not a regex, and the reason why lives in zsh_split_scan.rb.
 set -uo pipefail
 
 input=$(cat)
@@ -89,6 +98,32 @@ if ! printf '%s' "$cmd" | grep -qE 'PIPESTATUS|pipefail'; then
        printf '%s' "$cmd" | grep -qE '[^>&<]&[[:space:]]*;[[:space:]]*echo[^;]*\$\?' ; } &&
      ! printf '%s' "$cmd" | grep -qE '\|[[:space:]]*grep[^|;]*;[[:space:]]*echo[^;]*\$\?' ; then
     warn exit-after-pipe '[bash-guard] `$?` after a pipe or a background start reports the LAST element, and head/tail/`&` always exit 0 — so this reads success no matter what happened upstream. Use ${PIPESTATUS[0]}, or run the command unpiped and echo $? on its own line. (Fires once per session.)'
+  fi
+fi
+
+# ── C · BLOCK · a loop over an unsplit scalar (18 in 17,524, 18/18 confirmed) ──
+# This is the one place the file's false-negative bias is overridden on purpose,
+# because the failure is a FALSE GREEN and it is silent by construction. Of the
+# 18 measured instances: one printed "порожньо = добре" immediately before `rm`
+# of seven memory files, one printed EXIT=0 for six gates immediately before
+# `git push`, and one turned a loop that never ran into a plausible WRONG
+# CONCLUSION ("no probe output — at_exit skipped"). None of them looked broken.
+# The prefilter is a strict superset of the scanner's own anchors and keeps ruby
+# off 88% of calls (2,115 of 17,524 reach it, ~33 ms each).
+if printf '%s' "$cmd" | grep -qE '\bfor[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]+in\b|set[[:space:]]+--'; then
+  scan="$(dirname "$0")/zsh_split_scan.rb"
+  rb=$(command -v ruby 2>/dev/null || true)
+  # /usr/bin/ruby is the OS copy and needs no RVM; the scanner is kept 2.6-clean
+  # so this detector cannot go dark just because the hook's PATH lacks a shim.
+  [[ -x "$rb" ]] || rb=/usr/bin/ruby
+  if [[ -x "$rb" && -r "$scan" ]]; then
+    found=$(printf '%s' "$cmd" | "$rb" "$scan" 2>/dev/null)
+    if [[ -n "$found" ]]; then
+      jq -nc --arg f "$found" '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:("zsh does not word-split an unquoted scalar — unlike bash. " + $f + ". So the loop body runs once on the whole string (and `set -- $v` leaves $2 empty for ANY input), and whatever check comes next reports success regardless of its input. Fix by making it an array (`v=(a b c); for x in $v`), by splitting explicitly (`${=v}`), or by quoting the element and dropping the re-split. $(subst), globs and arrays are NOT this class and are not flagged.")}}'
+      exit 0
+    fi
+  else
+    warn scanner-dark '[bash-guard] zsh_split_scan.rb could not be run (no ruby, or the file is unreadable), so the word-splitting detector is DARK for this session — its silence means nothing. (Fires once per session.)'
   fi
 fi
 

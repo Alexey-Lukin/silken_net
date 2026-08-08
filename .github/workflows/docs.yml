@@ -256,6 +256,16 @@ jobs:
         # that fires unconditionally.
         run: bash .claude/hooks/memory_gate.sh --selftest
 
+      - name: Docs · zsh word-splitting scanner self-test
+        # `bash_verify_guard.sh` rule C denies a command on this scanner's word,
+        # so the scanner is on the critical path of every Bash call — and it is a
+        # hand-written parser, which is exactly the thing that rots quietly. The
+        # battery pins both directions: five commands that MUST be caught and
+        # twelve safe idioms (a $(subst), a zsh array, a glob, an assignment RHS,
+        # a paren inside quotes) that must stay silent, because a detector that
+        # fires unconditionally would block ordinary shell work.
+        run: ruby .claude/hooks/zsh_split_scan.rb --selftest
+
       - name: Docs · Guard-craft index ⇄ source
         # The 42 blindness shapes live in `ssot-maintenance/guard-craft.md`; SKILL.md
         # carries a GENERATED one-line index of them, because that skill auto-invokes
