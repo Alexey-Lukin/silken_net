@@ -1397,6 +1397,55 @@ case "${1:-}" in
     printf '%s\n' "${out:-OK — no source is cited by ${ONEWAY_MIN}+ homes without pointing back}"
     [ -z "$out" ]
     ;;
+  --weight)
+    # THE COST LINE NOBODY HAD ENTERED. This corpus polices growth from three
+    # directions and loss from one, and it has a floor, a ratchet and a ceiling —
+    # but it never once asked what share of itself is about the AGENT rather than
+    # about the product, i.e. what the reading tax of its own jurisprudence is.
+    # Founder verdict 2026-08-08: "це не аргумент різати — це стаття витрат, якої
+    # ми не завели." So this mode PRICES, it does not gate: always exit 0, no
+    # threshold, no ratchet. A number that gates would invite cutting the layer
+    # that stops lessons being re-bought, which is the opposite of the finding.
+    #
+    # It reports a BAND, not a figure, and that is the whole point: the split
+    # turns on how two 100 kB journals are classified, and a single number would
+    # be a verdict dressed as a measurement. Report both bounds or neither.
+    ruby - "$MEM_DIR" "$REPO" <<'RUBY'
+dir, repo = ARGV
+sz = Dir["#{dir}/*.md"].to_h { |p| [File.basename(p), File.size(p)] }
+# Core META: rules about how the work is done, plus the journals of the method
+# itself. Everything else — project state, references, the owner — is DOMAIN.
+core = sz.select { |f, _| f.start_with?("feedback_") ||
+                          f =~ /\Alog_(memory|perimeter|subagent|cross_ref|measurement)/ }
+# Files whose side is a judgement call. Named, so the band is auditable.
+swing = sz.select { |f, _| %w[log_stream_scope_axis.md MEMORY.md log_portfolio_surgery.md].include?(f) }
+app = { "memory_gate.sh"         => "#{repo}/.claude/hooks/memory_gate.sh",
+        "memory_housekeeping.md" => "#{repo}/.claude/prompts/memory_housekeeping.md",
+        "memory-maintenance"     => "#{repo}/.claude/skills/memory-maintenance/SKILL.md" }
+       .filter_map { |n, p| [n, File.size(p)] if File.exist?(p) }.to_h
+tot, c, s, a = sz.values.sum, core.values.sum, swing.values.sum, app.values.sum
+puts "corpus #{tot} B in #{sz.size} files · apparatus in git #{a} B (#{app.map { |n, v| "#{n} #{v}" }.join(' · ')})"
+puts "core META (feedback_* + method journals) = #{c} B — #{(100.0 * c / tot).round(1)}% of the corpus"
+puts
+[["LOW   swing → DOMAIN", 0], ["HIGH  swing → META", s]].each do |label, extra|
+  m = c + extra
+  puts format("  %-22s META+apparatus %8d   DOMAIN %8d   → %.2f : 1", label, m + a, tot - m, (m + a).to_f / (tot - m))
+end
+puts
+puts "  swing files (the band's whole width): #{swing.map { |f, v| "#{f} #{v}B" }.join(' · ')}"
+puts <<~NOTE
+
+  Read it as a cost line, not a verdict:
+    · In EVERY classification the immune system outweighs what it protects.
+    · That is not an argument to cut. The same corpus measured ~212 carrier
+      firings against ~29 relapses — the meta layer is what stops lessons being
+      re-bought, and cutting the index specifically ACCELERATES corpus growth.
+    · The open question this prices is the one nowhere in the corpus: whether a
+      two-person practice can indefinitely pay the reading tax of its own law.
+      Tracked as a ⚖️, not as a threshold — see 00_07.
+NOTE
+RUBY
+    ;;
   --stops)
     # WORKLIST, never a verdict — it always exits 0 and is deliberately outside
     # --audit, because its yield runs to hundreds and a permanently-red battery
