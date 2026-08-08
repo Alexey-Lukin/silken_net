@@ -276,8 +276,23 @@ check_file() {
     # one quantity while measuring another. Both numbers, and which one bites.
     echo "WARN  $f = ${sz}B — over the working ${FILE_WARN}, so this line alone makes --audit EXIT 1 (hard ceiling ${FILE_CAP}); evict instances to its log_* twin"
   fi
-  [ "$sum" -ge "$GENRE_MIN" ] &&
-    echo "GENRE $f carries $sum dated blocks (h/l/b = $shape) — chronicle inside a rule file"
+  # The verdict wording was the defect. "Chronicle inside a rule file" reads as a
+  # sentence, and the triage that makes it safe — keep a block that carries a
+  # CLASS plus a reflex, evict one that REPORTS a run — lived only in the
+  # housekeeping prompt, which nothing loads automatically. So the one line that
+  # actually reaches the person about to cut said the opposite of the rule.
+  #
+  # The router false positive is measured, not hypothetical: on the worst file 3
+  # of 4 hits were migration routers ("N rules moved to <home> (date)"), i.e. the
+  # detector cried chronicle at a file that had just SHED its chronicle. Widening
+  # or narrowing the regex cannot separate them — a router is a dated bold span
+  # exactly like a report — so the cure is on the WRITING side, and it belongs in
+  # this message because that is where the router's author is standing.
+  if [ "$sum" -ge "$GENRE_MIN" ]; then
+    echo "GENRE $f carries $sum dated blocks (h/l/b = $shape) — a TRIGGER to read them, not a verdict:"
+    echo "      keep a block carrying CLASS + reflex (strip its date wrapper only), evict one that REPORTS a run;"
+    echo "      a migration-router line (\"N rules moved to <home> (date)\") matches here and is a FALSE positive — drop its non-load-bearing date instead"
+  fi
   return 0
 }
 
@@ -558,10 +573,18 @@ index_check() {
 # two consecutive waves each rediscovered the same classes, and why phase-2
 # numbers kept rising instead of converging.
 #
-# Deliberately OUTSIDE --audit, for the same reason --genre is: the live count
-# runs to dozens, so folding it into the battery would make EXIT 1 permanent and
-# train the reader to skim the one stance that must stay loud. This is a
-# WORKLIST, not a verdict — same stance as GENRE.
+# Deliberately OUTSIDE --audit: the live count runs to dozens, so folding it into
+# the battery would make EXIT 1 permanent and train the reader to skim the one
+# stance that must stay loud. This is a WORKLIST, not a verdict.
+#
+# 🔴 The old wording here said "same stance as GENRE", and that was FALSE in the
+# way this file is meant to police: `--genre` is a corpus-wide LENS, but the GENRE
+# FINDING rides check_file and therefore sits INSIDE --audit and gates. The two are
+# separated by YIELD, not by subject — GENRE's live yield is zero, so it belongs in
+# the battery; this one's is dozens, so it cannot. Both are triggers to go read a
+# file; only one of them can afford to be loud. (There is no mechanical form for
+# this class of lie: the claim is an analogy between a mode and a finding, and no
+# function name appears in it — so it is prose, and it is corrected as prose.)
 #
 # Grouped by TARGET rather than by source, because the router is written into
 # the target: one edit there can answer several homes at once. And the unit is
@@ -612,14 +635,44 @@ RUBY
   return 0
 }
 
-journals_reachable() {
-  local f s
-  for f in "$MEM_DIR"/log_*.md; do
-    [ -e "$f" ] || continue
-    s=$(basename "$f" .md)
-    grep -rlq "\[\[$s\]\]" "$MEM_DIR"/*.md 2>/dev/null ||
-      echo "UNSTRUNG $(basename "$f") is a journal nothing links to — it is unreachable"
-  done
+# Every file needs an inbound string, not only a journal. The journal-only form
+# was the same half-fix UNSTRUNG itself once was: the EVENT is an edit that severs
+# the last string, and that edit is no likelier to land on a journal than on a
+# rule file. A non-journal keeps its index row and quietly stops resonating — and
+# the row is the weaker of the two carriers, since the reconstruction of first-read
+# addresses put strings ahead of it and found NO systemic reminder behind either.
+#
+# Measured on the live corpus the day this widened: 125 files, ZERO with in=0. So
+# it pins an invariant the corpus already holds rather than opening a worklist —
+# that yield test is what decides battery-vs-worklist one level up.
+#
+# Self-citation does NOT count, and that hole was in the journal-only version:
+# `grep -r` over the whole dir matches the file itself, so a file naming its own
+# slug certified its own reachability. Reachability is a claim about the REST of
+# the corpus by definition.
+#
+# Named `*_check` deliberately: the parity detector scans for that suffix, so the
+# old name kept a stance-running check outside its reach.
+unstrung_check() {
+  command -v ruby >/dev/null 2>&1 || return 0
+  ruby - "$MEM_DIR" <<'RUBY'
+dir   = ARGV[0]
+files = Dir[File.join(dir, "*.md")].map { |p| File.basename(p, ".md") } - ["MEMORY"]
+inbound = Hash.new(0)
+(files + ["MEMORY"]).each do |src|
+  path = File.join(dir, "#{src}.md")
+  next unless File.exist?(path)
+  File.read(path).scan(/\[\[([^\]\n]+)\]\]/).flatten.map(&:strip).uniq.each do |t|
+    inbound[t] += 1 unless t == src
+  end
+end
+files.sort.each do |f|
+  next unless inbound[f].zero?
+  puts(f.start_with?("log_") ?
+    "UNSTRUNG #{f}.md is a journal nothing links to — it has no index row either, so it is unreachable" :
+    "UNSTRUNG #{f}.md has an index row but nothing links to it — a row orients on the first read, the string is what carries recall afterwards")
+end
+RUBY
   return 0
 }
 
@@ -981,7 +1034,7 @@ integrity_check() {
       # A journal is deliberately absent from the index — it is reached by
       # string. Demanding an index row here would make the gate shout at the
       # very design it exists to protect. Its reachability is NOT unchecked:
-      # journals_reachable() owns it, so that both stances run the same test.
+      # unstrung_check() owns it, so that both stances run the same test.
       log_*) ;;
       # ORPHAN stays audit-only ON PURPOSE and that exemption is unchanged: it is
       # EXPECTED on a brand-new file, and route_check owns that moment instead.
@@ -1047,9 +1100,16 @@ route_check() {
         echo "NEW   $bn is a journal nothing links to — hang it off its rule file or it is unreachable"
       ;;
     *)
+      # The message used to end "…and give it at least one inbound string" while
+      # measuring only the index row — a contract wider than its implementation,
+      # which is the shape this gate exists to catch. The string half now has a
+      # real owner (unstrung_check, both stances), so this one names its own
+      # subject and points at the sibling instead of promising for it.
       grep -q "($bn)" "$IDX" || {
         echo "NEW   $bn is not in the index — route it (own row only if it opens a NEW surface;"
-        echo "      otherwise inline it under a hub row) and give it at least one inbound [[string]]"
+        echo "      otherwise inline it under a hub row). The inbound-string half is NOT measured"
+        echo "      here: unstrung_check owns it, and a brand-new file trips it BY DESIGN — write"
+        echo "      the router first, which is the same order the 208-session measurement prescribed."
       }
       ;;
   esac
@@ -1145,6 +1205,8 @@ metadata:
 
 A gateway counts itself online against an interval it also publishes, so the
 two numbers drift apart without either side ever looking wrong on its own.
+
+Kin: [[feedback_alpha]]
 EOF
   cat >"$d/log_gamma.md" <<'EOF'
 ---
@@ -1155,6 +1217,8 @@ metadata:
 ---
 
 Chronicle body, dates and numbers live here by design.
+
+Rule home: [[feedback_beta]]
 EOF
 }
 
@@ -1230,10 +1294,29 @@ selftest() {
   _st_build "$d"; sed '/log_gamma/d' "$d/feedback_alpha.md" >"$d/.t" && mv "$d/.t" "$d/feedback_alpha.md"
   _st_check "UNSTRUNG on a journal nothing links to" expect 'UNSTRUNG'
 
+  # 6a. The SAME severance on a rule file. The journal-only version was silent
+  #     here, and silence is the expensive direction: the file keeps its index
+  #     row, so every integrity stance stays green while it stops resonating.
+  _st_build "$d"; sed '/feedback_alpha/d' "$d/feedback_beta.md" >"$d/.t" && mv "$d/.t" "$d/feedback_beta.md"
+  _st_check "UNSTRUNG on a rule file whose last string was cut" expect 'UNSTRUNG feedback_alpha'
+
+  # 6b. Self-citation is not reachability, and the old bash form could not see it:
+  #     it grepped the whole directory, the file included, so naming your own slug
+  #     certified you. Reachability is a claim about the REST of the corpus.
+  _st_build "$d"; sed '/feedback_alpha/d' "$d/feedback_beta.md" >"$d/.t" && mv "$d/.t" "$d/feedback_beta.md"
+  printf '\nSee [[feedback_alpha]] above.\n' >>"$d/feedback_alpha.md"
+  _st_check "a file citing its OWN slug is still UNSTRUNG" expect 'UNSTRUNG feedback_alpha'
+
   # 7. Chronicle inside a rule file, in the bullet costume.
   _st_build "$d"
   { echo; for i in 1 2 3 4; do echo "- 2026-08-0$i something happened that day"; done; } >>"$d/feedback_beta.md"
   _st_check "GENRE on dated blocks in a rule file" expect 'GENRE'
+
+  # 7a. The GENRE line must ARRIVE as a trigger. Its old wording was a sentence
+  #     ("chronicle inside a rule file") and the triage that makes cutting safe
+  #     lived in a prompt nothing loads automatically — so this wording is not
+  #     phrasing, it is the carrier, and it needs a case like any other.
+  _st_check "GENRE arrives as a trigger, not a verdict" expect 'not a verdict'
 
   # 8-9. THE PAIR THAT CARRIES THE MOST. A verbatim rule copied into another file
   #      with no pointer is phase-2 debt; the same copy carrying [[home]] inside
@@ -1650,7 +1733,7 @@ case "${1:-}" in
   --selftest) selftest ;;
   --audit)
     out=$( { override_check; index_check; desc_check; corpus_floor_check; integrity_check
-             journals_reachable; asset_check
+             unstrung_check; asset_check
              privacy_check; overlap_check; section_ref_check; canon_section_check
              skill_item_check
              for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; mojibake_check "$f"; done; } )
@@ -1866,7 +1949,7 @@ RUBY
               mojibake_check "$fp"
               check_file "$fp"
               path_check "$fp"
-              journals_reachable
+              unstrung_check
               asset_check
               privacy_check
               # Runs on BOTH stances (the UNSTRUNG lesson): severing a section a
