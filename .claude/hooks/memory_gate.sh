@@ -827,11 +827,21 @@ sources += (Dir[File.join(repo, "docs", "**", "*.md")] +
             Dir[File.join(repo, "spec", "**", "*.rb")] +
             Dir[File.join(repo, "{tools,firmware}", "**", "*.{rb,md,c,h}")] +
             Dir[File.join(repo, "*.md")]).sort.uniq
+                                         .map { |p| [p.sub(%r{\A#{Regexp.escape(repo)}/}, ""), p] }
                                          # Vendored trees cannot cite our skills and are 96% of the
                                          # glob — scanning them took the gate from 4s to 34s, and a
                                          # PostToolUse hook that slow is a hook someone disables.
-                                         .reject { |p| p =~ %r{/(extern|vendor|node_modules|site-packages|coverage|tmp)/} }
-                                         .map { |p| [p.sub(%r{\A#{Regexp.escape(repo)}/}, ""), p] }
+                                         # 🔴 Filter the REPO-RELATIVE path, and therefore only AFTER
+                                         # the map: an absolute path also carries whatever the PARENT
+                                         # dirs happen to be called, so under CI — where the fixture
+                                         # repo is `/tmp/tmp.X.repo` — this erased the ENTIRE fixture
+                                         # perimeter. The tell was diagnostic: both POSITIVE repo
+                                         # cases went silent while every negative one passed
+                                         # VACUOUSLY (an empty perimeter is silent for free), so the
+                                         # battery read 49/2 rather than collapsing. Green on macOS
+                                         # (`mktemp` there ignores TMPDIR and yields /var/folders/…),
+                                         # red on Linux — a platform split no local run can see.
+                                         .reject { |(rel, _)| rel =~ %r{(\A|/)(extern|vendor|node_modules|site-packages|coverage|tmp)/} }
 
 sources.each do |label, path|
   next unless File.file?(path)
