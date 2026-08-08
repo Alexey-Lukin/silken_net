@@ -11,6 +11,17 @@
             "statusMessage": "SSOT discipline check..."
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/oleksiilukin/silken_net/.claude/hooks/bash_verify_guard.sh",
+            "timeout": 5,
+            "statusMessage": "Checking shell verification hygiene..."
+          }
+        ]
       }
     ],
     "PostToolUse": [
