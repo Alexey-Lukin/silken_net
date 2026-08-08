@@ -822,6 +822,29 @@ skills = skill_files.group_by { |p| File.basename(File.dirname(p)) }
 end
 skills.reject! { |_n, items| items.empty? }
 exit 0 if skills.empty?
+
+# ── AMBIG · a number that is not an ADDRESS ─────────────────────────────────
+# Four skills legitimately carry several numbered sequences (a pipeline, a set
+# of gotchas, a recipe), so the same `#N` names two different things and a bare
+# citation is ambiguous. The defect is therefore NOT "there is a duplicate" —
+# there are 24 and none is a writing error — it is "somebody CITED one without
+# saying which sequence". Live yield of the narrow question: zero, which is what
+# makes it a battery case; the wide one would be a permanently-red worklist and
+# would train the reader to skim the one stance that must stay loud.
+#
+# 🔴 THE UNIT IS THE FILE, and getting it wrong costs a recount: `ssot-maintenance`
+# repeats every one of its numbers across TWO files because `guard-craft.md` is
+# the source and the block in SKILL.md is GENERATED from it. Counting per-skill
+# calls all 45 of them duplicates and reds the gate on the healthiest invariant
+# in the tree. A number is ambiguous only when one FILE uses it twice.
+dups = Hash.new { |h, k| h[k] = [] }
+skills.each_key do |nm|
+  grouped = skill_files.select { |p| File.basename(File.dirname(p)) == nm }
+  grouped.each do |p|
+    nums = File.readlines(p).filter_map { |l| l[/\A\#{0,4}\s*(\d+[a-z]?)[.)] /, 1] }
+    dups[nm] |= nums.tally.select { |_n, c| c > 1 }.keys
+  end
+end
 names = skills.keys.sort_by { |k| -k.length }
 
 # ── HOMOGLYPH · item suffixes must live in ONE alphabet ──────────────────────
@@ -928,6 +951,17 @@ sources.each do |label, path|
                "to `##{n[0..-2]}` and resolves into the NEIGHBOURING item, silently. Use the Latin letter"
         end
         w.scan(/#(\d+[a-z]?)/) do |(n)|
+          # A `§Section` between the skill name and the number disambiguates —
+          # and that is not a proposal but the convention USAGE already settled
+          # on: every live citation to a doubled number already carries one.
+          if dups[nm].include?(n) && !w[0...Regexp.last_match.begin(0)].to_s.include?("§")
+            if EXEMPT.fetch(label, []).include?("#{nm} ##{n}")
+              used_exempt[label] << "#{nm} ##{n}"
+            else
+              puts "AMBIG      #{label}:#{ln + 1} cites `#{nm} ##{n}`, but that skill uses `#{n}` twice in " \
+                   "one file — the number is not an address. Name the sequence: `#{nm} §Section ##{n}`"
+            end
+          end
           next if skills[nm].include?(n)
           if EXEMPT.fetch(label, []).include?("#{nm} ##{n}")
             used_exempt[label] << "#{nm} ##{n}"
@@ -1380,6 +1414,33 @@ selftest() {
   #      rather than on the `skill #N` window would demand renaming live canon.
   _st_build "$d"; printf '\nProof form → `04_06 §A.2`, rule #10а.\n' >>"$d/feedback_beta.md"
   _st_check "HOMOGLYPH silent on a canon §-number with no skill beside it" reject 'HOMOGLYPH'
+
+  # 10j. AMBIG [DOC-T.62]. Four skills legitimately run several numbered
+  #      sequences, so `#1` names two different things and a bare citation
+  #      resolves into whichever the reader meets first — silently, since the
+  #      number DOES exist and NUMREF is green by construction.
+  _st_build "$d"
+  printf '\n## Second sequence\n\n1. **A step of another list** — body here.\n' >>"$d.repo/.claude/skills/fixtureskill/SKILL.md"
+  printf '\nOperational pair → `fixtureskill` #1.\n' >>"$d/feedback_beta.md"
+  _st_check "AMBIG on a bare number a skill uses twice in ONE file" expect 'AMBIG'
+
+  # 10k. Its negative control — and this is the shape usage already settled on
+  #      by itself: every live citation to a doubled number carries its section.
+  _st_build "$d"
+  printf '\n## Second sequence\n\n1. **A step of another list** — body here.\n' >>"$d.repo/.claude/skills/fixtureskill/SKILL.md"
+  printf '\nOperational pair → `fixtureskill` §Second #1.\n' >>"$d/feedback_beta.md"
+  _st_check "AMBIG silent once the citation names the sequence" reject 'AMBIG'
+
+  # 10l. THE UNIT, and it is the case that cost a recount before it existed: a
+  #      number repeated across a skill's TWO files is the generated-index shape
+  #      (`guard-craft.md` is the source, the block in SKILL.md is produced from
+  #      it), i.e. the healthiest invariant in the tree. Counting duplicates
+  #      per-SKILL instead of per-FILE calls all 45 of them ambiguous and reds
+  #      the gate on correctness itself.
+  _st_build "$d"
+  printf '1. **First item** — body.\n2. **Second item** — body.\n' >"$d.repo/.claude/skills/fixtureskill/mirror.md"
+  printf '\nOperational pair → `fixtureskill` #1.\n' >>"$d/feedback_beta.md"
+  _st_check "AMBIG silent on a number mirrored across a skill's files" reject 'AMBIG'
 
   # 10i. PERIMETER [DOC-T.62, 2026-08-08]. Until this date the citation scan read
   #      the memory dir and nothing else, so a phantom in `docs/`, a skill citing
