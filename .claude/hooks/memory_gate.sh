@@ -1323,7 +1323,21 @@ EOF
   if printf '%s' "$out" | grep -q 'OVERRIDE'; then pass=$((pass+1)); printf '  ok    %s\n' "write stance declares foreign thresholds instead of trusting them"
   else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "write stance declares foreign thresholds instead of trusting them" "$out"; fi
 
-  # 30-31. A truncated multi-byte character. Positive AND negative control,
+  # 30a-b. --stops, pinned on the pair that IS the design decision: it must find
+  #        an anchored ⛔ ban, and must stay silent on a ⊥ counter-rule heading.
+  #        Measured precision for a raw ⊥ sweep is ~15-20% — it marks a deliberate
+  #        TRADEOFF, not a ban — so the exclusion is the whole difference between
+  #        this mode and a naive grep, and it is the thing a future edit would undo.
+  _st_build "$d"
+  printf '\n- ⛔ **Відкинуто виміром — не відбудовувати:** диспетчер на HTTP-вісь (0 із 4), ARCH.13.\n' >>"$d/feedback_beta.md"
+  printf '\n## ⊥ Контр-правило\n\nСвідома жертва: тут допускається розбіжність, і це не дефект, а дизайн.\n' >>"$d/feedback_beta.md"
+  out=$(env MEMORY_GATE_SELFTEST=1 MEMORY_GATE_DIR="$d" bash "$SELF" --stops 2>&1)
+  if printf '%s' "$out" | grep -q 'Відкинуто виміром'; then pass=$((pass+1)); printf '  ok    %s\n' "--stops surfaces an anchored ⛔ prohibition"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "--stops surfaces an anchored ⛔ prohibition" "$out"; fi
+  if printf '%s' "$out" | grep -q 'Контр-правило'; then fail=$((fail+1)); printf '  FAIL  %s\n' "--stops stays silent on a ⊥ counter-rule (tradeoff, not a ban)"
+  else pass=$((pass+1)); printf '  ok    %s\n' "--stops stays silent on a ⊥ counter-rule (tradeoff, not a ban)"; fi
+
+  # 31-32. A truncated multi-byte character. Positive AND negative control,
   #        because the negative is the load-bearing one here: this corpus is
   #        bilingual and full of glyphs, so a detector that fires on ordinary
   #        Cyrillic would be worse than none.
@@ -1382,6 +1396,67 @@ case "${1:-}" in
     out=$(oneway_check)
     printf '%s\n' "${out:-OK — no source is cited by ${ONEWAY_MIN}+ homes without pointing back}"
     [ -z "$out" ]
+    ;;
+  --stops)
+    # WORKLIST, never a verdict — it always exits 0 and is deliberately outside
+    # --audit, because its yield runs to hundreds and a permanently-red battery
+    # trains the reader to skim the one stance that must stay loud.
+    #
+    # WHY COMPUTED AND NOT WRITTEN DOWN. The corpus needs this register — an
+    # agent starting cold cannot enumerate what has already been decided against,
+    # and the price of one miss is a whole session. But it explicitly refused to
+    # keep it as prose, for a reason worth repeating: that would be a FOURTH
+    # hand-synced mirror, and "a rotten prohibition is worse than an absent one —
+    # it blocks correct work with authority". Computed from source on every run,
+    # nothing here can go stale by construction.
+    #
+    # THE PATTERN SET IS MEASURED, not guessed (121 files, 5,483 lines):
+    #   · `⊥` is EXCLUDED. It looks like the obvious marker and is not: ~15-20%
+    #     precision, because the corpus defines it as a deliberate TRADEOFF, and
+    #     most hits are literally `## ⊥ Контр-правило` headings — sections whose
+    #     purpose is "here is when the rule does NOT apply", the semantic
+    #     opposite of a ban. Every ⊥ that did carry a real ban also tripped one
+    #     of the patterns below, so its marginal recall is ~zero and its noise is not.
+    #   · `⛔` only when it LEADS a heading or a bullet (~58% precision raw,
+    #     ~100% anchored — the false ones are mid-sentence talk ABOUT the
+    #     convention: `⛔-мітка`, `у ⛔-списку`).
+    #   · `do NOT` / `don't` were absent from the first candidate list and are
+    #     among the best (~90%): they carry bans no Ukrainian marker touches.
+    ruby - "$MEM_DIR" <<'RUBY'
+dir = ARGV[0]
+BAN  = /(^|[[:space:]])(won.?t-do|відкинуто|відхилено|YAGNI|MUST NOT|do NOT|don't|заборон\w*|не відбудов\w*|не переауд\w*|не пітчити|descope)/i
+LEAD = /\A\s*(\#{1,6}\s*|[-*]\s*(\*\*)?)⛔/
+ANCH = /\b([A-Z]{2,7}(-[A-Z])?\.\d+[a-z]?)\b|\b20\d\d-\d\d-\d\d\b|\b\d\d-\d\d\b|§|`[^`]+\.(rb|sh|yml|json|md)`/
+rows = Hash.new { |h, k| h[k] = [] }
+Dir["#{dir}/*.md"].sort.each do |p|
+  f = File.basename(p)
+  next if f.start_with?("user_")          # private; never in a worklist
+  File.readlines(p).each do |l|
+    next unless l =~ LEAD || l =~ BAN
+    t = l.strip.gsub(/\s+/, " ")
+    next if t.length < 25
+    rows[f] << [t =~ ANCH ? "ANCHORED  " : "PROSE-ONLY", t[0, 155]]
+  end
+end
+n = rows.values.sum(&:size)
+rows.sort.each do |f, rs|
+  puts "\n── #{f}  (#{rs.size})"
+  rs.each { |tag, t| puts "   #{tag} #{t}" }
+end
+anch = rows.values.flatten(1).count { |tag, _| tag.start_with?("ANCHORED") }
+puts <<~CEIL
+
+  ── #{n} lines across #{rows.size} files · #{anch} carry a checkable anchor (ID/date/§/path), #{n - anch} are bare prose
+  ── DECLARED CEILING, read it before trusting the list:
+     · This is a FLOOR, not a census. A full READ finds 2-4× more (measured here
+       at ~3.2×): the worst prohibitions carry no marker at all, in either language.
+     · ~half of even the MARKED lines carry nothing machine-checkable, so their
+       freshness is a human question — and ⛔-marks rot FASTER than ordinary prose,
+       because they describe the state of OTHER files.
+     · ANCHORED means an address exists, NOT that the decision is still current.
+       Verify the ID against 00_07's live-vs-archive split before relying on it.
+CEIL
+RUBY
     ;;
   --genre)
     # Journals are exempt HERE too, and the omission was not cosmetic: a journal

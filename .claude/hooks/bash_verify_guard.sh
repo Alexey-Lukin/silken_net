@@ -79,7 +79,14 @@ if ! printf '%s' "$cmd" | grep -qE 'PIPESTATUS|pipefail'; then
   # `git push` read as success and a mutation-verify that could not fail. A
   # terminal bare `grep` is EXCLUDED: reading grep's status is a deliberate,
   # documented idiom here ("1 = zero hits"), not a mistake.
-  if printf '%s' "$cmd" | grep -qE '[|&][^;]*;[[:space:]]*echo[^;]*\$\?' &&
+  # ⚠️ The `&` half must be a real BACKGROUND operator, not a redirect. The first
+  # live firing of this hook was a false positive on `cmd > out 2>&1; echo $?` —
+  # where `$?` is exactly right, because a redirect does not change whose status
+  # it is. So `&` counts only when it TERMINATES the statement (`… & ; echo`),
+  # never when preceded by `>`/`<`/another `&`. Caught by shipping it, which is
+  # also the argument for shipping: the measurement missed this class entirely.
+  if { printf '%s' "$cmd" | grep -qE '[^|]\|[^|][^;]*;[[:space:]]*echo[^;]*\$\?' ||
+       printf '%s' "$cmd" | grep -qE '[^>&<]&[[:space:]]*;[[:space:]]*echo[^;]*\$\?' ; } &&
      ! printf '%s' "$cmd" | grep -qE '\|[[:space:]]*grep[^|;]*;[[:space:]]*echo[^;]*\$\?' ; then
     warn exit-after-pipe '[bash-guard] `$?` after a pipe or a background start reports the LAST element, and head/tail/`&` always exit 0 — so this reads success no matter what happened upstream. Use ${PIPESTATUS[0]}, or run the command unpiped and echo $? on its own line. (Fires once per session.)'
   fi
