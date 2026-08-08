@@ -762,13 +762,38 @@ dir, repo = ARGV
 # І номер лишається РЯДКОМ, не Integer: `10a` існує (вставка суфіксом, бо
 # перенумерація осиротила б цитати), а `to_i` схлопував би його в `10` — тобто
 # цитата `#10a` тихо резолвилась би в ЧУЖИЙ пункт, що гірше за фантом.
-skills = Dir[File.join(repo, ".claude", "skills", "*", "*.md")].group_by { |p| File.basename(File.dirname(p)) }
-                                                              .transform_values do |paths|
+skill_files = Dir[File.join(repo, ".claude", "skills", "*", "*.md")]
+skills = skill_files.group_by { |p| File.basename(File.dirname(p)) }
+                    .transform_values do |paths|
   paths.flat_map { |p| File.readlines(p).filter_map { |l| l[/\A\#{0,4}\s*(\d+[a-z]?)[.)] /, 1] } }.uniq
 end
 skills.reject! { |_n, items| items.empty? }
 exit 0 if skills.empty?
 names = skills.keys.sort_by { |k| -k.length }
+
+# ── HOMOGLYPH · item suffixes must live in ONE alphabet ──────────────────────
+# Cyrillic `а` is U+0430 and Latin `a` is U+0061; they are indistinguishable on
+# screen, and both classes above are ASCII — so the two halves fail in OPPOSITE
+# directions and BOTH are silent. A Cyrillic-suffixed MARKER never enters the
+# address space at all (`[a-z]` cannot take it, so the whole line yields
+# nothing, and the item has no address). A Cyrillic-suffixed CITATION truncates
+# to the bare number, `include?` answers true, and it resolves into the
+# NEIGHBOURING item — which is worse than a phantom, because it is a wrong
+# address that passes. Measured 2026-08-08: 3 markers and 5 citations live, and
+# the one they landed on (`backend #26`) was itself two different items.
+# ⚠️ Canon §-numbers are a DIFFERENT address space and are legitimately
+# Cyrillic (`04_06 §A.2` rule `10а` is a real heading), so the citation half
+# only ever looks INSIDE a `skill #N` window — never at a bare `#N`.
+CYR = "[а-я]".freeze
+skill_files.sort.each do |p|
+  File.readlines(p).each_with_index do |l, i|
+    m = l[/\A\#{0,4}\s*(\d+#{CYR})[.)] /, 1]
+    next unless m
+    puts "HOMOGLYPH  #{p.sub(%r{\A#{Regexp.escape(repo)}/}, '')}:#{i + 1} defines item `#{m}` with a " \
+         "CYRILLIC suffix — the collector's `[a-z]` cannot see it, so this item has NO address at all. " \
+         "Use the Latin letter"
+  end
+end
 
 exempt = {} # per-file DECIDED cases, keyed like canon_section_check's
 
@@ -783,6 +808,10 @@ Dir.chdir(dir) { Dir["*.md"] }.sort.each do |f|
         next if w =~ /\b(PR|issue|pull|commit)\b/i
         # Суфікс ловимо разом із числом (`#10a`), інакше цитата на нього
         # зрізалась би до `#10` і резолвилась у сусідній пункт — тихо й хибно.
+        w.scan(/#(\d+#{CYR})/) do |(n)|
+          puts "HOMOGLYPH  #{f}:#{ln + 1} cites `#{nm} ##{n}` with a CYRILLIC suffix — it truncates to " \
+               "`##{n[0..-2]}` and resolves into the NEIGHBOURING item, silently. Use the Latin letter"
+        end
         w.scan(/#(\d+[a-z]?)/) do |(n)|
           next if skills[nm].include?(n)
           next if exempt.fetch(f, []).include?("#{nm} ##{n}")
@@ -1143,6 +1172,27 @@ selftest() {
   #      that proves it discriminates rather than shouts.
   _st_build "$d"; printf '\nOperational pair → `fixtureskill` #2.\n' >>"$d/feedback_beta.md"
   _st_check "NUMREF silent on a live skill item" reject 'NUMREF'
+
+  # 10f. HOMOGLYPH, MARKER side [DOC-T.62]. A Cyrillic-suffixed item is not a
+  #      near-miss — it is absent: the collector's `[a-z]` cannot take U+0430, so
+  #      the line yields nothing and the item has no address at all. Three lived
+  #      in the tree for weeks under a green gate.
+  _st_build "$d"; printf '\n26а. **Cyrillic-suffixed item** — body.\n' >>"$d.repo/.claude/skills/fixtureskill/SKILL.md"
+  _st_check "HOMOGLYPH on a Cyrillic item marker" expect 'HOMOGLYPH'
+
+  # 10g. HOMOGLYPH, CITATION side, and it needs its own verdict rather than a
+  #      widened class: the suffix is simply left unconsumed, so `#2а` resolves
+  #      to item `2` and NUMREF stays green. A wrong address that passes is worse
+  #      than a phantom, because nothing ever asks about it again.
+  _st_build "$d"; printf '\nOperational pair → `fixtureskill` #2а.\n' >>"$d/feedback_beta.md"
+  _st_check "HOMOGLYPH on a Cyrillic item citation" expect 'HOMOGLYPH'
+
+  # 10h. Its negative control, and load-bearing: canon §-numbers are a DIFFERENT
+  #      address space and are legitimately Cyrillic (`04_06 §A.2` rule `10а` is
+  #      a real heading, cited four times). A detector keyed on the character
+  #      rather than on the `skill #N` window would demand renaming live canon.
+  _st_build "$d"; printf '\nProof form → `04_06 §A.2`, rule #10а.\n' >>"$d/feedback_beta.md"
+  _st_check "HOMOGLYPH silent on a canon §-number with no skill beside it" reject 'HOMOGLYPH'
 
   # 11. A backticked path that claims our tree — now answered by the fixture repo.
   _st_build "$d"; printf '\nSee `app/services/no_such_service.rb` for the shape.\n' >>"$d/feedback_beta.md"
