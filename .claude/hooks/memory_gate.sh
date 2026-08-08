@@ -801,6 +801,9 @@ end
 # per-file for the reason the sibling gate already learned the hard way: a
 # blanket file exemption silently un-checks every OTHER address in that file.
 EXEMPT = {
+  # `docs/00_07…` names the phantom it closed, which is better provenance than
+  # saying «a phantom» abstractly — and EXEMPT-DEAD proved the point the same
+  # day: rewriting that item on closure orphaned this entry within minutes.
   "docs/00_07_Action_Plan_Tracker.md" => ["frontend #13a"],
   # This file exempts its OWN illustrations, and that is structural rather than
   # untidy: once the perimeter includes `.claude/**`, a gate that documents the
@@ -811,6 +814,7 @@ EXEMPT = {
   ".claude/hooks/memory_gate.sh"      => ["frontend #66", "frontend #78", "frontend #13a"]
 }.freeze
 used_exempt = Hash.new { |h, k| h[k] = [] }
+reported = {}
 
 # PERIMETER. Until 2026-08-08 this read `Dir["*.md"]` under MEM_DIR only, i.e.
 # it never opened the repo — so a phantom in the tracker, a skill citing another
@@ -866,6 +870,13 @@ sources.each do |label, path|
             used_exempt[label] << "#{nm} ##{n}"
             next
           end
+          # One line can hold the same address twice — two mentions of the name,
+          # and both 40-char windows reaching both numbers, which reported one
+          # finding four times. Noise in a gate's output is what teaches a reader
+          # to skim it, so key on the ADDRESS and say it once.
+          key = "#{label}:#{ln + 1}:#{nm}:#{n}"
+          next if reported.key?(key)
+          reported[key] = true
           puts "NUMREF  #{label}:#{ln + 1} cites `#{nm} ##{n}` — that skill defines no item " \
                "##{n} (max ##{skills[nm].max_by { |x| x.to_i }}). A line number is not an address: cite an " \
                "unnumbered paragraph by its opening phrase"

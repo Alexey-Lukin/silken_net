@@ -4,9 +4,12 @@
 # = =====================================================================
 # 🌱 INIT CONSOLIDATED — single squashed migration
 # = =====================================================================
-# This is THE only migration in the repository. All previous incremental
-# migrations have been squashed into `db/structure.sql` since the project
-# has no production database to preserve (pre-launch).
+# This is the SQUASH ANCHOR. Everything that existed before it lives in
+# `db/structure.sql`, since the project has no production database to preserve
+# (pre-launch). It was once literally the only migration here, and that sentence
+# stood after four incrementals had landed on top of it — a self-location claim
+# is falsified by an edit in ANOTHER file, so it reads fresher the longer it
+# stands. Count them with `ls db/migrate/`, never from this header.
 #
 # Workflow for new clones:
 #   bin/rails db:create db:schema:load db:seed
