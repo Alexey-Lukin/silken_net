@@ -31,9 +31,24 @@ ROOT    = File.expand_path("..", __dir__)
 MEM     = ENV["MEMORY_GATE_DIR"] ||
           File.expand_path("~/.claude/projects/-Users-oleksiilukin-silken-net/memory")
 
-SOURCES = Dir[File.join(ROOT, ".claude/skills/*/SKILL.md")] +
+# 🔴 ГЛОБ БУВ `*/SKILL.md` І ЦЕ ЛИШЕ ВИПАДКОВО НЕ КОШТУВАЛО (2026-08-08).
+# Скіли можуть нести ДОПОМІЖНІ файли, які читаються на вимогу (`guard-craft.md`
+# тощо) — і рівно вони природний дім для довгих розділів, тобто саме там осідає
+# більшість memory-роутерів. Вузький глоб означав би: виносиш секцію в
+# допоміжний файл — і її маршрути ЗНИКАЮТЬ із периметра цього гейта, мовчки,
+# при зеленому CI. Знайдено adversarial-ревʼю плану ПЕРЕД виносом; чотири доми
+# (`feedback_self_attestation` · `feedback_mechanism_vs_its_trigger` ·
+# `feedback_silent_default` · `feedback_mass_campaign_gate_inventory`) цитуються
+# рівно раз, і рівно всередині секції, яку планувалось винести.
+SOURCES = Dir[File.join(ROOT, ".claude/skills/*/*.md")] +
           Dir[File.join(ROOT, ".claude/prompts/*.md")] +
           [ File.join(ROOT, "CLAUDE.md") ]
+
+# ЛІХТАР НА ВЛАСНУ МНОЖИНУ. Гейт, чий периметр може тихо стиснутись, мусить
+# міряти сам периметр — інакше «нуль битих маршрутів» означає «нуль маршрутів».
+# Той самий клас, що `skills.reject! { items.empty? }` у `skill_item_check`:
+# порожня множина дає зелене за побудовою.
+SOURCE_FLOOR = 18
 
 # Слаг памʼяті: рівно ті чотири родини, які корпус використовує як імена файлів.
 # Тримаємо префікси ЯВНО, а не `\w+_\w+` — інакше ловимо кожен ruby-ідентифікатор
@@ -79,7 +94,16 @@ end
 
 files = SOURCES.count { |p| File.file?(p) }
 cites = routes.values.sum(&:size)
-puts "OK — #{routes.size} git→memory routes, all resolve (#{cites} citations across #{files} files)"
+
+if files < SOURCE_FLOOR
+  puts "PERIMETER shrank: scanned #{files} source files, floor is #{SOURCE_FLOOR}"
+  puts "  A green verdict over a shrunken set is not a verdict. Either a skill/prompt was"
+  puts "  removed (lower the floor here, which makes the loss a visible decision), or the"
+  puts "  glob stopped matching something it used to reach."
+  exit 1
+end
+
+puts "OK — #{routes.size} git→memory routes, all resolve (#{cites} citations across #{files} files, floor #{SOURCE_FLOOR})"
 
 if VERBOSE
   puts
