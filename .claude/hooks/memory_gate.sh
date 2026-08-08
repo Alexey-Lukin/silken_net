@@ -795,32 +795,98 @@ skill_files.sort.each do |p|
   end
 end
 
-exempt = {} # per-file DECIDED cases, keyed like canon_section_check's
+# DECIDED illustrative citations, per FILE and per REF. An illustration of a
+# phantom is byte-identical to a phantom, so no anchor can separate them — the
+# only honest instrument is a declared exemption. Kept per-ref rather than
+# per-file for the reason the sibling gate already learned the hard way: a
+# blanket file exemption silently un-checks every OTHER address in that file.
+EXEMPT = {
+  "docs/00_07_Action_Plan_Tracker.md" => ["frontend #13a"],
+  # This file exempts its OWN illustrations, and that is structural rather than
+  # untidy: once the perimeter includes `.claude/**`, a gate that documents the
+  # phantom class — or fixtures it in the self-test — necessarily writes phantoms
+  # into the tree it scans. Widening the perimeter without this entry reds the
+  # gate on its own teaching material, which is the fastest way to get a gate
+  # disabled. Each ref still stands separately, so an undeclared one still fires.
+  ".claude/hooks/memory_gate.sh"      => ["frontend #66", "frontend #78", "frontend #13a"]
+}.freeze
+used_exempt = Hash.new { |h, k| h[k] = [] }
 
-Dir.chdir(dir) { Dir["*.md"] }.sort.each do |f|
-  File.readlines(File.join(dir, f)).each_with_index do |line, ln|
+# PERIMETER. Until 2026-08-08 this read `Dir["*.md"]` under MEM_DIR only, i.e.
+# it never opened the repo — so a phantom in the tracker, a skill citing another
+# skill, and every `skill #N` in `spec/`, `docs/`, `tools/` or `firmware/` were
+# unreachable BY CONSTRUCTION while the gate reported green. Measured on the day
+# it was widened: 97 citations in memory, 33 more outside it.
+sources = Dir.chdir(dir) { Dir["*.md"] }.sort.map { |f| [f, File.join(dir, f)] }
+sources += (Dir[File.join(repo, "docs", "**", "*.md")] +
+            Dir[File.join(repo, ".claude", "**", "*.{md,sh,rb}")] +
+            Dir[File.join(repo, "spec", "**", "*.rb")] +
+            Dir[File.join(repo, "{tools,firmware}", "**", "*.{rb,md,c,h}")] +
+            Dir[File.join(repo, "*.md")]).sort.uniq
+                                         # Vendored trees cannot cite our skills and are 96% of the
+                                         # glob — scanning them took the gate from 4s to 34s, and a
+                                         # PostToolUse hook that slow is a hook someone disables.
+                                         .reject { |p| p =~ %r{/(extern|vendor|node_modules|site-packages|coverage|tmp)/} }
+                                         .map { |p| [p.sub(%r{\A#{Regexp.escape(repo)}/}, ""), p] }
+
+sources.each do |label, path|
+  next unless File.file?(path)
+  File.readlines(path).each_with_index do |line, ln|
+    # Cheap gate before the O(names) walk: a citation needs a `#` and a digit.
+    next unless line.include?("#") && line =~ /#\d/
     names.each do |nm|
-      next unless line.include?(nm)
-      # A 40-char window: a citation puts the number right after the name, while
-      # a PR/issue number that merely shares the line does not.
-      line.split(nm)[1..].to_a.each do |seg|
-        w = seg[0, 40].to_s
+      line.to_enum(:scan, /#{Regexp.escape(nm)}/).each do
+        pos = Regexp.last_match.begin(0)
+        pre  = line[[pos - 2, 0].max...pos].to_s
+        post = line[(pos + nm.length), 12].to_s
+        # The name must stand in a SKILL CONSTRUCTION, not merely near a `#N`.
+        # Mere adjacency was safe while the perimeter was the memory corpus,
+        # where these words are almost always skill names; over `docs/` it is
+        # not — `deploy`, `frontend`, `codex` are ordinary words, and the
+        # tracker's «верифікувати deploy … Pre-Flight #9» read as a citation to
+        # a skill that has no item 9. Measured over the whole widened
+        # perimeter: this anchor drops both such false positives and loses ZERO
+        # real citations, because the repo writes them exactly two ways —
+        # `name` in backticks, or `name-скіл gotcha #N`.
+        next unless pre.end_with?("`") || post.start_with?("`") ||
+                    post =~ /\A[-\s](скіл|скіла|скілу|skill)/i
+        # A 40-char window: a citation puts the number right after the name,
+        # while a PR/issue number that merely shares the line does not.
+        w = line[(pos + nm.length), 40].to_s
         next if w =~ /\b(PR|issue|pull|commit)\b/i
         # Суфікс ловимо разом із числом (`#10a`), інакше цитата на нього
         # зрізалась би до `#10` і резолвилась у сусідній пункт — тихо й хибно.
         w.scan(/#(\d+#{CYR})/) do |(n)|
-          puts "HOMOGLYPH  #{f}:#{ln + 1} cites `#{nm} ##{n}` with a CYRILLIC suffix — it truncates to " \
-               "`##{n[0..-2]}` and resolves into the NEIGHBOURING item, silently. Use the Latin letter"
+          puts "HOMOGLYPH  #{label}:#{ln + 1} cites `#{nm} ##{n}` with a CYRILLIC suffix — it truncates " \
+               "to `##{n[0..-2]}` and resolves into the NEIGHBOURING item, silently. Use the Latin letter"
         end
         w.scan(/#(\d+[a-z]?)/) do |(n)|
           next if skills[nm].include?(n)
-          next if exempt.fetch(f, []).include?("#{nm} ##{n}")
-          puts "NUMREF  #{f}:#{ln + 1} cites `#{nm} ##{n}` — that skill defines no item " \
+          if EXEMPT.fetch(label, []).include?("#{nm} ##{n}")
+            used_exempt[label] << "#{nm} ##{n}"
+            next
+          end
+          puts "NUMREF  #{label}:#{ln + 1} cites `#{nm} ##{n}` — that skill defines no item " \
                "##{n} (max ##{skills[nm].max_by { |x| x.to_i }}). A line number is not an address: cite an " \
                "unnumbered paragraph by its opening phrase"
         end
       end
     end
+  end
+end
+
+# An exemption whose subject is gone stops protecting anything and starts
+# protecting the NEXT phantom that lands on that address. So a stale entry is a
+# finding, not housekeeping — the exemption list guards itself.
+scanned = sources.map(&:first).to_set rescue (require "set"; sources.map(&:first).to_set)
+EXEMPT.each do |label, refs|
+  # Only a file that was actually SCANNED can make its exemption stale. Under a
+  # fixture repo none of these paths exist, and "not applicable" is not "rotten"
+  # — conflating them would red the self-test on every run.
+  next unless scanned.include?(label)
+  (refs - used_exempt[label]).each do |r|
+    puts "EXEMPT-DEAD  #{label} exempts `#{r}`, which no longer appears there — remove the entry, " \
+         "or it will silently bless the next phantom that takes that address"
   end
 end
 RUBY
@@ -1193,6 +1259,50 @@ selftest() {
   #      rather than on the `skill #N` window would demand renaming live canon.
   _st_build "$d"; printf '\nProof form → `04_06 §A.2`, rule #10а.\n' >>"$d/feedback_beta.md"
   _st_check "HOMOGLYPH silent on a canon §-number with no skill beside it" reject 'HOMOGLYPH'
+
+  # 10i. PERIMETER [DOC-T.62, 2026-08-08]. Until this date the citation scan read
+  #      the memory dir and nothing else, so a phantom in `docs/`, a skill citing
+  #      another skill, and every `skill #N` in specs or firmware were unreachable
+  #      BY CONSTRUCTION while the gate reported green. The case lives in the
+  #      fixture REPO, not the fixture corpus — that is the whole point of it.
+  _st_build "$d"; mkdir -p "$d.repo/docs"
+  printf 'Operational pair → `fixtureskill` #66.\n' >"$d.repo/docs/probe.md"
+  _st_check "NUMREF reaches a phantom OUTSIDE the memory corpus" expect 'NUMREF'
+
+  # 10j. Its anchor, and the widening is unsafe without it: mere adjacency was
+  #      fine while the perimeter was the corpus, where these words are always
+  #      skill names — over `docs/` they are ordinary words, and «верифікувати
+  #      deploy … Pre-Flight #9» read as a citation to a skill with no item 9.
+  #      The name must stand in a skill CONSTRUCTION (backticks, or `-скіл`).
+  _st_build "$d"; mkdir -p "$d.repo/docs"
+  printf 'верифікувати fixtureskill (крок = Pre-Flight #66 `06_01`)\n' >"$d.repo/docs/probe.md"
+  _st_check "NUMREF silent on a bare skill WORD next to a foreign #N" reject 'NUMREF'
+
+  # 10k. EXEMPT-DEAD. An illustration of a phantom is byte-identical to a phantom,
+  #      so the only honest instrument is a declared exemption — and an exemption
+  #      whose subject is gone stops protecting anything and starts blessing the
+  #      NEXT phantom to take that address. Fixture names the real tracker path so
+  #      the entry resolves, and omits the ref it exempts.
+  _st_build "$d"; mkdir -p "$d.repo/docs"
+  printf 'no illustration here\n' >"$d.repo/docs/00_07_Action_Plan_Tracker.md"
+  _st_check "EXEMPT-DEAD on an exemption whose subject vanished" expect 'EXEMPT-DEAD'
+
+  # 10l. Its negative control, load-bearing twice over: the exemption must still
+  #      SUPPRESS (or the widening would simply start shouting at the tracker for
+  #      documenting the class), and EXEMPT-DEAD must key on ABSENCE rather than
+  #      fire on every listed entry. ⚠️ The fixture has to define `frontend`
+  #      itself — the first version of this case did not, so the name was not in
+  #      the skill set at all, the citation was never scanned, and the case was
+  #      asserting something that could not happen. Caught by the battery.
+  _st_build "$d"; mkdir -p "$d.repo/docs" "$d.repo/.claude/skills/frontend"
+  printf '# Frontend\n\n1. **One** — body.\n2. **Two** — body.\n' >"$d.repo/.claude/skills/frontend/SKILL.md"
+  # ⚠️ One citation per line, deliberately. The first draft also wrote «зрізав до
+  # `#13`» inside the same 40-char window, and the case went red — correctly: the
+  # exemption is per-REF, so it declined to bless a second, undeclared address.
+  # That failure is the per-ref design working, not a fixture nuisance.
+  printf 'Виявлено фантомом `frontend #13a` — саме тому виняток оголошено.\n' >"$d.repo/docs/00_07_Action_Plan_Tracker.md"
+  _st_check "EXEMPT suppresses the phantom it declares" reject 'NUMREF'
+  _st_check "EXEMPT-DEAD silent while its subject is present" reject 'EXEMPT-DEAD'
 
   # 11. A backticked path that claims our tree — now answered by the fixture repo.
   _st_build "$d"; printf '\nSee `app/services/no_such_service.rb` for the shape.\n' >>"$d/feedback_beta.md"
