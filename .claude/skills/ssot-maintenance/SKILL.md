@@ -114,7 +114,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 
 ### Ways a gate cannot see its own surface
 
-> **The 42 shapes live in [`guard-craft.md`](guard-craft.md) — this is their index, generated from it.**
+> **The blindness shapes live in [`guard-craft.md`](guard-craft.md) — this is their index, generated from it.**
 > Below is one line per shape: the rule and its reflex. **Open `guard-craft.md` for the mechanism,
 > the incident that bought it, and its bounds** — and open it not only when building or hardening a
 > gate, but also when writing a spec, doing a mass delete, narrowing a rule, running a campaign, or
@@ -169,6 +169,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 40. Before a MASS campaign, baseline EVERY gate in the repo and rehearse on a throwaway clone — the expensive findings come from gates you were not thinking about
 41. A checklist, runbook, RFQ, pitch or locale file is CODE WITH NO COMPILER — nothing parses it, so its first execution is its first test, and that happens on deploy day or on a vendor's floor
 42. A mutation that fails to remove the mechanism makes a LIVE case look VACUOUS — and the wrong conclusion, delete the case, is the one that reads as rigour
+43. A gate with TWO STANCES — a full sweep and a hook at the moment of the write — diverges between them silently, and the PARITY detector built against that divergence inherits the hole through its own declared EXEMPTION: an exemption is a blind zone shaped exactly like the obligation it delegates — **for any gate with two stances — full sweep ⊥ incremental hook, pre-commit ⊥ CI, `--check` ⊥ nightly reindex — stop asserting parity in prose and COMPUTE it; then make every exemption PAY, by writing down what it delegates and asserting each delegate is actually present on the other side, because a one-directional diff cannot see INTO an exemption and the exemption is granted precisely where the obligation moved**
 
 <!-- /GUARD-CRAFT-INDEX -->
 
@@ -281,7 +282,7 @@ GATE per-phase docs:check_refs + tracker:check + zero-loss set-diff + wiki dry-r
 - **No volatile counts in prose** (test/line tallies drift every commit). Reference the source or generate it (`[[feedback_no_volatile_counts]]`).
 - **`wiki:sync` needs SSH access** to the `*.wiki.git` repo; **always dry-run first**; read its "unresolved links" — they're often stale source links worth fixing. **Run it PLAIN** — never prepend `/usr/bin` to PATH (shadows the rvm ruby shim → system Ruby 2.6 → bundler crash); a `Gem::Resolver…GemParser` trace can also be a SentinelOne-eaten shim (`[[project_rvm_env_repair]]`).
 - **A missing closing ` ``` ` fence silently desyncs EVERY fence-aware guard** (the `in_fence` toggle runs in ~9 `DocsLinter` methods) + truncates the ToC — one unclosed fence disables them all at once. **Now HARD-gated**: `DocsLinter.unbalanced_code_fences` (DOC-T.45, 2026-07-18) counts fences by the SAME `line.start_with?` predicate the guards use, so `docs:check_refs` aborts on an odd count (reporting the opening line) — a mirror gate, self-consistent with what it protects.
-- **A freshly-written guard can be pure decoration, and a green baseline HIDES it** — the `\z`-vs-`\Z` dead-scope class (DOC-T.52). Full account, with the other 41 blindness shapes, in [`guard-craft.md`](guard-craft.md) (§Guard-craft above indexes them); it is the reason recipe step 4 is not optional.
+- **A freshly-written guard can be pure decoration, and a green baseline HIDES it** — the `\z`-vs-`\Z` dead-scope class (DOC-T.52). Full account, with every other blindness shape, in [`guard-craft.md`](guard-craft.md) (§Guard-craft above indexes them); it is the reason recipe step 4 is not optional.
 - **Homoglyph / mixed-script drift** — a Cyrillic letter hiding inside a Latin word (`geniпin`-class) passes every ASCII gate. Detector = a perl per-letter-run scan flagging any `\p{L}+` run that carries Latin+Cyrillic TOGETHER; run it after chemistry-name work (ligand / enzyme names are the usual carriers).
 - **`.c` firmware comments stay Ukrainian + the file's poetic house style** (`[[feedback_comment_style]]`).
 - **zsh**: `status` is read-only; quote globs (`[[feedback_zsh_bash_gotchas]]`).

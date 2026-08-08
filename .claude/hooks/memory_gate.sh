@@ -933,11 +933,28 @@ broken_check() {
   return 0
 }
 
+# The KEY and the FILENAME are two spellings of one identity, and only one of
+# them is an address: every string resolves through `ls | grep -qix "$l.md"` and
+# every index row through `(file.md)`, so the filesystem name is what the corpus
+# navigates by, while `name:` is what a reader — and any agent trusting the
+# frontmatter — takes the record to BE. Presence was checked; equality was not,
+# by anything. The expensive shape is not the cosmetic mismatch but the rename:
+# move a file, fix its strings and its index row, and the stale key still names
+# a slug that either resolves to NOTHING or, worse, to a NEIGHBOUR — the same
+# silent resolution into the wrong home that `skill #N` already paid for one
+# address space over. Corpus measured clean when this landed, so it is a battery
+# case, not a worklist: the verdict exists to keep a future rename honest.
 format_check_one() {
-  local fn; fn=$(basename "$1")
+  local fn nm slug; fn=$(basename "$1"); slug=${fn%.md}
   [ "$fn" = "MEMORY.md" ] && return 0
   { grep -q '^name:' "$1" && grep -q 'type:' "$1"; } ||
     echo "FORMAT  $fn lacks name/type frontmatter"
+  # First `^name:` is the frontmatter one by position — the block is the head of
+  # the file. Quotes are stripped because the standard writes the slug bare and a
+  # quoted spelling is the same identity, not a second one.
+  nm=$(sed -n 's/^name:[[:space:]]*//p' "$1" | head -1 | tr -d '"'\''[:space:]')
+  [ -n "$nm" ] && [ "$nm" != "$slug" ] &&
+    echo "NAME    $fn declares name: $nm — strings and the index resolve by FILENAME, so the key is the half that must move (unless you are renaming the file, and then its strings move too)"
   return 0
 }
 
@@ -1550,6 +1567,30 @@ EOF
   _st_build "$d"; printf '\nЗвичайна кирилиця, гліфи ⊥ ⛔ 🔴 — усе валідне.\n' >>"$d/feedback_beta.md"
   _st_check "MOJIBAKE silent on healthy Cyrillic and glyphs" reject 'MOJIBAKE'
 
+  # 33-36. THE KEY AGAINST THE FILENAME. Four cases because the failure has two
+  #        spellings and the gate has two stances, and the quiet one is the
+  #        NEGATIVE: this verdict fires on every file in the corpus on every
+  #        write, so a detector that mistook a legal name for a mismatch would be
+  #        removed the same day. Case 36 is the one the filesystem hides — macOS
+  #        resolves a case-only difference, so the corpus looks consistent while
+  #        the key and the address disagree, and only an exact compare sees it.
+  _st_build "$d"
+  printf -- '---\nname: feedback_wrong_slug\ndescription: "B"\nmetadata:\n  type: feedback\n---\n\nBody.\n' >"$d/feedback_beta.md"
+  _st_check "NAME when the frontmatter key and the filename disagree" expect 'NAME    feedback_beta.md'
+
+  _st_build "$d"
+  _st_check "NAME silent on a corpus whose keys all match their filenames" reject 'NAME  '
+
+  _st_build "$d"
+  printf -- '---\nname: Feedback_Beta\ndescription: "B"\nmetadata:\n  type: feedback\n---\n\nBody.\n' >"$d/feedback_beta.md"
+  _st_check "NAME on a case-only difference the filesystem resolves silently" expect 'NAME    feedback_beta.md'
+
+  _st_build "$d"
+  printf -- '---\nname: feedback_wrong_slug\ndescription: "B"\nmetadata:\n  type: feedback\n---\n\nBody.\n' >"$d/feedback_beta.md"
+  out=$(_st_write "$d" feedback_beta.md)
+  if printf '%s' "$out" | grep -q 'NAME'; then pass=$((pass+1)); printf '  ok    %s\n' "write stance reports a key/filename mismatch as it is typed"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "write stance reports a key/filename mismatch as it is typed" "$out"; fi
+
   # 32. THE CLASS ITSELF GETS A CARRIER, because writing the rule down failed
   #     three times. "Both stances must run the same battery" has been stated in
   #     the playbook since the UNSTRUNG fix, and the stances diverged again
@@ -1565,13 +1606,36 @@ EOF
   #                         (broken_check · format_check_one · strings_check);
   #                         only ORPHAN stays audit-only, because it is EXPECTED
   #                         on a brand-new file and route_check owns that moment.
+  #
+  #     🔴 And it needed a SECOND half, found by mutating the thing itself: drop
+  #     format_check_one from the write stance and this said PARITY-OK. The
+  #     exemption is why. integrity_check is exempt BECAUSE its parts ride the
+  #     write stance individually — so the diff can only ever look one way (in
+  #     audit, absent from write), and the parts, which appear in the write
+  #     stance ONLY, are outside the subtraction by construction. The prose above
+  #     already names them; naming them was not checking them. So the exemption
+  #     now carries its own obligation, and a `defined?`-style guard keeps the
+  #     list from rotting into a claim about functions that no longer exist.
   out=$(ruby - "$SELF" <<'RUBY' 2>/dev/null
 src   = File.read(ARGV[0])
 audit = src[/^  --audit\)\n(.*?)\n    ;;/m, 1].to_s
 write = src[/^  \*\)\n(.*?)\n    ;;/m, 1].to_s
 calls = ->(s) { s.scan(/\b([a-z_]+_check)\b/).flatten.uniq }
 drift = calls.call(audit) - calls.call(write) - %w[integrity_check overlap_check]
-puts drift.empty? ? "PARITY-OK" : "PARITY-DRIFT #{drift.sort.join(' ')}"
+
+# The exemption's price: each part integrity_check delegates to the write stance
+# must actually BE there. Guarded against a stale list — a name here that is no
+# longer a function in this file is itself the failure.
+parts   = %w[broken_check format_check_one strings_check]
+defined = src.scan(/^([a-z_][a-z0-9_]*)\(\) \{/).flatten
+ghosts  = parts.reject { |p| defined.include?(p) }
+missing = parts.select { |p| defined.include?(p) && write !~ /\b#{Regexp.escape(p)}\b/ }
+
+out = []
+out << "PARITY-DRIFT #{drift.sort.join(' ')}" unless drift.empty?
+out << "PARITY-GHOST #{ghosts.sort.join(' ')}" unless ghosts.empty?
+out << "PARITY-EXEMPT-UNPAID #{missing.sort.join(' ')}" unless missing.empty?
+puts out.empty? ? "PARITY-OK" : out.join(" / ")
 RUBY
 )
   if printf '%s' "$out" | grep -q 'PARITY-OK'; then pass=$((pass+1)); printf '  ok    %s\n' "no check is audit-only without being a declared exemption"
