@@ -126,6 +126,19 @@ RSpec.describe Codex::CitationPolicy, type: :policy do
       expect(policy.destroy?).to be(false)
     end
 
+    # [SEC.26] Автор може зникнути, а цитата лишитись — тоді `created_by_user&.` дає
+    # nil, і вісь звуження втрачає предмет. Пін тут ФАЙЛ-CLOSED: без автора немає
+    # організації, з якою можна збігтися, тож override не спрацьовує НІ для кого —
+    # інакше зникнення автора тихо перетворювало б цитату на глобально-модеровану,
+    # тобто рівно на ту поведінку, яку SEC.26 і прибрав.
+    it "denies the admin override when the author record is gone" do
+      orphaned = fresh_own_citation
+      allow(orphaned).to receive(:created_by_user).and_return(nil)
+      policy = described_class.new(admin, orphaned)
+      expect(policy.update?).to  be(false)
+      expect(policy.destroy?).to be(false)
+    end
+
     it "denies an admin whose acting organization was switched away from the author's" do
       context = UserContext.new(admin, create(:organization))
       policy  = described_class.new(context, fresh_own_citation)
