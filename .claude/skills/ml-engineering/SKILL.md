@@ -14,19 +14,19 @@ on-device features, proven, not hoped.**
 
 | Source | Owns |
 |---|---|
-| `docs/03_03 §3.4` | **Log-mel feature contract** (SR / n_fft / mel / HTK / DC-removal / periodic-Hann / tol). The values live here; everything else mirrors. |
-| `docs/03_03 §3.2/§4/§10` | DSP-path decision (Path B log-mel), model architecture (Path B, 5-class), Mongabay fauna (biodiversity = 2-й D-MRV вимір, both/and — не заміна carbon). |
+| `docs/03_03_TinyML_Acoustic_Inference.md §3.4` | **Log-mel feature contract** (SR / n_fft / mel / HTK / DC-removal / periodic-Hann / tol). The values live here; everything else mirrors. |
+| `docs/03_03_TinyML_Acoustic_Inference.md §3.2/§4/§10` | DSP-path decision (Path B log-mel), model architecture (Path B, 5-class), Mongabay fauna (biodiversity = 2-й D-MRV вимір, both/and — не заміна carbon). |
 | `tools/ml/README.md` | Package layout, the three-impl parity diagram, the local-verify recipes, the deferred stack. |
-| `docs/00_06 §2` | Canonical-home registry — the contract's home + its C/python mirrors + drift guard. |
-| `docs/00_02` | Validation Gate — LLM proposes a *hypothesis*; no code until the spec is approved. |
-| `docs/03_01 §12.4` | **Firmware ARM cross-compile build** (FW.46) — CMake, pinned submodules (`firmware/extern/`), mrbc bytecode, toolchain pin, footprint, mruby `double`/NO_BOXING/minimal-gembox invariants. |
+| `docs/00_06_SSOT_Documentation_Standard.md §2` | Canonical-home registry — the contract's home + its C/python mirrors + drift guard. |
+| `docs/00_02_AI_Native_Engineering_and_TRL.md` | Validation Gate — LLM proposes a *hypothesis*; no code until the spec is approved. |
+| `docs/03_01_Firmware_Lifecycle_and_DMA.md §12.4` | **Firmware ARM cross-compile build** (FW.46) — CMake, pinned submodules (`firmware/extern/`), mrbc bytecode, toolchain pin, footprint, mruby `double`/NO_BOXING/minimal-gembox invariants. |
 
 **State** (what's built / next) lives in memory, not here: `[[project_e61_done_next_machine_doable]]`, plus `[[feedback_no_volatile_counts]]`, `[[feedback_comment_style]]`.
 
 ## Core invariant — three implementations, one definition, proven equal
 
 ```
-        docs/03_03 §3.4  (contract SSOT, hash-stamped)
+             03_03 §3.4  (contract SSOT, hash-stamped)
    librosa  ≡  pure-stdlib  ≡  C Compute_LogMel
  (training)   (fast local)    (firmware/common/logmel.c)
       └ parity 1e-6 ┘   └─ golden vectors, tol 1e-3 ─┘
@@ -55,7 +55,7 @@ Set up the heavy env once: `mamba env create -f tools/ml/environment.yml && mamb
 
 ## ARM cross-compile + bytecode (FW.46)
 
-Firmware build canon — `docs/03_01 §12.4` (CMake, pinned submodules, toolchain
+Firmware build canon — `03_01 §12.4` (CMake, pinned submodules, toolchain
 pin, footprint, mruby invariants). `git submodule update --init --recursive`
 first. **No ARM toolchain in this env by default** — pin Arm GNU 13.2.Rel1
 (ARM tarball or apt `gcc-arm-none-eabi`); CI installs it. Operational recipes:
@@ -80,7 +80,7 @@ a log-mel param OR the bytecode logic touches the contract dance AND these gates
 
 Editing a log-mel parameter touches **three homes** — keep them in lockstep:
 
-1. **`docs/03_03 §3.4`** (owner) — edit the value via the `ssot-maintenance` skill; run `docs:check_refs`.
+1. **`03_03 §3.4`** (owner) — edit the value via the `ssot-maintenance` skill; run `docs:check_refs`.
 2. **`tools/ml/.../dsp/contract.py`** + **`firmware/common/logmel_contract.h`** — mirror the value.
 3. **Regenerate** `firmware/common/logmel_*.h` (`emit_c`), **re-pin** the hash in `tests/test_contract_hash.py`, **re-run** `make -C firmware/test logmel` + `pytest`.
 
@@ -118,7 +118,7 @@ drops a class → ≥1 cavitation/chainsaw frame for the `03_03 §8` #6/#7 smoke
 `run`/`data-manifest` hashes are auditable + the header re-emittable; heavy/regenerable artifacts
 (`model.keras`, PTQ `*.npz`, TF SavedModel temp) stay ignored.
 
-**Honesty (don't conflate the two halves):** per-class field-validity is canon in `docs/03_03 §4.2` —
+**Honesty (don't conflate the two halves):** per-class field-validity is canon in `03_03 §4.2` —
 silence + cavitation are **synthetic placeholders**; baseline accuracy is a **pipeline-integrity**
 metric, NOT field accuracy. ⚠️ cavitation is deeper than "not validated" — it's an **audible-proxy,
 not the real signal**: true xylem-cavitation acoustic emission is ultrasonic 25–150 kHz (Tyree&Dixon

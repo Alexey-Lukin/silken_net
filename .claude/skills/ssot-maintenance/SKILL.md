@@ -13,11 +13,11 @@ These are the canonical homes. Read them before acting; never copy their content
 
 | Source | Owns |
 |---|---|
-| `docs/00_02_AI_Native_Engineering_and_TRL` | **Philosophy**: NASA TRL (1-9, never 10-12), the AI Pipeline + 🚦 **Validation Gate** (LLM proposes a *hypothesis*, it does NOT compute physics), Intent-First, golden rule: *no code/solder until the spec is approved in the Wiki*. |
-| `docs/00_06 §1` | **Canonical doc skeleton** (🎯 Мета / ✅ Статус / 🔗 Cross-references / 📑 auto-ToC / Content; blockers→00_07; no volatile counts). |
-| `docs/00_06 §2` | **Canonical-home registry** — *одна річ, один дім*. The table of which fact lives where (TRL matrix→00_03 §1, AES modes→03_05 §3.7, Lorenz→03_04 §4.1, …). |
-| `docs/00_06 §3` | **Drift-prevention tooling** — the CI-enforced guard table. Add new guards here. |
-| `docs/00_00` | SSOT index + reading order. |
+| `docs/00_02_AI_Native_Engineering_and_TRL.md` | **Philosophy**: NASA TRL (1-9, never 10-12), the AI Pipeline + 🚦 **Validation Gate** (LLM proposes a *hypothesis*, it does NOT compute physics), Intent-First, golden rule: *no code/solder until the spec is approved in the Wiki*. |
+| `docs/00_06_SSOT_Documentation_Standard.md §1` | **Canonical doc skeleton** (🎯 Мета / ✅ Статус / 🔗 Cross-references / 📑 auto-ToC / Content; blockers→00_07; no volatile counts). |
+| `docs/00_06_SSOT_Documentation_Standard.md §2` | **Canonical-home registry** — *одна річ, один дім*. The table of which fact lives where (TRL matrix→00_03 §1, AES modes→03_05 §3.7, Lorenz→03_04 §4.1, …). |
+| `docs/00_06_SSOT_Documentation_Standard.md §3` | **Drift-prevention tooling** — the CI-enforced guard table. Add new guards here. |
+| `docs/00_00_SSOT_Index.md` | SSOT index + reading order. |
 
 **State** (what's done / next) lives in memory, not here: `[[project_ssot_campaign_history]]` (Gen1 SSOT-standardization campaign, DORMANT) + `[[feedback_vilize_sweep_method]]` (the LIVE method — 00_07 tracker-hygiene + 7-family guard-craft) + `[[project_vilize_00]]` / `[[project_doc_t33_t34_seed]]` (§00-tooling: field_canon_sync, markers, stan_audit), plus `[[feedback_no_volatile_counts]]`, `[[feedback_ssot_review_workflow]]`, `[[project_wiki_sync]]`.
 
