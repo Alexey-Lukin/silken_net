@@ -422,7 +422,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
     // PAUSE — [B-07] SLASH MUST BYPASS PAUSE
     // ═══════════════════════════════════════════════════════════════════
 
-    function test_pause_blocksTransfers() public {
+    function testRevert_pause_blocksTransfers() public {
         vm.prank(minter);
         sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
@@ -434,7 +434,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
         sfc.transfer(user2, 100e18);
     }
 
-    function test_pause_blocksMinting() public {
+    function testRevert_pause_blocksMinting() public {
         vm.prank(pauser);
         sfc.pause();
 

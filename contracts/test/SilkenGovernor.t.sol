@@ -123,7 +123,7 @@ contract SilkenGovernorTest is Test {
         assertTrue(proposalId > 0);
     }
 
-    function test_propose_revertsBelowThreshold() public {
+    function testRevert_propose_belowThreshold() public {
         // voter3 has 200 SFC (below 100 SFC threshold — but 200 > 100, so let's test with no tokens)
         address noTokens = makeAddr("noTokensProposer");
         vm.roll(block.number + 1);

@@ -114,7 +114,7 @@ contract DeployWiringTest is Test {
     }
 
     // ─── The bypass that #1 closes (would FAIL under the old admin=Safe) ──
-    function test_safeCannotSetParamsDirectly() public {
+    function testRevert_safeCannotSetParamsDirectly() public {
         // Safe holds no role on Params → setParameter reverts (AccessControl).
         // Read the role constant BEFORE the cheatcodes (see the note below).
         bytes32 govRole = d.protocolParams.GOVERNANCE_ROLE();
@@ -123,7 +123,7 @@ contract DeployWiringTest is Test {
         d.protocolParams.setParameter(keccak256("dynamic_tax_rate"), 1e18);
     }
 
-    function test_safeCannotGrantItselfGovernance() public {
+    function testRevert_safeCannotGrantItselfGovernance() public {
         // Safe is NOT Params admin → cannot grant itself GOVERNANCE_ROLE to bypass the 48h Timelock.
         // Read the role constant BEFORE the cheatcodes — an external call in the args would
         // otherwise consume the prank/expectRevert (foundry gotcha).

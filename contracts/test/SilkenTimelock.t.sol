@@ -62,7 +62,7 @@ contract SilkenTimelockTest is Test {
 
     // ─── Scheduling Operations ────────────────────────────────────────
 
-    function test_schedule_enforcesMinDelay() public {
+    function testRevert_schedule_belowMinDelay() public {
         address target = makeAddr("scheduleTarget");
         bytes memory data = abi.encodeWithSignature("doSomething()");
         bytes32 predecessor = bytes32(0);
@@ -91,7 +91,7 @@ contract SilkenTimelockTest is Test {
         assertTrue(timelock.isOperationPending(opId));
     }
 
-    function test_schedule_revertsForNonProposer() public {
+    function testRevert_schedule_nonProposer() public {
         address target = makeAddr("scheduleTarget");
         bytes memory data = abi.encodeWithSignature("doSomething()");
         bytes32 predecessor = bytes32(0);
@@ -107,7 +107,7 @@ contract SilkenTimelockTest is Test {
 
     // ─── Execute with Delay ───────────────────────────────────────────
 
-    function test_execute_cannotRunBeforeDelay() public {
+    function testRevert_execute_beforeDelay() public {
         address target = makeAddr("scheduleTarget");
         bytes memory data = abi.encodeWithSignature("doSomething()");
         bytes32 predecessor = bytes32(0);

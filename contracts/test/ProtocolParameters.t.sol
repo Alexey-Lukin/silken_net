@@ -39,12 +39,12 @@ contract ProtocolParametersTest is Test {
         assertTrue(params.hasRole(params.GOVERNANCE_ROLE(), timelock));
     }
 
-    function test_constructor_revertsOnZeroAdmin() public {
+    function testRevert_constructor_zeroAdmin() public {
         vm.expectRevert("ProtocolParameters: zero admin");
         new ProtocolParameters(address(0), timelock);
     }
 
-    function test_constructor_revertsOnZeroTimelock() public {
+    function testRevert_constructor_zeroTimelock() public {
         vm.expectRevert("ProtocolParameters: zero timelock");
         new ProtocolParameters(admin, address(0));
     }
@@ -84,13 +84,13 @@ contract ProtocolParametersTest is Test {
         vm.stopPrank();
     }
 
-    function test_setParameter_revertsOnZeroKey() public {
+    function testRevert_setParameter_zeroKey() public {
         vm.prank(timelock);
         vm.expectRevert("ProtocolParameters: zero key");
         params.setParameter(bytes32(0), 42);
     }
 
-    function test_setParameter_revertsForUnauthorized() public {
+    function testRevert_setParameter_unauthorized() public {
         bytes32 govRole = params.GOVERNANCE_ROLE(); // pre-compute: an external call in the args eats the prank
         vm.prank(unauthorized);
         vm.expectRevert(
@@ -99,7 +99,7 @@ contract ProtocolParametersTest is Test {
         params.setParameter(KEY_LORENZ_SIGMA, 10e18);
     }
 
-    function test_setParameter_revertsForAdmin() public {
+    function testRevert_setParameter_adminLacksGovernance() public {
         // Admin has DEFAULT_ADMIN_ROLE but NOT GOVERNANCE_ROLE
         bytes32 govRole = params.GOVERNANCE_ROLE();
         vm.prank(admin);
@@ -162,7 +162,7 @@ contract ProtocolParametersTest is Test {
         params.setParameters(keys, values);
     }
 
-    function test_setParameters_revertsOnLengthMismatch() public {
+    function testRevert_setParameters_lengthMismatch() public {
         bytes32[] memory keys = new bytes32[](2);
         uint256[] memory values = new uint256[](3);
 
@@ -171,7 +171,7 @@ contract ProtocolParametersTest is Test {
         params.setParameters(keys, values);
     }
 
-    function test_setParameters_revertsOnEmptyBatch() public {
+    function testRevert_setParameters_emptyBatch() public {
         bytes32[] memory keys = new bytes32[](0);
         uint256[] memory values = new uint256[](0);
 
@@ -180,7 +180,7 @@ contract ProtocolParametersTest is Test {
         params.setParameters(keys, values);
     }
 
-    function test_setParameters_revertsOnBatchTooLarge() public {
+    function testRevert_setParameters_batchTooLarge() public {
         uint256 size = params.MAX_BATCH_SIZE() + 1; // 51
         bytes32[] memory keys = new bytes32[](size);
         uint256[] memory values = new uint256[](size);
@@ -195,7 +195,7 @@ contract ProtocolParametersTest is Test {
         params.setParameters(keys, values);
     }
 
-    function test_setParameters_revertsOnZeroKeyInBatch() public {
+    function testRevert_setParameters_zeroKeyInBatch() public {
         bytes32[] memory keys = new bytes32[](2);
         uint256[] memory values = new uint256[](2);
 
@@ -209,7 +209,7 @@ contract ProtocolParametersTest is Test {
         params.setParameters(keys, values);
     }
 
-    function test_setParameters_revertsForUnauthorized() public {
+    function testRevert_setParameters_unauthorized() public {
         bytes32[] memory keys = new bytes32[](1);
         uint256[] memory values = new uint256[](1);
         keys[0] = KEY_LORENZ_SIGMA;
@@ -405,7 +405,7 @@ contract ProtocolParametersTest is Test {
 
     // ─── Admin Protection ─────────────────────────────────────────────
 
-    function test_adminProtection_cannotRemoveLastAdmin() public {
+    function testRevert_adminProtection_cannotRemoveLastAdmin() public {
         bytes32 adminRole = params.DEFAULT_ADMIN_ROLE();
         vm.prank(admin);
         vm.expectRevert("ProtocolParameters: cannot remove last admin");
@@ -428,7 +428,7 @@ contract ProtocolParametersTest is Test {
         assertTrue(params.hasRole(adminRole, admin2));
     }
 
-    function test_adminProtection_cannotRevokeLastAdmin() public {
+    function testRevert_adminProtection_cannotRevokeLastAdmin() public {
         bytes32 adminRole = params.DEFAULT_ADMIN_ROLE();
         address admin2 = makeAddr("admin2");
 

@@ -453,7 +453,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
     // PAUSE / UNPAUSE
     // ═══════════════════════════════════════════════════════════════════
 
-    function test_pause_blocksTransfers() public {
+    function testRevert_pause_blocksTransfers() public {
         vm.prank(minter);
         scc.mint(user1, 1000e18, TREE_DID, bytes32(uint256(0xE60)));
 
@@ -465,7 +465,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
         scc.transfer(user2, 100e18);
     }
 
-    function test_pause_blocksMinting() public {
+    function testRevert_pause_blocksMinting() public {
         vm.prank(pauser);
         scc.pause();
 
