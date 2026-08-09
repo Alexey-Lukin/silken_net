@@ -281,6 +281,46 @@ registry.each_line do |line|
   end
 end
 
+# ── F. «прожени X» у прозі не сміє продавати ПІДМНОЖИНУ як смугу (OPS.25) ───
+# Дефект, що це купив: чекліст «Before merge» у скілі тримав рукописний перелік
+# девʼяти гейтів БЕЗ `spdx_headers` — того, що клав `main` тричі; а плейбук
+# архівації приписував верифікацію двома кроками у секції, яка зветься «GATE».
+# Джерело формули — `00_06 §3` + шапка `docs.yml`, тож периметр СВІДОМО ширший
+# за `.claude/**`: полагодити копії й лишити джерело = гарантований рецидив.
+#
+# 🔴 Якір — форма ВИКЛИКУ (`ruby scripts/docs_check.rb`), не імʼя референта.
+# Виміряно: якір на будь-який синонім (`docs:check_refs`/`tracker:check`) дав би
+# 15 хибних — `guard-craft.md` і таблиці скіла НАЗИВАЮТЬ ці гейти в педагогічній
+# прозі, і це легітимно. Виклик = імператив «ось як я перевіряю»; назва = опис.
+# ⚠️ Стеля: перейменують alias — якір осліпне мовчки, тому він деривований із
+# наявного файлу (нижче), а не написаний літералом удруге.
+FAST_ALIAS   = File.basename(Dir[File.join(ROOT, "scripts/docs_check.rb")].first.to_s)
+BAND_ALIAS   = File.basename(Dir[File.join(ROOT, "scripts/docs_band.rb")].first.to_s)
+CLAIM_WINDOW = 6
+
+if FAST_ALIAS.empty? || BAND_ALIAS.empty?
+  errors << "CHECK F: не знайдено scripts/docs_check.rb або scripts/docs_band.rb — якір сліпий, не мовчазний"
+else
+  claim_files = Dir[File.join(ROOT, ".claude/**/*.{md,sh}")] +
+                [ REGISTRY_DOC, DOCS_WORKFLOW ]
+  claim_files.each do |path|
+    next unless File.file?(path)
+
+    lines = File.readlines(path)
+    lines.each_with_index do |line, i|
+      next unless line.include?(FAST_ALIAS)
+
+      lo = [ i - CLAIM_WINDOW, 0 ].max
+      hi = [ i + CLAIM_WINDOW, lines.size - 1 ].min
+      next if lines[lo..hi].any? { |l| l.include?(BAND_ALIAS) }
+
+      rel = path.sub("#{ROOT}/", "")
+      errors << "CHECK F #{rel}:#{i + 1} — кличе `#{FAST_ALIAS}` (два кроки джоби) без згадки " \
+                "`#{BAND_ALIAS}` у ±#{CLAIM_WINDOW} рядках: підмножина продається як смуга (OPS.25)"
+    end
+  end
+end
+
 # ── report ──────────────────────────────────────────────────────────────────
 if errors.empty?
   puts "guard_registry_sync ✓ — 00_06 §3 ⟷ CI gates (#{run_cmds.size} run-steps, " \
