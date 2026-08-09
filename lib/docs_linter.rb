@@ -975,4 +975,36 @@ module DocsLinter
     [ "unclosed #{FENCE_PREFIX} code fence opened at line #{open_line} — odd fence count " \
       "desyncs every fence-aware guard (in_fence toggle stuck) + truncates the ToC" ]
   end
+
+  # [SSOT anti-drift, DOC-T.68 фаза 0] Every doc NUMBER named in an owner/exempt
+  # constant must still resolve to a real doc.
+  #
+  # WHY this is its own guard: the owner-only-vocabulary gates above grant immunity by
+  # NUMBER PREFIX (`\A05_03_`, `\A07_01_`, …), and a number is not a stable identity —
+  # it can be freed and later re-populated by an unrelated page. When that happens the
+  # stale entry hands the previous occupant's immunity to whatever lands there next: the
+  # new page may restate the mint rate, name an AI vendor or carry a retired term, and
+  # nothing objects. That is the third, quietest face of the reference-gate family —
+  # renaming empties a gate's input, re-use re-points citations, and an inherited
+  # exemption is a permission NOBODY GRANTED (`ssot-maintenance` §Guard-craft #50).
+  #
+  # The number set is collected from the CONSTANTS THEMSELVES — never from a
+  # hand-written roster, which would be a second home for the same fact and would rot
+  # exactly like the thing it guards. A constant naming no `NN_NN` contributes nothing
+  # (`TL_CHAIN_HASH_EXEMPT` matches prose; `THERMAL_STRESS_OWNER_DOC` matches a report
+  # basename), so the sweep is safe over the whole family. Returns number → [const names].
+  EXEMPTION_CONST_RE = /_(?:OWNER_DOC|EXEMPT|HOMES)\z/
+
+  def number_keyed_exemptions
+    constants.grep(EXEMPTION_CONST_RE).each_with_object({}) do |name, out|
+      value = const_get(name)
+      text  = case value
+              when Regexp then value.source
+              when Array  then value.join(" ")
+              when Hash   then value.keys.join(" ")
+              else value.to_s
+              end
+      text.scan(/\d\d_\d\d/).uniq.each { |num| (out[num] ||= []) << name.to_s }
+    end
+  end
 end

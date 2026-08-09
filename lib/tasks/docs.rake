@@ -85,6 +85,10 @@ namespace :docs do
     # silently hand its immunity to whatever document lands on that number next —
     # the freed-number face of §Guard-craft #50. An exemption must guard itself.
     trl_exempt_dead = TRL_NOT_APPLICABLE.keys.reject { |k| existing.any? { |b| b.start_with?(k) } }
+    # Same class, wider surface: every doc NUMBER named in an owner/exempt constant of
+    # the linter must still resolve. A freed number otherwise hands its immunity to the
+    # next occupant — see DocsLinter.number_keyed_exemptions for why this is its own guard.
+    exempt_dead = DocsLinter.number_keyed_exemptions.reject { |num, _| valid_ids.include?(num) }
     rtc_drift   = []  # hard: RTC register availability claimed outside 03_01 owner
     rtc_phantom = []  # hard: phantom RTC register DR>19 (chip has only DR0..DR19)
     lorenz_drift = [] # hard: Lorenz β formula re-stated outside 03_04 owner
@@ -449,6 +453,12 @@ namespace :docs do
       puts "  TRL EXEMPTION WITHOUT A SUBJECT (#{trl_exempt_dead.size}) — the page is gone; decide the entry explicitly:"
       trl_exempt_dead.sort.each { |k| puts "    ✗ #{k} — #{TRL_NOT_APPLICABLE[k]}" }
     end
+    if exempt_dead.empty?
+      puts "  exemption subjects: every NN_NN named in an owner/exempt constant resolves ✓"
+    else
+      puts "  EXEMPTION WITHOUT A SUBJECT (#{exempt_dead.size}) — inherited immunity; decide each explicitly:"
+      exempt_dead.sort.each { |num, consts| puts "    ✗ #{num} — granted by #{consts.join(', ')}" }
+    end
     if trl_misapplied.empty?
       puts "  TRL applicability: no declared non-technology page states a TRL ✓"
     else
@@ -580,6 +590,7 @@ namespace :docs do
     failed << "dangling doc links" unless dangling.empty?
     failed << "✅ Статус docs without a TRL" unless trl_missing.empty?
     failed << "TRL exemption whose page no longer exists (inherited immunity)" unless trl_exempt_dead.empty?
+    failed << "owner/exempt constant naming a doc number that no longer exists (inherited immunity)" unless exempt_dead.empty?
     failed << "TRL stated on a declared non-technology page (00_03 §1 category error)" unless trl_misapplied.empty?
     failed << "TRL matrix doc unresolved — 3 TRL gates did not run" unless trl_dark.empty?
     failed << "TRL ranges in 00_03 §1 matrix" unless trl_ranges.empty?

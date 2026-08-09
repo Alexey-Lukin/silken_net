@@ -56,6 +56,7 @@ DOCS_RAKE_LABELS = {
   "TRL matrix doc unresolved — 3 TRL gates did not run"                                    => "TRL source lantern",
   "TRL stated on a declared non-technology page (00_03 §1 category error)"                 => "TRL applicability",
   "TRL exemption whose page no longer exists (inherited immunity)"                          => "TRL applicability",
+  "owner/exempt constant naming a doc number that no longer exists (inherited immunity)"    => "exemption subject",
   "TRL ranges in 00_03 §1 matrix"                                                          => "одинарне 1-9",
   "TRL band inconsistency (doc TRL vs 00_03 §1 module band)"                               => "TRL range-consistency",
   "manifest TRL drift (PUBLIC manifesto §5 vs 00_03 §1)"                                    => "manifest TRL parity",
