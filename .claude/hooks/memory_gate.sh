@@ -96,7 +96,19 @@ ONEWAY_MIN=${MEMORY_GATE_ONEWAY_MIN:-2}          # homes citing a source that ig
 # version bump that broke PATH this time.
 resolve_ruby() {
   _c=""
-  for _c in "${MEMORY_GATE_RUBY:-}" "$(command -v ruby 2>/dev/null)" \
+  # An EXPLICIT override is an instruction, not a hint: if the operator named an
+  # interpreter and it cannot run the checks, that is an error to report, not a
+  # reason to quietly use a different one. This also makes the DARK case
+  # testable on any platform — the battery cannot rely on `/usr/bin/ruby` being
+  # too old, which is true on macOS and false on a Linux runner (the exact
+  # platform split that reddened CI here on 2026-08-09 while local stayed green).
+  if [ -n "${MEMORY_GATE_RUBY:-}" ]; then
+    [ -x "$MEMORY_GATE_RUBY" ] &&
+      "$MEMORY_GATE_RUBY" -e 'exit([].filter_map { |x| x } == [] && eval("def self.__p = 1") ? 0 : 1)' >/dev/null 2>&1 &&
+      { printf '%s' "$MEMORY_GATE_RUBY"; return 0; }
+    return 1
+  fi
+  for _c in "$(command -v ruby 2>/dev/null)" \
             "$HOME/.rvm/rubies/default/bin/ruby" /usr/bin/ruby; do
     [ -n "$_c" ] && [ -x "$_c" ] || continue
     # Probe the two features the heredocs actually need — `filter_map` (2.7)
