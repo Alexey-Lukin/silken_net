@@ -70,6 +70,45 @@ FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known rela
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
 ONEWAY_MIN=${MEMORY_GATE_ONEWAY_MIN:-2}          # homes citing a source that ignores them, before it is worth a router
 
+# 🔴 RUBY RESOLUTION — because `command -v ruby` answers the wrong question.
+#
+# Ten of this file's checks are ruby heredocs, and each used to open with
+# `command -v ruby || return 0` — a test of PRESENCE, not of FITNESS. Measured
+# 2026-08-09, in a live session: the harness PATH led with
+# `~/.rvm/gems/ruby-4.0.5@silken_net/bin`, a directory that no longer exists
+# (the ruby bump left 3.4.10 and 4.0.6), so `command -v ruby` resolved to
+# macOS `/usr/bin/ruby` 2.6.10. Under it one heredoc fails to parse and two
+# more die loading `lib/tracker/dashboard.rb`, so NINE of 64 selftest cases
+# fail — while `--audit` printed `OK` and exited 0. A gate that announces its
+# own failure and returns success is the exact shape this repo catalogues.
+#
+# CI cannot see it: `docs.yml` installs `.ruby-version`, so the battery is
+# green there forever. The inversion of "local green ≠ CI" — red precisely
+# where the gate actually runs.
+#
+# Why RESOLVE rather than keep the file 2.6-clean like its neighbour
+# `bash_verify_guard.sh`: that pattern works there because its scanner is
+# self-contained, whereas `canon_section_check` loads a REPO file. Staying
+# 2.6-clean would put a 2.6 ceiling on the tracker parser every gate shares —
+# and it would be prose in a comment with nothing enforcing it.
+#
+# `~/.rvm/rubies/default` is a symlink RVM maintains, so it survives the next
+# version bump that broke PATH this time.
+resolve_ruby() {
+  _c=""
+  for _c in "${MEMORY_GATE_RUBY:-}" "$(command -v ruby 2>/dev/null)" \
+            "$HOME/.rvm/rubies/default/bin/ruby" /usr/bin/ruby; do
+    [ -n "$_c" ] && [ -x "$_c" ] || continue
+    # Probe the two features the heredocs actually need — `filter_map` (2.7)
+    # and endless method definition (3.0, used by the tracker parser) — rather
+    # than a version string, so the check tracks the real dependency.
+    "$_c" -e 'exit([].filter_map { |x| x } == [] && eval("def self.__p = 1") ? 0 : 1)' >/dev/null 2>&1 &&
+      { printf '%s' "$_c"; return 0; }
+  done
+  return 1
+}
+RB=$(resolve_ruby || true)
+
 # --- The floor. Every other threshold here is a CEILING, and that asymmetry was
 # a hole the whole gate shared: growth was policed from three directions while
 # LOSS was not policed at all. Worse than unpoliced — actively rewarded: both
@@ -382,8 +421,8 @@ desc_check() {
   # was wrong in exactly the way that never looks wrong. Whatever counts this
   # must agree with `bytesize`; verify a new implementation against one file AND
   # the whole corpus before trusting it.
-  command -v ruby >/dev/null 2>&1 || return 0
-  tot=$(ruby - "$MEM_DIR" <<'RUBY'
+  [ -n "$RB" ] || return 0
+  tot=$("$RB" - "$MEM_DIR" <<'RUBY'
 dir = ARGV[0]
 total = 0
 Dir.chdir(dir) { Dir["*.md"] }.each do |f|
@@ -416,8 +455,8 @@ RUBY
 # single write anyway — it accumulates. Measured cost at the current corpus:
 # 1.4M block pairs in ~1.3s.
 overlap_check() {
-  command -v ruby >/dev/null 2>&1 || return 0
-  ruby - "$MEM_DIR" "$OVERLAP_COEF" "$OVERLAP_MIN_SHINGLES" <<'RUBY'
+  [ -n "$RB" ] || return 0
+  "$RB" - "$MEM_DIR" "$OVERLAP_COEF" "$OVERLAP_MIN_SHINGLES" <<'RUBY'
 require "set"
 dir, coef_floor, min_sh = ARGV[0], ARGV[1].to_f, ARGV[2].to_i
 files = Dir.chdir(dir) { Dir["*.md"] }.reject { |f| f == "MEMORY.md" }
@@ -593,8 +632,8 @@ index_check() {
 # correct fix as a regression. That inversion is the whole reason this axis went
 # unmeasured: every other threshold in this file is a size.
 oneway_check() {
-  command -v ruby >/dev/null 2>&1 || return 0
-  ruby - "$MEM_DIR" "$ONEWAY_MIN" <<'RUBY'
+  [ -n "$RB" ] || return 0
+  "$RB" - "$MEM_DIR" "$ONEWAY_MIN" <<'RUBY'
 dir, min = ARGV[0], ARGV[1].to_i
 files = Dir["#{dir}/*.md"].map { |p| File.basename(p, ".md") } - ["MEMORY"]
 present = files.each_with_object({}) { |f, h| h[f] = true }
@@ -654,8 +693,8 @@ RUBY
 # Named `*_check` deliberately: the parity detector scans for that suffix, so the
 # old name kept a stance-running check outside its reach.
 unstrung_check() {
-  command -v ruby >/dev/null 2>&1 || return 0
-  ruby - "$MEM_DIR" <<'RUBY'
+  [ -n "$RB" ] || return 0
+  "$RB" - "$MEM_DIR" <<'RUBY'
 dir   = ARGV[0]
 files = Dir[File.join(dir, "*.md")].map { |p| File.basename(p, ".md") } - ["MEMORY"]
 inbound = Hash.new(0)
@@ -700,8 +739,8 @@ RUBY
 # and of DIFFERENT shapes: an address written in the other language, and the
 # source's own section offered as the target's.
 section_ref_check() {
-  command -v ruby >/dev/null 2>&1 || return 0
-  ruby - "$MEM_DIR" <<'RUBY'
+  [ -n "$RB" ] || return 0
+  "$RB" - "$MEM_DIR" <<'RUBY'
 dir = ARGV[0]
 files = Dir.chdir(dir) { Dir["*.md"] }
 body = files.to_h { |f| [f, File.read(File.join(dir, f))] }
@@ -746,14 +785,30 @@ RUBY
 # from the four gates sharing the first one, which is the whole failure mode
 # this family exists to prevent.
 canon_section_check() {
-  command -v ruby >/dev/null 2>&1 || return 0
+  [ -n "$RB" ] || return 0
   [ -f "$REPO/lib/tracker/dashboard.rb" ] || return 0
-  ruby - "$MEM_DIR" "$REPO" <<'RUBY'
+  "$RB" - "$MEM_DIR" "$REPO" <<'RUBY'
 dir, repo = ARGV
 begin
   require File.join(repo, "lib", "tracker", "dashboard")
-rescue Exception
-  exit 0   # no repo / unloadable resolver → silent, never a false alarm
+rescue Exception => e
+  # 🔴 This used to be a bare `exit 0` with the comment "silent, never a false
+  # alarm" — and that comment was the defect, not the code. Two states are
+  # indistinguishable to a caller reading silence: "the repo is not here, so
+  # there is nothing to check" (legitimate) and "the resolver would not load,
+  # so CANONREF and CANONREF-EXEMPT-DEAD did not run at all" (a hole). Under
+  # macOS ruby 2.6 the second one was live and mute. A gate may decline to
+  # check; it may not decline QUIETLY, because its silence is read as a
+  # verdict. Missing repo stays silent; anything else says so and reds.
+  if File.directory?(File.join(repo, "lib"))
+    # stdout, not stderr: `--audit` captures stdout into `out` and decides the
+    # exit code by `[ -z "$out" ]`, so a warning on stderr would print beside a
+    # green verdict — loud and ignored, which is the disease, not the cure.
+    puts "DARK  canon_section_check did not run — #{e.class}: #{e.message.lines.first.to_s.strip[0, 120]}"
+    puts "DARK  its silence means nothing; CANONREF + CANONREF-EXEMPT-DEAD are unguarded this run"
+    exit 3
+  end
+  exit 0
 end
 # Curated exemptions, same posture as the SPDX gate's DENY list: a DECIDED case
 # is recorded with its reason so the gate never sits permanently red on it, and
@@ -825,9 +880,9 @@ RUBY
 # catches a number OUT OF RANGE, never a number that exists and means something
 # else — that half is semantic and only a READ finds it.
 skill_item_check() {
-  command -v ruby >/dev/null 2>&1 || return 0
+  [ -n "$RB" ] || return 0
   [ -d "$REPO/.claude/skills" ] || return 0
-  ruby - "$MEM_DIR" "$REPO" <<'RUBY'
+  "$RB" - "$MEM_DIR" "$REPO" <<'RUBY'
 dir, repo = ARGV
 # Resolve against the skills of the repo we were POINTED AT — same hermetic
 # posture as canon_section_check: a fixture must never answer with the live tree.
@@ -1817,7 +1872,7 @@ EOF
   #     already names them; naming them was not checking them. So the exemption
   #     now carries its own obligation, and a `defined?`-style guard keeps the
   #     list from rotting into a claim about functions that no longer exist.
-  out=$(ruby - "$SELF" <<'RUBY' 2>/dev/null
+  out=$("$RB" - "$SELF" <<'RUBY' 2>/dev/null
 src   = File.read(ARGV[0])
 audit = src[/^  --audit\)\n(.*?)\n    ;;/m, 1].to_s
 write = src[/^  \*\)\n(.*?)\n    ;;/m, 1].to_s
@@ -1842,6 +1897,40 @@ RUBY
   if printf '%s' "$out" | grep -q 'PARITY-OK'; then pass=$((pass+1)); printf '  ok    %s\n' "no check is audit-only without being a declared exemption"
   else fail=$((fail+1)); printf '  FAIL  %s\n         %s — it runs in --audit but not at the moment of the write\n' "no check is audit-only without being a declared exemption" "$out"; fi
 
+  # RUBY RESOLUTION. The class these pin is not "a check is wrong" but "a check
+  # did not run and the battery said OK" — the failure that hid for weeks
+  # because CI installs `.ruby-version` while the hook takes whatever PATH
+  # offers, and PATH went stale on a version bump.
+  #
+  # 31a. The resolver must reach a usable ruby even with NO rvm on PATH — that
+  #      is the live harness condition, not a hypothetical.
+  rb_bare=$(env PATH="/usr/bin:/bin" bash -c 'MEMORY_GATE_RUBY=""; '"$(sed -n '/^resolve_ruby()/,/^}/p' "$SELF")"'; resolve_ruby' 2>/dev/null)
+  if [ -n "$rb_bare" ] && "$rb_bare" -e 'exit([].filter_map { |x| x } == [] ? 0 : 1)' >/dev/null 2>&1; then
+    pass=$((pass+1)); printf '  ok    %s\n' "resolver reaches a usable ruby with no rvm on PATH"
+  else
+    fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "resolver reaches a usable ruby with no rvm on PATH" "${rb_bare:-<none>}"
+  fi
+
+  # 31b. POSITIVE control for the lantern: with every candidate unusable, the
+  #      battery must SAY it is dark and red — never print OK on an empty set.
+  out=$(env HOME=/nonexistent-home PATH="/usr/bin:/bin" MEMORY_GATE_RUBY=/nonexistent-ruby \
+        MEMORY_GATE_DIR="$d" bash "$SELF" --audit 2>&1); rc=$?
+  if printf '%s' "$out" | grep -q 'DARK' && [ "$rc" -ne 0 ]; then
+    pass=$((pass+1)); printf '  ok    %s\n' "an unusable ruby reds the battery instead of printing OK"
+  else
+    fail=$((fail+1)); printf '  FAIL  %s\n         rc=%s out=%s\n' "an unusable ruby reds the battery instead of printing OK" "$rc" "$out"
+  fi
+
+  # 31c. NEGATIVE control, and it is the load-bearing one: on a healthy corpus
+  #      with a usable ruby the word DARK must not appear at all, or 31b would
+  #      be satisfied by a gate that cries darkness unconditionally.
+  out=$(_st_audit "$d")
+  if printf '%s' "$out" | grep -q 'DARK'; then
+    fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "a healthy run says nothing about darkness" "$out"
+  else
+    pass=$((pass+1)); printf '  ok    %s\n' "a healthy run says nothing about darkness"
+  fi
+
   rm -rf "$root"
   printf 'selftest: %d passed, %d failed\n' "$pass" "$fail"
   [ "$fail" -eq 0 ]
@@ -1850,7 +1939,14 @@ RUBY
 case "${1:-}" in
   --selftest) selftest ;;
   --audit)
-    out=$( { override_check; index_check; desc_check; corpus_floor_check; integrity_check
+    # 🔴 The lantern for the whole battery: without a usable ruby, ten of these
+    # checks return 0 without running, `out` comes back empty, and the run
+    # prints OK. An empty finding-set means "nothing wrong" only when every
+    # check actually EXECUTED — so state the precondition before reading it.
+    out=$( { [ -n "$RB" ] || printf '%s\n%s\n' \
+               "DARK  no usable ruby (need filter_map + endless def) — tried \$MEMORY_GATE_RUBY, PATH, ~/.rvm/rubies/default, /usr/bin/ruby" \
+               "DARK  ten checks did not run; this battery's silence means nothing until that is fixed (see rvm-heal)"
+             override_check; index_check; desc_check; corpus_floor_check; integrity_check
              unstrung_check; asset_check
              privacy_check; overlap_check; section_ref_check; canon_section_check
              skill_item_check
@@ -1871,7 +1967,7 @@ case "${1:-}" in
     # прогоні. Те саме, чому її не існує в CI: їй потрібні ОБИДВА корпуси, а на
     # ранері є лише один.
     if [ -f "$REPO/scripts/memory_route_check.rb" ]; then
-      MEMORY_GATE_DIR="$MEM_DIR" ruby "$REPO/scripts/memory_route_check.rb" "${2:-}"
+      MEMORY_GATE_DIR="$MEM_DIR" "${RB:-ruby}" "$REPO/scripts/memory_route_check.rb" "${2:-}"
     else
       echo "SKIP  scripts/memory_route_check.rb is gone — the git→memory direction is unguarded"
       exit 1
@@ -1911,7 +2007,7 @@ case "${1:-}" in
     # widening its inputs would move a published figure without moving its name —
     # the same defect one level up. So the practice-wide number is reported as its
     # OWN line, and the memory-apparatus subset keeps the ratio it earned.
-    ruby - "$MEM_DIR" "$REPO" <<'RUBY'
+    "$RB" - "$MEM_DIR" "$REPO" <<'RUBY'
 dir, repo = ARGV
 sz = Dir["#{dir}/*.md"].to_h { |p| [File.basename(p), File.size(p)] }
 # Core META: rules about how the work is done, plus the journals of the method
@@ -1986,7 +2082,7 @@ RUBY
     #     convention: `⛔-мітка`, `у ⛔-списку`).
     #   · `do NOT` / `don't` were absent from the first candidate list and are
     #     among the best (~90%): they carry bans no Ukrainian marker touches.
-    ruby - "$MEM_DIR" <<'RUBY'
+    "$RB" - "$MEM_DIR" <<'RUBY'
 dir = ARGV[0]
 BAN  = /(^|[[:space:]])(won.?t-do|відкинуто|відхилено|YAGNI|MUST NOT|do NOT|don't|заборон\w*|не відбудов\w*|не переауд\w*|не пітчити|descope)/i
 LEAD = /\A\s*(\#{1,6}\s*|[-*]\s*(\*\*)?)⛔/
