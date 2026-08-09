@@ -91,8 +91,8 @@ ONEWAY_MIN=${MEMORY_GATE_ONEWAY_MIN:-2}          # homes citing a source that ig
 # `~/.rvm/gems/ruby-4.0.5@silken_net/bin`, a directory that no longer exists
 # (the ruby bump left 3.4.10 and 4.0.6), so `command -v ruby` resolved to
 # macOS `/usr/bin/ruby` 2.6.10. Under it one heredoc fails to parse and two
-# more die loading `lib/tracker/dashboard.rb`, so NINE of 64 selftest cases
-# fail — while `--audit` printed `OK` and exited 0. A gate that announces its
+# more die loading `lib/tracker/dashboard.rb`, so NINE of the then-64 selftest
+# cases fail — while `--audit` printed `OK` and exited 0. A gate that announces its
 # own failure and returns success is the exact shape this repo catalogues.
 #
 # CI cannot see it: `docs.yml` installs `.ruby-version`, so the battery is
