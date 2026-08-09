@@ -262,6 +262,14 @@ namespace :docs do
     trl_ranges  = matrix_text ? DocsLinter.trl_matrix_range_violations(matrix_text) : []
     trl_band    = matrix_text ? DocsLinter.trl_range_consistency(matrix_text, doc_trls) : []
 
+    # [manifest TRL parity] HARD — the PUBLIC manifesto states a TRL per layer and
+    # is not a canon doc, so no `## ✅ Статус` exists for the band check to read
+    # (DOC-T.66). Read directly; a missing file yields no claims, and the linter's
+    # registry then reports the loss rather than passing on an empty set.
+    manifest_f  = File.join(DOCS_DIR, "manifest.md")
+    manifest_trl = matrix_text && File.exist?(manifest_f) ?
+                     DocsLinter.manifest_trl_parity(matrix_text, File.read(manifest_f)) : []
+
     # [Blockers → 00_07] HARD (sweep completed 2026-05-30). Canon docs must not
     # host a 🛑/✅-archive blocker section; 00_07 is the tracker — exempt.
     blocker_sections = files.reject { |f| File.basename(f).start_with?("00_07") }
@@ -403,6 +411,12 @@ namespace :docs do
       puts "  TRL BAND INCONSISTENCY (#{trl_band.size}) — doc TRL vs 00_03 §1 per-module band:"
       trl_band.sort.each { |r| puts "    ✗ #{r}" }
     end
+    if manifest_trl.empty?
+      puts "  manifest TRL:   public manifesto §5 layers match their 00_03 §1 modules ✓"
+    else
+      puts "  MANIFEST TRL DRIFT (#{manifest_trl.size}) — PUBLIC claim vs 00_03 §1:"
+      manifest_trl.sort.each { |r| puts "    ✗ #{r}" }
+    end
     if blocker_sections.empty?
       puts "  blockers→00_07:  no canon doc hosts a 🛑/✅-archive blocker section ✓"
     else
@@ -505,6 +519,7 @@ namespace :docs do
     failed << "✅ Статус docs without a TRL" unless trl_missing.empty?
     failed << "TRL ranges in 00_03 §1 matrix" unless trl_ranges.empty?
     failed << "TRL band inconsistency (doc TRL vs 00_03 §1 module band)" unless trl_band.empty?
+    failed << "manifest TRL drift (PUBLIC manifesto §5 vs 00_03 §1)" unless manifest_trl.empty?
     failed << "ToC drift (run docs:toc)" unless toc_drift.empty?
     failed << "canon docs hosting blocker sections (→ 00_07)" unless blocker_sections.empty?
     failed << "docs missing the standard skeleton" unless conformance.empty?

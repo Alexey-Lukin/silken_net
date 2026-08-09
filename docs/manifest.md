@@ -99,12 +99,12 @@ This is what we mean by *cyber-physical symbiosis*: the forest is not merely mea
 To eliminate double-counting, replay attacks, and oracle manipulation, Silken Net implements a **zero-trust** pipeline that runs from the silicon at the trunk to the smart contract on Polygon. The architecture is deliberately modular: no single network is asked to do more than it does well.
 
 ```
-L1: Identity      peaq         — WHO is this?      (machine DID, tree passport)
-L2: Verification  IoTeX        — is it TRUE?       (W3bstream ZK-proof of pipeline integrity)
-L3: Oracle/Bridge Chainlink    — to CONNECT        (DON consensus, CCIP cross-chain delivery)
-L4: Execution     Solana       — to PAY            (Ed25519 micro-rewards, high TPS)
-L5: Memory        Filecoin     — to REMEMBER       (immutable raw-telemetry archive)
-L6: Finality      Polygon + L1 — to LEGALLY FIX    (SCC mint, weekly SHA-256 anchor to Ethereum)
+1.  Identity      peaq         — WHO is this?      (machine DID, tree passport)
+2.  Verification  IoTeX        — is it TRUE?       (W3bstream ZK-proof of pipeline integrity)
+3.  Oracle/Bridge Chainlink    — to CONNECT        (DON consensus, CCIP cross-chain delivery)
+4.  Execution     Solana       — to PAY            (Ed25519 micro-rewards, high TPS)
+5.  Memory        Filecoin     — to REMEMBER       (immutable raw-telemetry archive)
+6.  Finality      Polygon + L1 — to LEGALLY FIX    (SCC mint, weekly SHA-256 anchor to Ethereum)
 ```
 
 Concretely:

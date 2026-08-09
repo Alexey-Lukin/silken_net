@@ -384,19 +384,54 @@ check_file() {
 # A backticked path that CLAIMS our tree (starts with a real repo root) is a
 # checkable assertion; anything else — gem internals (`aasm/base.rb`), a bare
 # `queen/main.c` shorthand — is not, and checking those only yields noise the
-# gate gets muted for. Measured on the live corpus: 81 claims, 2 dead.
+# gate gets muted for.
 #
-# A dead path is one of two things, and the difference is what matters:
-# it MOVED (a stale mirror — cheap), or it was RETRACTED — the repo deleted the
-# claim as untrue and memory is now the last living copy of a deleted untruth.
-# Only the commit body can tell them apart, so the message says so.
+# A dead path is one of THREE things, and the third is not a defect at all:
+# it MOVED (a stale mirror — cheap), it was RETRACTED (the repo deleted the claim
+# as untrue and memory is now the last living copy of a deleted untruth), or
+# memory DELIBERATELY records a removed file as part of a decision and says so
+# outright («носія в дереві нема»). The first two are separated only by the commit
+# body, so the message says so; the third cannot be inferred at all and is
+# therefore DECLARED here — a `†` tombstone glued to the closing backtick of the
+# citation. The backtick itself stays: it names a tool that existed, and dropping
+# it would make the historical record less true. (No example path is spelled out
+# in this comment on purpose — an illustrative path is byte-identical to a live
+# claim, and three separate gates in this repo resolve such paths against disk.)
+#
+# Why a marker and not the prose it sits in: measured on the live corpus, honest
+# retirement notes stand 71..354 chars from their citation (one bullet carries
+# five of them under a single «Що знято» frame), so any window wide enough to
+# bless them is the whole bullet — while 17 LIVE path citations already share a
+# line with retirement wording about something else. Lexical inference would mute
+# more future deaths than it excuses present notes. The glyph is not invented for
+# this: the corpus already spells a person's death `†2024`.
+#
+# The marker is per-CITATION, not per-line and not per-file: a path cited once
+# bare and once entombed still reds on the bare one, because a claim is blessed
+# only where it is annotated. The fourth quadrant is its own check — a tombstone
+# over a file that EXISTS is the same lie pointing the other way (the file came
+# back, or never left), so TOMBLIVE fires. Forgetting the † is loud, never silent.
 PATH_ROOTS='app|lib|scripts|docs|firmware|contracts|config|db|spec|tools|bin|deploy|terraform|subgraph|\.claude|\.github'
 
 path_check() {
-  local f=$1 p
-  for p in $(grep -ohE '`('"$PATH_ROOTS"')/[a-zA-Z0-9_./-]+\.[a-z]{1,4}`' "$f" 2>/dev/null |
-               tr -d '`' | sort -u); do
-    [ -e "$REPO/$p" ] || echo "DEADPATH $(basename "$f") cites \`$p\` — gone from the repo; \`git log --diff-filter=D -- $p\` says whether it MOVED or was RETRACTED"
+  local f=$1 e p
+  # `(†)?` is grouped deliberately. A bare `†?` binds the quantifier to the last
+  # BYTE of the 3-byte glyph under a C locale, which would make the marker
+  # MANDATORY and silence every un-annotated claim — the gate would go quiet in
+  # exactly the direction it exists to prevent. Grouping is byte-safe in both
+  # BSD and GNU grep, so the check cannot behave differently here and on a runner.
+  for e in $(grep -ohE '`('"$PATH_ROOTS"')/[a-zA-Z0-9_./-]+\.[a-z]{1,4}`(†)?' "$f" 2>/dev/null |
+               sed 's/`†$/`:TOMB/' | sort -u); do
+    case $e in
+      *:TOMB)
+        p=$(printf '%s' "${e%:TOMB}" | tr -d '`')
+        [ -e "$REPO/$p" ] &&
+          echo "TOMBLIVE $(basename "$f") marks \`$p\`† as removed — the file EXISTS; drop the † or fix the claim around it" ;;
+      *)
+        p=$(printf '%s' "$e" | tr -d '`')
+        [ -e "$REPO/$p" ] ||
+          echo "DEADPATH $(basename "$f") cites \`$p\` — gone from the repo; \`git log --diff-filter=D -- $p\` says whether it MOVED or was RETRACTED, and \`$p\`† declares a deliberate tombstone" ;;
+    esac
   done
   return 0
 }
@@ -1671,6 +1706,49 @@ selftest() {
   #      every backticked path would have passed case 11 just as happily.
   _st_build "$d"; printf '\nSee `app/services/live_service.rb` for the shape.\n' >>"$d/feedback_beta.md"
   _st_check "DEADPATH silent on a path that exists" reject 'DEADPATH'
+
+  # 11c. THE THIRD STATE [DOC-T.65]. Memory deliberately records a removed file as
+  #      part of a decision and says outright that it is gone. The prose cannot
+  #      carry that verdict — the measurement in path_check's header is the reason
+  #      — so it is DECLARED with a `†` on the closing backtick, and this case is
+  #      the one that lets a permanently-red gate go quiet honestly.
+  _st_build "$d"; printf '\nThe carrier was `app/services/no_such_service.rb`† — removed, the lesson stands.\n' >>"$d/feedback_beta.md"
+  _st_check "DEADPATH silent on a tombstoned dead path" reject 'DEADPATH'
+
+  # 11d. The fourth quadrant — the tombstone's OWN lie, and the reason the marker
+  #      is not simply a mute button: a `†` over a file that EXISTS says "removed"
+  #      about something present (it came back, or never left). Without this half
+  #      the marker would be a permanent silencer that no returning file re-opens.
+  _st_build "$d"; printf '\nThe carrier was `app/services/live_service.rb`† — removed, the lesson stands.\n' >>"$d/feedback_beta.md"
+  _st_check "TOMBLIVE on a tombstone over a file that exists" expect 'TOMBLIVE'
+
+  # 11e. The marker is per-CITATION — not per-line, not per-file. A bare claim
+  #      standing beside an entombed one must still red, and this case exists to
+  #      stop a later "simplification" to a line- or file-scoped rule: that is
+  #      precisely the shape the corpus measurement rules out (17 live citations
+  #      already share a line with retirement wording about something else, so a
+  #      line-scoped marker would mute future deaths wholesale).
+  _st_build "$d"; printf '\nGone: `app/services/no_such_service.rb`† — yet see `app/services/no_such_service.rb` for the shape.\n' >>"$d/feedback_beta.md"
+  _st_check "DEADPATH still fires on a bare citation beside an entombed one" expect 'DEADPATH'
+
+  # 11f. The WRITE stance, because that is where a tombstone is actually typed and
+  #      the only stance whose silence nobody ever sees [DOC-T.64]. An --audit-only
+  #      proof would leave the moment of action ungoverned by the very branch this
+  #      item added; both quadrants ride, so a stance-drift cannot pass one-sided.
+  _st_build "$d"; printf '\nThe carrier was `app/services/no_such_service.rb`† — removed.\n' >>"$d/feedback_beta.md"
+  out=$(_st_write "$d" feedback_beta.md)
+  if printf '%s' "$out" | grep -q 'DEADPATH'; then
+    fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "the WRITE stance honours a tombstone too" "$out"
+  else
+    pass=$((pass+1)); printf '  ok    %s\n' "the WRITE stance honours a tombstone too"
+  fi
+  _st_build "$d"; printf '\nThe carrier was `app/services/live_service.rb`† — removed.\n' >>"$d/feedback_beta.md"
+  out=$(_st_write "$d" feedback_beta.md)
+  if printf '%s' "$out" | grep -q 'TOMBLIVE'; then
+    pass=$((pass+1)); printf '  ok    %s\n' "the WRITE stance catches a tombstone over a live file"
+  else
+    fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "the WRITE stance catches a tombstone over a live file" "$out"
+  fi
 
   # 12. The private marker disappearing under a rewrite.
   _st_build "$d"; printf -- '---\nname: user_life_context\ndescription: "L"\nmetadata:\n  type: user\n---\n\nBody.\n' >"$d/user_life_context.md"

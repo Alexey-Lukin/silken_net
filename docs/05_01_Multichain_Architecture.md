@@ -52,12 +52,12 @@ SilkenNet не обирає один блокчейн. Система викор
      │ (EBFC → LoRa → Queen Gateway → Rails API)
      ▼
 ┌────────────────────────────────────────────────────────────────────┐
-│ L1: Identity      peaq         — ХТО це? (DID машини, паспорт дерева) │
-│ L2: Verification  IoTeX        — це ПРАВДА? (ZK-proof, hardware trust) │
-│ L3: Oracle/Bridge Chainlink    — З'ЄДНАТИ (мультичейн доставка даних) │
-│ L4: Execution     Solana       — ПЛАТИТИ (мікроплатежі, висока TPS)    │
-│ L5: Memory        Filecoin     — ПАМ'ЯТАТИ (вічний незмінний архів)    │
-│ L6: Finality      Polygon+L1   — ЮРИДИЧНО ЗАФІКСУВАТИ (RWA, SCC токен) │
+│ 1.  Identity      peaq         — ХТО це? (DID машини, паспорт дерева) │
+│ 2.  Verification  IoTeX        — це ПРАВДА? (ZK-proof, hardware trust) │
+│ 3.  Oracle/Bridge Chainlink    — З'ЄДНАТИ (мультичейн доставка даних) │
+│ 4.  Execution     Solana       — ПЛАТИТИ (мікроплатежі, висока TPS)    │
+│ 5.  Memory        Filecoin     — ПАМ'ЯТАТИ (вічний незмінний архів)    │
+│ 6.  Finality      Polygon+L1   — ЮРИДИЧНО ЗАФІКСУВАТИ (RWA, SCC токен) │
 └────────────────────────────────────────────────────────────────────┘
 ```
 

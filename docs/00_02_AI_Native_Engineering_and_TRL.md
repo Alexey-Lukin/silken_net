@@ -167,4 +167,3 @@ Hardware Stream історично був "повільним" потоком (�
 Для **Atoms** гейт **3 → 4** замикає підписаний фізичний лаб-звіт (in-vitro): in-silico сам по собі дає лише TRL 3 (Validation Gate, §2 крок 2). Академічний «апрув» тут — це підписаний лабораторний протокол (PDF/Markdown), а не Git-approve: науковці-партнери не оперують GitHub.
 
 > **⚠️ Корекція:** мінтинг SCC — **НЕ перемикач**, який вмикають на TRL 9. Він керується Guard Clauses: живий периметр = KYC (`hadron_kyc`); oracle-гілка (`verified_by_iotex` + `oracle_status_fulfilled`) = latent PATH 1, замикання відмовлено (ARCH.53 §🗄️ — superseded by Merkle-lineage) ([`05_02`](05_02_Proof_of_Growth_Pipeline) / [`00_01 §5`](00_01_Vision_Mission_and_Roadmap)). На TRL 7-8 система **вже** в mainnet — з малим лімітом емісії та multi-sig на DAO-скарбниці. TRL 9 = доведена стабільна комерційна робота + децентралізація, а не «deploy» і не «мільйони вузлів».
-

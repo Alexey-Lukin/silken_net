@@ -77,6 +77,75 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".manifest_trl_parity" do
+    let(:matrix) do
+      <<~MD
+        | Модуль | TRL | Цільовий | Блокер |
+        |--------|-----|----------|--------|
+        | 01 Materials & EBFC | 3 | 6 | Ti-coin |
+        | 02 Hardware & BOM | 4 | 6 | BQ25570 |
+        | 03 Firmware | 6 | 8 | AES |
+        | 04 Backend Rails | 8 | 9 | RSpec |
+        | 05 Web3 Pipeline | 8 | 9 | SFC |
+      MD
+    end
+    # One bullet per registered layer, mirroring the real §5 shapes: a plain claim,
+    # a two-member claim whose module reads at the LOWER one, and prose digits that
+    # are targets rather than assertions.
+    let(:manifest) do
+      <<~MD
+        - **Backend (Rails 8.1, 12-chain):** TRL 8. External audit is the TRL-9 gate.
+        - **Firmware (STM32WLE5JC Soldier):** TRL 6. Running on hardware.
+        - **Hardware capsule:** TRL 6 — prototyped. **BQ25570 MPPT power chain and EDLC buffer:** TRL 4 — breadboard.
+        - **Tri-zone coaxial anchor and Gen-2.0 EBFC stack:** TRL 3. Next (physical TRL 4): in-vitro.
+      MD
+    end
+
+    it "passes when every public layer matches its 00_03 §1 module" do
+      expect(described_class.manifest_trl_parity(matrix, manifest)).to be_empty
+    end
+
+    it "reads a multi-member bullet at the LOWEST claim (00_03 §1 aggregate rule)" do
+      # Dropping the TRL-4 power chain leaves the capsule's 6 facing module 02 = 4.
+      broken = manifest.sub("**BQ25570 MPPT power chain and EDLC buffer:** TRL 4 — breadboard.", "the power chain.")
+      expect(described_class.manifest_trl_parity(matrix, broken))
+        .to contain_exactly(a_string_matching(/PUBLIC TRL 6 for "Hardware capsule".*module 02 = 4/))
+    end
+
+    it "flags the manifesto drifting above canon" do
+      expect(described_class.manifest_trl_parity(matrix, manifest.sub("Soldier):** TRL 6", "Soldier):** TRL 7")))
+        .to contain_exactly(a_string_matching(/PUBLIC TRL 7 for "Firmware".*module 03 = 6/))
+    end
+
+    it "flags canon moving away from the manifesto (the gate is two-directional)" do
+      expect(described_class.manifest_trl_parity(matrix.sub("| 03 Firmware | 6 |", "| 03 Firmware | 8 |"), manifest))
+        .to contain_exactly(a_string_matching(/PUBLIC TRL 6 for "Firmware".*module 03 = 8/))
+    end
+
+    it "flags a layer whose public claim silently disappears (the registry is a SET pin)" do
+      expect(described_class.manifest_trl_parity(matrix, manifest.sub(/^- \*\*Hardware capsule.*\n/, "")))
+        .to contain_exactly(a_string_matching(/states no TRL for "Hardware capsule"/))
+    end
+
+    it "flags a TRL claim by a layer nobody declared an owner for" do
+      expect(described_class.manifest_trl_parity(matrix, "#{manifest}- **Quantum layer:** TRL 5.\n"))
+        .to contain_exactly(a_string_matching(/unregistered layer "Quantum layer"/))
+    end
+
+    # The load-bearing near-miss: the anchor is the CLAIM FORM, never the digit.
+    # A min-over-every-TRL-number rule would go red on each of these while the
+    # manifesto is perfectly honest — and they are all real §5 phrasings.
+    it "ignores TRL digits that are prose — a target, a norm, a stage left behind" do
+      prose = "#{manifest}We are past the TRL 2 stage; per ISO 16290 in-silico = TRL 3, and TRL-9 is the gate.\n"
+      expect(described_class.manifest_trl_parity(matrix, prose)).to be_empty
+    end
+
+    it "says so instead of passing when the 00_03 band cannot be parsed at all" do
+      expect(described_class.manifest_trl_parity("no table here\n", manifest))
+        .to contain_exactly(a_string_matching(/band unreadable.*never measured/))
+    end
+  end
+
   describe ".canon_blocker_sections" do
     it "flags a '## 🛑 Блокери' section heading" do
       md = "## 🎯 Мета\n## 🛑 Блокери\n### 🟡 BLOCKER-2: AT blocking\n"

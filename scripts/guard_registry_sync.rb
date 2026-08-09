@@ -55,6 +55,7 @@ DOCS_RAKE_LABELS = {
   "✅ Статус docs without a TRL"                                                            => "кожен док з `## ✅ Статус` декларує TRL",
   "TRL ranges in 00_03 §1 matrix"                                                          => "одинарне 1-9",
   "TRL band inconsistency (doc TRL vs 00_03 §1 module band)"                               => "TRL range-consistency",
+  "manifest TRL drift (PUBLIC manifesto §5 vs 00_03 §1)"                                    => "manifest TRL parity",
   "ToC drift (run docs:toc)"                                                               => "ToC sync",
   "unbalanced code fences (unclosed ``` desyncs fence-aware guards + ToC — DOC-T.45)"      => "fence balance",
   "canon docs hosting blocker sections (→ 00_07)"                                          => "blocker-hygiene",
