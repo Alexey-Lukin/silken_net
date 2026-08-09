@@ -765,17 +765,44 @@ exempt = {
   # ssot-maintenance skill for this same ref, for this same reason.
   "project_ssot_campaign_history.md" => ["05_03 §749"]
 }
+# Test seam, same shape as the MEMORY_GATE_* overrides elsewhere: the curated
+# table names a real corpus file, which no fixture repo has, so the self-test
+# could not reach the staleness check without one. Format `file.md|ref`.
+if (extra = ENV["MEMORY_GATE_CANONREF_EXEMPT_EXTRA"])
+  f, r = extra.split("|", 2)
+  (exempt[f] ||= []) << r if f && r
+end
 # Resolve against the docs of the repo we were POINTED AT, never the one the
 # resolver happens to sit in — otherwise the fixture would silently answer with
 # the live tree, which is exactly the non-hermetic shape DEADPATH just outgrew.
 docs = File.join(repo, "docs")
 exit 0 unless Dir.exist?(docs)
-Dir.chdir(dir) { Dir["*.md"] }.sort.each do |f|
+used = Hash.new { |h, k| h[k] = [] }
+scanned = Dir.chdir(dir) { Dir["*.md"] }.sort
+scanned.each do |f|
   Tracker::Dashboard.file_section_dangling_refs(File.read(File.join(dir, f)), docs).each do |h|
     ref = h.to_s.delete("`")
-    next if exempt.fetch(f, []).any? { |e| ref.include?(e) }
+    if (hit = exempt.fetch(f, []).find { |e| ref.include?(e) })
+      used[f] << hit
+      next
+    end
     puts "CANONREF #{f} cites #{h} — that canon section does not exist: " \
          "fix the ref, or add it to `exempt` with the reason it must stay"
+  end
+end
+# Same posture as EXEMPT-DEAD on the `skill #N` stance a hundred lines below —
+# and the asymmetry was the finding: that table guards itself, this one did not,
+# in the same script. An exemption whose subject is gone protects nothing and
+# starts protecting the NEXT phantom that lands on that address. Two ways to die:
+# the file stopped citing the ref, or the canon section grew and the ref is no
+# longer dangling — both mean the entry must go. Only a SCANNED file can rot;
+# under a fixture repo these paths do not exist, and "not applicable" is not
+# "rotten" (conflating them would red the self-test on every run).
+exempt.each do |f, refs|
+  next unless scanned.include?(f)
+  (refs - used[f]).each do |r|
+    puts "CANONREF-EXEMPT-DEAD #{f} exempts `#{r}`, which is no longer a dangling ref there — " \
+         "remove the entry, or it will silently bless the next phantom that takes that address"
   end
 end
 RUBY
@@ -1387,6 +1414,29 @@ selftest() {
   #      refs — so the silent half is the half that proves it discriminates.
   _st_build "$d"; printf '\nProof form → `04_06 §A.2`.\n' >>"$d/feedback_beta.md"
   _st_check "CANONREF silent on a live canon §-address" reject 'CANONREF'
+
+  # 10b-i. The exemption seam itself: a DECIDED dead ref must silence CANONREF,
+  #        otherwise the curated table is decorative and the gate sits red.
+  _st_build "$d"; printf '\nProof form → `04_06 §A.999`.\n' >>"$d/feedback_beta.md"
+  _st_check "CANONREF silent while an exemption covers the ref" reject 'CANONREF' \
+            MEMORY_GATE_CANONREF_EXEMPT_EXTRA='feedback_beta.md|04_06 §A.999'
+
+  # 10b-ii. And the exemption guards ITSELF. This half was missing while its twin
+  #         a hundred lines below (EXEMPT-DEAD on `skill #N`) had it — the same
+  #         script, two exemption tables, one law applied. An entry whose subject
+  #         is gone protects nothing and starts blessing the next phantom.
+  _st_build "$d"
+  _st_check "CANONREF-EXEMPT-DEAD when the exempted ref is no longer there" \
+            expect 'CANONREF-EXEMPT-DEAD' \
+            MEMORY_GATE_CANONREF_EXEMPT_EXTRA='feedback_beta.md|04_06 §A.999'
+
+  # 10b-iii. Negative control that keeps the check honest under a fixture repo:
+  #          "not applicable" is not "rotten". Without this the staleness half
+  #          would red every run on paths the corpus does not contain.
+  _st_build "$d"
+  _st_check "CANONREF-EXEMPT-DEAD silent on a file that was never scanned" \
+            reject 'CANONREF-EXEMPT-DEAD' \
+            MEMORY_GATE_CANONREF_EXEMPT_EXTRA='no_such_file.md|04_06 §A.999'
 
   # 10d. Third address space [DOC-T.60]: `skill #N`, which NO §-resolver parses.
   #      The live defect was a LINE number worn as an item number, so the fixture

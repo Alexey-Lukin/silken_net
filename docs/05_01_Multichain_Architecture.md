@@ -685,7 +685,7 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 
 **Boundary case — Polygon hard fork / chain split:**
 - Призупинити `MintCarbonCoinWorker` (Sidekiq pause) — **операційна процедура**.
-- Дочекатись ясності: yкий fork буде canonical (community+exchanges).
+- Дочекатись ясності: який fork буде canonical (community+exchanges).
 - Replay queue після стабілізації; перевірити, що contract addresses не змінились.
 
 ### 8.3. Chainlink (Functions / DON) — ⚪ unwired, поза critical path [ARCH.53]

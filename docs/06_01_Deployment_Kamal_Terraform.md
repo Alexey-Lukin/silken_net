@@ -446,7 +446,7 @@ env:
 ```
 > **One-home:** це ілюстрація структури. **Повний інвентар ENV** (secret + clear, контракт-адреси, RPC, credentials) — лише [`06_04 §2.1`](06_04_Secrets_Checklist); не дублювати тут.
 
-> **🔴 Boot-time guard rationale:** Container injects ТІЛЬКИ ті secrets, що явно перелічені у `env: secret:`. Відсутність `PROVISIONING_MASTER_KEY` → `SecurityError` від `config/initializers/master_key_strength_check.rb` → Puma crash до accept. Відсутність `ORACLE_*_PRIVATE_KEY` → `KeyError` від `ENV.fetch` у `BlockchainMintingService`/`BlockchainBurningService` → web3-критичні воркери у DeadSet. Відсутність `ALCHEMY_ETHEREUM_RPC_URL` → `StateAnchorService` падає при tижневому anchor TX → `EthereumAnchor.status = failed`. **Bind these in `.kamal/secrets-common` first**, потім додавай у `env: secret:` блок.
+> **🔴 Boot-time guard rationale:** Container injects ТІЛЬКИ ті secrets, що явно перелічені у `env: secret:`. Відсутність `PROVISIONING_MASTER_KEY` → `SecurityError` від `config/initializers/master_key_strength_check.rb` → Puma crash до accept. Відсутність `ORACLE_*_PRIVATE_KEY` → `KeyError` від `ENV.fetch` у `BlockchainMintingService`/`BlockchainBurningService` → web3-критичні воркери у DeadSet. Відсутність `ALCHEMY_ETHEREUM_RPC_URL` → `StateAnchorService` падає при тижневому anchor TX → `EthereumAnchor.status = failed`. **Bind these in `.kamal/secrets-common` first**, потім додавай у `env: secret:` блок.
 
 > **Нові ENV змінні безпеки** (деталі у [`06_04 §2.1`](06_04_Secrets_Checklist)):
 >
@@ -574,7 +574,7 @@ Stage 3: final         — COPY gems + app + Cloud SQL Auth Proxy, USER rails:10
 
 ```bash
 cd terraform/akash
-# Створити terraform.tfvars з prefer-фuller exemплара:
+# Створити terraform.tfvars з prefer-fuller екземпляра:
 #   cp terraform.tfvars.example terraform.tfvars
 # Повний набір змінних (мірор .kamal/secrets-common, ~25 sensitive):
 #   akash_key_name, docker_image

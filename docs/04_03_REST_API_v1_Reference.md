@@ -1337,7 +1337,7 @@ ed25519_sign(sig, message, strlen(message), private_key);
 | 404 Not Found | `did` не знайдено в `hardware_keys` |
 | 422 Unprocessable | Ed25519 public key не зареєстровано для пристрою |
 | 400 Bad Request | Невалідний формат `timestamp` |
-| 401 Unauthorized | `timestamp` прострочено (>5 хв) або підпис не валідний або повтор нonce (Replay attack) |
+| 401 Unauthorized | `timestamp` прострочено (>5 хв) або підпис не валідний або повтор nonce (Replay attack) |
 | 503 Service Unavailable | Redis недоступний ТА Solid Cache fallback також відмовив |
 
 ---
