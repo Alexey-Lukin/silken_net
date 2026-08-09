@@ -102,10 +102,25 @@ jobs:
       # тому що ПРЕДМЕТ переїжджав: спершу в DOC-T.63, далі — коли перемір
       # розвів три Foundry-осі з різними коренями — у власний TEST.14, де
       # residual «перейменувати РАЗОМ з `forge snapshot` regen» і стоїть.
-      # ⚠️ Периметр самого гейта при цьому має власну сліпоту: `grep -q
-      # "AccessControl"` не бачить транзитивного успадкування, тож
-      # `SilkenTimelock is TimelockController` сюди не потрапляє (промах
-      # benign — Timelock самогрантує admin у конструкторі; TEST.14).
+      # ⚠️ Периметр гейта не бачить транзитивного успадкування: `grep -q
+      # "AccessControl"` не ловить `SilkenTimelock is TimelockController`.
+      # Транзитивно-сліпий контракт у дереві РІВНО ОДИН (Governor не вживає
+      # AccessControl взагалі — у всьому `@openzeppelin/contracts/governance/`
+      # його імпортує лише `TimelockController.sol`), і розширювати периметр
+      # на нього СВІДОМО не треба — TEST.14, перемір 2026-08-09.
+      # 🔴 Підстава тут доти стояла ХИБНА: «промах benign, бо Timelock
+      # самогрантує admin у конструкторі». Самогрант справді є (конструктор
+      # `TimelockController` кличе `_grantRole(DEFAULT_ADMIN_ROLE,
+      # address(this))`), але він гарантує непорожність лише В
+      # МОМЕНТ деплою: ні `revokeRole`, ні `renounceRole` там не
+      # перевизначені, а наш власний `script/Deploy.s.sol` робить
+      # `renounceRole(DEFAULT_ADMIN_ROLE, deployer)` рутинно — тобто множину
+      # адмінів МОЖНА довести до нуля пост-деплойно.
+      # Справжня підстава інша й сильніша: для Timelock нуль адмінів — це
+      # ЗАДЕКЛАРОВАНИЙ бажаний стан, а не brick (`SilkenTimelock.sol` NatSpec:
+      # «Рекомендовано: address(0) для immutable governance»). Тобто
+      # `_adminCount`-гвард зламав би саме ту опцію, а last-admin тест на
+      # Timelock був би НЕПРАВДИВИМ твердженням про контракт.
       - name: Invariant gate — every AccessControl contract pins last-admin
         run: |
           set -euo pipefail
@@ -126,8 +141,14 @@ jobs:
           done
           # Ліхтар на власний вимір: порожній перелік контрактів дав би зелене
           # мовчання — той самий клас, який цей гейт і ловить.
+          # 🔴 Поріг був 3 при фактичних 4 AccessControl-контрактах, тобто один
+          # міг тихо випасти зі сканування, а ліхтар не блимнув би (TEST.14,
+          # 2026-08-09). Це FLOOR: чесне ДОДАВАННЯ контракту його не червонить
+          # (n росте), червонить лише ЗНИКНЕННЯ. ⚠️ Стеля floor'а: він ловить
+          # падіння нижче названого числа, не «на один менше, ніж учора» — тож
+          # додаючи AccessControl-контракт, підніми поріг ТИМ САМИМ комітом.
           n=$(grep -l "AccessControl" ./*.sol | wc -l | tr -d ' ')
-          if [ "$n" -lt 3 ]; then
+          if [ "$n" -lt 4 ]; then
             echo "::error::AccessControl scan found only $n contracts — the glob is blind, not the tree clean"
             exit 1
           fi
@@ -137,6 +158,21 @@ jobs:
             exit 1
           fi
           echo "OK — all $n AccessControl contracts pin the last-admin invariant"
+
+      # TEST.14 · naming-вісь: revert-тест мусить зватись `testRevert_*`.
+      # Свідомо ОКРЕМИЙ гейт від last-admin вище: той стереже ІНВАРІАНТ (тест
+      # існує) і навмисно грепає підрядок без префікса — злиття двох осей в
+      # одну умову вже було відхилене (guard-craft #46). Тут вісь одна — ім'я.
+      # ⚠️ `working-directory` тут ЯВНО перебиває дефолт job'а (`contracts`) на
+      # корінь — не з естетики: `guard_registry_sync` звіряє §3-рядок із
+      # ДОСЛІВНОЮ командою кроку, тож відносний `../scripts/...` читався б як
+      # phantom-claim, а сам гейт лишався б поза реєстром. Скрипт резолвить
+      # корінь від власного `__dir__`, тож обидва CWD робочі — але канонічною
+      # мусить бути та форма, якою його кличуть локально (#45/#46: CI-крок
+      # міряють у ТОМУ CWD, де він біжить).
+      - name: Naming gate — a revert test is named testRevert_*
+        working-directory: ${{ github.workspace }}
+        run: ruby scripts/solidity_test_naming_check.rb
 
       - name: Run tests with gas report
         run: forge test -vvv --gas-report
