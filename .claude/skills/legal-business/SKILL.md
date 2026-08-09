@@ -114,7 +114,8 @@ description: "Use when working on the silken_net §07 surface — legal / busine
 ## Verify
 
 ```
-ruby scripts/docs_check.rb            # ~0.3с, без Rails; ті самі rake-тіла, що в CI
+ruby scripts/docs_band.rb             # УСЯ смуга CI · Docs (~1.5хв) — перед комітом; перелік кроків із docs.yml
+ruby scripts/docs_check.rb            # ~0.3с швидкий цикл: ДВА кроки з 24, не смуга (OPS.25)
 ruby scripts/protocols_ref_check.rb   # канон-рефи підшару + глибина ../
 ruby scripts/code_tracker_id_check.rb # якщо правив .claude/** або код із tracker-ID
 ```

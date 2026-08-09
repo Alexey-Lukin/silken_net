@@ -5,9 +5,12 @@
 # land BEFORE the edit. A reminder that arrives after I have already collapsed a
 # canon section is worth nothing — the damage is the edit itself.
 #
-# Why it carries what it carries: `docs_check.rb` already catches every FORM
-# violation (DOC-T.15 line-refs, meta-line WHO, section-home, bare doc-ids) and
-# it does so in 0.3s, HARD. Repeating those here would be noise. What no gate
+# Why it carries what it carries: `docs_check.rb` catches every FORM violation
+# THIS file can commit (DOC-T.15 line-refs, meta-line WHO, section-home, bare
+# doc-ids) in 0.3s, HARD. Repeating those here would be noise. ⚠️ It is two
+# steps of a 24-step lane, though — the hint text says so and points at
+# `docs_band.rb`, because reading its green as a verdict about the whole Docs
+# lane is exactly what reddened `main` three times (OPS.25). What no gate
 # can see is the one red line `deep_archival.md` itself flags as ungated: the
 # zero-loss set-diff is grep-based, so a fact that is present-by-token but
 # gutted-in-substance passes GREEN. That is the only thing worth interrupting
@@ -47,7 +50,7 @@ if [[ "$class" == "canon" ]]; then
 EOF
 else
   read -r -d '' hint <<'EOF' || true
-[SSOT] Трекер `00_07`. Форму стереже `ruby scripts/docs_check.rb tracker` (HARD) — не переказую. Тут те, що гейт пропускає:
+[SSOT] Трекер `00_07`. Форму стереже `ruby scripts/docs_check.rb tracker` (HARD) — не переказую; ⚠️ це ОДИН крок джоби `docs_check`, повна смуга перед комітом — `ruby scripts/docs_band.rb`. Тут те, що гейт пропускає:
 
 1. **Чекбокс несе ЛИШЕ відкрите.** Закрита робота живе в `- **Стан:**` + git, не як `[x]`-звіт. Повністю закритий пункт → §🗄️ Архів рядком `| ID | суть | канон |`, а НЕ «товстий ✅».
 2. **Перед архівацією — verify-canon.** Інбаунд-рефи по ID (канон/код/скіли) мусять лишитись живими: архівний рядок і є їхній дім. Спершу перевір, що присуд і design-justification вже в каноні — інакше зріжеш незбережене.
