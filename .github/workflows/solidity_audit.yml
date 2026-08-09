@@ -27,6 +27,11 @@ on:
     paths:
       - 'contracts/**'
       - '.github/workflows/solidity_audit.yml'
+      # Гейт naming-осі живе поза `contracts/`, тож без цього рядка правка
+      # САМОГО сторожа не перезапускала б його: зламаний скрипт лишався б
+      # зеленим, поки хтось не торкнеться контрактів (лаг детонації = число
+      # не-contracts комітів поспіль, не обмежене нічим).
+      - 'scripts/solidity_test_naming_check.rb'
 
 jobs:
   changes:
@@ -49,6 +54,7 @@ jobs:
             sol:
               - 'contracts/**'
               - '.github/workflows/solidity_audit.yml'
+              - 'scripts/solidity_test_naming_check.rb'
 
   foundry-tests:
     needs: changes
