@@ -8,6 +8,7 @@ import "../SilkenForestCoin.sol";
 import "../SilkenCarbonCoin.sol";
 import "../ProtocolParameters.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 
 /**
  * @title SilkenGovernor Test Suite
@@ -128,8 +129,14 @@ contract SilkenGovernorTest is Test {
         (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
             _createSetParameterProposal(keccak256("lorenz_sigma"), 12e18, "Should fail - no tokens");
 
+        // Pre-compute both args BEFORE the prank — an external call inside the expectRevert
+        // args would consume it, and the proposer would be the test contract instead.
+        uint256 threshold = governor.proposalThreshold();
+        uint256 votes = governor.getVotes(noTokens, block.number - 1); // 0 — holds no SFC
         vm.prank(noTokens);
-        vm.expectRevert(); // GovernorInsufficientProposerVotes
+        vm.expectRevert(
+            abi.encodeWithSelector(IGovernor.GovernorInsufficientProposerVotes.selector, noTokens, votes, threshold)
+        );
         governor.propose(targets, values, calldatas, description);
     }
 

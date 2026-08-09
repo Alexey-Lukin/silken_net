@@ -3,6 +3,7 @@ pragma solidity 0.8.36;
 
 import "forge-std/Test.sol";
 import "../script/Deploy.s.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 /**
  * @title DeployWiringTest
@@ -114,8 +115,10 @@ contract DeployWiringTest is Test {
     // ─── The bypass that #1 closes (would FAIL under the old admin=Safe) ──
     function test_safeCannotSetParamsDirectly() public {
         // Safe holds no role on Params → setParameter reverts (AccessControl).
+        // Read the role constant BEFORE the cheatcodes (see the note below).
+        bytes32 govRole = d.protocolParams.GOVERNANCE_ROLE();
         vm.prank(safe);
-        vm.expectRevert();
+        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, safe, govRole));
         d.protocolParams.setParameter(keccak256("dynamic_tax_rate"), 1e18);
     }
 
@@ -124,8 +127,11 @@ contract DeployWiringTest is Test {
         // Read the role constant BEFORE the cheatcodes — an external call in the args would
         // otherwise consume the prank/expectRevert (foundry gotcha).
         bytes32 govRole = d.protocolParams.GOVERNANCE_ROLE();
+        bytes32 adminRole = d.protocolParams.DEFAULT_ADMIN_ROLE(); // grantRole is admin-gated, not governance-gated
         vm.prank(safe);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, safe, adminRole)
+        );
         d.protocolParams.grantRole(govRole, safe);
     }
 

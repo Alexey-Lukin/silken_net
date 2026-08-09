@@ -5,6 +5,8 @@ import "forge-std/Test.sol";
 import "../SilkenCarbonCoin.sol";
 import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import "./helpers/Eip712SigUtils.sol";
 
 /**
@@ -15,7 +17,9 @@ import "./helpers/Eip712SigUtils.sol";
  *  1. Descriptive test names with test_/testFuzz_/testRevert_ prefixes
  *  2. Arrange-Act-Assert pattern
  *  3. vm.prank for caller isolation per test
- *  4. vm.expectRevert with exact error strings
+ *  4. vm.expectRevert with the revert's ACTUAL subject: an exact string for our own
+ *     require()s, abi.encodeWithSelector(...) — or expectPartialRevert when an argument
+ *     is unpredictable — for the OpenZeppelin custom errors (AccessControl / Pausable)
  *  5. vm.expectEmit for event verification
  *  6. Fuzz tests for boundary/arbitrary inputs
  *  7. Constants mirrored from contract for clarity
@@ -181,8 +185,11 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
     }
 
     function testRevert_mint_unauthorizedCaller() public {
+        bytes32 minterRole = scc.MINTER_ROLE(); // pre-compute: an external call in the args eats the prank
         vm.prank(unauthorized);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, unauthorized, minterRole)
+        );
         scc.mint(user1, 100e18, TREE_DID, bytes32(uint256(0xE60)));
     }
 
@@ -339,8 +346,11 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
         vm.prank(minter);
         scc.mint(user1, 1000e18, TREE_DID, bytes32(uint256(0xE60)));
 
+        bytes32 slasherRole = scc.SLASHER_ROLE();
         vm.prank(unauthorized);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, unauthorized, slasherRole)
+        );
         scc.slash(user1, 100e18);
     }
 
@@ -411,8 +421,11 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
         vm.prank(minter);
         scc.mint(user1, 1000e18, TREE_DID, bytes32(uint256(0xE60)));
 
+        bytes32 slasherRole = scc.SLASHER_ROLE();
         vm.prank(unauthorized);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, unauthorized, slasherRole)
+        );
         scc.slashUpTo(user1, 100e18, bytes32(0));
     }
 
@@ -448,7 +461,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
         scc.pause();
 
         vm.prank(user1);
-        vm.expectRevert();
+        vm.expectRevert(Pausable.EnforcedPause.selector);
         scc.transfer(user2, 100e18);
     }
 
@@ -457,7 +470,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
         scc.pause();
 
         vm.prank(minter);
-        vm.expectRevert();
+        vm.expectRevert(Pausable.EnforcedPause.selector);
         scc.mint(user1, 100e18, TREE_DID, bytes32(uint256(0xE60)));
     }
 
@@ -505,16 +518,22 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
     }
 
     function testRevert_pause_unauthorizedCaller() public {
+        bytes32 pauserRole = scc.PAUSER_ROLE();
         vm.prank(unauthorized);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, unauthorized, pauserRole)
+        );
         scc.pause();
     }
 
     /// @notice [SEC.1] DEFAULT_ADMIN (the Timelock in prod) must NOT be able to pause —
     ///         pause is PAUSER_ROLE only (the Safe). Proves the role split.
     function testRevert_pause_adminCannotPause() public {
+        bytes32 pauserRole = scc.PAUSER_ROLE();
         vm.prank(admin);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, admin, pauserRole)
+        );
         scc.pause();
     }
 
@@ -522,8 +541,11 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
     ///         grantRole(MINTER) power stays with DEFAULT_ADMIN (the Timelock).
     function testRevert_pauser_cannotGrantRoles() public {
         bytes32 minterRole = scc.MINTER_ROLE(); // pre-compute (the prank/expectRevert must hit grantRole)
+        bytes32 adminRole = scc.DEFAULT_ADMIN_ROLE(); // grantRole is admin-gated
         vm.prank(pauser);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, pauser, adminRole)
+        );
         scc.grantRole(minterRole, unauthorized);
     }
 

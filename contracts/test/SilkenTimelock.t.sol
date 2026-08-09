@@ -3,6 +3,8 @@ pragma solidity 0.8.36;
 
 import "forge-std/Test.sol";
 import "../SilkenTimelock.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 
 /**
  * @title SilkenTimelock Test Suite
@@ -67,8 +69,11 @@ contract SilkenTimelockTest is Test {
         bytes32 salt = keccak256("test-salt");
         uint256 tooShortDelay = 1 hours; // Less than 48h
 
+        uint256 minDelay = timelock.getMinDelay(); // pre-compute: an external call in the args eats the prank
         vm.prank(governor);
-        vm.expectRevert(); // TimelockController: insufficient delay
+        vm.expectRevert(
+            abi.encodeWithSelector(TimelockController.TimelockInsufficientDelay.selector, tooShortDelay, minDelay)
+        );
         timelock.schedule(target, 0, data, predecessor, salt, tooShortDelay);
     }
 
@@ -92,8 +97,11 @@ contract SilkenTimelockTest is Test {
         bytes32 predecessor = bytes32(0);
         bytes32 salt = keccak256("unauth-salt");
 
+        bytes32 proposerRole = timelock.PROPOSER_ROLE();
         vm.prank(executor); // executor has EXECUTOR_ROLE, not PROPOSER_ROLE
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, executor, proposerRole)
+        );
         timelock.schedule(target, 0, data, predecessor, salt, 48 hours);
     }
 
@@ -108,9 +116,11 @@ contract SilkenTimelockTest is Test {
         vm.prank(governor);
         timelock.schedule(target, 0, data, predecessor, salt, 48 hours);
 
-        // Try executing immediately — should fail (not ready yet)
+        // Try executing immediately — should fail (not ready yet).
+        // expectPartialRevert: TimelockUnexpectedOperationState carries the operation id AND an
+        // internal state-bitmap, so only the selector is a stable subject to assert on.
         vm.prank(executor);
-        vm.expectRevert();
+        vm.expectPartialRevert(TimelockController.TimelockUnexpectedOperationState.selector);
         timelock.execute(target, 0, data, predecessor, salt);
     }
 

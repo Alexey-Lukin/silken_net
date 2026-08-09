@@ -7,6 +7,8 @@ import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20P
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import "./helpers/Eip712SigUtils.sol";
 
 /**
@@ -158,8 +160,11 @@ contract SilkenForestCoinTest is Eip712SigUtils {
     }
 
     function testRevert_mint_unauthorizedCaller() public {
+        bytes32 minterRole = sfc.MINTER_ROLE(); // pre-compute: an external call in the args eats the prank
         vm.prank(unauthorized);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, unauthorized, minterRole)
+        );
         sfc.mint(user1, 100e18, CLUSTER_ID, bytes32(uint256(0xE60)));
     }
 
@@ -311,8 +316,11 @@ contract SilkenForestCoinTest is Eip712SigUtils {
         vm.prank(minter);
         sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
+        bytes32 slasherRole = sfc.SLASHER_ROLE();
         vm.prank(unauthorized);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, unauthorized, slasherRole)
+        );
         sfc.slash(user1, 100e18);
     }
 
@@ -384,8 +392,11 @@ contract SilkenForestCoinTest is Eip712SigUtils {
         vm.prank(minter);
         sfc.mint(user1, 1000e18, CLUSTER_ID, bytes32(uint256(0xE60)));
 
+        bytes32 slasherRole = sfc.SLASHER_ROLE();
         vm.prank(unauthorized);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, unauthorized, slasherRole)
+        );
         sfc.slashUpTo(user1, 100e18, bytes32(0));
     }
 
@@ -419,7 +430,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
         sfc.pause();
 
         vm.prank(user1);
-        vm.expectRevert();
+        vm.expectRevert(Pausable.EnforcedPause.selector);
         sfc.transfer(user2, 100e18);
     }
 
@@ -428,7 +439,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
         sfc.pause();
 
         vm.prank(minter);
-        vm.expectRevert();
+        vm.expectRevert(Pausable.EnforcedPause.selector);
         sfc.mint(user1, 100e18, CLUSTER_ID, bytes32(uint256(0xE60)));
     }
 
@@ -476,16 +487,22 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
     /// @notice [SEC.1] DEFAULT_ADMIN (the Timelock in prod) must NOT pause — PAUSER_ROLE only.
     function testRevert_pause_adminCannotPause() public {
+        bytes32 pauserRole = sfc.PAUSER_ROLE();
         vm.prank(admin);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, admin, pauserRole)
+        );
         sfc.pause();
     }
 
     /// @notice [SEC.1] PAUSER (the Safe) must NOT grant roles — grantRole stays DEFAULT_ADMIN (Timelock).
     function testRevert_pauser_cannotGrantRoles() public {
         bytes32 minterRole = sfc.MINTER_ROLE(); // pre-compute (the prank/expectRevert must hit grantRole)
+        bytes32 adminRole = sfc.DEFAULT_ADMIN_ROLE(); // grantRole is admin-gated
         vm.prank(pauser);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, pauser, adminRole)
+        );
         sfc.grantRole(minterRole, unauthorized);
     }
 

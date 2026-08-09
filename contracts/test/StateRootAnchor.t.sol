@@ -3,6 +3,7 @@ pragma solidity 0.8.36;
 
 import "forge-std/Test.sol";
 import "../StateRootAnchor.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 /**
  * @title StateRootAnchor Test Suite
@@ -158,8 +159,11 @@ contract StateRootAnchorTest is Test {
     }
 
     function testRevert_storeStateRoot_unauthorized() public {
+        bytes32 anchorRole = anchor.ANCHOR_ROLE(); // pre-compute: an external call in the args eats the prank
         vm.prank(unauthorized);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, unauthorized, anchorRole)
+        );
         anchor.storeStateRoot(ROOT_1);
     }
 

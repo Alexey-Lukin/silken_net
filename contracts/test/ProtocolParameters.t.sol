@@ -3,6 +3,7 @@ pragma solidity 0.8.36;
 
 import "forge-std/Test.sol";
 import "../ProtocolParameters.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 /**
  * @title ProtocolParameters Test Suite
@@ -90,15 +91,21 @@ contract ProtocolParametersTest is Test {
     }
 
     function test_setParameter_revertsForUnauthorized() public {
+        bytes32 govRole = params.GOVERNANCE_ROLE(); // pre-compute: an external call in the args eats the prank
         vm.prank(unauthorized);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, unauthorized, govRole)
+        );
         params.setParameter(KEY_LORENZ_SIGMA, 10e18);
     }
 
     function test_setParameter_revertsForAdmin() public {
         // Admin has DEFAULT_ADMIN_ROLE but NOT GOVERNANCE_ROLE
+        bytes32 govRole = params.GOVERNANCE_ROLE();
         vm.prank(admin);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, admin, govRole)
+        );
         params.setParameter(KEY_LORENZ_SIGMA, 10e18);
     }
 
@@ -208,8 +215,11 @@ contract ProtocolParametersTest is Test {
         keys[0] = KEY_LORENZ_SIGMA;
         values[0] = 10e18;
 
+        bytes32 govRole = params.GOVERNANCE_ROLE();
         vm.prank(unauthorized);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, unauthorized, govRole)
+        );
         params.setParameters(keys, values);
     }
 
