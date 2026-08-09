@@ -13,7 +13,7 @@
 > **Why publish rather than patent:** for a mission-first project with a public repository, the
 > enforcement reality of a solo Ukrainian rights-holder, and open/DePIN DNA, defensive publication
 > achieves anti-capture without the cost and exclusivity of a patent. Disclosure posture is owned by
-> [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md); novelty landscape →
+> [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md); novelty landscape →
 > [`prior_art_landscape.md`](prior_art_landscape.md); technical canon →
 > [`01_03`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) (EBFC) ·
 > [`01_01`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) (gyroid).
@@ -126,7 +126,7 @@ matter, and why the anti-capture search remains a separate open task
 
 **Non-assertion.** SilkenNet files no patents on this technology; should any ever be obtained
 defensively, an irrevocable non-assertion pledge applies to all good-faith users — see `/NOTICE` and
-[`07_03 §3`](../../07_03_Academic_Integration_and_IP.md).
+[`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md).
 
 ---
 
@@ -134,7 +134,7 @@ defensively, an irrevocable non-assertion pledge applies to all good-faith users
 
 | Resource | Role |
 |---|---|
-| [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) | **owner** of the IP posture (defensive-publication-first, licences, pledge) |
+| [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) | **owner** of the IP posture (defensive-publication-first, licences, pledge) |
 | [`prior_art_landscape.md`](prior_art_landscape.md) | novelty landscape and anti-capture (FTO-lite) scan plan |
 | [`01_03`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) · [`01_01`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) | EBFC / gyroid technical canon |
 | [`03_04`](../../03_04_mruby_Lorenz_Attractor.md) | chaotic classification of `delta_t` (Lorenz) |

@@ -9,7 +9,7 @@
 # states them only in root LICENSE files. Automated licence scanners (SPDX/SBOM tools,
 # GitHub's detector, an enterprise buyer's SCA pass) read per-file identifiers; without
 # them ~1400 tracked source files read as *unlicensed*, which is the opposite of what a
-# defensive-publication, copyleft-enforcement posture needs. Posture → docs/07_03 §3;
+# defensive-publication, copyleft-enforcement posture needs. Posture → docs/00_01 §8;
 # scope + named ceilings → THIS HEADER (it cannot drift from the code); state → 00_07 UNI.3.
 #
 # ENUMERATION IS `git ls-files`, NEVER `find` / `grep -r`. This is the single most
@@ -389,7 +389,7 @@ if __FILE__ == $PROGRAM_NAME
 
   unless mismatch.empty?
     warn "spdx_headers — #{mismatch.size} file(s) carry a DIFFERENT identifier than the scope map expects."
-    warn "These are never rewritten automatically; resolve by hand or fix the map (07_03 §3):"
+    warn "These are never rewritten automatically; resolve by hand or fix the map (00_01 §8):"
     mismatch.each { |a| warn "  ⚠ #{a[:path]} — found #{a[:found]}, map says #{a[:licence]}" }
     warn ""
   end

@@ -15,12 +15,12 @@
 > **Джерела фактів:** [`R1_ua_legal.md`](../research/R1_ua_legal.md) (UA entity/tax) · [`R2_offshore_token_securities.md`](../research/R2_offshore_token_securities.md) (offshore/token/securities) · [`securities_review`](securities_review.md) (securities fact-pattern, code-verified) · [`tax_posture_ua`](tax_posture_ua.md) (tax + open-q token-емісія). Усі «як воно є» — з посиланням на R#/memo/код + рівнем впевненості; усі «як це кваліфікує право» — **відкриті питання для юриста**.
 >
 > **🔑 НЕСУЧІ ВХІДНІ ФАКТИ (вхід, не висновок):**
-> - SilkenNet розміщується під **operational-vehicle** — **наявною UA-компанією, Дія.City-резидентом, співзасновником якої є founder** (тришар-присуд канонізовано: [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md), [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20). Нової інкорпорації не потрібно.
+> - SilkenNet розміщується під **operational-vehicle** — **наявною UA-компанією, Дія.City-резидентом, співзасновником якої є founder** (тришар-присуд канонізовано: [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md), [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20). Нової інкорпорації не потрібно.
 > - Operational-vehicle — **multi-founder** компанія: founder є одним зі співзасновників, не єдиним власником. SilkenNet — **mission-first SOLO-проєкт** founder'а.
 > - 🔴 **НЕСУЧИЙ НАСЛІДОК:** «під operational-vehicle» коректно **лише** якщо розвести **operational-vehicle** (так) від **IP/value-owner** (ні — титул лишається на фізособі founder'а). Ця вісь — центральна для всієї матриці (§1.2).
 > - Founder особисто = **ФОП** (персональний-дохід-канал **+ IP/trademark-holder**, НЕ токен — п.291.5 ПКУ).
 >
-> **Канон:** [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md) (BIZ.15 SPV, RWA, MSA/KYC open-items) · [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) (IP-постава: copyright/™ на фізособу) + [`07_03 §5`](../../07_03_Academic_Integration_and_IP.md) (бренд-архітектура) · [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20/BIZ.15/UNI.14/UNI.16/UNI.15/BIZ.2/BIZ.21.
+> **Канон:** [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md) (BIZ.15 SPV, RWA, MSA/KYC open-items) · [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) (IP-постава: copyright/™ на фізособу) + [`07_03 §5`](../../07_03_Academic_Integration_and_IP.md) (бренд-архітектура) · [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20/BIZ.15/UNI.14/UNI.16/UNI.15/BIZ.2/BIZ.21.
 
 ---
 
@@ -68,7 +68,7 @@ Operational-vehicle — **multi-founder** компанія (founder = співз
 | **Operational-vehicle** | dev-робота, MSA-підпис, білінг/інвойсинг, liability-щит, Дія.City-режим, KYC-org-anchor | **Наявна UA-компанія** | Shell-послуги — саме те, для чого операційна компанія існує; multi-founder тут нешкідливо |
 | **IP / value-owner** | copyright на код (`SilkenNet::Attractor`, `bio_contract.rb`…), trademark (SilkenNet™/GaiaNexus™/SCC™), governance/treasury-токеноміка, «цінність місії» | **Фізособа founder'а** | SilkenNet = solo-mission → титул має жити в особи, що несе місію; спільна особа зробила б власність на місію неоднозначною |
 
-**🔴 Ризик, який знімає структурування:** без явного оформлення діє **мовчазний default** — режим «службового твору» / work-product за загальним правилом. Тоді титул на SilkenNet-IP стає **двозначним для обох сторін**: ані founder не має чистої власності для Phase-2, ані operational-vehicle не має безспірної підстави використовувати IP у delivery. Це суперечить канонізованій поставі ([`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) — copyright на фізособу «Oleksii Lukin»; `/NOTICE`).
+**🔴 Ризик, який знімає структурування:** без явного оформлення діє **мовчазний default** — режим «службового твору» / work-product за загальним правилом. Тоді титул на SilkenNet-IP стає **двозначним для обох сторін**: ані founder не має чистої власності для Phase-2, ані operational-vehicle не має безспірної підстави використовувати IP у delivery. Це суперечить канонізованій поставі ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) — copyright на фізособу «Oleksii Lukin»; `/NOTICE`).
 
 **Механізм розведення (Phase-1) — стандартна двостороння IP-структурна практика:**
 - Copyright + trademark **папіряться на фізособу founder'а** (не assignment у компанію).
@@ -87,7 +87,7 @@ Operational-vehicle — **multi-founder** компанія (founder = співз
 | **MSA counterparty** (BIZ.2) | **Operational-vehicle** | MSA потребує named legal person ([`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md), [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.2). Готовий підписант із liability-щитом. **Розблоковує BIZ.2**. |
 | **Грант-заявник** | **Operational-vehicle** (юрособа-грант) АБО **фізособа** (персональний грант) — обидва живі | Юрособа-заявник = liability-щит + інституційна довіра + можливий неоподаткований режим для бюджетних/МТД-грантів [R1 §5]. ⚠️ Якщо грант фінансує SilkenNet-IP-створення → узгодити з §1.2 (deliverable-IP → founder). Персональний грант на фізособу — [R1 §5], [`tax_posture_ua`](tax_posture_ua.md) Q1.3. **Вибір per-grant.** |
 | **Trademark-заявник** (UNI.15) | **Фізособа (Oleksii Lukin)** | **Три причини сходяться:** (1) ™ у спільній компанії робить титул на бренд-рів неоднозначним (§1.2); (2) R1 §3/R5 — ™ на фізособу переживає ліквідацію/продаж, переходить у спадок; (3) уже ⚖️-default у UNI.15. |
-| **IP / copyright holder** | **Фізособа (Oleksii Lukin)**, license-back компанії для операцій | **Три причини:** (1) однозначність титулу solo-mission (§1.2); (2) `/NOTICE` уже вестить copyright на фізособу, [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) пілар 2 — copyright заради enforcement копілефту (AGPL); (3) єдиний copyright-holder = standing to enforce ([`securities_review`](securities_review.md) Блок 4.3). License-back, НЕ assignment. |
+| **IP / copyright holder** | **Фізособа (Oleksii Lukin)**, license-back компанії для операцій | **Три причини:** (1) однозначність титулу solo-mission (§1.2); (2) `/NOTICE` уже вестить copyright на фізособу, [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) пілар 2 — copyright заради enforcement копілефту (AGPL); (3) єдиний copyright-holder = standing to enforce ([`securities_review`](securities_review.md) Блок 4.3). License-back, НЕ assignment. |
 | **Anchor-install liability-щит** | **Operational-vehicle** | Неінкорпорований founder ніс би «втручання в держмайно» особисто. Під юрособою — обмежена відповідальність. **Phase-1-виграш.** (E&O-поліс BIZ.21 — юрисдикція UA за operational-vehicle → [`eo_insurance_spec`](../business/eo_insurance_spec.md).) |
 | **ФОП founder'а** | персональний-дохід + IP-holder-«фізособа» | Персональний дохід (гранти-фізособі, консалтинг). Носій IP/™ (як фізособа). **ФОП ВИКЛЮЧЕНИЙ для крипто** (п.291.5) → ФОП НЕ тримає й не емітує токен. |
 
@@ -251,7 +251,7 @@ securities-консультація на as-built NaaS-продукт (UNI.16 / 
 | Ресурс | Що бере |
 |---|---|
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | **BIZ.20** (дім стану) + BIZ.15 / BIZ.22 / UNI.14 / UNI.15 / UNI.16 / BIZ.2 / BIZ.21 |
-| [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) | IP-постава + канонізований тришар «хто оперує ≠ хто володіє ≠ хто емітує» |
+| [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) | IP-постава + канонізований тришар «хто оперує ≠ хто володіє ≠ хто емітує» |
 | [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md) | юр/бізнес-передумови NaaS (MSA, RWA, SPV/BIZ.15, KYC) |
 | [`securities_review`](securities_review.md) | securities/RWA/IP fact-pattern + питання до юриста (Блок 4.5 = IP-структурування) |
 | [`tax_posture_ua`](tax_posture_ua.md) | Дія.City-ставки, 90%-тест, token-емісія/банкування — податковий дім |

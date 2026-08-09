@@ -40,7 +40,7 @@
 1. **System TRL = 3** (anchor/EBFC gate, `00_03`) — залізо ще не в TRL4 in-vitro навіть. Реальний production-mint токена «backed by verified biomass growth» на реальному hardware — це роки, не квартали.
 2. **Zero юр-осіб зараз** — типовий dual-entity launch (Cayman+BVI за $8.5k-34k setup) розрахований на команду, що вже готова провести token sale цього року. SilkenNet — ні.
 3. **DAO governance — «far-horizon»** за власним визначенням задачі. Foundation-як-DAO-дім (Verein/Stiftung/Cayman) вирішує проблему, якої ще немає.
-4. Дешевша, миттєво корисна дія — **звичайна операційна юрособа** (UA ТОВ або Estonia OÜ — саме як «operating company», НЕ CASP-ліцензована) для контрактів/інвойсингу/IP-holding (вже узгоджено defensive-publication posture, `07_03 §3`) — це рішення сьогоднішньої, не 2027-28 проблеми.
+4. Дешевша, миттєво корисна дія — **звичайна операційна юрособа** (UA ТОВ або Estonia OÜ — саме як «operating company», НЕ CASP-ліцензована) для контрактів/інвойсингу/IP-holding (вже узгоджено defensive-publication posture, `00_01 §8`) — це рішення сьогоднішньої, не 2027-28 проблеми.
 
 **Відкрите питання:** жодне джерело не адресує напряму «forest-carbon D-MRV projects» як клас — усі приклади (ENS, Balancer, Uniswap) — DeFi/pure-software протоколи без фізичного активу (anchor/EBFC hardware) і без "Investor"-labeled B2C/B2B revenue-контракту. SilkenNet-специфічний fit — не перевірений жодним джерелом; екстраполяція моя, не задокументований прецедент.
 

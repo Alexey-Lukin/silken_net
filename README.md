@@ -168,7 +168,7 @@ Bugs and proposals go through [GitHub Issues](https://github.com/Alexey-Lukin/si
 
 ## 📜 Licence and IP posture
 
-SilkenNet is **mission-first and defensive-publication-first**: we deliberately **do not patent** this work. We publish it as prior art so that it stays free for every forest and **cannot be enclosed** by anyone — including us. The canonical statement of that posture is [`07_03 §3`](docs/07_03_Academic_Integration_and_IP.md); the full map of zones and exceptions is [`NOTICE`](NOTICE).
+SilkenNet is **mission-first and defensive-publication-first**: we deliberately **do not patent** this work. We publish it as prior art so that it stays free for every forest and **cannot be enclosed** by anyone — including us. The canonical statement of that posture is [`00_01 §8`](docs/00_01_Vision_Mission_and_Roadmap.md); the full map of zones and exceptions is [`NOTICE`](NOTICE).
 
 | Zone | Licence | File |
 |------|---------|------|

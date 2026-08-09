@@ -134,5 +134,5 @@
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | **дім стану** — BIZ.20 (тришар operational ⊥ IP ⊥ token) · UNI.14 (контакт) · UNI.16 (Блок 4) |
 | [`entity_structure.md`](entity_structure.md) | сусідній артефакт: чому operational-vehicle = Active Bridge, а IP — фізособа |
 | [`trademark_brief.md`](trademark_brief.md) | ™-заявник = фізособа (UNI.15); §5.9 і питання 5 стикуються саме туди |
-| [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) | канон IP-постави: ліцензійна матриця, межа «відкрито / утримуємо», правовий актор |
+| [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) | канон IP-постави: ліцензійна матриця, межа «відкрито / утримуємо», правовий актор |
 | [`legal_registry.md`](legal_registry.md) | індекс юр-концерну |

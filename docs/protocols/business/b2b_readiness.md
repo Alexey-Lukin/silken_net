@@ -8,7 +8,7 @@
 
 > **Статус:** DRAFT v0.1, 2026-07-24. Gap-analysis для планування, НЕ compliance-порада. Web-research станом на 2025–2026 (усі джерела — внизу, з датами). «Наш стан» — з прочитаних сиблінг-артефактів пакета ([`msa_skeleton`](../legal/msa_skeleton.md) · [`b2c_tos_privacy`](../legal/b2c_tos_privacy.md) · [`sla_exhibit`](sla_exhibit.md) · [`eo_insurance_spec`](eo_insurance_spec.md) · [`entity_structure`](../legal/entity_structure.md)) + repo-канону ([`06_07`](../../06_07_CICD_and_Runbook_Index.md), [`00_00`](../../00_00_SSOT_Index.md)) — НЕ здогадки.
 >
-> **Контекст:** solo-founder, phase-1, **нічого не задеплоєно, нуль users, нуль revenue**. Operational-vehicle = наявна UA-компанія, Дія.City-резидент, співзасновником якої є founder (тришар-присуд → [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) + [`entity_structure`](../legal/entity_structure.md)); IP/™ — на фізособі founder'а.
+> **Контекст:** solo-founder, phase-1, **нічого не задеплоєно, нуль users, нуль revenue**. Operational-vehicle = наявна UA-компанія, Дія.City-резидент, співзасновником якої є founder (тришар-присуд → [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) + [`entity_structure`](../legal/entity_structure.md)); IP/™ — на фізособі founder'а.
 >
 > **Guardrail документа: phase-aware, не gold-plate.** Більшість enterprise-вимог гейтяться подіями (перший live-деплой → перший enterprise-signing → scale), не календарем. Легенда фаз:
 > - 🟢 **phase-1-мінімум** — треба ЗАРАЗ або строго ДО першого live-деплою (це наш найближчий реальний гейт, не enterprise-угода);

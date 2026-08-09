@@ -22,7 +22,7 @@ title-blocked document a human or a shop reads. We need one as a deliverable in 
    (laser-triangulation / structured-light are the accurate ones for SLM parts). The drawing is
    the reference the scan is compared to. NB: GD&T of **PBF lattices is an open problem** —
    limited industrial knowledge — so a gyroid is **not** drawn point-by-point (see §4).
-3. **Publication / defensive-publication figure** (`07_03 §3`, IP posture = publish-to-protect).
+3. **Publication / defensive-publication figure** (`00_01 §8`, IP posture = publish-to-protect).
 4. **Self-review** — a dimensioned 2D view is a different error-surface than a 3D render; it
    catches drift the renderer hides (this is exactly how `AxialStack` found F1).
 

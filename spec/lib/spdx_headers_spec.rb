@@ -294,7 +294,7 @@ RSpec.describe SpdxHeaders do
     # The word alone must not trip it: scripts/dco_check.rb discusses copyright in prose.
     it "does not trip on the word 'copyright' without an attribution" do
       [
-        "# copyright-origin certification the AGPL posture leans on (07_03 §3)\n",
+        "# copyright-origin certification the AGPL posture leans on (00_01 §8)\n",
         "# Every contributor certifies copyright origin via the DCO.\n",
         "# See the copyright section of NOTICE.\n"
       ].each { |line| expect(described_class.foreign_notice([ line ])).to be_nil, "false positive on: #{line.strip}" }

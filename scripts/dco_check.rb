@@ -7,7 +7,7 @@
 # The project is AGPL and expects inbound code from universities/students
 # (`CONTRIBUTING.md` §DCO already asks for `git commit -s`) — but nothing
 # ENFORCED it: a PR without a `Signed-off-by` trailer merged silently, so the
-# copyright-origin certification the AGPL posture leans on (07_03 §3) existed
+# copyright-origin certification the AGPL posture leans on (00_01 §8) existed
 # as a request, not a gate. This is that gate. DCO > CLA here is a ratified
 # decision (CNCF recommendation, OpenInfra CLA→DCO 2025, Nextcloud-AGPL
 # precedent) — rationale + the two honest caveats (university thesis/grant IP,

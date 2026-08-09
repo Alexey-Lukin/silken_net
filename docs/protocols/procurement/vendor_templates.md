@@ -8,10 +8,10 @@
 
 > **Склад:** **(A)** DMLS additive-manufacturing vendor-scoring matrix · **(B)** ESG vendor-screening checklist · **(C)** mutual CDA/NDA для ВНЗ-MoU.
 > **Статус:** 🟡 робочий артефакт (**НЕ канон**) — draft-шаблони під заповнення/юр-review, не заморожені специфікації.
-> **Усі числа/пороги — дзеркало канону або явний `PLACEHOLDER`**: сплав/метал-constraint → [`01_02`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) §1.6/§1.7 · гіроїд-геометрія/поруватість → [`01_01`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) §5/§6 · procurement-constraint-доми → [`rfq_registry`](rfq_registry.md) §4.B · IP/NDA-постава → [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md). **Правити в домі, не тут** (One-Home, [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)).
+> **Усі числа/пороги — дзеркало канону або явний `PLACEHOLDER`**: сплав/метал-constraint → [`01_02`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) §1.6/§1.7 · гіроїд-геометрія/поруватість → [`01_01`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) §5/§6 · procurement-constraint-доми → [`rfq_registry`](rfq_registry.md) §4.B · IP/NDA-постава → [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md). **Правити в домі, не тут** (One-Home, [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)).
 > **Розміщення:** артефакт живе в `docs/protocols/procurement/` поряд з [`rfq_registry`](rfq_registry.md) та RFQ-аркушами; canon-ID — relative-links за конвенцією [`rfq_registry §5`](rfq_registry.md).
 >
-> ℹ️ **IP-постава (наскрізь):** SilkenNet = **defensive-publication** ([`07_03 §3`](../../07_03_Academic_Integration_and_IP.md)) — RFQ-specs/креслення/формат пакета **відкриті** (вже prior art під AGPL/MIT/CERN-OHL-S/CC-BY-SA). Тому:
+> ℹ️ **IP-постава (наскрізь):** SilkenNet = **defensive-publication** ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)) — RFQ-specs/креслення/формат пакета **відкриті** (вже prior art під AGPL/MIT/CERN-OHL-S/CC-BY-SA). Тому:
 > **CDA** (шаблони A/B) = стандартні комерц-умови (ціни/строки/QC), **НЕ** для новизни. **NDA** (шаблон C) покриває **ЛИШЕ нерозкрите** — криптоключі · польові production-дані · ML-ваги · невалідовані результати. **NDA-ити вже-публічне (open-source-код / CC-BY-SA-доки / defensive-published ядро) заборонено** — це суперечило б поставі.
 
 ---
@@ -195,7 +195,7 @@
 > ⚠️ **DRAFT — потребує UA-юр-review ДО підпису.** Counterparty-юрист: **Аблязов Д.Е.** (СЄУ, к.ю.н., господарське/комерційне право) + профільний IP-юрист — [`07_03 §4.2`](../../07_03_Academic_Integration_and_IP.md) · **UNI.14**. Це шаблон-каркас, не готовий до підпису інструмент.
 > **Мета:** розблокувати лаб-доступ ЧНУ/ЧДТУ (**UNI.2**, passive-гейт) через **mutual** confidentiality у рамках MoU.
 > **Governing law:** Україна (ЦК України · ЗУ «Про захист від недобросовісної конкуренції» — комерційна таємниця).
-> 🔑 **Ядро-принцип (defensive-publication, [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md)):** цей NDA покриває **ЛИШЕ нерозкрите**. **Технологія (код під open-source-ліцензіями · доки CC-BY-SA · defensive-published ядро) — вже public → carve-out §C.2, НЕ конфіденційне.** MoU **не embargo-їть** технологію (сам [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md): «MoU з ВНЗ містять open-license + co-authorship, **не** embargo/NDA на технологію»).
+> 🔑 **Ядро-принцип (defensive-publication, [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)):** цей NDA покриває **ЛИШЕ нерозкрите**. **Технологія (код під open-source-ліцензіями · доки CC-BY-SA · defensive-published ядро) — вже public → carve-out §C.2, НЕ конфіденційне.** MoU **не embargo-їть** технологію (сам [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md): «MoU з ВНЗ містять open-license + co-authorship, **не** embargo/NDA на технологію»).
 
 ---
 
@@ -227,7 +227,7 @@
 
 **Не є Конфіденційною інформацією** (жодне зобов'язання §C.3 не застосовується), зокрема:
 
-- (1) 🔓 **Вже-публічне ядро SilkenNet:** код backend/firmware/tooling під **AGPL-3.0-or-later** (per-file SPDX), смарт-контракти `contracts/*.sol` під **MIT** (per-file SPDX; ратифіковано DOC-T.47), hardware-специфікації під **CERN-OHL-S-2.0**, документація під **CC-BY-SA-4.0**, а також **defensive-published** інвентивне ядро (Synergy A/B — TDCommons + публічний repo + Стаття 1). Формат пакета, lightweight-crypto-інтеграція, RFQ-specs, креслення — **prior art, не secret**. Ліцензійна мапа зон — дім [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) (дзеркало кореневих LICENSE-файлів; правити там);
+- (1) 🔓 **Вже-публічне ядро SilkenNet:** код backend/firmware/tooling під **AGPL-3.0-or-later** (per-file SPDX), смарт-контракти `contracts/*.sol` під **MIT** (per-file SPDX; ратифіковано DOC-T.47), hardware-специфікації під **CERN-OHL-S-2.0**, документація під **CC-BY-SA-4.0**, а також **defensive-published** інвентивне ядро (Synergy A/B — TDCommons + публічний repo + Стаття 1). Формат пакета, lightweight-crypto-інтеграція, RFQ-specs, креслення — **prior art, не secret**. Ліцензійна мапа зон — дім [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) (дзеркало кореневих LICENSE-файлів; правити там);
 - (2) інформація, що стала публічною **не з вини** Одержувача;
 - (3) вже правомірно відома Одержувачу до розкриття (з доказом);
 - (4) незалежно розроблена Одержувачем без використання Конфіденційної інформації;
@@ -255,7 +255,7 @@
 
 - (a) **не надає ліцензій** на IP жодної Сторони (окрім явних open-license, що діють незалежно); не передає прав власності;
 - (b) **не створює** ексклюзивності, зобов'язання купувати/постачати, спільного підприємства;
-- (c) **не є embargo** на технологію SilkenNet — публікація open-source/defensive-disclosure триває без обмежень цією угодою ([`07_03 §3`](../../07_03_Academic_Integration_and_IP.md));
+- (c) **не є embargo** на технологію SilkenNet — публікація open-source/defensive-disclosure триває без обмежень цією угодою ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md));
 - (d) **не обмежує** співавторство/публікацію спільних результатів за окремими co-authorship-умовами MoU (publish-to-protect, без embargo).
 
 ### §C.6 Загальне
@@ -274,7 +274,7 @@
 - [ ] 👤 Підтвердити §C.2(1) carve-out проти актуальних кореневих ліцензій (`/LICENSE` AGPL + per-file SPDX по source-дереву · SPDX-MIT у `contracts/*.sol` · `/LICENSE-HARDWARE.txt` · `/LICENSE-DOCS.txt` · `/NOTICE`) — щоб NDA не суперечив open-license.
 - [ ] 👤 Заповнити всі `PLACEHOLDER`: сторони, тема MoU, строки (N/M), forum спорів, поріг need-to-know.
 - [ ] 👤 Узгодити з **co-authorship**-частиною MoU (§C.5(d)) — щоб конфіденційність не блокувала спільну публікацію.
-- [ ] 👤 Зафіксувати підписанта per-engagement: operational-vehicle (наявна UA-компанія, Дія.City-резидент) або founder як фізична особа — юр-звірити правочинність та відповідність тришару «оперує / володіє / емітує» ([`07_03 §3`](../../07_03_Academic_Integration_and_IP.md); residual — [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20).
+- [ ] 👤 Зафіксувати підписанта per-engagement: operational-vehicle (наявна UA-компанія, Дія.City-резидент) або founder як фізична особа — юр-звірити правочинність та відповідність тришару «оперує / володіє / емітує» ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md); residual — [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20).
 
 ---
 ---
@@ -369,7 +369,7 @@ Nothing is needed from you to answer this pre-qualification beyond the documents
 | [`01_02 §1.6/§1.7/§3.6`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) | SLM≠EBM · HIP · dehydrogenation bake · ZnO-Ta-заборона (§A.4 дім) |
 | [`01_01 §5/§6`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) | гіроїд-геометрія + ізоеластичність/пористість як CEM-параметр (C2 геометрія-дім) |
 | [`07_02 §8.1.1`](../../07_02_Unit_Economics_and_BOM.md) | vendor-кваліфікаційні критерії DMLS-хабів (Grade 23 ELI · ≥60% пористості · ISO 13485) — дім порогів C2/C6 |
-| [`07_03 §3/§4.2`](../../07_03_Academic_Integration_and_IP.md) | defensive-publication + ліцензійна матриця + trade-secret-scope (NDA §C дім) · Аблязов UA-юр-review |
+| [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) / [`07_03 §4.2`](../../07_03_Academic_Integration_and_IP.md) | defensive-publication + ліцензійна матриця + trade-secret-scope (NDA §C дім) · Аблязов UA-юр-review |
 | [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md) | One-Home — реєстрація артефакту (промоція → registry §1) |
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | **BIZ.17** (procurement RFQ-layer) · UNI.2 (лаб-доступ) · UNI.14 (CDA/NDA legal) · BIZ.6/BIZ.20 |
 

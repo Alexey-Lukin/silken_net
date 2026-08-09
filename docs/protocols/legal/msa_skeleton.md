@@ -39,7 +39,7 @@
 ### 0.1 Гейти виконання (dependency graph)
 
 ```
-BIZ.20 entity-питання ✅ вирішено 2026-07-24 (ActiveBridge = operational-vehicle, 07_03 §3) — named counterparty готовий
+BIZ.20 entity-питання ✅ вирішено 2026-07-24 (ActiveBridge = operational-vehicle, 00_01 §8) — named counterparty готовий
 UNI.16 (юр-відповіді Блок 1)   ──gates──► фіналізація §B.6 (термінація) + §B.9 (custody) + §C
 BIZ.9  (вибір реєстру)         ──gates──► активація §C.3 (Rider B)
 BIZ.21 (E&O поліс)             ──gates──► Exhibit E (Certificate of Insurance) — signing-condition
@@ -65,7 +65,7 @@ A1 SLA-exhibit                 ──hooks-into──► §B.7 / Exhibit A (не
 | 6 | **Service Term (орієнтовний)** | `[⚖️ TBD: __ місяців/років]`, з можливістю поновлення |
 | 7 | **Комерційні умови (орієнтовні, non-binding)** | Модель Service Fee: `[⚖️ TBD: fixed subscription \| per-hectare \| per-cluster \| per-tree]`; орієнтовна сума — **НЕ фіксується тут**, узгоджується в Order Form (`Exhibit C`) |
 | 8 | **Carbon-related компонент** | `[⚖️ TBD: так/ні]` — якщо так, окремий Rider (§C), gated на BIZ.9-вибір реєстру; **НЕ обіцяти сертифікований carbon-кредит на цьому етапі** |
-| 9 | **Умови-передумови (conditions precedent)** | (а) завершення KYC/KYB Клієнта; (б) підтвердження юр-статусу Провайдера — ActiveBridge = operational-vehicle за entity-присудом ([`07_03 §3`](../../07_03_Academic_Integration_and_IP.md), [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20), реєстраційні реквізити заповнюються при підписанні, див. `§E.1`; (в) узгодження SLA-цілей із перших live-даних (`Exhibit A §2.1`) |
+| 9 | **Умови-передумови (conditions precedent)** | (а) завершення KYC/KYB Клієнта; (б) підтвердження юр-статусу Провайдера — ActiveBridge = operational-vehicle за entity-присудом ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md), [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20), реєстраційні реквізити заповнюються при підписанні, див. `§E.1`; (в) узгодження SLA-цілей із перших live-даних (`Exhibit A §2.1`) |
 | 10 | **Застосовне право** | Україна `[⚖️ TBD — див. §E.2]` |
 | 11 | **Строк дії офера** | Term Sheet втрачає чинність, якщо MSA не підписано до `[⚖️ TBD: дата]` |
 | 12 | **Confidentiality** | Взаємна конфіденційність комерційних умов — **binding** незалежно від подальшого підписання MSA `[⚖️ TBD юрист: стандартне формулювання]` |
@@ -390,7 +390,7 @@ C.3.3. **НІКОЛИ:** «Клієнт купує SCC-токен як carbon-к
 
 ## E.1 🔴 Named Counterparty: ActiveBridge — колізія з кодом (нова знахідка, не з вхідних артефактів)
 
-**Founder-рішення (entity-присуд, [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20, [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md)):** SilkenNet розміщується як R&D-продукт-лінія під **ActiveBridge** — наявною UA-компанією, Дія.City-резидентом, співзасновником якої є founder. Це **operational-vehicle**, не власник IP (IP/™ лишається на фізособі founder'а — окремий трек, той самий канон); нової інкорпорації не потрібно.
+**Founder-рішення (entity-присуд, [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20, [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)):** SilkenNet розміщується як R&D-продукт-лінія під **ActiveBridge** — наявною UA-компанією, Дія.City-резидентом, співзасновником якої є founder. Це **operational-vehicle**, не власник IP (IP/™ лишається на фізособі founder'а — окремий трек, той самий канон); нової інкорпорації не потрібно.
 
 **⚠️ Колізія, знайдена при read-only перевірці репозиторію:** «ActiveBridge» **вже існує в кодовій базі** — не як юр-особа-оператор, а як **demo/seed B2B-organization** (приклад Клієнта, не Провайдера): seed-блок `Organization.create!(name: "ActiveBridge", …)` у `db/seeds.rb` + дзеркало в [`04_01 §8`](../../04_01_Data_Models_and_Entities.md) (Seeds) — «Початкові організації: ActiveBridge + EcoFuture Fund»; `alexey@activebridge.org` — admin, ActiveBridge.
 
@@ -405,7 +405,7 @@ C.3.3. **НІКОЛИ:** «Клієнт купує SCC-токен як carbon-к
 
 ## E.2 Governing Law placeholder
 
-Україна вказана як governing-law placeholder — і це узгоджується з entity-присудом: ActiveBridge = **UA-компанія, Дія.City-резидент** (`§E.1`, [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md)), тож юрисдикція реєстрації Провайдера більше не відкрите питання. **Потребує підтвердження** лише формальними реквізитами (`§B.0`) до фінальної версії. Для іноземних B2B-клієнтів (ESG-фонди, agri-корпорації з ЄС/США) варто також розглянути арбітраж замість українських судів з огляду на воєнний стан (практичний enforceability-фактор, не юридична порада) — `§B.19.2`.
+Україна вказана як governing-law placeholder — і це узгоджується з entity-присудом: ActiveBridge = **UA-компанія, Дія.City-резидент** (`§E.1`, [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)), тож юрисдикція реєстрації Провайдера більше не відкрите питання. **Потребує підтвердження** лише формальними реквізитами (`§B.0`) до фінальної версії. Для іноземних B2B-клієнтів (ESG-фонди, agri-корпорації з ЄС/США) варто також розглянути арбітраж замість українських судів з огляду на воєнний стан (практичний enforceability-фактор, не юридична порада) — `§B.19.2`.
 
 ## E.3 Юр-review маршрут та послідовність
 
@@ -447,7 +447,7 @@ C.3.3. **НІКОЛИ:** «Клієнт купує SCC-токен як carbon-к
 
 1. **👤 Founder:** передати цей каркас + [`securities_review`](securities_review.md) + [`carbon_registry_matrix`](../business/carbon_registry_matrix.md) Аблязову для UA-складової (крок `§E.3.2`).
 2. **👤 Founder:** знайти профільного crypto/securities-юриста (TBD) для Блоку 1 UNI.16 — це гейтить `§B.6.3`/`§B.6.4`/`§B.16.3`, найважливіші відкриті питання цього каркаса.
-3. **⚖️ Founder:** entity-присуд («SilkenNet під ActiveBridge») **УХВАЛЕНО** (2026-07-24) — канонізовано [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) + [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20. Залишається відкритим: co-founder IP-carve-out (окремий папір, `§E.1`) + 90%-тест Дія.City-звірка — обидва поза скоупом цього документа.
+3. **⚖️ Founder:** entity-присуд («SilkenNet під ActiveBridge») **УХВАЛЕНО** (2026-07-24) — канонізовано [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) + [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20. Залишається відкритим: co-founder IP-carve-out (окремий папір, `§E.1`) + 90%-тест Дія.City-звірка — обидва поза скоупом цього документа.
 4. **🤖 (майбутній slice):** після юр-відповідей на `§B.6.3`/`§B.6.4` — вирівняти `naas_contract.rb`/`contract_termination_service.rb` під обрану Опцію, щоб контракт і продукт не розходились.
 5. Тримати цей документ як **живий каркас** — оновлювати `[⚖️ TBD]`-таблицю (`§E.4`) по мірі закриття питань, не переписувати структуру.
 

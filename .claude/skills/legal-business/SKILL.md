@@ -40,7 +40,7 @@ description: "Use when working on the silken_net §07 surface — legal / busine
 | Node-rollup $ · cluster CAPEX · ROI-крива | [`07_02 §1.2`](../../../docs/07_02_Unit_Economics_and_BOM.md) · `§5.3` · `§7.3` (решта — дзеркала, правити в домі) |
 | Виробничі хаби, EU-backup, Frame Agreement | [`07_02 §8`](../../../docs/07_02_Unit_Economics_and_BOM.md) |
 | Академ-реєстр 5 ВНЗ · план публікацій | [`07_03 §1`](../../../docs/07_03_Academic_Integration_and_IP.md) · `§2` |
-| IP-постава, ліцензійна матриця, межа «відкрито/утримуємо», правовий актор | [`07_03 §3`](../../../docs/07_03_Academic_Integration_and_IP.md) — значення ліцензій = дзеркало `/LICENSE*` + `/NOTICE` |
+| IP-постава, ліцензійна матриця, межа «відкрито/утримуємо», правовий актор | [`00_01 §8`](../../../docs/00_01_Vision_Mission_and_Roadmap.md) — значення ліцензій = дзеркало `/LICENSE*` + `/NOTICE`; виконавчі IP-**інструменти** (TISC · ™ · юр-review) лишились у [`07_03 §4`](../../../docs/07_03_Academic_Integration_and_IP.md) |
 | TISC · ™ · UA-юр-review · послідовність кроків | [`07_03 §4`](../../../docs/07_03_Academic_Integration_and_IP.md) |
 | Бренд-архітектура | [`07_03 §5`](../../../docs/07_03_Academic_Integration_and_IP.md) |
 | Робочі чернетки (юр / бізнес) | `docs/protocols/legal/legal_registry.md` · `docs/protocols/business/business_registry.md` |

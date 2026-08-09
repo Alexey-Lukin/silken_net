@@ -2,7 +2,7 @@ SilkenNet
 Copyright (C) 2024-2026 Oleksii Lukin and the SilkenNet contributors
 
 ================================================================================
-LICENSING - one project, four zones  (canon: docs/07_03 §3)
+LICENSING - one project, four zones  (canon: docs/00_01 §8)
 ================================================================================
 
 SilkenNet is released under a mission-driven, DEFENSIVE-PUBLICATION-FIRST IP
@@ -45,8 +45,8 @@ SilkenNet will not file patents on the technology in this repository and will
 not assert any patent against any user of it. If a patent is ever obtained
 defensively (to prevent capture), we pledge irrevocable non-assertion against
 all good-faith users. The inventive core is published as DEFENSIVE DISCLOSURE
-(prior art) - see docs/protocols/anchor/defensive_disclosure.md and docs/07_03
-§3. Copyright is retained solely to enforce the copyleft licenses above.
+(prior art) - see docs/protocols/anchor/defensive_disclosure.md and docs/00_01
+§8. Copyright is retained solely to enforce the copyleft licenses above.
 
 Trademarks SilkenNet(TM), GaiaNexus(TM), SCC(TM) are NOT licensed by the above
 and remain reserved (brand / trust protection only).

@@ -4,7 +4,7 @@ name: Sec · DCO
 #
 # `CONTRIBUTING.md` §DCO already asks contributors for `git commit -s`, but nothing
 # enforced it — a PR without a `Signed-off-by` trailer merged silently, leaving the
-# copyright-origin certification the AGPL posture leans on (07_03 §3) as a request
+# copyright-origin certification the AGPL posture leans on (00_01 §8) as a request
 # rather than a gate. This closes that. DCO over CLA is a ratified choice (CNCF
 # recommendation, OpenInfra CLA→DCO 2025, Nextcloud's AGPL precedent) — rationale and
 # the two honest caveats (university thesis/grant IP; dual-license tension) live in
@@ -24,7 +24,7 @@ name: Sec · DCO
 # ecosystems. Bots hold no copyright, so there is no origin to certify. Full note →
 # scripts/dco_check.rb header.
 #
-# Canon: contribution policy = 07_03 §3, CI inventory = 06_07 §1. Tracker: UNI.20.
+# Canon: contribution policy = 00_01 §8, CI inventory = 06_07 §1. Tracker: UNI.20.
 
 on:
   pull_request:

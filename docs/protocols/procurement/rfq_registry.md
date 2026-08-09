@@ -42,7 +42,7 @@ Stage-2 coin-bake-off = **R&D-шар**; 100-партія = **Production-шар**
 
 ## 3. Cross-cutting procurement-політики (вказівники на доми)
 
-- **IP / CDA / NDA:** [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) — **defensive-publication** → RFQ-specs **відкриті** (вже prior art); CDA = **стандартні комерц-умови** (ціни/строки/QC), НЕ для новизни; NDA **лише** для нерозкритого (prod-keys/telemetry/ML-ваги). RFQ-аркуші це наслідують у §IP.
+- **IP / CDA / NDA:** [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) — **defensive-publication** → RFQ-specs **відкриті** (вже prior art); CDA = **стандартні комерц-умови** (ціни/строки/QC), НЕ для новизни; NDA **лише** для нерозкритого (prod-keys/telemetry/ML-ваги). RFQ-аркуші це наслідують у §IP.
 - **Академічний канал** ([`07_03`](../../07_03_Academic_Integration_and_IP.md)): co-pub (ЧНУ/ЧМА/ЧДТУ) = $0 + Q1-публікація, але темп-партнер-залежний; commercial CRO = $ + швидше + стандартний CDA. **Гібрид** на критичному шляху (HW.5: academ-валідація архітектури + commercial-експресія). Партнер-MoU гейт = ЧНУ лаб-доступ (**UNI.2**, passive) + CDA/NDA legal (**UNI.14** СЄУ Аблязов).
 - **Фінансування-гейти** ([`00_07` BIZ.20](../../00_07_Action_Plan_Tracker.md)): procurement-authority вивільняється поетапно з self-fund (operational-особа вже існує) (перша 100-партія CAPEX gated на BIZ.20).
 
@@ -80,6 +80,6 @@ Stage-2 coin-bake-off = **R&D-шар**; 100-партія = **Production-шар**
 |---|---|
 | [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md) | One-Home реєстрація цього concern'у |
 | [`07_02 §8`](../../07_02_Unit_Economics_and_BOM.md) | economics/BOM + україн­ські DMLS-хаби + Production-шар (Frame Agreement) |
-| [`07_03 §3`](../../07_03_Academic_Integration_and_IP.md) | IP/CDA/NDA-політика (defensive-publication) — дім |
+| [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) | IP/CDA/NDA-політика (defensive-publication) — дім |
 | [`07_03`](../../07_03_Academic_Integration_and_IP.md) | академічні co-pub канали (ЧНУ/ЧМА/ЧДТУ) |
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | HW.*/BIZ.* procurement-action-items + DOC-T (інкрементальне авторство) |

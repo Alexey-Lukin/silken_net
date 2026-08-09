@@ -11,7 +11,7 @@ here; this document is intended to constitute prior art.*
 > **First published in the public repository:** 2026-08-08 · **Status:** submission-ready (arXiv cs.SE/cs.AI).
 >
 > **Venue note.** The IP posture that governs this file is defensive-publication-first
-> ([`07_03 §3`](../../07_03_Academic_Integration_and_IP.md)), and its canonical channel for the
+> ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)), and its canonical channel for the
 > *inventive core* is Technical Disclosure Commons — a patent-blocking venue. This artifact is a
 > **methods paper**, not an invention: nobody patents a taxonomy of reasoning failure, so
 > anti-capture is not the function here. Its function is citation, and its entire prior art lives

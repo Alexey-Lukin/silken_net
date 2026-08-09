@@ -47,7 +47,7 @@
       «механізм + межа», не «валідація» (рівно як переформульовано Статтю 1, 2026-06-05).
 - [ ] **in-silico ≠ TRL.** Аналітичний PoC ≠ фізичний доказ; стан TRL чесний (System TRL 3).
 - [ ] Явна **Limitations**-секція; межі подані як новизна, не схована діра.
-- [ ] **AI-disclosure** присутній (venue-specific) — `07_03 §3` publish-to-protect, не приховування.
+- [ ] **AI-disclosure** присутній (venue-specific) — `00_01 §8` publish-to-protect, не приховування.
 
 ## Gate 0 — RQ sanity [опційно, до письма]
 
@@ -61,7 +61,7 @@
 | Що | Дім |
 |---|---|
 | План 24 статей + per-paper рамка | `07_03 §2.1` (ЧНУ 1–10 · ЧДТУ §1B 11–14 · спільні §1C 15–24a) |
-| IP-постава / publish-to-protect / AI-disclosure | `07_03 §3` + `protocols/anchor/defensive_disclosure.md` |
+| IP-постава / publish-to-protect / AI-disclosure | `00_01 §8` + `protocols/anchor/defensive_disclosure.md` |
 | Реальні числа/claims (Стаття 1 ①②③④) — One-Home | `protocols/ebfc/in_silico/SUMMARY.md` + `PIPELINE_STATUS.md` |
 | Staffing / AI-clones / хто що пише | `00_02 §4a` |
 | Інституції / співавтори (Мінаєв, Гусак) | `07_03` |
