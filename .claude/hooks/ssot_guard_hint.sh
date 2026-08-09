@@ -39,7 +39,7 @@ if [[ "$class" == "canon" ]]; then
   read -r -d '' hint <<'EOF' || true
 [SSOT] Канон-док. Скіл `ssot-maintenance` — операційний playbook; `00_06 §2` — реєстр домів.
 
-Гейти вже стережуть ФОРМУ (`ruby scripts/docs_check.rb` — 0.3с, HARD: dangling-лінки, §-drift, ToC, bare doc-ids, volatile line-refs). Тут — те, чого не бачить ЖОДЕН гейт:
+ФОРМУ цього файлу стережуть `docs:check_refs`+`tracker:check` (`ruby scripts/docs_check.rb`, 0.3с, HARD: dangling-лінки, §-drift, ToC, bare doc-ids, volatile line-refs). ⚠️ Це **два кроки** джоби `docs_check`, а не смуга: решта (spdx · model/component-sync · code_doc_section_refs · protocols-ref …) НЕ біжить — повна смуга `ruby scripts/docs_band.rb`. Тут — те, чого не бачить ЖОДЕН із них:
 
 1. **grep-hit ≠ канонізовано.** Перед тим як схлопнути/стоншити факт — ПРОЧИТАЙ повну секцію в КОЖНОМУ домі, де він живе. Zero-loss set-diff сам grep-based, тож факт, присутній по токену але вихолощений по суті, проходить ЗЕЛЕНИМ. Це єдина червона лінія без гейта позаду.
 2. **Migrate-first.** Наповни новий дім ПОВНОЮ субстанцією + переконайся, що вона там, і лише ТОДІ ріж джерело.

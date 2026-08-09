@@ -5,7 +5,8 @@
 #
 # scripts/docs_check.rb — швидкий, Rails-free запуск SSOT-гейтів.
 #
-# Ганяє ТІ САМІ doc-гейти, що й CI (`docs:check_refs` + `tracker:check`), але БЕЗ
+# Ганяє ДВА кроки джоби `docs_check` (`docs:check_refs` + `tracker:check`) тими
+# самими rake-тілами, що й CI, але БЕЗ
 # завантаження Rails: завантажує файли rake-тасок напряму й викликає їх. Engine-и
 # (`lib/docs_*.rb`, `lib/tracker/dashboard.rb`) — чистий Ruby (лише `require "set"`,
 # stdlib), тож скрипт не потребує ні `bundle`, ні БД, ні гемів окрім `rake` (default
@@ -47,5 +48,12 @@ tasks.each do |t|
 rescue SystemExit => e
   overall = 1 unless e.success?
 end
+
+# OPS.25 — гейт називає ВЛАСНИЙ клас, а не мовчить про нього. Цей скрипт ганяє
+# ДВА кроки джоби `docs_check`; читати його зелене як вердикт про смугу `CI · Docs`
+# — це та підміна виміру, що клала `main` тричі. Свідомо БЕЗ числа: лічильник
+# кроків росте (`00_06 §1` no-volatile-counts), а джерело істини — сам workflow,
+# який читає `docs_band.rb`.
+warn "\n(це 2 кроки джоби `docs_check` — не вся смуга `CI · Docs`; повна: ruby scripts/docs_band.rb)"
 
 exit overall

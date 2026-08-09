@@ -266,16 +266,14 @@ GATE per-phase docs:check_refs + tracker:check + zero-loss set-diff + wiki dry-r
 **Before merge** (any docs change):
 
 ```
-- [ ] ruby scripts/docs_check.rb          → green (fast: check_refs + tracker:check, no Rails)
-- [ ] bin/rails docs:toc                  → run if headings changed, then re-check green
-- [ ] ruby scripts/model_doc_sync.rb      → green (if 04_01/04_02 or app/models touched)
-- [ ] ruby scripts/component_doc_sync.rb  → green (if 04_04 §1/§6 or app/views/{components,shared} touched)
-- [ ] ruby scripts/guard_registry_sync.rb → green (if a guard / 00_06 §3 / docs.yml touched)
-- [ ] ruby scripts/workflow_gate_perimeter.rb → green (if .github/workflows/** touched — CI gate-perimeter, OPS.14: every PR-workflow classified required/advisory-by-design/flip_pending)
-- [ ] ruby scripts/field_canon_sync.rb    → green (if github_bootstrap.rb / 00_05 §1.1 / labels.yml touched)
-- [ ] ruby scripts/governance_key_sync.rb / governance_bounds_sync.rb → green (if contracts/** · app/** · db/seeds.rb touched — GOV.2/GOV.3 param parity)
-- [ ] ruby scripts/code_tracker_id_check.rb → green (if code cites a tracker-ID, or 00_07 IDs moved)
-- [ ] linter/ToC specs green              → if lib/docs_*.rb touched
+- [ ] ruby scripts/docs_check.rb   → green — but it is TWO steps of the `docs_check` job, never the band
+- [ ] ruby scripts/docs_band.rb    → green — the WHOLE `CI · Docs` lane (~1.5 min), step list read from
+      `docs.yml` itself. 🔴 This line replaced a hand-written roster of nine gates that had gone stale in
+      the expensive direction: it omitted `spdx_headers`, the very gate that reddened `main` three times
+      (OPS.25). A roster of gates rots by construction — the workflow is the only non-rotting source, so
+      run the band and never re-add the list here. ⚠️ `git add` first: `spdx_headers` enumerates via
+      `git ls-files`, so an untracked new file is invisible to it (the band lantern reds on this).
+- [ ] bin/rails docs:toc           → run if headings changed, then re-check green (regen, not in the band)
 - [ ] fact edited ONLY at its home (§8.2); mirrors labelled
 - [ ] no volatile counts · no blocker section in canon · Cross-references at top
 ```
