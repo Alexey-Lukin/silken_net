@@ -959,10 +959,14 @@ end
 # per-file for the reason the sibling gate already learned the hard way: a
 # blanket file exemption silently un-checks every OTHER address in that file.
 EXEMPT = {
-  # `docs/00_07…` names the phantom it closed, which is better provenance than
-  # saying «a phantom» abstractly — and EXEMPT-DEAD proved the point the same
-  # day: rewriting that item on closure orphaned this entry within minutes.
-  "docs/00_07_Action_Plan_Tracker.md" => ["frontend #13a"],
+  # The tracker's entry lived here and is GONE — twice over, and both times the
+  # detector caught it within minutes of the edit. First when the item was
+  # rewritten on closure; then on 2026-08-09 when the item was ARCHIVED and its
+  # body — illustration included — collapsed into a §🗄️ row. That is exactly
+  # what EXEMPT-DEAD is for: an exemption whose subject vanished stops guarding
+  # anything and starts blessing the next phantom to take that address. The
+  # entry is removed rather than re-pointed, because the tracker no longer
+  # names a phantom at all; if a future item needs to, it declares its own.
   # This file exempts its OWN illustrations, and that is structural rather than
   # untidy: once the perimeter includes `.claude/**`, a gate that documents the
   # phantom class — or fixtures it in the self-test — necessarily writes phantoms
@@ -970,7 +974,18 @@ EXEMPT = {
   # gate on its own teaching material, which is the fastest way to get a gate
   # disabled. Each ref still stands separately, so an undeclared one still fires.
   ".claude/hooks/memory_gate.sh"      => ["frontend #66", "frontend #78", "frontend #13a"]
-}.freeze
+}.dup
+# Test seam, same shape as MEMORY_GATE_CANONREF_EXEMPT_EXTRA and added for the
+# same reason: the EXEMPT-DEAD cases used to fixture their file but borrow the
+# LIVE registry's entry, so the day the tracker legitimately stopped naming a
+# phantom (its item was archived) both states went red — keeping the entry
+# tripped EXEMPT-DEAD, removing it broke the battery. A case must own every
+# input it asserts on.
+if (extra = ENV["MEMORY_GATE_SKILL_EXEMPT_EXTRA"])
+  f, r = extra.split("|", 2)
+  (EXEMPT[f] ||= []) << r if f && r
+end
+EXEMPT.freeze
 used_exempt = Hash.new { |h, k| h[k] = [] }
 reported = {}
 
@@ -1579,7 +1594,8 @@ selftest() {
   #      the entry resolves, and omits the ref it exempts.
   _st_build "$d"; mkdir -p "$d.repo/docs"
   printf 'no illustration here\n' >"$d.repo/docs/00_07_Action_Plan_Tracker.md"
-  _st_check "EXEMPT-DEAD on an exemption whose subject vanished" expect 'EXEMPT-DEAD'
+  _st_check "EXEMPT-DEAD on an exemption whose subject vanished" expect 'EXEMPT-DEAD' \
+            MEMORY_GATE_SKILL_EXEMPT_EXTRA='docs/00_07_Action_Plan_Tracker.md|frontend #13a'
 
   # 10l. Its negative control, load-bearing twice over: the exemption must still
   #      SUPPRESS (or the widening would simply start shouting at the tracker for
@@ -1595,8 +1611,10 @@ selftest() {
   # exemption is per-REF, so it declined to bless a second, undeclared address.
   # That failure is the per-ref design working, not a fixture nuisance.
   printf 'Виявлено фантомом `frontend #13a` — саме тому виняток оголошено.\n' >"$d.repo/docs/00_07_Action_Plan_Tracker.md"
-  _st_check "EXEMPT suppresses the phantom it declares" reject 'NUMREF'
-  _st_check "EXEMPT-DEAD silent while its subject is present" reject 'EXEMPT-DEAD'
+  _st_check "EXEMPT suppresses the phantom it declares" reject 'NUMREF' \
+            MEMORY_GATE_SKILL_EXEMPT_EXTRA='docs/00_07_Action_Plan_Tracker.md|frontend #13a'
+  _st_check "EXEMPT-DEAD silent while its subject is present" reject 'EXEMPT-DEAD' \
+            MEMORY_GATE_SKILL_EXEMPT_EXTRA='docs/00_07_Action_Plan_Tracker.md|frontend #13a'
 
   # 11. A backticked path that claims our tree — now answered by the fixture repo.
   _st_build "$d"; printf '\nSee `app/services/no_such_service.rb` for the shape.\n' >>"$d/feedback_beta.md"
