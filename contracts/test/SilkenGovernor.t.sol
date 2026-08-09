@@ -28,12 +28,14 @@ contract SilkenGovernorTest is Test {
     ProtocolParameters public protocolParams;
     SilkenCarbonCoin public scc; // [BIZ.4] governance-controlled token (admin = Timelock)
 
-    address public admin = address(0xA);
-    address public minter = address(0xB);
-    address public slasher = address(0xC);
-    address public voter1 = address(0x1);
-    address public voter2 = address(0x2);
-    address public voter3 = address(0x3);
+    address public admin = makeAddr("admin");
+    address public minter = makeAddr("minter");
+    address public slasher = makeAddr("slasher");
+    // NB: voter1..3 were address(0x1..0x3) — the ecrecover/sha256/ripemd160 PRECOMPILES.
+    // Harmless here only because ERC20 never calls the recipient; makeAddr removes the trap.
+    address public voter1 = makeAddr("voter1");
+    address public voter2 = makeAddr("voter2");
+    address public voter3 = makeAddr("voter3");
 
     uint256 public constant VOTING_DELAY = 43200; // ~1 day on Polygon
     uint256 public constant VOTING_PERIOD = 302400; // ~7 days on Polygon
@@ -123,7 +125,7 @@ contract SilkenGovernorTest is Test {
 
     function test_propose_revertsBelowThreshold() public {
         // voter3 has 200 SFC (below 100 SFC threshold — but 200 > 100, so let's test with no tokens)
-        address noTokens = address(0xDEAD);
+        address noTokens = makeAddr("noTokensProposer");
         vm.roll(block.number + 1);
 
         (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
@@ -202,7 +204,7 @@ contract SilkenGovernorTest is Test {
         // At this point, snapshot is taken at block.number (proposal creation)
 
         // Now mint new tokens to a "flash loaner" AFTER the snapshot
-        address flashLoaner = address(0xF1A5);
+        address flashLoaner = makeAddr("flashLoaner");
         _mintAndDelegate(flashLoaner, 5_000_000e18, "flash-cluster");
 
         // Skip voting delay

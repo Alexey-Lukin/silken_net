@@ -19,10 +19,10 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
 contract DeployWiringTest is Test {
     DeploySilkenNet internal deploy;
 
-    address internal safe = address(0x5AFE);
-    address internal minter = address(0x111);
-    address internal slasher = address(0x222);
-    address internal anchorOracle = address(0x333);
+    address internal safe = makeAddr("safe");
+    address internal minter = makeAddr("minter");
+    address internal slasher = makeAddr("slasher");
+    address internal anchorOracle = makeAddr("anchorOracle");
 
     DeploySilkenNet.Deployed internal d;
 
@@ -100,10 +100,11 @@ contract DeployWiringTest is Test {
         bytes memory data = "";
         bytes32 salt = keccak256("guardian-veto-test");
         uint256 delay = d.timelock.getMinDelay();
+        address vetoTarget = makeAddr("vetoTarget");
         vm.prank(safe);
-        d.timelock.schedule(address(0xdead), 0, data, bytes32(0), salt, delay);
+        d.timelock.schedule(vetoTarget, 0, data, bytes32(0), salt, delay);
 
-        bytes32 id = d.timelock.hashOperation(address(0xdead), 0, data, bytes32(0), salt);
+        bytes32 id = d.timelock.hashOperation(vetoTarget, 0, data, bytes32(0), salt);
         assertTrue(d.timelock.isOperationPending(id), "queued");
 
         // Guardian (Safe) cancels within the window — before the delay elapses.

@@ -15,9 +15,9 @@ import {TimelockController} from "@openzeppelin/contracts/governance/TimelockCon
 contract SilkenTimelockTest is Test {
     SilkenTimelock public timelock;
 
-    address public governor = address(0xA);
-    address public executor = address(0xB);
-    address public timelockAdmin = address(0xC);
+    address public governor = makeAddr("governor");
+    address public executor = makeAddr("executor");
+    address public timelockAdmin = makeAddr("timelockAdmin");
 
     function setUp() public {
         address[] memory proposers = new address[](1);
@@ -63,7 +63,7 @@ contract SilkenTimelockTest is Test {
     // ─── Scheduling Operations ────────────────────────────────────────
 
     function test_schedule_enforcesMinDelay() public {
-        address target = address(0xDEAD);
+        address target = makeAddr("scheduleTarget");
         bytes memory data = abi.encodeWithSignature("doSomething()");
         bytes32 predecessor = bytes32(0);
         bytes32 salt = keccak256("test-salt");
@@ -78,7 +78,7 @@ contract SilkenTimelockTest is Test {
     }
 
     function test_schedule_acceptsMinDelay() public {
-        address target = address(0xDEAD);
+        address target = makeAddr("scheduleTarget");
         bytes memory data = abi.encodeWithSignature("doSomething()");
         bytes32 predecessor = bytes32(0);
         bytes32 salt = keccak256("test-salt-ok");
@@ -92,7 +92,7 @@ contract SilkenTimelockTest is Test {
     }
 
     function test_schedule_revertsForNonProposer() public {
-        address target = address(0xDEAD);
+        address target = makeAddr("scheduleTarget");
         bytes memory data = abi.encodeWithSignature("doSomething()");
         bytes32 predecessor = bytes32(0);
         bytes32 salt = keccak256("unauth-salt");
@@ -108,7 +108,7 @@ contract SilkenTimelockTest is Test {
     // ─── Execute with Delay ───────────────────────────────────────────
 
     function test_execute_cannotRunBeforeDelay() public {
-        address target = address(0xDEAD);
+        address target = makeAddr("scheduleTarget");
         bytes memory data = abi.encodeWithSignature("doSomething()");
         bytes32 predecessor = bytes32(0);
         bytes32 salt = keccak256("exec-test");

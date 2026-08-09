@@ -14,9 +14,9 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
 contract ProtocolParametersTest is Test {
     ProtocolParameters public params;
 
-    address public admin = address(0xA);
-    address public timelock = address(0xB);
-    address public unauthorized = address(0xC);
+    address public admin = makeAddr("admin");
+    address public timelock = makeAddr("timelock");
+    address public unauthorized = makeAddr("unauthorized");
 
     // Well-known keys (must match contract constants)
     bytes32 public constant KEY_LORENZ_SIGMA = keccak256("lorenz_sigma");
@@ -414,7 +414,7 @@ contract ProtocolParametersTest is Test {
 
     function test_adminProtection_canRemoveAdminIfMultiple() public {
         bytes32 adminRole = params.DEFAULT_ADMIN_ROLE();
-        address admin2 = address(0xD);
+        address admin2 = makeAddr("admin2");
 
         // Admin grants admin role to admin2
         vm.prank(admin);
@@ -430,7 +430,7 @@ contract ProtocolParametersTest is Test {
 
     function test_adminProtection_cannotRevokeLastAdmin() public {
         bytes32 adminRole = params.DEFAULT_ADMIN_ROLE();
-        address admin2 = address(0xD);
+        address admin2 = makeAddr("admin2");
 
         // Add second admin
         vm.prank(admin);
