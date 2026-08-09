@@ -14,7 +14,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — CI/IaC-постава впроваджена й гейтована. **`main` захищено branch-protection** (required status checks = усі **8** детермінованих PR-гейтів — `CI`/`Docs`/`Solidity`/`CAD`/`ML`/`In-silico`/`IaC`/`DCO passed`, `enforce_admins=false` — owner лишає прямий push; канон [`06_07 §2`](06_07_CICD_and_Runbook_Index)). Відкриті residual'и supply-chain → [`00_07`](00_07_Action_Plan_Tracker) OPS.10 / OPS.21.
+- **Стан:** CI/IaC-постава впроваджена й гейтована; шкала готовності тут **незастосовна** — предмет процес, не технологія ([`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond), DOC-T.70). **`main` захищено branch-protection** (required status checks = усі **8** детермінованих PR-гейтів — `CI`/`Docs`/`Solidity`/`CAD`/`ML`/`In-silico`/`IaC`/`DCO passed`, `enforce_admins=false` — owner лишає прямий push; канон [`06_07 §2`](06_07_CICD_and_Runbook_Index)). Відкриті residual'и supply-chain → [`00_07`](00_07_Action_Plan_Tracker) OPS.10 / OPS.21.
 
 ---
 

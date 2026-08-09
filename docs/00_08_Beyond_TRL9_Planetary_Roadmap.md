@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 9 — це **Beyond-TRL-9 R&D-агенда** поверх TRL-9-продукту; **не TRL-gated** (комерційний продукт можливий і без неї). Зрілість трекається окремими шкалами **SRL** (System Readiness: `Concept → Pilot → Deployed`) / **MRL** (Manufacturing Readiness 8-10) — [`00_02 §1`](00_02_AI_Native_Engineering_and_TRL). Це стратегічні R&D-вектори, НЕ блокери (інженерні задачі → [`00_07`](00_07_Action_Plan_Tracker)).
+- **Стан:** Це **Beyond-TRL-9 R&D-агенда** поверх TRL-9-продукту, і вона **не TRL-gated** за власним визначенням (комерційний продукт можливий і без неї) — тож шкала NASA тут незастосовна, а не «дорівнює девʼяти» ([`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond), DOC-T.70). Зрілість трекається окремими шкалами **SRL** (System Readiness: `Concept → Pilot → Deployed`) / **MRL** (Manufacturing Readiness 8-10) — [`00_02 §1`](00_02_AI_Native_Engineering_and_TRL). Це стратегічні R&D-вектори, НЕ блокери (інженерні задачі → [`00_07`](00_07_Action_Plan_Tracker)).
 
 ---
 

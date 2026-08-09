@@ -45,6 +45,28 @@ namespace :docs do
   DOCS_DIR = File.expand_path("../../docs", __dir__)
   DOC_RE   = /\A\d\d_\d\d_/
 
+  # [DOC-T.70, ⚖️ ratified 2026-08-09] Pages whose SUBJECT is not a technology.
+  # TRL (NASA/ISO 16290) measures the readiness of a TECHNOLOGY, and 00_03 §1 says so
+  # in as many words: organisational, process and security maturity do NOT sit on that
+  # scale — «TRL партнерств» / «TRL процесу» is a CATEGORY ERROR, not a low score. Yet
+  # the presence-check below demanded a TRL from every doc carrying a ✅ Статус block,
+  # so such a page could not honestly say "not applicable" without losing its Статус:
+  # the norm forbade exactly what the gate compelled. Hence a DECLARED exception —
+  # a machine cannot tell a process page from a technology one, and inferring it would
+  # be wrong in the silent direction (same reasoning as MANIFEST_TRL_OWNERS).
+  # The list is a two-way pin: a page here must ALSO carry no TRL, otherwise the
+  # exception would quietly become a licence to keep the category error.
+  TRL_NOT_APPLICABLE = {
+    "00_01" => "візія / місія / дорожня карта — намір, не готовність технології",
+    "00_02" => "метод і AI-pipeline — процес",
+    "00_05" => "CI/IaC-постава — процес",
+    "00_06" => "стандарт самих доків — процес",
+    "00_08" => "Beyond-TRL-9 агенда — за власною заявою НЕ TRL-gated (шкали SRL/MRL)",
+    "07_01" => "юр/бізнес-шар NaaS — договірна, не технологічна зрілість",
+    "07_02" => "юніт-економіка — вартість, не готовність",
+    "07_03" => "академічні партнери та IP — рівно той «TRL партнерств», що §1 називає помилкою"
+  }.freeze
+
   desc "Lint docs/*.md cross-references (doc-existence hard, §-section advisory)"
   task :check_refs do
     files = Dir[File.join(DOCS_DIR, "*.md")]
@@ -57,6 +79,12 @@ namespace :docs do
     dangling    = []  # hard: link target doc missing
     suspect     = []  # soft: §-section label not found in target headings
     trl_missing = []  # hard: ## ✅ Статус section without a TRL declaration
+    trl_misapplied = [] # hard: a declared non-technology page that states a TRL anyway
+    # hard: an exemption whose SUBJECT is gone. A page can be dissolved or renumbered
+    # (DOC-T.68 does exactly that to 00_02/00_05/00_08), and a stale entry here would
+    # silently hand its immunity to whatever document lands on that number next —
+    # the freed-number face of §Guard-craft #50. An exemption must guard itself.
+    trl_exempt_dead = TRL_NOT_APPLICABLE.keys.reject { |k| existing.any? { |b| b.start_with?(k) } }
     rtc_drift   = []  # hard: RTC register availability claimed outside 03_01 owner
     rtc_phantom = []  # hard: phantom RTC register DR>19 (chip has only DR0..DR19)
     lorenz_drift = [] # hard: Lorenz β formula re-stated outside 03_04 owner
@@ -98,10 +126,11 @@ namespace :docs do
       # target (tested pure fn; canonical ref format → 00_06 §1, kept strict).
       suspect.concat(DocsLinter.section_label_drift(text, headings).map { |h| "#{base}: #{h}" })
 
-      # [TRL presence] a doc with a ✅ Статус section must declare its TRL there.
+      # [TRL presence] a doc with a ✅ Статус section must declare its TRL there —
+      # UNLESS its subject is not a technology at all (TRL_NOT_APPLICABLE below).
       lines = text.lines
       si = lines.index { |l| l =~ /^\#{1,3}\s.*Статус/ }
-      if si
+      if si && !TRL_NOT_APPLICABLE.key?(base[0, 5])
         rest = lines[(si + 1)..] || []
         ei = rest.index { |l| l =~ /^\#{2}\s/ }
         section = (ei ? rest[0...ei] : rest).join
@@ -109,6 +138,17 @@ namespace :docs do
         if (mt = section[/Поточний TRL[^\n]*?TRL\s*(\d)/, 1] || section[/Conceptual\s*\(TRL\s*(\d)/, 1] || section[/TRL\s*(\d)/, 1])
           doc_trls[base] = mt.to_i
         end
+      elsif si
+        # Reverse half of the two-way pin: a page declared non-technology must ALSO be
+        # free of a TRL claim, or the exemption silently becomes a licence to keep the
+        # very category error it was granted for.
+        rest = lines[(si + 1)..] || []
+        ei = rest.index { |l| l =~ /^\#{2}\s/ }
+        section = (ei ? rest[0...ei] : rest).join
+        # Anchored on the DECLARATION form, never on the digit: 00_08's subject is
+        # literally «Beyond TRL 9», so a bare `TRL\s*\d` would fire on the page's own
+        # topic. What makes a number a CLAIM here is the skeleton's bold label.
+        trl_misapplied << "#{base} — #{TRL_NOT_APPLICABLE[base[0, 5]]}" if section =~ /\*\*Поточний TRL|\*\*TRL[[:space:]-]*\d/
       end
 
       # [RTC reg-map drift] register availability is SSOT-owned by 03_01 §2; any
@@ -405,6 +445,16 @@ namespace :docs do
       puts "  MISSING TRL in ✅ Статус (#{trl_missing.size}):"
       trl_missing.sort.uniq.each { |d| puts "    ✗ #{d}" }
     end
+    unless trl_exempt_dead.empty?
+      puts "  TRL EXEMPTION WITHOUT A SUBJECT (#{trl_exempt_dead.size}) — the page is gone; decide the entry explicitly:"
+      trl_exempt_dead.sort.each { |k| puts "    ✗ #{k} — #{TRL_NOT_APPLICABLE[k]}" }
+    end
+    if trl_misapplied.empty?
+      puts "  TRL applicability: no declared non-technology page states a TRL ✓"
+    else
+      puts "  TRL ON A NON-TECHNOLOGY PAGE (#{trl_misapplied.size}) — 00_03 §1 calls this a category error:"
+      trl_misapplied.sort.each { |d| puts "    ✗ #{d}" }
+    end
     unless trl_dark.empty?
       puts "  TRL SOURCE DARK — the matrix doc could not be resolved:"
       trl_dark.each { |d| puts "    ✗ #{d}" }
@@ -529,6 +579,8 @@ namespace :docs do
     failed = []
     failed << "dangling doc links" unless dangling.empty?
     failed << "✅ Статус docs without a TRL" unless trl_missing.empty?
+    failed << "TRL exemption whose page no longer exists (inherited immunity)" unless trl_exempt_dead.empty?
+    failed << "TRL stated on a declared non-technology page (00_03 §1 category error)" unless trl_misapplied.empty?
     failed << "TRL matrix doc unresolved — 3 TRL gates did not run" unless trl_dark.empty?
     failed << "TRL ranges in 00_03 §1 matrix" unless trl_ranges.empty?
     failed << "TRL band inconsistency (doc TRL vs 00_03 §1 module band)" unless trl_band.empty?

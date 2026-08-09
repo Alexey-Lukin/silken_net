@@ -9,7 +9,7 @@
 
 Система побудована за принципами **Zero-Trust** та **«нульового лагу»** — де «нульовий лаг» означає **event-driven реакцію без polling-затримки на рівні заліза** (DMA/EXTI async-wakeup + RTC-WUT розклад — канон wake-source [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA); `VBAT_OK` — апаратний живлення-гейт, [`02_03 §7`](02_03_BQ25570_MPPT_Nano_Power)), а **не** миттєвість end-to-end: сама система **свідомо асинхронна** (STOP2-сон ~99 % часу, батчинг на Королеві, governance-timelock 48 год). Будь-який код, згенерований ШІ, або фізичний прототип, створений підрядником, повинен суворо відповідати документації на цих сторінках.
 
-> **Структура SSOT — тришарова.** **Модуль 00 — Фундамент** (read-first мета-лінза): *НАВІЩО* (візія/місія/дорожня карта) та *ЯК* (методологія, TRL, governance процесу) ми будуємо — плюс конституція всієї системи (карта нижче). **Tier I (Система, 01–06)** — інженерний канон того, *ЩО* ми будуємо: вертикальний стек шарів (01 анкер у дереві → 06 інфраструктура). **Tier II (Програма, 07–08)** — економіка/фінансування та академічні партнерства довкола системи. Стандарт самих доків — [`00_06`](00_06_SSOT_Documentation_Standard).
+> **Структура SSOT — тришарова.** **Модуль 00 — Фундамент** (read-first мета-лінза): *НАВІЩО* (візія/місія/дорожня карта) та *ЯК* (методологія, TRL, governance процесу) ми будуємо — плюс конституція всієї системи (карта нижче). **Tier I (Система, 01–06)** — інженерний канон того, *ЩО* ми будуємо: вертикальний стек шарів (01 анкер у дереві → 06 інфраструктура). **Tier II (Програма, 07)** — економіка/фінансування та академічні партнерства довкола системи. Стандарт самих доків — [`00_06`](00_06_SSOT_Documentation_Standard).
 
 ---
 
@@ -80,7 +80,7 @@ Soldier (Tree)         Soldier (Tree)         Soldier (Tree)
 - [`00_05` — GitHub Automation and IaC](00_05_GitHub_Automation_and_IaC) (CI/IaC-політика: SSOT-Guard · Solidity audit · Labels-as-Code · supply-chain hardening)
 - [`00_06` — SSOT Documentation Standard](00_06_SSOT_Documentation_Standard) (Стандарт канон-доків: skeleton + home-registry + drift-tooling + restructure-метод)
 - [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) (🔴 Живий документ — аудит блокерів, план дій, Sprint tracking)
-- [`00_08` — Beyond TRL9 Planetary Roadmap](00_08_Beyond_TRL9_Planetary_Roadmap) (Beyond TRL 9: 4 Planetary-Intelligence прогалини + фрактальна мережева топологія — far-horizon R&D 2026–2040+)
+- [`00_08` — Beyond TRL9 Planetary Roadmap](00_08_Beyond_TRL9_Planetary_Roadmap) (Beyond TRL 9: п'ять Planetary-Intelligence прогалин + фрактальна мережева топологія — far-horizon R&D 2026–2040+)
 
 ---
 
