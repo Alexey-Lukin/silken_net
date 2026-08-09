@@ -108,7 +108,7 @@ jobs:
           # периметрі, а не на інваріанті. Класика: гейт зелений локально й
           # червоний у CI, бо перевіряли його НЕ там, де він біжить.
           missing=""
-          for sol in *.sol; do
+          for sol in ./*.sol; do
             grep -q "AccessControl" "$sol" || continue
             base="$(basename "$sol" .sol)"
             t="test/${base}.t.sol"
@@ -118,7 +118,7 @@ jobs:
           done
           # Ліхтар на власний вимір: порожній перелік контрактів дав би зелене
           # мовчання — той самий клас, який цей гейт і ловить.
-          n=$(grep -l "AccessControl" *.sol | wc -l | tr -d ' ')
+          n=$(grep -l "AccessControl" ./*.sol | wc -l | tr -d ' ')
           if [ "$n" -lt 3 ]; then
             echo "::error::AccessControl scan found only $n contracts — the glob is blind, not the tree clean"
             exit 1
