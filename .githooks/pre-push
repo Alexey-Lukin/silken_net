@@ -19,7 +19,31 @@
 root=$(git rev-parse --show-toplevel) || exit 0
 [ -f "$root/scripts/dco_check.rb" ] || exit 0
 
-if ! ruby "$root/scripts/dco_check.rb"; then
+# 🔴 Resolve a ruby that can RUN the check, instead of taking whatever PATH
+# offers. Measured 2026-08-09, live: the shell's PATH led with a gemset removed
+# by the 4.0.5→4.0.6 bump, so `ruby` was macOS 2.6, `dco_check.rb` failed to
+# PARSE (shorthand `range:` is 3.1+), and this hook printed "commits lack a
+# Signed-off-by trailer" — its own default — for commits it never examined.
+# The hook could not tell "the check said no" from "the check never ran", so it
+# reported the only sentence it had. Verdict happened to be right that day;
+# the grounds were fabricated, and every push was blocked regardless of DCO.
+# Same fix and same reason as `.claude/hooks/memory_gate.sh` (00_06 §3, DARK).
+for _rb in "${DCO_RUBY:-}" "$(command -v ruby 2>/dev/null)" \
+           "$HOME/.rvm/rubies/default/bin/ruby" /usr/bin/ruby; do
+  [ -n "$_rb" ] && [ -x "$_rb" ] || continue
+  "$_rb" -c "$root/scripts/dco_check.rb" >/dev/null 2>&1 && break
+  _rb=""
+done
+
+if [ -z "$_rb" ]; then
+  echo "pre-push BLOCKED — no ruby able to parse scripts/dco_check.rb"
+  echo "This is NOT a DCO verdict: the check never ran, so its silence means nothing."
+  echo "Fix the toolchain (rvm-heal), or set DCO_RUBY=/path/to/ruby."
+  echo "(Emergency bypass: git push --no-verify — but that skips DCO entirely.)"
+  exit 1
+fi
+
+if ! "$_rb" "$root/scripts/dco_check.rb"; then
   echo
   echo "pre-push BLOCKED — commits above lack a matching Signed-off-by trailer."
   echo "Fix in place:  git rebase --signoff origin/main"
