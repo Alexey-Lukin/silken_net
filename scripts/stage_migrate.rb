@@ -17,7 +17,7 @@
 PATH = File.expand_path("../docs/00_07_Action_Plan_Tracker.md", __dir__)
 ITEM_HEAD = /^####\s+(?:[✅\p{So}\p{Sk}\u{FE0F}]+\s+)*([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)\s+[—-]\s+(.+?)\s*$/
 META = /^- \*\*(P[0-3])\*\*/
-REGISTRY = /^## (?:§|🔀)/
+REGISTRY = /^## §/  # 🔀 Cross-cutting знято 2026-08-09 — DOC-T живуть у §-секції свого модуля
 SKIP = /^## (?:🎯|🚦|📌|🗄️)/
 
 WHO_EMO   = { "🤖" => "🤖", "👤" => "👤" }.freeze

@@ -237,36 +237,36 @@ RSpec.describe Tracker::Dashboard do
     end
   end
 
-  # [dup-guard blind-spot fix, 2026-06-01] An ID used as BOTH a registry table row
-  # AND a #### heading (the DOC.12 ↔ DOC.13 collision) escaped the heading-only
-  # tally. table_row_ids surfaces first-cell IDs so the caller can merge them.
-  describe ".table_row_ids" do
+  # [dup-guard blind-spot fix, 2026-06-01] An ID used as BOTH a table row AND a ####
+  # heading (the DOC.12 ↔ DOC.13 collision) escaped the heading-only tally. The class
+  # is now carried by `all_item_ids`, which merges both shapes across EVERY section —
+  # the section-filtered `table_row_ids` went with the 🔀 registry section it served
+  # (2026-08-09), so these pin the surviving carrier, not the retired one.
+  describe "table-row ↔ #### heading ID collision" do
     let(:md) do
       <<~MD
-        ## 🔀 Cross-cutting · Doc-drift (DOC)
-        | ID | Невідповідність | Дія | Статус |
-        |----|-----------------|-----|--------|
-        | DOC.12 | Taxonomy P4 | — | ✅ Done |
-        | DOC.10 | deferred decision | — | 🟡 |
-        #### DOC.12 — round item that collides with the table row above
-        - **P2** · 🤖 · → `00_06 §3`
+        ## §00 · Process
+        #### DOC.12 — item that collides with the archive row below
+        - **P2** · 🤖 · ⚪ · → `00_06 §3`
         ## 🗄️ Архів закритих пунктів
-        | ARCH.1 | non-registry section — must be skipped | — | ✅ |
+        | ID | Пункт | Канон |
+        |----|-------|-------|
+        | DOC.12 | archived under an ID still used by a live heading | `00_06 §3` |
+        | DOC.10 | ordinary archived row | `00_06 §3` |
       MD
     end
 
-    it "extracts first-cell IDs from registry table rows (skips header/separator + Архів)" do
-      expect(described_class.table_row_ids(md)).to contain_exactly("DOC.12", "DOC.10")
+    it "catches an ID reused across a heading and a table row" do
+      expect(described_class.duplicate_ids(md)).to eq("DOC.12" => 2)
     end
 
-    it "lets the dup tally catch a table-row ↔ #### heading ID collision" do
-      ids = described_class.parse(md).map(&:id) + described_class.table_row_ids(md)
-      expect(ids.tally.select { |_, v| v > 1 }).to eq("DOC.12" => 2)
+    it "collects table-row IDs from NON-registry sections too (archive is where rows live now)" do
+      expect(described_class.all_item_ids(md)).to include("DOC.10")
     end
 
-    it "extracts a first-cell ID behind a leading ✅/emoji status prefix" do
-      md = "## 🔀 Cross-cutting\n| ✅ OPS.5 | done | — | ✅ |\n| 🌿 E.59 | finding | — | 🌿 |\n"
-      expect(described_class.table_row_ids(md)).to contain_exactly("OPS.5", "E.59")
+    it "reads a first-cell ID behind a leading ✅/emoji status prefix" do
+      md = "## 🗄️ Архів\n| ✅ OPS.5 | done | — |\n| 🌿 E.59 | finding | — |\n"
+      expect(described_class.all_item_ids(md)).to contain_exactly("OPS.5", "E.59")
     end
   end
 
@@ -510,8 +510,8 @@ RSpec.describe Tracker::Dashboard do
         ## §06 · Deploy
         #### S1.1 — visible, inside a registry section
         - **P0** · 👤 · ⚪ · → `06_04`
-        ## 🔀 Cross-cutting · Doc-drift (DOC)
-        #### DOC.9 — visible, cross-cutting counts as a registry section
+        ## §04 · Backend
+        #### DOC.9 — visible, a second §-section is a registry section too
         - **P2** · 🤖 · ⚪ · → `04_02`
       MD
     end

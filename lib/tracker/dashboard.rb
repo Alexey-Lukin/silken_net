@@ -3,7 +3,7 @@
 
 # [00_07 DRY tooling — #3 item-form contract + drift guards]
 #
-# Parses the undone-task registry (§-module + 🔀 cross-cutting sections) of
+# Parses the undone-task registry (`## §NN` module sections) of
 # docs/00_07_Action_Plan_Tracker.md and lints it: duplicate IDs, item-form
 # conformance (priority + WHO + STAGE + canon-ref), §-ref / section↔home /
 # inbound-ref resolution, and run-on / verdict-lead / meta-line form — the
@@ -17,7 +17,10 @@ module Tracker
     DOCS_DIR = File.expand_path("../../docs", __dir__)
 
     # #### items under these sections feed the dashboard (mirror canon modules).
-    REGISTRY_SECTION = /^## (?:§|🔀)/
+    # `🔀 Cross-cutting` was dropped [DOC-T.71]: it was the only TABLE-shaped registry
+    # section, and a table row is invisible to eleven `#### `-keyed guards. Its DOC-T
+    # items now live as ordinary `#### ` items in the §-section of their canon module.
+    REGISTRY_SECTION = /^## §/
     # Non-actionable / index sections explicitly excluded.
     SKIP_SECTION = /^## (?:🎯|🚦|📌|🗄️)/
 
@@ -61,7 +64,7 @@ module Tracker
           items << current if current
           current = nil
           in_registry = line.match?(REGISTRY_SECTION) && !line.match?(SKIP_SECTION)
-          # only `## §NN` headers carry a module set; `## 🔀` cross-cutting → nil (exempt)
+          # only `## §NN` headers carry a module set; anything else → nil (exempt)
           section_modules = line.start_with?("## §") ? line.scan(SECTION_NUMS).flatten : nil
           next
         end
@@ -92,32 +95,15 @@ module Tracker
       items
     end
 
-    # --- registry table-row IDs (dup-guard blind-spot fix) ---
-    # The dup-guard tallies #### heading IDs only; an ID used as BOTH a table-row
-    # (e.g. `| DOC-T.12 | … |` in the DOC-drift registry) AND a #### heading slipped
-    # through silently (the DOC-T.12 ↔ DOC-T.13 collision). This returns the first-cell
-    # ID token of every table row inside the §/🔀 registry sections so the caller
-    # can merge them into the dup tally. Same ID shape as `parse`; header/separator
-    # rows (no ID in the first cell) and **bold** wrappers are handled.
+    # --- table-row ID shape ---
+    # An ID may live as a table row (`| DOC-T.12 | … |`) as well as a `#### ` heading,
+    # and `all_item_ids` below merges both so a row reusing an active ID is caught.
     # A leading emoji/✅ run is tolerated (`| ✅ OPS.5 |`, `| 🌿 E.59 |`) — the same
-    # blind spot that once hid `#### 🌿 UNI.13a`; without it a status-prefixed backlog
-    # row was invisible to BOTH the dup tally and inbound-ref resolution.
+    # blind spot that once hid `#### 🌿 UNI.13a`; without it a status-prefixed row
+    # was invisible to BOTH the dup tally and inbound-ref resolution.
     # Лідерний emoji/✅-run — єдиний лінійний char-class (НЕ вкладений `(?:[…]+\s*)*`,
     # чий опційний роздільник давав exponential backtracking / ReDoS).
     TABLE_ID_RE = /\A\|[\s✅\p{So}\p{Sk}\u{FE0F}]*\*{0,2}([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)\*{0,2}\s*\|/
-
-    def self.table_row_ids(markdown)
-      in_registry = false
-      markdown.each_line.filter_map do |line|
-        if line.start_with?("## ")
-          in_registry = line.match?(REGISTRY_SECTION) && !line.match?(SKIP_SECTION)
-          next
-        end
-        next unless in_registry
-
-        line.match(TABLE_ID_RE)&.captures&.first
-      end
-    end
 
     # --- inbound 00_07 item-ref resolution ---
     # Other docs reference a tracker item as `[`00_07` — <ID>](00_07_…)`. Nothing
@@ -157,7 +143,7 @@ module Tracker
 
     # --- global ID uniqueness (dup-guard scope widened) ---
     # Every tracker item ID must be unique across the WHOLE file. The earlier tally
-    # spanned only the §/🔀 registry sections (parse + table_row_ids), so a 📌 Backlog
+    # spanned only the `## §NN` registry sections (parse), so a 📌 Backlog
     # or 🗄️ Архів row could silently reuse an active ID — exactly the `OPS.5` collision
     # (`#### OPS.5` §07 ↔ `| ✅ OPS.5 |` backlog) that slipped through. Reuses
     # `all_item_ids` (whole-file span, the same source the inbound-ref guard trusts),
@@ -411,7 +397,7 @@ module Tracker
     # `§03/§05` header declares a multi-module set (any OK); a `§NNx` sub-letter
     # heading (§01a/§08b) is one module NN — several may share it (curation split).
     # Catches the drift that once buried §06 deploy items (S*/INF*) under §04 "DevOps"
-    # behind apologetic nav-notes. 🔀 cross-cutting / 📌 backlog / 🗄️ archive sections
+    # behind apologetic nav-notes. 📌 backlog / 🗄️ archive sections
     # are module-agnostic (section_modules nil/empty) → exempt. (canon-mirror, 00_06 §4)
     def self.section_home_violations(items)
       items.filter_map do |it|
@@ -426,7 +412,7 @@ module Tracker
     end
 
     # --- pre-section orphan guard [DOC-T.49] ---
-    # `parse` only sees `#### ` items INSIDE a registry section (`## §NN` / `## 🔀`), so an
+    # `parse` only sees `#### ` items INSIDE a registry section (`## §NN`), so an
     # item sitting ABOVE the first `## ` heading — or under a SKIP section — is invisible to
     # EVERY other tracker gate (dup-ID, meta-form, canon-ref, section-home, verdict-lead all
     # iterate the PARSED set). They then check blind and stay GREEN on a corrupted file — the
@@ -443,7 +429,7 @@ module Tracker
         next unless (m = line.match(ANY_ITEM_HEAD))
         next if seen.include?(m[1])
 
-        bad << "#{m[1]} — `#### ` item outside any `## §NN`/`## 🔀` registry section → invisible to every tracker gate"
+        bad << "#{m[1]} — `#### ` item outside any `## §NN` registry section → invisible to every tracker gate"
       end
     end
 
@@ -794,7 +780,7 @@ module Tracker
         in_fence = !in_fence if line.lstrip.start_with?("```")
         next if in_fence
         # a `## ` header ends the previous item's body — without this, a tag
-        # mentioned in a 🔀-section table row leaks onto the last #### item
+        # mentioned in an archive table row leaks onto the last #### item
         current = nil if line.start_with?("## ")
         current = line[ANY_ITEM_HEAD, 1] || current
         next unless current && line.match?(CHECKBOX_RE)
