@@ -53,6 +53,7 @@ PINS_YML      = File.join(ROOT, "lib/canonical_block_pins.yml")
 DOCS_RAKE_LABELS = {
   "dangling doc links"                                                                     => "dangling `NN_NN` doc-links",
   "✅ Статус docs without a TRL"                                                            => "кожен док з `## ✅ Статус` декларує TRL",
+  "TRL matrix doc unresolved — 3 TRL gates did not run"                                    => "TRL source lantern",
   "TRL ranges in 00_03 §1 matrix"                                                          => "одинарне 1-9",
   "TRL band inconsistency (doc TRL vs 00_03 §1 module band)"                               => "TRL range-consistency",
   "manifest TRL drift (PUBLIC manifesto §5 vs 00_03 §1)"                                    => "manifest TRL parity",

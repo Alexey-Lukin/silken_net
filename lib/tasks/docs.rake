@@ -257,8 +257,14 @@ namespace :docs do
     # [TRL single-value] HARD — 00_03 §1 per-module matrix cells single 1-9.
     # [TRL range-consistency] HARD — a doc's member-TRL stays inside its module band
     # (00_03 §1): band well-formed + row ≤ max member + member ≤ target (see linter).
-    matrix      = File.join(DOCS_DIR, "00_03_TRL_Matrix_HIL_and_Beyond.md")
-    matrix_text = File.exist?(matrix) ? File.read(matrix) : nil
+    # Resolved by NUMBER, never by full filename: the number is the ratified stable
+    # coordinate of this page, its title is not. A missing (or ambiguous) match used to
+    # hand `nil` to all three TRL gates below, which then computed empty arrays and
+    # passed forever — on the corpus's central honesty claim, with zero red. An empty
+    # finding-set means "clean" only when the check actually RAN, so say so and go RED.
+    matrix_files = files.select { |f| File.basename(f).start_with?("00_03_") }
+    matrix_text  = matrix_files.one? ? File.read(matrix_files.first) : nil
+    trl_dark     = matrix_text ? [] : [ "docs/00_03_*.md matched #{matrix_files.size} files — the 3 TRL gates below did NOT run" ]
     trl_ranges  = matrix_text ? DocsLinter.trl_matrix_range_violations(matrix_text) : []
     trl_band    = matrix_text ? DocsLinter.trl_range_consistency(matrix_text, doc_trls) : []
 
@@ -399,23 +405,29 @@ namespace :docs do
       puts "  MISSING TRL in ✅ Статус (#{trl_missing.size}):"
       trl_missing.sort.uniq.each { |d| puts "    ✗ #{d}" }
     end
-    if trl_ranges.empty?
-      puts "  TRL single-value: 00_03 §1 matrix cells all single 1-9 ✓"
-    else
+    unless trl_dark.empty?
+      puts "  TRL SOURCE DARK — the matrix doc could not be resolved:"
+      trl_dark.each { |d| puts "    ✗ #{d}" }
+    end
+    # The three ✓ lines below are suppressed while the source is dark — a green tick
+    # next to "did NOT run" is the very thing this lantern exists to prevent.
+    if trl_ranges.any?
       puts "  TRL RANGE in 00_03 §1 matrix (#{trl_ranges.size}):"
       trl_ranges.each { |r| puts "    ✗ #{r}" }
+    elsif trl_dark.empty?
+      puts "  TRL single-value: 00_03 §1 matrix cells all single 1-9 ✓"
     end
-    if trl_band.empty?
-      puts "  TRL band:       every doc member-TRL within its 00_03 §1 module band ✓"
-    else
+    if trl_band.any?
       puts "  TRL BAND INCONSISTENCY (#{trl_band.size}) — doc TRL vs 00_03 §1 per-module band:"
       trl_band.sort.each { |r| puts "    ✗ #{r}" }
+    elsif trl_dark.empty?
+      puts "  TRL band:       every doc member-TRL within its 00_03 §1 module band ✓"
     end
-    if manifest_trl.empty?
-      puts "  manifest TRL:   public manifesto §5 layers match their 00_03 §1 modules ✓"
-    else
+    if manifest_trl.any?
       puts "  MANIFEST TRL DRIFT (#{manifest_trl.size}) — PUBLIC claim vs 00_03 §1:"
       manifest_trl.sort.each { |r| puts "    ✗ #{r}" }
+    elsif trl_dark.empty?
+      puts "  manifest TRL:   public manifesto §5 layers match their 00_03 §1 modules ✓"
     end
     if blocker_sections.empty?
       puts "  blockers→00_07:  no canon doc hosts a 🛑/✅-archive blocker section ✓"
@@ -517,6 +529,7 @@ namespace :docs do
     failed = []
     failed << "dangling doc links" unless dangling.empty?
     failed << "✅ Статус docs without a TRL" unless trl_missing.empty?
+    failed << "TRL matrix doc unresolved — 3 TRL gates did not run" unless trl_dark.empty?
     failed << "TRL ranges in 00_03 §1 matrix" unless trl_ranges.empty?
     failed << "TRL band inconsistency (doc TRL vs 00_03 §1 module band)" unless trl_band.empty?
     failed << "manifest TRL drift (PUBLIC manifesto §5 vs 00_03 §1)" unless manifest_trl.empty?

@@ -79,7 +79,7 @@ NaaS — це модель підписки, де клієнти (Організ
 **Що входить у послугу:**
 - Моніторинг здоров'я власних дерев (Soldier-вузли).
 - SCC токени на свій `Wallet` (курс — [`05_03`](05_03_Tokenomics_SCC_and_SFC)).
-- Мікро-нагороди у USDC на Solana (0.01–0.1 USDC за кожен LoRa пакет телеметрії).
+- Мікро-нагороди у USDC на Solana (0.01–0.0162 USDC за кожен LoRa пакет телеметрії — формула-дім [`04_02`](04_02_Business_Logic_and_Services)).
 - Celo ReFi нагороди (5 cUSD за здоровий кластер на добу) — якщо кластер проходить щоденний аудит.
 - **(Roadmap, deferred B2C) Eco-Therapy 4.0** — цифрова лісотерапія: користувач біля дерева відкриває додаток → бачить «пульс» (`delta_t`) → синхронізація з природними ритмами. Перший у світі інструмент цифрової лісотерапії (напр. реабілітація ветеранів з ПТСД).
 
@@ -140,7 +140,7 @@ NaaS — це модель підписки, де клієнти (Організ
 | **Страхова премія** | 5% від `total_funding` → DAO Treasury Pool | `NaasContract::INSURANCE_PREMIUM_RATE = BigDecimal("0.05")` |
 | **Частка форестера** | 95% від `total_funding` | `NaasContract#forester_share_amount` |
 | **Celo ReFi нагорода** | 5 cUSD / здоровий кластер / добу | `CeloRewardWorker`, `Celo::CommunityRewardService` |
-| **Solana мікро-нагорода** | 0.01–0.1 USDC / LoRa пакет | `SolanaMicroRewardWorker`, `Solana::MintingService` |
+| **Solana мікро-нагорода** | 0.01–0.0162 USDC / LoRa пакет (10 000 + GP×100 lamports; stored GP ≤ 62 = wire 5-bit ×2) | `SolanaMicroRewardWorker`, `Solana::MintingService`; формула-дім [`04_02`](04_02_Business_Logic_and_Services) |
 | **Динамічна ціна SCC** | Uniswap V3 Quoter (Polygon), fallback $25.50 | `PriceOracleService` |
 | **Штраф за дострокове розірвання** | `total_funding × early_exit_fee_percent / 100` | `NaasContract#calculate_early_exit_fee` |
 | **Пропорційне повернення** | `total_funding × (remaining_days / total_days) − fee` | `NaasContract#calculate_prorated_refund` |
@@ -266,12 +266,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 
 ## 🔑 6. Ієрархія Ролей та Доступу
 
-| Роль | Код | Можливості щодо NaaS контрактів |
-|---|---|---|
-| `super_admin` | 3 | Повний доступ: `index`, `show`, `stats` для всіх організацій |
-| `admin` | 2 | Доступ до контрактів власної організації |
-| `forester` | 1 | Доступ до контрактів власної організації (польовий) |
-| `investor` | 0 | Read-only: тільки власні контракти |
+Застосункові ролі та їхній скоуп даних — дім [`04_03 §3`](04_03_REST_API_v1_Reference) (RBAC) + [`04_03 §3.1`](04_03_REST_API_v1_Reference) (acting-organization). Тут лише те, що несуче для NaaS: **скоуп даних відв'язано від ролі** — у контексті ОДНІЄЇ організації за раз працюють усі, включно з `super_admin`, який її лише перемикає. `NaasContractPolicy` не має super_admin-гілки взагалі: і `show?`, і `Scope` стоять на одній умові приналежності організації.
 
 **Права на смарт-контракт (Polygon):**
 

@@ -78,8 +78,10 @@ files.each do |path|
     end
     crossrefs += l.scan(/\[`?\d\d_\d\d/).size if l.include?("](")
   end
-  # Фолбек для index-доків без ✅ Статус: реальний TRL-рядок, НЕ directory-лінк / table-row.
-  status ||= lines.find { |l| l =~ /\bTRL[\s-]?\d/i && !l.include?("](") && !l.lstrip.start_with?("|") }&.strip&.slice(0, 90)
+  # Жодного фолбеку: док без `✅ Статус` (00_00 index · 00_07 tracker — skeleton-винятки)
+  # не має TRL за конструкцією, і вгадувати його першим-ліпшим рядком «TRL N» означає
+  # показувати СУСІДНЮ властивість під іменем Статусу. Улов старого щабля був рівно один
+  # і хибний: 00_07 малювався з «TRL 4→6» із тіла пункту HW.1.
   total_secs += content_secs.size
   total_lines += lines.size
   mod_pages[mod] += 1
