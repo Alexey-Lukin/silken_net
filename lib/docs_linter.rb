@@ -13,7 +13,7 @@ module DocsLinter
 
   # TRL matrix single-value (HARD; scope: 00_03 §1 canonical matrix).
   # Per-module cells must be a single integer 1-9, never a range ("5-6"/"8-9")
-  # — 00_05 §1.1: Current TRL is single-select. Only rows whose first cell is
+  # — 00_02 §1 fixes the NASA 1-9 scale. Only rows whose first cell is
   # "NN <module>" are inspected; NASA-scale *stage* rows start "**TRL 5-6**" and
   # are skipped. Returns ["06 DevOps → TRL cell '5-6' ...", ...].
   def trl_matrix_range_violations(text)

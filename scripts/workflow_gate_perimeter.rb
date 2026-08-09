@@ -130,7 +130,7 @@ module WorkflowGatePerimeter
         .gsub(/\d\d_\d\d/, " ")
         .gsub(/§\s*\d+(?:\.\d+)*/, " ")
         .gsub(/\(\d+\)/, " ")
-        .gsub(/\bTRL[\s-]*\d+/i, " ") # "TRL 9" sits next to gate words in 00_04
+        .gsub(/\bTRL[\s-]*\d+/i, " ") # "TRL 9" sits next to gate words in the TRL canon
         .gsub(/~?\d+\+/, " ")         # "~150+ питань"
   end
 
@@ -218,7 +218,7 @@ module WorkflowGatePerimeter
 
   # pull_request-trigger detection, robust to the YAML-1.1 bare-`on:`→boolean
   # quirk (`on:` parses to the key `true`, not "on"). Deliberately does NOT count
-  # `pull_request_target` (a different, privileged event — labeler.yml — that is
+  # `pull_request_target` (a different, privileged event that is
   # an automation, not a merge-gate).
   def pr_triggered?(yaml)
     on = yaml["on"] || yaml[true]

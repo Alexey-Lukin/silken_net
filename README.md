@@ -45,50 +45,6 @@ L1  Біофізика         Ti-6Al-4V гіроїдний анкер, EBFC Gen
 
 ---
 
-## 🌐 Мультичейн Стек (12 Мереж)
-
-| Роль | Мережа | Функція |
-|------|--------|---------|
-| **Ідентичність** | peaq | Machine DID паспорт дерева |
-| **Верифікація** | IoTeX W3bstream | ZK-proof цілісності pipeline + peaq-DID (L0-custodial; silicon-origin = North-Star) |
-| **Оракул** | Chainlink | CCIP/Functions: Rails → Polygon/Solana |
-| **Токени** | Polygon | SCC (утилітарний) + SFC (governance DAO) |
-| **Мікроплатежі** | Solana | USDC нагороди лісникам |
-| **ReFi** | Celo | Нагороди громадам (cUSD) |
-| **ESG** | KlimaDAO | Carbon retirement |
-| **KYC/RWA** | Polygon Hadron | ERC-3643 compliance |
-| **Фіналізація** | Ethereum L1 | Щотижневий state root |
-| **Індексація** | The Graph | GraphQL subgraph для SCC подій |
-| **P2P Дані** | Streamr | Real-time трансляція телеметрії |
-| **Архів** | Filecoin/IPFS | Вічне зберігання аудит-логів |
-
----
-
-## 🔗 Proof of Growth — Пайплайн
-
-```
-EBFC (дерево) → delta_t → Lorenz Z → growth_points → TelemetryLog
-    ↓
-peaq DID → IoTeX ZK-proof → Chainlink Oracle → Polygon mint(SCC)
-    ↓
-10 000 growth_points = 1 SCC токен
-Slashing: лише за доведену халатність (cause-gate A/B/C; стихія → insurance) — 05_05
-```
-
----
-
-## 📖 Lore Layer (Codex)
-
-Поверх операційного стеку працює **Codex** — наративний шар, що прив'язує кожне дерево, кластер, тривогу й транзакцію до архетипів (4 Realm'и × 79 Nodes), дозволяє лісникам обирати фракцію (`Codex::Fraction`), голосувати в Battle Arena (Elo) та відкривати Discoveries у міру росту лісу. DAO-керовані правила unlock'у живуть у `codex_discovery_rules` і змінюються без редеплою. Жоден Codex-воркер не торкається черг `uplink/alerts/critical/downlink/web3_critical` — гейміфікація ніколи не голодує телеметрію (ADR-CDX-4). Деталі: [`docs/04_05_Codex_Lore_Module.md`](docs/04_05_Codex_Lore_Module.md).
-
----
-
-## 🌐 Зовнішні Стейкхолдери
-
-Окрім академічних партнерів ([`07_03`](docs/07_03_Academic_Integration_and_IP.md)), проєкт залежить від зовнішніх **non-operational** стейкхолдерів: B2G-гейткіпери (лісівник Дзюбенко, природоохоронець Сегеда) — ноти в [`07_03`](docs/07_03_Academic_Integration_and_IP.md); метрологія (Чорней — сертифікація SCC) — [`00_07`](docs/00_07_Action_Plan_Tracker.md) § STK.5; культурний шар (митці національного/локального рівня для Genesis NFT + Data Sonification) — `docs/cultural_layer.md`. Жоден із записів не блокує merge — це outreach pool, що активується за TRL-тригерами.
-
----
-
 ## 🧬 Технологічний Стек — вертикальний зріз стовбура
 
 _Знизу вгору, як сік у ксилемі: від кореня в живому дереві (**L1**) до фіналізації в Ethereum (**L8**) — той самий потік даних дерево→блокчейн, що й [8-рівнева конституція](#🏛️-архітектура-8-рівнів-silkennet) вище. `TRL`-мітка кожного рівня каже правду про зрілість заліза, а не лише «ми юзаємо X»._
@@ -236,15 +192,6 @@ kamal deploy
 
 ---
 
-## 📡 Ідентифікатори Вузлів
-
-| Тип | Формат | Приклад |
-|-----|--------|---------|
-| Солдат (Tree DID) | `SNET-XXXXXXXX` | `SNET-1A2B3C4D` |
-| Королева (Gateway UID) | `SNET-Q-XXXXXXXX` | `SNET-Q-5E6F7A8B` |
-
----
-
 ## ⛓️ Токеноміка
 
 **SCC (Silken Carbon Coin)** — утилітарний ERC-20 токен за верифіковану секвестрацію CO₂.
@@ -277,93 +224,15 @@ kamal deploy
 
 ## 📚 Документація
 
-Детальна документація в директорії [`docs/`](docs/):
+Канон живе в [`docs/`](docs/) як SSOT-документи, згруповані у модулі 00–07.
 
-### 🧭 Модуль 00 — Фундамент (Foundation: Візія + Метод — read-first)
-- [`00_00`](docs/00_00_SSOT_Index.md) — SSOT index + системна карта (8 рівнів кіберфізики) + reading order
-- [`00_01`](docs/00_01_Vision_Mission_and_Roadmap.md) — візія, місія, дорожня карта, NaaS, Proof-of-Growth (Slashing → [`05_05`](docs/05_05_Slashing_and_Risk_Policy.md))
-- [`00_02`](docs/00_02_AI_Native_Engineering_and_TRL.md) — AI-Native філософія: NASA TRL, Intent-First, Wiki-First, Validation Gate
-- [`00_03`](docs/00_03_TRL_Matrix_HIL_and_Beyond.md) — per-module TRL-матриця + per-domain TRL + HIL-симулятори (Beyond-TRL-9 → `00_08`)
-- [`00_04`](docs/00_04_Shape_Up_Operations_and_RnD_Clusters.md) — Shape Up 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review
-- [`00_05`](docs/00_05_GitHub_Projects_and_IaC_Automation.md) — Projects V2 + Labels-as-Code + GitHub Actions workflows
-- [`00_06`](docs/00_06_SSOT_Documentation_Standard.md) — стандарт канон-доків (skeleton + home-registry + drift-tooling + restructure-метод)
-- [`00_07`](docs/00_07_Action_Plan_Tracker.md) — 🔴 живий трекер незавершених задач (DOC/SW/SEC/ARCH/UNI аудит)
-- [`00_08`](docs/00_08_Beyond_TRL9_Planetary_Roadmap.md) — Beyond TRL 9: Planetary Intelligence Gaps + фрактальна мережева топологія (far-horizon R&D 2026–2040+)
+> **Повний індекс — [`docs/00_00` — SSOT Index](docs/00_00_SSOT_Index.md):** порядок читання, системна карта восьми рівнів кіберфізики й опис кожного документа. Це **єдиний дім переліку**; тут він свідомо не дублюється, щоб не дрейфував удруге.
 
-### 🏛️ Tier I — Система (01–06)
+- **Модуль 00 — фундамент** (read-first): візія та дорожня карта · AI-Native метод і NASA TRL · TRL-матриця з HIL · SSOT-стандарт · Beyond-TRL-9 агенда
+- **Модулі 01–06 — система:** анкер і EBFC · залізо капсули та Королеви · прошивка й Edge AI · серверне ядро Rails · Web3 та економіка · деплой і спостережуваність
+- **Модуль 07 — програма:** NaaS-контракти · юніт-економіка · академічна інтеграція та IP-постава
 
-**Біомеханіка та Хімія (Модуль 01)**
-- [`01_01`](docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md) — 3-складовий Ti-6Al-4V анкер
-- [`01_02`](docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) — металургія Ti-6Al-4V, DMLS та біосумісність
-- [`01_03`](docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) — EBFC Gen 2.0: >500 мВ з глюкози дерева (dgrFAD-GDH + Laccase/ZIF + Genipin + PSBMA, 20–25 років)
-- [`01_04`](docs/01_04_CODIT_and_Xylemointegration.md) — CODIT та ксилемоінтеграція
-
-**Апаратне Забезпечення (Модуль 02)**
-- [`02_01`](docs/02_01_Hardware_Architecture_and_BOM.md) — BOM та архітектура Солдата
-- [`02_02`](docs/02_02_Blind_Mate_Pogo_Pin_Interface.md) — сліпий з'єднувач Pogo Pin
-- [`02_03`](docs/02_03_BQ25570_MPPT_Nano_Power.md) — BQ25570 MPPT, нано-менеджмент живлення + EDLC-буфер 0.47Ф (§12)
-- [`02_04`](docs/02_04_Bench_Build_Guide.md) — 🔧 Bench Build & Test Guide (Soldier+Queen поблоково на макетці)
-- [`02_05`](docs/02_05_Queen_Hardware_and_Starlink.md) — шлюз Королева + Starlink/LTE
-
-**Прошивка та Edge AI (Модуль 03)**
-- [`03_01`](docs/03_01_Firmware_Lifecycle_and_DMA.md) — цикл Soldier: STOP2 → сенсори → LoRa TX
-- [`03_02`](docs/03_02_Queen_Gateway_Firmware.md) — прошивка шлюзу Королеви (LoRa RX → CIFO → CoAP)
-- [`03_03`](docs/03_03_TinyML_Acoustic_Inference.md) — TinyML: класифікація звуку пилки
-- [`03_04`](docs/03_04_mruby_Lorenz_Attractor.md) — mruby Атрактор Лоренца (гомеостаз дерева)
-- [`03_05`](docs/03_05_Hardware_Symmetric_Crypto_and_Security.md) — апаратне симетричне шифрування (LoRa AES-128-CCM, CoAP AES-256-CBC) та PQC migration roadmap
-- [`03_06`](docs/03_06_Factory_Flashing_and_Key_Provisioning.md) — Factory Flashing та provisioning ключів (HKDF · K_seed · OTA-HMAC · factory-ops security)
-
-**Серверне Ядро (Модуль 04)**
-- [`04_01`](docs/04_01_Data_Models_and_Entities.md) — ActiveRecord моделі, PostgreSQL схема, partitioning
-- [`04_02`](docs/04_02_Business_Logic_and_Services.md) — Service Objects + Sidekiq воркери, Web3CircuitBreaker
-- [`04_03`](docs/04_03_REST_API_v1_Reference.md) — REST API v1 (Pagy, Idempotency-Key, RBAC)
-- [`04_04`](docs/04_04_Phlex_UI_and_Tailwind.md) — дизайн-система Phlex + Tailwind
-- [`04_05`](docs/04_05_Codex_Lore_Module.md) — Codex — опціональний read-only наративний шар над телеметрією (ADR-зафіксований, поза hot-path)
-- [`04_06`](docs/04_06_Testing_Guide_and_Coverage.md) — Testing guide (RSpec/Phlex best practices) + Gap Analysis (known limitations + recommendations)
-
-**Web3 та Економіка (Модуль 05)**
-- [`05_01`](docs/05_01_Multichain_Architecture.md) — Core DePIN (peaq/IoTeX/Chainlink/Polygon) + Expansion ecosystem
-- [`05_02`](docs/05_02_Proof_of_Growth_Pipeline.md) — повний пайплайн Proof of Growth
-- [`05_03`](docs/05_03_Tokenomics_SCC_and_SFC.md) — токеноміка SCC/SFC
-- [`05_04`](docs/05_04_Ethereum_L1_State_Anchor.md) — щотижнева фіналізація в Ethereum L1
-- [`05_05`](docs/05_05_Slashing_and_Risk_Policy.md) — політика штрафів і ризиків (negligence/force-majeure + формула + insurance + anti-fraud + multi-signal de-risk)
-- [`05_06`](docs/05_06_Governance_and_DAO.md) — on-chain governance (SilkenGovernor + Timelock + ProtocolParameters + Flash-Loan-захист + Auto-Immune Sentinel)
-
-**Розгортання та Інфраструктура (Модуль 06)**
-- [`06_01`](docs/06_01_Deployment_Kamal_Terraform.md) — Kamal + Terraform (GCP) + Web3 ENV
-- [`06_02`](docs/06_02_Akash_Network_Integration.md) — децентралізована хмара Akash
-- [`06_03`](docs/06_03_Prometheus_Observability.md) — Prometheus + Grafana + Sentry
-- [`06_04`](docs/06_04_Secrets_Checklist.md) — інвентаризація секретів (GitHub Secrets, Kamal, Akash, Terraform)
-- [`06_05`](docs/06_05_Puma_Configuration.md) — Puma 8: IO-bound thread pool, shutdown debug, кластерні хуки
-- [`06_06`](docs/06_06_Disaster_Recovery_and_Backup.md) — Disaster Recovery + backup posture + RTO/RPO + restore-runbooks
-- [`06_07`](docs/06_07_CICD_and_Runbook_Index.md) — CI/CD workflows + єдиний operations runbook-індекс
-- [`06_08`](docs/06_08_Resilience_and_Failover_Policy.md) — Queen failover 4 рівні + Per-Chain Fallback Matrix
-
-### 🌿 Tier II — Програма (07)
-
-**Екосистема та Партнерства / Ecosystem & Partnerships (Модуль 07)**
-- [`07_01`](docs/07_01_Nature_as_a_Service_Contracts.md) — NaaS контракти та страхування
-- [`07_02`](docs/07_02_Unit_Economics_and_BOM.md) — юніт-економіка та ROI через SCC
-- [`07_03`](docs/07_03_Academic_Integration_and_IP.md) — Академічна інтеграція: реєстр 5 ВНЗ + спільні публікації + IP-постава + бренд
-
----
-
-## 📊 Поточний Стан (TRL Matrix)
-
-| Підсистема | TRL | Статус |
-|------------|-----|--------|
-| Rails Backend (API, сервіси, воркери) | 8 | Production Ready |
-| Смарт-контракти (SCC/SFC) | 8 | TRL 9-ready (Slither/Halmos/Medusa clean; mainnet-deploy pending) |
-| Токеноміка та Proof of Growth | 8 | Production Ready |
-| REST API (82 ендпоінти) | 8 | Production Ready |
-| Phlex UI + Tailwind дизайн-система | 8 | Production Ready |
-| Прошивка Солдата (C + mruby + TinyML) | 6 | Host-based тести проходять |
-| Прошивка Королеви (C + SIM7070G) | 6 | Host-based тести проходять |
-| Апаратна капсула (BOM, MPPT) | 6 | Архітектура заморожена |
-| Ti-6Al-4V гіроїдний анкер | 3 | In-silico: PicoGK Code-as-CAD генерація + Lamé press-fit (safety 9.9×; nTop = опційний reference); фізична DMLS-партія = TRL 4 |
-| EBFC Gen 2.0 (dgrFAD-GDH + Laccase/ZIF) | 3 | **Zero-Lab L1-L4 PASSED** (in-silico = TRL 3; physical TRL 4 = in-vitro Ti-coin; see `docs/protocols/ebfc/in_silico/SUMMARY.md`) |
-| Академічна мережа (ЧНУ+ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ) | 2 | 5 університетів-партнерів, 8 живих Q1-статей (портфель UNI.19) |
-| Розгортання GCP + Kamal | 4 | Код існує, деплой не проводився |
+🔴 Живий стан незавершеного — [`docs/00_07` — Action Plan Tracker](docs/00_07_Action_Plan_Tracker.md).
 
 ---
 

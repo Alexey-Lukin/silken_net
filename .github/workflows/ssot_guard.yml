@@ -6,7 +6,7 @@
 # docs/06_07 §2) — the red X informs, it does not block the merge.
 #
 # This prevents context drift between implementation and the SSOT docs.
-# Ref: docs/00_05_GitHub_Projects_and_IaC_Automation.md §2.3
+# Ref: docs/00_05_GitHub_Automation_and_IaC.md §2.3
 
 name: CI · SSOT Guard
 
@@ -141,12 +141,12 @@ jobs:
             );
 
             // ── Check for semantic type:* bypass labels ───────────────
-            // Doc reference: docs/00_05_GitHub_Projects_and_IaC_Automation.md §2.3.
+            // Doc reference: docs/00_05_GitHub_Automation_and_IaC.md §2.3.
             // Force-function: author must classify the change as non-architectural.
             // Generic skip-label was rejected because it would be abused without
             // forcing classification. Semantic labels are visible in PR title/UI,
             // so a mismatch (e.g. `type:bugfix` on a schema change) is caught by reviewers.
-            // [OPS.9] type:refactor & type:bugfix removed from bypass — they
+            // type:refactor & type:bugfix are deliberately NOT auto-bypassed — they
             // change names/paths/logic → context drift. Such PRs must update
             // the relevant docs/ file, or log the open drift in docs/00_07
             // (the One-Home backlog — itself a docs/ change). Only genuinely
@@ -203,7 +203,7 @@ jobs:
               '> (context drift). Update the relevant `docs/` file, or log the open drift in',
               '> `docs/00_07_Action_Plan_Tracker.md` — the One-Home backlog, itself a `docs/` change.',
               '> Generic skip-label was deliberately rejected — the semantic label forces classification.',
-              '> Ref: docs/00_05_GitHub_Projects_and_IaC_Automation.md §2.3 (SSOT Integrity Guard)',
+              '> Ref: docs/00_05_GitHub_Automation_and_IaC.md §2.3 (SSOT Integrity Guard)',
             ].join('\n');
 
             core.setFailed(message);

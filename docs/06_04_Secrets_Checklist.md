@@ -71,7 +71,6 @@
 
 ### 1.2. P1 — Operations (потрібні для конкретних автоматизацій)
 
-- [ ] `PROJECT_PAT` — GitHub Personal Access Token з `project:write` scope (для `trl_sync.yml` GitHub Action — OPS.1). Тип: classic PAT або fine-grained PAT.
 - [ ] `GCP_BILLING_ACCOUNT_ID` — **[OPS.11]** дзеркало tfvars `billing_account_id` для CI terraform apply (`TF_VAR_billing_account_id` в обох deploy-workflow). ⚠️ Заводиться **разом** із tfvars-значенням: локальний apply з бюджетом + CI-apply без секрета = count→0 → CI **знесе бюджет**. ⚠️ ПЕРЕД активацією — обов'язковий грант CI-SA `roles/billing.costsManager` на billing-акаунті (plan-refresh 403-ить і блокує весь deploy-ланцюг — точна команда/механіка → [`06_02 §4.4`](06_02_Akash_Network_Integration)). Порожній = budget просто не керується (no-op).
 
 > **Repo Variables (не Secrets):** `GCP_WORKLOAD_IDENTITY_PROVIDER` / `GCP_SERVICE_ACCOUNT` (keyless WIF-auth deploy/drift — INF.22; з `terraform output` після 1-го apply; їх presence = infra-provisioned deploy-gate, який раніше ніс `GCP_SA_KEY`) · `CANOPY_COAP_HOST` / `PRODUCTION_COAP_HOST` (активують `coap_smoke` — INF.6) · `AKASH_OWNER_ADDRESS` (+опц. `AKASH_MIN_RUNWAY_DAYS`, `AKASH_LCD_BASE`) — активує **Ops · Akash Escrow Watch** [OPS.11] після першого lease. До заповнення обидва workflow видимо skip-clean.
@@ -81,7 +80,7 @@
 - [ ] `KREDIS_REDIS_URL` — **[B1] виведено з усіх deploy-surface.** Kredis auto-derive DB 1 із `REDIS_URL` (`config/redis/shared.yml`: `/0`→`/1`). Не оголошений у Kamal / Akash / Terraform. Заводь GitHub Secret лише щоб указати на **окремий** Redis-інстанс (рідко).
 - [ ] `RACK_ATTACK_REDIS_URL` — Production Redis (DB 2) для rate limiting. Опціонально (auto-derive із `REDIS_URL`).
 - [ ] `SCORECARD_TOKEN` — fine-grained read-only PAT (repo admin: read) для `Sec · Scorecard` (OpenSSF, OPS.10). **Опціонально:** без нього Scorecard працює, але пропускає Branch-Protection/Webhooks-перевірки (`GITHUB_TOKEN` їх не читає). Дім workflow — [`06_07 §1`](06_07_CICD_and_Runbook_Index).
-- _(секрет НЕ потрібен)_ **Build-provenance attestation** (`mirror-ghcr.yml`, OpenSSF `signed_releases`) підписує GHCR-образ **keyless** через GitHub OIDC (`id-token: write`) + вбудований `GITHUB_TOKEN` — Sigstore Fulcio видає ефемерний сертифікат per-build, тож **підписувального ключа провіженити/зберігати не треба**. Політика → [`00_05 §2.7`](00_05_GitHub_Projects_and_IaC_Automation); verify → `SECURITY.md`.
+- _(секрет НЕ потрібен)_ **Build-provenance attestation** (`mirror-ghcr.yml`, OpenSSF `signed_releases`) підписує GHCR-образ **keyless** через GitHub OIDC (`id-token: write`) + вбудований `GITHUB_TOKEN` — Sigstore Fulcio видає ефемерний сертифікат per-build, тож **підписувального ключа провіженити/зберігати не треба**. Політика → [`00_05 §2.7`](00_05_GitHub_Automation_and_IaC); verify → `SECURITY.md`.
 
 ### 1.4. Web3 / runtime secrets — GitHub Secrets для CI Kamal deploy [B1]
 

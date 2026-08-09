@@ -45,7 +45,6 @@ RSpec.describe SpdxHeaders do
         "terraform/main.tf" => agpl,
         "subgraph/src/mapping.ts" => agpl,
         "deploy/grafana/import.rb" => agpl,
-        "bin/bootstrap_github.sh" => agpl,
         # 🔴 Extensionless and named-by-basename files. The first of these is the one that
         # matters: it was written as `%w[.rb .rake ""]`, where `""` is a two-character
         # string and not the empty one, so the extensionless rule matched NOTHING and the

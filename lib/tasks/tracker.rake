@@ -6,7 +6,7 @@
 #     first-cell, in EVERY section incl. 📌 Backlog / 🗄️ Архів (caught the HW.20
 #     BME280↔Buffer-Cap collision; the registry table-row span closed the
 #     DOC-T.12 #### ↔ table-row blind spot; widened to global to catch the
-#     `OPS.5` §07-heading ↔ 📌-backlog-row collision)
+#     a §07-heading ↔ 📌-backlog-row ID collision)
 #   - #3 conformance: every open #### item has a priority + a → canon-ref meta-line
 #   - §-section resolution: a `NN_NN §X` canon-ref's §X must be a real heading in the
 #     target (caught 12 stale §BLOCKER-N / wrong-doc-id refs orphaned by blockers→00_07)
@@ -23,7 +23,7 @@ namespace :tracker do
     items    = Tracker::Dashboard.parse(md)
     # dup tally spans the WHOLE file (all #### headings + all table-row first-cells,
     # incl. 📌 Backlog / 🗄️ Архів) → a backlog/archive row reusing an active ID is
-    # caught (the OPS.5 collision). Same `all_item_ids` span as the inbound-ref guard.
+    # caught (a heading-vs-backlog-row collision). Same `all_item_ids` span as the inbound-ref guard.
     dups     = Tracker::Dashboard.duplicate_ids(md)
     issues   = Tracker::Dashboard.issues(items)
     dangling = Tracker::Dashboard.dangling_refs(items)

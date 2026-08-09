@@ -5,8 +5,8 @@ name: Docs · Wiki Sync
 # Runs the pure-Ruby scripts/wiki_sync.rb — no Rails boot, no bundle (stdlib + git only).
 #
 # Disable WITHOUT deleting this file: set repo variable DISABLE_WIKI_AUTOSYNC=true
-# (Settings → Secrets and variables → Actions → Variables). Useful once several people
-# work in Shape-Up cycles and a per-cycle / manual publish is preferred over on-merge.
+# (Settings → Secrets and variables → Actions → Variables). Useful during a large
+# in-flight docs restructure, when one publish at the end beats one per push.
 # Manual run any time: Actions → "Docs · Wiki Sync" → Run workflow (workflow_dispatch).
 
 on:

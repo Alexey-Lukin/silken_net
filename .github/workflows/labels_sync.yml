@@ -1,10 +1,10 @@
 # Labels Sync (IaC)
 #
 # Synchronises the repository labels with the SSOT defined in
-# `.github/labels.yml`. delete-other-labels is FALSE (OPS.9) so ephemeral bot
+# `.github/labels.yml`. delete-other-labels is FALSE so ephemeral bot
 # labels (Dependabot/Snyk/Renovate) and GitHub defaults are NOT wiped on sync.
 #
-# Doc reference: docs/00_05_GitHub_Projects_and_IaC_Automation.md §2.5.
+# Doc reference: docs/00_05_GitHub_Automation_and_IaC.md §2.5.
 
 name: Ops · Labels Sync
 

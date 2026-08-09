@@ -12,7 +12,7 @@
 #                     (Поточний TRL / Conceptual (TRL …)) — catches the 06_04-class
 #                     "Статус without a readiness level" gap. All 50 docs pass today.
 #   HARD  (gates CI): the 00_03 §1 per-module TRL matrix has single-value cells
-#                     (1-9), never a range — 00_05 §1.1 Current TRL is single-select.
+#                     (1-9), never a range — 00_02 §1 fixes the NASA 1-9 scale.
 #   HARD  (gates CI): no canon doc hosts a blocker section (🛑/✅ + Блокери/Архів) —
 #                     ALL blockers live in 00_07 (sweep complete 2026-05-30); open ones
 #                     are reframed in-doc to non-blocker headings + a → 00_07 pointer.

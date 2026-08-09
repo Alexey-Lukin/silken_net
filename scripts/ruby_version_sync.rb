@@ -14,7 +14,7 @@
 # no push, part of the required `ci-ok` aggregate); THIS gate makes the
 # version itself One-Home: `.ruby-version` = SSOT, everything else mirrors.
 #
-# Each mirror carries a curated regex set (the field_canon_sync tripwire
+# Each mirror carries a curated regex set (the guard_registry_sync curated-map tripwire
 # style): a pattern that stops matching = dead mirror entry = RED, so the
 # list cannot rot silently; a matched value ≠ SSOT = drift = RED.
 #

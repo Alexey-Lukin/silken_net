@@ -1714,6 +1714,6 @@ Codex (Lore — read-only):
 
 > Раніше це був ручний «drift register» з датованим логом виправлень — він мовчки протух (заявляв 35 моделей при 36 файлах), тож логіку винесено у скрипт-гейт; історія виправлень живе в git.
 
-**Решта (ручний cool-down audit, [`00_04 §5.3`](00_04_Shape_Up_Operations_and_RnD_Clusters), поки не автоматизовано):** кожна `include AASM`-модель має state-перелік у своєму §; поліморфні `_type/_id` пари §10 «Карта Зв'язків» ⟷ реальні колонки `structure.sql`.
+**Решта (ручний семантичний аудит, [`00_06 §3а`](00_06_SSOT_Documentation_Standard), поки не автоматизовано):** кожна `include AASM`-модель має state-перелік у своєму §; поліморфні `_type/_id` пари §10 «Карта Зв'язків» ⟷ реальні колонки `structure.sql`.
 
 > **Поза скоупом (за дизайном, не drift):** Active Storage (`active_storage_*`), `schema_migrations` / `ar_internal_metadata` — framework-інфра; документується inline-згадками у моделях (`Organization.logo`, `MaintenanceRecord.photos`, `Codex::Node.cover_image`), не як окремі сутності.

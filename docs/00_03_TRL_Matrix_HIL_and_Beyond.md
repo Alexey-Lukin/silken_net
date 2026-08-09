@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL (System):** TRL 3 — anchor/EBFC на TRL 3 (Zero-Lab **in-silico** L1-L4 завершено 2026-05-25 = аналітичний PoC; фізичний TRL 4 = breadboard Ti-coin in-vitro, Stage 2 — ще не закрито). Програмні домени TRL 6-9 (декаплінг через HIL, §3).
-- **Per-domain TRL (декаплінг):** суть зняття TRL-Lock — програмні домени (Rails, Web3, Firmware, Security) рухаються до TRL 8–9 незалежно від фізичного відставання металу/хімії (anchor/EBFC **TRL 3** — Zero-Lab L1-L4 in-silico завершено 2026-05-25; фізичний TRL 4 = in-vitro Ti-coin, Stages 1-3 ще не закрито). За строгим NASA / ISO 16290 in-silico = TRL 3 (analytical PoC), TRL 4 = breadboard/component validation **у залізі** — тому «Zero-Lab gate PASSED» = «TRL 3 валідовано + GO на TRL 4», не «на TRL 4». **Канонічні per-module числа — `§1 Per-module TRL` нижче (єдиний дім; тут свідомо НЕ дублюються, щоб уникнути drift).** Оновлюється при кожному cool-down.
+- **Per-domain TRL (декаплінг):** суть зняття TRL-Lock — програмні домени (Rails, Web3, Firmware, Security) рухаються до TRL 8–9 незалежно від фізичного відставання металу/хімії (anchor/EBFC **TRL 3** — Zero-Lab L1-L4 in-silico завершено 2026-05-25; фізичний TRL 4 = in-vitro Ti-coin, Stages 1-3 ще не закрито). За строгим NASA / ISO 16290 in-silico = TRL 3 (analytical PoC), TRL 4 = breadboard/component validation **у залізі** — тому «Zero-Lab gate PASSED» = «TRL 3 валідовано + GO на TRL 4», не «на TRL 4». **Канонічні per-module числа — `§1 Per-module TRL` нижче (єдиний дім; тут свідомо НЕ дублюються, щоб уникнути drift).** Оновлюється на кожному TRL Gate Event ([`00_02 §5.1`](00_02_AI_Native_Engineering_and_TRL)) — тобто тоді, коли рівень справді змінюється.
 
 ---
 
@@ -19,8 +19,8 @@
 |--------|------|
 | [`00_01` — Vision Mission and Roadmap](00_01_Vision_Mission_and_Roadmap) | Бізнес-візія та slashing |
 | [`00_02` — AI Native Engineering and TRL](00_02_AI_Native_Engineering_and_TRL) | AI-Native TRL philosophy (метрика прогресу) |
-| [`00_04` — Shape Up Operations and RnD Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §Async-Review TRL Gates |
-| [`00_05` — GitHub Projects and IaC Automation](00_05_GitHub_Projects_and_IaC_Automation) | TRL Auto-Advancement (HIL → Projects V2 cards) |
+| [`00_02 §5.1`](00_02_AI_Native_Engineering_and_TRL) | TRL Gate Events (4→5 · 6→7 · 8→9) — де підняття рівня НЕ автоматичне |
+| [`00_05` — GitHub Automation and IaC](00_05_GitHub_Automation_and_IaC) | CI-гейти, що несуть рев'ю на TRL 1-4 |
 | [`04_06` — Testing Guide and Coverage](04_06_Testing_Guide_and_Coverage) | §B Gap Analysis — відомі обмеження тестів + відкриті ризики |
 | [`07_03` — Academic Institutions Registry](07_03_Academic_Integration_and_IP) | Фізичні валідаційні протоколи ВНЗ (TRL 1-4) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** |
@@ -49,7 +49,9 @@
 
 ### Per-module TRL (канонічне джерело)
 
-> SSOT для per-domain TRL. **System TRL = найнижчий модуль критичного шляху (01–07 build-path)** — наразі **3** (модуль 01 anchor/EBFC на TRL 3: Zero-Lab in-silico завершено, фізичний Ti-coin in-vitro pending; модуль 02 на TRL 4 — реальний breadboard CJMCU-2557 + EDLC). **Foundation (00)** = візія/метод (зрілі, TRL 9 — поза критичним шляхом, не гейтить). Модулі 08 (R&D-партнерства), 09 (PM-процес), 10 (Security-hardening) — це org/process/безпекова зрілість, яка трекається окремо і **не гейтить** System TRL (інакше System=2 за рахунок ранніх ВНЗ-партнерств, що хибно). Оновлюється при кожному cool-down. Канон тут.
+> SSOT для per-domain TRL. **System TRL = найнижчий модуль критичного шляху (01–07 build-path)** — наразі **3** (модуль 01 anchor/EBFC на TRL 3: Zero-Lab in-silico завершено, фізичний Ti-coin in-vitro pending; модуль 02 на TRL 4 — реальний breadboard CJMCU-2557 + EDLC). **Foundation (00)** = візія/метод (зрілі, TRL 9 — поза критичним шляхом, не гейтить). Оновлюється на кожному TRL Gate Event ([`00_02 §5.1`](00_02_AI_Native_Engineering_and_TRL)) — тобто тоді, коли рівень справді змінюється. Канон тут.
+>
+> 🔴 **Рядок = модуль документації (`00`–`07`), і нічого іншого.** NASA/ISO 16290 міряє готовність **технології** — тож організаційна, процесна й безпекова зрілість у цю таблицю не сідають: «TRL партнерств» або «TRL процесу» це категорійна помилка, а не низька оцінка. Їхній дім — [`00_07`](00_07_Action_Plan_Tracker): академічні партнерства — `UNI.*` (§07b, канон-ростер [`07_03 §1`](07_03_Academic_Integration_and_IP)), безпекова постава — `SEC.*` + [`SECURITY_ASSURANCE_CASE.md`](SECURITY_ASSURANCE_CASE), процес — сам трекер плюс вісім required-гейтів ([`06_07 §2`](06_07_CICD_and_Runbook_Index)). Не додавай сюди рядок, під яким немає `docs/NN_*`.
 
 | Модуль | TRL | Цільовий | Головний блокер |
 |--------|-----|----------|-----------------|
@@ -61,9 +63,6 @@
 | 05 Web3 Pipeline | 8 | 9 | SFC address |
 | 06 DevOps | 5 | 9 | перший реальний Akash deploy не проведено (06_02; GHCR mirror + Upstash TLS вже ✅); GCP/Kamal = fallback (06_01=4, не на критичному шляху) |
 | 07 Business | 5 | 8 | CO₂ methodology, MSA, ToS; заявки від фіз-особи; operational-особа існує (BIZ.20-присуд 2026-07-24) — гейт знято |
-| 08 University R&D | 2 | 6 | 5-сторонній партнерський фреймворк (ChNU + ChDTU + ChIPB + ChMA + СЄУ) — UNI.4-14 |
-| 09 Project Management | 7 | 9 | OPS.3 R&D portfolio, OPS.4 semester sync |
-| 10 Security | 7 | 9 | SEC.9 master key, ✅ SEC.11 Lorenz seed provenance, Multisig, RDP, Factory (Rails web layer ✅ S6.18) |
 
 > **Рядок модуля = агрегат (мінімум) member-TRL його під-доків** — гейтиться найнижчим під-компонентом критичного шляху, не «середнім». Окремий під-док може декларувати **вищий** member-TRL у власному `## ✅ Статус` без суперечності з рядком: це джерело (не дубль), а рядок просто бере мінімум. Приклад — **Module 02 = 4**: капсула [`02_01`](02_01_Hardware_Architecture_and_BOM) (архітектура + BOM заморожені) і шлюз Королеви [`02_05`](02_05_Queen_Hardware_and_Starlink) декларують вищі member-TRL у своїх Статусах, але агрегат гейтиться фізичними під-компонентами на TRL 4 — Pogo-pin [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface), резисторна мережа BQ25570 + EDLC-буфер [`02_03`](02_03_BQ25570_MPPT_Nano_Power) (anchor/EBFC-gated). Тож «HW=4» у матриці й «капсула вище» у 02_01 — **не drift**, а агрегат vs member.
 
@@ -131,6 +130,3 @@
 
 **Принципи:** (1) самописна модель периферії **не може** атестувати кремній (модель AES писалась би проти того ж OpenSSL — циркулярно; тому Renode-порт STM32WL відхилено — perif-моделі WL відсутні upstream, а питання класу C вони не закривають); (2) клас C **не означає «чекати»** — bench-день кодифікується наперед (runbook + скрипти + атестаційна граматика KAT-звітів), щоб залізо відповідало на вичерпний список питань за години, а артефакти лягали в репо; (3) той самий вхідний скрипт локально і в CI (патерн `cppcheck.sh`/`qemu_parity.sh`).
 
----
-
-> **🌌 Beyond TRL 9 — винесено у власний дім.** Далекогоризонтна R&D-агенда — 4 Planetary-Intelligence прогалини (колективний гомеостаз, self-evolving edge AI, cross-biome, auto-immune sentinel security) + фрактальна мережева топологія (L1/L2/L3, H-LDSE, Edge Data Fusion), горизонт 2026–2040+ — тепер канонічно живе в [`00_08`](00_08_Beyond_TRL9_Planetary_Roadmap). Тут лишаються **жива TRL-матриця** (§1) + **метод** (TRL-Layered-Independence §2, HIL-симулятори §3).

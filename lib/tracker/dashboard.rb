@@ -21,12 +21,12 @@ module Tracker
     # Non-actionable / index sections explicitly excluded.
     SKIP_SECTION = /^## (?:🎯|🚦|📌|🗄️)/
 
-    # WHO axis (Projects-V2 "Assigned Agent") — who does the OPEN work.
+    # WHO axis — who does the OPEN work.
     # ⚖️ = decision-residual (голова, ⊂ 👤 [DOC-T.33]): a verdict that does NOT
     # reduce to a known action — allowed on checkboxes (phase 1) AND in the
     # meta-line WHO (phase 2, scan-on-section).
     EXECUTORS = { "🤖" => :machine, "👤" => :owner, "⚖️" => :decider }.freeze
-    # STAGE axis (Projects-V2 "Shape Up Stage") — lifecycle, SEPARATE from WHO [DOC-T.18].
+    # STAGE axis — lifecycle, SEPARATE from WHO [DOC-T.18].
     # 🟡 (in-progress) and 🔗 (blocked) were wrongly mapped as :blocked EXECUTORS —
     # conflating who-with-status (a 🟡 in-progress item is NOT blocked; it routed to
     # the dashboard's "Заблоковано" bucket). Now STAGE is its own axis; "blocked" in

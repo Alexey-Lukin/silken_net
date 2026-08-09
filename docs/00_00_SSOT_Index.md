@@ -15,7 +15,7 @@
 
 # 🧭 Модуль 00 — Фундамент (Foundation: Візія + Метод)
 
-_Read-first мета-лінза проєкту: **НАВІЩО** (візія, місія, дорожня карта) і **ЯК** (методологія AI-Native, NASA TRL, Shape Up, governance процесу, стандарт SSOT-доків) ми будуємо — плюс **конституція всієї системи** (карта 8 рівнів нижче). Деталі кожного рівня розкриваються у профільних модулях Tier I (01–06)._
+_Read-first мета-лінза проєкту: **НАВІЩО** (візія, місія, дорожня карта) і **ЯК** (методологія AI-Native, NASA TRL, governance процесу, стандарт SSOT-доків) ми будуємо — плюс **конституція всієї системи** (карта 8 рівнів нижче). Деталі кожного рівня розкриваються у профільних модулях Tier I (01–06)._
 
 ## 🗺️ Системна Карта: 8 Рівнів Кіберфізики (The Constitution)
 
@@ -76,9 +76,8 @@ Soldier (Tree)         Soldier (Tree)         Soldier (Tree)
 
 - [`00_01` — Vision Mission and Roadmap](00_01_Vision_Mission_and_Roadmap) (Місія, проблема VCM, науковий підхід, NaaS, дорожня карта, Proof-of-Growth; філософія Slashing → 05_05)
 - [`00_02` — AI Native Engineering and TRL](00_02_AI_Native_Engineering_and_TRL) (Філософія: NASA TRL, Intent-First, Wiki-First, AI Pipeline + Validation Gate)
-- [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) (Канон per-module TRL-матриці + per-domain TRL + HIL-симулятори; Beyond-TRL-9 агенда винесена → 00_08)
-- [`00_04` — Shape Up Operations and RnD Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) (Операційний template: 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review)
-- [`00_05` — GitHub Projects and IaC Automation](00_05_GitHub_Projects_and_IaC_Automation) (Projects V2 fields + Labels-as-Code + GitHub Actions workflows)
+- [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) (Канон per-module TRL-матриці + per-domain TRL + HIL-симулятори; Beyond-TRL-9 агенда → 00_08)
+- [`00_05` — GitHub Automation and IaC](00_05_GitHub_Automation_and_IaC) (CI/IaC-політика: SSOT-Guard · Solidity audit · Labels-as-Code · supply-chain hardening)
 - [`00_06` — SSOT Documentation Standard](00_06_SSOT_Documentation_Standard) (Стандарт канон-доків: skeleton + home-registry + drift-tooling + restructure-метод)
 - [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) (🔴 Живий документ — аудит блокерів, план дій, Sprint tracking)
 - [`00_08` — Beyond TRL9 Planetary Roadmap](00_08_Beyond_TRL9_Planetary_Roadmap) (Beyond TRL 9: 4 Planetary-Intelligence прогалини + фрактальна мережева топологія — far-horizon R&D 2026–2040+)

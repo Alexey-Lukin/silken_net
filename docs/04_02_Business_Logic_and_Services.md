@@ -1605,7 +1605,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 > **🔗 Chain Integrity Invariant (Concurrency Guard).** `chain_hash` будується як SHA-256(previous_chain_hash | chain_payload) — це створює сувору залежність від порядку. Без серіалізації паралельні Sidekiq-потоки можуть прочитати один і той самий `AuditLog.last` для організації і утворити форки ланцюга. **Mitigation у коді** (`app/models/audit_log.rb`, [auditable]):
 > 1. Single-row insert (`AuditLog.create!`): `before_create :compute_chain_hash` бере `pg_advisory_xact_lock(827549841, organization_id)` (transaction-scoped). Lock автоматично знімається при COMMIT/ROLLBACK — не потрібно `lock_release`. Паралельні організації не блокують одна одну (lock keyed на `organization_id`).
 > 2. Bulk insert (`AuditLog.bulk_record!(entries)`): групує entries за `organization_id`, бере той самий advisory lock per org, обчислює послідовно chain_hash для кожного row перед `insert_all`. Один SQL батч, одна транзакція, нульовий fork ризик.
-> 3. Інтеграційна перевірка `AuditLog.verify_chain_integrity(org_id)` доступна для cool-down аудиту й Filecoin verification (`{ valid: false, broken_at: id }` при будь-якому дефекті).
+> 3. Інтеграційна перевірка `AuditLog.verify_chain_integrity(org_id)` доступна для семантичного аудиту й Filecoin verification (`{ valid: false, broken_at: id }` при будь-якому дефекті).
 >
 > **Чому advisory lock, а не `SELECT ... FOR UPDATE` / `Kredis.lock`:** advisory locks PG безкоштовні (in-memory у PG), не вимагають реального рядка-предка (на стадії genesis рядка немає), не залежать від Redis (Kredis fallback на Solid Cache додає latency). Transaction-scoped семантика гарантує авто-релізу при ROLLBACK через Sidekiq retry.
 
@@ -1842,7 +1842,7 @@ Privileged action (money-tx / contract / actuator / role / param / rotate / verd
 
 > **Принцип:** Цей документ — service-шар SSOT; `app/services/` / `app/workers/` — authoritative reality. Метод drift-resolution (код-ahead → онови док; doc-ahead → задача в [`00_07`](00_07_Action_Plan_Tracker)) + дзеркало data-шару (04_01 §12) — [`00_06 §3`](00_06_SSOT_Documentation_Standard). Колишній датований лог виправлень → git.
 
-**Механічна частина — ✅ enforced by `scripts/model_doc_sync.rb`** (CI `docs.yml`): кожен `app/services/**` / `app/workers/**` клас згаданий у цьому реєстрі — зловив би сервіс, повністю відсутній у доку (як `FactoryFlashing::*`-пропуск, що цей гейт і закрив). Семантику (сигнатури/ENV/guard-clauses/queue-розміщення) скрипт НЕ перевіряє — ручний cool-down аудит ([`00_04 §5.3`](00_04_Shape_Up_Operations_and_RnD_Clusters)).
+**Механічна частина — ✅ enforced by `scripts/model_doc_sync.rb`** (CI `docs.yml`): кожен `app/services/**` / `app/workers/**` клас згаданий у цьому реєстрі — зловив би сервіс, повністю відсутній у доку (як `FactoryFlashing::*`-пропуск, що цей гейт і закрив). Семантику (сигнатури/ENV/guard-clauses/queue-розміщення) скрипт НЕ перевіряє — ручний семантичний аудит ([`00_06 §3а`](00_06_SSOT_Documentation_Standard)).
 
 **Відкриті drift-айтеми живуть у [`00_07`](00_07_Action_Plan_Tracker)** (One-Home для backlog — не датований лог у каноні): slashing — positive-A-guard + convex-формула + blackout ✅ (картки §6); відкрите → A-сет-розширення + `penalty_factor`-uplift-активація ([`00_07` — SLASH-1](00_07_Action_Plan_Tracker)).
 

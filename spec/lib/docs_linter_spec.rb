@@ -450,7 +450,7 @@ RSpec.describe DocsLinter do
 
   describe ".ai_vendor_name_drift" do
     it "flags an AI-vendor name re-stated outside the 00_02 roster owner" do
-      hits = described_class.ai_vendor_name_drift("00_04_Shape_Up", "Handoff: Gemini (Shaping) → Cursor (Implementation)\n")
+      hits = described_class.ai_vendor_name_drift("00_03_TRL_Matrix_HIL_and_Beyond", "Handoff: Gemini (Shaping) → Cursor (Implementation)\n")
       expect(hits.size).to eq(1) # one violation per line (first vendor reported)
       expect(hits.first).to include("AI-vendor name `Gemini`")
     end
@@ -651,7 +651,7 @@ RSpec.describe DocsLinter do
 
   describe ".link_label_target_mismatch" do
     it "flags a label leading with a different doc-ID than the href resolves to" do
-      hits = described_class.link_label_target_mismatch("див. [`00_06 §2/§4`](00_05_GitHub_Projects_and_IaC_Automation)")
+      hits = described_class.link_label_target_mismatch("див. [`00_06 §2/§4`](00_05_GitHub_Automation_and_IaC)")
       expect(hits.size).to eq(1)
       expect(hits.first).to include("00_06").and include("00_05")
     end
@@ -901,7 +901,7 @@ RSpec.describe DocsLinter do
   end
 
   describe ".external_doc_path_drift" do
-    let(:existing) { %w[00_05_GitHub_Projects_and_IaC_Automation 08_03_External_Stakeholders_Registry] }
+    let(:existing) { %w[00_05_GitHub_Automation_and_IaC 08_03_External_Stakeholders_Registry] }
 
     it "flags a docs/NN_NN path whose basename is not a current doc" do
       txt = "# Ref: docs/00_07_GitHub_Projects_and_IaC_Automation.md §2.6\n"
@@ -910,7 +910,7 @@ RSpec.describe DocsLinter do
     end
 
     it "passes a path that resolves to a current doc (with or without .md)" do
-      txt = "see docs/00_05_GitHub_Projects_and_IaC_Automation.md and docs/08_03_External_Stakeholders_Registry\n"
+      txt = "see docs/00_05_GitHub_Automation_and_IaC.md and docs/08_03_External_Stakeholders_Registry\n"
       expect(described_class.external_doc_path_drift("README.md", txt, existing)).to be_empty
     end
 

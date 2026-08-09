@@ -73,11 +73,21 @@ SELF=${BASH_SOURCE[0]:-$0}
 # re-derived from scratch every session. Displacing a row to fund it was rejected:
 # the remaining candidates are commit-time reflexes, and demoting those costs a
 # trigger at the moment of action.
+# Bumped 2026-08-09 (23836 -> 24033, +197) for `project_uwei_process_layer_cut`.
+# It DID earn its own row, which the previous bump's candidate did not: the file
+# carries a ratified founder VERDICT (the whole team-shaped process layer —
+# Projects V2, Shape Up, Betting Table, academic semesters, R&D clusters as an
+# org chart — removed under У-ВЕЙ). A verdict with no memory home is not merely
+# re-derived, it is re-LITIGATED: the next session proposes rebuilding what was
+# deliberately cut, and the founder pays to issue the same ruling twice. Funded
+# rather than free: ~470 B was first reclaimed by compressing two descriptions
+# (memory_sync_program, arch57) and the local-verify row, so the net cost of the
+# new home is this +197, not its full width.
 # Every threshold below is `${ENV:-default}` for ONE reason: --selftest builds a
 # five-file fixture corpus, and a constant calibrated against the 1.2 MB live one
 # fires on every fixture. The default stays in the file, so a real bump is still
 # a git-visible decision — the override exists for the test harness, not for use.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-23836}
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-24033}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
@@ -203,7 +213,7 @@ rb_dark() {
 # false-positive measurement first, since any rephrase deletes a unique line.
 # (Write is genuinely too late — the file is already replaced — so that half
 # would need PreToolUse, a different question.)
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-126}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-127}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different

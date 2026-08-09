@@ -55,7 +55,7 @@ def each_function(src)
 
       name = m[1]
       start = idx + 1
-      body = [line]
+      body = [ line ]
       depth = line.count("{") - line.count("}")
       # Оголошення без відкритої дужки (interface/abstract) — не тіло.
       name = nil if line.include?("{") && depth <= 0
