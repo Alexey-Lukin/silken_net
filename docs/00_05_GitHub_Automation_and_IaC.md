@@ -118,8 +118,10 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: EndBug/label-sync@v2
+      # ⚠️ Скелет ілюстративний: у ЖИВОМУ файлі кожен зовнішній `uses:` запінено на
+      # повний 40-символьний SHA з коментарем `# vN` — рухомий тег заборонено (§2.7).
+      - uses: actions/checkout@<40-char-sha>   # v7
+      - uses: EndBug/label-sync@<40-char-sha>  # v2
         with:
           config-file: .github/labels.yml
           delete-other-labels: false  # НЕ видаляти лейбли ботів (Dependabot/Snyk) і GitHub-дефолти; прибирання — свідомо, див. §2.5

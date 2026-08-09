@@ -1082,6 +1082,7 @@ active/draft ──cancel──► cancelled
 | `total_funding` | decimal | Загальний обсяг фінансування (> 0) |
 | `start_date` / `end_date` | timestamp | Строки контракту |
 | `emitted_tokens` | numeric | Кількість емітованих SCC (default: 0) |
+| `cancellation_terms` | jsonb | Ключ-сет умов дострокового виходу: `early_exit_fee_percent` · `burn_accrued_points` · `min_days_before_exit`. Читають `calculate_early_exit_fee` / `calculate_prorated_refund` / `ContractTerminationService`; `burn_accrued_points = true` — єдиний шлях, яким `slash()` викликається як **погоджена форфейтура** (`contractual: true`, поза positive-A gate → [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)) |
 | `cancelled_at` | timestamp | Час відміни контракту |
 | `hadron_asset_id` | string | ID активу на Polygon Hadron |
 

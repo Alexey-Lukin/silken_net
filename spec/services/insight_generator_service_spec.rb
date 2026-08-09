@@ -657,7 +657,7 @@ RSpec.describe InsightGeneratorService, type: :service do
       )
     end
 
-    it "takes max(sap, acoustic), not their sum (00_01 SLASH-SAFETY)" do
+    it "takes max(sap, acoustic), not their sum (05_05 §6 SLASH-SAFETY)" do
       # status 1 (0.6) + low sap (0.2) AND high cavitation (0.2) → +max(0.2,0.2)=0.2, NOT 0.4
       expect(service.send(:calculate_stress_index_heuristic, 1, 25.0, 80, 0.5, -0.5)).to eq(0.8)
     end

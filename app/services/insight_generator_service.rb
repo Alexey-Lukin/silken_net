@@ -337,7 +337,7 @@ class InsightGeneratorService < ApplicationService
     anomaly_code = TelemetryLog.bio_statuses.fetch("anomaly")
     base_stress = (max_status.between?(stress_code, anomaly_code) ? 0.6 : 0.0) # bounded < slash 0.83
     # sap_flow↓ and cavitation↑ are CORRELATED drought signals (one root cause) →
-    # take the STRONGER, never SUM (00_01 SLASH-SAFETY: corroboration, not double-penalty).
+    # take the STRONGER, never SUM (05_05 §6 SLASH-SAFETY: corroboration, not double-penalty).
     # Both inert until ENV-calibrated.
     base_stress += [ sap_stress_contribution(sap_signed_deviation),
                     acoustic_stress_contribution(max_acoustic) ].max

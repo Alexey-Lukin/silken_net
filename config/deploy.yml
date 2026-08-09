@@ -94,7 +94,7 @@ registry:
 # Inject ENV variables into containers (secrets come from .kamal/secrets-common).
 # Drift guard: each entry below MUST also be declared in .kamal/secrets-common — otherwise
 # Kamal injects nothing and the container crashes at boot. See docs/06_01 §Kamal Detailed
-# and docs/00_08 cross-doc audit sweep entry #12.
+# and the secrets inventory docs/06_04.
 env:
   secret:
     # --- Application core ---

@@ -121,7 +121,7 @@
 | `ruby scripts/docs_check.rb tracker` | 00_07: dup-IDs, #3-conformance, canon-ref + §-section resolution, section-home, inbound-refs, prose-ID-refs, CHEM.N. |
 | `ruby scripts/doc_structure_map.rb` | Структурна мапа 00_01→07_03 (🎯/TRL/doc-links/секції) — навігація без читання всього. |
 | `ruby scripts/content_dup_audit.rb --near` | Семантичний near-dup (Jaccard) — там, де grep по токену сліпий. |
-| `ruby scripts/crossref_audit.rb` / `normalize_crossrefs.rb` / `linkify_bare_refs.rb` / `fix_stale_anchors.rb` | Таксономія + bulk-нормалізація крос-рефів / лінкіфікація bare-рефів / фікс stale-anchor. |
+| `ruby scripts/crossref_audit.rb` / `normalize_crossrefs.rb` / `linkify_bare_refs.rb` | Таксономія + bulk-нормалізація крос-рефів / лінкіфікація bare-рефів. _(Разовий `fix_stale_anchors.rb` знято 2026-08-09: його мапа одноразових фіксів давно застосована, клас тепер тримає HARD-гейт `#anchor resolution`, а мертвий запис усередині робив запуск неможливим — надгробок, не інструмент.)_ |
 | `bin/rails docs:toc` | Регенерувати auto-ToC після зміни h2-заголовків. |
 
 > Якщо знайдено **новий клас drift** — за рецептом `00_06 §3` додай pure-функцію-лінтер у `lib/docs_linter.rb` (+ spec, + wire у `docs.rake`, + рядок у `00_06 §3` guard-table). Defenses ростуть; skill — ні.

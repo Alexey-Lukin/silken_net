@@ -143,5 +143,5 @@ Slashing у SilkenNet — це **покарання за халатність/з
 
 - Кожен SCC токен підкріплений сенсорно-верифікованим фотосинтезом та поглинанням вуглецю.
 - On-device обчислення (mruby) запобігає підробці на рівні заліза.
-- Server-side верифікація (Ruby Float64, IEEE 754 — **категорично** ідентично firmware після [FW.7], raw Z у межах numeric-tolerance ~1e-14) забезпечує redundant integrity checking.
+- Server-side верифікація (Ruby Float64, IEEE 754 — **категорично** ідентично firmware після [FW.7]; raw Z доведено **бітово рівним** на sweep N=10 000, тож історична «~1e-14»-толерантність superseded — дім [`03_04`](03_04_mruby_Lorenz_Attractor)) забезпечує redundant integrity checking.
 - Slashing protocol (§6) гарантує економічні наслідки за деградацію через халатність, **не караючи** клієнтів за форс-мажор.

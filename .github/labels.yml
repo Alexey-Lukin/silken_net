@@ -62,7 +62,7 @@
 # Doc reference: docs/00_05_GitHub_Automation_and_IaC.md §2.3.
 # A PR with ANY of these labels skips the SSOT Guard documentation check —
 # the label is a force-function: the author must classify the change as
-# genuinely non-architectural. Generic skip-label was rejected (00_07 §2.3
+# genuinely non-architectural. Generic skip-label was rejected (00_05 §2.3
 # rationale) because it would be abused without classification.
 # ─────────────────────────────────────────────────────────────────────────
 - name: "type:bugfix"

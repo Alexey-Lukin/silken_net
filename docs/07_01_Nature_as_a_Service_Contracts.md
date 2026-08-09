@@ -64,7 +64,7 @@ NaaS — це модель підписки, де клієнти (Організ
 - `start_date < end_date`.
 
 **Страхова премія (Hybrid Protocol Gaia):**
-При активації контракту 5% від `total_funding` направляється до DAO Treasury Parametric Insurance Pool (константа `NaasContract::INSURANCE_PREMIUM_RATE = BigDecimal("0.05")`). Залишок 95% — `forester_share_amount` — надходить форестеру.
+При активації контракту 5% від `total_funding` направляється до DAO Treasury Parametric Insurance Pool (константа `NaasContract::INSURANCE_PREMIUM_RATE = BigDecimal("0.05")`). Залишок 95% — `forester_share_amount` — **обчислюється** як частка форестера, але диспенс-шляху ще немає (метод не має жодного call-site поза власною спекою) → [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy).
 
 **Поточний стан:** Бізнес-логіка реалізована в коді. Юридичного шаблону угоди (Term Sheet, Master Service Agreement) — немає → відкрите [`00_07`](00_07_Action_Plan_Tracker) BIZ.2 (B2B MSA).
 
@@ -138,7 +138,7 @@ NaaS — це модель підписки, де клієнти (Організ
 | **Денне накопичення** | **Calibration-pending** (`delta_t` recharge-каденція + GP-магнітуда = placeholder, чекають bench-кривої, [E.63](00_07_Action_Plan_Tracker)). Self-consistent realistic (Variant C, `delta_t`≈1.77 год [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)): ~13.6 пакети/добу × ~16 stored GP = **~217 growth_points/добу → ~8 SCC/дерево/рік**. Магнітуда = f(EBFC recharge): швидший `delta_t` → вище (фіз. стеля Δt=600s ≈ 326 SCC/рік; 1 TX/год = energy-negative без мітигацій). wire 5–31 × [FW.29] ×2 | [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`07_02 §7.1`](07_02_Unit_Economics_and_BOM), [`02_03 §9`](02_03_BQ25570_MPPT_Nano_Power) |
 | **Поріг емісії** | `Wallet.balance >= 10,000` | `TokenomicsEvaluatorWorker` |
 | **Страхова премія** | 5% від `total_funding` → DAO Treasury Pool | `NaasContract::INSURANCE_PREMIUM_RATE = BigDecimal("0.05")` |
-| **Частка форестера** | 95% від `total_funding` | `NaasContract#forester_share_amount` |
+| **Частка форестера** | 95% від `total_funding` — обчислюється, не диспенситься ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)) | `NaasContract#forester_share_amount` |
 | **Celo ReFi нагорода** | 5 cUSD / здоровий кластер / добу | `CeloRewardWorker`, `Celo::CommunityRewardService` |
 | **Solana мікро-нагорода** | 0.01–0.0162 USDC / LoRa пакет (10 000 + GP×100 lamports; stored GP ≤ 62 = wire 5-bit ×2) | `SolanaMicroRewardWorker`, `Solana::MintingService`; формула-дім [`04_02`](04_02_Business_Logic_and_Services) |
 | **Динамічна ціна SCC** | Uniswap V3 Quoter (Polygon), fallback $25.50 | `PriceOracleService` |
@@ -218,6 +218,8 @@ NaasContract (status: cancelled, cancelled_at: now)
 ---
 
 ## 🗃️ 5. Структура Даних (Data Model)
+
+> **Значення тут — дзеркало SSOT, правити в [`04_01`](04_01_Data_Models_and_Entities).** Нижче лише ті поля, що несуть БІЗНЕС-семантику NaaS; повний набір колонок (включно з lineage-курсором `lineage_cursor_at`/`lineage_cursor_log_id` [MRV.1], якого тут свідомо немає — він про мінт-вікно, не про контракт) живе в домі моделей.
 
 ### NaasContract (таблиця `naas_contracts`)
 
