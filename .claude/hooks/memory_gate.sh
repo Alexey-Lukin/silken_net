@@ -87,7 +87,16 @@ SELF=${BASH_SOURCE[0]:-$0}
 # five-file fixture corpus, and a constant calibrated against the 1.2 MB live one
 # fires on every fixture. The default stays in the file, so a real bump is still
 # a git-visible decision — the override exists for the test harness, not for use.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-24033}
+# Bumped 2026-08-09 (24033 -> 24047, +14) for `project_foundation_redeal_2026_08`,
+# the direct sibling of the bump above: same day, same campaign, three more ratified
+# verdicts (Готовність keeps 00_03 · prune 00_06 §3 before splitting it · the licensing
+# constitution moves 07_03 §3 -> 00_01). It cost 14 B rather than 197 because it took
+# NO row of its own — it is hub-inlined under the У-ВЕЙ line it continues, which is the
+# cheapest form the policy allows. Funded first: an over-long hook was cut back to its
+# trigger and the tool-trial row compressed. ⚠️ The eviction attempted before that was
+# WRONG and the gate caught it — dropping the tool-trial row left two `project_*` files
+# ORPHAN, because only `log_*` may live on strings alone.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-24047}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
@@ -213,7 +222,7 @@ rb_dark() {
 # false-positive measurement first, since any rephrase deletes a unique line.
 # (Write is genuinely too late — the file is already replaced — so that half
 # would need PreToolUse, a different question.)
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-127}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-128}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
