@@ -39,7 +39,12 @@ EXTS  = "{rb,c,h,sol,py,sh,rake,erb,yml,yaml,md,json}"
 # history), but it is the best index of which IDs ever existed: exempting the
 # file hid E.28, the twin of the OPS.8 orphan (same prune commit, same "zero
 # inbound refs" claim). So it reports separately instead of gating.
-EXEMPT = %r{\A(?:lib/tracker/dashboard\.rb|spec/lib/|scripts/code_tracker_id_check\.rb|contracts/(?:out|cache|node_modules|lib)/|firmware/extern/|tools/[^/]+/(?:node_modules|venv)/)}
+# `spec/quality/tracker_id_range_split_spec.rb` pins THIS script's range-split
+# and must therefore spell real-looking IDs (`DOC-T.5`, `UI.2-S`, `ARCH.35-Q2Q`)
+# plus deliberate phantoms as TEST DATA — the same reason `spec/lib/` is exempt.
+# Named per-file rather than blanketing `spec/quality/`: a blanket would silently
+# drop every other quality spec out of this gate's reach.
+EXEMPT = %r{\A(?:lib/tracker/dashboard\.rb|spec/lib/|spec/quality/tracker_id_range_split_spec\.rb|scripts/code_tracker_id_check\.rb|contracts/(?:out|cache|node_modules|lib)/|firmware/extern/|tools/[^/]+/(?:node_modules|venv)/)}
 ADVISORY_ONLY = %r{\ACHANGELOG\.md:}
 
 # ID-shaped tokens that are NOT tracker refs: external standards etc.
@@ -108,7 +113,24 @@ phantoms = files.flat_map do |rel|
       # DOTTED both sides on purpose: a `[.\-]\d` lookahead here would slice
       # fixture strings (`TEST-DEVICE-001` → `TEST` + `DEVICE-001`) into
       # phantom halves.
-      parts = tok.split(/-(?=[A-Z][A-Za-z0-9]*\.\d)/)
+      #
+      # 🔴 The LEFT side needs the same discipline, and until 2026-08-09 it had
+      # none: with only a lookahead, the hyphen INSIDE a family prefix read as a
+      # range boundary, so `DOC-T.62` split into `DOC` + `T.62` — neither of
+      # which is a family, so `families.include?` dropped both and the citation
+      # was never checked at all. Measured: 57 of the tracker's 494 IDs are
+      # `DOC-T.*` and 201 citations of them sit inside this gate's own trees, so
+      # the whole SSOT-tooling family was invisible — a phantom `DOC-T.999`
+      # passed while `SEC.999`/`ARCH.999`/`UI.999` reddened (mutation-verified
+      # in both directions). This is the SAME blindness the TOKEN_RE comment
+      # above records fixing for `SLASH-1`: it was repaired where the token is
+      # RECOGNISED and left standing forty lines down where it is SPLIT — the
+      # half-fix shape, where the healthy half is what hides the sick one.
+      # The lookbehind requires a COMPLETED id (`…\d`) before the hyphen, so a
+      # real range still splits and a prefix-internal hyphen never does; the
+      # lookahead reuses the same prefix shape as `families` rather than a
+      # narrower hand-rolled one, or `DOC-T.62-DOC-T.63` would stop splitting.
+      parts = tok.split(/(?<=\d)-(?=[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*[.\-]\d)/)
       # `/`-joined digit family (`ARCH.64/65`, `INF.3/4/6`) — every member is a
       # ref; the same idiom Tracker::Dashboard.expand_prose_ids already handles.
       parts = parts.flat_map do |p|
