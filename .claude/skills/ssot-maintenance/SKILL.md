@@ -178,6 +178,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 46. Deciding WHAT a gate pins is a separate act from building it — and the cheap default (pin the literal you happen to see) quietly widens the gate onto a second axis, where the fix costs far more than the defect — **write the sentence the gate enforces, and if it contains "and", you have two gates — build the one whose violation actually costs something, and file the other**
 47. A guard that asks whether its TOOL is PRESENT, not whether it is FIT, converts every check behind it into a silent no-op — and the gate then prints its own default as a verdict — **a tool guard must ask «can this binary execute THIS check» — probe the feature the code needs, or run the parser over the file itself — never «does the binary exist»; and an empty finding-set means «clean» only if every check EXECUTED, so when it did not, say so in the output and go red**
 48. A gate that resolves EXISTENCE against the filesystem answers a question about the MACHINE, not about the code — and it fails in the direction that ships: green on the author's laptop, red in CI, identical tree
+49. A gate over PROSE must anchor on the INVOCATION form, never on the referent's NAME — because naming a gate is legitimate teaching, and only calling it is a claim about your own verification
 
 <!-- /GUARD-CRAFT-INDEX -->
 
