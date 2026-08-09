@@ -124,7 +124,7 @@ deploy/akash · terraform · subgraph       # infra / The Graph
 **Конвенції тестів (must):**
 - Naming: `test_` (happy-path) · `testRevert_` (expected revert) · `testFuzz_` (property/fuzz) · `check_` (Halmos symbolic, `test/symbolic/`) · `property_` (Medusa fuzz, `test/medusa/`) · `invariant_` (Foundry stateful, `test/invariant/`).
 - `makeAddr("name")` (НЕ `address(0xN)`) · `vm.prank(caller)` на КОЖЕН виклик (НЕ `startPrank` без `stopPrank`).
-- `vm.expectRevert("exact error string")` — точний рядок, не голий `expectRevert()`.
+- `vm.expectRevert` — завжди з предметом, ніколи голий. **Ідіом залежить від джерела реверту:** наш `require(cond, "рядок")` → `vm.expectRevert("exact error string")`; **OZ 5.7 кидає custom errors** (`AccessControlUnauthorizedAccount` · `EnforcedPause` · Timelock/Governor) → `vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, actor, role))`, а якщо аргумент непередбачуваний (recovered signer) → `vm.expectPartialRevert(selector)`. ⚠️ Власних custom errors наші контракти не мають — тож «exact string» застосовний ЛИШЕ до `require`-рядків, і саме тому голий `expectRevert()` тут ще живий (→ `00_07` TEST.14).
 - `vm.expectEmit(...) + emit Event(...)` ПЕРЕД викликом · `bound(x,min,max)` > `vm.assume`.
 - `vm.warp` / `vm.roll` для timelock / ERC20Votes-checkpoint (snapshot voting) логіки.
 
@@ -132,6 +132,6 @@ deploy/akash · terraform · subgraph       # infra / The Graph
 - `testRevert_cannotRemoveLastAdmin` — кожен контракт з `AccessControl` (`_adminCount` guard); **enforced** кроком `solidity_audit.yml` (патерн без префікса — гейт стереже наявність тесту, не конвенцію імені: імена сидять у `.gas-snapshot`).
 - `test_pause_allowsSlash` — SCC/SFC `slash()` ОБОВ'ЯЗКОВО працює під `pause()` (B-07).
 - `totalSupply() <= MAX_SUPPLY` (1B SCC) після будь-якої послідовності операцій.
-- Ці 3 гейти **доведені Halmos** (`check_*` у `test/symbolic/` — symbolically, не семпл; loop-bound `--loop 3`) + **fuzz-Medusa** (`property_*` у `test/medusa/`), не лише unit-тести.
+- Усі 3 **доведені Halmos** (`check_*` у `test/symbolic/` — symbolically, не семпл; loop-bound `--loop 3`). ⚠️ **Medusa-фаз покриває з них ЛИШЕ supply-cap** (`property_totalSupplyWithinCap`): гарнеси не мають обгорток `pause`/ролей взагалі, тож `property_`-дзеркал для last-admin і pause-allows-slash **не існує** — дім діри `00_07` CONTRACT.2.
 
 **Команди + ролі:** `forge test -vvv --gas-report` · `forge build --sizes` (ліміт EIP-170 = 24KB) · `forge coverage --report lcov` (→ CI lcov-артефакт, ≥90% floor). **CI-аудит** (`solidity_audit.yml`, CI-gated не локально): Slither + `aderyn .` **gate-на-high** (static); `halmos --function "^check_"` (symbolic) + `medusa fuzz --config medusa-{scc,sfc}.json` (fuzz) — усі **fail-on** у своєму job + `Solidity passed` aggregate = **merge-required** branch-protection check (OPS.15, 2026-07-19; money-path більше не мерджиться червоним). On-chain адмін-ролі → Timelock (крім `pause`); `slash()` = `SLASHER_ROLE`, `mint()` = `MINTER_ROLE` (фізично розділені ключі, E.2).

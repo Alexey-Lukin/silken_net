@@ -103,6 +103,7 @@ TRACKER_GUARDS = {
   "chem_ambiguous_token_lines"   => "CHEM.N phantom-def hygiene",
   "inline_residual_runon"        => "residual run-on",
   "verdict_lead_violations"      => "verdict-lead",
+  "labour_split_lead"            => "labour-split lead",
   "meta_form_violations"         => "meta-line form",
   "cluster_marker_violations"    => "дім-кластер marker",
   "bench_tag_violations"         => "bench-session tag symmetry",

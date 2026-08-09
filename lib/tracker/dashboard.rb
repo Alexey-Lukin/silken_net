@@ -481,12 +481,16 @@ module Tracker
     # registry scope as `parse` (REGISTRY_SECTION, not SKIP). ADVISORY during the §03/§05/§06
     # sweep, flips HARD at 0 (00_06 §3 recipe). Pure.
     STAN_LEAD = /\A-\s+\*\*Стан:\*\*/
-    def self.verdict_lead_violations(markdown = File.read(DEFAULT_PATH))
+
+    # Yields [item_id, first_body_line] for EVERY registry item — the ONE position both
+    # lead-rules inspect. Extracted (DOC-T.63) so they cannot drift on WHERE they look:
+    # a second copy of this walk would be a second home for "what a Стан-lead is".
+    def self.each_item_lead(markdown)
       in_registry = false
       current = nil
       seen_meta = false
       in_fence = false
-      markdown.each_line.with_object([]) do |line, bad|
+      markdown.each_line do |line|
         in_fence = !in_fence if line.lstrip.start_with?("```")
         next if in_fence
         if line.start_with?("## ")
@@ -507,8 +511,44 @@ module Tracker
           next
         end
         next if line.strip.empty?
-        bad << current unless line.lstrip.match?(STAN_LEAD)
+        yield current, line
         current = nil # check ONLY the first body line per item
+      end
+    end
+
+    def self.verdict_lead_violations(markdown = File.read(DEFAULT_PATH))
+      [].tap do |bad|
+        each_item_lead(markdown) { |id, line| bad << id unless line.lstrip.match?(STAN_LEAD) }
+      end
+    end
+
+    # --- labour-split lead guard [DOC-T.63; founder ban 2026-07-05] ---
+    # The Стан-lead must open with the SUBSTANCE (verdict / root / decision), never with the
+    # DIVISION OF LABOUR — «Machine-half ✅ SHIPPED» / «Машинна половина ЗАКРИТА» / «вичерпано».
+    # WHO on the residual lines and STAGE already say what the machine did and what is left to
+    # the human, so the mantra spends the one position that has to carry the most.
+    #
+    # Why a gate and not the written rule: the ban was ruled AND the corpus swept in one commit
+    # (c9ebbe9e, 2026-07-05, which also wrote it into .claude/prompts/deep_archival.md) — and
+    # the form returned the SAME day, twice more inside three days, then five times in Ukrainian
+    # over the next three weeks. A rule nobody can violate while remembering it is not the
+    # problem; a rule that only exists in prose is.
+    #
+    # NOT DEPRECATED_TERMS (the shape an inventory first prescribed): 00_07 sits in
+    # DEPRECATED_EXEMPT, and this ban is POSITIONAL — «machine-half» mid-sentence is legitimate
+    # prose and lives in this very file twice.
+    # CEILING, stated rather than implied: lead position + a closed token list in BOTH languages.
+    # A paraphrase («роботу машини завершено») is invisible BY CONSTRUCTION — the discriminator
+    # is FORM, not meaning, and meaning-level judgement measures ~2% precision in this corpus
+    # (00_06 §3 design rule). Widening it into semantics would buy noise, and a noisy gate is off.
+    LEAD_ORNAMENT = /\A[\s*_~`✅🟢🔵⚪🤖👤·—–-]+/
+    LABOUR_SPLIT_TOKEN = /\A(?:machine[-\s]?half|машинн\p{L}*\s+(?:половин|частин)\p{L}*|вичерпан\p{L}*)/i
+    def self.labour_split_lead(markdown = File.read(DEFAULT_PATH))
+      [].tap do |bad|
+        each_item_lead(markdown) do |id, line|
+          rest = line.lstrip.sub(STAN_LEAD, "").sub(LEAD_ORNAMENT, "")
+          bad << "#{id}: #{rest.strip[0, 48]}…" if rest.match?(LABOUR_SPLIT_TOKEN)
+        end
       end
     end
 

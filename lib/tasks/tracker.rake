@@ -38,6 +38,7 @@ namespace :tracker do
     chemambig = Tracker::Dashboard.chem_ambiguous_token_lines(md)
     runon    = Tracker::Dashboard.inline_residual_runon(md)
     verdict  = Tracker::Dashboard.verdict_lead_violations(md)
+    labour   = Tracker::Dashboard.labour_split_lead(md)
     metaform = Tracker::Dashboard.meta_form_violations(md)
     cluster  = Tracker::Dashboard.cluster_marker_violations(md)
     bench    = Tracker::Dashboard.bench_tag_violations(md)
@@ -122,6 +123,18 @@ namespace :tracker do
     else
       puts "  verdict-lead non-Стан leads (#{verdict.size}) — Universal-Стан standard violated (00_07 intro): #{verdict.first(8).join(', ')}…"
     end
+    # [DOC-T.63, founder ban 2026-07-05] labour-split lead — the Стан-lead opens with the
+    # SUBSTANCE, never with «Machine-half ✅» / «Машинна половина ЗАКРИТА» / «вичерпано»
+    # (WHO + STAGE already carry the division of labour). HARD from birth: the 8 live cases
+    # were swept in the same commit that added this gate, so it starts at 0 and holds the
+    # line the written ban could not — it came back three times in three days after the ban,
+    # then five more in Ukrainian. (00_06 §3 recipe.)
+    if labour.empty?
+      puts "  labour-split lead: no Стан-lead opens with the division of labour ✓"
+    else
+      puts "  labour-split leads (#{labour.size}) — lead with the verdict/root, not «machine-half» (deep_archival.md, founder 2026-07-05):"
+      labour.each { |r| puts "    - #{r}" }
+    end
     # [DOC-T.23, founder 2026-06-14] meta-line form — WHO ∈ {🤖,👤,🤖+👤} + no tail after
     # canon-ref. HARD (joins abort): the DOC-T.23 sweep took 00_07 to 0 violations. (00_06 §3.)
     if metaform.empty?
@@ -177,6 +190,6 @@ namespace :tracker do
       puts "  understated WHO (#{thinwho.size}) — meta-line omits an executor its open residuals carry:"
       thinwho.each { |s| puts "    - #{s}" }
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || orphan.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || metaform.any? || cluster.any? || bench.any? || stalewho.any? || thinwho.any?
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || orphan.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || labour.any? || metaform.any? || cluster.any? || bench.any? || stalewho.any? || thinwho.any?
   end
 end

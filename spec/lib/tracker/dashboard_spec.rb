@@ -631,6 +631,68 @@ RSpec.describe Tracker::Dashboard do
     end
   end
 
+  # [DOC-T.63] The Стан-lead opens with the SUBSTANCE, never with the division of labour.
+  # Founder banned the mantra 2026-07-05; it returned the same day and seven more times
+  # (three English, five Ukrainian) — a prose rule with no carrier. Both branches of the
+  # discriminator are pinned positively: a mid-sentence «machine-half» must stay legal.
+  describe ".labour_split_lead" do
+    def item(lead)
+      <<~MD
+        ## §05 · Web3
+        #### X9.1 — sample
+        - **P1** · 🤖 · 🟢 · → `05_02`
+        - **Стан:** #{lead}
+      MD
+    end
+
+    it "flags the mantra in BOTH languages and in every inflection that shipped" do
+      [ "Machine-half ✅ SHIPPED — суть далі.",
+       "machine half закрито — суть далі.",
+       "Машинна половина ЗАКРИТА — суть далі.",
+       "Машинну частину зацементовано — суть далі.",
+       "Вичерпано — суть далі." ].each do |lead|
+        expect(described_class.labour_split_lead(item(lead)).size).to eq(1), "missed: #{lead}"
+      end
+    end
+
+    it "sees through a decorative prefix (the ornament is not an escape hatch)" do
+      expect(described_class.labour_split_lead(item("✅ **Machine-half SHIPPED** — суть."))).not_to be_empty
+    end
+
+    it "passes a lead that opens with the SUBSTANCE and merely mentions machine-half later" do
+      expect(described_class.labour_split_lead(item("Mint-volume circuit-breaker ✅ SHIPPED; machine-half тут згадана легітимно."))).to be_empty
+    end
+
+    it "passes a subject that merely starts with «Машина» (no половина/частина follows)" do
+      expect(described_class.labour_split_lead(item("Машина стану AASM переведена на after_update_commit."))).to be_empty
+    end
+
+    it "checks ONLY the lead — the mantra on a later body line is prose, not a lead" do
+      md = <<~MD
+        ## §05 · Web3
+        #### X9.2 — sample
+        - **P1** · 🤖 · 🟢 · → `05_02`
+        - **Стан:** Reserve-gate ✅ SHIPPED — суть.
+        - Machine-half ✅ — а це вже не лід.
+      MD
+      expect(described_class.labour_split_lead(md)).to be_empty
+    end
+
+    it "skips non-registry sections, like every other lead rule" do
+      md = <<~MD
+        ## 🗄️ Архів
+        #### Z9.1 — archived
+        - **P3** · 🤖 · 🟢 · → `05_02`
+        - **Стан:** Machine-half ✅ SHIPPED.
+      MD
+      expect(described_class.labour_split_lead(md)).to be_empty
+    end
+
+    it "the LIVE tracker is at zero — the sweep and the gate shipped together" do
+      expect(described_class.labour_split_lead).to be_empty
+    end
+  end
+
   # [DOC-T.34 ①] `[bench:slug]` tags ⇆ RUNBOOK §6 session registry, two-way.
   # The registry row is anchored by the tag itself (`| [bench:slug] | … | IDs |`)
   # so the RUNBOOK's other tables (tool names in code-spans) can't false-match.
