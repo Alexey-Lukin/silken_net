@@ -120,7 +120,9 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 > gate, but also when writing a spec, doing a mass delete, narrowing a rule, running a campaign, or
 > shipping anything a human executes by hand: roughly half of these fire outside gate-work.
 >
-> ⚠️ Honest about the cost: that file is ~80 kB, so "one Read away" is true of the address, not of
+> ⚠️ Honest about the cost: that file is the heaviest artifact in the practice (price it with
+> `memory_gate.sh --weight`, never from a number written here — this very sentence carried «~80 kB»
+> while the file stood at 98.8 kB), so "one Read away" is true of the address, not of
 > the price. The trade is deliberate — **the reflex reaches every session automatically, the
 > evidence does not.** Edit rules THERE; a hand-edit here is a second home and `--check` reds.
 
@@ -174,6 +176,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 45. Mutating a COPY of the gate proves nothing — the copy can fail for reasons that have nothing to do with your mutation, and it fails in the colour you were hoping for
 46. Deciding WHAT a gate pins is a separate act from building it — and the cheap default (pin the literal you happen to see) quietly widens the gate onto a second axis, where the fix costs far more than the defect — **write the sentence the gate enforces, and if it contains "and", you have two gates — build the one whose violation actually costs something, and file the other**
 47. A guard that asks whether its TOOL is PRESENT, not whether it is FIT, converts every check behind it into a silent no-op — and the gate then prints its own default as a verdict — **a tool guard must ask «can this binary execute THIS check» — probe the feature the code needs, or run the parser over the file itself — never «does the binary exist»; and an empty finding-set means «clean» only if every check EXECUTED, so when it did not, say so in the output and go red**
+48. A gate that resolves EXISTENCE against the filesystem answers a question about the MACHINE, not about the code — and it fails in the direction that ships: green on the author's laptop, red in CI, identical tree
 
 <!-- /GUARD-CRAFT-INDEX -->
 
