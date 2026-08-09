@@ -998,12 +998,12 @@ module DocsLinter
   def number_keyed_exemptions
     constants.grep(EXEMPTION_CONST_RE).each_with_object({}) do |name, out|
       value = const_get(name)
-      text  = case value
-              when Regexp then value.source
-              when Array  then value.join(" ")
-              when Hash   then value.keys.join(" ")
-              else value.to_s
-              end
+      # A Hash is read by its KEYS only — its values are human labels, and a label that
+      # happened to mention a doc number would invent a subject that grants nothing.
+      # Everything else (Regexp source, Array of ids) stringifies without that risk, so
+      # there is no third branch: a `case` arm nobody can reach is untestable by
+      # construction, and an unreachable arm is deleted, never covered.
+      text = value.is_a?(Hash) ? value.keys.join(" ") : value.to_s
       text.scan(/\d\d_\d\d/).uniq.each { |num| (out[num] ||= []) << name.to_s }
     end
   end

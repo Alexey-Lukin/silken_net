@@ -1131,4 +1131,40 @@ RSpec.describe DocsLinter do
       expect(described_class.unbalanced_code_fences("plain\nprose\nno fences\n")).to be_empty
     end
   end
+
+  # [DOC-T.68 фаза 0] Owner/exempt constants grant immunity by NUMBER PREFIX, and a
+  # number can be freed and re-populated — so a stale entry hands the previous
+  # occupant's immunity to whatever lands there next (§Guard-craft #50, third face).
+  # The caller checks each collected number against the live doc set; these pin the
+  # COLLECTOR, whose whole job is to see every shape a constant can take.
+  describe ".number_keyed_exemptions" do
+    subject(:map) { described_class.number_keyed_exemptions }
+
+    it "collects from a Regexp constant (the dominant owner-doc shape)" do
+      expect(map["03_04"]).to include("LORENZ_OWNER_DOC")
+    end
+
+    it "collects from an Array constant" do
+      expect(map["00_06"]).to include("DEPRECATED_EXEMPT")
+    end
+
+    it "collects from a Hash constant, reading its KEYS" do
+      expect(map["07_01"]).to include("RATE_ANCHOR_HOMES")
+    end
+
+    it "attributes one number to EVERY constant that grants it" do
+      expect(map["00_07"].size).to be > 1
+    end
+
+    # The load-bearing negative: a constant matching prose or a report basename names
+    # no NN_NN, so the sweep must stay silent about it rather than invent a number —
+    # otherwise widening the family would start reporting phantom subjects.
+    it "ignores constants that name no doc number" do
+      expect(map.values.flatten).not_to include("TL_CHAIN_HASH_EXEMPT", "THERMAL_STRESS_OWNER_DOC")
+    end
+
+    it "returns only NN_NN-shaped keys" do
+      expect(map.keys).to all(match(/\A\d\d_\d\d\z/))
+    end
+  end
 end
