@@ -129,7 +129,7 @@ deploy/akash · terraform · subgraph       # infra / The Graph
 - `vm.warp` / `vm.roll` для timelock / ERC20Votes-checkpoint (snapshot voting) логіки.
 
 **Інваріант-гейти (обов'язкові тести):**
-- `testRevert_cannotRemoveLastAdmin` — кожен контракт з `AccessControl` (`_adminCount` guard).
+- `testRevert_cannotRemoveLastAdmin` — кожен контракт з `AccessControl` (`_adminCount` guard); **enforced** кроком `solidity_audit.yml` (патерн без префікса — гейт стереже наявність тесту, не конвенцію імені: імена сидять у `.gas-snapshot`).
 - `test_pause_allowsSlash` — SCC/SFC `slash()` ОБОВ'ЯЗКОВО працює під `pause()` (B-07).
 - `totalSupply() <= MAX_SUPPLY` (1B SCC) після будь-якої послідовності операцій.
 - Ці 3 гейти **доведені Halmos** (`check_*` у `test/symbolic/` — symbolically, не семпл; loop-bound `--loop 3`) + **fuzz-Medusa** (`property_*` у `test/medusa/`), не лише unit-тести.

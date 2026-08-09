@@ -69,7 +69,7 @@ first. **No ARM toolchain in this env by default** — pin Arm GNU 13.2.Rel1
 | CMSIS RFFT packing == goldens (host, no board) | `cmake -B firmware/build-host -S firmware -DSILKEN_HOST_PARITY=ON -DHOST=ON -DCMSISCORE=… && ctest --test-dir firmware/build-host` | host cc, cmake |
 | CMSIS path on the real M4 ISA + stack high-water (QEMU mps2-an386, soft-float = WLE5 ABI; same check core `firmware/sim/logmel_parity_core.h`) | `firmware/scripts/qemu_logmel.sh` (local = cross-build + honest skip; CI `REQUIRE_QEMU=1`) | arm-gcc, cmake, qemu-system-arm |
 
-**mruby gotchas** (canon `03_01 §12.4` + `doc/mruby4.0.md`): float flag is
+**mruby gotchas** (canon `03_01 §12.4` + `firmware/extern/mruby/doc/mruby4.0.md`): float flag is
 `MRB_USE_FLOAT32` (renamed from `MRB_USE_FLOAT`); never enable WORD/NAN boxing
 on 32-bit (no inline float → heap-thrash); minimal gembox = core +
 `mruby-compar-ext` only. The committed bytecode was a placeholder stub before
@@ -82,7 +82,7 @@ Editing a log-mel parameter touches **three homes** — keep them in lockstep:
 
 1. **`03_03 §3.4`** (owner) — edit the value via the `ssot-maintenance` skill; run `docs:check_refs`.
 2. **`tools/ml/.../dsp/contract.py`** + **`firmware/common/logmel_contract.h`** — mirror the value.
-3. **Regenerate** `firmware/common/logmel_*.h` (`emit_c`), **re-pin** the hash in `tests/test_contract_hash.py`, **re-run** `make -C firmware/test logmel` + `pytest`.
+3. **Regenerate** `firmware/common/logmel_*.h` (`emit_c`), **re-pin** the hash in `tools/ml/tests/test_contract_hash.py`, **re-run** `make -C firmware/test logmel` + `pytest`.
 
 The `contract_hash` + `emit_c --check` catch any side left behind. **Audit inbound cross-refs to 03_03** when you change the input shape / preprocessing — drift-linters catch owned *values*, not "the same fact in other words" (e.g. "512 raw input" or "MFCC" prose elsewhere); that's a manual sweep.
 

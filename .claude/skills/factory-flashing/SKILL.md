@@ -41,14 +41,14 @@ Then **`FactoryFlashing::Session.run`** (after **supervisor-approved**). One `Ac
 
 | Component | Role |
 |-----------|------|
-| `factory_flashing/session.rb` | Orchestrator (`run`, `preflight!`, `verify_silicon_uid!` wrong-board guard, AASM start!/complete!/fail_with!) |
-| `factory_flashing/tree_resolver.rb` | [FW.54] UID→DID→Tree: create / re-flash / bind / collision→quarantine; deliberately does NOT enqueue peaq (offline factory) |
-| `factory_flashing/uid_readout.rb` | [FW.54] tolerant `-r32` stdout parser (keyed on `1FFF7590`); live format = bench-confirm (RUNBOOK 1.3) |
-| `factory_flashing/command_builder.rb` | `STM32_Programmer_CLI` emission (`preflight_commands` class-method: connect+UID-read; `flash_commands` per гілка, `write_block`, `rdp_command`) |
-| `factory_flashing/secure_element_provisioner.rb` | ATECC608B data-zone provisioning (Гілка B) |
-| `factory_flashing/executor.rb` | dry-run vs live subprocess (`programmer_available?`) |
-| `factory_flashing/master_key_source.rb` | `Base` / `EnvAdapter` / `BitwardenAdapter` master-key fetch — the fetched key feeds HKDF via `Session` (SEC.3 DI), not just the preflight gate |
-| `factory_flashing/audit_trail.rb` | chain-hashed audit log record |
+| `app/services/factory_flashing/session.rb` | Orchestrator (`run`, `preflight!`, `verify_silicon_uid!` wrong-board guard, AASM start!/complete!/fail_with!) |
+| `app/services/factory_flashing/tree_resolver.rb` | [FW.54] UID→DID→Tree: create / re-flash / bind / collision→quarantine; deliberately does NOT enqueue peaq (offline factory) |
+| `app/services/factory_flashing/uid_readout.rb` | [FW.54] tolerant `-r32` stdout parser (keyed on `1FFF7590`); live format = bench-confirm (RUNBOOK 1.3) |
+| `app/services/factory_flashing/command_builder.rb` | `STM32_Programmer_CLI` emission (`preflight_commands` class-method: connect+UID-read; `flash_commands` per гілка, `write_block`, `rdp_command`) |
+| `app/services/factory_flashing/secure_element_provisioner.rb` | ATECC608B data-zone provisioning (Гілка B) |
+| `app/services/factory_flashing/executor.rb` | dry-run vs live subprocess (`programmer_available?`) |
+| `app/services/factory_flashing/master_key_source.rb` | `Base` / `EnvAdapter` / `BitwardenAdapter` master-key fetch — the fetched key feeds HKDF via `Session` (SEC.3 DI), not just the preflight gate |
+| `app/services/factory_flashing/audit_trail.rb` | chain-hashed audit log record |
 | `ota_hmac_key_service.rb` | per-cluster OTA HMAC key `fetch_for(cluster_id, master_key: nil)` (Гілка A KOTA block + Гілка B ATECC provisioning) |
 
 > Line numbers drift every commit — grep/read `Session` for live locations rather than a hardcoded table (`[[feedback_no_volatile_counts]]`).
