@@ -249,9 +249,13 @@ end
 1. Відредагувати `@theme` блок у `application.css`.
 2. Запустити `grep -r "<old_token_name>" app/views/components/ app/views/shared/` — знайти всі використання.
 3. Оновити `CUSTOM_TEXT_SCALE` (або відповідну константу) у `application_component.rb`.
-4. Запустити RSpec component specs (`bundle exec rspec spec/components/`) — TailwindMerge помилки виявляться як unexpected class collisions у snapshot-тестах.
+4. Запустити RSpec component specs (`bin/rspec spec/components/`) — TailwindMerge помилки виявляться як unexpected class collisions у snapshot-тестах. Крок 3 при цьому вже під гейтом: `bin/rspec spec/quality/design_token_existence_spec.rb` червоніє, якщо CSS і `CUSTOM_TEXT_SCALE` розійшлись.
 
-> **Чому це не автоматизовано:** Tailwind v4 не експортує `@theme` як JSON/Ruby-сумісний формат. Парсинг CSS у Ruby — фрагільний (CSS comments, nested `@layer`, тощо). Простіше тримати **дві точки істини під дисципліною code review** ніж писати/підтримувати парсер. Якщо це стане bottleneck — кандидат на окремий `bin/check-tailwind-tokens` rake task.
+> **Це АВТОМАТИЗОВАНО** (2026-08-09): `spec/quality/design_token_existence_spec.rb` тримає set-рівність `CUSTOM_TEXT_SCALE` ⟷ `--font-size-*` з `@theme`, mutation-verified обома напрямками (зайве в CSS · зайве в константі), і живе в тому ж файлі, що й гейт існування колірних токенів — бо `@theme` там уже розібраний, тож це +1 приклад, а не другий парсер.
+>
+> ⚠️ Тут доти стояло «**чому це не автоматизовано**: Tailwind v4 не експортує `@theme` у Ruby-сумісному форматі, парсинг CSS фрагільний, простіше тримати дві точки істини під дисципліною code review». **Обґрунтування було спростоване власним сусідом** — гейт існування токенів парсить рівно цей `@theme` відтоді, як його написали, тобто канон боронив рішення причиною, яку та сама сюїта щодня перевіряє на практиці. Клас варто памʼятати ширше за цей випадок: **речення «X неможливо» старіє непомітно, бо ніхто не перечитує обґрунтування ВІДСУТНОСТІ — його читають як довідку, а не як claim**; коли поруч зʼявляється механізм, що робить X, ніщо не червоніє.
+>
+> 🔒 Стеля нового гейта названа: він судить **імена**, ніколи значення — `--font-size-tiny: 40rem` пройде, бо придатність розміру не є множинним питанням.
 
 ---
 
@@ -1932,7 +1936,7 @@ for f in config/locales/defaults/*.yml; do touch "config/locales/wallets/$(basen
 # перевіряєш ІНШУ локаль — явний `I18n.with_locale(:uk) { … }`, і назви приклад по локалі, не «by default»
 
 # 5. verify
-bundle exec rspec spec/views/components/wallets/
+bin/rspec spec/views/components/wallets/
 COMPONENTS=app/views/components/wallets/ bin/rails gaia:lint_tokens
 ```
 
@@ -2143,7 +2147,7 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 - [ ] Cookie flags `secure / httponly / same_site` встановлені де писали cookie
 - [ ] No open-redirect — `referer` валідується проти `request.host`
 - [ ] Conventional Commit message (`feat(scope):` / `fix(scope):` / `docs(scope):`)
-- [ ] `bundle exec rubocop && bundle exec rspec spec/views/ spec/requests/<changed>` зелено
+- [ ] `bin/rubocop && bin/rspec spec/views/ spec/requests/<changed>` зелено
 - [ ] `bin/rails gaia:lint_tokens` зелено (§ 16) — дефолт покриває `shared/`, а торкнуті доменні файли ганяй через `COMPONENTS=`
 - [ ] `parallel_validation` (Code Review + CodeQL) пройшов або addressed
 

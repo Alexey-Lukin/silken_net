@@ -73,7 +73,7 @@ workers ENV.fetch("WEB_CONCURRENCY", default_workers)
 
 **Development (workers=0):** У development Puma запускається в single-mode (без fork). Це відповідає блоку `cluster do … end` в `puma.rb`, чиї хуки reconnect-after-fork **ніколи** не виконуються в single mode. Single-mode спрощує debugging (`binding.irb`, `debug` gem) та уникає master/worker fork-танцю.
 
-**Чому не `:auto`:** `workers :auto` (Puma 7.2+) визначає count через `Etc.nprocessors`. На 16-core dev-ноутбуці це 16 workers × ~300 MB RSS = OOM при звичайному `bundle exec rails s`. Залишаємо явний `ENV.fetch` з dev-specific default `0`.
+**Чому не `:auto`:** `workers :auto` (Puma 7.2+) визначає count через `Etc.nprocessors`. На 16-core dev-ноутбуці це 16 workers × ~300 MB RSS = OOM при звичайному `bin/rails s`. Залишаємо явний `ENV.fetch` з dev-specific default `0`.
 
 ### 3. Preload app
 
@@ -224,7 +224,7 @@ curl -fsS http://[::1]:3000/up               # health-check IPv6 loopback
 ruby -c config/puma.rb
 
 # 2. Стиль (RuboCop)
-bundle exec rubocop config/puma.rb
+bin/rubocop config/puma.rb
 
 # 3. Програмний boot (Puma::Configuration)
 bundle exec ruby -e '
@@ -242,6 +242,6 @@ bundle exec ruby -e '
 # Очікується: workers=2, threads=3/3, max_io_threads=16, shutdown_debug=:on_force
 
 # 4. RSpec для middleware
-bundle exec rspec spec/middleware/mark_web3_requests_as_io_bound_spec.rb
+bin/rspec spec/middleware/mark_web3_requests_as_io_bound_spec.rb
 # Очікується: 0 failures
 ```

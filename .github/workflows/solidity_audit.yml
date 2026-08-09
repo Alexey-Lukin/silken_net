@@ -85,6 +85,45 @@ jobs:
       - name: Build contracts
         run: forge build --sizes
 
+      # Кожен AccessControl-контракт мусить мати парний last-admin тест
+      # (CLAUDE.md §8 — обов'язковий інваріант-гейт). Носій стоїть ТУТ, а не в
+      # docs-смузі: та не запускається на зміну `contracts/**`, тож був би
+      # декоративним рівно тоді, коли зʼявляється новий контракт.
+      # Улов на момент написання — 0 (усі чотири вкриті): це батарея, що пінує
+      # вже досягнутий інваріант, а не worklist.
+      # ⚠️ Патерн навмисно БЕЗ префікса `testRevert_`, хоча CLAUDE.md §8 його
+      # приписує: `ProtocolParameters.t.sol` називає свої два last-admin тести
+      # `test_adminProtection_*`, і вони СПРАВЖНІ (обидва з `vm.expectRevert`).
+      # Гейт стереже ІНВАРІАНТ (тест існує), а не конвенцію імені — змішавши
+      # дві осі, він вимагав би перейменування, а імена тестів сидять у
+      # `contracts/.gas-snapshot`, тобто косметика імені переписала б baseline
+      # грошового шляху. Дрейф конвенції відстежується окремо (00_07 DOC-T.62).
+      - name: Invariant gate — every AccessControl contract pins last-admin
+        run: |
+          set -euo pipefail
+          missing=""
+          for sol in contracts/*.sol; do
+            grep -q "AccessControl" "$sol" || continue
+            base="$(basename "$sol" .sol)"
+            t="contracts/test/${base}.t.sol"
+            if [ ! -f "$t" ] || ! grep -q "cannotRemoveLastAdmin" "$t"; then
+              missing="${missing}\n  ${base} -> ${t}"
+            fi
+          done
+          # Ліхтар на власний вимір: порожній перелік контрактів дав би зелене
+          # мовчання — той самий клас, який цей гейт і ловить.
+          n=$(grep -l "AccessControl" contracts/*.sol | wc -l | tr -d ' ')
+          if [ "$n" -lt 3 ]; then
+            echo "::error::AccessControl scan found only $n contracts — the glob is blind, not the tree clean"
+            exit 1
+          fi
+          if [ -n "$missing" ]; then
+            echo "::error::AccessControl contract without a last-admin revert test:$(printf "%b" "$missing")"
+            echo "Add testRevert_cannotRemoveLastAdmin — an admin set that can reach 0 bricks the contract irreversibly."
+            exit 1
+          fi
+          echo "OK — all $n AccessControl contracts pin the last-admin invariant"
+
       - name: Run tests with gas report
         run: forge test -vvv --gas-report
 

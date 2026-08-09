@@ -206,10 +206,10 @@ tail -f log/development.log | grep -i telemetry
 ### 5. Тести та якість
 
 ```bash
-bundle exec rspec                # Повний набір тестів
-bundle exec rubocop -A           # Лінтер (обов'язково перед комітом)
-bundle exec brakeman             # Статичний аналіз безпеки
-bundle exec bundler-audit check  # Вразливості залежностей
+bin/rspec                # Повний набір тестів
+bin/rubocop -A           # Лінтер (обов'язково перед комітом)
+bin/brakeman             # Статичний аналіз безпеки
+bin/bundler-audit check  # Вразливості залежностей
 ```
 
 ### 5.1. Смарт-контракти (Foundry)

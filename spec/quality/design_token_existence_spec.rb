@@ -68,8 +68,20 @@ module DesignTokenGate
       end
     end
   end
+
+  # Імена font-size токенів з `@theme`. Компаньйони `--font-size-X--line-height`
+  # відкидаються: вони НЕ окремі позиції шкали, а їхнє ім'я містить `--`
+  # всередині — саме за цим і фільтруємо, бо `[a-z0-9-]+` ковтає їх мовчки.
+  def declared_font_sizes
+    theme_block.to_s.scan(/--font-size-([a-z0-9-]+)\s*:/).flatten.reject { |n| n.include?("--") }.to_set
+  end
 end
 
+# rubocop:disable RSpec/MultipleDescribes -- дві групи в одному файлі свідомо:
+# друга перевикористовує `DesignTokenGate.theme_block`, тож окремий файл означав
+# би ДРУГИЙ парсер того самого `@theme` — рівно та дуплікація, яку обидва гейти
+# й ловлять. Вкладати їх одна в одну теж не можна: контракти різні (існування ⊥
+# рівність множин), і спільний `describe` брехав би про предмет.
 RSpec.describe "design tokens: every used token exists in @theme" do # rubocop:disable RSpec/DescribeClass
   let(:declared) { DesignTokenGate.declared }
   let(:used) { DesignTokenGate.used }
@@ -101,3 +113,54 @@ RSpec.describe "design tokens: every used token exists in @theme" do # rubocop:d
     MSG
   end
 end
+
+# 🔴 Друга вісь того ж крос-шарового контракту: `CUSTOM_TEXT_SCALE` мусить бути
+# РІВНА множині `--font-size-*` з `@theme` — і саме рівна, не «включати».
+#
+# Механізм, і він мовчазний в обидва боки. TailwindMerge розрізняє `text-<size>`
+# і `text-<color>` ЛИШЕ за цим списком: токен, доданий у CSS і забутий у
+# константі, робить `text-hero` КОЛІРНИМ класом, тож він конфліктує з
+# `text-gaia-primary-text` і один із двох тихо зникає при мержі. Дзеркально —
+# ім'я, лишене в константі після видалення з CSS, вчить merger'а шкалі, якої
+# нема, і глушить справжній колірний клас із тим самим суфіксом.
+#
+# 🔒 Чому воно живе ТУТ, а не окремим файлом: `@theme` уже розібраний вище
+# (`DesignTokenGate.theme_block`), тож це +1 приклад, а не другий парсер.
+# ⚠️ Це прямо СПРОСТОВУЄ обґрунтування, що доти стояло в `04_04` («Tailwind v4
+# не експортує @theme у Ruby-сумісному форматі, парсинг CSS фрагільний, тому
+# тримаємо дві точки істини під code review»): парсер існує в цій же сюїті з
+# моменту, коли гейт існування токенів було написано. Обґрунтування виправлено
+# разом із цим прикладом.
+#
+# 🔒 Чесна стеля: гейт судить ІМЕНА, ніколи ЗНАЧЕННЯ. `--font-size-tiny: 40rem`
+# пройде — придатність розміру не є множинним питанням.
+RSpec.describe "CUSTOM_TEXT_SCALE mirrors the @theme font-size scale" do # rubocop:disable RSpec/DescribeClass
+  let(:declared) { DesignTokenGate.declared_font_sizes }
+  let(:registered) { ApplicationComponent::CUSTOM_TEXT_SCALE.to_set }
+
+  it "extracts a non-trivial scale from the CSS side" do
+    expect(declared.size).to be >= 4, "the @theme font-size extractor is blind — it found #{declared.size}"
+  end
+
+  it "registers exactly the font-size tokens @theme declares" do
+    missing = declared - registered
+    extra = registered - declared
+
+    expect(missing | extra).to be_empty, <<~MSG
+      `CUSTOM_TEXT_SCALE` and the `@theme` font-size scale have drifted.
+
+      In CSS but NOT registered: #{missing.to_a.sort.inspect}
+        → TailwindMerge will treat `text-<name>` as a COLOUR class, so it
+          collides with real colour utilities and one of them vanishes silently.
+
+      Registered but NOT in CSS: #{extra.to_a.sort.inspect}
+        → the merger is taught a scale that no longer exists, which suppresses
+          a genuine colour class sharing that suffix.
+
+      Fix: keep both sides equal — `--font-size-<name>` in
+      #{DesignTokenGate::CSS_PATH.relative_path_from(Rails.root)} (@theme block)
+      and `<name>` in ApplicationComponent::CUSTOM_TEXT_SCALE.
+    MSG
+  end
+end
+# rubocop:enable RSpec/MultipleDescribes

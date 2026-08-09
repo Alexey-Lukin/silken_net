@@ -590,13 +590,13 @@ ETHEREUM_GAS_LIMIT=100000        # Default: 100_000 (storeStateRoot ~45k gas)
 
 ```bash
 # 1. Переконатись, що всі ENV встановлені:
-bundle exec rails runner "ENV.fetch('ALCHEMY_ETHEREUM_RPC_URL'); ENV.fetch('ETHEREUM_ANCHOR_PRIVATE_KEY'); ENV.fetch('ETHEREUM_ANCHOR_CONTRACT'); puts 'OK'"
+bin/rails runner "ENV.fetch('ALCHEMY_ETHEREUM_RPC_URL'); ENV.fetch('ETHEREUM_ANCHOR_PRIVATE_KEY'); ENV.fetch('ETHEREUM_ANCHOR_CONTRACT'); puts 'OK'"
 
 # 2. Перевірити баланс oracle-гаманця (> 0.01 ETH):
 # Через Alchemy Dashboard або etherscan.io
 
 # 3. Запустити тести:
-bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_spec.rb spec/models/ethereum_anchor_spec.rb
+bin/rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_spec.rb spec/models/ethereum_anchor_spec.rb
 ```
 
 ### Operational Security
