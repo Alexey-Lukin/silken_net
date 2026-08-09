@@ -87,7 +87,7 @@
 - **archive:** перенеси рядок у §🗄️ Архів-таблицю (`| ID | Пункт | Канон |`, поряд тематичних сусідів) + видали `#### ID` з §модуля (захопи наступний heading як якір, щоб не лишити подвійний порожній рядок).
 
 ### Фаза 6 — GATE + ZERO-LOSS
-- `ruby scripts/docs_check.rb refs` + `tracker` → зелені. ⚠️ Це **два кроки з 24** джоби `docs_check`, а не смуга: перед комітом ганяй `ruby scripts/docs_band.rb` (OPS.25 — читання зеленого `docs_check` як вердикту про смугу клало `main` тричі).
+- `ruby scripts/docs_check.rb refs` + `tracker` → зелені. ⚠️ Це **два кроки** джоби `docs_check`, а не смуга: перед комітом ганяй `ruby scripts/docs_band.rb` (OPS.25 — читання зеленого `docs_check` як вердикту про смугу клало `main` тричі).
 - Якщо чіпав heading → `bin/rails docs:toc`, потім check_refs.
 - Якщо чіпав код → `make -C firmware/test` (firmware) / `bin/rspec` (backend); `bash -n` для shell-скриптів.
 - **Zero-loss set-diff:** grep кожен видалений з 00_07 факт у каноні (має бути present). Inbound-рефи мають резолвитись (`inbound refs ✓`).
@@ -116,7 +116,7 @@
 
 | Команда | Призначення |
 |---|---|
-| `ruby scripts/docs_band.rb` | **Уся смуга `CI · Docs`** (~1.5 хв) — 24 кроки, перелік читається з `docs.yml`. Це те, що ганяти ПЕРЕД комітом; решта рядків цієї таблиці — швидкі підмножини (OPS.25). |
+| `ruby scripts/docs_band.rb` | **Уся смуга `CI · Docs`** (~1.5 хв) — перелік кроків читається з `docs.yml`, тож не протухає. Це те, що ганяти ПЕРЕД комітом; решта рядків цієї таблиці — швидкі підмножини (OPS.25). |
 | `ruby scripts/docs_check.rb refs` | Омнібус УСЕРЕДИНІ свого кроку (~0.3с): dangling-лінки, §-drift, TRL, blockers→00_07, ToC, RTC reg-map, Lorenz/GP формули, opcode, deprecated-терми, xref-форма, external-paths. ⚠️ «Омнібус» тут про категорії ОДНОГО кроку, не про смугу — кроків 24. |
 | `ruby scripts/docs_check.rb tracker` | 00_07: dup-IDs, #3-conformance, canon-ref + §-section resolution, section-home, inbound-refs, prose-ID-refs, CHEM.N. |
 | `ruby scripts/doc_structure_map.rb` | Структурна мапа 00_01→07_03 (🎯/TRL/doc-links/секції) — навігація без читання всього. |

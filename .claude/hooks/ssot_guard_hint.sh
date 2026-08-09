@@ -8,7 +8,7 @@
 # Why it carries what it carries: `docs_check.rb` catches every FORM violation
 # THIS file can commit (DOC-T.15 line-refs, meta-line WHO, section-home, bare
 # doc-ids) in 0.3s, HARD. Repeating those here would be noise. ⚠️ It is two
-# steps of a 24-step lane, though — the hint text says so and points at
+# steps of the lane, though — the hint text says so and points at
 # `docs_band.rb`, because reading its green as a verdict about the whole Docs
 # lane is exactly what reddened `main` three times (OPS.25). What no gate
 # can see is the one red line `deep_archival.md` itself flags as ungated: the
