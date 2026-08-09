@@ -101,18 +101,24 @@ jobs:
       - name: Invariant gate — every AccessControl contract pins last-admin
         run: |
           set -euo pipefail
+          # ⚠️ Шляхи ВІДНОСНІ до `contracts/` — цей job має
+          # `defaults.run.working-directory: contracts`. Перша редакція писала
+          # `contracts/*.sol` (як у локальному прогоні з кореня) і впала з
+          # `exit 2` — grep «файлів не знайдено», тобто гейт помер на власному
+          # периметрі, а не на інваріанті. Класика: гейт зелений локально й
+          # червоний у CI, бо перевіряли його НЕ там, де він біжить.
           missing=""
-          for sol in contracts/*.sol; do
+          for sol in *.sol; do
             grep -q "AccessControl" "$sol" || continue
             base="$(basename "$sol" .sol)"
-            t="contracts/test/${base}.t.sol"
+            t="test/${base}.t.sol"
             if [ ! -f "$t" ] || ! grep -q "cannotRemoveLastAdmin" "$t"; then
-              missing="${missing}\n  ${base} -> ${t}"
+              missing="${missing}\n  ${base} -> contracts/${t}"
             fi
           done
           # Ліхтар на власний вимір: порожній перелік контрактів дав би зелене
           # мовчання — той самий клас, який цей гейт і ловить.
-          n=$(grep -l "AccessControl" contracts/*.sol | wc -l | tr -d ' ')
+          n=$(grep -l "AccessControl" *.sol | wc -l | tr -d ' ')
           if [ "$n" -lt 3 ]; then
             echo "::error::AccessControl scan found only $n contracts — the glob is blind, not the tree clean"
             exit 1
