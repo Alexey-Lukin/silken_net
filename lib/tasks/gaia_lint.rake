@@ -71,9 +71,12 @@ namespace :gaia do
     ]
 
     violations = []
+    scanned = 0
     paths.each do |path|
       next unless path.extname == ".rb"
+      next unless path.exist?
 
+      scanned += 1
       path.each_line.with_index(1) do |line, lineno|
         # Strip allowlisted brand tokens before scanning.
         scrubbed = line.dup
@@ -88,8 +91,20 @@ namespace :gaia do
       end
     end
 
+    # [DOC-T.64] Population lantern. A green verdict is a claim about the files that
+    # were READ — and a mistyped or space-separated `COMPONENTS=` yields a Pathname
+    # that is neither a directory nor an existing file, so the loop above scanned
+    # nothing and the ✓ below would attest an empty set. The comment at the head of
+    # this file has described that hole since it was written; describing is not
+    # closing. Same shape as the `expect(scanned_files.size).to be > N` floor every
+    # spec/quality gate carries.
+    if scanned.zero?
+      abort "✗ gaia:lint_tokens — НУЛЬ файлів прочитано (scope: #{ENV['COMPONENTS'] || 'app/views/shared/'}). " \
+            "Вердикту немає: перевірка не бігла. COMPONENTS= бере ОДИН шлях."
+    end
+
     if violations.empty?
-      puts "✓ gaia:lint_tokens — no raw Tailwind colour utilities detected"
+      puts "✓ gaia:lint_tokens — no raw Tailwind colour utilities detected (#{scanned} files scanned)"
       next
     end
 

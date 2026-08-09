@@ -13,10 +13,23 @@
 # to catch are the silent ones, and for those the write is still the last moment
 # anyone is looking.
 #
-# Three stances, one engine:
-#   (stdin JSON)  PostToolUse Edit|Write — silent unless this write makes it worse
-#   --audit                              — full battery, exit code is the verdict
-#   --genre                              — chronicle detector alone (housekeeping step 1)
+# MANY stances, one engine. The roster is the `case "${1:-}"` block near the bottom
+# — READ IT THERE, never from a list here: this header said "three stances" while the
+# block carried seven, i.e. it described its own contents and rotted, which is the
+# very class this gate is written against. The load-bearing distinction is not which
+# modes exist but WHY some sit outside `--audit`: a check whose live yield is a
+# handful belongs in the battery; one whose yield runs to dozens is a worklist, and
+# folding a worklist in makes EXIT 1 permanent — which trains the reader to skim the
+# one stance that must stay loud. The no-argument stance is the PostToolUse hook.
+#
+# ⏱ TIME BUDGET — measured, not assumed (DOC-T.64, 2026-08-09, corpus 1.69 MB):
+#   write stance (the hook)  6.4 s   against a 30 s `timeout` in .claude/settings.json
+#   --audit                 15.5 s   (not a hook; no budget applies)
+# The budget was 10 s, i.e. a 1.56× margin on a cost that grows monotonically with
+# the corpus — and a hook timeout is FAIL-OPEN: the write proceeds, this gate simply
+# never spoke, and nothing anywhere records that it didn't. Raised to 30 s (≈4.7×).
+# Re-measure when the corpus grows by half again: `/usr/bin/time -p` on a fixture
+# write. Sibling hooks are nowhere near their budgets (0.01–0.07 s against 5–10 s).
 set -uo pipefail
 
 MEM_DIR="${MEMORY_GATE_DIR:-/Users/oleksiilukin/.claude/projects/-Users-oleksiilukin-silken-net/memory}"
@@ -120,6 +133,17 @@ resolve_ruby() {
   return 1
 }
 RB=$(resolve_ruby || true)
+
+# 🔴 ONE lantern, every stance [DOC-T.64]. When the probe above fails, every
+# ruby-backed check returns 0 WITHOUT RUNNING — an empty finding-set byte-identical
+# to "clean". That precondition used to be stated in `--audit` alone: loud in the
+# stance you invoke on purpose, silent in the stance that runs on EVERY write. The
+# caller passes what did not run (the count differs per stance); the sentence does not.
+rb_dark() {
+  printf '%s\n%s\n' \
+    "DARK  no usable ruby (need filter_map + endless def) — tried \$MEMORY_GATE_RUBY, PATH, ~/.rvm/rubies/default, /usr/bin/ruby" \
+    "DARK  ${1:-checks} did not run; this run's silence means nothing until that is fixed (see rvm-heal)"
+}
 
 # --- The floor. Every other threshold here is a CEILING, and that asymmetry was
 # a hole the whole gate shared: growth was policed from three directions while
@@ -1961,6 +1985,25 @@ RUBY
     pass=$((pass+1)); printf '  ok    %s\n' "a healthy run says nothing about darkness"
   fi
 
+  # 31d/31e [DOC-T.64]. The pair above proves the lantern for `--audit` — the stance
+  # you invoke deliberately. The WRITE stance is the one wired into settings.json and
+  # the only one that fires on every Edit into the corpus, and it had no case on this
+  # axis at all: the cured half was hiding the sick one. Same positive/negative shape,
+  # because a lantern that lights unconditionally is worth exactly nothing.
+  out=$(_st_write "$d" "feedback_alpha.md" MEMORY_GATE_RUBY=/nonexistent-ruby HOME=/nonexistent-home PATH="/usr/bin:/bin")
+  if printf '%s' "$out" | grep -q 'DARK'; then
+    pass=$((pass+1)); printf '  ok    %s\n' "the WRITE stance says it is dark, not just --audit"
+  else
+    fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "the WRITE stance says it is dark, not just --audit" "$out"
+  fi
+
+  out=$(_st_write "$d" "feedback_alpha.md")
+  if printf '%s' "$out" | grep -q 'DARK'; then
+    fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "a healthy WRITE says nothing about darkness" "$out"
+  else
+    pass=$((pass+1)); printf '  ok    %s\n' "a healthy WRITE says nothing about darkness"
+  fi
+
   rm -rf "$root"
   printf 'selftest: %d passed, %d failed\n' "$pass" "$fail"
   [ "$fail" -eq 0 ]
@@ -1973,9 +2016,7 @@ case "${1:-}" in
     # checks return 0 without running, `out` comes back empty, and the run
     # prints OK. An empty finding-set means "nothing wrong" only when every
     # check actually EXECUTED — so state the precondition before reading it.
-    out=$( { [ -n "$RB" ] || printf '%s\n%s\n' \
-               "DARK  no usable ruby (need filter_map + endless def) — tried \$MEMORY_GATE_RUBY, PATH, ~/.rvm/rubies/default, /usr/bin/ruby" \
-               "DARK  ten checks did not run; this battery's silence means nothing until that is fixed (see rvm-heal)"
+    out=$( { [ -n "$RB" ] || rb_dark "ten checks"
              override_check; index_check; desc_check; corpus_floor_check; integrity_check
              unstrung_check; asset_check
              privacy_check; overlap_check; section_ref_check; canon_section_check
@@ -1996,8 +2037,17 @@ case "${1:-}" in
     # нема, тож усередині неї ця перевірка червонила б усі 41 адреси на кожному
     # прогоні. Те саме, чому її не існує в CI: їй потрібні ОБИДВА корпуси, а на
     # ранері є лише один.
+    # 🔴 [DOC-T.64] This line used to read `"${RB:-ruby}"`, i.e. when the fitness
+    # probe rejected every candidate it fell back to whatever `ruby` PATH happens to
+    # offer — reviving, in one line, the exact "presence, not fitness" defect the
+    # probe exists to kill. It also hid from the obvious sweep: a search for the
+    # established `[ -n "$RB" ]` idiom does not match a `:-` fallback.
+    if [ -z "$RB" ]; then
+      rb_dark "the git→memory route check"
+      exit 1
+    fi
     if [ -f "$REPO/scripts/memory_route_check.rb" ]; then
-      MEMORY_GATE_DIR="$MEM_DIR" "${RB:-ruby}" "$REPO/scripts/memory_route_check.rb" "${2:-}"
+      MEMORY_GATE_DIR="$MEM_DIR" "$RB" "$REPO/scripts/memory_route_check.rb" "${2:-}"
     else
       echo "SKIP  scripts/memory_route_check.rb is gone — the git→memory direction is unguarded"
       exit 1
@@ -2172,7 +2222,13 @@ RUBY
     input=$(cat)
     fp=$(printf '%s' "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
     case "$fp" in "$MEM_DIR"/*.md) ;; *) exit 0 ;; esac
-    msgs=$( { # A green verdict computed against somebody else's thresholds is the
+    msgs=$( { # [DOC-T.64] Same reasoning as the override banner below, one axis over:
+              # five of the checks in this stance are ruby-backed and return 0 without
+              # running when the toolchain is broken. `--audit` said so; this stance —
+              # the one that actually fires on every write — did not, so the half that
+              # was cured hid the half that was not.
+              [ -n "$RB" ] || rb_dark "five of this stance's checks"
+              # A green verdict computed against somebody else's thresholds is the
               # self-attestation this file polices — and it was reported in ONE
               # stance out of four, so an exported MEMORY_GATE_* disarmed the hook
               # silently and permanently. The stance that runs on every write is

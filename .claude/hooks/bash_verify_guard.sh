@@ -117,7 +117,18 @@ if printf '%s' "$cmd" | grep -qE '\bfor[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:spac
   # so this detector cannot go dark just because the hook's PATH lacks a shim.
   [[ -x "$rb" ]] || rb=/usr/bin/ruby
   if [[ -x "$rb" && -r "$scan" ]]; then
+    # [DOC-T.64] THREE outcomes, not two. This used to read the verdict off `$found`
+    # alone, so a CRASH of the scanner (an `ArgumentError` on invalid UTF-8 arriving
+    # from an arbitrary Bash command is the realistic one) produced empty output —
+    # byte-identical to "scanned it, found nothing". The `scanner-dark` lantern below
+    # covers only the case its author foresaw (no ruby, unreadable file); it never
+    # covered the scanner dying mid-run. stderr stays suppressed on purpose: folding
+    # it into `$found` would turn a backtrace into a false DENY.
     found=$(printf '%s' "$cmd" | "$rb" "$scan" 2>/dev/null)
+    rc=$?
+    if (( rc != 0 )); then
+      warn scanner-crash "[bash-guard] zsh_split_scan.rb exited ${rc} — the word-splitting detector CRASHED rather than cleared this command, so its silence means nothing for the rest of this session. Re-run it by hand on the failing input to see the error (stderr is suppressed here to keep a backtrace from reading as a finding)."
+    fi
     if [[ -n "$found" ]]; then
       jq -nc --arg f "$found" '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:("zsh does not word-split an unquoted scalar — unlike bash. " + $f + ". So the loop body runs once on the whole string (and `set -- $v` leaves $2 empty for ANY input), and whatever check comes next reports success regardless of its input. Fix by making it an array (`v=(a b c); for x in $v`), by splitting explicitly (`${=v}`), or by quoting the element and dropping the re-split. $(subst), globs and arrays are NOT this class and are not flagged.")}}'
       exit 0

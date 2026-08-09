@@ -16,8 +16,24 @@
 # Enabled by `git config core.hooksPath .githooks` (set by bin/setup; re-run it
 # after a fresh clone). Emergency bypass: `git push --no-verify`.
 
-root=$(git rev-parse --show-toplevel) || exit 0
-[ -f "$root/scripts/dco_check.rb" ] || exit 0
+# [DOC-T.64] These two used to be `|| exit 0` — a silent surrender in the one hook
+# whose whole point is that forgetting must stop mattering. Losing the checker (a bad
+# merge, a stray `git rm`, a hooksPath pointing at another tree) would have disabled
+# DCO with no output at all, which is exactly the "the check never ran" state the
+# block at the bottom of this file already refuses to confuse with a verdict.
+if ! root=$(git rev-parse --show-toplevel 2>/dev/null); then
+  echo "pre-push BLOCKED — not inside a git work tree, so DCO could not be checked."
+  echo "This is NOT a DCO verdict: the check never ran, so its silence means nothing."
+  echo "(Emergency bypass: git push --no-verify — but that skips DCO entirely.)"
+  exit 1
+fi
+if [ ! -f "$root/scripts/dco_check.rb" ]; then
+  echo "pre-push BLOCKED — scripts/dco_check.rb is missing, so DCO could not be checked."
+  echo "This is NOT a DCO verdict: the check never ran, so its silence means nothing."
+  echo "Restore the file (git checkout -- scripts/dco_check.rb) and re-push."
+  echo "(Emergency bypass: git push --no-verify — but that skips DCO entirely.)"
+  exit 1
+fi
 
 # 🔴 Resolve a ruby that can RUN the check, instead of taking whatever PATH
 # offers. Measured 2026-08-09, live: the shell's PATH led with a gemset removed

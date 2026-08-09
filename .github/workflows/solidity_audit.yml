@@ -188,7 +188,16 @@ jobs:
                   failed = True
                   continue
               lh, lf = seen[name]
-              pct = 100.0 * lh / lf if lf else 100.0
+              # [DOC-T.64] `lf == 0` means "nothing was instrumented", which is the
+              # absence of a measurement — not a perfect score. Reading it as 100.0
+              # let a contract with zero instrumented lines clear a 90% floor while
+              # the floor had never looked at it. Today no TARGET is in that state;
+              # the shape is what gets closed here.
+              if lf == 0:
+                  print(f"  FAIL {name}: 0 instrumented lines — coverage was not measured")
+                  failed = True
+                  continue
+              pct = 100.0 * lh / lf
               ok = pct >= FLOOR
               failed |= not ok
               print(f"  {'OK  ' if ok else 'FAIL'} {name}: {pct:.2f}% ({lh}/{lf}) lines")
@@ -208,6 +217,14 @@ jobs:
     name: Slither Static Analysis
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # [DOC-T.64] `fail-on: high` is the GATE; without SARIF the Medium/Low findings on
+    # money-path contracts (SCC/SFC/Governor/ProtocolParameters) left no trace anywhere —
+    # not the build, not the Security tab, not an artifact — i.e. the run's silence about
+    # them was indistinguishable from having none. The Aderyn job below already draws this
+    # line correctly: gate on high, keep the rest VISIBLE. Mirrored here.
+    permissions:
+      contents: read
+      security-events: write # upload-sarif → GitHub Security tab
 
     defaults:
       run:
@@ -253,6 +270,18 @@ jobs:
           slither-config: contracts/slither.config.json
           fail-on: high
           slither-version: 0.11.5
+          sarif: results.sarif
+
+      # `always()` so the report lands even when `fail-on: high` failed the step — a high
+      # finding is exactly when the detail is most worth having. The `hashFiles` half is
+      # the other direction: if Slither died BEFORE writing the file (compile error), the
+      # upload must skip rather than red the job for a reason unrelated to the contracts.
+      - name: Upload Slither SARIF to Security tab
+        if: always() && hashFiles('results.sarif') != ''
+        uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+        with:
+          sarif_file: results.sarif
+          category: slither
 
   halmos:
     needs: changes

@@ -32,9 +32,24 @@ on:
   pull_request:
   push:
     branches: [ main ]
+    # [DOC-T.64] The filter is keyed on FILE CLASS, not on directory, because the
+    # scanner below runs with `scan-ref: .` — the whole repo. A directory-shaped
+    # filter (`terraform/**` + a single root `Dockerfile`) is narrower than what the
+    # job actually inspects, so an IaC file created anywhere else would never wake
+    # the guard that is meant to inspect it: «стереже X, але не прокидається на
+    # НОВИЙ X». Dormant when written — zero such files existed — but it opens by
+    # itself the moment one appears, which is exactly the wrong time to notice.
+    # ⚠️ Ceiling: Trivy's config scanner also reads Kubernetes/Helm/CloudFormation
+    # manifests, which are plain `*.yaml`; those are deliberately NOT listed, since
+    # that pattern would wake this job on every locale and workflow edit. Adding the
+    # first such manifest means adding its pattern here in the same commit.
     paths:
+      - '**/*.tf'
+      - '**/*.tfvars'
+      - '**/Dockerfile'
+      - '**/Dockerfile.*'
+      - '**/*.dockerfile'
       - 'terraform/**'
-      - 'Dockerfile'
       - '.github/workflows/iac_scan.yml'
   workflow_dispatch:
 

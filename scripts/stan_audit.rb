@@ -242,6 +242,7 @@ puts "\n── Вісь 3 · [x]-staleness: чекнутий бокс старш
 today       = Date.today
 stale_hits  = 0
 dateless    = 0
+unparsable  = 0
 current     = nil
 in_registry = false
 md.each_line do |line|
@@ -264,14 +265,24 @@ md.each_line do |line|
   end
   # OLDEST date wins: a line carrying two dates is stale from the first claim,
   # and `.max` on a future date would silently yield a negative age.
-  age = dates.filter_map { |d| Date.parse(d) rescue nil }.map { |d| (today - d).to_i }.max
-  next if age.nil? || age <= STALE_AFTER_DAYS
+  # [DOC-T.64] A malformed date (`2026-13-40` matches the regex, `Date.parse` raises)
+  # used to make the line vanish from BOTH counters: `filter_map` emptied the list,
+  # `age` came out nil, and `dateless` only counts lines with NO dates at all. The
+  # unit left the population silently — the same shape this script exists to report.
+  parsed = dates.filter_map { |d| Date.parse(d) rescue nil }
+  if parsed.empty?
+    unparsable += 1
+    next
+  end
+  age = parsed.map { |d| (today - d).to_i }.max
+  next if age <= STALE_AFTER_DAYS
 
   stale_hits += 1
   puts "  #{current}: #{age} дн. (#{dates.min}) — #{line.strip[0, 100]}"
 end
 puts "  (чисто ✓)" if stale_hits.zero?
 puts "  (+#{dateless} [x] без дати — вік невідомий; датуй закриття `✅ YYYY-MM-DD`)" if dateless.positive?
+puts "  (⚠ #{unparsable} [x] з НЕРОЗБІРНОЮ датою — рядок має дато-подібний токен, який не парситься; вік не виміряно)" if unparsable.positive?
 
 puts "\nadvisory: хіти розібрати очима — [C]-клас лікується прибиранням числа + рефом джерела; " \
      "stale-[x] — цементацією в Стан/канон."

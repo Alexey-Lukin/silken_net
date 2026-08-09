@@ -132,9 +132,26 @@ end
 
 # Org-level scope: only if the repo's owner is a GitHub organization (a personal account has no
 # org secrets). An org-level money key is the same R3c breach as repo-level (visible org-wide).
-owner = `gh repo view --json owner -q '.owner.login' 2>/dev/null`.strip
+#
+# [DOC-T.64] Both look-ups below used to fail SILENTLY into `org = []`, which is
+# indistinguishable from "audited the org and found nothing" — and the run then printed
+# `✓ Scope-audit clean` over an axis it never looked at. The honest twin is seven lines up:
+# the `env.nil?` block says out loud what it could not check. Same shape here.
+owner_out = `gh repo view --json owner -q '.owner.login' 2>&1`
+unless $?.success?
+  warn "✗ gh error (repo view): #{owner_out.strip}"
+  warn "  Власника репо не визначено → org-вісь НЕ перевірена; вердикт нижче був би про меншу множину."
+  exit 2
+end
+owner = owner_out.strip
 org = owner.empty? ? nil : gh_names_soft("secret list --org #{owner}")
-org ||= [] # not an org (personal account) or inaccessible → nothing to audit
+if org.nil?
+  # Two causes share this one channel — personal account (nothing to audit) and missing
+  # `admin:org` scope (plenty to audit, no access). We cannot tell them apart, so we say so
+  # rather than pick the comfortable reading.
+  puts "⚠ Org-секрети недоступні (особистий акаунт АБО бракує `admin:org`) — org-вісь НЕ перевірена; «clean» нижче її не покриває."
+  org = []
+end
 
 errors, warnings = audit(repo_secrets: repo, env_secrets: env, variables: vars, org_secrets: org)
 warnings.each { |w| puts "⚠ #{w}" }
