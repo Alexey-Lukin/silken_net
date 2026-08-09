@@ -8,7 +8,9 @@
 # emits a status on every PR — that one is REQUIRED on `main` (branch-protection).
 # A path-filtered required check would block unrelated PRs forever ("waiting for
 # status"); `docs-ok` (if: always()) never skips, so it gates docs HARD without
-# that trap. Local fast path (no Rails boot, ~0.3s): `ruby scripts/docs_check.rb`.
+# that trap. Local fast path (no Rails boot, ~0.3s): `ruby scripts/docs_check.rb`
+# — but that is TWO of this job's steps, not the lane; the whole lane locally is
+# `ruby scripts/docs_band.rb`, which reads the step list out of THIS file (OPS.25).
 
 name: CI · Docs
 
