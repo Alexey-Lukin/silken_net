@@ -269,7 +269,11 @@ index_reach_expected() {
 # saturated rule-homes somewhere to evict into. Their two descriptions weigh
 # 582 B, i.e. the layer moved by LESS than the new content — the ratchet had
 # 60 B of slack over the actual layer, so this bump also removes that slack.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-42686}
+# Bumped 2026-08-09 (42686 -> 42940, +254) for project_foundation_redeal_2026_08,
+# the home of the DOC-T.68/69 Foundation re-deal. Its description was written at
+# 579 B and trimmed to 325 B first, so the layer moved by LESS than half the new
+# content; the residue is what a new home structurally costs.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-42940}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
