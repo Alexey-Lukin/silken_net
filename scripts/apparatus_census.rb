@@ -92,7 +92,11 @@ first_ts = nil
 last_ts  = nil
 
 files.each do |path|
-  IO.foreach(path) do |line|
+  # `File.foreach`, не `IO.foreach`: другий трактує шлях, що починається з `|`,
+  # як команду для запуску (CodeQL `rb/non-constant-kernel-open`). Тут шлях
+  # приходить із `Dir.glob`, тож експлуатувати нічим — але sink лишається
+  # sink'ом, а різниця у виклику нульова.
+  File.foreach(path) do |line|
     next if line.length < 40
     ts = line[/"timestamp":"(20\d\d-\d\d-\d\d)T/, 1]
     if ts
