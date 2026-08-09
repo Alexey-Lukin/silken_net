@@ -42,6 +42,24 @@ module ClaudeProsePathRefs
     "radio_driver/radio.h" => "vendored Semtech API; його база (`firmware/extern/subghz-phy`) названа в ТІЙ САМІЙ комірці таблиці, тож форма однозначна для читача"
   }.freeze
 
+  # 🔴 Гейт міряє ФАЙЛОВУ СИСТЕМУ (`.exist?`), а не git-дерево — тож усе, що є на
+  # машині розробника й ВІДСУТНЄ в чистому checkout, робить його host-залежним:
+  # зелений локально, червоний у CI, при однаковому коді. Той самий клас, що
+  # платформо-залежне покриття (TEST.9): метрика міряє ХОСТ, а не предмет.
+  # Тому два префікси виключені КЛАСОМ, а не поіменно — інакше кожен новий
+  # цитований submodule-файл детонує окремо:
+  #   · `firmware/extern/` — git-submodule; `actions/checkout` у job `test` його не
+  #     тягне (Rails-тестам він не потрібен), тож вміст існує лише локально.
+  #   · `public/assets/` — вихід `assets:precompile`, gitignored за побудовою.
+  # ⚠️ Обидва — ЛЕГІТИМНІ цитати за змістом (vendored doc / місце маніфесту), тож
+  # лік тут виняток, а не переписування прози. Стеля винятку: він знімає нагляд і
+  # з наших власних файлів, якби вони колись опинилися під цими префіксами.
+  EXEMPT_PREFIXES = {
+    "firmware/extern/" => "git-submodule — не чекаутиться в job `test`, тож існує лише локально",
+    "public/assets/" => "вихід `assets:precompile`, gitignored — у чистому checkout його нема",
+    "app/assets/builds/" => "вихід `tailwindcss:build`, gitignored — той самий клас, знайдений ДО детонації звіркою цитат проти `git ls-files`"
+  }.freeze
+
   module_function
 
   def candidates
@@ -74,6 +92,7 @@ RSpec.describe "[.claude prose] every cited file path resolves from the repo roo
 
   it "cites no path that does not exist" do
     dead = candidates.reject { ClaudeProsePathRefs::EXEMPT.key?(_1[:token]) }
+                     .reject { |c| ClaudeProsePathRefs::EXEMPT_PREFIXES.keys.any? { c[:token].start_with?(_1) } }
                      .reject { ClaudeProsePathRefs::ROOT.join(_1[:token]).exist? }
 
     report = dead.map { "  #{_1[:token]}  ← #{_1[:at]}" }
