@@ -1,6 +1,6 @@
 ---
 name: ssot-maintenance
-description: "Use when working on the SSOT docs (docs/NN_NN_*.md) — editing or creating a canon doc, hunting or fixing SSOT drift, adding or hardening a docs linter / CI gate, checking where a fact canonically lives, or publishing canon to the GitHub wiki. Operational playbook for docs:check_refs / docs:toc / tracker:check / wiki:sync, plus §Guard-craft — the craft of building a gate that actually catches: its thesis, design rules, mutation-verify pitfalls and hardening checklist live here, while the **blindness shapes** (a gate that under-implements its declared contract, a One-Home invariant with no gate behind it, precision-in-the-anchor, …) are indexed here one line each and written in full in this skill's `guard-craft.md`, which loads on demand — open it when building, hardening or debugging a gate, and equally when writing a spec, mass-deleting, narrowing a rule or running a campaign. Defers the STANDARD itself to 00_02 + 00_06. Examples: \"edit 03_05\", \"is this value consistent across the docs?\", \"add a drift linter\", \"why is my guard green when it shouldn't be\", \"publish the docs to the wiki\", \"where does the Lorenz constant live?\""
+description: "Use when working on the SSOT docs (docs/NN_NN_*.md) — editing or creating a canon doc, hunting or fixing SSOT drift, adding or hardening a docs linter / CI gate, checking where a fact canonically lives, or publishing canon to the GitHub wiki. Operational playbook for docs:check_refs / docs:toc / tracker:check / wiki:sync, plus §Guard-craft — the craft of building a gate that actually catches: its thesis, design rules, mutation-verify pitfalls and hardening checklist live here, while the **blindness shapes** (a gate that under-implements its declared contract, a One-Home invariant with no gate behind it, precision-in-the-anchor, …) are indexed here one line each and written in full in this skill's `guard-craft.md`, which loads on demand — open it when building, hardening or debugging a gate, and equally when writing a spec, mass-deleting, narrowing a rule or running a campaign. Defers the STANDARD itself to 00_06. Examples: \"edit 03_05\", \"is this value consistent across the docs?\", \"add a drift linter\", \"why is my guard green when it shouldn't be\", \"publish the docs to the wiki\", \"where does the Lorenz constant live?\""
 ---
 
 # SSOT Maintenance
@@ -13,7 +13,8 @@ These are the canonical homes. Read them before acting; never copy their content
 
 | Source | Owns |
 |---|---|
-| `docs/00_03_TRL_Matrix_HIL_and_Beyond.md` | **Philosophy**: NASA TRL (1-9, never 10-12), the AI Pipeline + 🚦 **Validation Gate** (LLM proposes a *hypothesis*, it does NOT compute physics), Intent-First, golden rule: *no code/solder until the spec is approved in the Wiki*. |
+| `docs/00_03_TRL_Matrix_HIL_and_Beyond.md` | **Readiness**: the NASA/ISO scale (1-9, never 10-12) and its `SRL`/`MRL` siblings (§1), TRL-Layered-Independence (§2), HIL + in-silico-as-HIL (§3), and the task-closure criterion + TRL Gate Events (§4). |
+| `docs/00_06_SSOT_Documentation_Standard.md §5` | 🚦 **Validation Gate** — the admission criterion for a fact entering canon (an LLM proposes a *hypothesis*; it does NOT compute physics) + the AI-vendor roster (§5.1). Moved here 2026-08-10 when the method page dissolved (DOC-T.68 фаза 3); the golden rule *no code/solder until the spec is approved* survives as this gate, the rest of the old AI-pipeline prose did not. |
 | `docs/00_06_SSOT_Documentation_Standard.md §1` | **Canonical doc skeleton** (🎯 Мета / ✅ Статус / 🔗 Cross-references / 📑 auto-ToC / Content; blockers→00_07; no volatile counts). |
 | `docs/00_06_SSOT_Documentation_Standard.md §2` | **Canonical-home registry** — *одна річ, один дім*. The table of which fact lives where (TRL matrix→00_03 §1, AES modes→03_05 §3.7, Lorenz→03_04 §4.1, …). |
 | `docs/00_06_SSOT_Documentation_Standard.md §3` | **Drift-prevention tooling** — the CI-enforced guard table. Add new guards here. |
@@ -185,6 +186,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 48. A gate that resolves EXISTENCE against the filesystem answers a question about the MACHINE, not about the code — and it fails in the direction that ships: green on the author's laptop, red in CI, identical tree
 49. A gate over PROSE must anchor on the INVOCATION form, never on the referent's NAME — because naming a gate is legitimate teaching, and only calling it is a claim about your own verification
 50. The reference-gate family grips a canon doc by an IDENTIFIER, and it validates that the identifier RESOLVES — never that it still denotes the same subject. So a restructure has two silent faces: renaming empties a gate's input, and re-using a freed number silently re-points every stale citation at the new occupant — **before dissolving a number, list the gates that EXEMPT the docs where you will do the planning — the exemption you rely on daily is the one that will not warn you**
+51. A gate can be HARD, correct, unit-tested — and structurally unable to reach the place its class actually lives, because the same fact is WRITTEN in two forms and the gate's regex knows one
 
 <!-- /GUARD-CRAFT-INDEX -->
 
@@ -259,7 +261,12 @@ oversized, scattered topics into their own canon pages: slashing (00_01 §6,
 Repeatable shape (now canon in `00_06 §4`):
 
 ```
+GENRE FIRST    does the page describe anything BUILT? if not, it is a spec for
+               something that does not exist → its home is 00_07, not another
+               canon page, and the work becomes "make each tracker item carry
+               its own GROUNDS" rather than a migration (DOC-T.68 фаза 4)
 MIGRATE-FIRST  fill new home with FULL substance + verify present, THEN cut source
+               — and fill it before you REFERENCE it, not just before you cut
 STUB+POINTER   source keeps a thin vision/ref-stub → new home; mechanics reference
 SWEEP ANCHORED re-point §X refs anchored on a token (e.g. "07_01") so other docs'
                internal §X (01_01/02_03/04_04 each have their own §6.x!) survive;

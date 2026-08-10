@@ -18,7 +18,7 @@ on-device features, proven, not hoped.**
 | `docs/03_03_TinyML_Acoustic_Inference.md §3.2/§4/§10` | DSP-path decision (Path B log-mel), model architecture (Path B, 5-class), Mongabay fauna (biodiversity = 2-й D-MRV вимір, both/and — не заміна carbon). |
 | `tools/ml/README.md` | Package layout, the three-impl parity diagram, the local-verify recipes, the deferred stack. |
 | `docs/00_06_SSOT_Documentation_Standard.md §2` | Canonical-home registry — the contract's home + its C/python mirrors + drift guard. |
-| `docs/00_03_TRL_Matrix_HIL_and_Beyond.md` | Validation Gate — LLM proposes a *hypothesis*; no code until the spec is approved. |
+| `docs/00_06_SSOT_Documentation_Standard.md §5` | 🚦 Validation Gate — LLM proposes a *hypothesis*, it does NOT compute physics; no code until the spec is approved. (Moved from the dissolved method page 2026-08-10.) |
 | `docs/03_01_Firmware_Lifecycle_and_DMA.md §12.4` | **Firmware ARM cross-compile build** (FW.46) — CMake, pinned submodules (`firmware/extern/`), mrbc bytecode, toolchain pin, footprint, mruby `double`/NO_BOXING/minimal-gembox invariants. |
 
 **State** (what's built / next) lives in memory, not here: `[[project_e61_done_next_machine_doable]]`, plus `[[feedback_no_volatile_counts]]`, `[[feedback_comment_style]]`.
