@@ -4,12 +4,10 @@ lt:
     create_error_title: Evoliucijos klaida
     form:
       binary_label: Dvejetainis artefaktas (.bin)
-      notes_label: Leidimo pastabos / Loginiai pakeitimai
-      notes_placeholder: Apibūdinkite biogeninės programinės įrangos pakeitimus...
       submit: PATVIRTINTI EVOLIUCIJĄ
+      target_gateway: Queen (šliuzas)
       target_label: Tikslinė aparatūros architektūra
-      target_queen: ESP32-S3 (Queen)
-      target_soldier: STM32-L0 (Soldier)
+      target_tree: Soldier (medis)
       version_label: Evoliucijos versija
       version_placeholder: pvz. 1.4.2
     index:

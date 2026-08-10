@@ -32,20 +32,25 @@ RSpec.describe Firmwares::Form do
       expect(html).to include("Binary Artifact (.bin)")
     end
 
-    it "renders the Release Notes field label" do
-      expect(html).to include("Release Notes / Logical Changes")
-    end
-
     it "includes version placeholder text" do
       expect(html).to include("1.4.2")
     end
 
-    it "renders Soldier hardware option" do
-      expect(html).to include("STM32-L0 (Soldier)")
+    # 🔴 Пін на ЗНАЧЕННЯ, не лише на мітку. Селект роками пропонував `stm32_l0`/
+    # `esp32_s3` — значення поза `HARDWARE_TYPES`, тож навіть із правильним іменем
+    # поля запис не створився б. Мітки при цьому виглядали правдоподібно, бо називали
+    # MCU — і теж помилково: обидва наші процесори STM32WLE5JC.
+    it "пропонує рівно ті значення цільового заліза, які приймає модель" do
+      expect(html.scan(/<option value="([^"]*)"/).flatten)
+        .to match_array(BioContractFirmware::HARDWARE_TYPES)
     end
 
-    it "renders Queen hardware option" do
-      expect(html).to include("ESP32-S3 (Queen)")
+    it "renders the Tree (Soldier) hardware option" do
+      expect(html).to include("Soldier (Tree)")
+    end
+
+    it "renders the Gateway (Queen) hardware option" do
+      expect(html).to include("Queen (Gateway)")
     end
 
     it "renders the submit button" do

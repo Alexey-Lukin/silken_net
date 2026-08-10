@@ -4,12 +4,10 @@ uk:
     create_error_title: Помилка еволюції
     form:
       binary_label: Бінарний артефакт (.bin)
-      notes_label: Нотатки релізу / Логічні зміни
-      notes_placeholder: Опис змін у біогенній прошивці...
       submit: ЗАФІКСУВАТИ ЕВОЛЮЦІЮ
+      target_gateway: Королева (шлюз)
       target_label: Цільова архітектура обладнання
-      target_queen: ESP32-S3 (Королева)
-      target_soldier: STM32-L0 (Солдат)
+      target_tree: Солдат (дерево)
       version_label: Версія еволюції
       version_placeholder: напр. 1.4.2
     index:

@@ -196,11 +196,60 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
   end
 
   describe "POST /firmwares (create)" do
+    # 🔴 Round-trip форма⟷контролер: склад полів зішкрібається з ЖИВОЇ розмітки, а не
+    # друкується тут. Рукописний список пінив би те, що надрукував автор, і рівно цей
+    # дрейф прожив непоміченим: форма слала `firmware[target_hardware]` і
+    # `firmware[notes]` — колонок під них НЕМАЄ, тож мас-присвоєння кидало
+    # `ActiveModel::UnknownAttributeError`, і кожен сабміт віддавав 500.
+    # Рендер при цьому справний і мовчить: `form_with` виставляє
+    # `allow_method_names_outside_object`, тож читання неіснуючого поля дає nil —
+    # тому компонентна спека на реальній моделі лишалась зеленою.
+    it "форма переживає власний сабміт: кожне поле, яке вона рендерить, контролер приймає" do
+      html_headers = { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+
+      get "/firmwares/new", headers: html_headers
+      rendered_fields = response.body.scan(/name="firmware\[([a-z_]+)\]"/).flatten.uniq
+      # Пін на РОЗМІР множини: зішкрібання, що не знайшло нічого, зробило б приклад
+      # вакуумним — порожній payload проходить будь-яким контролером.
+      expect(rendered_fields).to include("version", "target_hardware_type")
+
+      known = {
+        "version" => "7.7.7",
+        "target_hardware_type" => BioContractFirmware::HARDWARE_TYPES.first,
+        "binary_file" => Rack::Test::UploadedFile.new(
+          StringIO.new("\xDE\xAD".b), "application/octet-stream", true, original_filename: "fw.bin"
+        )
+      }
+      post "/firmwares",
+           params: { firmware: rendered_fields.index_with { |f| known.fetch(f, "") } },
+           headers: html_headers
+
+      expect(response).to redirect_to(firmwares_path)
+      expect(BioContractFirmware.find_by(version: "7.7.7")&.target_hardware_type)
+        .to eq(BioContractFirmware::HARDWARE_TYPES.first)
+    end
+
+    # Дзеркало round-trip'а з боку API: застарілий клієнт шле ключі, яких на моделі
+    # немає. Доти вони стояли в `permit`, тобто летіли в мас-присвоєння й валили
+    # сервер; тепер strong-params відкидає їх мовчки, і 500 неможливий незалежно від
+    # того, що надішле клієнт.
+    it "ключ, якого модель не має, більше не валить сервер" do
+      post "/firmwares",
+           params: { firmware: { version: "8.8.8", bytecode_payload: "DEADBEEF",
+                                 target_hardware: "stm32_l0", notes: "легасі-клієнт" } },
+           headers: headers, as: :json
+
+      expect(response).to have_http_status(:created)
+    end
+
     it "creates firmware successfully as JSON" do
       post "/firmwares",
            params: { firmware: { version: "4.0.0", bytecode_payload: "DEADBEEF" } },
            headers: headers, as: :json
       expect(response).to have_http_status(:created)
+      # Відповідь не повертає завантажений байткод: голий `@firmware` серіалізує
+      # ВСІ колонки, тобто відсилав би до 40 МБ hex назад клієнтові.
+      expect(response.parsed_body["firmware"]).not_to have_key("bytecode_payload")
     end
 
     # 🔴 Доти приймалось 200 або 500 — множина, що навіть не містила 422, який ця

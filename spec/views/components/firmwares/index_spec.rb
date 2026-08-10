@@ -4,16 +4,16 @@
 require "rails_helper"
 
 RSpec.describe Firmwares::Index do
-  def mock_firmware(id: 1, version: "1.4.2", target_hardware: "stm32_l0", checksum: "abcdef1234567890AABB", created_at: Time.new(2024, 3, 15, 10, 30))
-    OpenStruct.new(
-      id: id,
-      version: version,
-      target_hardware: target_hardware,
-      checksum: checksum,
-      created_at: created_at,
-      to_param: id.to_s,
-      model_name: OpenStruct.new(param_key: "firmware", route_key: "firmwares", singular_route_key: "firmware")
-    )
+  # 🔴 [TEST.12] Мок подавав `target_hardware`/`checksum`, а компонент читає
+  # `target_hardware_type`/`binary_sha256` — `OpenStruct` мовчки віддавав `nil` на
+  # обидва, тож ці дві колонки могли рендеритись порожніми вічно (пінилися лише їхні
+  # ЗАГОЛОВКИ). `build_stubbed`, а не `.new`: рядок читається роут-хелпером
+  # `deploy_firmware_path`, тобто потребує `id`, і `created_at` для `strftime`.
+  def mock_firmware(id: 1, version: "1.4.2", target_hardware_type: "Tree",
+                    binary_sha256: "abcdef1234567890AABB", created_at: Time.new(2024, 3, 15, 10, 30))
+    build_stubbed(:bio_contract_firmware, id: id, version: version,
+                  target_hardware_type: target_hardware_type,
+                  binary_sha256: binary_sha256, created_at: created_at)
   end
 
   def mock_inventory_stats
@@ -53,6 +53,14 @@ RSpec.describe Firmwares::Index do
 
     it "renders firmware version" do
       expect(html).to include("v1.4.2")
+    end
+
+    # Пін цілить у САМІ комірки: `include("Tree")` по всьому документу проходив би
+    # через заголовок «Soldiers (Trees)» і був би зелений за будь-якої поведінки.
+    it "рендерить ЗНАЧЕННЯ цільового заліза й контрольної суми, а не лише їхні заголовки" do
+      cells = Nokogiri::HTML5.fragment(html).css("tbody tr td").map { |td| td.text.strip }
+      expect(cells).to include("Tree")
+      expect(cells).to include("abcdef1234567890")
     end
 
     it "renders firmware rows with deploy button" do

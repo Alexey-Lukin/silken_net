@@ -98,10 +98,10 @@ module Api
           hex_payload = params[:firmware][:bytecode_payload].to_s
           if hex_payload.bytesize > MAX_BYTECODE_PAYLOAD_HEX_SIZE
             # ⚠️ [SEC.25 Ф4] Ця гілка свідомо лишається JSON-only, на відміну від
-            # сусідньої: поля `bytecode_payload` у формі НЕМАЄ (`Firmwares::Form`
-            # має рівно version/target/binary_file/notes), тож браузер сюди не
-            # доходить у принципі — HTML-гілка була б мертвим кодом із дня
-            # написання. Це API-обхід multipart-ліміту, і він API-шляхом і лишається.
+            # сусідньої: поля `bytecode_payload` у формі НЕМАЄ — вона рендерить лише
+            # version/target_hardware_type/binary_file, — тож браузер сюди не доходить
+            # у принципі, і HTML-гілка була б мертвим кодом із дня написання. Це
+            # API-обхід multipart-ліміту, і він API-шляхом і лишається.
             render json: { error: I18n.t("flash.firmwares.file_too_large", limit: MAX_FIRMWARE_SIZE / 1.megabyte) }, status: :unprocessable_content
             return
           end
@@ -111,9 +111,12 @@ module Api
         if @firmware.save
           respond_to do |format|
             format.json do
+              # `only:` несучий: голий `@firmware` серіалізує ВСІ колонки, тобто
+              # повертає завантажений `bytecode_payload` (до 40 МБ hex) назад клієнту.
+              # Набір дзеркалить `index` і контракт `04_03 §5.8`.
               render json: {
                 message: I18n.t("flash.firmwares.uploaded", version: @firmware.version),
-                firmware: @firmware
+                firmware: @firmware.as_json(only: [ :id, :version, :target_hardware_type, :binary_sha256, :created_at ])
               }, status: :created
             end
             format.html { redirect_to firmwares_path, success: I18n.t("flash.firmwares.uploaded", version: @firmware.version) }
@@ -262,7 +265,11 @@ module Api
       end
 
       def firmware_params
-        params.require(:firmware).permit(:version, :binary_file, :target_hardware, :notes, :target_hardware_type, :tree_family_id, :bytecode_payload)
+        # ⚠️ Кожен пермічений скаляр, крім `binary_file`/`bytecode_payload`, іде в
+        # мас-присвоєння (`create` робить `.except` рівно на цю пару), тож ключ без
+        # колонки — не «зайвий дозвіл», а `ActiveModel::UnknownAttributeError` → 500.
+        # Саме так тут жили `target_hardware` і `notes`.
+        params.require(:firmware).permit(:version, :binary_file, :target_hardware_type, :tree_family_id, :bytecode_payload)
       end
     end
   end

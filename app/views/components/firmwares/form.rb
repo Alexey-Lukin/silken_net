@@ -28,16 +28,20 @@ module Firmwares
             f.text_field :version, class: input_classes, placeholder: t(".version_placeholder"), required: true
           end
 
+          # Колонка `target_hardware` не існує — форма роками слала ключ, якого модель
+          # не має, тож кожен сабміт помирав на `ActiveModel::UnknownAttributeError`.
+          # Значення беруться з allow-list моделі: рукописний перелік розійшовся б із
+          # нею мовчки, як розійшлися MCU-мітки. Без `include_blank` свідомо — прошивка
+          # без типу не гаситься релізом свого класу (`deploy_globally!` фільтрує по
+          # ньому, а SQL NULL не дорівнює жодному значенню).
           field_container(t(".target_label")) do
-            f.select :target_hardware, [ [ t(".target_soldier"), "stm32_l0" ], [ t(".target_queen"), "esp32_s3" ] ], {}, class: input_classes
+            f.select :target_hardware_type,
+                     BioContractFirmware::HARDWARE_TYPES.map { |type| [ t(".target_#{type.downcase}"), type ] },
+                     {}, class: input_classes
           end
 
           field_container(t(".binary_label")) do
             f.file_field :binary_file, class: "w-full text-gaia-text-muted text-tiny font-mono file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-gaia-surface-sunken file:text-gaia-primary hover:file:bg-gaia-primary/20 cursor-pointer", required: true
-          end
-
-          field_container(t(".notes_label")) do
-            f.text_area :notes, rows: 4, class: input_classes, placeholder: t(".notes_placeholder")
           end
         end
 

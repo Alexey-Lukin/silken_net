@@ -4,32 +4,12 @@
 require "rails_helper"
 
 RSpec.describe Firmwares::New do
+  # 🔴 [TEST.12] Тут стояв `OpenStruct` із рукописним `model_name` і полями
+  # `target_hardware`/`notes`, яких на моделі НЕМАЄ — тобто фікстура оголошувала
+  # світ, де сабміт цієї форми можливий, тоді як у проді він падав 500. Сусідній
+  # `form_spec` уже переведено на справжню модель [SEC.25]; ця — остання копія.
   def mock_firmware
-    fw = OpenStruct.new(
-      id: nil,
-      version: nil,
-      target_hardware: nil,
-      notes: nil,
-      binary_file: nil,
-      errors: OpenStruct.new(any?: false),
-      new_record?: true,
-      to_param: nil,
-      persisted?: false
-    )
-    fw.define_singleton_method(:to_model) { self }
-    fw.define_singleton_method(:model_name) do
-      OpenStruct.new(
-        param_key: "firmware",
-        route_key: "firmwares",
-        singular_route_key: "firmware",
-        name: "Firmware",
-        human: "Firmware",
-        i18n_key: :firmware,
-        element: "firmware",
-        collection: "firmwares"
-      )
-    end
-    fw
+    BioContractFirmware.new
   end
 
   describe "rendering" do

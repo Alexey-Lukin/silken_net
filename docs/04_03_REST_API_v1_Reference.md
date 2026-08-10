@@ -976,9 +976,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 |---|---|---|
 | `firmware[version]` | String | Версія (напр. `"1.4.2"`) |
 | `firmware[binary_file]` | File | Бінарний файл прошивки (макс. 20 МБ) |
-| `firmware[target_hardware]` | String | `"STM32WLE5JC"` тощо |
-| `firmware[notes]` | String | Нотатки до версії (опційно) |
-| `firmware[target_hardware_type]` | String | `"Tree"` або `"Gateway"` |
+| `firmware[target_hardware_type]` | String | `"Tree"` або `"Gateway"` (allow-list `BioContractFirmware::HARDWARE_TYPES`) — **єдине** поле цільового заліза, і саме його шле форма завантаження |
 | `firmware[tree_family_id]` | Integer | Прив'язка до породи (опційно) |
 | `firmware[bytecode_payload]` | String (HEX) | Альтернатива `binary_file`: hex-encoded bytecode. Розмір обмежено до `MAX_BYTECODE_PAYLOAD_HEX_SIZE = 2 × MAX_FIRMWARE_SIZE` (40 MB hex = 20 MB binary). |
 
@@ -990,7 +988,6 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
   "firmware": {
     "id": 12,
     "version": "1.4.2",
-    "target_hardware": "STM32WLE5JC",
     "target_hardware_type": "Tree",
     "binary_sha256": "A3F2...",
     "created_at": "2026-03-22T17:00:00Z"

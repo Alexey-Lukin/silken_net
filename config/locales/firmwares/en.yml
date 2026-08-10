@@ -4,12 +4,10 @@ en:
     create_error_title: Evolution Error
     form:
       binary_label: Binary Artifact (.bin)
-      notes_label: Release Notes / Logical Changes
-      notes_placeholder: Describing the changes in the biogenic firmware...
       submit: COMMIT EVOLUTION
+      target_gateway: Queen (Gateway)
       target_label: Target Hardware Architecture
-      target_queen: ESP32-S3 (Queen)
-      target_soldier: STM32-L0 (Soldier)
+      target_tree: Soldier (Tree)
       version_label: Evolution Version
       version_placeholder: e.g. 1.4.2
     index:

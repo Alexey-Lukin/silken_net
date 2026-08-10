@@ -4,12 +4,10 @@ lv:
     create_error_title: Evolūcijas kļūda
     form:
       binary_label: Binārais artefakts (.bin)
-      notes_label: Laidiena piezīmes / Loģiskās izmaiņas
-      notes_placeholder: Aprakstiet izmaiņas biogēnajā programmaparatūrā...
       submit: APSTIPRINĀT EVOLŪCIJU
+      target_gateway: Queen (vārteja)
       target_label: Mērķa aparatūras arhitektūra
-      target_queen: ESP32-S3 (Queen)
-      target_soldier: STM32-L0 (Soldier)
+      target_tree: Soldier (koks)
       version_label: Evolūcijas versija
       version_placeholder: piem. 1.4.2
     index:
