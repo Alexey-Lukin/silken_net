@@ -34,6 +34,14 @@
 #      with no CI call). Every `cmd` (…wf.yml…) pair in the command column
 #      must find cmd inside that workflow's run-steps, and every command span
 #      must live in SOME workflow unless the row is marked advisory/on-demand.
+#      🔴 DECLARED CEILING (moved from the 00_06 §3 row, 2026-08-10 — its only
+#      home): a row whose command column carries NO span matching `cmd_span_re`
+#      is skipped in SILENCE (`next if cmds.empty?`). So the very class E exists
+#      to catch — "declared gating with no CI call" — survived INSIDE this
+#      registry, in the row whose command was a doc-ref plus a `bin/rails runner`
+#      one-liner. A check that narrows its own subject BY SHAPE always keeps a
+#      genre it cannot see; name that genre here, or the green run reads as full
+#      coverage of the column.
 #
 # Pure Ruby (yaml stdlib only, no Rails). Run: ruby scripts/guard_registry_sync.rb
 # Exit 0 = in sync; exit 1 = drift (lists the divergence). Method/why → docs/00_06 §3.

@@ -409,6 +409,14 @@ module Tracker
     # Catches the drift that once buried §06 deploy items (S*/INF*) under §04 "DevOps"
     # behind apologetic nav-notes. 📌 backlog / 🗄️ archive sections
     # are module-agnostic (section_modules nil/empty) → exempt. (canon-mirror, 00_06 §4)
+    #
+    # ⛔ Curation is by THEME — by the subject's unchanging identity — and the obvious
+    # alternative was tested and REJECTED (§07, 2026-07-26; moved here from the 00_06 §3
+    # row on 2026-08-10, which was its only home). Splitting sub-sections by STATE
+    # duplicates the STAGE axis, which already carries state, and would force an item to
+    # MIGRATE on every flip. A filing rule that makes items move whenever their state
+    # changes is a drift generator, not a filing system — so the rejection is the load-
+    # bearing half here, not the mechanic above it.
     def self.section_home_violations(items)
       items.filter_map do |it|
         next if it.section_modules.nil? || it.section_modules.empty?
