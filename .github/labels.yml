@@ -58,20 +58,24 @@
   description: "Mixed AI + human"
 
 # ─────────────────────────────────────────────────────────────────────────
-# Change type (SSOT Guard bypass whitelist)
+# Change type — classification for every PR; bypass for only SOME
 # Doc reference: docs/00_05_GitHub_Automation_and_IaC.md §2.3.
-# A PR with ANY of these labels skips the SSOT Guard documentation check —
-# the label is a force-function: the author must classify the change as
-# genuinely non-architectural. Generic skip-label was rejected (00_05 §2.3
-# rationale) because it would be abused without classification.
+# 🔴 Only FOUR of these skip the SSOT Guard documentation check — chore, deps,
+# perf and test. `type:refactor` and `type:bugfix` are deliberately NOT in the
+# bypass list: a refactor moves names and paths, a bugfix changes logic, and
+# both drift the docs. They classify the PR and still require a docs/ update
+# or an open drift item in the tracker. The live list is BYPASS_LABELS in
+# .github/workflows/ssot_guard.yml — this file must not contradict it.
+# The label is a force-function: the author classifies the change publicly.
+# A generic skip-label was rejected — it would be used without classifying.
 # ─────────────────────────────────────────────────────────────────────────
 - name: "type:bugfix"
   color: "D73A4A"
-  description: "Defect fix without architectural/contract change — SSOT bypass"
+  description: "Defect fix without architectural/contract change — NO SSOT bypass"
 
 - name: "type:refactor"
   color: "A2EEEF"
-  description: "Refactor (rename, extract, no behavior change) — SSOT bypass"
+  description: "Refactor (rename, extract, no behavior change) — NO SSOT bypass"
 
 - name: "type:chore"
   color: "CFCFCF"
