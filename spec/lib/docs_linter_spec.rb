@@ -738,6 +738,19 @@ RSpec.describe DocsLinter do
       expect(described_class.link_label_target_mismatch("[Insurance Layer mechanics](07_01_Nature_as_a_Service_Contracts)")).to be_empty
     end
 
+    # The PATH href form is how root files and .github/ link canon, and it is where a
+    # re-point campaign leaves the lie unread — the in-docs loop never opens them
+    # [DOC-T.68 закривна: GOVERNANCE.md carried `docs/00_02` → docs/00_03_… unseen].
+    it "flags the same mismatch written in the docs/…​.md PATH form" do
+      hits = described_class.link_label_target_mismatch("[`docs/00_02`](docs/00_03_TRL_Matrix_HIL_and_Beyond.md)")
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("00_02").and include("00_03")
+    end
+
+    it "passes the PATH form when label and href agree" do
+      expect(described_class.link_label_target_mismatch("[`docs/00_07`](docs/00_07_Action_Plan_Tracker.md)")).to be_empty
+    end
+
     it "keys on the LEAD doc-ID only — a later secondary mention is not flagged" do
       expect(described_class.link_label_target_mismatch("[`03_04 §4.1` (див. також 05_05)](03_04_mruby_Lorenz_Attractor)")).to be_empty
     end

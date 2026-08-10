@@ -656,8 +656,14 @@ module DocsLinter
   # ["label `00_06 …` → href 00_05_… (label leads with 00_06, not 00_05)", …].
   LABEL_DOC_RE = /(?<!\d)\d\d_\d\d(?!\d)/
 
+  # Both href FORMS, because the class does not stop at the docs/ boundary: canon
+  # pages link wiki-style (`](NN_NN_Name)`), while root files and .github/ link by
+  # PATH (`](docs/NN_NN_Name.md)`) — and the path form is where a re-point campaign
+  # leaves the lie unseen, since the in-docs loop never reads those files
+  # [DOC-T.68 закривна]. Mutation-verified: restoring the GOVERNANCE.md residue
+  # (label `docs/00_02` → href docs/00_03_…) turns this RED.
   def link_label_target_mismatch(text)
-    text.scan(/\[([^\]]*)\]\((\d\d_\d\d)_[A-Za-z0-9_]+(?:#[^)]*)?\)/).filter_map do |label, target_id|
+    text.scan(%r{\[([^\]]*)\]\((?:docs/)?(\d\d_\d\d)_[A-Za-z0-9_]+(?:\.md)?(?:\#[^)]*)?\)}).filter_map do |label, target_id|
       label_id = label[LABEL_DOC_RE]
       next unless label_id           # label cites no doc-ID → nothing to verify
       next if label_id == target_id  # label leads with the doc it links to → ok

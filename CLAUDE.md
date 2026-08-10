@@ -28,7 +28,7 @@
 | Деплой / Akash / Kamal / observability | `deploy` | `06_01`–`06_08` |
 | §07 Юр/бізнес/академ/IP (NaaS-умови · юніт-економіка · партнер-реєстр · IP-постава й бренд · робочі чернетки `protocols/{legal,business,outreach,research}`) | `legal-business` | `07_01`–`07_03` (+ стан `00_07 §07`) |
 | Оновлення залежностей (будь-який домен) | `dependency-update` | (polyglot) |
-| SSOT-доки / drift-hunt / wiki-sync | `ssot-maintenance` | `00_02` + `00_06` |
+| SSOT-доки / drift-hunt / wiki-sync | `ssot-maintenance` | `00_06` |
 | **Подія, а не домен:** будуєш ГЕЙТ · пишеш СПЕКУ · масово ВИДАЛЯЄШ · ЗВУЖУЄШ правило · ведеш КАМПАНІЮ | `ssot-maintenance` → **`guard-craft.md`** (on-demand) | `00_06 §3` |
 | Персистентна пам'ять | `memory-maintenance` | `memory/` |
 

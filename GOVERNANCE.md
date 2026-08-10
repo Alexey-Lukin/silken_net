@@ -27,7 +27,7 @@ is of course free to fork.
 - **Architecture & specifications** are decided *documentation-first*: the canonical
   design lives in the SSOT docs (`docs/NN_NN_*.md`) and a change in behaviour is agreed
   in the docs before code is written (see
-  [`docs/00_02`](docs/00_03_TRL_Matrix_HIL_and_Beyond.md)). Open work and decisions
+  [`docs/00_06`](docs/00_06_SSOT_Documentation_Standard.md)). Open work and decisions
   are tracked in [`docs/00_07`](docs/00_07_Action_Plan_Tracker.md).
 - **Security decisions** follow [`SECURITY.md`](SECURITY.md).
 - **Disputes** are resolved by the maintainer.

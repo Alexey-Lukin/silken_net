@@ -239,7 +239,13 @@ namespace :docs do
                      .reject { |f| ext_exempt.include?(f.delete_prefix("#{root_dir}/")) }
     ext_drift = external_files.flat_map do |f|
       rel = f.delete_prefix("#{root_dir}/")
-      DocsLinter.external_doc_path_drift(rel, File.read(f), existing)
+      body = File.read(f)
+      # Same file set, second axis: `external_doc_path_drift` asks whether the href
+      # RESOLVES, and a link whose label cites one doc while the href points at
+      # another resolves perfectly — so the two must run as a PAIR or the lie stays
+      # invisible exactly on the surfaces no in-docs gate reads [DOC-T.68 закривна].
+      label_drift.concat(DocsLinter.link_label_target_mismatch(body).map { |h| "#{rel}: #{h}" })
+      DocsLinter.external_doc_path_drift(rel, body, existing)
     rescue ArgumentError
       [] # skip non-UTF-8 / binary files
     end
