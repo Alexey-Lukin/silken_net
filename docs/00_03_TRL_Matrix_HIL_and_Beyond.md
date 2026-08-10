@@ -20,7 +20,7 @@
 | [`00_01` — Vision Mission and Roadmap](00_01_Vision_Mission_and_Roadmap) | Бізнес-візія та slashing |
 | [`00_02` — AI Native Engineering and TRL](00_02_AI_Native_Engineering_and_TRL) | AI-Native TRL philosophy (метрика прогресу) |
 | [`00_02 §5.1`](00_02_AI_Native_Engineering_and_TRL) | TRL Gate Events (4→5 · 6→7 · 8→9) — де підняття рівня НЕ автоматичне |
-| [`00_05` — GitHub Automation and IaC](00_05_GitHub_Automation_and_IaC) | CI-гейти, що несуть рев'ю на TRL 1-4 |
+| [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) | CI-гейти, що несуть рев'ю на TRL 1-4 |
 | [`04_06` — Testing Guide and Coverage](04_06_Testing_Guide_and_Coverage) | §B Gap Analysis — відомі обмеження тестів + відкриті ризики |
 | [`07_03` — Academic Institutions Registry](07_03_Academic_Integration_and_IP) | Фізичні валідаційні протоколи ВНЗ (TRL 1-4) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** |

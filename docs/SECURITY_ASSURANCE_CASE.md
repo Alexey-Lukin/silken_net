@@ -277,5 +277,5 @@ The claims above are backed by enforced, automated evidence — not by assertion
 - [`05_02`](05_02_Proof_of_Growth_Pipeline) — telemetry → verification → mint, DCI (SEC.11), replay (SEC.10).
 - [`05_03`](05_03_Tokenomics_SCC_and_SFC) — token contracts, roles, supply cap.
 - [`05_05`](05_05_Slashing_and_Risk_Policy) — slashing categories, positive-A-evidence gate, insurance.
-- [`00_05`](00_05_GitHub_Automation_and_IaC) — supply-chain hardening (IaC policy); CI/CD inventory in [`06_07`](06_07_CICD_and_Runbook_Index).
+- [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) — supply-chain hardening (IaC policy); CI/CD inventory in [`06_07`](06_07_CICD_and_Runbook_Index).
 - [`00_07`](00_07_Action_Plan_Tracker) — open `SEC.*` / `FW.*` items and their status.

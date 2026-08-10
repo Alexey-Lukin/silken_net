@@ -6,7 +6,7 @@ name: Sec · Scorecard
 # permissions, branch protection, SAST, …) → a 0-10 score + findings in the
 # Security tab. Catches supply-chain REGRESSIONS automatically (a new action on a
 # moving tag, an over-broad token) instead of waiting for a human to re-audit.
-# Canon: 00_05 §2 (Actions IaC) / 06_07 §1. Tracker: OPS.10 (docs/00_07).
+# Canon: 06_07 §1 (Actions IaC) / 06_07 §1. Tracker: OPS.10 (docs/00_07).
 
 on:
   # Re-score whenever branch-protection changes (the Branch-Protection check).

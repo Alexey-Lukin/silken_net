@@ -19,7 +19,7 @@
 | [`00_00` — SSOT Index](00_00_SSOT_Index) | Reading-order + повний реєстр сторінок |
 | [`00_02` — AI Native Engineering and TRL](00_02_AI_Native_Engineering_and_TRL) | AI-Native філософія + Wiki-First (no code until spec approved) |
 | [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Per-module TRL matrix — канон-дім (§2 registry посилається сюди) |
-| [`00_05` — GitHub Automation and IaC](00_05_GitHub_Automation_and_IaC) | Workflows, що ганяють ці гейти (`docs.yml`, `ssot_guard.yml`); Labels-as-Code SSOT |
+| [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) | Workflows, що ганяють ці гейти (`docs.yml`, `ssot_guard.yml`); Labels-as-Code SSOT |
 | `lib/docs_linter.rb` · `lib/docs_toc.rb` · `lib/tasks/docs.rake` · `lib/wiki_link_normalizer.rb` | Engine'и drift-tooling (§3) — pure-функції, unit-tested |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Канонічний дім блокерів (§1) + open backlog |
 
@@ -89,7 +89,7 @@
 | Prometheus metric registry | `06_03 §2.8` (regen з `SilkenNet::Metrics::REGISTRY`) |
 | DR / backup posture | `06_06` (config SSOT = `terraform/database.tf`) |
 | CI/CD workflows + runbook index | `06_07` |
-| Supply-chain hardening (Actions SHA-pin · harden-runner · Scorecard · IaC misconfig-scan (Trivy) + TF-drift · build-provenance signing · CLI-tool hash-pin) | `00_05 §2.7` (IaC policy); інвентар workflow → `06_07 §1`; signed-release verify-команда → `SECURITY.md`; дія/стан → `00_07` OPS.10 (supply-chain) / INF.22 (IaC-scan/drift) |
+| Supply-chain hardening (Actions SHA-pin · harden-runner · Scorecard · IaC misconfig-scan (Trivy) + TF-drift · build-provenance signing · CLI-tool hash-pin) | `06_07 §1a` (IaC policy); інвентар workflow → `06_07 §1`; signed-release verify-команда → `SECURITY.md`; дія/стан → `00_07` OPS.10 (supply-chain) / INF.22 (IaC-scan/drift) |
 | GCP Cloud KMS keyring/IAM (disk-CMEK + mint-signer custody + tfstate-CMEK [SEC.22]) | `06_04 §5.6` (3 isolated keyrings `silken-disk-ew1`/`silken-sign-ew1`/`silken-tfstate-ew1` + separation-rules); mint-custody design → `06_04 §5.5`; стан → `00_07` SEC.17/SEC.22/INF.22. Інші доки реферять, не дублюють keyring-архітектуру |
 | Security assurance case (threat model · trust boundaries · OWASP map · residual risks) | `SECURITY_ASSURANCE_CASE.md` (synthesis-дім — аргументує + реферить canon, **не** новий source-of-truth: AES-режими лишаються в `03_05`, slashing у `05_05`, тощо) |
 | Публічний манифест (жанр: standalone маркетинг-нарратив) | `manifest.md` (genre-дім, DOC-T.41 — **не** source-of-truth: кожен факт у нім = дзеркало канону. Exempt з форм-лінтерів (bare-ref/line-ref) і rate-guard **за дизайном** — жанр несе числа в прозі без реф-апарату; лінію тримають (а) value-гейти без manifest-exempt (gp-clamp/deprecated/thermal/…), (б) rate-anchor, що при ре-прайсі явно називає manifest у чеклісті дзеркал (§3), (в) семантичні дрейфи — σ/ρ-інверсія, вигадані числа, 12 CONFIRMED у свіпі 07-16 — регекс НЕ ловить за природою → ручний свіп методом DOC-T.41 на цемент-сесіях. Живе в `docs/` свідомо; wiki-sync його не публікує (дзеркалить лише `NN_NN_*`)) |

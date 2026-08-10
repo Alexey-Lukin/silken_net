@@ -6,7 +6,7 @@ version: 2
 #     EBFC paper's DFT ran on) — reproducibility beats auto-bumps there.
 #   - firmware submodules (firmware/extern/*): not Dependabot-native; bumped on the
 #     firmware bench cadence, gated by host CMSIS / QEMU bit-parity.
-# labels: type:deps = the SSOT Integrity Guard's (00_05 §2.3) sanctioned bypass —
+# labels: type:deps = the SSOT Integrity Guard's (00_06 §3) sanctioned bypass —
 #     a dep bump touching a protected area (contracts/) is not an architecture change.
 updates:
 - package-ecosystem: bundler

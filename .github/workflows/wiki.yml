@@ -15,7 +15,7 @@ on:
     paths: ["docs/**"]
   workflow_dispatch:
 
-permissions: {}   # read-floor; the sync job elevates contents:write (00_05 §2.7)
+permissions: {}   # read-floor; the sync job elevates contents:write (06_07 §1a)
 
 concurrency:
   group: wiki-sync

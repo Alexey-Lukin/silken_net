@@ -822,7 +822,7 @@ On-chain governance (SFC-голосування за протокольні па
 # Компілюємо самі: forge build --build-info (solc 0.8.36 з foundry.toml), далі
 # crytic/slither-action@v0.4.2 з ignore-compile: true (читає build-info; forge install не потрібен — deps npm)
 # slither-version запінено: SHA-пін екшена НЕ тримає його начинку (образ тягне
-# slither-analyzer з PyPI свіжим щоразу) → 00_05 §2.4, стан 00_07 OPS.21
+# slither-analyzer з PyPI свіжим щоразу) → 06_07 §1a, стан 00_07 OPS.21
 # slither.config.json: fail-on high, filter_paths node_modules|test/ (аудит лише деплойних контрактів)
 # OpenZeppelin 5.x через contracts/package.json
 ```

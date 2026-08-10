@@ -13,7 +13,7 @@ name: Sec · IaC Scan
 # misconfiguration now fails the build, not just the SARIF report. Tool choice =
 # Trivy `config` (not tfsec — aquasecurity folded tfsec into Trivy; Trivy covers
 # terraform AND Dockerfile in one pass).
-# Canon: IaC-scan policy = 00_05 §2.7 (SHA-pinned scan-tool), inventory = 06_07 §1.
+# Canon: IaC-scan policy = 06_07 §1a (SHA-pinned scan-tool), inventory = 06_07 §1.
 # Tracker: INF.22 (docs/00_07 §06).
 #
 # Runs on every PR (no pull_request paths-filter): a `changes` job (dorny/paths-filter)
@@ -97,7 +97,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      # SHA-pinned action + explicit `version:` binary pin (00_05 §2.7 ruff
+      # SHA-pinned action + explicit `version:` binary pin (06_07 §1a ruff
       # precedent). skip-dirs excludes non-target noise: deploy/akash (SDL is not
       # a k8s manifest), deploy/grafana (alert-provisioning YAML), firmware/extern
       # (vendored third-party Dockerfiles we can't fix). config/*.yml (Rails) carry

@@ -55,7 +55,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 - **CI→GCP auth = keyless WIF (INF.22)** — без довгоживучого `GCP_SA_KEY` JSON (GitHub OIDC →
   GCP STS → impersonated deploy-SA). Provider+SA email = repo **Variables** (presence = deploy-gate).
   Виняток = Akash `GCP_SA_KEY_BASE64` (зовн. провайдер не досягає GitHub-issuer'а).
-  **Механіка/case-safety → `00_05 §2.7`** (`attribute_condition` owner-рівня ОБОВʼЯЗКОВИЙ +
+  **Механіка/case-safety → `06_07 §1a`** (`attribute_condition` owner-рівня ОБОВʼЯЗКОВИЙ +
   owner-case нормалізовано `lowerAscii()`); реєстр самого секрету → `06_04 §1.1`;
   виняток Akash → `06_02 §Security Exception`. ⚠️ Адреси РІЗНІ: обидві резолвляться, тож
   `code_doc_section_refs` зелений і на хибній — механіка в реєстрі секретів не живе.

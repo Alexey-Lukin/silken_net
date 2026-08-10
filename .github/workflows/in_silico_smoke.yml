@@ -68,7 +68,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Install conda-lock (hash-pinned)
         # `pipx install conda-lock` плавав latest без версії й хеша — єдина
-        # pip-поверхня поза «hash-pinned CI-тулзи» (00_05 §2.7). Лок = `uv pip
+        # pip-поверхня поза «hash-pinned CI-тулзи» (06_07 §1a). Лок = `uv pip
         # compile --universal --python-version 3.12` (НЕ pip-compile: той фіксує
         # markers під платформою компіляції — macOS-лок викинув linux-only
         # SecretStorage і цей крок упав; --universal тримає всі marker-гілки).

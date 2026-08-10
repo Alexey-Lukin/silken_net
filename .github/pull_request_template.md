@@ -10,4 +10,4 @@
       `type:chore` / `type:deps` / `type:perf` / `type:test` bypass the SSOT guard;
       `type:refactor` / `type:bugfix` still need a `docs/` update — or log the open drift in
       [`00_07`](../docs/00_07_Action_Plan_Tracker.md), which is itself a `docs/` change
-      (see [`00_05 §2.3`](../docs/00_05_GitHub_Automation_and_IaC.md)).
+      (see [`00_06 §3`](../docs/06_07_CICD_and_Runbook_Index.md)).

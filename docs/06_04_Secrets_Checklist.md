@@ -80,7 +80,7 @@
 - [ ] `KREDIS_REDIS_URL` — **[B1] виведено з усіх deploy-surface.** Kredis auto-derive DB 1 із `REDIS_URL` (`config/redis/shared.yml`: `/0`→`/1`). Не оголошений у Kamal / Akash / Terraform. Заводь GitHub Secret лише щоб указати на **окремий** Redis-інстанс (рідко).
 - [ ] `RACK_ATTACK_REDIS_URL` — Production Redis (DB 2) для rate limiting. Опціонально (auto-derive із `REDIS_URL`).
 - [ ] `SCORECARD_TOKEN` — fine-grained read-only PAT (repo admin: read) для `Sec · Scorecard` (OpenSSF, OPS.10). **Опціонально:** без нього Scorecard працює, але пропускає Branch-Protection/Webhooks-перевірки (`GITHUB_TOKEN` їх не читає). Дім workflow — [`06_07 §1`](06_07_CICD_and_Runbook_Index).
-- _(секрет НЕ потрібен)_ **Build-provenance attestation** (`mirror-ghcr.yml`, OpenSSF `signed_releases`) підписує GHCR-образ **keyless** через GitHub OIDC (`id-token: write`) + вбудований `GITHUB_TOKEN` — Sigstore Fulcio видає ефемерний сертифікат per-build, тож **підписувального ключа провіженити/зберігати не треба**. Політика → [`00_05 §2.7`](00_05_GitHub_Automation_and_IaC); verify → `SECURITY.md`.
+- _(секрет НЕ потрібен)_ **Build-provenance attestation** (`mirror-ghcr.yml`, OpenSSF `signed_releases`) підписує GHCR-образ **keyless** через GitHub OIDC (`id-token: write`) + вбудований `GITHUB_TOKEN` — Sigstore Fulcio видає ефемерний сертифікат per-build, тож **підписувального ключа провіженити/зберігати не треба**. Політика → [`06_07 §1a`](06_07_CICD_and_Runbook_Index); verify → `SECURITY.md`.
 
 ### 1.4. Web3 / runtime secrets — GitHub Secrets для CI Kamal deploy [B1]
 

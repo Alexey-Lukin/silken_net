@@ -14,7 +14,7 @@ exclude = ["node_modules", "test", "lib"]
 # Slither-clean, Foundry-tested, Hacken-bound). Excluded so the GitHub Security tab surfaces
 # only actionable findings; the high-severity detectors (the CI gate) stay active.
 # (The two genuinely-fixable notes — the magic-256 literal and the nonReentrant modifier
-# order — were FIXED in code, not excluded.) Rationale → docs/00_05 §2.7.
+# order — were FIXED in code, not excluded.) Rationale → docs/06_07 §1
 [detectors]
 exclude = [
   "centralization-risk",      # fires on every onlyRole/governance fn — the DAO admin design IS "centralized" (SEC.1)

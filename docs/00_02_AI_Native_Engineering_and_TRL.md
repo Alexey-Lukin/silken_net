@@ -2,9 +2,9 @@
 
 ## 🎯 Мета
 
-Зафіксувати **філософський каркас** методології SilkenNet: NASA TRL як єдину метрику прогресу, Intent-First Development, Wiki-First протокол та принцип розділення SSOT від виконання. У цьому документі залишається тільки те, що стабільне між операційними змінами; CI/IaC-механіка живе в [`00_05`](00_05_GitHub_Automation_and_IaC).
+Зафіксувати **філософський каркас** методології SilkenNet: NASA TRL як єдину метрику прогресу, Intent-First Development, Wiki-First протокол та принцип розділення SSOT від виконання. У цьому документі залишається тільки те, що стабільне між операційними змінами; CI/IaC-механіка живе в [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index).
 
-> **Що цей документ НЕ містить:** GitHub label conventions, конфігурацію workflow і supply-chain-поставу — це живе в [`00_05`](00_05_GitHub_Automation_and_IaC). Реєстр drift-гейтів і стандарт самих канон-доків — [`00_06`](00_06_SSOT_Documentation_Standard).
+> **Що цей документ НЕ містить:** GitHub label conventions, конфігурацію workflow і supply-chain-поставу — це живе в [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index). Реєстр drift-гейтів і стандарт самих канон-доків — [`00_06`](00_06_SSOT_Documentation_Standard).
 
 ---
 
@@ -20,7 +20,7 @@
 | Ресурс | Опис |
 |--------|------|
 | [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + per-domain TRL + HIL |
-| [`00_05` — GitHub Automation and IaC](00_05_GitHub_Automation_and_IaC) | Labels-as-Code, CI-гейти, supply-chain-постава |
+| [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) | Labels-as-Code, CI-гейти, supply-chain-постава |
 | [`04_05` — Codex Lore Module](04_05_Codex_Lore_Module) | Codex (read-only Atlas) застосовує ці ж AI-Native принципи |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Поточний backlog задач (SSOT) |
 

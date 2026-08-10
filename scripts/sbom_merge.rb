@@ -5,7 +5,7 @@
 # [BIZ.24] Flat merge of CycloneDX-1.6 fragments into one aggregate SBOM.
 #
 # WHY OUR OWN MERGE instead of `cyclonedx-cli merge` (which exists and works):
-#   1. **Pinning.** Repo policy (00_05 §2.7) pins every external `uses:` to a
+#   1. **Pinning.** Repo policy (06_07 §1a) pins every external `uses:` to a
 #      40-char commit SHA and every CLI analyser to a verified sha256. The
 #      official merger ships as a container; adding it would mean carrying an
 #      image digest for ~40 lines of set-union. Ruby stdlib needs no pin.

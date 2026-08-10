@@ -1,7 +1,7 @@
 # SSOT for repository labels — Labels-as-Code.
 # Synced by .github/workflows/labels_sync.yml (EndBug/label-sync@v2,
 # delete-other-labels: false — bot labels stay).
-# Doc reference: docs/00_05_GitHub_Automation_and_IaC.md §4 Label Conventions.
+# Doc reference: docs/06_07_CICD_and_Runbook_Index.md §1 Label Conventions.
 #
 # Labels are applied BY HAND. `type:*` is the only family a machine reads
 # (ssot_guard.yml bypass); the rest is navigation for human eyes.
@@ -59,7 +59,7 @@
 
 # ─────────────────────────────────────────────────────────────────────────
 # Change type — classification for every PR; bypass for only SOME
-# Doc reference: docs/00_05_GitHub_Automation_and_IaC.md §2.3.
+# Doc reference: docs/00_06_SSOT_Documentation_Standard.md §3
 # 🔴 Only FOUR of these skip the SSOT Guard documentation check — chore, deps,
 # perf and test. `type:refactor` and `type:bugfix` are deliberately NOT in the
 # bypass list: a refactor moves names and paths, a bugfix changes logic, and

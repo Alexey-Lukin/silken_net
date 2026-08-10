@@ -240,7 +240,7 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
 - **`db/structure.sql` / `Gemfile.lock`:** verify the diff is ONLY the intended dep (no drive-by
   churn) before committing.
 - **Canon docs mirror pinned versions — sweep them too (a bump is not done at the manifest).**
-  The SSOT docs pin versions in prose: `00_05` (CI-action `@vN` like `checkout@v6` + the foundry
+  The SSOT docs pin versions in prose: `06_07 §1a` (CI-action `@vN` like `checkout@v6` + the foundry
   config), `05_03` (solc/pragma + OpenZeppelin), `05_04` (anchor pragma), `06_01` (Terraform
   provider `~>`, Ruby, Cloud SQL Postgres), `03_01 §12.4` (submodule tags). Code + docs drift
   apart silently — this repo's solc `0.8.28 → 0.8.35` left **9 stale doc copies** until a follow-up
