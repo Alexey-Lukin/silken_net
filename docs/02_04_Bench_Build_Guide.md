@@ -48,7 +48,7 @@ silicon-атестація (µА-профілі, crypto-KAT) — у `firmware/sc
 | [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) / [`00_07` SE050-MIGRATION](00_07_Action_Plan_Tracker) | Secure Element (SE05x, роль/eval) |
 | `firmware/scripts/bench/RUNBOOK.md` | Silicon-атестація на готовій платі (crypto/power/timing) |
 | [`07_03`](07_03_Academic_Integration_and_IP) | Лабораторні протоколи ЧНУ |
-| [`00_08`](00_08_Beyond_TRL9_Planetary_Roadmap) | Beyond-TRL9 SKU-roadmap |
+| [`00_01 §4`](00_01_Vision_Mission_and_Roadmap) | Beyond-TRL9 SKU-roadmap |
 
 ## 📑 Зміст
 

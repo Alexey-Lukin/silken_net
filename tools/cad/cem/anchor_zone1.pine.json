@@ -1,5 +1,5 @@
 {
-  "_note": "v2 GRADED demo — radial cell-size gradient (core→rim period) at ~constant porosity, printable (rim ≥ DMLS floor). NOT a validated per-species spec: real pore sizes are bio-hub + FEA gated (00_08 §1.3, HW.33), and the canonical micron pores (01_01 §5.5) are µ-LPBF/nTop-only. Pine (Pinus sylvestris): conifer, tracheids ~20-50µm.",
+  "_note": "v2 GRADED demo — radial cell-size gradient (core→rim period) at ~constant porosity, printable (rim ≥ DMLS floor). NOT a validated per-species spec: real pore sizes are bio-hub + FEA gated (01_01 §6, HW.33), and the canonical micron pores (01_01 §5.5) are µ-LPBF/nTop-only. Pine (Pinus sylvestris): conifer, tracheids ~20-50µm.",
   "kind": "anchor_zone1",
   "name": "anchor_zone1_pine",
   "voxel_size_mm": 0.1,

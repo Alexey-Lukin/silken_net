@@ -178,7 +178,7 @@ internal static class Program
         }
     }
 
-    // Per-species 5-SKU sweep (00_08 §1.3) — generates + verifies every
+    // Per-species 5-SKU sweep (01_01 §6) — generates + verifies every
     // cem/anchor_zone1.*.json (one Library.Go per SKU). The concrete payoff of
     // code-as-CAD over a GUI: a whole family from one generator × N manifests.
     private static int Sweep()

@@ -546,7 +546,7 @@ nTop — провідний інструмент для генерації мі�
 
 **Наступний крок:** Передати STL з **PicoGK** (`tools/cad` — primary трек; nTop = опційний reference) на завод разом із специфікацією дворівневої шорсткості (розділ 1) — повний перелік заводських документів тримає §5.
 
-**🟡 Архітектурне обмеження nTop:** GUI-only workflow → **AI-агенти сліпі у візуальних інтерфейсах** (coding-agents не можуть "клікати" по нодах). Це блокер для AI-Native Engineering принципу ([`00_06 §5`](00_06_SSOT_Documentation_Standard)). Параметричні моделі зберігаються у бінарних `.ntop` файлах — **не Git-friendly**, без зрозумілого diff'у, без code review. Для масової вибірки per-species геометрій (5 SKU: pine/oak/broadleaf/mangrove/tropical — [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) потрібна Code-as-CAD парадигма.
+**🟡 Архітектурне обмеження nTop:** GUI-only workflow → **AI-агенти сліпі у візуальних інтерфейсах** (coding-agents не можуть "клікати" по нодах). Це блокер для AI-Native Engineering принципу ([`00_06 §5`](00_06_SSOT_Documentation_Standard)). Параметричні моделі зберігаються у бінарних `.ntop` файлах — **не Git-friendly**, без зрозумілого diff'у, без code review. Для масової вибірки per-species геометрій (5 SKU: pine/oak/broadleaf/mangrove/tropical — [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) потрібна Code-as-CAD парадигма.
 
 ### PicoGK + C# — Code-as-CAD (primary code-CAD трек)
 
@@ -563,7 +563,7 @@ nTop — провідний інструмент для генерації мі�
 - **CEM (Computational Engineering Model) = детермінований алгоритм, НЕ ML.** Lin Kayser: *«a Computational Engineering Model is an algorithm, not a neural net — closer to an expert system».* Геометрія **обчислюється з наміру** (фізика + інженерні правила + виробничі обмеження, закодовані в коді), а не «малюється» нейромережею → детерміновано, простежувано, рев'юабельно, без галюцинацій.
 - **Уточнює наш «AI-Native»** ([`00_03 §3.6`](00_03_TRL_Matrix_HIL_and_Beyond)): «AI генерує геометрію кодом» = **агент пише детермінований генератор** (Git-diffable `.cs`), не LLM, що емітить mesh.
 - **Intent-first:** правило рахує геометрію (CEM-параметр + `wallParam(r)` тримають порозність при градієнті розміру пори; **вимірюється per-shell**, не хардкод), а не ручні числа.
-- **Одна модель → родина:** per-species 7-SKU (5 видів + porosity-gradient + stepped demo) = один CEM × N спеків ([`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) — як Noyron робить різні двигуни з одного CEM.
+- **Одна модель → родина:** per-species 7-SKU (5 видів + porosity-gradient + stepped demo) = один CEM × N спеків ([`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) — як Noyron робить різні двигуни з одного CEM.
 - **Design↔sim злиті:** validation-as-code (порозність/градієнт/wall/manifold + **двофазна зв'язність** — open-pore/percolation/solid-island/closed-pore (+ specific-surface), ARCH.25, [`00_07`](00_07_Action_Plan_Tracker) → `metrics.json`) = Noyron-івський «predicted-performance» output генератора (геометрія емітить власні передбачені фіз-властивості).
   - **ARCH.25 двофазний аудит = прокси чотирьох лаб-тестів** (один flood-fill замість окремих стендів): open-pore↔Архімедова порозність, pore-percolation↔µCT + EAAE flow-through (закритий канал ⇒ H₂ gas-lock), solid-island↔AM floating-island + анод-електро-цілісність, closed-pore↔trapped-powder. Pore-фаза стабільна до огрубіння сітки, але **solid-зв'язність вимагає кроку ≈період/16** — грубіша сітка фрагментує тонку гіроїдну стінку у хибні «острівці» (метод-застереження). Робоче вікно стінки CEM (сосна) — `wallParam ∈ [0.80, 1.30]` @ порозності 55–75% (default 1.0 → ~67%). Деталі реалізації — `tools/cad` + skill `picogk`.
 
@@ -600,7 +600,7 @@ nTop — провідний інструмент для генерації мі�
 **Cross-references:**
 - AI-Native Engineering → [`00_03 §3.6`](00_03_TRL_Matrix_HIL_and_Beyond)
 - TPMS-геометрія анкера → [`01_01 §5`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
-- Cross-biome 5-SKU → [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)
+- Cross-biome 5-SKU → [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
 - Реалізація + трекер → `tools/cad` + [`00_07` HW.1 / HW.33](00_07_Action_Plan_Tracker)
 
 ### Перша Партія — 100 одиниць (Київ / Дніпро)

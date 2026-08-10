@@ -209,7 +209,7 @@ end
 | Queen-to-Queen Backhaul Mesh | §1.2 L2-рядок (спека — дім тут) · [`00_07` — ARCH.10](00_07_Action_Plan_Tracker) | 🟡 Concept, planned Phase 2 |
 | Helium fallback emit (Queen-side LoRaWAN) | Queen firmware `queen_helium_lorawan_uplink()` | 🟡 ARCH.34: обв'язка+wire+тригер+MAC-adapter+повний host-цикл join+uplink (мок-LNS)+KV-mount ✅ 2026-07-05 (гейт `ARCH34_HELIUM_ENABLED 0`); лишився bench OTAA-ефір + Helium Console (👤); backend ✅; Soldier-side відкинуто — Soldier не несе LoRaWAN MAC stack |
 | Ingress Proxy (Rust/Go CoAP buffer, Series D) | ARCH.2 / E.5 | 🟡 far-horizon |
-| Conductor L2 cluster heads (formerly "Sergeant") | [`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap) | 🟡 Concept (ARCH.1, TRL 1) |
+| Conductor L2 cluster heads (formerly "Sergeant") | [`00_07` ARCH.1](00_07_Action_Plan_Tracker) | 🟡 Concept (ARCH.1, TRL 1) |
 
 ---
 

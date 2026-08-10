@@ -240,7 +240,7 @@ EdgeCache forest_cache[50]; // 50 × 22 байти = 1.1 KB
 
 **Flush trigger:** кожні 3600 сек (+0–60 сек HRNG jitter) АБО при заповненні ≥ 45/50 слотів.
 
-⚠️ **Capacity math (2026):** 50 слотів × 1 пакет/Soldier/год × 100 Soldiers/Queen ⇒ переповнення за **30 хв** при втраті Starlink. На верхньому краю scaling roadmap ([`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap), 200 Soldiers/Queen) — переповнення за **15 хв**. Це **критичний gap**, який маскувався тестами в стенді з <50 Soldiers.
+⚠️ **Capacity math (2026):** 50 слотів × 1 пакет/Soldier/год × 100 Soldiers/Queen ⇒ переповнення за **30 хв** при втраті Starlink. На верхньому краю scaling roadmap ([`00_07` ARCH.1](00_07_Action_Plan_Tracker), 200 Soldiers/Queen) — переповнення за **15 хв**. Це **критичний gap**, який маскувався тестами в стенді з <50 Soldiers.
 
 **Flash Ring Buffer — Overflow Tier (ARCH.35):** ✅ **драйвер host-готовий (2026-06-11), інтеграція gated.** Дім коду: `firmware/common/flash_ring.{h,c}` (host-тести `test_flash_ring.c` — NOR-мок із чесною 1→0 семантикою + power-cut fault-injection) ↔ gated-глю у `firmware/queen/main.c` (`ARCH35_RING_ENABLED 0`; SPI W25Q32 cmd-set, спіл евікшнів + провалених flush'ів, drain-refill у CIFO після send-success).
 

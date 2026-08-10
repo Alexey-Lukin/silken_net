@@ -13,7 +13,7 @@ class InsurancePayoutWorker
     return unless insurance
 
     # [INS.1 kill-switch] Майстер-прапор money-path (default false). Стандарт = national-grid
-    # SCADA (00_08 §1.4): flip off → виплати миттєво зупиняються, кандидати тримаються.
+    # SCADA (05_06 §5): flip off → виплати миттєво зупиняються, кандидати тримаються.
     return unless oracle_enabled?
 
     # 1. ПЕРЕВІРКА ТРИГЕРА

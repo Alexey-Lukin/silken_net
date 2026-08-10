@@ -941,6 +941,20 @@ OtaPackagerService → 512-byte chunks → Queen poll-fetch [FW.60] → LoRa →
 > - **Edge Reinforcement Learning:** tabular Q-learning з 12-state × 4-action lookup для прийняття рішень (sleep_extend / normal / sample_extra / emergency_tx); reward = days-to-next-VBAT_OK. State buffer — Flash-KV ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)) / SRAM (RTC DR0..DR19 повні, DR20+ не існують на WLE5 — [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)).
 > - **Координація з mruby evolutionary algorithms у [`03_04`](03_04_mruby_Lorenz_Attractor)** — спільна `device-side learning loop` між TinyML (perception) і Lorenz contract (decision).
 >
-> **Безпекова прірва:** self-evolution + Web3-economic rewards = attack surface для adversarial reward poisoning. Mitigation — Auto-Immune Sentinel ([`05_06 §5`](05_06_Governance_and_DAO) + [`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap)).
+> **Безпекова прірва:** self-evolution + Web3-economic rewards = attack surface для adversarial reward poisoning. Mitigation — Auto-Immune Sentinel ([`05_06 §5`](05_06_Governance_and_DAO) + [`05_06 §5`](05_06_Governance_and_DAO)).
 >
-> **Деталі повної R&D-програми:** [`00_08 §1.2`](00_08_Beyond_TRL9_Planetary_Roadmap) — Self-Evolving Behaviour Gap.
+> 🔴 **Compute Budget Paradox — L1 не «self-evolves» фізично, і це не оцінка, а арифметика.** Перелік вище — інвентаризація того, **чому це неможливо** у поточному hardware envelope, а не план запуску на Soldier:
+>
+> - **mini-GA** (4 candidate sets × multi-epoch fitness): кожна fitness-епоха = повний цикл sense+Lorenz+TX ≈ **58 мДж** ([`02_03 §9.4`](02_03_BQ25570_MPPT_Nano_Power)). 10 generations/тиждень × 4 candidates × 58 мДж = **2.3 Дж/тиждень** додатково — при повному робочому вікні іоністора **3.87 Дж** ([`02_03 §8`](02_03_BQ25570_MPPT_Nano_Power)). Перевищує бюджет у 4-6× після врахування sleep drain.
+> - **Tabular Q-learning:** сам lookup дешевий, але reward «days-to-next-VBAT_OK» вимагає **тижневих** епізодів, а ε-greedy exploration з 0.1 ймовірністю «sample_extra» з'їдає весь headroom Сценарію C (+1.4 мДж/год, [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)).
+> - **On-device backprop:** seconds × 12 mA на Cortex-M4 без AI-акселератора = **гарантований brownout**.
+>
+> **Тому інтелект ієрархічно делегований**, і навчання відбувається там, де енергобюджет легший на 4-5 порядків:
+>
+> | Рівень | Що відбувається | Envelope |
+> |--------|----------------|----------|
+> | **L1 Soldier** | Inference-only: виконання **попередньо скомпільованого** mruby bytecode + емісія 1-bit stigmergic сигналу | STM32WLE5JC + 0.47F, +1.4 мДж/год headroom |
+> | **L2 Conductor** | Кластерний агрегатор: локальний GA на (σ, ρ, β) для свого кластера → candidate sets до Queen | Solar + LiFePO4 (спека відкрита — [`00_07` ARCH.1](00_07_Action_Plan_Tracker)) |
+> | **L3 Queen** | Distributed parameter estimation (Lorenz) + Cluster-level Edge Retraining (TinyML → `.tflite` OTA); справжній FL лише як Queen↔Rails обмін оновленнями моделі | 20Ah LiFePO4 + Solar + LTE ([`02_05`](02_05_Queen_Hardware_and_Starlink)) |
+>
+> До Soldier приходить **готовий compiled bytecode через OTA** (магік `0x45544952 "RITE"`, `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000` — [`03_02`](03_02_Queen_Gateway_Firmware)). Це усуває парадокс «self-training on edge» і тримає SRL-roadmap чесним.

@@ -46,7 +46,7 @@ The canon lives in [`docs/`](docs/) as SSOT documents grouped into modules 00–
 
 That number is a design constraint, not a boast. It is the denominator every architectural decision is divided by — RANGE-partitioned telemetry, strict-priority job queues, per-stream broadcast granularity, the bill of materials for a single node, the energy budget of a sensor that must run for two decades without a wire. A choice that is merely *fine* at ten thousand nodes and quietly quadratic at 10¹² is a defect here, even while it passes every test.
 
-**And the honest half:** today the system stands at **TRL 3**, gated by the anchor and the biofuel cell — in-silico validated, not yet in-vitro; zero nodes in a forest. The trillion is what we are building *toward* and measuring *against*, never a claim about what runs today. Current per-module readiness lives in [`docs/00_03 §1`](docs/00_03_TRL_Matrix_HIL_and_Beyond.md); the scaling phases in [`docs/00_01 §4`](docs/00_01_Vision_Mission_and_Roadmap.md); the beyond-TRL-9 agenda in [`docs/00_08`](docs/00_08_Beyond_TRL9_Planetary_Roadmap.md).
+**And the honest half:** today the system stands at **TRL 3**, gated by the anchor and the biofuel cell — in-silico validated, not yet in-vitro; zero nodes in a forest. The trillion is what we are building *toward* and measuring *against*, never a claim about what runs today. Current per-module readiness lives in [`docs/00_03 §1`](docs/00_03_TRL_Matrix_HIL_and_Beyond.md); the scaling phases in [`docs/00_01 §4`](docs/00_01_Vision_Mission_and_Roadmap.md); the beyond-TRL-9 agenda in [`docs/00_01 §4`](docs/00_01_Vision_Mission_and_Roadmap.md).
 
 ---
 

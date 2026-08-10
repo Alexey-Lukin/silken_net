@@ -108,7 +108,7 @@ PriceOracleService (scc_fallback_price_usd)
 |--------|--------|
 | **Пріоритет** | ✅ Реалізовано (ARCH.4 / BIZ.4 / E.35). Governance DAO pipeline повністю функціональний |
 | **Залежить від** | `SilkenForestCoin.sol` (SFC) задеплоєний → ✅ є |
-| **Блокує** | Планетарне масштабування з різними кліматичними зонами |
+| **Блокує** | Планетарне масштабування з різними кліматичними зонами — far-horizon гейт: **кожен новий біом потребує community vote (SFC) + слот лабораторної валідації ПЕРШ ніж із нього можуть мінтитись SCC**. Це не бюрократія, а пряме продовження «правдиво» ([`00_01 §1.1`](00_01_Vision_Mission_and_Roadmap)): мінтити з породи, чиї Lorenz-константи ніхто не калібрував, означає видавати вгадане за виміряне (hardware-бік 5 SKU → [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) |
 | **Ризики DAO** | ✅ Захисти реалізовано: quorum 4% + timelock 48h + snapshot voting + votingDelay 43200 blocks |
 
 ## 4. ⚠️ Flash Loan Attack Vector (Критичний)
@@ -155,14 +155,14 @@ contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
 >
 > **Майбутній напрям (Beyond TRL 9 / SRL roadmap) — Proactive AI Sentinel:**
 > - **Cluster-level statistical fingerprints:** замість per-tree fraud detection — federated anomaly detection. Якщо 100 дерев кластера раптом видають «too perfect» Z-curves (lower variance than physically possible) → suspicious activity flag.
-> - **Decoy DID Tripwire (backend, НЕ on-chain honeypot):** набір decoy DID у серверному watchlist (не on-chain — публічний стейт контракту видав би «заблоковане» дерево відсутністю mint-подій, і атакер обійшов би). Будь-яка телеметрія/mint-спроба від decoy DID = доведена підробка → instant slashing + 12-chain rotation. Канон — [`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap).
+> - **Decoy DID Tripwire (backend, НЕ on-chain honeypot):** набір decoy DID у серверному watchlist (не on-chain — публічний стейт контракту видав би «заблоковане» дерево відсутністю mint-подій, і атакер обійшов би). Будь-яка телеметрія/mint-спроба від decoy DID = доведена підробка → instant slashing + 12-chain rotation. Канон — тут.
 > - **Red Team Adversarial Telemetry Generators:** GAN-вироблені синтетичні patterns як частина CI/CD ([`04_06`](04_06_Testing_Guide_and_Coverage)) — знаходимо вразливості до того, як їх знайде зовнішній attacker.
 > - **Quantum-Resistant Oracle Migration:** перехід Chainlink + 12-chain stack (асиметричні підписи ECDSA/Ed25519) на NIST PQC до 2030+; симетричний LoRa/CoAP-трафік (AES) уже PQ-стійкий. Канон — [`03_05 §10`](03_05_Hardware_Symmetric_Crypto_and_Security).
 > - **AI Sentinel Service:** окремий ML-сервіс 24/7 у режимі "hunting for hunters" — корелює trading volume на SCC DEXs з telemetry-аномаліями та oracle response patterns.
 >
 > **Філософська позиція:** SCC — це **критична інфраструктура планетарного клімату**. Стандарт безпеки має бути **на рівні national-grid SCADA**, а не «не гірше за DeFi 2020–2024».
 >
-> **Деталі повної R&D-програми:** [`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap) — Auto-Immune Sentinel Gap. Партнери: Аблязов Д. (СЄУ, правова рамка), Карапетян (ChDTU, статистика fraud detection).
+> **Партнери напряму:** Аблязов Д. (СЄУ, правова рамка), Карапетян (ChDTU, статистика fraud detection).
 
 ## 6. Bonding Curves — Динамічне Ціноутворення (Перспектива TRL 9+)
 
