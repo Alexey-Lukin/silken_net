@@ -79,6 +79,11 @@ CI: `docs.yml` is the **single home** for the doc gates. Its `changes` filter co
 
 This is the point: the skill stays small, but it lets you turn **any** newly-found drift class into a permanent gate. The defenses grow; the skill doesn't. Recipe, mirroring the existing `DocsLinter` methods:
 
+0. **Name the KIND of gate first — the three kinds carry different obligations** (migrated from `00_02 §3` on 2026-08-10, which was its only home; `00_06 §3` LISTS the gates and never classifies them, so the taxonomy had no home in the skill that builds them).
+   1. **owned-value** — a specific value restated outside its home (Lorenz β, RTC registers, mint/carbon rate). Instrument: owner-only vocabulary inside `docs:check_refs`, with the owner doc exempt by construction.
+   2. **structural / registry-sync** — doc and code must be 1:1 and the gate COUNTS rather than reads (`model_doc_sync`, `cem_canon_sync`, `governance_*_sync`, `ruby_version_sync`, `protocols_ref_check`, `code_tracker_id_check`) — plus the **meta-gates over the gates themselves** (`guard_registry_sync`, `workflow_gate_perimeter`), because a registry of gates rots one-way exactly like canon does.
+   3. **semantic, with a NAMED ceiling** — where a word carries intent rather than a value (`offering_lexicon_check`). This kind MUST declare what it cannot see, or green starts to mean "not checked".
+   They are not interchangeable: reaching for (1) on a (3)-shaped problem is how a noisy advisory is born, and skipping the ceiling on (3) is how a green run becomes a false attestation. ⊕ The mirror risk when READING the registry rather than writing it — canon describing a gate as *weaker* than it has become, so the reader inherits an inflated backlog — is not a gate-craft shape but a drift class; it lives in memory `feedback_vilize_sweep_method` F3, and the practical half is: measure a gate's severity by RUNNING it, never by grepping the word «advisory».
 1. **Pick the owner.** Which doc canonically owns this fact (00_06 §2)? Everything else must only reference it.
 2. **Write a pure function** in `lib/docs_linter.rb` — `module_function`, takes `text` (or `basename, text`), returns an array of human-readable violation strings. No Rails, no I/O.
 3. **Keep false positives near zero** (heuristic linters are noisy):
