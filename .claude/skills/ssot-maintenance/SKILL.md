@@ -131,7 +131,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 
 1. Decorative — the gate's INPUT sits outside the workflow's `changes:` filter, so it only ever fires on somebody else's PR
 2. A whole GENRE outside every linter's namespace — «Стаття N» headings; a genre exempt BY DESIGN is where drift is densest, so a green `docs_check` ≠ correctness there
-3. A noisy advisory is functionally OFF — and a semantic gate that does not name its CEILING in the script header turns green into «not checked»
+3. A noisy advisory is functionally OFF — and a semantic gate that does not name its CEILING in the script header turns green into «not checked» — **for every advisory in the registry, ask which of the two it is — measure its live hit-count, then ask whether the design still admits the FP class the label was hedging against**
 4. Blind to its own prose — a gate sees its DATA, never what it SAYS about itself, so its header comment can contradict its own constant indefinitely
 5. It under-implements the contract it declares — **read what the gate SAYS it enforces, then check each direction of that sentence separately**
 6. It compares a HOMOGENEOUS pair and is blind to the seam between LAYERS — **name the two sets a gate compares, then ask which OTHER set this artifact must agree with — and whether anything checks that pair**
