@@ -75,10 +75,9 @@ Soldier (Tree)         Soldier (Tree)         Soldier (Tree)
 ### 📚 Сторінки Фундаменту (Read-First)
 
 - [`00_01` — Vision Mission and Roadmap](00_01_Vision_Mission_and_Roadmap) (Місія, проблема VCM, науковий підхід, NaaS, дорожня карта, Proof-of-Growth; філософія Slashing → 05_05)
-- [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) (Філософія: NASA TRL, Intent-First, Wiki-First, AI Pipeline + Validation Gate)
-- [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) (Канон per-module TRL-матриці + per-domain TRL + HIL-симулятори; шкали SRL/MRL за межами TRL 9)
+- [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) (Шкала NASA TRL + канон per-module матриці · per-domain TRL · HIL-симулятори · критерій закриття задачі та TRL Gate Events; шкали SRL/MRL за межами TRL 9)
 - [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) (CI/IaC-політика: SSOT-Guard · Solidity audit · Labels-as-Code · supply-chain hardening)
-- [`00_06` — SSOT Documentation Standard](00_06_SSOT_Documentation_Standard) (Стандарт канон-доків: skeleton + home-registry + drift-tooling + restructure-метод)
+- [`00_06` — SSOT Documentation Standard](00_06_SSOT_Documentation_Standard) (Стандарт канон-доків: skeleton + home-registry + drift-tooling + restructure-метод; 🚦 Validation Gate і AI-ростер — §5/§5.1)
 - [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) (🔴 Живий документ — аудит блокерів, план дій, Sprint tracking)
 
 ---
