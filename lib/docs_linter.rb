@@ -13,7 +13,7 @@ module DocsLinter
 
   # TRL matrix single-value (HARD; scope: 00_03 §1 canonical matrix).
   # Per-module cells must be a single integer 1-9, never a range ("5-6"/"8-9")
-  # — 00_02 §1 fixes the NASA 1-9 scale. Only rows whose first cell is
+  # — 00_03 §1 fixes the NASA 1-9 scale. Only rows whose first cell is
   # "NN <module>" are inspected; NASA-scale *stage* rows start "**TRL 5-6**" and
   # are skipped. Returns ["06 DevOps → TRL cell '5-6' ...", ...].
   def trl_matrix_range_violations(text)
@@ -472,16 +472,16 @@ module DocsLinter
 
   # [SSOT anti-drift] AI-vendor name re-stated outside owner (HARD, owner-only vocabulary).
   # The AI tool roster is VOLATILE (vendors come and go); canon must describe stable ROLES
-  # (frontier-LLM / coding-agent) with concrete instances snapshotted ONCE in 00_02 §2.
+  # (frontier-LLM / coding-agent) with concrete instances snapshotted ONCE in 00_03
   # A vendor token re-stated elsewhere drifts the moment the roster shifts. Same shape as
   # solc/tokenomics. Case-sensitive on purpose (lowercase "cursor"/"grok" = UI/verb, не вендор).
   # EXCLUDES overloaded/generic tokens that would false-positive: "Codex" (04_05 Codex Lore
   # Module / "The Codex" SSOT-guard nickname / ADR-CDX), bare "Claude"/"Opus"/"Sonnet"/"Fable"
   # (model words that collide with prose). Exempt: 00_02 (roster home), 00_06 (cites examples),
   # 00_07 (tracker). Skips fenced code (a script may legitimately name a tool).
-  AI_VENDOR_OWNER_DOC = /\A00_02_|\A00_06_|\A00_07_/
+  AI_VENDOR_OWNER_DOC = /\A00_06_|\A00_07_/
   AI_VENDOR_RE        = /(?<![A-Za-z])(Gemini|Cursor|Copilot|Windsurf|ChatGPT|Grok|DeepSeek|Claude Code)(?![A-Za-z])/
-  AI_VENDOR_MIRROR_RE = /дзеркал|mirror|00_02/i
+  AI_VENDOR_MIRROR_RE = /дзеркал|mirror|00_06 §5/i
 
   def ai_vendor_name_drift(basename, text)
     return [] if basename.match?(AI_VENDOR_OWNER_DOC)
@@ -493,7 +493,7 @@ module DocsLinter
       next if line.match?(AI_VENDOR_MIRROR_RE)
       next unless (m = line.match(AI_VENDOR_RE))
 
-      "AI-vendor name `#{m[1]}` outside owner (00_02 §2 roster = ROLES frontier-LLM/coding-agent; reference the role) → #{line.strip[0, 90]}"
+      "AI-vendor name `#{m[1]}` outside owner (00_06 §5 roster = ROLES frontier-LLM/coding-agent; reference the role) → #{line.strip[0, 90]}"
     end
   end
 
@@ -646,7 +646,7 @@ module DocsLinter
   # [SSOT anti-drift] Link label ↔ href doc mismatch (HARD). A cross-ref written
   # `[`NN_NN §X`](NN_NN_Name)` must point at the SAME doc its visible label cites.
   # When the label LEADS with one NN_NN but the href resolves to a different doc,
-  # the link silently lies — exactly how 00_02 §3 read "00_06 §2/§4" yet linked the
+  # the link silently lies — exactly how 00_06 §4 read "00_06 §2/§4" yet linked the
   # 00_05 file (a renamed-doc residue `docs:check_refs` could not catch, because the
   # href still resolves to a real file). Heuristic: compare the label's FIRST doc-ID
   # token to the href's NN_NN; flag a mismatch. A label with no NN_NN, or whose

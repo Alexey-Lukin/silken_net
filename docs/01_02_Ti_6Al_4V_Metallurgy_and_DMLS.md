@@ -546,7 +546,7 @@ nTop — провідний інструмент для генерації мі�
 
 **Наступний крок:** Передати STL з **PicoGK** (`tools/cad` — primary трек; nTop = опційний reference) на завод разом із специфікацією дворівневої шорсткості (розділ 1) — повний перелік заводських документів тримає §5.
 
-**🟡 Архітектурне обмеження nTop:** GUI-only workflow → **AI-агенти сліпі у візуальних інтерфейсах** (coding-agents не можуть "клікати" по нодах). Це блокер для AI-Native Engineering принципу ([`00_02 §2`](00_02_AI_Native_Engineering_and_TRL)). Параметричні моделі зберігаються у бінарних `.ntop` файлах — **не Git-friendly**, без зрозумілого diff'у, без code review. Для масової вибірки per-species геометрій (5 SKU: pine/oak/broadleaf/mangrove/tropical — [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) потрібна Code-as-CAD парадигма.
+**🟡 Архітектурне обмеження nTop:** GUI-only workflow → **AI-агенти сліпі у візуальних інтерфейсах** (coding-agents не можуть "клікати" по нодах). Це блокер для AI-Native Engineering принципу ([`00_06 §5`](00_06_SSOT_Documentation_Standard)). Параметричні моделі зберігаються у бінарних `.ntop` файлах — **не Git-friendly**, без зрозумілого diff'у, без code review. Для масової вибірки per-species геометрій (5 SKU: pine/oak/broadleaf/mangrove/tropical — [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) потрібна Code-as-CAD парадигма.
 
 ### PicoGK + C# — Code-as-CAD (primary code-CAD трек)
 
@@ -561,7 +561,7 @@ nTop — провідний інструмент для генерації мі�
 
 **Методологія Noyron — те, що ми переймаємо (не сам Noyron, він закритий):**
 - **CEM (Computational Engineering Model) = детермінований алгоритм, НЕ ML.** Lin Kayser: *«a Computational Engineering Model is an algorithm, not a neural net — closer to an expert system».* Геометрія **обчислюється з наміру** (фізика + інженерні правила + виробничі обмеження, закодовані в коді), а не «малюється» нейромережею → детерміновано, простежувано, рев'юабельно, без галюцинацій.
-- **Уточнює наш «AI-Native»** ([`00_02 §4a`](00_02_AI_Native_Engineering_and_TRL)): «AI генерує геометрію кодом» = **агент пише детермінований генератор** (Git-diffable `.cs`), не LLM, що емітить mesh.
+- **Уточнює наш «AI-Native»** ([`00_03 §3.6`](00_03_TRL_Matrix_HIL_and_Beyond)): «AI генерує геометрію кодом» = **агент пише детермінований генератор** (Git-diffable `.cs`), не LLM, що емітить mesh.
 - **Intent-first:** правило рахує геометрію (CEM-параметр + `wallParam(r)` тримають порозність при градієнті розміру пори; **вимірюється per-shell**, не хардкод), а не ручні числа.
 - **Одна модель → родина:** per-species 7-SKU (5 видів + porosity-gradient + stepped demo) = один CEM × N спеків ([`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) — як Noyron робить різні двигуни з одного CEM.
 - **Design↔sim злиті:** validation-as-code (порозність/градієнт/wall/manifold + **двофазна зв'язність** — open-pore/percolation/solid-island/closed-pore (+ specific-surface), ARCH.25, [`00_07`](00_07_Action_Plan_Tracker) → `metrics.json`) = Noyron-івський «predicted-performance» output генератора (геометрія емітить власні передбачені фіз-властивості).
@@ -592,13 +592,13 @@ nTop — провідний інструмент для генерації мі�
 | Експорт у DMLS-slicer | STL/3MF | STL/3MF (clean topology) |
 
 **Чесні застереження (TRL 3, in-silico):**
-- Згенерований STL ≠ фізичний анкер; жоден TRL-claim не рухається ([`00_02 §1`](00_02_AI_Native_Engineering_and_TRL)).
+- Згенерований STL ≠ фізичний анкер; жоден TRL-claim не рухається ([`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond)).
 - **Воксельна + DMLS стеля:** 100µm-пора@65% **фізично недрукований** (SLM стінка ~200µm → мін друкована пора ≈1.2мм) ТА воксель ~0.03мм → ~10⁹-bbox. Простий радіальний градієнт чистий лише ≤~0.8× (phase-distortion); сильний контраст → stepped-зони. Деталі — [`01_01 §5.5`](01_01_Coaxial_Gyroid_Topology_and_PEEK) + [`00_07` HW.33](00_07_Action_Plan_Tracker).
 - **Bus-factor:** PicoGK v2.x, single-vendor (LEAP 71), молода спільнота → пінимо версії; nTop лишається задокументованим escape-hatch.
 - **Headless у CI** потребує display-контексту (`Library.Go` піднімає viewer): macOS-runner OK, Linux — лише community Docker + xvfb.
 
 **Cross-references:**
-- AI-Native Engineering → [`00_02 §4a`](00_02_AI_Native_Engineering_and_TRL)
+- AI-Native Engineering → [`00_03 §3.6`](00_03_TRL_Matrix_HIL_and_Beyond)
 - TPMS-геометрія анкера → [`01_01 §5`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
 - Cross-biome 5-SKU → [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)
 - Реалізація + трекер → `tools/cad` + [`00_07` HW.1 / HW.33](00_07_Action_Plan_Tracker)

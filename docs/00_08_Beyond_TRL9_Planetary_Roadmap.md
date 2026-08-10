@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Стан:** Це **Beyond-TRL-9 R&D-агенда** поверх TRL-9-продукту, і вона **не TRL-gated** за власним визначенням (комерційний продукт можливий і без неї) — тож шкала NASA тут незастосовна, а не «дорівнює девʼяти» ([`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond), DOC-T.70). Зрілість трекається окремими шкалами **SRL** (System Readiness: `Concept → Pilot → Deployed`) / **MRL** (Manufacturing Readiness 8-10) — [`00_02 §1`](00_02_AI_Native_Engineering_and_TRL). Це стратегічні R&D-вектори, НЕ блокери (інженерні задачі → [`00_07`](00_07_Action_Plan_Tracker)).
+- **Стан:** Це **Beyond-TRL-9 R&D-агенда** поверх TRL-9-продукту, і вона **не TRL-gated** за власним визначенням (комерційний продукт можливий і без неї) — тож шкала NASA тут незастосовна, а не «дорівнює девʼяти» ([`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond), DOC-T.70). Зрілість трекається окремими шкалами **SRL** (System Readiness: `Concept → Pilot → Deployed`) / **MRL** (Manufacturing Readiness 8-10) — [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond). Це стратегічні R&D-вектори, НЕ блокери (інженерні задачі → [`00_07`](00_07_Action_Plan_Tracker)).
 
 ---
 
@@ -17,7 +17,7 @@
 | Ресурс | Опис |
 |--------|------|
 | [`00_01` — Vision Mission and Roadmap](00_01_Vision_Mission_and_Roadmap) | Near-term roadmap (§4, фази 2025–2030); ця сторінка — far-horizon продовження |
-| [`00_02` — AI Native Engineering and TRL](00_02_AI_Native_Engineering_and_TRL) | SRL/MRL шкали зрілості за межами TRL-9 |
+| [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | SRL/MRL шкали зрілості за межами TRL-9 |
 | [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Жива TRL-матриця (§1) + TRL-Layered-Independence (§2) + HIL (§3) — поточний стан/метод |
 | [`01_01` — Coaxial Gyroid Topology and PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Cross-biome 5 SKU (Gap #3 hardware-бік) |
 | [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | On-Device Learning / Edge RL (Gap #2 firmware-бік) |
@@ -42,7 +42,7 @@
 >
 > Цей розділ фіксує **5 архітектурних прогалин**, які стоять між поточною архітектурою та справжнім "planetary intelligence". Це **не блокери** для TRL 9 (комерційний продукт можливий і без них), але це **дослідницький горизонт за межами TRL 9** — наукова програма на 5–15 років, яка перетворить Silken Net з IoT-системи в самоорганізовану кібер-екосистему.
 >
-> **⚠️ Метрика: «TRL 10-12» — НЕ використовується.** TRL стандартизовано на 1-9 (NASA / ISO 16290) і вимірює лише технологічну готовність. Зрілість за межами TRL 9 трекається окремими шкалами ([`00_02 §1`](00_02_AI_Native_Engineering_and_TRL)): **SRL (System Readiness Level)** — системна/інтеграційна зрілість, стадії `Concept → Pilot → Deployed`; **MRL (Manufacturing Readiness Level, 8-10)** — серійне виробництво (5 SKU). Нижче «TRL шлях» кожної прогалини переформульовано як **SRL-шлях**.
+> **⚠️ Метрика: «TRL 10-12» — НЕ використовується.** TRL стандартизовано на 1-9 (NASA / ISO 16290) і вимірює лише технологічну готовність. Зрілість за межами TRL 9 трекається окремими шкалами ([`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond)): **SRL (System Readiness Level)** — системна/інтеграційна зрілість, стадії `Concept → Pilot → Deployed`; **MRL (Manufacturing Readiness Level, 8-10)** — серійне виробництво (5 SKU). Нижче «TRL шлях» кожної прогалини переформульовано як **SRL-шлях**.
 >
 > **Не плутати з блокерами в [`00_07`](00_07_Action_Plan_Tracker):** там — конкретні інженерні задачі з measurable outcomes. Тут — стратегічні R&D-вектори, які потребують академічної колаборації (Q1 публікації) та можуть стати темою PhD-дисертацій під школами Мінаєва (квантова хімія) + FOTIUS кібернетика.
 

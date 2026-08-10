@@ -12,7 +12,7 @@
 #                     (Поточний TRL / Conceptual (TRL …)) — catches the 06_04-class
 #                     "Статус without a readiness level" gap. All 50 docs pass today.
 #   HARD  (gates CI): the 00_03 §1 per-module TRL matrix has single-value cells
-#                     (1-9), never a range — 00_02 §1 fixes the NASA 1-9 scale.
+#                     (1-9), never a range — 00_03 §1 fixes the NASA 1-9 scale.
 #   HARD  (gates CI): no canon doc hosts a blocker section (🛑/✅ + Блокери/Архів) —
 #                     ALL blockers live in 00_07 (sweep complete 2026-05-30); open ones
 #                     are reframed in-doc to non-blocker headings + a → 00_07 pointer.
@@ -58,7 +58,6 @@ namespace :docs do
   # exception would quietly become a licence to keep the category error.
   TRL_NOT_APPLICABLE = {
     "00_01" => "візія / місія / дорожня карта — намір, не готовність технології",
-    "00_02" => "метод і AI-pipeline — процес",
     "00_06" => "стандарт самих доків — процес",
     "00_08" => "Beyond-TRL-9 агенда — за власною заявою НЕ TRL-gated (шкали SRL/MRL)",
     "07_01" => "юр/бізнес-шар NaaS — договірна, не технологічна зрілість",
@@ -104,7 +103,7 @@ namespace :docs do
     rate_drift  = []  # hard: tokenomics/carbon rate value re-stated outside its One-Home (05_03/07_01)
     rate_anchor = []  # hard: a rate HOME no longer matches the guard's own regex (re-price w/o updating the tripwire — DOC-T.40)
     solc_drift  = []  # hard: solc/pragma version re-stated outside 05_03 owner (code SSOT = foundry.toml)
-    ai_vendor   = []  # hard: AI-vendor name (Gemini/Cursor/…) re-stated outside 00_02 §2 roster (use roles)
+    ai_vendor   = []  # hard: AI-vendor name (Gemini/Cursor/…) re-stated outside 00_06 §5 roster (use roles)
     bare_doc    = []  # hard: bare code-span `NN_NN` doc-id (no §) that should be a full link
     xref_form   = []  # hard: doc-id link label not in the single code-span form (00_06 §1)
     sec_after_link = [] # hard: bare §X dangling after a whole-doc link — fold into label (DOC-T.16)
@@ -428,9 +427,9 @@ namespace :docs do
       block_drift.sort.each { |d| puts "    ✗ #{d}" }
     end
     if ai_vendor.empty?
-      puts "  AI-roster One-Home: no AI-vendor name restated outside 00_02 §2 (roles) ✓"
+      puts "  AI-roster One-Home: no AI-vendor name restated outside 00_06 §5 (roles) ✓"
     else
-      puts "  AI-VENDOR DRIFT (#{ai_vendor.size}) — vendor belongs only in 00_02 §2 roster (use frontier-LLM/coding-agent):"
+      puts "  AI-VENDOR DRIFT (#{ai_vendor.size}) — vendor belongs only in 00_06 §5 roster (use frontier-LLM/coding-agent):"
       ai_vendor.sort.each { |d| puts "    ✗ #{d}" }
     end
     if anchor_dim.empty?
@@ -616,7 +615,7 @@ namespace :docs do
     failed << "rate-guard anchor stale (home re-priced, regex not — DOC-T.40)" unless rate_anchor.empty?
     failed << "solc/pragma version restated outside One-Home (05_03; code = foundry.toml)" unless solc_drift.empty?
     failed << "canonical source-block drift (pinned code block changed → reconcile mirrors + `rake docs:repin`)" unless block_drift.empty?
-    failed << "AI-vendor name restated outside One-Home (00_02 §2 roster; use roles)" unless ai_vendor.empty?
+    failed << "AI-vendor name restated outside One-Home (00_06 §5 roster; use roles)" unless ai_vendor.empty?
     failed << "bare code-span `NN_NN §X` refs (should be `[`…`](Doc)` links)" unless bare_refs.empty?
     failed << "bare code-span `NN_NN` doc-ids (should be `[`…`](Doc)` links)" unless bare_doc.empty?
     failed << "link label↔href mismatches" unless label_drift.empty?

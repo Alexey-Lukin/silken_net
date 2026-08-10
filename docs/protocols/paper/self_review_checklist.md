@@ -63,7 +63,7 @@
 | План 24 статей + per-paper рамка | `07_03 §2.1` (ЧНУ 1–10 · ЧДТУ §1B 11–14 · спільні §1C 15–24a) |
 | IP-постава / publish-to-protect / AI-disclosure | `00_01 §8` + `protocols/anchor/defensive_disclosure.md` |
 | Реальні числа/claims (Стаття 1 ①②③④) — One-Home | `protocols/ebfc/in_silico/SUMMARY.md` + `PIPELINE_STATUS.md` |
-| Staffing / AI-clones / хто що пише | `00_02 §4a` |
+| Staffing / AI-clones / хто що пише | `00_03 §3.6` |
 | Інституції / співавтори (Мінаєв, Гусак) | `07_03` |
 | Paper-трекер (UNI.3, HW.3.IS, CHEM.*, E.59) | `00_07` |
 

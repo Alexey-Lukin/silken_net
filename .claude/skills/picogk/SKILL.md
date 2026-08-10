@@ -19,7 +19,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 | `docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md §5/§6` | Anchor geometry: gyroid 65% porosity, pore gradient 300→100µm, Gibson-Ashby isoelasticity, Ti-coin Stage-2 coupon (A=2cm²+eyelet) |
 | `docs/00_07_Action_Plan_Tracker.md` HW.1 / **HW.33** | Build state + the anchor geometry audit (founder decisions: radial gyroid (б), Ø11; open gaps: PEEK/hole chain, FEA) |
 | `docs/00_08_Beyond_TRL9_Planetary_Roadmap.md §1.3` | Cross-biome 5-SKU (pine/oak/broadleaf/mangrove/tropical) |
-| `docs/00_02_AI_Native_Engineering_and_TRL.md §4a` | Code-as-CAD vs generative-AI; In-Silico for the Hardware stream |
+| `docs/00_03_TRL_Matrix_HIL_and_Beyond.md §3.6` | Code-as-CAD vs generative-AI; In-Silico for the Hardware stream |
 | `tools/cad/docs/drawings_program.md` | Engineering-drawing program: CEM-native DXF (netDxf) + SVG, the ASME-Y14.5≠projection fix, lattice-as-inspection-card, phased §7 rollout |
 | `extern/.../README_ImplicitLibrary.md` | LEAP's own implicit/TPMS guide (splitting logic, modular workflow for the graded v2) |
 

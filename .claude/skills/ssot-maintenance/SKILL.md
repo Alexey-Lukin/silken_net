@@ -13,7 +13,7 @@ These are the canonical homes. Read them before acting; never copy their content
 
 | Source | Owns |
 |---|---|
-| `docs/00_02_AI_Native_Engineering_and_TRL.md` | **Philosophy**: NASA TRL (1-9, never 10-12), the AI Pipeline + 🚦 **Validation Gate** (LLM proposes a *hypothesis*, it does NOT compute physics), Intent-First, golden rule: *no code/solder until the spec is approved in the Wiki*. |
+| `docs/00_03_TRL_Matrix_HIL_and_Beyond.md` | **Philosophy**: NASA TRL (1-9, never 10-12), the AI Pipeline + 🚦 **Validation Gate** (LLM proposes a *hypothesis*, it does NOT compute physics), Intent-First, golden rule: *no code/solder until the spec is approved in the Wiki*. |
 | `docs/00_06_SSOT_Documentation_Standard.md §1` | **Canonical doc skeleton** (🎯 Мета / ✅ Статус / 🔗 Cross-references / 📑 auto-ToC / Content; blockers→00_07; no volatile counts). |
 | `docs/00_06_SSOT_Documentation_Standard.md §2` | **Canonical-home registry** — *одна річ, один дім*. The table of which fact lives where (TRL matrix→00_03 §1, AES modes→03_05 §3.7, Lorenz→03_04 §4.1, …). |
 | `docs/00_06_SSOT_Documentation_Standard.md §3` | **Drift-prevention tooling** — the CI-enforced guard table. Add new guards here. |
@@ -79,7 +79,7 @@ CI: `docs.yml` is the **single home** for the doc gates. Its `changes` filter co
 
 This is the point: the skill stays small, but it lets you turn **any** newly-found drift class into a permanent gate. The defenses grow; the skill doesn't. Recipe, mirroring the existing `DocsLinter` methods:
 
-0. **Name the KIND of gate first — the three kinds carry different obligations** (migrated from `00_02 §3` on 2026-08-10, which was its only home; `00_06 §3` LISTS the gates and never classifies them, so the taxonomy had no home in the skill that builds them).
+0. **Name the KIND of gate first — the three kinds carry different obligations** (migrated from `00_06 §4` on 2026-08-10, which was its only home; `00_06 §3` LISTS the gates and never classifies them, so the taxonomy had no home in the skill that builds them).
    1. **owned-value** — a specific value restated outside its home (Lorenz β, RTC registers, mint/carbon rate). Instrument: owner-only vocabulary inside `docs:check_refs`, with the owner doc exempt by construction.
    2. **structural / registry-sync** — doc and code must be 1:1 and the gate COUNTS rather than reads (`model_doc_sync`, `cem_canon_sync`, `governance_*_sync`, `ruby_version_sync`, `protocols_ref_check`, `code_tracker_id_check`) — plus the **meta-gates over the gates themselves** (`guard_registry_sync`, `workflow_gate_perimeter`), because a registry of gates rots one-way exactly like canon does.
    3. **semantic, with a NAMED ceiling** — where a word carries intent rather than a value (`offering_lexicon_check`). This kind MUST declare what it cannot see, or green starts to mean "not checked".

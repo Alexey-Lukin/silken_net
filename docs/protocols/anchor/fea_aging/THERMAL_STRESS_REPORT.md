@@ -149,7 +149,7 @@ the hot end (+40 °C + min fit) the effective interference goes **negative** —
 
 - [ ] **Prony-series stress-relaxation fit** for PEEK 450G (Maxwell-Wiechert, measured creep data) — the
   authoritative multi-term fit replacing the interim conservative 2-term estimate (школа Гусака, `07_03 Стаття 2`).
-- [ ] **Barb-tip stress-concentration FEA** → школа Гусака (heavy mesh-FEA outsourced, `00_02 §4a`). 👤 — but
+- [ ] **Barb-tip stress-concentration FEA** → школа Гусака (heavy mesh-FEA outsourced, `00_03 §3.6`). 👤 — but
   if Гусак stays unresponsive, a **self-own** light bound is a future-candidate (00_07 HW.3.IS).
 - [ ] **MD ion-permeation** of Ti²⁺/V³⁺ through PEEK via MSD (classical MD, like script 13) — NOT DFT.
   🤖 self-own, ~2-3 weeks GPU (00_07 HW.3.IS); separate milestone, not part of this geometry sync.
@@ -162,5 +162,5 @@ the hot end (+40 °C + min fit) the effective interference goes **negative** —
 - Coaxial topology + mechanical lock → `docs/01_01 §4.3`
 - Frozen dims + ΔCTE window (combined SF 5.6×) → `docs/01_01 §1` + `§4.2`
 - O-ring seal + Flush Mount → `docs/01_04 §3.1`
-- Prony-series / barb-FEA outsource boundary → `docs/00_02 §4a`, `docs/07_03 Стаття 2` (школа Гусака)
+- Prony-series / barb-FEA outsource boundary → `docs/00_03 §3.6`, `docs/07_03 Стаття 2` (школа Гусака)
 - Script → `tools/in_silico/scripts/50_thermal_stress_lame.py` + `51_…` + `56_unified_press_fit_lame.py` (core `lib/mechanics.py`) · Cache → `cache/kinetics/{thermal_stress_lame,gusak_degradation,unified_press_fit_lame}.json`

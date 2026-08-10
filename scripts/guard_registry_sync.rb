@@ -86,7 +86,7 @@ DOCS_RAKE_LABELS = {
   "rate-guard anchor stale (home re-priced, regex not — DOC-T.40)"                          => "rate-guard self-anchor",
   "solc/pragma version restated outside One-Home (05_03; code = foundry.toml)"             => "solc/pragma version One-Home",
   "canonical source-block drift (pinned code block changed → reconcile mirrors + `rake docs:repin`)" => "canonical source-block pin",
-  "AI-vendor name restated outside One-Home (00_02 §2 roster; use roles)"                  => "AI-vendor name One-Home",
+  "AI-vendor name restated outside One-Home (00_06 §5 roster; use roles)"                  => "AI-vendor name One-Home",
   "bare code-span `NN_NN §X` refs (should be `[`…`](Doc)` links)"                          => "bare §-ref → link",
   "bare code-span `NN_NN` doc-ids (should be `[`…`](Doc)` links)"                          => "bare doc-id → link",
   "link label↔href mismatches"                                                             => "link label↔href mismatch",

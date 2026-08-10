@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL (System):** TRL 3 — anchor/EBFC на TRL 3 (Zero-Lab **in-silico** L1-L4 завершено 2026-05-25 = аналітичний PoC; фізичний TRL 4 = breadboard Ti-coin in-vitro, Stage 2 — ще не закрито). Програмні домени TRL 6-9 (декаплінг через HIL, §3).
-- **Per-domain TRL (декаплінг):** суть зняття TRL-Lock — програмні домени (Rails, Web3, Firmware, Security) рухаються до TRL 8–9 незалежно від фізичного відставання металу/хімії (anchor/EBFC **TRL 3** — Zero-Lab L1-L4 in-silico завершено 2026-05-25; фізичний TRL 4 = in-vitro Ti-coin, Stages 1-3 ще не закрито). За строгим NASA / ISO 16290 in-silico = TRL 3 (analytical PoC), TRL 4 = breadboard/component validation **у залізі** — тому «Zero-Lab gate PASSED» = «TRL 3 валідовано + GO на TRL 4», не «на TRL 4». **Канонічні per-module числа — `§1 Per-module TRL` нижче (єдиний дім; тут свідомо НЕ дублюються, щоб уникнути drift).** Оновлюється на кожному TRL Gate Event ([`00_02 §5.1`](00_02_AI_Native_Engineering_and_TRL)) — тобто тоді, коли рівень справді змінюється.
+- **Per-domain TRL (декаплінг):** суть зняття TRL-Lock — програмні домени (Rails, Web3, Firmware, Security) рухаються до TRL 8–9 незалежно від фізичного відставання металу/хімії (anchor/EBFC **TRL 3** — Zero-Lab L1-L4 in-silico завершено 2026-05-25; фізичний TRL 4 = in-vitro Ti-coin, Stages 1-3 ще не закрито). За строгим NASA / ISO 16290 in-silico = TRL 3 (analytical PoC), TRL 4 = breadboard/component validation **у залізі** — тому «Zero-Lab gate PASSED» = «TRL 3 валідовано + GO на TRL 4», не «на TRL 4». **Канонічні per-module числа — `§1 Per-module TRL` нижче (єдиний дім; тут свідомо НЕ дублюються, щоб уникнути drift).** Оновлюється на кожному TRL Gate Event (§4.1) — тобто тоді, коли рівень справді змінюється.
 
 ---
 
@@ -18,8 +18,6 @@
 | Ресурс | Опис |
 |--------|------|
 | [`00_01` — Vision Mission and Roadmap](00_01_Vision_Mission_and_Roadmap) | Бізнес-візія та slashing |
-| [`00_02` — AI Native Engineering and TRL](00_02_AI_Native_Engineering_and_TRL) | AI-Native TRL philosophy (метрика прогресу) |
-| [`00_02 §5.1`](00_02_AI_Native_Engineering_and_TRL) | TRL Gate Events (4→5 · 6→7 · 8→9) — де підняття рівня НЕ автоматичне |
 | [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) | CI-гейти, що несуть рев'ю на TRL 1-4 |
 | [`04_06` — Testing Guide and Coverage](04_06_Testing_Guide_and_Coverage) | §B Gap Analysis — відомі обмеження тестів + відкриті ризики |
 | [`07_03` — Academic Institutions Registry](07_03_Academic_Integration_and_IP) | Фізичні валідаційні протоколи ВНЗ (TRL 1-4) |
@@ -59,7 +57,7 @@
 
 ### Per-module TRL (канонічне джерело)
 
-> SSOT для per-domain TRL. **System TRL = найнижчий модуль критичного шляху (01–06 build-path)** — наразі **3** (модуль 01 anchor/EBFC на TRL 3: Zero-Lab in-silico завершено, фізичний Ti-coin in-vitro pending; модуль 02 на TRL 4 — реальний breadboard CJMCU-2557 + EDLC). Оновлюється на кожному TRL Gate Event ([`00_02 §5.1`](00_02_AI_Native_Engineering_and_TRL)) — тобто тоді, коли рівень справді змінюється. Канон тут.
+> SSOT для per-domain TRL. **System TRL = найнижчий модуль критичного шляху (01–06 build-path)** — наразі **3** (модуль 01 anchor/EBFC на TRL 3: Zero-Lab in-silico завершено, фізичний Ti-coin in-vitro pending; модуль 02 на TRL 4 — реальний breadboard CJMCU-2557 + EDLC). Оновлюється на кожному TRL Gate Event (§4.1) — тобто тоді, коли рівень справді змінюється. Канон тут.
 >
 > ⚖️ **Модулі 00 і 07 у таблиці НЕ рядки — ратифіковано 2026-08-09 (DOC-T.70).** Обидва вимірювали не технологію: Фундамент — візію й метод, модуль 07 — договірну, вартісну й партнерську зрілість. Тримати їх на шкалі означало щодня стверджувати те, що наступний абзац називає категорійною помилкою, і платити за це двічі: рядок `00` стояв **9** при найвищому члені **3**, рядок `07` — **5** при мінімумі **3**, тобто обидва порушували власне правило агрегату, а гейт цього не бачив за дизайном (перевіряє лише верхні межі). Їхній стан живе прозою у власних `✅ Статус`, а машинну половину тримає `TRL_NOT_APPLICABLE` у `lib/tasks/docs.rake` — **двобічний** пін: така сторінка не сміє ані бракувати TRL, ані його мати.
 >
