@@ -77,7 +77,10 @@ namespace :docs do
     end
 
     dangling    = []  # hard: link target doc missing
-    suspect     = []  # soft: §-section label not found in target headings
+    # hard since DOC-T.48 (2026-07-25) — the name and this comment said "soft" for two
+    # weeks after the flip, while line ~628 pushes it into `failed`. A gate's own comment
+    # about its own severity is the one claim nothing checks (§Guard-craft #4).
+    suspect     = []  # hard: §-section label not found in target headings
     trl_missing = []  # hard: ## ✅ Статус section without a TRL declaration
     trl_misapplied = [] # hard: a declared non-technology page that states a TRL anyway
     # hard: an exemption whose SUBJECT is gone. A page can be dissolved or renumbered
