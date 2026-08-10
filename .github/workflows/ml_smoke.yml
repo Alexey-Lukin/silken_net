@@ -67,7 +67,7 @@ jobs:
       - name: Set up silken_ml conda env (cached)
         # micromamba caches the whole env keyed on environment.yml hash, so reruns
         # reuse it in ~30 s instead of resolving + downloading each time.
-        uses: mamba-org/setup-micromamba@ce51e99f4bb8a82ab7158c4dc59ef4634c59c4f9 # v3
+        uses: mamba-org/setup-micromamba@f457c30a868e4760d3a6fcea5f25dc655b8edf39 # v3
         with:
           environment-file: tools/ml/environment.yml
           environment-name: silken_ml
