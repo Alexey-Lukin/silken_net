@@ -172,10 +172,23 @@ RSpec.describe Tracker::Dashboard do
       expect(described_class.file_section_dangling_refs("04_05 §1 плюс §9")).to be_empty
     end
 
-    it "skips a §-ref to a doc-id that doesn't exist at all (not this guard's job)" do
-      # `anchors[doc]` is nil for an unknown doc-id — resolving THAT is the
-      # canon-ref existence guard's (`dangling_refs`) job, not this one's.
-      expect(described_class.file_section_dangling_refs("ref `99_99 §1` here")).to be_empty
+    # [DOC-T.68 фаза 0] This example used to assert the OPPOSITE — a §-ref to a doc-id with
+    # no file was skipped, "because resolving existence is `dangling_refs`'s job". That
+    # division of labour was honest while this resolver ran over 00_07 alone: `dangling_refs`
+    # reads `it.canon` — a tracker item's META line — and never prose, code or `.claude`.
+    # Handing the resolver to four consumers retired the premise without retiring the clause,
+    # and for a bare `NN_NN §X` in a code comment NOTHING else answers existence
+    # (`external_doc_path` matches `docs/NN_NN_Name` PATHS only). So a dissolved doc took its
+    # §-refs out of supervision in silence — which is the one thing a restructure must be
+    # able to measure.
+    it "flags a §-ref whose doc-id has no file at all" do
+      expect(described_class.file_section_dangling_refs("ref `99_99 §1` here"))
+        .to contain_exactly(a_string_matching(%r{99_99 §1.*no docs/}))
+    end
+
+    it "flags EVERY member of a comma-run under a dead doc-id, not just the first" do
+      expect(described_class.file_section_dangling_refs("`08_02 §1.1`, §1.8"))
+        .to contain_exactly(a_string_matching(/§1\.1/), a_string_matching(/§1\.8/))
     end
 
     # [DOC-T.60] letter-LABEL sections. The resolver used to be digit-led, which exempted

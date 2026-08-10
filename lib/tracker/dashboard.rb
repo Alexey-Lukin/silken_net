@@ -381,10 +381,20 @@ module Tracker
         h[id] = heading_anchors(File.read(f)) if id =~ /\A\d\d_\d\d/
       end
       markdown.scan(DOC_SECTION_REF).flat_map do |doc, run|
-        next [] unless anchors[doc]
-
+        # A doc-id with no file at all used to be skipped, on the reasoning that existence
+        # is `dangling_refs`'s job. That division was true while this resolver ran only over
+        # 00_07 — `dangling_refs` reads `it.canon`, i.e. the META line of a tracker item, and
+        # nothing else. Since then the resolver was handed to four consumers, and for the two
+        # that matter most (code/`.claude` comments via code_doc_section_refs, prose anywhere)
+        # NOTHING answers existence: `external_doc_path` sees only `docs/NN_NN_Name` PATHS,
+        # never a bare `NN_NN §X`. So a dissolved doc took its §-refs out of supervision
+        # silently. `nil` = no such doc; `[]` = the doc exists and simply has no anchors.
         run.scan(DOC_SECTION_TOKEN).filter_map do |raw|
-          next if raw.match?(/\.x\z/) # lowercase ".x" tail = wildcard placeholder
+          next if raw.match?(/\.x\z/) # lowercase ".x" tail = wildcard placeholder — in BOTH
+          # branches: the reason it is skipped ("not a section ref, a placeholder") does not
+          # depend on whether the target doc still exists.
+
+          next "`#{doc} §#{raw}` — no docs/#{doc}_*.md" unless anchors[doc]
 
           t = raw.downcase.sub(/\.+\z/, "")
           "`#{doc} §#{raw}`" unless anchors[doc].include?(t) || anchors[doc].any? { |a| a.start_with?("#{t}.") }

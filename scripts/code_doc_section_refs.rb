@@ -83,7 +83,11 @@ EXEMPT = %r{\A(?:lib/docs_linter\.rb|lib/docs_graph\.rb|lib/tracker/dashboard\.r
 # Прапорець на них червонив би гейт на його ж авторові.
 EXEMPT_REFS = {
   ".claude/skills/ssot-maintenance/SKILL.md"       => [ "05_03 §749", "07_01 §6.5" ],
-  ".claude/skills/ssot-maintenance/guard-craft.md" => [ "04_06 §A.10а", "04_06 §A.999", "07_03 §7" ],
+  # `08_01 §2` — той самий жанр, лише на осі ІСНУВАННЯ доку: форма #29 цитує його як
+  # доказ, що redirect-стаб небезпечний («реф не резолвиться проти тонкого стаба»).
+  # Побачив його аж фліп fail-OPEN→fail-CLOSED [DOC-T.68 фаза 0]: доти реф на мертвий
+  # doc-id резолвер мовчки пропускав, тож цитата була невидима, а не дозволена.
+  ".claude/skills/ssot-maintenance/guard-craft.md" => [ "04_06 §A.10а", "04_06 §A.999", "07_03 §7", "08_01 §2" ],
   "lib/tasks/docs.rake"                            => [ "05_03 §749" ]
 }.freeze
 
