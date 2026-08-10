@@ -20,6 +20,13 @@ the per-domain recipes**; it does **not** restate versions or track which bump s
 ## Core loop (per dependency)
 
 ```
+0. ALERTS     read the OPEN security alerts FIRST — they are a channel no
+              "outdated" command covers, and nothing else in the repo forces
+              you to open them (OPS.26): `gh api repos/:owner/:repo/dependabot/
+              alerts --paginate -q '.[] | select(.state=="open")'`. A green
+              `main` says nothing here: `bundler-audit` runs only in the
+              path-gated `scan_ruby` job, so an advisory filed against an
+              UNCHANGED lock stays invisible until someone opens a code PR.
 1. INVENTORY  what's behind: the domain's "outdated" command (table below).
 2. RESEARCH   read THIS version's changelog/release-notes (web/gh). Classify:
               security(CVE) · breaking · behavior/default · feature · routine/regen.
@@ -167,6 +174,18 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   identical failures, ask what they SHARE before reading any diff; fix `main` first, then rebase.
   Corollary on the quarantine: it has exactly **one** exception — a security fix you actually need.
   `rails 8.1.3.1` was taken at age 1 day, deliberately, and that is the rule working, not bending.
+- 🔴 **A PR's green check has a DATE, and the advisory DB moves independently of it — so an old green
+  attests to a world where the CVE did not yet exist** (2026-08-10, same root as the row above). `#501`
+  displayed `scan_ruby` SUCCESS dated 08-06; the `json` advisory (CVE-2026-71847) only landed in
+  `ruby-advisory-db` on 08-08. The tick was honestly earned — *before the question was asked* — so
+  merging on it means trusting a measurement that predates its own subject. Note this is the mirror of
+  the identical-failure rule: there the reds were somebody else's, here the **greens** are. Two
+  consequences: (a) on any PR older than a day, `gh pr checks` tells you about the base at run time,
+  never about today; (b) the honest re-measure is your own full local run over the applied bump
+  (`bundle update <gems> --conservative` → full `bin/rspec` + `bin/rubocop` + `bin/bundler-audit`),
+  or a rebase that forces CI to run again — never re-reading the tick. ⚠️ And the same asymmetry that
+  makes rebase expensive applies: re-running CI restarts the quarantine clock, while the local run
+  does not, so prefer the local run when the diff is small enough to apply by hand.
 - 🔴 **A security patch can EXPOSE a latent debt rather than break you — read the failure that way first**
   (2026-07-30). `rails 8.1.3.1` "broke" boot; in truth we had `variant_processor = :vips`, libvips in
   the Dockerfile and `.variant()` in three live places — and **no `ruby-vips` gem**, so variant
