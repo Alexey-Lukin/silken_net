@@ -908,11 +908,30 @@ end
 # is recorded with its reason so the gate never sits permanently red on it, and
 # the detector stays live for every new ref. Keyed per file, so an exemption
 # never blinds a whole file the way a path-level EXEMPT would.
+# ── Dissolved-module citations [DOC-T.68 фаза 0, 2026-08-10] ──────────────────
+# Ten refs to Module 08 and to 00_04 surfaced the day the §-resolver went
+# fail-CLOSED. They had been invisible, not absent. Each was read in context and
+# the test was «is the SUBJECT of this sentence the ADDRESS or the FACT», which
+# came back unanimous: every one records a past ACTION — "that section was
+# rewritten", "the dead path CODEOWNERS carried was this one", "BIZ.20 moved
+# FROM here", "the fix landed there" — plus one deliberate teaching citation
+# (range prose quoted as the specimen of a semantic tail after a mass delete).
+# So the address is part of the fact, not navigation to content: re-pointing
+# would make the sentence FALSE, and deleting the address would destroy the
+# record. History does not move when the docs do.
+# ⚠️ This is the widest exemption block in the gate, so note what still holds:
+# it is per-FILE and per-REF, `CANONREF-EXEMPT-DEAD` reds if any of these stops
+# being a dangling ref (the entry then guards nothing), and every NEW citation
+# of a dissolved doc is still caught — the detector stays live.
 exempt = {
   # The renumber-drift teaching case: `§749` is a LINE number written as a
   # section — citing it IS the lesson. `code_doc_section_refs.rb` exempts the
   # ssot-maintenance skill for this same ref, for this same reason.
-  "project_ssot_campaign_history.md" => ["05_03 §749"]
+  "project_ssot_campaign_history.md" => ["05_03 §749", "08_03 §11", "08_01 §2"],
+  "log_portfolio_surgery.md" => ["08_03 §9", "08_03 §15"],
+  "project_ip_posture_defensive_publication.md" => ["08_01 §2"],
+  "project_uwei_process_layer_cut.md" => ["00_04 §2"],
+  "project_vilize_07_08.md" => ["08_01 §0.1", "08_02 §2", "08_03 §2", "08_02 §5"]
 }
 # Test seam, same shape as the MEMORY_GATE_* overrides elsewhere: the curated
 # table names a real corpus file, which no fixture repo has, so the self-test
