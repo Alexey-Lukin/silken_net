@@ -142,6 +142,28 @@
 
 ---
 
+### 3.6 In Silico як HIL-аналог для Hardware Stream (Zero-Lab)
+
+Hardware Stream історично був «повільним» (друк металу → лабораторія → in vitro → поле). Це усувається двома паралельними Code-as-Engineering треками: **Трек A — Code-as-Chemistry** ([`01_03 §3.4`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)) і **Трек B — Code-as-CAD** ([`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)).
+
+🔑 **У треку B дві РІЗНІ ролі, які не можна плутати:** **PicoGK** (C#) — справжній CAD-as-code, де агент пише детермінований генератор геометрії (CEM-методологія — *алгоритм, НЕ генеративний ML*); **nTop Automate** — це headless parameter-sweep уже створеного в GUI шаблону, тобто базовий `.ntop` спершу «наклацує» інженер. From-scratch generation = PicoGK; автоматизована параметризація готового шаблону = nTop Automate.
+
+> ⚖️ **«Трек C — Code-as-Mechanics» ВИДАЛЕНО, і підстава не технічна.** Важка механіка полімерів (в'язкопружність PEEK, Prony series, термонапруження Ti+PEEK, 20-річний creep) канонічно закріплена за лабораторією ЧНУ на ANSYS LS-DYNA ([`01_01 §4.3`](01_01_Coaxial_Gyroid_Topology_and_PEEK) · [`07_03`](07_03_Academic_Integration_and_IP)). Паралельний AI-трек на CalculiX дав би **другий, неузгоджений** результат і знецінив би роботу професорів. Наш конвеєр покриває хімію, геометрію, кінетику та **легкий closed-form mechanics-bound** (аналітичний Lamé, БЕЗ mesh) — швидку оцінку-границю, що ЯВНО відкладає авторитетну mesh-FEA і Prony-fit до партнера.
+
+**Архітектурний принцип — НЕ «відмова від GUI», а headless/API-driven доступ.** Проблема не в тому, що nTop чи ANSYS погані (nTop — найпотужніший TPMS-рушій у світі), а в тому, що агент не клікає по GUI. Рішення — керувати тими самими індустріальними інструментами через їхні офіційні Python/CLI API, а не переписувати CAD «бо так зручніше LLM»:
+
+| Категорія | GUI-режим (для людини) | Code/API-driven (для агентів) |
+|---|---|---|
+| Chemistry | Gaussian / ORCA | **PySCF** (Python) — галузевий стандарт |
+| CAD parametric / TPMS | nTop Workbench, SolidWorks | **PicoGK** (C#, from-scratch) + **nTop Automate** (sweep готового шаблону) |
+| FEA mechanical | ANSYS Workbench | **PyAnsys / PyMAPDL / PyDPF** (headless — у партнера) |
+| Molecular Dynamics | VMD, NAMD GUI | **OpenMM** (Python) — галузевий стандарт |
+| Кінетика | (Custom GUIs) | **scipy/numpy** analytical models |
+
+**Ефект і його межа:** конвеєр дозволяє відшліфувати TRL 3 і підготувати хімічну/CAD-базу ПЕРЕД дорогим переходом на TRL 4, збиваючи R&D-бюджет на хімію в 5–10 разів, а на CAD-варіанти — в 10–20. ⚠️ Але за строгим NASA/ISO 16290 in-silico ≠ TRL 4 (§1 вище), тож «Zero-Lab gate PASSED» означає «TRL 3 повністю валідовано + GO фінансувати TRL 4», а НЕ «ми вже на TRL 4».
+
+---
+
 ## 📊 4. Критерій закриття задачі та TRL Gate Events
 
 Кожна задача несе рівень TRL; відкритий залишок живе в [`00_07`](00_07_Action_Plan_Tracker), поточні рівні — у §1 вище. Задача не вважається закритою, доки її реалізація не буде підтверджена:
