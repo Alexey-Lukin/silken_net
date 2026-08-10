@@ -67,6 +67,14 @@ RSpec.describe Firmwares::Index do
       expect(html).to include("Order Evolution →")
     end
 
+    # Прошивка, завантажена без бінара (лише `bytecode_payload`), хеша не має —
+    # доти цю гілку покривав мок, що НЕ оголошував поля взагалі й тому віддавав nil.
+    it "displays N/A when binary_sha256 is missing" do
+      rendered = render_component(firmwares: [ mock_firmware(binary_sha256: nil) ],
+                                  inventory_stats: mock_inventory_stats, pagy: mock_pagy(count: 1, last: 1))
+      expect(rendered).to include("N/A")
+    end
+
     it "displays a truncated binary_sha256 when present" do
       fw = mock_firmware(id: 3)
       fw.binary_sha256 = "0123456789abcdef0123456789abcdef"
