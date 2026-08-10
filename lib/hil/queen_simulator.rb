@@ -9,8 +9,7 @@ module Hil
   # 🏰 HilQueenSimulator — Queen Gateway HIL Digital Twin
   # = ===================================================================
   #
-  # Source: docs/00_03_TRL_Matrix_HIL_and_Beyond §4.2 +
-  # docs/06_08_Resilience_and_Failover_Policy §1.3.
+  # Source: 00_03 §3.2 (HIL/SIL simulator registry) + 06_08 §1.3.
   #
   # [ARCH.54] Емуляція ПУЛЬСУ Королеви — health-блоку у підписаному
   # QATT-v2 конверті (wire-дім: firmware/common/queen_attest.h). Стара

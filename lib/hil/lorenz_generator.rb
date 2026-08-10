@@ -8,7 +8,7 @@ module Hil
   # 🌀 HilLorenzGenerator — deterministic Lorenz fixture/training source
   # = ===================================================================
   #
-  # Source: docs/00_03_TRL_Matrix_HIL_and_Beyond §4.2.
+  # Source: 00_03 §3.2 (HIL/SIL simulator registry).
   #
   # Generates Lorenz attractor samples (inputs + Z + trajectory tails)
   # for two consumers:
