@@ -52,6 +52,7 @@ uk:
         bark_thickness_value: "%{value} мм"
         co2: Коеф. поглинання CO₂
         fire_rating: Вогнестійкість
+        fire_rating_value: "%{value} °C"
         foliage_density: Густина листя
         foliage_density_value: "%{value} %"
         sap_flow: Індекс потоку соку

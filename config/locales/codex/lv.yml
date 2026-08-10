@@ -32,6 +32,7 @@ lv:
       title_with_note: "%{base} — %{note}"
       unknown_realm: nezināma joma
     comments:
+      anonymous_author: Nenosaukts mežsargs
       empty: Esiet pirmais, kas dalās ar to, ko šis arhetips nozīmē jums.
       heading: Diskusija
       hidden: Paslēpts moderatora.

@@ -17,7 +17,10 @@ RSpec.describe Codex::Comments::Item do
       body_md: "Hello **world**.",
       hidden?: false,
       created_at: Time.utc(2026, 5, 9, 13, 0, 0),
-      user: OpenStruct.new(email_address: "ranger@example.com", full_name: "Ranger Rick")
+      # [TEST.12] Реальний `User`: доти мок оголошував `full_name` напряму, без
+      # `first_name`/`last_name`, — а справжня формула на тому самому вході
+      # віддала б EMAIL, тобто рівно те, що приклад нижче нібито забороняє.
+      user: User.new(first_name: "Ranger", last_name: "Rick", email_address: "ranger@example.com")
     }
     OpenStruct.new(base.merge(overrides))
   end
@@ -37,6 +40,17 @@ RSpec.describe Codex::Comments::Item do
     expect(html).to include("Ranger Rick")
     expect(html).not_to include("ranger@example.com")
     expect(html).to include("2026-05-09 13:00 UTC")
+  end
+
+  # [TEST.12] Той самий інваріант на вході, який його справді перевіряє. Жодне з
+  # імен не має `presence`-валідації, тож автор без імені — штатний стан; доти
+  # `full_name` падав на email, і саме цей випадок приклад вище проминав.
+  it "falls back to a neutral label — never the email — when the author has no name" do
+    nameless = User.new(email_address: "ranger@example.com")
+    html = render_item(fake_comment(user: nameless))
+
+    expect(html).not_to include("ranger@example.com")
+    expect(html).to include("Unnamed forester")
   end
 
   it "shows a moderator-hidden notice and skips body when hidden" do

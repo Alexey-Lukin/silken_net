@@ -156,7 +156,12 @@ module AccountSecurity
     end
 
     def render_unlink_button(identity)
-      can_unlink = @user.password_digest.present? || @identities.count { |i| i.active? } > 1
+      # [TEST.12] `Identity#active?` НЕ існує — `active` є лише скоупом (`where(locked_at: nil)`),
+      # тож цей рядок кидав NoMethodError на кожному OAuth-only власнику (`password_digest`
+      # порожній за побудовою: `User#password_required?` = `identities.none?`), тобто сторінка
+      # безпеки віддавала 500. Ховала це фікстура, що вигадала предикат. Контролер той самий
+      # намір уже виражав правильно — `identities.active.count` (account_security_controller.rb).
+      can_unlink = @user.password_digest.present? || @identities.count { |i| !i.locked? } > 1
 
       if can_unlink
         form(action: account_security_identity_path(identity), method: "post", class: "inline") do

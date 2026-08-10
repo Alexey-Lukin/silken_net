@@ -33,6 +33,7 @@ lt:
       title_with_note: "%{base} — %{note}"
       unknown_realm: nežinoma sritis
     comments:
+      anonymous_author: Bevardis miškininkas
       empty: Būkite pirmas, kuris pasidalins, ką šis archetipas reiškia jums.
       heading: Diskusija
       hidden: Paslėpta moderatoriaus.

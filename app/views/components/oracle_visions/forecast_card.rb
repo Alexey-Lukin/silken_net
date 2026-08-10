@@ -43,7 +43,10 @@ module OracleVisions
         h4(class: "text-lg font-light text-emerald-100 mt-2") { t(".predicted_window") }
         p(class: "text-tiny text-gray-500 font-mono flex items-center gap-2") do
           i(class: "ph ph-clock")
-          plain @insight.target_date.strftime("%d.%m.%Y // %H:%M UTC")
+          # [TEST.12] `ai_insights.target_date` — колонка `date`, без часу, тож
+          # «// %H:%M UTC» друкував вічне «00:00» як справжню годину прогнозу.
+          # Спека це ховала, подаючи `Time.utc(...)`, якого модель не віддає.
+          plain @insight.target_date.strftime("%d.%m.%Y")
         end
       end
     end
@@ -66,8 +69,13 @@ module OracleVisions
       end
     end
 
+    # [TEST.12] Гілка `insight_type == "emergency"` була МЕРТВА від народження:
+    # enum має рівно daily_health_summary/drought_probability/carbon_yield_forecast/
+    # biodiversity_trend, і `git log -S` не знає жодної ревізії, де «emergency» там
+    # був — тобто високоймовірний негативний прогноз ніколи не міг почервоніти, а
+    # зеленою її тримала фікстура, що подавала неможливе значення. Чи потрібне
+    # візуальне відрізнення такого прогнозу — ⚖️ у 00_07 UI.13, не здогад тут.
     def confidence_color
-      return "#ef4444" if @insight.probability_score.to_f > 90 && @insight.insight_type == "emergency"
       "#10b981"
     end
 

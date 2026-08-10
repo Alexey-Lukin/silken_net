@@ -52,6 +52,7 @@ lt:
         bark_thickness_value: "%{value} mm"
         co2: CO₂ sekvestracijos koef.
         fire_rating: Gaisro įvertinimas
+        fire_rating_value: "%{value} °C"
         foliage_density: Lapijos tankis
         foliage_density_value: "%{value} %"
         sap_flow: Sulų srauto indeksas

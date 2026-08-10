@@ -52,6 +52,7 @@ lv:
         bark_thickness_value: "%{value} mm"
         co2: CO₂ sekvestrācijas koef.
         fire_rating: Uguns novērtējums
+        fire_rating_value: "%{value} °C"
         foliage_density: Lapotnes blīvums
         foliage_density_value: "%{value} %"
         sap_flow: Sulas plūsmas indekss

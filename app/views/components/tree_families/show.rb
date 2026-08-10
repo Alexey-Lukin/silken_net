@@ -69,7 +69,17 @@ module TreeFamilies
           prop_row(t(".props.sap_flow"), @family.sap_flow_index || t(".defaults.zero"))
           prop_row(t(".props.bark_thickness"), t(".props.bark_thickness_value", value: @family.bark_thickness || 0))
           prop_row(t(".props.foliage_density"), t(".props.foliage_density_value", value: @family.foliage_density || 0))
-          prop_row(t(".props.fire_rating"), @family.fire_resistance_rating || t(".defaults.not_available"))
+          # [TEST.12] Значення — ПОРІГ температури в °C (`AlertDispatchService`
+          # звіряє його з `telemetry_log.temperature_c`, дефолт 60), а не якісний
+          # рейтинг, хоч мітка читається саме так. Без одиниці — як у сусідів
+          # вище — адміністратор, що введе «3» за лісівничою шкалою, дістав би
+          # пожежну тривогу на кожній телеметрії вище 3 °C.
+          prop_row(t(".props.fire_rating"),
+                   if @family.fire_resistance_rating
+                     t(".props.fire_rating_value", value: @family.fire_resistance_rating)
+                   else
+                     t(".defaults.not_available")
+                   end)
         end
       end
     end

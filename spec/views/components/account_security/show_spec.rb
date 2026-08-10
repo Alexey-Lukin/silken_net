@@ -4,31 +4,19 @@
 require "rails_helper"
 
 RSpec.describe AccountSecurity::Show do
-  def mock_user(mfa_enabled: false, recovery_codes_remaining: 10, password_digest: nil)
-    u = OpenStruct.new(
-      mfa_enabled: mfa_enabled,
-      recovery_codes_remaining: recovery_codes_remaining,
-      password_digest: password_digest
-    )
-    u.define_singleton_method(:mfa_enabled?) { mfa_enabled }
-    u
+  # [TEST.12] Реальні незбережені записи, а не `OpenStruct`. Мок тут вигадував
+  # `Identity#active?` — предиката, якого на моделі НЕМА (`active` існує лише
+  # скоупом), — і саме тому ховав 500 на сторінці безпеки для кожного власника
+  # без пароля. Заразом він оголошував `mfa_enabled`/`recovery_codes_remaining`,
+  # яких компонент не читає взагалі (`@user` дає лише `password_digest`).
+  # `id` потрібен роут-хелперам кнопок lock/unlink, тож `build_stubbed`.
+  def mock_user(password_digest: nil)
+    User.new(password_digest: password_digest)
   end
 
-  def mock_identity(provider: "google_oauth2", uid: "1234567890abc", primary: false,
-                    locked: false, active: true)
-    i = OpenStruct.new(
-      provider: provider,
-      uid: uid,
-      primary: primary,
-      locked_at: locked ? 1.hour.ago : nil
-    )
-    i.define_singleton_method(:locked?) { locked }
-    i.define_singleton_method(:primary?) { primary }
-    i.define_singleton_method(:active?) { active }
-    i.define_singleton_method(:model_name) { ActiveModel::Name.new(Identity) }
-    i.define_singleton_method(:to_key) { [ 1 ] }
-    i.define_singleton_method(:to_param) { "1" }
-    i
+  def mock_identity(provider: "google_oauth2", uid: "1234567890abc", primary: false, locked: false)
+    build_stubbed(:identity, provider: provider, uid: uid, primary: primary,
+                             locked_at: locked ? 1.hour.ago : nil)
   end
 
   def render_component(user:, identities:)
@@ -81,8 +69,7 @@ RSpec.describe AccountSecurity::Show do
       expect(html).not_to include("Enable MFA")
       expect(html).not_to include("Disable MFA")
 
-      user_with_mfa = mock_user(mfa_enabled: true)
-      html_enabled = render_component(user: user_with_mfa, identities: identities)
+      html_enabled = render_component(user: mock_user, identities: identities)
       expect(html_enabled).not_to include("Disable MFA")
     end
   end
@@ -178,8 +165,37 @@ RSpec.describe AccountSecurity::Show do
     context "when user has no password and only one active identity" do
       it "renders disabled Unlink span" do
         user_no_pwd = mock_user(password_digest: nil)
-        identity = mock_identity(provider: "google_oauth2", active: true)
+        identity = mock_identity(provider: "google_oauth2")
         html = render_component(user: user_no_pwd, identities: [ identity ])
+        expect(html).to include("cursor-not-allowed")
+      end
+    end
+
+    # [TEST.12] Саме цей шлях і падав: без пароля обчислення `can_unlink` доходить
+    # до правої половини `||`, тобто до предиката на КОЖНІЙ ідентичності. Доти
+    # фікстура вигадувала `active?`, тож приклад був зелений на методі, якого
+    # модель не має. На реальному записі приклад червоніє без фікса.
+    context "when user has no password but two unlocked identities" do
+      it "renders an active Unlink form for each" do
+        html = render_component(
+          user: mock_user(password_digest: nil),
+          identities: [ mock_identity(provider: "google_oauth2", uid: "uid-a"),
+                        mock_identity(provider: "facebook", uid: "uid-b") ]
+        )
+        expect(html).not_to include("cursor-not-allowed")
+        expect(html).to include("Unlink")
+      end
+    end
+
+    # Заблокована ідентичність не рахується «активною» — з однією живою й однією
+    # заблокованою відв'язати не можна, інакше власник лишиться без жодного входу.
+    context "when the second identity is locked" do
+      it "keeps Unlink disabled" do
+        html = render_component(
+          user: mock_user(password_digest: nil),
+          identities: [ mock_identity(provider: "google_oauth2", uid: "uid-a"),
+                        mock_identity(provider: "facebook", uid: "uid-b", locked: true) ]
+        )
         expect(html).to include("cursor-not-allowed")
       end
     end

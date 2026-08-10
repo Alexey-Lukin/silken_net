@@ -34,6 +34,7 @@ uk:
       title_with_note: "%{base} — %{note}"
       unknown_realm: невідомий realm
     comments:
+      anonymous_author: Лісник без імені
       empty: Будьте першим, хто поділиться, що означає цей архетип для вас.
       heading: Обговорення
       hidden: Приховано модератором.

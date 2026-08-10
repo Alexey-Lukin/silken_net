@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-# Codex::Comments::Item — single comment row, used inside `Codex::Comments::Thread`
-# and as the broadcast target for `codex_node_<id>_comments` Turbo streams.
+# Codex::Comments::Item — single comment row, used inside `Codex::Comments::Thread`.
+# 🔴 NOT a broadcast target: the `codex_node_<id>_comments` stream has no producer
+# (`Thread` already carries that correction; this docstring kept claiming it).
 module Codex
   module Comments
     class Item < ApplicationComponent
@@ -23,7 +24,10 @@ module Codex
             # required belongs_to and `user_id` carries a plain FK (no
             # `ON DELETE` cascade/nullify) — the referenced user can't be
             # removed while the comment exists, so `.user` is always present.
-            span { @comment.user&.full_name.to_s }
+            # [TEST.12] `full_name` тут був витоком: він падає на `email_address`,
+            # а імена не обовʼязкові — тож автор без імені показував адресу
+            # читачам ІНШИХ організацій. Лор-шар бере `public_display_name`.
+            span { @comment.user&.public_display_name.presence || t("codex.comments.anonymous_author") }
             time(datetime: @comment.created_at.iso8601) { @comment.created_at.utc.strftime("%Y-%m-%d %H:%M UTC") }
           end
 

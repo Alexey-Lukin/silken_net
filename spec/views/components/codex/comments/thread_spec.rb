@@ -34,7 +34,9 @@ RSpec.describe Codex::Comments::Thread do
       body_md: "Great tree!",
       hidden?: false,
       created_at: Time.utc(2026, 5, 10, 8, 0, 0),
-      user: OpenStruct.new(email_address: "user@example.com", full_name: "Tree Fan")
+      # [TEST.12] Реальний User — `full_name` фолбекає на email, тож мок із самим
+      # лише `full_name` робив PII-пін нижче неперевірним.
+      user: User.new(first_name: "Tree", last_name: "Fan", email_address: "user@example.com")
     )
     html = render_thread(node: node, comments: [ comment ], current_user: nil)
     expect(html).not_to include("Be the first to share")
@@ -87,11 +89,11 @@ RSpec.describe Codex::Comments::Thread do
   it "renders multiple comments in the given order" do
     first = OpenStruct.new(
       id: 1, body_md: "First!", hidden?: false, created_at: Time.utc(2026, 5, 10, 8, 0, 0),
-      user: OpenStruct.new(email_address: "a@example.com", full_name: "Ann")
+      user: User.new(first_name: "Ann", email_address: "a@example.com")
     )
     second = OpenStruct.new(
       id: 2, body_md: "Second!", hidden?: false, created_at: Time.utc(2026, 5, 10, 9, 0, 0),
-      user: OpenStruct.new(email_address: "b@example.com", full_name: "Bo")
+      user: User.new(first_name: "Bo", email_address: "b@example.com")
     )
     html = render_thread(node: node, comments: [ first, second ], current_user: nil)
     expect(html.index("First!")).to be < html.index("Second!")

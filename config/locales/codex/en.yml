@@ -32,6 +32,7 @@ en:
       title_with_note: "%{base} — %{note}"
       unknown_realm: unknown realm
     comments:
+      anonymous_author: Unnamed forester
       empty: Be the first to share what this archetype means to you.
       heading: Discussion
       hidden: Hidden by moderator.

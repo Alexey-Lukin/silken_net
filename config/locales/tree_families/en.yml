@@ -52,6 +52,7 @@ en:
         bark_thickness_value: "%{value} mm"
         co2: CO₂ Sequestration Coeff.
         fire_rating: Fire Rating
+        fire_rating_value: "%{value} °C"
         foliage_density: Foliage Density
         foliage_density_value: "%{value} %"
         sap_flow: Sap Flow Index

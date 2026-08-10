@@ -4,10 +4,13 @@
 require "rails_helper"
 
 RSpec.describe OracleVisions::Index do
-  def mock_insight(insight_type: "drought", probability_score: 74,
-                   target_date: 1.day.from_now.utc,
+  # [TEST.12] Реальний незбережений `AiInsight`: `insight_type` мусить належати
+  # enum'у (доти тут стояли «drought»/«frost_risk», яких модель не приймає), а
+  # `target_date` — колонка `date`, не `Time`.
+  def mock_insight(insight_type: "drought_probability", probability_score: 74,
+                   target_date: Date.current + 1,
                    summary: "Moisture deficit expected.", yield_impact: "-0.04%")
-    OpenStruct.new(
+    AiInsight.new(
       insight_type: insight_type,
       probability_score: probability_score,
       target_date: target_date,
@@ -32,7 +35,7 @@ RSpec.describe OracleVisions::Index do
   end
 
   let(:clusters) { [ mock_cluster(id: 1, name: "Carpathian-Alpha") ] }
-  let(:visions) { [ mock_insight, mock_insight(insight_type: "frost_risk", probability_score: 88) ] }
+  let(:visions) { [ mock_insight, mock_insight(insight_type: "biodiversity_trend", probability_score: 88) ] }
   let(:html) { render_component(visions: visions, emission_forecast: "12.45", clusters: clusters) }
 
   describe "header section" do
@@ -65,13 +68,14 @@ RSpec.describe OracleVisions::Index do
 
   describe "visions delegated to ForecastCard" do
     it "renders insight_type for each vision" do
-      expect(html).to include("drought")
-      expect(html).to include("frost_risk")
+      expect(html).to include("drought_probability")
+      expect(html).to include("biodiversity_trend")
     end
 
+    # [TEST.12] `numeric`-колонка → BigDecimal, тож у проді «74.0%», не «74%».
     it "renders probability scores for each vision" do
-      expect(html).to include("74%")
-      expect(html).to include("88%")
+      expect(html).to include("74.0%")
+      expect(html).to include("88.0%")
     end
 
     it "renders summaries for each vision" do

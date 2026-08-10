@@ -184,6 +184,14 @@ class User < ApplicationRecord
     [ first_name, last_name ].compact_blank.join(" ").presence || email_address
   end
 
+  # [TEST.12] Імʼя для поверхонь, видимих ПОЗА організацією (Codex-лор). На
+  # відміну від `full_name`, НІКОЛИ не падає на email: жодне з імен не має
+  # `presence`-валідації, тож власник без імені світив би адресу читачам чужих
+  # організацій. Порожнє імʼя лишається `nil` — підпис обирає викликач.
+  def public_display_name
+    [ first_name, last_name ].compact_blank.join(" ").presence
+  end
+
   def touch_visit!
     return if last_seen_at.present? && last_seen_at > 5.minutes.ago
     update_columns(last_seen_at: Time.current)
