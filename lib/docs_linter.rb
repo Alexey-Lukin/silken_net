@@ -397,10 +397,10 @@ module DocsLinter
   # elsewhere drifts the instant governance re-prices — exactly the silent dup found
   # across 8 docs (00_01/04_01/05_01/05_02/05_06/07_01 body/03_03). Other docs must
   # REFERENCE the home, never restate the number. Exempt: 05_03 + 07_01 (homes),
-  # 07_02 (a labelled "дзеркало SSOT" ROI calc), 00_07 (tracker archive), manifest
+  # 00_07 (tracker archive) and manifest
   # (the standalone manifesto). A line that itself references the home or is a
   # labelled mirror is not flagged — same shape as lorenz_formula_drift.
-  RATE_OWNER_DOC     = /\A05_03_|\A07_01_|\A07_02_|\A00_07_|\Amanifest/
+  RATE_OWNER_DOC     = /\A05_03_|\A07_01_|\A00_07_|\Amanifest/
   TOKENOMICS_RATE_RE = /10[ .,]?000[^\n]{0,30}=\s*1\s*SCC/i
   CARBON_RATE_RE     = /2[ .,]?000\s*SCC\s*=\s*1\s*[тt]/i
   RATE_MIRROR_RE     = /дзеркал|mirror|05_03|07_01|ProtocolParameters|SystemParameter/i
@@ -425,7 +425,7 @@ module DocsLinter
   # and the One-Home function is lost without a single red light. The anchor closes that loop:
   # each home must still MATCH the guard's own pattern, so re-pricing the home fails CI until
   # the regex is consciously updated together with every mirror. The violation text doubles as
-  # the mirror checklist — manifest.md + 07_02 are exempt from the drift-guard by design (genre),
+  # the mirror checklist — manifest.md is exempt from the drift-guard by design (genre),
   # so THIS is the only red light that will ever name them on a re-price (DOC-T.41).
   RATE_ANCHOR_HOMES = {
     "05_03" => [ [ :TOKENOMICS_RATE_RE, "mint rate `10,000 gp = 1 SCC`" ] ],
@@ -439,7 +439,7 @@ module DocsLinter
 
       "home #{basename[/\A\d\d_\d\d/]} no longer matches the guard's #{const} (#{label}) — " \
         "re-price? Update the regex in lib/docs_linter.rb AND sweep the mirrors: " \
-        "manifest.md (§2 genre home), 07_02 ROI, 03_04/05_02 references"
+        "manifest.md (§2 genre home), 07_01 §17 ROI, 03_04/05_02 references"
     end
   end
 

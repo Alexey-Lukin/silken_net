@@ -470,7 +470,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 
 ## 💰 5. Unit Economics — Біохімія Gen 2.0
 
-> Деталізована Unit Economics анкера — [`07_02`](07_02_Unit_Economics_and_BOM). Ця секція дає виключно біохімічну BOM.
+> Деталізована Unit Economics анкера — [`07_01`](07_01_Nature_as_a_Service_Contracts). Ця секція дає виключно біохімічну BOM.
 
 ### 5.1. BOM на 1000 анкерів (Gen 2.0 baseline)
 

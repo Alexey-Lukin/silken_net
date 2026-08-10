@@ -447,7 +447,7 @@ RSpec.describe DocsLinter do
       carbon = "2000 SCC = 1 tCO₂\n"
       expect(described_class.tokenomics_rate_drift("05_03_Tokenomics_SCC_and_SFC", mint)).to be_empty
       expect(described_class.tokenomics_rate_drift("07_01_Nature_as_a_Service_Contracts", mint)).to be_empty
-      expect(described_class.tokenomics_rate_drift("07_02_Unit_Economics_and_BOM", carbon)).to be_empty
+      expect(described_class.tokenomics_rate_drift("07_01_Nature_as_a_Service_Contracts", carbon)).to be_empty
       expect(described_class.tokenomics_rate_drift("00_07_Action_Plan_Tracker", carbon)).to be_empty
       expect(described_class.tokenomics_rate_drift("manifest", mint)).to be_empty
     end

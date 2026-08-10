@@ -160,6 +160,5 @@ _Деплой, моніторинг, секрети та децентраліз�
 
 _Зовнішній шар довкола системи: NaaS-контракти, юніт-економіка, академічні партнери та IP. Культурний шар (митці) — `cultural_layer.md`. Візія/місія/дорожня карта — у Фундаменті [`00_01`](00_01_Vision_Mission_and_Roadmap). Інженерна R&D-субстанція партнерів реферить канон Tier I (01–06), не дублює._
 
-- [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) (NaaS контракти + параметричне страхування + фінансові константи)
-- [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) (Юніт-економіка + ROI через SCC + Supply Chain Ukraine)
+- [`07_01` — Nature as a Service Contracts + Unit Economics](07_01_Nature_as_a_Service_Contracts) (NaaS контракти · параметричне страхування · фінансові константи · §11-§20 юніт-економіка/BOM/ROI/Supply Chain — злито 2026-08-10)
 - [`07_03` — Academic Integration and IP](07_03_Academic_Integration_and_IP) (Реєстр 5 ВНЗ + спільні публікації + IP-постава + бренд-архітектура)

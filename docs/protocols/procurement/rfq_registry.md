@@ -15,7 +15,7 @@
 | **EBFC хімія** | фермент · Os · ZIF · genipin · мембрана · CNC | [`01_03`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) §2.1/§2.2/§3.7 | §4.A | [`ebfc_chem_rfq`](ebfc_chem_rfq.md) **✅** | GenScript/ProteoGenix **CRO** (🔴 4-8тиж) · ЧМА/ЧНУ **ACAD** (ZIF/сік) · Challenge (genipin) | HW.5 |
 | **Анкер сплав** | Ti-coupon 6-alloy bake-off | [`01_02`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) §2.5 · [`01_01`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) §6.1 | §4.B | [`anchor_alloy_rfq`](anchor_alloy_rfq.md) **✅** | 3D Metal Tech Київ **AM** · EL-CELL (CV/EIS) **CRO** · Гусак **ACAD** | HW.24/HW.3 |
 | **Анкер dummy (Stage-1)** | 2-3 НЕ-функц. анкери — qualify DMLS-друк + props (SLA form&fit / SLM-Ti-4V метал) | [`01_01`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) §6.1 Stage 1 | §4.B (друк) | 🟡 STL ✅ (`tools/cad` `build`; gallery [`images/cad`](../../images/cad/README.md)) | 3D Metal Tech Київ / 3D Lab PL **AM** · SLA-сервіс | HW.24 (Stage 1) · BIZ.6 |
-| **Анкер hardware** | PEEK Zone2/Radome · pogo · O-ring · DIN-471 · болти | [`01_01`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · [`02_02`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) · [`07_02`](../../07_02_Unit_Economics_and_BOM.md) §8 | §4.B/§4.C | 🟡 | EU DMLS (3D Lab PL…) **AM** · Mill-Max (pogo) · fastener-**DIST** | HW.1/HW.8/HW.17/HW.23/HW.27/BIZ.6 |
+| **Анкер hardware** | PEEK Zone2/Radome · pogo · O-ring · DIN-471 · болти | [`01_01`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · [`02_02`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) · [`07_01`](../../07_01_Nature_as_a_Service_Contracts.md) §8 | §4.B/§4.C | 🟡 | EU DMLS (3D Lab PL…) **AM** · Mill-Max (pogo) · fastener-**DIST** | HW.1/HW.8/HW.17/HW.23/HW.27/BIZ.6 |
 | **Капсула електроніка** | MCU · MPPT · supercap · антена · piezo · conformal · PCB | [`02_01`](../../02_01_Hardware_Architecture_and_BOM.md) §1/§3 · [`02_03`](../../02_03_BQ25570_MPPT_Nano_Power.md) | §4.D | ⚪ | Mouser/Digi-Key **DIST** · Parylene-shop · PCB-fab | HW.9/HW.11/HW.29/HW.32 |
 | **Брама Queen** | SIM7070G · LTE/LoRa антени · solar · battery+BMS | [`02_05`](../../02_05_Queen_Hardware_and_Starlink.md) §2-§7 | §4.D | ⚪ | SIMCom/Київстар · antenna-spec · LiFePO4 **DIST** | HW.10/HW.14/HW.15/HW.16/HW.31 |
 | **Secure Element** | NXP SE05x (baseline SE051C2) | [`03_05`](../../03_05_Hardware_Symmetric_Crypto_and_Security.md) §3.7 · [`03_06`](../../03_06_Factory_Flashing_and_Key_Provisioning.md) | §4.D | ⚪ | NXP **DIST** (DNP до FW.2) | SEC.6 / FW.2 (в) |
@@ -31,7 +31,7 @@
 
 | | **R&D-RFQ** (TRL 3→5, Stage 1-3) | **Production-procurement** (TRL 6+, Stage 4 100-партія) |
 |---|---|---|
-| **Дім** | `protocols/procurement/` (цей шар) | [`07_02 §8`](../../07_02_Unit_Economics_and_BOM.md) (BOM/хаби) + §8.1.1 Frame Agreement |
+| **Дім** | `protocols/procurement/` (цей шар) | [`07_01 §18`](../../07_01_Nature_as_a_Service_Contracts.md) (BOM/хаби) + §8.1.1 Frame Agreement |
 | **Вендор-зв'язок** | spot-quote (CRO / academ-co-pub) | Frame Agreement (+20% premium, 30-day activation, SLA) |
 | **Авторитет** | architect + ЧНУ-PI | CEO/Partnerships (контракт) |
 | **00_07** | HW.5/HW.24/HW.3 | **BIZ.6** (EU-backup) |
@@ -79,7 +79,7 @@ Stage-2 coin-bake-off = **R&D-шар**; 100-партія = **Production-шар**
 | Ресурс | Що бере |
 |---|---|
 | [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md) | One-Home реєстрація цього concern'у |
-| [`07_02 §8`](../../07_02_Unit_Economics_and_BOM.md) | economics/BOM + україн­ські DMLS-хаби + Production-шар (Frame Agreement) |
+| [`07_01 §18`](../../07_01_Nature_as_a_Service_Contracts.md) | economics/BOM + україн­ські DMLS-хаби + Production-шар (Frame Agreement) |
 | [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) | IP/CDA/NDA-політика (defensive-publication) — дім |
 | [`07_03`](../../07_03_Academic_Integration_and_IP.md) | академічні co-pub канали (ЧНУ/ЧМА/ЧДТУ) |
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | HW.*/BIZ.* procurement-action-items + DOC-T (інкрементальне авторство) |
