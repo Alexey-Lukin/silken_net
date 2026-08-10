@@ -85,6 +85,12 @@ families       = ids.filter_map { |id| id[/\A[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-
 # table-row that documents its retirement, so a whole-file match keeps the
 # dead ID "resolvable" forever — the necrology immunises the phantom (8
 # HW.1-family refs survived 11 passes on exactly this trap).
+# ⚠️ RESIDUAL CEILING, and the narrowing above does not remove it (recorded here
+# 2026-08-10; it lived only in the 00_06 §3 row): a necrology written INSIDE a
+# live `####` body still immunises. The form cannot see semantics — "retired,
+# do not cite" and a live declaration are the same bytes to it — so the fix that
+# closed the dominant, TABLE-shaped case leaves the in-body one open by design.
+# Only a reading catches it; do not read this gate's green as coverage of that.
 def resolves?(tok, ids, facet_evidence)
   return true if ids.include?(tok)
 

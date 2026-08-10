@@ -22,6 +22,14 @@ module Tracker
     # items now live as ordinary `#### ` items in the §-section of their canon module.
     REGISTRY_SECTION = /^## §/
     # Non-actionable / index sections explicitly excluded.
+    # ⚠️ `📌` is RETIRED — the tracker has carried no Backlog section for some time
+    # (verified 2026-08-10: zero occurrences in the file). The alternative stays in
+    # the pattern deliberately, because its cost is nil and its removal would be a
+    # silent trap if the section ever returns. What is NOT harmless is the prose:
+    # comments elsewhere still read «incl. 📌 Backlog», which invites someone to file
+    # an item into a section that does not exist — and `parse` would never see it,
+    # which is the invisible-item class this very file guards against. Treat any
+    # mention of it as historical.
     SKIP_SECTION = /^## (?:🎯|🚦|📌|🗄️)/
 
     # WHO axis — who does the OPEN work.

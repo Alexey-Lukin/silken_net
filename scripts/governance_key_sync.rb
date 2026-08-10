@@ -26,6 +26,24 @@
 # protocol adds parameters, and a volatile counter would flag every honest
 # addition as drift until someone silences the gate.
 #
+# Why classifying by the CONSTANT PREFIX is safe even though identity is carried
+# by the STRING: the two are independent, so a mismatch between a `KEY_LORENZ_*`
+# name and the string it hashes cannot hide — it lands in the set comparison as a
+# member present on one side and absent on the other. The prefix decides only
+# WHICH SET a pair is sorted into; it never stands in for the identity itself.
+# (Moved here 2026-08-10 from the 00_06 §3 row, which was its only home.)
+#
+# Wiring: `contracts/**` and `app/**` are already inside the `changes:` filter of
+# docs.yml — without that this gate would be decorative, firing only on PRs that
+# do not touch what it guards (§Guard-craft #1). CHECK D2 of guard_registry_sync
+# does NOT cover this: it validates pinned sources and the ruby-version mirrors,
+# not an arbitrary gate's own inputs, so the fact is recorded here or nowhere.
+#
+# Mutation-verified ×5 — the three silent-failure classes above, plus a canon
+# divergence (the 05_06 §7 count made to disagree) and a broken extraction form
+# (which must abort, not pass empty). There is no spec for this script; this
+# header is the only record that the proof was done.
+#
 # Pure Ruby (stdlib only — the worker pulls in `eth` + ApplicationWeb3Worker,
 # so the Ruby side is regex-scanned, not required). A pattern that stops
 # matching aborts as a dead-mirror tripwire rather than passing vacuously. Run:
