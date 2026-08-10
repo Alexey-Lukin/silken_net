@@ -271,9 +271,18 @@ STUB+POINTER   source keeps a thin vision/ref-stub → new home; mechanics refer
 SWEEP ANCHORED re-point §X refs anchored on a token (e.g. "07_01") so other docs'
                internal §X (01_01/02_03/04_04 each have their own §6.x!) survive;
                Ruby script-FILE, dry-run + presence-check, never inline -e
+               — MERGING two docs? shift ARITHMETICALLY (§N→§N+10 when the
+               receiver holds §1..§10), never a hand-written map: a regex
+               cannot confuse §7 with §17, a 13-row map has 13 chances to,
+               and the slip RESOLVES against a live section and stays silent.
+               Then verify each cited address SEMANTICALLY, after the move.
+               Trap: `(\.\./)*` captures only the LAST repeat — a path rewrite
+               pulling it through $N silently shortens ../../ to ../
 AUTOMATE       turn the manual owner-violation hunt into a guard —
                DocsLinter.lorenz_formula_drift (β assignment outside 03_04)
-GATE per-phase docs:check_refs + tracker:check + zero-loss set-diff + wiki dry-run
+GATE per-phase THE WHOLE BAND (ruby scripts/docs_band.rb) + zero-loss
+               set-diff + wiki dry-run — never the docs_check pair: reading its
+               green as a verdict about the lane reddened main 3× (OPS.25)
 ```
 
 ## Checklists

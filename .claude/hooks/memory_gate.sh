@@ -222,7 +222,7 @@ rb_dark() {
 # false-positive measurement first, since any rephrase deletes a unique line.
 # (Write is genuinely too late — the file is already replaced — so that half
 # would need PreToolUse, a different question.)
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-128}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-129}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -282,7 +282,15 @@ index_reach_expected() {
 # the home of the DOC-T.68/69 Foundation re-deal. Its description was written at
 # 579 B and trimmed to 325 B first, so the layer moved by LESS than half the new
 # content; the residue is what a new home structurally costs.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-42940}
+# Bumped 2026-08-10 (42940 -> 43088, +148) for log_foundation_redeal — the
+# journal-twin of the re-deal home. This is the FIRST bump paid for by a
+# receiver rather than by a new claim: the twin took two phase-blocks out of
+# a rule-home sitting 278 B under WARN and gave it 4.5 kB of headroom, so the
+# description layer grew by one trigger while the corpus got structurally
+# healthier. Measured before bumping: the description spread is flat
+# (842/793/739/738/714 B at the top), i.e. there was no bloated entry to
+# displace — the policy asks for a displacement only when one exists.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43088}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
