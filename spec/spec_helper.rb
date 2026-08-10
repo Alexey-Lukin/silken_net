@@ -60,56 +60,30 @@ SimpleCov.start "rails" do
   else
     minimum_coverage line: 99, branch: 98
   end
-end
 
-# Per-group coverage tripwire — глобальний `minimum_coverage` не бачить, як
-# Services/Workers худнуть нижче критичного, доки середнє тримається ≈99%.
-# ⚠️ SimpleCov 1.0.3 має ВЛАСНИЙ per-group гейт (`coverage(:line) {
-# minimum_per_group N, only: "Models" }`), і цей блок його дублює СВІДОМО:
-# нативний рахує порожню групу як 0% і валить прогін, а тут порожні групи
-# пропускаються (`files.empty?`) — інакше будь-який subset-прогін
-# (`bin/rspec spec/models`) червонів би на решті пʼяти груп. Заміна = окреме
-# рішення з цією ціною → 00_07 OPS.22, не побічний ефект бампу.
-# Гейт відключаємо для feature-test run (там покриття вимірюється окремо)
-# та для pure-unit прогонів з COVERAGE=0 (subset спеків лінтерів у docs.yml).
-unless ENV["FEATURE_TEST"] || ENV["COVERAGE"] == "0"
-  SimpleCov.at_exit do
-    SimpleCov.result.format!
-
-    # Per-group line + branch floors — a RATCHET set to floor(current coverage).
-    # The gap between fact and floor IS permission to erode: every PR without a
-    # test slides down it until fact meets floor. Floors therefore track fact,
-    # kept ~0.5–1pp below it purely for seed-flake margin, NOT for drift-room.
-    # Branch is the tighter signal (line is ~99.8 everywhere).
-    # Services branch (99.06%, 13 leave-branches) → floor 98 not 99: at 99 a
-    # 2-branch seed-float would false-fail. Models (99.44) & Views (98.66) have
-    # the least margin — loosen by 1 if a seed-dependent run false-fails.
-    minimums = {
-      "Services"    => { line: 99.0, branch: 98.0 },
-      "Workers"     => { line: 99.0, branch: 99.0 },
-      "Models"      => { line: 99.0, branch: 99.0 },
-      "Controllers" => { line: 99.0, branch: 99.0 },
-      "Views"       => { line: 99.0, branch: 98.0 }
-    }
-
-    failures = SimpleCov.result.groups.flat_map do |name, files|
-      floors = minimums[name]
-      next [] if floors.nil? || files.empty?
-
-      {
-        "line"   => [ files.covered_percent,        floors[:line] ],
-        "branch" => [ files.branch_covered_percent, floors[:branch] ]
-      }.filter_map do |metric, (actual, threshold)|
-        next if actual >= threshold
-        "  #{name} #{metric}: #{actual.round(2)}% < #{threshold}%"
-      end
+  # Per-group coverage tripwire [TEST.13] — глобальний `minimum_coverage` не
+  # бачить, як Services/Workers худнуть нижче критичного, доки середнє тримається
+  # ≈99%. Пороги — RATCHET на floor(поточного покриття): проміжок між фактом і
+  # підлогою Є дозволом ерозії, тож підлоги тримаються ~0.5–1pp нижче факту суто
+  # під seed-flake margin, НЕ під drift-room. Branch — тонший сигнал (line ~99.8
+  # усюди). Services branch → 98 (13 leave-гілок; на 99 дво-гілковий float дав би
+  # хибне падіння). Models і Views мають найменшу маржу — послаблюй на 1, якщо
+  # seed-залежний прогін хибно впаде. Скоуп-політика → 04_06 §B.3.
+  unless ENV["FEATURE_TEST"] || ENV["COVERAGE"] == "0"
+    coverage(:line) do
+      minimum_per_group 99.0, only: "Services"
+      minimum_per_group 99.0, only: "Workers"
+      minimum_per_group 99.0, only: "Models"
+      minimum_per_group 99.0, only: "Controllers"
+      minimum_per_group 99.0, only: "Views"
     end
-
-    next if failures.empty?
-
-    warn "\nSimpleCov per-group coverage failures:"
-    failures.each { |line| warn line }
-    Kernel.exit SimpleCov::ExitCodes::MINIMUM_COVERAGE
+    coverage(:branch) do
+      minimum_per_group 98.0, only: "Services"
+      minimum_per_group 99.0, only: "Workers"
+      minimum_per_group 99.0, only: "Models"
+      minimum_per_group 99.0, only: "Controllers"
+      minimum_per_group 98.0, only: "Views"
+    end
   end
 end
 
