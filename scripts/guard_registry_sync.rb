@@ -266,9 +266,21 @@ all_wf_runs = nil
 claimed = 0
 registry.each_line do |line|
   next unless line.lstrip.start_with?("|")
-  next if line.match?(/advisory|on-demand|НЕ CI/i)
 
-  cmd_col = line.split("|")[-2].to_s
+  cols    = line.split("|")
+  cmd_col = cols[-2].to_s
+  # The advisory skip must read the row's ROLE, never a MENTION of the word.
+  # A non-CI row declares itself in one of two places: the command column, or a
+  # leading `_(advisory, on-demand …)_` italic opening the description. The same
+  # token inside the prose is EXPLANATION — and the row that defines axis E has
+  # to spell it out by construction, so it was excluding itself from the axis it
+  # documents. Measured 2026-08-10: of 13 rows carrying the token, 6 declare a
+  # role and **7 were HARD rows switched off by their own prose** — among them
+  # this script's row, the phantom-ID gate and the DCO gate. Class → §Guard-craft
+  # #7 (a mask that turns the gate off while the comment beside it justifies a
+  # different problem).
+  desc_col = cols[2].to_s.strip
+  next if cmd_col.match?(/advisory|on-demand|НЕ CI/i) || desc_col.start_with?("_(")
 
   cmd_col.scan(/`([^`]+)`\s*\(([^)]*)\)/) do |cmd, paren|
     # a workflow home is cited by BARE name (docs.yml, ci.yml); a path segment
