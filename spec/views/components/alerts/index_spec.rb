@@ -7,12 +7,14 @@ RSpec.describe Alerts::Index do
   # Component is i18n-aware. Existing assertions match the English copy.
   around { |ex| I18n.with_locale(:en) { ex.run } }
 
-  def mock_alert(id: 1, alert_type: "fire_detected", severity: "critical", status: "active")
-    alert = OpenStruct.new(id: id, alert_type: alert_type, severity: severity, status: status, created_at: Time.current)
-    alert.define_singleton_method(:model_name) { ActiveModel::Name.new(EwsAlert) }
-    alert.define_singleton_method(:to_key) { [ id ] }
-    alert.define_singleton_method(:to_param) { id.to_s }
-    alert
+  # 🔴 [TEST.12] Реальний незбережений `EwsAlert`, і вирішальне тут не типи, а
+  # ПОХІДНИЙ предикат: сторінка рендерить `Alerts::Row`, який гілкується на
+  # `status_resolved?`, а мок оголошував лише `status`. `OpenStruct` віддавав на
+  # предикат `nil`, тож рядок був «не resolved» ЗАВЖДИ — і resolved-вигляд не
+  # перевірявся тут ніде. Сусідній `row_spec` деривував його чесно, тобто дефект
+  # указувала асиметрія двох спек однієї родини.
+  def build_alert(id: 1, alert_type: :fire_detected, severity: :critical, status: :active)
+    EwsAlert.new(id: id, alert_type: alert_type, severity: severity, status: status, created_at: Time.current)
   end
 
   # `stream_epoch` несе саму адресу стріму [SEC.25 Ф3] — без нього дім імен
@@ -23,7 +25,7 @@ RSpec.describe Alerts::Index do
   end
 
   let(:org)    { mock_org }
-  let(:alerts) { [ mock_alert(id: 1, severity: "critical"), mock_alert(id: 2, severity: "medium") ] }
+  let(:alerts) { [ build_alert(id: 1, severity: "critical"), build_alert(id: 2, severity: "medium") ] }
   let(:html)   { render_component(alerts: alerts, pagy: mock_pagy(count: 63), organization: org) }
 
   describe "turbo stream subscription" do
@@ -79,6 +81,22 @@ RSpec.describe Alerts::Index do
     it "renders alerts_list tbody id" do
       expect(html).to include('id="alerts_list"')
     end
+
+    # 🔴 Приклад, який доти НЕ МІГ існувати: `status_resolved?` приходив із мока
+    # як `nil`, тож СКРІЗЬ ЧЕРЕЗ СТОРІНКУ список малював незакриту тривогу для
+    # будь-якого статусу. ⚠️ Не читай це як «resolved не покритий ніде» — сусідній
+    # `row_spec` тримає його чесно (мутація валить обидва приклади). Дім дефекту
+    # саме в АСИМЕТРІЇ: одна спека родини деривує предикат, друга його вигадує,
+    # і сторінковий тракт лишався єдиним, де закритий стан не рендерився ніколи.
+    # Пін тримає ОБИДВА боки — присутність закритого вигляду і відсутність
+    # активного: сама лише присутність зелена й тоді, коли рендеряться обидва.
+    it "renders a resolved alert in its resolved presentation, not the active one" do
+      out = render_component(alerts: [ build_alert(status: :resolved) ], pagy: mock_pagy(count: 1), organization: org)
+
+      expect(out).to include("✓ Resolved")
+      expect(out).to include("opacity-40")
+      expect(out).not_to include("hover:bg-gaia-surface-sunken")
+    end
   end
 
   describe "pagination" do
@@ -98,7 +116,7 @@ RSpec.describe Alerts::Index do
     end
 
     it "passes per-row citations through when bulk_for returns matches" do
-      alert = mock_alert(id: 7, severity: "critical")
+      alert = build_alert(id: 7, severity: "critical")
       citation = instance_double(::Codex::Citation, node: nil, id: 99)
       key = [ "EwsAlert", 7 ]
       allow(::Codex::Citation).to receive(:polymorphic_type_for).with(alert).and_return("EwsAlert")

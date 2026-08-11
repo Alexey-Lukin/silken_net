@@ -4,21 +4,17 @@
 require "rails_helper"
 
 RSpec.describe Contracts::Show do
-  def mock_org(name: "Cherkasy Forest Fund")
-    OpenStruct.new(name: name)
+  def build_org(name: "Cherkasy Forest Fund")
+    Organization.new(name: name)
   end
 
-  def mock_cluster(name: "Carpathian-Alpha", health_index: 0.85,
-                   total_active_trees: 42, active_threats: false)
-    c = OpenStruct.new(
-      name: name,
-      health_index: health_index,
-      total_active_trees: total_active_trees
-    )
-    c.define_singleton_method(:active_threats?) { active_threats }
-    c.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    c.define_singleton_method(:to_key) { [ 1 ] }
-    c.define_singleton_method(:to_param) { "1" }
+  # [TEST.12] Реальний незбережений `Cluster`. ⚠️ `active_threats?` лишається стабом
+  # НАВМИСНО — це запит у БД (`ews_alerts.unresolved.critical.exists?`), а не дані
+  # запису; підміняємо звертання до сховища, не поведінку моделі.
+  def build_cluster(name: "Carpathian-Alpha", health_index: 0.85,
+                    total_active_trees: 42, active_threats: false)
+    c = Cluster.new(name: name, health_index: health_index, active_trees_count: total_active_trees)
+    allow(c).to receive(:active_threats?).and_return(active_threats)
     c
   end
 
@@ -26,14 +22,22 @@ RSpec.describe Contracts::Show do
     OpenStruct.new(tx_hash: tx_hash, amount: amount, created_at: created_at)
   end
 
-  def mock_contract(id: 99, status: "active", org: nil, cluster: nil,
-                    total_funding: 50_000, emitted_tokens: 1234.56,
-                    start_date: 6.months.ago, end_date: 6.months.from_now,
-                    cancellation_terms: nil)
-    c = OpenStruct.new(
+  # 🔴 [TEST.12] Тут мок розщепив ОДНЕ сховище на два незалежні поля.
+  # `early_exit_fee_percent` / `burn_accrued_points` / `min_days_before_exit` —
+  # не колонки, а `store_accessor` НАД `cancellation_terms`: на реальному записі
+  # заповнити хеш означає заповнити акцесори, і навпаки. `OpenStruct` цього зв'язку
+  # не має, тож фікстура з правильними ключами лишала акцесори порожніми, і секція
+  # розірвання рендерилась із `0` / `no` / `—` — тобто саме там, де спека вважала
+  # її заповненою. Слід розщеплення видно в самій спеці: третій контекст
+  # («populated values») існував ЛИШЕ щоб дописати те, чого хеш не дав.
+  def build_contract(id: 99, status: :active, org: nil, cluster: nil,
+                     total_funding: 50_000, emitted_tokens: 1234.56,
+                     start_date: 6.months.ago, end_date: 6.months.from_now,
+                     cancellation_terms: nil)
+    NaasContract.new(
       id: id,
       status: status,
-      organization: org || mock_org,
+      organization: org || build_org,
       cluster: cluster,
       total_funding: total_funding,
       emitted_tokens: emitted_tokens,
@@ -41,10 +45,6 @@ RSpec.describe Contracts::Show do
       end_date: end_date,
       cancellation_terms: cancellation_terms
     )
-    c.define_singleton_method(:model_name) { ActiveModel::Name.new(NaasContract) }
-    c.define_singleton_method(:to_key) { [ id ] }
-    c.define_singleton_method(:to_param) { id.to_s }
-    c
   end
 
   def render_component(contract:, history:)
@@ -55,7 +55,7 @@ RSpec.describe Contracts::Show do
   end
 
   describe "contract header" do
-    let(:contract) { mock_contract(id: 99, status: "active") }
+    let(:contract) { build_contract(id: 99, status: "active") }
     let(:html) { render_component(contract: contract, history: []) }
 
     it "renders the contract ID in the hero" do
@@ -85,7 +85,7 @@ RSpec.describe Contracts::Show do
 
   describe "cluster backing asset panel" do
     context "when cluster is present" do
-      let(:contract) { mock_contract(cluster: mock_cluster) }
+      let(:contract) { build_contract(cluster: build_cluster) }
       let(:html) { render_component(contract: contract, history: []) }
 
       it "renders Backing Asset Health section" do
@@ -102,7 +102,7 @@ RSpec.describe Contracts::Show do
     end
 
     context "when cluster is nil" do
-      let(:contract) { mock_contract(cluster: nil) }
+      let(:contract) { build_contract(cluster: nil) }
       let(:html) { render_component(contract: contract, history: []) }
 
       it "does not render backing asset panel" do
@@ -114,7 +114,7 @@ RSpec.describe Contracts::Show do
   describe "emission ledger" do
     context "with blockchain history" do
       let(:tx) { mock_blockchain_tx(tx_hash: "0xdeadbeef1234567890abcdef", amount: "7.50") }
-      let(:html) { render_component(contract: mock_contract, history: [ tx ]) }
+      let(:html) { render_component(contract: build_contract, history: [ tx ]) }
 
       it "renders Blockchain Emission History heading" do
         expect(html).to include("Blockchain Emission History")
@@ -130,7 +130,7 @@ RSpec.describe Contracts::Show do
     end
 
     context "with no blockchain history" do
-      let(:html) { render_component(contract: mock_contract, history: []) }
+      let(:html) { render_component(contract: build_contract, history: []) }
 
       it "shows no emissions recorded message" do
         expect(html).to include("No emissions recorded.")
@@ -141,7 +141,7 @@ RSpec.describe Contracts::Show do
   describe "legal vault" do
     context "with cancellation_terms present" do
       let(:contract) do
-        mock_contract(cancellation_terms: {
+        build_contract(cancellation_terms: {
           "early_exit_fee_percent" => 15,
           "burn_accrued_points" => true,
           "min_days_before_exit" => 30
@@ -157,37 +157,31 @@ RSpec.describe Contracts::Show do
       it "renders the Smart Contract Data section" do
         expect(html).to include("Smart Contract Data")
       end
-    end
 
-    context "without cancellation terms" do
-      let(:html) { render_component(contract: mock_contract(cancellation_terms: nil), history: []) }
-
-      it "still renders the legal vault without cancellation section" do
-        expect(html).to include("Smart Contract Data")
-      end
-    end
-
-    context "with populated cancellation values" do
-      let(:contract) do
-        c = mock_contract(cancellation_terms: { "present" => true })
-        c.early_exit_fee_percent = 15
-        c.burn_accrued_points = true
-        c.min_days_before_exit = 30
-        c
-      end
-      let(:html) { render_component(contract: contract, history: []) }
-
-      it "renders the early exit fee, burn flag and minimum days" do
+      # 🔴 Ці три ассерти доти жили в ОКРЕМОМУ контексті, що виставляв акцесори
+      # руками поверх хеша-заглушки `{"present" => true}` — ключа, якого в схемі
+      # немає. Контекст був не зайвою ретельністю, а протезом: мок розщепив
+      # сховище, тож заповнений хеш не давав значень, і їх довелося дописувати
+      # другим шляхом. На реальному записі шлях один, тож і контекст один.
+      it "renders the values the terms hash itself carries" do
         expect(html).to include(">15%<")
         expect(html).to include(">Yes<")
         expect(html).to include(">30<")
+      end
+    end
+
+    context "without cancellation terms" do
+      let(:html) { render_component(contract: build_contract(cancellation_terms: nil), history: []) }
+
+      it "still renders the legal vault without cancellation section" do
+        expect(html).to include("Smart Contract Data")
       end
     end
   end
 
   describe "backing asset alert states" do
     it "flags vitality in red when cluster health is below 70%" do
-      contract = mock_contract(cluster: mock_cluster(health_index: 0.5))
+      contract = build_contract(cluster: build_cluster(health_index: 0.5))
       html = render_component(contract: contract, history: [])
       expect(html).to include(">50%<")
       expect(html).to include("text-red-500")
@@ -195,14 +189,21 @@ RSpec.describe Contracts::Show do
     end
 
     it "renders a DANGER threat status when the cluster has active threats" do
-      contract = mock_contract(cluster: mock_cluster(active_threats: true))
+      contract = build_contract(cluster: build_cluster(active_threats: true))
       html = render_component(contract: contract, history: [])
       expect(html).to include("DANGER")
     end
 
-    it "treats a nil health_index as zero" do
-      contract = mock_contract(cluster: mock_cluster(health_index: nil))
-      html = render_component(contract: contract, history: [])
+    # ⚠️ Цей приклад документує ГАРД, а не поведінку: `Cluster#health_index` —
+    # `read_attribute(:health_index) || 1.0`, тобто модель `nil` не віддає ніколи,
+    # і `|| 0` у компоненті даними недосяжний. Доти мок цього не показував — він
+    # просто віддавав `nil`, тож гілка виглядала звичайним станом кластера.
+    # Гард лишаємо (межа довіри дешева), але вхід тепер чесно позначений як стаб.
+    it "guards against a nil health_index the model itself cannot produce" do
+      cluster = build_cluster
+      allow(cluster).to receive(:health_index).and_return(nil)
+
+      html = render_component(contract: build_contract(cluster: cluster), history: [])
       expect(html).to include(">0%<")
     end
   end
@@ -210,14 +211,14 @@ RSpec.describe Contracts::Show do
   describe "emission ledger pending block" do
     it "shows the pending-block placeholder when a tx has no hash yet" do
       tx = mock_blockchain_tx(tx_hash: nil)
-      html = render_component(contract: mock_contract, history: [ tx ])
+      html = render_component(contract: build_contract, history: [ tx ])
       expect(html).to include("PENDING_BLOCK")
     end
   end
 
   describe "hero with missing optional fields [coverage / defensive]" do
     it "renders the hero when organization and contract dates are nil" do
-      contract = mock_contract(start_date: nil, end_date: nil)
+      contract = build_contract(start_date: nil, end_date: nil)
       contract.organization = nil
       html = render_component(contract: contract, history: [])
       expect(html).to include("Contract Identity")

@@ -13,39 +13,46 @@ RSpec.describe Maintenance::Index do
     pg
   end
 
-  def mock_user(first_name: "Ivan", last_name: "Koval")
-    OpenStruct.new(first_name: first_name, last_name: last_name)
+  def build_user(first_name: "Ivan", last_name: "Koval")
+    User.new(first_name: first_name, last_name: last_name)
   end
 
-  def mock_maintainable(display_identifier: "SNET-00000042")
-    OpenStruct.new(display_identifier: display_identifier)
+  # [TEST.12] `display_identifier` тут мок оголошував ЯВНО, тож рядок «ціль» рендерився —
+  # це слабший випадок, ніж у `show_spec`, і так його й треба читати. Реальним він стає
+  # заради самого зв'язку: на `Tree` ідентифікатор ПОХІДНИЙ від `did`, тож розійтись
+  # із моделлю більше нема чому.
+  def build_maintainable(did: "SNET-00000042")
+    Tree.new(did: did)
   end
 
-  def mock_record(id: 1, action_type: "inspection", performed_at: 2.hours.ago,
-                  hardware_verified: false, total_cost: 0,
-                  photos_count: 0, maintainable_type: "Tree",
-                  user: nil, maintainable: nil, notes: "Routine check")
-    rec_user = user || mock_user
-    rec_maintainable = maintainable || mock_maintainable
+  # 🔴 Вартість тепер ПОХІДНА: доти фікстура подавала `total_cost` числом, тобто
+  # компонент форматував значення, якого модель не обчислювала. Ставку не дублюємо —
+  # вхід задається годинами й запчастинами, як у справжньому записі.
+  def build_record(id: 1, action_type: :inspection, performed_at: 2.hours.ago,
+                   hardware_verified: false, labor_hours: nil, parts_cost: nil,
+                   photos_count: 0, maintainable_type: "Tree",
+                   user: nil, maintainable: nil, notes: "Routine check")
+    rec_user = user || build_user
+    rec_maintainable = maintainable || build_maintainable
 
     # photos_attachments mock
     photos_mock = double("photos_attachments", size: photos_count)
 
-    r = OpenStruct.new(
+    r = MaintenanceRecord.new(
       id: id,
       action_type: action_type,
       performed_at: performed_at,
       hardware_verified: hardware_verified,
-      total_cost: total_cost,
-      maintainable_type: maintainable_type,
+      labor_hours: labor_hours,
+      parts_cost: parts_cost,
       user: rec_user,
       maintainable: rec_maintainable,
       notes: notes
     )
+    r.maintainable_type = maintainable_type
+    # Стаб ActiveStorage лишається — він підміняє БЛОБИ, а не наш запис (та сама межа,
+    # що в `show_spec`: підмінюємо сховище файлів, не поведінку моделі).
     r.define_singleton_method(:photos_attachments) { photos_mock }
-    r.define_singleton_method(:model_name) { ActiveModel::Name.new(MaintenanceRecord) }
-    r.define_singleton_method(:to_key) { [ id ] }
-    r.define_singleton_method(:to_param) { id.to_s }
     r
   end
 
@@ -56,7 +63,7 @@ RSpec.describe Maintenance::Index do
     )
   end
 
-  let(:record) { mock_record }
+  let(:record) { build_record }
   let(:html) { render_component(records: [ record ], pagy: mock_pagy) }
 
   describe "header" do
@@ -114,35 +121,37 @@ RSpec.describe Maintenance::Index do
 
   describe "hardware verified indicator" do
     it "renders the verified checkmark for hardware_verified records" do
-      verified_record = mock_record(hardware_verified: true)
+      verified_record = build_record(hardware_verified: true)
       html = render_component(records: [ verified_record ], pagy: mock_pagy)
       expect(html).to include("✓")
     end
 
     it "renders the pending indicator for unverified records" do
-      html = render_component(records: [ mock_record(hardware_verified: false) ], pagy: mock_pagy)
+      html = render_component(records: [ build_record(hardware_verified: false) ], pagy: mock_pagy)
       expect(html).to include("◌")
     end
   end
 
   describe "photo count" do
     it "renders photo count when photos are attached" do
-      record_with_photos = mock_record(photos_count: 3)
+      record_with_photos = build_record(photos_count: 3)
       html = render_component(records: [ record_with_photos ], pagy: mock_pagy)
       expect(html).to include("📷 3")
     end
 
     it "renders em dash when no photos attached" do
-      html = render_component(records: [ mock_record(photos_count: 0) ], pagy: mock_pagy)
+      html = render_component(records: [ build_record(photos_count: 0) ], pagy: mock_pagy)
       expect(html).to include("—")
     end
   end
 
   describe "cost display" do
     it "renders cost in dollars when total_cost is positive" do
-      record_with_cost = mock_record(total_cost: 275.50)
+      record_with_cost = build_record(labor_hours: 2.0, parts_cost: 175.50)
+      expected = (2.0 * MaintenanceRecord::LABOR_RATE_PER_HOUR) + 175.50
+
       html = render_component(records: [ record_with_cost ], pagy: mock_pagy)
-      expect(html).to include("$275.5")
+      expect(html).to include("$#{expected.round(2)}")
     end
   end
 
@@ -154,17 +163,26 @@ RSpec.describe Maintenance::Index do
   end
 
   describe "action badge fallback" do
+    # ⚠️ Досяжно ЛИШЕ стабом ридера — `action_type` справжній enum (див. `show_spec`).
     it "uses the gray fallback color for an unknown action_type" do
-      html = render_component(records: [ mock_record(action_type: "calibration") ], pagy: mock_pagy)
+      rec = build_record
+      allow(rec).to receive(:action_type).and_return("calibration")
+
+      html = render_component(records: [ rec ], pagy: mock_pagy)
       expect(html).to include("text-gray-500")
     end
   end
 
   describe "row with missing user, maintainable and timestamp" do
     it "renders gracefully when those fields are nil" do
-      rec = mock_record(performed_at: nil)
+      rec = build_record(performed_at: nil)
       rec.user = nil
       rec.maintainable = nil
+      # 🔴 Порядок несучий: занулення поліморфної асоціації зчищає Й `maintainable_type`,
+      # тож без цього рядка приклад перевіряв би вже іншу гілку — «типу немає» замість
+      # реального стану «FK занулено, тип лишився». Мок цього не показував: у ньому два
+      # поля були незалежні, і рядок «Tree //» виживав випадково.
+      rec.maintainable_type = "Tree"
       html = render_component(records: [ rec ], pagy: mock_pagy)
       expect(html).to include("Tree //") # maintainable_type still renders
       expect(html).to include("—")        # maintainable&.display_identifier || "—"

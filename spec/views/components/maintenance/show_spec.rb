@@ -30,29 +30,34 @@ RSpec.describe Maintenance::Show do
     pg
   end
 
-  def mock_user(first_name: "Ivan", last_name: "Koval", role: "forester", password_digest: "x")
-    OpenStruct.new(
-      first_name: first_name,
-      last_name: last_name,
-      role: role,
-      password_digest: password_digest
-    )
+  # [TEST.12] Реальний незбережений `User`: `role` тепер справжній enum, тож роль поза
+  # набором тут неможлива. `password_digest` знято — його не читає ні компонент, ні
+  # `has_secure_password` на незбереженому записі; у моці він був спадком форми, не потребою.
+  def build_user(first_name: "Ivan", last_name: "Koval", role: :forester)
+    User.new(first_name: first_name, last_name: last_name, role: role)
   end
 
-  def mock_maintainable(did: "SNET-00000042", uid: nil, maintainable_type: "Tree")
-    OpenStruct.new(did: did, uid: uid)
+  # 🔴 [TEST.12] Найтихіша форма цієї осі: фікстура несла ПРАВИЛЬНІ дані під
+  # ПРАВИЛЬНИМИ іменами колонок (`did`/`uid`) — і рендер усе одно був мертвий.
+  # `display_identifier` не метод, а `alias_attribute` (Tree→`did`, Gateway→`uid`),
+  # тобто ланка, яка ці два імені зв'язує, існує ЛИШЕ в реальної моделі. Компонент
+  # читав `maintainable&.display_identifier`, `OpenStruct` віддавав `nil`, і рядок
+  # «ціль» у метаданих у КОЖНОМУ прикладі друкував прочерк. Мок виглядав максимально
+  # сумлінним саме тому, що автор знав справжні колонки.
+  def build_maintainable(did: "SNET-00000042", uid: "QUEEN-01", maintainable_type: "Tree")
+    maintainable_type == "Gateway" ? Gateway.new(uid: uid) : Tree.new(did: did)
   end
 
-  def mock_record(id: 7, action_type: "inspection", performed_at: 1.hour.ago,
+  def build_record(id: 7, action_type: "inspection", performed_at: 1.hour.ago,
                   hardware_verified: false, labor_hours: nil, parts_cost: nil,
                   notes: "Routine check of the node connections.",
                   latitude: nil, longitude: nil, maintainable_type: "Tree",
                   maintainable: nil, user: nil, ews_alert_id: nil,
                   created_at: 2.hours.ago, updated_at: 1.hour.ago, mutable: true)
-    rec_user = user || mock_user
-    rec_maintainable = maintainable || mock_maintainable
+    rec_user = user || build_user
+    rec_maintainable = maintainable || build_maintainable
 
-    r = OpenStruct.new(
+    r = MaintenanceRecord.new(
       id: id,
       action_type: action_type,
       performed_at: performed_at,
@@ -62,17 +67,17 @@ RSpec.describe Maintenance::Show do
       notes: notes,
       latitude: latitude,
       longitude: longitude,
-      maintainable_type: maintainable_type,
       maintainable: rec_maintainable,
       user: rec_user,
       ews_alert_id: ews_alert_id,
       created_at: created_at,
       updated_at: updated_at
     )
-    r.define_singleton_method(:model_name) { ActiveModel::Name.new(MaintenanceRecord) }
-    r.define_singleton_method(:to_key) { [ id ] }
-    r.define_singleton_method(:to_param) { id.to_s }
-    r.define_singleton_method(:total_cost) { (labor_hours.to_f * 50) + parts_cost.to_f }
+    # Поліморфний тип тепер ПОХІДНИЙ від об'єкта, і саме тому ставиться після нього:
+    # мок тримав два незалежні поля, тож був представний світ `type: "Gateway"` з
+    # Tree-подібним об'єктом, якого БД не допускає. Явне присвоєння лишається рівно
+    # для оберненого — реального стану «FK занулено, тип лишився».
+    r.maintainable_type = maintainable_type
     # [UI.6] Предикат — ВХІД компонентної спеки, а не її копія формули. Три шари пінять
     # різне й не заміняють одне одного: формулу «автор-або-admin» — `spec/models`,
     # послух компонента предикату — тут, а те, що актор реально доїжджає з контролера, —
@@ -82,7 +87,7 @@ RSpec.describe Maintenance::Show do
     r
   end
 
-  def render_component(record:, photos:, pagy_photos:, current_user: mock_user)
+  def render_component(record:, photos:, pagy_photos:, current_user: build_user)
     ApplicationController.renderer.render(
       component_class.new(
         record: record, photos: photos, pagy_photos: pagy_photos, current_user: current_user
@@ -91,7 +96,7 @@ RSpec.describe Maintenance::Show do
     )
   end
 
-  let(:record) { mock_record }
+  let(:record) { build_record }
   let(:html) { render_component(record: record, photos: [], pagy_photos: mock_pagy_photos) }
 
   describe "header" do
@@ -108,7 +113,7 @@ RSpec.describe Maintenance::Show do
     end
 
     it "renders the hardware badge as HW Verified when hardware_verified" do
-      verified_record = mock_record(hardware_verified: true)
+      verified_record = build_record(hardware_verified: true)
       html = render_component(record: verified_record, photos: [], pagy_photos: mock_pagy_photos)
       expect(html).to include("HW Verified")
     end
@@ -118,7 +123,7 @@ RSpec.describe Maintenance::Show do
     end
 
     it "does not show verify button when already verified" do
-      verified_record = mock_record(hardware_verified: true)
+      verified_record = build_record(hardware_verified: true)
       html = render_component(record: verified_record, photos: [], pagy_photos: mock_pagy_photos)
       expect(html).not_to include("Verify Hardware →")
     end
@@ -165,24 +170,54 @@ RSpec.describe Maintenance::Show do
       expect(html).to include("Total Cost")
     end
 
-    it "shows calculated labor cost for record with hours" do
-      record_with_cost = mock_record(labor_hours: 2.5, parts_cost: 100.0)
+    # 🔴 [TEST.12] Доти фікстура САМА обчислювала `total_cost` синглтоном
+    # `(labor_hours * 50) + parts_cost` — тобто спека пінила результат власної
+    # арифметики, а не модельної, і робила це зашитою ставкою проти
+    # `ENV.fetch("PATROL_LABOR_RATE", 50)`. Іронія в тому, що правило вже стояло
+    # в цьому файлі — коментар про `mutable_by?` рядком нижче забороняє рівно це;
+    # анотація стереже лише те, до чого дотягується.
+    #
+    # Ставка тепер береться з КОНСТАНТИ (один дім), а не з літерала: інакше пін
+    # ламався б у середовищі, де `PATROL_LABOR_RATE` виставлено. Саму формулу
+    # тримає `spec/models` — тут лише те, що компонент друкує СУМУ, а не доданок.
+    it "prints the record's own total, not one of its components" do
+      record_with_cost = build_record(labor_hours: 2.5, parts_cost: 100.0)
+      expected = (2.5 * MaintenanceRecord::LABOR_RATE_PER_HOUR) + 100.0
+
       html = render_component(record: record_with_cost, photos: [], pagy_photos: mock_pagy_photos)
-      expect(html).to include("225.0") # 2.5 * 50 + 100 = 225
+      expect(html).to include("$#{expected.round(2)}")
+    end
+  end
+
+  describe "target metadata" do
+    # 🔴 Пін, який доти НЕ МІГ спрацювати: `display_identifier` — аліас реальної
+    # моделі, тож на моці рядок «ціль» друкував прочерк у КОЖНОМУ прикладі, і
+    # жоден із них цього не бачив. Обидва боки несучі: без `not_to` приклад
+    # лишається зеленим і тоді, коли ідентифікатор поруч із прочерком.
+    it "renders the maintainable's identifier, not the em-dash fallback" do
+      expect(html).to include("Tree // SNET-00000042")
+      expect(html).not_to include("Tree // —")
+    end
+
+    it "renders the gateway identifier when the maintainable is a Gateway" do
+      rec = build_record(maintainable_type: "Gateway", maintainable: build_maintainable(maintainable_type: "Gateway"))
+      out = render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
+
+      expect(out).to include("Gateway // QUEEN-01")
     end
   end
 
   describe "GPS drift section" do
     context "when GPS coordinates are present for a Tree maintainable" do
       let(:tree_with_coords) do
-        t = mock_maintainable
+        t = build_maintainable
         t.define_singleton_method(:latitude) { 49.4285 }
         t.define_singleton_method(:longitude) { 32.0620 }
         t
       end
 
       it "renders coordinates" do
-        record_with_gps = mock_record(latitude: 49.4286, longitude: 32.0621,
+        record_with_gps = build_record(latitude: 49.4286, longitude: 32.0621,
                                       maintainable: tree_with_coords)
         html = render_component(record: record_with_gps, photos: [], pagy_photos: mock_pagy_photos)
         expect(html).to include("49.4286")
@@ -206,7 +241,7 @@ RSpec.describe Maintenance::Show do
     end
 
     it "shows STM32 Verified as YES when hardware_verified" do
-      verified_record = mock_record(hardware_verified: true)
+      verified_record = build_record(hardware_verified: true)
       html = render_component(record: verified_record, photos: [], pagy_photos: mock_pagy_photos)
       expect(html).to include("YES")
     end
@@ -229,13 +264,13 @@ RSpec.describe Maintenance::Show do
 
   describe "no photos placeholder with trust protocol warning" do
     it "shows trust protocol warning for repair action_type" do
-      repair_record = mock_record(action_type: "repair")
+      repair_record = build_record(action_type: "repair")
       html = render_component(record: repair_record, photos: [], pagy_photos: mock_pagy_photos)
       expect(html).to include("Trust Protocol requires photos for repair")
     end
 
     it "shows trust protocol warning for installation action_type" do
-      install_record = mock_record(action_type: "installation")
+      install_record = build_record(action_type: "installation")
       html = render_component(record: install_record, photos: [], pagy_photos: mock_pagy_photos)
       expect(html).to include("Trust Protocol requires photos for installation")
     end
@@ -247,7 +282,7 @@ RSpec.describe Maintenance::Show do
 
   describe "metadata panel with ews_alert_id" do
     it "renders EWS Alert reference when ews_alert_id present" do
-      record_with_ews = mock_record(ews_alert_id: 99)
+      record_with_ews = build_record(ews_alert_id: 99)
       html = render_component(record: record_with_ews, photos: [], pagy_photos: mock_pagy_photos)
       expect(html).to include("EWS Alert")
       expect(html).to include("#99")
@@ -256,7 +291,7 @@ RSpec.describe Maintenance::Show do
 
   describe "GPS drift colors" do
     let(:tree_with_coords) do
-      t = mock_maintainable
+      t = build_maintainable
       t.define_singleton_method(:latitude) { 49.4285 }
       t.define_singleton_method(:longitude) { 32.0620 }
       t
@@ -270,7 +305,7 @@ RSpec.describe Maintenance::Show do
       let(:drift) { 200.0 }
 
       it "renders warning color for moderate drift" do
-        record_with_gps = mock_record(latitude: 49.43, longitude: 32.07, maintainable: tree_with_coords)
+        record_with_gps = build_record(latitude: 49.43, longitude: 32.07, maintainable: tree_with_coords)
         html = render_component(record: record_with_gps, photos: [], pagy_photos: mock_pagy_photos)
         expect(html).to include("text-status-warning-text")
       end
@@ -280,7 +315,7 @@ RSpec.describe Maintenance::Show do
       let(:drift) { 800.0 }
 
       it "renders danger color for large drift" do
-        record_with_gps = mock_record(latitude: 49.50, longitude: 32.20, maintainable: tree_with_coords)
+        record_with_gps = build_record(latitude: 49.50, longitude: 32.20, maintainable: tree_with_coords)
         html = render_component(record: record_with_gps, photos: [], pagy_photos: mock_pagy_photos)
         expect(html).to include("text-red-400")
       end
@@ -289,7 +324,7 @@ RSpec.describe Maintenance::Show do
 
   describe "GPS drift — close range (< 50 m)" do
     let(:tree_with_coords) do
-      t = mock_maintainable
+      t = build_maintainable
       t.define_singleton_method(:latitude) { 49.4285 }
       t.define_singleton_method(:longitude) { 32.0620 }
       t
@@ -297,7 +332,7 @@ RSpec.describe Maintenance::Show do
 
     it "renders the close-range drift value (emerald branch)" do
       allow(SilkenNet::GeoUtils).to receive(:haversine_distance_m).and_return(30.0)
-      rec = mock_record(latitude: 49.4285, longitude: 32.0620, maintainable: tree_with_coords)
+      rec = build_record(latitude: 49.4285, longitude: 32.0620, maintainable: tree_with_coords)
       html = render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
       expect(html).to include("30 m")
     end
@@ -306,31 +341,40 @@ RSpec.describe Maintenance::Show do
   describe "GPS drift-check guards" do
     it "skips the drift calc when the maintainable is not a Tree" do
       expect(SilkenNet::GeoUtils).not_to receive(:haversine_distance_m)
-      gw = mock_maintainable
+      gw = build_maintainable
       gw.define_singleton_method(:latitude) { 49.0 }
       gw.define_singleton_method(:longitude) { 32.0 }
-      rec = mock_record(latitude: 49.0, longitude: 32.0, maintainable_type: "Gateway", maintainable: gw)
+      rec = build_record(latitude: 49.0, longitude: 32.0, maintainable_type: "Gateway", maintainable: gw)
       render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
     end
 
     it "skips the drift calc when the Tree has no coordinates" do
       expect(SilkenNet::GeoUtils).not_to receive(:haversine_distance_m)
-      bare = mock_maintainable # OpenStruct → latitude/longitude return nil
-      rec = mock_record(latitude: 49.0, longitude: 32.0, maintainable_type: "Tree", maintainable: bare)
+      bare = build_maintainable # OpenStruct → latitude/longitude return nil
+      rec = build_record(latitude: 49.0, longitude: 32.0, maintainable_type: "Tree", maintainable: bare)
       render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
     end
 
     it "skips the drift calc when the maintainable Tree record itself is gone (nullified FK)" do
       expect(SilkenNet::GeoUtils).not_to receive(:haversine_distance_m)
-      rec = mock_record(latitude: 49.0, longitude: 32.0, maintainable_type: "Tree")
+      rec = build_record(latitude: 49.0, longitude: 32.0, maintainable_type: "Tree")
       rec.maintainable = nil
+      # 🔴 Без цього рядка приклад тихо міняє гілку: занулення поліморфної асоціації
+      # зчищає й `maintainable_type`, тож гард виходив би на «тип не Tree», а не на
+      # «Tree є, запису немає» — тобто ім'я прикладу лишалось би, а предмет зникав.
+      rec.maintainable_type = "Tree"
       render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
     end
   end
 
   describe "action badge fallback" do
+    # ⚠️ Вхід досяжний ЛИШЕ стабом ридера: `action_type` — справжній enum, тож
+    # `MaintenanceRecord.new(action_type: "calibration")` кидає `ArgumentError` просто
+    # в конструкторі. Доти цю гілку «перевіряло» значення, якого в проді не буває —
+    # фолбек лишається носієм, але тепер видно, що дійти до нього даними неможливо.
     it "uses the gray default color for an unknown action_type" do
-      rec = mock_record(action_type: "calibration")
+      rec = build_record
+      allow(rec).to receive(:action_type).and_return("calibration")
       html = render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
       expect(html).to include("border-gray-600 text-gray-600")
     end
@@ -338,11 +382,11 @@ RSpec.describe Maintenance::Show do
 
   describe "nil-safe rendering of optional fields" do
     it "renders the metadata panel when user, maintainable, performed_at and timestamps are nil" do
-      rec = mock_record(
+      rec = build_record(
         performed_at: nil, user: nil, maintainable: nil,
         created_at: nil, updated_at: nil
       )
-      # Override the let(:user) fallback inside mock_record by giving an explicit nil sentinel.
+      # Override the let(:user) fallback inside build_record by giving an explicit nil sentinel.
       rec.user = nil
       rec.maintainable = nil
 
@@ -352,7 +396,7 @@ RSpec.describe Maintenance::Show do
     end
 
     it "renders the EWS alert metadata row when ews_alert_id is present" do
-      rec = mock_record(ews_alert_id: 99)
+      rec = build_record(ews_alert_id: 99)
       out = render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
       expect(out).to include("#99")
     end
@@ -360,9 +404,12 @@ RSpec.describe Maintenance::Show do
 
   describe "GPS drift check" do
     it "skips the drift comparison when the maintainable Tree has no coordinates" do
-      tree = OpenStruct.new(latitude: nil, longitude: nil, did: "SNET-NOCOORD")
-      tree.define_singleton_method(:display_identifier) { did }
-      rec = mock_record(
+      # ⚠️ Доти тут стояв інлайн-`OpenStruct`, якому автор ВРУЧНУ дописував
+      # `display_identifier` — тобто відсутність аліаса вже була помічена й залатана
+      # рівно в одному місці, а фабрика лишалась дірявою. Латка на екземплярі стереже
+      # тільки той екземпляр; на реальному записі `latitude`/`longitude` порожні самі.
+      tree = Tree.new(did: "SNET-NOCOORD")
+      rec = build_record(
         latitude: 49.0, longitude: 32.0,
         maintainable_type: "Tree", maintainable: tree
       )
@@ -379,13 +426,13 @@ RSpec.describe Maintenance::Show do
   # правду — `spec/models`, що актор доїжджає з контролера — request-спека.
   describe "мутаційні дії за предикатом запису" do
     it "показує verify/edit/attach тому, кому запис підвладний" do
-      out = render_component(record: mock_record(mutable: true), photos: [], pagy_photos: mock_pagy_photos)
+      out = render_component(record: build_record(mutable: true), photos: [], pagy_photos: mock_pagy_photos)
 
       expect(out).to include(verify_path, edit_path)
     end
 
     it "ховає їх від глядача, якому запис не підвладний" do
-      out = render_component(record: mock_record(mutable: false), photos: [], pagy_photos: mock_pagy_photos)
+      out = render_component(record: build_record(mutable: false), photos: [], pagy_photos: mock_pagy_photos)
 
       expect(out).not_to include(verify_path)
       expect(out).not_to include(edit_path)
@@ -401,7 +448,7 @@ RSpec.describe Maintenance::Show do
     # мутацію фільтра зеленою; тобто пін вимірював не те, чого стосувалась його назва.
     it "не пропонує видалення фотодоказу тому, кому запис не підвладний" do
       out = render_component(
-        record: mock_record(mutable: false), photos: [ mock_photo ],
+        record: build_record(mutable: false), photos: [ mock_photo ],
         pagy_photos: mock_pagy_photos(count: 1)
       )
 
@@ -410,7 +457,7 @@ RSpec.describe Maintenance::Show do
 
     it "пропонує видалення фотодоказу тому, кому запис підвладний" do
       out = render_component(
-        record: mock_record(mutable: true), photos: [ mock_photo ],
+        record: build_record(mutable: true), photos: [ mock_photo ],
         pagy_photos: mock_pagy_photos(count: 1)
       )
 

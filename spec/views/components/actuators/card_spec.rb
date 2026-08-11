@@ -28,8 +28,14 @@ RSpec.describe Actuators::Card do
     actuator
   end
 
-  def mock_command(status: "confirmed")
-    OpenStruct.new(status: status)
+  # 🔴 [TEST.12] `id` тут НЕСУЧИЙ, а не косметика: `CommandStatusBadge` будує з нього
+  # `id="command_status_{id}"`, і саме ця адреса є broadcast-таргетом
+  # (`actuator_command_worker`). Мок без `id` давав `command_status_` без суфікса —
+  # тобто спека пінила адресу, у яку жодне живе оновлення не влучить. У проді
+  # недосяжно (`last_command` завжди persisted), але саме тому пін мусить стояти на
+  # формі, яку прод справді дає.
+  def build_command(id: 7, status: :confirmed)
+    ActuatorCommand.new(id: id, status: status)
   end
 
   describe "rendering" do
@@ -85,8 +91,19 @@ RSpec.describe Actuators::Card do
     end
 
     it "displays last command status" do
-      html = render_component(actuator: build_actuator, last_command: mock_command(status: "confirmed"))
+      html = render_component(actuator: build_actuator, last_command: build_command(status: "confirmed"))
       expect(html).to include("confirmed")
+    end
+
+    # 🔴 Адреса бейджа — це broadcast-ТАРГЕТ (`actuator_command_worker` шле саме сюди),
+    # тож суфікс несучий: доти мок не давав `id`, і спека пінила `command_status_`
+    # без нього — форму, у яку жодне живе оновлення не влучає. Без цього прикладу
+    # конверсія фікстури оборотна мовчки.
+    it "renders the status badge at the id the broadcast actually targets" do
+      html = render_component(actuator: build_actuator, last_command: build_command(id: 7))
+
+      expect(html).to include('id="command_status_7"')
+      expect(html).not_to include('id="command_status_"')
     end
 
     it "displays IDLE when no last command" do
@@ -108,7 +125,7 @@ RSpec.describe Actuators::Card do
 
     it "resolves the last command status through the locale file" do
       html = I18n.with_locale(:uk) do
-        render_component(actuator: build_actuator, last_command: mock_command(status: "confirmed"))
+        render_component(actuator: build_actuator, last_command: build_command(status: "confirmed"))
       end
 
       expect(html).to include("завершено")
@@ -119,7 +136,7 @@ RSpec.describe Actuators::Card do
     # зеленою, навіть якби статус не рендерився взагалі. Пін мусить бути на
     # стилі САМОГО бейджа, який тепер єдиний дім кольорів усіх п'яти станів.
     it "renders a failed command through the shared status badge" do
-      html = render_component(actuator: build_actuator, last_command: mock_command(status: "failed"))
+      html = render_component(actuator: build_actuator, last_command: build_command(status: "failed"))
 
       # ⚠️ Пін саме на `text-red-200`, і це не примха: `bg-red-900` картка
       # вживає САМА в `status_led_class` для `offline`, тож на ньому приклад
