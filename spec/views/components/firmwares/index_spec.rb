@@ -10,7 +10,7 @@ RSpec.describe Firmwares::Index do
   # ЗАГОЛОВКИ). `build_stubbed`, а не `.new`: рядок читається роут-хелпером
   # `deploy_firmware_path`, тобто потребує `id`, і `created_at` для `strftime`.
   def mock_firmware(id: 1, version: "1.4.2", target_hardware_type: "Tree",
-                    binary_sha256: "abcdef1234567890AABB", created_at: Time.new(2024, 3, 15, 10, 30))
+                    binary_sha256: "abcdef1234567890AABB", created_at: Time.zone.local(2024, 3, 15, 10, 30))
     build_stubbed(:bio_contract_firmware, id: id, version: version,
                   target_hardware_type: target_hardware_type,
                   binary_sha256: binary_sha256, created_at: created_at)

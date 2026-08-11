@@ -4,24 +4,19 @@
 require "rails_helper"
 
 RSpec.describe BlockchainTransactions::OnChainFrame do
-  let(:transaction) { mock_transaction }
+  let(:transaction) { build_transaction }
   let(:html) { render_component(transaction: transaction) }
 
-  def mock_transaction(id: 1, tx_hash: "0xabcdef1234567890abcdef1234567890abcdef12",
-                       explorer_url: "https://polygonscan.com/tx/0xabc",
-                       blockchain_network: "polygon")
-    tx = OpenStruct.new(
-      id: id,
-      tx_hash: tx_hash,
-      explorer_url: explorer_url,
-      blockchain_network: blockchain_network
-    )
-    tx.define_singleton_method(:model_name) { ActiveModel::Name.new(BlockchainTransaction) }
-    tx.define_singleton_method(:to_key) { [ id ] }
-    tx.define_singleton_method(:to_param) { id.to_s }
-    tx.define_singleton_method(:solana_network?) { blockchain_network == "solana" }
-    tx.define_singleton_method(:celo_network?) { blockchain_network == "celo" }
-    tx
+  # [TEST.12] Реальний незбережений `BlockchainTransaction`, і мок брехав ТРИЧІ.
+  # (1) `blockchain_network: "polygon"` — значення, якого модель не приймає
+  #     (`inclusion: %w[evm solana celo]`); мережа Polygon виражається як `evm`.
+  # (2) `explorer_url` подавався НАПРЯМУ, тоді як модель його ДЕРИВУЄ з мережі
+  #     та хешу — саме це перетворення не перевірялось ніколи.
+  # (3) `solana_network?`/`celo_network?` були рукописні, тобто фікстура оголошувала
+  #     предикати, які реальний запис віддає сам.
+  def build_transaction(id: 1, tx_hash: "0xabcdef1234567890abcdef1234567890abcdef12",
+                        blockchain_network: "evm")
+    BlockchainTransaction.new(id: id, tx_hash: tx_hash, blockchain_network: blockchain_network)
   end
 
   describe "turbo frame" do
@@ -30,7 +25,7 @@ RSpec.describe BlockchainTransactions::OnChainFrame do
     end
 
     it "uses correct frame ID for different transaction IDs" do
-      tx = mock_transaction(id: 42)
+      tx = build_transaction(id: 42)
       rendered = render_component(transaction: tx)
       expect(rendered).to include("tx_onchain_frame_42")
     end
@@ -46,7 +41,7 @@ RSpec.describe BlockchainTransactions::OnChainFrame do
     end
 
     it "links to explorer URL" do
-      expect(html).to include("https://polygonscan.com/tx/0xabc")
+      expect(html).to include("https://polygonscan.com/tx/0xabcdef1234567890abcdef1234567890abcdef12")
     end
 
     # [I18N.1] Свідомо БЕЗ aria-label: видимий текст лінка сам описовий, а
@@ -67,22 +62,20 @@ RSpec.describe BlockchainTransactions::OnChainFrame do
     end
 
     it "displays Solana Explorer for solana network" do
-      tx = mock_transaction(blockchain_network: "solana",
-                            explorer_url: "https://explorer.solana.com/tx/abc")
+      tx = build_transaction(blockchain_network: "solana")
       rendered = render_component(transaction: tx)
       expect(rendered).to include("View on Solana Explorer")
     end
 
     it "displays Celo Explorer for celo network" do
-      tx = mock_transaction(blockchain_network: "celo",
-                            explorer_url: "https://celoscan.io/tx/abc")
+      tx = build_transaction(blockchain_network: "celo")
       rendered = render_component(transaction: tx)
       expect(rendered).to include("View on Celo Explorer")
     end
   end
 
   describe "when tx_hash is not present" do
-    let(:transaction) { mock_transaction(tx_hash: nil) }
+    let(:transaction) { build_transaction(tx_hash: nil) }
 
     it "shows pending message" do
       expect(html).to include("Transaction not yet submitted to chain.")

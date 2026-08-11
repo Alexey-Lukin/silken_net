@@ -9,14 +9,15 @@ RSpec.describe Actuators::Index do
   end
 
 
-  def mock_actuator(id: 1, device_type: "valve", state: "active", gateway_uid: "QUEEN-01")
-    gateway = OpenStruct.new(uid: gateway_uid)
-    commands = OpenStruct.new(last: nil)
-    OpenStruct.new(id: id, device_type: device_type, state: state, gateway: gateway, commands: commands)
+  # [TEST.12] Реальний незбережений `Actuator` — `device_type` ходить через справжній
+  # enum, тож вигаданого `"valve"` тут більше не буває (модель приймає лише
+  # `water_valve`/`fire_siren`/`seismic_beacon`/`drone_launcher`).
+  def build_actuator(id: 1, device_type: :water_valve, state: :active, gateway_uid: "QUEEN-01")
+    Actuator.new(id: id, device_type: device_type, state: state, gateway: Gateway.new(uid: gateway_uid))
   end
 
   describe "rendering with actuators" do
-    let(:actuators) { [ mock_actuator(id: 1), mock_actuator(id: 2) ] }
+    let(:actuators) { [ build_actuator(id: 1), build_actuator(id: 2) ] }
     let(:html) { render_component(cluster: mock_cluster, actuators: actuators, pagy: mock_pagy(count: 2, last: 1)) }
 
     it "renders the main container with animation" do
@@ -48,7 +49,7 @@ RSpec.describe Actuators::Index do
     end
 
     it "displays active count stat" do
-      html = render_component(cluster: mock_cluster, actuators: [ mock_actuator ], pagy: mock_pagy(last: 1), active_count: 5)
+      html = render_component(cluster: mock_cluster, actuators: [ build_actuator ], pagy: mock_pagy(last: 1), active_count: 5)
       expect(html).to include("Active Nodes")
     end
   end
@@ -70,7 +71,7 @@ RSpec.describe Actuators::Index do
   end
 
   describe "best practices compliance" do
-    let(:html) { render_component(cluster: mock_cluster, actuators: [ mock_actuator ], pagy: mock_pagy(last: 1)) }
+    let(:html) { render_component(cluster: mock_cluster, actuators: [ build_actuator ], pagy: mock_pagy(last: 1)) }
 
     it "uses text-tiny for uppercase microcopy" do
       expect(html).to include("text-tiny")

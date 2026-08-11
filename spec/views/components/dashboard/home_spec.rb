@@ -24,7 +24,11 @@ RSpec.describe Dashboard::Home do
   def mock_ews_event
     cluster = OpenStruct.new(name: "Carpathian-7")
     alert = EwsAlert.allocate
-    alert.define_singleton_method(:alert_type) { "Thermal Anomaly" }
+    # [TEST.12] Реальне значення enum'а, не display-рядок: із «Thermal Anomaly»
+    # `TextFormatter` їхав fail-open гілкою `humanize`, тобто стрічка подій
+    # перевірялась шляхом, якого в проді не буває (той самий дефект `event_row_spec`
+    # уже виправив — тут був його рецидив).
+    alert.define_singleton_method(:alert_type) { "fire_detected" }
     alert.define_singleton_method(:cluster) { cluster }
     alert.define_singleton_method(:created_at) { 1.minute.ago }
     alert

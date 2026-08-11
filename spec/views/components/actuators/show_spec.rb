@@ -4,10 +4,11 @@
 require "rails_helper"
 
 RSpec.describe Actuators::Show do
-  def mock_actuator(id: 1, device_type: "valve", state: "active", gateway_uid: "QUEEN-01")
-    gateway = OpenStruct.new(uid: gateway_uid)
-    commands = OpenStruct.new(last: nil)
-    OpenStruct.new(id: id, device_type: device_type, state: state, gateway: gateway, commands: commands)
+  # [TEST.12] Реальний незбережений `Actuator` — `device_type` ходить через справжній
+  # enum, тож вигаданого `"valve"` тут більше не буває (модель приймає лише
+  # `water_valve`/`fire_siren`/`seismic_beacon`/`drone_launcher`).
+  def build_actuator(id: 1, device_type: :water_valve, state: :active, gateway_uid: "QUEEN-01")
+    Actuator.new(id: id, device_type: device_type, state: state, gateway: Gateway.new(uid: gateway_uid))
   end
 
   def mock_command(id: 1, status: "confirmed", command_payload: "OPEN_VALVE", executed_at: Time.current, user_first_name: "Ada")
@@ -17,7 +18,7 @@ RSpec.describe Actuators::Show do
 
   describe "rendering" do
     let(:commands) { [ mock_command(id: 1), mock_command(id: 2, status: "failed", command_payload: "RESET") ] }
-    let(:html) { render_component(actuator: mock_actuator, commands: commands) }
+    let(:html) { render_component(actuator: build_actuator, commands: commands) }
 
     it "renders with fade-in animation" do
       expect(html).to include("animate-in")
@@ -64,7 +65,7 @@ RSpec.describe Actuators::Show do
     it "displays SYSTEM when user is nil" do
       cmd = mock_command(user_first_name: nil)
       cmd_with_nil_user = OpenStruct.new(id: cmd.id, status: cmd.status, command_payload: cmd.command_payload, executed_at: cmd.executed_at, user: nil)
-      html = render_component(actuator: mock_actuator, commands: [ cmd_with_nil_user ])
+      html = render_component(actuator: build_actuator, commands: [ cmd_with_nil_user ])
       expect(html).to include("SYSTEM")
     end
   end
@@ -77,7 +78,7 @@ RSpec.describe Actuators::Show do
   # це те, що не сміє зламатись, а конкретні класи належать спеці бейджа.
   describe "command status rendering" do
     it "delegates the status cell to the shared CommandStatusBadge" do
-      html = render_component(actuator: mock_actuator, commands: [ mock_command(status: "confirmed") ])
+      html = render_component(actuator: build_actuator, commands: [ mock_command(status: "confirmed") ])
 
       # DOM-id ставить саме компонент — його ж чекає broadcast-таргет.
       expect(html).to include("command_status_")
@@ -86,7 +87,7 @@ RSpec.describe Actuators::Show do
 
     it "renders the localized label, not the raw enum value" do
       html = I18n.with_locale(:uk) do
-        render_component(actuator: mock_actuator, commands: [ mock_command(status: "acknowledged") ])
+        render_component(actuator: build_actuator, commands: [ mock_command(status: "acknowledged") ])
       end
 
       expect(html).to include("виконується")
@@ -98,7 +99,7 @@ RSpec.describe Actuators::Show do
     it "renders acknowledged and confirmed as DIFFERENT words" do
       html = I18n.with_locale(:uk) do
         render_component(
-          actuator: mock_actuator,
+          actuator: build_actuator,
           commands: [ mock_command(status: "acknowledged"), mock_command(status: "confirmed") ]
         )
       end
@@ -108,7 +109,7 @@ RSpec.describe Actuators::Show do
     end
 
     it "falls back to the raw value for a status with no label" do
-      html = render_component(actuator: mock_actuator, commands: [ mock_command(status: "unknown_status") ])
+      html = render_component(actuator: build_actuator, commands: [ mock_command(status: "unknown_status") ])
 
       expect(html).to include("unknown_status")
       expect(html).to include("bg-zinc-800")
@@ -118,18 +119,18 @@ RSpec.describe Actuators::Show do
   describe "executed_at formatting" do
     it "formats execution timestamp" do
       time = Time.new(2024, 3, 15, 14, 30, 45)
-      html = render_component(actuator: mock_actuator, commands: [ mock_command(executed_at: time) ])
+      html = render_component(actuator: build_actuator, commands: [ mock_command(executed_at: time) ])
       expect(html).to include("15.03.24 // 14:30:45")
     end
 
     it "displays --- when executed_at is nil" do
-      html = render_component(actuator: mock_actuator, commands: [ mock_command(executed_at: nil) ])
+      html = render_component(actuator: build_actuator, commands: [ mock_command(executed_at: nil) ])
       expect(html).to include("---")
     end
   end
 
   describe "best practices compliance" do
-    let(:html) { render_component(actuator: mock_actuator, commands: [ mock_command ]) }
+    let(:html) { render_component(actuator: build_actuator, commands: [ mock_command ]) }
 
     it "uses text-tiny and text-micro for typography" do
       expect(html).to include("text-tiny")

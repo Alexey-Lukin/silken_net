@@ -13,7 +13,7 @@ RSpec.describe Trees::Show do
   let(:tree) { mock_tree }
   let(:latest_log) { mock_latest_log }
   let(:recent_logs) { [ mock_recent_log ] }
-  let(:maintenance_history) { [ mock_maintenance_record ] }
+  let(:maintenance_history) { [ build_maintenance_record ] }
   let(:html) do
     render_component(tree: tree, latest_log: latest_log,
                      recent_logs: recent_logs, maintenance_history: maintenance_history)
@@ -70,11 +70,21 @@ RSpec.describe Trees::Show do
     OpenStruct.new(z_value: z_value, created_at: created_at)
   end
 
-  def mock_maintenance_record(technician: "Ivan Koval", action_type: "sensor_replacement",
-                              notes: "Replaced corroded electrode on north-facing anchor point",
-                              performed_at: 2.days.ago)
-    user = OpenStruct.new(full_name: technician)
-    OpenStruct.new(user: user, action_type: action_type, notes: notes, performed_at: performed_at)
+  # [TEST.12] Реальний незбережений `MaintenanceRecord`: `action_type` ходить через
+  # справжній enum, тож вигаданих `"sensor_replacement"`/`"calibration"` тут більше
+  # немає — модель приймає лише `installation`/`inspection`/`cleaning`/`repair`/
+  # `decommissioning`/`biomass_extraction`, і на будь-якому іншому значенні кидає
+  # `ArgumentError` просто в конструкторі.
+  def build_maintenance_record(technician: "Ivan Koval", action_type: :repair,
+                               notes: "Replaced corroded electrode on north-facing anchor point",
+                               performed_at: 2.days.ago)
+    first, last = technician.to_s.split(" ", 2)
+    MaintenanceRecord.new(
+      user: User.new(first_name: first, last_name: last),
+      action_type: action_type,
+      notes: notes,
+      performed_at: performed_at
+    )
   end
 
   describe "argument validation" do
@@ -228,12 +238,12 @@ RSpec.describe Trees::Show do
     end
 
     it "displays action type" do
-      expect(html).to include("sensor_replacement")
+      expect(html).to include("repair")
     end
 
     it "truncates long notes to 50 characters" do
       long_notes = "A" * 100
-      record = mock_maintenance_record(notes: long_notes)
+      record = build_maintenance_record(notes: long_notes)
       rendered = render_component(tree: tree, latest_log: latest_log,
                                   recent_logs: recent_logs, maintenance_history: [ record ])
       expect(rendered).to include("A" * 47 + "...")
@@ -320,8 +330,8 @@ RSpec.describe Trees::Show do
 
   describe "edge cases — nil-safe rendering of optional fields" do
     it "renders 'Unknown' technician when maintenance record has no user" do
-      record = OpenStruct.new(user: nil, action_type: "calibration",
-                              notes: "Quick recalibration", performed_at: 1.day.ago)
+      record = MaintenanceRecord.new(user: nil, action_type: :inspection,
+                                     notes: "Quick recalibration", performed_at: 1.day.ago)
       rendered = render_component(tree: tree, latest_log: latest_log,
                                   recent_logs: recent_logs, maintenance_history: [ record ])
       expect(rendered).to include("Unknown")
