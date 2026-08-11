@@ -350,7 +350,7 @@ RSpec.describe Maintenance::Show do
 
     it "skips the drift calc when the Tree has no coordinates" do
       expect(SilkenNet::GeoUtils).not_to receive(:haversine_distance_m)
-      bare = build_maintainable # OpenStruct → latitude/longitude return nil
+      bare = build_maintainable # реальний Tree: latitude/longitude порожні самі, без підпірки
       rec = build_record(latitude: 49.0, longitude: 32.0, maintainable_type: "Tree", maintainable: bare)
       render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
     end

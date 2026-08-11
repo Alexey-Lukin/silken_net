@@ -48,14 +48,16 @@ module Clusters
             p(class: "text-tiny font-mono text-gray-600 mt-2") { "#{@cluster.region} // ID: #{@cluster.id}" }
             render_codex_citations
           end
+          # Один читок предиката на рендер — він б'є в БД і не мемоїзується (див. `Clusters::Item`).
+          threats = @cluster.active_threats?
           div(class: "flex items-center gap-4") do
             div(class: tokens(
               "h-3 w-3 rounded-full",
-              "bg-red-500 animate-pulse": @cluster.active_threats?,
-              "bg-emerald-500": !@cluster.active_threats?
+              "bg-red-500 animate-pulse": threats,
+              "bg-emerald-500": !threats
             ))
             span(class: "text-tiny font-mono text-emerald-800 uppercase") do
-              @cluster.active_threats? ? t(".header.threat_detected") : t(".header.nominal")
+              threats ? t(".header.threat_detected") : t(".header.nominal")
             end
           end
         end

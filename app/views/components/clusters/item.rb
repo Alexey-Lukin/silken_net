@@ -25,11 +25,17 @@ module Clusters
           p(class: "text-tiny font-mono text-emerald-800") { t(".id", id: @cluster.id) }
         end
 
-        # Статус кластера (на основі AI інсайтів або алертів)
+        # Статус кластера (на основі AI інсайтів або алертів).
+        # 🔴 Предикат ЗАПИТУЄ БД (`ews_alerts.unresolved.critical.exists?`) і НЕ мемоїзується —
+        # тож він читається рівно один раз на рендер. Це не мікрооптимізація: рядок їде в циклі
+        # `Clusters::Grid`, тобто кожен зайвий виклик множиться на кількість кластерів. Свідомий
+        # tradeoff контролера («EXISTS з composite index — `includes` не потрібен») рахований на
+        # ОДИН запит на рядок, і саме цей рядок його таким тримає.
+        threats = @cluster.active_threats?
         div(class: tokens(
           "h-2 w-2 rounded-full",
-          "bg-red-500 animate-pulse": @cluster.active_threats?,
-          "bg-emerald-500": !@cluster.active_threats?
+          "bg-red-500 animate-pulse": threats,
+          "bg-emerald-500": !threats
         ))
       end
     end

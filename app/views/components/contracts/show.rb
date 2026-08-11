@@ -61,7 +61,8 @@ module Contracts
         div(class: "space-y-4") do
           metric_row(t(".backing.vitality"), "#{(health * 100).round}%", alert: health < 0.7)
           metric_row(t(".backing.active_soldiers"), cluster.total_active_trees)
-          metric_row(t(".backing.threat_status"), cluster.active_threats? ? t(".backing.danger") : t(".backing.nominal"), alert: cluster.active_threats?)
+          threats = cluster.active_threats? # один читок: предикат б'є в БД (див. `Clusters::Item`)
+          metric_row(t(".backing.threat_status"), threats ? t(".backing.danger") : t(".backing.nominal"), alert: threats)
         end
       end
     end

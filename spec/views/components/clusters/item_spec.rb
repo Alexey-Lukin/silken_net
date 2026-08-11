@@ -81,4 +81,22 @@ RSpec.describe Clusters::Item do
       expect(html).to include("/clusters/1")
     end
   end
+
+  # 🔴 Носій свідомого tradeoff'у, а не мікрооптимізація. `Cluster#active_threats?` б'є в БД
+  # (`ews_alerts.unresolved.critical.exists?`) і НЕ мемоїзується, а цей рядок їде в циклі
+  # `Clusters::Grid` — тож кожен зайвий виклик множиться на кількість кластерів на сторінці.
+  # Контролер списку свідомо обрав EXISTS замість `includes` («composite index — includes не
+  # потрібен»), і той розрахунок вірний рівно доти, доки запит ОДИН на рядок; доти їх було два.
+  # Пін стоїть на реальному записі навмисно: `OpenStruct`-фабрика вище віддає синглтон, який
+  # виклики не рахує, тож цю вісь вона виміряти не здатна за побудовою.
+  describe "query discipline" do
+    it "reads the DB-backed threat predicate exactly once per render" do
+      real_cluster = Cluster.new(id: 1, name: "Carpathian-Alpha", health_index: 0.91, active_trees_count: 42)
+      allow(real_cluster).to receive(:active_threats?).and_return(true)
+
+      render_component(cluster: real_cluster)
+
+      expect(real_cluster).to have_received(:active_threats?).once
+    end
+  end
 end
