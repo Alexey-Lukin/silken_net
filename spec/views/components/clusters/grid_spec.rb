@@ -4,22 +4,21 @@
 require "rails_helper"
 
 RSpec.describe Clusters::Grid do
-  def mock_cluster(id: 1, name: "Carpathian-Alpha", active_threats: false, total_active_trees: 42,
-                   health_index: 0.85)
-    cluster = OpenStruct.new(
-      id: id,
-      name: name,
-      total_active_trees: total_active_trees,
-      health_index: health_index
-    )
-    cluster.define_singleton_method(:active_threats?) { active_threats }
-    cluster.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    cluster.define_singleton_method(:to_key) { [ id ] }
-    cluster.define_singleton_method(:to_param) { id.to_s }
+  # [TEST.12] Реальний незбережений `Cluster`. Дві ланки, яких мок не мав:
+  # `total_active_trees` — не поле, а читач КОЛОНКИ `active_trees_count` (лічильник-кеш),
+  # тож фікстура тепер годує саме колонку; `health_index` на моделі має фолбек
+  # (`read_attribute || 1.0`), тобто `nil` вона не віддає ніколи.
+  # ⚠️ `active_threats?` лишається стабом НАВМИСНО — це запит у БД
+  # (`ews_alerts.unresolved.critical.exists?`), а не дані запису.
+  def build_cluster(id: 1, name: "Carpathian-Alpha", active_threats: false, total_active_trees: 42,
+                    health_index: 0.85)
+    cluster = Cluster.new(id: id, name: name, active_trees_count: total_active_trees,
+                          health_index: health_index)
+    allow(cluster).to receive(:active_threats?).and_return(active_threats)
     cluster
   end
 
-  let(:clusters) { [ mock_cluster(id: 1, name: "Carpathian-Alpha"), mock_cluster(id: 2, name: "Danube-Beta") ] }
+  let(:clusters) { [ build_cluster(id: 1, name: "Carpathian-Alpha"), build_cluster(id: 2, name: "Danube-Beta") ] }
   let(:html)     { render_component(clusters: clusters, pagy: mock_pagy(count: 63)) }
 
   describe "grid layout" do
@@ -57,9 +56,13 @@ RSpec.describe Clusters::Grid do
     end
 
     it "renders red LED when cluster has active threats" do
-      threat_cluster = mock_cluster(id: 3, name: "Threat-Cluster", active_threats: true)
+      threat_cluster = build_cluster(id: 3, name: "Threat-Cluster", active_threats: true)
       html = render_component(clusters: [ threat_cluster ], pagy: mock_pagy(count: 63))
+
       expect(html).to include("bg-red-500")
+      # Другий бік несучий: сама присутність червоного лишається зеленою й тоді,
+      # коли гілки рендеряться ОБИДВІ (у сітці з одним кластером інших LED немає).
+      expect(html).not_to include("bg-emerald-500")
     end
   end
 

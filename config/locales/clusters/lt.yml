@@ -19,7 +19,7 @@ lt:
         empty: Nėra aktyvios NaaS sutarties.
         heading: NaaS sutartis
         status: Būsena
-        value: Vertė
+        value: Vertė (USD)
       gateways:
         coordinates: Koordinatės
         empty: Nėra įdiegtų šliuzų

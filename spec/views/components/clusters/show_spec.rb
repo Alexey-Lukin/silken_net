@@ -4,28 +4,34 @@
 require "rails_helper"
 
 RSpec.describe Clusters::Show do
-  let(:cluster) { mock_cluster }
+  let(:cluster) { build_cluster }
   let(:gateways) { [ mock_gateway ] }
   let(:recent_alerts) { [] }
   let(:html) { render_component(cluster: cluster, gateways: gateways, recent_alerts: recent_alerts) }
 
-  def mock_cluster(id: 1, name: "Carpathian-Alpha", region: "Cherkasy Oblast",
+  def build_cluster(id: 1, name: "Carpathian-Alpha", region: "Cherkasy Oblast",
                    health_index: 0.87, total_active_trees: 142, active_threats: false)
-    cluster = OpenStruct.new(
+    # [TEST.12] Реальний незбережений `Cluster`. Колонки годуються як колонки
+    # (`active_trees_count` — читач `total_active_trees`), а стабляться РІВНО ті три
+    # методи, що ходять у БД: `active_threats?` (`ews_alerts…exists?`), `geo_center`
+    # (агрегат по деревах) і `active_contract` (`naas_contracts.active…first`).
+    # ⚠️ `mapped?` НЕ стабиться свідомо — він чистий (`geojson_polygon.present? && …`),
+    # тож на реальному записі відповідає сам, і фікстура більше не вигадує його відповідь.
+    cluster = Cluster.new(
       id: id,
       name: name,
       region: region,
       health_index: health_index,
-      total_active_trees: total_active_trees,
+      active_trees_count: total_active_trees,
       environmental_settings: {},
-      active_contract: nil
+      # 🔴 Годуємо ДЖЕРЕЛО, а не відповідь: доти `mapped?` був синглтоном `true`,
+      # тобто фікстура сама вирішувала, чи кластер має контур. Метод чистий
+      # (`geojson_polygon.present? && …["coordinates"].present?`), тож реальна
+      # колонка робить його перевірним — і заразом видно, що порожній полігон
+      # (`{}`) дає `false`, чого мок не показував ніколи.
+      geojson_polygon: { "type" => "Polygon", "coordinates" => [ [ [ 32.0, 49.4 ], [ 32.1, 49.4 ], [ 32.1, 49.5 ] ] ] }
     )
-    cluster.define_singleton_method(:active_threats?) { active_threats }
-    cluster.define_singleton_method(:geo_center) { { lat: 49.4444, lng: 32.0597 } }
-    cluster.define_singleton_method(:mapped?) { true }
-    cluster.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    cluster.define_singleton_method(:to_key) { [ id ] }
-    cluster.define_singleton_method(:to_param) { id.to_s }
+    allow(cluster).to receive_messages(active_threats?: active_threats, active_contract: nil, geo_center: { lat: 49.4444, lng: 32.0597 })
     cluster
   end
 
@@ -60,7 +66,7 @@ RSpec.describe Clusters::Show do
     end
 
     it "shows threat detected when active threats" do
-      html = render_component(cluster: mock_cluster(active_threats: true), gateways: [], recent_alerts: [])
+      html = render_component(cluster: build_cluster(active_threats: true), gateways: [], recent_alerts: [])
       expect(html).to include("Threat Detected")
     end
   end
@@ -127,15 +133,15 @@ RSpec.describe Clusters::Show do
     end
 
     it "displays mapped=No when the cluster is not mapped" do
-      cl = mock_cluster
-      cl.define_singleton_method(:mapped?) { false }
+      cl = build_cluster
+      cl.geojson_polygon = {} # джерело, не відповідь: `mapped?` виводить це сам
       out = render_component(cluster: cl, gateways: [], recent_alerts: [])
       expect(out).to include("Mapped")
       expect(out).not_to include("Yes")
     end
 
     it "omits the centroid and map link when geo_center is nil" do
-      cl = mock_cluster
+      cl = build_cluster
       cl.define_singleton_method(:geo_center) { nil }
       out = render_component(cluster: cl, gateways: [], recent_alerts: [])
       expect(out).not_to include("google.com/maps")
@@ -144,7 +150,7 @@ RSpec.describe Clusters::Show do
 
   describe "environmental settings" do
     it "renders fire threshold when set" do
-      cluster = mock_cluster
+      cluster = build_cluster
       cluster.environmental_settings = { "custom_fire_threshold" => 65 }
       html = render_component(cluster: cluster, gateways: [], recent_alerts: [])
       expect(html).to include("Fire Threshold")
@@ -152,7 +158,7 @@ RSpec.describe Clusters::Show do
     end
 
     it "renders seismic sensitivity when set" do
-      cluster = mock_cluster
+      cluster = build_cluster
       cluster.environmental_settings = { "seismic_sensitivity_threshold" => 0.8 }
       html = render_component(cluster: cluster, gateways: [], recent_alerts: [])
       expect(html).to include("Seismic Sensitivity")
@@ -160,7 +166,7 @@ RSpec.describe Clusters::Show do
     end
 
     it "renders timezone when set" do
-      cluster = mock_cluster
+      cluster = build_cluster
       cluster.environmental_settings = { "timezone" => "Europe/Kyiv" }
       html = render_component(cluster: cluster, gateways: [], recent_alerts: [])
       expect(html).to include("Timezone")
@@ -168,7 +174,7 @@ RSpec.describe Clusters::Show do
     end
 
     it "renders Environmental Config heading when settings present" do
-      cluster = mock_cluster
+      cluster = build_cluster
       cluster.environmental_settings = { "custom_fire_threshold" => 65 }
       html = render_component(cluster: cluster, gateways: [], recent_alerts: [])
       expect(html).to include("Environmental Config")
@@ -186,12 +192,18 @@ RSpec.describe Clusters::Show do
 
     context "with active contract" do
       it "renders contract details" do
-        contract = OpenStruct.new(status: "active", total_value: 50_000, emitted_tokens: 1200)
-        cluster = mock_cluster
-        cluster.define_singleton_method(:active_contract) { contract }
+        # 🔴 [TEST.12] Реальний `NaasContract`, і це не гігієна: `total_value` — alias
+        # на `total_funding`, колонка `numeric`, тож прод друкує BigDecimal («50000.0»),
+        # а не Integer. Доти пін `include("50000")` був підрядком обох форм — тобто не
+        # здатен був побачити ані тип, ані ОДИНИЦЮ, яку цей рядок тепер несе (USD:
+        # сусідній рядок правомірно каже «Emitted SCC», і без підпису плата за послугу
+        # читалась у тій самій валюті — восьмий сайт класу, закритого в [I18N.1]).
+        contract = NaasContract.new(status: :active, total_funding: 50_000, emitted_tokens: 1200)
+        cluster = build_cluster
+        allow(cluster).to receive(:active_contract).and_return(contract)
         html = render_component(cluster: cluster, gateways: [], recent_alerts: [])
         expect(html).to include("ACTIVE")
-        expect(html).to include("50000")
+        expect(html).to include("50000.0 USD")
         expect(html).to include("1200")
       end
     end

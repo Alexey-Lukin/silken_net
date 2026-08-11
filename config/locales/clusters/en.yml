@@ -19,7 +19,7 @@ en:
         empty: No active NaaS contract.
         heading: NaaS Contract
         status: Status
-        value: Value
+        value: Value (USD)
       gateways:
         coordinates: Coordinates
         empty: No gateways deployed

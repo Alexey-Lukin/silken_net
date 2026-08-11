@@ -19,7 +19,7 @@ lv:
         empty: Nav aktīva NaaS līguma.
         heading: NaaS līgums
         status: Statuss
-        value: Vērtība
+        value: Vērtība (USD)
       gateways:
         coordinates: Koordinātas
         empty: Nav izvietotu vārteju

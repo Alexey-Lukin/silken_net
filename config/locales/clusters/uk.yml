@@ -19,7 +19,7 @@ uk:
         empty: Активного NaaS-контракту немає.
         heading: NaaS Контракт
         status: Статус
-        value: Вартість
+        value: Вартість (USD)
       gateways:
         coordinates: Координати
         empty: Шлюзи не розгорнуто
