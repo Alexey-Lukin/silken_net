@@ -8,7 +8,7 @@ RSpec.describe Trees::Index do
   around { |ex| I18n.with_locale(:en) { ex.run } }
 
   let(:cluster) { mock_cluster }
-  let(:trees) { [ mock_tree ] }
+  let(:trees) { [ build_tree ] }
   let(:pagy) { mock_pagy(count: 1, last: 1) }
   let(:html) { render_component(cluster: cluster, trees: trees, pagy: pagy) }
 
@@ -21,20 +21,26 @@ RSpec.describe Trees::Index do
     c
   end
 
-  def mock_tree(did: "SNET-00000042", status: "active", ionic_voltage: 3800,
-                charge_percentage: 85, last_seen_at: 1.minute.ago, under_threat: false)
-    t = OpenStruct.new(
+  # [TEST.12] Реальний незбережений `Tree`; фікстура годує ДЖЕРЕЛО заряду, не результат.
+  # Доти мок клав `ionic_voltage: 3800` І `charge_percentage: 85` одночасно — комбінація,
+  # недосяжна за побудовою: формула на 3800 дає **37**, тобто прод малює ЖОВТУ смугу там,
+  # де сюїта стверджувала зелену (кольорові зони протилежні). Тепер задаємо `latest_voltage_mv`
+  # (справжня колонка; `ionic_voltage` — проміжний метод `latest_voltage_mv || 0`), а відсоток
+  # виводить модель: 5095 → 85, 4150 → 50, 3340 → 20.
+  #
+  # `under_threat?` стабимо свідомо — на реальному записі це запит до `ews_alerts`,
+  # тобто єдине, що тут вимагало б БД.
+  def build_tree(did: "SNET-00000042", status: :active, latest_voltage_mv: 5095,
+                 last_seen_at: 1.minute.ago, under_threat: false)
+    tree = Tree.new(
+      id: 1,
       did: did,
       status: status,
-      ionic_voltage: ionic_voltage,
-      charge_percentage: charge_percentage,
+      latest_voltage_mv: latest_voltage_mv,
       last_seen_at: last_seen_at
     )
-    t.define_singleton_method(:under_threat?) { under_threat }
-    t.define_singleton_method(:model_name) { ActiveModel::Name.new(Tree) }
-    t.define_singleton_method(:to_key) { [ 1 ] }
-    t.define_singleton_method(:to_param) { "1" }
-    t
+    tree.define_singleton_method(:under_threat?) { under_threat }
+    tree
   end
 
   describe "header" do
@@ -66,7 +72,7 @@ RSpec.describe Trees::Index do
     end
 
     it "displays voltage" do
-      expect(html).to include("3800")
+      expect(html).to include("5095")
       expect(html).to include("mV")
     end
   end
@@ -77,20 +83,20 @@ RSpec.describe Trees::Index do
     end
 
     it "shows red pulsing LED when under threat" do
-      trees = [ mock_tree(under_threat: true) ]
+      trees = [ build_tree(under_threat: true) ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("bg-status-danger")
       expect(rendered).to include("animate-pulse")
     end
 
     it "shows gray LED when silent for over 24 hours" do
-      trees = [ mock_tree(last_seen_at: 25.hours.ago) ]
+      trees = [ build_tree(last_seen_at: 25.hours.ago) ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("bg-gaia-text-subtle")
     end
 
     it "shows gray LED when last_seen_at is nil" do
-      trees = [ mock_tree(last_seen_at: nil) ]
+      trees = [ build_tree(last_seen_at: nil) ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("bg-gaia-text-subtle")
     end
@@ -108,19 +114,19 @@ RSpec.describe Trees::Index do
     end
 
     it "renders dormant with the warning token" do
-      trees = [ mock_tree(status: "dormant") ]
+      trees = [ build_tree(status: "dormant") ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("bg-status-warning")
     end
 
     it "renders removed with the neutral token" do
-      trees = [ mock_tree(status: "removed") ]
+      trees = [ build_tree(status: "removed") ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("bg-status-neutral")
     end
 
     it "renders deceased with the danger token" do
-      trees = [ mock_tree(status: "deceased") ]
+      trees = [ build_tree(status: "deceased") ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("bg-status-danger")
     end
@@ -132,13 +138,13 @@ RSpec.describe Trees::Index do
     end
 
     it "shows warning bar when charge between 30-70%" do
-      trees = [ mock_tree(charge_percentage: 50) ]
+      trees = [ build_tree(latest_voltage_mv: 4150) ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("bg-status-warning")
     end
 
     it "shows red pulsing bar when charge < 30%" do
-      trees = [ mock_tree(charge_percentage: 20) ]
+      trees = [ build_tree(latest_voltage_mv: 3340) ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("bg-status-danger")
       expect(rendered).to include("animate-pulse")
@@ -159,8 +165,8 @@ RSpec.describe Trees::Index do
   describe "multiple trees" do
     it "renders all tree nodes" do
       trees = [
-        mock_tree(did: "SNET-00000001"),
-        mock_tree(did: "SNET-00000002")
+        build_tree(did: "SNET-00000001"),
+        build_tree(did: "SNET-00000002")
       ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("000001")
@@ -176,10 +182,20 @@ RSpec.describe Trees::Index do
   end
 
   describe "status text else branch" do
-    it "renders unknown status with default gray text" do
-      trees = [ mock_tree(status: "unknown_status") ]
-      rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
-      expect(rendered).to include("text-gaia-text")
+    # ⚠️ Дві поправки, і обидві несучі.
+    # (1) Значення поза enum недосяжне на реальному записі (`ArgumentError` у
+    #     конструкторі), тож єдиний чесний вхід — стаб самого РИДЕРА.
+    # (2) Пін НЕ на клас: доти стояв `text-gaia-text`, який носять і `h2` кластера,
+    #     і DID-спан, тобто був зелений незалежно від статусу. А на клас фолбеку
+    #     пінити теж не можна — `bg-status-neutral` належить ще й живому `removed`,
+    #     тому клас не розрізняє «фолбек» від «нормальний стан» (`04_06 §A.4` BP 20).
+    #     Розрізняє лише сам текст: `StatusBadge` fail-open віддає сире значення.
+    it "renders an unknown status verbatim, via the fail-open branch" do
+      broken = build_tree
+      allow(broken).to receive(:status).and_return("__not_a_status__")
+
+      rendered = render_component(cluster: cluster, trees: [ broken ], pagy: pagy)
+      expect(rendered).to include("__not_a_status__")
     end
   end
 
