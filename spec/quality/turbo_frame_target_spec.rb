@@ -12,6 +12,11 @@ require "rails_helper"
 # сервер відпрацьовує, екран не змінюється — і жодна спека цього не бачить, бо
 # компонентна не виконує Turbo, а request-спека дивиться на статус.
 #
+# ⚠️ Зарезервовані імена Turbo (`_top`, `_self`) — НЕ цілі: `_top` означає «вийди з
+# фрейма й навігуй сторінку цілком», тобто елемента з таким id не існує ніколи.
+# Без цього винятку гейт червонив би на КОРЕКТНОМУ коді (перевірено мутацією), а
+# найдешевша відповідь на надто широкий гейт — послабити його, тож це не дрібниця.
+#
 # ⚠️ Стеля названа: гейт звіряє ТЕКСТ виразу, не резолвить його. Тобто
 # `data: { turbo_frame: frame_id }` вимагає `turbo_frame_tag(frame_id)` у тому ж
 # файлі — і це навмисне звуження: обидва здорові сайти дерева саме такі, а
@@ -24,6 +29,9 @@ RSpec.describe "ціль data-turbo-frame існує як turbo-frame", type: :m
   # фрейм, і клік сьогодні взагалі не доходить туди — `SimulationWorker` у дереві
   # відсутній, тож `perform_async` дає NameError→500 раніше. Конвертувати div у
   # фрейм означало б зацементувати артефакт, який може піти цілком.
+  # Зарезервовані Turbo-імена: не посилання на елемент, а директива навігації.
+  def reserved_targets = %w[_top _self]
+
   def declared_exceptions
     {
       "app/views/components/oracle_visions/simulation_panel.rb" => {
@@ -50,6 +58,7 @@ RSpec.describe "ціль data-turbo-frame існує як turbo-frame", type: :m
         next if declared.include?(target)
 
         bare = target.delete_prefix('"').delete_suffix('"').delete_prefix("'").delete_suffix("'")
+        next if reserved_targets.include?(bare)
         next if declared_exceptions[rel]&.fetch(:target) == bare
 
         "#{rel} → ціль #{target} без `turbo_frame_tag(#{target})` у тому ж файлі"
@@ -79,6 +88,13 @@ RSpec.describe "ціль data-turbo-frame існує як turbo-frame", type: :m
       якщо доля елемента вирішується деінде, додати рядок у DECLARED_EXCEPTIONS
       із полями `why` (підстава) і `back` (подія, після якої виняток зникає).
     MSG
+  end
+
+  it "звільняє ЗАРЕЗЕРВОВАНІ імена Turbo, і рівно їх" do
+    # Пін на сам перелік: без нього хтось спорожнить його «бо порожньо-ж-і-так»,
+    # і гейт почне червоніти на коректному `_top`. Перевірено мутацією: `_top`
+    # проходить, а схоже-але-чуже `_topmost` — ні (збіг ТОЧНИЙ, не префіксний).
+    expect(reserved_targets).to contain_exactly("_top", "_self")
   end
 
   it "кожен оголошений виняток несе підставу І умову відкликання" do
