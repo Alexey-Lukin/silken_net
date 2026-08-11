@@ -82,8 +82,19 @@ module Users
       end
     end
 
+    # 🔴 [TEST.12] `super_admin` мусить мати ВЛАСНУ гілку: enum має чотири значення,
+    # а мапа знала три — тож найпривілейованіша роль падала в той самий `else`, що й
+    # пошкоджене значення, тобто візуально не відрізнялась від «невідомо що це».
+    # Бурштин, а не червоний: платформенний рівень стоїть НАД org-адміном, і сусідні
+    # кольори вже зайняті ієрархією investor→forester→admin.
+    #
+    # ⚠️ Мапа лишається ПРИВАТНОЮ свідомо. Спільний `StatusBadge::STYLES` не містить
+    # жодного ключа ролі (перевірено), тож дротування туди сьогодні поклало б у дефолт
+    # УСІ чотири значення — гірше за наявний стан. Перевести родину можна лише разом із
+    # мітками ×4 локалі, і це черга [`I18N.1`] (net-new authoring), не цей пункт.
     def role_color(role)
       case role
+      when "super_admin" then "bg-amber-900/50 text-amber-200 border border-amber-800"
       when "admin" then "bg-red-900/50 text-red-200 border border-red-800"
       when "forester" then "bg-emerald-900/50 text-emerald-200 border border-emerald-800"
       when "investor" then "bg-blue-900/50 text-blue-200 border border-blue-800"

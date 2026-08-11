@@ -37,14 +37,19 @@ class ClusterItemPreview < Lookbook::Preview
 
   private
 
+  # 🔴 [TEST.12] Реальний `Cluster`, а не `OpenStruct` — через `to_param`.
+  # Компонент будує href як `cluster_path(@cluster)`, а роут-хелпер кличе `to_param`;
+  # `Object#to_param` (ActiveSupport) — СПРАВЖНІЙ метод, тож він резолвиться раніше за
+  # `OpenStruct#method_missing` і віддає `#<OpenStruct id=1, name=…>` (перевірено
+  # рантаймом). Кнопка «OPEN MATRIX» виглядала справною в усіх чотирьох сценаріях і
+  # несла URL-екранований дамп мока замість `/clusters/1` — дефект, який видно лише
+  # при наведенні, тобто рівно те, що превʼю мало б показувати чесно.
   def mock_cluster(name:, trees:, health:, threats:)
-    OpenStruct.new(
-      id: 1,
-      name: name,
-      total_active_trees: trees,
-      active_trees_count: trees,
-      health_index: health,
-      active_threats?: threats
-    )
+    cluster = Cluster.new(id: 1, name: name)
+    cluster.define_singleton_method(:total_active_trees) { trees }
+    cluster.define_singleton_method(:active_trees_count) { trees }
+    cluster.define_singleton_method(:health_index) { health }
+    cluster.define_singleton_method(:active_threats?) { threats }
+    cluster
   end
 end

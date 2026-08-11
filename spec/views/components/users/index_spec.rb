@@ -4,8 +4,14 @@
 require "rails_helper"
 
 RSpec.describe Users::Index do
-  def mock_user(id: 1, first_name: "Ada", last_name: "Lovelace", role: "admin", last_seen_at: Time.current)
-    user = OpenStruct.new(
+  # [TEST.12] Реальний незбережений `User` замість OpenStruct: БД не потрібна, а
+  # метадані фреймворку (`model_name`/`to_key`/`to_param`) віддає сама модель — доти
+  # вони були рукописні, тобто фікстура оголошувала контракт, якого не перевіряла.
+  # 🔴 Головне, що це змінює: `role` тепер ходить через справжній enum, тож значення
+  # поза ним кидає `ArgumentError` у конструкторі (перевірено рантаймом) — саме тому
+  # фолбек-гілку нижче доводиться діставати стабом РИДЕРА, а не вигаданим рядком.
+  def build_user(id: 1, first_name: "Ada", last_name: "Lovelace", role: :admin, last_seen_at: Time.current)
+    User.new(
       id: id,
       first_name: first_name,
       last_name: last_name,
@@ -13,15 +19,11 @@ RSpec.describe Users::Index do
       last_seen_at: last_seen_at,
       email_address: "ada@silken.net"
     )
-    user.define_singleton_method(:model_name) { ActiveModel::Name.new(User) }
-    user.define_singleton_method(:to_key) { [ id ] }
-    user.define_singleton_method(:to_param) { id.to_s }
-    user
   end
 
-  let(:admin_user)    { mock_user(id: 1, first_name: "Ada", last_name: "Lovelace", role: "admin") }
-  let(:forester_user) { mock_user(id: 2, first_name: "Bob", last_name: "Oak", role: "forester") }
-  let(:investor_user) { mock_user(id: 3, first_name: "Carol", last_name: "Pine", role: "investor") }
+  let(:admin_user)    { build_user(id: 1, first_name: "Ada", last_name: "Lovelace", role: "admin") }
+  let(:forester_user) { build_user(id: 2, first_name: "Bob", last_name: "Oak", role: "forester") }
+  let(:investor_user) { build_user(id: 3, first_name: "Carol", last_name: "Pine", role: "investor") }
   let(:users)         { [ admin_user, forester_user, investor_user ] }
   let(:html)          { render_component(users: users) }
 
@@ -74,7 +76,7 @@ RSpec.describe Users::Index do
     end
 
     it "falls back to the email's first character when first_name is nil" do
-      user = mock_user(id: 5, first_name: nil, last_name: nil)
+      user = build_user(id: 5, first_name: nil, last_name: nil)
       user.email_address = "zed@silken.net"
       html = render_component(users: [ user ])
       expect(html).to include(">z<")
@@ -99,11 +101,28 @@ RSpec.describe Users::Index do
       expect(html).to include("investor")
     end
 
+    # 🔴 [TEST.12] `super_admin` — РЕАЛЬНА четверта роль enum'а, і доти вона власного
+    # стилю не мала: падала в той самий `else`, що й пошкоджене значення, тобто
+    # найпривілейованіший акаунт на екрані був невідрізнимий від «невідомо що це».
+    # Пін тримає обидві половини — свій колір Є і чужого фолбеку НЕМА.
+    it "gives super_admin its own badge, distinct from the corrupted-value fallback" do
+      html = render_component(users: [ build_user(id: 4, role: :super_admin) ])
+
+      expect(html).to include("bg-amber-900/50")
+      expect(html).not_to include("bg-zinc-800")
+    end
+
+    # ⚠️ Фолбек досяжний ЛИШЕ стабом ридера: на реальному записі enum кидає
+    # `ArgumentError` просто в конструкторі, тож доти цю гілку «перевіряв» вхід
+    # (`role: "guest"`), якого в проді не буває — той самий хід, яким [`UI.4`]
+    # діставав інакше недосяжну гілку статусу.
     it "renders an unrecognized role with the zinc fallback" do
-      guest_user = mock_user(id: 4, first_name: "Gus", last_name: "Guest", role: "guest")
-      html = render_component(users: [ guest_user ])
+      broken = build_user(id: 5, first_name: "Gus", last_name: "Guest")
+      allow(broken).to receive(:role).and_return("__not_a_role__")
+
+      html = render_component(users: [ broken ])
       expect(html).to include("bg-zinc-800")
-      expect(html).to include("guest")
+      expect(html).to include("__not_a_role__")
     end
 
     it "renders VIEW_LOGS link" do
@@ -111,7 +130,7 @@ RSpec.describe Users::Index do
     end
 
     it "shows Link offline for users without last_seen_at" do
-      no_seen_user = mock_user(id: 9, first_name: "Zero", last_name: "X", last_seen_at: nil)
+      no_seen_user = build_user(id: 9, first_name: "Zero", last_name: "X", last_seen_at: nil)
       html = render_component(users: [ no_seen_user ])
       expect(html).to include("Link offline")
     end
