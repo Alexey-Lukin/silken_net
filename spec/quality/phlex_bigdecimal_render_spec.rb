@@ -43,7 +43,7 @@ RSpec.describe "Phlex не друкує BigDecimal", type: :model do
 
   # Конвертори, після яких у блок їде вже НЕ BigDecimal. `\.round\b(?!\()` —
   # саме без аргументу: `round` дає Integer, `round(2)` лишає BigDecimal.
-  SAFE_CONVERSION = /\.to_f|\.to_i|\.to_s|\.round\b(?!\()|sprintf|format\(|number_/
+  def safe_conversion = /\.to_f|\.to_i|\.to_s|\.round\b(?!\()|sprintf|format\(|number_/
 
   def bare_decimal_renders
     re_col = Regexp.union(decimal_names)
@@ -59,7 +59,7 @@ RSpec.describe "Phlex не друкує BigDecimal", type: :model do
           # `t(".key", amount: x)` — i18n теж інтерполює значення.
           next if expr.match?(/\A\s*t\(/)
           next unless expr.match?(/(?:^|[.\s(])(#{re_col})\b/)
-          next if expr.match?(SAFE_CONVERSION)
+          next if expr.match?(safe_conversion)
 
           "#{file.sub("#{Rails.root}/", '')}:#{idx + 1} → #{expr.strip}"
         end
