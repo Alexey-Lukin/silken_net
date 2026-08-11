@@ -85,6 +85,19 @@ ignore_missing:
   # Вісь стереже `spec/i18n/locale_catalog_invariance_spec.rb`, не цей рядок.
   - 'locale.available.*'
 
+  # errors.messages.{content_type_invalid,file_size_not_less_than,limit_out_of_range}
+  # — ключі гема `active_storage_validations`, і їхній ДІМ у ньому: гем везе
+  # власні каталоги, серед них `en` і `uk`. Наші `errors/{lv,lt}.yml` існують
+  # рівно тому, що цих двох мов у гема НЕМА (перевіряється `ls` його
+  # `config/locales/`), тобто вони доповнення, а не переклад нашого рядка.
+  # i18n-tasks сканує лише `config/locales/**` і гемових не бачить, тож без
+  # цього виключення він вимагав би скопіювати гемові en/uk у наше дерево —
+  # тобто завести ДРУГИЙ дім чужого значення, який мовчки розійдеться при
+  # першому ж бампі гема.
+  - 'errors.messages.content_type_invalid'
+  - 'errors.messages.file_size_not_less_than'
+  - 'errors.messages.limit_out_of_range'
+
 ignore_unused:
   # ⚠️ Тут стояла маска `flash.*` — знято [SEC.25 Ф3]. Вона була ІНЕРТНОЮ, і це
   # виміряно прогоном обома конфігами: 352 unused-ключі однаково з нею й без неї,

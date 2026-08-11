@@ -29,10 +29,6 @@ lt:
           attributes:
             end_date:
               must_be_after_start: turi būti po pradžios datos
-        tree:
-          attributes:
-            did:
-              must_match_hardware_format: turi atitikti aparatinės įrangos formatą (SNET-XXXXXXXX)
         tiny_ml_model:
           attributes:
             accuracy_score:
@@ -41,16 +37,11 @@ lt:
             threshold:
               must_be_in_unit_range: turi būti diapazone 0..1
               must_be_numeric: turi būti galiojanti skaitinė vertė
+        tree:
+          attributes:
+            did:
+              must_match_hardware_format: turi atitikti aparatinės įrangos formatą (SNET-XXXXXXXX)
   errors:
-    messages:
-      invalid_eth_address: turi būti galiojantis 0x adresas
-      content_type_invalid:
-        one: turi būti paveikslėlis (JPEG, PNG, WebP, HEIC)
-        other: turi būti paveikslėlis (JPEG, PNG, WebP, HEIC)
-      file_size_not_less_than: failo dydis turi būti mažesnis nei %{max} (dabartinis dydis %{file_size})
-      limit_out_of_range:
-        one: ne daugiau kaip %{max} nuotraukos viename įraše
-        other: ne daugiau kaip %{max} nuotraukos viename įraše
     api:
       bad_request: Užklausai trūksta to, ko reikia Citadelei. Grįžkite ir bandykite dar kartą.
       bad_request_title: Netaisyklinga užklausa
@@ -66,6 +57,17 @@ lt:
       unauthorized: Reikalinga autentifikacija. Vartai uždaryti.
       validation_failed: Citadelė atmetė šias reikšmes. Grįžkite į formą ir jas pataisykite.
       validation_failed_title: Patikra nepavyko
+    messages:
+      content_type_invalid:
+        few: turi būti paveikslėlis (JPEG, PNG, WebP, HEIC)
+        one: turi būti paveikslėlis (JPEG, PNG, WebP, HEIC)
+        other: turi būti paveikslėlis (JPEG, PNG, WebP, HEIC)
+      file_size_not_less_than: failo dydis turi būti mažesnis nei %{max} (dabartinis dydis %{file_size})
+      invalid_eth_address: turi būti galiojantis 0x adresas
+      limit_out_of_range:
+        few: ne daugiau kaip %{max} nuotraukos viename įraše
+        one: ne daugiau kaip %{max} nuotraukos viename įraše
+        other: ne daugiau kaip %{max} nuotraukos viename įraše
     no_organization:
       body_1: Jūsų paskyra šiuo metu nesusieta su jokia organizacija Miško matricoje. Be klasterio Citadelė negali apriboti telemetrijos, piniginių ar įspėjimų.
       body_2: Susisiekite su administratoriumi, kad būtumėte prijungti prie klasterio.

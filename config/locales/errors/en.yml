@@ -29,10 +29,6 @@ en:
           attributes:
             end_date:
               must_be_after_start: must be after the start date
-        tree:
-          attributes:
-            did:
-              must_match_hardware_format: must match the hardware format (SNET-XXXXXXXX)
         tiny_ml_model:
           attributes:
             accuracy_score:
@@ -41,9 +37,11 @@ en:
             threshold:
               must_be_in_unit_range: must be in the 0..1 range
               must_be_numeric: must be a valid numeric value
+        tree:
+          attributes:
+            did:
+              must_match_hardware_format: must match the hardware format (SNET-XXXXXXXX)
   errors:
-    messages:
-      invalid_eth_address: must be a valid 0x address
     api:
       bad_request: The request was missing something the Citadel needs. Go back and try again.
       bad_request_title: Malformed Request
@@ -59,6 +57,8 @@ en:
       unauthorized: Authentication required. The Gate is closed.
       validation_failed: The Citadel rejected these values. Return to the form and correct them.
       validation_failed_title: Validation Failed
+    messages:
+      invalid_eth_address: must be a valid 0x address
     no_organization:
       body_1: Your account is not currently linked to any organization in the Forest Matrix. Without a Cluster, the Citadel cannot scope telemetry, wallets, or alerts.
       body_2: Contact your administrator to be onboarded into a cluster.

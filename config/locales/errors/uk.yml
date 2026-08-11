@@ -29,10 +29,6 @@ uk:
           attributes:
             end_date:
               must_be_after_start: повинна бути пізніше дати початку
-        tree:
-          attributes:
-            did:
-              must_match_hardware_format: має відповідати апаратному формату (SNET-XXXXXXXX)
         tiny_ml_model:
           attributes:
             accuracy_score:
@@ -41,9 +37,11 @@ uk:
             threshold:
               must_be_in_unit_range: має бути в діапазоні 0..1
               must_be_numeric: має бути коректним числовим значенням
+        tree:
+          attributes:
+            did:
+              must_match_hardware_format: має відповідати апаратному формату (SNET-XXXXXXXX)
   errors:
-    messages:
-      invalid_eth_address: має бути валідною 0x адресою
     api:
       bad_request: Запиту бракує чогось, що потрібне Цитаделі. Поверніться й спробуйте ще раз.
       bad_request_title: Некоректний запит
@@ -59,6 +57,8 @@ uk:
       unauthorized: Необхідна автентифікація. Брама закрита.
       validation_failed: Цитадель відхилила ці значення. Поверніться до форми й виправте їх.
       validation_failed_title: Перевірку не пройдено
+    messages:
+      invalid_eth_address: має бути валідною 0x адресою
     no_organization:
       body_1: Ваш акаунт наразі не прив'язаний до жодної організації в Матриці лісу. Без Кластера Цитадель не може обмежити телеметрію, гаманці або тривоги.
       body_2: Зверніться до адміністратора для підключення до кластера.
