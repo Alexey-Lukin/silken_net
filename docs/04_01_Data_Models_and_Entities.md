@@ -833,11 +833,14 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 |-------|------|
 | `total_carbon_points` | `wallets.sum(:balance)` — прямий SELECT |
 | `health_score` | `clusters.average(:health_index)` — SQL AVG |
-| `total_contracted` | `naas_contracts.sum(:total_funding)` |
+| `total_clusters` | `clusters.size` — **не `.count`**, див. нижче |
+| `total_contracted` | `naas_contracts.sum { … .to_f }` — блокова форма, **не `sum(:колонка)`**, див. нижче |
 | `cached_trees_count` | 1 год кеш `organization_#{id}_trees_count` |
 | `under_threat?` | `ews_alerts.unresolved.critical.exists?` |
 | `rotate_stream_epoch!` | [SEC.25 Ф3] Відкликати всі видані імена стрімів організації: bump `stream_epoch` → tombstone у покинуту адресу → слід ARCH.57. Ручний ops-важіль (рецепт — [`06_08 §4.7`](06_08_Resilience_and_Failover_Policy)); автотригера немає свідомо, бо членство в цьому дереві незмінне |
 | `broadcast_stream_tombstone!(epoch)` | Повторно штовхнути минулу епоху на перезавантаження — **штатна** дія, не crash-recovery: tombstone доїжджає лише до підключених у ту мить сокетів ([`04_04 §8.1`](04_04_Phlex_UI_and_Tailwind)) |
+
+🔴 **Форма агрегату тут не стиль, а вибір між двома різними правильними відповідями — і критерій ОДИН: чи метод кличуть у ЦИКЛІ.** `.count` і `sum(:колонка)` шлють SQL **завжди**, навіть коли асоціація вже завантажена через `includes` — тобто в колекційному рендері дбайливий preload поруч із ними лише додає запит, і виглядає це як турбота. Саме так `Organizations::Index` тримав два SQL-агрегати на РЯДОК ([`00_07`](00_07_Action_Plan_Tracker) N+1-пункт): `total_clusters`/`total_contracted` рендеряться з `OrganizationBlueprint view: :index` у циклі, тому переведені на `.size` і блокову `sum`, які беруть завантажений масив. ⚠️ **Сусіди в таблиці навмисно НЕ переведені, і «уніфікувати» їх — регресія:** `total_carbon_points`, `health_score` кличуть лише в однозаписових контекстах (`reports_controller`, `reports/index`), де SQL-агрегат дешевший за завантаження всіх рядків. Тож перед зміною форми питай не «яка гарніша», а **де цей метод стоїть — у рядку списку чи на сторінці одного запису**. 🔴 І знай, чому дефект прожив: спека реєстру мала у фікстурі рівно ОДНУ організацію, а клас «на рядок» потребує N≥2, тож Prosopite не міг спрацювати за побудовою ([`04_06 §B.2`](04_06_Testing_Guide_and_Coverage) BP 21).
 
 ---
 
