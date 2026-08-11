@@ -466,4 +466,31 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       expect(response).to have_http_status(:not_found)
     end
   end
+
+  describe "GET /maintenance_records/:id/edit (HTML)" do
+    let(:record) do
+      MaintenanceRecord.create!(
+        maintainable: own_tree, user: forester, action_type: :inspection,
+        performed_at: 1.hour.ago,
+        notes: "Routine inspection with photographic evidence attached."
+      )
+    end
+
+    # [TEST.12] Єдиний приклад у дереві, що ВІДКРИВАЄ сторінку редагування. Компонентна
+    # спека рендерить повз роутер і доти ще й підміняла САМ конструктор гема, тож провал
+    # міграції на `Pagy::Offset` був невидимий обабіч: форма валила 500 на кожному записі
+    # з фото. Пін на ВМІСТ, не на статус — 200 тут був би чесний і марний.
+    it "renders the edit page of a record that HAS photos" do
+      record.photos.attach(
+        io: StringIO.new("fake-image-data"),
+        filename: "evidence.jpg",
+        content_type: "image/jpeg"
+      )
+
+      get "/maintenance_records/#{record.id}/edit", headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("evidence.jpg")
+    end
+  end
 end

@@ -155,16 +155,11 @@ RSpec.describe Maintenance::Form do
       )
       photo.define_singleton_method(:variant) { |_style| "variant_thumb" }
 
-      mock_pg = OpenStruct.new(count: 1, page: 1, last: 1, from: 1, to: 1, previous: nil, next: nil, vars: { items: 6 })
-      mock_pg.define_singleton_method(:series) { [ 1 ] }
-
-      original_new = Pagy.method(:new)
-      Pagy.define_singleton_method(:new) { |**_kwargs| mock_pg }
-      begin
-        render_component(record: record, existing_photos: [ photo ])
-      ensure
-        Pagy.define_singleton_method(:new, original_new)
-      end
+      # [TEST.12] Доти тут підмінявся САМ КОНСТРУКТОР гема — `Pagy.define_singleton_method(:new)`
+      # з `**kwargs`, тоді як у 43.x `Pagy.new` не приймає аргументів узагалі. Тобто спека
+      # дописувала гему API, якого той не має, і рівно тому провал міграції на `Pagy::Offset`
+      # був невидимий: компонент валив 500 на кожному записі з фото, а приклад лишався зелений.
+      render_component(record: record, existing_photos: [ photo ])
     end
 
     it "renders existing photo gallery in edit mode" do

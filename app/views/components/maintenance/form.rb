@@ -188,7 +188,10 @@ module Maintenance
         render Maintenance::PhotoGallery.new(
           record: @record,
           photos: @existing_photos,
-          pagy: Pagy.new(count: @existing_photos.size, items: PhotoGallery::PHOTOS_PER_PAGE, page: 1),
+          # `Pagy::Offset`, а не `Pagy` — у 43.x базовий клас конструктора не має
+          # (`Pagy.new` кидає ArgumentError), тож стара форма валила цю гілку 500-ю
+          # на кожному записі з фото. Сусід `TreeChronicleService` уже на новій.
+          pagy: Pagy::Offset.new(count: @existing_photos.size, limit: PhotoGallery::PHOTOS_PER_PAGE, page: 1),
           editable: true
         )
       end
