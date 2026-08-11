@@ -36,6 +36,17 @@ the per-domain recipes**; it does **not** restate versions or track which bump s
               Release-age quarantine: skip a version <~7d old unless it's a needed security fix (gotchas).
 4. VALIDATE   the domain's gate (table). Deprecation warnings → RESOLVE, don't leave
               (rename identifiers, fix call-sites) — unless they're in vendored code.
+              🔴 A green suite does NOT prove the call-sites were fixed: a spec that
+              patches the gem's OWN API outside the RSpec mock-API makes the bump
+              unverifiable. Measured on Pagy 43 (TEST.12): the base class lost its
+              constructor (`Pagy::Offset.new` now), ONE of two call-sites was migrated,
+              and `Pagy.define_singleton_method(:new) { |**_kwargs| … }` in a component
+              spec kept the other one green while it 500'd in production. So after any
+              MAJOR bump also grep `spec/` for `define_singleton_method`/`define_method`
+              on that gem's constants — `allow(Gem).to receive(:x)` is safe (it goes
+              through `verify_partial_doubles` and reddens when the method disappears),
+              a raw singleton definition is not. And the cheapest tell that a migration
+              is HALF-done is asymmetry: two call-sites, one on the new API.
 5. CAPTURE    commit (standing founder authorization: commit+push main + wiki:sync when
               the work is validated). Commit body = the per-dep research. Separate
               concerns into separate commits where sensible.

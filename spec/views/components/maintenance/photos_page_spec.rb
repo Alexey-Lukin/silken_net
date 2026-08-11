@@ -13,22 +13,22 @@ unless Views::Shared::UI::PhotoCard.method_defined?(:_test_blob_helpers_stubbed)
 end
 
 RSpec.describe Maintenance::PhotosPage do
-  def mock_pagy(count: 6, page: 2, next_page: nil)
-    pg = OpenStruct.new(
-      count: count, page: page, last: [ (count / 6.0).ceil, 1 ].max,
-      from: 7, to: [ count, 12 ].min,
-      previous: 1, next: next_page, vars: { items: 6 }
-    )
-    pg.define_singleton_method(:series) { [ 1, 2 ] }
-    pg
+  # [TEST.12] Реальний `Pagy::Offset` — той самий клас, що будує прод; доти фікстура
+  # переписувала формулу сторінок власноруч і задавала `next` НЕЗАЛЕЖНО від `count`.
+  def build_pagy(count: 6, page: 2)
+    Pagy::Offset.new(count: count, page: page, limit: Maintenance::PhotoGallery::PHOTOS_PER_PAGE)
   end
 
-  def mock_record(id: 11)
-    r = OpenStruct.new(id: id)
-    r.define_singleton_method(:model_name) { ActiveModel::Name.new(MaintenanceRecord) }
-    r.define_singleton_method(:to_key) { [ id ] }
-    r.define_singleton_method(:to_param) { id.to_s }
-    r
+  def build_record(id: 11) = MaintenanceRecord.new(id: id)
+
+  def build_photo(name: "evidence.jpg")
+    photo = OpenStruct.new(
+      filename: ActiveStorage::Filename.new(name),
+      byte_size: 1_024_000,
+      representable?: true
+    )
+    photo.define_singleton_method(:variant) { |_style| "variant_thumb" }
+    photo
   end
 
   def render_component(record:, photos:, pagy:, editable: false)
@@ -38,8 +38,8 @@ RSpec.describe Maintenance::PhotosPage do
     )
   end
 
-  let(:record) { mock_record }
-  let(:pagy) { mock_pagy }
+  let(:record) { build_record }
+  let(:pagy) { build_pagy }
   let(:html) { render_component(record: record, photos: [], pagy: pagy) }
 
   describe "turbo frame" do
@@ -64,30 +64,43 @@ RSpec.describe Maintenance::PhotosPage do
 
   describe "load more link" do
     it "renders load more when pagy.next is present" do
-      pagy_with_next = mock_pagy(count: 18, page: 2, next_page: 3)
+      pagy_with_next = build_pagy(count: 18, page: 2)
       html = render_component(record: record, photos: [], pagy: pagy_with_next)
       expect(html).to include("Load More")
     end
 
     it "does not render load more when on last page" do
-      html = render_component(record: record, photos: [], pagy: mock_pagy(count: 6, page: 2, next_page: nil))
+      html = render_component(record: record, photos: [], pagy: build_pagy(count: 6, page: 2))
       expect(html).not_to include("Load More")
     end
 
     it "includes correct next page in load more link" do
-      pagy_with_next = mock_pagy(count: 18, page: 2, next_page: 3)
+      pagy_with_next = build_pagy(count: 18, page: 2)
       html = render_component(record: record, photos: [], pagy: pagy_with_next)
       expect(html).to include("page=3")
     end
 
     it "targets the same maintenance_photos frame in load more" do
-      pagy_with_next = mock_pagy(count: 18, page: 2, next_page: 3)
+      pagy_with_next = build_pagy(count: 18, page: 2)
       html = render_component(record: record, photos: [], pagy: pagy_with_next)
       expect(html).to include("maintenance_photos_11")
     end
   end
 
   describe "editable mode" do
+    # 🔴 Доти цей блок ніколи не ставив `editable: true` — тобто єдине, що цей прапорець
+    # вмикає (кнопка видалення фото), не перевірялось у жодному прикладі, а назва обіцяла
+    # «editable mode». Дефолт fail-closed, тож пара потрібна ОБИДВА боки: негативний
+    # доводить, що кнопки нема без права, позитивний — що проводка `editable:` жива.
+    it "renders the delete button only when editable" do
+      photos = [ build_photo ]
+      editable = render_component(record: record, photos: photos, pagy: build_pagy, editable: true)
+      readonly = render_component(record: record, photos: photos, pagy: build_pagy, editable: false)
+
+      expect(editable).to include(maintenance_record_photo_path(record, photos.first))
+      expect(readonly).not_to include(maintenance_record_photo_path(record, photos.first))
+    end
+
     it "renders without errors in non-editable mode" do
       expect(html).to include("photos_grid_page_2")
     end
@@ -95,13 +108,7 @@ RSpec.describe Maintenance::PhotosPage do
 
   describe "photo card rendering" do
     it "renders PhotoCard for each photo" do
-      photo = OpenStruct.new(
-        filename: ActiveStorage::Filename.new("evidence.jpg"),
-        byte_size: 1_024_000,
-        representable?: true
-      )
-      photo.define_singleton_method(:variant) { |_style| "variant_thumb" }
-      html = render_component(record: record, photos: [ photo ], pagy: mock_pagy)
+      html = render_component(record: record, photos: [ build_photo ], pagy: build_pagy)
       expect(html).to include("evidence.jpg")
     end
   end
