@@ -5,7 +5,7 @@ require "rails_helper"
 
 RSpec.describe Gateways::Show do
   let(:gateway) { mock_gateway }
-  let(:latest_log) { mock_latest_log }
+  let(:latest_log) { build_latest_log }
   let(:active_soldiers) { [ mock_soldier ] }
   let(:html) { render_component(gateway: gateway, latest_log: latest_log, active_soldiers: active_soldiers) }
 
@@ -29,10 +29,17 @@ RSpec.describe Gateways::Show do
     gw
   end
 
-  def mock_latest_log(signal_quality_percentage: 85, cellular_signal_csq: 18,
-                      voltage_mv: 4100, temperature_c: 23)
-    OpenStruct.new(
-      signal_quality_percentage: signal_quality_percentage,
+  # [TEST.12] Реальний незбережений `GatewayTelemetryLog`, і фікстура годує ДЖЕРЕЛО.
+  # `signal_quality_percentage` — не колонка, а метод, що виводить відсоток із CSQ,
+  # тож доти мок суперечив сам собі: клав відсоток НЕЗАЛЕЖНО від `cellular_signal_csq`,
+  # який сусідній приклад пінить тим самим рендером. Пара була недосяжною для будь-якого
+  # реального запису, і саме перетворення не перевірялось ніколи.
+  #
+  # 🔴 `voltage_mv`/`temperature_c` — колонки `numeric`, тобто BigDecimal: у проді це
+  # «4100.0»/«23.0», а не «4100»/«23». Доти фікстура подавала Integer, тож питання «як
+  # ТИП рендериться в рядок» із сюїти неможливо було поставити.
+  def build_latest_log(cellular_signal_csq: 18, voltage_mv: 4100, temperature_c: 23)
+    GatewayTelemetryLog.new(
       cellular_signal_csq: cellular_signal_csq,
       voltage_mv: voltage_mv,
       temperature_c: temperature_c
@@ -128,23 +135,30 @@ RSpec.describe Gateways::Show do
   end
 
   describe "technical matrix" do
-    it "displays signal strength percentage" do
+    # 🔴 Відсоток ВИВОДИТЬСЯ з того самого CSQ, який сусідній приклад пінить окремо.
+    # Доти мок задавав обидва незалежно, тож пара була самосуперечливою і жоден
+    # реальний запис її не дав би.
+    it "derives signal strength from the CSQ it also displays" do
       expect(html).to include("Signal Strength")
-      expect(html).to include("85%")
+      expect(html).to include("58.1%")
+      expect(html).not_to include("85%")
     end
 
     it "displays CSQ value" do
       expect(html).to include("CSQ: 18")
     end
 
-    it "displays voltage in mV" do
+    # ⚠️ Обидві колонки `numeric` → BigDecimal, тож рендер несе десяткову частку.
+    # Пін навмисно на повну форму: доти фікстура подавала Integer, і питання «як тип
+    # рендериться в рядок» із сюїти неможливо було поставити.
+    it "displays voltage in mV with the decimal the numeric column really carries" do
       expect(html).to include("Voltage Matrix")
-      expect(html).to include("4100")
+      expect(html).to include("4100.0")
     end
 
-    it "displays temperature in °C" do
+    it "displays temperature in °C with its numeric decimal" do
       expect(html).to include("Thermal State")
-      expect(html).to include("23°C")
+      expect(html).to include("23.0°C")
     end
 
     it "falls back to 0 when latest_log is nil" do
@@ -156,13 +170,13 @@ RSpec.describe Gateways::Show do
 
   describe "battery color" do
     it "shows red border when voltage is below 3400mV" do
-      log = mock_latest_log(voltage_mv: 3200)
+      log = build_latest_log(voltage_mv: 3200)
       rendered = render_component(gateway: gateway, latest_log: log, active_soldiers: active_soldiers)
       expect(rendered).to include("border-red-900")
     end
 
     it "shows emerald border when voltage is healthy" do
-      log = mock_latest_log(voltage_mv: 4100)
+      log = build_latest_log(voltage_mv: 4100)
       rendered = render_component(gateway: gateway, latest_log: log, active_soldiers: active_soldiers)
       expect(rendered).not_to include("border-red-900")
     end
