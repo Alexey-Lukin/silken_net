@@ -23,16 +23,13 @@ RSpec.describe Api::V1::ContractsController, type: :request do
     create(:naas_contract, organization: other_organization, cluster: other_cluster)
   end
 
-  before do
-    # The controller uses as_json(methods: [...]) with methods not yet on the model.
-    # Also calls @contract.blockchain_transactions.confirmed and ews_alerts.active
-    # which rely on unprefixed scopes that don't exist (enum uses prefix: true).
-    NaasContract.define_method(:current_yield_performance) { 0.85 } unless NaasContract.method_defined?(:current_yield_performance)
-    NaasContract.define_method(:active_threats?) { false } unless NaasContract.method_defined?(:active_threats?)
-    NaasContract.define_method(:blockchain_transactions) { BlockchainTransaction.none } unless NaasContract.method_defined?(:blockchain_transactions)
-    BlockchainTransaction.define_singleton_method(:confirmed) { status_confirmed } unless BlockchainTransaction.respond_to?(:confirmed)
-    EwsAlert.define_singleton_method(:active) { status_active } unless EwsAlert.respond_to?(:active)
-  end
+  # [TEST.12] Тут стояло пʼять `define_method`-гардів із прозою «methods not yet on the model»
+  # і «scopes that don't exist». Виміряно рантаймом — проза застаріла: `current_yield_performance`,
+  # `active_threats?`, `BlockchainTransaction.confirmed` і `EwsAlert.active` існують, тож
+  # ті гарди були інертні; пʼятий (`NaasContract#blockchain_transactions`) справді дописував
+  # асоціацію, якої на моделі немає, — але її не кличе НІХТО (ні `app/`, ні ця спека), тобто
+  # це залишок від прибраного колись виклику. Знято всі пʼять: підміна API моделі в `before`
+  # переживає рефакторинг мовчки й робить майбутній дрейф неперевірним.
 
   describe "GET /contracts" do
     context "when as JSON" do
