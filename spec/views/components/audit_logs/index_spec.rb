@@ -4,13 +4,19 @@
 require "rails_helper"
 
 RSpec.describe AuditLogs::Index do
-  def mock_user(name: "Ada Lovelace")
-    OpenStruct.new(full_name: name)
+  def build_user(name: "Ada Lovelace")
+    # [TEST.12] Реальний `User`: `full_name` тепер ФОРМУЛА
+    # (`[first,last].compact_blank.join(" ").presence || email_address`), а не поле —
+    # тобто фікстура годує імена, а не результат. Аудит-екран законно лишається на
+    # `full_name` (внутрішній, `04_04` / скіл `frontend`), тож саме тут фолбек на
+    # адресу є штатною поведінкою, і подавати готовий рядок означало б її сховати.
+    first, last = name.to_s.split(" ", 2)
+    User.new(first_name: first, last_name: last)
   end
 
-  def mock_log(id: 1, action: "create", auditable_type: "Tree", auditable_id: 99,
+  def build_log(id: 1, action: "create", auditable_type: "Tree", auditable_id: 99,
                user: nil, created_at: Time.current)
-    log = OpenStruct.new(
+    log = AuditLog.new(
       id: id,
       action: action,
       auditable_type: auditable_type,
@@ -18,14 +24,11 @@ RSpec.describe AuditLogs::Index do
       user: user,
       created_at: created_at
     )
-    log.define_singleton_method(:model_name) { ActiveModel::Name.new(AuditLog) }
-    log.define_singleton_method(:to_key) { [ id ] }
-    log.define_singleton_method(:to_param) { id.to_s }
     log
   end
 
-  let(:log_with_user)    { mock_log(id: 1, action: "update", auditable_type: "Tree", auditable_id: 7, user: mock_user) }
-  let(:log_without_user) { mock_log(id: 2, action: "destroy", auditable_type: nil, auditable_id: nil, user: nil) }
+  let(:log_with_user)    { build_log(id: 1, action: "update", auditable_type: "Tree", auditable_id: 7, user: build_user) }
+  let(:log_without_user) { build_log(id: 2, action: "destroy", auditable_type: nil, auditable_id: nil, user: nil) }
   let(:logs)             { [ log_with_user, log_without_user ] }
   let(:html)             { render_component(logs: logs, pagy: mock_pagy(count: 63)) }
 

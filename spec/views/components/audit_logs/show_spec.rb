@@ -4,13 +4,19 @@
 require "rails_helper"
 
 RSpec.describe AuditLogs::Show do
-  def mock_user(full_name: "Ada Lovelace", email_address: "ada@silken.net", role: "admin")
-    OpenStruct.new(full_name: full_name, email_address: email_address, role: role)
+  def build_user(full_name: "Ada Lovelace", email_address: "ada@silken.net", role: "admin")
+    # 🔴 [TEST.12] Доти мок оголошував `full_name` І `email_address` як ДВА незалежні
+    # поля — а на реальному `User` перше ВИВОДИТЬСЯ з імен і падає на друге
+    # (`[first,last].compact_blank.join(" ").presence || email_address`). Тобто зв'язок,
+    # який і є суттю цього методу, фікстура розривала, і фолбек «немає імені → показуємо
+    # адресу» не перевірявся ніде. Тепер годуємо джерело: імена + адресу.
+    first, last = full_name.to_s.split(" ", 2)
+    User.new(first_name: first, last_name: last, email_address: email_address, role: role)
   end
 
-  def mock_log(id: 1, action: "update", auditable_type: "Tree", auditable_id: 42,
+  def build_log(id: 1, action: "update", auditable_type: "Tree", auditable_id: 42,
                user: nil, metadata: {}, created_at: Time.current)
-    log = OpenStruct.new(
+    AuditLog.new(
       id: id,
       action: action,
       auditable_type: auditable_type,
@@ -19,14 +25,10 @@ RSpec.describe AuditLogs::Show do
       metadata: metadata,
       created_at: created_at
     )
-    log.define_singleton_method(:model_name) { ActiveModel::Name.new(AuditLog) }
-    log.define_singleton_method(:to_key) { [ id ] }
-    log.define_singleton_method(:to_param) { id.to_s }
-    log
   end
 
-  let(:user) { mock_user }
-  let(:log)  { mock_log(id: 5, action: "update", user: user, metadata: { "reason" => "correction" }) }
+  let(:user) { build_user }
+  let(:log)  { build_log(id: 5, action: "update", user: user, metadata: { "reason" => "correction" }) }
   let(:html) { render_component(log: log) }
 
   describe "header section" do
@@ -72,7 +74,7 @@ RSpec.describe AuditLogs::Show do
     end
 
     it "renders empty metadata notice when no metadata" do
-      log_no_meta = mock_log(metadata: {})
+      log_no_meta = build_log(metadata: {})
       html = render_component(log: log_no_meta)
       expect(html).to include("No additional metadata")
     end
@@ -96,7 +98,7 @@ RSpec.describe AuditLogs::Show do
     end
 
     it "renders System actor notice for system logs" do
-      system_log = mock_log(user: nil)
+      system_log = build_log(user: nil)
       html = render_component(log: system_log)
       expect(html).to include("System actor")
     end
@@ -116,9 +118,26 @@ RSpec.describe AuditLogs::Show do
     end
 
     it "renders no specific target notice when auditable_type is blank" do
-      log_no_target = mock_log(auditable_type: nil, auditable_id: nil)
+      log_no_target = build_log(auditable_type: nil, auditable_id: nil)
       html = render_component(log: log_no_target)
       expect(html).to include("No specific target")
+    end
+  end
+
+  describe "актор без імені" do
+    # 🔴 Приклад, який доти НЕ МІГ існувати: мок задавав `full_name` полем, тож
+    # фолбек «імен немає → показуємо адресу» був недосяжний за побудовою. На
+    # аудит-екрані це ШТАТНА поведінка (внутрішня сторінка), і саме тому її треба
+    # закріпити: той самий фолбек на ЗОВНІШНІХ поверхнях є витоком PII, і межа
+    # проходить по тому, хто читає сторінку, а не по зручності методу.
+    it "друкує адресу там, де імені немає — і це навмисно, бо екран внутрішній" do
+      nameless = User.new(email_address: "ranger@silken.net", role: :forester)
+      html = render_component(log: build_log(user: nameless))
+
+      # ⚠️ Пін МУСИТЬ цілити у вузол ІМЕНІ: адреса рендериться ще й окремим рядком
+      # нижче, тож `include("ranger@…")` по документу зелений незалежно від фолбеку —
+      # мутація «прибрати `|| email_address`» його не червонила (перевірено).
+      expect(html).to include(%(<p class="text-compact text-emerald-400 font-mono">ranger@silken.net</p>))
     end
   end
 end

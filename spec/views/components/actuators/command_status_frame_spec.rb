@@ -6,12 +6,17 @@ require "rails_helper"
 # [I18N.2 · клас 2] Пара «фрейм ⟷ заглушка» — контракт, у якому кожна половина
 # без іншої безглузда, тож перевіряються вони разом.
 RSpec.describe Actuators::CommandStatusFrame do
-  def mock_command(id: 7, status: "acknowledged")
-    OpenStruct.new(id: id, status: status)
+  def build_command(id: 7, status: "acknowledged")
+    # [TEST.12] Реальний незбережений `ActuatorCommand`: `status` тепер ходить через
+    # справжній enum, тож значення поза набором (`issued`/`sent`/`acknowledged`/
+    # `failed`/`confirmed`) тут неможливе — модель кидає `ArgumentError` у конструкторі.
+    # `id` несучий: із нього будується адреса броадкасту (`command_status_{id}` у бейджі,
+    # `CommandStatusFrame.dom_id` у фреймі), яку адресує `actuator_command_worker`.
+    ActuatorCommand.new(id: id, status: status)
   end
 
   describe "page/response frame (no src)" do
-    let(:html) { render_component(command: mock_command) }
+    let(:html) { render_component(command: build_command) }
 
     it "wraps the badge in a turbo-frame carrying the broadcast target id" do
       expect(html).to include("command_status_frame_7")
@@ -27,7 +32,7 @@ RSpec.describe Actuators::CommandStatusFrame do
     end
 
     it "renders the localized badge inside" do
-      localized = I18n.with_locale(:uk) { render_component(command: mock_command) }
+      localized = I18n.with_locale(:uk) { render_component(command: build_command) }
 
       expect(localized).to include("виконується")
     end
