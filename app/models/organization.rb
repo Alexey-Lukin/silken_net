@@ -167,14 +167,21 @@ class Organization < ApplicationRecord
     end
   end
 
-  # Кількість кластерів організації
+  # Кількість кластерів організації.
+  # 🔴 `.size`, а не `.count`: обидва дають те саме число, але `.count` шле SQL
+  # ЗАВЖДИ — навіть коли асоціація вже завантажена через `includes`. У реєстрі
+  # кланів це рядок-у-циклі, тож поруч стояв дбайливий `.includes(:clusters)`,
+  # який не діяв, і preload лише додавав запит. `.size` бере завантажений масив.
   def total_clusters
-    clusters.count
+    clusters.size
   end
 
-  # Загальна законтрактована сума за всіма контрактами
+  # Загальна законтрактована сума за всіма контрактами.
+  # Та сама пара, що вище: `sum(:колонка)` — це SQL-агрегат повз preload,
+  # блокова форма підсумовує вже завантажені записи. `.to_f` поелементно, бо
+  # `total_funding` nullable, і на голому `&:` порожня сума впала б на `nil`.
   def total_contracted
-    naas_contracts.sum(:total_funding).to_f
+    naas_contracts.sum { |contract| contract.total_funding.to_f }
   end
 
   # Загальний обсяг фінансування за активними контрактами

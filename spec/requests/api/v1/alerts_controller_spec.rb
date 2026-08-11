@@ -32,14 +32,33 @@ RSpec.describe Api::V1::AlertsController, type: :request do
       expect(ids).not_to include(other_alert.id)
     end
 
+    # 🔴 [TEST.12 вісь D] Обидва приклади нижче доти міряли лише `:ok` — тобто були
+    # зелені з видаленим `where`. І фікстура робила їх безнадійними навіть для піна
+    # на вміст: єдина СВОЯ тривога — `:drought` (severity `medium`), а `:critical`
+    # лежала в ЧУЖІЙ організації, тож `severity=critical` повертав порожній набір,
+    # і приклад вітав порожнечу. Фільтр перевірний лише тоді, коли є що ВІДКИНУТИ
+    # всередині вже видимого набору — інакше його роботу виконує тенант-скоуп.
     it "filters by severity" do
+      own_critical = create(:ews_alert, :fire, cluster: own_cluster)
+
       get "/alerts", params: { severity: "critical" }, headers: headers, as: :json
+
       expect(response).to have_http_status(:ok)
+      ids = response.parsed_body["data"].map { |a| a["id"] }
+      expect(ids).to include(own_critical.id)
+      expect(ids).not_to include(own_alert.id)
     end
 
     it "filters by cluster_id" do
+      sibling_cluster = create(:cluster, organization: organization)
+      sibling_alert = create(:ews_alert, :drought, cluster: sibling_cluster)
+
       get "/alerts", params: { cluster_id: own_cluster.id }, headers: headers, as: :json
+
       expect(response).to have_http_status(:ok)
+      ids = response.parsed_body["data"].map { |a| a["id"] }
+      expect(ids).to include(own_alert.id)
+      expect(ids).not_to include(sibling_alert.id)
     end
 
     # =========================================================================

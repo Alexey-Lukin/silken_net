@@ -74,7 +74,18 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
       expect(user.reload.authenticate("new_password_123")).to be_truthy
     end
 
+    # 🔴 [TEST.12 вісь D] Три приклади нижче доти доводили лише КОД, а тракт тут
+    # НЕавтентифікований — тобто обхід перевірки токена (найдорожча з можливих
+    # регресій цього файлу) віддав би 422 і лишився зеленим під назвою «rejects».
+    # Указала знову асиметрія: позитивний приклад свій наслідок звіряє, негативні
+    # не звіряли жодного. Пін тримає обидва боки — старий пароль ще діє, новий ні.
     it "rejects an expired/invalid token" do
+      # ⚠️ `user` МУСИТЬ існувати до запиту, і це не формальність: `let` лінивий,
+      # тож доти запис народжувався аж у ассерті — вже з правильним паролем — і
+      # пін підтверджував сам себе, хай би що робив контролер. Спіймано мутацією,
+      # яка ПРОЙШЛА: підміна резолву токена на `|| User.first` лишила сюїту зеленою.
+      user
+
       patch "/reset_password", params: {
         token: "invalid-token",
         password: "new_password_123",
@@ -82,6 +93,8 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
       }, as: :json
 
       expect(response).to have_http_status(:unprocessable_content)
+      expect(user.reload.authenticate("password12345")).to be_truthy
+      expect(user.reload.authenticate("new_password_123")).to be_falsey
     end
 
     it "rejects password shorter than 12 characters" do
@@ -95,6 +108,7 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["error"]).to include("12")
+      expect(user.reload.authenticate("password12345")).to be_truthy
     end
 
     it "rejects mismatched password confirmation" do
@@ -108,6 +122,8 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["error"]).to include("do not match")
+      expect(user.reload.authenticate("password12345")).to be_truthy
+      expect(user.reload.authenticate("new_password_123")).to be_falsey
     end
 
     context "with HTML format" do

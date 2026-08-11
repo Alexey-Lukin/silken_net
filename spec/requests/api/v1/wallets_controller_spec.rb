@@ -42,10 +42,26 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       let(:user) { create(:user, organization: organization) }
       let(:headers) { { "Authorization" => "Bearer #{user.generate_token_for(:api_access)}" } }
 
+      # 🔴 [TEST.12 вісь D] Доти приклад стверджував тенант-ізоляцію ІМЕНЕМ, а міряв
+      # `:ok` + наявність ключа `pagy` — тобто лишався зеленим і зі знятим
+      # `policy_scope`. Другий, тихіший бік: у фікстурі не існувало ЧУЖОГО гаманця
+      # взагалі, тож і пін на вміст не мав би що ловити — назва обіцяла «лише свої»
+      # там, де інших не було в природі. Обидві половини потрібні разом.
+      #
+      # ⚠️ Гаманець тут не створюється прямо: `Tree#build_default_wallet` робить його
+      # сам і бере організацію з `cluster&.organization` — тобто чужий гаманець мусить
+      # народитись від чужого дерева, інакше фікстура опише звʼязок, якого модель не дає.
       it "returns only organization wallets with pagination" do
+        foreign_tree = create(:tree, cluster: create(:cluster, organization: create(:organization)))
+
         get "/wallets", headers: headers, as: :json
+
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body).to have_key("pagy")
+
+        ids = response.parsed_body["data"].map { |w| w["id"] }
+        expect(ids).to include(wallet.id)
+        expect(ids).not_to include(foreign_tree.wallet.id)
       end
     end
   end

@@ -30,16 +30,34 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
       expect(ids).not_to include(other_tx.id)
     end
 
+    # 🔴 [TEST.12 вісь D] Обидва доти міряли лише `:ok`, тобто були зелені з видаленим
+    # `where`. Дефолти фабрики — `carbon_coin` + `confirmed`, тож `status=pending`
+    # ще й повертав ПОРОЖНІЙ набір, і приклад вітав порожнечу: фільтр, який нічого
+    # не знайшов, невідрізнимий від фільтра, якого немає. Кожен пін тепер несе
+    # запис, що мусить лишитись, І запис, що мусить відпасти — обидва свої, бо
+    # чужий відсіює тенант-скоуп, а не фільтр.
     it "filters by token_type (carbon_coin)" do
+      forest = create(:blockchain_transaction, wallet: own_wallet, token_type: :forest_coin)
+
       get "/blockchain_transactions",
           params: { token_type: "carbon_coin" }, headers: headers, as: :json
+
       expect(response).to have_http_status(:ok)
+      ids = response.parsed_body["data"].map { |t| t["id"] }
+      expect(ids).to include(own_tx.id)
+      expect(ids).not_to include(forest.id)
     end
 
     it "filters by status (pending)" do
+      pending_tx = create(:blockchain_transaction, wallet: own_wallet, status: :pending)
+
       get "/blockchain_transactions",
           params: { status: "pending" }, headers: headers, as: :json
+
       expect(response).to have_http_status(:ok)
+      ids = response.parsed_body["data"].map { |t| t["id"] }
+      expect(ids).to include(pending_tx.id)
+      expect(ids).not_to include(own_tx.id)
     end
 
     # =========================================================================

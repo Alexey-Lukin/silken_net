@@ -134,6 +134,14 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
       }, as: :json
 
       expect(response).to have_http_status(:unprocessable_content)
+
+      # 🔴 [TEST.12 вісь D] Без цих двох рядків приклад доводив лише КОД відповіді:
+      # 422 із мовчки зміненим паролем пройшов би зеленим під назвою «rejects».
+      # Асиметрія й указала на дірку — сусідній позитивний приклад свій наслідок
+      # звіряє (`authenticate("new_secure_pass_1")`), а негативний не звіряв нічого.
+      # Пін тримає ОБИДВА боки: старий пароль ще діє, новий — ні.
+      expect(user.reload.authenticate("password12345")).to be_truthy
+      expect(user.reload.authenticate("new_secure_pass_1")).to be_falsey
     end
 
     it "rejects too short new password" do

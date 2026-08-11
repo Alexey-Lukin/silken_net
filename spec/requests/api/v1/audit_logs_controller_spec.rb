@@ -102,20 +102,27 @@ RSpec.describe Api::V1::AuditLogsController, type: :request do
   end
 
   describe "GET /audit_logs with pagination" do
+    # 🔴 [TEST.12 вісь D] Усі три доти міряли `:ok`, тобто ПАРА «clamp до 1» +
+    # «clamp до 100» не розрізняла «затискач працює» від «затискача немає взагалі» —
+    # обидва входи віддають 200 у будь-якому разі. Затиснуте значення спостережне
+    # прямо у відповіді (`pagy_metadata` несе `limit:`), тож пін на нього і є
+    # найдешевшим чесним виміром — без нього потрібен був би 101 запис у фікстурі.
     it "respects custom limit parameter" do
       get "/audit_logs", params: { limit: 1 }, headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
-      expect(response.parsed_body["pagy"]).to be_present
+      expect(response.parsed_body["pagy"]["limit"]).to eq(1)
     end
 
     it "clamps limit to minimum of 1" do
       get "/audit_logs", params: { limit: 0 }, headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["pagy"]["limit"]).to eq(1)
     end
 
     it "clamps limit to maximum of 100" do
       get "/audit_logs", params: { limit: 999 }, headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["pagy"]["limit"]).to eq(100)
     end
   end
 

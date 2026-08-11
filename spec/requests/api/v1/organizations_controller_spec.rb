@@ -12,9 +12,20 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
       let(:super_admin) { create(:user, :super_admin, organization: organization) }
       let(:headers) { { "Authorization" => "Bearer #{super_admin.generate_token_for(:api_access)}" } }
 
-      it "returns organizations list" do
+      # 🔴 [TEST.12 вісь D] Доти приклад звався «returns organizations list» і міряв
+      # лише `:ok` — тобто був зелений і на порожньому тілі, і на зламаному Blueprint'і.
+      # ⚠️ Але вісь тут ІНША, ніж у `wallets`: реєстр кланів глобальний СВІДОМО —
+      # `Organization.all` під `authorize_super_admin!` — бо саме він живить перемикач
+      # контексту [SEC.25 Ф2]. Тож пін закріплює НАВМИСНУ глобальність: чужа
+      # організація мусить бути ВИДИМОЮ, і «дбайливе» скоупення тут зламає перемикач.
+      it "returns the global registry, not only the acting organization" do
+        other_organization = create(:organization)
+
         get "/organizations", headers: headers, as: :json
+
         expect(response).to have_http_status(:ok)
+        names = response.parsed_body["data"].map { |o| o["name"] }
+        expect(names).to include(organization.name, other_organization.name)
       end
     end
 
