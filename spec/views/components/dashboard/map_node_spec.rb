@@ -4,28 +4,36 @@
 require "rails_helper"
 
 RSpec.describe Dashboard::MapNode do
-  def mock_tree(id: 3, did: "SNET-00000003", latitude: 49.44, longitude: 32.06,
-                current_stress: 0.3, charge_percentage: 72, status: "active")
-    t = OpenStruct.new(
+  # [TEST.12] Реальний незбережений `Tree`, і фікстура годує ДЖЕРЕЛА, а не результати.
+  # `current_stress` і `charge_percentage` — не колонки, а похідні (`latest_stress_index.to_f`
+  # і формула від `ionic_voltage`), тож мок, який клав їх напряму, робив саме перетворення
+  # неперевірним і дозволяв задати комбінацію, недосяжну на реальному записі.
+  # Ланцюг деривації ТРИЯРУСНИЙ, і мок ховав рівно це: колонка `latest_voltage_mv`
+  # → `ionic_voltage` (`latest_voltage_mv || 0`) → `charge_percentage`. Годуємо перший
+  # ярус: `4744` → `((4744−2800)/2700)·100 = 72` — те саме число, але виведене.
+  #
+  # 🔴 `status` тепер ходить через справжній enum (`active/dormant/removed/deceased`),
+  # тому вигадані `"stress"`/`"anomaly"` тут більше неможливі: вони належать ІНШІЙ моделі
+  # (`TelemetryLog#bio_status` — самозвіт здоровʼя з пакета), і саме через них єдиний
+  # статус, на який зважає `map_controller.js`, не перевірявся ніде.
+  def build_tree(id: 3, did: "SNET-00000003", latitude: 49.44, longitude: 32.06,
+                 latest_stress_index: 0.3, latest_voltage_mv: 4744, status: :active)
+    Tree.new(
       id: id,
       did: did,
       latitude: latitude,
       longitude: longitude,
-      current_stress: current_stress,
-      charge_percentage: charge_percentage,
+      latest_stress_index: latest_stress_index,
+      latest_voltage_mv: latest_voltage_mv,
       status: status
     )
-    t.define_singleton_method(:model_name) { ActiveModel::Name.new(Tree) }
-    t.define_singleton_method(:to_key) { [ id ] }
-    t.define_singleton_method(:to_param) { id.to_s }
-    t
   end
 
   def render_component(tree:)
     component_class.new(tree: tree).call
   end
 
-  let(:tree) { mock_tree }
+  let(:tree) { build_tree }
   let(:html) { render_component(tree: tree) }
 
   describe "div ID" do
@@ -69,24 +77,35 @@ RSpec.describe Dashboard::MapNode do
   end
 
   describe "different tree statuses" do
-    it "renders stress status correctly" do
-      tree = mock_tree(status: "stress")
-      html = render_component(tree: tree)
-      expect(html).to include('data-status="stress"')
+    # 🔴 `removed` — ЄДИНЕ значення статусу, на яке зважає `map_controller.js`
+    # (`if (stress > 0.8 || data.status === "removed")` форсує danger-маркер), і доти
+    # воно не перевірялось НІДЕ: спека ходила вигаданими `"stress"`/`"anomaly"` з
+    # чужої моделі. Шлях штатний — `Tree#decommission!` переводить сюди й шле
+    # `broadcast_map_update`, тобто оператор вмикає саме цю гілку деінсталяцією.
+    it "passes the one status the map controller actually branches on" do
+      html = render_component(tree: build_tree(status: :removed))
+
+      expect(html).to include('data-status="removed"')
     end
 
-    it "renders anomaly status correctly" do
-      tree = mock_tree(status: "anomaly")
-      html = render_component(tree: tree)
-      expect(html).to include('data-status="anomaly"')
+    it "renders the remaining lifecycle statuses verbatim" do
+      %i[dormant deceased].each do |state|
+        html = render_component(tree: build_tree(status: state))
+
+        expect(html).to include(%(data-status="#{state}"))
+      end
     end
   end
 
   describe "zero values" do
-    it "handles zero stress gracefully" do
-      tree = mock_tree(current_stress: 0.0, charge_percentage: 0)
-      html = render_component(tree: tree)
-      expect(html).to include("data-stress=")
+    # ⚠️ Пін на ЗНАЧЕННЯ, не на присутність атрибута: `data-stress=` рендериться
+    # безумовно для будь-якого числа, тож попередня форма була зелена і при
+    # правильній, і при зламаній обробці нуля.
+    it "renders a zeroed node with explicit zeros, not blanks" do
+      html = render_component(tree: build_tree(latest_stress_index: 0.0, latest_voltage_mv: 0))
+
+      expect(html).to include('data-stress="0.0"')
+      expect(html).to include('data-charge="0"')
     end
   end
 end
