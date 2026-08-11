@@ -11,17 +11,23 @@ RSpec.describe Codex::Fractions::ProfileBadge do
     render_component(fraction: fraction)
   end
 
-  def mock_fraction(archetype_key: "relict_oracle", cooldown_active: false)
-    OpenStruct.new(
+  # Залишок вікна рахується в момент рендеру, а розряди формату — цілим
+  # діленням, тож без заморозки часу мікросекунда, згаяна між побудовою
+  # фікстури й читанням моделі, скидає цілий розряд донизу.
+  around { |ex| freeze_time { ex.run } }
+
+  # Стан cooldown'а виводиться з ОДНІЄЇ колонки `last_changed_at` (три
+  # похідні: `cooldown_until`, `cooldown_active?`, `seconds_until_unlocked`),
+  # тож фікстура задає лише залишок вікна й дає моделі вивести решту.
+  def fraction_with(archetype_key: "relict_oracle", remaining: -1.hour)
+    Codex::Fraction.new(
       archetype_key: archetype_key,
-      cooldown_active?: cooldown_active,
-      cooldown_until: Time.current + 7.days,
-      seconds_until_unlocked: cooldown_active ? 7.days.to_i : 0
+      last_changed_at: Time.current - Codex::Fraction::COOLDOWN + remaining
     )
   end
 
   describe "when fraction is present" do
-    let(:html) { render_badge(fraction: mock_fraction) }
+    let(:html) { render_badge(fraction: fraction_with) }
 
     it "renders the archetype_key label" do
       expect(html).to include("relict_oracle")
@@ -32,7 +38,15 @@ RSpec.describe Codex::Fractions::ProfileBadge do
     end
 
     it "renders the Cooldown sub-component" do
-      expect(html).to include("Open") # cooldown_active: false → Open pill
+      expect(html).to include("Open")
+    end
+
+    it "passes THIS fraction down to the Cooldown pill" do
+      # «Open» рендериться на будь-якому відкритому вікні, тож проводку
+      # доводить лише залишок, унікальний для цієї фракції.
+      locked = render_badge(fraction: fraction_with(remaining: 2.days + 9.hours))
+      expect(locked).to include("Locked")
+      expect(locked).to include("2d9h")
     end
 
     it "uses gaia-* tokens (no raw bg-white / text-gray)" do

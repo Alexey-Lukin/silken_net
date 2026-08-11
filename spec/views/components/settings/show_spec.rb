@@ -4,18 +4,19 @@
 require "rails_helper"
 
 RSpec.describe Settings::Show do
-  def mock_org(name: "Forest Org", billing_email: "billing@org.org",
-               crypto_public_address: "0xABCDEF1234",
-               alert_threshold_critical_z: 2.5, ai_sensitivity: 0.7,
-               id: 1, created_at: 2.years.ago, updated_at: 1.hour.ago,
-               logo_attached: false, error_messages: [])
-    logo = double("logo", attached?: logo_attached, filename: ActiveStorage::Filename.new("logo.png"))
-    OpenStruct.new(
-      # [SEC.25] Контролер передає сюди справжню `Organization` — ту саму, чиї
-      # `errors` він щойно наповнив невдалим `update`. Доти фікстура цього не
-      # знала, тобто оголошувала світ, у якому дефект «форма мовчить на 422»
-      # неможливий за побудовою (`04_06 §B.2` BP #14).
-      errors: double("errors", full_messages: error_messages),
+  # [SEC.25] Контролер передає сюди справжню `Organization` — ту саму, чиї
+  # `errors` він щойно наповнив невдалим `update`.
+  # [TEST.12] Тепер це реальний незбережений запис, і конверсія знімає дві
+  # вигадки. Адреса доти мала 12 символів при `ETH_ADDRESS_FORMAT` на 42 —
+  # значення, недосяжне для будь-якого записаного рядка, і саме через його
+  # довжину скорочення у сховищі особистості не спрацьовувало НІКОЛИ.
+  # Пороги — `numeric`, тож їх форму тепер видно з сюїти.
+  def build_org(name: "Forest Org", billing_email: "billing@org.org",
+                crypto_public_address: "0x1234567890abcdef1234567890abcdef12345678",
+                alert_threshold_critical_z: 2.5, ai_sensitivity: 0.7,
+                id: 1, created_at: 2.years.ago, updated_at: 1.hour.ago,
+                logo_attached: false, error_messages: [])
+    org = Organization.new(
       name: name,
       billing_email: billing_email,
       crypto_public_address: crypto_public_address,
@@ -23,9 +24,15 @@ RSpec.describe Settings::Show do
       ai_sensitivity: ai_sensitivity,
       id: id,
       created_at: created_at,
-      updated_at: updated_at,
-      logo: logo
+      updated_at: updated_at
     )
+    error_messages.each { |m| org.errors.add(:base, m) }
+    # Блоб без БД не збудувати — стаб іде через RSpec-API, тож `verify_partial_doubles`
+    # звіряє, що `logo` на моделі взагалі існує (`OpenStruct` цього не робив).
+    allow(org).to receive(:logo).and_return(
+      double("logo", attached?: logo_attached, filename: ActiveStorage::Filename.new("logo.png"))
+    )
+    org
   end
 
   def render_component(organization:)
@@ -35,7 +42,7 @@ RSpec.describe Settings::Show do
     )
   end
 
-  let(:org) { mock_org }
+  let(:org) { build_org }
   let(:html) { render_component(organization: org) }
 
   describe "settings form" do
@@ -72,7 +79,7 @@ RSpec.describe Settings::Show do
     end
 
     it "renders the input without a pre-filled value when billing_email is nil" do
-      org = mock_org(billing_email: nil)
+      org = build_org(billing_email: nil)
       rendered = render_component(organization: org)
       expect(rendered).to include('name="organization[billing_email]"')
     end
@@ -83,8 +90,8 @@ RSpec.describe Settings::Show do
       expect(html).to include('name="organization[crypto_public_address]"')
     end
 
-    it "pre-fills the crypto address" do
-      expect(html).to include("0xABCDEF1234")
+    it "pre-fills the crypto address in full — the field is editable" do
+      expect(html).to include(%(value="#{org.crypto_public_address}"))
     end
   end
 
@@ -103,8 +110,17 @@ RSpec.describe Settings::Show do
       expect(html).to include("On-Chain Identity Vault")
     end
 
+    # Доти цей приклад був вакуумний: ту саму адресу друкує поле форми вище,
+    # тож він лишався зеленим і зі знесеним сховищем. Цілимо у ВУЗОЛ під міткою.
     it "renders billing contact in the vault" do
-      expect(html).to include("billing@org.org")
+      expect(html).to include(%(<p class="text-compact text-gray-400">billing@org.org</p>))
+    end
+
+    # Сховище показує адресу СКОРОЧЕНОЮ, форма — повною. Доти розрізнити ці
+    # два шляхи було неможливо: фікстура подавала адресу, коротшу за поріг
+    # скорочення, тож обидва друкували те саме.
+    it "truncates the address in the vault, unlike the editable field" do
+      expect(html).to include("0x1234…5678")
     end
   end
 
@@ -122,11 +138,30 @@ RSpec.describe Settings::Show do
     it "renders ai_sensitivity field" do
       expect(html).to include('name="organization[ai_sensitivity]"')
     end
+
+    # Обидві колонки `numeric`, тобто модель віддає BigDecimal — доти сюїта
+    # пінила лише ІМЕНА полів, тож питання «що оператор бачить у полі порогу»
+    # з неї неможливо було поставити.
+    it "pre-fills both thresholds with the value the operator will see" do
+      expect(html).to include('value="2.5"')
+      expect(html).to include('value="0.7"')
+    end
+  end
+
+  describe "system metadata" do
+    # Секція не мала жодного прикладу, хоча друкує ідентифікатор організації
+    # і дві дати у власних форматах.
+    it "renders the organization id and both timestamps" do
+      expect(html).to include("System Metadata")
+      expect(html).to include(">1<")
+      expect(html).to include(org.created_at.strftime("%d.%m.%Y"))
+      expect(html).to include(org.updated_at.strftime("%d.%m.%Y %H:%M"))
+    end
   end
 
   describe "logo attached" do
     it "renders current logo filename when attached" do
-      org = mock_org(logo_attached: true)
+      org = build_org(logo_attached: true)
       html = render_component(organization: org)
       expect(html).to include("Current: logo.png")
     end

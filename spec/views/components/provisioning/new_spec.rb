@@ -4,31 +4,22 @@
 require "rails_helper"
 
 RSpec.describe Provisioning::New do
-  def mock_cluster(id: 1, name: "Carpathian-Alpha")
-    cluster = OpenStruct.new(id: id, name: name)
-    cluster.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    cluster.define_singleton_method(:to_key) { [ id ] }
-    cluster.define_singleton_method(:to_param) { id.to_s }
-    cluster
+  # Реальні незбережені записи: `collection_select` бере з них лише `:id`/`:name`,
+  # тож виготовлені доти `model_name`/`to_key`/`to_param` були мертвими стабами —
+  # оголошеним контрактом із фреймворком, якого жоден приклад не перевіряв.
+  def build_cluster(id: 1, name: "Carpathian-Alpha") = Cluster.new(id: id, name: name)
+  def build_family(id: 1, name: "Oak") = TreeFamily.new(id: id, name: name)
+
+  # Причини провалу провіжнінгу приходять на `:base` (`render_new_with_errors`
+  # добудовує порожній `Tree`, коли пристрій ще не збудовано), тож `full_messages`
+  # віддає їх ДОСЛІВНО. Доти фікстура імітувала атрибутну помилку про поле
+  # `hardware_uid`, якого на `Tree` немає, — форму, якої цей тракт не виробляє.
+  def device_with_error(message)
+    Tree.new.tap { |t| t.errors.add(:base, message) }
   end
 
-  def mock_family(id: 1, name: "Oak")
-    family = OpenStruct.new(id: id, name: name)
-    family.define_singleton_method(:model_name) { ActiveModel::Name.new(TreeFamily) }
-    family.define_singleton_method(:to_key) { [ id ] }
-    family.define_singleton_method(:to_param) { id.to_s }
-    family
-  end
-
-  def mock_device_with_errors(messages: [ "Hardware UID can't be blank" ])
-    # `any?` тут більше не потрібен: умову «чи є що показувати» тримає сам
-    # `ErrorSummary`, а не викликач — компонент читає лише `full_messages`.
-    errors = double("errors", full_messages: messages)
-    OpenStruct.new(errors: errors)
-  end
-
-  let(:clusters) { [ mock_cluster ] }
-  let(:families) { [ mock_family ] }
+  let(:clusters) { [ build_cluster ] }
+  let(:families) { [ build_family ] }
   let(:html)     { render_component(clusters: clusters, families: families) }
 
   describe "header section" do
@@ -85,10 +76,14 @@ RSpec.describe Provisioning::New do
 
   describe "error display" do
     it "renders validation errors when device has errors" do
-      device = mock_device_with_errors
-      html = render_component(clusters: clusters, families: families, device: device)
+      message = I18n.t("flash.provisioning.uid_taken", uid: "SNET-Q-AABB0011")
+      html = render_component(
+        clusters: clusters, families: families, device: device_with_error(message)
+      )
       expect(html).to include("Initiation Failed")
-      expect(html).to include("Hardware UID can")
+      # Дослівно, без префікса атрибута: причина з guard-клаузи їде на `:base`,
+      # і саме це відрізняє її від модельної валідації в очах лісника.
+      expect(html).to include(message)
     end
 
     it "does not render error section when device is nil" do

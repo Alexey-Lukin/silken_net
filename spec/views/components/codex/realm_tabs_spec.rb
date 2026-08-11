@@ -18,12 +18,23 @@ RSpec.describe Codex::RealmTabs do
     )
   end
 
-  def mock_realm(id:, slug:, name_en:)
-    OpenStruct.new(id: id, slug: slug, name_en: name_en)
+  # [TEST.12] Реальні незбережені реалми. Слаг `trees` не існує — реалмів рівно
+  # чотири (`ecosystem` · `unique_tree` · `protocol` · `mythos`), і власний
+  # докстрінг моделі оголошує цей набір закритим.
+  def build_realm(id:, slug:, name_en:)
+    Codex::Realm.new(id: id, slug: slug, name_en: name_en)
   end
 
-  let(:realm_eco)  { mock_realm(id: 1, slug: "ecosystem", name_en: "Ecosystems") }
-  let(:realm_tree) { mock_realm(id: 2, slug: "trees",     name_en: "Trees") }
+  # Мітка й лічильник — два сусідні `<span>` в ОДНОМУ анкері, тож довести
+  # відповідність «реалм ↔ його число» можна лише вирізавши анкор цілком:
+  # чотири окремі пошуки по документу лишаються зеленими й тоді, коли числа
+  # переставлені місцями.
+  def anchor_for(html, href)
+    html[%r{<a[^>]*href="#{Regexp.escape(href)}"[^>]*>.*?</a>}m]
+  end
+
+  let(:realm_eco)  { build_realm(id: 1, slug: "ecosystem",   name_en: "Ecosystems") }
+  let(:realm_tree) { build_realm(id: 2, slug: "unique_tree", name_en: "Unique Trees") }
   let(:realms)     { [ realm_eco, realm_tree ] }
   let(:counts)     { { 1 => 12, 2 => 7 } }
 
@@ -35,17 +46,17 @@ RSpec.describe Codex::RealmTabs do
       expect(html).to include(">(19)<") # 12 + 7
     end
 
-    it "renders one tab per realm with its label and count" do
-      expect(html).to include(">Ecosystems<")
-      expect(html).to include(">Trees<")
-      expect(html).to include(">(12)<")
-      expect(html).to include(">(7)<")
+    it "renders each realm's label and count inside the SAME tab" do
+      expect(anchor_for(html, "/codex/nodes?realm=ecosystem"))
+        .to include(">Ecosystems<").and include(">(12)<")
+      expect(anchor_for(html, "/codex/nodes?realm=unique_tree"))
+        .to include(">Unique Trees<").and include(">(7)<")
     end
 
     it "links each tab to the filtered index using realm slug" do
       expect(html).to include('href="/codex/nodes"')
       expect(html).to include('href="/codex/nodes?realm=ecosystem"')
-      expect(html).to include('href="/codex/nodes?realm=trees"')
+      expect(html).to include('href="/codex/nodes?realm=unique_tree"')
     end
 
     it "exposes a labelled <nav> for assistive tech" do
@@ -55,9 +66,9 @@ RSpec.describe Codex::RealmTabs do
 
   describe "active state" do
     it "marks the matching realm tab as `aria-current=page` and applies active token classes" do
-      html = render_tabs(realms: realms, nodes_counts: counts, active_realm_slug: "trees")
-      # Find the <a> for the trees realm
-      trees_anchor = html[/<a[^>]*href="\/codex\/nodes\?realm=trees"[^>]*>/]
+      html = render_tabs(realms: realms, nodes_counts: counts, active_realm_slug: "unique_tree")
+      # Find the <a> for the unique_tree realm
+      trees_anchor = html[/<a[^>]*href="\/codex\/nodes\?realm=unique_tree"[^>]*>/]
       expect(trees_anchor).to include('aria-current="page"')
       expect(trees_anchor).to include("border-gaia-primary")
       expect(trees_anchor).to include("text-gaia-primary")
@@ -70,7 +81,7 @@ RSpec.describe Codex::RealmTabs do
     end
 
     it "does not mark inactive tabs as `aria-current`" do
-      html = render_tabs(realms: realms, nodes_counts: counts, active_realm_slug: "trees")
+      html = render_tabs(realms: realms, nodes_counts: counts, active_realm_slug: "unique_tree")
       eco_anchor = html[/<a[^>]*href="\/codex\/nodes\?realm=ecosystem"[^>]*>/]
       expect(eco_anchor).not_to include('aria-current="page"')
       expect(eco_anchor).to include("text-gaia-text-muted")
@@ -85,13 +96,11 @@ RSpec.describe Codex::RealmTabs do
       expect(html.scan(/<a /).length).to eq(1)
     end
 
-    it "shows 0 for realms missing from nodes_counts" do
+    it "shows 0 in the tab of the realm missing from nodes_counts" do
       html = render_tabs(realms: realms, nodes_counts: { 1 => 5 }) # no entry for id=2
-      expect(html).to include(">Ecosystems<")
-      expect(html).to include(">Trees<")
-      # Trees count should be 0; All sum should be 5
-      expect(html).to include(">(5)<")
-      expect(html).to include(">(0)<")
+      expect(anchor_for(html, "/codex/nodes?realm=unique_tree")).to include(">(0)<")
+      expect(anchor_for(html, "/codex/nodes?realm=ecosystem")).to include(">(5)<")
+      expect(anchor_for(html, "/codex/nodes")).to include(">(5)<")
     end
   end
 

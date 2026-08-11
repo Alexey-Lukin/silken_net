@@ -4,22 +4,24 @@
 require "rails_helper"
 
 RSpec.describe SystemAudits::Index do
-  def mock_audit(db_total: 1000.0, chain_total: 1000.0, delta: 0.0,
-                 critical: false, checked_at: Time.parse("2024-01-15 12:00:00 UTC"))
-    audit = OpenStruct.new(
-      id: 1,
-      db_total: db_total,
-      chain_total: chain_total,
+  # [TEST.12] Субʼєкт тут не AR-модель, а `Struct` рівно з пʼяти полів — тож
+  # контракт ЖОРСТКІШИЙ: мок доти дописував `id` і `ok?`, яких на ньому немає
+  # взагалі, і оголошував `critical` незалежно від `delta`, тоді як сервіс
+  # виводить його порівнянням із порогом. Поріг береться з дому (константа
+  # сервісу), а не переписується числом; сама формула деривації належить
+  # `spec/services/chain_audit_service_spec.rb`, тут перевіряється рендер.
+  def audit_with(delta:, checked_at: Time.parse("2024-01-15 12:00:00 UTC"))
+    ChainAuditService::Result.new(
+      db_total: 1000.0,
+      chain_total: 1000.0 - delta,
       delta: delta,
+      critical: delta > ChainAuditService::CRITICAL_DELTA_THRESHOLD,
       checked_at: checked_at
     )
-    audit.define_singleton_method(:critical) { critical }
-    audit.define_singleton_method(:ok?) { !critical }
-    audit
   end
 
-  let(:ok_audit)       { mock_audit }
-  let(:critical_audit) { mock_audit(db_total: 1000.0, chain_total: 998.5, delta: 1.5, critical: true) }
+  let(:ok_audit)       { audit_with(delta: 0.0) }
+  let(:critical_audit) { audit_with(delta: 1.5) }
 
   describe "header" do
     # [I18N.1-нейминг] Заголовок секції знято: сторінка має ОДНУ секцію, тож

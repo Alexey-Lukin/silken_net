@@ -11,11 +11,10 @@ RSpec.describe Codex::Comments::Form do
     render_component(node: node)
   end
 
-  let(:node) do
-    OpenStruct.new(id: 9, slug: "cherkasy-bir").tap do |n|
-      n.define_singleton_method(:to_param) { n.slug }
-    end
-  end
+  # Реальний незбережений вузол: мок доти ВИГОТОВЛЯВ `to_param`, якого
+  # компонент не читає взагалі (він передає `slug` рядком), тобто оголошував
+  # контракт із роутером, що жодним прикладом не перевірявся.
+  let(:node) { Codex::Node.new(slug: "cherkasy-bir") }
 
   describe "rendering" do
     it "posts to the node-scoped comments endpoint" do
