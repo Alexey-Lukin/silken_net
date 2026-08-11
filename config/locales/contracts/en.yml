@@ -56,6 +56,6 @@ en:
       period: 'Period: %{start} → %{end}'
       status: 'Status: %{value}'
       title: "#%{id} // SEC_%{sector}"
-      total_funding: 'Total Service Fee: %{amount} SCC'
+      total_funding: 'Total Service Fee: %{amount} USD'
       yield_unit: SCC
     show_title: 'Contract Audit // #%{id}'

@@ -48,7 +48,11 @@ module Contracts
 
     def render_stats_hero
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
-        render Views::Shared::UI::StatCard.new(label: t(".stats.portfolio_capital"), value: "#{@stats[:total_contracted].to_f.round(2)} SCC", sub: t(".stats.total_injected"))
+        # Одиниця тут USD, а не SCC: `total_contracted` агрегує `naas_contracts.total_value`
+        # (alias на `total_funding`) — «сума оплати за послугу (USDC/USD)» за 07_01 §5, і вся
+        # юніт-економіка 07_01 §11-§20 рахує в $. Сусідня картка нижче правомірно в SCC —
+        # там справді емісія. Дві різні валюти на одній сітці, тож не «уніфікуй» їх.
+        render Views::Shared::UI::StatCard.new(label: t(".stats.portfolio_capital"), value: "#{@stats[:total_contracted].to_f.round(2)} USD", sub: t(".stats.total_injected"))
         render Views::Shared::UI::StatCard.new(label: t(".stats.biogenic_yield"), value: "#{@stats[:total_minted].to_f.round(2)} SCC", sub: t(".stats.total_minted"))
         render Views::Shared::UI::StatCard.new(label: t(".stats.network_health"), value: "#{network_health_percent}%", sub: t(".stats.portfolio_avg"))
       end
@@ -72,7 +76,9 @@ module Contracts
         end
         td(class: "p-4 text-gaia-text-muted") { contract.organization&.name || "—" }
         td(class: "p-4 text-gaia-primary") { contract.cluster&.name || t(".unassigned") }
-        td(class: "p-4 text-gaia-text-muted") { "#{contract.total_value} SCC" }
+        # `total_value` = alias на `total_funding` (плата за послугу, USD) ⊥ `emitted_tokens`
+        # (справжня SCC-емісія). Дві сусідні комірки в РІЗНИХ валютах — це не дрейф.
+        td(class: "p-4 text-gaia-text-muted") { "#{contract.total_value} USD" }
         td(class: "p-4 text-gaia-text") { "#{contract.emitted_tokens} SCC" }
         td(class: "p-4 text-tiny text-gaia-text-muted") do
           plain contract.start_date&.strftime("%d.%m.%y")

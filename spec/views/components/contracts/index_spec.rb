@@ -97,8 +97,13 @@ RSpec.describe Contracts::Index do
       expect(html).to include("Carpathian-Alpha")
     end
 
-    it "renders the investment total_value with SCC" do
-      expect(html).to include("10000 SCC")
+    # 🔴 Дві сусідні комірки НАВМИСНО в різних валютах, і плутати їх не можна в жоден бік:
+    # `total_value` = alias на `total_funding` — плата клієнта за послугу, деномінована в
+    # USD (07_01 §5 + вся юніт-економіка §11-§20 в $), тоді як `emitted_tokens` — справжня
+    # SCC-емісія. Доти обидві казали «SCC», тобто фіат малювався карбоновим токеном.
+    it "renders the contracted service fee in USD, not in the carbon token" do
+      expect(html).to include("10000 USD")
+      expect(html).not_to include("10000 SCC")
     end
 
     it "renders emitted_tokens with SCC" do

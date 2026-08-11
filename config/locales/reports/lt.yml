@@ -41,7 +41,7 @@ lt:
         total_contracts: Iš viso sutarčių
         total_contracts_sub: Per visą laiką
         total_invested: Iš viso sutarta
-        total_invested_sub: SCC
+        total_invested_sub: USD
       title: "💎 Finansinės suvestinės ataskaita"
     financial_summary_title: Finansinės suvestinės ataskaita
     index:
@@ -60,7 +60,7 @@ lt:
         biological_assets: Stebimi medžiai
         biological_assets_sub: Medžiai
         capital_injected: Sutarčių suma
-        capital_injected_sub: SCC pagal sutartis
+        capital_injected_sub: USD pagal sutartis
         carbon_yield: Nukalta SCC
         carbon_yield_sub: SCC iš viso
         health_score: Sveikatos rodiklis

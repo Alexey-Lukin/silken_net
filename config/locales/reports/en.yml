@@ -41,7 +41,7 @@ en:
         total_contracts: Total Contracts
         total_contracts_sub: Lifetime
         total_invested: Total Contracted
-        total_invested_sub: SCC
+        total_invested_sub: USD
       title: "💎 Financial Summary Report"
     financial_summary_title: Financial Summary Report
     index:
@@ -60,7 +60,7 @@ en:
         biological_assets: Monitored Trees
         biological_assets_sub: Trees
         capital_injected: Contracted Amount
-        capital_injected_sub: SCC Contracted
+        capital_injected_sub: USD Contracted
         carbon_yield: SCC Minted
         carbon_yield_sub: SCC Total
         health_score: Health Score

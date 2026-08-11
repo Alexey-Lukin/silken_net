@@ -6,11 +6,11 @@ en:
         audit: Audit
         context: Context
         identity: On-Chain Identity
-        investment: Contracted (SCC)
+        investment: Contracted (USD)
         name: Organization Name
         sectors: Sectors
       current_context: ACTIVE_CONTEXT
-      investment_value: "%{amount} SCC"
+      investment_value: "%{amount} USD"
       subtitle: Management of multi-tenant entities and their environmental programmes.
       switch: SWITCH_TO →
       switch_aria: Switch acting context to %{name}
@@ -48,7 +48,7 @@ en:
         biological_assets: Monitored Trees
         biological_assets_sub: Soldier Trees
         capital_injected: Contracted Amount
-        capital_injected_sub: SCC Total
+        capital_injected_sub: USD Total
         carbon_yield: SCC Minted
         carbon_yield_sub: SCC Minted
       switch: SWITCH_TO →

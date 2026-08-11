@@ -56,6 +56,6 @@ lv:
       period: 'Periods: %{start} → %{end}'
       status: 'Statuss: %{value}'
       title: "#%{id} // SEC_%{sector}"
-      total_funding: 'Pakalpojuma maksa kopā: %{amount} SCC'
+      total_funding: 'Pakalpojuma maksa kopā: %{amount} USD'
       yield_unit: SCC
     show_title: 'Līguma audits // #%{id}'

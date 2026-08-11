@@ -41,7 +41,7 @@ lv:
         total_contracts: Kopā līgumi
         total_contracts_sub: Mūža laikā
         total_invested: Kopā līgumos
-        total_invested_sub: SCC
+        total_invested_sub: USD
       title: "💎 Finanšu kopsavilkuma atskaite"
     financial_summary_title: Finanšu kopsavilkuma atskaite
     index:
@@ -60,7 +60,7 @@ lv:
         biological_assets: Uzraudzītie koki
         biological_assets_sub: Koki
         capital_injected: Līgumu summa
-        capital_injected_sub: SCC līgumos
+        capital_injected_sub: USD līgumos
         carbon_yield: Kalts SCC
         carbon_yield_sub: SCC kopā
         health_score: Veselības rādītājs

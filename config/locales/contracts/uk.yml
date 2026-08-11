@@ -56,6 +56,6 @@ uk:
       period: 'Період: %{start} → %{end}'
       status: 'Статус: %{value}'
       title: "#%{id} // СЕК_%{sector}"
-      total_funding: 'Загальна плата за послугу: %{amount} SCC'
+      total_funding: 'Загальна плата за послугу: %{amount} USD'
       yield_unit: SCC
     show_title: Аудит контракту // №%{id}

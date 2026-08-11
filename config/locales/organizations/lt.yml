@@ -6,11 +6,11 @@ lt:
         audit: Auditas
         context: Kontekstas
         identity: Grandinės tapatybė
-        investment: Pagal sutartis (SCC)
+        investment: Pagal sutartis (USD)
         name: Organizacijos pavadinimas
         sectors: Sektoriai
       current_context: AKTYVUS_KONTEKSTAS
-      investment_value: "%{amount} SCC"
+      investment_value: "%{amount} USD"
       subtitle: Daugianuomininkių entitetų ir jų aplinkos kapitalo valdymas.
       switch: PERJUNGTI →
       switch_aria: Perjungti darbo kontekstą į %{name}
@@ -48,7 +48,7 @@ lt:
         biological_assets: Stebimi medžiai
         biological_assets_sub: Karių medžiai
         capital_injected: Sutarčių suma
-        capital_injected_sub: SCC iš viso
+        capital_injected_sub: USD iš viso
         carbon_yield: Nukalta SCC
         carbon_yield_sub: Nukalinta SCC
       switch: PERJUNGTI →

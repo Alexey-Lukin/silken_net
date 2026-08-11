@@ -6,11 +6,11 @@ lv:
         audit: Audits
         context: Konteksts
         identity: Ķēdes identitāte
-        investment: Līgumos (SCC)
+        investment: Līgumos (USD)
         name: Organizācijas nosaukums
         sectors: Sektori
       current_context: AKTĪVAIS_KONTEKSTS
-      investment_value: "%{amount} SCC"
+      investment_value: "%{amount} USD"
       subtitle: Daudzvadītāju entītiju un to vides kapitāla pārvaldība.
       switch: PĀRSLĒGT →
       switch_aria: Pārslēgt darba kontekstu uz %{name}
@@ -48,7 +48,7 @@ lv:
         biological_assets: Uzraudzītie koki
         biological_assets_sub: Karavīru koki
         capital_injected: Līgumu summa
-        capital_injected_sub: SCC kopā
+        capital_injected_sub: USD kopā
         carbon_yield: Kalts SCC
         carbon_yield_sub: Kalts SCC
       switch: PĀRSLĒGT →

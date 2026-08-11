@@ -6,11 +6,11 @@ uk:
         audit: Аудит
         context: Контекст
         identity: On-Chain ідентичність
-        investment: Законтрактовано (SCC)
+        investment: Законтрактовано (USD)
         name: Назва організації
         sectors: Сектори
       current_context: АКТИВНИЙ_КОНТЕКСТ
-      investment_value: "%{amount} SCC"
+      investment_value: "%{amount} USD"
       subtitle: Управління multi-tenant сутностями та їхніми екологічними програмами.
       switch: ПЕРЕМКНУТИСЬ →
       switch_aria: Перемкнути робочий контекст на %{name}
@@ -48,7 +48,7 @@ uk:
         biological_assets: Дерева під моніторингом
         biological_assets_sub: Дерева-солдати
         capital_injected: Сума контрактів
-        capital_injected_sub: Всього SCC
+        capital_injected_sub: Всього USD
         carbon_yield: Нараховано SCC
         carbon_yield_sub: Створено SCC
       switch: ПЕРЕМКНУТИСЬ →
