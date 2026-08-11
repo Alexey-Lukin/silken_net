@@ -38,12 +38,12 @@ class BioContractFirmware < ApplicationRecord
   # Строга HEX-валідація (Case-insensitive)
   validates :bytecode_payload, presence: true, format: {
     with: /\A([a-fA-F0-9]{2})+\z/,
-    message: "має бути чистим HEX-рядком парної довжини (кратним байту)"
+    message: :must_be_even_length_hex
   }
 
   # [DB Bloat Protection]: Обмежуємо розмір HEX-пейлоаду (512KB HEX ≈ 256KB binary)
   validates :bytecode_payload, length: { maximum: MAX_BYTECODE_SIZE,
-    message: "перевищує ліміт #{MAX_BYTECODE_SIZE / 1.kilobyte} КБ" }
+    message: :exceeds_size_limit }
 
   # [Species Specificity]: Тип обладнання (Tree/Gateway)
   validates :target_hardware_type, inclusion: { in: HARDWARE_TYPES }, allow_nil: true

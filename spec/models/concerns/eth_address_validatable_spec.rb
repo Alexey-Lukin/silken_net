@@ -89,7 +89,21 @@ RSpec.describe EthAddressValidatable do
       org = build(:organization, crypto_public_address: "not-a-wallet")
 
       expect(org).not_to be_valid
-      expect(org.errors[:crypto_public_address]).to contain_exactly("має бути валідною 0x адресою")
+      # [I18N.4] Повідомлення більше не зашите в концерні — воно резолвиться з
+      # `errors.messages.invalid_eth_address`, тож базова локаль дає англійську.
+      expect(org.errors[:crypto_public_address]).to contain_exactly("must be a valid 0x address")
+    end
+
+    # 🔴 Пін, який доти НЕ МІГ існувати: зашитий рядок однаковий у будь-якій локалі,
+    # тож попередній приклад не відрізняв «перекладено» від «захардкожено». Цей —
+    # відрізняє, і він же червонітиме, якщо ключ загубиться в одній із локалей.
+    it "локалізує повідомлення, а не несе його зашитим" do
+      org = build(:organization, crypto_public_address: "not-a-wallet")
+      org.valid?
+
+      uk = I18n.with_locale(:uk) { org.errors.generate_message(:crypto_public_address, :invalid_eth_address) }
+      expect(uk).to eq("має бути валідною 0x адресою")
+      expect(uk).not_to eq(org.errors[:crypto_public_address].first)
     end
 
     # The boot guard (`Security::Web3NetworkGuard`) reuses this predicate — One-Home.

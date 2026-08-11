@@ -11,9 +11,16 @@ en:
               must_be_future: must be in the future
         bio_contract_firmware:
           attributes:
+            bytecode_payload:
+              exceeds_size_limit: 'exceeds the maximum payload length in HEX characters: %{count}'
+              must_be_even_length_hex: must be a pure even-length HEX string (byte-aligned)
             compatible_hardware_versions:
               must_be_array: must be an array
               version_must_be_non_blank_string: every version must be a non-blank string
+        gateway:
+          attributes:
+            uid:
+              must_match_hardware_format: must match the hardware format (SNET-Q-XXXXXXXX)
         maintenance_record:
           attributes:
             photos:
@@ -22,6 +29,10 @@ en:
           attributes:
             end_date:
               must_be_after_start: must be after the start date
+        tree:
+          attributes:
+            did:
+              must_match_hardware_format: must match the hardware format (SNET-XXXXXXXX)
         tiny_ml_model:
           attributes:
             accuracy_score:
@@ -31,6 +42,8 @@ en:
               must_be_in_unit_range: must be in the 0..1 range
               must_be_numeric: must be a valid numeric value
   errors:
+    messages:
+      invalid_eth_address: must be a valid 0x address
     api:
       bad_request: The request was missing something the Citadel needs. Go back and try again.
       bad_request_title: Malformed Request

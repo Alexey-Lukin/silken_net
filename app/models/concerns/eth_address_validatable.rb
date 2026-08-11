@@ -33,7 +33,9 @@ module EthAddressValidatable
       validation_opts = {
         format: {
           with: ETH_ADDRESS_FORMAT,
-          message: "має бути валідною 0x адресою"
+          # [I18N.4] Глобальний скоуп (`errors.messages.*`), а не модельний: концерн
+          # вживають ТРИ моделі, тож ключ мусить бути один на всіх.
+          message: :invalid_eth_address
         }
       }
       validation_opts[:presence] = true if presence

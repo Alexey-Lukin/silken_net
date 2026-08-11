@@ -11,9 +11,16 @@ uk:
               must_be_future: має бути в майбутньому
         bio_contract_firmware:
           attributes:
+            bytecode_payload:
+              exceeds_size_limit: 'перевищує максимальну довжину пейлоада в HEX-символах: %{count}'
+              must_be_even_length_hex: має бути чистим HEX-рядком парної довжини (кратним байту)
             compatible_hardware_versions:
               must_be_array: має бути масивом
               version_must_be_non_blank_string: кожна версія має бути непорожнім рядком
+        gateway:
+          attributes:
+            uid:
+              must_match_hardware_format: має відповідати апаратному формату (SNET-Q-XXXXXXXX)
         maintenance_record:
           attributes:
             photos:
@@ -22,6 +29,10 @@ uk:
           attributes:
             end_date:
               must_be_after_start: повинна бути пізніше дати початку
+        tree:
+          attributes:
+            did:
+              must_match_hardware_format: має відповідати апаратному формату (SNET-XXXXXXXX)
         tiny_ml_model:
           attributes:
             accuracy_score:
@@ -31,6 +42,8 @@ uk:
               must_be_in_unit_range: має бути в діапазоні 0..1
               must_be_numeric: має бути коректним числовим значенням
   errors:
+    messages:
+      invalid_eth_address: має бути валідною 0x адресою
     api:
       bad_request: Запиту бракує чогось, що потрібне Цитаделі. Поверніться й спробуйте ще раз.
       bad_request_title: Некоректний запит

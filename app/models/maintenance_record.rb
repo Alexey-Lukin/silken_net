@@ -52,11 +52,16 @@ class MaintenanceRecord < ApplicationRecord
   validate :photos_required_for_critical_actions
 
   # Тип вкладень — тільки зображення, max 20 МБ кожне, max 10 фото на запис
+  # [I18N.4] `message:` тут СВІДОМО немає: `active_storage_validations` везе власні
+  # i18n-ключі (`errors.messages.content_type_invalid` / `file_size_not_less_than` /
+  # `limit_out_of_range`) у 17 локалях, включно з `uk`. Зашитий рядок їх ПЕРЕКРИВАВ —
+  # тобто англієць бачив українську, — і заразом губив числа: гемове повідомлення
+  # несе `%{max}` і `%{file_size}`, наше не несло. `lv`/`lt` гем не має, тож вони
+  # перекриті в `config/locales/errors/{lv,lt}.yml`.
   validates :photos,
-            content_type: { in: %w[image/jpeg image/png image/webp image/heic image/heif],
-                            message: "має бути зображенням (JPEG, PNG, WebP, HEIC)" },
-            size: { less_than: 20.megabytes, message: "не може перевищувати 20 МБ" },
-            limit: { max: 10, message: "не більше 10 фото на запис" }
+            content_type: { in: %w[image/jpeg image/png image/webp image/heic image/heif] },
+            size: { less_than: 20.megabytes },
+            limit: { max: 10 }
 
   # --- СКОУПИ ---
   scope :recent,            -> { order(performed_at: :desc) }

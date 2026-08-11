@@ -33,11 +33,17 @@ RSpec.describe "pluralized strings declare a plural block" do # rubocop:disable 
   # вузлів: 1», де іменник заморожено в родовому множини. Тобто такий ключ
   # не є ані коректно звільненим, ані боргом у сенсі списку нижче: рамку
   # треба або переписати, або визнати конвенцією. Рішення мовне → `00_07` I18N.1.
+  # ⚠️ [I18N.4] Коментар стоїть ТУТ, а не всередині `%w[]`: там `#` — звичайний
+  # символ, тож слова коментаря стають ЕЛЕМЕНТАМИ (спіймано dead-entry-прикладом).
+  # Останній запис: число стоїть у кінці рядка, після двокрапки — узгоджувати нема
+  # з чим у жодній мові; перша версія («%{count} HEX-символів») ставила іменник
+  # після числа, і цей гейт її законно завернув.
   let(:exempt) do
     %w[
       codex.discoveries.counter
       dashboard.map.live_nodes
       account_security.show.mfa.enabled_with_remaining
+      activerecord.errors.models.bio_contract_firmware.attributes.bytecode_payload.exceeds_size_limit
     ]
   end
 

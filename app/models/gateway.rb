@@ -112,7 +112,7 @@ class Gateway < ApplicationRecord
   normalize_identifier :uid
 
   validates :uid, presence: true, uniqueness: true,
-            format: { with: UID_FORMAT, message: "має відповідати апаратному формату (SNET-Q-XXXXXXXX)" }
+            format: { with: UID_FORMAT, message: :must_match_hardware_format }
   validates :config_sleep_interval_s, presence: true, numericality: { greater_than_or_equal_to: 60 }
 
   # IP адреса модему SIM7070G (Starlink/LTE)

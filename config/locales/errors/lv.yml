@@ -11,9 +11,16 @@ lv:
               must_be_future: jābūt nākotnē
         bio_contract_firmware:
           attributes:
+            bytecode_payload:
+              exceeds_size_limit: 'pārsniedz maksimālo lietderīgās slodzes garumu HEX rakstzīmēs: %{count}'
+              must_be_even_length_hex: jābūt tīrai HEX virknei ar pāra garumu (baitu robežās)
             compatible_hardware_versions:
               must_be_array: jābūt masīvam
               version_must_be_non_blank_string: katrai versijai jābūt nepustukšai virknei
+        gateway:
+          attributes:
+            uid:
+              must_match_hardware_format: jāatbilst aparatūras formātam (SNET-Q-XXXXXXXX)
         maintenance_record:
           attributes:
             photos:
@@ -22,6 +29,10 @@ lv:
           attributes:
             end_date:
               must_be_after_start: jābūt pēc sākuma datuma
+        tree:
+          attributes:
+            did:
+              must_match_hardware_format: jāatbilst aparatūras formātam (SNET-XXXXXXXX)
         tiny_ml_model:
           attributes:
             accuracy_score:
@@ -31,6 +42,15 @@ lv:
               must_be_in_unit_range: jābūt diapazonā 0..1
               must_be_numeric: jābūt derīgai skaitliskai vērtībai
   errors:
+    messages:
+      invalid_eth_address: jābūt derīgai 0x adresei
+      content_type_invalid:
+        one: jābūt attēlam (JPEG, PNG, WebP, HEIC)
+        other: jābūt attēlam (JPEG, PNG, WebP, HEIC)
+      file_size_not_less_than: faila izmēram jābūt mazākam par %{max} (pašreizējais izmērs %{file_size})
+      limit_out_of_range:
+        one: ne vairāk kā %{max} fotoattēli vienā ierakstā
+        other: ne vairāk kā %{max} fotoattēli vienā ierakstā
     api:
       bad_request: Pieprasījumam trūkst kaut kā, kas nepieciešams Citadelei. Atgriezieties un mēģiniet vēlreiz.
       bad_request_title: Nepareizs pieprasījums

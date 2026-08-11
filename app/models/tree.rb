@@ -87,7 +87,7 @@ class Tree < ApplicationRecord
   # --- ВАЛІДАЦІЇ ---
   normalize_identifier :did
   validates :did, presence: true, uniqueness: true,
-            format: { with: DID_FORMAT, message: "має відповідати апаратному формату (SNET-XXXXXXXX)" }
+            format: { with: DID_FORMAT, message: :must_match_hardware_format }
   # DID входить у Merkle leaf-формулу (Mrv::TelemetryLeaf) — зміна після створення
   # зробила б історичні листи невідтворюваними (якорені корені «попливли» б).
   attr_readonly :did

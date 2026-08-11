@@ -11,9 +11,16 @@ lt:
               must_be_future: turi būti ateityje
         bio_contract_firmware:
           attributes:
+            bytecode_payload:
+              exceeds_size_limit: 'viršija didžiausią naudingosios apkrovos ilgį HEX simboliais: %{count}'
+              must_be_even_length_hex: turi būti grynoji lyginio ilgio HEX eilutė (baitų riba)
             compatible_hardware_versions:
               must_be_array: turi būti masyvas
               version_must_be_non_blank_string: kiekviena versija turi būti ne tuščia eilutė
+        gateway:
+          attributes:
+            uid:
+              must_match_hardware_format: turi atitikti aparatinės įrangos formatą (SNET-Q-XXXXXXXX)
         maintenance_record:
           attributes:
             photos:
@@ -22,6 +29,10 @@ lt:
           attributes:
             end_date:
               must_be_after_start: turi būti po pradžios datos
+        tree:
+          attributes:
+            did:
+              must_match_hardware_format: turi atitikti aparatinės įrangos formatą (SNET-XXXXXXXX)
         tiny_ml_model:
           attributes:
             accuracy_score:
@@ -31,6 +42,15 @@ lt:
               must_be_in_unit_range: turi būti diapazone 0..1
               must_be_numeric: turi būti galiojanti skaitinė vertė
   errors:
+    messages:
+      invalid_eth_address: turi būti galiojantis 0x adresas
+      content_type_invalid:
+        one: turi būti paveikslėlis (JPEG, PNG, WebP, HEIC)
+        other: turi būti paveikslėlis (JPEG, PNG, WebP, HEIC)
+      file_size_not_less_than: failo dydis turi būti mažesnis nei %{max} (dabartinis dydis %{file_size})
+      limit_out_of_range:
+        one: ne daugiau kaip %{max} nuotraukos viename įraše
+        other: ne daugiau kaip %{max} nuotraukos viename įraše
     api:
       bad_request: Užklausai trūksta to, ko reikia Citadelei. Grįžkite ir bandykite dar kartą.
       bad_request_title: Netaisyklinga užklausa
