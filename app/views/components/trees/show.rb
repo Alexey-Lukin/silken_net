@@ -103,7 +103,12 @@ module Trees
           div(class: "relative h-56 w-56 mx-auto") do
             render_radial_svg
             div(class: "absolute inset-0 flex flex-col items-center justify-center") do
-              span(class: "text-6xl font-extralight text-gaia-text-strong") { @latest_log&.z_value || "---" }
+              # 🔴 `&.to_f` НЕСУЧИЙ: `z_value` — колонка `decimal`, а Phlex друкує
+              # BigDecimal ПОРОЖНІМ рядком (виміряно: Float/Integer/String рендеряться,
+              # BigDecimal — ні). Фолбек `|| "---"` тут не рятує й ніколи не спрацьовував:
+              # BigDecimal істинний, тож гілка не бралась, а елемент виходив порожнім —
+              # захист виглядав написаним і не діяв. Дім класу → `00_07` ARCH.89.
+              span(class: "text-6xl font-extralight text-gaia-text-strong") { @latest_log&.z_value&.to_f || "---" }
               span(class: "text-tiny text-gaia-text-subtle font-mono uppercase") { t(".biometrics.impedance_unit") }
             end
           end
@@ -207,7 +212,10 @@ module Trees
           div do
             p(class: "text-mini text-gaia-text-muted uppercase") { t(".labels.verified_balance") }
             div(class: "flex items-baseline gap-2") do
-              span(class: "text-3xl font-light text-gaia-text-strong") { @tree.wallet&.scc_balance || "0.0" }
+              # 🔴 Те саме, що в біометричній панелі: `balance` — `decimal`, тож без
+              # `&.to_f` баланс рендерився ПОРОЖНІМ, а поруч лишався самотній «SCC».
+              # ⚠️ Сам ПІДПИС тут окреме питання — це бали росту, не монети → `ARCH.88`.
+              span(class: "text-3xl font-light text-gaia-text-strong") { @tree.wallet&.scc_balance&.to_f || "0.0" }
               span(class: "text-xs text-gaia-primary-hover font-mono") { "SCC" }
             end
           end

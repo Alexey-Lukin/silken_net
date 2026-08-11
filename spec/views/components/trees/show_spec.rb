@@ -10,8 +10,8 @@ RSpec.describe Trees::Show do
   # `I18n.with_locale(:uk)` example, named after the locale it pins.
   around { |ex| I18n.with_locale(:en) { ex.run } }
 
-  let(:tree) { mock_tree }
-  let(:latest_log) { mock_latest_log }
+  let(:tree) { build_tree }
+  let(:latest_log) { build_latest_log }
   let(:recent_logs) { [ mock_recent_log ] }
   let(:maintenance_history) { [ build_maintenance_record ] }
   let(:html) do
@@ -19,7 +19,7 @@ RSpec.describe Trees::Show do
                      recent_logs: recent_logs, maintenance_history: maintenance_history)
   end
 
-  def mock_tree(did: "SNET-00000042", status: "active", current_stress: 0.35,
+  def build_tree(did: "SNET-00000042", status: "active", current_stress: 0.35,
                 family_name: "Quercus Robur", baseline_impedance: 100.0,
                 device_uid: "HK-SOLDIER-042", scc_balance: 12.5,
                 crypto_address: "0xABCDEF1234567890ABCDEF1234567890ABCDEF12",
@@ -27,38 +27,49 @@ RSpec.describe Trees::Show do
                 latitude: 49.4444, longitude: 32.0597,
                 ionic_voltage: 3800, last_seen_at: 1.minute.ago,
                 under_threat: false)
-    family = OpenStruct.new(name: family_name, baseline_impedance: baseline_impedance)
-    hardware_key = device_uid ? OpenStruct.new(device_uid: device_uid) : nil
-    wallet = OpenStruct.new(
-      scc_balance: scc_balance,
-      crypto_public_address: crypto_address,
-      balance: wallet_balance
-    )
-    cluster = OpenStruct.new(name: cluster_name)
+    family = TreeFamily.new(name: family_name, baseline_impedance: baseline_impedance)
+    # 🔴 [TEST.12] `device_uid` — не окремий ідентифікатор, а САМ зовнішній ключ
+    # (`belongs_to :tree, foreign_key: :device_uid, primary_key: :did`), тож на реальному
+    # записі він ДОРІВНЮЄ DID власника. Мок вигадував "HK-SOLDIER-042" — значення, якого
+    # прод не дає ніколи, і спека пінила саме його.
+    hardware_key = device_uid ? HardwareKey.new : nil
+    # 🔴 [TEST.12] Доти мок давав гаманцю `scc_balance: 12.5` І `balance: 42.0` як ДВА
+    # незалежні поля — а `scc_balance` це `alias_attribute` на `balance`, тобто ОДНА
+    # колонка. Фікстура оголошувала світ, неможливий за побудовою, і жоден приклад
+    # не міг би цього побачити. Тепер значення одне.
+    wallet = Wallet.new(balance: scc_balance, crypto_public_address: crypto_address)
+    cluster = Cluster.new(name: cluster_name)
 
-    t = OpenStruct.new(
+    # 🔴 [TEST.12] Реальний незбережений `Tree`, і головне тут — ТРИЯРУСНА деривація,
+    # уже доведена в `trees/index` і `dashboard/map_node`: `ionic_voltage` сам НЕ колонка,
+    # він виводиться з `latest_voltage_mv`; те саме `current_stress` ⇐ `latest_stress_index`.
+    # Тож фікстура годує ПЕРШИЙ ярус, і саме перетворення стає перевірним.
+    # ⚠️ `under_threat?` лишається стабом — це запит у БД (`ews_alerts.unresolved.exists?`),
+    # а `active?` тепер приходить від справжнього статусу, не від синглтона.
+    t = Tree.new(
+      id: 1,
       did: did,
       status: status,
-      current_stress: current_stress,
+      latest_stress_index: current_stress,
+      latest_voltage_mv: ionic_voltage,
       tree_family: family,
       hardware_key: hardware_key,
       wallet: wallet,
       cluster: cluster,
       latitude: latitude,
       longitude: longitude,
-      ionic_voltage: ionic_voltage,
       last_seen_at: last_seen_at
     )
-    t.define_singleton_method(:under_threat?) { under_threat }
-    t.define_singleton_method(:active?) { status == "active" }
-    t.define_singleton_method(:model_name) { ActiveModel::Name.new(Tree) }
-    t.define_singleton_method(:to_key) { [ 1 ] }
-    t.define_singleton_method(:to_param) { "1" }
+    allow(t).to receive(:under_threat?).and_return(under_threat)
     t
   end
 
-  def mock_latest_log(z_value: 28.7, voltage_mv: 3800, temperature_c: 22, created_at: 5.minutes.ago)
-    OpenStruct.new(
+  # 🔴 [TEST.12] Реальний незбережений `TelemetryLog`, і без цього пін на біометрію
+  # СЛІПИЙ до живого дефекту: усі три поля — колонки `decimal`, а Phlex друкує
+  # BigDecimal ПОРОЖНІМ рядком. `OpenStruct` віддавав Ruby-`Float`, тож сюїта бачила
+  # «28.7» там, де прод малював порожній `text-6xl`. Дім класу → `00_07` ARCH.89.
+  def build_latest_log(z_value: 28.7, voltage_mv: 3800, temperature_c: 22, created_at: 5.minutes.ago)
+    TelemetryLog.new(
       z_value: z_value,
       voltage_mv: voltage_mv,
       temperature_c: temperature_c,
@@ -111,7 +122,7 @@ RSpec.describe Trees::Show do
 
     it "displays uplink timestamp from latest_log" do
       frozen_time = Time.zone.parse("2025-06-10 14:30:00")
-      log = mock_latest_log(created_at: frozen_time)
+      log = build_latest_log(created_at: frozen_time)
       rendered = render_component(tree: tree, latest_log: log,
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
       expect(rendered).to include("14:30:00 // 10.06.25")
@@ -134,14 +145,14 @@ RSpec.describe Trees::Show do
     end
 
     it "renders dormant with the warning token" do
-      t = mock_tree(status: "dormant")
+      t = build_tree(status: "dormant")
       rendered = render_component(tree: t, latest_log: latest_log,
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
       expect(rendered).to include("bg-status-warning")
     end
 
     it "renders deceased with the danger token" do
-      t = mock_tree(status: "deceased")
+      t = build_tree(status: "deceased")
       rendered = render_component(tree: t, latest_log: latest_log,
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
       expect(rendered).to include("bg-status-danger")
@@ -150,8 +161,8 @@ RSpec.describe Trees::Show do
 
   describe "family name" do
     it "displays 'Unknown' when family is nil" do
-      t = mock_tree(family_name: nil)
-      t.tree_family = OpenStruct.new(name: nil, baseline_impedance: 100.0)
+      t = build_tree(family_name: nil)
+      t.tree_family = TreeFamily.new(name: nil, baseline_impedance: 100.0)
       rendered = render_component(tree: t, latest_log: latest_log,
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
       expect(rendered).to include("Unknown")
@@ -203,7 +214,7 @@ RSpec.describe Trees::Show do
     end
 
     it "uses red pulse stroke when under threat" do
-      t = mock_tree(under_threat: true)
+      t = build_tree(under_threat: true)
       rendered = render_component(tree: t, latest_log: latest_log,
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
       expect(rendered).to include("stroke-red-600")
@@ -270,7 +281,7 @@ RSpec.describe Trees::Show do
     end
 
     it "shows NOT_PROVISIONED when no wallet address" do
-      t = mock_tree(crypto_address: nil)
+      t = build_tree(crypto_address: nil)
       t.wallet.crypto_public_address = nil
       rendered = render_component(tree: t, latest_log: latest_log,
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
@@ -280,11 +291,11 @@ RSpec.describe Trees::Show do
 
   describe "hardware security vault" do
     it "displays device_uid" do
-      expect(html).to include("HK-SOLDIER-042")
+      expect(html).to include("SNET-00000042") # = DID власника, бо `device_uid` і є FK
     end
 
     it "shows NOT_PROVISIONED when hardware key is nil" do
-      t = mock_tree(device_uid: nil)
+      t = build_tree(device_uid: nil)
       t.hardware_key = nil
       rendered = render_component(tree: t, latest_log: latest_log,
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
@@ -354,7 +365,7 @@ RSpec.describe Trees::Show do
     end
 
     it "renders '0.0' SCC when tree has no wallet" do
-      t = mock_tree
+      t = build_tree
       t.wallet = nil
       rendered = render_component(tree: t, latest_log: latest_log,
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
@@ -363,7 +374,7 @@ RSpec.describe Trees::Show do
     end
 
     it "renders without a cluster when tree.cluster is nil" do
-      t = mock_tree
+      t = build_tree
       t.cluster = nil
       rendered = render_component(tree: t, latest_log: latest_log,
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
@@ -372,7 +383,7 @@ RSpec.describe Trees::Show do
     end
 
     it "skips impedance bars when family has no positive baseline_impedance" do
-      t = mock_tree(baseline_impedance: nil)
+      t = build_tree(baseline_impedance: nil)
       rendered = render_component(tree: t, latest_log: latest_log,
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
       # Header still renders; bars simply absent — no crash
@@ -380,7 +391,7 @@ RSpec.describe Trees::Show do
     end
 
     it "treats baseline_impedance == 0 as not-positive and skips bars (no division by zero)" do
-      t = mock_tree(baseline_impedance: 0)
+      t = build_tree(baseline_impedance: 0)
       rendered = render_component(tree: t, latest_log: latest_log,
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
       expect(rendered).to include("Impedance Flux")
@@ -388,7 +399,7 @@ RSpec.describe Trees::Show do
     end
 
     it "falls back to 'Unknown' family when tree.tree_family is nil entirely" do
-      t = mock_tree(family_name: "ignored")
+      t = build_tree(family_name: "ignored")
       t.tree_family = nil
       rendered = render_component(tree: t, latest_log: latest_log,
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
@@ -398,7 +409,7 @@ RSpec.describe Trees::Show do
 
   describe "Codex citation strip" do
     it "renders the strip when citations exist for the tree" do
-      tree = mock_tree
+      tree = build_tree
       citation = instance_double(::Codex::Citation, node: nil, id: 21)
       relation = double("relation")
       allow(::Codex::Citation).to receive(:for_target).with(tree).and_return(relation)
