@@ -16,25 +16,27 @@ RSpec.describe Contracts::Index do
     c
   end
 
-  def mock_contract(id: 42, status: "active", org_name: "Cherkasy Forest Fund",
-                    cluster_name: "Carpathian-Alpha", total_value: 10_000,
-                    emitted_tokens: 350, performance: 50,
-                    start_date: 6.months.ago, end_date: 6.months.from_now)
-    c = OpenStruct.new(
+  # [TEST.12] Реальний незбережений `NaasContract`, і `current_yield_performance` більше
+  # НЕ задається: модель виводить його з `emitted_tokens` та `total_funding` — тобто з
+  # двох полів, які мок задавав поруч і незалежно. Доти спека пінила смугу прогресу
+  # наполовину заповненою, тоді як формула на тих самих числах дає майже порожню.
+  #
+  # 🔴 `total_value` (alias на `total_funding`) і `emitted_tokens` — колонки `numeric`,
+  # тобто BigDecimal: прод друкує десяткову частку, а Integer у фікстурі її ховав.
+  def build_contract(id: 42, status: :active, org_name: "Cherkasy Forest Fund",
+                     cluster_name: "Carpathian-Alpha", total_funding: 10_000,
+                     emitted_tokens: 350,
+                     start_date: 6.months.ago, end_date: 6.months.from_now)
+    NaasContract.new(
       id: id,
       status: status,
-      organization: mock_org(name: org_name),
-      cluster: mock_cluster(name: cluster_name),
-      total_value: total_value,
+      organization: Organization.new(name: org_name),
+      cluster: Cluster.new(name: cluster_name),
+      total_funding: total_funding,
       emitted_tokens: emitted_tokens,
-      current_yield_performance: performance,
       start_date: start_date,
       end_date: end_date
     )
-    c.define_singleton_method(:model_name) { ActiveModel::Name.new(NaasContract) }
-    c.define_singleton_method(:to_key) { [ id ] }
-    c.define_singleton_method(:to_param) { id.to_s }
-    c
   end
 
   # ⚠️ Ключі — це КОНТРАКТ із `Api::V1::ContractsController#index`, а не вигадка спеки.
@@ -53,7 +55,7 @@ RSpec.describe Contracts::Index do
     )
   end
 
-  let(:contract) { mock_contract }
+  let(:contract) { build_contract }
   let(:html) { render_component(contracts: [ contract ], stats: mock_stats, pagy: mock_pagy(last: 1)) }
 
   describe "header" do
@@ -102,16 +104,21 @@ RSpec.describe Contracts::Index do
     # USD (07_01 §5 + вся юніт-економіка §11-§20 в $), тоді як `emitted_tokens` — справжня
     # SCC-емісія. Доти обидві казали «SCC», тобто фіат малювався карбоновим токеном.
     it "renders the contracted service fee in USD, not in the carbon token" do
-      expect(html).to include("10000 USD")
-      expect(html).not_to include("10000 SCC")
+      expect(html).to include("10000.0 USD")
+      expect(html).not_to include("10000.0 SCC")
     end
 
     it "renders emitted_tokens with SCC" do
-      expect(html).to include("350 SCC")
+      expect(html).to include("350.0 SCC")
     end
 
-    it "renders the performance gauge" do
-      expect(html).to include("50%")
+    # 🔴 Відсоток ВИВОДИТЬСЯ з двох сусідніх комірок того ж рядка, а не задається:
+    # доти мок клав його незалежно й пінив смугу наполовину заповненою, тоді як
+    # формула на тих самих числах дає майже порожню — тобто сюїта стверджувала
+    # протилежний стан прогресу.
+    it "derives the performance gauge from the two cells it renders beside it" do
+      expect(html).to include("4%")
+      expect(html).not_to include("50%")
     end
 
     it "renders audit details link" do
@@ -124,22 +131,22 @@ RSpec.describe Contracts::Index do
   # warning; централізована мапа дає йому власний neutral.
   describe "status colors" do
     it "colors active contracts with the success token" do
-      html = render_component(contracts: [ mock_contract(status: "active") ], stats: mock_stats, pagy: mock_pagy(last: 1))
+      html = render_component(contracts: [ build_contract(status: "active") ], stats: mock_stats, pagy: mock_pagy(last: 1))
       expect(html).to include("bg-status-success")
     end
 
     it "colors fulfilled contracts with the success token" do
-      html = render_component(contracts: [ mock_contract(status: "fulfilled") ], stats: mock_stats, pagy: mock_pagy(last: 1))
+      html = render_component(contracts: [ build_contract(status: "fulfilled") ], stats: mock_stats, pagy: mock_pagy(last: 1))
       expect(html).to include("bg-status-success")
     end
 
     it "colors breached contracts with the danger token" do
-      html = render_component(contracts: [ mock_contract(status: "breached") ], stats: mock_stats, pagy: mock_pagy(last: 1))
+      html = render_component(contracts: [ build_contract(status: "breached") ], stats: mock_stats, pagy: mock_pagy(last: 1))
       expect(html).to include("bg-status-danger")
     end
 
     it "dims cancelled contracts with the neutral token" do
-      html = render_component(contracts: [ mock_contract(status: "cancelled") ], stats: mock_stats, pagy: mock_pagy(last: 1))
+      html = render_component(contracts: [ build_contract(status: "cancelled") ], stats: mock_stats, pagy: mock_pagy(last: 1))
       expect(html).to include("bg-status-neutral")
       expect(html).to include("opacity-50")
     end
@@ -156,8 +163,14 @@ RSpec.describe Contracts::Index do
   # контракту це справді нерозпізнаний стан; після переходу на спільну мапу він
   # дістає `DEFAULT_STYLE`, а не бурштин попередньої `else`-гілки.
   describe "unrecognised status" do
+    # ⚠️ Вхід досяжний лише стабом РИДЕРА: на реальному записі enum кидає
+    # `ArgumentError` просто в конструкторі, тож доти цю гілку «перевіряло»
+    # значення, якого в проді не буває.
     it "falls back to the neutral token" do
-      html = render_component(contracts: [ mock_contract(status: "expired") ], stats: mock_stats, pagy: mock_pagy(last: 1))
+      contract = build_contract
+      allow(contract).to receive(:status).and_return("expired")
+
+      html = render_component(contracts: [ contract ], stats: mock_stats, pagy: mock_pagy(last: 1))
       expect(html).to include("bg-status-neutral")
     end
   end
@@ -165,14 +178,14 @@ RSpec.describe Contracts::Index do
   describe "pagination rendering" do
     it "renders pagination component" do
       pagy = mock_pagy(count: 50, page: 1, last: 3)
-      html = render_component(contracts: [ mock_contract ], stats: mock_stats, pagy: pagy)
+      html = render_component(contracts: [ build_contract ], stats: mock_stats, pagy: pagy)
       expect(html).to be_present
     end
   end
 
   describe "contract row with missing optional fields" do
     it "renders em-dash org, unassigned cluster and blank dates" do
-      contract = mock_contract
+      contract = build_contract
       contract.organization = nil
       contract.cluster = nil
       contract.start_date = nil

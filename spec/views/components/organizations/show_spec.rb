@@ -17,22 +17,24 @@ RSpec.describe Organizations::Show do
     c
   end
 
-  def mock_org(id: 1, name: "Cherkasy Forest Fund", created_at: 2.years.ago,
-               crypto_public_address: "0xABCD1234", billing_email: "billing@forest.org",
-               total_contracted: "50000")
-    o = OpenStruct.new(
+  # [TEST.12] Реальний незбережений `Organization`: метадані фреймворку (потрібні
+  # перемикачу контексту — `button_to` будує шлях через `to_param`) віддає модель, а не
+  # фікстура. `total_contracted` — АГРЕГАТ по асоціації (`naas_contracts.sum(...).to_f`),
+  # тож на незбереженому записі він чесно дає 0.0; стабимо сам ридер — метод існує,
+  # підміняється лише значення. 🔴 І він віддає **Float**, а не String: доти фікстура
+  # подавала рядок, тож десяткова частка, яку прод друкує завжди, була невидима.
+  def build_org(id: 1, name: "Cherkasy Forest Fund", created_at: 2.years.ago,
+                crypto_public_address: "0xABCD1234", billing_email: "billing@forest.org",
+                total_contracted: 50_000.0)
+    org = Organization.new(
       id: id,
       name: name,
       created_at: created_at,
       crypto_public_address: crypto_public_address,
-      billing_email: billing_email,
-      total_contracted: total_contracted
+      billing_email: billing_email
     )
-    # Потрібні перемикачу контексту: `button_to` будує шлях через `to_param`.
-    o.define_singleton_method(:model_name) { ActiveModel::Name.new(Organization) }
-    o.define_singleton_method(:to_key) { [ id ] }
-    o.define_singleton_method(:to_param) { id.to_s }
-    o
+    allow(org).to receive(:total_contracted).and_return(total_contracted)
+    org
   end
 
   def render_component(organization:, clusters:, performance:, acting_organization: nil)
@@ -47,9 +49,14 @@ RSpec.describe Organizations::Show do
     )
   end
 
-  let(:org) { mock_org }
+  let(:org) { build_org }
   let(:clusters) { [ mock_cluster ] }
-  let(:performance) { { total_trees: 42, carbon_minted: "1234 SCC" } }
+  # 🔴 Значення взято з рядка контролера, що його будує (`organizations_controller`
+  # `#show`: `naas_contracts.sum(:emitted_tokens).to_f.round(2)`) — тобто ГОЛИЙ Float.
+  # Доти фікстура несла одиницю ВСЕРЕДИНІ значення («1234 SCC»), і пін шукав власний
+  # вигаданий рядок: `StatCard` рендерить число й підпис у РІЗНИХ вузлах, тож така
+  # послідовність не з'являється в розмітці ніколи, хай би що робив компонент.
+  let(:performance) { { total_trees: 42, carbon_minted: 1234.56 } }
   let(:html) { render_component(organization: org, clusters: clusters, performance: performance) }
 
   # [UI.6] Четверта посадка «права без переходу»: з рядка реєстру ведуть ДВІ дії, а
@@ -108,12 +115,21 @@ RSpec.describe Organizations::Show do
       expect(html).to include("SCC Minted")
     end
 
-    it "renders Carbon minted value" do
-      expect(html).to include("1234 SCC")
+    # Число й одиниця живуть у РІЗНИХ вузлах `StatCard`, тож пін на «<число> SCC»
+    # не міг пройти ніколи — він шукав рядок, який фікстура сама ж і вигадала.
+    it "renders the carbon value the controller actually passes" do
+      expect(html).to include("1234.56")
+      expect(html).not_to include("1234 SCC")
     end
 
     it "renders Contracted Amount stat card" do
       expect(html).to include("Contracted Amount")
+    end
+
+    # 🔴 Значення картки доти не пінив ніхто — приклад вище перевіряє лише ЗАГОЛОВОК.
+    # `total_contracted` віддає Float, тож прод завжди друкує десяткову частку.
+    it "renders the contracted amount with the decimal its Float really carries" do
+      expect(html).to include("50000.0")
     end
 
     it "renders total_trees count" do
