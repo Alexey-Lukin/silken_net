@@ -19,11 +19,13 @@ RSpec.describe Codex::Attunements::Toggle do
     )
   end
 
-  let(:node) do
-    OpenStruct.new(id: 42, slug: "cherkasy-bir", attunement_count: 7).tap do |n|
-      n.define_singleton_method(:to_param) { n.slug }
-    end
-  end
+  # [TEST.12] Реальний незбережений вузол: `to_param` мок ВИГОТОВЛЯВ, хоча модель
+  # його перевизначає сама, а компонент до нього й не звертається (адресує `slug`
+  # напряму). 🔴 `attunement_count` СВІДОМО розведено з переданим `count:` — доти
+  # обидва були сімкою, тож пін на число лишався б зеленим і тоді, коли компонент
+  # читав би колонку замість kwarg'а, хоча в проді їх наповнюють різні шляхи
+  # (counter_cache проти запиту контролера).
+  let(:node) { Codex::Node.new(id: 42, slug: "cherkasy-bir", attunement_count: 99) }
 
   # Справжні хелпери — не літерали: пін мусить упасти, якщо маршрут перейменують.
   let(:routes)         { Rails.application.routes.url_helpers }

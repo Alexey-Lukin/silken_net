@@ -4,44 +4,41 @@
 require "rails_helper"
 
 RSpec.describe Codex::NodeCard do
-  def mock_realm(slug: "ecosystem", glyph: "forest", name_en: "Ecosystems", accent_token: "gaia-primary")
-    realm = OpenStruct.new(
-      slug: slug, glyph: glyph, name_en: name_en, accent_token: accent_token
-    )
-    # Mirror the real `Codex::Realm#display_glyph` lookup so the mock matches
-    # the production API surface; otherwise components that call it on a mock
-    # would silently fall through to the default placeholder glyph.
-    realm.define_singleton_method(:display_glyph) do
-      ::Codex::Realm::DISPLAY_GLYPHS.fetch(glyph.to_s, ::Codex::Realm::DEFAULT_DISPLAY_GLYPH)
-    end
-    realm
+  # [TEST.12] Реальні незбережені записи. Мок доти ВИГОТОВЛЯВ `display_glyph`
+  # (щоправда чесно — через ті самі константи) і три метадані фреймворку
+  # (`to_param`/`model_name`/`to_key`); усе це реальна модель віддає сама, а
+  # `to_param` у `Codex::Node` ще й перевизначений на `slug`.
+  def build_realm(slug: "ecosystem", glyph: "forest", name_en: "Ecosystems", accent_token: "status-success")
+    Codex::Realm.new(slug: slug, glyph: glyph, name_en: name_en, accent_token: accent_token)
   end
 
-  def mock_node(**overrides)
-    realm = overrides.delete(:realm) || mock_realm
-    cover = OpenStruct.new(attached?: false, representable?: false)
-    attrs = {
-      id: 1,
-      slug: "cherkasy-bir",
-      codex_uid: "CDX-ECO-0001",
-      title_uk: "Черкаський бір",
-      title_en: "Cherkasy Pine Forest",
-      subtitle_en: "Pine cathedral of the Dnipro",
-      lifecycle_status: "thriving",
-      attunement_elo: 1700,
-      geo_region: "cherkasy-bir",
-      realm: realm,
-      cover_image: cover
-    }.merge(overrides)
-    OpenStruct.new(attrs).tap do |n|
-      n.define_singleton_method(:to_param) { n.slug }
-      n.define_singleton_method(:model_name) { ActiveModel::Name.new(Codex::Node) }
-      n.define_singleton_method(:to_key) { [ n.id ] }
+  # 🔴 `geo_region` СВІДОМО відмінний від `slug`. Доти обидва були рядком
+  # «cherkasy-bir», а приклад про футер пінив саме його — тобто був зелений
+  # через href сусіднього приклада й пережив би зняття гілки geo_region цілком.
+  def build_node(**overrides)
+    realm = overrides.delete(:realm) || build_realm
+    node = Codex::Node.new(
+      {
+        id: 1,
+        slug: "cherkasy-bir",
+        codex_uid: "CDX-ECO-0001",
+        title_uk: "Черкаський бір",
+        title_en: "Cherkasy Pine Forest",
+        subtitle_en: "Pine cathedral of the Dnipro",
+        lifecycle_status: "thriving",
+        attunement_elo: 1700,
+        geo_region: "Dnipro Basin"
+      }.merge(overrides.except(:cover_image))
+    )
+    node.realm = realm
+    if overrides.key?(:cover_image)
+      allow(node).to receive(:cover_image).and_return(overrides[:cover_image])
     end
+    node
   end
 
   describe "rendering" do
-    let(:html) { render_component(node: mock_node) }
+    let(:html) { render_component(node: build_node) }
 
     it "renders the bilingual title" do
       expect(html).to include("Черкаський бір")
@@ -66,13 +63,13 @@ RSpec.describe Codex::NodeCard do
 
     it "renders Elo and geo_region in the footer" do
       expect(html).to include("Elo 1700")
-      expect(html).to include("cherkasy-bir")
+      expect(html).to include("Dnipro Basin")
     end
   end
 
   describe "edge cases" do
     it "renders a placeholder glyph when cover_image is not attached" do
-      html = render_component(node: mock_node)
+      html = render_component(node: build_node)
       expect(html).to include("🌲")
     end
 
@@ -86,7 +83,7 @@ RSpec.describe Codex::NodeCard do
                      attached?: true,
                      representable?: true)
       allow(cover).to receive(:variant).and_return(variant)
-      node_with_cover = mock_node(cover_image: cover)
+      node_with_cover = build_node(cover_image: cover)
 
       # ⚠️ ЄДИНИЙ приклад цього файла повз `render_component`, і виняток названий:
       # `cover` — double, а не справжнє вкладення, тож реальний
@@ -105,18 +102,18 @@ RSpec.describe Codex::NodeCard do
     end
 
     it "renders an em dash when geo_region is blank" do
-      html = render_component(node: mock_node(geo_region: nil))
+      html = render_component(node: build_node(geo_region: nil))
       expect(html).to include("—")
     end
 
     it "omits subtitle row when subtitle_en is blank" do
-      html = render_component(node: mock_node(subtitle_en: nil))
+      html = render_component(node: build_node(subtitle_en: nil))
       expect(html).not_to include("Pine cathedral")
     end
   end
 
   describe "design system compliance" do
-    let(:html) { render_component(node: mock_node) }
+    let(:html) { render_component(node: build_node) }
 
     it "uses gaia design tokens, not raw Tailwind colors" do
       expect(html).not_to include("bg-white")
