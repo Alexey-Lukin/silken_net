@@ -4,12 +4,13 @@
 require "rails_helper"
 
 RSpec.describe Reports::CarbonAbsorption do
-  def mock_org(name: "EcoDAO")
-    OpenStruct.new(name: name)
-  end
-
-  def mock_data(total_carbon_points: 9_800, wallets_count: 45,
-                trees_active: 280, trees_total: 320)
+  # Типи взято з `Api::V1::ReportsController#carbon_absorption`, який і будує цей
+  # хеш: `wallets.sum(:balance)` над колонкою `numeric` віддає BigDecimal, решта —
+  # `count`/`cached_trees_count`, тобто Integer. Доти вся четвірка подавалась
+  # Integer'ом, і питання «як BigDecimal доїжджає до розмітки» з сюїти поставити
+  # було неможливо (`ARCH.89`: Phlex друкує BigDecimal порожнім рядком).
+  def report_data(total_carbon_points: BigDecimal("9800"), wallets_count: 45,
+                  trees_active: 280, trees_total: 320)
     {
       total_carbon_points: total_carbon_points,
       wallets_count: wallets_count,
@@ -18,8 +19,8 @@ RSpec.describe Reports::CarbonAbsorption do
     }
   end
 
-  let(:org)  { mock_org }
-  let(:data) { mock_data }
+  let(:org)  { Organization.new(name: "EcoDAO") }
+  let(:data) { report_data }
   let(:html) { render_component(organization: org, data: data) }
 
   describe "header section" do
@@ -37,6 +38,9 @@ RSpec.describe Reports::CarbonAbsorption do
   end
 
   describe "stat cards" do
+    # ⛔ Підпис під цією ж карткою (`…_sub`) каже «SCC», хоча величина — бали
+    # росту: мітка чесна, sub — ні. Пін на нього СВІДОМО не ставиться, доки не
+    # ухвалено присуд `ARCH.88` — інакше зелений пін зацементує брехливу одиницю.
     it "renders Total Carbon Points stat card" do
       expect(html).to include("Total Carbon Points")
     end
@@ -55,8 +59,11 @@ RSpec.describe Reports::CarbonAbsorption do
   end
 
   describe "metrics table" do
-    it "renders total carbon points value" do
-      expect(html).to include("9800")
+    # Ціль — сама КОМІРКА, не документ: те саме число стоїть ще й в `aria-label`
+    # картки, куди воно приходить інтерполяцією (а та кличе `to_s` завжди), тож
+    # пін по документу лишався б зеленим і після зняття `to_s` із комірки.
+    it "prints the BigDecimal aggregate in the value cell" do
+      expect(html).to include(%(<td class="p-4 text-right text-gray-300">9800.0</td>))
     end
 
     it "renders wallets count" do
