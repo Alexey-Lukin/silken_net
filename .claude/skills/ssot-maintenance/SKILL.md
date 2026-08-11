@@ -188,6 +188,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 50. The reference-gate family grips a canon doc by an IDENTIFIER, and it validates that the identifier RESOLVES — never that it still denotes the same subject. So a restructure has two silent faces: renaming empties a gate's input, and re-using a freed number silently re-points every stale citation at the new occupant — **before dissolving a number, list the gates that EXEMPT the docs where you will do the planning — the exemption you rely on daily is the one that will not warn you**
 51. A gate can be HARD, correct, unit-tested — and structurally unable to reach the place its class actually lives, because the same fact is WRITTEN in two forms and the gate's regex knows one
 52. Mutation-verify a gate in BOTH directions — «it reds on the defect» is only half the proof, and the missing half is where an over-broad gate hides
+53. A carve-out registry gates the PRESENCE of its `back:` condition, never its TRUTH — so an expired exemption looks identical to a live one, and the reader is the only check that exists
 
 <!-- /GUARD-CRAFT-INDEX -->
 
