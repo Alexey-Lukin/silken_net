@@ -201,6 +201,8 @@ Rails view helpers: `csp_meta_tag`, `csrf_meta_tags`, `stylesheet_link_tag`, `ja
 >
 > ⚠️ **І фолбек тут створює ілюзію захисту:** `{ record.amount || "---" }` не спрацьовує НІКОЛИ, бо BigDecimal істинний — гілка не береться, а елемент виходить порожнім. Захист виглядає написаним і не діє.
 >
+> ✅ **Носій — `spec/quality/phlex_bigdecimal_render_spec.rb`** (мутація-перевірено чотирма ходами: зняття `.to_f` → RED · `.round(2)` → RED · `.round` без аргументу → GREEN · аліас `scc_balance` → RED). Множини `decimal`-колонок і `alias_attribute` він бере з РАНТАЙМУ, тож нова колонка входить у периметр сама.
+>
 > ⚠️ Компонентна спека сліпа до цього **за побудовою**, якщо фікстура — `OpenStruct`: вона віддає Ruby-`Float`, тож сюїта бачить число там, де прод малює порожнечу ([`04_06 §B.2`](04_06_Testing_Guide_and_Coverage) BP #14, вісь ТИПУ).
 
 **Файл:** `app/views/components/application_component.rb`
