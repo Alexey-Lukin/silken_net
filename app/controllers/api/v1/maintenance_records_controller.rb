@@ -40,7 +40,7 @@ module Api
           @records = @records.where("performed_at <= ?", parsed_to)
         end
 
-        @pagy, @records = pagy(@records, items: 50)
+        @pagy, @records = pagy(@records, limit: 50)
 
         respond_to do |format|
           format.json do
@@ -112,7 +112,7 @@ module Api
 
       # --- ДЕТАЛІ ЗАПИСУ ---
       def show
-        @pagy_photos, @photos = pagy(@record.photos, items: 6)
+        @pagy_photos, @photos = pagy(@record.photos, limit: 6)
         respond_to do |format|
           format.json { render json: MaintenanceRecordBlueprint.render_as_hash(@record, view: :show) }
           format.html do
@@ -144,7 +144,7 @@ module Api
       # --- ПАГІНАЦІЯ ФОТО (Turbo Frame Load More) ---
       # GET /maintenance_records/:id/photos?page=N
       def photos
-        @pagy_photos, @photos = pagy(@record.photos, items: 6)
+        @pagy_photos, @photos = pagy(@record.photos, limit: 6)
         # [UI.6] `editable:` проводиться сюди ТЕЖ, і це найпідступніший із сайтів: без
         # нього дефолт `false` мовчки знімав би кнопку видалення на сторінках 2+ у самого
         # АВТОРА — тобто fail-closed бив би не по чужому, а по тому, хто має право.

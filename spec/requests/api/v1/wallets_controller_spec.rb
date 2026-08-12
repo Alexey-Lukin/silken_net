@@ -145,11 +145,23 @@ RSpec.describe Api::V1::WalletsController, type: :request do
     let(:admin) { create(:user, :admin, organization: organization) }
     let(:headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
 
-    it "renders balance Turbo Frame for HTML" do
-      allow_any_instance_of(Wallets::BalanceFrame).to receive(:template) { |c| c.plain "balance" }
+    # 🔴 [TEST.12 вісь D] Приклад доти ПЕРШИМ рядком стабив `BalanceFrame#template`
+    # на `plain "balance"` — тобто вимикав рівно те, що обіцяє його назва, і лишав
+    # твердженням самий 200. Стаб не обходив жодної перешкоди: знятий, компонент
+    # рендериться чисто. Несуче тут ІМʼЯ, а не вміст — фрейм вантажиться ЛІНИВО
+    # (`Wallets::Show` оголошує його з `src:`), тож розходження імені між викликачем
+    # і ціллю лишає баланс вічним скелетом при чесних 200.
+    # ⚠️ Значення й одиницю пін свідомо НЕ чіпає: підпис балансу — предмет
+    # відкритого ⚖️ [ARCH.88], і пін на нього зацементував би брехливий тікер.
+    it "віддає фрейм балансу під імʼям, яким його адресує сторінка гаманця" do
+      get "/wallets/#{wallet.id}", headers: headers.merge("Accept" => "text/html")
+      addressed = response.body[/<turbo-frame[^>]*balance[^>]*>/]&.[](/id="([^"]+)"/, 1)
 
       get "/wallets/#{wallet.id}/balance", headers: headers
+
       expect(response).to have_http_status(:ok)
+      expect(addressed).to be_present
+      expect(response.body).to include(%(id="#{addressed}"))
     end
 
     it "returns JSON with balance data" do
@@ -185,11 +197,26 @@ RSpec.describe Api::V1::WalletsController, type: :request do
     let(:admin) { create(:user, :admin, organization: organization) }
     let(:headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
 
-    it "renders metadata Turbo Frame for HTML" do
-      allow_any_instance_of(Wallets::MetadataFrame).to receive(:template) { |c| c.plain "metadata" }
+    # Той самий клас, що у фреймі балансу вище — стаб вимикав власний предмет.
+    # Тут вміст пінити МОЖНА (адреса гаманця не має спірної одиниці), тож пін
+    # двоскладовий: імʼя, яким фрейм адресують, І сама блокчейн-адреса.
+    it "віддає фрейм метаданих під імʼям, яким його адресує сторінка гаманця" do
+      # Адресу виставляємо ЯВНО: `let!(:wallet)` бере авто-створений
+      # `Tree.after_create`-гаманець (`balance: 0`, адреси немає), тож фабричні
+      # атрибути на нього НЕ лягають — і заповнена гілка `Web3::Address` без цього
+      # рядка не виконується жодного разу. Повна адреса їде в `title=`, у видимому
+      # тексті вона скорочена.
+      wallet.update!(crypto_public_address: "0x#{'a' * 40}")
+
+      get "/wallets/#{wallet.id}", headers: headers.merge("Accept" => "text/html")
+      addressed = response.body[/<turbo-frame[^>]*metadata[^>]*>/]&.[](/id="([^"]+)"/, 1)
 
       get "/wallets/#{wallet.id}/metadata", headers: headers
+
       expect(response).to have_http_status(:ok)
+      expect(addressed).to be_present
+      expect(response.body).to include(%(id="#{addressed}"))
+      expect(response.body).to include(wallet.crypto_public_address)
     end
 
     it "returns JSON with metadata" do

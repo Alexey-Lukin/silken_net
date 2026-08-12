@@ -57,6 +57,13 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
 
       expect(response.parsed_body).to have_key("pagy")
       expect(response.parsed_body["pagy"]).to include("page", "count", "pages")
+      # 🔴 [TEST.12] `limit` тут несучий, а не четвертий ключ для повноти: у Pagy 43
+      # `OPTIONS` містить РІВНО `[:limit]`, тож застаріле `items:` не кидає нічого —
+      # воно мовчки лишає дефолтні 20 (виміряно: `items: 6` → `limit == 20`).
+      # Перелік ключів через `include` цього не бачить за побудовою: він питає про
+      # наявність, а підміна міняє ЗНАЧЕННЯ. Саме так три виклики контролера
+      # переживали мажорний бамп гема.
+      expect(response.parsed_body["pagy"]["limit"]).to eq(50)
     end
 
     # 🔴 Доти пін був `types.uniq == ["inspection"]` — і тримався БЕЗ фільтра:

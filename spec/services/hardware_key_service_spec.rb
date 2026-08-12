@@ -404,6 +404,31 @@ RSpec.describe HardwareKeyService, type: :service do
       described_class.derive_device_key("TEST-DEVICE-002")
     end
 
+    # 🔴 [TEST.12, вісь ПРОВЕНАНСУ] Решта трьох info-рядків доти не мали ЖОДНОГО
+    # літерального піна: їхні оракули будувались із тієї самої константи, яку мали б
+    # стерегти (`info: described_class::IOTEX_HKDF_INFO`, `eq(derive_lora_key(...))`),
+    # тобто приклад був тотожністю. Зміна константи на `…-v2` лишала сюїту зеленою,
+    # а деривація віддавала інший ключ, ніж прошито в залізі й зареєстровано в
+    # W3bstream — тобто мовчазна відмова атестацій і закритий мінт-гейт.
+    # Форму взято в сусіда вище: рядок ЛІТЕРАЛОМ, бо саме рядок є контрактом із
+    # прошитим пристроєм. Дім значень — `03_05 §3`.
+    it "прибиває три інші HKDF-info ЛІТЕРАЛАМИ, бо контракт із залізом — сам рядок" do
+      expect(OpenSSL::KDF).to receive(:hkdf).with(
+        anything, hash_including(info: "silken-aes-128-lora-key")
+      ).and_call_original
+      described_class.derive_lora_key("TEST-DEVICE-004")
+
+      expect(OpenSSL::KDF).to receive(:hkdf).with(
+        anything, hash_including(info: "silken-aes-128-broadcast-key")
+      ).and_call_original
+      described_class.derive_broadcast_key(42)
+
+      expect(OpenSSL::KDF).to receive(:hkdf).with(
+        anything, hash_including(info: "silken-ed25519-iotex-v1")
+      ).and_call_original
+      described_class.derive_iotex_seed("TEST-DEVICE-004")
+    end
+
     it "returns exactly 64 hex characters (32 bytes)" do
       key = described_class.derive_device_key("TEST-DEVICE-003")
       expect(key.length).to eq(64)

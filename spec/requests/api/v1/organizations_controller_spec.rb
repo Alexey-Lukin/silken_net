@@ -206,6 +206,14 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
     # страхування на випадок ручного втручання в БД, і саме тому перевіряється
     # штучно, а не через `destroy!`.
     it "відкочується на власну організацію, якщо acting-організації більше немає" do
+      # 🔴 [TEST.12 вісь D] Доти пін був `have_http_status(:ok)` — тобто міряв, що
+      # резолвер не ВПАВ, і мовчав про те, чия організація стала чинною. Третій
+      # клан тут несучий: без нього «відкотився на власну» не відрізнити від
+      # «узяв першу-ліпшу живу», бо фолбек `current_user.organization` і будь-яка
+      # інша жива організація дають однаково успішні 200.
+      own_tree = create(:tree, cluster: create(:cluster, organization: organization))
+      stranger_tree = create(:tree, cluster: create(:cluster, organization: create(:organization)))
+
       post "/organizations/#{other_organization.id}/switch", as: :json
 
       # [⚖️ 2026-07-30] Порядок тепер несучий: `Cluster has_many :trees` і
@@ -220,6 +228,9 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
       get "/wallets", as: :json
 
       expect(response).to have_http_status(:ok)
+      ids = response.parsed_body["data"].map { |w| w["id"] }
+      expect(ids).to include(own_tree.wallet.id)
+      expect(ids).not_to include(stranger_tree.wallet.id)
     end
 
     it "не дає перемкнутись звичайному адміністраторові" do

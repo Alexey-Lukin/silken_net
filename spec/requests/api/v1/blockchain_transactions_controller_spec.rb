@@ -151,9 +151,25 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
   end
 
   describe "GET /blockchain_transactions/:id/on_chain" do
-    it "renders on-chain verification Turbo Frame" do
+    # 🔴 [TEST.12 вісь D] Пін доти був `have_http_status(:ok)`, тоді як назва обіцяє
+    # ДВІ речі: що це Turbo Frame і що в ньому on-chain верифікація. Перша важливіша,
+    # бо фрейм вантажиться ЛІНИВО — сторінка транзакції оголошує його з `src:`, тож
+    # розходження імен між викликачем і ціллю лишає панель порожньою НАЗАВЖДИ, а
+    # сервер однаково віддає 200. Компонентна спека це не ловить за побудовою: вона
+    # рендерить і повз маршрутизатор, і повз викликача.
+    # Пін на ЗБІГ, а не на літерал — узгоджене перейменування обох боків лишається
+    # зеленим, розходження червоніє.
+    it "віддає фрейм під тим самим імʼям, яким його адресує сторінка транзакції" do
+      get "/blockchain_transactions/#{own_tx.id}",
+          headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+      addressed = response.body[/<turbo-frame[^>]*on_chain[^>]*>/]&.[](/id="([^"]+)"/, 1)
+
       get "/blockchain_transactions/#{own_tx.id}/on_chain", headers: headers
+
       expect(response).to have_http_status(:ok)
+      expect(addressed).to be_present
+      expect(response.body).to include(%(id="#{addressed}"))
+      expect(response.body).to include(own_tx.tx_hash)
     end
   end
 end

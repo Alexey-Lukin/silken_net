@@ -17,7 +17,9 @@ RSpec.describe SystemHealth::Show do
       coap_listener: coap,
       sidekiq: sidekiq,
       database: database,
-      checked_at: "2024-01-15 12:00:00 UTC"
+      # Форма — та, яку кладе контролер (`Time.current.iso8601`), а не людяний
+      # штамп: інакше спека показує екран, якого адміністратор не бачить.
+      checked_at: "2024-01-15T12:00:00Z"
     }
   end
 
@@ -134,8 +136,7 @@ RSpec.describe SystemHealth::Show do
 
   describe "footer" do
     it "renders last checked timestamp" do
-      expect(html).to include("Last checked at")
-      expect(html).to include("2024-01-15 12:00:00 UTC")
+      expect(html).to include("Last checked at 2024-01-15T12:00:00Z")
     end
   end
 end
