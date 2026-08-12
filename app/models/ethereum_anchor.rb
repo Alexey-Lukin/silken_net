@@ -3,8 +3,13 @@
 
 # [BLOCKER-2] Модель для зберігання L1 Ethereum state root anchoring записів.
 # Забезпечує аудит-трейл: { state_root, tx_hash, anchored_at, block_number }.
-# [BLOCKER-6] Зберігає компоненти state_root (total_scc, chain_hash, anchored_at)
-# для незалежної верифікації зовнішнім аудитором.
+# [BLOCKER-6] Зберігає компоненти state_root (total_growth_points, total_scc_supply,
+# total_sfc, active_tree_count, chain_hash, anchored_at) для незалежної верифікації
+# зовнішнім аудитором. [ARCH.97] Дві перші — РІЗНІ величини: бали офчейн-леджера
+# ⊥ чинний monetary supply (Σmints − Σburns, дзеркало on-chain `totalSupply()`);
+# доти перша стояла тут під іменем другої. ⚠️ Ім'я каже «supply», а НЕ «minted»:
+# величина не кумулятивна — slash її зменшує, тож «змінтоване» брехало б після
+# першого ж спалення.
 class EthereumAnchor < ApplicationRecord
   # --- СТАТУСИ ---
   enum :status, {
@@ -18,7 +23,8 @@ class EthereumAnchor < ApplicationRecord
   # --- ВАЛІДАЦІЇ ---
   validates :state_root, presence: true, uniqueness: true,
             format: { with: /\A[a-f0-9]{64}\z/, message: "must be a 64-char hex SHA-256" }
-  validates :total_scc, presence: true, numericality: { greater_than_or_equal_to: 0 }
+  validates :total_growth_points, presence: true, numericality: { greater_than_or_equal_to: 0 }
+  validates :total_scc_supply, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :chain_hash, presence: true
   validates :anchored_at, presence: true
   validates :tx_hash, uniqueness: true, allow_nil: true,
@@ -61,8 +67,21 @@ class EthereumAnchor < ApplicationRecord
 
   # [ARCH.12] One-Home агрегат-формули: ЄДИНЕ місце рядка-payload'а — юзають і
   # generate_state_root (leaf0), і verify нижче. Розійтись їм більше нема як.
-  def self.aggregate_payload(total_scc:, total_sfc:, active_tree_count:, chain_hash:, anchored_at:)
-    "#{total_scc}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{anchored_at.utc.iso8601}"
+  # [ARCH.97] Порядок полів = порядок історії формули (E.53/E.54 додавали в хвіст),
+  # тож нове поле теж іде В ХВІСТ — інакше payload перестав би читатись як
+  # накопичувальний журнал розширень. `total_growth_points` — офчейн-леджер балів
+  # (єдине його криптографічне засвідчення: `Wallet` не має `Auditable`, а `credit!`
+  # це голий `increment!` без сліду); `total_scc_supply` — чинний monetary supply.
+  # ⚠️ `total_sfc` СВІДОМО лишається сирою Σ confirmed-мінтів, тобто кумулятивною, а
+  # не supply: бекенд SFC не палить (`BlockchainBurningService` хардкодить
+  # `carbon_coin`). Але `SilkenForestCoin.sol` МАЄ `slash()`/`slashUpTo()`, тож
+  # перший же DAO-слеш зробить цю величину розбіжною з `totalSupply()` — тоді вона
+  # мусить перейти на `net_minted_supply(:forest_coin)`. Різні семантики двох
+  # сусідніх полів названі тут навмисно, щоб наступний читач не вивів симетрію.
+  def self.aggregate_payload(total_growth_points:, total_sfc:, active_tree_count:, chain_hash:, anchored_at:,
+                             total_scc_supply:)
+    "#{total_growth_points}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|" \
+      "#{anchored_at.utc.iso8601}|#{total_scc_supply}"
   end
 
   # Перевіряє, чи можна незалежно відтворити state_root з збережених компонентів.
@@ -150,7 +169,8 @@ class EthereumAnchor < ApplicationRecord
 
   def components_payload
     self.class.aggregate_payload(
-      total_scc: total_scc, total_sfc: total_sfc, active_tree_count: active_tree_count,
+      total_growth_points: total_growth_points, total_scc_supply: total_scc_supply,
+      total_sfc: total_sfc, active_tree_count: active_tree_count,
       chain_hash: chain_hash, anchored_at: anchored_at
     )
   end

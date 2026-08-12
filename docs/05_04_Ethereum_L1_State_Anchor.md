@@ -20,7 +20,7 @@
 |--------|------|
 | [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Мультичейн (L1 у стеку фіналізації) |
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Pipeline (джерело state даних) |
-| [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (total_scc/total_sfc у root) |
+| [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (`total_scc_supply`/`total_sfc` у root) |
 | [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | Slashing/burn змінює total_supply між anchor-вікнами |
 | [`05_06` — Governance and DAO](05_06_Governance_and_DAO) | Timelock керує `ANCHOR_ROLE`-ротацією (admin=Timelock) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (Mainnet deploy, gas) |
@@ -50,7 +50,7 @@
 
 Ethereum L1 State Anchor — це **фінальна печатка** всього стану системи SilkenNet. Один раз на тиждень (щопонеділка о 03:00 UTC) `EthereumAnchorWorker` запускає `Ethereum::StateAnchorService`, який:
 
-1. Збирає глобальний стан системи з PostgreSQL (загальний SCC-баланс + загальний SFC supply + кількість активних дерев + останній chain_hash AuditLog + timestamp)
+1. Збирає глобальний стан системи з PostgreSQL (бали росту всіх гаманців + чинний SCC-supply + кумулятивні SFC-мінтинги + кількість активних дерев + останній chain_hash AuditLog + timestamp)
 2. Стискає його в 32-байтний SHA-256 хеш (`state_root`)
 3. Записує `bytes32` хеш у смарт-контракт `StateRootAnchor` на **Ethereum Mainnet** через Alchemy RPC
 
@@ -157,14 +157,17 @@ end
 ### Формула
 
 ```
-state_root = SHA256("#{total_scc}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{anchored_at.iso8601}")
+state_root = SHA256("#{total_growth_points}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{anchored_at.iso8601}|#{total_scc_supply}")
 ```
+
+> 🔴 **[ARCH.97] Дві грошові величини — РІЗНІ, і плутати їх не можна.** Доти тут стояло одне поле `total_scc` = `Wallet.sum(:scc_balance)`, тобто **бали росту** під іменем монети (`scc_balance` — це `alias_attribute` на колонку `balance`; дім величини — [`04_01 §6`](04_01_Data_Models_and_Entities)), тоді як сусідній `total_sfc` того самого дайджесту ніс справжні confirmed-мінти. Одна криптографічна обіцянка змішувала дві одиниці, а верифікація цього не бачила **за побудовою**: `aggregate_payload` — свідомий One-Home для generate І verify, тож обидві сторони рахували однаково й ідеально збігались. Нове поле стоїть **у хвості** payload'а, бо порядок тут = порядок історії розширень (E.53/E.54 теж додавали в хвіст).
 
 де:
 
 | Поле | Джерело | Тип | Приклад |
 |------|---------|-----|---------|
-| `total_scc` | `Wallet.sum(:scc_balance)` | Decimal (сума всіх SCC-балансів у системі) | `"1250000.5"` |
+| `total_growth_points` | `Wallet.sum(:balance)` | Decimal — **офчейн-леджер балів росту**, НЕ монети. Єдине його криптографічне засвідчення: `Wallet` не має `Auditable`, а `credit!` — голий `increment!` без сліду, тож саме тут воно й потрібне | `"1250000.5"` |
+| `total_scc_supply` | `BlockchainTransaction.net_minted_supply(:carbon_coin)` | Decimal — **чинний** monetary supply (Σmints − Σburns), дзеркало on-chain `totalSupply()`. Ім'я каже «supply», а не «minted»: величина не кумулятивна, slash її зменшує | `"48.0"` |
 | `total_sfc` | `BlockchainTransaction.where(token_type: :forest_coin, status: :confirmed).sum(:amount)` | Decimal (сума підтверджених SFC мінтингів) | `"500.0"` |
 | `active_tree_count` | `Tree.active.count` | Integer (кількість активних дерев у екосистемі) | `"4250"` |
 | `chain_hash` | `AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash)` | String або `"GENESIS"` якщо AuditLog порожній | `"a3f8c2..."` |
@@ -177,12 +180,21 @@ def generate_state_root
   # [SNAPSHOT ISOLATION]: REPEATABLE READ гарантує consistent snapshot
   # між паралельними MintCarbonCoinWorker / AuditLogWorker записами
   ActiveRecord::Base.transaction(isolation: :repeatable_read) do
-    # 1. Сума всіх SCC-балансів у системі (cross-chain total supply snapshot)
-    #    `.to_d` нормалізує до BigDecimal для консистентного рядкового представлення
-    #    (Active Record sum() повертає Integer 0 коли немає записів, BigDecimal при наявності)
-    total_scc = Wallet.sum(:scc_balance).to_d
+    # 1. [ARCH.97] Офчейн-леджер БАЛІВ росту (НЕ монети). Читається `balance` НАПРЯМУ,
+    #    не через alias `scc_balance`: доказовий шлях не має залежати від імені, що
+    #    обіцяє монети. `.to_d` нормалізує до BigDecimal (sum() віддає Integer 0 на
+    #    порожній множині) — Float дав би e-нотацію в хешованому рядку.
+    total_growth_points = Wallet.sum(:balance).to_d
+
+    # 1b. [ARCH.97] ЧИННИЙ monetary supply — One-Home `net_minted_supply`
+    #     (Σmints − Σburns, дискримінатор `sourceable_type`), спільний із ChainAudit.
+    total_scc_supply = BlockchainTransaction.net_minted_supply(:carbon_coin).to_d
 
     # 2. [E.53] Сума підтверджених SFC мінтингів (governance token supply)
+    #    ⚠️ СВІДОМО сира Σ, тобто КУМУЛЯТИВНА, а не supply: бекенд SFC не палить.
+    #    Але `SilkenForestCoin.sol` має `slash()`/`slashUpTo()` — перший DAO-слеш
+    #    зробить її розбіжною з `totalSupply()`, і тоді вона мусить перейти на
+    #    `net_minted_supply(:forest_coin)`. Семантики двох сусідніх полів РІЗНІ навмисно.
     total_sfc = BlockchainTransaction.where(token_type: :forest_coin, status: :confirmed).sum(:amount).to_d
 
     # 3. [E.54] Кількість активних дерев (ecosystem coverage metric)
@@ -195,14 +207,16 @@ def generate_state_root
     # 5. Timestamp моменту формування хешу (зберігається в EthereumAnchor.anchored_at)
     timestamp = Time.current.utc
 
-    # 6. Конкатенація через | роздільник
-    payload = "#{total_scc}|#{total_sfc}|#{active_tree_count}|#{latest_chain_hash}|#{timestamp.iso8601}"
+    # 6. Конкатенація через | роздільник (One-Home рядка = EthereumAnchor.aggregate_payload)
+    payload = "#{total_growth_points}|#{total_sfc}|#{active_tree_count}|" \
+              "#{latest_chain_hash}|#{timestamp.iso8601}|#{total_scc_supply}"
 
     # 7. SHA-256 хешування → 64-символьний hex рядок (256 bits / 32 bytes)
     state_root = Digest::SHA256.hexdigest(payload)
 
     # 8. Повернути всі компоненти для збереження в EthereumAnchor (BLOCKER-6)
-    { state_root: state_root, total_scc: total_scc, total_sfc: total_sfc,
+    { state_root: state_root, total_growth_points: total_growth_points,
+      total_scc_supply: total_scc_supply, total_sfc: total_sfc,
       active_tree_count: active_tree_count, chain_hash: latest_chain_hash, anchored_at: timestamp }
   end
 end
@@ -219,15 +233,18 @@ Result:   "7f4a9b2c1e8d3f6a0b5c8e2d7a4f1b9e3c6d0a7f4b1e8d5c2a9f6b3e0d7a4c1"  (64
 
 | Включено ✅ | Відсутнє ⚠️ |
 |------------|------------|
-| Загальний SCC supply (всі гаманці) — leaf0 | Lorenz Z-value статистика (агрегатна) |
-| Загальний SFC supply (підтверджені мінтинги) [E.53] — leaf0 | |
+| **Бали росту всіх гаманців** (офчейн-леджер, НЕ монети) [ARCH.97] — leaf0 | Lorenz Z-value статистика (агрегатна) |
+| **Чинний SCC supply** (Σmints − Σburns, дзеркало `totalSupply()`) [ARCH.97] — leaf0 | |
+| Кумулятивні SFC-мінтинги [E.53] — leaf0 (⚠️ не supply: burn'и не віднімаються) | |
 | Кількість активних дерев [E.54] — leaf0 | |
 | Останній AuditLog chain_hash — leaf0 | |
 | Timestamp виконання (збережений в БД) — leaf0 | |
 | **Per-record телеметрія-листя вікна** (cluster-субкорені; leaf = `Mrv::TelemetryLeaf`) [ARCH.12 Фаза 1а] | |
 | `REPEATABLE READ` snapshot isolation | |
 
-> **Примітка [ARCH.12 Фаза 1а, 2026-07-19]:** Агрегат-формула вище тепер = **`leaf0`** Merkle-дерева, а `state_root = MerkleTree.root([leaf0] + cluster-субкорені)` (`root_version: 1`; One-Home рядка-формули = `EthereumAnchor.aggregate_payload` — юзають і generate, і verify). Legacy-якорі (`root_version: 0`) — flat commitment, верифікуються старою формулою назавжди. Незалежна верифікація: `EthereumAnchor#verify_state_root` version-route — v0 відтворює хеш з 5 збережених колонок; v1 звіряє leaf0 з тих самих 5 колонок І перераховує корінь зі збережених `subtree_roots` (самодостатньо O(#кластерів), переживає ретеншн). Механіка вікна/листя — §Merkle нижче.
+> **Примітка [ARCH.12 Фаза 1а, 2026-07-19]:** Агрегат-формула вище тепер = **`leaf0`** Merkle-дерева, а `state_root = MerkleTree.root([leaf0] + cluster-субкорені)` (`root_version: 1`; One-Home рядка-формули = `EthereumAnchor.aggregate_payload` — юзають і generate, і verify). Legacy-якорі (`root_version: 0`) — flat commitment. Незалежна верифікація: `EthereumAnchor#verify_state_root` version-route — v0 відтворює хеш зі збережених колонок; v1 звіряє leaf0 з тих самих колонок І перераховує корінь зі збережених `subtree_roots` (самодостатньо O(#кластерів), переживає ретеншн). Механіка вікна/листя — §Merkle нижче.
+>
+> 🔴 **ПОПРАВКА [ARCH.97]: тут стояло «верифікуються старою формулою НАЗАВЖДИ», і це звужено.** `root_version` версіонує **структуру** commitment'а (flat ⊥ Merkle), а не заморожує СКЛАД полів: обидві гілки читають один `aggregate_payload`, тож зміна складу міняє обидві. Формулу вже розширювали на місці — E.53/E.54 (3→5 полів) і [ARCH.97] (5→6), — і це легально рівно **до першого підтвердженого якоря**: продовий письменник один і завжди ставить `root_version: 1`, рядків у БД нуль, контракт не задеплоєно ([`SEC.1`](00_07_Action_Plan_Tracker)), тож обіцянка «назавжди» квантифікувалась по ПОРОЖНІЙ множині. **Після першого confirmed-якоря склад полів заморожується, і будь-яке розширення вимагає нової версії кореня** — разом із двома хардкодженими фільтрами `root_version: 1` (window-chaining в `StateAnchorService`, `covering_anchors` у `Mrv::LineageReportService`), які інакше зроблять v2-якорі невидимими для lineage-бандлів.
 
 ---
 
@@ -242,10 +259,10 @@ Result:   "7f4a9b2c1e8d3f6a0b5c8e2d7a4f1b9e3c6d0a7f4b1e8d5c2a9f6b3e0d7a4c1"  (64
 generate_state_root()
        │
        ▼
-generate_state_root()  →  { state_root, total_scc, total_sfc, active_tree_count, chain_hash, anchored_at }
+generate_state_root()  →  { state_root, total_growth_points, total_scc_supply, total_sfc, active_tree_count, chain_hash, anchored_at }
        │
        ▼
-EthereumAnchor.create!(state_root:, total_scc:, total_sfc:, active_tree_count:, chain_hash:, anchored_at:, status: :pending)
+EthereumAnchor.create!(state_root:, total_growth_points:, total_scc_supply:, total_sfc:, active_tree_count:, chain_hash:, anchored_at:, status: :pending)
        │ Crash recovery: запис існує до TX (якщо процес впаде — запис залишиться в :pending)
        │
        ▼
@@ -476,7 +493,7 @@ Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
 
 | Тест | Що перевіряє |
 |------|-------------|
-| validations (presence, uniqueness, format) | state_root, tx_hash, total_scc, chain_hash |
+| validations (presence, uniqueness, format) | state_root, tx_hash, total_growth_points, total_scc_supply, chain_hash |
 | `verify_state_root` | Відтворення хешу з компонентів (незалежна верифікація) |
 | `etherscan_url` | URL генерація для confirmed TX |
 | scopes: `recent`, `successful`, `latest_confirmed`, `stuck_sent` [ARCH.66] | AR scopes |
@@ -500,7 +517,7 @@ Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
 ║                                                                      ║
 ║  Понеділок 02:00 UTC                                                 ║
 ║    ClusterHealthCheckWorker → Slashing Protocol (якщо потрібно)     ║
-║    Wallet.scc_balance може змінитись (BurnCarbonTokensWorker)       ║
+║    SCC-supply може змінитись (slash палить on-chain)                ║
 ║                                                                      ║
 ║  Понеділок 03:00 UTC ← ТОЧКА ФІНАЛІЗАЦІЇ                            ║
 ║    EthereumAnchorWorker (web3_low, cron: '0 3 * * 1', retry: 5)     ║
@@ -508,7 +525,8 @@ Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
 ║       ▼                                                              ║
 ║    generate_state_root():                                            ║
 ║      [REPEATABLE READ transaction]                                   ║
-║      total_scc           = Wallet.sum(:scc_balance)  [PostgreSQL]   ║
+║      total_growth_points = Wallet.sum(:balance)      [PostgreSQL]   ║
+║      total_scc_supply    = net_minted_supply(:scc)   [PostgreSQL]   ║
 ║      total_sfc           = BlockchainTx(SFC).sum     [PostgreSQL]   ║
 ║      active_tree_count   = Tree.where(...).count     [PostgreSQL]   ║
 ║      chain_hash          = AuditLog.last.chain_hash  [PostgreSQL]   ║
@@ -554,7 +572,9 @@ L5  Rails Backend  ← Telemetry, Services, Workers (04_xx)
 | Модуль | Воркер | Час | Що надає |
 |--------|--------|-----|---------|
 | 05_02 Proof of Growth | `DailyAggregationWorker` | 01:00 UTC | Оновлені `AuditLog.chain_hash` за добу |
-| 05_03 Tokenomics | `ClusterHealthCheckWorker` + `BurnCarbonTokensWorker` | 02:00 UTC | Фінальний `Wallet.scc_balance` після slashing |
+| 05_03 Tokenomics | `ClusterHealthCheckWorker` + `BurnCarbonTokensWorker` | 02:00 UTC | Фінальний **SCC-supply** після slashing (burn зменшує `net_minted_supply`) |
+
+> 🔴 **ПОПРАВКА [ARCH.97]: тут стояв «фінальний `Wallet.scc_balance` після slashing», і залежність була ВИГАДАНА.** Slashing колонки `wallets.balance` не торкається взагалі — виміряно: письменників у дереві рівно два (`credit!` → `increment!` і ESG-`decrement!`, останній без живого викликача, [`ARCH.95`](00_07_Action_Plan_Tracker)), тож балова величина монотонно росте й від 02:00-воркерів не залежить. Залежність стала СПРАВЖНЬОЮ лише тепер, коли якір несе `total_scc_supply`: burn зменшує саме його. **Урок ширший за рядок: увесь цей документ міркував про якорену величину як про монетний supply — і в такому прочитанні був НЕСУПЕРЕЧЛИВИЙ, тож перечитування дрейфу не ловило, бо шукало конфлікт між реченнями, а конфлікт був між узгодженим документом і реальністю.**
 
 ### Низхідні (Blocks)
 

@@ -7,7 +7,13 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
  * @title StateRootAnchor
  * @notice Щотижнева фіналізація стану SilkenNet в Ethereum Mainnet (L1).
  * @dev Зберігає 32-байтний SHA-256 state_root — криптографічний commitment
- *      глобального стану SilkenNet (total_scc + chain_hash + timestamp).
+ *      глобального стану SilkenNet. Склад leaf0 (SSOT формули — docs/05_04 §3):
+ *      total_growth_points | total_sfc | active_tree_count | chain_hash |
+ *      anchored_at | total_scc_supply.
+ *      NB [ARCH.97]: перше поле — БАЛИ офчейн-леджера, останнє — чинний
+ *      SCC-supply (Σmints−Σburns). Доти NatSpec описував 3-польову формулу
+ *      (протух від E.53/E.54) і називав балову величину «total_scc», тобто
+ *      монетою; контракт байтів не інтерпретує, але опис вводив в оману.
  *
  *      Один раз на тиждень EthereumAnchorWorker → StateAnchorService викликає
  *      storeStateRoot(bytes32), записуючи незмінний proof of state в Ethereum L1.

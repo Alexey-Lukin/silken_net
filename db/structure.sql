@@ -1388,7 +1388,7 @@ ALTER SEQUENCE public.device_calibrations_id_seq OWNED BY public.device_calibrat
 CREATE TABLE public.ethereum_anchors (
     id bigint NOT NULL,
     state_root character varying(64) NOT NULL,
-    total_scc numeric(30,4) NOT NULL,
+    total_growth_points numeric(30,6) NOT NULL,
     chain_hash character varying NOT NULL,
     anchored_at timestamp(6) without time zone NOT NULL,
     tx_hash character varying(66),
@@ -1405,7 +1405,8 @@ CREATE TABLE public.ethereum_anchors (
     leaf_count integer DEFAULT 0,
     root_version integer DEFAULT 0 NOT NULL,
     subtree_roots jsonb,
-    window_to timestamp without time zone
+    window_to timestamp without time zone,
+    total_scc_supply numeric(30,6) DEFAULT 0.0 NOT NULL
 );
 
 
@@ -8538,6 +8539,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260812175736'),
 ('20260729052758'),
 ('20260727130640'),
 ('20260726165258'),

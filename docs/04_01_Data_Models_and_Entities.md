@@ -1320,7 +1320,8 @@ active/draft ──cancel──► cancelled
 | Поле | Тип | Опис |
 |------|-----|------|
 | `state_root` | string(64) | 64-char SHA-256 hex дайджест (`UNIQUE`) |
-| `total_scc` | decimal(30,4) | Загальний SCC-баланс усіх гаманців на момент anchoring |
+| `total_growth_points` | decimal(30,6) | **[ARCH.97]** Бали росту всіх гаманців (офчейн-леджер, НЕ монети). Шкала 6 = шкала джерела `wallets.balance` — інакше збережене значення округлювалось і `verify_state_root` не сходився САМ ІЗ СОБОЮ |
+| `total_scc_supply` | decimal(30,6) | **[ARCH.97]** Чинний SCC-supply (Σmints − Σburns, One-Home `BlockchainTransaction.net_minted_supply`) — дзеркало on-chain `totalSupply()` |
 | `total_sfc` | decimal(30,4) | Сума підтверджених SFC мінтингів на момент anchoring [E.53] |
 | `active_tree_count` | integer | Кількість активних дерев в екосистемі на момент anchoring [E.54] |
 | `chain_hash` | string | chain_hash останнього `AuditLog` на момент anchoring |
@@ -1350,13 +1351,14 @@ active/draft ──cancel──► cancelled
 **Валідації:**
 - `state_root` — presence, uniqueness, format `/\A[a-f0-9]{64}\z/`
 - `tx_hash` — uniqueness, format `/\A0x[a-fA-F0-9]{64}\z/` (when present); presence required for `sent`/`confirmed`
-- `total_scc` — presence, `>= 0`
+- `total_growth_points` — presence, `>= 0`
+- `total_scc_supply` — presence, `>= 0`
 - `chain_hash`, `anchored_at` — presence
 
 **Scopes:** `recent`, `successful` (confirmed), `latest_confirmed`, `stuck_sent` [ARCH.66] (`:sent` AND `updated_at < STUCK_SENT_THRESHOLD`=6год — One-Home предикат для reconcile-sweeper + gauge).
 
 **Методи:**
-- `verify_state_root` — незалежно відтворює хеш з `total_scc|total_sfc|active_tree_count|chain_hash|anchored_at.iso8601` та порівнює з `state_root` (для зовнішнього аудитора; працює на будь-якому статусі — компоненти заповнюються ще при `:pending`)
+- `verify_state_root` — незалежно відтворює хеш з `total_growth_points|total_sfc|active_tree_count|chain_hash|anchored_at.iso8601|total_scc_supply` та порівнює з `state_root` (для зовнішнього аудитора; працює на будь-якому статусі — компоненти заповнюються ще при `:pending`)
 - `etherscan_url` — повертає `https://etherscan.io/tx/#{tx_hash}` або `nil`
 - `confirm!(block_number, gas_used)` / `mark_failed!(reason)` / `escalate_to_review!(reason)` [ARCH.66] — гардовані переходи (`with_lock`, idempotent, plain enum): `confirm!`/`mark_failed!` з `:sent` **або** `:manual_review` (останнє = гардований операторський вихід із manual_review після etherscan-звірки, без raw `update_column`); `escalate!` лише з `:sent`
 

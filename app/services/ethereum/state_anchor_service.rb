@@ -96,7 +96,15 @@ module Ethereum
     # per-record телеметрія-листя (Mrv::TelemetryLeaf) дають inclusion-proof для ISO-звіту.
     def generate_state_root
       ActiveRecord::Base.transaction(isolation: :repeatable_read) do
-        total_scc = Wallet.sum(:scc_balance).to_d
+        # [ARCH.97] ДВІ РІЗНІ ВЕЛИЧИНИ, і плутати їх не можна — доти якір ніс лише першу
+        # під іменем другої. `balance` читається НАПРЯМУ, не через alias `scc_balance`:
+        # доказовий шлях не має залежати від імені, що обіцяє монети (ARCH.88).
+        total_growth_points = Wallet.sum(:balance).to_d
+        total_scc_supply    = BlockchainTransaction.net_minted_supply(:carbon_coin).to_d
+        # ⚠️ SFC — СИРА сума confirmed-мінтів (без віднімання burn'ів), і це коректно рівно
+        # доти, доки SFC не палиться: `BlockchainBurningService` жорстко ставить
+        # `carbon_coin`. Зʼявиться SFC-burn — цей рядок дістане ту саму ваду й мусить
+        # перейти на `net_minted_supply(:forest_coin)`.
         total_sfc = BlockchainTransaction.where(token_type: :forest_coin, status: :confirmed).sum(:amount).to_d
         active_tree_count = Tree.active.count
         latest_chain_hash = AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash) || "GENESIS"
@@ -104,7 +112,8 @@ module Ethereum
 
         leaf0 = Digest::SHA256.hexdigest(
           EthereumAnchor.aggregate_payload(
-            total_scc: total_scc, total_sfc: total_sfc, active_tree_count: active_tree_count,
+            total_growth_points: total_growth_points, total_scc_supply: total_scc_supply,
+            total_sfc: total_sfc, active_tree_count: active_tree_count,
             chain_hash: latest_chain_hash, anchored_at: timestamp
           )
         )
@@ -121,7 +130,8 @@ module Ethereum
 
         {
           state_root: state_root,
-          total_scc: total_scc,
+          total_growth_points: total_growth_points,
+          total_scc_supply: total_scc_supply,
           total_sfc: total_sfc,
           active_tree_count: active_tree_count,
           chain_hash: latest_chain_hash,
@@ -175,7 +185,8 @@ module Ethereum
         # а DB unique index на state_root забезпечує додатковий захист.
         anchor = EthereumAnchor.create!(
           state_root: state_root,
-          total_scc: root_data[:total_scc],
+          total_growth_points: root_data[:total_growth_points],
+          total_scc_supply: root_data[:total_scc_supply],
           total_sfc: root_data[:total_sfc],
           active_tree_count: root_data[:active_tree_count],
           chain_hash: root_data[:chain_hash],

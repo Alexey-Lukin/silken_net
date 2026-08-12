@@ -7,7 +7,7 @@ RSpec.describe EthereumAnchor, type: :model do
   subject(:anchor) do
     described_class.new(
       state_root: "a" * 64,
-      total_scc: 1000.0,
+      total_growth_points: 1000.0,
       chain_hash: "abc123",
       anchored_at: Time.current
     )
@@ -30,8 +30,8 @@ RSpec.describe EthereumAnchor, type: :model do
       expect(anchor.errors[:state_root]).to include("must be a 64-char hex SHA-256")
     end
 
-    it "requires total_scc" do
-      anchor.total_scc = nil
+    it "requires total_growth_points" do
+      anchor.total_growth_points = nil
       expect(anchor).not_to be_valid
     end
 
@@ -49,7 +49,7 @@ RSpec.describe EthereumAnchor, type: :model do
       anchor.save!
       duplicate = described_class.new(
         state_root: anchor.state_root,
-        total_scc: 2000.0,
+        total_growth_points: 2000.0,
         chain_hash: "def456",
         anchored_at: Time.current
       )
@@ -115,16 +115,23 @@ RSpec.describe EthereumAnchor, type: :model do
     it "returns true when state_root matches recomputed hash" do
       freeze_time do
         now = Time.current.utc
-        total_scc = BigDecimal("1000.5")
+        # [ARCH.97] Payload виписаний РУКОПИСНО й навмисно — це незалежне твердження
+        # про контракт, а не переграш `aggregate_payload`; інакше пін не міг би впасти
+        # від зміни формули. Дві грошові величини свідомо РІЗНІ: збіг чисел зробив би
+        # пін сліпим до того, яка з них куди пішла.
+        total_growth_points = BigDecimal("1000.5")
+        total_scc_supply = BigDecimal("7.25")
         total_sfc = BigDecimal("0")
         active_tree_count = 0
         chain_hash = "test_chain_hash"
-        expected_payload = "#{total_scc}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{now.iso8601}"
+        expected_payload = "#{total_growth_points}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|" \
+                           "#{now.iso8601}|#{total_scc_supply}"
         expected_root = Digest::SHA256.hexdigest(expected_payload)
 
         record = described_class.new(
           state_root: expected_root,
-          total_scc: total_scc,
+          total_growth_points: total_growth_points,
+          total_scc_supply: total_scc_supply,
           chain_hash: chain_hash,
           anchored_at: now
         )
@@ -133,10 +140,44 @@ RSpec.describe EthereumAnchor, type: :model do
       end
     end
 
+    # [ARCH.97] Регресійний носій ПРОТИ мовчазного повернення шкали.
+    #
+    # Доказові величини приходять із `numeric(24,6)`-джерел (`wallets.balance`,
+    # `blockchain_transactions.amount`), а колонки якоря були `numeric(30,4)`.
+    # Generate хешує НЕокруглене значення в leaf0, verify перераховує зі ЗБЕРЕЖЕНОЇ
+    # колонки — тож при 6-знаковому джерелі якір не сходився САМ ІЗ СОБОЮ, і
+    # «зовнішній аудитор відтворить хеш» було хибним арифметично, а не концептуально.
+    # Виміряно до фіксу: 1000.123456 → 1000.1235 → verify_state_root == false.
+    # Приклад падає, щойно шкалу колонки опустять нижче за шкалу джерела.
+    it "round-trips evidence values at SOURCE precision (6dp) so verify stays true" do
+      freeze_time do
+        now = Time.current.utc
+        gp = BigDecimal("1000.123456")
+        supply = BigDecimal("7.654321")
+        leaf0 = Digest::SHA256.hexdigest(
+          described_class.aggregate_payload(
+            total_growth_points: gp, total_scc_supply: supply, total_sfc: BigDecimal("0"),
+            active_tree_count: 0, chain_hash: "h", anchored_at: now
+          )
+        )
+
+        record = described_class.create!(
+          state_root: MerkleTree.root([ leaf0 ]), total_growth_points: gp,
+          total_scc_supply: supply, total_sfc: 0, active_tree_count: 0,
+          chain_hash: "h", anchored_at: now, root_version: 1,
+          subtree_roots: [ { "kind" => "aggregate", "root" => leaf0 } ], window_to: now
+        ).reload
+
+        expect(record.total_growth_points).to eq(gp)
+        expect(record.total_scc_supply).to eq(supply)
+        expect(record.verify_state_root).to be true
+      end
+    end
+
     it "returns false when state_root does not match" do
       record = described_class.new(
         state_root: "b" * 64,
-        total_scc: 1000.0,
+        total_growth_points: 1000.0,
         chain_hash: "abc",
         anchored_at: Time.current
       )
@@ -149,7 +190,8 @@ RSpec.describe EthereumAnchor, type: :model do
       let(:leaf0) do
         Digest::SHA256.hexdigest(
           described_class.aggregate_payload(
-            total_scc: BigDecimal("1000.5"), total_sfc: BigDecimal("0"),
+            total_growth_points: BigDecimal("1000.5"), total_scc_supply: BigDecimal("7.25"),
+            total_sfc: BigDecimal("0"),
             active_tree_count: 0, chain_hash: "test_chain_hash", anchored_at: now
           )
         )
@@ -162,7 +204,8 @@ RSpec.describe EthereumAnchor, type: :model do
 
       def build_merkle_record(state_root:, subtree_roots: tier2)
         described_class.new(
-          state_root: state_root, total_scc: BigDecimal("1000.5"),
+          state_root: state_root, total_growth_points: BigDecimal("1000.5"),
+          total_scc_supply: BigDecimal("7.25"),
           chain_hash: "test_chain_hash", anchored_at: now,
           root_version: 1, subtree_roots: subtree_roots, window_to: now - 5.minutes
         )
@@ -188,8 +231,36 @@ RSpec.describe EthereumAnchor, type: :model do
       it "returns false when leaf0 does not match the aggregate components (supply tamper)" do
         freeze_time do
           record = build_merkle_record(state_root: MerkleTree.root([ leaf0, cluster_root ]))
-          record.total_scc = BigDecimal("9999.9")
+          record.total_growth_points = BigDecimal("9999.9")
           expect(record.verify_state_root).to be false
+        end
+      end
+
+      # [ARCH.97] Дзеркало вище на ДРУГІЙ величині — доказ, що SCC-supply реально
+      # входить у leaf0, а не доданий декоративно. Без цього прикладу поле можна було б
+      # забути прокинути в payload, і жоден інший пін не почервонів би.
+      it "returns false when the SCC supply is tampered (second quantity is load-bearing)" do
+        freeze_time do
+          record = build_merkle_record(state_root: MerkleTree.root([ leaf0, cluster_root ]))
+          record.total_scc_supply = BigDecimal("9999.9")
+          expect(record.verify_state_root).to be false
+        end
+      end
+
+      # [ARCH.97] Дві величини мусять лишатись РІЗНИМИ доданками: якщо колись їх
+      # зведуть назад в одну, payload перестане розрізняти «бали» й «монети», а
+      # верифікація цього не побачить (обидві сторони рахують однаково).
+      it "keeps growth points and minted supply as distinct payload fields" do
+        freeze_time do
+          payload = described_class.aggregate_payload(
+            total_growth_points: BigDecimal("1000.5"), total_scc_supply: BigDecimal("7.25"),
+            total_sfc: BigDecimal("0"), active_tree_count: 0,
+            chain_hash: "h", anchored_at: now
+          )
+
+          expect(payload).to include("1000.5")
+          expect(payload).to include("7.25")
+          expect(payload.split("|").size).to eq(6)
         end
       end
 
@@ -226,7 +297,7 @@ RSpec.describe EthereumAnchor, type: :model do
     before do
       described_class.create!(
         state_root: "a" * 64,
-        total_scc: 100.0,
+        total_growth_points: 100.0,
         chain_hash: "hash1",
         anchored_at: 2.days.ago,
         status: :confirmed,
@@ -234,7 +305,7 @@ RSpec.describe EthereumAnchor, type: :model do
       )
       described_class.create!(
         state_root: "b" * 64,
-        total_scc: 200.0,
+        total_growth_points: 200.0,
         chain_hash: "hash2",
         anchored_at: 1.day.ago,
         status: :failed,
@@ -254,14 +325,14 @@ RSpec.describe EthereumAnchor, type: :model do
     it ".in_flight returns only pending/sent anchors from the last week" do
       pending_anchor = described_class.create!(
         state_root: "c" * 64,
-        total_scc: 300.0,
+        total_growth_points: 300.0,
         chain_hash: "hash3",
         anchored_at: 1.hour.ago,
         status: :pending
       )
       sent_anchor = described_class.create!(
         state_root: "d" * 64,
-        total_scc: 400.0,
+        total_growth_points: 400.0,
         chain_hash: "hash4",
         anchored_at: 2.hours.ago,
         status: :sent,

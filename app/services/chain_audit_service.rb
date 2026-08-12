@@ -58,13 +58,10 @@ class ChainAuditService < ApplicationService
   # роздуває delta на 2×burn → хибний `critical` після кожного slash. Дискримінатор:
   # `sourceable_type = "NaasContract"` = burn (єдиний slash-шлях); усе інше (mint / insurance-
   # payout mint) = емісія. [G4]
+  # [ARCH.97] Формула переїхала в One-Home `BlockchainTransaction.net_minted_supply`:
+  # її другим споживачем став L1-якір, а два доми дискримінатора розійшлися б тихо.
   def fetch_db_scc_total
-    base  = BlockchainTransaction.where(token_type: :carbon_coin, status: :confirmed)
-    # NULL-safe: mint-tx мають sourceable_type IS NULL — звичайний `!=` відсіяв би їх
-    # (SQL `NULL != 'x'` = NULL, не TRUE), занизивши db_total до −Σburns.
-    mints = base.where("sourceable_type IS DISTINCT FROM 'NaasContract'").sum(:amount)
-    burns = base.where(sourceable_type: "NaasContract").sum(:amount)
-    (mints - burns).to_f
+    BlockchainTransaction.net_minted_supply(:carbon_coin).to_f
   end
 
   # Загальна емісія SCC у смарт-контракті Polygon (totalSupply) — Thread-cached RPC client

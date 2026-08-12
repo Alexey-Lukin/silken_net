@@ -104,7 +104,7 @@ RSpec.describe EthereumAnchorWorker, type: :worker do
       travel_to(6.days.ago) do
         EthereumAnchor.create!(
           state_root: "a" * 64,
-          total_scc: 100.0,
+          total_growth_points: 100.0,
           chain_hash: "recent_hash",
           anchored_at: Time.current,
           status: :confirmed,
@@ -122,13 +122,13 @@ RSpec.describe EthereumAnchorWorker, type: :worker do
       # detect_missed counts only :confirmed, so a fresh weekly :sent no longer resets the gap.
       travel_to(10.days.ago) do
         EthereumAnchor.create!(
-          state_root: "a" * 64, total_scc: 100.0, chain_hash: "old_confirmed",
+          state_root: "a" * 64, total_growth_points: 100.0, chain_hash: "old_confirmed",
           anchored_at: Time.current, status: :confirmed, tx_hash: "0x#{"bb" * 32}"
         )
       end
       travel_to(1.day.ago) do
         EthereumAnchor.create!(
-          state_root: "b" * 64, total_scc: 200.0, chain_hash: "fresh_sent",
+          state_root: "b" * 64, total_growth_points: 200.0, chain_hash: "fresh_sent",
           anchored_at: Time.current, status: :sent, tx_hash: "0x#{"cc" * 32}"
         )
       end
@@ -143,7 +143,7 @@ RSpec.describe EthereumAnchorWorker, type: :worker do
       travel_to(10.days.ago) do
         EthereumAnchor.create!(
           state_root: "b" * 64,
-          total_scc: 200.0,
+          total_growth_points: 200.0,
           chain_hash: "old_hash",
           anchored_at: Time.current,
           status: :confirmed,
@@ -160,7 +160,7 @@ RSpec.describe EthereumAnchorWorker, type: :worker do
     it "ignores failed anchors when checking for gaps" do
       EthereumAnchor.create!(
         state_root: "c" * 64,
-        total_scc: 300.0,
+        total_growth_points: 300.0,
         chain_hash: "failed_hash",
         anchored_at: 2.days.ago,
         status: :failed,

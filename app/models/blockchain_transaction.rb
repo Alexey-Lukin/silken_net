@@ -188,6 +188,33 @@ class BlockchainTransaction < ApplicationRecord
     self.class.token_type_label(token_type)
   end
 
+  # [G4/ARCH.97] One-Home DB-дзеркала on-chain `totalSupply()`: Σ(mints) − Σ(burns).
+  #
+  # Slash-інтенти теж `carbon_coin` і теж доходять до `:confirmed`
+  # (`BlockchainBurningService#create_slash_intent!` → `sourceable: NaasContract`),
+  # але on-chain `slash()` ЗМЕНШУЄ supply — тож сумувати їх позитивно роздуває
+  # результат на 2×burn. Дискримінатор: `sourceable_type = "NaasContract"` = burn
+  # (єдиний slash-шлях); усе інше (mint / insurance-payout mint) = емісія.
+  #
+  # NULL-safe `IS DISTINCT FROM`: mint-tx мають `sourceable_type IS NULL`, а
+  # звичайний `!=` відсіяв би їх (SQL `NULL != 'x'` = NULL, не TRUE), лишивши
+  # −Σburns. ⚠️ Дім свідомо ОДИН: два місця з цим дискримінатором розійшлися б
+  # тихо, і саме тому формула переїхала сюди з приватного методу chain-аудиту —
+  # її другим споживачем став L1-якір ([`05_04 §3`](../../docs/05_04_Ethereum_L1_State_Anchor.md)).
+  #
+  # ✅ Викликається і на КЛАСІ, і на RELATION (перевірено рантаймом: `where` всередині
+  # чіпляється до `current_scope`), тож кластерний споживач бере ТОЙ САМИЙ дім:
+  # `BlockchainTransaction.joins(wallet: :tree).where(trees: { cluster_id: id })
+  #                       .net_minted_supply(:carbon_coin)`.
+  # Це навмисно — щоб [ARCH.96] не завів другу копію дискримінатора під кластер.
+  # Повертає BigDecimal (без `.to_f`): Float дав би e-нотацію в хешованому payload'і.
+  def self.net_minted_supply(token_type)
+    base  = where(token_type: token_type, status: :confirmed)
+    mints = base.where("sourceable_type IS DISTINCT FROM 'NaasContract'").sum(:amount)
+    burns = base.where(sourceable_type: "NaasContract").sum(:amount)
+    mints - burns
+  end
+
   # [СИНХРОНІЗОВАНО]: Додано статус :sent для підтримки асинхронного Fire-and-Forget
   enum :status, {
     pending: 0,        # Очікує в черзі на обробку

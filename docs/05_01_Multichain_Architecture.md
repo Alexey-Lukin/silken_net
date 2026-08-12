@@ -412,7 +412,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 | **RPC** | `ALCHEMY_ETHEREUM_RPC_URL` |
 | **Спека** | `spec/services/ethereum/state_anchor_service_spec.rb` |
 
-**Формула `state_root` + флоу** — §4 нижче (повна 5-польова версія E.53/E.54: `total_scc|total_sfc|active_tree_count|chain_hash|anchored_at`); SSOT-дім формули — [`05_04`](05_04_Ethereum_L1_State_Anchor).
+**Формула `state_root` + флоу** — §4 нижче (6-польова версія [ARCH.97]: `total_growth_points|total_sfc|active_tree_count|chain_hash|anchored_at|total_scc_supply` — перше поле це БАЛИ офчейн-леджера, останнє чинний SCC-supply; доти обидві ролі ніс один `total_scc`); SSOT-дім формули — [`05_04`](05_04_Ethereum_L1_State_Anchor).
 
 **Економіка:** 32 байти раз на тиждень. Мінімальний газ, але рівень безпеки мережі Ethereum вартістю в сотні мільярдів доларів.
 
@@ -504,7 +504,7 @@ OracleCallbacksController → oracle_status = "fulfilled"
 
 ```
 TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
-  → EvaluateTreeBatchWorker → Wallet.balance >= 10,000? → lock_and_mint!
+  → EvaluateTreeBatchWorker → Wallet.available_balance >= 10,000? → lock_and_mint!  (NET — ARCH.94)
   → BlockchainMintingService.call(batch, telemetry_log: nil)
   → Guard: wallet.kyc_approved_for_minting? (тільки; бенефіціар — KYC.1)
          (verified_by_iotex? + oracle_status свідомо пропускаються —
@@ -574,7 +574,7 @@ TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
 ```ruby
 # Формула — дзеркало SSOT (owner [`05_04`](05_04_Ethereum_L1_State_Anchor)), правити ТАМ.
 # Роздільник `|` (pipe), не `:`. [E.53/E.54] 5 полів: + total_sfc, active_tree_count.
-state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{timestamp.iso8601}")
+state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{timestamp.iso8601}|#{total_scc_supply}")
 ```
 
 Цей `bytes32` хеш записується в смарт-контракт на Ethereum Mainnet раз на тиждень. Рівень безпеки Ethereum (сотні мільярдів $) за мінімальну плату за газ.

@@ -26,7 +26,7 @@ RSpec.describe Ethereum::StateAnchorService do
     it "includes all components for reproducibility (BLOCKER-6, E.53, E.54)" do
       result = described_class.new.generate_state_root
 
-      expect(result).to include(:state_root, :total_scc, :total_sfc, :active_tree_count, :chain_hash, :anchored_at)
+      expect(result).to include(:state_root, :total_growth_points, :total_sfc, :active_tree_count, :chain_hash, :anchored_at)
       expect(result[:anchored_at]).to be_a(Time)
       expect(result[:total_sfc]).to be_a(Numeric)
       expect(result[:active_tree_count]).to be_a(Integer)
@@ -71,7 +71,9 @@ RSpec.describe Ethereum::StateAnchorService do
     end
 
     it "uses GENESIS fallback when no AuditLog exists (leaf0 = flat aggregate, root = Merkle over [leaf0])" do
-      expected_payload = "0.0|0.0|0|GENESIS|#{Time.current.utc.iso8601}"
+      # [ARCH.97] Шосте поле — `total_scc_supply`; на порожній БД теж 0.0, але
+      # величина ІНША за природою (Σ confirmed-мінтів − Σ burn'ів, не сума балансів).
+      expected_payload = "0.0|0.0|0|GENESIS|#{Time.current.utc.iso8601}|0.0"
       leaf0 = Digest::SHA256.hexdigest(expected_payload)
 
       freeze_time do
@@ -100,7 +102,8 @@ RSpec.describe Ethereum::StateAnchorService do
           result = described_class.new.generate_state_root
           expected_leaf0 = Digest::SHA256.hexdigest(
             EthereumAnchor.aggregate_payload(
-              total_scc: result[:total_scc], total_sfc: result[:total_sfc],
+              total_growth_points: result[:total_growth_points],
+              total_scc_supply: result[:total_scc_supply], total_sfc: result[:total_sfc],
               active_tree_count: result[:active_tree_count],
               chain_hash: result[:chain_hash], anchored_at: result[:anchored_at]
             )
@@ -232,7 +235,7 @@ RSpec.describe Ethereum::StateAnchorService do
       result = described_class.new.anchor_to_l1!
 
       expect(result.state_root).to match(/\A[a-f0-9]{64}\z/)
-      expect(result.total_scc).to be_present
+      expect(result.total_growth_points).to be_present
       expect(result.total_sfc).to be_present
       expect(result.active_tree_count).to be_present
       expect(result.chain_hash).to be_present
@@ -359,7 +362,7 @@ RSpec.describe Ethereum::StateAnchorService do
       it "skips when a sent anchor exists within the last week" do
         sent_anchor = EthereumAnchor.create!(
           state_root: "c" * 64,
-          total_scc: 500.0,
+          total_growth_points: 500.0,
           chain_hash: "existing_hash",
           anchored_at: 1.hour.ago,
           status: :sent,
@@ -379,7 +382,7 @@ RSpec.describe Ethereum::StateAnchorService do
       it "resumes a pending anchor instead of creating a new one" do
         pending_anchor = EthereumAnchor.create!(
           state_root: "d" * 64,
-          total_scc: 600.0,
+          total_growth_points: 600.0,
           chain_hash: "pending_hash",
           anchored_at: 30.minutes.ago,
           status: :pending
@@ -400,7 +403,7 @@ RSpec.describe Ethereum::StateAnchorService do
         travel_to(8.days.ago) do
           EthereumAnchor.create!(
             state_root: "e" * 64,
-            total_scc: 700.0,
+            total_growth_points: 700.0,
             chain_hash: "old_hash",
             anchored_at: Time.current,
             status: :sent,
@@ -419,7 +422,7 @@ RSpec.describe Ethereum::StateAnchorService do
       it "ignores failed anchors and creates a new one" do
         EthereumAnchor.create!(
           state_root: "f" * 64,
-          total_scc: 800.0,
+          total_growth_points: 800.0,
           chain_hash: "failed_hash",
           anchored_at: 1.hour.ago,
           status: :failed,
@@ -451,7 +454,7 @@ RSpec.describe Ethereum::StateAnchorService do
       it "reuses the persisted nonce on a pending resume instead of re-fetching (no N+1)" do
         # crash між transact() і update!(:sent): anchor лишився :pending з уже-персистованим nonce.
         pending_anchor = EthereumAnchor.create!(
-          state_root: "a" * 64, total_scc: 900.0, chain_hash: "resume_hash",
+          state_root: "a" * 64, total_growth_points: 900.0, chain_hash: "resume_hash",
           anchored_at: 20.minutes.ago, status: :pending, nonce: 7
         )
         allow(mock_client).to receive(:transact).and_return("0x#{"cc" * 32}")
@@ -469,7 +472,7 @@ RSpec.describe Ethereum::StateAnchorService do
       it "fetches a fresh nonce on resume when the crash landed before nonce was persisted" do
         # crash між create!(:pending) і persist nonce → tx НЕ полетів → безпечно фетчити свіжий.
         EthereumAnchor.create!(
-          state_root: "b" * 64, total_scc: 950.0, chain_hash: "no_nonce_hash",
+          state_root: "b" * 64, total_growth_points: 950.0, chain_hash: "no_nonce_hash",
           anchored_at: 15.minutes.ago, status: :pending, nonce: nil
         )
         allow(mock_client).to receive_messages(get_nonce: 99, transact: "0x#{"dd" * 32}")
@@ -487,7 +490,7 @@ RSpec.describe Ethereum::StateAnchorService do
         # F2a: crash між broadcast і update!(:sent) лишив :pending з персистованим nonce; на resume
         # перший tx уже досяг мережі → same-nonce re-broadcast відхиляється нодою (RpcError < IOError).
         EthereumAnchor.create!(
-          state_root: "a" * 64, total_scc: 900.0, chain_hash: "ambiguous_hash",
+          state_root: "a" * 64, total_growth_points: 900.0, chain_hash: "ambiguous_hash",
           anchored_at: 20.minutes.ago, status: :pending, nonce: 7
         )
       end
