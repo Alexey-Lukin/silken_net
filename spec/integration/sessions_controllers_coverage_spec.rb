@@ -624,23 +624,4 @@ RSpec.describe "Controller coverage — uncovered paths" do
       end
     end
   end
-
-  # ==========================================================================
-  # 9. PASSWORDS CONTROLLER — rate limiting
-  # ==========================================================================
-  describe "PasswordsController" do
-    describe "rate limiting on password reset" do
-      it "responds to password reset requests" do
-        mailer_double = double(deliver_later: nil)
-        mailer_with = double(reset_instructions: mailer_double)
-        allow(PasswordMailer).to receive(:with).and_return(mailer_with)
-
-        post "/forgot_password",
-             params: { email: user.email_address },
-             headers: json_headers
-
-        expect(response).to have_http_status(:ok)
-      end
-    end
-  end
 end

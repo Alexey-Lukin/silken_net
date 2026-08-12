@@ -186,65 +186,17 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
   describe "Additional controller APIs" do
     let!(:tree) { create(:tree, cluster: cluster, tree_family: tree_family) }
     let!(:wallet) { tree.wallet || create(:wallet, tree: tree) }
-    let!(:gateway) { create(:gateway, cluster: cluster) }
 
-    it "GET /clusters returns clusters" do
-      get "/clusters",
-          headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
-    end
-
-    it "GET /clusters/:id returns cluster details" do
-      get "/clusters/#{cluster.id}",
-          headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
-    end
-
-    it "GET /trees/:id returns tree" do
-      get "/trees/#{tree.id}",
-          headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
-    end
-
-    it "GET /gateways returns gateways" do
-      get "/gateways",
-          headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
-    end
-
-    it "GET /gateways/:id returns gateway" do
-      get "/gateways/#{gateway.id}",
-          headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
-    end
-
-    it "GET /wallets returns wallets" do
-      get "/wallets",
-          headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
-    end
-
+    # ⚠️ Ці два — ЄДИНІ приклади дерева, що взагалі відкривають тіло цих двох
+    # `show`-дій, тож піни тут не дублюють нікого (на відміну від решти блоку,
+    # знятої як надлишкова: у неї були загартовані спадкоємці в профільних
+    # `spec/requests/api/v1/*`).
     it "GET /wallets/:id returns wallet details" do
       get "/wallets/#{wallet.id}",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
-    end
-
-    it "GET /organizations returns organizations" do
-      super_admin = create(:user, :super_admin, organization: organization)
-      sa_token = super_admin.generate_token_for(:api_access)
-
-      get "/organizations",
-          headers: { "Authorization" => "Bearer #{sa_token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["data"]["id"]).to eq(wallet.id)
     end
 
     it "GET /organizations/:id returns org details" do
@@ -255,38 +207,7 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
           headers: { "Authorization" => "Bearer #{sa_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
-    end
-
-    it "GET /blockchain_transactions returns transactions" do
-      create(:blockchain_transaction, wallet: wallet)
-
-      get "/blockchain_transactions",
-          headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
-    end
-
-    it "GET /audit_logs returns logs" do
-      create(:audit_log, user: admin, organization: organization)
-
-      get "/audit_logs",
-          headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
-    end
-
-    it "GET /system_audits returns chain audit data" do
-      allow(ChainAuditService).to receive(:call).and_return(
-        ChainAuditService::Result.new(
-          db_total: 100.0, chain_total: 100.0, delta: 0.0,
-          critical: false, checked_at: Time.current
-        )
-      )
-
-      get "/system_audits",
-          headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["organization"]["id"]).to eq(organization.id)
     end
   end
 
@@ -322,25 +243,6 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
   end
 
   # ---------------------------------------------------------------------------
-  # TreeFamiliesController
-  # ---------------------------------------------------------------------------
-  describe "Tree Families API" do
-    it "GET /tree_families returns families" do
-      get "/tree_families",
-          headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
-    end
-
-    it "GET /tree_families/:id returns family" do
-      get "/tree_families/#{tree_family.id}",
-          headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
-    end
-  end
-
-  # ---------------------------------------------------------------------------
   # OracleVisionsController
   # ---------------------------------------------------------------------------
   describe "Oracle Visions API" do
@@ -368,13 +270,6 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
       expect(response).to have_http_status(:ok)
       json = response.parsed_body
       expect(json["data"]).to be_an(Array)
-    end
-
-    it "GET /actuators/:id returns actuator detail" do
-      get "/actuators/#{actuator.id}",
-          headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
     end
 
     it "POST /actuators/:id/execute creates a command" do
@@ -406,13 +301,6 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
   describe "Maintenance Records API" do
     let!(:tree) { create(:tree, cluster: cluster, tree_family: tree_family) }
     let!(:record) { create(:maintenance_record, user: forester, maintainable: tree) }
-
-    it "GET /maintenance_records returns records" do
-      get "/maintenance_records",
-          headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
-    end
 
     it "GET /maintenance_records/:id returns record detail" do
       get "/maintenance_records/#{record.id}",

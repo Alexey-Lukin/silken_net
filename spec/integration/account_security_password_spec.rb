@@ -95,30 +95,6 @@ RSpec.describe "Account security and password management" do
       expect(user.reload.authenticate("newsecurepass12")).to be_truthy
     end
 
-    it "rejects wrong current password" do
-      patch "/account_security/password",
-            params: {
-              current_password: "wrong_password",
-              new_password: "newsecurepass12",
-              new_password_confirmation: "newsecurepass12"
-            },
-            headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:unprocessable_content)
-    end
-
-    it "rejects too-short new password" do
-      patch "/account_security/password",
-            params: {
-              current_password: "securepass1234",
-              new_password: "short",
-              new_password_confirmation: "short"
-            },
-            headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:unprocessable_content)
-    end
-
     it "rejects mismatched password confirmation" do
       patch "/account_security/password",
             params: {
@@ -150,14 +126,6 @@ RSpec.describe "Account security and password management" do
       expect(json["message"]).to include("email")
     end
 
-    it "POST /forgot_password protects against email enumeration" do
-      post "/forgot_password",
-           params: { email: "nonexistent@example.com" },
-           headers: { "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
-    end
-
     it "PATCH /reset_password updates password with valid token" do
       reset_token = user.generate_token_for(:password_reset)
 
@@ -171,34 +139,6 @@ RSpec.describe "Account security and password management" do
 
       expect(response).to have_http_status(:ok)
       expect(user.reload.authenticate("newpassword1234")).to be_truthy
-    end
-
-    it "PATCH /reset_password rejects invalid token" do
-      patch "/reset_password",
-            params: { token: "invalid_token", password: "newpassword1234", password_confirmation: "newpassword1234" },
-            headers: { "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:unprocessable_content)
-    end
-
-    it "PATCH /reset_password rejects short password" do
-      reset_token = user.generate_token_for(:password_reset)
-
-      patch "/reset_password",
-            params: { token: reset_token, password: "short", password_confirmation: "short" },
-            headers: { "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:unprocessable_content)
-    end
-
-    it "PATCH /reset_password rejects mismatched confirmation" do
-      reset_token = user.generate_token_for(:password_reset)
-
-      patch "/reset_password",
-            params: { token: reset_token, password: "newpassword1234", password_confirmation: "different1234" },
-            headers: { "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 

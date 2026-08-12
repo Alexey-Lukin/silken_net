@@ -51,17 +51,36 @@ RSpec.describe "Api::V1::Codex::Leaderboard", type: :request do
       expect(response.parsed_body["data"].size).to eq(1)
     end
 
-    it "clamps excessively large limit to 100" do
+    # 🔴 Доти пін був `size <= 100` під коментарем «will be <= 100 regardless of
+    # input» — тобто спека сама оголошувала свою вакуумність: при двох вузлах
+    # нерівність істинна й із повністю знятим затискачем. Стеля тут не в піні, а
+    # в тому, що нижче MAX_LIMIT затискач через API не спостережний узагалі;
+    # 101 фікстура коштувала б дорожче за те, що доводить. Тому стабимо саму
+    # константу — і затискач стає перевірним на наявному наборі.
+    it "clamps an excessive limit down to MAX_LIMIT" do
+      stub_const("Api::V1::Codex::LeaderboardController::MAX_LIMIT", 1)
+
       get "/codex/leaderboard", params: { realm: realm.slug, limit: 999, format: :json }
+
       expect(response).to have_http_status(:ok)
-      # The result size will be <= 100 regardless of input
-      expect(response.parsed_body["data"].size).to be <= 100
+      expect(response.parsed_body["data"].size).to eq(1)
     end
 
+    # Фолбек доводиться парою «яка стала чинною ⊥ яка ні»: сам по собі `:ok`
+    # однаковий і для правильного фолбеку, і для nil-реалму, і для чужого —
+    # доти реалм-фолбек не мав ЖОДНОГО вузла, тож відповідь була порожня в
+    # обох випадках.
     it "falls back to the first realm when realm param is blank" do
-      create(:codex_realm, position: 0, slug: "first_realm")
-      get "/codex/leaderboard"
+      first_realm = create(:codex_realm, position: 0, slug: "first_realm")
+      create(:codex_node, realm: first_realm, lifecycle_status: :thriving,
+             attunement_elo: 1500, title_en: "Keystone", title_uk: "Наріжний")
+
+      get "/codex/leaderboard", params: { format: :json }
+
       expect(response).to have_http_status(:ok)
+      titles = response.parsed_body["data"].map { |row| row["title_en"] }
+      expect(titles).to include("Keystone")
+      expect(titles).not_to include("Pinnacle")
     end
 
     it "uses DEFAULT_LIMIT (25) when no limit is supplied" do

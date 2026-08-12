@@ -31,12 +31,23 @@ RSpec.describe "Rack::Attack", type: :request do
   # SAFELIST
   # -----------------------------------------------------------------------
   describe "safelist" do
-    it "allows requests from 127.0.0.1 without throttling" do
-      301.times do
-        get "/up", headers: { "REMOTE_ADDR" => "127.0.0.1" }
-      end
+    # 🔴 Доти цей приклад ганяв 301 запит на `/up` — шлях, ВИВЕДЕНИЙ із throttle
+    # НЕЗАЛЕЖНО від IP (це доводить сусід нижче з не-safelisted адреси), тож
+    # safelist у ньому не брав участі й приклад лишався зеленим навіть із
+    # повністю знятим правилом.
+    #
+    # ⚠️ Поведінкову форму («safelisted адреса не ловить 429 там, де чужа ловить»)
+    # на цьому дереві збудувати НЕ ВИЙДЕ, і причина варта запису: єдині шляхи з
+    # досяжним лімітом (`/login`, `/forgot_password`) обмежуються Rails-нативним
+    # `rate_limit` у самому контролері, а він Rack::Attack не бачить — тобто
+    # safelist від нього не звільняє (виміряно: 429 на шостому POST з
+    # `127.0.0.1`). Тому пін іде туди, де правило живе.
+    it "exempts loopback from every Rack::Attack throttle" do
+      loopback = Rack::Attack::Request.new(Rack::MockRequest.env_for("/login", "REMOTE_ADDR" => "127.0.0.1"))
+      foreign  = Rack::Attack::Request.new(Rack::MockRequest.env_for("/login", "REMOTE_ADDR" => "1.2.3.4"))
 
-      expect(response).to have_http_status(:ok)
+      expect(Rack::Attack.safelists["allow-localhost"].matched_by?(loopback)).to be(true)
+      expect(Rack::Attack.safelists["allow-localhost"].matched_by?(foreign)).to be(false)
     end
   end
 

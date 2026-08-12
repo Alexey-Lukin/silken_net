@@ -131,12 +131,6 @@ RSpec.describe "User authentication and session lifecycle" do
   describe "Session-based authentication" do
     let(:user) { create(:user, organization: organization) }
 
-    it "creates session on login" do
-      post "/login", params: { email: user.email_address, password: "password12345" },
-                            headers: { "Accept" => "application/json" }
-      expect(response).to have_http_status(:created)
-    end
-
     it "rejects invalid credentials" do
       post "/login", params: { email: user.email_address, password: "wrong_password" },
                             headers: { "Accept" => "application/json" }

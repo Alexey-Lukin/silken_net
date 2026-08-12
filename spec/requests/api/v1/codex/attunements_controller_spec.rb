@@ -96,8 +96,14 @@ RSpec.describe "Api::V1::Codex::Attunements", type: :request do
       expect(response).to have_http_status(:no_content)
     end
 
+    # «No-op» — твердження про ЛІЧИЛЬНИК, а не про код: 204 лишається й тоді,
+    # коли декремент виїхав за межі гарда `if attunement`. Форма взята в сусіда
+    # вище, лише з протилежним знаком.
     it "is a safe no-op when there is no attunement to remove" do
-      delete "/codex/nodes/#{node.slug}/attunements/me", headers: headers, as: :json
+      expect {
+        delete "/codex/nodes/#{node.slug}/attunements/me", headers: headers, as: :json
+      }.not_to change { node.reload.attunement_count }
+
       expect(response).to have_http_status(:no_content)
     end
 

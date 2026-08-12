@@ -17,9 +17,15 @@ RSpec.describe PrometheusCollector, type: :request do
   # PASSTHROUGH (non-/metrics requests)
   # -----------------------------------------------------------------------
   describe "passthrough" do
+    # Назва обіцяє, що запит дійшов ДО ЗАСТОСУНКУ, а не що він завершився 200:
+    # флип `unless`→`if` завернув би `/up` у рендер метрик, і той теж віддав би
+    # 200 (`REMOTE_ADDR` у rack-test = 127.0.0.1, тобто гард пропускає). Тож пін
+    # мусить називати, ЧИЄ це тіло.
     it "passes non-/metrics requests to the app" do
       get "/up"
+
       expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include("silkennet_")
     end
   end
 

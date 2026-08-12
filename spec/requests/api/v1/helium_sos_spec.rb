@@ -88,12 +88,18 @@ RSpec.describe "POST /telemetry/helium", type: :request do
       ENV["WEB3_STRICT_MODE"] = old_strict
     end
 
+    # Назва обіцяє ДВІ речі — «проходить» І «з попередженням», — а пін міряв лише
+    # першу: 202 лишався б і при мовчазному пропуску без сліду, тобто найтихішій
+    # формі цього дефекту (гілка bypass є, а сліду про неї немає).
     it "passes with a warning in dev/test (без підпису)" do
       ENV["WEB3_STRICT_MODE"] = nil
+      allow(Rails.logger).to receive(:warn)
+
       post "/api/v1/telemetry/helium", params: raw,
            headers: { "CONTENT_TYPE" => "application/json" }
 
       expect(response).to have_http_status(:accepted)
+      expect(Rails.logger).to have_received(:warn).with(/HELIUM_WEBHOOK_SECRET/)
     end
 
     it "fail-fast у WEB3_STRICT_MODE (endpoint без HMAC не живе в prod)" do
