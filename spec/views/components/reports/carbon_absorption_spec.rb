@@ -8,7 +8,8 @@ RSpec.describe Reports::CarbonAbsorption do
   # хеш: `wallets.sum(:balance)` над колонкою `numeric` віддає BigDecimal, решта —
   # `count`/`cached_trees_count`, тобто Integer. Доти вся четвірка подавалась
   # Integer'ом, і питання «як BigDecimal доїжджає до розмітки» з сюїти поставити
-  # було неможливо (`ARCH.89`: Phlex друкує BigDecimal порожнім рядком).
+  # було неможливо (`ARCH.89`: Phlex тоді не вмів друкувати BigDecimal узагалі —
+  # корінь знято в `ApplicationComponent#format_object`, `04_04 §2`).
   def report_data(total_carbon_points: BigDecimal("9800"), wallets_count: 45,
                   trees_active: 280, trees_total: 320)
     {

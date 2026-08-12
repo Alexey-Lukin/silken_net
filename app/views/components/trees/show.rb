@@ -103,11 +103,11 @@ module Trees
           div(class: "relative h-56 w-56 mx-auto") do
             render_radial_svg
             div(class: "absolute inset-0 flex flex-col items-center justify-center") do
-              # 🔴 `&.to_f` НЕСУЧИЙ: `z_value` — колонка `decimal`, а Phlex друкує
-              # BigDecimal ПОРОЖНІМ рядком (виміряно: Float/Integer/String рендеряться,
-              # BigDecimal — ні). Фолбек `|| "---"` тут не рятує й ніколи не спрацьовував:
-              # BigDecimal істинний, тож гілка не бралась, а елемент виходив порожнім —
-              # захист виглядав написаним і не діяв. Дім класу → `00_07` ARCH.89.
+              # `&.to_f` тримає ФОРМАТ: `z_value` — колонка `decimal`, тобто BigDecimal
+              # із точністю схеми. Зникнути вона вже не може (`ApplicationComponent`
+              # заповнив Phlex-хук `format_object`), але без цього тут друкувалась би
+              # сира точність замість числа під `text-6xl`. ⚠️ Фолбек `|| "---"` не
+              # спрацьовує НІКОЛИ — BigDecimal істинний, гілка не береться. Дім → `04_04 §2`.
               span(class: "text-6xl font-extralight text-gaia-text-strong") { @latest_log&.z_value&.to_f || "---" }
               span(class: "text-tiny text-gaia-text-subtle font-mono uppercase") { t(".biometrics.impedance_unit") }
             end

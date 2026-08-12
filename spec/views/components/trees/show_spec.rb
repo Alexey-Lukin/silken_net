@@ -64,10 +64,13 @@ RSpec.describe Trees::Show do
     t
   end
 
-  # 🔴 [TEST.12] Реальний незбережений `TelemetryLog`, і без цього пін на біометрію
-  # СЛІПИЙ до живого дефекту: усі три поля — колонки `decimal`, а Phlex друкує
-  # BigDecimal ПОРОЖНІМ рядком. `OpenStruct` віддавав Ruby-`Float`, тож сюїта бачила
-  # «28.7» там, де прод малював порожній `text-6xl`. Дім класу → `00_07` ARCH.89.
+  # 🔴 [TEST.12] Реальний незбережений `TelemetryLog`: усі три поля — колонки
+  # `decimal`, тобто прод віддає BigDecimal, а `OpenStruct` віддавав Ruby-`Float`.
+  # Доти це ховало живий дефект — Phlex не вмів друкувати BigDecimal узагалі, тож
+  # сюїта бачила «28.7» там, де прод малював порожній `text-6xl`. ⚠️ Корінь знято
+  # (`ApplicationComponent#format_object`), тому саме ЦЕЙ пін більше не червоніє на
+  # знятому `&.to_f` — виміряно мутацією; сьогодні ту вимогу тримає лише
+  # `spec/quality/phlex_bigdecimal_render_spec.rb`. Дім класу → `04_04 §2`.
   def build_latest_log(z_value: 28.7, voltage_mv: 3800, temperature_c: 22, created_at: 5.minutes.ago)
     TelemetryLog.new(
       z_value: z_value,

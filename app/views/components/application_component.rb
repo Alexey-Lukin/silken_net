@@ -59,4 +59,43 @@ class ApplicationComponent < Phlex::HTML
       theme: { "text" => CUSTOM_TEXT_SCALE }
     })
   end
+
+  # Phlex формалізує в текст ЛИШЕ `Float` та `Integer`; на будь-що інше його
+  # `format_object` віддає `nil`, і тоді в буфер не йде НІЧОГО — вузол виходить
+  # порожнім без жодної помилки (`04_04 §2`). Виміряно рендером: BigDecimal ·
+  # Rational · Date · Time · true/false · Array · Hash → «».
+  #
+  # `Numeric` — не політика, а рід, який Phlex просто не перелічив: `decimal`
+  # приходить BigDecimal'ом, і арифметика з ним заражає в ОДИН бік
+  # (Float + BigDecimal = BigDecimal), тож канал зараження не має статичної
+  # форми й жодним сканом коду не ловиться.
+  private def format_object(object)
+    case object
+    # `to_s("F")` явно, а не голий `to_s`: десятковий вигляд BigDecimal у Rails дає
+    # патч `ActiveSupport::BigDecimalWithDefaultFormat`, і без нього той самий виклик
+    # повертає НАУКОВУ нотацію (`0.123…e14`). Спиратись тут на чужий патч мовчки —
+    # означає мати формат, який зникне від зміни в сусідньому гемі.
+    when BigDecimal then object.to_s("F")
+    when Numeric then object.to_s
+    # 🔴 Колекція тут — НЕ значення, а штатний залишок ітерації: `div { rows.each … }`
+    # повертає саму колекцію, і коли вона порожня, буфер не зрушив, тож Phlex питає
+    # про неї саме тут. Виміряно: без цієї гілки гучними стають 105 законних прикладів.
+    when Enumerable then nil
+    else super || unrenderable!(object)
+    end
+  end
+
+  # Решту типів свідомо не друкуємо: дата/час без `l()` втрачає локаль, а булеве
+  # значення не є текстом інтерфейсу. Але МОВЧАЗНА втрата не має власного
+  # симптому — порожній вузол виглядає як «даних немає», — тому поза продом вона
+  # гучна. У проді лишається тиша: падати через формат гірше, ніж недодрукувати.
+  private def unrenderable!(object)
+    return nil unless Rails.env.local?
+
+    raise Phlex::ArgumentError, <<~MSG.squish
+      Phlex не вміє надрукувати #{object.class} — вузол вийде ПОРОЖНІМ, мовчки.
+      Дай явну форму: дата/час → `l(value, format: :short)` або `.to_fs(:short)`;
+      булеве → тернарник із текстом; колекція → зведи в рядок. (`04_04 §2`)
+    MSG
+  end
 end
