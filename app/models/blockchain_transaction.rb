@@ -202,6 +202,15 @@ class BlockchainTransaction < ApplicationRecord
       .or(where(cluster_id: Cluster.where(organization_id: org_id).select(:id)))
   }
 
+  # [ARCH.96] Кластерний сиблінг — та сама двошляхова резолюція, лише вужча координата.
+  # Друга гілка НЕ косметична: slash-інтент при мертвому кластері чіпляється прямо до
+  # `cluster` (`wallet: nil` — «пастка останнього дерева»), тож join лише через гаманець
+  # такі рядки не бачить, і база розміру наступного спалення виходить завищеною.
+  scope :for_cluster, lambda { |cluster_id|
+    where(wallet_id: Wallet.joins(:tree).where(trees: { cluster_id: cluster_id }).select(:id))
+      .or(where(cluster_id: cluster_id))
+  }
+
   # [G4/ARCH.97] One-Home DB-дзеркала on-chain `totalSupply()`: Σ(mints) − Σ(burns).
   #
   # Slash-інтенти теж `carbon_coin` і теж доходять до `:confirmed`

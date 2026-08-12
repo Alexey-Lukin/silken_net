@@ -852,4 +852,41 @@ RSpec.describe BlockchainTransaction, type: :model do
       end
     end
   end
+
+  # [ARCH.96] Резолюція кластера + чиста емісія. `for_cluster` має ДВІ гілки, бо
+  # slash-інтент при мертвому кластері живе з `wallet: nil` (пастка останнього дерева)
+  # і join через гаманець його не бачить — саме той рядок найбільше й роздував базу.
+  describe "рахунок емісії кластера (ARCH.96)" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+    let(:naas_contract) { create(:naas_contract, organization: organization, cluster: cluster) }
+    let(:tree) { create(:tree, cluster: cluster) }
+    let(:wallet) { tree.wallet || create(:wallet, tree: tree) }
+
+    def net_scc
+      described_class.for_cluster(cluster.id).net_minted_supply(:carbon_coin)
+    end
+
+    it "рахує лише вказаний тип токена" do
+      create(:blockchain_transaction, wallet: wallet, amount: 100, token_type: :carbon_coin, status: :confirmed)
+      create(:blockchain_transaction, wallet: wallet, amount: 40, token_type: :forest_coin, status: :confirmed)
+
+      expect(net_scc).to eq(100)
+    end
+
+    it "не рахує незавершені транзакції" do
+      create(:blockchain_transaction, wallet: wallet, amount: 100, token_type: :carbon_coin, status: :confirmed)
+      create(:blockchain_transaction, wallet: wallet, amount: 55, token_type: :carbon_coin, status: :pending)
+
+      expect(net_scc).to eq(100)
+    end
+
+    it "віднімає спалення, прив'язане до САМОГО кластера (пастка останнього дерева)" do
+      create(:blockchain_transaction, wallet: wallet, amount: 100, token_type: :carbon_coin, status: :confirmed)
+      create(:blockchain_transaction, wallet: nil, cluster: cluster, amount: 25, token_type: :carbon_coin,
+                                      status: :confirmed, sourceable: naas_contract)
+
+      expect(net_scc).to eq(75)
+    end
+  end
 end

@@ -1015,7 +1015,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 
 | Поле | Тип | Опис |
 |------|-----|------|
-| `amount` | decimal | Сума (> 0) |
+| `amount` | decimal | Сума (> 0) **у МОНЕТАХ токена**, не в балах: mint пише сюди `tokens_to_mint = (points_to_lock / threshold).floor` (`Wallet#lock_and_mint!`), тобто вже сконвертоване. Парний `locked_points` тримає БАЛИ тієї самої операції — дві колонки одного рядка навмисно в різних одиницях, і плутанина між ними коштує 10 000× ([`05_03`](05_03_Tokenomics_SCC_and_SFC) — дім курсу) |
 | `to_address` | string | Ethereum або Base58 (Solana) адреса |
 | `blockchain_network` | string | `evm / solana / celo` |
 | `tx_hash` | string | Хеш транзакції (required для sent/confirmed) |
@@ -1042,7 +1042,11 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 - `after_update_commit :record_money_audit_trail, if: :saved_change_to_status?` — **[MRV.1/ARCH.57]** кожна зміна статусу (AASM І raw `update!`) пише SHA-256 `AuditLog`-ланцюг ПІСЛЯ commit (AASM `after_all_transitions` файрив ДО персистенції → phantom-рядок на rollback; event-ім'я зберігається з freshness-guard'ом, fallback = state-based `blockchain_tx_to_*`); actor=`oracle_executioner`, metadata from/to/tx_hash; org-резолюція `wallet&.organization_id || cluster&.organization_id` — cluster-sourced рухи (Celo reward, last-tree slash; `wallet=nil`) атрибутуються через кластер; без org/actor — WARN-skip, tx не валимо
 - `scope :in_flight` (recent `:pending`/`:sent`) — **[ARCH.45]** intent-marker idempotency guard (дзеркало `EthereumAnchor.in_flight`): на retry ловить on-chain↔DB crash-window для slash / Solana payout проти double-pay / double-burn ([`04_02 §4/§10`](04_02_Business_Logic_and_Services))
 
-**Методи:** `find_with_partition_pruning(id, created_at = nil)` _(клас)_, `explorer_url`, `solana_network?`, `celo_network?`, `broadcast_status_change`.
+**Методи:** `find_with_partition_pruning(id, created_at = nil)` _(клас)_, `net_minted_supply(token_type)` _(клас)_, `explorer_url`, `solana_network?`, `celo_network?`, `broadcast_status_change`.
+
+**Скоупи власності:** `.for_organization(org_id)` · `.for_cluster(cluster_id)` — обидва резолвлять ДВОМА гілками (гаманці ∪ прямий `cluster_id`), бо cluster-sourced рухи живуть із `wallet: nil` (Celo-reward, слеш останнього дерева). Одногілковий `joins(wallet: :tree)` їх не бачить — і саме ці рядки найбільші за сумою.
+
+> **[ARCH.97/ARCH.96] `net_minted_supply(token_type)` — One-Home «скільки монет реально в обігу».** Σ(`confirmed` mints) − Σ(`confirmed` burns) для одного типу токена; burn розпізнається дискримінатором `sourceable_type = 'NaasContract'` (slash-інтент пишеться з ДОДАТНИМ `amount`, тож знак сумі його не видає). Chainable — комбінується з `.for_cluster` / `.for_organization`. **Два живі споживачі, обидва незворотні:** поле `total_scc_supply` L1-якоря ([`05_04 §3`](05_04_Ethereum_L1_State_Anchor)) і база розміру спалення ([`05_05 §3`](05_05_Slashing_and_Risk_Policy)). ⚠️ Величина **не кумулятивна** — slash її зменшує; для «скільки взагалі колись намінтили» це НЕ той метод.
 
 > **`find_with_partition_pruning`** — partition-aware lookup: при наявності `created_at` додає `WHERE created_at IN [time, time+1s)`, дозволяючи PostgreSQL звернутись до однієї партиції (`O(log N)`) замість глобального сканування (`O(P×log N)`). Використовується в `ApplicationWeb3Worker#find_blockchain_tx_with_pruning` та контролері (параметр `?created_at=ISO8601`).
 

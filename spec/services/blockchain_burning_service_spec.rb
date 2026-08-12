@@ -975,6 +975,44 @@ RSpec.describe BlockchainBurningService do
     end
   end
 
+  # [ARCH.96] База РОЗМІРУ спалення — вимірюється НА ІНТЕНТІ, бо саме його `amount`
+  # їде в `slashUpTo(maxAmount)`, тобто це і є розмір незворотної дії.
+  # 🔴 Перша редакція цих прикладів кликала `BlockchainTransaction.for_cluster(...)`
+  # НАПРЯМУ — вони були зеленими й на голому `sum(:amount)`, бо міряли модель повз
+  # сервіс, у якому живе дефект. Пін мусить стояти в точці ДІЇ (див. `04_06 §B.2`).
+  describe "база розміру спалення (ARCH.96)" do
+    let(:tree_burn) { create(:tree, cluster: cluster) }
+    let!(:wallet_burn) { tree_burn.wallet || create(:wallet, tree: tree_burn) }
+
+    # `contractual: true` → damage_ratio = 1.0 → burn == база, тож `amount` інтенту
+    # ЧИТАЄТЬСЯ як сама база (без домішки кривої штрафу).
+    def slash_intent_amount
+      described_class.call(organization.id, naas_contract.id, contractual: true)
+      BlockchainTransaction.where(sourceable: naas_contract).order(created_at: :desc).first&.amount
+    end
+
+    it "не рахує SFC-виплати гаманців кластера як зароблений SCC" do
+      create(:blockchain_transaction, wallet: wallet_burn, amount: 100,
+                                      token_type: :carbon_coin, status: :confirmed)
+      create(:blockchain_transaction, wallet: wallet_burn, amount: 40,
+                                      token_type: :forest_coin, status: :confirmed)
+
+      expect(slash_intent_amount).to eq(100)
+    end
+
+    it "ВІДНІМАЄ попереднє спалення — повторний слеш не палить із роздутої бази" do
+      create(:blockchain_transaction, wallet: wallet_burn, amount: 100,
+                                      token_type: :carbon_coin, status: :confirmed)
+      # Завершений burn-інтент: той самий тип, ДОДАТНИЙ amount; дискримінатор — sourceable.
+      # `:confirmed` свідомо: незавершений перехопив би in-flight guard і слеш би не стався.
+      create(:blockchain_transaction, wallet: wallet_burn, amount: 30,
+                                      token_type: :carbon_coin, status: :confirmed,
+                                      sourceable: naas_contract)
+
+      expect(slash_intent_amount).to eq(70)
+    end
+  end
+
   describe "total_minted_amount zero" do
     let(:tree_burn) { create(:tree, cluster: cluster) }
 

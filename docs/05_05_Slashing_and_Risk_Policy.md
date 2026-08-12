@@ -66,7 +66,15 @@
 
 ```
 slash_ratio  = clamp( damage_ratio^GAMMA × min(penalty_factor, PENALTY_FACTOR_MAX), 0, 1.0 )
-slash_amount = locked_balance × slash_ratio
+slash_amount = net_minted_scc(cluster) × slash_ratio
+                   # [ARCH.96] База — ЧИСТА намінтована емісія кластера в МОНЕТАХ SCC:
+                   # Σ(confirmed carbon_coin mints) − Σ(confirmed burns), де burn-інтент
+                   # розпізнається за `sourceable_type = NaasContract`. Дім формули —
+                   # `BlockchainTransaction.net_minted_supply`, скоуп — `.for_cluster`.
+                   # ⚠️ Доти цей рядок казав `locked_balance × slash_ratio` — і це БАЛИ
+                   # (`04_01 §6`: locked_balance = сконвертовані бали росту), тоді як
+                   # `slashUpTo(maxAmount)` приймає МОНЕТИ. Курс 10 000:1 (`05_03`), тож
+                   # буквальна реалізація тієї формули палила б у 10 000× більше.
 
 damage_ratio       = stressed_trees / active_trees_in_cluster   ∈ [0,1]
                    # [⚖️ 2026-07-30] Мертвих НЕМА ні в чисельнику, ні в знаменнику: смерть
@@ -137,7 +145,7 @@ PENALTY_FACTOR_MAX = 2.0   # стеля застосовується до МНО
 
 > **[ARCH.48] Збій slash більше не ставить хибно `:breached`.** Раніше rescue breach-ив на БУДЬ-ЯКОМУ `StandardError` → worker-guard `return if status_breached?` глушив кожен Sidekiq-retry → on-chain `slash()` тихо не транслювався (silent abort, reachable на правильно-keyed prod через RPC-лаг). Тепер rescue розрізняє три випадки: **`LockTimeout`** (lock не взято → `transact` не виконувався → tx не в мемпулі) → контракт `:active`, intent `:failed`, retry re-slash-ить; **помилка з `transact`** (broadcast невідомий) → `escalate_to_review!` (`:manual_review`; in-flight guard `unsettled_within` блокує blind re-slash — інакше double-burn свіжим nonce); **крах ПІСЛЯ broadcast** (`:sent`) → `:breached` як раніше. Тобто `:breached` ≡ «slash підтверджено-broadcast».
 
-> **[SLASH.2] On-chain виконання = `slashUpTo(investor, maxAmount)`, не `slash()`.** Бекенд рахує `burn_amount` з **pre-tax** суми намінтованого (`sum(:amount)` по confirmed tx), а форестер on-chain тримає менше (DynamicTax пішов у treasury; SCC вільно переказуваний). Строгий `slash(amount)` тоді `require(balanceOf ≥ amount)` **revert-ив** — економічне покарання тихо не застосовувалось (`ConfirmationWorker.fail!` не знімав оптимістичний `:breached`), а переказ 1 wei перед транзакцією Оракула скасовував би **повний** slash (evasion). `slashUpTo` палить `min(maxAmount, balanceOf)` **атомарно** (без TOCTOU: дрейф балансу лише зменшує спалене, revert зникає). `BlockchainBurningService` до транзакції ще й pre-read `balanceOf`: (1) записує в intent/метрику **реалістичну** `effective_burn = min(burn, balance)` замість pre-tax (метрика `SCC_SLASHED_TOTAL` більше не завищує); (2) **повне виведення** (balance ≈ 0) → `escalate_evasion!` (critical `:field_audit`, повертає `:evaded`, БЕЗ breach/broadcast — юридичний/clawback-трек §3.3, а не приречена revert-tx). Контракт-half: `SilkenCarbonCoin`/`SilkenForestCoin.slashUpTo` (Halmos `check_slashUpTo_clampsToBalance` symbolic + Medusa property). Канон контракту — [`05_03`](05_03_Tokenomics_SCC_and_SFC).
+> **[SLASH.2] On-chain виконання = `slashUpTo(investor, maxAmount)`, не `slash()`.** Бекенд рахує `burn_amount` з **pre-tax** чистої емісії кластера (`net_minted_supply` — §3), а форестер on-chain тримає менше (DynamicTax пішов у treasury; SCC вільно переказуваний). Строгий `slash(amount)` тоді `require(balanceOf ≥ amount)` **revert-ив** — економічне покарання тихо не застосовувалось (`ConfirmationWorker.fail!` не знімав оптимістичний `:breached`), а переказ 1 wei перед транзакцією Оракула скасовував би **повний** slash (evasion). `slashUpTo` палить `min(maxAmount, balanceOf)` **атомарно** (без TOCTOU: дрейф балансу лише зменшує спалене, revert зникає). `BlockchainBurningService` до транзакції ще й pre-read `balanceOf`: (1) записує в intent/метрику **реалістичну** `effective_burn = min(burn, balance)` замість pre-tax (метрика `SCC_SLASHED_TOTAL` більше не завищує); (2) **повне виведення** (balance ≈ 0) → `escalate_evasion!` (critical `:field_audit`, повертає `:evaded`, БЕЗ breach/broadcast — юридичний/clawback-трек §3.3, а не приречена revert-tx). Контракт-half: `SilkenCarbonCoin`/`SilkenForestCoin.slashUpTo` (Halmos `check_slashUpTo_clampsToBalance` symbolic + Medusa property). Канон контракту — [`05_03`](05_03_Tokenomics_SCC_and_SFC).
 
 ### 3.3 L2 device-voice reconcile/clawback [SLASH-1 × E.60]
 

@@ -90,14 +90,22 @@ class BlockchainBurningService < ApplicationService
     # зростає без необхідності додаткового мінтингу.
     # =========================================================================
 
-    # 1. АГРЕГАЦІЯ: Рахуємо всі токени, що були "зароблені" цим кластером.
+    # 1. АГРЕГАЦІЯ: Рахуємо токени, що ЛИШИЛИСЬ зароблені цим кластером — база розміру спалення.
     # [КЕНОЗИС]: Якщо порушення локальне (одне дерево), ми можемо вилучати
     # або частку, або весь контракт. Наразі йдемо шляхом повної ануляції за порушення гомеостазу.
-    total_minted_amount = BlockchainTransaction
-                          .joins(wallet: :tree)
-                          .where(trees: { cluster_id: @cluster.id })
-                          .where(status: :confirmed)
-                          .sum(:amount)
+    #
+    # 🔴 [ARCH.96] Доти тут стояв голий `sum(:amount)` по `joins(wallet: :tree)` — дві діри,
+    # обидві в бік ЗБІЛЬШЕННЯ незворотної дії:
+    #   (1) без фільтра `token_type` SFC-виплати гаманців кластера рахувались як зароблений SCC;
+    #   (2) без виключення самих спалень попередній burn-інтент (той самий `carbon_coin`,
+    #       ДОДАТНИЙ `amount`, `sourceable: NaasContract`) зараховувався як «зароблене» —
+    #       повторний слеш того ж кластера палив із роздутої бази.
+    # Лік — не третя формула, а наявний One-Home: `net_minted_supply` = Σmints − Σburns із
+    # дискримінатором `sourceable_type`. `for_cluster` додає другу гілку резолюції, бо
+    # slash-інтент при мертвому кластері живе з `wallet: nil` і join через гаманець його не
+    # бачить — саме той рядок і роздував базу найсильніше.
+    total_minted_amount = BlockchainTransaction.for_cluster(@cluster.id)
+                                               .net_minted_supply(:carbon_coin)
 
     return if total_minted_amount.zero?
 
