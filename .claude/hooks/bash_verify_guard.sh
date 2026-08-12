@@ -94,6 +94,18 @@ if ! printf '%s' "$cmd" | grep -qE 'PIPESTATUS|pipestatus|pipefail'; then
   # it is. So `&` counts only when it TERMINATES the statement (`… & ; echo`),
   # never when preceded by `>`/`<`/another `&`. Caught by shipping it, which is
   # also the argument for shipping: the measurement missed this class entirely.
+  # 🔴 KNOWN GAP, measured 2026-08-11 and deliberately NOT patched here. That
+  # exclusion is right only in the FOREGROUND. Launched with the tool's
+  # `run_in_background`, the very same `cmd > log 2>&1; echo "EXIT=$?"` makes the
+  # HARNESS report the chain's status — i.e. the `echo`'s 0 — so its completion
+  # notice said "exit code 0" about an rspec run that had died on the coverage
+  # floor with 2. One text, two contexts, opposite verdicts; this detector keys
+  # on text alone, while the discriminator (`.tool_input.run_in_background`) sits
+  # in the JSON already parsed above. Patching it unmeasured would violate this
+  # file's own stance (every block carries its corpus count), so the honest form
+  # is: measure that flag's real firing rate first, then add a narrow rule.
+  # Until then the carrier has a hole — the reader is the check. Rule-home for
+  # the class: memory `feedback_verify_gate_exit_code`, fourth family (a).
   if { printf '%s' "$cmd" | grep -qE '[^|]\|[^|][^;]*;[[:space:]]*echo[^;]*\$\?' ||
        printf '%s' "$cmd" | grep -qE '[^>&<]&[[:space:]]*;[[:space:]]*echo[^;]*\$\?' ; } &&
      ! printf '%s' "$cmd" | grep -qE '\|[[:space:]]*grep[^|;]*;[[:space:]]*echo[^;]*\$\?' ; then

@@ -189,6 +189,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 51. A gate can be HARD, correct, unit-tested — and structurally unable to reach the place its class actually lives, because the same fact is WRITTEN in two forms and the gate's regex knows one
 52. Mutation-verify a gate in BOTH directions — «it reds on the defect» is only half the proof, and the missing half is where an over-broad gate hides
 53. A carve-out registry gates the PRESENCE of its `back:` condition, never its TRUTH — so an expired exemption looks identical to a live one, and the reader is the only check that exists
+54. A guard installed in a BOOTSTRAP file covers only the processes that LOAD that file — and the colliding party is usually the one that loads a different one
 
 <!-- /GUARD-CRAFT-INDEX -->
 

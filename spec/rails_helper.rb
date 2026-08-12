@@ -94,6 +94,14 @@ RSpec.configure do |config|
   # паралельність вимагає окремої БД на процес (`parallel_tests`-модель), і це
   # інша робота, ніж ця перевірка. Плюс гард бачить лише прогони, що дійшли до
   # цього хука, і не бачить того, хто стартував за мілісекунду до нього.
+  #
+  # ⚠️ Четверта стеля, і вона найтихіша: гард живе в ЦЬОМУ файлі, а колізійний
+  # прогін може його не вантажити взагалі. `spec/lib/docs_*_spec.rb` вимагають
+  # лише `spec_helper` (pure-unit, без Rails), тож смуга Docs, що кличе їх через
+  # `COVERAGE=0 bin/rspec`, до цього хука не доходить ЖОДНОГО разу. І ділять вони
+  # з повною сюїтою не БД, а `coverage/.resultset.json` — `COVERAGE=0` вимикає
+  # ГЕЙТ, не запис. Підпис колізії: `0 failures` при EXIT=2 і групи по 0.0 %;
+  # лік — `rm -f coverage/.resultset.json` і прогін наодинці.
   config.before(:suite) do
     redis = Kredis.redis(config: :shared)
     owner = redis.get(SUITE_OWNER_KEY)
