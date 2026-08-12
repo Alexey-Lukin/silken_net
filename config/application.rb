@@ -70,6 +70,17 @@ module SilkenNet
     config.autoload_paths << root.join("app/views/components").to_s
     config.autoload_paths << root.join("app/views/layouts").to_s
 
+    # [SEC.27] Друга лінія під модельними валідаціями вкладень: жодне наше
+    # вкладення не приймає bmp/psd/ico (allow-list усіх трьох — jpeg/png/webp),
+    # але Rails-дефолт лишає ці формати variant-придатними, тобто тримає шлях
+    # у декодер, якого ми не потребуємо. Після звуження вже залитий блоб такого
+    # типу деградує до `representable? == false` замість `Vips::Error` у рендері.
+    # heic/heif лишаються свідомо — `MaintenanceRecord#photos` їх приймає і
+    # рендерить `variant(:thumb)`, тобто це живий тракт польових фото.
+    config.active_storage.variable_content_types =
+      ActiveStorage::Engine.config.active_storage.variable_content_types -
+      %w[image/bmp image/vnd.adobe.photoshop image/vnd.microsoft.icon]
+
     # Use RSpec and FactoryBot for generators
     config.generators do |g|
       g.test_framework :rspec

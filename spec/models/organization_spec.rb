@@ -4,6 +4,44 @@
 require "rails_helper"
 
 RSpec.describe Organization, type: :model do
+  # [SEC.27] `logo` — єдине вкладення дерева з живим upload-шляхом
+  # (`settings_controller` кладе `:logo` у `permit`), тож валідація тут не
+  # гігієна, а межа довіри. Кожна вісь пінить ПАРУ «проходить ⊥ відпадає»:
+  # приклад лише на успіху зелений і при знятій валідації.
+  describe "logo attachment validation" do
+    let(:organization) { create(:organization) }
+
+    def attach_logo(content_type:, bytes: "x")
+      organization.logo.attach(
+        io: StringIO.new(bytes), filename: "logo", content_type: content_type
+      )
+    end
+
+    it "accepts a web raster image" do
+      attach_logo(content_type: "image/png")
+      expect(organization).to be_valid
+    end
+
+    it "rejects a content type outside the allow-list" do
+      attach_logo(content_type: "application/pdf")
+      expect(organization).not_to be_valid
+      expect(organization.errors[:logo]).to be_present
+    end
+
+    # SVG свідомо поза списком: Rails віддає його `attachment`, а не inline,
+    # але allow-list лишається рівно растровим — вектор тут не потрібен.
+    it "rejects SVG" do
+      attach_logo(content_type: "image/svg+xml")
+      expect(organization).not_to be_valid
+    end
+
+    it "rejects a file over the size ceiling" do
+      attach_logo(content_type: "image/png", bytes: "x" * 6.megabytes)
+      expect(organization).not_to be_valid
+      expect(organization.errors[:logo]).to be_present
+    end
+  end
+
   describe "associations" do
     it "has gateways through clusters" do
       organization = create(:organization)

@@ -811,7 +811,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `wallets` | `has_many, dependent: :nullify` | Пряма магістраль (без 4-рівневого JOIN); `organization_id` обнуляється при видаленні Organization |
 | `ews_alerts` | `has_many, through: :clusters` | Тривоги всіх кластерів (через `under_threat?`) |
 | `audit_logs` | `has_many, dependent: :restrict_with_error` | Незмінний аудит — журнал переживає Org [ARCH.57] |
-| `logo` | `has_one_attached` | Active Storage |
+| `logo` | `has_one_attached` | Active Storage — **≤ 5 МБ, JPEG/PNG/WebP** [SEC.27]. Єдине вкладення дерева з живим upload-шляхом (`settings_controller` кладе `:logo` у `permit`), тож валідація тут межа довіри, не гігієна. SVG свідомо поза allow-list: Rails віддає його `attachment`, а не inline (`content_types_to_serve_as_binary`), але список тримається растровим — логотип іде через `url_for` без variant'а |
 
 **Ключові поля:**
 
@@ -1454,7 +1454,7 @@ Lore-шар SilkenNet — read-only бібліотека "архетипів" (�
 
 ### `Codex::Node` — Запис у Кодексі
 
-**Атрибути:** `codex_realm_id` (FK), `slug` (UNIQUE), `codex_uid` (`CDX-{ECO|TRE|PRT|MYT}-NNNN`, UNIQUE), bilingual `title_uk`/`title_en`/`subtitle_uk`/`subtitle_en`, `archetype_key` (з реєстру `Codex::ARCHETYPES`), markdown лор `context_md`, `cyber_meaning_md`, `lore_md` (рендериться через `Codex::MarkdownRenderer`), геопросторові `latitude`/`longitude`/`geo_point` (PostGIS GEOGRAPHY(POINT, 4326)) + `geo_region`, лічильники-каунтери (`attunement_count`, `comments_count`, `view_count`, `discovery_count`, `citation_count`, `match_count`), `attunement_elo` (battle rating, default 1500, range 0..4000), `lifecycle_status` enum (`mythical`/`extinct`/`endangered`/`thriving`/`destroyed`/`unknown`), `seed_origin` enum (`seed`/`dao_proposal`/`community_submission`), `external_refs` (JSONB `[{label, url}]`), `discoverable_after_minutes`, `published_at`. Active Storage: `cover_image`, `gallery`.
+**Атрибути:** `codex_realm_id` (FK), `slug` (UNIQUE), `codex_uid` (`CDX-{ECO|TRE|PRT|MYT}-NNNN`, UNIQUE), bilingual `title_uk`/`title_en`/`subtitle_uk`/`subtitle_en`, `archetype_key` (з реєстру `Codex::ARCHETYPES`), markdown лор `context_md`, `cyber_meaning_md`, `lore_md` (рендериться через `Codex::MarkdownRenderer`), геопросторові `latitude`/`longitude`/`geo_point` (PostGIS GEOGRAPHY(POINT, 4326)) + `geo_region`, лічильники-каунтери (`attunement_count`, `comments_count`, `view_count`, `discovery_count`, `citation_count`, `match_count`), `attunement_elo` (battle rating, default 1500, range 0..4000), `lifecycle_status` enum (`mythical`/`extinct`/`endangered`/`thriving`/`destroyed`/`unknown`), `seed_origin` enum (`seed`/`dao_proposal`/`community_submission`), `external_refs` (JSONB `[{label, url}]`), `discoverable_after_minutes`, `published_at`. Active Storage: `cover_image`, `gallery` — обидва **≤ 10 МБ, JPEG/PNG/WebP**, галерея ще й **≤ 10 файлів** [SEC.27]. ⚠️ Тут, на відміну від решти вкладень, variant РЕАЛЬНО генерується (`Codex::NodeCard` робить `resize_to_fill`), тож нерозпізнаний формат прилетів би не тихим блобом у сховищі, а `Vips::Error` під час рендеру Atlas-гріду.
 
 **Concerns:** `GeoLocatable`. **Sync:** `before_save :sync_geo_point` — оновлює PostGIS точку при зміні lat/lng.
 
@@ -1703,6 +1703,7 @@ Codex (Lore — read-only):
 | **AR Encryption + In-Process LRU Cache** | HardwareKey.aes_key_hex — шифрування в БД + `cached_binary_key` у in-process LRU (SinLruRedux, max 10 000 entries). Ключі не залишають Ruby-процес (Zero Network Exposure) |
 | **BigDecimal в JSONB** | TinyMlModel accuracy_score/threshold — уникнення Float похибок |
 | **Partial Index для sparse поля** | `blockchain_transactions.tx_hash WHERE tx_hash IS NOT NULL` — виключає рядки без tx_hash (pending/processing) |
+| **Вкладення декларує МЕЖІ** [SEC.27] | Кожне наше Active-Storage-вкладення оголошує `content_type` + `size`, а колекційне (`has_many_attached`) — ще й `limit`. 🔴 Дефект тут — **відсутність рядка**, тож ані греп, ані ревʼю його не бачать: голий `has_one_attached` читається як завершений код, доки хтось не покладе у сховище довільний блоб. Носій — `spec/quality/attachment_validation_discipline_spec.rb`: множину бере з рантайму (`attachment_reflections`), тож нове вкладення входить у периметр самим фактом оголошення; периметр — `app/models` (фреймворкові вкладення ActionText/ActiveStorage/ActionMailbox свідомо поза ним). ⚠️ Гейт судить НАЯВНІСТЬ валідатора, ніколи його ЗМІСТ — доречність allow-list лишається на ревʼю |
 
 ---
 

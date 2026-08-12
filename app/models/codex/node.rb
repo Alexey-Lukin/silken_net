@@ -74,8 +74,21 @@ module Codex
              inverse_of: :commentable,
              dependent: :destroy
 
+    # Тип і розмір валідуються [SEC.27]. Тут, на відміну від решти вкладень,
+    # variant РЕАЛЬНО генерується (`Codex::NodeCard` робить `resize_to_fill`),
+    # тож нерозпізнаний формат прилетів би не тихим блобом у сховищі, а
+    # `Vips::Error` під час рендеру списку — allow-list тримає рівно ті типи,
+    # які vips обробляє без окремих залежностей.
     has_one_attached  :cover_image
     has_many_attached :gallery
+
+    validates :cover_image,
+              content_type: { in: %w[image/jpeg image/png image/webp] },
+              size: { less_than: 10.megabytes }
+    validates :gallery,
+              content_type: { in: %w[image/jpeg image/png image/webp] },
+              size: { less_than: 10.megabytes },
+              limit: { max: 10 }
 
     # ----- Validations ---------------------------------------------------
     validates :slug, presence: true, uniqueness: true,

@@ -4,6 +4,52 @@
 require "rails_helper"
 
 RSpec.describe Codex::Node do
+  # [SEC.27] Тут, на відміну від решти вкладень, variant РЕАЛЬНО генерується
+  # (`Codex::NodeCard` робить `resize_to_fill`), тож нерозпізнаний формат
+  # прилетів би `Vips::Error`ом у рендер списку, а не тихим блобом.
+  describe "attachment validations" do
+    let(:node) { create(:codex_node) }
+
+    def attach(name, content_type:, bytes: "x")
+      node.public_send(name).attach(
+        io: StringIO.new(bytes), filename: "asset", content_type: content_type
+      )
+    end
+
+    it "accepts a web raster cover image" do
+      attach(:cover_image, content_type: "image/webp")
+      expect(node).to be_valid
+    end
+
+    it "rejects a cover image outside the allow-list" do
+      attach(:cover_image, content_type: "image/vnd.adobe.photoshop")
+      expect(node).not_to be_valid
+      expect(node.errors[:cover_image]).to be_present
+    end
+
+    it "rejects an oversized cover image" do
+      attach(:cover_image, content_type: "image/png", bytes: "x" * 11.megabytes)
+      expect(node).not_to be_valid
+    end
+
+    it "rejects a gallery item outside the allow-list" do
+      attach(:gallery, content_type: "image/bmp")
+      expect(node).not_to be_valid
+      expect(node.errors[:gallery]).to be_present
+    end
+
+    it "caps the gallery size" do
+      11.times { attach(:gallery, content_type: "image/png") }
+      expect(node).not_to be_valid
+      expect(node.errors[:gallery]).to be_present
+    end
+
+    it "accepts a gallery at the cap" do
+      10.times { attach(:gallery, content_type: "image/png") }
+      expect(node).to be_valid
+    end
+  end
+
   describe "validations" do
     it "is valid with required attributes" do
       expect(build(:codex_node)).to be_valid

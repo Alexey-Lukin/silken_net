@@ -42,7 +42,18 @@ class Organization < ApplicationRecord
   has_many :wallets, dependent: :nullify
 
   # Логотип організації (The Brain Map)
+  #
+  # Тип і розмір валідуються [SEC.27]: `logo` — єдине вкладення з живим
+  # upload-шляхом (`settings_controller` кладе `:logo` у `permit`), тож без
+  # цього будь-який org-admin клав би у сховище довільний блоб довільного
+  # розміру. SVG свідомо поза allow-list: Rails віддає його `attachment`,
+  # а не inline, але сам список тримаємо рівно з тих типів, які vips
+  # обробляє як растр — логотипу вектор не потрібен, він іде через `url_for`
+  # без variant'а.
   has_one_attached :logo
+  validates :logo,
+            content_type: { in: %w[image/jpeg image/png image/webp] },
+            size: { less_than: 5.megabytes }
 
   # --- НОРМАЛІЗАЦІЯ ---
   normalizes :billing_email, with: ->(e) { e.strip.downcase }
