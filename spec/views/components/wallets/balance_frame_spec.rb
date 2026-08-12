@@ -4,11 +4,11 @@
 require "rails_helper"
 
 RSpec.describe Wallets::BalanceFrame do
-  def mock_wallet(id: 1, scc_balance: 42.5, locked_balance: 0.0,
+  def mock_wallet(id: 1, balance: 42.5, locked_balance: 0.0,
                   esg_retired_balance: 0.0)
     wallet = OpenStruct.new(
       id: id,
-      scc_balance: scc_balance,
+      balance: balance,
       locked_balance: locked_balance,
       esg_retired_balance: esg_retired_balance
     )
@@ -38,14 +38,17 @@ RSpec.describe Wallets::BalanceFrame do
   end
 
   describe "balance display delegation" do
-    let(:html) { render_component(wallet: mock_wallet(scc_balance: 12.3456)) }
+    let(:html) { render_component(wallet: mock_wallet(balance: 12.3456)) }
 
-    it "renders the SCC balance from BalanceDisplay" do
+    it "renders the growth-point balance from BalanceDisplay" do
       expect(html).to include("12.3456")
     end
 
-    it "renders SCC label" do
-      expect(html).to include("SCC")
+    it "renders the GP unit label" do
+      # [ARCH.88] Пара, що РОЗРІЗНЯЄ: доти пін ловив «SCC» із декоративного
+      # водяного знака й лишався зеленим навіть при виправленій мітці.
+      expect(html).to include("GP")
+      expect(html).not_to include("SCC")
     end
   end
 

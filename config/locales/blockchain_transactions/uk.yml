@@ -53,6 +53,7 @@ uk:
         not_available: Н/Д
         title: Прив'язаний гаманець
         tree_did: DID дерева
+        unit: GP
         wallet_balance: Баланс гаманця
     show_title: Транзакція №%{id}
     token_types:

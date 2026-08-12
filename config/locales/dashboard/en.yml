@@ -17,8 +17,9 @@ en:
         view_all: Open Mission Log →
       stats:
         active_soldiers: Active Soldiers
-        carbon_treasury: Carbon Treasury
         forest_vitality: Forest Vitality
+        growth_treasury: Growth Treasury
+        growth_treasury_sub: GP
         ionic_potential: Ionic Potential
     index_title: Citadel Command // Global Overview
     map:

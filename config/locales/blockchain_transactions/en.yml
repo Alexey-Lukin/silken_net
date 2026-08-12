@@ -53,6 +53,7 @@ en:
         not_available: N/A
         title: Linked Wallet
         tree_did: Tree DID
+        unit: GP
         wallet_balance: Wallet Balance
     show_title: 'Transaction #%{id}'
     token_types:

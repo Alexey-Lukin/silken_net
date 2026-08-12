@@ -7,12 +7,12 @@ RSpec.describe Wallets::Index do
   # Component is i18n-aware. Existing assertions match the English copy.
   around { |ex| I18n.with_locale(:en) { ex.run } }
 
-  def mock_wallet(id: 1, scc_balance: 42.5, locked_balance: 0, esg_retired_balance: 0, tree_did: "SNET-AABBCCDD", org_name: nil, crypto_public_address: "0xDEAD1234BEEF5678")
+  def mock_wallet(id: 1, balance: 42.5, locked_balance: 0, esg_retired_balance: 0, tree_did: "SNET-AABBCCDD", org_name: nil, crypto_public_address: "0xDEAD1234BEEF5678")
     tree = tree_did ? OpenStruct.new(did: tree_did) : nil
     org  = org_name ? OpenStruct.new(name: org_name) : nil
     OpenStruct.new(
       id: id,
-      scc_balance: scc_balance,
+      balance: balance,
       locked_balance: locked_balance,
       esg_retired_balance: esg_retired_balance,
       tree: tree,
@@ -30,11 +30,12 @@ RSpec.describe Wallets::Index do
     end
 
     it "displays the monitoring description" do
-      expect(html).to include("Monitoring the flow of Silken Carbon Coins")
+      expect(html).to include("Monitoring the flow of growth points")
     end
 
-    it "shows total liquidity" do
-      expect(html).to include("100.5 SCC")
+    it "shows total liquidity in growth points, not coins" do
+      expect(html).to include("100.5 GP")
+      expect(html).not_to include("100.5 SCC")
     end
 
     it "renders the grid layout for wallet cards" do
@@ -47,14 +48,17 @@ RSpec.describe Wallets::Index do
   end
 
   describe "wallet card content" do
-    let(:html) { render_component(wallets: [ mock_wallet(scc_balance: 99.1234) ], total_liquidity: 99.1234) }
+    let(:html) { render_component(wallets: [ mock_wallet(balance: 99.1234) ], total_liquidity: 99.1234) }
 
-    it "displays the SCC balance" do
+    it "displays the growth-point balance" do
       expect(html).to include("99.1234")
     end
 
-    it "displays the SCC label" do
-      expect(html).to include("SCC")
+    it "displays the GP unit label, never the coin ticker" do
+      # [ARCH.88] Доти цей пін лишався зеленим від рядка total-liquidity навіть
+      # при виправленій мітці картки — тепер він розрізняє.
+      expect(html).to include("GP")
+      expect(html).not_to include("SCC")
     end
 
     it "shows Soldier Wallet label for tree wallets" do

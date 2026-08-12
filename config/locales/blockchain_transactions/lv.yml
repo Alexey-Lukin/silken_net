@@ -53,6 +53,7 @@ lv:
         not_available: Nav
         title: Saistītais maks
         tree_did: Koka DID
+        unit: GP
         wallet_balance: Maka atlikums
     show_title: 'Darījums #%{id}'
     token_types:

@@ -65,8 +65,12 @@ RSpec.describe Wallets::MetadataFrame do
       expect(html).to include("5.25")
     end
 
-    it "shows SCC unit labels" do
-      expect(html).to include("SCC")
+    # [ARCH.88] Усі три величини цієї картки — БАЛИ росту; тікер монети тут був
+    # завищенням у 10 000×. Негативна половина несуча: без неї пін пройшов би
+    # і на поверненому «SCC».
+    it "shows GP unit labels, never the coin ticker" do
+      expect(html).to include("GP")
+      expect(html).not_to include("SCC")
     end
   end
 

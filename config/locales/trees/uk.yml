@@ -29,7 +29,7 @@ uk:
       headings:
         biometrics: Жива біометрична матриця
         deployment_matrix: Матриця розгортання
-        economic_yield: Нараховано SCC
+        economic_yield: Нараховано балів росту
         hardware_vault: Апаратне сховище безпеки
         impedance_flux: Імпедансний потік (останні 10 циклів)
         maintenance: Ритуали обслуговування та історія зцілення
@@ -41,6 +41,7 @@ uk:
       labels:
         family: 'Родина: %{name}'
         family_unknown: Невідома
+        unit: GP
         uplink_state: Стан зв'язку
         verified_balance: Підтверджений баланс
       locate_aria: Знайти вузол дерева на Google Maps

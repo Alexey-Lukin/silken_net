@@ -81,8 +81,11 @@ RSpec.describe Dashboard::Home do
   end
 
   describe "economy stat" do
-    it "renders Carbon Treasury stat card" do
-      expect(html).to include("Carbon Treasury")
+    # [ARCH.88] Величина = sum(:balance), тобто БАЛИ росту. Ім'я прикладу тут
+    # само було твердженням — і брехливим, тож правиться разом з ассертом.
+    it "renders the Growth Treasury stat card, not a coin treasury" do
+      expect(html).to include("Growth Treasury")
+      expect(html).not_to include("Carbon Treasury")
     end
 
     it "renders total_scc value" do

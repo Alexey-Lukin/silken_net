@@ -16,8 +16,17 @@ class WalletBlueprint < Blueprinter::Base
 
   # Lightweight view for the /balance endpoint — returns key financial figures
   # without tree/org associations to keep the response fast for Turbo Frame lazy-loads.
+  # [ARCH.88] `scc_balance` лишається В КОНТРАКТІ, але як ДЕПРЕКОВАНИЙ аліас, а не
+  # як правда: колонка тримає growth_points, тож ім'я завищує величину в 10 000×.
+  # Тихо перейменувати не можна — поле опубліковане таблицею полів у `04_03` і
+  # читається Bearer-клієнтами (view `:metadata` прямо оголошує «mobile clients and
+  # third-party integrators»). Тому поруч віддається чесне `growth_points` з тим
+  # самим значенням; зняття аліаса — окремий крок після депрекації.
   view :balance do
     exclude :crypto_public_address
+    field :growth_points do |wallet, _options|
+      wallet.balance
+    end
     field :scc_balance
     field :locked_balance
     field :available_balance

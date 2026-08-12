@@ -31,17 +31,19 @@ module Wallets
             p(class: "text-gray-600 mb-1 uppercase") { t(".network") }
             p(class: "text-white") { t(".polygon_mainnet") }
           end
+          # [ARCH.88] Усі три величини нижче — БАЛИ росту (locked/available/esg живуть
+          # у тій самій колонковій родині, що й `balance`), тож тікер монети знято.
           div(class: "pt-3 border-t border-emerald-900/30") do
             p(class: "text-gaia-text-muted mb-1 uppercase") { t(".locked_balance") }
-            p(class: "text-status-warning-text") { "#{@wallet.locked_balance.to_f.round(4)} SCC" }
+            p(class: "text-status-warning-text") { "#{@wallet.locked_balance.to_f.round(4)} #{t('.unit')}" }
           end
           div do
             p(class: "text-gaia-text-muted mb-1 uppercase") { t(".available_balance") }
-            p(class: "text-gaia-primary") { "#{@wallet.available_balance.to_f.round(4)} SCC" }
+            p(class: "text-gaia-primary") { "#{@wallet.available_balance.to_f.round(4)} #{t('.unit')}" }
           end
           div do
             p(class: "text-gaia-text-muted mb-1 uppercase") { t(".esg_retired") }
-            p(class: "text-gaia-text-muted") { "#{@wallet.esg_retired_balance.to_f.round(4)} SCC" }
+            p(class: "text-gaia-text-muted") { "#{@wallet.esg_retired_balance.to_f.round(4)} #{t('.unit')}" }
           end
         end
       end

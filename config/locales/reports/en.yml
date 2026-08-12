@@ -61,8 +61,8 @@ en:
         biological_assets_sub: Trees
         capital_injected: Contracted Amount
         capital_injected_sub: USD Contracted
-        carbon_yield: SCC Minted
-        carbon_yield_sub: SCC Total
+        carbon_yield: Growth Points Accrued
+        carbon_yield_sub: Total GP
         health_score: Health Score
         health_score_sub: Index
         sectors: Sectors

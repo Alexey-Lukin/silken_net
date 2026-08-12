@@ -61,8 +61,8 @@ lt:
         biological_assets_sub: Medžiai
         capital_injected: Sutarčių suma
         capital_injected_sub: USD pagal sutartis
-        carbon_yield: Nukalta SCC
-        carbon_yield_sub: SCC iš viso
+        carbon_yield: Sukaupti augimo taškai
+        carbon_yield_sub: Iš viso GP
         health_score: Sveikatos rodiklis
         health_score_sub: Indeksas
         sectors: Sektoriai

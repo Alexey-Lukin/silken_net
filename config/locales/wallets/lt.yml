@@ -3,21 +3,23 @@ lt:
   wallets:
     balance_display:
       available: 'Galima:'
-      decoration: SCC
+      decoration: GP
       esg_retired: 'ESG išimta:'
       locked: 'Užblokuota:'
       locked_for: 'Užblokuota: %{owner}'
-      verified_balance: Patikrintas balansas
+      unit: GP
+      verified_balance: Patikrinti augimo taškai
     index:
       audit_link: Audito knyga →
       kind_clan: Klano iždas
       kind_soldier: Kario piniginė
       locked_label: "🔒 %{amount} užblokuota"
       retired_label: "♻ %{amount} išimta"
-      subtitle: Silken anglies monetų srauto stebėjimas tinkle.
+      subtitle: Augimo taškų srauto stebėsena tinkle.
       system_reserve: Sistemos rezervas
       title: Iždo matrica
       total_liquidity: 'Bendra likvidumas:'
+      unit: GP
     index_title: Iždo matrica
     metadata_frame:
       available_balance: Galimas balansas
@@ -28,6 +30,7 @@ lt:
       polygon_address: Polygon adresas
       polygon_mainnet: Polygon PoS (Mainnet)
       title: Blokų grandinės tapatybė
+      unit: GP
     show:
       columns:
         amount: Suma

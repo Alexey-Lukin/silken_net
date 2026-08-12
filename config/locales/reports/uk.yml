@@ -61,8 +61,8 @@ uk:
         biological_assets_sub: Дерева
         capital_injected: Сума контрактів
         capital_injected_sub: Законтрактовано USD
-        carbon_yield: Нараховано SCC
-        carbon_yield_sub: Всього SCC
+        carbon_yield: Нараховано балів росту
+        carbon_yield_sub: Усього GP
         health_score: Індекс здоров'я
         health_score_sub: Індекс
         sectors: Сектори

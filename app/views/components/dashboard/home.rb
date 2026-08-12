@@ -21,7 +21,10 @@ module Dashboard
           # `contracts/show`.
           render Views::Shared::UI::StatCard.new(label: t(".stats.forest_vitality"), value: "#{(@stats[:trees][:health_avg].to_f * 100).round}%")
           render Views::Shared::UI::StatCard.new(label: t(".stats.active_soldiers"), value: @stats[:trees][:active], sub: "/ #{@stats[:trees][:total]}")
-          render Views::Shared::UI::StatCard.new(label: t(".stats.carbon_treasury"), value: @stats[:economy][:total_scc], sub: "SCC")
+          # [ARCH.88] Величина = `org.wallets.sum(:balance)`, тобто БАЛИ росту, а не
+          # монети — `sub` був зашитим літералом «SCC» і завищував її в 10 000×.
+          # ⚠️ Тут ДВА незалежні носії одиниці (label і sub), і гниють вони окремо.
+          render Views::Shared::UI::StatCard.new(label: t(".stats.growth_treasury"), value: @stats[:economy][:total_scc], sub: t(".stats.growth_treasury_sub"))
           render Views::Shared::UI::StatCard.new(
             label: t(".stats.ionic_potential"),
             value: "#{@stats[:energy][:avg_voltage]}mV",

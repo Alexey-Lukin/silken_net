@@ -275,8 +275,11 @@ RSpec.describe Trees::Show do
       expect(html).to include("12.5")
     end
 
-    it "displays SCC label" do
-      expect(html).to include("SCC")
+    # [ARCH.88] Панель показує БАЛИ росту — і заголовок, і одиниця мусять це
+    # називати; тікер монети тут завищував величину в 10 000×.
+    it "displays the GP unit label, never the coin ticker" do
+      expect(html).to include("GP")
+      expect(html).not_to include("SCC")
     end
 
     it "truncates crypto address" do

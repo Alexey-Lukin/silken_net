@@ -61,8 +61,8 @@ lv:
         biological_assets_sub: Koki
         capital_injected: Līgumu summa
         capital_injected_sub: USD līgumos
-        carbon_yield: Kalts SCC
-        carbon_yield_sub: SCC kopā
+        carbon_yield: Uzkrātie izaugsmes punkti
+        carbon_yield_sub: Kopā GP
         health_score: Veselības rādītājs
         health_score_sub: Indekss
         sectors: Sektori

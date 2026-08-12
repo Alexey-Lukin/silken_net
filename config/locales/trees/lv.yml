@@ -29,7 +29,7 @@ lv:
       headings:
         biometrics: Tiešraides biometrijas matrica
         deployment_matrix: Izvietojuma matrica
-        economic_yield: Uzkrāts SCC
+        economic_yield: Uzkrātie izaugsmes punkti
         hardware_vault: Aparatūras drošības glabātuve
         impedance_flux: Impedances svārstības (pēdējie 10 cikli)
         maintenance: Apkopes rituāli un dziedināšanas vēsture
@@ -41,6 +41,7 @@ lv:
       labels:
         family: 'Dzimta: %{name}'
         family_unknown: Nezināms
+        unit: GP
         uplink_state: Augšupsaites stāvoklis
         verified_balance: Verificētais atlikums
       locate_aria: Atrast koka mezglu Google Maps

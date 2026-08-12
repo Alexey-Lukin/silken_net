@@ -29,7 +29,7 @@ en:
       headings:
         biometrics: Live Biometric Matrix
         deployment_matrix: Deployment Matrix
-        economic_yield: SCC Accrued
+        economic_yield: Growth Points Accrued
         hardware_vault: Hardware Security Vault
         impedance_flux: Impedance Flux (Last 10 Cycles)
         maintenance: Maintenance Rituals & Healing History
@@ -41,6 +41,7 @@ en:
       labels:
         family: 'Family: %{name}'
         family_unknown: Unknown
+        unit: GP
         uplink_state: Uplink State
         verified_balance: Verified Balance
       locate_aria: Locate tree node on Google Maps

@@ -17,8 +17,9 @@ lt:
         view_all: Atidaryti misijų žurnalą →
       stats:
         active_soldiers: Aktyvūs kariai
-        carbon_treasury: Anglies iždas
         forest_vitality: Miško gyvybingumas
+        growth_treasury: Augimo taškų iždas
+        growth_treasury_sub: GP
         ionic_potential: Joninis potencialas
     index_title: Citadelės vadovybė // Globali apžvalga
     map:

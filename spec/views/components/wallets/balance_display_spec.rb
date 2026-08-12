@@ -4,21 +4,24 @@
 require "rails_helper"
 
 RSpec.describe Wallets::BalanceDisplay do
-  def mock_wallet(id: 1, scc_balance: 42.123456, tree_did: "TREE::0xBEEF", org_name: nil)
+  def mock_wallet(id: 1, balance: 42.123456, tree_did: "TREE::0xBEEF", org_name: nil)
     tree = tree_did ? OpenStruct.new(did: tree_did) : nil
     org  = org_name ? OpenStruct.new(name: org_name) : nil
-    OpenStruct.new(id: id, scc_balance: scc_balance, tree: tree, organization: org)
+    OpenStruct.new(id: id, balance: balance, tree: tree, organization: org)
   end
 
   describe "balance rendering" do
-    let(:html) { render_component(wallet: mock_wallet(scc_balance: 42.123456)) }
+    let(:html) { render_component(wallet: mock_wallet(balance: 42.123456)) }
 
-    it "displays the SCC balance rounded to 6 decimals" do
+    it "displays the growth-point balance rounded to 6 decimals" do
       expect(html).to include("42.123456")
     end
 
-    it "displays the SCC currency label" do
-      expect(html).to include("SCC")
+    it "displays the GP unit label, never the coin ticker" do
+      # [ARCH.88] Пара, що РОЗРІЗНЯЄ: доти пін ловив «SCC» із декоративного
+      # водяного знака й лишався зеленим навіть при виправленій мітці.
+      expect(html).to include("GP")
+      expect(html).not_to include("SCC")
     end
 
     it "displays the locked-for tree DID" do

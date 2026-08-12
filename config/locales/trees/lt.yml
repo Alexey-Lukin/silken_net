@@ -29,7 +29,7 @@ lt:
       headings:
         biometrics: Tiesioginės biometrinės matricos
         deployment_matrix: Diegimo matrica
-        economic_yield: Sukaupta SCC
+        economic_yield: Sukaupti augimo taškai
         hardware_vault: Aparatūros saugumo saugykla
         impedance_flux: Impedanso svyravimai (paskutiniai 10 ciklų)
         maintenance: Priežiūros ritualai ir gydymo istorija
@@ -41,6 +41,7 @@ lt:
       labels:
         family: 'Šeima: %{name}'
         family_unknown: Nežinoma
+        unit: GP
         uplink_state: Ryšio aukštyn būsena
         verified_balance: Patikrintas balansas
       locate_aria: Rasti medžio mazgą Google Maps

@@ -41,7 +41,8 @@ module Wallets
         end
         div(class: "text-right font-mono text-tiny text-gaia-text-subtle") do
           plain "#{t('.total_liquidity')} "
-          span(class: "text-gaia-primary") { "#{@total_liquidity.to_f.round(2)} SCC" }
+          # [ARCH.88] Сума БАЛІВ (`scope.sum(:balance)`), не монет — тікер звідси знято.
+          span(class: "text-gaia-primary") { "#{@total_liquidity.to_f.round(2)} #{t('.unit')}" }
         end
       end
     end
@@ -61,8 +62,9 @@ module Wallets
         end
 
         div(class: "mb-6") do
-          span(class: "text-3xl font-light text-gaia-text-strong") { wallet.scc_balance.to_f.round(4) }
-          span(class: "ml-2 text-xs text-gaia-primary-hover font-mono") { "SCC" }
+          # [ARCH.88] `balance` напряму — аліас `scc_balance` лише перейменовував бали в монету.
+          span(class: "text-3xl font-light text-gaia-text-strong") { wallet.balance.to_f.round(4) }
+          span(class: "ml-2 text-xs text-gaia-primary-hover font-mono") { t(".unit") }
           if wallet.locked_balance.to_f > 0
             div(class: "mt-1 text-micro font-mono text-status-warning-text") do
               t(".locked_label", amount: wallet.locked_balance.to_f.round(2))

@@ -3,21 +3,23 @@ lv:
   wallets:
     balance_display:
       available: 'Pieejams:'
-      decoration: SCC
+      decoration: GP
       esg_retired: 'ESG izņemts:'
       locked: 'Bloķēts:'
       locked_for: 'Bloķēts: %{owner}'
-      verified_balance: Verificētais atlikums
+      unit: GP
+      verified_balance: Verificētie izaugsmes punkti
     index:
       audit_link: Audita virsgrāmata →
       kind_clan: Klana kase
       kind_soldier: Karavīra maks
       locked_label: "🔒 %{amount} bloķēts"
       retired_label: "♻ %{amount} izņemts"
-      subtitle: Silken oglekļa monētu plūsmas uzraudzība tīklā.
+      subtitle: Izaugsmes punktu plūsmas uzraudzība tīklā.
       system_reserve: Sistēmas rezerve
       title: Kases matrica
       total_liquidity: 'Kopējā likviditāte:'
+      unit: GP
     index_title: Kases matrica
     metadata_frame:
       available_balance: Pieejamais atlikums
@@ -28,6 +30,7 @@ lv:
       polygon_address: Polygon adrese
       polygon_mainnet: Polygon PoS (Mainnet)
       title: Blokķēdes identitāte
+      unit: GP
     show:
       columns:
         amount: Summa

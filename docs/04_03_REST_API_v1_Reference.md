@@ -838,6 +838,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 {
   "data": {
     "id": 42,
+    "growth_points": "1250.500000",
     "scc_balance": "1250.500000",
     "locked_balance": "100.000000",
     "available_balance": "1150.500000",
@@ -848,10 +849,11 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 | Поле | Тип | Опис |
 |------|-----|------|
-| `scc_balance` | Decimal (string) | Загальний баланс SCC (alias для `balance`) |
+| `growth_points` | Decimal (string) | **[ARCH.88]** Накопичені **бали росту** — чесне ім'я величини, що лежить у колонці `balance` (дім → [`04_01 §6`](04_01_Data_Models_and_Entities)) |
+| `scc_balance` | Decimal (string) | ⚠️ **ДЕПРЕКОВАНО [ARCH.88]** — те саме значення, що `growth_points`. Ім'я успадковане від `alias_attribute` і **бреше**: колонка тримає бали, не монети, тож за курсом конверсії ([`05_03`](05_03_Tokenomics_SCC_and_SFC) — дім) воно завищує величину на кілька порядків. Лишене заради Bearer/mobile-клієнтів, які вже читають це поле; знімається окремим кроком після депрекації |
 | `locked_balance` | Decimal (string) | Заблоковано для pending blockchain TX |
-| `available_balance` | Decimal (string) | Доступно для витрат (`scc_balance - locked_balance`) |
-| `esg_retired_balance` | Decimal (string) | ESG-retired SCC (назавжди виведені з обігу) |
+| `available_balance` | Decimal (string) | Доступно до КОНВЕРСІЇ (`balance − locked_balance`) — у балах. `locked_balance` = вже сконвертоване назавжди ([`04_01 §6`](04_01_Data_Models_and_Entities) E.66), тож це не «доступно для витрат» |
+| `esg_retired_balance` | Decimal (string) | ESG-retired **бали** (назавжди виведені з обігу) |
 
 **HTML Response:** Повертає `Wallets::BalanceFrame` Phlex-компонент (Turbo Frame `wallet_balance_frame_{id}`), без layout.
 

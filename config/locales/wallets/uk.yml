@@ -3,21 +3,23 @@ uk:
   wallets:
     balance_display:
       available: 'Доступно:'
-      decoration: SCC
+      decoration: GP
       esg_retired: 'ESG погашено:'
       locked: 'Заблоковано:'
       locked_for: 'Заблоковано для: %{owner}'
-      verified_balance: Перевірений баланс
+      unit: GP
+      verified_balance: Перевірені бали росту
     index:
       audit_link: Аудит реєстру →
       kind_clan: Скарбниця клану
       kind_soldier: Гаманець солдата
       locked_label: "🔒 %{amount} заблоковано"
       retired_label: "♻ %{amount} погашено"
-      subtitle: Моніторинг потоку Вуглецевих монет Silken у мережі.
+      subtitle: Моніторинг потоку балів росту в мережі.
       system_reserve: Системний резерв
       title: Скарбнична матриця
       total_liquidity: 'Загальна ліквідність:'
+      unit: GP
     index_title: Скарбнична матриця
     metadata_frame:
       available_balance: Доступний баланс
@@ -28,6 +30,7 @@ uk:
       polygon_address: Адреса Polygon
       polygon_mainnet: Polygon PoS (Mainnet)
       title: Блокчейн-ідентичність
+      unit: GP
     show:
       columns:
         amount: Сума

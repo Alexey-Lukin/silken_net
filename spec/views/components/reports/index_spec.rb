@@ -43,8 +43,11 @@ RSpec.describe Reports::Index do
       expect(html).to include("Health Score")
     end
 
-    it "renders SCC Minted stat card" do
-      expect(html).to include("SCC Minted")
+    # [ARCH.88] Величина = sum(:balance), тобто БАЛИ росту. Ім'я прикладу тут
+    # само було твердженням — і брехливим, тож правиться разом з ассертом.
+    it "renders accrued growth points, never «SCC Minted»" do
+      expect(html).to include("Growth Points Accrued")
+      expect(html).not_to include("SCC Minted")
     end
 
     it "renders Contracted Amount stat card" do

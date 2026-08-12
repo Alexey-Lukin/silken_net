@@ -17,8 +17,9 @@ uk:
         view_all: Відкрити журнал місій →
       stats:
         active_soldiers: Активні солдати
-        carbon_treasury: Вуглецева скарбниця
         forest_vitality: Життєздатність лісу
+        growth_treasury: Скарбниця балів росту
+        growth_treasury_sub: GP
         ionic_potential: Іонний потенціал
     index_title: Командування Цитаделі // Глобальний огляд
     map:

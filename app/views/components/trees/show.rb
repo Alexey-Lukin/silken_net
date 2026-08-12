@@ -213,10 +213,11 @@ module Trees
             p(class: "text-mini text-gaia-text-muted uppercase") { t(".labels.verified_balance") }
             div(class: "flex items-baseline gap-2") do
               # 🔴 Те саме, що в біометричній панелі: `balance` — `decimal`, тож без
-              # `&.to_f` баланс рендерився ПОРОЖНІМ, а поруч лишався самотній «SCC».
-              # ⚠️ Сам ПІДПИС тут окреме питання — це бали росту, не монети → `ARCH.88`.
-              span(class: "text-3xl font-light text-gaia-text-strong") { @tree.wallet&.scc_balance&.to_f || "0.0" }
-              span(class: "text-xs text-gaia-primary-hover font-mono") { "SCC" }
+              # `&.to_f` баланс рендерився ПОРОЖНІМ, а поруч лишався самотній тікер.
+              # ✅ [ARCH.88] Підпис виправлено: це БАЛИ росту, не монети — читаємо
+              # `balance` напряму, одиниця з локалі.
+              span(class: "text-3xl font-light text-gaia-text-strong") { @tree.wallet&.balance&.to_f || "0.0" }
+              span(class: "text-xs text-gaia-primary-hover font-mono") { t(".labels.unit") }
             end
           end
           wallet_address = @tree.wallet&.crypto_public_address

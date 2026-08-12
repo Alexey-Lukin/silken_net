@@ -18,7 +18,9 @@ module Api
             }
           end
           format.html do
-            total_liquidity = scope.sum(:scc_balance)
+            # [ARCH.88] `balance` напряму: аліас лише перейменовував бали в монету,
+            # а підсумок реєстру — сума БАЛІВ, і підписується він тепер як GP.
+            total_liquidity = scope.sum(:balance)
             render_dashboard(
               title: I18n.t("wallets.index_title"),
               component: Wallets::Index.new(wallets: @wallets, pagy: @pagy, total_liquidity: total_liquidity)

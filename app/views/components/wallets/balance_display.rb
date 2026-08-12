@@ -14,8 +14,11 @@ module Wallets
 
         p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-4") { t(".verified_balance") }
         div(class: "flex items-baseline gap-4") do
-          span(class: "text-7xl font-extralight text-white tracking-tighter") { @wallet.scc_balance.to_f.round(6) }
-          span(class: "text-xl text-emerald-500 font-mono animate-pulse") { "SCC" }
+          # [ARCH.88] `balance` НАПРЯМУ, не через alias `scc_balance`: колонка тримає
+          # БАЛИ росту, і аліас лише перейменовував їх у монету. Одиниця — з локалі,
+          # бо зашитий літерал «SCC» тут і був завищенням у 10 000×.
+          span(class: "text-7xl font-extralight text-white tracking-tighter") { @wallet.balance.to_f.round(6) }
+          span(class: "text-xl text-emerald-500 font-mono animate-pulse") { t(".unit") }
         end
         div(class: "mt-6 flex gap-8 text-xs font-mono") do
           div do

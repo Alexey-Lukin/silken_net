@@ -53,6 +53,7 @@ lt:
         not_available: Nėra
         title: Susieta piniginė
         tree_did: Medžio DID
+        unit: GP
         wallet_balance: Piniginės balansas
     show_title: 'Sandoris #%{id}'
     token_types:

@@ -123,8 +123,11 @@ module BlockchainTransactions
           div(class: "pt-3 border-t border-emerald-900/30") do
             p(class: "text-mini text-gray-600 uppercase mb-1") { t(".wallet.wallet_balance") }
             p(class: "text-lg text-white font-light") do
+              # [ARCH.88] Це БАЛАНС ГАМАНЦЯ, тобто бали росту — на відміну від
+              # `@tx.amount` вище, який справді в монетах і носить `@tx.ticker`.
+              # Дві сусідні величини на одній сторінці, дві різні одиниці.
               plain @tx.wallet.balance.to_f.round(4).to_s
-              span(class: "text-xs text-emerald-600 ml-2") { "SCC" }
+              span(class: "text-xs text-emerald-600 ml-2") { t(".wallet.unit") }
             end
           end
         else
