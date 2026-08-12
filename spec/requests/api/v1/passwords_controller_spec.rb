@@ -50,10 +50,19 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
   # GET /reset_password
   # =========================================================================
   describe "GET /reset_password" do
-    it "renders the reset password form" do
+    # 🔴 [TEST.12 вісь D] Пін доти був самим `:ok`, а несуче тут — ПРОВОДКА токена:
+    # контролер бере його з `params` і кладе в приховане поле, звідки він і їде
+    # назад у `PATCH`. Розрив цього ланцюга лишає сторінку цілком справною на
+    # вигляд (200, форма, кнопка) і робить скидання пароля мовчки неможливим —
+    # сабміт піде без токена. Компонентна спека це не ловить: вона подає токен
+    # сама, тобто перевіряє шаблон, а не те, що контролер його прокинув.
+    it "прокидає токен із запиту в приховане поле форми" do
       token = user.generate_token_for(:password_reset)
+
       get "/reset_password", params: { token: token }
+
       expect(response).to have_http_status(:ok)
+      expect(response.body).to include(%(name="token" value="#{token}"))
     end
   end
 

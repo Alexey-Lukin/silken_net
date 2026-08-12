@@ -181,9 +181,17 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
   describe "GET /tree_families/:id/edit" do
     let(:headers) { super_admin_headers }
 
-    it "renders the edit form for super_admin" do
+    # 🔴 [TEST.12 вісь D] Пін доти був самим `:ok`. Це ЄДИНИЙ шлях у дереві, який
+    # рендерить `TreeFamilies::Form` із ПЕРСИСТОВАНИМ записом — компонентна спека
+    # подає непер­систований (`id: nil`), тож предзаповнення полів значеннями з БД
+    # не перевіряв ніхто. А форма редагування без предзаповнення віддає чесні 200
+    # і мовчки стирає дані при сабміті: `update` запише порожнє.
+    it "предзаповнює форму значеннями РЕДАГОВАНОГО запису, а не порожнього" do
       get "/tree_families/#{scots_pine.id}/edit", headers: headers
+
       expect(response).to have_http_status(:ok)
+      expect(response.body).to include(%(value="#{scots_pine.name}"))
+      expect(response.body).to include(%(value="#{scots_pine.scientific_name}"))
     end
 
     it "returns 403 for non-admin users" do
