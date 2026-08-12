@@ -216,10 +216,16 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
       admin = create(:user, :admin, organization: organization)
       admin_headers = { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" }
 
-      delete "/maintenance_records/#{other_record.id}/photos/#{photo.id}",
-             headers: admin_headers, as: :json
+      # Файл прискіпливий у доведенні ВІДМОВИ (кожен заборонений шлях пінить
+      # `not_to have_enqueued_job`) і доти мовчазний у доведенні самого ДОЗВОЛУ —
+      # тобто `:ok` переживав би адміна, якому нічого не видалили.
+      expect do
+        delete "/maintenance_records/#{other_record.id}/photos/#{photo.id}",
+               headers: admin_headers, as: :json
+      end.to have_enqueued_job(ActiveStorage::PurgeJob)
 
       expect(response).to have_http_status(:ok)
+      expect(other_record.reload.photos.count).to eq(0)
     end
   end
 end

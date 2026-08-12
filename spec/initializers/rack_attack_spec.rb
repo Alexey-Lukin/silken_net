@@ -118,29 +118,34 @@ RSpec.describe "Rack::Attack", type: :request do
       expect(JSON.parse(response.body)).to eq("error" => "Forbidden")
     end
 
-    it "uses X-Gateway-UID as discriminator when present" do
-      # Requests with UID-A
-      10.times do
-        get "/telemetry/live", headers: {
-          "REMOTE_ADDR" => "5.6.7.9",
-          "HTTP_X_GATEWAY_UID" => "UID-A"
-        }
-      end
-
-      # Request with a different UID from the same IP shares the IP's global
-      # counter but has a separate telemetry throttle bucket.
-      get "/telemetry/live", headers: {
-        "REMOTE_ADDR" => "5.6.7.9",
-        "HTTP_X_GATEWAY_UID" => "UID-B"
-      }
-      # With only 11 total requests, neither global throttle (300) nor
-      # telemetry throttle (60) nor fail2ban (15) should trigger.
-      expect(response.status).not_to eq(429)
-    end
-
     it "registers the telemetry throttle rule" do
       throttle = Rack::Attack.throttles["telemetry/uid"]
       expect(throttle).to be_present
+    end
+
+    # 🔴 Диференціал «UID-A вичерпав ліміт, UID-B ще проходить» через HTTP
+    # недосяжний ЗА ПОБУДОВОЮ: неавтентифіковані запити віддають 401, той годує
+    # Fail2Ban, і на одній адресі бан настає на 15-му — тобто до ліміту 60
+    # черга не доходить ніколи (це прямо доводить сусідній приклад вище).
+    # Тому дискримінатор пінимо там, де він живе, а не по його тіні в статусі.
+    it "buckets by X-Gateway-UID when present and falls back to the IP" do
+      discriminator = Rack::Attack.throttles["telemetry/uid"].block
+
+      with_uid = Rack::Attack::Request.new(
+        "PATH_INFO" => "/telemetry/live", "REMOTE_ADDR" => "5.6.7.9",
+        "HTTP_X_GATEWAY_UID" => "SNET-Q-AABB0011", "rack.input" => StringIO.new
+      )
+      without_uid = Rack::Attack::Request.new(
+        "PATH_INFO" => "/telemetry/live", "REMOTE_ADDR" => "5.6.7.9", "rack.input" => StringIO.new
+      )
+      off_path = Rack::Attack::Request.new(
+        "PATH_INFO" => "/up", "REMOTE_ADDR" => "5.6.7.9",
+        "HTTP_X_GATEWAY_UID" => "SNET-Q-AABB0011", "rack.input" => StringIO.new
+      )
+
+      expect(discriminator.call(with_uid)).to eq("SNET-Q-AABB0011")
+      expect(discriminator.call(without_uid)).to eq("5.6.7.9")
+      expect(discriminator.call(off_path)).to be_nil
     end
   end
 

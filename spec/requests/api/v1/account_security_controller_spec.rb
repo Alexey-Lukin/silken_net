@@ -163,6 +163,11 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
       }, as: :json
 
       expect(response).to have_http_status(:unprocessable_content)
+
+      # Третя відмова родини не дістала піна на НАСЛІДОК, який два сусіди вище
+      # уже мають — та сама асиметрія, лише всередині одного `describe`.
+      expect(user.reload.authenticate("password12345")).to be_truthy
+      expect(user.reload.authenticate("new_secure_pass_1")).to be_falsey
     end
 
     # 🔴 [SEC.25] HTML-гілка цих трьох відмов не була пінена ЖОДНИМ прикладом — усі
