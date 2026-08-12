@@ -52,6 +52,43 @@ RSpec.describe MaintenanceRecord, type: :model do
   # =========================================================================
   # VALIDATIONS — базові
   # =========================================================================
+  # [SEC.27] Найстаріше вкладення дерева і єдине, чия валідація роками не мала
+  # поведінкового піна: `spec/quality/attachment_validation_discipline_spec.rb`
+  # стереже, що декларація ІСНУЄ, і структурно сліпий до того, чи вона працює.
+  # Тут — доказова база Evidence Protocol, тож пара «проходить ⊥ відпадає»
+  # коштує дешевше за будь-який інший пін цієї родини.
+  describe "photos attachment validation" do
+    let(:record) { create(:maintenance_record) }
+
+    def attach_photo(content_type:, bytes: "x")
+      record.photos.attach(
+        io: StringIO.new(bytes), filename: "evidence", content_type: content_type
+      )
+    end
+
+    it "accepts the field-photo formats a phone produces" do
+      attach_photo(content_type: "image/heic")
+      expect(record).to be_valid
+    end
+
+    it "rejects a content type outside the allow-list" do
+      attach_photo(content_type: "application/pdf")
+      expect(record).not_to be_valid
+      expect(record.errors[:photos]).to be_present
+    end
+
+    it "rejects a photo over the size ceiling" do
+      attach_photo(content_type: "image/jpeg", bytes: "x" * 21.megabytes)
+      expect(record).not_to be_valid
+    end
+
+    it "caps the number of photos per record" do
+      11.times { attach_photo(content_type: "image/jpeg") }
+      expect(record).not_to be_valid
+      expect(record.errors[:photos]).to be_present
+    end
+  end
+
   describe "validations" do
     it "is valid with default factory" do
       expect(build(:maintenance_record)).to be_valid
