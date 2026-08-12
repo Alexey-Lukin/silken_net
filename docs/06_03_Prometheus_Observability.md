@@ -201,6 +201,7 @@ end
 | `silkennet_scc_minted_total` | `SilkenNet::Metrics::SCC_MINTED_TOTAL` | `token_type` (carbon_coin, forest_coin) | `BlockchainMintingService` | Кожен успішний мінт SCC/SFC в Polygon mempool |
 | `silkennet_mint_attempts_total` | `SilkenNet::Metrics::MINT_ATTEMPTS_TOTAL` | `token_type` | `BlockchainMintingService` (вхід `process_token_group`, до локу) | Спроби on-chain мінту (txs, що пройшли pre-flight guards) — знаменник SLO «≥80% mint success during outage» ([`06_08 §2.4`](06_08_Resilience_and_Failover_Policy)) |
 | `silkennet_mint_success_total` | `SilkenNet::Metrics::MINT_SUCCESS_TOTAL` | `token_type` | `BlockchainMintingService` (status→sent) | Успішні broadcast'и в mempool — чисельник того ж SLO |
+| `silkennet_mint_chunk_errors_total` | `SilkenNet::Metrics::MINT_CHUNK_ERRORS_TOTAL` | — | `EvaluateTreeBatchWorker` (`rescue StandardError` кожного гаманця) | **[ARCH.94]** Проковтнуті відмови мінту НА РІВНІ ГАМАНЦЯ. Джоба при цьому вертає **успіх** (нема retry, нема DeadSet), а mint-SLO їх не бачить за побудовою: tx не створено, тож гаманець не входить навіть у ЗНАМЕННИК. Саме так P1 «емісія спрацьовує раз на гаманець» прожив непоміченим |
 | `silkennet_scc_slashed_total` | `SilkenNet::Metrics::SCC_SLASHED_TOTAL` | — | `BlockchainBurningService` | Кумулятивна **сума спалених токенів** (increment `by: burn_amount`, не лічильник подій) |
 | `silkennet_rpc_errors_total` | `SilkenNet::Metrics::RPC_ERRORS_TOTAL` | `network`, `error_type` (timeout, connection) | `ApplicationWeb3Worker` (4 точки) | Кожна RPC-помилка по всіх 12 блокчейн-мережах |
 | `silkennet_telemetry_processed_total` | `SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL` | — | `TelemetryUnpackerService` | Кожен успішно оброблений telemetry chunk |
@@ -220,6 +221,7 @@ end
 | `silkennet_sidekiq_queue_size` | `SilkenNet::Metrics::SIDEKIQ_QUEUE_SIZE` | `queue` (всі 9 черг) | `PrometheusCollector#refresh_sidekiq_gauges` | Поточна кількість задач у кожній Sidekiq черзі |
 | `silkennet_sidekiq_queue_latency_seconds` | `SilkenNet::Metrics::SIDEKIQ_QUEUE_LATENCY` | `queue` (всі 9 черг) | `PrometheusCollector#refresh_sidekiq_gauges` | Вік найстарішої задачі в черзі (секунди) |
 | `silkennet_sidekiq_dead_set_size` | `SilkenNet::Metrics::SIDEKIQ_DEAD_SET_SIZE` | — | `PrometheusCollector#refresh_sidekiq_gauges` | **[ARCH.45]** Розмір Sidekiq DeadSet (job-и, що вичерпали retry) — money-path тут = stranded funds/tx без авто-відновлення |
+| `silkennet_mint_eligible_unminted_depth` | `SilkenNet::Metrics::MINT_ELIGIBLE_UNMINTED_DEPTH` | — | `TokenomicsBatchCallbacks#on_success` (ПІСЛЯ завершення всіх чанків циклу) | **[ARCH.94]** Глибина застряглої популяції: гаманці над порогом емісії, які цикл НЕ змінтував. Дискримінатор точний — мінт піднімає `locked_balance`, тож після здорового циклу множина порожня **за побудовою**. 🔴 Несучий ОКРЕМО від лічильника помилок: відмова, що не кидає винятку (порожній селектор, знятий cron, хибний фільтр), лишає той у нулі, а нуль спроб для SLO-відношення невідрізненний від спокою — алерт `sn-alert-mint-slo-breach` несе гард `and attempts > 0`. Лічильник СТАНУ бачить обидва режими; форма — прецедент `hadron_kyc_pending_depth` [ARCH.65] |
 
 > **[ARCH.61]** Actioning DeadSet-алертів: **`/sidekiq`** (Sidekiq::Web, змонтований за admin-only route-constraint + SEC.16 salt-stamp; app-constraint = єдиний шлюз — HAProxy path-ACL немає; unmatched → 404). Механіка constraint — [`04_03 §1`](04_03_REST_API_v1_Reference).
 
@@ -317,7 +319,7 @@ end
 >
 > **Разом: 79 метрик = 45 counters + 32 gauges + 2 histograms** (звірено регенерацією нижче).
 
-**Counters (45):**
+**Counters (47):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -341,6 +343,7 @@ end
 | `silkennet_lineage_root_failures_total` | — | Mint lineage Merkle-root computation failures (fail-open, root left NULL) |
 | `silkennet_m2m_nonce_fallback_total` | — | Total M2M nonce checks falling back from Redis to DB-backed cache (Redis outage indicator) |
 | `silkennet_mint_attempts_total` | `token_type` | Mint transactions attempted by BlockchainMintingService (SLO denominator) |
+| `silkennet_mint_chunk_errors_total` | — | Per-wallet mint failures swallowed by EvaluateTreeBatchWorker (job still reports success) |
 | `silkennet_mint_success_total` | `token_type` | Mint transactions successfully broadcast to mempool — status→sent (SLO numerator) |
 | `silkennet_ota_chunks_sent_total` | `firmware_version` | Total OTA firmware chunks transmitted to field devices |
 | `silkennet_panic_replay_rejected_total` | — | Panic packets rejected as replay via SEC.10 Frame Counter SETNX nonce |
@@ -368,7 +371,7 @@ end
 | `silkennet_tree_silence_total` | — | Total tree silence transitions detected by the staleness sweeper (per-tree field_audit escalations) |
 | `silkennet_w3bstream_signature_fallback_total` | `reason` | Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature |
 
-**Gauges (32):**
+**Gauges (33):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -387,6 +390,7 @@ end
 | `silkennet_gateway_attest_lapsed` | — | Online QATT-capable gateways whose last Ed25519-attested batch is older than the lapse window |
 | `silkennet_gateways_faulty` | — | Current number of gateways in the faulty state (set on each staleness sweep) |
 | `silkennet_hadron_kyc_pending_depth` | — | Count of Wallet+Organization rows with hadron_kyc_status=pending (KYC backlog gating mint) |
+| `silkennet_mint_eligible_unminted_depth` | — | Wallets over the emission threshold that produced no mint in the last cycle (stall detector) |
 | `silkennet_mint_volume_window_scc` | `token_type` | SCC/SFC minted in the trailing 1h window (ARCH.62 volume-anomaly detector input) |
 | `silkennet_oracle_balance` | `network`, `signer` | Oracle wallet balance in native currency (wei/lamports) |
 | `silkennet_oracle_balance_ratio` | `network`, `signer` | Oracle balance as ratio to minimum threshold (below 1.0 = critical) |

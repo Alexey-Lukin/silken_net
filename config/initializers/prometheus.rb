@@ -47,6 +47,33 @@ module SilkenNet
       labels: [ :token_type ]
     )
 
+    # [ARCH.94] Дві метрики проти класу «емісія зупинилась, і ніхто не дізнався».
+    # Обидві потрібні, бо відповідають на РІЗНІ питання й ловлять протилежні
+    # режими відмови:
+    #
+    # (1) COUNTER — «чи падали спроби на рівні гаманця». `EvaluateTreeBatchWorker`
+    #     ловить виняток кожного гаманця в `rescue StandardError`, рахує в
+    #     `stats[:errors]` і викидає в лог-рядок; джоба вертає успіх, retry нема,
+    #     DeadSet порожній. Саме так P1-дефект (сайзинг від gross-балансу проти
+    #     гарда по net) прожив непоміченим.
+    #
+    # (2) GAUGE — «чи є гаманці, які МАЛИ Б мінтити й не мінтять». Він несучий
+    #     окремо від лічильника: відмова, що не кидає винятку ЗОВСІМ (порожній
+    #     селектор, знятий cron, помилковий фільтр), лишає лічильник у нулі —
+    #     нуль спроб для SLO-відношення невідрізненний від спокою, бо алерт
+    #     `sn-alert-mint-slo-breach` несе гард `and attempts > 0`. Форма —
+    #     глибина застряглої популяції, за прецедентом `hadron_kyc_pending_depth`
+    #     [ARCH.65]: «нуль подій» лікується лічильником СТАНУ, не подій.
+    MINT_CHUNK_ERRORS_TOTAL = REGISTRY.counter(
+      :silkennet_mint_chunk_errors_total,
+      docstring: "Per-wallet mint failures swallowed by EvaluateTreeBatchWorker (job still reports success)"
+    )
+
+    MINT_ELIGIBLE_UNMINTED_DEPTH = REGISTRY.gauge(
+      :silkennet_mint_eligible_unminted_depth,
+      docstring: "Wallets over the emission threshold that produced no mint in the last cycle (stall detector)"
+    )
+
     # Total tokens slashed (monotonic counter)
     SCC_SLASHED_TOTAL = REGISTRY.counter(
       :silkennet_scc_slashed_total,

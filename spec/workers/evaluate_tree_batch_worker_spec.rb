@@ -116,6 +116,22 @@ RSpec.describe EvaluateTreeBatchWorker, type: :worker do
         described_class.new.perform([ wallet.id ], "test-cycle")
       end
     end
+
+    # [ARCH.94] Доти проковтнутий виняток жив ЛИШЕ в лог-рядку: джоба вертала
+    # успіх, retry не було, DeadSet лишався порожній, mint-метрики не рухались
+    # (tx не створено → гаманець не входив навіть у знаменник SLO). Саме так P1
+    # грошового шляху прожив непоміченим — тепер він рухає власний лічильник.
+    context "when a per-wallet mint fails" do
+      it "increments the swallowed-error counter, so the failure is not silent" do
+        tree = create(:tree, status: :active)
+        wallet = create(:wallet, tree: tree, balance: 10_000)
+        allow_any_instance_of(Wallet).to receive(:lock_and_mint!).and_raise(StandardError, "boom")
+
+        expect(SilkenNet::Metrics::MINT_CHUNK_ERRORS_TOTAL).to receive(:increment)
+
+        described_class.new.perform([ wallet.id ], "test-cycle")
+      end
+    end
   end
 
   describe "sidekiq options" do

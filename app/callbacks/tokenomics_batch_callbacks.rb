@@ -24,10 +24,34 @@ class TokenomicsBatchCallbacks
     Rails.logger.info "✅ [NAM-ŠID] Батч #{status.bid} завершено успішно. " \
                       "Цикл: #{cycle_id}. Ініціація пакетного мінтингу..."
 
+    sample_stalled_depth!
+
     # [AUTO-DISCOVERY]: MintCarbonCoinWorker без аргументів автоматично знаходить
     # всі pending BlockchainTransaction та виконує пакетний мінтинг.
     # Це елегантніше за передачу масиву TX IDs через Redis/Batch metadata,
     # особливо при масштабі 10M+ дерев де IDs можуть зайняти десятки МБ.
     MintCarbonCoinWorker.perform_async
+  end
+
+  private
+
+  # [ARCH.94] Детектор застрягання емісії, і саме ТУТ його єдине чесне місце.
+  #
+  # Мінт піднімає `locked_balance`, тож `available_balance` падає нижче порога —
+  # отже ПІСЛЯ здорового циклу eligible-множина порожня **за побудовою**.
+  # Усе, що в ній лишилось, змінтувати мало й не змінтувало.
+  #
+  # Чому не лічильник помилок: той ловить лише відмови, які КИНУЛИ виняток.
+  # Відмова без винятку (порожній селектор, знятий cron, хибний фільтр) лишає
+  # лічильник у нулі, а нуль спроб для SLO-відношення невідрізненний від спокою
+  # (алерт несе гард `and attempts > 0`). Лічильник СТАНУ бачить обидва режими.
+  #
+  # Семпл best-effort: детектор видимості не сміє завалити грошовий тракт.
+  def sample_stalled_depth!
+    SilkenNet::Metrics::MINT_ELIGIBLE_UNMINTED_DEPTH.set(
+      TokenomicsEvaluatorWorker.eligible_wallets.count
+    )
+  rescue StandardError => e
+    Rails.logger.warn "⚠️ [ARCH.94] Не вдалось зняти stall-глибину (мінт НЕ зачеплено): #{e.message}"
   end
 end

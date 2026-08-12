@@ -41,6 +41,11 @@ class EvaluateTreeBatchWorker
         stats[:minted] += tokens_to_mint if tx&.persisted?
       rescue StandardError => e
         stats[:errors] += 1
+        # [ARCH.94] Доти цей виняток жив лише в лічильнику й лог-рядку: джоба
+        # поверталась успіхом, retry не було, DeadSet лишався порожній, а
+        # mint-метрики не рухались узагалі (tx не створено → гаманець не входив
+        # навіть у ЗНАМЕННИК SLO). Саме так P1 і прожив непоміченим.
+        SilkenNet::Metrics::MINT_CHUNK_ERRORS_TOTAL.increment
         Rails.logger.error "🛑 [NAM-ŠID] Помилка вузла Tree #{wallet.tree&.did}: #{e.message}"
         # Продовжуємо обробку — падіння одного дерева не зупиняє весь чанк
       end

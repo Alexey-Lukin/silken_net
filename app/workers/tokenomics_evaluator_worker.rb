@@ -43,7 +43,7 @@ class TokenomicsEvaluatorWorker
     chunks_enqueued = 0
 
     batch.jobs do
-      eligible_wallets.in_batches(of: BATCH_CHUNK_SIZE) do |relation|
+      self.class.eligible_wallets.in_batches(of: BATCH_CHUNK_SIZE) do |relation|
         EvaluateTreeBatchWorker.perform_async(relation.pluck(:id), cycle_id)
         chunks_enqueued += 1
       end
@@ -53,15 +53,18 @@ class TokenomicsEvaluatorWorker
                       "по #{BATCH_CHUNK_SIZE} гаманців. Очікуємо завершення..."
   end
 
-  private
-
-  # Scope для eligible гаманців: активні дерева з балансом >= порогу емісії.
-  def eligible_wallets
+  # Scope для eligible гаманців: активні дерева з НЕсконвертованим залишком >= порогу.
+  # [ARCH.94] Публічний і КЛАСОВИЙ свідомо: той самий предикат семплить
+  # `TokenomicsBatchCallbacks` як детектор застрягання — після здорового циклу
+  # множина порожня ЗА ПОБУДОВОЮ (мінт піднімає `locked_balance`, тож
+  # `available_balance` падає нижче порога). Дублювати умову не можна: два доми
+  # eligibility розійшлися б тихо, і детектор почав би міряти не те, що тракт.
+  def self.eligible_wallets
     Wallet.joins(:tree)
           .where(trees: { status: :active })
           # [ARCH.94] NET, не gross: `balance` тримає й уже сконвертоване
           # (locked назавжди, 04_01 §6 E.66), тож фільтр по ньому вічно
           # переобирає гаманці, які нічого змінтувати вже не можуть.
-          .where("balance - locked_balance >= ?", self.class.emission_threshold)
+          .where("balance - locked_balance >= ?", emission_threshold)
   end
 end
