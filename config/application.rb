@@ -1,17 +1,34 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 require_relative "boot"
 
-# ⚠️ ПОРЯДОК НЕСУЧИЙ, не алфавіт. `rails/all` тягне activestorage/engine.rb, а той
-# у тілі класу згадує `ImageAnalyzer::Vips` → autoload → ruby-vips → glib. Якщо glib
-# заходить ПЕРШОЮ, нативний argon2id ламається на arm64-darwin: `__stack_chk_fail`
-# у `initial_hash`, SIGABRT (134) на ~50 хешах. Зворотний порядок чистий, тож
-# argon2id вантажимо до rails/all. Мінімальний репро (без Rails):
+# ⚠️ ПОРЯДОК НЕСУЧИЙ, не алфавіт. `active_storage/engine` у тілі класу згадує
+# `ImageAnalyzer::Vips` → autoload → ruby-vips → glib. Якщо glib заходить ПЕРШОЮ,
+# нативний argon2id ламається на arm64-darwin: `__stack_chk_fail` у `initial_hash`,
+# SIGABRT (134) на ~50 хешах. Зворотний порядок чистий, тож argon2id вантажимо
+# ПЕРЕД будь-яким railtie. Мінімальний репро (без Rails):
 #   ruby -e 'require "ruby-vips"; require "argon2id"; 50.times { Argon2id::Password.create("p") }'  → 134
 #   ruby -e 'require "argon2id"; require "ruby-vips"; …'                                            → 0
 # Linux (CI/Docker) не відтворює — тримаємо рядок для локальної сюїти на macOS.
 require "argon2id"
 
-require "rails/all"
+# [ARCH.79] Railtie перелічені ЯВНО замість `rails/all` — той тягне десять, і три
+# з них ніхто не вмикав рішенням: вони приходять пакетом і мовчки публікують
+# поверхню. Порядок збережено від `rails/all`, бо він і є той несучий порядок ↑.
+#   ⊘ `action_mailbox/engine`   — 14 ingress-маршрутів (Postmark/SendGrid/Mandrill/
+#     Mailgun/Relay + `rails/conductor`) плюс модель `InboundEmail`, що пише блоб у
+#     НАШЕ сховище на кожен вхідний лист, — при повній відсутності `app/mailboxes/`.
+#   ⊘ `action_text/engine`      — нуль `has_rich_text` у дереві.
+#   ⊘ `rails/test_unit/railtie` — сюїта на RSpec.
+# ⚠️ Тут НЕМА `rescue LoadError`, яким `rails/all` глушить кожен require: відсутній
+# railtie мусить впасти голосно, інакше зникнення engine'а читалось би як норма.
+require "rails"
+require "active_record/railtie"
+require "active_storage/engine"
+require "action_controller/railtie"
+require "action_view/railtie"
+require "action_mailer/railtie"
+require "active_job/railtie"
+require "action_cable/engine"
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.

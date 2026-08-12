@@ -14,12 +14,13 @@ Rails::Schema.configure do |config|
   config.theme = :dark
   config.expand_columns = false
   config.schema_format = :sql # project uses structure.sql (PostgreSQL partitioning)
+  # Перелічуємо лише ті фреймворкові моделі, чиї engine ми справді вантажимо:
+  # ActionMailbox/ActionText сюди не входять, бо їхніх engine немає в
+  # `application.rb` взагалі [ARCH.79].
   config.exclude_models = [
     "ActiveStorage::Blob",
     "ActiveStorage::Attachment",
     "ActiveStorage::VariantRecord",
-    "ActionMailbox::*",
-    "ActionText::*",
     "SolidCache::*",
     "SolidCable::*"
   ]
