@@ -85,9 +85,11 @@ module Api
       def financial_summary
         org = acting_organization!
 
-        transactions = BlockchainTransaction
-                         .joins(wallet: { tree: :cluster })
-                         .where(clusters: { organization_id: org.id })
+        # [ARCH.98] One-Home резолюції «чиї це гроші». Доти тут стояв
+        # `joins(wallet: { tree: :cluster })` — INNER JOIN, тож cluster-sourced рядки
+        # (`wallet_id IS NULL`: Celo-винагорода кластеру, слеш останнього дерева)
+        # у ФІНАНСОВИЙ звіт організації не потрапляли взагалі.
+        transactions = BlockchainTransaction.for_organization(org.id)
 
         # [S6.16] Один згрупований прохід замість чотирьох COUNT. Прунінгу тут не
         # буває за побудовою: звіт агрегує ВСЮ історію організації, тож будь-яка

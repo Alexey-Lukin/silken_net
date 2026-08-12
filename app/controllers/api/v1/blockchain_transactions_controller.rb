@@ -7,9 +7,10 @@ module Api
       # GET /blockchain_transactions
       # Глобальний аудит блокчейн-подій (Minting/Slashing) для Організації
       def index
+        # [ARCH.98] One-Home: INNER JOIN через гаманець ховав cluster-sourced рядки
+        # (Celo-винагорода, слеш останнього дерева) з АУДИТ-списку організації.
         @transactions = BlockchainTransaction
-                          .joins(wallet: { tree: :cluster })
-                          .where(clusters: { organization_id: acting_organization!.id })
+                          .for_organization(acting_organization!.id)
                           .includes(wallet: :tree)
                           .order(created_at: :desc)
 
@@ -89,9 +90,10 @@ module Api
       # 1-секундне вікно, яким PostgreSQL прунить так само до однієї партиції.
       # Битий/відсутній created_at хелпер сам відкочує в lookup без прунінгу.
       def find_transaction
+        # [ARCH.98] Та сама резолюція, що в #index — інакше cluster-sourced
+        # транзакція давала 404 за ПРЯМОЮ адресою на власні гроші організації.
         BlockchainTransaction
-          .joins(wallet: { tree: :cluster })
-          .where(clusters: { organization_id: acting_organization!.id })
+          .for_organization(acting_organization!.id)
           .includes(wallet: :tree)
           .find_with_partition_pruning(params[:id], params[:created_at])
       end

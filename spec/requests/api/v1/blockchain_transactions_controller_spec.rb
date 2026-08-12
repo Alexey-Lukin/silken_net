@@ -80,6 +80,44 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
     end
   end
 
+  # [ARCH.98] Cluster-sourced гроші — `wallet_id IS NULL` (Celo-винагорода кластеру,
+  # слеш ОСТАННЬОГО дерева). Доти всі org-читачі робили `joins(wallet: …)`, тобто
+  # INNER JOIN, і такі рядки не існували для жодного з них. Фікстури класу не
+  # досягали за побудовою: кожна створює транзакцію ЧЕРЕЗ гаманець.
+  describe "cluster-sourced money (wallet: nil) [ARCH.98]" do
+    let!(:cluster_tx) do
+      create(:blockchain_transaction, wallet: nil, cluster: own_cluster,
+                                      token_type: :cusd, amount: 5)
+    end
+
+    it "lists it in the organization's audit feed" do
+      get "/blockchain_transactions", headers: headers, as: :json
+
+      ids = response.parsed_body["data"].map { |t| t["id"] }
+      expect(ids).to include(cluster_tx.id)
+    end
+
+    # Найгостріший із пʼяти сайтів: доти власна транзакція організації віддавала
+    # 404 за ПРЯМОЮ адресою — не «сховано», а «не існує».
+    it "resolves it by direct address instead of 404" do
+      get "/blockchain_transactions/#{cluster_tx.id}",
+          params: { created_at: cluster_tx.created_at.iso8601 }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["id"]).to eq(cluster_tx.id)
+    end
+
+    it "still refuses another organization's cluster-sourced row" do
+      foreign = create(:blockchain_transaction, wallet: nil, cluster: other_cluster,
+                                                token_type: :cusd, amount: 5)
+
+      get "/blockchain_transactions/#{foreign.id}",
+          params: { created_at: foreign.created_at.iso8601 }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
   describe "GET /blockchain_transactions/:id" do
     it "returns a transaction belonging to the user's organization" do
       get "/blockchain_transactions/#{own_tx.id}", headers: headers, as: :json

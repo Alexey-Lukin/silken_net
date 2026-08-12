@@ -65,12 +65,15 @@ module Mrv
 
     private
 
-    # Org-scoping через cluster-ланцюг (прецедент ReportsController#financial_summary);
+    # [ARCH.98] Org-scoping через One-Home `for_organization` (дві гілки: гаманці ∪
+    # прямий `cluster_id`). Доти тут стояв `joins(wallet: …)` «за прецедентом
+    # `ReportsController#financial_summary`» — і успадкував разом із ним INNER JOIN,
+    # тобто cluster-sourced слеш останнього дерева випадав із ДОКАЗОВОГО шляху
+    # (ISO 14064/Verra), а не лише з екрана.
     # created_at-вікно = partition-pruning на партиційованій таблиці.
     def credit_transactions
       BlockchainTransaction
-        .joins(wallet: { tree: :cluster })
-        .where(clusters: { organization_id: @organization.id })
+        .for_organization(@organization.id)
         .where(token_type: [ :carbon_coin, :forest_coin ], status: :confirmed)
         .where(created_at: @from..@to)
         .order(:created_at, :id)

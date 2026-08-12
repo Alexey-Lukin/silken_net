@@ -109,9 +109,9 @@ module Api
         # Збираємо мікс з останніх алертів, транзакцій та реєстрацій (scoped to organization)
         [
           org.ews_alerts.includes(:cluster).order(created_at: :desc).limit(3),
-          BlockchainTransaction.joins(wallet: { tree: :cluster })
+          # [ARCH.98] One-Home — стрічка подій пропускала cluster-sourced рухи.
+          BlockchainTransaction.for_organization(org.id)
                                .includes(wallet: { tree: :cluster })
-                               .where(clusters: { organization_id: org.id })
                                .order(created_at: :desc).limit(3),
           MaintenanceRecord.joins(:user)
                            .includes(:user)
