@@ -150,6 +150,28 @@ RSpec.describe Cluster, type: :model do
     end
   end
 
+  # [ARCH.76] `blockchain_transactions.cluster_id` має справжній DB-FK, але
+  # `Cluster` не оголошував `has_many` — тож Rails не мав куди поставити
+  # `restrict`, і знищення кластера зі slash-аудит-записом падало сирим
+  # `PG::ForeignKeyViolation` ПОВЗ усю драбину `rescue_from`.
+  #
+  # Клас гірший за сам ARCH.76: той видно при читанні `has_many`, цей — ні,
+  # бо декларації просто НЕМА. А сценарій не гіпотетичний: «останнє дерево»
+  # пише інтент саме з `wallet: nil, cluster: …` ЗА ДИЗАЙНОМ ([ARCH.98]).
+  describe "destroy guard over cluster-sourced money [ARCH.76]" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+
+    it "refuses politely instead of raising a raw FK violation" do
+      create(:blockchain_transaction, wallet: nil, cluster: cluster,
+                                      token_type: :cusd, amount: 5)
+
+      expect { cluster.destroy }.not_to raise_error
+      expect(cluster.destroyed?).to be false
+      expect(cluster.errors[:base]).to be_present
+    end
+  end
+
   describe "validations" do
     it "requires name" do
       cluster = build(:cluster, name: nil)

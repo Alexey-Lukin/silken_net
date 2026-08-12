@@ -33,6 +33,16 @@ class Cluster < ApplicationRecord
   has_many :naas_contracts, dependent: :restrict_with_error
   has_many :parametric_insurances, dependent: :restrict_with_error
 
+  # [ARCH.76] `blockchain_transactions.cluster_id` МАЄ справжній DB-FK
+  # (`fk_blockchain_transactions_cluster_id`), але асоціації тут не було — тож
+  # Rails не мав куди поставити `restrict`, і знищення кластера з грошовим
+  # аудит-записом падало сирим `PG::ForeignKeyViolation` ПОВЗ усю драбину
+  # `rescue_from`. Клас гірший за відсутній `dependent:`: той видно при читанні
+  # `has_many`, цей — ні, бо декларації просто немає.
+  # ⚠️ Сценарій не гіпотетичний: слеш «останнього дерева» і Celo-винагорода
+  # пишуть рядок саме з `wallet: nil, cluster: …` ЗА ДИЗАЙНОМ ([ARCH.98]).
+  has_many :blockchain_transactions, dependent: :restrict_with_error
+
   # [ВИПРАВЛЕНО: Чорна Діра Пам'яті]: Використовуємо delete_all для масових таблиць,
   # щоб уникнути OOM при видаленні кластера з мільйонами тривог та інсайтів.
   has_many :ews_alerts, dependent: :delete_all

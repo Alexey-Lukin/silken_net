@@ -332,6 +332,7 @@ dormant ──reactivate──► active
 | `gateways` | `has_many, dependent: :restrict_with_error` | Королеви. ⚠️ Було `:nullify` при `gateways.cluster_id NOT NULL` — тобто декларація, чий єдиний можливий вихід був `PG::NotNullViolation` (ARCH.76, виміряно рантаймом). Знято тим самим присудом, що й `trees` |
 | `naas_contracts` | `has_many, dependent: :restrict_with_error` | Захист фінансової історії |
 | `parametric_insurances` | `has_many, dependent: :restrict_with_error` | Захист страхової історії |
+| `blockchain_transactions` | `has_many, dependent: :restrict_with_error` | **[ARCH.76, 2026-08-13]** Cluster-sourced гроші (`wallet: nil` — слеш «останнього дерева», Celo-винагорода). ⚠️ DB-FK `fk_blockchain_transactions_cluster_id` існував і без цієї асоціації, тож Rails не мав куди поставити `restrict`, і `cluster.destroy` падав СИРИМ `PG::ForeignKeyViolation` повз усю драбину `rescue_from` — клас гірший за відсутній `dependent:`, бо той видно при читанні `has_many`, а тут декларації не було взагалі |
 | `ews_alerts` | `has_many, dependent: :delete_all` | Тривоги сектора |
 | `ai_insights` | `has_many, polymorphic, dependent: :delete_all` | Daily Health Summary |
 | `actuators` | `has_many, through: :gateways` | Виконавчі пристрої |
