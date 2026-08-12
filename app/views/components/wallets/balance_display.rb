@@ -17,21 +17,21 @@ module Wallets
           # [ARCH.88] `balance` НАПРЯМУ, не через alias `scc_balance`: колонка тримає
           # БАЛИ росту, і аліас лише перейменовував їх у монету. Одиниця — з локалі,
           # бо зашитий літерал «SCC» тут і був завищенням у 10 000×.
-          span(class: "text-7xl font-extralight text-white tracking-tighter") { @wallet.balance.to_f.round(6) }
+          span(class: "text-7xl font-extralight text-white tracking-tighter") { formatted_points(@wallet.balance) }
           span(class: "text-xl text-emerald-500 font-mono animate-pulse") { t(".unit") }
         end
         div(class: "mt-6 flex gap-8 text-xs font-mono") do
           div do
             span(class: "text-gray-600 uppercase") { "#{t('.locked')} " }
-            span(class: "text-status-warning-text") { @wallet.locked_balance.to_f.round(4) }
+            span(class: "text-status-warning-text") { formatted_points(@wallet.locked_balance) }
           end
           div do
             span(class: "text-gray-600 uppercase") { "#{t('.available')} " }
-            span(class: "text-emerald-400") { @wallet.available_balance.to_f.round(4) }
+            span(class: "text-emerald-400") { formatted_points(@wallet.available_balance) }
           end
           div do
             span(class: "text-gray-600 uppercase") { "#{t('.esg_retired')} " }
-            span(class: "text-gray-500") { @wallet.esg_retired_balance.to_f.round(4) }
+            span(class: "text-gray-500") { formatted_points(@wallet.esg_retired_balance) }
           end
         end
         p(class: "mt-4 text-xs font-mono text-gray-500") { t(".locked_for", owner: @wallet.tree&.did || @wallet.organization&.name) }

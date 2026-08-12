@@ -216,7 +216,7 @@ module Trees
               # `&.to_f` баланс рендерився ПОРОЖНІМ, а поруч лишався самотній тікер.
               # ✅ [ARCH.88] Підпис виправлено: це БАЛИ росту, не монети — читаємо
               # `balance` напряму, одиниця з локалі.
-              span(class: "text-3xl font-light text-gaia-text-strong") { @tree.wallet&.balance&.to_f || "0.0" }
+              span(class: "text-3xl font-light text-gaia-text-strong") { formatted_points(@tree.wallet&.balance || 0) }
               span(class: "text-xs text-gaia-primary-hover font-mono") { t(".labels.unit") }
             end
           end

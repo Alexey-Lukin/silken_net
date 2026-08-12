@@ -35,15 +35,15 @@ module Wallets
           # у тій самій колонковій родині, що й `balance`), тож тікер монети знято.
           div(class: "pt-3 border-t border-emerald-900/30") do
             p(class: "text-gaia-text-muted mb-1 uppercase") { t(".locked_balance") }
-            p(class: "text-status-warning-text") { "#{@wallet.locked_balance.to_f.round(4)} #{t('.unit')}" }
+            p(class: "text-status-warning-text") { "#{formatted_points(@wallet.locked_balance)} #{t('.unit')}" }
           end
           div do
             p(class: "text-gaia-text-muted mb-1 uppercase") { t(".available_balance") }
-            p(class: "text-gaia-primary") { "#{@wallet.available_balance.to_f.round(4)} #{t('.unit')}" }
+            p(class: "text-gaia-primary") { "#{formatted_points(@wallet.available_balance)} #{t('.unit')}" }
           end
           div do
             p(class: "text-gaia-text-muted mb-1 uppercase") { t(".esg_retired") }
-            p(class: "text-gaia-text-muted") { "#{@wallet.esg_retired_balance.to_f.round(4)} #{t('.unit')}" }
+            p(class: "text-gaia-text-muted") { "#{formatted_points(@wallet.esg_retired_balance)} #{t('.unit')}" }
           end
         end
       end

@@ -38,10 +38,11 @@ RSpec.describe Wallets::BalanceFrame do
   end
 
   describe "balance display delegation" do
-    let(:html) { render_component(wallet: mock_wallet(balance: 12.3456)) }
+    # [ARCH.88] Значення кратне кроку джерела (0.01) — див. `balance_display_spec`.
+    let(:html) { render_component(wallet: mock_wallet(balance: 12.35)) }
 
     it "renders the growth-point balance from BalanceDisplay" do
-      expect(html).to include("12.3456")
+      expect(html).to include("12.35")
     end
 
     it "renders the GP unit label" do

@@ -42,7 +42,7 @@ module Wallets
         div(class: "text-right font-mono text-tiny text-gaia-text-subtle") do
           plain "#{t('.total_liquidity')} "
           # [ARCH.88] Сума БАЛІВ (`scope.sum(:balance)`), не монет — тікер звідси знято.
-          span(class: "text-gaia-primary") { "#{@total_liquidity.to_f.round(2)} #{t('.unit')}" }
+          span(class: "text-gaia-primary") { "#{formatted_points(@total_liquidity)} #{t('.unit')}" }
         end
       end
     end
@@ -63,16 +63,23 @@ module Wallets
 
         div(class: "mb-6") do
           # [ARCH.88] `balance` напряму — аліас `scc_balance` лише перейменовував бали в монету.
-          span(class: "text-3xl font-light text-gaia-text-strong") { wallet.balance.to_f.round(4) }
+          span(class: "text-3xl font-light text-gaia-text-strong") { formatted_points(wallet.balance) }
           span(class: "ml-2 text-xs text-gaia-primary-hover font-mono") { t(".unit") }
-          if wallet.locked_balance.to_f > 0
+          # [ARCH.88] Гард стоїть на ВІДФОРМАТОВАНОМУ значенні, не на сирому:
+          # інакше величина, доведено ненульова, могла б надрукуватись як «0.0»
+          # (клас «механізм ⟷ його пускач»). Покладатись тут на те, що крок
+          # балансу = 0.01, не можна — це властивість ЖИВИХ трактів, а не
+          # інваріант колонки (`numeric(24,6)` приймає 0.004 вільно).
+          locked = formatted_points(wallet.locked_balance)
+          if locked > 0
             div(class: "mt-1 text-micro font-mono text-status-warning-text") do
-              t(".locked_label", amount: wallet.locked_balance.to_f.round(2))
+              t(".locked_label", amount: locked)
             end
           end
-          if wallet.esg_retired_balance.to_f > 0
+          retired = formatted_points(wallet.esg_retired_balance)
+          if retired > 0
             div(class: "mt-1 text-micro font-mono text-gaia-text-muted") do
-              t(".retired_label", amount: wallet.esg_retired_balance.to_f.round(2))
+              t(".retired_label", amount: retired)
             end
           end
         end

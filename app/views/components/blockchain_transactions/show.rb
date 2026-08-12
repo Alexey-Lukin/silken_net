@@ -126,7 +126,7 @@ module BlockchainTransactions
               # [ARCH.88] Це БАЛАНС ГАМАНЦЯ, тобто бали росту — на відміну від
               # `@tx.amount` вище, який справді в монетах і носить `@tx.ticker`.
               # Дві сусідні величини на одній сторінці, дві різні одиниці.
-              plain @tx.wallet.balance.to_f.round(4).to_s
+              plain formatted_points(@tx.wallet.balance).to_s
               span(class: "text-xs text-emerald-600 ml-2") { t(".wallet.unit") }
             end
           end

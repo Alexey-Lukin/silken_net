@@ -11,10 +11,23 @@ RSpec.describe Wallets::BalanceDisplay do
   end
 
   describe "balance rendering" do
-    let(:html) { render_component(wallet: mock_wallet(balance: 42.123456)) }
+    # [ARCH.88] Крок джерела = 0.01 (`TreeFamily#weighted_growth_points` округлює
+    # нарахування до 2 знаків), тож фікстура несе ДОСЯЖНЕ значення. Доти тут
+    # стояло `42.123456` — число, якого жоден живий тракт у колонку не кладе,
+    # і пін на «6 знаків» цементував запас СХОВИЩА як точність ПОКАЗУ.
+    let(:html) { render_component(wallet: mock_wallet(balance: 42.13)) }
 
-    it "displays the growth-point balance rounded to 6 decimals" do
-      expect(html).to include("42.123456")
+    it "displays the growth-point balance at the source's own step" do
+      expect(html).to include("42.13")
+    end
+
+    # Дискримінує САМ дім точності: без `formatted_points` тут надрукувалось би
+    # «42.123456», тобто шість знаків там, де домен має два.
+    it "truncates precision beyond the domain step to POINTS_PRECISION" do
+      html = render_component(wallet: mock_wallet(balance: 42.123456))
+
+      expect(html).to include("42.12")
+      expect(html).not_to include("42.123456")
     end
 
     it "displays the GP unit label, never the coin ticker" do

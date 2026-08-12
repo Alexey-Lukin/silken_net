@@ -67,7 +67,18 @@ RSpec.describe "Phlex не друкує BigDecimal", type: :model do
 
   # Конвертори, після яких у блок їде вже НЕ BigDecimal. `\.round\b(?!\()` —
   # саме без аргументу: `round` дає Integer, `round(2)` лишає BigDecimal.
-  def safe_conversion = /\.to_f|\.to_i|\.to_s|\.round\b(?!\()|sprintf|format\(|number_/
+  #
+  # 🔴 `formatted_points\(` — це НЕ послаблення, а перенесення ключа на
+  # ЦЕНТРАЛІЗАТОР (§Guard-craft #23). One-Home точності балових величин
+  # ([ARCH.88]) зробив `.to_f.round(2)` внутрішньою справою
+  # `ApplicationComponent#formatted_points`, тож на сайтах виклику літеральний
+  # `.to_f` зник — і гейт, ключований на ФОРМІ, почав червонити рівно ті пʼять
+  # вузлів, які щойно стали правильними. Розширювати форму було б хибно:
+  # неможливо матчити «цей вираз повернув Float». Ключ переїжджає на імʼя
+  # методу, що ГАРАНТУЄ тип, і це строгіше — метод має власний носій
+  # (`spec/quality/points_precision_home_spec.rb`), тоді як `.to_f` посеред
+  # виразу нічого про решту виразу не обіцяє.
+  def safe_conversion = /\.to_f|\.to_i|\.to_s|\.round\b(?!\()|sprintf|format\(|number_|formatted_points\(/
 
   def bare_decimal_renders
     re_col = Regexp.union(decimal_names)
