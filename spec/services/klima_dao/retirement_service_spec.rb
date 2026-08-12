@@ -30,6 +30,12 @@ RSpec.describe KlimaDao::RetirementService do
     allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
 
+    # [ARCH.95] Тракт fail-closed до присуду (три нерозвʼязані осі — шапка сервісу).
+    # Механіка нижче все одно мусить бути коректною, тож гард тут знімається явно;
+    # САМ гард має власний приклад у кінці файлу — інакше стуб зробив би його
+    # непомітним для сюїти, і зняття гарда в коді нічого б не зачервонило.
+    allow(described_class).to receive(:semantics_resolved?).and_return(true)
+
     # Встановлюємо баланс гаманця (auto-created wallet має balance: 0)
     wallet.update!(balance: 5000)
 
@@ -177,6 +183,27 @@ RSpec.describe KlimaDao::RetirementService do
         wallet.reload
         expect(wallet.esg_retired_balance).to eq(BigDecimal("50.5"))
       end
+    end
+  end
+
+  # [ARCH.95] Пін на САМ fail-closed гард. Решта файлу стубає
+  # `semantics_resolved?` (щоб механіка лишалась перевіреною), тож без цього
+  # прикладу зняття гарда в коді не зачервонило б НІЧОГО — стуб зробив би його
+  # невидимим для всієї сюїти (§Guard-craft #25).
+  describe "fail-closed семантичний гард [ARCH.95]" do
+    it "refuses to retire while the unit/direction/gross questions are unresolved" do
+      allow(described_class).to receive(:semantics_resolved?).and_call_original
+
+      expect { described_class.new(wallet, 10).retire_carbon! }
+        .to raise_error(described_class::UnresolvedSemanticsError, /ARCH\.95/)
+    end
+
+    it "burns nothing on-chain when the guard fires" do
+      allow(described_class).to receive(:semantics_resolved?).and_call_original
+
+      expect { described_class.new(wallet, 10).retire_carbon! }
+        .to raise_error(described_class::UnresolvedSemanticsError)
+      expect(mock_client).not_to have_received(:transact)
     end
   end
 end

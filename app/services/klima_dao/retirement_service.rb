@@ -29,6 +29,38 @@ module KlimaDao
 
     class InsufficientBalanceError < StandardError; end
     class InvalidTokenTypeError < StandardError; end
+    class UnresolvedSemanticsError < StandardError; end
+
+    # 🔴 [ARCH.95] FAIL-CLOSED до присуду. Тракт сьогодні МЕРТВИЙ (`KlimaRetirementWorker`
+    # не має жодного enqueue-викликача поза спекою — виміряно), і саме тому три
+    # незалежні розходження в ньому лишались невидимими. Кожне з них озброїлось би
+    # ПЕРШОЮ ж миттю дротування, а два з трьох мутують необоротні поверхні:
+    #
+    #   1. ОДИНИЦЯ. Один скаляр трактується двома одиницями в одному методі:
+    #      on-chain шле `amount × 10**18` (тобто МОНЕТИ), а в БД робить
+    #      `decrement!(:balance, amount)` (тобто БАЛИ). За курсом 10 000:1 половини
+    #      розходяться на чотири порядки — в обидва боки, і один із них палить
+    #      реальних SCC у 10 000× більше, необоротно.
+    #
+    #   2. НАПРЯМОК. Запис іде БЕЗ `sourceable`, з ДОДАТНИМ `amount` і
+    #      `token_type: :carbon_coin`, тож `BlockchainTransaction.net_minted_supply`
+    #      (дискримінатор `sourceable_type IS DISTINCT FROM 'NaasContract'`) рахує
+    #      ВИЛУЧЕННЯ з обігу як ЕМІСІЮ. А цей One-Home годує дві незворотні
+    #      поверхні: поле `total_scc_supply` тижневого L1-якоря (`05_04 §3`) і базу
+    #      розміру спалення (`05_05 §3`) — тобто погашення завищувало б розмір
+    #      майбутнього слешингу.
+    #
+    #   3. GROSS-СЕМАНТИКА. `decrement!(:balance, …)` — єдине в застосунку місце,
+    #      де `balance` СПАДАЄ, а `04_01 §6` визначає його як gross-лічильник
+    #      («усе, що дерево заробило за життя»). Наслідок для доказу: перше поле
+    #      L1-якоря = `Wallet.sum(:balance)`, тож погашення тихо переписало б
+    #      офчейн-леджер балів заднім числом.
+    #
+    # Три осі не лікуються поодинці — фікс одної без інших дає ту саму
+    # половинчастість, що вже коштувала пів дня на `total_sfc` (§Guard-craft #35).
+    # Гард знято НЕ буде, доки присуд не ухвалено; знімати його = свідома дія,
+    # а не побічний ефект дротування. → `00_07` ARCH.95.
+    def self.semantics_resolved? = false
 
     def initialize(wallet, amount_to_retire)
       @wallet = wallet
@@ -67,6 +99,14 @@ module KlimaDao
     private
 
     def validate!
+      # [ARCH.95] Перед будь-якою перевіркою балансу — гард семантики (шапка класу).
+      unless self.class.semantics_resolved?
+        raise UnresolvedSemanticsError,
+              "🛑 [ARCH.95] ESG-погашення заблоковано: одиниця (`monety` vs `бали`), напрямок " \
+              "у `net_minted_supply` і gross-семантика `balance` НЕ вирішені. Тракт мертвий " \
+              "(нуль enqueue-викликачів), тож блокування нічого не ламає. Присуд → `00_07` ARCH.95."
+      end
+
       # Guard Clause: Перевірка типу токена
       unless @wallet.blockchain_transactions.exists?(token_type: :carbon_coin)
         raise InvalidTokenTypeError,
