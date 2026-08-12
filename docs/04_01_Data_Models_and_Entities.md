@@ -960,7 +960,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 
 **Асоціації:**
 - `belongs_to :tree`
-- `belongs_to :organization` (optional, денормалізований FK)
+- `belongs_to :organization` (optional, денормалізований FK) — **[ARCH.87] інваріант: колонка НІКОЛИ не розходиться з ланцюгом `tree → cluster → organization`, і це структурно, а не декларативно.** Письменник рівно один (`Tree#build_default_wallet` → `cluster&.organization` при народженні дерева), бекфілу немає й не потрібно: єдине, що могло б колонку інвалідувати — переїзд дерева в інший кластер, а такої операції **не існує й не може існувати** (`clusters.id` = фабрично заморожена координата, HKDF-salt для `K_ota`/`KEYB` у кремнії; ⚖️ 2026-07-30 → канон робить «переїзд» парою decommission + factory-provision нового DID). Виміряно на живому наборі: нуль розбіжностей. ⚠️ Порожня колонка = ВІДСУТНІСТЬ, не конфлікт: `Tree belongs_to :cluster, optional: true` свідомо лишає захисний стан «дерево без кластера», і саме тому `WalletPolicy::Scope` приймає ОБИДВІ гілки, дзеркалячи `show?` — інакше такий гаманець зникає зі списку й із суми ліквідності, лишаючись відкритим за прямою адресою. Носій інваріанта — `spec/quality/wallet_org_denormalization_spec.rb` (стеля названа в шапці: детектор ключується на ІМЕНІ отримувача й не бачить присвоєння через довільно названу локальну змінну).
 - `has_many :blockchain_transactions, dependent: :nullify` — **[ARCH.57]** дозволений destroy (порожній/чисто-pending гаманець) лишає tx-ряди сиротами, не стирає (сирітський ряд валідний за дизайном — cluster-sourced money вже живе без wallet); первинний захист доказів = `guard_mrv_evidence!`
 - `has_one :cluster, through: :tree`
 

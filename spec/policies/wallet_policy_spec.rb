@@ -76,6 +76,33 @@ RSpec.describe WalletPolicy do
       expect(scope).to include(own_tree.wallet)
       expect(scope).not_to include(other_tree.wallet)
     end
+
+    # [ARCH.87] Дискримінуючий приклад: гаманець, чия ДЕНОРМАЛІЗОВАНА колонка порожня,
+    # але ланцюг `tree → cluster → organization` резолвиться. Доти `Scope` приймав лише
+    # колонку, тож такий гаманець зникав зі списку й із суми ліквідності — а `show?` його
+    # відкривав. Список і пряма адреса відповідали на «чий це гаманець» по-різному.
+    context "when the denormalised column is blank but the chain resolves" do
+      let!(:chain_only) do
+        tree = create(:tree, cluster: cluster)
+        tree.wallet.update_columns(organization_id: nil)
+        tree.wallet
+      end
+
+      it "is visible to its own organization" do
+        scope = described_class::Scope.new(investor, Wallet).resolve
+        expect(scope).to include(chain_only)
+      end
+
+      it "stays invisible to a foreign organization" do
+        foreign = described_class::Scope.new(UserContext.new(super_admin, other_org), Wallet).resolve
+        expect(foreign).not_to include(chain_only)
+      end
+
+      it "answers the same as #show? — list and direct address must not diverge" do
+        expect(described_class.new(investor, chain_only).show?).to be true
+        expect(described_class::Scope.new(investor, Wallet).resolve).to include(chain_only)
+      end
+    end
   end
 
   describe "#index?" do
