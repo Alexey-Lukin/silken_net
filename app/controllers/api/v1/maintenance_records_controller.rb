@@ -212,11 +212,18 @@ module Api
 
       private
 
-      # Returns nil for malformed input; both ISO8601 and date-only ("2026-05-23")
-      # strings parse cleanly via Time.iso8601. Returning nil lets the caller
-      # produce a 400 instead of leaking a server-side exception.
+      # Returns nil for malformed input, letting the caller produce a 400 instead
+      # of leaking a server-side exception.
+      #
+      # `Time.zone.iso8601`, ніколи голий `Time.iso8601` [ARCH.92]: другий ігнорує
+      # `config.time_zone` і читає зону ПРОЦЕСУ, тож `?from=2026-05-23T10:00:00`
+      # (без суфікса) означав би різний момент на різних машинах — а це фільтр
+      # НАД ЧУЖИМИ записами, тобто тихо віддавав би не ті рядки.
+      #
+      # ⚠️ Він же приймає дату-без-часу (`2026-05-23` → північ у зоні застосунку),
+      # чого `Time.iso8601` не вміє — тобто фільтр за днем працює лише в цій формі.
       def parse_iso8601_filter(raw)
-        Time.iso8601(raw.to_s)
+        Time.zone.iso8601(raw.to_s)
       rescue ArgumentError
         nil
       end

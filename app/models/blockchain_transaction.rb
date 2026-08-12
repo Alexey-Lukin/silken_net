@@ -29,7 +29,17 @@ class BlockchainTransaction < ApplicationRecord
       return where(id: id).first!
     end
 
-    time = created_at.is_a?(String) ? Time.iso8601(created_at) : created_at.to_time
+    # `Time.zone.iso8601`, ніколи голий `Time.iso8601` [ARCH.92]: другий читає зону
+    # ПРОЦЕСУ, тож `params[:created_at]` без суфікса зони зсував би секундне вікно на
+    # UTC-офсет хоста — і `first!` віддав би `RecordNotFound` ПОВЗ rescue нижче (той
+    # ловить формат, не порожній результат). Гард на час тримає fallback досяжним:
+    # дата-без-часу проходить `Time.zone.iso8601`, але шукати навколо півночі — не те
+    # саме, що шукати без прунінгу.
+    if created_at.is_a?(String)
+      raise ArgumentError, "created_at without a time component" unless created_at.include?("T")
+    end
+
+    time = created_at.is_a?(String) ? Time.zone.iso8601(created_at) : created_at.to_time
     # Use a 1-second range to account for sub-second precision differences
     # between ISO 8601 (second precision) and DB timestamps (microsecond).
     # PostgreSQL still prunes to at most one partition for a 1-second window.

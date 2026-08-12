@@ -182,6 +182,42 @@ RSpec.describe TelemetryLog, type: :model do
       allow(SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL).to receive(:increment)
     end
 
+    # [ARCH.92] Вісь ПРОВЕНАНСУ: усі наші фікстури йдуть через `record.created_at.iso8601`,
+    # тобто ЗАВЖДИ несуть `Z` — а зовнішній JS оракула виробляє рядок без суфікса, і
+    # саме на ньому голий `Time.iso8601` читає зону ПРОЦЕСУ замість зони застосунку.
+    # 🔴 Дискримінатор мусить бути стійким до ХОСТА: зсуваємо зону ЗАСТОСУНКУ
+    # (`Time.use_zone`), бо зона процесу на CI вже UTC — і приклад, побудований на
+    # ній, був би зеленим там і доводив би нуль.
+    it "reads a zone-less ISO in the APPLICATION zone, not the process zone" do
+      naive = log.created_at.utc.strftime("%Y-%m-%dT%H:%M:%S")
+
+      Time.use_zone("Asia/Tokyo") do
+        found = described_class.where(id: log.id)
+                            .partition_pruned(naive, metric_caller: "Spec")
+                            .first
+        # Під токійською зоною застосунку цей рядок означає МОМЕНТ на 9 годин
+        # раніший за UTC-запис, тож вікно з ним не перетинається.
+        expect(found).to be_nil
+      end
+
+      # Контроль: та сама фікстура під UTC-зоною застосунку знаходиться —
+      # тобто приклад вище падає через ЗОНУ, а не через биту фікстуру.
+      expect(described_class.where(id: log.id)
+                            .partition_pruned(naive, metric_caller: "Spec").first).to eq(log)
+    end
+
+    it "falls back to an unpruned lookup on a date-only string" do
+      # `Time.zone.iso8601` приймає дату-без-часу (північ), і без гарда це дало б
+      # секундне вікно навколо 00:00:00 — тобто ТИХУ порожнечу замість fallback'у.
+      found = described_class.where(id: log.id)
+                          .partition_pruned(log.created_at.strftime("%Y-%m-%d"), metric_caller: "Spec")
+                          .first
+
+      expect(found).to eq(log)
+      expect(SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL)
+        .to have_received(:increment).with(labels: { caller: "Spec:invalid_iso8601" })
+    end
+
     it "finds the record from a seconds-precision ISO despite microsecond created_at" do
       # Давня точна рівність `created_at == Time.iso8601(iso)` тут мовчки
       # промахувалась (DB тримає мікросекунди) — 1с-вікно це закриває.

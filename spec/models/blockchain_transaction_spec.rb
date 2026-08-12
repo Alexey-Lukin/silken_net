@@ -477,6 +477,30 @@ RSpec.describe BlockchainTransaction, type: :model do
       expect(found).to eq(tx)
     end
 
+    # [ARCH.92] `params[:created_at]` приходить із HTTP, тобто рядок може НЕ нести
+    # суфікса зони — а голий `Time.iso8601` читав би зону ПРОЦЕСУ й зсував секундне
+    # вікно, після чого `first!` кидає `RecordNotFound` ПОВЗ rescue нижче (той ловить
+    # формат, не порожній результат). 🔴 Зсуваємо зону ЗАСТОСУНКУ, не процесу: на CI
+    # процес уже UTC, тож приклад на ній був би зеленим і не доводив би нічого.
+    it "reads a zone-less ISO in the APPLICATION zone, not the process zone" do
+      naive = tx.created_at.utc.strftime("%Y-%m-%dT%H:%M:%S")
+
+      Time.use_zone("Asia/Tokyo") do
+        expect { described_class.find_with_partition_pruning(tx.id, naive) }
+          .to raise_error(ActiveRecord::RecordNotFound)
+      end
+
+      # Контроль: під UTC-зоною застосунку той самий рядок знаходить запис.
+      expect(described_class.find_with_partition_pruning(tx.id, naive)).to eq(tx)
+    end
+
+    it "falls back to an unpruned lookup on a date-only string" do
+      # Без гарда `Time.zone.iso8601` прийняв би дату як північ і звузив вікно до
+      # секунди навколо 00:00:00 — тобто RecordNotFound замість чесного fallback'у.
+      expect(described_class.find_with_partition_pruning(tx.id, tx.created_at.strftime("%Y-%m-%d")))
+        .to eq(tx)
+    end
+
     it "raises RecordNotFound for non-existent id" do
       expect {
         described_class.find_with_partition_pruning(-1)

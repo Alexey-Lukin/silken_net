@@ -121,6 +121,43 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       expect(ids).not_to include(sibling_record.id)
     end
 
+    # [ARCH.92] Сюїта сліпа до зони ЗА ПОБУДОВОЮ: усі фікстури йдуть через
+    # `.iso8601`, тобто ЗАВЖДИ несуть `Z`, а браузер шле рядок без суфікса.
+    # 🔴 Зсуваємо зону ЗАСТОСУНКУ, не процесу — на CI процес уже UTC, тож пін на
+    # ній був би зеленим там і не доводив би нічого.
+    it "reads a zone-less filter bound in the APPLICATION zone" do
+      # Арифметика тут несуча, бо саме вона робить пін здатним упасти.
+      # Зона застосунку Tokyo = UTC+9, тож межа "10:00" означає 01:00 UTC;
+      # зона ПРОЦЕСУ (UTC на CI, EEST локально) дала б 10:00 / 07:00 UTC.
+      # Запис о 05:00 UTC лежить МІЖ цими прочитаннями: під зоною застосунку
+      # він у діапазоні, під зоною процесу — випадає.
+      record = MaintenanceRecord.create!(
+        maintainable: own_tree, user: forester, action_type: :inspection,
+        performed_at: Time.utc(2026, 5, 23, 5, 0, 0),
+        notes: "Inspection at 05:00 UTC — between the two readings of the bound."
+      )
+
+      Time.use_zone("Asia/Tokyo") do
+        get "/maintenance_records",
+            params: { from: "2026-05-23T10:00:00", to: "2026-05-24T00:00:00" },
+            headers: headers, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["data"].map { |r| r["id"] }).to include(record.id)
+      end
+    end
+
+    it "accepts a date-only filter bound" do
+      # `Time.iso8601` кидав на `2026-05-23` → 400, тобто фільтр за ДНЕМ не працював
+      # ніколи, попри те що коментар методу обіцяв протилежне.
+      get "/maintenance_records",
+          params: { from: 2.days.ago.strftime("%Y-%m-%d") },
+          headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["data"].map { |r| r["id"] }).to include(own_record.id)
+    end
+
     it "filters by date range (from/to)" do
       stale_record = MaintenanceRecord.create!(
         maintainable: own_tree, user: forester, action_type: :inspection,

@@ -115,7 +115,17 @@ class TelemetryLog < ApplicationRecord
       return all
     end
 
-    time = Time.iso8601(created_at_iso)
+    # `Time.zone.iso8601`, ніколи голий `Time.iso8601` [ARCH.92]: другий читає зону
+    # ПРОЦЕСУ, тож рядок без суфікса зони (їх виробляє зовнішній JS оракула, не наші
+    # серіалізатори) зсував би вікно на UTC-офсет хоста — а вікно тут секундне, тож
+    # промах тихо повертає ПОРОЖНЬО замість запису.
+    #
+    # ⚠️ Гард на час несучий: `Time.zone.iso8601` приймає дату-без-часу (`2026-05-23`
+    # → північ), і без нього такий вхід дав би секундне вікно навколо 00:00:00
+    # замість чесного fallback'у — тобто «не знайшли» замість «шукали без прунінгу».
+    raise ArgumentError, "created_at_iso without a time component" unless created_at_iso.to_s.include?("T")
+
+    time = Time.zone.iso8601(created_at_iso)
     where(created_at: time...(time + 1))
   rescue ArgumentError, TypeError
     Rails.logger.warn "⚠️ [S6.16] #{metric_caller}: битий created_at_iso #{created_at_iso.inspect} — lookup без partition pruning."

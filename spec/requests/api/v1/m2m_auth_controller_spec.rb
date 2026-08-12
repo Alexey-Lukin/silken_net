@@ -60,6 +60,45 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
       end
     end
 
+    # [ARCH.92] Прошивка може надіслати ISO без суфікса зони, і голий `Time.iso8601`
+    # прочитав би його в зоні ПРОЦЕСУ — тобто чесний шлюз діставав би 401 через
+    # середовище хоста, а не через свій підпис. 🔴 Зсуваємо зону ЗАСТОСУНКУ: зона
+    # процесу на CI вже UTC, тож пін на ній був би там зеленим.
+    context "with a zone-less timestamp" do
+      let(:naive_timestamp) { Time.current.utc.strftime("%Y-%m-%dT%H:%M:%S") }
+      let(:naive_message) { "#{gateway.uid}:#{naive_timestamp}" }
+      let(:naive_signature) { Ed25519Crypto::SigningService.sign(seed_hex, naive_message) }
+
+      it "reads it in the application zone and issues a token" do
+        Time.use_zone("UTC") do
+          post "/api/v1/auth/m2m_token",
+               params: { did: gateway.uid, timestamp: naive_timestamp, signature: naive_signature },
+               as: :json
+
+          # Голий `Time.iso8601` на не-UTC хості зсунув би момент на офсет і вибив
+          # його з вікна ±5 хв → 401 замість токена.
+          expect(response).to have_http_status(:created)
+        end
+      end
+    end
+
+    context "with a date-only timestamp" do
+      let(:date_only) { Time.current.strftime("%Y-%m-%d") }
+      let(:date_message) { "#{gateway.uid}:#{date_only}" }
+      let(:date_signature) { Ed25519Crypto::SigningService.sign(seed_hex, date_message) }
+
+      it "rejects it as malformed, not as expired" do
+        post "/api/v1/auth/m2m_token",
+             params: { did: gateway.uid, timestamp: date_only, signature: date_signature },
+             as: :json
+
+        # `Time.zone.iso8601` прийняв би дату як північ, і відмова виродилась би в
+        # 401 «прострочений» — клієнт шукав би розсинхрон годинника замість формату.
+        expect(response).to have_http_status(:bad_request)
+        expect(response.parsed_body["error"]).to eq(I18n.t("m2m_auth.invalid_timestamp"))
+      end
+    end
+
     context "with expired timestamp" do
       let(:old_timestamp) { 10.minutes.ago.iso8601 }
       let(:old_message) { "#{gateway.uid}:#{old_timestamp}" }

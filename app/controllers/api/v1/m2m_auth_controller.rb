@@ -50,8 +50,20 @@ module Api
         end
 
         # Перевіряємо актуальність timestamp (± 5 хвилин)
+        #
+        # `Time.zone.iso8601`, ніколи голий `Time.iso8601` [ARCH.92]: другий читає
+        # зону ПРОЦЕСУ, тож підпис із рядком без суфікса зони зсувався б на
+        # UTC-офсет хоста — а тут це fail-closed-вікно, тобто чесний шлюз діставав
+        # би 401 через середовище, а не через свій підпис.
+        #
+        # ⚠️ Явна вимога часу несуча: `Time.zone.iso8601` приймає дату-без-часу
+        # (`2026-05-23` → північ), і без цього гарда вона мовчки пройшла б парс,
+        # щоб упасти вже на вікні — тобто «невалідний timestamp» (400) вироджувався
+        # б у «прострочений» (401), і клієнт шукав би розсинхрон годинника.
         begin
-          request_time = Time.iso8601(timestamp)
+          raise ArgumentError, "timestamp without a time component" unless timestamp.to_s.include?("T")
+
+          request_time = Time.zone.iso8601(timestamp)
         rescue ArgumentError
           render json: { error: I18n.t("m2m_auth.invalid_timestamp") }, status: :bad_request
           return
