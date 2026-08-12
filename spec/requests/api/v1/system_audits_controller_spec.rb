@@ -75,9 +75,16 @@ RSpec.describe Api::V1::SystemAuditsController, type: :request do
     end
 
     context "when as HTML" do
-      it "renders the dashboard page" do
+      # 🔴 [TEST.12 вісь D, друга група присуду D3] Уся сторінка — це РЕЗУЛЬТАТ
+      # сервісу, переданий контролером (`@audit`), тож смок на 200 не доводить
+      # нічого про доставку: `nil` у Phlex-рядку не кидає, і сторінка чесно
+      # віддала б 200 із порожніми підсумками. Ціль піна — `db_total`, бо це
+      # єдине з трьох чисел, яке не збігається з жодним іншим у фікстурі.
+      it "друкує підсумки аудиту, що приїхали з сервісу" do
         get "/system_audits", headers: headers
+
         expect(response).to have_http_status(:ok)
+        expect(response.body).to include("1000.0")
       end
 
       it "includes text/html content type" do

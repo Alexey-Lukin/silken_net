@@ -15,6 +15,11 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
 
   describe "GET /telemetry/live" do
     context "when as HTML" do
+      # ⚠️ [TEST.12 вісь D] Це D4-ДУБЛЬ, а не борг, і тому лишається як є: приклад
+      # «subscribes each viewer to their OWN organization stream» нижче робить той
+      # самий GET і звіряє ВМІСТ (ім'я підписаного стріму), тобто вже доводить, що
+      # HTML-гілка жива. Знімати його заради метрики не варто — політика присуду D3
+      # каже переписувати смок лише там, де в тому ж файлі нема кому шипити контракт.
       it "renders the live telemetry dashboard" do
         get "/telemetry/live", headers: headers
         expect(response).to have_http_status(:ok)

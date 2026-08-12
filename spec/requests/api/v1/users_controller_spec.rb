@@ -89,9 +89,15 @@ RSpec.describe Api::V1::UsersController, type: :request do
     end
 
     context "when as HTML" do
-      it "renders the dashboard page" do
+      # 🔴 [TEST.12 вісь D, друга група присуду D3] Сторінка несе `@user` із контролера,
+      # тож смок на 200 сліпий там само, де сліпа компонентна спека (та рендерить повз
+      # маршрутизатор і повз викликача). Пін на email, бо це ЄДИНЕ поле профілю, яке
+      # не має `presence`-валідації-двійника й приходить рівно з переданого запису.
+      it "друкує профіль ЗАПИТАНОГО користувача" do
         get "/users/#{extra_user.id}", headers: admin_headers
+
         expect(response).to have_http_status(:ok)
+        expect(response.body).to include(extra_user.email_address)
       end
     end
 
@@ -129,9 +135,21 @@ RSpec.describe Api::V1::UsersController, type: :request do
     end
 
     context "when as HTML" do
-      it "renders the dashboard page" do
+      # ⊥ Той самий компонент, що в `show`, але ІНША проводка: тут `@user` береться
+      # не з `params[:id]`, а з `current_user`. Саме тому пін мусить називати
+      # ВЛАСНИКА токена — інакше підміна одного тракту на інший лишилась би зеленою.
+      # ⚠️ Другий користувач НЕОБХІДНИЙ, і це не надмірність — перевірено мутацією,
+      # що ПРОЙШЛА: з одним записом у БД підміна `@user` на «будь-кого іншого»
+      # віддає `nil` і падає на фолбек, тобто пін мовчить на найправдоподібнішій
+      # регресії. Розрізняє лише ПАРА «свій ⊥ чужий».
+      it "друкує профіль ВЛАСНИКА токена, а не сусіда" do
+        stranger = create(:user, :forester, organization: organization)
+
         get "/users/me", headers: investor_headers
+
         expect(response).to have_http_status(:ok)
+        expect(response.body).to include(investor.email_address)
+        expect(response.body).not_to include(stranger.email_address)
       end
     end
 

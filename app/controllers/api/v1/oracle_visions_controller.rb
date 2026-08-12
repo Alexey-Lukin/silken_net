@@ -76,7 +76,12 @@ module Api
             total_potential += sap_index * (1.0 - stress)
           end
 
-          ((total_potential * 24) / threshold).round(4)
+          # `.to_f` НЕСУЧИЙ, не косметика [ARCH.89]: `sap_flow` — `decimal`, тож після
+          # першого ж дерева `total_potential` стає BigDecimal, а `.round(4)` на ньому
+          # повертає BigDecimal — і Phlex друкує його ПОРОЖНІМ рядком. Показник
+          # «Expected Yield» рендериться голим блоком, тож без цього він зникав з
+          # екрана щойно в організації зʼявлялась телеметрія.
+          ((total_potential * 24) / threshold).to_f.round(4)
         end
       end
     end

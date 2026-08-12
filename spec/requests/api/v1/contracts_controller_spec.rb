@@ -130,9 +130,15 @@ RSpec.describe Api::V1::ContractsController, type: :request do
     end
 
     context "when as HTML" do
-      it "renders the dashboard page" do
+      # 🔴 [TEST.12 вісь D, друга група присуду D3] Сторінка несе `@contract` із
+      # контролера. Пін на назву кластера, а не на id: id є ще й у самому URL, тож
+      # він рендерився б і при геть іншому записі — а сектор приходить рівно з
+      # переданого контракту через його асоціацію.
+      it "друкує ЗАПИТАНИЙ контракт, а не порожню сторінку" do
         get "/contracts/#{own_contract.id}", headers: headers
+
         expect(response).to have_http_status(:ok)
+        expect(response.body).to include(own_cluster.name.upcase)
       end
     end
 

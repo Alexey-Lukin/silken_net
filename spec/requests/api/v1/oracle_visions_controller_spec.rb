@@ -47,9 +47,25 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
     end
 
     context "when as HTML" do
-      it "renders the dashboard page" do
+      # 🔴 [TEST.12 вісь D + ARCH.89] Цей приклад НАВМИСНО обходить стаб кешу з
+      # `before` — і саме стаб ховав живий дефект: він віддавав Float, тоді як
+      # справжній розрахунок після першого ж дерева дає **BigDecimal** (`sap_flow` —
+      # `decimal`), а Phlex друкує BigDecimal ПОРОЖНІМ рядком. Показник «Expected
+      # Yield» рендериться голим блоком, тож на будь-якій організації з телеметрією
+      # він зникав з екрана, а сюїта лишалась зеленою: у фікстурі дерев не було, і
+      # число приходило зі стабу вже правильним типом.
+      # ⚠️ Пін цілиться у ВУЗОЛ (`>…<`), а не в документ: голе `include("1.5")`
+      # вакуумне за побудовою — Tailwind сипле в розмітку класи на кшталт `gap-1.5`.
+      it "друкує ОБЧИСЛЕНИЙ прогноз, а не порожній вузол" do
+        RSpec::Mocks.space.proxy_for(Rails.cache).reset
+        tree = create(:tree, cluster: cluster)
+        create(:telemetry_log, tree: tree, sap_flow: 2.5)
+
         get "/oracle_visions", headers: forester_headers
+
         expect(response).to have_http_status(:ok)
+        yield_node = response.body[/drop-shadow-\[0_0_8px_rgba\(52,211,153,0\.5\)\]"[^>]*>\s*([^<]*)</, 1]
+        expect(yield_node.to_s.strip).to match(/\A\d+(\.\d+)?\z/)
       end
     end
 

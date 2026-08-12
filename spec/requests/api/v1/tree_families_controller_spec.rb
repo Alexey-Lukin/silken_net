@@ -71,9 +71,14 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
     end
 
     context "when as HTML" do
-      it "renders the dashboard page" do
+      # 🔴 [TEST.12 вісь D, друга група присуду D3] Сторінка несе `@family` з контролера.
+      # Пін на наукову назву, а не на `name`: `name` рендериться ще й водяним знаком
+      # (перші три літери) і в заголовку, тож пін на нього був би менш адресним.
+      it "друкує ЗАПИТАНУ родину, а не порожню сторінку" do
         get "/tree_families/#{scots_pine.id}", headers: headers
+
         expect(response).to have_http_status(:ok)
+        expect(response.body).to include(scots_pine.scientific_name)
       end
     end
 

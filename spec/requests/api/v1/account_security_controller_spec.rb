@@ -40,9 +40,24 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
       expect(identities.map { |i| i["provider"] }).to contain_exactly("google_oauth2", "facebook")
     end
 
-    it "renders the HTML dashboard page" do
+    # 🔴 [TEST.12 вісь D, друга група присуду D3] Сторінка несе ДАНІ З КОНТРОЛЕРА
+    # (`@user` + `@identities`), тож смок на 200 сліпий рівно там, де сліпа й
+    # компонентна спека: та рендерить повз маршрутизатор і повз викликача, тобто
+    # проводку не бачить НІХТО. `nil` у рядку Phlex не кидає — сторінка чесно
+    # віддала б 200 із порожнім місцем там, де має стояти власник.
+    # ⚠️ Ціль піна — `@identities`, а НЕ дані користувача: сторінка свідомо не друкує
+    # ані email, ані імені (це власний екран «моя безпека», ідентифікувати нікого не
+    # треба), тож із `@user` компонент читає лише булеве `password_digest.present?`.
+    # Проводку доводить саме прив'язаний провайдер: без нього сторінка малює
+    # «No providers linked.» — тобто той самий чесний 200 на порожньому місці.
+    it "друкує прив'язані ідентичності, що приїхали з контролера" do
+      create(:identity, user: user, provider: "google_oauth2")
+
       get "/account_security", headers: headers
+
       expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Google Oauth2")
+      expect(response.body).not_to include("No providers linked.")
     end
   end
 
