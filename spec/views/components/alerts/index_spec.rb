@@ -7,6 +7,25 @@ RSpec.describe Alerts::Index do
   # Component is i18n-aware. Existing assertions match the English copy.
   around { |ex| I18n.with_locale(:en) { ex.run } }
 
+  # 🔴 [SEC.31] Цей пін стереже не компонент, а ПІДСТАВУ чужого реєстрового рядка.
+  # `browser_contour_registry` оголошує гілку `alerts#index` недосяжною саме тому,
+  # що фільтр не може подати значення поза enum'ом — тобто недосяжність тримається
+  # на ВІДНОШЕННІ двох множин, і жоден приклад доти його не перевіряв. Правка, що
+  # додасть у фільтр значення, якого enum не має, зробить ту підставу хибною
+  # мовчки: реєстр лишиться зеленим, бо він судить форму рядка, не його правду.
+  # ⚠️ Чесна межа: розходження в бік «зайве у фільтрі» ламає й сам рендер, тож
+  # клас частково ГУЧНИЙ. Цінність піна не в тому, що дефект був би тихим, а в
+  # тому, що він називає ПРИЧИНУ (решта прикладів упали б як обвал рендера) і
+  # стереже підставу чужого рядка — на випадок, коли розійдеться інший бік:
+  # enum звузиться, а фільтр лишиться повним.
+  let(:html)   { render_component(alerts: alerts, pagy: mock_pagy(count: 63), organization: org) }
+  let(:alerts) { [ build_alert(id: 1, severity: "critical"), build_alert(id: 2, severity: "medium") ] }
+  let(:org)    { mock_org }
+
+  it "не пропонує severity, якої модель не знає" do
+    expect(described_class::FILTER_SEVERITIES).to all(satisfy { |s| EwsAlert.severities.key?(s) })
+  end
+
   # 🔴 [TEST.12] Реальний незбережений `EwsAlert`, і вирішальне тут не типи, а
   # ПОХІДНИЙ предикат: сторінка рендерить `Alerts::Row`, який гілкується на
   # `status_resolved?`, а мок оголошував лише `status`. `OpenStruct` віддавав на
@@ -24,9 +43,6 @@ RSpec.describe Alerts::Index do
     OpenStruct.new(id: id, name: name, stream_epoch: stream_epoch)
   end
 
-  let(:org)    { mock_org }
-  let(:alerts) { [ build_alert(id: 1, severity: "critical"), build_alert(id: 2, severity: "medium") ] }
-  let(:html)   { render_component(alerts: alerts, pagy: mock_pagy(count: 63), organization: org) }
 
   describe "turbo stream subscription" do
     it "includes turbo-cable-stream-source when organization is provided" do

@@ -57,16 +57,27 @@ require Rails.root.join("spec/support/browser_contour_registry")
 #      `format.html { render json: … }`, який є §2.2б у чистому вигляді, і з
 #      блоком, що має лише `format.json`. Виміряно по всіх 121 `respond_to`
 #      дерева: блоків без `format.html` — нуль. Знову порожньо, не безпечно.
-#   7. 🔴 **Гейт міряє ОБСЯГ зняття, і сліпий до трьох перемикачів, що вимикають
-#      захист, нічого не знімаючи.** Перший — `handle_unverified_request`: для
-#      41 з 45 контролерів реальна політика живе в тілі цього методу в
-#      `Api::V1::BaseController`, а `protect_from_forgery` лише МАРШРУТИЗУЄ туди
-#      неперевірений запит (сьогодні там свідомий і обґрунтований Bearer-обхід).
-#      Другий — `protect_against_forgery?`/`verified_request?`: перевизначення
-#      будь-якого робить гард no-op. Третій — глобальний
-#      `config.action_controller.allow_forgery_protection`, який у test-середовищі
-#      вже `false`, тобто звичайна request-спека цю вісь не бачить у принципі.
-#      Кожен із трьох лишає всі приклади нижче зеленими.
+#   7. ✅ **Перемикачі, що вимикають захист, нічого не «знімаючи» — закрито
+#      [SEC.31]**, і перелік по дорозі виявився НЕПОВНИМ. Гейт міряв ОБСЯГ зняття
+#      (колбек) і СТРАТЕГІЮ, а обидві осі сліпі до того, ХТО ВИРІШУЄ:
+#        · `handle_unverified_request` — для 42 з 45 контролерів реальна політика
+#          живе в тілі цього методу в `Api::V1::BaseController`, а
+#          `protect_from_forgery` лише МАРШРУТИЗУЄ туди неперевірений запит.
+#          Перевизначення в НАЩАДКУ знімає CSRF цілком, не рухаючи ні колбека,
+#          ні стратегії → тепер міряється `.owner` (множина, що лише скорочується).
+#        · `protect_against_forgery?`/`verified_request?` — живих екземплярів нуль,
+#          і саме тому пін дешевий: він фіксує «нуль», а не шукає порушників.
+#        · 🔴 **ЧЕТВЕРТИЙ, якого перелік пункту не називав і який обходить ОБИДВА
+#          наявні виміри:** `self.allow_forgery_protection = false` на самому
+#          контролері. `config` там — `InheritableOptions` з `default_proc` у
+#          батька, тож запис на нащадку ЗАТІНЮЄ глобальний — а отже й
+#          `csrf_machine_contour_spec`, який вмикає прапорець на
+#          `ActionController::Base`. Виміряно рантаймом, не виведено.
+#        · Глобальний `allow_forgery_protection` лишається won't-do: спека вище
+#          знімає його за побудовою, вмикаючи прапорець сама.
+#      ⚠️ Заразом виявлено, що перевірка стратегії була ХИБНО-ПОЗИТИВНОЮ для
+#      нащадків `BaseController`: той кидає сам і в стратегію не делегує, тож
+#      `with: :null_session` червонив би гейт, НІЧОГО не зламавши.
 # ─────────────────────────────────────────────────────────────────────────────
 RSpec.describe "Браузерний контур: голий render json", type: :model do
   let(:sites)   { BrowserContourInventory.scan }
@@ -202,8 +213,27 @@ RSpec.describe "Браузерний контур: голий render json", type
     # робити, якщо стратегію підмінено (`with: :null_session` мовчки чистить
     # сесію замість кидати). Обсяг і стратегія падають окремо, тож і міряються
     # окремо — інакше одна перевірка обслуговувала б два різні твердження.
+    #
+    # 🔴 **Але для нащадків `Api::V1::BaseController` ця вісь ХИБНО-ПОЗИТИВНА, і
+    # виміряно це рантаймом [SEC.31]:** той перевизначає `handle_unverified_request`
+    # і НЕ делегує ні в `super`, ні в стратегію — він кидає сам. Тож обʼєкт
+    # стратегії для 42 з 45 контролерів не інстанціюється ніколи, а перевірка
+    # червоніла б на `with: :null_session`, яка НІЧОГО не ламає. Ось чому вісь
+    # питає не «яка стратегія», а «ХТО ВИРІШУЄ» — і лише там, де вирішує стратегія.
     def strategy_raises?(klass)
+      return true unless decision_owner(klass) == ActionController::RequestForgeryProtection
+
       klass.forgery_protection_strategy == ActionController::RequestForgeryProtection::ProtectionMethods::Exception
+    end
+
+    # 🔴 ВЛАСНІСТЬ рішення [SEC.31]. `protect_from_forgery` лише маршрутизує в
+    # `handle_unverified_request`, тож реальна політика живе в тілі того, хто його
+    # ВИЗНАЧАЄ. Перевизначення в нащадку знімає CSRF цілком і не рухає ані колбек,
+    # ані стратегію — тобто жодна інша вісь цього файлу його не бачить.
+    def decision_owner(klass)
+      klass.instance_method(:handle_unverified_request).owner
+    rescue NameError
+      nil
     end
 
     # 🔴 Корені деривуються з РЕАЛЬНОСТІ, а не перелічуються [SEC.31]. Літерал
@@ -282,6 +312,51 @@ RSpec.describe "Браузерний контур: голий render json", type
         У цих контролерах є дія, що автентифікується cookie-сесією (ambient authority
         реальна), тож зняття мусить накривати РІВНО машинні дії — інакше машинний
         вхід полагоджено ціною відкриття браузерного.
+      MSG
+    end
+
+    # 🔴 Три перемикачі, кожен вимикає CSRF, нічого не «знімаючи» [SEC.31]. Перші
+    # дві осі цього файлу (обсяг колбека · стратегія) сліпі до всіх трьох за
+    # побудовою: колбек лишається на місці й безумовний, стратегія лишається
+    # `Exception`. Виміряно рантаймом — не виведено.
+    it "рішення про CSRF ухвалює РІВНО один клас" do
+      owners = all_controllers.filter_map { |k| decision_owner(k) }.uniq
+
+      # Множина, що лише СКОРОЧУЄТЬСЯ: сьогодні рішення ухвалює `BaseController`
+      # (для машинного контуру) або сам Rails. Новий власник = нова політика,
+      # якої не бачить жодна інша вісь.
+      expect(owners).to contain_exactly(ActionController::RequestForgeryProtection, Api::V1::BaseController), <<~MSG
+        `handle_unverified_request` перевизначено там, де його доти не було:
+        #{owners.map(&:to_s).join(', ')}
+
+        Це знімає CSRF цілком і не рухає ані колбек, ані стратегію — тобто
+        решта перевірок цього файлу лишаються ЗЕЛЕНИМИ. Якщо власник新 легітимний,
+        додай його сюди свідомо. Дім → `04_03 §1.3а`.
+      MSG
+    end
+
+    it "жоден контролер не глушить CSRF власним прапорцем" do
+      # 🔴 ЧЕТВЕРТИЙ перемикач, якого перелік SEC.31 не називав: `allow_forgery_protection`
+      # делегується в `config`, а той у контролера — `InheritableOptions` з
+      # `default_proc` у батька. Запис на НАЩАДКУ затіняє глобальний, тож
+      # `csrf_machine_contour_spec`, який сам вмикає прапорець на
+      # `ActionController::Base`, до такого класу не дотягується — виміряно.
+      #
+      # ⚠️ Дискримінатор мусить міряти КОД, а не СЕРЕДОВИЩЕ: у `test` глобальний
+      # прапорець `false` (`config/environments/test.rb`), тож пряме читання
+      # почервоніло б на всіх 45 контролерах і вимірювало б конфіг, не дерево.
+      # Тому глобальний піднімається, і лишаються рівно ті, хто ЗАПИСАВ власне.
+      original = ActionController::Base.allow_forgery_protection
+      ActionController::Base.allow_forgery_protection = true
+      muted = all_controllers.reject { |k| k.allow_forgery_protection }.map(&:name)
+      ActionController::Base.allow_forgery_protection = original
+
+      expect(muted).to be_empty, <<~MSG
+        `self.allow_forgery_protection = false` у: #{muted.join(', ')}.
+
+        Колбек лишається на місці, стратегія лишається `Exception`, обидві наявні
+        осі зелені — а контролер віддає cookie-автентифіковані мутації будь-якому
+        cross-site POST. Це найдешевший спосіб знеструмити CSRF у цьому дереві.
       MSG
     end
 
