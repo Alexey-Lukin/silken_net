@@ -32,7 +32,12 @@ class BlockchainConfirmationWorker
     scope = BlockchainTransaction.where(tx_hash: tx_hash)
     return scope if created_at_iso.blank?
 
-    t = Time.iso8601(created_at_iso.to_s)
+    # `Time.zone.iso8601` [ARCH.92]. Сьогодні всі call-sites внутрішні
+    # (`tx.created_at.iso8601` → завжди `Z`), а напрямок зсуву лише РОЗШИРЮЄ
+    # нижню межу — тобто сайт захищений збігом двох властивостей, не інваріантом.
+    # Форма однорідна з рештою тракту саме тому: перший зовнішній call-site
+    # оживив би дефект тихо, і жоден приклад цього не побачив би.
+    t = Time.zone.iso8601(created_at_iso.to_s)
     scope.where("created_at >= ?", t - 1.hour)
   rescue ArgumentError, TypeError
     BlockchainTransaction.where(tx_hash: tx_hash)
