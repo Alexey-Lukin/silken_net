@@ -119,6 +119,26 @@ RSpec.describe Wallet, type: :model do
       expect(wallet.locked_balance).to eq(500)
       expect(wallet.available_balance).to eq(500)
     end
+
+    # [ARCH.94] Некратний вхід морозив залишок під НУЛЬ монет — і назавжди, бо
+    # reserve-семантика (`04_01 §6`) locked не звільняє взагалі. Живого некратного
+    # викликача сьогодні немає (`EvaluateTreeBatchWorker` рахує `tokens × threshold`),
+    # тож без цього прикладу гілка озброїлась би тихо першим новим.
+    it "locks only the CONVERTED points when the input is not a multiple of the threshold" do
+      wallet = create(:tree).wallet
+      wallet.update!(balance: 30_000)
+      allow(wallet.tree).to receive(:active?).and_return(true)
+
+      tx = wallet.lock_and_mint!(25_000, 10_000)
+      wallet.reload
+
+      expect(tx.amount).to eq(2)
+      # 2 монети коштують 20 000 балів — решта 5 000 мусить лишитись ДОСТУПНОЮ,
+      # інакше вона заморожена ні за що (виміряний дефект: locked ставало 25 000).
+      expect(wallet.locked_balance).to eq(20_000)
+      expect(wallet.available_balance).to eq(10_000)
+      expect(tx.locked_points).to eq(20_000)
+    end
   end
 
   describe "#lock_and_mint! lineage [MRV.1]" do

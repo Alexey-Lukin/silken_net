@@ -154,11 +154,27 @@ class Wallet < ApplicationRecord
       tokens_to_mint = (points_to_lock.to_f / threshold).floor
       return if tokens_to_mint.zero? # Немає сенсу створювати транзакцію на 0 токенів (курсор НЕ рухається)
 
+      # [ARCH.94] Блокуємо рівно СКОНВЕРТОВАНЕ, а не запитане. Некратний
+      # `points_to_lock` (25 000 при порозі 10 000) дає 2 токени, і залишок 5 000
+      # осідав у `locked_balance` під нуль монет — НАЗАВЖДИ, бо за ратифікованою
+      # reserve-семантикою (`04_01 §6`) locked не звільняється взагалі.
+      # Клампінг тут не ховає помилку викликача — він виконує визначення, яке
+      # канон уже дає цій колонці: locked_balance = бали, позначені СКОНВЕРТОВАНИМИ.
+      # Блокувати більше, ніж сконвертовано, означало б, що колонка бреше про
+      # власний зміст. Живий викликач (`EvaluateTreeBatchWorker`) завжди передає
+      # кратне, тож його поведінка не змінюється; гілка озброїлась би першим новим.
+      converted_points = tokens_to_mint * threshold
+      if converted_points != points_to_lock
+        Rails.logger.warn "⚠️ [Wallet ##{id}] Некратний points_to_lock=#{points_to_lock} " \
+                          "при порозі #{threshold}: блокуємо #{converted_points} (#{tokens_to_mint} токенів), " \
+                          "решта лишається доступною [ARCH.94]"
+      end
+
       # 4. БЛОКУВАННЯ КОШТІВ (Pending Balance Protection)
       # Замість негайного списання з balance, блокуємо кошти в locked_balance.
       # Це захищає від Double Spend: кошти недоступні, але залишаються на балансі
       # до фіналізації транзакції в блокчейні.
-      increment!(:locked_balance, points_to_lock)
+      increment!(:locked_balance, converted_points)
 
       # [MRV.1] Lineage-вікно вимірів (під тим самим wallet-локом — дешеве: 1 SELECT позиції):
       # (курсор .. останній лог ≤ now−GRACE]. GRACE — щоб лог, що комітиться зараз, не випав
@@ -185,13 +201,13 @@ class Wallet < ApplicationRecord
         token_type: token_type,
         status: :pending,
         to_address: target_address,
-        locked_points: points_to_lock,
+        locked_points: converted_points,
         telemetry_window_from_at: lineage_cursor_at,
         telemetry_window_from_id: lineage_cursor_log_id,
         telemetry_window_to_at: window_to_at,
         telemetry_window_to_id: window_to_id,
         telemetry_lineage_version: Mrv::TelemetryLeaf::LEAF_VERSION,
-        notes: "Конвертація #{points_to_lock} балів росту (Поріг: #{threshold})."
+        notes: "Конвертація #{converted_points} балів росту (Поріг: #{threshold})."
       )
 
       update!(lineage_cursor_at: window_to_at, lineage_cursor_log_id: window_to_id) if window_upper
