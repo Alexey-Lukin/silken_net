@@ -40,6 +40,24 @@ RSpec.describe BlockchainConfirmationWorker, type: :worker do
         expect(tx2.reload.status).to eq("confirmed")
       end
 
+      # 🔴 [TEST.12 вісь ПРОВЕНАНСУ] Усі приклади вище кличуть `perform(tx_hash)` —
+      # ОДНИМ аргументом, тоді як прод передає ДВА на кожному живому сайті
+      # (`[ARCH.52] partition-prune`: sweeper · insurance-payout · обидва burning).
+      # Тобто сюїта ходила формою, якої виробник не виробляє, і гілка з прунінгом
+      # не виконувалась у `#perform` ЖОДНОГО разу. `.confirmation_scope` покритий
+      # окремо й добре — але це інша ланка: доказу, що `perform` ПЕРЕДАЄ свій
+      # другий аргумент далі, не було, і зняття його з виклику лишало сюїту
+      # зеленою (виміряно мутацією), тобто прунінг тихо ставав повним скана́ми.
+      it "передає ключ прунінгу далі: рядок поза вікном не чіпається" do
+        out_of_window = create(:blockchain_transaction, wallet: wallet, tx_hash: tx_hash,
+                                                        status: :sent, created_at: 3.hours.ago)
+
+        described_class.new.perform(tx_hash, transaction.created_at.iso8601)
+
+        expect(transaction.reload.status).to eq("confirmed")
+        expect(out_of_window.reload.status).to eq("sent")
+      end
+
       it "parses hex blockNumber and gasUsed when the receipt includes them" do
         allow(client_double).to receive(:eth_get_transaction_receipt).and_return(
           { "result" => { "status" => "0x1", "blockNumber" => "0x10", "gasUsed" => "0x5208" } }
