@@ -13,7 +13,10 @@ FactoryBot.define do
     # Direct normal-пакет: стартовий DEFAULT_TTL=3 без жодного relay
     # (5 — wire-неможливе для non-panic; TelemetryLog::INITIAL_TTL_*).
     mesh_ttl { 3 }
-    z_value { 0.35 }
+    # 🔴 [TEST.12] Було 0.35 — та сама до-FW.8 реліквія, яку трейт `:optimal` нижче
+    # уже полагодив у себе й лишив тут: реальні Z ідуть у 2.0..45.0. Дефолт мусить
+    # бути ВАЛІДНИЙ, але НЕоптимальний, інакше трейт перестає щось означати.
+    z_value { 25.0 }
     rssi { -65 }
 
     trait :healthy do

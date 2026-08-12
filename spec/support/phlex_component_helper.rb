@@ -26,7 +26,8 @@
 #
 #   2. `component_class` — shorthand for `described_class`.
 #
-#   3. `mock_pagy(...)` — standard Pagy double for paginated component specs.
+#   3. `mock_pagy(...)` — a REAL `Pagy::Offset` for paginated component specs
+#      (the name is legacy; see the method's own comment for why it is not a double).
 #
 #   4. `mock_model(klass, id:, **attrs)` — builds an OpenStruct that
 #      quacks like an ActiveRecord model (model_name, to_key, to_param).
@@ -74,26 +75,24 @@ module PhlexComponentHelper
   # Mock helpers
   # ---------------------------------------------------------------------------
 
-  # Standard Pagy mock used by any paginated component.
+  # Standard Pagy for any paginated component. 🔴 [TEST.12] Це вже НЕ мок —
+  # повертається справжній `Pagy::Offset`; назву збережено, бо її кличуть двадцять
+  # файлів. Попередній `OpenStruct` мав три вади, і третя несуча:
+  #   • оголошував `vars` — методу з таким іменем на `Pagy::Offset` немає взагалі;
+  #   • робив ПУБЛІЧНИМ `series`, який у гема `protected` (десята вісь — фікстура
+  #     дописує API залежності повз RSpec mock-API, тож переживає бамп мовчки);
+  #   • приймав `count` і `last` як НЕЗАЛЕЖНІ поля, тоді як гем виводить `last`
+  #     із `count`/`limit` — тобто вміщав стан, недосяжний за побудовою (жменя
+  #     записів і водночас кілька сторінок), а перший пін на «сторінка X з Y»
+  #     зацементував би неможливе.
+  # Тепер `limit` виводиться з бажаного `last`, тож `next`, `previous`, `from`,
+  # `to` і `last` течуть з ОДНОГО джерела й суперечити одне одному не можуть.
   #
   # @param count [Integer] total record count
   # @param page  [Integer] current page
-  # @param last  [Integer] last page number (set > 1 to make pagination render)
+  # @param last  [Integer] desired last-page number (set > 1 to make pagination render)
   def mock_pagy(count: 3, page: 1, last: 3)
-    pagy = OpenStruct.new(
-      count: count,
-      page: page,
-      last: last,
-      from: 1,
-      to: count,
-      previous: page > 1 ? page - 1 : nil,
-      next: page < last ? page + 1 : nil,
-      vars: { items: 21 }
-    )
-    pagy.define_singleton_method(:series) do
-      (1..last).to_a
-    end
-    pagy
+    Pagy::Offset.new(count: count, page: page, limit: [ (count.to_f / last).ceil, 1 ].max)
   end
 
   # Builds an OpenStruct that responds to model_name, to_key, to_param —

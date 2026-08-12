@@ -112,6 +112,45 @@ RSpec.describe SilkenNet::SeedDerivation do
       implicit = described_class.initial_state(seed_bytes)
       expect(implicit).to eq(explicit)
     end
+
+    # 🔴 [TEST.12, вісь ПРОВЕНАНСУ] Усі приклади вище РЕЛЯЦІЙНІ: вони звіряють виклик
+    # із ще одним викликом того самого методу (детермінізм, ротація, залежність від
+    # сіда) або перевіряють лише тип і діапазон. Тобто оракул позичений у коду, який
+    # перевіряється, і приклад є тотожністю. Виміряно мутацією: перестановка зрізів
+    # x0↔y0 виживає ВСЮ цю спеку і ще 245 прикладів суміжного периметра
+    # (`hardware_key_service`, `factory_flashing`, `provisioning`) — бо кожна з
+    # перевірених властивостей інваріантна під будь-якою перестановкою трьох зрізів.
+    #
+    # Ціна мовчазної зміни розкладки не косметична: цей стан годує Lorenz-траєкторію,
+    # а backend мусить бути БІТОВО тотожний firmware-mruby (FW.7). Свап на одному боці
+    # розводить DCI-звірку без жодного червоного тесту.
+    #
+    # ⚠️ Межа цих двох прикладів названа чесно: вони МОРОЗЯТЬ чинну розкладку як
+    # контракт (під неї вже прошито залізо), а не доводять її правильність.
+    describe "золотий вектор — розкладка дайджесту заморожена" do
+      let(:frozen_seed) { ("\x00".."\x1f").to_a.join.b }
+
+      it "віддає ті самі координати для фіксованої пари (seed, epoch_day)" do
+        expect(described_class.initial_state(frozen_seed, 20_000)).to eq(
+          [ -0.7456425164358368, 0.46030256489974186, -0.8144958023098249 ]
+        )
+      end
+
+      # Оракул НЕЗАЛЕЖНИЙ: HMAC рахується прямо OpenSSL за оголошеною специфікацією
+      # (`"init|"` + big-endian epoch), а не через `initial_state`. Тож приклад пінить
+      # саме ПОЗИЦІЇ зрізів і лишається чинним, навіть якщо зміниться `signed_unit_float`.
+      it "бере x0/y0/z0 саме з байтів 0/8/16, а не з іншої перестановки" do
+        digest = OpenSSL::HMAC.digest("SHA256", frozen_seed, "init|".b + [ 20_000 ].pack("Q>"))
+
+        expect(described_class.initial_state(frozen_seed, 20_000)).to eq(
+          [
+            described_class.signed_unit_float(digest[0, 8]),
+            described_class.signed_unit_float(digest[8, 8]),
+            described_class.signed_unit_float(digest[16, 8])
+          ]
+        )
+      end
+    end
   end
 
   describe ".signed_unit_float" do

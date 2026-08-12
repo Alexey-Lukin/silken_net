@@ -112,7 +112,12 @@ RSpec.describe Dashboard::EventRow do
   describe "EwsAlert with no cluster" do
     let(:event) do
       alert = EwsAlert.allocate
-      alert.define_singleton_method(:alert_type) { "Seismic" }
+      # 🔴 [TEST.12] Доти тут стояло `"Seismic"` — значення поза enum (`EwsAlert.new`
+      # на ньому кидає `ArgumentError`). Приклад цього не асертував, тож дефект був
+      # ЛАТЕНТНИЙ: `.allocate` пропускає те, що конструктор відкинув би, а перший пін
+      # на заголовок зацементував би «Seismic» замість продового «Seismic Anomaly»
+      # (виміряно: локаль-ключа `alerts.types.Seismic` немає → fail-open `humanize`).
+      alert.define_singleton_method(:alert_type) { "seismic_anomaly" }
       alert.define_singleton_method(:cluster) { nil }
       alert.define_singleton_method(:created_at) { 1.minute.ago }
       alert

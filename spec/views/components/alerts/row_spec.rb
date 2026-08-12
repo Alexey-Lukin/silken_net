@@ -124,6 +124,13 @@ RSpec.describe Alerts::Row do
     end
   end
 
+  # ⚠️ [TEST.12] Вхід НЕДОСЯЖНИЙ, і це оголошено, а не замовчано: `enum :severity`
+  # має рівно три члени (`low`/`medium`/`critical`), тож `"unknown"` реальний
+  # `EwsAlert` мати не може — `new` на ньому кидає `ArgumentError`. Отже `else`-гілка
+  # бейджа є ГАРДОМ (ловить `nil`/сире значення), а не станом, який побачить
+  # користувач; параметр `severity:` тут працює як стаб РИДЕРА, не як легальний стан.
+  # ⊕ Пін лишається розрізнимим (на відміну від `04_06 §A.4` BP 20): `bg-status-neutral`
+  # не належить жодному з трьох живих severity, тож він таки говорить про фолбек.
   describe "severity badge else branch" do
     it "renders unknown severity with zinc fallback style" do
       html = render_component(alert: mock_alert(severity: "unknown"))

@@ -311,25 +311,37 @@ RSpec.describe TreeChronicle::TextFormatter do
   end
 
   describe ".minting_description" do
+    # 🔴 [TEST.12 вісь ТИПУ] `amount` тут БУВ Integer, і обидва піни стерегли форму,
+    # якої застосунок не виробляє жодного разу: колонка — `numeric(24,6)`, тож живий
+    # запис віддає **BigDecimal**, і рядок виходить «Minted 5.0 tokens», а не
+    # «Minted 5 tokens» (виміряно на persisted+reloaded записі). Єдиний виробник
+    # (`TreeChronicleService#blockchain_entries`) бере лише збережені транзакції,
+    # тож Integer сюди не приходить ніколи. Фікстура лишається `OpenStruct` свідомо
+    # — це unit-спека форматера, від БД незалежна, — але ТИП мусить бути продовий.
     context "with blockchain_network" do
-      let(:tx) { OpenStruct.new(amount: 5, blockchain_network: "solana") }
+      let(:tx) { OpenStruct.new(amount: BigDecimal("5"), blockchain_network: "solana") }
 
       it "includes amount and capitalized network" do
         result = described_class.minting_description(tx)
-        expect(result).to include("Minted 5 tokens")
+        expect(result).to include("Minted 5.0 tokens")
         expect(result).to include("Solana")
         # [ARCH.53]: жодних oracle-verified claim'ів у юзер-хроніці — мінт оптимістичний (L0-custodial)
         expect(result).not_to include("Chainlink")
       end
     end
 
-    context "without blockchain_network" do
-      let(:tx) { OpenStruct.new(amount: 10, blockchain_network: nil) }
+    # ⚠️ Вхід НЕДОСЯЖНИЙ на продовому шляху, і це оголошено, а не замовчано:
+    # `blockchain_network` має DB-дефолт `evm` І `inclusion`-валідацію без
+    # `allow_nil` (виміряно: запис із `nil` не валідний). Тобто фолбек `|| "Polygon"`
+    # — ГАРД проти `nil.capitalize`, а не поведінка, яку колись побачить користувач.
+    # Приклад лишено саме як пін гарда; знімати гілку не можна — вона ловить падіння.
+    context "without blockchain_network (недосяжний вхід — пін ГАРДА)" do
+      let(:tx) { OpenStruct.new(amount: BigDecimal("10"), blockchain_network: nil) }
 
       it "defaults to Polygon" do
         result = described_class.minting_description(tx)
         expect(result).to include("Polygon")
-        expect(result).to include("Minted 10 tokens")
+        expect(result).to include("Minted 10.0 tokens")
       end
     end
   end
