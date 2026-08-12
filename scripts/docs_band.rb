@@ -36,9 +36,11 @@
 #      таким був інцидент 2026-08-09. Тому смуга ВИМАГАЄ, щоб робоче дерево не
 #      мало untracked-файлів у in-scope теках, і червоніє, якщо має: інакше вона
 #      друкує зелене на дереві, яке покладе CI.
-#   3. `bin/rspec`-крок перезаписує локальний `coverage/` ≈0%-звітом (SimpleCov
-#      стартує безумовно; `COVERAGE=0` лише знімає поріг). Артефакт gitignored,
-#      але якщо тобі потрібен свіжий звіт покриття — зроби його ПІСЛЯ смуги.
+#   3. ✅ **[TEST.15] Знято 2026-08-13:** `bin/rspec`-крок БІЛЬШЕ не чіпає
+#      локальний `coverage/` — `COVERAGE=0` тепер вимикає сам ЗАПИС (SimpleCov
+#      не стартує), а не лише поріг. Доти ця стеля стояла тут як данність, і
+#      разом із двома іншими домами того ж речення описувала дефект замість
+#      лікувати його. Смуга сама це й стереже — див. перевірку відбитка нижче.
 #   4. Смуга виконує довільні `run:`-рядки з `docs.yml`. На своїй гілці це те
 #      саме, що набрати їх руками; на ЧУЖІЙ — ні. Не ганяй її на неперевіреному
 #      діфі workflow.
@@ -125,6 +127,19 @@ unless untracked.empty?
   exit 1 unless list_only
 end
 
+# [TEST.15] НОСІЙ правила «смуга не торкається спільного звіту покриття».
+# Правило мало ТРИ доми (шапка цього файлу · `rails_helper` · `04_06 §B.3`) і
+# жодного інструмента: `COVERAGE=0` вимикав ГЕЙТ, а не ЗАПИС, тож rspec-крок
+# смуги писав у той самий `coverage/.resultset.json`, що й повна сюїта. Симптом
+# колізії (`0 failures` + `EXIT=2` + усі групи по 0.0 %) читається як «я зламав
+# покриття», тому крав сесію чотири рази. Корінь знято в `spec/spec_helper.rb`
+# (SimpleCov не стартує при `COVERAGE=0`); ця перевірка стереже, щоб він не
+# повернувся мовчки — регресія тут не має ВЛАСНОГО симптому, вона лише робить
+# НАСТУПНИЙ прогін сюїти хибно-червоним.
+RESULTSET = File.join(__dir__, "..", "coverage", ".resultset.json")
+coverage_fingerprint = -> { File.exist?(RESULTSET) ? [ File.size(RESULTSET), File.mtime(RESULTSET) ] : nil }
+coverage_before = coverage_fingerprint.call
+
 results = []
 steps.each_with_index do |s, i|
   cmd = s["run"].strip
@@ -151,6 +166,17 @@ steps.each_with_index do |s, i|
 end
 
 exit 0 if list_only
+
+# [TEST.15] Звіт покриття мусить бути НЕЗАЙМАНИЙ після смуги.
+coverage_after = coverage_fingerprint.call
+if coverage_before && coverage_after != coverage_before
+  warn "\n::error::docs_band: rspec-крок смуги ПЕРЕЗАПИСАВ `coverage/.resultset.json`"
+  warn "  Це регресія TEST.15: `COVERAGE=0` мусить вимикати ЗАПИС, не лише поріг."
+  warn "  Наслідок не тут, а в НАСТУПНОМУ прогоні повної сюїти — вона впаде з"
+  warn "  `0 failures` + EXIT=2 і всіма групами по 0.0 %, і це читається як зламане"
+  warn "  покриття, а не як колізія. Дім ліку — `spec/spec_helper.rb` (SimpleCov.start)."
+  exit 1
+end
 
 failed  = results.select { |r| r[0] == :fail }
 not_run = results.select { |r| r[0] == :not_run }

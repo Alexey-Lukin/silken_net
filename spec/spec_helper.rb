@@ -2,6 +2,26 @@
 # SimpleCov — аналіз покриття тестами.
 # Має бути на самому початку, до завантаження будь-якого коду додатка.
 require "simplecov"
+
+# 🔴 [TEST.15] `COVERAGE=0` вимикає ЗАПИС, а не лише поріг — і це виправлення
+# розбіжності, яку три доми документували як данність («COVERAGE=0 вимикає ГЕЙТ,
+# не запис» — `rails_helper` · `docs_band.rb` §3 · `04_06 §B.3`).
+#
+# Доти SimpleCov стартував безумовно, тож pure-unit прогін (смуга Docs ганяє
+# `COVERAGE=0 bin/rspec spec/lib/docs_*`) писав у СПІЛЬНИЙ `coverage/.resultset.json`
+# поряд із повною сюїтою. Симптом колізії читається не як колізія, а як «я зламав
+# покриття»: `0 failures` разом із `EXIT=2` і ВСІ групи по 0.0 % — тому він крав
+# сесію чотири рази. Діагностична ознака була однозначна (реальний провал підлоги
+# зсуває ОДНУ групу на десяті, а не всі одразу в нуль), але її треба було знати.
+#
+# ⚖️ Чому саме «не стартувати», а не власний `coverage_dir`: `COVERAGE=0` уже
+# означає «покриття цього прогону не потрібне», тож ізольована тека була б
+# артефактом, якого ніхто не читає. Це заразом лікує ДРУГИЙ бік того ж класу —
+# субсет-прогін більше не перезаписує локальний `coverage/coverage.json` ≈0%-звітом.
+# ⚠️ `FEATURE_TEST` навмисно НЕ сюди: там поріг знято, але звіт лишається потрібним
+# (окремий CI-job зі своїм скоупом).
+COLLECT_COVERAGE = ENV["COVERAGE"] != "0"
+
 SimpleCov.start "rails" do
   enable_coverage :branch
 
@@ -85,7 +105,7 @@ SimpleCov.start "rails" do
       minimum_per_group 98.0, only: "Views"
     end
   end
-end
+end if COLLECT_COVERAGE
 
 # See https://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 RSpec.configure do |config|
