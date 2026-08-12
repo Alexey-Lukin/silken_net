@@ -59,35 +59,75 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       expect(response.parsed_body["pagy"]).to include("page", "count", "pages")
     end
 
+    # 🔴 Доти пін був `types.uniq == ["inspection"]` — і тримався БЕЗ фільтра:
+    # єдиний свій запис і був інспекцією, а `other_record` (cleaning) прибирав
+    # тенант-скоуп. Форма твердження тут ні до чого — доводить лише склад
+    # фікстури, тож у неї додано СВІЙ запис, що мусить відпасти.
     it "filters by action_type" do
+      own_cleaning = MaintenanceRecord.create!(
+        maintainable: own_tree, user: forester, action_type: :cleaning,
+        performed_at: 90.minutes.ago, notes: "Cleaned the enclosure and sensor window."
+      )
+
       get "/maintenance_records", params: { action_type: "inspection" },
                                          headers: headers, as: :json
+
       expect(response).to have_http_status(:ok)
-      types = response.parsed_body["data"].map { |r| r["action_type"] }.uniq
-      expect(types).to eq([ "inspection" ])
+      ids = response.parsed_body["data"].map { |r| r["id"] }
+      expect(ids).to include(own_record.id)
+      expect(ids).not_to include(own_cleaning.id)
     end
 
     it "filters by hardware_verified" do
       own_record.update!(hardware_verified: true)
+      unverified = MaintenanceRecord.create!(
+        maintainable: own_tree, user: forester, action_type: :inspection,
+        performed_at: 30.minutes.ago, notes: "Inspection still awaiting hardware verification."
+      )
+
       get "/maintenance_records", params: { verified: "1" },
                                          headers: headers, as: :json
+
       expect(response).to have_http_status(:ok)
       ids = response.parsed_body["data"].map { |r| r["id"] }
       expect(ids).to include(own_record.id)
+      expect(ids).not_to include(unverified.id)
     end
 
+    # Пара «лишається ⊥ відпадає», і обидва записи СВОЇ: `other_record` живе в
+    # чужій організації, тож його прибирає тенант-скоуп, а не фільтр — ним
+    # фільтр не доведеш (`04_06 §B.2` BP 21).
     it "filters by maintainable_type and maintainable_id" do
+      sibling_tree = create(:tree, cluster: own_cluster)
+      sibling_record = MaintenanceRecord.create!(
+        maintainable: sibling_tree, user: forester, action_type: :inspection,
+        performed_at: 1.hour.ago, notes: "Inspection of the neighbouring node completed."
+      )
+
       get "/maintenance_records",
           params: { maintainable_type: "Tree", maintainable_id: own_tree.id },
           headers: headers, as: :json
+
       expect(response).to have_http_status(:ok)
+      ids = response.parsed_body["data"].map { |r| r["id"] }
+      expect(ids).to include(own_record.id)
+      expect(ids).not_to include(sibling_record.id)
     end
 
     it "filters by date range (from/to)" do
+      stale_record = MaintenanceRecord.create!(
+        maintainable: own_tree, user: forester, action_type: :inspection,
+        performed_at: 10.days.ago, notes: "Older inspection well outside the window."
+      )
+
       get "/maintenance_records",
           params: { from: 2.days.ago.iso8601, to: Time.current.iso8601 },
           headers: headers, as: :json
+
       expect(response).to have_http_status(:ok)
+      ids = response.parsed_body["data"].map { |r| r["id"] }
+      expect(ids).to include(own_record.id)
+      expect(ids).not_to include(stale_record.id)
     end
 
     # =========================================================================

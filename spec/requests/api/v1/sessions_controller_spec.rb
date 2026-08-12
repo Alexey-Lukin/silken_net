@@ -85,12 +85,16 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
+    # Назва обіцяє ЗНИЩЕННЯ рядка, а не код відповіді: `:ok` переживає й
+    # повністю знятий `current_session&.destroy`.
     it "destroys the current session record when session exists" do
-      # First login to create a session
       post "/login", params: { email: user.email_address, password: "password12345" }, as: :json
       token = response.parsed_body["token"]
 
-      delete "/logout", headers: { "Authorization" => "Bearer #{token}" }, as: :json
+      expect do
+        delete "/logout", headers: { "Authorization" => "Bearer #{token}" }, as: :json
+      end.to change { user.sessions.count }.by(-1)
+
       expect(response).to have_http_status(:ok)
     end
 
@@ -110,14 +114,23 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       json_headers.merge("Authorization" => "Bearer #{user.generate_token_for(:api_access)}")
     end
 
+    # 🔴 Обидва приклади доти ходили через HTTP і читали статус — а `signed_in?`
+    # на тому шляху не викликається ЖОДНОГО разу: рішення про 401 ухвалює
+    # `authenticate_user!`, який від цього хелпера не залежить. Тобто повністю
+    # інвертований `signed_in?` лишав би блок зеленим. Форму взято в чесного
+    # сусіда нижче (`#current_session` з nil-юзером) — прямий виклик.
     it "returns true when user is authenticated" do
-      get "/trees", headers: auth_headers
-      expect(response).not_to have_http_status(:unauthorized)
+      controller = described_class.new
+      allow(controller).to receive(:current_user).and_return(user)
+
+      expect(controller.send(:signed_in?)).to be(true)
     end
 
     it "returns false when user is not authenticated" do
-      get "/organizations", headers: json_headers
-      expect(response).to have_http_status(:unauthorized)
+      controller = described_class.new
+      allow(controller).to receive(:current_user).and_return(nil)
+
+      expect(controller.send(:signed_in?)).to be(false)
     end
   end
 
@@ -129,14 +142,20 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       expect(result).to be_nil
     end
 
+    # 🔴 Тіло цього приклада було ПОБАЙТОВО таким самим, як у «destroys the
+    # current session record» вище — одне слабке тіло під двома різними
+    # обіцянками, і жодна не перевірялась. Тут предметом є САМЕ ПОРЯДОК, тож
+    # сесій мусить бути дві: на одній `order(created_at: :desc)` не відрізнити
+    # від `:asc` і від відсутності сортування взагалі.
     it "returns the most recent session when current_user exists" do
-      # Login to create a session, then logout to exercise current_session lookup
-      post "/login", params: { email: user.email_address, password: "password12345" }, as: :json
-      token = response.parsed_body["token"]
+      older  = user.sessions.create!(user_agent: "old", ip_address: "10.0.0.1", created_at: 2.days.ago)
+      newest = user.sessions.create!(user_agent: "new", ip_address: "10.0.0.2", created_at: 1.minute.ago)
 
-      # The destroy action calls current_session internally, exercising lines 80-82
-      delete "/logout", headers: { "Authorization" => "Bearer #{token}" }, as: :json
-      expect(response).to have_http_status(:ok)
+      controller = described_class.new
+      allow(controller).to receive(:current_user).and_return(user)
+
+      expect(controller.send(:current_session)).to eq(newest)
+      expect(controller.send(:current_session)).not_to eq(older)
     end
   end
 

@@ -87,10 +87,22 @@ RSpec.describe "Api::V1::Codex::Nodes", type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
-    it "hides drafts from non-super-admin users" do
+    # Назва обіцяє РІЗНИЦЮ між акторами, тож потрібні обидва: сам по собі 404
+    # доводить лише гілку `else` у `Codex::NodePolicy::Scope`, а гілку
+    # `super_admin? → scope.all` не виконував у цьому дереві жоден приклад —
+    # тобто «сховано від НЕ-super_admin» стверджувало половину власної назви.
+    it "hides drafts from non-super-admin users but shows them to super_admin" do
       draft = create(:codex_node, slug: "draft-node", published_at: nil)
+
       get "/codex/nodes/#{draft.slug}", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
+
+      overseer = create(:user, :super_admin, organization: org)
+      get "/codex/nodes/#{draft.slug}",
+          headers: { "Authorization" => "Bearer #{overseer.generate_token_for(:api_access)}" }, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["slug"]).to eq("draft-node")
     end
 
     it "renders the Show dashboard as HTML with comments + attunement state" do

@@ -89,11 +89,18 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
       expect(body["timestamps"].length).to eq(2)
     end
 
+    # Вікно доводиться парою «в межах ⊥ поза межами». Свідомо НЕ спираюсь на
+    # запис `1.day.ago` із `before` — він рівно на межі, тож належність
+    # вирішували б мікросекунди між побудовою фікстури й запитом.
     it "supports days parameter" do
+      create(:telemetry_log, tree: own_tree, z_value: 0.10, temperature_c: 18.0, created_at: 5.days.ago)
+
       get "/trees/#{own_tree.id}/telemetry",
-          params: { tree_id: own_tree.id, days: 1 },
+          params: { tree_id: own_tree.id, days: 3 },
           headers: headers, as: :json
+
       expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["timestamps"].length).to eq(2)
     end
 
     it "returns 404 for a tree from another organization" do
@@ -112,13 +119,20 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
     # DAYS CAP: `params[:days]` was unbounded. Clamp into [1, 365] so that
     # bogus or absurd values gracefully degrade to a manageable window.
     # =========================================================================
+    # 🔴 Тут стояв лише `:ok` під коментарем «Range coercion is internal» —
+    # тобто проза оголошувала дефект контрактом: без запису ПОЗА 365 днями
+    # «затиснуто до 365» не відрізнити від «затискача немає» (`99999.days.ago`
+    # повертає рівно ті самі рядки). Пара «в межах ⊥ поза стелею» це розрізняє.
     it "clamps `days` parameter to MAX_HISTORY_DAYS (365)" do
+      create(:telemetry_log, tree: own_tree, z_value: 0.20, temperature_c: 20.0, created_at: 100.days.ago)
+      create(:telemetry_log, tree: own_tree, z_value: 0.15, temperature_c: 19.0, created_at: 400.days.ago)
+
       get "/trees/#{own_tree.id}/telemetry",
           params: { days: 99_999 }, headers: headers, as: :json
 
       expect(response).to have_http_status(:ok)
-      # Range coercion is internal; the surfaced contract is that the request
-      # returns successfully without OOMing the Ruby process.
+      # Два з `before` + стоденний; чотирьохсотденний мусить лишитись за стелею.
+      expect(response.parsed_body["timestamps"].length).to eq(3)
     end
 
     it "treats non-numeric `days` as the default (7) instead of 0" do

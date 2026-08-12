@@ -104,9 +104,15 @@ RSpec.describe Api::V1::AlertsController, type: :request do
   end
 
   describe "PATCH /alerts/:id/resolve" do
+    # Назва обіцяє ПОБІЧНИЙ ЕФЕКТ, а не доступ, тож пін іде на сам запис: `:ok`
+    # переживає й повністю знятий `resolve!`.
     it "resolves an alert belonging to the user's organization" do
+      expect(own_alert.status).not_to eq("resolved")
+
       patch resolve_alert_path(own_alert), headers: headers, as: :json
+
       expect(response).to have_http_status(:ok)
+      expect(own_alert.reload.status).to eq("resolved")
     end
 
     it "returns 404 for an alert from another organization" do
