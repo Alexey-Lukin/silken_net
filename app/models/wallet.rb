@@ -33,7 +33,26 @@ class Wallet < ApplicationRecord
   validates :lineage_cursor_log_id, numericality: { only_integer: true }, allow_nil: true
 
   # SCC = Silken Carbon Coin — public-facing alias for the internal balance column.
+  # ⚠️ [ARCH.88] Ім'я БРЕШЕ: колонка тримає growth_points, тож аліас — ренейм, не
+  # конверсія. Лишений як депрекований для вже-наявних Bearer/mobile-клієнтів
+  # (публікується таблицею полів `04_03`); на шляху показу й на доказовому шляху
+  # більше не вживається — там читається `balance` напряму.
   alias_attribute :scc_balance, :balance
+
+  # [ARCH.87] One-Home резолву «чий це гаманець»: денормалізована колонка АБО
+  # похідний ланцюг `tree → cluster → organization`. Обидві гілки звіряються з
+  # ОДНІЄЮ організацією, тож периметр не ширшає; однозначність `OR` тримає
+  # структурний інваріант «колонка не розходиться з ланцюгом» (носій —
+  # `spec/quality/wallet_org_denormalization_spec.rb`).
+  #
+  # Дім свідомо ОДИН: `WalletPolicy::Scope` і org-скоуп транзакцій
+  # (`BlockchainTransaction.for_organization`) беруть його звідси — дві копії
+  # предиката розійшлися б тихо, і список гаманців почав би відповідати на
+  # питання «чий це гаманець» інакше, ніж грошовий агрегат.
+  scope :for_organization, lambda { |org_id|
+    left_joins(tree: :cluster)
+      .where("wallets.organization_id = :org OR clusters.organization_id = :org", org: org_id)
+  }
 
   # Стандартний формат Ethereum/Polygon адреси для On-Chain операцій
   validates_eth_address :crypto_public_address, allow_blank: true

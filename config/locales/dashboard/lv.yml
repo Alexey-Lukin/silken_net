@@ -21,6 +21,8 @@ lv:
         growth_treasury: Izaugsmes punktu kase
         growth_treasury_sub: GP
         ionic_potential: Joniskais potenciāls
+        minted_scc: Kalts SCC
+        minted_scc_sub: SCC
     index_title: Citadeles pavēlniecība // Globālais pārskats
     map:
       heading: Ģeotelpiskā matrica

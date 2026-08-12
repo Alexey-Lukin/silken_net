@@ -27,8 +27,18 @@ module Api
               active: active_trees,
               health_avg: health_avg
             },
+            # [ARCH.88] ДВІ різні величини, і плутати їх не можна: `growth_points` —
+            # офчейн-бали, що ростуть від телеметрії; `minted_scc` — чинний monetary
+            # supply організації (Σmints − Σburns) через One-Home `net_minted_supply`.
+            # Ключ `total_scc` збережено як ДЕПРЕКОВАНИЙ аліас: він публікується назовні
+            # і вже читається клієнтами, тож тихий ренейм тут заборонений так само, як у
+            # `WalletBlueprint`. Один агрегат на 2-хвилинне вікно кешу — та сама ціна,
+            # що в сусідніх лічильників цього ж блоку.
             economy: {
-              total_scc: org.wallets.sum(:balance).to_f.round(4)
+              growth_points: org.wallets.sum(:balance).to_f.round(4),
+              total_scc: org.wallets.sum(:balance).to_f.round(4),
+              minted_scc: BlockchainTransaction.for_organization(org.id)
+                                               .net_minted_supply(:carbon_coin).to_f.round(4)
             },
             security: {
               active_alerts: org.ews_alerts.unresolved.count

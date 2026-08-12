@@ -12,11 +12,17 @@ RSpec.describe Dashboard::Home do
   # `health_avg` там = `org.clusters.average(:health_index).to_f.round(2)`, тобто
   # шкала 0..1. Доти фікстура підставляла `92` — ключ правильний, ШКАЛА вигадана,
   # і саме тому «0%» на живій головній сторінці лишалось невидимим ([UI.7]).
+  # 🔴 [ARCH.88 фаза 2] Набір ключів мусить дзеркалити КОНТРОЛЕР, не компонент:
+  # доти фікстура несла лише `total_scc`, тож нова картка «SCC Minted»
+  # рендерилась ПОРОЖНЬОЮ, а сюїта лишалась зеленою (04_06 §B.2 BP #14,
+  # дванадцята вісь — фікстура ховає не хибне значення, а ВІДСУТНЮ поверхню).
+  # Дві грошові величини свідомо РІЗНІ: збіг чисел зробив би пін сліпим до того,
+  # яка з них у якій картці.
   def mock_stats(health_avg: 0.92, active_trees: 38, total_trees: 40,
-                 total_scc: "1250 SCC", avg_voltage: 3800)
+                 total_scc: 1250.0, minted_scc: 7.25, avg_voltage: 3800)
     {
       trees: { health_avg: health_avg, active: active_trees, total: total_trees },
-      economy: { total_scc: total_scc },
+      economy: { growth_points: total_scc, total_scc: total_scc, minted_scc: minted_scc },
       energy: { avg_voltage: avg_voltage }
     }
   end
@@ -83,13 +89,28 @@ RSpec.describe Dashboard::Home do
   describe "economy stat" do
     # [ARCH.88] Величина = sum(:balance), тобто БАЛИ росту. Ім'я прикладу тут
     # само було твердженням — і брехливим, тож правиться разом з ассертом.
+    # [ARCH.88 фаза 2] Дві картки, дві ОДИНИЦІ. Розбіжність підписів тут свідома:
+    # їх злиття в одну величину й було дефектом, тож пін стереже саме роздільність.
+    it "renders growth points and minted SCC as SEPARATE quantities" do
+      expect(html).to include("Growth Treasury")
+      expect(html).to include("SCC Minted")
+      expect(html).to include("1250.0")
+      expect(html).to include("7.25")
+    end
+
     it "renders the Growth Treasury stat card, not a coin treasury" do
       expect(html).to include("Growth Treasury")
       expect(html).not_to include("Carbon Treasury")
     end
 
-    it "renders total_scc value" do
-      expect(html).to include("1250 SCC")
+    # 🔴 [ARCH.88] Доти пін чекав `"1250 SCC"` — і це був ВАКУУМ подвійно: фікстура
+    # запікала одиницю у ЗНАЧЕННЯ (контролер шле голий Float), а `StatCard` рендерить
+    # `value` і `sub` РІЗНИМИ вузлами, тож такий рядок не міг зʼявитись у розмітці за
+    # жодної поведінки. Пін знаходив те, що фікстура сама й вигадала (04_06 §B.2 BP #14,
+    # шоста вісь). Тепер пінимо число, яке справді друкується.
+    it "renders the growth-point value the controller actually passes" do
+      expect(html).to include("1250.0")
+      expect(html).not_to include("1250 SCC")
     end
   end
 

@@ -188,6 +188,20 @@ class BlockchainTransaction < ApplicationRecord
     self.class.token_type_label(token_type)
   end
 
+  # [ARCH.88 фаза 2] Приналежність транзакції організації резолвиться ДВОМА шляхами,
+  # і це не надмірність: cluster-sourced гроші (celo-винагорода, слеш останнього дерева)
+  # живуть із `wallet: nil` — та сама пара, що вже стоїть в аудит-трейлі MRV.1
+  # (`wallet&.organization_id || cluster&.organization_id`).
+  #
+  # Гаманцева половина делегує в One-Home `Wallet.for_organization` [ARCH.87] — тобто
+  # приймає й порожню денормалізовану колонку, резолвлену через ланцюг. Другої копії
+  # предиката тут свідомо НЕМА: інакше грошовий агрегат почав би відповідати на «чий це
+  # гаманець» інакше, ніж список скарбниці.
+  scope :for_organization, lambda { |org_id|
+    where(wallet_id: Wallet.for_organization(org_id).select(:id))
+      .or(where(cluster_id: Cluster.where(organization_id: org_id).select(:id)))
+  }
+
   # [G4/ARCH.97] One-Home DB-дзеркала on-chain `totalSupply()`: Σ(mints) − Σ(burns).
   #
   # Slash-інтенти теж `carbon_coin` і теж доходять до `:confirmed`

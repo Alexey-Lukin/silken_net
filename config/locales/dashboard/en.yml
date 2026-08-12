@@ -21,6 +21,8 @@ en:
         growth_treasury: Growth Treasury
         growth_treasury_sub: GP
         ionic_potential: Ionic Potential
+        minted_scc: SCC Minted
+        minted_scc_sub: SCC
     index_title: Citadel Command // Global Overview
     map:
       heading: Geospatial Matrix

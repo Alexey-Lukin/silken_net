@@ -54,8 +54,7 @@ class WalletPolicy < ApplicationPolicy
     # (HKDF-salt у кремнії), тож переїзд дерева між кластерами не існує як операція
     # (⚖️ 2026-07-30), а носій інваріанта — `spec/quality/wallet_org_denormalization_spec.rb`.
     def resolve
-      scope.left_joins(tree: :cluster)
-           .where("wallets.organization_id = :org OR clusters.organization_id = :org", org: organization_id)
+      scope.for_organization(organization_id)
     end
   end
 end

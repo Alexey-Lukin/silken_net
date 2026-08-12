@@ -437,7 +437,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | 13 | PATCH | `/account_security/identities/:id/lock` | `account_security#lock_identity` | 🔑 Auth | Заблокувати OAuth-ідентичність |
 | 14 | PATCH | `/account_security/identities/:id/unlock` | `account_security#unlock_identity` | 🔑 Auth | Розблокувати OAuth-ідентичність |
 | **🏰 Dashboard** | | | | | |
-| 15 | GET | `/dashboard` | `dashboard#index` | 🔑 Auth | Зведена статистика організації. **[ARCH.77]** Той самий `dashboard#index` віддає й корінь застосунку — `root_path` існує. |
+| 15 | GET | `/dashboard` | `dashboard#index` | 🔑 Auth | Зведена статистика організації (кеш 2 хв per-org). **[ARCH.77]** Той самий `dashboard#index` віддає й корінь застосунку — `root_path` існує. **[ARCH.88]** Блок `economy` несе ДВІ РІЗНІ величини: `growth_points` — офчейн-бали, що ростуть від телеметрії, і `minted_scc` — чинний monetary supply організації (Σmints − Σburns через One-Home `BlockchainTransaction.net_minted_supply`, скоуплений парою `wallet&.organization_id \|\| cluster&.organization_id`). ⚠️ `total_scc` лишається **депрекованим аліасом** `growth_points` — ім’я успадковане від колонкового аліаса й БРЕШЕ (колонка тримає бали); тихий ренейм заборонено, бо ключ уже читають клієнти. |
 | **👤 Користувачі та Організації** | | | | | |
 | 16 | GET | `/users/me` | `users#me` | 🔑 Auth | Профіль поточного користувача |
 | 17 | GET | `/users` | `users#index` | 👑 Admin | Список користувачів організації |

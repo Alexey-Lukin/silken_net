@@ -25,6 +25,10 @@ module Dashboard
           # монети — `sub` був зашитим літералом «SCC» і завищував її в 10 000×.
           # ⚠️ Тут ДВА незалежні носії одиниці (label і sub), і гниють вони окремо.
           render Views::Shared::UI::StatCard.new(label: t(".stats.growth_treasury"), value: @stats[:economy][:total_scc], sub: t(".stats.growth_treasury_sub"))
+          # [ARCH.88 фаза 2] Сусідня картка НАВМИСНО в іншій одиниці: бали ⊥ монети.
+          # Це не дублювання — це дві різні величини, і саме їх злиття в одну й було
+          # дефектом. Розбіжність підписів тут СВІДОМА, «уніфікувати» її не можна.
+          render Views::Shared::UI::StatCard.new(label: t(".stats.minted_scc"), value: @stats[:economy][:minted_scc], sub: t(".stats.minted_scc_sub"))
           render Views::Shared::UI::StatCard.new(
             label: t(".stats.ionic_potential"),
             value: "#{@stats[:energy][:avg_voltage]}mV",
