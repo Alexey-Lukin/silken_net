@@ -59,6 +59,9 @@ class TokenomicsEvaluatorWorker
   def eligible_wallets
     Wallet.joins(:tree)
           .where(trees: { status: :active })
-          .where("balance >= ?", self.class.emission_threshold)
+          # [ARCH.94] NET, не gross: `balance` тримає й уже сконвертоване
+          # (locked назавжди, 04_01 §6 E.66), тож фільтр по ньому вічно
+          # переобирає гаманці, які нічого змінтувати вже не можуть.
+          .where("balance - locked_balance >= ?", self.class.emission_threshold)
   end
 end

@@ -126,6 +126,35 @@ RSpec.describe "Wallet tokenomics flow end-to-end" do
       # tree2 should have no transactions (below threshold)
       expect(tree2.wallet.blockchain_transactions.count).to eq(0)
     end
+
+    # [ARCH.94] Сконвертовані бали лишаються в `locked_balance` НАЗАВЖДИ (04_01 §6 E.66),
+    # тож наступний цикл мусить сайзитись від НЕсконвертованого залишку. Доти жоден
+    # приклад не подавав у воркер гаманець із `locked_balance > 0` — саме тому
+    # розходження «сайзинг від gross-balance ⊥ гард по available_balance» не мало
+    # чим виявитись, і емісія тихо зупинялась після першого ж мінту.
+    it "keeps minting on the second cycle after the first mint is confirmed" do
+      tree = create(:tree, cluster: cluster, tree_family: tree_family)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "cc" * 20)
+
+      wallet.credit!(25_000)
+      TokenomicsEvaluatorWorker.new.perform
+      EvaluateTreeBatchWorker.drain
+
+      first_tx = wallet.blockchain_transactions.sole
+      first_tx.mark_as_sent!("0x" + "11" * 32)
+      first_tx.confirm!(1_000, 21_000)
+
+      expect(wallet.reload.locked_balance).to eq(20_000)
+
+      wallet.credit!(25_000)
+      # balance 50 000 · locked 20 000 → доступно 30 000 = рівно 3 токени
+      TokenomicsEvaluatorWorker.new.perform
+      EvaluateTreeBatchWorker.drain
+
+      expect(wallet.blockchain_transactions.count).to eq(2)
+      expect(wallet.blockchain_transactions.order(:id).last.amount).to eq(3)
+    end
   end
 
   describe "tree death triggers slashing protocol" do

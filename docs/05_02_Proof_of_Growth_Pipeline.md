@@ -730,7 +730,7 @@ total = base + bonus    # max: 10_000 + 62×100 = 16_200 lamports = 0.0162 USDC
 
 ## Усі Шляхи до `Wallet#lock_and_mint!` (Guard Inventory) [DOC.7]
 
-> **Контекст:** `Wallet#lock_and_mint!(points, threshold, token_type)` — атомарна операція з `pessimistic_lock`, що конвертує `growth_points` у SCC (курс — [`05_03`](05_03_Tokenomics_SCC_and_SFC)). У системі **п'ять окремих шляхів** її викликають, кожен зі своїм guard chain. Раніше зв'язок між цими шляхами був розкиданий між [`04_02 §4`](04_02_Business_Logic_and_Services) (oracle path) та різними воркерами (tokenomics path). Ця секція — єдина точка істини; будь-який новий шлях повинен бути доданий сюди.
+> **Контекст:** `Wallet#lock_and_mint!(points, threshold, token_type)` — атомарна операція з `pessimistic_lock`, що конвертує `growth_points` у SCC (курс — [`05_03`](05_03_Tokenomics_SCC_and_SFC)). Схема нижче перелічує **п'ять шляхів** money-тракту з їхніми guard chain'ами. ⚠️ **Але «викликають» тут завищення, і це виміряно `grep` по `app/`+`lib/` ([ARCH.94], 2026-08-12): сам метод має РІВНО ОДНОГО викликача — `EvaluateTreeBatchWorker` (PATH 2).** PATH 1 латентний за побудовою (oracle-callback не дротований — [ARCH.53]), PATH 3 звільняє резерв, а не конвертує, PATH 4 свідомо не торкається `balance`/`locked_balance` (нижче), тож перелік описує **периметр guard'ів money-тракту**, а не множину call-site'ів. Читай його так — інакше висновок «шляхів багато, отже інваріант перевіряється в багатьох місцях» хибний: інваріант конверсії сьогодні тримає одна функція й один її викликач. Раніше зв'язок між цими шляхами був розкиданий між [`04_02 §4`](04_02_Business_Logic_and_Services) (oracle path) та різними воркерами (tokenomics path). Ця секція — єдина точка істини; будь-який новий шлях повинен бути доданий сюди.
 
 ```
                                 ┌─────────────────────────────────────┐
@@ -738,8 +738,8 @@ total = base + bonus    # max: 10_000 + 62×100 = 16_200 lamports = 0.0162 USDC
                                 │                       threshold,    │
                                 │                       token_type)   │
                                 │  • pessimistic_lock                 │
-                                │  • atomic: balance -= points,       │
-                                │            locked += points,        │
+                                │  • atomic: locked += points         │
+                                │    (RESERVE — balance untouched)    │
                                 │            queue MintCarbonCoinJob  │
                                 └──────────────┬──────────────────────┘
                                                ▲
@@ -754,7 +754,7 @@ total = base + bonus    # max: 10_000 + 62×100 = 16_200 lamports = 0.0162 USDC
    (web3_critical #6)            (default #5)                         (critical #3)
         │                                      │                                      │
    GUARDS:                       GUARDS:                              GUARDS:
-   ✓ verified_by_iotex?          ✓ wallet.balance >= threshold        ✓ original burn TX confirmed
+   ✓ verified_by_iotex?          ✓ available_balance >= threshold     ✓ original burn TX confirmed
    ✓ oracle_status_fulfilled?    ✓ kyc_status == "approved"           ✓ rollback authorized by admin
    ✓ hadron_kyc_status==approved ✓ NOT in cooldown window              ✓ idempotency by tx_hash
    ✓ chainlink_request_id match  ✗ (does NOT need oracle)              ✗ (bypasses oracle)

@@ -28,7 +28,11 @@ class EvaluateTreeBatchWorker
       stats[:processed] += 1
 
       begin
-        tokens_to_mint = (wallet.balance / threshold).to_i
+        # [ARCH.94] Сайзинг мусить читати ТУ САМУ величину, що й гард
+        # `lock_and_mint!` — тобто НЕсконвертований залишок. `balance` тут gross:
+        # сконвертовані бали лишаються в `locked_balance` назавжди (04_01 §6 E.66),
+        # тож сайзинг від нього просить більше, ніж доступно, з другого ж циклу.
+        tokens_to_mint = (wallet.available_balance / threshold).to_i
         next if tokens_to_mint.zero?
 
         points_to_lock = tokens_to_mint * threshold

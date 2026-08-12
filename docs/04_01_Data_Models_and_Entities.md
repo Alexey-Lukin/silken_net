@@ -981,14 +981,16 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | Метод | Опис |
 |-------|------|
 | `available_balance` | `balance - locked_balance` |
-| `lock_funds!(amount)` | Переміщує з `balance` до `locked_balance` |
-| `release_locked_funds!(amount)` | Повертає до `balance` |
+| `lock_funds!(amount)` | **Резервує** `amount` у `locked_balance`; `balance` НЕ змінюється (reserve-, не move-семантика — див. нижче) |
+| `release_locked_funds!(amount)` | Знімає резерв із `locked_balance`; `balance` НЕ змінюється. Кличеться лише на ПРОВАЛЬНОМУ шляху (`fail`-подія tx + rollback-сервіс) — успішний мінт резерв не звільняє [E.66] |
 | `credit!(points)` | Зараховує з урахуванням `carbon_sequestration_coefficient` породи |
 | `lock_and_mint!(points_to_lock, threshold, token_type)` | Повний цикл емісії SCC (курс — [`05_03`](05_03_Tokenomics_SCC_and_SFC)) |
 | `kyc_approved_for_minting?` | [KYC.1] Гейт мінтингу = статус БЕНЕФІЦІАРА адреси: власна адреса → власний статус; custodial (без власної) → успадковує `organizations.hadron_kyc_status` (гейт — [`05_02` — Крок E](05_02_Proof_of_Growth_Pipeline)) |
 | `broadcast_balance_update` | Turbo Stream оновлення UI |
 | `guard_mrv_evidence!` | **[MRV.1]** `before_destroy` (prepend) destroy-guard MRV-доказів: гаманець із settled/in-flight `blockchain_transactions` → abort (грошові докази незнищенні); чисто-pending видаляється. **[E.60]** + tx з `archive_batch_id` (будь-який статус, включно pending/failed) → abort: стемпнутий tx = член архів-батчу, видалення стерло б вікна → хибний `mismatch` у pin-воркера. **Межа (fable №2, звужена E.60):** лише failed-tx БЕЗ архів-членства не блокують destroy |
 
+> 🔴 **Семантика трьох величин — RESERVE, не MOVE (дім визначення; [ARCH.94] 2026-08-12).** `balance` — **gross**-лічильник: усе, що дерево заробило за життя; він НЕ спадає при мінті. `lock_and_mint!` лише інкрементить `locked_balance`, тобто позначає бали як сконвертовані, а `available_balance = balance − locked_balance` — те, що ще можна сконвертувати. **Move-семантика («`balance -= points`») тут структурно НЕМОЖЛИВА:** DB-констрейнт `wallets_balance_invariants` вимагає `locked_balance <= balance`, тож списання `balance` при зростанні `locked` падає `PG::CheckViolation`. ⚠️ **Практичний наслідок, куплений живим дефектом:** будь-який споживач, що вирішує «скільки можна змінтувати», мусить читати **`available_balance`**, ніколи `balance` — інакше з другого циклу він просить більше, ніж доступно. Так упав `EvaluateTreeBatchWorker` (сайзинг від gross) разом із селектором `TokenomicsEvaluatorWorker`, і так само раніше падав ESG-retire, виправлений під [ARCH.56].
+>
 > **[E.66] Toucan-prune:** `lock_for_toucan_bridge!` / `finalize_spend!` / `toucan_bridged_balance` видалено (flow DEAD, 0 enqueue-callerів; failure-path мав money-integrity діру — несиметричний rollback). Escrow-примітив воскресає з git при E.20-go (locked у mint-flow = «сконвертовано назавжди» by design — finalize не потрібен).
 
 ---

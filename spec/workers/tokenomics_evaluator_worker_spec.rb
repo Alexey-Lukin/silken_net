@@ -80,6 +80,20 @@ RSpec.describe TokenomicsEvaluatorWorker, type: :worker do
       end
     end
 
+    # [ARCH.94] Gross-баланс іще над порогом, але все вже сконвертовано (locked
+    # лишається назавжди — 04_01 §6 E.66), тож мінтувати такому гаманцю нічого.
+    # Селектор по `balance` тягнув би його в кожен цикл довіку.
+    context "with fully converted wallets" do
+      it "skips a wallet whose balance is entirely locked" do
+        tree = create(:tree, status: :active)
+        create(:wallet, tree: tree, balance: 50_000, locked_balance: 50_000)
+
+        described_class.new.perform
+
+        expect(EvaluateTreeBatchWorker.jobs).to be_empty
+      end
+    end
+
     it "handles empty eligible wallets gracefully" do
       expect { described_class.new.perform }.not_to raise_error
       expect(EvaluateTreeBatchWorker.jobs).to be_empty
