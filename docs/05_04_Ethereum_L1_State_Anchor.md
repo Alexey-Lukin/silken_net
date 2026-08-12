@@ -168,10 +168,12 @@ state_root = SHA256("#{total_growth_points}|#{total_sfc}|#{active_tree_count}|#{
 |------|---------|-----|---------|
 | `total_growth_points` | `Wallet.sum(:balance)` | Decimal — **офчейн-леджер балів росту**, НЕ монети. Єдине його криптографічне засвідчення: `Wallet` не має `Auditable`, а `credit!` — голий `increment!` без сліду, тож саме тут воно й потрібне | `"1250000.5"` |
 | `total_scc_supply` | `BlockchainTransaction.net_minted_supply(:carbon_coin)` | Decimal — **чинний** monetary supply (Σmints − Σburns), дзеркало on-chain `totalSupply()`. Ім'я каже «supply», а не «minted»: величина не кумулятивна, slash її зменшує | `"48.0"` |
-| `total_sfc` | `BlockchainTransaction.where(token_type: :forest_coin, status: :confirmed).sum(:amount)` | Decimal (сума підтверджених SFC мінтингів) | `"500.0"` |
+| `total_sfc` | `BlockchainTransaction.where(token_type: :forest_coin, status: :confirmed).sum(:amount)` | Decimal (сума підтверджених SFC мінтингів) — **сира кумулятивна Σ**, свідомо не `net_minted_supply`: бекенд SFC не палить. ⚠️ Але `SilkenForestCoin.sol` має `slash()`/`slashUpTo()`, тож перший DAO-слеш розведе це поле з on-chain `totalSupply()` | `"500.0"` |
 | `active_tree_count` | `Tree.active.count` | Integer (кількість активних дерев у екосистемі) | `"4250"` |
 | `chain_hash` | `AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash)` | String або `"GENESIS"` якщо AuditLog порожній | `"a3f8c2..."` |
 | `anchored_at` | `Time.current.utc` | UTC DateTime (зберігається в `EthereumAnchor.anchored_at`) | `2026-03-23T03:00:01Z` |
+
+> 🔴 **[ARCH.97] Інваріант ШКАЛИ: кожна decimal-колонка якоря = `numeric(30,6)`, бо шкала її ДЖЕРЕЛА = 6.** `wallets.balance` і `blockchain_transactions.amount` — обидва `numeric(24,6)`. `generate_state_root` хешує **необроблене** значення в `leaf0`, а `verify_state_root` перераховує payload зі **збереженої** колонки — тож колонка, вужча за джерело, робить чесний якір таким, що не сходиться САМ ІЗ СОБОЮ, і «зовнішній аудитор відтворить хеш» стає хибним арифметично, а не концептуально. Виміряно SQL: `SELECT 3.000003::numeric(30,4)` → `3.0000`. ⚠️ **І знай, як цей дефект вижив пів дня ПІСЛЯ власного фіксу:** шкалу звели на двох полях із трьох, а `total_sfc` лишився `(30,4)` — захищений не інваріантом, а **збігом** (mint пише ціле `tokens_to_mint`). Збіг не тримає: SFC приходить у транзакції ще й страховим трактом (`InsurancePayoutWorker` → `payout_amount`, голий `numeric`, рахується як `damage_ratio × insured_value`). Регресійний носій — `spec/models/ethereum_anchor_spec.rb`, і він мусить подавати КОЖНОМУ decimal-полю власне 6-значне значення: на нулі розходження шкал не виразиме за побудовою.
 
 ### Покроковий алгоритм (Ruby)
 

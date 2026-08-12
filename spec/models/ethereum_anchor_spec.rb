@@ -148,28 +148,38 @@ RSpec.describe EthereumAnchor, type: :model do
     # колонки — тож при 6-знаковому джерелі якір не сходився САМ ІЗ СОБОЮ, і
     # «зовнішній аудитор відтворить хеш» було хибним арифметично, а не концептуально.
     # Виміряно до фіксу: 1000.123456 → 1000.1235 → verify_state_root == false.
-    # Приклад падає, щойно шкалу колонки опустять нижче за шкалу джерела.
-    it "round-trips evidence values at SOURCE precision (6dp) so verify stays true" do
+    # Приклад падає, щойно шкалу БУДЬ-ЯКОЇ доказової колонки опустять нижче за джерело.
+    #
+    # 🔴 Перша редакція цього піна подавала `total_sfc: 0` — і саме тому не побачила,
+    # що третє поле лишилось на `numeric(30,4)` ще пів дня після «фіксу»: на нулі
+    # розходження шкал НЕ ВИРАЗИМЕ за жодної шкали. Тож кожне decimal-поле payload'а
+    # мусить нести тут ВЛАСНЕ 6-значне значення, інакше приклад доводить менше, ніж
+    # твердить його ім'я (`04_06 §B.2` BP #14 — фікстура ховає поверхню, не значення).
+    # SFC-шлях досяжний: `InsurancePayoutWorker` пише `amount: payout_amount` із
+    # `token_type: insurance.token_type`, а `payout_amount` — голий `numeric`.
+    it "round-trips EVERY evidence value at SOURCE precision (6dp) so verify stays true" do
       freeze_time do
         now = Time.current.utc
         gp = BigDecimal("1000.123456")
         supply = BigDecimal("7.654321")
+        sfc = BigDecimal("42.135791")
         leaf0 = Digest::SHA256.hexdigest(
           described_class.aggregate_payload(
-            total_growth_points: gp, total_scc_supply: supply, total_sfc: BigDecimal("0"),
+            total_growth_points: gp, total_scc_supply: supply, total_sfc: sfc,
             active_tree_count: 0, chain_hash: "h", anchored_at: now
           )
         )
 
         record = described_class.create!(
           state_root: MerkleTree.root([ leaf0 ]), total_growth_points: gp,
-          total_scc_supply: supply, total_sfc: 0, active_tree_count: 0,
+          total_scc_supply: supply, total_sfc: sfc, active_tree_count: 0,
           chain_hash: "h", anchored_at: now, root_version: 1,
           subtree_roots: [ { "kind" => "aggregate", "root" => leaf0 } ], window_to: now
         ).reload
 
         expect(record.total_growth_points).to eq(gp)
         expect(record.total_scc_supply).to eq(supply)
+        expect(record.total_sfc).to eq(sfc)
         expect(record.verify_state_root).to be true
       end
     end

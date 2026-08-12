@@ -177,6 +177,15 @@ jobs:
         # FW.7 device↔server parity.
         run: ruby scripts/governance_key_sync.rb
 
+      - name: Anchor payload sync (ARCH.97 — aggregate_payload ⟷ 5 mirrors + DDL scale)
+        # Pure Ruby, no Rails. The L1 state-root payload's field composition is
+        # the instruction an EXTERNAL auditor follows to reproduce the hash, and
+        # it lives in five mirrors (E.53/E.54 left the NatSpec 3-field for
+        # months). Two axes, deliberately separate: composition/order parity,
+        # and the SCALE of every decimal column — a column narrower than its
+        # `numeric(24,6)` source makes an honest anchor fail its own verify.
+        run: ruby scripts/anchor_payload_sync.rb
+
       - name: Governance-bounds sync (GOV.3 — db/seeds.rb ⟷ PARAMETER_MAP)
         # Pure Ruby, no Rails — sibling of GOV.2 on the OTHER axis of the same
         # worker mirror: the bounds/value_type/category the 9 governance-synced

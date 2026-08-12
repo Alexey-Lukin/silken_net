@@ -1398,7 +1398,7 @@ CREATE TABLE public.ethereum_anchors (
     error_message character varying(500),
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    total_sfc numeric(30,4) DEFAULT 0,
+    total_sfc numeric(30,6) DEFAULT 0.0,
     active_tree_count integer DEFAULT 0,
     nonce bigint,
     window_from timestamp without time zone,
@@ -8539,6 +8539,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260812231500'),
 ('20260812175736'),
 ('20260729052758'),
 ('20260727130640'),
