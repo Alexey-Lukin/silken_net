@@ -1292,6 +1292,43 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ---
 
+### 5.14а GET `/reports/financial_summary` — Фінансовий Звіт
+
+Сусід §5.14 із **чотирма** форматами (той має три — PDF/CSV/JSON без HTML).
+
+| Accept | Формат | Блок `network_emission` |
+|---|---|---|
+| `application/json` | JSON | ✅ віддається |
+| `text/csv` | CSV (стрімінг) | ✅ друкується |
+| `application/pdf` | PDF (Prawn) | ✅ друкується |
+| `text/html` | Phlex-дашборд | ⚠️ **НЕ рендериться** — див. ноту нижче |
+
+**Success Response `200 OK` (JSON):**
+
+```json
+{
+  "report": "financial_summary",
+  "organization": "Forest Corp",
+  "generated_at": "2026-03-22T17:10:00Z",
+  "data": {
+    "total_contracted": 250000.0,
+    "active_contracts": 12,
+    "total_contracts": 15,
+    "blockchain_transactions": { "total": 480, "confirmed": 455, "pending": 20, "failed": 5 },
+    "network_emission": {
+      "total_minted_scc": 1200, "total_burned_scc": 40,
+      "total_premiums_usdc": 3500, "net_deflation": 40
+    }
+  }
+}
+```
+
+> ⚠️ **[ARCH.90] Один ендпоінт віддає РІЗНИЙ зміст у чотирьох форматах, і це задокументовано ЯК Є, доки триває ⚖️.** `@data` будується з пʼятьох ключів для всіх форматів однаково — зокрема `network_emission`, за який платять **subgraph-раундтрипом** (кеш 5 хв) на кожному запиті. JSON/CSV/PDF його віддають; HTML-компонент `Reports::FinancialSummary` блоку не має взагалі, тож екран біднішій за власний експорт, а вартість запиту та сама. **Ця секція існує саме тому, що розходження прожило непоміченим: формат, який ніде не описаний, нема з чим звірити.** Напрямок ліку (добудувати блок в HTML ⊥ припинити рахувати його для HTML, зробивши `fetch_network_emission` `format`-залежним) — відкритий ⚖️ у [`00_07`](00_07_Action_Plan_Tracker) ARCH.90; ця таблиця оновлюється ОДНИМ рядком, щойно присуд ухвалено.
+>
+> 🔴 **[ARCH.98] Множина транзакцій тут — `BlockchainTransaction.for_organization(org.id)`, а НЕ `joins(wallet: …)`.** Доти INNER JOIN викидав cluster-sourced рухи (`wallet_id IS NULL`: Celo-винагорода кластеру, слеш останнього дерева), тобто фінансовий звіт мовчки не рахував частину власних грошей організації. Дім резолюції — [`04_01 §6`](04_01_Data_Models_and_Entities).
+
+---
+
 ### 5.15 POST `/api/v1/auth/m2m_token` — M2M Автентифікація Gateway (Ed25519)
 
 **Призначення:** Gateway-пристрої отримують та оновлюють Bearer-токен без логіна/пароля через Ed25519-підпис.
