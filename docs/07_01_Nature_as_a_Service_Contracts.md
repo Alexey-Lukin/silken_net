@@ -149,7 +149,7 @@ NaaS — це модель підписки, де клієнти (Організ
 |---|---|---|
 | **Конверсія: growth_points → SCC** | 10,000 growth_points = 1 SCC | [`05_03`](05_03_Tokenomics_SCC_and_SFC), `TokenomicsEvaluatorWorker` |
 | **Денне накопичення** | **Calibration-pending** (`delta_t` recharge-каденція + GP-магнітуда = placeholder, чекають bench-кривої, [E.63](00_07_Action_Plan_Tracker)). Self-consistent realistic (Variant C, `delta_t`≈1.77 год [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)): ~13.6 пакети/добу × ~16 stored GP = **~217 growth_points/добу → ~8 SCC/дерево/рік**. Магнітуда = f(EBFC recharge): швидший `delta_t` → вище (фіз. стеля Δt=600s ≈ 326 SCC/рік; 1 TX/год = energy-negative без мітигацій). wire 5–31 × [FW.29] ×2 | [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`07_01 §17.1`](07_01_Nature_as_a_Service_Contracts), [`02_03 §9`](02_03_BQ25570_MPPT_Nano_Power) |
-| **Поріг емісії** | `Wallet.balance >= 10,000` | `TokenomicsEvaluatorWorker` |
+| **Поріг емісії** | `Wallet.available_balance >= 10,000` (NET — сконвертоване лишається в `locked_balance`, [ARCH.94]) | `TokenomicsEvaluatorWorker` |
 | **Страхова премія** | 5% від `total_funding` → DAO Treasury Pool | `NaasContract::INSURANCE_PREMIUM_RATE = BigDecimal("0.05")` |
 | **Частка форестера** | 95% від `total_funding` — обчислюється, не диспенситься ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)) | `NaasContract#forester_share_amount` |
 | **Celo ReFi нагорода** | 5 cUSD / здоровий кластер / добу | `CeloRewardWorker`, `Celo::CommunityRewardService` |

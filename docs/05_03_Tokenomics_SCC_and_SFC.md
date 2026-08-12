@@ -584,7 +584,10 @@ Telemetry → Lorenz Z-value → growth_points++
                                     ↓
                     TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
                                     ↓
-                    Wallet.balance >= 10,000? → lock_and_mint!
+                    Wallet.available_balance >= 10,000? → lock_and_mint!
+                    (NET, не gross — [ARCH.94]: сконвертоване лишається в
+                     locked_balance назавжди, тож фільтр по balance вічно
+                     переобирав гаманці, які змінтувати вже нічого не можуть)
                                     ↓
                     MintCarbonCoinWorker [queue: web3_critical]
                                     ↓
