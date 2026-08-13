@@ -57,9 +57,16 @@ module Gateways
       end
     end
 
+    # [UI.10 · TEST.12] ТРЕТІЙ сайт того самого обходу, і він пережив фікс сусідів:
+    # `Gateways::Show` і `Gateways::Index` уже читають `#online?`, а тут лишався
+    # рукописний `last_seen_at&.after?(5.minutes.ago)`. Питання «чи живий цей
+    # пристрій» має ОДИН дім — `Gateway#online?` (`config_sleep_interval_s * 1.2`),
+    # тож при типовому сні 3600 с чесне вікно ≈ 72 хв, і власний 5-хвилинний поріг
+    # малював справний флот червоним. 🔴 Ховала це саме фікстура: мок подавав
+    # `1.minute.ago` / `10.minutes.ago` — обидва лежать по РІЗНІ боки 5 хв, тож
+    # приклади проходили однаково і з дефектом, і без нього.
     def connection_led_class
-      recently_seen = @gateway.last_seen_at&.after?(5.minutes.ago)
-      tokens("bg-emerald-500 shadow-[0_0_8px_#10b981]": recently_seen, "bg-red-900 animate-pulse": !recently_seen)
+      tokens("bg-emerald-500 shadow-[0_0_8px_#10b981]": @gateway.online?, "bg-red-900 animate-pulse": !@gateway.online?)
     end
   end
 end
