@@ -390,8 +390,9 @@ webhook'и, обидва auth-шляхи, `m2m_auth`, платформені) �
 422 з HTML · 200 з фальшивим порожнім станом · 500 з JSON-блобом у браузері (§2.2).
 
 🔴 **Периметр самого контракту — тобто РЕСУРСИ, до яких він не застосовний** (виміряно
-перебором 2026-08-13, [ARCH.83](00_07_Action_Plan_Tracker); викликів `acting_organization!`
-**45 у 18 контролерах**). Власну колонку `organization_id` несуть **сім** таблиць
+перебором 2026-08-13, [ARCH.83](00_07_Action_Plan_Tracker) — усі виклики
+`acting_organization!` у дереві; ⚠️ живий лічильник бери грепом, не звідси: присуд того ж
+дня перевів дві поверхні на не-bang форму). Власну колонку `organization_id` несуть **сім** таблиць
 (`actuator_commands` · `audit_logs` · `clusters` · `naas_contracts` · `parametric_insurances`
 · `users` · `wallets`); тенанта **не мають за побудовою** — `bio_contract_firmwares` ·
 `codex_nodes` · `codex_realms` · `ethereum_anchors` · `system_parameters` ·
