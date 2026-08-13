@@ -33,11 +33,19 @@ uk:
         title: Розподіл блокчейн-транзакцій
         total_transactions: Всього транзакцій
       decoration: FIN
+      emission:
+        disclaimer: Загальнопротокольні on-chain показники — не цієї організації.
+        net_deflation: Чиста дефляція (SCC)
+        title: Емісія мережі (DePIN/ReFi)
+        total_burned: Всього спалено (SCC)
+        total_minted: Всього змінтовано (SCC)
       footer: Звіт згенеровано %{at} для %{org}
       generated: 'Згенеровано: %{at}'
       metrics:
         active_contracts: Активні контракти
         active_contracts_sub: NaaS
+        insurance_premiums: Сплачено страхових премій
+        insurance_premiums_sub: USDC
         total_contracts: Всього контрактів
         total_contracts_sub: За весь час
         total_invested: Всього законтрактовано

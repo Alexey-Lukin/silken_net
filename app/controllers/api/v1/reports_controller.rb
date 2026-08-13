@@ -104,10 +104,24 @@ module Api
         # на один HTTP-запит. Ключі `group` — рядкові мітки enum'а.
         by_status = transactions.group(:status).count
 
+        # [ARCH.90, присуд founder 2026-08-13] Премія переїхала СЮДИ, в org-секцію,
+        # і стала скоупленою. Доти в блоці `network_emission` стояв
+        # `NaasContract.total_insurance_premiums` — КЛАСОВА форма, тобто агрегат по
+        # ВСІХ орендарях платформи, надрукований у звіті одного під міткою
+        # «Total Premiums USDC». Дві причини, чому це не косметика: (1) число
+        # відповідало на питання, якого читач не ставив, і виглядало як його
+        # власне; (2) саме pooled-агрегат `protocols/legal/securities_review.md`
+        # F8 називає фактором Howey prong 2 «common enterprise» + AIFMD, тож його
+        # видимість на інвестор-facing поверхні — рішення з юридичною ціною.
+        # Ключ перейменовано СВІДОМО: семантика змінилась, і тиха підміна значення
+        # під старим іменем була б гіршою за гучний злам (клас «один токен, два
+        # домени»). Скоуп працює тим самим прийомом, що `net_minted_supply` —
+        # метод класу, викликаний на relation, чейнить `where` на неї.
         @data = {
           total_contracted: org.total_contracted,
           active_contracts: org.naas_contracts.active.count,
           total_contracts: org.naas_contracts.count,
+          insurance_premiums_paid_usdc: org.naas_contracts.total_insurance_premiums.to_i,
           blockchain_transactions: {
             total: by_status.values.sum,
             confirmed: by_status.fetch("confirmed", 0),
@@ -148,14 +162,20 @@ module Api
 
       private
 
-      NETWORK_EMISSION_DEFAULTS = { total_minted_scc: 0, total_burned_scc: 0, total_premiums_usdc: 0, net_deflation: 0 }.freeze
+      # [ARCH.90] `total_premiums_usdc` звідси знято разом із самим полем: блок
+      # тепер суто on-chain, тож `.except(...)` на кожному rescue-шляху більше не
+      # потрібен — форма fallback'у збігається з формою успіху, і розійтись їм ніде.
+      NETWORK_EMISSION_DEFAULTS = { total_minted_scc: 0, total_burned_scc: 0, net_deflation: 0 }.freeze
 
-      # [SEC.1] Премія — off-chain USDC-факт (NaasContract), береться з БД і мерджиться
-      # сюди, тож збій subgraph НЕ обнуляє відому премію. Minted/burned/net_deflation —
-      # з subgraph (кеш 5 хв). Раніше total_premiums_usdc читав ніколи-не-емітовану
-      # on-chain подію PremiumPaid → вічний 0 (знято, канон 05_03).
+      # [SEC.1] Премія — off-chain USDC-факт (`NaasContract`), НЕ on-chain подія:
+      # доти `total_premiums_usdc` читав ніколи-не-емітовану `PremiumPaid` → вічний 0
+      # (знято, канон `05_03`). [ARCH.90] А тепер вона й фізично не тут: блок містить
+      # ЛИШЕ on-chain протокольні величини (публічні дані subgraph, кеш 5 хв), а
+      # премія живе в org-секції `@data` скоупленою на організацію. Наслідок для
+      # читача цього методу: збій subgraph більше не має що «обнуляти» повз премію —
+      # вони роз'єднані, і кожна відповідає рівно за свій домен.
       def fetch_network_emission
-        cached_subgraph_network_emission.merge(total_premiums_usdc: NaasContract.total_insurance_premiums.to_i)
+        cached_subgraph_network_emission
       end
 
       # SCC-показники з subgraph (minted/burned/net_deflation), кеш 5 хв — щоб не блокувати
@@ -173,10 +193,10 @@ module Api
         end
       rescue TheGraph::QueryService::QueryError => e
         Rails.logger.warn("Real yield fetch failed: #{e.message}")
-        NETWORK_EMISSION_DEFAULTS.except(:total_premiums_usdc)
+        NETWORK_EMISSION_DEFAULTS
       rescue StandardError => e
         Rails.logger.warn("Real yield fetch timeout: #{e.message}")
-        NETWORK_EMISSION_DEFAULTS.except(:total_premiums_usdc)
+        NETWORK_EMISSION_DEFAULTS
       end
 
       # --- CSV Streaming ---
@@ -220,6 +240,11 @@ module Api
           yielder << CSV.generate_line([ "Total Contracted", data[:total_contracted] ])
           yielder << CSV.generate_line([ "Active Contracts", data[:active_contracts] ])
           yielder << CSV.generate_line([ "Total Contracts", data[:total_contracts] ])
+          # [ARCH.90] Мітка навмисно каже «Paid by This Organization»: доти рядок
+          # звався «Total Premiums USDC» і стояв у мережевій секції, несучи агрегат
+          # по ВСІХ орендарях — тобто підпис не давав читачеві жодного способу
+          # зрозуміти, чиє це число.
+          yielder << CSV.generate_line([ "Insurance Premiums Paid by This Organization (USDC)", data[:insurance_premiums_paid_usdc] ])
           yielder << CSV.generate_line([])
           yielder << CSV.generate_line([ "Blockchain Transactions" ])
           yielder << CSV.generate_line([ "Total", tx[:total] ])
@@ -227,10 +252,9 @@ module Api
           yielder << CSV.generate_line([ "Pending", tx[:pending] ])
           yielder << CSV.generate_line([ "Failed", tx[:failed] ])
           yielder << CSV.generate_line([])
-          yielder << CSV.generate_line([ "Network Emission (DePIN/ReFi)" ])
+          yielder << CSV.generate_line([ "Network Emission (DePIN/ReFi) — protocol-wide, not this organization" ])
           yielder << CSV.generate_line([ "Total Minted SCC", ry[:total_minted_scc] ])
           yielder << CSV.generate_line([ "Total Burned SCC", ry[:total_burned_scc] ])
-          yielder << CSV.generate_line([ "Total Premiums USDC", ry[:total_premiums_usdc] ])
           yielder << CSV.generate_line([ "Net Deflation", ry[:net_deflation] ])
         end
       end
@@ -284,7 +308,9 @@ module Api
               [ "Metric", "Value" ],
               [ "Total Contracted", data[:total_contracted].to_s ],
               [ "Active Contracts", data[:active_contracts].to_s ],
-              [ "Total Contracts", data[:total_contracts].to_s ]
+              [ "Total Contracts", data[:total_contracts].to_s ],
+              # [ARCH.90] Див. CSV-двійник: підпис мусить називати ВЛАСНИКА числа.
+              [ "Insurance Premiums Paid by This Organization (USDC)", data[:insurance_premiums_paid_usdc].to_s ]
             ],
             header: true,
             width: pdf.bounds.width,
@@ -318,6 +344,8 @@ module Api
 
           pdf.move_down 20
           pdf.text "Network Emission (DePIN/ReFi)", size: 14, style: :bold
+          pdf.move_down 4
+          pdf.text "Protocol-wide on-chain figures — not this organization's.", size: 9, color: "666666"
           pdf.move_down 10
 
           pdf.table(
@@ -325,7 +353,6 @@ module Api
               [ "Metric", "Value" ],
               [ "Total Minted SCC", ry[:total_minted_scc].to_s ],
               [ "Total Burned SCC", ry[:total_burned_scc].to_s ],
-              [ "Total Premiums USDC", ry[:total_premiums_usdc].to_s ],
               [ "Net Deflation", ry[:net_deflation].to_s ]
             ],
             header: true,

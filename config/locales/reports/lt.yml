@@ -33,11 +33,19 @@ lt:
         title: Blokų grandinės sandorių suskirstymas
         total_transactions: Iš viso sandorių
       decoration: FIN
+      emission:
+        disclaimer: Viso protokolo on-chain rodikliai — ne šios organizacijos.
+        net_deflation: Grynoji defliacija (SCC)
+        title: Tinklo emisija (DePIN/ReFi)
+        total_burned: Iš viso sudeginta (SCC)
+        total_minted: Iš viso sukurta (SCC)
       footer: Ataskaita sugeneruota %{at} %{org}
       generated: 'Sugeneruota: %{at}'
       metrics:
         active_contracts: Aktyvios sutartys
         active_contracts_sub: NaaS
+        insurance_premiums: Sumokėtos draudimo įmokos
+        insurance_premiums_sub: USDC
         total_contracts: Iš viso sutarčių
         total_contracts_sub: Per visą laiką
         total_invested: Iš viso sutarta

@@ -638,6 +638,24 @@ RSpec.describe NaasContract, type: :model do
     it "returns zero when there are no contracts" do
       expect(described_class.total_insurance_premiums).to eq(BigDecimal("0"))
     end
+
+    # [ARCH.90] Вісь, від якої залежить фінзвіт: той самий метод, викликаний на
+    # RELATION, мусить рахувати внесок ОДНІЄЇ організації, а не платформи. Доти
+    # `reports#financial_summary` брав класову форму, тобто клав у звіт орендаря
+    # агрегат по ВСІХ орендарях — а це саме та pooled-величина, яку
+    # `protocols/legal/securities_review.md` F8 називає фактором Howey prong 2.
+    # Пін навмисно має ДВА тенанти з різними сумами: з одним «своє» і «все»
+    # збігаються, і перевірка не здатна виразити дефект (`04_06 §B.2` BP #21).
+    it "scopes to a single organization when called on a relation" do
+      other_organization = create(:organization)
+      other_cluster = create(:cluster, organization: other_organization)
+      create(:naas_contract, status: :active, organization: organization, cluster: cluster, total_funding: 100_000)
+      create(:naas_contract, status: :active, organization: other_organization, cluster: other_cluster, total_funding: 900_000)
+
+      expect(described_class.total_insurance_premiums).to eq(BigDecimal("50000.0"))
+      expect(organization.naas_contracts.total_insurance_premiums).to eq(BigDecimal("5000.0"))
+      expect(other_organization.naas_contracts.total_insurance_premiums).to eq(BigDecimal("45000.0"))
+    end
   end
 
   # [ARCH.57] Кожна зміна статусу контракту → audit-ланцюг організації, chain-only.

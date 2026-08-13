@@ -33,11 +33,19 @@ lv:
         title: Blokķēdes darījumu sadalījums
         total_transactions: Kopā darījumi
       decoration: FIN
+      emission:
+        disclaimer: Protokola mēroga on-chain rādītāji — nav šīs organizācijas.
+        net_deflation: Neto deflācija (SCC)
+        title: Tīkla emisija (DePIN/ReFi)
+        total_burned: Kopā sadedzināts (SCC)
+        total_minted: Kopā emitēts (SCC)
       footer: Atskaite ģenerēta %{at} par %{org}
       generated: 'Ģenerēts: %{at}'
       metrics:
         active_contracts: Aktīvie līgumi
         active_contracts_sub: NaaS
+        insurance_premiums: Samaksātās apdrošināšanas prēmijas
+        insurance_premiums_sub: USDC
         total_contracts: Kopā līgumi
         total_contracts_sub: Mūža laikā
         total_invested: Kopā līgumos

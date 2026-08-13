@@ -1364,7 +1364,9 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | `application/json` | JSON | ✅ віддається |
 | `text/csv` | CSV (стрімінг) | ✅ друкується |
 | `application/pdf` | PDF (Prawn) | ✅ друкується |
-| `text/html` | Phlex-дашборд | ⚠️ **НЕ рендериться** — див. ноту нижче |
+| `text/html` | Phlex-дашборд | ✅ рендериться (з 2026-08-13) |
+
+> ✅ **ARCH.90 закрито 2026-08-13 присудом «розвести», і розходження було НЕ одне, а два.** (1) HTML не рендерив блок, за який сам же платив: `@data` будується ДО `respond_to`, тож кожен HTML-запит виконував GraphQL-раундтрип у subgraph і викидав результат. Тепер блок рендериться, і чотири формати кажуть одне. (2) 🔴 **Всередині блоку жило чуже число:** `total_premiums_usdc` брався КЛАСОВОЮ формою `NaasContract.total_insurance_premiums`, тобто агрегатом по **всіх орендарях платформи**, і друкувався у звіті одного під міткою «Total Premiums USDC». Він переїхав в org-секцію як `insurance_premiums_paid_usdc` (relation-скоуп на `org.naas_contracts` — той самий прийом, що в `net_minted_supply`), а сам блок став суто on-chain. Підстава для (2) не лише «чиє це число»: pooled-агрегат страхового пулу — це фактор **Howey prong 2 «common enterprise» + AIFMD** у `protocols/legal/securities_review.md` F8, тож його видимість на інвестор-facing поверхні є рішенням із юридичною ціною, а не форматуванням. ⚠️ **Ключ перейменовано свідомо** — семантика змінилась, і тиха підміна значення під старим іменем була б гіршою за гучний злам. Мітки в CSV/PDF/HTML тепер називають ВЛАСНИКА числа («…Paid by This Organization», «protocol-wide — not this organization's»).
 
 **Success Response `200 OK` (JSON):**
 
@@ -1377,10 +1379,10 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
     "total_contracted": 250000.0,
     "active_contracts": 12,
     "total_contracts": 15,
+    "insurance_premiums_paid_usdc": 12500,
     "blockchain_transactions": { "total": 480, "confirmed": 455, "pending": 20, "failed": 5 },
     "network_emission": {
-      "total_minted_scc": 1200, "total_burned_scc": 40,
-      "total_premiums_usdc": 3500, "net_deflation": 40
+      "total_minted_scc": 1200, "total_burned_scc": 40, "net_deflation": 40
     }
   }
 }

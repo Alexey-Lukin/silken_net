@@ -33,11 +33,19 @@ en:
         title: Blockchain Transactions Breakdown
         total_transactions: Total Transactions
       decoration: FIN
+      emission:
+        disclaimer: Protocol-wide on-chain figures — not this organization's.
+        net_deflation: Net Deflation (SCC)
+        title: Network Emission (DePIN/ReFi)
+        total_burned: Total Burned (SCC)
+        total_minted: Total Minted (SCC)
       footer: Report generated at %{at} for %{org}
       generated: 'Generated: %{at}'
       metrics:
         active_contracts: Active Contracts
         active_contracts_sub: NaaS
+        insurance_premiums: Insurance Premiums Paid
+        insurance_premiums_sub: USDC
         total_contracts: Total Contracts
         total_contracts_sub: Lifetime
         total_invested: Total Contracted

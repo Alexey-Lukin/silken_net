@@ -9,24 +9,28 @@ RSpec.describe Reports::FinancialSummary do
   # тобто Float; лічильники — Integer; `blockchain_transactions` приходить із
   # `group(:status).count`.
   #
-  # 🔴 `network_emission` стоїть тут САМЕ ТОМУ, що компонент його не читає: доти
-  # фікстуру складали з ЧИТАНЬ компонента, а не з ЗАПИСІВ контролера, і при
-  # чотирьох ключах проти пʼяти питання «а де пʼятий» із сюїти не ставилось.
-  # Відповідь — цілий блок (Minted/Burned SCC · Premiums USDC · Net Deflation),
-  # який CSV, PDF і JSON того самого екшена друкують, а HTML не має ніколи
-  # (`00_07` ARCH.90). Пін на його відсутність СВІДОМО не ставиться — він
-  # зацементував би дірку; фікстура лише перестає її ховати.
+  # ✅ [ARCH.90, присуд founder 2026-08-13] Розходження ЗАКРИТО, і фікстура тепер
+  # описує обидві половини присуду. Доти вона стояла тут як ліхтар: `network_emission`
+  # був у ній САМЕ ТОМУ, що компонент його не читав (чотири ключі проти пʼяти), а
+  # пін на відсутність свідомо не ставився, щоб не зацементувати дірку.
+  # Тепер: (1) блок рендериться в HTML, тож чотири формати одного ендпоінта
+  # нарешті кажуть одне; (2) премія з нього ПІШЛА — вона ані мережева, ані емісія,
+  # а платформенний агрегат у звіті орендаря ще й є pooled-фактором
+  # (`securities_review` F8), тож у `@data` вона живе окремим org-скоупленим
+  # ключем `insurance_premiums_paid_usdc`.
   def report_data(total_contracted: 75_000.0, active_contracts: 12, total_contracts: 20,
+                  insurance_premiums_paid_usdc: 4_200,
                   blockchain_transactions: nil, network_emission: nil)
     {
       total_contracted: total_contracted,
       active_contracts: active_contracts,
       total_contracts: total_contracts,
+      insurance_premiums_paid_usdc: insurance_premiums_paid_usdc,
       blockchain_transactions: blockchain_transactions || {
         total: 500, confirmed: 480, pending: 15, failed: 5
       },
       network_emission: network_emission || {
-        total_minted_scc: 1_250, total_burned_scc: 300, total_premiums_usdc: 4_200, net_deflation: -950
+        total_minted_scc: 1_250, total_burned_scc: 300, net_deflation: -950
       }
     }
   end
@@ -117,6 +121,38 @@ RSpec.describe Reports::FinancialSummary do
       expect(html).to include(
         %(<td class="p-4 text-red-400">Failed</td><td class="p-4 text-right font-bold text-red-400">5</td>)
       )
+    end
+  end
+
+  # [ARCH.90] Половина, якої в цьому файлі не було ніколи — і саме її відсутність
+  # тримала розходження чотирьох форматів невидимим для сюїти.
+  describe "network emission block" do
+    it "renders the on-chain figures the exports have always printed" do
+      expect(html).to include("Network Emission")
+      expect(html).to include("1250")
+      expect(html).to include("300")
+      expect(html).to include("-950")
+    end
+
+    it "states whose figures these are" do
+      # 🔴 Несучий пін, не косметика: єдиною підказкою доти було слово «Network»
+      # у заголовку — а поруч у тій самій секції стояла премія ПЛАТФОРМИ, тож
+      # читач не мав як зрозуміти, що числа не його.
+      expect(html).to include("not this organization")
+    end
+
+    it "keeps the premium out of the network block and shows it as the org's own" do
+      expect(html).to include("Insurance Premiums Paid")
+      expect(html).to include("4200")
+      # Негативна половина: повернення премії в мережевий блок червонить тут.
+      expect(html).not_to include("Total Premiums")
+    end
+
+    it "stays silent when the emission data is absent" do
+      # Гілка `return if ne.blank?` — без цього приклада вона непокрита, а
+      # порожній blok на екрані виглядав би як «нуль емісії», тобто твердження.
+      html_without = render_component(organization: org, data: report_data(network_emission: {}))
+      expect(html_without).not_to include("Network Emission")
     end
   end
 

@@ -90,12 +90,7 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       expect(tx["total"]).to eq(4)
     end
 
-    it "includes network_emission data in JSON response (premiums DB-sourced from NaaS contracts)" do
-      # [SEC.1] total_premiums_usdc now comes from the DB (5% of activated NaaS funding),
-      # not a never-emitted on-chain PremiumPaid event. 600_000 funding × 5% = 30_000.
-      create(:naas_contract, status: :active, organization: organization,
-                             cluster: create(:cluster, organization: organization), total_funding: 600_000)
-
+    it "keeps network_emission strictly on-chain (no off-chain premium mixed in)" do
       get "/reports/financial_summary", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
@@ -103,9 +98,33 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       expect(ry).to include(
         "total_minted_scc" => 500_000,
         "total_burned_scc" => 150_000,
-        "total_premiums_usdc" => 30_000,
         "net_deflation" => -350_000
       )
+      # [ARCH.90] Негативна половина: премія — off-chain USDC-факт і в мережевому
+      # блоці їй не місце. Без цього піна повернення старої форми зелене.
+      expect(ry).not_to have_key("total_premiums_usdc")
+    end
+
+    # 🔴 [ARCH.90] Найважливіший пін цього фіксу: премія в звіті організації мусить
+    # бути ЇЇ внеском, а не агрегатом платформи. Доти контролер кликав КЛАСОВУ
+    # `NaasContract.total_insurance_premiums`, тож інвестор бачив суму по ВСІХ
+    # орендарях — саме ту pooled-величину, яку securities_review F8 називає
+    # фактором Howey prong 2. Фікстура навмисно має ДРУГОГО орендаря з БІЛЬШОЮ
+    # сумою: з одним тенантом «своє» і «все» збігаються, і приклад не здатен
+    # виразити дефект (`04_06 §B.2` BP #21).
+    it "scopes insurance premiums to the acting organization, never the whole platform" do
+      create(:naas_contract, status: :active, organization: organization,
+                             cluster: create(:cluster, organization: organization), total_funding: 600_000)
+
+      other_org = create(:organization)
+      create(:naas_contract, status: :active, organization: other_org,
+                             cluster: create(:cluster, organization: other_org), total_funding: 4_000_000)
+
+      get "/reports/financial_summary", headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+
+      # 600_000 × 5% = 30_000 — своє. Платформенне було б 230_000.
+      expect(response.parsed_body.dig("data", "insurance_premiums_paid_usdc")).to eq(30_000)
     end
 
     it "returns a financial summary report as CSV" do
@@ -128,8 +147,14 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       expect(csv_text).to include("Network Emission (DePIN/ReFi)")
       expect(csv_text).to include("Total Minted SCC")
       expect(csv_text).to include("Total Burned SCC")
-      expect(csv_text).to include("Total Premiums USDC")
       expect(csv_text).to include("Net Deflation")
+      # [ARCH.90] Заголовок мережевої секції мусить САМ казати, чиї це числа —
+      # доти єдиною підказкою було слово «Network», а поруч у тій самій секції
+      # стояла премія платформи.
+      expect(csv_text).to include("not this organization")
+      # Премія переїхала в org-секцію під власником у підписі.
+      expect(csv_text).to include("Insurance Premiums Paid by This Organization (USDC)")
+      expect(csv_text).not_to include("Total Premiums USDC")
     end
 
     it "returns a financial summary report as PDF" do
@@ -153,7 +178,6 @@ RSpec.describe Api::V1::ReportsController, type: :request do
         expect(ry).to include(
           "total_minted_scc" => 0,
           "total_burned_scc" => 0,
-          "total_premiums_usdc" => 0,
           "net_deflation" => 0
         )
       end
@@ -173,7 +197,6 @@ RSpec.describe Api::V1::ReportsController, type: :request do
         expect(ry).to include(
           "total_minted_scc" => 0,
           "total_burned_scc" => 0,
-          "total_premiums_usdc" => 0,
           "net_deflation" => 0
         )
       end
@@ -188,17 +211,21 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       it "still reports DB premiums while minted/burned fall back to 0" do
         # [SEC.1] Premiums are DB-sourced, decoupled from the subgraph — a GraphQL
         # outage zeroes minted/burned/net_deflation but NOT a known premium.
+        # [ARCH.90] Розв'язка тепер СТРУКТУРНА, а не мерджем: премія живе окремим
+        # org-ключем, тож збою subgraph нічим її зачепити — і саме це пінить пара
+        # тверджень нижче (блок обнулився ⊥ премія ціла).
         create(:naas_contract, status: :active, organization: organization,
                                cluster: create(:cluster, organization: organization), total_funding: 200_000)
 
         get "/reports/financial_summary", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
+        expect(response.parsed_body.dig("data", "insurance_premiums_paid_usdc")).to eq(10_000)
+
         ry = response.parsed_body.dig("data", "network_emission")
         expect(ry).to include(
           "total_minted_scc" => 0,
           "total_burned_scc" => 0,
-          "total_premiums_usdc" => 10_000,
           "net_deflation" => 0
         )
       end

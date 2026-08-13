@@ -13,6 +13,7 @@ module Reports
         header_section
         render_metrics
         render_blockchain_breakdown
+        render_network_emission
         render_footer
       end
     end
@@ -31,10 +32,45 @@ module Reports
     end
 
     def render_metrics
-      div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
+      div(class: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6") do
         render Views::Shared::UI::StatCard.new(label: t(".metrics.total_invested"), value: @data[:total_contracted], sub: t(".metrics.total_invested_sub"))
         render Views::Shared::UI::StatCard.new(label: t(".metrics.active_contracts"), value: @data[:active_contracts], sub: t(".metrics.active_contracts_sub"))
         render Views::Shared::UI::StatCard.new(label: t(".metrics.total_contracts"), value: @data[:total_contracts], sub: t(".metrics.total_contracts_sub"))
+        # [ARCH.90] Внесок ЦІЄЇ організації у страховий пул. Підпис несе одиницю
+        # (USDC), бо сусіди в цьому ж звіті деноміновані інакше — вісь ARCH.88.
+        render Views::Shared::UI::StatCard.new(label: t(".metrics.insurance_premiums"), value: @data[:insurance_premiums_paid_usdc], sub: t(".metrics.insurance_premiums_sub"))
+      end
+    end
+
+    # [ARCH.90, присуд founder 2026-08-13] Блок існував у CSV/PDF/JSON і НЕ існував
+    # тут — при тому, що кожен HTML-запит за нього платив (GraphQL-раундтрип у
+    # subgraph будувався в спільному `@data` і викидався). Тепер він рендериться, і
+    # 🔴 несе ЯВНЕ застереження, що числа протокольні: доти єдиною підказкою було
+    # слово «Network» у заголовку, а поруч у тій самій секції стояла премія —
+    # платформенний агрегат, який читався як власний. Премія звідси пішла нагору,
+    # у метрики, вже скоупленою.
+    def render_network_emission
+      ne = @data[:network_emission]
+      return if ne.blank?
+
+      div(class: "space-y-4") do
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".emission.title") }
+        p(class: "text-mini text-gray-600 font-mono") { t(".emission.disclaimer") }
+        div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+          table(role: "table", class: "w-full text-left font-mono text-compact") do
+            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
+              tr do
+                th(scope: "col", class: "p-4") { t(".breakdown.category") }
+                th(scope: "col", class: "p-4 text-right") { t(".breakdown.count") }
+              end
+            end
+            tbody(class: "divide-y divide-emerald-900/30") do
+              tx_row(t(".emission.total_minted"), ne[:total_minted_scc])
+              tx_row(t(".emission.total_burned"), ne[:total_burned_scc])
+              tx_row(t(".emission.net_deflation"), ne[:net_deflation])
+            end
+          end
+        end
       end
     end
 
