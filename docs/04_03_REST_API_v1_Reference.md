@@ -694,6 +694,8 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 > **Zero-Trust: жодних секретів у відповіді.** Бекенд та прошивка незалежно деривують однаковий 32-байтний AES-ключ через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: device_uid, info: "silken-aes-256-device-key")` (cross-ref: [`03_06 §2`](03_06_Factory_Flashing_and_Key_Provisioning)) **та** 32-байтний `K_seed` для атрактора Лоренца через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: "silken-lorenz-v1", info: "silken-lorenz-seed|<DID>")` ([SEC.11], cross-ref: [`03_06 §3`](03_06_Factory_Flashing_and_Key_Provisioning)). Обидва секрети зберігаються в `HardwareKey` (AR Encryption non-deterministic) і **ніколи не передаються** через HTTP/мережу. `PROVISIONING_MASTER_KEY` повинен бути встановлений у ENV — інакше endpoint повертає `503 Service Unavailable` (no fallback). Прошивка отримує обидва секрети під час physical Factory Flashing через окремий захищений канал (UART/JTAG, поза цим API).
 
+> **Побічний ефект:** у тій самій транзакції створюється `MaintenanceRecord(action_type: :installation, system_generated: true)` — фіксація монтажу. Ознака провенансу тут несуча, бо `installation` вимагає фотодоказів, а провізія йде без камери; деталь і перелік машинних писачів — [`04_01 §7`](04_01_Data_Models_and_Entities). Запис народжується `hardware_verified: false`; підняти прапорець — окрема дія `PATCH /maintenance_records/:id/verify` (ендпоінт 64 у §4).
+
 **Conflict Response `409 Conflict`:**
 
 ```json
@@ -1165,6 +1167,10 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | `maintenance_record[longitude]` | Float | GPS довгота |
 | `maintenance_record[photos][]` | File | Фото (масив файлів, опційно) |
 | `maintenance_record[ews_alert_id]` | Integer | Прив'язка до EWS-тривоги (опційно) |
+
+⛔ **`system_generated` СВІДОМО не приймається** — це ознака провенансу, яку ставлять лише машинні писачі (дім і перелік — [`04_01 §7`](04_01_Data_Models_and_Entities)). Вона звільняє запис від Evidence Protocol, тож у permit-списку означала б, що лісник знімає з себе вимогу фотодоказів одним ключем payload'а. Носій — request-приклад, mutation-verified [ARCH.91].
+
+⚠️ **`installation` і `repair` без фото → `422`** (Trust Protocol), і перевірка біжить на КОЖНОМУ записі, не лише на створенні: запис, що втратив докази через `DELETE …/photos/:id`, лишається неоновлюваним, доки фото не повернуть.
 
 **Success Response `201 Created`:**
 
