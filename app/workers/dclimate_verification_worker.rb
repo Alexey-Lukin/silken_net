@@ -40,10 +40,11 @@ class DclimateVerificationWorker
     # Пропускаємо, якщо алерт вже верифіковано або відхилено
     return unless alert.satellite_unverified?
 
-    result = Dclimate::VerificationService.new(alert).perform
-
-    # [S2.4] Track EWS alert outcome for Prometheus monitoring
-    alert_type = alert.alert_type.to_s
-    SilkenNet::Metrics::EWS_ALERTS_TOTAL.increment(labels: { alert_type: alert_type }) if result
+    Dclimate::VerificationService.new(alert).perform
+    # [INF.26] Інкремент `EWS_ALERTS_TOTAL` знято звідси: метрика зветься «total EWS
+    # alerts», а цей сайт лічив лише ті, що дійшли до супутникової верифікації Й
+    # повернули результат — одна підмножина з тринадцяти сайтів створення. Дім переїхав
+    # у `EwsAlert.after_create_commit`. ⚠️ Разом із ним зник ЄДИНИЙ числовий слід
+    # супутникового результату; окремої метрики на нього не було ніколи → `00_07` INF.26.
   end
 end

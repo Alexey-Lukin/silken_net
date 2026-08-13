@@ -592,8 +592,15 @@ class BlockchainMintingService < ApplicationService
     end
     tx.mark_as_sent!(tx_hash)
 
-    SilkenNet::Metrics::SCC_MINTED_TOTAL.increment(labels: { token_type: token_type })
-    # SLO numerator (06_08 §2.4) — successful broadcast (status→sent).
+    # [INF.26] `by: tx.amount` — метрика зветься «tokens minted», а голий `.increment`
+    # рахував ТРАНЗАКЦІЇ. Вирішує це не імʼя, а СПОЖИВАЧ: обидві серії живуть на одній
+    # панелі «SCC Minted vs Slashed», на одній осі, і сусідній `SCC_SLASHED_TOTAL` уже
+    # інкрементиться `by: effective_burn` — тобто графік віднімав монети від штук.
+    # Моменти при цьому симетричні (обидва на broadcast, до підтвердження), тож після
+    # вирівнювання одиниці порівняння стає чесним.
+    SilkenNet::Metrics::SCC_MINTED_TOTAL.increment(by: tx.amount, labels: { token_type: token_type })
+    # SLO numerator (06_08 §2.4) — successful broadcast (status→sent). Тут саме ПОДІЯ,
+    # а не сума: знаменник `MINT_ATTEMPTS_TOTAL` теж рахує спроби.
     SilkenNet::Metrics::MINT_SUCCESS_TOTAL.increment(labels: { token_type: token_type })
 
     # [ARCH.52] СПІЛЬНИЙ confirm_at для batch (інакше per-tx created_at ламає unique_for → N воркерів);

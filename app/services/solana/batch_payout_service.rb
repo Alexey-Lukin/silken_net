@@ -79,10 +79,20 @@ module Solana
       case service.signature_status(tx.tx_hash)
       when :confirmed
         # Виплата landed → settle Kredis (блокує re-pay) + перевести у :confirmed, де дозволено.
+        # [INF.26] Дискримінатор ПЕРЕД переходом: `:pending` тут означає, що процес упав
+        # усередині `batch_payout!` (до `mark_as_sent!`), тобто інкремент щасливого шляху
+        # НЕ стався — лише тоді ця гілка є чисельником. Доти вона інкрементила БЕЗУМОВНО,
+        # а `:sent` входить в `unsettled_within`, тож кожна нормальна виплата лічилась
+        # двічі (broadcast + confirm наступного циклу) при знаменнику +0 — панель
+        # `success/attempts` читала б ~200 % замість SLO.
+        crash_recovered = tx.status_pending?
+
         tx.mark_as_sent!(tx.tx_hash) if tx.status_pending?
         tx.confirm! if tx.may_confirm?
         settle_kredis(wallet_id, tx)
-        SilkenNet::Metrics::SOLANA_PAYOUT_SUCCESS_TOTAL.increment # reconcile-confirmed payout
+        # Чисельник визначений як BROADCAST (докстрінг + три сиблінги SLO), тож рахуємо
+        # лише випадок, де broadcast стався, а лічильник його проґавив через крах.
+        SilkenNet::Metrics::SOLANA_PAYOUT_SUCCESS_TOTAL.increment if crash_recovered
         Rails.logger.info "🌊 [Solana BatchPayout] Wallet ##{wallet_id}: виплату #{tx.tx_hash} підтверджено on-chain — Kredis узгоджено."
       when :not_found
         # getSignatureStatuses :not_found НЕ авторитетне (RPC-лаг / history

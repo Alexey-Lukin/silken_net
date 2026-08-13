@@ -1461,6 +1461,21 @@ end
         expect(metric.get(labels: { token_type: "carbon_coin" })).to be > before_val
       end
 
+      # 🔴 [INF.26] Приклад вище стереже УМОВУ («лише після успіху») і на осі ОДИНИЦІ
+      # сліпий за побудовою: `be > before_val` зелений і при голому `.increment`, тобто
+      # при лічбі ТРАНЗАКЦІЙ під іменем «tokens minted». Вирішив питання не докстрінг, а
+      # споживач — обидві серії стоять на одній панелі «SCC Minted vs Slashed», і сусідня
+      # вже інкрементиться `by: effective_burn`.
+      it "increments SCC_MINTED_TOTAL by the AMOUNT, not by one (unit of count)" do
+        log = create(:telemetry_log, :verified_telemetry, tree: tree)
+        metric = SilkenNet::Metrics::SCC_MINTED_TOTAL
+        before_val = metric.get(labels: { token_type: "carbon_coin" })
+
+        described_class.call(tx.id, telemetry_log: log)
+
+        expect(metric.get(labels: { token_type: "carbon_coin" }) - before_val).to eq(tx.amount)
+      end
+
       it "increments MINT_ATTEMPTS_TOTAL and MINT_SUCCESS_TOTAL on a successful mint" do
         log = create(:telemetry_log, :verified_telemetry, tree: tree)
         attempts = SilkenNet::Metrics::MINT_ATTEMPTS_TOTAL

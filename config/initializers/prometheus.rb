@@ -405,10 +405,13 @@ module SilkenNet
       labels: [ :firmware_version ]
     )
 
-    # Early Warning System alerts dispatched
+    # [INF.26] «created», а НЕ «dispatched»: доставки не існує (ARCH.60/78), тож старий
+    # докстрінг обіцяв канал, якого немає. Дім інкременту — `EwsAlert.after_create_commit`,
+    # один на застосунок; доти сайт стояв у dClimate-воркері під `if result` і лічив
+    # одну підмножину з тринадцяти сайтів створення.
     EWS_ALERTS_TOTAL = REGISTRY.counter(
       :silkennet_ews_alerts_total,
-      docstring: "Total EWS alerts dispatched (fire, drought, pest, storm)",
+      docstring: "Total EWS alerts created (fire, drought, pest, storm)",
       labels: [ :alert_type ]
     )
 

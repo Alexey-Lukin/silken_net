@@ -107,6 +107,20 @@ RSpec.describe Solana::BatchPayoutService do
       expect(Kredis.set(pending_key).members).not_to include(wallet.id.to_s)
     end
 
+    # 🔴 [INF.26] Чисельник SLO визначений як BROADCAST (докстрінг + три сиблінги), а
+    # `:sent` входить в `unsettled_within` — тож без гарда КОЖНА нормальна виплата
+    # лічилась двічі (broadcast, потім confirm наступного циклу) при знаменнику +0:
+    # панель `success/attempts` читала б ~200 % замість SLO.
+    it "does not re-count the SLO numerator on reconcile — broadcast already counted it" do
+      rpc[:sig] = "confirmed"
+      metric = SilkenNet::Metrics::SOLANA_PAYOUT_SUCCESS_TOTAL
+      before_val = metric.get
+
+      described_class.call # 2-й цикл: reconcile уже порахованої виплати
+
+      expect(metric.get).to eq(before_val)
+    end
+
     it "on not_found: escalates to manual_review WITHOUT re-pay (RPC-lag double-pay guard)" do
       rpc[:sig] = "not_found"
       described_class.call
@@ -140,6 +154,27 @@ RSpec.describe Solana::BatchPayoutService do
       described_class.call # reconcile → confirmed → settle, без re-pay
       expect(rpc[:sends]).to eq(1)
       expect(pending_lamports(wallet.id)).to eq(0)
+    end
+  end
+
+  # Позитивна половина того самого гарда: без неї мутація `if false` лишила б гілку
+  # німою, а негативний пін вище — зеленим. Тут broadcast стався, але процес упав ДО
+  # `mark_as_sent!`, тож tx лишився `:pending` і лічильник його проґавив — саме цей
+  # випадок reconcile і має внести в чисельник.
+  describe ".call — reconcile of a payout whose process crashed before mark_as_sent!" do
+    it "counts the SLO numerator once, because broadcast was never counted" do
+      wallet.blockchain_transactions.create!(
+        blockchain_network: "solana", status: :pending, tx_hash: "cr" * 32,
+        amount: 0.025, token_type: :cusd, to_address: recipient_solana_address
+      )
+      seed_pending(wallet.id, 25_000, 2)
+      rpc[:sig] = "confirmed"
+      metric = SilkenNet::Metrics::SOLANA_PAYOUT_SUCCESS_TOTAL
+      before_val = metric.get
+
+      described_class.call
+
+      expect(metric.get - before_val).to eq(1)
     end
   end
 

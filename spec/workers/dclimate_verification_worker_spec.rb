@@ -77,54 +77,25 @@ RSpec.describe DclimateVerificationWorker, type: :worker do
   end
 
   # -----------------------------------------------------------------------
-  # S2.4: Prometheus metric EWS_ALERTS_TOTAL
+  # Prometheus: цей воркер метрику алертів більше НЕ веде (INF.26)
   # -----------------------------------------------------------------------
-  describe "Prometheus metrics (S2.4)" do
+  describe "Prometheus metrics" do
     let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
 
-    it "increments EWS_ALERTS_TOTAL on successful verification" do
+    # 🔴 [INF.26] Доти тут стояли ЧОТИРИ приклади, і головний із них цементував дефект
+    # як норму: «increments EWS_ALERTS_TOTAL on successful verification» — тобто лічильник
+    # з іменем «total EWS alerts» пінився на одній підмножині (супутниково верифіковані).
+    # Решта три («does not increment …») після переносу дому стали б вакуумними: воркер
+    # не торкається метрики за жодних умов. Вісь не знято, а ПЕРЕЦІЛЕНО — тут лишається
+    # заборона повернути сайт назад, а справжній пін живе в `ews_alert_spec` (створення).
+    it "does not touch EWS_ALERTS_TOTAL at all — the counter's home is the model callback" do
       service = instance_double(Dclimate::VerificationService)
       allow(Dclimate::VerificationService).to receive(:new).with(alert).and_return(service)
       allow(service).to receive(:perform).and_return(true)
 
-      metric = SilkenNet::Metrics::EWS_ALERTS_TOTAL
-      before_val = metric.get(labels: { alert_type: alert.alert_type.to_s })
+      expect(SilkenNet::Metrics::EWS_ALERTS_TOTAL).not_to receive(:increment)
 
       described_class.new.perform(alert.id)
-
-      expect(metric.get(labels: { alert_type: alert.alert_type.to_s })).to eq(before_val + 1.0)
-    end
-
-    it "does not increment EWS_ALERTS_TOTAL when verification returns falsey" do
-      service = instance_double(Dclimate::VerificationService)
-      allow(Dclimate::VerificationService).to receive(:new).with(alert).and_return(service)
-      allow(service).to receive(:perform).and_return(nil)
-
-      metric = SilkenNet::Metrics::EWS_ALERTS_TOTAL
-      before_val = metric.get(labels: { alert_type: alert.alert_type.to_s })
-
-      described_class.new.perform(alert.id)
-
-      expect(metric.get(labels: { alert_type: alert.alert_type.to_s })).to eq(before_val)
-    end
-
-    it "does not increment EWS_ALERTS_TOTAL when alert is already verified" do
-      verified_alert = create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :verified)
-      metric = SilkenNet::Metrics::EWS_ALERTS_TOTAL
-      before_val = metric.get(labels: { alert_type: verified_alert.alert_type.to_s })
-
-      described_class.new.perform(verified_alert.id)
-
-      expect(metric.get(labels: { alert_type: verified_alert.alert_type.to_s })).to eq(before_val)
-    end
-
-    it "does not increment EWS_ALERTS_TOTAL when alert does not exist" do
-      metric = SilkenNet::Metrics::EWS_ALERTS_TOTAL
-      before_val = metric.get(labels: { alert_type: "unknown" })
-
-      described_class.new.perform(-1)
-
-      expect(metric.get(labels: { alert_type: "unknown" })).to eq(before_val)
     end
   end
 

@@ -342,6 +342,22 @@ RSpec.describe EwsAlert, type: :model do
       end
     end
 
+    # 🔴 [INF.26] Дім лічильника переїхав сюди з `DclimateVerificationWorker`, де він
+    # стояв ще й під `if result`. Пін навмисно бере тип, якого СТАРИЙ сайт порахувати не
+    # міг у принципі: `system_fault` не проходить `requires_satellite_consensus?`, тож у
+    # dClimate-тракт не потрапляє — а метрика зветься «total EWS alerts». Плюс рядок без
+    # кластера, бо такі теж лічаться (їх пише монітор скарбниці).
+    describe "after_create_commit :count_created_alert" do
+      it "counts an alert the satellite tract never sees (cluster-less system_fault)" do
+        metric = SilkenNet::Metrics::EWS_ALERTS_TOTAL
+        before_val = metric.get(labels: { alert_type: "system_fault" })
+
+        create(:ews_alert, alert_type: :system_fault, severity: :critical, cluster: nil, tree: nil)
+
+        expect(metric.get(labels: { alert_type: "system_fault" }) - before_val).to eq(1)
+      end
+    end
+
     describe "after_create_commit :schedule_satellite_verification!" do
       it "enqueues DclimateVerificationWorker for fire_detected" do
         allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original

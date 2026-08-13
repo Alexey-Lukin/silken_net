@@ -198,11 +198,11 @@ end
 
 | Metric Name | Ruby Constant | Labels | Де інкрементується | Бізнес-значення |
 |-------------|--------------|--------|-------------------|-----------------|
-| `silkennet_scc_minted_total` | `SilkenNet::Metrics::SCC_MINTED_TOTAL` | `token_type` (carbon_coin, forest_coin) | `BlockchainMintingService` | Кожен успішний мінт SCC/SFC в Polygon mempool |
+| `silkennet_scc_minted_total` | `SilkenNet::Metrics::SCC_MINTED_TOTAL` | `token_type` (carbon_coin, forest_coin) | `BlockchainMintingService` | Кумулятивна **сума змінтованих токенів** (increment `by: tx.amount`, не лічильник подій) — [INF.26]. Доти був голий `.increment`, тобто рахував ТРАНЗАКЦІЇ під іменем «tokens», і це видно було лише через споживача: обидві серії стоять на одній панелі «SCC Minted vs Slashed». Лічбу ПОДІЙ на цьому тракті несе пара `MINT_ATTEMPTS_TOTAL`/`MINT_SUCCESS_TOTAL` (SLO) |
 | `silkennet_mint_attempts_total` | `SilkenNet::Metrics::MINT_ATTEMPTS_TOTAL` | `token_type` | `BlockchainMintingService` (вхід `process_token_group`, до локу) | Спроби on-chain мінту (txs, що пройшли pre-flight guards) — знаменник SLO «≥80% mint success during outage» ([`06_08 §2.4`](06_08_Resilience_and_Failover_Policy)) |
 | `silkennet_mint_success_total` | `SilkenNet::Metrics::MINT_SUCCESS_TOTAL` | `token_type` | `BlockchainMintingService` (status→sent) | Успішні broadcast'и в mempool — чисельник того ж SLO |
 | `silkennet_mint_chunk_errors_total` | `SilkenNet::Metrics::MINT_CHUNK_ERRORS_TOTAL` | — | `EvaluateTreeBatchWorker` (`rescue StandardError` кожного гаманця) | **[ARCH.94]** Проковтнуті відмови мінту НА РІВНІ ГАМАНЦЯ. Джоба при цьому вертає **успіх** (нема retry, нема DeadSet), а mint-SLO їх не бачить за побудовою: tx не створено, тож гаманець не входить навіть у ЗНАМЕННИК. Саме так P1 «емісія спрацьовує раз на гаманець» прожив непоміченим |
-| `silkennet_scc_slashed_total` | `SilkenNet::Metrics::SCC_SLASHED_TOTAL` | — | `BlockchainBurningService` | Кумулятивна **сума спалених токенів** (increment `by: burn_amount`, не лічильник подій) |
+| `silkennet_scc_slashed_total` | `SilkenNet::Metrics::SCC_SLASHED_TOTAL` | — | `BlockchainBurningService` | Кумулятивна **сума спалених токенів** (increment `by: effective_burn` — [SLASH.2] on-chain-реалістичний upper-bound, свідомо НЕ pre-tax `burn_amount`, як стояло тут доти; не лічильник подій) |
 | `silkennet_rpc_errors_total` | `SilkenNet::Metrics::RPC_ERRORS_TOTAL` | `network`, `error_type` (timeout, connection) | `ApplicationWeb3Worker` (4 точки) | Кожна RPC-помилка по всіх 12 блокчейн-мережах |
 | `silkennet_telemetry_processed_total` | `SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL` | — | `TelemetryUnpackerService` | Кожен успішно оброблений telemetry chunk |
 | `silkennet_telemetry_fraud_detected_total` | `SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL` | — | `TelemetryUnpackerService` (2 точки) | Відхилені пакети (sensor noise, unknown DID, tamper) |
@@ -235,7 +235,7 @@ end
 |-------------|-----|--------|--------|
 | `silkennet_slashing_events_total` | Counter | `BurnCarbonTokensWorker` | `reason` |
 | `silkennet_ota_chunks_sent_total` | Counter | `Downlink::PendingQueueService` (chunk-server [FW.60]) | `firmware_version` |
-| `silkennet_ews_alerts_total` | Counter | `DclimateVerificationWorker` | `alert_type` |
+| `silkennet_ews_alerts_total` | Counter | `EwsAlert` (`after_create_commit`) — [INF.26] дім переїхав із `DclimateVerificationWorker`, який лічив лише супутниково верифіковану підмножину | `alert_type` |
 | `silkennet_oracle_dispatch_duration_seconds` | Histogram | `ChainlinkDispatchWorker` | — |
 | `silkennet_coap_packets_received_total` | Counter | `UnpackTelemetryWorker` | `status` |
 | `silkennet_streamr_broadcast_failures_total` | Counter | `StreamrBroadcastWorker` | — |
@@ -328,7 +328,7 @@ end
 | `silkennet_circuit_breaker_rejections_total` | `service` | Web3 requests fast-failed because a provider circuit breaker was open |
 | `silkennet_coap_packets_received_total` | `status` | Total CoAP UDP packets received by the telemetry daemon |
 | `silkennet_ethereum_anchor_reverted_total` | — | EthereumAnchor storeStateRoot txs that reverted on-chain (ARCH.66) |
-| `silkennet_ews_alerts_total` | `alert_type` | Total EWS alerts dispatched (fire, drought, pest, storm) |
+| `silkennet_ews_alerts_total` | `alert_type` | Total EWS alerts created (fire, drought, pest, storm) — [INF.26] «created», бо доставки не існує ([`ARCH.60`](00_07_Action_Plan_Tracker)/[`ARCH.78`](00_07_Action_Plan_Tracker)) |
 | `silkennet_fauna_skip_reports_total` | — | FW.42 telemetry packets reporting a fauna session skipped on low Vcap (per-DID attribution in logs) |
 | `silkennet_filecoin_archive_exhausted_total` | — | FilecoinArchiveWorker jobs that exhausted all retries (archive landed in Dead Set) |
 | `silkennet_filecoin_repin_total` | — | AuditLog archive re-enqueues issued by FilecoinReconcileWorker |

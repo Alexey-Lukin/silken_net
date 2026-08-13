@@ -161,6 +161,14 @@ class EwsAlert < ApplicationRecord
   BROADCAST_THROTTLE_SECONDS = 5
 
   # --- КОЛБЕКИ (Zero-Lag Awareness) ---
+  # [INF.26] Лічильник створених тривог — ОДИН дім на застосунок, а не один із 25
+  # сайтів створення. Доти інкремент стояв у `DclimateVerificationWorker` ще й під
+  # `if result`, тобто «Total EWS alerts» рахував лише ту підмножину, що пройшла
+  # супутникову верифікацію — недолік на порядок під іменем «total».
+  # ⚠️ Колбек, а не `after_create`: рахуємо те, що справді осіло в БД (rollback не
+  # має інкрементувати), тим самим правилом, що й сусіди нижче.
+  after_create_commit :count_created_alert
+
   # Сакральна асинхронність: сповіщення летять лише після COMMIT
   after_create_commit :dispatch_notifications!
 
@@ -286,6 +294,14 @@ class EwsAlert < ApplicationRecord
   end
 
   private
+
+  # [INF.26] Єдиний дім лічильника створених тривог. Свідомо БЕЗ гарда: рахуємо кожну
+  # тривогу, що осіла в БД, незалежно від типу, кластера й подальшої долі — інакше
+  # повертається рівно той дефект, який цей перенос знімає (метрика під іменем «total»,
+  # що лічить одну підмножину).
+  def count_created_alert
+    SilkenNet::Metrics::EWS_ALERTS_TOTAL.increment(labels: { alert_type: alert_type.to_s })
+  end
 
   def dispatch_notifications!
     AlertNotificationWorker.perform_async(self.id)
