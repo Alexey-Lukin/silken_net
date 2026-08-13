@@ -4,7 +4,7 @@ lt:
     data_table:
       empty: Įrašų nerasta.
     measurement:
-      coverage: "išmatuota %{measured} iš %{total}"
+      coverage: išmatuota %{measured} iš %{total}
       not_measured: Neišmatuota
     metric_value:
       no_data: Nėra duomenų

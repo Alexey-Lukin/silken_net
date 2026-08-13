@@ -4,7 +4,7 @@ uk:
     data_table:
       empty: Записів не знайдено.
     measurement:
-      coverage: "виміряно %{measured} з %{total}"
+      coverage: виміряно %{measured} з %{total}
       not_measured: Не виміряно
     metric_value:
       no_data: Немає даних
