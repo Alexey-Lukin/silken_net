@@ -24,6 +24,7 @@ uk:
       cluster_data_blackout: 'Cluster-wide data blackout (%{target_date}): можлива відмова шлюзу / Starlink-блекаут (force-majeure). Slashing НЕ застосовано — потрібен Field Audit (Category C, 05_05 §5).'
       cluster_small_sample_degradation: 'Деградація на малому семплі (%{target_date}): %{critical_count} з %{total_trees} дерев критичні. Відсотковий поріг вироджується на кластері, меншому за 5 дерев — його перетинає одне-єдине дерево, — тож авто-slash НЕ застосовано; вирішує Field Audit (Category C, 05_05 §5).'
       entropy_pre_stress: "🎲 ПЕРЕДСТРЕСОВИЙ СИГНАЛ: Ентропія Z-розподілу кластера %{cluster_name} знизилась до %{entropy_score} (поріг: %{threshold}). Аналіз %{sample_count} вимірювань за останні 24 години вказує на гомогенізацію відповідей дерев — можливий початок лісового стресу."
+      field_audit_escalated_c_to_a: 'Field Audit %{date}: розкрито корпус вузла %{uid} — акт №%{act}, фото %{photo}. Ескалація C→A: прямий доказ Категорії A, зафіксований на місці.'
       fire_detected: "🔥 КАТАСТРОФА: Температура %{temperature_c}°C (поріг: %{fire_limit}). Ризик пожежі!"
       firmware_fault: "⚙️ ЗБІЙ ПРОШИВКИ: mruby VM error / device unprovisioned — потрібен re-flash/OTA. DID: %{did}"
       firmware_reverted: "⏮️ ВІДКАТ ПРОШИВКИ: вузол на embedded baseline, OTA-версія %{burned_version} спалена fallback’ом — re-issue лише вищою версією. DID: %{did}"

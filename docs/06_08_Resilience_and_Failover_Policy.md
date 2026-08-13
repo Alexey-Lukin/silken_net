@@ -290,12 +290,18 @@ cluster = Cluster.find(<id>)
 
 # Ескалація C→A. `severity: :critical` обов'язковий — гейт читає `.critical`
 # (= severity_critical.unresolved), medium/low ворота не відчиняють.
+# ⚠️ Колонки `message` НЕМАЄ з 2026-07-26 — алерт народжується там, де локалі глядача
+# не існує, тож проза не зберігається (`04_01 §7`). Рецепт із `message:` кидав
+# `ActiveModel::UnknownAttributeError` (виміряно рантаймом 2026-08-13), тобто ЄДИНИЙ
+# людський шлях відчинити ворота Кат-A не виконувався. Параметри несуть ВИМІР
+# (ідентифікатори акта/фото/вузла), ніколи фрагмент фрази.
 EwsAlert.create!(
   cluster: cluster,
   tree:    <Tree|nil>,          # опційно — для атрибуції в аудиті; гейт cluster-scoped
   severity: :critical,
   alert_type: :vandalism_breach,
-  message: "Field-Audit <дата>: розкрито корпус вузла <uid>; акт №<N>, фото <ref>. Ескалація C→A."
+  message_key: "field_audit_escalated_c_to_a",
+  message_params: { date: "<дата>", uid: "<uid вузла>", act: "<N>", photo: "<ref>" }
 )
 
 Slashing::CauseEvidence.new(cluster).positive_a?   # → true (ворота відчинені)

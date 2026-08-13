@@ -358,6 +358,14 @@ module Treasury
                           "below threshold #{result[:min_threshold_human]} #{result[:currency]} " \
                           "(ratio: #{result[:ratio]}x)"
 
+        # Dedup — дзеркало `active_mint_volume_alert?` у цьому ж файлі, і асиметрія була
+        # реальна: сусідній детектор мав гард із порахованою ціною («~4/год/токен → флуд
+        # ops-черги»), а цей не мав жодного. Порожній гаманець тримається годинами, крон
+        # ходить `*/15`, підписантів вісім — тобто до 32 нових `active` critical-рядків на
+        # годину, безстроково. Ідентичність тут — ПАРА (мережа, підписант): різні
+        # підписанти порожніють незалежно, тож глушити їх одним рядком не можна.
+        next if active_oracle_balance_alert?(result[:network], result[:signer])
+
         # Створюємо EwsAlert для оперативного реагування (system_fault — загальний тип для інфраструктурних проблем)
         EwsAlert.create(
           alert_type: :system_fault,
@@ -368,6 +376,16 @@ module Treasury
                             min_threshold: result[:min_threshold_human], ratio: result[:ratio] }
         )
       end
+    end
+
+    # Активний oracle-balance-алерт для цієї пари вже висить? (dedup — див. `generate_alerts`).
+    # Ключуємось на `message_key` + двох параметрах, НІКОЛИ на рендереному тексті: та сама
+    # пастка, що вже ламала дедуп сусіда тихо — запит просто переставав щось знаходити.
+    def active_oracle_balance_alert?(network, signer)
+      EwsAlert.where(alert_type: :system_fault, status: :active, message_key: "oracle_balance_low")
+              .where("message_params ->> 'network' = ? AND message_params ->> 'signer' = ?",
+                     network.to_s, signer.to_s)
+              .exists?
     end
 
     # Конвертує wei/lamports у людський формат

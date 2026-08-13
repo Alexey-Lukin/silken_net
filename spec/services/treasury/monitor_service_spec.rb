@@ -487,6 +487,21 @@ RSpec.describe Treasury::MonitorService do
 
       expect { described_class.call }.not_to change(EwsAlert, :count)
     end
+
+    # 🔴 Асиметрія в ОДНОМУ файлі: сусідній `mint_volume`-детектор мав дедуп із
+    # порахованою ціною («~4/год/токен → флуд ops-черги»), а oracle-balance за 170
+    # рядків нижче не мав жодного. Порожній гаманець тримається годинами, крон ходить
+    # `*/15`, підписантів вісім — до 32 нових `active` critical-рядків на годину.
+    # ⚠️ Другу половину властивості — що дедуп ключується на ПАРУ (мережа, підписант) і
+    # не злипає різних підписантів — уже стереже `creates an EwsAlert per critical signer`
+    # вище (точний `.by(2)`); мутація «зняти пару з ключа» червонить саме його, тож
+    # третій копії тут свідомо немає.
+    it "dedups the oracle-balance alert across cycles (no 15-min storm on a drained wallet)" do
+      described_class.call
+
+      expect { described_class.call }
+        .not_to change { EwsAlert.where(message_key: "oracle_balance_low").count }
+    end
   end
 
   describe "check_balance with a zero min-threshold (no-minimum config)" do
