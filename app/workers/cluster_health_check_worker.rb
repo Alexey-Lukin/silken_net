@@ -8,19 +8,19 @@ class ClusterHealthCheckWorker
 
   def perform(date_string = nil)
     # 1. СИНХРОНІЗАЦІЯ ДАТИ (The Audit Anchor)
-    # Якщо дата не передана, target_date = nil, і кожен кластер/контракт
-    # використає свій часовий пояс (cluster.local_yesterday).
-    # [Global Forest Anchor]: Прибрано хардкод "Kyiv" — тепер система масштабується
-    # від Бразилії до Індонезії через timezone кожного кластера.
-    target_date = Date.parse(date_string) if date_string.present?
+    # [ARCH.100] Доба аудиту = доба, якою інсайти ЗАПИСАНІ (`AiInsight.reporting_date`),
+    # а не «вчора» в поясі кожного кластера. Доти тут стояв per-tenant якір під обіцянкою
+    # «система масштабується від Бразилії до Індонезії» — і вимір показав протилежне:
+    # Індонезія (UTC+7) збігалась, Бразилія (UTC−3) промахувалась ЩОНОЧІ, бо о 02:00 UTC
+    # її локальне «вчора» на добу старше за те, яким агрегатор штампував інсайти.
+    target_date = date_string.present? ? Date.parse(date_string) : AiInsight.reporting_date
 
-    date_label = target_date ? " за #{target_date}" : ""
-    Rails.logger.info "🕵️ [D-MRV Audit] Початок перевірки активних NaaS контрактів#{date_label}"
+    Rails.logger.info "🕵️ [D-MRV Audit] Початок перевірки активних NaaS контрактів за #{target_date}"
 
     # 1.5. ОНОВЛЕННЯ КЕШУ ЗДОРОВ'Я (Cached Health Index)
-    # Перераховуємо health_index для всіх кластерів і зберігаємо в БД.
-    # Кожен кластер використовує свій часовий пояс для визначення "вчора".
-    Cluster.find_each { |c| c.recalculate_health_index!(target_date || c.local_yesterday) }
+    # Перераховуємо health_index для всіх кластерів і зберігаємо в БД — ОДНІЄЮ добою,
+    # тією ж, якою нижче судиться контракт.
+    Cluster.find_each { |c| c.recalculate_health_index!(target_date) }
 
     summary = { checked: 0, flagged: 0, errors: 0 }
 
@@ -34,8 +34,7 @@ class ClusterHealthCheckWorker
         # асинхронний (ставиться лише на реальному positive-A слешингу в чокпоінті).
         # Celo-винагорода йде ЛИШЕ здоровому кластеру: деградований/blackout (на адъюдикації
         # cause-gate) винагороди не отримує — закриває reward-leak деградованому кластеру.
-        audit_date = target_date || contract.cluster.local_yesterday
-        verdict = contract.check_cluster_health!(audit_date)
+        verdict = contract.check_cluster_health!(target_date)
 
         case verdict
         # `:insufficient_sample` [SLASH-1] іде сюди свідомо: кластер ФЛАГОВАНО (Field Audit
@@ -44,10 +43,10 @@ class ClusterHealthCheckWorker
         # би як «нічого не сталось». Celo-винагороди він при цьому не дістає (не `:healthy`).
         when :degraded, :blackout, :insufficient_sample
           summary[:flagged] += 1
-          Rails.logger.warn "🚨 [D-MRV] Контракт ##{contract.id} (Кластер: #{contract.cluster.name}) ФЛАГОВАНО (#{verdict}) за станом на #{audit_date} — на адъюдикацію слешингу."
+          Rails.logger.warn "🚨 [D-MRV] Контракт ##{contract.id} (Кластер: #{contract.cluster.name}) ФЛАГОВАНО (#{verdict}) за станом на #{target_date} — на адъюдикацію слешингу."
         when :healthy
           # [Celo ReFi]: Позитивний зворотний зв'язок — здоровому кластеру cUSD через Celo.
-          CeloRewardWorker.perform_async(contract.cluster_id, audit_date.to_s)
+          CeloRewardWorker.perform_async(contract.cluster_id, target_date.to_s)
         end
         # :skipped (неактивний / без активних дерев) — без дії
 

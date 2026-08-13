@@ -113,7 +113,7 @@ class NaasContract < ApplicationRecord
 
   # Делегує перевірку здоров'я кластера до ContractHealthCheckService.
   # [Cluster TZ]: Використовує часовий пояс кластера для детермінованості арбітражу.
-  def check_cluster_health!(target_date = cluster.local_yesterday)
+  def check_cluster_health!(target_date = AiInsight.reporting_date)
     ContractHealthCheckService.call(self, target_date)
   end
 

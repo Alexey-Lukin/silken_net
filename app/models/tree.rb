@@ -133,10 +133,10 @@ class Tree < ApplicationRecord
   # delta_t навмисно варіативний, поріг НЕ виводиться з конфіга). Стеля: індексу на
   # last_seen_at нема — на тисячах рядків seq-scan дешевий, scale → індекс.
   scope :silent, ->(threshold = 24.hours) { active.where(last_seen_at: ...threshold.ago) }
-  # [UTC Anchor]: Використовуємо фіксований UTC для скоупу без контексту кластера.
+  # [ARCH.100] Доба звіту — з One-Home `AiInsight.reporting_date`, не власною копією виразу.
   scope :critical_stress, -> {
     joins(:ai_insights)
-      .where(ai_insights: { insight_type: :daily_health_summary, target_date: Time.current.utc.to_date - 1 })
+      .where(ai_insights: { insight_type: :daily_health_summary, target_date: AiInsight.reporting_date })
       .where("ai_insights.stress_index > 0.8")
   }
 

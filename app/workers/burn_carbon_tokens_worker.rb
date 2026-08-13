@@ -37,7 +37,7 @@ class BurnCarbonTokensWorker
         source_tree: source_tree,
         contractual: contractual,
         # [ARCH.46] target_date прокинутий від ContractHealthCheckService (Sidekiq → String ISO8601);
-        # nil/blank → сервіс дефолтить на cluster.local_yesterday (tree-death/dClimate/contractual).
+        # nil/blank → сервіс дефолтить на `AiInsight.reporting_date` (tree-death/dClimate/contractual).
         target_date: (Date.parse(target_date) if target_date.present?)
       )
     end

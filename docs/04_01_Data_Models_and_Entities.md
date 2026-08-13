@@ -364,8 +364,7 @@ dormant ──reactivate──► active
 | `contains_point?(lat, lng)` | PostGIS: `ST_Contains` через GIST-індекс |
 | `total_active_trees` | Читає `active_trees_count` (без COUNT(*)) |
 | `health_index` | Читає денормалізовану колонку (0..1) |
-| `recalculate_health_index!` | `1.0 - stress_index` зі щоденного AiInsight |
-| `local_yesterday` | Дата "вчора" в TZ кластера (для детермінованого арбітражу) |
+| `recalculate_health_index!` | `1.0 - stress_index` зі щоденного AiInsight за `AiInsight.reporting_date` |
 | `geo_center` | Мемоізований центроїд полігону (Resilient — підтримує MultiPolygon) |
 | `active_contract` | Останній активний NaasContract (з ORDER BY) |
 | `active_threats?` | `ews_alerts.unresolved.critical.exists?` |
@@ -1181,6 +1180,10 @@ active/draft ──cancel──► cancelled
 | `summary` | text | Текстовий підсумок (human-readable) |
 
 **Ключові методи:** `contract_breach?`, `confidence_level`, `forecast?`, `source_logs`, `attach_evidence!(log_ids)`, `status_label`.
+
+**Класові методи:** `AiInsight.slash_stress_threshold` (DAO-live поріг, ARCH.46 — дім спільності «тригер ≡ розмір») · **`AiInsight.reporting_date(now = Time.current)`** — див. ⚡ нижче.
+
+> ⚡ **ДОБА ЗВІТУ = ОДИН ДІМ [ARCH.100].** Денний інсайт є агрегатом **UTC-доби** (`InsightGeneratorService` ріже вікно телеметрії в UTC і штампує нею `target_date`), а `for_date` шукає **точною рівністю**. Тому і писач, і КОЖЕН читач беруть добу з `AiInsight.reporting_date` — власних виразів не існує. ⚠️ Доти якорів було два: чотири копії `Time.current.utc.to_date - 1` і `Cluster#local_yesterday` («вчора» в поясі орендаря) дефолтом у шести вердикт-несучих сайтах. Для будь-якого поясу західніше **UTC−2** (уся Америка від Сан-Паулу) о 02:00 UTC ці дати не збігаються **ніколи**, тож нічний крон читав порожню добу — і одна вигадана порожнеча роз'їжджалась чотирма вироками протилежного знаку: `health_index = 1.0` («ідеально здоровий») · `:blackout` → Field Audit + невиплачена Celo-винагорода · страховий no-data → Field Audit · `:frozen` на слешингу. ⛔ **Пер-орендарська доба стане правдою лише тоді, коли пер-орендарським стане САМ агрегатор** — і тоді зміниться цей метод, а не його читачі; `clusters.environmental_settings["timezone"]` доти лишається операторськими даними без поведінкового споживача (показ на картці кластера). Носій єдиності — `spec/quality/reporting_date_home_spec.rb` (mutation-verified обома формами).
 
 **Scopes:** `highly_probable`, `upcoming`, `critical_stress`, `for_date(date)`, `fraudulent`, `referencing_log(log_id)`, `search_reasoning(query)` — повнотекстовий пошук у `reasoning->>'description'` через `plainto_tsquery('simple', ...)` з використанням tsvector GIN-індексу `idx_ai_insights_reasoning_fts`.
 

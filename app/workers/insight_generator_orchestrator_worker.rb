@@ -28,7 +28,7 @@ class InsightGeneratorOrchestratorWorker
   CLUSTER_BATCH_SIZE = 100
 
   def perform(date_string = nil)
-    target_date = date_string.present? ? Date.parse(date_string) : (Time.current.utc.to_date - 1)
+    target_date = date_string.present? ? Date.parse(date_string) : AiInsight.reporting_date
 
     Rails.logger.info "🧠 [Insight Orchestrator] Початок батч-агрегації за #{target_date}..."
 

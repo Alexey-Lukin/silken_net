@@ -161,7 +161,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       create(:ai_insight,
              analyzable: tree,
              insight_type: :daily_health_summary,
-             target_date: cluster.local_yesterday,
+             target_date: AiInsight.reporting_date,
              stress_index: 1.0)
 
       expect {

@@ -142,7 +142,7 @@ RSpec.describe ContractHealthCheckService do
         }.to change { BurnCarbonTokensWorker.jobs.size }.by(1)
 
         # [ARCH.46] burn-воркер МУСИТЬ отримати прокинутий target_date (5-й арг) — інакше burn
-        # перевираховує local_yesterday у момент виконання → date-mismatch over-burn (regression guard).
+        # перевираховує добу в момент виконання → date-mismatch over-burn (regression guard).
         expect(BurnCarbonTokensWorker.jobs.last["args"]).to eq(
           [ contract.organization_id, contract.id, nil, false, target_date.to_s ]
         )

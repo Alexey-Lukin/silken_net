@@ -87,7 +87,7 @@ RSpec.describe BlockchainBurningService do
         create(:ai_insight,
                analyzable: tree,
                insight_type: :daily_health_summary,
-               target_date: cluster.local_yesterday,
+               target_date: AiInsight.reporting_date,
                stress_index: 1.0)
 
         described_class.call(organization.id, naas_contract.id)
@@ -138,7 +138,7 @@ RSpec.describe BlockchainBurningService do
         )
         # 1 of 2 trees at 0.9 (below the retired 1.0 ceiling) → damage 0.5, NOT critical=0 → 100%.
         create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
-               target_date: cluster.local_yesterday, stress_index: 0.9)
+               target_date: AiInsight.reporting_date, stress_index: 0.9)
 
         described_class.call(organization.id, naas_contract.id)
 
@@ -151,7 +151,7 @@ RSpec.describe BlockchainBurningService do
       # [ARCH.46] Data present + forest healthy (0 trees ≥0.83) + no source_tree → 0 damage → no burn.
       it "does NOT burn when data exists but the forest is healthy and there is no source_tree (ARCH.46)" do
         create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
-               target_date: cluster.local_yesterday, stress_index: 0.5)
+               target_date: AiInsight.reporting_date, stress_index: 0.5)
 
         result = described_class.call(organization.id, naas_contract.id)
 
@@ -171,11 +171,11 @@ RSpec.describe BlockchainBurningService do
         )
         # Одне дерево, ДВА легальні oracle-consensus рядки → одне критичне дерево з двох.
         create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
-               target_date: cluster.local_yesterday, stress_index: 1.0, model_source: "oracle_a")
+               target_date: AiInsight.reporting_date, stress_index: 1.0, model_source: "oracle_a")
         create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
-               target_date: cluster.local_yesterday, stress_index: 1.0, model_source: "oracle_b")
+               target_date: AiInsight.reporting_date, stress_index: 1.0, model_source: "oracle_b")
         create(:ai_insight, analyzable: other_tree, insight_type: :daily_health_summary,
-               target_date: cluster.local_yesterday, stress_index: 0.1)
+               target_date: AiInsight.reporting_date, stress_index: 0.1)
 
         described_class.call(organization.id, naas_contract.id)
 
@@ -198,9 +198,9 @@ RSpec.describe BlockchainBurningService do
         )
         # 0.85 — ВИЩЕ константи 0.83, НИЖЧЕ DAO-порога 0.9 → з константою це був би burn.
         create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
-               target_date: cluster.local_yesterday, stress_index: 0.85)
+               target_date: AiInsight.reporting_date, stress_index: 0.85)
         create(:ai_insight, analyzable: other_tree, insight_type: :daily_health_summary,
-               target_date: cluster.local_yesterday, stress_index: 0.1)
+               target_date: AiInsight.reporting_date, stress_index: 0.1)
 
         result = described_class.call(organization.id, naas_contract.id)
 
@@ -219,7 +219,7 @@ RSpec.describe BlockchainBurningService do
           to_address: organization.crypto_public_address, tx_hash: "0x#{'c' * 64}"
         )
         create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
-               target_date: cluster.local_yesterday, stress_index: 1.0)
+               target_date: AiInsight.reporting_date, stress_index: 1.0)
         # Дрейф колонки: обидва дерева ЖИВІ, а лічильник каже 0.
         cluster.update_column(:active_trees_count, 0)
 
@@ -242,9 +242,9 @@ RSpec.describe BlockchainBurningService do
           to_address: organization.crypto_public_address, tx_hash: "0x#{'c' * 64}"
         )
         create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
-               target_date: cluster.local_yesterday, stress_index: 1.0)
+               target_date: AiInsight.reporting_date, stress_index: 1.0)
         create(:ai_insight, analyzable: others.first, insight_type: :daily_health_summary,
-               target_date: cluster.local_yesterday, stress_index: 1.0)
+               target_date: AiInsight.reporting_date, stress_index: 1.0)
         dead = create(:tree, cluster: cluster)
         dead.update!(status: :deceased)
 
@@ -277,7 +277,7 @@ RSpec.describe BlockchainBurningService do
 
       # [ARCH.46] Date threading: damage is queried on the PASSED target_date, not a re-derived local_yesterday.
       it "queries AiInsight on the passed target_date, not local_yesterday (ARCH.46 date-threading)" do
-        explicit_date = cluster.local_yesterday - 1.day
+        explicit_date = AiInsight.reporting_date - 1.day
         create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
                target_date: explicit_date, stress_index: 1.0)
 
@@ -308,7 +308,7 @@ RSpec.describe BlockchainBurningService do
         )
         # 1 of 2 trees stressed → without the contractual-first guard this would size to 0.5.
         create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
-               target_date: cluster.local_yesterday, stress_index: 0.9)
+               target_date: AiInsight.reporting_date, stress_index: 0.9)
 
         described_class.call(organization.id, naas_contract.id, contractual: true)
 
@@ -591,7 +591,7 @@ RSpec.describe BlockchainBurningService do
       # AiInsight, щоб damage_ratio був визначений (інакше freeze спрацював би до balanceOf).
       it "escalates evasion with cluster context (not tree) when there is no source_tree" do
         create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
-               target_date: cluster.local_yesterday, stress_index: 1.0)
+               target_date: AiInsight.reporting_date, stress_index: 1.0)
         allow(mock_client).to receive(:call).and_return(0)
 
         result = described_class.call(organization.id, naas_contract.id)
@@ -1050,7 +1050,7 @@ RSpec.describe BlockchainBurningService do
       create(:blockchain_transaction, wallet: wallet_burn, amount: 100, status: :confirmed)
       # [ARCH.46] critical AiInsight → damage via critical_count (no source_tree path still burns).
       create(:ai_insight, analyzable: tree_burn, insight_type: :daily_health_summary,
-             target_date: cluster.local_yesterday, stress_index: 1.0)
+             target_date: AiInsight.reporting_date, stress_index: 1.0)
 
       allow(mock_client).to receive(:transact).and_return("0xabc123")
 
@@ -1168,9 +1168,9 @@ RSpec.describe BlockchainBurningService do
     it "prefers AiInsight ratio over source_tree ratio" do
       # AiInsight says 2/2 trees critical = 100% damage
       create(:ai_insight, analyzable: tree1, insight_type: :daily_health_summary,
-             target_date: cluster.local_yesterday, stress_index: 1.0)
+             target_date: AiInsight.reporting_date, stress_index: 1.0)
       create(:ai_insight, analyzable: tree2, insight_type: :daily_health_summary,
-             target_date: cluster.local_yesterday, stress_index: 1.0)
+             target_date: AiInsight.reporting_date, stress_index: 1.0)
 
       described_class.call(organization.id, naas_contract.id, source_tree: tree1)
 
@@ -1184,9 +1184,9 @@ RSpec.describe BlockchainBurningService do
     it "caps damage_ratio at 1.0 maximum" do
       # Even with many critical trees, ratio can't exceed 1.0
       create(:ai_insight, analyzable: tree1, insight_type: :daily_health_summary,
-             target_date: cluster.local_yesterday, stress_index: 1.0)
+             target_date: AiInsight.reporting_date, stress_index: 1.0)
       create(:ai_insight, analyzable: tree2, insight_type: :daily_health_summary,
-             target_date: cluster.local_yesterday, stress_index: 1.0)
+             target_date: AiInsight.reporting_date, stress_index: 1.0)
 
       # All trees critical → ratio = 2/2 = 1.0 (capped)
       described_class.call(organization.id, naas_contract.id)
@@ -1221,7 +1221,7 @@ RSpec.describe BlockchainBurningService do
     before do
       create(:blockchain_transaction, wallet: tree_claim.wallet, amount: 100, status: :confirmed)
       create(:ai_insight, analyzable: tree_claim, insight_type: :daily_health_summary,
-             target_date: cluster.local_yesterday, stress_index: 1.0)
+             target_date: AiInsight.reporting_date, stress_index: 1.0)
     end
 
     it "wraps the slash window in a non-blocking per-contract Kredis claim" do

@@ -83,8 +83,8 @@ class ParametricInsurance < ApplicationRecord
   # (05_05 §6 «ніколи лише за одним внутрішнім сигналом») гроші рухає лише
   # НЕЗАЛЕЖНЕ підтвердження (Trigger-2: dClimate satellite / Field-Audit людина).
   # Тому тут — лише arm-кандидат + field_audit; settlement — InsurancePayoutWorker.
-  # [Cluster TZ]: часовий пояс кластера для детермінованості арбітражу.
-  def evaluate_daily_health!(target_date = cluster.local_yesterday)
+  # [ARCH.100] Якір доби — `AiInsight.reporting_date` (доба, якою інсайти ЗАПИСАНІ).
+  def evaluate_daily_health!(target_date = AiInsight.reporting_date)
     return unless status_active?
 
     # [SLASH-1] Спільне денне читання (DRY зі slash-шляхом A) + blackout-рішення.

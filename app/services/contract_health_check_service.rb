@@ -17,7 +17,9 @@ class ContractHealthCheckService < ApplicationService
   def initialize(naas_contract, target_date = nil)
     @contract = naas_contract
     @cluster = naas_contract.cluster
-    @target_date = target_date || @cluster.local_yesterday
+    # [ARCH.100] Дефолт — доба ЗАПИСУ інсайтів, не локальне вчора кластера: `DailyHealthRouter`
+    # шукає точною рівністю, тож розходження якорів давало `:blackout` на здоровому лісі.
+    @target_date = target_date || AiInsight.reporting_date
   end
 
   # Повертає verdict-символ для крона (`ClusterHealthCheckWorker` гілкує Celo-винагороду
@@ -87,7 +89,7 @@ class ContractHealthCheckService < ApplicationService
   def flag_degradation!
     Rails.logger.warn "🚨 [D-MRV] NaasContract ##{@contract.id}: >20% критичних аномалій — на чокпоінт слешингу (cause-gate вирішить slash/freeze)."
     # [ARCH.46] Прокидаємо @target_date у burn (5-й позиц. арг), щоб damage-ratio рахувався за ТУ Ж
-    # добу, що тут — інакше burn перевираховує local_yesterday у свій момент → інша дата → 100%.
+    # добу, що тут — інакше burn перевираховує добу у свій момент → інша дата → 100%.
     BurnCarbonTokensWorker.perform_async(@contract.organization_id, @contract.id, nil, false, @target_date.to_s)
     :degraded
   end

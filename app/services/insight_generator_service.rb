@@ -9,7 +9,7 @@ class InsightGeneratorService < ApplicationService
   MODEL_PATH = Rails.root.join("lib/assets/silken_forest.marshal").freeze
   MODEL_DIGEST_PATH = Rails.root.join("lib/assets/silken_forest.marshal.sha256").freeze
 
-  def initialize(date = Time.current.utc.to_date - 1)
+  def initialize(date = AiInsight.reporting_date)
     @date = date
     @start_time = date.beginning_of_day
     @end_time = date.end_of_day

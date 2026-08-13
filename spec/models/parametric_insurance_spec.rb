@@ -348,7 +348,7 @@ RSpec.describe ParametricInsurance, type: :model do
       trees = create_list(:tree, 10, cluster: cluster, status: :active)
       cluster.update_column(:active_trees_count, 10)
 
-      target_date = cluster.local_yesterday
+      target_date = AiInsight.reporting_date
       trees.each do |t|
         create(:ai_insight, analyzable: t, target_date: target_date,
                stress_index: 0.95, insight_type: :daily_health_summary)

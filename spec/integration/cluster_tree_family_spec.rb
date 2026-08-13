@@ -57,20 +57,31 @@ RSpec.describe "Cluster health and tree family management" do
     end
   end
 
-  describe "Cluster local_yesterday respects timezone" do
-    it "returns yesterday in cluster timezone" do
-      cluster.update!(environmental_settings: { "timezone" => "Europe/Kyiv" })
-      yesterday = cluster.local_yesterday
-      expect(yesterday).to be_a(Date)
+  # [ARCH.100] Доти тут стояв describe «Cluster local_yesterday respects timezone» — два
+  # приклади, що пінили пер-кластерну добу. Вони перевіряли ЗОНУ, але жодного разу не
+  # звели її з добою, якою інсайт реально записано, тож промах був для них невидимий.
+  # ⚠️ Час заморожено на моменті нічного крона (02:00 UTC): саме там дві дати розходяться.
+  describe "Reporting-date anchor holds across timezones" do
+    it "finds the cluster's own insight even when its timezone is west of UTC-2" do
+      travel_to(Time.utc(2026, 8, 13, 2, 0, 0)) do
+        expect(Time.use_zone("America/Manaus") { Date.yesterday }).not_to eq(AiInsight.reporting_date)
 
-      kyiv_yesterday = Time.use_zone("Europe/Kyiv") { Date.yesterday }
-      expect(yesterday).to eq(kyiv_yesterday)
+        cluster.update!(environmental_settings: { "timezone" => "America/Manaus" })
+        create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+                            target_date: AiInsight.reporting_date, stress_index: 0.4)
+
+        expect(cluster.recalculate_health_index!).to eq(0.6)
+      end
     end
 
-    it "falls back to UTC when timezone not set" do
-      cluster.update!(environmental_settings: {})
-      utc_yesterday = Time.use_zone("UTC") { Date.yesterday }
-      expect(cluster.local_yesterday).to eq(utc_yesterday)
+    it "gives an eastern cluster the same answer on the same data" do
+      travel_to(Time.utc(2026, 8, 13, 2, 0, 0)) do
+        cluster.update!(environmental_settings: { "timezone" => "Asia/Jakarta" })
+        create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+                            target_date: AiInsight.reporting_date, stress_index: 0.4)
+
+        expect(cluster.recalculate_health_index!).to eq(0.6)
+      end
     end
   end
 
@@ -80,7 +91,7 @@ RSpec.describe "Cluster health and tree family management" do
     end
 
     it "recalculates based on AI insight" do
-      yesterday = cluster.local_yesterday
+      yesterday = AiInsight.reporting_date
       create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
                           target_date: yesterday, stress_index: 0.4)
 

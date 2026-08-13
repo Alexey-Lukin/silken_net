@@ -118,16 +118,16 @@ class Cluster < ApplicationRecord
     read_attribute(:health_index) || 1.0
   end
 
-  # [UTC/Cluster TZ Anchor]: Вчорашня дата в часовому поясі кластера.
-  # Якщо timezone не задано — використовуємо UTC для детермінованості арбітражу.
-  # Гарантує, що «вчора» у Черкасах та «вчора» у джунглях Амазонки — це правильна дата.
-  def local_yesterday
-    Time.use_zone(timezone.presence || "UTC") { Date.yesterday }
-  end
+  # [ARCH.100] `local_yesterday` тут БІЛЬШЕ НЕМАЄ — і це не спрощення, а лік.
+  # Він брав «вчора» в поясі кластера, тоді як інсайт, який усі ці читачі шукають,
+  # штампується UTC-добою агрегатора. Для поясів західніше UTC−2 дати не збігались
+  # НІКОЛИ, тож нічний крон читав порожню добу й видавав на неї вироки. Дім якоря —
+  # `AiInsight.reporting_date`; `environmental_settings["timezone"]` лишається
+  # операторськими даними, чий споживач з'явиться разом із per-tenant агрегацією.
 
   # Перерахунок health_index на основі даних ШІ (використовується у ClusterHealthCheckWorker)
   # $$V = 1.0 - S$$ де $S$ - stress_index з добового звіту ШІ
-  def recalculate_health_index!(target_date = local_yesterday)
+  def recalculate_health_index!(target_date = AiInsight.reporting_date)
     insight = ai_insights.daily_health_summary.for_date(target_date).first
     new_value = insight ? (1.0 - insight.stress_index.to_f).round(2) : 1.0
     update_column(:health_index, new_value)

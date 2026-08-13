@@ -70,9 +70,9 @@ class BlockchainBurningService < ApplicationService
     @source_tree = source_tree
     @contractual = contractual
     # [ARCH.46] Дата для damage-ratio — прокинута від ContractHealthCheckService (де порахована
-    # й де відбувся blackout-guard), щоб burn НЕ перевираховував local_yesterday у свій момент
+    # й де відбувся blackout-guard), щоб burn НЕ перевираховував добу у свій момент
     # (date-mismatch → запит на іншу добу → нуль записів → хибне 100%). Інші тригери
-    # (tree-death/dClimate/contractual) дати не передають → дефолт local_yesterday (їх поведінка).
+    # (tree-death/dClimate/contractual) дати не передають → дефолт `AiInsight.reporting_date`.
     @target_date = target_date
   end
 
@@ -498,9 +498,10 @@ class BlockchainBurningService < ApplicationService
   end
 
   # [ARCH.46] Дата для AiInsight-запиту: прокинута від `ContractHealthCheckService` (де порахована
-  # й де відпрацював blackout-guard), інакше дефолт `local_yesterday` (tree-death/dClimate/contractual).
+  # й де відпрацював blackout-guard), інакше дефолт [ARCH.100] `AiInsight.reporting_date`
+  # (tree-death/dClimate/contractual) — той САМИЙ якір, яким інсайти записані.
   def effective_target_date
-    @target_date || @cluster.local_yesterday
+    @target_date || AiInsight.reporting_date
   end
 
   # [05_05 §3 Slashing curve] Progressive CONVEX penalty:

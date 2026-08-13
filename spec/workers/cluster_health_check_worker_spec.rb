@@ -24,8 +24,31 @@ RSpec.describe ClusterHealthCheckWorker, type: :worker do
       expect { described_class.new.perform(date) }.not_to raise_error
     end
 
-    it "handles nil date_string gracefully" do
-      expect { described_class.new.perform(nil) }.not_to raise_error
+    # 🔴 [ARCH.100] Регрес. Доти цей приклад звався «handles nil date_string gracefully» і
+    # стверджував лише `not_to raise_error` — тобто НІЧОГО: саме nil-гілка й несла дефект,
+    # а єдиний пін на дату стеріг протилежну, явну гілку (нижче). Дефолтна доба мусить бути
+    # тією, якою інсайти ЗАПИСАНО, а не «вчора» в поясі кластера.
+    #
+    # ⚠️ Час заморожено НАВМИСНО: дві дати розходяться лише у вікні `UTC-година < |offset|`,
+    # тож на живому годиннику цей пін дві третини доби був би зеленим на зламаному коді.
+    context "with no date_string (the nightly cron path)" do
+      let(:cluster) do
+        create(:cluster, organization: organization,
+                         environmental_settings: { "timezone" => "America/Manaus" })
+      end
+
+      it "anchors both consumers on the reporting date, not the cluster's local yesterday" do
+        travel_to(Time.utc(2026, 8, 13, 2, 0, 0)) do
+          expected = AiInsight.reporting_date
+          stale = Time.use_zone("America/Manaus") { Date.yesterday }
+          expect(stale).not_to eq(expected) # ліхтар: інакше приклад стереже порожнечу
+
+          expect_any_instance_of(Cluster).to receive(:recalculate_health_index!).with(expected)
+          expect_any_instance_of(NaasContract).to receive(:check_cluster_health!).with(expected)
+
+          described_class.new.perform(nil)
+        end
+      end
     end
 
     it "continues processing when a single contract errors" do

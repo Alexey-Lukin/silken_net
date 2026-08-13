@@ -25,7 +25,7 @@ class InsuranceOracleWorker
     cluster = Cluster.find_by(id: cluster_id)
     return unless cluster
 
-    target_date = date_string.present? ? Date.parse(date_string) : cluster.local_yesterday
+    target_date = date_string.present? ? Date.parse(date_string) : AiInsight.reporting_date
 
     cluster.parametric_insurances.status_active.find_each do |insurance|
       insurance.evaluate_daily_health!(target_date)

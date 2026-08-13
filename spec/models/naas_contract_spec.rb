@@ -148,40 +148,53 @@ RSpec.describe NaasContract, type: :model do
     end
   end
 
-  describe "cluster timezone integration" do
+  # [ARCH.100] Доти цей блок звався «cluster timezone integration» і мав ДОВОДИТИ, що пояс
+  # кластера обирає добу аудиту. Він нічого не доводив: єдине його твердження стояло під
+  # `if nz_yesterday != utc_yesterday`, тобто мовчало більшу частину доби, а всередині
+  # умови перевіряло `be_status_active` — стан, у якому контракт і так народжується.
+  # Тепер пін стереже властивість, від якої залежать гроші: пояс НЕ впливає на присуд.
+  describe "reporting-date anchor vs cluster timezone" do
     let(:organization) { create(:organization) }
     let(:contract) { create(:naas_contract, organization: organization, cluster: cluster, status: :active) }
 
-    context "when cluster has a timezone set" do
-      let(:cluster) { create(:cluster, organization: organization, environmental_settings: { "timezone" => "Pacific/Auckland" }) }
+    # ⚠️ Час заморожено на реальному моменті крона (02:00 UTC) НАВМИСНО: локальна доба
+    # розходиться з добою звіту лише у вікні `UTC-година < |offset|`, тож без заморозки
+    # обидва приклади дві третини доби були б зелені на зламаному коді.
+    let(:cron_moment) { Time.utc(2026, 8, 13, 2, 0, 0) }
 
-      it "uses cluster timezone for default target_date" do
-        create(:tree, cluster: cluster, status: :active)
+    def seed_healthy_day!
+      tree = create(:tree, cluster: cluster, status: :active)
+      create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+                          target_date: AiInsight.reporting_date, stress_index: 0.05)
+      cluster.reload
+    end
 
-        nz_yesterday = Time.use_zone("Pacific/Auckland") { Date.yesterday }
-        utc_yesterday = Time.current.utc.to_date - 1
+    context "when the cluster sits west of UTC-2 (the whole of the Americas)" do
+      let(:cluster) { create(:cluster, organization: organization, environmental_settings: { "timezone" => "America/Manaus" }) }
 
-        # Create insight for the NZ-timezone yesterday
-        create(:ai_insight,
-          analyzable: cluster.trees.active.first,
-          target_date: nz_yesterday,
-          stress_index: 0.1
-        )
+      # 🔴 Регрес ARCH.100. Доти дефолт брав «вчора» в поясі кластера, а інсайт лежав за
+      # UTC-добою агрегатора — і здоровий ліс щоночі діставав `:blackout`, тобто виклик
+      # людини в поле й невиплачену Celo-винагороду.
+      it "returns :healthy on a healthy day instead of a fabricated blackout" do
+        travel_to(cron_moment) do
+          # ліхтар: без розходження дат приклад стеріг би порожнечу
+          expect(Time.use_zone("America/Manaus") { Date.yesterday }).not_to eq(AiInsight.reporting_date)
+          seed_healthy_day!
 
-        # When NZ yesterday differs from UTC yesterday, the cluster timezone matters
-        if nz_yesterday != utc_yesterday
-          # With cluster timezone, contract should find the insight
-          contract.check_cluster_health!(nz_yesterday)
-          expect(contract.reload).to be_status_active
+          expect(contract.check_cluster_health!).to eq(:healthy)
         end
       end
     end
 
-    context "when cluster has no timezone set" do
-      let(:cluster) { create(:cluster, organization: organization) }
+    context "when the cluster sits east of UTC" do
+      let(:cluster) { create(:cluster, organization: organization, environmental_settings: { "timezone" => "Pacific/Auckland" }) }
 
-      it "falls back to UTC" do
-        expect(cluster.local_yesterday).to eq(Time.current.utc.to_date - 1)
+      it "returns the same verdict on the same data" do
+        travel_to(cron_moment) do
+          seed_healthy_day!
+
+          expect(contract.check_cluster_health!).to eq(:healthy)
+        end
       end
     end
   end

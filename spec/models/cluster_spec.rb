@@ -16,29 +16,31 @@ RSpec.describe Cluster, type: :model do
     end
   end
 
-  describe "#local_yesterday" do
-    it "returns UTC yesterday when no timezone is set" do
-      cluster = create(:cluster)
-      expect(cluster.local_yesterday).to eq(Time.current.utc.to_date - 1)
-    end
-
-    it "uses the cluster timezone when set" do
-      cluster = create(:cluster, environmental_settings: { "timezone" => "Pacific/Auckland" })
-      nz_yesterday = Time.use_zone("Pacific/Auckland") { Date.yesterday }
-      expect(cluster.local_yesterday).to eq(nz_yesterday)
-    end
-
-    it "falls back to UTC when timezone is empty string" do
-      cluster = create(:cluster, environmental_settings: { "timezone" => "" })
-      expect(cluster.local_yesterday).to eq(Time.current.utc.to_date - 1)
-    end
-  end
-
   describe "#recalculate_health_index!" do
     it "accepts a target_date parameter" do
       cluster = create(:cluster)
       result = cluster.recalculate_health_index!(Time.current.utc.to_date - 1)
       expect(result).to eq(1.0) # No insights → default 1.0
+    end
+
+    # [ARCH.100] Тут доти стояв `describe "#local_yesterday"` — три приклади, що пінили
+    # ПЕР-КЛАСТЕРНУ добу як правильну. Вони були зелені й описували справжню поведінку
+    # методу; хибною була сама поведінка, бо інсайт, який цей метод шукає, штампується
+    # UTC-добою агрегатора. Пін нижче стереже те, чого ті три не питали ЖОДНОГО разу:
+    # чи знаходить кластер СВІЙ інсайт, коли його пояс не UTC.
+    #
+    # ⚠️ Час заморожено на моменті крона: дві дати розходяться лише у вікні
+    # `UTC-година < |offset|`, тож без заморозки приклад був би зелений і на старій формі.
+    it "resolves its default date to the anchor the insights were WRITTEN with, whatever the cluster timezone" do
+      travel_to(Time.utc(2026, 8, 13, 2, 0, 0)) do
+        expect(Time.use_zone("America/Manaus") { Date.yesterday }).not_to eq(AiInsight.reporting_date)
+
+        cluster = create(:cluster, environmental_settings: { "timezone" => "America/Manaus" })
+        create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+                            target_date: AiInsight.reporting_date, stress_index: 0.4)
+
+        expect(cluster.recalculate_health_index!).to eq(0.6)
+      end
     end
   end
 
@@ -408,7 +410,7 @@ RSpec.describe Cluster, type: :model do
       create(:ai_insight,
              analyzable: cluster,
              insight_type: :daily_health_summary,
-             target_date: cluster.local_yesterday,
+             target_date: AiInsight.reporting_date,
              stress_index: 0.3)
 
       result = cluster.recalculate_health_index!
@@ -421,7 +423,7 @@ RSpec.describe Cluster, type: :model do
       create(:ai_insight,
              analyzable: cluster,
              insight_type: :daily_health_summary,
-             target_date: cluster.local_yesterday,
+             target_date: AiInsight.reporting_date,
              stress_index: 0.0)
 
       result = cluster.recalculate_health_index!
@@ -433,7 +435,7 @@ RSpec.describe Cluster, type: :model do
       create(:ai_insight,
              analyzable: cluster,
              insight_type: :daily_health_summary,
-             target_date: cluster.local_yesterday,
+             target_date: AiInsight.reporting_date,
              stress_index: 1.0)
 
       result = cluster.recalculate_health_index!

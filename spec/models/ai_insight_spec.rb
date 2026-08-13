@@ -158,6 +158,23 @@ RSpec.describe AiInsight, type: :model do
     end
   end
 
+  # [ARCH.100] Дім доби звіту. Пін тримає ДВІ властивості, і друга — та, заради якої
+  # дім заведено: доба не залежить від пояса, у якому опинився процес чи орендар.
+  describe ".reporting_date" do
+    it "is the UTC day before the given moment" do
+      expect(described_class.reporting_date(Time.utc(2026, 8, 13, 2, 0, 0))).to eq(Date.new(2026, 8, 12))
+    end
+
+    it "does not move with the ambient Rails timezone" do
+      moment = Time.utc(2026, 8, 13, 2, 0, 0)
+      answers = [ "UTC", "America/Manaus", "Pacific/Auckland" ].map do |zone|
+        Time.use_zone(zone) { described_class.reporting_date(moment) }
+      end
+
+      expect(answers.uniq).to eq([ Date.new(2026, 8, 12) ])
+    end
+  end
+
   # =========================================================================
   # EVIDENCE PERSISTENCE (source_log_ids)
   # =========================================================================
