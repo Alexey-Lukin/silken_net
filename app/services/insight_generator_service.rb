@@ -20,6 +20,25 @@ class InsightGeneratorService < ApplicationService
   # Синхронний режим: обробляє ВСІ кластери в одному процесі.
   # Підходить для малих датасетів або прямого виклику через InsightGeneratorService.call(date).
   # Для масштабу 10M+ дерев використовуйте InsightGeneratorOrchestratorWorker (Sidekiq::Batch).
+  # 🔴 [ARCH.84] Вердикт за добу мусить дістати КОЖНЕ дерево, а обидва шляхи
+  # писача обходять лише кластери з даними (`cluster_baselines.keys`) — тож
+  # повністю мовчазний кластер не відвідується взагалі, і його дерева тримали б
+  # учорашній стрес: «постаріла підміна виміру», яку `Cluster#recalculate_health_index!`
+  # (`04_01 §3`) називає небезпечнішою за очевидну, бо вона правдоподібна.
+  #
+  # Один set-based UPDATE, а не обхід флоту: межа `IS NOT NULL` лишає в наборі
+  # тільки рядки, які справді треба занулити (10¹²-масштаб — `00_01 §1.1`).
+  # ⚠️ `cluster_id IS NULL` враховано ЯВНО: `belongs_to :cluster, optional: true`,
+  # а `NOT IN` такі рядки мовчки виключає — та сама сліпота, що [ARCH.98].
+  def self.reset_stress_outside(cluster_ids)
+    base = Tree.where.not(latest_stress_index: nil)
+    return base.update_all(latest_stress_index: nil) if cluster_ids.blank?
+
+    base.where.not(cluster_id: cluster_ids)
+        .or(base.where(cluster_id: nil))
+        .update_all(latest_stress_index: nil)
+  end
+
   def perform
     Rails.logger.info "🧠 [Insight Generator] Початок масової агрегації за #{@date}..."
 
@@ -36,6 +55,9 @@ class InsightGeneratorService < ApplicationService
     ActiveRecord::Base.transaction do
       # 1. ІДЕМПОТЕНТНІСТЬ: Очищуємо старі інсайти за цю дату перед перерахунком
       AiInsight.where(target_date: @date, insight_type: :daily_health_summary).delete_all
+
+      # [ARCH.84] Дерева поза обробленими кластерами — теж вердикт за цю добу.
+      self.class.reset_stress_outside(processed_cluster_ids)
 
       unless processed_cluster_ids.empty?
         Cluster.where(id: processed_cluster_ids).find_each do |cluster|
@@ -158,7 +180,20 @@ class InsightGeneratorService < ApplicationService
 
     cluster.trees.find_each do |tree|
       stats = tree_stats_map[tree.id]
-      next unless stats
+
+      # 🔴 [ARCH.84] Дерево без телеметрії за добу дістає ЯВНИЙ `nil`, а не пропуск.
+      # Доти тут стояв `next unless stats` — і денормалізований стрес лишався
+      # стояти з попереднього прогону НАЗАВЖДИ: понеділковий 0.42 на вівторковій
+      # темряві. Це підміна виміру, лише постаріла, і тим небезпечніша, що
+      # правдоподібна — дослівно те, чого уникає дзеркальний
+      # `Cluster#recalculate_health_index!` (`04_01 §3`), і чого ця колонка не
+      # уникала. Ціна нульова за скануванням: цикл уже обходить КОЖНЕ дерево
+      # кластера, `prefetch_tree_stats` — один згрупований запит; додається
+      # лише запис, і лише для мовчазної меншості (поріг тиші — 24 год).
+      unless stats
+        tree.update_column(:latest_stress_index, nil) unless tree.latest_stress_index.nil?
+        next
+      end
 
       @processed_count += 1 if generate_for_tree(tree, cluster_baseline, stats)
     end

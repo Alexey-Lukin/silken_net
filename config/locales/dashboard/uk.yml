@@ -27,3 +27,4 @@ uk:
     map:
       heading: Геопросторова матриця
       live_nodes: 'Живих активних вузлів: %{count}'
+      unmeasured: НЕ ВИМІРЯНО

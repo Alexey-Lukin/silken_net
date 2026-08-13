@@ -27,3 +27,4 @@ lv:
     map:
       heading: Ģeotelpiskā matrica
       live_nodes: 'Aktīvie tiešraides mezgli: %{count}'
+      unmeasured: NAV IZMĒRĪTS

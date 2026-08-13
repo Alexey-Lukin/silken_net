@@ -23,14 +23,28 @@ module Api
         @scc_yield = calculate_expected_yield(org)
 
         respond_to do |format|
-          format.json { render json: { visions: @visions, emission_forecast: @scc_yield } }
+          # [ARCH.84] `emission_forecast` лишається ЧИСЛОМ (додатковий ключ, не зміна
+          # форми), а покриття їде поруч: скільки дерев із скількох стоїть за цим
+          # прогнозом. Число без покриття є твердженням про весь ліс.
+          format.json do
+            render json: {
+              visions: @visions,
+              emission_forecast: @scc_yield[:value],
+              emission_forecast_coverage: {
+                measured: @scc_yield[:measured],
+                total: @scc_yield[:total]
+              }
+            }
+          end
           format.html do
             @clusters = acting_organization!.clusters.order(:name)
             render_dashboard(
               title: I18n.t("oracle_visions.index_title"),
               component: OracleVisions::Index.new(
                 visions: @visions,
-                emission_forecast: @scc_yield,
+                emission_forecast: @scc_yield[:value],
+                forecast_measured: @scc_yield[:measured],
+                forecast_total: @scc_yield[:total],
                 clusters: @clusters,
                 current_user: current_user
               )
@@ -69,10 +83,28 @@ module Api
         Rails.cache.fetch(Organization.expected_yield_cache_key(org.id), expires_in: 1.hour) do
           threshold = TokenomicsEvaluatorWorker.emission_threshold
           total_potential = 0.0
+          measured = 0
+          total = 0
 
-          org.trees.active.includes(:ai_insights).find_each(batch_size: 1000) do |tree|
-            sap_index = tree.latest_telemetry_log&.sap_flow || 0.0
+          # 🔴 [ARCH.84] Невиміряне дерево ПРОПУСКАЄМО — але разом із покриттям, і
+          # саме це робить пропуск законним. Доти `current_stress` віддавав `0.0`,
+          # тобто множник `(1.0 − 0)` = **повна вага здоровʼя**: щойно розгорнутий
+          # вузол, який ще не бачив нічного проходу, віддавав у прогноз увесь свій
+          # sap як ідеально здоровий. Після зняття підстановки `1.0 - nil` — це
+          # `TypeError`, тобто 500 на всьому ендпоінті, а не зіпсована комірка.
+          # ⛔ Мовчазний скіп сюди не годиться: «відкид невиміряних і є відбір»
+          # проти ноги місії «невідбирано» (`00_01 §1.1`, дзеркало — `04_01 §3`).
+          # Тому число їде з `measured`/`total`, як `Cluster.health_coverage`.
+          # ⊕ `.includes(:ai_insights)` знято: `current_stress` читає денормалізовану
+          # колонку, тож eager-load був мертвий. Живий N+1 (`latest_telemetry_log`)
+          # лишається — він поза цим фіксом, трекається окремо.
+          org.trees.active.find_each(batch_size: 1000) do |tree|
+            total += 1
             stress = tree.current_stress
+            next if stress.nil?
+
+            measured += 1
+            sap_index = tree.latest_telemetry_log&.sap_flow || 0.0
             total_potential += sap_index * (1.0 - stress)
           end
 
@@ -81,7 +113,13 @@ module Api
           # `.round(4)` на ньому повертає BigDecimal — тобто прогноз їхав би на екран
           # із сирою точністю схеми замість чотирьох знаків. Доти він там ще й ЗНИКАВ,
           # поки Phlex не вмів друкувати цей тип узагалі (`04_04 §2`).
-          ((total_potential * 24) / threshold).to_f.round(4)
+          # У кеш кладемо СКАЛЯРИ, не Struct — та сама дисципліна, що в
+          # `dashboard_controller` після [ARCH.84].
+          {
+            value: ((total_potential * 24) / threshold).to_f.round(4),
+            measured: measured,
+            total: total
+          }
         end
       end
     end

@@ -37,6 +37,12 @@ class InsightGeneratorOrchestratorWorker
     baselines = service.cluster_baselines
     cluster_ids = baselines.keys
 
+    # [ARCH.84] Дерева поза обробленими кластерами дістають явний `nil` — і саме
+    # ТУТ, бо шардовані воркери бачать лише свій чанк і про мовчазний кластер не
+    # дізнаються ніколи. Дім правила один — `InsightGeneratorService`; це другий
+    # його викликач, не друга копія.
+    InsightGeneratorService.reset_stress_outside(cluster_ids)
+
     if cluster_ids.empty?
       Rails.logger.warn "⚠️ [Insight Orchestrator] За #{target_date} немає кластерів з даними."
       return

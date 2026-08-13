@@ -16,7 +16,10 @@ module Dashboard
           did: @tree.did,
           lat: @tree.latitude.to_f,
           lng: @tree.longitude.to_f,
-          stress: @tree.current_stress.to_f,
+          # [ARCH.84] Атрибут ВІДСУТНІЙ, коли стрес не виміряно — `.to_f` тут був
+          # ридер-підстановкою (nil → 0.0 → смарагдовий «гомеостаз»). Відсутність
+          # читає `map_controller` як окремий стан, а не як нуль.
+          **(@tree.current_stress.nil? ? {} : { stress: @tree.current_stress }),
           # ⛔ [ARCH.99] `charge` тут БІЛЬШЕ НЕМА, і це не косметика: здорове дерево
           # давало 18 %, тож `charge < 30` у `map_controller` було істинне ЗАВЖДИ —
           # диз'юнкція згорталась, і смарагдовий колір гомеостазу був недосяжний за

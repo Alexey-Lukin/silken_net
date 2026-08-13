@@ -25,9 +25,12 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       # "oracle_expected_yield_24h" to a per-org "oracle_expected_yield_24h_org_<id>"
       # to stop cross-tenant leakage. Match the org-scoped key so the stub fires
       # for the forester/admin tests below.
+      # [ARCH.84] Форма кешованого значення — ХЕШ скалярів (`value`/`measured`/`total`),
+      # бо прогноз рахується лише по деревах із виміряним стресом і мусить нести
+      # покриття. Стаб мусить дзеркалити форму, інакше він тестує неіснуючий контракт.
       allow(Rails.cache).to receive(:fetch)
         .with("oracle_expected_yield_24h_org_#{organization.id}", anything)
-        .and_return(1.5)
+        .and_return({ value: 1.5, measured: 1, total: 1 })
     end
 
     context "when as JSON" do
@@ -81,30 +84,78 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
+    # 🔴 [ARCH.84] Цей контекст роками НЕ прогонив розрахунку, попри власну назву:
+    # файловий `before` вище стабить `Rails.cache.fetch` для org-ключа, а вкладений
+    # `Rails.cache.clear` стаб не знімає — тіло `calculate_expected_yield` не
+    # виконувалось ЖОДНОГО разу, і обидва приклади вітали підставлені 1.5, чесно
+    # бачачи `Numeric`. Тепер стаб знімається явно, і приклади пінять ЗНАЧЕННЯ.
     context "when calculate_expected_yield runs without cache" do
       before do
         Rails.cache.clear
+        allow(Rails.cache).to receive(:fetch).and_call_original
       end
 
       it "computes yield from tree data using sap_flow and stress" do
-        tree = create(:tree, cluster: cluster, status: :active)
-        create(:ai_insight, analyzable: tree)
-
-        get "/oracle_visions", headers: forester_headers, as: :json
-        expect(response).to have_http_status(:ok)
-        expect(response.parsed_body["emission_forecast"]).to be_a(Numeric)
-      end
-
-      it "uses sap_flow from latest telemetry when present" do
-        tree = create(:tree, cluster: cluster, status: :active)
-        create(:telemetry_log, tree: tree, sap_flow: 1.5,
+        tree = create(:tree, cluster: cluster, status: :active, latest_stress_index: 0.2)
+        create(:telemetry_log, tree: tree, sap_flow: 2.0,
                temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
                acoustic_events: 2, growth_points: 10,
                bio_status: :homeostasis, metabolism_s: 1000)
 
         get "/oracle_visions", headers: forester_headers, as: :json
+
         expect(response).to have_http_status(:ok)
-        expect(response.parsed_body["emission_forecast"]).to be_a(Numeric)
+        # 2.0 sap × (1 − 0.2) × 24 / поріг — пін на ЧИСЛО, не на «якесь Numeric».
+        expected = ((2.0 * 0.8 * 24) / TokenomicsEvaluatorWorker.emission_threshold).round(4)
+        expect(response.parsed_body["emission_forecast"]).to be_within(0.0001).of(expected)
+      end
+
+      # 🔴 Ядро фіксу: дерево БЕЗ виміряного стресу не має ваги здоровʼя, тож воно
+      # не входить у суму — але й не зникає мовчки. Доти `current_stress` віддавав
+      # `0.0`, тобто множник `(1.0 − 0)`: невиміряне дерево віддавало ВЕСЬ свій sap
+      # як ідеально здорове. Пін тримає обидві половини — число й покриття.
+      it "leaves an unmeasured tree out of the sum and declares the coverage" do
+        measured = create(:tree, cluster: cluster, status: :active, latest_stress_index: 0.5)
+        unmeasured = create(:tree, cluster: cluster, status: :active, latest_stress_index: nil)
+        [ measured, unmeasured ].each do |tree|
+          create(:telemetry_log, tree: tree, sap_flow: 2.0,
+                 temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+                 acoustic_events: 2, growth_points: 10,
+                 bio_status: :homeostasis, metabolism_s: 1000)
+        end
+
+        get "/oracle_visions", headers: forester_headers, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expected = ((2.0 * 0.5 * 24) / TokenomicsEvaluatorWorker.emission_threshold).round(4)
+        expect(response.parsed_body["emission_forecast"]).to be_within(0.0001).of(expected)
+        expect(response.parsed_body["emission_forecast_coverage"]).to eq("measured" => 1, "total" => 2)
+      end
+
+      # ⊥ Третій вхід, відмінний від обох вище: стрес ВИМІРЯНО, а телеметрії немає
+      # (нічний прохід був, свіжих пакетів — ні). Дерево входить у покриття як
+      # виміряне, але віддає нуль sap — інакше `&.` на відсутньому лозі лишався б
+      # непройденою гілкою, тобто саме тією адресою, де ніхто не ходив.
+      it "counts a measured tree with no telemetry as measured, contributing zero" do
+        create(:tree, cluster: cluster, status: :active, latest_stress_index: 0.3)
+
+        get "/oracle_visions", headers: forester_headers, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["emission_forecast"]).to eq(0.0)
+        expect(response.parsed_body["emission_forecast_coverage"]).to eq("measured" => 1, "total" => 1)
+      end
+
+      # ⊥ Межа: до фіксу цей вхід давав `1.0 - nil` → TypeError → 500 на ВСЬОМУ
+      # ендпоінті, а не зіпсовану комірку.
+      it "does not 500 when every active tree is unmeasured" do
+        create(:tree, cluster: cluster, status: :active, latest_stress_index: nil)
+
+        get "/oracle_visions", headers: forester_headers, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["emission_forecast"]).to eq(0.0)
+        expect(response.parsed_body["emission_forecast_coverage"]).to eq("measured" => 0, "total" => 1)
       end
     end
   end
@@ -201,7 +252,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       allow(Rails.cache).to receive(:fetch).and_call_original
       allow(Rails.cache).to receive(:fetch)
         .with("oracle_expected_yield_24h_org_#{organization.id}", expires_in: 1.hour)
-        .and_return(2.5)
+        .and_return({ value: 2.5, measured: 3, total: 3 })
 
       get "/oracle_visions", headers: forester_headers, as: :json
       expect(response).to have_http_status(:ok)

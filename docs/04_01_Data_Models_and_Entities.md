@@ -270,7 +270,7 @@ normalize_identifier :device_uid  # HardwareKey
 | `latitude`, `longitude` | decimal | WGS-84 координати (via GeoLocatable) |
 | `last_seen_at` | datetime | Останній пакет телеметрії |
 | `latest_voltage_mv` | integer | Денормалізована **напруга шини живлення MCU** (мВ VDDA, VREFINT-калібрування — [`03_01`](03_01_Firmware_Lifecycle_and_DMA) FW.50). ⚠️ **[ARCH.99]** НЕ заряд іоністора: каналу Vcap на вузлі не існує, тож здоровий вузол стоїть біля номіналу 3300 мВ |
-| `latest_stress_index` | decimal | Денормалізований stress_index від InsightGeneratorService |
+| `latest_stress_index` | **decimal, nullable** | Денормалізований stress_index від `InsightGeneratorService`. ⚡ **[ARCH.84]** `NULL` = «не виміряно **за цю добу**» — окремий СТАН, не нуль; доти стояв `DEFAULT 0.0 NOT NULL`, див. нижче |
 | `health_streak` | integer | Кількість послідовних здорових пакетів (Anti-Flapping) |
 | `peaq_did` | string | peaq DID-ідентифікатор для Proof of Growth |
 | `altitude` | numeric | Висота над рівнем моря (м) |
@@ -298,7 +298,7 @@ dormant ──reactivate──► active
 | Метод | Опис |
 |-------|------|
 | `mark_seen!(voltage_mv)` | Hot path: `GREATEST` атомарне оновлення `last_seen_at` + `latest_voltage_mv`. Обходить колбеки. |
-| `current_stress` | Читає `latest_stress_index` (денормалізовано, без N+1) |
+| `current_stress` | Читає `latest_stress_index` **як є** (денормалізовано, без N+1): `nil` = не виміряно [ARCH.84]. ⛔ Не повертати `.to_f`/`\|\| 0` — це була ридер-підстановка, і без її зняття міграція нічого б не змінила |
 | `supply_voltage_mv` | `latest_voltage_mv \|\| 0` — сира напруга шини VDDA, діагностична (просідання = близькість брауноуту). **НЕ похідна для шкали заряду** |
 | `fresh_signal?(threshold = SILENCE_THRESHOLD)` | **[ARCH.99]** Рядковий бік сигналу тиші — ОДИН дім порога для скоупа й в'ю. ⊥ Свідомо НЕ дзеркало `scope :silent`: той відкидає `last_seen_at IS NULL` (sweeper не гонить Field Audit на вузол, що ще не виходив в ефір), глядачеві ж «жодного пакета» = така сама відсутність свіжого сигналу |
 | `under_threat?` | `ews_alerts.unresolved.exists?` |
@@ -312,6 +312,38 @@ dormant ──reactivate──► active
 - `after_update_commit :broadcast_map_update, if: :map_relevant_change?` — лише при зміні lat/lng/status/voltage
 
 **Scopes:** `active`, `geolocated`, `silent` (> 24 год мовчання), `critical_stress` (stress > 0.8).
+
+> ⚡ **«НЕ ВИМІРЯНО» = СТАН, А НЕ ЗНАЧЕННЯ — друга колонка того ж класу [ARCH.84].**
+> `latest_stress_index` більше не має ані `DEFAULT 0.0`, ані ридера-підстановки.
+>
+> 🔴 **Підстава та сама, що в `health_index`, і тут вона СИЛЬНІША: нуль — не просто
+> досяжний вимір, а МОДАЛЬНИЙ.** `calculate_stress_index_heuristic` віддає рівно
+> `0.0` здоровому дереву (обидва доданки — sap і акустика — інертні до
+> ENV-калібрування), тож «бездоганне» й «не міряли» були **одним числом**, і жоден
+> споживач їх не розрізняв. Ціна була видима: після зняття фабрикованої
+> `charge`-ноги ([ARCH.99]) колір маркера на карті тримається на самому стресі —
+> і невиміряне дерево малювалось **смарагдовим «гомеостазом»**.
+>
+> **Писач дає вердикт КОЖНОМУ дереву за добу — двома шляхами, бо діри дві:**
+>
+> | Хто мовчить | Механізм | Чому окремо |
+> |---|---|---|
+> | дерево в кластері, що має дані | `InsightGeneratorService#process_cluster_trees` — явний `nil` замість `next` | цикл уже обходить кожне дерево кластера; додається лише запис |
+> | кластер, що замовк ЦІЛКОМ | `InsightGeneratorService.reset_stress_outside(cluster_ids)` — один set-based `UPDATE` | обидва шляхи писача (синхронний і шардований) беруть `cluster_baselines.keys`, тобто мовчазний кластер не відвідується ВЗАГАЛІ |
+>
+> ⚠️ Другий механізм враховує `cluster_id IS NULL` **явно**: `belongs_to :cluster,
+> optional: true`, а `NOT IN` такі рядки мовчки виключає (та сама сліпота, що
+> [ARCH.98]). І межа `IS NOT NULL` тримає набір мінімальним — знаменник тут 10¹²
+> ([`00_01 §1.1`](00_01_Vision_Mission_and_Roadmap)).
+>
+> ⊥ **Відмінність від `health_index`, і вона несуча:** там колонка пер-КЛАСТЕРНА й
+> агрегується, тож їй знадобилась структура покриття (`Cluster.health_coverage`).
+> Ця — пер-деревна, тож покриття потрібне лише там, де дерева СУМУЮТЬ: єдиний
+> такий споживач — прогноз емісії ([`04_03 §5.9`](04_03_REST_API_v1_Reference)).
+>
+> ⛔ Бекфілу немає свідомо: єдиний доступний дискримінатор («дерево має AiInsight
+> ⇒ колонку писали») спростовується сідами — вони створюють `daily_health_summary`
+> кожному дереву й колонку не писали; тепер пишуть.
 
 ---
 

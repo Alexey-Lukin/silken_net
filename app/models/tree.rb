@@ -176,11 +176,17 @@ class Tree < ApplicationRecord
 
   # Останній вердикт Оракула
   # [ВИПРАВЛЕНО: N+1 TreeBlueprint#current_stress]:
-  # Тепер читаємо денормалізовану колонку latest_stress_index замість запиту до ai_insights.
-  # Колонка оновлюється InsightGeneratorService при щоденній агрегації.
-  # Це усуває N+1 запит для КОЖНОГО дерева при серіалізації TreeBlueprint :index та Dashboard::MapNode.
+  # Читаємо денормалізовану колонку latest_stress_index замість запиту до ai_insights —
+  # це усуває N+1 при серіалізації TreeBlueprint :index та Dashboard::MapNode.
+  #
+  # 🔴 [ARCH.84] Колонку читаємо ЯК Є: `nil` = «не виміряно», окремий СТАН, і саме
+  # тут стояла ридер-підстановка. `.to_f` виглядав форматуванням, а був нею: він
+  # перетворював порожнечу на `0.0` — найкращий можливий показник стресу, — тож
+  # знята з колонки `DEFAULT 0.0` без цього рядка не змінила б нічого.
+  # ⛔ Не повертати `.to_f`/`|| 0`: розрізняти «бездоганне» від «не міряли» —
+  # робота споживача, і кожен робить це по-своєму (`04_01 §2`).
   def current_stress
-    latest_stress_index.to_f
+    latest_stress_index&.to_f
   end
 
   def under_threat?

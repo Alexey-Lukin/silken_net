@@ -4,6 +4,10 @@ import L from "leaflet"
 
 export default class extends Controller {
   static targets = ["node"]
+  // [ARCH.84] Підпис стану «не виміряно» приходить із i18n через контейнер, а не
+  // зашитим рядком: попап уже несе два англійські літерали (DID/Stress) — це борг
+  // I18N.1, і збільшувати його новим станом не можна.
+  static values = { unmeasuredLabel: String }
 
   connect() {
     this.ensureMap()
@@ -60,7 +64,16 @@ export default class extends Controller {
     const lat = parseFloat(data.lat)
     const lng = parseFloat(data.lng)
     const did = data.did
-    const stress = parseFloat(data.stress || 0)
+
+    // 🔴 [ARCH.84] «Не виміряно» — ОКРЕМИЙ канал, не четвертий колір. Колір тут
+    // це рампа ЗДОРОВʼЯ (emerald→yellow→red), і додати до неї сірий означало б
+    // сказати, що невиміряне дерево має якесь здоровʼя. Тому при відсутньому
+    // вимірі рампа просто ЗНИКАЄ: маркер лишається порожнім кільцем без заливки
+    // й БЕЗ `animate-ping` — пульс є заявою про живий сигнал, а ми його не маємо.
+    // ⚠️ `data.stress` відсутній ≠ нуль: доти тут стояв `|| 0`, і нуль читався як
+    // ідеальний гомеостаз (`map_node.rb` більше не друкує атрибут без виміру).
+    const measured = data.stress !== undefined && data.stress !== ""
+    const stress = measured ? parseFloat(data.stress) : null
 
     if (isNaN(lat) || isNaN(lng)) return
 
@@ -71,19 +84,25 @@ export default class extends Controller {
     // [ARCH.99] Жовтий тримає ОДИН операнд — стрес. Другим стояв `charge < 30`,
     // а здорове дерево давало 18 %: умова була істинна завжди, тож смарагдовий
     // рядком вище не міг дожити до кінця функції для ЖОДНОГО вузла.
-    if (stress > 0.8 || data.status === "removed") {
+    // ⊕ `removed` лишається червоним і БЕЗ виміру: це факт статусу, не здоровʼя.
+    if ((measured && stress > 0.8) || data.status === "removed") {
       color = "#ef4444" // Red (Термінальний стрес / Фрод)
       shadow = "rgba(239, 68, 68, 0.8)"
-    } else if (stress > 0.4) {
+    } else if (measured && stress > 0.4) {
       color = "#eab308" // Yellow (Аномалія)
       shadow = "rgba(234, 179, 8, 0.6)"
     }
 
-    // Створюємо пульсуючий HTML-маркер
-    const iconHtml = `
+    const iconHtml = (!measured && data.status !== "removed")
+      ? `
+      <div class="relative w-4 h-4">
+        <div class="relative w-4 h-4 rounded-full border-2 border-dashed border-gray-400 bg-transparent z-10"></div>
+      </div>
+    `
+      : `
       <div class="relative w-4 h-4">
         <div class="absolute inset-0 rounded-full animate-ping opacity-75" style="background-color: ${color};"></div>
-        <div class="relative w-4 h-4 rounded-full border-2 border-black z-10 transition-colors duration-500" 
+        <div class="relative w-4 h-4 rounded-full border-2 border-black z-10 transition-colors duration-500"
              style="background-color: ${color}; box-shadow: 0 0 15px ${shadow};"></div>
       </div>
     `
@@ -106,6 +125,9 @@ export default class extends Controller {
   }
 
   popupTemplate(did, stress) {
-    return `<div class="font-mono text-[10px] text-black"><b>DID: ${did}</b><br>Stress: ${(stress * 100).toFixed(1)}%</div>`
+    const value = stress === null
+      ? (this.unmeasuredLabelValue || "—")
+      : `${(stress * 100).toFixed(1)}%`
+    return `<div class="font-mono text-[10px] text-black"><b>DID: ${did}</b><br>Stress: ${value}</div>`
   }
 }

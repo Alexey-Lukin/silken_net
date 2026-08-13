@@ -79,6 +79,27 @@ RSpec.describe Dashboard::MapNode do
     it "sets the status data attribute" do
       expect(html).to include('data-status="active"')
     end
+
+    # 🔴 [ARCH.84] Невиміряний стрес НЕ друкується взагалі — і це не косметика:
+    # `.to_f` тут був ридер-підстановкою (nil → 0.0), а нуль у `map_controller`
+    # означає смарагдовий «гомеостаз». Тобто дерево, якого нічний прохід не бачив
+    # жодного разу, малювалось найздоровішим на карті. Відсутність атрибута
+    # контролер читає окремим станом (порожнє кільце без пульсу).
+    it "omits the stress attribute entirely when the tree was never analysed" do
+      html = render_component(tree: build_tree(latest_stress_index: nil))
+
+      expect(html).not_to include("data-stress")
+      # ⊥ Решта вузла лишається: позиція й статус виміром стресу не гейтовані.
+      expect(html).to include('data-status="active"')
+      expect(html).to include("data-did=")
+    end
+
+    # ⊥ Ліхтар: справжній нуль ДРУКУЄТЬСЯ — «виміряно нулем» ≠ «не виміряно».
+    it "still prints a genuinely measured zero" do
+      html = render_component(tree: build_tree(latest_stress_index: 0.0))
+
+      expect(html).to include('data-stress="0.0"')
+    end
   end
 
   describe "different tree statuses" do

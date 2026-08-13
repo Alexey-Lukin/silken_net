@@ -7,11 +7,18 @@ module OracleVisions
     # за `authorize_admin!, only: [:simulate]` — тобто форестер бачив цілий пульт
     # симуляції, заповнював його й діставав 403 у turbo-frame без пояснення. Дефолт
     # `nil` fail-CLOSED.
-    def initialize(visions:, emission_forecast:, clusters:, current_user: nil)
+    # [ARCH.84] Покриття — не оздоба: прогноз рахується лише по деревах із
+    # виміряним стресом, тож без `measured`/`total` число мовчки видає себе за
+    # твердження про ВЕСЬ ліс. Дефолти `nil` тримають компонент рендерабельним
+    # для викликача, який покриття не передав (жоден живий такий не лишився).
+    def initialize(visions:, emission_forecast:, clusters:, current_user: nil,
+                   forecast_measured: nil, forecast_total: nil)
       @visions = visions
       @emission_forecast = emission_forecast
       @clusters = clusters
       @current_user = current_user
+      @forecast_measured = forecast_measured
+      @forecast_total = forecast_total
     end
 
     def view_template
@@ -50,6 +57,11 @@ module OracleVisions
             end
             span(class: "text-xs text-emerald-600 font-light italic") { t(".yield_unit") }
           end
+
+          # [ARCH.84] Підпис покриття зʼявляється ЛИШЕ при частковому вимірі —
+          # `measurement_coverage` віддає `nil` на повному (дім — сайт 1 пункту).
+          coverage = measurement_coverage(@forecast_measured, @forecast_total)
+          p(class: "text-micro text-status-warning-text font-mono mt-1") { coverage } if coverage
         end
       end
     end

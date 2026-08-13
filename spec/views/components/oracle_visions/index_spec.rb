@@ -27,9 +27,10 @@ RSpec.describe OracleVisions::Index do
     c
   end
 
-  def render_component(visions:, emission_forecast:, clusters:)
+  def render_component(visions:, emission_forecast:, clusters:, forecast_measured: nil, forecast_total: nil)
     ApplicationController.renderer.render(
-      component_class.new(visions: visions, emission_forecast: emission_forecast, clusters: clusters),
+      component_class.new(visions: visions, emission_forecast: emission_forecast, clusters: clusters,
+                          forecast_measured: forecast_measured, forecast_total: forecast_total),
       layout: false
     )
   end
@@ -63,6 +64,25 @@ RSpec.describe OracleVisions::Index do
 
     it "shows the Projected 24h Emission label" do
       expect(html).to include("Projected 24h Emission")
+    end
+
+    # 🔴 [ARCH.84] Прогноз рахується ЛИШЕ по деревах із виміряним стресом, тож без
+    # покриття число мовчки видає себе за твердження про весь ліс — а мовчазний
+    # відкид невиміряних і є той «відбір», який місія забороняє (`00_01 §1.1`).
+    it "declares the coverage when only part of the fleet was measured" do
+      rendered = render_component(visions: visions, emission_forecast: "12.45", clusters: clusters,
+                                  forecast_measured: 3, forecast_total: 10)
+
+      expect(rendered).to include(I18n.t("ui.measurement.coverage", measured: 3, total: 10))
+    end
+
+    # ⊥ Ліхтар: на ПОВНОМУ покритті рядок мовчить — інакше пін вище був би зелений
+    # за будь-якої поведінки, а екран ніс би шум там, де твердження повне.
+    it "stays silent when the whole fleet was measured" do
+      rendered = render_component(visions: visions, emission_forecast: "12.45", clusters: clusters,
+                                  forecast_measured: 10, forecast_total: 10)
+
+      expect(rendered).not_to include(I18n.t("ui.measurement.coverage", measured: 10, total: 10))
     end
   end
 

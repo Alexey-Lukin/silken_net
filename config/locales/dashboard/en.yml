@@ -27,3 +27,4 @@ en:
     map:
       heading: Geospatial Matrix
       live_nodes: 'Live Active Nodes: %{count}'
+      unmeasured: NOT MEASURED

@@ -163,9 +163,25 @@ RSpec.describe Tree, type: :model do
   end
 
   describe "#current_stress" do
-    it "returns 0.0 when latest_stress_index is default" do
+    # 🔴 [ARCH.84] Доти приклад звався «returns 0.0 when latest_stress_index is
+    # default» — і саме той дефолт був дефектом: `numeric(4,3) DEFAULT 0.0 NOT NULL`
+    # давав ніколи-не-аналізованому дереву найкращий можливий стрес, а `.to_f` у
+    # ридері добивав порожнечу до нуля. Дефолту більше немає, і ридер читає як є.
+    it "returns nil when the tree was never analysed" do
       tree = create(:tree)
+
+      expect(tree.latest_stress_index).to be_nil
+      expect(tree.current_stress).to be_nil
+    end
+
+    # ⊥ Ліхтар проти вакууму: нуль лишається ДОСЯЖНИМ виміром (здорове дерево дає
+    # рівно 0.0 — обидва доданки евристики інертні до ENV-калібрування), тож
+    # «не виміряно» й «виміряно нулем» мусять лишатись відрізнимими.
+    it "returns 0.0 when zero was actually measured" do
+      tree = create(:tree, latest_stress_index: 0.0)
+
       expect(tree.current_stress).to eq(0.0)
+      expect(tree.current_stress).not_to be_nil
     end
 
     it "returns latest_stress_index from denormalized column" do
@@ -284,10 +300,15 @@ RSpec.describe Tree, type: :model do
   end
 
   describe "current_stress when cluster is nil" do
-    it "returns 0.0 from denormalized column regardless of cluster presence" do
-      tree = create(:tree)
+    # ⚠️ [ARCH.84] Значення тут ЗАПИСАНЕ свідомо: приклад стверджує, що наявність
+    # кластера нерелевантна, а з `nil` обабіч він став би вакуумним — nil із
+    # правильної причини (колонка порожня) і nil із хибної (щось зламалось у
+    # ридері) нерозрізнимі. Записане число робить твердження перевірним.
+    it "reads the denormalized column regardless of cluster presence" do
+      tree = create(:tree, latest_stress_index: 0.42)
       allow(tree).to receive(:cluster).and_return(nil)
-      expect(tree.current_stress).to eq(0.0)
+
+      expect(tree.current_stress).to eq(0.42)
     end
   end
 

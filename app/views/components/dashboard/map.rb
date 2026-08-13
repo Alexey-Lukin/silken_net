@@ -33,7 +33,11 @@ module Dashboard
         # мапа лишається порожньою, а наступні `broadcast_replace` летять у
         # неіснуючі id. Дашборд refresh-сигналів не отримує, тож морфу тут
         # нема від чого захищати.
-        div(id: "geospatial_map_canvas", data: { controller: "map" }, class: "w-full h-full z-0") do
+        # [ARCH.84] Підпис стану «не виміряно» їде ОДНИМ value на контейнер, а не
+        # атрибутом на кожному вузлі: попап його читає, коли `data-stress` відсутній.
+        div(id: "geospatial_map_canvas",
+            data: { controller: "map", map_unmeasured_label_value: t(".unmeasured") },
+            class: "w-full h-full z-0") do
           # Прихований блок даних. Stimulus "зчитує" звідси.
           div(id: "map_data_nodes", class: "hidden") do
             @trees.each { |tree| render Dashboard::MapNode.new(tree: tree) }

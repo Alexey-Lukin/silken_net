@@ -27,3 +27,4 @@ lt:
     map:
       heading: Geospatinė matrica
       live_nodes: 'Aktyvūs tiesioginiai mazgai: %{count}'
+      unmeasured: NEIŠMATUOTA

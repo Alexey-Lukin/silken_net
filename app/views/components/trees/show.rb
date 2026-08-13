@@ -122,8 +122,13 @@ module Trees
             # внутрішнього ядра») роками, суперечачи власному ж заголовку.
             metric_row(t(".biometrics.supply_voltage"), "#{@latest_log&.voltage_mv || 0} mV", sub: t(".biometrics.supply_sub"))
             metric_row(t(".biometrics.core_temperature"), "#{@latest_log&.temperature_c || 0} °C", sub: t(".biometrics.core_sub"))
-            stress_pct = ((@tree.current_stress || 0) * 100).round(1)
-            metric_row(t(".biometrics.stress_index"), "#{stress_pct}%", danger: @tree.under_threat?)
+            # [ARCH.84] `|| 0` тут був мертвим (колонка мала `DEFAULT 0.0 NOT NULL`) і
+            # оживши, друкував би «0.0%» — ту саму брехню, лише з іншого боку. Дім
+            # стану «не виміряно» вже збудовано сайтом 1 того ж пункту.
+            metric_row(t(".biometrics.stress_index"),
+                       measured_percent(@tree.current_stress, precision: 1),
+                       danger: @tree.under_threat?,
+                       unmeasured: @tree.current_stress.nil?)
           end
         end
       end
@@ -226,13 +231,19 @@ module Trees
 
     # --- HELPERS ---
 
-    def metric_row(label, value, sub: nil, danger: false)
+    # [ARCH.84] Третій стан — `unmeasured` — дзеркалить `Contracts::Show#metric_row`
+    # (той самий пункт, сайт 1): «не виміряно» мусить бути відрізнимим і від норми,
+    # і від тривоги, інакше воно читається як виміряне добре.
+    def metric_row(label, value, sub: nil, danger: false, unmeasured: false)
       div(class: "flex justify-between items-end border-b border-gaia-border pb-2") do
         div do
           p(class: "text-mini text-gaia-text-muted uppercase") { label }
           p(class: "text-micro text-gaia-text-subtle font-mono") { sub } if sub
         end
-        span(class: tokens("text-lg font-mono", "text-red-500 animate-pulse": danger, "text-emerald-300": !danger)) { value }
+        span(class: tokens("text-lg font-mono",
+                           "text-red-500 animate-pulse": danger,
+                           "text-status-warning-text": unmeasured && !danger,
+                           "text-emerald-300": !danger && !unmeasured)) { value }
       end
     end
 
@@ -250,11 +261,16 @@ module Trees
       end
     end
 
+    # 🔴 [ARCH.84] Без виміру дуга НЕ малюється взагалі — лишається сама канавка.
+    # Тут не можна «взяти інше число»: довжина дуги і Є твердженням про вимір, а
+    # `|| 0` давав offset 0, тобто ПОВНЕ кільце смарагдом із сяйвом — найсильніший
+    # образ «усе ідеально» в усьому UI, і саме його бачило кожне невиміряне дерево.
     def render_radial_svg
-      stress_factor = @tree.current_stress || 0
-      offset = 552 * (1 - stress_factor)
+      stress_factor = @tree.current_stress
       svg(class: "h-56 w-56 -rotate-90 transform") do
         circle(cx: "112", cy: "112", r: "88", class: "fill-none stroke-emerald-950 stroke-1")
+        next if stress_factor.nil?
+
         circle(
           cx: "112", cy: "112", r: "88",
           class: tokens(
@@ -262,7 +278,7 @@ module Trees
             "stroke-red-600 animate-pulse": @tree.under_threat?,
             "stroke-emerald-500 shadow-[0_0_15px_#10b981]": !@tree.under_threat?
           ),
-          style: "stroke-dasharray: 552; stroke-dashoffset: #{offset};"
+          style: "stroke-dasharray: 552; stroke-dashoffset: #{552 * (1 - stress_factor)};"
         )
       end
     end

@@ -19,6 +19,106 @@ RSpec.describe InsightGeneratorService, type: :service do
     }
   end
 
+  # 🔴 [ARCH.84] Симетрія з `Cluster#recalculate_health_index!`: денормалізований
+  # стрес — це твердження про ДОБУ, тож дерево без телеметрії за цю добу дістає
+  # явний `nil`, а не лишається з попереднім значенням. Доти тут стояв
+  # `next unless stats`, і колонка тримала понеділковий показник на вівторковій
+  # темряві — підміна виміру, лише постаріла, і тим небезпечніша, що правдоподібна.
+  describe "денормалізований стрес мовчазного дерева" do
+    # 🔴 ЯДРО ноги: дерево замовкло всередині кластера, який ДАНІ МАЄ. Саме тут
+    # жив «понеділковий 0.42 на вівторковій темряві» — сусіди цокочуть, кластер
+    # обробляється, а це дерево тримає позавчорашній показник. Два інші приклади
+    # нижче ходять іншим механізмом (`reset_stress_outside`), тож без цього
+    # найважливіша гілка лишалась без жодного проходу.
+    it "занулює мовчазне дерево ВСЕРЕДИНІ кластера, що має дані" do
+      silent = create(:tree, cluster: cluster, status: :active)
+      silent.update_column(:latest_stress_index, 0.42)
+
+      create(:telemetry_log, tree: tree,
+        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+        acoustic_events: 2, growth_points: 10,
+        bio_status: :homeostasis, metabolism_s: 1000,
+        created_at: date.beginning_of_day + 12.hours)
+
+      described_class.call(date)
+
+      expect(silent.reload.latest_stress_index).to be_nil
+      # ⊥ Ліхтар: галасливий сусід у тому ж кластері дістав ВИМІР, не nil —
+      # інакше приклад проходив би на поведінці, що просто занулює все підряд.
+      expect(tree.reload.latest_stress_index).not_to be_nil
+    end
+
+    it "занулює в nil дерево, чий кластер за добу мовчав цілком" do
+      tree.update_column(:latest_stress_index, 0.42)
+
+      described_class.call(date)
+
+      expect(tree.reload.latest_stress_index).to be_nil
+    end
+
+    # 🔴 Третій шар, знайдений прогоном: обидва шляхи писача обходять лише
+    # кластери З ДАНИМИ, тож повністю мовчазний кластер не відвідується взагалі —
+    # і його дерева тримали б учорашній стрес попри те, що ліс замовк цілком.
+    it "занулює дерево в кластері, який замовк ПОВНІСТЮ" do
+      dark_cluster = create(:cluster)
+      dark_tree = create(:tree, cluster: dark_cluster, status: :active)
+      dark_tree.update_column(:latest_stress_index, 0.7)
+
+      # Живий кластер поруч — щоб прохід не був порожнім і мав що обробляти.
+      create(:telemetry_log, tree: tree,
+        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+        acoustic_events: 2, growth_points: 10,
+        bio_status: :homeostasis, metabolism_s: 1000,
+        created_at: date.beginning_of_day + 12.hours)
+
+      described_class.call(date)
+
+      expect(dark_tree.reload.latest_stress_index).to be_nil
+    end
+
+    # ⊥ Гілка «вже порожнє»: мовчазне дерево, чий стрес уже `nil`, ПОВТОРНОГО
+    # запису не отримує. Гард не косметичний — без нього кожне мовчазне дерево
+    # діставало б `UPDATE` щоночі назавжди, а знаменник тут 10¹² (`00_01 §1.1`).
+    it "не переписує дерево, чий стрес уже порожній" do
+      silent = create(:tree, cluster: cluster, status: :active)
+      # Сусід із телеметрією тримає кластер «із даними», щоб прохід дійшов до циклу.
+      loud = create(:tree, cluster: cluster, status: :active)
+      create(:telemetry_log, tree: loud,
+        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+        acoustic_events: 2, growth_points: 10,
+        bio_status: :homeostasis, metabolism_s: 1000,
+        created_at: date.beginning_of_day + 12.hours)
+
+      expect { described_class.call(date) }.not_to change { silent.reload.latest_stress_index }
+      expect(silent.reload.latest_stress_index).to be_nil
+    end
+
+    # ⊥ Крайній випадок тієї ж ноги: даних НЕМАЄ ЗОВСІМ, тож оброблених кластерів
+    # нуль. Тоді вердикт «не виміряно» належить усьому флоту — і саме на цій гілці
+    # `reset_stress_outside` працює без обмеження за кластером.
+    it "занулює ВЕСЬ флот, коли за добу не було жодного кластера з даними" do
+      tree.update_column(:latest_stress_index, 0.33)
+
+      described_class.call(date)
+
+      expect(tree.reload.latest_stress_index).to be_nil
+    end
+
+    # ⊥ Ліхтар: дерево З телеметрією дістає ВИМІРЯНЕ число, а не nil — інакше
+    # приклад вище проходив би на будь-якій поведінці, що просто все занулює.
+    it "лишає виміряне значення дереву, яке слало телеметрію" do
+      create(:telemetry_log, tree: tree,
+        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+        acoustic_events: 2, growth_points: 10,
+        bio_status: :homeostasis, metabolism_s: 1000,
+        created_at: date.beginning_of_day + 12.hours)
+
+      described_class.call(date)
+
+      expect(tree.reload.latest_stress_index).not_to be_nil
+    end
+  end
+
   describe "#perform" do
     it "creates daily health summary insights for each tree" do
       create(:telemetry_log, tree: tree,
