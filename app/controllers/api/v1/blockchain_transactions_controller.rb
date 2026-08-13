@@ -9,9 +9,12 @@ module Api
       def index
         # [ARCH.98] One-Home: INNER JOIN через гаманець ховав cluster-sourced рядки
         # (Celo-винагорода, слеш останнього дерева) з АУДИТ-списку організації.
+        # `:cluster` — друга координата провенансу, не дубль: рядки, заради яких
+        # ARCH.98 і розширив скоуп, гаманця не мають, тож комірка джерела читає
+        # саме її (N+1 інакше — виміряно).
         @transactions = BlockchainTransaction
                           .for_organization(acting_organization!.id)
-                          .includes(wallet: :tree)
+                          .includes(:cluster, wallet: :tree)
                           .order(created_at: :desc)
 
         # Фільтрація — параметри клієнта обмежуємо до enum-словника моделі,
@@ -94,7 +97,7 @@ module Api
         # транзакція давала 404 за ПРЯМОЮ адресою на власні гроші організації.
         BlockchainTransaction
           .for_organization(acting_organization!.id)
-          .includes(wallet: :tree)
+          .includes(:cluster, wallet: :tree)
           .find_with_partition_pruning(params[:id], params[:created_at])
       end
     end

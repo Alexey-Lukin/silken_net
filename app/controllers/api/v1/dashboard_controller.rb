@@ -116,8 +116,10 @@ module Api
         [
           org.ews_alerts.includes(:cluster).order(created_at: :desc).limit(3),
           # [ARCH.98] One-Home — стрічка подій пропускала cluster-sourced рухи.
+          # `:cluster` — не дубль гаманцевої гілки: cluster-sourced рядок гаманця не
+          # має ЗА ПОБУДОВОЮ, і саме звідти `EventRow` бере джерело події.
           BlockchainTransaction.for_organization(org.id)
-                               .includes(wallet: { tree: :cluster })
+                               .includes(:cluster, wallet: { tree: :cluster })
                                .order(created_at: :desc).limit(3),
           MaintenanceRecord.joins(:user)
                            .includes(:user)

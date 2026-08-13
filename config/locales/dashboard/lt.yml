@@ -2,9 +2,10 @@
 lt:
   dashboard:
     event_row:
+      burned: "⬢ Sudeginta %{amount} %{ticker} ← %{target}"
       etherisc_claim: "🛡️ Etherisc DIP reikalavimas %{amount} USDC → %{address}"
       maintenance: "🔧 %{action}: atliko %{user}"
-      minted: "⬢ Nukalinta %{amount} SCC → %{target}"
+      minted: "⬢ Nukalinta %{amount} %{ticker} → %{target}"
       pool: Fondas
       system_pulse: "● Aptiktas sistemos impulsas"
       system_user: Sistema

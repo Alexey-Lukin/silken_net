@@ -21,13 +21,14 @@ RSpec.describe BlockchainTransactions::Index do
   def mock_transaction(id: 1, amount: "0.005", status: "confirmed", token_type: "carbon_coin",
                        tx_hash: "0xabcdef1234567890abcdef1234567890abcdef12",
                        blockchain_network: "evm", wallet_tree_did: "SNET-00000042",
-                       has_wallet: true)
+                       has_wallet: true, cluster_name: nil)
     tx = BlockchainTransaction.new(
       amount: amount,
       status: status,
       token_type: token_type,
       tx_hash: tx_hash,
       blockchain_network: blockchain_network,
+      cluster: cluster_name && Cluster.new(name: cluster_name),
       created_at: Time.current
     )
     tx.id = id
@@ -57,7 +58,10 @@ RSpec.describe BlockchainTransactions::Index do
       expect(html).to include("Amount")
       expect(html).to include("Status")
       expect(html).to include("Network")
-      expect(html).to include("Tree")
+      # Мітка питає ПРОВЕНАНС, а не дерево: під «Tree» cluster-sourced рядок
+      # показував тире, тобто колонка обіцяла координату, якої в нього не буває.
+      expect(html).to include("Source")
+      expect(html).not_to include("Tree")
       expect(html).to include("TX Hash")
       expect(html).to include("Timestamp")
     end
@@ -177,12 +181,33 @@ RSpec.describe BlockchainTransactions::Index do
     end
   end
 
-  describe "wallet without tree" do
-    it "shows dash when wallet is nil" do
+  # [ARCH.98] Обидві координати провенансу, і саме ПАРА тут несуча: гілку кластера
+  # додано тому, що cluster-sourced рухи (Celo-винагорода, слеш останнього дерева)
+  # гаманця не мають ЗА ПОБУДОВОЮ — і доти вони були єдиним родом рядків, чиє
+  # джерело екран не вмів назвати взагалі.
+  # 🔴 Піни цілять у САМ вузол, і це куплено падінням: `include("—")` по документу
+  # був ВАКУУМНИЙ — заголовок сторінки містить «Blockchain Ledger — Global Audit»,
+  # тож приклад лишався зеленим і зі знятою коміркою.
+  describe "provenance cell" do
+    def provenance_cell(rendered) = rendered[%r{<td class="p-4 text-emerald-500">([^<]*)</td>}, 1]
+
+    it "names the tree when the row is wallet-sourced" do
+      rendered = render_component(transactions: [ mock_transaction ], pagy: pagy)
+      expect(provenance_cell(rendered)).to eq("SNET-00000042")
+    end
+
+    it "names the cluster when the row carries no wallet" do
+      txs = [ mock_transaction(has_wallet: false, cluster_name: "Карпати-7") ]
+      rendered = render_component(transactions: txs, pagy: pagy)
+      expect(provenance_cell(rendered)).to eq("Карпати-7")
+    end
+
+    # ⚠️ Fail-open: рядок без ОБОХ координат `for_organization` не бачить, тож на цю
+    # сторінку він не потрапляє — пін стереже форму фолбеку, не живий стан.
+    it "falls back to a dash when neither wallet nor cluster is present" do
       txs = [ mock_transaction(has_wallet: false) ]
       rendered = render_component(transactions: txs, pagy: pagy)
-      # The component calls tx.wallet&.tree&.did || "—"
-      expect(rendered).to include("—")
+      expect(provenance_cell(rendered)).to eq("—")
     end
   end
 

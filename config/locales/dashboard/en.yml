@@ -2,9 +2,10 @@
 en:
   dashboard:
     event_row:
+      burned: "⬢ Burned %{amount} %{ticker} ← %{target}"
       etherisc_claim: "🛡️ Etherisc DIP claim %{amount} USDC → %{address}"
       maintenance: "🔧 %{action}: by %{user}"
-      minted: "⬢ Minted %{amount} SCC → %{target}"
+      minted: "⬢ Minted %{amount} %{ticker} → %{target}"
       pool: Pool
       system_pulse: "● System pulse detected"
       system_user: System

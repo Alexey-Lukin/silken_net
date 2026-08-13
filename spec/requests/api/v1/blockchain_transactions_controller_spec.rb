@@ -90,6 +90,17 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
                                       token_type: :cusd, amount: 5)
     end
 
+    # 🔴 ДРУГИЙ рядок — не надмірність, а передумова детектора: Prosopite мовчить
+    # при `min_n_queries = 2`, тож на ОДНОМУ cluster-sourced рядку знятий
+    # `.includes(:cluster)` дає рівно один зайвий запит і лишається невидимим.
+    # Клас на цю саму вісь уже коштував одного разу — `Organization#total_clusters`
+    # (N+1 було неможливо побачити, доки у фікстурі жила одна організація).
+    let!(:second_cluster_tx) do
+      create(:blockchain_transaction, wallet: nil,
+                                      cluster: create(:cluster, organization: organization),
+                                      token_type: :cusd, amount: 7)
+    end
+
     it "lists it in the organization's audit feed" do
       get "/blockchain_transactions", headers: headers, as: :json
 
@@ -105,6 +116,24 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["id"]).to eq(cluster_tx.id)
+    end
+
+    # 🔴 Машинний контур мусить нести ТУ САМУ координату, що й екранна комірка
+    # «Джерело»: один екшен обслуговує обидва формати, тож добудова лише HTML — це
+    # клас [ARCH.90] (той самий ендпоінт віддає різний ЗМІСТ у різних форматах).
+    it "carries the cluster provenance in the index payload, not just tree_did" do
+      get "/blockchain_transactions", headers: headers, as: :json
+
+      row = response.parsed_body["data"].find { |t| t["id"] == cluster_tx.id }
+      expect(row["tree_did"]).to be_nil
+      expect(row["cluster_name"]).to eq(own_cluster.name)
+    end
+
+    it "carries the cluster provenance in the show payload" do
+      get "/blockchain_transactions/#{cluster_tx.id}",
+          params: { created_at: cluster_tx.created_at.iso8601 }, headers: headers, as: :json
+
+      expect(response.parsed_body["cluster_name"]).to eq(own_cluster.name)
     end
 
     it "still refuses another organization's cluster-sourced row" do

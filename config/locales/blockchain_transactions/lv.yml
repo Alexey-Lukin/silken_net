@@ -8,9 +8,9 @@ lv:
         amount: Summa
         empty: Nav reģistrētu blokķēdes darījumu.
         network: Tīkls
+        source: Avots
         status: Statuss
         timestamp: Laika zīmogs
-        tree: Koks
         tx_hash: TX Kods
         type: Veids
     index_title: Blokķēdes virsgrāmata

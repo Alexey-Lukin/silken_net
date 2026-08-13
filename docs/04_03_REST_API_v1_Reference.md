@@ -538,8 +538,8 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | 67 | GET | `/oracle_visions` | `oracle_visions#index` | 🌿 Forester | AI-прогнози та SCC-врожайність |
 | 68 | POST | `/oracle_visions/simulate` | `oracle_visions#simulate` | 👑 Admin | Запустити Lorenz-симуляцію |
 | **⛓️ Блокчейн** | | | | | |
-| 69 | GET | `/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій. Query: `?token_type=` (allow-list з `BlockchainTransaction.token_types.keys`: `carbon_coin`, `forest_coin`, `cusd`), `?status=` (allow-list з `.statuses.keys`). Невідомі значення → `400 Bad Request`. |
-| 70 | GET | `/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції |
+| 69 | GET | `/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій. Query: `?token_type=` (allow-list з `BlockchainTransaction.token_types.keys`: `carbon_coin`, `forest_coin`, `cusd`), `?status=` (allow-list з `.statuses.keys`). Невідомі значення → `400 Bad Request`. **Провенанс — ДВА поля, не одне** [ARCH.98/ARCH.101]: `tree_did` ⊥ `cluster_name`, бо cluster-sourced рухи гаманця не мають за побудовою, тож `tree_did` для них `null` — і HTML-комірка «Джерело» читає ту саму пару (розходження форматів = клас [`ARCH.90`](00_07_Action_Plan_Tracker)). |
+| 70 | GET | `/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції. Та сама пара провенансу: `cluster_name` + `wallet` (з деревом) |
 | 71 | GET | `/blockchain_transactions/:id/on_chain` | `blockchain_transactions#on_chain` | 🔑 Auth | On-chain верифікація (Turbo Frame) |
 | **🔔 Сповіщення** | | | | | |
 | 73 | GET | `/notifications/settings` | `notifications#settings` | 🔑 Auth | Поточні канали сповіщень |

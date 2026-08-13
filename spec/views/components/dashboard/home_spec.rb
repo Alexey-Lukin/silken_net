@@ -40,15 +40,15 @@ RSpec.describe Dashboard::Home do
     alert
   end
 
+  # [TEST.12] Реальний незбережений запис: `EventRow` виводить тікер і НАПРЯМОК із
+  # колонок (`token_type`, `sourceable_type`), тож `.allocate` без атрибутів тут
+  # більше не рендериться взагалі — і це чесний гучний провал, а не регресія.
   def mock_tx_event
-    tree = OpenStruct.new(did: "SNET-00000042")
-    wallet = OpenStruct.new(tree: tree)
-    tx = BlockchainTransaction.allocate
-    tx.define_singleton_method(:amount) { "0.005" }
-    tx.define_singleton_method(:wallet) { wallet }
-    tx.define_singleton_method(:sourceable) { nil }
-    tx.define_singleton_method(:created_at) { 2.minutes.ago }
-    tx
+    BlockchainTransaction.new(
+      token_type: :carbon_coin, amount: "0.005",
+      wallet: Wallet.new(tree: Tree.new(did: "SNET-00000042")),
+      created_at: 2.minutes.ago
+    )
   end
 
   # `stream_epoch` несе адресу вкладеної мапи [SEC.25 Ф3]: `Dashboard::Home`

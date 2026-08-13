@@ -8,9 +8,9 @@ lt:
         amount: Suma
         empty: Nėra įrašytų blokų grandinės sandorių.
         network: Tinklas
+        source: Šaltinis
         status: Būsena
         timestamp: Laiko žyma
-        tree: Medis
         tx_hash: TX Kodas
         type: Tipas
     index_title: Blokų grandinės knyga

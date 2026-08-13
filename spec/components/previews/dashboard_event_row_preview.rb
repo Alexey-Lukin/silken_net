@@ -14,8 +14,25 @@ class DashboardEventRowPreview < Lookbook::Preview
   # @label Blockchain Mint Event
   # @notes Renders a SCC minting transaction in the live feed.
   def blockchain_transaction
-    tx = mock_blockchain_tx
-    render Dashboard::EventRow.new(event: tx)
+    render Dashboard::EventRow.new(event: mock_blockchain_tx)
+  end
+
+  # @label Blockchain Burn Event (slashing)
+  # @notes Direction is DERIVED from `sourceable_type`, never from the sign of
+  #   `amount` — a slash intent is written POSITIVE. Until 2026-08-13 this state
+  #   rendered as «Minted», i.e. the feed reported an emission on a burn.
+  def blockchain_burn
+    render Dashboard::EventRow.new(event: mock_blockchain_tx(amount: "3.0", sourceable_type: "NaasContract"))
+  end
+
+  # @label Cluster-sourced Celo Reward
+  # @notes [ARCH.98] Cluster-sourced money carries no wallet by construction, so
+  #   both the ticker and the source come from the row itself — not from «SCC»
+  #   and «System» baked into the sentence.
+  def cluster_sourced_reward
+    render Dashboard::EventRow.new(
+      event: mock_blockchain_tx(token_type: :cusd, amount: "5.0", cluster: Cluster.new(name: "Carpathian-9"))
+    )
   end
 
   # @label Maintenance Record Event
@@ -52,18 +69,16 @@ class DashboardEventRowPreview < Lookbook::Preview
     alert
   end
 
-  def mock_blockchain_tx
-    tree = OpenStruct.new(did: "TREE::0xA7F3")
-    wallet = OpenStruct.new(tree: tree)
-    tx = BlockchainTransaction.allocate
-    tx.define_singleton_method(:amount) { BigDecimal("0.0042") }
-    tx.define_singleton_method(:wallet) { wallet }
-    tx.define_singleton_method(:created_at) { 45.seconds.ago }
-    # `.allocate` не ініціалізує `@attributes`, тож КОЖНЕ поле, яке компонент читає,
-    # мусить бути застабленим — інакше рендер падає на `fetch_value for nil`.
-    # `sourceable` веде у гілку Etherisc-виплати; `nil` лишає звичайний мінт.
-    tx.define_singleton_method(:sourceable) { nil }
-    tx
+  # Грошовий рядок будується РЕАЛЬНИМ `new`, а не `.allocate`: тікер і НАПРЯМОК
+  # виводяться з колонок (`token_type`, `sourceable_type`), тож запис без атрибутів
+  # їх віддати не може взагалі. Класову ідентичність для `case/when` незбережений
+  # `new` тримає так само — саме вона й була єдиною причиною брати `.allocate`.
+  def mock_blockchain_tx(token_type: :carbon_coin, amount: "0.0042", cluster: nil, sourceable_type: nil)
+    BlockchainTransaction.new(
+      token_type: token_type, amount: amount, sourceable_type: sourceable_type,
+      wallet: cluster ? nil : Wallet.new(tree: Tree.new(did: "SNET-0A7F3B21")),
+      cluster: cluster, created_at: 45.seconds.ago
+    )
   end
 
   def mock_maintenance_record

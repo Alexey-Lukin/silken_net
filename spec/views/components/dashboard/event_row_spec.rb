@@ -4,9 +4,11 @@
 require "rails_helper"
 
 RSpec.describe Dashboard::EventRow do
-  # Render under :en so hardcoded English text in event_summary is matched correctly.
-  # The component strings are intentional display text (not i18n-keyed), so we
-  # lock the locale to avoid order-dependent failures if the default changes.
+  # Специфікації типово йдуть під :en, і саме англійські рядки тут асертуються.
+  # ⚠️ Коментар на цьому місці доти казав, що рядки компонента «intentional display
+  # text (not i18n-keyed)» — це було НЕПРАВДОЮ від першого дня: `event_summary`
+  # увесь на `t(".…")`. Проза стереже читача, а не код, тож хибна проза переживає
+  # будь-який зелений прогін.
   around { |ex| I18n.with_locale(:en) { ex.run } }
 
   # Use allocate to bypass ActiveRecord initialization but keep class identity
@@ -37,23 +39,30 @@ RSpec.describe Dashboard::EventRow do
     end
   end
 
+  # 🔴 [TEST.12] Грошові рядки будуються РЕАЛЬНИМ `new`, а не `.allocate` +
+  # сингլетонами: `#ticker` і `#burn?` ВИВОДЯТЬСЯ з колонок (`token_type`,
+  # `sourceable_type`), тож фікстура, що оголошувала б їх окремими полями, описувала
+  # транзакцію, яку неможливо побудувати — і саме так тут роками жив пін, що
+  # стверджував «Minted» для спалення. Клас ідентичності `case/when` незбережений
+  # `new` тримає так само добре, як `allocate`.
+  def money_row(token_type: :carbon_coin, amount: "0.005", wallet: nil, cluster: nil, sourceable_type: nil)
+    BlockchainTransaction.new(
+      token_type: token_type, amount: amount, wallet: wallet, cluster: cluster,
+      sourceable_type: sourceable_type, created_at: 1.minute.ago
+    )
+  end
+
+  def tree_wallet(did) = Wallet.new(tree: Tree.new(did: did))
+
   describe "with a BlockchainTransaction event" do
-    let(:event) do
-      mock_tree = OpenStruct.new(did: "TREE::0xDEAD")
-      mock_wallet = OpenStruct.new(tree: mock_tree)
-      tx = BlockchainTransaction.allocate
-      tx.define_singleton_method(:amount) { "0.005" }
-      tx.define_singleton_method(:wallet) { mock_wallet }
-      tx.define_singleton_method(:sourceable) { nil }
-      tx.define_singleton_method(:created_at) { 1.minute.ago }
-      tx
-    end
+    let(:event) { money_row(wallet: tree_wallet("SNET-0DEADBEE")) }
     let(:html) { render_component(event: event) }
 
-    it "renders the mint summary with amount and DID" do
+    it "renders the mint summary with amount, ticker and DID" do
       expect(html).to include("Minted")
       expect(html).to include("0.005")
-      expect(html).to include("TREE::0xDEAD")
+      expect(html).to include("SCC")
+      expect(html).to include("SNET-0DEADBEE")
     end
 
     it "uses the gaia text token for blockchain events" do
@@ -152,20 +161,59 @@ RSpec.describe Dashboard::EventRow do
     end
   end
 
-  describe "BlockchainTransaction mint with no wallet" do
-    let(:event) do
-      tx = BlockchainTransaction.allocate
-      tx.define_singleton_method(:amount) { "0.001" }
-      tx.define_singleton_method(:wallet) { nil }
-      tx.define_singleton_method(:sourceable) { nil }
-      tx.define_singleton_method(:created_at) { 1.minute.ago }
-      tx
-    end
+  describe "BlockchainTransaction mint with neither wallet nor cluster" do
+    # ⚠️ Fail-open гілка, а НЕ спостережний стан: рядок без обох координат не бачить
+    # `for_organization`, тож на цю сторінку він не потрапляє. Пін стереже форму
+    # фолбеку, і саме тому не претендує описувати живі дані.
+    let(:event) { money_row(amount: "0.001") }
 
-    it "falls back to the System mint target" do
+    it "falls back to the System target" do
       html = render_component(event: event)
       expect(html).to include("Minted")
       expect(html).to include("→ System")
+    end
+  end
+
+  # 🔴 НАПРЯМОК не є полем — він деривується з `sourceable_type`, і знак `amount`
+  # його НЕ видає (slash-інтент пишеться ДОДАТНИМ). Доти обидва приклади нижче
+  # друкувались «⬢ Minted … SCC», тобто екран стверджував емісію на спаленні.
+  describe "BlockchainTransaction that is a slash burn" do
+    it "names the burn and points the arrow away from the tree that paid" do
+      html = render_component(
+        event: money_row(amount: "3.0", wallet: tree_wallet("SNET-0BADCAFE"),
+                         sourceable_type: "NaasContract")
+      )
+      expect(html).to include("Burned 3.0 SCC ← SNET-0BADCAFE")
+      expect(html).not_to include("Minted")
+    end
+
+    it "names the CLUSTER when the last tree is gone and the row carries no wallet" do
+      html = render_component(
+        event: money_row(amount: "3.0", cluster: Cluster.new(name: "Карпати-7"),
+                         sourceable_type: "NaasContract")
+      )
+      expect(html).to include("Burned 3.0 SCC ← Карпати-7")
+      expect(html).not_to include("System")
+    end
+  end
+
+  # [ARCH.98] Cluster-sourced гроші живуть БЕЗ гаманця, тож джерело події доводиться
+  # брати тією самою парою, якою `for_organization` резолвить приналежність.
+  describe "cluster-sourced Celo reward" do
+    let(:html) do
+      render_component(
+        event: money_row(token_type: :cusd, amount: "5.0", cluster: Cluster.new(name: "Карпати-7"))
+      )
+    end
+
+    it "signs the amount with the token's OWN ticker" do
+      expect(html).to include("5.0 cUSD")
+      expect(html).not_to include("SCC")
+    end
+
+    it "names the cluster instead of inventing a System actor" do
+      expect(html).to include("→ Карпати-7")
+      expect(html).not_to include("System")
     end
   end
 

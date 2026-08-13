@@ -2,9 +2,10 @@
 uk:
   dashboard:
     event_row:
+      burned: "⬢ Спалено %{amount} %{ticker} ← %{target}"
       etherisc_claim: "🛡️ Etherisc DIP виплата %{amount} USDC → %{address}"
       maintenance: "🔧 %{action}: від %{user}"
-      minted: "⬢ Створено %{amount} SCC → %{target}"
+      minted: "⬢ Створено %{amount} %{ticker} → %{target}"
       pool: Пул
       system_pulse: "● Виявлено пульс системи"
       system_user: Система

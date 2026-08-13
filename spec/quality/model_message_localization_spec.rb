@@ -51,7 +51,7 @@ module ModelMessageLocalization
            "жодного контролера з create/update у дереві немає",
       back: "поява людського шляху створення інсайту"
     },
-    "app/models/blockchain_transaction.rb:260" => {
+    "app/models/blockchain_transaction.rb:274" => {
       why: "формат Solana-адреси; рядки пише лише money-path із Sidekiq, контролер має " \
            "тільки index/show",
       back: "поява форми, що приймає адресу від людини"

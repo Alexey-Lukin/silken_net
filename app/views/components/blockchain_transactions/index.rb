@@ -52,7 +52,7 @@ module BlockchainTransactions
               th(scope: "col", class: "p-4") { t(".table.amount") }
               th(scope: "col", class: "p-4") { t(".table.status") }
               th(scope: "col", class: "p-4") { t(".table.network") }
-              th(scope: "col", class: "p-4") { t(".table.tree") }
+              th(scope: "col", class: "p-4") { t(".table.source") }
               th(scope: "col", class: "p-4") { t(".table.tx_hash") }
               th(scope: "col", class: "p-4 text-right") { t(".table.timestamp") }
             end
@@ -84,7 +84,12 @@ module BlockchainTransactions
           render Views::Shared::UI::StatusBadge.new(status: tx.status)
         end
         td(class: "p-4 text-gaia-text-muted text-mini uppercase") { tx.blockchain_network&.upcase || "—" }
-        td(class: "p-4 text-emerald-500") { tx.wallet&.tree&.did || "—" }
+        # [ARCH.98] Провенанс, а не дерево: cluster-sourced рухи (Celo-винагорода,
+        # слеш останнього дерева) гаманця не мають ЗА ПОБУДОВОЮ, тож під міткою
+        # «Дерево» вони показували тире — тобто мітка обіцяла координату, якої в
+        # цього роду рядків не буває. Пара та сама, якою `for_organization`
+        # резолвить приналежність; прецедент форми — `Alerts::Row`.
+        td(class: "p-4 text-emerald-500") { tx.wallet&.tree&.did || tx.cluster&.name || "—" }
         td(class: "p-4 text-gray-600 truncate max-w-[150px] font-mono text-tiny") do
           if tx.tx_hash.present?
             # Тут aria_label НЕСУЧИЙ (на відміну від OnChainFrame): видимий текст —

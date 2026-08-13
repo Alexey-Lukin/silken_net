@@ -43,13 +43,30 @@ module Dashboard
       render Views::Shared::UI::RelativeTime.new(datetime: @event.created_at)
     end
 
+    # Один грошовий рядок несе ТРИ властивості, і жодна не видна з імені колонки:
+    # ТІКЕР (`token_type` має три значення — дім `#ticker`), НАПРЯМОК (деривація з
+    # `sourceable_type`, дім `#burn?` — знак `amount` його НЕ видає, slash-інтент
+    # пишеться додатним) і ДЖЕРЕЛО (гаманцеве дерево АБО кластер). Доти всі три
+    # були зашиті в одне речення, тож спалення друкувалось емісією, cUSD-винагорода
+    # — «SCC», а кластерне джерело — «System».
     def blockchain_transaction_summary
       sourceable = @event.sourceable
       if sourceable.is_a?(ParametricInsurance) && sourceable.uses_etherisc?
         t(".etherisc_claim", amount: @event.amount, address: short_address(@event.to_address))
+      elsif @event.burn?
+        t(".burned", amount: @event.amount, ticker: @event.ticker, target: event_target)
       else
-        t(".minted", amount: @event.amount, target: @event.wallet&.tree&.did || t(".system_user"))
+        t(".minted", amount: @event.amount, ticker: @event.ticker, target: event_target)
       end
+    end
+
+    # Провенанс резолвиться ТІЄЮ САМОЮ парою, що й приналежність організації
+    # (`BlockchainTransaction.for_organization`, [ARCH.98]): гаманець → дерево,
+    # інакше кластер. Прецедент форми — `Alerts::Row`, де кластер і DID стоять в
+    # одній комірці. Третя гілка лишається fail-open: рядок без обох координат
+    # `for_organization` не бачить, тож на цьому екрані вона недосяжна.
+    def event_target
+      @event.wallet&.tree&.did || @event.cluster&.name || t(".system_user")
     end
 
     def short_address(address)

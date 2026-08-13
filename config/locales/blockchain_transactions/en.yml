@@ -8,9 +8,9 @@ en:
         amount: Amount
         empty: No blockchain transactions recorded.
         network: Network
+        source: Source
         status: Status
         timestamp: Timestamp
-        tree: Tree
         tx_hash: TX Hash
         type: Type
     index_title: Blockchain Ledger

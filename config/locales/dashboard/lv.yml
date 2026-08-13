@@ -2,9 +2,10 @@
 lv:
   dashboard:
     event_row:
+      burned: "⬢ Sadedzināts %{amount} %{ticker} ← %{target}"
       etherisc_claim: "🛡️ Etherisc DIP prasība %{amount} USDC → %{address}"
       maintenance: "🔧 %{action}: veica %{user}"
-      minted: "⬢ Kalts %{amount} SCC → %{target}"
+      minted: "⬢ Kalts %{amount} %{ticker} → %{target}"
       pool: Fonds
       system_pulse: "● Sistēmas impulss konstatēts"
       system_user: Sistēma

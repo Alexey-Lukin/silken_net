@@ -211,6 +211,20 @@ class BlockchainTransaction < ApplicationRecord
       .or(where(cluster_id: cluster_id))
   }
 
+  # Дім ЗНАЧЕННЯ дискримінатора напрямку. Винесено в константу, бо споживачів у
+  # нього тепер двоє в РІЗНИХ формах — SQL-агрегат `net_minted_supply` нижче й
+  # рядковий предикат `#burn?` — а той самий літерал, написаний двічі, розійшовся б
+  # тихо: обидві сторони «present» для будь-якого гейта.
+  BURN_SOURCEABLE_TYPE = "NaasContract"
+
+  # Напрямок руху коштів НЕ є полем — він ДЕРИВУЄТЬСЯ (`CLAUDE.md §6`), і саме тому
+  # UI не сміє вгадувати його зі знака `amount`: slash-інтент пишеться ДОДАТНИМ.
+  # Рядковий бік того самого дискримінатора, яким агрегат нижче відділяє спалення
+  # від емісії.
+  def burn?
+    sourceable_type == BURN_SOURCEABLE_TYPE
+  end
+
   # [G4/ARCH.97] One-Home DB-дзеркала on-chain `totalSupply()`: Σ(mints) − Σ(burns).
   #
   # Slash-інтенти теж `carbon_coin` і теж доходять до `:confirmed`
@@ -233,8 +247,8 @@ class BlockchainTransaction < ApplicationRecord
   # Повертає BigDecimal (без `.to_f`): Float дав би e-нотацію в хешованому payload'і.
   def self.net_minted_supply(token_type)
     base  = where(token_type: token_type, status: :confirmed)
-    mints = base.where("sourceable_type IS DISTINCT FROM 'NaasContract'").sum(:amount)
-    burns = base.where(sourceable_type: "NaasContract").sum(:amount)
+    mints = base.where("sourceable_type IS DISTINCT FROM ?", BURN_SOURCEABLE_TYPE).sum(:amount)
+    burns = base.where(sourceable_type: BURN_SOURCEABLE_TYPE).sum(:amount)
     mints - burns
   end
 

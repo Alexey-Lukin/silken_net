@@ -8,9 +8,9 @@ uk:
         amount: Сума
         empty: Жодної блокчейн-транзакції не зафіксовано.
         network: Мережа
+        source: Джерело
         status: Статус
         timestamp: Час
-        tree: Дерево
         tx_hash: TX Хеш
         type: Тип
     index_title: Реєстр блокчейну
