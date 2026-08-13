@@ -3,60 +3,67 @@
 
 require "rails_helper"
 
+# [TEST.12] Конвертовано з `EwsAlert.allocate` + define_singleton_method на
+# РЕАЛЬНИЙ незбережений запис. Найгостріше, що ховала підробка: `#message` — це
+# НЕ колонка, а рендер (`I18n.t("alerts.messages.#{message_key}", **params)`,
+# fail-open на `humanize`). Мок віддавав готовий рядок, тож увесь локалізаційний
+# тракт компонента не перевірявся ЖОДНОГО разу — а саме на ньому стоїть правило
+# «параметр несе ВИМІР, ніколи фрагмент фрази» (`backend` #14).
+#
+# `allocate` заразом підробляв і enum-предикати (`status_resolved?`), тобто
+# найтонше місце: рядок `"resolved"` проходив там, де модель приймає лише
+# значення власного enum.
 RSpec.describe Alerts::Row do
   # Component is i18n-aware. Existing assertions match the English copy.
   around { |ex| I18n.with_locale(:en) { ex.run } }
 
-  def mock_alert(id: 7, severity: "medium", alert_type: "fire_detected", status: "active",
-                 cluster_name: "Carpathian-7", tree_did: "TREE::0xBEEF", message: "Thermal anomaly detected")
-    alert = EwsAlert.allocate
-    alert.define_singleton_method(:id) { id }
-    alert.define_singleton_method(:severity) { severity }
-    alert.define_singleton_method(:alert_type) { alert_type }
-    alert.define_singleton_method(:cluster) { OpenStruct.new(name: cluster_name) }
-    alert.define_singleton_method(:tree) { OpenStruct.new(did: tree_did) }
-    alert.define_singleton_method(:message) { message }
-    alert.define_singleton_method(:created_at) { Time.current }
-    alert.define_singleton_method(:status_resolved?) { status == "resolved" }
-    alert.define_singleton_method(:to_key) { [ id ] }
-    alert.define_singleton_method(:to_param) { id.to_s }
-    alert.define_singleton_method(:to_model) { self }
-    alert
+  # Реальні типи, нуль БД: `EwsAlert.new` дає справжні enum-предикати й справжній
+  # `#message`, а `dom_id` бере `to_key` з самої моделі.
+  def build_alert(id: 7, severity: :medium, alert_type: :fire_detected, status: :active,
+                  cluster_name: "Carpathian-7", tree_did: "SNET-DEADBEEF",
+                  message_key: "fire_detected", message_params: { temperature_c: 61, fire_limit: 55 })
+    EwsAlert.new(
+      id: id, severity: severity, alert_type: alert_type, status: status,
+      message_key: message_key, message_params: message_params,
+      created_at: Time.current,
+      cluster: Cluster.new(name: cluster_name),
+      tree: tree_did && Tree.new(did: tree_did)
+    )
   end
 
   describe "DOM ID" do
     it "uses dom_id format for the row id" do
-      html = render_component(alert: mock_alert(id: 42))
+      html = render_component(alert: build_alert(id: 42))
       expect(html).to include('id="ews_alert_42"')
     end
   end
 
   describe "severity badge" do
     it "renders critical severity with danger styles and pulse" do
-      html = render_component(alert: mock_alert(severity: "critical"))
+      html = render_component(alert: build_alert(severity: :critical))
       expect(html).to include("bg-status-danger")
       expect(html).to include("animate-pulse")
     end
 
     it "renders medium severity with warning styles" do
-      html = render_component(alert: mock_alert(severity: "medium"))
+      html = render_component(alert: build_alert(severity: :medium))
       expect(html).to include("bg-status-warning")
     end
 
     it "renders low severity with emerald styles" do
-      html = render_component(alert: mock_alert(severity: "low"))
+      html = render_component(alert: build_alert(severity: :low))
       expect(html).to include("bg-status-info")
     end
 
     it "includes aria-label for accessibility" do
-      html = render_component(alert: mock_alert(severity: "critical"))
+      html = render_component(alert: build_alert(severity: :critical))
       expect(html).to include("aria-label")
       expect(html).to include("Severity")
     end
   end
 
   describe "alert content" do
-    let(:html) { render_component(alert: mock_alert) }
+    let(:html) { render_component(alert: build_alert) }
 
     # [I18N.1] Мітка типу тепер із `alerts.types.*` через TextFormatter —
     # раніше тут був locale-сліпий `.humanize` ("Fire detected").
@@ -66,16 +73,20 @@ RSpec.describe Alerts::Row do
 
     it "displays cluster and tree source" do
       expect(html).to include("Carpathian-7")
-      expect(html).to include("TREE::0xBEEF")
+      expect(html).to include("SNET-DEADBEEF")
     end
 
-    it "displays the alert message" do
-      expect(html).to include("Thermal anomaly detected")
+    # `#message` — РЕНДЕР, не колонка: текст збирається з `message_key` +
+    # `message_params` через I18n. Мок віддавав готовий рядок, тож цей тракт не
+    # перевірявся ніколи — а на ньому стоїть правило «параметр несе ВИМІР».
+    it "renders the message from its key and measured params" do
+      expect(html).to include("Temperature 61")
+      expect(html).to include("55")
     end
   end
 
   describe "resolved state" do
-    let(:html) { render_component(alert: mock_alert(status: "resolved")) }
+    let(:html) { render_component(alert: build_alert(status: :resolved)) }
 
     it "shows resolved indicator instead of action button" do
       expect(html).to include("Resolved")
@@ -89,7 +100,7 @@ RSpec.describe Alerts::Row do
   describe "active state" do
     # [UI.6] Гасити тривогу може лише forester+, тож приклади, що пінять кнопку,
     # ведуть саме такого актора. Видимість для нижчої ролі — окрема група нижче.
-    let(:html) { render_component(alert: mock_alert(status: "active"), current_user: build_stubbed(:user, :forester)) }
+    let(:html) { render_component(alert: build_alert(status: :active), current_user: build_stubbed(:user, :forester)) }
 
     it "renders the resolve button" do
       expect(html).to include("Acknowledge")
@@ -106,7 +117,7 @@ RSpec.describe Alerts::Row do
   # головного операційного розділу.
   describe "роле-фільтр дії [UI.6]" do
     def render_for(actor)
-      render_component(alert: mock_alert(status: "active"), current_user: actor)
+      render_component(alert: build_alert(status: :active), current_user: actor)
     end
 
     it "ховає Acknowledge від investor" do
@@ -132,8 +143,12 @@ RSpec.describe Alerts::Row do
   # ⊕ Пін лишається розрізнимим (на відміну від `04_06 §A.4` BP 20): `bg-status-neutral`
   # не належить жодному з трьох живих severity, тож він таки говорить про фолбек.
   describe "severity badge else branch" do
-    it "renders unknown severity with zinc fallback style" do
-      html = render_component(alert: mock_alert(severity: "unknown"))
+    # 🔴 Доти сюди подавали `severity: "unknown"` — значення ПОЗА enum, на якому
+    # реальна модель кидає ArgumentError, тобто гілку перевіряли входом, неможливим
+    # у проді. Досяжна вона рівно одним чесним входом — `nil` (незбережений запис
+    # до валідації), і саме він тепер тут.
+    it "renders the neutral fallback for an alert whose severity is not set yet" do
+      html = render_component(alert: build_alert(severity: nil))
       expect(html).to include("bg-status-neutral")
     end
   end
@@ -141,7 +156,7 @@ RSpec.describe Alerts::Row do
   describe "Codex citation strip when Codex is absent" do
     it "renders the row without a citation strip when Codex::Citation is undefined" do
       hide_const("Codex::Citation")
-      html = render_component(alert: mock_alert)
+      html = render_component(alert: build_alert)
       expect(html).not_to include("codex_citations_")
     end
   end
