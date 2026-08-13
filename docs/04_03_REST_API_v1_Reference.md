@@ -389,6 +389,27 @@ webhook'и, обидва auth-шляхи, `m2m_auth`, платформені) �
 Це заразом прибрало три різні поведінки одного сімейства сторінок, що були до Ф2:
 422 з HTML · 200 з фальшивим порожнім станом · 500 з JSON-блобом у браузері (§2.2).
 
+🔴 **Периметр самого контракту — тобто РЕСУРСИ, до яких він не застосовний** (виміряно
+перебором 2026-08-13, [ARCH.83](00_07_Action_Plan_Tracker); викликів `acting_organization!`
+**45 у 18 контролерах**). Власну колонку `organization_id` несуть **сім** таблиць
+(`actuator_commands` · `audit_logs` · `clusters` · `naas_contracts` · `parametric_insurances`
+· `users` · `wallets`); тенанта **не мають за побудовою** — `bio_contract_firmwares` ·
+`codex_nodes` · `codex_realms` · `ethereum_anchors` · `system_parameters` ·
+`telemetry_archive_batches` · `tiny_ml_models` · `tree_families`. **Читач такого ресурсу
+`acting_organization!` кликати НЕ повинен** — зразок форми: `tree_families#index`
+(`pagy(TreeFamily.alphabetical)`), так само `system_health` і `system_audits`, усі троє під
+`authorize_admin!`.
+
+⚠️ **Дві межі цього переліку, обидві куплені виміром.** (1) «Немає колонки
+`organization_id`» ⊥ «немає ШЛЯХУ до тенанта»: `codex_citations`/`comments`/`attunements`/
+`discoveries`/`fractions` колонки не мають, але досягають організації через автора
+(`user_id → users.organization_id`), і для цитат ця вісь **несуча** за
+[ADR-CDX-11](04_05_Codex_Lore_Module). (2) Дзеркально, FK-ребро не завжди означає власність:
+`system_parameters.updated_by_id` — це **провенанс**, і сама модель оголошує протилежне
+(`organization_id: nil` → глобальний ланцюг, [ARCH.57]); так само `created_by_user_id` у
+`codex_discovery_rules`. Тож схема дає множину кандидатів, а присуд ухвалює семантика —
+**перебором отримують периметр, не вердикт**.
+
 **Перемикання — привілейована дія**, тож лишає слід **синхронно й до мутації сесії**
 (`AuditLog.create!`, не `record_async!`: черга дала б лише порядок виклику), у журналі
 тієї організації, **куди** входять. Дії, виконані з перемкнутого контексту, несуть
