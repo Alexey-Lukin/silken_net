@@ -222,7 +222,7 @@ rb_dark() {
 # false-positive measurement first, since any rephrase deletes a unique line.
 # (Write is genuinely too late — the file is already replaced — so that half
 # would need PreToolUse, a different question.)
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-131}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-132}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
