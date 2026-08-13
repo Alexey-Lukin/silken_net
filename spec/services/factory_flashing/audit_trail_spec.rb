@@ -64,10 +64,17 @@ RSpec.describe FactoryFlashing::AuditTrail do
       expect(result.maintenance_record.notes).to include("Gilka: A")
     end
 
-    it "skips photo validation (factory bench has no camera)" do
+    # [ARCH.91] Пін навмисно перечитує запис із бази: доти він стверджував
+    # `be_valid` на тому самому інстансі, якому щойно виставили ознаку, тож
+    # світ, у якому дефект можливий, до нього не доходив.
+    it "skips photo validation (factory bench has no camera) even after a reload" do
       result = trail.record!
-      expect(result.maintenance_record).to be_valid
       expect(result.maintenance_record.photos).to be_empty
+
+      reloaded = MaintenanceRecord.find(result.maintenance_record.id)
+      expect(reloaded).to be_system_generated
+      expect(reloaded).to be_valid
+      expect(reloaded.update(notes: "Bench record amended after review")).to be true
     end
 
     it "marks dry_run: false when transcript carries exit statuses" do

@@ -1309,12 +1309,19 @@ active/draft ──cancel──► cancelled
 | `notes` | text | Опис (≥ 10 символів) |
 | `latitude` / `longitude` | decimal | GPS координати патрульного |
 | `hardware_verified` | boolean | Обов'язкове підтвердження |
+| `system_generated` | boolean | Провенанс: рядок написала платформа, не лісник (default `false`) |
 | `biomass_yield_kg` | decimal | Вимірювання біомаси (для tokenomics) |
 | `labor_hours` | decimal | Витрачений час |
 | `parts_cost` | decimal | Вартість запчастин |
 | `biomass_passport_tx_hash` | string | TX-хеш паспорту біомаси (Puro.earth Biochar) |
 
 **Методи:** `total_cost` (labor + parts), `trigger_ecosystem_healing!`.
+
+**Evidence Protocol** — `repair` і `installation` вимагають фото (`photos_required_for_critical_actions`); решта `action_type` виходить із валідації рано.
+
+🔴 **Виняток для системних записів мусить бути КОЛОНКОЮ, а не транзієнтною ознакою [ARCH.91].** Валідація оголошена **без `on:`**, тож біжить на кожен `save`, а не лише на `create` — отже ознака, що не переживає `find`, робить запис невиправно невалідним: `verify` віддає `false`, і будь-яка правка теж. Писачі `system_generated: true` — провізія (`ProvisioningController#register`), factory-flashing bench (`FactoryFlashing::AuditTrail`) і slash-надгробок (`BurnCarbonTokensWorker`, підписант — Oracle Executioner). ⚠️ **Ознака НЕ входить у `maintenance_params`**: вона фіксує провенанс, а не намір клієнта — інакше лісник знімає з себе вимогу фотодоказів одним ключем payload'а.
+
+⚖️ **Чому інваріант лишається «сильним» (присуд 2026-08-13):** валідація на кожному `save` означає, що запис, який утратив фото через вкладений `photos#destroy`, стає неоновлюваним, доки докази не повернуть. Це виміряна, а не теоретична поведінка, тож послаблення до `on: :create` було відхилено — воно зняло б працюючий захист заради двох системних писачів (дотично до `SEC.28`: `purge_later` незворотний і йде поза `Auditable`).
 
 ---
 

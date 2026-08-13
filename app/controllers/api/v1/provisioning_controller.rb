@@ -134,7 +134,7 @@ module Api
               action_type: :installation,
               performed_at: Time.current,
               notes: I18n.t("flash.provisioning.node_initiated", did: device_identifier, uid: provisioning_params[:hardware_uid]),
-              skip_photo_validation: true
+              system_generated: true
             )
 
             # РЕЄСТРАЦІЯ PEAQ DID (Machine Identity)

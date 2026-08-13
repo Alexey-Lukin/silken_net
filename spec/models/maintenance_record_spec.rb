@@ -259,6 +259,25 @@ RSpec.describe MaintenanceRecord, type: :model do
       it "does NOT require photos for :biomass_extraction" do
         expect(build(:maintenance_record, :biomass_extraction)).to be_valid
       end
+
+      # [ARCH.91] Виняток мусить пережити reload: валідація біжить на кожен
+      # `save`, тож ознака, що живе лише в інстансі, робить системний запис
+      # невиправно невалідним — і `verify` разом з нею.
+      context "when the record is system-generated" do
+        it "does NOT require photos" do
+          expect(build(:maintenance_record, :installation, system_generated: true)).to be_valid
+        end
+
+        it "stays updatable after crossing the persistence boundary" do
+          record = create(:maintenance_record, :installation, system_generated: true)
+
+          reloaded = described_class.find(record.id)
+          expect(reloaded.system_generated).to be true
+          expect(reloaded).to be_valid
+          expect(reloaded.update(hardware_verified: true)).to be true
+          expect(described_class.find(record.id).update(notes: "Corrected installation note")).to be true
+        end
+      end
     end
   end
 

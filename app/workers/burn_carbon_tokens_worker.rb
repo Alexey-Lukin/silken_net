@@ -67,6 +67,9 @@ class BurnCarbonTokensWorker
         user: executioner,
         action_type: :decommissioning,
         performed_at: Time.current,
+        # Підписант — бот, тож рядок машинний; на валідацію це не впливає
+        # (`decommissioning` фото не вимагає), але провенанс мусить бути чесний.
+        system_generated: true,
         notes: <<~NOTES
           🚨 SLASHING EXECUTED.
           Контракт ##{naas_contract_id} анульовано через порушення біо-цілісності.

@@ -45,10 +45,11 @@ class MaintenanceRecord < ApplicationRecord
             numericality: { greater_than: 0 },
             if: :action_type_biomass_extraction?
 
-  # System-generated records (provisioning, slashing) may skip photo requirement
-  attr_accessor :skip_photo_validation
-
-  # Evidence Protocol: фото обов'язкові при монтажі та ремонті
+  # Evidence Protocol: фото обов'язкові при монтажі та ремонті.
+  # Виняток для системних записів несе КОЛОНКА `system_generated`, а не
+  # транзієнтна ознака: валідація оголошена без `on:`, тож біжить на кожен
+  # `save`, і виняток, що не переживає reload, робить запис невиправно
+  # невалідним після першого ж `find` [ARCH.91].
   validate :photos_required_for_critical_actions
 
   # Тип вкладень — тільки зображення, max 20 МБ кожне, max 10 фото на запис
@@ -117,8 +118,11 @@ class MaintenanceRecord < ApplicationRecord
   end
 
   # Trust Protocol: ремонт і монтаж без фото — не proof of care, а просто слова.
+  # Платформа камери не має, тому її власні записи звільнені — і саме тому
+  # `system_generated` не входить у `maintenance_params`: інакше клієнт знімав
+  # би з себе Evidence Protocol одним полем форми.
   def photos_required_for_critical_actions
-    return if skip_photo_validation
+    return if system_generated?
     return unless action_type_repair? || action_type_installation?
     return if photos.any?
 

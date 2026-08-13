@@ -193,6 +193,38 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
     end
   end
 
+  # [ARCH.91] `system_generated` звільняє запис від Evidence Protocol, тож воно
+  # є ознакою ПРОВЕНАНСУ, а не полем форми: щойно воно потрапить у permit-список,
+  # будь-який лісник зніме з себе вимогу фотодоказів одним ключем у payload'і.
+  describe "POST /maintenance_records (Evidence Protocol не обходиться payload'ом)" do
+    let(:params) do
+      {
+        maintenance_record: {
+          maintainable_type: "Tree", maintainable_id: own_tree.id,
+          action_type: "installation", performed_at: 1.hour.ago.iso8601,
+          notes: "Installed new titanium anchor and LoRa sensor unit on node.",
+          system_generated: true
+        }
+      }
+    end
+
+    it "ignores a client-supplied system_generated and still demands photos" do
+      expect { post "/maintenance_records", params: params, headers: headers, as: :json }
+        .not_to change(MaintenanceRecord, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["errors"].join).to include("required for 'repair' and 'installation'")
+    end
+
+    it "persists an installation record as forester-authored, never system-generated" do
+      params[:maintenance_record][:action_type] = "inspection"
+      post "/maintenance_records", params: params, headers: headers, as: :json
+
+      expect(response).to have_http_status(:created).or have_http_status(:ok)
+      expect(MaintenanceRecord.order(:id).last.system_generated).to be false
+    end
+  end
+
   describe "PATCH /maintenance_records/:id/verify" do
     let(:record) do
       MaintenanceRecord.create!(

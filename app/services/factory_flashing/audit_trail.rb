@@ -14,7 +14,7 @@
 #        Raw key bytes are NEVER persisted.
 #   2. MaintenanceRecord(action_type: :installation, maintainable: device, ...)
 #      — keeps the device-history view consistent with the new monitor;
-#        skip_photo_validation: true because the bench has no camera.
+#        system_generated: true because the bench has no camera.
 #
 # Both writes occur inside the surrounding ActiveRecord::Base.transaction
 # opened by Session, so a HardwareKey row that fails to materialize also
@@ -81,7 +81,7 @@ module FactoryFlashing
         action_type:  :installation,
         performed_at: Time.current,
         notes:        notes_text,
-        skip_photo_validation: true,
+        system_generated: true,
         hardware_verified: true
       )
     end
