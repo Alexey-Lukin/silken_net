@@ -4,12 +4,11 @@
 require "rails_helper"
 
 RSpec.describe OracleVisions::SimulationPanel do
-  def mock_cluster(id:, name:)
-    c = OpenStruct.new(id: id, name: name)
-    c.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    c.define_singleton_method(:to_key) { [ id ] }
-    c.define_singleton_method(:to_param) { id.to_s }
-    c
+  # [TEST.12] Реальний незбережений `Cluster` замість OpenStruct із рукописними
+  # `model_name`/`to_key`/`to_param`: саме ця трійця робила фікстуру нечутливою до
+  # того, що віддає модель — а `<option value>` будується з НЕЇ.
+  def build_cluster(id:, name:)
+    Cluster.new(id: id, name: name)
   end
 
   def render_component(clusters:)
@@ -18,8 +17,8 @@ RSpec.describe OracleVisions::SimulationPanel do
 
   let(:clusters) do
     [
-      mock_cluster(id: 1, name: "Carpathian-Alpha"),
-      mock_cluster(id: 2, name: "Podillia-Beta")
+      build_cluster(id: 1, name: "Carpathian-Alpha"),
+      build_cluster(id: 2, name: "Podillia-Beta")
     ]
   end
 
