@@ -44,6 +44,8 @@ namespace :tracker do
     bench    = Tracker::Dashboard.bench_tag_violations(md)
     stalewho = Tracker::Dashboard.stale_who(md)
     thinwho  = Tracker::Dashboard.understated_who(md)
+    prio     = Tracker::Dashboard.priority_order_violations(md)
+    priosect = Tracker::Dashboard.priority_ordered_sections(md)
 
     puts "00_07 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(items).size} actionable)"
     puts "  duplicate IDs:    #{dups.empty? ? 'none ✓' : dups.inspect}"
@@ -190,6 +192,17 @@ namespace :tracker do
       puts "  understated WHO (#{thinwho.size}) — meta-line omits an executor its open residuals carry:"
       thinwho.each { |s| puts "    - #{s}" }
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || orphan.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || labour.any? || metaform.any? || cluster.any? || bench.any? || stalewho.any? || thinwho.any?
+    # [DOC-T.73] priority monotonicity — HARD from birth (baseline 8 violations across 5
+    # sections was sorted to 0 by `scripts/tracker_sort.rb` in the SAME commit, so the
+    # gate never shipped over known drift). The section COUNT is printed on purpose: it is
+    # the lantern — «0 violations» means «clean» only while the scan still has a subject.
+    if prio.empty?
+      puts "  priority order:   P non-decreasing within each §-section ✓ (#{priosect.size} sections scanned)"
+    else
+      puts "  priority order (#{prio.size}) — вищий P стоїть НИЖЧЕ за нижчий:"
+      prio.each { |s| puts "    - #{s}" }
+    end
+
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || orphan.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || labour.any? || metaform.any? || cluster.any? || bench.any? || stalewho.any? || thinwho.any? || prio.any?
   end
 end

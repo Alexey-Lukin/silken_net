@@ -1302,4 +1302,101 @@ RSpec.describe Tracker::Dashboard do
       expect(described_class.understated_who(noise)).to be_empty
     end
   end
+
+  # [DOC-T.73] Форма порядку: всередині `## §NN` пріоритет не сміє РОСТИ згори вниз.
+  # Писач (`scripts/tracker_sort.rb`) існував давно — бракувало саме читача, тож
+  # дрейф був невидимий: сортування §04 знайшло 8 порушень у 5 секціях, і жоден
+  # гейт не червонів.
+  describe ".priority_order_violations" do
+    let(:ordered) do
+      <<~MD
+        ## §04 · Backend
+        #### A.1 — найгостріше
+        - **P0** · 🤖 · ⚪ · → `04_01 §1`
+        #### A.2 — так само гостре
+        - **P0** · 🤖 · ⚪ · → `04_01 §1`
+        #### A.3 — нижче
+        - **P2** · 🤖 · ⚪ · → `04_01 §1`
+      MD
+    end
+
+    it "мовчить на незростаючій послідовності (рівні P поруч — законні)" do
+      expect(described_class.priority_order_violations(ordered)).to be_empty
+    end
+
+    it "ловить вищий пріоритет, що осів ПІД нижчим, і називає обидва сусіди" do
+      bad = ordered.sub("#### A.3 — нижче\n- **P2**", "#### A.3 — нижче\n- **P1**")
+                   .sub("#### A.2 — так само гостре\n- **P0**", "#### A.2 — так само гостре\n- **P3**")
+
+      violations = described_class.priority_order_violations(bad)
+      expect(violations.size).to eq(1)
+      expect(violations.first).to include("A.3 (P1)", "A.2 (P3)", "§04")
+    end
+
+    it "рахує послідовність ОКРЕМО в кожній секції (перехід через заголовок не є порушенням)" do
+      two_sections = <<~MD
+        ## §04 · Backend
+        #### A.1 — низький хвіст секції
+        - **P3** · 🤖 · ⚪ · → `04_01 §1`
+        ## §05 · Web3
+        #### B.1 — новий високий старт
+        - **P0** · 🤖 · ⚪ · → `05_01 §1`
+      MD
+
+      expect(described_class.priority_order_violations(two_sections)).to be_empty
+    end
+
+    it "не читає `**P?**`, процитований у ТІЛІ пункту (лише meta-рядок)" do
+      quoting = <<~MD
+        ## §04 · Backend
+        #### A.1 — перший
+        - **P1** · 🤖 · ⚪ · → `04_01 §1`
+        - **Стан:** сусід колись був **P0**, і цитата не сміє зсувати послідовність.
+        #### A.2 — другий
+        - **P1** · 🤖 · ⚪ · → `04_01 §1`
+      MD
+
+      expect(described_class.priority_order_violations(quoting)).to be_empty
+    end
+
+    # Обидві межі скану РЕАЛЬНІ в живому трекері, тому пінимо їх, а не знімаємо:
+    # інтро несе ```-блок із прикладом meta-рядка, а `## 🎯 Мета` / `## 🗄️ Архів` —
+    # не-реєстрові заголовки, які мусять СКИДАТИ послідовність, а не продовжувати її.
+    it "ігнорує приклади всередині code-fence і не рахує не-§ секції" do
+      noisy = <<~MD
+        ## 🎯 Мета
+        ```
+        #### X.1 — приклад із документації
+        - **P0** · 🤖 · ⚪ · → `00_06 §1`
+        ```
+        ## §04 · Backend
+        #### A.1 — перший
+        - **P2** · 🤖 · ⚪ · → `04_01 §1`
+        #### A.2 — другий
+        - **P2** · 🤖 · ⚪ · → `04_01 §1`
+        ## 🗄️ Архів
+        #### Z.9 — архівний рядок із високим P
+        - **P0** · 🤖 · ⚪ · → `04_01 §1`
+      MD
+
+      expect(described_class.priority_order_violations(noisy)).to be_empty
+      # ⚠️ Стеля ліхтаря, названа прямо: він рахує секції, де порівняння МОЖЛИВЕ
+      # (≥2 items дають пару). Секція з одним пунктом просканована, але в лічбу не
+      # входить — і саме тому пін на живому трекері вимагає `>= 8`, а не «всі».
+      expect(described_class.priority_ordered_sections(noisy)).to eq([ "§04" ])
+    end
+
+    # 🔴 Ліхтар: без нього «нуль порушень» на живому файлі означало б «нуль перевірок»
+    # рівно тоді, коли парсер тихо втратив скоуп (перейменована секція, зсунутий
+    # ITEM_HEAD). Пінимо НЕПОРОЖНЮ множину секцій на РЕАЛЬНОМУ трекері.
+    it "сканує непорожню множину секцій живого трекера" do
+      sections = described_class.priority_ordered_sections
+      expect(sections.size).to be >= 8
+      expect(sections).to all(start_with("§"))
+    end
+
+    it "живий трекер тримає порядок" do
+      expect(described_class.priority_order_violations).to be_empty
+    end
+  end
 end

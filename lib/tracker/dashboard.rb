@@ -459,6 +459,73 @@ module Tracker
       end
     end
 
+    # --- priority monotonicity within a §-section [DOC-T.73] ---
+    # The 00_07 intro states the rule and its own ceiling in one breath: a new item
+    # takes the position of its `PN` inside the section's priority cluster, «найгостріше
+    # згори (enforcement очима, не лінтером)». The §04 sort of 2026-08-11 measured that
+    # ceiling — higher-P items had settled below lower-P ones and nothing went red,
+    # because no gate looked at this axis at all.
+    #
+    # 🔒 CEILING, named here so green never reads as more than it is: this checks the
+    # FORM of the order, never its TRUTH. It cannot see whether a `P` is honest (severity
+    # vs the item's own body) nor the intro's sibling rule «блокер несе щонайменше `P`
+    # того, що блокує» — there the discriminator is the direction of a dependency stated
+    # in prose, which is not available to a machine. Both stay on the eye deliberately.
+    #
+    # The writer already exists (`scripts/tracker_sort.rb`, stable + zero-loss); this is
+    # the missing reader. Baseline when built: 8 violations across 5 sections → sorted
+    # → 0, and only then wired HARD.
+    def self.priority_order_violations(markdown = File.read(DEFAULT_PATH))
+      scan_priority_runs(markdown).filter_map do |section, prev_id, prev_p, id, p_num|
+        next if p_num >= prev_p
+
+        "#{section}: #{id} (P#{p_num}) стоїть ПІСЛЯ #{prev_id} (P#{prev_p}) — " \
+          "вищий пріоритет мусить бути ВИЩЕ в секції (`ruby scripts/tracker_sort.rb`)"
+      end
+    end
+
+    # Lantern for the check above: «0 violations» means «clean» only if the scan had a
+    # non-empty subject. A spec pins this COUNT, so a parser change that silently empties
+    # the scope (a renamed section header, a regex that stops matching item heads) turns
+    # the gate red instead of green-on-nothing (§Guard-craft: dead scope under a green label).
+    def self.priority_ordered_sections(markdown = File.read(DEFAULT_PATH))
+      scan_priority_runs(markdown).map(&:first).uniq
+    end
+
+    # Yields [section, prev_id, prev_p, id, p_num] for every ADJACENT pair of items
+    # inside one `## §` section. Pairs, not items: the rule is about the step between
+    # neighbours, and a run resets at every section header.
+    def self.scan_priority_runs(markdown)
+      section = prev_id = prev_p = cur_id = nil
+      in_fence = false
+
+      markdown.each_line.with_object([]) do |line, pairs|
+        in_fence = !in_fence if line.lstrip.start_with?("```")
+        next if in_fence
+
+        if line.start_with?("## ")
+          section = line.start_with?("## §") ? line[/## (§\S+)/, 1] : nil
+          prev_id = prev_p = cur_id = nil
+          next
+        end
+        next unless section
+
+        if (m = line.match(ITEM_HEAD))
+          cur_id = m[1]
+          next
+        end
+        # Only the meta-line carries `**P?**`; the first hit after a head wins, and
+        # `cur_id` is cleared so a `P` quoted later in the body cannot re-trigger.
+        next unless cur_id && (pr = line[/\*\*P([0-3])\*\*/, 1])
+
+        p_num = pr.to_i
+        pairs << [ section, prev_id, prev_p, cur_id, p_num ] if prev_p
+        prev_id = cur_id
+        prev_p  = p_num
+        cur_id  = nil
+      end
+    end
+
     # --- inline residual run-on guard [founder 2026-06-14] ---
     # The item-form standard (00_07 intro) requires open residuals as a VERTICAL list —
     # «≥2 residual'и — завжди список; НЕ паковати кілька `· [ ]` в один рядок». A body line

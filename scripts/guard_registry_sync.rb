@@ -121,7 +121,11 @@ TRACKER_GUARDS = {
   "cluster_marker_violations"    => "дім-кластер marker",
   "bench_tag_violations"         => "bench-session tag symmetry",
   "stale_who"                    => "stale WHO",
-  "understated_who"              => "understated WHO"
+  "understated_who"              => "understated WHO",
+  # [DOC-T.73] Обидва імені мапляться в ОДИН §3-рядок: перевірка та її ліхтар —
+  # одна вісь, і розводити їх на два рядки реєстру означало б обіцяти два гейти.
+  "priority_order_violations"    => "priority order",
+  "priority_ordered_sections"    => "priority order"
 }.freeze
 # Non-guard Dashboard calls in tracker.rake (parsing/reporting helpers).
 TRACKER_HELPERS = %w[parse open_items].freeze
