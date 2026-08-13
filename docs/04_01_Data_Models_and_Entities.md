@@ -309,7 +309,7 @@ dormant ──reactivate──► active
 - `after_create :build_default_wallet` — автоматично створює Wallet
 - `after_create :ensure_calibration` — автоматично створює DeviceCalibration
 - `after_update_commit :trigger_slashing_protocol` — при `removed?` або `deceased?` → `BurnCarbonTokensWorker`
-- `after_update_commit :broadcast_map_update, if: :map_relevant_change?` — лише при зміні lat/lng/status/voltage
+- `after_update_commit :broadcast_map_update, if: :map_relevant_change?` — лише при зміні lat/lng/status/voltage. ⚠️ **[ARCH.84] Перелік розійшовся з тим, що карта РЕНДЕРИТЬ:** `latest_stress_index` (він і фарбує маркер) у ньому немає, а писач іде `update_column` повз колбеки — тож на зміну стресу броадкаст не стріляє ніколи; `latest_voltage_mv` навпаки лишився тригером, хоч [ARCH.99] зняв `data-charge`. Стан → [`00_07` ARCH.84](00_07_Action_Plan_Tracker)
 
 **Scopes:** `active`, `geolocated`, `silent` (> 24 год мовчання), `critical_stress` (stress > 0.8).
 
