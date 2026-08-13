@@ -35,18 +35,17 @@ RSpec.describe "Single tree end-to-end flow" do
       expect(tree.latest_voltage_mv).to eq(3500)
     end
 
-    # [TEST.10] `be_between(0, 100)` тут не могло впасти: метод завершується
-    # `.clamp(0, 100)`, тобто твердження перевіряло власний кодомен. 4150 мВ —
-    # рівно середина робочого вікна (2800…5500), тож пін тепер на ЧИСЛО, і будь-яка
-    # зміна формули чи меж його червонить.
-    it "calculates charge percentage" do
-      tree.update_columns(latest_voltage_mv: 4150)
-      expect(tree.charge_percentage).to eq(50)
-    end
+    # [ARCH.99] Доти тут два приклади рахували «відсоток заряду» й «низьке
+    # живлення» від 4150/3000 мВ — напружень, яких стабілізована шина не дає
+    # (`02_03 §7`). Величину знято; наскрізний енергосигнал тепер — тиша.
+    it "reads node energy end-to-end as silence, not as a level" do
+      tree.update_columns(latest_voltage_mv: 3300, last_seen_at: Time.current)
+      expect(tree.supply_voltage_mv).to eq(3300)
+      expect(tree).to be_fresh_signal
 
-    it "detects low power" do
-      tree.update_columns(latest_voltage_mv: 3000)
-      expect(tree.low_power?).to be true
+      tree.update_columns(last_seen_at: (Tree::SILENCE_THRESHOLD + 1.hour).ago)
+      expect(tree).not_to be_fresh_signal
+      expect(Tree.silent).to include(tree)
     end
   end
 

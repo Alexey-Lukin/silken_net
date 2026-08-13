@@ -5,9 +5,10 @@ require "rails_helper"
 
 RSpec.describe Dashboard::Map do
   # [TEST.12] Реальні незбережені записи. Дерева їдуть у `Dashboard::MapNode`,
-  # чия фікстура вже годує ДЖЕРЕЛА — а тут доти лежали похідні (`current_stress`,
-  # `charge_percentage`) напряму, тобто той самий дефект, який у сусідній спеці
-  # закритий, жив далі в тій, що рендерить той самий під-компонент.
+  # чия фікстура вже годує ДЖЕРЕЛА — а тут доти лежали похідні напряму, тобто той
+  # самий дефект, який у сусідній спеці закритий, жив далі в тій, що рендерить той
+  # самий під-компонент. [ARCH.99] Другу похідну (`charge_percentage`) знято разом
+  # із величиною; делегацію тримає стрес.
   def build_tree(id: 1, did: "SNET-00000001", latitude: 49.4444, longitude: 32.0597,
                  status: :active, latest_stress_index: 0.2, latest_voltage_mv: 5095)
     Tree.new(
@@ -100,11 +101,13 @@ RSpec.describe Dashboard::Map do
       expect(html).to include("SNET-00000001")
     end
 
-    # Делегацію доводить не присутність вузла, а ВИВЕДЕНЕ значення в ньому:
-    # заряд рахує модель із `latest_voltage_mv`, тож пін падає і коли Map
-    # передасть під-компоненту не те дерево, і коли зламається сама формула.
-    it "carries each tree's derived charge down into its node" do
-      expect(html).to include('data-charge="85"')
+    # Делегацію доводить не присутність вузла, а ВИВЕДЕНЕ значення в ньому.
+    # [ARCH.99] Доти носієм тут був заряд; його знято разом із величиною, тож
+    # делегацію тримає стрес — єдина похідна, що лишилась у вузлі (модель виводить
+    # її з `latest_stress_index`). Пін падає і коли Map передасть під-компоненту
+    # не те дерево, і коли зламається саме перетворення.
+    it "carries each tree's derived stress down into its node" do
+      expect(html).to include('data-stress="0.2"')
     end
   end
 

@@ -97,48 +97,35 @@ RSpec.describe Tree, type: :model do
     end
   end
 
-  describe "#charge_percentage" do
-    it "returns 0 when voltage is zero" do
-      tree = build(:tree, latest_voltage_mv: nil)
-      expect(tree.charge_percentage).to eq(0)
+  # 🔴 [ARCH.99, присуд founder 2026-08-13] Носій ВИДАЛЕННЯ, не поведінки.
+  # Тут стояло вісім прикладів, що доводили арифметику `charge_percentage` й
+  # `low_power?` — і всі вісім були зелені на фабрикації: вони годували фікстуру
+  # напруженнями 2800…5500, яких `latest_voltage_mv` не бачить НІКОЛИ (BQ25570
+  # стабілізує ту шину на 3.3 В, `02_03 §7`). Тобто сюїта доводила формулу на
+  # вході, недосяжному за побудовою. Величина знята; цей приклад стереже, щоб
+  # шкала «скільки лишилось» не повернулась на той самий непридатний вхід.
+  # Повертати можна ЛИШЕ разом із живим Vcap-каналом (`00_07` FW.50).
+  describe "energy semantics [ARCH.99]" do
+    it "derives no charge scale from the regulated supply rail" do
+      tree = build(:tree, latest_voltage_mv: 3300)
+
+      expect(tree).not_to respond_to(:charge_percentage)
+      expect(tree).not_to respond_to(:low_power?)
+      expect(described_class.constants).not_to include(:VCAP_MIN_MV, :VCAP_MAX_MV, :LOW_POWER_MV)
+      expect(tree.supply_voltage_mv).to eq(3300)
     end
 
-    it "returns 0 at minimum voltage" do
-      tree = build(:tree, latest_voltage_mv: Tree::VCAP_MIN_MV)
-      expect(tree.charge_percentage).to eq(0)
-    end
+    it "reads low energy as SILENCE, sharing one threshold with the sweeper scope" do
+      fresh = build(:tree, last_seen_at: 1.hour.ago)
+      quiet = build(:tree, last_seen_at: (Tree::SILENCE_THRESHOLD + 1.hour).ago)
+      unborn = build(:tree, last_seen_at: nil)
 
-    it "returns 100 at maximum voltage" do
-      tree = build(:tree, latest_voltage_mv: Tree::VCAP_MAX_MV)
-      expect(tree.charge_percentage).to eq(100)
-    end
-
-    it "returns correct percentage for mid-range voltage" do
-      mid_mv = (Tree::VCAP_MIN_MV + Tree::VCAP_MAX_MV) / 2
-      tree = build(:tree, latest_voltage_mv: mid_mv)
-      expect(tree.charge_percentage).to eq(50)
-    end
-
-    it "clamps below minimum to 0" do
-      tree = build(:tree, latest_voltage_mv: 2000)
-      expect(tree.charge_percentage).to eq(0)
-    end
-  end
-
-  describe "#low_power?" do
-    it "returns true below LOW_POWER_MV" do
-      tree = build(:tree, latest_voltage_mv: Tree::LOW_POWER_MV - 1)
-      expect(tree).to be_low_power
-    end
-
-    it "returns false at LOW_POWER_MV" do
-      tree = build(:tree, latest_voltage_mv: Tree::LOW_POWER_MV)
-      expect(tree).not_to be_low_power
-    end
-
-    it "returns false when voltage is zero (no data)" do
-      tree = build(:tree, latest_voltage_mv: nil)
-      expect(tree).not_to be_low_power
+      expect(fresh).to be_fresh_signal
+      expect(quiet).not_to be_fresh_signal
+      # ⊥ Свідома розбіжність зі `scope :silent`: той NULL відкидає (sweeper не
+      # гонить Field Audit на вузол, що ще не виходив в ефір), глядачеві ж
+      # «жодного пакета» — така сама відсутність свіжого сигналу.
+      expect(unborn).not_to be_fresh_signal
     end
   end
 

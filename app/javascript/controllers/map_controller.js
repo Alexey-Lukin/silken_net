@@ -61,19 +61,21 @@ export default class extends Controller {
     const lng = parseFloat(data.lng)
     const did = data.did
     const stress = parseFloat(data.stress || 0)
-    const charge = parseInt(data.charge || 0)
 
     if (isNaN(lat) || isNaN(lng)) return
 
     // Емоційна палітра дерева
     let color = "#10b981" // Emerald (Гомеостаз)
     let shadow = "rgba(16, 185, 129, 0.5)"
-    
+
+    // [ARCH.99] Жовтий тримає ОДИН операнд — стрес. Другим стояв `charge < 30`,
+    // а здорове дерево давало 18 %: умова була істинна завжди, тож смарагдовий
+    // рядком вище не міг дожити до кінця функції для ЖОДНОГО вузла.
     if (stress > 0.8 || data.status === "removed") {
       color = "#ef4444" // Red (Термінальний стрес / Фрод)
       shadow = "rgba(239, 68, 68, 0.8)"
-    } else if (stress > 0.4 || charge < 30) {
-      color = "#eab308" // Yellow (Аномалія / Низький заряд)
+    } else if (stress > 0.4) {
+      color = "#eab308" // Yellow (Аномалія)
       shadow = "rgba(234, 179, 8, 0.6)"
     }
 
@@ -90,10 +92,10 @@ export default class extends Controller {
     if (this.markers[did]) {
       // Якщо дерево вже на карті — просто оновлюємо його колір/іконку
       this.markers[did].setIcon(icon)
-      this.markers[did].setPopupContent(this.popupTemplate(did, stress, charge))
+      this.markers[did].setPopupContent(this.popupTemplate(did, stress))
     } else {
       // Нове дерево — розміщуємо його
-      const marker = L.marker([lat, lng], { icon: icon }).bindPopup(this.popupTemplate(did, stress, charge))
+      const marker = L.marker([lat, lng], { icon: icon }).bindPopup(this.popupTemplate(did, stress))
       marker.addTo(this.markerLayer)
       this.markers[did] = marker
 
@@ -103,7 +105,7 @@ export default class extends Controller {
     }
   }
 
-  popupTemplate(did, stress, charge) {
-    return `<div class="font-mono text-[10px] text-black"><b>DID: ${did}</b><br>Stress: ${(stress * 100).toFixed(1)}%<br>Charge: ${charge}%</div>`
+  popupTemplate(did, stress) {
+    return `<div class="font-mono text-[10px] text-black"><b>DID: ${did}</b><br>Stress: ${(stress * 100).toFixed(1)}%</div>`
   }
 }

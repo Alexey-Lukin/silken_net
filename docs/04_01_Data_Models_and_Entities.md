@@ -286,9 +286,8 @@ dormant ──reactivate──► active
 ```
 
 **Константи:**
-- `VCAP_MIN_MV = 2800` — мінімум для mesh-relay
-- `VCAP_MAX_MV = 5500` — паспортна стеля іоністора ⚠️ **[ARCH.99]** прикладена до `latest_voltage_mv`, тобто до шини VDDA: `Tree#charge_percentage` лінійно проєктує напругу живлення на цю шкалу, тож номінальні 3300 мВ дають ~18 %, а верхні 81 % шкали недосяжні за побудовою. Присуд про самі числа відкритий ([`00_07`](00_07_Action_Plan_Tracker) ARCH.99 ⚖️)
-- `LOW_POWER_MV = 3300` — поріг критичного рівня ⚠️ дорівнює НОМІНАЛУ тієї ж шини
+- ⛔ **`VCAP_MIN_MV` / `VCAP_MAX_MV` / `LOW_POWER_MV` ЗНЯТО** — [ARCH.99], присуд founder 2026-08-13. Вони описували шкалу іоністора, а прикладались до `latest_voltage_mv` = мВ VDDA; BQ25570 стабілізує ту шину на 3.3 В від VSTOR ≥ 3.4 В аж до 5.5 на іоністорі ([`02_03 §7`](02_03_BQ25570_MPPT_Nano_Power)), тож вона **за конструкцією не несе інформації про запас енергії** — buck існує рівно щоб сховати напругу сховища від MCU. Разом із константами знято `charge_percentage` і `low_power?`. **Повертати шкалу можна ЛИШЕ разом із живим Vcap-каналом** ([`00_07` — FW.50](00_07_Action_Plan_Tracker)); носій заборони — `spec/models/tree_spec.rb` «energy semantics [ARCH.99]»
+- `SILENCE_THRESHOLD = 24.hours` — [transitional] дефолт порога тиші, ОДИН дім на `scope :silent` і `#fresh_signal?`; рантайм веде `TreeStalenessSweepWorker` через `SystemParameter`. **Дім сигналу «мало енергії»**: нижче `VBAT_UV` BQ25570 просто знеструмлює MCU, тож низький запас спостережуваний ЛИШЕ як тиша, ніколи як низьке число
 - `DID_FORMAT = /\ASNET-[0-9A-F]{8}\z/`
 - `GLOBAL_LORENZ_Z_MIN = 2.0` — [FW.8] global fallback (дзеркало `BioContract::CRITICAL_Z_MIN`)
 - `GLOBAL_LORENZ_Z_MAX = 45.0` — [FW.8] global fallback
@@ -300,8 +299,8 @@ dormant ──reactivate──► active
 |-------|------|
 | `mark_seen!(voltage_mv)` | Hot path: `GREATEST` атомарне оновлення `last_seen_at` + `latest_voltage_mv`. Обходить колбеки. |
 | `current_stress` | Читає `latest_stress_index` (денормалізовано, без N+1) |
-| `charge_percentage` | `(voltage - MIN) / (MAX - MIN) * 100` |
-| `low_power?` | `voltage > 0 && voltage < 3300` |
+| `supply_voltage_mv` | `latest_voltage_mv \|\| 0` — сира напруга шини VDDA, діагностична (просідання = близькість брауноуту). **НЕ похідна для шкали заряду** |
+| `fresh_signal?(threshold = SILENCE_THRESHOLD)` | **[ARCH.99]** Рядковий бік сигналу тиші — ОДИН дім порога для скоупа й в'ю. ⊥ Свідомо НЕ дзеркало `scope :silent`: той відкидає `last_seen_at IS NULL` (sweeper не гонить Field Audit на вузол, що ще не виходив в ефір), глядачеві ж «жодного пакета» = така сама відсутність свіжого сигналу |
 | `under_threat?` | `ews_alerts.unresolved.exists?` |
 | `broadcast_map_update` | Turbo Stream → `geospatial_matrix_org_{cluster.organization_id}` — імʼя **org-скоуплене** (SEC.25); дерево без кластера не броадкастить узагалі (fail-closed; ⚠️ це вже НЕ «звичайний стан» — каскад став `restrict_with_error`, ⚖️ 2026-07-30, і гард лишається як defense-in-depth) |
 | `effective_lorenz_thresholds` | [FW.8] `{ min:, max:, optimal: }` з 3-рівневим пріоритетом: Cluster override → TreeFamily → Global default. Використовується `TelemetryUnpackerService#check_z_divergence!` та `OtaPackagerService.build_threshold_config_block`. |
@@ -462,8 +461,8 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `mark_seen!(new_ip:, voltage_mv:)` | `GREATEST` атомарне оновлення, обходить колбеки |
 | `online?` | `last_seen_at >= (sleep_interval * 1.2).seconds.ago` |
 | `next_wakeup_expected_at` | `last_seen_at + sleep_interval` |
-| `battery_critical?` | `latest_voltage_mv < 3300` |
-| `system_fault?` | EwsAlert `system_fault` або `battery_critical?` |
+| `battery_critical?` | `latest_voltage_mv < 3300`. ⚠️ **[ARCH.99]** Гілка сьогодні НЕ виконується: писача колонки не існує (пульс QATT-v2 напруги не несе — у Королеви нема ADC), тож `.present?` завжди хибний. Fail-closed у безпечний бік, свідомо — предикат чекає залізного тракту. ⊥ НЕ те саме, що зняте в `Tree`: там величину міряли, і вона не могла відповісти на питання; тут її ще не міряють |
+| `system_fault?` | EwsAlert `system_fault` або `battery_critical?` — доки другий операнд мертвий, зводиться до першого. Живий сигнал стану доти — тиша (`Gateway.offline` + `GatewayStalenessSweepWorker`, [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy)) |
 
 **Scopes:** `online`, `offline`, `ready_for_commands` (idle + online).
 

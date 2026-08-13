@@ -17,7 +17,10 @@ module Dashboard
           lat: @tree.latitude.to_f,
           lng: @tree.longitude.to_f,
           stress: @tree.current_stress.to_f,
-          charge: @tree.charge_percentage.to_i,
+          # ⛔ [ARCH.99] `charge` тут БІЛЬШЕ НЕМА, і це не косметика: здорове дерево
+          # давало 18 %, тож `charge < 30` у `map_controller` було істинне ЗАВЖДИ —
+          # диз'юнкція згорталась, і смарагдовий колір гомеостазу був недосяжний за
+          # побудовою. Карта фарбувала весь ліс жовтим назавжди.
           status: @tree.status
         }
       )

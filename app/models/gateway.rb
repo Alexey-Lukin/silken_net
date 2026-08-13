@@ -187,6 +187,14 @@ class Gateway < ApplicationRecord
 
   # [ВИПРАВЛЕНО]: Блискавична перевірка без SQL запитів до логів.
   # Використовуємо денормалізовану колонку latest_voltage_mv.
+  # ⚠️ [ARCH.99] СТЕЛЯ, названа явно: гілка сьогодні НЕ виконується — писача
+  # колонки не існує (`GatewayTelemetryWorker`: «пульс v2 напруги не несе — нема
+  # ADC»), тож `.present?` завжди хибний і `system_fault?` зводиться до перевірки
+  # алертів. Це fail-closed у безпечний бік і свідомо: предикат чекає залізного
+  # тракту, а не мертвий. ⊥ НЕ те саме, що зняте у Tree: там величину міряли й
+  # вона не могла відповісти на питання, тут її просто ще не міряють.
+  # Живий сигнал стану шлюза доти — тиша: `Gateway.offline` +
+  # `GatewayStalenessSweepWorker` (dead-man switch, `06_08 §1.3`).
   def battery_critical?
     latest_voltage_mv.present? && latest_voltage_mv < LOW_POWER_MV
   end

@@ -55,7 +55,6 @@ module Trees
 
     def render_soldier_node(tree)
       voltage = tree.supply_voltage_mv
-      charge_percent = tree.charge_percentage
 
       a(
         href: tree_path(tree),
@@ -70,20 +69,13 @@ module Trees
           div(class: tokens("h-1.5 w-1.5 rounded-full", tree_status_led(tree)))
         end
 
-        # [ARCH.99] Смуга рахує ВІДСОТОК від `voltage`, а `voltage` — це мВ VDDA
-        # (шина живлення MCU), не заряд іоністора: Vcap-каналу на вузлі нема (`03_01` FW.50).
-        # ⚠️ Сама шкала лишається відкритим ⚖️ — здорова 3.3 V шина дає тут ~17 %.
-        div(class: "space-y-1") do
-          div(class: "flex justify-between text-micro uppercase text-gaia-text font-mono") do
-            span { t(".supply_voltage") }
-            span { "#{voltage}mV" }
-          end
-          div(class: "w-full h-0.5 bg-gaia-surface-sunken overflow-hidden") do
-            div(
-              class: tokens("h-full transition-all duration-1000", charge_color(charge_percent)),
-              style: "width: #{charge_percent}%"
-            )
-          end
+        # ⛔ [ARCH.99] Смуги «заряду» тут БІЛЬШЕ НЕМА: вона рахувала відсоток від
+        # мВ VDDA — стабілізованої шини, що про запас енергії не каже нічого
+        # (`02_03 §7`). Лишається сама напруга: чесна діагностика просідання.
+        # Стан енергії читається з LED вище — тиша, а не вигадана шкала.
+        div(class: "flex justify-between text-micro uppercase text-gaia-text font-mono") do
+          span { t(".supply_voltage") }
+          span { "#{voltage}mV" }
         end
 
         # Hover overlay зі стресом
@@ -91,17 +83,12 @@ module Trees
       end
     end
 
+    # [ARCH.99] Поріг тиші приходить із моделі (`Tree#fresh_signal?`) — доти тут
+    # стояла рукописна копія «24 години», тобто друга відповідь на те саме питання.
     def tree_status_led(tree)
       return "bg-status-danger animate-pulse shadow-[0_0_8px_red]" if tree.under_threat?
-      return "bg-gaia-text-subtle" if tree.last_seen_at.nil? || tree.last_seen_at < 24.hours.ago
+      return "bg-gaia-text-subtle" unless tree.fresh_signal?
       "bg-emerald-500 shadow-[0_0_5px_#10b981]"
-    end
-
-    def charge_color(percent)
-      if percent > 70 then "bg-emerald-500 shadow-[0_0_5px_#10b981]"
-      elsif percent > 30 then "bg-status-warning"
-      else "bg-status-danger animate-pulse"
-      end
     end
   end
 end

@@ -22,7 +22,7 @@ RSpec.describe Trees::Index do
   end
 
   # [TEST.12] Реальний незбережений `Tree`; фікстура годує ДЖЕРЕЛО заряду, не результат.
-  # Доти мок клав `supply_voltage_mv: 3800` І `charge_percentage: 85` одночасно — комбінація,
+  # Доти мок клав напругу І відсоток заряду одночасно (`ARCH.99` зняв другий) — комбінація,
   # недосяжна за побудовою: на тому напруженні формула дає зовсім інший відсоток, тобто
   # прод малював ЖОВТУ смугу там, де сюїта стверджувала зелену (кольорові зони протилежні).
   # Тепер задаємо `latest_voltage_mv` (справжня колонка; `supply_voltage_mv` — проміжний метод
@@ -78,9 +78,17 @@ RSpec.describe Trees::Index do
     end
   end
 
+  # 🔴 [ARCH.99] Після зняття смуги заряду ЦЕЙ LED — єдиний енергетичний сигнал
+  # картки, тож піни тут стали несучими й переписані двома осями.
+  # (1) Ціль — САМ елемент, не документ: `bg-emerald-500` носять ще hover-overlay
+  #     (`bg-emerald-500/10`) і знята смуга, тож `include("bg-emerald-500")` був
+  #     зелений за будь-якої поведінки LED (та сама вакуумність, що вбила три
+  #     приклади «charge bar colors» разом зі смугою).
+  # (2) Поріг — із моделі (`Tree::SILENCE_THRESHOLD`), а не «25 годин» літералом:
+  #     компонент доти ніс рукописну копію правила, і спека цементувала копію.
   describe "LED indicator" do
     it "shows emerald LED for active, recently seen tree" do
-      expect(html).to include("bg-emerald-500")
+      expect(html).to include("h-1.5 w-1.5 rounded-full bg-emerald-500")
     end
 
     it "shows red pulsing LED when under threat" do
@@ -90,16 +98,18 @@ RSpec.describe Trees::Index do
       expect(rendered).to include("animate-pulse")
     end
 
-    it "shows gray LED when silent for over 24 hours" do
-      trees = [ build_tree(last_seen_at: 25.hours.ago) ]
+    it "greys the LED once the node passes the shared silence threshold" do
+      trees = [ build_tree(last_seen_at: (Tree::SILENCE_THRESHOLD + 1.hour).ago) ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
-      expect(rendered).to include("bg-gaia-text-subtle")
+
+      expect(rendered).to include("h-1.5 w-1.5 rounded-full bg-gaia-text-subtle")
+      expect(rendered).not_to include("h-1.5 w-1.5 rounded-full bg-emerald-500")
     end
 
     it "shows gray LED when last_seen_at is nil" do
       trees = [ build_tree(last_seen_at: nil) ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
-      expect(rendered).to include("bg-gaia-text-subtle")
+      expect(rendered).to include("h-1.5 w-1.5 rounded-full bg-gaia-text-subtle")
     end
   end
 
@@ -130,25 +140,6 @@ RSpec.describe Trees::Index do
       trees = [ build_tree(status: "deceased") ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("bg-status-danger")
-    end
-  end
-
-  describe "charge bar colors" do
-    it "shows emerald bar when charge > 70%" do
-      expect(html).to include("bg-emerald-500")
-    end
-
-    it "shows warning bar when charge between 30-70%" do
-      trees = [ build_tree(latest_voltage_mv: 4150) ]
-      rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
-      expect(rendered).to include("bg-status-warning")
-    end
-
-    it "shows red pulsing bar when charge < 30%" do
-      trees = [ build_tree(latest_voltage_mv: 3340) ]
-      rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
-      expect(rendered).to include("bg-status-danger")
-      expect(rendered).to include("animate-pulse")
     end
   end
 

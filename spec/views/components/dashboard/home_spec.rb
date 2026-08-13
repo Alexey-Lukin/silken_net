@@ -169,7 +169,7 @@ RSpec.describe Dashboard::Home do
   describe "geospatial matrix" do
     let(:tree) do
       t = OpenStruct.new(id: 5, did: "SNET-00000005", latitude: 49.44, longitude: 32.06,
-                         status: "active", current_stress: 0.1, charge_percentage: 90)
+                         status: "active", current_stress: 0.1)
       t.define_singleton_method(:model_name) { ActiveModel::Name.new(Tree) }
       t.define_singleton_method(:to_key) { [ 5 ] }
       t.define_singleton_method(:to_param) { "5" }

@@ -5,12 +5,13 @@ require "rails_helper"
 
 RSpec.describe Dashboard::MapNode do
   # [TEST.12] Реальний незбережений `Tree`, і фікстура годує ДЖЕРЕЛА, а не результати.
-  # `current_stress` і `charge_percentage` — не колонки, а похідні (`latest_stress_index.to_f`
-  # і формула від `supply_voltage_mv`), тож мок, який клав їх напряму, робив саме перетворення
-  # неперевірним і дозволяв задати комбінацію, недосяжну на реальному записі.
-  # Ланцюг деривації ТРИЯРУСНИЙ, і мок ховав рівно це: колонка `latest_voltage_mv`
-  # → `supply_voltage_mv` (`latest_voltage_mv || 0`) → `charge_percentage`. Годуємо ПЕРШИЙ
-  # ярус — відсоток виводить модель, тож пін на нього тепер щось доводить.
+  # `current_stress` — не колонка, а похідна (`latest_stress_index.to_f`), тож мок, який
+  # клав її напряму, робив саме перетворення неперевірним і дозволяв задати комбінацію,
+  # недосяжну на реальному записі.
+  # 🔴 [ARCH.99] Другою похідною тут був `charge_percentage`, і подача її напряму
+  # ховала не одиницю, а ПОРІГ: `map_controller` розгалужувався на `charge < 30`, тоді
+  # як реальний вхід дає 18 % завжди. Тобто фікстура приховувала не хибне число, а
+  # згорнуту гілку — величину знято цілком, разом із самим атрибутом.
   #
   # 🔴 `status` тепер ходить через справжній enum (`active/dormant/removed/deceased`),
   # тому вигадані `"stress"`/`"anomaly"` тут більше неможливі: вони належать ІНШІЙ моделі
@@ -66,9 +67,13 @@ RSpec.describe Dashboard::MapNode do
       expect(html).to include("0.3")
     end
 
-    it "sets the charge percentage data attribute" do
-      expect(html).to include("data-charge=")
-      expect(html).to include("72")
+    # 🔴 [ARCH.99] Носій ВИДАЛЕННЯ. Доти пін вимагав `data-charge="72"` — і саме
+    # цей атрибут згортав рішення в `map_controller`: здорове дерево давало 18 %,
+    # тож `charge < 30` було істинне завжди, і смарагдовий гомеостаз лишався
+    # недосяжним для БУДЬ-ЯКОГО вузла — карта фарбувала ліс жовтим назавжди.
+    # Спека цього не бачила, бо фікстура подавала відсоток напряму.
+    it "emits no charge attribute — the map must not branch on a fabricated level" do
+      expect(html).not_to include("data-charge")
     end
 
     it "sets the status data attribute" do
@@ -105,7 +110,6 @@ RSpec.describe Dashboard::MapNode do
       html = render_component(tree: build_tree(latest_stress_index: 0.0, latest_voltage_mv: 0))
 
       expect(html).to include('data-stress="0.0"')
-      expect(html).to include('data-charge="0"')
     end
   end
 end
