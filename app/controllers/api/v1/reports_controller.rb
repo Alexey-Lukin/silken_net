@@ -11,10 +11,16 @@ module Api
       def index
         org = acting_organization!
 
+        # [ARCH.84] Одне читання покриття на обидві гілки формату — і скаляр, і підстава
+        # під ним. `health_score` тепер nullable: `null` = не виміряно, ⊥ виміряний 0.0.
+        health = org.health_coverage
+
         @summary = {
           total_trees: org.cached_trees_count,
           total_clusters: org.total_clusters,
-          health_score: org.health_score,
+          health_score: health.average,
+          clusters_measured: health.measured,
+          clusters_total: health.total,
           total_carbon_points: org.total_carbon_points,
           total_contracted: org.total_contracted,
           under_threat: org.under_threat?

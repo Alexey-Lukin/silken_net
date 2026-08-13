@@ -54,7 +54,9 @@ module Contracts
         # там справді емісія. Дві різні валюти на одній сітці, тож не «уніфікуй» їх.
         render Views::Shared::UI::StatCard.new(label: t(".stats.portfolio_capital"), value: "#{@stats[:total_contracted].to_f.round(2)} USD", sub: t(".stats.total_injected"))
         render Views::Shared::UI::StatCard.new(label: t(".stats.biogenic_yield"), value: "#{@stats[:total_minted].to_f.round(2)} SCC", sub: t(".stats.total_minted"))
-        render Views::Shared::UI::StatCard.new(label: t(".stats.network_health"), value: "#{network_health_percent}%", sub: t(".stats.portfolio_avg"))
+        render Views::Shared::UI::StatCard.new(label: t(".stats.network_health"),
+                                               value: measured_percent(@stats[:cluster_health].average, precision: 1),
+                                               sub: network_health_sub)
       end
     end
 
@@ -62,8 +64,13 @@ module Contracts
     # читалось `avg_health`, якого не існує, тож картка рендерила голе «%».
     # Шкала джерела — 0..1 (`health_index`), у відсоток переводить в'ю: «%» — форма
     # подачі, а не одиниця даних.
-    def network_health_percent
-      (@stats[:cluster_health].to_f * 100).round(1)
+    # [ARCH.84] Підпис картки каже «Avg Cluster Health», і саме він вирішив, ЯК рахувати
+    # (по кластерах, не по рядках контрактів — `contracts_controller`). Коли покриття
+    # неповне, підпис поступається місцем підставі: без неї середнє по одному кластеру
+    # читалось би як твердження про весь портфель.
+    def network_health_sub
+      measurement_coverage(@stats[:cluster_health].measured, @stats[:cluster_health].total) ||
+        t(".stats.portfolio_avg")
     end
 
     def render_contract_row(contract)

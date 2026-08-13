@@ -84,11 +84,18 @@ module Api
         # — 403 означає «тобі заборонено», тоді як насправді користувач просто без
         # організації, і решта дашборду відповідає на це 422 з `code: "no_organization"`.
         organization = acting_organization!
+        cluster_health = calculate_cluster_health(organization)
 
         render json: {
           total_contracted: organization.naas_contracts.sum(:total_value),
           total_tokens_minted: organization.naas_contracts.sum(:emitted_tokens),
-          cluster_health: calculate_cluster_health(organization),
+          # [ARCH.84] Скаляр лишається тим, що описує клієнтський контракт (`07_01`,
+          # шкала 0..1) — але тепер він **nullable**: `null` = не виміряно, і це не
+          # те саме, що виміряний 0.0. Дві ноги покриття додано, бо саме вони не
+          # дають прочитати середнє по одному кластеру як твердження про сто.
+          cluster_health: cluster_health.average,
+          clusters_measured: cluster_health.measured,
+          clusters_total: cluster_health.total,
           attested_value_usd: calculate_attested_value(organization)
         }
       end
@@ -99,23 +106,31 @@ module Api
         policy_scope(NaasContract).find(id)
       end
 
-      # [ОПТИМІЗАЦІЯ]: Використовуємо SQL average для економії RAM
+      # [ARCH.84] Обчислення — One-Home `Cluster.health_coverage`; шкала 0..1.
+      #
+      # ⛔ Голого `rescue → 1.0` тут БІЛЬШЕ НЕМА, і це не косметика: він ловив КОЖЕН
+      # `StandardError` і віддавав «ідеальне здоров'я». Виміряно — з `PG::StatementInvalid`
+      # усередині метод повертав `1.0`, тобто аварія БД звітувала інвесторові бездоганний
+      # ліс. Виняток тепер іде драбиною `rescue_from` `BaseController`, як усе інше.
       def calculate_cluster_health(org)
-        return 1.0 if org.clusters.empty?
-        org.clusters.average(:health_index) || 1.0
-      rescue
-        1.0
+        org.health_coverage
       end
 
-      # [ОПТИМІЗАЦІЯ]: SQL агрегація для вибірки контрактів (joins + average)
+      # [ARCH.84] Множина — КЛАСТЕРИ з-під цих контрактів, а не рядки контрактів.
       #
-      # Шкала — 0..1, як у `health_index` (`1.0 - stress_index`, `04_01 §3`), і як у
-      # сусіднього `calculate_cluster_health`. Доти два fallback'и стояли на 100/100.0,
-      # тобто ОДИН метод повертав дві різні шкали; сама середня — завжди 0..1, тож
-      # «100» не було ні досяжним максимумом, ні нейтральним дефолтом. Обидва гарди
-      # надлишкові: `average` на порожній релації вже віддає nil.
+      # 🔴 Доти стояло `contracts.joins(:cluster).average(...)`, тобто середнє, зважене
+      # за КІЛЬКІСТЮ КОНТРАКТІВ: кластер із трьома паперами важив утричі. Присуд дала не
+      # смакова оцінка, а власний підпис картки — `sub:` цього `StatCard` каже
+      # «**Avg Cluster Health**», тобто обіцяє середнє по кластерах. Виміряно на фікстурі
+      # «здоровий кластер з 1 контрактом ⊥ мертвий з 3»: стара форма 0.3, чесна 0.5.
+      # ⚠️ `unscope(:includes, :select)` несучий: викликач подає релацію з
+      # `includes(cluster: :ews_alerts)`, і без зняття Rails перетворює її на
+      # `eager_load` (LEFT JOIN), після чого `select(:cluster_id)` віддає не той
+      # стовпець — підзапит тихо порожніє, а картка показує «не виміряно» на
+      # виміряному фонді. Спіймано прикладом, не ревʼю.
       def calculate_cluster_health_for_scope(contracts)
-        contracts.joins(:cluster).average("clusters.health_index")&.to_f || 1.0
+        cluster_ids = contracts.unscope(:includes, :select).select(:cluster_id)
+        Cluster.health_coverage(Cluster.where(id: cluster_ids))
       end
 
       # [DYNAMIC PRICE]: Заміна хардкоду на Oracle Service

@@ -139,6 +139,50 @@ class Cluster < ApplicationRecord
   # `AiInsight.reporting_date`; `environmental_settings["timezone"]` лишається
   # операторськими даними, чий споживач з'явиться разом із per-tenant агрегацією.
 
+  # [ARCH.84] Дім АГРЕГОВАНОГО здоровʼя — один на всі поверхні. Доти «середнє здоровʼя
+  # кластерів» стояло ЧОТИРМА незалежними реалізаціями з ДВОМА протилежними дефолтами
+  # на одну й ту саму порожнечу: `Organization#health_score` і `DashboardController`
+  # віддавали **0.0** (через `nil.to_f`), а обидва методи `ContractsController` — **1.0**.
+  #
+  # 🔴 Повертаємо ПОКРИТТЯ, а не голе число, і це не оздоба: стан «виміряно частину»
+  # створює сама відмова від підстановки. Доти NULL-ів у стійкому стані не бувало (писач
+  # їх забивав), тож `AVG`, що мовчки пропускає NULL, нікому не брехав. Тепер один
+  # виміряний кластер із ста дасть чесне число про ОДИН і подасть його як твердження про
+  # СТО — тобто вердикт без підстави поруч. Місія проєкту зве це прямо: «правдиво ·
+  # **невідбирано** · відтворювано» (`00_01 §1.1`), а мовчазний відкид невиміряних і є
+  # відбір. Тому `measured`/`total` їдуть разом зі значенням, а вʼю зобовʼязана їх показати.
+  #
+  # ⚠️ Один запит: `COUNT(колонка)` рахує лише не-NULL, `COUNT(*)` — усі рядки, тож
+  # дискримінатор уже є в SQL і другого звертання не потребує.
+  HealthCoverage = Struct.new(:average, :measured, :total, keyword_init: true) do
+    # «Нема чого міряти» — структурний стан, НЕ те саме, що «міряли й не вийшло».
+    def no_clusters?
+      total.zero?
+    end
+
+    def unmeasured?
+      total.positive? && measured.zero?
+    end
+
+    def partial?
+      measured.positive? && measured < total
+    end
+  end
+
+  def self.health_coverage(scope = all)
+    row = scope.pick(Arel.sql("AVG(clusters.health_index), COUNT(clusters.health_index), COUNT(*)"))
+
+    # ⚠️ Середнє віддаємо СИРИМ: округлення — подача, і в кожного споживача вона своя
+    # (картка портфеля показує один знак після коми, `Organization#health_score` — два).
+    # Округливши тут, дім тихо зрізав би точність, якої в'ю ще потребує: спіймано
+    # прикладом «87.3%», що перетворився на «87.0%».
+    HealthCoverage.new(
+      average: row[0]&.to_f,
+      measured: row[1].to_i,
+      total: row[2].to_i
+    )
+  end
+
   # Перерахунок health_index на основі даних ШІ (використовується у ClusterHealthCheckWorker)
   # $$V = 1.0 - S$$ де $S$ - stress_index з добового звіту ШІ
   #

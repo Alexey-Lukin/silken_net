@@ -44,8 +44,16 @@ RSpec.describe Contracts::Index do
   # рівно той ключ, що читав зламаний компонент, тож обидві половини узгоджувались
   # між собою й лишались зеленими, поки картка рендерила голе «%» ([UI.7]).
   # `cluster_health` — шкала 0..1 (`health_index` = 1.0 - stress_index), відсоток робить в'ю.
-  def mock_stats(total_contracted: 50_000, total_minted: 1234.5, cluster_health: 0.873)
-    { total_contracted: total_contracted, total_minted: total_minted, cluster_health: cluster_health }
+  # [ARCH.84] Фікстура будує СПРАВЖНІЙ `Cluster::HealthCoverage`, а не власний скаляр:
+  # контролер кладе саме його, і мок-скаляр оголошував би світ, у якому «виміряно
+  # частину» не існує як стан (`04_06 §B.2` BP #14).
+  def mock_stats(total_contracted: 50_000, total_minted: 1234.5,
+                 cluster_health: 0.873, measured: 4, total: 4)
+    {
+      total_contracted: total_contracted,
+      total_minted: total_minted,
+      cluster_health: Cluster::HealthCoverage.new(average: cluster_health, measured: measured, total: total)
+    }
   end
 
   def render_component(contracts:, stats:, pagy:)

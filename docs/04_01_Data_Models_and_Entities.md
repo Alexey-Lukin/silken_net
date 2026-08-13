@@ -342,7 +342,7 @@ dormant ──reactivate──► active
 | `region` | string | Географічний регіон |
 | `geo_boundary` | geometry (PostGIS) | Полігон сектора для ST_Contains |
 | `geojson_polygon` | jsonb | GeoJSON-представлення (синхронізується тригером → див. примітку нижче) |
-| `health_index` | decimal | Денормалізований індекс `1.0 - stress_index` (0..1) |
+| `health_index` | **double precision, nullable** | Денормалізований індекс `1.0 - stress_index` (0..1). ⚡ **`NULL` = «не виміряно» — окремий СТАН, не нуль і не порожнеча** [ARCH.84], див. нижче. ⚠️ Тут доти стояло `decimal`, а схема каже `double precision` — і в цьому дереві різниця не косметична: `decimal` приходить у Ruby BigDecimal'ом, а `CLAUDE.md §6` окремо вимагає Float (IEEE 754) на Lorenz-шляху, бо він бітово дзеркалить mruby |
 | `entropy_score` | float | Нормалізована ентропія Шеннона Z-розподілу (0..1). Оновлюється `ClusterEntropyAnalyzerWorker` |
 | `active_trees_count` | bigint | Counter cache (оновлюється Tree callbacks) |
 | `climate_type` | string | Кліматичний тип зони (напр. "temperate_continental") |
@@ -363,8 +363,9 @@ dormant ──reactivate──► active
 |-------|------|
 | `contains_point?(lat, lng)` | PostGIS: `ST_Contains` через GIST-індекс |
 | `total_active_trees` | Читає `active_trees_count` (без COUNT(*)) |
-| `health_index` | Читає денормалізовану колонку (0..1) |
-| `recalculate_health_index!` | `1.0 - stress_index` зі щоденного AiInsight за `AiInsight.reporting_date` |
+| `health_index` | Читає денормалізовану колонку **як є**: `nil` = не виміряно [ARCH.84] |
+| `Cluster.health_coverage(scope)` | **One-Home агрегату** → `HealthCoverage(average:, measured:, total:)` одним запитом; предикати `no_clusters?` ⊥ `unmeasured?` ⊥ `partial?` |
+| `recalculate_health_index!` | `1.0 - stress_index` зі щоденного AiInsight за `AiInsight.reporting_date`; без інсайту пише **явний `nil`** |
 | `geo_center` | Мемоізований центроїд полігону (Resilient — підтримує MultiPolygon) |
 | `active_contract` | Останній активний NaasContract (з ORDER BY) |
 | `active_threats?` | `ews_alerts.unresolved.critical.exists?` |
@@ -372,6 +373,25 @@ dormant ──reactivate──► active
 | `lorenz_overrides_for(scientific_name)` | [FW.8] Повертає `{ min:, max:, optimal: }` або `nil` для даного виду. Читає `lorenz_overrides_by_species[scientific_name]`. |
 
 **Scopes:** `alphabetical`, `containing_point(lat, lng)`, `under_threat`.
+
+> ⚡ **«НЕ ВИМІРЯНО» = СТАН, А НЕ ЗНАЧЕННЯ [ARCH.84].** `health_index` більше не має ридера-підстановки, а писач без інсайту кладе **явний `NULL`**.
+>
+> 🔴 **Підстава герметична й не потребує міркувань про напрямок fail-safe: `1.0` — ДОСЯЖНЕ ВИМІРЯНЕ значення** (`stress_index == 0` → `1.0 − 0`; пін «returns 1.0 when stress_index is 0» стоїть у `cluster_spec` роками). Доти воно ж підставлялось на порожнечу — тобто «бездоганний ліс» і «ми його не міряли» були **одним числом**, і жоден споживач їх не розрізняв. Прецедент форми — [`ARCH.81`](00_07_Action_Plan_Tracker): скалярне поле не вміє сказати «не знаю», тож стан робиться першокласним.
+>
+> **Стани агрегату** (`Cluster.health_coverage`, один SQL-запит — `COUNT(колонка)` рахує не-NULL, `COUNT(*)` усі):
+>
+> | Стан | `average` | Значення |
+> |---|---|---|
+> | `no_clusters?` | `nil` | Міряти **нема чого** — структурний стан |
+> | `unmeasured?` | `nil` | Кластери Є, жоден не виміряно — операційний стан, **не те саме, що попередній** |
+> | `partial?` | число | Виміряно частину. Число правдиве про **підмножину** — тому `measured`/`total` їдуть разом із ним, і в'ю **зобовʼязана** їх показати |
+> | (повне покриття) | число | Твердження про весь набір |
+>
+> ⚠️ **Партіальний стан створює сама відмова від підстановки:** доти NULL-ів у стійкому стані не бувало (писач їх забивав), тож `AVG`, що мовчки пропускає NULL, нікому не брехав. Відвантажити середнє **без** покриття означало б завести свіжу брехню замість старої — мовчазний відкид невиміряних і є той «відбір», який місія ([`00_01 §1.1`](00_01_Vision_Mission_and_Roadmap)) забороняє словом «**невідбирано**».
+>
+> ⛔ **Округлення в домі обчислення НЕ живе** — воно подача, і в кожного споживача своя (портфель показує один знак, `health_score` два). Спіймано прикладом: `round(2)` у домі перетворив «87.3%» на «87.0%».
+>
+> ⚠️ Колонка не знає, ЯКУ добу описує: `ClusterHealthCheckWorker` приймає довільну дату, тож значення = «результат останнього прогону з тією датою, яку той узяв».
 
 > **📝 PostGIS Оптимізація — Generated Column vs Тригер (E.36):**
 > Поточна синхронізація `geojson_polygon` → `geo_boundary` використовує PL/pgSQL тригер `sync_cluster_geo_boundary()`. Починаючи з PostgreSQL 12, для таких прямих трансформацій рекомендовано використовувати **Generated Columns**:
@@ -828,7 +848,8 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | Метод | Опис |
 |-------|------|
 | `total_carbon_points` | `wallets.sum(:balance)` — прямий SELECT |
-| `health_score` | `clusters.average(:health_index)` — SQL AVG |
+| `health_coverage` | [ARCH.84] One-Home `Cluster.health_coverage(clusters)` — середнє **разом із покриттям** |
+| `health_score` | Тонка подача над ним: `average&.round(2)`, **nullable**. ⚠️ Доти цей метод мав ДВА взаємовиключні дефолти на дві форми «нічого» — `1.0` на порожню організацію й `0.0` на всі-NULL кластери, тобто вигадані числа, призначені задом наперед |
 | `total_clusters` | `clusters.size` — **не `.count`**, див. нижче |
 | `total_contracted` | `naas_contracts.sum { … .to_f }` — блокова форма, **не `sum(:колонка)`**, див. нижче |
 | `cached_trees_count` | 1 год кеш `organization_#{id}_trees_count` |

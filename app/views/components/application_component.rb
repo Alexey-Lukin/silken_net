@@ -103,6 +103,17 @@ class ApplicationComponent < Phlex::HTML
     "#{precision.zero? ? pct.to_i : pct}%"
   end
 
+  # [ARCH.84] Пара до `measured_percent` для АГРЕГАТІВ: середнє по виміряній підмножині
+  # правдиве про неї й німе про решту, тож поруч мусить їхати підстава — скільки з
+  # чого виміряно. Повне покриття підпису НЕ отримує (нема чого дисконтувати), тож
+  # рядок зʼявляється рівно тоді, коли він щось означає.
+  def measurement_coverage(measured, total)
+    return nil if measured.nil? || total.nil? || total.zero?
+    return nil if measured == total
+
+    t("ui.measurement.coverage", measured: measured, total: total)
+  end
+
   # Phlex формалізує в текст ЛИШЕ `Float` та `Integer`; на будь-що інше його
   # `format_object` віддає `nil`, і тоді в буфер не йде НІЧОГО — вузол виходить
   # порожнім без жодної помилки (`04_04 §2`). Виміряно рендером: BigDecimal ·

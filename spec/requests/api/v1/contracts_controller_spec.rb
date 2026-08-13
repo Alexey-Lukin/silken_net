@@ -84,17 +84,46 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         expect(response.body).to include("87.3%")
       end
 
-      # Порожній скоуп — не екзотика, а типовий перший вхід: `belongs_to :cluster`
-      # обов'язковий, тож nil-агрегація приходить саме звідси, а не з контракту
-      # без кластера. Картка мусить читатись як «повне здоров'я», не як «0%».
-      it "falls back to a full-health reading for an organization with no contracts yet" do
+      # 🔴 [ARCH.84] Пін на ЗВАЖУВАННЯ. Доти середнє рахувалось по РЯДКАХ контрактів
+      # (`joins(:cluster).average`), тож кластер важив стільки, скільки на нього
+      # випадково підписано паперів. Присуд дав власний підпис картки — «Avg Cluster
+      # Health», — тож множина мусить бути КЛАСТЕРНОЮ.
+      #
+      # ⚠️ Фікстура навмисно асиметрична: здоровий кластер з ОДНИМ контрактом проти
+      # мертвого з ТРЬОМА. Симетрична дала б однакове число обома формами й нічого
+      # не доводила б.
+      it "weights the portfolio average per CLUSTER, not per contract row" do
+        healthy = own_cluster
+        healthy.update!(health_index: 1.0)
+        sick = create(:cluster, organization: organization)
+        sick.update!(health_index: 0.0)
+
+        create(:naas_contract, organization: organization, cluster: healthy, status: :active)
+        3.times { create(:naas_contract, organization: organization, cluster: sick, status: :active) }
+
+        get "/contracts", headers: headers.merge("Accept" => "text/html")
+
+        expect(response.body).to include("50.0%")   # (1.0 + 0.0) / 2 кластери
+        expect(response.body).not_to include("25.0%") # (1+0+0+0) / 4 рядки контрактів
+      end
+
+      # 🔴 [ARCH.84] Цей приклад РАТИФІКУВАВ дефект прозою, і його стара редакція була
+      # найсильнішим внутрішнім аргументом ПРОТИ фіксу: «Картка мусить читатись як
+      # „повне здоров'я", не як „0%"», плюс `include("100.0%")` на request-рівні.
+      #
+      # Він мав рацію в половині: «0%» тут справді брехня (це вимір, і то найгірший).
+      # Помилка — у припущенні, що альтернатива одна. Порожній скоуп означає, що
+      # міряти НЕМА ЧОГО, і чесна відповідь третя: ні 0%, ні 100%.
+      it "shows «not measured» for an organization with no contracts — neither 0% nor a fabricated 100%" do
         fresh_user = create(:user, organization: create(:organization))
 
         get "/contracts",
             headers: { "Authorization" => "Bearer #{fresh_user.generate_token_for(:api_access)}",
                        "Accept" => "text/html" }
 
-        expect(response.body).to include("100.0%")
+        expect(response.body).to include(I18n.t("ui.measurement.not_measured"))
+        expect(response.body).not_to include("100.0%")
+        expect(response.body).not_to include("0.0%")
       end
     end
 
@@ -182,29 +211,37 @@ RSpec.describe Api::V1::ContractsController, type: :request do
     end
 
     context "when organization has no clusters" do
-      it "returns cluster_health as 1.0" do
+      # [ARCH.84] Доти: «returns cluster_health as 1.0». Клієнтський контракт
+      # (`07_01`) лишає шкалу 0..1, але поле стало **nullable**, і покриття їде
+      # поруч — саме воно розводить «нема чого міряти» від «не змогли».
+      it "returns cluster_health as null with an honest zero coverage" do
         allow(PriceOracleService).to receive(:current_scc_price).and_return(25.5)
 
-        # Create a fresh user/org with no clusters or contracts
         fresh_org = create(:organization)
         fresh_user = create(:user, organization: fresh_org)
         fresh_headers = { "Authorization" => "Bearer #{fresh_user.generate_token_for(:api_access)}" }
 
         get "/contracts/stats", headers: fresh_headers, as: :json
+
         expect(response).to have_http_status(:ok)
-        expect(response.parsed_body["cluster_health"]).to eq(1.0)
+        expect(response.parsed_body).to have_key("cluster_health")
+        expect(response.parsed_body["cluster_health"]).to be_nil
+        expect(response.parsed_body["clusters_total"]).to eq(0)
       end
     end
 
-    context "when cluster_health calculation raises" do
-      it "returns 1.0 as fallback" do
+    # 🔴 [ARCH.84] Доти цей контекст звався «returns 1.0 as fallback» і пінив, що
+    # БУДЬ-ЯКИЙ виняток усередині розрахунку віддає «ідеальне здоров'я». Голого
+    # `rescue` більше немає: аварія мусить читатись як аварія, а не як бездоганний ліс.
+    context "when the health calculation blows up" do
+      it "surfaces the failure instead of laundering it into perfect health" do
         allow(PriceOracleService).to receive(:current_scc_price).and_return(25.5)
-        # Stub average to raise an error, triggering the rescue fallback
-        allow_any_instance_of(ActiveRecord::Associations::CollectionProxy).to receive(:average).and_raise(StandardError, "DB error")
+        allow(Cluster).to receive(:health_coverage).and_raise(ActiveRecord::StatementInvalid, "DB error")
 
         get "/contracts/stats", headers: headers, as: :json
-        expect(response).to have_http_status(:ok)
-        expect(response.parsed_body["cluster_health"]).to eq(1.0)
+
+        expect(response).not_to have_http_status(:ok)
+        expect(response.parsed_body["cluster_health"]).to be_nil
       end
     end
   end

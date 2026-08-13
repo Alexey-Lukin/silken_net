@@ -19,7 +19,14 @@ module Dashboard
           # життєздатності на головній сторінці. Переведення у відсоток робить в'ю —
           # так само, як `clusters/show`, `clusters/item`, `organizations/show`,
           # `contracts/show`.
-          render Views::Shared::UI::StatCard.new(label: t(".stats.forest_vitality"), value: "#{(@stats[:trees][:health_avg].to_f * 100).round}%")
+          # [ARCH.84] `.to_f` тут був НЕ форматуванням, а мовчазним дефолтом: на
+          # невиміряному фонді він давав «0%» — тобто «ліс мертвий» замість «не міряли»,
+          # і жоден тест не червонів, бо `StatCard` робить `to_s` і не кидає ніколи.
+          render Views::Shared::UI::StatCard.new(
+            label: t(".stats.forest_vitality"),
+            value: measured_percent(@stats[:trees][:health_avg]),
+            sub: measurement_coverage(@stats[:trees][:clusters_measured], @stats[:trees][:clusters_total])
+          )
           render Views::Shared::UI::StatCard.new(label: t(".stats.active_soldiers"), value: @stats[:trees][:active], sub: "/ #{@stats[:trees][:total]}")
           # [ARCH.88] Величина = `org.wallets.sum(:balance)`, тобто БАЛИ росту, а не
           # монети — `sub` був зашитим літералом «SCC» і завищував її в 10 000×.

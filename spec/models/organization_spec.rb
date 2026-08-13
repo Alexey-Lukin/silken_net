@@ -120,9 +120,40 @@ RSpec.describe Organization, type: :model do
   end
 
   describe "#health_score" do
-    it "returns 1.0 when organization has no clusters" do
-      organization = create(:organization)
-      expect(organization.health_score).to eq(1.0)
+    # [ARCH.84] Доти: «returns 1.0 when organization has no clusters» — вигадане
+    # ідеальне здоров'я на структурну порожнечу, тоді як та сама організація з
+    # НЕВИМІРЯНИМИ кластерами діставала 0.0. Два вигадані числа, призначені навпаки.
+    it "returns nil when there is nothing to measure, and says so through coverage" do
+      org = create(:organization)
+
+      expect(org.health_score).to be_nil
+      expect(org.health_coverage).to be_no_clusters
+    end
+
+    it "distinguishes «nothing to measure» from «clusters exist but none measured»" do
+      org = create(:organization)
+      create(:cluster, organization: org)
+      create(:cluster, organization: org)
+
+      coverage = org.health_coverage
+
+      expect(coverage.average).to be_nil
+      expect(coverage).not_to be_no_clusters
+      expect(coverage).to be_unmeasured
+      expect(coverage.total).to eq(2)
+    end
+
+    it "reports partial coverage rather than passing a subset average off as the whole" do
+      org = create(:organization)
+      measured = create(:cluster, organization: org)
+      create(:cluster, organization: org)
+      measured.update_column(:health_index, 0.9)
+
+      coverage = org.health_coverage
+
+      expect(coverage.average).to eq(0.9)
+      expect(coverage).to be_partial
+      expect([ coverage.measured, coverage.total ]).to eq([ 1, 2 ])
     end
 
     it "calculates average of denormalized health_index" do

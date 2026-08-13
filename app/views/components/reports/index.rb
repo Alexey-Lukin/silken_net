@@ -34,7 +34,15 @@ module Reports
     def render_performance_hero
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
         render Views::Shared::UI::StatCard.new(label: t(".hero.biological_assets"), value: @summary[:total_trees], sub: t(".hero.biological_assets_sub"))
-        render Views::Shared::UI::StatCard.new(label: t(".hero.health_score"), value: @summary[:health_score], sub: t(".hero.health_score_sub"))
+        # [ARCH.84] Доти сюди їхало сире значення, і на невиміряному фонді `StatCard`
+        # друкував порожній вузол — а його `aria-label` ставав «Health Score: » і
+        # замовкав, тобто незрячий діставав підпис без величини (виміряно рендером).
+        render Views::Shared::UI::StatCard.new(
+          label: t(".hero.health_score"),
+          value: @summary[:health_score] || t("ui.measurement.not_measured"),
+          sub: measurement_coverage(@summary[:clusters_measured], @summary[:clusters_total]) ||
+            t(".hero.health_score_sub")
+        )
         render Views::Shared::UI::StatCard.new(label: t(".hero.carbon_yield"), value: @summary[:total_carbon_points], sub: t(".hero.carbon_yield_sub"))
       end
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6 mt-6") do

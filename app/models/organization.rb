@@ -214,12 +214,20 @@ class Organization < ApplicationRecord
   # [ОПТИМІЗАЦІЯ: N+1 Kill]: Агрегований показник здоров'я всього фонду організації
   # health_index — денормалізована колонка в clusters, оновлюється ClusterHealthCheckWorker
   # раз на добу після звіту Оракула. Тому AVG виконується на кешованих значеннях.
-  def health_score
-    return 1.0 if clusters.empty?
+  #
+  # [ARCH.84] Обчислення живе в One-Home `Cluster.health_coverage`; тут лишається
+  # доменне ім'я. ⚠️ Доти цей метод мав ДВА взаємовиключні дефолти на дві форми
+  # «нічого»: `return 1.0 if clusters.empty?` (нема чого міряти → ідеально) і
+  # `nil.to_f` на всіх-NULL (не змогли виміряти → **0.0**, тобто мертвий ліс).
+  # Обидва вигадані, і призначені задом наперед.
+  def health_coverage
+    Cluster.health_coverage(clusters)
+  end
 
-    # Використовуємо SQL AVG для миттєвого розрахунку середнього значення
-    # Формула: $$Health = \frac{\sum_{i=1}^{n} Cluster_{i}.health\_index}{n}$$
-    clusters.average(:health_index).to_f.round(2)
+  # `nil` = міряти або нема чого, або не вийшло; що саме — питай `health_coverage`.
+  # Два знаки — власна подача цього методу, не властивість дому обчислення.
+  def health_score
+    health_coverage.average&.round(2)
   end
 
   private

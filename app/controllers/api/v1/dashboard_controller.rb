@@ -11,7 +11,11 @@ module Api
           # Агрегація Війська (scoped to organization)
           total_trees = org.trees.count
           active_trees = org.trees.active.count
-          health_avg = org.clusters.average(:health_index).to_f.round(2)
+          # [ARCH.84] One-Home `Cluster.health_coverage`. Доти тут стояла ДРУГА, вручну
+          # продубльована копія формули `Organization#health_score` — з тим самим
+          # `nil.to_f`, тобто «жоден кластер не виміряно» друкувалось як **0%**
+          # життєздатності лісу. У кеш кладемо скаляри, не Struct.
+          health = Cluster.health_coverage(org.clusters)
 
           # Агрегація Енергії (Streaming Potential)
           # [ВИПРАВЛЕНО: Dashboard avg_voltage JOIN]:
@@ -25,7 +29,9 @@ module Api
             trees: {
               total: total_trees,
               active: active_trees,
-              health_avg: health_avg
+              health_avg: health.average,
+              clusters_measured: health.measured,
+              clusters_total: health.total
             },
             # [ARCH.88] ДВІ різні величини, і плутати їх не можна: `growth_points` —
             # офчейн-бали, що ростуть від телеметрії; `minted_scc` — чинний monetary
