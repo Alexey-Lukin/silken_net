@@ -49,6 +49,39 @@ if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+commit[^|;]*-m[[:space:]]+"[^"]
   fi
 fi
 
+# ── BLOCK · `rg -<cluster>` where `r` is not the last letter ─────────────────
+# `-r` is `--replace`, and in a CLUSTERED short-flag token it swallows the
+# remaining letters as the replacement STRING: `rg -rn "pat" path` parses as
+# `--replace=n`, so every match is printed as the literal `n` and the real text
+# never reaches the eye. Nothing errors. The output looks like a normal result
+# set, which is the whole danger — the corruption is in the CONTENT, not in the
+# exit code, and it feeds whatever conclusion the caller was measuring.
+#
+# Measured over 22,064 recorded Bash calls: 315 use `rg`, 3 use the legitimate
+# spaced `-r <replacement>` (untouched by this anchor), and 9 match this
+# signature — ALL NINE are `rg -rn`, i.e. precision 9/9. For scale, the backtick
+# rule above ships at 2 findings in 17,206. Six of the nine landed in the last
+# two days, so the rate is rising, not decaying.
+#
+# It is a BLOCK rather than a warn because the failure has no symptom: a warn
+# arrives beside output the reader already believes. Prose did not hold it —
+# the rule stands as item 6 in the memory corpus and was re-tripped four times
+# in one session by the author who had just read that file.
+#
+# Anchor is the FLAG POSITION, not "a dash followed by letters": the loose form
+# matched `-Users` inside `/private/tmp/…/-Users-oleksiilukin-…` and reported
+# path segments as findings. Found by reading the top hits, never visible in the
+# total — the measurement instrument had the same class of defect it measures.
+# ⚠️ Flag and `rg` must sit in the SAME segment. Two separate conditions would
+# deny `grep -rn "x" . ; rg -n "y"`, where `-r` is grep's legitimate recursion —
+# and the measurement above was segment-scoped, so a whole-command guard would
+# ship something other than what was measured.
+if printf '%s' "$cmd" | grep -qE '(^|[;&|])[[:space:]]*rg[[:space:]]+([^;&|]*[[:space:]]+)?-[a-zA-Z]*r[a-zA-Z]+([[:space:]]|$)'; then
+  jq -nc --arg r 'In `rg`, `-r` is --replace, and in a clustered flag token it eats the remaining letters as the replacement string: `rg -rn "pat"` means --replace=n, so every match prints as the literal "n" and the real text is never shown. Nothing fails and the exit code is 0 — the corruption is in the OUTPUT you are about to read. ripgrep is recursive by default, so `-r` is never what you want here: drop it (`rg -n`), or pass a real replacement with a space (`rg -r "text" -n`).' \
+    '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
+  exit 0
+fi
+
 # ── WARN · once per session per class ────────────────────────────────────────
 # The marker idiom is borrowed from ssot_guard_hint.sh for the reason stated
 # there: a noisy advisory is a disabled gate. It takes rule A from 1,564 firings
