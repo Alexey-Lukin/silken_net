@@ -12,7 +12,7 @@ lv:
       header_operational_unit: Mezgli
       header_population: Populācija
       header_population_unit: Karavīri
-      ionic_pulse: Joniskais impulss
+      supply_voltage: Barošanas spriegums
     index_title: Sektora matrica // %{name}
     show:
       actions:
@@ -20,12 +20,12 @@ lv:
         rotate_key_aria: Rotēt aparatūras šifrēšanas atslēgu
         rotate_key_label: Rotēt aparatūras atslēgu →
       biometrics:
-        ionic_potential: Joniskais potenciāls
-        ionic_sub: Plūstošā potenciāla lādiņš
+        core_sub: MCU iekšējais sensors
+        core_temperature: Kristāla temperatūra
         lorenz_z: Lorenca Z (bezdimensiju)
         stress_index: Stresa indekss
-        xylem_sub: Iekšējā kodola temperatūra
-        xylem_thermal: Ksilēma termiskais stāvoklis
+        supply_sub: MCU barošanas šina, VREFINT kalibrēta
+        supply_voltage: Barošanas spriegums
       headings:
         biometrics: Tiešraides biometrijas matrica
         deployment_matrix: Izvietojuma matrica

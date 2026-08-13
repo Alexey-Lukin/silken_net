@@ -20,9 +20,9 @@ lt:
         forest_vitality: Miško gyvybingumas
         growth_treasury: Augimo taškų iždas
         growth_treasury_sub: GP
-        ionic_potential: Joninis potencialas
         minted_scc: Nukalta SCC
         minted_scc_sub: SCC
+        supply_voltage: Maitinimo įtampa
     index_title: Citadelės vadovybė // Globali apžvalga
     map:
       heading: Geospatinė matrica

@@ -17,7 +17,7 @@ module Api
           # життєздатності лісу. У кеш кладемо скаляри, не Struct.
           health = Cluster.health_coverage(org.clusters)
 
-          # Агрегація Енергії (Streaming Potential)
+          # Агрегація енергії: середня напруга шини живлення MCU (мВ VDDA)
           # [ВИПРАВЛЕНО: Dashboard avg_voltage JOIN]:
           # Замість важкого JOIN на telemetry_logs (мільйони рядків за годину)
           # використовуємо вже денормалізовану колонку latest_voltage_mv із таблиці trees.

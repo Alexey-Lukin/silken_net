@@ -6,10 +6,10 @@ require "rails_helper"
 RSpec.describe Dashboard::MapNode do
   # [TEST.12] Реальний незбережений `Tree`, і фікстура годує ДЖЕРЕЛА, а не результати.
   # `current_stress` і `charge_percentage` — не колонки, а похідні (`latest_stress_index.to_f`
-  # і формула від `ionic_voltage`), тож мок, який клав їх напряму, робив саме перетворення
+  # і формула від `supply_voltage_mv`), тож мок, який клав їх напряму, робив саме перетворення
   # неперевірним і дозволяв задати комбінацію, недосяжну на реальному записі.
   # Ланцюг деривації ТРИЯРУСНИЙ, і мок ховав рівно це: колонка `latest_voltage_mv`
-  # → `ionic_voltage` (`latest_voltage_mv || 0`) → `charge_percentage`. Годуємо ПЕРШИЙ
+  # → `supply_voltage_mv` (`latest_voltage_mv || 0`) → `charge_percentage`. Годуємо ПЕРШИЙ
   # ярус — відсоток виводить модель, тож пін на нього тепер щось доводить.
   #
   # 🔴 `status` тепер ходить через справжній enum (`active/dormant/removed/deceased`),

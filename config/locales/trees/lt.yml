@@ -12,7 +12,7 @@ lt:
       header_operational_unit: Mazgai
       header_population: Populiacija
       header_population_unit: Kariai
-      ionic_pulse: Joninis impulsas
+      supply_voltage: Maitinimo įtampa
     index_title: Sektoriaus matrica // %{name}
     show:
       actions:
@@ -20,12 +20,12 @@ lt:
         rotate_key_aria: Rotuoti aparatūros šifravimo raktą
         rotate_key_label: Rotuoti aparatūros raktą →
       biometrics:
-        ionic_potential: Joninis potencialas
-        ionic_sub: Srauto potencialo krūvis
+        core_sub: MCU vidinis jutiklis
+        core_temperature: Kristalo temperatūra
         lorenz_z: Lorenco Z (bedimensis)
         stress_index: Streso indeksas
-        xylem_sub: Vidinio branduolio temperatūra
-        xylem_thermal: Ksilemos šiluminė būsena
+        supply_sub: MCU maitinimo šina, kalibruota VREFINT
+        supply_voltage: Maitinimo įtampa
       headings:
         biometrics: Tiesioginės biometrinės matricos
         deployment_matrix: Diegimo matrica

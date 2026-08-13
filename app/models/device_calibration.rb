@@ -39,8 +39,11 @@ class DeviceCalibration < ApplicationRecord
     (raw_temp_c + temperature_offset_c).round(2)
   end
 
+  # [ARCH.99] Вхід — мВ VDDA (шина живлення MCU, VREFINT-калібрування, `03_01` FW.50),
+  # а НЕ заряд іоністора: каналу Vcap на вузлі не існує. Коефіцієнт тому компенсує
+  # похибку самого тракту вимірювання (розкид VREFINT-калібровки, старіння ADC),
+  # а не деградацію ємності — ім'я `vcap_coefficient` історичне.
   def normalize_voltage(raw_vcap_mv)
-    # Коефіцієнт компенсує падіння ємності іоністора або старіння ADC
     (raw_vcap_mv * vcap_coefficient).to_i
   end
 

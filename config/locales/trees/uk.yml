@@ -12,7 +12,7 @@ uk:
       header_operational_unit: Вузли
       header_population: Популяція
       header_population_unit: Солдати
-      ionic_pulse: Іонний пульс
+      supply_voltage: Напруга живлення
     index_title: Матриця сектору // %{name}
     show:
       actions:
@@ -20,12 +20,12 @@ uk:
         rotate_key_aria: Ротація апаратного ключа шифрування
         rotate_key_label: Ротувати апаратний ключ →
       biometrics:
-        ionic_potential: Іонний потенціал
-        ionic_sub: Заряд потенціалу потоку
+        core_sub: Внутрішній датчик MCU
+        core_temperature: Температура кристала
         lorenz_z: Z Лоренца (безрозмірна)
         stress_index: Індекс стресу
-        xylem_sub: Температура внутрішнього ядра
-        xylem_thermal: Ксилемна температура
+        supply_sub: Шина MCU, калібрування VREFINT
+        supply_voltage: Напруга живлення
       headings:
         biometrics: Жива біометрична матриця
         deployment_matrix: Матриця розгортання

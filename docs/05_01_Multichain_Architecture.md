@@ -424,7 +424,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 
 ### Крок 1: Збір (Hardware → Backend)
 
-Сенсор зчитує час заряду іоністора (`delta_t`) і напругу (`vcap`), пакує у 16 байт і шифрує **AES-128** (LoRa-канал Soldier→Queen; режими — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)). AES-256-CBC застосовується далі, на магістралі Queen→Rails (CoAP-батч).
+Сенсор зчитує час заряду іоністора (`delta_t`) і напругу шини живлення (`vcap` — мВ VDDA, [ARCH.99]; не заряд самого іоністора), пакує у 16 байт і шифрує **AES-128** (LoRa-канал Soldier→Queen; режими — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)). AES-256-CBC застосовується далі, на магістралі Queen→Rails (CoAP-батч).
 
 ```
 firmware/soldier/main.c → LoRa TX → Queen → CoAP PUT → UnpackTelemetryWorker → TelemetryUnpackerService

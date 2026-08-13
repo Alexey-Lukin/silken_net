@@ -114,8 +114,14 @@ module Trees
           end
 
           div(class: "space-y-6") do
-            metric_row(t(".biometrics.ionic_potential"), "#{@latest_log&.voltage_mv || 0} mV", sub: t(".biometrics.ionic_sub"))
-            metric_row(t(".biometrics.xylem_thermal"), "#{@latest_log&.temperature_c || 0} °C", sub: t(".biometrics.xylem_sub"))
+            # [ARCH.99] Мітки називають ВИМІРЯНЕ, не бажане. `voltage_mv` — це мВ VDDA
+            # (шина живлення MCU через VREFINT-калібрування, `03_01` FW.50), НЕ заряд
+            # іоністора: реального Vcap-каналу на вузлі не існує. `temperature_c` —
+            # температура кристала STM32 (внутрішній датчик), не ксилеми.
+            # ⚠️ Підпис `core_sub` тут не новий — він казав правду («температура
+            # внутрішнього ядра») роками, суперечачи власному ж заголовку.
+            metric_row(t(".biometrics.supply_voltage"), "#{@latest_log&.voltage_mv || 0} mV", sub: t(".biometrics.supply_sub"))
+            metric_row(t(".biometrics.core_temperature"), "#{@latest_log&.temperature_c || 0} °C", sub: t(".biometrics.core_sub"))
             stress_pct = ((@tree.current_stress || 0) * 100).round(1)
             metric_row(t(".biometrics.stress_index"), "#{stress_pct}%", danger: @tree.under_threat?)
           end

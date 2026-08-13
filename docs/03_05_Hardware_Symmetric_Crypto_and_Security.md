@@ -157,7 +157,7 @@ hcryp.Init.Algorithm = CRYP_AES_ECB;          // ECB transitional — TARGET: CR
 
 | Зсув | Поле | Тип | Діапазон / Кодування | Походження |
 |------|------|-----|----------------------|------------|
-| 0..1 | `Vcap_mv` | uint16 BE | 0..65535 мВ (фактично 0..5500) | повна 1 мВ-роздільність, як у поточному 16B |
+| 0..1 | `Vcap_mv` | uint16 BE | 0..65535 мВ ⚠️ [ARCH.99] фактично ≈ VDDA-шина біля 3300, а не 0..5500: іменем поле обіцяє іоністор, а несе `Adc_Vdda_Mv()` ([`03_01`](03_01_Firmware_Lifecycle_and_DMA) FW.50) | повна 1 мВ-роздільність, як у поточному 16B |
 | 2 | `temp_c` | int8 | −128..+127 °C | без змін |
 | 3 | `acoustic_events` | uint8 (saturating) | 0..255 | FW.22 — saturating increment, без overflow ambiguity |
 | 4..5 | `delta_t_s` | uint16 BE | 0..65535 сек (≈ 18 год) | повна роздільність — критично для [E.63] метаболічного `growth_points` (delta_t→GP на пристрої; backend декодує wire, точна звірка — FW.2, [`03_01 §13.6`](03_01_Firmware_Lifecycle_and_DMA)) |

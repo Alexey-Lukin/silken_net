@@ -269,7 +269,7 @@ normalize_identifier :device_uid  # HardwareKey
 | `firmware_update_status` | enum | OTA lifecycle (via Firmwareable) |
 | `latitude`, `longitude` | decimal | WGS-84 координати (via GeoLocatable) |
 | `last_seen_at` | datetime | Останній пакет телеметрії |
-| `latest_voltage_mv` | integer | Денормалізована напруга іоністора (мВ) |
+| `latest_voltage_mv` | integer | Денормалізована **напруга шини живлення MCU** (мВ VDDA, VREFINT-калібрування — [`03_01`](03_01_Firmware_Lifecycle_and_DMA) FW.50). ⚠️ **[ARCH.99]** НЕ заряд іоністора: каналу Vcap на вузлі не існує, тож здоровий вузол стоїть біля номіналу 3300 мВ |
 | `latest_stress_index` | decimal | Денормалізований stress_index від InsightGeneratorService |
 | `health_streak` | integer | Кількість послідовних здорових пакетів (Anti-Flapping) |
 | `peaq_did` | string | peaq DID-ідентифікатор для Proof of Growth |
@@ -287,8 +287,8 @@ dormant ──reactivate──► active
 
 **Константи:**
 - `VCAP_MIN_MV = 2800` — мінімум для mesh-relay
-- `VCAP_MAX_MV = 5500` — повний заряд іоністора
-- `LOW_POWER_MV = 3300` — поріг критичного рівня
+- `VCAP_MAX_MV = 5500` — паспортна стеля іоністора ⚠️ **[ARCH.99]** прикладена до `latest_voltage_mv`, тобто до шини VDDA: `Tree#charge_percentage` лінійно проєктує напругу живлення на цю шкалу, тож номінальні 3300 мВ дають ~18 %, а верхні 81 % шкали недосяжні за побудовою. Присуд про самі числа відкритий ([`00_07`](00_07_Action_Plan_Tracker) ARCH.99 ⚖️)
+- `LOW_POWER_MV = 3300` — поріг критичного рівня ⚠️ дорівнює НОМІНАЛУ тієї ж шини
 - `DID_FORMAT = /\ASNET-[0-9A-F]{8}\z/`
 - `GLOBAL_LORENZ_Z_MIN = 2.0` — [FW.8] global fallback (дзеркало `BioContract::CRITICAL_Z_MIN`)
 - `GLOBAL_LORENZ_Z_MAX = 45.0` — [FW.8] global fallback
@@ -557,8 +557,8 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | Поле | Тип | Опис |
 |------|-----|------|
 | `bio_status` | enum | `homeostasis(0) / stress(1) / anomaly(2) / vm_error(3)` — **[SLASH-1 P0]** код 3 = `BIO_STATUS_VM_ERROR` (софт-збій прошивки: mruby-crash/OOM/unprovisioned), НЕ tamper; фізичний tamper їде PANIC_FLAG-каналом (стара назва `tamper_detected` інвертувала semantics → хибний positive-A slash) |
-| `temperature_c` | decimal | Температура (°C) |
-| `voltage_mv` | integer | Напруга EBFC (мВ) |
+| `temperature_c` | decimal | Температура кристала STM32 у капсулі анкера (°C), після `DeviceCalibration#normalize_temperature`. ⚠️ **[ARCH.99]** НЕ температура ксилеми — окремого сенсора в деревині немає; сирий wire-градус (той, з якого прошивка рахувала Z) живе окремо, [FW.57 F2] |
+| `voltage_mv` | integer | **[ARCH.99]** Напруга шини живлення MCU (мВ VDDA, VREFINT-калібрування — [`03_01`](03_01_Firmware_Lifecycle_and_DMA) FW.50). ⚠️ НЕ напруга EBFC і не заряд іоністора: обидві ті величини вузол не міряє (ADC має рівно два канали — внутрішня температура + VREFINT) |
 | `z_value` | decimal | Z-значення Атрактора Лоренца |
 | `acoustic_events` | integer | Кількість акустичних подій (TinyML) |
 | `mesh_ttl` | integer | Time-To-Live пакету в mesh-мережі (на прибутті; стартовий — 3 normal / 5 panic, дзеркало firmware `DEFAULT_TTL`/`PANIC_TTL`) |

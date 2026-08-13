@@ -37,7 +37,7 @@ module Dashboard
           # дефектом. Розбіжність підписів тут СВІДОМА, «уніфікувати» її не можна.
           render Views::Shared::UI::StatCard.new(label: t(".stats.minted_scc"), value: @stats[:economy][:minted_scc], sub: t(".stats.minted_scc_sub"))
           render Views::Shared::UI::StatCard.new(
-            label: t(".stats.ionic_potential"),
+            label: t(".stats.supply_voltage"),
             value: "#{@stats[:energy][:avg_voltage]}mV",
             danger: @stats[:energy][:avg_voltage] < 3300
           )

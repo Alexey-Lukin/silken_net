@@ -115,8 +115,12 @@ RSpec.describe Dashboard::Home do
   end
 
   describe "energy stat" do
-    it "renders Ionic Potential stat card" do
-      expect(html).to include("Ionic Potential")
+    # [ARCH.99] Картка підписує `avg_voltage` — середнє `telemetry_logs.voltage_mv`,
+    # тобто мВ VDDA (шина живлення MCU, VREFINT-калібрування). Доти мітка звала це
+    # «Ionic Potential», хоча жодного каналу Vcap іоністора на вузлі не існує.
+    it "labels the energy card by what is measured — the supply rail, not an ionic potential" do
+      expect(html).to include("Supply Voltage")
+      expect(html).not_to include("Ionic Potential")
     end
 
     it "renders average voltage with mV unit" do

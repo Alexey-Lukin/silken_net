@@ -54,7 +54,7 @@ module Trees
     end
 
     def render_soldier_node(tree)
-      voltage = tree.ionic_voltage
+      voltage = tree.supply_voltage_mv
       charge_percent = tree.charge_percentage
 
       a(
@@ -70,10 +70,12 @@ module Trees
           div(class: tokens("h-1.5 w-1.5 rounded-full", tree_status_led(tree)))
         end
 
-        # Індикатор заряду іоністора (Streaming Potential Reserve)
+        # [ARCH.99] Смуга рахує ВІДСОТОК від `voltage`, а `voltage` — це мВ VDDA
+        # (шина живлення MCU), не заряд іоністора: Vcap-каналу на вузлі нема (`03_01` FW.50).
+        # ⚠️ Сама шкала лишається відкритим ⚖️ — здорова 3.3 V шина дає тут ~17 %.
         div(class: "space-y-1") do
           div(class: "flex justify-between text-micro uppercase text-gaia-text font-mono") do
-            span { t(".ionic_pulse") }
+            span { t(".supply_voltage") }
             span { "#{voltage}mV" }
           end
           div(class: "w-full h-0.5 bg-gaia-surface-sunken overflow-hidden") do

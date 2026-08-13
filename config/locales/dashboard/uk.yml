@@ -20,9 +20,9 @@ uk:
         forest_vitality: Життєздатність лісу
         growth_treasury: Скарбниця балів росту
         growth_treasury_sub: GP
-        ionic_potential: Іонний потенціал
         minted_scc: Змінтовано SCC
         minted_scc_sub: SCC
+        supply_voltage: Напруга живлення
     index_title: Командування Цитаделі // Глобальний огляд
     map:
       heading: Геопросторова матриця

@@ -12,7 +12,7 @@ en:
       header_operational_unit: Nodes
       header_population: Population
       header_population_unit: Soldiers
-      ionic_pulse: Ionic Pulse
+      supply_voltage: Supply Voltage
     index_title: Sector Matrix // %{name}
     show:
       actions:
@@ -20,12 +20,12 @@ en:
         rotate_key_aria: Rotate hardware encryption key
         rotate_key_label: Rotate Hardware Key →
       biometrics:
-        ionic_potential: Ionic Potential
-        ionic_sub: Streaming potential charge
+        core_sub: MCU internal sensor
+        core_temperature: Core Temperature
         lorenz_z: Lorenz Z (dimensionless)
         stress_index: Stress Index
-        xylem_sub: Internal core temp
-        xylem_thermal: Xylem Thermal
+        supply_sub: MCU rail, VREFINT-calibrated
+        supply_voltage: Supply Voltage
       headings:
         biometrics: Live Biometric Matrix
         deployment_matrix: Deployment Matrix

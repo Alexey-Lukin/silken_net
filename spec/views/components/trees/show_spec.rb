@@ -25,7 +25,7 @@ RSpec.describe Trees::Show do
                 crypto_address: "0xABCDEF1234567890ABCDEF1234567890ABCDEF12",
                 wallet_balance: 42.0, cluster_name: "Carpathian-Alpha",
                 latitude: 49.4444, longitude: 32.0597,
-                ionic_voltage: 3800, last_seen_at: 1.minute.ago,
+                supply_voltage_mv: 3800, last_seen_at: 1.minute.ago,
                 under_threat: false)
     family = TreeFamily.new(name: family_name)
     # 🔴 [TEST.12] `device_uid` — не окремий ідентифікатор, а САМ зовнішній ключ
@@ -41,7 +41,7 @@ RSpec.describe Trees::Show do
     cluster = Cluster.new(name: cluster_name)
 
     # 🔴 [TEST.12] Реальний незбережений `Tree`, і головне тут — ТРИЯРУСНА деривація,
-    # уже доведена в `trees/index` і `dashboard/map_node`: `ionic_voltage` сам НЕ колонка,
+    # уже доведена в `trees/index` і `dashboard/map_node`: `supply_voltage_mv` сам НЕ колонка,
     # він виводиться з `latest_voltage_mv`; те саме `current_stress` ⇐ `latest_stress_index`.
     # Тож фікстура годує ПЕРШИЙ ярус, і саме перетворення стає перевірним.
     # ⚠️ `under_threat?` лишається стабом — це запит у БД (`ews_alerts.unresolved.exists?`),
@@ -51,7 +51,7 @@ RSpec.describe Trees::Show do
       did: did,
       status: status,
       latest_stress_index: current_stress,
-      latest_voltage_mv: ionic_voltage,
+      latest_voltage_mv: supply_voltage_mv,
       tree_family: family,
       hardware_key: hardware_key,
       wallet: wallet,

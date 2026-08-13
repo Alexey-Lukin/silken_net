@@ -142,15 +142,15 @@ RSpec.describe Tree, type: :model do
     end
   end
 
-  describe "#ionic_voltage" do
+  describe "#supply_voltage_mv" do
     it "returns latest_voltage_mv when present" do
       tree = build(:tree, latest_voltage_mv: 4200)
-      expect(tree.ionic_voltage).to eq(4200)
+      expect(tree.supply_voltage_mv).to eq(4200)
     end
 
     it "returns 0 when latest_voltage_mv is nil" do
       tree = build(:tree, latest_voltage_mv: nil)
-      expect(tree.ionic_voltage).to eq(0)
+      expect(tree.supply_voltage_mv).to eq(0)
     end
   end
 
