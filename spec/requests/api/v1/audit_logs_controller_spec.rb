@@ -44,6 +44,38 @@ RSpec.describe Api::V1::AuditLogsController, type: :request do
       expect(ids).to include(own_log.id)
       expect(ids).not_to include(system_log.id)
     end
+
+    # 🔴 [ARCH.83] Приклади вище будують super_admin'а З організацією — тобто доводять
+    # видимість ланцюга рівно тому, кому він і так був видимий. А обидва СІДЖЕНІ
+    # super_admin створюються БЕЗ організації («глобальний системний агент»), і доти
+    # `acting_organization!` кидав рядком раніше, ніж `<< nil` дав би їм цей ланцюг:
+    # журнал governance-змін був недосяжний своєму єдиному призначеному читачеві.
+    context "when the super_admin has not adopted a tenant yet (типовий перший вхід)" do
+      it "віддає системний ланцюг, а не 422 «немає організації»" do
+        platform_admin = create(:user, :super_admin, organization: nil)
+        get "/audit_logs",
+            headers: { "Authorization" => "Bearer #{platform_admin.generate_token_for(:api_access)}" },
+            as: :json
+
+        expect(response).to have_http_status(:ok)
+        ids = response.parsed_body["data"].map { |l| l["id"] }
+        expect(ids).to include(system_log.id)
+        # ⊥ Тенантні журнали лишаються за межею: платформений контекст не є
+        # «бачу все», він є «бачу те, що не належить нікому».
+        expect(ids).not_to include(own_log.id, other_log.id)
+      end
+    end
+
+    # ⊥ Контрприклад до попереднього: без ролі super_admin відсутність організації
+    # не відкриває нічого. `AuditLog.none` тут ВИМІР (читабельних рядків нуль), а не
+    # дефолт на місці невиміряного — межа з [ARCH.84] проходить саме тут.
+    it "адміністраторові без організації віддає порожньо, а не системний ланцюг" do
+      orphan = create(:user, :admin, organization: nil)
+      get "/audit_logs", headers: { "Authorization" => "Bearer #{orphan.generate_token_for(:api_access)}" }, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["data"]).to be_empty
+    end
   end
 
   describe "GET /audit_logs" do

@@ -40,13 +40,23 @@ module Firmwares
       end
     end
 
+    # [ARCH.83] Каталог образів глобальний, а ЦЯ панель — org-скоуплена, тож на
+    # платформеному контексті вона не «порожня», а НЕВИМІРЯНА. `nil` ⊥ `{}` тут
+    # несуче: порожній хеш надрукував би тиху нульову статистику по кожній версії,
+    # тобто рівно той клас, що [ARCH.84]. Кнопки перемикання панель не рендерить
+    # свідомо — перемикач уже стоїть у шапці (`navigation.top_bar.context_none`),
+    # а гейтована дія в компоненті потребувала б актора (UI.5/UI.6).
     def render_inventory_summary
       div(class: "p-6 border border-emerald-900 bg-zinc-950 shadow-2xl") do
         h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-6") { t(".inventory_title") }
 
-        div(class: "grid grid-cols-1 md:grid-cols-2 gap-8") do
-          inventory_block(t(".queens"), @inventory_stats[:gateways])
-          inventory_block(t(".soldiers"), @inventory_stats[:trees])
+        if @inventory_stats.nil?
+          p(class: "text-compact font-mono text-gray-500") { t(".inventory_no_context") }
+        else
+          div(class: "grid grid-cols-1 md:grid-cols-2 gap-8") do
+            inventory_block(t(".queens"), @inventory_stats[:gateways])
+            inventory_block(t(".soldiers"), @inventory_stats[:trees])
+          end
         end
       end
     end

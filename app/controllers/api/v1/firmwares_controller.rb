@@ -23,18 +23,36 @@ module Api
       def index
         @pagy, @firmwares = pagy(BioContractFirmware.order(version: :desc))
 
-        # Збираємо статистику інвентаря для дашборду (org-scoped)
-        org = acting_organization!
-        @inventory_stats = {
-          trees: org.trees.group(:firmware_version).count,
-          gateways: org.gateways.group(:firmware_version).count
-        }
+        # [ARCH.83] Каталог образів тенанта НЕ має за побудовою (`04_03 §3.1`), тож
+        # рендериться й ДО вибору клану. Доти тут стояв `acting_organization!` — банг
+        # заради самої лише декоративної половини нижче, — і платформений адмін
+        # (обидва сіджені super_admin створюються без організації) не бачив реєстру
+        # прошивок узагалі, доки не всиновить випадкового тенанта.
+        org = acting_organization
+
+        # ⚠️ `nil`, а НЕ `{}`: порожній хеш друкується як «нуль пристроїв на кожній
+        # версії», тобто вигаданий вимір на місці невиміряного [ARCH.84]. Розрізняти
+        # «контексту немає» від «пристроїв немає» — робота компонента.
+        @inventory_stats =
+          if org
+            {
+              trees: org.trees.group(:firmware_version).count,
+              gateways: org.gateways.group(:firmware_version).count
+            }
+          end
 
         # [SEC.20] Живі OTA-кампанії: updating АБО затаргечені (Queen ще
         # не поллила hint) — прогрес-бари з підпискою на Firmwares::Index.
-        @active_ota_gateways = org.gateways.where(state: :updating)
-                                  .or(org.gateways.where.not(pending_firmware_id: nil))
-                                  .order(:uid).to_a
+        # Без контексту секція просто відсутня: мовчання не є твердженням, тоді як
+        # «0 кампаній» ним було б.
+        @active_ota_gateways =
+          if org
+            org.gateways.where(state: :updating)
+               .or(org.gateways.where.not(pending_firmware_id: nil))
+               .order(:uid).to_a
+          else
+            []
+          end
 
         respond_to do |format|
           # API Response
@@ -140,6 +158,10 @@ module Api
 
       # --- ПРОВЕРКА ІНВЕНТАРЯ (Who has what?) ---
       # GET /firmwares/inventory
+      # ⊥ [ARCH.83] Банг тут ПРАВИЛЬНИЙ і лишається: на відміну від каталогу в `index`,
+      # цей екшен віддає виключно org-скоуплені дані, тобто ресурс тенантний — і на
+      # нього діє інша, теж ратифікована політика (однакове 422, `contracts#stats`:
+      # «не втрата, а вирівнювання»). Межу стереже request-пін.
       def inventory
         org = acting_organization!
         stats = {

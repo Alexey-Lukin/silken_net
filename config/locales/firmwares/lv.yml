@@ -19,6 +19,7 @@ lv:
         uploaded: Augšupielādēts
         version: Versija
       deploy_aria: Izvietot programmaparatūru v%{version}
+      inventory_no_context: Klana konteksts nav izvēlēts — inventārs pieder organizācijai, nevis platformai. Izvēlieties klanu augšējā joslā, lai redzētu versiju sadalījumu.
       inventory_title: Meža inventārs (versiju sadalījums)
       queens: Queens (Vārtejas)
       registry_title: Pieejamās bināro evolūciju versijas

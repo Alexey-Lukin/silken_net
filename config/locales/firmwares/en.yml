@@ -19,6 +19,7 @@ en:
         uploaded: Uploaded
         version: Version
       deploy_aria: Deploy firmware v%{version}
+      inventory_no_context: No clan context selected — the inventory belongs to an organization, not to the platform. Pick a clan in the top bar to see the version distribution.
       inventory_title: Forest Inventory (Version Distribution)
       queens: Queens (Gateways)
       registry_title: Available Binary Evolutions

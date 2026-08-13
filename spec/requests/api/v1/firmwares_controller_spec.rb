@@ -176,6 +176,45 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
         expect(streams).to eq([ "ota_channel_#{own_gateway.uid}" ])
       end
     end
+
+    # 🔴 [ARCH.83, присуд founder 2026-08-13] Каталог образів тенанта не має за
+    # побудовою, а сторінка кликала `acting_organization!` заради самої лише панелі
+    # інвентаря — тож платформений адмін (обидва сіджені super_admin створюються без
+    # організації) не бачив реєстру прошивок узагалі. Приклади вище цього не ловили:
+    # усі будують актора З організацією, тобто ходять входом, якого перший вхід не дає.
+    context "when the super_admin has not adopted a tenant yet" do
+      let(:platform_admin) { create(:user, :super_admin, organization: nil) }
+      let(:platform_headers) { { "Authorization" => "Bearer #{platform_admin.generate_token_for(:api_access)}" } }
+
+      it "віддає глобальний каталог образів, а не 422 «немає організації»" do
+        get "/firmwares", headers: platform_headers, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["data"].map { |f| f["version"] }).to include("3.0.0")
+      end
+
+      # ⚠️ Панель інвентаря org-скоуплена, тож без контексту вона НЕВИМІРЯНА, а не
+      # порожня: `{}` надрукував би тиху нульову статистику по кожній версії — рівно
+      # клас [ARCH.84]. Пін цілиться в текст стану, бо саме він розрізняє два світи.
+      it "показує панель інвентаря як невиміряну, не як нульову" do
+        get "/firmwares", headers: { "Authorization" => "Bearer #{platform_admin.generate_token_for(:api_access)}",
+                                     "Accept" => "text/html" }
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include(I18n.t("firmwares.index.inventory_no_context"))
+        expect(response.body).not_to include(I18n.t("firmwares.index.queens"))
+      end
+
+      # ⊥ Межа присуду: `#inventory` віддає ВИКЛЮЧНО org-скоуплені дані, тобто ресурс
+      # тенантний — на нього діє інша, теж ратифікована політика (однакове 422), і
+      # знімати банг там було б помилкою. Цей приклад стереже саме межу.
+      it "лишає суто тенантний #inventory за 422 — банг там правильний" do
+        get "/firmwares/inventory", headers: platform_headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body["code"]).to eq("no_organization")
+      end
+    end
   end
 
   describe "GET /firmwares/new" do
