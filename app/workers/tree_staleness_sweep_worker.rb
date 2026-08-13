@@ -25,7 +25,10 @@ class TreeStalenessSweepWorker
   # сам прохід — кілька легких запитів.
   sidekiq_options queue: "alerts", retry: 2
 
-  DEFAULT_THRESHOLD_HOURS = 24
+  # [ARCH.99] Число НЕ повторюємо: дім транзиційного порога — `Tree::SILENCE_THRESHOLD`,
+  # той самий, що годує `scope :silent` і `Tree#fresh_signal?` у в'ю. Доти воркер ніс
+  # власну «24», і кожен, хто рухав би поріг, мусив би вгадати, скільки домів у числа.
+  DEFAULT_THRESHOLD_HOURS = Tree::SILENCE_THRESHOLD.in_hours.to_i
 
   def perform
     threshold = silence_threshold

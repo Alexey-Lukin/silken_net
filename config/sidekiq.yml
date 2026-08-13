@@ -186,7 +186,8 @@
     # --- [SILENCE-1] DEAD-MAN SWITCH СОЛДАТА (The Silent Soldier Watcher) ---
     # Per-tree тиша ≠ cluster-blackout: вкрадене/мертве дерево при живих сусідах
     # бачить ЛИШЕ цей sweeper (06_08 §1.3). Поріг = SystemParameter
-    # :tree_silence_threshold_hours (24h transitional, bench-калібрування E.63);
+    # :tree_silence_threshold_hours, дефолт = Tree::SILENCE_THRESHOLD [transitional,
+    # bench-калібрування E.63] — число тут не дублюємо, воно ще зрушить (ARCH.99);
     # носій = per-tree field_audit («слухай, не карай» — 05_05). */5 — дзеркало
     # Queen-sweeper'а: детект-резолюція хвилини при порозі-годинах, прохід дешевий.
     tree_staleness_sweep:
