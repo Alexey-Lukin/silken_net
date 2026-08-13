@@ -9,9 +9,13 @@
 # stops mattering. `dco.yml` does NOT cover it: that gate fires on INBOUND pull
 # requests, and the maintainer's authorized direct pushes to `main` never open one.
 #
-# Deliberately DCO-only. The full suite and the docs battery are the founder's
-# pre-push discipline and are CI-gated; putting ~1.5 min of tests on every push
-# buys a bypass habit, which costs more than it saves.
+# SCOPE RULE — the line is the COST, not the name. This hook carries DCO plus
+# any check that is deterministic and CHEAP (each block states its MEASURED
+# price). The full suite and the docs battery stay out: at ~1.5 min they buy a
+# `--no-verify` habit, and then nothing at all stands on this path. `00_06 §3`
+# records the same ground for DCO — «повна сюїта на кожному push купує звичку
+# обходити хук». Read "deliberately DCO-only" in older notes as that cost rule;
+# it was never a rule about the number of checks (I18N.4, 2026-08-13).
 #
 # Enabled by `git config core.hooksPath .githooks` (set by bin/setup; re-run it
 # after a fresh clone). Emergency bypass: `git push --no-verify`.
@@ -66,3 +70,57 @@ if ! "$_rb" "$root/scripts/dco_check.rb"; then
   echo "Then re-push.  (Emergency bypass: git push --no-verify)"
   exit 1
 fi
+
+# [I18N.4] i18n parity band — the second carrier on this hook.
+#
+# `i18n_check` (ci.yml) was the ONLY CI lane with no local carrier of any kind:
+# no binstub, no line in CLAUDE.md §3, nothing. Its price was paid for real —
+# `main` stood red from 10ae12bd, and two subsequent green runs MASKED it,
+# because the job is gated on `ruby||ci`, so docs-only and .sh commits never
+# even started it.
+#
+# COST, measured on this tree 2026-08-13 (not estimated): missing 2.9 s +
+# check-consistent-interpolations 0.5 s + check-normalized 0.6 s ≈ 4 s. Two
+# orders of magnitude under the suite the scope rule above refuses.
+#
+# 🔴 All three DISCRIMINATE by exit code — mutation-verified 2026-08-13, one
+# mutant per mechanism (a batch would let one mask another): a key present in
+# the base locale deleted from `uk` → `missing` exits 1; `%{current}` renamed
+# to `%{cur}` → `check-consistent-interpolations` exits 1; a key placed out of
+# alphabetical order → `check-normalized` exits 1; a syntactically broken YAML
+# → all three exit 78. The long-standing claim that `check-normalized` "always
+# exits 0 (upstream quirk)" was true of an older gem and is DEAD in 1.1.2 —
+# the gem returns `:exit1 unless non_normalized.empty?`
+# (lib/i18n/tasks/command/commands/data.rb). Grepping its prose instead is now
+# strictly worse: it pins an English sentence a Dependabot bump may reword.
+#
+# NOT-RUN ⊥ FAILED (§Guard-craft #47): a non-zero code alone cannot tell "the
+# locales are broken" from "the gem never ran", and an unrunnable check must
+# never read as a verdict. The fitness probe therefore sits on the FAILURE path
+# only — the green path must not pay for a diagnosis nobody reads, while on the
+# red path its ~0.5 s is free.
+_i18n_log=$(mktemp)
+trap 'rm -f "$_i18n_log"' EXIT INT TERM
+
+for _cmd in missing check-consistent-interpolations check-normalized; do
+  ( cd "$root" && bundle exec i18n-tasks "$_cmd" ) >"$_i18n_log" 2>&1 && continue
+
+  cat "$_i18n_log"
+  echo
+
+  if ! ( cd "$root" && bundle exec i18n-tasks --version ) >/dev/null 2>&1; then
+    echo "pre-push BLOCKED — i18n-tasks could not RUN (bundler or the gem is unavailable)."
+    echo "This is NOT an i18n verdict: the check never ran, so its silence means nothing."
+    echo "Fix the toolchain (bundle install — or rvm-heal if the gemset is gone), then re-push."
+    echo "(Emergency bypass: git push --no-verify — but that skips DCO as well.)"
+    exit 1
+  fi
+
+  echo "pre-push BLOCKED — \`i18n-tasks $_cmd\` reports violations (listed above)."
+  echo "Fix:  bundle exec i18n-tasks normalize          # for check-normalized"
+  echo "      edit config/locales/**                    # for missing / interpolations"
+  echo "Then re-push.  (Emergency bypass: git push --no-verify)"
+  exit 1
+done
+
+echo "pre-push: DCO + i18n parity OK."

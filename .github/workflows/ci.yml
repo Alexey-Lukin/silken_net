@@ -506,15 +506,20 @@ jobs:
         run: bundle exec i18n-tasks check-consistent-interpolations
 
       - name: Check locale YAML files are normalized
-        # `check-normalized` always exits 0 (upstream quirk). Gate the
-        # build by grepping the output — non-empty list of files = failure.
-        run: |
-          output=$(bundle exec i18n-tasks check-normalized 2>&1)
-          echo "$output"
-          if echo "$output" | grep -q "requires normalization"; then
-            echo "::error::Some locale files are not normalized. Run \`bundle exec i18n-tasks normalize\`."
-            exit 1
-          fi
+        # [I18N.4, 2026-08-13] The grep wrapper that stood here is GONE, and the
+        # claim it rested on with it: `check-normalized` no longer "always exits
+        # 0 (upstream quirk)". Measured on i18n-tasks 1.1.2 — a key out of alpha
+        # order exits 1, a broken YAML exits 78 — and the gem says so in source:
+        # `:exit1 unless non_normalized.empty?` (command/commands/data.rb).
+        #
+        # The wrapper was not merely stale, it was DEAD CODE: `run:` executes
+        # under `bash -e`, so `output=$(…)` already aborted the step on a
+        # non-zero code and the `grep` branch was unreachable. Keeping it taught
+        # every reader the opposite — that this exit code is worthless — and it
+        # pinned an English sentence of a third-party gem that a Dependabot bump
+        # may reword at any time. The local carrier of these same three checks
+        # is `.githooks/pre-push` (mutation-verified on all three).
+        run: bundle exec i18n-tasks check-normalized
       # NB: docs SSOT gates (docs:check_refs + tracker:check) live SOLELY in docs.yml
       # (2026-06-02) — removed from here to stop the mixed code+docs double-run.
 

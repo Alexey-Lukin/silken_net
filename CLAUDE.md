@@ -48,7 +48,10 @@ make -C firmware/test     # firmware host-tests (x86, без ARM)
 make -C firmware/test asan # + ASan/UBSan memory-safety смуга (TEST.5)
 cd contracts && forge test -vvv --gas-report   # Solidity (Foundry; §8)
 ruff check                # Python (in-silico/ml), root ruff.toml
+bundle exec i18n-tasks missing   # i18n-парність (+`check-consistent-interpolations`, `check-normalized`)
 ```
+
+**Носій ≠ список команд.** Смуга `Docs` = `ruby scripts/docs_band.rb` (кроки читаються з `docs.yml`, не з голови). **i18n-трійка вище вже стоїть на `.githooks/pre-push`** разом із DCO — тобто спрацьовує, навіть якщо про неї не згадати (I18N.4); поріг хука — ЦІНА (~4 с виміряно), не кількість перевірок, тож повна сюїта туди не їде. Усі три дискримінують exit-кодом; «`check-normalized` завжди 0» — мертве твердження (гем 1.1.2).
 
 ## 4. Стиль коду: драбинка «лінивого сеньйора» (YAGNI-first)
 
