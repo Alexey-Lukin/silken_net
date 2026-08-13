@@ -2,13 +2,11 @@
 lv:
   actuators:
     card:
+      emergency_stop: AVĀRIJAS_APTURĒŠANA
+      emergency_stop_aria: 'Avārijas apturēšana: atcelt rindā esošās komandas aktuatoram %{device_type}'
       endpoint: 'Galapunkts:'
       energy_budget: 'Enerģijas budžets:'
       energy_budget_value: "%{mj} mJ"
-      execute_off: IZPILDĪT_IZSLĒGT
-      execute_off_aria: Izpildīt IZSLĒGŠANAS komandu aktuatoram %{device_type}
-      execute_on: IZPILDĪT_IESLĒGT
-      execute_on_aria: Izpildīt IESLĒGŠANAS komandu aktuatoram %{device_type}
       gateway: 'Vārteja: %{uid}'
       idle: NEAKTĪVS
       last_activated: 'Pēdējo reizi aktivizēts:'

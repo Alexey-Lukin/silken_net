@@ -2,13 +2,11 @@
 lt:
   actuators:
     card:
+      emergency_stop: AVARINIS_STABDYMAS
+      emergency_stop_aria: 'Avarinis stabdymas: atšaukti eilėje esančias komandas aktuatoriui %{device_type}'
       endpoint: 'Galutinis taškas:'
       energy_budget: 'Energijos biudžetas:'
       energy_budget_value: "%{mj} mJ"
-      execute_off: VYKDYTI_IŠJUNGTI
-      execute_off_aria: Vykdyti IŠJUNGIMO komandą aktuatoriui %{device_type}
-      execute_on: VYKDYTI_ĮJUNGTI
-      execute_on_aria: Vykdyti ĮJUNGIMO komandą aktuatoriui %{device_type}
       gateway: 'Šliuzas: %{uid}'
       idle: NEAKTYVUS
       last_activated: 'Paskutinį kartą suaktyvinta:'

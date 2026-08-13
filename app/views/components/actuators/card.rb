@@ -83,22 +83,34 @@ module Actuators
       # При Turbo broadcast з воркера — request context відсутній.
       return unless respond_to?(:view_context) && view_context&.respond_to?(:url_options)
 
-      div(class: "grid grid-cols-2 gap-2") do
-        # Кнопка Увімкнення/Відкриття (Execute Open/ON)
+      # [UI.14, присуд founder 2026-08-13] Ручна дія тут рівно ОДНА — аварійна
+      # зупинка, і вона єдина, що має спостережуваний ефект сьогодні: `STOP` є
+      # override-вантажем (`ActuatorCommand::OVERRIDE_COMMANDS`), тож
+      # `cancel_pending_for_actuator!` гасить чергу актуатора й пише audit-trail
+      # ЧИСТО на бекенді — Королеви для цього не треба.
+      #
+      # Кнопок «відкрити/закрити» більше немає, і знято їх не за косметику: вони
+      # слали `open`/`close`, тоді як модель приймає лише `[A-Z_]+` → кожен клік
+      # по пожежному клапану давав 500. 🔴 «Полагодити регістр» зробило б ГІРШЕ:
+      # Королева ACTION не інтерпретує взагалі (`queen/main.c` — на місці
+      # виконання коментар, не код), а Rails просуває стан при ПОБУДОВІ відповіді,
+      # тож команда пройшла б `dispatch!`→`acknowledge!`→`confirmed` і лягла б у
+      # ланцюг `Auditable` як виконана. Гучна відмова стала б підробленим доказом
+      # на physical-safety поверхні — клас FW.63 «слід бреше».
+      div do
+        # 🔴 `duration_seconds` тут НЕСУЧИЙ, і це ДРУГА нога того самого дефекту,
+        # якої пункт не називав: модель має `validates :duration_seconds,
+        # presence: true`, а стара кнопка не слала його зовсім — тобто навіть із
+        # правильним регістром клік однаково давав би 500 (`create!` →
+        # `RecordInvalid` → `rescue_from StandardError`). Знайдено піном на живий
+        # вхід, не читанням. Значення `1` — конвенція STOP'а, що вже жила в
+        # request-спеці: зупинка миттєва, тривалості не має, але поле обовʼязкове.
         button_to(
-          execute_actuator_path(@actuator, action_payload: "open"),
+          execute_actuator_path(@actuator, action_payload: "STOP", duration_seconds: 1),
           method: :post,
-          aria: { label: t(".execute_on_aria", device_type: @actuator.device_type) },
-          class: execute_on_classes
-        ) { t(".execute_on") }
-
-        # Кнопка Вимкнення/Закриття (Execute Close/OFF)
-        button_to(
-          execute_actuator_path(@actuator, action_payload: "close"),
-          method: :post,
-          aria: { label: t(".execute_off_aria", device_type: @actuator.device_type) },
-          class: execute_off_classes
-        ) { t(".execute_off") }
+          aria: { label: t(".emergency_stop_aria", device_type: @actuator.device_type) },
+          class: emergency_stop_classes
+        ) { t(".emergency_stop") }
       end
     end
 
@@ -118,18 +130,12 @@ module Actuators
         "relative overflow-hidden"
     end
 
-    def execute_on_classes
-      "py-2 border border-gaia-primary text-mini uppercase text-gaia-primary " \
-        "hover:bg-gaia-primary hover:text-black " \
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary " \
-        "transition-all font-bold tracking-widest"
-    end
-
-    def execute_off_classes
-      "py-2 border border-gaia-border text-mini uppercase text-gaia-text-muted " \
-        "hover:border-status-danger-accent hover:text-status-danger-accent " \
+    def emergency_stop_classes
+      "w-full py-2 border border-status-danger-accent text-mini uppercase " \
+        "text-status-danger-accent " \
+        "hover:bg-status-danger-accent hover:text-black " \
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger-accent " \
-        "transition-all tracking-widest"
+        "transition-all font-bold tracking-widest"
     end
   end
 end

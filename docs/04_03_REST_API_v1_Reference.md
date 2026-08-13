@@ -953,15 +953,15 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ```json
 {
-  "action_payload": "VALVE_OPEN",
+  "action_payload": "OPEN_VALVE",
   "duration_seconds": 300
 }
 ```
 
 | Параметр | Тип | Опис |
 |---|---|---|
-| `action_payload` | String | Рядкова команда для актуатора (залежить від `device_type`) |
-| `duration_seconds` | Integer | Тривалість дії (опційно) |
+| `action_payload` | String | Рядкова команда. Модель приймає **лише** `/\A[A-Z_]+(?::\d+)?\z/` — тобто ВЕЛИКІ літери. ⚠️ **Вокабуляр не уніфікований, і ця таблиця донедавна несла форму, якої не приймає НІХТО** (`VALVE_OPEN` — переставлені слова): автоматика шле `OPEN_VALVE`/`ACTIVATE_SIREN`/`ACTIVATE_BEACON` ([`04_02 §7`](04_02_Business_Logic_and_Services)), прошивка документує й host-тестує `CMD:OPEN:` ([`03_02 §6`](03_02_Queen_Gateway_Firmware)), а UI шле рівно `STOP`. Присуд про канонічну форму відкритий і свідомо гейтований тим, що Королева ACTION ще не інтерпретує → [`00_07`](00_07_Action_Plan_Tracker) UI.14 |
+| `duration_seconds` | Integer | Тривалість дії. 🔴 **ОБОВʼЯЗКОВИЙ** — `validates :duration_seconds, presence: true`; доти тут стояло «опційно», і клієнт, що повірив цьому рядку, діставав **500** (`create!` → `RecordInvalid` → `rescue_from StandardError`), а не 422. Для миттєвих дій (`STOP`) конвенція — `1` |
 
 **Success Response `202 Accepted`:**
 

@@ -177,6 +177,44 @@ RSpec.describe Actuators::Card do
     end
   end
 
+  # [UI.14] Вісь, якої цей файл не мав ЖОДНОГО разу: що саме кнопка кладе на дріт.
+  # Доти картка слала `open`/`close` — вантаж, який модель відкидає РЕГІСТРОМ, тож
+  # кожен клік по пожежному клапану давав 500, а сюїта цього не бачила, бо кожен
+  # request-приклад подавав власний рукописний літерал ВЕЛИКИМИ. Пін нижче звіряє
+  # вивід картки з МОДЕЛЬНОЮ константою, а не з літералом автора, тож він
+  # червоніє на будь-якому розходженні UI ⟷ модель, а не лише на цьому.
+  describe "manual control payload" do
+    let(:html) { render_component(actuator: build_actuator) }
+
+    def rendered_payload(markup)
+      CGI.unescape(markup[/action_payload=([^"'&]+)/, 1].to_s)
+    end
+
+    it "renders a payload the model actually accepts" do
+      payload = rendered_payload(html)
+
+      # Ліхтар: без нього приклад був би зелений на розмітці ЗОВСІМ без кнопки.
+      expect(payload).to be_present
+      expect(payload).to match(ActuatorCommand::ALLOWED_PAYLOAD_FORMAT)
+    end
+
+    it "renders the emergency stop, which is the only action with a backend effect today" do
+      payload = rendered_payload(html)
+
+      # `STOP` мусить лишатись override-вантажем: саме з цього виводиться
+      # `cancel_pending_for_actuator!`, тобто єдиний спостережуваний ефект дії,
+      # поки Королева ACTION не інтерпретує.
+      expect(ActuatorCommand.override_payload?(payload)).to be true
+    end
+
+    it "no longer offers an actuation the wire cannot carry" do
+      # Негативна половина: повернення кнопок «відкрити/закрити» червонить тут.
+      # Без неї пін вище лишався б зеленим, якби поруч зі STOP додали ще й `open`.
+      expect(html.scan(/action_payload=/).size).to eq(1)
+      expect(html).not_to include("action_payload=open")
+    end
+  end
+
   describe "best practices compliance" do
     let(:html) { render_component(actuator: build_actuator) }
 

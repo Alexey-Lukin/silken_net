@@ -2,13 +2,11 @@
 en:
   actuators:
     card:
+      emergency_stop: EMERGENCY_STOP
+      emergency_stop_aria: 'Emergency stop: cancel queued commands for actuator %{device_type}'
       endpoint: 'Endpoint:'
       energy_budget: 'Energy Budget:'
       energy_budget_value: "%{mj} mJ"
-      execute_off: EXECUTE_OFF
-      execute_off_aria: Execute OFF command for actuator %{device_type}
-      execute_on: EXECUTE_ON
-      execute_on_aria: Execute ON command for actuator %{device_type}
       gateway: 'Gateway: %{uid}'
       idle: IDLE
       last_activated: 'Last Activated:'

@@ -50,6 +50,34 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
     end
 
+    # 🔴 [UI.14] Пін на ЖИВИЙ вхід, і саме його бракувало роками. Кожен приклад
+    # нижче подає власний рукописний літерал ВЕЛИКИМИ (`OPEN_VALVE`, `STOP`) —
+    # тобто сюїта ходила входом, якого UI не виробляв ЖОДНОГО разу, поки картка
+    # слала `open`/`close` і кожен клік по пожежному клапану давав 500. Тут
+    # вантаж береться з розмітки, яку віддає САМА сторінка, тож приклад
+    # червоніє на будь-якому майбутньому розходженні UI ⟷ модель, а не лише
+    # на регістрі. Компонентна спека це половину не закриває: вона рендерить
+    # повз маршрутизатор (`04_06 §B.2` BP #14).
+    it "accepts the whole payload the actuator page actually renders" do
+      get "/actuators/#{own_actuator.id}", headers: headers
+      expect(response).to have_http_status(:ok)
+
+      # Береться ВЕСЬ query кнопки, не одне поле: саме неповнота вантажу й була
+      # другою ногою дефекту (`duration_seconds` не слався зовсім, а модель
+      # вимагає його `presence: true` → `create!` → 500). Пін на самий
+      # `action_payload` її б не побачив.
+      query = CGI.unescapeHTML(response.body[%r{/actuators/#{own_actuator.id}/execute\?([^"']+)}, 1].to_s)
+      params = Rack::Utils.parse_nested_query(query)
+
+      # Ліхтар: без нього приклад лишався б зеленим на сторінці ЗОВСІМ без кнопки.
+      expect(params).to include("action_payload")
+
+      post "/actuators/#{own_actuator.id}/execute", params: params, headers: headers
+
+      expect(response).to have_http_status(:see_other)
+      expect(own_actuator.commands.reload.last.command_payload).to eq(params["action_payload"])
+    end
+
     it "creates and returns a command for the actuator" do
       post "/actuators/#{own_actuator.id}/execute",
            params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },

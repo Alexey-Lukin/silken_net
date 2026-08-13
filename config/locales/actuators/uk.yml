@@ -2,13 +2,11 @@
 uk:
   actuators:
     card:
+      emergency_stop: АВАРІЙНА_ЗУПИНКА
+      emergency_stop_aria: 'Аварійна зупинка: скасувати команди в черзі для актуатора %{device_type}'
       endpoint: 'Кінцева точка:'
       energy_budget: 'Енергетичний бюджет:'
       energy_budget_value: "%{mj} мДж"
-      execute_off: ВИКОНАТИ_ВИМКНУТИ
-      execute_off_aria: Виконати команду ВИМКНУТИ для актуатора %{device_type}
-      execute_on: ВИКОНАТИ_УВІМКНУТИ
-      execute_on_aria: Виконати команду УВІМКНУТИ для актуатора %{device_type}
       gateway: 'Шлюз: %{uid}'
       idle: ОЧІКУВАННЯ
       last_activated: 'Остання активація:'
