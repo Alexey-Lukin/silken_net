@@ -81,7 +81,7 @@ module Clusters
       div(class: "p-8 border border-emerald-900 bg-zinc-950") do
         h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-8") { t(".vitals.heading") }
         div(class: "grid grid-cols-3 gap-8") do
-          vital_block(t(".vitals.health_index"), "#{(@cluster.health_index * 100).round}%")
+          vital_block(t(".vitals.health_index"), measured_percent(@cluster.health_index))
           vital_block(t(".vitals.active_trees"), @cluster.total_active_trees.to_s)
           vital_block(t(".vitals.queen_gateways"), @gateways.size.to_s)
         end

@@ -10,9 +10,27 @@ RSpec.describe Cluster, type: :model do
       expect(cluster.health_index).to eq(0.85)
     end
 
-    it "returns 1.0 when health_index is nil" do
-      cluster = create(:cluster, health_index: nil)
-      expect(cluster.health_index).to eq(1.0)
+    # 🔴 [ARCH.84] Доти тут стояло «returns 1.0 when health_index is nil». Пін був
+    # зелений і описував справжню поведінку — хибною була сама поведінка: `1.0` це
+    # ДОСЯЖНЕ ВИМІРЯНЕ значення (див. «returns 1.0 when stress_index is 0» нижче),
+    # тож два різні факти мали одне число. Пін тепер доводить розрізнення, а не
+    # значення: невиміряний ⊥ виміряний-ідеальний.
+    it "reports «not measured» as its own state, distinct from a measured perfect 1.0" do
+      unmeasured = create(:cluster, health_index: nil)
+      perfect    = create(:cluster, health_index: 1.0)
+
+      expect(unmeasured.health_index).to be_nil
+      expect(unmeasured.read_attribute(:health_index)).to be_nil
+
+      expect(perfect.health_index).to eq(1.0)
+      expect(perfect.read_attribute(:health_index)).to eq(1.0)
+    end
+
+    it "treats a measured zero as measured — not as absence" do
+      dead = create(:cluster, health_index: 0.0)
+
+      expect(dead.read_attribute(:health_index)).to eq(0.0)
+      expect(dead.health_index).to eq(0.0)
     end
   end
 
@@ -20,7 +38,17 @@ RSpec.describe Cluster, type: :model do
     it "accepts a target_date parameter" do
       cluster = create(:cluster)
       result = cluster.recalculate_health_index!(Time.current.utc.to_date - 1)
-      expect(result).to eq(1.0) # No insights → default 1.0
+      expect(result).to be_nil # немає інсайту → «не виміряно», НЕ вигадане число
+    end
+
+    # 🔴 [ARCH.84] Писач мусить писати ЯВНИЙ nil, а не пропускати запис: колонку
+    # переписує щонічний `Cluster.find_each`, тож «пропустити» означало б лишити
+    # вчорашнє число на сьогоднішній темряві.
+    it "OVERWRITES a previously measured value with nil when the day has no insight" do
+      cluster = create(:cluster, health_index: 0.42)
+
+      expect { cluster.recalculate_health_index! }
+        .to change { cluster.reload.read_attribute(:health_index) }.from(0.42).to(nil)
     end
 
     # [ARCH.100] Тут доти стояв `describe "#local_yesterday"` — три приклади, що пінили

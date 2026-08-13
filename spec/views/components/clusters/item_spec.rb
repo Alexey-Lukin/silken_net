@@ -70,6 +70,16 @@ RSpec.describe Clusters::Item do
     it "renders health index as percentage" do
       expect(html).to include("91%")
     end
+
+    # 🔴 [ARCH.84] Доти цієї гілки не проходив ЖОДЕН приклад дерева: усі фікстури
+    # ставили `health_index` явно, тож 500 на невиміряному кластері ловився лише
+    # request-рівнем. Пін доводить стан ПРОТИ сусіда, у який він злипався, — 0%.
+    it "renders «not measured» for a cluster with no reading, never 0%" do
+      unmeasured = render_component(cluster: mock_cluster(health_index: nil))
+
+      expect(unmeasured).to include(I18n.t("ui.measurement.not_measured"))
+      expect(unmeasured).not_to include("0%")
+    end
   end
 
   describe "footer link" do

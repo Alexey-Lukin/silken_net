@@ -112,10 +112,20 @@ module Organizations
                   td(class: "p-4 text-emerald-100") { cluster.name }
                   td(class: "p-4") do
                     div(class: "flex items-center gap-2") do
-                      div(class: "w-16 h-1 bg-emerald-950 rounded-full overflow-hidden") do
-                        div(class: "h-full bg-emerald-500", style: "width: #{(cluster.health_index * 100).round}%")
+                      # [ARCH.84] Невиміряний кластер НЕ отримує смуги взагалі. Тире сюди
+                      # покласти неможливо — це CSS-довжина, — а нульова ширина читалась би
+                      # як виміряні 0%, тобто як мертвий ліс. Відсутність смуги = відсутність
+                      # твердження про величину; саме твердження несе підпис поруч.
+                      if !cluster.health_index.nil?
+                        div(class: "w-16 h-1 bg-emerald-950 rounded-full overflow-hidden") do
+                          div(class: "h-full bg-emerald-500", style: "width: #{(cluster.health_index * 100).round}%")
+                        end
                       end
-                      span(class: "text-tiny text-emerald-500") { "#{(cluster.health_index * 100).round}%" }
+                      span(class: tokens("text-tiny",
+                                         "text-emerald-500": !cluster.health_index.nil?,
+                                         "text-status-neutral-text": !!cluster.health_index.nil?)) do
+                        measured_percent(cluster.health_index)
+                      end
                     end
                   end
                   td(class: "p-4 text-gray-400") { t(".clusters.soldiers_count", count: cluster.total_active_trees) }

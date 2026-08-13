@@ -43,7 +43,7 @@ module Clusters
     def stats_section
       div(class: "grid grid-cols-2 gap-4 mb-6") do
         stat_block(t(".trees"), @cluster.total_active_trees)
-        stat_block(t(".health"), "#{(@cluster.health_index * 100).round}%")
+        stat_block(t(".health"), measured_percent(@cluster.health_index))
       end
     end
 

@@ -154,6 +154,22 @@ RSpec.describe Organizations::Show do
       expect(html).to include("85%")
     end
 
+    # 🔴 [ARCH.84] Тут стан несе ще й СМУГА, і саме вона не вміє сказати «не знаю»:
+    # тире в CSS-довжину не покласти, а нульова ширина читалась би як виміряні 0%,
+    # тобто як мертвий ліс. Тому смуги просто немає — пін стереже її ВІДСУТНІСТЬ.
+    it "drops the vitality bar entirely for an unmeasured cluster instead of drawing it empty" do
+      unmeasured = render_component(organization: org, clusters: [ mock_cluster(health_index: nil) ],
+                                    performance: performance)
+
+      expect(unmeasured).to include(I18n.t("ui.measurement.not_measured"))
+      expect(unmeasured).not_to include("width: 0%")
+      # ⚠️ Цілимось у САМ вузол смуги (`w-16 h-1 …`), не в колір: `bg-emerald-500`
+      # живе на сторінці й поза смугою, тож матчер по всьому документу проходив би
+      # через сусідній зелений вузол і нічого не доводив (`04_04` · Guard-craft #17).
+      expect(unmeasured).not_to include("w-16 h-1 bg-emerald-950")
+      expect(html).to include("w-16 h-1 bg-emerald-950")
+    end
+
     it "renders the Open Matrix link" do
       expect(html).to include("Open Matrix →")
     end

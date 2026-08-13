@@ -194,17 +194,33 @@ RSpec.describe Contracts::Show do
       expect(html).to include("DANGER")
     end
 
-    # ⚠️ Цей приклад документує ГАРД, а не поведінку: `Cluster#health_index` —
-    # `read_attribute(:health_index) || 1.0`, тобто модель `nil` не віддає ніколи,
-    # і `|| 0` у компоненті даними недосяжний. Доти мок цього не показував — він
-    # просто віддавав `nil`, тож гілка виглядала звичайним станом кластера.
-    # Гард лишаємо (межа довіри дешева), але вхід тепер чесно позначений як стаб.
-    it "guards against a nil health_index the model itself cannot produce" do
+    # 🔴 [ARCH.84] Передумова цього приклада ПОМЕРЛА. Тут стояло «гард проти nil, якого
+    # модель не вміє віддати» — і воно було правдою рівно доти, доки ридер підставляв
+    # `|| 1.0`. Тепер `nil` є ЗВИЧАЙНИМ станом кластера, тож гілка не гард, а поведінка,
+    # і пінити її треба як поведінку: не «0%» (це вимір, і то найгірший), а власний стан.
+    it "renders «not measured» — never a fabricated 0% — when the cluster has no reading" do
       cluster = build_cluster
       allow(cluster).to receive(:health_index).and_return(nil)
 
       html = render_component(contract: build_contract(cluster: cluster), history: [])
-      expect(html).to include(">0%<")
+
+      expect(html).to include(I18n.t("ui.measurement.not_measured"))
+      expect(html).not_to include(">0%<")
+    end
+
+    # 🔴 Пара до попереднього, і саме вона робить його доказовим: невиміряний кластер
+    # НЕ сміє дістати тривожну пульсацію (її підстава — вимір), а виміряний поганий —
+    # мусить. Без цієї пари обидва стани злились би в «не зелений».
+    it "withholds the degradation alarm from an unmeasured cluster but keeps it for a measured bad one" do
+      unmeasured = build_cluster
+      allow(unmeasured).to receive(:health_index).and_return(nil)
+      measured_bad = build_cluster(health_index: 0.2)
+
+      unmeasured_html = render_component(contract: build_contract(cluster: unmeasured), history: [])
+      measured_html   = render_component(contract: build_contract(cluster: measured_bad), history: [])
+
+      expect(unmeasured_html).not_to include("animate-pulse")
+      expect(measured_html).to include("animate-pulse")
     end
   end
 

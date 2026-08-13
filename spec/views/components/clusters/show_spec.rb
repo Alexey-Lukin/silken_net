@@ -76,6 +76,15 @@ RSpec.describe Clusters::Show do
       expect(html).to include("87%")
     end
 
+    # 🔴 [ARCH.84] Пара до попереднього: невиміряний ⊥ виміряний. Без другої половини
+    # приклад доводив би лише «щось відрендерилось».
+    it "displays «not measured» instead of a fabricated percentage when there is no reading" do
+      unmeasured = render_component(cluster: build_cluster(health_index: nil), gateways: [], recent_alerts: [])
+
+      expect(unmeasured).to include(I18n.t("ui.measurement.not_measured"))
+      expect(unmeasured).not_to include("0%")
+    end
+
     it "displays active trees count" do
       expect(html).to include("142")
     end

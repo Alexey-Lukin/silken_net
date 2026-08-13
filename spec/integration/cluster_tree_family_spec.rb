@@ -86,8 +86,9 @@ RSpec.describe "Cluster health and tree family management" do
   end
 
   describe "Cluster health_index management" do
-    it "defaults to 1.0 when no data" do
-      expect(cluster.health_index).to eq(1.0)
+    # [ARCH.84] Доти: «defaults to 1.0 when no data».
+    it "reports «not measured» rather than inventing a reading" do
+      expect(cluster.health_index).to be_nil
     end
 
     it "recalculates based on AI insight" do

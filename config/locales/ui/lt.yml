@@ -3,6 +3,9 @@ lt:
   ui:
     data_table:
       empty: Įrašų nerasta.
+    measurement:
+      coverage: "išmatuota %{measured} iš %{total}"
+      not_measured: Neišmatuota
     metric_value:
       no_data: Nėra duomenų
     photo_card:

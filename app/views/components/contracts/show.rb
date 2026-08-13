@@ -54,12 +54,24 @@ module Contracts
       cluster = @contract.cluster
       return unless cluster
 
-      health = cluster.health_index || 0
+      # [ARCH.84] Тут доти стояв `health = cluster.health_index || 0`, і на невиміряному
+      # кластері панель ЗАСТАВИ друкувала «0%» червоним пульсуючим — тобто вигадане
+      # число під виглядом виміру, ще й у найгучнішій формі.
+      #
+      # 🔴 Але й тиха нейтральна комірка була б дефектом, лише протилежним: арбітражний
+      # шар на ту саму порожнечу піднімає `flag_data_blackout!` → Field Audit (`05_05 §6`,
+      # «absence-of-data → freeze, NEVER slash»), а `BlockchainBurningService` дає
+      # `:frozen`. **UI не сміє бути ТИХІШИМ за шар, який він відображає.** Тому станів
+      # три, і третій — власний: не тривога (її підстава — вимір) і не норма.
+      measured = !cluster.health_index.nil?
 
       div(class: "p-6 border border-emerald-900 bg-black") do
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".backing.title") }
         div(class: "space-y-4") do
-          metric_row(t(".backing.vitality"), "#{(health * 100).round}%", alert: health < 0.7)
+          metric_row(t(".backing.vitality"),
+                     measured_percent(cluster.health_index),
+                     alert: measured && cluster.health_index < 0.7,
+                     unmeasured: !measured)
           metric_row(t(".backing.active_soldiers"), cluster.total_active_trees)
           threats = cluster.active_threats? # один читок: предикат б'є в БД (див. `Clusters::Item`)
           metric_row(t(".backing.threat_status"), threats ? t(".backing.danger") : t(".backing.nominal"), alert: threats)
@@ -67,10 +79,16 @@ module Contracts
       end
     end
 
-    def metric_row(label, value, alert: false)
+    # [ARCH.84] Три стани, не два: `alert` = виміряно й погано · `unmeasured` = виміру
+    # не було · решта = виміряно й нормально. Пульсацію свідомо НЕ віддано третьому —
+    # вона стверджує деградацію, а її підстава тут відсутня.
+    def metric_row(label, value, alert: false, unmeasured: false)
       div(class: "flex justify-between border-b border-emerald-900/30 pb-2") do
         span(class: "text-tiny text-gray-600 uppercase") { label }
-        span(class: tokens("font-mono text-sm", "text-red-500 animate-pulse": alert, "text-emerald-100": !alert)) { value }
+        span(class: tokens("font-mono text-sm",
+                           "text-red-500 animate-pulse": alert,
+                           "text-status-warning-text": unmeasured,
+                           "text-emerald-100": !alert && !unmeasured)) { value }
       end
     end
 
