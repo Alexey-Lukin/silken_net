@@ -62,6 +62,7 @@ lv:
         one: jābūt attēlam (JPEG, PNG, WebP, HEIC)
         other: jābūt attēlam (JPEG, PNG, WebP, HEIC)
       file_size_not_less_than: faila izmēram jābūt mazākam par %{max} (pašreizējais izmērs %{file_size})
+      invalid_eip55_checksum: ir nederīga EIP-55 kontrolsumma (pārbaudiet burtu reģistru)
       invalid_eth_address: jābūt derīgai 0x adresei
       limit_out_of_range:
         one: ne vairāk kā %{max} fotoattēli vienā ierakstā

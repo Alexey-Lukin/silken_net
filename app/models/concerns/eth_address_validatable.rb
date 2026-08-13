@@ -13,7 +13,16 @@ module EthAddressValidatable
 
   ETH_ADDRESS_FORMAT = /\A0x[a-fA-F0-9]{40}\z/
 
-  EIP55_MESSAGE = "має невалідну EIP-55 контрольну суму (звір регістр літер)"
+  # [I18N.4] Ключ, не літерал — і скоуп ГЛОБАЛЬНИЙ, як у сусідньої форматної гілки:
+  # концерн уживають три моделі, тож дім повідомлення один на всіх.
+  #
+  # 🔴 Ця гілка була дев'ятим ДОСЯЖНИМ повідомленням, і минула хвиля її проґавила,
+  # бо перелічувала форму `message:`, а тут текст їхав `errors.add(attr, КОНСТАНТА)`.
+  # Виміряно рендером: `PATCH /settings` на адресі з битою чексумою давав людині
+  # рядок «Crypto public address має невалідну EIP-55 контрольну суму …» — двомовний,
+  # і ІДЕНТИЧНИЙ у всіх чотирьох локалях, тоді як форматний сусід за два рядки
+  # локалізований чесно. Асиметрія всередині одного файлу = дрейф, не carve-out.
+  EIP55_MESSAGE_KEY = :invalid_eip55_checksum
 
   # EIP-55 ПОВЕРХ форми, не замість неї: `Eth::Address` толерує адресу без `0x`-префікса
   # (сам його дописує), а наш regex — ні, тож shape лишається за regex'ом. Дім правила —
@@ -50,7 +59,7 @@ module EthAddressValidatable
         value = read_attribute_for_validation(attribute)
         next if value.blank? || !value.match?(ETH_ADDRESS_FORMAT)
 
-        errors.add(attribute, EIP55_MESSAGE) unless EthAddressValidatable.eip55_valid?(value)
+        errors.add(attribute, EIP55_MESSAGE_KEY) unless EthAddressValidatable.eip55_valid?(value)
       end
     end
   end

@@ -58,6 +58,7 @@ en:
       validation_failed: The Citadel rejected these values. Return to the form and correct them.
       validation_failed_title: Validation Failed
     messages:
+      invalid_eip55_checksum: has an invalid EIP-55 checksum (check the letter case)
       invalid_eth_address: must be a valid 0x address
     no_organization:
       body_1: Your account is not currently linked to any organization in the Forest Matrix. Without a Cluster, the Citadel cannot scope telemetry, wallets, or alerts.

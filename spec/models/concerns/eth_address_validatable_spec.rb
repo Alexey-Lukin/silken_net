@@ -72,7 +72,23 @@ RSpec.describe EthAddressValidatable do
       org = build(:organization, crypto_public_address: mistyped)
 
       expect(org).not_to be_valid
-      expect(org.errors[:crypto_public_address]).to include(EthAddressValidatable::EIP55_MESSAGE)
+      # [I18N.4] Доти тут стояла КОНСТАНТА (`EIP55_MESSAGE`), і саме тому пін не міг
+      # відрізнити перекладене від зашитого — він порівнював рядок сам із собою.
+      expect(org.errors[:crypto_public_address])
+        .to contain_exactly("has an invalid EIP-55 checksum (check the letter case)")
+    end
+
+    # 🔴 Дзеркало сусіднього піна форматної гілки. Ця гілка була ДЕВʼЯТИМ досяжним
+    # повідомленням і минулу хвилю пережила, бо текст їхав не `message:`, а
+    # `errors.add(attr, КОНСТАНТА)` — форма, невидима і для грепу по `message:`,
+    # і для рантайм-обходу `validators`.
+    it "локалізує чексумне повідомлення, а не несе його зашитим" do
+      org = build(:organization, crypto_public_address: mistyped)
+      org.valid?
+
+      uk = I18n.with_locale(:uk) { org.errors.generate_message(:crypto_public_address, :invalid_eip55_checksum) }
+      expect(uk).to eq("має невалідну EIP-55 контрольну суму (звір регістр літер)")
+      expect(uk).not_to eq(org.errors[:crypto_public_address].first)
     end
 
     it "accepts an all-lowercase address (carries no checksum → nothing to verify)" do

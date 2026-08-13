@@ -63,6 +63,7 @@ lt:
         one: turi būti paveikslėlis (JPEG, PNG, WebP, HEIC)
         other: turi būti paveikslėlis (JPEG, PNG, WebP, HEIC)
       file_size_not_less_than: failo dydis turi būti mažesnis nei %{max} (dabartinis dydis %{file_size})
+      invalid_eip55_checksum: turi neteisingą EIP-55 kontrolinę sumą (patikrinkite raidžių registrą)
       invalid_eth_address: turi būti galiojantis 0x adresas
       limit_out_of_range:
         few: ne daugiau kaip %{max} nuotraukos viename įraše
