@@ -46,6 +46,7 @@ uk:
       mint_volume_anomaly: 'Mint-volume anomaly [ARCH.62] %{token_type}: %{volume} намінтовано за %{window}, що перевищує стелю (%{ceiling}). Можливий баг прошивки/пайплайну або зловжитий MINTER-ключ. Звір останні mint-tx перед підняттям стелі.'
       oracle_balance_low: "%{network} %{signer}: баланс гаманця Оракула (%{balance} %{currency}) нижчий за мінімальний поріг (%{min_threshold} %{currency}). Ratio: %{ratio}x. Блокчейн-транзакції провалюватимуться без поповнення."
       power_loss: "🚨 КРИТИЧНО: Втрата живлення (%{voltage_mv} мВ)! DID: %{did}"
+      queen_ota_stuck: "👑 Королева %{uid} зависла посеред OTA на %{stuck_for_h} год (прошивка #%{firmware_id}). Кампанію знято, шлюз звільнено — майбутні оновлення знову доступні; версія прошивки лишилась старою. Повторний деплой — вручну, перевіривши звʼязок."
       queen_silent: "👑 Королева %{uid} мовчить %{silent_for_min} хв (останній зв’язок %{last_seen_at}). Кластер без uplink — телеметрія дерев не надходить."
       queen_uplink_lost: "🆘 Королева %{uid} втратила ВСІ uplink’и (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min). Крик дійшов через Helium — телеметрія буферизується, потрібен виїзд."
       queen_uplink_lost_reported: "🆘 Королева %{uid} втратила ВСІ uplink’и (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min, reported_at=%{reported_at}). Крик дійшов через Helium — телеметрія буферизується, потрібен виїзд."

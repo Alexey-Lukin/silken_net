@@ -15,20 +15,15 @@ class OtaTransmissionWorker
   # Використовуємо окрему чергу для низхідного зв'язку, щоб не блокувати телеметрію
   sidekiq_options queue: "downlink", retry: false
 
-  # [P1 FIX]: Якщо job помирає від неочікуваної помилки (SIGKILL, OOM, unhandled exception),
-  # шлюз може залишитись в стані :updating нескінченно. Скидаємо в :faulty.
-  sidekiq_retries_exhausted do |msg, _ex|
-    queen_uid = msg["args"]&.first
-    if queen_uid
-      gateway = Gateway.find_by(uid: queen_uid)
-      if gateway && !gateway.update(state: :faulty)
-        Rails.logger.error "🛑 [OTA] Не вдалося скинути #{queen_uid} у :faulty: #{gateway.errors.full_messages.join(', ')}"
-      else
-        Rails.logger.error "🛑 [OTA] Job для #{queen_uid} помер. Шлюз переведено у :faulty."
-      end
-    end
-  end
-
+  # 🔴 [ARCH.59] Тут стояв `sidekiq_retries_exhausted`-блок, який мав рятувати
+  # шлюз, залиплий у `:updating`. Він НЕ ВИКОНУВАВСЯ ЖОДНОГО РАЗУ: під
+  # `retry: false` Sidekiq прокидає виняток одразу в `death_handlers`, минаючи
+  # exhausted-хук — тобто «конфіг повний, шлях мертвий», лише з коментарем
+  # «[P1 FIX]», який читався як доказ, що клас закрито. Знято, а не полагоджено:
+  # сам воркер — залишок push-ери (нуль enqueuer'ів після FW.60), тож
+  # відроджувати тут порятунок означало б лікувати мертвий шлях. Живий сторож
+  # цього стану — `GatewayStalenessSweepWorker#release_stuck_ota_gateways`, і він
+  # не залежить від того, який саме процес залишив шлюз у `:updating`.
   CHUNK_SIZE = 512
   MAX_CHUNK_RETRIES = 5
 

@@ -26,16 +26,29 @@ class GatewayStalenessSweepWorker
 
   ATTEST_LAPSE_HOURS = 24
 
+  # [ARCH.59] Вікно живої OTA-кампанії — ВИВЕДЕНЕ, не зі стелі, і формула
+  # перерахунку тут навмисно, бо образ росте: Королева тягне
+  # `QUEEN_OTA_FETCH_PER_FLUSH` = **4** чанки за флаш, флаш ≈ година, чанк 512 B
+  # (`OtaPackagerService::COAP_MTU`). Поточний bytecode ≈ 2.3 КБ = 5 чанків ≈ 2
+  # флаші ≈ 2 год, тож 24 год — приблизно 12× запас і покриває образ до ~48 KB.
+  # ⛔ Стеля названа: НИЖНЬОЇ межі каденсу флашу не існує взагалі (таймерна нога
+  # гейтована `cache_count > 0 || ed25519_ready` — ARCH.75), тож на мовчазній
+  # legacy-Королеві жодне вікно не є «достатнім». Це вікно відмови від кампанії,
+  # а не обіцянка, що за нього вона встигне.
+  OTA_STUCK_MARGIN = 24.hours
+
   def perform
     flagged   = flag_silent_gateways
     recovered = recover_returned_gateways
     lapsed    = observe_attest_lapse
+    released  = release_stuck_ota_gateways
 
     SilkenNet::Metrics::GATEWAYS_FAULTY.set(Gateway.faulty.count)
     SilkenNet::Metrics::GATEWAY_ATTEST_LAPSED.set(lapsed)
 
     Rails.logger.info(
-      "👑 [ARCH.54] Staleness sweep: flagged=#{flagged} recovered=#{recovered} attest_lapsed=#{lapsed}"
+      "👑 [ARCH.54] Staleness sweep: flagged=#{flagged} recovered=#{recovered} " \
+      "attest_lapsed=#{lapsed} ota_released=#{released}"
     )
   end
 
@@ -57,6 +70,98 @@ class GatewayStalenessSweepWorker
       count += 1
     end
     count
+  end
+
+  # [ARCH.59] Четвертий обов'язок: Королева, що залипла в `:updating`.
+  #
+  # 🔴 **Симптом, яким цей клас відкрили, ПОМЕР — і лік від того змінився.** Пункт
+  # казав «`:updating` блокує ВСІ downlink включно з сиреною»; це було правдою в
+  # push-еру, коли гейт `raise "Gateway Busy: Updating"` стояв у
+  # `ActuatorCommandWorker`. Той воркер FW.60 зняв із тракту (нуль enqueuer'ів), а
+  # ЖИВИЙ poll-тракт (`Downlink::PendingQueueService`) на цей стан не дивиться
+  # взагалі — CMD видається як звичайно. Тож сирена й полив сьогодні НЕ страждають.
+  #
+  # Реальний наслідок тихіший і не самолікується: `Gateway.ota_deployable`
+  # виключає `updating`, а вийти зі стану можна лише через `observe_delivered_firmware!`
+  # — тобто через звіт Королеви, який уже не прийде. Замкнена петля: шлюз назавжди
+  # випадає з МАЙБУТНІХ OTA-кампаній, і ніхто не дізнається, бо він online, а
+  # `flag_silent_gateways` вимагає `Gateway.offline`.
+  #
+  # ⚠️ Тому НЕ `report_fault!`, як приписував пункт: `faulty` стоїть у тому ж
+  # списку виключень `ota_deployable`, тобто міняв би одну блокуючу причину на
+  # іншу. Вихід — `finish_update!` (стан не стверджує успіху: `firmware_version`
+  # лишається старою), а кампанія знімається, бо «не автоматизувати мовчки» —
+  # ратифікований дефолт сусіднього ⚖️ цього ж пункту: повторний деплой ухвалює
+  # людина, побачивши алерт.
+  def release_stuck_ota_gateways
+    count = 0
+
+    stuck_ota_scope.includes(:cluster).find_each do |gateway|
+      abandoned_firmware_id = gateway.pending_firmware_id
+      started_at = gateway.ota_started_at
+
+      ActiveRecord::Base.transaction do
+        gateway.finish_update!
+        gateway.update!(ota_started_at: nil, pending_firmware_id: nil)
+        create_ota_stuck_alert(gateway, abandoned_firmware_id, started_at)
+      end
+      count += 1
+    rescue ActiveRecord::ActiveRecordError, AASM::InvalidTransition => e
+      # Rescue НА ЗАПИС (дзеркало ActuatorSafetySweepWorker): одна проблемна
+      # Королева не сміє обірвати прохід для решти флоту.
+      Rails.logger.error "🛑 [ARCH.59] Шлюз #{gateway.uid} не звільнено з :updating: #{e.message}"
+    end
+
+    count
+  end
+
+  # Два предикати, і другий — backstop проти стану, якого живий код не створює.
+  # `Downlink::PendingQueueService` пише стан і якір ОДНИМ `update!`, тож
+  # `updating` без `ota_started_at` є аномалією за побудовою; єдиний писач, що
+  # так умів, — `OtaTransmissionWorker` (push-ера, нуль enqueuer'ів). Без цієї
+  # гілки sweep був би сліпий рівно до того випадку, який ніхто не помітив би
+  # (пункт називає його «затаргечений-але-не-анонсований»). Часова межа тут по
+  # `updated_at`, бо іншого якоря в такого рядка немає за визначенням.
+  def stuck_ota_scope
+    anchored = Gateway.where(state: :updating).where(ota_started_at: ...OTA_STUCK_MARGIN.ago)
+    anchorless = Gateway.where(state: :updating, ota_started_at: nil)
+                        .where(updated_at: ...OTA_STUCK_MARGIN.ago)
+
+    Gateway.where(id: anchored).or(Gateway.where(id: anchorless))
+  end
+
+  # Дедуп по `message_params ->> 'uid'`, а не по кластеру: тип `system_fault`
+  # ділять девʼять писачів, тож cluster-scoped guard глушив би чужі сигнали
+  # (конвенція вже жива в `Treasury::MonitorService` — дедуп по парі
+  # `message_key` + параметр ідентичності).
+  def create_ota_stuck_alert(gateway, firmware_id, started_at)
+    return if ota_stuck_alert_exists?(gateway)
+
+    # `medium`, не `critical`: провалена OTA-кампанія не є life-safety подією
+    # (сирена й полив їдуть poll-трактом незалежно від цього стану — див. вище),
+    # а `critical` тут розбавляв би чергу справжніх аварій. ⚠️ Рівнів рівно три
+    # (`low`/`medium`/`critical`) — `:warning` в цьому enum'і не існує.
+    EwsAlert.create!(
+      cluster_id: gateway.cluster_id,
+      severity: :medium,
+      alert_type: :system_fault,
+      message_key: "queen_ota_stuck",
+      message_params: {
+        uid: gateway.uid,
+        stuck_for_h: started_at ? ((Time.current - started_at) / 3600).round : OTA_STUCK_MARGIN.in_hours.round,
+        firmware_id: firmware_id.to_i
+      }
+    )
+  end
+
+  # ⚠️ Дедуп ключується на КОЛОНЦІ `message_key` (не на JSONB-предикаті): у
+  # `where("… ? …")` знак питання Rails прийняв би за bind-плейсхолдер, і умова
+  # зламалась би тихо.
+  def ota_stuck_alert_exists?(gateway)
+    EwsAlert.unresolved.alert_type_system_fault
+            .where(cluster_id: gateway.cluster_id, message_key: "queen_ota_stuck")
+            .where("message_params ->> 'uid' = ?", gateway.uid)
+            .exists?
   end
 
   def recover_returned_gateways

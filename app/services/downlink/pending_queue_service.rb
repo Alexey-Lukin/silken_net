@@ -221,8 +221,13 @@ module Downlink
       return unless pending_id && delivered_id >= pending_id
 
       firmware = BioContractFirmware.find_by(id: pending_id)
+      # [ARCH.59] `ota_started_at: nil` — якір ЗНІМАЄТЬСЯ на завершенні, і доти
+      # його не чистив ніхто (нуль call-sites). Без цього поле пережило б власну
+      # кампанію й показувало б час давно закритої OTA, а watchdog у
+      # `GatewayStalenessSweepWorker` читає саме пару «стан + якір».
       @gateway.update!(
         pending_firmware_id: nil,
+        ota_started_at: nil,
         firmware_version: firmware&.version || @gateway.firmware_version,
         state: @gateway.updating? ? :idle : @gateway.state
       )

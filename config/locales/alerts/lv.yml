@@ -46,6 +46,7 @@ lv:
       mint_volume_anomaly: 'Mint-volume anomaly [ARCH.62] %{token_type}: %{volume} kalts pēdējās %{window}, kas pārsniedz konfigurēto griestu (%{ceiling}). Iespējama programmaparatūras/konveijera kļūda vai ļaunprātīgi izmantota MINTER atslēga. Pārbaudi nesenos mint tx pirms griestu celšanas.'
       oracle_balance_low: "%{network} %{signer}: Orākula maka atlikums (%{balance} %{currency}) ir zem minimālā sliekšņa (%{min_threshold} %{currency}). Ratio: %{ratio}x. Blokķēdes transakcijas neizdosies bez papildināšanas."
       power_loss: "🚨 KRITISKI: Barošanas zudums (%{voltage_mv} mV)! DID: %{did}"
+      queen_ota_stuck: "👑 Queen %{uid} iestrēga OTA vidū %{stuck_for_h} h (programmaparatūra #%{firmware_id}). Kampaņa atsaukta, vārteja atbrīvota — nākotnes atjauninājumi atkal iespējami; programmaparatūras versija nav mainīta. Atkārtoti izvietojiet manuāli, pārbaudot savienojumu."
       queen_silent: "👑 Queen %{uid} klusē %{silent_for_min} min (pēdējais kontakts %{last_seen_at}). Klasteris bez augšupsaites — koku telemetrija nepienāk."
       queen_uplink_lost: "🆘 Queen %{uid} zaudēja VISAS augšupsaites (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min). Sauciens atnāca caur Helium — telemetrija buferizējas, nepieciešams izbraukums."
       queen_uplink_lost_reported: "🆘 Queen %{uid} zaudēja VISAS augšupsaites (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min, reported_at=%{reported_at}). Sauciens atnāca caur Helium — telemetrija buferizējas, nepieciešams izbraukums."

@@ -46,6 +46,7 @@ en:
       mint_volume_anomaly: 'Mint-volume anomaly [ARCH.62] %{token_type}: %{volume} minted in the last %{window} exceeds the configured ceiling (%{ceiling}). Possible firmware/pipeline bug or misused MINTER key. Verify recent mint tx before topping the ceiling.'
       oracle_balance_low: "%{network} %{signer} Oracle wallet balance (%{balance} %{currency}) is below the minimum threshold (%{min_threshold} %{currency}). Ratio: %{ratio}x. Blockchain transactions will fail without a top-up."
       power_loss: "🚨 CRITICAL: Power loss (%{voltage_mv} mV)! DID: %{did}"
+      queen_ota_stuck: "👑 Queen %{uid} was stuck mid-OTA for %{stuck_for_h} h (firmware #%{firmware_id}). The campaign has been withdrawn and the gateway released, so it can receive future updates again; the firmware version is unchanged. Re-deploy manually after checking the link."
       queen_silent: "👑 Queen %{uid} has been silent for %{silent_for_min} min (last contact %{last_seen_at}). Cluster without uplink — tree telemetry is not arriving."
       queen_uplink_lost: "🆘 Queen %{uid} lost ALL uplinks (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min). The cry arrived via Helium — telemetry is buffering, a visit is required."
       queen_uplink_lost_reported: "🆘 Queen %{uid} lost ALL uplinks (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min, reported_at=%{reported_at}). The cry arrived via Helium — telemetry is buffering, a visit is required."

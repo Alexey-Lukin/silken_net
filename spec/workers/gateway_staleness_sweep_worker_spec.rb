@@ -158,4 +158,69 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
       sweep
     end
   end
+
+  # [ARCH.59] Королева, що залипла в :updating. ⚠️ Шлюзи тут навмисно ONLINE
+  # (`last_seen_at: 1.minute.ago`) — саме в цьому й дефект: `flag_silent_gateways`
+  # вимагає `Gateway.offline`, тож stuck-OTA на живій Королеві був невидимий
+  # НАЗАВЖДИ, і жоден інший прохід його не бачив.
+  describe "залипла OTA-кампанія" do
+    def updating_gateway(started_ago:, sleep_s: 3600, firmware_id: 77)
+      create(:gateway, cluster: cluster, state: :updating,
+                       config_sleep_interval_s: sleep_s,
+                       last_seen_at: 1.minute.ago,
+                       pending_firmware_id: firmware_id,
+                       ota_started_at: started_ago&.ago)
+    end
+
+    it "звільняє шлюз, знімає кампанію і лишає версію прошивки незмінною" do
+      gateway = updating_gateway(started_ago: 30.hours)
+      version_before = gateway.firmware_version
+
+      expect { sweep }.to change { gateway.reload.state }.from("updating").to("idle")
+
+      expect(gateway.pending_firmware_id).to be_nil
+      expect(gateway.ota_started_at).to be_nil
+      # 🔴 Несуче: `idle` не сміє стверджувати УСПІХ оновлення.
+      expect(gateway.firmware_version).to eq(version_before)
+    end
+
+    it "залишає слід алертом, який називає кампанію" do
+      updating_gateway(started_ago: 30.hours, firmware_id: 42)
+
+      expect { sweep }.to change { EwsAlert.where(message_key: "queen_ota_stuck").count }.by(1)
+
+      alert = EwsAlert.find_by(message_key: "queen_ota_stuck")
+      expect(alert.severity).to eq("medium")
+      expect(alert.message_params["firmware_id"]).to eq(42)
+    end
+
+    # 🔴 Негативна половина, і без неї пін вище був би небезпечним: watchdog, що
+    # не розрізняє живу кампанію, убивав би КОЖЕН OTA-деплой. Вікно виведене з
+    # каденсу (4 чанки/флаш, флаш ≈ година), тож 2 години — нормальна кампанія.
+    it "НЕ чіпає кампанію, що триває в межах вікна" do
+      gateway = updating_gateway(started_ago: 2.hours)
+
+      expect { sweep }.not_to(change { gateway.reload.state })
+      expect(gateway.pending_firmware_id).to eq(77)
+      expect(EwsAlert.where(message_key: "queen_ota_stuck")).to be_empty
+    end
+
+    # Backstop-предикат: стан без якоря. Живий код такого не створює
+    # (`PendingQueueService` пише пару одним `update!`), але мертвий
+    # `OtaTransmissionWorker` умів — і саме цей випадок sweep інакше не бачить.
+    it "ловить :updating БЕЗ якоря ota_started_at" do
+      gateway = updating_gateway(started_ago: nil)
+      gateway.update_columns(updated_at: 30.hours.ago)
+
+      expect { sweep }.to change { gateway.reload.state }.from("updating").to("idle")
+    end
+
+    it "не дублює алерт для тієї самої Королеви" do
+      updating_gateway(started_ago: 30.hours)
+      described_class.new.perform
+
+      expect { described_class.new.perform }
+        .not_to(change { EwsAlert.where(message_key: "queen_ota_stuck").count })
+    end
+  end
 end
