@@ -5,7 +5,6 @@ lt:
     edit_title: Tikslinti genomą // %{name}
     form:
       bark_thickness: Žievės storis (mm)
-      baseline_impedance: Bazinis impedansas (kΩ)
       co2_coefficient: CO₂ sekvestracijos koeficientas
       co2_placeholder: '1.0'
       critical_z_max: Kritinis Z maks.
@@ -19,9 +18,7 @@ lt:
     index:
       audit: AUDITAS
       audit_aria: Audituoti %{name} rūšį
-      baseline_value: "%{value} kΩ"
       columns:
-        baseline_z: Bazinis Z
         command: Komanda
         population: Populiacija
         safe_range: Saugus diapazonas
@@ -31,22 +28,16 @@ lt:
       edit: REDAGUOTI
       edit_aria: Redaguoti %{name} rūšį
       kicker: Biologinė matrica
-      range_value: "%{min} - %{max} kΩ"
+      range_value: "%{min} - %{max}"
       soldiers_count: "%{count} kariai"
       title: Globalios rūšių konstantos
     index_title: Biologinės konstantos // Genomai
     new_title: Apibrėžti naują rūšį
     show:
-      baseline_info: 'Bazinis impedansas: %{baseline} kOhm // CO₂ koeficientas: %{coef}'
+      carbon_info: 'CO₂ sekvestracijos koeficientas: %{coef}'
       defaults:
         not_available: Nėra
         zero: '0.0'
-      marker_value: "%{value}kΩ"
-      markers:
-        baseline: BAZĖ
-        death: MIRTIS
-        safe_max: SAUGUS_MAKS
-        safe_min: SAUGUS_MIN
       props:
         bark_thickness: Žievės storis
         bark_thickness_value: "%{value} mm"
@@ -57,6 +48,5 @@ lt:
         foliage_density_value: "%{value} %"
         sap_flow: Sulų srauto indeksas
       props_title: TinyML biologiniai požymiai
-      scale_title: Homeostazės skalė
     show_title: Genomo architektūra // %{name}
     update_error_title: Perkalibravimo klaida

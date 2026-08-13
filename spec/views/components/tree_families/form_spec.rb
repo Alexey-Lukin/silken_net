@@ -41,7 +41,6 @@ RSpec.describe TreeFamilies::Form do
     end
 
     it "displays all field labels" do
-      expect(html).to include("Baseline Impedance")
       expect(html).to include("Critical Z Min")
       expect(html).to include("Critical Z Max")
       expect(html).to include("Sequestration Coefficient")

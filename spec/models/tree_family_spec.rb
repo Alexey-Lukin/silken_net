@@ -75,19 +75,6 @@ RSpec.describe TreeFamily, type: :model do
       end
     end
 
-    describe "baseline_impedance" do
-      it "requires presence" do
-        family = build(:tree_family, baseline_impedance: nil)
-        expect(family).not_to be_valid
-        expect(family.errors[:baseline_impedance]).to be_present
-      end
-
-      it "requires numericality" do
-        family = build(:tree_family, baseline_impedance: "abc")
-        expect(family).not_to be_valid
-      end
-    end
-
     describe "critical_z_min" do
       it "requires presence" do
         family = build(:tree_family, critical_z_min: nil)
@@ -222,99 +209,6 @@ RSpec.describe TreeFamily, type: :model do
   # =========================================================================
   # METHODS
   # =========================================================================
-  describe "#attractor_thresholds" do
-    it "returns a hash with min, max, optimal, and baseline as floats" do
-      family = build(:tree_family, critical_z_min: 5.0, critical_z_max: 45.0, baseline_impedance: 1200)
-
-      result = family.attractor_thresholds
-      expect(result).to eq({ min: 5.0, max: 45.0, optimal: 29.0, baseline: 1200.0 })
-    end
-
-    it "[FW.8] uses per-species optimal_z_target when set" do
-      family = build(:tree_family, critical_z_min: 5.0, critical_z_max: 45.0, baseline_impedance: 1200)
-      family.optimal_z_target = 27.5
-
-      expect(family.attractor_thresholds[:optimal]).to eq(27.5)
-    end
-
-    it "converts decimal values to floats" do
-      family = build(:tree_family, critical_z_min: BigDecimal("5.5"), critical_z_max: BigDecimal("45.5"), baseline_impedance: 1200)
-
-      result = family.attractor_thresholds
-      expect(result[:min]).to be_a(Float)
-      expect(result[:max]).to be_a(Float)
-      expect(result[:baseline]).to be_a(Float)
-    end
-  end
-
-  describe "#attractor_thresholds_cached" do
-    let(:family) { create(:tree_family) }
-
-    it "returns the same data as attractor_thresholds" do
-      expect(family.attractor_thresholds_cached).to eq(family.attractor_thresholds)
-    end
-
-    it "caches the result in Rails.cache" do
-      family.attractor_thresholds_cached
-
-      cached = Rails.cache.read("tree_family_#{family.id}_thresholds")
-      expect(cached).to eq(family.attractor_thresholds)
-    end
-
-    it "returns cached data on subsequent calls without hitting the method" do
-      family.attractor_thresholds_cached
-
-      allow(family).to receive(:attractor_thresholds).and_call_original
-      family.attractor_thresholds_cached
-
-      expect(family).not_to have_received(:attractor_thresholds)
-    end
-
-    it "invalidates cache when critical_z_min changes" do
-      family.attractor_thresholds_cached
-
-      family.update!(critical_z_min: 10.0)
-
-      expect(Rails.cache.read("tree_family_#{family.id}_thresholds")).to be_nil
-    end
-
-    it "invalidates cache when critical_z_max changes" do
-      family.attractor_thresholds_cached
-
-      family.update!(critical_z_max: 50.0)
-
-      expect(Rails.cache.read("tree_family_#{family.id}_thresholds")).to be_nil
-    end
-
-    it "invalidates cache when baseline_impedance changes" do
-      family.attractor_thresholds_cached
-
-      family.update!(baseline_impedance: 2000)
-
-      expect(Rails.cache.read("tree_family_#{family.id}_thresholds")).to be_nil
-    end
-
-    it "does not invalidate cache when unrelated fields change" do
-      family.attractor_thresholds_cached
-
-      family.update!(name: "Updated Name")
-
-      expect(Rails.cache.read("tree_family_#{family.id}_thresholds")).to be_present
-    end
-  end
-
-  describe "#death_threshold_impedance" do
-    it "returns 30% of baseline_impedance" do
-      family = build(:tree_family, baseline_impedance: 1000)
-      expect(family.death_threshold_impedance).to eq(300.0)
-    end
-
-    it "returns correct value for oak baseline" do
-      family = build(:tree_family, :common_oak)
-      expect(family.death_threshold_impedance).to eq(1800 * 0.3)
-    end
-  end
-
   describe "#display_name" do
     it "returns just the name when scientific_name is nil" do
       family = build(:tree_family, name: "Дуб звичайний", scientific_name: nil)
@@ -389,46 +283,6 @@ RSpec.describe TreeFamily, type: :model do
 
     it "converts string values to float" do
       expect(family.healthy_z?("25.0")).to be true
-    end
-  end
-
-  describe "#stress_level" do
-    let(:family) { build(:tree_family, baseline_impedance: 1000) }
-
-    it "returns :normal above 80% of baseline" do
-      expect(family.stress_level(900)).to eq(:normal)
-    end
-
-    it "returns :normal at 81% of baseline" do
-      expect(family.stress_level(810)).to eq(:normal)
-    end
-
-    it "returns :warning at 80% of baseline" do
-      expect(family.stress_level(800)).to eq(:warning)
-    end
-
-    it "returns :warning between 60% and 80% of baseline" do
-      expect(family.stress_level(700)).to eq(:warning)
-    end
-
-    it "returns :critical at 60% of baseline" do
-      expect(family.stress_level(600)).to eq(:critical)
-    end
-
-    it "returns :critical between 30% and 60% of baseline" do
-      expect(family.stress_level(400)).to eq(:critical)
-    end
-
-    it "returns :dead at exactly 30% of baseline (death threshold)" do
-      expect(family.stress_level(300)).to eq(:dead)
-    end
-
-    it "returns :dead below death threshold" do
-      expect(family.stress_level(100)).to eq(:dead)
-    end
-
-    it "returns :dead at zero impedance" do
-      expect(family.stress_level(0)).to eq(:dead)
     end
   end
 

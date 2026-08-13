@@ -39,15 +39,22 @@ module Api
 
         # Оптимізація: використовуємо pluck замість map для зменшення навантаження на пам'ять
         plucked = logs.pluck(:created_at, :z_value, :temperature_c)
-        baseline = @tree.tree_family.baseline_impedance
 
+        # [ARCH.86] `z_value` віддається під власним іменем і БЕЗ одиниці: це
+        # безрозмірна координата атрактора Лоренца, а не фізична величина.
+        # Публікувати її зобов'язує відтворюваність — Z входить у Merkle-лист
+        # (`TelemetryLog::LEAF_PAYLOAD_COLUMNS`), тож без нього зовнішній аудитор
+        # не перерахує `archive_root` і не перевірить наш якір.
+        # ⛔ Похідного «індексу стресу» тут немає СВІДОМО: Z — DCI/anti-fraud
+        # сигнал, а не оракул здоров'я, і роль його вирішує ground-truth-протокол
+        # (`05_05 §8`). Справжня метрика живе добовим зерном на AiInsight —
+        # розмазати її по телеметричних мітках означало б виготовити роздільність,
+        # якої модель не має.
         render json: {
           did: @tree.did,
-          unit: "kOhm",
           timestamps: plucked.map { |row| row[0].to_i },
-          impedance: plucked.map { |row| row[1].to_f.round(2) },
-          temperature: plucked.map { |row| row[2].to_f.round(2) },
-          stress_index: plucked.map { |row| (1.0 - (row[1].to_f / baseline)).round(3) }
+          z_value: plucked.map { |row| row[1].to_f.round(2) },
+          temperature: plucked.map { |row| row[2].to_f.round(2) }
         }
       end
 

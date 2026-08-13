@@ -12,12 +12,10 @@ class DeviceCalibration < ApplicationRecord
   # --- КОНСТАНТИ КРИТИЧНОГО ЗСУВУ (Hardware Decay Thresholds) ---
   # Межі, за якими програмна корекція стає неможливою
   MAX_TEMP_DRIFT = 5.0
-  MAX_IMPEDANCE_DRIFT = 500
   MAX_VCAP_TOLERANCE = 0.2 # 20% відхилення
 
   # --- ВАЛІДАЦІЇ ---
-  validates :temperature_offset_c, :impedance_offset_ohms,
-            presence: true, numericality: true
+  validates :temperature_offset_c, presence: true, numericality: true
   validates :vcap_coefficient,
             presence: true, numericality: { greater_than: 0, less_than: 2.0 }
 
@@ -26,10 +24,7 @@ class DeviceCalibration < ApplicationRecord
   after_save :check_for_hardware_fault, if: :saved_changes?
 
   # --- СКОУПИ ---
-  scope :critical_drift, -> {
-    where("ABS(temperature_offset_c) > ? OR ABS(impedance_offset_ohms) > ?",
-          MAX_TEMP_DRIFT, MAX_IMPEDANCE_DRIFT)
-  }
+  scope :critical_drift, -> { where("ABS(temperature_offset_c) > ?", MAX_TEMP_DRIFT) }
 
   # =========================================================================
   # НОРМАЛІЗАЦІЯ СИГНАЛУ (The Signal Purifier)
@@ -44,10 +39,6 @@ class DeviceCalibration < ApplicationRecord
     (raw_temp_c + temperature_offset_c).round(2)
   end
 
-  def normalize_impedance(raw_impedance_ohms)
-    (raw_impedance_ohms + impedance_offset_ohms).to_i
-  end
-
   def normalize_voltage(raw_vcap_mv)
     # Коефіцієнт компенсує падіння ємності іоністора або старіння ADC
     (raw_vcap_mv * vcap_coefficient).to_i
@@ -59,7 +50,6 @@ class DeviceCalibration < ApplicationRecord
 
   def sensor_drift_critical?
     temperature_offset_c.abs > MAX_TEMP_DRIFT ||
-    impedance_offset_ohms.abs > MAX_IMPEDANCE_DRIFT ||
     (vcap_coefficient - 1.0).abs > MAX_VCAP_TOLERANCE
   end
 
@@ -67,7 +57,6 @@ class DeviceCalibration < ApplicationRecord
 
   def set_defaults
     self.temperature_offset_c ||= 0.0
-    self.impedance_offset_ohms ||= 0.0
     self.vcap_coefficient ||= 1.0
   end
 

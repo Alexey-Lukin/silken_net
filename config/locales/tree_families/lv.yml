@@ -5,7 +5,6 @@ lv:
     edit_title: Precizēt genomu // %{name}
     form:
       bark_thickness: Mizas biezums (mm)
-      baseline_impedance: Bāzes impedance (kΩ)
       co2_coefficient: CO₂ sekvestrācijas koeficients
       co2_placeholder: '1.0'
       critical_z_max: Kritiskais Z maks.
@@ -19,9 +18,7 @@ lv:
     index:
       audit: AUDITS
       audit_aria: Auditēt %{name} sugu
-      baseline_value: "%{value} kΩ"
       columns:
-        baseline_z: Bāzes Z
         command: Komanda
         population: Populācija
         safe_range: Drošais diapazons
@@ -31,22 +28,16 @@ lv:
       edit: REDIĢĒT
       edit_aria: Rediģēt %{name} sugu
       kicker: Bioloģiskā matrica
-      range_value: "%{min} - %{max} kΩ"
+      range_value: "%{min} - %{max}"
       soldiers_count: "%{count} karavīri"
       title: Globālās sugas konstantes
     index_title: Bioloģiskās konstantes // Genomi
     new_title: Definēt jaunu sugu
     show:
-      baseline_info: 'Bāzes impedance: %{baseline} kOhm // CO₂ koeficients: %{coef}'
+      carbon_info: 'CO₂ sekvestrācijas koeficients: %{coef}'
       defaults:
         not_available: Nav
         zero: '0.0'
-      marker_value: "%{value}kΩ"
-      markers:
-        baseline: BĀZE
-        death: NĀVE
-        safe_max: DROŠAIS_MAKS
-        safe_min: DROŠAIS_MIN
       props:
         bark_thickness: Mizas biezums
         bark_thickness_value: "%{value} mm"
@@ -57,6 +48,5 @@ lv:
         foliage_density_value: "%{value} %"
         sap_flow: Sulas plūsmas indekss
       props_title: TinyML bioloģiskās pazīmes
-      scale_title: Homeostāzes skala
     show_title: Genoma arhitektūra // %{name}
     update_error_title: Rekalibrēšanas kļūda

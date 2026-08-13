@@ -20,9 +20,9 @@ uk:
         rotate_key_aria: Ротація апаратного ключа шифрування
         rotate_key_label: Ротувати апаратний ключ →
       biometrics:
-        impedance_unit: кΩ Імпеданс
         ionic_potential: Іонний потенціал
         ionic_sub: Заряд потенціалу потоку
+        lorenz_z: Z Лоренца (безрозмірна)
         stress_index: Індекс стресу
         xylem_sub: Температура внутрішнього ядра
         xylem_thermal: Ксилемна температура
@@ -31,13 +31,7 @@ uk:
         deployment_matrix: Матриця розгортання
         economic_yield: Нараховано балів росту
         hardware_vault: Апаратне сховище безпеки
-        impedance_flux: Імпедансний потік (останні 10 циклів)
         maintenance: Ритуали обслуговування та історія зцілення
-      impedance:
-        current: Поточний
-        sampling: Вимірювання в реальному часі
-        t10: T-10 Циклів
-      impedance_tooltip: "%{value} kΩ, %{at}"
       labels:
         family: 'Родина: %{name}'
         family_unknown: Невідома

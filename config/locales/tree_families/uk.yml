@@ -5,7 +5,6 @@ uk:
     edit_title: Уточнити геном // %{name}
     form:
       bark_thickness: Товщина кори (мм)
-      baseline_impedance: Базовий імпеданс (кΩ)
       co2_coefficient: Коеф. поглинання CO₂
       co2_placeholder: '1.0'
       critical_z_max: Критичний Z Макс
@@ -19,9 +18,7 @@ uk:
     index:
       audit: АУДИТ
       audit_aria: Аудит виду %{name}
-      baseline_value: "%{value} кΩ"
       columns:
-        baseline_z: Базовий Z
         command: Команда
         population: Популяція
         safe_range: Безпечний діапазон
@@ -31,22 +28,16 @@ uk:
       edit: РЕДАГ
       edit_aria: Редагувати вид %{name}
       kicker: Біологічна матриця
-      range_value: "%{min} - %{max} кΩ"
+      range_value: "%{min} - %{max}"
       soldiers_count: "%{count} солдатів"
       title: Глобальні константи видів
     index_title: Біологічні константи // Геноми
     new_title: Визначити новий вид
     show:
-      baseline_info: 'Базовий імпеданс: %{baseline} кОм // CO₂ коефіцієнт: %{coef}'
+      carbon_info: 'Коефіцієнт секвестрації CO₂: %{coef}'
       defaults:
         not_available: Н/Д
         zero: '0.0'
-      marker_value: "%{value}кΩ"
-      markers:
-        baseline: БАЗА
-        death: СМЕРТЬ
-        safe_max: БЕЗПЕЧНИЙ_МАКС
-        safe_min: БЕЗПЕЧНИЙ_МІН
       props:
         bark_thickness: Товщина кори
         bark_thickness_value: "%{value} мм"
@@ -57,6 +48,5 @@ uk:
         foliage_density_value: "%{value} %"
         sap_flow: Індекс потоку соку
       props_title: Біологічні характеристики TinyML
-      scale_title: Шкала гомеостазу
     show_title: Архітектура генома // %{name}
     update_error_title: Помилка рекалібрування

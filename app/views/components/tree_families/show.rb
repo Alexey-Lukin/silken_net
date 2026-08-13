@@ -12,10 +12,7 @@ module TreeFamilies
       div(class: "space-y-10 animate-in slide-in-from-right duration-700") do
         render_hero
 
-        div(class: "grid grid-cols-1 lg:grid-cols-2 gap-8") do
-          render_threshold_viz
-          render_biological_props
-        end
+        render_biological_props
       end
     end
 
@@ -29,35 +26,7 @@ module TreeFamilies
         if @family.scientific_name.present?
           p(class: "text-sm italic text-emerald-500 mt-2") { @family.scientific_name }
         end
-        p(class: "text-tiny font-mono text-emerald-700 uppercase tracking-[0.4em] mt-4") { t(".baseline_info", baseline: @family.baseline_impedance, coef: @family.carbon_sequestration_coefficient) }
-      end
-    end
-
-    def render_threshold_viz
-      div(class: "p-8 border border-emerald-900 bg-black space-y-8") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".scale_title") }
-
-        # Візуальна шкала
-        div(class: "relative pt-10 pb-4") do
-          # Лінія шкали
-          div(class: "h-px w-full bg-emerald-900/50")
-
-          # Маркери
-          marker(@family.death_threshold_impedance, t(".markers.death"), "bg-red-900")
-          marker(@family.critical_z_min, t(".markers.safe_min"), "bg-emerald-500")
-          marker(@family.baseline_impedance, t(".markers.baseline"), "bg-white", active: true)
-          marker(@family.critical_z_max, t(".markers.safe_max"), "bg-emerald-500")
-        end
-      end
-    end
-
-    def marker(value, label, color, active: false)
-      # Дуже спрощена логіка позиціонування для прикладу
-      left = [ (value.to_f / (@family.critical_z_max * 1.2) * 100), 100 ].min
-      div(class: "absolute top-0 flex flex-col items-center", style: "left: #{left}%") do
-         span(class: "text-micro text-gray-600 mb-2 font-mono") { t(".marker_value", value: value) }
-         div(class: tokens("h-3 w-px", "bg-white": active, "bg-emerald-900": !active))
-         span(class: tokens("mt-4 text-micro uppercase tracking-tighter", "text-white": active, "text-gray-700": !active)) { label }
+        p(class: "text-tiny font-mono text-emerald-700 uppercase tracking-[0.4em] mt-4") { t(".carbon_info", coef: @family.carbon_sequestration_coefficient) }
       end
     end
 

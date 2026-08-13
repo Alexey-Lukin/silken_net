@@ -20,14 +20,14 @@ RSpec.describe Trees::Show do
   end
 
   def build_tree(did: "SNET-00000042", status: "active", current_stress: 0.35,
-                family_name: "Quercus Robur", baseline_impedance: 100.0,
+                family_name: "Quercus Robur",
                 device_uid: "HK-SOLDIER-042", scc_balance: 12.5,
                 crypto_address: "0xABCDEF1234567890ABCDEF1234567890ABCDEF12",
                 wallet_balance: 42.0, cluster_name: "Carpathian-Alpha",
                 latitude: 49.4444, longitude: 32.0597,
                 ionic_voltage: 3800, last_seen_at: 1.minute.ago,
                 under_threat: false)
-    family = TreeFamily.new(name: family_name, baseline_impedance: baseline_impedance)
+    family = TreeFamily.new(name: family_name)
     # 🔴 [TEST.12] `device_uid` — не окремий ідентифікатор, а САМ зовнішній ключ
     # (`belongs_to :tree, foreign_key: :device_uid, primary_key: :did`), тож на реальному
     # записі він ДОРІВНЮЄ DID власника. Мок вигадував "HK-SOLDIER-042" — значення, якого
@@ -165,7 +165,7 @@ RSpec.describe Trees::Show do
   describe "family name" do
     it "displays 'Unknown' when family is nil" do
       t = build_tree(family_name: nil)
-      t.tree_family = TreeFamily.new(name: nil, baseline_impedance: 100.0)
+      t.tree_family = TreeFamily.new(name: nil)
       rendered = render_component(tree: t, latest_log: latest_log,
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
       expect(rendered).to include("Unknown")
@@ -197,8 +197,11 @@ RSpec.describe Trees::Show do
       expect(html).to include("35.0%")
     end
 
-    it "renders the impedance label" do
-      expect(html).to include("Impedance")
+    # [ARCH.86] Підпис під `text-6xl`-числом називає безрозмірну ВЕЛИЧИНУ,
+    # а не одиницю: «kΩ Impedance» стояло на координаті атрактора Лоренца.
+    it "labels the big number as the dimensionless Lorenz Z" do
+      expect(html).to include("Lorenz Z (dimensionless)")
+      expect(html).not_to include("Impedance")
     end
   end
 
@@ -222,20 +225,6 @@ RSpec.describe Trees::Show do
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
       expect(rendered).to include("stroke-red-600")
       expect(rendered).to include("animate-pulse")
-    end
-  end
-
-  describe "impedance history" do
-    it "renders impedance flux section" do
-      expect(html).to include("Impedance Flux")
-    end
-
-    it "renders bars for recent logs" do
-      logs = [ mock_recent_log(z_value: 50.0), mock_recent_log(z_value: 75.0) ]
-      rendered = render_component(tree: tree, latest_log: latest_log,
-                                  recent_logs: logs, maintenance_history: maintenance_history)
-      expect(rendered).to include("50.0")
-      expect(rendered).to include("75.0")
     end
   end
 
@@ -386,22 +375,6 @@ RSpec.describe Trees::Show do
                                   recent_logs: recent_logs, maintenance_history: maintenance_history)
       # Should still render the metadata panel without crashing
       expect(rendered).to include("Deployment")
-    end
-
-    it "skips impedance bars when family has no positive baseline_impedance" do
-      t = build_tree(baseline_impedance: nil)
-      rendered = render_component(tree: t, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
-      # Header still renders; bars simply absent — no crash
-      expect(rendered).to include("Impedance Flux")
-    end
-
-    it "treats baseline_impedance == 0 as not-positive and skips bars (no division by zero)" do
-      t = build_tree(baseline_impedance: 0)
-      rendered = render_component(tree: t, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
-      expect(rendered).to include("Impedance Flux")
-      expect(rendered).not_to include("Infinity%")
     end
 
     it "falls back to 'Unknown' family when tree.tree_family is nil entirely" do

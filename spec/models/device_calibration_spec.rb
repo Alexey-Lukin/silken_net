@@ -21,11 +21,6 @@ RSpec.describe DeviceCalibration, type: :model do
       expect(calibration).not_to be_valid
     end
 
-    it "requires impedance_offset_ohms" do
-      calibration = build(:device_calibration, impedance_offset_ohms: nil)
-      expect(calibration).not_to be_valid
-    end
-
     it "requires vcap_coefficient to be positive" do
       calibration = build(:device_calibration, vcap_coefficient: 0)
       expect(calibration).not_to be_valid
@@ -44,13 +39,6 @@ RSpec.describe DeviceCalibration, type: :model do
     end
   end
 
-  describe "#normalize_impedance" do
-    it "applies impedance offset" do
-      calibration = build(:device_calibration, impedance_offset_ohms: 100)
-      expect(calibration.normalize_impedance(1200)).to eq(1300)
-    end
-  end
-
   describe "#normalize_voltage" do
     it "applies vcap coefficient" do
       calibration = build(:device_calibration, vcap_coefficient: 0.9)
@@ -60,17 +48,12 @@ RSpec.describe DeviceCalibration, type: :model do
 
   describe "#sensor_drift_critical?" do
     it "returns false when within thresholds" do
-      calibration = build(:device_calibration, temperature_offset_c: 2.0, impedance_offset_ohms: 100, vcap_coefficient: 1.1)
+      calibration = build(:device_calibration, temperature_offset_c: 2.0, vcap_coefficient: 1.1)
       expect(calibration.sensor_drift_critical?).to be false
     end
 
     it "returns true when temperature drift exceeds threshold" do
       calibration = build(:device_calibration, temperature_offset_c: 6.0)
-      expect(calibration.sensor_drift_critical?).to be true
-    end
-
-    it "returns true when impedance drift exceeds threshold" do
-      calibration = build(:device_calibration, impedance_offset_ohms: 600)
       expect(calibration.sensor_drift_critical?).to be true
     end
 
@@ -83,19 +66,13 @@ RSpec.describe DeviceCalibration, type: :model do
   describe ".critical_drift scope" do
     it "returns calibrations with temperature offset exceeding threshold" do
       tree = create(:tree)
-      cal = create(:device_calibration, tree: tree, temperature_offset_c: 6.0, impedance_offset_ohms: 0)
-      expect(described_class.critical_drift).to include(cal)
-    end
-
-    it "returns calibrations with impedance offset exceeding threshold" do
-      tree = create(:tree)
-      cal = create(:device_calibration, tree: tree, temperature_offset_c: 0.0, impedance_offset_ohms: 600)
+      cal = create(:device_calibration, tree: tree, temperature_offset_c: 6.0)
       expect(described_class.critical_drift).to include(cal)
     end
 
     it "excludes calibrations within thresholds" do
       tree = create(:tree)
-      cal = create(:device_calibration, tree: tree, temperature_offset_c: 2.0, impedance_offset_ohms: 100)
+      cal = create(:device_calibration, tree: tree, temperature_offset_c: 2.0)
       expect(described_class.critical_drift).not_to include(cal)
     end
   end

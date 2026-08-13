@@ -86,11 +86,14 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
 
       body = response.parsed_body
       expect(body["did"]).to eq(own_tree.did)
-      expect(body["unit"]).to eq("kOhm")
+      # [ARCH.86] Одиниці немає СВІДОМО: Z безрозмірний. `impedance`/`stress_index`
+      # знято — обидва були підписом на величині, якої пристрій не міряє.
+      expect(body).not_to have_key("unit")
+      expect(body).not_to have_key("impedance")
+      expect(body).not_to have_key("stress_index")
+      expect(body["z_value"]).to be_an(Array)
       expect(body["timestamps"]).to be_an(Array)
-      expect(body["impedance"]).to be_an(Array)
       expect(body["temperature"]).to be_an(Array)
-      expect(body["stress_index"]).to be_an(Array)
       expect(body["timestamps"].length).to eq(2)
     end
 

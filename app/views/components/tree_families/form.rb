@@ -18,7 +18,6 @@ module TreeFamilies
           div(class: "grid grid-cols-1 md:grid-cols-2 gap-6") do
             field_container(f, :name, t(".species_identity")) { f.text_field :name, class: input_classes, placeholder: t(".species_placeholder") }
             field_container(f, :scientific_name, t(".scientific_name")) { f.text_field :scientific_name, class: input_classes, placeholder: t(".scientific_placeholder") }
-            field_container(f, :baseline_impedance, t(".baseline_impedance")) { f.number_field :baseline_impedance, step: 0.1, class: input_classes }
             field_container(f, :critical_z_min, t(".critical_z_min")) { f.number_field :critical_z_min, step: 0.1, class: input_classes }
             field_container(f, :critical_z_max, t(".critical_z_max")) { f.number_field :critical_z_max, step: 0.1, class: input_classes }
             field_container(f, :carbon_sequestration_coefficient, t(".co2_coefficient")) { f.number_field :carbon_sequestration_coefficient, step: 0.01, class: input_classes, placeholder: t(".co2_placeholder") }

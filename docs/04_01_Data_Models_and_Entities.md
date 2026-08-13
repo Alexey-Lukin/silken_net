@@ -218,7 +218,6 @@ normalize_identifier :device_uid  # HardwareKey
 |------|-----|------|
 | `name` | string | Унікальна назва (напр. "Сосна Звичайна") |
 | `scientific_name` | string | Латинська назва (nullable, для міжнародних контрактів) |
-| `baseline_impedance` | integer | Базовий імпеданс ксилеми (Ω) |
 | `critical_z_min` | decimal | Мінімум Z-значення атрактора (нижня межа гомеостазу) |
 | `critical_z_max` | decimal | Максимум Z-значення атрактора (`> critical_z_min`) |
 | `carbon_sequestration_coefficient` | decimal | Коефіцієнт секвестрації (> 0) для зваженого нарахування SCC |
@@ -228,14 +227,12 @@ normalize_identifier :device_uid  # HardwareKey
 
 | Метод | Повертає | Опис |
 |-------|----------|------|
-| `attractor_thresholds` | `{min:, max:, optimal:, baseline:}` | Параметри для Lorenz attractor (включає `optimal_z_target` з FW.8) |
-| `attractor_thresholds_cached` | Hash | Кешована версія (24 год) для hot path |
 | `effective_optimal_z_target` | Float | [FW.8] `optimal_z_target || 29.0` — per-species sweet spot або global default |
-| `death_threshold_impedance` | Float | `baseline_impedance * 0.3` — "Межа Смерті" |
 | `healthy_z?(z_value)` | Boolean | Чи Z у межах гомеостазу |
-| `stress_level(impedance)` | Symbol | `:normal / :warning / :critical / :dead` |
 | `weighted_growth_points(raw)` | Float | `raw * carbon_sequestration_coefficient` |
 | `display_name` | String | "Quercus robur (Дуб звичайний)" або просто назва |
+
+> 🔴 **[ARCH.86] Імпедансної осі тут НЕМАЄ, і це присуд, а не пропуск.** `baseline_impedance` (з `presence: true`), `death_threshold_impedance`, `stress_level` і пара `attractor_thresholds`/`_cached` знято 2026-08-13: пристрій імпеданс не міряє й ніколи не слав (немає поля в жодній ері wire-формату, ADC Солдата має два канали, у BOM немає компонента), а сідові значення були рядом номіналів резисторів E12. Дім порогів Лоренца для СПОЖИВАЧІВ — `Tree#effective_lorenz_thresholds` (він накладає ще й cluster-overrides); знята пара мала нуль продакшн-викликачів, а її докстрінг називав неіснуючих. ⛔ Не відбудовувати без рішення про сенсорний тракт — підстава й дослідження в [`00_07 §🗄️`](00_07_Action_Plan_Tracker) ARCH.86.
 
 **Callbacks:** `after_update :invalidate_thresholds_cache` — при зміні порогів Атрактора або `biological_properties` (включає `optimal_z_target`).
 
@@ -507,12 +504,10 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | Поле | Тип | Значення за замовчуванням | Опис |
 |------|-----|--------------------------|------|
 | `temperature_offset_c` | decimal | 0.0 | Офсет температури (°C) |
-| `impedance_offset_ohms` | decimal | 0.0 | Офсет імпедансу (Ω) |
 | `vcap_coefficient` | decimal | 1.0 | Коефіцієнт напруги (0 < x < 2.0) |
 
 **Константи критичного дрейфу:**
 - `MAX_TEMP_DRIFT = 5.0` °C
-- `MAX_IMPEDANCE_DRIFT = 500` Ω
 - `MAX_VCAP_TOLERANCE = 0.2` (20%)
 
 **Ключові методи:**
@@ -520,9 +515,10 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | Метод | Опис |
 |-------|------|
 | `normalize_temperature(raw)` | `raw + temperature_offset_c` |
-| `normalize_impedance(raw)` | `raw + impedance_offset_ohms` |
 | `normalize_voltage(raw)` | `raw * vcap_coefficient` |
 | `sensor_drift_critical?` | Перевищення порогів → потрібна заміна |
+
+> ⚠️ **[ARCH.86] Осей калібрування ДВІ, не три.** `impedance_offset_ohms` / `MAX_IMPEDANCE_DRIFT` / `normalize_impedance` знято 2026-08-13 разом з імпедансною віссю: офсет калібрував сенсор, якого немає, писачів у проді мав нуль, а `normalize_impedance` не кликав ніхто — unpacker нормалізує лише температуру й напругу. Гілка `sensor_drift_critical?` лишається живою на температурі й `vcap`.
 
 **Callback:** `after_save :check_for_hardware_fault` — при критичному дрейфі автоматично створює `EwsAlert` (system_fault / medium), дедуплікація через `find_or_create_by!`.
 

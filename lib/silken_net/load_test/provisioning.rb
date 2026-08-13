@@ -73,7 +73,7 @@ module SilkenNet
           )
           family = ::TreeFamily.create!(
             name: "loadtest-family-#{tag}",
-            baseline_impedance: 1000.0, critical_z_min: 5.0, critical_z_max: 45.0
+            critical_z_min: 5.0, critical_z_max: 45.0
           )
           [ org, cluster, family ]
         end

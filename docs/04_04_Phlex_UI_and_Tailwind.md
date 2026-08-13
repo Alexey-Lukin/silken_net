@@ -676,7 +676,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | Компонент | Файл | Props | Опис |
 |---|---|---|---|
 | `Trees::Index` | `trees/index.rb` | `trees:`, `pagy:` | Пагінований список дерев |
-| `Trees::Show` | `trees/show.rb` | `tree:`, `latest_log:`, `recent_logs:`, `maintenance_history:` | Повна деталізація дерева: біометрична матриця (радіальний SVG), графік історії імпедансу, економічна панель, сховище безпеки обладнання, журнал технічного обслуговування. Містить lazy-loading Turbo Frame `tree_chronicle_{id}`, що підвантажує `Trees::Chronicle` з `/trees/:id/chronicle`. |
+| `Trees::Show` | `trees/show.rb` | `tree:`, `latest_log:`, `recent_logs:`, `maintenance_history:` | Повна деталізація дерева: біометрична матриця (радіальний SVG), економічна панель, сховище безпеки обладнання, журнал технічного обслуговування. ⚠️ Графік «Impedance Flux» знято [ARCH.86] — він нормував безрозмірний Z на омовий baseline, тож усі стовпчики малювались у нижніх ~3 % контейнера. Містить lazy-loading Turbo Frame `tree_chronicle_{id}`, що підвантажує `Trees::Chronicle` з `/trees/:id/chronicle`. |
 | `Trees::Chronicle` | `trees/chronicle.rb` | `tree:`, `entries:` (Array\<TreeChronicleService::Entry>), `pagy:` | Хронологічний список подій дерева. Рендериться у Turbo Frame (`tree_chronicle_{id}`). Підтримує пагінацію `Shared::UI::Pagination`, порожній стан `Shared::UI::EmptyState`. Стилізація severity через inline CSS-класи (`stable/info/warning/critical`). Skeleton-завантаження через `Shared::UI::Skeleton`. |
 
 #### Гаманці
@@ -1989,7 +1989,7 @@ COMPONENTS=app/views/components/wallets/ bin/rails gaia:lint_tokens
 
 Brand-glow / decorative Tailwind utilities never go through the codemod:
 
-- `bg-emerald-500/10`, `bg-emerald-500/20` — login submit + impedance bar fill
+- `bg-emerald-500/10`, `bg-emerald-500/20` — login submit
 - `bg-emerald-500` (with `animate-ping` / `animate-pulse`) — pulse accents
 - `border-emerald-500/20` (with `animate-spin`) — spinner ring
 

@@ -222,7 +222,6 @@ amazon_sector = Cluster.create!(
 pine = TreeFamily.create!(
   name: "Сосна звичайна",
   scientific_name: "Pinus sylvestris",
-  baseline_impedance: 1500,
   critical_z_min: 5.0,
   critical_z_max: 45.0,
   optimal_z_target: 29.0,
@@ -232,7 +231,6 @@ pine = TreeFamily.create!(
 oak = TreeFamily.create!(
   name: "Дуб звичайний",
   scientific_name: "Quercus robur",
-  baseline_impedance: 2200,
   critical_z_min: 8.0,
   critical_z_max: 40.0,
   optimal_z_target: 24.0,

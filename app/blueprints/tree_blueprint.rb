@@ -26,6 +26,5 @@ class TreeBlueprint < Blueprinter::Base
       tree.wallet
     end
     field(:tree_family_name) { |tree| tree.tree_family&.name }
-    field(:baseline_impedance) { |tree| tree.tree_family&.baseline_impedance }
   end
 end

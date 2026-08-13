@@ -20,9 +20,9 @@ lv:
         rotate_key_aria: Rotēt aparatūras šifrēšanas atslēgu
         rotate_key_label: Rotēt aparatūras atslēgu →
       biometrics:
-        impedance_unit: kΩ Impedance
         ionic_potential: Joniskais potenciāls
         ionic_sub: Plūstošā potenciāla lādiņš
+        lorenz_z: Lorenca Z (bezdimensiju)
         stress_index: Stresa indekss
         xylem_sub: Iekšējā kodola temperatūra
         xylem_thermal: Ksilēma termiskais stāvoklis
@@ -31,13 +31,7 @@ lv:
         deployment_matrix: Izvietojuma matrica
         economic_yield: Uzkrātie izaugsmes punkti
         hardware_vault: Aparatūras drošības glabātuve
-        impedance_flux: Impedances svārstības (pēdējie 10 cikli)
         maintenance: Apkopes rituāli un dziedināšanas vēsture
-      impedance:
-        current: Pašreizējais
-        sampling: Reāllaika mērīšana
-        t10: T-10 cikli
-      impedance_tooltip: "%{value} kΩ, %{at}"
       labels:
         family: 'Dzimta: %{name}'
         family_unknown: Nezināms

@@ -8,7 +8,7 @@ RSpec.describe TreeBlueprint, type: :model do
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
   end
 
-  let(:tree_family) { create(:tree_family, name: "Quercus robur", baseline_impedance: 1500) }
+  let(:tree_family) { create(:tree_family, name: "Quercus robur") }
   let(:cluster) { create(:cluster) }
   let(:tree) do
     create(:tree, tree_family: tree_family, cluster: cluster,
@@ -91,9 +91,10 @@ RSpec.describe TreeBlueprint, type: :model do
       expect(parsed["tree_family_name"]).to eq("Quercus robur")
     end
 
-    it "excludes show-only fields" do
-      expect(parsed).not_to have_key("baseline_impedance")
-    end
+    # [ARCH.86] Приклада «excludes show-only fields» тут більше немає СВІДОМО:
+    # його єдиним предметом було `baseline_impedance`, і після зняття осі
+    # ексклюзивних полів у `:show` не лишилось жодного — `:index` є його
+    # надмножиною плюс `latitude`/`longitude`.
   end
 
   describe ":show view" do
@@ -134,10 +135,6 @@ RSpec.describe TreeBlueprint, type: :model do
     it "includes tree_family_name" do
       expect(parsed["tree_family_name"]).to eq("Quercus robur")
     end
-
-    it "includes baseline_impedance from tree_family" do
-      expect(parsed["baseline_impedance"]).to eq(1500)
-    end
   end
 
   describe "nil tree_family edge case" do
@@ -152,9 +149,12 @@ RSpec.describe TreeBlueprint, type: :model do
       expect(parsed["tree_family_name"]).to be_nil
     end
 
-    it "returns nil for baseline_impedance in :show" do
+    # [ARCH.86] `:show` має власний `tree_family&.name`, і доти його nil-гілку
+    # покривав лише побічно приклад про зняте поле — тобто поведінка була
+    # перевірена ВИПАДКОВО. Пін тепер прямий.
+    it "returns nil for tree_family_name in :show" do
       parsed = JSON.parse(described_class.render(tree_without_family, view: :show))
-      expect(parsed["baseline_impedance"]).to be_nil
+      expect(parsed["tree_family_name"]).to be_nil
     end
   end
 

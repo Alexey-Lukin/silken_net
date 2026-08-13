@@ -25,15 +25,6 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
       expect(family).not_to be_valid
       expect(family.errors[:optimal_z_target]).to be_present
     end
-
-    it "exposes optimal in attractor_thresholds hash" do
-      family = build(:tree_family, critical_z_min: 5.0, critical_z_max: 45.0)
-      family.optimal_z_target = 30.0
-      thresholds = family.attractor_thresholds
-      expect(thresholds[:optimal]).to eq(30.0)
-      expect(thresholds[:min]).to eq(5.0)
-      expect(thresholds[:max]).to eq(45.0)
-    end
   end
 
   describe "Cluster#lorenz_overrides_for(scientific_name)" do

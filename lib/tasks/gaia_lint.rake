@@ -65,7 +65,7 @@ namespace :gaia do
     # Decorative / brand allowlist — these are intentional and not migrated.
     allowlist = [
       "bg-emerald-500/10",  # login submit brand glow
-      "bg-emerald-500/20",  # impedance bar fill
+      "bg-emerald-500/20",  # brand glow (parcel of the /10 pair)
       "bg-emerald-500",     # brand pulse / animate-ping accents
       "border-emerald-500/20" # spinner ring
     ]

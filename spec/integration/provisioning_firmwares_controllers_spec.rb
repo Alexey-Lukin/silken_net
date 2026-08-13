@@ -227,7 +227,7 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
       expect(response).to have_http_status(:ok)
       json = response.parsed_body
       expect(json["did"]).to eq(tree.did)
-      expect(json["impedance"]).to be_an(Array)
+      expect(json["z_value"]).to be_an(Array)
     end
 
     it "GET /gateways/:id/telemetry returns gateway history" do

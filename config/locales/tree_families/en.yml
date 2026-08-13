@@ -5,7 +5,6 @@ en:
     edit_title: Refine Genome // %{name}
     form:
       bark_thickness: Bark Thickness (mm)
-      baseline_impedance: Baseline Impedance (kΩ)
       co2_coefficient: CO₂ Sequestration Coefficient
       co2_placeholder: '1.0'
       critical_z_max: Critical Z Max
@@ -19,9 +18,7 @@ en:
     index:
       audit: AUDIT
       audit_aria: Audit %{name} species
-      baseline_value: "%{value} kΩ"
       columns:
-        baseline_z: Baseline Z
         command: Command
         population: Population
         safe_range: Safe Range
@@ -31,22 +28,16 @@ en:
       edit: EDIT
       edit_aria: Edit %{name} species
       kicker: Biological Matrix
-      range_value: "%{min} - %{max} kΩ"
+      range_value: "%{min} - %{max}"
       soldiers_count: "%{count} Soldiers"
       title: Global Species Constants
     index_title: Biological Constants // The Genomes
     new_title: Define New Species
     show:
-      baseline_info: 'Baseline Impedance: %{baseline} kOhm // CO₂ Coefficient: %{coef}'
+      carbon_info: 'CO₂ Sequestration Coefficient: %{coef}'
       defaults:
         not_available: N/A
         zero: '0.0'
-      marker_value: "%{value}kΩ"
-      markers:
-        baseline: BASELINE
-        death: DEATH
-        safe_max: SAFE_MAX
-        safe_min: SAFE_MIN
       props:
         bark_thickness: Bark Thickness
         bark_thickness_value: "%{value} mm"
@@ -57,6 +48,5 @@ en:
         foliage_density_value: "%{value} %"
         sap_flow: Sap Flow Index
       props_title: TinyML Biological Features
-      scale_title: The Homeostasis Scale
     show_title: Genome Architecture // %{name}
     update_error_title: Recalibration Error

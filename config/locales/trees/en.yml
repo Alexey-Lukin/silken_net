@@ -20,9 +20,9 @@ en:
         rotate_key_aria: Rotate hardware encryption key
         rotate_key_label: Rotate Hardware Key →
       biometrics:
-        impedance_unit: kΩ Impedance
         ionic_potential: Ionic Potential
         ionic_sub: Streaming potential charge
+        lorenz_z: Lorenz Z (dimensionless)
         stress_index: Stress Index
         xylem_sub: Internal core temp
         xylem_thermal: Xylem Thermal
@@ -31,13 +31,7 @@ en:
         deployment_matrix: Deployment Matrix
         economic_yield: Growth Points Accrued
         hardware_vault: Hardware Security Vault
-        impedance_flux: Impedance Flux (Last 10 Cycles)
         maintenance: Maintenance Rituals & Healing History
-      impedance:
-        current: Current
-        sampling: Real-time Sampling
-        t10: T-10 Cycles
-      impedance_tooltip: "%{value} kΩ at %{at}"
       labels:
         family: 'Family: %{name}'
         family_unknown: Unknown

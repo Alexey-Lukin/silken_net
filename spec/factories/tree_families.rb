@@ -7,7 +7,6 @@ FactoryBot.define do
     # `scientific_name` (теж unique) фабрика лишає nil, а NULL-и індекс не
     # конфліктує — рандомізувати нічого.
     sequence(:name) { |n| "Tree Family #{n}-#{SecureRandom.hex(3)}" }
-    baseline_impedance { 1200 }
     critical_z_min { 5.0 }
     critical_z_max { 45.0 }
     carbon_sequestration_coefficient { 1.0 }
@@ -15,7 +14,6 @@ FactoryBot.define do
     trait :scots_pine do
       name { "Scots Pine" }
       scientific_name { "Pinus sylvestris" }
-      baseline_impedance { 1200 }
       critical_z_min { 5.0 }
       critical_z_max { 45.0 }
       carbon_sequestration_coefficient { 0.8 }
@@ -24,7 +22,6 @@ FactoryBot.define do
     trait :common_oak do
       name { "Common Oak" }
       scientific_name { "Quercus robur" }
-      baseline_impedance { 1800 }
       critical_z_min { 8.0 }
       critical_z_max { 40.0 }
       carbon_sequestration_coefficient { 1.5 }

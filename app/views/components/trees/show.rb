@@ -27,7 +27,6 @@ module Trees
           # ЛІВИЙ КОНТУР: Біометрія та Графіки
           div(class: "xl:col-span-2 space-y-10") do
             render_biometric_panel
-            render_impedance_history # Новий блок графіків
             render_maintenance_ledger # Журнал зцілень
           end
 
@@ -109,7 +108,8 @@ module Trees
               # сира точність замість числа під `text-6xl`. ⚠️ Фолбек `|| "---"` не
               # спрацьовує НІКОЛИ — BigDecimal істинний, гілка не береться. Дім → `04_04 §2`.
               span(class: "text-6xl font-extralight text-gaia-text-strong") { @latest_log&.z_value&.to_f || "---" }
-              span(class: "text-tiny text-gaia-text-subtle font-mono uppercase") { t(".biometrics.impedance_unit") }
+              # [ARCH.86] Підпис називає ВЕЛИЧИНУ, а не одиницю: Z безрозмірний.
+              span(class: "text-tiny text-gaia-text-subtle font-mono uppercase") { t(".biometrics.lorenz_z") }
             end
           end
 
@@ -119,32 +119,6 @@ module Trees
             stress_pct = ((@tree.current_stress || 0) * 100).round(1)
             metric_row(t(".biometrics.stress_index"), "#{stress_pct}%", danger: @tree.under_threat?)
           end
-        end
-      end
-    end
-
-    def render_impedance_history
-      div(class: "p-8 border border-gaia-border bg-gaia-surface-sunken") do
-        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".headings.impedance_flux") }
-
-        # Візуалізація міні-графіка через висоту барів
-        div(class: "flex items-end gap-2 h-32 border-b border-gaia-border pb-2") do
-          @recent_logs.reverse_each do |log|
-            baseline = @family&.baseline_impedance
-            next unless baseline&.positive?
-
-            height = [ (log.z_value.to_f / baseline * 100), 100 ].min
-            div(
-              class: "flex-1 bg-emerald-500/20 border-t border-gaia-primary hover:bg-emerald-500 transition-all",
-              style: "height: #{height}%",
-              title: t(".impedance_tooltip", value: log.z_value, at: log.created_at.to_fs(:short))
-            )
-          end
-        end
-        div(class: "flex justify-between mt-2 text-micro font-mono text-gaia-text-subtle uppercase") do
-          span { t(".impedance.t10") }
-          span { t(".impedance.sampling") }
-          span { t(".impedance.current") }
         end
       end
     end

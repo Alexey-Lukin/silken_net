@@ -20,9 +20,9 @@ lt:
         rotate_key_aria: Rotuoti aparatūros šifravimo raktą
         rotate_key_label: Rotuoti aparatūros raktą →
       biometrics:
-        impedance_unit: kΩ Impedansas
         ionic_potential: Joninis potencialas
         ionic_sub: Srauto potencialo krūvis
+        lorenz_z: Lorenco Z (bedimensis)
         stress_index: Streso indeksas
         xylem_sub: Vidinio branduolio temperatūra
         xylem_thermal: Ksilemos šiluminė būsena
@@ -31,13 +31,7 @@ lt:
         deployment_matrix: Diegimo matrica
         economic_yield: Sukaupti augimo taškai
         hardware_vault: Aparatūros saugumo saugykla
-        impedance_flux: Impedanso svyravimai (paskutiniai 10 ciklų)
         maintenance: Priežiūros ritualai ir gydymo istorija
-      impedance:
-        current: Dabartinis
-        sampling: Realiojo laiko matavimai
-        t10: T-10 ciklai
-      impedance_tooltip: "%{value} kΩ, %{at}"
       labels:
         family: 'Šeima: %{name}'
         family_unknown: Nežinoma

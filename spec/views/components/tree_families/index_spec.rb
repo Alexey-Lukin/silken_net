@@ -4,13 +4,12 @@
 require "rails_helper"
 
 RSpec.describe TreeFamilies::Index do
-  def mock_family(id: 1, name: "Oak", scientific_name: "Quercus robur", baseline_impedance: 45,
+  def mock_family(id: 1, name: "Oak", scientific_name: "Quercus robur",
                   critical_z_min: 10, critical_z_max: 80, trees_count: 120)
     family = OpenStruct.new(
       id: id,
       name: name,
       scientific_name: scientific_name,
-      baseline_impedance: baseline_impedance,
       critical_z_min: critical_z_min,
       critical_z_max: critical_z_max,
       trees_count: trees_count
@@ -79,10 +78,6 @@ RSpec.describe TreeFamilies::Index do
       expect(html).to include("Species Name")
     end
 
-    it "renders Baseline Z column" do
-      expect(html).to include("Baseline Z")
-    end
-
     it "renders Safe Range column" do
       expect(html).to include("Safe Range")
     end
@@ -105,10 +100,6 @@ RSpec.describe TreeFamilies::Index do
       fam = mock_family(scientific_name: nil)
       rendered = render_component(families: [ fam ], pagy: mock_pagy(count: 1))
       expect(rendered).to include(fam.name)
-    end
-
-    it "renders baseline impedance with kΩ unit" do
-      expect(html).to include("45 k")
     end
 
     it "renders safe range" do

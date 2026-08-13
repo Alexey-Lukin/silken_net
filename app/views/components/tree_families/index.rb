@@ -23,7 +23,6 @@ module TreeFamilies
             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
               tr do
                 th(scope: "col", class: "p-4") { t(".columns.species_name") }
-                th(scope: "col", class: "p-4") { t(".columns.baseline_z") }
                 th(scope: "col", class: "p-4") { t(".columns.safe_range") }
                 th(scope: "col", class: "p-4") { t(".columns.population") }
                 th(scope: "col", class: "p-4 text-right") { t(".columns.command") }
@@ -69,7 +68,6 @@ module TreeFamilies
             span(class: "text-mini italic text-emerald-700") { family.scientific_name }
           end
         end
-        td(class: "p-4 text-emerald-500") { t(".baseline_value", value: family.baseline_impedance) }
         td(class: "p-4 text-gray-500") { t(".range_value", min: family.critical_z_min, max: family.critical_z_max) }
         td(class: "p-4 text-emerald-900") { t(".soldiers_count", count: family.trees_count) }
         td(class: "p-4 text-right space-x-4") do

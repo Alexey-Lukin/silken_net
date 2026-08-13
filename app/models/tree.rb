@@ -34,7 +34,7 @@ class Tree < ApplicationRecord
   has_many :ai_insights, as: :analyzable, dependent: :delete_all
 
   # --- ДЕЛЕГУВАННЯ ---
-  delegate :name, :attractor_thresholds, to: :tree_family, prefix: true
+  delegate :name, to: :tree_family, prefix: true
 
   # [FW.8] Global Lorenz defaults — match firmware/bio_contracts/bio_contract.rb
   # BioContract::CRITICAL_Z_MIN/MAX/OPTIMAL_Z_TARGET. Used as final fallback when

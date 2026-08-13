@@ -21,7 +21,6 @@ RSpec.describe "Seeded TreeFamily values vs Lorenz attractor (OPS.8)" do
     {
       name: "Сосна звичайна",
       scientific_name: "Pinus sylvestris",
-      baseline_impedance: 1500,
       critical_z_min: 5.0,
       critical_z_max: 45.0,
       optimal_z_target: 29.0,
@@ -30,7 +29,6 @@ RSpec.describe "Seeded TreeFamily values vs Lorenz attractor (OPS.8)" do
     {
       name: "Дуб звичайний",
       scientific_name: "Quercus robur",
-      baseline_impedance: 2200,
       critical_z_min: 8.0,
       critical_z_max: 40.0,
       optimal_z_target: 24.0,

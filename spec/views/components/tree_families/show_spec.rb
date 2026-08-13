@@ -4,15 +4,13 @@
 require "rails_helper"
 
 RSpec.describe TreeFamilies::Show do
-  # [TEST.12] Реальний запис замість `OpenStruct`. Мок брехав тричі: подавав
+  # [TEST.12] Реальний запис замість `OpenStruct`. Мок брехав двічі: подавав
   # `fire_resistance_rating: "High"` при `numericality` (насправді це ПОРІГ у °C,
-  # який `AlertDispatchService` звіряє з температурою телеметрії); подавав
-  # `death_threshold_impedance: 5.0` напряму, тоді як модель ДЕРИВУЄ його
-  # (`baseline_impedance * 0.3` → 13.5 на цьому ж baseline), тобто мітка «DEATH»
-  # на шкалі стояла не там, де стоятиме в проді; і вигадував метадані фреймворку
-  # (`model_name`/`to_key`/`to_param`), з яких Rails виводить маршрут.
+  # який `AlertDispatchService` звіряє з температурою телеметрії) і вигадував
+  # метадані фреймворку (`model_name`/`to_key`/`to_param`), з яких Rails
+  # виводить маршрут.
   def mock_family(id: 1, name: "Oak", scientific_name: "Quercus robur",
-                  baseline_impedance: 45, carbon_sequestration_coefficient: 1.2,
+                  carbon_sequestration_coefficient: 1.2,
                   critical_z_min: 10.0, critical_z_max: 80.0,
                   sap_flow_index: 0.7, bark_thickness: 12, foliage_density: 85,
                   fire_resistance_rating: 60)
@@ -20,7 +18,6 @@ RSpec.describe TreeFamilies::Show do
                   id: id,
                   name: name,
                   scientific_name: scientific_name,
-                  baseline_impedance: baseline_impedance,
                   carbon_sequestration_coefficient: carbon_sequestration_coefficient,
                   critical_z_min: critical_z_min,
                   critical_z_max: critical_z_max,
@@ -42,10 +39,6 @@ RSpec.describe TreeFamilies::Show do
       expect(html).to include("Quercus robur")
     end
 
-    it "renders baseline impedance" do
-      expect(html).to include("45")
-    end
-
     it "renders CO2 coefficient" do
       expect(html).to include("1.2")
     end
@@ -54,28 +47,6 @@ RSpec.describe TreeFamilies::Show do
       family_no_sci = mock_family(scientific_name: nil)
       html = render_component(family: family_no_sci)
       expect(html).not_to include("Quercus robur")
-    end
-  end
-
-  describe "threshold scale" do
-    it "renders The Homeostasis Scale section" do
-      expect(html).to include("The Homeostasis Scale")
-    end
-
-    it "renders BASELINE marker" do
-      expect(html).to include("BASELINE")
-    end
-
-    it "renders SAFE_MIN marker" do
-      expect(html).to include("SAFE_MIN")
-    end
-
-    it "renders SAFE_MAX marker" do
-      expect(html).to include("SAFE_MAX")
-    end
-
-    it "renders DEATH marker" do
-      expect(html).to include("DEATH")
     end
   end
 
@@ -113,17 +84,6 @@ RSpec.describe TreeFamilies::Show do
       rendered = render_component(family: mock_family(fire_resistance_rating: nil))
       expect(rendered).to include("N/A")
       expect(rendered).not_to include("°C")
-    end
-  end
-
-  # [TEST.12] Поріг загибелі дерева ДЕРИВУЄТЬСЯ (`baseline_impedance * 0.3`), і доти
-  # мок подавав його напряму значенням, що суперечило власному ж baseline у тій самій
-  # фікстурі — тож саме число не пінив жоден приклад, і мітка «DEATH» могла стояти на
-  # будь-якій позиції шкали вічно.
-  describe "derived death threshold" do
-    it "renders the value the model derives, not one supplied by the fixture" do
-      expect(family.death_threshold_impedance).to eq(13.5)
-      expect(html).to include("13.5")
     end
   end
 end

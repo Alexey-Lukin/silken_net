@@ -111,45 +111,6 @@ RSpec.describe "Cluster health and tree family management" do
   end
 
   describe "TreeFamily management" do
-    it "calculates attractor thresholds" do
-      thresholds = tree_family.attractor_thresholds
-      expect(thresholds[:min]).to eq(tree_family.critical_z_min.to_f)
-      expect(thresholds[:max]).to eq(tree_family.critical_z_max.to_f)
-      expect(thresholds[:baseline]).to eq(tree_family.baseline_impedance.to_f)
-    end
-
-    it "caches attractor thresholds" do
-      cached = tree_family.attractor_thresholds_cached
-      expect(cached).to eq(tree_family.attractor_thresholds)
-    end
-
-    it "invalidates cache on threshold change" do
-      tree_family.attractor_thresholds_cached # populate cache
-      tree_family.update!(critical_z_min: 3.0)
-
-      # After invalidation, cache should return fresh data
-      new_cached = tree_family.attractor_thresholds_cached
-      expect(new_cached[:min]).to eq(3.0)
-    end
-
-    it "calculates death_threshold_impedance" do
-      # baseline_impedance for common_oak = 1800
-      expect(tree_family.death_threshold_impedance).to eq(1800 * 0.3)
-    end
-
-    it "determines stress_level correctly" do
-      # baseline = 1800
-      expect(tree_family.stress_level(500)).to eq(:dead)      # <= 540 (30%)
-      expect(tree_family.stress_level(700)).to eq(:critical)   # <= 1080 (60%)
-      expect(tree_family.stress_level(1200)).to eq(:warning)   # <= 1440 (80%)
-      expect(tree_family.stress_level(1800)).to eq(:normal)    # > 80%
-    end
-
-    it "calculates weighted growth points" do
-      # common_oak has carbon_sequestration_coefficient: 1.5
-      expect(tree_family.weighted_growth_points(100)).to eq(150.0)
-    end
-
     it "checks healthy z range" do
       # common_oak: z_min=8.0, z_max=40.0
       expect(tree_family.healthy_z?(20.0)).to be true

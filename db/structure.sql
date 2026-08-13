@@ -1355,7 +1355,6 @@ CREATE TABLE public.device_calibrations (
     id bigint NOT NULL,
     tree_id bigint NOT NULL,
     temperature_offset_c numeric,
-    impedance_offset_ohms integer,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     vcap_coefficient numeric DEFAULT 1.0
@@ -2637,7 +2636,6 @@ ALTER SEQUENCE public.tiny_ml_models_id_seq OWNED BY public.tiny_ml_models.id;
 CREATE TABLE public.tree_families (
     id bigint NOT NULL,
     name character varying,
-    baseline_impedance integer,
     critical_z_min numeric,
     critical_z_max numeric,
     created_at timestamp(6) without time zone NOT NULL,
@@ -8540,6 +8538,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260813060830'),
 ('20260813045042'),
 ('20260812231500'),
 ('20260812175736'),
