@@ -115,9 +115,30 @@ class BioContractFirmware < ApplicationRecord
 
       # 1. Кенозис старих версій СВОГО класу обладнання: Gateway-реліз не гасить
       # активний Tree-контракт (latest_tree_firmware_id живиться скоупом .active)
-      self.class.active.where.not(id: id)
-          .where(target_hardware_type: target_hardware_type)
-          .update_all(is_active: false)
+      #
+      # 🔴 [ARCH.85] Типізований реліз гасить і БЕЗТИПНИХ предків, і це не
+      # розширення про всяк випадок. `where(target_hardware_type: "Tree")` — це
+      # SQL `= 'Tree'`, а **NULL не дорівнює нічому**, тож рядки без типу не
+      # гасились НІКОЛИ. Писальників цієї колонки в дереві не було взагалі до
+      # фіксу форми завантаження, отже безтипні — це геть усі наявні рядки:
+      # перший же типізований реліз лишав би їх усіх `is_active`.
+      #
+      # ⚠️ Чому гасити безтипного БЕЗПЕЧНО, а не ризиковано: активний рядок без
+      # типу вже недосяжний для типізованого читача (`latest_tree_firmware_id`
+      # фільтрує по типу), тобто він зомбі за визначенням — присутній у `.active`
+      # і не обраний ніким. Лишати його означало б тримати другий «активний»
+      # контракт, який мовчки зіпсує будь-якого майбутнього читача, що
+      # прочитає `.active` без фільтра.
+      #
+      # ⊕ Безтипний реліз поводиться як раніше (`IS NULL` → гасить лише
+      # безтипних): legacy гасить legacy, і нової семантики це не вводить.
+      superseded = self.class.active.where.not(id: id)
+      superseded = if target_hardware_type.present?
+                     superseded.where(target_hardware_type: [ target_hardware_type, nil ])
+      else
+                     superseded.where(target_hardware_type: nil)
+      end
+      superseded.update_all(is_active: false)
 
       # 2. Активація нової істини з фіксацією відсотка розгортання
       update!(is_active: true, rollout_percentage: clamped)

@@ -254,6 +254,39 @@ RSpec.describe BioContractFirmware, type: :model do
       expect(firmware.rollout_percentage).to eq(1)
     end
 
+    # 🔴 [ARCH.85] Кенозис мусить накривати й БЕЗТИПНИХ предків: `where(type: X)`
+    # це SQL `= 'X'`, а NULL не дорівнює нічому — тож до фіксу рядки без типу
+    # не гасились НІКОЛИ. Писальників колонки не було взагалі, отже безтипні —
+    # це всі наявні рядки, і перший типізований реліз лишав би їх активними.
+    #
+    # ⚠️ Пін іде ТРІЙКОЮ, бо кожен елемент доводить своє: безтипний предок
+    # гаситься (нова поведінка) · ЧУЖИЙ тип виживає (стара межа не зламана) ·
+    # свій тип гаситься (базовий контракт). Без другого елемента фікс міг би
+    # виявитись «гасить усе підряд», і приклад цього не побачив би.
+    it "гасить безтипних предків, не зачіпаючи ЧУЖИЙ тип" do
+      untyped   = create(:bio_contract_firmware, target_hardware_type: nil, is_active: true)
+      other_hw  = create(:bio_contract_firmware, target_hardware_type: "Gateway", is_active: true)
+      same_hw   = create(:bio_contract_firmware, target_hardware_type: "Tree", is_active: true)
+      release   = create(:bio_contract_firmware, target_hardware_type: "Tree")
+
+      release.deploy_globally!
+
+      expect(untyped.reload.is_active).to be(false), "безтипний предок лишився активним зомбі"
+      expect(same_hw.reload.is_active).to be(false), "предок свого типу не згашений"
+      expect(other_hw.reload.is_active).to be(true), "чужий тип згашено — межа зламана"
+    end
+
+    # Дзеркало: безтипний реліз лишається legacy-поведінкою й типізованих не
+    # чіпає — інакше фікс тихо ввів би нову семантику для старого шляху.
+    it "безтипний реліз не гасить типізованих" do
+      typed   = create(:bio_contract_firmware, target_hardware_type: "Tree", is_active: true)
+      release = create(:bio_contract_firmware, target_hardware_type: nil)
+
+      release.deploy_globally!
+
+      expect(typed.reload.is_active).to be(true)
+    end
+
     it "clamps percentage to maximum 100" do
       firmware = create(:bio_contract_firmware)
       firmware.deploy_globally!(percentage: 200)
