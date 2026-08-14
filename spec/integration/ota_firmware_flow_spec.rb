@@ -80,17 +80,23 @@ RSpec.describe "OTA firmware deployment flow" do
       expect(tree.firmware_fw_completed?).to be true
     end
 
-    it "tracks firmware mismatch via TelemetryUnpackerService" do
+    # 🔴 [ARCH.85] Перецілено з ДІЇ на СПОСТЕРЕЖЕННЯ (присуд власника 2026-08-14).
+    # Тракт не біг у проді жодного разу — писальників `target_hardware_type` було
+    # нуль, тож `latest_tree_firmware_id` завжди віддавав `nil`. Обидві спеки цієї
+    # осі (тут і в `telemetry_unpacker_service_spec`) цементували поведінку, яка
+    # вперше відбулась би ОДРАЗУ в полі, на гарячому шляху.
+    it "помічає розбіжність прошивки, але стан дерева НЕ міняє" do
       latest_fw = create(:bio_contract_firmware, :for_tree, :active)
       # [SEC.20] Wire-звіт нової семантики: semantic-біт + застарілий contract-id
       stale_report = TelemetryLog::FW_REPORT_SEMANTIC_BIT |
                      ((latest_fw.id - 1) & TelemetryLog::FW_REPORT_ID_MASK)
+      before = tree.firmware_update_status
 
       service = TelemetryUnpackerService.new(nil, nil)
+      expect(Rails.logger).to receive(:info).with(/ARCH\.85 OTA Mismatch/)
       service.send(:check_firmware_mismatch!, tree, stale_report)
 
-      tree.reload
-      expect(tree.firmware_update_status).to eq("fw_pending")
+      expect(tree.reload.firmware_update_status).to eq(before)
     end
   end
 

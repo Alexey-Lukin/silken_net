@@ -970,12 +970,29 @@ class TelemetryUnpackerService < ApplicationService
     reported_contract = reported_firmware_id & TelemetryLog::FW_REPORT_ID_MASK
     return if reported_contract == (latest_id & TelemetryLog::FW_REPORT_ID_MASK)
 
-    # Дерево працює на застарілій прошивці — позначаємо як fw_pending
-    # (тільки якщо не вже в процесі оновлення)
     return unless tree.firmware_fw_idle? || tree.firmware_fw_completed? || tree.firmware_fw_failed?
 
-    Tree.where(id: tree.id).update_all(firmware_update_status: :fw_pending)
-    Rails.logger.info "🔄 [OTA Mismatch] Дерево #{tree.did}: contract #{reported_contract} != latest #{latest_id}. Позначено fw_pending."
+    # 🔴 [ARCH.85] СПОСТЕРЕЖНЕ, ще не дієве — присуд власника 2026-08-14.
+    #
+    # Цей тракт не біг ЖОДНОГО разу: писальників `target_hardware_type` у `app/`
+    # було нуль до фіксу форми завантаження прошивки, тож `latest_tree_firmware_id`
+    # завжди віддавав `nil` і виконання виходило рядком вище. Щойно хтось
+    # задеплоїть типований реліз, перший в історії прогін відбудеться ОДРАЗУ в
+    # полі, на гарячому шляху телеметрії, і при хибній деривації позначив би
+    # `fw_pending` весь флот — а downlink-ретрансміту в цього стану немає
+    # (`FW.63`). Клас «інертне детонує в день активації».
+    #
+    # ⚠️ Прапорця-перемикача тут свідомо НЕМА: забутий прапорець стає тихо
+    # вимкненим захистом (прецедент INF.11 — Hadron був єдиний flag-only, і це
+    # захарднили). Замість нього — гілка, що ПИШЕ спостереження й не міняє
+    # стану. Дієвий рядок (`update_all(firmware_update_status: :fw_pending)`)
+    # знято, а не закоментовано: закоментований код гниє мовчки, а `git log -S`
+    # його віддає. Повертати — ПІСЛЯ того, як цей лічильник покаже правдоподібні
+    # числа на живому флоті → `00_07` ARCH.85.
+    Rails.logger.info(
+      "🔄 [ARCH.85 OTA Mismatch · спостереження] Дерево #{tree.did}: " \
+      "contract #{reported_contract} != latest #{latest_id}. Стан НЕ змінено."
+    )
   end
 
   # Lazy-кешований ID останньої активної прошивки для дерев (1 запит на весь батч)

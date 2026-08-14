@@ -19,6 +19,13 @@ module Api
       before_action :set_photo
 
       def destroy
+        # 🔴 [SEC.28] Слід ПЕРЕД знищенням, і він мусить нести ІДЕНТИЧНІСТЬ блоба,
+        # а не сам факт. Підстава конкретна: доказ після `purge_later` не
+        # відновити, тож запис «фото видалено» дав би нуль для розслідування —
+        # чим саме він був, встановити вже нічим. Імʼя, розмір і checksum
+        # лишаються єдиною ниткою, якою знищений блоб можна звірити із зовнішньою
+        # копією (польовий телефон, експорт, лист).
+        record_audit_trail_for_purge!
         @photo.purge_later # async — не блокуємо запит, S3 deletion в Sidekiq
         respond_to do |format|
           format.json { render json: { message: I18n.t("flash.maintenance.photo_deleted") }, status: :ok }
@@ -49,6 +56,53 @@ module Api
       # мовчазна. Досяжність гілки лишається малою: не-автор кнопки вже не бачить,
       # тож сюди приходять лише зкрафтлений запит або гонка «сторінка відрендерена
       # → право відкликано».
+      # [SEC.28] Викликається ДО `purge_later`: після нього `@photo.blob` уже
+      # може бути в дорозі до знищення, і метадані нема з чого зібрати.
+      # ⚠️ Організація береться з `acting_organization` (SEC.25 Ф2), не з
+      # `current_user.organization`: super_admin працює в контексті однієї
+      # організації за раз, і слід мусить нести саме контекст дії.
+      # 🔴 `AuditLog.create!`, а НЕ штатний `record_audit_trail!` — і підстава та
+      # сама, що вже задокументована в `organizations_controller#record_switch!`,
+      # лише сильніша. Хелпер іде через `record_async!` → `AuditLogWorker`, тобто
+      # ставить джобу в чергу: «слід перед знищенням» там означало б порядок
+      # ВИКЛИКУ, а не порядок ПЕРСИСТЕНЦІЇ. При зупиненому Sidekiq фото зникло б
+      # незворотно, а сліду не лишилось би взагалі — тобто асинхронний запис
+      # відтворює РІВНО ту пару властивостей, проти якої SEC.28 і стоїть.
+      # `create!` пише рядок синхронно, і `before_create :compute_chain_hash`
+      # вбудовує його в tamper-evident ланцюг тут-таки.
+      #
+      # ⚠️ Викликається ДО `purge_later`: після нього блоб уже в дорозі до
+      # знищення, і метадані нема з чого зібрати.
+      # ⚠️ Організація — з `acting_organization` (SEC.25 Ф2), не з
+      # `current_user.organization`: super_admin працює в контексті однієї
+      # організації за раз, і ланцюг будується per-org.
+      # ⚠️ Без `&.` СВІДОМО, обидва рази — safe-navigation тут створила б
+      # непокривані nil-плечі на гілках, недосяжних за побудовою (той самий клас,
+      # що вже коштував гілкового покриття раніше). `ActiveStorage::Attachment`
+      # має `belongs_to :blob` обовʼязковим, тож блоба без блоба не буває; а
+      # `acting_organization!` — оголошений контракт (SEC.25 Ф2), і його виняток
+      # чесніший за тихий `nil` у полі, за яким будується per-org ланцюг.
+      def record_audit_trail_for_purge!
+        blob = @photo.blob
+
+        AuditLog.create!(
+          user_id: current_user.id,
+          organization_id: acting_organization!.id,
+          action: "maintenance_photo_purged",
+          auditable_type: @record.class.name,
+          auditable_id: @record.id,
+          ip_address: request.remote_ip,
+          user_agent: request.user_agent,
+          metadata: {
+            attachment_id: @photo.id,
+            filename: blob.filename.to_s,
+            byte_size: blob.byte_size,
+            checksum: blob.checksum,
+            content_type: blob.content_type
+          }
+        )
+      end
+
       def authorize_record_mutation!
         return if @record.mutable_by?(current_user)
 

@@ -51,6 +51,33 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
         expect(response.parsed_body["message"]).to be_present
       end
 
+      # 🔴 [SEC.28] Пін на ІДЕНТИЧНІСТЬ у сліді, не на факт. Підстава: після
+      # `purge_later` блоба не існує, тож запис «фото видалено» дає нуль для
+      # розслідування — чим саме він був, установити вже нічим. Тому ассерт
+      # цілить у `checksum`/`filename`, а не в наявність рядка: слід без них
+      # виглядав би написаним і не був би придатним.
+      #
+      # ⚠️ Ліхтар обовʼязковий: `record_audit_trail!` мовчки виходить, коли
+      # актора не знайдено (WARN-skip) — тобто «нуль записів» могло б означати
+      # «гілка не дійшла», а не «слід не пишеться».
+      it "лишає слід, придатний для розслідування знищеного доказу" do
+        record.photos.attach(
+          io: StringIO.new("fake-image-data"), filename: "evidence.jpg", content_type: "image/jpeg"
+        )
+        photo = record.photos.first
+        checksum = photo.blob.checksum
+
+        expect {
+          delete "/maintenance_records/#{record.id}/photos/#{photo.id}", headers: headers, as: :json
+        }.to change { AuditLog.where(action: "maintenance_photo_purged").count }.by(1)
+
+        trail = AuditLog.where(action: "maintenance_photo_purged").last
+        expect(trail.user_id).to eq(forester.id), "слід мусить називати АКТОРА, не систему"
+        expect(trail.metadata["filename"]).to eq("evidence.jpg")
+        expect(trail.metadata["checksum"]).to eq(checksum)
+        expect(trail.metadata["byte_size"]).to be_positive
+      end
+
       it "returns 404 for a non-existent photo" do
         delete "/maintenance_records/#{record.id}/photos/999999",
                headers: headers, as: :json

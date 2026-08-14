@@ -369,13 +369,24 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         expect(tree.reload.firmware_update_status).not_to eq("fw_pending")
       end
 
-      it "marks tree as fw_pending when reported contract mismatches and tree is fw_idle" do
+      # 🔴 [ARCH.85] Приклад перецілено з ДІЇ на СПОСТЕРЕЖЕННЯ (присуд власника
+      # 2026-08-14). Він цементував поведінку тракту, який до фіксу форми
+      # завантаження прошивки не біг ЖОДНОГО разу: писальників
+      # `target_hardware_type` було нуль, тож `latest_tree_firmware_id` завжди
+      # віддавав nil. Тобто «дерево позначається `fw_pending`» було твердженням
+      # про код, а не про систему — і перший реальний прогін стався б у полі.
+      #
+      # ⚠️ Пін тримає ОБИДВІ половини присуду: розбіжність ПОМІЧЕНА (лог) і стан
+      # НЕ змінений. Без другої половини повернення `update_all` пройшло б зеленим.
+      it "помічає розбіжність, але НЕ міняє стан дерева" do
         service = described_class.new("", nil)
         stale = TelemetryLog::FW_REPORT_SEMANTIC_BIT |
                 ((active_firmware.id + 999) & TelemetryLog::FW_REPORT_ID_MASK)
+
+        expect(Rails.logger).to receive(:info).with(/ARCH\.85 OTA Mismatch/)
         service.send(:check_firmware_mismatch!, tree, stale)
 
-        expect(tree.reload.firmware_update_status).to eq("fw_pending")
+        expect(tree.reload.firmware_update_status).to eq("fw_idle")
       end
 
       it "does not mark tree as fw_pending when already fw_pending" do
