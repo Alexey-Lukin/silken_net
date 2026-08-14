@@ -181,6 +181,30 @@ class EwsAlert < ApplicationRecord
   # Real-time broadcast: оновлюємо дашборди всіх операторів при будь-яких змінах алерту
   after_update_commit :broadcast_alert_update
 
+  # 🔴 [UI.11] Бейдж «Threat Alerts» кешується на хвилину, і TTL там був ПРОКСІ
+  # для «щось змінилось» — тимчасом момент зміни ми знаємо ТОЧНО: створення
+  # алерту й перехід у `resolved`. Присуд власника 2026-08-14 — гасити кеш на
+  # ЗАПИСІ, не за часом: бейдж стає точним, а кількість COUNT-запитів НЕ росте
+  # (кеш живе рівно доки число чинне, а не фіксовані 60 с).
+  #
+  # ⚠️ Класична пастка «механізм ⊥ його пускач»: пускач у нас БУВ, а ми
+  # полінгували. Звуження TTL до 5 с дало б у 12 разів більше запитів і все одно
+  # лишалось би полінгом, тобто наближенням замість факту.
+  #
+  # `after_commit`, не `after_save`: гасити кеш до COMMIT означало б вікно, у
+  # якому наступний рендер прогріє його СТАРИМ числом із незавершеної транзакції.
+  #
+  # 🔴 **Імена методів РІЗНІ навмисно, і це не стиль.** Перша редакція мала
+  # `after_create_commit :bust…` + `after_update_commit :bust…` — ОДИН і той
+  # самий метод двічі. Rails дедуплікує колбеки за парою (kind, filter), тож
+  # замість двох записів лишається ОДИН, а умови обох ЗЛИВАЮТЬСЯ через AND:
+  # гард вимагає бути водночас `on: :create` і `on: :update`, тобто недосяжний.
+  # Колбек не спрацьовує ЖОДНОГО разу, і ніщо про це не попереджає —
+  # `_commit_callbacks` показує його присутнім. Виміряно пробою: після `create`
+  # значення в кеші лишалось попереднім.
+  after_commit :bust_org_alert_count_cache, on: :create
+  after_commit :bust_alert_count_on_status_change, on: :update
+
   # --- СКОУПИ ---
   scope :unresolved, -> { status_active }
   scope :critical, -> { severity_critical.unresolved }
@@ -299,6 +323,24 @@ class EwsAlert < ApplicationRecord
   # тривогу, що осіла в БД, незалежно від типу, кластера й подальшої долі — інакше
   # повертається рівно той дефект, який цей перенос знімає (метрика під іменем «total»,
   # що лічить одну підмножину).
+  # [UI.11] ⚠️ `cluster` тут `optional: true` СВІДОМО (платформені тривоги без
+  # кластера — ARCH.82), тож організації може не бути взагалі: тоді гасити
+  # нічого, бо й бейджа для такого алерту не існує (він рахується
+  # `org.ews_alerts`, тобто через кластери). Тихий вихід тут — не мовчазний
+  # дефолт, а точне відображення того, що поза орг-скоупом лічильника немає.
+  def bust_org_alert_count_cache
+    org = cluster&.organization
+    return if org.nil?
+
+    Rails.cache.delete(org.alert_count_cache_key)
+  end
+
+  # Окреме імʼя, а не `if:` на спільному методі — див. коментар біля декларацій:
+  # два `after_*_commit` з ОДНИМ filter'ом злипаються в один недосяжний колбек.
+  def bust_alert_count_on_status_change
+    bust_org_alert_count_cache if saved_change_to_status?
+  end
+
   def count_created_alert
     SilkenNet::Metrics::EWS_ALERTS_TOTAL.increment(labels: { alert_type: alert_type.to_s })
   end

@@ -295,6 +295,36 @@ RSpec.describe Api::V1::BaseController, type: :request do
       expect(count_for(user_b)).to eq(3)
     end
 
+    # 🔴 [UI.11] Кеш гаситься НА ЗАПИСІ, не за часом — і пін мусить довести саме
+    # НЕГАЙНІСТЬ, бо TTL цього не дає в принципі. Порядок несучий: перше читання
+    # ПРОГРІВАЄ кеш, і без гасіння друге віддало б старе число — тобто зняття
+    # `after_commit`-гасильника червонить приклад поіменно.
+    #
+    # ⚠️ Ключ навмисно НЕ пишеться тут рукою: він має один дім
+    # (`Organization#alert_count_cache_key`), і пін, що знав би власну копію
+    # рядка, лишався б зеленим при розходженні читача з гасильником.
+    it "оновлює бейдж ОДРАЗУ після появи тривоги, не чекаючи TTL" do
+      expect(count_for(user_a)).to eq(1) # прогріває кеш
+
+      Prosopite.pause if defined?(Prosopite)
+      create(:ews_alert, cluster: create(:cluster, organization: org_a), status: :active)
+      Prosopite.resume if defined?(Prosopite)
+
+      expect(count_for(user_a)).to eq(2)
+    end
+
+    # Дзеркальна половина: закриття тривоги теж мусить гасити кеш, інакше бейдж
+    # завищує загрозу — а це той бік помилки, що змушує оператора шукати те,
+    # чого немає.
+    it "оновлює бейдж ОДРАЗУ після закриття тривоги" do
+      alert = org_a.ews_alerts.first
+      expect(count_for(user_a)).to eq(1)
+
+      alert.update!(status: :resolved)
+
+      expect(count_for(user_a)).to eq(0)
+    end
+
     it "returns zero for a viewer without an organization (fail-closed, not a global sum)" do
       expect(count_for(create(:user, :super_admin, organization: nil))).to eq(0)
     end

@@ -477,7 +477,13 @@ module Api
         org = acting_organization
         return 0 unless org
 
-        Rails.cache.fetch("ews_alert_count_unresolved/org/#{org.id}", expires_in: 1.minute) do
+        # [UI.11] Без `expires_in`: кеш гаситься НА ЗАПИСІ (`EwsAlert`
+        # after_commit), тобто живе рівно доки число чинне. TTL тут був проксі
+        # для «щось змінилось», хоча момент зміни відомий точно — і при 60 с
+        # бейдж відставав від живої стрічки тривог у дванадцять разів.
+        # Ключ — з дому `Organization#alert_count_cache_key`, той самий, що
+        # читає гасильник: рукописний дубль розійшовся б МОВЧКИ.
+        Rails.cache.fetch(org.alert_count_cache_key) do
           org.ews_alerts.unresolved.count
         end
       rescue StandardError

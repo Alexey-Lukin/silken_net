@@ -905,6 +905,20 @@ Canvas-ефект Matrix digital rain з hex-символами (`0-9A-F`). Canv
 
 ## 8. Інтеграція Turbo (Streams & Frames)
 
+> 🧭 **ВИМІРЯНИЙ СТАН Drive/morph-осі станом на 2026-08-14 [UI.11] — факт, не політика.** Ця врізка навмисно НЕ переказує того, що вже тримають гейти: переказ був би другим домом, який гниє. Вона фіксує конфігурацію й **маршрутизує** до сторожів.
+>
+> | Що | Виміряно | Хто тримає |
+> |---|---|---|
+> | morph | `turbo-refresh-method: morph` + `turbo-refresh-scroll: preserve` — **лише** в `DashboardLayout`, тобто діють на всі дашборд-сторінки | ревʼю (машинної форми «чи безпечна морфом сторінка X» не існує) |
+> | prefetch | явної конфігурації НЕМА → дефолт гема (hover-prefetch увімкнений) | ревʼю |
+> | `data-turbo-permanent` | **НУЛЬ** вузлів у дереві | `spec/quality/no_turbo_permanent_spec.rb` — заборона з нульовим винятком |
+> | `data-turbo="false"` | **НУЛЬ** сайтів | — (знято разом із причинами, §8.1) |
+> | ціль `data-turbo-frame` | кожна мусить мати `turbo_frame_tag` у тому ж файлі | `spec/quality/turbo_frame_target_spec.rb` |
+> | імена стрімів | єдиний дім `lib/turbo_streams/name.rb`, провенанс аргументу | `spec/security/turbo_stream_scope_spec.rb` |
+> | сирий ActionCable | заборонено | `spec/security/no_raw_action_cable_spec.rb` |
+>
+> 🔬 **Перетин «refresh-сигнал × лінивий фрейм» — ПОРОЖНІЙ, і це перевірено, а не припущено.** Механізм реальний і описаний нижче (сигнал повертає `src`-фрейм у плейсхолдер і не перезавантажує його), але живих екземплярів у дереві немає: `broadcast_refresh_*` іде лише в алертні стріми та tombstone (`Organization::TOMBSTONE_KINDS` = `telemetry`, `alerts`), а їхні підписники (`clusters/show`, `alerts/index`, `telemetry/live_stream`) `src:`-фреймів не мають; єдина сторінка з двома лінивими фреймами — `wallets/show` — підписана на record-form стрім, куди `refresh` не шле ніхто. **Тобто `refresh="morph"` сьогодні не потрібен ніде — але стане потрібним у ту саму мить, коли сторінка з лінивим фреймом підпишеться на refresh-стрім.**
+
 ### 8.1 Turbo Streams
 
 Оновлення DOM в реальному часі через `ActionCable` (Solid Cable).
