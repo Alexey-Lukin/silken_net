@@ -76,9 +76,7 @@
 
 ### Тригери
 
-| Тригер | Таблиця | Призначення |
-|--------|---------|-------------|
-| `sync_cluster_geo_boundary()` | `clusters` | Автоматична синхронізація PostGIS geometry `geo_boundary` з JSONB `geojson_polygon` |
+**Жодного.** ⚠️ Тут жив `sync_cluster_geo_boundary()`; знято 2026-08-14 разом із переходом `clusters.geo_boundary` на `GENERATED ALWAYS ... STORED` ([E.36], §2 нижче). Рядок лишається як запис про порожню множину, а не як пропуск: тригерна функція у `structure.sql` є окремим класом ризику (`pg_dump` не зберігає `OR REPLACE`), тож «тригерів немає» — властивість, варта оголошення.
 
 ### Партиціонування (RANGE BY created_at)
 
@@ -424,14 +422,20 @@ dormant ──reactivate──► active
 >
 > ⚠️ Колонка не знає, ЯКУ добу описує: `ClusterHealthCheckWorker` приймає довільну дату, тож значення = «результат останнього прогону з тією датою, яку той узяв».
 
-> **📝 PostGIS Оптимізація — Generated Column vs Тригер (E.36):**
-> Поточна синхронізація `geojson_polygon` → `geo_boundary` використовує PL/pgSQL тригер `sync_cluster_geo_boundary()`. Починаючи з PostgreSQL 12, для таких прямих трансформацій рекомендовано використовувати **Generated Columns**:
-> ```sql
-> ALTER TABLE clusters
-> ADD COLUMN geo_boundary geometry(Polygon, 4326)
-> GENERATED ALWAYS AS (ST_GeomFromGeoJSON(geojson_polygon)) STORED;
-> ```
-> **Переваги:** працює на рівні C-рушія БД (швидше), не потребує підтримки тригерних функцій, автоматично оновлюється при зміні `geojson_polygon`. **Обмеження:** generated column не може посилатися на інші generated columns; GIST-індекс на generated column підтримується. **Статус:** Оптимізація для Post-TRL 8.
+> ✅ **PostGIS: `geo_boundary` — GENERATED ALWAYS ... STORED [E.36, закрито 2026-08-14].**
+> Синхронізація `geojson_polygon` → `geo_boundary` більше не тригерна: колонка обчислюється рушієм БД, тригер і функція `sync_cluster_geo_boundary()` знято.
+>
+> 🔴 **Це була НЕ оптимізація, і саме тому потребувало присуду власника: змінилась СЕМАНТИКА ПОМИЛКИ.** Тригер мав `EXCEPTION WHEN OTHERS` і на битому GeoJSON тихо писав `NULL` — запис проходив. Вираз generated column винятків ловити не може, тож тепер це **hard-fail при записі**. Підстава присуду: кордон кластера, тихо записаний як NULL, є втратою геометрії там, де координата входить у ДОКАЗ (MRV-лінійка, Field Audit) — гучна відмова чесніша за NULL, якого ніхто не помітить.
+>
+> ⚠️ **`CASE` без `ELSE` лишає легальним «кордон не заданий»:** відсутній або неповний GeoJSON (`type`/`coordinates` = NULL) і далі дає NULL. Змінилась доля саме **невалідного** — доти EXCEPTION-хендлер зводив його до того самого NULL.
+>
+> ⚠️ **«КОЛИ» важило більше за «чи»:** на порожній таблиці це `DROP+ADD` без переписування рядків; після польового деплою та сама операція означала б `ACCESS EXCLUSIVE` rewrite tenant-root + GIST-rebuild + ризик backfill'у на битих рядках.
+>
+> 🔬 **Виміряно ПЕРЕД міграцією, а не припущено:** вираз generated column мусить бути IMMUTABLE, і обидві функції такими є (`pg_proc.provolatile = i`) — інакше PostgreSQL відхилив би колонку за побудовою. Перевірено рантаймом ПІСЛЯ: битий GeoJSON → `PG::InternalError`, валідний → обчислено.
+>
+> ⊕ Побічно зникла функція, яку `pg_dump` не вміє зберігати з `OR REPLACE` — клас «неідемпотентна функція у `structure.sql`» закрився сам собою.
+>
+> ⚠️ **`unknown OID …: failed to recognize type of 'geo_boundary'. It will be treated as String` у консолі — ШУМ, не дефект, і це перевірено, щоб наступний читач за ним не гнався.** PostGIS-тип не зареєстрований в адаптері, тож AR не десеріалізує значення — але **жоден рядок Ruby його й не читає**: усі звертання йдуть через SQL (`ST_Contains(…)` у скоупі `containing_point`, `where.not(geo_boundary: nil)` у предикаті `geo_boundary_present?`). Десеріалізації немає кому знадобитись. Попередження стане значущим рівно тоді, коли зʼявиться перший Ruby-читач самого значення.
 
 ---
 

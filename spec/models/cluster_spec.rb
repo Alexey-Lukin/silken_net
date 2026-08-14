@@ -305,7 +305,20 @@ RSpec.describe Cluster, type: :model do
       end
     end
 
-    describe "geo_boundary trigger sync" do
+    # [E.36] Тригера тут БІЛЬШЕ НЕМА — колонка `GENERATED ALWAYS ... STORED`
+    # (2026-08-14). Імʼя блоку стверджувало механізм, який зник; лишити його
+    # означало б навчити наступного читача шукати тригер, якого не існує.
+    describe "geo_boundary (generated column)" do
+      # 🔴 Нова властивість, якої тригер не мав: битий GeoJSON тепер ВІДМОВЛЯЄ
+      # на записі замість тихого NULL. Пін стоїть тут, бо без нього повернення
+      # толерантності (тригер, `ELSE NULL`, rescue у моделі) пройшло б зеленим —
+      # сусідні приклади не розрізняють «кордону немає» і «кордон був битий».
+      it "ВІДМОВЛЯЄ на битому GeoJSON, а не пише тихий NULL" do
+        expect {
+          create(:cluster, geojson_polygon: { "type" => "Polygon", "coordinates" => "not-an-array" })
+        }.to raise_error(ActiveRecord::StatementInvalid, /GeoJSON/)
+      end
+
       it "auto-populates geo_boundary when geojson_polygon is set" do
         cluster = create(:cluster, geojson_polygon: polygon)
         expect(cluster.geo_boundary_present?).to be true
