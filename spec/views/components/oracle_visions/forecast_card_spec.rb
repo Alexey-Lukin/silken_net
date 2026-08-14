@@ -104,33 +104,91 @@ RSpec.describe OracleVisions::ForecastCard do
     end
   end
 
-  describe "confidence color" do
-    it "uses green color for every insight the enum can actually hold" do
+  # [UI.13] Присуд founder 2026-08-14: критичний прогноз має власний стан, і
+  # сигнал — ЗНАК `yield_impact`. Обидві попередні спеки цементували стан ДО
+  # присуду («зелений для КОЖНОГО типу» · «червоного немає взагалі»), тож
+  # переписані: вони були правдиві рівно доти, доки рішення не ухвалили.
+  describe "confidence colour follows the yield_impact sign [UI.13]" do
+    # Ключове: сигналом є ЗНАК впливу, а НЕ тип інсайту й не ймовірність —
+    # тому перебір типів лишається, але доводить тепер протилежне: жоден тип
+    # сам по собі кольору не змінює.
+    it "лишається смарагдовим для будь-якого типу з невідʼємним впливом" do
       AiInsight.insight_types.each_key do |type|
-        html = render_component(insight: mock_insight(insight_type: type, probability_score: 95))
-        expect(html).to include("#10b981")
+        html = render_component(
+          insight: mock_insight(insight_type: type, probability_score: 95, yield_impact: "+12.5%")
+        )
+        expect(html).to include("text-emerald-500"), "#{type} мав лишитись смарагдовим"
+        expect(html).not_to include("text-red-500")
       end
     end
 
-    # [TEST.12] Червоної гілки більше немає — вона порівнювала `insight_type` з
-    # «emergency», значенням поза enum'ом, тож була недосяжна від народження.
-    # Пін тримає цю відсутність явно: якщо колись зʼявиться справжній критичний
-    # стиль, він мусить приїхати з рішенням (00_07 UI.13), а не тихо повернутись.
-    it "has no unreachable emergency styling left" do
-      html = render_component(insight: mock_insight(probability_score: 99))
-      expect(html).not_to include("#ef4444")
+    it "червоніє на негативному впливі — незалежно від типу й імовірності" do
+      html = render_component(
+        insight: mock_insight(insight_type: "carbon_yield_forecast", probability_score: 12, yield_impact: "-3.0%")
+      )
+
+      expect(html).to include("text-red-500")
+      expect(html).to include("bg-red-500")
+      expect(html).not_to include("text-emerald-500")
+    end
+
+    # 🔴 Дім сигналу ОДИН, і саме цю властивість пін і стереже: доти деривація
+    # стояла двома копіями, тож картка могла показати червоний ВПЛИВ під
+    # зеленим ІНДИКАТОРОМ — два вузли однієї картки, що суперечать одне одному.
+    it "тримає індикатор і рядок впливу в ОДНОМУ стані" do
+      html = render_component(
+        insight: mock_insight(probability_score: 88, yield_impact: "-1.0%")
+      )
+
+      expect(html.scan("text-red-500").size).to be >= 2
+      expect(html).not_to include("text-emerald-500")
+    end
+
+    # [UI.1] Інлайн-`style:` із кольором — виміряна сліпа зона обох
+    # токен-інструментів (вони сканують КЛАСИ). Обидва відомі сайти класу жили
+    # саме тут; пін тримає їхню відсутність.
+    it "не має інлайн-кольору, невидимого для токен-інструментів" do
+      html = render_component(insight: mock_insight(probability_score: 70))
+
+      expect(html).to include("width: 70"), "смуга мусить лишитись інлайн — ширина рантаймова"
+      expect(html).not_to match(/style="[^"]*color:/)
     end
   end
 
-  describe "missing prediction_data" do
-    it "falls back to the default yield impact and emerald color" do
-      insight = mock_insight(summary: "No structured prediction payload.").tap do |i|
+  # 🔴 [ARCH.84] Приклад доти ЦЕМЕНТУВАВ дефект: він вимагав, щоб картка без
+  # даних друкувала «-0.04%» — вигадане точне число, однакове в чотирьох
+  # локалях, — і фарбувала його СМАРАГДОВИМ. Тобто текст стверджував збиток,
+  # колір стверджував благополуччя, а виміру не було жодного. Обидві половини
+  # були закріплені як контракт.
+  describe "missing prediction_data [ARCH.84]" do
+    let(:unmeasured) do
+      mock_insight(summary: "No structured prediction payload.").tap do |i|
         i.prediction_data = nil
         i.probability_score = 50
       end
-      html = render_component(insight: insight)
-      expect(html).to include("-0.04%")           # yield_impact_default (dig → nil)
-      expect(html).to include("text-emerald-500") # nil.to_f < 0 == false → emerald
+    end
+
+    it "називає відсутність виміру, а не вигадує число" do
+      html = render_component(insight: unmeasured)
+
+      expect(html).to include(I18n.t("ui.measurement.not_measured"))
+      expect(html).not_to include("-0.04%")
+    end
+
+    it "тримає НЕЙТРАЛЬНИЙ стан — невиміряне не є ні добрим, ні поганим" do
+      html = render_component(insight: unmeasured)
+
+      expect(html).to include("text-gray-400")
+      expect(html).not_to include("text-emerald-500")
+      expect(html).not_to include("text-red-500")
+    end
+
+    # Порожній рядок — той самий стан, що nil: `presence` зводить обидва, бо
+    # інакше `"".to_f` дало б 0.0 і картка вітала б порожнечу смарагдовим.
+    it "рахує порожній рядок відсутністю виміру, а не нулем" do
+      insight = mock_insight(yield_impact: "")
+
+      expect(render_component(insight: insight)).to include("text-gray-400")
     end
   end
 

@@ -6,7 +6,6 @@ en:
       impact_value: "%{value} SCC"
       predicted_window: Predicted Event Window
       probability: "%{value}%"
-      yield_impact_default: "-0.04%"
     index:
       active_simulations: Active Simulations
       confidence: 'AI Confidence: %{value}'

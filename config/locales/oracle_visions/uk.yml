@@ -6,7 +6,6 @@ uk:
       impact_value: "%{value} SCC"
       predicted_window: Прогнозоване вікно події
       probability: "%{value}%"
-      yield_impact_default: "-0.04%"
     index:
       active_simulations: Активні симуляції
       confidence: 'Впевненість ШІ: %{value}'

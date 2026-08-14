@@ -84,8 +84,21 @@ module SilkenNet
     # Phlex components & layouts: autoload app/views/components and
     # app/views/layouts so Wallets::TransactionRow, DashboardLayout, etc.
     # are resolvable by Zeitwerk without the Views:: wrapper.
-    config.autoload_paths << root.join("app/views/components").to_s
-    config.autoload_paths << root.join("app/views/layouts").to_s
+    #
+    # [ARCH.93] Обидва шляхи мусять стояти і в eager_load_paths, і це НЕ
+    # надлишковість: `autoload_paths` не входить в `eager_load_paths`
+    # автоматично — Rails виключає `app/views` з дефолтного `app/*` за
+    # побудовою (там історично шаблони, не Ruby-класи). Виміряно рантаймом
+    # ДО фіксу: `eager_load!` давав 16 нащадків `ApplicationComponent` при 112
+    # файлах на диску, тобто 96 класів (94 компоненти + 2 лейаути) народжувались
+    # під час ЗАПИТУ. У проді це знімає рівно те, заради чого `eager_load = true`
+    # існує: `NameError`, синтаксис і циклічний реф ловились першим відвідувачем
+    # сторінки, а не деплоєм. `app/views/shared` тут не потрібен — він
+    # резолвиться через `Views::`-неймспейс і вже в переліку (ті самі 16).
+    %w[app/views/components app/views/layouts].each do |phlex_path|
+      config.autoload_paths   << root.join(phlex_path).to_s
+      config.eager_load_paths << root.join(phlex_path).to_s
+    end
 
     # [SEC.27] Друга лінія під модельними валідаціями вкладень: жодне наше
     # вкладення не приймає bmp/psd/ico (allow-list усіх трьох — jpeg/png/webp),

@@ -59,6 +59,37 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
       end
     end
 
+    # 🔴 [ARCH.76] Дзеркало прикладу вище, і саме воно було відсутнє: те, що для
+    # Дерева є переходом стану, для Королеви не існує як механізм узагалі —
+    # її enum це операційна петля без точки виходу. Доти такий запис
+    # створювався, валідувався й тихо не робив нічого, тобто журнал стверджував
+    # дію, якої не сталося. Пін тримає ГУЧНІСТЬ, а не стан: термінального стану
+    # свідомо немає (присуд власника 2026-08-14 — відкликання довіри без
+    # фізичного re-provision є театром).
+    context "when target is a Gateway with decommissioning" do
+      it "кричить у лог замість тихого no-op" do
+        gateway = create(:gateway)
+        record = create(:maintenance_record, maintainable: gateway, action_type: :decommissioning)
+
+        expect(Rails.logger).to receive(:error).with(/ARCH\.76.*НЕ змінив стан/m)
+
+        described_class.new.perform(record.id)
+      end
+
+      it "не вигадує шлюзу термінального стану" do
+        gateway = create(:gateway)
+        record = create(:maintenance_record, maintainable: gateway, action_type: :decommissioning)
+        before_state = gateway.state
+
+        described_class.new.perform(record.id)
+
+        # Ліхтар: пін не про «нічого не сталось», а про те, що НЕ ЗʼЯВИВСЯ стан,
+        # якого enum не має — інакше приклад був би зелений і на порожньому enum'і.
+        expect(Gateway.states.keys).not_to include("retired", "revoked", "decommissioned")
+        expect(gateway.reload.state).to eq(before_state)
+      end
+    end
+
     context "when target responds to mark_seen!" do
       it "calls mark_seen! on the target" do
         tree = create(:tree, status: :active)

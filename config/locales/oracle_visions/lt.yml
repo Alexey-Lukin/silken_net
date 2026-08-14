@@ -6,7 +6,6 @@ lt:
       impact_value: "%{value} SCC"
       predicted_window: Prognozuojamas įvykio langas
       probability: "%{value}%"
-      yield_impact_default: "-0.04%"
     index:
       active_simulations: Aktyvios simuliacijos
       confidence: 'DI pasitikėjimas: %{value}'

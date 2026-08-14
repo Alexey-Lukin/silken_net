@@ -33,6 +33,25 @@ class EcosystemHealingWorker
         target.decommission!
       end
 
+      # 🔴 [ARCH.76] Виведення з експлуатації має життєвий цикл ЛИШЕ в Дерева.
+      # У Королеви enum — операційна петля без точки виходу
+      # (idle/active/updating/maintenance/faulty), тож `decommissioning` на
+      # шлюз доти створювався, валідувався й НЕ РОБИВ НІЧОГО: журнал стверджував
+      # дію, якої не сталося ([FW.63]-клас на trust-поверхні).
+      #
+      # Рядок гучний СВІДОМО, і термінального стану замість нього не додано
+      # (присуд власника 2026-08-14): відкликання довіри Королеви без фізичного
+      # re-provision є театром — вкрадений шлюз тримає у флеші CoAP-ключ,
+      # QATT-seed і KEYB УСЬОГО кластера, а `rotate_gateway_random!` із
+      # Dual-Key Grace такого не гасить. Поле вирішує, як це має виглядати;
+      # доти чесніша гучна відмова, ніж тихий успіх → `00_07` ARCH.76.
+      if target.is_a?(Gateway) && record.action_type_decommissioning?
+        Rails.logger.error(
+          "[ARCH.76] `decommissioning` на Gateway ##{target.id} — життєвого циклу " \
+          "виведення в шлюза НЕМАЄ, запис ##{record.id} НЕ змінив стан пристрою"
+        )
+      end
+
       # 3a. AFTERLIFE ECONOMY (Puro.earth Biochar D-MRV)
       # Biomass extraction marks a dead tree and initiates Biomass Passport generation
       # for Puro.earth CORC certification. The passport anchors provenance on-chain.

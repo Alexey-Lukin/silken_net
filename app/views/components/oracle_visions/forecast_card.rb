@@ -10,7 +10,7 @@ module OracleVisions
     def view_template
       div(class: "p-6 border border-emerald-900 bg-zinc-950 group relative overflow-hidden transition-all hover:border-emerald-500") do
         # Неоновий індикатор впевненості Оракула
-        div(class: "absolute top-0 right-0 p-4 font-mono text-2xl opacity-40 group-hover:opacity-100 transition-opacity", style: "color: #{confidence_color}") do
+        div(class: tokens("absolute top-0 right-0 p-4 font-mono text-2xl opacity-40 group-hover:opacity-100 transition-opacity", confidence_text_class)) do
           plain t(".probability", value: @insight.probability_score)
         end
 
@@ -53,34 +53,85 @@ module OracleVisions
 
     def render_mini_trend
       div(class: "h-1 w-full bg-emerald-950 my-4") do
-        div(class: "h-full shadow-[0_0_15px_#10b981] transition-all duration-1000",
-            style: "width: #{@insight.probability_score}%; background-color: #{confidence_color}")
+        div(class: tokens("h-full transition-all duration-1000", confidence_bar_class),
+            style: "width: #{@insight.probability_score}%")
       end
       p(class: "text-compact text-gray-400 italic leading-relaxed") { @insight.summary }
     end
 
+    # 🔴 [ARCH.84] Доти відсутність даних друкувалась як `-0.04%` — ВИГАДАНЕ
+    # точне число, однакове в чотирьох локалях, під підписом «Economic Impact».
+    # Тобто картка без жодного прогнозу стверджувала конкретний збиток, ще й
+    # смарагдовим кольором (бо `nil.to_f` не відʼємний), — текст казав одне,
+    # колір протилежне. Тепер «не виміряно» має ІМʼЯ й власний нейтральний
+    # стан: станів ТРИ, і третій не є ні добрим, ні поганим.
     def impact_assessment
-      # Якщо це негативна подія (стрес), показуємо червоним
       div(class: "mt-4 pt-4 border-t border-emerald-900/50 flex justify-between items-center") do
         span(class: "text-mini uppercase text-gray-600") { t(".economic_impact") }
-        span(class: tokens("text-xs font-mono", impact_text_color)) do
-          plain t(".impact_value", value: @insight.prediction_data&.dig("yield_impact") || t(".yield_impact_default"))
+        span(class: tokens("text-xs font-mono", confidence_text_class)) do
+          plain impact_reading
         end
       end
     end
 
-    # [TEST.12] Гілка `insight_type == "emergency"` була МЕРТВА від народження:
-    # enum має рівно daily_health_summary/drought_probability/carbon_yield_forecast/
-    # biodiversity_trend, і `git log -S` не знає жодної ревізії, де «emergency» там
-    # був — тобто високоймовірний негативний прогноз ніколи не міг почервоніти, а
-    # зеленою її тримала фікстура, що подавала неможливе значення. Чи потрібне
-    # візуальне відрізнення такого прогнозу — ⚖️ у 00_07 UI.13, не здогад тут.
-    def confidence_color
-      "#10b981"
+    def impact_reading
+      return t("ui.measurement.not_measured") if yield_impact.nil?
+
+      t(".impact_value", value: yield_impact)
     end
 
-    def impact_text_color
-      @insight.prediction_data&.dig("yield_impact").to_f < 0 ? "text-red-500" : "text-emerald-500"
+    # [UI.13] Присуд founder 2026-08-14: критичний прогноз ДІСТАЄ власний
+    # візуальний стан — і сигналом є ЗНАК `yield_impact`, не поріг імовірності.
+    #
+    # Підстава вибору сигналу: він УЖЕ живе в цьому файлі (`impact_assessment`
+    # фарбує ним сусідній рядок), тобто ми нічого не вводимо. Поріг на
+    # `probability_score` виглядав інтуїтивнішим («95 % посухи має бути
+    # червоним»), але число довелось би взяти зі стелі — дому для «яка
+    # ймовірність тривожна» в платформі немає, і це рівно той клас, що
+    # закривав [UI.10] (00_07 §🗄️).
+    #
+    # ⚠️ Доти тут стояла МЕРТВА від народження гілка `insight_type ==
+    # "emergency"` ([TEST.12]) — значення, якого enum не приймав ніколи, тож
+    # високоймовірний негативний прогноз не міг почервоніти в принципі, а
+    # зеленою її тримала фікстура, що подавала неможливе значення.
+    def yield_impact
+      @insight.prediction_data&.dig("yield_impact").presence
     end
+
+    def adverse_forecast?
+      yield_impact.to_f.negative?
+    end
+
+    # Невиміряне не є ні добрим, ні поганим — і колір теж є твердженням, тож
+    # третій стан мусить бути нейтральним, а не «зеленим за замовчуванням».
+    # ⚠️ Нейтраль тут тема-ІНВАРІАНТНА свідомо: поверхня картки (`bg-zinc-950`)
+    # з темою не фліпається, тож токен, що фліпається, дав би на ній
+    # недосяжну AA — виміряний урок `Codex::NodeCard` (00_07 §🗄️ UI.10).
+    def unmeasured_impact?
+      yield_impact.nil?
+    end
+
+    # Дім сигналу ОДИН: доти деривація стояла двома копіями (тут і в
+    # `impact_text_color`), тобто картка могла показати червоний вплив під
+    # зеленим індикатором — стан, у якому два вузли однієї картки
+    # суперечать одне одному.
+    def confidence_text_class
+      return "text-gray-400" if unmeasured_impact?
+
+      adverse_forecast? ? "text-red-500" : "text-emerald-500"
+    end
+
+    # [UI.1] Смуга й індикатор доти малювались інлайн-`style:` із зашитим
+    # `#10b981` — а це виміряна СЛІПА ЗОНА обох токен-інструментів: і
+    # `gaia:lint_tokens`, і `design_token_existence_spec` скануть КЛАСИ, тож
+    # колір без класу для них не існує. Це були ОБИДВА відомі сайти класу.
+    # Ширина лишається інлайн свідомо — вона рантайм-значення, класу не має.
+    def confidence_bar_class
+      return "bg-gray-500" if unmeasured_impact?
+
+      adverse_forecast? ? "bg-red-500 shadow-[0_0_15px_#ef4444]" : "bg-emerald-500 shadow-[0_0_15px_#10b981]"
+    end
+
+    alias impact_text_color confidence_text_class
   end
 end
