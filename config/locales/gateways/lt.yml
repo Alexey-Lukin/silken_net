@@ -17,7 +17,6 @@ lt:
     show:
       config:
         cluster: Klasteris
-        firmware_hash: Programinės įrangos kodas
         firmware_version: Programinės įrangos versija
         heading: Tinklo konfigūracija
         mesh_enabled: Įjungta

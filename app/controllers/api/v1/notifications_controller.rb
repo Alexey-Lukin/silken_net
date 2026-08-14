@@ -22,7 +22,10 @@ module Api
           format.html do
             render_dashboard(
               title: I18n.t("notifications.settings_title"),
-              component: Notifications::Settings.new(user: current_user)
+              component: Notifications::Settings.new(
+                user: current_user,
+                available_channels: Notifications::DeliveryChannels.available
+              )
             )
           end
         end
@@ -58,7 +61,10 @@ module Api
             format.html do
               render_dashboard(
                 title: I18n.t("notifications.settings_title"),
-                component: Notifications::Settings.new(user: current_user),
+                component: Notifications::Settings.new(
+                user: current_user,
+                available_channels: Notifications::DeliveryChannels.available
+              ),
                 status: :unprocessable_content
               )
             end

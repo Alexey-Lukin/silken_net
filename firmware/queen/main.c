@@ -2231,7 +2231,9 @@ uint8_t Cmd_Dedup_Check(uint32_t hash)
 //     - [0x99][chunk_idx:2][total:2][bytecode][CRC]      → OTA-чанк байткоду
 //     - [0x9A][len_le:2][body:10]                         → CMD_SET_THRESHOLDS
 //     - [0x9E][len_le:2 = 4][target_version:u16le][crc16] → CMD_ROTATE_KEY (FW.17)
-// Приклад: CMD:OPEN:60:42:a1b2c3d4-e5f6-7890-abcd-ef1234567890
+// Приклад: CMD:OPEN_VALVE:60:42:a1b2c3d4-e5f6-7890-abcd-ef1234567890
+// ACTION самоописовий за типом пристрою — Королева реєстру не тримає, тож
+// наказ мусить нести своє призначення сам (03_02 §6, присуд UI.14).
 //
 // [FW.20] Бекенд `CoapEncryption` тепер ЗАВЖДИ обгортає inner_payload у
 // конверт CMD_TIME_SYNC: [0x9C маркер][unix_ts_be:4]. Королева зрізає

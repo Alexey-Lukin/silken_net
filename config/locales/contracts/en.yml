@@ -10,7 +10,6 @@ en:
         id_status: ID / Status
         investment: Service Fee
         organization: Organization
-        performance: Cluster Health
         period: Period
         target_cluster: Target Cluster
       portfolio_title: Monitored Clusters

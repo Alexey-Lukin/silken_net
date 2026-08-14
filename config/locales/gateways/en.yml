@@ -17,7 +17,6 @@ en:
     show:
       config:
         cluster: Cluster
-        firmware_hash: Firmware Hash
         firmware_version: Firmware Version
         heading: Network Configuration
         mesh_enabled: Enabled

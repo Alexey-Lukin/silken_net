@@ -53,6 +53,25 @@ RSpec.describe Codex::NodeCard do
       expect(html).to include("Ecosystems")
     end
 
+    # [UI.10] Доти акцент був ОБІЦЯНКОЮ докстрінга: компонент зашивав один
+    # токен на всі реалми. Пін цілить у САМ вузол пігулки (не в документ —
+    # `bg-gaia-surface` і `border-l-2` трапляються на сторінці й деінде), і
+    # доводить різницю ПАРОЮ: два реалми в одному прикладі, бо клас-присутність
+    # у поодинокому рендері не відрізняє «дротовано» від «зашито».
+    it "фарбує пігулку акцентом ВЛАСНОГО реалму, а не спільним токеном" do
+      ecosystem = render_component(node: build_node)
+      mythos    = render_component(
+        node: build_node(realm: build_realm(slug: "mythos", name_en: "Mythos", accent_token: "status-warning"))
+      )
+
+      expect(ecosystem).to include("border-l-status-success")
+      expect(ecosystem).to include("text-status-success-text")
+      expect(mythos).to include("border-l-status-warning")
+      expect(mythos).to include("text-status-warning-text")
+      # Дзеркало: чужий акцент не просочується (саме це й було дефектом).
+      expect(ecosystem).not_to include("status-warning")
+    end
+
     it "renders the lifecycle badge with semantic token" do
       expect(html).to include("bg-status-success")
     end

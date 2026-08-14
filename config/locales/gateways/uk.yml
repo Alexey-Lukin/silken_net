@@ -17,7 +17,6 @@ uk:
     show:
       config:
         cluster: Кластер
-        firmware_hash: Хеш прошивки
         firmware_version: Версія прошивки
         heading: Конфігурація мережі
         mesh_enabled: Увімкнено

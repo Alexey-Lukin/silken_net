@@ -25,29 +25,10 @@
 module Codex
   module Citations
     class Pill < ApplicationComponent
-      # Static class table — Tailwind v4 JIT only picks up classes it sees as
-      # static text in source files. Dynamic interpolation `border-l-#{token}`
-      # would NOT be compiled, leaving the pill border colour-less in prod.
-      # We map the 4 seeded `Realm.accent_token` values explicitly; new realms
-      # added by DAO proposal must extend this hash AND add their classes to
-      # `@source inline()` in `app/assets/tailwind/application.css` (or be
-      # whitelisted by being mentioned anywhere else in the source tree).
-      ACCENT_BORDER_CLASSES = {
-        "status-success" => "border-l-status-success",
-        "gaia-primary"   => "border-l-gaia-primary",
-        "status-info"    => "border-l-status-info",
-        "status-warning" => "border-l-status-warning"
-      }.freeze
-      DEFAULT_ACCENT_BORDER_CLASS = "border-l-gaia-border"
-
-      ACCENT_TEXT_CLASSES = {
-        "status-success" => "text-status-success",
-        "gaia-primary"   => "text-gaia-primary",
-        "status-info"    => "text-status-info",
-        "status-warning" => "text-status-warning"
-      }.freeze
-      DEFAULT_ACCENT_TEXT_CLASS = "text-gaia-text-muted"
-
+      # [UI.10] Мапи акценту переїхали в `Codex::Realm` — до `DISPLAY_GLYPHS`,
+      # свого природного сусіда: пʼятий реалм від DAO має додаватись одним
+      # записом у моделі. Тут лишається лише споживання; копії немає навмисно —
+      # `Codex::NodeCard` читає ТОЙ САМИЙ дім.
       DEFAULT_GLYPH = ::Codex::Realm::DEFAULT_DISPLAY_GLYPH
 
       # @param citation [Codex::Citation] eager-loaded with `:node` (and
@@ -104,20 +85,14 @@ module Codex
         )
       end
 
-      # `Realm#accent_token` is a Tailwind class fragment seeded per realm
-      # (e.g. `"gaia-primary"`, `"status-success"`). We map it through the
-      # static ACCENT_*_CLASSES hashes because Tailwind JIT can't see
-      # dynamic interpolation.
-      def accent_token(node)
-        node.realm&.accent_token.to_s
-      end
-
+      # Резолв акценту живе на моделі (`Codex::Realm#accent_*_class`) — тут лише
+      # nil-плече на випадок реалму, знятого з-під вузла.
       def accent_border_class(node)
-        ACCENT_BORDER_CLASSES.fetch(accent_token(node), DEFAULT_ACCENT_BORDER_CLASS)
+        node.realm&.accent_border_class || ::Codex::Realm::DEFAULT_ACCENT_BORDER_CLASS
       end
 
       def accent_text_class(node)
-        ACCENT_TEXT_CLASSES.fetch(accent_token(node), DEFAULT_ACCENT_TEXT_CLASS)
+        node.realm&.accent_text_class || ::Codex::Realm::DEFAULT_ACCENT_TEXT_CLASS
       end
 
       def glyph(node)

@@ -314,6 +314,30 @@ RSpec.describe Organization, type: :model do
     end
   end
 
+  # [UI.7] Форма налаштувань шле «не обрано» порожнім РЯДКОМ, а `allow_nil`
+  # покриває лише `nil` — тож без нормалізації намір «скинути мову» був
+  # невиразимий і давав 422 на кожному збереженні. Колонка — звичайний varchar,
+  # тож касту blank→nil, який рятує сусідні enum/numeric-поля, тут не буває.
+  describe "locale normalization" do
+    it "перетворює порожній рядок на nil — «не обрано» мусить бути виразимим" do
+      org = build(:organization, locale: "")
+
+      expect(org.locale).to be_nil
+      expect(org).to be_valid
+    end
+
+    it "лишає обрану локаль недоторканою" do
+      expect(build(:organization, locale: "uk").locale).to eq("uk")
+    end
+
+    it "відхиляє локаль поза каталогом — нормалізація не є послабленням" do
+      org = build(:organization, locale: "klingon")
+
+      expect(org).not_to be_valid
+      expect(org.errors[:locale]).to be_present
+    end
+  end
+
   describe "SUPPORTED_DATA_REGIONS" do
     it "contains five regions" do
       expect(Organization::SUPPORTED_DATA_REGIONS).to contain_exactly(

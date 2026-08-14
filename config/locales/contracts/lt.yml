@@ -10,7 +10,6 @@ lt:
         id_status: ID / Būsena
         investment: Paslaugos mokestis
         organization: Organizacija
-        performance: Klasterio būklė
         period: Laikotarpis
         target_cluster: Tikslinis klasteris
       portfolio_title: Stebimi klasteriai

@@ -472,9 +472,14 @@ dormant ──reactivate──► active
 | `ota_started_at` | datetime | **[ARCH.56 pull-forward]** якір майбутнього ARCH.59-watchdog для stuck-`:updating` OTA (sweep-воркера ще нема — [`00_07`](00_07_Action_Plan_Tracker) ARCH.59); колонка дешева до деплою |
 | `pending_firmware_id` | bigint | **[FW.60]** таргет OTA-кампанії per-gateway (пише dispatcher атомарно з hiwater-burn; canary-когорта); Королева дізнається через hint у власному poll'і, глушиться спостереженим `?fw=` — [`04_02`](04_02_Business_Logic_and_Services) `Downlink::PendingQueueService` |
 
-> **Примітка:** `firmware_hash` НЕ є полем Gateway і наразі не існує як колонка — UI-компонент
-> (`components/gateways/show.rb`) робить `try(:firmware_hash)` із safe fallback `"—"`. Хеші OTA-артефактів
-> живуть у `BioContractFirmware` / `TinyMlModel` (`binary_sha256`), окремої моделі `Firmware` немає.
+> **Примітка:** `firmware_hash` НЕ є полем Gateway і колонкою не стане — присуд власника
+> 2026-08-14 ([`00_07`](00_07_Action_Plan_Tracker) UI.10): рядок знято з UI, а не задротовано.
+> Підстава — не відсутність кандидата, а те, що єдиний кандидат (`pending_firmware_id` →
+> `bio_contract_firmwares.binary_sha256`) називає хеш **очікуваної** прошивки, тоді як сусідній
+> `firmware_version` називає **встановлену**: дві різні прошивки в сусідніх рядках під спільним
+> підписом. Хеш як доказ цілісності належить attestation-осі (QATT), не конфіг-панелі. Хеші
+> OTA-артефактів живуть у `BioContractFirmware` / `TinyMlModel` (`binary_sha256`), окремої
+> моделі `Firmware` немає.
 
 **AASM State Machine (column: `state`):**
 
@@ -1155,7 +1160,6 @@ active/draft ──cancel──► cancelled
 | `calculate_early_exit_fee` | Штраф за дострокове розірвання |
 | `calculate_prorated_refund` | Пропорційне повернення |
 | `terminate_early!` | Дострокове розірвання |
-| `current_yield_performance` | Поточна прибутковість |
 | `active_threats?` | Загрози в кластері |
 | `insurance_premium_amount` | `total_funding * INSURANCE_PREMIUM_RATE` (5%) — обчислювальний метод |
 | `forester_share_amount` | `total_funding * 0.95` — частка лісника (обчислювальний метод) |

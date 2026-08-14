@@ -2027,20 +2027,22 @@ TEST(test_queen_load_key_overwrite) {
 TEST(test_time_sync_envelope_strips_5_bytes) {
     test_queen_unix_ts = 0;
 
-    /* [0x9C][unix_ts_be: 0x65000000][inner: "CMD:OPEN:..."] */
-    uint8_t buf[32] = {
+    /* [0x9C][unix_ts_be: 0x65000000][inner: "CMD:OPEN_VALVE:..."]
+     * Вантаж для конверта непрозорий, але вокабуляр тут ПРОДОВИЙ навмисно:
+     * фікстура, що вигадує дію, вчить наступного читача світу, якого немає. */
+    uint8_t buf[38] = {
         0x9C, 0x65, 0x00, 0x00, 0x00,
-        'C','M','D',':','O','P','E','N',':','6','0',':','4','2',':',
+        'C','M','D',':','O','P','E','N','_','V','A','L','V','E',':','6','0',':','4','2',':',
         'a','b','c','d','-','1','-','2','-','3','-','4'
     };
     uint8_t* inner = NULL;
     uint16_t inner_len = 0;
 
-    uint8_t stripped = Strip_Time_Sync_Envelope(buf, 32, &inner, &inner_len);
+    uint8_t stripped = Strip_Time_Sync_Envelope(buf, 38, &inner, &inner_len);
 
     ASSERT_EQ(stripped, 5);
-    ASSERT_EQ(inner_len, 27);
-    ASSERT_EQ(memcmp(inner, "CMD:OPEN:60:42:abcd-1-2-3-4", 27), 0);
+    ASSERT_EQ(inner_len, 33);
+    ASSERT_EQ(memcmp(inner, "CMD:OPEN_VALVE:60:42:abcd-1-2-3-4", 33), 0);
     ASSERT_EQ(test_queen_unix_ts, 0x65000000U);
 }
 

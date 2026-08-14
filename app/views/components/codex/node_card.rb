@@ -4,7 +4,9 @@
 # Codex::NodeCard — Phlex card adapter around lore Codex::Node entries.
 #
 # Reuses dashboard tokens (gaia-* / status-*) only. The realm accent is
-# pulled from `node.realm.accent_token` and applied to the corner badge.
+# pulled from `node.realm.accent_token` through the model's one home
+# (`Codex::Realm#accent_border_class` / `#accent_text_class`) and applied to
+# the corner badge — same maps `Codex::Citations::Pill` consumes, never a copy.
 #
 # Used inside `Codex::Index` grid and (Phase 4) the Battle Arena.
 module Codex
@@ -69,12 +71,25 @@ module Codex
       end
     end
 
+    # [UI.10] Акцент реалму задротовано (присуд власника 2026-08-14) — доти
+    # докстрінг обіцяв його, а метод зашивав один токен на всі чотири реалми,
+    # тож Atlas-грід не розрізняв їх візуально взагалі.
+    #
+    # 🔴 Поверхня змінена з `bg-black/70` НЕ з естетики: скрим тема-інваріантний,
+    # а обидві акцент-родини з темою фліпаються, тож на ньому AA недосяжна за
+    # побудовою. Заразом знято приховану ваду попереднього стану — виміряно
+    # (`lib/silken_net/contrast.rb`): `text-gaia-primary` на `bg-black/70` дає
+    # 8.28:1 над темною обкладинкою й лише 3.36:1 над світлою, тобто читабельність
+    # залежала від картинки. Суцільна тема-поверхня робить число детермінованим:
+    # 7.09–17.00:1 на всіх чотирьох комбінаціях реалм × тема.
     def render_realm_pill
       return unless @node.realm
 
       span(class: tokens(
         "absolute top-2 left-2 px-2 py-0.5 text-micro uppercase tracking-widest font-bold",
-        "bg-black/70 text-gaia-primary"
+        "bg-gaia-surface border-l-2",
+        @node.realm.accent_border_class,
+        @node.realm.accent_text_class
       )) { @node.realm.name_en }
     end
 

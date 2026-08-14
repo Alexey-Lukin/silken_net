@@ -117,11 +117,12 @@ module Gateways
           config_row(t(".config.cluster"), @gateway.cluster&.name || "UNASSIGNED")
           config_row(t(".config.sleep_interval"), "#{@gateway.config_sleep_interval_s || 60}s")
           config_row(t(".config.firmware_version"), @gateway.firmware_version || "—")
-          # [UI.10] Джерела для цього значення в системі НЕМА: `firmware_hash` не
-          # існує на `Gateway` ні колонкою, ні методом, тож `try(:…)&.first(16)`
-          # малював тут гілку, недосяжну за побудовою (її «покривав» лише мок, що
-          # поле вигадував). Рядок лишається — присуд «дротувати чи зняти» → 00_07 UI.10.
-          config_row(t(".config.firmware_hash"), "—")
+          # [UI.10] Рядка «Firmware Hash» тут більше немає, і це присуд, а не
+          # недогляд: джерела в системі не було ніколи. Єдиний кандидат —
+          # `pending_firmware_id` — назвав би хеш ОЧІКУВАНОЇ прошивки просто під
+          # версією ВСТАНОВЛЕНОЇ, тобто дві різні прошивки в сусідніх рядках під
+          # спільним підписом. Хеш як доказ цілісності належить attestation-осі
+          # (QATT), не конфіг-панелі.
           config_row(t(".config.mesh_mode"), t(".config.mesh_enabled"))
         end
       end

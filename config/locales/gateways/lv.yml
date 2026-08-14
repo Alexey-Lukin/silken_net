@@ -17,7 +17,6 @@ lv:
     show:
       config:
         cluster: Klasteris
-        firmware_hash: Programmaparatūras kods
         firmware_version: Programmaparatūras versija
         heading: Tīkla konfigurācija
         mesh_enabled: Iespējots

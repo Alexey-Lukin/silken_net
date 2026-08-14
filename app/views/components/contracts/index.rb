@@ -26,7 +26,10 @@ module Contracts
                   th(scope: "col", class: "p-4") { t(".columns.investment") }
                   th(scope: "col", class: "p-4") { t(".columns.current_yield") }
                   th(scope: "col", class: "p-4") { t(".columns.period") }
-                  th(scope: "col", class: "p-4") { t(".columns.performance") }
+                  # [UI.10] Колонки «Cluster Health» тут більше немає: датчик під
+                  # цим підписом малював `current_yield_performance` — SCC/USD, —
+                  # тобто чужу величину. Здоровʼя кластера має два чесні доми:
+                  # агрегат у герої вище й `backing_asset` у `contracts#show`.
                   th(scope: "col", class: "p-4 text-right") { t(".columns.command") }
                 end
               end
@@ -92,21 +95,9 @@ module Contracts
           plain " → "
           plain contract.end_date&.strftime("%d.%m.%y")
         end
-        td(class: "p-4") do
-          render_performance_gauge(contract.current_yield_performance)
-        end
         td(class: "p-4 text-right") do
           a(href: contract_path(contract), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t(".audit_aria", id: contract.id)) { t(".audit_details") }
         end
-      end
-    end
-
-    def render_performance_gauge(performance)
-      div(class: "flex items-center gap-3") do
-        div(class: "w-20 h-1 bg-emerald-950 rounded-full overflow-hidden") do
-          div(class: "h-full bg-emerald-500 shadow-[0_0_8px_#10b981]", style: "width: #{performance}%")
-        end
-        span(class: "text-tiny text-emerald-500 font-mono") { "#{performance.to_i}%" }
       end
     end
   end

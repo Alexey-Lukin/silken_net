@@ -150,13 +150,16 @@ class NaasContract < ApplicationRecord
     ContractTerminationService.call(self)
   end
 
-  # Відсоток виконання контракту за обсягом емісії відносно вкладених коштів.
-  # Використовується для індикатора прогресу у вьюхах (Contracts::Index).
-  def current_yield_performance
-    return 0 if total_funding.nil? || total_funding.zero?
-
-    (emitted_tokens.to_f / total_funding * 100).clamp(0, 100).round
-  end
+  # [UI.10] `current_yield_performance` ЗНЯТО 2026-08-14 (присуд власника).
+  # Він ділив `emitted_tokens` (SCC) на `total_funding` (USD за послугу,
+  # `07_01 §5`) і подавав частку відсотком, а `.clamp(0, 100)` маскував те, що
+  # величина не міряє нічого: у чисельника й знаменника різні одиниці. Датчик,
+  # який він живив, стояв під підписом «Cluster Health» — тобто чужа величина
+  # під чужим підписом. Колонку знято цілком, а не перецілено: здоровʼя кластера
+  # вже має два чесні доми (агрегат у герої `Contracts::Index`, per-contract
+  # `backing_asset` у `contracts#show`), тож третій був би новою поверхнею
+  # заради виправдання колонки. Заразом закривається `securities_review.md` F7
+  # («yield» = мова доходу на інвестицію → Howey prong 3).
 
   # Whether the backing cluster currently has active EWS alerts.
   # Uses Ruby-level filtering to leverage eager-loaded ews_alerts (avoids N+1).

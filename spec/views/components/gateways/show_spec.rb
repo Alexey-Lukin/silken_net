@@ -234,14 +234,16 @@ RSpec.describe Gateways::Show do
       expect(html).to include("2.1.0")
     end
 
-    # [UI.10] Рядок «Firmware Hash» не має джерела: `firmware_hash` не існує на
-    # `Gateway` ні колонкою, ні методом, тож `try(:…)` віддає nil ЗАВЖДИ. Доти
-    # це ховав мок, який поле вигадував — і сюїта стверджувала значення, якого
-    # прод видати не може. Пін фіксує РЕАЛЬНУ поведінку; чи рядок треба
-    # дротувати (через `pending_firmware`) чи знімати — присуд у `00_07`.
-    it "renders the firmware-hash row with no value, because the model has no such field" do
+    # [UI.10] Присуд founder 2026-08-14: рядок «Firmware Hash» знято, бо джерела
+    # для нього не існувало ніколи. Пін лишається як заборона його повернення —
+    # він мусить уміти впасти, тому пінить ВІДСУТНІСТЬ підпису поруч із
+    # ПРИСУТНІСТЮ сусіда, чиє джерело живе (інакше приклад був би зелений і на
+    # порожній сторінці). ⚠️ «Firmware Version» тут несуче: без нього пін не
+    # відрізняє «рядок знято» від «панель не відрендерилась».
+    it "більше не малює безджерельний рядок хешу прошивки" do
       expect(Gateway.new).not_to respond_to(:firmware_hash)
-      expect(html).to include("Firmware Hash")
+      expect(html).to include("Firmware Version")
+      expect(html).not_to include("Firmware Hash")
     end
   end
 

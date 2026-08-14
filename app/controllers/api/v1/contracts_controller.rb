@@ -30,7 +30,7 @@ module Api
                   organization: { only: [ :id, :name ] }
                 },
                 # [UI/UX]: Додано active_threats?, щоб інвестор бачив "червоний вогник" у списку
-                methods: [ :current_yield_performance, :active_threats? ]
+                methods: [ :active_threats? ]
               ),
               pagy: pagy_metadata(@pagy)
             }
@@ -58,7 +58,7 @@ module Api
         respond_to do |format|
           format.json do
             render json: {
-              contract: @contract.as_json(methods: [ :current_yield_performance, :active_threats? ]),
+              contract: @contract.as_json(methods: [ :active_threats? ]),
               emission_history: @emission_history,
               backing_asset: {
                 cluster_health: @contract.cluster.health_index,

@@ -10,6 +10,7 @@ lv:
         push: "🔔 Push"
         sms: "📱 SMS / Tālrunis"
         telegram: "✈️ Telegram"
+        unavailable: Kanāls nav pieejams
       channels:
         email_address: E-pasta adrese
         heading: Kanālu konfigurācija
@@ -20,13 +21,5 @@ lv:
         telegram_chat_id: Telegram čata ID
       email_hint: E-pastu var mainīt profilā.
       heading: "🔔 Neirālais tīkls — Paziņojumu kanāli"
-      notification_types:
-        active: AKTĪVS
-        critical_alerts: Kritiski brīdinājumi
-        heading: Paziņojumu veidi
-        minting_events: Kalšanas notikumi
-        slashing_events: Sodīšanas notikumi
-        system_health: Sistēmas veselība
-        warning_alerts: Brīdinājuma paziņojumi
       subtitle: Konfigurēt paziņojumu kanālus — kur piegādāt brīdinājumus un notikumus.
     settings_title: Paziņojumu kanāli

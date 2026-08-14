@@ -10,6 +10,7 @@ uk:
         push: "🔔 Push"
         sms: "📱 SMS / Телефон"
         telegram: "✈️ Telegram"
+        unavailable: Канал недоступний
       channels:
         email_address: Email адреса
         heading: Конфігурація каналів
@@ -20,13 +21,5 @@ uk:
         telegram_chat_id: Telegram Chat ID
       email_hint: Змінити email можна в профілі.
       heading: "🔔 Нейронна мережа — Канали сповіщень"
-      notification_types:
-        active: АКТИВНО
-        critical_alerts: Критичні тривоги
-        heading: Типи сповіщень
-        minting_events: Мінтинг-події
-        slashing_events: Слешинг-події
-        system_health: Системне здоров'я
-        warning_alerts: Попереджувальні тривоги
       subtitle: 'Налаштування каналів зв''язку: куди надсилати сповіщення про тривоги та події.'
     settings_title: Канали сповіщень

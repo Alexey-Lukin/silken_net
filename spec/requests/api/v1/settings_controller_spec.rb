@@ -68,6 +68,26 @@ RSpec.describe Api::V1::SettingsController, type: :request do
       expect(organization.billing_email).to eq("new@example.org")
     end
 
+    # [UI.7] Вантаж тут НЕ вигаданий: `Settings::Show` малює «не обрано» як
+    # `option(value: "")`, а форма рукописна, тож браузер серіалізує КОЖЕН
+    # іменований контрол — отже `organization[locale]=""` їде на дріт при
+    # кожному збереженні організації, яка мови не обирала. Доти це давало 422,
+    # і сюїта того не бачила: обидві браузерні спеки, що ходять цією формою,
+    # пінять або «сабміт є POST» (істина й для 422), або наявність
+    # `[role="status"]` (регіон рендериться завжди, навіть порожній).
+    it "приймає порожню локаль з форми й зберігає решту полів" do
+      patch "/settings",
+            headers: admin_headers,
+            params: { organization: { name: "Ліс без мови", locale: "" } },
+            as: :json
+
+      expect(response).to have_http_status(:ok)
+      organization.reload
+      # Наслідок, не лише статус: 422 лишив би стару назву.
+      expect(organization.name).to eq("Ліс без мови")
+      expect(organization.locale).to be_nil
+    end
+
     # [SEC.25] Пін на ПРОВОДКУ flash, а не на компонент.
     #
     # 🔴 Чому саме тут і саме так. `FlashMessages` має власну компонентну спеку, але

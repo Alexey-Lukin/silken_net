@@ -316,44 +316,16 @@ RSpec.describe NaasContract, type: :model do
     end
   end
 
+  # [UI.10] Пʼять прикладів `#current_yield_performance` знято разом із методом
+  # (присуд власника 2026-08-14). 🔴 Варте перенесення: жоден із них не міг
+  # спіймати дефект, бо всі пінили АРИФМЕТИКУ (`2500/10000 → 25`) — вона була
+  # бездоганна. Хибними були ОДИНИЦІ операндів (SCC ÷ USD) і підпис колонки, а
+  # питання «що це число означає» не ставив жоден приклад. Приклад на `.clamp`
+  # навіть цементував маскування: він доводив, що 200% стають 100%, тобто
+  # стверджував як контракт саме те, що ховало безглуздя.
   describe "#current_yield_performance" do
-    let(:organization) { create(:organization) }
-    let(:cluster) { create(:cluster, organization: organization) }
-
-    it "returns percentage of emitted tokens vs total funding" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster,
-        total_funding: 10_000, emitted_tokens: 2_500)
-
-      expect(contract.current_yield_performance).to eq(25)
-    end
-
-    it "returns 0 when total_funding is zero" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster,
-        total_funding: 1, emitted_tokens: 0)
-      contract.update_column(:total_funding, 0)
-
-      expect(contract.current_yield_performance).to eq(0)
-    end
-
-    it "returns 0 when total_funding is nil" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster)
-      contract.update_column(:total_funding, nil)
-
-      expect(contract.current_yield_performance).to eq(0)
-    end
-
-    it "clamps result to 100 when emitted exceeds funding" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster,
-        total_funding: 1_000, emitted_tokens: 2_000)
-
-      expect(contract.current_yield_performance).to eq(100)
-    end
-
-    it "returns 0 when no tokens have been emitted" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster,
-        total_funding: 50_000, emitted_tokens: 0)
-
-      expect(contract.current_yield_performance).to eq(0)
+    it "більше не існує — величина не мала одиниці, а датчик мав чужий підпис" do
+      expect(described_class.new).not_to respond_to(:current_yield_performance)
     end
   end
 

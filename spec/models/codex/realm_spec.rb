@@ -82,6 +82,45 @@ RSpec.describe Codex::Realm do
     end
   end
 
+  # [UI.10] Акцент реалму. Властивість, заради якої його дротували, — саме
+  # РОЗРІЗНЮВАНІСТЬ: Atlas-грід є єдиною поверхнею, де всі чотири видно
+  # одночасно, тож мапа, що звела б два реалми в один клас, лишила б дефект на
+  # місці при зелених пінах «клас присутній».
+  describe "#accent_border_class / #accent_text_class" do
+    # Перелік деривується з СІДІВ, а не з руки: реалм, доданий DAO, має
+    # зʼявитись тут сам, інакше «чотири різні» стає твердженням про мій список.
+    let(:seeded_tokens) do
+      YAML.safe_load_file(Rails.root.join("db/seeds/codex/realms.yml")).map { |r| r["accent_token"] }
+    end
+
+    it "дає КОЖНОМУ засіяному реалму власний, ні з ким не спільний відтінок" do
+      expect(seeded_tokens.size).to be >= 4 # ліхтар: пін на порожньому переліку був би зелений
+
+      border = seeded_tokens.map { |t| build(:codex_realm, accent_token: t).accent_border_class }
+      text   = seeded_tokens.map { |t| build(:codex_realm, accent_token: t).accent_text_class }
+
+      expect(border.uniq.size).to eq(seeded_tokens.size)
+      expect(text.uniq.size).to eq(seeded_tokens.size)
+    end
+
+    # 🔴 Носій виміру, а не смаку: базовий `status-*` — це ФОН бейджа, і саме
+    # він стояв на тексті (1.01–1.11:1 у світлій темі). Пін ловить рецидив
+    # рівно цієї підміни — повернення базового токена червонить.
+    it "бере ТЕКСТ із парного `-text`-токена, ніколи з фонового" do
+      seeded_tokens.each do |token|
+        klass = build(:codex_realm, accent_token: token).accent_text_class
+        expect(klass).to end_with("-text"), "#{token} → #{klass}: фон бейджа на тексті"
+      end
+    end
+
+    it "падає у нейтральний дефолт на невідомому токені, не в порожній клас" do
+      realm = build(:codex_realm, accent_token: "aurora-borealis")
+
+      expect(realm.accent_border_class).to eq(described_class::DEFAULT_ACCENT_BORDER_CLASS)
+      expect(realm.accent_text_class).to eq(described_class::DEFAULT_ACCENT_TEXT_CLASS)
+    end
+  end
+
   describe "#display_glyph" do
     it "translates the seeded forest keyword to a pine emoji" do
       expect(build(:codex_realm, glyph: "forest").display_glyph).to eq("🌲")

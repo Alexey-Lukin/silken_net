@@ -62,6 +62,13 @@ class Organization < ApplicationRecord
   # Прибираємо downcase, щоб не зруйнувати контрольну суму гаманця для Web3-провайдерів
   normalizes :crypto_public_address, with: ->(a) { a.strip }
 
+  # [UI.7] «Не обрано» приїжджає з форми порожнім РЯДКОМ, а `allow_nil` нижче
+  # покриває лише `nil` — тож без цього рядка намір «скинути мову» був
+  # невиразимий, і кожне збереження налаштувань організації без обраної локалі
+  # давало 422. Колонка — звичайний varchar, тож типового касту blank→nil (як у
+  # integer-enum'а чи numeric-поля) тут не відбувається ні на якому щаблі.
+  normalizes :locale, with: ->(l) { l.presence }
+
   # --- ВАЛІДАЦІЇ ---
   validates :name, presence: true, uniqueness: true
   validates :billing_email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }

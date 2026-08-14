@@ -10,7 +10,6 @@ lv:
         id_status: ID / Statuss
         investment: Pakalpojuma maksa
         organization: Organizācija
-        performance: Klastera stāvoklis
         period: Periods
         target_cluster: Mērķa klasteris
       portfolio_title: Uzraudzītie klasteri

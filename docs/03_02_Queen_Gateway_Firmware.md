@@ -1076,10 +1076,22 @@ push-воркер superseded — CGNAT). Якщо команда прилеті�
 
 ### Механізм
 
+> **⚖️ Вокабуляр ACTION — доменний за `device_type`** (присуд власника 2026-08-14,
+> [`00_07` UI.14](00_07_Action_Plan_Tracker)): `OPEN_VALVE` · `ACTIVATE_SIREN` ·
+> `ACTIVATE_BEACON` · `STOP`. Підстава не стильова: Королева реєстру пристроїв не має
+> і мати не буде, тож універсальний `OPEN` вимагав би від неї знати, що актуатор 42 —
+> це клапан. **Самоописова дія — єдина форма, що працює на stateless-шлюзі**, і саме її
+> вже пишуть усі продові писачі (`EmergencyResponseService`, `ActuatorSafetySweepWorker`,
+> UI). Шару перекладу немає ніде й не буде: `ActuatorCommand.override_payload?` звіряє
+> префікс ТОЧНИМ збігом, тож наївний `.upcase` у контролері зробив би `stop` командою,
+> що гасить чергу актуатора. Дім регексу — `ActuatorCommand::ALLOWED_PAYLOAD_FORMAT`
+> ([`04_01 §4`](04_01_Data_Models_and_Entities)); Королева ACTION не інтерпретує взагалі
+> (§6 нижче — на місці виконання коментар, не код).
+
 ```
 Формат команди (plaintext після CBC decrypt):
   CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
-  Приклад: CMD:OPEN:60:42:a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  Приклад: CMD:OPEN_VALVE:60:42:a1b2c3d4-e5f6-7890-abcd-ef1234567890
 
 DJB2 Hash UUID токена (36 символів):
   h = 5381

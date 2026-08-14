@@ -3,8 +3,13 @@
 
 module Notifications
   class Settings < ApplicationComponent
-    def initialize(user:)
+    # [UI.10] `available_channels` приходить ЗВОВНІ (дім — `Notifications::
+    # DeliveryChannels`), бо це факт про платформу, а не про користувача.
+    # Дефолт порожній СВІДОМО — fail-closed: компонент, якому забули передати
+    # факт, применшує спроможність, а не вигадує її.
+    def initialize(user:, available_channels: [])
       @user = user
+      @available_channels = Array(available_channels).map(&:to_sym)
     end
 
     def view_template
@@ -76,40 +81,39 @@ module Notifications
       end
     end
 
+    # [UI.10] Блок «типів сповіщень» знято (присуд власника 2026-08-14): пʼять
+    # рядків малювались статичним переліком із безумовним «активно», тоді як
+    # моделі преференцій не існує — ні таблиці, ні колонки, ні контролера.
+    # Перемикач, якого не можна перемкнути, — не налаштування, а декорація, і
+    # повернеться він разом із `NotificationPreference`, не раніше.
     def render_channels_status
       div(class: "p-6 border border-emerald-900 bg-black") do
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".active_channels.heading") }
         div(class: "space-y-4") do
-          channel_status(t(".active_channels.email"), @user.email_address.present?)
-          channel_status(t(".active_channels.sms"), @user.phone_number.present?)
-          channel_status(t(".active_channels.telegram"), @user.telegram_chat_id.present?)
-          channel_status(t(".active_channels.push"), @user.push_token.present?)
-        end
-      end
-
-      div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".notification_types.heading") }
-        div(class: "space-y-3") do
-          %i[critical_alerts warning_alerts minting_events slashing_events system_health].each do |key|
-            div(class: "flex justify-between items-center") do
-              span(class: "text-tiny text-gray-500 uppercase font-mono") { t(".notification_types.#{key}") }
-              span(class: "text-mini text-emerald-500") { t(".notification_types.active") }
-            end
-          end
+          channel_status(t(".active_channels.email"), :email, @user.email_address)
+          channel_status(t(".active_channels.sms"), :sms, @user.phone_number)
+          channel_status(t(".active_channels.telegram"), :telegram, @user.telegram_chat_id)
+          channel_status(t(".active_channels.push"), :push, @user.push_token)
         end
       end
     end
 
-    def channel_status(label, active)
+    # Станів ТРИ, і третій куплений: «немає транспорту» ⊥ «немає адреси». Доти
+    # обидва згорталися в `not_configured`, тобто платформа приписувала людині
+    # власну недоробку — вона вписала телефон, а екран казав «не налаштовано».
+    def channel_status(label, channel, destination)
       div(class: "flex justify-between items-center py-2 border-b border-emerald-900/20") do
         span(class: "text-tiny text-gray-400 font-mono") { label }
-        if active
+
+        if !@available_channels.include?(channel)
+          span(class: "text-mini text-gray-700 uppercase") { t(".active_channels.unavailable") }
+        elsif destination.blank?
+          span(class: "text-mini text-gray-700 uppercase") { t(".active_channels.not_configured") }
+        else
           div(class: "flex items-center gap-2") do
             div(class: "h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981]")
             span(class: "text-mini text-emerald-500 uppercase") { t(".active_channels.connected") }
           end
-        else
-          span(class: "text-mini text-gray-700 uppercase") { t(".active_channels.not_configured") }
         end
       end
     end

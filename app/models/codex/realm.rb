@@ -56,5 +56,51 @@ module Codex
     def display_glyph
       DISPLAY_GLYPHS.fetch(glyph.to_s, DEFAULT_DISPLAY_GLYPH)
     end
+
+    # [UI.10] Дім реалм-акценту — тут, поряд із `DISPLAY_GLYPHS` і з того самого
+    # обґрунтування: пʼятий реалм від DAO має додаватись ОДНИМ записом, а не
+    # полюванням по вʼю. Доти мапи жили приватно в `Codex::Citations::Pill`, а
+    # `Codex::NodeCard` акцент лише ОБІЦЯВ докстрінгом — тож Atlas-грід, єдина
+    # поверхня, де всі чотири реалми видно одночасно, не розрізняв їх ніяк.
+    #
+    # Класи статичні навмисно: Tailwind JIT бачить лише те, що стоїть у джерелі
+    # текстом, тож `border-l-#{token}` не скомпілювався б узагалі.
+    ACCENT_BORDER_CLASSES = {
+      "status-success" => "border-l-status-success",
+      "gaia-primary"   => "border-l-status-active",
+      "status-info"    => "border-l-status-info",
+      "status-warning" => "border-l-status-warning"
+    }.freeze
+    DEFAULT_ACCENT_BORDER_CLASS = "border-l-gaia-border"
+
+    # 🔴 Тут `-text`-варіант, а не базовий токен, і це ВИМІРЯНО, не стильово:
+    # `status-*` без суфікса — це ФОН бейджа (`#d1fae5`, `#fef3c7`), і попередня
+    # мапа клала ці значення на ТЕКСТ. Вимір (`lib/silken_net/contrast.rb`) на
+    # реальній поверхні пігулки: 1.01–1.11:1 у світлій темі та 1.73–2.59:1 у
+    # темній — тобто гліф був практично невидимий в ОБОХ. Парні `-text`-токени
+    # дають 6.4–17.5:1. Третій екземпляр класу «токен існує ≠ токен придатний
+    # для РОЛІ» (перші два — `--status-danger` на крапці severity й фантомний
+    # `--gaia-primary-text`).
+    #
+    # ⚠️ `gaia-primary` мапиться на бірюзову родину СВІДОМО: у брендового
+    # смарагда AA-безпечної текстової пари не існує — його `-text` партнер
+    # (`#0f172a`) призначений стояти НА смарагдовій кнопці, а не поруч із нею.
+    # Реалми лишаються чотирма розрізнюваними відтінками, і колір тут не єдиний
+    # носій різниці (пігулка друкує ще й назву реалму та гліф — WCAG 1.4.1).
+    ACCENT_TEXT_CLASSES = {
+      "status-success" => "text-status-success-text",
+      "gaia-primary"   => "text-status-active-text",
+      "status-info"    => "text-status-info-text",
+      "status-warning" => "text-status-warning-text"
+    }.freeze
+    DEFAULT_ACCENT_TEXT_CLASS = "text-gaia-text-muted"
+
+    def accent_border_class
+      ACCENT_BORDER_CLASSES.fetch(accent_token.to_s, DEFAULT_ACCENT_BORDER_CLASS)
+    end
+
+    def accent_text_class
+      ACCENT_TEXT_CLASSES.fetch(accent_token.to_s, DEFAULT_ACCENT_TEXT_CLASS)
+    end
   end
 end

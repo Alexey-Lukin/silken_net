@@ -10,7 +10,6 @@ uk:
         id_status: ID / Статус
         investment: Плата за послугу
         organization: Організація
-        performance: Стан кластера
         period: Період
         target_cluster: Цільовий кластер
       portfolio_title: Кластери під моніторингом

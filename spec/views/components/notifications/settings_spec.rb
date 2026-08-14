@@ -22,7 +22,12 @@ RSpec.describe Notifications::Settings do
   end
 
   let(:user) { account }
-  let(:html) { render_component(user: user) }
+  # [UI.10] Транспорт — факт про ПЛАТФОРМУ, тож він приходить кwargʼом (дім —
+  # `Notifications::DeliveryChannels`). Тут його оголошено живим для всіх
+  # чотирьох, бо решта прикладів файлу говорить про адреси користувача; окремі
+  # контексти нижче міряють саме вісь транспорту.
+  let(:available_channels) { %i[email sms telegram push] }
+  let(:html) { render_component(user: user, available_channels: available_channels) }
 
   describe "header section" do
     it "renders Neural Web heading" do
@@ -103,36 +108,58 @@ RSpec.describe Notifications::Settings do
     end
   end
 
-  describe "notification types list" do
-    it "renders Critical Alerts type" do
-      expect(html).to include("Critical")
+  # [UI.10] Вісь ТРАНСПОРТУ — окрема від адреси, і саме її злиття було дефектом:
+  # екран рахував «активним» будь-який канал із заповненим полем, тоді як
+  # доставки не існувало в жодному.
+  describe "transport availability" do
+    context "when the platform has no transport at all" do
+      let(:available_channels) { [] }
+
+      it "називає це станом КАНАЛУ, а не недоліком налаштувань користувача" do
+        # Telegram у фікстурі заповнений — тобто «не налаштовано» тут було б
+        # звинуваченням людини в тому, що зробила платформа.
+        expect(html).to include(
+          %(<span class="text-tiny text-gray-400 font-mono">✈️ Telegram</span><span class="text-mini text-gray-700 uppercase">Channel unavailable</span>)
+        )
+        expect(html).not_to include("Connected")
+      end
     end
 
-    it "renders Warning Alerts type" do
-      expect(html).to include("Warning")
+    # Дефолт fail-closed: компонент, якому забули передати факт, применшує
+    # спроможність, а не вигадує її (дзеркало UI.5/UI.6).
+    it "без переданого факту не оголошує ЖОДЕН канал живим" do
+      bare = render_component(user: user)
+
+      expect(bare).to include("Channel unavailable")
+      expect(bare).not_to include("Connected")
     end
 
-    it "renders Minting Events type" do
-      expect(html).to include("Minting")
-    end
+    it "розрізняє «немає транспорту» і «немає адреси» в межах одного рендеру" do
+      # push_token порожній, транспорт оголошено живим для email/push.
+      partial = render_component(user: user, available_channels: %i[email push])
 
-    it "renders Slashing Events type" do
-      expect(html).to include("Slashing")
-    end
-
-    it "renders System Health type" do
-      expect(html).to include("System Health")
-    end
-
-    it "shows ACTIVE for all notification types" do
-      active_count = html.scan("ACTIVE").length
-      expect(active_count).to be >= 5
+      expect(partial).to include(
+        %(<span class="text-tiny text-gray-400 font-mono">🔔 Push</span><span class="text-mini text-gray-700 uppercase">Not configured</span>)
+      )
+      expect(partial).to include(
+        %(<span class="text-tiny text-gray-400 font-mono">✈️ Telegram</span><span class="text-mini text-gray-700 uppercase">Channel unavailable</span>)
+      )
     end
   end
 
+  # [UI.10] Блок «типів сповіщень» знято разом із шістьма прикладами, що його
+  # пінили: пʼять рядків малювались статичним переліком із безумовним «АКТИВНО»
+  # при нульовій моделі преференцій. Пін лишається як заборона повернення —
+  # і він мусить уміти впасти, тому стоїть поруч із живим сусідом.
   describe "Active Channels section" do
     it "renders Active Channels heading" do
       expect(html).to include("Active Channels")
+    end
+
+    it "не обіцяє підписок, механізму яких немає" do
+      expect(html).to include("Active Channels")
+      expect(html).not_to include("Notification Types")
+      expect(html).not_to include("ACTIVE")
     end
   end
 end
