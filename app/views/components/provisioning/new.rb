@@ -22,27 +22,27 @@ module Provisioning
           )
 
           div(class: "grid grid-cols-1 md:grid-cols-2 gap-8") do
-            field_container(t(".fields.hardware_uid")) do
+            field_container(f, :hardware_uid, t(".fields.hardware_uid")) do
               f.text_field :hardware_uid, class: input_classes, placeholder: t(".fields.hardware_uid_placeholder"), required: true
             end
 
-            field_container(t(".fields.node_class")) do
+            field_container(f, :device_type, t(".fields.node_class")) do
               f.select :device_type, [ [ t(".fields.soldier"), "tree" ], [ t(".fields.queen"), "gateway" ] ], {}, class: input_classes
             end
 
-            field_container(t(".fields.cluster")) do
+            field_container(f, :cluster_id, t(".fields.cluster")) do
               f.collection_select :cluster_id, @clusters, :id, :name, {}, class: input_classes
             end
 
-            field_container(t(".fields.family")) do
+            field_container(f, :family_id, t(".fields.family")) do
               f.collection_select :family_id, @families, :id, :name, {}, class: input_classes
             end
 
-            field_container(t(".fields.latitude")) do
+            field_container(f, :latitude, t(".fields.latitude")) do
               f.text_field :latitude, class: input_classes, placeholder: t(".fields.latitude_placeholder"), required: true
             end
 
-            field_container(t(".fields.longitude")) do
+            field_container(f, :longitude, t(".fields.longitude")) do
               f.text_field :longitude, class: input_classes, placeholder: t(".fields.longitude_placeholder"), required: true
             end
           end
@@ -62,9 +62,14 @@ module Provisioning
       end
     end
 
-    def field_container(label, &block)
+    # [UI.3] Мітка йде через `form.label`, а не через голий `label` — той не має
+    # `for=`, тож скрінрідер не звʼязує підпис із полем, а клік по підпису не
+    # фокусує ввід. `id` тут уже генерує білдер (`form_with scope: :provisioning`
+    # → `provisioning_hardware_uid`), тобто вся робота — передати атрибут.
+    # Взірець і носій — `tree_families/form` + `sessions/new_spec`.
+    def field_container(form, attribute, label_text, &block)
       div(class: "space-y-2") do
-        label(class: "text-mini uppercase tracking-widest text-gray-600") { label }
+        form.label attribute, label_text, class: "text-mini uppercase tracking-widest text-gaia-label"
         yield
       end
     end

@@ -24,7 +24,7 @@ module Firmwares
         render Views::Shared::UI::ErrorSummary.new(messages: @firmware.errors.full_messages)
 
         div(class: "space-y-6") do
-          field_container(t(".version_label")) do
+          field_container(f, :version, t(".version_label")) do
             f.text_field :version, class: input_classes, placeholder: t(".version_placeholder"), required: true
           end
 
@@ -34,13 +34,13 @@ module Firmwares
           # нею мовчки, як розійшлися MCU-мітки. Без `include_blank` свідомо — прошивка
           # без типу не гаситься релізом свого класу (`deploy_globally!` фільтрує по
           # ньому, а SQL NULL не дорівнює жодному значенню).
-          field_container(t(".target_label")) do
+          field_container(f, :target_hardware_type, t(".target_label")) do
             f.select :target_hardware_type,
                      BioContractFirmware::HARDWARE_TYPES.map { |type| [ t(".target_#{type.downcase}"), type ] },
                      {}, class: input_classes
           end
 
-          field_container(t(".binary_label")) do
+          field_container(f, :binary_file, t(".binary_label")) do
             f.file_field :binary_file, class: "w-full text-gaia-text-muted text-tiny font-mono file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-gaia-surface-sunken file:text-gaia-primary hover:file:bg-gaia-primary/20 cursor-pointer", required: true
           end
         end
@@ -53,9 +53,13 @@ module Firmwares
 
     private
 
-    def field_container(label, &block)
+    # [UI.3] `form.label`, не голий `label`: той не має `for=`, тож підпис і поле
+    # не звʼязані для AT, а клік по підпису не фокусує ввід. `id` дає білдер
+    # (`scope: :firmware` → `firmware_version`). Класи ті самі — сусідній пін
+    # звіряє саме їх.
+    def field_container(form, attribute, label_text, &block)
       div(class: "space-y-2") do
-        label(class: "text-mini uppercase tracking-widest text-gaia-label") { label }
+        form.label attribute, label_text, class: "text-mini uppercase tracking-widest text-gaia-label"
         yield
       end
     end

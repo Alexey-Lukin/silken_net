@@ -20,6 +20,19 @@ RSpec.describe Firmwares::Form do
   describe "form fields" do
     let(:html) { render_component(firmware: mock_firmware) }
 
+    # [UI.3] Асоціація мітка↔контрол — форма з `sessions/new_spec`. Сусідні
+    # приклади цього ж файлу пінять ТЕКСТ мітки, і всі вони лишались зелені при
+    # `for`, якого не було взагалі: присутність рядка не є асоціацією.
+    it "associates every label with a real form control" do
+      doc = Nokogiri::HTML5.fragment(html)
+      labels = doc.css("label")
+      control_ids = doc.css("input, select, textarea").filter_map { |n| n["id"] }
+
+      expect(labels.size).to eq(3), "очікувались 3 мітки — пін інакше вакуумний"
+      orphans = labels.reject { |l| l["for"].present? && control_ids.include?(l["for"]) }
+      expect(orphans.map { |l| l.text.strip }).to be_empty
+    end
+
     it "renders the Evolution Version field label" do
       expect(html).to include("Evolution Version")
     end

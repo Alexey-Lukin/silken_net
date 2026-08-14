@@ -27,28 +27,28 @@ module Maintenance
 
           # --- РЯДОК 1: Target + EWS ---
           div(class: "grid grid-cols-2 gap-6") do
-            field_container(t(".target_type")) do
+            field_container(f, :maintainable_type, t(".target_type")) do
               f.select :maintainable_type, [ "Tree", "Gateway" ], {}, class: input_classes
             end
-            field_container(t(".target_id")) do
+            field_container(f, :maintainable_id, t(".target_id")) do
               f.number_field :maintainable_id, class: input_classes, placeholder: "e.g. 42"
             end
           end
 
-          field_container(t(".ews_association")) do
+          field_container(f, :ews_alert_id, t(".ews_association")) do
             f.number_field :ews_alert_id, class: input_classes,
                            placeholder: t(".ews_placeholder")
           end
 
           # --- РЯДОК 2: Action + Timestamp ---
           div(class: "grid grid-cols-2 gap-6") do
-            field_container(t(".action_type")) do
+            field_container(f, :action_type, t(".action_type")) do
               f.select :action_type,
                 MaintenanceRecord.action_types.keys.map { |k| [ k.humanize, k ] },
                 { prompt: t(".action_prompt") },
                 class: input_classes
             end
-            field_container(t(".performed_at")) do
+            field_container(f, :performed_at, t(".performed_at")) do
               f.datetime_local_field :performed_at,
                 value: (@record.performed_at || Time.current).strftime("%Y-%m-%dT%H:%M"),
                 class: input_classes
@@ -56,7 +56,7 @@ module Maintenance
           end
 
           # --- НОТАТКИ ---
-          field_container(t(".notes")) do
+          field_container(f, :notes, t(".notes")) do
             f.text_area :notes, rows: 4, class: input_classes,
                         placeholder: t(".notes_placeholder")
           end
@@ -67,11 +67,11 @@ module Maintenance
           div(class: "border border-gaia-border p-4 space-y-4") do
             p(class: "text-mini uppercase tracking-widest text-gaia-text-muted mb-2") { t(".opex.heading") }
             div(class: "grid grid-cols-2 gap-6") do
-              field_container(t(".opex.labor_hours")) do
+              field_container(f, :labor_hours, t(".opex.labor_hours")) do
                 f.number_field :labor_hours, step: 0.5, min: 0, class: input_classes,
                                placeholder: "e.g. 2.5"
               end
-              field_container(t(".opex.parts_cost")) do
+              field_container(f, :parts_cost, t(".opex.parts_cost")) do
                 f.number_field :parts_cost, step: 0.01, min: 0, class: input_classes,
                                placeholder: "e.g. 150.00"
               end
@@ -84,11 +84,11 @@ module Maintenance
           div(class: "border border-gaia-border p-4 space-y-4") do
             p(class: "text-mini uppercase tracking-widest text-gaia-text-muted mb-2") { t(".gps.heading") }
             div(class: "grid grid-cols-2 gap-6") do
-              field_container(t(".gps.latitude")) do
+              field_container(f, :latitude, t(".gps.latitude")) do
                 f.number_field :latitude, step: 0.000001, class: input_classes,
                                placeholder: "49.428500"
               end
-              field_container(t(".gps.longitude")) do
+              field_container(f, :longitude, t(".gps.longitude")) do
                 f.number_field :longitude, step: 0.000001, class: input_classes,
                                placeholder: "32.062000"
               end
@@ -108,7 +108,7 @@ module Maintenance
             end
 
             # Direct upload — файли йдуть напряму на S3, не через Rails
-            field_container(t(".evidence.attach_photos")) do
+            field_container(f, :photos, t(".evidence.attach_photos")) do
               f.file_field :photos,
                 multiple: true,
                 accept: "image/jpeg,image/png,image/webp,image/heic,image/heif",
@@ -207,9 +207,16 @@ module Maintenance
       hr(class: "border-gaia-border mb-6")
     end
 
-    def field_container(label, &)
+    # [UI.3] `form.label`, не голий `label` — той не має `for=`, тож AT не звʼязує
+    # підпис із полем, а клік по підпису не фокусує ввід. `id` уже генерує білдер
+    # (`form_with model:` → `maintenance_record_*`), тож уся робота — передати
+    # атрибут. ⊕ Чекбокс `hardware_verified` нижче свідомо лишається на голому
+    # `label(for: …)`: він рахує id РУКАМИ, і саме той рукописний звʼязок ця
+    # міграція існує щоб усунути — але він поза `field_container`, тож іде
+    # окремим ходом разом із рештою периметра.
+    def field_container(form, attribute, label_text, &)
       div(class: "space-y-2") do
-        label(class: "text-mini uppercase tracking-widest text-gaia-label") { label }
+        form.label attribute, label_text, class: "text-mini uppercase tracking-widest text-gaia-label"
         yield
       end
     end

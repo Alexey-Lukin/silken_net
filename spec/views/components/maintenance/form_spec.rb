@@ -24,6 +24,21 @@ RSpec.describe Maintenance::Form do
     let(:record) { build(:maintenance_record) }
     let(:html) { render_component(record: record) }
 
+    # [UI.3] Асоціація мітка↔контрол — форма з `sessions/new_spec`. Найбільша
+    # форма дерева: одинадцять полів ішли через `field_container`, і жодне не
+    # мало `for=`. ⚠️ Чекбокс `hardware_verified` тут теж рахується — він єдиний
+    # звʼязаний РУКОПИСНО, і саме такий звʼязок пін і мусить бачити: він
+    # правильний сьогодні й нічим не захищений завтра.
+    it "associates every label with a real form control" do
+      doc = Nokogiri::HTML5.fragment(html)
+      labels = doc.css("label")
+      control_ids = doc.css("input, select, textarea").filter_map { |n| n["id"] }
+
+      expect(labels.size).to be >= 11, "мало міток — пін вакуумний"
+      orphans = labels.reject { |l| l["for"].present? && control_ids.include?(l["for"]) }
+      expect(orphans.map { |l| l.text.strip }).to be_empty
+    end
+
     it "renders the form action URL for new record" do
       expect(html).to include("/maintenance_records")
     end

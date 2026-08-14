@@ -35,6 +35,23 @@ RSpec.describe Provisioning::New do
   end
 
   describe "form fields" do
+    # [UI.3] Асоціація мітка↔контрол. Форма взята з `sessions/new_spec` —
+    # єдиного місця в дереві, де ця вісь пінилась як асоціація, а не як
+    # присутність рядка. ⚠️ Ліхтар обовʼязковий: без нього приклад зелений на
+    # сторінці БЕЗ жодної мітки, тобто саме там, де дефект найгірший. І пін
+    # цілить у РЕЗОЛЮЦІЮ `for` проти реальних `id`, а не в наявність `for=`:
+    # сусідній `tree_families/form_spec` робить друге й лишається зеленим при
+    # `for`, що вказує в нікуди.
+    it "associates every label with a real form control" do
+      doc = Nokogiri::HTML5.fragment(html)
+      labels = doc.css("label")
+      control_ids = doc.css("input, select, textarea").filter_map { |n| n["id"] }
+
+      expect(labels.size).to eq(6), "очікувались 6 міток — пін інакше вакуумний"
+      orphans = labels.reject { |l| l["for"].present? && control_ids.include?(l["for"]) }
+      expect(orphans.map { |l| l.text.strip }).to be_empty
+    end
+
     it "renders hardware_uid field" do
       expect(html).to include("hardware_uid")
     end
