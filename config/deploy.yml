@@ -113,6 +113,11 @@ env:
     - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY
     - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY
     - ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT
+    # --- Mail transport gate (mail_transport_check.rb) [ARCH.60] — the credential half.
+    #     Secret-by-default because the "username" IS the credential on several ESPs
+    #     (Postmark server token; SES access-key id). MAIL_FROM/SMTP_ADDRESS are clear below. ---
+    - SMTP_USER_NAME
+    - SMTP_PASSWORD
     # --- Web3 money/signing keys: JOB-ONLY (servers.job env.secret above) —
     #     deliberately NOT global so web/coap containers never carry them ---
     # --- RPC endpoints (SSOT names expected by Web3::RpcConnectionPool) ---
@@ -141,7 +146,16 @@ env:
     # silken_net_canopy in config/deploy.canopy.yml (same instance, isolated DB names).
     POSTGRES_DATABASE: silken_net_production
     # Mailer link host (config/environments/production.rb action_mailer.default_url_options).
+    # This is the host INSIDE the message body — transport and sender are separate, below.
     APP_HOST: silkennet.com
+    # 🛑 BOOT-CRITICAL [ARCH.60]: mail_transport_check.rb refuses to boot without these two.
+    # Vendor-agnostic plain SMTP — every ESP speaks it, so switching provider is these
+    # values and nothing else. SMTP_PORT / SMTP_DOMAIN / SMTP_AUTHENTICATION are omitted
+    # deliberately: their defaults (587 / none / plain) cover the mainstream ESPs, and a
+    # declared var with a sane default is one more surface to keep in sync for nothing.
+    # Placeholders fail the guard loudly until a real ESP is provisioned (👤 S1.1).
+    MAIL_FROM: REQUIRED_SECRET_NOT_SET
+    SMTP_ADDRESS: REQUIRED_SECRET_NOT_SET
     # [ARCH.81] CoAP intake address the admin health panel probes over UDP — the
     # same host a Queen dials (firmware `COAP_SERVER_HOST`; A-record → Ingress
     # Anchor, checklist step 1). Unset ⇒ the panel says "not configured"; it never

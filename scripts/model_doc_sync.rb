@@ -25,6 +25,7 @@ DOC_SVC     = File.join(ROOT, "docs/04_02_Business_Logic_and_Services.md")
 MODELS_DIR  = File.join(ROOT, "app/models")
 SERVICES_DIR = File.join(ROOT, "app/services")
 WORKERS_DIR  = File.join(ROOT, "app/workers")
+MAILERS_DIR  = File.join(ROOT, "app/mailers")
 WORKER      = File.join(ROOT, "app/workers/partition_maintenance_worker.rb")
 
 # Files under app/models/ that are NOT domain models (skip in the 1:1 check).
@@ -118,8 +119,14 @@ end
 # Weaker than the model 1:1 (services/workers are spread across prose, §1 base
 # classes, §10 multichain tables, §11 queues), but it catches a service/worker
 # file entirely absent from the registry (e.g. the FactoryFlashing::* gap).
+#
+# [ARCH.60] `app/mailers/` joined the perimeter 2026-08-14. It was a whole directory of
+# production code outside every gate: delivery runs on the same Sidekiq queues the §11
+# registry documents, so a new mailer belonged in that registry — and appeared there only
+# by hand. Found by stan_audit, not by a gate, which is the tell. Cheap to include because
+# the check is "is this class name mentioned at all", and the three mailers already were.
 svc_doc = File.read(DOC_SVC)
-{ SERVICES_DIR => "service", WORKERS_DIR => "worker" }.each do |dir, label|
+{ SERVICES_DIR => "service", WORKERS_DIR => "worker", MAILERS_DIR => "mailer" }.each do |dir, label|
   Dir.glob(File.join(dir, "**/*.rb")).sort.each do |path|
     next if NON_SERVICE_BASENAMES.include?(File.basename(path))
     fqcn = fqcn_for(path, dir)
@@ -153,10 +160,12 @@ end
 # ── report ─────────────────────────────────────────────────────────────────
 svc_count = Dir.glob(File.join(SERVICES_DIR, "**/*.rb")).reject { |p| NON_SERVICE_BASENAMES.include?(File.basename(p)) }.size
 wrk_count = Dir.glob(File.join(WORKERS_DIR, "**/*.rb")).reject { |p| NON_SERVICE_BASENAMES.include?(File.basename(p)) }.size
+mlr_count = Dir.glob(File.join(MAILERS_DIR, "**/*.rb")).size
 if errors.empty?
   puts "model_doc_sync ✓ — 04_01 ⟷ app/models/ (#{model_classes.size} models, " \
        "#{concern_classes.size} concerns, #{part_tables.size} partitioned tables); " \
-       "04_02 ⟷ app/services+workers (#{svc_count} services, #{wrk_count} workers all mentioned)"
+       "04_02 ⟷ app/services+workers+mailers (#{svc_count} services, #{wrk_count} workers, " \
+       "#{mlr_count} mailers all mentioned)"
   exit 0
 else
   warn "model_doc_sync ✗ — 04_01 ↔ code drift:"

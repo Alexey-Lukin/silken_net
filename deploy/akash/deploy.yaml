@@ -119,8 +119,17 @@ services:
 
       # Puma concurrency — adjust based on 4 vCPU allocation.
       - WEB_CONCURRENCY=4
-      # Mailer link host (production.rb action_mailer.default_url_options).
+      # Mailer link host (production.rb action_mailer.default_url_options) — the host
+      # INSIDE the message body. Transport and sender are separate, below.
       - APP_HOST=silkennet.com
+      # --- 🛑 BOOT-CRITICAL: mail_transport_check.rb raises without MAIL_FROM + SMTP_ADDRESS.
+      #     Plain SMTP, no vendor SDK — every ESP speaks it, so switching provider is these
+      #     values and nothing else. The placeholder is NOT accepted: the guard checks shape
+      #     (an address needs "@", a host cannot contain "_"), so it fails closed here. ---
+      - MAIL_FROM=REQUIRED_SECRET_NOT_SET
+      - SMTP_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - SMTP_USER_NAME=REQUIRED_SECRET_NOT_SET
+      - SMTP_PASSWORD=REQUIRED_SECRET_NOT_SET
       # [ARCH.81] Address the admin health panel probes over UDP — the SAME one a
       # Queen dials (`COAP_SERVER_HOST` in firmware/queen/main.c, A-record to the
       # Ingress Anchor per 06_01 step 1). The PRIMARY daemon does NOT live in this
@@ -308,6 +317,13 @@ services:
       - DB_POOL=17
       # Mailer link host (production.rb) — deliver_later runs in Sidekiq.
       - APP_HOST=silkennet.com
+      # --- 🛑 BOOT-CRITICAL: mail_transport_check.rb. This is the service that ACTUALLY
+      #     delivers (deliver_later ⇒ Sidekiq); web only enqueues but is gated too, so the
+      #     misconfiguration is visible on the surface an operator looks at first. ---
+      - MAIL_FROM=REQUIRED_SECRET_NOT_SET
+      - SMTP_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - SMTP_USER_NAME=REQUIRED_SECRET_NOT_SET
+      - SMTP_PASSWORD=REQUIRED_SECRET_NOT_SET
 
       # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb raises without this ---
       - PROVISIONING_MASTER_KEY=REQUIRED_SECRET_NOT_SET

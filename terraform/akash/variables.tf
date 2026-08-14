@@ -119,6 +119,44 @@ variable "provisioning_master_key" {
   }
 }
 
+# Mail transport [ARCH.60] — config/initializers/mail_transport_check.rb refuses to boot
+# without these two. The validations deliberately mirror the guard's own predicates
+# (Notifications::DeliveryChannels), so a placeholder or a mispaste is caught at
+# `terraform plan` instead of in a container restart loop.
+variable "mail_from" {
+  description = "Sender identity for Action Mailer (MAIL_FROM). Must be an address on a domain with SPF/DKIM configured, or the mail lands in spam and password reset is UX-dead."
+  type        = string
+
+  validation {
+    condition     = can(regex("@", var.mail_from))
+    error_message = "MAIL_FROM must be an email address — the REQUIRED_SECRET_NOT_SET placeholder and a mispasted value both trip this."
+  }
+}
+
+variable "smtp_address" {
+  description = "Outgoing SMTP host (SMTP_ADDRESS). Vendor-agnostic: every ESP we would pick speaks plain SMTP, so switching provider is this value plus the credentials below."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9.-]+$", var.smtp_address)) && var.smtp_address != "localhost"
+    error_message = "SMTP_ADDRESS must be a hostname and not localhost — the REQUIRED_SECRET_NOT_SET placeholder trips this (underscores are not hostname characters)."
+  }
+}
+
+variable "smtp_user_name" {
+  description = "SMTP username (SMTP_USER_NAME). Secret-by-default: on several ESPs the username IS the credential (Postmark server token, SES access-key id). Empty is valid for a relay that needs no auth."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "smtp_password" {
+  description = "SMTP password (SMTP_PASSWORD). Empty is valid for a relay that needs no auth; a wrong value surfaces as a failed Sidekiq job, not silence."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 # ActiveRecord Encryption keys [SEC.22] — decrypt hardware_keys + identities columns.
 # From ENV, never credentials.yml.enc. active_record_encryption_keys_check.rb raises at
 # boot without them (>=32 chars each). Generate all three: bin/rails db:encryption:init.

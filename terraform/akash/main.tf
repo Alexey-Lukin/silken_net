@@ -76,6 +76,12 @@ resource "local_file" "akash_sdl" {
     rails_max_threads  = var.rails_max_threads
     # 🛑 BOOT-CRITICAL: Rails refuses to boot without this (master_key_strength_check.rb)
     provisioning_master_key = var.provisioning_master_key
+    # 🛑 BOOT-CRITICAL: mail_transport_check.rb (password reset + critical-alert email)
+    mail_from    = var.mail_from
+    smtp_address = var.smtp_address
+    # Credentials — not boot-critical themselves (an auth-less relay is legitimate).
+    smtp_user_name = var.smtp_user_name
+    smtp_password  = var.smtp_password
     # 🛑 BOOT-CRITICAL: active_record_encryption_keys_check.rb (hardware_keys + identities)
     active_record_encryption_primary_key         = var.active_record_encryption_primary_key
     active_record_encryption_deterministic_key   = var.active_record_encryption_deterministic_key

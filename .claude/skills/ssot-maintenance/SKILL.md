@@ -193,6 +193,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 55. Before building a gate, look for the record that this class was ALREADY measured and the gate ALREADY refused — and look for it in the ARTEFACT's header, because that is where such a verdict tends to live
 57. A gate over DECLARATIONS makes the whole class look covered — while the oldest member is usually the one whose behaviour nothing has ever tested — **after adding a declaration-gate, ask which member existed BEFORE the gate, and mutate ITS mechanism — that is where the untested behaviour lives**
 56. Deleting a REDUNDANT test is not the same act as deleting a dead branch, and it needs THREE independent measurements plus a fourth pass nobody's brief asks for
+58. A boot guard is usually blind to the very placeholder that exists to make it fail loudly — because `REQUIRED_SECRET_NOT_SET` is neither blank nor the sentinel, and a presence-shaped predicate reads it as a real value
 
 <!-- /GUARD-CRAFT-INDEX -->
 

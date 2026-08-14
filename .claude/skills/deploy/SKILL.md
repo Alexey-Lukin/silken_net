@@ -69,6 +69,22 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   owner-case нормалізовано `lowerAscii()`); реєстр самого секрету → `06_04 §1.1`;
   виняток Akash → `06_02 §Security Exception`. ⚠️ Адреси РІЗНІ: обидві резолвляться, тож
   `code_doc_section_refs` зелений і на хибній — механіка в реєстрі секретів не живе.
+- 🔴 **Додав boot-гард на ENV — мусиш пройти ВІСІМ поверхонь і ДВА процеси, інакше ти щойно
+  зробив деплой неможливим** (ARCH.60, 2026-08-14). Поверхні: `config/deploy.yml` **env.clear**
+  (не-секрети) + **env.secret** → `.kamal/secrets-common` (`$VAR`) → `env:`-блок КОЖНОГО
+  deploy-воркфлоу (`deploy.yml` canopy + `deploy-production.yml`) → Akash SDL **web І job** у
+  **обох** маніфестах (`deploy.yaml` статичний + `.tpl`) → terraform `variables.tf` +
+  `main.tf` templatefile-мапа. Ланцюг секретів енфорсить `spec/deploy/env_fetch_declaration_spec.rb`
+  — ⚠️ але **лише для `ENV.fetch("X")` БЕЗ дефолту в `app/`+`lib/`**, тож змінна, прочитана в
+  `config/environments/*.rb` або з дефолтом, для нього **не існує** (мій випадок: жодного хіта).
+  🔴 **Процеси — окрема вісь, і саме там ламається тихо:** `after_initialize` біжить у КОЖНОМУ,
+  хто вантажить середовище. `canopy` = web-only (масив-форма `servers:`, Sidekiq немає взагалі →
+  доставки пошти теж) і `coap_listener` = UDP-клей, що вантажить усі ініціалізатори. Обидва
+  вимагали б можливості, якої не мають. Платформа має ДВА зразки звільнення — видати змінні
+  процесу (AR-ключі на coap) або **пропустити сам процес** (`next if $PROGRAM_NAME.include?("coap_listener")`
+  у `master_key_strength_check`); бери другий, коли шляху до фічі з процесу немає взагалі.
+  ⚠️ І плейсхолдер `REQUIRED_SECRET_NOT_SET` присутність-гард **проходить** — форматну перевірку
+  див. `.claude/skills/ssot-maintenance/guard-craft.md` #58.
 - **Akash SDL ENV = plaintext, видимий провайдеру.** Реальні ключі **ніколи** в `deploy.yaml` —
   інжект через Console/`env.secret`. **Money/signing-п'ятірка = JOB-ONLY** (`ORACLE_MINTER/SLASHER/CELO`
   + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`); legacy `ORACLE_PRIVATE_KEY` **RETIRED** (guard-tripwire).

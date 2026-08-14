@@ -20,10 +20,16 @@ module Notifications
   # рішення.
   #
   # Але оголошення, яке треба перемикати руками, протухає мовчки — тому пошта
-  # має ДВА спостережуваних, обидва сьогодні хибні й обидва входять у першу ногу
-  # ARCH.60 (sender-identity + транспорт). Щойно та нога приїде, екран скаже
-  # правду без правки цього файлу; носій проти зворотного дрейфу —
+  # має ДВА спостережуваних, обидва входять у першу ногу ARCH.60
+  # (sender-identity + транспорт). ✅ Та нога приїхала 2026-08-14: обидва тепер
+  # ENV-керовані, тож екран каже правду без правки цього файлу — рівно як тут і
+  # обіцяно. Носій проти зворотного дрейфу —
   # `spec/services/notifications/delivery_channels_spec.rb`.
+  #
+  # 🔴 І тепер це питання має ДРУГОГО споживача, важчого за екран:
+  # `config/initializers/mail_transport_check.rb` відмовляє продові в завантаженні,
+  # доки пошта мертва. Обидва питають ОДИН предикат навмисно — інакше платформа
+  # могла б стартувати, вважаючи канал живим, і водночас малювати його мертвим.
   module DeliveryChannels
     ALL = %i[email sms telegram push].freeze
 
@@ -31,8 +37,22 @@ module Notifications
     SCAFFOLD_SENDER = "from@example.com"
     # Дефолт `ActionMailer`, коли `smtp_settings` не задавали взагалі.
     UNCONFIGURED_SMTP_HOST = "localhost"
+    # Ім'я ENV живе тут, поруч зі сентинелом і предикатом, що його читає:
+    # інакше «чи налаштовано?» і «чим налаштовується» стали б двома домами, і
+    # друкарська помилка в одному з них не мала б жодного симптому.
+    SENDER_ENV = "MAIL_FROM"
 
     module_function
+
+    # Відправник для `ApplicationMailer.default`. Порожній ENV НЕ підмінюємо
+    # правдоподібною адресою — падаємо назад у сентинел, бо він єдиний, що чесно
+    # означає «не налаштовано» і саме в такому вигляді читається предикатом нижче.
+    # ⚠️ Значення мусить лишатись РЯДКОМ: `default from:` приймає й `Proc`, але
+    # тоді `sender_configured?` порівнював би `#<Proc…>` зі сентинелом і завжди
+    # казав би «налаштовано» — мовчазний дефолт того самого класу, що лікуємо.
+    def configured_sender(env = ENV)
+      env[SENDER_ENV].presence || SCAFFOLD_SENDER
+    end
 
     # @return [Boolean] чи існує транспорт, здатний доставити цим каналом
     def available?(channel)
@@ -53,14 +73,24 @@ module Notifications
       sender_configured? && smtp_host_configured?
     end
 
+    # 🔴 Форма перевіряється НЕ для краси: деплой-файли несуть `REQUIRED_SECRET_NOT_SET`
+    # як видиме нагадування «сюди підставити», і без форматної ноги обидва предикати
+    # прийняли б цей рядок за справжнє значення (він не порожній і не сентинел) — тобто
+    # плейсхолдер, вигаданий, щоб гучно падати, тихо ПРОХОДИВ би гард. Той самий
+    # прийом, що в `Security::Web3NetworkGuard` (там плейсхолдер не проходить
+    # address-формат), і він заразом ловить одруківку та вставлений не той секрет.
     def sender_configured?
-      ApplicationMailer.default[:from].to_s.presence.present? &&
-        ApplicationMailer.default[:from].to_s != SCAFFOLD_SENDER
+      sender = ApplicationMailer.default[:from].to_s
+      sender.present? && sender != SCAFFOLD_SENDER && sender.include?("@")
     end
 
+    # Хост, а не адреса пошти: літери/цифри/крапки/дефіси. IP і коротке імʼя всередині
+    # приватної мережі проходять; підкреслення (а отже й плейсхолдер) — ні.
+    HOST_FORMAT = /\A[a-z0-9.-]+\z/i
+
     def smtp_host_configured?
-      ActionMailer::Base.smtp_settings[:address].to_s.presence.present? &&
-        ActionMailer::Base.smtp_settings[:address].to_s != UNCONFIGURED_SMTP_HOST
+      host = ActionMailer::Base.smtp_settings[:address].to_s
+      host.present? && host != UNCONFIGURED_SMTP_HOST && host.match?(HOST_FORMAT)
     end
   end
 end

@@ -238,6 +238,12 @@ jobs:
           ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY: ${{ secrets.ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY }}
           ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY: ${{ secrets.ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY }}
           ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT: ${{ secrets.ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT }}
+          # --- SMTP credentials [ARCH.60]. Not in the BOOT_CRITICAL assert above on purpose:
+          #     mail_transport_check.rb demands MAIL_FROM + SMTP_ADDRESS (env.clear), while a
+          #     relay that needs no auth is a legitimate setup. A wrong password is a failed
+          #     Sidekiq job, which is loud now that a transport exists at all. ---
+          SMTP_USER_NAME: ${{ secrets.SMTP_USER_NAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           # --- Web3 oracle keys (dual-key split, B-02) — web3_network_guard fail-closes at boot.
           #     ORACLE_PRIVATE_KEY (legacy shared fallback) is RETIRED (INF.22): no code
           #     reads it and the guard refuses a value under that name. ---

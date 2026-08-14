@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 class ApplicationMailer < ActionMailer::Base
-  default from: "from@example.com"
+  # [ARCH.60] Відправник приходить із ENV `MAIL_FROM`; дім резолву — там же, де
+  # сентинел «не налаштовано» і предикат, що його читає.
+  default from: Notifications::DeliveryChannels.configured_sender
   layout "mailer"
 
   private

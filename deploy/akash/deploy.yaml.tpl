@@ -26,8 +26,14 @@ services:
       # KREDIS_REDIS_URL omitted — auto-derives from REDIS_URL (config/redis/shared.yml). [B1]
       - RAILS_MAX_THREADS=${rails_max_threads}
       - WEB_CONCURRENCY=${web_concurrency}
-      # Mailer link host (production.rb).
+      # Mailer link host (production.rb) — the host INSIDE the body; transport below.
       - APP_HOST=silkennet.com
+      # --- 🛑 BOOT-CRITICAL: mail_transport_check.rb raises without MAIL_FROM + SMTP_ADDRESS.
+      #     Plain SMTP, no vendor SDK — swapping ESP is these values and nothing else. ---
+      - MAIL_FROM=${mail_from}
+      - SMTP_ADDRESS=${smtp_address}
+      - SMTP_USER_NAME=${smtp_user_name}
+      - SMTP_PASSWORD=${smtp_password}
       # [ARCH.81] CoAP intake address for the admin health probe — the same host
       # a Queen dials; unset means the panel reports "not configured", never "dead".
       - COAP_HOST=api.silkennet.com
@@ -122,6 +128,13 @@ services:
       - DB_POOL=17
       # Mailer link host (production.rb — deliver_later runs here).
       - APP_HOST=silkennet.com
+      # --- 🛑 BOOT-CRITICAL: mail_transport_check.rb. This is the service that ACTUALLY
+      #     delivers (deliver_later ⇒ Sidekiq); web only enqueues but is gated too, so a
+      #     misconfiguration is visible on the surface an operator looks at. ---
+      - MAIL_FROM=${mail_from}
+      - SMTP_ADDRESS=${smtp_address}
+      - SMTP_USER_NAME=${smtp_user_name}
+      - SMTP_PASSWORD=${smtp_password}
 %{ if release_version != "" }      - RELEASE_VERSION=${release_version}
 %{ endif ~}
       # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb ---

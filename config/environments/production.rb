@@ -109,21 +109,38 @@ Rails.application.configure do
   # This avoids running an idle Solid Queue supervisor inside Puma.
   config.active_job.queue_adapter = :sidekiq
 
-  # Ignore bad email addresses and do not raise email delivery errors.
-  # Set this to true and configure the email server for immediate delivery to raise delivery errors.
-  # config.action_mailer.raise_delivery_errors = false
+  # `raise_delivery_errors` is left at the Rails default (`true`, measured) so a
+  # refused SMTP connection surfaces as a failed Sidekiq job instead of a silent
+  # no-op. The scaffold comment that used to sit here suggested setting it to
+  # `false` — on this platform that would hide exactly the failure ARCH.60 is about.
 
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "silkennet.com"), protocol: "https" }
 
-  # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
-  # config.action_mailer.smtp_settings = {
-  #   user_name: Rails.application.credentials.dig(:smtp, :user_name),
-  #   password: Rails.application.credentials.dig(:smtp, :password),
-  #   address: "smtp.example.com",
-  #   port: 587,
-  #   authentication: :plain
-  # }
+  # [ARCH.60] Outgoing SMTP — ENV-driven, no vendor SDK. Every ESP we would pick
+  # (Postmark / SES / Mailgun / SendGrid / Resend) speaks plain SMTP, so the vendor
+  # stays swappable by changing three variables and nothing else. `delivery_method`
+  # is deliberately not restated: production already defaults to `:smtp`.
+  #
+  # 🔴 The unset case is NOT benign and must not be softened. Assigning this hash
+  # replaces Rails' default wholesale, so a missing `SMTP_ADDRESS` yields `nil`
+  # rather than the `localhost:25` default — and `mail_transport_check.rb` refuses
+  # to boot on it. Before that guard, an unconfigured deploy enqueued the mail,
+  # returned 200 to the user, then ground through 25 Sidekiq retries into the dead
+  # set: password reset was dead end-to-end with no signal anywhere.
+  # ENV names are mirrored in docs/06_04 §2.1; the sender lives in MAIL_FROM
+  # (read by `Notifications::DeliveryChannels.configured_sender`).
+  config.action_mailer.smtp_settings = {
+    address: ENV["SMTP_ADDRESS"].presence,
+    port: ENV.fetch("SMTP_PORT", 587).to_i,
+    user_name: ENV["SMTP_USER_NAME"].presence,
+    password: ENV["SMTP_PASSWORD"].presence,
+    # HELO domain — some providers reject the container hostname Net::SMTP would
+    # otherwise announce; nil is fine for those that don't care.
+    domain: ENV["SMTP_DOMAIN"].presence,
+    authentication: ENV.fetch("SMTP_AUTHENTICATION", "plain").to_sym,
+    enable_starttls_auto: true
+  }
 
   # NB: `config.i18n.fallbacks` тут НЕ дублюємо — дім один, `application.rb`
   # (Rails-скаффолд ставив сюди `= true`, і воно тихо перекривало інший тамтешній

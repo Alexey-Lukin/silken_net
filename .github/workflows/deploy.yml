@@ -285,6 +285,11 @@ jobs:
           ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY: ${{ secrets.ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY }}
           ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY: ${{ secrets.ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY }}
           ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT: ${{ secrets.ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT }}
+          # --- SMTP credentials [ARCH.60] — global env.secret, so kamal looks them up on
+          #     this leg too and an unmapped entry injects "" (B1). Canopy itself declares
+          #     SILKENNET_SKIP_MAIL_TRANSPORT_CHECK=1 (web-only, no Sidekiq → no delivery). ---
+          SMTP_USER_NAME: ${{ secrets.SMTP_USER_NAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           # --- Web3 money/signing keys: NOT mapped (INF.22) — the quintet is
           #     servers.job.env.secret-only and canopy is structurally web-only
           #     (array-form servers: in deploy.canopy.yml; an omitted role would be
