@@ -31,9 +31,15 @@ RSpec.describe "Phlex component eager-load perimeter", type: :model do
          .to_set
   end
 
+  # 🔴 `filter_map`, не `map`: у ПОВНОМУ прогоні сусідні спеки створюють
+  # анонімні `Class.new(ApplicationComponent)`, і `descendants` їх бачить — їхнє
+  # `name` дорівнює `nil`. Перша редакція брала `map(&:name)`, тож дзеркальний
+  # приклад був зелений у файлі й ЧЕРВОНИЙ у сюїті, ще й друкував порожній
+  # перелік винних (nil у `join`). Спіймано повним прогоном, не мутацією —
+  # мутація йшла по файлу, а цей клас із файлу не видно за побудовою.
   let(:loaded_component_names) do
     Rails.application.eager_load!
-    ApplicationComponent.descendants.map(&:name).to_set
+    ApplicationComponent.descendants.filter_map(&:name).to_set
   end
 
   it "вантажить КОЖЕН компонентний клас на старті, а не за першим запитом" do
