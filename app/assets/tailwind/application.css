@@ -415,6 +415,40 @@ dialog[open]::backdrop {
     justify-content: center;
     padding-top: 0.75rem;
   }
+
+  /* ── Labels published by the PAGE, not by the row ── [I18N.2]
+   *
+   * Opt-in with `gaia-labels-published` on the <table>. The page sets
+   * `--gaia-col-N` once (from the same strings it already renders into
+   * <thead>, in the VIEWER's locale) and every row — including rows that
+   * arrive later over a Turbo Stream — inherits them.
+   *
+   * Why this exists: a row broadcast from Sidekiq has no locale, so a
+   * `data-label` baked into it ships the PRODUCER's language to everyone
+   * (`04_04 §8.1а`). Publishing from the page keeps the broadcast payload
+   * locale-invariant, which is the whole invariant: cost scales with
+   * viewers, never with the locale catalogue.
+   *
+   * Measured, not assumed (spec/features/responsive_table_broadcast_label_spec.rb):
+   * a custom property set on the table resolves inside a row appended
+   * afterwards, and the `attr(data-label)` fallback stays live — so tables
+   * that do NOT opt in are untouched even though these rules are global.
+   *
+   * CEILING: four columns. Deliberate — the mechanism is opt-in per table
+   * and a table's column count is known when you opt in; a fifth column
+   * needs a fifth rule (and the page must publish it). */
+  .gaia-responsive-table td:nth-child(1)::before { content: var(--gaia-col-1, attr(data-label)); }
+  .gaia-responsive-table td:nth-child(2)::before { content: var(--gaia-col-2, attr(data-label)); }
+  .gaia-responsive-table td:nth-child(3)::before { content: var(--gaia-col-3, attr(data-label)); }
+  .gaia-responsive-table td:nth-child(4)::before { content: var(--gaia-col-4, attr(data-label)); }
+
+  /* An opted-in table carries no `data-label` at all, so the "no label →
+   * centre" rule above would otherwise collapse every cell. Higher
+   * specificity restores the label/value split. */
+  .gaia-responsive-table.gaia-labels-published td:not([data-label]) {
+    justify-content: space-between;
+    padding-top: 0.5rem;
+  }
 }
 
 /* ── Pagination: optional sticky-bottom helper ──

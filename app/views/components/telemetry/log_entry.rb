@@ -36,11 +36,10 @@ module Telemetry
     def view_template
       tr(class: "hover:bg-gaia-surface-sunken md:border-b md:border-gaia-border animate-in slide-in-from-left duration-300 group") do
         td(
-          class: "p-3 text-gaia-text-muted font-mono text-mini",
-          data_label: t("telemetry.table.timestamp")
+          class: "p-3 text-gaia-text-muted font-mono text-mini"
         ) { @timestamp.strftime("%H:%M:%S.%L") }
 
-        td(class: "p-3", data_label: t("telemetry.table.gateway")) do
+        td(class: "p-3") do
           span(class: "text-gaia-primary font-bold") { @gateway&.uid || UNKNOWN_RELAY }
           span(class: "ml-2 text-micro text-gaia-text-subtle") do
             "IP: #{@gateway&.ip_address || UNKNOWN_IP}"
@@ -48,11 +47,10 @@ module Telemetry
         end
 
         td(
-          class: "p-3 font-mono text-gaia-text-strong/80 break-all leading-tight text-mini tracking-tighter",
-          data_label: t("telemetry.table.payload")
+          class: "p-3 font-mono text-gaia-text-strong/80 break-all leading-tight text-mini tracking-tighter"
         ) { @hex_payload }
 
-        td(class: "p-3 text-right text-micro uppercase tracking-widest", data_label: t("telemetry.table.status")) do
+        td(class: "p-3 text-right text-micro uppercase tracking-widest") do
           span(class: "px-2 py-0.5 border border-gaia-border text-gaia-text-muted group-hover:text-gaia-text group-hover:border-gaia-primary transition-colors") do
             BATCH_RECEIVED
           end

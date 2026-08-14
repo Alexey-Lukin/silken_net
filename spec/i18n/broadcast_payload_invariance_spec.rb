@@ -38,11 +38,11 @@ require "rails_helper"
 RSpec.describe "broadcast payload carries no locale-dependent prose" do # rubocop:disable RSpec/DescribeClass
   # Компоненти, чий broadcast-продюсер живий, але payload ще не мігровано.
   # Стан і план по кожному → `00_07` I18N.2. Список ТІЛЬКИ скорочується.
-  let(:pending) do
-    %w[
-      Telemetry::LogEntry
-    ]
-  end
+  # ✅ ПОРОЖНІЙ від 2026-08-14 — борг вичерпано (`Telemetry::LogEntry` мігрував
+  # останнім). Машинерія лишається: це дім для наступного боргу, а не решта
+  # від старого. Порожній список означає «кожен broadcast-компонент дерева
+  # тримає інваріант», і саме це стереже приклад нижче.
+  let(:pending) { [] }
 
   # Витягуємо константу компонента з `html:`-виразу кожного broadcast-сайту.
   let(:broadcast_components) do
@@ -75,7 +75,30 @@ RSpec.describe "broadcast payload carries no locale-dependent prose" do # ruboco
     dead = pending - broadcast_components
 
     expect(dead).to be_empty,
-      "виняток більше не рендериться в жодному broadcast (мігрував або продюсера знято) — приберіть: #{dead.join(', ')}"
+      "виняток більше не рендериться в жодному broadcast (продюсера знято) — приберіть: #{dead.join(', ')}"
+  end
+
+  # 🔴 ДРУГА вісь смерті винятку, і саме вона тут прожила непоміченою
+  # (знайдено 2026-08-14, коли `Telemetry::LogEntry` домігрував).
+  #
+  # Перевірка вище ловить лише «продюсера знято». Компонент, який ЗАЛИШИВСЯ
+  # у броадкасті, але позбувся всіх `t()`, для неї виглядає живим винятком
+  # назавжди — а виняток без підстави не просто декоративний: він ПРИКРИВАЄ
+  # регресію, бо `t()`, повернений у такий компонент, гейт пропустить.
+  #
+  # Клас — `ssot-maintenance/guard-craft.md` #53 («реєстр винятків стереже
+  # НАЯВНІСТЬ умови, ніколи її ІСТИННІСТЬ»); відмінність у тому, що тут
+  # істинність механічно перевіряна, тож лишати її оку не було підстав.
+  it "has no exemption whose grounds have expired (component already clean)" do
+    expired = pending.filter_map do |const_name|
+      src = component_source(const_name)
+      next if src.nil?
+
+      const_name if src.scan(/\bt\(|\bI18n\.t\(/).none?
+    end
+
+    expect(expired).to be_empty,
+      "виняток більше не потрібен — компонент уже без `t()`, а запис у списку прикриває майбутню регресію: #{expired.join(', ')}"
   end
 
   it "keeps every non-exempt broadcast component free of t() calls" do

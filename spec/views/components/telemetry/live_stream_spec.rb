@@ -44,6 +44,37 @@ RSpec.describe Telemetry::LiveStream do
     end
   end
 
+  # [I18N.2] Сторінка — ЄДИНЕ місце, де мітка колонки ще знає локаль глядача:
+  # рядок приїжджає броадкастом із Sidekiq, де локалі немає. Тому вона публікує
+  # мітки як `--gaia-col-N`, а CSS підставляє їх у будь-який рядок, зокрема
+  # вставлений пізніше (браузерний доказ механізму —
+  # `spec/features/responsive_table_broadcast_label_spec.rb`).
+  describe "публікація міток колонок" do
+    it "віддає мітки в ЛОКАЛІ ГЛЯДАЧА, а не в базовій" do
+      uk = I18n.with_locale(:uk) { render_component(organization: organization) }
+
+      expect(uk).to include("--gaia-col-1: 'Час'")
+      expect(uk).to include("--gaia-col-2: 'Королева / Шлюз'")
+      # Ліхтар проти «опублікували, але базовою»: англійська мітка тут — дефект.
+      expect(uk).not_to include("--gaia-col-1: 'Timestamp'")
+    end
+
+    it "тримає порядок публікації тим самим, що й `<thead>`" do
+      # 🔴 CSS адресує колонки через `nth-child`, тож розбіжність порядку
+      # мовчки переставила б мітки на мобільному — і жоден інший приклад
+      # цього не побачив би: обидва набори рядків самі по собі правильні.
+      html = I18n.with_locale(:uk) { render_component(organization: organization) }
+      published = html.scan(/--gaia-col-\d: '([^']*)'/).flatten
+      headers   = html.scan(%r{<th[^>]*>([^<]+)</th>}).flatten
+
+      expect(published).to eq(headers)
+    end
+
+    it "оголошує таблицю опт-іном, інакше CSS-правило не застосується" do
+      expect(render_component(organization: organization)).to include("gaia-labels-published")
+    end
+  end
+
   describe "rendering" do
     let(:html) { render_component(organization: organization) }
 

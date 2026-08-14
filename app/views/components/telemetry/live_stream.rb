@@ -8,6 +8,16 @@ module Telemetry
     # телеметрію шлюзів УСІХ організацій, і жоден REST/Pundit-аудит цього не
     # бачив: HTTP-відповідь тенант-даних не несе взагалі, витік приїжджав
     # вебсокетом уже після підписки.
+    # [I18N.2] Дім ПОРЯДКУ колонок: ті самі ключі живлять і `<thead>`, і
+    # `--gaia-col-N`, тож заголовок і мобільна мітка не можуть розійтись.
+    # Порядок несучий — CSS адресує колонки через `nth-child`.
+    COLUMNS = %w[
+      telemetry.table.timestamp
+      telemetry.table.gateway
+      telemetry.table.payload
+      telemetry.table.status
+    ].freeze
+
     def initialize(organization:)
       @organization = organization
     end
@@ -37,13 +47,17 @@ module Telemetry
           # HUD-таблиця, що "плаває" поверх дощу. Mobile рендериться як
           # стек карток через `gaia-responsive-table` (CSS-only flip).
           div(class: "relative z-10 w-full h-[400px] md:h-[600px] overflow-y-auto md:overflow-x-auto custom-scrollbar") do
-            table(class: "gaia-responsive-table w-full text-left font-mono text-tiny md:min-w-[640px]", role: "table") do
+            table(
+              class: "gaia-responsive-table gaia-labels-published w-full text-left font-mono text-tiny md:min-w-[640px]",
+              role: "table",
+              style: published_column_labels
+            ) do
               thead(class: "gaia-sticky-thead bg-gaia-surface-sunken/80 backdrop-blur-md text-gaia-text-muted uppercase tracking-widest border-b border-gaia-border shadow-md") do
                 tr do
-                  th(scope: "col", class: "p-4 w-32 font-medium") { t("telemetry.table.timestamp") }
-                  th(scope: "col", class: "p-4 w-40 font-medium") { t("telemetry.table.gateway") }
-                  th(scope: "col", class: "p-4 font-medium") { t("telemetry.table.payload") }
-                  th(scope: "col", class: "p-4 w-24 text-right font-medium") { t("telemetry.table.status") }
+                  th(scope: "col", class: "p-4 w-32 font-medium") { COLUMNS[0].then { t(it) } }
+                  th(scope: "col", class: "p-4 w-40 font-medium") { COLUMNS[1].then { t(it) } }
+                  th(scope: "col", class: "p-4 font-medium") { COLUMNS[2].then { t(it) } }
+                  th(scope: "col", class: "p-4 w-24 text-right font-medium") { COLUMNS[3].then { t(it) } }
                 end
               end
 
@@ -63,6 +77,20 @@ module Telemetry
 
     private
 
+    # [I18N.2] Публікує мітки колонок як CSS custom properties, щоб рядок,
+    # який приїде броадкастом, не мусив нести власну копію (він рендериться в
+    # Sidekiq, де локалі немає — `04_04 §8.1а`).
+    #
+    # 🔴 Лапки обовʼязкові: `content` приймає РЯДОК, а не ключове слово, тож
+    # без них правило просто не застосується. Одинарна лапка всередині
+    # перекладу зламала б значення — екрануємо (`content` розуміє `\'`).
+    # Крапку з комою прибираємо: вона розділяє декларації в `style`.
+    def published_column_labels
+      COLUMNS.each_with_index.map do |key, index|
+        value = t(key).to_s.gsub("\\", "\\\\\\\\").gsub("'", "\\\\'").delete(";")
+        "--gaia-col-#{index + 1}: '#{value}'"
+      end.join("; ")
+    end
 
     def header_section
       div(class: "flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 border-b border-gaia-border pb-4") do

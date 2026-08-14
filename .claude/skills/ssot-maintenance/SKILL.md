@@ -194,6 +194,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 57. A gate over DECLARATIONS makes the whole class look covered — while the oldest member is usually the one whose behaviour nothing has ever tested — **after adding a declaration-gate, ask which member existed BEFORE the gate, and mutate ITS mechanism — that is where the untested behaviour lives**
 56. Deleting a REDUNDANT test is not the same act as deleting a dead branch, and it needs THREE independent measurements plus a fourth pass nobody's brief asks for
 58. A boot guard is usually blind to the very placeholder that exists to make it fail loudly — because `REQUIRED_SECRET_NOT_SET` is neither blank nor the sentinel, and a presence-shaped predicate reads it as a real value
+59. A shrink-list exemption has TWO ways to die, and the obvious check catches only one — the other leaves an expired exemption actively PROTECTING the regression it was meant to track
 
 <!-- /GUARD-CRAFT-INDEX -->
 
