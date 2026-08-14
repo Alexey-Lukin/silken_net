@@ -47,7 +47,7 @@ lt:
         cipher_suite: Šifro rinkinys
         cipher_value: AES-128-ECB (LoRa kanalas, post-ARCH.42)
         integrity: Vientisumas
-        integrity_value: Patikrintas aparatūros inkaras
+        integrity_value: Inkaras parengtas · raktas v%{version}
         key_identity: Rakto tapatybė
         ota_status: OTA būsena
         ota_value: Kanalas užšifruotas

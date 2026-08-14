@@ -297,6 +297,37 @@ RSpec.describe Trees::Show do
       expect(rendered).to include("NOT_PROVISIONED")
     end
 
+    # 🔴 [ARCH.84] Доти цей самий рендер ОДНОЧАСНО казав «не провіжінено» і
+    # «анкер перевірено» + «канал зашифровано»: три рядки нижче були
+    # безумовними літералами поруч із чесним сусідом. Приклад вище цього не
+    # бачив — він пінив лише присутність `NOT_PROVISIONED`, а суперечність
+    # жила у ВІДСУТНОСТІ решти.
+    it "не заявляє шифру й анкера для дерева БЕЗ ключа" do
+      t = build_tree(device_uid: nil)
+      t.hardware_key = nil
+      rendered = render_component(tree: t, latest_log: latest_log,
+                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+
+      expect(rendered).to include("NOT_PROVISIONED")
+      expect(rendered).not_to include("AES-128-ECB")
+      expect(rendered).not_to include("Anchor provisioned")
+      expect(rendered).not_to include("Channel Encrypted")
+    end
+
+    # ⊥ Дзеркало: доводить, що приклад вище не просто «нічого не рендерить».
+    it "показує всі чотири рядки, коли ключ Є" do
+      expect(html).to include("AES-128-ECB", "Channel Encrypted", "Anchor provisioned")
+    end
+
+    # 🔴 «Verified Hardware Anchor» було твердженням БЕЗ ДЖЕРЕЛА: поля
+    # верифікації на `HardwareKey` не існує взагалі. Замінено на реальну
+    # колонку `key_version` (`NOT NULL DEFAULT 0`), яка до того ж робить
+    # видимою ротацію [FW.17].
+    it "друкує РЕАЛЬНУ версію ключа, а не вигадану «верифікацію»" do
+      expect(html).to include("key v0")
+      expect(html).not_to include("Verified Hardware Anchor")
+    end
+
     it "displays cipher suite info" do
       # Post-ARCH.42: Tree LoRa channel — AES-128-ECB (locale label).
       expect(html).to include("AES-128-ECB")

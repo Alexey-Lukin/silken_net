@@ -47,7 +47,7 @@ en:
         cipher_suite: Cipher Suite
         cipher_value: AES-128-ECB (LoRa Channel, post-ARCH.42)
         integrity: Integrity
-        integrity_value: Verified Hardware Anchor
+        integrity_value: Anchor provisioned · key v%{version}
         key_identity: Key Identity
         ota_status: OTA Status
         ota_value: Channel Encrypted

@@ -47,7 +47,7 @@ uk:
         cipher_suite: Набір шифрів
         cipher_value: AES-128-ECB (LoRa-канал, post-ARCH.42)
         integrity: Цілісність
-        integrity_value: Верифікований апаратний анкер
+        integrity_value: Анкер провіжінено · ключ v%{version}
         key_identity: Ідентифікатор ключа
         ota_status: OTA статус
         ota_value: Канал зашифровано

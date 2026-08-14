@@ -47,7 +47,7 @@ lv:
         cipher_suite: Šifru komplekts
         cipher_value: AES-128-ECB (LoRa kanāls, post-ARCH.42)
         integrity: Integritāte
-        integrity_value: Verificēts aparatūras enkurs
+        integrity_value: Enkurs nodrošināts · atslēga v%{version}
         key_identity: Atslēgas identitāte
         ota_status: OTA statuss
         ota_value: Kanāls šifrēts

@@ -174,11 +174,25 @@ module Trees
           span(class: "h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]")
         end
 
+        # 🔴 [ARCH.84] Три нижні рядки були БЕЗУМОВНИМИ літералами поруч із
+        # чесним `NOT_PROVISIONED`, тож дерево без ключа в ОДНОМУ рендері
+        # заявляло і «не провіжінено», і «анкер перевірено», і «канал
+        # зашифровано». Тепер вони існують лише там, де існує ключ.
+        #
+        # ⚠️ І «Verified Hardware Anchor» було не просто невчасним, а
+        # твердженням БЕЗ ДЖЕРЕЛА: поля верифікації на `HardwareKey` немає
+        # взагалі (`verified_at` не існує), тобто жоден акт перевірки ніколи не
+        # відбувався. Замінено на те, що справді вимірне — `key_version`
+        # (`NOT NULL DEFAULT 0`), який до того ж робить видимою ротацію [FW.17].
         div(class: "space-y-4 text-tiny font-mono") do
-          security_item(t(".security.key_identity"), @hardware_key&.device_uid || "NOT_PROVISIONED")
-          security_item(t(".security.cipher_suite"), t(".security.cipher_value"))
-          security_item(t(".security.integrity"), t(".security.integrity_value"))
-          security_item(t(".security.ota_status"), t(".security.ota_value"))
+          if @hardware_key
+            security_item(t(".security.key_identity"), @hardware_key.device_uid)
+            security_item(t(".security.cipher_suite"), t(".security.cipher_value"))
+            security_item(t(".security.integrity"), t(".security.integrity_value", version: @hardware_key.key_version))
+            security_item(t(".security.ota_status"), t(".security.ota_value"))
+          else
+            security_item(t(".security.key_identity"), "NOT_PROVISIONED")
+          end
         end
 
         # [UI.7] Кнопка ротації схована до дротування — interim-форма ARCH.69
