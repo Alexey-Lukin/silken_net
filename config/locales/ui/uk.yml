@@ -45,8 +45,8 @@ uk:
       unknown: невідомо
       updating: оновлення
     web3_address:
+      copied: Адресу скопійовано
       copy: Копіювати адресу
       copy_aria: Копіювати адресу %{address} у буфер обміну
-      copied: Адресу скопійовано
       copy_failed: Не вдалося скопіювати
       not_provisioned: НЕ ПРИЗНАЧЕНО

@@ -45,8 +45,8 @@ lt:
       unknown: nežinoma
       updating: atnaujinama
     web3_address:
+      copied: Adresas nukopijuotas
       copy: Kopijuoti adresą
       copy_aria: Kopijuoti adresą %{address} į iškarpinę
-      copied: Adresas nukopijuotas
       copy_failed: Nepavyko nukopijuoti
       not_provisioned: NEPRISKIRTA

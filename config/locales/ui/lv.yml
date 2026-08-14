@@ -45,8 +45,8 @@ lv:
       unknown: nezināms
       updating: atjaunina
     web3_address:
+      copied: Adrese nokopēta
       copy: Kopēt adresi
       copy_aria: Kopēt adresi %{address} starpliktuvē
-      copied: Adrese nokopēta
       copy_failed: Neizdevās nokopēt
       not_provisioned: NAV PIEŠĶIRTS
