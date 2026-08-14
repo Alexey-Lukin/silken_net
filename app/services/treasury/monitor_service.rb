@@ -125,6 +125,11 @@ module Treasury
       # Генеруємо алерти для критичних балансів
       generate_alerts(results)
 
+      # [ARCH.82] …і закриваємо ті, чия причина зникла. Порядок навмисний: спершу підняти
+      # нові, тоді зняти одужалі — інакше гаманець, що впав і піднявся в межах одного
+      # проходу, лишив би по собі закритий рядок замість жодного.
+      resolve_recovered_balance_alerts!(results)
+
       results
     end
 
@@ -188,7 +193,12 @@ module Treasury
         SilkenNet::Metrics::MINT_VOLUME_WINDOW_SCC.set(volume, labels: { token_type: token_type })
 
         # Поріг 0 = detector-off (gauge все одно живий) — не алертимо, поки 👤 не налаштує.
-        next unless max_scc.positive? && volume > max_scc
+        # [ARCH.82] …але спершу закриваємо те, що вже висить: причина спостережувана в цьому
+        # ж проході, а рядок безкластерний, тож жодна людина закрити його не може.
+        unless max_scc.positive? && volume > max_scc
+          resolve_mint_volume_alert!(token_type, volume, max_scc)
+          next
+        end
 
         Rails.logger.warn "🚨 [ARCH.62] Mint-volume аномалія: #{token_type} " \
                           "#{volume.round(2)} SCC за #{MINT_VOLUME_WINDOW.inspect} (поріг #{max_scc.round(2)})."
@@ -222,6 +232,37 @@ module Treasury
       EwsAlert.where(alert_type: :system_fault, status: :active, message_key: "mint_volume_anomaly")
               .where("message_params ->> 'token_type' = ?", token_type)
               .exists?
+    end
+
+    # [ARCH.82] Закриває mint-volume-алерт, коли причина зникла. Дзеркало
+    # `TreeStalenessSweepWorker#resolve_returned_trees` — ⚖️ founder 2026-08-14: для
+    # безкластерних алертів шлях закриття АВТОМАТИЧНИЙ, а не людський, бо жодна орг-поверхня
+    # їх не бачить (`Organization has_many :ews_alerts, through: :clusters` = INNER JOIN).
+    #
+    # 🔴 Асиметрія, яку це прибирає, була в самому файлі: Kredis-запобіжник має
+    # `MINT_CIRCUIT_TTL` і сам відпускається, коли сплеск минув, — а алерт про той самий
+    # сплеск не відпускався НІКОЛИ. Тобто механізм уже вмів помічати одужання; не вмів
+    # лише його ЗАПИСАТИ.
+    #
+    # Дві причини закриття свідомо розрізняються в нотатці: «обсяг повернувся під стелю» —
+    # це одужання, а «детектор вимкнули» — ні. Друге все одно закриваємо: алерт від
+    # вимкненого детектора не має жодного шляху зникнути, і саме він накопичувався б.
+    def resolve_mint_volume_alert!(token_type, volume, max_scc)
+      alert = EwsAlert.unresolved
+                      .where(alert_type: :system_fault, message_key: "mint_volume_anomaly")
+                      .where("message_params ->> 'token_type' = ?", token_type)
+                      .first
+      return if alert.nil?
+
+      notes = if max_scc.positive?
+                "Обсяг мінтингу #{token_type} повернувся під стелю " \
+                  "(#{volume.round(2)} ≤ #{max_scc.round(2)} SCC за #{MINT_VOLUME_WINDOW.inspect})."
+      else
+                "Детектор mint-volume вимкнено (`mint_volume_hourly_max_scc` = 0) — " \
+                  "алерт закрито як безпредметний, а не як усунутий."
+      end
+      alert.resolve!(notes: notes)
+      Rails.logger.info "✅ [ARCH.82] mint_volume_anomaly (#{token_type}) закрито автоматично: #{notes}"
     end
 
     # Ставить inert per-token Kredis-прапор, який BlockchainMintingService читає per token-group →
@@ -375,6 +416,40 @@ module Treasury
                             balance: result[:balance_human], currency: result[:currency],
                             min_threshold: result[:min_threshold_human], ratio: result[:ratio] }
         )
+      end
+    end
+
+    # [ARCH.82] Закриває oracle-balance-алерти пар, які цього проходу вже НЕ критичні.
+    # ⚖️ founder 2026-08-14: безкластерний алерт закривається автоматично, бо людського
+    # шляху до нього не існує — орг-поверхні його не бачать за побудовою.
+    #
+    # Ключ одужання — той самий, що й ключ дедупу: ПАРА (мережа, підписник). Інакше
+    # поповнення одного гаманця гасило б тривогу про сім інших.
+    #
+    # ⚠️ Стеля названа: `results` містить лише гаманці, ПЕРЕВІРЕНІ цього проходу, тож
+    # activation-gated гаманець, у якого зняли ключ, випадає з переліку — його алерт
+    # лишиться висіти. Це свідомо: «ключ зник» не означає «баланс поповнено», і мовчазно
+    # закривати тривогу про гаманець, якого ми більше не бачимо, було б гірше за висячий
+    # рядок. Спостережуваність тієї підмножини тримає Grafana (`oracle_balance_ratio`).
+    def resolve_recovered_balance_alerts!(results)
+      recovered = results.reject { |r| r[:status] == :critical }
+      return if recovered.empty?
+
+      recovered.each do |result|
+        alert = EwsAlert.unresolved
+                        .where(alert_type: :system_fault, message_key: "oracle_balance_low")
+                        .where("message_params ->> 'network' = ? AND message_params ->> 'signer' = ?",
+                               result[:network].to_s, result[:signer].to_s)
+                        .first
+        next if alert.nil?
+
+        alert.resolve!(
+          notes: "Баланс #{result[:network]}/#{result[:signer]} відновлено: " \
+                 "#{result[:balance_human]} #{result[:currency]} (поріг " \
+                 "#{result[:min_threshold_human]} #{result[:currency]})."
+        )
+        Rails.logger.info "✅ [ARCH.82] oracle_balance_low (#{result[:network]}/#{result[:signer]}) " \
+                          "закрито автоматично — баланс відновлено."
       end
     end
 

@@ -392,6 +392,7 @@ end
 | `silkennet_hadron_kyc_pending_depth` | — | Count of Wallet+Organization rows with hadron_kyc_status=pending (KYC backlog gating mint) |
 | `silkennet_mint_eligible_unminted_depth` | — | Wallets over the emission threshold that produced no mint in the last cycle (stall detector) |
 | `silkennet_mint_volume_window_scc` | `token_type` | SCC/SFC minted in the trailing 1h window (ARCH.62 volume-anomaly detector input) |
+| `silkennet_insurance_reserve_hold_total` | `reason` | Internal-mode виплати, зупинені reserve-gate [INS.2]. ⚖️ ARCH.82: **ЄДИНИЙ канал** — парний `EwsAlert` пишеться без кластера, тож орг-поверхні його не бачать за побудовою. Окремо від `manual_review_depth` навмисно: той не розрізняє казначейську політику від double-spend-лімбо, а відповіді протилежні. ⚠️ Штатно нуль до калібрування порогів INS.2; `:eval_error` сюди НЕ рахується (transient RPC → Sidekiq-retry) |
 | `silkennet_oracle_balance` | `network`, `signer` | Oracle wallet balance in native currency (wei/lamports) |
 | `silkennet_oracle_balance_ratio` | `network`, `signer` | Oracle balance as ratio to minimum threshold (below 1.0 = critical) |
 | `silkennet_process_resident_memory_bytes` | — | Resident set size (RSS) of the scraped process in bytes (Linux /proc; 0 elsewhere) |

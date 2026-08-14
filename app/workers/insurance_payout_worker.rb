@@ -167,6 +167,10 @@ class InsurancePayoutWorker
             message_key: "insurance_reserve_hold_#{reserve_gate.reason}",
             message_params: reserve_gate.params.merge(id: insurance.id)
           )
+          # [ARCH.82] Другий канал, і саме він доїде до людини: сам EwsAlert безкластерний,
+          # тож жодна орг-поверхня його не показує (`has_many through: :clusters` = INNER JOIN),
+          # а `manual_review`-gauge не розрізняє казначейський HOLD від double-spend-лімбо.
+          SilkenNet::Metrics::INSURANCE_RESERVE_HOLD_TOTAL.increment(labels: { reason: reserve_gate.reason.to_s })
           Rails.logger.warn "🛡️ [Insurance] ##{insurance.id}: reserve-gate HOLD (#{reserve_gate.reason}) → manual_review (без mint)."
           return
         end

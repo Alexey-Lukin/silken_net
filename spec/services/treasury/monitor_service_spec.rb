@@ -189,6 +189,115 @@ RSpec.describe Treasury::MonitorService do
       end
     end
 
+    # [ARCH.82] ⚖️ founder 2026-08-14: безкластерний алерт закривається АВТОМАТИЧНО.
+    # Людського шляху до нього не існує — `Organization has_many :ews_alerts, through:
+    # :clusters` це INNER JOIN, тож рядок без кластера не видно на жодній орг-поверхні,
+    # і без резолвера він висить вічно.
+    describe "авто-резолв алертів, чия причина зникла" do
+      def hanging_oracle_alert(network:, signer:)
+        EwsAlert.create!(
+          alert_type: :system_fault, severity: :critical, status: :active,
+          message_key: "oracle_balance_low",
+          message_params: { network: network, signer: signer, balance: "0.01",
+                            currency: "MATIC", min_threshold: "0.5", ratio: 0.02 }
+        )
+      end
+
+      context "when balances have recovered" do
+        before { allow(mock_evm_client).to receive(:get_balance).and_return(healthy_balance) }
+
+        it "закриває висячий алерт пари, яка більше не критична" do
+          alert = hanging_oracle_alert(network: "polygon", signer: "minter")
+
+          described_class.call
+
+          expect(alert.reload.status).to eq("resolved")
+          expect(alert.resolved_at).to be_present
+          expect(alert.resolution_notes).to include("polygon/minter")
+        end
+
+        it "не чіпає алертів ІНШОГО роду — ключ одужання не ширший за ключ дедупу" do
+          # Ліхтар проти over-broad резолвера. Ціль навмисно НЕ `mint_volume_anomaly`:
+          # той самий прохід має ВЛАСНИЙ резолвер для нього, тож він закрився б законно —
+          # і приклад пройшов би, нічого не довівши. Беремо ключ, якого не володіє жоден
+          # із двох (HOLD страхового резерву — його канал — Grafana, не резолвер).
+          other = EwsAlert.create!(
+            alert_type: :system_fault, severity: :critical, status: :active,
+            message_key: "insurance_reserve_hold_aggregate_cap",
+            message_params: { id: 1, window_scc: "500.0", cap_scc: "100.0" }
+          )
+
+          described_class.call
+
+          expect(other.reload.status).to eq("active")
+        end
+      end
+
+      context "when one pair is still critical" do
+        before do
+          allow(mock_evm_client).to receive(:get_balance).and_return(healthy_balance)
+          polygon_client = instance_double(Eth::Client)
+          allow(polygon_client).to receive(:get_balance).and_return(critical_balance)
+          allow(Web3::RpcConnectionPool).to receive(:client_for).and_call_original
+          allow(Web3::RpcConnectionPool).to receive(:client_for)
+            .with("ALCHEMY_POLYGON_RPC_URL").and_return(polygon_client)
+          allow(Web3::RpcConnectionPool).to receive(:client_for)
+            .with("CELO_RPC_URL", anything).and_return(mock_evm_client)
+          allow(Web3::RpcConnectionPool).to receive(:client_for)
+            .with("ALCHEMY_ETHEREUM_RPC_URL").and_return(mock_evm_client)
+        end
+
+        # 🔴 Найважливіший напрямок: резолвер, що закриває ВСЕ, гірший за його відсутність —
+        # він гасить живу тривогу. Ключ одужання = ПАРА (мережа, підписник), як і ключ дедупу.
+        it "лишає її алерт активним, закриваючи лише одужалу сусідню мережу" do
+          still_critical = hanging_oracle_alert(network: "polygon", signer: "minter")
+          recovered = hanging_oracle_alert(network: "celo", signer: "rewards")
+
+          described_class.call
+
+          expect(still_critical.reload.status).to eq("active")
+          expect(recovered.reload.status).to eq("resolved")
+        end
+      end
+
+      context "with the mint-volume detector" do
+        before { allow(mock_evm_client).to receive(:get_balance).and_return(healthy_balance) }
+
+        def hanging_mint_alert(token_type)
+          EwsAlert.create!(
+            alert_type: :system_fault, severity: :critical, status: :active,
+            message_key: "mint_volume_anomaly",
+            message_params: { token_type: token_type, volume: 9.0, window: "1 hour", ceiling: 1.0 }
+          )
+        end
+
+        # Асиметрія, яку це прибирає: Kredis-запобіжник має TTL і сам відпускається,
+        # а алерт про той самий сплеск не відпускався НІКОЛИ.
+        it "закриває алерт, коли обсяг повернувся під увімкнену стелю" do
+          SystemParameter.set(:mint_volume_hourly_max_scc, 1_000_000)
+          alert = hanging_mint_alert("carbon_coin")
+
+          described_class.call
+
+          expect(alert.reload.status).to eq("resolved")
+          expect(alert.resolution_notes).to include("під стелю")
+        end
+
+        it "закриває алерт вимкненого детектора, але нотатка каже ІНШЕ" do
+          # Поріг 0 = детектор off. Причина не усунута — вона стала безпредметною,
+          # і нотатка мусить це розрізняти, інакше запис бреше про одужання.
+          SystemParameter.set(:mint_volume_hourly_max_scc, 0)
+          alert = hanging_mint_alert("carbon_coin")
+
+          described_class.call
+
+          expect(alert.reload.status).to eq("resolved")
+          expect(alert.resolution_notes).to include("безпредметний")
+          expect(alert.resolution_notes).not_to include("під стелю")
+        end
+      end
+    end
+
     context "when Solana RPC fails" do
       before do
         allow(mock_evm_client).to receive(:get_balance).and_return(healthy_balance)

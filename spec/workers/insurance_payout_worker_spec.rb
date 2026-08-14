@@ -91,6 +91,42 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
         expect(insurance.reload.blockchain_transaction.status).to eq("manual_review")
       end
 
+      # [ARCH.82] ⚖️ founder 2026-08-14: HOLD дістає Grafana-канал, і це ЄДИНИЙ канал —
+      # сам EwsAlert безкластерний, тож `Organization has_many :ews_alerts, through:
+      # :clusters` (INNER JOIN) не показує його на жодній орг-поверхні. Лічильник має
+      # мітку причини, бо `manual_review`-gauge, куди HOLD теж потрапляє, не розрізняє
+      # казначейську політику від double-spend-лімбо, а відповіді на них протилежні.
+      it "рахує HOLD окремою метрикою з міткою причини (ЄДИНИЙ канал до оператора)" do
+        allow(Insurance::ReserveGate).to receive(:call).and_return(
+          Insurance::ReserveGate::Result.new(ok: false, reason: :reserve_inadequate, detail: "under reserve")
+        )
+        counter = SilkenNet::Metrics::INSURANCE_RESERVE_HOLD_TOTAL
+        labels = { reason: "reserve_inadequate" }
+        before_count = counter.get(labels: labels).to_i
+
+        described_class.new.perform(insurance.id)
+
+        expect(counter.get(labels: labels).to_i).to eq(before_count + 1)
+      end
+
+      it "НЕ рахує HOLD на transient RPC-збої — той шлях іде в Sidekiq-retry, не в політику" do
+        # Ліхтар проти over-broad лічильника: :eval_error реврайзиться вище по коду й
+        # ніколи не є присудом gate'а. Порахувати його означало б підняти оператора на
+        # мережевий збій під виглядом зупиненої емісії.
+        allow(Insurance::ReserveGate).to receive(:call).and_return(
+          Insurance::ReserveGate::Result.new(ok: false, reason: :eval_error, detail: "RPC down")
+        )
+        counter = SilkenNet::Metrics::INSURANCE_RESERVE_HOLD_TOTAL
+        before_count = counter.get(labels: { reason: "eval_error" }).to_i
+
+        # Той шлях RAISE-иться раніше за лічильник — і саме це робить пін подвійним:
+        # він тримає і напрямок обробки, і мовчання метрики.
+        expect { described_class.new.perform(insurance.id) }
+          .to raise_error(/transient RPC error/)
+
+        expect(counter.get(labels: { reason: "eval_error" }).to_i).to eq(before_count)
+      end
+
       it "proceeds to mint when the reserve gate passes" do
         allow(Insurance::ReserveGate).to receive(:call).and_return(
           Insurance::ReserveGate::Result.new(ok: true, reason: :ok)

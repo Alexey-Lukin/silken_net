@@ -115,6 +115,25 @@ module SilkenNet
       docstring: "Parametric insurance payouts executed — Etherisc claim sent / mint initiated (SLO numerator)"
     )
 
+    # [INS.2/ARCH.82] Reserve-gate HOLD — виплату зупинено казначейською політикою.
+    # ⚖️ founder 2026-08-14: цьому родові алертів дається Grafana-канал (не орг-поверхня) —
+    # HOLD означає «емісія зупинена», і читач цього оператор, не лісник.
+    #
+    # 🔴 Чому окрема метрика, хоча HOLD і так додає рядок у `manual_review`: той gauge
+    # НЕ РОЗРІЗНЯЄ причин, а відповіді на них протилежні — reserve-hold це нормальна
+    # робота політики (звірити подію, можливо підняти поріг), а double-spend-лімбо
+    # (ARCH.45) це підозра на втрачені кошти. Один сигнал на два питання = підміна виміру.
+    #
+    # ⚠️ Тракт сьогодні інертний (обидва пороги `SystemParameter` default 0 → gate завжди
+    # `:ok`), тож лічильник лишатиметься нулем до калібрування [INS.2] у деплой-день SEC.1.
+    # Канал заводиться ПЕРЕД озброєнням навмисно: інакше перший же HOLD став би невидимим
+    # і незакриваним одночасно.
+    INSURANCE_RESERVE_HOLD_TOTAL = REGISTRY.counter(
+      :silkennet_insurance_reserve_hold_total,
+      docstring: "Internal-mode insurance payouts held by the INS.2 reserve gate, by breach reason",
+      labels: [ :reason ]
+    )
+
     # Web3 RPC errors (labeled by network and error type)
     RPC_ERRORS_TOTAL = REGISTRY.counter(
       :silkennet_rpc_errors_total,

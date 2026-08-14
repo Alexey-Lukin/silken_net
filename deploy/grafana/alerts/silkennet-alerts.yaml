@@ -171,6 +171,54 @@ groups:
           team: ops
 
       # -----------------------------------------------------------------------
+      # P0: Insurance reserve-gate HOLD [INS.2/ARCH.82]
+      #
+      # ⚖️ founder 2026-08-14: цей рід алертів має ОДИН канал, і це Grafana — HOLD
+      # означає «емісія зупинена казначейською політикою», тобто читач тут оператор,
+      # а не орендар. Причина, чому канал потрібен окремо: сам `EwsAlert` пишеться БЕЗ
+      # кластера, а `Organization has_many :ews_alerts, through: :clusters` — це INNER
+      # JOIN, тож на орг-поверхнях рядок не існує; а `manual_review`-gauge, куди HOLD
+      # теж потрапляє, не розрізняє його від double-spend-лімбо (ARCH.45), і відповіді
+      # на ці два стани протилежні.
+      #
+      # ⚠️ Тракт інертний до калібрування порогів INS.2 (обидва `SystemParameter`
+      # default 0 → gate завжди :ok), тож правило штатно мовчить. Заведене НАПЕРЕД
+      # навмисно: інакше перший же HOLD у деплой-день SEC.1 став би невидимим і
+      # незакриваним одночасно.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-insurance-reserve-hold
+        title: "🔴 Insurance payout held by the reserve gate"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: increase(silkennet_insurance_reserve_hold_total[1h])
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 0m
+        annotations:
+          summary: "{{ $values.A.Value | printf \"%.0f\" }} страхових виплат зупинено reserve-gate за годину (причина: {{ $labels.reason }})."
+          description: "Internal-mode виплата мінтить НОВИЙ SCC, тож gate спинив емісію: aggregate 24h correlated stop-loss або reserve-adequacy проти DAO_TREASURY. Заявки лежать у manual_review — звір подію ПЕРЕД ручним резолвом; це не збій, а спрацювання політики. Поріг transient-RPC (:eval_error) сюди НЕ потрапляє — той шлях іде в Sidekiq-retry."
+          runbook_url: "docs/07_01_Nature_as_a_Service_Contracts.md#reserve-gate"
+        labels:
+          severity: critical
+          component: web3
+          team: ops
+
+      # -----------------------------------------------------------------------
       # P0: Panic replay attack spike
       # -----------------------------------------------------------------------
       - uid: sn-alert-panic-replay

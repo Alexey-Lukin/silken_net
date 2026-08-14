@@ -59,6 +59,7 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 | sn-alert-web3-queue-critical | web3_critical queue > 100 jobs | critical | 5m |
 | sn-alert-fraud-detected | fraud rate > 0/s | critical | 2m |
 | sn-alert-oracle-balance-critical | oracle_balance_ratio < 0.2 | critical | 5m |
+| sn-alert-insurance-reserve-hold | insurance_reserve_hold increase[1h] > 0 (INS.2 gate спинив емісію; ЄДИНИЙ канал — алерт безкластерний) | critical | 0m |
 | sn-alert-panic-replay | panic replay > 0.1/s | critical | 2m |
 | sn-alert-scrape-target-down | min by(process) up{job="silken_net_scraper"} < 1 (3 таргети; NoData→Alerting = Alloy впав) | critical | 5m |
 | sn-alert-gateway-faulty | gateways_faulty > 0 (dead-man switch ARCH.54) | critical | 5m |
@@ -86,7 +87,7 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 | sn-alert-filecoin-unarchived-backlog | filecoin_unarchived_depth sustained (Pinata-exhaustion backlog; INF.22 крок 11) | info | 1h |
 | sn-alert-hadron-kyc-backlog | hadron_kyc_pending_depth sustained[6h] (KYC backlog; ARCH.65, auto-heal) | info | 30m |
 
-> Повний SSOT правил (30) — сам `alerts/silkennet-alerts.yaml`; ця таблиця — людська шпаргалка, `import.rb` рахує з yaml.
+> Повний SSOT правил — сам `alerts/silkennet-alerts.yaml`; ця таблиця — людська шпаргалка, і `import.rb` рахує з yaml, не звідси. Числа правил тут свідомо немає: воно протухало б тихо при кожному додаванні, а єдиний, хто його реально знає, друкує його на імпорті.
 
 ## Notification channel
 
