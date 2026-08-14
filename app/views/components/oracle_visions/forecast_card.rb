@@ -131,7 +131,5 @@ module OracleVisions
 
       adverse_forecast? ? "bg-red-500 shadow-[0_0_15px_#ef4444]" : "bg-emerald-500 shadow-[0_0_15px_#10b981]"
     end
-
-    alias impact_text_color confidence_text_class
   end
 end
