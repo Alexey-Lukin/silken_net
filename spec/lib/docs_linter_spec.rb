@@ -641,6 +641,38 @@ RSpec.describe DocsLinter do
     end
   end
 
+  # [SSOT anti-drift] Канон не сміє лінкувати `memory/` — вона поза репозиторієм.
+  # Клас куплений повтором: чотири входження у двох комітах за чотири дні, усі в
+  # `00_07`, тобто саме там, де `DEPRECATED_EXEMPT` звільняє від сусідньої
+  # перевірки — тому окрема функція БЕЗ винятків, а не ще один термін у мапі.
+  describe ".memory_wikilink_violations" do
+    it "ловить memory-лінк і називає лік" do
+      hits = described_class.memory_wikilink_violations("клас описано в [[feedback_silent_default]] докладно")
+
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("[[feedback_silent_default]]", "поза репозиторієм")
+    end
+
+    it "не має винятку для 00_06/00_07 — саме там клас і виникав" do
+      # Сигнатура навмисно без `basename`: виняток тут був би дірою у формі дефекту.
+      expect(described_class.method(:memory_wikilink_violations).arity).to eq(1)
+    end
+
+    it "дедуплікує повтор того самого лінка" do
+      expect(described_class.memory_wikilink_violations("[[a_b]] і ще раз [[a_b]]").size).to eq(1)
+    end
+
+    # ⊥ Межі: markdown-лінк, посилання на канон і подвійна дужка в коді — не хіти.
+    it "не чіпає звичайних посилань і сусідніх форм" do
+      %w[
+        [текст](04_04_Phlex_UI_and_Tailwind)
+        `04_04\ §8.1а`
+      ].each { |sample| expect(described_class.memory_wikilink_violations(sample)).to be_empty }
+
+      expect(described_class.memory_wikilink_violations("масив[[0]] і [[Klass]]")).to be_empty
+    end
+  end
+
   describe ".deprecated_terms" do
     it "flags a retired token and gives the replacement hint" do
       hits = described_class.deprecated_terms("03_05", "derive via HKDF info silkennet-v1-aes256 here")

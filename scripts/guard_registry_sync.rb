@@ -79,6 +79,7 @@ DOCS_RAKE_LABELS = {
   "retired growth_points clamp `(…,10,63)` (FW.29-PACK → 03_04 §4.3)"                      => "growth_points clamp drift",
   "retired pre-FW.29 StatusByte bit-layout (6-bit `<<6`/`0x3F`/bits 7..6 outside owner)"    => "StatusByte layout",
   "deprecated SSOT terms present"                                                          => "deprecated terms (Ruthless Pruning)",
+  "memory wiki-links in canon"                                                             => "memory wiki-link у каноні",
   "anchor dimension drift (superseded flange/Zone2 range outside 01_01 §1 freeze)"         => "anchor dimension drift",
   "thermal-stress drift (superseded HW.3.IS SF/P_c number outside 01_01 §4.2 / the report)" => "thermal-stress One-Home",
   "superseded term in front-matter (🎯/Статус names a reversed decision)"                   => "superseded term in front-matter",

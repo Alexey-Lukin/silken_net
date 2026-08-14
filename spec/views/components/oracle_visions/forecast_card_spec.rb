@@ -60,6 +60,37 @@ RSpec.describe OracleVisions::ForecastCard do
       html = render_component(insight: mock_insight(probability_score: 65))
       expect(html).to include("width: 65.0%")
     end
+
+    # 🔴 [ARCH.84] СЬОМИЙ інстанс класу, і жив він у ТОМУ САМОМУ файлі, що
+    # шостий (`yield_impact`): прохід, який полагодив сусіда за двадцять рядків
+    # нижче, цього не побачив. Обидва поля мають НУЛЬ писачів —
+    # `InsightGeneratorService` створює лише `daily_health_summary`, тож
+    # прогноз-інсайт у проді не народжується взагалі.
+    #
+    # Що саме друкувалось (виміряно рендером): текст — голий «%» без числа,
+    # смуга — `style="width: %"`, тобто НЕВАЛІДНИЙ CSS. Модель при цьому
+    # чесна (`#confidence_level` → `:n_a`), тож розходився компонент із
+    # власною моделлю, а не дані з даними.
+    context "when the score was never measured (no writer exists — ARCH.84)" do
+      it "names the state instead of printing a bare percent sign" do
+        html = render_component(insight: mock_insight(probability_score: nil))
+
+        expect(html).to include(I18n.t("ui.measurement.not_measured"))
+        # Ліхтар: саме «%» без числа і був симптомом, тож пін мусить його ловити.
+        expect(html).not_to match(/>\s*%\s*</)
+      end
+
+      it "does not draw the bar at all — any width is a claim about a measurement" do
+        html = render_component(insight: mock_insight(probability_score: nil))
+
+        expect(html).not_to include("width:")
+      end
+
+      # ⊥ Дзеркало: доводить, що приклади вище не просто «нічого не малює».
+      it "still draws the bar when the score IS measured" do
+        expect(render_component(insight: mock_insight(probability_score: 65))).to include("width: 65.0%")
+      end
+    end
   end
 
   describe "summary" do

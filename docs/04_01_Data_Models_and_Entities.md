@@ -1231,7 +1231,7 @@ active/draft ──cancel──► cancelled
 | `insight_type` | enum | Тип висновку |
 | `target_date` | date | Дата, до якої відноситься (unique per analyzable+type) |
 | `stress_index` | decimal | 0.0..1.0 (ключовий показник) |
-| `probability_score` | decimal | 0.0..100.0 (впевненість Оракула) |
+| `probability_score` | decimal, **nullable** | 0.0..100.0 (впевненість Оракула). 🔴 **[ARCH.84] Писачів НУЛЬ:** `InsightGeneratorService` створює лише `daily_health_summary`, тож прогноз-інсайт у проді не народжується взагалі, а значення приходить винятково з `db/seeds.rb`. `NULL` = «не виміряно» — окремий СТАН, і модель це вже кодує (`#confidence_level` → `:n_a`). ⛔ Читач не сміє друкувати його голим: `ForecastCard` давав «%» без числа і `style="width: %"` (невалідний CSS) — смуга тепер **не малюється взагалі**, бо будь-яка довжина є твердженням про вимір. Те саме стосується сусіда `prediction_data["yield_impact"]` — у нього писачів теж нуль |
 | `reasoning` | jsonb (GIN) | Структуровані причини рішення. Два індекси: `idx_ai_insights_reasoning_gin` (JSONB GIN — containment `@>` запити) та `idx_ai_insights_reasoning_fts` (tsvector GIN — повнотекстовий пошук по `reasoning->>'description'`) |
 | `source_log_ids` | integer[] (GIN) | IDs telemetry_logs, що стали джерелом |
 | `fraud_detected` | boolean | Прапор маніпуляції даними |

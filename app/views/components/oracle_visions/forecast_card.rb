@@ -11,7 +11,7 @@ module OracleVisions
       div(class: "p-6 border border-emerald-900 bg-zinc-950 group relative overflow-hidden transition-all hover:border-emerald-500") do
         # Неоновий індикатор впевненості Оракула
         div(class: tokens("absolute top-0 right-0 p-4 font-mono text-2xl opacity-40 group-hover:opacity-100 transition-opacity", confidence_text_class)) do
-          plain t(".probability", value: @insight.probability_score)
+          plain probability_reading
         end
 
         header_section
@@ -51,12 +51,39 @@ module OracleVisions
       end
     end
 
+    # 🔴 [ARCH.84] СЬОМИЙ інстанс класу, і він жив у ТОМУ САМОМУ файлі, що
+    # шостий (`yield_impact`) — прохід, який полагодив сусіда за двадцять
+    # рядків нижче, цього не побачив. Обидва поля мають нуль писачів:
+    # `InsightGeneratorService` створює лише `daily_health_summary`, тож
+    # прогноз-інсайт у проді не народжується взагалі, а `probability_score`
+    # приходить винятково з `db/seeds.rb`.
+    #
+    # Що саме друкувалось при `nil` (виміряно рендером, не виведено):
+    # текст — голий «%» без числа, а смуга — `style="width: %"`, тобто
+    # НЕВАЛІДНИЙ CSS. Модель при цьому чесна: `#confidence_level` віддає
+    # `:n_a`. Розходились не дані з даними, а компонент із власною моделлю.
+    #
+    # Смуга не малюється взагалі, і це та сама межа, що для стрес-дуги
+    # ([ARCH.84], `trees/show`): будь-яка довжина є ТВЕРДЖЕННЯМ про вимір,
+    # а нульова читається як виміряний нуль — тобто гірше за відсутність.
     def render_mini_trend
-      div(class: "h-1 w-full bg-emerald-950 my-4") do
-        div(class: tokens("h-full transition-all duration-1000", confidence_bar_class),
-            style: "width: #{@insight.probability_score}%")
+      if probability_score
+        div(class: "h-1 w-full bg-emerald-950 my-4") do
+          div(class: tokens("h-full transition-all duration-1000", confidence_bar_class),
+              style: "width: #{probability_score}%")
+        end
       end
       p(class: "text-compact text-gray-400 italic leading-relaxed") { @insight.summary }
+    end
+
+    def probability_score = @insight.probability_score
+
+    # Дзеркало `impact_reading`: невиміряне має ІМʼЯ, а не порожнє місце
+    # поруч зі знаком відсотка.
+    def probability_reading
+      return t("ui.measurement.not_measured") if probability_score.nil?
+
+      t(".probability", value: probability_score)
     end
 
     # 🔴 [ARCH.84] Доти відсутність даних друкувалась як `-0.04%` — ВИГАДАНЕ

@@ -95,6 +95,7 @@ namespace :docs do
     gp_clamp     = [] # hard: retired growth_points clamp `(…,10,63)` (pre-FW.29-PACK)
     statusbyte_drift = [] # hard: retired pre-FW.29 StatusByte bit-layout (6-bit `<<6`/`0x3F`/bits 7..6) — DOC-T.43
     deprecated  = []  # hard: retired SSOT term reappeared (DocsLinter::DEPRECATED_TERMS)
+    mem_links   = []  # hard: [[wiki-link]] into memory/, which lives OUTSIDE the repo
     label_drift = []  # hard: link label leads with a different NN_NN than its href resolves to
     magic_drift = []  # hard: magic-marker hex ≠ BE/LE ASCII of its quoted name (DOC-T.46 flip — deterministic byte-packing, 0 residual)
     bare_refs   = []  # hard: bare code-span `NN_NN §X` ref that should be a full link
@@ -166,6 +167,7 @@ namespace :docs do
       gp_clamp.concat(DocsLinter.growth_points_clamp_drift(base, text).map { |h| "#{base}: #{h}" })
       statusbyte_drift.concat(DocsLinter.status_byte_layout_drift(base, text).map { |h| "#{base}: #{h}" })
       deprecated.concat(DocsLinter.deprecated_terms(base, text).map { |h| "#{base}: #{h}" })
+      mem_links.concat(DocsLinter.memory_wikilink_violations(text).map { |h| "#{base}: #{h}" })
       label_drift.concat(DocsLinter.link_label_target_mismatch(text).map { |h| "#{base}: #{h}" })
       magic_drift.concat(DocsLinter.magic_marker_hex_drift(text).map { |h| "#{base}: #{h}" })
       bare_refs.concat(DocsLinter.bare_section_ref(base, text).map { |h| "#{base}: #{h}" })
@@ -296,6 +298,7 @@ namespace :docs do
       gp_clamp.concat(DocsLinter.growth_points_clamp_drift(base, text).map { |h| "#{base}: #{h}" })
       statusbyte_drift.concat(DocsLinter.status_byte_layout_drift(base, text).map { |h| "#{base}: #{h}" })
       deprecated.concat(DocsLinter.deprecated_terms(base, text).map { |h| "#{base}: #{h}" })
+      mem_links.concat(DocsLinter.memory_wikilink_violations(text).map { |h| "#{base}: #{h}" })
       rate_drift.concat(DocsLinter.tokenomics_rate_drift(base, text).map { |h| "#{base}: #{h}" })
       solc_drift.concat(DocsLinter.solc_pragma_version_drift(base, text).map { |h| "#{base}: #{h}" })
       ai_vendor.concat(DocsLinter.ai_vendor_name_drift(base, text).map { |h| "#{base}: #{h}" })
@@ -560,6 +563,13 @@ namespace :docs do
       puts "  STATUSBYTE LAYOUT DRIFT (#{statusbyte_drift.size}) — post-FW.29 = [PanicFlag:1|Status:2|GP:5], pack (status<<5)|gp, mask 0x1F (03_04 §4.3/§4.4 + wire 03_05 §2.1):"
       statusbyte_drift.sort.each { |d| puts "    ✗ #{d}" }
     end
+    if mem_links.empty?
+      puts "  memory links:     no [[wiki-link]] into out-of-repo memory ✓"
+    else
+      puts "  MEMORY LINKS (#{mem_links.size}) — canon must not link to memory/ (outside the repo):"
+      mem_links.sort.each { |d| puts "    ✗ #{d}" }
+    end
+
     if deprecated.empty?
       puts "  deprecated terms: no retired SSOT tokens present ✓"
     else
@@ -611,6 +621,7 @@ namespace :docs do
     failed << "retired growth_points clamp `(…,10,63)` (FW.29-PACK → 03_04 §4.3)" unless gp_clamp.empty?
     failed << "retired pre-FW.29 StatusByte bit-layout (6-bit `<<6`/`0x3F`/bits 7..6 outside owner)" unless statusbyte_drift.empty?
     failed << "deprecated SSOT terms present" unless deprecated.empty?
+    failed << "memory wiki-links in canon" unless mem_links.empty?
     failed << "anchor dimension drift (superseded flange/Zone2 range outside 01_01 §1 freeze)" unless anchor_dim.empty?
     failed << "thermal-stress drift (superseded HW.3.IS SF/P_c number outside 01_01 §4.2 / the report)" unless thermal_drift.empty?
     failed << "unbalanced code fences (unclosed ``` desyncs fence-aware guards + ToC — DOC-T.45)" unless fence_unbalanced.empty?
