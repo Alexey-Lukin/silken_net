@@ -17,6 +17,48 @@ RSpec.describe BlockchainTransactionBlueprint, type: :model do
                                     tx_hash: tx_hash, notes: "Carbon credit minting")
   end
 
+  # 🔴 [ARCH.101] Напрямок — властивість контракту, не оздоба: `amount`
+  # валідовано `greater_than: 0`, тож slash-інтент їде ДОДАТНИМ і знак його не
+  # видає. Без цього поля машинний споживач не відрізнить спалення від емісії
+  # на поверхні, чиє призначення саме аудит.
+  #
+  # Пін іде ПАРОЮ навмисно: одне значення предиката доводить, що ключ є, і нічого
+  # не каже про те, чи він ДИСКРИМІНУЄ — саме так виглядав би захардкоджений
+  # `false`. Обидва боки будуються тим самим дискримінатором, що й
+  # `net_minted_supply` (`sourceable_type`), тож пін звірений із SQL-агрегатом.
+  describe "напрямок руху [ARCH.101]" do
+    let(:contract) { create(:naas_contract) }
+    let(:burn_tx) do
+      create(:blockchain_transaction, wallet: wallet, amount: 3.0,
+                                      sourceable: contract, status: :confirmed)
+    end
+
+    it "позначає спалення в обох вʼю" do
+      %i[index show].each do |view|
+        parsed = JSON.parse(described_class.render(burn_tx, view: view))
+        expect(parsed["burn"]).to be(true), "#{view}: спалення не позначене"
+      end
+    end
+
+    it "не позначає емісію — і саме ця половина доводить дискримінацію" do
+      %i[index show].each do |view|
+        parsed = JSON.parse(described_class.render(blockchain_transaction, view: view))
+        expect(parsed["burn"]).to be(false), "#{view}: емісія позначена спаленням"
+      end
+    end
+
+    # Ліхтар: обидві сторони мусять мати ОДНАКОВУ додатну суму, інакше пін
+    # непомітно спирався б на знак, якого в схемі не буває.
+    it "розрізняє їх при ОДНАКОВІЙ додатній сумі" do
+      mint = create(:blockchain_transaction, wallet: wallet, amount: 3.0, status: :confirmed)
+
+      expect(burn_tx.amount).to eq(mint.amount)
+      expect(burn_tx.amount).to be_positive
+      expect(JSON.parse(described_class.render(burn_tx, view: :index))["burn"]).to be(true)
+      expect(JSON.parse(described_class.render(mint, view: :index))["burn"]).to be(false)
+    end
+  end
+
   describe ":index view" do
     subject(:parsed) { JSON.parse(described_class.render(blockchain_transaction, view: :index)) }
 

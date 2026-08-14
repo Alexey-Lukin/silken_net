@@ -77,31 +77,67 @@ module ModelMessageLocalization
     }
   }.freeze
 
+  # 🔴 [I18N.4, присуд founder 2026-08-14] Правило СИЛЬНІШЕ, але ВУЖЧЕ — і
+  # обидві половини куплені одним аргументом.
+  #
+  # Сильніше: на моделях, чиї помилки доходять до ЛЮДИНИ, зашитий літерал
+  # заборонено незалежно від мови. Доти гейт ключувався на не-ASCII, тобто
+  # ловив лише кирилицю — а англійський зашитий рядок так само не локалізований,
+  # просто збігається з базовою локаллю, і на людській формі це той самий дефект.
+  #
+  # Вужче: на решті моделей лишається старе правило (не-ASCII). Підстава —
+  # ратифікований закон масштабування: **вартість іде за ПОПИТОМ, не за
+  # каталогом** (`04_04 §8.1а`). Двадцять сім повідомлень на моделях, чиї
+  # помилки бачить лише JSON, коштували б 108 записів у локалях для поверхні,
+  # якої людина не читає, — і росли б із кожною новою мовою. Це рівно той
+  # анти-патерн, що й per-locale стріми.
+  #
+  # ⚠️ Перелік людських поверхонь — ДЕКЛАРАЦІЯ, а не деривація, і це свідомо:
+  # «чи побачить це людина» не має машинної форми (компонент бере запис
+  # кwargʼом від контролера). Але декларація має ЖИВІСТЬ — приклад нижче звіряє
+  # її з реальною множиною файлів, що рендерять `ErrorSummary`, В ОБИДВА боки,
+  # тож нова форма червонить гейт, доки її модель не оголошено.
+  HUMAN_SURFACES = {
+    "app/views/components/firmwares/form.rb"        => "app/models/bio_contract_firmware.rb",
+    "app/views/components/notifications/settings.rb" => "app/models/user.rb",
+    "app/views/components/settings/show.rb"         => "app/models/organization.rb",
+    "app/views/components/maintenance/form.rb"      => "app/models/maintenance_record.rb",
+    "app/views/components/provisioning/new.rb"      => "app/models/tree.rb",
+    "app/views/components/tree_families/form.rb"    => "app/models/tree_family.rb"
+  }.freeze
+
+  def self.human_reachable_models = HUMAN_SURFACES.values.to_set
+
+  def self.error_summary_renderers
+    Dir[Rails.root.join("app/views/components/**/*.rb")].filter_map do |path|
+      rel = Pathname.new(path).relative_path_from(Rails.root).to_s
+      rel if File.read(path).include?("Views::Shared::UI::ErrorSummary")
+    end.to_set
+  end
+
   def self.hits
     Dir[Rails.root.join("app/models/**/*.rb")].sort.flat_map do |path|
       rel = Pathname.new(path).relative_path_from(Rails.root).to_s
+      human = human_reachable_models.include?(rel)
 
       File.readlines(path).each_with_index.filter_map do |line, idx|
         next if line.lstrip.start_with?("#")
-        next unless offending_text(line)
+        next unless offending_text(line, human_facing: human)
 
         "#{rel}:#{idx + 1}"
       end
     end
   end
 
-  # Три форми авторства, кожна з власним якорем.
-  def self.offending_text(line)
-    declarative = line[/(?<![_a-zA-Z])message:\s*(["'])(.*?)\1/, 2]
-    return declarative if declarative&.match?(NON_ASCII)
-
-    imperative = line[/errors\.add\([^,]+,\s*(["'])(.*?)\1/, 2]
-    return imperative if imperative&.match?(NON_ASCII)
-
-    constant = line[/^\s*[A-Z][A-Z0-9_]*(?:MESSAGE|ERROR)[A-Z0-9_]*\s*=\s*(["'])(.*?)\1/, 2]
-    return constant if constant&.match?(NON_ASCII)
-
-    nil
+  # Три форми авторства, кожна з власним якорем. `human_facing` перемикає лише
+  # ПОРІГ (будь-який літерал ⊥ лише не-ASCII), не перелік форм — інакше вузька
+  # множина мала б власну сліпоту.
+  def self.offending_text(line, human_facing: false)
+    [
+      line[/(?<![_a-zA-Z])message:\s*(["'])(.*?)\1/, 2],
+      line[/errors\.add\([^,]+,\s*(["'])(.*?)\1/, 2],
+      line[/^\s*[A-Z][A-Z0-9_]*(?:MESSAGE|ERROR)[A-Z0-9_]*\s*=\s*(["'])(.*?)\1/, 2]
+    ].compact.find { |text| human_facing || text.match?(NON_ASCII) }
   end
 end
 
@@ -158,6 +194,33 @@ RSpec.describe ModelMessageLocalization, type: :quality do
   # ці рядки ПОЛАГОДИТЬ, тобто карала б покращення (design-rule §Guard-craft:
   # канарка мусить рахувати те, чого робота не сміє змінити). Форми змінитись
   # не можуть — вони і є предметом гейта.
+  # 🔴 [I18N.4] Живість ДЕКЛАРАЦІЇ людських поверхонь. Перелік не деривується
+  # («чи побачить це людина» машинної форми не має), але його ПРЕДМЕТ —
+  # деривується: множина файлів, що рендерять `ErrorSummary`, читається з
+  # дерева. Звірка йде В ОБИДВА боки, тож нова форма робить гейт червоним,
+  # доки її модель не оголошено, а знята форма не лишає протухлого рядка.
+  # Без цього прикладу «нуль порушень» на вузькій множині означало б «нуль
+  # перевірок»: досить було б помилитись у шляху, і множина стала б порожньою.
+  it "тримає перелік людських поверхонь у синхроні з деревом" do
+    declared = described_class::HUMAN_SURFACES.keys.to_set
+    actual   = described_class.error_summary_renderers
+
+    expect(actual).not_to be_empty, "жоден компонент не рендерить ErrorSummary — екстрактор зламано"
+    expect(actual - declared).to be_empty,
+      "нова форма рендерить ErrorSummary, а її модель не оголошена: #{(actual - declared).to_a.sort.join(", ")}"
+    expect(declared - actual).to be_empty,
+      "оголошена поверхня більше не рендерить ErrorSummary: #{(declared - actual).to_a.sort.join(", ")}"
+  end
+
+  # Поріг мусить РІЗНИТИСЬ між двома множинами — інакше «сильніше на вузькій»
+  # є заявою, а не механізмом. Пара доводить обидві половини присуду одразу.
+  it "вимагає СИМВОЛА на людській поверхні й лише не-ASCII на решті" do
+    english = %(validates :x, presence: { message: "can't be blank" })
+
+    expect(described_class.offending_text(english, human_facing: true)).to eq("can't be blank")
+    expect(described_class.offending_text(english, human_facing: false)).to be_nil
+  end
+
   it "екстрактор впізнає ВСІ ТРИ форми авторства — інакше гейт стереже порожнечу" do
     expect(described_class.offending_text(%(validates :x, format: { message: "мусить бути" })))
       .to eq("мусить бути")

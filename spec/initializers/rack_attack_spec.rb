@@ -49,6 +49,37 @@ RSpec.describe "Rack::Attack", type: :request do
       expect(Rack::Attack.safelists["allow-localhost"].matched_by?(loopback)).to be(true)
       expect(Rack::Attack.safelists["allow-localhost"].matched_by?(foreign)).to be(false)
     end
+
+    # ✅ [SEC.32] ПРИСУД founder 2026-08-14: обмежувачі лишаються ДВОМА
+    # незалежними політиками, і safelist свідомо НЕ поширюється на
+    # контролерний ліміт.
+    #
+    # Підстава — різні предмети, а не забутий дріт. Rack::Attack захищає
+    # EDGE від ОБСЯГУ (скани, DoS), і там «внутрішня адреса» є осмисленим
+    # винятком. Контролерний `rate_limit` захищає КОНКРЕТНИЙ обліковий запис
+    # від перебору пароля — а внутрішній брутфорс є таким самим брутфорсом,
+    # тож loopback тут виняткам не підлягає: скомпрометований внутрішній хост
+    # це рівно той сценарій, проти якого ліміт і стоїть.
+    #
+    # 🔴 Пін існує, щоб «уніфікувати два лімітери» не сталось МОВЧКИ: у Rails
+    # `rate_limit` є `by:`-лямбда, тобто технічно спільний safelist за один
+    # рядок — і саме тому рішення потребує носія, а не коментаря.
+    it "лишає auth-ліміт чинним для loopback — це присуд, а не недогляд" do
+      expect(Api::V1::SessionsController.new).to respond_to(:create)
+
+      loopback = Rack::Attack::Request.new(Rack::MockRequest.env_for("/login", "REMOTE_ADDR" => "127.0.0.1"))
+      expect(Rack::Attack.safelists["allow-localhost"].matched_by?(loopback)).to be(true)
+
+      # Контролерний лімітер не консультується з edge-шаром узагалі: у ньому
+      # немає жодного посилання на Rack::Attack — саме це й робить дві
+      # політики незалежними.
+      %w[sessions_controller passwords_controller].each do |controller|
+        source = Rails.root.join("app/controllers/api/v1/#{controller}.rb").read
+        expect(source).to include("rate_limit"), "#{controller}: контролерний ліміт зник"
+        expect(source).not_to match(/Rack::Attack|safelist/),
+          "#{controller}: зʼявилось посилання на edge-шар — межу SEC.32 знято без присуду"
+      end
+    end
   end
 
   # -----------------------------------------------------------------------
