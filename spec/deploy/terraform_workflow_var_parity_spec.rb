@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-require "rails_helper"
+require "spec_helper"
+require_relative "../support/repo_root"
 
 # OPS.11 drift guard. billing.tf uses `count = var.billing_account_id != "" ? 1 : 0` — a terraform
 # apply/plan with that var EMPTY silently sets count→0 and DESTROYS the GCP billing budget (a
@@ -14,14 +15,14 @@ require "rails_helper"
 RSpec.describe "count-guarded TF_VARs reach every terraform-var workflow (OPS.11)" do # rubocop:disable RSpec/DescribeClass
   # Vars whose terraform resource is count-gated on non-empty — empty ⇒ destroyed.
   let(:guarded_vars) do
-    Dir[Rails.root.join("terraform/**/*.tf")]
+    Dir[REPO_ROOT.join("terraform/**/*.tf")]
       .flat_map { |f| File.read(f).scan(/count\s*=\s*var\.([a-z_]+)\s*!=\s*""/).flatten }.uniq
   end
 
   # A workflow that passes ANY TF_VAR runs terraform against real vars (validate-only passes none),
   # so it can create/destroy — a new apply-workflow is auto-covered without editing this spec.
   let(:tf_workflows) do
-    Dir[Rails.root.join(".github/workflows/*.yml")].select { |f| File.read(f).include?("TF_VAR_") }
+    Dir[REPO_ROOT.join(".github/workflows/*.yml")].select { |f| File.read(f).include?("TF_VAR_") }
   end
 
   it "is non-vacuous (found count-guarded vars AND terraform-var workflows)" do

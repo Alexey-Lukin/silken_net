@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-require "rails_helper"
+require "spec_helper"
+require_relative "../support/repo_root"
 
 # INF.4 flash-asymmetry guard. firmware/queen/main.c HARDCODES COAP_SERVER_HOST and it is
 # FROZEN at flash time — if the deploy ever points DNS at a different host, the whole fleet
@@ -23,7 +24,7 @@ RSpec.describe "CoAP host consistency (firmware #define ↔ deploy tooling)" do 
   end
 
   let(:firmware_host) do
-    src = File.read(Rails.root.join("firmware/queen/main.c"))
+    src = File.read(REPO_ROOT.join("firmware/queen/main.c"))
     src[/#define\s+COAP_SERVER_HOST\s+"([^"]+)"/, 1] or raise "COAP_SERVER_HOST #define not found in firmware/queen/main.c"
   end
 
@@ -32,7 +33,7 @@ RSpec.describe "CoAP host consistency (firmware #define ↔ deploy tooling)" do 
   end
 
   it "every committed deploy surface echoes the frozen firmware host (re-flash coupling)" do
-    stale = echo_surfaces.reject { |p| File.read(Rails.root.join(p)).include?(firmware_host) }
+    stale = echo_surfaces.reject { |p| File.read(REPO_ROOT.join(p)).include?(firmware_host) }
     expect(stale).to be_empty,
                      "these committed surfaces don't name the firmware COAP host #{firmware_host.inspect} — " \
                      "either the #define drifted or they did (the fleet is flashed with #{firmware_host.inspect}): " \

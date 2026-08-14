@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-require "rails_helper"
+require "spec_helper"
+require_relative "../support/repo_root"
 
 # 🔴 Кожен файловий шлях, названий у прозі `.claude/**` (скіли · промти · хуки),
 # мусить існувати ВІД КОРЕНЯ РЕПО.
@@ -29,7 +30,7 @@ require "rails_helper"
 #   · Гейт не бачить шляхів, названих ПРОЗОЮ без бектиків — і це навмисно,
 #     інакше він ловив би англійські слова з крапкою.
 module ClaudeProsePathRefs
-  ROOT = Rails.root
+  ROOT = REPO_ROOT
   SCAN_GLOB = ".claude/**/*.md"
 
   PATH_RE = /`([^`\s]+)`/

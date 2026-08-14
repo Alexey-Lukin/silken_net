@@ -116,6 +116,22 @@ jobs:
         # whole-suite minimum_coverage gate — a 2-file subset measures ≈0% overall.
         run: COVERAGE=0 bin/rspec spec/lib/docs_linter_spec.rb spec/lib/docs_toc_spec.rb
 
+      - name: Cross-tree gates (specs whose INPUT lives outside app/lib/spec)
+        # [DOC-T.75, присуд founder 2026-08-14] Пʼять спек читають `.github/**`,
+        # `.claude/**`, `terraform/**`, `deploy/**` — і жодне з цих дерев не входить
+        # у `changes`-фільтр `ci.yml` (`ruby || ci`), де вони жили в джобі `test`.
+        # Тобто вони не бігли на змінах того, що стережуть, і працювали лише як
+        # побічний ефект чужого діфу (§Guard-craft #1 — декоративний за ВХОДОМ).
+        # Фільтр ЦЬОГО workflow покриває всі чотири дерева й був розширений саме
+        # проти цього класу («a PR that touches ONLY terraform/subgraph/deploy
+        # would skip docs_check entirely»), тож дім гейтів — тут.
+        #
+        # Rails тут НЕМАЄ за побудовою (жоден крок цієї джоби не тягне
+        # `:environment`), тому спеки переведені з `rails_helper` на `spec_helper`,
+        # а `Rails.root` замінено на `spec/support/repo_root.rb` — корінь виводиться
+        # з розташування самого файлу. COVERAGE=0 — субсет-прогін, як і сусід вище.
+        run: COVERAGE=0 bin/rspec spec/quality/claude_prose_path_refs_spec.rb spec/lib/workflow_gate_perimeter_spec.rb spec/deploy/terraform_workflow_var_parity_spec.rb spec/deploy/coap_host_consistency_spec.rb spec/deploy/env_fetch_declaration_spec.rb
+
       - name: 04_01 model↔code sync (replaces the §12 manual drift-register invariants)
         # Pure Ruby, no Rails — model files ⟷ `### `Model`` headings, concerns,
         # PARTITIONED_TABLES. Catches a model added in code but absent from 04_01.

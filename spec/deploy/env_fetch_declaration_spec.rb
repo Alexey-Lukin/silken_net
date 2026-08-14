@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-require "rails_helper"
+require "spec_helper"
+require_relative "../support/repo_root"
 
 # INF.12 drift guard. A money/web3 var read as ENV.fetch("X") with NO default raises KeyError
 # on first use if absent — so it must reach the runtime on EVERY deploy path the code runs on,
@@ -25,7 +26,7 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
   let(:activation_gated) { %w[ORACLE_ETHERISC_PRIVATE_KEY ORACLE_PURO_PRIVATE_KEY ORACLE_KLIMA_PRIVATE_KEY] }
   # ENV.fetch("X") NOT followed by "{" (block default); positional-default form never matches.
   let(:code_fetches) do
-    Dir[Rails.root.join("app/**/*.rb"), Rails.root.join("lib/**/*.rb")]
+    Dir[REPO_ROOT.join("app/**/*.rb"), REPO_ROOT.join("lib/**/*.rb")]
       .flat_map { |f| File.read(f).scan(/ENV\.fetch\("([A-Z][A-Z0-9_]{2,})"\)(?!\s*\{)/).flatten }
       .uniq - activation_gated
   end
@@ -42,7 +43,7 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
       .flat_map { |p| names(p, /^\s+([A-Z][A-Z0-9_]{2,}):\s*\$\{\{/) }.uniq
   end
 
-  def names(path, regex) = File.read(Rails.root.join(path)).scan(regex).flatten.uniq
+  def names(path, regex) = File.read(REPO_ROOT.join(path)).scan(regex).flatten.uniq
 
 
 
