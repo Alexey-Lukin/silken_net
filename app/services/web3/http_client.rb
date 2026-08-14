@@ -133,7 +133,13 @@ module Web3
             service: service_name,
             failures: @failure_counts[key],
             circuit_open: circuit_open?(key),
-            available: provider_available?(key)
+            # 🔴 [ARCH.84] ЧИСТИЙ предикат: доти тут стояв `provider_available?`,
+            # який при вичерпаному cooldown видаляє `@failure_counts` і
+            # `@circuit_opened_at` — тобто метод, чий власний коментар каже «для
+            # моніторингу / Prometheus», напів-відкривав справжній circuit
+            # breaker. Дзеркало того самого дефекту в `Web3::ResilientClient`;
+            # нога трекера називала лише його, а сайтів було два.
+            available: provider_reachable?(key)
           }
         end
       end
@@ -180,22 +186,32 @@ module Web3
         end
       end
 
-      def provider_available?(key)
+      # [ARCH.84] ЧИСТИЙ предикат — той самий вердикт без побічних ефектів.
+      # Читає `circuit_status` (звіт); мутуючий сусід нижче — лише диспетчер.
+      def provider_reachable?(key)
         return true unless circuit_open?(key)
 
         opened_at = @circuit_opened_at[key]
-        # circuit_open? true ⇒ @circuit_opened_at[key] сет (record_failure ставить обидва разом,
-        # record_success/cooldown видаляє обидва) ⇒ opened_at present; then (nil) dead — desync-захист (§B.4 leave).
         return true unless opened_at
 
-        if Time.current - opened_at >= CIRCUIT_OPEN_DURATION
+        Time.current - opened_at >= CIRCUIT_OPEN_DURATION
+      end
+
+      # Вердикт + ПЕРЕХІД open → half-open. Кличе лише `check_circuit!`.
+      #
+      # ⚠️ Рішення живе у `provider_reachable?` і тут НЕ дублюється — інакше
+      # мертва desync-гілка стояла б двома копіями. `key?` сам тримає семантику
+      # оригіналу (лічильник і момент відкриття завжди чистяться разом), тож
+      # пара з `circuit_open?` дала б лише непокривану завжди-істинну гілку.
+      def provider_available?(key)
+        return false unless provider_reachable?(key)
+
+        if @circuit_opened_at.key?(key)
           # Cooldown expired — close circuit breaker (half-open → test)
           @failure_counts.delete(key)
           @circuit_opened_at.delete(key)
-          true
-        else
-          false
         end
+        true
       end
 
       def circuit_open?(key)

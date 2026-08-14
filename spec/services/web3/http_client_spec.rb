@@ -247,6 +247,46 @@ RSpec.describe Web3::HttpClient do
       expect(status[:available]).to be true
     end
 
+    # 🔴 [ARCH.84] Дзеркало дефекту з `Web3::ResilientClient`, і саме тут воно
+    # найгостріше: коментар методу дослівно каже «для моніторингу / Prometheus»,
+    # а метод при вичерпаному cooldown видаляв `@failure_counts` і
+    # `@circuit_opened_at` — тобто ЗВІТ напів-відкривав справжній breaker.
+    # ⚠️ Нога трекера називала лише `ResilientClient`; сайтів було ДВА.
+    # 🔴 Перехід open → half-open доти НЕ мав власного носія: єдиним, що його
+    # виконувало в сюїті, був виклик із МОНІТОРИНГУ — тобто рівно той дефект,
+    # який [ARCH.84] і лікує. Щойно звіт перевели на чистий предикат, гілка
+    # переходу лишилась без жодного тесту, і це показало покриття, не око.
+    # **Урок: коли прибираєш побічний ефект із читача, спитай, чи не БУВ той
+    # ефект єдиним виконавцем механізму — інакше фікс лишає механізм без сітки.**
+    it "ДИСПЕТЧЕР (не звіт) виконує перехід half-open після cooldown" do
+      allow(configured_session).to receive(:post).and_return(error_response)
+      Web3::HttpClient::MAX_FAILURES.times { make_failing_post }
+      expect { make_failing_post }.to raise_error(Web3::HttpClient::CircuitOpenError)
+
+      allow(Time).to receive(:current).and_return(Time.current + Web3::HttpClient::CIRCUIT_OPEN_DURATION + 1)
+
+      # Запит проходить (breaker напів-відкрився) — і саме ЦЕЙ шлях мутує стан.
+      # `make_successful_post` сам перестаблює сесію на успіх.
+      expect { make_successful_post }.not_to raise_error
+      expect(Web3::HttpClient.circuit_status("Filecoin")[:failures]).to eq(0) # rubocop:disable RSpec/DescribedClass
+    end
+
+    it "circuit_status НЕ мутує breaker при вичерпаному cooldown" do
+      allow(configured_session).to receive(:post).and_return(error_response)
+      Web3::HttpClient::MAX_FAILURES.times { make_failing_post }
+      allow(Time).to receive(:current).and_return(Time.current + Web3::HttpClient::CIRCUIT_OPEN_DURATION + 1)
+
+      first  = Web3::HttpClient.circuit_status("Filecoin") # rubocop:disable RSpec/DescribedClass
+      second = Web3::HttpClient.circuit_status("Filecoin") # rubocop:disable RSpec/DescribedClass
+
+      # Вердикт чесний (cooldown минув), але СТАН не зрушив: якби звіт мутував,
+      # друге читання побачило б уже обнулений лічильник.
+      expect(first[:available]).to be true
+      expect(first[:circuit_open]).to be true
+      expect(first[:failures]).to eq(Web3::HttpClient::MAX_FAILURES)
+      expect(second).to eq(first)
+    end
+
     it "is case-insensitive for service names" do
       allow(configured_session).to receive(:post).and_return(error_response)
 

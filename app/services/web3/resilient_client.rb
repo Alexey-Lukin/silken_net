@@ -80,15 +80,22 @@ module Web3
     end
 
     # Поточний стан circuit breakers (для моніторингу / Prometheus)
+    # 🔴 [ARCH.84] Звіт читає ЧИСТИЙ предикат, і це не стиль.
+    #
+    # Доти тут стояв `provider_available?`, який при вичерпаному cooldown
+    # ОБНУЛЯЄ `@failure_counts`, видаляє `@circuit_opened_at` і переписує
+    # Prometheus-gauge — тобто **відкриття панелі здоровʼя напів-відкривало
+    # справжні circuit breaker'и**. Проба, що змінює стан, яким звітує, не є
+    # пробою: два оператори, що дивляться на панель одночасно, змінювали
+    # маршрутизацію RPC самим фактом перегляду.
     def provider_health
       @mutex.synchronize do
         @rpc_urls.map do |url|
-          masked = mask_url(url)
           {
-            provider: masked,
+            provider: mask_url(url),
             failures: @failure_counts[url],
             circuit_open: circuit_open?(url),
-            available: provider_available?(url)
+            available: provider_reachable?(url)
           }
         end
       end
@@ -105,23 +112,37 @@ module Web3
       end
     end
 
-    def provider_available?(url)
+    # [ARCH.84] ЧИСТИЙ предикат — той самий вердикт, нуль побічних ефектів.
+    # Дім відповіді «чи доступний»; мутуючий сусід нижче лише додає ПЕРЕХІД.
+    def provider_reachable?(url)
       return true unless circuit_open?(url)
 
-      # Перевіряємо чи минув час cooldown
       opened_at = @circuit_opened_at[url]
+      # `circuit_open?` ⇒ `@circuit_opened_at` сет (`record_failure` ставить
+      # обидва разом) — гілка мертва, лишається як desync-захист.
       return true unless opened_at
 
-      if Time.current - opened_at >= CIRCUIT_OPEN_DURATION
-        # Cooldown минув — закриваємо circuit breaker (half-open → test)
+      Time.current - opened_at >= CIRCUIT_OPEN_DURATION
+    end
+
+    # Вердикт + ПЕРЕХІД open → half-open. Кличе лише диспетчер
+    # (`available_urls`), бо саме він має право випробувати провайдера.
+    #
+    # ⚠️ Рішення НЕ дублюється — воно все у `provider_reachable?`; тут лише
+    # умова ПЕРЕХОДУ. Дзеркальні гілки були б двома копіями мертвої
+    # desync-гілки, а мертвий код у двох місцях гірший за мертвий в одному.
+    # Умова `key?` тримає ту саму семантику, що й оригінал: у desync-стані
+    # (breaker відкритий, а моменту відкриття немає) перехід НЕ відбувається.
+    def provider_available?(url)
+      return false unless provider_reachable?(url)
+
+      if @circuit_opened_at.key?(url)
         @failure_counts[url] = 0
         @circuit_opened_at.delete(url)
         # [S2.2]: Скидаємо gauge при переході з open → half-open після cooldown
         set_circuit_breaker_gauge(mask_url(url), 0.0)
-        true
-      else
-        false
       end
+      true
     end
 
     def circuit_open?(url)

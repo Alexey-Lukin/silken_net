@@ -82,6 +82,35 @@ RSpec.describe Web3::ResilientClient do
       expect(primary_health[:failures]).to eq(described_class::MAX_FAILURES)
     end
 
+    # 🔴 [ARCH.84] Проба, що змінює стан, яким звітує, не є пробою.
+    # Доти `provider_health` кликав мутуючий `provider_available?`, тож при
+    # вичерпаному cooldown ВІДКРИТТЯ ПАНЕЛІ обнуляло лічильник, знімало
+    # `@circuit_opened_at` і переписувало Prometheus-gauge — тобто два
+    # оператори, що дивляться на панель, міняли маршрутизацію RPC самим
+    # фактом перегляду.
+    it "не МУТУЄ circuit breaker, навіть коли cooldown уже вичерпано" do
+      allow(primary_eth_client).to receive(:eth_block_number).and_raise(Net::ReadTimeout)
+      allow(secondary_eth_client).to receive(:eth_block_number).and_return("0xok")
+      described_class::MAX_FAILURES.times { client.eth_block_number }
+
+      # Ліхтар: без нього приклад був би зелений і на невідкритому breaker'і.
+      expect(client.provider_health.find { |h| h[:provider].include?("alchemy") }[:circuit_open]).to be true
+
+      travel_to(Time.current + described_class::CIRCUIT_OPEN_DURATION + 1) do
+        # Читаємо ДВІЧІ: якби звіт мутував, друге читання побачило б уже
+        # закритий breaker — тобто панель «полагодила» б його сама.
+        first  = client.provider_health.find { |h| h[:provider].include?("alchemy") }
+        second = client.provider_health.find { |h| h[:provider].include?("alchemy") }
+
+        # Вердикт чесний: cooldown минув, тож провайдер доступний…
+        expect(first[:available]).to be true
+        # …але СТАН не зрушив ні на йоту, і другий погляд бачить те саме.
+        expect(first[:circuit_open]).to be true
+        expect(first[:failures]).to eq(described_class::MAX_FAILURES)
+        expect(second).to eq(first)
+      end
+    end
+
     it "resets failure count on success" do
       allow(primary_eth_client).to receive(:eth_block_number).and_return("0xok")
 
