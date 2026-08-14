@@ -21,6 +21,50 @@ RSpec.describe Telemetry::LogEntry do
   # `%L` зрізає, не округлює, — тобто Float-форма мовчки дала б «122».
   def stamp = Time.zone.local(2024, 6, 15, 10, 30, 45, 123_000)
 
+  # 🔴 [I18N.2] Носій ПРИСУДУ, а не поведінки: тіло рядка заморожене в
+  # locale-інваріантні токени (⚖️ founder 2026-08-14), бо компонент рендериться
+  # лише з Sidekiq, де локалі немає — тобто uk/lv/lt-переклади не бачив НІХТО.
+  #
+  # Чому окремий приклад, хоч сусідні вже пінять «BATCH_RECEIVED»: ті проходили
+  # й ДО заморозки, бо `around` тримає `:en`. Вони цементують РЯДОК; цей —
+  # інваріантність, і саме він червоніє, якщо хтось поверне `t()`.
+  #
+  # ⚠️ Ітеруємо `I18n.available_locales`, а не перелік із трьох мов: приклад
+  # мусить лишатись правдивим у день, коли каталог виросте до 150 (`04_04 §8.1а`).
+  #
+  # 🔴 СТЕЛЯ, і вона тимчасова: `data-label` із порівняння ВИКЛЮЧЕНО, бо чотири
+  # мітки колонок досі локаль-залежні — це відкритий ⚖️ у `00_07` I18N.2
+  # (card-flip-критерій, §8.1а). Приклад доводить заморозку ТІЛА рядка й нічого
+  # не каже про мітки; коли присуд про них прийде, зняти `strip_labels` — і він
+  # стане повним доказом інваріантності без жодної іншої правки.
+  describe "locale-інваріантність payload'а" do
+    # Вирізаємо саме атрибут, а не будь-що схоже: широкий `gsub` міг би з'їсти
+    # частину прози й зробити приклад зеленим на справжньому розходженні.
+    def strip_labels(html) = html.gsub(/ data-label="[^"]*"/, "")
+
+    it "тіло рядка рендериться ПОБАЙТОВО однаково в кожній налаштованій локалі" do
+      renders = I18n.available_locales.to_h do |locale|
+        [ locale, I18n.with_locale(locale) { strip_labels(render_component(gateway: relay, hex_payload: "DEADBEEF1234", timestamp: stamp)) } ]
+      end
+
+      # Ліхтар: без нього приклад був би зелений і на однині available_locales.
+      expect(renders.size).to be >= 2
+
+      baseline = renders.values.first
+      renders.each do |locale, html|
+        expect(html).to eq(baseline), "рендер у #{locale} розійшовся з базовим — у payload'і локаль-залежна проза"
+      end
+    end
+
+    # ⊥ Дзеркало: доводить, що механізм порівняння ЖИВИЙ. Без нього перша
+    # асершн проходила б і на компоненті, який просто нічого не рендерить.
+    it "містить самі токени, а не порожнечу" do
+      html = I18n.with_locale(I18n.available_locales.last) { render_component(gateway: nil, hex_payload: "AA", timestamp: stamp) }
+
+      expect(html).to include(described_class::UNKNOWN_RELAY, described_class::UNKNOWN_IP, described_class::BATCH_RECEIVED)
+    end
+  end
+
   describe "rendering" do
     let(:html) { render_component(gateway: relay, hex_payload: "DEADBEEF1234", timestamp: stamp) }
 

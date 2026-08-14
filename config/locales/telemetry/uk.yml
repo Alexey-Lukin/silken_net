@@ -7,11 +7,6 @@ uk:
       header_eyebrow: Вихідний нейроканал
       header_title: Глобальний потік телеметрії
     live_title: Жива телеметрія // Пульс
-    log_entry:
-      batch_received: ПАКЕТ_ОТРИМАНО
-      ip_label: 'IP: %{ip}'
-      unknown_ip: "?.?.?.?"
-      unknown_relay: НЕВІДОМИЙ_ШЛЮЗ
     table:
       gateway: Королева / Шлюз
       payload: Сирий вміст CoAP (HEX-потік)

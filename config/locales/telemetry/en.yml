@@ -7,11 +7,6 @@ en:
       header_eyebrow: Neural Link Output
       header_title: Global Telemetry Stream
     live_title: Live Telemetry // The Pulse
-    log_entry:
-      batch_received: BATCH_RECEIVED
-      ip_label: 'IP: %{ip}'
-      unknown_ip: "?.?.?.?"
-      unknown_relay: UNKNOWN_RELAY
     table:
       gateway: Queen / Gateway
       payload: Raw CoAP Payload (Hex Stream)

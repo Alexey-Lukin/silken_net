@@ -7,11 +7,6 @@ lv:
       header_eyebrow: Neirālā saites izeja
       header_title: Globālā telemetrijas plūsma
     live_title: Tiešraides telemetrija // Pulss
-    log_entry:
-      batch_received: PARTIJA_SAŅEMTA
-      ip_label: 'IP: %{ip}'
-      unknown_ip: "?.?.?.?"
-      unknown_relay: NEZINĀMS_RELĒJS
     table:
       gateway: Queen / Vārteja
       payload: Neapstrādāts CoAP saturs (Hex plūsma)
