@@ -47,4 +47,6 @@ lv:
     web3_address:
       copy: Kopēt adresi
       copy_aria: Kopēt adresi %{address} starpliktuvē
+      copied: Adrese nokopēta
+      copy_failed: Neizdevās nokopēt
       not_provisioned: NAV PIEŠĶIRTS

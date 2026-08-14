@@ -94,8 +94,13 @@ RSpec.describe Telemetry::LiveStream do
       expect(html).to include("Carrier: Direct-to-Cell")
     end
 
-    it "renders the matrix-rain canvas with stimulus controller" do
-      expect(html).to include("matrix-rain")
+    # ⚖️ [UI.1] Декоративний matrix-rain canvas знято 2026-08-14: ~16 fps
+    # безперервного перемальовування = 100–300 мВт, більше за всю різницю тем.
+    # Пін тримає ВІДСУТНІСТЬ, бо «прибрали» без носія повертається першим же
+    # редизайном — а ефект виглядає як прикраса, не як витрата.
+    it "не несе декоративного canvas — ані вузла, ані контролера" do
+      expect(html).not_to include("matrix-rain")
+      expect(html).not_to include("<canvas")
     end
 
     it "renders the telemetry_feed tbody" do
@@ -141,11 +146,6 @@ RSpec.describe Telemetry::LiveStream do
 
   describe "visual effects" do
     let(:html) { render_component(organization: organization) }
-
-    it "renders with GPU compositing hints on canvas" do
-      expect(html).to include("transform-gpu")
-      expect(html).to include("will-change-transform")
-    end
 
     it "renders the spinner animation in placeholder" do
       expect(html).to include("animate-spin")

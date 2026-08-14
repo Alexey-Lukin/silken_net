@@ -459,7 +459,7 @@ end
 коли OS повідомляє про reduced-motion. Для CSS-анімації сторінкам нічого додавати
 не треба — правило діє автоматично. ⚠️ **Виняток — canvas/`requestAnimationFrame`:**
 CSS-гейт глушить лише `*-duration`, НЕ JS rAF-цикл, тож JS-контролери руху
-(`matrix-rain`, `reveal`) мусять САМІ перевіряти
+(`reveal`) мусять САМІ перевіряти
 `matchMedia("(prefers-reduced-motion: reduce)")` у `connect()` і виходити (реалізовано).
 
 **`@utility animate-fade-in`** — keyframe `gaia-fade-in` (translateY 4px → 0 +
@@ -701,7 +701,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 
 | Компонент | Файл | Props | Опис |
 |---|---|---|---|
-| `Telemetry::LiveStream` | `telemetry/live_stream.rb` | `organization:` | Live telemetry HUD: Matrix Rain canvas (Stimulus), sticky `<thead>`, `turbo_stream_from TurboStreams::Name.org(:telemetry, org)` (org — це скоуп стріму, не декорація; епоха в імені = відкликання, §8.1) |
+| `Telemetry::LiveStream` | `telemetry/live_stream.rb` | `organization:` | Live telemetry HUD (декоративний canvas знято — §7.3), sticky `<thead>`, `turbo_stream_from TurboStreams::Name.org(:telemetry, org)` (org — це скоуп стріму, не декорація; епоха в імені = відкликання, §8.1) |
 | `Telemetry::LogEntry` | `telemetry/log_entry.rb` | `log:` | Один декодований рядок телеметрії, вставлений `UnpackTelemetryWorker` |
 
 #### Oracle Visions
@@ -842,7 +842,6 @@ START: Що це за компонент?
 |---|---|---|---|
 | **clipboard** | `clipboard_controller.js` | `clipboard` | Копіювання в буфер обміну для Web3-адрес |
 | **map** | `map_controller.js` | `map` | Геопросторова карта дерев Leaflet.js |
-| **matrix-rain** | `matrix_rain_controller.js` | `matrix-rain` | Canvas-ефект Matrix digital rain |
 | **mobile-nav** | `mobile_nav_controller.js` | `mobile-nav` | Шим `<dialog>` мобільної навігації (backdrop-click + scroll-lock Safari) — § 15.2 |
 | **codex--comment** | `codex/comment_controller.js` | `codex--comment` | Codex thread — inline reply / broadcast (`Codex::Comments::Thread`) |
 | **reveal** ⚠️ | `reveal_controller.js` | `reveal` | Appear-on-scroll (IntersectionObserver) — § 14.3. **Наразі 0 консюмерів** (`data-controller="reveal"` ніде): scaffold, який авто-реєструється |
@@ -891,15 +890,11 @@ START: Що це за компонент?
 
 **Phlex-використання:** `data: { controller: "map" }` на map `<div>` у `Dashboard::Map`. Приховані `<div data-map-target="node">` елементи стрімляться через Turbo з `Dashboard::MapNode`.
 
-### 7.3 Контролер `matrix-rain`
+### 7.3 ~~Контролер `matrix-rain`~~ — ЗНЯТО
 
-Canvas-ефект Matrix digital rain з hex-символами (`0-9A-F`). Canvas-елемент отримує `transform-gpu will-change-transform` для GPU-compositing (апаратне прискорення).
+⚖️ **Присуд founder 2026-08-14: декоративний canvas видалено цілком** ([`00_07`](00_07_Action_Plan_Tracker) UI.1). Підстава — вимір, не смак: ~16 fps безперервного перемальовування коштували глядачеві **100–300 мВт**, тобто **більше, ніж уся різниця світлої й темної теми** (~30 мВт). 🔑 **Урок, ширший за цей контролер: якщо енергетичний аргумент про UI взагалі має право звучати в цьому проєкті, він звучить «ми вимкнули декоративний дощ», а не «ми зробили темну тему»** — різниця тем на мільярд переглядів ≈ 0.22 т CO₂e/рік, тоді як один декоративний rAF-цикл на відкритій вкладці бʼє її на порядок. Саме тому енергетичне обґрунтування ТЕМ у канон свідомо не пішло.
 
-- `connect()` — отримує canvas 2D контекст, запускає rAF-цикл (`requestAnimationFrame`) з throttle до ~16 fps (`FRAME_INTERVAL = 60ms`); цикл автоматично призупиняється при неактивній вкладці
-- `disconnect()` — скасовує rAF через `cancelAnimationFrame(this.rafId)`, видаляє resize-слухач
-- `resize()` — підганяє canvas під батьківський елемент, переініціалізує масив `drops[]`
-
-**Phlex-використання:** `canvas(data: { controller: "matrix-rain" }, class: "absolute inset-0 z-0 opacity-20 pointer-events-none w-full h-full transform-gpu will-change-transform")` всередині `Telemetry::LiveStream`.
+⊕ Надгробок лишається навмисно: ефект виглядав як прикраса, не як витрата, тож без запису він вертається першим же редизайном. Носій — пін відсутності в `live_stream_spec` (`не несе декоративного canvas`). Разом із контролером пішли `transform-gpu`/`will-change-transform` — у джерелах їх більше немає жодного споживача.
 
 ---
 
@@ -909,8 +904,8 @@ Canvas-ефект Matrix digital rain з hex-символами (`0-9A-F`). Canv
 >
 > | Що | Виміряно | Хто тримає |
 > |---|---|---|
-> | morph | `turbo-refresh-method: morph` + `turbo-refresh-scroll: preserve` — **лише** в `DashboardLayout`, тобто діють на всі дашборд-сторінки | ревʼю (машинної форми «чи безпечна морфом сторінка X» не існує) |
-> | prefetch | явної конфігурації НЕМА → дефолт гема (hover-prefetch увімкнений) | ревʼю |
+> | morph | `turbo-refresh-method: morph` + `turbo-refresh-scroll: preserve` — **лише** в `DashboardLayout`, тобто діють на всі дашборд-сторінки. 🔬 **Переміряно 2026-08-14, і два факти тут неочевидні.** (1) **Атрибут на СТРІМ-ТЕЗІ бʼє метатег:** `broadcast_refresh_(later_)to(*streamables, **attributes)` прокидає `method:`/`scroll:` у `turbo_stream_refresh_tag`, а `turbo.js` бере `visit?.refresh?.method \|\| snapshot.refreshMethod` — тобто важіль існує на боці ПРОДЮСЕРА, і він адресніший за сторінковий. (2) **`turbo-refresh-scroll: preserve` тут ДЕКОРАТИВНИЙ:** `body` має `overflow-hidden`, скролиться внутрішній `div`, а Turbo скролить `window`; збереження скролу насправді дає сам МОРФ (той самий DOM-вузол переживає рендер). ⚠️ І периметр морфу ширший за refresh-сигнал: same-location редирект теж морфить, таких сторінок ~9. Присуд про форму → [`00_07`](00_07_Action_Plan_Tracker) UI.11 | ревʼю (машинної форми «чи безпечна морфом сторінка X» не існує) |
+> | prefetch | явної конфігурації НЕМА → дефолт гема (hover-prefetch увімкнений). ✅ **⚖️ 2026-08-14 — лишаємо дефолт.** Безпекового аргументу не існує: Prism-прохід по тілу кожного екшена дав **нуль із 81 GET-екшена, що пише в базу**, тож hover не може смикнути побічний ефект. Лишається ціна, і вона масштабується глядачами, яких нуль | ревʼю |
 > | `data-turbo-permanent` | **НУЛЬ** вузлів у дереві | `spec/quality/no_turbo_permanent_spec.rb` — заборона з нульовим винятком |
 > | `data-turbo="false"` | **НУЛЬ** сайтів | — (знято разом із причинами, §8.1) |
 > | ціль `data-turbo-frame` | кожна мусить мати `turbo_frame_tag` у тому ж файлі | `spec/quality/turbo_frame_target_spec.rb` |
@@ -1967,7 +1962,7 @@ Stimulus controller, який скидає `opacity-0 translate-y-2` коли е
 |---|---|
 | `mobile_nav_controller` (тонкий шим) | Native `<dialog>` не закривається на backdrop-click + scroll-lock у Safari через `.showModal()` не завжди — лишаємо ~25 рядків шіма. |
 | `reveal_controller` ⚠️ | CSS `animation-timeline: view()` ще НЕ Baseline (Safari/Firefox в роботі) — IntersectionObserver лишається оптимальним до ~2027. **Наразі 0 консюмерів** (`data-controller="reveal"` ніде) — scaffold-патерн задокументовано (§ 14.3), але ще не застосовано (дзеркало Popover-чесності § 15.1). |
-| `clipboard_controller`, `map_controller`, `matrix_rain_controller`, `codex/*` | Інтеграція з 3rd-party / Canvas / складна логіка. |
+| `clipboard_controller`, `map_controller`, `codex/*` | Інтеграція з 3rd-party / складна логіка. |
 
 ### 15.3 Чек-ліст: коли можна **не** писати Stimulus controller
 
@@ -2200,7 +2195,7 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 
 - **LCP < 2.5 s** на 4G/Slow Mobile — fluid `clamp()` typography уникає CLS-перерозкладок при зміні vw (§ 14.1).
 - **CLS < 0.1** — `Skeleton` варіанти займають той самий простір, що й контент.
-- **INP < 200 ms** — Stimulus controllers без важких synchronous блоків; `matrix-rain` throttle ~16 fps (`requestAnimationFrame`).
+- **INP < 200 ms** — Stimulus controllers без важких synchronous блоків. ⊕ Найбільший внесок тут зробило не тюнінгування, а ВИДАЛЕННЯ: декоративний rAF-цикл знято цілком (§7.3), тож безперервних перемальовувань у дереві не лишилось.
 - **Lazy-load** через Turbo Frames `loading: :lazy` для дорогих фрагментів (Wallet balance/metadata).
 - **Resource hints:** `<link rel="preconnect">` для CDN тайлів Leaflet (CartoDB).
 - **Bundle budget:** importmap (no bundler) — кожен Stimulus controller ≤ 5 KB gzipped (manual budget).

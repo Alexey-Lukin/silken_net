@@ -21,7 +21,15 @@ module Views
           if @address.present?
             span(
               class: "inline-flex items-center gap-1",
-              data: { controller: "clipboard", clipboard_content_value: @address }
+              data: {
+                controller: "clipboard",
+                clipboard_content_value: @address,
+                # Локаль знає ЛИШЕ сервер: контролер не сміє вигадувати текст,
+                # а порожнє значення там вимикає оголошення, а не підставляє
+                # англійський дефолт усередині JS.
+                clipboard_copied_text_value: t("ui.web3_address.copied"),
+                clipboard_failed_text_value: t("ui.web3_address.copy_failed")
+              }
             ) do
               span(
                 class: "text-compact font-mono text-gaia-primary break-all leading-relaxed",
@@ -32,8 +40,21 @@ module Views
                 class: copy_button_classes,
                 title: t("ui.web3_address.copy"),
                 aria_label: t("ui.web3_address.copy_aria", address: truncated_address),
-                data: { action: "clipboard#copy", clipboard_target: "button" }
-              ) { copy_icon }
+                data: { action: "clipboard#copy" }
+              ) do
+                copy_icon
+                check_icon
+              end
+              # Результат оголошується ОКРЕМИМ live-регіоном, а не підміною
+              # вмісту кнопки: у кнопки є `aria-label`, і він перекриває будь-який
+              # текст усередині — тобто доти успіх не отримував ЖОДНОГО
+              # звукового підтвердження, лише візуальну «✓».
+              span(
+                class: "sr-only",
+                role: "status",
+                aria_live: "polite",
+                data: { clipboard_target: "status" }
+              )
             end
           else
             span(class: "text-compact font-mono text-gaia-text-muted italic") do
@@ -64,7 +85,8 @@ module Views
             stroke_width: "1.5",
             stroke: "currentColor",
             class: "w-3 h-3",
-            aria_hidden: "true"
+            aria_hidden: "true",
+            data: { clipboard_target: "icon" }
           ) do |s|
             s.path(
               stroke_linecap: "round",
@@ -76,6 +98,25 @@ module Views
                  "1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 " \
                  "1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
             )
+          end
+        end
+
+        # Обидві іконки рендеряться СЕРВЕРОМ, контролер лише перемикає `hidden`.
+        # Доти він робив `button.innerHTML = "✓"` і відновлював рядок — тобто
+        # знищував SVG і збирав його назад із памʼяті; будь-яка вкладена зміна
+        # (клас, атрибут) при цьому губилась.
+        def check_icon
+          svg(
+            xmlns: "http://www.w3.org/2000/svg",
+            fill: "none",
+            viewbox: "0 0 24 24",
+            stroke_width: "2",
+            stroke: "currentColor",
+            class: "w-3 h-3 hidden",
+            aria_hidden: "true",
+            data: { clipboard_target: "check" }
+          ) do |s|
+            s.path(stroke_linecap: "round", stroke_linejoin: "round", d: "m4.5 12.75 6 6 9-13.5")
           end
         end
       end

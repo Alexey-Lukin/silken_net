@@ -662,6 +662,20 @@ RSpec.describe DocsLinter do
       expect(described_class.memory_wikilink_violations("[[a_b]] і ще раз [[a_b]]").size).to eq(1)
     end
 
+    # ⚠️ Док, що ілюструє цей самий антипатерн літеральним прикладом, — природна
+    # річ; без пропуску фенсів гейт червонів би на інертному прикладі, а не на
+    # живому посиланні (`guard-craft` #29 — цитата стає твердженням).
+    it "пропускає fenced-блок, але не сусідній живий лінк" do
+      doc = "жива згадка [[live_one]]\n\n```md\nприклад: [[in_fence]]\n```\n\nхвіст\n"
+
+      hits = described_class.memory_wikilink_violations(doc)
+
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("[[live_one]]")
+      # Ліхтар: без нього приклад був би зелений і на гейті, що не бачить нічого.
+      expect(hits.first).not_to include("in_fence")
+    end
+
     # ⊥ Межі: markdown-лінк, посилання на канон і подвійна дужка в коді — не хіти.
     it "не чіпає звичайних посилань і сусідніх форм" do
       %w[

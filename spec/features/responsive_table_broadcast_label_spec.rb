@@ -94,6 +94,43 @@ RSpec.describe "Responsive-table: мітка колонки в broadcast-ряд�
     })
   JS
 
+  # 🔴 Носій регресу, якого приклад вище не бачив ЗА ПОБУДОВОЮ: його синтетичний
+  # рядок МАЄ `data-label`, тобто комірка-без-мітки лежала поза його світом.
+  # Реальна така комірка є — `feed_placeholder` у телеметрії це один
+  # `<td colspan="4">` зі спінером, тобто `nth-child(1)`; без `:not([colspan])`
+  # він успадковував `--gaia-col-1` і на КОЖНОМУ мобільному завантаженні
+  # друкував «Timestamp» над написом «очікуємо аплінк».
+  it "комірка, що охоплює колонки, мітки НЕ отримує" do
+    result = measure(<<~JS)
+      (() => {
+        const style = document.createElement('style');
+        style.textContent =
+          '#span-probe td:nth-child(1):not([colspan])::before { content: var(--gaia-col-1, attr(data-label)); }';
+        document.head.appendChild(style);
+
+        const host = document.createElement('div');
+        host.innerHTML = "<table id='span-probe' style=\\"--gaia-col-1: 'ЧАС'\\"><tbody>" +
+                         "<tr><td colspan='4'>spinner</td></tr>" +
+                         "<tr><td>real</td></tr></tbody></table>";
+        document.body.appendChild(host);
+
+        const rows = host.querySelectorAll('tr');
+        const spanning = getComputedStyle(rows[0].querySelector('td'), '::before').content;
+        const normal   = getComputedStyle(rows[1].querySelector('td'), '::before').content;
+
+        host.remove(); style.remove();
+        return JSON.stringify({ spanning, normal });
+      })()
+    JS
+
+    parsed = JSON.parse(result)
+
+    expect(parsed["spanning"]).not_to include("ЧАС")
+    # ⊥ Ліхтар: сусідній рядок БЕЗ colspan мітку отримує — без цього приклад
+    # був би зелений і на правилі, яке не працює взагалі.
+    expect(parsed["normal"]).to include("ЧАС")
+  end
+
   it "CSS custom property зі СТОРІНКИ доїжджає у рядок, вставлений ПІСЛЯ неї" do
     parsed = {
       "resolved" => measure("#{custom_property_probe}(true)"),

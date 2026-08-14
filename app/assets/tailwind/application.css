@@ -280,7 +280,7 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--gaia-border-strong); }
 
   /* Honour OS-level "reduce motion" preference globally — disables heavy
-   * decorative animations (Matrix rain pulse, ping rings, smooth scrolls)
+   * decorative animations (ping rings, smooth scrolls)
    * while keeping focus-ring transitions snappy enough to remain visible. */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
@@ -436,16 +436,28 @@ dialog[open]::backdrop {
    *
    * CEILING: four columns. Deliberate — the mechanism is opt-in per table
    * and a table's column count is known when you opt in; a fifth column
-   * needs a fifth rule (and the page must publish it). */
-  .gaia-responsive-table td:nth-child(1)::before { content: var(--gaia-col-1, attr(data-label)); }
-  .gaia-responsive-table td:nth-child(2)::before { content: var(--gaia-col-2, attr(data-label)); }
-  .gaia-responsive-table td:nth-child(3)::before { content: var(--gaia-col-3, attr(data-label)); }
-  .gaia-responsive-table td:nth-child(4)::before { content: var(--gaia-col-4, attr(data-label)); }
+   * needs a fifth rule (and the page must publish it).
+   *
+   * 🔴 `:not([colspan])` is load-bearing, not defensive. A cell that SPANS
+   * columns has no single column label by definition — and the telemetry
+   * table has exactly such a cell: the `feed_placeholder` row is one
+   * `<td colspan="4">` holding the spinner. Without this guard it is
+   * `td:nth-child(1)`, so it inherited `--gaia-col-1` and every mobile page
+   * load printed "Timestamp" over the "Awaiting uplink" spinner, with the
+   * layout flipped from the documented centred block to a label/value row.
+   * Found by an adversarial pass, not by a test: the feature example uses a
+   * synthetic row that HAS a data-label, so the spanning cell was outside
+   * its world entirely. */
+  .gaia-responsive-table td:nth-child(1):not([colspan])::before { content: var(--gaia-col-1, attr(data-label)); }
+  .gaia-responsive-table td:nth-child(2):not([colspan])::before { content: var(--gaia-col-2, attr(data-label)); }
+  .gaia-responsive-table td:nth-child(3):not([colspan])::before { content: var(--gaia-col-3, attr(data-label)); }
+  .gaia-responsive-table td:nth-child(4):not([colspan])::before { content: var(--gaia-col-4, attr(data-label)); }
 
   /* An opted-in table carries no `data-label` at all, so the "no label →
    * centre" rule above would otherwise collapse every cell. Higher
-   * specificity restores the label/value split. */
-  .gaia-responsive-table.gaia-labels-published td:not([data-label]) {
+   * specificity restores the label/value split — but NOT for a spanning
+   * cell, which is exactly the case the centred block was written for. */
+  .gaia-responsive-table.gaia-labels-published td:not([data-label]):not([colspan]) {
     justify-content: space-between;
     padding-top: 0.5rem;
   }

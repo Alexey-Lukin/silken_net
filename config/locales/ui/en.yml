@@ -47,4 +47,6 @@ en:
     web3_address:
       copy: Copy address
       copy_aria: Copy address %{address} to clipboard
+      copied: Address copied
+      copy_failed: Copy failed
       not_provisioned: NOT_PROVISIONED

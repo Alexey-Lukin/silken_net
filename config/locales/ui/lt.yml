@@ -47,4 +47,6 @@ lt:
     web3_address:
       copy: Kopijuoti adresą
       copy_aria: Kopijuoti adresą %{address} į iškarpinę
+      copied: Adresas nukopijuotas
+      copy_failed: Nepavyko nukopijuoti
       not_provisioned: NEPRISKIRTA

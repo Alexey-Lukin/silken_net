@@ -31,11 +31,12 @@ module Telemetry
         # оновлень просто не надходить — дзеркало `Alerts::Index`.
         turbo_stream_from TurboStreams::Name.org(:telemetry, @organization) if @organization
 
-        # Контейнер з відносною позицією для накладання Canvas та таблиці.
+        # Контейнер з відносною позицією для накладання градієнта й таблиці.
+        # ⚖️ [UI.1] Декоративний matrix-rain canvas ЗНЯТО 2026-08-14 (присуд founder):
+        # ~16 fps безперервного перемальовування коштували глядачеві 100–300 мВт —
+        # більше, ніж уся різниця світлої й темної теми (~30 мВт). Це і є та форма,
+        # у якій енергетичний аргумент про UI має право звучати в цьому проєкті.
         div(class: "relative border border-gaia-border bg-gaia-surface min-h-[400px] md:min-h-[600px] overflow-hidden rounded-sm shadow-[0_0_40px_rgba(6,78,59,0.2)]") do
-          # 📟 Абсолютний Canvas — ефект "Зеленого дощу" від Stimulus 'matrix-rain'.
-          canvas(data: { controller: "matrix-rain" }, class: "absolute inset-0 z-0 opacity-20 pointer-events-none w-full h-full transform-gpu will-change-transform")
-
           # Радіальний градієнт для глибини (decorative — raw classes allowed).
           # Градієнт «затемнення до країв» тепер іде за темою: сирий `to-black`
           # робив цю панель чорною і в СВІТЛІЙ, тобто був тем-інваріантною
@@ -44,7 +45,7 @@ module Telemetry
           # Намір збережено симетрично: краї глибші за панель в ОБОХ темах.
           div(class: "absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-gaia-surface-base/80 to-gaia-surface-base pointer-events-none", aria_hidden: "true")
 
-          # HUD-таблиця, що "плаває" поверх дощу. Mobile рендериться як
+          # HUD-таблиця поверх градієнта. Mobile рендериться як
           # стек карток через `gaia-responsive-table` (CSS-only flip).
           div(class: "relative z-10 w-full h-[400px] md:h-[600px] overflow-y-auto md:overflow-x-auto custom-scrollbar") do
             table(
@@ -84,12 +85,27 @@ module Telemetry
     # 🔴 Лапки обовʼязкові: `content` приймає РЯДОК, а не ключове слово, тож
     # без них правило просто не застосується. Одинарна лапка всередині
     # перекладу зламала б значення — екрануємо (`content` розуміє `\'`).
-    # Крапку з комою прибираємо: вона розділяє декларації в `style`.
+    # Крапку з комою прибираємо: вона розділяє декларації в `style`. Переноси
+    # рядка — теж: неекранований LF усередині CSS-рядка це bad-string-token
+    # (CSS Syntax L3 §4.3.5), а YAML тривіально дозволяє багаторядковий скаляр.
+    # ⊥ Подвійну лапку НЕ чіпаємо свідомо: Phlex екранує атрибути сам
+    # (`sgml/attributes.rb` — `gsub('"', "&quot;")`), тож наша копія була б
+    # другим домом того самого правила.
     def published_column_labels
       COLUMNS.each_with_index.map do |key, index|
-        value = t(key).to_s.gsub("\\", "\\\\\\\\").gsub("'", "\\\\'").delete(";")
+        value = css_string_literal(t(key).to_s)
         "--gaia-col-#{index + 1}: '#{value}'"
       end.join("; ")
+    end
+
+    # Один дім екранування, щоб ланцюг не читався як випадковий набір `gsub`.
+    ESCAPE_IN_CSS_STRING = { "\\" => "\\\\", "'" => "\\'" }.freeze
+
+    def css_string_literal(raw)
+      raw.gsub(/[\\']/) { |char| ESCAPE_IN_CSS_STRING.fetch(char) }
+         .delete(";")
+         .gsub(/\s+/, " ")
+         .strip
     end
 
     def header_section
