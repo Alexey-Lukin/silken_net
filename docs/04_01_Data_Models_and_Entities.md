@@ -1289,7 +1289,7 @@ active/draft ──cancel──► cancelled
 | Метод | Опис |
 |-------|------|
 | `resolve!(user:, notes:)` | Закрити тривогу + закрити пов'язаний MaintenanceRecord |
-| `coordinates` | `{lat:, lng:}` через tree або cluster.geo_center |
+| `coordinates` | `[lat, lng]` через `tree` або `cluster.geo_center` — інакше **`nil`** [ARCH.82]. 🔴 Доти віддавав `[0.0, 0.0]` «щоб не ламати Leaflet.js», але це не відсутність, а **вигадана географія** (Гвінейська затока), і стан досяжний: `trees.latitude/longitude` nullable (тому й існує скоуп `geolocated`), а `geo_center` деривується з опційного полігона. Ціна була доказова, не косметична — єдиний споживач (`Dclimate::VerificationService`) годує координати в запит про пожежу, і його вердикт лягає на алерт як `satellite_status`. ⚠️ Споживач мусить розрізняти ЗАТРИМКУ і ВИРОК: `nil` дає **термінальний** `inconclusive` (без orbital-ретраю, бо координати чеканням не зʼявляться), для критичних — той самий негайний Field Audit, що при затемненні |
 | `actionable?` | Чи можна автоматично відреагувати |
 | `requires_satellite_consensus?` | fire або drought → IoTeX ZK-верифікація |
 | `dispatch_notifications!` | Надіслати SMS/Telegram/Push |

@@ -466,14 +466,19 @@ RSpec.describe EwsAlert, type: :model do
       expect(coords).to eq([ 50.0, 30.0 ])
     end
 
-    it "falls back to [0.0, 0.0] when no coordinates available" do
+    # 🔴 [ARCH.82] Доти тут стояло `[0.0, 0.0]` «щоб не ламати Leaflet.js» — і
+    # три піни цементували це як контракт. Нульова точка не є відсутністю: (0,0)
+    # — Гвінейська затока. Ціна не косметична: єдиний споживач
+    # (`Dclimate::VerificationService`) годує координати в ЗАПИТ ПРО ПОЖЕЖУ, а
+    # його вердикт лягає на алерт як `satellite_status`, тобто як ДОКАЗ.
+    it "віддає nil, коли координат немає — вигаданої точки більше нема" do
       cluster = create(:cluster)
       alert = create(:ews_alert, tree: nil, cluster: cluster)
 
       allow(cluster).to receive(:geo_center).and_return(nil)
 
       coords = alert.coordinates
-      expect(coords).to eq([ 0.0, 0.0 ])
+      expect(coords).to be_nil
     end
 
     # Regression: cluster is optional (одиноке дерево / тестова інсталяція).
@@ -482,15 +487,15 @@ RSpec.describe EwsAlert, type: :model do
     it "does not raise when both tree and cluster are nil" do
       alert = build(:ews_alert, tree: nil, cluster: nil)
       expect { alert.coordinates }.not_to raise_error
-      expect(alert.coordinates).to eq([ 0.0, 0.0 ])
+      expect(alert.coordinates).to be_nil
     end
 
-    it "falls back to [0.0, 0.0] when tree has no GPS and cluster is nil" do
+    it "віддає nil, коли дерево без GPS і кластера немає" do
       tree = create(:tree, latitude: nil, longitude: nil)
       alert = build(:ews_alert, tree: tree, cluster: nil)
 
       expect { alert.coordinates }.not_to raise_error
-      expect(alert.coordinates).to eq([ 0.0, 0.0 ])
+      expect(alert.coordinates).to be_nil
     end
   end
 
@@ -637,10 +642,10 @@ RSpec.describe EwsAlert, type: :model do
       expect(alert.coordinates).to eq([ 50.0, 30.0 ])
     end
 
-    it "falls back to [0, 0] when tree is nil and cluster has no geo_center" do
+    it "віддає nil, коли дерева немає, а кластер без geo_center" do
       alert = create(:ews_alert, cluster: cluster_coord, tree: nil)
       allow(cluster_coord).to receive(:geo_center).and_return(nil)
-      expect(alert.coordinates).to eq([ 0.0, 0.0 ])
+      expect(alert.coordinates).to be_nil
     end
   end
 

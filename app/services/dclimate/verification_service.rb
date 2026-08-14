@@ -70,6 +70,8 @@ module Dclimate
         handle_clear_sky_no_fire
       when :obscured_by_clouds
         handle_obscured_by_clouds
+      when :coordinates_unknown
+        handle_coordinates_unknown
       end
     end
 
@@ -86,7 +88,20 @@ module Dclimate
     # При будь-якій мережевій помилці (timeout, HTTP 5xx, DNS failure)
     # повертає :obscured_by_clouds → OrbitalLagError → Sidekiq retry.
     def query_dclimate_api
-      lat, lng = @alert.coordinates
+      coords = @alert.coordinates
+      # 🔴 [ARCH.82] Немає координат — немає ЧОГО верифікувати, і це окремий
+      # результат, а не хмарність. Доти `EwsAlert#coordinates` віддавав
+      # `[0.0, 0.0]`, тож запит ішов у Гвінейську затоку, а його вердикт лягав
+      # на алерт як `satellite_status`, тобто як доказ про іншу півкулю.
+      #
+      # ⚠️ Повертати `:obscured_by_clouds` тут БУЛО Б ХИБНО, і різниця не
+      # косметична: та гілка кидає `OrbitalLagError` → Sidekiq-ретрай «до
+      # наступного прольоту». Але брак координат чеканням не лікується —
+      # алерт їх не набуде. Тому результат ТЕРМІНАЛЬНИЙ: `inconclusive`, стан,
+      # що вже означає «потрібен DAO-аудит», без ретраю.
+      return :coordinates_unknown if coords.nil?
+
+      lat, lng = coords
       date = @alert.created_at.to_date
 
       response_data = fetch_firms_data(lat, lng, date)
@@ -255,6 +270,27 @@ module Dclimate
 
       raise Dclimate::OrbitalLagError,
             "Satellite pass obscured by clouds/canopy for alert ##{@alert.id}. Retrying on next orbit."
+    end
+
+    # 🔴 [ARCH.82] Координат немає — верифікувати НЕМА ЧОГО, і це термінально.
+    #
+    # Відмінність від хмарності несуча: та кидає `OrbitalLagError` і чекає
+    # наступного прольоту, бо небо проясниться. Координати не «проясняться» —
+    # алерт їх не набуде, тож ретрай тут був би вічним. Пишемо `inconclusive`
+    # (стан, який уже означає «потрібен DAO-аудит») і виходимо тихо.
+    #
+    # ⚠️ Дзеркалимо `escalate_obscured_critical_fire!` для критичних: людський
+    # вердикт потрібен тим самим шляхом, лише привід інший — не затемнення, а
+    # відсутність координати. Життєва безпека не чекає ні орбіти, ні геоданих.
+    def handle_coordinates_unknown
+      Rails.logger.warn(
+        "🛰️ [Cosmic Eye] Алерт ##{@alert.id} — КООРДИНАТ НЕМА (ні дерева з lat/lng, " \
+        "ні geo_center кластера). Супутникова верифікація неможлива; ретраю не буде."
+      )
+
+      return escalate_obscured_critical_fire! if @alert.severity_critical?
+
+      @alert.update!(satellite_status: :inconclusive)
     end
 
     # [E.41] Критичний fire-алерт затемнений → негайний Field Audit замість 48h orbital

@@ -94,6 +94,49 @@ RSpec.describe Dclimate::VerificationService, type: :service do
       end
     end
 
+    # 🔴 [ARCH.82] Окремий результат від хмарності, і різниця несуча: хмарність
+    # ЧЕКАЄ наступного прольоту (`OrbitalLagError` → Sidekiq-ретрай), бо небо
+    # проясниться; координати не «проясняться» — алерт їх не набуде, тож той
+    # самий шлях дав би вічний ретрай. Доти проблеми не існувало ЛИШЕ тому, що
+    # `coordinates` вигадував `[0.0, 0.0]` і запит ішов у Гвінейську затоку —
+    # супутниковий вирок про іншу півкулю лягав на алерт як доказ.
+    context "when the alert has no coordinates at all (ARCH.82)" do
+      let(:tree) { create(:tree, latitude: nil, longitude: nil) }
+      let(:alert) do
+        create(:ews_alert, alert_type: :fire_detected, severity: :medium, tree: tree, cluster: nil)
+      end
+      let(:service) { described_class.new(alert) }
+
+      it "не ретраїть — пише термінальний inconclusive" do
+        expect { service.perform }.not_to raise_error
+        expect(alert.reload).to be_satellite_inconclusive
+      end
+
+      it "не питає dClimate узагалі — верифікувати нема чого" do
+        expect(service).not_to receive(:fetch_firms_data)
+        service.perform
+      end
+
+      # 🔴 Критична гілка — і провал гілкового покриття вказав саме на неї,
+      # тобто на сценарій, який я не запінив: пожежа з `severity: critical`
+      # БЕЗ координат. Тут життєва безпека не чекає ні орбіти, ні геоданих —
+      # людський вердикт кличеться тим самим шляхом, що при затемненні, лише
+      # привід інший. Без цього приклада гілка існувала б неперевіреною рівно
+      # там, де ціна помилки найвища.
+      context "when the alert is a critical fire" do
+        let(:alert) do
+          create(:ews_alert, alert_type: :fire_detected, severity: :critical, tree: tree, cluster: nil)
+        end
+
+        it "ескалює в негайний Field Audit, а не мовчить" do
+          expect { service.perform }.not_to raise_error
+
+          expect(alert.reload).to be_satellite_inconclusive
+          expect(alert.resolution_notes).to include("негайний Field Audit")
+        end
+      end
+    end
+
     context "when satellite is obscured by clouds (obscured_by_clouds)" do
       before do
         allow(service).to receive(:query_dclimate_api).and_return(:obscured_by_clouds)
