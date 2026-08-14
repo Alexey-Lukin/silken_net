@@ -172,12 +172,4 @@ RSpec.describe "path literals vs router", type: :request do
       expect(route_exists?("/reset_password", "POST")).to be(false)
     end
   end
-
-  describe "IO-bound шляхи мідлвара" do
-    MarkWeb3RequestsAsIoBound::IO_BOUND_PATHS.each do |path|
-      it "#{path} існує для POST" do
-        expect(route_exists?(path, MarkWeb3RequestsAsIoBound::IO_BOUND_METHOD)).to be(true)
-      end
-    end
-  end
 end

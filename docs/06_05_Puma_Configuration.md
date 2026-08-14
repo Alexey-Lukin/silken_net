@@ -12,7 +12,7 @@
 - **Версія:** `puma (8.0.2)` (`Gemfile.lock`)
 - **Конфігураційний SSOT:** `config/puma.rb`
 - **Runtime-архітектура:** `Thruster (HTTP/2, TLS) → Puma (clustered, preload_app!) → Rails 8.1`
-- **Puma middleware:** `MarkWeb3RequestsAsIoBound` (`app/middleware/mark_web3_requests_as_io_bound.rb`)
+- **Puma middleware:** немає — `MarkWeb3RequestsAsIoBound` знято 2026-08-14 ([ARCH.80]; обґрунтування було мертве на обох шляхах)
 - **Відкрите:** production verification (живий деплой) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
@@ -35,7 +35,7 @@
 
 <!-- TOC:AUTO:START -->
 - [Конфігурація — ключові рішення](#-конфігурація--ключові-рішення)
-- [MarkWeb3RequestsAsIoBound Middleware](#-markweb3requestsasiobound-middleware)
+- [IO-bound позначення запитів — ЗНЯТО](#-io-bound-позначення-запитів--знято-arch80)
 - [Операційні Runbooks](#-операційні-runbooks)
 - [Валідація](#-валідація)
 <!-- TOC:AUTO:END -->
@@ -54,7 +54,7 @@ max_io_threads ENV.fetch("PUMA_MAX_IO_THREADS", 16).to_i       # секція 1b
 
 **Чому `threads = RAILS_MAX_THREADS` (default 3):** кожен потік відкриває власний DB-connection; пул рахує І io-burst: `pool = RAILS_MAX_THREADS + PUMA_MAX_IO_THREADS + 2 Cable = 21` (`config/database.yml` — SSOT формули; [INF.22]: io-марковані запити біжать понад `max_threads` і теж тримають checkout — пул без них голодує під сплеском; стеля, не преалокація). Job/Sidekiq-роль override `DB_POOL=17` — concurrency 15, деталі [`06_04 §3.2`](06_04_Secrets_Checklist). Бюджет з'єднань і запас `max_connections=400` — [`06_01 §Розрахунок max_connections`](06_01_Deployment_Kamal_Terraform).
 
-**Чому `max_io_threads 16`:** запити до Oracle (`oracle_callbacks` — Chainlink HMAC + Polygon `eth_call` через Alchemy) та provisioning (`provisioning/register` — peaq DID + Hadron KYC) синхронно дзвонять по HTTP (~200-2000ms кожен). При лише 3 CPU-threads три таких запити блокують увесь worker. IO-bound пул дозволяє до 3+16 паралельних threads на worker без OOM (IO-threads майже не споживають CPU).
+**Чому `max_io_threads 16` лишається при НУЛІ позначених шляхів [ARCH.80]:** механізм Puma справний, але жоден запит більше не кличе `puma.mark_as_io_bound` — обґрунтування обох колишніх шляхів виявилось мертвим (обидва лише `perform_async`, синхронного HTTP немає), а на `provisioning/register` прапорець ще й брехав у шкідливий бік (HKDF = CPU-bound). Значення лишається як **готовність**, а не як активний бонус; деталі зняття — розділ нижче.
 
 За замовчуванням `PUMA_MAX_IO_THREADS=16`. Нуль = відключено (backward-compatible з Puma < 8).
 
@@ -140,40 +140,19 @@ env["rack.response_finished"] << ->(_env, _status, _headers, _error) {
 
 ---
 
-## 🌐 MarkWeb3RequestsAsIoBound Middleware
+## 🌐 IO-bound позначення запитів — ЗНЯТО [ARCH.80]
 
-**Файл:** `app/middleware/mark_web3_requests_as_io_bound.rb`
-**Реєстрація:** `config/application.rb` — після `PrometheusCollector`
+✅ **Присуд власника 2026-08-14: `MarkWeb3RequestsAsIoBound` видалено разом з обома його шляхами.** Тут доти жив опис живого механізму; збережено як запис про зняття, бо `max_io_threads` у `puma.rb` лишається налаштованим і наступний читач мусить розуміти, чому бонус недосяжний.
 
-### Як це працює
+**Що було:** Puma 8.0+ виставляє `env["puma.mark_as_io_bound"]` — лямбду, після виклику якої thread переходить у IO-bound режим і може породжувати нові threads понад `max_threads`. Middleware кликав її для двох шляхів: `POST /api/v1/oracle_callbacks` і `POST /provisioning/register`.
 
-Puma 8.0+ виставляє `env["puma.mark_as_io_bound"]` → лямбду ДО виклику Rack-додатка (`puma/response.rb`). Middleware викликає цю лямбду (`&.call`) для вибраних endpoints:
+🔴 **Чому знято — обґрунтування було мертве на ОБОХ шляхах, і вимір це показав, а не читання коментаря.** Канон (і сам middleware) стверджували «синхронно дзвонять по HTTP до IoTeX W3bstream / Polygon RPC / Hadron KYC (~200-2000 ms кожен)». Виміряно грепом по обох контролерах: єдиний зовнішній виклик у кожному — `perform_async`, тобто Sidekiq. **Синхронного вихідного HTTP на цих шляхах немає взагалі.**
 
-```
-POST /api/v1/oracle_callbacks       — Chainlink HMAC + Polygon eth_call dry-run
-POST /provisioning/register         — peaq DID registration + Hadron KYC HTTP
-```
+🔴 **І прапорець брехав у ШКІДЛИВИЙ бік, не в нейтральний.** `provisioning#register` виконує HKDF-деривацію ключа (`HardwareKeyService`) — тобто він **CPU-bound**. Позначати CPU-роботу як IO-bound означає дозволяти Puma перепідписувати потоки під навантаження, що тримає процесор: пул, розрахований на «IO майже не споживає CPU», дістає рівно протилежне.
 
-**[ARCH.77]** Один шлях лишився `/api/v1/…`, інший — ні: межа проходить не за форматом відповіді (обидва JSON), а за тим, **хто відвантажує клієнта** — Chainlink DON нам не підконтрольний (версія в шляху щось важить), forester приходить власним браузером (клієнт оновлюється з кожним деплоєм).
+⚠️ **`max_io_threads 16` у `puma.rb` лишається СВІДОМО, і це не залишок:** механізм Puma справний, бонус просто недосяжний, доки ніхто не кличе лямбду. Того дня, коли зʼявиться справжній синхронний RPC-шлях, повертається і middleware (`git log` віддає його цілим), і рядок у пулі зʼєднань `database.yml`.
 
-Після виклику лямбди Puma переводить цей thread у IO-bound режим і може породжувати нові threads понад `max_threads` (до `max_threads + max_io_threads`).
-
-`&.call` — no-op коли env-key відсутній (rack-test, Falcon, dev single mode). Backward-compatible з будь-яким Rack сервером.
-
-### Opt-in для нових endpoints
-
-```ruby
-# декларативний before_action у контролері:
-before_action { request.env["silken_net.io_bound"] = true }
-
-# або додати шлях у константу:
-# app/middleware/mark_web3_requests_as_io_bound.rb
-IO_BOUND_PATHS = Set.new(%w[
-  /api/v1/oracle_callbacks
-  /provisioning/register
-  /api/v1/new_io_heavy_endpoint   # ← додати тут
-]).freeze
-```
+🔑 **Урок, ширший за цей файл: коментар, що НАЗИВАЄ причину, старіє тихіше за код, який її реалізує.** Обидві названі підстави (`peaq DID`, `Hadron KYC`) переїхали у воркери окремими комітами, і жоден із них не згадував ні middleware, ні цього канон-розділу. **Перед тим як спиратись на прапорець продуктивності, грепни те, що його ОБҐРУНТУВАННЯ називає — не сам прапорець.**
 
 ---
 

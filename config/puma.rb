@@ -41,15 +41,22 @@ threads threads_count, threads_count
 # threads beyond `max_threads` (up to `max_threads + max_io_threads`) without
 # blocking the regular CPU pool.
 #
-# Why this matters for SilkenNet (PUMA-IO-1, F-1 in 06_05):
-#   `oracle_callbacks#create` and `provisioning#register` synchronously call
-#   IoTeX W3bstream / Polygon RPC / Hadron KYC over HTTP. At RAILS_MAX_THREADS=3
-#   three slow callbacks would block the entire worker. Marking these requests
-#   as IO-bound lets up to 16 of them run concurrently per worker, while CPU
-#   work (telemetry decoding, Lorenz attractor) remains capped at 3 threads.
+# 🔴 [ARCH.80, присуд власника 2026-08-14] Жоден шлях НЕ позначений IO-bound —
+# `MarkWeb3RequestsAsIoBound` знято разом з обома його записами.
 #
-# Endpoints opted-in via `MarkWeb3RequestsAsIoBound` middleware
-# (see `app/middleware/mark_web3_requests_as_io_bound.rb`).
+# Тут раніше стояло: «`oracle_callbacks#create` і `provisioning#register`
+# синхронно ходять по HTTP до IoTeX W3bstream / Polygon RPC / Hadron KYC».
+# **Виміряно 2026-08-14 — жоден із двох цього не робить:** обидва лише кладуть
+# job у Sidekiq (`perform_async`), тобто синхронного вихідного HTTP на цих
+# шляхах немає взагалі. Гірше того, `provisioning#register` виконує
+# HKDF-деривацію ключа, тобто він CPU-bound — позначати його IO-bound означало
+# дозволяти Puma перепідписувати потоки під роботу, що ТРИМАЄ процесор, тобто
+# прапорець брехав у шкідливий бік.
+#
+# `max_io_threads` лишається налаштованим СВІДОМО: механізм Puma працює, і
+# повернути його треба буде того дня, коли зʼявиться справжній синхронний
+# RPC-шлях — тоді ж повертається й middleware (`git log` віддає його цілим).
+# Доти бонус недосяжний, бо ніхто не кличе `puma.mark_as_io_bound`.
 #
 # Default 0 means "no IO-thread bonus" — fully backward-compatible.
 max_io_threads ENV.fetch("PUMA_MAX_IO_THREADS", 16).to_i

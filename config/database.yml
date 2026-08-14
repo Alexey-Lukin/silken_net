@@ -22,8 +22,9 @@ default: &default
   # Connection consumers inside a Puma worker:
   #   1. Puma request threads ............ RAILS_MAX_THREADS   (default 3)
   #   2. IO-bound burst threads .......... PUMA_MAX_IO_THREADS (default 16) —
-  #      Puma 8 max_io_threads: io-marked requests (oracle_callbacks,
-  #      provisioning — MarkWeb3RequestsAsIoBound) run BEYOND max_threads and
+  #      Puma 8 max_io_threads. ⚠️ [ARCH.80] Позначених шляхів зараз НУЛЬ
+  #      (middleware знято 2026-08-14), тож бонус недосяжний — запас лишено
+  #      навмисно: io-marked запити біжать ПОНАД max_threads і
   #      still check out DB connections; a pool sized without them starves
   #      under burst (ConnectionTimeoutError). [INF.22]
   #   3. ActionCable / Solid Cable ....... +2 headroom (polling + broadcast)
