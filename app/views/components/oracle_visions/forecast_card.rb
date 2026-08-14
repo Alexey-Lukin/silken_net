@@ -70,7 +70,7 @@ module OracleVisions
       if probability_score
         div(class: "h-1 w-full bg-emerald-950 my-4") do
           div(class: tokens("h-full transition-all duration-1000", confidence_bar_class),
-              style: "width: #{probability_score}%")
+              style: "width: #{formatted_probability}%")
         end
       end
       p(class: "text-compact text-gray-400 italic leading-relaxed") { @insight.summary }
@@ -78,12 +78,30 @@ module OracleVisions
 
     def probability_score = @insight.probability_score
 
+    # [UI.13] ⚖️ founder 2026-08-14: ціле друкується цілим, дробове лишається
+    # дробовим. Колонка `numeric` віддає BigDecimal, тож без цього кожна картка
+    # несла хвостовий нуль («40.0 %», `width: 40.0%`).
+    #
+    # 🔴 Чому НЕ `.round`, хоч він коротший: прецедент платформи
+    # (`ApplicationComponent#formatted_points`, [ARCH.88]) виводить точність із
+    # КРОКУ ДЖЕРЕЛА — а джерела тут немає взагалі, писачів нуль ([ARCH.84]).
+    # Кроку, з якого можна вивести округлення, не існує, тож `.round` тихо
+    # зʼїв би 40.5 → 41 у день, коли писач нарешті зʼявиться. Ця форма не
+    # втрачає інформації в жодному майбутньому.
+    #
+    # ⚠️ Формат ОДИН на текст і на `width:` — інакше картка показувала б
+    # «40 %» над смугою `width: 40.0%`, тобто два написання одного числа.
+    def formatted_probability
+      value = probability_score
+      (value % 1).zero? ? value.to_i : value
+    end
+
     # Дзеркало `impact_reading`: невиміряне має ІМʼЯ, а не порожнє місце
     # поруч зі знаком відсотка.
     def probability_reading
       return t("ui.measurement.not_measured") if probability_score.nil?
 
-      t(".probability", value: probability_score)
+      t(".probability", value: formatted_probability)
     end
 
     # 🔴 [ARCH.84] Доти відсутність даних друкувалась як `-0.04%` — ВИГАДАНЕ

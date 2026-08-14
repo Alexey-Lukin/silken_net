@@ -92,10 +92,12 @@ RSpec.describe OracleVisions::Index do
       expect(html).to include("biodiversity_trend")
     end
 
-    # [TEST.12] `numeric`-колонка → BigDecimal, тож у проді «74.0%», не «74%».
+    # [TEST.12] `numeric`-колонка → BigDecimal. ⚖️ [UI.13] founder 2026-08-14:
+    # ціле друкується ЦІЛИМ (дробове лишається дробовим) — дім формату один,
+    # `ForecastCard#formatted_probability`; цей пін тримає його ЧЕРЕЗ делегацію.
     it "renders probability scores for each vision" do
-      expect(html).to include("74.0%")
-      expect(html).to include("88.0%")
+      expect(html).to include("74%")
+      expect(html).to include("88%")
     end
 
     it "renders summaries for each vision" do

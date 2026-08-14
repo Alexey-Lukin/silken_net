@@ -41,14 +41,16 @@ RSpec.describe OracleVisions::ForecastCard do
     end
   end
 
-  # [TEST.12] Колонка `probability_score` — `numeric`, тобто BigDecimal: ціле 40
-  # рендериться «40.0%», а не «40%». Доти мок подавав Integer, тож питання «як ТИП
-  # доходить до екрана» з сюїти неможливо було поставити. Піни нижче фіксують саме
-  # прод-рендер; чи прибирати хвостовий нуль — косметика, 00_07 UI.13.
+  # [TEST.12] Колонка `probability_score` — `numeric`, тобто BigDecimal; доти мок
+  # подавав Integer, тож питання «як ТИП доходить до екрана» з сюїти неможливо було
+  # поставити. ⚖️ [UI.13] founder 2026-08-14: ціле друкується ЦІЛИМ, дробове лишається
+  # дробовим — і формат ОДИН на текст і на `width:`, інакше картка показувала б «40 %»
+  # над смугою `width: 40.0%`. НЕ `.round`: кроку джерела не існує (писачів нуль,
+  # [ARCH.84]), тож округлення тихо зʼїло б 40.5 у день появи писача.
   describe "probability_score display" do
     it "renders the probability score as percentage" do
       html = render_component(insight: mock_insight(probability_score: 40))
-      expect(html).to include("40.0%")
+      expect(html).to include("40%")
     end
 
     it "renders a fractional score without rounding it away" do
@@ -58,7 +60,7 @@ RSpec.describe OracleVisions::ForecastCard do
 
     it "uses the confidence bar width matching score" do
       html = render_component(insight: mock_insight(probability_score: 65))
-      expect(html).to include("width: 65.0%")
+      expect(html).to include("width: 65%")
     end
 
     # 🔴 [ARCH.84] СЬОМИЙ інстанс класу, і жив він у ТОМУ САМОМУ файлі, що
@@ -88,7 +90,7 @@ RSpec.describe OracleVisions::ForecastCard do
 
       # ⊥ Дзеркало: доводить, що приклади вище не просто «нічого не малює».
       it "still draws the bar when the score IS measured" do
-        expect(render_component(insight: mock_insight(probability_score: 65))).to include("width: 65.0%")
+        expect(render_component(insight: mock_insight(probability_score: 65))).to include("width: 65%")
       end
     end
   end
