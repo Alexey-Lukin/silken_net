@@ -44,30 +44,6 @@ CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
 COMMENT ON EXTENSION postgis IS 'PostGIS geometry and geography spatial types and functions';
 
 
---
--- Name: sync_cluster_geo_boundary(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.sync_cluster_geo_boundary() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-  IF NEW.geojson_polygon IS NOT NULL
-     AND NEW.geojson_polygon->>'type' IS NOT NULL
-     AND NEW.geojson_polygon->>'coordinates' IS NOT NULL THEN
-    BEGIN
-      NEW.geo_boundary := ST_SetSRID(ST_GeomFromGeoJSON(NEW.geojson_polygon::text), 4326);
-    EXCEPTION WHEN OTHERS THEN
-      NEW.geo_boundary := NULL;
-    END;
-  ELSE
-    NEW.geo_boundary := NULL;
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -837,9 +813,13 @@ CREATE TABLE public.clusters (
     environmental_settings jsonb,
     health_index double precision,
     active_trees_count bigint DEFAULT 0 NOT NULL,
-    geo_boundary public.geometry(Geometry,4326),
     entropy_score double precision,
-    ota_version_hiwater bigint DEFAULT 0 NOT NULL
+    ota_version_hiwater bigint DEFAULT 0 NOT NULL,
+    geo_boundary public.geometry(Geometry,4326) GENERATED ALWAYS AS (
+CASE
+    WHEN ((geojson_polygon IS NOT NULL) AND ((geojson_polygon ->> 'type'::text) IS NOT NULL) AND ((geojson_polygon ->> 'coordinates'::text) IS NOT NULL)) THEN public.st_setsrid(public.st_geomfromgeojson((geojson_polygon)::text), 4326)
+    ELSE NULL::public.geometry
+END) STORED
 );
 
 
@@ -8061,13 +8041,6 @@ ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telem
 
 
 --
--- Name: clusters trigger_sync_cluster_geo_boundary; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER trigger_sync_cluster_geo_boundary BEFORE INSERT OR UPDATE OF geojson_polygon ON public.clusters FOR EACH ROW EXECUTE FUNCTION public.sync_cluster_geo_boundary();
-
-
---
 -- Name: blockchain_transactions fk_blockchain_transactions_cluster_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8538,6 +8511,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260814120000'),
 ('20260813140416'),
 ('20260813060830'),
 ('20260813045042'),
