@@ -35,7 +35,6 @@ lt:
         title: Priskirti sektoriai (klasteriai)
         vitality: Gyvybingumas
       current_context: AKTYVUS_KONTEKSTAS
-      fully_synced: VISIŠKAI_SINCHRONIZUOTA
       hero_decoration: KLANAS
       identity_vault:
         billing_contact: Atsiskaitymo kontaktas
@@ -43,7 +42,6 @@ lt:
         public_address: Viešasis kriptografijos adresas
         title: Grandinės tapatybės saugykla
       member_since: 'Narys nuo: %{date}'
-      operational_status: Veiklos būsena
       performance:
         biological_assets: Stebimi medžiai
         biological_assets_sub: Karių medžiai

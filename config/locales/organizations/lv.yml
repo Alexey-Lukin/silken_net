@@ -35,7 +35,6 @@ lv:
         title: Piesaistītie sektori (klasteri)
         vitality: Vitalitāte
       current_context: AKTĪVAIS_KONTEKSTS
-      fully_synced: PILNĪGI_SINHRONIZĒTS
       hero_decoration: KLANS
       identity_vault:
         billing_contact: Norēķinu kontakts
@@ -43,7 +42,6 @@ lv:
         public_address: Publiskā kriptogrāfijas adrese
         title: Ķēdes identitātes glabātuve
       member_since: 'Dalībnieks kopš: %{date}'
-      operational_status: Darbības statuss
       performance:
         biological_assets: Uzraudzītie koki
         biological_assets_sub: Karavīru koki

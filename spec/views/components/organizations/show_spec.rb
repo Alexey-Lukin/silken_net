@@ -92,13 +92,25 @@ RSpec.describe Organizations::Show do
     end
   end
 
-  describe "FULLY_SYNCED status" do
-    it "renders FULLY_SYNCED operational status" do
-      expect(html).to include("FULLY_SYNCED")
+  # 🔴 [ARCH.84] Обидва приклади тут ЦЕМЕНТУВАЛИ дефект як контракт: вони
+  # вимагали, щоб сторінка друкувала «FULLY_SYNCED» і зелену лампу — а обидва
+  # були безумовними літералами над колонкою, якої в `Organization` НЕМАЄ.
+  # Тобто сюїта вимагала твердження без джерела.
+  #
+  # ⚠️ Пін тримає ВІДСУТНІСТЬ, а не лише зняття: заява без виміру виглядає як
+  # нешкідлива прикраса й вертається першим же редизайном (той самий носій-
+  # надгробок, що для декоративного canvas).
+  describe "operational status (знято — ARCH.84)" do
+    it "не стверджує стану синхронізації, якого нічим не виміряти" do
+      expect(html).not_to include("FULLY_SYNCED")
+      expect(html).not_to include("Operational Status")
     end
 
-    it "renders Operational Status label" do
-      expect(html).to include("Operational Status")
+    it "не малює зеленої лампи над порожнечею" do
+      # Ліхтар: цілимось у САМ вузол лампи (тінь + розмір), а не в клас
+      # `bg-emerald-500`, який на цій сторінці несуть ще кілька живих елементів —
+      # широкий матч зробив би приклад вакуумним.
+      expect(html).not_to include("h-3 w-3 rounded-full bg-emerald-500")
     end
   end
 

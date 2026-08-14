@@ -35,7 +35,6 @@ uk:
         title: Призначені сектори (кластери)
         vitality: Життєздатність
       current_context: АКТИВНИЙ_КОНТЕКСТ
-      fully_synced: СИНХРОНІЗОВАНО
       hero_decoration: КЛАН
       identity_vault:
         billing_contact: Контакт для рахунків
@@ -43,7 +42,6 @@ uk:
         public_address: Публічна крипто-адреса
         title: Сховище On-Chain ідентичності
       member_since: 'Учасник з: %{date}'
-      operational_status: Операційний статус
       performance:
         biological_assets: Дерева під моніторингом
         biological_assets_sub: Дерева-солдати

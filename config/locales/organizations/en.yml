@@ -35,7 +35,6 @@ en:
         title: Assigned Sectors (Clusters)
         vitality: Vitality
       current_context: ACTIVE_CONTEXT
-      fully_synced: FULLY_SYNCED
       hero_decoration: CLAN
       identity_vault:
         billing_contact: Billing Contact
@@ -43,7 +42,6 @@ en:
         public_address: Public Crypto Address
         title: On-Chain Identity Vault
       member_since: 'Member Since: %{date}'
-      operational_status: Operational Status
       performance:
         biological_assets: Monitored Trees
         biological_assets_sub: Soldier Trees
