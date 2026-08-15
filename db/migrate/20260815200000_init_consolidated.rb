@@ -6,10 +6,11 @@
 # = =====================================================================
 # This is the SQUASH ANCHOR. Everything that existed before it lives in
 # `db/structure.sql`, since the project has no production database to preserve
-# (pre-launch). It was once literally the only migration here, and that sentence
-# stood after four incrementals had landed on top of it — a self-location claim
-# is falsified by an edit in ANOTHER file, so it reads fresher the longer it
-# stands. Count them with `ls db/migrate/`, never from this header.
+# (pre-launch). ⚠️ This header once claimed to be the only migration here, and
+# that sentence stood while four incrementals sat on top of it — a self-location
+# claim is falsified by an edit in ANOTHER file, so it reads fresher the longer
+# it stands. Hence no claim about the population is made here at all: count with
+# `ls db/migrate/`, and read the live anchor timestamp off the filename.
 #
 # Workflow for new clones:
 #   bin/rails db:create db:schema:load db:seed
