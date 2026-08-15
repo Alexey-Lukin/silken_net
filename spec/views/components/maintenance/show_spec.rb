@@ -104,8 +104,11 @@ RSpec.describe Maintenance::Show do
       expect(html).to include("Record // #7")
     end
 
-    it "renders the action type badge" do
-      expect(html).to include("inspection")
+    # [I18N.1] Не-базова локаль: в англійській мітка «Inspection» відрізняється від
+    # токена лише регістром, тож пін не розрізняв би їх на регресії.
+    it "renders the action type badge as a human label" do
+      expect(I18n.with_locale(:uk) { render_component(record: record, photos: [], pagy_photos: mock_pagy_photos) })
+        .to include("ОГЛЯД")
     end
 
     it "renders the hardware badge as Pending Verify when not verified" do
@@ -266,13 +269,13 @@ RSpec.describe Maintenance::Show do
     it "shows trust protocol warning for repair action_type" do
       repair_record = build_record(action_type: "repair")
       html = render_component(record: repair_record, photos: [], pagy_photos: mock_pagy_photos)
-      expect(html).to include("Trust Protocol requires photos for repair")
+      expect(html).to include("Trust Protocol requires photos for Repair")
     end
 
     it "shows trust protocol warning for installation action_type" do
       install_record = build_record(action_type: "installation")
       html = render_component(record: install_record, photos: [], pagy_photos: mock_pagy_photos)
-      expect(html).to include("Trust Protocol requires photos for installation")
+      expect(html).to include("Trust Protocol requires photos for Installation")
     end
 
     it "does not show trust protocol warning for inspection" do

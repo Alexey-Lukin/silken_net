@@ -52,6 +52,26 @@ class MaintenanceRecord < ApplicationRecord
     biomass_extraction: 5  # Вилучення біомаси (Puro.earth Biochar)
   }, prefix: true
 
+  # [I18N.1] Людська назва ДІЇ обслуговування — найбільша enum-родина дерева.
+  # Скоуп належить домену МОДЕЛІ, не компоненту (`04_04 §12.14`).
+  #
+  # ⚠️ Мітка ≠ значення: сире значення лишається в URL-параметрі фільтра
+  # (`maintenance_records_path(action_type: type)`) і в логіці
+  # (`%w[repair installation].include?`) — локалізувати треба ПОКАЗ, і плутати ці
+  # три роди вжитку тут особливо легко, бо вони стоять в одному файлі.
+  ACTION_TYPE_LABEL_SCOPE = "maintenance.action_types"
+
+  # ОДНА деривація ключа. Fail-open: новий член enum'а рендериться сирим значенням,
+  # доки мітка не доїде в локалі — і саме це червонить гейт парності.
+  def self.action_type_label(action_type)
+    value = action_type.to_s
+    I18n.t("#{ACTION_TYPE_LABEL_SCOPE}.#{value}", default: value)
+  end
+
+  def action_type_label
+    self.class.action_type_label(action_type)
+  end
+
   # --- ВАЛІДАЦІЇ ---
   validates :action_type, :performed_at, presence: true
   validates :notes, presence: true, length: { minimum: 10 }

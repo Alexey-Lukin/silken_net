@@ -1,6 +1,13 @@
 ---
 lt:
   maintenance:
+    action_types:
+      biomass_extraction: Biomasės išgavimas
+      cleaning: Valymas
+      decommissioning: Išmontavimas
+      inspection: Apžiūra
+      installation: Montavimas
+      repair: Remontas
     create_error_title: Klaida rituale
     edit_title: 'Redaguoti įrašą // #%{id}'
     form:

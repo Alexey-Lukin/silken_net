@@ -1,6 +1,13 @@
 ---
 lv:
   maintenance:
+    action_types:
+      biomass_extraction: Biomasas izņemšana
+      cleaning: Tīrīšana
+      decommissioning: Demontāža
+      inspection: Apskate
+      installation: Uzstādīšana
+      repair: Remonts
     create_error_title: Kļūda rituālā
     edit_title: 'Rediģēt ierakstu // #%{id}'
     form:

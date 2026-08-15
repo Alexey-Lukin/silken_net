@@ -1,6 +1,13 @@
 ---
 uk:
   maintenance:
+    action_types:
+      biomass_extraction: Вилучення біомаси
+      cleaning: Очищення
+      decommissioning: Демонтаж
+      inspection: Огляд
+      installation: Монтаж
+      repair: Ремонт
     create_error_title: Помилка в ритуалі
     edit_title: Редагування запису // №%{id}
     form:

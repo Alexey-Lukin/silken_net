@@ -54,6 +54,13 @@ registry = [
     values: -> { BlockchainTransaction.token_types.keys }
   },
   {
+    # [I18N.1] Найбільша родина дерева — і її сайти діляться на ТРИ роди вжитку
+    # (показ ⊥ значення URL-параметра ⊥ логіка), два з яких мітки НЕ приймають.
+    name:   "MaintenanceRecord#action_type",
+    scope:  MaintenanceRecord::ACTION_TYPE_LABEL_SCOPE,
+    values: -> { MaintenanceRecord.action_types.keys }
+  },
+  {
     name:   "AiInsight#insight_type",
     scope:  AiInsight::INSIGHT_TYPE_LABEL_SCOPE,
     values: -> { AiInsight.insight_types.keys }

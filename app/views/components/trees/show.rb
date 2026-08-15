@@ -138,7 +138,7 @@ module Trees
                 @maintenance_history.each do |record|
                   tr(class: "hover:bg-gaia-surface-sunken transition-colors") do
                     td(class: "p-4 text-emerald-100") { record.user&.full_name || "Unknown" }
-                    td(class: "p-4 uppercase text-gaia-primary") { record.action_type }
+                    td(class: "p-4 uppercase text-gaia-primary") { record.action_type_label }
                     td(class: "p-4 text-gaia-text-muted italic") { record.notes&.truncate(50) || "—" }
                     td(class: "p-4 text-right text-gaia-text-muted") { record.performed_at&.strftime("%d.%m.%y") || "—" }
                   end

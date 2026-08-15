@@ -240,8 +240,14 @@ RSpec.describe Trees::Show do
       expect(html).to include("Ivan Koval")
     end
 
-    it "displays action type" do
-      expect(html).to include("repair")
+    # [I18N.1] Мітка, не сирий токен — і в не-базовій локалі, де вони не збігаються.
+    # ⚠️ Очікуємо «Ремонт», а не «РЕМОНТ»: великі літери тут дає CSS (`uppercase`), а він
+    # НЕ міняє текст у розмітці — оракул береться з реального виводу, не з вигляду.
+    it "displays a human action-type label" do
+      expect(I18n.with_locale(:uk) do
+        render_component(tree: tree, latest_log: latest_log,
+                         recent_logs: recent_logs, maintenance_history: maintenance_history)
+      end).to include("Ремонт")
     end
 
     it "truncates long notes to 50 characters" do

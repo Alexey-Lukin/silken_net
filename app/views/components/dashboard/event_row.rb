@@ -25,7 +25,7 @@ module Dashboard
       # токен. Мітку бере той самий TextFormatter, що й `Alerts::Row`.
       when EwsAlert then t(".threat", type: TreeChronicle::TextFormatter.alert_title(@event), cluster: @event.cluster&.name || t(".unknown_cluster"))
       when BlockchainTransaction then blockchain_transaction_summary
-      when MaintenanceRecord then t(".maintenance", action: @event.action_type&.capitalize, user: @event.user&.first_name || t(".system_user"))
+      when MaintenanceRecord then t(".maintenance", action: @event.action_type_label, user: @event.user&.first_name || t(".system_user"))
       else t(".system_pulse")
       end
     end

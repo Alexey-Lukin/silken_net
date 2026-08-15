@@ -54,7 +54,7 @@ module Maintenance
       div(class: "flex flex-col md:flex-row justify-between items-start md:items-center " \
                  "p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
         div(class: "absolute top-0 right-0 p-4 text-[80px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") do
-          @record.action_type.to_s.upcase
+          @record.action_type_label.upcase
         end
 
         div do
@@ -62,7 +62,7 @@ module Maintenance
             "Record // ##{@record.id}"
           end
           div(class: "flex flex-wrap items-center gap-3 mt-2") do
-            action_badge(@record.action_type)
+            action_badge(@record.action_type_label)
             hardware_badge(@record.hardware_verified)
             span(class: "text-mini text-gray-600 font-mono") do
               @record.performed_at&.strftime("%d.%m.%Y // %H:%M UTC")
@@ -119,7 +119,7 @@ module Maintenance
         p(class: "text-emerald-900 uppercase tracking-widest text-tiny") { t(".evidence.no_photos") }
         if %w[repair installation].include?(@record.action_type)
           p(class: "text-red-800 text-mini mt-2 font-mono") do
-            t(".evidence.trust_protocol", action_type: @record.action_type)
+            t(".evidence.trust_protocol", action_type: @record.action_type_label)
           end
         end
         if mutable?
@@ -184,7 +184,7 @@ module Maintenance
           meta_row(t(".metadata.technician"), "#{@user&.first_name} #{@user&.last_name}")
           meta_row(t(".metadata.role"), @user&.role.to_s.upcase)
           meta_row(t(".metadata.target"), "#{@record.maintainable_type} // #{@record.maintainable&.display_identifier || '—'}")
-          meta_row(t(".metadata.action"), @record.action_type.to_s.upcase)
+          meta_row(t(".metadata.action"), @record.action_type_label.upcase)
           meta_row(t(".metadata.photos"), @pagy_photos.count.to_s)
           if @record.ews_alert_id
             meta_row(t(".metadata.ews_alert"), "##{@record.ews_alert_id}")
@@ -276,7 +276,7 @@ module Maintenance
 
         div(class: "text-tiny font-mono space-y-3") do
           meta_row(t(".hardware.stm_verified"), @record.hardware_verified ? t(".hardware.verified") : t(".hardware.pending"))
-          meta_row(t(".hardware.record_type"), @record.action_type.to_s.upcase)
+          meta_row(t(".hardware.record_type"), @record.action_type_label.upcase)
         end
 
         if !@record.hardware_verified && mutable?

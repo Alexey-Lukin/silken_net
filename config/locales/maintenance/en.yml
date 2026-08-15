@@ -1,6 +1,13 @@
 ---
 en:
   maintenance:
+    action_types:
+      biomass_extraction: Biomass extraction
+      cleaning: Cleaning
+      decommissioning: Decommissioning
+      inspection: Inspection
+      installation: Installation
+      repair: Repair
     create_error_title: Error in Ritual
     edit_title: 'Edit Record // #%{id}'
     form:

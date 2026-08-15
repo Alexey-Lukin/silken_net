@@ -44,11 +44,12 @@ module Maintenance
         action_types.each do |type|
           a(
             href: maintenance_records_path(action_type: type),
-            # `type` лишається сирим enum'ом — міток action_type у локалях ще
-            # немає (окремий пункт I18N.1, той самий клас, що був у alert_type).
-            aria_label: t(".filter.by_aria", type: type),
+            # 🔴 [I18N.1] Три роди вжитку в ОДНОМУ циклі, і плутати їх коштує по-різному:
+            # `type` у `href` лишається СИРИМ enum'ом (це значення параметра — мітка
+            # зламала б фільтр), а в `aria_label` і в тексті кнопки їде МІТКА, бо це показ.
+            aria_label: t(".filter.by_aria", type: MaintenanceRecord.action_type_label(type)),
             class: filter_link_classes
-          ) { type }
+          ) { MaintenanceRecord.action_type_label(type) }
         end
         a(
           href: maintenance_records_path(verified: "1"),
