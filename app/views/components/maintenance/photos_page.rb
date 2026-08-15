@@ -15,7 +15,7 @@ module Maintenance
 
     def view_template
       # Turbo Frame з тим самим id — замінює вміст попереднього фрейму
-      turbo_frame_tag("maintenance_photos_#{@record.id}") do
+      turbo_frame_tag(PhotoGallery.frame_dom_id(@record.id)) do
         render_grid
         render_load_more
       end
@@ -26,7 +26,7 @@ module Maintenance
     def render_grid
       div(
         class: "grid grid-cols-2 sm:grid-cols-3 gap-3",
-        id: "photos_grid_page_#{@pagy.page}"
+        id: PhotoGallery.grid_dom_id(@pagy.page)
       ) do
         @photos.each { |photo| render_photo_card(photo) }
       end
@@ -45,11 +45,19 @@ module Maintenance
       div(class: "mt-4 text-center") do
         a(
           href: next_url,
-          data: { turbo_frame: "maintenance_photos_#{@record.id}" },
+          data: { turbo_frame: PhotoGallery.frame_dom_id(@record.id) },
           class: "inline-block px-6 py-2 border border-emerald-900 text-emerald-700 " \
                  "hover:border-emerald-500 hover:text-emerald-500 uppercase text-mini " \
                  "tracking-widest transition-all font-mono"
-        ) { t("maintenance.photo_gallery.load_more", remaining: remaining) }
+          ) do
+          # 🔴 [UI.4] Ключ АБСОЛЮТНИЙ і свідомо: `t(".load_more")` автоскоупиться за
+          # ІМЕНЕМ КЛАСУ (`maintenance.photos_page.*`), а фраза живе в скоупі сусіда —
+          # два компоненти малюють одну кнопку. ⚠️ Капкан у тому, що перейменування
+          # скоупа `PhotoGallery` зламає цей рядок ТИХО: `i18n-tasks` бачить ключ
+          # ужитим і не скаржиться. Дім фрази лишається у галереї, бо вона — власник
+          # першої сторінки; звідси на неї СВІДОМО показують повним шляхом.
+          t(PhotoGallery::LOAD_MORE_KEY, remaining: remaining)
+        end
       end
     end
   end

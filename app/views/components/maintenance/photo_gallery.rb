@@ -9,6 +9,12 @@ module Maintenance
   class PhotoGallery < ApplicationComponent
     PHOTOS_PER_PAGE = 6
 
+    # [UI.4] Дім КЛЮЧА кнопки «показати ще»: `PhotosPage` малює ту саму кнопку, але
+    # автоскоуп `t(".load_more")` дав би там `maintenance.photos_page.*` — ключа, якого
+    # немає. Константа робить залежність видимою: перейменування скоупа галереї тепер
+    # ламає рядок ГУЧНО, а не тихо (`i18n-tasks` абсолютний ключ у чужому файлі не судить).
+    LOAD_MORE_KEY = "maintenance.photo_gallery.load_more"
+
     def initialize(record:, photos:, pagy:, editable: false)
       @record   = record
       @photos   = photos
@@ -27,11 +33,18 @@ module Maintenance
       end
     end
 
+    # 🔴 [UI.4] Дім target-id галереї: цю адресу називали рукою ЧОТИРИ рази у двох
+    # файлах (тут ×2 і в `PhotosPage` ×2), а вона є ціллю Turbo-фрейма — тобто
+    # розходження не має симптому: «Показати ще» просто перестає замінювати вміст.
+    # Той самий клас, що `wallet_balance_frame_`, лише всередині однієї родини.
+    def self.frame_dom_id(record_id) = "maintenance_photos_#{record_id}"
+
+    # Сітка сторінки пагінації — ціль, яку `PhotosPage` мусить назвати ІДЕНТИЧНО.
+    def self.grid_dom_id(page) = "photos_grid_page_#{page}"
+
     private
 
-    def frame_id
-      "maintenance_photos_#{@record.id}"
-    end
+    def frame_id = self.class.frame_dom_id(@record.id)
 
     def render_header
       div(class: "flex justify-between items-center") do
@@ -49,7 +62,7 @@ module Maintenance
       if @photos.any?
         div(
           class: "grid grid-cols-2 sm:grid-cols-3 gap-3",
-          id: "photos_grid_page_#{@pagy.page}"
+          id: self.class.grid_dom_id(@pagy.page)
         ) do
           @photos.each { |photo| render_photo_card(photo) }
         end

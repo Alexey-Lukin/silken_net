@@ -27,15 +27,21 @@ require "rails_helper"
 #     «правильний аргумент», і її тримає читання.
 #   · Він мовчить про те, чи ціль узагалі рендериться на живому МАРШРУТІ —
 #     четверта ланка контракту (`04_04 §8.1`), яку жоден статичний скан не бачить.
-RSpec.describe "Turbo target-id has one home" do # rubocop:disable RSpec/DescribeClass
+# Форма-дзеркало `ModelMessageLocalization`: реєстр і скан живуть у модулі, а не в
+# `describe` — інакше константа тече в глобальний неймспейс усього прогону.
+module TurboTargetIdHome
   # Префікс → файл, якому НАЛЕЖИТЬ його деривація (єдиний, де літерал легальний).
   HOMED_TARGETS = {
     "wallet_balance_frame_" => "app/views/components/wallets/balance_frame.rb",
     "ota_progress_"         => "app/views/components/firmwares/ota_progress_bar.rb",
     "map_node_"             => "app/views/components/dashboard/map_node.rb",
     "telemetry_feed"        => "app/views/components/telemetry/live_stream.rb",
-    "feed_placeholder"      => "app/views/components/telemetry/live_stream.rb"
+    "feed_placeholder"      => "app/views/components/telemetry/live_stream.rb",
+    "maintenance_photos_"   => "app/views/components/maintenance/photo_gallery.rb",
+    "photos_grid_page_"     => "app/views/components/maintenance/photo_gallery.rb"
   }.freeze
+
+  module_function
 
   def scanned_files
     Dir[Rails.root.join("app/**/*.rb")].sort
@@ -56,6 +62,10 @@ RSpec.describe "Turbo target-id has one home" do # rubocop:disable RSpec/Describ
       end.flatten
     end
   end
+end
+
+RSpec.describe "Turbo target-id has one home" do # rubocop:disable RSpec/DescribeClass
+  let(:offenders) { TurboTargetIdHome.offenders }
 
   it "keeps every homed target literal inside its own home" do
     expect(offenders).to be_empty, <<~MSG
@@ -75,13 +85,13 @@ RSpec.describe "Turbo target-id has one home" do # rubocop:disable RSpec/Describ
   # скані (§Guard-craft #61: якщо перемога виглядає як порожня множина, живість
   # доводить ДЕТЕКТОР, а не популяція).
   it "still resolves every declared home" do
-    missing = HOMED_TARGETS.values.uniq.reject { |home| File.exist?(Rails.root.join(home)) }
+    missing = TurboTargetIdHome::HOMED_TARGETS.values.uniq.reject { |home| File.exist?(Rails.root.join(home)) }
 
     expect(missing).to be_empty, "дім зник або переїхав: #{missing.join(', ')}"
   end
 
   it "sees the literal it forbids — the home itself still derives it" do
-    HOMED_TARGETS.each do |prefix, home|
+    TurboTargetIdHome::HOMED_TARGETS.each do |prefix, home|
       body = File.read(Rails.root.join(home))
 
       expect(body).to include(%("#{prefix})),
