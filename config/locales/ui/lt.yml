@@ -23,11 +23,8 @@ lt:
       cancelled: atšaukta
       confirmed: patvirtinta
       deceased: miręs
-      destroyed: sunaikinta
       dormant: neaktyvus
       draft: juodraštis
-      endangered: nykstantis
-      extinct: išnykęs
       failed: nepavyko
       faulty: sugedusi
       fulfilled: įvykdyta
@@ -35,14 +32,11 @@ lt:
       maintenance: priežiūra
       maintenance_needed: reikalinga priežiūra
       manual_review: rankinis peržiūra
-      mythical: mitinis
       offline: neprisijungęs
       pending: laukiama
       processing: apdorojama
       removed: pašalinta
       sent: išsiųsta
-      thriving: klestintis
-      unknown: nežinoma
       updating: atnaujinama
     web3_address:
       copied: Adresas nukopijuotas

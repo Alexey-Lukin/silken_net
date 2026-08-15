@@ -12,9 +12,9 @@
 # ipfs_cid, назад у archive.
 #
 # [SCOPE — OUTBOX, не голий not_archived]: лише `AuditLog.pending_archive` = логи з
-# виставленим `archive_requested_at` (money/MRV-шлях через AuditLogWorker). Codex/factory
+# виставленим `archive_requested_at` (money/MRV-шлях через AuditLogWorker). Factory/console
 # прямий `create!` маркер НЕ ставлять → навмисно поза периметром (без крихкої
-# auditable_type-евристики; over-pinning codex/factory = Pinata quota-waste + security
+# auditable_type-евристики; over-pinning factory/console = Pinata quota-waste + security
 # over-exposure factory-provenance на публічний IPFS).
 #
 # [MONEY-SAFE / ідемпотентно, БЕЗ reload-guard]: на відміну від CeloRewardReconcileWorker

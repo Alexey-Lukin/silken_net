@@ -9,10 +9,9 @@ class PartitionMaintenanceWorker
   sidekiq_options queue: "default", retry: 3
 
   # Таблиці з декларативним партиціюванням RANGE за created_at.
-  # Phase 4 додав codex_matches (гра Battle Arena, 100M+ rows очікувано).
   # Якщо додаєте нову RANGE-партиційну таблицю — внесіть її сюди І перевірте
   # `spec/workers/partition_maintenance_worker_spec.rb` (очікуване число логів).
-  PARTITIONED_TABLES = %w[telemetry_logs gateway_telemetry_logs blockchain_transactions codex_matches].freeze
+  PARTITIONED_TABLES = %w[telemetry_logs gateway_telemetry_logs blockchain_transactions].freeze
 
   def perform
     today = Time.current.utc.to_date

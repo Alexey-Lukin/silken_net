@@ -40,7 +40,6 @@ RSpec.describe "pluralized strings declare a plural block" do # rubocop:disable 
   # після числа, і цей гейт її законно завернув.
   let(:exempt) do
     %w[
-      codex.discoveries.counter
       dashboard.map.live_nodes
       account_security.show.mfa.enabled_with_remaining
       activerecord.errors.models.bio_contract_firmware.attributes.bytecode_payload.exceeds_size_limit

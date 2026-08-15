@@ -14,15 +14,6 @@ uk:
     blockchain_transactions:
       invalid_status: 'Невірний фільтр status: %{value}.'
       invalid_token_type: 'Невірний фільтр token_type: %{value}.'
-    codex:
-      attunement_removed: Резонанс знято.
-      attunement_saved: Резонанс встановлено.
-      comment_posted: Коментар опубліковано.
-      fraction_cooldown: Зміна фракції доступна з %{until}.
-      fraction_set: 'Фракцію обрано: %{node}.'
-      idempotency_required: Заголовок Idempotency-Key обов'язковий для JSON-записів.
-      match_rejected: Голос не зараховано — ось нова пара.
-      match_replay: Голос за цю пару вже зараховано — ось нова пара.
     firmwares:
       deployment_dispatched: Наказ на еволюцію v%{version} поставлено в чергу — Королеви заберуть його власним poll-ом після наступного флашу.
       deployment_no_targets: 'OTA відхилено: немає придатних шлюзів для розгортання.'

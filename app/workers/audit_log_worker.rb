@@ -11,7 +11,7 @@ class AuditLogWorker
   # на IPFS. Ставимо archive_requested_at атомарно з create → FilecoinReconcileWorker підбере
   # лог навіть якщо perform_async нижче загубиться (Redis-down у вікні між create! і enqueue).
   # archive=false [ARCH.57] = chain-only привілейовані дії (ключі/ролі/актуатори — security-
-  # метадані НЕ на публічний IPFS); прямий AuditLog.create! (codex/factory) — теж поза periметром.
+  # метадані НЕ на публічний IPFS); прямий AuditLog.create! (factory/console) — теж поза periметром.
   def perform(attrs, archive = true)
     attrs = attrs.deep_stringify_keys
     attrs = attrs.merge("archive_requested_at" => Time.current) if archive

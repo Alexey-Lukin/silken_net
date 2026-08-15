@@ -141,7 +141,7 @@ module AccountSecurity
     # [UI.7] `button_to`, не рукописна `<form>`: обидві гілки — дія без вводу, тож
     # форма була лише обгорткою. ⚠️ `form_class: "inline"` НЕСУЧИЙ: без нього
     # `button_to` перезаписує клас самої `<form>` своїм дефолтним `"button_to"`,
-    # і кнопка втрачає інлайн-розкладку (прецедент — `Codex::Battle::Arena`).
+    # і кнопка втрачає інлайн-розкладку.
     def render_lock_toggle(identity)
       if identity.locked?
         button_to(

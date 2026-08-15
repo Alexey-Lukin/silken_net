@@ -14,15 +14,6 @@ lv:
     blockchain_transactions:
       invalid_status: 'Nederīgs statusa filtrs: %{value}.'
       invalid_token_type: 'Nederīgs token_type filtrs: %{value}.'
-    codex:
-      attunement_removed: Saskaņošana noņemta.
-      attunement_saved: Saskaņošana saglabāta.
-      comment_posted: Komentārs publicēts.
-      fraction_cooldown: Frakcijas maiņa pieejama no %{until}.
-      fraction_set: 'Frakcija izvēlēta: %{node}.'
-      idempotency_required: JSON ierakstiem nepieciešama Idempotency-Key galvene.
-      match_rejected: Balsojums nav ieskaitīts — šeit ir jauns pāris.
-      match_replay: Balsojums par šo pāri jau ir ieskaitīts — šeit ir jauns pāris.
     firmwares:
       deployment_dispatched: Izvietošanas rīkojums v%{version} ierindots — Karalienes to paņems nākamajā poll pieprasījumā.
       deployment_no_targets: 'OTA noraidīta: nav piemērotu vārteju izvietošanai.'

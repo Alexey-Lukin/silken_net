@@ -4,19 +4,12 @@
 # app/views/components/alerts/row.rb
 module Alerts
   class Row < ApplicationComponent
-    # `citations:` is an optional, pre-fetched Array<Codex::Citation> for THIS
-    # alert. When the parent `Alerts::Index` renders many rows it computes
-    # `Codex::Citation.bulk_for(@alerts)` ONCE and threads each row's slice
-    # in here, eliminating the N+1 that Prosopite caught. When `citations`
-    # is nil (single-row Turbo Stream replace, e.g. resolve action) we fall
-    # back to a per-row query — that's at most one extra round-trip.
     # [UI.6] `current_user` — лише для видимості «Acknowledge»: список тривог відкритий
     # УСІМ ролям (investor теж), а `alerts#resolve` стоїть за `authorize_forester!,
     # only: :resolve`, тож read-only глядач бачив бойову кнопку, яка після
     # turbo-confirm мовчки вмирала в 403. Дефолт `nil` fail-CLOSED.
-    def initialize(alert:, citations: nil, current_user: nil)
+    def initialize(alert:, current_user: nil)
       @alert = alert
-      @citations = citations
       @current_user = current_user
     end
 
@@ -38,7 +31,6 @@ module Alerts
         end
         td(class: "p-4 text-gaia-text-subtle", data_label: t("alerts.table.message")) do
           div { @alert.message }
-          render_codex_citations
         end
         td(class: "p-4 text-tiny text-gaia-text-muted", data_label: t("alerts.table.timestamp")) do
           @alert.created_at.strftime("%H:%M:%S")
@@ -51,21 +43,6 @@ module Alerts
 
     private
 
-
-    # Phase 6 — Codex citation strip beneath the alert message. A
-    # forester citing `chainsaw_protocol` on a `chainsaw_detected`
-    # alert turns the row into auditable, lore-linked forensic data.
-    # Wrapped in a `gaia-*` island so the surrounding emerald palette
-    # of the alerts table doesn't bleed through.
-    def render_codex_citations
-      return unless defined?(::Codex::Citation)
-      citations = @citations || ::Codex::Citation.for_target(@alert).includes(node: :realm).limit(10)
-      return if citations.empty?
-
-      div(class: "mt-2") do
-        render ::Codex::Citations::Strip.new(target: @alert, citations: citations)
-      end
-    end
 
     def severity_badge
       color = case @alert.severity.to_s

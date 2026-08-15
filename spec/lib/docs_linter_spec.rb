@@ -548,7 +548,7 @@ RSpec.describe DocsLinter do
     it "skips fenced code and does not false-positive on lowercase cursor/grok or excluded tokens" do
       expect(described_class.ai_vendor_name_drift("03_01_Firmware", "```\nGemini api call\n```\n")).to be_empty
       expect(described_class.ai_vendor_name_drift("04_02_Business", "move the cursor; agents grok the spec\n")).to be_empty
-      expect(described_class.ai_vendor_name_drift("04_05_Codex", "The Codex narrative; Claude/Opus/Sonnet/Fable\n")).to be_empty
+      expect(described_class.ai_vendor_name_drift("00_00_SSOT_Index", "The Codex SSOT-guard; Claude/Opus/Sonnet/Fable\n")).to be_empty
     end
   end
 

@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Codex::Node corpus — Realm: unique_tree (48 records).
-# `cyber_meaning_md` is the verbatim canonical interpretation from the
-# lore appendix.
+# Корпус вузлів — realm `unique_tree`. `cyber_meaning_md` — дослівна канонічна
+# інтерпретація з лор-додатку. Читача НЕМА — db/seeds/codex/README.md.
 
 - slug: oak-zalizniaka-buda
   realm: unique_tree

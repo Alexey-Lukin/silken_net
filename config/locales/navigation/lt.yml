@@ -9,18 +9,13 @@ lt:
     items:
       account_security: Paskyros saugumas
       audit_log: Audito žurnalas
-      battle_arena: Mūšių arena
       blockchain_ledger: Blokų grandinės knyga
       clan_hierarchy: Klano hierarchija
-      codex_atlas: Codex atlasas
       crew_registry: Įgulos registras
       firmware_ota: Programinės įrangos OTA
       initiate_node: Inicijuoti mazgą
-      leaderboard: Lentelė
       live_telemetry: Tiesioginė telemetrija
       maintenance_log: Priežiūros žurnalas
-      my_codex: Mano Codex
-      my_fraction: Mano frakcija
       naas_contracts: NaaS sutartys
       notifications: Pranešimai
       oracle_visions: Oracle vizijos
@@ -39,7 +34,6 @@ lt:
     sections:
       administration: Administracija
       forest_operations: Miško operacijos
-      library: Biblioteka
       neural_network: Neuralinis tinklas
       strategic_insight: Strateginė įžvalga
     status:

@@ -55,7 +55,6 @@ RSpec.describe "operationally distinct labels stay distinct" do # rubocop:disabl
         "Gateway#state"                => -> { Gateway.states.keys },
         "NaasContract#status"          => -> { NaasContract.statuses.keys },
         "Actuator#state"               => -> { Actuator.states.keys },
-        "Codex::Node#lifecycle_status" => -> { Codex::Node.lifecycle_statuses.keys },
         "BlockchainTransaction#status" => -> { BlockchainTransaction.statuses.keys }
       }.map { |model, keys| { name: "#{model} → спільний ui.status", scope: "ui.status", keys: keys } }
     ]

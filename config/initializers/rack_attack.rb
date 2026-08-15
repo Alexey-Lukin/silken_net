@@ -159,48 +159,6 @@ Rack::Attack.throttle("helium_sos/ip", limit: 30, period: 1.minute) do |request|
 end
 
 # ---------------------------------------------------------------------------
-# 5c. CODEX SOCIAL THROTTLES — anti-spam for community endpoints (Phase 2).
-#
-# Per docs/04_05 §12 — "120 attunements / 1 hour / user". Throttle on the
-# session token (proxied via the bearer header) when present, otherwise IP
-# (anonymous traffic should already be blocked by `authenticate_user!`,
-# but throttling on IP is a cheap defence in depth).
-# ---------------------------------------------------------------------------
-Rack::Attack.throttle("codex/attunements", limit: 120, period: 1.hour) do |request|
-  if request.path =~ %r{\A/codex/nodes/[^/]+/attunements} && (request.post? || request.delete?)
-    request.env["HTTP_AUTHORIZATION"].presence || request.ip
-  end
-end
-
-# Comments: more permissive than attunements (people type slowly) but still
-# capped to deflect bot-driven spam. 60 comments / 10 minutes / actor.
-Rack::Attack.throttle("codex/comments", limit: 60, period: 10.minutes) do |request|
-  if request.path =~ %r{\A/codex/nodes/[^/]+/comments\z} && request.post?
-    request.env["HTTP_AUTHORIZATION"].presence || request.ip
-  end
-end
-
-# Fraction picks: cooldown is 7 days at the service layer; the throttle
-# defends against rapid-fire attempts (replay, brute-force scripting) and
-# scoping bugs. 60 attempts / 24 hours / actor — generous enough that real
-# users never hit it but tight enough to dampen abuse.
-Rack::Attack.throttle("codex/fractions", limit: 60, period: 1.day) do |request|
-  if request.path == "/codex/fractions" && request.post?
-    request.env["HTTP_AUTHORIZATION"].presence || request.ip
-  end
-end
-
-# Battle vote → Match create: per docs/04_05 — 60 votes / 1 minute / actor.
-# Service-side replay protection is already in place (Redis nonce
-# consumed on first vote); this throttle prevents bot-driven scrubbing
-# of the rate-limited Elo surface.
-Rack::Attack.throttle("codex/matches/create", limit: 60, period: 1.minute) do |request|
-  if request.path == "/codex/matches" && request.post?
-    request.env["HTTP_AUTHORIZATION"].presence || request.ip
-  end
-end
-
-# ---------------------------------------------------------------------------
 # 6. FAIL2BAN — ban IPs that return too many 401/404 errors
 #
 # Rack::Attack blocklists run *before* the response, so we cannot inspect

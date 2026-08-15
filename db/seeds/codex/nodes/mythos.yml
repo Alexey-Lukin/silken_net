@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Codex::Node corpus — Realm: mythos (10 records).
+# Корпус вузлів — realm `mythos`. Читача НЕМА — db/seeds/codex/README.md.
 
 - slug: jianmu
   realm: mythos

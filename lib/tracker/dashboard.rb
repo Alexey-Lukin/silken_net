@@ -335,7 +335,7 @@ module Tracker
     # -/+///; a lowercase ".x" tail = wildcard placeholder (skipped — real literal subsecs
     # use ".X"); "Стаття N" named refs carry no § → out of scope here.
     # The inter-token separator also eats `,;` and a closing backtick so a comma/list of §
-    # under ONE doc-id resolves EVERY member, not just the first — `04_05 §2.9, §6` and
+    # under ONE doc-id resolves EVERY member, not just the first — `06_07 §1, §3` and
     # `` `03_05 §3.7`, §3.4 `` were a blind spot (the run stopped at the comma/backtick, so
     # the trailing §-ref rotted unseen). Only separator chars join consecutive § tokens; any
     # word/paren between them ends the run, so a later §X of a DIFFERENT doc is never swept in.

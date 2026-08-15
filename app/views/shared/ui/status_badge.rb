@@ -36,14 +36,7 @@ module Views
           "deceased"     => "bg-status-danger text-status-danger-text line-through",
           # AASM: Actuator states
           "offline"            => "bg-status-neutral text-status-neutral-text",
-          "maintenance_needed" => "bg-status-warning text-status-warning-text",
-          # Codex::Node lifecycle_status (docs/04_01 §7b)
-          "mythical"   => "bg-status-info text-status-info-text",
-          "extinct"    => "bg-status-neutral text-status-neutral-text opacity-50",
-          "endangered" => "bg-status-warning text-status-warning-text",
-          "thriving"   => "bg-status-success text-status-success-text",
-          "destroyed"  => "bg-status-danger text-status-danger-text line-through",
-          "unknown"    => "bg-status-neutral text-status-neutral-text"
+          "maintenance_needed" => "bg-status-warning text-status-warning-text"
         }.freeze
 
         DEFAULT_STYLE = "bg-status-neutral text-status-neutral-text"

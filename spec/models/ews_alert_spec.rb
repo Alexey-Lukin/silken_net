@@ -187,6 +187,26 @@ RSpec.describe EwsAlert, type: :model do
       expect(described_class.escalate_field_audit!(cluster: cluster, tree: tree, message_key: "cluster_data_blackout")).to be_persisted
     end
 
+    # 🔴 ДРУГИЙ КІНЕЦЬ ДИСКРИМІНАТОРА. `rescue RecordInvalid` ловить ВУЗЬКО —
+    # `raise unless tree && e.record.errors.of_kind?(:alert_type, :taken)`, — і доти
+    # пінили лише ту гілку, що ковтає (програну гонку). Тобто «вузькість» була
+    # заявою без піна: якби гард розширили до голого `rescue RecordInvalid`, жоден
+    # приклад не почервонів би, а справжній баг тихо повертав би `nil` замість
+    # летіти. Тут пін на протилежний вихід: валідаційний збій, що НЕ є `:taken`,
+    # мусить пробити rescue наскрізь.
+    it "re-raises a validation failure that is NOT the dedup race (вузьке перехоплення)" do
+      allow(described_class).to receive(:active_tree_field_audit_for).and_return(nil)
+      invalid = described_class.new(cluster: cluster, tree: tree, severity: :critical,
+                                    alert_type: :field_audit, message_key: nil)
+      invalid.validate
+      expect(invalid.errors.of_kind?(:alert_type, :taken)).to be(false) # не гонка — справжній збій
+      allow(described_class).to receive(:create!).and_raise(ActiveRecord::RecordInvalid.new(invalid))
+
+      expect {
+        described_class.escalate_field_audit!(cluster: cluster, tree: tree, message_key: "cluster_data_blackout")
+      }.to raise_error(ActiveRecord::RecordInvalid)
+    end
+
     it "does not poison an enclosing transaction when losing the unique race (savepoint)" do
       described_class.escalate_field_audit!(cluster: cluster, tree: tree, message_key: "cluster_data_blackout")
       # Сліпимо dedup-скан → create! б'ється об модельну uniqueness-валідацію

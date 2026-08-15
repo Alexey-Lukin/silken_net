@@ -475,8 +475,8 @@ module DocsLinter
   # (frontier-LLM / coding-agent) with concrete instances snapshotted ONCE in 00_03
   # A vendor token re-stated elsewhere drifts the moment the roster shifts. Same shape as
   # solc/tokenomics. Case-sensitive on purpose (lowercase "cursor"/"grok" = UI/verb, не вендор).
-  # EXCLUDES overloaded/generic tokens that would false-positive: "Codex" (04_05 Codex Lore
-  # Module / "The Codex" SSOT-guard nickname / ADR-CDX), bare "Claude"/"Opus"/"Sonnet"/"Fable"
+  # EXCLUDES overloaded/generic tokens that would false-positive: "Codex" (OpenAI's coding
+  # agent collides with "The Codex" SSOT-guard nickname), bare "Claude"/"Opus"/"Sonnet"/"Fable"
   # (model words that collide with prose). Exempt: 00_02 (roster home), 00_06 (cites examples),
   # 00_07 (tracker). Skips fenced code (a script may legitimately name a tool).
   AI_VENDOR_OWNER_DOC = /\A00_06_|\A00_07_/

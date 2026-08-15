@@ -30,7 +30,7 @@ RSpec.describe UserContext do
 
   describe "the user it carries" do
     # The header states this as a MEASUREMENT, not a preference: the context must not
-    # stand in for the user, or `user.present?` — the base RBAC primitive of the codex
+    # stand in for the user, or `user.present?` — the base RBAC primitive of the policy
     # branch — would answer true around a nil user and invert every guard built on it.
     it "keeps the user itself, so nil stays nil" do
       expect(described_class.new(nil, organization).user).to be_nil

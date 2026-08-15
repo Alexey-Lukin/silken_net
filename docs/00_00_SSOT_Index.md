@@ -124,7 +124,6 @@ _Rails 8.1 Omakase: моделі даних, бізнес-логіка, REST API
 - [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) (Service Objects + Sidekiq воркери, Web3CircuitBreaker, doc↔code sync)
 - [`04_03` — REST API v1 Reference](04_03_REST_API_v1_Reference) (REST API v1, Pagy, Idempotency-Key, RBAC)
 - [`04_04` — Phlex UI and Tailwind](04_04_Phlex_UI_and_Tailwind) (Phlex компоненти + Tailwind 4 + gaia design tokens + i18n)
-- [`04_05` — Codex Lore Module](04_05_Codex_Lore_Module) (Codex — read-only наративний шар над телеметрією; ADR-зафіксований, поза hot-path)
 - [`04_06` — Testing Guide and Coverage](04_06_Testing_Guide_and_Coverage) — ⚠️ **крос-доменний, попри номер модуля**: методологія й карта покриття ВСІХ шарів (RSpec · firmware C · Foundry Solidity), на нього реферять `03_02`/`05_04`/`CLAUDE.md §8`. Частина A — RSpec/Phlex-конвенції; Частина B — gap-аналіз ризиків покриття. Дім і присуд про номер — [`00_06 §2`](00_06_SSOT_Documentation_Standard)
 
 ## ⛓️ Модуль 05: Web3 та Економіка (The Ledger)

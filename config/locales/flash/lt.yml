@@ -14,15 +14,6 @@ lt:
     blockchain_transactions:
       invalid_status: 'Neteisingas būsenos filtras: %{value}.'
       invalid_token_type: 'Neteisingas token_type filtras: %{value}.'
-    codex:
-      attunement_removed: Derinimas pašalintas.
-      attunement_saved: Derinimas išsaugotas.
-      comment_posted: Komentaras paskelbtas.
-      fraction_cooldown: Frakcijos keitimas galimas nuo %{until}.
-      fraction_set: 'Frakcija pasirinkta: %{node}.'
-      idempotency_required: JSON įrašams reikalinga Idempotency-Key antraštė.
-      match_rejected: Balsas neįskaitytas — štai nauja pora.
-      match_replay: Balsas už šią porą jau įskaitytas — štai nauja pora.
     firmwares:
       deployment_dispatched: Diegimo užsakymas v%{version} įtrauktas į eilę — Karalienės jį paims kitame poll užklausime.
       deployment_no_targets: 'OTA atmesta: nėra tinkamų šliuzų diegimui.'

@@ -46,7 +46,7 @@ RSpec.describe "Вкладення оголошують тип і розмір",
     # Liveness: без цього прикладу порожня множина зробила б гейт вакуумним —
     # «нуль порушень» означало б «нуль перевірок».
     pairs = our_attachments.map { |model, name, _| "#{model.name}##{name}" }
-    expect(pairs).to include("Organization#logo", "MaintenanceRecord#photos", "Codex::Node#gallery")
+    expect(pairs).to include("Organization#logo", "MaintenanceRecord#photos")
   end
 
   it "не лишає жодного вкладення без типу й розміру" do

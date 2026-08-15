@@ -9,18 +9,13 @@ uk:
     items:
       account_security: Безпека акаунту
       audit_log: Журнал аудиту
-      battle_arena: Арена битв
       blockchain_ledger: Реєстр блокчейну
       clan_hierarchy: Ієрархія кланів
-      codex_atlas: Атлас Кодексу
       crew_registry: Реєстр екіпажу
       firmware_ota: Прошивка OTA
       initiate_node: Ініціювати вузол
-      leaderboard: Таблиця лідерів
       live_telemetry: Жива телеметрія
       maintenance_log: Журнал обслуговування
-      my_codex: Мій Кодекс
-      my_fraction: Моя фракція
       naas_contracts: NaaS-контракти
       notifications: Сповіщення
       oracle_visions: Видіння Оракула
@@ -39,7 +34,6 @@ uk:
     sections:
       administration: Адміністрування
       forest_operations: Лісові операції
-      library: Бібліотека
       neural_network: Нейронна мережа
       strategic_insight: Стратегічний контур
     status:

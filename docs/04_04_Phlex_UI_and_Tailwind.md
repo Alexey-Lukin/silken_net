@@ -115,7 +115,6 @@ ApplicationComponent (Phlex::HTML)
     ├── blockchain_transactions/ # Аудиторський on-chain леджер
     ├── reports/                # Карбон, фінанси
     ├── tree_families/          # Довідник видів
-    ├── codex/                  # Lore Layer (read-only наратив) — власний канон 04_05
     ├── organizations/          # Реєстр кланів + перемикач контексту [UI.6]
     ├── users/                  # Список, профіль
     ├── audit_logs/             # Журнал привілейованих дій
@@ -568,15 +567,14 @@ render Views::Shared::UI::StatusBadge.new(status: "confirmed", class: "mt-2")
 
 | AASM Стани | Семантичний Стиль |
 |---|---|
-| `pending`, `dormant`, `maintenance_needed`, `endangered` (Codex lifecycle) | `bg-status-warning text-status-warning-text` |
+| `pending`, `dormant`, `maintenance_needed` | `bg-status-warning text-status-warning-text` |
 | `processing`, `updating` | `+ animate-pulse` |
 | `manual_review` | `bg-status-warning text-status-warning-text + animate-pulse` — **[DOUBLE-SPEND GUARD]**: tx_hash існує або стан невідомий, потребує ручної звірки |
-| **`active`**, `confirmed`, `fulfilled`, `thriving` (Codex lifecycle) | `bg-status-success text-status-success-text` |
+| **`active`**, `confirmed`, `fulfilled` | `bg-status-success text-status-success-text` |
 | `sent`, `maintenance` | `bg-status-info text-status-info-text` |
-| `failed`, `breached`, `deceased`, `faulty`, `destroyed` (Codex lifecycle) | `bg-status-danger text-status-danger-text` |
-| `mythical` (Codex lifecycle) | `bg-status-active text-status-active-text` |
-| `idle`, `draft`, `offline`, `cancelled`, `removed`, `unknown` (Codex lifecycle), `extinct` (Codex lifecycle) | `bg-status-neutral text-status-neutral-text` |
-| `cancelled`, `removed`, `extinct` (Codex) | `+ opacity-50` (застосовується через модифікатор) |
+| `failed`, `breached`, `deceased`, `faulty` | `bg-status-danger text-status-danger-text` |
+| `idle`, `draft`, `offline`, `cancelled`, `removed` | `bg-status-neutral text-status-neutral-text` |
+| `cancelled`, `removed` | `+ opacity-50` (застосовується через модифікатор) |
 
 > 🔴 **Примітка щодо `active` — і виправлення того, що тут стояло раніше.** `STYLES` ключований **самим рядком-значенням**, тож фізично не може віддати два стилі на одне слово. `"active"` у ньому **явно перелічений** — як danger, бо його вписав `EwsAlert` (нерозвʼязаний сигнал = погано). Отже будь-яка сутність, передана в `StatusBadge` зі станом `active`, дістає **червоне** — включно зі здоровим `Tree`/`Gateway`/`NaasContract`/`Actuator`, для яких те саме слово означає «все гаразд».
 >
@@ -635,7 +633,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 
 | Компонент | Файл | Props | Опис |
 |---|---|---|---|
-| `Navigation::Sidebar` | `navigation/sidebar.rb` | `current_path:`, `ews_alert_count:`, `current_user:` | Навігаційна бічна панель з 5 групами секцій (Strategic Insight, **Library** (Codex), Forest Ops, Neural Network, Administration), виділенням активного стану, бейджем EWS-сигналів, пульсуючим статусом. Пункти роле-гейтовані — див. нижче |
+| `Navigation::Sidebar` | `navigation/sidebar.rb` | `current_path:`, `ews_alert_count:`, `current_user:` | Навігаційна бічна панель з 4 групами секцій (Strategic Insight, Forest Ops, Neural Network, Administration), виділенням активного стану, бейджем EWS-сигналів, пульсуючим статусом. Пункти роле-гейтовані — див. нижче |
 
 > 🔒 **Видимість пункту меню = гард його контролера. Це інваріант, не оформлення [UI.5].** Доти сайдбар не приймав користувача взагалі, тож фільтру за роллю не було ДЕ жити: investor бачив повне меню платформи, і кожен із **одинадцяти** гейтованих пунктів віддавав йому сирий JSON-блоб `render_forbidden`. Це не «виняток на дашборді», а штатний шлях звичайного користувача — тому корінь одноклікових 403 сидить тут, а не в error-рендерерах ([`04_03 §2.2`](04_03_REST_API_v1_Reference)). Один пункт (`clan_hierarchy`) блобив навіть адміну, бо гард там `authorize_super_admin!`.
 >
@@ -720,31 +718,6 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Firmwares::Form` | `firmwares/form.rb` | `firmware:` | Поля форми прошивки |
 | `Firmwares::Row` | `firmwares/row.rb` | `firmware:` | Один рядок списку прошивок |
 | `Firmwares::OtaProgressBar` | `firmwares/ota_progress_bar.rb` | `uid:`, `percent:`, `current:`, `total:`, `status:` | Анімований прогрес-бар OTA; Turbo target `ota_progress_{uid}` |
-
-#### Codex (Lore Layer)
-
-| Компонент | Файл | Props | Опис |
-|---|---|---|---|
-| `Codex::Index` | `codex/index.rb` | `nodes:`, `pagy:`, `realms:`, `active_realm_slug:` | Сторінка-каталог lore-вузлів (Atlas). Сітка карток (`NodeCard`), вкладки шарів (`RealmTabs`), пагінація `Shared::UI::Pagination`, порожній стан `Shared::UI::EmptyState` |
-| `Codex::Show` | `codex/show.rb` | `node:`, `current_user:`, `comments:`, `current_user_attuned:` | Детальна сторінка lore-вузла. Bilingual title/subtitle, 3 markdown-блоки (`context_md` → `Codex::MarkdownRenderer`), `Shared::UI::StatusBadge` для `lifecycle_status`, зовнішні посилання, мета-рядки (Elo, view_count). Phase 2: рендерить `Codex::Attunements::Toggle` + `Codex::Comments::Thread`. |
-| `Codex::RealmTabs` | `codex/realm_tabs.rb` | `realms:`, `active_slug:` | Горизонтальні вкладки шарів. Active token: `bg-gaia-primary text-gaia-primary-text` |
-| `Codex::NodeCard` | `codex/node_card.rb` | `node:` | Картка одного lore-вузла. ActiveStorage `cover_image` з placeholder-гліфом per realm, lifecycle-бейдж, footer з Elo+geo_region. Linkable до `/codex/nodes/:slug`. |
-| `Codex::Attunements::Toggle` | `codex/attunements/toggle.rb` | `node:`, `current_user_attuned:`, `count:` | **Phase 2.** Кнопка "Attune"/"Attuned" + лічильник. 🔴 **ДВІ дії — ДВА маршрути, і цей рядок доти стверджував протилежне** («POST/DELETE на nested-route»): колекційний шлях зареєстровано лише під `POST`, зняття живе окремим `attunements/me`, а компонент слав обидві гілки на перший — тобто «відвʼязатись» летіло в 404 назавжди, і канон-дім описував дефект як робочу поведінку ([UI.7], 2026-07-31). Форма — `button_to`, і це не стиль: він бере ціль із гілки, кладе `authenticity_token` (рукописна `<form>` його не мала → без JS гілка attune падала на CSRF; Turbo маскував це тим, що додає заголовок сам) і дає валідний `method="post"`+`_method` замість невалідного `method="delete"`. Успішний un-attune віддає **303**, не 302 — `fetch` конвертує 301/302 у GET лише для POST, тож на 302 браузер перевидав би DELETE на сторінку вузла. 🔴 **Лічильник НЕ живий** — приходить із рендером контролера й освіжається перезавантаженням. Обіцяний «Turbo Stream broadcast» ним ніколи не був (сирий ActionCable без підписника), а на силі тієї обіцянки видалили робочий Stimulus-фолбек `codex--attune`; воркер знято 2026-07-27 ([`UI.2`](00_07_Action_Plan_Tracker), присуд ADR-CDX-8 → [`04_05 §2`](04_05_Codex_Lore_Module)). |
-| `Codex::Comments::Thread` | `codex/comments/thread.rb` | `node:`, `comments:`, `current_user:` | **Phase 2.** Список коментарів (хронологічно) + composer (тільки для авторизованих). DOM id `codex_node_<id>_comments` — стабільний **якір списку**, продюсера НЕМА (inline-броадкаст знято 2026-07-27, [`UI.2`](00_07_Action_Plan_Tracker)). Stimulus `codex--comment`. |
-| `Codex::Comments::Item` | `codex/comments/item.rb` | `comment:` | **Phase 2.** Один рядок коментаря (sanitised markdown через `MarkdownRenderer`, ISO timestamp). Hidden-state — italic + opacity-50 + повідомлення модератора. DOM id `codex_comment_<id>`. |
-| `Codex::Comments::Form` | `codex/comments/form.rb` | `node:` | **Phase 2.** Composer (textarea + Post). `maxlength: Codex::Comment::BODY_MAX`. Stimulus targets `codex--comment.body` / `.form`. |
-| `Codex::Fractions::Card` | `codex/fractions/card.rb` | `fraction:`, `current_user:` | **Phase 3.** Read-only summary ідентичності caller'а. Empty-state CTA коли fraction nil; "Change →" + Cooldown pill коли set. DOM id `codex_fraction_card`. |
-| `Codex::Fractions::Cooldown` | `codex/fractions/cooldown.rb` | `fraction:` | **Phase 3.** Status pill ("Open" / "Locked · Nd Mh"). Tokens: `status-success` / `status-warning`. |
-| `Codex::Fractions::Picker` | `codex/fractions/picker.rb` | `realms:`, `active_realm:`, `nodes:`, `current_fraction:` | **Phase 3.** Turbo Frame grid pickable nodes для активного realm. Realm tabs (active = `bg-gaia-primary`), node cards з POST формою на `/codex/fractions`, disable button під час cooldown. DOM id `codex_fraction_picker`. |
-| `Codex::Fractions::ProfileBadge` | `codex/fractions/profile_badge.rb` | `fraction:` | **Phase 3.** 1-row teaser для `Users::Profile`. Embed live в `render_codex_fraction` секцію. Стоїть на gaia-* tokens — не торкає legacy emerald palette профілю. |
-| `Codex::Fractions::OnboardingWizard` | `codex/fractions/onboarding_wizard.rb` | `current_user:` | **Phase 8.** First-login банер у `DashboardLayout` — рендериться лише коли `current_user.codex_fraction.blank?`, з двома CTA: «Choose your Fraction →» (`/codex/fractions/picker`) та «Browse the Codex» (`/codex/realms`). Без Stimulus — нативна Turbo-Drive навігація (узгоджено з § 15 Native HTML over Stimulus). Layout-хук обгорнутий у `rescue StandardError` (ADR-CDX-7 fail-open). DOM id `codex_onboarding_wizard`. |
-| `Codex::Battle::Arena` | `codex/battle/arena.rb` | `left:`, `right:`, `pair_seed:`, `realm:`, `error:` | **Phase 4.** Turbo Frame `id="codex_battle_arena"` з двома cards (Title + Archetype + `Elo: N · Mm`) + VS-divider + Skip. POST форми на `/codex/matches` (`MatchesController#create`; один winner_slug per форма + окрема skip-форма). UI-назва "Battle Arena" — UX label, REST-ресурс — `Codex::Match`. Error-state pill при `not enough nodes`. |
-| `Codex::Leaderboard::Table` | `codex/leaderboard/table.rb` | `realm:`, `nodes:`, `limit:` | **Phase 4.** Read-only top-N Elo board. HTML `<table>` з колонками rank / Title / Elo / Matches / Lifecycle. Рендериться публічно (`/codex/leaderboard` без auth). Empty-state copy коли `nodes.empty?`. |
-| `Codex::Discoveries::List` | `codex/discoveries/list.rb` | `discoveries:`, `pagy:` | **Phase 5.** Paginated 3-col grid of own unlocked nodes (rendered by `GET /codex/discoveries/me` HTML format). Empty-state copy "Nothing unlocked yet — observe a tree, vote in the Arena, choose a fraction." Кожна card показує title / archetype_key / `trigger_type · unlocked_at`. gaia-* tokens only. |
-| `Codex::Citations::Pill` | `codex/citations/pill.rb` | `citation:` | **Phase 6.** Single inline citation chip — `« Title · archetype_key »`. Slug-href anchor до `/codex/nodes/:slug`, hover-title зі 140-char note, `aria-label` для screen readers, `focus-visible:ring-2`. gaia-* tokens (`bg-gaia-surface-sunken`, `border-gaia-border`, `hover:border-gaia-primary`). Defensive nil-safe — рендерить порожньо якщо `citation.node` зник. |
-| `Codex::Citations::Strip` | `codex/citations/strip.rb` | `target:`, `citations:`, `current_user:` | **Phase 6.** Wrap-flex container з усіма pills прив'язаними до операційної цілі (`Tree`/`Cluster`/`AiInsight`/`EwsAlert`/`OracleVision`/`NaasContract`). DOM id `codex_citations_<type_underscore>_<id>` (продюсера НЕМА — сирий ActionCable знято 2026-07-27; живим тракт стане лише через підписаний Turbo-стрім). Empty-state copy "No lore citations yet." щоб freshly-cited entity мав стабільний DOM target. Інтегровано в `Trees::Show`, `Clusters::Show`, `Alerts::Row`, `OracleVisions::ForecastCard` через приватний `render_codex_citations` що early-return'ить на `defined?(Codex::Citation)` гарду + `for_target(target).includes(:node)`. |
-
-> ⚠️ **Сирий ActionCable знято 2026-07-27** (UI.2 descope + SEC). Підписника не існувало ніколи, а `/cable` монтується движком САМ (`after_initialize`, `internal: true` — його не видно в `bin/rails routes`), тож канал без авторизації підписки був латентним крос-тенантним IDOR при послідовних ID. Realtime — лише через ПІДПИСАНІ Turbo-стріми, бо їх ім'я дістається тільки тому, кому сторінка вже відрендерилась. Заборону тримає `spec/security/no_raw_action_cable_spec.rb`.
 
 #### Інші Доменні Компоненти
 
@@ -842,7 +815,6 @@ START: Що це за компонент?
 | **clipboard** | `clipboard_controller.js` | `clipboard` | Копіювання в буфер обміну для Web3-адрес |
 | **map** | `map_controller.js` | `map` | Геопросторова карта дерев Leaflet.js |
 | **mobile-nav** | `mobile_nav_controller.js` | `mobile-nav` | Шим `<dialog>` мобільної навігації (backdrop-click + scroll-lock Safari) — § 15.2 |
-| **codex--comment** | `codex/comment_controller.js` | `codex--comment` | Codex thread — inline reply / broadcast (`Codex::Comments::Thread`) |
 | **reveal** ⚠️ | `reveal_controller.js` | `reveal` | Appear-on-scroll (IntersectionObserver) — § 14.3. **Наразі 0 консюмерів** (`data-controller="reveal"` ніде): scaffold, який авто-реєструється |
 
 > **⚠️ Важливо:** Будь-який `*_controller.js` у директорії автоматично реєструється через `eagerLoadControllersFrom` — **не залишайте scaffold-файли в production** (пор. `reveal` вище: авто-зареєстрований, але без жодного консюмера).
@@ -925,6 +897,8 @@ START: Що це за компонент?
 ### 8.1 Turbo Streams
 
 Оновлення DOM в реальному часі через `ActionCable` (Solid Cable).
+
+> 🔒 **Сирий ActionCable заборонено — це вісь АВТОРИЗАЦІЇ, а не стилю** (знято з дерева 2026-07-27). `/cable` монтується движком САМ (`after_initialize`, `internal: true`), і в `bin/rails routes` його не видно — тобто «mount'а немає, отже безпечно» є артефактом способу подивитись, а не фактом. Канал без авторизації підписки лишається латентним крос-тенантним IDOR при послідовних ID. Realtime — лише через **ПІДПИСАНІ** Turbo-стріми, бо їхнє ім'я дістається тільки тому, кому сторінка вже відрендерилась. Заборону тримає `spec/security/no_raw_action_cable_spec.rb` — і сама спека маршрутизує сюди ж, тож дім правила один.
 
 Реєстр звірено з кодом по ОБИДВА боки — і продюсери, і підписники (UI.4, 2026-07-27).
 
@@ -1060,7 +1034,7 @@ Turbo::StreamsChannel.broadcast_replace_later_to(
 >
 > ⚠️ **Перевірка СТАТИЧНА — рахує `t(`/`I18n.t(` у джерелі компонента.** Це варто знати точно, бо тут довго стояв опис ІНШОГО механізму («зрендерити двічі у двох локалях і звірити байт-у-байт»). Той абзац написали як **прогноз** — до того, як гейт існував, — а коміт, що збудував гейт, канону не торкнувся; розбіжність прожила непоміченою, бо обидва формулювання звучать однаково правдоподібно. Рендер-порівняння в репо таки є, і **у двох місцях, не в одному**: `command_status_frame_spec.rb` ітерує ВСІ налаштовані локалі на рівні компонента, а `wallet_spec.rb` робить справді ДВОМОВНЕ побайтове порівняння на рівні ПРОДЮСЕРА (гонить реальний `broadcast_balance_update` у двох локалях) і додає сильнішу половину — асершн, що заглушка порожня, бо «однаково у двох локалях» саме по собі означало б лише «переклад ще не додано». ⚠️ Тут доти стояло «лише в спеці стабів, і не дві» — обидві клаузи хибні; показово, що це той самий абзац, який існує заради виправлення попереднього хибного опису механізму.
 >
-> 🔒 **Три речі, яких цей гейт не бачить** (стеля названа й у шапці спеки): (1) локаль-залежність, сховану в СЕРВІСІ, а не в компоненті — напр. `TextFormatter.alert_title`; (2) ДОЧІРНІ компоненти — payload тягне їхні `t()` за собою, тож запис зі списку знімається лише після читання дерева (демонстрація класу: `Codex::Citations::Pill` сидів двома рівнями нижче `Alerts::Row` і їхав у payload'і, поки той броадкастився — сам приклад уже неактивний, бо рядок мігрував на сигнал, але сліпота гейта лишається); (3) **однорядковий** `broadcast_*_to(...)` — регекс-екстрактор вимагає багаторядкової форми, і це виміряно, не припущено (бачить 1 із 2 викликів у `unpack_telemetry_worker.rb`). Перед реюзом машинерії для гейта, якому потрібен ПОВНИЙ набір продюсерів, її треба переписати на AST — інакше пропущений виклик = хибно-зелений.
+> 🔒 **Три речі, яких цей гейт не бачить** (стеля названа й у шапці спеки): (1) локаль-залежність, сховану в СЕРВІСІ, а не в компоненті — напр. `TextFormatter.alert_title`; (2) ДОЧІРНІ компоненти — payload тягне їхні `t()` за собою, тож запис зі списку знімається лише після читання ДЕРЕВА рендеру, а не самого файла компонента: локаль-залежний нащадок, що сидить кількома рівнями нижче broadcast-компонента, їде в payload'і разом із ним, а статичний лічильник `t()` у батьківському джерелі його не бачить; (3) **однорядковий** `broadcast_*_to(...)` — регекс-екстрактор вимагає багаторядкової форми, і це виміряно, не припущено (бачить 1 із 2 викликів у `unpack_telemetry_worker.rb`). Перед реюзом машинерії для гейта, якому потрібен ПОВНИЙ набір продюсерів, її треба переписати на AST — інакше пропущений виклик = хибно-зелений.
 >
 > Міграція наявних поверхонь → [`00_07`](00_07_Action_Plan_Tracker) I18N.2 (той самий ratchet-порядок, що в UI.1: спершу migrate-to-green, потім HARD).
 
@@ -1074,7 +1048,7 @@ Turbo::StreamsChannel.broadcast_replace_later_to(
 >
 > ✅ **Сигнал закриває чотири речі одним відʼємним діфом:** форма лишається у власника · семантика «прибрати + підтягнути наступну» стає безкоштовною (сторінка переграє власний запит) · рендер їде в локалі **глядача**, тож поверхня зникає з міграції I18N.2 сама · спец-кейс `citations: []` випаровується разом із push'ем.
 >
-> ⚠️ **Але ОДИНИЦЯ вартості при цьому виросла з фрагмента до СТОРІНКИ, і це треба тримати в голові.** Старий шлях коштував один рендер + N доставок готового `<tr>`. Новий коштує N **повних GET** сторінки з боку глядачів — для `Clusters::Show` це шлюзи, нерозвʼязані тривоги, контракт і Codex-посилання. Інваріант §8.1а («ціна масштабується попитом, не каталогом») тримається — платять лише реальні глядачі, — але сигнал НЕ є універсально дешевшим за push, і саме тому §8.1а вимагає зважати на **частоту**. ⚠️ І не називай цей тракт «тротленим» цілком: 5-секундний `should_broadcast?` сидить ЛИШЕ в `broadcast_alert_update`; шлях створення тривоги обмежений тільки `Turbo::ThreadDebouncer` (0,5 с **на тред продюсера**), тож батч у Sidekiq дебаунситься приблизно до 2 сигналів/с, а не до одного на 5 с. Для рідких тривог це прийнятно; для firehose — ні, і саме там обовʼязковий клас 1.
+> ⚠️ **Але ОДИНИЦЯ вартості при цьому виросла з фрагмента до СТОРІНКИ, і це треба тримати в голові.** Старий шлях коштував один рендер + N доставок готового `<tr>`. Новий коштує N **повних GET** сторінки з боку глядачів — для `Clusters::Show` це шлюзи, нерозвʼязані тривоги й контракт. Інваріант §8.1а («ціна масштабується попитом, не каталогом») тримається — платять лише реальні глядачі, — але сигнал НЕ є універсально дешевшим за push, і саме тому §8.1а вимагає зважати на **частоту**. ⚠️ І не називай цей тракт «тротленим» цілком: 5-секундний `should_broadcast?` сидить ЛИШЕ в `broadcast_alert_update`; шлях створення тривоги обмежений тільки `Turbo::ThreadDebouncer` (0,5 с **на тред продюсера**), тож батч у Sidekiq дебаунситься приблизно до 2 сигналів/с, а не до одного на 5 с. Для рідких тривог це прийнятно; для firehose — ні, і саме там обовʼязковий клас 1.
 >
 > ⚠️ **Умова придатності — morph.** `broadcast_refresh_*_to` без `<meta name="turbo-refresh-method" content="morph">` дає не оновлення на місці, а повний Turbo-візит зі скидом скролу — на потоці тривог це гірше за дефект, який лікуємо. Метатеги стоять у `DashboardLayout`.
 >
@@ -1429,13 +1403,13 @@ Layout-компоненти (`AuthLayout`, `DashboardLayout`) використо
 ### 12.1 Архітектурні правила (foundational)
 
 1. **Жодних hardcoded user-facing strings.** Все, що користувач бачить (UI текст, flash, error JSON, mailer body) — через `I18n.t`. Hardcoded UA/EN рядки у `app/views/components/**/*.rb` та `app/controllers/api/v1/**/*.rb` **мають** блокуватись CI. ⚠️ **Фактично не блокуються:** job `i18n_check` (`ci.yml`) ганяє лише `i18n-tasks missing` / `check-consistent-interpolations` / `check-normalized` — усі три звіряють **парність ІСНУЮЧИХ `t()`-ключів** між локалями; сканера сирих строкових літералів у репо немає, тож хардкод у «захищеній» зоні проходить зеленим. Робота → [`00_07`](00_07_Action_Plan_Tracker) I18N.1.
-2. **Per-domain YAML layout.** Файли локалізації лежать як `config/locales/<domain>/<locale>.yml`. Кожен «домен» = верхньокореневий namespace (`wallets`, `codex`, `actuators`, `flash`, `errors`, ...). Масштабовано до десятків доменів без monolithic `en.yml`. Детальна структура — §12.3.
+2. **Per-domain YAML layout.** Файли локалізації лежать як `config/locales/<domain>/<locale>.yml`. Кожен «домен» = верхньокореневий namespace (`wallets`, `actuators`, `flash`, `errors`, ...). Масштабовано до десятків доменів без monolithic `en.yml`. Детальна структура — §12.3.
 3. **Class-name autoscope для Phlex.** `ApplicationComponent` override'ить `t` (від `Phlex::Rails::Helpers::Translate`):
-   - `t(".key")` всередині `Codex::Show` резолвить у `I18n.t("codex.show.key")`
+   - `t(".key")` всередині `Wallets::Show` резолвить у `I18n.t("wallets.show.key")`
    - Абсолютний ключ (`t("flash.errors.unauthorized")`) працює без autoscope
    - Працює як у controller-render контексті, так і в `Component.new(...).call` (specs/Turbo broadcasts)
    - Для анонімних subclasses (`Class.new(Component)` у тестах) scope обчислюється по першому named ancestor
-   - **Міграція завершена:** всі компоненти переведені на `t(".key")` relative-lookup. Абсолютні `t("codex.fractions.current")` залишаються тільки для cross-scope ключів (ключ із сусіднього компонента). `I18n.t()` у view-шарі повністю замінено на `t()` — 0 залишків. Detail-pattern та приклади — §12.6.
+   - **Міграція завершена:** всі компоненти переведені на `t(".key")` relative-lookup. Абсолютні `t("alerts.table.severity")` залишаються тільки для cross-scope ключів (ключ із сусіднього компонента). `I18n.t()` у view-шарі повністю замінено на `t()` — 0 залишків. Detail-pattern та приклади — §12.6.
 4. **Controller-side strings.** Flash, error JSON, redirect notice — всі через `I18n.t("flash.<controller>.<action>")` / `I18n.t("errors.api.<code>")`. Hardcoded UA рядки у контролерах = CI failure. Детальний мапінг доменів — §12.8.
 5. **Mailer та service-worker.** Mailer templates (`app/views/<mailer>/*.erb`) та `pwa/service-worker.js` поки **out of scope** для авто-перевірки — їх локалізують вручну за тим самим патерном (`config/locales/mailers/...`, `pwa/...`). Service-worker не йде через I18n (це JS у браузері). Поточний backlog — §12.13.
 
@@ -1638,7 +1612,7 @@ uk:
       intro: "Поточний баланс: %{balance} SCC"
 ```
 
-Cross-scope keys (потрібен ключ із сусіднього компонента) — використовуйте абсолютний `t("codex.fractions.current")`. Не вводьте `tr()` private helper — це попередній паттерн, замінений на `t(".key")` (537+ викликів у проекті vs 5 legacy `tr` визначень).
+Cross-scope keys (потрібен ключ із сусіднього компонента) — використовуйте абсолютний `t("alerts.table.severity")`. Не вводьте `tr()` private helper — це попередній паттерн, замінений на `t(".key")` (537+ викликів у проекті vs 5 legacy `tr` визначень).
 
 ### 12.7 Pluralization
 
@@ -1683,7 +1657,7 @@ uk:  { one: "1 фото", few: "%{count} фото",                     # 4 фо
 | M2M auth | `m2m_auth/<locale>.yml` | `m2m_auth.token.issued` |
 | **Заголовок сторінки** | `<domain>/<locale>.yml` | `wallets.index_title` · `trees.show_title` (інтерполяція — `%{name}`/`%{uid}`/`%{id}`) |
 
-> 🧱 **`title:` — не «рядок десь у кутку», а ім'я сторінки.** Аргумент `render_dashboard(title:)` стає ОДРАЗУ двома речами: `<title>` вкладки (а отже й запис в історії браузера) і видимий `<h1>` (`DashboardLayout`). Тому конвенція жорстка: плоский ключ `<domain>.<action>_title` (виняток — домен `codex`, який уже має власні під-скоупи й лишається на `page_title` усередині них).
+> 🧱 **`title:` — не «рядок десь у кутку», а ім'я сторінки.** Аргумент `render_dashboard(title:)` стає ОДРАЗУ двома речами: `<title>` вкладки (а отже й запис в історії браузера) і видимий `<h1>` (`DashboardLayout`). Тому конвенція жорстка й **безвиняткова**: плоский ключ `<domain>.<action>_title`.
 >
 > 🧱 **Ім'я сторінки живе в ОДНОМУ місці — `title:` контролера.** `DashboardLayout` малює його як `h1` у верхній панелі, тож компонент, який малює власний заголовок сторінки нижче, дублює ім'я — а на сторінці з ОДНІЄЮ секцією ще й дає ДВА різні імені одного екрана. Перевірка проста: якщо `h3` компонента називає ту саму сутність, що `title:`, — його місце порожнє. Якщо називає одну з кількох секцій (`oracle_visions`) або є заголовком ФОРМИ («Register Intervention Ritual» проти «New Maintenance Ritual») — лишається, це різні речі.
 >
@@ -1768,7 +1742,7 @@ bundle exec i18n-tasks unused       # довідково: не gated у CI (fals
 
 CI-гейт ловить майбутні regressions. Класи, що лишаються нелокалізованими (пооб'єктний реєстр — [`00_07`](00_07_Action_Plan_Tracker) I18N.1, тут лише класи):
 - `app/views/pwa/service-worker.js` — manifest + offline сторінка JS-string'и (не через Rails I18n)
-- **Сирі enum'и як видимий текст** — клас, який §12.14 закрив для `alert_type` і `severity` й лишив відкритим для решти. 🔴 **«Дротування» тут — це ДВІ роботи з різною ціною, і плаский перелік їх зливав:** частина родин **уже має повні мітки** в `ui.status.*` у всіх локалях і потребує лише перенаправлення рендер-сайтів (`Tree#status` · `Gateway#state` · `NaasContract#status` · `Actuator#state` · `Codex::Node#lifecycle_status` · `BlockchainTransaction#status`), а частина **не має жодної мітки в жодній локалі** (`MaintenanceRecord#action_type` — найбільша родина · `Actuator#device_type` · `User#role` · `AiInsight#insight_type` · `blockchain_network`), тобто це **net-new authoring ×N локалей**, і планувати його треба окремо. ✅ `BlockchainTransaction#token_type` із цього переліку **вибув** — його мітки шипнули разом із власним верхнім домом (`§12.14` ↓). Перевіряй цю тезу **per-родину**: колись вона була правдива рівно для половини.
+- **Сирі enum'и як видимий текст** — клас, який §12.14 закрив для `alert_type` і `severity` й лишив відкритим для решти. 🔴 **«Дротування» тут — це ДВІ роботи з різною ціною, і плаский перелік їх зливав:** частина родин **уже має повні мітки** в `ui.status.*` у всіх локалях і потребує лише перенаправлення рендер-сайтів (`Tree#status` · `Gateway#state` · `NaasContract#status` · `Actuator#state` · `BlockchainTransaction#status`), а частина **не має жодної мітки в жодній локалі** (`MaintenanceRecord#action_type` — найбільша родина · `Actuator#device_type` · `User#role` · `AiInsight#insight_type` · `blockchain_network`), тобто це **net-new authoring ×N локалей**, і планувати його треба окремо. ✅ `BlockchainTransaction#token_type` із цього переліку **вибув** — його мітки шипнули разом із власним верхнім домом (`§12.14` ↓). Перевіряй цю тезу **per-родину**: колись вона була правдива рівно для половини.
 - **Сусіди того ж дефекту, які НЕ є enum'ами — тому гейт на `Model.enum.keys` їх не бачить за визначенням:** `AuditLog#action` (вільний varchar; родини генеруються інтерполяцією ЧУЖИХ AASM-станів, тож пласка мапа вимагала б комбінаторного перебору — ліки нижче) · `Identity#provider` (`inclusion`-валідований рядок, рендериться `.titleize`) · `TreeChronicleService::Entry#event_type` (синтетичний символ сервісу, у БД його немає взагалі) · breadcrumb-сегменти (це сегменти URL, тож їхнім джерелом істини є `Rails.application.routes`, а не модель)
 - **`.humanize` псує ідентифікатори** (`0xAbC123` → `0xabc123`), тож для хешів/DID/slug'ів він не «англійський фолбек», а пошкодження даних
 - **Проза, записана в БД сервісом** (`resolution_notes`, `MaintenanceRecord#notes`, `*.error_message`) — не `t()`-заміна, а редизайн «ключ + параметри замість готового рядка». ✅ `EwsAlert#message` цей редизайн уже пройшов — колонки в схемі НЕМА, у БД лежать `message_key` + `message_params`, фраза збирається в момент показу, — тож він стоїть тут як **прецедент**, а не як борг
@@ -1823,7 +1797,7 @@ end
 >
 > 🔴 **І найдорожча вісь була не в одиниці, а в ПІДПИСІ — та сама, якою закрився сайт (3) цього ж пункту.** Датчик, який ця величина живила, стояв у колонці, підписаній **«Cluster Health»**: інвестор читав «здоровʼя лісу 25 %» там, де число означало «емітовано 2500 монет проти оплати 10 000 доларів». Це вже не хибна одиниця, а **чужа величина**. Присуд — зняти колонку цілком, **не перецілювати її на справжнє здоровʼя**: у здоровʼя вже було два чесні доми на тій самій сторінці (агрегат у герої, `backing_asset` у `show`), тож третій був би новою поверхнею заради виправдання колонки, народженої хибною. **Рефлекс: знайшовши число під чужим підписом, спитай спершу, чи потрібен САМ ПІДПИС — «полагодити значення» є найдорожчою з трьох відповідей і найчастіше зайвою.** ⊕ Побічно закрився `securities_review.md` F7 (Howey prong-3 «yield»-мова) — тобто юридично-токсичний факт виявився безодиничним кодом, і відповідь на нього була інженерною, а не термінологічною.
 
-> 🔴 **[I18N.4] Обовʼязок «повідомлення валідації — це КЛЮЧ» має ДВА пороги, і межа проходить по тому, чи текст доходить до ЛЮДИНИ** (присуд власника 2026-08-14). На моделях, чиї помилки рендеряться через `Views::Shared::UI::ErrorSummary`, зашитий літерал заборонено **незалежно від мови**: англійський рядок так само не локалізований, просто збігається з базовою локаллю. На решті — лише не-ASCII. **Підстава та сама, що й у §8.1а: вартість іде за ПОПИТОМ, не за каталогом** — 27 повідомлень на JSON-only моделях (`cluster` ×8, `codex/*` ×7, `hardware_key` ×3, `system_parameter` ×3) коштували б 108 записів у локалях для поверхні, якої людина не читає, і сума росла б із кожною новою мовою.
+> 🔴 **[I18N.4] Обовʼязок «повідомлення валідації — це КЛЮЧ» має ДВА пороги, і межа проходить по тому, чи текст доходить до ЛЮДИНИ** (присуд власника 2026-08-14). На моделях, чиї помилки рендеряться через `Views::Shared::UI::ErrorSummary`, зашитий літерал заборонено **незалежно від мови**: англійський рядок так само не локалізований, просто збігається з базовою локаллю. На решті — лише не-ASCII. **Підстава та сама, що й у §8.1а: вартість іде за ПОПИТОМ, не за каталогом** — 20 повідомлень на JSON-only моделях (`cluster` ×8, `hardware_key` ×3, `system_parameter` ×3) коштували б 80 записів у локалях для поверхні, якої людина не читає, і сума росла б із кожною новою мовою.
 >
 > ⚠️ **Перелік людських поверхонь є ДЕКЛАРАЦІЄЮ, а не деривацією, і це навмисно:** «чи побачить це людина» машинної форми не має — компонент отримує запис kwargʼом від контролера, тож жоден статичний скан цього не бачить. Але **предмет** декларації деривується: `spec/quality/model_message_localization_spec.rb` звіряє оголошені шість файлів із реальною множиною тих, що рендерять `ErrorSummary`, **в обидва боки** — нова форма робить гейт червоним, доки її модель не оголошено, а знята не лишає протухлого рядка. Без цієї звірки «нуль порушень» на вузькій множині означало б «нуль перевірок»: досить помилитись у шляху, і множина стає порожньою.
 
@@ -1994,7 +1968,7 @@ Stimulus controller, який скидає `opacity-0 translate-y-2` коли е
 |---|---|
 | `mobile_nav_controller` (тонкий шим) | Native `<dialog>` не закривається на backdrop-click + scroll-lock у Safari через `.showModal()` не завжди — лишаємо ~25 рядків шіма. |
 | `reveal_controller` ⚠️ | CSS `animation-timeline: view()` ще НЕ Baseline (Safari/Firefox в роботі) — IntersectionObserver лишається оптимальним до ~2027. **Наразі 0 консюмерів** (`data-controller="reveal"` ніде) — scaffold-патерн задокументовано (§ 14.3), але ще не застосовано (дзеркало Popover-чесності § 15.1). |
-| `clipboard_controller`, `map_controller`, `codex/*` | Інтеграція з 3rd-party / складна логіка. |
+| `clipboard_controller`, `map_controller` | Інтеграція з 3rd-party / складна логіка. |
 
 ### 15.3 Чек-ліст: коли можна **не** писати Stimulus controller
 

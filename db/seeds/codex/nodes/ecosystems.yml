@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Codex::Node corpus — Realm: ecosystem (52 records).
-# Source-of-truth: doc plan §1 (lore appendix). Idempotent UPSERT by slug.
-# `cyber_meaning_md` is the verbatim canonical interpretation from the lore
-# bundle; `context_md` carries factual baseline data.
+# Корпус вузлів — realm `ecosystem`. `cyber_meaning_md` — дослівна канонічна
+# інтерпретація з лор-бандлу; `context_md` несе фактичний базлайн.
+# Читача НЕМА — підстава й стеля в db/seeds/codex/README.md.
 
 - slug: cherkasy-bir
   realm: ecosystem

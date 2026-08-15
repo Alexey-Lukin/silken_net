@@ -42,7 +42,7 @@ class AuditLog < ApplicationRecord
   scope :archived, -> { where.not(ipfs_cid: nil) }
   scope :not_archived, -> { where(ipfs_cid: nil) }
   # [INF.22 крок 11] Outbox-eligibility: archivable = money/MRV-лог, який AuditLogWorker
-  # явно позначив `archive_requested_at` у create-транзакції. Codex/factory прямий `create!`
+  # явно позначив `archive_requested_at` у create-транзакції. Factory/console прямий `create!`
   # маркер НЕ ставлять → природно поза archive-периметром (без евристики по auditable_type).
   # pending_archive = archivable, ще не запінене — саме це дренажить FilecoinReconcileWorker
   # (partial index `index_audit_logs_pending_archive` дзеркалить цей предикат).

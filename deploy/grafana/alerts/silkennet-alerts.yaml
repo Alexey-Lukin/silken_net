@@ -28,7 +28,7 @@ groups:
       # -----------------------------------------------------------------------
       # P0: PartitionMaintenanceWorker failure — silent monthly PG-crash guard
       # (06_03 §2.8 / S2.5). Without a new-month partition, the first INSERT on
-      # day-1 crashes with `no partition of relation` for all 4 RANGE tables.
+      # day-1 crashes with `no partition of relation` for all 3 RANGE tables.
       # -----------------------------------------------------------------------
       - uid: sn-alert-partition-maintenance-failed
         title: "🔴 Partition maintenance failed (day-1 INSERT crash risk)"
@@ -55,7 +55,7 @@ groups:
         for: 0m
         annotations:
           summary: "PartitionMaintenanceWorker провалився ({{ $values.A.Value }}× за 24h) — партиція наступного місяця може бути відсутня."
-          description: "Без партиції на новий місяць перший INSERT 1-го числа впаде з `no partition of relation` (telemetry_logs / gateway_telemetry_logs / blockchain_transactions / codex_matches). Sidekiq retry:3 + Sentry активні. Перевірити DDL-права оракула / disk / cron. 06_03 §2.8 (S2.5)."
+          description: "Без партиції на новий місяць перший INSERT 1-го числа впаде з `no partition of relation` (telemetry_logs / gateway_telemetry_logs / blockchain_transactions). Sidekiq retry:3 + Sentry активні. Перевірити DDL-права оракула / disk / cron. 06_03 §2.8 (S2.5)."
         labels:
           severity: critical
           component: database

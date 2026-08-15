@@ -36,11 +36,9 @@
 
 | Ключ | Зараз | Дефект | Пропозиція |
 |---|---|---|---|
-| `codex.show.sections.cyber_meaning` | `Kibermedijs` | «кібер-носій», не «значення» | `Kibernozīme` |
 | `activerecord.errors…version_must_be_non_blank_string` | `nepustukšai virknei` | `pustukšs` = напівпорожній | `netukšai virknei` |
 | `system_health.show.all_systems_go` | `VISAS SISTĒMAS GATAVS` | жін. мн. + чол. одн. | `VISAS SISTĒMAS GATAVAS` |
 | `navigation.sections.strategic_insight` | `Stratēģiskā ieskats` | рід | `Stratēģiskais ieskats` |
-| `codex.atlas.title` | `Arhetipa Codex` | однина родового проти en «of Archetypes» | `Arhetipu Codex` |
 
 ### Обидві — enum-літерали перекладено як слова
 
@@ -64,15 +62,15 @@
 
 ## C · Плюралізація — клас, якого не бачить жоден гейт
 
-**Виміряно на базовій локалі:** 13 ключів містять `%{count}`, plural-блоків — 3. Англійська ховає проблему за `-s`; три відмінювані мови — ні («21 одиниць», «1 vienības», «10 vienetai»).
+**Виміряно на базовій локалі:** 12 ключів містять `%{count}`, plural-блоків — 2. Англійська ховає проблему за `-s`; три відмінювані мови — ні («21 одиниць», «1 vienības», «10 vienetai»).
 
 Реальні кандидати на plural-блок (після `%{count}` стоїть іменник або дієприкметник):
 
 `firmwares.index.units` · `gateways.show.fleet.active_nodes` · `maintenance.index.page_info` · `organizations.show.clusters.soldiers_count` · `tree_families.index.soldiers_count` · `trees.chronicle.events` · `users.profile.security.linked_count`
 
-Легітимні за формою (число стоїть останнім, узгоджувати нічого) — **не чіпати**: `codex.discoveries.counter` · `dashboard.map.live_nodes` · `account_security.show.mfa.enabled_with_remaining`.
+Легітимні за формою (число стоїть останнім, узгоджувати нічого) — **не чіпати**: `dashboard.map.live_nodes` · `account_security.show.mfa.enabled_with_remaining`.
 
-Окремо: **`lv` має лише `one`/`other` там, де за CLDR потрібен ще `zero`** (`codex.atlas.count`, `maintenance.photo_gallery.photo_count`) — при нулі латиська впаде в `other` замість родового множини.
+Окремо: **`lv` має лише `one`/`other` там, де за CLDR потрібен ще `zero`** (`maintenance.photo_gallery.photo_count`) — при нулі латиська впаде в `other` замість родового множини.
 
 > ✅ **Гейт зашиплено 2026-07-27** — `spec/i18n/pluralization_gate_spec.rb`: базова локаль, два списки (`exempt` = число останнє, узгоджувати нічого, назавжди · `pending` = ці сім, ТІЛЬКИ скорочується), мертвий запис у будь-якому червонить. Отже клас більше не РОСТЕ; лишилось заповнити самі блоки, і це вже мовне судження (`few`/`many` для uk, `zero` для lv) → нативний пас.
 
@@ -90,7 +88,6 @@ Adversarial-ревʼю 208 щойно доданих записів шукало
 
 | Що | Чому не виправлено |
 |---|---|
-| uk: `Кодекс · Realms` — англійський іменник в імені сторінки | `realm` лишений англійським у **11** місцях `codex/uk.yml`; фікс = доменне рішення про термін («Світи»/«Сфери»), не правка ключа. Міграція підняла цей виняток із мітки фільтра до `<h1>` — тож або термін, або явно записаний виняток |
 | uk: чотири слова на одну сутність — тривога / попередження / загроза / сигнал | lv (`brīdinājums`) і lt (`įspėjimas`) однорідні; uk розколота, і нові ключі додали ще page-level «тривогу». Потрібен глосарій-присуд, далі механічна заміна |
 | uk: `Системний аудит` vs nav `Системні перевірки` · `Уточнити геном` (інфінітив) vs `Редагування запису` (іменник) | той самий клас внутрішньомовної двоїстості |
 | lt: `programinė įranga` для **firmware** — це software | семантичний розрив певний (lv має правильне `programmaparatūra`), але вибір lt-терміна потребує носія; фікс лише мого ключа створив би внутрішній розкол |

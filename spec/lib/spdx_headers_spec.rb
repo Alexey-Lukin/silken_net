@@ -88,7 +88,7 @@ RSpec.describe SpdxHeaders do
         "db/cable_schema.rb",                        # SchemaDumper rewrites it — tag not durable
         "db/cache_schema.rb",                        # ditto
         "config/locales/en.yml",                     # i18n-tasks re-renders byte-for-byte
-        "config/locales/codex/uk.yml",               # ditto, at any depth
+        "config/locales/navigation/uk.yml",          # ditto, at any depth
         "tools/in_silico/conda-lock.yml",            # third-party lock output
         "firmware/hal_glue/stm32wlxx_hal_conf.h",    # © STMicroelectronics — adjudicated
         "firmware/queen/lorawan_glue/se-identity.h", # Semtech BSD — adjudicated

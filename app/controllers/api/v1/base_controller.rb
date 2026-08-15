@@ -6,12 +6,11 @@ module Api
     class BaseController < ActionController::Base
       # [SEC.25 Ф2] Кидається `acting_organization!` — тобто В ТОЧЦІ ЧИТАННЯ організації,
       # а не `before_action`-гардом. Різниця несуча: від `BaseController` успадковують і
-      # ті, хто організації не має за побудовою — більшість codex (lore глобальний),
-      # обидва webhook'и, обидва auth-шляхи, `m2m_auth` і платформені (`system_health`,
-      # `system_audits`, `organizations`). ⚠️ «Більшість», а не «весь» codex: [SEC.26]
-      # дав `Codex::CitationsController` організацію, бо цитата пише в ОПЕРАЦІЙНУ ціль,
-      # і саме це показує, чому гард живе в точці читання — той самий контролер
-      # org-less на читанні лору й org-скоуплений на записі цитати.
+      # ті, хто організації не має за побудовою — обидва webhook'и, обидва auth-шляхи,
+      # `m2m_auth` і платформені (`system_health`, `system_audits`, `organizations`).
+      # ⚠️ Приналежність вирішує ДІЯ, а не шар: [SEC.26] дав організацію рівно тому
+      # контролеру, що писав у ОПЕРАЦІЙНУ ціль, лишивши його читання org-less. Саме
+      # це й показує, чому гард мусить жити в точці читання, а не на класі.
       # Класовий `before_action` вимагав би
       # `skip_before_action` у кожному з них — тобто «однорідне правило», зібране зі
       # списку винятків, який мусить рости з кожним новим контролером і який хтось
@@ -208,10 +207,9 @@ module Api
       # (super_admin її перемикає).
       #
       # ⚠️ `current_user &&` тут несуче, а не оборонний рефлекс: без нього анонімний
-      # запит (`skip_before_action :authenticate_user!` — публічний codex-leaderboard,
-      # webhook'и, логін) дістав би обгортку навколо `nil`, а обгортка — це об'єкт,
-      # тобто `present?` каже `true`. Кожен `return scope.none unless user` у
-      # codex-політиках перевернувся б на fail-OPEN. Нема користувача — нема пари.
+      # запит (`skip_before_action :authenticate_user!` — webhook'и, логін) дістав би
+      # обгортку навколо `nil`, а обгортка — це об'єкт, тобто `present?` каже `true`.
+      # Кожен `return scope.none unless user` у політиках перевернувся б на fail-OPEN. Нема користувача — нема пари.
       def pundit_user
         current_user && UserContext.new(current_user, acting_organization)
       end
@@ -307,7 +305,7 @@ module Api
       end
 
       # Читання org тут навмисне НЕ-bang: контролери, що організації не потребують
-      # (codex, платформені, webhook'и), не мусять падати лише через те, що ми
+      # (платформені, webhook'и), не мусять падати лише через те, що ми
       # ставимо слід для аудиту.
       def expose_acting_context
         Current.acting_organization_id = acting_organization&.id
@@ -354,9 +352,8 @@ module Api
       # смаковий, і вимір інвертував початкове припущення пункту:
       #   · шість request-прикладів, які «мали б почервоніти» від редиректу, виявились
       #     не недбалими API-тестами, а сигналом: два роблять справжній cookie-логін
-      #     через `POST /login`, а три б'ють у дії (`codex/matches#new`,
-      #     `telemetry#live`, `codex/fractions#picker`), що взагалі не мають
-      #     `format.json` — там нема чого «забути попросити»;
+      #     через `POST /login`, а решта б'ють у дії (як `telemetry#live`), що взагалі
+      #     не мають `format.json` — там нема чого «забути попросити»;
       #   · `redirect_to` без `return_to` губить намір: у цьому дереві
       #     `sessions#create` завжди веде на дашборд, тож користувача телепортувало б
       #     геть зі сторінки, яку він відкривав (механізму «повернись назад» немає);
@@ -466,7 +463,7 @@ module Api
 
       # [UI.9] Останні два JSON-only рендерери. Досяжні саме з БРАУЗЕРА і саме через
       # форми: `params.require` стоїть у `settings`, `maintenance_records`,
-      # `tree_families`, `codex/comments` — усі під `format.html`-екшенами. Тобто
+      # `tree_families` — усі під `format.html`-екшенами. Тобто
       # сабміт форми з обрізаним полем віддавав користувачеві сирий JSON.
       #
       # ⚠️ Тут свідомо НЕ показуємо `exception.param` / `record.errors` у HTML: JSON

@@ -58,27 +58,8 @@ module Alerts
 
     def render_tbody
       tbody(id: "alerts_list", class: "md:divide-y md:divide-gaia-border") do
-        # Single bulk citation lookup for the whole page (kills per-row N+1
-        # that Prosopite caught). `defined?` guard keeps non-Codex deploys green.
-        citations_by_target = if defined?(::Codex::Citation) && @alerts.any?
-          ::Codex::Citation.bulk_for(@alerts.to_a)
-        else
-          {}
-        end
-
         @alerts.each do |alert|
-          row_citations = if citations_by_target.any?
-            key = [ ::Codex::Citation.polymorphic_type_for(alert), alert.id ]
-            citations_by_target[key] || []
-          else
-            []
-          end
-
-          render Alerts::Row.new(
-            alert: alert,
-            citations: row_citations,
-            current_user: @current_user
-          )
+          render Alerts::Row.new(alert: alert, current_user: @current_user)
         end
       end
     end

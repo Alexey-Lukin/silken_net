@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Codex realms — top-level taxonomy of the Lore Module.
-# SSOT: docs/04_05_Codex_Lore_Module.md §2.1.
-# Idempotently UPSERTed by Codex::NodeImportService (keyed by `slug`).
+# Realms — верхня таксономія культурного корпусу. Читача НЕМА (рантайм-шар
+# зрізано 2026-08-15) — підстава й стеля в db/seeds/codex/README.md.
 
 - slug: ecosystem
   name_uk: Екосистеми

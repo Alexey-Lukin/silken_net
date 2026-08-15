@@ -17,25 +17,10 @@ module OracleVisions
         header_section
         render_mini_trend
         impact_assessment # Новий блок оцінки впливу на SCC
-        render_codex_citations
       end
     end
 
     private
-
-    # Phase 6 — Codex citation strip on the forecast card. Lets foresters
-    # tie an oracle prediction (`emergency`/`yield_drop`) back to the
-    # archetype that explains it (e.g. `relict_oracle` for a centennial
-    # prophecy). Inert when no citations exist.
-    def render_codex_citations
-      return unless defined?(::Codex::Citation)
-      citations = ::Codex::Citation.for_target(@insight).includes(node: :realm).limit(10)
-      return if citations.empty?
-
-      div(class: "mt-3 pt-3 border-t border-emerald-900/50") do
-        render ::Codex::Citations::Strip.new(target: @insight, citations: citations)
-      end
-    end
 
     def header_section
       div(class: "mb-4") do
@@ -151,7 +136,7 @@ module OracleVisions
     # третій стан мусить бути нейтральним, а не «зеленим за замовчуванням».
     # ⚠️ Нейтраль тут тема-ІНВАРІАНТНА свідомо: поверхня картки (`bg-zinc-950`)
     # з темою не фліпається, тож токен, що фліпається, дав би на ній
-    # недосяжну AA — виміряний урок `Codex::NodeCard` (00_07 §🗄️ UI.10).
+    # недосяжну AA — виміряний урок (00_07 §🗄️ UI.10).
     def unmeasured_impact?
       yield_impact.nil?
     end

@@ -28,8 +28,8 @@ require "rails_helper"
 #     поведінковий приклад у `spec/initializers/rack_attack_spec.rb`, і його треба
 #     писати ОКРЕМО для кожного правила, чиє дієслово несуче.
 #   · `recognize_path` доводить, що маршрут ОГОЛОШЕНО, а не що дія існує: сусідній
-#     випадок того ж свіпу (`codex/admin` `new`/`edit`) резолвився роутером і
-#     віддавав 404 з `ActionNotFound`.
+#     випадок того ж свіпу резолвився роутером і віддавав 404 з `ActionNotFound`,
+#     бо `resources` згенерував `new`/`edit` для чисто-JSON контролера без форм.
 #   · `config/deploy.yml` / `.kamal/**` читає Kamal поза Rails-процесом; сюди вони
 #     не потрапляють за побудовою.
 #
@@ -70,17 +70,7 @@ THROTTLE_PATH_REGISTRY = {
     verbs: %w[POST]
   },
   "oracle_callbacks/ip" => { paths: %w[/api/v1/oracle_callbacks], verbs: %w[POST] },
-  "helium_sos/ip" => { paths: %w[/api/v1/telemetry/helium], verbs: %w[POST] },
-  # Правило читає `post? || delete?`, і DELETE живе на ОКРЕМОМУ підшляху
-  # (`.../attunements/me`) — реєстр доти казав лише POST, тобто брехав про
-  # правило з дня народження. Обидві дії перелічені явно.
-  "codex/attunements" => {
-    paths: %w[/codex/nodes/some-slug/attunements /codex/nodes/some-slug/attunements/me],
-    verbs: %w[POST DELETE]
-  },
-  "codex/comments" => { paths: %w[/codex/nodes/some-slug/comments], verbs: %w[POST] },
-  "codex/fractions" => { paths: %w[/codex/fractions], verbs: %w[POST] },
-  "codex/matches/create" => { paths: %w[/codex/matches], verbs: %w[POST] }
+  "helium_sos/ip" => { paths: %w[/api/v1/telemetry/helium], verbs: %w[POST] }
 }.freeze
 
 # Правило дієслова не розрізняє → перевіряємо всі, інакше дефолт `GET` червонив би

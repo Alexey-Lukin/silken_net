@@ -157,19 +157,19 @@ RSpec.describe Tracker::Dashboard do
 
     it "resolves EVERY member of a comma/backtick-joined §-list under one doc-id" do
       # The run used to stop at the comma / closing backtick → the trailing ref went
-      # unchecked (`04_05 §2.9, §6` blind spot). All four below are real sections.
-      expect(described_class.file_section_dangling_refs("see `03_05 §3.6`, §3.7 and 04_05 §1, §3")).to be_empty
+      # unchecked (a multi-member list under ONE doc-id). All four below are real sections.
+      expect(described_class.file_section_dangling_refs("see `03_05 §3.6`, §3.7 and 06_07 §1, §3")).to be_empty
     end
 
     it "flags a STALE trailing ref in a comma-joined list (not just the first)" do
-      expect(described_class.file_section_dangling_refs("04_05 §1, §9 here"))
-        .to include(a_string_matching(%r{04_05 §9}))
+      expect(described_class.file_section_dangling_refs("06_07 §1, §9 here"))
+        .to include(a_string_matching(%r{06_07 §9}))
     end
 
     it "does NOT sweep a §X separated from the doc-id by intervening prose" do
       # only separator chars join consecutive § tokens; a word ("плюс") ends the run,
-      # so the stale §9 is never (mis)attributed to 04_05 and falsely flagged.
-      expect(described_class.file_section_dangling_refs("04_05 §1 плюс §9")).to be_empty
+      # so the stale §9 is never (mis)attributed to 06_07 and falsely flagged.
+      expect(described_class.file_section_dangling_refs("06_07 §1 плюс §9")).to be_empty
     end
 
     # [DOC-T.68 фаза 0] This example used to assert the OPPOSITE — a §-ref to a doc-id with

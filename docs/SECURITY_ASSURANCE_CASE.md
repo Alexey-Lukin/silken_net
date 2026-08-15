@@ -167,7 +167,7 @@ exact crypto modes and the deployment hardening) in `SECURITY.md` and canon
   fallback; `Security::Web3NetworkGuard` refuses to boot against a testnet/misconfigured RPC.
 - **Complete mediation** — tenant isolation is enforced *inside the query*
   (`acting_organization!.trees.find(...)`), so a foreign record never materialises; Pundit policies
-  (`app/policies/`) cover the predicate surfaces (funds, PII, authorship, lore) and role gates guard the
+  (`app/policies/`) cover the predicate surfaces (funds, PII) and role gates guard the
   API base controller; thin controllers and AASM state machines make state changes non-bypassable.
 - **Least privilege / separation of privilege** — on-chain roles gated by `onlyRole(...)`, admin actions
   routed through `SilkenTimelock` (48h delay; flash-loan defense, E.35), `mint()`/`slash()` on separate
@@ -186,16 +186,16 @@ with a per-request nonce, a full security-header set, and `httponly`/`secure`/`s
 
 | # | Category | How it is countered | Where |
 |---|---|---|---|
-| **A01** | Broken Access Control | Tenant scope enforced **inside the query** (`acting_organization!.<assoc>.find`); **Pundit** policies on predicate surfaces (funds/PII/authorship/lore) + role gates (`authorize_admin!/forester!`); on-chain **AccessControl** roles + 48h **Timelock** | `app/controllers/api/v1/`, `app/policies/`, `app/controllers/api/v1/base_controller.rb`, `contracts/*.sol` |
+| **A01** | Broken Access Control | Tenant scope enforced **inside the query** (`acting_organization!.<assoc>.find`); **Pundit** policies on predicate surfaces (funds/PII) + role gates (`authorize_admin!/forester!`); on-chain **AccessControl** roles + 48h **Timelock** | `app/controllers/api/v1/`, `app/policies/`, `app/controllers/api/v1/base_controller.rb`, `contracts/*.sol` |
 | **A02** | Cryptographic Failures | **Argon2id** passwords; AES-256-CBC/AES-128-CCM, HMAC-SHA256, HKDF, **Ed25519**; **no MD5/SHA-1/DES/RC4**; `force_ssl`+HSTS; secret scrubbing | `app/models/concerns/has_argon2_password.rb`, `config/initializers/{filter_parameter_logging,sentry}.rb` |
-| **A03** | Injection | Strong-parameter **allowlists**; ActiveRecord parameterized queries; **SafeListSanitizer** + HTML-escape for rendered markdown; URI allowlist | `app/controllers/**`, `app/services/codex/markdown_renderer.rb` |
+| **A03** | Injection | Strong-parameter **allowlists**; ActiveRecord parameterized queries; URI allowlist | `app/controllers/**` |
 | **A04** | Insecure Design | Fail-safe minting guard clauses; `manual_review` double-spend guard; boot-time `Web3NetworkGuard`; positive-A-evidence slashing gate | `app/services/blockchain_minting_service.rb`, `app/services/security/web3_network_guard.rb`, `app/services/slashing/` |
 | **A05** | Security Misconfiguration | Strict **CSP** (nonce, `frame-ancestors 'none'`, `object-src 'none'`); `X-Frame-Options: DENY`, nosniff, Referrer/COOP/CORP/Permissions-Policy; secure cookies; HSTS preload; `RAILS_ALLOWED_HOSTS` | `config/initializers/{content_security_policy,security_headers,session_store}.rb`, `config/environments/production.rb` |
 | **A06** | Vulnerable & Outdated Components | **Dependabot** (5 ecosystems), **bundler-audit** + **Brakeman** in CI, **Slither** + **Aderyn**, **OpenSSF Scorecard**, **CodeQL** | `.github/dependabot.yml`, `.github/workflows/{ci,solidity_audit,scorecard}.yml` |
 | **A07** | Identification & Auth Failures | **Argon2id**; M2M **Ed25519** + `SETNX` nonce replay guard; one-time **recovery codes**; Rails 8 token expiry/invalidation; **Rack::Attack** Fail2Ban on 401/404 + per-IP throttle | `app/controllers/api/v1/m2m_auth_controller.rb`, `app/models/user.rb`, `config/initializers/rack_attack.rb` |
 | **A08** | Software & Data Integrity | `Marshal.load` guarded by **SHA-256** verification; **audit-log SHA-256 hash chain**; firmware **OTA HMAC-SHA256 + CRC**; firmware `binary_sha256`; **Sigstore build-provenance** on the release image | `app/services/insight_generator_service.rb`, `app/models/audit_log.rb`, `app/services/ota_packager_service.rb`, `.github/workflows/mirror-ghcr.yml` |
 | **A09** | Logging & Monitoring Failures | Tamper-evident **AuditLog**; Prometheus metrics; **Sentry** with PII disabled + secret scrubbing; `filter_parameters`; Rack::Attack notifications; structured JSON logs | `app/models/audit_log.rb`, `config/initializers/{sentry,filter_parameter_logging,prometheus}.rb` |
-| **A10** | SSRF | Open-redirect **referer sanitizer** (scheme + host allowlist); markdown link scheme allowlist; outbound RPC via an ENV-configured connection pool (no caller-supplied URLs) + `Web3NetworkGuard` | `app/controllers/api/v1/locales_controller.rb`, `app/services/web3/rpc_connection_pool.rb` |
+| **A10** | SSRF | Open-redirect **referer sanitizer** (scheme + host allowlist); outbound RPC via an ENV-configured connection pool (no caller-supplied URLs) + `Web3NetworkGuard` | `app/controllers/api/v1/locales_controller.rb`, `app/services/web3/rpc_connection_pool.rb` |
 
 ---
 

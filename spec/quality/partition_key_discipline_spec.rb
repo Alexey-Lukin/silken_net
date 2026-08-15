@@ -63,9 +63,7 @@ RSpec.describe "partition-key discipline [S6.16]" do # rubocop:disable RSpec/Des
   # Джерело істини — сам воркер обслуговування, не рукописний перелік тут: інакше
   # пʼята партиційована таблиця з'явилась би, а гейт лишився б зеленим на чотирьох.
   let(:partitioned_tables) { PartitionMaintenanceWorker::PARTITIONED_TABLES }
-  let(:partitioned_models) do
-    partitioned_tables.map { |t| t.classify.sub("CodexMatch", "Codex::Match") }
-  end
+  let(:partitioned_models) { partitioned_tables.map(&:classify) }
 
   let(:scanned_files) { Dir[Rails.root.join("app/**/*.rb"), Rails.root.join("lib/**/*.rb")].sort }
 
@@ -117,7 +115,7 @@ RSpec.describe "partition-key discipline [S6.16]" do # rubocop:disable RSpec/Des
   describe "the guarded set" do
     it "knows every partitioned model the maintenance worker creates partitions for" do
       expect(partitioned_models).to contain_exactly(
-        "TelemetryLog", "GatewayTelemetryLog", "BlockchainTransaction", "Codex::Match"
+        "TelemetryLog", "GatewayTelemetryLog", "BlockchainTransaction"
       )
     end
 
@@ -127,14 +125,13 @@ RSpec.describe "partition-key discipline [S6.16]" do # rubocop:disable RSpec/Des
       end
     end
 
-    # One-Home покриває ПОЛОВИНУ родини, і це свідомо: у двох моделей немає
-    # жодного id-звертання, тож хелпер там був би важелем без пускача. Пін тримає
-    # саме цей факт — щойн з'явиться перший викликач, він і буде приводом.
+    # One-Home покриває не всю родину, і це свідомо: у `GatewayTelemetryLog`
+    # немає жодного id-звертання, тож хелпер там був би важелем без пускача. Пін
+    # тримає саме цей факт — щойно з'явиться перший викликач, він і буде приводом.
     it "records which models actually carry a One-Home helper" do
       expect(TelemetryLog).to respond_to(:partition_pruned)
       expect(BlockchainTransaction).to respond_to(:find_with_partition_pruning, :where_ids_pruned)
       expect(GatewayTelemetryLog).not_to respond_to(:partition_pruned)
-      expect(Codex::Match).not_to respond_to(:find_with_partition_pruning)
     end
   end
 

@@ -23,11 +23,8 @@ lv:
       cancelled: atcelts
       confirmed: apstiprināts
       deceased: miris
-      destroyed: iznīcināts
       dormant: neaktīvs
       draft: melnraksts
-      endangered: apdraudēts
-      extinct: izmirušais
       failed: neizdevās
       faulty: bojāts
       fulfilled: izpildīts
@@ -35,14 +32,11 @@ lv:
       maintenance: apkope
       maintenance_needed: nepieciešama apkope
       manual_review: manuāla pārskatīšana
-      mythical: mītisks
       offline: bezsaistē
       pending: gaida
       processing: apstrādā
       removed: noņemts
       sent: nosūtīts
-      thriving: plaukstošs
-      unknown: nezināms
       updating: atjaunina
     web3_address:
       copied: Adrese nokopēta

@@ -67,7 +67,6 @@ module Trees
             render Views::Shared::UI::StatusBadge.new(status: @tree.status)
             span(class: "text-tiny text-gaia-text-subtle font-mono") { t(".labels.family", name: @family&.name || t(".labels.family_unknown")) }
           end
-          render_codex_citations
         end
 
         div(class: "mt-6 md:mt-0 flex items-center gap-12") do
@@ -77,20 +76,6 @@ module Trees
           end
           div(class: tokens("h-4 w-4 rounded-sm rotate-45", status_led_class))
         end
-      end
-    end
-
-    # Phase 6 — Codex citation strip. Lazily looks up citations on the
-    # tree so the show page surfaces lore stitches forester+ have made.
-    # Wrapped in a `gaia-*` island so the surrounding emerald palette
-    # of `Trees::Show` (legacy) doesn't bleed through.
-    def render_codex_citations
-      return unless defined?(::Codex::Citation)
-      citations = ::Codex::Citation.for_target(@tree).includes(node: :realm).limit(20)
-      return if citations.empty?
-
-      div(class: "mt-3") do
-        render ::Codex::Citations::Strip.new(target: @tree, citations: citations)
       end
     end
 

@@ -255,25 +255,4 @@ RSpec.describe Clusters::Show do
       expect(out).to include("—")
     end
   end
-
-  describe "Codex citation strip" do
-    it "renders the strip when citations exist for the cluster" do
-      citation = instance_double(::Codex::Citation, node: nil, id: 11)
-      relation = double("relation")
-      allow(::Codex::Citation).to receive(:for_target).with(cluster).and_return(relation)
-      allow(relation).to receive(:includes).with(node: :realm).and_return(relation)
-      allow(relation).to receive(:limit).with(20).and_return([ citation ])
-      allow(relation).to receive(:empty?).and_return(false)
-
-      out = render_component(cluster: cluster, gateways: [], recent_alerts: [])
-      # The wrapper div for the strip ships with `mt-3`; happy-path tests skip it.
-      expect(out).to include('class="mt-3"')
-    end
-
-    it "skips the citation strip entirely when Codex::Citation is undefined" do
-      hide_const("Codex::Citation")
-      out = render_component(cluster: cluster, gateways: [], recent_alerts: [])
-      expect(out).not_to include("codex_citations_")
-    end
-  end
 end

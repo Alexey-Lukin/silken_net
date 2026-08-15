@@ -474,27 +474,4 @@ RSpec.describe Trees::Show do
       expect(rendered).to include("Unknown")
     end
   end
-
-  describe "Codex citation strip" do
-    it "renders the strip when citations exist for the tree" do
-      tree = build_tree
-      citation = instance_double(::Codex::Citation, node: nil, id: 21)
-      relation = double("relation")
-      allow(::Codex::Citation).to receive(:for_target).with(tree).and_return(relation)
-      allow(relation).to receive(:includes).with(node: :realm).and_return(relation)
-      allow(relation).to receive(:limit).with(20).and_return([ citation ])
-      allow(relation).to receive(:empty?).and_return(false)
-
-      out = render_component(tree: tree, latest_log: latest_log,
-                             recent_logs: recent_logs, maintenance_history: maintenance_history)
-      expect(out).to include('class="mt-3"')
-    end
-
-    it "renders without a citation strip when Codex::Citation is undefined" do
-      hide_const("Codex::Citation")
-      out = render_component(tree: tree, latest_log: latest_log,
-                             recent_logs: recent_logs, maintenance_history: maintenance_history)
-      expect(out).not_to include("codex_citations_")
-    end
-  end
 end

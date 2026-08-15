@@ -44,8 +44,7 @@ module Api
               component: Users::Profile.new(
                 user: @user,
                 maintenance_count: @user.maintenance_records.count,
-                active_identities: @user.identities.active.to_a,
-                codex_fraction: @user.codex_fraction
+                active_identities: @user.identities.active.to_a
               )
             )
           end
@@ -68,8 +67,7 @@ module Api
               component: Users::Profile.new(
                 user: @user,
                 maintenance_count: @user.maintenance_records.count,
-                active_identities: @user.identities.active.to_a,
-                codex_fraction: @user.codex_fraction
+                active_identities: @user.identities.active.to_a
               )
             )
           end

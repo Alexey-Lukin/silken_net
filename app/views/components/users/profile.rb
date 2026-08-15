@@ -5,12 +5,10 @@ module Users
     # @param user [User] the user to display
     # @param maintenance_count [Integer] pre-computed count (eager-load in controller)
     # @param active_identities [Array<Identity>] pre-loaded active identities (eager-load in controller)
-    # @param codex_fraction [Codex::Fraction, nil] eager-loaded current fraction
-    def initialize(user:, maintenance_count: 0, active_identities: [], codex_fraction: nil)
+    def initialize(user:, maintenance_count: 0, active_identities: [])
       @user = user
       @active_identities = active_identities
       @maintenance_count = maintenance_count
-      @codex_fraction    = codex_fraction
     end
 
     def view_template
@@ -24,7 +22,6 @@ module Users
 
         render_security_status
         render_linked_providers
-        render_codex_fraction
       end
     end
 
@@ -100,14 +97,6 @@ module Users
             provider_badge(identity)
           end
         end
-      end
-    end
-
-    # Phase 3 — Codex Identity badge. Lives inside its own gaia-* island so
-    # the legacy emerald palette of the surrounding profile is not touched.
-    def render_codex_fraction
-      div(class: "pt-2") do
-        render Codex::Fractions::ProfileBadge.new(fraction: @codex_fraction)
       end
     end
 

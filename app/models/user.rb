@@ -22,41 +22,6 @@ class User < ApplicationRecord
   include Auditable
   after_update_commit :record_role_change_audit, if: :saved_change_to_role?
 
-  # --- CODEX (Lore Layer) ---
-  # Phase 2: User-authored social activity in the Codex.
-  # `restrict_with_error` keeps the moderation history intact: deleting a
-  # user with active comments/attunements requires explicit cleanup, never
-  # an accidental cascade.
-  has_many :codex_comments,
-           class_name: "Codex::Comment",
-           dependent: :restrict_with_error
-  has_many :codex_attunements,
-           class_name: "Codex::Attunement",
-           dependent: :destroy
-
-  # Phase 3: a user has at most one active fraction (DB-level UNIQUE).
-  # `dependent: :destroy` is safe — a fraction is not a moderation
-  # artefact; deleting the user erases their identity claim cleanly.
-  has_one :codex_fraction,
-          class_name: "Codex::Fraction",
-          dependent: :destroy
-
-  # Phase 6: citations authored by this user. `dependent: :restrict_with_error`
-  # — citations are audit-grade lore stitches (an EwsAlert citing the
-  # `chainsaw_protocol` Node is part of forensic record). The
-  # `created_by_user_id` is NOT NULL at schema level (see structure.sql):
-  # forcing explicit cleanup mirrors `codex_comments` (also audit-grade).
-  has_many :codex_citations,
-           class_name: "Codex::Citation",
-           foreign_key: :created_by_user_id,
-           dependent: :restrict_with_error,
-           inverse_of: :created_by_user
-
-  # Phase 5: own collection of unlocked Codex Nodes.
-  has_many :codex_discoveries,
-           class_name: "Codex::Discovery",
-           dependent: :destroy
-
   # --- НОРМАЛІЗАЦІЯ ТА ВАЛІДАЦІЯ ---
   normalizes :email_address, with: ->(e) { e.strip.downcase }
   validates :email_address, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
@@ -239,14 +204,6 @@ class User < ApplicationRecord
 
   def full_name
     [ first_name, last_name ].compact_blank.join(" ").presence || email_address
-  end
-
-  # [TEST.12] Імʼя для поверхонь, видимих ПОЗА організацією (Codex-лор). На
-  # відміну від `full_name`, НІКОЛИ не падає на email: жодне з імен не має
-  # `presence`-валідації, тож власник без імені світив би адресу читачам чужих
-  # організацій. Порожнє імʼя лишається `nil` — підпис обирає викликач.
-  def public_display_name
-    [ first_name, last_name ].compact_blank.join(" ").presence
   end
 
   def touch_visit!

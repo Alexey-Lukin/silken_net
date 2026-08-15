@@ -23,11 +23,8 @@ uk:
       cancelled: скасовано
       confirmed: підтверджено
       deceased: загибель
-      destroyed: знищено
       dormant: спокій
       draft: чернетка
-      endangered: під загрозою
-      extinct: вимерлий
       failed: збій
       faulty: несправність
       fulfilled: виконано
@@ -35,14 +32,11 @@ uk:
       maintenance: обслуговування
       maintenance_needed: потрібне обслуговування
       manual_review: ручний розгляд
-      mythical: міфічний
       offline: офлайн
       pending: очікування
       processing: обробка
       removed: видалено
       sent: надіслано
-      thriving: процвітає
-      unknown: невідомо
       updating: оновлення
     web3_address:
       copied: Адресу скопійовано

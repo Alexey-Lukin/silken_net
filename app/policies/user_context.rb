@@ -12,8 +12,7 @@
 #
 # Він НЕ підміняє користувача й НЕ делегує на нього (`delegate_missing_to`).
 # Політики питають у користувача не лише організацію: `user.present?` — базовий
-# RBAC-примітив усієї codex-гілки, а `return scope.none unless user` — її форма
-# fail-closed. `present?`/`blank?`/`nil?` означені на `Object`, тобто вони НЕ
+# RBAC-примітив, а `return scope.none unless user` — його форма fail-closed. `present?`/`blank?`/`nil?` означені на `Object`, тобто вони НЕ
 # «missing» і делегування їх не перехоплює НІКОЛИ: обгортка навколо `nil`-юзера
 # відповідала б `present? == true` і перевертала б кожен із цих гардів на
 # fail-OPEN. Дзеркально `user&.role_admin?` перестав би рятувати — обгортка не

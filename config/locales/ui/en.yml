@@ -23,11 +23,8 @@ en:
       cancelled: cancelled
       confirmed: confirmed
       deceased: deceased
-      destroyed: destroyed
       dormant: dormant
       draft: draft
-      endangered: endangered
-      extinct: extinct
       failed: failed
       faulty: faulty
       fulfilled: fulfilled
@@ -35,14 +32,11 @@ en:
       maintenance: maintenance
       maintenance_needed: maintenance needed
       manual_review: manual review
-      mythical: mythical
       offline: offline
       pending: pending
       processing: processing
       removed: removed
       sent: sent
-      thriving: thriving
-      unknown: unknown
       updating: updating
     web3_address:
       copied: Address copied

@@ -166,7 +166,7 @@ RSpec.describe Api::V1::BaseController, type: :request do
       controller.response = ActionDispatch::TestResponse.new
       controller.request.format = :json
       allow(controller).to receive(:render)
-      exception = ActionController::ParameterMissing.new(:codex_node_slug)
+      exception = ActionController::ParameterMissing.new(:tree_id)
 
       controller.send(:render_parameter_missing, exception)
       expect(controller).to have_received(:render).with(
@@ -386,7 +386,16 @@ RSpec.describe Api::V1::BaseController, type: :request do
       # Гард у точці читання не має списку винятків — сторінка, що org не питає,
       # його просто не тригерить. Мутація «повернути класовий before_action»
       # червонить саме цей приклад.
-      get "/codex/leaderboard", as: :json
+      #
+      # ⚠️ Суб'єкт несучий, і його не можна «спростити». Треба сторінку, яка
+      # (а) успадковує `BaseController` — інакше класовий before_action до неї
+      # не дійшов би й мутація лишилась би зеленою, і (б) організації не читає.
+      # `SessionsController < BaseController` зі `skip_before_action
+      # :authenticate_user!` дає рівно це. ⛔ НЕ `/up`: `ReadinessController`
+      # успадковує `ActionController::Base` напряму, тож приклад став би
+      # вакуумним. Доти цю роль ніс `/codex/leaderboard` — єдина тодішня
+      # поверхня поза організацією; шар Codex зрізано 2026-08-15.
+      get "/login"
 
       expect(response).to have_http_status(:ok)
     end

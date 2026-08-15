@@ -9,7 +9,7 @@
 # 36; 04_02 omitted the whole FactoryFlashing::* service namespace) with an
 # automated check. Enforces:
 #
-#   1. Model files ⟷ `### `Model`` headings in 04_01 §2..§7b (1:1).
+#   1. Model files ⟷ `### `Model`` headings in 04_01 §2..§7 (1:1).
 #   2. Concern files (app/models/concerns/) ⟷ `### `Concern`` headings in 04_01 §1.
 #   3. PartitionMaintenanceWorker::PARTITIONED_TABLES ⟷ tables in 04_01 (§0 + §11).
 #   4. Every app/services/** + app/workers/** class is mentioned somewhere in
@@ -29,7 +29,7 @@ MAILERS_DIR  = File.join(ROOT, "app/mailers")
 WORKER      = File.join(ROOT, "app/workers/partition_maintenance_worker.rb")
 
 # Files under app/models/ that are NOT domain models (skip in the 1:1 check).
-NON_MODEL_BASENAMES = %w[application_record.rb codex.rb].freeze
+NON_MODEL_BASENAMES = %w[application_record.rb].freeze
 # Base classes documented under §1 (not domain services/workers).
 NON_SERVICE_BASENAMES = %w[application_service.rb application_web3_worker.rb].freeze
 
@@ -37,7 +37,7 @@ def camelize(snake)
   snake.split("_").map(&:capitalize).join
 end
 
-# file path under app/models/ → expected Ruby class name (Codex:: for the subdir).
+# file path under app/models/ → expected Ruby class name (namespaced for subdirs).
 def class_name_for(rel_path)
   parts = rel_path.sub(/\.rb\z/, "").split("/")
   parts.map { |seg| camelize(seg) }.join("::")
@@ -71,7 +71,7 @@ end
 
 errors = []
 
-# ── 1. Models ⟷ §2..§7b headings ───────────────────────────────────────────
+# ── 1. Models ⟷ §2..§7 headings ────────────────────────────────────────────
 model_files = Dir.glob(File.join(MODELS_DIR, "**/*.rb")).sort.reject do |path|
   rel = path.delete_prefix(MODELS_DIR + "/")
   rel.start_with?("concerns/") || NON_MODEL_BASENAMES.include?(rel)
@@ -83,7 +83,7 @@ models_to     = h2_index("8. Seeds")
 doc_models    = headings_between(models_from, models_to)
 
 (model_classes - doc_models).sort.each do |m|
-  errors << "model in code but NOT documented in 04_01 §2..§7b: `#{m}`"
+  errors << "model in code but NOT documented in 04_01 §2..§7: `#{m}`"
 end
 (doc_models - model_classes).sort.each do |m|
   errors << "model documented in 04_01 but NO app/models file: `#{m}`"

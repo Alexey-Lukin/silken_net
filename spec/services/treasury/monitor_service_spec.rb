@@ -120,7 +120,7 @@ RSpec.describe Treasury::MonitorService do
         create(:audit_log, archive_requested_at: 1.hour.ago, ipfs_cid: nil)
         create(:audit_log, archive_requested_at: 40.days.ago, ipfs_cid: nil) # поза reconcile LOOKBACK, але у depth-плато
         create(:audit_log, archive_requested_at: 1.hour.ago, ipfs_cid: "bafyarch") # archived → excluded
-        create(:audit_log, archive_requested_at: nil, ipfs_cid: nil) # no outbox marker (codex/factory) → excluded
+        create(:audit_log, archive_requested_at: nil, ipfs_cid: nil) # no outbox marker (factory/console) → excluded
         # [ARCH.66] anchor confirmation-lifecycle backlog
         create(:ethereum_anchor, :sent).update_column(:updated_at, 7.hours.ago) # stuck >6h → stuck_sent_depth
         create(:ethereum_anchor, :sent).update_column(:status, EthereumAnchor.statuses[:manual_review]) # → manual_review_depth

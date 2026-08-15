@@ -152,12 +152,4 @@ RSpec.describe Alerts::Row do
       expect(html).to include("bg-status-neutral")
     end
   end
-
-  describe "Codex citation strip when Codex is absent" do
-    it "renders the row without a citation strip when Codex::Citation is undefined" do
-      hide_const("Codex::Citation")
-      html = render_component(alert: build_alert)
-      expect(html).not_to include("codex_citations_")
-    end
-  end
 end

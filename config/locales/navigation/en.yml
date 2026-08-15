@@ -9,18 +9,13 @@ en:
     items:
       account_security: Account Security
       audit_log: Audit Log
-      battle_arena: Battle Arena
       blockchain_ledger: Blockchain Ledger
       clan_hierarchy: Clan Hierarchy
-      codex_atlas: Codex Atlas
       crew_registry: Crew Registry
       firmware_ota: Firmware OTA
       initiate_node: Initiate Node
-      leaderboard: Leaderboard
       live_telemetry: Live Telemetry
       maintenance_log: Maintenance Log
-      my_codex: My Codex
-      my_fraction: My Fraction
       naas_contracts: NaaS Contracts
       notifications: Notifications
       oracle_visions: Oracle Visions
@@ -39,7 +34,6 @@ en:
     sections:
       administration: Administration
       forest_operations: Forest Operations
-      library: Library
       neural_network: Neural Network
       strategic_insight: Strategic Insight
     status:

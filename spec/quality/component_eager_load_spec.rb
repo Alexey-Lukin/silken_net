@@ -45,7 +45,7 @@ RSpec.describe "Phlex component eager-load perimeter", type: :model do
   it "вантажить КОЖЕН компонентний клас на старті, а не за першим запитом" do
     # Ліхтар: без нього приклад зелений на порожній множині — саме тому, що
     # `all_expected_cpaths` мовчки віддав би нуль при зміні фільтра.
-    expect(expected_component_names.size).to be >= 100,
+    expect(expected_component_names.size).to be >= 80,
       "очікуваних компонентів #{expected_component_names.size} — фільтр шляхів зламався, пін вакуумний"
 
     missing = expected_component_names - loaded_component_names

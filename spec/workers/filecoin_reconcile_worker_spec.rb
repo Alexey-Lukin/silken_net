@@ -17,10 +17,10 @@ RSpec.describe FilecoinReconcileWorker, type: :worker do
       described_class.new.perform
     end
 
-    # GOLDEN LINCHPIN: a direct-create! log (codex/factory) has NO archive_requested_at →
+    # GOLDEN LINCHPIN: a direct-create! log (factory/console) has NO archive_requested_at →
     # it was NEVER meant to be pinned. A naive `not_archived` scan would pin it (Pinata waste +
     # security over-exposure of factory-provenance on public IPFS). Fails if scope regresses.
-    it "IGNORES a not-archived log with no outbox marker (codex/factory never pinned)" do
+    it "IGNORES a not-archived log with no outbox marker (factory/console never pinned)" do
       create(:audit_log, archive_requested_at: nil, ipfs_cid: nil)
 
       expect(FilecoinArchiveWorker).not_to receive(:perform_async)

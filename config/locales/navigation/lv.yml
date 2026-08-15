@@ -9,18 +9,13 @@ lv:
     items:
       account_security: Konta drošība
       audit_log: Audita žurnāls
-      battle_arena: Cīņas arēna
       blockchain_ledger: Blokķēdes virsgrāmata
       clan_hierarchy: Klana hierarhija
-      codex_atlas: Codex atlants
       crew_registry: Apkalpes reģistrs
       firmware_ota: Programmaparatūras OTA
       initiate_node: Inicializēt mezglu
-      leaderboard: Tabula
       live_telemetry: Tiešraides telemetrija
       maintenance_log: Apkopes žurnāls
-      my_codex: Mans Codex
-      my_fraction: Mana frakcija
       naas_contracts: NaaS līgumi
       notifications: Paziņojumi
       oracle_visions: Oracle vīzijas
@@ -39,7 +34,6 @@ lv:
     sections:
       administration: Administrācija
       forest_operations: Meža operācijas
-      library: Bibliotēka
       neural_network: Neirālais tīkls
       strategic_insight: Stratēģiskā ieskats
     status:

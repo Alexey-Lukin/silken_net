@@ -178,7 +178,7 @@ ForceMajeure event → InsurancePayoutWorker
 ## 5. Indeterminate (категорія C) — DAO Peer Review
 
 - Кошти заморожені у `wallet.locked_balance`.
-- DAO ставить пропозицію `Codex(): cluster_X_event_Y → upgrade_to(A | B)` через `SilkenGovernor` (механіка governance — [`05_06` — Governance & DAO](05_06_Governance_and_DAO)).
+- DAO ставить пропозицію `Reclassify(): cluster_X_event_Y → upgrade_to(A | B)` через `SilkenGovernor` (механіка governance — [`05_06` — Governance & DAO](05_06_Governance_and_DAO)).
 - Quorum: 4% SFC voting power (стандарт `GovernorVotesQuorumFraction`), затримка 48 годин у `SilkenTimelock`.
 - Після затвердження пропозиції — застосовується відповідна реакція (slash або insurance payout).
 - **Якщо DAO не голосує протягом 30 днів — кошти ЗАЛИШАЮТЬСЯ замороженими**, статус кластера → `Field Audit Required`. Розморозка/виплата відбувається ЛИШЕ за підтвердженими даними (фізична інспекція рейнджером або підтверджена телеметрія після відновлення зв'язку).

@@ -41,14 +41,6 @@ module Navigation
             nav_item(:reports_archive,   reports_path,                  "clipboard")
           end
 
-          section_group(:library) do
-            nav_item(:codex_atlas,  codex_nodes_path,           "book")
-            nav_item(:battle_arena, new_codex_match_path,       "swords")
-            nav_item(:leaderboard,  codex_leaderboard_path,     "trophy")
-            nav_item(:my_codex,     codex_my_discoveries_path,  "book")
-            nav_item(:my_fraction,  codex_my_fraction_path,     "shield")
-          end
-
           section_group(:forest_operations) do
             nav_item(:threat_alerts,   alerts_path,                "zap", badge: @ews_alert_count)
             nav_item(:soldier_fleet,   clusters_path,              "tree")

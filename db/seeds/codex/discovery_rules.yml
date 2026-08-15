@@ -1,10 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Codex::DiscoveryRule seed registry — Phase 5.
-#
-# Each entry is a row in `codex_discovery_rules`, idempotently upserted
-# by the `Codex::DiscoveryRuleImportService` (run from `db/seeds.rb`).
-# `created_by_user_email` is resolved to `User#id` at import-time and
-# falls back to `User.oracle_executioner` when the email is unknown.
+# Правила відкриттів — запис ЗАДУМУ мертвого шару, не конфіг: ані таблиці,
+# ані імпортера більше не існує. Підстава й стеля — db/seeds/codex/README.md.
 #
 # Adding a rule here is the *editing-by-PR* equivalent of the DAO
 # CRUD endpoint at `POST /codex/admin/discovery_rules`.

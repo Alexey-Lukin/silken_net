@@ -1318,40 +1318,6 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     end
   end
 
-  describe "Codex Discovery probes hook [Codex Phase 5]" do
-    let(:chunk) { build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3) }
-
-    it "fans out a probe per observer when PresenceTracker reports watchers" do
-      allow(::Codex::PresenceTracker).to receive(:observers_for_tree)
-        .with(tree.id).and_return([ 101, 202 ])
-
-      expect(::Codex::DiscoveryProbeWorker).to receive(:perform_async)
-        .with(101, "telemetry_observation", hash_including("tree_id" => tree.id, "trigger_ref_type" => "TelemetryLog"))
-      expect(::Codex::DiscoveryProbeWorker).to receive(:perform_async)
-        .with(202, "telemetry_observation", hash_including("tree_id" => tree.id))
-
-      described_class.call(chunk)
-    end
-
-    it "is a no-op when nobody is observing the tree (empty observers)" do
-      allow(::Codex::PresenceTracker).to receive(:observers_for_tree)
-        .with(tree.id).and_return([])
-
-      expect(::Codex::DiscoveryProbeWorker).not_to receive(:perform_async)
-      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
-    end
-
-    it "swallows StandardError from the probes and does not break uplink finalisation" do
-      allow(::Codex::PresenceTracker).to receive(:observers_for_tree)
-        .and_raise(StandardError, "redis exploded")
-      allow(Rails.logger).to receive(:warn)
-
-      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
-      expect(Rails.logger).to have_received(:warn)
-        .with(a_string_matching(/codex hook failed: StandardError: redis exploded/))
-    end
-  end
-
   describe "#previous_lorenz_state_for [SEC.11]" do
     it "returns nil when the last Lorenz state row has a non-finite coordinate" do
       # Build a telemetry log with NaN in z to simulate corruption on disk.
@@ -1798,10 +1764,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     end
   end
 
-  # commit_telemetry has three guard branches around wallet credit and one
-  # around the Codex Discovery hook that the existing happy-path specs
-  # never exercise. They are real-logic edges (zero-credit species,
-  # family-less tree, Codex constant absent), not `&.` defensive nil.
+  # commit_telemetry has three guard branches around wallet credit that the
+  # existing happy-path specs never exercise. They are real-logic edges
+  # (zero-credit species, family-less tree), not `&.` defensive nil.
   describe "commit_telemetry credit guards" do
     let(:chunk) { build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3) }
 
@@ -1828,16 +1793,6 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
       expect(tree.wallet).not_to receive(:credit!)
       expect { described_class.call(tiny_chunk) }.to change(TelemetryLog, :count).by(1)
-    end
-  end
-
-  describe "Codex Discovery hook constant-guard" do
-    it "is a no-op when Codex::PresenceTracker is not loaded" do
-      hide_const("Codex::PresenceTracker")
-      expect(::Codex::DiscoveryProbeWorker).not_to receive(:perform_async)
-
-      chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
-      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
     end
   end
 end

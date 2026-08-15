@@ -224,33 +224,4 @@ RSpec.describe OracleVisions::ForecastCard do
       expect(render_component(insight: insight)).to include("text-gray-400")
     end
   end
-
-  describe "Codex citation strip" do
-    it "renders the citation strip when citations exist for the insight" do
-      insight = mock_insight
-      citation = instance_double(::Codex::Citation)
-      relation = double("relation")
-      allow(::Codex::Citation).to receive(:for_target).with(insight).and_return(relation)
-      allow(relation).to receive(:includes).with(node: :realm).and_return(relation)
-      allow(relation).to receive(:limit).with(10).and_return([ citation ])
-      allow(relation).to receive(:empty?).and_return(false)
-
-      strip = instance_double(::Codex::Citations::Strip)
-      allow(::Codex::Citations::Strip).to receive(:new)
-        .with(target: insight, citations: [ citation ])
-        .and_return(strip)
-      allow(strip).to receive_messages(call: "<div class='cite-strip'>cited</div>".html_safe, render_in: "<div class='cite-strip'>cited</div>".html_safe)
-
-      html = ApplicationController.renderer.render(
-        component_class.new(insight: insight), layout: false
-      )
-      expect(html).to include("border-emerald-900/50")
-    end
-
-    it "renders without a citation strip when Codex::Citation is undefined" do
-      hide_const("Codex::Citation")
-      html = render_component(insight: mock_insight)
-      expect(html).not_to include("codex_citations_")
-    end
-  end
 end
