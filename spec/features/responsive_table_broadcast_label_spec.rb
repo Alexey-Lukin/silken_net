@@ -29,7 +29,7 @@ RSpec.describe "Responsive-table: мітка колонки в broadcast-ряд�
 
   before do
     sign_in_as(admin, password: password)
-    visit "/dashboard"
+    visit_ok "/dashboard"
   end
 
   # Синтетичний DOM навмисно: питання про ПОВЕДІНКУ БРАУЗЕРА, не про наш

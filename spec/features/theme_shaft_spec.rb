@@ -94,7 +94,7 @@ RSpec.describe "Theme: одна шафа, і нею є середовище", :j
 
   it "при ТЕМНІЙ перевазі ОС темніють ОБИДВІ половини — і токен, і `dark:`-утиліта" do
     emulate_os("dark")
-    visit "/dashboard"
+    visit_ok "/dashboard"
 
     expect(page).to have_css(card, minimum: 1)
     expect(os_reports_dark?).to be(true), "емуляція ОС не спрацювала — вимір недійсний"
@@ -105,7 +105,7 @@ RSpec.describe "Theme: одна шафа, і нею є середовище", :j
 
   it "при СВІТЛІЙ перевазі ОС світлішають ОБИДВІ половини" do
     emulate_os("light")
-    visit "/dashboard"
+    visit_ok "/dashboard"
 
     expect(page).to have_css(card, minimum: 1)
     expect(os_reports_dark?).to be(false), "емуляція ОС не спрацювала — вимір недійсний"
@@ -119,7 +119,7 @@ RSpec.describe "Theme: одна шафа, і нею є середовище", :j
   # ним `localStorage` і недетермінований рендер), приклад почервоніє поіменно.
   it "не ставить на <html> жодного класу теми — посередника не існує" do
     emulate_os("dark")
-    visit "/dashboard"
+    visit_ok "/dashboard"
 
     expect(page).to have_css(card, minimum: 1)
     expect(dark_class_present?).to be(false)

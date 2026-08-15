@@ -30,7 +30,7 @@ RSpec.describe "Дротове дієслово не-GET сабміту", :js do
 
   it "виходить на дріт як POST, а не як PATCH" do
     sign_in_as(admin, password: password)
-    visit "/settings"
+    visit_ok "/settings"
 
     browser = page.driver.browser
     browser.network.clear(:traffic)

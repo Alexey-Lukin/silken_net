@@ -35,7 +35,7 @@ RSpec.describe "Причина відмови видима у справжньо
   # і єдиним сигналом відмови був заголовок сторінки.
   it "показує причину після сабміту form_with-форми" do
     sign_in_as(super_admin, password: password)
-    visit "/tree_families/new"
+    visit_ok "/tree_families/new"
 
     fill_in "tree_family[name]", with: ""
     click_button(type: "submit")
@@ -52,7 +52,7 @@ RSpec.describe "Причина відмови видима у справжньо
   # який попередній приклад не проходить.
   it "показує причину після сабміту рукописної форми з hidden _method" do
     sign_in_as(admin, password: password)
-    visit "/settings"
+    visit_ok "/settings"
 
     fill_in "organization[billing_email]", with: "not-an-email"
     click_button(type: "submit")

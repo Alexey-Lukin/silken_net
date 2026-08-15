@@ -231,6 +231,21 @@ RSpec.describe EmergencyResponseService do
       )
     end
 
+    # 🔴 GREEN-половина (§Guard-craft #52), і без неї клас закритий лише наполовину:
+    # усі піни вище стверджують, що алерт Є, тобто over-broad писач — той, що кричить і
+    # на ОБСЛУЖЕНОМУ кроці, — лишався б непоміченим. Виміряно мутацією: безумовний
+    # виклик червонить рівно двох СУСІДІВ («still dispatches to the sibling», «does not
+    # pile up a duplicate»), чиї назви про цю вісь мовчать — тобто механізм тримався на
+    # чужих пінах, і наступний рефактор прочитав би ті падіння як «поправити фікстуру».
+    it "stays SILENT when every protocol step has a healthy actuator" do
+      create(:actuator, :water_valve, gateway: gateway, state: :idle)
+
+      # Ліхтар обовʼязковий: без нього «нуль алертів» не відрізнити від «нічого не
+      # виконувалось» — та сама порожня множина, що вже коштувала на `seismic_anomaly`.
+      expect { described_class.call(alert) }.to change(ActuatorCommand, :count)
+      expect(EwsAlert.alert_type_emergency_response_undeliverable.count).to eq(0)
+    end
+
     # Дедуп ключується на ТИПІ, не на актуаторі — інакше крок, якому нема кому
     # виконуватись, писав би новий рядок на кожну тривогу кластера.
     it "does not pile up a duplicate alert for the same missing device type" do
