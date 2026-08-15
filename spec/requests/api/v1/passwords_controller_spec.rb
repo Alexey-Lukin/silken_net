@@ -160,7 +160,14 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
         expect(response).to have_http_status(:unprocessable_content)
       end
 
-      it "redirects on successful HTML password reset" do
+      # 🔴 [UI.7] Ці три приклади доти твердили РІВНО `have_http_status(:redirect)`, тобто
+      # «будь-який 3xx у будь-яку адресу» — і два перші є ДВІЙНИКАМИ з протилежними
+      # цілями (`login_path` після успішної зміни ⊥ `forgot_password_path` на битому
+      # токені). Отже успіх і провал скидання пароля сюїта не розрізняла ВЗАГАЛІ: обидва
+      # лишались зеленими, якби контролер повів людину не туди. Пін тепер називає ціль,
+      # а успіх додатково пінить НАСЛІДОК — сам пароль, — бо редирект у правильне місце
+      # ще не означає, що щось змінилось (§B.2 #21).
+      it "redirects to the login page and actually changes the password" do
         token = user.generate_token_for(:password_reset)
 
         patch "/reset_password", params: {
@@ -169,24 +176,26 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
           password_confirmation: "new_password_123"
         }, headers: { "Accept" => "text/html" }
 
-        expect(response).to have_http_status(:redirect)
+        expect(response).to redirect_to(login_path)
+        expect(user.reload.authenticate("new_password_123")).to be_truthy
       end
 
-      it "redirects when token is invalid in HTML format" do
+      it "sends an invalid token BACK to the forgot form, and changes nothing" do
         patch "/reset_password", params: {
           token: "invalid-token",
           password: "new_password_123",
           password_confirmation: "new_password_123"
         }, headers: { "Accept" => "text/html" }
 
-        expect(response).to have_http_status(:redirect)
+        expect(response).to redirect_to(forgot_password_path)
+        expect(user.reload.authenticate("new_password_123")).to be_falsey
       end
 
-      it "redirects on HTML forgot_password submit" do
+      it "redirects an HTML forgot_password submit to the login page" do
         post "/forgot_password", params: { email: user.email_address },
           headers: { "Accept" => "text/html" }
 
-        expect(response).to have_http_status(:redirect)
+        expect(response).to redirect_to(login_path)
       end
     end
   end

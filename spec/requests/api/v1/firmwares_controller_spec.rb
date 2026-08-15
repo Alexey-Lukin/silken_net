@@ -355,10 +355,14 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
       post "/firmwares/#{firmware.id}/deploy",
            headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
 
-      expect(response).to have_http_status(:redirect)
+      # [UI.7] Ціль тут ОДНАКОВА в обох гілках, тож дискримінатором лишається ключ
+      # flash (`pending` ⊥ `error`) — але адресу все одно називаємо: доти обидва
+      # приклади приймали «якийсь 3xx у будь-яку адресу».
+      expect(response).to redirect_to(firmwares_path)
       # `pending`, не `success`: на момент показу жоден пристрій ще нічого не
       # отримав — наказ лише поставлено в чергу, і сам текст ключа це й каже.
       expect(flash[:pending]).to be_present
+      expect(flash[:error]).to be_blank
       expect(gw.reload.pending_firmware_id).to eq(firmware.id)
     end
 
@@ -366,8 +370,9 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
       post "/firmwares/#{firmware.id}/deploy",
            headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
 
-      expect(response).to have_http_status(:redirect)
+      expect(response).to redirect_to(firmwares_path)
       expect(flash[:error]).to be_present
+      expect(flash[:pending]).to be_blank
       expect(OtaTransmissionWorker.jobs).to be_empty
     end
   end

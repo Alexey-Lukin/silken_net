@@ -119,7 +119,10 @@ RSpec.describe Api::V1::SessionsController, type: :request do
     it "redirects to login page for HTML format" do
       delete "/logout",
         headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
-      expect(response).to have_http_status(:redirect)
+
+      # Назва обіцяла «login page», а твердження приймало будь-який 3xx у будь-яку
+      # адресу — тобто саме те, що назва обіцяє, ніхто не перевіряв [UI.7].
+      expect(response).to redirect_to(login_path)
     end
   end
 
@@ -185,11 +188,17 @@ RSpec.describe Api::V1::SessionsController, type: :request do
   end
 
   describe "POST /login (HTML format)" do
-    it "redirects on successful HTML login" do
+    # 🔴 [UI.7] Пара з логаутом нижче/вище — ДВІЙНИК: обидва приклади твердили лише
+    # «якийсь 3xx», тоді як цілі протилежні (`dashboard_index_path` при вході ⊥
+    # `login_path` при виході). Контролер, що після успішного входу веде назад на форму
+    # логіну, лишався б зеленим — і це рівно та поведінка, яку користувач читає як
+    # «пароль не підійшов».
+    it "redirects a successful HTML login to the dashboard" do
       post "/login",
         params: { email: user.email_address, password: "password12345" },
         headers: { "Accept" => "text/html" }
-      expect(response).to have_http_status(:redirect)
+
+      expect(response).to redirect_to(dashboard_index_path)
     end
 
     # ⚠️ [TEST.10] Доти цей приклад приймав і 401, і 500 — з підставою «Phlex may

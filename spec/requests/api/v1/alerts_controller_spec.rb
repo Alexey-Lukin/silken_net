@@ -158,10 +158,30 @@ RSpec.describe Api::V1::AlertsController, type: :request do
       expect(response.body).not_to include(%(target="alert_#{own_alert.id}"))
     end
 
-    it "redirects on successful HTML resolve" do
+    # 🔴 [UI.7] Тут ціль ОДНАКОВА в обох гілках (`alerts_path`), тож `redirect_to` сам
+    # по собі нічого не розрізняє — дискримінатором є КЛЮЧ flash: `success` при
+    # закритті ⊥ `pending` при повторному кліку (AASM::InvalidTransition → 409-гілка).
+    # Доти існував лише перший приклад, і його єдиним твердженням був «якийсь 3xx»,
+    # тобто дві протилежні події сюїта бачила однаково. Пара нижче — взаємні мутації.
+    it "redirects a successful HTML resolve back to the list, flagged as success" do
       patch resolve_alert_path(own_alert),
             headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
-      expect(response).to have_http_status(:redirect)
+
+      expect(response).to redirect_to(alerts_path)
+      expect(flash[:success]).to be_present
+      expect(flash[:pending]).to be_blank
+      expect(own_alert.reload.status).to eq("resolved")
+    end
+
+    it "flags a SECOND resolve as pending, not as success" do
+      own_alert.update!(status: :resolved, resolved_at: Time.current, resolved_by: user)
+
+      patch resolve_alert_path(own_alert),
+            headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+
+      expect(response).to redirect_to(alerts_path)
+      expect(flash[:pending]).to be_present
+      expect(flash[:success]).to be_blank
     end
   end
 

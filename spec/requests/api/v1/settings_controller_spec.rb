@@ -112,7 +112,9 @@ RSpec.describe Api::V1::SettingsController, type: :request do
 
       patch "/settings", params: { organization: { name: "Ліс Тіней" } }
 
-      expect(response).to have_http_status(:redirect)
+      # [UI.7] Ціль названа ДО `follow_redirect!` — той на 302 завжди робить GET, тож
+      # після нього оригінальна адреса вже не спостережна.
+      expect(response).to redirect_to(settings_path)
       follow_redirect!
 
       expect(response).to have_http_status(:ok)

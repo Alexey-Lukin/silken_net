@@ -133,7 +133,9 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
         post "/tree_families", params: valid_params, headers: headers
       }.to change(TreeFamily, :count).by(1)
 
-      expect(response).to have_http_status(:redirect)
+      # [UI.7] Ціль названа: create веде в СПИСОК, update — на сторінку запису, тож
+      # «якийсь 3xx» не розрізняв двох сусідніх дій цього ж контролера.
+      expect(response).to redirect_to(tree_families_path)
     end
 
     context "when as JSON" do
@@ -211,7 +213,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
             params: { tree_family: { name: "Updated Pine" } },
             headers: headers
 
-      expect(response).to have_http_status(:redirect)
+      expect(response).to redirect_to(tree_family_path(scots_pine))
       expect(scots_pine.reload.name).to eq("Updated Pine")
     end
 
