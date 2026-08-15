@@ -51,38 +51,60 @@ class EmergencyResponseService
       return
     end
 
-    # Знаходимо всі працездатні актуатори в секторі (Кластері).
-    # 🔴 Живість шлюза питаємо ОДНИМ домом — `Gateway.online` / `Gateway#online?`.
-    # Доти тут стояло рукописне `1.hour.ago..`: при провіжінених 3600 с чесне вікно
-    # предиката = 72 хв, тож аварійна відповідь мовчки ПРОПУСКАЛА шлюз, який решта
-    # застосунку бачить справним. ⚠️ Попередні знахідки цього класу всі були у
-    # в'ю-шарі, і саме тому цей екземпляр пережив їхні свіпи — периметр пошуку
-    # мусить бути `last_seen_at` по всьому `app/`, не лише по `app/views/`.
-    # 🔴 Набір беремо ОДНИМ запитом і розкладаємо за типом у памʼяті, а не
-    # скоупимо по разу на крок протоколу. Виграш не в кроках (їх одиниці, і росту
-    # там не буде — це не дані, а таблиця), а в тому, що `deliverable?` питає шлюз
-    # КОЖНОГО актуатора: без `preload(:gateway)` ось ЦЕ росло б із флотом.
-    available_actuators = Actuator.joins(:gateway)
-                                  .preload(:gateway)
-                                  .where(gateways: { cluster_id: cluster.id })
-                                  .where(state: [ :idle, :active ])
-                                  .merge(Gateway.online)
-                                  .to_a
+    # Знаходимо всі актуатори сектора (Кластера) — ОДНИМ запитом, із розкладкою за
+    # типом у памʼяті. Виграш не в кроках протоколу (їх одиниці, і росту там не
+    # буде — це таблиця, не дані), а в тому, що придатність питає шлюз КОЖНОГО
+    # актуатора: без `preload(:gateway)` ось ЦЕ росло б із флотом.
+    #
+    # 🔴 [ARCH.75] Фільтр придатності стоїть у ПАМʼЯТІ, а не в `WHERE`, і це не
+    # стиль: порожній результат мусить розрізняти ДВА стани, а SQL-фільтр зливає їх
+    # в один. «Заліза цього роду в кластері немає» (закупити й встановити) ⊥
+    # «залізо є, але недосяжне» (полагодити звʼязок або пристрій) — це різні дії
+    # людини, а платформа доти відповідала на обидва одним `logger.warn`, тобто
+    # приписувала операторові власну недоробку. Той самий клас, що вже коштував у
+    # `Notifications::DeliveryChannels`: станів ТРИ, а не два.
+    #
+    # 🔴 Живість шлюза питаємо ОДНИМ домом — `Gateway#online?` (SQL-двійник
+    # `Gateway.online` тут більше не потрібен, бо набір уже в памʼяті). Доти стояло
+    # рукописне `1.hour.ago..`: при провіжінених 3600 с чесне вікно предиката = 72 хв,
+    # тож аварійна відповідь мовчки ПРОПУСКАЛА шлюз, який решта застосунку бачить
+    # справним. ⚠️ Попередні знахідки цього класу всі були у вʼю-шарі, і саме тому
+    # цей екземпляр пережив їхні свіпи — периметр пошуку мусить бути `last_seen_at`
+    # по всьому `app/`, не лише по `app/views/`.
+    cluster_actuators = Actuator.joins(:gateway)
+                                .preload(:gateway)
+                                .where(gateways: { cluster_id: cluster.id })
+                                .to_a
 
-    if available_actuators.empty?
-      Rails.logger.warn "⚠️ [Emergency] Кластер #{cluster.name}: Не знайдено доступних інструментів відгуку."
-      return
-    end
-
-    by_device_type = available_actuators.group_by(&:device_type)
+    by_device_type = cluster_actuators.select { available?(_1) }.group_by(&:device_type)
 
     protocol.each do |step|
+      serving = by_device_type.fetch(step[:device_type], [])
+
+      # 🔴 [ARCH.75] Крок без жодного придатного актуатора — це НЕ-ДІЯ, і вона мусить
+      # свідчити про себе так само гучно, як недоставний наказ. Доти мовчали ОБИДВІ її
+      # форми, і друга гірша за першу, бо виглядає як успіх: кластер із клапаном, але
+      # без сирени, виконував пожежний протокол НАПОЛОВИНУ — полив їхав, евакуаційний
+      # сигнал не існував, а слід був невідрізнимий від повного успіху. Дедуп тут
+      # ключується на ТИПІ пристрою, не на актуаторі: актуатора може не бути взагалі.
+      if serving.empty?
+        report_step_unserved(ews_alert, step[:device_type], cluster_actuators)
+        next
+      end
+
       dispatch_commands(
-        by_device_type.fetch(step[:device_type], []), step[:payload],
+        serving, step[:payload],
         duration: step[:duration], relevance: step[:relevance], alert: ews_alert
       )
     end
   end
+
+  # Придатність = робочий стан пристрою І живий шлюз. Дві НЕЗАЛЕЖНІ причини
+  # недоступності, і саме тому звіт нижче рахує їх окремо.
+  # ⚠️ `Actuator#offline?` (стан самого пристрою) ⊥ `Gateway#online?` (тиша шлюза) —
+  # одне слово, два доми; плутати їх тут коштувало б мовчазного пропуску.
+  private_class_method def self.fit?(actuator) = actuator.idle? || actuator.active?
+  private_class_method def self.available?(actuator) = fit?(actuator) && actuator.gateway.online?
 
   private_class_method def self.dispatch_commands(actuators, command_code, duration:, relevance:, alert:)
     return if actuators.empty?
@@ -180,15 +202,55 @@ class EmergencyResponseService
   # на одному пристрої є двома різними фактами й обидва мусять бути видні.
   # `actuator_id` у тексті не інтерполюється — він тут ключ ідентичності, не вимір.
   private_class_method def self.report_undeliverable(alert, actuator, key, **measurements)
-    return if undeliverable_alert_exists?(alert.cluster_id, key, actuator)
+    record_undeliverable(
+      alert, key, dedup_field: :actuator_id, dedup_value: actuator.id,
+      params: { name: actuator.name, endpoint: actuator.endpoint, **measurements }
+    )
+  end
+
+  # [ARCH.75] Не-дія цілого КРОКУ протоколу. Дедуп ключується на `device_type`, бо
+  # актуатора, на який можна було б послатись, може не існувати взагалі — і саме це
+  # й розводить два стани, які доти були одним мовчанням.
+  #
+  # ⚠️ `device_type` їде в повідомлення СИРИМ токеном (`water_valve`), і це свідомо:
+  # він тут ідентифікатор класу пристрою, як `%{endpoint}` у сусідніх ключах, а не
+  # фрагмент фрази. Локалізованої назви типу в дереві не існує (`Actuators::Card`
+  # друкує той самий сирий токен), тож підставляти сюди `I18n.t` означало б застигле
+  # серверною мовою слово в чужій локалі — рівно те, що заборонено для `message_params`.
+  # Коли дім людських назв типів зʼявиться (борг I18N.1), він накриє обидва сайти разом.
+  private_class_method def self.report_step_unserved(alert, device_type, cluster_actuators)
+    installed = cluster_actuators.select { _1.device_type == device_type }
+
+    if installed.empty?
+      record_undeliverable(alert, "emergency_response_no_actuator",
+                           dedup_field: :device_type, dedup_value: device_type, params: {})
+      return
+    end
+
+    # Причини рахуються НЕЗАЛЕЖНО й свідомо можуть перетинатись: пристрій у сервісі
+    # за мовчазним шлюзом — це два факти про нього, а не половина одного, тож сума
+    # лічильників має право перевищити `installed`. Формулювання ключа це поважає.
+    record_undeliverable(
+      alert, "emergency_response_all_unavailable",
+      dedup_field: :device_type, dedup_value: device_type,
+      params: { installed: installed.size,
+                silent_gateway: installed.count { !_1.gateway.online? },
+                out_of_service: installed.count { !fit?(_1) } }
+    )
+  end
+
+  # Один писач на обидві осі дедупу (актуатор ⊥ тип пристрою) — щоб rescue-межа,
+  # куплена виміром нижче, існувала в ОДНОМУ екземплярі, а не копіювалась разом
+  # із кожним новим родом не-дії.
+  private_class_method def self.record_undeliverable(alert, key, dedup_field:, dedup_value:, params:)
+    return if undeliverable_alert_exists?(alert.cluster_id, key, dedup_field, dedup_value)
 
     EwsAlert.create!(
       cluster_id: alert.cluster_id,
       severity: :critical,
       alert_type: :emergency_response_undeliverable,
       message_key: key,
-      message_params: { name: actuator.name, endpoint: actuator.endpoint,
-                        actuator_id: actuator.id, **measurements }
+      message_params: { dedup_field => dedup_value, **params }
     )
   rescue StandardError => e
     # 🔴 `StandardError`, а НЕ `ActiveRecordError`, і межа тут виміряна: ERS біжить
@@ -201,10 +263,13 @@ class EmergencyResponseService
     Rails.logger.error "🛑 [ARCH.75] Алерт про недоставну відповідь не створено: #{e.message}"
   end
 
-  private_class_method def self.undeliverable_alert_exists?(cluster_id, key, actuator)
+  # Поле дедупу — параметр, бо осей дві: `actuator_id` (відмова конкретному пристрою)
+  # ⊥ `device_type` (крок, який нема кому виконати). Імʼя поля йде bind-параметром у
+  # сам оператор `->>`, тож нова вісь не приносить ані другого запиту, ані склеєного SQL.
+  private_class_method def self.undeliverable_alert_exists?(cluster_id, key, dedup_field, dedup_value)
     EwsAlert.unresolved.alert_type_emergency_response_undeliverable
             .where(cluster_id: cluster_id, message_key: key)
-            .where("message_params ->> 'actuator_id' = ?", actuator.id.to_s)
+            .where("message_params ->> ? = ?", dedup_field.to_s, dedup_value.to_s)
             .exists?
   end
 

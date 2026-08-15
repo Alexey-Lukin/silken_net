@@ -77,6 +77,21 @@ RSpec.describe Downlink::PendingQueueService do
       expect(second_inner).to include(second.idempotency_token)
     end
 
+    # 🔴 [ARCH.75] Єдина негативна гілка файла, що ВИКОНУВАЛАСЬ (branch-coverage чистий),
+    # але не мала ІМЕНОВАНОГО піна — тобто трималась на сусідах. Гілка не косметична:
+    # голий `mark_active!` на вже активному актуаторі кидає `AASM::InvalidTransition`,
+    # а тут ми в синхронному reply-шляху coap-демона — виняток лишив би `reply`
+    # непризначеним, тож poll помер би БЕЗ ВІДПОВІДІ разом із ratchet, OTA-hint і
+    # time-sync. Подовження/override на активний пристрій — легальний потік, і саме
+    # він найімовірніший під час пожежі.
+    it "друга команда на ВЖЕ активний актуатор видається (подовження/override — легальний потік)" do
+      actuator.update!(state: :active)
+
+      expect(decrypt_inner(poll)).to include(command.idempotency_token)
+      expect(command.reload.status).to eq("acknowledged")
+      expect(actuator.reload.state).to eq("active")
+    end
+
     it "протермінована команда фейлиться і пропускається (не блокує чергу)" do
       command.update_columns(expires_at: 1.minute.ago)
 
@@ -233,6 +248,24 @@ RSpec.describe Downlink::PendingQueueService do
       expect(described_class.ota_chunk_reply(
         gateway: gateway, query: { "v" => (firmware.id + 99).to_s, "ch" => "0" }
       )).to be_nil
+    end
+
+    # 🔴 [ARCH.75] Єдиний шлях цього файла, який не виконувався ЖОДНОГО разу —
+    # виміряно coverage'ом, не оком (решта негативних гілок уже доведена сусідами
+    # вище). Backstop стоїть на ВЖЕ ЗАШИФРОВАНОМУ конверті, і досяжний він лише
+    # звідси: `oversized?(inner)` питається на CMD-сходинці, а чанк іде в `envelope`
+    # без жодної перевірки розміру — тобто підняття `OtaTransmissionWorker::CHUNK_SIZE`
+    # детонувало б саме тут. Вироджуємось у time-only (Королева лишається з живим
+    # RTC-sync), а не шлемо конверт, який вона мовчки відкине ще до decrypt.
+    it "чанк понад стелю конверта вироджується в time-only, а не їде на мовчазне відкидання" do
+      stub_const("#{described_class}::MAX_ENVELOPE_BYTES", 40)
+
+      fetched = described_class.ota_chunk_reply(
+        gateway: gateway, query: { "v" => firmware.id.to_s, "ch" => "0" }
+      )
+
+      expect(fetched.bytesize).to eq(32)
+      expect(decrypt_inner(fetched).bytes).to all(eq(0))
     end
 
     it "спостережене підтвердження: fw=<pending> глушить кампанію і ставить версію" do

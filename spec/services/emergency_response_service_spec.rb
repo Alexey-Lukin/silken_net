@@ -163,15 +163,83 @@ RSpec.describe EmergencyResponseService do
     end
   end
 
-  describe "no available actuators" do
+  # =========================================================================
+  # [ARCH.75] НЕ-ДІЯ мусить свідчити про себе — інакше вона невідрізнима від успіху
+  # =========================================================================
+  # 🔴 Доти тут стояв рівно один приклад — «returns early when no actuators are
+  # available» з піном на `Rails.logger.warn`, — і він ЦЕМЕНТУВАВ дефект: лог, якого
+  # ніхто не читає, був єдиним слідом того, що аварійний протокол не виконався. Гірша
+  # ж половина класу не мала прикладу взагалі: коли крок протоколу не має свого
+  # інструмента, а сусідній має, відповідь іде НАПОЛОВИНУ й виглядає як повний успіх.
+  describe "protocol steps that nothing can serve" do
     let(:alert) { create(:ews_alert, :drought, cluster: cluster, tree: tree) }
 
-    it "returns early when no actuators are available" do
-      expect(Rails.logger).to receive(:warn).with(/Не знайдено доступних/)
+    it "raises a critical alert instead of a log line when the cluster has no actuators at all" do
+      expect { described_class.call(alert) }.not_to change(ActuatorCommand, :count)
 
-      expect {
-        described_class.call(alert)
-      }.not_to change(ActuatorCommand, :count)
+      raised = EwsAlert.alert_type_emergency_response_undeliverable
+                       .find_by(message_key: "emergency_response_no_actuator")
+      expect(raised).to be_present
+      expect(raised.severity).to eq("critical")
+      expect(raised.message_params).to include("device_type" => "water_valve")
+    end
+
+    # 🔴 Найдорожча половина класу: пожежа на кластері, де є полив і НЕМАЄ сирени.
+    # Пара «лишається ⊥ відпадає» тут несуча — без неї «алерт створено» не відрізнити
+    # від «нічого не поїхало», а саме часткове виконання й читалось як успіх.
+    it "fires the valve AND names the missing siren — a half-executed protocol is not a success" do
+      valve = create(:actuator, :water_valve, gateway: gateway, state: :idle)
+      fire = create(:ews_alert, :fire, cluster: cluster, tree: tree)
+
+      described_class.call(fire)
+
+      expect(ActuatorCommand.where(ews_alert: fire).pluck(:actuator_id).uniq).to eq([ valve.id ])
+      raised = EwsAlert.alert_type_emergency_response_undeliverable
+                       .find_by(message_key: "emergency_response_no_actuator")
+      expect(raised).to be_present
+      expect(raised.message_params).to include("device_type" => "fire_siren")
+    end
+
+    # Два відсутні інструменти — ДВА факти, не один: кластер, у якому не поставили
+    # нічого, мусить дізнатись про обидва кроки протоколу окремо.
+    it "reports every unserved step separately" do
+      fire = create(:ews_alert, :fire, cluster: cluster, tree: tree)
+
+      described_class.call(fire)
+
+      named = EwsAlert.alert_type_emergency_response_undeliverable
+                      .pluck(:message_params).map { _1["device_type"] }
+      expect(named).to match_array(%w[fire_siren water_valve])
+    end
+
+    # 🔴 Дискримінатор, заради якого фільтр придатності поїхав із SQL у памʼять:
+    # «заліза немає» і «залізо є, але недосяжне» — різні дії людини, і доти вони
+    # згорталися в один мовчазний `warn`.
+    it "tells hardware that was never installed apart from hardware that cannot be reached" do
+      silent_gateway = create(:gateway, :offline, cluster: cluster)
+      create(:actuator, :water_valve, gateway: silent_gateway, state: :idle)
+      create(:actuator, :water_valve, gateway: gateway, state: :maintenance_needed)
+
+      expect { described_class.call(alert) }.not_to change(ActuatorCommand, :count)
+
+      raised = EwsAlert.alert_type_emergency_response_undeliverable
+                       .find_by(message_key: "emergency_response_all_unavailable")
+      expect(raised).to be_present
+      expect(raised.message_params).to include(
+        "device_type" => "water_valve", "installed" => 2,
+        "silent_gateway" => 1, "out_of_service" => 1
+      )
+    end
+
+    # Дедуп ключується на ТИПІ, не на актуаторі — інакше крок, якому нема кому
+    # виконуватись, писав би новий рядок на кожну тривогу кластера.
+    it "does not pile up a duplicate alert for the same missing device type" do
+      second = create(:ews_alert, cluster: cluster, tree: tree, alert_type: :insect_epidemic, severity: :low)
+
+      described_class.call(alert)
+      described_class.call(second)
+
+      expect(EwsAlert.alert_type_emergency_response_undeliverable.count).to eq(1)
     end
   end
 
@@ -388,8 +456,12 @@ RSpec.describe EmergencyResponseService do
 
         expect { described_class.call(fire) }.not_to change(ActuatorCommand, :count)
 
-        raised = EwsAlert.alert_type_emergency_response_undeliverable.last
-        expect(raised.message_key).to eq("emergency_response_too_slow")
+        # 🔴 Адресація за КЛЮЧЕМ, не `.last`: у цьому кластері немає клапана, тож
+        # пожежний протокол законно лишає ДВА сліди — недоставну сирену й невстановлений
+        # полив. Доти приклад брав останній рядок і був би зелений на чужому факті.
+        raised = EwsAlert.alert_type_emergency_response_undeliverable
+                         .find_by(message_key: "emergency_response_too_slow")
+        expect(raised).to be_present
         expect(raised.message_params).to include("relevance_min" => 15, "cadence_min" => 61)
       end
     end
