@@ -195,6 +195,8 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 56. Deleting a REDUNDANT test is not the same act as deleting a dead branch, and it needs THREE independent measurements plus a fourth pass nobody's brief asks for
 58. A boot guard is usually blind to the very placeholder that exists to make it fail loudly — because `REQUIRED_SECRET_NOT_SET` is neither blank nor the sentinel, and a presence-shaped predicate reads it as a real value
 59. A shrink-list exemption has TWO ways to die, and the obvious check catches only one — the other leaves an expired exemption actively PROTECTING the regression it was meant to track
+61. Чи є ПОРОЖНЯ МНОЖИНА для гейта провалом чи метою — вирішує ФОРМУ доказу його живості, і переплутати їх означає або вічнозелену декорацію, або гейт, що забороняє власний успіх — **перш ніж писати гейт, спитай, як має виглядати перемога — і якщо це порожня множина, доводь живість детектором, а не популяцією; якщо ні, дай гейту приклад, який скаже тобі, коли він доробив**
+62. Пиши гейт ПЕРШИМ і прожени його ЧЕРВОНИМ по всьому периметру — тоді перехід у зелене доводить РОБОТА, а не твоя правка гейта — **якщо збираєшся робити кампанію, першим комітом роби її вимірювач — і не май права його редагувати, доки не закінчиш**
 
 <!-- /GUARD-CRAFT-INDEX -->
 
