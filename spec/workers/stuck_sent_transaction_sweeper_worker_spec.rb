@@ -102,16 +102,44 @@ RSpec.describe StuckSentTransactionSweeperWorker, type: :worker do
         # партиційно-звужене пере-читання лишила б його зеленим ні за що. Стаб тут —
         # лише ГОДИННИК: він позначає мить між SELECT'ом свіпера й пере-читанням, а сам
         # перехід робить справжній UPDATE, і читається він теж справжнім запитом.
+        reread_ids = []
         allow(BlockchainTransaction).to receive(:find_with_partition_pruning).and_wrap_original do |orig, *args, **kwargs|
+          reread_ids << args.first
           tx.update_columns(status: BlockchainTransaction.statuses[:sent])
           orig.call(*args, **kwargs)
         end
 
         described_class.new.perform
 
+        # 🔴 [PERF.1] Ліхтар на власну ПЕРЕДУМОВУ: без нього приклад не стверджує, що
+        # гард пере-читання взагалі дійшов до НАШОГО орфана. Сьогодні другого сайту
+        # виклику в `perform` немає, тож пін нижче тримає — але щойно він зʼявиться,
+        # стаб спрацює там, переведе tx у `:sent` ще до гілки орфанів, і «зелено»
+        # означатиме «гілка не виконувалась». Стаб — це out-of-band маніпуляція, і вона
+        # мусить мати власне позитивне твердження, а не покладатись на наслідок.
+        expect(reread_ids).to include(tx.id),
+                              "гард пере-читання не дійшов до орфана — приклад вакуумний"
+
         # Свіжий :sent не перетерто — саме це стереже гард (`escalate_to_review`
         # приймає sent→manual_review, тож без гарда тут стояло б "manual_review").
         expect(tx.reload.status).to eq("sent")
+      end
+
+      # 🔴 [PERF.1] Свідок для НУЛЬОВОГО результату: доти свіпер мовчав ЦІЛКОМ, коли
+      # гард пропускав усю вибірку — тобто саме тоді, коли підозрілих рядків було
+      # найбільше. Пін на лог, бо іншого спостережного виходу в цієї гілки немає.
+      it "says out loud that it examined orphans even when it escalated NONE" do
+        tx = create(:blockchain_transaction, wallet: wallet, status: :processing)
+        tx.update_columns(updated_at: 20.minutes.ago)
+
+        allow(BlockchainTransaction).to receive(:find_with_partition_pruning).and_wrap_original do |orig, *args, **kwargs|
+          tx.update_columns(status: BlockchainTransaction.statuses[:sent])
+          orig.call(*args, **kwargs)
+        end
+
+        expect(Rails.logger).to receive(:info).with(/Розглянуто 1 :processing-орфан/)
+
+        described_class.new.perform
       end
     end
   end

@@ -117,7 +117,18 @@ class StuckSentTransactionSweeperWorker
     # Лічимо ФАКТИЧНІ ескалації, не розмір вибірки: guard вище пропускає ті, що
     # їх щойно довершив живий поллер, тож `orphans.size` звітував би про дію,
     # якої не сталося.
-    return unless escalated.positive?
+    #
+    # 🔴 [PERF.1] Але НУЛЬ ескалацій ≠ нічого не сталося: доти `return unless positive?`
+    # робив свіпер ПОВНІСТЮ німим у випадку, коли гард пропустив усю вибірку — тобто
+    # рівно тоді, коли до BATCH_LIMIT транзакцій висіли в `:processing` понад поріг і
+    # всі довершились у мілісекундну щілину. Оператор не бачив ані «є N підозрілих»,
+    # ані «усі виявились живими», і не-дія знову не свідчила про себе. Рівень `info`,
+    # а не `warn`, свідомо: це спостереження про здоровий тракт, не інцидент.
+    if escalated.zero?
+      Rails.logger.info "🧹 [ARCH.45] Розглянуто #{orphans.size} :processing-орфан(ів), " \
+                        "ескальовано 0 — усіх довершив живий поллер між SELECT'ом і пере-читанням."
+      return
+    end
 
     Rails.logger.warn "🧹 [ARCH.45] Escalated #{escalated} stuck-:processing orphan(s) to :manual_review."
   end
