@@ -194,9 +194,13 @@ class TelemetryArchiveBatchWorker
     ActiveRecord::Base.transaction do
       break unless batch.repair!(root, leaf_count: logs.size, tx_count: txs.size)
 
-      window = txs.map(&:created_at).minmax
-      BlockchainTransaction.where(id: txs.map(&:id), archive_batch_id: nil)
-                           .where(created_at: window.first..window.second)
+      # [PERF.1] Делеговано в One-Home: форма правильна й доти, але вона була третьою
+      # рукописною копією span-логіки, а дім заразом веде лічильник деградації
+      # (`missing_span`), якого рукописна форма не мала — тихий промах тут означає
+      # скан усіх партицій на money-таблиці.
+      BlockchainTransaction.where_ids_pruned(txs.map(&:id), txs.map(&:created_at),
+                                             metric_caller: "TelemetryArchiveBatchWorker")
+                           .where(archive_batch_id: nil)
                            .update_all(archive_batch_id: batch.id)
     end
     TelemetryArchiveBatchWorker.perform_async(batch.id) if batch.reload.status_pending?

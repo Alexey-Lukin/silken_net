@@ -133,11 +133,13 @@ module Mrv
         # created_at-межі = partition-pruning (партиційована таблиця; id-only
         # update_all сканував би всі партиції); archive_batch_id IS NULL =
         # set-once на рівні SQL (конкурент, що встиг першим, лишається власником).
-        BlockchainTransaction.where(id: txs.map(&:id), archive_batch_id: nil)
-                             .where(created_at: window.first..window.second)
+        BlockchainTransaction.where_ids_pruned(txs.map(&:id), window,
+                                               metric_caller: "Mrv::TelemetryArchiveBatchService")
+                             .where(archive_batch_id: nil)
                              .update_all(archive_batch_id: batch.id)
-        member_count = BlockchainTransaction.where(id: txs.map(&:id), archive_batch_id: batch.id)
-                                            .where(created_at: window.first..window.second)
+        member_count = BlockchainTransaction.where_ids_pruned(txs.map(&:id), window,
+                                                              metric_caller: "Mrv::TelemetryArchiveBatchService")
+                                            .where(archive_batch_id: batch.id)
                                             .count
         complete = member_count == txs.size
         raise ActiveRecord::Rollback unless complete
