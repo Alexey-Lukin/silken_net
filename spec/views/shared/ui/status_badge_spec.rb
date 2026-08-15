@@ -44,6 +44,33 @@ RSpec.describe Views::Shared::UI::StatusBadge do
     end
   end
 
+  # 🔴 [UI.3] Ця пара стереже те, чого класовий гейт бачити не може. Гейт
+  # (`spec/quality/opacity_contrast_multiplier_spec.rb`) забороняє прозорість на
+  # текстовому вузлі — але він однаково зелений і тоді, коли `opacity-50` просто
+  # ВИДАЛЕНО, а замінити її нічим. А видалити було не можна: прозорість тут була
+  # ЄДИНИМ, що відрізняло «cancelled» від «draft» — обидва носять той самий
+  # `bg-status-neutral text-status-neutral-text`. Тобто наївний фікс контрасту
+  # злив би два різні стани в один вигляд, і жоден гейт не сказав би ні слова.
+  describe "завершені стани — дискримінатор без кольору" do
+    it "розрізняє cancelled і draft, які носять ОДИН колірний токен" do
+      cancelled = render_component(status: "cancelled")
+      draft = render_component(status: "draft")
+
+      expect(cancelled).to include("line-through")
+      expect(draft).not_to include("line-through")
+      # Обидва мусять лишатись нейтральними — інакше «розрізнення» приїхало
+      # кольором, тобто ми полагодили контраст, зламавши семантику палітри.
+      expect(cancelled).to include("bg-status-neutral")
+      expect(draft).to include("bg-status-neutral")
+    end
+
+    it "не глушить завершені стани прозорістю — вона множила контраст до 2.25:1" do
+      %w[cancelled removed].each do |state|
+        expect(render_component(status: state)).not_to include("opacity-")
+      end
+    end
+  end
+
   describe "with an unknown status" do
     let(:html) { render_component(status: "unknown_state") }
 

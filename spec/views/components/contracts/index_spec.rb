@@ -164,10 +164,18 @@ RSpec.describe Contracts::Index do
       expect(html).to include("bg-status-danger")
     end
 
-    it "dims cancelled contracts with the neutral token" do
+    # 🔴 [UI.3] Назва казала «dims», і пін вимагав саме приглушення — `opacity-50`,
+    # яка давала 2.25:1 на бейджі `text-tiny` (поріг 4.5:1). Але `bg-status-neutral`
+    # тут НЕ дискримінатор: його носять і `draft`, і `idle`, і дефолтний фолбек,
+    # тож приклад «cancelled ⊥ решта» тримала виключно та сама прозорість, що була
+    # дефектом. Роль перебрав `line-through` — сусідній рядок тієї ж мапи
+    # (`deceased`) уже вживав його для завершеного стану.
+    it "розрізняє скасований контракт неколірним дискримінатором, не приглушенням" do
       html = render_component(contracts: [ build_contract(status: "cancelled") ], stats: mock_stats, pagy: mock_pagy(last: 1))
+
       expect(html).to include("bg-status-neutral")
-      expect(html).to include("opacity-50")
+      expect(html).to include("line-through")
+      expect(html).not_to include("opacity-")
     end
   end
 

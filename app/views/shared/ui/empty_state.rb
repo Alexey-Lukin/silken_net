@@ -27,10 +27,20 @@ module Views
         private
 
         def render_content
+          # Прозорість тут ЗАКОННА рівно тому, що вузол оголошений декоративним:
+          # `aria_hidden` знімає гліф із дерева доступності, а WCAG 1.4.3 не
+          # ставить вимог до чистої декорації. Це і є машинний дискримінатор
+          # класу — не «схоже на іконку», а власна семантична декларація.
           p(class: "text-gaia-text-muted text-lg opacity-50", aria_hidden: "true") { @icon }
           p(class: "text-gaia-text-muted font-mono text-xs uppercase tracking-widest") { @title }
           if @description
-            p(class: "text-gaia-text-muted font-mono text-tiny mt-2 opacity-70") { @description }
+            # 🔴 [UI.3] Тут доти стояла `opacity-70` — приглушення ПОВЕРХ уже
+            # приглушеного токена, і воно давало 3.54:1 у СВІТЛІЙ темі проти
+            # порогу 4.5:1 (`text-tiny`), тоді як у темній 6.69:1. Тобто дефект
+            # був однотемний: половина глядачів бачила справний екран, і жоден
+            # наш прилад цього не судив — токен правильний, пара fg/bg
+            # правильна, губить ТРЕТІЙ множник.
+            p(class: "text-gaia-text-muted font-mono text-tiny mt-2") { @description }
           end
         end
       end

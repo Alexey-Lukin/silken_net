@@ -24,7 +24,13 @@ module Views
           "draft"        => "bg-status-neutral text-status-neutral-text",
           "fulfilled"    => "bg-status-success text-status-success-text",
           "breached"     => "bg-status-danger text-status-danger-text",
-          "cancelled"    => "bg-status-neutral text-status-neutral-text opacity-50",
+          # 🔴 [UI.3] Доти тут стояла `opacity-50` — і вона була ЄДИНИМ, що
+          # відрізняло «cancelled» від «draft», ціною 6.87:1 → **2.25:1** у
+          # світлій темі й 5.81:1 → 2.37:1 у темній (поріг 4.5:1 для `text-tiny`).
+          # `line-through` бере ту саму роль із сусіднього рядка цієї ж мапи
+          # (`deceased`), розрізняє стани БЕЗ кольору взагалі й контрасту не
+          # чіпає — тобто дискримінатор став сильнішим, а не слабшим.
+          "cancelled"    => "bg-status-neutral text-status-neutral-text line-through",
           # AASM: Gateway states
           "idle"         => "bg-status-neutral text-status-neutral-text",
           "updating"     => "bg-status-warning text-status-warning-text animate-pulse",
@@ -32,7 +38,7 @@ module Views
           "faulty"       => "bg-status-danger text-status-danger-text",
           # AASM: Tree states
           "dormant"      => "bg-status-warning text-status-warning-text",
-          "removed"      => "bg-status-neutral text-status-neutral-text opacity-50",
+          "removed"      => "bg-status-neutral text-status-neutral-text line-through",
           "deceased"     => "bg-status-danger text-status-danger-text line-through",
           # AASM: Actuator states
           "offline"            => "bg-status-neutral text-status-neutral-text",

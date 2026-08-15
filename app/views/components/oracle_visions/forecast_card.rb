@@ -9,8 +9,19 @@ module OracleVisions
 
     def view_template
       div(class: "p-6 border border-emerald-900 bg-zinc-950 group relative overflow-hidden transition-all hover:border-emerald-500") do
-        # Неоновий індикатор впевненості Оракула
-        div(class: tokens("absolute top-0 right-0 p-4 font-mono text-2xl opacity-40 group-hover:opacity-100 transition-opacity", confidence_text_class)) do
+        # Неоновий індикатор впевненості Оракула.
+        #
+        # 🔴 [UI.3] Прозорості тут БУТИ НЕ МОЖЕ, і це не «занизьке значення», а
+        # структурна несумісність. `opacity-40` давала композит 1.70:1 (червоний)
+        # · 2.09:1 (смарагд) · 2.12:1 (нейтраль) на `bg-zinc-950` — при порозі
+        # 3:1 для `text-2xl`. А підняти її до прохідної НЕМОЖЛИВО одним числом:
+        # α для рівно 3:1 різна на кожен колір (0.692 · 0.549 · 0.544), а колір
+        # деривується РАНТАЙМ із `yield_impact`. Спільне безпечне значення = 0.70,
+        # тобто ефект вироджується в невидиму різницю.
+        #
+        # ⚠️ «На hover видно» ліком не є: на тачі hover'а немає, а WCAG 1.4.3
+        # винятку «читабельно при наведенні» не має.
+        div(class: tokens("absolute top-0 right-0 p-4 font-mono text-2xl", confidence_text_class)) do
           plain probability_reading
         end
 

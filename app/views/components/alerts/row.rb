@@ -86,10 +86,19 @@ module Alerts
       end
     end
 
+    # 🔴 [UI.3] `opacity-40` тут глушила ВЕСЬ рядок разом із текстом: 16.10:1 →
+    # **2.46:1** у світлій темі, 19.05:1 → 3.58:1 у темній, при порозі 4.5:1.
+    # Прозорість на контейнері множить контраст КОЖНОГО нащадка, і жоден наш
+    # прилад цього не бачить — токени правильні, пари fg/bg правильні.
+    #
+    # Знята без заміни, бо сигнал «закрито» вже несуть ДВА інші носії: фон
+    # `surface-sunken` і слово `t(".resolved")` замість кнопки в колонці дії
+    # (`action_button`). Прозорість була третім, надлишковим — і єдиним, що
+    # коштував читабельності.
     def row_classes
       tokens(
         "transition-all duration-700",
-        "bg-gaia-surface-sunken opacity-40": @alert.status_resolved?,
+        "bg-gaia-surface-sunken": @alert.status_resolved?,
         "hover:bg-gaia-surface-sunken": !@alert.status_resolved?
       )
     end

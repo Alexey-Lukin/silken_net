@@ -92,8 +92,20 @@ RSpec.describe Alerts::Row do
       expect(html).to include("Resolved")
     end
 
-    it "applies reduced opacity for resolved rows" do
-      expect(html).to include("opacity-40")
+    # 🔴 [UI.3] Тут стояло `include("opacity-40")` — тобто сюїта ВИМАГАЛА дефекту:
+    # прозорість на `<tr>` множить контраст кожного нащадка (16.10:1 → **2.46:1**
+    # у світлій темі, 19.05:1 → 3.58:1 у темній, поріг 4.5:1). Пін не був
+    # надлишковим — він був носієм хвороби, і зняти її, не переписавши його,
+    # неможливо.
+    #
+    # Ціль тепер — те, що справді відрізняє закритий рядок: власний фон замість
+    # hover-фону сусіда. Пара «має sunken ⊥ не має hover:sunken» несуча, бо
+    # `hover:bg-gaia-surface-sunken` містить той самий підрядок, тож пін лише на
+    # `bg-gaia-surface-sunken` був би зелений і на АКТИВНОМУ рядку.
+    it "позначає закритий рядок власним фоном, а не прозорістю" do
+      expect(html).to include("bg-gaia-surface-sunken")
+      expect(html).not_to include("hover:bg-gaia-surface-sunken")
+      expect(html).not_to include("opacity-")
     end
   end
 

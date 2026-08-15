@@ -110,7 +110,10 @@ RSpec.describe Alerts::Index do
       out = render_component(alerts: [ build_alert(status: :resolved) ], pagy: mock_pagy(count: 1), organization: org)
 
       expect(out).to include("✓ Resolved")
-      expect(out).to include("opacity-40")
+      # [UI.3] Доти дискримінатором тут стояла `opacity-40` — і вона ж була
+      # дефектом (2.46:1). Роль перебрав власний фон; пара «має sunken ⊥ не має
+      # hover:sunken» лишається двобічною, як і задумано вище.
+      expect(out).to include("bg-gaia-surface-sunken")
       expect(out).not_to include("hover:bg-gaia-surface-sunken")
     end
   end
