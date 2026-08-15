@@ -284,6 +284,64 @@ RSpec.describe Trees::Show do
     end
   end
 
+  # 🔴 [ARCH.84] Носій пінить ЗГОДУ двох сторінок, бо ламалась саме вона:
+  # `trees/index` читав `Tree#fresh_signal?` (24 год, ARCH.99), а ця сторінка
+  # мала власні 15 хв від `@latest_log.created_at`. Обидві величини
+  # штампуються в одній транзакції, тож розходились ПОРОГИ — одне дерево було
+  # зеленим у списку й мертвим тут ~23 год 45 хв із кожних 24.
+  #
+  # ⚠️ Пін на ОДНУ сторінку цього не побачив би за побудовою: кожен рендер
+  # окремо самоузгоджений, суперечність існує лише між ними.
+  describe "живість дерева — та сама відповідь, що в списку [ARCH.84]" do
+    # ⚠️ Цілимось у ВІДБИТОК кожного LED, не в `bg-emerald-500`: на обох
+    # сторінках є інші смарагдові вузли, і широкий матч зробив би приклад
+    # вакуумним (той самий промах уже коштував у цій сесії). Радіус тіні
+    # різний — 12px на сторінці, 5px у списку, — і це надійний дискримінатор.
+    def show_led_green?(markup)  = markup.include?("bg-emerald-500 shadow-[0_0_12px_#10b981]")
+    def index_led_green?(markup) = markup.include?("bg-emerald-500 shadow-[0_0_5px_#10b981]")
+
+    # 2 години: усередині канонного порога тиші (24 год) і ЗА МЕЖАМИ знятих
+    # 15 хв — тобто рівно те вікно, де дві сторінки не сходились.
+    let(:seen_two_hours_ago) { build_tree.tap { |t| t.last_seen_at = 2.hours.ago } }
+
+    # ⚠️ Через `renderer`, а не `.call`: список будує `tree_path`, тобто
+    # потребує view-контексту — прямий виклик падає `default_url_options`.
+    def index_markup(tree)
+      ApplicationController.renderer.render(
+        Trees::Index.new(cluster: tree.cluster, trees: [ tree ]), layout: false
+      )
+    end
+
+    it "показує ЖИВИМ дерево, яке список теж вважає живим" do
+      t = seen_two_hours_ago
+      shown = render_component(tree: t, latest_log: nil, recent_logs: [],
+                               maintenance_history: maintenance_history)
+
+      expect(show_led_green?(shown)).to be(true)
+      expect(index_led_green?(index_markup(t))).to be(true)
+    end
+
+    it "показує МЕРТВИМ дерево, яке список теж вважає мертвим" do
+      t = build_tree.tap { |x| x.last_seen_at = 30.hours.ago }
+      shown = render_component(tree: t, latest_log: nil, recent_logs: [],
+                               maintenance_history: maintenance_history)
+
+      expect(show_led_green?(shown)).to be(false)
+      expect(index_led_green?(index_markup(t))).to be(false)
+    end
+
+    # ⊕ Тихіша половина: `@latest_log` — це останній РЯДОК телеметрії, тобто
+    # `nil` після retention-зрізу. Доти сторінка називала таке дерево мертвим,
+    # хоч його власний `last_seen_at` живий.
+    it "не називає мертвим дерево, чиї логи зрізав retention" do
+      t = seen_two_hours_ago
+      shown = render_component(tree: t, latest_log: nil, recent_logs: [],
+                               maintenance_history: maintenance_history)
+
+      expect(show_led_green?(shown)).to be(true)
+    end
+  end
+
   describe "hardware security vault" do
     it "displays device_uid" do
       expect(html).to include("SNET-00000042") # = DID власника, бо `device_uid` і є FK
