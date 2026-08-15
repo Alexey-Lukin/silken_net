@@ -1161,7 +1161,7 @@ sources.each do |label, path|
         # The name must stand in a SKILL CONSTRUCTION, not merely near a `#N`.
         # Mere adjacency was safe while the perimeter was the memory corpus,
         # where these words are almost always skill names; over `docs/` it is
-        # not — `deploy`, `frontend`, `codex` are ordinary words, and the
+        # not — `deploy`, `frontend`, `backend` are ordinary words, and the
         # tracker's «верифікувати deploy … Pre-Flight #9» read as a citation to
         # a skill that has no item 9. Measured over the whole widened
         # perimeter: this anchor drops both such false positives and loses ZERO
