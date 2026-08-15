@@ -268,9 +268,23 @@ class Tree < ApplicationRecord
   # [ВИПРАВЛЕНО: Broadcast Storm]: Визначаємо, чи зміна є релевантною для оновлення мапи.
   # Широкомовлення лише при зміні координат, статусу або latest_voltage_mv (іконка батареї).
   # Це скорочує кількість WebSocket-повідомлень з ~10K/годину до ~100/годину.
+  # 🔴 [ARCH.84] Множина тригерів = множина КОЛОНОК, які маркер справді рендерить
+  # (`Dashboard::MapNode`: lat · lng · status · stress). Доти вона розходилась з
+  # payload'ом ОБАБІЧ, і обидві розбіжності тихі:
+  #
+  # (а) `latest_stress_index` тут НЕ БУЛО — тобто чесний колір стресу не
+  #     оновлювався наживо ЖОДНОГО разу, і глядач із відкритим дашбордом бачив
+  #     учорашній колір до повного перезавантаження;
+  # (б) `latest_voltage_mv` БУВ — хоч [ARCH.99] прибрав `data-charge` з маркера,
+  #     тож механізм, збудований саме щоб скоротити броадкасти (Broadcast Storm,
+  #     ~10K→~100/год), перемальовував вузол на величину, якої більше не малює.
+  #
+  # ⚠️ Самої правки тут НЕ ДОСИТЬ: писачі стресу йдуть `update_column`/`update_all`,
+  # які колбеків не пускають узагалі — тому `InsightGeneratorService` фаєрить
+  # броадкаст ЯВНО. Дві причини були незалежні, і фікс однієї не дав би нічого.
   def map_relevant_change?
     saved_change_to_latitude? || saved_change_to_longitude? ||
-      saved_change_to_status? || saved_change_to_latest_voltage_mv?
+      saved_change_to_status? || saved_change_to_latest_stress_index?
   end
 
   def build_default_wallet

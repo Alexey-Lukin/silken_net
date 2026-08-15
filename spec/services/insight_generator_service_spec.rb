@@ -119,6 +119,79 @@ RSpec.describe InsightGeneratorService, type: :service do
     end
   end
 
+  # 🔴 [ARCH.84] ДРУГА причина мертвого маркера, незалежна від множини тригерів:
+  # усі три писачі стресу йдуть `update_column`/`update_all`, а ті колбеків не
+  # пускають ЗОВСІМ — тож навіть із правильним `map_relevant_change?` броадкаст не
+  # стріляв би жодного разу. Дві причини множаться: фікс однієї з них наодинці не
+  # міняє нічого видимого, і саме тому дефект прожив стільки — кожна половина
+  # окремо виглядає як «зробили, а колір усе одно старий».
+  describe "маркер перемальовується на КОЖНОМУ писачі стресу [ARCH.84]" do
+    # Шпигун несе ще й ЗНАЧЕННЯ, а не лише факт виклику: маркер фарбується
+    # стресом, тож броадкаст із застарілим числом у памʼяті — це той самий
+    # мертвий колір, лише з живим сокетом. Масова гілка синхронізує колонку
+    # вручну (замість N `reload`-ів), і без цього піна така синхронізація
+    # зникає мовчки.
+    let(:redrawn) { {} }
+
+    before do
+      allow_any_instance_of(Tree).to receive(:broadcast_map_update) { |t| redrawn[t.did] = t.latest_stress_index }
+    end
+
+    def loud_neighbour(in_cluster)
+      create(:tree, cluster: in_cluster, status: :active).tap do |t|
+        create(:telemetry_log, tree: t,
+          temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+      end
+    end
+
+    it "перемальовує дерево, що дістало ВИМІРЯНИЙ стрес" do
+      loud = loud_neighbour(cluster)
+
+      described_class.call(date)
+
+      expect(redrawn).to have_key(loud.did)
+      expect(redrawn[loud.did]).not_to be_nil
+    end
+
+    it "перемальовує мовчазне дерево, чий стрес занулено всередині кластера з даними" do
+      silent = create(:tree, cluster: cluster, status: :active)
+      silent.update_column(:latest_stress_index, 0.42)
+      loud_neighbour(cluster)
+
+      described_class.call(date)
+
+      expect(redrawn).to have_key(silent.did)
+      expect(redrawn[silent.did]).to be_nil
+    end
+
+    it "перемальовує дерево, занулене масовим `reset_stress_outside`" do
+      dark = create(:tree, cluster: create(:cluster), status: :active)
+      dark.update_column(:latest_stress_index, 0.7)
+      loud_neighbour(cluster)
+
+      described_class.call(date)
+
+      expect(redrawn).to have_key(dark.did)
+      # ⊥ Саме тут жив би `reload`: без синхронізації в памʼяті сюди приїхало б 0.7.
+      expect(redrawn[dark.did]).to be_nil
+    end
+
+    # ⊥ Дзеркало, без якого приклади вище проходили б на «броадкасти все підряд»:
+    # незмінене значення руху не дає. Знаменник ~10¹² дерев (`00_01 §1.1`), тож
+    # безумовний броадкаст на кожному нічному проході — не марнотратство, а DoS.
+    it "НЕ перемальовує дерево, чий стрес лишився тим самим порожнім" do
+      quiet = create(:tree, cluster: cluster, status: :active)
+      loud_neighbour(cluster)
+
+      described_class.call(date)
+
+      expect(redrawn).not_to have_key(quiet.did)
+    end
+  end
+
   describe "#perform" do
     it "creates daily health summary insights for each tree" do
       create(:telemetry_log, tree: tree,

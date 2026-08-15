@@ -30,13 +30,36 @@ class InsightGeneratorService < ApplicationService
   # тільки рядки, які справді треба занулити (10¹²-масштаб — `00_01 §1.1`).
   # ⚠️ `cluster_id IS NULL` враховано ЯВНО: `belongs_to :cluster, optional: true`,
   # а `NOT IN` такі рядки мовчки виключає — та сама сліпота, що [ARCH.98].
+  # 🔴 [ARCH.84] `update_all` колбеків не пускає, тож маркери цих дерев лишались
+  # би з учорашнім кольором на відкритому дашборді — і глядач не відрізнив би
+  # «ще не виміряли» від «броадкаст зламався», тобто фікс чесного кольору не
+  # доїжджав би саме там, де мав.
+  #
+  # ⚠️ Множину для броадкасту звужено ДВІЧІ, і обидва звуження принципові:
+  # (а) `where.not(latest_stress_index: nil)` уже стоїть — оновлюємо лише те,
+  #     що справді змінюється; (б) `geolocated` — дерево без координат маркера
+  #     не має взагалі (`broadcast_map_update` сам це гейтує), тож вантажити його
+  #     означало б платити за вузол, якого на мапі немає.
+  # ⛔ І НЕ `tree.reload` перед броадкастом: `update_all` щойно поставив рівно
+  # одну колонку у відоме значення, тож перечитувати рядок означало б додати по
+  # SELECT-у на дерево — N+1 рівно на тому шляху, заради ефективності якого
+  # set-based `UPDATE` тут і стоїть. Синхронізуємо в памʼяті.
+  # Ціна: один SELECT id-шок на добовий прогін.
   def self.reset_stress_outside(cluster_ids)
     base = Tree.where.not(latest_stress_index: nil)
-    return base.update_all(latest_stress_index: nil) if cluster_ids.blank?
+    scope = if cluster_ids.blank?
+              base
+    else
+              base.where.not(cluster_id: cluster_ids).or(base.where(cluster_id: nil))
+    end
 
-    base.where.not(cluster_id: cluster_ids)
-        .or(base.where(cluster_id: nil))
-        .update_all(latest_stress_index: nil)
+    remapped = scope.geolocated.to_a
+    affected = scope.update_all(latest_stress_index: nil)
+    remapped.each do |tree|
+      tree.latest_stress_index = nil
+      tree.broadcast_map_update
+    end
+    affected
   end
 
   def perform
@@ -191,7 +214,13 @@ class InsightGeneratorService < ApplicationService
       # кластера, `prefetch_tree_stats` — один згрупований запит; додається
       # лише запис, і лише для мовчазної меншості (поріг тиші — 24 год).
       unless stats
-        tree.update_column(:latest_stress_index, nil) unless tree.latest_stress_index.nil?
+        # [ARCH.84] `update_column` колбеків не пускає, тож броадкаст явний —
+        # інакше маркер лишався б учорашнім кольором до перезавантаження.
+        # Гард `unless nil?` уже означає «значення змінилось», тож зайвих не буде.
+        unless tree.latest_stress_index.nil?
+          tree.update_column(:latest_stress_index, nil)
+          tree.broadcast_map_update
+        end
         next
       end
 
@@ -247,7 +276,13 @@ class InsightGeneratorService < ApplicationService
     # Денормалізуємо stress_index прямо в таблицю trees (аналогічно latest_voltage_mv).
     # Це усуває N+1 запит для кожного дерева при серіалізації (TreeBlueprint, MapNode).
     # Використовуємо update_column для швидкодії без callbacks (hot path для мільйонів дерев).
+    # 🔴 [ARCH.84] І саме тому броадкаст мапи тут ЯВНИЙ: `update_column` не пускає
+    # `after_update_commit`, тож чесний колір стресу не доїжджав до відкритого
+    # дашборда ЖОДНОГО разу. Фаєримо лише на РЕАЛЬНІЙ зміні — прогін щоденний, а
+    # дерево, чий стрес не зрушив, перемальовувати нема за чим.
+    stress_changed = tree.latest_stress_index != stress_index
     tree.update_column(:latest_stress_index, stress_index)
+    tree.broadcast_map_update if stress_changed
 
     # ⚡ [ВИПРАВЛЕНО: Жорсткий Slashing]:
     # Ми більше не "вбиваємо" дерево миттєво. Створюємо критичну тривогу для перевірки.

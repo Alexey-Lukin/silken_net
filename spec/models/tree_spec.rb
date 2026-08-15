@@ -312,6 +312,37 @@ RSpec.describe Tree, type: :model do
     end
   end
 
+  # 🔴 [ARCH.84] Множина тригерів мусить дорівнювати множині КОЛОНОК, які маркер
+  # рендерить (`Dashboard::MapNode`: lat · lng · status · stress). Доти вона
+  # розходилась ОБАБІЧ, і обидві розбіжності тихі: стресу серед тригерів не було
+  # (чесний колір не доїжджав наживо ЖОДНОГО разу), а напруга була — хоч ARCH.99
+  # прибрав `data-charge` з маркера, тобто вузол перемальовувався на величину,
+  # якої більше не малює, у механізмі, збудованому саме щоб скоротити броадкасти.
+  describe "тригери мапи = колонки, які маркер справді малює [ARCH.84]" do
+    def broadcasts_on(tree, **change)
+      allow(tree).to receive(:broadcast_map_update)
+      tree.update!(**change)
+      tree
+    end
+
+    it "перемальовує маркер на зміну СТРЕСУ" do
+      tree = create(:tree, latest_stress_index: 0.1)
+      expect(broadcasts_on(tree, latest_stress_index: 0.8)).to have_received(:broadcast_map_update)
+    end
+
+    # ⊥ Дзеркало, без якого приклад вище доводив би лише «щось стріляє»:
+    # напруга маркером НЕ рендериться, тож і перемальовувати нема за чим.
+    it "НЕ перемальовує на зміну напруги — її маркер не несе (ARCH.99)" do
+      tree = create(:tree, latest_voltage_mv: 3300)
+      expect(broadcasts_on(tree, latest_voltage_mv: 4200)).not_to have_received(:broadcast_map_update)
+    end
+
+    it "перемальовує на координати й статус, як і доти" do
+      expect(broadcasts_on(create(:tree), latitude: 50.0)).to have_received(:broadcast_map_update)
+      expect(broadcasts_on(create(:tree), status: :dormant)).to have_received(:broadcast_map_update)
+    end
+  end
+
   describe "broadcast_map_update when latitude is nil" do
     it "returns nil without broadcasting when latitude is absent" do
       allow_any_instance_of(described_class).to receive(:broadcast_map_update).and_call_original
