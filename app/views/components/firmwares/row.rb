@@ -15,23 +15,18 @@ module Firmwares
         td(class: "p-4 text-gray-500 font-mono text-tiny") { @firmware.created_at.strftime("%d.%m.%y // %H:%M") }
 
         td(class: "p-4 text-right") do
-          # Форма для ініціації OTA оновлення
-          form(action: deploy_firmware_path(@firmware), method: "post") do
-            authenticity_token_input
-            button(
-              type: "submit",
-              class: "text-emerald-500 hover:text-white border border-emerald-900 hover:border-emerald-500 px-4 py-1 uppercase text-mini tracking-widest transition-all group-hover:shadow-[0_0_10px_rgba(16,185,129,0.2)]",
-              data: { turbo_confirm: t(".confirm", version: @firmware.version) }
-            ) { t(".order_evolution") }
-          end
+          # [UI.7] `button_to`, не рукописна `<form>`: токен, коректний `_method`
+          # і кодування приходять самі. Дія без вводу — тож форма тут була ЛИШЕ
+          # обгорткою над однією кнопкою (дзеркало `Alerts::Row#acknowledge`).
+          button_to(
+            t(".order_evolution"),
+            deploy_firmware_path(@firmware),
+            method: :post,
+            class: "text-emerald-500 hover:text-white border border-emerald-900 hover:border-emerald-500 px-4 py-1 uppercase text-mini tracking-widest transition-all group-hover:shadow-[0_0_10px_rgba(16,185,129,0.2)]",
+            data: { turbo_confirm: t(".confirm", version: @firmware.version) }
+          )
         end
       end
-    end
-
-    private
-
-    def authenticity_token_input
-      input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
     end
   end
 end

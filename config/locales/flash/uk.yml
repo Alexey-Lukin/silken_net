@@ -43,8 +43,6 @@ uk:
       record_updated: Запис оновлено.
     notifications:
       updated: Налаштування сповіщень оновлено.
-    oracle:
-      simulation_started: Оракул почав симуляцію.
     organizations:
       context_switched: 'Робочий контекст перемкнуто: %{name}.'
     provisioning:

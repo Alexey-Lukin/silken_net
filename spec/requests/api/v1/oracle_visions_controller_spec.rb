@@ -160,69 +160,6 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
     end
   end
 
-  describe "POST /oracle_visions/simulate" do
-    before do
-      stub_const("SimulationWorker", Class.new do
-        def self.perform_async(*args)
-          "job-123"
-        end
-      end)
-    end
-
-    it "starts a simulation for admin" do
-      post "/oracle_visions/simulate",
-           params: { cluster_id: cluster.id, variables: { temp: 25 } },
-           headers: admin_headers, as: :json
-
-      expect(response).to have_http_status(:accepted)
-      expect(response.parsed_body["job_id"]).to eq("job-123")
-    end
-
-    it "starts a simulation for admin when variables is omitted entirely" do
-      post "/oracle_visions/simulate",
-           params: { cluster_id: cluster.id },
-           headers: admin_headers, as: :json
-
-      expect(response).to have_http_status(:accepted)
-      expect(response.parsed_body["job_id"]).to eq("job-123")
-    end
-
-    it "returns 403 for forester (simulate requires admin)" do
-      post "/oracle_visions/simulate",
-           params: { cluster_id: cluster.id },
-           headers: forester_headers, as: :json
-      expect(response).to have_http_status(:forbidden)
-    end
-
-    it "returns 403 for investor users" do
-      post "/oracle_visions/simulate",
-           params: { cluster_id: cluster.id },
-           headers: investor_headers, as: :json
-      expect(response).to have_http_status(:forbidden)
-    end
-
-    it "returns 401 without authentication" do
-      post "/oracle_visions/simulate", as: :json
-      expect(response).to have_http_status(:unauthorized)
-    end
-
-    # =========================================================================
-    # TENANT-ISOLATION: SimulationWorker walks Trees by cluster_id without
-    # re-checking org. Admin from org A used to be able to fire a simulation
-    # against org B's cluster — pattern matches firmware deploy guard.
-    # =========================================================================
-    it "returns 404 when cluster_id belongs to another organization" do
-      other_org = create(:organization)
-      other_cluster = create(:cluster, organization: other_org)
-
-      post "/oracle_visions/simulate",
-           params: { cluster_id: other_cluster.id, variables: { sigma: 10 } },
-           headers: admin_headers, as: :json
-
-      expect(response).to have_http_status(:not_found)
-    end
-  end
-
   # ===========================================================================
   # TENANT-ISOLATION: visions and yield calculation must scope to current org.
   # Previously the index leaked global AiInsight + cached the protocol-wide

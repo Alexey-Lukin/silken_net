@@ -37,10 +37,16 @@ module Settings
       div(class: "p-6 border border-emerald-900 bg-black") do
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".config.heading") }
 
-        form(action: settings_path, method: "post", enctype: "multipart/form-data", class: "space-y-6") do
-          input(type: "hidden", name: "_method", value: "patch")
-          input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
-
+        # [UI.7] `form_with`: токен і `_method=patch` приходять самі.
+        # ⚠️ `multipart: true` ЯВНО, і це не перестраховка: авто-детект `form_with`
+        # спрацьовує на БІЛДЕРНОМУ `f.file_field`, а логотип тут — сирий
+        # `input(type: "file")`, якого хелпер не бачить. Без цього рядка `enctype`
+        # згорнувся б у `urlencoded`, і `organization[logo]` приїхав би РЯДКОМ з
+        # іменем файлу замість завантаження. Дзеркало — `firmwares/form.rb`.
+        # ⚠️ Скоуп не задаємо `model:`-формою: префікс `organization[...]` тут
+        # збігається з `params.require(:organization)`, але `model:` вивів би ще й
+        # МАРШРУТ — `organization_path`, для якого PATCH-роуту не існує взагалі.
+        form_with(url: settings_path, method: :patch, multipart: true, class: "space-y-6") do
           # [SEC.25] Контролер рендерить цю сторінку на 422 (кривий billing_email,
           # зайнята назва, поріг поза діапазоном), і доти причина нікуди не їхала —
           # `org.errors` бачила лише JSON-гілка.

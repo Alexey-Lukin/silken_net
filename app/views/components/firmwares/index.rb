@@ -121,15 +121,17 @@ module Firmwares
         td(class: "p-4 text-gray-500 font-mono text-tiny") { firmware.created_at.strftime("%d.%m.%y // %H:%M") }
 
         td(class: "p-4 text-right") do
-          form(action: deploy_firmware_path(firmware), method: "post") do
-            input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
-            button(
-              type: "submit",
-              class: "text-emerald-500 hover:text-white border border-emerald-900 hover:border-emerald-500 px-4 py-1 uppercase text-mini tracking-widest transition-all group-hover:shadow-[0_0_10px_rgba(16,185,129,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
-              aria_label: t(".deploy_aria", version: firmware.version),
-              data: { turbo_confirm: t("firmwares.row.confirm", version: firmware.version) }
-            ) { t("firmwares.row.order_evolution") }
-          end
+          # [UI.7] `button_to`, не рукописна `<form>` — див. ноту у `firmwares/row.rb`.
+          # ⚠️ `aria:`, не `aria_label:`: `button_to` розкладає вкладений хеш у
+          # `aria-label` сам, а плаский kwarg поїхав би в розмітку як є.
+          button_to(
+            t("firmwares.row.order_evolution"),
+            deploy_firmware_path(firmware),
+            method: :post,
+            class: "text-emerald-500 hover:text-white border border-emerald-900 hover:border-emerald-500 px-4 py-1 uppercase text-mini tracking-widest transition-all group-hover:shadow-[0_0_10px_rgba(16,185,129,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+            aria: { label: t(".deploy_aria", version: firmware.version) },
+            data: { turbo_confirm: t("firmwares.row.confirm", version: firmware.version) }
+          )
         end
       end
     end

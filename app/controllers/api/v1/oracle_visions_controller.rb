@@ -5,7 +5,6 @@ module Api
   module V1
     class OracleVisionsController < BaseController
       before_action :authorize_forester!
-      before_action :authorize_admin!, only: [ :simulate ]
 
       # GET /oracle_visions
       def index
@@ -37,39 +36,17 @@ module Api
             }
           end
           format.html do
-            @clusters = acting_organization!.clusters.order(:name)
             render_dashboard(
               title: I18n.t("oracle_visions.index_title"),
               component: OracleVisions::Index.new(
                 visions: @visions,
                 emission_forecast: @scc_yield[:value],
                 forecast_measured: @scc_yield[:measured],
-                forecast_total: @scc_yield[:total],
-                clusters: @clusters,
-                current_user: current_user
+                forecast_total: @scc_yield[:total]
               )
             )
           end
         end
-      end
-
-      # POST /oracle_visions/simulate
-      def simulate
-        # [TENANT-ISOLATION]: cluster_id must belong to the caller's organization.
-        # SimulationWorker walks Trees by cluster_id without re-checking org, so an
-        # unguarded admin from org A could trigger a simulation against org B's
-        # cluster. `find` raises ActiveRecord::RecordNotFound which BaseController
-        # renders as 404 — keeping the response shape identical to other IDOR
-        # guards (e.g. firmware deploy).
-        cluster = acting_organization!.clusters.find(params[:cluster_id])
-
-        permitted_variables = params.permit(variables: [ :sigma, :rho, :beta ])[:variables]
-        job_id = SimulationWorker.perform_async(cluster.id, permitted_variables&.to_h)
-
-        render json: {
-          message: I18n.t("flash.oracle.simulation_started"),
-          job_id: job_id
-        }, status: :accepted
       end
 
       private

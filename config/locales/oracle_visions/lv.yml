@@ -7,18 +7,8 @@ lv:
       predicted_window: Prognozētais notikuma logs
       probability: "%{value}%"
     index:
-      active_simulations: Aktīvās simulācijas
       confidence: 'MI ticamība: %{value}'
       expected_yield: Prognozētā 24h emisija
       title: Stratēģiskās prognozes matrica
       yield_unit: SCC
     index_title: Oracle vīzijas // Nākotnes matrica
-    simulation_panel:
-      sector_option: 'Sektors: %{name}'
-      sliders:
-        humidity_drop: Mitruma kritums (%)
-        sap_flow_bias: Sulas plūsmas nobīde
-        temp_offset: Temp. nobīde (Δt)
-      submit: Izsaukt neirālo simulāciju
-      target_sector: Mērķa sektors
-      title: Simulācijas dzinējs // Un ja?

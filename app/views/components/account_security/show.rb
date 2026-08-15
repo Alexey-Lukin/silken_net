@@ -56,10 +56,9 @@ module AccountSecurity
           p(class: "text-tiny text-status-warning-text mb-4") { t(".password.not_set") }
         end
 
-        form(action: account_security_password_path, method: "post", class: "space-y-4") do
-          input(type: "hidden", name: "_method", value: "patch")
-          input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
-
+        # [UI.7] `form_with` без скоупу: контролер читає `params[:current_password]`
+        # та `[:new_password]` плоско, і жодне з цих імен не є атрибутом `User`.
+        form_with(url: account_security_password_path, method: :patch, class: "space-y-4") do
           render_password_error
 
           if @user.password_digest.present?
@@ -139,19 +138,27 @@ module AccountSecurity
       end
     end
 
+    # [UI.7] `button_to`, не рукописна `<form>`: обидві гілки — дія без вводу, тож
+    # форма була лише обгорткою. ⚠️ `form_class: "inline"` НЕСУЧИЙ: без нього
+    # `button_to` перезаписує клас самої `<form>` своїм дефолтним `"button_to"`,
+    # і кнопка втрачає інлайн-розкладку (прецедент — `Codex::Battle::Arena`).
     def render_lock_toggle(identity)
       if identity.locked?
-        form(action: unlock_account_security_identity_path(identity), method: "post", class: "inline") do
-          input(type: "hidden", name: "_method", value: "patch")
-          input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
-          button(type: "submit", class: "px-3 py-1 border border-emerald-900 text-micro text-emerald-700 uppercase hover:text-emerald-400 transition-all") { t(".identities.unlock") }
-        end
+        button_to(
+          t(".identities.unlock"),
+          unlock_account_security_identity_path(identity),
+          method: :patch,
+          form_class: "inline",
+          class: "px-3 py-1 border border-emerald-900 text-micro text-emerald-700 uppercase hover:text-emerald-400 transition-all"
+        )
       else
-        form(action: lock_account_security_identity_path(identity), method: "post", class: "inline") do
-          input(type: "hidden", name: "_method", value: "patch")
-          input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
-          button(type: "submit", class: "px-3 py-1 border border-status-warning text-micro text-status-warning-text uppercase hover:text-status-warning-text transition-all") { t(".identities.lock") }
-        end
+        button_to(
+          t(".identities.lock"),
+          lock_account_security_identity_path(identity),
+          method: :patch,
+          form_class: "inline",
+          class: "px-3 py-1 border border-status-warning text-micro text-status-warning-text uppercase hover:text-status-warning-text transition-all"
+        )
       end
     end
 
@@ -164,12 +171,17 @@ module AccountSecurity
       can_unlink = @user.password_digest.present? || @identities.count { |i| !i.locked? } > 1
 
       if can_unlink
-        form(action: account_security_identity_path(identity), method: "post", class: "inline") do
-          input(type: "hidden", name: "_method", value: "delete")
-          input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
-          button(type: "submit", class: "px-3 py-1 border border-red-900 text-micro text-red-700 uppercase hover:text-red-400 transition-all",
-                 data: { turbo_confirm: t(".identities.unlink_confirm", provider: identity.provider.titleize) }) { t(".identities.unlink") }
-        end
+        # [UI.7] `button_to` — див. ноту біля `render_lock_toggle`. `_method=delete`
+        # хелпер кладе сам, і саме він робить його ВАЛІДНИМ: у розмітці
+        # `method="delete"` — неіснуюче значення, браузер відкотився б на GET.
+        button_to(
+          t(".identities.unlink"),
+          account_security_identity_path(identity),
+          method: :delete,
+          form_class: "inline",
+          class: "px-3 py-1 border border-red-900 text-micro text-red-700 uppercase hover:text-red-400 transition-all",
+          data: { turbo_confirm: t(".identities.unlink_confirm", provider: identity.provider.titleize) }
+        )
       else
         span(class: "px-3 py-1 border border-gray-800 text-micro text-gray-700 uppercase cursor-not-allowed", title: t(".identities.unlink_disabled_title")) { t(".identities.unlink") }
       end

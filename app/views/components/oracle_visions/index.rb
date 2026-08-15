@@ -3,39 +3,32 @@
 
 module OracleVisions
   class Index < ApplicationComponent
-    # [UI.6] Сторінка відкрита forester+ (`authorize_forester!`), а `#simulate` стоїть
-    # за `authorize_admin!, only: [:simulate]` — тобто форестер бачив цілий пульт
-    # симуляції, заповнював його й діставав 403 у turbo-frame без пояснення. Дефолт
-    # `nil` fail-CLOSED.
     # [ARCH.84] Покриття — не оздоба: прогноз рахується лише по деревах із
     # виміряним стресом, тож без `measured`/`total` число мовчки видає себе за
     # твердження про ВЕСЬ ліс. Дефолти `nil` тримають компонент рендерабельним
     # для викликача, який покриття не передав (жоден живий такий не лишився).
-    def initialize(visions:, emission_forecast:, clusters:, current_user: nil,
+    #
+    # ⚖️ [UI.7, присуд founder 2026-08-15] Пульт симуляції знято ЦІЛКОМ разом із
+    # дією `#simulate`: фічі не існувало на ЖОДНОМУ ярусі — форма цілилась у `div`
+    # замість `<turbo-frame>` (Turbo мовчки ігнорує), контролер кликав
+    # `SimulationWorker`, якого в дереві немає, а імена повзунків
+    # (`variables[temp_offset]`…) не перетинались із permit-списком контролера
+    # (`:sigma/:rho/:beta`) — тобто навіть із живим воркером не доїхало б жодне
+    # значення. Разом пішла й стрічка `#simulation_results`: вічно порожня коробка
+    # з пульсуючою крапкою й підписом «активні симуляції» при нулі продюсерів.
+    # Той самий присуд, що в [UI.14]: коли виконавця немає, чесніше не обіцяти.
+    def initialize(visions:, emission_forecast:,
                    forecast_measured: nil, forecast_total: nil)
       @visions = visions
       @emission_forecast = emission_forecast
-      @clusters = clusters
-      @current_user = current_user
       @forecast_measured = forecast_measured
       @forecast_total = forecast_total
     end
 
     def view_template
-      div(class: "grid grid-cols-1 xl:grid-cols-3 gap-8 animate-in zoom-in duration-700") do
-        # ЛІВА ПАНЕЛЬ: Стрічка пророцтв
-        div(class: "xl:col-span-2 space-y-6") do
-          header_section
-          @visions.each { |vision| render OracleVisions::ForecastCard.new(insight: vision) }
-        end
-
-        # ПРАВА ПАНЕЛЬ: Пульт Симуляції
-        div(class: "space-y-6") do
-          # [UI.6] Пульт симуляції веде в `#simulate` (admin+), тож форестеру його не
-          # показуємо: стрічку прогнозів він бачить далі — вона під гардом сторінки.
-          render OracleVisions::SimulationPanel.new(clusters: @clusters) if @current_user&.admin_or_above?
-          render_active_simulations_feed
-        end
+      div(class: "space-y-6 animate-in zoom-in duration-700") do
+        header_section
+        @visions.each { |vision| render OracleVisions::ForecastCard.new(insight: vision) }
       end
     end
 
@@ -63,16 +56,6 @@ module OracleVisions
           coverage = measurement_coverage(@forecast_measured, @forecast_total)
           p(class: "text-micro text-status-warning-text font-mono mt-1") { coverage } if coverage
         end
-      end
-    end
-
-    def render_active_simulations_feed
-      div(id: "simulation_results", class: "space-y-4") do
-        div(class: "flex items-center gap-2 mb-4") do
-          div(class: "w-1 h-1 bg-emerald-500 rounded-full animate-ping")
-          h4(class: "text-tiny uppercase text-gray-600 tracking-widest") { t(".active_simulations") }
-        end
-        # Сюди Turbo Stream буде додавати результати симуляцій
       end
     end
   end

@@ -206,9 +206,7 @@ Rails.application.routes.draw do
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # ⊙ ВИДІННЯ ОРАКУЛА (Strategic Intelligence)
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    resources :oracle_visions, only: [ :index ] do
-      post :simulate, on: :collection
-    end
+    resources :oracle_visions, only: [ :index ]
 
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # ⛓️ БЕЗПЕКА ТА ЕТИКА (Integrity)

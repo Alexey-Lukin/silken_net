@@ -41,10 +41,13 @@ module Notifications
       div(class: "p-6 border border-emerald-900 bg-black") do
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".channels.heading") }
 
-        form(action: notifications_settings_path, method: "post", class: "space-y-6") do
-          input(type: "hidden", name: "_method", value: "patch")
-          input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
-
+        # [UI.7] `form_with` БЕЗ скоупу — і це найнебезпечніший сайт конверсії:
+        # поля (`phone_number`/`telegram_chat_id`/`push_token`) є колонками `User`,
+        # тож `model: current_user` виглядав би природно — а контролер читає їх
+        # ПЛОСКО (`params.permit(:phone_number…)`). Під `user[...]` permit віддав би
+        # `{}`, `update({})` повернув би **true**, і людина побачила б «збережено»
+        # при нулі збережень. Компонентні піни цього не бачать (голий `include`).
+        form_with(url: notifications_settings_path, method: :patch, class: "space-y-6") do
           # [SEC.25] Дзеркало `settings#update`: телефон не в E.164 дає 422, і доти
           # сторінка просто перемальовувалась із тим самим значенням у полі.
           render Views::Shared::UI::ErrorSummary.new(messages: @user.errors.full_messages)

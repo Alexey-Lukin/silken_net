@@ -80,8 +80,9 @@ module Api
         end
 
         # [SEC IDOR]: cluster_id надходить від клієнта — переконуємось, що він
-        # належить організації форестера (дзеркало firmwares#deploy /
-        # oracle_visions#simulate, які цей клас багу вже закрили). Без цього
+        # належить організації форестера (дзеркало firmwares#deploy, який цей клас
+        # багу вже закрив; сиблінг oracle_visions#simulate знято 2026-08-15 разом
+        # із мертвою фічею — [UI.7]). Без цього
         # форестер org-A провізіонить пристрій + HardwareKey + DID у кластер org-B.
         unless acting_organization!.clusters.exists?(id: provisioning_params[:cluster_id])
           # [SEC.25 Ф4] Досяжно БЕЗ підміни значення: `<select>` пропонує лише свої

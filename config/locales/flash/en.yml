@@ -43,8 +43,6 @@ en:
       record_updated: Record updated.
     notifications:
       updated: Notification settings updated.
-    oracle:
-      simulation_started: The Oracle has started the simulation.
     organizations:
       context_switched: 'Working context switched: %{name}.'
     provisioning:

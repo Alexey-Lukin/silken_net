@@ -181,7 +181,7 @@ POST /api/v1/auth/m2m_token
 - `spec/requests/api/v1/blockchain_transactions_controller_spec.rb` — enum allow-list для `status`/`token_type` (fail-fast)
 - `spec/requests/api/v1/firmwares_controller_spec.rb` — bytecode_payload size cap (422), `target_type` allow-list (400), cluster tenant guard (404)
 - `spec/requests/api/v1/maintenance_records_controller_spec.rb` — `authorize_record_mutation!` (403 для not-author, admin override); ISO8601 date validation (`from`/`to` → 400)
-- `spec/requests/api/v1/oracle_visions_controller_spec.rb` — cross-tenant scoping (polymorphic analyzable, per-org cache key); simulate cluster_id tenant guard
+- `spec/requests/api/v1/oracle_visions_controller_spec.rb` — cross-tenant scoping (polymorphic analyzable, per-org cache key)
 - `spec/requests/api/v1/telemetry_controller_spec.rb` — payload size cap (413), days cap clamp (365), non-numeric days fallback to default 7
 
 ---
@@ -232,7 +232,7 @@ POST /api/v1/auth/m2m_token
 >
 > Клас ширший за винятки, і на той момент лишався відкритим для решти **шести** (⚠️ тут доти стояло «п'яти» — арифметична помилка, що перекочувала з commit-меседжа й тиражувалась як цитата себе; перерахунок по коду 2026-07-31): `render_forbidden` досяжний зі звичайних before-action RBAC-гардів, `render_not_found` — з будь-якого `find`, а `render_internal_server_error` ловить `StandardError` на всьому дашборді. ⚠️ І ціна їхнього полагодження **не в самих рендерерах**: `base_controller_spec` будує контролер через `described_class.new` без Rails-диспетчера й стабить лише `render`, а `respond_to` лізе в `request.formats` — тож додавання HTML-гілки впаде там `NoMethodError` на nil, тобто вісім прикладів треба переписати на справжній HTTP. `render_unauthorized` закрився дешево саме тому, що прямого приклада в тому харнесі не мав узагалі. ✅ Обсяг закрито повністю — ✅-нота вище.
 >
-> ⚖️ **Обсяг звужено до ДВОХ гілок (founder 2026-07-31) — і вирішальним був не сам рендерер, а те, ЯК до нього доходять.** `render_forbidden`/`render_forbidden_pundit` мали **штатний** шлях: сайдбар показував усім ролям одинадцять гейтованих пунктів, тож 403-блоб діставався одним кліком по видимому меню. Роле-фільтр ([`04_04 §6.4`](04_04_Phlex_UI_and_Tailwind), UI.5) зняв його з МЕНЮ. ⚠️ **Тут доти стояло «тепер обидва досяжні хіба URL-хакінгом» — спростовано adversarial-виміром того ж дня:** гарди з `only:` сидять ГЛИБШЕ за дію пункту меню, тож видима сторінка й далі пропонує дію, недосяжну цій ролі. Три штатні кліки живі — admin → Species DNA → «Define DNA»/«Edit» (`authorize_super_admin!, only:` — блоб дістає навіть адмін), investor → «Acknowledge» на тривозі (`authorize_forester!, only: :resolve`), forester → «Simulate» (`authorize_admin!, only: :simulate`), — і корінь у них той самий, що був у меню: компонент сторінки не приймає користувача, тож фільтрувати дію нема чим. Лік теж той самий (сховати дію від ролі, якій вона недоступна), а не HTML-гілка — тож звуження до двох гілок лишається чинним, але його підстава ВУЖЧА, ніж записано: `render_forbidden` не став недосяжним, він став наступною ітерацією того самого фільтра → [`00_07`](00_07_Action_Plan_Tracker) UI.6. `render_validation_error` виміряно **живим** (сім прямих викликів у чотирьох контролерах), і всі вже всередині `format.json` — HTML-гілка йому не потрібна; ✅ його МЕРТВИЙ `rescue_from ActiveModel::ValidationError` знято 2026-08-01 (джерел винятку нуль — `validate!` у дереві не зустрічається; сам виняток несе `model`, а не `record`, тож хендлер упав би `NoMethodError` ще до рендера). ⚠️ **Сусіда `ActiveRecord::RecordInvalid` СВІДОМО не підвішено на цей хендлер**, хоч сигнатура збіглася б ідеально: він летить у `StandardError` → 500, і це правильно — контролери гардять користувацький ввід явно ДО bang-мутації, тож `RecordInvalid`, що долетів до бази, означає пропущений гард (наш баг), а мʼяка 422 замаскувала б його під помилку людини. `render_parameter_missing` — суто API-шлях. Лишаються **три** (⚖️ 2026-07-31, обсяг переглянуто після перевиміру): **`render_not_found`** (протухлий лінк), **`render_internal_server_error`** (будь-який прод-баг) і **`render_forbidden_pundit`** — останній додано саме виміром: `wallets`/`users` мають `authorize` І `format.html` на тих самих екшенах, тобто це money-поверхня з буденним тригером «super_admin відкрив гаманець org-A → перемкнув контекст → «назад» у браузері». `render_forbidden` тоді відкладено за [`UI.6`](00_07_Action_Plan_Tracker): він найдорожчий (7 прикладів проти 2–3 у решти), а його штатні шляхи знімає роле-фільтр самих дій — ✅ і закрито [UI.9] 2026-08-01, коли вимір показав, що асиметрія з pundit-близнюком жила для дванадцяти контролерів із класовим гардом. ⚠️ Ціна тут **пофайлова, не гуртова** — кожен рендерер має власний ізольований `describe`, і прецедент переписування на справжній HTTP уже стоїть у цьому ж файлі спеки (`коли організації немає`, `коли автентифікації немає`); усереднене «~8 крихких прикладів» ховало розкид у кілька разів і саме воно робило обсяг більшим, ніж робота. ✅ **ТРИ гілки шипнуто 2026-07-31, і остаточний перевимір ціни знову дав ВНИЗ: переписати довелось три приклади, не вісім** (у `base_controller_spec` кожен із цих рендерерів має рівно один, а «сімка» для `render_forbidden` — це чужий `describe "RBAC helpers"`). 🔴 Односторонність трьох перевимірювань поспіль важливіша за самі числа: щоразу завищена ціна ставала підставою відкласти. **Форма розводить рендерери по ШАБЛОНАХ, і це вимір, не смак:** `render_not_found` (31 із 43 `find`-сайтів досяжні з браузера) і `render_forbidden_pundit` (17 із 29 `authorize`-викликів) → `render_dashboard`, бо там глядач гарантовано автентифікований і навігація йому чесна; `render_internal_server_error` → `render_auth_page`, бо це ЄДИНИЙ, до якого є відтворюваний шлях із `current_user = nil` (CSRF-виняток летить ДО `authenticate_user!`), і його blast-radius — уся поверхня. ⚠️ **Компонент помилки свідомо не має власних `t()`:** він рендериться зсередини `rescue_from`, а `raise_on_missing_translations` робить забутий ключ винятком, якого Rails там уже не переловить — тобто сторінка помилки впала б від власної.
+> ⚖️ **Обсяг звужено до ДВОХ гілок (founder 2026-07-31) — і вирішальним був не сам рендерер, а те, ЯК до нього доходять.** `render_forbidden`/`render_forbidden_pundit` мали **штатний** шлях: сайдбар показував усім ролям одинадцять гейтованих пунктів, тож 403-блоб діставався одним кліком по видимому меню. Роле-фільтр ([`04_04 §6.4`](04_04_Phlex_UI_and_Tailwind), UI.5) зняв його з МЕНЮ. ⚠️ **Тут доти стояло «тепер обидва досяжні хіба URL-хакінгом» — спростовано adversarial-виміром того ж дня:** гарди з `only:` сидять ГЛИБШЕ за дію пункту меню, тож видима сторінка й далі пропонує дію, недосяжну цій ролі. Штатні кліки цього класу живі — admin → Species DNA → «Define DNA»/«Edit» (`authorize_super_admin!, only:` — блоб дістає навіть адмін) та investor → «Acknowledge» на тривозі (`authorize_forester!, only: :resolve`); третій, forester → «Simulate», зник разом із самою дією 2026-08-15 ([UI.7] — фічі не існувало на жодному ярусі), тож приклад лишається як ФОРМА класу, не як живий шлях, — і корінь у них той самий, що був у меню: компонент сторінки не приймає користувача, тож фільтрувати дію нема чим. Лік теж той самий (сховати дію від ролі, якій вона недоступна), а не HTML-гілка — тож звуження до двох гілок лишається чинним, але його підстава ВУЖЧА, ніж записано: `render_forbidden` не став недосяжним, він став наступною ітерацією того самого фільтра → [`00_07`](00_07_Action_Plan_Tracker) UI.6. `render_validation_error` виміряно **живим** (сім прямих викликів у чотирьох контролерах), і всі вже всередині `format.json` — HTML-гілка йому не потрібна; ✅ його МЕРТВИЙ `rescue_from ActiveModel::ValidationError` знято 2026-08-01 (джерел винятку нуль — `validate!` у дереві не зустрічається; сам виняток несе `model`, а не `record`, тож хендлер упав би `NoMethodError` ще до рендера). ⚠️ **Сусіда `ActiveRecord::RecordInvalid` СВІДОМО не підвішено на цей хендлер**, хоч сигнатура збіглася б ідеально: він летить у `StandardError` → 500, і це правильно — контролери гардять користувацький ввід явно ДО bang-мутації, тож `RecordInvalid`, що долетів до бази, означає пропущений гард (наш баг), а мʼяка 422 замаскувала б його під помилку людини. `render_parameter_missing` — суто API-шлях. Лишаються **три** (⚖️ 2026-07-31, обсяг переглянуто після перевиміру): **`render_not_found`** (протухлий лінк), **`render_internal_server_error`** (будь-який прод-баг) і **`render_forbidden_pundit`** — останній додано саме виміром: `wallets`/`users` мають `authorize` І `format.html` на тих самих екшенах, тобто це money-поверхня з буденним тригером «super_admin відкрив гаманець org-A → перемкнув контекст → «назад» у браузері». `render_forbidden` тоді відкладено за [`UI.6`](00_07_Action_Plan_Tracker): він найдорожчий (7 прикладів проти 2–3 у решти), а його штатні шляхи знімає роле-фільтр самих дій — ✅ і закрито [UI.9] 2026-08-01, коли вимір показав, що асиметрія з pundit-близнюком жила для дванадцяти контролерів із класовим гардом. ⚠️ Ціна тут **пофайлова, не гуртова** — кожен рендерер має власний ізольований `describe`, і прецедент переписування на справжній HTTP уже стоїть у цьому ж файлі спеки (`коли організації немає`, `коли автентифікації немає`); усереднене «~8 крихких прикладів» ховало розкид у кілька разів і саме воно робило обсяг більшим, ніж робота. ✅ **ТРИ гілки шипнуто 2026-07-31, і остаточний перевимір ціни знову дав ВНИЗ: переписати довелось три приклади, не вісім** (у `base_controller_spec` кожен із цих рендерерів має рівно один, а «сімка» для `render_forbidden` — це чужий `describe "RBAC helpers"`). 🔴 Односторонність трьох перевимірювань поспіль важливіша за самі числа: щоразу завищена ціна ставала підставою відкласти. **Форма розводить рендерери по ШАБЛОНАХ, і це вимір, не смак:** `render_not_found` (31 із 43 `find`-сайтів досяжні з браузера) і `render_forbidden_pundit` (17 із 29 `authorize`-викликів) → `render_dashboard`, бо там глядач гарантовано автентифікований і навігація йому чесна; `render_internal_server_error` → `render_auth_page`, бо це ЄДИНИЙ, до якого є відтворюваний шлях із `current_user = nil` (CSRF-виняток летить ДО `authenticate_user!`), і його blast-radius — уся поверхня. ⚠️ **Компонент помилки свідомо не має власних `t()`:** він рендериться зсередини `rescue_from`, а `raise_on_missing_translations` робить забутий ключ винятком, якого Rails там уже не переловить — тобто сторінка помилки впала б від власної.
 
 ### 2.2а Контракт відповіді на МУТАЦІЮ (браузерний контур) [SEC.25]
 
@@ -315,7 +315,7 @@ POST /api/v1/auth/m2m_token
 |---|---|---|
 | `investor` | Інвестор (за замовчуванням для OAuth) | Читання фінансових даних своєї організації |
 | `forester` | Лісник | + Provisioning, Actuators, Maintenance Records, Oracle Visions. Метод `forest_commander?` (User) охоплює `forester` + `admin` + `super_admin` |
-| `admin` | Адміністратор організації | + Firmwares, TreeFamilies, Settings, AuditLogs, SystemHealth, Users, Simulate |
+| `admin` | Адміністратор організації | + Firmwares, TreeFamilies, Settings, AuditLogs, SystemHealth, Users |
 | `super_admin` | Суперадміністратор | + Organizations (реєстр усіх організацій) + перемикання acting-організації + системний аудит-ланцюг. **Дані бачить рівно тієї організації, в контексті якої працює** — як і всі. |
 
 Формула «`admin` ∪ `super_admin`» має ОДИН дім — `User#admin_or_above?`. Її читають три
@@ -555,7 +555,6 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | 66 | DELETE | `/maintenance_records/:maintenance_record_id/photos/:id` | `maintenance_record_photos#destroy` | 🌿 Forester | Видалити фото. **Тільки автор або admin+** [UI.6] — доти гарда не було зовсім, хоч шлях мутує той самий запис, що рядки 63/64 |
 | **⊙ Оракул (AI Insights)** | | | | | |
 | 67 | GET | `/oracle_visions` | `oracle_visions#index` | 🌿 Forester | AI-прогнози та SCC-врожайність |
-| 68 | POST | `/oracle_visions/simulate` | `oracle_visions#simulate` | 👑 Admin | Запустити Lorenz-симуляцію |
 | **⛓️ Блокчейн** | | | | | |
 | 69 | GET | `/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій. Query: `?token_type=` (allow-list з `BlockchainTransaction.token_types.keys`: `carbon_coin`, `forest_coin`, `cusd`), `?status=` (allow-list з `.statuses.keys`). Невідомі значення → `400 Bad Request`. **Провенанс — ДВА поля, не одне** [ARCH.98/ARCH.101]: `tree_did` ⊥ `cluster_name`, бо cluster-sourced рухи гаманця не мають за побудовою, тож `tree_did` для них `null` — і HTML-комірка «Джерело» читає ту саму пару (розходження форматів = клас [`ARCH.90`](00_07_Action_Plan_Tracker)). |
 | 70 | GET | `/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції. Та сама пара провенансу: `cluster_name` + `wallet` (з деревом) |
@@ -1192,35 +1191,6 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 ---
 
-### 5.10 POST `/oracle_visions/simulate` — Lorenz Симуляція
-
-**Доступ:** Роль `admin`.
-
-**Request Body:**
-
-```json
-{
-  "cluster_id": 7,
-  "variables": {
-    "sigma": 10,
-    "rho": 28,
-    "beta": 2.6667
-  }
-}
-```
-
-**Success Response `202 Accepted`:**
-
-```json
-{
-  "message": "Оракул почав симуляцію.",
-  "job_id": "abc123def456789abc123def"
-}
-```
-
-> **`job_id`** — це Sidekiq JID (рядок ~24 hex-символи), а не числовий id. Використовується для відстеження статусу симуляції.
-
-> **🔒 Tenant Guard:** `cluster_id` MUST належати організації caller-а. SimulationWorker обходить дерева кластера без повторної перевірки org, тому admin з org A раніше міг тригернути симуляцію проти кластера org B. Тепер контролер виконує `current_user.organization.clusters.find(params[:cluster_id])` → `404 Not Found` при невідповідності.
 
 ---
 

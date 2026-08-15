@@ -43,8 +43,6 @@ lt:
       record_updated: Įrašas atnaujintas.
     notifications:
       updated: Pranešimų nustatymai atnaujinti.
-    oracle:
-      simulation_started: Oracle pradėjo simuliaciją.
     organizations:
       context_switched: 'Darbo kontekstas perjungtas: %{name}.'
     provisioning:

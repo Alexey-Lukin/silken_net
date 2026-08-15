@@ -7,18 +7,8 @@ lt:
       predicted_window: Prognozuojamas įvykio langas
       probability: "%{value}%"
     index:
-      active_simulations: Aktyvios simuliacijos
       confidence: 'DI pasitikėjimas: %{value}'
       expected_yield: Prognozuojama 24h emisija
       title: Strateginių prognozių matrica
       yield_unit: SCC
     index_title: Oracle vizijos // Ateities matrica
-    simulation_panel:
-      sector_option: 'Sektorius: %{name}'
-      sliders:
-        humidity_drop: Drėgmės kritimas (%)
-        sap_flow_bias: Sulų srauto poslinkis
-        temp_offset: Temp. poslinkis (Δt)
-      submit: Iškviesti neuralinę simuliaciją
-      target_sector: Tikslinis sektorius
-      title: Simuliacijos variklis // Kas jei?

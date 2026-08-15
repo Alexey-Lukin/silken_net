@@ -203,14 +203,6 @@ module BrowserContourRegistry
               "фільтрує `where.not(lifecycle_status: destroyed/extinct)`, тож такий вузол просто не " \
               "показується. Отже реальний залишок — ГОНКА: вузол помирає між рендером пікера й сабмітом",
         back: "`#picker` перестане фільтрувати `lifecycle_status`, або зʼявиться другий шлях сабміту повз нього"
-      },
-      "app/controllers/api/v1/oracle_visions_controller.rb#simulate" => {
-        why:  "підвид (б), єдиний такий: UI-джерело ІСНУЄ і рендериться адмінам " \
-              "(`OracleVisions::SimulationPanel` з `oracle_visions/index`), а недосяжність тримається " \
-              "виключно на `SimulationWorker`, якого немає в дереві — клік дає NameError→500 ще ДО " \
-              "цього рядка. Голий сайт стоїть на шляху УСПІХУ, тож щойно воркер зʼявиться, адмін " \
-              "дістане сирий блоб у Turbo Frame. Дім присуду «будувати чи зняти» — UI.7",
-        back: "поява `SimulationWorker` — раніше за будь-яке рішення про UI"
       }
     }.freeze
 

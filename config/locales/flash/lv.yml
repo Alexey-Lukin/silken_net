@@ -43,8 +43,6 @@ lv:
       record_updated: Ieraksts atjaunināts.
     notifications:
       updated: Paziņojumu iestatījumi atjaunināti.
-    oracle:
-      simulation_started: Oracle ir sācis simulāciju.
     organizations:
       context_switched: 'Darba konteksts pārslēgts: %{name}.'
     provisioning:

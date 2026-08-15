@@ -105,7 +105,7 @@ ApplicationComponent (Phlex::HTML)
     ├── wallets/                # Баланс, журнал транзакцій, lazy-фрейми
     ├── alerts/                 # EWS-тривоги
     ├── telemetry/              # Live-HUD, декодований рядок пакета
-    ├── oracle_visions/         # Прогноз Лоренца, what-if симуляція
+    ├── oracle_visions/         # Прогноз Лоренца (AI-інсайти)
     ├── clusters/               # Кластери дерев
     ├── gateways/               # Королеви (шлюзи)
     ├── actuators/              # Виконавчі механізми + черга команд
@@ -708,9 +708,8 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 
 | Компонент | Файл | Props | Опис |
 |---|---|---|---|
-| `OracleVisions::Index` | `oracle_visions/index.rb` | `visions:`, `emission_forecast:`, `clusters:`, `current_user: nil` | Список AI-прогнозів + панель симуляції (остання — лише `admin_or_above?`, [UI.6] fail-closed) |
+| `OracleVisions::Index` | `oracle_visions/index.rb` | `visions:`, `emission_forecast:`, `forecast_measured: nil`, `forecast_total: nil` | Список AI-прогнозів + заголовок із очікуваним врожаєм і підписом покриття [ARCH.84] |
 | `OracleVisions::ForecastCard` | `oracle_visions/forecast_card.rb` | `insight:` | Окрема картка прогнозу атрактора Лоренца. ⚠️ Футер із кнопками `Deploy Shield`/`Ignore` знято [UI.7] 2026-08-06 — бекенду під ними не існувало (слова «shield» немає в жодній моделі/сервісі; `AiInsight` не має ні `dismissed_at`, ні скоупа) |
-| `OracleVisions::SimulationPanel` | `oracle_visions/simulation_panel.rb` | `clusters:` | What-If форма симуляції з повзунками діапазону; надсилає до `simulate_oracle_visions_path` у Turbo Frame |
 
 #### Firmware OTA
 
@@ -768,7 +767,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Provisioning` | `New` | `hardware_key:` (`Success` знято 2026-08-03 — мертвий компонент, нуль рендерерів; історія його `@device.did`-бага лишається в §11) |
 | `AccountSecurity` | `Show` | `user:` |
 | `Notifications` | `Settings` | `settings:` |
-| `Settings` | `Show` | `organization:` — налаштування тенанта. 🔴 **Рукописна `form(action: settings_path, method: "post")` з hidden `_method=patch` і РУКОПИСНИМ `authenticity_token`** — тобто рівно той тракт, де клас UI.7 уже стріляв, коли токен забули зовсім; тут він явний, і саме тому цю форму пінить браузерний приклад окремо від `form_with`-механізму ([`04_06 §B.1.4`](04_06_Testing_Guide_and_Coverage)). Причини відмови їдуть через `Views::Shared::UI::ErrorSummary` з `@organization.errors` — окремого kwarg'а немає, помилки приїжджають на самому записі |
+| `Settings` | `Show` | `organization:` — налаштування тенанта. ✅ **`form_with(url: settings_path, method: :patch, multipart: true)`** — рукописну форму знято 2026-08-15 разом з усім класом (⚖️ UI.7, 11→0; носій — `phlex_no_handwritten_form_spec`, заборона з нульовим винятком). ⚠️ **`multipart: true` тут ЯВНИЙ і несучий:** авто-детект `form_with` спрацьовує на білдерному `f.file_field`, а логотип — сирий `input(type: "file")`, тож без цього аргумента `enctype` згорнувся б у `urlencoded` і файл приїхав би РЯДКОМ з іменем. ⚠️ І `model:`-форма тут заборонена не префіксом (він якраз збігається з `params.require(:organization)`), а МАРШРУТОМ: вона вивела б `organization_path`, для якого PATCH-роуту не існує. Браузерний приклад пінить цю форму окремо ([`04_06 §B.1.4`](04_06_Testing_Guide_and_Coverage)) — і саме він довів конверсію на справжньому Chrome. Причини відмови їдуть через `Views::Shared::UI::ErrorSummary` з `@organization.errors` — окремого kwarg'а немає, помилки приїжджають на самому записі |
 | `Sessions` | `New` | `flash_alert:` — рендериться через `AuthLayout`. 🔴 **Це ІНШЕ дієслово, ніж `FlashMessages` (§1), і паралельність тут свідома:** kwarg несе помилку **поточного сабміту** (401/429), яку сторінка показує НА МІСЦІ зі збереженим статусом і біля поля, що його треба перевводити; `FlashMessages` натомість несе повідомлення, яке **пережило редирект**. Плутати їх не можна в жоден бік: flash на 401 вимагав би редиректу (відкинуто — [`00_07`](00_07_Action_Plan_Tracker) SEC.25), а kwarg після редиректу не заповнює ніхто. ⚠️ `flash_notice:` знято 2026-08-03 — нуль викликачів у дереві, гілку тримала лише власна спека [SEC.25] |
 | `Passwords` | `Forgot`, `Reset` | `Reset` — `token:` + `flash_alert:` (валідація нового пароля: `too_short`/`mismatch`, 422 на місці; та сама inline-форма, що в `Sessions::New`). ⚠️ `Forgot` kwarg'ів **не має взагалі** — обидва його шляхи (rate-limit, протермінований токен) приходять **редиректом**, тож повідомлення несе `FlashMessages`; доти компонент мав обидва kwarg'и й чесно їх рендерив при нулі викликачів [SEC.25] |
 | `Errors` | `NoOrganization` | `current_user:` (fail-closed `nil`) — Quarantine-сторінка для користувачів без організації, рендериться через `AuthLayout`. ⚠️ Це не рідкісний кут, а **перший екран платформеного адміністратора**: за seeds обидва super_admin без організації, логін веде на `dashboard#index`, той кличе `acting_organization!`. Тому другий абзац і вихід роле-залежні [UI.6]: «зверніться до адміністратора» адресовано тому, кого забули додати, а super_admin і є той адміністратор — йому потрібен реєстр кланів, а не порада. Для решти ролей лінка немає й по суті: реєстр за `authorize_super_admin!` |
@@ -1097,7 +1096,6 @@ Turbo::StreamsChannel.broadcast_replace_later_to(
 |---|---|---|
 | `wallet_balance_frame_{id}` | `Wallets::Show` | `balance_wallet_path(@wallet)` |
 | `wallet_metadata_frame_{id}` | `Wallets::Show` | `metadata_wallet_path(@wallet)` |
-| `simulation_results` | `OracleVisions::SimulationPanel` | Turbo form target |
 
 **Патерн Skeleton:**
 

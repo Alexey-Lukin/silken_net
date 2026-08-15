@@ -16,9 +16,9 @@ module Passwords
         div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10") do
           render_header
 
-          form(action: forgot_password_path, method: "post", class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do
-            input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
-
+          # [UI.7] `form_with`, не рукописна `<form>`: токен приходить сам.
+          # Скоупу НЕМА свідомо — `passwords#create` читає `params[:email]` плоско.
+          form_with(url: forgot_password_path, method: :post, class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do
             div(class: "space-y-6") do
               field_container(t(".email_label")) do
                 input(type: "email", name: "email", class: input_classes, placeholder: "architect@silken.net", required: true)

@@ -15,9 +15,10 @@ module Passwords
         div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10") do
           render_header
 
-          form(action: reset_password_path, method: "post", class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do
-            input(type: "hidden", name: "_method", value: "patch")
-            input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
+          # [UI.7] `form_with`: токен і `_method=patch` приходять самі.
+          # Скоупу НЕМА — контролер читає `params[:token]`/`[:password]` плоско,
+          # ба більше: `token` узагалі не є атрибутом `User`.
+          form_with(url: reset_password_path, method: :patch, class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do
             input(type: "hidden", name: "token", value: @token)
 
             render_flash_messages

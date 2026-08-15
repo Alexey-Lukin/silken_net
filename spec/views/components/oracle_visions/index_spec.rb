@@ -19,25 +19,17 @@ RSpec.describe OracleVisions::Index do
     )
   end
 
-  def mock_cluster(id:, name:)
-    c = OpenStruct.new(id: id, name: name)
-    c.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    c.define_singleton_method(:to_key) { [ id ] }
-    c.define_singleton_method(:to_param) { id.to_s }
-    c
-  end
 
-  def render_component(visions:, emission_forecast:, clusters:, forecast_measured: nil, forecast_total: nil)
+  def render_component(visions:, emission_forecast:, forecast_measured: nil, forecast_total: nil)
     ApplicationController.renderer.render(
-      component_class.new(visions: visions, emission_forecast: emission_forecast, clusters: clusters,
+      component_class.new(visions: visions, emission_forecast: emission_forecast,
                           forecast_measured: forecast_measured, forecast_total: forecast_total),
       layout: false
     )
   end
 
-  let(:clusters) { [ mock_cluster(id: 1, name: "Carpathian-Alpha") ] }
   let(:visions) { [ mock_insight, mock_insight(insight_type: "biodiversity_trend", probability_score: 88) ] }
-  let(:html) { render_component(visions: visions, emission_forecast: "12.45", clusters: clusters) }
+  let(:html) { render_component(visions: visions, emission_forecast: "12.45") }
 
   describe "header section" do
     it "renders the Strategic Forecast Matrix heading" do
@@ -70,7 +62,7 @@ RSpec.describe OracleVisions::Index do
     # покриття число мовчки видає себе за твердження про весь ліс — а мовчазний
     # відкид невиміряних і є той «відбір», який місія забороняє (`00_01 §1.1`).
     it "declares the coverage when only part of the fleet was measured" do
-      rendered = render_component(visions: visions, emission_forecast: "12.45", clusters: clusters,
+      rendered = render_component(visions: visions, emission_forecast: "12.45",
                                   forecast_measured: 3, forecast_total: 10)
 
       expect(rendered).to include(I18n.t("ui.measurement.coverage", measured: 3, total: 10))
@@ -79,7 +71,7 @@ RSpec.describe OracleVisions::Index do
     # ⊥ Ліхтар: на ПОВНОМУ покритті рядок мовчить — інакше пін вище був би зелений
     # за будь-якої поведінки, а екран ніс би шум там, де твердження повне.
     it "stays silent when the whole fleet was measured" do
-      rendered = render_component(visions: visions, emission_forecast: "12.45", clusters: clusters,
+      rendered = render_component(visions: visions, emission_forecast: "12.45",
                                   forecast_measured: 10, forecast_total: 10)
 
       expect(rendered).not_to include(I18n.t("ui.measurement.coverage", measured: 10, total: 10))
@@ -105,19 +97,9 @@ RSpec.describe OracleVisions::Index do
     end
   end
 
-  describe "simulation_results container" do
-    it "renders the simulation_results div" do
-      expect(html).to include('id="simulation_results"')
-    end
-
-    it "renders the Active Simulations label" do
-      expect(html).to include("Active Simulations")
-    end
-  end
-
   describe "empty visions list" do
     it "renders without errors when visions is empty" do
-      html = render_component(visions: [], emission_forecast: "0.00", clusters: clusters)
+      html = render_component(visions: [], emission_forecast: "0.00")
       expect(html).to include("Strategic Forecast Matrix")
     end
   end
