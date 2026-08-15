@@ -375,5 +375,24 @@ class UnpackTelemetryWorker
     )
 
     Turbo::StreamsChannel.broadcast_remove_to(stream, target: "feed_placeholder")
+  rescue StandardError => e
+    # [UI.4] Прикраса екрана НЕ сміє вбити КОНВЕРТ — і ціна тут інша, ніж у
+    # money-path-дзеркала (`BlockchainTransaction#broadcast_new_transaction`,
+    # звідки взято форму). Там втрачається пульс UI; тут виклик стоїть у
+    # `perform` **перед** `TelemetryUnpackerService.call`, а зовнішній
+    # `rescue StandardError` виняток не ковтає, а **перекидає** його (`raise e`)
+    # заради Sidekiq-retry. Тобто броадкаст, що падає стабільно (Solid Cable,
+    # рендер компонента, кабель), робить батч таким, що **ніколи не
+    # розпакується**: ретраї вичерпуються, і найдорожчі дані платформи лягають
+    # у dead set — на черзі №1.
+    #
+    # ⚠️ Асиметрію створив той самий прохід, що роздавав ізоляцію: він узяв
+    # `prepend`+плейсхолдер САМЕ звідси, а `rescue` дав лише двом продюсерам
+    # `BlockchainTransaction`. Тобто зразок скопіювали, а захист — ні.
+    #
+    # Стеля названа: втрачений кадр стрічки не повторюється — глядач побачить
+    # телеметрію після перезавантаження, бо самі рядки в БД уже є (їх пише
+    # `TelemetryUnpackerService`, який тепер виконується незалежно від UI).
+    Rails.logger.warn "📡 [UI.4] broadcast_to_matrix #{gateway.uid}: #{e.class}: #{e.message}"
   end
 end

@@ -70,6 +70,43 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       expect(Turbo::StreamsChannel).not_to have_received(:broadcast_prepend_to).with("telemetry_stream", anything)
     end
 
+    # 🔴 [UI.4] Найдорожча вісь цього воркера, і доти вона не мала піна взагалі.
+    #
+    # `broadcast_to_matrix` стоїть у `perform` ПЕРЕД `TelemetryUnpackerService`,
+    # а зовнішній `rescue StandardError` виняток не ковтає — він ПЕРЕКИДАЄ його
+    # заради Sidekiq-retry. Тобто броадкаст, що падає стабільно (Solid Cable,
+    # рендер компонента, кабель), робив батч таким, що НІКОЛИ не розпакується:
+    # ретраї вичерпувались, і найдорожчі дані платформи лягали в dead set — на
+    # черзі №1. Ізоляція тепер є, і ці два приклади її тримають.
+    context "when the live-feed broadcast fails [UI.4]" do
+      before do
+        allow(Turbo::StreamsChannel)
+          .to receive(:broadcast_prepend_to)
+          .and_raise(StandardError, "solid cable down")
+      end
+
+      it "still unpacks the batch — UI decoration must not cost the envelope" do
+        raw_data = "TELEMETRY_SURVIVES_DEAD_CABLE"
+        encoded = Base64.strict_encode64(encrypt_payload(raw_data, key_record.binary_key))
+
+        expect { described_class.new.perform(encoded, "10.0.0.1", gateway.uid) }.not_to raise_error
+
+        expect(TelemetryUnpackerService).to have_received(:call)
+          .with(anything, gateway.id, gateway_attested: false)
+      end
+
+      # Ізоляція мусить бути ЧУТНОЮ: мовчазний `rescue` тут перетворив би
+      # зламану стрічку на «фічу, якої ніхто не помітив».
+      it "says so in the log instead of failing silently" do
+        allow(Rails.logger).to receive(:warn)
+        encoded = Base64.strict_encode64(encrypt_payload("X", key_record.binary_key))
+
+        described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
+
+        expect(Rails.logger).to have_received(:warn).with(/\[UI\.4\] broadcast_to_matrix/)
+      end
+    end
+
     # «Краще без live-стрічки, ніж у глобальний ефір» — але ЗБЕРЕЖЕННЯ мусить
     # тривати. Без другого асершна перенесення гарду в `perform` тихо з'їло б
     # телеметрію осиротілих кластерів, а приклад лишився б зеленим.
