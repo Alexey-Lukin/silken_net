@@ -29,7 +29,7 @@
   params: {}
 
 - name: weekly-attunement-streak
-  node_slug: protocol-acoustic-cavitation
+  node_slug: protocol-ultrasonic-cavitation
   condition_type: attunement_streak_days
   threshold_value: 7
   active: true
@@ -41,12 +41,3 @@
   threshold_value: 5
   active: true
   params: {}
-
-- name: long-observer
-  node_slug: roots-darwin-brain
-  condition_type: tree_observation_minutes
-  threshold_value: 600   # 10 hours
-  active: true
-  params:
-    window_days: 30
-    effective_period_minutes: 5

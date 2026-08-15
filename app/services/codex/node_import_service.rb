@@ -6,7 +6,8 @@ require "yaml"
 # Codex::NodeImportService — idempotent UPSERT of Codex::Node + Codex::Realm
 # seed records from YAML files at db/seeds/codex/.
 #
-# Why a service: Phase 1 ships 79 lore-records as YAML for diff-friendly PRs.
+# Why a service: the lore corpus ships as YAML for diff-friendly PRs (кількість
+# читається з `db/seeds/codex/nodes/`, не з цього рядка).
 # Production seeding runs `db/seeds.rb` which calls this service after the
 # User/Organization seeds. Re-running is safe — every record is keyed by
 # its stable `slug`, and counters / battle state / counter caches are

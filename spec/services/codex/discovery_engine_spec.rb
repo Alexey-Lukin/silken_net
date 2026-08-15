@@ -121,16 +121,18 @@ RSpec.describe Codex::DiscoveryEngine, type: :service do
                params: { "window_days" => 30, "effective_period_minutes" => 5 })
       end
 
-      it "fires when enough telemetry logs exist within the window" do
-        2.times { create(:telemetry_log, tree: tree) }
+      # 🔴 [2026-08-15] Адаптер ВИМКНЕНО, і пін мусить стерегти саме це.
+      # Доти тут стояло «fires when enough telemetry logs exist» — тобто спека
+      # цементувала брехню: правило звалось «long-observer» і стверджувало, що
+      # КОРИСТУВАЧ спостерігав, а міряло `count(телеметрії ОРГАНІЗАЦІЇ) × 5 хв`.
+      # Людина, яка жодного разу не відкривала застосунок, діставала бейдж,
+      # щойно флот її організації надсилав достатньо пакетів.
+      it "never fires — the adapter measured the ORG's fleet, not the user" do
+        10.times { create(:telemetry_log, tree: tree) }
         result = described_class.evaluate(user: user, trigger_type: :telemetry_observation)
-        expect(result).to contain_exactly(node)
-      end
-
-      it "does not fire when logs are below threshold" do
-        create(:telemetry_log, tree: tree) # 1 * 5 = 5 < 10
-        result = described_class.evaluate(user: user, trigger_type: :telemetry_observation)
-        expect(result).to eq([])
+        expect(result).to eq([]),
+          "адаптер знову щось стверджує про спостереження користувача — перечитай " \
+          "ноту в `discovery_engine.rb`: без per-user observation log бейдж не має джерела"
       end
     end
 

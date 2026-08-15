@@ -13,7 +13,7 @@ module Api
                     .by_lifecycle(params[:lifecycle_status])
                     .by_archetype(params[:archetype])
                     .search_title(params[:q])
-                    .ordered_by_elo
+                    .curated_order
                     .includes(:realm, cover_image_attachment: :blob)
 
           @pagy, @nodes = pagy(scope, limit: 21)

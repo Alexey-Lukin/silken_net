@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-# Codex::Node — central lore entity. Hosts all 79 seed records (ecosystems,
+# Codex::Node — central lore entity. Hosts the seed corpus (ecosystems,
 # unique trees, protocols, mythos) as well as DAO/community submissions.
 #
 # Identity:
@@ -144,7 +144,20 @@ module Codex
     scope :by_lifecycle, ->(status) {
       where(lifecycle_status: lifecycle_statuses[status]) if status.present? && lifecycle_statuses.key?(status.to_s)
     }
-    scope :ordered_by_elo, -> { order(attunement_elo: :desc, id: :asc) }
+scope :ordered_by_elo, -> { order(attunement_elo: :desc, id: :asc) }
+
+# 🔴 [UI/місія 2026-08-15] Каталог знань упорядковує КУРАТОР, не гра.
+# Доти `nodes#index` сортувався `ordered_by_elo`, тобто читач Атласу бачив
+# першими вузли, що виграли більше естетичних дуелей в Арені. Elo чесно
+# відповідає на «звідки ти це знаєш» лише як «зі смакових кліків», тож
+# ранжувати ним енциклопедію про реальні біоми, названі дерева й
+# біопротоколи — це те саме «твердження без виміру», проти якого стоїть
+# зворотний тест місії (`00_01 §1.1`). ⚠️ Ланцюг був гірший за самий факт:
+# `EloRecomputeWorker` має `retry: 3` з адитивним `update_all` без
+# ідемпотентності ([ARCH.59]), тож число, яке курувало каталог, могло тихо
+# розійтися з сумою матчів. `codex_uid` — людиноприсвоєний послідовний
+# лічильник у межах realm'у (ADR-CDX-1), тобто саме курований порядок.
+scope :curated_order, -> { order(:codex_uid) }
 
     # ----- Helpers -------------------------------------------------------
     def title(locale = I18n.locale)

@@ -84,22 +84,20 @@ module Codex
     # ------------------------------------------------------------------
 
     ADAPTERS = {
-      tree_observation_minutes: ->(user, rule, _payload) {
-        # Approximation: count distinct minutes in the last 30 d in
-        # which any tree owned by the user's org emitted telemetry
-        # (Wallet is org-scoped, not user-scoped — see Wallet model).
-        # We don't track per-user observation time precisely (would
-        # require a side log); the proxy is `count(rows) × effective_period_minutes`.
-        return false if user.organization_id.blank?
-        window  = (rule.params["window_days"] || 30).to_i.days.ago
-        per_log = (rule.params["effective_period_minutes"] || 5).to_i
-        observed_logs = TelemetryLog
-                          .where("telemetry_logs.created_at >= ?", window)
-                          .joins(tree: :wallet)
-                          .where(wallets: { organization_id: user.organization_id })
-                          .count
-        observed_logs * per_log >= rule.threshold_value
-      },
+# 🔴 [2026-08-15] ВИМКНЕНО, доки не зʼявиться справжній вимір.
+# Правило звалось «long-observer» і стверджувало, що КОРИСТУВАЧ
+# спостерігав 10 годин. Міряло ж воно `count(телеметрії ОРГАНІЗАЦІЇ)
+# × 5 хв` — тобто бейдж діставався тому, хто ЖОДНОГО разу не відкривав
+# застосунок, щойно флот його організації надсилав 120 пакетів. Код
+# визнавав це сам («We don't track per-user observation time precisely»),
+# а `PresenceTracker`, який мав дати чесний вимір, не має писача жодного
+# за історію репо. Це «твердження без виміру» (зворотний тест місії,
+# `00_01 §1.1`) — ще й твердження про поведінку ЛЮДИНИ, виведене з
+# поведінки машин.
+# ⚠️ Глушимо АДАПТЕР, не лише сідове правило: `condition_type` лишається
+# в enum, тож admin-CRUD відтворив би брехню одним POST'ом. Умова
+# відкликання — поява per-user observation log.
+tree_observation_minutes: ->(_user, _rule, _payload) { false },
 
       match_count: ->(user, rule, _payload) {
         scope = ::Codex::Match.where(user_id: user.id)

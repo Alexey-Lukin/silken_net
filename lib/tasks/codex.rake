@@ -5,7 +5,8 @@
 # 📖 CODEX — Production-safe lore seeding
 # = =====================================================================
 # Exposes the idempotent `Codex::NodeImportService` as a rake task so the
-# 4 realms + 79 lore nodes can be loaded into a production database via
+# The seed corpus (realms + lore nodes — кількість читається з
+# `db/seeds/codex/`, не з цього рядка) can be loaded into production via
 # the deployment pipeline without ever invoking the destructive
 # `db/seeds.rb`.
 #

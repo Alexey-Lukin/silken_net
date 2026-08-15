@@ -154,13 +154,33 @@ archetype_key` замість наслідування. Додавання 5-г�
 
 ### ADR-CDX-7 — Discovery gated by presence, fail-open
 
-`Codex::DiscoveryProbeWorker.perform_async` викликається з трьох місць:
+`Codex::DiscoveryProbeWorker.perform_async` викликається з **ЧОТИРЬОХ** місць:
 `EloRecomputeWorker` (milestone матчу), `FractionChangeService` (вибір фракції),
-`AttunementsController#create` (streak attunement). Усі три —
-**fail-open**: збій enqueue у Sidekiq НЕ ПОВИНЕН відкочувати user-facing операцію.
-Результати probe читаються через `Codex::PresenceTracker` (Redis Set TTL 10 хв),
-тому воркер розсилає тільки онлайн-користувачам — це тримає Discovery
-O(active_users), не O(all_users).
+`AttunementsController#create` (streak attunement) і `TelemetryUnpackerService`
+(`telemetry_observation`). Усі чотири — **fail-open**: збій enqueue у Sidekiq НЕ
+ПОВИНЕН відкочувати user-facing операцію (кожен має власний локальний `rescue`).
+
+🔴 **ЗАГОЛОВОК ЦЬОГО ADR ОПИСУВАВ ГЕЙТ, ЯКОГО НІКОЛИ НЕ БУЛО — виправлено 2026-08-15.**
+Тут стояло, що probe «розсилає тільки онлайн-користувачам, і це тримає Discovery
+O(active_users)». Виміряно: `Codex::PresenceTracker.touch`/`.leave` **не мали
+жодного продового викликача за всю історію репо** (`git log -S "PresenceTracker.touch"`
+порожній, при живому контролі на сусідньому символі) — описаний у самому сервісі
+«Stimulus heartbeat кожні 60 с» не існує, і маршруту під нього теж немає. Отже
+Redis-сет ніколи не наповнюється, `observers_for_tree` завжди віддає `[]`, і
+**четвертий probe структурно недосяжний**: єдиний виклик, що presence узагалі
+питає, закритий назавжди. Три інші presence не питають — тобто гейт, іменем якого
+названо цей ADR, не діє **на жодному** зі шляхів.
+
+⚠️ Друга половина тієї ж помилки: ADR перелічував ТРИ місця виклику й пропускав
+саме те, що описував (докстрінг воркера при цьому чесно називав усі чотири).
+**Урок ADR-рівня — той самий, що вже записаний в ADR-CDX-8: «прибрано/гейтовано
+на користь X» вимагає доказу, що X ПРАЦЮЄ.** Тут гейт не прибирали — його просто
+ніколи не дротували, а ADR стверджував протилежне два з половиною місяці.
+
+⚖️ **Доля самого механізму — відкритий присуд** (носій-heartbeat ⊥ зняття
+`PresenceTracker` разом із мертвою гілкою в `TelemetryUnpackerService`): дім →
+[`00_07`](00_07_Action_Plan_Tracker). Цей абзац фіксує лише те, що є **фактом
+сьогодні**, бо канон не сміє описувати неіснуючий механізм у теперішньому часі.
 
 ### ADR-CDX-8 — Stimulus-мінімалізм (Turbo-first)
 

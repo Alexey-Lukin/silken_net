@@ -21,14 +21,28 @@ RSpec.describe "Api::V1::Codex::Nodes", type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
-    it "returns paginated JSON ordered by attunement_elo desc" do
+    # 🔴 [2026-08-15] Каталог знань упорядковує КУРАТОР (`codex_uid`), не гра.
+    # Доти цей приклад пінив `ordered_by_elo` — тобто стверджував як ПРАВИЛЬНУ
+    # поведінку те, що енциклопедію про реальні біоми й названі дерева ранжує
+    # результат естетичних дуелей Арени. Пара «курований порядок ⊥ НЕ за Elo»
+    # несуча: без другої половини повернення `.ordered_by_elo` лишилось би
+    # зеленим, бо на малій фікстурі порядки можуть випадково збігтись.
+    it "returns paginated JSON in curated order, NOT ranked by the battle game" do
       get "/codex/nodes", headers: headers, as: :json
 
       expect(response).to have_http_status(:ok)
       body = response.parsed_body
       expect(body).to include("data", "pagy")
-      slugs = body["data"].map { |n| n["slug"] }
-      expect(slugs.first).to eq("methuselah") # highest Elo
+
+      returned = body["data"]
+      uids = returned.map { |n| n["codex_uid"] }.compact
+      expect(uids).to eq(uids.sort), "порядок розійшовся з кураторським `codex_uid`"
+
+      elos = returned.map { |n| n["attunement_elo"] }.compact
+      if elos.uniq.size > 1
+        expect(elos).not_to eq(elos.sort.reverse),
+          "видача знову впорядкована за Elo — гра курує каталог знань"
+      end
     end
 
     it "filters by realm slug" do
