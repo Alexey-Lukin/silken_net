@@ -54,8 +54,27 @@ module Api
       # чотири (семантика й тон); мапінг тримає компонент, не цей список.
       add_flash_types :success, :error, :pending, :security
 
+      # [SEC.16] Allowlist машинного токена — ВЕСЬ периметр, який прошивка має
+      # право торкатись Bearer'ом. Свідомо крихітний, і це не обережність, а
+      # вимір: машинних маршрутів [ARCH.77] пʼять, але три з них автентифікуються
+      # НЕ токеном (`m2m_auth#create` — Ed25519 у тілі, `oracle_callbacks` і
+      # `helium_sos` — HMAC, обидва `skip_before_action :authenticate_user!`).
+      # Тобто Bearer-поверхня машини — рівно ці два екшени.
+      #
+      # 🔴 Форма — ALLOWLIST, ніколи denylist: новий admin-екшен зʼявляється
+      # частіше, ніж новий машинний, тож denylist мовчки роздавав би доступ
+      # кожному, кого забули дописати. Тут забудькуватість коштує 403 на
+      # машинному шляху — гучно й одразу, а не тихо й назавжди.
+      M2M_ALLOWED_ACTIONS = {
+        "api/v1/m2m_auth" => %w[refresh].freeze,
+        "api/v1/telemetry" => %w[gateway_uplink].freeze
+      }.freeze
+
       # --- ПОРЯДОК ЗАХИСТУ ---
       before_action :authenticate_user!
+      # [SEC.16] Одразу після автентифікації й ДО будь-якої роботи: машина не
+      # сміє дійти навіть до `acting_organization`, якщо вона не на своєму шляху.
+      before_action :restrict_machine_scope
       # [I18N.3] Другий прохід резолву локалі — рівно тут і не раніше: `set_locale`
       # реєструється разом із концерном (вище), тобто ДО автентифікації, коли
       # `current_user` ще `nil` і акаунт-щабель порожній за побудовою. Раніше
@@ -119,8 +138,18 @@ module Api
       # Підтримуємо як сесійні куки (для Дашборду), так і Bearer Tokens (для Мобільного додатка)
       def authenticate_user!
         # Спроба 1: Перевірка через HTTP Token (для API-запитів)
+        #
+        # [SEC.16] Два purpose, і порядок тут не має значення (вони ізольовані
+        # криптографічно — токен одного не резолвиться іншим). Значення має те,
+        # що ми ЗАПАМʼЯТОВУЄМО, який саме спрацював: далі `restrict_machine_scope`
+        # тримає машину в межах її allowlist'а.
         @current_user = authenticate_with_http_token do |token, _options|
-          User.find_by_token_for(:api_access, token)
+          human = User.find_by_token_for(:api_access, token)
+          next human if human
+
+          machine = User.find_by_token_for(:m2m_access, token)
+          @machine_token = true if machine
+          machine
         end
 
         # Спроба 2: Перевірка через сесію Rails 8 (для Дашборду в браузері).
@@ -139,6 +168,30 @@ module Api
 
       def current_user
         @current_user
+      end
+
+      # [SEC.16] Машина ≠ людина-адмін. Доти `m2m_auth#create` видавав шлюзові
+      # `:api_access` першого org-admin'а — токен, нерозрізнимий від людського,
+      # тобто фізично захоплена Королева давала повний admin-API організації.
+      # Тепер той токен має власний purpose, і ось де він упирається в стелю.
+      #
+      # ⚠️ Відповідь 403, а не 401: токен ВАЛІДНИЙ, просто не для цього шляху —
+      # 401 сказав би прошивці «перевидай токен», і вона крутила б Ed25519-цикл
+      # проти дверей, які їй не відчиняться ніколи.
+      # Чи автентифікований цей запит МАШИННИМ токеном. Читає `m2m_auth#refresh`,
+      # щоб перевидати той самий purpose (інакше машина підвищувала б себе).
+      def machine_token?
+        @machine_token.present?
+      end
+
+      def restrict_machine_scope
+        return unless machine_token?
+        return if M2M_ALLOWED_ACTIONS[controller_path]&.include?(action_name)
+
+        Rails.logger.warn(
+          "🚨 [SEC.16] M2M-токен спробував #{controller_path}##{action_name} — поза allowlist'ом"
+        )
+        render json: { error: I18n.t("errors.api.forbidden"), code: "m2m_scope" }, status: :forbidden
       end
 
       # [I18N.3] Реалізація hook'а `LocaleSettable#locale_account`: саме тут живе

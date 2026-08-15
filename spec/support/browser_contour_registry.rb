@@ -38,6 +38,15 @@ module BrowserContourRegistry
         why:  "Bearer-only оновлення токена",
         back: "зʼявиться UI керування M2M-доступом"
       },
+      "app/controllers/api/v1/base_controller.rb#restrict_machine_scope" => {
+        why:  "[SEC.16] Гілка ДОСЯЖНА ЛИШЕ машинним токеном (`:m2m_access`), який видає " \
+              "тільки `m2m_auth#create` пристрою з Ed25519-підписом. Людина сюди не " \
+              "потрапляє за побудовою: cookie-сесія й людський `:api_access` цей гард " \
+              "не вмикають, тож сирого блоба ніхто не побачить. Відповідь читає прошивка, " \
+              "і їй потрібен машинний `code: \"m2m_scope\"`, а не HTML-сторінка відмови",
+        back: "зʼявиться клієнт, що ходить машинним токеном І має UI (напр. installable " \
+              "guild-PWA з device-credential) — тоді ця відмова потребує людського обличчя"
+      },
       "app/controllers/api/v1/oracle_callbacks_controller.rb#create" => {
         why:  "Chainlink DON, HMAC-SHA256; браузерного шляху не існує за визначенням",
         back: :none

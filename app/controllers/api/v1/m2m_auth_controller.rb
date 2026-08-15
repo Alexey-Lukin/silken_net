@@ -158,7 +158,11 @@ module Api
           return
         end
 
-        token = system_user.generate_token_for(:api_access)
+        # [SEC.16] `:m2m_access`, а НЕ `:api_access`: доти шлюз діставав токен,
+        # нерозрізнимий від людського admin-Bearer'а, і компрометована Королева
+        # відкривала повний admin-API організації. Purpose ізолює криптографічно,
+        # а `BaseController::M2M_ALLOWED_ACTIONS` тримає стелю поверхні.
+        token = system_user.generate_token_for(:m2m_access)
 
         Rails.logger.info "✅ [M2M Auth] Токен видано для пристрою #{did} (org: #{organization.name})."
 
@@ -183,7 +187,13 @@ module Api
       #   4. Отримує новий токен → зберігає → продовжує роботу
       def refresh
         # current_user вже автентифікований через before_action :authenticate_user!
-        new_token = current_user.generate_token_for(:api_access)
+        #
+        # 🔴 [SEC.16] Purpose видається ТОЙ САМИЙ, яким прийшли, і це замикає
+        # обхід, який інакше коштував би одного запиту: машина з `:m2m_access`
+        # приходить сюди (екшен у її allowlist'і), а виходила б із `:api_access`,
+        # тобто **сама себе підвищувала б до повного admin-scope**. Звуження при
+        # видачі без цього рядка є декорацією з життям в один refresh-цикл.
+        new_token = current_user.generate_token_for(machine_token? ? :m2m_access : :api_access)
 
         Rails.logger.info "🔄 [M2M Refresh] Токен оновлено для #{current_user.email_address} " \
                           "(org: #{current_user.organization&.name})."

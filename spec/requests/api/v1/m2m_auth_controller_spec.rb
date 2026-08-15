@@ -347,6 +347,9 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
     end
 
     context "when new token is used for authentication" do
+      # ⚠️ Токен тут ЛЮДСЬКИЙ (`:api_access`, взятий з моделі), і саме тому
+      # приклад лишається позитивним: людина, що рефрешиться, зберігає свій
+      # scope. Машинна дзеркальна половина — у блоці [SEC.16] нижче.
       it "can be used for subsequent API requests" do
         original_token = admin_user.generate_token_for(:api_access)
 
@@ -364,6 +367,94 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
 
         expect(response).not_to have_http_status(:unauthorized)
       end
+    end
+  end
+
+  # =========================================================================
+  # [SEC.16] SCOPE ВИДАНОГО ТОКЕНА
+  # =========================================================================
+  # 🔴 Це та вісь, якої в файлі не існувало ЗОВСІМ, і саме тому «M2M-токен =
+  # повний org-admin scope» прожив від аудиту §04 до сьогодні: у всій
+  # `describe "POST /auth/m2m_token"` значення `response.parsed_body["token"]`
+  # перевірялось лише на `be_present` — воно НІКОЛИ не клалось в `Authorization`
+  # і не било наступний запит. Тобто клас, який дав крос-тенантний
+  # account-takeover, стояв без жодного regression-ловця.
+  #
+  # ⚠️ **Токен береться з ВІДПОВІДІ ендпоінта, ніколи з моделі.** Сусідні
+  # refresh-приклади роблять `admin_user.generate_token_for(:api_access)`
+  # напряму — тобто обходять машинну видачу й лишились би зеленими, навіть якби
+  # `m2m_auth#create` роздавав admin-токени далі. Пін, що не проходить через
+  # реальну видачу, тут вакуумний за побудовою.
+  describe "the scope of an issued M2M token [SEC.16]" do
+    let(:timestamp) { Time.current.iso8601 }
+    let(:signature) { Ed25519Crypto::SigningService.sign(seed_hex, "#{gateway.uid}:#{timestamp}") }
+
+    def issue_machine_token!
+      post "/api/v1/auth/m2m_token",
+           params: { did: gateway.uid, timestamp: timestamp, signature: signature },
+           as: :json
+      expect(response).to have_http_status(:created)
+      response.parsed_body["token"]
+    end
+
+    it "is refused on a human admin endpoint" do
+      get "/users/me", headers: { "Authorization" => "Bearer #{issue_machine_token!}" }, as: :json
+
+      expect(response).to have_http_status(:forbidden)
+      expect(response.parsed_body["code"]).to eq("m2m_scope")
+    end
+
+    # 403, не 401, і це не стилістика: токен ВАЛІДНИЙ, просто не для цих дверей.
+    # На 401 прошивка пішла б крутити Ed25519-цикл перевидачі проти дверей, які
+    # їй не відчиняться ніколи.
+    it "answers 403 (valid token, wrong door), never 401" do
+      get "/users/me", headers: { "Authorization" => "Bearer #{issue_machine_token!}" }, as: :json
+
+      expect(response).not_to have_http_status(:unauthorized)
+    end
+
+    it "still reaches the telemetry uplink it exists for" do
+      token = issue_machine_token!
+
+      post "/api/v1/gateways/#{gateway.id}/telemetry",
+           headers: { "Authorization" => "Bearer #{token}" },
+           params: { payload_hex: "00" },
+           as: :json
+
+      # Тіло може бути відхилене валідацією — важливо, що SCOPE пропустив:
+      # 403 тут означав би, що allowlist ріже власний машинний шлях.
+      expect(response).not_to have_http_status(:forbidden)
+    end
+
+    # 🔴 Найдорожчий приклад блоку: без нього звуження живе рівно один
+    # refresh-цикл. Машина приходить у `refresh` (він у її allowlist'і) — і якби
+    # той видавав `:api_access`, вона САМА СЕБЕ підвищила б до повного scope.
+    it "cannot escalate itself through refresh" do
+      token = issue_machine_token!
+
+      post "/api/v1/auth/m2m_token/refresh",
+           headers: { "Authorization" => "Bearer #{token}" },
+           as: :json
+
+      expect(response).to have_http_status(:created)
+      refreshed = response.parsed_body["token"]
+
+      get "/users/me", headers: { "Authorization" => "Bearer #{refreshed}" }, as: :json
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "does not resolve as a human :api_access token at all" do
+      expect(User.find_by_token_for(:api_access, issue_machine_token!)).to be_nil
+    end
+
+    # Дзеркало: звуження не сміє зачепити людей. Без цього прикладу «нуль
+    # порушень» означало б і «нуль доступу» — гейт, що ріже всіх, теж зелений.
+    it "leaves a human admin token untouched" do
+      get "/users/me",
+          headers: { "Authorization" => "Bearer #{admin_user.generate_token_for(:api_access)}" },
+          as: :json
+
+      expect(response).not_to have_http_status(:forbidden)
     end
   end
 end

@@ -493,6 +493,26 @@ RSpec.describe User, type: :model do
         token = user.generate_token_for(:password_reset)
         expect(token).to be_present
       end
+
+      # [SEC.16] Дзеркало для машинного purpose: обидва прив'язані до тієї самої
+      # солі, тож і вироджуються однаково. Пін тут не косметичний — він фіксує,
+      # що поява `:m2m_access` НЕ завела другої поведінки на порожній солі.
+      it "generates an m2m_access token even with nil salt" do
+        user = create(:user)
+        allow(user).to receive(:password_salt).and_return(nil)
+
+        expect(user.generate_token_for(:m2m_access)).to be_present
+      end
+    end
+
+    # [SEC.16] Purposes ізольовані КРИПТОГРАФІЧНО — і саме на цьому стоїть увесь
+    # scope-фікс: якби машинний токен резолвився як людський, allowlist був би
+    # декорацією. Пін тримає обидва напрямки.
+    it "does not let one token purpose resolve as another" do
+      user = create(:user)
+
+      expect(described_class.find_by_token_for(:api_access, user.generate_token_for(:m2m_access))).to be_nil
+      expect(described_class.find_by_token_for(:m2m_access, user.generate_token_for(:api_access))).to be_nil
     end
   end
 

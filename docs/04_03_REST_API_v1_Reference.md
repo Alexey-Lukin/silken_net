@@ -80,7 +80,7 @@ Authorization: Bearer <token>
 ```
 
 - Токен генерується при успішному POST `/login` (поле `token` у відповіді).
-- Реалізація: `User.find_by_token_for(:api_access, token)` — Rails 8 `generates_token_for`.
+- Реалізація: `User.find_by_token_for(:api_access, token)` — Rails 8 `generates_token_for`. ⚠️ **[SEC.16] Purposes ДВА, і резолвер пробує обидва:** `:api_access` (людина) ⊥ `:m2m_access` (машина, §1.4). Вони ізольовані криптографічно — токен одного не резолвиться іншим, — і саме цим `authenticate_user!` знає, кого автентифікував; наслідок для scope тримає allowlist у §1.4.
 - Токен має термін дії 30 днів.
 - **Обмеження на вхід:** rate limit — 5 спроб за 1 хвилину (HTTP 429 при перевищенні).
 - **M2M Auth (Gateway):** прошивка шлюзу не може інтерактивно оновити токен. Для цього використовується `POST /api/v1/auth/m2m_token` — Ed25519-підпис DID без логіна/пароля (§1.4 та §5.15).
@@ -162,7 +162,9 @@ POST /api/v1/auth/m2m_token
 - Бекенд перевіряє підпис та timestamp (±5 хвилин) перед видачею токена.
 - **Replay-захист (nonce):** SHA256-дайджест підпису зберігається в Redis із TTL 10 хв (`SET NX`). Повторне використання тієї ж `signature` повертає `401 Unauthorized` із повідомленням `"Replay attack detected"`. **[S6.1]** При Redis outage: fallback на Solid Cache (DB) — шлюзи не отримують `503`.
 - Токен дійсний 30 днів. Для оновлення: `POST /api/v1/auth/m2m_token/refresh` з поточним Bearer token (§5.15.1), або повторний `POST /api/v1/auth/m2m_token` з Ed25519-підписом.
-- ⚠️ **[SEC.16] Scope-каveat:** виданий `api_access`-токен = ПОВНИЙ org-admin scope (`organization.users.role_admin.first`), нерозрізнимий від людського admin-Bearer. Тобто compromised-шлюз = повний admin-API org-и. Звуження до `:m2m_access` purpose + endpoint-allowlist трекається → [`00_07` SEC.16](00_07_Action_Plan_Tracker).
+- ✅ **[SEC.16] Scope звужено 2026-08-15.** Доти виданий токен був `:api_access` першого org-admin'а — **нерозрізнимий від людського** admin-Bearer, тобто компрометована польова Королева відкривала повний admin-API організації (2-га ланка cross-tenant-takeover з аудиту §04). Тепер видається окремий purpose **`:m2m_access`**, а `BaseController::M2M_ALLOWED_ACTIONS` тримає стелю поверхні: `m2m_auth#refresh` + `telemetry#gateway_uplink` — і це **весь** Bearer-периметр машини, бо решта машинних маршрутів автентифікується не токеном (`m2m_auth#create` — Ed25519 у тілі; `oracle_callbacks` і `helium_sos` — HMAC). Поза allowlist'ом — **403 `code: "m2m_scope"`, свідомо не 401**: токен валідний, просто не для цих дверей, а 401 послав би прошивку крутити Ed25519-цикл перевидачі проти дверей, які не відчиняться ніколи.
+  🔴 **Purpose мусить перевидаватись ТОЙ САМИЙ, інакше звуження живе рівно один refresh-цикл:** `refresh` стоїть у машинному allowlist'і, тож видача звідти `:api_access` дозволила б машині **підвищити саму себе** до повного scope одним запитом. Форма — **allowlist, ніколи denylist**: нових admin-екшенів зʼявляється більше, ніж машинних, тож denylist роздавав би доступ кожному, кого забули дописати; тут забудькуватість коштує гучного 403 на машинному шляху.
+  ⚠️ **Виміряна межа, яку варто знати, плануючи цей тракт:** прошивка сьогодні **не робить HTTP узагалі** — увесь трафік Королеви це CoAP/UDP :5683 повз Rails (`telemetry/batch`, `device/event`, `poll`, `ota`), автентифікований підписом у payload'і, а не Bearer'ом; описаний тут refresh-цикл у `firmware/queen/` не реалізований. Тобто allowlist сьогодні описує **потенційну** поверхню машини, а не спостережуваний трафік — і саме тому його звуження нічого в полі не ламає.
 - Детальний опис: §5.15.
 
 ### 1.5 Тестове Покриття Безпеки
