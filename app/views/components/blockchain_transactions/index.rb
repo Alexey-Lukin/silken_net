@@ -9,7 +9,7 @@ module BlockchainTransactions
     end
 
     def view_template
-      div(class: "space-y-6 animate-in fade-in duration-500") do
+      div(class: "space-y-6") do
         header_section
         transactions_table
         render Views::Shared::UI::Pagination.new(

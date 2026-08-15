@@ -11,7 +11,7 @@ module Dashboard
     end
 
     def view_template
-      div(class: "space-y-10 animate-in fade-in duration-1000") do
+      div(class: "space-y-10") do
         # Ряд головних метрик (The Four Pillars)
         div(class: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6") do
           # `health_avg` — середнє `health_index`, шкала 0..1 (`04_01 §3`). Доти тут

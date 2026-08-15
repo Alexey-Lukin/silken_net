@@ -89,10 +89,6 @@ RSpec.describe Telemetry::LogEntry do
     it "applies hover effect" do
       expect(html).to include("hover:bg-gaia-surface-sunken")
     end
-
-    it "applies slide-in animation" do
-      expect(html).to include("slide-in-from-left")
-    end
   end
 
   # ⊥ Оголошений carve-out, не жива гілка. `gateway` тут НЕ буває `nil`: єдиний

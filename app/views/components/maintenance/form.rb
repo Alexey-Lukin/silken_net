@@ -10,7 +10,7 @@ module Maintenance
     end
 
     def view_template
-      div(class: "max-w-3xl mx-auto animate-in zoom-in duration-500") do
+      div(class: "max-w-3xl mx-auto") do
         render_existing_photos
 
         form_with(

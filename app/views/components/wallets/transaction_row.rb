@@ -74,7 +74,7 @@ module Wallets
     end
 
     def row_classes
-      "hover:bg-emerald-950/10 transition-colors animate-in fade-in duration-500"
+      "hover:bg-emerald-950/10 transition-colors duration-500"
     end
   end
 end

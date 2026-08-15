@@ -23,7 +23,7 @@ module Telemetry
     end
 
     def view_template
-      div(class: "space-y-6 animate-in fade-in duration-1000") do
+      div(class: "space-y-6") do
         header_section
 
         # Підписка на SolidCable / Turbo Streams. Без організації підписки
@@ -112,7 +112,6 @@ module Telemetry
       div(class: "flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 border-b border-gaia-border pb-4") do
         div do
           h3(class: "text-tiny uppercase tracking-[0.5em] text-gaia-text-muted flex items-center gap-2") do
-            i(class: "ph ph-broadcast", aria_hidden: "true")
             plain t(".header_eyebrow")
           end
           h2(class: "text-2xl font-light text-gaia-text mt-2") { t(".header_title") }

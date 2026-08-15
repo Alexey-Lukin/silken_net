@@ -341,11 +341,14 @@ end
 
 Всі AASM-стани рендеряться виключно через ці токени — ніяких raw Tailwind кольорів.
 
+> 🔴 **ПАРА `<status>` ⊥ `<status>-accent` — це дві РОЛІ, і плутати їх коштує сигналу.** `status-<x>` — **пастельний ФОН бейджа** (світлий у світлій темі), `status-<x>-accent` — **насичене значення для самого СИГНАЛУ**: LED, крапка, ромб-гліф, severity-рамка. Ужитий не за роллю, пастельний токен віддає сигнал, якого не видно: виміряно 2026-08-15 на тлі сторінки — `bg-status-warning` як гліф дає **1.07:1** у світлій темі (тон 403 `Errors::Page` був фактично невидимий), `bg-status-info` — **1.17:1**, тоді як `status-danger-accent` тримає **4.63 / 5.39**. Поріг тут не 4.5, а **3:1** (WCAG 1.4.11, non-text), і пастельні значення не проходять і його. ⚠️ **`-accent` існує НЕ в кожної родини** — сьогодні його мають `danger` і `warning`; отже «уніфікувати за симетрією імен» не можна: заміна сигналу на `status-info` зробила б видиме невидимим. Родина дістає `-accent` тоді, коли зʼявляється другий сигнальний сайт, а не заради повноти таблиці. Дім значень і їхнього обґрунтування — `app/assets/tailwind/application.css`; жива відмова — [`00_07`](00_07_Action_Plan_Tracker) UI.1 (`bg-red-500`→`bg-status-danger` на severity-крапці зробило б найгучніший стан найблідішим).
+
 | Пара Токенів | Light Bg / Text | Dark Bg / Text | AASM Стани |
 |---|---|---|---|
 | `status-danger` / `status-danger-text` | `#fee2e2` / `#991b1b` | `#7f1d1d` / `#fecaca` | `failed`, `active` (лише EwsAlert — див. примітку), `breached`, `deceased`, `faulty` |
 | `status-danger-accent` | `#dc2626` | `#ef4444` | Акцентні значення, LED-індикатори |
 | `status-warning` / `status-warning-text` | `#fef3c7` / `#92400e` | `#78350f` / `#fde68a` | `pending`, `issued`, `triggered`, `updating`, `dormant` |
+| `status-warning-accent` | `#b45309` | `#d97706` | Акцентні значення, LED-індикатори (дзеркало `danger-accent`) |
 | `status-info` / `status-info-text` | `#dbeafe` / `#1e40af` | `#1e3a5f` / `#bfdbfe` | `sent`, `paid`, `maintenance` |
 | `status-success` / `status-success-text` | `#d1fae5` / `#065f46` | `#065f46` / `#d1fae5` | `confirmed`, `fulfilled` |
 | `status-active` / `status-active-text` | `#ccfbf1` / `#115e59` | `#064e3b` / `#a7f3d0` | `acknowledged` |

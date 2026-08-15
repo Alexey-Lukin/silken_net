@@ -20,9 +20,6 @@ RSpec.describe Actuators::Index do
     let(:actuators) { [ build_actuator(id: 1), build_actuator(id: 2) ] }
     let(:html) { render_component(cluster: mock_cluster, actuators: actuators, pagy: mock_pagy(count: 2, last: 1)) }
 
-    it "renders the main container with animation" do
-      expect(html).to include("animate-in")
-    end
 
     it "displays the cluster name in the header" do
       expect(html).to include("Amazon-Alpha")

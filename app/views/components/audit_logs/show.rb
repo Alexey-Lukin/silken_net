@@ -8,7 +8,7 @@ module AuditLogs
     end
 
     def view_template
-      div(class: "space-y-8 animate-in slide-in-from-bottom-4 duration-700") do
+      div(class: "space-y-8") do
         render_header
         div(class: "grid grid-cols-1 xl:grid-cols-3 gap-8") do
           div(class: "xl:col-span-2 space-y-8") do

@@ -78,9 +78,6 @@ RSpec.describe Telemetry::LiveStream do
   describe "rendering" do
     let(:html) { render_component(organization: organization) }
 
-    it "renders with fade-in animation" do
-      expect(html).to include("animate-in")
-    end
 
     it "displays the Neural Link Output heading" do
       expect(html).to include("Neural Link Output")
@@ -153,10 +150,6 @@ RSpec.describe Telemetry::LiveStream do
 
     it "renders the pulsing live indicator" do
       expect(html).to include("animate-ping")
-    end
-
-    it "renders the broadcast icon" do
-      expect(html).to include("ph-broadcast")
     end
   end
 

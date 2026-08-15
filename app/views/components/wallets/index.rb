@@ -13,7 +13,7 @@ module Wallets
     end
 
     def view_template
-      div(class: "space-y-8 animate-in fade-in duration-700") do
+      div(class: "space-y-8") do
         render_header
 
         div(class: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6") do

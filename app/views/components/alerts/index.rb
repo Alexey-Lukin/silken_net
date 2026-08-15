@@ -21,7 +21,7 @@ module Alerts
       # ⚡ Підписка на потік оновлень алертів організації.
       turbo_stream_from TurboStreams::Name.org(:alerts, @organization) if @organization
 
-      div(class: "space-y-6 animate-in fade-in duration-500") do
+      div(class: "space-y-6") do
         header_section
         render_table
         render_pagination

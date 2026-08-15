@@ -15,7 +15,7 @@ module Actuators
     end
 
     def view_template
-      div(class: "space-y-8 animate-in slide-in-from-right duration-700") do
+      div(class: "space-y-8") do
         header_section
 
         div(class: "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6") do

@@ -47,6 +47,7 @@
   --color-status-danger-accent: var(--status-danger-accent);
   --color-status-warning: var(--status-warning);
   --color-status-warning-text: var(--status-warning-text);
+  --color-status-warning-accent: var(--status-warning-accent);
   --color-status-info: var(--status-info);
   --color-status-info-text: var(--status-info-text);
   --color-status-success: var(--status-success);
@@ -143,6 +144,13 @@
   /* Status: warning — deep amber on soft amber */
   --status-warning: #fef3c7;
   --status-warning-text: #92400e;
+  /* 🔴 Насичений двійник — для СИГНАЛУ (гліф · крапка · LED · рамка severity), ніколи
+   * для фону бейджа. Заведений 2026-08-15 (UI.3), бо `--status-warning` — пастельний
+   * ФОН, і вжитий як сигнал він давав 1.07:1 у світлій темі, тобто тон 403 на сторінці
+   * помилки був фактично невидимий. Дзеркало `--status-danger-accent`, і значення
+   * підібрані під ЙОГО профіль (4.63/5.39), а не «щоб проходило»: 4.81 / 6.37 —
+   * попередження помітне, але не гучніше за аварію. */
+  --status-warning-accent: #b45309;
 
   /* Status: info — deep blue on soft blue */
   --status-info: #dbeafe;
@@ -210,6 +218,7 @@
     /* Status: warning — neon amber on dark amber */
     --status-warning: #78350f;
     --status-warning-text: #fde68a;
+    --status-warning-accent: #d97706;
 
     /* Status: info — neon blue on dark blue */
     --status-info: #1e3a5f;

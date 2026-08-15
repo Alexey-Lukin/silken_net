@@ -47,6 +47,42 @@ RSpec.describe Passwords::Forgot do
   # гілки були мертві з народження, і живими їх тримали саме ці три приклади.
   # Повідомлення цієї сторінки приходять редиректом і належать `FlashMessages`.
 
+  # 🔴 [UI.3] Ця сторінка була ЧОРНОЮ в обох темах (`bg-black` на корені, ніде не
+  # оголошено), і на ній: мітки полів та лінк «назад» на `emerald-900` — **2.18:1**,
+  # підзаголовок **3.91**, placeholder **1.31**. Форма відновлення пароля, тобто шлях,
+  # який ARCH.60 щойно зробив живим, дротувавши SMTP.
+  #
+  # ⚠️ Пін НЕГАТИВНИЙ на родину + позитивний liveness: перелік очікуваних класів довелось
+  # би правити з кожним рефактором і він мовчав би про новий сайт.
+  # 🔒 Стеля: судиться ТЕКСТ. Watermark-сітка лишається сирою — `aria-hidden`-декорація;
+  # `text-gaia-primary` на CTA входить у відому когорту «бренд як текст» (`00_07` UI.3).
+  describe "token discipline (contrast)" do
+    it "рендерить текст на токенах і має ВЛАСНУ поверхню" do
+      expect(html).to include("bg-gaia-surface-base"), "корінь без поверхні — пара fg/bg невідома"
+      expect(html).to include("text-gaia-text-strong")
+      expect(html).to include("text-gaia-text-subtle")
+
+      expect(html).not_to match(/\btext-(?:white|(?:gray|zinc|neutral|slate|stone)-\d+|emerald-\d+)\b/)
+      expect(html).not_to match(/\bbg-(?:black|zinc-\d+)\b/)
+    end
+  end
+
+  # 🔴 Приклади вище пінять ТЕКСТ мітки й нічого не кажуть про звʼязок із полем — саме
+  # тому голий `<label>` жив тут непоміченим (WCAG 1.3.1, сильніше за 3.3.1, заради
+  # якого пункт писався). Форму взято з `Sessions::New`, де це вже еталон.
+  describe "label association" do
+    it "associates every label with a real form control" do
+      doc = Nokogiri::HTML5.fragment(html)
+      labels = doc.css("label")
+      control_ids = doc.css("input, select, textarea").filter_map { |n| n["id"] }
+
+      expect(labels).not_to be_empty, "no labels rendered — the pin would be vacuous"
+
+      orphans = labels.reject { |l| l["for"].present? && control_ids.include?(l["for"]) }
+      expect(orphans.map { |l| l.text.strip }).to be_empty
+    end
+  end
+
   describe "form action" do
     it "posts to the forgot password path" do
       expect(html).to include("forgot_password")

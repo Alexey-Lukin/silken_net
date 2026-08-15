@@ -34,7 +34,7 @@ module Telemetry
     end
 
     def view_template
-      tr(class: "hover:bg-gaia-surface-sunken md:border-b md:border-gaia-border animate-in slide-in-from-left duration-300 group") do
+      tr(class: "hover:bg-gaia-surface-sunken md:border-b md:border-gaia-border group") do
         td(
           class: "p-3 text-gaia-text-muted font-mono text-mini"
         ) { @timestamp.strftime("%H:%M:%S.%L") }

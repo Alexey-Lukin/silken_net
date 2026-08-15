@@ -8,7 +8,7 @@ module Firmwares
     end
 
     def view_template
-      div(class: "max-w-2xl mx-auto animate-in zoom-in duration-500") do
+      div(class: "max-w-2xl mx-auto") do
         # Заголовок сторінки (Презентаційний шар)
         header_section
 

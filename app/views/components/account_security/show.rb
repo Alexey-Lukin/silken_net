@@ -15,7 +15,7 @@ module AccountSecurity
     end
 
     def view_template
-      div(class: "max-w-4xl mx-auto space-y-8 animate-in slide-in-from-bottom-8 duration-700") do
+      div(class: "max-w-4xl mx-auto space-y-8") do
         render_header
         render_mfa_section
         render_password_section

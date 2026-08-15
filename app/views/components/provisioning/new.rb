@@ -8,7 +8,7 @@ module Provisioning
     end
 
     def view_template
-      div(class: "max-w-3xl mx-auto animate-in fade-in duration-1000") do
+      div(class: "max-w-3xl mx-auto") do
         header_section
 
         form_with(url: register_provisioning_index_path, scope: :provisioning, class: "space-y-8 p-10 border border-emerald-900 bg-black/60 backdrop-blur-md shadow-2xl") do |f|

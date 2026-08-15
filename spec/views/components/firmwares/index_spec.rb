@@ -27,9 +27,6 @@ RSpec.describe Firmwares::Index do
     let(:firmwares) { [ mock_firmware(id: 1), mock_firmware(id: 2, version: "1.3.0") ] }
     let(:html) { render_component(firmwares: firmwares, inventory_stats: mock_inventory_stats, pagy: mock_pagy(count: 2, last: 1)) }
 
-    it "renders with fade-in animation" do
-      expect(html).to include("animate-in")
-    end
 
     it "displays the inventory summary heading" do
       expect(html).to include("Forest Inventory (Version Distribution)")

@@ -9,7 +9,7 @@ module Reports
     end
 
     def view_template
-      div(class: "space-y-8 animate-in fade-in duration-700") do
+      div(class: "space-y-8") do
         header_section
         render_performance_hero
         render_available_reports

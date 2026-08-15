@@ -37,10 +37,20 @@ RSpec.describe Errors::Page do
       expect(html).to include("status-danger-accent")
     end
 
-    it "фарбує 403 у warning" do
+    # 🔴 Пін мусить бути ТОЧНИЙ, а не підрядковий, і це куплено просто зараз: доти тут
+    # стояло `include("status-warning")`, а `status-warning-accent` МІСТИТЬ цей підрядок —
+    # тобто після переходу на акцент приклад лишився зеленим, не помітивши зміни, і так
+    # само лишився б зеленим на відкоті в пастельний токен, тобто рівно на дефекті, який
+    # він мав би стерегти (пастельний ФОН як сигнал → **1.07:1** у світлій темі).
+    # Негативна половина обовʼязкова: без неї пара «пастельний ⊥ акцентний» не судиться.
+    it "фарбує 403 у warning — НАСИЧЕНИМ токеном, не пастельним фоном бейджа" do
       html = render_component(heading: "H", message: "M", tone: :warning)
 
-      expect(html).to include("status-warning")
+      expect(html).to include("bg-status-warning-accent")
+      # ⚠️ `\b` тут НЕ межа: дефіс — не-словесний символ, тож `\bbg-status-warning\b`
+      # спрацьовує ВСЕРЕДИНІ `bg-status-warning-accent` і робить пін вічно-червоним.
+      # Межу класу токенів задає негативний lookahead, не `\b`.
+      expect(html).not_to match(/\bbg-status-warning(?![-\w])/)
     end
 
     it "фарбує 404 стриманіше — це не аварія" do

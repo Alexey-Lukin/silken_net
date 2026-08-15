@@ -12,7 +12,7 @@ module Users
     end
 
     def view_template
-      div(class: "max-w-4xl mx-auto space-y-8 animate-in slide-in-from-bottom-8 duration-700") do
+      div(class: "max-w-4xl mx-auto space-y-8") do
         render_hero_profile
 
         div(class: "grid grid-cols-1 md:grid-cols-2 gap-8") do

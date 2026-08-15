@@ -26,7 +26,7 @@ module OracleVisions
     end
 
     def view_template
-      div(class: "space-y-6 animate-in zoom-in duration-700") do
+      div(class: "space-y-6") do
         header_section
         @visions.each { |vision| render OracleVisions::ForecastCard.new(insight: vision) }
       end

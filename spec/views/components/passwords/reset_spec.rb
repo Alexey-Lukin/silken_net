@@ -67,6 +67,33 @@ RSpec.describe Passwords::Reset do
     end
   end
 
+  # 🔴 [UI.3] Дзеркало `passwords/forgot` — той самий немігрований близнюк `Sessions::New`:
+  # сторінка чорна в обох темах, мітки обох полів пароля на **2.18:1**, placeholder **1.31**.
+  # ⚠️ Тут полів ДВА, тож пін на асоціацію нижче судить обидва — а не «хоч одне».
+  describe "token discipline (contrast)" do
+    it "рендерить текст на токенах і має ВЛАСНУ поверхню" do
+      expect(html).to include("bg-gaia-surface-base"), "корінь без поверхні — пара fg/bg невідома"
+      expect(html).to include("text-gaia-text-strong")
+      expect(html).to include("text-gaia-text-subtle")
+
+      expect(html).not_to match(/\btext-(?:white|(?:gray|zinc|neutral|slate|stone)-\d+|emerald-\d+)\b/)
+      expect(html).not_to match(/\bbg-(?:black|zinc-\d+)\b/)
+    end
+  end
+
+  describe "label association" do
+    it "associates every label with a real form control" do
+      doc = Nokogiri::HTML5.fragment(html)
+      labels = doc.css("label")
+      control_ids = doc.css("input, select, textarea").filter_map { |n| n["id"] }
+
+      expect(labels.size).to eq(2), "обидва поля пароля мусять мати мітку — інакше пін судить половину"
+
+      orphans = labels.reject { |l| l["for"].present? && control_ids.include?(l["for"]) }
+      expect(orphans.map { |l| l.text.strip }).to be_empty
+    end
+  end
+
   describe "form structure" do
     it "renders form element" do
       expect(html).to include("<form")

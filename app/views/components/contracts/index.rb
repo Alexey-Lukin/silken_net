@@ -10,7 +10,7 @@ module Contracts
     end
 
     def view_template
-      div(class: "space-y-8 animate-in fade-in duration-700") do
+      div(class: "space-y-8") do
         render_stats_hero
 
         div(class: "space-y-4") do

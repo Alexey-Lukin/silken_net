@@ -19,7 +19,7 @@ module SystemHealth
     end
 
     def view_template
-      div(class: "space-y-8 animate-in fade-in duration-500") do
+      div(class: "space-y-8") do
         header_section
         overall_status_banner
         div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do

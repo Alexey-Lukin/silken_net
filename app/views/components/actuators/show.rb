@@ -13,7 +13,7 @@ module Actuators
       # («global_events» ніс страхові виплати всіх організацій).
       turbo_stream_from @actuator, :commands
 
-      div(class: "space-y-10 animate-in fade-in duration-700") do
+      div(class: "space-y-10") do
         div(class: "grid grid-cols-1 lg:grid-cols-3 gap-8") do
           # Головна картка стану
           div(class: "lg:col-span-1") do

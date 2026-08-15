@@ -54,10 +54,6 @@ RSpec.describe Wallets::Index do
     it "renders the grid layout for wallet cards" do
       expect(html).to include("grid-cols-1")
     end
-
-    it "renders with fade-in animation" do
-      expect(html).to include("animate-in")
-    end
   end
 
   describe "wallet card content" do

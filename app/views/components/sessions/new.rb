@@ -26,7 +26,7 @@ module Sessions
         # ефект і оцей градієнт, — і сплутати їх легко саме тут.
         div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]", aria_hidden: "true")
 
-        div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10") do
+        div(class: "w-full max-w-md relative z-10") do
           render_portal_header
 
           form_with(url: login_path, method: :post, class: "p-8 border border-gaia-border bg-gaia-surface/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do |f|

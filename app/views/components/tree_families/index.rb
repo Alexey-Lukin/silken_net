@@ -15,7 +15,7 @@ module TreeFamilies
     end
 
     def view_template
-      div(class: "space-y-8 animate-in fade-in duration-700") do
+      div(class: "space-y-8") do
         render_header
 
         div(class: "border border-emerald-900 bg-black overflow-x-auto w-full shadow-2xl") do

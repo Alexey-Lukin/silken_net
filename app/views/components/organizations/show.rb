@@ -16,7 +16,7 @@ module Organizations
     end
 
     def view_template
-      div(class: "space-y-10 animate-in slide-in-from-right duration-700") do
+      div(class: "space-y-10") do
         render_header
         render_performance_hero
 

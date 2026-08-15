@@ -20,9 +20,6 @@ RSpec.describe Actuators::Show do
     let(:commands) { [ mock_command(id: 1), mock_command(id: 2, status: "failed", command_payload: "RESET") ] }
     let(:html) { render_component(actuator: build_actuator, commands: commands) }
 
-    it "renders with fade-in animation" do
-      expect(html).to include("animate-in")
-    end
 
     it "renders the Command Execution Log heading" do
       expect(html).to include("Command Execution Log")

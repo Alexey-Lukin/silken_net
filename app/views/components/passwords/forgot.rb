@@ -10,18 +10,18 @@ module Passwords
     # Обидва шляхи цієї сторінки (rate-limit, протермінований токен) приходять
     # РЕДИРЕКТОМ, тож їхнє повідомлення несе `FlashMessages` у layout'і.
     def view_template
-      main(class: "min-h-screen bg-black flex items-center justify-center p-4 font-mono relative overflow-hidden") do
+      main(class: "min-h-screen bg-gaia-surface-base flex items-center justify-center p-4 font-mono relative overflow-hidden") do
         div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]")
 
-        div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10") do
+        div(class: "w-full max-w-md relative z-10") do
           render_header
 
           # [UI.7] `form_with`, не рукописна `<form>`: токен приходить сам.
           # Скоупу НЕМА свідомо — `passwords#create` читає `params[:email]` плоско.
-          form_with(url: forgot_password_path, method: :post, class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do
+          form_with(url: forgot_password_path, method: :post, class: "p-8 border border-gaia-border bg-gaia-surface/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do |f|
             div(class: "space-y-6") do
-              field_container(t(".email_label")) do
-                input(type: "email", name: "email", class: input_classes, placeholder: "architect@silken.net", required: true)
+              field_container(f, :email, t(".email_label")) do
+                f.email_field :email, class: input_classes, placeholder: "architect@silken.net", required: true
               end
             end
 
@@ -39,32 +39,37 @@ module Passwords
 
     def render_header
       div(class: "text-center mb-10 space-y-2") do
-        div(class: "inline-block h-12 w-12 border border-token-forest rotate-45 mb-4 relative") do
-          div(class: "absolute inset-1 bg-token-forest/50 animate-pulse")
+        div(class: "inline-block h-12 w-12 border border-gaia-primary rotate-45 mb-4 relative", aria_hidden: "true") do
+          div(class: "absolute inset-1 bg-emerald-500 animate-pulse")
         end
-        h1(class: "text-3xl font-extralight text-white tracking-[0.3em] uppercase") { t(".heading") }
-        p(class: "text-tiny text-emerald-700 uppercase tracking-[0.5em]") { t(".subtitle") }
+        h1(class: "text-3xl font-extralight text-gaia-text-strong tracking-[0.3em] uppercase") { t(".heading") }
+        p(class: "text-tiny text-gaia-text-muted uppercase tracking-[0.5em]") { t(".subtitle") }
       end
     end
 
-    def field_container(label, &)
+    # Голий `<label>` поруч із `<input>` — сиблінги, не вкладені: ні явного, ні
+    # неявного звʼязку, і скрінрідер не називає поле (WCAG 1.3.1). Білдер виводить
+    # `for` із того самого джерела, що й `id` поля, тож розійтись вони не можуть.
+    def field_container(form, attribute, text, &block)
       div(class: "space-y-2") do
-        label(class: "text-mini uppercase tracking-widest text-emerald-900 font-bold") { label }
+        form.label attribute, text, class: "text-mini uppercase tracking-widest text-gaia-text-subtle font-bold"
         yield
       end
     end
 
     def input_classes
-      "w-full bg-zinc-950 border border-emerald-900/50 text-emerald-100 p-4 font-mono text-sm focus-visible:border-emerald-500 focus-visible:ring-0 outline-none transition-all placeholder:text-emerald-950"
+      "w-full bg-gaia-surface-sunken border border-gaia-border-strong text-gaia-text-strong p-4 font-mono text-sm focus-visible:border-gaia-primary focus-visible:ring-0 outline-none transition-all placeholder:text-gaia-text-subtle"
     end
 
     def submit_classes
-      "w-full py-4 bg-token-forest/10 border border-token-forest text-token-forest uppercase text-xs tracking-[0.4em] hover:bg-token-forest hover:text-black transition-all cursor-pointer"
+      "w-full py-4 bg-emerald-500/10 border border-gaia-primary text-gaia-primary uppercase text-xs tracking-[0.4em] " \
+        "hover:bg-emerald-500 hover:text-gaia-surface focus-visible:outline-none focus-visible:ring-2 " \
+        "focus-visible:ring-gaia-primary transition-all cursor-pointer"
     end
 
     def render_back_link
       div(class: "text-center pt-2") do
-        a(href: login_path, class: "text-tiny text-emerald-900 uppercase tracking-widest hover:text-emerald-500 transition-colors") do
+        a(href: login_path, class: "text-tiny text-gaia-text-subtle uppercase tracking-widest hover:text-gaia-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-colors") do
           t(".back_link")
         end
       end

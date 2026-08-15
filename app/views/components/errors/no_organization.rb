@@ -51,7 +51,7 @@ module Errors
           aria_hidden: "true"
         )
 
-        div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10") do
+        div(class: "w-full max-w-md relative z-10") do
           render_header
 
           div(class: "p-8 border border-gaia-border bg-gaia-surface/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do

@@ -8,7 +8,7 @@ module TreeFamilies
     end
 
     def view_template
-      div(class: "max-w-2xl mx-auto animate-in zoom-in duration-500") do
+      div(class: "max-w-2xl mx-auto") do
         form_with(model: @family, class: "space-y-8 p-10 border border-gaia-border bg-gaia-surface shadow-sm dark:shadow-none") do |f|
           # [SEC.25] Форма рендериться контролером на 422 у ДВОХ екшенах, і доти не
           # мала куди покласти причину: єдиним сигналом відмови лишалась зміна

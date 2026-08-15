@@ -27,7 +27,6 @@ module OracleVisions
         span(class: "text-mini px-2 py-0.5 border border-emerald-800 text-emerald-600 uppercase tracking-tighter") { @insight.insight_type }
         h4(class: "text-lg font-light text-emerald-100 mt-2") { t(".predicted_window") }
         p(class: "text-tiny text-gray-500 font-mono flex items-center gap-2") do
-          i(class: "ph ph-clock")
           # [TEST.12] `ai_insights.target_date` — колонка `date`, без часу, тож
           # «// %H:%M UTC» друкував вічне «00:00» як справжню годину прогнозу.
           # Спека це ховала, подаючи `Time.utc(...)`, якого модель не віддає.

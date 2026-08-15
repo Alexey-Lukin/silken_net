@@ -11,7 +11,7 @@ module Firmwares
     end
 
     def view_template
-      div(class: "space-y-10 animate-in fade-in duration-700") do
+      div(class: "space-y-10") do
         render_active_evolutions
         render_inventory_summary
         render_firmware_registry

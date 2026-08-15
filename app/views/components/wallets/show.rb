@@ -20,7 +20,7 @@ module Wallets
       # ⚡ [СИНХРОНІЗАЦІЯ]: Підписка на потік оновлень транзакцій гаманця
       turbo_stream_from @wallet, :transactions
 
-      div(class: "space-y-8 animate-in slide-in-from-bottom-4 duration-700") do
+      div(class: "space-y-8") do
         # Lazy-load: Turbo Frame підвантажує BalanceDisplay окремим запитом,
         # поки що показуємо Skeleton (пульсуючі блоки).
         turbo_frame_tag "wallet_balance_frame_#{@wallet.id}",

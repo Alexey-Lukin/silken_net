@@ -15,9 +15,6 @@ RSpec.describe Firmwares::New do
   describe "rendering" do
     let(:html) { render_component(firmware: mock_firmware) }
 
-    it "renders with zoom-in animation" do
-      expect(html).to include("animate-in")
-    end
 
     it "displays the New Code Injection heading" do
       expect(html).to include("New Code Injection")

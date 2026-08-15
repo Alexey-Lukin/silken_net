@@ -9,7 +9,7 @@ module Contracts
     end
 
     def view_template
-      div(class: "space-y-8 animate-in zoom-in duration-500") do
+      div(class: "space-y-8") do
         render_hero_section
 
         div(class: "grid grid-cols-1 lg:grid-cols-3 gap-8") do

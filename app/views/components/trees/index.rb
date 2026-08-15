@@ -10,7 +10,7 @@ module Trees
     end
 
     def view_template
-      div(class: "space-y-8 animate-in fade-in duration-700") do
+      div(class: "space-y-8") do
         render_header
 
         # Масова сітка солдатів

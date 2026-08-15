@@ -28,9 +28,24 @@
 module Errors
   class Page < ApplicationComponent
     # Тон = вага помилки, а не смак: 404 не повинен кричати так само, як 500.
+    #
+    # 🔴 Ромб — це СИГНАЛ (non-text, WCAG 1.4.11 = 3:1), тож усі три тони мусять брати
+    # НАСИЧЕНЕ значення, а не пастельний фон бейджа. Виміряно 2026-08-15 композитом на
+    # тлі сторінки: `bg-status-warning` (`#fef3c7`) давав **1.07:1** у світлій темі —
+    # гліф 403 був фактично невидимий, і саме той тон, що мав би попереджати. Лік — не
+    # інший відтінок, а ПАРНИЙ токен `--status-warning-accent` (форма, яку danger має
+    # від початку); дім значень і їхнє обґрунтування — `application.css`.
+    #
+    # ⚠️ `:info` лишається СИРИМ emerald СВІДОМО, і це оголошення за `04_04 §3.5`, не
+    # недогляд: значення тем-інваріантне за задумом (бренд-акцент 404 однаковий обабіч)
+    # і виміряне — **5.14** світла / **3.78** темна, тобто єдиний неакцентний тон, який
+    # узагалі видно. ⛔ Не «уніфікувати» його на `status-info`: той теж пастельний ФОН
+    # (`#dbeafe`) і дав би **1.17:1**, тобто заміна зробила б видиме невидимим заради
+    # симетрії імен. Родину закриє `--status-info-accent`, коли він знадобиться комусь
+    # іще — заводити токен на один сайт означало б платити за симетрію, а не за сигнал.
     TONES = {
       danger: "border-status-danger-accent bg-status-danger-accent",
-      warning: "border-status-warning bg-status-warning",
+      warning: "border-status-warning-accent bg-status-warning-accent",
       info: "border-emerald-700 bg-emerald-700"
     }.freeze
 
@@ -54,7 +69,7 @@ module Errors
           aria_hidden: "true"
         )
 
-        div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10 text-center") do
+        div(class: "w-full max-w-md relative z-10 text-center") do
           render_glyph
           h1(class: "text-3xl font-extralight text-gaia-text-strong tracking-[0.3em] uppercase mt-6") { @heading }
           p(class: "text-compact text-gaia-text-muted leading-relaxed mt-4") { @message }
