@@ -29,6 +29,19 @@
 # Allowlist: see `allowlist` below — brand / decorative colours that are raw on
 # purpose (e.g. `bg-emerald-500/10` for the login button's brand-glow).
 #
+# 🔴 DECLARED CEILING — the shapes this gate does NOT see, and they are the ones
+# the surface actually migrates by. `raw_patterns` below anchors on a colour
+# utility carrying a NAMED family, so two dialects are invisible by construction:
+# GRADIENT stops (`from-`/`via-`/`to-black`, `to-gray-900`) and ARBITRARY values
+# (`bg-[#000]`, `text-[#fff]`). That is not a hypothetical gap — it is the exact
+# form by which raw colour re-entered `telemetry/live_stream`, i.e. precisely
+# where `04_04 § 3.5` forbids it, while this gate stayed green. A semantic gate
+# that does not name its ceiling turns a green run into "not checked"
+# (`ssot-maintenance` § Guard-craft #3), so the ceiling is stated HERE, beside
+# the regex it bounds, and cannot drift from it. Widening to either dialect
+# means measuring the current perimeter FIRST (ratchet: migrate-to-green BEFORE
+# the gate), exactly as the five-neutral-families extension below was done.
+#
 # 🔴 NO `:environment` PREREQUISITE, and that is load-bearing rather than tidy.
 # The body is pure Ruby (Pathname + ENV), and its docs.yml neighbours —
 # `docs:check_refs`, `tracker:check` — declare no `:environment` either, so that
