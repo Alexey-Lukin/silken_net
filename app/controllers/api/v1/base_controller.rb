@@ -129,7 +129,7 @@ module Api
         # одразу, а не доживає свої 14 днів.
         if @current_user.nil? && session[:user_id]
           user = User.find_by(id: session[:user_id])
-          @current_user = user if user && session[:ps].to_s == user.password_salt.to_s.last(10)
+          @current_user = user if user&.session_salt_matches?(session[:ps])
         end
 
         return render_unauthorized unless @current_user

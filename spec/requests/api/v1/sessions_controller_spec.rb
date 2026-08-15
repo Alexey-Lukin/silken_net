@@ -85,6 +85,24 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
+    # 🔴 [SEC.16] Вихід мусить бути СИМЕТРИЧНИЙ входу: `establish_session` робить
+    # `reset_session` проти session-fixation, а логаут доти знімав рівно ОДИН
+    # ключ із трьох (`:user_id`), лишаючи в cookie `:ps` і `:acting_org_id`.
+    # Доступу це не давало, але на спільному пристрої в браузері лишалась
+    # організація попереднього оператора. Пін цілить у `:acting_org_id` навмисно
+    # — саме він переживав вихід найдовше (гинув аж на НАСТУПНОМУ логіні), і
+    # саме на ньому мутація `reset_session` → `session[:user_id] = nil` червоніє.
+    it "clears the WHOLE session on logout, not just :user_id" do
+      post "/login", params: { email: user.email_address, password: "password12345" }
+      expect(session[:ps]).to be_present
+
+      delete "/logout", headers: { "Accept" => "text/html" }
+
+      expect(session[:user_id]).to be_nil
+      expect(session[:ps]).to be_nil
+      expect(session[:acting_org_id]).to be_nil
+    end
+
     # Назва обіцяє ЗНИЩЕННЯ рядка, а не код відповіді: `:ok` переживає й
     # повністю знятий `current_session&.destroy`.
     it "destroys the current session record when session exists" do

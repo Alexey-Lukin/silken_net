@@ -22,8 +22,7 @@ Rails.application.routes.draw do
   # fail2ban банить проби). CSRF вбудований у Sidekiq 8.
   mount Sidekiq::Web => "/sidekiq", :constraints => lambda { |req|
     user = User.find_by(id: req.session[:user_id])
-    user.present? &&
-      req.session[:ps].to_s == user.password_salt.to_s.last(10) &&
+    user&.session_salt_matches?(req.session[:ps]) &&
       (user.role_admin? || user.role_super_admin?)
   }
 

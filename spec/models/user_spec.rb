@@ -496,6 +496,52 @@ RSpec.describe User, type: :model do
     end
   end
 
+  # [SEC.16] Дім салт-стемпа сесії. Звіряльників ЧОТИРИ і спільного предка в них
+  # немає (`BaseController` · `LocalesController` під сестрою · ActionCable
+  # `Connection` · route-constraint `/sidekiq`), тож єдине місце, яке бачать усі, —
+  # ця модель, і єдине місце, де цю поведінку можна пінити один раз, — теж вона.
+  describe "#session_salt_matches? (cookie ⟷ чинний пароль)" do
+    let(:user) { create(:user) }
+
+    it "accepts the stamp its own writer produces" do
+      expect(user.session_salt_matches?(user.session_salt_stamp)).to be true
+    end
+
+    it "rejects a stamp from a different password" do
+      expect(user.session_salt_matches?("0" * described_class::SESSION_STAMP_LENGTH)).to be false
+    end
+
+    it "rejects a stamp that went stale after a password change" do
+      stale = user.session_salt_stamp
+      user.update!(password: "brand-new-password-123", password_confirmation: "brand-new-password-123")
+
+      expect(user.reload.session_salt_matches?(stale)).to be false
+    end
+
+    # 🔴 Ядро пункту, і воно НЕ про досяжність: попередня форма звірки
+    # (`session[:ps].to_s == user.password_salt.to_s.last(10)`) для користувача
+    # без `password_digest` згортала ОБИДВА боки в `""`, тобто повертала true —
+    # fail-OPEN, синхронно в усіх чотирьох звіряльниках. Сьогодні такого
+    # користувача створити не можна (`password can't be blank`), тому пін іде
+    # через стаб: він стереже не наявний шлях, а ФОРМУ, яка чекає свого тригера —
+    # першого passwordless/OAuth-входу, що не проставить пароля.
+    context "when the account has no password at all (fail-CLOSED)" do
+      before { allow(user).to receive(:password_salt).and_return(nil) }
+
+      it "produces no stamp to compare against" do
+        expect(user.session_salt_stamp).to be_nil
+      end
+
+      it "refuses an empty stamp instead of matching it" do
+        expect(user.session_salt_matches?("")).to be false
+      end
+
+      it "refuses a nil stamp instead of matching it" do
+        expect(user.session_salt_matches?(nil)).to be false
+      end
+    end
+  end
+
   # [ARCH.57] Зміна ролі → audit-ланцюг (model-layer ловить і console-шлях).
   describe "role-change audit-trail [ARCH.57]" do
     let!(:oracle) do

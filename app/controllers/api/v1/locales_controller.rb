@@ -91,7 +91,7 @@ module Api
       # тобто мертвим кодом, який виглядає як дбайливість.
       def salt_verified_user
         user = User.find_by(id: session[:user_id]) if session[:user_id].present?
-        user if user && session[:ps].to_s == user.password_salt.to_s.last(10)
+        user if user&.session_salt_matches?(session[:ps])
       end
 
       def remember_choice_for_signed_in_user(locale)

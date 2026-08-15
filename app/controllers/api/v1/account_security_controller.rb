@@ -155,7 +155,7 @@ module Api
         # authenticate_user!). Звірка user_id: Bearer-запит із ЧУЖИМ cookie-jar
         # не має штампувати чужу сесію.
         if session[:user_id].to_s == current_user.id.to_s
-          session[:ps] = current_user.password_salt.to_s.last(10)
+          session[:ps] = current_user.session_salt_stamp
         end
 
         # [SECURITY] Revoke every other Rails session — a password change is a

@@ -93,7 +93,7 @@ module ApplicationCable
       # уже застосував — тобто рівно ту дірку, від якої стемп і зроблено.
       def verified_user(data)
         user = User.find_by(id: data["user_id"])
-        reject_unauthorized_connection unless user && data["ps"].to_s == user.password_salt.to_s.last(10)
+        reject_unauthorized_connection unless user&.session_salt_matches?(data["ps"])
 
         user
       end

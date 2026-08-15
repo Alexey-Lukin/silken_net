@@ -123,6 +123,37 @@ class User < ApplicationRecord
     password_salt&.last(10)
   end
 
+  # --- SESSION SALT-STAMP [SEC.16] ---
+  #
+  # Хвіст `password_salt`, яким cookie-сесія прив'язується до чинного пароля:
+  # зміна пароля рухає сіль → украдений cookie гасне, не чекаючи своїх 14 днів.
+  #
+  # 🔴 **Дім тут — на МОДЕЛІ — обраний периметром, а не смаком: звіряльників
+  # ЧОТИРИ, і спільного предка в них немає за побудовою** — `BaseController`,
+  # `LocalesController` (успадковує сестру `ApplicationController`),
+  # `ApplicationCable::Connection` (ActionCable, не ActionController) і
+  # route-constraint `/sidekiq` у `config/routes.rb`. Єдине, що бачать усі
+  # чотири, — сам `User`.
+  #
+  # ⚠️ **`&.` тут НЕ оборонний рефлекс, а дискримінатор.** Попередня форма
+  # `password_salt.to_s.last(10)` для користувача без `password_digest` давала
+  # `""`, і порожній стемп сесії згортався в `""` теж — тобто перевірка
+  # ставала **істинною**, fail-OPEN, синхронно в усіх чотирьох місцях. Сьогодні
+  # недосяжно (сесія вимагає логіну паролем), але це форма, що чекає свого
+  # тригера: перший passwordless/OAuth-шлях, який не проставить пароля, зробить
+  # її дірою МОВЧКИ. Тому предикат вимагає непорожнього очікуваного значення
+  # ЯВНО, а не покладається на те, що порожнеча недосяжна.
+  SESSION_STAMP_LENGTH = 10
+
+  def session_salt_stamp
+    password_salt&.last(SESSION_STAMP_LENGTH)
+  end
+
+  def session_salt_matches?(stamp)
+    expected = session_salt_stamp
+    expected.present? && stamp.to_s == expected
+  end
+
   # --- МЕТОДИ ---
 
   def forest_commander?

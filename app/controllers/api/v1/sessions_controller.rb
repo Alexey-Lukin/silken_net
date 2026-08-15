@@ -87,7 +87,15 @@ module Api
       def destroy
         # Видаляємо фізичний запис сесії, якщо він існує
         current_session&.destroy
-        session[:user_id] = nil
+
+        # [SEC.16] `reset_session`, а НЕ `session[:user_id] = nil`: у cookie живуть
+        # ТРИ ключі, і зняття одного лишає два. Доступу вони не дають
+        # (`authenticate_user!` вимагає `:user_id`), тож це не діра, а залишковий
+        # слід — і найгірший із трьох саме `:acting_org_id`: на спільному пристрої
+        # в браузері лишалась організація, в контексті якої працював попередній
+        # оператор. Дзеркалить `establish_session`, який робить те саме на вході
+        # проти session-fixation — вихід мусить бути симетричним входу.
+        reset_session
 
         respond_to do |format|
           format.json { render json: { message: I18n.t("flash.sessions.logout_success") }, status: :ok }
@@ -118,7 +126,7 @@ module Api
         # 2. Стандартна Rails сесія (Cookie-based) + salt-прив'язка [SEC.16]:
         # authenticate_user! звіряє цей stamp — password-change гасить чужі cookie.
         session[:user_id] = user.id
-        session[:ps] = user.password_salt.to_s.last(10)
+        session[:ps] = user.session_salt_stamp
 
         # 3. Створення запису в таблиці Session (Operational Pulse)
         # Це тригерне track_user_activity через after_create в моделі Session
