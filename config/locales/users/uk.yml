@@ -45,4 +45,9 @@ uk:
         password: Пароль
         providers: Провайдери
         set: Встановлено
+    roles:
+      admin: Адміністратор
+      forester: Лісник
+      investor: Інвестор
+      super_admin: Адміністратор платформи
     show_title: Профіль // %{name}

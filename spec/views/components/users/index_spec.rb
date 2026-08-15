@@ -88,17 +88,27 @@ RSpec.describe Users::Index do
 
     it "renders admin role with red badge colors" do
       expect(html).to include("bg-red-900/50")
-      expect(html).to include("admin")
     end
 
     it "renders forester role with emerald badge colors" do
       expect(html).to include("bg-emerald-900/50")
-      expect(html).to include("forester")
     end
 
     it "renders investor role with blue badge colors" do
       expect(html).to include("bg-blue-900/50")
-      expect(html).to include("investor")
+    end
+
+    # 🔴 [I18N.1] Мітки ролей — у НЕ-базовій локалі: в англійській «admin» є підрядком
+    # людської назви «Administrator», тож пін не розрізняв би сирий enum від мітки й
+    # лишався б зеленим при регресії. Негативна половина обовʼязкова з тієї ж причини.
+    it "renders human role labels, never the raw enum tokens" do
+      I18n.with_locale(:uk) do
+        localized = render_component(users: users)
+
+        expect(localized).to include("Адміністратор", "Лісник", "Інвестор")
+        expect(localized).not_to include(">forester<")
+        expect(localized).not_to include(">investor<")
+      end
     end
 
     # 🔴 [TEST.12] `super_admin` — РЕАЛЬНА четверта роль enum'а, і доти вона власного

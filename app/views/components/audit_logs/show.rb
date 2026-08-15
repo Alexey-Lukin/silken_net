@@ -98,7 +98,7 @@ module AuditLogs
           end
           div(class: "pt-3 border-t border-emerald-900/30") do
             p(class: "text-mini text-gray-600 uppercase mb-1") { t(".actor.role") }
-            span(class: "px-2 py-0.5 bg-emerald-900 text-emerald-200 text-mini uppercase font-bold") { @log.user.role }
+            span(class: "px-2 py-0.5 bg-emerald-900 text-emerald-200 text-mini uppercase font-bold") { @log.user.role_label }
           end
         else
           p(class: "text-compact text-gray-700 italic") { t(".actor.system") }

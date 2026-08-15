@@ -41,7 +41,7 @@ module Users
             h2(class: "text-4xl font-extralight text-white tracking-tighter") { "#{@user.first_name} #{@user.last_name}" }
             p(class: "text-emerald-800 font-mono text-xs uppercase tracking-widest mt-2") { @user.email_address }
             div(class: "mt-6 flex justify-center md:justify-start gap-4") do
-              badge(t(".role", role: @user.role.upcase))
+              badge(t(".role", role: @user.role_label.upcase))
               badge(t(".id", id: @user.id))
             end
           end

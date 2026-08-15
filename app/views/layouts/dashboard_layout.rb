@@ -197,7 +197,7 @@ class DashboardLayout < ApplicationComponent
     div(class: "flex items-center gap-3") do
       div(class: "text-right hidden lg:block") do
         p(class: "text-tiny text-gaia-text-strong leading-none") { @current_user&.full_name }
-        p(class: "text-micro text-gaia-text-subtle uppercase tracking-widest mt-1") { @current_user&.role }
+        p(class: "text-micro text-gaia-text-subtle uppercase tracking-widest mt-1") { @current_user&.role_label }
       end
       div(class: "h-10 w-10 border border-gaia-primary flex items-center justify-center text-gaia-primary bg-gaia-surface-sunken transition-colors duration-300") do
         @current_user&.first_name&.first || "A"

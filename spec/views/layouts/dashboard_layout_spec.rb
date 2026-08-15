@@ -16,6 +16,9 @@ RSpec.describe DashboardLayout do
       email_address: email_address
     )
     u.define_singleton_method(:full_name) { "#{first_name} #{last_name}" }
+    # [I18N.1] Мітку бере ДІМ (`User.role_label`), а не сама фікстура: інакше мок став би
+    # другою деривацією й показував би мітку там, де застосунок показав би сире значення.
+    u.define_singleton_method(:role_label) { User.role_label(role) }
     # ОБИДВА предикати, і це не надмірність: `super_admin?` читає індикатор
     # контексту, `role_super_admin?` — делегат під ним, а сайдбар питає перший.
     # Визначити лише один означало б змоделювати актора, який одночасно
@@ -175,9 +178,15 @@ RSpec.describe DashboardLayout do
       expect(html).to include("Olena Kovalenko")
     end
 
-    it "renders the user role" do
-      html = render_layout(user: mock_user(role: "admin"))
-      expect(html).to include("admin")
+    # [I18N.1] Не-базова локаль: «admin» є підрядком «Administrator», тож у en цей пін
+    # не розрізняв би сирий enum від людської мітки. Напис видно на КОЖНІЙ сторінці.
+    it "renders the user role as a human label" do
+      I18n.with_locale(:uk) do
+        html = render_layout(user: mock_user(role: "admin"))
+
+        expect(html).to include("Адміністратор")
+        expect(html).not_to include(">admin<")
+      end
     end
   end
 

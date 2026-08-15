@@ -46,6 +46,24 @@ class User < ApplicationRecord
     super_admin: 3
   }, prefix: true, default: :investor
 
+  # [I18N.1] Людська назва РОЛІ — дзеркало `Actuator::DEVICE_TYPE_LABEL_SCOPE`.
+  # Скоуп належить домену МОДЕЛІ, не компоненту, який показав значення першим
+  # (`04_04 §12.14`). ⚠️ Роль рендериться на ЧОТИРЬОХ поверхнях, і одна з них —
+  # сайдбар, тобто напис видно на КОЖНІЙ сторінці дашборда; доти всі чотири
+  # друкували англійський технічний токен у локалізованому інтерфейсі.
+  ROLE_LABEL_SCOPE = "users.roles"
+
+  # ОДНА деривація ключа на застосунок. Fail-open: новий член enum'а рендериться
+  # сирим значенням, доки мітка не доїде в локалі (гейт парності це червонить).
+  def self.role_label(role)
+    value = role.to_s
+    I18n.t("#{ROLE_LABEL_SCOPE}.#{value}", default: value)
+  end
+
+  def role_label
+    self.class.role_label(role)
+  end
+
   # --- Series C (Privacy & Localization) ---
   # [I18N.1/I18N.3] Persisted мовна вподоба — джерело для ОБОХ контурів.
   # (а) пошта з Sidekiq, де ані cookie, ані сесії немає (`in_locale_of`);

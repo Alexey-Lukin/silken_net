@@ -45,4 +45,9 @@ lv:
         password: Parole
         providers: Pakalpojumu sniedzēji
         set: Iestatīts
+    roles:
+      admin: Administrators
+      forester: Mežsargs
+      investor: Investors
+      super_admin: Platformas administrators
     show_title: Profils // %{name}

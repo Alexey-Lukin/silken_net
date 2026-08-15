@@ -93,8 +93,10 @@ RSpec.describe AuditLogs::Show do
       expect(html).to include("ada@silken.net")
     end
 
-    it "renders actor role" do
-      expect(html).to include("admin")
+    # [I18N.1] Локаль НЕ базова: «admin» є підрядком «Administrator», тож у en пін не
+    # розрізняв би сирий enum від мітки.
+    it "renders actor role as a human label" do
+      expect(I18n.with_locale(:uk) { render_component(log: log) }).to include("Адміністратор")
     end
 
     it "renders System actor notice for system logs" do

@@ -45,4 +45,9 @@ lt:
         password: Slaptažodis
         providers: Tiekėjai
         set: Nustatyta
+    roles:
+      admin: Administratorius
+      forester: Girininkas
+      investor: Investuotojas
+      super_admin: Platformos administratorius
     show_title: Profilis // %{name}

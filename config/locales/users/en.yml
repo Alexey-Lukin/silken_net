@@ -45,4 +45,9 @@ en:
         password: Password
         providers: Providers
         set: Set
+    roles:
+      admin: Administrator
+      forester: Forester
+      investor: Investor
+      super_admin: Platform Administrator
     show_title: Profile // %{name}

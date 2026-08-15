@@ -57,7 +57,7 @@ module Users
           end
         end
         td(class: "p-4") do
-          span(class: tokens("px-2 py-0.5 rounded-sm text-mini font-bold uppercase", role_color(user.role))) { user.role }
+          span(class: tokens("px-2 py-0.5 rounded-sm text-mini font-bold uppercase", role_color(user.role))) { user.role_label }
         end
         td(class: "p-4 text-gray-600") do
            if user.last_seen_at
