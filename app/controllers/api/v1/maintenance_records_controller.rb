@@ -136,7 +136,10 @@ module Api
           title: I18n.t("maintenance.edit_title", id: @record.id),
           component: Maintenance::Form.new(
             record: @record,
-            existing_photos: @record.photos.limit(6).to_a
+            existing_photos: @record.photos.limit(6).to_a,
+            # [UI.6] Актор — явно: галерея вирішує, чи показувати кнопку НЕЗВОРОТНОГО
+            # видалення фотодоказу, і компонент більше не деривує це право з маршруту.
+            current_user: current_user
           )
         )
       end
@@ -174,7 +177,8 @@ module Api
                 title: I18n.t("maintenance.edit_title", id: @record.id),
                 component: Maintenance::Form.new(
                   record: @record,
-                  existing_photos: @record.photos.limit(6).to_a
+                  existing_photos: @record.photos.limit(6).to_a,
+                  current_user: current_user
                 ),
                 status: :unprocessable_content
               )

@@ -3,10 +3,18 @@ module Maintenance
   class Form < ApplicationComponent
     # @param record [MaintenanceRecord] the record to edit/create
     # @param existing_photos [Array<ActiveStorage::Blob>] pre-loaded first page of photos (max 6, eager-load in controller)
-    def initialize(record:, existing_photos: [])
+    # 🔴 [UI.6] `current_user:` з дефолтом `nil` — fail-CLOSED: компонент рендерить
+    # ГЕЙТОВАНУ й НЕЗВОРОТНУ дію (кнопку видалення фотодоказу, `purge_later` у S3 —
+    # [SEC.28]), а доти віддавав її літеральним `editable: true`, тобто не знав про
+    # актора взагалі й не міг знати. Транзитивно це було безпечно (галерею дістають
+    # лише `edit` і невдалий `update`, обидва за `authorize_record_mutation!`), але
+    # безпека трималась на маршруті викликача, а не на власному контракті —
+    # і саме таку залежність правило UI.5/UI.6 і забороняє.
+    def initialize(record:, existing_photos: [], current_user: nil)
       @record = record
       @editing = @record.persisted?
       @existing_photos = existing_photos
+      @current_user = current_user
     end
 
     def view_template
@@ -118,16 +126,6 @@ module Maintenance
                        "file:text-gaia-primary file:text-mini file:uppercase file:px-3 file:py-1 " \
                        "focus-visible:border-gaia-primary outline-none transition-all"
             end
-
-            # Direct upload progress bar (активується activestorage JS)
-            div(class: "hidden mt-2",
-              id: "direct-upload-progress",
-              data: { "direct-upload-progress-bar": "" }
-            ) do
-              div(class: "h-1 bg-gaia-surface-sunken overflow-hidden") do
-                div(class: "h-full bg-gaia-primary transition-all", style: "width:0%", id: "direct-upload-bar")
-              end
-            end
           end
 
           # -----------------------------------------------------------------------
@@ -177,10 +175,10 @@ module Maintenance
     # З БУДЬ-ЯКИМ ФОТО не зберігалась узагалі, — а «×» сабмітив зовнішню форму
     # замість власної. Виміряно spec-сумісним HTML5-парсером, не виведено. [UI.7]
     #
-    # ⚠️ `editable: true` літералом безпечний ТРАНЗИТИВНО, а не сам собою: галерею
-    # дістають лише `edit` і невдалий `update`, обидва за `authorize_record_mutation!`
-    # (= `mutable_by?`). Незахищеного шляху рендеру немає; вирівняти форму на явний
-    # предикат, як у `Maintenance::Show`, — гігієна [UI.6], не діра.
+    # ✅ [UI.6] Тепер явний предикат замість літерала — форма питає ТУ САМУ модель, що
+    # й `authorize_record_mutation!` (`MaintenanceRecord#mutable_by?`), тож право
+    # більше не деривується з маршруту. Без актора (`nil`) галерея нередагована —
+    # fail-closed, а не «як зазвичай».
     def render_existing_photos
       return unless @editing && @existing_photos.any?
 
@@ -192,7 +190,7 @@ module Maintenance
           # (`Pagy.new` кидає ArgumentError), тож стара форма валила цю гілку 500-ю
           # на кожному записі з фото. Сусід `TreeChronicleService` уже на новій.
           pagy: Pagy::Offset.new(count: @existing_photos.size, limit: PhotoGallery::PHOTOS_PER_PAGE, page: 1),
-          editable: true
+          editable: @record.mutable_by?(@current_user)
         )
       end
     end

@@ -13,9 +13,9 @@ unless Views::Shared::UI::PhotoCard.method_defined?(:_test_blob_helpers_stubbed)
 end
 
 RSpec.describe Maintenance::Form do
-  def render_component(record:, existing_photos: [])
+  def render_component(record:, existing_photos: [], current_user: nil)
     ApplicationController.renderer.render(
-      component_class.new(record: record, existing_photos: existing_photos),
+      component_class.new(record: record, existing_photos: existing_photos, current_user: current_user),
       layout: false
     )
   end
@@ -162,7 +162,7 @@ RSpec.describe Maintenance::Form do
   describe "edit form with existing photos" do
     let(:record) { create(:maintenance_record) }
 
-    def render_with_photo
+    def render_with_photo(current_user: nil)
       photo = OpenStruct.new(
         filename: ActiveStorage::Filename.new("existing.jpg"),
         byte_size: 500_000,
@@ -174,7 +174,26 @@ RSpec.describe Maintenance::Form do
       # з `**kwargs`, тоді як у 43.x `Pagy.new` не приймає аргументів узагалі. Тобто спека
       # дописувала гему API, якого той не має, і рівно тому провал міграції на `Pagy::Offset`
       # був невидимий: компонент валив 500 на кожному записі з фото, а приклад лишався зелений.
-      render_component(record: record, existing_photos: [ photo ])
+      render_component(record: record, existing_photos: [ photo ], current_user: current_user)
+    end
+
+    # 🔴 [UI.6] ПАРА, без якої фікс невидимий: доти галерея діставала `editable: true`
+    # ЛІТЕРАЛОМ, тобто право на НЕЗВОРОТНЕ видалення фотодоказу ([SEC.28]) деривувалось
+    # із маршруту викликача, а не з власного контракту компонента. Жоден приклад цього
+    # файлу не пінив `editable` взагалі — тож заміна літерала на предикат не червонила
+    # нічого, і фікс лишався б без свідка.
+    # ⚠️ Пін цілить у сам ЕЛЕМЕНТ (форма на photo-шлях із `_method=delete`), а не в
+    # рядок: `include("×")` чи клас кнопки проходили б через сусідні вузли (§Guard-craft #17).
+    def delete_forms(html)
+      Nokogiri::HTML5(html).css("form").select { |f| f["action"].to_s.match?(%r{/photos/}) }
+    end
+
+    it "hides the delete affordance when it does not know the actor (fail-closed)" do
+      expect(delete_forms(render_with_photo)).to be_empty
+    end
+
+    it "shows it to the record's author" do
+      expect(delete_forms(render_with_photo(current_user: record.user))).not_to be_empty
     end
 
     it "renders existing photo gallery in edit mode" do
