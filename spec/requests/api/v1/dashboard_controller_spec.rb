@@ -69,7 +69,9 @@ RSpec.describe Api::V1::DashboardController, type: :request do
 
         energy = response.parsed_body["energy"]
         expect(energy).to have_key("avg_voltage")
-        expect(energy).to have_key("status")
+        # [ARCH.84/ARCH.99] `status` знято: вердикт про запас енергії на шині,
+        # яку BQ25570 сам і стабілізує, був фабрикацією за конструкцією.
+        expect(energy).not_to have_key("status")
       end
     end
 
@@ -180,29 +182,42 @@ RSpec.describe Api::V1::DashboardController, type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
-    context "with energy status branches" do
+    # 🔴 [ARCH.84/ARCH.99] Обидва приклади тут ЦЕМЕНТУВАЛИ фабрикацію: вимагали
+    # вердикту «STABLE/LOW_RESERVE» від величини, яка про запас енергії не каже
+    # нічого ЗА КОНСТРУКЦІЄЮ — `latest_voltage_mv` це мВ VDDA, а BQ25570
+    # стабілізує цю шину на 3.3 В, тобто поріг «> 3300» порівнював величину з її
+    # ж регульованим номіналом. Шкалу заряду знято присудом founder ще при
+    # ARCH.99; цей ключ пережив ту хвилю, бо мав НУЛЬ споживачів.
+    #
+    # ⚠️ Найгірший був перший: він вимагав «LOW_RESERVE» на ПОРОЖНІЙ базі, тобто
+    # цементував вердикт про запас енергії там, де телеметрії немає взагалі.
+    context "with the energy diagnostic" do
       before do
         allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_total_carbon_minted).and_return(0)
       end
 
-      it "returns LOW_RESERVE when no telemetry data exists" do
+      it "не віддає вердикту про запас енергії — його нічим виміряти" do
+        get "/dashboard", headers: headers, as: :json
+
+        energy = response.parsed_body["energy"]
+        expect(energy).not_to have_key("status")
+        expect(energy.keys).to contain_exactly("avg_voltage")
+      end
+
+      it "лишає сире діагностичне число, і на порожній базі воно НУЛЬ" do
         get "/dashboard", headers: headers, as: :json
 
         expect(response).to have_http_status(:ok)
-        energy = response.parsed_body["energy"]
-        expect(energy["avg_voltage"]).to be(0)
-        expect(energy["status"]).to eq("LOW_RESERVE")
+        expect(response.parsed_body.dig("energy", "avg_voltage")).to be(0)
       end
 
-      it "returns STABLE when average voltage exceeds 3300 mV" do
+      # ⊥ Ліхтар: число справді рахується, а не заглушене нулем назавжди.
+      it "віддає середнє по активних деревах, коли телеметрія є" do
         create(:tree, cluster: cluster, status: :active, latest_voltage_mv: 4100)
 
         get "/dashboard", headers: headers, as: :json
 
-        expect(response).to have_http_status(:ok)
-        energy = response.parsed_body["energy"]
-        expect(energy["avg_voltage"]).to be > 3300
-        expect(energy["status"]).to eq("STABLE")
+        expect(response.parsed_body.dig("energy", "avg_voltage")).to be > 3300
       end
     end
   end

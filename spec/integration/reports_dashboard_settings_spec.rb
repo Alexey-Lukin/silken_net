@@ -89,7 +89,10 @@ RSpec.describe "Reports, dashboard, and settings API" do
       expect(json["trees"]).to include("total", "active", "health_avg")
       expect(json["economy"]).to include("total_scc")
       expect(json["security"]).to include("active_alerts")
-      expect(json["energy"]).to include("avg_voltage", "status")
+      # [ARCH.84/ARCH.99] `status` знято: вердикт про запас енергії на шині,
+      # яку BQ25570 сам стабілізує на 3.3 В, був фабрикацією за конструкцією.
+      expect(json["energy"]).to include("avg_voltage")
+      expect(json["energy"]).not_to include("status")
     end
   end
 
