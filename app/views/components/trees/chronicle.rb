@@ -39,8 +39,8 @@ module Trees
 
     def render_header
       div(class: "flex items-center justify-between") do
-        h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".heading") }
-        span(class: "text-micro text-emerald-900 font-mono") { t(".events", count: @pagy.count) }
+        h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-subtle") { t(".heading") }
+        span(class: "text-micro text-gaia-text-subtle font-mono") { t(".events", count: @pagy.count) }
       end
     end
 
@@ -63,10 +63,10 @@ module Trees
         # Іконка та дата (ліва частина)
         div(class: "flex-shrink-0 w-16 text-center") do
           div(class: "text-lg") { entry.icon }
-          div(class: "text-micro font-mono text-emerald-900 mt-1") do
+          div(class: "text-micro font-mono text-gaia-text-muted mt-1") do
             plain(entry.date&.strftime(DATE_FORMAT_SHORT) || "—")
           end
-          div(class: "text-micro font-mono text-gray-700") do
+          div(class: "text-micro font-mono text-gaia-text-subtle") do
             plain(entry.date&.strftime(DATE_FORMAT_YEAR) || "")
           end
         end
@@ -83,7 +83,7 @@ module Trees
             end
           end
 
-          p(class: "text-tiny text-gray-400 font-mono leading-relaxed") { entry.description }
+          p(class: "text-tiny text-gaia-text-muted font-mono leading-relaxed") { entry.description }
         end
       end
     end
@@ -111,7 +111,7 @@ module Trees
       when :critical then "text-status-danger-text"
       when :warning  then "text-status-warning-text"
       when :info     then "text-status-info-text"
-      else "text-emerald-400"
+      else "text-gaia-text"
       end
     end
 

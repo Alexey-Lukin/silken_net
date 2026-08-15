@@ -59,6 +59,35 @@ RSpec.describe Errors::Page do
     end
   end
 
+  # 🔴 [UI.3] Пінів на ТЕКСТ цієї сторінки не було ЖОДНОГО — і це пояснює, чому дефект
+  # прожив стільки: сюїта стерегла тон гліфа (`emerald-700`) і мовчала про те, чи напис
+  # узагалі видно. Компонент не має власного фону, тож поверхня приходить із `<body>`
+  # (`--gaia-surface-base`): `text-white` давав **1.04:1** у світлій темі, а
+  # `text-emerald-300/80` — **1.37:1**. Тобто 404/403/500 показували порожній екран тому,
+  # у кого світла ОС, — на поверхні, яка є ОСТАННЬОЮ лінією й іншого способу сказати
+  # людині, що сталось, не має.
+  #
+  # ⚠️ Альфу `/80` знято разом із кольором навмисно: прозорість на змістовному тексті —
+  # прихований множник контрасту, якого не бачить ЖОДЕН прилад у цьому репо
+  # (`design_token_existence_spec` судить існування, браузерний збирач композитить лише
+  # стек ФОНІВ). Повернення `text-…/NN` сюди має червоніти як сирий колір.
+  #
+  # 🔒 Стеля: судиться ТЕКСТ. `TONES` і растрова сітка лишаються сирим emerald свідомо —
+  # обидва `aria-hidden`-декорація, тем-інваріантна за задумом; чи має тон `:info` їхати
+  # на `status-info`, це питання ГУЧНОСТІ й окрема ⚖️ (`00_07` UI.3).
+  describe "token discipline (contrast)" do
+    it "рендерить текст на токенах — сторінка помилки видима в ОБОХ темах" do
+      html = render_component(heading: "SYSTEM FAULT", message: "Щось пішло не так")
+
+      # liveness: обидва текстові вузли справді відрендерились
+      expect(html).to include("text-gaia-text-strong"), "заголовок без токена — пін вакуумний"
+      expect(html).to include("text-gaia-text-muted")
+
+      expect(html).not_to match(/\btext-(?:white|(?:gray|zinc|neutral|slate|stone)-\d+|emerald-\d+)\b/)
+      expect(html).not_to match(%r{\btext-[\w-]+/\d+\b})
+    end
+  end
+
   def render_component(**kwargs)
     ApplicationController.renderer.render(described_class.new(**kwargs), layout: false)
   end

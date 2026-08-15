@@ -5,9 +5,24 @@
 # has no organization assigned (наприклад, системний бот Oracle Executioner,
 # або щойно створений акаунт у процесі onboarding).
 #
-# Стиль: domain page-component (auth-сторінка), тому використовує raw emerald
-# Tailwind токени узгоджено з Sessions::New / Passwords::Forgot
-# (див. docs/04_04 §3.5 — виняток для domain page-components).
+# 🔴 Тут доти стояло, що raw emerald — «виняток для domain page-components» за
+# `04_04 §3.5`. Дозвіл СКАСОВАНО 2026-08-07 (`04_04 §1`/`§3.5` звужено до
+# тем-інваріантного *й оголошеного*), а покликання «узгоджено з Sessions::New»
+# застаріло з протилежного боку: той сусід уже мігрований, тож звірятись треба
+# було саме з ним. Вимір на цій сторінці (UI.3, 2026-08-15): заголовок
+# `text-white` — **1.04:1** у світлій темі, а `text-emerald-900` на кнопці виходу —
+# **1.33:1** світла / **2.17:1** темна, тобто ЄДИНА дія першого екрана
+# платформеного адміністратора була невидима в ОБОХ темах.
+#
+# 🔴 Панель була `bg-black/80`, і саме напівпрозорість робила її оманливою:
+# «чорне є чорне» читається як тем-інваріантність, але при α=0.8 вона
+# композититься з тлом сторінки — фактично `rgb(50,50,50)` у світлій проти
+# `rgb(1,1,1)` у темній. Тобто §3.5-виняток «тем-інваріантне за задумом» на
+# будь-яку `/NN`-поверхню не поширюється за побудовою.
+#
+# Форму взято з мігрованого близнюка `Sessions::New` (той самий екран auth-родини),
+# а не винайдено: скло лишається (`bg-gaia-surface/80 backdrop-blur-xl`), змінюється
+# лише те, що воно тепер знає про тему.
 module Errors
   class NoOrganization < ApplicationComponent
     # @param current_user [User, nil] актор — потрібен ЛИШЕ щоб вирішити, чи є
@@ -28,7 +43,7 @@ module Errors
 
     def view_template
       main(
-        class: "min-h-screen flex items-center justify-center p-4 relative overflow-hidden",
+        class: "min-h-screen bg-gaia-surface-base flex items-center justify-center p-4 relative overflow-hidden",
         role: "main"
       ) do
         div(
@@ -39,7 +54,7 @@ module Errors
         div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10") do
           render_header
 
-          div(class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do
+          div(class: "p-8 border border-gaia-border bg-gaia-surface/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do
             render_message
             render_choose_organization
             render_logout_link
@@ -55,13 +70,13 @@ module Errors
         div(class: "inline-block h-12 w-12 border border-status-danger-accent rotate-45 mb-4 relative", aria_hidden: "true") do
           div(class: "absolute inset-1 bg-status-danger-accent animate-pulse")
         end
-        h1(class: "text-3xl font-extralight text-white tracking-[0.3em] uppercase") { t(".heading") }
-        p(class: "text-tiny text-emerald-700 uppercase tracking-[0.5em]") { t(".subtitle") }
+        h1(class: "text-3xl font-extralight text-gaia-text-strong tracking-[0.3em] uppercase") { t(".heading") }
+        p(class: "text-tiny text-gaia-text-muted uppercase tracking-[0.5em]") { t(".subtitle") }
       end
     end
 
     def render_message
-      div(class: "space-y-4 text-compact text-emerald-300/80 leading-relaxed") do
+      div(class: "space-y-4 text-compact text-gaia-text-muted leading-relaxed") do
         p do
           plain t(".body_1")
         end
@@ -70,7 +85,7 @@ module Errors
         # адміністратор, і його стан інший: членства не бракує, бракує ОБРАНОГО
         # контексту. Лишити спільний текст означало б поставити кнопку виходу
         # впритул до речення, яке заперечує її існування.
-        p(class: "text-tiny text-emerald-700 uppercase tracking-widest") do
+        p(class: "text-tiny text-gaia-text-subtle uppercase tracking-widest") do
           t(super_admin? ? ".body_2_super_admin" : ".body_2")
         end
       end
@@ -82,9 +97,9 @@ module Errors
       div(class: "text-center") do
         a(
           href: organizations_path,
-          class: "inline-block px-6 py-3 border border-emerald-500 text-emerald-400 text-tiny uppercase " \
-                 "tracking-[0.3em] hover:bg-emerald-500 hover:text-black transition-colors " \
-                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          class: "inline-block px-6 py-3 border border-gaia-primary text-gaia-primary text-tiny uppercase " \
+                 "tracking-[0.3em] hover:bg-emerald-500 hover:text-gaia-surface transition-colors " \
+                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary"
         ) { t(".choose_organization") }
       end
     end
@@ -96,13 +111,13 @@ module Errors
     end
 
     def render_logout_link
-      div(class: "pt-4 border-t border-emerald-900/30 text-center") do
+      div(class: "pt-4 border-t border-gaia-border text-center") do
         button_to(
           t(".sign_out"),
           logout_path,
           method: :delete,
           aria: { label: "Sign out" },
-          class: "text-tiny text-emerald-900 uppercase tracking-widest hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors bg-transparent border-0 cursor-pointer"
+          class: "text-tiny text-gaia-text-subtle uppercase tracking-widest hover:text-gaia-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-colors bg-transparent border-0 cursor-pointer"
         )
       end
     end

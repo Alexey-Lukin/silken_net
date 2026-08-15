@@ -149,10 +149,16 @@ RSpec.describe Trees::Chronicle do
   end
 
   describe "severity text classes" do
+    # ⚠️ Клас змінився `text-emerald-400` → `text-gaia-text` (UI.3, 2026-08-15), і ⛔ вище
+    # ПЕРЕВІРЕНО, а не проігноровано: він стереже те, що фолбек НЕ відрізняється від живого
+    # `:stable` — обидва й далі беруть цю саму гілку, тож захищене твердження ціле.
+    # Змінилась лише читабельність: `emerald-400` на `bg-gaia-surface-sunken` давав **1.76:1**
+    # у світлій темі; у темній `--gaia-text` = `#a7f3d0`, тобто той самий блідий emerald —
+    # вигляд теми, якою користуються, не зрушив.
     it "renders unknown severity with default emerald text" do
       entry = build_entry(severity: :unknown, title: "Unknown Severity Text")
       html = render_component(tree: tree, entries: [ entry ], pagy: pagy)
-      expect(html).to include("text-emerald-400")
+      expect(html).to include("text-gaia-text")
     end
   end
 
@@ -179,6 +185,37 @@ RSpec.describe Trees::Chronicle do
       entry = build_entry(event_type: :recovery, title: "Recovery Event")
       html = render_component(tree: tree, entries: [ entry ], pagy: pagy)
       expect(html).to include("bg-status-active")
+    end
+  end
+
+  # 🔴 [UI.3] Носія цій осі не існувало, і саме тому шість сирих кольорів прожили тут
+  # непоміченими. Хроніка рендериться лінивим фреймом УСЕРЕДИНІ `bg-gaia-surface-sunken`
+  # (`trees/show.rb#render_chronicle_frame`), тобто поверхня токенізована, а текст був ні —
+  # виміряно композитом на цій парі: дата й лічильник `emerald-900` **2.07:1** у темній,
+  # рік `gray-700` **1.93:1**, заголовок `emerald-700` **3.71:1**, опис події `gray-400`
+  # **2.36:1** у світлій. Чотири з шести падали в ТЕМНІЙ — тобто в тій, якою й користуються.
+  #
+  # ⚠️ Форма піна — НЕГАТИВ на родину, а не перелік очікуваних класів: перелік довелось би
+  # правити з кожним рефактором розмітки й він мовчав би про СЬОМИЙ сайт, доданий завтра.
+  # Позитивна половина обовʼязкова окремо — без неї «нуль порушень» означало б і «нуль
+  # перевірок» на порожньому рендері.
+  #
+  # 🔒 Стеля названа: судиться лише ТЕКСТ. `border-emerald-800` і `hover:bg-emerald-950/5`
+  # у цьому ж файлі лишаються сирими СВІДОМО — перший є severity-сигналом, і очевидна
+  # заміна на `border-status-neutral` зробила б його НЕВИДИМИМ у світлій темі (той токен —
+  # пастельний ФОН бейджа, `#f3f4f6` на `#f3f4f6` = 1.0:1), тобто рівно пастка `00_07` UI.1
+  # «мапа мусить знати РОЛЬ». Не-текстова вісь (1.4.11) лишається роботою UI.3.
+  describe "token discipline (contrast)" do
+    let(:raw_text_colour) { /\btext-(?:white|(?:gray|zinc|neutral|slate|stone)-\d+|emerald-\d+)\b/ }
+
+    it "рендерить увесь текст на токенах — жодного сирого кольору" do
+      html = render_component(tree: tree, entries: [ entry ], pagy: pagy)
+
+      # liveness: рендер справді дійшов до тексту, а не віддав порожнечу
+      expect(html).to include("text-gaia-text-subtle"), "рендер без токен-тексту — пін вакуумний"
+      expect(html).to include("text-gaia-text-muted")
+
+      expect(html).not_to match(raw_text_colour)
     end
   end
 

@@ -14,8 +14,17 @@
 # `@content`, а панель центрується власним `min-h-[60vh]` — у дашборді вона займає
 # контент-область, в auth-шаблоні майже весь екран.
 #
-# Стиль: domain page-component (як `Errors::NoOrganization`), тож raw emerald — легальний
-# виняток із токен-правила `04_04 §3`.
+# 🔴 Тут доти стояло, що raw emerald — «легальний виняток із токен-правила `04_04 §3`,
+# бо це domain page-component». Той дозвіл СКАСОВАНО 2026-08-07 (`04_04 §1`/`§3.5`:
+# сира поверхня чи сирий текст на доменній сторінці = дефект теми), тобто коментар
+# роками оголошував санкціонованим рівно те, що робило цю сторінку невидимою:
+# `text-white` на світлому тлі давав **1.04:1**, а `text-emerald-300/80` — **1.37:1**.
+# Остання лінія оборони показувала порожній екран тому, хто має світлу ОС.
+#
+# Текст тепер на токенах. Сирим лишається САМЕ декоративне: ромб-гліф (`TONES`) і
+# растрова сітка-watermark — обидва `aria-hidden`, тем-інваріантні за задумом.
+# ⚖️ Чи має тон `:info` їхати на `status-info` замість бренд-emerald — питання
+# ГУЧНОСТІ, не правдивості, і воно відкрите (`00_07` UI.3): фаза смаку окрема.
 module Errors
   class Page < ApplicationComponent
     # Тон = вага помилки, а не смак: 404 не повинен кричати так само, як 500.
@@ -47,8 +56,8 @@ module Errors
 
         div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10 text-center") do
           render_glyph
-          h1(class: "text-3xl font-extralight text-white tracking-[0.3em] uppercase mt-6") { @heading }
-          p(class: "text-compact text-emerald-300/80 leading-relaxed mt-4") { @message }
+          h1(class: "text-3xl font-extralight text-gaia-text-strong tracking-[0.3em] uppercase mt-6") { @heading }
+          p(class: "text-compact text-gaia-text-muted leading-relaxed mt-4") { @message }
         end
       end
     end
