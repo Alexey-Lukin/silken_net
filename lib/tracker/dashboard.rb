@@ -415,7 +415,11 @@ module Tracker
     # `§03/§05` header declares a multi-module set (any OK); a `§NNx` sub-letter
     # heading (§01a/§08b) is one module NN — several may share it (curation split).
     # Catches the drift that once buried §06 deploy items (S*/INF*) under §04 "DevOps"
-    # behind apologetic nav-notes. 📌 backlog / 🗄️ archive sections
+    # behind apologetic nav-notes — FIFTEEN of them, surfaced by 00_07's canon-mirror
+    # restructuring on 2026-06-01. (That count and date were dropped from the 00_06 §3
+    # row on 2026-08-10 and survived only in the commit message; restored here 2026-08-15,
+    # because the incident is what BOUGHT this guard and a rule whose evidence lives only
+    # in git history is a rule nobody can weigh.) 📌 backlog / 🗄️ archive sections
     # are module-agnostic (section_modules nil/empty) → exempt. (canon-mirror, 00_06 §4)
     #
     # ⛔ Curation is by THEME — by the subject's unchanging identity — and the obvious

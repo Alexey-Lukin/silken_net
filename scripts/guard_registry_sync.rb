@@ -162,6 +162,55 @@ registry = rest[0...stop].join
 
 errors = []
 
+# ── ЛІХТАР НА ВЛАСНУ МНОЖИНУ §3 (2026-08-15) ────────────────────────────────
+# CHECK E нижче — ЄДИНИЙ, хто читає §3 ПОРЯДКОВО, і він мовчить у чотири боки,
+# кожен із яких лишає EXIT 0:
+#   (a) таблиця перестала бути pipe-таблицею → `next unless start_with?("|")`
+#       не пускає в тіло ЖОДНОГО рядка, `claimed` падає в нуль, скрипт друкує ✓;
+#   (b) дописана 4-та колонка → `cols[-2]` зсувається В УСІХ рядках одразу;
+#   (c) загублений хвостовий `|` (або неекранований `|` у комірці) → `cols[-2]`
+#       стає колонкою ОПИСУ, і рядок ще й САМОМАСКУЄТЬСЯ: опис, що згадує
+#       advisory, вмикає скіп рядка, який насправді HARD;
+#   (d) команда, винесена з останньої комірки → `next if cmds.empty?` (оголошена
+#       стеля вище; тут вона нарешті ще й ВИМІРЮЄТЬСЯ).
+# Тому периметр міряється ТУТ, ДО перевірок: порожній набір знахідок означає
+# «чисто» лише коли перевірка ВИКОНАЛАСЬ (§Guard-craft #47).
+#
+# 🔴 ФОРМА ПОРОГУ — з `scripts/memory_route_check.rb` (SOURCE_FLOOR), і вона
+# СВІДОМО не «жорсткий пін» і не «не спадає»: це ПІДЛОГА З ЗАПАСОМ, яку людина
+# опускає ВИДИМОЮ правкою. Підстава емпірична, не смакова — за всю історію доку
+# рядки §3 зникали РІВНО ОДИН раз (−2 із 90, присуд У-ВЕЙ 2026-08-09), разом із
+# кодом, який вони реєстрували. Тобто легітимна втрата мала, рідкісна й
+# самопояснювальна, а обвал у нуль — ні. Лічильник call-site'ів тут був би
+# помилкою (він карає чесний рефакторинг), лічильник РЯДКІВ РЕЄСТРУ — ні.
+ROW_FLOOR   = 60   # data-рядків §3
+CLAIM_FLOOR = 20   # пар «команда (workflow)», які бачить CHECK E
+PATH_FLOOR  = 50   # файл-токенів, які перевіряє CHECK C
+
+registry_rows = registry.lines
+                        .select { |l| l.lstrip.start_with?("|") }
+                        .reject { |l| l.include?("| Guard |") || l.match?(/\A\s*\|[\s\-:|]+\|\s*\n?\z/) }
+
+if registry_rows.size < ROW_FLOOR
+  errors << "ПЕРИМЕТР §3 СТИСНУВСЯ: розпарсено #{registry_rows.size} data-рядків, підлога #{ROW_FLOOR}. " \
+            "Зелений вердикт над стиснутою множиною — не вердикт. Або таблиця перестала бути pipe-таблицею " \
+            "(і тоді CHECK E не побачив жодного рядка), або гейти справді зняли — тоді опусти підлогу ТУТ, " \
+            "щоб втрата стала видимим рішенням у діфі."
+end
+
+# Форма рядка (закриває (b) і (c)): рівно ТРИ колонки ⇒ 5 split-частин
+# ("", col1, col2, col3, ""). Екранований `\|` нейтралізується — він легітимний
+# усередині комірки; неекранований ламає і рендер, і `cols[-2]`.
+registry_rows.each do |row|
+  cols = row.chomp.gsub('\\|', " ").split("|", -1)
+  next if cols.size == 5
+
+  name = cols[1].to_s.strip[0, 60]
+  errors << "§3 рядок «#{name}» має #{cols.size - 2} колонок замість 3 — CHECK E читає команду як " \
+            "`cols[-2]`, тож зсув робить його вердикт беззмістовним МОВЧКИ. Причина зазвичай одна: " \
+            "неекранований `|` усередині комірки (пиши `\\|`) або загублений хвостовий `|`."
+end
+
 # ── A. docs_check run-steps ⊆ §3 command column (verbatim) ──────────────────
 docs_wf = YAML.safe_load_file(DOCS_WORKFLOW)
 steps   = docs_wf.dig("jobs", "docs_check", "steps") or
@@ -194,7 +243,14 @@ end
 
 # ── C. every file cited in §3 exists on disk ────────────────────────────────
 BARE_NAME_DIRS = "{app,scripts,tools,lib,bin,spec,firmware,docs,.github}"
-registry.scan(%r{[\w./*-]*\w\.(?:rb|py|sh|yml|rake)}).uniq.each do |token|
+# Названа змінна, а не інлайн-скан: без неї CHECK C не мав ЧОГО пінити, і його
+# охоплення могло тихо стиснутись — success-рядок його не друкував узагалі.
+path_tokens = registry.scan(%r{[\w./*-]*\w\.(?:rb|py|sh|yml|rake)}).uniq
+if path_tokens.size < PATH_FLOOR
+  errors << "CHECK C стиснувся: #{path_tokens.size} файл-токенів у §3, підлога #{PATH_FLOOR} — " \
+            "«жоден шлях не битий» над порожньою множиною означає «шляхів не знайдено»."
+end
+path_tokens.each do |token|
   found =
     if token.include?("*")
       Dir.glob(File.join(ROOT, token)).any?
@@ -311,6 +367,13 @@ registry.each_line do |line|
   end
 end
 
+if claimed < CLAIM_FLOOR
+  errors << "CHECK E ОСЛІП: зібрано #{claimed} пар «команда (workflow)», підлога #{CLAIM_FLOOR}. " \
+            "Це ЄДИНА порядкова перевірка §3, і вона віддає нуль мовчки — де-таблиця, зсунута колонка " \
+            "чи загублений хвостовий `|` дають рівно цей симптом. Спершу перевір форму таблиці, " \
+            "а підлогу опускай лише тоді, коли реєстр справді зменшили."
+end
+
 # ── F. «прожени X» у прозі не сміє продавати ПІДМНОЖИНУ як смугу (OPS.25) ───
 # Дефект, що це купив: чекліст «Before merge» у скілі тримав рукописний перелік
 # девʼяти гейтів БЕЗ `spdx_headers` — того, що клав `main` тричі; а плейбук
@@ -356,7 +419,9 @@ if errors.empty?
   puts "guard_registry_sync ✓ — 00_06 §3 ⟷ CI gates (#{run_cmds.size} run-steps, " \
        "#{labels.size} docs.rake labels, #{guards.size} tracker guards, " \
        "#{sg_paths.size} ssot_guard areas, #{pin_inputs.uniq.size} pinned inputs, " \
-       "#{a2_gates} outside-docs.yml A2 gates, #{claimed} reverse §3→workflow claims)"
+       "#{a2_gates} outside-docs.yml A2 gates, #{claimed} reverse §3→workflow claims; " \
+       "периметр: #{registry_rows.size} §3-рядків ≥ #{ROW_FLOOR} · #{path_tokens.size} шляхів ≥ #{PATH_FLOOR} · " \
+       "#{claimed} claims ≥ #{CLAIM_FLOOR})"
   exit 0
 else
   warn "guard_registry_sync ✗ — guard-registry ↔ code drift (DOC-T.40):"
