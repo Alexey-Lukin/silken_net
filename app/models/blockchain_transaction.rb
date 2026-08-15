@@ -70,7 +70,11 @@ class BlockchainTransaction < ApplicationRecord
     bounds = partition_span_for(span)
     return scope.where(created_at: bounds) if bounds
 
-    record_unpruned_lookup(metric_caller, "missing_span")
+    # 🔴 [PERF.1] Порожній набір id — це `WHERE 1=0`, тобто сканувати НЕМА ЧОГО: подія
+    # «деградували до повного скану» тут не відбулась, і рахувати її означало б труїти
+    # ту саму панель, задля якої лічильник і заводили (виміряно: ×3 на один rescue-батч
+    # `MintCarbonCoinWorker` плюс кожна КОНСТРУКЦІЯ сервісу до його ж `return if empty?`).
+    record_unpruned_lookup(metric_caller, "missing_span") if Array.wrap(ids).any?
     scope
   end
 
@@ -86,10 +90,25 @@ class BlockchainTransaction < ApplicationRecord
   # to make that every internal insurance payout — caught by adversarial review,
   # invisible to the suite because every call-site spec stubs the service.
   def self.partition_span_for(span)
-    return span if span.is_a?(Range)
+    # 🔴 [PERF.1] ЕКСКЛЮЗИВНИЙ Range нормалізується в інклюзивний, бо це ПІДКАЗКА, а не
+    # фільтр: `min...max`, побудований із самих рядків, викинув би рядок із максимальним
+    # `created_at` — той самий недорахований набір, що й у частковому nil нижче. Ідіома
+    # `...` живе за десять рядків звідси (`find_with_partition_pruning` рахує вікно
+    # `time...time+1s`), тож викликач природно скопіює саме її.
+    return span.exclude_end? ? (span.begin..span.end) : span if span.is_a?(Range)
 
-    stamps = Array.wrap(span).compact
+    raw = Array.wrap(span)
+    stamps = raw.compact
     return nil if stamps.empty?
+
+    # 🔴 [PERF.1] ЧАСТКОВИЙ `nil` деградує, а не звужує — і це єдина форма входу, на
+    # якій інваріант «підказка, НІКОЛИ фільтр» справді ламався. `.compact` над `[t, nil]`
+    # мовчки давав `t..t`, тобто рядок із невідомим часом ВИПАДАВ би з результату: на
+    # money-таблиці це не повільніший запит, а недорахований набір. Сьогодні вхід такої
+    # форми недосяжний (`created_at` входить у composite PK, тож NOT NULL; `bounded_txs`
+    # має гард «обидва або жоден») — саме тому гард СТАВИТЬСЯ зараз: латентна міна
+    # детонує в день, коли зʼявиться викликач із nullable-джерелом, і зробить це тихо.
+    return nil if stamps.size != raw.size
 
     stamps.min..stamps.max
   end

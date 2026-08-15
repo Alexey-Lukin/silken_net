@@ -599,6 +599,39 @@ RSpec.describe BlockchainTransaction, type: :model do
         .to receive(:increment).with(labels: { caller: "Spec:missing_span" })
       expect(described_class.where_ids_pruned(ids, [ nil, nil ], metric_caller: "Spec").to_a).to match_array(txs)
     end
+
+    # 🔴 [PERF.1] Порожній `ids` — це `WHERE 1=0`: деградації НЕ БУЛО, бо сканувати нема
+    # чого. Лічильник там труїв саме ту панель, задля якої його заводили.
+    it "does NOT count a degradation when there is nothing to scan" do
+      expect(SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL)
+        .not_to receive(:increment)
+
+      expect(described_class.where_ids_pruned([], nil, metric_caller: "Spec").to_a).to be_empty
+    end
+
+    # 🔴 [PERF.1] Ексклюзивний Range, побудований із самих рядків, викидав би рядок із
+    # максимальним `created_at` — і саме цю ідіому викликач природно скопіює, бо
+    # `find_with_partition_pruning` за десять рядків звідси рахує вікно `time...time+1s`.
+    it "normalises an EXCLUSIVE range — a hint must not drop the boundary row" do
+      newest = txs.max_by(&:created_at)
+
+      expect(described_class.where_ids_pruned(ids, span.min...span.max).to_a)
+        .to include(newest)
+    end
+
+    # 🔴 [PERF.1] ЧАСТКОВИЙ nil — єдина форма, на якій ламався інваріант «підказка,
+    # НІКОЛИ фільтр»: `.compact` давав `t..t`, тож рядок із невідомим часом ВИПАДАВ
+    # би з набору. На money-таблиці це не повільніший запит, а недорахований результат.
+    # ⚠️ Сьогодні такий вхід недосяжний (`created_at` у composite PK → NOT NULL), тож
+    # приклад стереже ЛАТЕНТНУ міну — саме тому він тут, а не «коли знадобиться».
+    it "degrades on a PARTIAL nil span instead of silently narrowing the window" do
+      expect(SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL)
+        .to receive(:increment).with(labels: { caller: "Spec:missing_span" })
+
+      partial = [ txs.first.created_at, nil ]
+      expect(described_class.where_ids_pruned(ids, partial, metric_caller: "Spec").to_a)
+        .to match_array(txs)
+    end
   end
 
   describe ".unsettled_within" do
