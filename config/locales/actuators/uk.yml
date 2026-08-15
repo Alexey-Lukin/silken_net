@@ -21,6 +21,11 @@ uk:
       failed: невдало
       issued: видано
       sent: надіслано
+    device_types:
+      drone_launcher: Док-станція дрона
+      fire_siren: Пожежна сирена
+      seismic_beacon: Сейсмічний маяк
+      water_valve: Клапан поливу
     index:
       active_nodes: Активних вузлів
       decoration: АКТУАТОРИ

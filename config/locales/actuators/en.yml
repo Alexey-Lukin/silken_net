@@ -21,6 +21,11 @@ en:
       failed: failed
       issued: issued
       sent: sent
+    device_types:
+      drone_launcher: Drone dock
+      fire_siren: Fire siren
+      seismic_beacon: Seismic beacon
+      water_valve: Water valve
     index:
       active_nodes: Active Nodes
       decoration: ACTUATORS

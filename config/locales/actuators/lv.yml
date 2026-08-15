@@ -21,6 +21,11 @@ lv:
       failed: neizdevās
       issued: izdots
       sent: nosūtīts
+    device_types:
+      drone_launcher: Dronu doks
+      fire_siren: Ugunsgrēka sirēna
+      seismic_beacon: Seismiskā bāka
+      water_valve: Ūdens vārsts
     index:
       active_nodes: Aktīvie mezgli
       decoration: AKTUATORI

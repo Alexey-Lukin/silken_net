@@ -16,7 +16,10 @@ module Actuators
     def view_template
       div(id: "actuator_#{@actuator.id}", class: card_container_classes) do
         # Фоновий індикатор типу (декоративний)
-        div(class: "absolute -right-4 -top-4 text-[40px] font-bold text-gaia-text-muted/5 select-none", aria_hidden: "true") { @actuator.device_type[0..2].upcase }
+        # Декоративний, `aria_hidden` — але ВИДИМИЙ оком, тож три літери беруться з
+        # локалізованої назви: англійське «WAT» на українському екрані було тим самим
+        # дефектом, лише тихішим за бейдж під ним.
+        div(class: "absolute -right-4 -top-4 text-[40px] font-bold text-gaia-text-muted/5 select-none", aria_hidden: "true") { @actuator.device_type_label[0..2].upcase }
 
         render_header
         render_status_matrix
@@ -29,7 +32,10 @@ module Actuators
     def render_header
       div(class: "flex justify-between items-start mb-6") do
         div do
-          span(class: "text-micro px-2 py-0.5 border border-gaia-border text-gaia-text-muted uppercase font-mono tracking-widest") { @actuator.device_type }
+          # [I18N.1] Рід пристрою — через дім міток (`Actuator::DEVICE_TYPE_LABEL_SCOPE`),
+          # не сирий enum: доти тут стояв англійський технічний токен «water_valve»
+          # у локалізованому інтерфейсі всіх чотирьох мов.
+          span(class: "text-micro px-2 py-0.5 border border-gaia-border text-gaia-text-muted uppercase font-mono tracking-widest") { @actuator.device_type_label }
           h4(class: "text-lg font-light text-gaia-text mt-2 tracking-tighter") { @actuator.name }
           p(class: "text-micro text-gaia-text-muted font-mono mt-1") { t(".gateway", uid: @actuator.gateway&.uid) }
         end
@@ -108,7 +114,7 @@ module Actuators
         button_to(
           execute_actuator_path(@actuator, action_payload: "STOP", duration_seconds: 1),
           method: :post,
-          aria: { label: t(".emergency_stop_aria", device_type: @actuator.device_type) },
+          aria: { label: t(".emergency_stop_aria", device_type: @actuator.device_type_label) },
           class: emergency_stop_classes
         ) { t(".emergency_stop") }
       end

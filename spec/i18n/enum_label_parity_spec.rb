@@ -54,6 +54,14 @@ registry = [
     values: -> { BlockchainTransaction.token_types.keys }
   },
   {
+    # [I18N.1/ARCH.75] Рід пристрою читає не лише картка актуатора, а й аварійний
+    # алерт про НЕ-дію — там пристрою може не існувати взагалі, тож клас лишається
+    # єдиним, чим подію можна назвати.
+    name:   "Actuator#device_type",
+    scope:  Actuator::DEVICE_TYPE_LABEL_SCOPE,
+    values: -> { Actuator.device_types.keys }
+  },
+  {
     # Тут джерело — не одна модель, а сама курована мапа StatusBadge: вона
     # обслуговує вісім родин станів одразу, тож «enum» для неї = її ж ключі.
     # `aria_label` — не стан, а шаблон обгортки; єдиний свідомий виняток.

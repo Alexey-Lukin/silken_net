@@ -44,7 +44,7 @@ module Api
           format.json { render json: { actuator: @actuator, history: @commands } }
           format.html do
             render_dashboard(
-              title: I18n.t("actuators.show_title", device_type: @actuator.device_type.upcase),
+              title: I18n.t("actuators.show_title", device_type: @actuator.device_type_label.upcase),
               component: Actuators::Show.new(actuator: @actuator, commands: @commands)
             )
           end

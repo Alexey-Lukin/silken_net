@@ -22,6 +22,24 @@ class Actuator < ApplicationRecord
     drone_launcher: 3   # Док-станція дрона
   }, prefix: true
 
+  # [I18N.1] Людська назва РОДУ пристрою — дзеркало `BlockchainTransaction::TOKEN_TYPE_LABEL_SCOPE`.
+  # Скоуп належить домену МОДЕЛІ, не компоненту, який показав значення першим (`04_04 §12.14`).
+  # ⚠️ Потрібен ширше за UI: `EmergencyResponseService` називає рід пристрою, якого в кластері
+  # НЕМА, тобто там немає ані `name`, ані `endpoint` — лишається сам клас [ARCH.75].
+  DEVICE_TYPE_LABEL_SCOPE = "actuators.device_types"
+
+  # ОДНА деривація ключа на застосунок: викликач бере цей метод, а не будує
+  # `"#{SCOPE}.#{value}"` сам. Класовий, бо рід буває названий БЕЗ запису під рукою.
+  # Fail-open: новий член enum'а рендериться сирим значенням, доки мітка не доїде в локалі.
+  def self.device_type_label(device_type)
+    value = device_type.to_s
+    I18n.t("#{DEVICE_TYPE_LABEL_SCOPE}.#{value}", default: value)
+  end
+
+  def device_type_label
+    self.class.device_type_label(device_type)
+  end
+
   # --- СТАНИ (The Readiness) ---
   enum :state, {
     idle: 0,

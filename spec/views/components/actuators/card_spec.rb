@@ -45,8 +45,17 @@ RSpec.describe Actuators::Card do
       expect(html).to include("actuator_1")
     end
 
-    it "displays the device type" do
-      expect(html).to include("water_valve")
+    # 🔴 [I18N.1] Твердження живе в НЕ-базовій локалі навмисно: в англійській мітка й
+    # сирий токен розрізняються слабко, а в українській вони не мають нічого спільного —
+    # тобто саме тут пін здатен упасти. Негативна половина обовʼязкова: без неї регресія
+    # на сире значення enum'а лишалась би зеленою (`04_06 §A.2`).
+    it "displays the device type as a human label, never the raw enum token" do
+      I18n.with_locale(:uk) do
+        localized = render_component(actuator: build_actuator)
+
+        expect(localized).to include("Клапан поливу")
+        expect(localized).not_to include("water_valve")
+      end
     end
 
     it "displays the gateway UID in the header" do
@@ -151,7 +160,7 @@ RSpec.describe Actuators::Card do
       actuator = build_actuator
       actuator.gateway = nil
       html = render_component(actuator: actuator)
-      expect(html).to include(actuator.device_type)
+      expect(html).to include(actuator.device_type_label)
     end
 
     it "renders the max duration row when max_active_duration_s is set" do

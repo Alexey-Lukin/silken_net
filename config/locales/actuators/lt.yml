@@ -21,6 +21,11 @@ lt:
       failed: nepavyko
       issued: išduota
       sent: išsiųsta
+    device_types:
+      drone_launcher: Dronų dokas
+      fire_siren: Gaisro sirena
+      seismic_beacon: Seisminis švyturys
+      water_valve: Vandens vožtuvas
     index:
       active_nodes: Aktyvūs mazgai
       decoration: AKTUATORIAI
