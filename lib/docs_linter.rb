@@ -699,14 +699,63 @@ module DocsLinter
   # leaves the lie unseen, since the in-docs loop never reads those files
   # [DOC-T.68 закривна]. Mutation-verified: restoring the GOVERNANCE.md residue
   # (label `docs/00_02` → href docs/00_03_…) turns this RED.
+  #
+  # 🔴 THIRD href form added 2026-08-15, and its absence is the same self-defeating
+  # perimeter as the `.md` hole in `section_ref_after_doclink`: this guard's corpus
+  # was widened to `.github/**` + root `*.md`, and a file one directory down can
+  # only write `](../docs/NN_NN_Name.md)` — the one form the pattern did not admit.
+  # Live proof at the moment of the fix: `.github/pull_request_template.md` carried
+  # the label `00_06 §3` over an href to `06_07_…` — the very class this guard
+  # exists for, in the very file that sends contributors to read `00_06 §3`, green
+  # since the widening. §Guard-craft #51.
+  #
+  # 🔴 The LABEL is parsed by walking back to the MATCHING `[`, not by `[^\]]*`,
+  # and that is a correctness fix rather than a nicety. A character class starting
+  # at the FIRST bracket mis-captures two live shapes in opposite directions: a
+  # bold prose marker wrapping a real link (`**[`00_07`-прямий + [`07_03 §4.3`](…)]**`)
+  # yields a label of foreign text and a FALSE accusation, while a legitimate label
+  # carrying nested brackets (`[`05_02 §… [DOC.7]`](…)`) is not seen AT ALL. Both
+  # exist in the tree today; measured on the flip: naive widening = 1 false positive,
+  # balanced walk-back = 0.
+  #
+  # ⚠️ DECLARED CEILING: unlike its siblings this guard is NOT fence-aware, so a
+  # link inside a ``` block is still inspected. Zero live instances (measured over
+  # 4933 files), and the class is illustrative-example-shaped, so it stays named
+  # rather than fixed — a skip added without a case to justify it is a blind zone.
   def link_label_target_mismatch(text)
-    text.scan(%r{\[([^\]]*)\]\((?:docs/)?(\d\d_\d\d)_[A-Za-z0-9_]+(?:\.md)?(?:\#[^)]*)?\)}).filter_map do |label, target_id|
-      label_id = label[LABEL_DOC_RE]
+    text.to_enum(:scan, LINK_HREF_RE).filter_map do
+      m         = Regexp.last_match
+      target_id = m[1]
+      label     = balanced_link_label(text, m.begin(0)) or next
+      label_id  = label[LABEL_DOC_RE]
       next unless label_id           # label cites no doc-ID → nothing to verify
       next if label_id == target_id  # label leads with the doc it links to → ok
 
       "label `#{label.strip[0, 48]}` → href #{target_id}_… (label leads with #{label_id}, not #{target_id})"
     end
+  end
+
+  # Anchored on `](` so the label is never part of the match — the label is then
+  # recovered by bracket-balance (above). Accepts all three written dialects:
+  # wiki `](NN_NN_Name)` · path `](docs/NN_NN_Name.md)` · relative `](../docs/…)`.
+  LINK_HREF_RE = %r{\]\((?:\.{1,2}/)*(?:docs/)?(\d\d_\d\d)_[A-Za-z0-9_]+(?:\.md)?(?:\#[^)]*)?\)}
+
+  # Walk back from the `]` at `close_idx` to its matching `[`, honouring nesting.
+  # Returns nil at a newline (a markdown label never spans lines) or if unbalanced,
+  # so an unmatched bracket makes the link INVISIBLE rather than mis-attributed —
+  # the safe direction for a guard that accuses.
+  def balanced_link_label(text, close_idx)
+    depth = 0
+    i     = close_idx
+    while i >= 0
+      case text[i]
+      when "]" then depth += 1
+      when "[" then (depth -= 1) == 0 and return text[(i + 1)...close_idx]
+      when "\n" then return nil
+      end
+      i -= 1
+    end
+    nil
   end
 
   # [SSOT anti-drift] §-section label drift (ADVISORY). Extracted from the inline
@@ -846,7 +895,19 @@ module DocsLinter
   # convention) → out of scope by design. Skips ``` fences + meta placeholders
   # (`§X`/`§N`). Same exempt set as the bare-ref siblings (index / standard-owner /
   # tracker / appendix). Pure: no I/O.
-  SECTION_AFTER_DOCLINK_RE = %r{\[(`\d\d_\d\d[^`]*`[^\]]*)\]\((?:\.\./)*(\d\d_\d\d_[A-Za-z0-9_]+)(?:#[^)]*)?\)[ \t]*§[ \t]*(\S+)}
+  #
+  # 🔴 `(?:\.md)?` IS LOAD-BEARING, and its absence made the `(?:\.\./)*` beside it
+  # DECORATIVE for two months (2026-08-15). The relative branch exists precisely for
+  # `docs/protocols/**` — and that subtree writes the extension in EVERY canon href
+  # (`](../../NN_NN_Name.md)`), so the group never closed and the guard reached
+  # exactly ZERO of the files it was widened for. Measured on flipping it: 8 → 24
+  # hits, i.e. **16 real violations** had been invisible since the widening. Same
+  # class as the sibling `link_label_target_mismatch`, which was extended to
+  # `.github/**` while `.github/` can only write `](../docs/…)` — §Guard-craft #51,
+  # twice in one family. Reflex: after widening a gate FOR a tree, open that tree
+  # and read one real line — a perimeter extension that cannot match the dialect it
+  # was extended for is a decoration that reports coverage.
+  SECTION_AFTER_DOCLINK_RE = %r{\[(`\d\d_\d\d[^`]*`[^\]]*)\]\((?:\.\./)*(\d\d_\d\d_[A-Za-z0-9_]+)(?:\.md)?(?:#[^)]*)?\)[ \t]*§[ \t]*(\S+)}
 
   def section_ref_after_doclink(basename, text)
     return [] if basename.match?(BARE_REF_EXEMPT)

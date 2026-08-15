@@ -784,6 +784,37 @@ RSpec.describe DocsLinter do
       expect(described_class.link_label_target_mismatch("[Insurance Layer mechanics](07_01_Nature_as_a_Service_Contracts)")).to be_empty
     end
 
+    # 🔴 The RELATIVE href is the dialect a file one directory down can only write —
+    # and it is exactly the tree this guard's corpus was widened to (.github/**,
+    # root *.md). Live proof at the time of the fix: pull_request_template.md
+    # labelled `00_06 §3` over an href to 06_07. Green since the widening.
+    it "flags the mismatch through a ../-relative href (the .github/ dialect)" do
+      hits = described_class.link_label_target_mismatch(
+        "(see [`00_06 §3`](../docs/06_07_CICD_and_Runbook_Index.md))")
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("00_06").and include("06_07")
+    end
+
+    it "flags it through a deeper ../../ href too" do
+      expect(described_class.link_label_target_mismatch(
+        "[`00_06 §3`](../../06_07_CICD_and_Runbook_Index.md)").size).to eq(1)
+    end
+
+    # The label is recovered by bracket-BALANCE, and both directions matter: a real
+    # label carrying nested brackets must be SEEN, and a bold prose marker wrapping
+    # a link must not have its outer text mistaken for the label.
+    it "sees a legitimate label that carries nested brackets" do
+      expect(described_class.link_label_target_mismatch(
+        "[`05_02 §Усі Шляхи [DOC.7]`](05_02_Proof_of_Growth_Pipeline)")).to be_empty
+      expect(described_class.link_label_target_mismatch(
+        "[`05_02 §Усі Шляхи [DOC.7]`](07_01_Nature_as_a_Service_Contracts)").size).to eq(1)
+    end
+
+    it "does not accuse a link wrapped in a bold prose marker (the [^\\]]* false positive)" do
+      expect(described_class.link_label_target_mismatch(
+        "**[`00_07`-прямий + [`07_03 §4.3`](../../07_03_Academic_Integration_and_IP.md)]** UNI.15")).to be_empty
+    end
+
     # The PATH href form is how root files and .github/ link canon, and it is where a
     # re-point campaign leaves the lie unread — the in-docs loop never opens them
     # [DOC-T.68 закривна: GOVERNANCE.md carried `docs/00_02` → docs/00_03_… unseen].
@@ -1004,6 +1035,24 @@ RSpec.describe DocsLinter do
     it "flags a relative-path href (docs/protocols/ refs canon by ../)" do
       expect(described_class.section_ref_after_doclink(
         "SUMMARY", "база [`01_03`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell) §3.2\n").size).to eq(1)
+    end
+
+    # 🔴 The case above passed for two months while the guard reached ZERO of the
+    # tree it was widened for — because its fixture writes a dialect the corpus
+    # never uses. Every real `docs/protocols/**` href carries the `.md` extension,
+    # and without `(?:\.md)?` the group never closed: 16 live violations sat green.
+    # A fixture is a claim about the corpus's OUTPUT vocabulary; write it in the
+    # dialect the tree actually writes, or the branch is proved against nothing.
+    it "flags the relative href AS THE SUBTREE ACTUALLY WRITES IT (with .md)" do
+      expect(described_class.section_ref_after_doclink(
+        "rfq_registry",
+        "дім [`01_04`](../../01_04_CODIT_and_Xylemointegration.md) §3.1\n").size).to eq(1)
+    end
+
+    it "still passes the folded form in that same .md dialect" do
+      expect(described_class.section_ref_after_doclink(
+        "rfq_registry",
+        "дім [`01_04 §3.1`](../../01_04_CODIT_and_Xylemointegration.md)\n")).to be_empty
     end
 
     it "passes the canonical folded form (§ inside the label)" do
