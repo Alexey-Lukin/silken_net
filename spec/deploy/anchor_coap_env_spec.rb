@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-require "rails_helper"
+require "spec_helper"
+require_relative "../support/repo_root"
 
 # INF.17 / SEC.22 regression guard. The Ingress Anchor coap daemon (compute.tf systemd
 # env-file heredoc) is a THIRD deploy surface for the coap boot contract, OUTSIDE the Akash
@@ -16,7 +17,7 @@ require "rails_helper"
 #     plaintext /proc/environ for nothing.
 RSpec.describe "Ingress Anchor coap.env (compute.tf)" do # rubocop:disable RSpec/DescribeClass
   subject(:coap_env_vars) do
-    lines  = File.read(Rails.root.join("terraform/compute.tf")).lines
+    lines  = File.read(REPO_ROOT.join("terraform/compute.tf")).lines
     start  = lines.index { |l| l.include?("<< 'COAP_ENV'") } or raise "coap.env heredoc start not found"
     length = lines[(start + 1)..].index { |l| l.strip == "COAP_ENV" } or raise "coap.env heredoc end not found"
     lines[start + 1, length].filter_map { |l| l[/\A\s*([A-Z][A-Z0-9_]*)=/, 1] }

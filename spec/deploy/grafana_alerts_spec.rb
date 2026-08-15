@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-require "rails_helper"
+require "spec_helper"
+require "yaml"
+require_relative "../support/repo_root"
 
 # [INF.22] Ловить «конфіг повний, шлях мертвий» для Grafana-алертів: alert-правило, що
 # посилається на метрику з typo в назві (або на прибрану з реєстру метрику), тихо НІКОЛИ
@@ -11,9 +13,20 @@ require "rails_helper"
 RSpec.describe "Grafana alert rules ↔ Prometheus registry consistency" do # rubocop:disable RSpec/DescribeClass
   # Base-імена всіх зареєстрованих метрик (counter несе _total у назві; histogram — базове
   # ім'я, expr додає _bucket/_sum/_count — нормалізуємо на боці referenced нижче).
-  let(:registered) { SilkenNet::Metrics::REGISTRY.metrics.map { |m| m.name.to_s }.to_set }
+  # 🔴 [DOC-T.76] Реєстр метрик живе в Rails-ІНІЦІАЛІЗАТОРІ, а джоба `docs_check`
+  # Rails не піднімає за побудовою. Файл вантажиться автономно: усі його
+  # `Rails.`-звернення сидять у тілах sampler-методів, що на load-time не біжать.
+  # ⚠️ Гард І ЛІНЬ несучі РАЗОМ: у повній сюїті (`ci.yml` job `test`) Rails уже
+  # `load`-нув цей файл, а `load` НЕ пише в `$LOADED_FEATURES`, тож безумовний
+  # `require_relative` дав би 83 попередження «already initialized constant».
+  # Ліниво = на момент виклику Rails або вже є, або його не буде, і порядок
+  # завантаження спек не впливає ні на що.
+  let(:registered) do
+    require_relative "../../config/initializers/prometheus" unless defined?(SilkenNet::Metrics::REGISTRY)
+    SilkenNet::Metrics::REGISTRY.metrics.map { |m| m.name.to_s }.to_set
+  end
 
-  let(:alerts_file) { Rails.root.join("deploy/grafana/alerts/silkennet-alerts.yaml") }
+  let(:alerts_file) { REPO_ROOT.join("deploy/grafana/alerts/silkennet-alerts.yaml") }
 
   let(:referenced) do
     yaml = YAML.safe_load(File.read(alerts_file), aliases: true)

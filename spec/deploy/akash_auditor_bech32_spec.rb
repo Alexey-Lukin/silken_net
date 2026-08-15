@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-require "rails_helper"
+require "spec_helper"
+require_relative "../support/repo_root"
 
 # INF.24 drift guard. The Akash `signedBy.anyOf` auditor address gates audited bids — a corrupt
 # one (INF.24 shipped a 43-char string that failed bech32-checksum) means ZERO audited bids on the
@@ -18,7 +19,7 @@ RSpec.describe "Akash signedBy auditor addresses are valid bech32 (INF.24)" do #
       deploy/akash/deploy.yaml
       terraform/akash/variables.tf
       terraform/akash/terraform.tfvars.example
-    ].flat_map { |p| File.read(Rails.root.join(p)).scan(/akash1[0-9a-z]+/) }.uniq
+    ].flat_map { |p| File.read(REPO_ROOT.join(p)).scan(/akash1[0-9a-z]+/) }.uniq
   end
 
   it "finds at least one committed auditor address (guard is not vacuous)" do

@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-require "rails_helper"
+require "spec_helper"
+require_relative "../support/repo_root"
 
 # S2.4 / INF.14 drift guard. The Prometheus registry is in-process, so a job/daemon-incremented
 # metric (money-path SLO, dead-man switch, QATT-security) is scraped as an eternal ZERO unless
@@ -12,7 +13,7 @@ require "rails_helper"
 RSpec.describe "config.alloy declares the 3-process scrape topology (S2.4)" do # rubocop:disable RSpec/DescribeClass
   # __address__ → process — the load-bearing map (06_03 §2.9): web never sees worker increments.
   let(:targets) do
-    text = File.read(Rails.root.join("deploy/akash/config.alloy"))
+    text = File.read(REPO_ROOT.join("deploy/akash/config.alloy"))
     # \s spans newlines, and ,? tolerates the trailing comma `alloy fmt` adds in the multi-line
     # form (`"process" = "web",\n}`) — so a legit reformat can't false-alarm the guard.
     text.scan(/\{\s*"__address__"\s*=\s*"([^"]+)",\s*"process"\s*=\s*"([^"]+)",?\s*\}/).to_h

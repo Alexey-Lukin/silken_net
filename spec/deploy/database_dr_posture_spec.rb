@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-require "rails_helper"
+require "spec_helper"
+require_relative "../support/repo_root"
 
 # DR.1 posture guard. The Cloud SQL DR promise (docs/06_06: PITR + 30-day window +
 # 30 daily backups + REGIONAL HA) is CONFIGURED in terraform/database.tf, but a DR-posture
@@ -11,8 +12,8 @@ require "rails_helper"
 # meets the documented minimums, so weakening it (disable PITR, cut retention, ZONAL) fails in
 # CI instead of at the worst possible moment.
 RSpec.describe "Cloud SQL DR posture (terraform/database.tf ↔ 06_06)" do # rubocop:disable RSpec/DescribeClass
-  let(:database_tf) { File.read(Rails.root.join("terraform/database.tf")) }
-  let(:variables_tf) { File.read(Rails.root.join("terraform/variables.tf")) }
+  let(:database_tf) { File.read(REPO_ROOT.join("terraform/database.tf")) }
+  let(:variables_tf) { File.read(REPO_ROOT.join("terraform/variables.tf")) }
 
   it "point-in-time recovery is enabled" do
     expect(database_tf).to match(/point_in_time_recovery_enabled\s*=\s*true/)

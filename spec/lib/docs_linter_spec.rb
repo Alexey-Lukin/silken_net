@@ -815,6 +815,19 @@ RSpec.describe DocsLinter do
         "**[`00_07`-прямий + [`07_03 §4.3`](../../07_03_Academic_Integration_and_IP.md)]** UNI.15")).to be_empty
     end
 
+    # An unbalanced bracket must make the link INVISIBLE, never mis-attributed —
+    # the safe direction for a guard that accuses. Two ways the walk-back can fail,
+    # and both must end in silence rather than in a label borrowed from above.
+    it "stays silent when the walk-back crosses a newline (a label never spans lines)" do
+      expect(described_class.link_label_target_mismatch(
+        "[`00_06 §3` без закриття\n](06_07_CICD_and_Runbook_Index)")).to be_empty
+    end
+
+    it "stays silent when there is no opening bracket at all" do
+      expect(described_class.link_label_target_mismatch(
+        "](06_07_CICD_and_Runbook_Index) — осиротілий хвіст лінка")).to be_empty
+    end
+
     # The PATH href form is how root files and .github/ link canon, and it is where a
     # re-point campaign leaves the lie unread — the in-docs loop never opens them
     # [DOC-T.68 закривна: GOVERNANCE.md carried `docs/00_02` → docs/00_03_… unseen].
