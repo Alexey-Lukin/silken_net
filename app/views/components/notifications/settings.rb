@@ -64,22 +64,32 @@ module Notifications
       end
     end
 
-    def render_field(label, name, value, placeholder: nil, disabled: false, hint: nil)
+    # [UI.3] Дві осі звʼязку, і друга тут не косметична. `for` ⟷ `id` (WCAG 1.3.1 —
+    # без нього скрінрідер поля НЕ НАЗИВАЄ), плюс `aria-describedby` на підказку: вона
+    # пояснює, ЧОМУ поле вимкнене або якого формату чекає, а лежачи окремим `<p>`
+    # читається як не повʼязаний текст десь після поля — тобто саме тоді, коли вже
+    # пізно. Обидва id з одного дому (`field_id_for`), щоб рукописних копій не було.
+    def render_field(label_text, name, value, placeholder: nil, disabled: false, hint: nil)
+      field_id = field_id_for(name)
+      hint_id  = hint ? "#{field_id}_hint" : nil
+
       div(class: "space-y-2") do
-        label(class: "text-mini text-gray-600 uppercase tracking-widest block") { label }
+        label(for: field_id, class: "text-mini text-gray-600 uppercase tracking-widest block") { label_text }
         input(
+          id: field_id,
           type: "text",
           name: name,
           value: value,
           placeholder: placeholder,
           disabled: disabled,
+          aria_describedby: hint_id,
           class: tokens(
             "w-full bg-zinc-950 border border-emerald-900/50 text-compact font-mono text-emerald-400 px-4 py-3 focus-visible:border-emerald-500 focus-visible:outline-none transition-colors",
             "opacity-50 cursor-not-allowed": disabled
           )
         )
         if hint
-          p(class: "text-mini text-gray-700 italic") { hint }
+          p(id: hint_id, class: "text-mini text-gray-700 italic") { hint }
         end
       end
     end

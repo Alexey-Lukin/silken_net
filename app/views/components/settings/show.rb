@@ -67,10 +67,15 @@ module Settings
       end
     end
 
-    def render_field(label, name, value, placeholder: nil)
+    # [UI.3] `for` ⟷ `id` з одного дому (`field_id_for`): доти мітка й поле були
+    # сиблінгами без асоціації, тож скрінрідер поля не називав (WCAG 1.3.1).
+    def render_field(label_text, name, value, placeholder: nil)
+      field_id = field_id_for(name)
+
       div(class: "space-y-2") do
-        label(class: "text-mini text-gray-600 uppercase tracking-widest block") { label }
+        label(for: field_id, class: "text-mini text-gray-600 uppercase tracking-widest block") { label_text }
         input(
+          id: field_id,
           type: "text",
           name: name,
           value: value&.to_s,
@@ -110,13 +115,14 @@ module Settings
 
     def render_logo_field
       div(class: "space-y-2") do
-        label(class: "text-mini text-gray-600 uppercase tracking-widest block") { t(".fields.logo") }
+        label(for: "organization_logo", class: "text-mini text-gray-600 uppercase tracking-widest block") { t(".fields.logo") }
         if @organization.logo.attached?
           div(class: "flex items-center gap-4 mb-2") do
             span(class: "text-tiny text-emerald-500 font-mono") { t(".fields.current_logo", filename: @organization.logo.filename) }
           end
         end
         input(
+          id: "organization_logo",
           type: "file",
           name: "organization[logo]",
           accept: "image/png,image/jpeg,image/svg+xml",

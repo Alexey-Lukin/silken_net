@@ -46,6 +46,21 @@ RSpec.describe Settings::Show do
   let(:html) { render_component(organization: org) }
 
   describe "settings form" do
+    # 🔴 [UI.3] Пін парсить розмітку, а не шукає рядок: сусідні приклади пінять текст
+    # мітки й імена полів, тобто голий `<label>` без `for` лишався б зеленим, поки
+    # скрінрідер поля не називає (WCAG 1.3.1). ⚠️ Селект локалі `for` мав ще доти —
+    # тобто форма була напів-звʼязана, і саме така асиметрія найтихіша.
+    it "associates every label with a real form control" do
+      doc = Nokogiri::HTML5.fragment(html)
+      labels = doc.css("label")
+      control_ids = doc.css("input, select, textarea").filter_map { |n| n["id"] }
+
+      expect(labels).not_to be_empty, "no labels rendered — the pin would be vacuous"
+
+      orphans = labels.reject { |l| l["for"].present? && control_ids.include?(l["for"]) }
+      expect(orphans.map { |l| l.text.strip }).to be_empty
+    end
+
     it "renders the Configuration heading" do
       expect(html).to include("Configuration")
     end

@@ -75,6 +75,21 @@ RSpec.describe AccountSecurity::Show do
   end
 
   describe "password form" do
+    # 🔴 [UI.3] Сусідні приклади пінять ІМЕНА полів і текст міток — і саме тому голі
+    # `<label>` без `for` жили тут непоміченими: усе рендерилось, приклади були зелені,
+    # а скрінрідер поля не називав (WCAG 1.3.1, сильніше за 3.3.1). Пін парсить
+    # розмітку, а не шукає рядок, тож перейменування ключа локалі його не обійде.
+    it "associates every label with a real form control" do
+      doc = Nokogiri::HTML5.fragment(html)
+      labels = doc.css("label")
+      control_ids = doc.css("input, select, textarea").filter_map { |n| n["id"] }
+
+      expect(labels).not_to be_empty, "no labels rendered — the pin would be vacuous"
+
+      orphans = labels.reject { |l| l["for"].present? && control_ids.include?(l["for"]) }
+      expect(orphans.map { |l| l.text.strip }).to be_empty
+    end
+
     it "renders Password heading" do
       expect(html).to include("Password")
     end

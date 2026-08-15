@@ -62,17 +62,17 @@ module AccountSecurity
           render_password_error
 
           if @user.password_digest.present?
-            field_container(t(".password.current_label")) do
-              input(type: "password", name: "current_password", class: input_classes, required: true)
+            field_container(t(".password.current_label"), "current_password") do |id|
+              input(id: id, type: "password", name: "current_password", class: input_classes, required: true)
             end
           end
 
-          field_container(t(".password.new_label")) do
-            input(type: "password", name: "new_password", class: input_classes, required: true, minlength: "12")
+          field_container(t(".password.new_label"), "new_password") do |id|
+            input(id: id, type: "password", name: "new_password", class: input_classes, required: true, minlength: "12")
           end
 
-          field_container(t(".password.confirm_label")) do
-            input(type: "password", name: "new_password_confirmation", class: input_classes, required: true, minlength: "12")
+          field_container(t(".password.confirm_label"), "new_password_confirmation") do |id|
+            input(id: id, type: "password", name: "new_password_confirmation", class: input_classes, required: true, minlength: "12")
           end
 
           button(type: "submit", class: "px-6 py-2 border border-emerald-500 text-tiny text-emerald-500 uppercase tracking-widest hover:bg-emerald-500 hover:text-black transition-all") do
@@ -194,10 +194,18 @@ module AccountSecurity
       nil
     end
 
-    def field_container(label, &)
+    # [UI.3] Мітка ЗВʼЯЗАНА з полем: `for` ⟷ `id`, обидва з одного дому
+    # (`field_id_for`). Доти `<label>` і `<input>` були сиблінгами без жодної
+    # асоціації — ні явної, ні через вкладеність, — тож скрінрідер не називав поле
+    # взагалі (WCAG 1.3.1). Тут форма йде `form_with(url:)` БЕЗ моделі, тобто білдера
+    # в блоці немає й `id` не згенерується сам; блок дістає його аргументом, щоб
+    # рукописних копій не було двох.
+    def field_container(label_text, name, &)
+      field_id = field_id_for(name)
+
       div(class: "space-y-2") do
-        label(class: "text-mini text-gray-600 uppercase tracking-widest block") { label }
-        yield
+        label(for: field_id, class: "text-mini text-gray-600 uppercase tracking-widest block") { label_text }
+        yield(field_id)
       end
     end
 

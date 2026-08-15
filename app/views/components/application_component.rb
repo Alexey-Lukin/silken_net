@@ -47,6 +47,18 @@ class ApplicationComponent < Phlex::HTML
   # Registered here so TailwindMerge treats them as font-size (not text-color).
   CUSTOM_TEXT_SCALE = %w[micro mini tiny compact display-sm display-md display-lg].freeze
 
+  # [UI.3] `id` поля, деривований з його `name` за Rails-конвенцією
+  # (`organization[name]` → `organization_name`, `current_password` → `current_password`).
+  #
+  # 🔴 **Навіщо дім, а не рядок на місці:** мітка, не звʼязана з полем, — це WCAG 1.3.1
+  # (скрінрідер поля просто НЕ НАЗИВАЄ), і воно сильніше за 3.3.1, заради якого писався
+  # цей пункт. Там, де форма йде через `form_with |f|`, звʼязок дає сам білдер — і в
+  # ТОМУ випадку цей хелпер не потрібен (див. `TreeFamilies::Form` як еталон). Він
+  # існує для форм, де поля не є атрибутами моделі: контролер читає `params[:current_password]`
+  # плоско, тож білдера в блоці немає, а `id` треба вигадати обабіч — і саме «обабіч»
+  # є режимом відмови, бо дві рукописні копії розходяться мовчки.
+  def field_id_for(name) = name.to_s.gsub(/\]\[|\[|\]/, "_").chomp("_")
+
   def tokens(*args, **conditions)
     result = args.compact.join(" ")
     conditional = conditions.filter_map { |cls, flag| cls.to_s if flag }.join(" ")
