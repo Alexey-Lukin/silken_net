@@ -24,8 +24,8 @@ module Firmwares
         render Views::Shared::UI::ErrorSummary.new(messages: @firmware.errors.full_messages)
 
         div(class: "space-y-6") do
-          field_container(f, :version, t(".version_label")) do
-            f.text_field :version, class: input_classes, placeholder: t(".version_placeholder"), required: true
+          field_container(f, :version, t(".version_label")) do |aria|
+            f.text_field :version, class: input_classes, placeholder: t(".version_placeholder"), required: true, **aria
           end
 
           # Колонка `target_hardware` не існує — форма роками слала ключ, якого модель
@@ -34,14 +34,14 @@ module Firmwares
           # нею мовчки, як розійшлися MCU-мітки. Без `include_blank` свідомо — прошивка
           # без типу не гаситься релізом свого класу (`deploy_globally!` фільтрує по
           # ньому, а SQL NULL не дорівнює жодному значенню).
-          field_container(f, :target_hardware_type, t(".target_label")) do
+          field_container(f, :target_hardware_type, t(".target_label")) do |aria|
             f.select :target_hardware_type,
                      BioContractFirmware::HARDWARE_TYPES.map { |type| [ t(".target_#{type.downcase}"), type ] },
-                     {}, class: input_classes
+                     {}, class: input_classes, **aria
           end
 
-          field_container(f, :binary_file, t(".binary_label")) do
-            f.file_field :binary_file, class: "w-full text-gaia-text-muted text-tiny font-mono file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-gaia-surface-sunken file:text-gaia-primary hover:file:bg-gaia-primary/20 cursor-pointer", required: true
+          field_container(f, :binary_file, t(".binary_label")) do |aria|
+            f.file_field :binary_file, class: "w-full text-gaia-text-muted text-tiny font-mono file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-gaia-surface-sunken file:text-gaia-primary hover:file:bg-gaia-primary/20 cursor-pointer", required: true, **aria
           end
         end
 
@@ -57,10 +57,14 @@ module Firmwares
     # не звʼязані для AT, а клік по підпису не фокусує ввід. `id` дає білдер
     # (`scope: :firmware` → `firmware_version`). Класи ті самі — сусідній пін
     # звіряє саме їх.
+    # [UI.3] Блок дістає ARIA-атрибути ПОЛЯ — інакше `aria-invalid` нікуди
+    # поставити: контрол рендерить викликач, а не цей хелпер. Порожній хеш на
+    # валідному полі, тож `**aria` у викликача безпечний завжди.
     def field_container(form, attribute, label_text, &block)
       div(class: "space-y-2") do
         form.label attribute, label_text, class: "text-mini uppercase tracking-widest text-gaia-label"
-        yield
+        yield(field_error_attrs(form, attribute))
+        render_field_error(form, attribute)
       end
     end
 

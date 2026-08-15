@@ -20,6 +20,31 @@ RSpec.describe Maintenance::Form do
     )
   end
 
+  # 🔴 [UI.3] Найбільша форма дерева — одинадцять `field_container`, і кожен
+  # прокидає ARIA окремо, тож дротування доводиться тут, а не в еталоні.
+  describe "per-field error indication" do
+    let(:invalid_record) do
+      record = MaintenanceRecord.new
+      record.valid?
+      record
+    end
+    let(:fragment) { Nokogiri::HTML5.fragment(render_component(record: invalid_record)) }
+
+    it "позначає невалідні поля й веде кожне до ЖИВОГО вузла з причиною" do
+      expect(LabelAssociation.invalid_fields(fragment)).not_to be_empty
+      expect(LabelAssociation.unexplained_invalid_fields(fragment)).to be_empty
+      expect(LabelAssociation.dangling_descriptions(fragment)).to be_empty
+    end
+
+    it "не лишає НЕПОЗНАЧЕНИМ жодного поля, яке модель вважає невалідним" do
+      # 🔴 Дериваційна половина, без якої пін вище не падає на найправдоподібнішій
+      # регресії: зняття `**aria` з ОДНОГО `field_container` лишає множину
+      # позначених непорожньою. Тут звіряються дві незалежні сторони — `errors`
+      # моделі ⊥ атрибути в HTML, — і промах називає поле поіменно.
+      expect(LabelAssociation.unmarked_error_fields(fragment, invalid_record, "maintenance_record")).to be_empty
+    end
+  end
+
   describe "new record form" do
     let(:record) { build(:maintenance_record) }
     let(:html) { render_component(record: record) }

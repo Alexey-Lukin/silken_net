@@ -17,6 +17,34 @@ RSpec.describe Firmwares::Form do
     BioContractFirmware.new
   end
 
+  # 🔴 [UI.3] Дротування per-field індикації В ЦЬОМУ файлі, а не лише в еталоні:
+  # хелпер спільний (`ApplicationComponent#field_error_attrs`), але прокинути його
+  # в блок мусить КОЖЕН `field_container` окремо, тож «працює в одній формі» про
+  # решту не каже нічого. Пін парсить розмітку — `include("aria-invalid")` зелений
+  # і тоді, коли атрибут сів не на те поле й вказує в порожнечу.
+  describe "per-field error indication" do
+    let(:invalid_firmware) do
+      firmware = BioContractFirmware.new
+      firmware.valid?
+      firmware
+    end
+    let(:fragment) { Nokogiri::HTML5.fragment(render_component(firmware: invalid_firmware)) }
+
+    it "позначає невалідні поля й веде кожне до ЖИВОГО вузла з причиною" do
+      expect(LabelAssociation.invalid_fields(fragment)).not_to be_empty
+      expect(LabelAssociation.unexplained_invalid_fields(fragment)).to be_empty
+      expect(LabelAssociation.dangling_descriptions(fragment)).to be_empty
+    end
+
+    it "не лишає НЕПОЗНАЧЕНИМ жодного поля, яке модель вважає невалідним" do
+      # 🔴 Дериваційна половина, без якої пін вище не падає на найправдоподібнішій
+      # регресії: зняття `**aria` з ОДНОГО `field_container` лишає множину
+      # позначених непорожньою. Тут звіряються дві незалежні сторони — `errors`
+      # моделі ⊥ атрибути в HTML, — і промах називає поле поіменно.
+      expect(LabelAssociation.unmarked_error_fields(fragment, invalid_firmware, "bio_contract_firmware")).to be_empty
+    end
+  end
+
   describe "form fields" do
     let(:html) { render_component(firmware: mock_firmware) }
 

@@ -35,38 +35,38 @@ module Maintenance
 
           # --- РЯДОК 1: Target + EWS ---
           div(class: "grid grid-cols-2 gap-6") do
-            field_container(f, :maintainable_type, t(".target_type")) do
-              f.select :maintainable_type, [ "Tree", "Gateway" ], {}, class: input_classes
+            field_container(f, :maintainable_type, t(".target_type")) do |aria|
+              f.select :maintainable_type, [ "Tree", "Gateway" ], {}, class: input_classes, **aria
             end
-            field_container(f, :maintainable_id, t(".target_id")) do
-              f.number_field :maintainable_id, class: input_classes, placeholder: "e.g. 42"
+            field_container(f, :maintainable_id, t(".target_id")) do |aria|
+              f.number_field :maintainable_id, class: input_classes, placeholder: "e.g. 42", **aria
             end
           end
 
-          field_container(f, :ews_alert_id, t(".ews_association")) do
+          field_container(f, :ews_alert_id, t(".ews_association")) do |aria|
             f.number_field :ews_alert_id, class: input_classes,
-                           placeholder: t(".ews_placeholder")
+                           placeholder: t(".ews_placeholder"), **aria
           end
 
           # --- РЯДОК 2: Action + Timestamp ---
           div(class: "grid grid-cols-2 gap-6") do
-            field_container(f, :action_type, t(".action_type")) do
+            field_container(f, :action_type, t(".action_type")) do |aria|
               f.select :action_type,
                 MaintenanceRecord.action_types.keys.map { |k| [ k.humanize, k ] },
                 { prompt: t(".action_prompt") },
-                class: input_classes
+                class: input_classes, **aria
             end
-            field_container(f, :performed_at, t(".performed_at")) do
+            field_container(f, :performed_at, t(".performed_at")) do |aria|
               f.datetime_local_field :performed_at,
                 value: (@record.performed_at || Time.current).strftime("%Y-%m-%dT%H:%M"),
-                class: input_classes
+                class: input_classes, **aria
             end
           end
 
           # --- НОТАТКИ ---
-          field_container(f, :notes, t(".notes")) do
+          field_container(f, :notes, t(".notes")) do |aria|
             f.text_area :notes, rows: 4, class: input_classes,
-                        placeholder: t(".notes_placeholder")
+                        placeholder: t(".notes_placeholder"), **aria
           end
 
           # -----------------------------------------------------------------------
@@ -75,13 +75,13 @@ module Maintenance
           div(class: "border border-gaia-border p-4 space-y-4") do
             p(class: "text-mini uppercase tracking-widest text-gaia-text-muted mb-2") { t(".opex.heading") }
             div(class: "grid grid-cols-2 gap-6") do
-              field_container(f, :labor_hours, t(".opex.labor_hours")) do
+              field_container(f, :labor_hours, t(".opex.labor_hours")) do |aria|
                 f.number_field :labor_hours, step: 0.5, min: 0, class: input_classes,
-                               placeholder: "e.g. 2.5"
+                               placeholder: "e.g. 2.5", **aria
               end
-              field_container(f, :parts_cost, t(".opex.parts_cost")) do
+              field_container(f, :parts_cost, t(".opex.parts_cost")) do |aria|
                 f.number_field :parts_cost, step: 0.01, min: 0, class: input_classes,
-                               placeholder: "e.g. 150.00"
+                               placeholder: "e.g. 150.00", **aria
               end
             end
           end
@@ -92,13 +92,13 @@ module Maintenance
           div(class: "border border-gaia-border p-4 space-y-4") do
             p(class: "text-mini uppercase tracking-widest text-gaia-text-muted mb-2") { t(".gps.heading") }
             div(class: "grid grid-cols-2 gap-6") do
-              field_container(f, :latitude, t(".gps.latitude")) do
+              field_container(f, :latitude, t(".gps.latitude")) do |aria|
                 f.number_field :latitude, step: 0.000001, class: input_classes,
-                               placeholder: "49.428500"
+                               placeholder: "49.428500", **aria
               end
-              field_container(f, :longitude, t(".gps.longitude")) do
+              field_container(f, :longitude, t(".gps.longitude")) do |aria|
                 f.number_field :longitude, step: 0.000001, class: input_classes,
-                               placeholder: "32.062000"
+                               placeholder: "32.062000", **aria
               end
             end
           end
@@ -116,7 +116,7 @@ module Maintenance
             end
 
             # Direct upload — файли йдуть напряму на S3, не через Rails
-            field_container(f, :photos, t(".evidence.attach_photos")) do
+            field_container(f, :photos, t(".evidence.attach_photos")) do |aria|
               f.file_field :photos,
                 multiple: true,
                 accept: "image/jpeg,image/png,image/webp,image/heic,image/heif",
@@ -124,7 +124,7 @@ module Maintenance
                 class: "w-full bg-gaia-input-bg border border-gaia-input-border text-gaia-input-text p-3 font-mono text-xs " \
                        "file:mr-3 file:border file:border-gaia-border file:bg-gaia-surface-sunken " \
                        "file:text-gaia-primary file:text-mini file:uppercase file:px-3 file:py-1 " \
-                       "focus-visible:border-gaia-primary outline-none transition-all"
+                       "focus-visible:border-gaia-primary outline-none transition-all", **aria
             end
           end
 
@@ -212,10 +212,14 @@ module Maintenance
     # `label(for: …)`: він рахує id РУКАМИ, і саме той рукописний звʼязок ця
     # міграція існує щоб усунути — але він поза `field_container`, тож іде
     # окремим ходом разом із рештою периметра.
+    # [UI.3] Блок дістає ARIA-атрибути ПОЛЯ — інакше `aria-invalid` нікуди
+    # поставити: контрол рендерить викликач, а не цей хелпер. Порожній хеш на
+    # валідному полі, тож `**aria` у викликача безпечний завжди.
     def field_container(form, attribute, label_text, &)
       div(class: "space-y-2") do
         form.label attribute, label_text, class: "text-mini uppercase tracking-widest text-gaia-label"
-        yield
+        yield(field_error_attrs(form, attribute))
+        render_field_error(form, attribute)
       end
     end
 

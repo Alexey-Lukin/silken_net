@@ -59,6 +59,59 @@ class ApplicationComponent < Phlex::HTML
   # є режимом відмови, бо дві рукописні копії розходяться мовчки.
   def field_id_for(name) = name.to_s.gsub(/\]\[|\[|\]/, "_").chomp("_")
 
+  # [UI.3] Per-field індикація ПОМИЛКИ — ОДИН дім на застосунок.
+  #
+  # 🔴 Що це лікує: `ErrorSummary` показує СПИСОК причин згори, тож людина зі
+  # скрінрідером чує їх усі, а дійшовши до конкретного поля не дізнається, що
+  # невалідне саме воно (WCAG 3.3.1 просить звʼязати причину з ПОЛЕМ, а не лише
+  # показати її). Доти `aria-invalid` мав **нуль** входжень у всьому `app/`.
+  #
+  # ⚠️ Пастка, через яку це виглядало зробленим: Rails-івський
+  # `ActionView::Base.field_error_proc` активний і справді огортає невалідне поле
+  # в `.field_with_errors` — але той клас ніде не стилізований (нуль згадок у
+  # `application.css`), тобто механізм працює й не дає ані візуального, ані ARIA
+  # сигналу. Перевизначати його ми свідомо НЕ стали: proc дістає готовий HTML
+  # РЯДКОМ, тож додати в тег атрибут можна лише регексом по розмітці — це другий
+  # рендерер поза Phlex, якого ніхто не звіряє.
+  #
+  # 🔴 `aria-describedby`, а не `aria-errormessage`, попри те, що остання назва
+  # точніша: `aria-errormessage` озвучується лише в парі з `aria-invalid="true"`
+  # і має нерівну підтримку в AT, тоді як `describedby` працює скрізь і вже
+  # вживається в цьому дереві для підказок (`notifications/settings`). Форма,
+  # у якої поле нестиме І hint, І помилку, мусить злити обидва id в один атрибут —
+  # сьогодні такої немає (hint живе лише у формах без моделі).
+  #
+  # `id` не деривуємо самі: `form.field_id(attr, :error)` — нативна Rails-конвенція
+  # (8.1), тобто той самий бік, що генерує `id` поля, генерує й адресу помилки,
+  # і розійтись вручну вони не можуть.
+  def field_error_messages(form, attribute)
+    return [] if form.object.blank?
+
+    form.object.errors[attribute]
+  end
+
+  # Атрибути для САМОГО контрола. Порожній хеш, коли поле валідне — `aria-invalid`
+  # на справному полі є твердженням не менш гучним, ніж на зламаному.
+  def field_error_attrs(form, attribute)
+    return {} if field_error_messages(form, attribute).empty?
+
+    { aria: { invalid: "true", describedby: form.field_id(attribute, :error) } }
+  end
+
+  # Вузол, на який вказує `aria-describedby`. Тон — `status-danger-accent`, бо це
+  # сигнал БЕЗ власного фону: парний `-text` призначений стояти на `bg-status-danger`,
+  # і винести його на поверхню форми означало б ужити токен поза роллю — рівно та
+  # підміна, що вже коштувала невидимих гліфів (`04_04 §3.2`). Виміряно на
+  # `bg-gaia-surface`: **4.83:1** світла · 5.12:1 темна, при порозі 4.5 для `text-mini`.
+  def render_field_error(form, attribute)
+    messages = field_error_messages(form, attribute)
+    return if messages.empty?
+
+    p(id: form.field_id(attribute, :error), class: "text-mini text-status-danger-accent") do
+      messages.to_sentence
+    end
+  end
+
   def tokens(*args, **conditions)
     result = args.compact.join(" ")
     conditional = conditions.filter_map { |cls, flag| cls.to_s if flag }.join(" ")

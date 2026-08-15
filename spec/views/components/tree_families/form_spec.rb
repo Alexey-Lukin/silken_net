@@ -49,6 +49,54 @@ RSpec.describe TreeFamilies::Form do
     end
   end
 
+  # 🔴 [UI.3] Per-field індикація помилки (WCAG 3.3.1). `ErrorSummary` показує
+  # СПИСОК причин згори — тобто людина зі скрінрідером чує їх усі, а дійшовши до
+  # конкретного поля не дізнається, що невалідне саме воно. Доти `aria-invalid`
+  # мав нуль входжень у всьому `app/`.
+  #
+  # ⚠️ Субʼєкт — РЕАЛЬНО невалідний запис (`valid?` наповнює `errors`), а не мок із
+  # підробленим `errors`: саме така фікстура вже двічі цементувала тут неіснуючий
+  # контракт (`04_06 §B.2` BP #14). Піни ПАРСЯТЬ розмітку через спільний дім
+  # `LabelAssociation`, бо `include("aria-invalid")` зелений і тоді, коли атрибут
+  # сів не на те поле й вказує в порожнечу.
+  describe "per-field error indication" do
+    let(:invalid_family) do
+      family = mock_family
+      family.valid?
+      family
+    end
+    let(:fragment) { Nokogiri::HTML5.fragment(render_component(family: invalid_family)) }
+
+    it "позначає невалідні поля й веде кожне до ЖИВОГО вузла з причиною" do
+      expect(LabelAssociation.invalid_fields(fragment)).not_to be_empty
+      expect(LabelAssociation.unexplained_invalid_fields(fragment)).to be_empty
+      expect(LabelAssociation.dangling_descriptions(fragment)).to be_empty
+    end
+
+    it "не лишає НЕПОЗНАЧЕНИМ жодного поля, яке модель вважає невалідним" do
+      # 🔴 Дериваційна половина, без якої пін вище не падає на найправдоподібнішій
+      # регресії: зняття `**aria` з ОДНОГО `field_container` лишає множину
+      # позначених непорожньою. Тут звіряються дві незалежні сторони — `errors`
+      # моделі ⊥ атрибути в HTML, — і промах називає поле поіменно.
+      expect(LabelAssociation.unmarked_error_fields(fragment, invalid_family, "tree_family")).to be_empty
+    end
+
+    it "друкує текст причини саме в тому вузлі, на який показує поле" do
+      # 🔴 Пін на ЗБІГ адреси з умістом, не на присутність рядка: `can't be blank`
+      # є і в `ErrorSummary` згори, тож `include(...)` по документу зелений навіть
+      # коли per-field вузол порожній або відсутній.
+      target = fragment.at_css('[name="tree_family[name]"]')["aria-describedby"]
+
+      expect(fragment.at_css("##{target}").text).to include("can't be blank")
+    end
+
+    it "мовчить на валідному записі — `aria-invalid` на справному полі теж є твердженням" do
+      clean = Nokogiri::HTML5.fragment(render_component(family: mock_family))
+
+      expect(LabelAssociation.invalid_fields(clean)).to be_empty
+    end
+  end
+
   describe "form inputs" do
     let(:html) { render_component(family: mock_family) }
 
