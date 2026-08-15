@@ -24,8 +24,14 @@ module Firmwares
       @status = status
     end
 
+    # 🔴 [UI.4] Дім target-id прогрес-бара: адресу називали рукою ТРИ сайти —
+    # цей компонент і ДВА продюсери (push-воркер + живий poll-тракт FW.60).
+    # ⚠️ `dom_id` тут непридатний у принципі: id ключується на `uid` шлюза, тобто
+    # на НЕ-PK колонці, а `dom_id` вміє лише `param_key` + первинний ключ.
+    def self.dom_id(uid) = "ota_progress_#{uid}"
+
     def view_template
-      div(id: "ota_progress_#{@uid}", class: "p-4 border border-emerald-900 bg-black font-mono") do
+      div(id: self.class.dom_id(@uid), class: "p-4 border border-emerald-900 bg-black font-mono") do
         div(class: "flex justify-between items-center mb-2") do
           span(class: "text-mini text-emerald-700 uppercase tracking-widest") { "OTA_LINK: #{@uid}" }
           span(class: tokens("text-mini", status_color)) { @status }

@@ -301,7 +301,7 @@ module Downlink
 
       Turbo::StreamsChannel.broadcast_replace_to(
         TurboStreams::Name.gateway_ota(@gateway),
-        target: "ota_progress_#{@gateway.uid}",
+        target: Firmwares::OtaProgressBar.dom_id(@gateway.uid),
         html: Firmwares::OtaProgressBar.new(
           uid: @gateway.uid, percent: percent,
           current: current, total: total, status: status

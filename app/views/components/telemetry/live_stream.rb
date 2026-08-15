@@ -3,6 +3,15 @@
 
 module Telemetry
   class LiveStream < ApplicationComponent
+    # 🔴 [UI.4] Дім двох СТАТИЧНИХ target-id стрічки. Обидва називалися рукою по
+    # обидва боки тракту — тут і в `UnpackTelemetryWorker`, — а розходження такої
+    # пари не має жодного симптому: `replace`/`remove` у неіснуючу ціль Turbo
+    # ковтає мовчки, тож стрічка просто перестає оновлюватись. Форма — константа,
+    # бо адреса СИНГЛТОННА (сторінка одна, запису під нею немає), тобто метод
+    # класу тут був би церемонією; прецедент у сусіда — `Wallets::Show::LEDGER_TARGET`.
+    FEED_TARGET = "telemetry_feed"
+    PLACEHOLDER_TARGET = "feed_placeholder"
+
     # Організація глядача — НЕ декорація: вона і є скоуп стріму. Голий
     # `"telemetry_stream"` віддавав кожному автентифікованому користувачу
     # телеметрію шлюзів УСІХ організацій, і жоден REST/Pundit-аудит цього не
@@ -62,8 +71,8 @@ module Telemetry
                 end
               end
 
-              tbody(id: "telemetry_feed", class: "md:divide-y md:divide-gaia-border") do
-                tr(id: "feed_placeholder") do
+              tbody(id: FEED_TARGET, class: "md:divide-y md:divide-gaia-border") do
+                tr(id: PLACEHOLDER_TARGET) do
                   td(colspan: 4, class: "p-12 text-center text-gaia-text-subtle flex flex-col items-center justify-center") do
                     div(class: "w-8 h-8 rounded-full border-b-2 border-gaia-border-strong animate-spin mb-4", aria_hidden: "true")
                     p(class: "italic tracking-widest text-mini") { t(".awaiting") }

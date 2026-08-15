@@ -160,11 +160,4 @@ class AiInsight < ApplicationRecord
   def attach_evidence!(log_ids)
     update!(source_log_ids: (source_log_ids + Array(log_ids)).uniq)
   end
-
-  # Швидка перевірка стану
-  def status_label
-    return "Forecast" if forecast?
-    return "Fraud Detected" if fraud_detected?
-    stress_index.present? && stress_index >= BigDecimal("0.3") ? "Stressed" : "Stable"
-  end
 end

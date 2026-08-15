@@ -4,61 +4,6 @@
 require "rails_helper"
 
 RSpec.describe AiInsight, type: :model do
-  describe "#status_label" do
-    it "returns 'Fraud Detected' when fraud_detected is true" do
-      insight = described_class.new(
-        insight_type: :daily_health_summary,
-        target_date: Date.yesterday,
-        stress_index: 0.1,
-        fraud_detected: true
-      )
-
-      expect(insight.status_label).to eq("Fraud Detected")
-    end
-
-    it "returns 'Stable' for healthy summary without fraud" do
-      insight = described_class.new(
-        insight_type: :daily_health_summary,
-        target_date: Date.yesterday,
-        stress_index: 0.1,
-        fraud_detected: false
-      )
-
-      expect(insight.status_label).to eq("Stable")
-    end
-
-    it "returns 'Stressed' for high stress summary" do
-      insight = described_class.new(
-        insight_type: :daily_health_summary,
-        target_date: Date.yesterday,
-        stress_index: 0.5,
-        fraud_detected: false
-      )
-
-      expect(insight.status_label).to eq("Stressed")
-    end
-
-    it "returns 'Forecast' for non-summary types" do
-      insight = described_class.new(
-        insight_type: :drought_probability,
-        target_date: Date.tomorrow
-      )
-
-      expect(insight.status_label).to eq("Forecast")
-    end
-
-    it "returns 'Stable' when stress_index is nil" do
-      insight = described_class.new(
-        insight_type: :daily_health_summary,
-        target_date: Date.yesterday,
-        stress_index: nil,
-        fraud_detected: false
-      )
-
-      expect(insight.status_label).to eq("Stable")
-    end
-  end
-
   describe "#contract_breach?" do
     it "returns true for daily summary with stress_index >= 0.8" do
       insight = described_class.new(

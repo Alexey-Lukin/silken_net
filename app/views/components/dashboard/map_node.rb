@@ -3,6 +3,12 @@
 
 module Dashboard
   class MapNode < ApplicationComponent
+    # 🔴 [UI.4] Дім target-id вузла мапи: адресу називали рукою обидва боки —
+    # цей компонент і `Tree#broadcast_map_update`. ⚠️ `dom_id(tree, :map_node)` тут
+    # НЕ підходить: він вставляє `param_key` між префіксом і id, тобто дав би
+    # `map_node_tree_42`, а не `map_node_42` — виміряно рантаймом, не виведено.
+    def self.dom_id(tree_id) = "map_node_#{tree_id}"
+
     def initialize(tree:)
       @tree = tree
     end
@@ -10,7 +16,7 @@ module Dashboard
     def view_template
       # Цей div зчитається методом nodeTargetConnected у JS
       div(
-        id: "map_node_#{@tree.id}",
+        id: self.class.dom_id(@tree.id),
         data: {
           map_target: "node",
           did: @tree.did,

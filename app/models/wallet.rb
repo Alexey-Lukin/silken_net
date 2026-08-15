@@ -257,7 +257,7 @@ class Wallet < ApplicationRecord
   def broadcast_balance_update
     Turbo::StreamsChannel.broadcast_replace_to(
       [ self, :transactions ],
-      target: "wallet_balance_frame_#{id}",
+      target: Wallets::BalanceFrame.dom_id(id),
       html: Wallets::BalanceFrameStub.new(
         wallet_id: id,
         src: Rails.application.routes.url_helpers.balance_wallet_path(self)

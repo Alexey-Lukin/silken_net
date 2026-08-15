@@ -23,7 +23,7 @@ module Wallets
       div(class: "space-y-8") do
         # Lazy-load: Turbo Frame підвантажує BalanceDisplay окремим запитом,
         # поки що показуємо Skeleton (пульсуючі блоки).
-        turbo_frame_tag "wallet_balance_frame_#{@wallet.id}",
+        turbo_frame_tag Wallets::BalanceFrame.dom_id(@wallet.id),
                         src: balance_wallet_path(@wallet),
                         loading: :lazy do
           render Views::Shared::UI::Skeleton.new(variant: :balance)

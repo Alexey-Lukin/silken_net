@@ -30,7 +30,7 @@ module Wallets
     end
 
     def view_template
-      turbo_frame(id: "wallet_balance_frame_#{@wallet_id}", src: @src, loading: "eager")
+      turbo_frame(id: Wallets::BalanceFrame.dom_id(@wallet_id), src: @src, loading: "eager")
     end
   end
 end

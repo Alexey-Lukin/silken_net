@@ -115,7 +115,7 @@ class OtaTransmissionWorker
     # Трансляція в персональний канал пристрою
     Turbo::StreamsChannel.broadcast_replace_to(
       TurboStreams::Name.gateway_ota(uid),
-      target: "ota_progress_#{uid}",
+      target: Firmwares::OtaProgressBar.dom_id(uid),
       html: Firmwares::OtaProgressBar.new(
         uid: uid,
         percent: percent,

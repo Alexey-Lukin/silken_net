@@ -366,7 +366,7 @@ class UnpackTelemetryWorker
     # Turbo Stream трансляція для "живого" дашборду телеметрії
     Turbo::StreamsChannel.broadcast_prepend_to(
       stream,
-      target: "telemetry_feed",
+      target: Telemetry::LiveStream::FEED_TARGET,
       html: Telemetry::LogEntry.new(
         gateway: gateway,
         hex_payload: hex_payload,
@@ -374,7 +374,7 @@ class UnpackTelemetryWorker
       ).call
     )
 
-    Turbo::StreamsChannel.broadcast_remove_to(stream, target: "feed_placeholder")
+    Turbo::StreamsChannel.broadcast_remove_to(stream, target: Telemetry::LiveStream::PLACEHOLDER_TARGET)
   rescue StandardError => e
     # [UI.4] Прикраса екрана НЕ сміє вбити КОНВЕРТ — і ціна тут інша, ніж у
     # money-path-дзеркала (`BlockchainTransaction#broadcast_new_transaction`,

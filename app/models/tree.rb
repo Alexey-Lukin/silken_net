@@ -242,7 +242,7 @@ class Tree < ApplicationRecord
 
     Turbo::StreamsChannel.broadcast_replace_to(
       TurboStreams::Name.org(:map, organization),
-      target: "map_node_#{id}",
+      target: Dashboard::MapNode.dom_id(id),
       html: Dashboard::MapNode.new(tree: self).call
     )
   end
