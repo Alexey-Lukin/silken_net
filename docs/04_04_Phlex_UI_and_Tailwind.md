@@ -850,20 +850,29 @@ START: Що це за компонент?
 
 ### 7.1 Контролер `clipboard`
 
-**Values:** `content` (String — текст для копіювання)
-**Targets:** `button`
+**Values:** `content` · `copiedText` · `failedText` (усі String)
+**Targets:** `icon` · `check` · `status`
 
-Копіює `contentValue` до буфера через `navigator.clipboard.writeText()` з fallback на `document.execCommand("copy")`. Показує галочку `✓` на 2 секунди як візуальний зворотний зв'язок.
+`async copy()` → `navigator.clipboard.writeText()` у `try/catch`. Успіх і відмова — **різні стани**: успіх ховає іконку копіювання й показує галочку, відмова лишає іконку й тонує вузол `text-status-danger-accent`; обидва пишуть локалізований текст у live-регіон і скидаються через 2 с. `disconnect()` гасить таймер.
+
+🔴 **Чому JS тут не наш вибір, а єдиний легальний шлях.** Декларативної форми копіювання в HTML/CSS не існує й навряд зʼявиться: запис у буфер — привілейована дія, дозволена браузером лише з обробника ЖЕСТУ користувача, інакше будь-яка сторінка тихо перезаписувала б буфер. Найближче, що дає CSS, — `user-select: all` (клік виділяє, далі людина тисне Ctrl+C); це не «сучасніше», це **інша фіча**.
+
+⚠️ **Що знято 2026-08-14 і чому — три різні підстави, не одна.** (1) `document.execCommand("copy")` задепрекейчений, а фолбек будував тимчасовий `<input>` у `body`. (2) 🔴 Той фолбек був **НЕДОСЯЖНИЙ**: `navigator.clipboard` не існує лише поза secure context, а `navigator.clipboard.writeText` там кидає `TypeError` **синхронно**, до появи промісу — тобто `.catch()`, написаний рівно для цього випадку, не спрацював би НІКОЛИ (`async/await` + `try/catch` ловить обидва роди відмови одним блоком). (3) 🔴 `showFeedback()` викликався в catch-гілці **безумовно**, а boolean від `execCommand` ігнорувався — кнопка показувала «✓» навіть коли копіювання не сталося, тобто клас САМОСВІДЧЕННЯ на дії, яку користувач не може перевірити інакше.
+
+🔒 **Два інваріанти розмітки, обидва куплені.** (а) **Текст результату приходить із СЕРВЕРА** (`*TextValue`), бо локаль знає лише він; порожнє значення вимикає оголошення, а не підставляє англійський дефолт усередині JS. (б) **Результат оголошується окремим `role="status"`-регіоном**, а не підміною вмісту кнопки: у кнопки є `aria-label`, і він **перекриває** будь-який текст усередині — тобто доти успіх не отримував ЖОДНОГО озвучення, лише візуальну «✓». ⊕ Обидві іконки рендерить сервер, контролер лише перемикає `hidden`: доти він робив `innerHTML = "✓"` і відновлював рядок, тобто знищував SVG і збирав його назад із памʼяті.
 
 ```html
 <span data-controller="clipboard"
-      data-clipboard-content-value="0x1234...abcd">
-  <button data-action="clipboard#copy"
-          data-clipboard-target="button">⧉</button>
+      data-clipboard-content-value="0x1234...abcd"
+      data-clipboard-copied-text-value="Адресу скопійовано"
+      data-clipboard-failed-text-value="Не вдалося скопіювати">
+  <button data-action="clipboard#copy">
+    <svg data-clipboard-target="icon">…</svg>
+    <svg data-clipboard-target="check" class="hidden">…</svg>
+  </button>
+  <span class="sr-only" role="status" aria-live="polite" data-clipboard-target="status"></span>
 </span>
 ```
-
-**`disconnect()`:** Викликає `clearTimeout(this.feedbackTimeout)` — очищає таймер зворотного зв'язку ✓, запобігаючи DOM mutation після знищення компонента.
 
 **Phlex-використання:** Вбудований у `Views::Shared::Web3::Address`.
 
