@@ -23,6 +23,8 @@ en:
       chainsaw_detected_panic: "🪚 LOGGING: Acoustic anomaly without a thermal signal (PANIC-TX). DID: %{did}"
       cluster_data_blackout: 'Cluster-wide data blackout (%{target_date}): possible gateway failure / Starlink blackout (force-majeure). Slashing NOT applied — Field Audit required (Category C, 05_05 §5).'
       cluster_small_sample_degradation: 'Small-sample degradation (%{target_date}): %{critical_count} of %{total_trees} trees critical. The percentage threshold degenerates below 5 trees — a single tree crosses it — so NO auto-slash; Field Audit decides (Category C, 05_05 §5).'
+      emergency_response_over_ceiling: 'Emergency response NOT dispatched to actuator ‘%{name}’ (%{endpoint}): it is rated for %{limit_s} s of continuous action, but a single command in this protocol runs %{chunk_s} s. No command was issued to THIS actuator; the rest of the cluster is unaffected.'
+      emergency_response_too_slow: 'Emergency response NOT dispatched to actuator ‘%{name}’ (%{endpoint}): the gateway fleet is polled at worst every %{cadence_min} min, while this response stays meaningful for only %{relevance_min} min. The command would expire before it was ever asked for. No command was issued to THIS actuator; the rest of the cluster is unaffected.'
       entropy_pre_stress: "🎲 PRE-STRESS SIGNAL: Z-distribution entropy of cluster %{cluster_name} dropped to %{entropy_score} (threshold: %{threshold}). Analysis of %{sample_count} measurements over the last 24 hours points to homogenisation of tree responses — forest stress may be starting."
       field_audit_escalated_c_to_a: 'Field Audit %{date}: node %{uid} enclosure breached — act №%{act}, photo %{photo}. Escalation C→A: direct Category-A evidence recorded on site.'
       fire_detected: "🔥 CATASTROPHE: Temperature %{temperature_c}°C (threshold: %{fire_limit}). Fire risk!"
@@ -79,6 +81,7 @@ en:
     types:
       actuator_stuck: Actuator Stuck
       chainsaw_detected: Chainsaw Detected
+      emergency_response_undeliverable: Emergency Response Undeliverable
       entropy_anomaly: Entropy Anomaly
       field_audit: Field Audit
       fire_detected: Fire Detected

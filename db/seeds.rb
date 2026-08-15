@@ -326,6 +326,13 @@ gateways = []
     device_type: :water_valve,
     endpoint: "valve_#{i + 1}",
     state: :idle,
+    # ⚠️ [ARCH.75] 300 с — ПЛЕЙСХОЛДЕР, не виміряна фізика, і він СУПЕРЕЧИТЬ
+    # власному протоколу платформи: `EmergencyResponseService` просить клапану
+    # 7200 с (посуха) і 14400 с (пожежа), тобто чанки по 3600 с. Доти суперечність
+    # була невидима — `insert_all` обходив валідації, і накази лягали невалідними
+    # й мовчки. Тепер вона гучна: аварійна відповідь на цій конфігурації НЕ
+    # відправляється, а платформа пише `emergency_response_undeliverable`. Число
+    # лишається до стенд-виміру реального соленоїда → `00_07` ARCH.75 / HW-домен.
     max_active_duration_s: 300,
     estimated_mj_per_action: 150
   )
@@ -351,6 +358,8 @@ fire_siren = Actuator.create!(
   device_type: :fire_siren,
   endpoint: "siren_1",
   state: :idle,
+  # ⚠️ [ARCH.75] Так само плейсхолдер: протокол просить сирені 3600 с (див. ноту
+  # біля клапана вище) — ця конфігурація аварійну відповідь не виконує.
   max_active_duration_s: 120,
   estimated_mj_per_action: 200
 )

@@ -40,7 +40,7 @@ module ModelMessageLocalization
   # firmwares · notifications · settings · maintenance · provisioning ·
   # tree_families), тож текст доходить лише до JSON-контуру або лога.
   DECLARED = {
-    "app/models/actuator_command.rb:112" => {
+    "app/models/actuator_command.rb:122" => {
       why: "формат команди; `actuators#execute` створює наказ усередині контролера, але " \
            "`RecordInvalid` там свідомо не має `rescue_from` і летить у generic 500 — " \
            "людина бачить `errors.api.internal`, кирилиця йде в `Rails.logger.fatal`",
@@ -56,7 +56,7 @@ module ModelMessageLocalization
            "тільки index/show",
       back: "поява форми, що приймає адресу від людини"
     },
-    "app/models/ews_alert.rb:135" => {
+    "app/models/ews_alert.rb:153" => {
       why: "унікальність активної тривоги; алерти народжуються виключно у воркерах/сервісах, " \
            "`alerts_controller` має лише index/show/resolve",
       back: "поява create-шляху тривоги з UI"

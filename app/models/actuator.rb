@@ -100,6 +100,18 @@ class Actuator < ApplicationRecord
     end
   end
 
+  # [ARCH.75] Safety envelope як ПИТАННЯ, а не лише як валідація: «чи витримає цей
+  # пристрій безперервну дію такої тривалості». Дім один, читачів двоє —
+  # `ActuatorCommand#duration_within_safety_envelope` (після факту) і
+  # `EmergencyResponseService` (ДО запису, бо він пише `insert_all`, тобто повз
+  # валідації; рядок, який не проходить власну модель, далі не вміє навіть померти).
+  # Порожня стеля = «не оголошено», а не «нуль»: пристрій без заявленого ліміту
+  # не обмежуємо — саме тому аварійна відповідь працювала рівно доти, доки колонку
+  # лишали порожньою.
+  def can_sustain?(seconds)
+    max_active_duration_s.blank? || seconds.to_i <= max_active_duration_s
+  end
+
   # Перевірка, чи пристрій готовий до негайного розгортання
   def ready_for_deployment?
     return false unless idle?

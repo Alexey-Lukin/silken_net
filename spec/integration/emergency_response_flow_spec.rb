@@ -34,6 +34,10 @@ RSpec.describe "Emergency response and actuator command flow" do
     end
 
     it "dispatches water valve and fire siren for fire alert" do
+      # [ARCH.75] Сирена/маяк на РЕАЛЬНОМУ каденсі прошивки (1 год) недоставні
+      # ЗАВЖДИ — це ратифікована поведінка, запінена окремим прикладом. Тут
+      # предметом є ФОРМА протоколу, тож каденс стабимо.
+      stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
       fire_siren = create(:actuator, :fire_siren, gateway: gateway)
       alert = create(:ews_alert, :fire, cluster: cluster, tree: tree)
 
@@ -55,7 +59,7 @@ RSpec.describe "Emergency response and actuator command flow" do
         .not_to change(ActuatorCommand, :count)
     end
 
-    it "chunks long durations into MAX_COMMAND_DURATION pieces" do
+    it "chunks long durations into ActuatorCommand::MAX_DURATION_S pieces" do
       alert = create(:ews_alert, :fire, cluster: cluster, tree: tree)
 
       EmergencyResponseService.call(alert)

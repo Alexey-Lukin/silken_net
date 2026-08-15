@@ -92,6 +92,16 @@ class ActuatorCommand < ApplicationRecord
 
   ALLOWED_PAYLOAD_FORMAT = /\A[A-Z_]+(?::\d+)?\z/
 
+  # [ARCH.75] Протокольна стеля ОДНІЄЇ команди — дім один. Доти те саме число
+  # стояло двома незв'язаними літералами: тут у валідації й `MAX_COMMAND_DURATION`
+  # в `EmergencyResponseService`, який ріже чанки. Розійтись вони могли мовчки —
+  # жоден гейт їх не звіряв, — а наслідок розходження недешевий: сервіс нарізав би
+  # чанки, які модель не приймає, і `insert_all` поклав би їх у БД повз валідації.
+  # ⚠️ Це стеля ПРОТОКОЛУ (скільки вміє нести один наказ), а НЕ фізична стеля
+  # пристрою — та живе на `Actuator#max_active_duration_s` і питається через
+  # `Actuator#can_sustain?`. Дві різні величини, і плутати їх коштувало ARCH.75.
+  MAX_DURATION_S = 3600
+
   # [ARCH.58] Один дім деривації «це override?»: `enforce_override_priority`
   # ставить пріоритет ПІСЛЯ валідації, а контролеру треба знати відповідь ДО
   # створення запису (in-flight гард). Без спільного методу правило жило б у
@@ -111,7 +121,7 @@ class ActuatorCommand < ApplicationRecord
                               format: { with: ALLOWED_PAYLOAD_FORMAT,
                                         message: "дозволені лише команди формату ACTION або ACTION:value (напр. OPEN:60)" }
   validates :duration_seconds, presence: true,
-                               numericality: { greater_than: 0, less_than_or_equal_to: 3600 }
+                               numericality: { greater_than: 0, less_than_or_equal_to: MAX_DURATION_S }
   validates :idempotency_token, presence: true, uniqueness: true
   validates :priority, presence: true
   validate :duration_within_safety_envelope
@@ -183,13 +193,15 @@ class ActuatorCommand < ApplicationRecord
     self.organization_id ||= actuator&.gateway&.cluster&.organization_id
   end
 
-  # Safety Envelope: тривалість команди не може перевищувати фізичний ліміт актуатора
+  # Safety Envelope: тривалість команди не може перевищувати фізичний ліміт актуатора.
+  # Саме питання живе на пристрої (`Actuator#can_sustain?`) — тут лише його наслідок
+  # для запису, бо ТОЙ САМИЙ предикат мусить бути доступний ДО створення рядка:
+  # `EmergencyResponseService` пише `insert_all` повз валідації [ARCH.75].
   def duration_within_safety_envelope
-    return unless actuator&.max_active_duration_s.present? && duration_seconds.present?
+    return if actuator.nil? || duration_seconds.blank?
+    return if actuator.can_sustain?(duration_seconds)
 
-    if duration_seconds > actuator.max_active_duration_s
-      errors.add(:duration_seconds, :exceeds_actuator_limit, limit: actuator.max_active_duration_s)
-    end
+    errors.add(:duration_seconds, :exceeds_actuator_limit, limit: actuator.max_active_duration_s)
   end
 
   # ⏱️ TTL: expires_at має бути в майбутньому при створенні

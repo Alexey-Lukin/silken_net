@@ -43,6 +43,10 @@ RSpec.describe EmergencyResponseService do
       end
 
       it "creates a single 3600s siren command" do
+        # [ARCH.75] Сирена/маяк на РЕАЛЬНОМУ каденсі прошивки (1 год) недоставні
+        # ЗАВЖДИ — це ратифікована поведінка, запінена окремим прикладом. Тут
+        # предметом є ФОРМА протоколу, тож каденс стабимо.
+        stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
         siren = create(:actuator, :fire_siren, gateway: gateway, state: :idle)
 
         described_class.call(alert)
@@ -72,6 +76,10 @@ RSpec.describe EmergencyResponseService do
       let(:alert) { create(:ews_alert, cluster: cluster, tree: tree, alert_type: :seismic_anomaly, severity: :critical) }
 
       it "creates a single 1800s beacon command (no splitting needed)" do
+        # [ARCH.75] Сирена/маяк на РЕАЛЬНОМУ каденсі прошивки (1 год) недоставні
+        # ЗАВЖДИ — це ратифікована поведінка, запінена окремим прикладом. Тут
+        # предметом є ФОРМА протоколу, тож каденс стабимо.
+        stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
         beacon = create(:actuator, :seismic_beacon, gateway: gateway, state: :idle)
 
         described_class.call(alert)
@@ -248,6 +256,10 @@ RSpec.describe EmergencyResponseService do
     let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
 
     it "creates valve AND siren commands for fire alert" do
+      # [ARCH.75] Сирена/маяк на РЕАЛЬНОМУ каденсі прошивки (1 год) недоставні
+      # ЗАВЖДИ — це ратифікована поведінка, запінена окремим прикладом. Тут
+      # предметом є ФОРМА протоколу, тож каденс стабимо.
+      stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
       valve = create(:actuator, :water_valve, gateway: gateway, state: :idle)
       siren = create(:actuator, :fire_siren, gateway: gateway, state: :idle)
 
@@ -297,13 +309,161 @@ RSpec.describe EmergencyResponseService do
       expect(cmd.priority).to eq("high")
     end
 
-    it "sets expires_at to 15 minutes from now" do
+    # [ARCH.75] TTL більше НЕ фіксовані 15 хв: це вікно РЕЛЕВАНТНОСТІ кроку, тобто
+    # твердження про фізику події. Пін на дві різні величини в одному протоколі —
+    # інакше «взяли з таблиці» не відрізнити від «знову одна константа».
+    it "sets expires_at to the step's relevance window, not a flat constant" do
       create(:actuator, :water_valve, gateway: gateway, state: :idle)
 
       described_class.call(alert)
 
       cmd = ActuatorCommand.last
-      expect(cmd.expires_at).to be_within(1.minute).of(15.minutes.from_now)
+      expect(cmd.expires_at).to be_within(1.minute).of(6.hours.from_now)
+    end
+
+    it "gives the siren a SHORTER window than the valve in the same fire protocol" do
+      # Каденс стабимо: на РЕАЛЬНОМУ (годинному) сирена недоставна за побудовою —
+      # це ратифікована поведінка, запінена окремо нижче. Тут перевіряємо, що
+      # вікна РІЗНІ, а не що сирена доїжджає.
+      stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
+      fire = create(:ews_alert, :fire, cluster: cluster, tree: tree)
+      create(:actuator, :water_valve, gateway: gateway, state: :idle)
+      create(:actuator, :fire_siren, gateway: gateway, state: :idle)
+
+      described_class.call(fire)
+
+      siren = ActuatorCommand.joins(:actuator).where(ews_alert: fire, actuators: { device_type: :fire_siren }).first
+      valve = ActuatorCommand.joins(:actuator).where(ews_alert: fire, actuators: { device_type: :water_valve }).first
+      expect(siren.expires_at).to be_within(1.minute).of(15.minutes.from_now)
+      expect(valve.expires_at).to be_within(1.minute).of(2.hours.from_now)
+    end
+
+    # 🔴 Пін, якого НЕ БУЛО, і саме тому весь клас ARCH.75 прожив непоміченим:
+    # `insert_all` обходить валідації, тож спеки роками пінили `duration_seconds`
+    # і жодна не питала, чи створений рядок узагалі можна зберегти. Невалідний
+    # наказ не вміє ні виконатись, ні померти.
+    # ⚠️ Слабкий актуатор у наборі — НЕ декорація: без нього приклад вакуумний.
+    # Виміряно мутацією: зі самим лише дефолтним пристроєм (стеля = чанк) зняття
+    # перевірки стелі лишає цей пін ЗЕЛЕНИМ, бо в наборі немає нічого, що механізм
+    # мусить відкинути. Фільтр доводиться парою «лишається ⊥ відпадає».
+    it "creates only commands that pass their own model validations" do
+      create(:actuator, :water_valve, gateway: gateway, state: :idle, max_active_duration_s: 120)
+      create(:actuator, :water_valve, gateway: gateway, state: :idle)
+
+      described_class.call(alert)
+
+      commands = ActuatorCommand.where(ews_alert: alert)
+      expect(commands).to be_any
+      expect(commands.reject(&:valid?)).to be_empty
+    end
+  end
+
+  # =========================================================================
+  # [ARCH.75] ГУЧНА ВІДМОВА замість тихого невалідного рядка
+  # =========================================================================
+  describe "undeliverable physical response" do
+    let(:alert) { create(:ews_alert, :drought, cluster: cluster, tree: tree) }
+
+    context "when the protocol exceeds the actuator's physical ceiling" do
+      it "issues NO command and raises a critical alert naming both numbers" do
+        create(:actuator, :water_valve, gateway: gateway, state: :idle, max_active_duration_s: 120)
+
+        expect { described_class.call(alert) }.not_to change(ActuatorCommand, :count)
+
+        raised = EwsAlert.alert_type_emergency_response_undeliverable.last
+        expect(raised.message_key).to eq("emergency_response_over_ceiling")
+        expect(raised.severity).to eq("critical")
+        expect(raised.message_params).to include("chunk_s" => 3600, "limit_s" => 120)
+      end
+    end
+
+    # 🔴 Ратифікована поведінка (⚖️ 2026-08-15), а не побічний ефект: каденс флашу
+    # Королеви — компайл-тайм константа прошивки (1 год), тож 15-хвилинна сирена
+    # недоставна на БУДЬ-ЯКОМУ шлюзі, який платформа провіжинить. Каденс тут
+    # СВІДОМО не стабиться — предметом піна є саме дефолт.
+    context "when the response stays relevant for less than the fleet's real poll cadence" do
+      it "issues NO siren command at all, and names the cadence rather than the ceiling" do
+        create(:actuator, :fire_siren, gateway: gateway, state: :idle)
+        fire = create(:ews_alert, :fire, cluster: cluster, tree: tree)
+
+        expect { described_class.call(fire) }.not_to change(ActuatorCommand, :count)
+
+        raised = EwsAlert.alert_type_emergency_response_undeliverable.last
+        expect(raised.message_key).to eq("emergency_response_too_slow")
+        expect(raised.message_params).to include("relevance_min" => 15, "cadence_min" => 61)
+      end
+    end
+
+    # Дзеркало «лишається ⊥ відпадає»: без нього «нуль порушень» не відрізнити
+    # від «нуль доставки». Відмова мусить бути ПОАКТУАТОРНОЮ.
+    it "still dispatches to the sibling actuator that CAN deliver" do
+      weak = create(:actuator, :water_valve, gateway: gateway, state: :idle, max_active_duration_s: 120)
+      strong = create(:actuator, :water_valve, gateway: gateway, state: :idle)
+
+      described_class.call(alert)
+
+      served = ActuatorCommand.where(ews_alert: alert).pluck(:actuator_id).uniq
+      expect(served).to eq([ strong.id ])
+      expect(EwsAlert.alert_type_emergency_response_undeliverable.count).to eq(1)
+      expect(EwsAlert.alert_type_emergency_response_undeliverable.last.message_params["actuator_id"]).to eq(weak.id)
+    end
+
+    # Другий тригер СВІДОМО іншого типу: модель не дає двох активних алертів
+    # одного типу на одне дерево, а дедуп тут ключується на ПАРІ (причина,
+    # актуатор) — не на алерті, що його спричинив. Інакший тип це і доводить.
+    it "does not pile up a duplicate alert for the same actuator and cause" do
+      create(:actuator, :water_valve, gateway: gateway, state: :idle, max_active_duration_s: 120)
+      second = create(:ews_alert, cluster: cluster, tree: tree, alert_type: :insect_epidemic, severity: :low)
+
+      described_class.call(alert)
+      described_class.call(second)
+
+      expect(EwsAlert.alert_type_emergency_response_undeliverable.count).to eq(1)
+    end
+  end
+
+  # =========================================================================
+  # [ARCH.75] Ієрархія Виживання — сирена мусить ВИЙТИ З ЧЕРГИ першою
+  # =========================================================================
+  describe "fire dispatch order" do
+    it "puts the siren ahead of the watering chunks in the poll queue" do
+      stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
+      fire = create(:ews_alert, :fire, cluster: cluster, tree: tree)
+      create(:actuator, :water_valve, gateway: gateway, state: :idle)
+      create(:actuator, :fire_siren, gateway: gateway, state: :idle)
+
+      described_class.call(fire)
+
+      # Королева дренажує лише QUEEN_POLL_MAX_PER_FLUSH=3 накази за флаш, тож
+      # п'ята позиція = наступний флаш = смерть по TTL для 15-хвилинного вікна.
+      first = ActuatorCommand.where(ews_alert: fire).by_priority.first
+      expect(first.command_payload).to eq("ACTIVATE_SIREN")
+    end
+  end
+
+  # =========================================================================
+  # [ARCH.75] Парність таблиці протоколів проти обох enum'ів
+  # =========================================================================
+  # 🔴 Найдешевший гейт цього тракту, і доти його не існувало: `by_device_type.fetch(k, [])`
+  # + `return if actuators.empty?` означає, що друкарська помилка в ключі (чи символ
+  # замість рядка) дає НУЛЬ команд, НУЛЬ алертів і НУЛЬ логів — тобто аварійний
+  # протокол мовчки зникає. `drone_launcher` уже показав, що enum-значення без гілки
+  # диспетчеризації в цьому домені трапляється.
+  describe "PROTOCOLS parity" do
+    it "keys every step by a real Actuator#device_type" do
+      declared = described_class::PROTOCOLS.values.flatten.map { _1[:device_type] }.uniq
+      expect(declared - Actuator.device_types.keys).to be_empty
+    end
+
+    it "keys every protocol by a real EwsAlert#alert_type" do
+      expect(described_class::PROTOCOLS.keys.map(&:to_s) - EwsAlert.alert_types.keys).to be_empty
+    end
+
+    it "declares a relevance window and a positive duration for every step" do
+      described_class::PROTOCOLS.values.flatten.each do |step|
+        expect(step[:relevance].to_i).to be > 0, "крок #{step[:payload]} без вікна релевантності"
+        expect(step[:duration].to_i).to be > 0, "крок #{step[:payload]} без тривалості"
+      end
     end
   end
 

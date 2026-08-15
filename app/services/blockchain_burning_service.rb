@@ -603,10 +603,14 @@ class BlockchainBurningService < ApplicationService
     # vendor-attributable клас, що firmware_fault: виїзд лісника нашого
     # bookkeeping-збою не лікує, а карати оператора за нього — те саме, що
     # штрафувати за mruby-crash.
+    # [ARCH.75] І :emergency_response_undeliverable — платформа сама відмовилась
+    # видати аварійну команду, бо стеля пристрою чи каденс шлюза її не пропускають.
+    # Це наша конфігурація, а не операторська недбалість: виїзд лісника не полагодить
+    # число, яке ми ж і задали. Той самий vendor-attributable клас, що actuator_stuck.
     stale_critical = @cluster.ews_alerts.severity_critical
                              .where.not(alert_type: [ :field_audit, :vandalism_breach, :firmware_fault,
                                                       :firmware_reverted, :firmware_canary_trip,
-                                                      :actuator_stuck ])
+                                                      :actuator_stuck, :emergency_response_undeliverable ])
                              .where.not(status: :resolved, resolved_by: nil)
                              .where(created_at: ..30.minutes.ago)
     return false unless stale_critical.exists?

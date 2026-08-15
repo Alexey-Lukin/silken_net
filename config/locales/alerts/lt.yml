@@ -23,6 +23,8 @@ lt:
       chainsaw_detected_panic: "🪚 KIRTIMAS: Akustinė anomalija be šiluminio signalo (PANIC-TX). DID: %{did}"
       cluster_data_blackout: 'Viso klasterio duomenų pertrūkis (%{target_date}): galimas šliuzo gedimas / Starlink pertrūkis (force-majeure). Slashing NETAIKYTAS — reikalingas Field Audit (C kategorija, 05_05 §5).'
       cluster_small_sample_degradation: 'Mažos imties degradacija (%{target_date}): %{critical_count} iš %{total_trees} medžių kritiniai. Procentinis slenkstis išsigimsta esant mažiau nei 5 medžiams — jį kerta vienas medis — todėl auto-slash NETAIKYTAS; sprendžia Field Audit (C kategorija, 05_05 §5).'
+      emergency_response_over_ceiling: 'Avarinis atsakas NEIŠSIŲSTAS pavarai „%{name}“ (%{endpoint}): ji pritaikyta %{limit_s} s nepertraukiamam veikimui, o viena šio protokolo komanda trunka %{chunk_s} s. ŠIAI pavarai komandų neišduota; likusios klasterio dalies tai neveikia.'
+      emergency_response_too_slow: 'Avarinis atsakas NEIŠSIŲSTAS pavarai „%{name}“ (%{endpoint}): vartų parkas blogiausiu atveju apklausiamas kas %{cadence_min} min., o šis atsakas prasmingas tik %{relevance_min} min. Komandos galiojimas baigtųsi anksčiau, nei jos būtų paprašyta. ŠIAI pavarai komandų neišduota; likusios klasterio dalies tai neveikia.'
       entropy_pre_stress: "🎲 PRIEŠSTRESINIS SIGNALAS: klasterio %{cluster_name} Z pasiskirstymo entropija nukrito iki %{entropy_score} (slenkstis: %{threshold}). %{sample_count} matavimų analizė per pastarąsias 24 valandas rodo medžių atsakų homogenizaciją — galima miško streso pradžia."
       field_audit_escalated_c_to_a: 'Field Audit %{date}: mazgo %{uid} korpusas atplėštas — aktas Nr.%{act}, nuotrauka %{photo}. Eskalavimas C→A: tiesioginis A kategorijos įrodymas, užfiksuotas vietoje.'
       fire_detected: "🔥 KATASTROFA: Temperatūra %{temperature_c}°C (slenkstis: %{fire_limit}). Gaisro rizika!"
@@ -79,6 +81,7 @@ lt:
     types:
       actuator_stuck: Vykdiklis įstrigo
       chainsaw_detected: Aptiktas grandininis pjūklas
+      emergency_response_undeliverable: Avarinis atsakas nepristatomas
       entropy_anomaly: Entropijos anomalija
       field_audit: Lauko auditas
       fire_detected: Aptiktas gaisras

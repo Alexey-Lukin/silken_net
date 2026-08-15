@@ -26,6 +26,23 @@ module Downlink
 
     OTA_HINT_MARKER = 0x9F # [0x9F][firmware_id:4 BE][total_packages:2 BE]
 
+    # [ARCH.75] Найгірше очікування downlink'а — дзеркало прошивки:
+    # `FLUSH_INTERVAL_MS` 3600000 + `FLUSH_JITTER_MAX_MS` 60000 (`firmware/queen/main.c`).
+    # 🔴 **Чому НЕ `gateways.config_sleep_interval_s`:** прошивка тієї колонки не читає
+    # ВЗАГАЛІ (нуль згадок у `firmware/`), і downlink'а, який доніс би її до Королеви,
+    # не існує — це Rails-side переконання без носія. Порівнювати з ним вікно доставки
+    # означало б міряти вигадану величину: шлюз, провіжінений на 3600, і шлюз із 300
+    # флашать ОДНАКОВО, за компайл-тайм таймером. ⚠️ Це стеля ЗВЕРХУ для таймерної
+    # ноги; нижньої межі каденсу не існує взагалі — таймерний флаш сам гейтований
+    # `cache_count > 0 || ed25519_ready`, тож мовчазна legacy-Королева не флашить
+    # ніколи. Тобто «вкладаємось» тут = «не можемо довести, що НЕ вкладемось».
+    WORST_CASE_POLL_INTERVAL_S = 3660
+
+    # Чи встигне downlink доїхати за `seconds` — питання ПЛАТФОРМИ, не пристрою.
+    def self.reachable_within?(seconds)
+      WORST_CASE_POLL_INTERVAL_S <= seconds.to_i
+    end
+
     def self.poll_reply(gateway:, query:)
       new(gateway).poll_reply(query)
     end
