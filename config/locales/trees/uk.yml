@@ -4,6 +4,14 @@ uk:
     chronicle:
       empty_description: Події з'являтимуться тут, щойно дерево почне надсилати телеметрію
       empty_title: Подій хроніки ще не записано
+      event_types:
+        alert: Тривога
+        fraud: Перевірка цілісності
+        homeostasis: Гомеостаз
+        maintenance: Обслуговування
+        minting: Емісія
+        recovery: Відновлення
+        stress: Стрес
       events: "%{count} подій"
       heading: Цифровий хронограф
     index:

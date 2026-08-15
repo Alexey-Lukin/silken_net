@@ -124,7 +124,10 @@ RSpec.describe AccountSecurity::Show do
     end
 
     it "renders the provider name" do
-      expect(html).to include("Google Oauth2")
+      # [I18N.1] Канонічне написання, не `.titleize`: той давав «Google Oauth2» —
+      # тобто цей пін цементував дефект показу як правильну поведінку.
+      expect(html).to include("Google")
+      expect(html).not_to include("Google Oauth2")
     end
 
     it "renders the Primary badge for primary identities" do

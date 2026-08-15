@@ -56,7 +56,10 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
       get "/account_security", headers: headers
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Google Oauth2")
+      # [I18N.1] Канонічне написання: `.titleize` давав «Google Oauth2», тобто цей пін
+      # (як і два компонентні) цементував дефект показу.
+      expect(response.body).to include("Google")
+      expect(response.body).not_to include("Google Oauth2")
       expect(response.body).not_to include("No providers linked.")
     end
   end

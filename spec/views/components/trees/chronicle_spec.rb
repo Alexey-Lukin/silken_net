@@ -69,8 +69,11 @@ RSpec.describe Trees::Chronicle do
       expect(html).to include("◉")
     end
 
-    it "renders the event_type badge" do
-      expect(html).to include("homeostasis")
+    # [I18N.1] Мітка, не сирий символ сервісу. Локаль НЕ базова: в англійській
+    # «Homeostasis» відрізняється від токена лише регістром, а регістр тут дає CSS
+    # (`uppercase`), який розмітки не міняє — тобто в en пін не розрізняв би їх.
+    it "renders the event_type badge as a human label" do
+      expect(I18n.with_locale(:uk) { render_component(tree: tree, entries: [ entry ], pagy: pagy) }).to include("Гомеостаз")
     end
 
     it "renders the date in dd.mm format" do

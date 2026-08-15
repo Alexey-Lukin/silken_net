@@ -4,6 +4,14 @@ en:
     chronicle:
       empty_description: Events will appear here as the tree generates telemetry data
       empty_title: No chronicle events recorded
+      event_types:
+        alert: Alert
+        fraud: Integrity check
+        homeostasis: Homeostasis
+        maintenance: Maintenance
+        minting: Emission
+        recovery: Recovery
+        stress: Stress
       events: "%{count} events"
       heading: Digital Chronicle
     index:

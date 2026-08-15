@@ -4,6 +4,14 @@ lv:
     chronicle:
       empty_description: Notikumi parādīsies šeit, tiklīdz koks sāks sūtīt telemetriju
       empty_title: Nav reģistrētu hronikas notikumu
+      event_types:
+        alert: Trauksme
+        fraud: Integritātes pārbaude
+        homeostasis: Homeostāze
+        maintenance: Apkope
+        minting: Emisija
+        recovery: Atjaunošanās
+        stress: Stress
       events: "%{count} notikumi"
       heading: Digitālā hronika
     index:

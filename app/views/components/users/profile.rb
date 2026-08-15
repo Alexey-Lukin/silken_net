@@ -121,7 +121,7 @@ module Users
 
       div(class: "flex items-center gap-2 px-3 py-2 border border-emerald-900/50 bg-zinc-950") do
         span { icon }
-        span(class: "text-tiny text-emerald-500 font-mono") { identity.provider.titleize }
+        span(class: "text-tiny text-emerald-500 font-mono") { identity.provider_name }
         if identity.primary?
           span(class: "text-micro px-1 bg-emerald-900/30 text-emerald-600 uppercase") { t(".provider.primary") }
         end

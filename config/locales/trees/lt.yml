@@ -4,6 +4,14 @@ lt:
     chronicle:
       empty_description: Įvykiai atsiras čia, kai medis pradės siųsti telemetriją
       empty_title: Kronikos įvykių neužfiksuota
+      event_types:
+        alert: Pavojus
+        fraud: Vientisumo patikra
+        homeostasis: Homeostazė
+        maintenance: Priežiūra
+        minting: Emisija
+        recovery: Atsigavimas
+        stress: Stresas
       events: "%{count} įvykiai"
       heading: Skaitmeninė kronika
     index:

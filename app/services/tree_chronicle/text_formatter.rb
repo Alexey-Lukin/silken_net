@@ -61,6 +61,20 @@ module TreeChronicle
     # означають, що друкарська помилка в одній лишається зеленою назавжди.
     SEVERITY_SCOPE = "alerts.severities"
 
+    # [I18N.1] Дім міток `Entry#event_type` — синтетичного роду події, який
+    # виробляє САМ сервіс (`:alert`/`:fraud`/`:stress`/`:maintenance`/`:minting`/
+    # `:recovery`/`:homeostasis`). ⚠️ Це НЕ enum моделі, і саме тому клас випав з
+    # усіх переліків: гейт парності будується на `Model.enum.keys`, а тут enum'а
+    # немає за побудовою — множину дає код сервісу.
+    EVENT_TYPE_SCOPE = "trees.chronicle.event_types"
+
+    # ОДНА деривація ключа. Fail-open: новий рід події рендериться сирим, доки
+    # мітка не доїде в локалі.
+    def self.event_type_label(event_type)
+      value = event_type.to_s
+      I18n.t("#{EVENT_TYPE_SCOPE}.#{value}", default: value)
+    end
+
     # \u0413\u043B\u0456\u0444\u0438 locale-\u0456\u043D\u0432\u0430\u0440\u0456\u0430\u043D\u0442\u043D\u0456 \u2192 \u0434\u0456\u043C \u0442\u0443\u0442, \u043D\u0435 \u0432 YAML: parity-\u0433\u0435\u0439\u0442 `i18n-tasks
     # missing` \u0456\u043D\u0430\u043A\u0448\u0435 \u0437\u043C\u0443\u0441\u0438\u0432 \u0431\u0438 \u0442\u0440\u0438\u043C\u0430\u0442\u0438 \u0447\u043E\u0442\u0438\u0440\u0438 \u043E\u0434\u043D\u0430\u043A\u043E\u0432\u0456 \u043A\u043E\u043F\u0456\u0457 \u043A\u043E\u0436\u043D\u043E\u0433\u043E \u0435\u043C\u043E\u0434\u0437\u0456.
     ALERT_ICONS = {

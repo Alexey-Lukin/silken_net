@@ -176,7 +176,8 @@ RSpec.describe Users::Profile do
       end
 
       it "renders the provider name" do
-        expect(html).to include("Google Oauth2")
+        expect(html).to include("Google")
+        expect(html).not_to include("Google Oauth2")
       end
 
       it "renders Primary badge for primary identity" do
@@ -196,7 +197,8 @@ RSpec.describe Users::Profile do
     it "renders provider badge for linkedin" do
       identity = mock_identity(provider: "linkedin")
       html = render_component(user: user, active_identities: [ identity ])
-      expect(html).to include("Linkedin")
+      # «LinkedIn», не «Linkedin»: `.titleize` ламав саме власну назву бренду.
+      expect(html).to include("LinkedIn")
     end
 
     it "renders provider badge for twitter" do

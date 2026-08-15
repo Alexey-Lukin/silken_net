@@ -119,7 +119,7 @@ module AccountSecurity
           span(class: "text-lg") { provider_icon(identity.provider) }
           div do
             div(class: "flex items-center gap-2") do
-              span(class: "text-compact text-white font-mono") { identity.provider.titleize }
+              span(class: "text-compact text-white font-mono") { identity.provider_name }
               if identity.primary?
                 span(class: "text-micro px-2 py-0.5 bg-emerald-900/30 text-emerald-500 uppercase") { t(".identities.primary") }
               end
@@ -180,7 +180,7 @@ module AccountSecurity
           method: :delete,
           form_class: "inline",
           class: "px-3 py-1 border border-red-900 text-micro text-red-700 uppercase hover:text-red-400 transition-all",
-          data: { turbo_confirm: t(".identities.unlink_confirm", provider: identity.provider.titleize) }
+          data: { turbo_confirm: t(".identities.unlink_confirm", provider: identity.provider_name) }
         )
       else
         span(class: "px-3 py-1 border border-gray-800 text-micro text-gray-700 uppercase cursor-not-allowed", title: t(".identities.unlink_disabled_title")) { t(".identities.unlink") }

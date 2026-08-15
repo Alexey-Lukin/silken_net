@@ -79,7 +79,7 @@ module Trees
             end
             span(class: tokens("px-1.5 py-0.5 text-micro font-mono uppercase rounded",
                                event_type_badge_class(entry.event_type))) do
-              entry.event_type.to_s
+              TreeChronicle::TextFormatter.event_type_label(entry.event_type)
             end
           end
 

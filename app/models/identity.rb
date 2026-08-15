@@ -35,6 +35,29 @@ class Identity < ApplicationRecord
   # --- ПІДТРИМУВАНІ ПРОВАЙДЕРИ ---
   SUPPORTED_PROVIDERS = %w[google_oauth2 facebook linkedin twitter].freeze
 
+  # [I18N.1] Назви провайдерів — ВЛАСНІ, тобто locale-INVARIANT: «LinkedIn»
+  # українською лишається «LinkedIn». Тому фрозен-мапа, а не YAML — той самий клас,
+  # що тікер і назви мереж, і той самий аргумент: чотири копії одного слова в
+  # локалях плюс обовʼязок їх синхронізувати.
+  #
+  # 🔴 Але дефект тут БУВ, просто не той, який шукали: `.titleize` (стояв на трьох
+  # сайтах) бреше на ДВОХ значеннях із чотирьох — `google_oauth2` → «Google Oauth2»,
+  # `linkedin` → «Linkedin». Тобто це дефект ПОКАЗУ, і локалізація його не лікує.
+  # ⚠️ Fallback лишається `titleize` навмисно: новий провайдер має рендеритись
+  # прийнятно ще до того, як хтось допише йому канонічне написання.
+  PROVIDER_NAMES = {
+    "google_oauth2" => "Google",
+    "facebook"      => "Facebook",
+    "linkedin"      => "LinkedIn",
+    "twitter"       => "Twitter"
+  }.freeze
+
+  def self.provider_name(provider)
+    PROVIDER_NAMES.fetch(provider.to_s) { provider.to_s.titleize }
+  end
+
+  def provider_name = self.class.provider_name(provider)
+
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   # OMNIAUTH ІНТЕГРАЦІЯ (The Gateway Processor)
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
