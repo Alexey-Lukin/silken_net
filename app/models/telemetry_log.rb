@@ -100,6 +100,23 @@ class TelemetryLog < ApplicationRecord
   # Індекс: index_telemetry_logs_on_tree_id_and_created_at
   scope :recent, -> { order(created_at: :desc) }
 
+  # [PERF.1] Останній рядок на КОЖНЕ дерево набору — ОДИН `DISTINCT ON` замість
+  # N окремих `ORDER BY created_at DESC LIMIT 1`. Дім саме тут, бо `Tree#latest_telemetry_log`
+  # відповідає на це питання для ОДНОГО дерева й у циклі вироджується в N+1.
+  #
+  # 🔒 **Стеля названа, бо інакше зелений план читався б як «запруніли»:** межі по
+  # `created_at` тут НЕМАЄ і бути не може — питання саме́ звучить «останній, хоч би
+  # коли він був», тож будь-яке вікно ЗМІНИЛО Б ВІДПОВІДЬ (дерево, що мовчить довше
+  # вікна, віддало б порожньо замість останнього відомого рядка). Це рівно та пастка,
+  # на якій PERF.1 уже спіткнувся з `2.months` у `previous_lorenz_state_for`. Отже
+  # виграш тут — у КІЛЬКОСТІ запитів (N → 1), а не в обсязі скану: партиції
+  # проходяться всі, як і доти. Дешевший план потребує іншої форми — денормалізованого
+  # вказівника на Дереві (дзеркало `latest_stress_index`), і це окреме рішення з
+  # власною ціною (старіння писача, `00_07` PERF.1 кандидат «а»).
+  scope :latest_per_tree, ->(tree_ids) {
+    where(tree_id: tree_ids).select("DISTINCT ON (tree_id) *").order(:tree_id, created_at: :desc)
+  }
+
   # [S6.16] Partition pruning з ISO-8601 рядка для RANGE-партиційованої
   # таблиці; chainable: `TelemetryLog.where(...).partition_pruned(iso, ...)`.
   # Єдиний дім pruning-логіки — воркери/сервіси/контролери НЕ дублюють.

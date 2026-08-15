@@ -206,30 +206,52 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
   end
 
   describe "yield calculation with real tree data" do
-    it "iterates over active trees in find_each computing sap_flow and stress" do
+    # 🔴 [PERF.1] Доти цей приклад був вакуумний ТРИЧІ, і осі незалежні — тобто
+    # полагодження однієї лишало його зеленим на решті:
+    #   (1) `Prosopite.pause` глушив N+1-детектор у прикладі, який САМЕ той N+1 і
+    #       виконував — тобто єдиний наявний свідок був вимкнений зсередини;
+    #   (2) `expect(forecast.to_f).to be_a(Float)` не здатне впасти В ПРИНЦИПІ
+    #       (`.to_f` повертає Float завжди) — твердження було про Ruby, не про нас;
+    #   (3) фікстура не задавала `latest_stress_index`, тож `next if stress.nil?`
+    #       відсікав ОБИДВА дерева на другому рядку циклу: назва обіцяла «computing
+    #       sap_flow», а `sap_flow` не читався жодного разу.
+    # Тепер `pause` знято НАВМИСНО — після переходу на `find_in_batches` + один
+    # `DISTINCT ON` детектор мусить бути живим саме тут, інакше повернення N+1
+    # нікому помітити.
+    it "sums sap × (1 − stress) over active trees, and the coverage names the sample" do
       Rails.cache.clear
-      Prosopite.pause if defined?(Prosopite)
+      allow(TokenomicsEvaluatorWorker).to receive(:emission_threshold).and_return(72.0)
 
-      tree1 = create(:tree, cluster: cluster, status: :active)
-      tree2 = create(:tree, cluster: cluster, status: :active)
-
-      create(:telemetry_log, tree: tree1, sap_flow: 2.0,
-             temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-             acoustic_events: 2, growth_points: 10,
-             bio_status: :homeostasis, metabolism_s: 1000)
-
-      create(:telemetry_log, tree: tree2, sap_flow: 3.0,
-             temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-             acoustic_events: 2, growth_points: 10,
-             bio_status: :homeostasis, metabolism_s: 1000)
+      tree1 = create(:tree, cluster: cluster, status: :active, latest_stress_index: 0.25)
+      tree2 = create(:tree, cluster: cluster, status: :active, latest_stress_index: 0.5)
+      create(:telemetry_log, tree: tree1, sap_flow: 2.0)
+      create(:telemetry_log, tree: tree2, sap_flow: 3.0)
 
       get "/oracle_visions", headers: forester_headers, as: :json
+
       expect(response).to have_http_status(:ok)
-      # emission_forecast may be a string or numeric depending on JSON serialization
-      forecast = response.parsed_body["emission_forecast"]
-      expect(forecast.to_f).to be_a(Float)
-    ensure
-      Prosopite.resume if defined?(Prosopite)
+      # Оракул порахований РУКОЮ, не повтором формули з коду (§B.2 #12):
+      # 2.0×(1−0.25) + 3.0×(1−0.5) = 3.0 → (3.0 × 24) / 72.0 = 1.0
+      expect(response.parsed_body["emission_forecast"]).to eq(1.0)
+      expect(response.parsed_body["emission_forecast_coverage"])
+        .to eq("measured" => 2, "total" => 2)
+    end
+
+    # Дискримінатор порядку: `DISTINCT ON (tree_id) … ORDER BY tree_id, created_at DESC`
+    # мовчки віддав би НАЙСТАРІШИЙ рядок при `ASC`, і жоден пін вище цього не побачив би —
+    # там на дерево рівно один лог.
+    it "takes the NEWEST log per tree, never an arbitrary one" do
+      Rails.cache.clear
+      allow(TokenomicsEvaluatorWorker).to receive(:emission_threshold).and_return(24.0)
+
+      tree = create(:tree, cluster: cluster, status: :active, latest_stress_index: 0.0)
+      create(:telemetry_log, tree: tree, sap_flow: 9.0, created_at: 1.hour.ago)
+      create(:telemetry_log, tree: tree, sap_flow: 1.0, created_at: Time.current)
+
+      get "/oracle_visions", headers: forester_headers, as: :json
+
+      # Свіжий sap = 1.0 → (1.0 × 24) / 24.0 = 1.0; застарілий дав би 9.0.
+      expect(response.parsed_body["emission_forecast"]).to eq(1.0)
     end
 
     it "handles tree with nil telemetry (sap_flow defaults to 0.0)" do

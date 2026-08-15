@@ -78,16 +78,27 @@ module Api
           # 2026-08-15; аргумент лишився той самий, змінилась лише нога.
           # Тому число їде з `measured`/`total`, як `Cluster.health_coverage`.
           # ⊕ `.includes(:ai_insights)` знято: `current_stress` читає денормалізовану
-          # колонку, тож eager-load був мертвий. Живий N+1 (`latest_telemetry_log`)
-          # лишається — він поза цим фіксом, трекається окремо.
-          org.trees.active.find_each(batch_size: 1000) do |tree|
-            total += 1
-            stress = tree.current_stress
-            next if stress.nil?
+          # колонку, тож eager-load був мертвий.
+          # ✅ [PERF.1] N+1 на `latest_telemetry_log` знято: `find_in_batches` + ОДИН
+          # `DISTINCT ON` на батч (`TelemetryLog.latest_per_tree` — дім там, бо питання
+          # «останній рядок на дерево» належить логу, не контролеру). Відповідь та сама
+          # ДОСЛІВНО: часової межі не додано, бо вона змінила б семантику — дерево,
+          # що мовчить довше вікна, віддало б порожньо замість останнього відомого
+          # sap. ⚠️ Тому виграш тут у КІЛЬКОСТІ запитів (N → 1 на батч), а не в обсязі
+          # скану: партиції проходяться всі, і стеля названа в самому скоупі.
+          org.trees.active.find_in_batches(batch_size: 1000) do |batch|
+            sap_by_tree = TelemetryLog.latest_per_tree(batch.map(&:id))
+                                      .to_h { |log| [ log.tree_id, log.sap_flow ] }
 
-            measured += 1
-            sap_index = tree.latest_telemetry_log&.sap_flow || 0.0
-            total_potential += sap_index * (1.0 - stress)
+            batch.each do |tree|
+              total += 1
+              stress = tree.current_stress
+              next if stress.nil?
+
+              measured += 1
+              sap_index = sap_by_tree[tree.id] || 0.0
+              total_potential += sap_index * (1.0 - stress)
+            end
           end
 
           # `.to_f` НЕСУЧИЙ, не косметика: `sap_flow` — `decimal`, тож після першого ж

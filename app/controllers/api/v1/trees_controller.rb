@@ -36,7 +36,11 @@ module Api
         @tree = acting_organization!.trees
                   .includes(:tree_family, :hardware_key, :wallet, :cluster)
                   .find(params[:id])
-        @latest_log = @tree.telemetry_logs.order(created_at: :desc).first
+        # [PERF.1] Дім формули — `Tree#latest_telemetry_log`, і доти цей рядок був її
+        # рукописною копією: метод існував із коментарем «використовувати тільки в show»,
+        # а `show` писав його тіло сам. Дублікат ховався не другим ВИКЛИКОМ, а другим
+        # ВИВОДОМ, тож греп за іменем методу показував сироту (backend #48).
+        @latest_log = @tree.latest_telemetry_log
         @insights = @tree.ai_insights.daily_health_summary.limit(7)
 
         respond_to do |format|

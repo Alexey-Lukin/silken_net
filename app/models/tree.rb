@@ -213,7 +213,13 @@ class Tree < ApplicationRecord
     last_seen_at.present? && last_seen_at >= threshold.ago
   end
 
-  # Помічник для глибокого аудиту (використовувати тільки в show)
+  # Останній рядок телеметрії ОДНОГО дерева — сторінка вузла (`trees#show`).
+  # 🔴 **Тільки для одиничного дерева, і межа несуча:** у циклі по флоту цей метод
+  # вироджується в N+1 (`ORDER BY created_at DESC LIMIT 1` на кожне дерево, по всіх
+  # партиціях), і саме так він і жив у прогнозі врожаю [PERF.1]. Питання «останній
+  # рядок на КОЖНЕ дерево набору» має власний дім — `TelemetryLog.latest_per_tree`
+  # (один `DISTINCT ON` на батч). ⚠️ Мемоїзація тут розрахована на життя одного
+  # запиту; на довгоживучому обʼєкті вона застаріє мовчки.
   def latest_telemetry_log
     @latest_telemetry_log ||= telemetry_logs.order(created_at: :desc).first
   end
