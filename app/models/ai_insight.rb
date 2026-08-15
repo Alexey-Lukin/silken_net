@@ -51,6 +51,21 @@ class AiInsight < ApplicationRecord
     biodiversity_trend: 3     # [ПРОГНОЗ]: Стабільність Атрактора Лоренца
   }
 
+  # [I18N.1] Людська назва РОДУ інсайту — дзеркало `User::ROLE_LABEL_SCOPE`.
+  # Скоуп належить домену МОДЕЛІ, не компоненту (`04_04 §12.14`).
+  INSIGHT_TYPE_LABEL_SCOPE = "oracle_visions.insight_types"
+
+  # ОДНА деривація ключа. Fail-open: новий член enum'а рендериться сирим значенням,
+  # доки мітка не доїде в локалі — і саме це червонить гейт парності.
+  def self.insight_type_label(insight_type)
+    value = insight_type.to_s
+    I18n.t("#{INSIGHT_TYPE_LABEL_SCOPE}.#{value}", default: value)
+  end
+
+  def insight_type_label
+    self.class.insight_type_label(insight_type)
+  end
+
   # --- СТРУКТУРОВАНІ ДАНІ (The Reasoning Engine) ---
   # Використовуємо JSONB для гнучкого пояснення логіки ШІ
   # fraud_detected винесено в окрему boolean колонку для коректної типізації та швидкого пошуку

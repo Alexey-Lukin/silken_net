@@ -12,3 +12,8 @@ en:
       title: Strategic Forecast Matrix
       yield_unit: SCC
     index_title: Oracle Visions // Future Matrix
+    insight_types:
+      biodiversity_trend: Biodiversity trend
+      carbon_yield_forecast: Emission forecast
+      daily_health_summary: Daily health summary
+      drought_probability: Drought probability

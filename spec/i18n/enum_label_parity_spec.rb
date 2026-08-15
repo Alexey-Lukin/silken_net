@@ -54,6 +54,11 @@ registry = [
     values: -> { BlockchainTransaction.token_types.keys }
   },
   {
+    name:   "AiInsight#insight_type",
+    scope:  AiInsight::INSIGHT_TYPE_LABEL_SCOPE,
+    values: -> { AiInsight.insight_types.keys }
+  },
+  {
     # [I18N.1] Роль видно на ЧОТИРЬОХ поверхнях, і одна з них — сайдбар, тобто
     # напис присутній на КОЖНІЙ сторінці дашборда.
     name:   "User#role",

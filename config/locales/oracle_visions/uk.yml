@@ -12,3 +12,8 @@ uk:
       title: Стратегічна матриця прогнозів
       yield_unit: SCC
     index_title: Видіння Оракула // Матриця майбутнього
+    insight_types:
+      biodiversity_trend: Тренд біорізноманіття
+      carbon_yield_forecast: Прогноз емісії
+      daily_health_summary: Добовий звіт здоровʼя
+      drought_probability: Ймовірність посухи

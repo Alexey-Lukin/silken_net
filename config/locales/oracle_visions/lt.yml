@@ -12,3 +12,8 @@ lt:
       title: Strateginių prognozių matrica
       yield_unit: SCC
     index_title: Oracle vizijos // Ateities matrica
+    insight_types:
+      biodiversity_trend: Biologinės įvairovės tendencija
+      carbon_yield_forecast: Emisijos prognozė
+      daily_health_summary: Dienos sveikatos ataskaita
+      drought_probability: Sausros tikimybė

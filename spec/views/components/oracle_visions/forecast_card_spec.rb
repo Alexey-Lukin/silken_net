@@ -32,12 +32,18 @@ RSpec.describe OracleVisions::ForecastCard do
   describe "insight_type badge" do
     it "renders the insight_type label" do
       html = render_component(insight: mock_insight(insight_type: "drought_probability"))
-      expect(html).to include("drought_probability")
+      expect(html).to include("Drought probability")
     end
 
-    it "displays the insight_type in uppercase styling" do
-      html = render_component(insight: mock_insight(insight_type: "carbon_yield_forecast"))
-      expect(html).to include("carbon_yield_forecast")
+    # [I18N.1] Локаль НЕ базова: в англійській мітка й токен розрізняються слабко
+    # (обидва містять «forecast»), тож саме тут пін здатен упасти на регресії.
+    it "displays a human insight-type label, never the raw enum token" do
+      I18n.with_locale(:uk) do
+        html = render_component(insight: mock_insight(insight_type: "carbon_yield_forecast"))
+
+        expect(html).to include("Прогноз емісії")
+        expect(html).not_to include("carbon_yield_forecast")
+      end
     end
   end
 

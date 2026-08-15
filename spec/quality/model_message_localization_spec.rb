@@ -55,7 +55,7 @@ module ModelMessageLocalization
            "людина бачить `errors.api.internal`, кирилиця йде в `Rails.logger.fatal`",
       back: "як тільки помилка створення наказу почне рендеритись у формі"
     },
-    "app/models/ai_insight.rb:66" => {
+    "app/models/ai_insight.rb:81" => {
       why: "унікальність добового звіту; `AiInsight` створює лише InsightGenerator і воркери — " \
            "жодного контролера з create/update у дереві немає",
       back: "поява людського шляху створення інсайту"

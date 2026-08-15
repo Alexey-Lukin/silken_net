@@ -79,9 +79,14 @@ RSpec.describe OracleVisions::Index do
   end
 
   describe "visions delegated to ForecastCard" do
-    it "renders insight_type for each vision" do
-      expect(html).to include("drought_probability")
-      expect(html).to include("biodiversity_trend")
+    # [I18N.1] Мітки, не сирі токени — і в НЕ-базовій локалі, де вони не збігаються.
+    it "renders a human insight-type label for each vision" do
+      I18n.with_locale(:uk) do
+        localized = render_component(visions: visions, emission_forecast: "12.45")
+
+        expect(localized).to include("Ймовірність посухи", "Тренд біорізноманіття")
+        expect(localized).not_to include("drought_probability")
+      end
     end
 
     # [TEST.12] `numeric`-колонка → BigDecimal. ⚖️ [UI.13] founder 2026-08-14:
