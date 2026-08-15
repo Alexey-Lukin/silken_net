@@ -16,7 +16,7 @@ These are the canonical homes. Read them before acting; never copy their content
 | `docs/00_03_TRL_Matrix_HIL_and_Beyond.md` | **Readiness**: the NASA/ISO scale (1-9, never 10-12) and its `SRL`/`MRL` siblings (§1), TRL-Layered-Independence (§2), HIL + in-silico-as-HIL (§3), and the task-closure criterion + TRL Gate Events (§4). |
 | `docs/00_06_SSOT_Documentation_Standard.md §5` | 🚦 **Validation Gate** — the admission criterion for a fact entering canon (an LLM proposes a *hypothesis*; it does NOT compute physics) + the AI-vendor roster (§5.1). Moved here 2026-08-10 when the method page dissolved (DOC-T.68 фаза 3); the golden rule *no code/solder until the spec is approved* survives as this gate, the rest of the old AI-pipeline prose did not. |
 | `docs/00_06_SSOT_Documentation_Standard.md §1` | **Canonical doc skeleton** (🎯 Мета / ✅ Статус / 🔗 Cross-references / 📑 auto-ToC / Content; blockers→00_07; no volatile counts). |
-| `docs/00_06_SSOT_Documentation_Standard.md §2` | **Canonical-home registry** — *одна річ, один дім*. The table of which fact lives where (TRL matrix→00_03 §1, AES modes→03_05 §3.7, Lorenz→03_04 §4.1, …). |
+| `docs/00_06_SSOT_Documentation_Standard.md §2` | **Canonical-home registry** — *одна річ, один дім*. The table of which fact lives where (TRL matrix→00_03 §1, AES modes→03_05 §3.7, Lorenz→03_04 §1.2, …). |
 | `docs/00_06_SSOT_Documentation_Standard.md §3` | **Drift-prevention tooling** — the CI-enforced guard table. Add new guards here. |
 | `docs/00_00_SSOT_Index.md` | SSOT index + reading order. |
 

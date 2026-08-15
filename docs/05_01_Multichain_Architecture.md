@@ -444,7 +444,7 @@ firmware/soldier/main.c → LoRa TX → Queen → CoAP PUT → UnpackTelemetryWo
 
 > **⚠️ [Lorenz de-risk]** «Z = здоров'я» — недоведена гіпотеза ([`05_05 §8`](05_05_Slashing_and_Risk_Policy)); slashing вимагає ≥1 прямого сигналу (sap_flow / VPD / acoustic), не лише Z ([`05_05 §7`](05_05_Slashing_and_Risk_Policy)). Lorenz-DCI (anti-fraud) валідний незалежно.
 
-> Lorenz-константи (σ/ρ/β, clamps, dt, iterations) — **SSOT [`03_04 §4.1`](03_04_mruby_Lorenz_Attractor)** (firmware↔backend дзеркало, не дублюється тут). Серверний `SilkenNet::Attractor` — Float64 IEEE 754, бітово ідентично firmware mruby [FW.7].
+> Lorenz-константи (σ/ρ/β, clamps, dt, iterations) — **SSOT [`03_04 §1.2`](03_04_mruby_Lorenz_Attractor)** (firmware↔backend дзеркало, не дублюється тут). Серверний `SilkenNet::Attractor` — Float64 IEEE 754, бітово ідентично firmware mruby [FW.7].
 
 | Компонент | Файл |
 |-----------|------|

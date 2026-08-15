@@ -74,7 +74,7 @@ DOCS_RAKE_LABELS = {
   "docs missing the standard skeleton"                                                     => "standard-conformance",
   "RTC register-map drift (availability claimed outside 03_01)"                            => "RTC reg-map drift",
   "phantom RTC register DR>19 (STM32WLE5JC has only DR0..DR19)"                            => "RTC phantom register",
-  "Lorenz-formula drift (β re-stated outside 03_04 §4.1)"                                  => "Lorenz-formula drift",
+  "Lorenz-formula drift (β re-stated outside 03_04 §1.2)"                                  => "Lorenz-formula drift",
   "telemetry_logs.chain_hash drift (no such column; Merkle leaf = 05_02 §E.60)"            => "telemetry_logs.chain_hash drift",
   "retired growth_points clamp `(…,10,63)` (FW.29-PACK → 03_04 §4.3)"                      => "growth_points clamp drift",
   "retired pre-FW.29 StatusByte bit-layout (6-bit `<<6`/`0x3F`/bits 7..6 outside owner)"    => "StatusByte layout",

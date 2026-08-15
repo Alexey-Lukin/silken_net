@@ -53,7 +53,7 @@
 | `POINTS_PER_SCC = 10_000` | `TokenomicsEvaluatorWorker` | Конверсія growth points → SCC |
 | `STRESS_THRESHOLD = 0.83` | `ContractHealthCheckService` | Поріг стресу дерева |
 
-> Значення-приклади ілюструють hardcoded-стан *до* governance; канонічні доми: Lorenz [`03_04 §4.1`](03_04_mruby_Lorenz_Attractor), slash-пороги [`05_05`](05_05_Slashing_and_Risk_Policy), tokenomics-курс [`05_03`](05_03_Tokenomics_SCC_and_SFC).
+> Значення-приклади ілюструють hardcoded-стан *до* governance; канонічні доми: Lorenz [`03_04 §1.2`](03_04_mruby_Lorenz_Attractor), slash-пороги [`05_05`](05_05_Slashing_and_Risk_Policy), tokenomics-курс [`05_03`](05_03_Tokenomics_SCC_and_SFC).
 
 **Проблема при планетарному масштабуванні:** Тропічні ліси, тайга та мангрові зарості мають принципово різні метаболічні базлайни. Одні й ті самі константи σ=10, ρ=28 призведуть до масових хибних Slashings у тропіках та пропуску реальних аномалій у тайзі.
 

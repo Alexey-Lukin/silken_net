@@ -540,9 +540,9 @@ namespace :docs do
       rtc_phantom.sort.each { |d| puts "    ✗ #{d}" }
     end
     if lorenz_drift.empty?
-      puts "  Lorenz formula: no β `8.0/3.0` re-stated outside owner (03_04 §4.1) ✓"
+      puts "  Lorenz formula: no β `8.0/3.0` re-stated outside owner (03_04 §1.2) ✓"
     else
-      puts "  LORENZ-FORMULA DRIFT (#{lorenz_drift.size}) — σ/ρ/β values are owned by 03_04 §4.1:"
+      puts "  LORENZ-FORMULA DRIFT (#{lorenz_drift.size}) — σ/ρ/β values are owned by 03_04 §1.2:"
       lorenz_drift.sort.each { |d| puts "    ✗ #{d}" }
     end
     if tl_chain_hash.empty?
@@ -616,7 +616,7 @@ namespace :docs do
     failed << "docs missing the standard skeleton" unless conformance.empty?
     failed << "RTC register-map drift (availability claimed outside 03_01)" unless rtc_drift.empty?
     failed << "phantom RTC register DR>19 (STM32WLE5JC has only DR0..DR19)" unless rtc_phantom.empty?
-    failed << "Lorenz-formula drift (β re-stated outside 03_04 §4.1)" unless lorenz_drift.empty?
+    failed << "Lorenz-formula drift (β re-stated outside 03_04 §1.2)" unless lorenz_drift.empty?
     failed << "telemetry_logs.chain_hash drift (no such column; Merkle leaf = 05_02 §E.60)" unless tl_chain_hash.empty?
     failed << "retired growth_points clamp `(…,10,63)` (FW.29-PACK → 03_04 §4.3)" unless gp_clamp.empty?
     failed << "retired pre-FW.29 StatusByte bit-layout (6-bit `<<6`/`0x3F`/bits 7..6 outside owner)" unless statusbyte_drift.empty?

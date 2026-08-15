@@ -310,7 +310,7 @@ RSpec.describe DocsLinter do
     it "flags the β literal `8.0 / 3.0` re-stated outside the owner" do
       hits = described_class.lorenz_formula_drift("05_01_Multichain", "beta  = 8.0 / 3.0\n")
       expect(hits.size).to eq(1)
-      expect(hits.first).to include("03_04 §4.1")
+      expect(hits.first).to include("03_04 §1.2")
     end
 
     it "exempts the owner docs (03_04 Lorenz + 03_01 firmware-lifecycle)" do

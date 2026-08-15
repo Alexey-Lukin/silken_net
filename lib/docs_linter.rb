@@ -276,10 +276,10 @@ module DocsLinter
   end
 
   # [SSOT anti-drift] Lorenz constants (σ=10 / ρ=28 / β=8÷3, dt, iterations) are
-  # SSOT-owned by 03_04 §4.1 (firmware↔backend mirror). Re-declaring the formula
+  # SSOT-owned by 03_04 §1.2 (firmware↔backend mirror). Re-declaring the formula
   # values elsewhere drifts — exactly how 05_01 §2 + 00_01 §5 carried a stale
   # σ/ρ/β code block until the 2026-05-30 05/07 restructure. Other docs must
-  # REFERENCE 03_04 §4.1, never re-state. Heuristic: a β *assignment*
+  # REFERENCE 03_04 §1.2, never re-state. Heuristic: a β *assignment*
   # (`beta = 8.0 / 3.0` / `BASE_BETA = …`) is the unique Lorenz re-declaration
   # signature — an inline mention ("…(8.0/3.0, parity-tested)") inside DCI prose
   # is NOT a re-declaration and is not flagged. Flag the assignment outside the
@@ -300,7 +300,7 @@ module DocsLinter
       next unless line.match?(LORENZ_BETA_RE)
       next if line.match?(LORENZ_MIRROR_RE)
 
-      "Lorenz β `8.0/3.0` re-stated outside owner (03_04 §4.1) → #{line.strip[0, 100]}"
+      "Lorenz β `8.0/3.0` re-stated outside owner (03_04 §1.2) → #{line.strip[0, 100]}"
     end
   end
 
