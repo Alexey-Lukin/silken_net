@@ -244,7 +244,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 **Модуль `SilkenNet::Attractor` (firmware):**
 ```ruby
 # ─ Константи Лоренца (BASE_SIGMA/RHO/BETA, DT, ITERATIONS, SIGMA/RHO_LIMITS,
-#   BASELINE_DELTA_T_S, NOMINAL_VCAP_MV) — SSOT: 03_04 §4.1 (firmware↔backend
+#   BASELINE_DELTA_T_S, NOMINAL_VCAP_MV) — SSOT: 03_04 §1.2, міст-константи §6.1 (firmware↔backend
 #   дзеркало). Значення тут НЕ дублюються: правити ЛИШЕ в 03_04, інакше — тихий
 #   DCI-дрейф device-Z vs server-Z. [E.63] β = BASE_BETA фіксований (β-пертурбація
 #   ВИДАЛЕНА; метаболізм → growth_points напряму, 03_04 §4.3).

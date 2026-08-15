@@ -96,7 +96,18 @@ SELF=${BASH_SOURCE[0]:-$0}
 # trigger and the tool-trial row compressed. ⚠️ The eviction attempted before that was
 # WRONG and the gate caught it — dropping the tool-trial row left two `project_*` files
 # ORPHAN, because only `log_*` may live on strings alone.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-24047}
+# LOWERED 2026-08-15 (24047 -> 24026, -21) to lock a verified drop, and the
+# GROUNDS are written here because the comment at the floor below says exactly
+# what nobody checks: a byte drop is a MEASUREMENT, "gain" is a VERDICT. This one
+# is the first of the three shapes — prose compressed, nothing displaced, nothing
+# deleted. Zero rows removed, zero files removed, zero `[[strings]]` touched; the
+# whole 128 B came from (a) six status words duplicating the `✅` glyph they sit
+# next to (`SHIPPED` · `RESOLVED` · `DONE` · `COMPLETE` · `ШИПНУТО` · `§🗄️`),
+# i.e. one state asserted twice, and (b) ONE volatile count in a hook
+# (`(5 осей/4 секції)`), which the index preamble's own write-time rule 3 bans
+# outright. ⛔ Nothing was funded by eviction: the only weak candidate is still
+# the tool-trial row, and the note above already records why that is refused.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-24026}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes

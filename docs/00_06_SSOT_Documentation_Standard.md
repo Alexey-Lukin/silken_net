@@ -17,8 +17,7 @@
 | Ресурс | Опис |
 |--------|------|
 | [`00_00` — SSOT Index](00_00_SSOT_Index) | Reading-order + повний реєстр сторінок |
-| [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | AI-Native філософія + Wiki-First (no code until spec approved) |
-| [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Per-module TRL matrix — канон-дім (§2 registry посилається сюди) |
+| [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Per-module TRL matrix — канон-дім (§2 registry посилається сюди); `§4` — механіка критерію закриття задачі, на яку спирається §5 |
 | [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) | Workflows, що ганяють ці гейти (`docs.yml`, `ssot_guard.yml`); Labels-as-Code SSOT |
 | `lib/docs_linter.rb` · `lib/docs_toc.rb` · `lib/tasks/docs.rake` · `lib/wiki_link_normalizer.rb` | Engine'и drift-tooling (§3) — pure-функції, unit-tested |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Канонічний дім блокерів (§1) + open backlog |
