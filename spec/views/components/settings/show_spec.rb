@@ -52,13 +52,9 @@ RSpec.describe Settings::Show do
     # тобто форма була напів-звʼязана, і саме така асиметрія найтихіша.
     it "associates every label with a real form control" do
       doc = Nokogiri::HTML5.fragment(html)
-      labels = doc.css("label")
-      control_ids = doc.css("input, select, textarea").filter_map { |n| n["id"] }
 
-      expect(labels).not_to be_empty, "no labels rendered — the pin would be vacuous"
-
-      orphans = labels.reject { |l| l["for"].present? && control_ids.include?(l["for"]) }
-      expect(orphans.map { |l| l.text.strip }).to be_empty
+      expect(doc.css("label")).not_to be_empty, "no labels rendered — the pin would be vacuous"
+      expect(LabelAssociation.orphan_labels(doc).map { |l| l.text.strip }).to be_empty
     end
 
     it "renders the Configuration heading" do

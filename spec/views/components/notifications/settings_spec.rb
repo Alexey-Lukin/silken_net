@@ -44,20 +44,21 @@ RSpec.describe Notifications::Settings do
     # (`hint`) пояснює, ЧОМУ поле вимкнене, а лежачи окремим `<p>` читалась як
     # непов'язаний текст після поля. Пін вимагає обох: `for` ⟷ `id` і
     # `aria-describedby` ⟷ id підказки.
-    it "associates every label AND every hint with its control" do
+    # ⚠️ Дві осі — ДВА приклади (§Guard-craft #46): у злитому вигляді падіння не
+    # каже, яка з них зламалась, а перша ж червона половина ховає другу.
+    it "associates every label with a real form control" do
       doc = Nokogiri::HTML5.fragment(html)
-      labels = doc.css("label")
-      controls = doc.css("input, select, textarea")
-      control_ids = controls.filter_map { |n| n["id"] }
 
-      expect(labels).not_to be_empty, "no labels rendered — the pin would be vacuous"
+      expect(doc.css("label")).not_to be_empty, "no labels rendered — the pin would be vacuous"
+      expect(LabelAssociation.orphan_labels(doc).map { |l| l.text.strip }).to be_empty
+    end
 
-      orphans = labels.reject { |l| l["for"].present? && control_ids.include?(l["for"]) }
-      expect(orphans.map { |l| l.text.strip }).to be_empty
+    it "points every hint reference at a description that exists" do
+      doc = Nokogiri::HTML5.fragment(html)
 
-      described = controls.filter_map { |n| n["aria-describedby"] }
-      expect(described).not_to be_empty, "no hints rendered — the aria half would be vacuous"
-      expect(described - doc.css("p").filter_map { |p| p["id"] }).to be_empty
+      expect(doc.css("[aria-describedby]")).not_to be_empty,
+                                                  "no hints rendered — the aria half would be vacuous"
+      expect(LabelAssociation.dangling_descriptions(doc)).to be_empty
     end
 
     it "renders email field as disabled" do
