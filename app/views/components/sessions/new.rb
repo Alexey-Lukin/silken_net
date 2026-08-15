@@ -18,6 +18,12 @@ module Sessions
       # Окремий мінімалістичний лейаут для входу.
       main(class: "min-h-screen bg-gaia-surface-base flex items-center justify-center p-4 font-mono relative overflow-hidden", role: "main") do
         # Фоновий ефект Матриці/Міцелію — декоративні брендові акценти лишаються raw (intentional).
+        # ⚠️ Це СТАТИЧНИЙ CSS-градієнт (крапки 20×20), а НЕ той canvas-«дощ», що його
+        # знято з `telemetry/live_stream` присудом [UI.1] 2026-08-14: тут нуль JS і нуль
+        # перемальовувань, тож енергетичний аргумент того присуду сюди не поширюється.
+        # Уточнення коштує рядок, бо слово «Матриця» в цьому дереві означає ТРИ різні
+        # речі — брендову метафору системи (`Treasury Matrix`, «схема Матриці»), знятий
+        # ефект і оцей градієнт, — і сплутати їх легко саме тут.
         div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]", aria_hidden: "true")
 
         div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10") do
