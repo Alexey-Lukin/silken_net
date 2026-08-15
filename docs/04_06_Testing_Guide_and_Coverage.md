@@ -97,7 +97,7 @@ app/views/layouts/dashboard_layout.rb → spec/views/layouts/dashboard_layout_sp
 
 ### 6. OpenStruct для моків, НЕ FactoryBot (для view спек)
 View спеки тестують HTML-розмітку, не ORM. `OpenStruct` швидший за `build()`.
-Виняток: `Maintenance::Form` потребує валідну AR-модель для `form_with`.
+⚠️ **ПРАВИЛО ЗВУЖЕНО [TEST.12]: це дефолт для ДАНИХ, а не дозвіл ПІДРОБЛЯТИ модель.** Щойно компонент читає щось, що модель ДЕРИВУЄ (`alias_attribute` · `store_accessor` · метод над колонками), `OpenStruct` віддає `nil` або дозволяє задати похідне НАПРЯМУ — і фікстура оголошує світ, у якому дефекту не існує (тринадцять виміряних осей — §B.2 BP #14). Тому дерево системно переведене на **реальні незбережені записи** (`Klass.new`, без БД); мок лишається доречним для plain-Hash даних, які й контролер будує хешем. Винятки, де AR-модель обовʼязкова структурно: `Maintenance::Form` (потребує валідну модель для `form_with`).
 
 ### 7. `mock_model(klass, id:, **attrs)` для моделей з route helpers
 Якщо компонент використовує `tree_path(tree)` або `dom_id(tx)` —
@@ -461,7 +461,7 @@ it "test that status works" do
 
 - [ ] Файл дзеркалить шлях компонента (BP #1)
 - [ ] Використовує `render_component` з хелпера або обґрунтовано перевизначає (BP #2-4)
-- [ ] Моки через OpenStruct з розумними дефолтами (BP #6-10)
+- [ ] Фікстура — реальний незбережений запис там, де компонент читає ДЕРИВОВАНЕ; `OpenStruct` лише для plain-Hash даних (BP #6-10, звужено TEST.12)
 - [ ] Є describe-блоки: rendering, edge cases, accessibility, design system (BP #11-15)
 - [ ] Assertions через `include`, не повні HTML-рядки (BP #16-18)
 - [ ] Gaia токени в shared components (BP #19)
