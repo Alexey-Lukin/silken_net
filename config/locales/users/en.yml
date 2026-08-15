@@ -48,6 +48,6 @@ en:
     roles:
       admin: Administrator
       forester: Forester
-      investor: Investor
+      investor: Client
       super_admin: Platform Administrator
     show_title: Profile // %{name}

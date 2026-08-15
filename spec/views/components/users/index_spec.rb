@@ -105,7 +105,11 @@ RSpec.describe Users::Index do
       I18n.with_locale(:uk) do
         localized = render_component(users: users)
 
-        expect(localized).to include("Адміністратор", "Лісник", "Інвестор")
+        # ⚠️ «Замовник», а не «Інвестор»: мітку ролі `investor` продиктував гейт
+        # `offering_lexicon_check` [BIZ.22] — інвестиційна рамка на customer-facing
+        # поверхні є фактором Howey (`07_01 §1`), тож enum-ТОКЕН лишається технічним,
+        # а людська назва описує СЕРВІСНУ роль.
+        expect(localized).to include("Адміністратор", "Лісник", "Замовник")
         expect(localized).not_to include(">forester<")
         expect(localized).not_to include(">investor<")
       end

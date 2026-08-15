@@ -48,6 +48,6 @@ lt:
     roles:
       admin: Administratorius
       forester: Girininkas
-      investor: Investuotojas
+      investor: Klientas
       super_admin: Platformos administratorius
     show_title: Profilis // %{name}
