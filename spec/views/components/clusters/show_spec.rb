@@ -207,10 +207,14 @@ RSpec.describe Clusters::Show do
         # здатен був побачити ані тип, ані ОДИНИЦЮ, яку цей рядок тепер несе (USD:
         # сусідній рядок правомірно каже «Emitted SCC», і без підпису плата за послугу
         # читалась у тій самій валюті — восьмий сайт класу, закритого в [I18N.1]).
+        #
+        # ⚠️ [UI.3] Контракт тепер ПЕРЕДАЄТЬСЯ, а не стабиться на кластері: доти
+        # компонент діставав його сам у `initialize`, тобто спека мусила підробляти
+        # DB-виклик, щоб описати екран. Стаб на `active_contract` став би тепер
+        # мертвим — і мовчки, бо `nil`-гілка теж рендериться.
         contract = NaasContract.new(status: :active, total_funding: 50_000, emitted_tokens: 1200)
-        cluster = build_cluster
-        allow(cluster).to receive(:active_contract).and_return(contract)
-        html = render_component(cluster: cluster, gateways: [], recent_alerts: [])
+        html = render_component(cluster: build_cluster, gateways: [], recent_alerts: [],
+                                active_contract: contract)
         expect(html).to include("ACTIVE")
         expect(html).to include("50000.0 USD")
         expect(html).to include("1200")

@@ -49,12 +49,16 @@ module Api
           format.html do
             @gateways = @cluster.gateways.order(:uid).limit(50)
             @recent_alerts = @cluster.ews_alerts.unresolved.order(created_at: :desc).limit(5)
+            # [UI.3] Контракт вантажить КОНТРОЛЕР — компонент його доти діставав
+            # сам, усередині `initialize` (див. коментар там).
+            @active_contract = @cluster.active_contract
             render_dashboard(
               title: I18n.t("clusters.show_title", name: @cluster.name),
               component: Clusters::Show.new(
                 cluster: @cluster,
                 gateways: @gateways,
-                recent_alerts: @recent_alerts
+                recent_alerts: @recent_alerts,
+                active_contract: @active_contract
               )
             )
           end

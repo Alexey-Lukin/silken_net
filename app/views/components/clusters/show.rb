@@ -4,15 +4,30 @@
 module Clusters
   class Show < ApplicationComponent
     # All data must be pre-loaded in the controller — no fallback queries.
+    #
+    # 🔴 [UI.3] `active_contract` доти діставався ТУТ — `@cluster.active_contract`,
+    # тобто запит у Phlex-конструкторі, за пʼять рядків під коментарем, який це
+    # прямо забороняє (`CLAUDE.md §6`). Самосуперечність у сусідніх рядках і є
+    # причиною, чому дефект прожив: правило стояло, і саме його присутність
+    # читалась як виконання.
+    #
+    # ⚠️ Статичним сканом він невидимий, і це вимір, а не здогад: детектор
+    # AR-ланцюжків (`.where` · `.order` · `.first`) у тілах `initialize` дає по
+    # дереву **нуль** — бо запит тут ховається за ДОМЕННИМ методом моделі
+    # (`Cluster#active_contract` = `naas_contracts.active.order(...).first`), а
+    # читання доменного методу синтаксично не відрізнити від читання атрибута.
+    # Носій тому рантаймовий — спека рахує SQL під час самого конструювання.
+    #
     # @param cluster [Cluster] must respond to :name, :region, :health_index
     # @param gateways [Array<Gateway>] pre-loaded gateways for this cluster
     # @param recent_alerts [Array<EwsAlert>] pre-loaded unresolved alerts
-    def initialize(cluster:, gateways:, recent_alerts:)
+    # @param active_contract [NaasContract, nil] pre-loaded; nil = контракту немає
+    def initialize(cluster:, gateways:, recent_alerts:, active_contract: nil)
       raise ArgumentError, "cluster must respond to :name" unless cluster.respond_to?(:name)
 
       @cluster = cluster
       @gateways = gateways
-      @active_contract = @cluster.active_contract
+      @active_contract = active_contract
       @recent_alerts = recent_alerts
     end
 

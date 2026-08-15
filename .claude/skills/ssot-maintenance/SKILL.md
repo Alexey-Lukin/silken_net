@@ -200,6 +200,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 63. «Прибрано/гейтовано на користь X» вимагає доказу, що X ПРАЦЮЄ — виміряного живим трактом, а не запланованого; найдорожча форма — зняти РОБОЧИЙ механізм тим самим комітом, на слово про наступника
 64. Зрізавши щось, НЕ пояснюй його відсутність — переказ власного зрізу сам є дрейфовою поверхнею, і він народжується десятками за одну кампанію — **закриваючи кампанію, грепни власний діф на дату цієї сесії поруч зі словом зрізаної підсистеми — це і буде перелік твоїх надгробків**
 65. A mutation that PASSES is ambiguous, and the reflex reading is the wrong one: before concluding "the pin doesn't discriminate", check that the thing you mutated is even IN the set the pin judges
+66. A runtime probe can be structurally incapable of seeing the class it was built for — and its zero reads exactly like a clean tree — **before reporting a probe's zero, re-introduce the KNOWN defect and confirm the probe names it — and when it doesn't, the useful output is not "clean" but "this instrument cannot see this class on this tier"**
 
 <!-- /GUARD-CRAFT-INDEX -->
 
