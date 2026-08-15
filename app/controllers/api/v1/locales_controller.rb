@@ -17,8 +17,17 @@ module Api
         requested = raw.to_sym if raw.is_a?(String) && raw.present?
 
         if requested && I18n.available_locales.include?(requested)
-          cookies.permanent[:locale] = {
+          # ⚠️ [I18N.3] `expires:` ЯВНО, і це не косметика: `cookies.permanent`
+          # ставить **20 років** (`actionpack .../cookies.rb` → `20.years.from_now`),
+          # тобто строк зберігання даних обирав дефолт фреймворку, а не ми. Обидва
+          # наші носії наміру — `b2c_tos_privacy.md` §Cookies і його ж таблиця
+          # Cookie Policy, тобто МАЙБУТНІЙ ПУБЛІЧНИЙ документ, — заявляють рік.
+          # Розбіжність у 20× на функціональному cookie є заявою про retention,
+          # яку ми не виконуємо, тож приводимо код до записаного наміру, а не
+          # навпаки: рік для мовної вподоби достатній, 20 років — не мінімізація.
+          cookies[:locale] = {
             value: requested.to_s,
+            expires: 1.year.from_now,
             same_site: :lax,
             httponly: true,
             secure: Rails.env.production?
@@ -35,10 +44,17 @@ module Api
 
       private
 
-      # [I18N.1] Cookie тримає вибір для БРАУЗЕРА; колонка — для того, що з
-      # браузера не видно. Пошта відправляється з Sidekiq (`deliver_later`), де
-      # ані cookie, ані сесії немає, тож без цього запису `users.locale` лишався б
-      # NULL назавжди, а `ApplicationMailer#in_locale_of` — декоративним.
+      # [I18N.1] Cookie тримає вибір для ЦЬОГО браузера; колонка — для всього
+      # іншого, і причин у неї тепер ДВІ.
+      #
+      # (1) Пошта відправляється з Sidekiq (`deliver_later`), де ані cookie, ані
+      #     сесії немає, тож без цього запису `users.locale` лишався б NULL
+      #     назавжди, а `ApplicationMailer#in_locale_of` — декоративним.
+      # (2) [I18N.3] Відколи колонка стоїть третім щаблем `LocaleSettable`, вона
+      #     ще й переживає ЗМІНУ ПРИСТРОЮ: доти людина, що обрала мову тут,
+      #     діставала англійський веб на новому браузері — і латиський лист.
+      #     Тобто цей рядок доти був вужчим, ніж здавався: він рятував пошту й
+      #     мовчки лишав веб.
       #
       # Гість лишається гостем: анонімний перемикач і далі працює (він і має —
       # перемикач стоїть на сторінці входу), просто нічого не персистить.
@@ -52,12 +68,35 @@ module Api
       # `update_column` свідомо: значення вже провалідоване проти
       # `I18n.available_locales` вище, а мовна вподоба не мусить ані запускати
       # audit-ланцюг, ані падати через невалідне legacy-поле деінде в записі.
-      def remember_choice_for_signed_in_user(locale)
-        return if session[:user_id].blank?
+      # [I18N.3] Hook `LocaleSettable#locale_account` — і без нього щабель 3 був би
+      # мертвий рівно тут, у контролері, який ВОЛОДІЄ перемиканням мови: сестра
+      # `ApplicationController` не має `current_user`, тож дефолтний `nil` тихо
+      # з'їдав би акаунт-вподобу. Тобто оголошений-і-недосяжний щабель — та сама
+      # хвороба, що лікується цим пунктом, і повторити її на сусідньому корені
+      # було б найтихішим способом лишити роботу недоробленою.
+      # Наслідок конкретний: людина з `users.locale = "uk"` на новому пристрої
+      # діставала б `flash[:error]` про невалідну локаль АНГЛІЙСЬКОЮ.
+      def locale_account
+        salt_verified_user
+      end
 
-        user = User.find_by(id: session[:user_id])
-        return unless user && session[:ps].to_s == user.password_salt.to_s.last(10)
-        return if user.locale == locale.to_s
+      # Один дім salt-звіреного lookup'а в цьому контролері — його читають ОБИДВА
+      # споживачі (hook вище + писач нижче).
+      #
+      # ⚠️ Мемоізації тут НЕМАЄ свідомо, і це виміряно, а не вгадано: `resolve_locale`
+      # оцінює щаблі ЛІНИВО, а на `POST /locale` перший щабель (`params[:locale]`)
+      # відповідає завжди — тож hook до цього методу просто не доходить, і виклик
+      # лишається рівно один на запит по кожному досяжному шляху. Мемо-гілка
+      # `defined?` була б недосяжна за побудовою (спіймано branch-coverage, не оком),
+      # тобто мертвим кодом, який виглядає як дбайливість.
+      def salt_verified_user
+        user = User.find_by(id: session[:user_id]) if session[:user_id].present?
+        user if user && session[:ps].to_s == user.password_salt.to_s.last(10)
+      end
+
+      def remember_choice_for_signed_in_user(locale)
+        user = salt_verified_user
+        return if user.nil? || user.locale == locale.to_s
 
         user.update_column(:locale, locale.to_s)
       end

@@ -263,11 +263,12 @@ RSpec.describe Api::V1::WalletsController, type: :request do
     let(:headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
     let!(:transaction) { create(:blockchain_transaction, wallet: wallet, status: :confirmed) }
 
-    # ⚠️ Локаль ведемо COOKIE, а не заголовком `Accept-Language`, і це не смак:
-    # виміряно 2026-08-06, що третій щабель `LocaleSettable#resolve_locale` мертвий —
-    # `request.preferred_language` у цьому дереві не існує (гема немає), а гард
-    # `return nil unless request.respond_to?(:preferred_language)` ковтає це мовчки.
-    # Cookie — саме той шлях, яким локаль приходить у проді (її ставить перемикач).
+    # ⚠️ Локаль ведемо COOKIE — але підстава ЗМІНИЛАСЬ, і стара була б тепер
+    # брехнею. Доти тут стояло «бо щабель `Accept-Language` мертвий»; від [I18N.3]
+    # він живий, тож cookie більше не «єдиний шлях у проді». Чинна підстава вужча
+    # й переживе наступний фікс: cookie — НАЙВИЩИЙ щабель після `params`, тож це
+    # найдетермінованіший спосіб задати локаль глядача, не залежачи ані від
+    # заголовків клієнта, ані від стану акаунта.
     it "renders the status frame with the badge in the VIEWER's locale" do
       cookies[:locale] = "uk"
 

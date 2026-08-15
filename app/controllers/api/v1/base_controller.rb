@@ -30,7 +30,9 @@ module Api
 
       include Pagy::Method
       include Pundit::Authorization
-      # Resolve `I18n.locale` from params → cookie → Accept-Language → default.
+      # Resolve `I18n.locale` — повний ланцюг і його стелі живуть у самому
+      # концерні (`LocaleSettable`), тут лише реєстрація: акаунт-щабель вимагає
+      # ДРУГОГО проходу після автентифікації, див. `set_locale_from_account` нижче.
       # Without this every Dashboard request fell back to `default_locale`
       # because `Api::V1::BaseController` does NOT inherit from
       # `ApplicationController` (which is the one that included the concern
@@ -54,6 +56,13 @@ module Api
 
       # --- ПОРЯДОК ЗАХИСТУ ---
       before_action :authenticate_user!
+      # [I18N.3] Другий прохід резолву локалі — рівно тут і не раніше: `set_locale`
+      # реєструється разом із концерном (вище), тобто ДО автентифікації, коли
+      # `current_user` ще `nil` і акаунт-щабель порожній за побудовою. Раніше
+      # поставити не можна (нема кого читати), а перереєструвати `set_locale`
+      # не можна теж — Rails дедуплікує колбеки за іменем фільтра й пересунув би
+      # ЄДИНИЙ виклик сюди, лишивши сторінку логіну без мови.
+      before_action :set_locale_from_account
       # Слід для ARCH.57: ставиться ПІСЛЯ автентифікації (раніше немає кого писати)
       # і несе лише id — див. застереження в `Current`.
       before_action :expose_acting_context
@@ -130,6 +139,15 @@ module Api
 
       def current_user
         @current_user
+      end
+
+      # [I18N.3] Реалізація hook'а `LocaleSettable#locale_account`: саме тут живе
+      # єдиний у дереві автентифікований користувач, тож саме тут концерн дістає
+      # persisted-вподобу (`users.locale`). Сестра `ApplicationController` цього
+      # методу не має за побудовою — під нею лише `LocalesController`, який
+      # користувача резолвить сам, під salt-гардом SEC.16.
+      def locale_account
+        current_user
       end
 
       # [SEC.25 Ф2] Pundit дістає не користувача, а пару «хто + в контексті якої

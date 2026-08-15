@@ -16,6 +16,20 @@ RSpec.describe Api::V1::LocalesController, type: :request do
       expect(cookies[:locale]).to eq("uk")
     end
 
+    # 🔴 Строк життя cookie тут — ЗАЯВА, яку ми вже дали публічно: обидва носії
+    # наміру (`protocols/legal/b2c_tos_privacy.md` §Cookies + його таблиця Cookie
+    # Policy, тобто майбутній клієнтський документ) кажуть «1 рік». Доти код
+    # кликав `cookies.permanent`, а це **20 років** — тобто retention обирав
+    # дефолт фреймворку, і документ розходився з реальністю у 20 разів.
+    # Без цього піна повернення до `permanent` знову зробило б публічну обіцянку
+    # хибною, і жоден гейт не почервонів би — правило без носія.
+    it "expires the locale cookie in about a year, per the published retention claim" do
+      post "/locale", params: { locale: "uk" }
+
+      expires_at = Time.zone.parse(response.headers["Set-Cookie"].to_s[/expires=([^;]+)/i, 1])
+      expect(expires_at).to be_between(11.months.from_now, 13.months.from_now)
+    end
+
     it "rejects an unknown locale and does not write a cookie" do
       post "/locale", params: { locale: "ru" }
       expect(cookies[:locale]).to be_blank
@@ -107,21 +121,23 @@ RSpec.describe Api::V1::LocalesController, type: :request do
     end
   end
 
+  # [I18N.3] 🔴 Ці приклади свідомо ходять ЗАПИТАМИ, а не через стаб концерну — і
+  # це не стильова примха, а прямий висновок з того, як цей дефект вижив.
+  #
+  # Доти тут стояли два юніт-приклади, які будували голий клас, підмішували в нього
+  # `LocaleSettable` і `define_singleton_method(:preferred_language)` на фейковому
+  # `request`. Обидва були ЗЕЛЕНІ сім місяців — і саме тому щабель `Accept-Language`
+  # ніхто не переміряв: мок ВИГОТОВЛЯВ метод, якого не існує ні в `actionpack`, ні в
+  # `rack`, тобто спека доводила поведінку API, що в проді не викликається ніколи.
+  # Сусідній приклад («swallows StandardError») цементував мовчазний `rescue`, тобто
+  # другу половину тієї ж невидимості. Клас — [`TEST.12`], лише тут фікстура вигадала
+  # не ТИП, а МЕТОД; назва першої з них («when available») тихо визнавала умовність,
+  # яку ніхто не пішов перевіряти.
+  #
+  # Тому носієм тепер є справжній стек: заголовок → Rack → концерн → рендер.
   describe "LocaleSettable concern (resolution priority)" do
-    # Drives the concern via the only public endpoint that is part of this
-    # change set — POST /locale itself. The POST always passes through
-    # `set_locale` before `update`, so `I18n.locale` is observable via the
-    # cookie behaviour we already cover above. We additionally assert the
-    # default-locale wiring directly from configuration to avoid coupling
-    # to other controllers' rendering paths.
-    let(:test_stub_class) do
-      base = Class.new do
-        attr_accessor :params, :cookies, :request
-        define_singleton_method(:before_action) { |*| } # stub out controller DSL
-      end
-      base.send(:include, LocaleSettable)
-      base
-    end
+    def unauthorized_text(locale) = I18n.t("errors.api.unauthorized", locale: locale)
+    def vitality_text(locale) = I18n.t("dashboard.home.stats.forest_vitality", locale: locale)
 
     it "ships with :en as the application default locale" do
       expect(I18n.default_locale).to eq(:en)
@@ -137,29 +153,191 @@ RSpec.describe Api::V1::LocalesController, type: :request do
       expect(cookies[:locale]).to eq("en")
     end
 
+    describe "tier 4 — Accept-Language" do
+      it "resolves an anonymous visitor's language from the header" do
+        get "/dashboard", headers: { "HTTP_ACCEPT_LANGUAGE" => "uk-UA,uk;q=0.9,en;q=0.8" }
 
-    it "uses request#preferred_language when available and produces a known locale" do
-      stub_request = Object.new
-      stub_request.define_singleton_method(:preferred_language) { |_avail| "uk" }
+        expect(response).to have_http_status(:unauthorized)
+        expect(response.body).to include(unauthorized_text(:uk))
+        # Негативна половина: без неї приклад лишався б зеленим і тоді, коли
+        # сторінка несе ОБИДВІ мови (шапка англійська, тіло українське).
+        expect(response.body).not_to include(unauthorized_text(:en))
+      end
 
-      instance = test_stub_class.new
-      instance.params = {}
-      instance.cookies = {}
-      instance.request = stub_request
+      it "honours q-values rather than the order the header lists" do
+        get "/dashboard", headers: { "HTTP_ACCEPT_LANGUAGE" => "en;q=0.1,lv;q=0.9" }
 
-      expect(instance.send(:resolve_locale)).to eq(:uk)
+        expect(response.body).to include(unauthorized_text(:lv))
+      end
+
+      # 🔴 Дискримінатор тут НЕ довільний, і перша редакція цього прикладу була
+      # брехлива: вона слала `en;q=0,lt;q=0.5` і зеленіла тому, що `0.5 > 0.0`,
+      # а не тому, що `q=0` поважається — тобто пінила спроможність, якої в коді
+      # тоді не було (рівно клас, проти якого стоїть увесь цей блок).
+      # Єдина форма, що РОЗРІЗНЯЄ: відхилити мову, яка інакше виграла б сама.
+      it "treats q=0 as «not acceptable», not as a candidate" do
+        get "/dashboard", headers: { "HTTP_ACCEPT_LANGUAGE" => "uk;q=0" }
+
+        expect(response.body).to include(unauthorized_text(I18n.default_locale))
+        expect(response.body).not_to include(unauthorized_text(:uk))
+      end
+
+      it "keeps a lower-q language once the higher one is rejected" do
+        get "/dashboard", headers: { "HTTP_ACCEPT_LANGUAGE" => "en;q=0,lt;q=0.5" }
+
+        expect(response.body).to include(unauthorized_text(:lt))
+      end
+
+      # 🔴 Найдорожча вісь із усіх: `Accept-Language: uk,en` не має ЖОДНОЇ ваги,
+      # і RFC 9110 §12.5.4 каже, що тоді перевагу задає ПОРЯДОК. Готовий
+      # `Rack::Utils.best_q_match` віддавав тут «en» (він розвʼязує рівність
+      # останнім елементом) — тобто українець із типовим заголовком діставав
+      # англійську, і фікс щабля виглядав би зробленим.
+      it "prefers the FIRST tag when no weights are given" do
+        get "/dashboard", headers: { "HTTP_ACCEPT_LANGUAGE" => "uk,en" }
+
+        expect(response.body).to include(unauthorized_text(:uk))
+        expect(response.body).not_to include(unauthorized_text(:en))
+      end
+
+      # Форма, яку реально шле Chrome: регіональний тег ПЕРШИМ.
+      it "falls back from a regional tag to its base language" do
+        get "/dashboard", headers: { "HTTP_ACCEPT_LANGUAGE" => "lv-LV" }
+
+        expect(response.body).to include(unauthorized_text(:lv))
+      end
+
+      it "survives empty segments without losing the valid tag beside them" do
+        get "/dashboard", headers: { "HTTP_ACCEPT_LANGUAGE" => "uk,,en" }
+
+        expect(response.body).to include(unauthorized_text(:uk))
+      end
+
+      it "reads a bare wildcard as «any», i.e. the application default" do
+        get "/dashboard", headers: { "HTTP_ACCEPT_LANGUAGE" => "*" }
+
+        expect(response.body).to include(unauthorized_text(I18n.default_locale))
+      end
+
+      # BCP-47 оголошує мовні теги регістро-НЕЧУТЛИВИМИ, а `Rack::Utils.best_q_match`
+      # порівнює рядки буквально — виміряно, `UK-ua` проти `uk` дає `nil`. Нормалізація
+      # живе в концерні; цей приклад стереже саме її.
+      it "matches a language tag regardless of case" do
+        get "/dashboard", headers: { "HTTP_ACCEPT_LANGUAGE" => "UK-UA,UK;q=0.9" }
+
+        expect(response.body).to include(unauthorized_text(:uk))
+      end
+
+      it "falls through to the default for a language we do not ship" do
+        get "/dashboard", headers: { "HTTP_ACCEPT_LANGUAGE" => "de-DE,de;q=0.9,fr;q=0.8" }
+
+        expect(response.body).to include(unauthorized_text(I18n.default_locale))
+      end
+
+      # ⚠️ Пін на СТАТУС тут був би слабший, ніж здається: він зеленів би й тоді,
+      # коли валідний `uk` тихо гине разом із битим сусідом (саме так поводився
+      # `best_q_match` — кидав, і `rescue` ховав втрату). Тому пінимо РЕЗУЛЬТАТ.
+      it "survives a malformed header AND still honours the valid tag inside it" do
+        get "/dashboard", headers: { "HTTP_ACCEPT_LANGUAGE" => ";;;q=,,uk;q=абв" }
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(response.body).to include(unauthorized_text(:uk))
+      end
+
+      # 🔴 Ця гілка НЕ досяжна жодним заголовком — і саме тому потребує піна, а не
+      # видалення: після переходу з `best_q_match` на власний вибір парсер більше
+      # не кидає на битому вході (порожні сегменти обробляються явно), тож
+      # `rescue` лишається межею довіри до ЧУЖОГО гема, а не мертвим кодом.
+      # Пін тримає обидві половини властивості: запит виживає І відмова ГУЧНА —
+      # саме мовчазний `rescue` поверх мовчазного `respond_to?` робив попередній
+      # дефект невидимим на двох рівнях одразу.
+      it "degrades softly AND loudly if the parser itself ever raises" do
+        allow(Rack::Utils).to receive(:q_values).and_raise(ArgumentError, "boom")
+        allow(Rails.logger).to receive(:warn)
+
+        get "/dashboard", headers: { "HTTP_ACCEPT_LANGUAGE" => "uk" }
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(response.body).to include(unauthorized_text(I18n.default_locale))
+        expect(Rails.logger).to have_received(:warn).with(/\[I18N\] Accept-Language parse failed: ArgumentError/)
+      end
+
+      it "loses to an explicit cookie choice" do
+        cookies[:locale] = "lv"
+        get "/dashboard", headers: { "HTTP_ACCEPT_LANGUAGE" => "uk,en;q=0.8" }
+
+        expect(response.body).to include(unauthorized_text(:lv))
+      end
     end
 
-    it "swallows StandardError from preferred_language and falls back to the default" do
-      stub_request = Object.new
-      stub_request.define_singleton_method(:preferred_language) { |_avail| raise StandardError, "bad header" }
+    describe "tier 3 — persisted users.locale" do
+      let(:user) { create(:user, locale: "lv") }
 
-      instance = test_stub_class.new
-      instance.params = {}
-      instance.cookies = {}
-      instance.request = stub_request
+      def sign_in!
+        post "/login", params: { email: user.email_address, password: "password12345" }
+      end
 
-      expect(instance.send(:resolve_locale)).to eq(I18n.default_locale)
+      it "renders the dashboard in the account language when no cookie is present" do
+        sign_in!
+        get "/dashboard"
+
+        expect(response.body).to include(vitality_text(:lv))
+        expect(response.body).not_to include(vitality_text(:en))
+      end
+
+      it "wins over Accept-Language" do
+        sign_in!
+        get "/dashboard", headers: { "HTTP_ACCEPT_LANGUAGE" => "uk,en;q=0.8" }
+
+        expect(response.body).to include(vitality_text(:lv))
+      end
+
+      it "loses to the cookie — «обрав У ЦЬОМУ браузері» лишається сильнішим" do
+        sign_in!
+        cookies[:locale] = "uk"
+        get "/dashboard"
+
+        expect(response.body).to include(vitality_text(:uk))
+      end
+
+      # 🔴 Другий корінь дерева контролерів, і без власного hook'а щабель 3 був би
+      # мертвий саме тут — у контролері, який ВОЛОДІЄ перемиканням мови.
+      # `Api::V1::LocalesController` успадковує `ApplicationController`, у якої
+      # `current_user` немає за побудовою, тож дефолтний `nil` з'їдав би
+      # акаунт-вподобу мовчки. Дискримінатор: людина з `users.locale` і БЕЗ cookie
+      # шле невалідну локаль — повідомлення про відмову мусить прийти її мовою.
+      it "resolves the account locale on the switcher's own root (ApplicationController)" do
+        user.update_column(:locale, "uk")
+        sign_in!
+
+        post "/locale", params: { locale: "ru" }
+
+        expect(flash[:error]).to eq(I18n.t("flash.unsupported_locale", locale: :uk))
+        expect(flash[:error]).not_to eq(I18n.t("flash.unsupported_locale", locale: :en))
+      end
+
+      it "falls through when the column is empty" do
+        user.update_column(:locale, nil)
+        sign_in!
+        get "/dashboard", headers: { "HTTP_ACCEPT_LANGUAGE" => "lt" }
+
+        expect(response.body).to include(vitality_text(:lt))
+      end
+    end
+
+    # 🔴 Ліхтар на ПЕРШИЙ прохід, і він стереже не поведінку, а ПОРЯДОК колбеків.
+    #
+    # `set_locale` реєструється разом із концерном, тобто ДО `authenticate_user!`;
+    # акаунт-щабель доганяє окремим `set_locale_from_account` уже після. Природна
+    # «оптимізація» — злити їх в один `before_action :set_locale`, зареєстрований
+    # після автентифікації, — тиха: Rails дедуплікує колбеки за іменем фільтра, тож
+    # рання фаза не подвоїлась би, а ЗНИКЛА, і 401 віддавалась би базовою мовою
+    # незалежно від того, що просив браузер. Приклад нижче червоніє рівно на цьому.
+    it "resolves the locale BEFORE authentication, so the login page keeps its language" do
+      get "/dashboard", headers: { "HTTP_ACCEPT_LANGUAGE" => "lt,en;q=0.5" }
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(response.body).to include(unauthorized_text(:lt))
     end
   end
 end

@@ -47,11 +47,19 @@ module SilkenNet
     # [KENOSIS TITAN]: structure.sql зберігає партиціювання PostgreSQL (schema.rb не підтримує)
     config.active_record.schema_format = :sql
 
-    # [I18N]: Quadrilingual UI (EN default; UA/LV/LT auto-detected via
-    # Accept-Language header, or saved via locale cookie). Locale files are
+    # [I18N]: Quadrilingual UI (EN default). Мову запиту резолвить
+    # `LocaleSettable` — ланцюг і його стелі живуть ТАМ, не тут. Locale files are
     # organised by domain under config/locales/<group>/<locale>.yml — the
     # nested load_path picks them up automatically. New languages are added
     # by appending to `available_locales` and shipping a matching YAML set.
+    #
+    # ⚠️ [I18N.3] Тут доти стояло «UA/LV/LT auto-detected via Accept-Language
+    # header» — і це було САМОСВІДЧЕННЯ: щабель `Accept-Language` не працював
+    # жодного разу, бо викликав неіснуючий метод. Конфіг-файл заявляв
+    # спроможність, якої в застосунку не було, тобто найгучніший носій брехні
+    # стояв найдалі від коду, що її спростовує. Рядок тепер РОУТИТЬ у концерн
+    # замість переказувати його — дзеркало не може розійтись із тим, чого не
+    # дублює.
     config.i18n.load_path += Dir[Rails.root.join("config/locales/**/*.{rb,yml}")]
     config.i18n.available_locales = %i[uk en lv lt]
     config.i18n.default_locale    = :en
