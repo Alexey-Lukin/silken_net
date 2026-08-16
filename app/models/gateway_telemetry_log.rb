@@ -53,8 +53,13 @@ class GatewayTelemetryLog < ApplicationRecord
   # --- МЕТОДИ (Health Intelligence) ---
 
   # Допоміжний метод для дашборду (переведення CSQ у відсотки)
+  # [ARCH.84] 🔴 `99` — це «unknown» за 3GPP (канон `04_01` про `cellular_signal_csq`),
+  # а не нульовий сигнал: доти обидва стани віддавали **0**, тобто «модем на звʼязку,
+  # якість нульова» замість «модем не відповів». Сусідній `signal_dbm` від початку
+  # робив ПРАВИЛЬНО (`nil` на 99/nil) — і саме він мертвий, тоді як брехливий читали
+  # два екрани. Тепер обидва методи відповідають на «немає даних» однаково.
   def signal_quality_percentage
-    return 0 if cellular_signal_csq == 99 || cellular_signal_csq.nil?
+    return nil if cellular_signal_csq == 99 || cellular_signal_csq.nil?
     ((cellular_signal_csq / 31.0) * 100.0).round(1)
   end
 

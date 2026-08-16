@@ -70,8 +70,11 @@ module Gateways
           # Cellular Signal (CSQ)
           render_circular_metric(
             label: t(".telemetry.signal_strength"),
-            value: "#{@latest_log&.signal_quality_percentage || 0}%",
-            subtext: t(".telemetry.signal_csq", csq: @latest_log&.cellular_signal_csq || 0),
+            # [ARCH.84] Обидва `|| 0` знято: 99 = «unknown» за 3GPP, а CSQ=0 — ВАЛІДНЕ
+            # значення (−113 dBm, гранична чутливість), тож підстановка нуля робила
+            # «модем не відповів» невідрізнимим від «сигнал на межі».
+            value: measured_value(@latest_log&.signal_quality_percentage, "%", space: false),
+            subtext: t(".telemetry.signal_csq", csq: @latest_log&.cellular_signal_csq || t("ui.measurement.not_measured")),
             color: signal_color
           )
 
@@ -203,9 +206,16 @@ module Gateways
     end
 
     def signal_color; "border-emerald-900/50"; end
+    # [ARCH.84] 🔴 Найтонша форма класу: ЗНАЧЕННЯ поруч чесне («---»), а КОЛІР брехав —
+    # `|| DEFAULT_HEALTHY_VOLTAGE_MV` підставляв здорову напругу, тож невиміряний шлюз
+    # діставав зелену рамку. Текст казав «не знаю», рамка казала «все гаразд», і
+    # переважає завжди друге. Тепер станів три, як у `metric_row`: тривога · норма ·
+    # не виміряно (нейтральний, бо тривога теж є твердженням про вимір).
     def battery_color
-      low_voltage = (@latest_log&.voltage_mv || DEFAULT_HEALTHY_VOLTAGE_MV).to_i < 3400
-      tokens("border-red-900": low_voltage, "border-emerald-900/50": !low_voltage)
+      mv = @latest_log&.voltage_mv
+      return "border-gaia-border" if mv.nil?
+
+      tokens("border-red-900": mv.to_i < 3400, "border-emerald-900/50": mv.to_i >= 3400)
     end
     def temp_color; "border-emerald-900/50"; end
   end

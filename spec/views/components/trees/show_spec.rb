@@ -197,6 +197,20 @@ RSpec.describe Trees::Show do
       expect(html).to include("35.0%")
     end
 
+    # [ARCH.84] 🔴 Жодна фікстура файлу не доходила до nil (`build_latest_log` подає
+    # 3800/22), тож дефект «виміряний нуль на місці невиміряного» був невидимий ЗА
+    # ПОБУДОВОЮ — фікс не червонив жодного наявного прикладу. Негативна половина
+    # несуча: без неї пін пройшов би і на `|| 0`, бо «0 mV» теж містить «mV».
+    it "says NOT MEASURED for an absent sensor reading, never a fabricated zero" do
+      rendered = render_component(tree: tree,
+                                  latest_log: build_latest_log(voltage_mv: nil, temperature_c: nil),
+                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+
+      expect(rendered).to include(I18n.t("ui.measurement.not_measured"))
+      expect(rendered).not_to include("0 mV")
+      expect(rendered).not_to include("0 °C")
+    end
+
     # [ARCH.86] Підпис під `text-6xl`-числом називає безрозмірну ВЕЛИЧИНУ,
     # а не одиницю: «kΩ Impedance» стояло на координаті атрактора Лоренца.
     it "labels the big number as the dimensionless Lorenz Z" do

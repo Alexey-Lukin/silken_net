@@ -128,13 +128,18 @@ RSpec.describe Gateways::Index do
   end
 
   describe "gateway with no cluster, telemetry or recent contact" do
-    it "renders unassigned/zero/silent fallbacks and a stale LED" do
+    # [ARCH.84] «zero» у назві був зізнанням: сигнал без телеметрії друкувався «0%»,
+    # тобто виміряним найгіршим значенням замість відсутності виміру. Решта фолбеків
+    # цього прикладу чесні й лишаються — «UNASSIGNED» і «SILENT» є ІМЕНАМИ станів,
+    # а не числами, тож вони нічого не стверджують про вимір.
+    it "renders unassigned/not-measured/silent fallbacks and a stale LED" do
       gw = mock_gateway(last_seen_at: nil, latest_log: nil)
       gw.cluster = nil
       rendered = render_component(gateways: [ gw ], pagy: mock_pagy(count: 1, last: 1), online_count: 0)
       expect(rendered).to include("UNASSIGNED") # cluster&.name || unassigned
       expect(rendered).to include("SILENT")     # last_seen_at&.strftime || silent
-      expect(rendered).to include("0%")         # latest_log&.signal_quality_percentage || 0
+      expect(rendered).to include(I18n.t("ui.measurement.not_measured"))
+      expect(rendered).not_to include("0%")
       expect(rendered).to include("bg-red-900") # last_seen_at nil → stale LED branch
     end
   end

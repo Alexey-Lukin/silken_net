@@ -36,12 +36,14 @@ RSpec.describe OracleVisions::Index do
       expect(html).to include("Strategic Forecast Matrix")
     end
 
-    it "renders AI Confidence display" do
-      expect(html).to include("AI Confidence")
-    end
-
-    it "shows the static AI confidence value" do
-      expect(html).to include("94.2%")
+    # [ARCH.84] ⚖️ Обидва приклади цементували вигадане число, і другий зізнавався в
+    # назві — «shows the STATIC AI confidence value». Заголовну впевненість знято:
+    # це був агрегат над картками, а кожна `ForecastCard` уже показує власну
+    # `probability_score` чесно. Пін негативний і НАЗВАНИЙ, а не мовчазно видалений —
+    # інакше повернення літерала пройшло б зеленим.
+    it "never prints a headline confidence — the number had no source" do
+      expect(html).not_to include("94.2%")
+      expect(html).not_to include("AI Confidence")
     end
   end
 

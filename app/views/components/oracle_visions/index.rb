@@ -38,7 +38,14 @@ module OracleVisions
       div(class: "p-6 border border-emerald-900 bg-black/40 backdrop-blur-md flex justify-between items-end") do
         div do
           h3(class: "text-tiny uppercase tracking-[0.5em] text-emerald-700") { t(".title") }
-          p(class: "text-2xl font-light text-emerald-400 mt-2") { t(".confidence", value: "94.2%") }
+          # [ARCH.84] ⚖️ Заголовну «впевненість ШІ» знято 2026-08-16: значення було
+          # ЛІТЕРАЛОМ в аргументі `t(...)` — перший сайт класу, де вигадане число стоїть
+          # не в колонці, тож обидва доменні зонди (колонка без писача · одиниця без
+          # тракту) були до нього сліпі. Не переведено в «не виміряно», бо це АГРЕГАТ
+          # над картками нижче: кожна `ForecastCard` уже показує власну
+          # `probability_score` чесно, а прогноз-інсайтів `InsightGeneratorService` не
+          # створює взагалі (лише `daily_health_summary`). Четвертий поверх над трьома
+          # чесними — той самий клас, що `ARCH.101` зрізав на дашборді.
         end
 
         # [FINANCIAL ENGINE VISUALIZATION]: Очікуваний врожай

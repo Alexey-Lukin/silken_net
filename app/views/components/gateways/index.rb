@@ -62,7 +62,11 @@ module Gateways
           end
           div do
             p(class: "text-mini uppercase tracking-tighter text-gray-600") { t("gateways.item.signal") }
-            p(class: "text-xl font-light text-emerald-100") { "#{latest_log&.signal_quality_percentage || 0}%" }
+            # [ARCH.84] CSQ=99 («unknown» за 3GPP) більше не друкується як 0% — модель
+            # віддає `nil`, і тут це стан, а не число.
+            p(class: "text-xl font-light text-emerald-100") do
+              measured_value(latest_log&.signal_quality_percentage, "%", space: false)
+            end
           end
         end
 

@@ -124,16 +124,24 @@ RSpec.describe GatewayTelemetryLog, type: :model do
   # INSTANCE METHODS
   # =========================================================================
   describe "#signal_quality_percentage" do
-    it "returns 0 for CSQ = 99 (unknown)" do
+    # [ARCH.84] 🔴 Обидва приклади цементували дефект, і перший зізнавався у ВЛАСНІЙ
+    # НАЗВІ: «returns 0 for CSQ = 99 (unknown)» — спека знала, що 99 означає
+    # «невідомо», і вимагала друкувати це нулем. Канон каже те саме (`04_01`:
+    # «0-31, 99=unknown»), а сусідній `signal_dbm` від початку віддавав `nil`.
+    it "returns nil for CSQ = 99, the 3GPP sentinel for «unknown»" do
       log = build(:gateway_telemetry_log, cellular_signal_csq: 99)
-      expect(log.signal_quality_percentage).to eq(0)
+      expect(log.signal_quality_percentage).to be_nil
     end
 
-    it "returns 0 for nil CSQ" do
+    it "returns nil when the modem reported nothing at all" do
       log = build(:gateway_telemetry_log, cellular_signal_csq: 15)
       allow(log).to receive(:cellular_signal_csq).and_return(nil)
-      expect(log.signal_quality_percentage).to eq(0)
+      expect(log.signal_quality_percentage).to be_nil
     end
+
+    # ⊥ Ліхтар на цю пару вже стоїть нижче — «returns 0 for minimum CSQ (0)»:
+    # виміряний нуль (−113 dBm, гранична чутливість) лишається ДОСЯЖНИМ, і саме
+    # тому його не можна було ділити з «невідомо».
 
     it "returns 100 for maximum CSQ (31)" do
       log = build(:gateway_telemetry_log, cellular_signal_csq: 31)

@@ -7,7 +7,6 @@ lt:
       predicted_window: Prognozuojamas įvykio langas
       probability: "%{value}%"
     index:
-      confidence: 'DI pasitikėjimas: %{value}'
       expected_yield: Prognozuojama 24h emisija
       title: Strateginių prognozių matrica
       yield_unit: SCC

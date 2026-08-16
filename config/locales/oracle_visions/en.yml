@@ -7,7 +7,6 @@ en:
       predicted_window: Predicted Event Window
       probability: "%{value}%"
     index:
-      confidence: 'AI Confidence: %{value}'
       expected_yield: Projected 24h Emission
       title: Strategic Forecast Matrix
       yield_unit: SCC

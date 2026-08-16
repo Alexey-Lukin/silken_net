@@ -105,8 +105,20 @@ module Trees
             # температура кристала STM32 (внутрішній датчик), не ксилеми.
             # ⚠️ Підпис `core_sub` тут не новий — він казав правду («температура
             # внутрішнього ядра») роками, суперечачи власному ж заголовку.
-            metric_row(t(".biometrics.supply_voltage"), "#{@latest_log&.voltage_mv || 0} mV", sub: t(".biometrics.supply_sub"))
-            metric_row(t(".biometrics.core_temperature"), "#{@latest_log&.temperature_c || 0} °C", sub: t(".biometrics.core_sub"))
+            # [ARCH.84] 🔴 `|| 0` тут був ЖИВИЙ, на відміну від сусіда нижче: обидві
+            # колонки `telemetry_logs` nullable (`voltage_mv integer`, `temperature_c
+            # numeric`), а `@latest_log` ще й `nil` після retention-зрізу — тож дерево
+            # без виміру рапортувало «0 mV» і «0 °C», тобто справний сенсор на нулі.
+            # Знайдено 2026-08-16: прохід, що полагодив стрес-рядок нижче, ці два не
+            # побачив, хоч і написав поруч коментар саме про цей клас.
+            metric_row(t(".biometrics.supply_voltage"),
+                       measured_value(@latest_log&.voltage_mv, "mV"),
+                       sub: t(".biometrics.supply_sub"),
+                       unmeasured: @latest_log&.voltage_mv.nil?)
+            metric_row(t(".biometrics.core_temperature"),
+                       measured_value(@latest_log&.temperature_c, "°C"),
+                       sub: t(".biometrics.core_sub"),
+                       unmeasured: @latest_log&.temperature_c.nil?)
             # [ARCH.84] `|| 0` тут був мертвим (колонка мала `DEFAULT 0.0 NOT NULL`) і
             # оживши, друкував би «0.0%» — ту саму брехню, лише з іншого боку. Дім
             # стану «не виміряно» вже збудовано сайтом 1 того ж пункту.

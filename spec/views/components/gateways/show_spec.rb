@@ -161,10 +161,18 @@ RSpec.describe Gateways::Show do
       expect(html).to include("23.0°C")
     end
 
-    it "falls back to 0 when latest_log is nil" do
+    # [ARCH.84] 🔴 Приклад цементував дефект і зізнавався в назві («falls back to 0»).
+    # Обидва нулі були вигадані: 0% читалось як «модем на звʼязку, якість нульова», а
+    # «CSQ: 0» — це ВАЛІДНИЙ вимір (−113 dBm, гранична чутливість), тож підстановка
+    # робила «не відповів» невідрізнимим від «на межі».
+    # ⚠️ Пін цілиться в «CSQ: 0», а НЕ в голе «0%» — і це виміряно, не вгадано:
+    # `style="width: 0%"` живе в прогрес-барі того ж екрана, тож широкий матч
+    # проходив би через сусідній вузол і червонів на здоровому коді.
+    it "says NOT MEASURED without telemetry, never a fabricated zero" do
       rendered = render_component(gateway: gateway, latest_log: nil, active_soldiers: active_soldiers)
-      expect(rendered).to include("0%")
-      expect(rendered).to include("CSQ: 0")
+
+      expect(rendered).to include(I18n.t("ui.measurement.not_measured"))
+      expect(rendered).not_to include("CSQ: 0")
     end
   end
 
