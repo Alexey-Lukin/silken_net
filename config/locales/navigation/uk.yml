@@ -45,3 +45,4 @@ uk:
       context_none: НЕ_ОБРАНО
       core_sync_label: Синхр. ядра
       core_sync_value: 1.12 ТГц
+      profile_aria: 'Відкрити профіль: %{name}'

@@ -45,3 +45,4 @@ en:
       context_none: NOT_SELECTED
       core_sync_label: Core Sync
       core_sync_value: 1.12 THz
+      profile_aria: 'Open profile: %{name}'

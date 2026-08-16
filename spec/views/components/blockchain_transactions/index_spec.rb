@@ -272,5 +272,16 @@ RSpec.describe BlockchainTransactions::Index do
                                 "стан #{state} падає в дефолтну гілку — його не видно як окремий"
       end
     end
+
+    # [UI.8] Двері в deep-audit. Пін тримає ДВІ осі, і друга несуча: `created_at`
+    # у query — не косметика, а ключ партиції. Без нього `find_with_partition_pruning`
+    # мовчки падає в degraded-path (скан усіх партицій + лічильник unpruned_lookups),
+    # тобто промах був би ТИХИЙ і на екрані невидимий.
+    it "links each row to its own audit page, carrying the partition key" do
+      tx = mock_transaction(id: 77)
+      html = render_component(transactions: [ tx ], pagy: pagy)
+
+      expect(html).to include("/blockchain_transactions/77?created_at=")
+    end
   end
 end

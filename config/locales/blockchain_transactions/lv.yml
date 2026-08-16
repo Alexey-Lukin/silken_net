@@ -2,10 +2,13 @@
 lv:
   blockchain_transactions:
     index:
+      audit_aria: 'Darījuma #%{id} detaļas'
+      audit_details: Detaļas
       explorer_aria: Skatīt darījumu blokķēdes pārlūkā
       subtitle: Kalšana, sodīšana un visi ķēdes notikumi jūsu organizācijai.
       table:
         amount: Summa
+        audit: Audits
         empty: Nav reģistrētu blokķēdes darījumu.
         network: Tīkls
         source: Avots

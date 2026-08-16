@@ -161,17 +161,12 @@ class NaasContract < ApplicationRecord
   # заради виправдання колонки. Заразом закривається `securities_review.md` F7
   # («yield» = мова доходу на інвестицію → Howey prong 3).
 
-  # Whether the backing cluster currently has active EWS alerts.
-  # Uses Ruby-level filtering to leverage eager-loaded ews_alerts (avoids N+1).
-  def active_threats?
-    return false unless cluster
-
-    if cluster.association(:ews_alerts).loaded?
-      cluster.ews_alerts.any? { |a| a.status_active? }
-    else
-      cluster.ews_alerts.unresolved.any?
-    end
-  end
+  # [UI.8] `active_threats?` знято 2026-08-16 — питання «чи є загрози в кластері»
+  # має ОДИН дім, `Cluster#active_threats?` (лише critical, канон `04_01 §Cluster`).
+  # Цей двійник ніколи не мав UI-споживача: контролер завів `methods: [:active_threats?]`
+  # разом із коментарем про «червоний вогник у списку» за ТИЖДЕНЬ до того, як метод
+  # зʼявився на моделі, і метод приїхав латкою під виклик, що падав. Ширший поріг
+  # (будь-яка severity) звідти й походить — його не обирали.
 
   private
 

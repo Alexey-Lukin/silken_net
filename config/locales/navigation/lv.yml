@@ -45,3 +45,4 @@ lv:
       context_none: NAV_IZVĒLĒTS
       core_sync_label: Kodola sinhronizācija
       core_sync_value: 1.12 THz
+      profile_aria: 'Atvērt profilu: %{name}'

@@ -193,8 +193,15 @@ class DashboardLayout < ApplicationComponent
     end
   end
 
+  # [UI.8] Аватар — ЄДИНИЙ вхід у власний профіль: `Users::Profile` (168 рядків,
+  # 17 i18n-ключів, лічильник обслуговувань і активні ідентичності) був повністю
+  # побудований і недосяжний — `users_me_path` не згадувався в `app/` жодного разу.
+  # Класика «право без переходу»: робота зроблена, дверей немає.
   def render_user_avatar
-    div(class: "flex items-center gap-3") do
+    a(href: users_me_path,
+      aria_label: t("navigation.top_bar.profile_aria", name: @current_user&.full_name),
+      class: "flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 " \
+             "focus-visible:ring-gaia-primary focus-visible:ring-offset-2 focus-visible:ring-offset-gaia-surface") do
       div(class: "text-right hidden lg:block") do
         p(class: "text-tiny text-gaia-text-strong leading-none") { @current_user&.full_name }
         p(class: "text-micro text-gaia-text-subtle uppercase tracking-widest mt-1") { @current_user&.role_label }

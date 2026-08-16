@@ -9,7 +9,11 @@ module Api
       # --- ПОРТФЕЛЬ КОНТРАКТІВ (Registry + Dashboard) ---
       # GET /contracts
       def index
-        scope = policy_scope(NaasContract).includes(:organization, cluster: :ews_alerts)
+        # [UI.8] `cluster: :ews_alerts` знято разом із `active_threats?`: після зняття
+        # того ключа тривоги кластера тут не читає НІХТО — JSON віддає `cluster` лише
+        # як `{id, name}`, а `Contracts::Index` бере `contract.cluster&.name`. Прелоад
+        # без читача — це зайвий запит на кожен рендер списку.
+        scope = policy_scope(NaasContract).includes(:organization, :cluster)
         @pagy, @contracts = pagy(scope)
 
         # Агрегуємо дані для Phlex-дашборду, використовуючи твою логіку
@@ -28,9 +32,7 @@ module Api
                 include: {
                   cluster: { only: [ :id, :name ] },
                   organization: { only: [ :id, :name ] }
-                },
-                # [UI/UX]: Додано active_threats?, щоб інвестор бачив "червоний вогник" у списку
-                methods: [ :active_threats? ]
+                }
               ),
               pagy: pagy_metadata(@pagy)
             }
@@ -58,12 +60,18 @@ module Api
         respond_to do |format|
           format.json do
             render json: {
-              contract: @contract.as_json(methods: [ :active_threats? ]),
+              contract: @contract.as_json,
               emission_history: @emission_history,
               backing_asset: {
                 cluster_health: @contract.cluster.health_index,
                 active_trees: @contract.cluster.active_trees_count,
-                active_threats: @contract.cluster.ews_alerts.unresolved.any?
+                # [UI.8] One-Home предиката, а НЕ інлайн-вираз: доти ця відповідь
+                # несла ДВА пороги на одне питання — тут `unresolved.any?` (будь-яка
+                # severity), а HTML-гілка ТОГО САМОГО екшена малювала вогник за
+                # `Cluster#active_threats?` (лише critical). Ширший поріг ніколи не
+                # обирали свідомо — він приїхав латкою під виклик, заведений тижнем
+                # раніше за сам метод; вужчий канонізований (`04_01 §Cluster`).
+                active_threats: @contract.cluster.active_threats?
               }
             }
           end

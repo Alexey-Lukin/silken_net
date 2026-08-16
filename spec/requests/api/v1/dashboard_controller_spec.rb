@@ -221,4 +221,17 @@ RSpec.describe Api::V1::DashboardController, type: :request do
       end
     end
   end
+
+  # [UI.8] Проводка, а не компонент: аватар живе в `DashboardLayout`, тож
+  # компонентна спека його не бачить ЗА ПОБУДОВОЮ (вона рендерить повз layout).
+  # Пін позитивний навмисно — саме він падає, якщо лінк знімуть: `Users::Profile`
+  # був повністю побудований і недосяжний, бо `users_me_path` не згадувався ніде.
+  describe "profile door in the top bar" do
+    it "renders the avatar as a link to the own-profile page" do
+      get "/dashboard", headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(%(href="/users/me"))
+    end
+  end
 end

@@ -2,10 +2,13 @@
 en:
   blockchain_transactions:
     index:
+      audit_aria: 'Transaction #%{id} details'
+      audit_details: Details
       explorer_aria: View transaction on blockchain explorer
       subtitle: Minting, slashing, and all on-chain events for your Organization.
       table:
         amount: Amount
+        audit: Audit
         empty: No blockchain transactions recorded.
         network: Network
         source: Source

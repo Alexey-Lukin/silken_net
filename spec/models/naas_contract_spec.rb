@@ -401,50 +401,6 @@ RSpec.describe NaasContract, type: :model do
     end
   end
 
-  describe "#active_threats?" do
-    let(:organization) { create(:organization) }
-    let(:cluster) { create(:cluster, organization: organization) }
-
-    it "returns false when cluster is nil" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster)
-      allow(contract).to receive(:cluster).and_return(nil)
-
-      expect(contract.active_threats?).to be false
-    end
-
-    it "returns false when no active alerts" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster)
-      expect(contract.active_threats?).to be false
-    end
-
-    it "returns true when cluster has unresolved alerts (not eager-loaded)" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster)
-      create(:ews_alert, cluster: cluster, status: :active)
-
-      expect(contract.active_threats?).to be true
-    end
-
-    it "returns true when cluster has eager-loaded active alerts" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster)
-      create(:ews_alert, cluster: cluster, status: :active)
-
-      loaded_cluster = Cluster.includes(:ews_alerts).find(cluster.id)
-      allow(contract).to receive(:cluster).and_return(loaded_cluster)
-
-      expect(contract.active_threats?).to be true
-    end
-
-    it "returns false when cluster has eager-loaded but resolved alerts" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster)
-      create(:ews_alert, cluster: cluster, status: :resolved)
-
-      loaded_cluster = Cluster.includes(:ews_alerts).find(cluster.id)
-      allow(contract).to receive(:cluster).and_return(loaded_cluster)
-
-      expect(contract.active_threats?).to be false
-    end
-  end
-
   describe "cluster health verdict (via ContractHealthCheckService)" do
     let(:organization) { create(:organization) }
     let(:cluster) { create(:cluster, organization: organization) }

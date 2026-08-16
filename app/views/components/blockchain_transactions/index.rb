@@ -55,6 +55,7 @@ module BlockchainTransactions
               th(scope: "col", class: "p-4") { t(".table.source") }
               th(scope: "col", class: "p-4") { t(".table.tx_hash") }
               th(scope: "col", class: "p-4 text-right") { t(".table.timestamp") }
+              th(scope: "col", class: "p-4 text-right") { t(".table.audit") }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
@@ -100,6 +101,18 @@ module BlockchainTransactions
           end
         end
         td(class: "p-4 text-right text-gray-500") { tx.created_at.strftime("%H:%M:%S // %d.%m.%y") }
+        # [UI.8] Двері в deep-audit: `BlockchainTransactions::Show` був повністю
+        # побудований, а зі списку на нього не вело НІЧОГО — єдиний лінк рядка йшов
+        # у зовнішній експлорер. 🔴 `created_at` у параметрі НЕСУЧИЙ, не косметика:
+        # таблиця RANGE-партиційна, і `find_with_partition_pruning` без нього падає
+        # у degraded-path (`where(id:)` по ВСІХ партиціях + лічильник
+        # `unpruned_lookups_total`) — тобто промах був би ТИХИЙ.
+        td(class: "p-4 text-right") do
+          a(href: blockchain_transaction_path(tx, created_at: tx.created_at.iso8601),
+            aria_label: t(".audit_aria", id: tx.id),
+            class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none " \
+                   "focus-visible:ring-2 focus-visible:ring-emerald-500") { t(".audit_details") }
+        end
       end
     end
 

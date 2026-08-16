@@ -25,7 +25,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
 
   # [TEST.12] Тут стояло пʼять `define_method`-гардів із прозою «methods not yet on the model»
   # і «scopes that don't exist». Виміряно рантаймом — проза застаріла: `current_yield_performance`,
-  # `active_threats?`, `BlockchainTransaction.confirmed` і `EwsAlert.active` існують, тож
+  # `BlockchainTransaction.confirmed` і `EwsAlert.active` існують, тож
   # ті гарди були інертні; пʼятий (`NaasContract#blockchain_transactions`) справді дописував
   # асоціацію, якої на моделі немає, — але її не кличе НІХТО (ні `app/`, ні ця спека), тобто
   # це залишок від прибраного колись виклику. Знято всі пʼять: підміна API моделі в `before`
@@ -151,10 +151,28 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         expect(response).to have_http_status(:not_found)
       end
 
-      it "includes backing_asset data" do
+      # [UI.8] Пін на ЗМІСТ, а не на присутність ключа: `backing_asset` є JSON-дзеркалом
+      # живої панелі `Contracts::Show#render_backing_asset_panel`, і саме поле загрози
+      # роками розходилось із нею порогом (JSON — будь-яка severity, панель — лише
+      # critical). `have_key` цього не бачив і не міг: він зелений на будь-якому вмісті.
+      it "mirrors the backing-asset panel, threat threshold included" do
+        create(:ews_alert, cluster: own_contract.cluster, severity: :medium, status: :active)
+
         get "/contracts/#{own_contract.id}", headers: headers, as: :json
+
         expect(response).to have_http_status(:ok)
-        expect(response.parsed_body).to have_key("backing_asset")
+        backing = response.parsed_body.fetch("backing_asset")
+        # Панель питає `Cluster#active_threats?` = unresolved.critical — тож
+        # НЕрозвʼязана MEDIUM-тривога не сміє засвітити «загрозу».
+        expect(backing["active_threats"]).to be(false)
+      end
+
+      it "reports a threat when the cluster has an unresolved CRITICAL alert" do
+        create(:ews_alert, cluster: own_contract.cluster, severity: :critical, status: :active)
+
+        get "/contracts/#{own_contract.id}", headers: headers, as: :json
+
+        expect(response.parsed_body.fetch("backing_asset")["active_threats"]).to be(true)
       end
     end
 

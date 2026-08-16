@@ -576,6 +576,20 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | — | GET | `/up` | `rails/health#show` | 🌐 Public | **Liveness** — процес живий (без перевірки залежностей). Виключено з `force_ssl`/host-auth redirect + Rack::Attack throttle. |
 | — | GET | `/ready` | `readiness#show` | 🌐 Public | **Readiness** — DB + Redis (Sidekiq + Kredis) round-trip → 200 `ready` / 503 `not_ready` (ops: [`06_05`](06_05_Puma_Configuration)). Ті самі виключення, що `/up`. |
 
+> 🔌 **[UI.8] JSON-only за ПРИЗНАЧЕННЯМ — не «зачинені двері».** Частина маршрутів цієї
+> таблиці свідомо не має UI-входу, і свіп «право без переходу» мусить їх ПРОПУСКАТИ, а не
+> рахувати боргом (вимір 2026-08-16):
+>
+> | Маршрут | Чому без UI |
+> |---|---|
+> | `GET /trees/:id/telemetry` · `GET /gateways/:id/telemetry` | Повна історія до `MAX_HISTORY_DAYS` = 365. Адресат названий у самому коді — «chronicle/charting tools page through history in smaller windows». Chart-бібліотеки в дереві **нуль**, `fetch` у всьому `app/javascript/` — **нуль**; будувати графік, щоб виправдати ендпоінт, — рівно та інверсія, яку забороняє У-ВЕЙ-присуд. Реальний споживач приходить із [`ARCH.63`](00_07_Action_Plan_Tracker) (B2B OpenAPI, demand-gated). |
+> | `GET /contracts/stats` | Ширший за `contracts#index`: рахує по ОРГАНІЗАЦІЇ (а не по пагінованому скоупу) і несе `clusters_measured`/`clusters_total`/`attested_value_usd`, яких у списку немає. Клієнтський контракт — §5.14б. |
+> | `GET /firmwares/inventory` | Статистика версій для зовнішнього споживача. ⚠️ Його формула **дослівно дублює** `@inventory_stats` у `firmwares#index` — це One-Home-борг, і він НЕ про відсутні двері. |
+>
+> **Рефлекс для наступного свіпу:** перш ніж назвати маршрут «бекенд без UI», спитай, чи він
+> оголошений як API-поверхня ТУТ. Інвентар, що міряє лише «чи є `*_path` у `app/views/`»,
+> завищує борг за побудовою — задокументований ендпоінт дверей не потребує.
+
 ### 4.2 Машинний контур (`/api/v1`)
 
 **[ARCH.77]** Рівно п'ять маршрутів. Кожен обслуговує клієнта, якого відвантажуємо НЕ ми —

@@ -1164,7 +1164,6 @@ active/draft ──cancel──► cancelled
 | `calculate_early_exit_fee` | Штраф за дострокове розірвання |
 | `calculate_prorated_refund` | Пропорційне повернення |
 | `terminate_early!` | Дострокове розірвання |
-| `active_threats?` | Загрози в кластері |
 | `insurance_premium_amount` | `total_funding * INSURANCE_PREMIUM_RATE` (5%) — обчислювальний метод |
 | `forester_share_amount` | `total_funding * 0.95` — частка лісника (обчислювальний метод) |
 | `self.total_insurance_premiums` | Σ премій (5%) по активованих (active/fulfilled/breached) контрактах; off-chain USDC-факт, НЕ on-chain подія. 🔴 **Викликається у ДВОХ формах, і вибір форми — рішення про приналежність, не про стиль:** на класі це агрегат **усієї платформи**, на relation (`org.naas_contracts.…`) — внесок однієї організації (`where` чейниться на `current_scope`, як у `BlockchainTransaction.net_minted_supply`). Фінзвіт ([`04_03 §5.14а`](04_03_REST_API_v1_Reference)) бере САМЕ relation-форму: класова клала pooled-агрегат по всіх орендарях у звіт одного, а це ще й securities-фактор F8 ([ARCH.90](00_07_Action_Plan_Tracker)) |

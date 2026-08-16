@@ -45,3 +45,4 @@ lt:
       context_none: NEPASIRINKTA
       core_sync_label: Branduolio sinchronizacija
       core_sync_value: 1.12 THz
+      profile_aria: 'Atidaryti profilį: %{name}'

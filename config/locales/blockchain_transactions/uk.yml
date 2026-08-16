@@ -2,10 +2,13 @@
 uk:
   blockchain_transactions:
     index:
+      audit_aria: 'Деталі транзакції #%{id}'
+      audit_details: Деталі
       explorer_aria: Переглянути транзакцію в оглядачі блокчейну
       subtitle: Minting, slashing та всі on-chain події вашої Організації.
       table:
         amount: Сума
+        audit: Аудит
         empty: Жодної блокчейн-транзакції не зафіксовано.
         network: Мережа
         source: Джерело
