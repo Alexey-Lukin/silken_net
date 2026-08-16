@@ -25,7 +25,7 @@
 # the citations do not.
 #
 #   bin/rails gaia:lint_tokens                          # shared/ — the HARD rule
-#   COMPONENTS=app/views/components/wallets/ \
+#   LINT_SCOPE=app/views/components/wallets/ \
 #     bin/rails gaia:lint_tokens                        # any subtree, on demand
 #
 # ⚠️ `app/views/layouts/` is deliberately OUT of the default: measured, its one
@@ -33,7 +33,7 @@
 # stay black in BOTH themes (a surface token there would make the light-theme
 # scrim pale). Adding layouts means adding that allowlist entry first.
 #
-# ⚠️ COMPONENTS= takes ONE path. The `.then` below branches on `directory?`, so a
+# ⚠️ LINT_SCOPE= takes ONE path. The `.then` below branches on `directory?`, so a
 # space-separated pair yields a non-directory Pathname and silently lints one
 # nonexistent file — green with zero files scanned, the decorative-gate shape.
 #
@@ -80,7 +80,17 @@ require "pathname"
 namespace :gaia do
   desc "Find raw Tailwind colour utilities in shared Phlex primitives (compliance check)"
   task :lint_tokens do
-    paths = (ENV["COMPONENTS"] || "app/views/shared/").then do |p|
+    # [UI.1] Стара назва (`COMPONENTS=`) відмовляє ГУЧНО, а не ігнорується.
+    # Мовчазний скип був би найгіршим із можливих виходів: дефолт — існуючий
+    # каталог із файлами, тож ліхтар порожнього набору нижче НЕ спрацював би, і
+    # прогін надрукував би ✓ про `shared/` людині, яка просила доменний каталог —
+    # зелений вердикт про НЕ ТУ множину.
+    if ENV["COMPONENTS"]
+      abort "✗ gaia:lint_tokens — `COMPONENTS=` перейменовано на `LINT_SCOPE=`. " \
+            "Стара назва брехала: дефолт цієї змінної — `app/views/shared/`, а не `components/`."
+    end
+
+    paths = (ENV["LINT_SCOPE"] || "app/views/shared/").then do |p|
       Pathname.new(p).directory? ? Pathname.glob("#{p}/**/*.rb") : [ Pathname.new(p) ]
     end
 
@@ -142,15 +152,15 @@ namespace :gaia do
     end
 
     # [DOC-T.64] Population lantern. A green verdict is a claim about the files that
-    # were READ — and a mistyped or space-separated `COMPONENTS=` yields a Pathname
+    # were READ — and a mistyped or space-separated `LINT_SCOPE=` yields a Pathname
     # that is neither a directory nor an existing file, so the loop above scanned
     # nothing and the ✓ below would attest an empty set. The comment at the head of
     # this file has described that hole since it was written; describing is not
     # closing. Same shape as the `expect(scanned_files.size).to be > N` floor every
     # spec/quality gate carries.
     if scanned.zero?
-      abort "✗ gaia:lint_tokens — НУЛЬ файлів прочитано (scope: #{ENV['COMPONENTS'] || 'app/views/shared/'}). " \
-            "Вердикту немає: перевірка не бігла. COMPONENTS= бере ОДИН шлях."
+      abort "✗ gaia:lint_tokens — НУЛЬ файлів прочитано (scope: #{ENV['LINT_SCOPE'] || 'app/views/shared/'}). " \
+            "Вердикту немає: перевірка не бігла. LINT_SCOPE= бере ОДИН шлях."
     end
 
     if violations.empty?

@@ -394,7 +394,7 @@ end
 >
 > 🔴 **Чому клас прожив непоміченим, хоч прилад про нього ЗНАВ:** «opacity-група» стоїть у кошику **UNMEASURABLE** браузерного збирача (`spec/support/contrast_audit.rb`) — тобто він чесно відмовлявся міряти такий вузол. Саме ця чесність його й ховала: відмова не червоніє, і «не можу виміряти» ніхто не читав як «тут може бути дефект». Носій тепер є — `spec/quality/opacity_contrast_multiplier_spec.rb`, і його **стеля названа**: він бачить вузол, який САМ оголошує текст (`text-…` у тому ж class-виразі), а прозорість на КОНТЕЙНЕРІ, чиї нащадки несуть текст, статично не видна взагалі — рівно так і прожив найдорожчий екземпляр (`Alerts::Row`, де жодного `text-` у class-виразі немає). Розширювати регекс на «будь-який вузол» відмовлено виміром: під нього падають усі декоративні оверлеї, і гейт вироджується в реєстр.
 >
-> ⚠️ Правило сьогодні строгіше за периметр гейта: `gaia:lint_tokens` тримає `app/views/shared/**` HARD (§16.1), а доменні компоненти заводяться порційно, кожне розширення — після власної migrate-хвилі. Залишок міряй командою, не числом із доки: `COMPONENTS=app/views/components/ bin/rails gaia:lint_tokens`. Стан і черга → [`00_07`](00_07_Action_Plan_Tracker) UI.1.
+> ⚠️ Правило сьогодні строгіше за периметр гейта: `gaia:lint_tokens` тримає `app/views/shared/**` HARD (§16.1), а доменні компоненти заводяться порційно, кожне розширення — після власної migrate-хвилі. Залишок міряй командою, не числом із доки: `LINT_SCOPE=app/views/components/ bin/rails gaia:lint_tokens`. Стан і черга → [`00_07`](00_07_Action_Plan_Tracker) UI.1.
 
 ### 3.6 Tailwind v3 → v4 Cheatsheet [DOC.11]
 
@@ -2009,7 +2009,7 @@ Stimulus controller, який скидає `opacity-0 translate-y-2` коли е
 | Tool | Purpose |
 |---|---|
 | `bin/migrate-tailwind-tokens` | Word-boundary `gsub` codemod with `--dry-run` and `--report` modes. Mapping table mirrors § 3.1 (4-tier surfaces + 3-level text + primary tokens). |
-| `bin/rails gaia:lint_tokens` | Compliance-перевірка — `exit 1` на сирій Tailwind-утиліті кольору; brand-glow allowlist усередині (див. джерело). **Периметр діалектів розширено 2026-08-15** (UI.3 (б)): окрім іменованих родин ловить **градієнтні стопи** (`from-`/`via-`/`to-black`) і **arbitrary-значення, що НЕСУТЬ колір** (`bg-[#000]`, `bg-[radial-gradient(#10b981…)]`) — саме градієнтною формою сирий колір колись повернувся в `telemetry/live_stream` повз зелений гейт. ⚠️ Arbitrary без кольору (`min-h-[60vh]`, `tracking-[0.3em]`) законний і не ловиться свідомо. **Повнорядкові коментарі пропускаються** — гейт, що червоніє на прозі, яка пояснює дефект, знімають першим; межа саме «рядок-коментар», ніколи «все після `#`» (у `"#{…}"` це ховало б справжню розмітку — хибний негатив). **HARD-гейт у `docs.yml` з 2026-08-07**, і його периметр за замовчуванням — `app/views/shared/**`. 🔴 **Доти периметр був ІНВЕРТОВАНИЙ:** дефолт стояв на `app/views/components/`, де §3.5 сиру Tailwind явно ДОЗВОЛЯЄ, тобто сторож патрулював поверхню з м'яким правилом і на сувору не дивився взагалі — а та виявилась чистою, що й зробило гейт підключабельним без міграції. Міграційний бек-лог доменних компонентів лишається у [`00_07`](00_07_Action_Plan_Tracker) UI.1 і ганяється на вимогу через `COMPONENTS=`. |
+| `bin/rails gaia:lint_tokens` | Compliance-перевірка — `exit 1` на сирій Tailwind-утиліті кольору; brand-glow allowlist усередині (див. джерело). **Периметр діалектів розширено 2026-08-15** (UI.3 (б)): окрім іменованих родин ловить **градієнтні стопи** (`from-`/`via-`/`to-black`) і **arbitrary-значення, що НЕСУТЬ колір** (`bg-[#000]`, `bg-[radial-gradient(#10b981…)]`) — саме градієнтною формою сирий колір колись повернувся в `telemetry/live_stream` повз зелений гейт. ⚠️ Arbitrary без кольору (`min-h-[60vh]`, `tracking-[0.3em]`) законний і не ловиться свідомо. **Повнорядкові коментарі пропускаються** — гейт, що червоніє на прозі, яка пояснює дефект, знімають першим; межа саме «рядок-коментар», ніколи «все після `#`» (у `"#{…}"` це ховало б справжню розмітку — хибний негатив). **HARD-гейт у `docs.yml` з 2026-08-07**, і його периметр за замовчуванням — `app/views/shared/**`. 🔴 **Доти периметр був ІНВЕРТОВАНИЙ:** дефолт стояв на `app/views/components/`, де §3.5 сиру Tailwind явно ДОЗВОЛЯЄ, тобто сторож патрулював поверхню з м'яким правилом і на сувору не дивився взагалі — а та виявилась чистою, що й зробило гейт підключабельним без міграції. Міграційний бек-лог доменних компонентів лишається у [`00_07`](00_07_Action_Plan_Tracker) UI.1 і ганяється на вимогу через `LINT_SCOPE=`. |
 
 ### 16.2 Migration workflow per domain
 
@@ -2032,7 +2032,7 @@ for f in config/locales/defaults/*.yml; do touch "config/locales/wallets/$(basen
 
 # 5. verify
 bin/rspec spec/views/components/wallets/
-COMPONENTS=app/views/components/wallets/ bin/rails gaia:lint_tokens
+LINT_SCOPE=app/views/components/wallets/ bin/rails gaia:lint_tokens
 ```
 
 ### 16.3 Mapping table (codemod)
@@ -2253,7 +2253,7 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 - [ ] No open-redirect — `referer` валідується проти `request.host`
 - [ ] Conventional Commit message (`feat(scope):` / `fix(scope):` / `docs(scope):`)
 - [ ] `bin/rubocop && bin/rspec spec/views/ spec/requests/<changed>` зелено
-- [ ] `bin/rails gaia:lint_tokens` зелено (§ 16) — дефолт покриває `shared/`, а торкнуті доменні файли ганяй через `COMPONENTS=`
+- [ ] `bin/rails gaia:lint_tokens` зелено (§ 16) — дефолт покриває `shared/`, а торкнуті доменні файли ганяй через `LINT_SCOPE=`
 - [ ] `parallel_validation` (Code Review + CodeQL) пройшов або addressed
 
 Sandbox-обмеження: автоматичний прогін axe-core / Lighthouse у CI потребує headless Chromium з мережевим доступом. Поки що це **manual gate** для рев'ювера. Коли `cuprite` тести отримають axe-runner — переведемо у автомат і відмітимо чек-бокс програмно.
