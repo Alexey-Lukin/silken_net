@@ -243,7 +243,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 | `start_date` | timestamp | Дата початку контракту |
 | `end_date` | timestamp | Дата закінчення контракту |
 | `status` | integer (enum) | `draft(0)`, `active(1)`, `fulfilled(2)`, `breached(3)`, `cancelled(4)` |
-| `emitted_tokens` | numeric (default: 0.0) | Загальна кількість емітованих SCC |
+| `emitted_tokens` | numeric, nullable (без default) | Загальна кількість емітованих SCC. ⚠️ **Не виміряно** — писача немає, семантика відкрита ([`00_07` ARCH.103](00_07_Action_Plan_Tracker)); `NULL` тут стан, а не пропуск |
 | `cancellation_terms` | jsonb | `early_exit_fee_percent`, `burn_accrued_points`, `min_days_before_exit` |
 | `cancelled_at` | timestamp | Час дострокового розірвання |
 | `hadron_asset_id` | varchar | ID лісової ділянки як RWA в Polygon Hadron |

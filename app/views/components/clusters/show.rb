@@ -191,7 +191,9 @@ module Clusters
             # закрив на семи сайтах; цей був восьмим. Формат — як у `contracts/index`:
             # гроші друкуються з копійками, бо `numeric` через голий `to_s` дає «50000.0».
             contract_row(t(".contract.value"), "#{@active_contract.total_value.to_f.round(2)} USD")
-            contract_row(t(".contract.emitted"), @active_contract.emitted_tokens.to_s)
+            # [ARCH.103] `.to_s` на `nil` дає ПОРОЖНІЙ рядок — підпис «Emitted» без
+            # жодного значення поруч, що читається як «нуль» переконливіше за самий нуль.
+            contract_row(t(".contract.emitted"), measured_value(@active_contract.emitted_tokens, "SCC"))
           end
         else
           p(class: "text-compact text-gray-700 italic") { t(".contract.empty") }

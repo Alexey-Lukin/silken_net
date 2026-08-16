@@ -42,7 +42,14 @@ module Api
 
         @performance = {
           total_trees: @organization.cached_trees_count,
-          carbon_minted: @organization.naas_contracts.sum(:emitted_tokens).to_f.round(2)
+          # [ARCH.103] `nil` = не виміряно. Джерело — `naas_contracts.emitted_tokens`,
+          # колонка зі схемним `DEFAULT 0.0` і нулем писачів, тож ключ роками
+          # стверджував намінтований вуглець рівно нулем. ⚠️ Жива відповідь на це
+          # питання в дереві Є — `BlockchainTransaction.for_organization(id)
+          # .net_minted_supply(:carbon_coin)`, — але вона про ІНШУ множину (усі
+          # мінти орендаря, не «за контрактами»), тож підставити її мовчки означало б
+          # замінити фабрикацію підміною. Присуд → `00_07` ARCH.103.
+          carbon_minted: nil
         }
 
         respond_to do |format|

@@ -204,9 +204,29 @@ RSpec.describe Api::V1::ContractsController, type: :request do
 
       body = response.parsed_body
       expect(body).to have_key("total_contracted")
-      expect(body).to have_key("total_tokens_minted")
       expect(body).to have_key("cluster_health")
-      expect(body).to have_key("attested_value_usd")
+
+      # 🔴 [ARCH.103] Доти обидва ключі стерегли лише `have_key` — тобто НАЯВНІСТЬ,
+      # ніколи значення, — і саме тому фабрикація прожила стільки: `total_tokens_minted`
+      # сумував колонку без жодного писача, а `attested_value_usd` множив ту суму на
+      # живу ціну з оракула, тобто був доларовою оцінкою портфеля, структурно рівною
+      # нулю. Єдиний правдивий множник у виразі створював враження обчислення.
+      # ⛔ `nil` тут — ВИМІР «не виміряно», і пін тримає саме його: повернення `0`
+      # (як і будь-якого числа) означало б, що семантику ухвалили без присуду.
+      expect(body["total_tokens_minted"]).to be_nil
+      expect(body["attested_value_usd"]).to be_nil
+    end
+
+    # ⚠️ Пара до піна вище: оракул більше не смикають узагалі. Без цього прикладу
+    # «полагодити» відсутню оцінку можна було б, лишивши зовнішній виклик заради
+    # множення на невідоме — витрата без результату, чия тиша ще й читалась би як
+    # «оцінка не працює», ховаючи справжню причину.
+    it "does not call the price oracle while the minted amount is unmeasured" do
+      expect(PriceOracleService).not_to receive(:current_scc_price)
+
+      get "/contracts/stats", headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
     end
 
     # [SEC.25 Ф2] Доти цей екшен мав ВЛАСНУ відповідь на «нема організації» (403 через

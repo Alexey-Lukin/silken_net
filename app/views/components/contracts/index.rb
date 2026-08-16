@@ -89,7 +89,11 @@ module Contracts
         # `total_value` = alias на `total_funding` (плата за послугу, USD) ⊥ `emitted_tokens`
         # (справжня SCC-емісія). Дві сусідні комірки в РІЗНИХ валютах — це не дрейф.
         td(class: "p-4 text-gaia-text-muted") { "#{contract.total_value} USD" }
-        td(class: "p-4 text-gaia-text") { "#{contract.emitted_tokens} SCC" }
+        # [ARCH.103] `nil` тут — вимір «не виміряно», а не порожнеча даних: без
+        # цієї гілки інтерполяція дала б рядок « SCC» — одиницю без величини.
+        td(class: "p-4 text-gaia-text") do
+          contract.emitted_tokens.nil? ? t("ui.measurement.not_measured") : "#{contract.emitted_tokens} SCC"
+        end
         td(class: "p-4 text-tiny text-gaia-text-muted") do
           plain contract.start_date&.strftime("%d.%m.%y")
           plain " → "

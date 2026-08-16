@@ -44,8 +44,19 @@ module Contracts
 
          div(class: "mt-8 md:mt-0 text-center md:text-right") do
            p(class: "text-tiny text-gray-600 uppercase mb-1") { t(".current_yield") }
-           span(class: "text-6xl font-light text-emerald-400") { @contract.emitted_tokens.to_f.round(2) }
-           span(class: "text-xl text-emerald-600 font-mono ml-2") { t(".yield_unit") }
+           # 🔴 [ARCH.103] Це була ГЕРОЙ-ЦИФРА сторінки контракту в `text-6xl` — і
+           # структурно завжди нуль: `emitted_tokens` має схемний `DEFAULT 0.0` і
+           # жодного писача. `.to_f` ще й прибирав останній шанс помітити порожнечу.
+           # ⛔ Величина не має ВИЗНАЧЕННЯ, доки кластер несе кілька контрактів
+           # одночасно, а mint-рядок не має посилання на контракт (`00_07` ARCH.103),
+           # тож підставити сюди кластерну суму означало б замінити фабрикацію
+           # підміною — інша множина під тим самим підписом.
+           if @contract.emitted_tokens.nil?
+             span(class: "text-2xl font-light text-status-warning-text") { t("ui.measurement.not_measured") }
+           else
+             span(class: "text-6xl font-light text-emerald-400") { @contract.emitted_tokens.to_f.round(2) }
+             span(class: "text-xl text-emerald-600 font-mono ml-2") { t(".yield_unit") }
+           end
          end
       end
     end

@@ -22,9 +22,16 @@ module Api
         @pagy, @contracts = pagy(scope)
 
         # Агрегуємо дані для Phlex-дашборду, використовуючи твою логіку
+        # 🔴 [ARCH.103] `total_minted` — `nil`, і це ВИМІР, а не збій. Джерело
+        # (`naas_contracts.emitted_tokens`) має схемний `DEFAULT 0.0` і НУЛЬ писачів,
+        # тож сума завжди повертала впевнений `0`, невідрізнимий від чесного «ще не
+        # намінчено». ⛔ Дротувати писача сьогодні НЕМА КУДИ: кластер може нести
+        # кілька контрактів ОДНОЧАСНО (overlap не заборонений), а mint-рядок не має
+        # жодного посилання на контракт — тобто величина не має визначення, а не
+        # лише реалізації. Тригер повернення — присуд про семантику (`00_07` ARCH.103).
         @stats = {
           total_contracted: scope.sum(:total_value),
-          total_minted: scope.sum(:emitted_tokens),
+          total_minted: nil,
           # [ОПТИМІЗАЦІЯ]: SQL агрегація замість перебору масиву в Ruby
           cluster_health: calculate_cluster_health_for_scope(scope)
         }
@@ -101,7 +108,8 @@ module Api
 
         render json: {
           total_contracted: organization.naas_contracts.sum(:total_value),
-          total_tokens_minted: organization.naas_contracts.sum(:emitted_tokens),
+          # [ARCH.103] `nil` = не виміряно (дім рішення — `#index` вище).
+          total_tokens_minted: nil,
           # [ARCH.84] Скаляр лишається тим, що описує клієнтський контракт (`07_01`,
           # шкала 0..1) — але тепер він **nullable**: `null` = не виміряно, і це не
           # те саме, що виміряний 0.0. Дві ноги покриття додано, бо саме вони не
@@ -151,11 +159,17 @@ module Api
         Cluster.health_coverage(Cluster.where(id: cluster_ids))
       end
 
-      # [DYNAMIC PRICE]: Заміна хардкоду на Oracle Service
-      def calculate_attested_value(org)
-        # Ціна SCC тепер динамічна, підтягується з DEX через наш сервіс
-        current_price = PriceOracleService.current_scc_price
-        org.naas_contracts.sum(:emitted_tokens) * current_price
+      # 🔴 [ARCH.103] Найгостріший сайт класу в дереві: це була ДОЛАРОВА ОЦІНКА
+      # ПОРТФЕЛЯ, і вона структурно дорівнювала нулю завжди — `sum(:emitted_tokens)`
+      # по колонці без жодного писача, помножена на живу ціну з оракула. Тобто
+      # єдиний правдивий множник у виразі створював враження виміру: ціна СПРАВДІ
+      # тягнулась із DEX, тож число виглядало обчисленим, а не заповненим.
+      # ⚠️ Оракул тут більше не смикаємо навмисно — зовнішній виклик заради
+      # множення на невідоме є витратою без результату, і його тиша ще й читалась
+      # би як «оцінка не працює», ховаючи справжню причину.
+      # 🔓 Повертати разом із семантикою `emitted_tokens` (`00_07` ARCH.103).
+      def calculate_attested_value(_org)
+        nil
       end
     end
   end

@@ -1396,11 +1396,11 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | Поле | Тип | Значення |
 |---|---|---|
 | `total_contracted` | decimal | Σ `total_value` активних контрактів організації — **USD**, плата за послугу ([`07_01 §5`](07_01_Nature_as_a_Service_Contracts)), не токени |
-| `total_tokens_minted` | decimal | Σ `emitted_tokens` — **SCC** |
+| `total_tokens_minted` | decimal \| **null** | Σ `emitted_tokens` — **SCC**. `null` = не виміряно (ARCH.103): джерело без писача, семантика відкрита |
 | `cluster_health` | float \| **null** | Середнє `clusters.health_index` по кластерах організації, шкала **0..1** (не відсоток — у відсоток переводить в'ю). **`null` = не виміряно**, і це НЕ те саме, що виміряний `0.0` |
 | `clusters_measured` | integer | Скільки кластерів дали вимір за добу звіту |
 | `clusters_total` | integer | Скільки кластерів у наборі взагалі |
-| `attested_value_usd` | decimal | `emitted_tokens × PriceOracleService.current_scc_price` |
+| `attested_value_usd` | decimal \| **null** | Доти `emitted_tokens × PriceOracleService.current_scc_price` — доларова оцінка портфеля, структурно завжди `0`, бо перший множник без писача. Тепер `null`, і оракул НЕ смикається (ARCH.103) |
 
 > ⚡ **`cluster_health` без пари `measured`/`total` — незавершене твердження [ARCH.84].** Середнє рахується по **виміряній підмножині** (SQL `AVG` мовчки пропускає `NULL`), тож один виміряний кластер зі ста дасть чесне число про один і подасть його як твердження про сто. Клієнт МУСИТЬ мати чим це здисконтувати. Три стани розводяться так: `clusters_total == 0` → міряти нема чого · `total > 0 && measured == 0` → кластери є, жоден не виміряно · `measured < total` → часткове покриття.
 >

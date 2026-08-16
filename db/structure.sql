@@ -1377,7 +1377,7 @@ CREATE TABLE public.naas_contracts (
     status integer,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    emitted_tokens numeric DEFAULT 0.0,
+    emitted_tokens numeric,
     cancellation_terms jsonb DEFAULT '{}'::jsonb,
     cancelled_at timestamp(6) without time zone,
     hadron_asset_id character varying
@@ -6919,6 +6919,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260817090000'),
 ('20260816120000'),
 ('20260815200000');
 
