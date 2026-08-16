@@ -1531,6 +1531,39 @@ TEST(test_acoustic_packing_uint8_max) {
  * тест б'є по справжньому коду, не по копії (freeze-contract на < і −15/4000). */
 #include "../common/tx_defer.h"
 
+/* [ARCH.102] One-Home: той самий ледж, що прошивка
+ * (firmware/common/acoustic_ledger.h). Пінить не арифметику, а ПОСЛІДОВНІСТЬ:
+ * лічильник споживає лише те, що доставлено, тож пробудження, яке відклало TX
+ * (мороз) або відправило grace-hello замість телеметрії, більше не з'їдає
+ * зафіксовану подію. Доти обнулення стояло у Фазі 2 — до того, як стане
+ * відомо, чи кадр узагалі поїде, — і на дроті величина була рівно 0 або 1. */
+#include "../common/acoustic_ledger.h"
+
+TEST(test_acoustic_ledger_consumes_only_delivered) {
+    ASSERT_EQ(Acoustic_Ledger_Consume(1, 1), 0);
+    ASSERT_EQ(Acoustic_Ledger_Consume(3, 3), 0);
+}
+
+/* 🔴 ЄДИНИЙ приклад цієї групи, що РОЗРІЗНЯЄ ледж від старого обнулення —
+ * мутація «завжди 0» червонить рівно його. Решта два лишаються зеленими на
+ * обох реалізаціях і тому є контрактом тотальності, не доказом семантики.
+ *
+ * ⚠️ Стеля названа чесно: сама ПОСЛІДОВНІСТЬ (пробудження без TX не з'їдає
+ * подію) живе в control-flow `main.c` — знімок у Фазі 2, споживання у Фазі 4
+ * під `telemetry_sent`, — і host-сюїта туди не дістає за побудовою. Приклад,
+ * який моделював би цикл локально, пінив би власну модель, а не прошивку:
+ * така спроба тут була і мутацію ПЕРЕЖИЛА, тому знята. */
+TEST(test_acoustic_ledger_keeps_remainder) {
+    /* Знімок узяв 2, а поки кадр летів, детектор дорахував ще одну. */
+    ASSERT_EQ(Acoustic_Ledger_Consume(3, 2), 1);
+}
+
+TEST(test_acoustic_ledger_total_on_overshoot) {
+    /* Тотальність: від'ємного залишку не буває. */
+    ASSERT_EQ(Acoustic_Ledger_Consume(2, 5), 0);
+    ASSERT_EQ(Acoustic_Ledger_Consume(0, 1), 0);
+}
+
 TEST(test_tx_defer_cold_and_low_vcap) {
     /* -20°C, 3500 mV → MUST defer */
     ASSERT_TRUE(Should_Defer_TX(-20, 3500));
@@ -5568,6 +5601,11 @@ int main(void)
     RUN(test_acoustic_sat_inc_ramp_to_max);
     RUN(test_acoustic_packing_uint8_direct);
     RUN(test_acoustic_packing_uint8_max);
+
+    printf("\n  Acoustic event ledger (ARCH.102):\n");
+    RUN(test_acoustic_ledger_consumes_only_delivered);
+    RUN(test_acoustic_ledger_keeps_remainder);
+    RUN(test_acoustic_ledger_total_on_overshoot);
 
     printf("\n  Temperature-Based TX Deferral (FW.10):\n");
     RUN(test_tx_defer_cold_and_low_vcap);

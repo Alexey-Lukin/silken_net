@@ -61,7 +61,16 @@ module SilkenNet
     DELTA_T_FAST_S = 600
     DELTA_T_SLOW_S = 7200
 
+    # [ARCH.102] «Метаболізм не виміряно» — сентинел, не число (дім значення й
+    # підстави — `bio_contract.rb`). Пристрій віддає його, коли guard'и wall-time
+    # спрацювали або EMA ще не прогрілась; тоді при `status = 0` на дроті стоїть
+    # `growth_points = 0`. Дзеркало мусить давати ТЕ САМЕ, інакше DCI-звірка
+    # оголосила б розходженням якраз чесну відмову.
+    DELTA_T_UNKNOWN_S = 0
+
     def self.expected_homeostasis_gp(ema_delta_t_s)
+      return 0 if ema_delta_t_s == DELTA_T_UNKNOWN_S
+
       m  = (DELTA_T_SLOW_S - ema_delta_t_s).to_f / (DELTA_T_SLOW_S - DELTA_T_FAST_S)
       m  = m.clamp(0.0, 1.0)
       gp = (GP_HOMEO_MIN + (m * (GP_HOMEO_MAX - GP_HOMEO_MIN))).round

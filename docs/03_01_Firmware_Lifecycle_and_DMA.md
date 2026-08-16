@@ -413,11 +413,11 @@ Offset | Size | Field            | Значення
 Після пакування:
 
 ```c
-// [FW.28] Atomic read-and-clear: захист від Race Condition між DMA ISR та main loop
-// (ISR може збільшити acoustic_events між перевіркою та скиданням у main loop)
+// [FW.28] Атомарне зчитування — критична секція проти PVD/panic-контекстів,
+// що читають лічильник. [ARCH.102] Знімок БЕЗ обнулення: споживає лише
+// успішна передача (Фаза 4), відніманням знімка.
 __disable_irq();
 uint8_t acoustic_snapshot = acoustic_events;
-acoustic_events = 0;
 __enable_irq();
 
 lora_payload[7] = acoustic_snapshot;
@@ -428,16 +428,15 @@ lora_payload[7] = acoustic_snapshot;
 uint8_t acoustic_events = 0;                        // [FW.22] Saturating uint8_t
 if (acoustic_events < 255) acoustic_events++;        // Saturating increment (no overflow)
 ```
-При пакуванні — атомарне зчитування та скидання (FW.28):
+При пакуванні — атомарне зчитування (FW.28); споживання перенесено на успішний TX ([ARCH.102](00_07_Action_Plan_Tracker)):
 ```c
-// [FW.28] __disable_irq() guard — запобігає race condition з DMA ISR
+// [FW.28] __disable_irq() guard — критична секція проти читачів з PVD/panic
 __disable_irq();
-uint8_t acoustic_snapshot = acoustic_events;
-acoustic_events = 0;
+uint8_t acoustic_snapshot = acoustic_events;         // [ARCH.102] без обнулення
 __enable_irq();
 lora_payload[7] = acoustic_snapshot;                 // Direct assignment (no clamping needed)
 ```
-FW.22 переміщає захист від overflow на рівень інкременту (тип `uint8_t` фізично не може перевищити 255). FW.28 гарантує що жодна кавітаційна подія не втрачається між читанням і скиданням у main loop.
+FW.22 переміщає захист від overflow на рівень інкременту (тип `uint8_t` фізично не може перевищити 255). FW.28 гарантує, що подія не втрачається між читанням і пакуванням. **[ARCH.102]** Обнулення тут більше НЕ стоїть: доти воно спрацьовувало на кожному проході циклу — до того, як стане відомо, чи кадр узагалі поїде, — тож подія, зафіксована в циклі з відкладеним TX або grace-hello, зникала, а на дроті величина зводилась до 0/1. Тепер лічильник — **ледж**: споживає рівно доставлене (`firmware/common/acoustic_ledger.h`), решта доживає до наступного успішного uplink'а й переживає STOP2 у DR0.
 
 ---
 

@@ -41,6 +41,10 @@
 
 /* [E.63] Metabolic growth — recharge vigor → growth_points (monotonic).
  * Calibration-pending placeholders (bench recharge curve, RUNBOOK §3.3). */
+/* [ARCH.102] Сентинел «метаболізм не виміряно» — дзеркало
+ * Attractor::DELTA_T_UNKNOWN_S. Нуль секунд між пробудженнями не є інтервалом
+ * перезаряду, тож значення вільне й не забирає жодного досяжного виміру. */
+#define DELTA_T_UNKNOWN_S 0
 #define DELTA_T_FAST_S   600     /* <= → m = 1.0 (peak vigor) */
 #define DELTA_T_SLOW_S   7200    /* >= → m = 0.0 (minimal)    */
 #define GP_HOMEO_MIN     5
@@ -138,6 +142,13 @@ static uint8_t evaluate_and_pack(uint32_t seed, int8_t temp, uint8_t acoustic,
         growth_points = 1;
     } else if (z_val > anomaly_ceiling) {
         status = BIO_STATUS_ANOMALY;
+        growth_points = 0;
+    } else if (delta_t_s == DELTA_T_UNKNOWN_S) {
+        /* [ARCH.102] Гомеостаз виміряно, метаболізм — ні: емісія без доказу
+         * росту не нараховується. Пара (status=0, GP=0) вільна, бо виміряний
+         * гомеостаз починається з GP_HOMEO_MIN, а нуль у полі балів доти
+         * належав лише аномалії (status=2). */
+        status = BIO_STATUS_HOMEOSTASIS;
         growth_points = 0;
     } else {
         status = BIO_STATUS_HOMEOSTASIS;
@@ -406,6 +417,34 @@ static void test_gp_responds_to_recharge_status_does_not(void) {
     }
 }
 
+/* [ARCH.102] Пара «не виміряно ⊥ виміряний»: доти guard-и wall-time і
+ * непрогріта EMA віддавали BASELINE_DELTA_T_S = 60, а той мапиться у
+ * metabolic_health = 1.0 → GP = МАКСИМУМ. Тобто відмова виміряти мінтила
+ * найбільше. Тепер сентинел дає нуль балів, а СПРАВЖНІЙ вимір 60 с (дуже
+ * жваве дерево на лабораторній потужності) і далі дає максимум — без другої
+ * половини фікс не відрізнити від «просто зрізали жвавість». */
+static void test_unknown_delta_t_yields_no_growth(void) {
+    uint8_t r = evaluate_and_pack(12345, 20, 5, DELTA_T_UNKNOWN_S);
+    uint8_t status = (r >> 5) & 0x03;
+
+    if (status == BIO_STATUS_HOMEOSTASIS) {
+        ASSERT((r & 0x1F) == 0, "test_unknown_delta_t_gp_is_zero");
+    } else {
+        ASSERT(0, "test_unknown_delta_t_fixture_left_homeostasis");
+    }
+}
+
+static void test_measured_sixty_seconds_still_peaks(void) {
+    uint8_t r = evaluate_and_pack(12345, 20, 5, 60);
+    uint8_t status = (r >> 5) & 0x03;
+
+    if (status == BIO_STATUS_HOMEOSTASIS) {
+        ASSERT((r & 0x1F) == GP_HOMEO_MAX, "test_measured_60s_gp_is_max");
+    } else {
+        ASSERT(0, "test_measured_60s_fixture_left_homeostasis");
+    }
+}
+
 /* ════════════════════════════════════════════════════════════════════
  * EVALUATE & PACK (Integration)
  * ════════════════════════════════════════════════════════════════════ */
@@ -538,6 +577,8 @@ int main(void) {
     printf("\n  [E.63] Decoupling (Z independent of metabolism):\n");
     test_z_axis_independent_of_metabolism();
     test_gp_responds_to_recharge_status_does_not();
+    test_unknown_delta_t_yields_no_growth();
+    test_measured_sixty_seconds_still_peaks();
 
     printf("\n  Evaluate & Pack (Integration):\n");
     test_evaluate_pack_normal();

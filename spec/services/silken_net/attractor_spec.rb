@@ -200,4 +200,30 @@ RSpec.describe SilkenNet::Attractor do
       expect(status_div).to be_empty, "bio_status divergence (real fw ↔ backend): #{status_div.first(3)}"
     end
   end
+
+  # [ARCH.102] Дзеркало сентинела «метаболізм не виміряно». Дім значення й
+  # підстави — `firmware/bio_contracts/bio_contract.rb`; тут доводиться, що
+  # DCI-звірка не оголосить розходженням саме чесну відмову пристрою.
+  #
+  # 🔴 Чому це money-path: доти guard-и wall-time і непрогріта EMA віддавали
+  # `BASELINE_DELTA_T_S = 60`, а `metabolic_health(60)` = 1.08 → clamp 1.0 →
+  # GP = `GP_HOMEO_MAX`. Тобто відмова виміряти нараховувала МАКСИМУМ балів,
+  # які йдуть у `Wallet#credit!` і в `leaf0` тижневого L1-якоря.
+  describe ".expected_homeostasis_gp" do
+    it "credits nothing when the metabolism was not measured" do
+      expect(described_class.expected_homeostasis_gp(described_class::DELTA_T_UNKNOWN_S)).to eq(0)
+    end
+
+    # ⊥ Ліхтар: сентинел не сміє зрізати ЖВАВІСТЬ. Виміряні 60 с — це дуже
+    # швидкий перезаряд, і він і далі дає максимум; без цієї половини фікс
+    # не відрізнити від «просто занизили бали».
+    it "still peaks on a genuinely measured fast recharge" do
+      expect(described_class.expected_homeostasis_gp(60)).to eq(described_class::GP_HOMEO_MAX)
+    end
+
+    it "keeps the measured band between the calibration thresholds" do
+      expect(described_class.expected_homeostasis_gp(described_class::DELTA_T_SLOW_S))
+        .to eq(described_class::GP_HOMEO_MIN)
+    end
+  end
 end

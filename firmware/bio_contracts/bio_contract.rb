@@ -46,6 +46,19 @@ module SilkenNet
     BASELINE_DELTA_T_S = 60
     NOMINAL_VCAP_MV    = 3300
 
+    # [ARCH.102] «Метаболізм не виміряно» — окремий СТАН, не число. Нуль секунд
+    # між пробудженнями не є інтервалом перезаряду в жодному прочитанні (ні як
+    # вимір, ні як фізика), тож він вільний під сентинел і не забирає жодного
+    # досяжного значення. Guard-и `wall_time.h` (cold-start · зсув годинника
+    # назад · стрибок епохи · HAL-збій) і непрогріта EMA віддають САМЕ його.
+    #
+    # 🔴 Чому це несуче: доти ті ж гілки віддавали `BASELINE_DELTA_T_S = 60`,
+    # поданий як «нейтральний», — а `metabolic_health(60)` = 1.08 → clamp 1.0 →
+    # `growth_points = GP_HOMEO_MAX`. Тобто відмова виміряти мінтила МАКСИМУМ,
+    # і на кремнії це не крайній випадок: `Wall_Seconds_Now()` повертає 0 до
+    # LSE/RTC bring-up (FW.49), отже cold-start-гілка спрацьовує щоцикла.
+    DELTA_T_UNKNOWN_S  = 0
+
     # Sole entry-point: takes initial (x, y, z) directly. Returns
     # [z, x_final, y_final, z_final] for RTC persistence. [E.63] Чистий
     # хаос — без delta_t/vcap (метаболізм перенесено у growth_points).
@@ -142,6 +155,15 @@ module SilkenNet
       elsif z_val > anomaly_ceiling
         status = 2            # Аномалія (вихід за temp-обвідну — справжній зрив)
         growth_points = 0     # Емісія зупиняється
+      elsif delta_t_s == Attractor::DELTA_T_UNKNOWN_S
+        # [ARCH.102] Гомеостаз ВИМІРЯНО (Лоренц-гейт відпрацював на живих
+        # temp/acoustic), а метаболізм — НІ. Емісія без доказу росту не
+        # нараховується: `growth_points = 0` при `status = 0` — вільна пара,
+        # бо виміряний гомеостаз починається з `GP_HOMEO_MIN`, а нуль у полі
+        # балів доти належав лише аномалії (`status = 2`). Тож бекенд і людина
+        # розрізняють «зрив» від «не міряли» за СТАТУСОМ, не за балами.
+        status = 0
+        growth_points = 0
       else
         status = 0            # Гомеостаз (здоровий хаос)
         # [E.63] growth_points = метаболічна жвавість (швидкість перезаряду),

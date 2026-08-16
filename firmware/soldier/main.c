@@ -44,6 +44,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include "../common/tdma_schedule.h" // [ARCH.26 L2] розклад синхронних вікон з маяка (One-Home)
 #include "../common/cad_sniff.h"     // [ARCH.26 L3] CAD-нюх + PANIC-преамбула (One-Home)
 #include "../common/tx_defer.h"      // [FW.10] зимовий кенозис TX: Should_Defer_TX (One-Home)
+#include "../common/acoustic_ledger.h" // [ARCH.102] ледж акустики: споживає лише доставлене (One-Home)
 
 // Підключаємо скомпільовану нейромережу TinyML.
 // Якщо реальної моделі ще немає (модель ще не #include'нута → fallback; docs/03_03 §4) на
@@ -110,6 +111,12 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 // заморожений HAL_GetTick міряв лише active-час → m(delta_t) ≈ максимум
 // у ВСІХ дерев → over-mint Proof-of-Growth. Guard-пороги дельти:
 #define BASELINE_DELTA_T_S        60u        // нейтральний baseline (= mruby BASELINE_DELTA_T_S)
+// [ARCH.102] «Метаболізм не виміряно» — сентинел, дзеркало mruby
+// Attractor::DELTA_T_UNKNOWN_S. Нуль секунд між пробудженнями не є інтервалом
+// перезаряду в жодному прочитанні, тож значення вільне. Guard-и wall-time і
+// непрогріта EMA віддають САМЕ його: доти вони віддавали baseline 60, який
+// mruby мапить у growth_points = МАКСИМУМ (див. bio_contract.rb).
+#define DELTA_T_UNKNOWN_S         0u
 #define DELTA_T_MAX_PLAUSIBLE_S   604800u    // 7 діб: довше = стрибок епохи (перший sync) / wrap
 #define LORA_RX_TIMEOUT_MS        500        // Таймаут прийому LoRa (мс)
 #define LORA_RX_LOOP_MS           600        // Максимальний час очікування пакета (мс)
@@ -2078,9 +2085,12 @@ int main(void)
     // (~секунди) → m(delta_t) ≈ максимум у всіх → over-mint. Guard-и дельти
     // (cold-start / зсув назад / стрибок епохи при першому sync) — wall_time.h.
     // wall_now == 0 (HAL-збій) → cold-start гілка guard'а → baseline.
+    // [ARCH.102] Guard'и віддають СЕНТИНЕЛ «не виміряно», а не «нейтральні» 60 с:
+    // ті 60 мапились у `metabolic_health` = 1.0, тобто відмова виміряти мінтила
+    // МАКСИМУМ балів. Дім значення й підстави — `bio_contracts/bio_contract.rb`.
     uint32_t current_time = Wall_Seconds_Now();
     delta_t_seconds = Silken_Wall_Delta_Seconds(current_time, last_wakeup_timestamp,
-                                                BASELINE_DELTA_T_S,
+                                                DELTA_T_UNKNOWN_S,
                                                 DELTA_T_MAX_PLAUSIBLE_S);
     last_wakeup_timestamp = current_time;
 
@@ -2112,7 +2122,12 @@ int main(void)
     // [FW.21] Оновлюємо фільтр пульсу (delta_t / vcap) — стан живе в RTC DR10-12,
     // зчитано в Phase 0 (BOOT). delta_t чесний лише після FW.49 (wall-clock);
     // vcap — VDDA-проксі мВ до живого Vcap-каналу (FW.50 bench).
-    EMA_Update(delta_t_seconds, vcap_voltage);
+    // [ARCH.102] Не годуємо фільтр НЕвиміром: інакше EMA «прогрівається» на
+    // сентинелі й починає віддавати число, за яким виміру не стояло — тобто
+    // фабрикація повертається на крок пізніше, вже під виглядом згладженої.
+    if (delta_t_seconds != DELTA_T_UNKNOWN_S) {
+        EMA_Update(delta_t_seconds, vcap_voltage);
+    }
 
     // 3. Квантовий Хаос (Зерно для mesh anti-pingpong, TX jitter, CoAP nonce)
     // [SEC.11 / FW.30] chaos_seed більше НЕ використовується для Lorenz attractor.
@@ -2236,9 +2251,15 @@ int main(void)
     // [FW.28] Атомарне хапання звуку: замикаємо вікно між ISR та пакуванням
     // на один міг. Жоден крик ксилеми не розчиниться між читанням і обнуленням —
     // переривання вимкнені рівно на два рядки, а потім одразу відчиняються.
+    // [ARCH.102] Знімок БЕЗ обнулення. Обнуляє лише УСПІШНА передача телеметрії
+    // (нижче, Фаза 4) — доти лічильник тут скидався на КОЖНОМУ проході, тобто
+    // (а) на дроті він завжди був 0 або 1, хоч і σ-таблиця `03_04`, і бекендні
+    // пороги писалися під семантику «подій за інтервал»; (б) події, зафіксовані
+    // в циклі, який відклав TX по морозу (`Should_Defer_TX`) або відправив
+    // grace-hello замість телеметрії, ЗНИКАЛИ безслідно. Тепер незʼїдений
+    // залишок доживає до Кенозису й лягає в DR0 разом із рештою стану.
     __disable_irq();
     uint8_t acoustic_snapshot = acoustic_events;
-    acoustic_events = 0;
     __enable_irq();
 
     // [ARCH.41-B/C] Час невідомий: ні beacon'а від народження (cold-boot після
@@ -2291,7 +2312,10 @@ int main(void)
     // metabolic_health, і у wire-байти 20..21. Обчислюється ДО гілкування:
     // VM_ERROR-кадр (mruby скип) теж мусить нести чесне поточне значення,
     // а не залишок минулого циклу.
-    uint32_t delta_t_for_lorenz = BASELINE_DELTA_T_S;
+    // [ARCH.102] До прогріву EMA метаболізм НЕ виміряно — і це сентинел, а не
+    // baseline: `BASELINE_DELTA_T_S` тут давав GP = максимум на кожному вузлі,
+    // що ще не набрав `EMA_WARMUP_CYCLES` зразків.
+    uint32_t delta_t_for_lorenz = DELTA_T_UNKNOWN_S;
     uint16_t vcap_for_lorenz    = 3300u;     // nominal (NOMINAL_VCAP_MV; reserved)
     if (EMA_Is_Warmed_Up()) {
         uint32_t ema_s = EMA_Get_DeltaT_Sec();
@@ -2450,6 +2474,10 @@ int main(void)
         // (замість телеметрії — Королеві потрібен uplink для OTA-рефлексу);
         // cooldown належить сплячому drift-watchdog'у (0x56 ПОВЕРХ телеметрії).
     } else {
+        // [ARCH.102] Прапорець спільний для обох збірок: у CCM-гілці передача
+        // умовна (білд кадру може не вдатись), у ECB — безумовна, а лічильник
+        // мусить споживатись рівно там, де кадр справді пішов.
+        uint8_t telemetry_sent = 0u;
 #if FW2_CCM_ENABLED
         // [FW.2] Wire-rev2: телеметрія = 28B CCM замість 16B ECB. Джерела —
         // ті САМІ живі значення, що вже лягли в lora_payload (байт-парність
@@ -2484,11 +2512,23 @@ int main(void)
                                           wire_ema_delta_t_s /* [E.63 (г)] = вхід GP */,
                                           ccm_air) == HAL_OK) {
             Radio.Send(ccm_air, FW2_CCM_AIR_PACKET_LEN);
+            telemetry_sent = 1u;
         }
 #else
         HAL_CRYP_Encrypt(&hcryp, (uint32_t*)lora_payload, 4, (uint32_t*)encrypted_payload, 1000);
         Radio.Send(encrypted_payload, 16);
+        telemetry_sent = 1u;
 #endif
+
+        // [ARCH.102] Спожити рівно СТІЛЬКИ, скільки поїхало на дріт. Віднімання,
+        // не обнулення: між знімком і передачею лічильник не росте (інкремент
+        // живе у Фазі 1.5 того ж проходу), але віднімання лишається правдивим і
+        // тоді, коли це зміниться. Незʼїдений залишок доживає до наступного TX.
+        if (telemetry_sent) {
+            __disable_irq();
+            acoustic_events = Acoustic_Ledger_Consume(acoustic_events, acoustic_snapshot);
+            __enable_irq();
+        }
 
         // [FW.20-S2 3/5] Сторожовий пес часу подає голос: ≈12 год пробуджень
         // без голосу Королеви → зойк 0x56 ПОВЕРХ телеметрії (перший — одразу,
