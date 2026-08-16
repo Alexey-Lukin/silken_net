@@ -165,7 +165,13 @@ module Api
       # [ARCH.90] `total_premiums_usdc` звідси знято разом із самим полем: блок
       # тепер суто on-chain, тож `.except(...)` на кожному rescue-шляху більше не
       # потрібен — форма fallback'у збігається з формою успіху, і розійтись їм ніде.
-      NETWORK_EMISSION_DEFAULTS = { total_minted_scc: 0, total_burned_scc: 0, net_deflation: 0 }.freeze
+      # 🔴 [ARCH.103] Fallback віддає `nil`, а НЕ нулі: збій subgraph — це «не
+      # виміряно», і жодна з трьох величин на ньому не стає нулем. Доти недоступність
+      # зовнішнього джерела друкувалась у фінзвіті як «намінтовано 0 / спалено 0 /
+      # дефляція 0» — тобто найспокійніший можливий стан протоколу, невідрізнимий
+      # від справжнього. ⚠️ Форма fallback'у й далі збігається з формою успіху
+      # (ті самі три ключі) — змінилось лише те, що вони більше нічого не СТВЕРДЖУЮТЬ.
+      NETWORK_EMISSION_DEFAULTS = { total_minted_scc: nil, total_burned_scc: nil, net_deflation: nil }.freeze
 
       # [SEC.1] Премія — off-chain USDC-факт (`NaasContract`), НЕ on-chain подія:
       # доти `total_premiums_usdc` читав ніколи-не-емітовану `PremiumPaid` → вічний 0

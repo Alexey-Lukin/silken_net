@@ -166,14 +166,18 @@ RSpec.describe Api::V1::DashboardController, type: :request do
         expect(response.parsed_body["global_onchain_carbon"]).to eq(1_450_000)
       end
 
-      it "falls back to 0 when The Graph service raises an error" do
+      # 🔴 [ARCH.103] Доти цей приклад ВИМАГАВ фабрикації, і казав це у власній
+      # назві («falls back to 0»): недоступний subgraph друкувався як «протокол
+      # намінтував нуль» — найспокійніший можливий стан, невідрізнимий від справжнього.
+      it "reports the platform figure as unmeasured when The Graph service raises an error" do
         allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_total_carbon_minted)
           .and_raise(TheGraph::QueryService::QueryError, "The Graph node is syncing")
 
         get "/dashboard", headers: headers, as: :json
 
         expect(response).to have_http_status(:ok)
-        expect(response.parsed_body["global_onchain_carbon"]).to eq(0)
+        expect(response.parsed_body).to have_key("global_onchain_carbon")
+        expect(response.parsed_body["global_onchain_carbon"]).to be_nil
       end
     end
 

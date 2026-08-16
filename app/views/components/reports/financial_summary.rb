@@ -101,7 +101,12 @@ module Reports
     def tx_row(label, count, color_class = nil)
       tr(class: "hover:bg-emerald-950/10") do
         td(class: tokens("p-4", color_class || "text-emerald-500")) { label }
-        td(class: tokens("p-4 text-right font-bold", color_class || "text-gray-300")) { count.to_s }
+        # [ARCH.103] `.to_s` на `nil` дає ПОРОЖНЮ комірку під підписом «Total Minted» —
+        # мовчання, яке читається як нуль. `nil` тут приходить із fallback'у subgraph
+        # (`NETWORK_EMISSION_DEFAULTS`) і означає «не виміряно», а не «нуль подій».
+        td(class: tokens("p-4 text-right font-bold", color_class || "text-gray-300")) do
+          count.nil? ? t("ui.measurement.not_measured") : count.to_s
+        end
       end
     end
 

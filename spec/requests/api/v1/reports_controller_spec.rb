@@ -170,16 +170,14 @@ RSpec.describe Api::V1::ReportsController, type: :request do
           .and_raise(TheGraph::QueryService::QueryError, "connection refused")
       end
 
-      it "returns zero defaults for network_emission" do
+      # 🔴 [ARCH.103] «zero defaults» було не описом поведінки, а ВИМОГОЮ до неї.
+      it "reports all three network figures as unmeasured" do
         get "/reports/financial_summary", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
         ry = response.parsed_body.dig("data", "network_emission")
-        expect(ry).to include(
-          "total_minted_scc" => 0,
-          "total_burned_scc" => 0,
-          "net_deflation" => 0
-        )
+        expect(ry).to include("total_minted_scc", "total_burned_scc", "net_deflation")
+        expect(ry.values_at("total_minted_scc", "total_burned_scc", "net_deflation")).to all(be_nil)
       end
     end
 
@@ -189,16 +187,13 @@ RSpec.describe Api::V1::ReportsController, type: :request do
           .and_raise(StandardError, "network timeout")
       end
 
-      it "returns zero defaults for network_emission on generic error" do
+      it "reports all three network figures as unmeasured on generic error" do
         get "/reports/financial_summary", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
         ry = response.parsed_body.dig("data", "network_emission")
-        expect(ry).to include(
-          "total_minted_scc" => 0,
-          "total_burned_scc" => 0,
-          "net_deflation" => 0
-        )
+        expect(ry).to include("total_minted_scc", "total_burned_scc", "net_deflation")
+        expect(ry.values_at("total_minted_scc", "total_burned_scc", "net_deflation")).to all(be_nil)
       end
     end
 
@@ -208,7 +203,7 @@ RSpec.describe Api::V1::ReportsController, type: :request do
           .and_raise(TheGraph::QueryService::QueryError, "connection refused")
       end
 
-      it "still reports DB premiums while minted/burned fall back to 0" do
+      it "still reports DB premiums while the subgraph figures stay unmeasured" do
         # [SEC.1] Premiums are DB-sourced, decoupled from the subgraph — a GraphQL
         # outage zeroes minted/burned/net_deflation but NOT a known premium.
         # [ARCH.90] Розв'язка тепер СТРУКТУРНА, а не мерджем: премія живе окремим
@@ -223,11 +218,8 @@ RSpec.describe Api::V1::ReportsController, type: :request do
         expect(response.parsed_body.dig("data", "insurance_premiums_paid_usdc")).to eq(10_000)
 
         ry = response.parsed_body.dig("data", "network_emission")
-        expect(ry).to include(
-          "total_minted_scc" => 0,
-          "total_burned_scc" => 0,
-          "net_deflation" => 0
-        )
+        expect(ry).to include("total_minted_scc", "total_burned_scc", "net_deflation")
+        expect(ry.values_at("total_minted_scc", "total_burned_scc", "net_deflation")).to all(be_nil)
       end
     end
   end

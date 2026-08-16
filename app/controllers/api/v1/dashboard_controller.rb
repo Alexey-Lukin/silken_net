@@ -126,8 +126,14 @@ module Api
             TheGraph::QueryService.new.fetch_total_carbon_minted
           end
         end
+      # 🔴 [ARCH.103] `nil`, а не `0`: недоступний subgraph — це «не виміряно», і
+      # мовчазний нуль тут стверджував би, що протокол не намінтував нічого. ⚠️ Ключ
+      # `global_onchain_carbon` живе в org-скоупленому `@stats`, хоча величина
+      # PLATFORM-WIDE — сусіднє `minted_scc` поруч рахує ЦЮ організацію з нашої БД.
+      # Три різні відповіді на близькі питання (org-DB · protocol-subgraph · контрактна)
+      # → `00_07` ARCH.103; підпис кожної мусить називати, що саме вона рахує.
       rescue StandardError
-        0
+        nil
       end
 
       def fetch_recent_events
