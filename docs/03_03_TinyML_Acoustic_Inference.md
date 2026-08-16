@@ -552,13 +552,26 @@ Compute_LogMel(audio_buffer, logmel_features)   ← 512 семплів → 40 lo
 [✅ FW.4: розкоментовано]
 ml_event_id = Run_Inference(logmel_features, &ml_confidence) ← Інференс (40 log-mel)
         ↓
-if (ml_confidence > 0.80)                     ← Поріг 80%
+if (ml_confidence >= CRITICAL)                ← DR14, default 0.85
     │
     ├── ml_event_id == 2 (Кавітація)
     │       └── acoustic_events++              ← Лічильник для батчу
     │
-    └── ml_event_id == 3 (Пилка/Вандалізм)
-            └── Trigger_Emergency_LoRa_TX()    ← НЕГАЙНИЙ TX без сну
+    ├── ml_event_id == 3 (Пилка/Вандалізм)
+    │       ├── acoustic_events++              ← ТЕЖ інкремент
+    │       └── Trigger_Emergency_LoRa_TX()    ← НЕГАЙНИЙ TX без сну
+    │
+    └── (будь-яке CRITICAL) warning_counter = 0
+
+else if (ml_confidence >= WARNING)            ← DR13, default 0.60
+    │
+    └── ml_event_id ∈ {2, 3}
+            ├── acoustic_events++              ← ТЕЖ інкремент
+            ├── warning_counter++
+            └── 3× поспіль ⇒ Trigger_Emergency_LoRa_TX() ЛИШЕ для класу 3
+
+else                                          ← SILENCE-зона
+    └── warning_counter = 0
 ```
 
 ### 5.2 Маппінг на Payload та Backend
@@ -572,13 +585,17 @@ acoustic_events = 0; // Скидаємо лічильник після паку�
 
 | Подія | `ml_event_id` | `ml_confidence` | Дія firmware | Backend ефект |
 |-------|--------------|-----------------|--------------|---------------|
-| Тиша | 0 | будь-яка | Нічого | `lora_payload[7] == 0` |
-| Вітер | 1 | будь-яка | Нічого | `lora_payload[7] == 0` |
-| Вітер | 1 | > 0.80 | Нічого | `lora_payload[7] == 0` |
-| Кавітація | 2 | ≤ 0.80 | Нічого | `lora_payload[7] == 0` |
-| **Кавітація** | **2** | **> 0.80** | **`acoustic_events++`** | **`TelemetryLog#acoustic_events > 0`** |
-| Пилка | 3 | ≤ 0.80 | Нічого | `lora_payload[7] == 0` |
-| **Пилка/Вандалізм** | **3** | **> 0.80** | **`Trigger_Emergency_LoRa_TX()`** | **`EwsAlert` тривога** |
+| Тиша / Вітер / Фауна | 0, 1, 4 | будь-яка | Нічого (лічильник не рухається на жодному порозі) | `lora_payload[7]` без змін |
+| Кавітація | 2 | < WARNING | Нічого | `lora_payload[7]` без змін |
+| Кавітація | 2 | ≥ WARNING | `acoustic_events++` · `warning_counter++` | `TelemetryLog#acoustic_events > 0` |
+| **Кавітація** | **2** | **≥ CRITICAL** | **`acoustic_events++`** | **`TelemetryLog#acoustic_events > 0`** |
+| Пилка | 3 | < WARNING | Нічого | `lora_payload[7]` без змін |
+| Пилка | 3 | ≥ WARNING | **`acoustic_events++`** · `warning_counter++` · 3× поспіль ⇒ panic TX | `TelemetryLog#acoustic_events > 0` |
+| **Пилка/Вандалізм** | **3** | **≥ CRITICAL** | **`acoustic_events++` + `Trigger_Emergency_LoRa_TX()`** | **`EwsAlert` тривога** |
+
+> 🔴 **[ARCH.102] Лічильник НЕ «лише кавітація» — і ця таблиця доти казала протилежне.** Клас 3 інкрементує його в обох зонах; одно­порогова схема `> 0.80` вище була застарілою редакцією (пороги стали двома при FW.18 — див. §5.3 нижче й [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)). Ціна дрейфу вимірна: бекенд-коментар у `insight_generator_service` виводив із цієї сторінки гарантію **про гроші** — «this term NEVER slashes a forester for third-party logging», — тоді як стороннє лісозаготівельне пиляння лічильник таки рухає. Сьогодні лісоруба тримає лише ENV-інертність акустичного терму, а не описаний тут механізм.
+>
+> ⚠️ **Друга властивість, яку легко проґавити: значення на дроті ∈ {0,1}.** Phase 2 робить snapshot+обнулення на КОЖНОМУ проході циклу, а на пробудження припадає щонайбільше один інференс — тож «лічильник за вікно» тут метафора, а не семантика. Будь-який споживач, що порівнює це поле з порогом більшим за 1 (`> 50`, `>= 200`), недосяжний з реального заліза — стан і розвилка в [`00_07`](00_07_Action_Plan_Tracker) ARCH.102.
 
 > **🎯 Калібрування `ml_confidence` (пороги FW.18) — застереження landed-baseline:** на пристрої
 > `ml_confidence` = max-prob softmax над **INT8-dequant** логітами (`SNAM_OUT_SCALE`), а ECE / conf-
