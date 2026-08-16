@@ -23,7 +23,11 @@ module Api
           # використовуємо вже денормалізовану колонку latest_voltage_mv із таблиці trees.
           # mark_seen! оновлює latest_voltage_mv при кожному пакеті телеметрії,
           # тому середнє по активних деревах відображає поточний стан флоту точніше.
-          avg_voltage = org.trees.active.average(:latest_voltage_mv) || 0
+          # [ARCH.84] ⛔ Без `|| 0`: `AVG` мовчки пропускає NULL, тож порожній набір
+          # (жодне активне дерево ще не звітувало) віддає `nil` — і підстановка нуля
+          # друкувала на ГОЛОВНІЙ сторінці «0mV», тобто браунаут-грейд вимір усього
+          # флоту, якого ніхто не міряв. Форма зняття та сама, що в `Tree#supply_voltage_mv`.
+          avg_voltage = org.trees.active.average(:latest_voltage_mv)
 
           {
             trees: {
@@ -66,7 +70,9 @@ module Api
             # `avg_voltage` лишається — канон називає його діагностичним (просідання
             # = близькість брауноуту), і це чесне сире число без вердикту.
             energy: {
-              avg_voltage: avg_voltage.to_i
+              # ⚠️ `&.to_i`, не `.to_i`: голий виклик на `nil` віддає 0 — тобто
+              # повертав би зняту щойно підстановку через кастинг.
+              avg_voltage: avg_voltage&.to_i
             },
             global_onchain_carbon: fetch_global_onchain_carbon
           }

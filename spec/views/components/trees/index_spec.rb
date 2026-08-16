@@ -25,9 +25,9 @@ RSpec.describe Trees::Index do
   # Доти мок клав напругу І відсоток заряду одночасно (`ARCH.99` зняв другий) — комбінація,
   # недосяжна за побудовою: на тому напруженні формула дає зовсім інший відсоток, тобто
   # прод малював ЖОВТУ смугу там, де сюїта стверджувала зелену (кольорові зони протилежні).
-  # Тепер задаємо `latest_voltage_mv` (справжня колонка; `supply_voltage_mv` — проміжний метод
-  # `latest_voltage_mv || 0`), а відсоток виводить модель — кожен приклад нижче обирає
-  # напруження під ту зону, яку він пінить.
+  # Тепер задаємо `latest_voltage_mv` (справжня колонка; `supply_voltage_mv` — проміжний
+  # метод, що віддає її ЯК Є: `nil` = не виміряно, [ARCH.84] зняв тут `|| 0`), а відсоток
+  # виводить модель — кожен приклад нижче обирає напруження під ту зону, яку він пінить.
   #
   # `under_threat?` стабимо свідомо — на реальному записі це запит до `ews_alerts`,
   # тобто єдине, що тут вимагало б БД.
@@ -75,6 +75,24 @@ RSpec.describe Trees::Index do
     it "displays voltage" do
       expect(html).to include("5095")
       expect(html).to include("mV")
+    end
+
+    # [ARCH.84] Носія в цієї осі не було ЗОВСІМ — фікс «0mV → не виміряно» не
+    # червонив нічого, бо жоден приклад не подавав невиміряного дерева. Пара
+    # обовʼязкова: сама лише поява напису не відрізняє «не виміряно» від
+    # «виміряно нуль», а нуль на шині VDDA означає БРАУНАУТ, тобто найгірший
+    # можливий вимір, підставлений мовчанню.
+    it "says «not measured» instead of a brownout-grade 0mV for a silent node" do
+      rendered = render_component(cluster: cluster, trees: [ build_tree(latest_voltage_mv: nil) ], pagy: pagy)
+
+      expect(rendered).to include(I18n.t("ui.measurement.not_measured"))
+      expect(rendered).not_to include("0mV")
+    end
+
+    it "still prints a genuinely measured zero" do
+      rendered = render_component(cluster: cluster, trees: [ build_tree(latest_voltage_mv: 0) ], pagy: pagy)
+
+      expect(rendered).to include("0mV")
     end
   end
 

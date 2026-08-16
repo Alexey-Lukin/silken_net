@@ -46,7 +46,10 @@ module Dashboard
           # другий ВИВІД тієї самої формули.** Число лишається сирим і діагностичним.
           render Views::Shared::UI::StatCard.new(
             label: t(".stats.supply_voltage"),
-            value: "#{@stats[:energy][:avg_voltage]}mV"
+            # [ARCH.84] `measured_value`, а не інтерполяція: `nil` тут означає, що
+            # жодне активне дерево ще не звітувало, і доти це друкувалось «0mV» —
+            # найгіршим МОЖЛИВИМ виміром замість відсутності виміру.
+            value: measured_value(@stats[:energy][:avg_voltage], "mV", space: false)
           )
         end
 

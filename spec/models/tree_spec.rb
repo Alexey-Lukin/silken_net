@@ -135,8 +135,18 @@ RSpec.describe Tree, type: :model do
       expect(tree.supply_voltage_mv).to eq(4200)
     end
 
-    it "returns 0 when latest_voltage_mv is nil" do
+    # [ARCH.84] Доти цей приклад стверджував `eq(0)` — тобто цементував
+    # ридер-підстановку як контракт. Нуль тут не нейтральний: на шині VDDA він
+    # означає БРАУНАУТ, тож вузол, що ніколи не виходив в ефір, друкувався
+    # найгіршим МОЖЛИВИМ виміром. Пін іде парою, бо сама лише перевірка на `nil`
+    # не відрізняє «не виміряно» від «виміряно нуль».
+    it "returns nil when latest_voltage_mv is nil — не виміряно, а не браунаут" do
       tree = build(:tree, latest_voltage_mv: nil)
+      expect(tree.supply_voltage_mv).to be_nil
+    end
+
+    it "keeps a genuinely measured zero distinguishable from silence" do
+      tree = build(:tree, latest_voltage_mv: 0)
       expect(tree.supply_voltage_mv).to eq(0)
     end
   end

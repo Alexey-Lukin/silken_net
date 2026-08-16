@@ -75,7 +75,11 @@ module Trees
         # Стан енергії читається з LED вище — тиша, а не вигадана шкала.
         div(class: "flex justify-between text-micro uppercase text-gaia-text font-mono") do
           span { t(".supply_voltage") }
-          span { "#{voltage}mV" }
+          # [ARCH.84] `measured_value`, а не інтерполяція: доти дерево, яке ніколи
+          # не виходило в ефір, друкувало тут «0mV» — браунаут-грейд показник —
+          # просто під LED, що чесно показує тишу. Дві відповіді на одну величину
+          # в одному рядку; `trees/show` для неї ж уже казав «не виміряно».
+          span { measured_value(voltage, "mV", space: false) }
         end
 
         # Hover overlay зі стресом

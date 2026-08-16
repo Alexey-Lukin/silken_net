@@ -204,11 +204,16 @@ RSpec.describe Api::V1::DashboardController, type: :request do
         expect(energy.keys).to contain_exactly("avg_voltage")
       end
 
-      it "лишає сире діагностичне число, і на порожній базі воно НУЛЬ" do
+      # [ARCH.84] Назва цього приклада доти сама цементувала дефект — «на порожній
+      # базі воно НУЛЬ». Нуль на шині VDDA не нейтральний: це БРАУНАУТ, тобто
+      # найгірший можливий вимір, підставлений замість відсутності виміру, і
+      # друкувався він на ГОЛОВНІЙ сторінці. `AVG` мовчки пропускає NULL, тож
+      # порожній набір мусить лишатись `null`.
+      it "лишає сире діагностичне число, а на порожній базі віддає null — не браунаут" do
         get "/dashboard", headers: headers, as: :json
 
         expect(response).to have_http_status(:ok)
-        expect(response.parsed_body.dig("energy", "avg_voltage")).to be(0)
+        expect(response.parsed_body.dig("energy", "avg_voltage")).to be_nil
       end
 
       # ⊥ Ліхтар: число справді рахується, а не заглушене нулем назавжди.
