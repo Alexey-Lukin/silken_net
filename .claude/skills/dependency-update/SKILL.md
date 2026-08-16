@@ -119,7 +119,13 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   Hub API, and verify the digest **independently** via the registry manifest (`docker-content-digest`),
   not from the Hub JSON you just read. Sibling check worth one command: compare the tag's digest against
   its `-<suite>` variants (`4.0.6-slim` vs `4.0.6-slim-trixie`) — identical digests prove the base OS did
-  NOT shift under you, which is what would silently move `libvips`/glibc floors.
+  NOT shift under you, which is what would silently move `libvips`/glibc floors. 🔴 **And the same
+  measurement finds drift BEFORE Dependabot files anything** (2026-08-16): `ruby:4.0.6-slim` had been
+  re-pushed 08-07 under an unchanged tag (`b6505477…` → `607bf92f…`, i.e. fresh Debian trixie patches at
+  an identical Ruby version), and no docker PR existed in the open set although `docker` is one of the
+  five automated ecosystems. The bot is a convenience, not the instrument — **make "read `tag_last_pushed`
+  for the pinned base image" a standing step of the sweep**, because a digest bump is pure security patch
+  and is invisible in every version-based inventory (`bundle outdated`, `gh api releases`) by construction.
 - 🔴 **A version perimeter is WIDER than its gate, and half the hits must NOT be edited** (Ruby bump,
   2026-08-06). `git grep 4.0.5` returned **15 files** while `ruby_version_sync.rb` guards **8** mirrors.
   The rest were *historical narrative* — the PR #463 post-mortem quoted inside `ci.yml`/`docs.yml`/the
@@ -197,6 +203,24 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   or a rebase that forces CI to run again — never re-reading the tick. ⚠️ And the same asymmetry that
   makes rebase expensive applies: re-running CI restarts the quarantine clock, while the local run
   does not, so prefer the local run when the diff is small enough to apply by hand.
+- 🔴 **The RED check has a date too — and a green neighbour does not disprove it** (2026-08-16). The row
+  above says a stale green attests to a world before the CVE; the mirror is that a stale **red** attests
+  to a base that has since been fixed, and it is harder to spot because red reads as "this PR is broken".
+  Five PRs sat red on `scan_ruby` from 08-10 while `main` already carried the fix. What made the diagnosis
+  hard was that the "identical failure ⇒ root in the base" rule looked *refuted*: `#509` sentry-rails was
+  **green in the same minute** as `#507` sentry-ruby was red — same bump 6.6.2→6.7.0, same upstream. The
+  answer was in the lock diff's COMPOSITION: `#507` touched only sentry, so it left `json 2.21.1`
+  (CVE-2026-71847) in place and reddened *honestly*; `#509` happened to drag `json 2.21.2`+erb+rbs+reline+
+  zeitwerk along as passengers, and the advisory vanished with them. **So "age the DIFF, not the PR title"
+  has a third face: a passenger is sometimes not a risk but an ACCIDENTAL CURE — and then the check's
+  colour reports the diff's composition, not the bump's quality.** Diagnose by opening the failing job's
+  LOG; a cause inferred from a neighbouring commit is a guess wearing a verdict's clothes (here I blamed
+  `brakeman --ensure-latest`, which had genuinely reddened `main` three days earlier, and was wrong).
+- 🔴 **`built_at` on rubygems is DEAD as an age signal — it returns `1980-01-02`** (2026-08-16). Reproducible
+  builds normalise the gemspec timestamp, so all ten gems measured that day reported the same 1980 date.
+  A quarantine computed from it measures a file-format artefact, not a release. Use `created_at` from
+  `https://rubygems.org/api/v1/versions/<gem>.json` (the push time), and treat any age field that looks
+  identical across unrelated packages as an instrument failure, not as a finding.
 - 🔴 **A security patch can EXPOSE a latent debt rather than break you — read the failure that way first**
   (2026-07-30). `rails 8.1.3.1` "broke" boot; in truth we had `variant_processor = :vips`, libvips in
   the Dockerfile and `.variant()` in three live places — and **no `ruby-vips` gem**, so variant
@@ -219,6 +243,16 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
 - **SHA==tag verification has a wrong endpoint that reads as a mismatch** (2026-07-30):
   `git/ref/tags/<tag>` returns the SHA of the **tag OBJECT** for an annotated tag. Use
   `gh api repos/<o>/<r>/commits/<tag> --jq .sha` (or deref `git/tags/<sha>`).
+- 🔴 **The version COMMENT beside a SHA pin is a convention, and Dependabot preserves whichever form it
+  finds — so "unifying" it is a silent convention change riding a `build(deps)` subject** (2026-08-16).
+  Both forms live here on purpose-by-accident: major (`# v4`, 56×`# v7`, 15×`# v1`) and exact
+  (`# v2.20.0`, `# v0.36.0`) — and the bot wrote both, proven by `e2cd58c7`, which bumped
+  codeql-action's SHA and left its `# v4` untouched. A major comment does **not lie** when the SHA
+  resolves to v4.37.6; it names the same action at coarser granularity, so there is nothing to fix.
+  **Rule: update the comment only where its form is already exact; leave a major one as-is.** Otherwise
+  a routine bump rewrites the style of 11 lines nobody asked about. Canon states the convention as
+  `# vN` (`06_07`, OPS.10 paragraph), and no gate compares the comment against its pin — the same
+  blind spot as the `@vN`-in-prose sweep at the bottom of this file.
 - **A gate that did not RUN is not green** (2026-07-29). `Solidity passed` showed green on most PRs
   only because `dorny/paths-filter` skipped the job. The breakage above surfaced solely on the two
   PRs that touched `solidity_audit.yml` — they did not break Slither, they **made it run**. Before
@@ -255,6 +289,14 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   DSP floor like `librosa>=0.11` that protects the parity contract). in-silico has a real
   `conda-lock.yml` — that's the reproducible pin the DFT ran on; the env.yml floors are loose
   on purpose. A local conda env can drift behind the lock (re-sync with `conda-lock install`).
+  📌 **The GENERATOR is pinned too — `uv==0.12.3`, in the `requirements-conda-lock.in` header**
+  (2026-08-16). CI only *consumes* that lock (`pip install --require-hashes`), so the only thing
+  touching `uv` is a human at regeneration time, and an unpinned one rewrites row order, comments
+  and marker shape across the whole 84 KB file — turning a one-line bump into an unreadable diff.
+  `uv` is not on the machine by default: install it into a throwaway venv at the pinned version,
+  never globally. **Verify the recipe, not just the diff: a second compile must produce a
+  BYTE-IDENTICAL file** — that single check proves both the pin and that your `.in` edits (comments
+  included) did not perturb resolution.
 - **CI actions:** we major-pin `@vN` → latest patch auto-flows; only a *new major* needs a bump.
   Most stay current; check each with `gh api`. SHA-pinned actions update differently (Dependabot).
 - **Firmware/Solidity full validation is CI-gated** (ARM build + QEMU; slither). The host gates
