@@ -36,6 +36,7 @@ lv:
       ledger:
         amount: Summa
         amount_value: "+ %{amount} SCC"
+        amount_value_burn: "− %{amount} SCC"
         empty: Nav reģistrētu emisiju.
         pending_block: GAIDOŠAIS_BLOKS
         timestamp: Laika zīmogs

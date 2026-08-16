@@ -236,16 +236,16 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
         described_class.new.perform(insurance.id)
       end
 
-      # [INS.1] Не-пожежні перили (посуха/шкідник) → :inconclusive (Field Audit) → HOLD, консистентно з fire.
-      [ :severe_drought, :insect_epidemic ].each do |peril|
-        it "holds payout when the only independent alert is #{peril} at :inconclusive" do
-          confirmation.destroy
-          create(:ews_alert, cluster: cluster, tree: tree, alert_type: peril, severity: :critical, satellite_status: :inconclusive)
+      # [INS.1] Не-пожежний перил (посуха) → :inconclusive (Field Audit) → HOLD, консистентно з fire.
+      # [ARCH.102] Перилів у whitelist'і воркера ДВА (fire/drought): insect знято разом із
+      # вердиктом, якого нічим виміряти; chainsaw сюди не належить — він не страховий.
+      it "holds payout when the only independent alert is severe_drought at :inconclusive" do
+        confirmation.destroy
+        create(:ews_alert, cluster: cluster, tree: tree, alert_type: :severe_drought, severity: :critical, satellite_status: :inconclusive)
 
-          described_class.new.perform(insurance.id)
+        described_class.new.perform(insurance.id)
 
-          expect(BlockchainMintingService).not_to have_received(:call)
-        end
+        expect(BlockchainMintingService).not_to have_received(:call)
       end
     end
 

@@ -41,7 +41,6 @@ en:
       global_blackout: "🛰️ GLOBAL BLACKOUT: no telemetry arrived for %{target_date}. Possible Starlink outage or mass gateway failure — Field Audit (Cat-C), slashing NOT applied."
       hardware_decay: 'Hardware Decay: node %{did} requires replacement.'
       hydrological_stress: "💧 DROUGHT: Hydrological stress."
-      insect_epidemic: "🪲 BIO-THREAT: Acoustic pest activity (%{acoustic_events})."
       insurance_candidate_armed: 'Insurance candidate #%{id}: the AI oracle sees %{percentage}% critical trees — INDEPENDENT confirmation (dClimate satellite / Field Audit) is required before payout (dual-trigger, 05_05 §6).'
       insurance_no_data: 'Insurance oracle #%{id}: zero AiInsight for %{target_date} while trees are active (possible catastrophe / destroyed sensors). Payout NOT zeroed — Field Audit required (Category C, 05_05 §5/§6).'
       insurance_reserve_hold_aggregate_cap: 'Insurance reserve-gate HOLD [INS.2] for #%{id}: 24h internal insurance emission %{window_sum} %{token_type} exceeds the cap %{cap}. Payout stopped — reconcile exposure before a manual resolve.'
@@ -54,7 +53,6 @@ en:
       queen_silent: "👑 Queen %{uid} has been silent for %{silent_for_min} min (last contact %{last_seen_at}). Cluster without uplink — tree telemetry is not arriving."
       queen_uplink_lost: "🆘 Queen %{uid} lost ALL uplinks (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min). The cry arrived via Helium — telemetry is buffering, a visit is required."
       queen_uplink_lost_reported: "🆘 Queen %{uid} lost ALL uplinks (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min, reported_at=%{reported_at}). The cry arrived via Helium — telemetry is buffering, a visit is required."
-      seismic_anomaly: "🌋 SEISMIC: Anomalous resonance (%{acoustic_events}). DID: %{did}"
       slash_evasion_cluster: 'Slash evasion (cluster #%{cluster_id}): Category A evidence exists, but the holder moved out all SCC before the verdict was executed (requested %{requested_burn} SCC, on-chain balance ≈0). Burning is impossible — a legal/manual track is required (05_05 §3.2).'
       slash_evasion_tree: 'Slash evasion (tree %{tree_did}): Category A evidence exists, but the holder moved out all SCC before the verdict was executed (requested %{requested_burn} SCC, on-chain balance ≈0). Burning is impossible — a legal/manual track is required (05_05 §3.2).'
       slash_frozen_indeterminate_cluster: 'Slashing blocked (cluster #%{cluster_id}): Category A evidence exists, but the MAGNITUDE of the damage is indeterminate (no AiInsight data for the date). Nothing burned — Field Audit required (Category C, 05_05 §3.2/§5).'
@@ -90,10 +88,8 @@ en:
       firmware_canary_trip: Firmware Canary Trip
       firmware_fault: Firmware Fault
       firmware_reverted: Firmware Reverted
-      insect_epidemic: Insect Epidemic
       queen_offline: Queen Offline
       queen_uplink_lost: Queen Uplink Lost
-      seismic_anomaly: Seismic Anomaly
       severe_drought: Severe Drought
       system_fault: System Fault
       vandalism_breach: Vandalism Breach

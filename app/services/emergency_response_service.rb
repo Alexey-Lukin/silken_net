@@ -32,12 +32,6 @@ class EmergencyResponseService
     fire_detected: [
       { device_type: "fire_siren", payload: "ACTIVATE_SIREN", duration: 3600, relevance: 15.minutes },
       { device_type: "water_valve", payload: "OPEN_VALVE", duration: 14400, relevance: 2.hours }
-    ],
-    insect_epidemic: [
-      { device_type: "water_valve", payload: "OPEN_VALVE", duration: 3600, relevance: 6.hours }
-    ],
-    seismic_anomaly: [
-      { device_type: "seismic_beacon", payload: "ACTIVATE_BEACON", duration: 1800, relevance: 30.minutes }
     ]
   }.freeze
 

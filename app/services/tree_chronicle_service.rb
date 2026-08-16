@@ -174,14 +174,22 @@ class TreeChronicleService < ApplicationService
           .map { |tx| format_blockchain(tx) }
   end
 
+  # 🔴 [ARCH.101] Напрямок ДЕРИВУЄТЬСЯ — тут стояв захардкоджений `:minting` на
+  # КОЖЕН рядок гаманця, тож слеш-інтент (`create_slash_intent!` пише його на той
+  # самий гаманець дерева й доводить до `:confirmed`) з'являвся в хроніці як
+  # «Minted» із зеленим success-бейджем. Тобто сторінка дерева свідчила про
+  # вилучення коштів як про емісію — рівно навпаки. Три осі мусять рухатись РАЗОМ:
+  # тип (ключ підпису) · severity (тон) · іконка, інакше лишиться половина правди.
   def format_blockchain(tx)
+    burn = tx.burn?
+
     Entry.new(
       date: tx.confirmed_at || tx.created_at,
-      event_type: :minting,
-      icon: "◆",
-      title: TreeChronicle::TextFormatter.minting_title(tx),
-      description: TreeChronicle::TextFormatter.minting_description(tx),
-      severity: :stable,
+      event_type: burn ? :burning : :minting,
+      icon: burn ? "⬢" : "◆",
+      title: TreeChronicle::TextFormatter.blockchain_title(tx),
+      description: TreeChronicle::TextFormatter.blockchain_description(tx),
+      severity: burn ? :warning : :stable,
       source_type: "BlockchainTransaction",
       source_id: tx.id
     )

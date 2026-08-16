@@ -25,15 +25,14 @@ namespace :ai do
     insights.find_each do |insight|
       reasoning = insight.reasoning || {}
 
-      # Feature vector: [avg_temp, avg_vcap, avg_z, sap_deviation, max_acoustic]
+      # Feature vector: [avg_temp, avg_vcap, avg_z, max_acoustic]
       # Must match the order in InsightGeneratorService#calculate_stress_index
       avg_temp = insight.average_temperature.to_f
       avg_vcap = reasoning["avg_vcap"].to_f
       avg_z = reasoning["avg_z"].to_f
-      sap_deviation = reasoning["deviation_from_baseline"].to_f
       max_acoustic = reasoning["max_acoustic"].to_f
 
-      features << [ avg_temp, avg_vcap, avg_z, sap_deviation, max_acoustic ]
+      features << [ avg_temp, avg_vcap, avg_z, max_acoustic ]
 
       # Бінарна мітка: 1 (стрес/аномалія) або 0 (гомеостаз).
       # Поріг 0.5 визначає клас для навчання; окремий поріг 0.83 використовується

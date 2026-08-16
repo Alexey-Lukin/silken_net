@@ -156,6 +156,30 @@ RSpec.describe TreeChronicleService do
         expect(entry).to be_present
         expect(entry.icon).to eq("\u25C6")
       end
+
+      # 🔴 [ARCH.101] Доти тут стояв захардкоджений `event_type: :minting` на КОЖЕН
+      # рядок гаманця, тож слеш-інтент (`create_slash_intent!` пише його на той самий
+      # гаманець дерева й доводить до `:confirmed`) з'являвся в хроніці як «Minted»
+      # із зеленим success-бейджем — сторінка дерева свідчила про вилучення коштів
+      # як про емісію. Пін тримає ВСІ ТРИ осі разом (тип · тон · іконка): напрямок,
+      # що змінив лише підпис, лишив би дві третини брехні на екрані.
+      it "derives a burn row as :burning across type, severity and icon" do
+        wallet = tree.wallet
+        wallet.update!(crypto_public_address: "0x" + "a" * 40)
+        contract = create(:naas_contract, organization: tree.cluster.organization, cluster: tree.cluster)
+        create(:blockchain_transaction, wallet: wallet, sourceable: contract,
+               status: :confirmed, token_type: :carbon_coin,
+               confirmed_at: 1.day.ago, tx_hash: "0x" + SecureRandom.hex(32))
+
+        result = described_class.call(tree: tree)
+        entry = result[:entries].find { |e| e.event_type == :burning }
+
+        expect(entry).to be_present
+        expect(entry.severity).to eq(:warning)
+        expect(entry.icon).to eq("\u2B22")
+        expect(entry.title).to include("Burned")
+        expect(result[:entries].map(&:event_type)).not_to include(:minting)
+      end
     end
 
     context "with pagination" do

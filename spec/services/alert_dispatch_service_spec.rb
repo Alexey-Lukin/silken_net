@@ -21,7 +21,7 @@ RSpec.describe AlertDispatchService, type: :service do
         tree: tree, bio_status_vm_error?: false, firmware_report_reverted?: false,
         voltage_mv: 3500, temperature_c: 25,
         bio_status_anomaly?: false, panic?: false, bio_status_stress?: false,
-        acoustic_events: 10, z_value: 20.0
+        z_value: 20.0
       }.merge(overrides))
     end
 
@@ -50,7 +50,7 @@ RSpec.describe AlertDispatchService, type: :service do
         firmware_report_contract_id: 42,
         voltage_mv: 3500, temperature_c: 25,
         bio_status_anomaly?: false, panic?: false, bio_status_stress?: false,
-        acoustic_events: 10, z_value: 20.0
+        z_value: 20.0
       }.merge(overrides))
     end
 
@@ -87,7 +87,6 @@ RSpec.describe AlertDispatchService, type: :service do
         bio_status_anomaly?: false,
         panic?: false,
         bio_status_stress?: false,
-        acoustic_events: 10,
         z_value: 20.0
       )
 
@@ -113,7 +112,6 @@ RSpec.describe AlertDispatchService, type: :service do
         bio_status_anomaly?: false,
         panic?: false,
         bio_status_stress?: false,
-        acoustic_events: 10,
         z_value: 20.0
       )
 
@@ -136,7 +134,6 @@ RSpec.describe AlertDispatchService, type: :service do
         bio_status_anomaly?: false,
         panic?: false,
         bio_status_stress?: false,
-        acoustic_events: 10,
         z_value: 20.0
       )
 
@@ -159,7 +156,6 @@ RSpec.describe AlertDispatchService, type: :service do
         bio_status_anomaly?: false,
         panic?: false,
         bio_status_stress?: false,
-        acoustic_events: 10,
         z_value: 20.0
       )
 
@@ -231,9 +227,10 @@ RSpec.describe AlertDispatchService, type: :service do
     end
 
     # [SLASH-1] РЕАЛЬНА пилка: Trigger_Emergency_LoRa_TX шле status=homeostasis +
-    # PANIC_FLAG + acoustic=0xFF (255) + vcap=0 — до фікса падала у seismic_anomaly
-    # (255≥200) повз chainsaw-маршрут, а vcap=0 плодив фантомний system_fault.
-    it "routes a REAL chainsaw panic frame (status=homeostasis) to chainsaw_detected, not seismic" do
+    # PANIC_FLAG + acoustic=0xFF (255) + vcap=0 — до фікса гейт лише на
+    # bio_status_anomaly? губив її (кадр падав у тодішню лічильникову гілку —
+    # знята [ARCH.102]), а vcap=0 плодив фантомний system_fault.
+    it "routes a REAL chainsaw panic frame (status=homeostasis) to chainsaw_detected and nothing else" do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
@@ -242,7 +239,7 @@ RSpec.describe AlertDispatchService, type: :service do
         temperature_c: 0,
         bio_status_anomaly?: false, # пилка НЕ ставить anomaly — status лишається homeostasis
         panic?: true,
-        acoustic_events: 255
+        acoustic_events: 255 # форма реального wire-кадру; диспетчер лічильник не читає
       )
 
       expect {
@@ -254,7 +251,9 @@ RSpec.describe AlertDispatchService, type: :service do
       expect(alert.message_key).to eq("chainsaw_detected_panic")
       I18n.with_locale(:uk) { expect(alert.message).to include("PANIC-TX") }
       expect(EwsAlert.alert_type_system_fault).to be_empty # vcap=0 panic ≠ «втрата живлення»
-      expect(EwsAlert.alert_type_seismic_anomaly).to be_empty
+      # [ARCH.102] Колишній ліхтар «not seismic» узагальнено: panic-кадр не сміє
+      # лишити ЖОДНОГО другого алерту — пилка їде рівно одним типом.
+      expect(EwsAlert.where.not(alert_type: :chainsaw_detected)).to be_empty
     end
   end
 
@@ -281,7 +280,6 @@ RSpec.describe AlertDispatchService, type: :service do
         bio_status_anomaly?: false,
         panic?: false,
         bio_status_stress?: false,
-        acoustic_events: 10,
         z_value: 20.0
       )
 
@@ -303,87 +301,12 @@ RSpec.describe AlertDispatchService, type: :service do
         bio_status_anomaly?: false,
         panic?: false,
         bio_status_stress?: true,
-        acoustic_events: 10,
         z_value: 20.0
       )
 
       described_class.analyze_and_trigger!(log)
 
       expect(Rails.cache.read(Organization.expected_yield_cache_key(cluster.organization_id))).to eq(42.0)
-    end
-  end
-
-  describe "seismic anomaly branch" do
-    it "creates a critical seismic_anomaly alert when acoustic_events >= 200" do
-      log = instance_double(TelemetryLog,
-        tree: tree,
-        bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
-        voltage_mv: 3500,
-        temperature_c: 25,
-        bio_status_anomaly?: false,
-        panic?: false,
-        bio_status_stress?: false,
-        acoustic_events: 200,
-        z_value: 20.0
-      )
-
-      expect {
-        described_class.analyze_and_trigger!(log)
-      }.to change(EwsAlert, :count).by(1)
-
-      alert = EwsAlert.last
-      expect(alert.alert_type).to eq("seismic_anomaly")
-      expect(alert.severity).to eq("critical")
-      expect(alert.message_key).to eq("seismic_anomaly")
-      I18n.with_locale(:uk) { expect(alert.message).to include("СЕЙСМІКА") }
-    end
-  end
-
-  describe "pest detection branch" do
-    let(:family_with_sap) { create(:tree_family, sap_flow_index: 1.0) }
-    let(:tree_with_sap) { create(:tree, cluster: cluster, tree_family: family_with_sap) }
-
-    it "creates medium severity insect_epidemic alert when bio_status is stress" do
-      log = instance_double(TelemetryLog,
-        tree: tree_with_sap,
-        bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
-        voltage_mv: 3500,
-        temperature_c: 25,
-        bio_status_anomaly?: false,
-        panic?: false,
-        bio_status_stress?: true,
-        acoustic_events: 100,
-        z_value: 20.0
-      )
-
-      described_class.analyze_and_trigger!(log)
-
-      pest_alert = EwsAlert.where(tree: tree_with_sap, alert_type: :insect_epidemic).last
-      expect(pest_alert).to be_present
-      expect(pest_alert.severity).to eq("medium")
-    end
-
-    it "creates low severity insect_epidemic alert when bio_status is not stress" do
-      log = instance_double(TelemetryLog,
-        tree: tree_with_sap,
-        bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
-        voltage_mv: 3500,
-        temperature_c: 25,
-        bio_status_anomaly?: false,
-        panic?: false,
-        bio_status_stress?: false,
-        acoustic_events: 100,
-        z_value: 20.0
-      )
-
-      described_class.analyze_and_trigger!(log)
-
-      pest_alert = EwsAlert.where(tree: tree_with_sap, alert_type: :insect_epidemic).last
-      expect(pest_alert).to be_present
-      expect(pest_alert.severity).to eq("low")
     end
   end
 
@@ -400,7 +323,6 @@ RSpec.describe AlertDispatchService, type: :service do
         bio_status_anomaly?: false,
         panic?: false,
         bio_status_stress?: false,
-        acoustic_events: 10,
         z_value: 99.0
       )
 
@@ -416,7 +338,7 @@ RSpec.describe AlertDispatchService, type: :service do
   end
 
   describe "adaptive thresholds" do
-    let(:family_custom) { create(:tree_family, fire_resistance_rating: 80, sap_flow_index: 2.0) }
+    let(:family_custom) { create(:tree_family, fire_resistance_rating: 80) }
     let(:tree_custom) { create(:tree, cluster: cluster, tree_family: family_custom) }
 
     it "uses family fire_resistance_rating when cluster has no custom threshold" do
@@ -429,7 +351,6 @@ RSpec.describe AlertDispatchService, type: :service do
         bio_status_anomaly?: false,
         panic?: false,
         bio_status_stress?: false,
-        acoustic_events: 10,
         z_value: 20.0
       )
 
@@ -448,7 +369,6 @@ RSpec.describe AlertDispatchService, type: :service do
         bio_status_anomaly?: false,
         panic?: false,
         bio_status_stress?: false,
-        acoustic_events: 10,
         z_value: 20.0
       )
 
@@ -471,52 +391,12 @@ RSpec.describe AlertDispatchService, type: :service do
         bio_status_anomaly?: false,
         panic?: false,
         bio_status_stress?: false,
-        acoustic_events: 10,
         z_value: 20.0
       )
 
       expect {
         described_class.analyze_and_trigger!(log)
       }.not_to change(EwsAlert, :count)
-    end
-
-    it "adapts pest_limit by sap_flow_index" do
-      # pest_limit = 50 * 2.0 = 100
-      log = instance_double(TelemetryLog,
-        tree: tree_custom,
-        bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
-        voltage_mv: 3500,
-        temperature_c: 25,
-        bio_status_anomaly?: false,
-        panic?: false,
-        bio_status_stress?: false,
-        acoustic_events: 90,  # above default 50 but below adapted 100
-        z_value: 20.0
-      )
-
-      expect {
-        described_class.analyze_and_trigger!(log)
-      }.not_to change(EwsAlert, :count)
-    end
-
-    it "triggers pest alert when acoustic_events exceed adapted pest_limit" do
-      log = instance_double(TelemetryLog,
-        tree: tree_custom,
-        bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
-        voltage_mv: 3500,
-        temperature_c: 25,
-        bio_status_anomaly?: false,
-        panic?: false,
-        bio_status_stress?: false,
-        acoustic_events: 110,  # above adapted 100, below seismic 200
-        z_value: 20.0
-      )
-
-      described_class.analyze_and_trigger!(log)
-      pest_alert = EwsAlert.where(alert_type: :insect_epidemic).last
-      expect(pest_alert).to be_present
     end
   end
 
@@ -530,8 +410,7 @@ RSpec.describe AlertDispatchService, type: :service do
         temperature_c: 25,
         bio_status_anomaly?: false,
         panic?: false,
-        bio_status_stress?: false,
-        acoustic_events: 250,
+        bio_status_stress?: true,
         z_value: 20.0
       )
 
@@ -566,7 +445,6 @@ RSpec.describe AlertDispatchService, type: :service do
         bio_status_anomaly?: false,
         panic?: false,
         bio_status_stress?: false,
-        acoustic_events: 10,
         z_value: 20.0
       )
       expect {
@@ -586,7 +464,6 @@ RSpec.describe AlertDispatchService, type: :service do
         bio_status_anomaly?: false,
         panic?: false,
         bio_status_stress?: false,
-        acoustic_events: 10,
         z_value: 20.0
       )
 
@@ -604,7 +481,6 @@ RSpec.describe AlertDispatchService, type: :service do
         bio_status_anomaly?: false,
         panic?: false,
         bio_status_stress?: false,
-        acoustic_events: 10,
         z_value: 20.0
       )
 
@@ -625,7 +501,6 @@ RSpec.describe AlertDispatchService, type: :service do
         bio_status_anomaly?: false,
         panic?: false,
         bio_status_stress?: false,
-        acoustic_events: 10,
         z_value: 20.0
       )
 
@@ -648,7 +523,6 @@ RSpec.describe AlertDispatchService, type: :service do
         bio_status_anomaly?: true,
         panic?: false,
         bio_status_stress?: false,
-        acoustic_events: 10,
         z_value: 20.0
       )
 
@@ -668,7 +542,6 @@ RSpec.describe AlertDispatchService, type: :service do
         bio_status_anomaly?: false,
         panic?: false,
         bio_status_stress?: true,
-        acoustic_events: 10,
         z_value: 20.0
       )
 

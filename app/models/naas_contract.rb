@@ -43,7 +43,9 @@ class NaasContract < ApplicationRecord
     # Активація контракту (після підтвердження інвестиції)
     # [HYBRID PROTOCOL GAIA]: При активації контракту insurance_premium_amount (5% від total_funding)
     # у USDC направляється до DAO Treasury Parametric Insurance Pool.
-    # Це забезпечує фінансування страхового пулу для параметричних виплат (пожежі, посухи, шкідники).
+    # Це забезпечує фінансування страхового пулу для параметричних виплат.
+    # ⛔ Перелік перилів тут НЕ дублюємо — дім один: `ParametricInsurance#trigger_event`
+    # (сьогодні їх два, і кожен мусить мати вимірювача — 07_01 §INS.1).
     event :activate do
       transitions from: :draft, to: :active
     end

@@ -186,8 +186,15 @@ module Treasury
       )
 
       MINT_TOKEN_TYPES.each do |token_type|
+        # 🔴 [ARCH.101] Напрямок ДЕРИВУЄТЬСЯ — інакше цей агрегат рахує спалення
+        # мінт-обсягом (slash пишеться ДОДАТНИМ і теж `carbon_coin`, теж доходить до
+        # `:sent`/`:confirmed`). ⚠️ Ціна не косметична й зворотна за знаком до
+        # очікуваної: перебравши стелю, детектор смикає `trip_mint_circuit!` — тобто
+        # ВЕЛИКЕ СПАЛЕННЯ вимикало б ЛЕГІТИМНИЙ мінтинг того самого токена. Дискримінатор
+        # той самий, що в `net_minted_supply`; тримати обидва боки в одному домі.
         volume = BlockchainTransaction
                  .where(token_type: token_type, status: [ :sent, :confirmed ])
+                 .where("sourceable_type IS DISTINCT FROM ?", BlockchainTransaction::BURN_SOURCEABLE_TYPE)
                  .where("created_at >= ?", MINT_VOLUME_WINDOW.ago)
                  .sum(:amount).to_f
         SilkenNet::Metrics::MINT_VOLUME_WINDOW_SCC.set(volume, labels: { token_type: token_type })

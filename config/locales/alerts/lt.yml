@@ -41,7 +41,6 @@ lt:
       global_blackout: "🛰️ GLOBALUS PERTRŪKIS: už %{target_date} negauta jokių telemetrijos duomenų. Galima Starlink avarija arba masinis šliuzų gedimas — Field Audit (C kat.), slashing NETAIKYTAS."
       hardware_decay: 'Aparatūros nusidėvėjimas: mazgą %{did} reikia pakeisti.'
       hydrological_stress: "💧 SAUSRA: Hidrologinis stresas."
-      insect_epidemic: "🪲 BIO-GRĖSMĖ: Akustinis kenkėjų aktyvumas (%{acoustic_events})."
       insurance_candidate_armed: 'Draudimo kandidatas #%{id}: AI orakulas mato %{percentage}% kritinių medžių — prieš išmoką reikalingas NEPRIKLAUSOMAS patvirtinimas (dClimate palydovas / Field Audit) (dual-trigger, 05_05 §6).'
       insurance_no_data: 'Draudimo orakulas #%{id}: už %{target_date} nulis AiInsight, nors medžiai aktyvūs (galima katastrofa / sunaikinti jutikliai). Išmoka NEANULIUOTA — reikalingas Field Audit (C kategorija, 05_05 §5/§6).'
       insurance_reserve_hold_aggregate_cap: 'Insurance reserve-gate HOLD [INS.2] dėl #%{id}: 24 val. vidinė draudimo emisija %{window_sum} %{token_type} viršija lubas %{cap}. Išmoka sustabdyta — patikrink ekspoziciją prieš rankinį išsprendimą.'
@@ -54,7 +53,6 @@ lt:
       queen_silent: "👑 Queen %{uid} tyli %{silent_for_min} min (paskutinis kontaktas %{last_seen_at}). Klasteris be ryšio aukštyn — medžių telemetrija nepasiekia."
       queen_uplink_lost: "🆘 Queen %{uid} prarado VISUS ryšius aukštyn (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min). Šauksmas atėjo per Helium — telemetrija buferizuojama, reikalingas išvykimas."
       queen_uplink_lost_reported: "🆘 Queen %{uid} prarado VISUS ryšius aukštyn (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min, reported_at=%{reported_at}). Šauksmas atėjo per Helium — telemetrija buferizuojama, reikalingas išvykimas."
-      seismic_anomaly: "🌋 SEISMIKA: Anomalus rezonansas (%{acoustic_events}). DID: %{did}"
       slash_evasion_cluster: 'Slash vengimas (klasteris #%{cluster_id}): A kategorijos įrodymas yra, bet turėtojas išvedė visus SCC prieš nuosprendžio vykdymą (prašyta %{requested_burn} SCC, on-chain likutis ≈0). Sudeginti neįmanoma — reikalingas teisinis/rankinis kelias (05_05 §3.2).'
       slash_evasion_tree: 'Slash vengimas (medis %{tree_did}): A kategorijos įrodymas yra, bet turėtojas išvedė visus SCC prieš nuosprendžio vykdymą (prašyta %{requested_burn} SCC, on-chain likutis ≈0). Sudeginti neįmanoma — reikalingas teisinis/rankinis kelias (05_05 §3.2).'
       slash_frozen_indeterminate_cluster: 'Slashing užblokuotas (klasteris #%{cluster_id}): A kategorijos įrodymas yra, bet žalos MASTAS neapibrėžtas (nėra AiInsight duomenų tai datai). Nieko nesudeginta — reikalingas Field Audit (C kategorija, 05_05 §3.2/§5).'
@@ -90,10 +88,8 @@ lt:
       firmware_canary_trip: Programinės įrangos kanarėlės signalas
       firmware_fault: Programinės įrangos gedimas
       firmware_reverted: Programinė įranga atstatyta
-      insect_epidemic: Vabzdžių epidemija
       queen_offline: Queen neprisijungęs
       queen_uplink_lost: Prarastas Queen ryšys
-      seismic_anomaly: Seisminė anomalija
       severe_drought: Didelė sausra
       system_fault: Sistemos gedimas
       vandalism_breach: Vandalizmo įsilaužimas

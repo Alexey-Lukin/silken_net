@@ -2,10 +2,6 @@
 # frozen_string_literal: true
 
 class InsightGeneratorService < ApplicationService
-  # Поріг відхилення. Якщо вологість/температура дерева відрізняється від
-  # середньої по кластеру більше ніж на 30%, це класифікується як фрод/аномалія.
-  FRAUD_DEVIATION_THRESHOLD = 0.30
-
   MODEL_PATH = Rails.root.join("lib/assets/silken_forest.marshal").freeze
   MODEL_DIGEST_PATH = Rails.root.join("lib/assets/silken_forest.marshal.sha256").freeze
 
@@ -106,7 +102,7 @@ class InsightGeneratorService < ApplicationService
   # Використовується GenerateClusterInsightWorker для обробки чанку кластерів.
   # Кожен воркер отримує масив cluster_ids та обробляє їх незалежно.
 
-  # Повертає Hash { cluster_id => { temp:, sap:, z: } } для кластерів, що мають дані.
+  # Повертає Hash { cluster_id => { temp:, z: } } для кластерів, що мають дані.
   # Якщо cluster_ids передано — фільтрує тільки вказані кластери.
   def cluster_baselines(cluster_ids = nil)
     prefetch_cluster_baselines(cluster_ids)
@@ -164,12 +160,10 @@ class InsightGeneratorService < ApplicationService
          .select(
            "trees.cluster_id",
            "AVG(temperature_c) as avg_temp",
-           "AVG(sap_flow) as avg_sap",
            "AVG(z_value) as avg_z"
          ).each_with_object({}) do |row, hash|
            hash[row.cluster_id] = {
              temp: row.avg_temp.to_f,
-             sap: row.avg_sap.to_f,
              z: row.avg_z.to_f
            }
          end
@@ -185,7 +179,6 @@ class InsightGeneratorService < ApplicationService
                   "AVG(temperature_c) as avg_temp",
                   "AVG(voltage_mv) as avg_vcap",
                   "AVG(z_value) as avg_z",
-                  "AVG(sap_flow) as avg_sap",
                   "AVG(vpd) as avg_vpd",
                   "MAX(acoustic_events) as max_acoustic",
                   "SUM(growth_points) as total_growth",
@@ -239,17 +232,15 @@ class InsightGeneratorService < ApplicationService
 
     # Розраховуємо індекс стресу (враховуючи відхилення Z Атрактора та Фрод)
     # $$Stress = \min(1.0, \text{base\_stress} + \text{anomaly\_penalties})$$
-    stress_index = is_fraud ? 1.0 : calculate_stress_index(stats.max_status.to_i, stats.avg_temp.to_f, stats.max_acoustic.to_i, stats.avg_z.to_f, stats.avg_vcap.to_i, calculate_deviation(stats.avg_sap.to_f, baseline[:sap]), signed_deviation(stats.avg_sap.to_f, baseline[:sap]))
+    stress_index = is_fraud ? 1.0 : calculate_stress_index(stats.max_status.to_i, stats.avg_temp.to_f, stats.max_acoustic.to_i, stats.avg_z.to_f, stats.avg_vcap.to_i)
 
-    # [VPD weather-confounder, 05_05 §7] Discount-only weather gate so a
-    # humid spell (low VPD → suppressed sap on a HEALTHY tree) cannot push a
-    # cluster over the slash threshold. Inert until firmware sends VPD + ML
-    # retrain + ground-truth calibration (see #apply_weather_confounder). Fraud
-    # stays pinned at 1.0 — weather never excuses anomalous deviation.
+    # [VPD weather-confounder, 05_05 §7] Discount-only weather gate so a humid
+    # spell cannot push a cluster over the slash threshold. Inert until firmware
+    # sends VPD + ground-truth calibration (see #apply_weather_confounder).
+    # ⚠️ Друга умова гейта — метаболічне відхилення — виміру не має, тож дисконт
+    # не спрацює й після VPD-калібрування; тригер той самий, що у фрод-гарда.
     unless is_fraud
-      stress_index = apply_weather_confounder(
-        stress_index, stats.avg_vpd&.to_f, calculate_deviation(stats.avg_sap.to_f, baseline[:sap])
-      )
+      stress_index = apply_weather_confounder(stress_index, stats.avg_vpd&.to_f)
     end
 
     summary = is_fraud ? "🚨 КРИТИЧНО: Виявлено фрод-телеметрію (аномальне відхилення від кластера)." : generate_summary(stats.max_status.to_i, stats.avg_temp.to_f)
@@ -267,8 +258,7 @@ class InsightGeneratorService < ApplicationService
         avg_z: stats.avg_z.to_f.round(4),
         max_acoustic: stats.max_acoustic.to_i,
         avg_vcap: stats.avg_vcap.to_i,
-        avg_vpd: stats.avg_vpd&.to_f&.round(3), # nil доки firmware не шле VPD (HW.32)
-        deviation_from_baseline: calculate_deviation(stats.avg_sap.to_f, baseline[:sap])
+        avg_vpd: stats.avg_vpd&.to_f&.round(3) # nil доки firmware не шле VPD (HW.32)
       }
     )
 
@@ -297,11 +287,21 @@ class InsightGeneratorService < ApplicationService
     false
   end
 
-  def detect_fraud?(stats, baseline)
-    return false if baseline[:sap].zero?
-    sap_deviation = calculate_deviation(stats.avg_sap.to_f, baseline[:sap])
-    temp_deviation = calculate_deviation(stats.avg_temp.to_f, baseline[:temp])
-    (sap_deviation > FRAUD_DEVIATION_THRESHOLD) && (temp_deviation > FRAUD_DEVIATION_THRESHOLD)
+  # 🔴 ІНЕРТНИЙ, і це ОГОЛОШЕНО, а не випадково. Дизайн вимагає ДВОХ незалежних
+  # осей відхилення від кластерного базлайну, і вимога несуча: одна вісь означає
+  # «це дерево тепліше за сусідів», а так буває з краю насадження на сонці — гард
+  # на одній осі виробляв би хибні звинувачення, тобто був би ГІРШИЙ за мовчання.
+  # Другої осі сьогодні немає: `sap_flow` не мав жодного писача (нема в жодному
+  # wire-форматі) і знятий. Доти безпеку тримала АРИФМЕТИКА — `AVG` по самих NULL
+  # давав 0.0, і гард мовчки коротко замикався; тепер причина названа.
+  #
+  # ⚠️ Наслідки не косметичні — `is_fraud` обнуляє `final_growth` і виставляє
+  # `stress_index = 1.0`, тобто це грошовий шлях.
+  # ⊕ Живий антифрод НЕ тут, і він справжній: DCI-парність device-Z ≡ server-Z
+  # ([`05_02`](../../docs/05_02_Proof_of_Growth_Pipeline.md)) — незалежна від цього гарда.
+  # 🔓 Тригер повернення: поява ДРУГОГО виміряного пер-деревного сигналу.
+  def detect_fraud?(_stats, _baseline)
+    false
   end
 
   def calculate_deviation(value, base)
@@ -313,10 +313,6 @@ class InsightGeneratorService < ApplicationService
   # sap_flow — suppressed transpiration). Distinct from calculate_deviation, which
   # is the absolute magnitude used for fraud detection + the ML feature. 0.0 when
   # baseline is zero.
-  def signed_deviation(value, base)
-    return 0.0 if base.zero?
-    ((value - base) / base).round(4)
-  end
 
   # [VPD weather-confounder gate — 04_02 §VPD, 05_05 §7] DISCOUNT-ONLY.
   # Lowers stress_index when a low sap_flow is explained by WEATHER, not disease:
@@ -336,55 +332,43 @@ class InsightGeneratorService < ApplicationService
   # in silken_forest.marshal) + ground-truth calibration. Until then a wired,
   # tested no-op. NB: the heuristic still ignores sap entirely (GAP, 05_05 §7) —
   # a signed low-sap (not |dev|) test is part of that calibration follow-up.
-  def apply_weather_confounder(stress_index, avg_vpd, sap_deviation)
-    return stress_index if avg_vpd.nil?
 
-    calibration = vpd_confounder_calibration
-    return stress_index unless calibration
-    return stress_index unless avg_vpd <= calibration[:low_kpa]
-    return stress_index unless sap_deviation.to_f.positive?
-
-    discounted = stress_index * (1.0 - calibration[:max_discount])
-    [ discounted, stress_index ].min.round(3) # discount-only: never above input
+  # 🔴 ІНЕРТНИЙ, і причина названа. Гейт існує, щоб ЗНИЖУВАТИ стрес, коли
+  # пригнічений метаболізм пояснюється погодою (насичене повітря → нульова
+  # транспіраційна тяга), а не хворобою. Тобто його передумова — ДВА входи:
+  # погода І метаболічне відхилення. Другого немає: `sap_flow` не мав жодного
+  # писача і знятий, а дисконтувати стрес лише за вологим днем означало б
+  # вибачати посуху погодою без жодного підтвердження з дерева.
+  # ⚠️ Напрямок несучий: гейт тільки ЗНИЖУЄ, тож його інертність безпечна —
+  # вона лишає стрес як є, а не вигадує його.
+  # 🔓 Тригер: поява метаболічного виміру на рівні дерева (E.63 `delta_t`).
+  def apply_weather_confounder(stress_index, _avg_vpd)
+    stress_index
   end
 
-  # Calibration-pending config for the VPD gate. Returns nil (→ gate inert) until
-  # BOTH ground-truth values are supplied (07_03 §1.4) via ENV — deliberately not
-  # hardcoded, so no guessed threshold can silently enter slashing. low_kpa =
-  # "saturated air" VPD floor (kPa); max_discount = max stress reduction (0..1].
-  def vpd_confounder_calibration
-    low = ENV["VPD_CONFOUNDER_LOW_KPA"]&.to_f
-    discount = ENV["VPD_CONFOUNDER_MAX_DISCOUNT"]&.to_f
-    return nil unless low&.positive? && discount&.positive?
-
-    { low_kpa: low, max_discount: [ discount, 1.0 ].min }
-  end
-
-  # sap_deviation = ABSOLUTE deviation (ML feature, unchanged — model trained on it).
-  # sap_signed_deviation = SIGNED (negative = below baseline) — fed only to the
-  # heuristic's sap term (#sap_stress_contribution), which the ML path doesn't need
-  # (its trained feature already carries sap).
-  def calculate_stress_index(max_status, avg_temp, max_acoustic, avg_z, avg_vcap = 0, sap_deviation = 0.0, sap_signed_deviation = 0.0)
+  # ⚠️ Порядок фіч — КОНТРАКТ із тренером (`lib/tasks/ai_train.rake`): міняючи його,
+  # міняй обидва боки одним ходом, інакше модель дістане чужу вісь під своїм іменем.
+  def calculate_stress_index(max_status, avg_temp, max_acoustic, avg_z, avg_vcap = 0)
     if @ai_model
-      features = Numo::DFloat.cast([ [ avg_temp.to_f, avg_vcap.to_f, avg_z.to_f, sap_deviation.to_f, max_acoustic.to_f ] ])
+      features = Numo::DFloat.cast([ [ avg_temp.to_f, avg_vcap.to_f, avg_z.to_f, max_acoustic.to_f ] ])
       proba = @ai_model.predict_proba(features)
       stress_class_index = @ai_model.classes.to_a.index(1)
 
       unless stress_class_index
         Rails.logger.error "🛑 [Insight] ML-модель не містить клас 1 (stress). Fallback на евристику."
-        return calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z, sap_signed_deviation)
+        return calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z)
       end
 
       proba[0, stress_class_index].round(3)
     else
-      calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z, sap_signed_deviation)
+      calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z)
     end
   end
 
   # [E.64] Conformance with 05_05 §7 "Z alone never slashes" (audit #3).
   # `_avg_temp`/`_avg_z` accepted for signature symmetry with the ML path but
   # NO LONGER used by the heuristic — both were confounds (see below).
-  def calculate_stress_index_heuristic(max_status, _avg_temp, max_acoustic, _avg_z, sap_signed_deviation = 0.0)
+  def calculate_stress_index_heuristic(max_status, _avg_temp, _max_acoustic, _avg_z)
     # [SLASH-1] vm_error (status 3) = софт-збій прошивки (mruby crash / unprovisioned),
     # NOT bio-stress and NOT tamper: the old `>= 3 → 1.0` short-circuit put a firmware
     # bug ABOVE the slash threshold (0.83) — a cluster-wide bad OTA read as max-stress
@@ -405,75 +389,17 @@ class InsightGeneratorService < ApplicationService
     # тримаємо прив'язку до TelemetryLog.bio_statuses, не голі літерали.
     stress_code  = TelemetryLog.bio_statuses.fetch("stress")
     anomaly_code = TelemetryLog.bio_statuses.fetch("anomaly")
-    base_stress = (max_status.between?(stress_code, anomaly_code) ? 0.6 : 0.0) # bounded < slash 0.83
-    # sap_flow↓ and cavitation↑ are CORRELATED drought signals (one root cause) →
-    # take the STRONGER, never SUM (05_05 §6 SLASH-SAFETY: corroboration, not double-penalty).
-    # Both inert until ENV-calibrated.
-    base_stress += [ sap_stress_contribution(sap_signed_deviation),
-                    acoustic_stress_contribution(max_acoustic) ].max
-    [ base_stress, 0.99 ].min
-  end
-
-  # [Sap-flow stress term — closes the 05_05 §7 GAP where the heuristic ignored
-  # sap entirely.] Low sap_flow (below cluster baseline) is the PRIMARY DIRECT
-  # drought/disease signal — more grounded than the unproven Lorenz-Z. Only LOW
-  # sap (signed dev ≤ −threshold) adds stress; high sap is vigour, never penalised.
-  # BOUNDED so sap CORROBORATES but never SOLELY triggers slashing — a status-0
-  # tree maxes at this weight (≈0.2 ≪ 0.83), honouring the de-risk "≥1 direct
-  # corroborating signal, not Z alone". The VPD gate later discounts this when the
-  # low sap is weather-driven (#apply_weather_confounder) → the full sap↔weather loop.
-  #
-  # INERT by default (0.0): like the VPD gate, NO guessed weight enters live
-  # slashing — activates only once ground-truth calibration sets ENV
-  # STRESS_SAP_LOW_THRESHOLD + STRESS_SAP_WEIGHT (07_03 §1.4).
-  def sap_stress_contribution(sap_signed_deviation)
-    calibration = sap_stress_calibration
-    return 0.0 unless calibration
-    return 0.0 unless sap_signed_deviation <= -calibration[:threshold] # only LOW sap
-
-    calibration[:weight]
-  end
-
-  # Calibration-pending config for the sap-stress term. nil (→ term inert) until
-  # BOTH ground-truth values are set via ENV (07_03 §1.4): threshold = fraction below
-  # baseline that counts as drought-stress (e.g. 0.30); weight = stress increment
-  # (e.g. 0.2). Deliberately not hardcoded — no guessed weight in live slashing.
-  def sap_stress_calibration
-    threshold = ENV["STRESS_SAP_LOW_THRESHOLD"]&.to_f
-    weight = ENV["STRESS_SAP_WEIGHT"]&.to_f
-    return nil unless threshold&.positive? && weight&.positive?
-
-    { threshold: threshold, weight: [ weight, 0.99 ].min }
-  end
-
-  # [Acoustic (cavitation) stress term — closes the acoustic half of the 05_05 §7
-  # heuristic GAP, symmetric to the sap term.] acoustic_events = COUNT of phloem
-  # cavitation events (TinyML, uint8 saturating at 255; 03_04) — a DIRECT drought /
-  # water-tension signal (high cavitation = xylem under stress).
-  # ⚠️ This field is CAVITATION only; chainsaw/tamper rides a separate panic /
-  # PANIC_FLAG path — so this term NEVER slashes a forester for third-party logging.
-  # Only HIGH cavitation (≥ calibrated count) adds stress; bounded + max()'d with the
-  # sap term so drought CORROBORATES but never SOLELY slashes. INERT by default —
-  # activates only via ground-truth ENV STRESS_ACOUSTIC_THRESHOLD + STRESS_ACOUSTIC_WEIGHT
-  # (07_03 §1.4); the max() in the heuristic already prevents same-root-cause stacking.
-  def acoustic_stress_contribution(max_acoustic)
-    calibration = acoustic_stress_calibration
-    return 0.0 unless calibration
-    return 0.0 unless max_acoustic.to_i >= calibration[:threshold] # only HIGH cavitation
-
-    calibration[:weight]
-  end
-
-  # Calibration-pending config for the acoustic-stress term. nil (→ inert) until both
-  # ground-truth values are set via ENV (07_03 §1.4): threshold = cavitation event count
-  # that counts as drought-stress (e.g. 50); weight = stress increment (e.g. 0.2).
-  # Deliberately not hardcoded — no guessed count in live slashing.
-  def acoustic_stress_calibration
-    threshold = ENV["STRESS_ACOUSTIC_THRESHOLD"]&.to_i
-    weight = ENV["STRESS_ACOUSTIC_WEIGHT"]&.to_f
-    return nil unless threshold&.positive? && weight&.positive?
-
-    { threshold: threshold, weight: [ weight, 0.99 ].min }
+    # 🔴 [ARCH.102] Прямих сигналів у евристиці НЕМАЄ, і це СТЕЛЯ, не пропуск.
+    # Обидва кандидати відпали з однієї причини — величини, про яку вони мали
+    # свідчити, ніхто не міряє: `sap_flow` не мав писача взагалі, а `acoustic_events`
+    # писача має, але канал ЗМІШАНИЙ — прошивка інкрементує той самий uint8 і на
+    # кавітації (`ml_event_id == 2`), і на бензопилі (`== 3`, обидві зони
+    # впевненості), тож «посуха» з нього не деривується ЖОДНИМ порогом.
+    # ⛔ Наслідок мусить бути видно саме звідси: евристичний шлях має стелю
+    # 0.6 < 0.83 (поріг слешингу дерева, 05_05 §3) — слешинг ним НЕДОСЯЖНИЙ.
+    # Повертати прямий терм — лише з роздільним лічильником на дроті
+    # (кавітація ⊥ пилка), не з новою калібровкою → 00_07 ARCH.102.
+    max_status.between?(stress_code, anomaly_code) ? 0.6 : 0.0
   end
 
   def aggregate_clusters!(cluster_ids)
@@ -520,8 +446,13 @@ class InsightGeneratorService < ApplicationService
   def generate_summary(status, temp)
     case status
     when 3 then "ЗБІЙ ПРОШИВКИ: пристрій не зміг порахувати біостатус (mruby VM error) — потрібен re-flash/OTA."
-    when 2 then "АНОМАЛІЯ: Атрактор вказує на хворобу або шкідників."
-    when 1 then "СТРЕС: Вузол реагує на зовнішнє середовище (#{temp.round(1)}°C)."
+    # ⛔ Рядок називає СТАН, не причину: атрактор класифікує положення Z відносно
+    # обвідної (03_04 §4.2) і про світ за цим сигналом не свідчить. Доти тут стояли
+    # «хвороба або шкідники» (класу «комаха» в TinyML немає взагалі) та «реагує на
+    # зовнішнє середовище» при супутній температурі — обидва читались як діагноз,
+    # і обидва йдуть у `AiInsight#summary` просто на екран.
+    when 2 then "АНОМАЛІЯ: Z вийшов за обвідну гомеостазу; причину сигнал не називає."
+    when 1 then "СТРЕС: Z нижче критичного мінімуму (супутня температура #{temp.round(1)}°C)."
     else "ГОМЕОСТАЗ: Стан дерева ідеальний."
     end
   end

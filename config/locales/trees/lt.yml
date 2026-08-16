@@ -6,6 +6,7 @@ lt:
       empty_title: Kronikos įvykių neužfiksuota
       event_types:
         alert: Pavojus
+        burning: Sudeginimas
         fraud: Vientisumo patikra
         homeostasis: Homeostazė
         maintenance: Priežiūra

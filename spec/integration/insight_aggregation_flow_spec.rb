@@ -65,26 +65,29 @@ RSpec.describe "Insight generation and daily aggregation flow" do
       expect(second_count).to eq(first_count)
     end
 
-    it "detects fraud when tree deviates significantly from cluster baseline" do
+    it "does not accuse a tree that deviates hard from the cluster baseline (fraud guard declared inert)" do
       travel_to yesterday.beginning_of_day + 6.hours do
-        # Create anomalous tree with very different values
+        # Одноосьове екстремальне відхилення температури від базлайну кластера
         create(:telemetry_log, tree: tree1, temperature_c: 80.0,
-                               sap_flow: 500.0, voltage_mv: 3500,
-                               z_value: 25.0, acoustic_events: 5,
-                               growth_points: 10, bio_status: :homeostasis)
+                               voltage_mv: 3500, z_value: 25.0,
+                               acoustic_events: 5, growth_points: 10,
+                               bio_status: :homeostasis)
         # Normal tree
         create(:telemetry_log, tree: tree2, temperature_c: 22.0,
-                               sap_flow: 100.0, voltage_mv: 3500,
-                               z_value: 25.0, acoustic_events: 5,
-                               growth_points: 10, bio_status: :homeostasis)
+                               voltage_mv: 3500, z_value: 25.0,
+                               acoustic_events: 5, growth_points: 10,
+                               bio_status: :homeostasis)
       end
 
       InsightGeneratorService.call(yesterday)
 
       tree1_insight = AiInsight.find_by(analyzable: tree1, target_date: yesterday)
-      # Fraud detection depends on sap_flow deviation > 30% from cluster avg
-      # With such extreme values, fraud may or may not be detected
+      # Одна вісь відхилення — легітимна біологія; звинувачення вимагає ДРУГОГО
+      # виміряного сигналу (`InsightGeneratorService#detect_fraud?` — оголошена
+      # інертність), тож грошовий хвіст фроду не смикається.
       expect(tree1_insight).to be_present
+      expect(tree1_insight.fraud_detected).to be false
+      expect(tree1_insight.total_growth_points).to eq(20) # 10 (before) + 10 — ріст не обнулено
     end
 
     it "cleans up old telemetry logs older than 7 days" do

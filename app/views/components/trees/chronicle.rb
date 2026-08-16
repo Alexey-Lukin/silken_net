@@ -121,6 +121,9 @@ module Trees
       when :stress                 then "bg-status-warning text-status-warning-text"
       when :maintenance            then "bg-status-info text-status-info-text"
       when :minting                then "bg-status-success text-status-success-text"
+      # [ARCH.101] Спалення — НЕ успіх: вилучення коштів мусить читатись тоном, а не
+      # лише підписом. Без цієї гілки воно тихо падало б у нейтральний `else`.
+      when :burning                then "bg-status-danger text-status-danger-text"
       when :recovery, :homeostasis then "bg-status-active text-status-active-text"
       else "bg-status-neutral text-status-neutral-text"
       end

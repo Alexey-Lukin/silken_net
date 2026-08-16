@@ -98,30 +98,6 @@ RSpec.describe "Telemetry ingestion pipeline end-to-end" do
       expect(alert.cluster).to eq(cluster)
     end
 
-    it "creates seismic alert for extreme acoustic events" do
-      log = create(:telemetry_log, tree: tree, temperature_c: 20,
-                                   bio_status: :homeostasis, voltage_mv: 3500,
-                                   acoustic_events: 250, z_value: 25.0)
-
-      expect { AlertDispatchService.analyze_and_trigger!(log) }
-        .to change(EwsAlert, :count).by_at_least(1)
-
-      expect(EwsAlert.last.alert_type).to eq("seismic_anomaly")
-    end
-
-    it "creates insect epidemic alert for moderate acoustic anomaly" do
-      # acoustic_events > pest_limit but < 200 (seismic threshold)
-      # Default pest_limit = 50 (no sap_flow_index set)
-      log = create(:telemetry_log, tree: tree, temperature_c: 20,
-                                   bio_status: :homeostasis, voltage_mv: 3500,
-                                   acoustic_events: 100, z_value: 25.0)
-
-      expect { AlertDispatchService.analyze_and_trigger!(log) }
-        .to change(EwsAlert, :count).by(1)
-
-      expect(EwsAlert.last.alert_type).to eq("insect_epidemic")
-    end
-
     it "creates drought alert for out-of-homeostasis z_value" do
       log = create(:telemetry_log, tree: tree, temperature_c: 20,
                                    bio_status: :homeostasis, voltage_mv: 3500,

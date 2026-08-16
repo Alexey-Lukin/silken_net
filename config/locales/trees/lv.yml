@@ -6,6 +6,7 @@ lv:
       empty_title: Nav reģistrētu hronikas notikumu
       event_types:
         alert: Trauksme
+        burning: Sadedzināšana
         fraud: Integritātes pārbaude
         homeostasis: Homeostāze
         maintenance: Apkope

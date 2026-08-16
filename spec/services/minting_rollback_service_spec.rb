@@ -119,6 +119,26 @@ RSpec.describe MintingRollbackService do
         described_class.call(transactions: BlockchainTransaction.none)
       }.not_to raise_error
     end
+
+    # 🔴 [ARCH.101] Пін стереже БАЛАНС, не текст. Спалення нічого не блокувало, тож
+    # рефанду не має — а без гарда воно падало у legacy-мінт-гілку, бо `locked_points`
+    # у слеш-інтенті `nil` ЗА КОНСТРУКЦІЄЮ (`create_slash_intent!` його не ставить),
+    # тобто той самий `nil` означає тут ДВІ різні речі. Далі гілка множила МОНЕТИ на
+    # курс (`amount × EMISSION_THRESHOLD`) і «повертала» результат як бали.
+    # ⚠️ Числа підібрані так, щоб мутація була ГУЧНОЮ: 2 × 10 000 = 20 000 балів проти
+    # 5 000 наявних, тож без гарда спрацював би навіть `elsif`-злив усього залишку в нуль.
+    it "does not touch balances when the row is a burn" do
+      wallet.update!(balance: 5_000, locked_balance: 5_000)
+      contract = create(:naas_contract, organization: organization, cluster: cluster)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
+                  locked_points: nil, tx_hash: nil, amount: 2, sourceable: contract)
+
+      described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+      expect(wallet.reload.locked_balance).to eq(5_000)
+      expect(tx.reload.status).to eq("failed")
+      expect(tx.notes).to include("Спалення НЕ виконано")
+    end
   end
 
   describe ".call with no arguments" do

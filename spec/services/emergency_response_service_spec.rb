@@ -57,39 +57,6 @@ RSpec.describe EmergencyResponseService do
         expect(commands.first.command_payload).to eq("ACTIVATE_SIREN")
       end
     end
-
-    context "with insect_epidemic alert" do
-      let(:alert) { create(:ews_alert, cluster: cluster, tree: tree, alert_type: :insect_epidemic, severity: :low) }
-
-      it "creates a single 3600s command (no splitting needed)" do
-        valve = create(:actuator, :water_valve, gateway: gateway, state: :idle)
-
-        described_class.call(alert)
-
-        commands = ActuatorCommand.where(actuator: valve, ews_alert: alert)
-        expect(commands.count).to eq(1)
-        expect(commands.first.duration_seconds).to eq(3600)
-      end
-    end
-
-    context "with seismic_anomaly alert" do
-      let(:alert) { create(:ews_alert, cluster: cluster, tree: tree, alert_type: :seismic_anomaly, severity: :critical) }
-
-      it "creates a single 1800s beacon command (no splitting needed)" do
-        # [ARCH.75] Сирена/маяк на РЕАЛЬНОМУ каденсі прошивки (1 год) недоставні
-        # ЗАВЖДИ — це ратифікована поведінка, запінена окремим прикладом. Тут
-        # предметом є ФОРМА протоколу, тож каденс стабимо.
-        stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
-        beacon = create(:actuator, :seismic_beacon, gateway: gateway, state: :idle)
-
-        described_class.call(alert)
-
-        commands = ActuatorCommand.where(actuator: beacon, ews_alert: alert)
-        expect(commands.count).to eq(1)
-        expect(commands.first.duration_seconds).to eq(1800)
-        expect(commands.first.command_payload).to eq("ACTIVATE_BEACON")
-      end
-    end
   end
 
   describe "alert without a cluster" do
@@ -126,7 +93,7 @@ RSpec.describe EmergencyResponseService do
   end
 
   describe "gateway proximity prioritization" do
-    let(:alert) { create(:ews_alert, cluster: cluster, tree: tree, alert_type: :insect_epidemic, severity: :low) }
+    let(:alert) { create(:ews_alert, :drought, cluster: cluster, tree: tree) }
 
     it "orders actuators by gateway proximity to the alert tree" do
       near_gw = create(:gateway, :online, cluster: cluster, latitude: 49.4286, longitude: 32.0621)
@@ -140,7 +107,22 @@ RSpec.describe EmergencyResponseService do
       commands = ActuatorCommand.where(ews_alert: alert).order(:id)
       actuator_ids = commands.pluck(:actuator_id)
 
-      expect(actuator_ids).to eq([ near_actuator.id, far_actuator.id ])
+      # Посуха ріже 7200 на два чанки на актуатор: обидва накази ближнього мусять
+      # ЦІЛКОМ передувати наказам дальнього (flat_map іде по відсортованих).
+      expect(actuator_ids).to eq([ near_actuator.id, near_actuator.id, far_actuator.id, far_actuator.id ])
+    end
+  end
+
+  # Гард тотальності приватного API: живий викликач порожній набір уже відсіює
+  # (`report_step_unserved` → next), тож ця гілка досяжна лише прямим викликом —
+  # пін тримає її свідомим no-op'ом, а не випадковим залишком.
+  describe ".dispatch_commands із порожнім набором" do
+    it "no-op'ає без жодного запису й без винятку" do
+      alert = create(:ews_alert, :drought, cluster: cluster, tree: tree)
+      expect {
+        described_class.send(:dispatch_commands, [], "OPEN_VALVE",
+                             duration: 3600, relevance: 1.hour, alert: alert)
+      }.not_to change(ActuatorCommand, :count)
     end
   end
 
@@ -248,8 +230,10 @@ RSpec.describe EmergencyResponseService do
 
     # Дедуп ключується на ТИПІ, не на актуаторі — інакше крок, якому нема кому
     # виконуватись, писав би новий рядок на кожну тривогу кластера.
+    # Другий тригер — той самий перил на ІНШОМУ дереві: модель не дає двох
+    # активних алертів одного типу на одне дерево.
     it "does not pile up a duplicate alert for the same missing device type" do
-      second = create(:ews_alert, cluster: cluster, tree: tree, alert_type: :insect_epidemic, severity: :low)
+      second = create(:ews_alert, :drought, cluster: cluster, tree: create(:tree, cluster: cluster))
 
       described_class.call(alert)
       described_class.call(second)
@@ -299,14 +283,14 @@ RSpec.describe EmergencyResponseService do
 
   describe "tree without coordinates (proximity skip)" do
     let(:tree_no_coords) { create(:tree, cluster: cluster, latitude: nil, longitude: nil) }
-    let(:alert) { create(:ews_alert, cluster: cluster, tree: tree_no_coords, alert_type: :insect_epidemic, severity: :low) }
+    let(:alert) { create(:ews_alert, :drought, cluster: cluster, tree: tree_no_coords) }
 
     it "does not sort by proximity and still creates commands" do
       create(:actuator, :water_valve, gateway: gateway, state: :idle)
 
       expect {
         described_class.call(alert)
-      }.to change(ActuatorCommand, :count).by(1)
+      }.to change(ActuatorCommand, :count).by(2) # посуха = 7200 → два чанки
     end
   end
 
@@ -495,12 +479,14 @@ RSpec.describe EmergencyResponseService do
       expect(EwsAlert.alert_type_emergency_response_undeliverable.last.message_params["actuator_id"]).to eq(weak.id)
     end
 
-    # Другий тригер СВІДОМО іншого типу: модель не дає двох активних алертів
-    # одного типу на одне дерево, а дедуп тут ключується на ПАРІ (причина,
-    # актуатор) — не на алерті, що його спричинив. Інакший тип це і доводить.
+    # Другий тригер — ІНШЕ дерево: модель не дає двох активних алертів одного
+    # типу на одне дерево, а дедуп тут ключується на ПАРІ (причина, актуатор) —
+    # не на алерті, що його спричинив. [ARCH.102] Інакший тип більше не годиться:
+    # єдиний інший клапанний протокол (fire) тягне ще й сирену, чий unserved-слід
+    # зашумив би лічильник.
     it "does not pile up a duplicate alert for the same actuator and cause" do
       create(:actuator, :water_valve, gateway: gateway, state: :idle, max_active_duration_s: 120)
-      second = create(:ews_alert, cluster: cluster, tree: tree, alert_type: :insect_epidemic, severity: :low)
+      second = create(:ews_alert, :drought, cluster: cluster, tree: create(:tree, cluster: cluster))
 
       described_class.call(alert)
       described_class.call(second)

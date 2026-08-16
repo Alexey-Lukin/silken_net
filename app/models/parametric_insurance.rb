@@ -56,7 +56,11 @@ class ParametricInsurance < ApplicationRecord
     end
   end
 
-  enum :trigger_event, { critical_fire: 0, extreme_drought: 1, insect_epidemic: 2 }
+  # ⛔ 2 ЗАРЕЗЕРВОВАНЕ — не бери його під новий перил (значення лягає в колонку).
+  # ⚠️ Перил існує лише тоді, коли існує його арм-сутність: `EwsAlert`-тип, який
+  # читає `InsurancePayoutWorker#awaiting_independent_confirmation?`. Перил без
+  # неї не «недоробка», а кандидат, що висить вічно.
+  enum :trigger_event, { critical_fire: 0, extreme_drought: 1 }
 
   # Тип токена виплати — обирається інвестором при підписанні контракту
   enum :token_type, { carbon_coin: 0, forest_coin: 1 }, prefix: true

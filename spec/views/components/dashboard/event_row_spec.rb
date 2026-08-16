@@ -124,9 +124,12 @@ RSpec.describe Dashboard::EventRow do
       # 🔴 [TEST.12] Доти тут стояло `"Seismic"` — значення поза enum (`EwsAlert.new`
       # на ньому кидає `ArgumentError`). Приклад цього не асертував, тож дефект був
       # ЛАТЕНТНИЙ: `.allocate` пропускає те, що конструктор відкинув би, а перший пін
-      # на заголовок зацементував би «Seismic» замість продового «Seismic Anomaly»
-      # (виміряно: локаль-ключа `alerts.types.Seismic` немає → fail-open `humanize`).
-      alert.define_singleton_method(:alert_type) { "seismic_anomaly" }
+      # на заголовок зацементував би «Seismic» замість продового заголовка
+      # (виміряно тоді: локаль-ключа `alerts.types.Seismic` немає → fail-open `humanize`).
+      # [ARCH.102] Виправлений тоді `seismic_anomaly` сам покинув enum — семпл переїхав
+      # на `system_fault`: тип, що в проді СПРАВДІ буває без кластера (його пише
+      # монітор скарбниці, ARCH.82).
+      alert.define_singleton_method(:alert_type) { "system_fault" }
       alert.define_singleton_method(:cluster) { nil }
       alert.define_singleton_method(:created_at) { 1.minute.ago }
       alert

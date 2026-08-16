@@ -523,19 +523,6 @@ drought_alert = EwsAlert.create!(
   message_params: { z_value: 3.4 }
 )
 
-EwsAlert.create!(
-  cluster: cherkasy_forest,
-  tree: cherkasy_trees.first,
-  alert_type: :insect_epidemic,
-  severity: :low,
-  status: :resolved,
-  resolved_at: 1.day.ago,
-  resolved_by: forester.id,
-  resolution_notes: "Пастки встановлено. Короїд локалізовано.",
-  message_key: "insect_epidemic",
-  message_params: { acoustic_events: 120 }
-)
-
 fire_alert = EwsAlert.create!(
   cluster: amazon_sector,
   alert_type: :fire_detected,

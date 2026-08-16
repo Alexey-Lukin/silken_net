@@ -66,7 +66,7 @@ NaaS — це модель підписки, де клієнти (Організ
 **Що входить у послугу:**
 - Верифіковані SilkenCarbonCoin (SCC) токени, кожен з яких підкріплений реальними D-MRV даними біомаси конкретних дерев.
 - Real-time dashboard зі станом лісового кластера через Streamr P2P та Prometheus.
-- Параметричне страхування кластера (`ParametricInsurance`) від `critical_fire`, `extreme_drought`, `insect_epidemic`.
+- Параметричне страхування кластера (`ParametricInsurance`) від `critical_fire` та `extreme_drought`.
 - Корпоративний ESG-звіт з можливістю ретайрменту SCC через KlimaDAO.
 - **(Roadmap, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM))** Гіперлокальні мікрокліматичні дані (t°/RH/тиск/VPD з BME280) — data-as-a-service для агрохолдингів і страховиків: 1000+ датчиків *усередині* екосистеми проти усереднених метеостанцій на 50 км². Окреме джерело доходу поза SCC; має кількісно вимірювати біопреципітацію.
 - **(Roadmap, deferred SLA-фасети)** Predictive tree-fall як SLA-підписка — конкретні дерева, що впадуть під вітром (`z_value` + гіро-аналіз стовбура, [`03_04`](03_04_mruby_Lorenz_Attractor)) для енерго-ЛЕП / автотрас+залізниці (Service-of-Roads) / муніципальних парків (позови за аварійні стовбури) + захист берегозахисних лісосмуг Дніпра + оптимізація міського поливу за `delta_t` гідратації ксилеми (економія бюджету). SLA-дім → §2.
@@ -132,14 +132,13 @@ NaaS — це модель підписки, де клієнти (Організ
 | **Відсутність даних** (cluster-wide blackout — Starlink/шлюз) | `AiInsight.empty?` для кластера | `ContractHealthCheckService#flag_data_blackout!` | — (no on-chain дія) | `EwsAlert(:field_audit)` | **Force-majeure-сигнатура** (вкрадений/знищений шлюз, блекаут) → Field Audit (Category C), **НЕ** slash — карати лісника за збитий шлюз = false slash ([`05_05 §6`](05_05_Slashing_and_Risk_Policy)) |
 | **Дерево згоріло** (`critical_fire`) | `EwsAlert` `fire_detected` — термальний поріг `temperature_c ≥ fire_limit` (`AlertDispatchService`, біом-адаптивний) | `EcosystemHealingWorker` → `InsurancePayoutWorker` | `SilkenCarbonCoin.sol` або Etherisc DIP | `mint(to, payout)` або `triggerClaim()` | Параметричне страхування активується |
 | **Посуха** (`extreme_drought`) | `EwsAlert` `severe_drought` — wire-статус stress АБО вихід за per-family Z-смугу (`AlertDispatchService`) | `InsurancePayoutWorker` | `SilkenCarbonCoin.sol` або Etherisc DIP | `mint(to, payout)` або `triggerClaim()` | Параметрична виплата |
-| **Шкідники** (`insect_epidemic`) | `EwsAlert` `insect_epidemic` — поріг на акустичному лічильнику (`AlertDispatchService`). ⚠️ Інсектного класифікатора НЕ існує — платформа комах не вимірює: лічильник рахує кавітацію/пилку ([`03_03 §5`](03_03_TinyML_Acoustic_Inference)) | `InsurancePayoutWorker` | `SilkenCarbonCoin.sol` або Etherisc DIP | `mint(to, payout)` або `triggerClaim()` | Параметрична виплата |
 | **Дострокове розірвання** (Early Exit клієнта) | `ContractTerminationService.call(contract)` | Sync (API call) | `SilkenCarbonCoin.sol` | `slash(investor, burned_points)` (якщо `burn_accrued_points = true`; `contractual: true` — пропускає positive-A gate, бо це погоджена форфейтура, не slash-за-провину) | `NaasContract.status = :cancelled`, повернення з вирахуванням штрафу |
 | **Успішне завершення** (контракт закінчився) | `NaasContract.pending_completion` + аудит | `ClusterHealthCheckWorker` → `fulfill!` | — | — | `NaasContract.status = :fulfilled`, звіт в Filecoin |
 | **Смерть дерева** (біологічна) | `Tree.status = :deceased`, MaintenanceRecord | `EcosystemHealingWorker` → `PuroEarthPassportWorker` | Puro.earth (`PuroEarthPassportWorker` ✅ код; on-chain post-TRL 7) | D-MRV Biomass Passport | Biochar CORC генерація на Puro.earth |
 | **ESG Ретайрмент** | `KlimaRetirementWorker` | `KlimaRetirementWorker` → `KlimaDao::RetirementService` | KlimaDAO (Polygon) | `approve()` + `retire()` | SCC перено до `esg_retired_balance` (незворотно) |
 | **Щотижнева фіналізація** | Cron (понеділок 03:00 UTC) | `EthereumAnchorWorker` | Ethereum L1 | `anchorStateRoot(bytes32)` | State Root → Ethereum Mainnet |
 
-> **[INS.1] Insurance-перили потребують НЕЗАЛЕЖНОГО Trigger-2 — не платяться напряму.** Рядки «Дерево згоріло / Посуха / Шкідники» — це ЛЕГАЛЬНИЙ наслідок; механічно виплата йде лише за **dual-trigger** (Trigger-1 AI-кандидат + Trigger-2 незалежне підтвердження, [`05_05 §4`](05_05_Slashing_and_Risk_Policy)). Реальний Trigger-2 існує ЛИШЕ для **пожежі** (dClimate FIRMS-супутник); **посуха/шкідник супутникового оракула НЕ мають** → `Dclimate::VerificationService` ескалює їх у `:inconclusive`/**Field-Audit** (Кат-C, ніколи `rejected_fraud`/slash), доки не з'явиться реальне drought/pest-джерело (👤 [`00_07` INS.1/S3.2/UNI.12](00_07_Action_Plan_Tracker)).
+> **[INS.1] Insurance-перили потребують НЕЗАЛЕЖНОГО Trigger-2 — не платяться напряму.** Рядки «Дерево згоріло / Посуха» — це ЛЕГАЛЬНИЙ наслідок; механічно виплата йде лише за **dual-trigger** (Trigger-1 AI-кандидат + Trigger-2 незалежне підтвердження, [`05_05 §4`](05_05_Slashing_and_Risk_Policy)). Реальний Trigger-2 існує ЛИШЕ для **пожежі** (dClimate FIRMS-супутник); **посуха супутникового оракула НЕ має** → `Dclimate::VerificationService` ескалює її у `:inconclusive`/**Field-Audit** (Кат-C, ніколи `rejected_fraud`/slash), доки не з'явиться реальне drought-джерело (👤 [`00_07` INS.1/S3.2/UNI.12](00_07_Action_Plan_Tracker)).
 
 ---
 
@@ -184,8 +183,8 @@ Organization pays for monitoring
      │                        │
      ▼                        ▼
 Daily Health Check         Catastrophic Event
-(ClusterHealthCheck        (critical_fire, drought,
- Worker via                 insect_epidemic)
+(ClusterHealthCheck        (critical_fire, drought)
+ Worker via
  InsightBatchCallbacks)
      │                        │
      │ >20% critical           │
@@ -269,7 +268,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 | `organization_id` | bigint FK | Страхувальник |
 | `cluster_id` | bigint FK | Кластер під страховим захистом |
 | `status` | integer (enum) | `active(0)`, `triggered(1)`, `paid(2)`, `expired(3)` |
-| `trigger_event` | integer (enum) | `critical_fire(0)`, `extreme_drought(1)`, `insect_epidemic(2)` |
+| `trigger_event` | integer (enum) | `critical_fire(0)`, `extreme_drought(1)` |
 | `payout_amount` | numeric | Сума виплати |
 | `threshold_value` | numeric | Поріг для тригера (% аномальних дерев) |
 | `token_type` | integer (default: 0) | Тип токена виплати (SCC або SFC) |
@@ -307,7 +306,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 **Guard clauses перед виплатою:**
 - `required_confirmations` (default: 3) незалежних D-MRV підтверджень (Trigger-1 oracle-consensus).
 - `ParametricInsurance.status = :active` (ще не тригернуто раніше).
-- **[INS.1] Незалежне підтвердження (Trigger-2):** `InsurancePayoutWorker#awaiting_independent_confirmation?` — payout лише за verified Trigger-2 (fire — dClimate FIRMS-супутник; посуха/шкідник — Field-Audit/DAO, супутникового drought/pest-оракула немає → `:inconclusive`, ніколи `rejected_fraud`, [`05_05 §4`](05_05_Slashing_and_Risk_Policy)); без нього → hold (basis-risk guard).
+- **[INS.1] Незалежне підтвердження (Trigger-2):** `InsurancePayoutWorker#awaiting_independent_confirmation?` — payout лише за verified Trigger-2 (fire — dClimate FIRMS-супутник; посуха — Field-Audit/DAO, супутникового drought-оракула немає → `:inconclusive`, ніколи `rejected_fraud`, [`05_05 §4`](05_05_Slashing_and_Risk_Policy)); без нього → hold (basis-risk guard).
 - **[INS.1] No-data guard:** активні дерева Є, нуль AiInsight (катастрофа знищила сенсори) → `escalate_no_data_field_audit!` (Field Audit), а НЕ тихий `damage_ratio = 0` («не карати жертву», [`05_05 §6`](05_05_Slashing_and_Risk_Policy)).
 - Майстер-прапор `:parametric_insurance_oracle_enabled` (kill-switch, default off → інертно до DAO/founder-активації).
 

@@ -109,7 +109,18 @@ module Contracts
                   @history.each do |tx|
                     tr(class: "hover:bg-emerald-950/10 transition-colors") do
                       td(class: "p-4 text-emerald-600") { tx.tx_hash.present? ? "#{tx.tx_hash.first(12)}…" : t(".ledger.pending_block") }
-                      td(class: "p-4 text-white") { t(".ledger.amount_value", amount: tx.amount) }
+                      # 🔴 [ARCH.101] Знак «плюс» був ЗАШИТИЙ у сам рядок локалі, тож слеш
+                      # САМЕ ЦЬОГО контракту (`create_slash_intent!` ставить
+                      # `sourceable: @naas_contract`) друкувався в його ж «Emission History»
+                      # як надходження — на сторінці, яку читає інвестор. Напрямок
+                      # деривуємо через `#burn?`; колір іде ПАРОЮ зі знаком, бо самого
+                      # мінуса в моноширинному рядку майже не видно.
+                      # ⚠️ Плейсхолдер локалі тут НЕ цитуємо дослівно: `phlex_bigdecimal_render_spec`
+                      # сканує однорядкові `{…}`-блоки і виключає лише `#{…}`, тож
+                      # процентна форма в КОМЕНТАРІ червонить гейт як «голий decimal».
+                      td(class: tokens("p-4", "text-white": !tx.burn?, "text-status-danger-text": tx.burn?)) do
+                        t(tx.burn? ? ".ledger.amount_value_burn" : ".ledger.amount_value", amount: tx.amount)
+                      end
                       td(class: "p-4 text-gray-500 text-right") { tx.created_at.strftime("%H:%M // %d.%m.%y") }
                     end
                   end

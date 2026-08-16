@@ -328,7 +328,7 @@ end
 | `silkennet_circuit_breaker_rejections_total` | `service` | Web3 requests fast-failed because a provider circuit breaker was open |
 | `silkennet_coap_packets_received_total` | `status` | Total CoAP UDP packets received by the telemetry daemon |
 | `silkennet_ethereum_anchor_reverted_total` | — | EthereumAnchor storeStateRoot txs that reverted on-chain (ARCH.66) |
-| `silkennet_ews_alerts_total` | `alert_type` | Total EWS alerts created (fire, drought, pest, storm) — [INF.26] «created», бо доставки не існує ([`ARCH.60`](00_07_Action_Plan_Tracker)/[`ARCH.78`](00_07_Action_Plan_Tracker)) |
+| `silkennet_ews_alerts_total` | `alert_type` | Total EWS alerts created — [INF.26] «created», бо доставки не існує ([`ARCH.60`](00_07_Action_Plan_Tracker)/[`ARCH.78`](00_07_Action_Plan_Tracker)) |
 | `silkennet_fauna_skip_reports_total` | — | FW.42 telemetry packets reporting a fauna session skipped on low Vcap (per-DID attribution in logs) |
 | `silkennet_filecoin_archive_exhausted_total` | — | FilecoinArchiveWorker jobs that exhausted all retries (archive landed in Dead Set) |
 | `silkennet_filecoin_repin_total` | — | AuditLog archive re-enqueues issued by FilecoinReconcileWorker |

@@ -85,10 +85,8 @@ module TreeChronicle
     # missing` інакше змусив би тримати чотири однакові копії кожного емодзі.
     ALERT_ICONS = {
       "severe_drought"       => "\u{1F4A7}",
-      "insect_epidemic"      => "\u{1F41B}",
       "vandalism_breach"     => "\u{1F6A8}",
       "fire_detected"        => "\u{1F525}",
-      "seismic_anomaly"      => "\u{1F30D}",
       "system_fault"         => "\u26A0",
       "entropy_anomaly"      => "\u{1F4C9}",
       "field_audit"          => "\u{1F50D}",
@@ -154,15 +152,20 @@ module TreeChronicle
     end
 
     # --- BlockchainTransaction ---
-    def minting_title(tx)
+    # [ARCH.101] Напрямок не видно ні з колонки, ні зі знака `amount` (слеш пишеться
+    # ДОДАТНИМ) — тому обидва рядки деривують його через `#burn?`, а не приймають
+    # мінт за замовчуванням. Доти ім'я методу саме стверджувало напрямок
+    # («minting_title»), тож викликач не мав де помітити, що стверджує неправду.
+    def blockchain_title(tx)
       token = tx.token_type.to_s.humanize
-      "#{token} Minted"
+      tx.burn? ? "#{token} Burned" : "#{token} Minted"
     end
 
-    def minting_description(tx)
+    def blockchain_description(tx)
       amount = tx.amount
-      network = tx.blockchain_network || "Polygon"
-      "Minted #{amount} tokens on #{network.capitalize}"
+      network = (tx.blockchain_network || "Polygon").capitalize
+      verb = tx.burn? ? "Burned" : "Minted"
+      "#{verb} #{amount} tokens on #{network}"
     end
   end
 end

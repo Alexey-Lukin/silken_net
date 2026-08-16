@@ -6,6 +6,7 @@ en:
       empty_title: No chronicle events recorded
       event_types:
         alert: Alert
+        burning: Burn
         fraud: Integrity check
         homeostasis: Homeostasis
         maintenance: Maintenance

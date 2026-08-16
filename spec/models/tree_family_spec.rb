@@ -190,10 +190,11 @@ RSpec.describe TreeFamily, type: :model do
 
       # [ARCH.84] Кожен приклад вище подає ЧИСЛО — тобто те, чого форма не шле
       # ніколи. `store_accessor` кладе в JSONB рівно вантаж форми, а вантаж
-      # HTML-форми це РЯДОК, і `AlertDispatchService` ним арифметичить:
-      # виміряно рантаймом `DEFAULT_PEST_THRESHOLD * "0.7"` → `TypeError`,
-      # `temperature_c >= "60"` → `ArgumentError`. Тож питання тут не про
-      # валідність, а про ТИП того, що осіло.
+      # HTML-форми це РЯДОК, і `AlertDispatchService` ним арифметичить: виміряно
+      # рантаймом `temperature_c >= "60"` → `ArgumentError` (живий fire-поріг
+      # `fire_resistance_rating`; другий тодішній вимір — pest-множник — знято
+      # разом із гілкою, [ARCH.102]). Тож питання тут не про валідність, а про
+      # ТИП того, що осіло.
       describe "the shape an HTML form actually writes" do
         it "stores a numeric string as a number" do
           family = create(:tree_family, sap_flow_index: "0.7", bark_thickness: "12")

@@ -12,11 +12,11 @@ RSpec.describe InsightGeneratorService, type: :service do
     allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
 
-    # create_fraud_alert! викликається в InsightGeneratorService, але визначений як приватний
-    # class method у AlertDispatchService. Використовуємо without_partial_double_verification.
-    without_partial_double_verification {
-      allow(AlertDispatchService).to receive(:create_fraud_alert!)
-    }
+    # create_fraud_alert! — ПУБЛІЧНИЙ class method (AlertDispatchService); стаб
+    # верифікується штатно й служить обом полюсам: «не шле» (інертний гард) ⊥
+    # «шле» (застаблений детектор). Стара обгортка without_partial_double_verification
+    # стояла на протухлому «метод приватний» і ламала have_received зсередини.
+    allow(AlertDispatchService).to receive(:create_fraud_alert!)
   end
 
   # 🔴 [ARCH.84] Симетрія з `Cluster#recalculate_health_index!`: денормалізований
@@ -210,50 +210,58 @@ RSpec.describe InsightGeneratorService, type: :service do
       expect(insight.summary).to include("ГОМЕОСТАЗ")
     end
 
-    context "when sap and temp both deviate >30% from cluster baseline" do
+    # 🔴 Пін на ОГОЛОШЕНУ інертність fraud-гарда (`#detect_fraud?` → false):
+    # дизайн вимагає ДВОХ незалежних осей відхилення, а виміряна лишилась одна —
+    # температура. Одна вісь — легітимна біологія (тепліший край насадження),
+    # тож гард мовчить навіть на екстремальному відхиленні; звинувачення тут було б
+    # гірше за мовчання. Тригер повернення названо в самому `#detect_fraud?`;
+    # задротують детектор без другої осі — ці приклади червоніють першими.
+    context "when temperature alone deviates >30% from the cluster baseline" do
       let(:normal_tree1) { create(:tree, cluster: cluster, status: :active) }
       let(:normal_tree2) { create(:tree, cluster: cluster, status: :active) }
-      let(:fraudulent_tree) { create(:tree, cluster: cluster, status: :active) }
+      let(:warm_edge_tree) { create(:tree, cluster: cluster, status: :active) }
 
       before do
-        # Two normal trees establish the baseline centre
+        # Два сусіди тримають центр базлайну; третє дерево тепліше за нього на ~50%.
         [ normal_tree1, normal_tree2 ].each do |t|
           create(:telemetry_log, tree: t,
-            temperature_c: 25.0, sap_flow: 100.0, voltage_mv: 3500, z_value: 0.5,
+            temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
             acoustic_events: 2, growth_points: 10,
             bio_status: :homeostasis, metabolism_s: 1000,
             created_at: date.beginning_of_day + 12.hours)
         end
 
-        # Fraudulent tree: both sap (200) and temp (50) deviate >30% from cluster avg
-        create(:telemetry_log, tree: fraudulent_tree,
-          temperature_c: 50.0, sap_flow: 200.0, voltage_mv: 3500, z_value: 0.5,
+        create(:telemetry_log, tree: warm_edge_tree,
+          temperature_c: 50.0, voltage_mv: 3500, z_value: 0.5,
           acoustic_events: 2, growth_points: 10,
           bio_status: :homeostasis, metabolism_s: 1000,
           created_at: date.beginning_of_day + 12.hours)
       end
 
-      it "detects fraud when sap and temp both deviate >30% from cluster baseline" do
+      it "не піднімає фрод-прапор і не шле фрод-алерт" do
         described_class.call(date)
 
-        fraud_insight = AiInsight.find_by(
-          analyzable: fraudulent_tree,
+        insight = AiInsight.find_by(
+          analyzable: warm_edge_tree,
           insight_type: :daily_health_summary,
           target_date: date
         )
-        expect(fraud_insight).to be_present
-        expect(fraud_insight.fraud_detected).to be true
+        expect(insight).to be_present
+        expect(insight.fraud_detected).to be false
+        expect(AlertDispatchService).not_to have_received(:create_fraud_alert!)
       end
 
-      it "assigns zero growth points to fraudulent trees" do
+      it "лишає growth points і чесний стрес (грошовий хвіст фроду не смикається)" do
         described_class.call(date)
 
-        fraud_insight = AiInsight.find_by(
-          analyzable: fraudulent_tree,
+        insight = AiInsight.find_by(
+          analyzable: warm_edge_tree,
           insight_type: :daily_health_summary,
           target_date: date
         )
-        expect(fraud_insight.total_growth_points).to be(0)
+        expect(insight.total_growth_points).to eq(10)
+        # [E.64] температура — не стрес-терм; homeostasis → чесний 0.0, не фродовий 1.0
+        expect(insight.stress_index).to be_zero
       end
     end
 
@@ -397,7 +405,8 @@ RSpec.describe InsightGeneratorService, type: :service do
       described_class.call(date)
 
       insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-      expect(insight.summary).to include("СТРЕС")
+      # Рядок називає СТАН сигналу (положення Z), не діагноз про світ за ним
+      expect(insight.summary).to include("СТРЕС: Z нижче критичного мінімуму")
     end
 
     it "generates anomaly summary for status 2" do
@@ -410,7 +419,8 @@ RSpec.describe InsightGeneratorService, type: :service do
       described_class.call(date)
 
       insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-      expect(insight.summary).to include("АНОМАЛІЯ")
+      # Рядок називає СТАН сигналу (Z поза обвідною), не «хворобу чи шкідників»
+      expect(insight.summary).to include("АНОМАЛІЯ: Z вийшов за обвідну гомеостазу")
     end
 
     it "generates firmware-fault summary for status 3 (vm_error)" do
@@ -438,24 +448,6 @@ RSpec.describe InsightGeneratorService, type: :service do
 
       expect(Rails.logger).to receive(:error).with(/Insight.*Помилка/)
       described_class.call(date)
-    end
-
-    context "when baseline sap is zero" do
-      it "returns false (no fraud) when baseline sap is zero" do
-        # Single tree so cluster baseline sap == tree's sap == 0
-        tree_zero_sap = create(:tree, cluster: cluster, status: :active)
-        create(:telemetry_log, tree: tree_zero_sap,
-          temperature_c: 25.0, sap_flow: 0.0, voltage_mv: 3500, z_value: 0.5,
-          acoustic_events: 2, growth_points: 10,
-          bio_status: :homeostasis, metabolism_s: 1000,
-          created_at: date.beginning_of_day + 12.hours)
-
-        described_class.call(date)
-
-        insight = AiInsight.find_by(analyzable: tree_zero_sap, insight_type: :daily_health_summary, target_date: date)
-        expect(insight).to be_present
-        expect(insight.fraud_detected).to be false
-      end
     end
 
     context "with stress_index calculations" do
@@ -532,21 +524,22 @@ RSpec.describe InsightGeneratorService, type: :service do
       end
     end
 
-    context "with cluster aggregation and fraud" do
+    context "with cluster aggregation під інертним fraud-гардом" do
       let(:normal_tree) { create(:tree, cluster: cluster, status: :active) }
-      let(:fraud_tree) { create(:tree, cluster: cluster, status: :active) }
+      let(:warm_edge_tree) { create(:tree, cluster: cluster, status: :active) }
 
-      it "includes fraud count in summary when fraud is detected" do
-        # Normal tree
+      # ⊥ Дзеркало інертності на агрегаті: різке одноосьове відхилення не сміє
+      # долетіти до кластерного summary словом «фрод». Позитивна половина гілки
+      # `fraud_count > 0` живе в describe «фрод-хвіст лишається задротованим».
+      it "каже «Стан стабільний», а не «фрод», навіть при різкому відхиленні" do
         create(:telemetry_log, tree: normal_tree,
-          temperature_c: 25.0, sap_flow: 100.0, voltage_mv: 3500, z_value: 0.5,
+          temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
           acoustic_events: 2, growth_points: 10,
           bio_status: :homeostasis, metabolism_s: 1000,
           created_at: date.beginning_of_day + 12.hours)
 
-        # Fraud tree: both sap and temp deviate >30%
-        create(:telemetry_log, tree: fraud_tree,
-          temperature_c: 50.0, sap_flow: 200.0, voltage_mv: 3500, z_value: 0.5,
+        create(:telemetry_log, tree: warm_edge_tree,
+          temperature_c: 50.0, voltage_mv: 3500, z_value: 0.5,
           acoustic_events: 2, growth_points: 10,
           bio_status: :homeostasis, metabolism_s: 1000,
           created_at: date.beginning_of_day + 12.hours)
@@ -559,7 +552,8 @@ RSpec.describe InsightGeneratorService, type: :service do
           target_date: date
         )
         expect(cluster_insight).to be_present
-        expect(cluster_insight.summary).to include("фрод")
+        expect(cluster_insight.summary).to include("Стан стабільний")
+        expect(cluster_insight.summary).not_to include("фрод")
       end
     end
   end
@@ -568,95 +562,54 @@ RSpec.describe InsightGeneratorService, type: :service do
     it "returns false when stats.avg_temp is nil" do
       service = described_class.new
       stats = double("stats", avg_temp: nil)
-      result = service.send(:generate_for_tree, tree, { sap: 1.0, temp: 25.0, z: 0.5 }, stats)
+      result = service.send(:generate_for_tree, tree, { temp: 25.0, z: 0.5 }, stats)
       expect(result).to be false
     end
 
     it "returns false when stats itself is nil (safe-navigation guard)" do
       service = described_class.new
-      result = service.send(:generate_for_tree, tree, { sap: 1.0, temp: 25.0, z: 0.5 }, nil)
+      result = service.send(:generate_for_tree, tree, { temp: 25.0, z: 0.5 }, nil)
       expect(result).to be false
     end
   end
 
-  # [VPD weather-confounder gate — 05_05 §7] Discount-only, inert until
-  # calibrated. Guards against FALSE slashing during a humid spell (low VPD →
-  # suppressed sap on a healthy tree). Must never raise stress and must ship no
-  # guessed kPa threshold into the slashing path until ground-truth calibration.
+  # Гард нульового базлайну відносного відхилення (ділення на нуль → 0.0).
+  # ⚠️ Викликачів у `app/` зараз НУЛЬ: fraud-гард оголошено інертним, а
+  # `signed_deviation` знято — метод чекає app-сторонньої розв'язки долі разом
+  # із fraud-хвостом. Пін тримає обидві гілки живими, доки метод у дереві.
+  describe "#calculate_deviation" do
+    let(:service) { described_class.new }
+
+    it "returns 0.0 when the baseline is zero (no division by zero)" do
+      expect(service.send(:calculate_deviation, 42.0, 0.0)).to eq(0.0)
+    end
+
+    it "returns the absolute relative deviation for a non-zero baseline" do
+      expect(service.send(:calculate_deviation, 30.0, 40.0)).to eq(0.25)
+    end
+  end
+
+  # 🔴 Пін на ОГОЛОШЕНУ інертність VPD-гейта: його передумова — ДВА входи
+  # (погода І метаболічне відхилення), а другого виміру немає (`sap_flow` знято),
+  # тож дисконтувати стрес самим вологим днем означало б вибачати посуху погодою.
+  # Тригер повернення названо в самому методі (E.63 `delta_t`); задротують
+  # дисконт без метаболічного входу — ці приклади червоніють першими.
   describe "#apply_weather_confounder" do
     let(:service) { described_class.new }
 
-    it "is inert when avg_vpd is nil (firmware not yet emitting VPD — HW.32)" do
-      allow(service).to receive(:vpd_confounder_calibration).and_return({ low_kpa: 0.5, max_discount: 0.4 })
-      expect(service.send(:apply_weather_confounder, 0.9, nil, 0.5)).to eq(0.9)
+    it "returns stress unchanged even at saturated air (low VPD — the case the discount existed for)" do
+      expect(service.send(:apply_weather_confounder, 0.9, 0.2)).to eq(0.9)
     end
 
-    it "is inert when calibration is absent (no guessed threshold enters slashing)" do
-      allow(service).to receive(:vpd_confounder_calibration).and_return(nil)
-      expect(service.send(:apply_weather_confounder, 0.9, 0.2, 0.5)).to eq(0.9)
-    end
-
-    context "when calibrated (post ground-truth, 07_03 §1.4)" do
-      before { allow(service).to receive(:vpd_confounder_calibration).and_return({ low_kpa: 0.5, max_discount: 0.4 }) }
-
-      it "discounts stress when air is saturated (low VPD) and sap departs baseline" do
-        expect(service.send(:apply_weather_confounder, 0.9, 0.2, 0.5)).to eq(0.54) # 0.9 × (1 − 0.4)
-      end
-
-      it "never raises stress (discount-only invariant)" do
-        expect(service.send(:apply_weather_confounder, 0.9, 0.1, 0.8)).to be <= 0.9
-      end
-
-      it "is inert when VPD is not low (normal/high VPD = no weather excuse)" do
-        expect(service.send(:apply_weather_confounder, 0.9, 1.8, 0.5)).to eq(0.9)
-      end
-
-      it "is inert when sap is near baseline (nothing weather could account for)" do
-        expect(service.send(:apply_weather_confounder, 0.9, 0.2, 0.0)).to eq(0.9)
-      end
+    it "returns stress unchanged when avg_vpd is nil (firmware not yet emitting VPD — HW.32)" do
+      expect(service.send(:apply_weather_confounder, 0.9, nil)).to eq(0.9)
     end
   end
 
-  describe "#vpd_confounder_calibration" do
-    let(:service) { described_class.new }
-
-    it "returns nil by default (gate inert until ground-truth calibration)" do
-      expect(service.send(:vpd_confounder_calibration)).to be_nil
-    end
-
-    it "returns the calibrated config when both ENV thresholds are set" do
-      ENV["VPD_CONFOUNDER_LOW_KPA"] = "0.5"
-      ENV["VPD_CONFOUNDER_MAX_DISCOUNT"] = "0.4"
-      expect(service.send(:vpd_confounder_calibration)).to eq({ low_kpa: 0.5, max_discount: 0.4 })
-    ensure
-      ENV.delete("VPD_CONFOUNDER_LOW_KPA")
-      ENV.delete("VPD_CONFOUNDER_MAX_DISCOUNT")
-    end
-
-    # asymmetric branch: low set but discount missing → guard still fires
-    it "returns nil when only low_kpa is set (discount missing/zero)" do
-      ENV["VPD_CONFOUNDER_LOW_KPA"] = "0.5"
-      ENV.delete("VPD_CONFOUNDER_MAX_DISCOUNT")
-      expect(service.send(:vpd_confounder_calibration)).to be_nil
-    ensure
-      ENV.delete("VPD_CONFOUNDER_LOW_KPA")
-      ENV.delete("VPD_CONFOUNDER_MAX_DISCOUNT")
-    end
-
-    it "clamps max_discount to 1.0" do
-      ENV["VPD_CONFOUNDER_LOW_KPA"] = "0.5"
-      ENV["VPD_CONFOUNDER_MAX_DISCOUNT"] = "1.5"
-      expect(service.send(:vpd_confounder_calibration)[:max_discount]).to eq(1.0)
-    ensure
-      ENV.delete("VPD_CONFOUNDER_LOW_KPA")
-      ENV.delete("VPD_CONFOUNDER_MAX_DISCOUNT")
-    end
-  end
-
-  describe "VPD gate end-to-end (inert while uncalibrated)" do
+  describe "VPD gate end-to-end (inert by declaration)" do
     it "plumbs avg_vpd into reasoning yet leaves stress_index unchanged (gate inert)" do
       create(:telemetry_log, tree: tree,
-        temperature_c: 40.0, voltage_mv: 3500, z_value: 3.0, sap_flow: 5.0, vpd: 0.1,
+        temperature_c: 40.0, voltage_mv: 3500, z_value: 3.0, vpd: 0.1,
         acoustic_events: 2, growth_points: 5,
         bio_status: :stress, metabolism_s: 1000,
         created_at: date.beginning_of_day + 12.hours)
@@ -670,174 +623,18 @@ RSpec.describe InsightGeneratorService, type: :service do
     end
   end
 
-  # [Sap-flow stress term — closes the 05_05 §7 GAP where the heuristic ignored
-  # sap.] Low sap (below baseline) is the primary DIRECT drought signal. Inert
-  # until calibrated; bounded so it corroborates but never solely triggers slashing.
-  describe "#sap_stress_contribution" do
+  # 🔴 [ARCH.102] СТЕЛЯ евристики — несуча властивість, не побічний ефект:
+  # прямих сигналів у ній НЕМАЄ (sap_flow без писача; acoustic_events — змішаний
+  # канал кавітація/пилка, посуха з нього не деривується), тож евристичний шлях
+  # сягає щонайбільше 0.6 і слешинг дерева (поріг 0.83) ним НЕДОСЯЖНИЙ.
+  # Хтось поверне доданок без роздільного лічильника на дроті — пін червоніє.
+  describe "евристична стеля нижча за поріг слешингу [ARCH.102]" do
     let(:service) { described_class.new }
 
-    it "is inert (0.0) by default — no guessed weight enters live slashing" do
-      expect(service.send(:sap_stress_contribution, -0.9)).to eq(0.0)
-    end
-
-    context "when calibrated (post ground-truth, 07_03 §1.4)" do
-      before { allow(service).to receive(:sap_stress_calibration).and_return({ threshold: 0.3, weight: 0.2 }) }
-
-      it "adds the weight when sap is well below baseline (drought signal)" do
-        expect(service.send(:sap_stress_contribution, -0.5)).to eq(0.2)
-      end
-
-      it "ignores high sap (vigour is never penalised)" do
-        expect(service.send(:sap_stress_contribution, 0.5)).to eq(0.0)
-      end
-
-      it "ignores sap near baseline (shallower than the −threshold floor)" do
-        expect(service.send(:sap_stress_contribution, -0.1)).to eq(0.0)
-      end
-    end
-  end
-
-  describe "#sap_stress_calibration" do
-    let(:service) { described_class.new }
-
-    it "returns nil by default (term inert until calibrated)" do
-      expect(service.send(:sap_stress_calibration)).to be_nil
-    end
-
-    it "returns config when both ENV thresholds are set" do
-      ENV["STRESS_SAP_LOW_THRESHOLD"] = "0.3"
-      ENV["STRESS_SAP_WEIGHT"] = "0.2"
-      expect(service.send(:sap_stress_calibration)).to eq({ threshold: 0.3, weight: 0.2 })
-    ensure
-      ENV.delete("STRESS_SAP_LOW_THRESHOLD")
-      ENV.delete("STRESS_SAP_WEIGHT")
-    end
-
-    # asymmetric branch
-    it "returns nil when only threshold is set (weight ENV missing)" do
-      ENV["STRESS_SAP_LOW_THRESHOLD"] = "0.3"
-      ENV.delete("STRESS_SAP_WEIGHT")
-      expect(service.send(:sap_stress_calibration)).to be_nil
-    ensure
-      ENV.delete("STRESS_SAP_LOW_THRESHOLD")
-      ENV.delete("STRESS_SAP_WEIGHT")
-    end
-  end
-
-  describe "sap-flow in the stress heuristic" do
-    let(:service) { described_class.new }
-
-    it "leaves the heuristic unchanged by default (sap term inert despite low sap)" do
-      # [E.64] status 1 → 0.6 (z/temp removed); sap inert while uncalibrated → 0.6
-      expect(service.send(:calculate_stress_index_heuristic, 1, 40.0, 0, 3.0, -0.9)).to eq(0.6)
-    end
-
-    context "when calibrated" do
-      before { allow(service).to receive(:sap_stress_calibration).and_return({ threshold: 0.3, weight: 0.2 }) }
-
-      it "raises stress for a low-sap stressed tree" do
-        # status 1 (0.6) + low sap (0.2); z/temp normal = 0.8
-        expect(service.send(:calculate_stress_index_heuristic, 1, 25.0, 0, 0.5, -0.5)).to eq(0.8)
-      end
-
-      it "sap alone (homeostasis tree) cannot reach the 0.83 slash threshold" do
-        # status 0 (0.0) + low sap (0.2) = 0.2 — corroborator, never sole trigger
-        result = service.send(:calculate_stress_index_heuristic, 0, 25.0, 0, 0.5, -0.9)
-        expect(result).to eq(0.2)
-        expect(result).to be < 0.83
-      end
-    end
-  end
-
-  describe "sap stress end-to-end (signed deviation plumbed via generate_for_tree)" do
-    let(:high_sap_tree) { create(:tree, cluster: cluster, status: :active) }
-    let(:low_sap_tree) { create(:tree, cluster: cluster, status: :active) }
-
-    it "applies the sap term only to the below-baseline tree when calibrated" do
-      ENV["STRESS_SAP_LOW_THRESHOLD"] = "0.3"
-      ENV["STRESS_SAP_WEIGHT"] = "0.2"
-      # baseline sap = avg(100, 40) = 70 → low tree signed dev = (40-70)/70 = -0.43 ≤ -0.3
-      create(:telemetry_log, tree: high_sap_tree, temperature_c: 25.0, sap_flow: 100.0,
-        voltage_mv: 3500, z_value: 0.5, acoustic_events: 1, growth_points: 10,
-        bio_status: :homeostasis, metabolism_s: 1000, created_at: date.beginning_of_day + 12.hours)
-      create(:telemetry_log, tree: low_sap_tree, temperature_c: 25.0, sap_flow: 40.0,
-        voltage_mv: 3500, z_value: 0.5, acoustic_events: 1, growth_points: 10,
-        bio_status: :homeostasis, metabolism_s: 1000, created_at: date.beginning_of_day + 12.hours)
-
-      described_class.call(date)
-
-      high = AiInsight.find_by(analyzable: high_sap_tree, target_date: date)
-      low = AiInsight.find_by(analyzable: low_sap_tree, target_date: date)
-      expect(high.stress_index).to eq(0.0)  # vigour — no penalty
-      expect(low.stress_index).to eq(0.2)   # drought corroborator
-    ensure
-      ENV.delete("STRESS_SAP_LOW_THRESHOLD")
-      ENV.delete("STRESS_SAP_WEIGHT")
-    end
-  end
-
-  # [Acoustic (cavitation) stress term — closes the acoustic half of the 05_05 §7
-  # heuristic GAP.] acoustic_events = cavitation count (drought signal); chainsaw is
-  # a separate panic path. Inert until calibrated; max()'d with sap (correlated).
-  describe "#acoustic_stress_contribution" do
-    let(:service) { described_class.new }
-
-    it "is inert (0.0) by default even at high cavitation count" do
-      expect(service.send(:acoustic_stress_contribution, 200)).to eq(0.0)
-    end
-
-    context "when calibrated (post ground-truth, 07_03 §1.4)" do
-      before { allow(service).to receive(:acoustic_stress_calibration).and_return({ threshold: 50, weight: 0.2 }) }
-
-      it "adds the weight when cavitation is at/above the calibrated count" do
-        expect(service.send(:acoustic_stress_contribution, 80)).to eq(0.2)
-      end
-
-      it "ignores low cavitation (below the count threshold)" do
-        expect(service.send(:acoustic_stress_contribution, 10)).to eq(0.0)
-      end
-
-      it "treats nil cavitation as inert" do
-        expect(service.send(:acoustic_stress_contribution, nil)).to eq(0.0)
-      end
-    end
-  end
-
-  describe "#acoustic_stress_calibration" do
-    let(:service) { described_class.new }
-
-    it "returns nil by default (term inert until calibrated)" do
-      expect(service.send(:acoustic_stress_calibration)).to be_nil
-    end
-
-    it "returns config when both ENV thresholds are set" do
-      ENV["STRESS_ACOUSTIC_THRESHOLD"] = "50"
-      ENV["STRESS_ACOUSTIC_WEIGHT"] = "0.2"
-      expect(service.send(:acoustic_stress_calibration)).to eq({ threshold: 50, weight: 0.2 })
-    ensure
-      ENV.delete("STRESS_ACOUSTIC_THRESHOLD")
-      ENV.delete("STRESS_ACOUSTIC_WEIGHT")
-    end
-  end
-
-  describe "correlated drought signals (sap + acoustic) do not stack" do
-    let(:service) { described_class.new }
-
-    before do
-      allow(service).to receive_messages(
-        sap_stress_calibration: { threshold: 0.3, weight: 0.2 },
-        acoustic_stress_calibration: { threshold: 50, weight: 0.2 }
-      )
-    end
-
-    it "takes max(sap, acoustic), not their sum (05_05 §6 SLASH-SAFETY)" do
-      # status 1 (0.6) + low sap (0.2) AND high cavitation (0.2) → +max(0.2,0.2)=0.2, NOT 0.4
-      expect(service.send(:calculate_stress_index_heuristic, 1, 25.0, 80, 0.5, -0.5)).to eq(0.8)
-    end
-
-    it "still corroborates when only the acoustic signal fires" do
-      # cavitation only (sap normal): status 1 (0.6) + max(0, 0.2) = 0.8
-      expect(service.send(:calculate_stress_index_heuristic, 1, 25.0, 80, 0.5, 0.0)).to eq(0.8)
+    it "навіть найгірший вхід (anomaly + сатурована акустика + спека) лишається строго під slash_stress_threshold" do
+      anomaly = TelemetryLog.bio_statuses.fetch("anomaly")
+      worst = service.send(:calculate_stress_index_heuristic, anomaly, 55.0, 255, 9.9)
+      expect(worst).to be < AiInsight.slash_stress_threshold
     end
   end
 
@@ -1035,34 +832,39 @@ RSpec.describe InsightGeneratorService, type: :service do
     end
   end
 
-  describe "fraud detection bypasses ML model" do
-    let(:normal_tree1) { create(:tree, cluster: cluster, status: :active) }
-    let(:fraudulent_tree) { create(:tree, cluster: cluster, status: :active) }
-
-    it "assigns stress_index 1.0 for fraud without querying AI model" do
-      # Normal tree establishes baseline
-      create(:telemetry_log, tree: normal_tree1,
-        temperature_c: 25.0, sap_flow: 100.0, voltage_mv: 3500, z_value: 0.5,
+  # 🔴 Друга половина інертності: детектор оголошено мертвим, але його ХВІСТ
+  # (грошовий шлях — нуль росту, max-стрес, алерт, фрод-агрегат) лишається
+  # задротованим до тригера повернення. Живого шляху сюди немає, тож єдиний
+  # чесний пуск — стаб самого `#detect_fraud?`; зникне хвіст — червоніє тут.
+  describe "фрод-хвіст лишається задротованим (детектор застаблено)" do
+    it "обнуляє ріст, ставить стрес 1.0, шле алерт і рахує фрод в агрегаті" do
+      create(:telemetry_log, tree: tree,
+        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
         acoustic_events: 2, growth_points: 10,
         bio_status: :homeostasis, metabolism_s: 1000,
         created_at: date.beginning_of_day + 12.hours)
 
-      # Fraudulent tree: both sap (200) and temp (50) deviate >30% from cluster avg
-      create(:telemetry_log, tree: fraudulent_tree,
-        temperature_c: 50.0, sap_flow: 200.0, voltage_mv: 3500, z_value: 0.5,
-        acoustic_events: 2, growth_points: 10,
-        bio_status: :homeostasis, metabolism_s: 1000,
-        created_at: date.beginning_of_day + 12.hours)
-
-      described_class.call(date)
+      service = described_class.new(date)
+      allow(service).to receive(:detect_fraud?).and_return(true)
+      service.perform
 
       fraud_insight = AiInsight.find_by(
-        analyzable: fraudulent_tree,
+        analyzable: tree,
         insight_type: :daily_health_summary,
         target_date: date
       )
-      expect(fraud_insight.stress_index).to eq(1.0)
       expect(fraud_insight.fraud_detected).to be true
+      expect(fraud_insight.stress_index).to eq(1.0)
+      expect(fraud_insight.total_growth_points).to eq(0)
+      expect(fraud_insight.summary).to include("КРИТИЧНО")
+      expect(AlertDispatchService).to have_received(:create_fraud_alert!).with(tree, date)
+
+      cluster_insight = AiInsight.find_by(
+        analyzable: cluster,
+        insight_type: :daily_health_summary,
+        target_date: date
+      )
+      expect(cluster_insight.summary).to include("фрод")
     end
   end
 
@@ -1124,7 +926,7 @@ RSpec.describe InsightGeneratorService, type: :service do
       # Two telemetry rows establish a non-degenerate cluster baseline.
       [ tree_with_logs, tree ].each do |t|
         create(:telemetry_log, tree: t,
-          temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5, sap_flow: 100.0,
+          temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
           acoustic_events: 1, growth_points: 10,
           bio_status: :homeostasis, metabolism_s: 1000,
           created_at: date.beginning_of_day + 12.hours)
@@ -1144,7 +946,7 @@ RSpec.describe InsightGeneratorService, type: :service do
       tree_no_temp = create(:tree, cluster: cluster, status: :active)
       [ tree, tree_no_temp ].each do |t|
         create(:telemetry_log, tree: t,
-          temperature_c: nil, voltage_mv: 3500, z_value: 0.5, sap_flow: 100.0,
+          temperature_c: nil, voltage_mv: 3500, z_value: 0.5,
           acoustic_events: 1, growth_points: 0,
           bio_status: :homeostasis, metabolism_s: 1000,
           created_at: date.beginning_of_day + 12.hours)
@@ -1152,54 +954,6 @@ RSpec.describe InsightGeneratorService, type: :service do
 
       processed = service.process_cluster_batch([ cluster.id ])
       expect(processed).to eq(0)
-    end
-  end
-
-  # ===========================================================================
-  # sap_stress_calibration / acoustic_stress_calibration ENV-applied
-  # ===========================================================================
-  describe "#sap_stress_calibration — clamp" do
-    let(:service) { described_class.new }
-
-    it "clamps weight to 0.99 ceiling when ENV exceeds it" do
-      ENV["STRESS_SAP_LOW_THRESHOLD"] = "0.3"
-      ENV["STRESS_SAP_WEIGHT"] = "1.5"
-      expect(service.send(:sap_stress_calibration)).to eq({ threshold: 0.3, weight: 0.99 })
-    ensure
-      ENV.delete("STRESS_SAP_LOW_THRESHOLD")
-      ENV.delete("STRESS_SAP_WEIGHT")
-    end
-  end
-
-  describe "#acoustic_stress_calibration — ENV-applied" do
-    let(:service) { described_class.new }
-
-    it "returns config when both ENV thresholds are set" do
-      ENV["STRESS_ACOUSTIC_THRESHOLD"] = "50"
-      ENV["STRESS_ACOUSTIC_WEIGHT"] = "0.2"
-      expect(service.send(:acoustic_stress_calibration)).to eq({ threshold: 50, weight: 0.2 })
-    ensure
-      ENV.delete("STRESS_ACOUSTIC_THRESHOLD")
-      ENV.delete("STRESS_ACOUSTIC_WEIGHT")
-    end
-
-    it "clamps weight to 0.99 ceiling when ENV exceeds it" do
-      ENV["STRESS_ACOUSTIC_THRESHOLD"] = "50"
-      ENV["STRESS_ACOUSTIC_WEIGHT"] = "2.0"
-      expect(service.send(:acoustic_stress_calibration)[:weight]).to eq(0.99)
-    ensure
-      ENV.delete("STRESS_ACOUSTIC_THRESHOLD")
-      ENV.delete("STRESS_ACOUSTIC_WEIGHT")
-    end
-
-    # asymmetric branch
-    it "returns nil when only threshold is set (weight ENV missing)" do
-      ENV["STRESS_ACOUSTIC_THRESHOLD"] = "50"
-      ENV.delete("STRESS_ACOUSTIC_WEIGHT")
-      expect(service.send(:acoustic_stress_calibration)).to be_nil
-    ensure
-      ENV.delete("STRESS_ACOUSTIC_THRESHOLD")
-      ENV.delete("STRESS_ACOUSTIC_WEIGHT")
     end
   end
 end

@@ -4,8 +4,6 @@
 class AlertDispatchService
   # Fallback пороги (Hardware Truths), якщо в БД нічого не вказано
   DEFAULT_FIRE_TEMP_C = 60
-  DEFAULT_SEISMIC_THRESHOLD = 200
-  DEFAULT_PEST_THRESHOLD = 50
 
   # [SEC.10]: Per-DID rate limiting для emergency/panic alert creation.
   # Захист від replay attack та injection forged panic packets.
@@ -25,9 +23,6 @@ class AlertDispatchService
     # 2026-07-30 це ототожнення скасовано: одиноке дерево B2C має ВЛАСНИЙ кластер із
     # одного дерева, а не NULL. Гард лишається захистом на ще-nullable колонці.
     fire_limit = cluster&.custom_fire_threshold || family.fire_resistance_rating || DEFAULT_FIRE_TEMP_C
-
-    # Шкідники: коригується індексом сокоруху (чим соковитіше дерево, тим вищий фон)
-    pest_limit = family.sap_flow_index ? (DEFAULT_PEST_THRESHOLD * family.sap_flow_index) : DEFAULT_PEST_THRESHOLD
 
     # 1. СОФТ-ЗБІЙ ПРОШИВКИ (wire status=3 = BIO_STATUS_VM_ERROR)
     # [SLASH-1] Раніше status=3 хибно читався «вандалізмом» (vandalism_breach →
@@ -89,9 +84,10 @@ class AlertDispatchService
     # FIRMS-«ясне небо»-тавра rejected_fraud на жертві вирубки.
     # [SLASH-1] panic? — РЕАЛЬНА пилка: TinyML ml_event_id==3 стріляє panic-TX зі
     # status=homeostasis + PANIC_FLAG (bit 7, ОКРЕМО від status-бітів), тож гейт лише
-    # на bio_status_anomaly? пропускав її вниз у seismic_anomaly (acoustic=255≥200) повз
-    # chainsaw-маршрут. anomaly? і panic? взаємовиключні на реальному дроті — обидва
-    # ведуть сюди.
+    # на bio_status_anomaly? пропускав її повз chainsaw-маршрут у сусідню акустичну
+    # гілку. anomaly? і panic? взаємовиключні на реальному дроті — обидва ведуть сюди.
+    # ⚠️ Урок пережив свій інстанс: додаючи БУДЬ-ЯКУ гілку на `acoustic_events`,
+    # став її ПІСЛЯ цієї — panic-кадр несе 0xFF у тому ж байті.
     if telemetry_log.panic? || telemetry_log.bio_status_anomaly?
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
@@ -102,16 +98,6 @@ class AlertDispatchService
         message_params: { did: tree.did }
       )
       return
-    end
-
-    # 3. ЗЕМЛЕТРУС (Seismic Pulse)
-    if telemetry_log.acoustic_events >= DEFAULT_SEISMIC_THRESHOLD
-      create_and_dispatch_alert!(
-        cluster: cluster, tree: tree, severity: :critical,
-        alert_type: :seismic_anomaly,
-        message_key: "seismic_anomaly",
-        message_params: { did: tree.did, acoustic_events: telemetry_log.acoustic_events }
-      )
     end
 
     # 4. ПОСУХА ТА АТРАКТОР (Mathematical Homeostasis)
@@ -132,19 +118,6 @@ class AlertDispatchService
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :medium,
         alert_type: :severe_drought, message_key: key, message_params: params
-      )
-    end
-
-    # 5. ШКІДНИКИ (The Silent Eaters - Updated Logic)
-    # [ПІДСТУПНІСТЬ]: Тригеримо загрозу навіть БЕЗ біо-стресу, якщо шум аномальний
-    if telemetry_log.acoustic_events > pest_limit && telemetry_log.acoustic_events < DEFAULT_SEISMIC_THRESHOLD
-      pest_severity = telemetry_log.bio_status_stress? ? :medium : :low
-
-      create_and_dispatch_alert!(
-        cluster: cluster, tree: tree, severity: pest_severity,
-        alert_type: :insect_epidemic,
-        message_key: "insect_epidemic",
-        message_params: { acoustic_events: telemetry_log.acoustic_events }
       )
     end
   end

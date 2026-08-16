@@ -118,9 +118,7 @@ RSpec.describe TreeChronicle::TextFormatter do
       "fire_detected"     => "🔥",
       "chainsaw_detected" => "🪚",
       "severe_drought"    => "💧",
-      "insect_epidemic"   => "🐛",
       "vandalism_breach"  => "🚨",
-      "seismic_anomaly"   => "🌍",
       "system_fault"      => "⚠",
       "field_audit"       => "🔍",
       "firmware_fault"    => "⚙"
@@ -144,9 +142,7 @@ RSpec.describe TreeChronicle::TextFormatter do
       "fire_detected"     => "Fire Detected",
       "chainsaw_detected" => "Chainsaw Detected",
       "severe_drought"    => "Severe Drought",
-      "insect_epidemic"   => "Insect Epidemic",
       "vandalism_breach"  => "Vandalism Breach",
-      "seismic_anomaly"   => "Seismic Anomaly",
       "system_fault"      => "System Fault",
       "field_audit"       => "Field Audit",
       "firmware_fault"    => "Firmware Fault"
@@ -318,14 +314,23 @@ RSpec.describe TreeChronicle::TextFormatter do
     end
   end
 
-  describe ".minting_title" do
-    it "humanizes the token_type" do
-      tx = OpenStruct.new(token_type: "carbon_coin")
-      expect(described_class.minting_title(tx)).to eq("Carbon coin Minted")
+  # [ARCH.101] Напрямок грошового рядка ДЕРИВУЄТЬСЯ (`#burn?`), не приймається
+  # мінтом за замовчуванням — слеш пишеться ДОДАТНИМ, тож знак `amount` нічого
+  # не каже. Обидва полюси запінені: без burn-половини перейменування
+  # `minting_* → blockchain_*` було б косметикою.
+  describe ".blockchain_title" do
+    it "humanizes the token_type and derives Minted for a non-burn tx" do
+      tx = OpenStruct.new(token_type: "carbon_coin", "burn?" => false)
+      expect(described_class.blockchain_title(tx)).to eq("Carbon coin Minted")
+    end
+
+    it "derives Burned for a burn-sourced tx" do
+      tx = OpenStruct.new(token_type: "carbon_coin", "burn?" => true)
+      expect(described_class.blockchain_title(tx)).to eq("Carbon coin Burned")
     end
   end
 
-  describe ".minting_description" do
+  describe ".blockchain_description" do
     # 🔴 [TEST.12 вісь ТИПУ] `amount` тут БУВ Integer, і обидва піни стерегли форму,
     # якої застосунок не виробляє жодного разу: колонка — `numeric(24,6)`, тож живий
     # запис віддає **BigDecimal**, і рядок виходить «Minted 5.0 tokens», а не
@@ -334,14 +339,25 @@ RSpec.describe TreeChronicle::TextFormatter do
     # тож Integer сюди не приходить ніколи. Фікстура лишається `OpenStruct` свідомо
     # — це unit-спека форматера, від БД незалежна, — але ТИП мусить бути продовий.
     context "with blockchain_network" do
-      let(:tx) { OpenStruct.new(amount: BigDecimal("5"), blockchain_network: "solana") }
+      let(:tx) { OpenStruct.new(amount: BigDecimal("5"), blockchain_network: "solana", "burn?" => false) }
 
       it "includes amount and capitalized network" do
-        result = described_class.minting_description(tx)
+        result = described_class.blockchain_description(tx)
         expect(result).to include("Minted 5.0 tokens")
         expect(result).to include("Solana")
         # [ARCH.53]: жодних oracle-verified claim'ів у юзер-хроніці — мінт оптимістичний (L0-custodial)
         expect(result).not_to include("Chainlink")
+      end
+    end
+
+    # [ARCH.101] Burn-полюс деривації дієслова — дзеркало title-пари.
+    context "with a burn-sourced tx" do
+      let(:tx) { OpenStruct.new(amount: BigDecimal("5"), blockchain_network: "solana", "burn?" => true) }
+
+      it "says Burned, not Minted" do
+        result = described_class.blockchain_description(tx)
+        expect(result).to include("Burned 5.0 tokens")
+        expect(result).not_to include("Minted")
       end
     end
 
@@ -351,10 +367,10 @@ RSpec.describe TreeChronicle::TextFormatter do
     # — ГАРД проти `nil.capitalize`, а не поведінка, яку колись побачить користувач.
     # Приклад лишено саме як пін гарда; знімати гілку не можна — вона ловить падіння.
     context "without blockchain_network (недосяжний вхід — пін ГАРДА)" do
-      let(:tx) { OpenStruct.new(amount: BigDecimal("10"), blockchain_network: nil) }
+      let(:tx) { OpenStruct.new(amount: BigDecimal("10"), blockchain_network: nil, "burn?" => false) }
 
       it "defaults to Polygon" do
-        result = described_class.minting_description(tx)
+        result = described_class.blockchain_description(tx)
         expect(result).to include("Polygon")
         expect(result).to include("Minted 10.0 tokens")
       end

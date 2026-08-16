@@ -41,7 +41,6 @@ lv:
       global_blackout: "🛰️ GLOBĀLS PĀRTRAUKUMS: par %{target_date} nav saņemti nekādi telemetrijas dati. Iespējama Starlink avārija vai masveida vārteju atteice — Field Audit (C kat.), slashing NAV piemērots."
       hardware_decay: 'Aparatūras nolietojums: mezglam %{did} nepieciešama nomaiņa.'
       hydrological_stress: "💧 SAUSUMS: Hidroloģiskais stress."
-      insect_epidemic: "🪲 BIO-DRAUDI: Akustiska kaitēkļu aktivitāte (%{acoustic_events})."
       insurance_candidate_armed: 'Apdrošināšanas kandidāts #%{id}: AI orākuls redz %{percentage}% kritisku koku — pirms izmaksas nepieciešams NEATKARĪGS apstiprinājums (dClimate satelīts / Field Audit) (dual-trigger, 05_05 §6).'
       insurance_no_data: 'Apdrošināšanas orākuls #%{id}: par %{target_date} nulle AiInsight, kamēr koki ir aktīvi (iespējama katastrofa / iznīcināti sensori). Izmaksa NAV anulēta — nepieciešams Field Audit (C kategorija, 05_05 §5/§6).'
       insurance_reserve_hold_aggregate_cap: 'Insurance reserve-gate HOLD [INS.2] priekš #%{id}: 24h iekšējā apdrošināšanas emisija %{window_sum} %{token_type} pārsniedz griestus %{cap}. Izmaksa apturēta — pārbaudi ekspozīciju pirms manuālas atrisināšanas.'
@@ -54,7 +53,6 @@ lv:
       queen_silent: "👑 Queen %{uid} klusē %{silent_for_min} min (pēdējais kontakts %{last_seen_at}). Klasteris bez augšupsaites — koku telemetrija nepienāk."
       queen_uplink_lost: "🆘 Queen %{uid} zaudēja VISAS augšupsaites (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min). Sauciens atnāca caur Helium — telemetrija buferizējas, nepieciešams izbraukums."
       queen_uplink_lost_reported: "🆘 Queen %{uid} zaudēja VISAS augšupsaites (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min, reported_at=%{reported_at}). Sauciens atnāca caur Helium — telemetrija buferizējas, nepieciešams izbraukums."
-      seismic_anomaly: "🌋 SEISMIKA: Anomāla rezonanse (%{acoustic_events}). DID: %{did}"
       slash_evasion_cluster: 'Slash izvairīšanās (klasteris #%{cluster_id}): A kategorijas pierādījums pastāv, bet turētājs izņēma visus SCC pirms sprieduma izpildes (pieprasīts %{requested_burn} SCC, on-chain atlikums ≈0). Sadedzināšana nav iespējama — nepieciešams juridisks/manuāls ceļš (05_05 §3.2).'
       slash_evasion_tree: 'Slash izvairīšanās (koks %{tree_did}): A kategorijas pierādījums pastāv, bet turētājs izņēma visus SCC pirms sprieduma izpildes (pieprasīts %{requested_burn} SCC, on-chain atlikums ≈0). Sadedzināšana nav iespējama — nepieciešams juridisks/manuāls ceļš (05_05 §3.2).'
       slash_frozen_indeterminate_cluster: 'Slashing bloķēts (klasteris #%{cluster_id}): A kategorijas pierādījums pastāv, bet kaitējuma APJOMS nav nosakāms (nav AiInsight datu par datumu). Nekas nav sadedzināts — nepieciešams Field Audit (C kategorija, 05_05 §3.2/§5).'
@@ -90,10 +88,8 @@ lv:
       firmware_canary_trip: Programmaparatūras kanārijsignāls
       firmware_fault: Programmaparatūras kļūme
       firmware_reverted: Programmaparatūra atgriezta
-      insect_epidemic: Kukaiņu epidēmija
       queen_offline: Queen bezsaistē
       queen_uplink_lost: Zaudēta Queen augšupsaite
-      seismic_anomaly: Seismiskā anomālija
       severe_drought: Smags sausums
       system_fault: Sistēmas kļūme
       vandalism_breach: Vandālisma ielaušanās

@@ -25,7 +25,6 @@ RSpec.describe ParametricInsurance, type: :model do
       insurance = build(:parametric_insurance)
       expect(insurance).to respond_to(:critical_fire?)
       expect(insurance).to respond_to(:extreme_drought?)
-      expect(insurance).to respond_to(:insect_epidemic?)
     end
 
     it "defines token_type values with prefix" do

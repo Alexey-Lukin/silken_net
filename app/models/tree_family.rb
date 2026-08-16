@@ -55,13 +55,12 @@ class TreeFamily < ApplicationRecord
   #     «is not a number». `normalizes` сюди не дістає — виміряно: воно працює над
   #     справжніми атрибутами, а `store_accessor` ним не є (клас `Organization#locale`).
   #
-  # (2) заповнене поле осідало рядком, і `AlertDispatchService` ним АРИФМЕТИЧИТЬ:
-  #     `DEFAULT_PEST_THRESHOLD * sap_flow_index` → `TypeError`, а
-  #     `temperature_c >= fire_resistance_rating` → `ArgumentError`. Виміряно
-  #     рантаймом; ціна різна й жодна не вказує на причину — TypeError їде
-  #     `raise e` в `UnpackTelemetryWorker` і кладе БАТЧ у dead set (черга `uplink`),
-  #     а ArgumentError ловить сусідній `rescue ArgumentError` і пише в лог
-  #     «Корупція Base64 від <gateway>», тобто приписує провину шлюзу.
+  # (2) заповнене поле осідає рядком, а `AlertDispatchService` ним АРИФМЕТИЧИТЬ:
+  #     `temperature_c >= fire_resistance_rating` кидає `ArgumentError`. Виміряно
+  #     рантаймом, і ціна не там, де здається: виняток ловить сусідній
+  #     `rescue ArgumentError` в `UnpackTelemetryWorker` і пише в лог «Корупція
+  #     Base64 від <gateway>» — тобто провина приписується шлюзу за те, що
+  #     адміністратор увів у довідник, і жоден слід не веде до причини.
   #
   # ⚠️ Звужено до РЯДКІВ навмисно: `compact_blank` зʼїв би й `false`, тож майбутня
   # булева властивість зникала б мовчки при кожному збереженні.

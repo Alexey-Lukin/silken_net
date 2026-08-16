@@ -36,6 +36,7 @@ uk:
       ledger:
         amount: Сума
         amount_value: "+ %{amount} SCC"
+        amount_value_burn: "− %{amount} SCC"
         empty: Емісій не зафіксовано.
         pending_block: ОЧІКУЄ_БЛОК
         timestamp: Час

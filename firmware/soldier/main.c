@@ -2303,8 +2303,10 @@ int main(void)
     // [SEC.11 / FW.30] Єдина сигнатура: calculate_state(x, y, z, temp, acoustic, delta_t_s, vcap_mv)
     // Warm path: (x,y,z) з RTC DR16-DR18 (FW.6 state continuation).
     // Cold path: (x₀,y₀,z₀) з K_seed via HKDF/HMAC (SEC.11 seed derivation).
-    // delta_t_s/vcap_mv у mruby: EMA-згладжені після прогріву (FW.49-S1 wired),
-    // до прогріву — baseline 60/3300 (03_01 §13.3).
+    // delta_t_s/vcap_mv у mruby: EMA-згладжені після прогріву (FW.49-S1 wired);
+    // до прогріву — delta_t СЕНТИНЕЛ (DELTA_T_UNKNOWN_S), vcap nominal 3300
+    // (03_01 §13.3). Дві різні відповіді на дві різні відсутності: метаболізм
+    // не виміряно взагалі → GP=0, а шина живлення стабілізована BQ25570.
     // =========================================================================
 
     // [E.63 (г)] КОНТРАКТ «wire = вхід GP»: одне число на обидва споживачі —

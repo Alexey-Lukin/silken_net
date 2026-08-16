@@ -810,8 +810,11 @@ class TelemetryUnpackerService < ApplicationService
   # Солдата: «мій epoch_day застарілий». Нейтралізуємо acoustic до 0 ДО DCI
   # (пристрій рахував Лоренц з 0 — дзеркало Soldier_Acoustic_Wire_Value),
   # ставимо time_unsynced_fallback і одразу просимо CMD_TIME_SYNC. Побічний
-  # виграш нейтралізації: alert-ланцюг (сейсміка/шкідники) і stress_index
-  # бачать 0, а не фальшиві 254 «події». DCI при цьому НЕ обходиться —
+  # виграш нейтралізації: ML-фіча `max_acoustic` бачить 0, а не фальшиві 254
+  # «події» — і це не про один інсайт, а про ВИБІРКУ: те саме число осідає в
+  # `AiInsight#reasoning`, з якого тренується модель (`ai_train.rake`), тож
+  # ненейтралізований сентинел ставав би піком акустики в тренувальних даних.
+  # DCI при цьому НЕ обходиться —
   # sentinel не може служити маскою для підробленого Z (fraud-логіка жива).
   def apply_time_uncertain_sentinel!(tree, attributes, hex_did)
     return unless attributes[:acoustic_events] == ACOUSTIC_TIME_UNCERTAIN_SENTINEL

@@ -13,9 +13,9 @@ RSpec.describe GenerateClusterInsightWorker, type: :worker do
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
 
-    without_partial_double_verification {
-      allow(AlertDispatchService).to receive(:create_fraud_alert!)
-    }
+    # create_fraud_alert! — публічний class method; ізоляційний стаб (гард інертний,
+    # живого виклику тут немає — носій обох полюсів у сервісному спеку).
+    allow(AlertDispatchService).to receive(:create_fraud_alert!)
   end
 
   describe "#perform" do
@@ -23,7 +23,7 @@ RSpec.describe GenerateClusterInsightWorker, type: :worker do
       before do
         create(:telemetry_log, tree: tree,
           temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-          acoustic_events: 2, growth_points: 10, sap_flow: 100.0,
+          acoustic_events: 2, growth_points: 10,
           bio_status: :homeostasis, metabolism_s: 1000,
           created_at: date.beginning_of_day + 12.hours)
       end
@@ -101,12 +101,12 @@ RSpec.describe GenerateClusterInsightWorker, type: :worker do
       before do
         create(:telemetry_log, tree: tree,
           temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-          acoustic_events: 2, growth_points: 10, sap_flow: 100.0,
+          acoustic_events: 2, growth_points: 10,
           bio_status: :homeostasis, metabolism_s: 1000,
           created_at: date.beginning_of_day + 12.hours)
         create(:telemetry_log, tree: tree2,
           temperature_c: 30.0, voltage_mv: 4000, z_value: 0.8,
-          acoustic_events: 5, growth_points: 20, sap_flow: 120.0,
+          acoustic_events: 5, growth_points: 20,
           bio_status: :homeostasis, metabolism_s: 1200,
           created_at: date.beginning_of_day + 12.hours)
       end
@@ -118,52 +118,50 @@ RSpec.describe GenerateClusterInsightWorker, type: :worker do
       end
     end
 
-    context "with fraud detection in batch mode" do
+    # 🔴 Пін на ОГОЛОШЕНУ інертність fraud-гарда й у батч-шляху
+    # (`InsightGeneratorService#detect_fraud?` → false: одна виміряна вісь —
+    # температура — не є доказом фроду; хвіст доводиться стабом у сервісному спеку).
+    context "with the inert fraud guard in batch mode" do
       let(:normal_tree) { create(:tree, cluster: cluster, status: :active) }
-      let(:fraudulent_tree) { create(:tree, cluster: cluster, status: :active) }
+      let(:warm_edge_tree) { create(:tree, cluster: cluster, status: :active) }
 
       before do
         # Два нормальних дерева встановлюють базлайн кластера
         [ tree, normal_tree ].each do |t|
           create(:telemetry_log, tree: t,
             temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-            acoustic_events: 2, growth_points: 10, sap_flow: 100.0,
+            acoustic_events: 2, growth_points: 10,
             bio_status: :homeostasis, metabolism_s: 1000,
             created_at: date.beginning_of_day + 12.hours)
         end
 
-        # Фрод-дерево: і sap_flow, і temperature відхиляються >30% від базлайну
-        create(:telemetry_log, tree: fraudulent_tree,
+        # Тепле дерево: температура відхиляється >30% від базлайну — одна вісь
+        create(:telemetry_log, tree: warm_edge_tree,
           temperature_c: 50.0, voltage_mv: 3500, z_value: 0.5,
-          acoustic_events: 2, growth_points: 10, sap_flow: 200.0,
+          acoustic_events: 2, growth_points: 10,
           bio_status: :homeostasis, metabolism_s: 1000,
           created_at: date.beginning_of_day + 12.hours)
       end
 
-      it "marks fraudulent tree insight with fraud_detected=true" do
+      it "не звинувачує відхильне дерево і не смикає грошовий хвіст" do
         described_class.new.perform([ cluster.id ], date.to_s)
 
-        fraud_insight = AiInsight.find_by(
-          analyzable: fraudulent_tree,
+        insight = AiInsight.find_by(
+          analyzable: warm_edge_tree,
           insight_type: :daily_health_summary,
           target_date: date
         )
-        expect(fraud_insight).to be_present
-        expect(fraud_insight.fraud_detected).to be true
-        expect(fraud_insight.stress_index).to eq(1.0)
-        expect(fraud_insight.total_growth_points).to eq(0)
-      end
-
-      it "creates cluster summary mentioning fraud count" do
-        described_class.new.perform([ cluster.id ], date.to_s)
+        expect(insight).to be_present
+        expect(insight.fraud_detected).to be false
+        expect(insight.stress_index).not_to eq(1.0)
+        expect(insight.total_growth_points).to eq(10)
 
         cluster_insight = AiInsight.find_by(
           analyzable: cluster,
           insight_type: :daily_health_summary,
           target_date: date
         )
-        expect(cluster_insight).to be_present
-        expect(cluster_insight.summary).to include("фрод")
+        expect(cluster_insight.summary).not_to include("фрод")
       end
     end
   end

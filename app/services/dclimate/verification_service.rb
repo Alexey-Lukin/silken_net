@@ -57,7 +57,7 @@ module Dclimate
 
     def perform
       # [INS.1] Cosmic Eye = FIRMS fire-супутник → верифікує ЛИШЕ пожежу. Не-пожежний перил
-      # (посуха/шкідник) НЕ спростовується відсутністю вогню → НІКОЛИ rejected_fraud/trigger_slashing;
+      # (сьогодні лише `severe_drought`) НЕ спростовується відсутністю вогню → НІКОЛИ rejected_fraud/trigger_slashing;
       # ескалюємо у незалежний Field Audit (Кат-C, 05_05 §5). Дзеркало SLASH-1 (indeterminate → Field Audit).
       return escalate_non_fire_to_field_audit! unless @alert.alert_type_fire_detected?
 
@@ -307,15 +307,15 @@ module Dclimate
                         "(Кат-C, 05_05 §5), без 48h orbital retry."
     end
 
-    # [INS.1] Не-пожежний перил (посуха/шкідник): FIRMS fire-супутник не може його ні підтвердити,
+    # [INS.1] Не-пожежний перил (сьогодні лише `severe_drought`): FIRMS fire-супутник не може його ні підтвердити,
     # ні спростувати → ескалюємо у незалежний Field Audit (Кат-C DAO peer-review, 05_05 §5), а НЕ
     # rejected_fraud (це таврувало б жертву force-majeure фродом і слало у trigger_slashing). Вердикт
     # :inconclusive — наявний стан «потрібен людський/DAO-аудит», на якому InsurancePayoutWorker уже
     # HOLD-ить. Фізичний дрон-fallback = ForestBountyService (E.20/E.34) [PLANNED]; реальний
-    # drought/pest-оракул = North-Star (S3.2 / ДСНС-API UNI.12). Без FIRMS-запиту (нерелевантний).
+    # drought-оракул = North-Star (S3.2 / ДСНС-API UNI.12). Без FIRMS-запиту (нерелевантний).
     def escalate_non_fire_to_field_audit!
       note = "[#{Time.current.iso8601}] FIRMS fire-супутник не верифікує не-пожежний перил " \
-             "'#{@alert.alert_type}' → Field Audit (Кат-C, 05_05 §5); реального drought/pest-оракула " \
+             "'#{@alert.alert_type}' → Field Audit (Кат-C, 05_05 §5); реального drought-оракула " \
              "ще нема (S3.2 North-Star / E.20-E.34 fallback)."
       combined = [ @alert.resolution_notes.presence, note ].compact.join("\n")
 

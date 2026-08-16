@@ -223,6 +223,23 @@ RSpec.describe EwsAlert, type: :model do
 
       expect(sibling.reload).to be_persisted # зовнішня транзакція КОМІТНУЛАСЬ
     end
+
+    # TOCTOU-шлях per-tree гілки ЧЕРЕЗ ІНДЕКС: переможець закомітився ПІСЛЯ
+    # валідаційного SELECT'а, але ДО INSERT'а — валідація гонку не бачила (тут це
+    # емулює зняття perform_validations), тож дубль бʼється об частковий
+    # unique-index → RecordNotUnique → та сама ковтальна гілка, що в cluster-гонки,
+    # але лог мусить назвати ДЕРЕВО. Доти tree-половина цього rescue жила без прогону.
+    it "swallows a tree-side duplicate that slips past validation (TOCTOU → index), naming the tree" do
+      described_class.escalate_field_audit!(cluster: cluster, tree: tree, message_key: "cluster_data_blackout")
+      allow(described_class).to receive(:active_tree_field_audit_for).and_return(nil)
+      allow_any_instance_of(described_class).to receive(:perform_validations).and_return(true)
+      allow(Rails.logger).to receive(:info).and_call_original
+
+      expect(
+        described_class.escalate_field_audit!(cluster: cluster, tree: tree, message_key: "cluster_data_blackout")
+      ).to be_nil
+      expect(Rails.logger).to have_received(:info).with(/дереву #{Regexp.escape(tree.did)}/)
+    end
   end
 
   # =========================================================================
@@ -391,14 +408,6 @@ RSpec.describe EwsAlert, type: :model do
         create(:ews_alert, :drought)
       end
 
-      # [INS.1] insect — теж страховий перил → планує незалежну Trigger-2-перевірку (сервіс її
-      # маршрутизує у Field Audit, бо fire-супутник не адьюдикує шкідника).
-      it "enqueues DclimateVerificationWorker for insect_epidemic" do
-        allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original
-        expect(DclimateVerificationWorker).to receive(:perform_in).with(1.hour, kind_of(Integer))
-        create(:ews_alert, alert_type: :insect_epidemic, severity: :medium)
-      end
-
       it "does not enqueue DclimateVerificationWorker for vandalism_breach" do
         allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original
         expect(DclimateVerificationWorker).not_to receive(:perform_in)
@@ -560,13 +569,6 @@ RSpec.describe EwsAlert, type: :model do
     it "returns false for vandalism_breach" do
       alert = build(:ews_alert, alert_type: :vandalism_breach)
       expect(alert.requires_satellite_consensus?).to be false
-    end
-
-    # [INS.1] insect — теж страховий перил → потребує незалежного Trigger-2 (маршрут — Field Audit,
-    # бо fire-супутник не адьюдикує шкідника; раніше false → peril висів без Trigger-2 = Potemkin).
-    it "returns true for insect_epidemic" do
-      alert = build(:ews_alert, alert_type: :insect_epidemic)
-      expect(alert.requires_satellite_consensus?).to be true
     end
 
     # [SLASH-1] chainsaw — НЕ страховий, але критичний acoustic-детект потребує незалежної

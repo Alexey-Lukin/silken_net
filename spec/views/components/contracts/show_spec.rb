@@ -18,8 +18,11 @@ RSpec.describe Contracts::Show do
     c
   end
 
-  def mock_blockchain_tx(tx_hash: "0xdeadbeef1234567890abcdef", amount: "5.00", created_at: 2.hours.ago)
-    OpenStruct.new(tx_hash: tx_hash, amount: amount, created_at: created_at)
+  # ⚠️ `burn:` ЯВНИЙ і обовʼязково задається: `OpenStruct` віддає `nil` на будь-який
+  # незнаний метод, тож `tx.burn?` мовчки читався б як «мінт» — тобто фікстура
+  # відтворювала б рівно той дефолт, який ARCH.101 і лікує.
+  def mock_blockchain_tx(tx_hash: "0xdeadbeef1234567890abcdef", amount: "5.00", created_at: 2.hours.ago, burn: false)
+    OpenStruct.new(tx_hash: tx_hash, amount: amount, created_at: created_at, "burn?" => burn)
   end
 
   # 🔴 [TEST.12] Тут мок розщепив ОДНЕ сховище на два незалежні поля.
@@ -126,6 +129,26 @@ RSpec.describe Contracts::Show do
 
       it "renders amount with SCC" do
         expect(html).to include("7.50 SCC")
+      end
+    end
+
+    # 🔴 [ARCH.101] Слеш САМЕ ЦЬОГО контракту потрапляє в його ж «Emission History»
+    # (`create_slash_intent!` ставить `sourceable: @naas_contract`), а знак «плюс»
+    # був зашитий у сам рядок локалі — тобто вилучення друкувалось надходженням на
+    # сторінці для інвестора. Пін тримає ОБИДВІ осі, бо самого мінуса в моноширинному
+    # рядку майже не видно: знак ⊕ колір. Мутація «прибрати `burn?`-тернар» червонить
+    # його на першому ж рядку.
+    context "with a burn row in the history" do
+      let(:tx) { mock_blockchain_tx(amount: "7.50", burn: true) }
+      let(:html) { render_component(contract: build_contract, history: [ tx ]) }
+
+      it "renders the burn with a minus sign, never a plus" do
+        expect(html).to include("− 7.50 SCC")
+        expect(html).not_to include("+ 7.50 SCC")
+      end
+
+      it "renders the burn in the danger tone, not the neutral one" do
+        expect(html).to include("text-status-danger-text")
       end
     end
 

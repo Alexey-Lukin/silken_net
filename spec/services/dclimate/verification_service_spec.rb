@@ -203,13 +203,16 @@ RSpec.describe Dclimate::VerificationService, type: :service do
       end
     end
 
-    # [INS.1] Не-пожежний перил (посуха/шкідник): fire-супутник не може його ні підтвердити, ні
+    # [INS.1] Не-пожежні типи: страховий перил (посуха) і не-страховий критичний акустичний
+    # детект (пилка, [SLASH-1]) — fire-супутник не може їх ні підтвердити, ні
     # спростувати → ескалація у Field Audit (:inconclusive), НІКОЛИ rejected_fraud/slashing. Раніше
     # severe_drought йшов крізь fire-двигун → no-fire → rejected_fraud → trigger_slashing (Potemkin-peril).
-    context "when alert is a non-fire peril (fire-satellite cannot adjudicate)" do
-      [ :severe_drought, :insect_epidemic ].each do |peril|
-        context "when the peril is #{peril}" do
-          let(:alert) { create(:ews_alert, cluster: cluster, tree: tree, alert_type: peril, severity: :medium) }
+    # [ARCH.102] Другим членом циклу був знятий insect-перил; його місце зайняв chainsaw —
+    # живий не-fire тип цього ж маршруту (severity кожного = як у його диспетчера).
+    context "when alert is non-fire (fire-satellite cannot adjudicate)" do
+      { severe_drought: :medium, chainsaw_detected: :critical }.each do |peril, severity|
+        context "when the alert_type is #{peril}" do
+          let(:alert) { create(:ews_alert, cluster: cluster, tree: tree, alert_type: peril, severity: severity) }
           let(:service) { described_class.new(alert) }
 
           it "escalates to satellite_status :inconclusive (Field Audit, Cat-C)" do

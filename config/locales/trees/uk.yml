@@ -6,6 +6,7 @@ uk:
       empty_title: Подій хроніки ще не записано
       event_types:
         alert: Тривога
+        burning: Спалення
         fraud: Перевірка цілісності
         homeostasis: Гомеостаз
         maintenance: Обслуговування

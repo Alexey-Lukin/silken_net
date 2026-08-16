@@ -36,6 +36,7 @@ lt:
       ledger:
         amount: Suma
         amount_value: "+ %{amount} SCC"
+        amount_value_burn: "− %{amount} SCC"
         empty: Nėra įrašytų emisijų.
         pending_block: LAUKIAMAS_BLOKAS
         timestamp: Laiko žyma

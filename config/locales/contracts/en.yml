@@ -36,6 +36,7 @@ en:
       ledger:
         amount: Amount
         amount_value: "+ %{amount} SCC"
+        amount_value_burn: "− %{amount} SCC"
         empty: No emissions recorded.
         pending_block: PENDING_BLOCK
         timestamp: Timestamp

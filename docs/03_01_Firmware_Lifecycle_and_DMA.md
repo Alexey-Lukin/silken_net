@@ -269,7 +269,7 @@ void Error_Handler(void) {
 // [FW.49 S1] wall-секунди з free-running RTC-календаря (LSE йде у STOP2)
 uint32_t current_time = Wall_Seconds_Now();
 delta_t_seconds = Silken_Wall_Delta_Seconds(current_time, last_wakeup_timestamp,
-                                            BASELINE_DELTA_T_S,        // 60 с
+                                            DELTA_T_UNKNOWN_S,         // 0 = сентинел «не виміряно»
                                             DELTA_T_MAX_PLAUSIBLE_S);  // 7 діб
 last_wakeup_timestamp = current_time;
 ```
@@ -1594,7 +1594,7 @@ EMA_t = α × x_t + (1−α) × EMA_{t-1}
 | DR12 [23:16] | `ema_count` | uint8 | Saturating counter @ 255 (warmup після ≥ `EMA_WARMUP_CYCLES`) |
 | DR12 [15:0] | `ema_vcap_x10` | uint16 | EMA vcap × 10 (fixed-point 0.1 мВ; max 55000 ≤ 2¹⁶) |
 
-**Cross-VBAT поведінка:** при втраті живлення RTC backup domain очищається → `ema_valid != 0x45` на boot → cold-start → 3 цикли warmup перед `EMA_Is_Warmed_Up()`. Споживач ([E.63] метаболізм: `delta_t`→`growth_points`) у ці 3 цикли працює з baseline-defaults (60 с / 3300 мВ), після — з EMA: **передавання у mruby `calculate_state()` wired** (FW.49-S1 wiring: `delta_t_for_lorenz = EMA_Get_DeltaT_Sec()` при `EMA_Is_Warmed_Up()`); silicon-residual — `Wall_Seconds_Now()`=0 до LSE bring-up тримає delta_t на baseline (чесна відмова, FW.49 bench). `SilkenNet::Attractor` backend-mirror вже E.63-compliant (β фіксований, метаболізм → `growth_points`).
+**Cross-VBAT поведінка:** при втраті живлення RTC backup domain очищається → `ema_valid != 0x45` на boot → cold-start → 3 цикли warmup перед `EMA_Is_Warmed_Up()`. Споживач ([E.63] метаболізм: `delta_t`→`growth_points`) у ці 3 цикли дістає **дві РІЗНІ відповіді на дві різні відсутності**: `delta_t` = `DELTA_T_UNKNOWN_S` (сентинел `0` → GP=0), `vcap` = nominal 3300 мВ. Після прогріву — з EMA: **передавання у mruby `calculate_state()` wired** (FW.49-S1: `delta_t_for_lorenz = EMA_Get_DeltaT_Sec()` при `EMA_Is_Warmed_Up()`). 🔴 **Асиметрія навмисна й несуча:** метаболізм не виміряно взагалі, тож будь-яке число тут = вигаданий GP (`BASELINE_DELTA_T_S` давав рівно `GP_HOMEO_MAX` — максимум балів за відмову міряти, [ARCH.102](00_07_Action_Plan_Tracker)); шину живлення натомість стабілізує BQ25570, тож 3300 — не здогад, а специфікація. silicon-residual: `Wall_Seconds_Now()`=0 до LSE bring-up тримає delta_t на сентинелі кожен цикл (FW.49 bench). `SilkenNet::Attractor` backend-mirror вже E.63-compliant (β фіксований, метаболізм → `growth_points`).
 
 ### 13.4 Firmware — реалізація
 

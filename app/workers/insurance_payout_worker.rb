@@ -210,7 +210,7 @@ class InsurancePayoutWorker
   # перили: fire-супутник їх не адьюдикує, Dclimate::VerificationService).
   def awaiting_independent_confirmation?(cluster)
     peril_alerts = cluster.ews_alerts
-                          .where(alert_type: [ :fire_detected, :severe_drought, :insect_epidemic ])
+                          .where(alert_type: [ :fire_detected, :severe_drought ])
                           .where(status: :active)
 
     if peril_alerts.none?
@@ -230,7 +230,10 @@ class InsurancePayoutWorker
 
     # [INS.1] Платимо ЛИШЕ за VERIFIED незалежним підтвердженням. `:rejected_fraud` буває лише для
     # fire-алерту (заявлено пожежу, супутник вогню не бачить) — ВІДМОВА, не confirmation → hold.
-    # Не-пожежні перили (посуха/шкідник) ідуть у :inconclusive (Field Audit), НІКОЛИ rejected_fraud.
+    # Не-пожежний перил іде у :inconclusive (Field Audit), НІКОЛИ rejected_fraud.
+    # ⚠️ Такий перил сьогодні ОДИН (`severe_drought`), тож ця гілка має рівно один
+    # вхід — і поки він єдиний, «HOLD до людського аудиту» = стан за замовчуванням
+    # для всього, що не пожежа.
     return false if peril_alerts.exists?(satellite_status: :verified)
 
     Rails.logger.info "🛡️ [Insurance] Кластер ##{cluster.id}: незалежний алерт є, але НЕ verified (можливо rejected) — тримаємо, payout НЕ запущено."

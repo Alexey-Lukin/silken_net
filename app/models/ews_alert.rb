@@ -17,7 +17,8 @@ class EwsAlert < ApplicationRecord
 
   enum :alert_type, {
     severe_drought: 0,    # Гідрологічний стрес
-    insect_epidemic: 1,   # Короїд (TinyML)
+    # ⛔ 1 і 4 ЗАРЕЗЕРВОВАНІ — не бери їх під новий тип: значення enum'а лягає в
+    # колонку, тож переприсвоєння мовчки перейменує історичні рядки.
     # [SLASH-1] Відкриття корпусу / доведений tamper — ЄДИНИЙ позитивний Кат-A сигнал
     # (Slashing::CauseEvidence#positive_a? → необоротний slash). ⚠️ Автоматичного джерела
     # НАРАЗІ НЕМАЄ: wire status=3 = vm_error (софт-збій, НЕ tamper → firmware_fault нижче),
@@ -27,7 +28,6 @@ class EwsAlert < ApplicationRecord
     # Тип живий свідомо: ворота positive-A лишаються wired, чесно-порожні.
     vandalism_breach: 2,
     fire_detected: 3,     # Пожежа
-    seismic_anomaly: 4,   # Землетрус
     system_fault: 5,      # Поломка шлюзу/актуатора/сенсора
     entropy_anomaly: 6,   # Зниження ентропії Z-розподілу (передстресовий сигнал)
     # [SLASH-1] Аудит на місці — причина невизначена: дерево замовкло (no-data blackout),
@@ -334,13 +334,12 @@ class EwsAlert < ApplicationRecord
   end
 
   # [COSMIC EYE / INS.1]: Чи потребує цей алерт НЕЗАЛЕЖНОГО Trigger-2-підтвердження (поза нашим AI)?
-  # 3 страхові перили (пожежа/посуха/шкідник) + chainsaw ([SLASH-1] — НЕ страховий, але
-  # критичний акустичний детект вимагає незалежної перевірки). Маршрут РІЗНИЙ
+  # Страхові перили (пожежа/посуха) + chainsaw ([SLASH-1] — НЕ страховий,
+  # але критичний акустичний детект вимагає незалежної перевірки). Маршрут РІЗНИЙ
   # (Dclimate::VerificationService): fire → dClimate FIRMS-супутник; не-пожежа
-  # (drought/insect/chainsaw) → Field Audit (fire-супутник не адьюдикує).
+  # (drought/chainsaw) → Field Audit (fire-супутник не адьюдикує).
   def requires_satellite_consensus?
-    alert_type_fire_detected? || alert_type_severe_drought? || alert_type_insect_epidemic? ||
-      alert_type_chainsaw_detected?
+    alert_type_fire_detected? || alert_type_severe_drought? || alert_type_chainsaw_detected?
   end
 
   private

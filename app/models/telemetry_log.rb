@@ -197,8 +197,6 @@ class TelemetryLog < ApplicationRecord
   #     серверний `Attractor.homeostatic?` поза per-family смугою), а `healthy?`
   #     другу не перевіряв ЖОДНОГО разу — для родини з `critical_z_min > 2.0`
   #     стрік ріс, ПОКИ причина тривоги тривала;
-  #   · `insect_epidemic` міряє кавітацію, а не комах — класу «комаха» в TinyML
-  #     немає, і бекенд це визнає («This field is CAVITATION only»);
   #   · `entropy_anomaly` — інший рівень агрегації: Shannon по кластеру за добу
   #     проти трьох пакетів одного дерева.
   # ⊕ Каденс Солдата енергетичний, не календарний: «3 пакети» = від ~2 хв до

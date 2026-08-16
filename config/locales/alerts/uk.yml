@@ -41,7 +41,6 @@ uk:
       global_blackout: "🛰️ ГЛОБАЛЬНИЙ БЛЕКАУТ: За %{target_date} не надійшло жодних даних телеметрії. Можлива аварія Starlink або масовий відказ шлюзів — Field Audit (Кат-C), slashing НЕ застосовано."
       hardware_decay: 'Hardware Decay: Вузол %{did} вимагає заміни.'
       hydrological_stress: "💧 ПОСУХА: Гідрологічний стрес."
-      insect_epidemic: "🪲 БІО-ЗАГРОЗА: Акустична активність шкідників (%{acoustic_events})."
       insurance_candidate_armed: 'Страховий кандидат #%{id}: AI-оракул бачить %{percentage}% критичних дерев — потрібне НЕЗАЛЕЖНЕ підтвердження (dClimate satellite / Field Audit) перед виплатою (dual-trigger, 05_05 §6).'
       insurance_no_data: 'Страховий оракул #%{id}: за %{target_date} нуль AiInsight при активних деревах (можлива катастрофа / знищені сенсори). Виплату НЕ обнулено — потрібен Field Audit (Категорія C, 05_05 §5/§6).'
       insurance_reserve_hold_aggregate_cap: 'Insurance reserve-gate HOLD [INS.2] для #%{id}: добова внутрішня емісія %{window_sum} %{token_type} перевищує стелю %{cap}. Виплату зупинено — звір експозицію перед ручним resolve.'
@@ -54,7 +53,6 @@ uk:
       queen_silent: "👑 Королева %{uid} мовчить %{silent_for_min} хв (останній зв’язок %{last_seen_at}). Кластер без uplink — телеметрія дерев не надходить."
       queen_uplink_lost: "🆘 Королева %{uid} втратила ВСІ uplink’и (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min). Крик дійшов через Helium — телеметрія буферизується, потрібен виїзд."
       queen_uplink_lost_reported: "🆘 Королева %{uid} втратила ВСІ uplink’и (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min, reported_at=%{reported_at}). Крик дійшов через Helium — телеметрія буферизується, потрібен виїзд."
-      seismic_anomaly: "🌋 СЕЙСМІКА: Аномальний резонанс (%{acoustic_events}). DID: %{did}"
       slash_evasion_cluster: 'Slash-ухилення (кластер #%{cluster_id}): доказ Категорії A є, але власник вивів усі SCC до виконання вироку (запит %{requested_burn} SCC, on-chain баланс ≈0). Спалення неможливе — потрібен юридичний/ручний трек (05_05 §3.2).'
       slash_evasion_tree: 'Slash-ухилення (дерево %{tree_did}): доказ Категорії A є, але власник вивів усі SCC до виконання вироку (запит %{requested_burn} SCC, on-chain баланс ≈0). Спалення неможливе — потрібен юридичний/ручний трек (05_05 §3.2).'
       slash_frozen_indeterminate_cluster: 'Слешинг заблоковано (кластер #%{cluster_id}): доказ Категорії A є, але РОЗМІР шкоди невизначений (нема AiInsight-даних за дату). Нічого не спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5).'
@@ -90,10 +88,8 @@ uk:
       firmware_canary_trip: Спрацювала канарка прошивки
       firmware_fault: Збій прошивки
       firmware_reverted: Відкат прошивки
-      insect_epidemic: Епідемія шкідників
       queen_offline: Королева офлайн
       queen_uplink_lost: Втрачено зв'язок Королеви
-      seismic_anomaly: Сейсмічна аномалія
       severe_drought: Сильна посуха
       system_fault: Збій системи
       vandalism_breach: Розкриття корпусу
