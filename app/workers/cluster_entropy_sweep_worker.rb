@@ -16,11 +16,17 @@ class ClusterEntropySweepWorker
   # Та сама черга, що й у аналізатора, який він драйвить (alerts = EWS, пріоритет 2).
   sidekiq_options queue: "alerts", retry: 3
 
+  # [ARCH.59] Один Redis round-trip на батч, а не на кластер: `find_each` +
+  # `perform_async` давав по RTT на кожен рядок, тобто N звертань на прогін.
+  # Розмір батчу тримає стелю памʼяті там само, де її тримав `find_each`.
+  BATCH_SIZE = 1_000
+
   def perform
     enqueued = 0
-    Cluster.find_each do |cluster|
-      ClusterEntropyAnalyzerWorker.perform_async(cluster.id)
-      enqueued += 1
+    Cluster.in_batches(of: BATCH_SIZE) do |batch|
+      ids = batch.ids
+      ClusterEntropyAnalyzerWorker.perform_bulk(ids.map { |id| [ id ] })
+      enqueued += ids.size
     end
     Rails.logger.info "🎲 [Entropy Sweep] Поставлено #{enqueued} аналізів ентропії кластерів."
   end

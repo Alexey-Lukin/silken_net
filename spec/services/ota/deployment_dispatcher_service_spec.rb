@@ -37,6 +37,18 @@ RSpec.describe Ota::DeploymentDispatcherService do
       expect { call_service }.to change { cluster.reload.ota_version_hiwater }.from(0).to(firmware.id)
     end
 
+    # [ARCH.59] Якір ставиться при ТАРГЕТИНГУ, не на першому hint'і — інакше
+    # шлюз, якому hint не пішов ЖОДНОГО разу, лишається з `ota_started_at IS
+    # NULL`, і третя нога `GatewayStalenessSweepWorker#stuck_ota_scope` не
+    # бачить його за побудовою (її часова межа не матчить NULL).
+    it "stamps the campaign anchor so an unannounced target can age out" do
+      call_service
+
+      gateways.each do |gw|
+        expect(gw.reload.ota_started_at).to be_present
+      end
+    end
+
     it "activates the firmware (feeds latest_tree_firmware_id / mismatch detection)" do
       call_service(canary_percentage: 25)
 

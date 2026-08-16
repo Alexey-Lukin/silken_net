@@ -85,7 +85,14 @@ module Ota
           cluster.update_column(:ota_version_hiwater, @firmware.id)
           # [FW.60] Канарейкова когорта персистується per-gateway: Королева
           # дізнається через OTA-hint на власному poll'і, не push'ем.
-          cluster.gateways.where(uid: uids).update_all(pending_firmware_id: @firmware.id)
+          # [ARCH.59] Якір ставиться ТУТ, а не на першому hint'і: доти між
+          # таргетингом і анонсом шлюз ніс кампанію без жодної позначки часу й
+          # без стану, тож sweep не бачив його за побудовою — а саме там живуть
+          # keyless-таргет, Королева, що не поллить, і видалена прошивка.
+          # `ota_started_at` = «відколи шлюз відповідає за цю кампанію»; poll
+          # його НЕ перезаписує (`Downlink::PendingQueueService#ota_hint_payload`).
+          cluster.gateways.where(uid: uids)
+                 .update_all(pending_firmware_id: @firmware.id, ota_started_at: Time.current)
           cohort_uids.concat(uids)
         end
       end

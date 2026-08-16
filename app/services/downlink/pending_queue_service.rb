@@ -219,7 +219,10 @@ module Downlink
 
       unless @gateway.updating?
         # ARCH.59-якір: watchdog ловить stuck-:updating саме за цією парою.
-        @gateway.update!(state: :updating, ota_started_at: Time.current)
+        # ⚠️ `ota_started_at` тут НЕ перезаписується, якщо його вже поставив
+        # диспетчер: якір міряє вік КАМПАНІЇ, а не вік передачі, інакше шлюз,
+        # що поллить рідко, щоразу обнуляв би власний годинник і не старів ніколи.
+        @gateway.update!(state: :updating, ota_started_at: @gateway.ota_started_at || Time.current)
         # 0% лише на ПЕРШОМУ hint'і: hint повторюється кожен poll до
         # fw=-підтвердження, але Queen тримає курсор кампанії (re-hint того
         # самого fw НЕ скидає bitmap) — re-broadcast 0% пиляв би бар назад.

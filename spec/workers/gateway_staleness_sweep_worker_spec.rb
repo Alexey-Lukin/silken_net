@@ -222,5 +222,39 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
       expect { described_class.new.perform }
         .not_to(change { EwsAlert.where(message_key: "queen_ota_stuck").count })
     end
+
+    # [ARCH.59] Нога (3) — «затаргечений, але не анонсований»: кампанію записав
+    # диспетчер, а hint не пішов ЖОДНОГО разу, тож `state` лишився робочим і
+    # обидві ноги вище сліпі до нього ЗА ПОБУДОВОЮ (обидві вимагають
+    # `:updating`). Сюди однаково сходяться шлюз без `hardware_key`, Королева,
+    # що не поллить, і dangling `pending_firmware_id`.
+    def targeted_gateway(dispatched_ago:, firmware_id: 91)
+      create(:gateway, cluster: cluster, state: :idle,
+                       last_seen_at: 1.minute.ago,
+                       pending_firmware_id: firmware_id,
+                       ota_started_at: dispatched_ago.ago)
+    end
+
+    it "ловить затаргечений шлюз, якому hint не пішов ЖОДНОГО разу" do
+      gateway = targeted_gateway(dispatched_ago: 30.hours)
+
+      expect { sweep }.to change { gateway.reload.pending_firmware_id }.from(91).to(nil)
+
+      # 🔴 Стан НЕ чіпається: `finish_update!` тут кинув би InvalidTransition,
+      # rescue проковтнув би його — і кампанія лишилась би висіти, а прохід
+      # рахувався б виконаним.
+      expect(gateway.state).to eq("idle")
+      expect(gateway.ota_started_at).to be_nil
+      expect(EwsAlert.where(message_key: "queen_ota_stuck").count).to eq(1)
+    end
+
+    # 🔴 Дзеркало, без якого нога (3) убивала б КОЖНУ щойно націлену кампанію:
+    # між диспатчем і першим poll'ом шлюз штатно стоїть рівно в цьому стані.
+    it "НЕ чіпає щойно націлену кампанію, яку ще не встигли анонсувати" do
+      gateway = targeted_gateway(dispatched_ago: 2.hours)
+
+      expect { sweep }.not_to(change { gateway.reload.pending_firmware_id })
+      expect(EwsAlert.where(message_key: "queen_ota_stuck")).to be_empty
+    end
   end
 end

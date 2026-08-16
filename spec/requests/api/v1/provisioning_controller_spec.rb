@@ -165,6 +165,24 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         expect(PeaqRegistrationWorker).to have_received(:perform_async).with(Tree.last.id)
       end
 
+      # [ARCH.59] Єдиний носій межі транзакції на цьому сайті: enqueue стоїть
+      # ПІСЛЯ коміту, тож мертвий Redis більше не скасовує вже провіжінений
+      # вузол разом із записом монтажу. Мутація «повернути `perform_async`
+      # усередину транзакції» червонить рівно цей приклад — сусіди її не бачать,
+      # бо їхня точка збою (`HardwareKeyService.provision`) стоїть ДО enqueue.
+      it "keeps the provisioned tree committed when the peaq enqueue fails" do
+        allow(PeaqRegistrationWorker).to receive(:perform_async)
+          .and_raise(StandardError.new("Redis unavailable"))
+
+        expect {
+          post "/provisioning/register", params: tree_params, headers: headers, as: :json
+        }.to change(Tree, :count).by(1)
+
+        expect(response).to have_http_status(:internal_server_error)
+        # Уся транзакція закомічена, не лише сам вузол.
+        expect(MaintenanceRecord.where(maintainable: Tree.last).count).to eq(1)
+      end
+
       it "відкидає не-24-hex hardware_uid (422, жодних рядків)" do
         bad = tree_params.deep_merge(provisioning: { hardware_uid: "AABB11223344CCDD" })
 

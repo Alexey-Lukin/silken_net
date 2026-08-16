@@ -101,7 +101,11 @@ class GatewayStalenessSweepWorker
       started_at = gateway.ota_started_at
 
       ActiveRecord::Base.transaction do
-        gateway.finish_update!
+        # ⚠️ Умова несуча: нога (3) ловить шлюз, якому стан НЕ виставляли, і
+        # `finish_update!` там кинув би `AASM::InvalidTransition` — rescue нижче
+        # проковтнув би його, кампанія лишилась би висіти, а прохід рахувався б
+        # виконаним. Знімати треба таргет, а стан чіпати лише там, де він є.
+        gateway.finish_update! if gateway.updating?
         gateway.update!(ota_started_at: nil, pending_firmware_id: nil)
         create_ota_stuck_alert(gateway, abandoned_firmware_id, started_at)
       end
@@ -115,19 +119,38 @@ class GatewayStalenessSweepWorker
     count
   end
 
-  # Два предикати, і другий — backstop проти стану, якого живий код не створює.
-  # `Downlink::PendingQueueService` пише стан і якір ОДНИМ `update!`, тож
-  # `updating` без `ota_started_at` є аномалією за побудовою; єдиний писач, що
-  # так умів, — `OtaTransmissionWorker` (push-ера, нуль enqueuer'ів). Без цієї
-  # гілки sweep був би сліпий рівно до того випадку, який ніхто не помітив би
-  # (пункт називає його «затаргечений-але-не-анонсований»). Часова межа тут по
-  # `updated_at`, бо іншого якоря в такого рядка немає за визначенням.
+  # ТРИ предикати, і вони ловлять три РІЗНІ поломки — межу між ними легко
+  # стерти, а вона несуча.
+  #
+  # (1) `anchored` — передача почалась і не дійшла: живий, штатний випадок.
+  #
+  # (2) `anchorless` — backstop проти стану, якого живий код не створює:
+  #     `Downlink::PendingQueueService` пише стан і якір ОДНИМ `update!`, тож
+  #     `updating` без `ota_started_at` є аномалією за побудовою; єдиний писач,
+  #     що так умів, — `OtaTransmissionWorker` (push-ера, нуль enqueuer'ів).
+  #     Часова межа тут по `updated_at`, бо іншого якоря в такого рядка немає.
+  #     ⚠️ Доти цей коментар приписував саме сюди клас «затаргечений-але-не-
+  #     анонсований» — неправда: обидві ноги вище вимагають `state: :updating`,
+  #     тобто бачать лише тих, кому стан УЖЕ виставили.
+  #
+  # (3) `unannounced` — власне «затаргечений, але не анонсований» [ARCH.59]:
+  #     кампанія записана диспетчером, а hint не пішов ЖОДНОГО разу, тож стану
+  #     немає й не буде. Три відомі причини сходяться сюди однаково — шлюз без
+  #     `hardware_key` (`ota_deployable` ключа не питає, а `poll_reply` без KEYC
+  #     виходить ДО hint'а), Королева, що не поллить (CGNAT/мертва), і dangling
+  #     `pending_firmware_id` (bigint без FK → `ota_packages` віддає nil).
+  #     Якір — той самий `ota_started_at`, який тепер ставить диспетчер.
   def stuck_ota_scope
     anchored = Gateway.where(state: :updating).where(ota_started_at: ...OTA_STUCK_MARGIN.ago)
     anchorless = Gateway.where(state: :updating, ota_started_at: nil)
                         .where(updated_at: ...OTA_STUCK_MARGIN.ago)
+    unannounced = Gateway.where.not(pending_firmware_id: nil)
+                         .where.not(state: :updating)
+                         .where(ota_started_at: ...OTA_STUCK_MARGIN.ago)
 
-    Gateway.where(id: anchored).or(Gateway.where(id: anchorless))
+    Gateway.where(id: anchored)
+           .or(Gateway.where(id: anchorless))
+           .or(Gateway.where(id: unannounced))
   end
 
   # Дедуп по `message_params ->> 'uid'`, а не по кластеру: тип `system_fault`

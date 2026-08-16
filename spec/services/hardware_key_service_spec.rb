@@ -121,7 +121,12 @@ RSpec.describe HardwareKeyService, type: :service do
       expect(hardware_key.aes_key_hex).to eq(original_key)
     end
 
-    it "rolls back DB changes when downlink enqueue fails (atomicity)" do
+    # [ARCH.59] Дзеркало знятої «атомарності»: enqueue стоїть ПІСЛЯ коміту, тож
+    # мертвий Redis більше не відкочує ротацію. Це вибір НАПРЯМКУ відмови, а не
+    # послаблення: стан, що лишається, тракт лікує сам, і другу половину доказу
+    # несе `spec/services/downlink/pending_queue_service_spec.rb` («derivable з
+    # Dual-Key Grace») — шов між ними рівно один, колонка нижче.
+    it "survives a failed downlink enqueue and arms the Grace backstop" do
       open_ratchet_gate!
       service = described_class.new(tree)
 
@@ -132,11 +137,12 @@ RSpec.describe HardwareKeyService, type: :service do
         service.rotate!
       }.to raise_error(StandardError, /Redis unavailable/)
 
-      # Key AND version should remain unchanged because transaction rolled back
       hardware_key.reload
-      expect(hardware_key.aes_key_hex).to eq(original_key)
-      expect(hardware_key.previous_aes_key_hex).to be_nil
-      expect(hardware_key.key_version).to eq(0)
+      expect(hardware_key.aes_key_hex).not_to eq(original_key)
+      expect(hardware_key.key_version).to eq(1)
+      # Саме це поле читає `Downlink::PendingQueueService#key_rotation_payload`:
+      # непорожнє = незавершена ротація доїде 0x9E на наступному poll'і Королеви.
+      expect(hardware_key.previous_aes_key_hex).to eq(original_key)
     end
 
     it "allows rotation after grace period is cleared" do

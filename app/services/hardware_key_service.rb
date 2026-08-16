@@ -265,17 +265,22 @@ class HardwareKeyService
       to: target_version
     )
 
-    # ⚡ [АТОМАРНІСТЬ]: БД-ротація і enqueue 0x9E — в одній транзакції:
-    # недоступний Redis/Sidekiq відкочує і ключ, і версію.
-    HardwareKey.transaction do
-      key_record.update!(
-        previous_aes_key_hex: old_key, # "Подушка безпеки" до першого uplink'а на K_{v+1}
-        aes_key_hex: new_hex_key,
-        key_version: target_version,
-        rotated_at: Time.current
-      )
-      KeyRotationDownlinkWorker.perform_async(@device_uid, target_version)
-    end
+    # ⚡ [ARCH.59]: коміт БД-ротації, і ЛИШЕ потім enqueue 0x9E. Спільна
+    # транзакція відкочувала ключ разом із версією — тобто в бік, якого тракт
+    # лікувати НЕ вміє: без `previous_aes_key_hex` Grace-декрипту нема за що
+    # вхопитись, вузол німіє, а Sidekiq бачив job ще до коміту (phantom-job).
+    # Після коміту відмова падає в бік із backstop'ом: Grace-вікно робить
+    # незавершену ротацію видимою `Downlink::PendingQueueService
+    # #key_rotation_payload`, тож 0x9E добере наступний poll Королеви.
+    # Виняток НЕ ковтаємо — кадр не поїхав, і повтор упреться в
+    # RotationPendingError, а не в подвійний advance.
+    key_record.update!(
+      previous_aes_key_hex: old_key, # "Подушка безпеки" до першого uplink'а на K_{v+1}
+      aes_key_hex: new_hex_key,
+      key_version: target_version,
+      rotated_at: Time.current
+    )
+    KeyRotationDownlinkWorker.perform_async(@device_uid, target_version)
 
     Rails.logger.warn "🔄 [FW.17] Ratchet-ротація #{@device_uid} → v#{target_version}. " \
                       "Старий ключ у Grace до першого пакета на новому."

@@ -104,6 +104,14 @@ module Api
           return
         end
 
+        # [ARCH.59] Транзакція охоплює РІВНО те, що мусить бути атомарним:
+        # пристрій + ключі + запис монтажу. Enqueue і відповідь — після коміту
+        # (нижче), бо доти вони стояли всередині: Sidekiq бачив джобу до коміту
+        # (phantom-job), а HTTP-рендер тримав PG-транзакцію відкритою на весь
+        # час серіалізації. Правильна форма стояла поруч увесь час —
+        # `MaintenanceRecord` вішає свій пост-ефект на `after_create_commit`.
+        device_identifier = nil
+
         ActiveRecord::Base.transaction do
           @device = build_device(provisioning_params)
 
@@ -115,71 +123,73 @@ module Api
             device_identifier = @device.uid
           end
 
-          if @device.save
-            # КРИПТОГРАФІЧНА ПРОПИСКА
-            # [SEC.11] HardwareKeyService.provision derives both the AES
-            # key and the Lorenz K_seed in one call — single source of
-            # truth for "create HardwareKey at provisioning time".
-            HardwareKeyService.provision(@device)
+          next unless @device.save
 
-            # [M2M Auth]: Реєструємо Ed25519 public key для M2M автентифікації шлюзу
-            if provisioning_params[:ed25519_public_key].present?
-              hw_key = HardwareKey.find_by!(device_uid: device_identifier)
-              hw_key.update!(ed25519_public_key_hex: provisioning_params[:ed25519_public_key])
-            end
+          # КРИПТОГРАФІЧНА ПРОПИСКА
+          # [SEC.11] HardwareKeyService.provision derives both the AES
+          # key and the Lorenz K_seed in one call — single source of
+          # truth for "create HardwareKey at provisioning time".
+          HardwareKeyService.provision(@device)
 
-            # ФІКСАЦІЯ МОНТАЖУ
-            MaintenanceRecord.create!(
-              maintainable: @device,
-              user: current_user,
-              action_type: :installation,
-              performed_at: Time.current,
-              notes: I18n.t("flash.provisioning.node_initiated", did: device_identifier, uid: provisioning_params[:hardware_uid]),
-              system_generated: true
-            )
+          # [M2M Auth]: Реєструємо Ed25519 public key для M2M автентифікації шлюзу
+          if provisioning_params[:ed25519_public_key].present?
+            hw_key = HardwareKey.find_by!(device_uid: device_identifier)
+            hw_key.update!(ed25519_public_key_hex: provisioning_params[:ed25519_public_key])
+          end
 
-            # РЕЄСТРАЦІЯ PEAQ DID (Machine Identity)
-            PeaqRegistrationWorker.perform_async(@device.id) if @device.is_a?(Tree)
+          # ФІКСАЦІЯ МОНТАЖУ
+          MaintenanceRecord.create!(
+            maintainable: @device,
+            user: current_user,
+            action_type: :installation,
+            performed_at: Time.current,
+            notes: I18n.t("flash.provisioning.node_initiated", did: device_identifier, uid: provisioning_params[:hardware_uid]),
+            system_generated: true
+          )
+        end
 
-            respond_to do |format|
-              format.json do
-                # [P0 BLOCKER FIX] [SEC.11] Neither the AES key nor the
-                # Lorenz K_seed is ever returned over the network. Both
-                # backend and firmware derive them independently via HKDF
-                # from PROVISIONING_MASTER_KEY. Response carries only the
-                # DID and a derivation marker.
-                render json: {
-                  did: device_identifier,
-                  device: @device.as_json(only: [ :id, :did, :status, :cluster_id ]),
-                  key_derivation: "hkdf-sha256"
-                }, status: :created
-              end
-              # [SEC.25] 🔴 Тут був НАЙДОРОЖЧИЙ екземпляр класу: успіх провізії
-              # рендерився як `200` без редиректу, а Turbo такі відповіді на сабміт
-              # викидає мовчки. Тобто лісник тиснув «Provision», пристрій
-              # створювався, `HardwareKey` писався, `PeaqRegistrationWorker` летів —
-              # і сторінка не ворушилась. Найгірша форма німоти в дереві: не «дія не
-              # вдалась», а «дія вдалась, і про це не сказано».
-              #
-              # Лік — PRG на сторінку самого пристрою, а не окрема сторінка успіху:
-              # `trees/show` уже показує `did` заголовком і `device_uid` у
-              # hardware-vault, `gateways/show` — `uid` у шапці. Тобто все, що
-              # виводила знята сторінка успіху, там уже є, і в контексті.
-              # `flash.provisioning.node_initiated` уже написаний у 4 локалях і тепер
-              # має де відрендеритись.
-              format.html do
-                redirect_to device_path_after_provisioning(@device),
-                            status: :see_other,
-                            success: I18n.t("flash.provisioning.node_initiated",
-                                           did: device_identifier,
-                                           uid: provisioning_params[:hardware_uid])
-              end
-            end
-          else
-            respond_to do |format|
-              format.json { render_validation_error(@device) }
-              format.html { render_new_with_errors }
-            end
+        unless @device.persisted?
+          return respond_to do |format|
+            format.json { render_validation_error(@device) }
+            format.html { render_new_with_errors }
+          end
+        end
+
+        # РЕЄСТРАЦІЯ PEAQ DID (Machine Identity) — ПІСЛЯ коміту [ARCH.59]
+        PeaqRegistrationWorker.perform_async(@device.id) if @device.is_a?(Tree)
+
+        respond_to do |format|
+          format.json do
+            # [P0 BLOCKER FIX] [SEC.11] Neither the AES key nor the
+            # Lorenz K_seed is ever returned over the network. Both
+            # backend and firmware derive them independently via HKDF
+            # from PROVISIONING_MASTER_KEY. Response carries only the
+            # DID and a derivation marker.
+            render json: {
+              did: device_identifier,
+              device: @device.as_json(only: [ :id, :did, :status, :cluster_id ]),
+              key_derivation: "hkdf-sha256"
+            }, status: :created
+          end
+          # [SEC.25] 🔴 Тут був НАЙДОРОЖЧИЙ екземпляр класу: успіх провізії
+          # рендерився як `200` без редиректу, а Turbo такі відповіді на сабміт
+          # викидає мовчки. Тобто лісник тиснув «Provision», пристрій
+          # створювався, `HardwareKey` писався, `PeaqRegistrationWorker` летів —
+          # і сторінка не ворушилась. Найгірша форма німоти в дереві: не «дія не
+          # вдалась», а «дія вдалась, і про це не сказано».
+          #
+          # Лік — PRG на сторінку самого пристрою, а не окрема сторінка успіху:
+          # `trees/show` уже показує `did` заголовком і `device_uid` у
+          # hardware-vault, `gateways/show` — `uid` у шапці. Тобто все, що
+          # виводила знята сторінка успіху, там уже є, і в контексті.
+          # `flash.provisioning.node_initiated` уже написаний у 4 локалях і тепер
+          # має де відрендеритись.
+          format.html do
+            redirect_to device_path_after_provisioning(@device),
+                        status: :see_other,
+                        success: I18n.t("flash.provisioning.node_initiated",
+                                       did: device_identifier,
+                                       uid: provisioning_params[:hardware_uid])
           end
         end
       rescue StandardError => e

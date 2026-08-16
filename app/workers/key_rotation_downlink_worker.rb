@@ -10,9 +10,10 @@ require "timeout"
 # CoapEncryption), Королева маршрутизує за маркером 0x9E у soldier_cmd_queue
 # (FW.20-Q2) і проповідує Солдату LoRa-broadcast'ом.
 #
-# Enqueue — ЛИШЕ зсередини HardwareKeyService#rotate_tree_via_ratchet!
-# (транзакційно з БД-ротацією). Гейт продубльовано тут defense-in-depth'ом:
-# випадковий ручний enqueue у ECB-флот не повинен дійти до ефіру.
+# Enqueue — ЛИШЕ зсередини HardwareKeyService#rotate_tree_via_ratchet!, і
+# ПІСЛЯ коміту БД-ротації [ARCH.59]. Гейт продубльовано тут
+# defense-in-depth'ом: випадковий ручний enqueue у ECB-флот не повинен
+# дійти до ефіру.
 class KeyRotationDownlinkWorker
   include Sidekiq::Job
   include CoapEncryption
@@ -20,7 +21,7 @@ class KeyRotationDownlinkWorker
   sidekiq_options queue: "downlink", retry: 2
 
   # [FW.60] Вичерпані ретраї падали в DeadSet БЕЗ сліду в БД — а тут наслідок
-  # важчий за time-sync: key_version уже бампнутий транзакційно з enqueue
+  # важчий за time-sync: key_version уже закомічений ДО enqueue
   # (HardwareKeyService#rotate_tree_via_ratchet!), тож смерть job'а = ключ
   # ротований у БД, кадр 0x9E не доставлений. Recovery існує derivation'ом:
   # Dual-Key Grace (previous_aes_key_hex ≠ NULL) робить незавершену ротацію

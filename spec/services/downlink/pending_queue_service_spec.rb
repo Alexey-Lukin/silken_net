@@ -224,6 +224,19 @@ RSpec.describe Downlink::PendingQueueService do
       expect(gateway.ota_started_at).to be_present
     end
 
+    # [ARCH.59] Якір міряє вік КАМПАНІЇ, не вік передачі: його ставить диспетчер
+    # при таргетингу, і перший hint НЕ сміє його обнулити. Інакше шлюз, що поллить
+    # рідко, щоразу отримував би свіжий годинник — і кампанія, яка провисіла добу
+    # без анонсу, діставала б повне вікно заново.
+    it "зберігає якір диспетчера — перший hint його НЕ перезаписує" do
+      dispatched_at = 3.hours.ago
+      gateway.update!(ota_started_at: dispatched_at)
+
+      poll
+
+      expect(gateway.reload.ota_started_at).to be_within(1.second).of(dispatched_at)
+    end
+
     it "CMD пріоритетніший за OTA-hint" do
       actuator = create(:actuator, gateway: gateway)
       create(:actuator_command, actuator: actuator)
