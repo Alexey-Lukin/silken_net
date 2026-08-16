@@ -325,6 +325,31 @@ RSpec.describe Api::V1::LocalesController, type: :request do
       end
     end
 
+    # ⛔ [I18N.3] `organizations.locale` щаблем НЕ Є — і це присуд, а не пропуск.
+    # Симетрія напрошується (колонка є, валідується проти того самого дому,
+    # читається `AlertMailer`'ом), тож без носія наступний прохід допише щабель
+    # «за симетрією». Підстава — на моделі: та колонка каже, якою мовою
+    # організація отримує ПОШТУ на `billing_email`, тобто адресу, за якою може не
+    # стояти жоден User; мовою ЕКРАНА вона робила б так, що латвійська філія
+    # нав'язує інтерфейс українцеві, приписаному до неї, — і саме на першому
+    # візиті, доки людина перемикача ще не торкалась.
+    describe "⊥ organizations.locale is deliberately NOT a tier" do
+      it "keeps the screen on the default when only the ORGANIZATION has a language" do
+        organization = create(:organization, locale: "lv")
+        user = create(:user, locale: nil, organization: organization)
+
+        # Ліхтар: без нього приклад зелений і на порожній колонці, тобто доводив
+        # би відсутність щабля так само, як його наявність (`04_06 §B.2` BP 21).
+        expect(organization.reload.locale).to eq("lv")
+
+        post "/login", params: { email: user.email_address, password: "password12345" }
+        get "/dashboard"
+
+        expect(response.body).to include(vitality_text(:en))
+        expect(response.body).not_to include(vitality_text(:lv))
+      end
+    end
+
     # 🔴 Ліхтар на ПЕРШИЙ прохід, і він стереже не поведінку, а ПОРЯДОК колбеків.
     #
     # `set_locale` реєструється разом із концерном, тобто ДО `authenticate_user!`;
