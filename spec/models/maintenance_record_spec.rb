@@ -332,27 +332,37 @@ RSpec.describe MaintenanceRecord, type: :model do
   # =========================================================================
   # METHODS
   # =========================================================================
+  # 🔴 [ARCH.103] Три приклади цього блоку доти ЦЕМЕНТУВАЛИ фабрикацію, і два з них
+  # зізнавались у власній назві («returns 0.0 when … are nil», «returns only
+  # parts_cost when labor_hours is nil»). Тобто сюїта вимагала, щоб «не введено»
+  # рахувалось нулем — і поки вона цього вимагала, дефект був не багом, а контрактом.
   describe "#total_cost" do
-    it "returns 0.0 when labor_hours and parts_cost are nil" do
+    it "is nil when neither cost input was entered" do
       record = build(:maintenance_record, labor_hours: nil, parts_cost: nil)
-      expect(record.total_cost).to eq(0.0)
+      expect(record.total_cost).to be_nil
     end
 
-    it "calculates labor cost at base rate" do
+    # ⚠️ Пара несуча саме РАЗОМ: перший приклад доводить, що порожнє поле не стає
+    # нулем, другий — що ВВЕДЕНИЙ нуль лишається виміром. Без другого найдешевший
+    # спосіб «полагодити» перший — глушити будь-який нуль, і тоді безкоштовний
+    # візит став би невидимим.
+    it "is nil when only one input was entered — a Total may not hide an unknown addend" do
       record = build(:maintenance_record, labor_hours: 2.0, parts_cost: nil)
-      expected = 2.0 * MaintenanceRecord::LABOR_RATE_PER_HOUR
-      expect(record.total_cost).to eq(expected)
+      expect(record.total_cost).to be_nil
+
+      record = build(:maintenance_record, labor_hours: nil, parts_cost: 150.0)
+      expect(record.total_cost).to be_nil
+    end
+
+    it "is a real 0.0 when both inputs were entered as zero (a free visit is a measurement)" do
+      record = build(:maintenance_record, labor_hours: 0, parts_cost: 0)
+      expect(record.total_cost).to eq(0.0)
     end
 
     it "adds parts_cost to labor cost" do
       record = build(:maintenance_record, labor_hours: 1.0, parts_cost: 300.0)
       expected = (1.0 * MaintenanceRecord::LABOR_RATE_PER_HOUR) + 300.0
       expect(record.total_cost).to eq(expected)
-    end
-
-    it "returns only parts_cost when labor_hours is nil" do
-      record = build(:maintenance_record, labor_hours: nil, parts_cost: 150.0)
-      expect(record.total_cost).to eq(150.0)
     end
   end
 

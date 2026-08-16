@@ -149,20 +149,39 @@ module Maintenance
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".cost.heading") }
 
+        # 🔴 [ARCH.103] Асиметрія стояла в ОДНОМУ РЯДКУ, і саме тому пережила всі
+        # проходи класу: той самий тернар `@record.labor_hours ?` друкував чесне
+        # «—» у ПІДПИСІ й вигаданий `$0.00` у сусідній комірці. Тобто картка сама
+        # зізнавалась, що виміру немає, і поруч називала його число.
+        # ⚠️ Нуль тут не нейтральний у ЖОДЕН бік: явно введений `0` — законний
+        # вимір «безкоштовний візит», тож глушити його не можна; підставлений `0`
+        # на порожньому полі — фабрикація. Розрізняє їх лише `nil`, тому всі три
+        # картки читають саме його, а не «чи значення додатне».
         div(class: "grid grid-cols-3 gap-6") do
           cost_card(
             t(".cost.labor_label"),
-            @record.labor_hours ? "#{@record.labor_hours}h × $#{MaintenanceRecord::LABOR_RATE_PER_HOUR}" : "—",
-            @record.labor_hours ? "$#{(@record.labor_hours.to_f * MaintenanceRecord::LABOR_RATE_PER_HOUR).round(2)}" : "$0.00"
+            @record.labor_hours ? "#{@record.labor_hours}h × $#{MaintenanceRecord::LABOR_RATE_PER_HOUR}" : t("ui.measurement.not_measured"),
+            money_or_unmeasured(@record.labor_hours && @record.labor_hours.to_f * MaintenanceRecord::LABOR_RATE_PER_HOUR)
           )
           cost_card(
             t(".cost.parts_label"),
             t(".cost.parts_sub"),
-            @record.parts_cost ? "$#{@record.parts_cost}" : "$0.00"
+            money_or_unmeasured(@record.parts_cost)
           )
-          cost_card(t(".cost.total_label"), t(".cost.total_sub"), "$#{@record.total_cost.round(2)}", highlight: true)
+          cost_card(t(".cost.total_label"), t(".cost.total_sub"), money_or_unmeasured(@record.total_cost), highlight: true)
         end
       end
+    end
+
+    # [ARCH.103] Дім рішення про порожнечу для грошових комірок цієї сторінки.
+    # Власний хелпер потрібен лише тому, що одиниця тут ПРЕФІКСНА (`$` перед
+    # числом), тож `measured_value` з його постфіксною формою не підходить;
+    # спільним лишається саме рішення — `nil` друкує `ui.measurement.not_measured`,
+    # той самий ключ, що й на сенсорних величинах.
+    def money_or_unmeasured(value)
+      return t("ui.measurement.not_measured") if value.nil?
+
+      "$#{value.to_f.round(2)}"
     end
 
     def cost_card(label, sub, value, highlight: false)

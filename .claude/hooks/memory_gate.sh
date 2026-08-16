@@ -236,7 +236,7 @@ rb_dark() {
 # 2026-08-16: 132 → 133 — `log_verify_gate.md`, the journal twin for
 # `feedback_verify_gate_exit_code`. Raised so the new home is protected too:
 # a floor that lags the corpus stops guarding whatever arrived after it.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-133}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-134}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different

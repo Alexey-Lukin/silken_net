@@ -102,8 +102,19 @@ module Maintenance
         end
         td(class: "p-4") { action_badge(record.action_type) }
         td(class: "p-4 text-right text-gray-400") do
+          # 🔴 [ARCH.103] Тут була ТРЕТЯ поведінка того самого числа: `cost > 0`
+          # зливало «безкоштовний візит» (явний нуль — законний вимір) із «не
+          # введено» в один прочерк, тоді як сторінка запису друкувала на тому
+          # самому місці впевнений `$0.00`. Одна величина, три різні відповіді на
+          # трьох поверхнях — і жодна не називала, яку з двох порожнеч показує.
+          # ⚠️ `total_cost` тепер уміє бути `nil`, тож старий `cost > 0` кинув би
+          # `NoMethodError`: перевірка мусить питати про ВИМІР, не про знак.
           cost = record.total_cost
-          cost > 0 ? span(class: "text-emerald-300") { "$#{cost.round(2)}" } : span(class: "text-gray-700") { "—" }
+          if cost.nil?
+            span(class: "text-gray-700") { t("ui.measurement.not_measured") }
+          else
+            span(class: "text-emerald-300") { "$#{cost.round(2)}" }
+          end
         end
         td(class: "p-4 text-center") do
           count = record.photos_attachments.size

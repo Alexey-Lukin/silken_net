@@ -110,9 +110,16 @@ RSpec.describe MaintenanceRecordBlueprint, type: :model do
       create(:maintenance_record, user: user, maintainable: tree)
     end
 
-    it "returns 0.0 when labor_hours and parts_cost are nil" do
+    # 🔴 [ARCH.103] Суперечність була видна в ОДНОМУ payload'і: обидва доданки
+    # чесно віддавались як `null`, а похідний `total_cost` поруч — упевненим `0.0`.
+    # Пін тримає саме СПІВСТАВЛЕННЯ трьох полів, а не одне значення: інакше
+    # «полагодити» його можна було б, зробивши null і доданки.
+    it "reports total_cost as null when its addends are null" do
       parsed = JSON.parse(described_class.render(no_cost_record, view: :index))
-      expect(parsed["total_cost"]).to eq(0.0)
+
+      expect(parsed["labor_hours"]).to be_nil
+      expect(parsed["parts_cost"]).to be_nil
+      expect(parsed["total_cost"]).to be_nil
     end
   end
 

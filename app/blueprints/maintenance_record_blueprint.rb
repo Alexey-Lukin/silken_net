@@ -10,7 +10,11 @@ class MaintenanceRecordBlueprint < Blueprinter::Base
            :hardware_verified,
            :latitude, :longitude
 
-    field(:total_cost) { |r| r.total_cost.round(2) }
+    # [ARCH.103] `&.` несучий: суперечність було видно в ОДНОМУ payload'і — обидва
+    # доданки чесно віддавались як `null`, а похідний `total_cost` поруч друкував
+    # упевнений `0.0`. Інтегратор не мав жодного способу відрізнити «візит нічого
+    # не коштував» від «вартість не вводили».
+    field(:total_cost) { |r| r.total_cost&.round(2) }
     field(:photo_count) { |r| r.photos.size }
     field(:maintainable_label) { |r| "#{r.maintainable_type} // #{r.maintainable&.display_identifier}" }
 
