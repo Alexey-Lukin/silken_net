@@ -1,13 +1,9 @@
 ---
 uk:
   ui:
-    data_table:
-      empty: Записів не знайдено.
     measurement:
       coverage: виміряно %{measured} з %{total}
       not_measured: Не виміряно
-    metric_value:
-      no_data: Немає даних
     photo_card:
       confirm_remove: Видалити це фото з документації обслуговування?
       remove_photo: 'Видалити фото: %{filename}'

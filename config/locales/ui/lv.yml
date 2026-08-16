@@ -1,13 +1,9 @@
 ---
 lv:
   ui:
-    data_table:
-      empty: Nav atrasto ierakstu.
     measurement:
       coverage: izmērīti %{measured} no %{total}
       not_measured: Nav izmērīts
-    metric_value:
-      no_data: Nav datu
     photo_card:
       confirm_remove: Noņemt šo fotogrāfiju no pierādījumu ieraksta?
       remove_photo: 'Noņemt fotogrāfiju: %{filename}'

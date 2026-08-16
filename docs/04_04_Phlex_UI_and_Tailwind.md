@@ -144,7 +144,7 @@ HTTP Request (Dashboard pages)
                                     ├─► render Navigation::Sidebar.new(...)
                                     └─► render @content  ← Domain Component
                                             ├─► render Views::Shared::UI::StatusBadge.new(...)
-                                            ├─► render Views::Shared::UI::DataTable.new(...) { rows }
+                                            ├─► render Views::Shared::UI::Pagination.new(...)
                                             └─► turbo_stream_from / turbo_frame_tag (lazy)
 
 HTTP Request (Auth pages — login, forgot/reset password, no-organization quarantine)
@@ -556,7 +556,7 @@ render Views::Shared::UI::StatusBadge.new(status: "confirmed", class: "mt-2")
 
 ### 6.1 Спільні UI Примітиви (`app/views/shared/ui/`)
 
-Це будівельні блоки рівня фреймворку, що використовуються у всіх доменних в'юшках. ⚠️ **Один виняток, виміряний 2026-07-27: `DataTable` не вживається НІДЕ** — нуль викликачів на весь застосунок (усі 23 таблиці рукописні). Доля «знести чи дотягнути» — відкрите ⚖️ в [`00_07`](00_07_Action_Plan_Tracker) UI.4.
+Це будівельні блоки рівня фреймворку, що використовуються у всіх доменних в'юшках — **кожен із ненульовим числом продових викликачів**. ⚖️ **Присуд 2026-08-16: `DataTable` і `MetaRow` знято** разом із рештою класу осиротілих компонентів; підстава — не сам факт нуля, а те, що рукописні двійники їх ПЕРЕРОСЛИ (card-flip, sticky-заголовок, `aria`-мітки), тобто дотягування означало б переписати живе під гірше.
 
 | Компонент | Файл | Ключові Props | Призначення |
 |---|---|---|---|
@@ -564,10 +564,8 @@ render Views::Shared::UI::StatusBadge.new(status: "confirmed", class: "mt-2")
 | **ErrorSummary** | `error_summary.rb` | `messages:`, `title:` | Зведення причин відмови для форми, що перемалювалась на 422 (`role="alert"`). ⚠️ **Третій жанр повідомлення, не дубль двох інших:** `FlashMessages` несе те, що пережило редирект, `flash_alert:`/`password_error:` в auth-компонентах — ОДНУ наперед відому помилку сабміту, а це — СПИСОК причин від моделі, з якими людина лишається у формі. ⚠️ Рендер **умовний** (дзеркально до `FlashMessages`): відповідь на 422 є повним рендером, вузол приходить новим разом із текстом, і `role="alert"` AT озвучує саме так — порожня коробка тут чутності не додала б. ⚠️ Заголовок — параметр: `provisioning/new` називає інший АКТ («ініціалізація не вдалася»), бо більшість причин там не з валідації моделі, а з guard-клауз контролера [SEC.25] |
 | **StatusBadge** | `status_badge.rb` | `status:`, `id:`, `class:` | AASM стан → семантичний кольоровий бейдж (20+ станів) |
 | **StatCard** | `stat_card.rb` | `label:`, `value:`, `sub:`, `danger:`, `class:` | Картка метрики дашборду з опціональним danger-виділенням |
-| **DataTable** | `data_table.rb` | `columns:`, `empty_message:`, `class:`, `&block` | Обгортка таблиці з налаштовуваними заголовками стовпців |
 | **Pagination** | `pagination.rb` | `pagy:`, `url_helper:` | Pagy-навігація prev/next |
 | **EmptyState** | `empty_state.rb` | `title:`, `description:`, `icon:`, `colspan:` | Плейсхолдер порожніх даних (grid або `<tr><td>` режим) |
-| **MetaRow** | `meta_row.rb` | `label:`, `value:`, `class:` | Рядок ключ-значення для сторінок деталей |
 | **ActionBadge** | `action_badge.rb` | `action:`, `class:` | Бейдж типу дії журналу аудиту (regex pattern matching) |
 | **PhotoCard** | `photo_card.rb` | `photo:`, `record:`, `editable:` | Картка ActiveStorage blob з hover-оверлеєм |
 | **RelativeTime** | `relative_time.rb` | `datetime:`, `css_class:`, `prefix:` | "5 хвилин тому" з повною міткою часу у `title`-підказці |
@@ -615,14 +613,10 @@ render Views::Shared::UI::StatusBadge.new(status: "confirmed", class: "mt-2")
 
 ### 6.2 Спільні IoT Компоненти (`app/views/shared/iot/`)
 
+> ⚖️ **Наразі порожня (присуд 2026-08-16).** Єдиний мешканець — `MetricValue` — знято: продових викликачів нуль, а з трьох поверхонь, які пункт називав кандидатами, дві чисел не показують узагалі (`Telemetry::LogEntry` друкує hex-payload, `LiveStream` — статус каналу), а третя (`Trees::Show`) має ВЛАСНИЙ, кращий механізм невиміряного — `metric_row(unmeasured:)` з кольором і `ui.measurement.not_measured`. ⚠️ **Секція лишається порожньою навмисно:** `component_doc_sync` бере її межі через `heading_index`, тож видалення заголовка дає `ArgumentError` замість чесного red.
+
 | Компонент | Файл | Ключові Props | Призначення |
 |---|---|---|---|
-| **MetricValue** | `metric_value.rb` | `value:`, `unit:`, `precision:` | Числове відображення значення сенсора з налаштовуваною точністю; обробляє `nil` та `BigDecimal` |
-
-```ruby
-render Views::Shared::IoT::MetricValue.new(value: 3800.0, unit: "mV", precision: 0)
-render Views::Shared::IoT::MetricValue.new(value: lorenz_z, unit: "σ", precision: 4)
-```
 
 ---
 
@@ -730,7 +724,6 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Firmwares::Index` | `firmwares/index.rb` | `firmwares:`, `inventory_stats:`, `pagy:`, `active_ota_gateways:` | Список прошивок + інвентар версій + секція живих OTA-кампаній [SEC.20] |
 | `Firmwares::New` | `firmwares/new.rb` | — | Форма завантаження нової прошивки |
 | `Firmwares::Form` | `firmwares/form.rb` | `firmware:` | Поля форми прошивки |
-| `Firmwares::Row` | `firmwares/row.rb` | `firmware:` | Один рядок списку прошивок |
 | `Firmwares::OtaProgressBar` | `firmwares/ota_progress_bar.rb` | `uid:`, `percent:`, `current:`, `total:`, `status:` | Анімований прогрес-бар OTA; Turbo target `ota_progress_{uid}` |
 
 #### Інші Доменні Компоненти
@@ -739,8 +732,8 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 |---|---|---|
 | `Alerts` | `Index`, `Row` | `alert:` (`Badge` знято 2026-07-27 — UI без жодного рендерера) |
 | `Clusters` | `Grid`, `Item`, `Show` | `cluster:`, `trees:` |
-| `Gateways` | `Index`, `Item`, `Show` | `gateway:` |
-| `Actuators` | `Index`, `Show`, `Card`, `CommandRow`, `CommandStatusBadge`, `CommandStatusFrame`, `CommandStatusFrameStub` | `actuator:`, `command:` · **`CommandStatusFrame`/`CommandStatusFrameStub` = пара класу 2 «viewer-driven pull» [I18N.2]** (`command_id:`+`src:` у стаба): id фрейма НАВМИСНО ≠ id бейджа всередині (`command_status_frame_{id}` обгортає `command_status_{id}`) — збіг дав би дубль id у DOM, а ціллю броадкасту мусить бути саме ФРЕЙМ, бо `src` несе він. ⚠️ Відхилення від прецеденту гаманця свідоме: там сторінка теж ставить `src` (lazy-load дорогого балансу), тут — НІ, бо дані вже в `@commands`, а рядків до 20, тобто двадцять GET на перше відкриття заради того, що вже в пам'яті. Стаб рендерить пульс-плейсхолдер, а не `Views::Shared::UI::Skeleton` — той локалізований (`t(".loading")`), тобто зламав би саме ту інваріантність, заради якої існує · `Card` і `Index` беруть останню команду ПАРАМЕТРОМ (`last_command:` / `last_commands:` = мапа `actuator_id ⇒ команда`, яку збирає контролер із преloaded асоціації). Доти `Card` мала фолбек `@actuator.commands.last` у конструкторі — порушення §6.4, що ще й віддавало РІЗНУ «останню команду» на двох сторінках: на `index` асоціація преloaded, тож `.last` брав останній у порядку БД, а на `show` летів окремий `ORDER BY id DESC`. Фікстура спеки навмисно вибухає на `commands` — повернення фолбека червонить кожен приклад |
+| `Gateways` | `Index`, `Show` | `gateway:` |
+| `Actuators` | `Index`, `Show`, `Card`, `CommandStatusBadge`, `CommandStatusFrame`, `CommandStatusFrameStub` | `actuator:`, `command:` · **`CommandStatusFrame`/`CommandStatusFrameStub` = пара класу 2 «viewer-driven pull» [I18N.2]** (`command_id:`+`src:` у стаба): id фрейма НАВМИСНО ≠ id бейджа всередині (`command_status_frame_{id}` обгортає `command_status_{id}`) — збіг дав би дубль id у DOM, а ціллю броадкасту мусить бути саме ФРЕЙМ, бо `src` несе він. ⚠️ Відхилення від прецеденту гаманця свідоме: там сторінка теж ставить `src` (lazy-load дорогого балансу), тут — НІ, бо дані вже в `@commands`, а рядків до 20, тобто двадцять GET на перше відкриття заради того, що вже в пам'яті. Стаб рендерить пульс-плейсхолдер, а не `Views::Shared::UI::Skeleton` — той локалізований (`t(".loading")`), тобто зламав би саме ту інваріантність, заради якої існує · `Card` і `Index` беруть останню команду ПАРАМЕТРОМ (`last_command:` / `last_commands:` = мапа `actuator_id ⇒ команда`, яку збирає контролер із преloaded асоціації). Доти `Card` мала фолбек `@actuator.commands.last` у конструкторі — порушення §6.4, що ще й віддавало РІЗНУ «останню команду» на двох сторінках: на `index` асоціація преloaded, тож `.last` брав останній у порядку БД, а на `show` летів окремий `ORDER BY id DESC`. Фікстура спеки навмисно вибухає на `commands` — повернення фолбека червонить кожен приклад |
 | `Maintenance` | `Index`, `Show`, `Form`, `PhotoGallery`, `PhotosPage` | `record:`, `photos:` |
 | `Contracts` | `Index`, `Show` | `contract:` |
 | `BlockchainTransactions` | `Index`, `Show`, `OnChainFrame` | `tx:` |
@@ -770,12 +763,12 @@ START: Що це за компонент?
 ├── (а) Чисто візуальний примітив без бізнес-логіки
 │       (button, badge, table-wrapper, skeleton)
 │       → app/views/shared/ui/                                [§6.1]
-│       Приклади: StatusBadge, StatCard, DataTable, Skeleton
+│       Приклади: StatusBadge, StatCard, Pagination, Skeleton
 │
 ├── (б) IoT / hardware-specific відображення
 │       (sensor value, calibration display, telemetry sparkline)
 │       → app/views/shared/iot/                               [§6.2]
-│       Приклади: MetricValue (mV, °C, σ)
+│       Приклади: (наразі порожньо — див. §6.2)
 │
 ├── (в) Web3 / blockchain-specific відображення
 │       (address, tx hash, chain badge)
@@ -1177,13 +1170,10 @@ Lookbook надає живий попередній перегляд усіх к
 | `StatCardPreview` | Default, Danger, Minimal, Interactive |
 | `ActionBadgePreview` | 2 сценарії: `all_types` (4 типи дій), `interactive` |
 | `EmptyStatePreview` | Grid, Custom icon, Minimal |
-| `MetaRowPreview` | Default, Numeric, Interactive |
 | `AlertBadgePreview` | 2 сценарії: `all_combos` (9 combo matrix severity × status), `interactive` |
 | `DashboardEventRowPreview` | EwsAlert, BlockchainTx (мінт), Blockchain burn (слешинг), Cluster-sourced Celo reward, Maintenance, Unknown |
 | `SidebarPreview` | Default, With alert badge, Telemetry active, Interactive |
 | `Web3AddressPreview` | Valid, Short, Nil fallback, Custom fallback, Interactive |
-| `IoTMetricValuePreview` | Default, High precision, Nil, No unit, Interactive |
-| `DataTablePreview` | With sample rows, Empty state |
 | `PaginationPreview` | First page, Middle page, Last page |
 | `RelativeTimePreview` | Recent, With prefix, Nil datetime |
 | `SkeletonPreview` | Default (balance), Text, Card, Stats, Table, Map, Custom lines, Interactive |
@@ -1191,7 +1181,6 @@ Lookbook надає живий попередній перегляд усіх к
 | `WalletBalanceDisplayPreview` | Tree wallet, Locked funds, Org wallet, Zero balance, Interactive |
 | `ClusterItemPreview` | Healthy, Under threat, Low health, Interactive |
 | `ActuatorCommandStatusBadgePreview` | All command statuses, Interactive |
-| `ActuatorCommandRowPreview` | Confirmed open, Issued activate, Failed close, Interactive |
 | `PhotoCardPreview` | Image photo, File fallback |
 
 ---
@@ -1349,7 +1338,6 @@ span(class: tokens("text-tiny uppercase", "text-red-500": danger?, "text-emerald
 render Views::Shared::Web3::Address.new(address: "0x1234...")
 
 # IoT метрика з точністю
-render Views::Shared::IoT::MetricValue.new(value: 3800, unit: "mV", precision: 0)
 
 # Lookbook preview з анотаціями
 class MyComponentPreview < Lookbook::Preview
@@ -2103,7 +2091,6 @@ Three options were evaluated:
 
 | Option | Verdict |
 |---|---|
-| **Heavy refactor on `DataTable` shared component** with `mobile_layout:` prop | Rejected — `DataTable` is orphan (⚠️ переміряно 2026-07-27: не «один споживач, що його обходить», а **нуль викликачів**; доля → [`00_07`](00_07_Action_Plan_Tracker) UI.4). Would require rewriting Turbo-Stream wiring + bulk citation lookup. |
 | **JS-driven dual-render** (Stimulus controller swaps markup) | Rejected — duplicates the source of truth, ships extra JS, breaks `prefers-reduced-motion` simplicity, fights Turbo Stream row replace. |
 | **CSS-only flip via `attr(data-label)`** ✅ | Single semantic HTML, 0 JS, 0 new components, screen reader friendly, Turbo Streams keep working unchanged. |
 

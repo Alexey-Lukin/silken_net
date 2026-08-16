@@ -1,13 +1,9 @@
 ---
 en:
   ui:
-    data_table:
-      empty: No records found.
     measurement:
       coverage: "%{measured} of %{total} measured"
       not_measured: Not measured
-    metric_value:
-      no_data: No data
     photo_card:
       confirm_remove: Remove this photo from the evidence record?
       remove_photo: 'Remove photo: %{filename}'
