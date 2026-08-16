@@ -93,10 +93,17 @@ module Api
             batch.each do |tree|
               total += 1
               stress = tree.current_stress
-              next if stress.nil?
+              # 🔴 [ARCH.84] `measured` доти рахував ОДИН вимір, а число залежало
+              # від ДВОХ: стрес відсіювався чесно, а `sap_flow` підставлявся
+              # (`|| 0.0`) вже ПІСЛЯ інкремента — тобто дерево без телеметрії
+              # входило в покриття як виміряне й додавало в чисельник нуль.
+              # Покриття, заведене саме щоб зробити прогноз чесним, засвідчувало
+              # само себе. `sap_flow` nullable, і нуль на ньому ДОСЯЖНИЙ (спляче
+              # дерево), тож два стани були одним числом.
+              sap_index = sap_by_tree[tree.id]
+              next if stress.nil? || sap_index.nil?
 
               measured += 1
-              sap_index = sap_by_tree[tree.id] || 0.0
               total_potential += sap_index * (1.0 - stress)
             end
           end

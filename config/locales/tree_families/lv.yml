@@ -35,9 +35,6 @@ lv:
     new_title: Definēt jaunu sugu
     show:
       carbon_info: 'CO₂ sekvestrācijas koeficients: %{coef}'
-      defaults:
-        not_available: Nav
-        zero: '0.0'
       props:
         bark_thickness: Mizas biezums
         bark_thickness_value: "%{value} mm"

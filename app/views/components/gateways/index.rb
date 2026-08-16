@@ -69,7 +69,14 @@ module Gateways
         div(class: "grid grid-cols-2 gap-4 mb-6") do
           div do
             p(class: "text-mini uppercase tracking-tighter text-gray-600") { t("gateways.item.soldiers") }
-            p(class: "text-xl font-light text-emerald-100") { gateway.cluster&.active_trees_count || 0 }
+            # [ARCH.84] Нуль тут — ЗАКОННИЙ вимір (порожній кластер), тож `|| 0`
+            # робив шлюз без кластера невідрізнимим від шлюза з порожнім. Чесна
+            # відповідь стоїть рядком ВИЩЕ (`unassigned`), і питання «скільки
+            # солдатів у кластері» для безкластерного шлюза просто не існує —
+            # тому тире, а не «не виміряно» (`ApplicationComponent#measured_value`).
+            p(class: "text-xl font-light text-emerald-100") do
+              gateway.cluster ? gateway.cluster.active_trees_count : "—"
+            end
           end
           div do
             p(class: "text-mini uppercase tracking-tighter text-gray-600") { t("gateways.item.signal") }

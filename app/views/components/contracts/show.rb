@@ -133,7 +133,19 @@ module Contracts
         if @contract.cancellation_terms.present?
           div(class: "space-y-2 pt-3 border-t border-emerald-900/30") do
             h4(class: "text-mini uppercase tracking-widest text-emerald-800 mb-2") { t(".legal.cancellation_title") }
-            term_row(t(".legal.early_exit_fee"), t(".legal.early_exit_value", value: @contract.early_exit_fee_percent || 0))
+            # [ARCH.84] «0%» комісії за дострокове розірвання — ЗАКОННА умова
+            # договору, тож підстановка робила «умови не задано» невідрізнимим
+            # від «розірвання безкоштовне», і саме в панелі LEGAL VAULT. Чесний
+            # сусід стоїть двома рядками нижче (`min_days_before_exit || "—"`).
+            # ⚖️ Грошовий двійник (`NaasContract#calculate_early_exit_fee` теж
+            # робить `|| 0`) НЕ чіпаємо: скільки платформа стягує за незаданої
+            # умови — присуд власника, не правка (`00_07` ARCH.84).
+            term_row(t(".legal.early_exit_fee"),
+                     if @contract.early_exit_fee_percent
+                       t(".legal.early_exit_value", value: @contract.early_exit_fee_percent)
+                     else
+                       "—"
+                     end)
             term_row(t(".legal.burn_points"), @contract.burn_accrued_points ? t(".legal.burn_yes") : t(".legal.burn_no"))
             term_row(t(".legal.min_days"), @contract.min_days_before_exit || "—")
           end

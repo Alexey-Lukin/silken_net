@@ -35,9 +35,6 @@ lt:
     new_title: Apibrėžti naują rūšį
     show:
       carbon_info: 'CO₂ sekvestracijos koeficientas: %{coef}'
-      defaults:
-        not_available: Nėra
-        zero: '0.0'
       props:
         bark_thickness: Žievės storis
         bark_thickness_value: "%{value} mm"

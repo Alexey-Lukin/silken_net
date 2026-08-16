@@ -133,17 +133,24 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       end
 
       # ⊥ Третій вхід, відмінний від обох вище: стрес ВИМІРЯНО, а телеметрії немає
-      # (нічний прохід був, свіжих пакетів — ні). Дерево входить у покриття як
-      # виміряне, але віддає нуль sap — інакше `&.` на відсутньому лозі лишався б
-      # непройденою гілкою, тобто саме тією адресою, де ніхто не ходив.
-      it "counts a measured tree with no telemetry as measured, contributing zero" do
+      # (нічний прохід був, свіжих пакетів — ні).
+      #
+      # 🔴 [ARCH.84] Доти цей приклад ЦЕМЕНТУВАВ дефект — і зізнавався в назві
+      # («counts … as measured, contributing zero»): покриття рахувало дерево
+      # виміряним, тоді як у чисельник ішов підставлений `0.0`. Число залежить
+      # від ДВОХ вимірів (стрес ⊥ sap), тож покриття мусить рахувати ОБИДВА,
+      # інакше воно засвідчує само себе. `telemetry_logs.sap_flow` при цьому не
+      # має ЖОДНОГО писача (переміряно: нема ні в `PAYLOAD_FORMAT`, ні в
+      # `CCM_SENSOR_PAYLOAD_FORMAT`), тож саме цей приклад і був тим, що ховало
+      # структурний нуль за виглядом повного покриття.
+      it "excludes a tree whose sap was never measured from the coverage" do
         create(:tree, cluster: cluster, status: :active, latest_stress_index: 0.3)
 
         get "/oracle_visions", headers: forester_headers, as: :json
 
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body["emission_forecast"]).to eq(0.0)
-        expect(response.parsed_body["emission_forecast_coverage"]).to eq("measured" => 1, "total" => 1)
+        expect(response.parsed_body["emission_forecast_coverage"]).to eq("measured" => 0, "total" => 1)
       end
 
       # ⊥ Межа: до фіксу цей вхід давав `1.0 - nil` → TypeError → 500 на ВСЬОМУ

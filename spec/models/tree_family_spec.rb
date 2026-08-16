@@ -187,6 +187,42 @@ RSpec.describe TreeFamily, type: :model do
                        fire_resistance_rating: 3)
         expect(family).to be_valid
       end
+
+      # [ARCH.84] Кожен приклад вище подає ЧИСЛО — тобто те, чого форма не шле
+      # ніколи. `store_accessor` кладе в JSONB рівно вантаж форми, а вантаж
+      # HTML-форми це РЯДОК, і `AlertDispatchService` ним арифметичить:
+      # виміряно рантаймом `DEFAULT_PEST_THRESHOLD * "0.7"` → `TypeError`,
+      # `temperature_c >= "60"` → `ArgumentError`. Тож питання тут не про
+      # валідність, а про ТИП того, що осіло.
+      describe "the shape an HTML form actually writes" do
+        it "stores a numeric string as a number" do
+          family = create(:tree_family, sap_flow_index: "0.7", bark_thickness: "12")
+          family.reload
+
+          expect(family.sap_flow_index).to be_a(Numeric)
+          expect(family.sap_flow_index.to_f).to eq(0.7)
+          expect(family.bark_thickness).to be_a(Numeric)
+          expect(family.bark_thickness.to_i).to eq(12)
+        end
+
+        it "drops a blank string so an optional property stays optional" do
+          family = build(:tree_family, sap_flow_index: "", fire_resistance_rating: "")
+
+          expect(family).to be_valid
+          expect(family.sap_flow_index).to be_nil
+          expect(family.fire_resistance_rating).to be_nil
+        end
+
+        # ⊥ Ліхтар до обох: нечисловий рядок мусить ЛИШИТИСЬ рядком. `to_f` тут
+        # був би найгіршим можливим ліком — «abc» стало б `0.0`, тобто невалідне
+        # зробилось би валідним, а поріг шкідників — нулем.
+        it "leaves a non-numeric string alone so numericality still reports it" do
+          family = build(:tree_family, sap_flow_index: "abc")
+
+          expect(family).not_to be_valid
+          expect(family.sap_flow_index).to eq("abc")
+        end
+      end
     end
   end
 

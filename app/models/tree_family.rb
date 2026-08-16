@@ -45,6 +45,28 @@ class TreeFamily < ApplicationRecord
             numericality: { greater_than: :critical_z_min, less_than: :critical_z_max },
             allow_nil: true
 
+  # --- КОЛБЕКИ ---
+  # [ARCH.84] `store_accessor` кладе в JSONB рівно те, що приїхало з форми, — а з
+  # HTML-форми приїжджає РЯДОК. Звідси дві незалежні поломки, і обидві живі:
+  #
+  # (1) порожній `<input type="number">` шле `""`, тож `allow_nil` вище не
+  #     спрацьовує (порожній рядок не `nil`) і кожна ОПЦІЙНА властивість ставала
+  #     де-факто обовʼязковою: єдиний UI-шлях завести породу відповідав 422
+  #     «is not a number». `normalizes` сюди не дістає — виміряно: воно працює над
+  #     справжніми атрибутами, а `store_accessor` ним не є (клас `Organization#locale`).
+  #
+  # (2) заповнене поле осідало рядком, і `AlertDispatchService` ним АРИФМЕТИЧИТЬ:
+  #     `DEFAULT_PEST_THRESHOLD * sap_flow_index` → `TypeError`, а
+  #     `temperature_c >= fire_resistance_rating` → `ArgumentError`. Виміряно
+  #     рантаймом; ціна різна й жодна не вказує на причину — TypeError їде
+  #     `raise e` в `UnpackTelemetryWorker` і кладе БАТЧ у dead set (черга `uplink`),
+  #     а ArgumentError ловить сусідній `rescue ArgumentError` і пише в лог
+  #     «Корупція Base64 від <gateway>», тобто приписує провину шлюзу.
+  #
+  # ⚠️ Звужено до РЯДКІВ навмисно: `compact_blank` зʼїв би й `false`, тож майбутня
+  # булева властивість зникала б мовчки при кожному збереженні.
+  before_validation :normalize_biological_properties
+
   # --- СКОУПИ ---
   scope :alphabetical, -> { order(name: :asc) }
 
@@ -79,5 +101,24 @@ class TreeFamily < ApplicationRecord
   def healthy_z?(z_value)
     # Завдяки валідації comparison, цей метод тепер завжди працює коректно
     z_value.to_f.between?(critical_z_min, critical_z_max)
+  end
+
+  private
+
+  def normalize_biological_properties
+    return if biological_properties.blank?
+
+    self.biological_properties = biological_properties.filter_map { |key, value|
+      # Число/`nil`/boolean — не наша справа: нормалізуємо лише те, що приїхало
+      # рядком, тобто рівно вантаж HTML-форми.
+      next [ key, value ] unless value.is_a?(String)
+      next if value.blank?
+
+      # ⚠️ `to_f` тут був би НАЙГІРШИМ можливим ліком: «abc» стало б `0.0`, тобто
+      # `numericality` перестала б скаржитись, а поріг шкідників став би нулем.
+      # `Integer`/`Float` з `exception: false` лишають нечисловий рядок як є —
+      # і валідація доповідає про нього, як і мусить.
+      [ key, Integer(value, exception: false) || Float(value, exception: false) || value ]
+    }.to_h
   end
 end

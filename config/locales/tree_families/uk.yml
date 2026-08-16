@@ -35,9 +35,6 @@ uk:
     new_title: Визначити новий вид
     show:
       carbon_info: 'Коефіцієнт секвестрації CO₂: %{coef}'
-      defaults:
-        not_available: Н/Д
-        zero: '0.0'
       props:
         bark_thickness: Товщина кори
         bark_thickness_value: "%{value} мм"

@@ -138,6 +138,32 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
       expect(response).to redirect_to(tree_families_path)
     end
 
+    # [ARCH.84] Браузер шле ПОРОЖНІЙ РЯДОК за кожен незаповнений `number_field`,
+    # і саме цього набору фікстура не мала: `valid_params` ці ключі просто
+    # ОПУСКАЄ, тож `store_accessor` ніколи не отримував `""` і сюїта була зелена
+    # за побудовою (`04_06 §B.2` BP 21 — у наборі немає того, що механізм мусить
+    # відкинути). `allow_nil` порожнього рядка не покриває, тож обидві опційні
+    # біологічні властивості були де-факто обовʼязковими, і єдиний UI-шлях
+    # завести породу відповідав 422 на цілком легальному вводі.
+    it "accepts the form's blank optional biological fields" do
+      params = valid_params.deep_dup
+      params[:tree_family][:sap_flow_index] = ""
+      params[:tree_family][:bark_thickness] = ""
+
+      expect {
+        post "/tree_families", params: params, headers: headers, as: :json
+      }.to change(TreeFamily, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+
+      # Друга половина: порожнеча мусить осісти саме `nil`, а не `""` — рядок
+      # у JSONB truthy, тож `AlertDispatchService` помножив би на нього поріг
+      # шкідників і впав би `String can't be coerced into Integer`.
+      created = TreeFamily.find_by(name: "Silver Birch")
+      expect(created.sap_flow_index).to be_nil
+      expect(created.bark_thickness).to be_nil
+    end
+
     context "when as JSON" do
       it "returns 201 with JSON body on success" do
         post "/tree_families", params: valid_params, headers: headers, as: :json

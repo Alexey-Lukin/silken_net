@@ -79,14 +79,30 @@ RSpec.describe Api::V1::TreesController, type: :request do
       expect(response.parsed_body["tree"]["id"]).to eq(own_tree.id)
     end
 
+    # [ARCH.84] Приклад сам зізнавався в назві («with null values») і водночас
+    # вимагав `eq(0)` від однієї з чотирьох величин. Нуль тут не нейтральний:
+    # `z` — координата атрактора Лоренца, а `CRITICAL_Z_MIN` = 2.0, тож нуль
+    # читається як катастрофічна втрата тургору, приписана вузлу, який просто
+    # ніколи не виходив в ефір. Три сусідні поля були чесні весь час.
     it "includes telemetry data with null values when no logs exist" do
       get "/trees/#{own_tree.id}", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       telemetry = response.parsed_body["telemetry"]
-      expect(telemetry["z_value"]).to eq(0)
+      expect(telemetry["z_value"]).to be_nil
       expect(telemetry["temperature"]).to be_nil
       expect(telemetry["voltage"]).to be_nil
       expect(telemetry["last_sync"]).to be_nil
+    end
+
+    # ⊥ Ліхтар до піна вище: сам лише `be_nil` не розрізняє «не виміряно» і
+    # «виміряний нуль», а нуль тут ДОСЯЖНИЙ — без цієї пари фікс, що поверне
+    # `|| 0`, червонив би рівно один приклад і читався б як регресія формату.
+    it "reports a measured zero z_value as zero, not as absence" do
+      create(:telemetry_log, tree: own_tree, z_value: 0.0)
+
+      get "/trees/#{own_tree.id}", headers: headers, as: :json
+      expect(response.parsed_body.dig("telemetry", "z_value").to_f).to eq(0.0)
+      expect(response.parsed_body.dig("telemetry", "z_value")).not_to be_nil
     end
 
     it "includes telemetry data when logs exist" do

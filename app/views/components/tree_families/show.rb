@@ -35,22 +35,42 @@ module TreeFamilies
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".props_title") }
         div(class: "space-y-4 font-mono text-compact") do
           prop_row(t(".props.co2"), @family.carbon_sequestration_coefficient)
-          prop_row(t(".props.sap_flow"), @family.sap_flow_index || t(".defaults.zero"))
-          prop_row(t(".props.bark_thickness"), t(".props.bark_thickness_value", value: @family.bark_thickness || 0))
-          prop_row(t(".props.foliage_density"), t(".props.foliage_density_value", value: @family.foliage_density || 0))
+          prop_row(t(".props.sap_flow"), measured_prop(@family.sap_flow_index))
+          prop_row(t(".props.bark_thickness"),
+                   measured_prop(@family.bark_thickness) { |v| t(".props.bark_thickness_value", value: v) })
+          prop_row(t(".props.foliage_density"),
+                   measured_prop(@family.foliage_density) { |v| t(".props.foliage_density_value", value: v) })
           # [TEST.12] Значення — ПОРІГ температури в °C (`AlertDispatchService`
           # звіряє його з `telemetry_log.temperature_c`, дефолт 60), а не якісний
           # рейтинг, хоч мітка читається саме так. Без одиниці — як у сусідів
           # вище — адміністратор, що введе «3» за лісівничою шкалою, дістав би
           # пожежну тривогу на кожній телеметрії вище 3 °C.
           prop_row(t(".props.fire_rating"),
-                   if @family.fire_resistance_rating
-                     t(".props.fire_rating_value", value: @family.fire_resistance_rating)
-                   else
-                     t(".defaults.not_available")
-                   end)
+                   measured_prop(@family.fire_resistance_rating) { |v| t(".props.fire_rating_value", value: v) })
         end
       end
+    end
+
+    # [ARCH.84] Дім стану «не виміряно» один на всі поверхні — `ui.measurement.not_measured`,
+    # той самий, що віддає `measured_value` на сенсорних величинах. Власний хелпер
+    # родина потребує лише тому, що ОДИНИЦЯ тут локалізована («mm» ⊥ «мм»), тож
+    # зашити її аргументом, як робить `measured_value`, не можна; спільним лишається
+    # саме рішення про порожнечу, а не форматування.
+    #
+    # 🔴 Нуль тут не нейтральний: `sap_flow_index` МНОЖИТЬ поріг шкідників у
+    # `AlertDispatchService` (`DEFAULT_PEST_THRESHOLD * sap_flow_index`), тож
+    # надрукований «0.0» був рівно тим числом, яке робить порогом нуль — і сусідня
+    # форма дозволяє його ввести, бо валідація нуль приймає.
+    # ⚠️ Одиниця приходить БЛОКОМ, а не ключем-аргументом, і це не стиль: перша
+    # редакція брала `unit_key` рядком, тож `t(".props.…_value")` переставав бути
+    # ЛІТЕРАЛОМ — і `i18n-tasks unused` виріс на 12 ключів (622 → 634), тобто три
+    # живі одиниці × 4 локалі стали кандидатами на видалення. Той сканер не
+    # входить у pre-push-трійку, тож регресія поїхала б мовчки (§Guard-craft #23:
+    # One-Home ОСЛІПЛЮЄ гейт, що ключувався на літеральній формі значення).
+    def measured_prop(value)
+      return t("ui.measurement.not_measured") if value.nil?
+
+      block_given? ? yield(value) : value
     end
 
     def prop_row(label, value)

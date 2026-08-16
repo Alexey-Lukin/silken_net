@@ -80,10 +80,57 @@ RSpec.describe TreeFamilies::Show do
       expect(html).not_to include("High")
     end
 
-    it "falls back to N/A when the threshold is unset" do
+    it "falls back to the unmeasured state when the threshold is unset" do
       rendered = render_component(family: mock_family(fire_resistance_rating: nil))
-      expect(rendered).to include("N/A")
+      expect(prop_value(rendered, "Fire Rating")).to eq(not_measured)
       expect(rendered).not_to include("°C")
     end
+  end
+
+  # [ARCH.84] Панель зветься «TinyML Biological Features», а `db/seeds.rb` жодної
+  # з чотирьох властивостей не пише — тобто фабриковані числа бачила КОЖНА
+  # порода. Найдорожчий із них не декоративний: `sap_flow_index` множить поріг
+  # шкідників у `AlertDispatchService`, тож надрукований «0.0» є рівно тим
+  # значенням, яке робить порогом нуль і перетворює будь-яку акустичну подію на
+  # епідемію комах — а сусідня форма дозволяє його ввести (валідація нуль приймає).
+  describe "properties that were never measured" do
+    let(:bare) do
+      mock_family(sap_flow_index: nil, bark_thickness: nil,
+                  foliage_density: nil, fire_resistance_rating: nil)
+    end
+
+    it "names the unmeasured state instead of printing a fabricated zero" do
+      rendered = render_component(family: bare)
+
+      expect(prop_value(rendered, "Sap Flow Index")).to eq(not_measured)
+      expect(prop_value(rendered, "Bark Thickness")).to eq(not_measured)
+      expect(prop_value(rendered, "Foliage Density")).to eq(not_measured)
+      expect(prop_value(rendered, "Fire Rating")).to eq(not_measured)
+    end
+
+    # ⊥ Ліхтар: без нього «не виміряно» не відрізнити від «завжди не виміряно»,
+    # і нуль тут ДОСЯЖНИЙ — `sap_flow_index: 0` модель приймає (переміряно).
+    it "still prints a measured zero as a number" do
+      rendered = render_component(
+        family: mock_family(sap_flow_index: 0, bark_thickness: 0, foliage_density: 0)
+      )
+
+      expect(prop_value(rendered, "Sap Flow Index")).to eq("0")
+      expect(prop_value(rendered, "Bark Thickness")).to eq("0 mm")
+      expect(prop_value(rendered, "Foliage Density")).to eq("0 %")
+    end
+  end
+
+  # [ARCH.84] Значення живе в СУСІДНЬОМУ `<span>` за міткою; пін на текст усього
+  # документа проходив би через будь-який інший рядок таблиці (§Guard-craft #17).
+  def prop_value(rendered, label)
+    Nokogiri::HTML5.fragment(rendered)
+      .css("span")
+      .find { |span| span.text.strip == label }
+      &.next_element&.text&.strip
+  end
+
+  def not_measured
+    I18n.t("ui.measurement.not_measured")
   end
 end

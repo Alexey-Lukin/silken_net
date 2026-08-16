@@ -35,9 +35,6 @@ en:
     new_title: Define New Species
     show:
       carbon_info: 'CO₂ Sequestration Coefficient: %{coef}'
-      defaults:
-        not_available: N/A
-        zero: '0.0'
       props:
         bark_thickness: Bark Thickness
         bark_thickness_value: "%{value} mm"

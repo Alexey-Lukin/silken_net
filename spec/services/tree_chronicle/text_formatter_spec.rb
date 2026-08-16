@@ -50,12 +50,27 @@ RSpec.describe TreeChronicle::TextFormatter do
       end
     end
 
+    # [ARCH.84] Доти цей приклад цементував дефект — і найгірше, що чесна
+    # відповідь на те саме питання стояла ТРЬОМА рядками нижче («falls back to
+    # N/A for temperature»). Пін цілиться у відбиток («Stress index: N/A.»), бо
+    # голий `include("N/A")` пройшов би через сусідню температуру.
     context "when stress_index is nil" do
       let(:insight) { OpenStruct.new(stress_index: nil, max_temp: 38) }
 
-      it "defaults stress percentage to 0%" do
+      it "names the unmeasured state instead of a fabricated zero" do
         result = described_class.stress_description(insight)
-        expect(result).to include("0%")
+        expect(result).to include("Stress index: N/A.")
+        expect(result).not_to include("Stress index: 0")
+      end
+    end
+
+    # ⊥ Ліхтар: нуль тут ДОСЯЖНИЙ — здорове дерево дає рівно `0.0`, тож без цієї
+    # половини «не виміряно» не відрізнити від «виміряли, вийшов нуль».
+    context "when stress_index is a measured zero" do
+      let(:insight) { OpenStruct.new(stress_index: 0.0, max_temp: 21) }
+
+      it "prints it as a number" do
+        expect(described_class.stress_description(insight)).to include("Stress index: 0.0%.")
       end
     end
 

@@ -154,6 +154,23 @@ RSpec.describe Contracts::Show do
         expect(html).to include("Cancellation Terms")
       end
 
+      # [ARCH.84] «0%» комісії за дострокове розірвання — ЗАКОННА умова договору,
+      # тож `|| 0` робив «умову не задано» невідрізнимим від «розірвання
+      # безкоштовне», і саме в панелі LEGAL VAULT. Чесний сусід у тому ж блоці —
+      # `min_days_before_exit || "—"`. ⚖️ Грошовий двійник
+      # (`NaasContract#calculate_early_exit_fee`) лишається відкритим присудом.
+      context "when the fee term itself is absent" do
+        let(:contract) do
+          build_contract(cancellation_terms: { "burn_accrued_points" => true })
+        end
+
+        it "does not print a fabricated zero percent" do
+          expect(html).to include("Cancellation Terms")
+          expect(html).not_to match(/Early Exit Fee[^<]*<\/[^>]*>\s*<[^>]*>\s*0\s*%/i)
+          expect(html).not_to include("0%")
+        end
+      end
+
       it "renders the Smart Contract Data section" do
         expect(html).to include("Smart Contract Data")
       end

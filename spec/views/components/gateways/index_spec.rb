@@ -33,7 +33,9 @@ RSpec.describe Gateways::Index do
       uid: uid,
       last_seen_at: last_seen_at,
       config_sleep_interval_s: config_sleep_interval_s,
-      cluster: Cluster.new(name: cluster_name, active_trees_count: active_trees_count)
+      # `cluster_name: nil` → шлюз БЕЗ кластера (не кластер без імені): це окремий
+      # стан, який компонент мусить рендерити інакше [ARCH.84].
+      cluster: cluster_name && Cluster.new(name: cluster_name, active_trees_count: active_trees_count)
     )
     # Незбережений лог, а не стаб на асоціації: компонент читає його з ХЕША, тож
     # підміняти нічого не треба — і саме тому фікстура тепер не здатна оголосити
@@ -67,6 +69,19 @@ RSpec.describe Gateways::Index do
     it "renders soldiers count" do
       expect(html).to include("Soldiers")
       expect(html).to include("12")
+    end
+
+    # [ARCH.84] Нуль солдатів — ЗАКОННИЙ вимір (щойно створений порожній кластер),
+    # тож `|| 0` робив шлюз БЕЗ кластера невідрізнимим від шлюза з порожнім. Чесна
+    # відповідь на те саме питання вже стояла рядком вище — `unassigned`.
+    context "when the gateway has no cluster" do
+      let(:gateways) { [ mock_gateway(cluster_name: nil) ] }
+
+      it "does not print a fabricated zero under SOLDIERS" do
+        expect(html).to include("Cluster: UNASSIGNED")
+        expect(html).to include("—")
+        expect(html).not_to match(%r{SOLDIERS</p>\s*<p[^>]*>\s*0\s*</p>}i)
+      end
     end
 
     it "renders signal percentage derived from the raw CSQ" do
