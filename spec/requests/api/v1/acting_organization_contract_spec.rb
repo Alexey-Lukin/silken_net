@@ -81,6 +81,19 @@ RSpec.describe "Acting-organization contract (Pundit contour)", type: :request d
     }.fetch(surface)
   end
 
+  # Реєстр поверхонь вище — рукописний, тож четвертий Pundit-контролер утік би
+  # ТИХО: він не почервонив би нічого, а просто лишився б непокритим. Ліхтар
+  # ключується на файловій системі, тобто на джерелі, якого сам перелік не
+  # породжує — інакше обидва боки звіряння мали б спільне походження й розбіжність
+  # була б недосяжна за побудовою.
+  it "covers every controller that reaches for Pundit" do
+    pundit_callers = Dir[Rails.root.join("app/controllers/api/v1/*.rb")].select do |file|
+      File.read(file).match?(/^\s*(?:@?\w+\s*=\s*)?(?:policy_scope\(|authorize\s)/)
+    end.map { |file| File.basename(file, "_controller.rb") }
+
+    expect(pundit_callers).to match_array(%w[contracts users wallets])
+  end
+
   describe "an actor without an acting organization" do
     it "carries a population a regression would expose" do
       expect(User.where(organization_id: nil).count).to be >= 2
