@@ -110,6 +110,29 @@ RSpec.describe UserPolicy do
       expect(scope).not_to include(other_user)
     end
 
+    # [UI.7] Пара `Scope` ⊥ `show?` мусить відповідати на ПОРОЖНІЙ контекст
+    # однаково — і саме на ньому вона роками розходилась: предикат починається з
+    # `organization_id.present?` і ВІДМОВЛЯЄ, а скоуп будував `IS NULL`, тобто
+    # фільтр, що ЗБІГАЄТЬСЯ з org-less рядками.
+    #
+    # ⚠️ Ліхтар на набір несучий (`04_06 §B.2` BP 21): без org-less користувача в
+    # базі `where(organization_id: nil)` віддає порожньо САМ ПО СОБІ, і пін був
+    # би зелений із повністю знятим гардом.
+    context "when the acting organization is missing" do
+      let!(:platform_user) { create(:user, :super_admin, organization: nil) }
+      let(:contextless) { UserContext.new(super_admin, nil) }
+
+      it "resolves to nothing even though org-less rows exist" do
+        expect(User.where(organization_id: nil)).to include(platform_user)
+
+        expect(described_class::Scope.new(contextless, User).resolve).to be_empty
+      end
+
+      it "refuses the record predicate on the very row the scope would have matched" do
+        expect(described_class.new(contextless, platform_user).show?).to be false
+      end
+    end
+
     it "звужує super_admin до acting-організації, і перемикання її змінює" do
       in_own = described_class::Scope.new(UserContext.new(super_admin, organization), User).resolve
       in_other = described_class::Scope.new(UserContext.new(super_admin, other_org), User).resolve

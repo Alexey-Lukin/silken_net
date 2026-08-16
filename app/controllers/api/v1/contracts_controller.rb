@@ -13,6 +13,11 @@ module Api
         # того ключа тривоги кластера тут не читає НІХТО — JSON віддає `cluster` лише
         # як `{id, name}`, а `Contracts::Index` бере `contract.cluster&.name`. Прелоад
         # без читача — це зайвий запит на кожен рендер списку.
+        # [UI.7] Той самий гард, що вже стоїть у `#stats` нижче — і з тієї самої
+        # підстави: `naas_contracts.organization_id` це `NOT NULL`, тож без нього
+        # актор без організації діставав 200 із порожнім портфелем замість чесного
+        # «немає контексту» (`04_03 §3.1`, політика (1)).
+        acting_organization!
         scope = policy_scope(NaasContract).includes(:organization, :cluster)
         @pagy, @contracts = pagy(scope)
 
@@ -110,7 +115,12 @@ module Api
 
       private
 
+      # [UI.7] Банг ПЕРЕД скоупленим `find`: без нього актор без організації діставав
+      # `404` — тобто чужа за формою відповідь («такого контракту немає») на власне
+      # питання про контекст. Гард розводить два різні стани, які скоуплений `find`
+      # згортав в один.
       def find_contract(id)
+        acting_organization!
         policy_scope(NaasContract).find(id)
       end
 

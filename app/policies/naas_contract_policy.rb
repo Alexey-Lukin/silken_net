@@ -19,6 +19,8 @@ class NaasContractPolicy < ApplicationPolicy
 
   class Scope < ApplicationPolicy::Scope
     def resolve
+      return scope.none if no_acting_organization?
+
       scope.where(organization_id: organization_id)
     end
   end

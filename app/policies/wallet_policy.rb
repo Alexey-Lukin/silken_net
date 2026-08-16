@@ -53,7 +53,15 @@ class WalletPolicy < ApplicationPolicy
     # розходиться з ланцюгом» — він не декларативний: `clusters.id` фабрично заморожено
     # (HKDF-salt у кремнії), тож переїзд дерева між кластерами не існує як операція
     # (⚖️ 2026-07-30), а носій інваріанта — `spec/quality/wallet_org_denormalization_spec.rb`.
+    #
+    # ⚠️ [UI.7] Гард на порожній контекст тут НЕ надлишковий, хоч `for_organization`
+    # і будує сирий `= :org`, який на `nil` не істинний ніколи: fail-closed там є
+    # властивістю ФОРМИ запиту, не правила, тож перша ж переписка ланцюга на
+    # хеш-форму (`where(organization_id: org_id)` → `IS NULL`) мовчки відкрила б
+    # org-less гаманці. Правило мусить бути оголошене, а не успадковане від SQL.
     def resolve
+      return scope.none if no_acting_organization?
+
       scope.for_organization(organization_id)
     end
   end

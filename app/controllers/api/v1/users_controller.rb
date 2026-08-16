@@ -6,8 +6,16 @@ module Api
     class UsersController < BaseController
       # --- СПИСОК ЕКІПАЖУ (The Crew) ---
       # GET /users
+      # [UI.7] `authorize` вирішує, ЧИ можна дивитись список (роль), а
+      # `acting_organization!` — ЧОГО саме (організація запиту). Порядок несучий:
+      # інвестор без права дістає 403 незалежно від контексту, а admin без
+      # організації — 422 `no_organization`, як усі тенантні поверхні (`04_03 §3.1`,
+      # політика (1)). Доти цей екшен був ТРЕТЬОЮ поведінкою: `policy_scope`
+      # фільтрував по `IS NULL` і чесно віддавав платформених користувачів, кожен
+      # рядок якого `show?` нижче відхиляв — список, який неможливо відкрити.
       def index
         authorize User
+        acting_organization!
         scope = policy_scope(User).order(last_seen_at: :desc, id: :desc)
 
         respond_to do |format|
@@ -31,6 +39,7 @@ module Api
       # --- ПРОФІЛЬ УЧАСНИКА ---
       # GET /users/:id
       def show
+        acting_organization!
         @user = policy_scope(User).find(params[:id])
         authorize @user
 

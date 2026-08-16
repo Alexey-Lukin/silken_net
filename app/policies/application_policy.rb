@@ -107,6 +107,19 @@ class ApplicationPolicy
 
     private
 
+    # [UI.7] `nil` тут — ВІДСУТНІСТЬ контексту, а не організація з `NULL`, і
+    # розрізнити їх мусить кожен тенантний `Scope`. Rails перекладає
+    # `where(organization_id: nil)` у `IS NULL`, тобто у ФІЛЬТР, що збігається з
+    # org-less рядками, тоді як предикат-близнюк (`same_organization?`) на тому
+    # самому вході ВІДМОВЛЯЄ. Виміряно на `users`: `Scope` віддавав двох
+    # платформених super_admin'ів, а `show?` давав 403 на кожному — список, який
+    # неможливо відкрити. Сусіди мовчали з ВИПАДКОВИХ причин (сирий `= NULL`
+    # ніколи не істинний; `NOT NULL`-колонка не має чого віддати), тобто fail-closed
+    # там був властивістю схеми, а не правила.
+    def no_acting_organization?
+      organization_id.blank?
+    end
+
     def admin_or_above?
       user.admin_or_above?
     end

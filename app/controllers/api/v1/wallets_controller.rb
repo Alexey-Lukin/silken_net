@@ -6,7 +6,12 @@ module Api
     class WalletsController < BaseController
       # --- ЗАГАЛЬНИЙ ОГЛЯД СКАРБНИЦІ (The Treasury Matrix) ---
       # GET /wallets
+      # [UI.7] Гаманець — тенантний ресурс, тож актор без організації дістає те саме
+      # `422 no_organization`, що й решта дашборда (`04_03 §3.1`, політика (1)).
+      # Доти цей екшен віддавав 200 із ПОРОЖНІМ реєстром над живим флотом — тобто
+      # був невідрізнимий від організації, що справді не має жодного гаманця.
       def index
+        acting_organization!
         scope = policy_scope(Wallet).includes(:organization, :tree)
         @pagy, @wallets = pagy(scope)
 
@@ -32,6 +37,7 @@ module Api
       # --- ДЕТАЛІ ГАМАНЦЯ (On-Chain Audit) ---
       # GET /wallets/:id
       def show
+        acting_organization!
         @wallet = Wallet.find(params[:id])
         authorize @wallet
         @pagy_tx, @transactions = pagy(@wallet.blockchain_transactions.order(created_at: :desc), limit: 50)
@@ -56,6 +62,7 @@ module Api
       # --- БАЛАНС ГАМАНЦЯ (Lazy-Loaded Turbo Frame) ---
       # GET /wallets/:id/balance
       def balance
+        acting_organization!
         @wallet = Wallet.find(params[:id])
         authorize @wallet
 
@@ -89,6 +96,7 @@ module Api
       # сам тримає 1-секундне вікно (ISO-8601 має секундну точність, колонка —
       # мікросекундну) і fail-safe на кривому форматі.
       def transaction_status
+        acting_organization!
         @wallet = Wallet.find(params[:wallet_id])
         authorize @wallet
 
@@ -105,6 +113,7 @@ module Api
       # --- БЛОКЧЕЙН ІДЕНТИЧНІСТЬ (Lazy-Loaded Turbo Frame) ---
       # GET /wallets/:id/metadata
       def metadata
+        acting_organization!
         @wallet = Wallet.find(params[:id])
         authorize @wallet
 
