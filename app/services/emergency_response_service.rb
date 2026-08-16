@@ -294,8 +294,13 @@ class EmergencyResponseService
     return actuators unless tree&.latitude.present? && tree.longitude.present?
 
     actuators.sort_by do |actuator|
+      # [ARCH.103] `&.` тут був недосяжною гілкою, і саме тому непокривною: асоціація
+      # гарантована ДВІЧІ — `belongs_to :gateway` без `optional:` і `gateway_id NOT NULL`
+      # у схемі. Чесний лік — зняти оператор, а не вигадувати фікстуру під вхід, якого
+      # база не приймає. ⚠️ Координати шлюзу лишаються nullable, тож перевірка НА НИХ
+      # несуча: без неї `Float::INFINITY`-гілка не спрацювала б і сортування впало б.
       gateway = actuator.gateway
-      if gateway&.latitude.nil? || gateway.longitude.nil?
+      if gateway.latitude.nil? || gateway.longitude.nil?
         Float::INFINITY
       else
         (gateway.latitude - tree.latitude)**2 + (gateway.longitude - tree.longitude)**2

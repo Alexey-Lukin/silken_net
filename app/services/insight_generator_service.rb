@@ -304,15 +304,16 @@ class InsightGeneratorService < ApplicationService
     false
   end
 
+  # 🔴 [ARCH.103] Нуль викликачів у `app/` — але це residual ЗНЯТТЯ, не забуття:
+  # єдиним споживачем була фрод-арифметика, оголошена інертною двома методами вище.
+  # Лишено з тригером, а не зрізано, тим самим рішенням, що й сусід `detect_fraud?`:
+  # утиліта чиста, і оживе автоматично разом із гардом, коли зʼявиться другий
+  # виміряний пер-деревний сигнал. ⛔ Не додавай сюди виклику раніше за нього.
+  # 🔓 Тригер той самий, що в `detect_fraud?` вище.
   def calculate_deviation(value, base)
     return 0.0 if base.zero?
     ((value - base).abs / base).round(4)
   end
-
-  # Signed relative deviation: NEGATIVE = below baseline (the stress direction for
-  # sap_flow — suppressed transpiration). Distinct from calculate_deviation, which
-  # is the absolute magnitude used for fraud detection + the ML feature. 0.0 when
-  # baseline is zero.
 
   # [VPD weather-confounder gate — 04_02 §VPD, 05_05 §7] DISCOUNT-ONLY.
   # Lowers stress_index when a low sap_flow is explained by WEATHER, not disease:

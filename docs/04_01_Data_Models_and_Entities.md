@@ -269,7 +269,7 @@ normalize_identifier :device_uid  # HardwareKey
 | `latest_voltage_mv` | integer | Денормалізована **напруга шини живлення MCU** (мВ VDDA, VREFINT-калібрування — [`03_01`](03_01_Firmware_Lifecycle_and_DMA) FW.50). ⚠️ **[ARCH.99]** НЕ заряд іоністора: каналу Vcap на вузлі не існує, тож здоровий вузол стоїть біля номіналу 3300 мВ |
 | `latest_stress_index` | **decimal, nullable** | Денормалізований stress_index від `InsightGeneratorService`. ⚡ **[ARCH.84]** `NULL` = «не виміряно **за цю добу**» — окремий СТАН, не нуль; доти стояв `DEFAULT 0.0 NOT NULL`, див. нижче |
 | `peaq_did` | string | peaq DID-ідентифікатор для Proof of Growth |
-| `altitude` | numeric | Висота над рівнем моря (м) |
+| `altitude` | numeric | ⚠️ **Не задротовано** [ARCH.103]: нуль посилань у `app/`/`lib/`, `GeoLocatable` знає лише lat/lng. Єдина згадка наміру — [`07_03 §1`](07_03_Academic_Integration_and_IP) (вибір висот Queen-шлюзів за оглядовими точками), і жоден інженерний розділ її не розвиває — link-budget [`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM) моделює відстань і матеріали, не висоту |
 | `firmware_version` | string | Версія прошивки STM32 (SemVer) |
 
 **AASM State Machine (column: `status`):**
@@ -472,7 +472,7 @@ dormant ──reactivate──► active
 | `last_attested_at` | datetime | **[L1 QATT]** Останній батч з валідним Ed25519-підписом Королеви (wire-дім [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)); `nil` = шлюз на L0 |
 | `latest_voltage_mv` | integer | Денормалізована напруга |
 | `firmware_version` | string | Версія прошивки STM32 (SemVer) |
-| `altitude` | numeric | Висота над рівнем моря (м) |
+| `altitude` | numeric | ⚠️ **Не задротовано** [ARCH.103]: нуль посилань у `app/`/`lib/`, `GeoLocatable` знає лише lat/lng. Єдина згадка наміру — [`07_03 §1`](07_03_Academic_Integration_and_IP) (вибір висот Queen-шлюзів за оглядовими точками), і жоден інженерний розділ її не розвиває — link-budget [`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM) моделює відстань і матеріали, не висоту |
 | `helium_dev_eui` | string | **[ARCH.54]** Helium SOS fallback dev EUI (`HeliumSosWorker` → `EwsAlert(queen_uplink_lost)`) |
 | `ota_started_at` | datetime | **[ARCH.59]** якір віку КАМПАНІЇ для stuck-OTA watchdog'а (`GatewayStalenessSweepWorker`). ⚠️ Ставить його **диспетчер** при таргетингу, а poll-тракт **не перезаписує**: інакше шлюз, що поллить рідко, обнуляв би власний годинник і не старів ніколи, а вікно між таргетингом і першим анонсом лишалось би без якоря взагалі — саме там живуть keyless-таргет, Королева, що не поллить, і dangling `pending_firmware_id`. Доти тут стояло «якір майбутнього watchdog'а, sweep-воркера ще нема» — протухло 2026-08-13, виправлено 08-16 |
 | `pending_firmware_id` | bigint | **[FW.60]** таргет OTA-кампанії per-gateway (пише dispatcher атомарно з hiwater-burn; canary-когорта); Королева дізнається через hint у власному poll'і, глушиться спостереженим `?fw=` — [`04_02`](04_02_Business_Logic_and_Services) `Downlink::PendingQueueService` |
@@ -610,7 +610,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `growth_points` | numeric | Нараховані бали зростання (raw) |
 | `metabolism_s` | integer | Час метаболічного циклу (с) |
 | `rssi` | integer | RSSI LoRa-каналу (дБм) |
-| `sap_flow` | numeric | Потік соку ксилеми |
+| `sap_flow` | numeric | ⚠️ **Колонка без ЖОДНОГО писача** — поля немає в жодному wire-форматі, тож у проді вона структурно `NULL` [ARCH.102]. Читачі, що на ній стояли (sap-терм стресу, ML-фіча `sap_deviation`), знято 2026-08-16: вимірювача не існує. Прецедент маркування — `tamper_detected` нижче |
 | `humidity` | numeric | **[HW.32]** Відносна вологість повітря (% RH, BME280) — climate frame, nullable |
 | `pressure` | numeric | **[HW.32]** Атмосферний тиск (hPa, BME280) — nullable; барометр → раннє попередження про шторм |
 | `vpd` | numeric | **[HW.32]** Vapor Pressure Deficit (kPa) — прямий confounder сокоруху (False-Slashing guard, [`05_05 §6/§7`](05_05_Slashing_and_Risk_Policy)). Hot-path: device шле VPD-індекс; nullable. ⚠️ НЕ входить у Lorenz-Z (DCI-guard) |
@@ -1329,7 +1329,7 @@ active/draft ──cancel──► cancelled
 | `metadata` | jsonb | Контекст дії |
 | `chain_hash` | string | SHA-256 попереднього запису + payload (blockchain-ланцюг) |
 | `ipfs_cid` | string | IPFS CID при архівуванні |
-| `l1_anchor_tx_hash` | string | TX хеш на Ethereum L1 |
+| `l1_anchor_tx_hash` | string | ⚠️ **Не задротовано** [ARCH.103]: нуль посилань у `app/`/`lib/`, навіть `AuditLogBlueprint` його не віддає. Залишок ПЕР-РЯДКОВОЇ архітектури якорення, витісненої АГРЕГАТНОЮ: `Ethereum::StateAnchorService` бере лише ОСТАННІЙ `chain_hash` як інгредієнт leaf0, і tx-хеш назад у рядок не пише ніколи. Leaf-рівневий proof (ARCH.12) дістав лише `TelemetryLog`, дзеркала для `AuditLog` немає |
 | `archive_requested_at` | datetime | [INF.22] Outbox-маркер: money/MRV-лог, призначений для IPFS-архіву (виставляє `AuditLogWorker`; factory/console прямий `create!` не ставить) |
 
 **Класові методи:**
