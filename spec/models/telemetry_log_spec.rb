@@ -17,54 +17,7 @@ RSpec.describe TelemetryLog, type: :model do
     end
   end
 
-  describe "#healthy?" do
-    it "returns true for homeostasis with normal readings" do
-      log = build(:telemetry_log, :healthy)
-      expect(log).to be_healthy
-    end
 
-    it "returns false when bio_status is stress" do
-      log = build(:telemetry_log, :stressed)
-      expect(log).not_to be_healthy
-    end
-
-    it "returns false when temperature is extreme" do
-      log = build(:telemetry_log, :healthy, temperature_c: 55)
-      expect(log).not_to be_healthy
-    end
-
-    it "returns false when acoustic events are high" do
-      log = build(:telemetry_log, :healthy, acoustic_events: 25)
-      expect(log).not_to be_healthy
-    end
-  end
-
-  describe "#optimal?" do
-    it "returns true for ideal conditions" do
-      log = build(:telemetry_log, :optimal)
-      expect(log).to be_optimal
-    end
-
-    it "returns false when voltage is low" do
-      log = build(:telemetry_log, :optimal, voltage_mv: 3000)
-      expect(log).not_to be_optimal
-    end
-
-    it "returns false when z_value is out of range" do
-      log = build(:telemetry_log, :optimal, z_value: 1.5)
-      expect(log).not_to be_optimal
-    end
-
-    it "returns false when the log is not in homeostasis" do
-      log = build(:telemetry_log, :optimal, bio_status: :stress)
-      expect(log).not_to be_optimal
-    end
-
-    it "returns false when z_value is absent" do
-      log = build(:telemetry_log, :optimal, z_value: nil)
-      expect(log).not_to be_optimal
-    end
-  end
 
   describe "#critical?" do
     it "returns true for anomaly status" do
@@ -83,40 +36,6 @@ RSpec.describe TelemetryLog, type: :model do
     end
   end
 
-  describe "#recovery_confirmed?" do
-    let(:tree) { create(:tree, health_streak: 0) }
-
-    it "returns true when log is healthy and health_streak >= 3" do
-      tree.update_column(:health_streak, 3)
-      log = build(:telemetry_log, :healthy, tree: tree)
-
-      expect(log.recovery_confirmed?).to be true
-    end
-
-    it "returns false when health_streak < 3" do
-      tree.update_column(:health_streak, 2)
-      log = build(:telemetry_log, :healthy, tree: tree)
-
-      expect(log.recovery_confirmed?).to be false
-    end
-
-    it "returns false when log is not healthy even with high streak" do
-      tree.update_column(:health_streak, 10)
-      log = build(:telemetry_log, :stressed, tree: tree)
-
-      expect(log.recovery_confirmed?).to be false
-    end
-
-    it "uses denormalized counter instead of querying telemetry_logs" do
-      tree.update_column(:health_streak, 5)
-      log = build(:telemetry_log, :healthy, tree: tree)
-
-      # recovery_confirmed? works without querying telemetry_logs —
-      # uses only tree.health_streak (in-memory attribute)
-      result = log.recovery_confirmed?
-      expect(result).to be true
-    end
-  end
 
   describe "#relayed_via_mesh?" do
     # Стартовий TTL залежить від типу пакета (firmware DEFAULT_TTL=3 /

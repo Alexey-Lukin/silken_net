@@ -90,11 +90,13 @@ class TelemetryLog < ApplicationRecord
   before_update :forbid_sealed_leaf_mutation!
 
   # --- ПОРОГИ АНАЛІТИКИ (канон значень — тут, 04_01 дзеркалить) ---
-  # Акустика: < CALM_MAX — здорова тиша; > STORM_MIN — шторм (шкідники/пилка).
-  # Сіра зона CALM_MAX..STORM_MIN навмисна: «навантажено, але ще не аномалія».
-  ACOUSTIC_CALM_MAX  = 20
+  # Акустика: > STORM_MIN — шторм (кавітація/пилка над порогом confidence).
+  # ⛔ [ARCH.84] `ACOUSTIC_CALM_MAX` (20) і `HEALTHY_TEMP_MAX_C` (50) знято разом
+  # із `healthy?` — обидва були bootstrap-числами того самого коміту 2026-03-02,
+  # без калібрувального сліду. Новіший код тієї ж платформи вже так не робить:
+  # acoustic-term у `InsightGeneratorService` ІНЕРТНИЙ, доки поріг не заданий
+  # ground-truth'ом («no guessed count in live slashing»).
   ACOUSTIC_STORM_MIN = 50
-  HEALTHY_TEMP_MAX_C = 50
 
   # --- СКОУПИ (The Analytical Eyes) ---
   # Індекс: index_telemetry_logs_on_tree_id_and_created_at
@@ -183,52 +185,31 @@ class TelemetryLog < ApplicationRecord
   # SELF-HEALING INTELLIGENCE (Recovery Protocols)
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-  # Дерево вважається здоровим, якщо воно в гомеостазі,
-  # температура в межах норми і немає акустичного шторму шкідників.
-  # nil-safe: на hot path TelemetryLog може мати nil-fields коли запис
-  # створюється через insert_all (KENOSIS TITAN bypass валідацій).
-  def healthy?
-    bio_status_homeostasis? &&
-      temperature_c.present? && temperature_c < HEALTHY_TEMP_MAX_C &&
-      acoustic_events.present? && acoustic_events < ACOUSTIC_CALM_MAX
-  end
-
-  # "Optimal" стан Lorenz attractor: Z поряд із OPTIMAL_Z_TARGET (29.0).
-  # SSOT — `BioContract::OPTIMAL_Z_TARGET` (firmware) / `Tree::GLOBAL_LORENZ_Z_OPTIMAL`.
-  # Раніше використовував діапазон 0.1..0.5, що було залишком до-FW.8 нормалізації
-  # і ніколи не співпадало з реальними значеннями Z (2.0..45.0).
-  OPTIMAL_Z_BAND = 4.0
-
-  def optimal?
-    return false unless healthy?
-    return false unless voltage_mv.present? && voltage_mv > 3600
-    return false unless z_value.present?
-
-    target = Tree::GLOBAL_LORENZ_Z_OPTIMAL
-    (z_value.to_f - target).abs <= OPTIMAL_Z_BAND
-  end
-
-  # [KENOSIS TITAN]: Перевірка на «Відновлення» (Anti-Flapping)
+  # ⛔ [ARCH.84, ⚖️ присуд founder 2026-08-16] Anti-flapping-петлю знято ЦІЛКОМ:
+  # `healthy?` · `optimal?` · `recovery_confirmed?` · `OPTIMAL_Z_BAND` ·
+  # `HEALTHY_TEMP_MAX_C` · `ACOUSTIC_CALM_MAX` + колонка `trees.health_streak`
+  # + писач `TelemetryUnpackerService#update_health_streak!`.
   #
-  # 🔴 [ARCH.84, виміряно 2026-08-14] Рядок «Використовується в
-  # AlertDispatchService» був НЕПРАВДОЮ: у тому сервісі немає ані виклику, ані
-  # згадки — грепнуто все дерево. Метод має НУЛЬ продових викликачів, як і
-  # сусідній `optimal?`; отже `health_streak`, який `TelemetryUnpackerService`
-  # оновлює `update_all`-ом на КОЖНОМУ здоровому пакеті (hot path), сьогодні
-  # ніхто не читає — дзеркало «колонки без писача», лише навпаки.
-  #
-  # ⚠️ Це НЕ мертвий код у звичному сенсі, а спроєктована й не задротована
-  # фіча (клас ARCH.69/ARCH.71). Доля — присуд у `00_07` ARCH.84: дротувати
-  # авто-закриття тривог ⊥ зняти читачів разом із підтримкою лічильника.
-  # ⛔ Не «оптимізувати» лічильник поодинці: він і читач падають або живуть разом.
-  # Замість N+1 запиту tree.telemetry_logs.recent.limit(3) — використовуємо
-  # денормалізований лічильник health_streak з моделі Tree.
-  # Лічильник оновлюється атомарно в TelemetryUnpackerService.commit_telemetry.
-  def recovery_confirmed?
-    return false unless healthy?
-
-    tree.health_streak >= 3
-  end
+  # 🔴 Підстава — НЕ «нуль читачів»: продакшну не було, тож це вимір
+  # недобудованості, а не смерті. Знято тому, що КОНСТРУКЦІЯ хибна — сигнал
+  # закриття не спростовує сигнал відкриття:
+  #   · `severe_drought` народжується ДВОМА гілками (пристрійний `z < 2.0` АБО
+  #     серверний `Attractor.homeostatic?` поза per-family смугою), а `healthy?`
+  #     другу не перевіряв ЖОДНОГО разу — для родини з `critical_z_min > 2.0`
+  #     стрік ріс, ПОКИ причина тривоги тривала;
+  #   · `insect_epidemic` міряє кавітацію, а не комах — класу «комаха» в TinyML
+  #     немає, і бекенд це визнає («This field is CAVITATION only»);
+  #   · `entropy_anomaly` — інший рівень агрегації: Shannon по кластеру за добу
+  #     проти трьох пакетів одного дерева.
+  # ⊕ Каденс Солдата енергетичний, не календарний: «3 пакети» = від ~2 хв до
+  # 2+ діб, і вікно розтягується САМЕ тоді, коли дерево хворе (EBFC живиться
+  # соком). Плюс sentinel-нуль [ARCH.41-B] фабрикував «спокійні» пакети, які
+  # інкрементували лічильник.
+  # ⚠️ Не відроджувати як «майже готову фічу»: канон уже призначив суддею
+  # ЛЮДИНУ (`05_05` INS.1 — drought/pest-оракула не існує), а активна біо-тривога
+  # є ВОРОТАМИ перед незворотною страховою виплатою. Прецедент форми дослівний —
+  # `EwsAlert` `actuator_stuck`: «Машинного resolve НЕМА свідомо».
+  # Повний розбір і чотири рамки виміру → `00_07` ARCH.84.
 
   private
 

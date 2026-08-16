@@ -148,36 +148,4 @@ RSpec.describe "Telemetry ingestion pipeline end-to-end" do
         .not_to change(EwsAlert, :count)
     end
   end
-
-  describe "health streak tracking" do
-    let!(:tree) { create(:tree, cluster: cluster, tree_family: tree_family) }
-
-    it "increments health_streak for healthy telemetry" do
-      expect(tree.health_streak).to eq(0)
-
-      log = create(:telemetry_log, tree: tree, bio_status: :homeostasis,
-                                   temperature_c: 22, acoustic_events: 5,
-                                   voltage_mv: 4000, z_value: 25.0)
-
-      service = TelemetryUnpackerService.new(nil, nil)
-      service.send(:update_health_streak!, tree, log)
-
-      expect(tree.health_streak).to eq(1)
-    end
-
-    it "resets health_streak for unhealthy telemetry" do
-      Tree.where(id: tree.id).update_all(health_streak: 5)
-      tree.health_streak = 5
-
-      # Stressed log (temperature >= 50 or acoustic >= 20 makes it unhealthy)
-      log = create(:telemetry_log, tree: tree, bio_status: :stress,
-                                   temperature_c: 55, acoustic_events: 30,
-                                   voltage_mv: 3500, z_value: 25.0)
-
-      service = TelemetryUnpackerService.new(nil, nil)
-      service.send(:update_health_streak!, tree, log)
-
-      expect(tree.health_streak).to eq(0)
-    end
-  end
 end

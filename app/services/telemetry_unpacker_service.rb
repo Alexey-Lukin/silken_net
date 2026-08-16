@@ -868,9 +868,11 @@ class TelemetryUnpackerService < ApplicationService
       # [СИНХРОНІЗАЦІЯ]: Оновлюємо денормалізований вольтаж для мапи без N+1
       tree.mark_seen!(record.voltage_mv)
 
-      # [KENOSIS TITAN]: Атомарне оновлення health_streak без додаткових SELECT-ів.
-      # Якщо лог здоровий — інкремент, інакше — скидання до нуля.
-      update_health_streak!(tree, record)
+      # ⛔ [ARCH.84, ⚖️ 2026-08-16] Тут стояв `update_health_streak!` — `UPDATE trees`
+      # на КОЖЕН chunk, поверх `mark_seen!` того ж рядка, з row-lock до кінця
+      # транзакції. Знято разом з усією anti-flapping-петлею: єдиний її читач мав
+      # закривати біо-тривоги, а критерій не спростовував власний тригер (розбір —
+      # `TelemetryLog` §знято + `00_07` ARCH.84).
 
       # [OTA MISMATCH]: Якщо дерево повідомляє firmware_version_id, що відрізняється від
       # актуальної прошивки — позначаємо дерево як fw_pending для повторної роздачі OTA.
@@ -890,7 +892,7 @@ class TelemetryUnpackerService < ApplicationService
 
     # [P1-7 FIX: Phantom Sidekiq Jobs — Wiki 04_02 Audit §14]
     # perform_async виклики перенесено ПОЗА транзакцію. Якщо транзакція відкотиться
-    # (напр., update_health_streak! або check_firmware_mismatch! кинуть) — jobs НЕ
+    # (напр., `check_firmware_mismatch!` кине) — jobs НЕ
     # потраплять до Redis, бо виконання не дійде до цих рядків.
     # Раніше: jobs ставились у чергу всередині transaction — при rollback TelemetryLog
     # запис не існував, але IotexVerificationWorker вже був у Redis (5 марних ретраїв
@@ -910,21 +912,6 @@ class TelemetryUnpackerService < ApplicationService
     if growth_points.positive?
       weighted_points = tree.tree_family&.weighted_growth_points(growth_points) || growth_points
       tree.wallet.credit!(weighted_points) if weighted_points.positive?
-    end
-  end
-
-  # [KENOSIS TITAN]: Денормалізований лічильник "одужання" (Anti-Flapping).
-  # Замінює N+1 запит tree.telemetry_logs.recent.limit(3) у recovery_confirmed?.
-  # Атомарний SQL запобігає race conditions при одночасних пакетах від різних Королев.
-  # In-memory синхронізація безпечна — метод викликається лише всередині транзакції
-  # commit_telemetry, де дерево гарантовано існує (аналогічно mark_seen!).
-  def update_health_streak!(tree, log)
-    if log.healthy?
-      Tree.where(id: tree.id).update_all("health_streak = health_streak + 1")
-      tree.health_streak += 1
-    else
-      Tree.where(id: tree.id).update_all(health_streak: 0)
-      tree.health_streak = 0
     end
   end
 

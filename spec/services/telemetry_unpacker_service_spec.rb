@@ -158,12 +158,12 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     it "does not enqueue IotexVerificationWorker or StreamrBroadcastWorker" do
       chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
 
-      # Simulate a transaction rollback by making update_health_streak! raise.
-      # Stub on Tree since that is where the atomic SQL runs; this triggers
-      # ActiveRecord::Rollback inside the transaction, which is rescued by
-      # process_chunk's broad rescue — the error is logged but not re-raised.
-      allow(Tree).to receive(:where).and_call_original
-      allow_any_instance_of(described_class).to receive(:update_health_streak!).and_raise(ActiveRecord::RecordInvalid)
+      # [ARCH.84] Seam перецілено: доти збій ін'єктувався через
+      # `update_health_streak!`, знятий разом із anti-flapping-петлею. Приклад
+      # НЕ про той метод — він про P1-7 (enqueue поза транзакцією), тож будь-який
+      # крок ВСЕРЕДИНІ `commit_telemetry` після `create!` слугує так само.
+      # `check_firmware_mismatch!` — останній такий крок, і він лишається живим.
+      allow_any_instance_of(described_class).to receive(:check_firmware_mismatch!).and_raise(ActiveRecord::RecordInvalid)
 
       expect(Rails.logger).to receive(:error).with(/Telemetry Error/)
       expect { described_class.call(chunk) }.not_to raise_error
@@ -939,44 +939,6 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       end
     end
 
-    describe "update_health_streak!" do
-      it "increments health_streak when log is healthy" do
-        tree.update_column(:health_streak, 5)
-        tree.reload
-        log = create(:telemetry_log, tree: tree, bio_status: :homeostasis)
-        allow(log).to receive(:healthy?).and_return(true)
-
-        service = described_class.new("", nil)
-        service.send(:update_health_streak!, tree, log)
-
-        expect(tree.reload.health_streak).to eq(6)
-      end
-
-      it "resets health_streak to 0 when log is unhealthy" do
-        tree.update_column(:health_streak, 10)
-        tree.reload
-        log = create(:telemetry_log, tree: tree, bio_status: :stress)
-        allow(log).to receive(:healthy?).and_return(false)
-
-        service = described_class.new("", nil)
-        service.send(:update_health_streak!, tree, log)
-
-        expect(tree.reload.health_streak).to eq(0)
-      end
-
-      it "syncs in-memory tree state after SQL update" do
-        tree.update_column(:health_streak, 3)
-        tree.reload
-        log = create(:telemetry_log, tree: tree, bio_status: :homeostasis)
-        allow(log).to receive(:healthy?).and_return(true)
-
-        service = described_class.new("", nil)
-        service.send(:update_health_streak!, tree, log)
-
-        # Verify in-memory state was updated (without reload)
-        expect(tree.health_streak).to eq(4)
-      end
-    end
 
     describe "acoustic_events overflow warning" do
       it "logs warning when acoustic_events is 255 (saturated)" do

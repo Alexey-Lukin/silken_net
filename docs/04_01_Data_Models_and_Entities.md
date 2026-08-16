@@ -266,7 +266,6 @@ normalize_identifier :device_uid  # HardwareKey
 | `last_seen_at` | datetime | Останній пакет телеметрії |
 | `latest_voltage_mv` | integer | Денормалізована **напруга шини живлення MCU** (мВ VDDA, VREFINT-калібрування — [`03_01`](03_01_Firmware_Lifecycle_and_DMA) FW.50). ⚠️ **[ARCH.99]** НЕ заряд іоністора: каналу Vcap на вузлі не існує, тож здоровий вузол стоїть біля номіналу 3300 мВ |
 | `latest_stress_index` | **decimal, nullable** | Денормалізований stress_index від `InsightGeneratorService`. ⚡ **[ARCH.84]** `NULL` = «не виміряно **за цю добу**» — окремий СТАН, не нуль; доти стояв `DEFAULT 0.0 NOT NULL`, див. нижче |
-| `health_streak` | integer | Кількість послідовних здорових пакетів (Anti-Flapping) |
 | `peaq_did` | string | peaq DID-ідентифікатор для Proof of Growth |
 | `altitude` | numeric | Висота над рівнем моря (м) |
 | `firmware_version` | string | Версія прошивки STM32 (SemVer) |
@@ -629,9 +628,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 |-------|------|
 | `relayed_via_mesh?` | `mesh_ttl < стартовий TTL типу пакета` (`panic? ? 5 : 3` — `INITIAL_TTL_PANIC/NORMAL`). До FW.29-персистенції давній default 5 позначав «релейнутим» кожен direct normal-пакет |
 | `critical?` | `anomaly?` або `vm_error?` |
-| `healthy?` | homeostasis + temp < 50 + acoustic < 20 |
-| `optimal?` | healthy + voltage > 3600 + `\|z_value − 29.0\| ≤ 4.0` (`Tree::GLOBAL_LORENZ_Z_OPTIMAL` ± `OPTIMAL_Z_BAND`; реліктовий до-FW.8 діапазон 0.1..0.5 ретирувано) |
-| `recovery_confirmed?` | `healthy? && tree.health_streak >= 3` |
+| ⛔ *знято* | `healthy?` · `optimal?` · `recovery_confirmed?` + колонка `trees.health_streak` — anti-flapping-петля, ⚖️ присуд founder 2026-08-16. Підстава НЕ «нуль читачів» (продакшну не було), а хибна КОНСТРУКЦІЯ: критерій закриття не спростовує критерій відкриття — `healthy?` не кликав `Attractor.homeostatic?`, тобто був сліпий до половини тригера посухи; для `insect_epidemic` міряв кавітацію (класу «комаха» в TinyML немає); для `entropy_anomaly` — інший рівень агрегації. Не відроджувати: канон [`05_05`](05_05_Slashing_and_Risk_Policy) INS.1 призначив суддею ЛЮДИНУ, а активна біо-тривога є ворітьми перед незворотною виплатою → [`00_07`](00_07_Action_Plan_Tracker) ARCH.84 |
 | `.partition_pruned(iso, metric_caller:)` | **[S6.16]** One-Home pruning-логіки: chainable 1с-вікно по `created_at` (толерантне до секундної точності ISO — стандарт `BlockchainTransaction`) + облік degraded path лічильником `unpruned_lookups`. Воркери/сервіси/контролери делегують сюди, НЕ дублюють |
 
 **Scopes:** `recent`, `anomalies`, `in_timeframe` (`vandalized` видалено — мертвий scope на хибній tamper-семантиці).

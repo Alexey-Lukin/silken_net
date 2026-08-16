@@ -2180,7 +2180,6 @@ CREATE TABLE public.trees (
     last_seen_at timestamp(6) without time zone,
     firmware_version character varying,
     latest_voltage_mv integer,
-    health_streak integer DEFAULT 0 NOT NULL,
     firmware_update_status integer DEFAULT 0 NOT NULL,
     peaq_did character varying,
     peaq_did_compromised boolean DEFAULT false NOT NULL,
@@ -6920,5 +6919,6 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260816120000'),
 ('20260815200000');
 
