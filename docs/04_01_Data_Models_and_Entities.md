@@ -473,7 +473,7 @@ dormant ──reactivate──► active
 | `firmware_version` | string | Версія прошивки STM32 (SemVer) |
 | `altitude` | numeric | Висота над рівнем моря (м) |
 | `helium_dev_eui` | string | **[ARCH.54]** Helium SOS fallback dev EUI (`HeliumSosWorker` → `EwsAlert(queen_uplink_lost)`) |
-| `ota_started_at` | datetime | **[ARCH.56 pull-forward]** якір майбутнього ARCH.59-watchdog для stuck-`:updating` OTA (sweep-воркера ще нема — [`00_07`](00_07_Action_Plan_Tracker) ARCH.59); колонка дешева до деплою |
+| `ota_started_at` | datetime | **[ARCH.59]** якір віку КАМПАНІЇ для stuck-OTA watchdog'а (`GatewayStalenessSweepWorker`). ⚠️ Ставить його **диспетчер** при таргетингу, а poll-тракт **не перезаписує**: інакше шлюз, що поллить рідко, обнуляв би власний годинник і не старів ніколи, а вікно між таргетингом і першим анонсом лишалось би без якоря взагалі — саме там живуть keyless-таргет, Королева, що не поллить, і dangling `pending_firmware_id`. Доти тут стояло «якір майбутнього watchdog'а, sweep-воркера ще нема» — протухло 2026-08-13, виправлено 08-16 |
 | `pending_firmware_id` | bigint | **[FW.60]** таргет OTA-кампанії per-gateway (пише dispatcher атомарно з hiwater-burn; canary-когорта); Королева дізнається через hint у власному poll'і, глушиться спостереженим `?fw=` — [`04_02`](04_02_Business_Logic_and_Services) `Downlink::PendingQueueService` |
 
 > **Примітка:** `firmware_hash` НЕ є полем Gateway і колонкою не стане — присуд власника
