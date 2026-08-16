@@ -35,6 +35,53 @@ RSpec.describe Api::V1::GatewaysController, type: :request do
       get "/gateways", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
+
+    # [PERF.1 (а)] Преload `has_one` знято на користь `latest_per_gateway` (LATERAL).
+    # Обидві половини заміни треба доводити ОКРЕМО: що відповідь та сама, і що
+    # виграш справді є — інакше «оптимізацію» не відрізнити від тихої зміни даних.
+    describe "останній пульс на шлюз" do
+      # ДВА шлюзи × ДВА пульси — менший набір не показує нічого: на одному рядку
+      # N+1 недосяжний за побудовою (Prosopite нема на чому спрацювати), а на
+      # одному лозі «останній» не відрізнити від «будь-який» (`04_06 §B.2` BP 21).
+      let!(:second_gateway) { create(:gateway, cluster: own_cluster) }
+
+      before do
+        create(:gateway_telemetry_log, gateway: own_gateway, cellular_signal_csq: 5, created_at: 2.hours.ago)
+        create(:gateway_telemetry_log, gateway: own_gateway, cellular_signal_csq: 27, created_at: 1.minute.ago)
+        create(:gateway_telemetry_log, gateway: second_gateway, cellular_signal_csq: 8, created_at: 3.hours.ago)
+        create(:gateway_telemetry_log, gateway: second_gateway, cellular_signal_csq: 20, created_at: 2.minutes.ago)
+      end
+
+      # Чотири відсотки РІЗНІ свідомо: інакше пін проходив би через сусідній
+      # вузол, і зіпсований `ORDER BY` (найстаріший замість найновішого) лишався
+      # б зеленим.
+      it "renders the LATEST heartbeat of EACH gateway, never an older one" do
+        get "/gateways", headers: headers
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("87.1")  # csq 27 — свіжий пульс шлюзу A
+        expect(response.body).to include("64.5")  # csq 20 — свіжий пульс шлюзу B
+        expect(response.body).not_to include("16.1") # csq 5  — старий пульс A
+        expect(response.body).not_to include("25.8") # csq 8  — старий пульс B
+      end
+
+      # Виграш сам по собі: JSON-гілка телеметрії не віддає (`GatewayBlueprint` —
+      # лише uid/state/last_seen_at/координати), тож преload там був чистою
+      # втратою. Пін цілиться в ТАБЛИЦЮ, а не в кількість запитів: останнє
+      # дрейфує від будь-якої сусідньої правки.
+      it "does not touch gateway_telemetry_logs at all in the JSON branch" do
+        touched = []
+        sub = ActiveSupport::Notifications.subscribe("sql.active_record") do |*, payload|
+          touched << payload[:sql] if payload[:sql]&.include?("gateway_telemetry_logs")
+        end
+
+        get "/gateways", headers: headers, as: :json
+
+        ActiveSupport::Notifications.unsubscribe(sub)
+        expect(response).to have_http_status(:ok)
+        expect(touched).to be_empty
+      end
+    end
   end
 
   describe "GET /gateways/:id" do

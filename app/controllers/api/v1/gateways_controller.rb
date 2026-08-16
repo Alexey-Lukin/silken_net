@@ -6,10 +6,16 @@ module Api
     class GatewaysController < BaseController
       # GET /gateways
       def index
-        @pagy, @gateways = pagy(
-          acting_organization!.gateways
-            .includes(:cluster, :latest_gateway_telemetry_log)
-        )
+        # [PERF.1 (а)] Преload `:latest_gateway_telemetry_log` знято: щоб узяти по
+        # ОДНОМУ рядку на шлюз, він матеріалізував усю історію пульсів (`Sort` над
+        # `Append` по всіх партиціях) — і робив це для ОБОХ форматів, тоді як
+        # `GatewayBlueprint` цієї асоціації не віддає взагалі, тобто для JSON це
+        # була чиста втрата. Останній пульс тепер тягне HTML-гілка й лише вона,
+        # через `latest_per_gateway` (LATERAL + рання зупинка на індексі).
+        # ⚠️ Сама асоціація ЛИШАЄТЬСЯ — `#show` бере її на ОДНОМУ шлюзі й дістає
+        # добрий план (`Limit` + `Merge Append`); дефект був у кардинальності
+        # СПИСКУ, не в асоціації, тож «прибрати `has_one`» зламало б здоровий сайт.
+        @pagy, @gateways = pagy(acting_organization!.gateways.includes(:cluster))
 
         respond_to do |format|
           format.json do
@@ -25,7 +31,12 @@ module Api
             online_count = acting_organization!.gateways.online.count
             render_dashboard(
               title: I18n.t("gateways.index_title"),
-              component: Gateways::Index.new(gateways: @gateways, pagy: @pagy, online_count: online_count)
+              component: Gateways::Index.new(
+                gateways: @gateways,
+                pagy: @pagy,
+                online_count: online_count,
+                latest_logs: GatewayTelemetryLog.latest_per_gateway(@gateways.map(&:uid))
+              )
             )
           end
         end

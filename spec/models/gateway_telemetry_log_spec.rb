@@ -256,4 +256,36 @@ RSpec.describe GatewayTelemetryLog, type: :model do
       expect(log.ccm_spoof_seen?).to be false
     end
   end
+
+  describe ".latest_per_gateway" do
+    let(:gateway) { create(:gateway) }
+
+    it "returns the newest heartbeat per uid, never an older one" do
+      create(:gateway_telemetry_log, gateway: gateway, cellular_signal_csq: 5, created_at: 3.hours.ago)
+      newest = create(:gateway_telemetry_log, gateway: gateway, cellular_signal_csq: 27, created_at: 1.minute.ago)
+
+      result = described_class.latest_per_gateway([ gateway.uid ])
+
+      expect(result.keys).to eq([ gateway.uid ])
+      expect(result[gateway.uid].id).to eq(newest.id)
+    end
+
+    # [PERF.1 (а)] Організація без жодного шлюзу — звичайний стан (свіжий орендар),
+    # тож рання відсічка реальна, а не оборонна. ⚠️ Вона про ВАРТІСТЬ, не про
+    # безпеку: `unnest(ARRAY[]::character varying[])` віддає нуль рядків і не кидає
+    # (перевірено окремо), тож пін мусить стверджувати саме відсутність ЗАПИТУ —
+    # інакше він зелений і зі знятою відсічкою.
+    it "asks the database nothing for an empty set" do
+      queries = []
+      sub = ActiveSupport::Notifications.subscribe("sql.active_record") do |*, payload|
+        queries << payload[:sql] if payload[:sql]&.include?("gateway_telemetry_logs")
+      end
+
+      result = described_class.latest_per_gateway([])
+
+      ActiveSupport::Notifications.unsubscribe(sub)
+      expect(result).to eq({})
+      expect(queries).to be_empty
+    end
+  end
 end

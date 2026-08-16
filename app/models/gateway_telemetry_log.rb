@@ -50,6 +50,40 @@ class GatewayTelemetryLog < ApplicationRecord
   scope :weak_signal, -> { where("cellular_signal_csq < ? AND cellular_signal_csq != 99", LOW_SIGNAL_THRESHOLD) }
   scope :uplink_degraded, -> { where("coap_fail_count >= ?", COAP_FAIL_ALERT_THRESHOLD) }
 
+  # [PERF.1 (а)] «Останній пульс на КОЖЕН шлюз набору» — і форма тут ІНША, ніж у
+  # дзеркального `TelemetryLog.latest_per_tree`, попри дослівно те саме питання.
+  #
+  # 🔴 Виміряно EXPLAIN'ом, а не виведено з прецеденту: `DISTINCT ON` дає `Unique`
+  # над ТИМ САМИМ `Sort` над `Append` по всіх партиціях, тобто скану не скорочує
+  # взагалі. Його виграш у дзеркальному випадку був у КІЛЬКОСТІ запитів (N→1), а
+  # сторінка шлюзів уже робила ОДИН запит — преload `has_one`; отже там лишалась
+  # би сама економія Ruby-обʼєктів. LATERAL натомість дає `Limit` → `Merge Append`
+  # → `Index Scan Backward`, тобто планувальник спиняється РАНО на індексі
+  # `(queen_uid, created_at)`, який уже стоїть на кожній партиції.
+  #
+  # ⚠️ Часової межі НЕМА свідомо: питання звучить «останній, хоч би коли він був»,
+  # тож будь-яке вікно змінило б ВІДПОВІДЬ — довго мовчазна Королева віддала б
+  # порожньо замість останнього відомого стану. Це та сама пастка, на якій PERF.1
+  # уже спіткнувся з `2.months` у `previous_lorenz_state_for`.
+  #
+  # ⚠️ Порожній набір перевірено окремо: `unnest(ARRAY[]::character varying[])`
+  # віддає нуль рядків і НЕ кидає, тож ранній `return` тут про вартість, не про
+  # безпеку.
+  def self.latest_per_gateway(uids)
+    return {} if uids.blank?
+
+    find_by_sql(sanitize_sql_array([ <<~SQL, uids ])).index_by(&:queen_uid)
+      SELECT l.*
+      FROM unnest(ARRAY[?]::character varying[]) AS g(uid)
+      JOIN LATERAL (
+        SELECT * FROM gateway_telemetry_logs t
+        WHERE t.queen_uid = g.uid
+        ORDER BY t.created_at DESC
+        LIMIT 1
+      ) l ON TRUE
+    SQL
+  end
+
   # --- МЕТОДИ (Health Intelligence) ---
 
   # Допоміжний метод для дашборду (переведення CSQ у відсотки)

@@ -8,6 +8,17 @@ RSpec.describe Gateways::Index do
   let(:pagy) { mock_pagy(count: 1, last: 1) }
   let(:html) { render_component(gateways: gateways, pagy: pagy, online_count: 3) }
 
+  # [PERF.1 (а)] Останній пульс більше НЕ асоціація, а хеш `queen_uid → лог`, який
+  # будує контролер (`GatewayTelemetryLog.latest_per_gateway`, LATERAL). Тож
+  # фікстура мусить його БУДУВАТИ, а не стабити на записі — і робить це в одному
+  # місці: `mock_gateway` реєструє свій лог за uid, обгортка підмішує реєстр.
+  # Інакше кожен із шести call-site'ів ніс би власну копію проводки, а розходження
+  # між ними було б невидиме (`04_06 §A.1` правило 4 — перевизначення з причиною).
+  let(:latest_logs) { {} }
+
+  def render_component(**kwargs)
+    super(latest_logs: latest_logs, **kwargs)
+  end
 
   # [TEST.12] Реальний незбережений запис, а не `OpenStruct`: мок мусив би
   # вигадати `online?`, тобто оголосити світ, у якому дефект «компонент рахує
@@ -24,9 +35,11 @@ RSpec.describe Gateways::Index do
       config_sleep_interval_s: config_sleep_interval_s,
       cluster: Cluster.new(name: cluster_name, active_trees_count: active_trees_count)
     )
-    # Асоціація стабиться точково — реальний лог тягнув би партиційну таблицю.
+    # Незбережений лог, а не стаб на асоціації: компонент читає його з ХЕША, тож
+    # підміняти нічого не треба — і саме тому фікстура тепер не здатна оголосити
+    # світ, у якому проводка є, а насправді її нема.
     log = latest_log == :derive ? GatewayTelemetryLog.new(cellular_signal_csq: cellular_signal_csq) : latest_log
-    allow(gw).to receive(:latest_gateway_telemetry_log).and_return(log)
+    latest_logs[gw.uid] = log if log
     gw
   end
 

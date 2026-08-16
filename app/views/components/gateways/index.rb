@@ -3,9 +3,20 @@
 
 module Gateways
   class Index < ApplicationComponent
-    def initialize(gateways:, pagy:, online_count: 0)
+    # [PERF.1 (а)] `latest_logs` — хеш `queen_uid → останній пульс`, який будує
+    # контролер (`GatewayTelemetryLog.latest_per_gateway`). Доти компонент читав
+    # `gateway.latest_gateway_telemetry_log`, тобто асоціацію, і був справним лише
+    # доки викликач не забув її преload'ити — а преload заради одного рядка на
+    # шлюз і був самим дефектом.
+    #
+    # ⚠️ Kwarg БЕЗ дефолту свідомо: `latest_logs: {}` перетворив би забуту проводку
+    # на «весь флот без телеметрії» — правдоподібний екран, якого ніхто не
+    # прочитає як поломку. Гучний `ArgumentError` тут чесніший за тихий порожній
+    # стан (клас «мовчазний дефолт»).
+    def initialize(gateways:, pagy:, latest_logs:, online_count: 0)
       @gateways = gateways
       @pagy = pagy
+      @latest_logs = latest_logs
       @online_count = online_count
     end
 
@@ -42,7 +53,7 @@ module Gateways
     end
 
     def render_gateway_item(gateway)
-      latest_log = gateway.latest_gateway_telemetry_log
+      latest_log = @latest_logs[gateway.uid]
       recently_seen = gateway.online?
       led_class = tokens("bg-emerald-500 shadow-[0_0_8px_#10b981]": recently_seen, "bg-red-900 animate-pulse": !recently_seen)
 

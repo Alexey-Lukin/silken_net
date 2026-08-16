@@ -707,6 +707,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 |-------|------|
 | `signal_quality_percentage` | `(csq / 31.0) * 100` |
 | `signal_dbm` | `2 * csq - 113` (формула 3GPP) |
+| `latest_per_gateway(uids)` | **[PERF.1 (а)]** «Останній пульс на КОЖЕН шлюз набору» — хеш `queen_uid → лог`, **LATERAL + `LIMIT 1`**. 🔴 **Форма ІНША, ніж у дзеркального `TelemetryLog.latest_per_tree`, попри дослівно те саме питання — і різницю дав вимір, не аналогія:** `DISTINCT ON` тут віддає `Unique` над ТИМ САМИМ `Sort` над `Append` по всіх партиціях, тобто скану не скорочує; його виграш там був у **кількості запитів** (N→1), а сторінка шлюзів уже робила один — преload `has_one`. LATERAL дає `Limit` → `Merge Append` → `Index Scan Backward` на індексі `(queen_uid, created_at)`, тобто **ранню зупинку**. ⚠️ Часової межі немає свідомо: питання звучить «останній, хоч би коли він був», тож будь-яке вікно змінило б ВІДПОВІДЬ (пастка `2.months`, [`00_07`](00_07_Action_Plan_Tracker) PERF.1). ⊥ Асоціація `Gateway#latest_gateway_telemetry_log` ЛИШАЄТЬСЯ для `gateways#show`: на ОДНОМУ шлюзі вона вже дістає той самий добрий план — дефект жив у кардинальності **списку**, не в асоціації |
 | `critical_fault?` | Будь-яка з **чотирьох** констант перевищена (battery low, overheat, freeze, weak signal). Nil-safe: повертає `false` коли voltage/temperature/csq ще не зафіксовано (insert_all hot path). |
 
 ---
