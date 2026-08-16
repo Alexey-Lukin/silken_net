@@ -233,7 +233,10 @@ rb_dark() {
 # false-positive measurement first, since any rephrase deletes a unique line.
 # (Write is genuinely too late — the file is already replaced — so that half
 # would need PreToolUse, a different question.)
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-132}
+# 2026-08-16: 132 → 133 — `log_verify_gate.md`, the journal twin for
+# `feedback_verify_gate_exit_code`. Raised so the new home is protected too:
+# a floor that lags the corpus stops guarding whatever arrived after it.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-133}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -301,7 +304,14 @@ index_reach_expected() {
 # healthier. Measured before bumping: the description spread is flat
 # (842/793/739/738/714 B at the top), i.e. there was no bloated entry to
 # displace — the policy asks for a displacement only when one exists.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43088}
+#
+# 2026-08-16: +86 for `log_verify_gate` — a journal twin created to pull the
+# fourth `$?` family's bodies out of a rule-home that had crossed FILE_WARN.
+# Same shape as above: the new trigger was already written at ~160 chars,
+# half the corpus median (321), so trimming it further would be manicure, and
+# nothing else was bloated enough to displace. The eviction it enabled took
+# its home 36876 → 35332 B, i.e. the layer grew by one line and a WARN closed.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43174}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
