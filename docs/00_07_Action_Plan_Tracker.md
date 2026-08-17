@@ -1333,6 +1333,7 @@
 - **P3** · 🤖 · 🌿 · → `04_02 §11`, [`03_03`](03_03_TinyML_Acoustic_Inference)
 - **Стан:** Мертва тип-гілка, клас ARCH.69 «написаний шлях без дроту» (SEC.20-розвідка 2026-07-12): `OtaTransmissionWorker#fetch_firmware_record` вміє типи `tinyml`/`weights` (TinyMlModel), але контролера/роута для TinyML-деплою НЕ існує; `TinyMlModel#activate!` — 0 call-sites. Аспіраційний тракт доставки ваг (03_03 baseline shipped; польовий model-update = майбутнє). Реалізація = дзеркало SEC.20 Rails-half: параметризувати `Ota::DeploymentDispatcherService` по firmware_type + TinyML-ендпоінт/policy/anti-rollback власного простору версій. FW.60-транспорт ✅ wire-up (07-12) — лишився чистий YAGNI-гейт до другої моделі (dispatcher параметризувати по firmware_type дешево будь-коли).
 - [ ] 🤖 (за реальної потреби польового model-update) TinyML deploy-ендпоінт → диспетчер `firmware_type: "tinyml"` + `activate!`-wire + специ
+- ⊕ **Уточнення 2026-08-17 (свіп ARCH.103): шлях створення моделі ІСНУЄ, але лише demo.** `db/seeds.rb` і створює `TinyMlModel`, і призначає її деревам — тож «нуль `.create` поза спеками» було б хибним виміром. Продового шляху й далі немає (нуль контролерів, нуль маршрутів), а `min_firmware_version` читається лише через `firmware_compatible?`, у якого теж нуль живих викликачів — тобто транзитивно мертвий. Create-половину каноном уже названо: [`03_03 §11.3`](03_03_TinyML_Acoustic_Inference) «Статус: Не реалізовано. Post-TRL 8»
 
 #### E.33 — AlertNotification rate limits
 - **P3** · 🤖 · 🔗 · → `04_02`
