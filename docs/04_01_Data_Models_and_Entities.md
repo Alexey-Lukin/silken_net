@@ -393,7 +393,7 @@ dormant ──reactivate──► active
 | `total_active_trees` | Читає `active_trees_count` (без COUNT(*)) |
 | `health_index` | Читає денормалізовану колонку **як є**: `nil` = не виміряно [ARCH.84] |
 | `Cluster.health_coverage(scope)` | **One-Home агрегату** → `HealthCoverage(average:, measured:, total:)` одним запитом; предикати `no_clusters?` ⊥ `unmeasured?` ⊥ `partial?` |
-| `recalculate_health_index!` | `1.0 - stress_index` зі щоденного AiInsight за `AiInsight.reporting_date`; без інсайту пише **явний `nil`** |
+| `recalculate_health_index!` | `1.0 - stress_index` зі щоденного AiInsight за `AiInsight.reporting_date`; **без ВИМІРУ пише явний `nil`** — гард питає сам `stress_index`, а не наявність інсайту [ARCH.84]: колонка легально `NULL` (`allow_nil: true`), і `nil.to_f` дав би рівно `1.0`, тобто «бездоганний ліс» для стресу, якого не рахували. ⚠️ Виміряний `0.0` лишається законним входом (→ `1.0`), тож дискримінатор — `nil`, ніколи `.zero?`/`present?` |
 | `geo_center` | Мемоізований центроїд полігону (Resilient — підтримує MultiPolygon) |
 | `active_contract` | Останній активний NaasContract (з ORDER BY) |
 | `active_threats?` | `ews_alerts.unresolved.critical.exists?` |
@@ -402,7 +402,7 @@ dormant ──reactivate──► active
 
 **Scopes:** `alphabetical`, `containing_point(lat, lng)`, `under_threat`.
 
-> ⚡ **«НЕ ВИМІРЯНО» = СТАН, А НЕ ЗНАЧЕННЯ [ARCH.84].** `health_index` більше не має ридера-підстановки, а писач без інсайту кладе **явний `NULL`**.
+> ⚡ **«НЕ ВИМІРЯНО» = СТАН, А НЕ ЗНАЧЕННЯ [ARCH.84].** `health_index` більше не має ридера-підстановки, а писач кладе **явний `NULL`** щоразу, коли ВИМІРУ немає — і межа тут по виміру, не по його носієві: інсайт може існувати з `stress_index IS NULL` (колонка `allow_nil`), тож гард питає саме поле, інакше `nil.to_f` віддав би `1.0` — «бездоганний ліс» для стресу, якого не рахували.
 >
 > 🔴 **Підстава герметична й не потребує міркувань про напрямок fail-safe: `1.0` — ДОСЯЖНЕ ВИМІРЯНЕ значення** (`stress_index == 0` → `1.0 − 0`; пін «returns 1.0 when stress_index is 0» стоїть у `cluster_spec` роками). Доти воно ж підставлялось на порожнечу — тобто «бездоганний ліс» і «ми його не міряли» були **одним числом**, і жоден споживач їх не розрізняв. Прецедент форми — [`ARCH.81`](00_07_Action_Plan_Tracker): скалярне поле не вміє сказати «не знаю», тож стан робиться першокласним.
 >

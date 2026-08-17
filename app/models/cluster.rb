@@ -199,9 +199,22 @@ class Cluster < ApplicationRecord
   # понеділковий 0.42 на вівторковій темряві: підміна виміру, лише постаріла, і
   # тим небезпечніша, що правдоподібна. (Сам entropy — третій інстанс цього класу,
   # не взірець: його коментар «аналогічно health_index» видає, звідки він списаний.)
+  # 🔴 [ARCH.84] Гард питає САМ ВИМІР, а не наявність інсайту — бо `stress_index`
+  # легально `NULL` (`allow_nil: true` + nullable-колонка), і `nil.to_f` дав би рівно
+  # `1.0`, тобто «бездоганний ліс» для стресу, якого ніхто не рахував. Доти клас
+  # тримали ТРИ збіги, жоден із них не правило: кластерний писач коерсить середнє
+  # через `.to_f`, порожню множину відсікає власний `return`, а рядок із `NULL` у
+  # сідах має інший `insight_type` і не проходить скоуп. Перший писач, що створить
+  # `daily_health_summary` без виміру, робить фабрикацію живою.
+  # ⊥ Несуче саме тут, а не деінде: `Cluster.health_coverage` рахує виміряність як
+  # `COUNT(health_index)`, тож підставлена одиниця пройшла б як ВИМІРЯНА — механізм
+  # чесності, збудований проти цього класу, годувався б ним же.
+  # ⚠️ `0.0` при цьому лишається ЗАКОННИМ входом (пін «returns 1.0 when stress_index
+  # is 0» стоїть роками), тож дискримінатор — `nil`, ніколи `.zero?`/`present?`.
   def recalculate_health_index!(target_date = AiInsight.reporting_date)
     insight = ai_insights.daily_health_summary.for_date(target_date).first
-    new_value = insight ? (1.0 - insight.stress_index.to_f).round(2) : nil
+    stress = insight&.stress_index
+    new_value = stress ? (1.0 - stress.to_f).round(2) : nil
     update_column(:health_index, new_value)
     new_value
   end

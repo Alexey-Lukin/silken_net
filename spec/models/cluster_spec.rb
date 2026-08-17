@@ -471,6 +471,28 @@ RSpec.describe Cluster, type: :model do
       expect(result).to eq(1.0)
     end
 
+    # 🔴 [ARCH.84] Пара до сусіда згори: обидва входи дають ОДНЕ число без гарда
+    # (`nil.to_f` == `0.0.to_f`), тож розрізняє їх лише сам гард. Позитивна половина
+    # («виміряний нуль → 1.0») стоїть вище й лишається — без неї «не пускаємо nil»
+    # не відрізнити від «не пускаємо нічого».
+    # ⊥ Друга половина несуча окремо: `health_coverage` рахує виміряність як
+    # `COUNT(health_index)`, тож підставлена одиниця пройшла б як ВИМІРЯНА.
+    it "лишає health_index невиміряним, коли інсайт Є, а stress_index не рахували" do
+      cluster = create(:cluster)
+      create(:ai_insight,
+             analyzable: cluster,
+             insight_type: :daily_health_summary,
+             target_date: AiInsight.reporting_date,
+             stress_index: nil)
+
+      expect(cluster.recalculate_health_index!).to be_nil
+      expect(cluster.reload.health_index).to be_nil
+
+      coverage = described_class.health_coverage(described_class.where(id: cluster.id))
+      expect(coverage.measured).to eq(0)
+      expect(coverage.total).to eq(1)
+    end
+
     it "returns 0.0 when stress_index is 1.0 (full stress)" do
       cluster = create(:cluster)
       create(:ai_insight,
