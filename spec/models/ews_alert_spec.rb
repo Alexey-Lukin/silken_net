@@ -588,8 +588,41 @@ RSpec.describe EwsAlert, type: :model do
   # THROTTLING
   # =========================================================================
   describe "broadcast throttling" do
-    it "defines BROADCAST_THROTTLE_SECONDS constant" do
-      expect(described_class::BROADCAST_THROTTLE_SECONDS).to eq(5)
+    # 🔴 [UI.4] Пін на НАСЛІДОК, а не на механізм: попередній блок тут пінив
+    # саму наявність константи й те, що `should_broadcast?` віддає `false` у
+    # вікні, — тобто цементував поведінку, яка й була дефектом.
+    #
+    # Тротл був **leading-edge з ВИКИДАННЯМ**: перший виклик у вікні проходив,
+    # решта гинули. Для сигналу «перечитай сторінку» це втрата саме ОСТАННЬОГО
+    # оновлення — а останнє на тривозі це закриття. Ланцюг досяжний двома
+    # акторами на ОДНІЙ тривозі: `Dclimate::VerificationService` пише
+    # `satellite_status` (сигнал 1, ставить ключ), оператор тисне «закрити» в
+    # тому ж вікні (сигнал 2 — у нікуди). Власна сторінка оператора оновиться
+    # редиректом, а в усіх інших тривога лишиться активною.
+    #
+    # Гем при цьому вже робить правильну річ: `broadcast_refresh_later_to`
+    # обгорнутий у `refresh_debouncer_for(...).debounce`, ключований ІМЕНЕМ
+    # СТРІМУ і **trailing-edge** — останній виклик завжди виграє.
+    it "сигналить і на оновлення, що йде ОДРАЗУ за попереднім (закриття не губиться)" do
+      allow_any_instance_of(described_class).to receive(:broadcast_alert_update).and_call_original
+
+      cluster = create(:cluster)
+      alert   = create(:ews_alert, cluster: cluster, tree: nil)
+
+      signals = []
+      allow(Turbo::StreamsChannel).to receive(:broadcast_refresh_later_to) { |*args| signals << args }
+
+      alert.update!(resolution_notes: "супутник підтвердив")
+      after_first = signals.size
+
+      # Ліхтар: без непорожньої першої множини приклад був би зелений на нулі.
+      expect(after_first).to be > 0,
+                             "перше оновлення не дало жодного сигналу — приклад безпредметний"
+
+      alert.resolve!(notes: "закрито оператором")
+
+      expect(signals.size).to be > after_first,
+                              "сигнал про ЗАКРИТТЯ не пішов — чужі відкриті сторінки лишаться з активною тривогою"
     end
   end
 
@@ -671,65 +704,20 @@ RSpec.describe EwsAlert, type: :model do
     end
   end
 
-  describe "broadcast_alert_update — should_broadcast? throttle" do
-    let(:cluster_bc) { create(:cluster) }
-
-    it "skips broadcast when throttle cache exists" do
-      tree = create(:tree, cluster: cluster_bc)
-      allow_any_instance_of(described_class).to receive(:broadcast_alert_update)
-      alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
-
-      Rails.cache.write("ews_alert_broadcast_throttle:#{alert.id}", true, expires_in: 5.seconds)
-      expect(alert.send(:should_broadcast?)).to be false
-    end
-
-    it "broadcasts when throttle cache does not exist" do
-      tree = create(:tree, cluster: cluster_bc)
-      allow_any_instance_of(described_class).to receive(:broadcast_alert_update)
-      alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
-
-      Rails.cache.delete("ews_alert_broadcast_throttle:#{alert.id}")
-      expect(alert.send(:should_broadcast?)).to be true
-    end
-  end
-
-  describe "should_broadcast? returns false then true" do
-    let(:cluster_bc) { create(:cluster) }
-
-    it "returns false on second call within throttle window" do
-      tree = create(:tree, cluster: cluster_bc)
-      alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
-
-      Rails.cache.delete("ews_alert_broadcast_throttle:#{alert.id}")
-      expect(alert.send(:should_broadcast?)).to be true
-      expect(alert.send(:should_broadcast?)).to be false
-    end
-  end
-
   describe "broadcast_alert_update execution" do
     let(:cluster_bc) { create(:cluster) }
 
-    it "skips Turbo broadcast when should_broadcast? returns false" do
-      tree = create(:tree, cluster: cluster_bc)
-      allow_any_instance_of(described_class).to receive(:broadcast_alert_update).and_call_original
-      alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
-
-      Rails.cache.write("ews_alert_broadcast_throttle:#{alert.id}", true, expires_in: 5.seconds)
-
-      expect(Turbo::StreamsChannel).not_to receive(:broadcast_replace_to)
-      alert.send(:broadcast_alert_update)
-    end
-
-    it "performs Turbo broadcast when should_broadcast? returns true" do
+    # 🔴 [UI.4] Тут стояли ТРИ блоки, що пінили знятий `should_broadcast?` —
+    # включно з прикладом «skips broadcast when throttle cache exists», тобто
+    # сюїта вимагала саме тієї поведінки, яка губила сигнал про закриття
+    # тривоги. Живий інваріант — нижче: сигналів РІВНО два (панель кластера ⊥
+    # org-список), і жоден із них не `replace`.
+    it "sends both refresh signals and never a replace" do
       tree = create(:tree, cluster: cluster_bc)
       allow_any_instance_of(described_class).to receive(:broadcast_alert_update).and_call_original
       allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
       allow(Turbo::StreamsChannel).to receive(:broadcast_refresh_later_to)
       alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
-
-      Rails.cache.delete("ews_alert_broadcast_throttle:#{alert.id}")
-
-      # Stub Phlex component rendering to avoid URL helper issues in test
 
       alert.send(:broadcast_alert_update)
       expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to).twice

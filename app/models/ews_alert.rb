@@ -176,8 +176,6 @@ class EwsAlert < ApplicationRecord
 
   # Троттлінг WebSocket-трансляцій: не частіше ніж раз на N секунд,
   # щоб уникнути "шторму" повідомлень при масових інцидентах.
-  BROADCAST_THROTTLE_SECONDS = 5
-
   # --- КОЛБЕКИ (Zero-Lag Awareness) ---
   # [INF.26] Лічильник створених тривог — ОДИН дім на застосунок, а не один із 25
   # сайтів створення. Доти інкремент стояв у `DclimateVerificationWorker` ще й під
@@ -444,14 +442,36 @@ class EwsAlert < ApplicationRecord
     )
   end
 
-  # [THROTTLED]: Real-time broadcast для всіх операторів організації.
-  # При масових інцидентах WebSocket-канал може «лягти» від потоку оновлень.
-  # Троттлінг гарантує мінімальний інтервал між некритичними broadcast.
+  # Real-time broadcast для всіх операторів організації.
+  #
+  # 🔴 [UI.4, 2026-08-17] ВЛАСНОГО ТРОТЛУ ТУТ БІЛЬШЕ НЕМАЄ, і зняли його не
+  # заради швидкості — він ГУБИВ сигнал. `should_broadcast?` був leading-edge:
+  # перший виклик у 5-секундному вікні проходив, решта ВИКИДАЛИСЬ. Для сигналу
+  # «перечитай сторінку» це втрата саме ОСТАННЬОГО оновлення, а останнє на
+  # тривозі — її закриття. Досяжно двома акторами на ОДНІЙ тривозі:
+  # `Dclimate::VerificationService` пише `satellite_status` (ставить ключ),
+  # оператор тисне «закрити» в тому ж вікні — і його сигнал не летить нікуди.
+  # Сторінка самого оператора оновлюється редиректом, тож дефект видно лише
+  # чужим очам, і скаржитись нема кому.
+  #
+  # ⊕ Заразом він був зайвий: `broadcast_refresh_later_to` УЖЕ обгорнутий у
+  # `refresh_debouncer_for(...).debounce` (turbo-rails `broadcasts.rb:70-76`),
+  # ключований ІМЕНЕМ СТРІМУ і **trailing-edge** — останній виклик скасовує
+  # попередній заплановий і завжди стріляє. Тобто платформа дає рівно той
+  # per-stream кап, який ми намагались зробити руками, і робить це без утрат.
+  # Наш ключ був ще й per-ALERT (`ews_alert_broadcast_throttle:#{id}`), тож
+  # обіцяного власним коментарем захисту «від масових інцидентів» він не давав
+  # ЗА ПОБУДОВОЮ: тисяча різних тривог давала тисячу сигналів.
+  #
+  # ⚠️ Стеля гемового дебаунсера названа чесно: він живе в `Thread.current`,
+  # тож коалесує в межах ОДНОГО треда — 15 Sidekiq-тредів дадуть до 15 сигналів
+  # на вікно 0,5 с. Глобального капу немає ні в нас, ні в гема; чи він потрібен —
+  # питання ВИМІРЯНОГО навантаження, і воно лишається відкритим у `00_07` UI.4.
+  #
   # nil-safe: cluster — optional. Без cluster немає org-channel і немає
   # [cluster, :alerts] stream — для одиноких дерев broadcast no-op.
   def broadcast_alert_update
     return unless cluster
-    return unless should_broadcast?
 
     # Обидві поверхні дістають СИГНАЛ. Для панелі кластера причина — форма й
     # дієслово (див. `broadcast_new_alert`); для списку алертів — локаль і
@@ -465,14 +485,5 @@ class EwsAlert < ApplicationRecord
     # replace не вміє, і знімає `citations`-запит із процесу-продюсера.
     broadcast_org_refresh
     Turbo::StreamsChannel.broadcast_refresh_later_to([ cluster, :alerts ])
-  end
-
-  # Троттлінг: не частіше ніж раз на BROADCAST_THROTTLE_SECONDS.
-  def should_broadcast?
-    cache_key = "ews_alert_broadcast_throttle:#{id}"
-    return false if Rails.cache.exist?(cache_key)
-
-    Rails.cache.write(cache_key, true, expires_in: BROADCAST_THROTTLE_SECONDS.seconds)
-    true
   end
 end
