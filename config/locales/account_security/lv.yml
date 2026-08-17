@@ -12,8 +12,7 @@ lv:
       unlocked_json: Identitāte %{provider} atbloķēta.
     mfa:
       disabled: MFA atspējota.
-      enabled: MFA iespējota.
-      enabled_with_codes: MFA iespējota. Saglabājiet savus atjaunošanas kodus!
+      not_implemented: Divu faktoru pieteikšanās vēl nav izveidota, tāpēc tās ieslēgšana apgalvotu aizsardzību, kuras nav.
     password:
       current_invalid: Pašreizējā parole ir nepareiza.
       mismatch: Paroles nesakrīt.

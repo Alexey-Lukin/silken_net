@@ -25,14 +25,23 @@ RSpec.describe "Account security and password management" do
       expect(json["identities"].first["provider"]).to eq("google_oauth2")
     end
 
-    it "PATCH /account_security/mfa enables MFA with recovery codes" do
+    # [S6.21] Доти цей приклад ВИМАГАВ увімкнення — тобто сюїта цементувала заявку
+    # на другий фактор, якого `sessions#create` не перевіряє. Пін на саму відмову
+    # живе в `spec/requests/api/v1/account_security_controller_spec.rb`; тут —
+    # інша заява: після спроби ПОВЕРХНЯ СТАТУСУ, яку читають три споживачі,
+    # лишається чесною.
+    it "PATCH /account_security/mfa cannot enable MFA, and the status surface stays honest" do
       patch "/account_security/mfa",
             headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
-      expect(response).to have_http_status(:ok)
+      expect(response).to have_http_status(:not_implemented)
+
+      get "/account_security",
+          headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
+
       json = response.parsed_body
-      expect(json["mfa_enabled"]).to be true
-      expect(json["recovery_codes"]).to be_present
+      expect(json["mfa_enabled"]).to be false
+      expect(json["recovery_codes_remaining"]).to eq(0)
     end
 
     it "PATCH /account_security/mfa disables MFA when already enabled (with step-up password)" do

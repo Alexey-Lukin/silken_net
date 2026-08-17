@@ -12,8 +12,7 @@ lt:
       unlocked_json: Tapatybė %{provider} atblokuota.
     mfa:
       disabled: MFA išjungta.
-      enabled: MFA įjungta.
-      enabled_with_codes: MFA įjungta. Išsaugokite atkūrimo kodus!
+      not_implemented: Dviejų veiksnių prisijungimas dar nesukurtas, todėl jo įjungimas skelbtų apsaugą, kurios nėra.
     password:
       current_invalid: Dabartinis slaptažodis neteisingas.
       mismatch: Slaptažodžiai nesutampa.

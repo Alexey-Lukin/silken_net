@@ -12,8 +12,7 @@ en:
       unlocked_json: Identity %{provider} unlocked.
     mfa:
       disabled: MFA disabled.
-      enabled: MFA enabled.
-      enabled_with_codes: MFA enabled. Save your recovery codes!
+      not_implemented: Two-factor login is not built yet, so enabling it would claim a protection that does not exist.
     password:
       current_invalid: Current password is incorrect.
       mismatch: Passwords do not match.

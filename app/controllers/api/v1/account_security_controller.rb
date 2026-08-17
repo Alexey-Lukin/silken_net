@@ -61,12 +61,7 @@ module Api
             format.html { redirect_to account_security_path, status: :see_other, security: t("account_security.mfa.disabled") }
           end
         else
-          codes = current_user.generate_recovery_codes!
-          current_user.update!(otp_required_for_login: true)
-          respond_to do |format|
-            format.json { render json: { message: t("account_security.mfa.enabled"), mfa_enabled: true, recovery_codes: codes }, status: :ok }
-            format.html { redirect_to account_security_path, status: :see_other, security: t("account_security.mfa.enabled_with_codes") }
-          end
+          render_mfa_not_implemented
         end
       end
 
@@ -174,6 +169,32 @@ module Api
       end
 
       private
+
+      # 🔴 [S6.21] Той самий wip-контракт, що вже стоїть на view
+      # (`AccountSecurity::Show#render_mfa_section`), але на ШЛЯХУ: interim прибрав
+      # кнопку, а `PATCH /account_security/mfa` і далі піднімав MFA-прапорець будь-
+      # якому автентифікованому клієнту — повз прибрану кнопку. (Сама присвоєна
+      # форма тут свідомо ПЕРЕКАЗАНА, не процитована: гейт нижче шукає саме її, і
+      # цитата в коментарі отруїла б кожен ручний греп — §Guard-craft #10a.)
+      # `sessions#create` цього прапорця не читає, тож увімкнення
+      # не додає ЖОДНОГО захисту; воно лише друкує «MFA Active» на трьох поверхнях
+      # (`users/profile` · `account_security#show` · `user_blueprint`).
+      #
+      # Гейт АСИМЕТРИЧНИЙ, і це несуче: закрито напрямок, що заявку СТВОРЮЄ, а
+      # disable лишається відкритим, бо він її ЗНІМАЄ. Глухий гейт на весь екшен
+      # законсервував би вже поставлений прапорець назавжди.
+      #
+      # 501, а не 403: двері не заборонені — за ними ще нема механізму. Знімається
+      # РАЗОМ із verify-on-login ([`00_07`](../../../../docs/00_07_Action_Plan_Tracker.md) S6.21);
+      # похідний сторож — `spec/security/mfa_claim_honesty_spec.rb`.
+      def render_mfa_not_implemented
+        message = t("account_security.mfa.not_implemented")
+
+        respond_to do |format|
+          format.json { render json: { error: message, code: "mfa_not_implemented" }, status: :not_implemented }
+          format.html { redirect_to account_security_path, status: :see_other, error: message }
+        end
+      end
 
       # [SEC.25] Один дім посадки для валідаційних відмов форми пароля: та сама
       # сторінка, те саме місце, 422 — дзеркало `PasswordsController#update`.

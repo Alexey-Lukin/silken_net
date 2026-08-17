@@ -40,6 +40,13 @@ module Api
       end
 
       # --- КЛАСИЧНИЙ ВХІД (Email/Password) ---
+      #
+      # 🔴 [S6.21] Другого фактора тут НЕМА, і це не пропуск опису: `otp_required_for_login`
+      # у шляху входу не читається жодного разу, тож пароль дає повний доступ навіть
+      # акаунту з «увімкненим» MFA. Саме тому напрямок «увімкнути» в
+      # `AccountSecurityController#toggle_mfa` закритий — інакше прапорець друкував би
+      # захист, якого нема. Дротуючи verify-on-login, знімай той гейт ТИМ САМИМ комітом;
+      # `spec/security/mfa_claim_honesty_spec.rb` почервоніє й нагадає.
       def create
         user = User.find_by(email_address: params[:email])
 

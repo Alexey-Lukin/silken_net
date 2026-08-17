@@ -12,8 +12,7 @@ uk:
       unlocked_json: Ідентичність %{provider} розблоковано.
     mfa:
       disabled: MFA вимкнено.
-      enabled: MFA увімкнено.
-      enabled_with_codes: MFA увімкнено. Збережіть recovery codes!
+      not_implemented: Вхід із другим фактором ще не збудовано, тож увімкнення заявляло б захист, якого не існує.
     password:
       current_invalid: Поточний пароль невірний.
       mismatch: Паролі не співпадають.
