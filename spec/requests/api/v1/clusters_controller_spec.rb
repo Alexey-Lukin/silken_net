@@ -103,5 +103,22 @@ RSpec.describe Api::V1::ClustersController, type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
+
+    # 🔴 [ARCH.84] Проводка пари покриття доводиться ЛИШЕ тут: компонентна спека
+    # рендерить повз маршрутизатор І повз викликача, тож вона однаково зелена і
+    # тоді, коли контролер узагалі не шукає інсайту (`04_06 §B.2` BP #14).
+    # Приклад вище тримає ДРУГУ половину — інсайту немає, `&.` іде в `nil`, і
+    # сторінка мовчить про покриття; разом вони пінять обидві гілки.
+    it "wires the coverage of the day's cluster insight into the rendered page" do
+      own_cluster.update_column(:health_index, 0.87)
+      create(:ai_insight, analyzable: own_cluster, insight_type: :daily_health_summary,
+                          target_date: AiInsight.reporting_date, stress_index: 0.13,
+                          reasoning: { "measured_trees" => 1, "total_trees" => 5 })
+
+      get "/clusters/#{own_cluster.id}", headers: html_headers
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t("ui.measurement.coverage", measured: 1, total: 5))
+    end
   end
 end
