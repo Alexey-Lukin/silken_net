@@ -33,13 +33,47 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = ["dialog"]
 
+  // 🔴 [UI.11] Закриваємось на НАВІГАЦІЇ, не на будь-якому візиті — і різницю
+  // довелось міряти, бо `turbo:visit` фіриться однаково для обох. Виміряно
+  // браузером: refresh-візит (алерт прилетів у стрім, на який підписана
+  // сторінка) дає `detail.url === location.href` + `action: "replace"`, а
+  // справжня навігація — `false` + `"advance"`. Доти обробником стояв голий
+  // `this.close`, тож **алерт-шторм закривав відкритий drawer користувачеві
+  // під пальцем**: сторінка не мінялась, а навігація зникала.
+  // ⚠️ Дискримінатор саме АДРЕСА, не `action`: same-location редирект після
+  // сабміту (перемикач мови живе в цьому ж сайдбарі) теж лишає адресу — і там
+  // тримати drawer відкритим правильно, бо людина бачить наслідок дії в
+  // контексті, з якого її почала.
   connect() {
-    this.handleTurboVisit = this.close.bind(this)
+    this.handleTurboVisit = (event) => {
+      if (event.detail?.url === window.location.href) return
+
+      this.close()
+    }
     document.addEventListener("turbo:visit", this.handleTurboVisit)
+
+    // 🔴 [UI.11] ДРУГА причина, і без неї перша нічого не міняє — виміряно
+    // браузером: під морфом `close` НЕ фіриться (0 подій), а атрибут `open`
+    // усе одно зникає, бо idiomorph зводить атрибути з серверною розміткою, де
+    // його немає за побудовою (стан модалки — чисто клієнтський). Тобто drawer
+    // НАПІВ-закривався: візуально зник, а `onClose`-прибирання (скрол-лок,
+    // `aria-expanded` на тригері) не відпрацьовувало ЖОДНОГО разу.
+    // ⚠️ Лік саме на осі АТРИБУТА, а не морф-непрозорість вузла: піддерево
+    // drawer'а несе сайдбар із серверними даними (бейдж тривог), і зробити
+    // його непрозорим означало б заморозити рівно те, що [UI.11] крок 1
+    // розморожував, знімаючи `data-turbo-permanent`.
+    this.protectOpenAttribute = (event) => {
+      if (event.detail?.attributeName === "open") event.preventDefault()
+    }
+    this.element.addEventListener("turbo:before-morph-attribute", this.protectOpenAttribute)
   }
 
   disconnect() {
     document.removeEventListener("turbo:visit", this.handleTurboVisit)
+    if (this.protectOpenAttribute) {
+      this.element.removeEventListener("turbo:before-morph-attribute", this.protectOpenAttribute)
+      this.protectOpenAttribute = null
+    }
     this._unlockScroll()
   }
 

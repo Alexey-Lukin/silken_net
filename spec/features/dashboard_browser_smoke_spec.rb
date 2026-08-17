@@ -212,4 +212,40 @@ RSpec.describe "Dashboard in a real browser", :js do
     expect(page.evaluate_script("document.querySelectorAll('.leaflet-pane').length")).to eq(panes_before)
     expect(page).to have_css(".custom-tree-marker", visible: :all)
   end
+
+  # 🔴 [UI.11] Остання ціна morph-на-refresh, і вона НЕ від морфу, а від самого
+  # ВІЗИТУ: `mobile_nav` закривався на будь-якому `turbo:visit`, тож алерт-шторм
+  # згортав drawer користувачеві під пальцем — сторінка не мінялась, а навігація
+  # зникала. Пара обовʼязкова: без другої половини гард, що не закриває НІКОЛИ,
+  # лишався б зеленим.
+  describe "drawer vs visit" do
+    it "stays open when the page merely refreshes under it" do
+      sign_in_as(user, password: password)
+
+      page.execute_script("document.querySelector('#mobile-nav-drawer').showModal()")
+      expect(page).to have_css("#mobile-nav-drawer[open]", visible: :all)
+
+      page.execute_script(<<~JS)
+        window.__morphSeen = false;
+        document.addEventListener("turbo:morph", () => { window.__morphSeen = true }, { once: true });
+        document.body.insertAdjacentHTML('beforeend', '<turbo-stream action="refresh"></turbo-stream>');
+      JS
+      Timeout.timeout(Capybara.default_max_wait_time) do
+        sleep 0.1 until page.evaluate_script("window.__morphSeen === true")
+      end
+
+      expect(page).to have_css("#mobile-nav-drawer[open]", visible: :all)
+    end
+
+    it "still closes on a real navigation" do
+      sign_in_as(user, password: password)
+
+      page.execute_script("document.querySelector('#mobile-nav-drawer').showModal()")
+      expect(page).to have_css("#mobile-nav-drawer[open]", visible: :all)
+
+      page.execute_script("Turbo.visit('/clusters')")
+
+      expect(page).to have_no_css("#mobile-nav-drawer[open]", visible: :all)
+    end
+  end
 end
