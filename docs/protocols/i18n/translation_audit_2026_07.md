@@ -68,7 +68,9 @@
 
 `firmwares.index.units` · `gateways.show.fleet.active_nodes` · `maintenance.index.page_info` · `organizations.show.clusters.soldiers_count` · `tree_families.index.soldiers_count` · `trees.chronicle.events` · `users.profile.security.linked_count`
 
-Легітимні за формою (число стоїть останнім, узгоджувати нічого) — **не чіпати**: `dashboard.map.live_nodes` · `account_security.show.mfa.enabled_with_remaining`.
+Легітимні за формою (число стоїть останнім, узгоджувати нічого) — **не чіпати**: `account_security.show.mfa.enabled_with_remaining`.
+
+> 🔴 **`dashboard.map.live_nodes` ЗВІДСИ ЗНЯТО 2026-08-17 — звільнення було видане за АНГЛОЦЕНТРИЧНИМ критерієм.** «Число стоїть останнім» істинне про англійський рядок (`Live Active Nodes: %{count}`), і хибне про українську та балтійські: там перед числом стоїть **препозитивний іменник**, який усе одно мусить узгоджуватись («Живих активних **вузлів**: 1»). Тобто це третій стан — ані коректно звільнений, ані борг у списку `pending`, — і дім рішення мовний ([`00_07`](../../00_07_Action_Plan_Tracker.md) I18N.1 👤-ревʼю), не інженерний. ⚠️ **Клас, вартий понад цей рядок: критерій звільнення, виведений із базової локалі, роздає дозволи мовам, яких він не бачить** — і дозвіл ховається від будь-якого свіпу за правилом, бо не містить його словника.
 
 Окремо: **`lv` має лише `one`/`other` там, де за CLDR потрібен ще `zero`** (`maintenance.photo_gallery.photo_count`) — при нулі латиська впаде в `other` замість родового множини.
 
