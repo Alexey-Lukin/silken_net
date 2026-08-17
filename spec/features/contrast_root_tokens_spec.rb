@@ -46,8 +46,10 @@ require "rails_helper"
 #     контур (`before { sign_in_as }`) вона не додається одним рядком.
 #     Стан → `00_07` UI.3.
 #
-# ⚠️ Перед прогоном: `RAILS_ENV=test bin/rails assets:precompile`
-# (стеля 3а в `spec/support/feature_helper.rb`).
+# ⚠️ Перед прогоном переконайся, що `public/assets/` НЕМАЄ — залишковий манифест
+# тримає Propshaft на Static-резолвері й віддає застарілий CSS, тож прилад міряє
+# знімок, а не дерево (стеля 3а в `spec/support/feature_helper.rb`; тут доти
+# стояла зворотна порада — `assets:precompile`, — і вона цю ж пастку й ставить).
 RSpec.describe "[UI.3] Кореневі текстові токени тримають AA в обох темах", :js do
   let(:organization) { create(:organization) }
   let(:password)     { "contrast-root-pass-1" }

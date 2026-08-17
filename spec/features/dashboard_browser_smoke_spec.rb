@@ -20,9 +20,14 @@ require "rails_helper"
 # `window.Stimulus` лишався `undefined`. Діагноз тричі шукали в чужому коді, бо
 # `bin/rails runner` віддавав теги коректно — рівно тому, що НЕ вантажить
 # `spec/support/`. Тепер фолбек ловить лише реальний `Propshaft::MissingAssetError`,
-# і при зібраних assets (`rails assets:precompile`, ~1 c — крок є у CI-джобі
-# `feature-test`) Stimulus і Turbo в браузері живі: `typeof window.Stimulus`
-# = `"object"`, `turbo:morph` відтворюється керовано.
+# і Stimulus та Turbo в браузері живі: `typeof window.Stimulus` = `"object"`,
+# `turbo:morph` відтворюється керовано. ⚠️ **Умову доти було названо хибно**
+# (виправлено 2026-08-17): стояло «при зібраних assets (`rails assets:precompile`
+# — крок є у CI-джобі `feature-test`)». Такого кроку в тій джобі НЕМА і не було —
+# `ci.yml` прямо над нею пише, що precompile пробували й зняли того ж дня, бо
+# манифест перемикає Propshaft на Static. Потрібно й достатньо
+# `bin/rails tailwindcss:build` (він у `setup-rails-test`): Propshaft у dev/test
+# резолвить із load-path динамічно. Клас заяви — `04_06 §B.1.4`.
 #
 # ✅ **[TEST.7] Мапа більше НЕ виняток — і записана тут причина була хибна.**
 # Тут стояло, що `map#connect()` «не спрацьовує», бо модуль не приїжджає з CDN.
