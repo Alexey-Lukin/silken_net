@@ -15,6 +15,34 @@ en:
         stress: Stress
       events: "%{count} events"
       heading: Digital Chronicle
+      templates:
+        alert:
+          fallback_description: Alert triggered
+        blockchain:
+          burned_description: Burned %{amount} tokens on %{network}
+          burned_title: "%{token} Burned"
+          minted_description: Minted %{amount} tokens on %{network}
+          minted_title: "%{token} Minted"
+        fraud:
+          description: 'AI Guard detected anomaly: sap_flow deviation from baseline > %{deviation}%'
+          title: AI Guard Anomaly
+        homeostasis:
+          description: 'Tree entered deep homeostasis. Z-value stable: %{z_value} σ'
+          title: Deep Homeostasis
+        maintenance:
+          description: 'Technician %{technician}: %{notes}'
+          no_notes: No notes
+          unknown_technician: Unknown
+        not_available: N/A
+        recovery:
+          description: Incident closed.
+          duration:
+            one: 'Duration: %{count} day.'
+            other: 'Duration: %{count} days.'
+          title: Incident Resolved
+        stress:
+          description: 'Stress index: %{stress}. Max temperature: %{max_temp}°C. Recommendation: monitoring'
+          title: Elevated Stress Detected
     index:
       eyebrow: Sector Matrix Deployment
       header_operational: Operational

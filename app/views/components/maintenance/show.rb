@@ -62,7 +62,7 @@ module Maintenance
             "Record // ##{@record.id}"
           end
           div(class: "flex flex-wrap items-center gap-3 mt-2") do
-            action_badge(@record.action_type_label)
+            action_badge(@record.action_type)
             hardware_badge(@record.hardware_verified)
             span(class: "text-mini text-gray-600 font-mono") do
               @record.performed_at&.strftime("%d.%m.%Y // %H:%M UTC")
@@ -316,16 +316,23 @@ module Maintenance
     # =========================================================================
     # HELPERS
     # =========================================================================
+    # [I18N.1] Приймає СИРИЙ токен: мапа ключується ним, тож подана сюди локалізована
+    # мітка не влучала НІКОЛИ — бейдж мовчки сірів на кожному записі, і фолбек-пін
+    # цього не бачив, бо він однаково зелений, коли сіріє лише невідомий тип і коли
+    # сіріє кожен. Мітку деривує сам хелпер, дім — `MaintenanceRecord.action_type_label`.
     def action_badge(type)
       colors = {
         "repair" => "border-status-warning text-status-warning-text",
         "installation" => "border-blue-600 text-blue-600",
         "inspection" => "border-emerald-600 text-emerald-600",
         "cleaning" => "border-cyan-700 text-cyan-700",
-        "decommissioning" => "border-red-800 text-red-800"
+        "decommissioning" => "border-red-800 text-red-800",
+        "biomass_extraction" => "border-status-danger text-status-danger-accent"
       }
-      cls = colors[type] || "border-gray-600 text-gray-600"
-      span(class: tokens("text-mini px-2 py-0.5 border font-mono uppercase tracking-widest", cls)) { type }
+      cls = colors[type.to_s] || "border-gray-600 text-gray-600"
+      span(class: tokens("text-mini px-2 py-0.5 border font-mono uppercase tracking-widest", cls)) do
+        MaintenanceRecord.action_type_label(type)
+      end
     end
 
     def hardware_badge(verified)

@@ -15,6 +15,35 @@ lv:
         stress: Stress
       events: "%{count} notikumi"
       heading: Digitālā hronika
+      templates:
+        alert:
+          fallback_description: Trauksme aktivizēta
+        blockchain:
+          burned_description: Sadedzināts %{amount} tīklā %{network}
+          burned_title: "%{token} — sadedzināts"
+          minted_description: Emitēts %{amount} tīklā %{network}
+          minted_title: "%{token} — emitēts"
+        fraud:
+          description: 'AI sargs konstatēja anomāliju: sap_flow novirze no bāzlīnijas > %{deviation}%'
+          title: AI sarga anomālija
+        homeostasis:
+          description: 'Koks iegāja dziļā homeostāzē. Z vērtība stabila: %{z_value} σ'
+          title: Dziļa homeostāze
+        maintenance:
+          description: 'Tehniķis %{technician}: %{notes}'
+          no_notes: Nav piezīmju
+          unknown_technician: Nezināms
+        not_available: N/P
+        recovery:
+          description: Incidents slēgts.
+          duration:
+            one: 'Ilgums: %{count} diena.'
+            other: 'Ilgums: %{count} dienas.'
+            zero: 'Ilgums: %{count} dienu.'
+          title: Incidents atrisināts
+        stress:
+          description: 'Stresa indekss: %{stress}. Maksimālā temperatūra: %{max_temp}°C. Ieteikums: novērošana'
+          title: Konstatēts paaugstināts stress
     index:
       eyebrow: Sektora matricas izvietojums
       header_operational: Darbībā

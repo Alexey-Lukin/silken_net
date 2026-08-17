@@ -15,6 +15,36 @@ uk:
         stress: Стрес
       events: "%{count} подій"
       heading: Цифровий хронограф
+      templates:
+        alert:
+          fallback_description: Спрацювала тривога
+        blockchain:
+          burned_description: Спалено %{amount} у мережі %{network}
+          burned_title: "%{token} — спалено"
+          minted_description: Намінтовано %{amount} у мережі %{network}
+          minted_title: "%{token} — намінтовано"
+        fraud:
+          description: 'AI-вартовий виявив аномалію: відхилення sap_flow від базової лінії > %{deviation}%'
+          title: Аномалія AI-вартового
+        homeostasis:
+          description: 'Дерево увійшло в глибокий гомеостаз. Z-значення стабільне: %{z_value} σ'
+          title: Глибокий гомеостаз
+        maintenance:
+          description: 'Технік %{technician}: %{notes}'
+          no_notes: Без нотаток
+          unknown_technician: Невідомий
+        not_available: н/д
+        recovery:
+          description: Інцидент закрито.
+          duration:
+            few: 'Тривалість: %{count} дні.'
+            many: 'Тривалість: %{count} днів.'
+            one: 'Тривалість: %{count} день.'
+            other: 'Тривалість: %{count} дня.'
+          title: Інцидент вичерпано
+        stress:
+          description: 'Індекс стресу: %{stress}. Максимальна температура: %{max_temp}°C. Рекомендація: спостереження'
+          title: Виявлено підвищений стрес
     index:
       eyebrow: Розгортання матриці сектору
       header_operational: Операційні

@@ -15,6 +15,35 @@ lt:
         stress: Stresas
       events: "%{count} įvykiai"
       heading: Skaitmeninė kronika
+      templates:
+        alert:
+          fallback_description: Įjungtas įspėjimas
+        blockchain:
+          burned_description: Sudeginta %{amount} tinkle %{network}
+          burned_title: "%{token} — sudeginta"
+          minted_description: Išleista %{amount} tinkle %{network}
+          minted_title: "%{token} — išleista"
+        fraud:
+          description: 'DI sargybinis aptiko anomaliją: sap_flow nuokrypis nuo bazinės linijos > %{deviation}%'
+          title: DI sargybinio anomalija
+        homeostasis:
+          description: 'Medis pasiekė gilią homeostazę. Z reikšmė stabili: %{z_value} σ'
+          title: Gili homeostazė
+        maintenance:
+          description: 'Technikas %{technician}: %{notes}'
+          no_notes: Pastabų nėra
+          unknown_technician: Nežinomas
+        not_available: N/D
+        recovery:
+          description: Incidentas uždarytas.
+          duration:
+            few: 'Trukmė: %{count} dienos.'
+            one: 'Trukmė: %{count} diena.'
+            other: 'Trukmė: %{count} dienų.'
+          title: Incidentas išspręstas
+        stress:
+          description: 'Streso indeksas: %{stress}. Maksimali temperatūra: %{max_temp}°C. Rekomendacija: stebėjimas'
+          title: Aptiktas padidėjęs stresas
     index:
       eyebrow: Sektoriaus matricos diegimas
       header_operational: Veikiantys

@@ -6,24 +6,38 @@ module TreeChronicle
   # 📝 TEXT FORMATTER (i18n-Ready Chronicle Text Templates)
   # = ===================================================================
   # Централізує всі текстові шаблони хроніки дерева.
-  # Мітки alert_type локалізовані (`alerts.types.*`, 4 локалі) — решта шаблонів
-  # ще англомовні рядки; їхня локалізація трекається в 00_07 I18N.1.
+  #
+  # [I18N.1] Шаблони живуть у `trees.chronicle.templates.*` (4 локалі); мітки
+  # доменних enum'ів беруться з ВЛАСНИХ домів (`alerts.types.*` через
+  # `ALERT_TYPE_SCOPE`, `MaintenanceRecord.action_type_label`,
+  # `BlockchainTransaction.token_type_label`) — тут вони не дублюються.
+  # Хроніка будується в РЕНДЕР-ЧАС і нікуди не персиститься, тож локаль тут
+  # завжди локаль ГЛЯДАЧА; ⛔ не кешувати ці рядки поза межами запиту.
+  # Умовний фрагмент («спалено» ⊥ «намінтовано») — ОКРЕМИЙ ключ, а не булевий
+  # параметр: в іншій мові він може стояти в іншому місці речення.
   module TextFormatter
     module_function
 
+    # ОДНА деривація ключа шаблону — друкарська помилка в неймспейсі валить усі
+    # шаблони одразу, а не проходить тихо одним рядком.
+    TEMPLATE_SCOPE = "trees.chronicle.templates"
+
+    def template(key, **args)
+      I18n.t("#{TEMPLATE_SCOPE}.#{key}", **args)
+    end
+
     # --- AiInsight: Homeostasis ---
     def homeostasis_title
-      "Deep Homeostasis"
+      template("homeostasis.title")
     end
 
     def homeostasis_description(insight)
-      z_value = insight.avg_z || "N/A"
-      "Tree entered deep homeostasis. Z-value stable: #{z_value} \u03c3"
+      template("homeostasis.description", z_value: insight.avg_z || template("not_available"))
     end
 
     # --- AiInsight: Stress ---
     def stress_title
-      "Elevated Stress Detected"
+      template("stress.title")
     end
 
     # [ARCH.84] Асиметрія жила в ОДНОМУ тілі: `max_temp` рядком нижче чесно
@@ -33,14 +47,15 @@ module TreeChronicle
     # легально `NULL` (`allow_nil` + nullable-колонка), а нуль тут ДОСЯЖНИЙ —
     # `calculate_stress_index_heuristic` віддає рівно `0.0` здоровому дереву.
     def stress_description(insight)
-      stress_pct = insight.stress_index ? "#{(insight.stress_index * 100).round(1)}%" : "N/A"
-      max_temp = insight.max_temp || "N/A"
-      "Stress index: #{stress_pct}. Max temperature: #{max_temp}\u00b0C. Recommendation: monitoring"
+      stress_pct = insight.stress_index ? "#{(insight.stress_index * 100).round(1)}%" : template("not_available")
+      template("stress.description",
+               stress: stress_pct,
+               max_temp: insight.max_temp || template("not_available"))
     end
 
     # --- AiInsight: Fraud ---
     def fraud_title
-      "AI Guard Anomaly"
+      template("fraud.title")
     end
 
     def fraud_description(insight)
@@ -49,8 +64,8 @@ module TreeChronicle
       # як робить stress_description для stress_index — раніше рендерилось "0.35%"
       # замість "35%" (заниження fraud-сигналу інвесторам на два порядки).
       deviation = insight.deviation_from_baseline
-      deviation_pct = deviation ? (deviation.to_f * 100).round(1) : "N/A"
-      "AI Guard detected anomaly: sap_flow deviation from baseline > #{deviation_pct}%"
+      deviation_pct = deviation ? (deviation.to_f * 100).round(1) : template("not_available")
+      template("fraud.description", deviation: deviation_pct)
     end
 
     # --- EwsAlert ---
@@ -121,34 +136,39 @@ module TreeChronicle
     end
 
     def alert_description(alert)
-      alert.message || "Alert triggered"
+      alert.message || template("alert.fallback_description")
     end
 
     # --- EwsAlert: Recovery ---
     def recovery_title
-      "Incident Resolved"
+      template("recovery.title")
     end
 
+    # Тривалість — plural-БЛОК (`count:`), а не `"day".pluralize(n)`: англійське
+    # `-s` ховає клас, у якому uk/lv/lt мають різні форми на 1/2/5.
     def recovery_description(alert)
       duration = if alert.resolved_at && alert.created_at
                    days = ((alert.resolved_at - alert.created_at) / 1.day).round
-                   "Duration: #{days} #{"day".pluralize(days)}."
+                   template("recovery.duration", count: days)
       else
                    ""
       end
       notes = alert.resolution_notes.present? ? " #{alert.resolution_notes}" : ""
-      "Incident closed.#{" " + duration if duration.present?}#{notes}".strip
+      "#{template('recovery.description')}#{" " + duration if duration.present?}#{notes}".strip
     end
 
     # --- MaintenanceRecord ---
+    # [I18N.1] Через ДІМ мітки, не `.humanize`: доти цей рядок обходив
+    # `MaintenanceRecord.action_type_label`, тобто той самий файл ніс і ратифіковану
+    # форму (`alert_title` ↑), і її порушення.
     def maintenance_title(record)
-      record.action_type.to_s.humanize
+      MaintenanceRecord.action_type_label(record.action_type)
     end
 
     def maintenance_description(record)
-      technician = record.user&.full_name || "Unknown"
-      notes = record.notes.present? ? record.notes.truncate(120) : "No notes"
-      "Technician #{technician}: #{notes}"
+      template("maintenance.description",
+               technician: record.user&.full_name || template("maintenance.unknown_technician"),
+               notes: record.notes.presence&.truncate(120) || template("maintenance.no_notes"))
     end
 
     # --- BlockchainTransaction ---
@@ -156,16 +176,18 @@ module TreeChronicle
     # ДОДАТНИМ) — тому обидва рядки деривують його через `#burn?`, а не приймають
     # мінт за замовчуванням. Доти ім'я методу саме стверджувало напрямок
     # («minting_title»), тож викликач не мав де помітити, що стверджує неправду.
+    # [I18N.1] Мітка токена — з ДОМУ (`token_type_label`), не `.humanize`; напрямок —
+    # ДВА окремі ключі, не булевий параметр: в іншій мові дієслово стоїть в іншому
+    # місці речення, тож фрагмент фрази параметром зробив би переклад неможливим.
     def blockchain_title(tx)
-      token = tx.token_type.to_s.humanize
-      tx.burn? ? "#{token} Burned" : "#{token} Minted"
+      token = BlockchainTransaction.token_type_label(tx.token_type)
+      template(tx.burn? ? "blockchain.burned_title" : "blockchain.minted_title", token: token)
     end
 
     def blockchain_description(tx)
-      amount = tx.amount
       network = (tx.blockchain_network || "Polygon").capitalize
-      verb = tx.burn? ? "Burned" : "Minted"
-      "#{verb} #{amount} tokens on #{network}"
+      template(tx.burn? ? "blockchain.burned_description" : "blockchain.minted_description",
+               amount: tx.amount, network: network)
     end
   end
 end

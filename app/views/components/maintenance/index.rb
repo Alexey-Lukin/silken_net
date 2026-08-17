@@ -142,15 +142,24 @@ module Maintenance
       end
     end
 
+    # [I18N.1] Приймає СИРИЙ токен — саме ним ключується мапа — а мітку деривує з
+    # дому (`MaintenanceRecord.action_type_label`). Доти тут друкувався сам токен,
+    # тобто рядок реєстру лишався англійським у всіх локалях; дзеркальний дефект
+    # у `Maintenance::Show` був протилежний (мітка подавалась У мапу й гасила колір).
+    # `biomass_extraction` має ВЛАСНИЙ колір, не спільний із `decommissioning`:
+    # то дія над залізом, а це над деревом (тягне declare_deceased! → слешинг).
     def action_badge(type)
       colors = {
-        "repair"          => "text-status-warning-text",
-        "installation"    => "text-blue-500",
-        "inspection"      => "text-emerald-500",
-        "cleaning"        => "text-cyan-600",
-        "decommissioning" => "text-red-700"
+        "repair"             => "text-status-warning-text",
+        "installation"       => "text-blue-500",
+        "inspection"         => "text-emerald-500",
+        "cleaning"           => "text-cyan-600",
+        "decommissioning"    => "text-red-700",
+        "biomass_extraction" => "text-status-danger-accent"
       }
-      span(class: tokens("uppercase", colors[type] || "text-gray-500")) { type }
+      span(class: tokens("uppercase", colors[type.to_s] || "text-gray-500")) do
+        MaintenanceRecord.action_type_label(type)
+      end
     end
 
     def register_button_classes

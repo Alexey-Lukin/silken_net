@@ -4,6 +4,49 @@
 require "rails_helper"
 
 RSpec.describe TreeChronicle::TextFormatter do
+  # 🔴 [I18N.1] Свідки локалізації. Приклади нижче пінять БАЗОВУ локаль, а в ній
+  # шаблон і його англійський попередник збігаються ПОБАЙТОВО — тобто вони зелені
+  # і до, і після переведення на ключі, тож нічого про механізм не доводять. Ці —
+  # у не-базовій, з негативною половиною на регресію назад в англійську.
+  describe "localization (non-base locale)" do
+    it "takes the maintenance title from the label home, not from .humanize" do
+      record = MaintenanceRecord.new(action_type: :repair)
+
+      expect(I18n.with_locale(:uk) { described_class.maintenance_title(record) }).to eq("Ремонт")
+      expect(I18n.with_locale(:uk) { described_class.maintenance_title(record) }).not_to include("Repair")
+    end
+
+    # Напрямок — ДВА ключі, не булевий параметр; мітка токена приїжджає з дому.
+    it "renders the burn direction as its own key, with the token label localized" do
+      burn = BlockchainTransaction.new(token_type: :carbon_coin, sourceable_type: BlockchainTransaction::BURN_SOURCEABLE_TYPE)
+      mint = BlockchainTransaction.new(token_type: :carbon_coin)
+
+      uk_burn = I18n.with_locale(:uk) { described_class.blockchain_title(burn) }
+      uk_mint = I18n.with_locale(:uk) { described_class.blockchain_title(mint) }
+
+      expect(uk_burn).to include("спалено")
+      expect(uk_burn).not_to include("Burned")
+      expect(uk_mint).to include("намінтовано")
+      expect(uk_burn).not_to eq(uk_mint)
+    end
+
+    # `"day".pluralize(n)` давав «3 days» у кожній мові. Українська розрізняє
+    # три форми, і саме тому тривалість мусить бути plural-БЛОКОМ.
+    it "agrees the duration noun with the number (three Ukrainian forms)" do
+      alert = ->(days) {
+        EwsAlert.new(created_at: Time.zone.now - days.days, resolved_at: Time.zone.now)
+      }
+
+      texts = I18n.with_locale(:uk) do
+        [ 1, 3, 7 ].map { |d| described_class.recovery_description(alert.call(d)) }
+      end
+
+      expect(texts[0]).to include("1 день")
+      expect(texts[1]).to include("3 дні")
+      expect(texts[2]).to include("7 днів")
+    end
+  end
+
   describe ".homeostasis_title" do
     it "returns the homeostasis title" do
       expect(described_class.homeostasis_title).to eq("Deep Homeostasis")
@@ -243,9 +286,20 @@ RSpec.describe TreeChronicle::TextFormatter do
   end
 
   describe ".maintenance_title" do
-    it "humanizes the action_type" do
+    # 🔴 [I18N.1] Доти цей приклад звався «humanizes the action_type» і їхав на
+    # `sensor_replacement` — значенні, якого в enum'і НЕМАЄ. Тобто він пінив
+    # `.humanize` на вході, недосяжному в проді, і саме тому обхід дому міток
+    # прожив непоміченим. Тепер — реальне значення через дім.
+    it "takes the label from the action_type home" do
+      record = MaintenanceRecord.new(action_type: :repair)
+      expect(described_class.maintenance_title(record)).to eq("Repair")
+    end
+
+    # Fail-open лишається носієм: невідоме значення друкується сирим, а не валить
+    # сторінку — і саме це червонить гейт парності, коли enum виростає без мітки.
+    it "falls back to the raw value for a type with no label yet" do
       record = OpenStruct.new(action_type: "sensor_replacement")
-      expect(described_class.maintenance_title(record)).to eq("Sensor replacement")
+      expect(described_class.maintenance_title(record)).to eq("sensor_replacement")
     end
   end
 
@@ -319,14 +373,17 @@ RSpec.describe TreeChronicle::TextFormatter do
   # не каже. Обидва полюси запінені: без burn-половини перейменування
   # `minting_* → blockchain_*` було б косметикою.
   describe ".blockchain_title" do
-    it "humanizes the token_type and derives Minted for a non-burn tx" do
+    # [I18N.1] Мітка токена приїжджає з дому (`token_type_label`), а той деривує її
+    # з того самого `ERC20(name, symbol)`, що й тікер — тож у хроніці стоїть ім'я
+    # монети, а не гуманізований ключ enum'а («Carbon coin»).
+    it "names the token as the contract does, and derives Minted for a non-burn tx" do
       tx = OpenStruct.new(token_type: "carbon_coin", "burn?" => false)
-      expect(described_class.blockchain_title(tx)).to eq("Carbon coin Minted")
+      expect(described_class.blockchain_title(tx)).to eq("Silken Carbon Coin Minted")
     end
 
     it "derives Burned for a burn-sourced tx" do
       tx = OpenStruct.new(token_type: "carbon_coin", "burn?" => true)
-      expect(described_class.blockchain_title(tx)).to eq("Carbon coin Burned")
+      expect(described_class.blockchain_title(tx)).to eq("Silken Carbon Coin Burned")
     end
   end
 

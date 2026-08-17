@@ -101,8 +101,15 @@ RSpec.describe Maintenance::Index do
       expect(html).to include("Ivan Koval")
     end
 
-    it "renders action_type in the row" do
-      expect(html).to include("inspection")
+    # 🔴 [I18N.1] Доти цей приклад пінив СИРИЙ токен — тобто вимагав неперекладеної
+    # мітки в рядку. Пін мусить жити в НЕ-базовій локалі: в англійській мітка
+    # («Inspection») від токена відрізняється лише регістром, тож база до дефекту
+    # сліпа. Негативна половина ловить регресію назад на enum.
+    it "renders the localized action label in the row, never the raw enum token" do
+      uk_html = I18n.with_locale(:uk) { render_component(records: [ record ], pagy: mock_pagy) }
+
+      expect(uk_html).to include("Огляд")
+      expect(uk_html).not_to include(">inspection<")
     end
 
     it "renders the maintainable type" do

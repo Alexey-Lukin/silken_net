@@ -381,6 +381,31 @@ RSpec.describe Maintenance::Show do
       html = render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
       expect(html).to include("border-gray-600 text-gray-600")
     end
+
+    # 🔴 [I18N.1] ПОЗИТИВНА половина, якої не існувало — і без неї фолбек-пін вище
+    # проходив вакуумно: він однаково зелений, коли сіріє ЛИШЕ невідомий тип і коли
+    # сіріє КОЖЕН. Саме друге й сталося, щойно рядок виклику перевели на локалізовану
+    # мітку: мапа кольорів ключується СИРИМ токеном, тож «Ремонт» у неї не влучає
+    # ніколи (мутація: подати `action_type_label` замість `action_type` → RED тут).
+    it "carries the family colour for a known action_type (not the gray fallback)" do
+      html = render_component(record: build_record(action_type: "repair"), photos: [], pagy_photos: mock_pagy_photos)
+
+      expect(html).to include("border-status-warning text-status-warning-text")
+      expect(html).not_to include("border-gray-600 text-gray-600")
+    end
+
+    # `biomass_extraction` — найнаслідковіший тип (тягне EcosystemHealingWorker →
+    # declare_deceased! → слешинг), і саме його в мапі не було: він малювався як
+    # невалідне значення. Колір ВЛАСНИЙ, не спільний із `decommissioning`: то дія
+    # над ЗАЛІЗОМ, а це над ДЕРЕВОМ, і злиття двох станів в один вигляд — дефект.
+    it "gives biomass_extraction its own colour, distinct from decommissioning" do
+      biomass = render_component(record: build_record(action_type: "biomass_extraction"), photos: [], pagy_photos: mock_pagy_photos)
+      decom   = render_component(record: build_record(action_type: "decommissioning"), photos: [], pagy_photos: mock_pagy_photos)
+
+      expect(biomass).not_to include("border-gray-600 text-gray-600")
+      expect(biomass).to include("text-status-danger-accent")
+      expect(decom).not_to include("text-status-danger-accent")
+    end
   end
 
   describe "nil-safe rendering of optional fields" do
