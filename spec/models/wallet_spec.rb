@@ -73,35 +73,37 @@ RSpec.describe Wallet, type: :model do
       expect(wallet.balance).to eq(original_balance)
     end
 
-    describe "broadcast throttling" do
-      it "broadcasts on the first credit! call" do
-        wallet = create(:tree).wallet
-        Rails.cache.clear
+    # 🔴 [UI.4, 2026-08-17] Тут стояли ТРИ приклади, що цементували leading-edge
+    # тротл — включно з «throttles subsequent broadcasts within the throttle
+    # window», тобто сюїта ВИМАГАЛА викидання новішого балансу. Дискримінатор
+    # нижче інший і навмисно: пін не на кількість кадрів (їх однаково один в
+    # обох світах), а на ЗНАЧЕННЯ, яке бачить ОСТАННІЙ кадр.
+    #
+    # ⚠️ Стеля названа: у тестах `Turbo::ThreadDebouncer` підмінений на
+    # `ImmediateDebouncer` (`spec/support/turbo_debouncer.rb`), тож САМЕ
+    # коалесування тут не перевіряється — перевіряється, що останній кадр
+    # доїжджає. Коалесування живе в гемі й має власні тести там.
+    describe "коалесування броадкасту балансу" do
+      it "останній кадр бачить баланс ПІСЛЯ останнього кредиту" do
+        # Знімаємо файловий стаб (рядок 8) — інакше приклад міряв би заглушку.
+        allow_any_instance_of(described_class).to receive(:broadcast_balance_update).and_call_original
 
-        expect(wallet).to receive(:broadcast_balance_update).once
+        wallet = create(:tree).wallet
+        start  = wallet.balance
+
+        seen = []
+        allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to) do
+          seen << described_class.find(wallet.id).balance
+        end
 
         wallet.credit!(10)
-      end
+        wallet.credit!(20)
 
-      it "throttles subsequent broadcasts within the throttle window" do
-        wallet = create(:tree).wallet
-        Rails.cache.clear
+        # Ліхтар: без непорожньої множини приклад був би зелений на нулі кадрів.
+        expect(seen).not_to be_empty, "жодного броадкасту — приклад безпредметний"
 
-        expect(wallet).to receive(:broadcast_balance_update).once
-
-        3.times { wallet.credit!(10) }
-      end
-
-      it "broadcasts again after the throttle period expires" do
-        wallet = create(:tree).wallet
-        Rails.cache.clear
-
-        expect(wallet).to receive(:broadcast_balance_update).twice
-
-        wallet.credit!(10)
-        # Очищаємо кеш троттлінгу, імітуючи закінчення таймера
-        Rails.cache.delete("wallet_broadcast_throttle:#{wallet.id}")
-        wallet.credit!(10)
+        expect(seen.last).to eq(start + 30),
+                             "останній кадр показує #{seen.last} замість #{start + 30} — новіше значення викинуто"
       end
     end
   end

@@ -76,8 +76,6 @@ class Wallet < ApplicationRecord
 
   # Троттлінг трансляції: оновлюємо UI не частіше ніж раз на N секунд,
   # щоб уникнути "шторму" WebSocket-повідомлень при масовій телеметрії.
-  BROADCAST_THROTTLE_SECONDS = 10
-
   # --- МЕТОДИ НАРАХУВАННЯ (Growth Credit) ---
 
   # Доступний баланс — це загальний баланс мінус заблоковані кошти (Pending транзакції).
@@ -122,9 +120,28 @@ class Wallet < ApplicationRecord
       increment!(:balance, points)
     end
 
-    # [СИНХРОНІЗАЦІЯ]: Оновлюємо цифри на Dashboard Архітектора з троттлінгом,
-    # щоб при 1 000 000 дерев не створювати ~16 000 повідомлень/сек
-    broadcast_balance_update if should_broadcast?
+    # 🔴 [UI.4, ⚖️ 2026-08-17] Коалесування, а не ТРОТЛ — і різниця тут грошова.
+    #
+    # Доти стояв `broadcast_balance_update if should_broadcast?` — leading-edge
+    # з ВИКИДАННЯМ (`return false if Rails.cache.exist?`, вікно 10 с). Перший
+    # кредит у вікні летів, решта гинули, тож рамка балансу застрягала на
+    # ПЕРШОМУ значенні: виміряно прикладом — броадкаст ніс `10.0`, тоді як у
+    # базі вже було `30.0`. Для леджера це «застаріло», для гаманця — показане
+    # число, що розходиться з базою.
+    #
+    # ⚠️ І обіцянки власного коментаря той тротл не виконував: він казав «щоб
+    # при 1 000 000 дерев не створювати ~16 000 повідомлень/сек», але ключ був
+    # **per-WALLET** — мільйон дерев дає мільйон окремих ключів і ті самі
+    # 16 000/с. Крос-флотового захисту він не давав ЗА ПОБУДОВОЮ.
+    #
+    # `Turbo::ThreadDebouncer` — той самий примітив, яким гем дебаунсить власні
+    # refresh-броадкасти (`Turbo::Streams::Broadcasts#broadcast_refresh_later_to`):
+    # новий виклик СКАСОВУЄ заплановане й планує своє, тож останній кадр
+    # доїжджає завжди, а серія кредитів в одному батчі коштує один broadcast.
+    # ⚠️ Стеля: дебаунсер живе в `Thread.current`, тобто коалесує в межах ОДНОГО
+    # треда; глобального капу немає ні тут, ні в гема — і він свідомо не
+    # будується, доки навантаження не виміряне ([`00_07`] UI.4).
+    Turbo::ThreadDebouncer.for("wallet-balance-#{id}").debounce { broadcast_balance_update }
   end
 
   # --- МЕТОДИ ЕМІСІЇ (Web3 Minting) ---
@@ -267,15 +284,6 @@ class Wallet < ApplicationRecord
 
   private
 
-  # Троттлінг WebSocket-трансляцій: не частіше ніж раз на BROADCAST_THROTTLE_SECONDS.
-  # Використовуємо Rails.cache для зберігання мітки останнього broadcast.
-  def should_broadcast?
-    cache_key = "wallet_broadcast_throttle:#{id}"
-    return false if Rails.cache.exist?(cache_key)
-
-    Rails.cache.write(cache_key, true, expires_in: BROADCAST_THROTTLE_SECONDS.seconds)
-    true
-  end
 
   # [MRV.1] Абортить destroy за наявності settled/in-flight money-tx (докази MRV).
   # [E.60 Фаза 1б] + tx із archive_batch_id: стемпнутий tx = член archive-батчу
