@@ -84,12 +84,17 @@ module Api
         respond_to do |format|
           format.json { render json: @stats }
           format.html do
+            # [UI.4] Вантажимо ЯВНО: компонент нижче рахує `.size` уже завантаженої
+            # колекції, а знати ціле треба ТУТ — інакше `map_node_total` слав би
+            # COUNT ще й на визначення `shown.size`.
+            @map_trees = map_trees(org).to_a
             render_dashboard(
               title: I18n.t("dashboard.index_title"),
               component: Dashboard::Home.new(
                 stats: @stats,
                 events: @recent_events,
-                trees: map_trees(org),
+                trees: @map_trees,
+                map_total: map_node_total(org, @map_trees),
                 organization: org
               )
             )
@@ -116,6 +121,18 @@ module Api
       # перезавантаженнями, а це виглядає як зникання вузлів, не як ліміт.
       def map_trees(org)
         org.trees.geolocated.order(:id).limit(MAP_NODE_LIMIT)
+      end
+
+      # 🔴 [UI.4] Скільки геолокованих вузлів організації Є НАСПРАВДІ — підстава під
+      # числом, яке малює HUD. Без неї флот на 10 000 дерев друкувався «500», і стеля
+      # `MAP_NODE_LIMIT` була видима лише тому, хто читав ЦЕЙ файл: сам екран її не
+      # оголошував ніде, тобто підмножина подавалась як вимір цілого — той самий клас,
+      # що [`ARCH.84`] закрив на кластерному середньому.
+      # ⚡ COUNT платимо ЛИШЕ впершись у стелю: нижче неї показане й ціле рівні ЗА
+      # ПОБУДОВОЮ, тож зайвий запит там купив би нуль інформації. Це та сама
+      # арифметика, якою сусідній коментар боронив `.size` замість `.count`.
+      def map_node_total(org, shown)
+        shown.size < MAP_NODE_LIMIT ? shown.size : org.trees.geolocated.count
       end
 
       # [ВИПРАВЛЕНО: Sync RPC Trap]: Кешуємо GraphQL результат з TheGraph на 5 хвилин,

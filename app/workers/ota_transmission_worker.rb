@@ -9,6 +9,16 @@ require "timeout"
 # тягне сама Королева (poll → OTA-hint → Downlink::PendingQueueService
 # chunk-server). Видалити після bench-верифікації poll-тракту [bench:coap];
 # CHUNK_SIZE лишається живою константою пакування.
+#
+# 🔴 [UI.4] ВИДАЛЯЮЧИ ЦЕЙ ФАЙЛ, ЗНІМИ Й РЯДОК ІЗ `producer_files` у
+# `spec/security/turbo_stream_scope_spec.rb` — інакше гейт почервоніє на
+# курованому переліку, і його повідомлення читатиметься як поломка екстрактора,
+# а не як наслідок свідомого зняття. Носій стоїть тут, а не в трекері, бо саме
+# цей файл відкриє той, хто буде його зносити.
+# ⚠️ І не читай «superseded» як «адреса мертва»: `TurboStreams::Name.gateway_ota`
+# нижче має ДВОХ живих підписників (`Gateways::Show` · `Firmwares::Index`) і
+# другого, живого продюсера (`Downlink::PendingQueueService`). Мертвий тут
+# ПУСКАЧ, а не адреса — переміряно 2026-08-17.
 class OtaTransmissionWorker
   include Sidekiq::Job
   include CoapEncryption

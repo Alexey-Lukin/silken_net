@@ -25,9 +25,13 @@ RSpec.describe Dashboard::Map do
   # `stream_epoch` НЕ дефолтний (1) навмисно [SEC.25 Ф3]: якби епоха десь була
   # зашита константою замість того, щоб текти з організації, з одиницею це
   # лишилось би зеленим.
-  def render_component(trees:, organization: Organization.new(id: 42, stream_epoch: 7))
+  # [UI.4] `map_total` компонент вимагає БЕЗ дефолту (забута проводка мусить падати
+  # гучно), тож дефолт живе тут — і він чесний: «показано стільки ж, скільки є»,
+  # тобто стан, у якому підстава не рендериться. Саму пару стереже власний
+  # `describe` наприкінці файлу.
+  def render_component(trees:, organization: Organization.new(id: 42, stream_epoch: 7), map_total: nil)
     ApplicationController.renderer.render(
-      component_class.new(trees: trees, organization: organization),
+      component_class.new(trees: trees, organization: organization, map_total: map_total || trees.size),
       layout: false
     )
   end
@@ -133,6 +137,36 @@ RSpec.describe Dashboard::Map do
     it "floats above the Leaflet tiles without stealing pointer events" do
       expect(html).to include("z-[400]")
       expect(html).to include("pointer-events-none")
+    end
+  end
+
+  # 🔴 [UI.4] Стеля `MAP_NODE_LIMIT` ріже флот, і доти екран цього не оголошував
+  # ніде — число зрізаної підмножини друкувалось як факт про ліс. Трійка потрібна
+  # ЦІЛКОМ: без другого «500» на флоті в 10 000 невідрізнимі від повного покриття,
+  # без третього пін проходив би й на компоненті, що друкує підставу ЗАВЖДИ (тоді
+  # «показано N з N» стояло б під кожною здоровою мапою й знецінило б сигнал).
+  describe "коли мапа показує лише частину флоту" do
+    it "prints the ground under the node count" do
+      truncated = render_component(trees: trees, map_total: 137)
+
+      expect(truncated).to include("Live Active Nodes: 2")
+      expect(truncated).to include(I18n.t("ui.measurement.coverage", measured: 2, total: 137))
+    end
+
+    it "stays SILENT about coverage when the whole fleet fits on the map" do
+      full = render_component(trees: trees, map_total: 2)
+
+      expect(full).to include("Live Active Nodes: 2")
+      expect(full).not_to include(I18n.t("ui.measurement.coverage", measured: 2, total: 2))
+    end
+
+    # Ліхтар на РІШЕННЯ, а не на поведінку: пара свідомо без дефолту, бо `nil`
+    # мовчав би так само, як «стеля не досягнута». Без цього прикладу перший,
+    # кому обовʼязковий kwarg заважає, тихо допише `= nil`.
+    it "refuses to render without the total — a silent default would read as full coverage" do
+      expect {
+        component_class.new(trees: trees, organization: Organization.new(id: 42, stream_epoch: 7))
+      }.to raise_error(ArgumentError, /map_total/)
     end
   end
 end

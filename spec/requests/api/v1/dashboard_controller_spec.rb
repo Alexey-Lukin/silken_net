@@ -154,6 +154,38 @@ RSpec.describe Api::V1::DashboardController, type: :request do
         expect(response.body).not_to include("map_node_#{ungeolocated.id}")
         expect(response.body).not_to include(foreign.did)
       end
+
+      # 🔴 [UI.4] Проводку підстави доводить ЛИШЕ request-рівень: компонентна спека
+      # рендерить повз маршрутизатор і повз викликача, тож вона однаково зелена й
+      # тоді, коли контролер ціле взагалі не рахує (`04_06 §B.2` BP #14).
+      # Стелю ріжемо `stub_const`, бо інакше приклад вимагав би 501 дерева.
+      it "declares that the map shows only part of the fleet when the ceiling truncates it" do
+        # ⚠️ Три ОКРЕМІ виклики, не цикл: `Tree` створює гаманець колбеком, а
+        # Prosopite групує за бектрейсом — тож `3.times { create(:tree) }` читається
+        # як N+1 ФІКСТУРИ й валить приклад про запит. Глушити детектор тут не можна:
+        # саме він і є носієм сусідньої осі (PERF.1).
+        create(:tree, cluster: cluster, latitude: 49.40, longitude: 32.06)
+        create(:tree, cluster: cluster, latitude: 49.41, longitude: 32.06)
+        create(:tree, cluster: cluster, latitude: 49.42, longitude: 32.06)
+        stub_const("#{described_class}::MAP_NODE_LIMIT", 2)
+
+        get "/dashboard", headers: headers
+
+        # Ліхтар на передумову: дерев справді БІЛЬШЕ за стелю — інакше приклад
+        # доводив би лише те, що зрізати не було чого.
+        expect(organization.clusters.joins(:trees).count).to be_positive
+        expect(response.body).to include(I18n.t("ui.measurement.coverage", measured: 2, total: 3))
+      end
+
+      it "stays silent about coverage when the whole fleet fits under the ceiling" do
+        create(:tree, cluster: cluster, latitude: 49.40, longitude: 32.06)
+        create(:tree, cluster: cluster, latitude: 49.41, longitude: 32.06)
+
+        get "/dashboard", headers: headers
+
+        expect(response.body).to include("Live Active Nodes: 2")
+        expect(response.body).not_to include(I18n.t("ui.measurement.coverage", measured: 2, total: 2))
+      end
     end
 
     context "with global_onchain_carbon from The Graph" do

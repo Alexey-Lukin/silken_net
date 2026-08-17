@@ -3,9 +3,14 @@
 
 module Dashboard
   class Map < ApplicationComponent
-    def initialize(trees:, organization:)
+    # 🔴 [UI.4] `map_total` — підстава під числом HUD'а, і вона БЕЗ дефолту:
+    # `nil` мовчав би так само, як «стеля не досягнута», тобто забута проводка
+    # читалась би як здоровий екран (прецеденти — PERF.1 `latest_logs`,
+    # ARCH.84 `health_measured`).
+    def initialize(trees:, organization:, map_total:)
       @trees = trees
       @organization = organization
+      @map_total = map_total
     end
 
     def view_template
@@ -54,6 +59,13 @@ module Dashboard
           # вище, тож `.count` слав би ДРУГИЙ SQL (обгорнутий COUNT) на кожен
           # показ дашборду.
           p(class: "text-mini text-gray-400 font-mono") { t(".live_nodes", count: @trees.size) }
+          # 🔴 [UI.4] Стеля `MAP_NODE_LIMIT` доти була видима ЛИШЕ тому, хто читав
+          # контролер: екран друкував зрізане число як факт про флот, тобто підмножина
+          # подавалась виміром цілого. `measurement_coverage` мовчить на повному
+          # покритті, тож рядок зʼявляється рівно тоді, коли він щось означає — і
+          # ключ спільний із рештою дерева (`ui.measurement.coverage`), нових міток нуль.
+          coverage = measurement_coverage(@trees.size, @map_total)
+          p(class: "text-micro text-status-warning-text font-mono mt-1") { coverage } if coverage
         end
       end
     end

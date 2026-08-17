@@ -58,9 +58,12 @@ RSpec.describe Dashboard::Home do
     OpenStruct.new(id: id, stream_epoch: stream_epoch)
   end
 
-  def render_component(stats:, events:, trees: [], organization: mock_organization)
+  # [UI.4] `map_total` — обовʼязковий kwarg (див. `map_spec`); дефолт тут чесний:
+  # «показано стільки ж, скільки є», тобто підстава не рендериться.
+  def render_component(stats:, events:, trees: [], organization: mock_organization, map_total: nil)
     ApplicationController.renderer.render(
-      component_class.new(stats: stats, events: events, trees: trees, organization: organization),
+      component_class.new(stats: stats, events: events, trees: trees,
+                          organization: organization, map_total: map_total || trees.size),
       layout: false
     )
   end

@@ -3,11 +3,16 @@
 
 module Dashboard
   class Home < ApplicationComponent
-    def initialize(stats:, events:, trees:, organization:)
+    # 🔴 [UI.4] `map_total` БЕЗ дефолту свідомо: `nil` зробив би забуту проводку
+    # невідрізнимою від «стеля не досягнута» — `measurement_coverage` мовчить в обох
+    # випадках, тож екран читався б як здоровий. Той самий вибір, що
+    # `Gateways::Index#latest_logs` (PERF.1) і `Clusters::Show#health_measured` (ARCH.84).
+    def initialize(stats:, events:, trees:, organization:, map_total:)
       @stats = stats
       @events = events
       @trees = trees
       @organization = organization
+      @map_total = map_total
     end
 
     def view_template
@@ -67,7 +72,7 @@ module Dashboard
     # `Dashboard::Map`, інакше вийшла б рамка в рамці й подвійні 500px.
     def render_geospatial_matrix
       div(class: "lg:col-span-2") do
-        render Dashboard::Map.new(trees: @trees, organization: @organization)
+        render Dashboard::Map.new(trees: @trees, organization: @organization, map_total: @map_total)
       end
     end
 
