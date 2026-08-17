@@ -1662,7 +1662,7 @@ Privileged action (money-tx / contract / actuator / role / param / rotate / verd
 | **Puro.earth D-MRV Registry** | On-chain (Polygon) + HTTPS REST | `PURO_EARTH_REGISTRY_CONTRACT_ADDRESS`, `ORACLE_PURO_PRIVATE_KEY` (on-chain, activation-gated — INF.22); `PURO_EARTH_API_URL` (default: `https://api.puro.earth`), `Rails.credentials.puro_earth.api_key` або `PURO_EARTH_API_KEY` (REST) | PuroEarth::PassportService, PuroEarth::RegistryApiService |
 | **KlimaDAO** | On-chain (Polygon) | `KLIMA_RETIREMENT_CONTRACT` | KlimaDao::RetirementService |
 | **Uniswap V3 Quoter** | On-chain (Polygon) | `POLYGON_RPC_URL` | PriceOracleService |
-| **CoAP Gateway** | CoAP/UDP | `gateway.ip_address` (dynamic) | ActuatorCommandWorker, OtaTransmissionWorker |
+| **CoAP Gateway** | CoAP/UDP | `gateway.ip_address` (dynamic) | `Downlink::PendingQueueService` (poll-тракт). ⚠️ Доти тут стояли `ActuatorCommandWorker, OtaTransmissionWorker` — обидва push-ерні й БЕЗ жодного enqueue-виклику з часів [FW.60](00_07_Action_Plan_Tracker); знімаються post-bench |
 
 ---
 
