@@ -125,13 +125,32 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
       expect(response).to have_http_status(:created)
     end
 
-    it "GET /firmwares/inventory returns distribution" do
+    # ⊥ Пін цілиться у ВМІСТ, а не в наявність ключів: `include("trees", "gateways")`
+    # на хеші звіряє самі імена, тож лишався б зеленим і на порожньому розподілі, і
+    # на чужому. Пара «своє лишається ⊥ чуже відпадає» доводить обидві властивості
+    # ОДНІЄЇ деривації, яку тепер ділять `#index` і `#inventory` [UI.8]: підрахунок
+    # за версіями та org-скоуп. Точна рівність, а не `include`, — інакше зайва
+    # версія в розподілі не мала б чим впасти.
+    it "GET /firmwares/inventory returns the org-scoped version distribution" do
+      # `Prosopite.pause` — фікстурна підготовка, не поведінка під тестом: `Tree`
+      # має `build_default_wallet`/`ensure_calibration` в `after_create`, тож
+      # створення кількох дерев поспіль виглядає для детектора як N+1. Сам запит
+      # лишається ПОЗА паузою — інакше приклад глушив би детекцію на ендпоінті,
+      # який і перевіряє.
+      Prosopite.pause
+      create_list(:tree, 2, cluster: cluster, firmware_version: "v1.0.0")
+      create(:tree, cluster: cluster, firmware_version: "v2.0.0")
+      create(:gateway, cluster: cluster, firmware_version: "q-1.0.0")
+      create(:tree, cluster: create(:cluster, organization: create(:organization)), firmware_version: "v9.9.9")
+      Prosopite.resume
+
       get "/firmwares/inventory",
           headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
       json = response.parsed_body
-      expect(json).to include("trees", "gateways")
+      expect(json["trees"]).to eq("v1.0.0" => 2, "v2.0.0" => 1)
+      expect(json["gateways"]).to eq("q-1.0.0" => 1)
     end
 
     it "POST /firmwares/:id/deploy targets gateways for the poll-тракт (FW.60)" do

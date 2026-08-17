@@ -33,13 +33,7 @@ module Api
         # ⚠️ `nil`, а НЕ `{}`: порожній хеш друкується як «нуль пристроїв на кожній
         # версії», тобто вигаданий вимір на місці невиміряного [ARCH.84]. Розрізняти
         # «контексту немає» від «пристроїв немає» — робота компонента.
-        @inventory_stats =
-          if org
-            {
-              trees: org.trees.group(:firmware_version).count,
-              gateways: org.gateways.group(:firmware_version).count
-            }
-          end
+        @inventory_stats = firmware_inventory_for(org) if org
 
         # [SEC.20] Живі OTA-кампанії: updating АБО затаргечені (Queen ще
         # не поллила hint) — прогрес-бари з підпискою на Firmwares::Index.
@@ -163,12 +157,7 @@ module Api
       # нього діє інша, теж ратифікована політика (однакове 422, `contracts#stats`:
       # «не втрата, а вирівнювання»). Межу стереже request-пін.
       def inventory
-        org = acting_organization!
-        stats = {
-          trees: org.trees.group(:firmware_version).count,
-          gateways: org.gateways.group(:firmware_version).count
-        }
-        render json: stats
+        render json: firmware_inventory_for(acting_organization!)
       end
 
       # --- НАКАЗ НА ОНОВЛЕННЯ (The Deployment) ---
@@ -257,6 +246,21 @@ module Api
       end
 
       private
+
+      # One-Home деривації інвентаря версій — його читають ДВА екшени: `index`
+      # малює з нього панель, `#inventory` віддає ту саму пару машині (оголошена
+      # API-поверхня, `04_03 §4.1`). Доти пара стояла дослівно двічі [UI.8].
+      #
+      # ⊥ Гілку «контексту немає» тримає ВИКЛИКАЧ, а не цей метод, і це не стиль:
+      # `index` рендериться й без обраного клану, тож мусить розрізняти `nil` ⊥ `{}`
+      # [ARCH.84], тоді як `#inventory` входить через `acting_organization!` —
+      # організація там гарантована, і nil-гілка була б недосяжною.
+      def firmware_inventory_for(organization)
+        {
+          trees: organization.trees.group(:firmware_version).count,
+          gateways: organization.gateways.group(:firmware_version).count
+        }
+      end
 
       # 🔴 [SEC.25 Ф4] Доти — голий `render json:` у дії, чий успіх і чия валідаційна
       # відмова обидва мають `format.html`: оператор, що завантажив завеликий бінар

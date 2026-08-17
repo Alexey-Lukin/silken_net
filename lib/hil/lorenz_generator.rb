@@ -13,9 +13,13 @@ module Hil
   # Generates Lorenz attractor samples (inputs + Z + trajectory tails)
   # for two consumers:
   #
-  #   1. TinyML training pipeline — labelled acoustic / temp / metabolism
-  #      tuples with the resulting bio_status (homeostasis / stress /
-  #      anomaly). Exposed as `to_csv` for OTA model retraining.
+  #   1. Labelled acoustic / temp / metabolism tuples with the resulting
+  #      bio_status (homeostasis / stress / anomaly), exposed as `to_csv`.
+  #      ⚠️ [ARCH.102] This is NOT a source for retraining the acoustic
+  #      TinyML model: that model consumes 40 log-mel frames (tools/ml,
+  #      docs/03_03), never the wire counter. The CSV describes the Lorenz
+  #      side of the packet, so read it as attractor fixtures — the header
+  #      column `acoustic_events` is a COUNT, not a class label.
   #
   #   2. Rails Attractor validation — deterministic K_seed-derived
   #      (x₀, y₀, z₀) + sensor inputs → Z values for spec fixtures, so
@@ -31,8 +35,8 @@ module Hil
   #   :stress      — z <  critical_z_min
   #   :anomaly     — z >  critical_z_max
   #
-  # Acoustic presets reflect the four-class TinyML taxonomy
-  # (silence / wind / cavitation / chainsaw) from docs/03_03 §1.
+  # Acoustic presets are WIRE REGIMES, not TinyML classes — see the
+  # constant below for why the two cannot be mapped onto each other.
   # = ===================================================================
   class LorenzGenerator
     # Default Z-band thresholds when no TreeFamily is supplied. Match
@@ -40,12 +44,25 @@ module Hil
     DEFAULT_Z_MIN = 5.0
     DEFAULT_Z_MAX = 45.0
 
-    # Acoustic class presets — values fed into σ_eff perturbation.
+    # Acoustic presets — values fed into the σ_eff perturbation.
+    #
+    # 🔴 [ARCH.102] The wire counter does NOT encode a CLASS, so the former
+    # `class → range` map was a category error: firmware increments
+    # `acoustic_events` only on cavitation (2) and chainsaw (3), in BOTH
+    # confidence zones, and never on silence (0) / wind (1) / fauna (4).
+    # A value of 220 therefore means «220 qualified detections since the
+    # last successful uplink» (docs/03_04 §2.2), never «a chainsaw».
+    #
+    # Two consequences the old map got backwards. (a) It named a FOUR-class
+    # taxonomy while the model ships FIVE (`ML_CLASS_FAUNA` was missing).
+    # (b) Its `wind` preset emitted 15..60 for a HEALTHY tree — a count the
+    # field only reaches under sustained cavitation or sawing, i.e. the
+    # simulator made a quiet forest look loud. Hence regimes, not classes:
+    # the wire can express exactly two, and their inseparability is the same
+    # measurement gap that retired the pest/seismic verdicts.
     ACOUSTIC_PROFILES = {
-      silence:    (0..15),
-      wind:       (15..60),
-      cavitation: (60..150),
-      chainsaw:   (200..255)
+      quiet:      (0..0),     # silence · wind · fauna — none increments
+      detections: (1..255)    # cavitation ⊕ chainsaw — inseparable by design
     }.freeze
 
     # Per-state default knobs (chosen so rejection sampling converges in
@@ -53,21 +70,24 @@ module Hil
     STATE_PROFILES = {
       homeostasis: {
         temp_range:     (15..30),
-        acoustic_class: :wind,
+        acoustic_class: :quiet,
         delta_t_range:  (30..60),
         vcap_range:     (3500..4400)
       },
       stress: {
         # Slow EBFC charging + low vcap → β collapses, Z dips below z_min.
         temp_range:     (-10..5),
-        acoustic_class: :silence,
+        acoustic_class: :quiet,
         delta_t_range:  (110..180),
         vcap_range:     (2800..3200)
       },
       anomaly: {
-        # Hot crown + chainsaw burst → σ/ρ spike, Z punches through z_max.
+        # Hot crown + a burst of qualified detections → σ/ρ spike, Z punches
+        # through z_max. [ARCH.102] «Detections» stays deliberately unnamed:
+        # cavitation and sawing arrive on the same uint8 and no threshold can
+        # separate them, so the profile asserts a COUNT, never a cause.
         temp_range:     (55..80),
-        acoustic_class: :chainsaw,
+        acoustic_class: :detections,
         delta_t_range:  (10..40),
         vcap_range:     (4400..4800)
       }

@@ -66,9 +66,5 @@ FactoryBot.define do
     trait :hot do
       temperature_c { 55.0 }
     end
-
-    trait :pest_swarm do
-      acoustic_events { 80 }
-    end
   end
 end

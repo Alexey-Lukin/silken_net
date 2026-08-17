@@ -610,7 +610,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 > |---|---|
 > | `GET /trees/:id/telemetry` · `GET /gateways/:id/telemetry` | Повна історія до `MAX_HISTORY_DAYS` = 365. Адресат названий у самому коді — «chronicle/charting tools page through history in smaller windows». Chart-бібліотеки в дереві **нуль**, `fetch` у всьому `app/javascript/` — **нуль**; будувати графік, щоб виправдати ендпоінт, — рівно та інверсія, яку забороняє У-ВЕЙ-присуд. Реальний споживач приходить із [`ARCH.63`](00_07_Action_Plan_Tracker) (B2B OpenAPI, demand-gated). |
 > | `GET /contracts/stats` | Ширший за `contracts#index`: рахує по ОРГАНІЗАЦІЇ (а не по пагінованому скоупу) і несе `clusters_measured`/`clusters_total`/`attested_value_usd`, яких у списку немає. Клієнтський контракт — §5.14б. |
-> | `GET /firmwares/inventory` | Статистика версій для зовнішнього споживача. ⚠️ Його формула **дослівно дублює** `@inventory_stats` у `firmwares#index` — це One-Home-борг, і він НЕ про відсутні двері. |
+> | `GET /firmwares/inventory` | Статистика версій для зовнішнього споживача. ✅ Деривацію зведено на ОДИН дім — приватний `firmware_inventory_for(org)`, який читають обидва екшени; ⊥ гілка «контексту немає» лишилась у ВИКЛИКАЧА свідомо: `index` рендериться й без обраного клану і мусить розрізняти `nil` ⊥ `{}` ([ARCH.84](00_07_Action_Plan_Tracker)), а сюди вхід іде через `acting_organization!`, тож організація гарантована. |
 >
 > **Рефлекс для наступного свіпу:** перш ніж назвати маршрут «бекенд без UI», спитай, чи він
 > оголошений як API-поверхня ТУТ. Інвентар, що міряє лише «чи є `*_path` у `app/views/`»,

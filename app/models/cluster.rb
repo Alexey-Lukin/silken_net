@@ -50,6 +50,12 @@ class Cluster < ApplicationRecord
   has_many :ai_insights, as: :analyzable, dependent: :delete_all
 
   # --- JSONB SETTINGS (The Biome Adaptation) ---
+  # ⚠️ Ключі тут НЕ рівноцінні за живістю, і різницю видно лише звідси: `custom_fire_threshold`
+  # читає `AlertDispatchService` (перша ланка `fire_limit`), `timezone` — добовий шар,
+  # `lorenz_overrides_by_species` — [FW.8]; а ⛔ `seismic_sensitivity_threshold` не читає НІХТО
+  # [ARCH.102] — сейсмічний вердикт знято разом із його вимірювачем. Лишається оголошеним
+  # forward-контрактом (валідація й рендер чинні на випадок, коли ключ таки виставлять руками),
+  # але сід його більше не заповнює: показувати чутливість неіснуючого детектора = фабрикація.
   store_accessor :environmental_settings,
                  :custom_fire_threshold,
                  :seismic_sensitivity_threshold,

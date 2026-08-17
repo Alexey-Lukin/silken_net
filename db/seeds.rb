@@ -200,7 +200,11 @@ cherkasy_forest = Cluster.create!(
   name: "Черкаський бір",
   region: "Центральна Україна",
   organization: active_bridge,
-  environmental_settings: { "custom_fire_threshold" => 60, "seismic_sensitivity_threshold" => 3.5, "timezone" => "Europe/Kyiv" },
+  # [ARCH.102] `seismic_sensitivity_threshold` тут БІЛЬШЕ НЕ сідиться: механізму, що його
+  # читає, не існує (сейсмічний вердикт знято — вимірювача немає), тож демо друкувало на
+  # картці кластера чутливість детектора, якого платформа не має. Ключ лишається живим
+  # forward-контрактом на моделі; сід не сміє його ВИГАДУВАТИ.
+  environmental_settings: { "custom_fire_threshold" => 60, "timezone" => "Europe/Kyiv" },
   geojson_polygon: { type: "Polygon", coordinates: [ [ [ 31.9, 49.4 ], [ 32.0, 49.4 ], [ 32.0, 49.5 ], [ 31.9, 49.5 ], [ 31.9, 49.4 ] ] ] }
 )
 
@@ -239,12 +243,14 @@ oak = TreeFamily.create!(
 
 tree_families = [ pine, oak ]
 
-bark_beetle_model = TinyMlModel.create!(
-  version: "v1.0.4-bark-beetle",
+# [ARCH.102] Ім'я моделі називає те, що класифікатор РЕАЛЬНО вміє — пʼять акустичних класів
+# (silence · wind · cavitation · chainsaw · fauna, `03_03`); виду шкідника серед них немає,
+# тож `target_pest` сід свідомо НЕ заповнює (оголошена колонка без читачів, `04_01`).
+pine_acoustic_model = TinyMlModel.create!(
+  version: "v1.0.4-acoustic-pine",
   binary_weights_payload: SecureRandom.hex(64),
   tree_family: pine,
-  is_active: true,
-  target_pest: "bark_beetle"
+  is_active: true
 )
 
 # =========================================================================
@@ -402,7 +408,7 @@ cherkasy_trees = []
     longitude: gateway.longitude + rand(-0.005..0.005),
     cluster: cherkasy_forest,
     tree_family: family,
-    tiny_ml_model: family == pine ? bark_beetle_model : nil
+    tiny_ml_model: family == pine ? pine_acoustic_model : nil
   )
 
   # Post-ARCH.42 (2026-05-23): Tree LoRa channel — AES-128 (16 bytes / 32 hex).
