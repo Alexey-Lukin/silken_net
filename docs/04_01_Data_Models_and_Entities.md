@@ -335,8 +335,18 @@ dormant ──reactivate──► active
 >
 > ⊥ **Відмінність від `health_index`, і вона несуча:** там колонка пер-КЛАСТЕРНА й
 > агрегується, тож їй знадобилась структура покриття (`Cluster.health_coverage`).
-> Ця — пер-деревна, тож покриття потрібне лише там, де дерева СУМУЮТЬ: єдиний
-> такий споживач — прогноз емісії ([`04_03 §5.9`](04_03_REST_API_v1_Reference)).
+> Ця — пер-деревна, тож сама по собі підстави не потребує; її потребує КОЖЕН, хто
+> зводить дерева в одне число — і байдуже, СУМОЮ чи СЕРЕДНІМ.
+> 🔴 **Тут доти стояло «покриття потрібне лише там, де дерева СУМУЮТЬ», і це
+> узагальнення було ХИБНЕ — воно ж і аргументувало геть механізм, який упіймав би
+> [ARCH.84]-дефект поверхом нижче** (виміряно 2026-08-17): кластерний
+> `AiInsight.stress_index` УСЕРЕДНЮЄ дерева, і кластер із одним виміряним деревом
+> із пʼяти віддавав той самий `stress_index`, той самий `health_index` і те саме
+> `health_coverage(measured: 1, total: 1)`, що й виміряний повністю. Середнє
+> залежить від покриття не менше за суму — і подає себе переконливіше, бо
+> читається як властивість цілого. Споживачів покриття тому **два**: прогноз
+> емісії ([`04_03 §5.9`](04_03_REST_API_v1_Reference)) і кластерний денний
+> агрегат (`AiInsight` §7 — `measured_trees`/`total_trees`).
 >
 > ⛔ Бекфілу немає свідомо: єдиний доступний дискримінатор («дерево має AiInsight
 > ⇒ колонку писали») спростовується сідами — вони створюють `daily_health_summary`
@@ -393,7 +403,7 @@ dormant ──reactivate──► active
 | `total_active_trees` | Читає `active_trees_count` (без COUNT(*)) |
 | `health_index` | Читає денормалізовану колонку **як є**: `nil` = не виміряно [ARCH.84] |
 | `Cluster.health_coverage(scope)` | **One-Home агрегату** → `HealthCoverage(average:, measured:, total:)` одним запитом; предикати `no_clusters?` ⊥ `unmeasured?` ⊥ `partial?` |
-| `recalculate_health_index!` | `1.0 - stress_index` зі щоденного AiInsight за `AiInsight.reporting_date`; **без ВИМІРУ пише явний `nil`** — гард питає сам `stress_index`, а не наявність інсайту [ARCH.84]: колонка легально `NULL` (`allow_nil: true`), і `nil.to_f` дав би рівно `1.0`, тобто «бездоганний ліс» для стресу, якого не рахували. ⚠️ Виміряний `0.0` лишається законним входом (→ `1.0`), тож дискримінатор — `nil`, ніколи `.zero?`/`present?` |
+| `recalculate_health_index!` | `1.0 - stress_index` зі щоденного AiInsight за `AiInsight.reporting_date`; **без ВИМІРУ пише явний `nil`** — гард питає сам `stress_index`, а не наявність інсайту [ARCH.84]: колонка легально `NULL` (`allow_nil: true`), і `nil.to_f` дав би рівно `1.0`, тобто «бездоганний ліс» для стресу, якого не рахували. ⚠️ Виміряний `0.0` лишається законним входом (→ `1.0`), тож дискримінатор — `nil`, ніколи `.zero?`/`present?`. 🔴 **Друга вісь, і гард її не покриває ЗА ПОБУДОВОЮ [ARCH.84]:** він судить, чи вимір Є, і не питає, про СКІЛЬКИ дерев той вимір говорить — а вхід є середнім по тих, що заговорили. Тому підстава живе не тут, а на самому інсайті (`reasoning.measured_trees`/`total_trees`, `AiInsight` §7), і читач `health_index` зобовʼязаний везти її поруч (`Clusters::Show` → `measurement_coverage`) |
 | `geo_center` | Мемоізований центроїд полігону (Resilient — підтримує MultiPolygon) |
 | `active_contract` | Останній активний NaasContract (з ORDER BY) |
 | `active_threats?` | `ews_alerts.unresolved.critical.exists?` |
@@ -1229,7 +1239,7 @@ active/draft ──cancel──► cancelled
 | `target_date` | date | Дата, до якої відноситься (unique per analyzable+type) |
 | `stress_index` | decimal | 0.0..1.0 (ключовий показник) |
 | `probability_score` | decimal, **nullable** | 0.0..100.0 (впевненість Оракула). 🔴 **[ARCH.84] Писачів НУЛЬ:** `InsightGeneratorService` створює лише `daily_health_summary`, тож прогноз-інсайт у проді не народжується взагалі, а значення приходить винятково з `db/seeds.rb`. `NULL` = «не виміряно» — окремий СТАН, і модель це вже кодує (`#confidence_level` → `:n_a`). ⛔ Читач не сміє друкувати його голим: `ForecastCard` давав «%» без числа і `style="width: %"` (невалідний CSS) — смуга тепер **не малюється взагалі**, бо будь-яка довжина є твердженням про вимір. Те саме стосується сусіда `prediction_data["yield_impact"]` — у нього писачів теж нуль |
-| `reasoning` | jsonb (GIN) | Структуровані причини рішення. Два індекси: `idx_ai_insights_reasoning_gin` (JSONB GIN — containment `@>` запити) та `idx_ai_insights_reasoning_fts` (tsvector GIN — повнотекстовий пошук по `reasoning->>'description'`) |
+| `reasoning` | jsonb (GIN) | Структуровані причини рішення. Два індекси: `idx_ai_insights_reasoning_gin` (JSONB GIN — containment `@>` запити) та `idx_ai_insights_reasoning_fts` (tsvector GIN — повнотекстовий пошук по `reasoning->>'description'`). ⚡ **[ARCH.84] На КЛАСТЕРНОМУ рядку несе покриття** — `measured_trees`/`total_trees` (`store_accessor`), див. ⚡ нижче |
 | `source_log_ids` | integer[] (GIN) | IDs telemetry_logs, що стали джерелом |
 | `fraud_detected` | boolean | Прапор маніпуляції даними |
 | `model_source` | string | AI-модель (GPT-4, Claude, тощо) |
@@ -1245,6 +1255,8 @@ active/draft ──cancel──► cancelled
 **Класові методи:** `AiInsight.slash_stress_threshold` (DAO-live поріг, ARCH.46 — дім спільності «тригер ≡ розмір») · **`AiInsight.reporting_date(now = Time.current)`** — див. ⚡ нижче.
 
 > ⚡ **ДОБА ЗВІТУ = ОДИН ДІМ [ARCH.100].** Денний інсайт є агрегатом **UTC-доби** (`InsightGeneratorService` ріже вікно телеметрії в UTC і штампує нею `target_date`), а `for_date` шукає **точною рівністю**. Тому і писач, і КОЖЕН читач беруть добу з `AiInsight.reporting_date` — власних виразів не існує. ⚠️ Доти якорів було два: чотири копії `Time.current.utc.to_date - 1` і `Cluster#local_yesterday` («вчора» в поясі орендаря) дефолтом у шести вердикт-несучих сайтах. Для будь-якого поясу західніше **UTC−2** (уся Америка від Сан-Паулу) о 02:00 UTC ці дати не збігаються **ніколи**, тож нічний крон читав порожню добу — і одна вигадана порожнеча роз'їжджалась чотирма вироками протилежного знаку: `health_index = 1.0` («ідеально здоровий») · `:blackout` → Field Audit + невиплачена Celo-винагорода · страховий no-data → Field Audit · `:frozen` на слешингу. ✅ **ПРИСУД власника 2026-08-14: доба звіту ГЛОБАЛЬНА, пер-орендарський агрегатор ВІДХИЛЕНО** — і це вже не «доти», а рішення. Підстава — критерій місії «**відтворювано**» ([`00_01 §1.1`](00_01_Vision_Mission_and_Roadmap)): аудитор, що перераховує вікно, мусить дістати той самий результат, а пер-орендарська доба зробила б агрегат залежним від **мутабельного налаштування** на грошовому шляху (пороги слешингу, Celo-винагороди) — «денна» цифра дерева мінялася б від редагування таймзони організації. ⚠️ Ціна прийнята явно, не замовчана: UTC-доба для UTC−4 справді ріже локальний вечір навпіл — це властивість МЕТОДУ вимірювання, і саме тому вона оголошена тут, а не виведена читачем. `clusters.environmental_settings["timezone"]` **лишається** — периметр перевірено грепом, його єдиний споживач це картка кластера, тобто чесний факт ПРО кластер, а не вхід арбітражу. Носій єдиності — `spec/quality/reporting_date_home_spec.rb` (mutation-verified обома формами).
+
+> ⚡ **КЛАСТЕРНИЙ РЯДОК НЕСЕ СВОЄ ПОКРИТТЯ [ARCH.84].** `stress_index` кластера — це СЕРЕДНЄ по деревах, що вийшли в ефір за добу, тож він правдивий про них і **німий про решту**. Доти дискримінатор існував лише в ПРОЗІ `summary` («Оброблено N вузлів»), а всі три машинні читачі — `Cluster#recalculate_health_index!` (звідти в комерційний `backing_asset.cluster_health`), `Celo::CommunityRewardService` (реальна виплата) і `Filecoin::ArchiveService` (незмінний IPFS-доказ) — бачили однакове: виміряно рантаймом, кластер із **1 із 5** дерев і кластер із **5 із 5** дали ідентичний `stress_index`, ідентичний `health_index = 1.0` і ідентичне `health_coverage(measured: 1, total: 1)`. Тому писач кладе в `reasoning` пару **`measured_trees`** (`.distinct` по деревах — дзеркало `DailyHealthRouter#critical_count`) і **`total_trees`** (живий `COUNT` по `trees.active`, не денормалізований `active_trees_count`: рядок годує гроші й доказ, а лічильник тримають колбеки, які `update_all` обходить). Читає її `Clusters::Show` через `measurement_coverage` (мовчить на повному покритті) і `Filecoin::ArchiveService`. ⚠️ **Популяція середнього — `trees.active`**, як у всіх трьох денних читачів: доти писач брав `cluster.trees` цілком, тож інсайт мертвого дерева входив у середнє живого лісу — те саме «кладовище розбавляло», що ⚖️ 2026-07-30 зняв на слешинг-шляху. ⛔ Стеля: `average(:stress_index)` усереднює РЯДКИ, а `measured_trees` рахує ДЕРЕВА; розійтись вони могли б лише на дублікаті одного дерева за добу (unique-індекс його легалізує через nullable `model_source`), але такий рядок до підрахунку не доживає — `InsightGeneratorService#perform` починається з тотального `delete_all` по добі. Тригер перегляду обох — перший писач денного інсайту поза цим сервісом. ⚠️ На TREE-рядку пара `nil` за побудовою: дерево не агрегат.
 
 **Scopes:** `highly_probable`, `upcoming`, `critical_stress`, `for_date(date)`, `fraudulent`, `referencing_log(log_id)`, `search_reasoning(query)` — повнотекстовий пошук у `reasoning->>'description'` через `plainto_tsquery('simple', ...)` з використанням tsvector GIN-індексу `idx_ai_insights_reasoning_fts`.
 

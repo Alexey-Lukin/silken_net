@@ -314,6 +314,66 @@ RSpec.describe InsightGeneratorService, type: :service do
       expect(cluster_insight.summary).to include(cluster.name)
     end
 
+    # 🔴 [ARCH.84] Кластерне середнє німе про дерева, що мовчали, тож поруч мусить
+    # їхати підстава — і саме ДАНИМИ, а не прозою. Доти дискримінатор існував лише
+    # в `summary` («Оброблено N вузлів»), тобто жоден машинний читач (health_index →
+    # комерційний `backing_asset.cluster_health`, Celo-виплата, IPFS-доказ) не
+    # відрізняв кластер, виміряний на пʼяту частину, від виміряного повністю.
+    it "records HOW MANY of the sector's living trees the cluster average actually speaks for" do
+      loud = tree
+      4.times { create(:tree, cluster: cluster, tree_family: tree.tree_family) }
+      create(:telemetry_log, tree: loud,
+        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+        acoustic_events: 2, growth_points: 10,
+        bio_status: :homeostasis, metabolism_s: 1000,
+        created_at: date.beginning_of_day + 12.hours)
+
+      described_class.call(date)
+
+      cluster_insight = AiInsight.find_by(analyzable: cluster, insight_type: :daily_health_summary,
+                                          target_date: date)
+      # Ліхтар на передумову: без нього приклад був би зелений і на кластері з одного дерева.
+      expect(cluster.trees.active.count).to eq(5)
+      expect(cluster_insight.measured_trees).to eq(1)
+      expect(cluster_insight.total_trees).to eq(5)
+    end
+
+    # ⛔ [ARCH.84] Свідка на `.distinct` тут НЕМАЄ, і причина виміряна, а не забута:
+    # `perform` починається з `AiInsight…delete_all` по всій добі, тож ЧУЖИЙ рядок
+    # (oracle-consensus, який unique-індекс легалізує через nullable `model_source`)
+    # знищується ще ДО агрегації — дублікат не доживає до підрахунку в жодному
+    # сценарії, що проходить через цього писача. `.distinct` лишається дзеркалом
+    # ратифікованого `DailyHealthRouter#critical_count`, тобто захистом на випадок,
+    # коли ідемпотентний зріз перестане бути тотальним. Спроба збудувати пін і є
+    # тим виміром: фікстура, яку доводиться «домовляти», називає чуже правило.
+
+    # 🔴 [ARCH.84] Популяція середнього = ЖИВИЙ ліс, як у всіх трьох денних читачів
+    # (`DailyHealthRouter`, `BlockchainBurningService#calculate_damage_ratio`). Доти
+    # писач брав `cluster.trees` цілком, тож інсайт мертвого дерева входив у середнє —
+    # те саме «кладовище розбавляло», що ⚖️ 2026-07-30 зняв на слешинг-шляху.
+    # ⚠️ Пристрій про смерть дерева не знає, тож телеметрія від нього легітимно є.
+    it "leaves the sector's dead out of the living forest's average" do
+      dead = create(:tree, cluster: cluster, tree_family: tree.tree_family)
+      [ tree, dead ].each do |t|
+        create(:telemetry_log, tree: t,
+          temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+      end
+      dead.update_column(:status, Tree.statuses[:deceased])
+
+      described_class.call(date)
+
+      cluster_insight = AiInsight.find_by(analyzable: cluster, insight_type: :daily_health_summary,
+                                          target_date: date)
+      # Обидва дерева МАЮТЬ добовий інсайт — відрізняється саме множина агрегату.
+      expect(AiInsight.where(analyzable_type: "Tree", analyzable_id: [ tree.id, dead.id ],
+                             target_date: date).count).to eq(2)
+      expect(cluster_insight.measured_trees).to eq(1)
+      expect(cluster_insight.total_trees).to eq(1)
+    end
+
     it "cleans up telemetry logs older than 7 days" do
       old_log = create(:telemetry_log, tree: tree,
         temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,

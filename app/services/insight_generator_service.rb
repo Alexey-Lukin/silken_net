@@ -411,23 +411,59 @@ class InsightGeneratorService < ApplicationService
 
   # Створює cluster-level AiInsight на основі tree-level інсайтів.
   # Використовується як у синхронному perform, так і в батчевому process_cluster_batch.
+  #
+  # 🔴 [ARCH.84] Цей рядок — СЕРЕДНЄ по деревах, що вийшли в ефір, тож він правдивий
+  # про них і НІМИЙ про решту. Доти єдиним місцем, де ця різниця взагалі існувала,
+  # була ПРОЗА `summary` («Оброблено N вузлів»): кластер із одним виміряним деревом
+  # із пʼяти давав той самий `stress_index`, той самий `clusters.health_index` і те
+  # саме `Cluster.health_coverage(measured: 1, total: 1)`, що й кластер, виміряний
+  # повністю — виміряно рантаймом, обидва кінці діапазону дали ІДЕНТИЧНИЙ машинний
+  # вивід. А читачів цього числа троє, і всі несучі: `Cluster#recalculate_health_index!`
+  # (звідти в комерційний `backing_asset.cluster_health`), `Celo::CommunityRewardService`
+  # (реальна виплата) і `Filecoin::ArchiveService` (незмінний D-MRV доказ в IPFS).
+  # ⊕ Форма ліку НЕ нова: `ApplicationComponent#measurement_coverage` уже несе це
+  # правило дослівно, а `Cluster.health_coverage` — його ратифікований зразок ПОВЕРХОМ
+  # ВИЩЕ (`04_01 §3`). Бракувало саме кластерного члена родини.
+  #
+  # ⚠️ Популяція — `trees.active`, як у ВСІХ трьох денних читачів (`DailyHealthRouter#insights`,
+  # `BlockchainBurningService#calculate_damage_ratio`). Доти писач брав `cluster.trees`
+  # цілком, тож інсайт мертвого дерева входив у середнє ЖИВОГО лісу — те саме
+  # «кладовище розбавляло», що ⚖️ 2026-07-30 зняв на слешинг-шляху й не зняв тут.
+  # ⚠️ `total` іде ЖИВИМ `COUNT`, а не денормалізованим `active_trees_count`: рядок
+  # годує гроші й доказ, а лічильник тримають колбеки, які `update_all`/`update_columns`
+  # обходять — той самий вибір, що в `calculate_damage_ratio` (тригер має право читати
+  # лічильник, розмір — ні).
+  #
+  # ⛔ СТЕЛЯ, названа явно й ВИМІРЯНА (спроба збудувати пін її й показала):
+  # `average(:stress_index)` усереднює РЯДКИ, а `measured` рахує ДЕРЕВА (`.distinct`,
+  # дзеркало `DailyHealthRouter#critical_count`). Розійтись вони могли б лише на
+  # дублікаті одного дерева за добу, який unique-індекс легалізує через nullable
+  # `model_source` — але такий рядок до цього підрахунку НЕ ДОЖИВАЄ: `#perform`
+  # починається з тотального `AiInsight…delete_all` по добі, тобто зносить і чужі
+  # `model_source`. Отже `.distinct` тут — не виправлення живого дефекту, а дзеркало
+  # ратифікованої форми на випадок, коли ідемпотентний зріз перестане бути тотальним.
+  # 🔓 Тригер перегляду ОБОХ: перший писач денного інсайту поза цим сервісом.
   def aggregate_cluster!(cluster)
+    active_tree_ids = cluster.trees.active.select(:id)
+
     tree_insights = AiInsight.where(
       analyzable_type: "Tree",
-      analyzable_id: cluster.trees.select(:id),
+      analyzable_id: active_tree_ids,
       insight_type: :daily_health_summary,
       target_date: @date
     )
 
-    return if tree_insights.empty?
+    measured_trees = tree_insights.select(:analyzable_id).distinct.count
+    return if measured_trees.zero?
 
+    total_trees = cluster.trees.active.count
     # ⚡ [ОПТИМІЗАЦІЯ]: Використовуємо boolean колонку замість JSONB @> оператора
-    fraud_count = tree_insights.where(fraud_detected: true).count
+    fraud_trees = tree_insights.where(fraud_detected: true).select(:analyzable_id).distinct.count
 
-    summary = if fraud_count > 0
-                "⚠️ Сектор #{cluster.name}: Виявлено #{fraud_count} вузлів із фрод-телеметрією."
+    summary = if fraud_trees > 0
+                "⚠️ Сектор #{cluster.name}: Виявлено #{fraud_trees} вузлів із фрод-телеметрією."
     else
-                "Сектор #{cluster.name}: Оброблено #{tree_insights.count} вузлів. Стан стабільний."
+                "Сектор #{cluster.name}: Оброблено #{measured_trees} вузлів. Стан стабільний."
     end
 
     AiInsight.create!(
@@ -436,7 +472,8 @@ class InsightGeneratorService < ApplicationService
       target_date: @date,
       stress_index: tree_insights.average(:stress_index).to_f.round(3),
       total_growth_points: tree_insights.sum(:total_growth_points),
-      summary: summary
+      summary: summary,
+      reasoning: { measured_trees: measured_trees, total_trees: total_trees }
     )
   end
 

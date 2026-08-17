@@ -70,6 +70,15 @@ class AiInsight < ApplicationRecord
   # Використовуємо JSONB для гнучкого пояснення логіки ШІ
   # fraud_detected винесено в окрему boolean колонку для коректної типізації та швидкого пошуку
   store_accessor :reasoning, :avg_z, :max_temp, :anomaly_vector, :avg_vcap, :deviation_from_baseline
+  # [ARCH.84] Покриття КЛАСТЕРНОГО агрегату — скільки живих дерев сектора реально
+  # заговорило за цю добу. Без нього `stress_index` кластера з одним виміряним
+  # деревом із пʼяти невідрізнимий від виміряного повністю на КОЖНОМУ машинному
+  # читачі (`health_index` → комерційний `backing_asset.cluster_health`, Celo-виплата,
+  # IPFS-доказ), а дискримінатор жив лише в прозі `summary`. Дзеркало
+  # `Cluster.health_coverage` поверхом вище й `measurement_coverage` у в'ю.
+  # ⚠️ На TREE-рядку обидва `nil` за побудовою — там пара безпредметна (дерево не
+  # агрегат), і `nil` тут значить саме це, а не «не порахували».
+  store_accessor :reasoning, :measured_trees, :total_trees
   store_accessor :recommendation, :action_required, :priority
 
   # --- ВАЛІДАЦІЇ ---

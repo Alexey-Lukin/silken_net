@@ -246,6 +246,34 @@ RSpec.describe Filecoin::ArchiveService do
         expect(content[:telemetry_summary][:clusters].first[:stress_index]).to eq(0.42)
       end
 
+      # 🔴 [ARCH.84] Доказ мусить нести підставу: середнє по кластеру німе про
+      # дерева, що мовчали, тож без покриття аудитор, який відкриє IPFS-артефакт,
+      # не відрізнить лісу, виміряного повністю, від виміряного на пʼяту частину.
+      it "carries the coverage of the cluster average into the immutable evidence" do
+        cluster = create(:cluster, organization: user.organization)
+        create(:ai_insight, :daily_health_summary,
+               analyzable: cluster,
+               target_date: audit_log.created_at.to_date,
+               stress_index: 0.42,
+               total_growth_points: 500,
+               summary: "Partly measured",
+               reasoning: { "measured_trees" => 1, "total_trees" => 5 },
+               fraud_detected: false)
+
+        expected_body = nil
+        allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
+          expected_body = kwargs[:body]
+          Web3::HttpClient::Response.new({ "IpfsHash" => "QmCoverage" }.to_json)
+        end
+
+        described_class.new(audit_log).archive!
+
+        row = expected_body[:pinataContent][:telemetry_summary][:clusters].first
+        expect(row[:stress_index]).to eq(0.42)
+        expect(row[:measured_trees]).to eq(1)
+        expect(row[:total_trees]).to eq(5)
+      end
+
       it "handles nil stress_index in insight" do
         cluster = create(:cluster, organization: user.organization)
         create(:ai_insight, :daily_health_summary,

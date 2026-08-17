@@ -22,12 +22,23 @@ module Clusters
     # @param gateways [Array<Gateway>] pre-loaded gateways for this cluster
     # @param recent_alerts [Array<EwsAlert>] pre-loaded unresolved alerts
     # @param active_contract [NaasContract, nil] pre-loaded; nil = контракту немає
-    def initialize(cluster:, gateways:, recent_alerts:, active_contract: nil)
+    # @param health_measured [Integer, nil] скільки живих дерев сектора заговорило за звітну добу
+    # @param health_total [Integer, nil] скільки їх усього живих; пара — підстава під `health_index`
+    #
+    # 🔴 [ARCH.84] Пара покриття БЕЗ дефолту свідомо, і причина та сама, що в
+    # `Gateways::Index#latest_logs` (PERF.1): `nil`-дефолт зробив би забуту проводку
+    # невідрізнимою від «виміряно повністю» — `measurement_coverage` мовчить в обох
+    # випадках, тобто екран читався б як здоровий. Явний `nil` від контролера — це
+    # рішення («інсайту за добу немає»), пропущений аргумент — недогляд; тільки
+    # обовʼязковий kwarg їх розводить, і робить це гучно.
+    def initialize(cluster:, gateways:, recent_alerts:, health_measured:, health_total:, active_contract: nil)
       raise ArgumentError, "cluster must respond to :name" unless cluster.respond_to?(:name)
 
       @cluster = cluster
       @gateways = gateways
       @active_contract = active_contract
+      @health_measured = health_measured
+      @health_total = health_total
       @recent_alerts = recent_alerts
     end
 
@@ -82,7 +93,12 @@ module Clusters
       div(class: "p-8 border border-emerald-900 bg-zinc-950") do
         h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-8") { t(".vitals.heading") }
         div(class: "grid grid-cols-3 gap-8") do
-          vital_block(t(".vitals.health_index"), measured_percent(@cluster.health_index))
+          # [ARCH.84] Підстава їде під числом: `health_index` = 1 − середнє стресу по
+          # деревах, що заговорили, тож без покриття «100%» на лісі, виміряному на
+          # пʼяту частину, невідрізнимі від повного. `measurement_coverage` мовчить на
+          # повному покритті — рядок зʼявляється рівно тоді, коли щось означає.
+          vital_block(t(".vitals.health_index"), measured_percent(@cluster.health_index),
+                      sub: measurement_coverage(@health_measured, @health_total))
           vital_block(t(".vitals.active_trees"), @cluster.total_active_trees.to_s)
           vital_block(t(".vitals.queen_gateways"), @gateways.size.to_s)
         end
@@ -105,10 +121,11 @@ module Clusters
       end
     end
 
-    def vital_block(label, value)
+    def vital_block(label, value, sub: nil)
       div do
         p(class: "text-mini uppercase tracking-tighter text-gray-600") { label }
         p(class: "text-3xl font-extralight text-emerald-100") { value }
+        p(class: "text-micro text-status-warning-text font-mono mt-1") { sub } if sub
       end
     end
 

@@ -9,6 +9,15 @@ RSpec.describe Clusters::Show do
   let(:recent_alerts) { [] }
   let(:html) { render_component(cluster: cluster, gateways: gateways, recent_alerts: recent_alerts) }
 
+  # [ARCH.84] Компонент вимагає пару покриття БЕЗ дефолту (щоб забута проводка
+  # падала гучно), тож дефолт живе тут — і рівно тут він чесний: приклади нижче
+  # міряють інші осі, а САМУ пару стереже власний `describe` наприкінці файлу.
+  # ⚠️ `nil`/`nil` = «інсайту за добу немає», тобто рядок покриття не рендериться —
+  # це і є базовий стан решти прикладів.
+  def render_component(health_measured: nil, health_total: nil, **kwargs)
+    super(health_measured: health_measured, health_total: health_total, **kwargs)
+  end
+
   def build_cluster(id: 1, name: "Carpathian-Alpha", region: "Cherkasy Oblast",
                    health_index: 0.87, total_active_trees: 142, active_threats: false)
     # [TEST.12] Реальний незбережений `Cluster`. Колонки годуються як колонки
@@ -94,6 +103,28 @@ RSpec.describe Clusters::Show do
 
       expect(unmeasured).to include(I18n.t("ui.measurement.not_measured"))
       expect(unmeasured).not_to include("0%")
+    end
+
+    # 🔴 [ARCH.84] Трійка на ПОКРИТТЯ, і кожен член несе свою половину доказу.
+    # Без другого «87%» на лісі, виміряному на пʼяту частину, невідрізнимі від
+    # повного; без третього пін проходив би й на компоненті, що друкує підставу
+    # ЗАВЖДИ (тоді «виміряно 5 з 5» стояло б під кожним здоровим кластером і
+    # знецінило б сигнал). Дім тексту — `ui.measurement.coverage`, спільний із
+    # `OracleVisions::Index`, тож пінимо його ЗНАЧЕННЯ, а не свій рядок.
+    it "prints the ground under the health index when the sector was only partly measured" do
+      partial = render_component(cluster: cluster, gateways: [], recent_alerts: [],
+                                 health_measured: 1, health_total: 5)
+
+      expect(partial).to include("87%")
+      expect(partial).to include(I18n.t("ui.measurement.coverage", measured: 1, total: 5))
+    end
+
+    it "stays SILENT about coverage when every living tree of the sector reported" do
+      full = render_component(cluster: cluster, gateways: [], recent_alerts: [],
+                              health_measured: 5, health_total: 5)
+
+      expect(full).to include("87%")
+      expect(full).not_to include(I18n.t("ui.measurement.coverage", measured: 5, total: 5))
     end
 
     it "displays active trees count" do
@@ -281,8 +312,20 @@ RSpec.describe Clusters::Show do
     it "raises ArgumentError when cluster does not respond to :name" do
       bad = Object.new
       expect {
-        described_class.new(cluster: bad, gateways: [], recent_alerts: [])
+        described_class.new(cluster: bad, gateways: [], recent_alerts: [],
+                            health_measured: nil, health_total: nil)
       }.to raise_error(ArgumentError, /cluster must respond to :name/)
+    end
+
+    # 🔴 [ARCH.84] Ліхтар на РІШЕННЯ, а не на поведінку: пара покриття свідомо
+    # без дефолту, бо `nil`-дефолт зробив би забуту проводку невідрізнимою від
+    # «виміряно повністю» (`measurement_coverage` мовчить в обох випадках).
+    # Без цього прикладу перший, кому обовʼязковий kwarg заважає, тихо додасть
+    # `= nil` — і жоден інший приклад не почервоніє.
+    it "refuses to render without the coverage pair — a silent default would read as full measurement" do
+      expect {
+        described_class.new(cluster: cluster, gateways: [], recent_alerts: [])
+      }.to raise_error(ArgumentError, /health_measured/)
     end
   end
 

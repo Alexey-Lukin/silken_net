@@ -119,7 +119,7 @@ module Filecoin
         .daily_health_summary
         .where(target_date: target_date)
         .where(analyzable_type: "Cluster", analyzable_id: org_cluster_ids)
-        .select(:analyzable_id, :stress_index, :total_growth_points, :summary, :fraud_detected)
+        .select(:analyzable_id, :stress_index, :total_growth_points, :summary, :fraud_detected, :reasoning)
 
       return nil if summaries.empty?
 
@@ -129,6 +129,12 @@ module Filecoin
           {
             cluster_id: insight.analyzable_id,
             stress_index: insight.stress_index&.to_f,
+            # 🔴 [ARCH.84] Покриття їде РАЗОМ зі стресом, і саме тут воно найдорожче:
+            # цей артефакт пінується в IPFS ЯК ДОКАЗ, тож аудитор, що його відкриє,
+            # мусить бачити, про скільки дерев говорить середнє. Доти 1-із-5 і 5-із-5
+            # були в архіві невідрізнимі. `nil` = інсайт старший за це поле.
+            measured_trees: insight.measured_trees,
+            total_trees: insight.total_trees,
             total_growth_points: insight.total_growth_points,
             summary: insight.summary,
             fraud_detected: insight.fraud_detected
