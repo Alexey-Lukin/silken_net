@@ -116,6 +116,34 @@ RSpec.describe Mrv::LineageReportService do
     expect(result[:credits]).to be_empty
   end
 
+  # 🔴 [ARCH.101] Пара «своє лишається ⊥ своє відпадає», і ОБИДВА боки свої: чужа
+  # організація довела б тенант-скоуп (сусідній приклад це вже робить), а не напрямок.
+  # Форма спалення взята з реального писача — `BlockchainBurningService#create_slash_intent!`
+  # кладе `sourceable: naas_contract`, `token_type: :carbon_coin` і ДОДАТНУ суму, — а стан
+  # проганяється тим самим AASM, бо загроза реалізується лише на `:confirmed`.
+  it "тримає мінт у credits і НЕ пускає туди спалення — напрямок деривується, не читається зі знака" do
+    create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
+    mint = mint_confirmed!
+
+    contract = create(:naas_contract, cluster: cluster)
+    slash = BlockchainTransaction.create!(
+      wallet: wallet, sourceable: contract, to_address: "0x#{SecureRandom.hex(20)}",
+      amount: 3.0, token_type: :carbon_coin, status: :pending
+    )
+    slash.process!
+    slash.mark_as_sent!("0x#{SecureRandom.hex(32)}")
+    slash.confirm!(12_346, 0.01)
+
+    ids = bundle[:credits].map { |c| c.dig(:tx, :id) }
+
+    # ⊥ Позитивна половина несуча окремо: мінт має `sourceable_type IS NULL`, тож
+    # наївний `where.not(sourceable_type: …)` викинув би САМЕ його — тобто зникнення
+    # спалення без цього рядка не відрізнити від зникнення всього бандла.
+    expect(ids).to include(mint.id)
+    expect(ids).not_to include(slash.id)
+    expect(slash.reload).to be_burn
+  end
+
   it "inherits failed-attempt windows into the next successful credit (чесна межа (г))" do
     old_log = create(:telemetry_log, tree: tree, created_at: 3.hours.ago)
     failed_tx = wallet.lock_and_mint!(300, 100)

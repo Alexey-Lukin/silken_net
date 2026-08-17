@@ -71,10 +71,24 @@ module Mrv
     # тобто cluster-sourced слеш останнього дерева випадав із ДОКАЗОВОГО шляху
     # (ISO 14064/Verra), а не лише з екрана.
     # created_at-вікно = partition-pruning на партиційованій таблиці.
+    # 🔴 [ARCH.101] Напрямок ДЕРИВУЄТЬСЯ, і без цього рядка ключ `credits:` ніс спалення.
+    # Слеш-інтент теж `carbon_coin`, теж доходить до `:confirmed` і пишеться ДОДАТНОЮ
+    # сумою (модель каже це прямо), тож ані `token_type`, ані `status`, ані знак `amount`
+    # його не відсіюють — зовнішній аудитор ISO 14064/Verra дістав би штраф як виданий
+    # кредит. Форма береться та сама, що в `net_minted_supply`: `IS DISTINCT FROM` тримає
+    # мінти з `sourceable_type IS NULL`, чого простий `where.not` не робить.
+    #
+    # ⊥ Передумова, оголошена свідомо: після цього фільтра КОЖЕН рядок має гаманець —
+    # але це властивість складу ПИСАЧІВ (`wallet: nil` пише рівно `BlockchainBurningService`,
+    # «пастка останнього дерева»), а не інваріант схеми: `belongs_to :wallet` тут
+    # `optional`, і `for_organization` має другу гілку саме по `cluster_id`. Тобто
+    # `inherited_failed_attempts` безпечний ВИПАДКОВО; перший не-burn писач із
+    # кластерною координатою зробить його падінням на доказовому шляху.
     def credit_transactions
       BlockchainTransaction
         .for_organization(@organization.id)
         .where(token_type: [ :carbon_coin, :forest_coin ], status: :confirmed)
+        .where("sourceable_type IS DISTINCT FROM ?", BlockchainTransaction::BURN_SOURCEABLE_TYPE)
         .where(created_at: @from..@to)
         .order(:created_at, :id)
     end
