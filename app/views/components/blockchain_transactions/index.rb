@@ -3,6 +3,21 @@
 
 module BlockchainTransactions
   class Index < ApplicationComponent
+    # 🔴 [UI.4, 2026-08-17] Колонки — ОДИН дім, і це не косметика: `colspan`
+    # порожнього стану був числом, яке дрейфувало ДВІЧІ незалежно. Колонок
+    # стало вісім двома окремими проходами (`source` від ARCH.98, `audit` від
+    # UI.8), а `colspan` підняв лише один із них — тож порожній стан не
+    # перекривав останню колонку. Симптому в тестах не було, бо жоден приклад
+    # не звіряв ці два числа між собою: кожне окремо самоузгоджене, суперечність
+    # існує лише МІЖ ними.
+    # Найстійкіший лік — не «підняти 7 до 8», а зняти число: те, чого не існує
+    # окремим фактом, не розходиться. Пара `[ключ, додаткові класи]`.
+    COLUMNS = [
+      [ :type, "" ], [ :amount, "" ], [ :status, "" ], [ :network, "" ],
+      [ :source, "" ], [ :tx_hash, "" ],
+      [ :timestamp, "text-right" ], [ :audit, "text-right" ]
+    ].freeze
+
     def initialize(transactions:, pagy:)
       @transactions = transactions
       @pagy = pagy
@@ -48,14 +63,7 @@ module BlockchainTransactions
         table(class: "w-full text-left font-mono text-compact min-w-[640px]", role: "table") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
             tr do
-              th(scope: "col", class: "p-4") { t(".table.type") }
-              th(scope: "col", class: "p-4") { t(".table.amount") }
-              th(scope: "col", class: "p-4") { t(".table.status") }
-              th(scope: "col", class: "p-4") { t(".table.network") }
-              th(scope: "col", class: "p-4") { t(".table.source") }
-              th(scope: "col", class: "p-4") { t(".table.tx_hash") }
-              th(scope: "col", class: "p-4 text-right") { t(".table.timestamp") }
-              th(scope: "col", class: "p-4 text-right") { t(".table.audit") }
+              COLUMNS.each { |key, extra| th(scope: "col", class: "p-4 #{extra}".rstrip) { t(".table.#{key}") } }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
@@ -65,7 +73,7 @@ module BlockchainTransactions
               render Views::Shared::UI::EmptyState.new(
                 title: t(".table.empty"),
                 icon: "⬢",
-                colspan: 7
+                colspan: COLUMNS.size
               )
             end
           end

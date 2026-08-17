@@ -173,6 +173,25 @@ RSpec.describe BlockchainTransactions::Index do
       rendered = render_component(transactions: [], pagy: mock_pagy(count: 0, last: 1))
       expect(rendered).to include("No blockchain transactions recorded.")
     end
+
+    # 🔴 [UI.4] Пін на ЗГОДУ двох чисел, а не на кожне окремо — саме тому дефект
+    # і прожив: `colspan` був `7` при ВОСЬМИ `<th>`, тобто порожній стан не
+    # перекривав останню колонку. Кожен бік окремо самоузгоджений, суперечність
+    # існує лише МІЖ ними, тож жоден однобічний приклад її не бачить.
+    # Число дрейфувало двічі незалежно (`source` від ARCH.98, `audit` від UI.8).
+    it "порожній стан перекриває РІВНО стільки колонок, скільки їх у шапці" do
+      rendered = render_component(transactions: [], pagy: mock_pagy(count: 0, last: 1))
+
+      headers = rendered.scan(/<th\b/).size
+      colspan = rendered[/colspan="(\d+)"/, 1]&.to_i
+
+      # Ліхтарі: без них приклад був би зелений на розмітці, що не має ні того, ні того.
+      expect(headers).to be > 0, "у шапці нуль <th> — приклад безпредметний"
+      expect(colspan).not_to be_nil, "порожній стан не вивів colspan — приклад безпредметний"
+
+      expect(colspan).to eq(headers),
+                         "colspan=#{colspan} при #{headers} колонках — порожній стан не перекриває таблицю"
+    end
   end
 
   describe "pagination" do
