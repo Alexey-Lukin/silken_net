@@ -36,6 +36,7 @@ class StuckSentAnchorSweeperWorker
 
   def perform
     stuck = EthereumAnchor.stuck_sent.order(:created_at).limit(BATCH_LIMIT).to_a
+    return if stuck.empty?
 
     re_armed = 0
     stuck.each do |anchor|
@@ -50,7 +51,15 @@ class StuckSentAnchorSweeperWorker
       next # anchor видалено між SELECT і reload — нічого re-arm'ити
     end
 
-    return unless re_armed.positive?
+    # 🔴 [PERF.1] Нуль re-arm'ів ≠ нічого не сталося: без цього ліхтаря свіпер німий
+    # саме тоді, коли reload-гард пропустив УСЮ вибірку. Тут ціна вища за обсяг
+    # (1 якір/тиждень): мовчання стосується доказової бази L1. `info`, не `warn` —
+    # це спостереження про здоровий тракт; порожня вибірка мовчить окремим `return`.
+    if re_armed.zero?
+      Rails.logger.info "🧹 [ARCH.66] Розглянуто #{stuck.size} stuck-:sent anchor(s), " \
+                        "re-armed 0 — усіх довершив живий поллер між SELECT'ом і пере-читанням."
+      return
+    end
 
     Rails.logger.warn "🧹 [ARCH.66] Re-armed #{re_armed} stuck-:sent anchor(s) " \
                       "(updated_at older than #{EthereumAnchor::STUCK_SENT_THRESHOLD.inspect}) for confirmation."

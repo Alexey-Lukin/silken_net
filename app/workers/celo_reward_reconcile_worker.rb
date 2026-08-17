@@ -52,6 +52,7 @@ class CeloRewardReconcileWorker
                                  .order(:created_at)
                                  .limit(BATCH_LIMIT)
                                  .to_a
+    return if stale.empty?
 
     escalated = 0
     stale.each do |tx|
@@ -72,7 +73,19 @@ class CeloRewardReconcileWorker
       next # intent видалено між SELECT і reload — нічого ескалювати
     end
 
-    return unless escalated.positive?
+    # 🔴 [PERF.1] Нуль ескалацій ≠ нічого не сталося. Доти тут стояв
+    # `return unless escalated.positive?`, і воркер робився ПОВНІСТЮ німим саме тоді,
+    # коли reload-гард пропускав усю вибірку — тобто коли до BATCH_LIMIT інтентів
+    # висіли `:pending` понад поріг і всі довершились у мілісекундну щілину. Оператор
+    # не бачив ані «є N підозрілих», ані «усі виявились живими». Рівень `info`, а не
+    # `warn`: це спостереження про здоровий тракт, не інцидент. (Порожня вибірка
+    # мовчить окремим `return` вище — свідчить лише РОЗГЛЯНУТЕ, не кожен тик крона.)
+    if escalated.zero?
+      Rails.logger.info "🌿 [ARCH.64] Розглянуто #{stale.size} Celo-reward :pending-інтент(ів), " \
+                        "ескальовано 0 — усіх довершив живий CeloConfirmationWorker між " \
+                        "SELECT'ом і пере-читанням."
+      return
+    end
 
     Rails.logger.warn "🌿 [ARCH.64] Ескальовано #{escalated} застряглих Celo-reward :pending → " \
                       ":manual_review (тиха недоплата тепер видима через manual_review_depth)."

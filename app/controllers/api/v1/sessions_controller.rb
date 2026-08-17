@@ -63,7 +63,15 @@ module Api
       end
 
       # --- OMNIAUTH ВХІД (Google/Apple/LinkedIn/Facebook/Twitter) ---
-      # Маршрут: get/post '/auth/:provider/callback'
+      #
+      # 🔴 [ARCH.69] МАРШРУТУ ДО ЦЬОГО ЕКШЕНА НЕ ІСНУЄ — і не існувало ЖОДНОГО дня
+      # історії репо (`git log --all -S` по `routes.rb` порожній). Доти цей коментар
+      # називав «get/post '/auth/:provider/callback'», тобто описував дріт, якого
+      # ніхто ніколи не тягнув. OmniAuth-гемів у Gemfile теж немає, отже
+      # `request.env["omniauth.auth"]` не заповниться, і тіло нижче недосяжне.
+      # Лишається як заготовка ПІД дротування (⚖️ founder: OAuth потрібен), а не як
+      # живий шлях; доля «маршрут зʼявляється / екшен зникає» тримається разом із
+      # ним → [`00_07`](../../../../docs/00_07_Action_Plan_Tracker.md) ARCH.69.
       def omniauth_create
         auth = request.env["omniauth.auth"]
 

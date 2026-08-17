@@ -64,13 +64,37 @@ RSpec.describe CeloRewardReconcileWorker, type: :worker do
       expect(evm.reload.status_pending?).to be true
     end
 
-    it "is a no-op (no escalation, no warn) when nothing is stuck" do
+    # [PERF.1] Друга половина свідка нижче: РОЗГЛЯНУТЕ звітується, порожня вибірка —
+    # ні. Без цього рядка ліхтар «ескальовано 0» сипав би в лог на кожен тик крона,
+    # і саме таке послаблення читалося б як нешкідливе.
+    it "is a no-op (no escalation, no warn, no lantern) when nothing is stuck" do
       celo_reward_intent(status: :pending, created_at: 5.minutes.ago) # fresh only
       allow(Rails.logger).to receive(:warn)
+      allow(Rails.logger).to receive(:info)
 
       described_class.new.perform
 
       expect(Rails.logger).not_to have_received(:warn)
+      expect(Rails.logger).not_to have_received(:info).with(/Розглянуто/)
+    end
+
+    # 🔴 [PERF.1] Свідок для НУЛЬОВОГО результату. Сиблінг `StuckSentTransactionSweeperWorker`
+    # дістав його 2026-08-15, а цей воркер — ні, хоч форму гарда сиблінг позичив
+    # САМЕ ТУТ (його коментар називає цей файл прецедентом). Без свідка воркер німий
+    # рівно тоді, коли гард пере-читання пропустив УСЮ вибірку, тобто коли застряглих
+    # інтентів було найбільше: оператор не бачить ані «є N підозрілих», ані «усі живі».
+    # Пін на лог, бо іншого спостережного виходу в цієї гілки немає.
+    it "says out loud that it examined intents even when it escalated NONE" do
+      stuck = celo_reward_intent(status: :pending, created_at: 1.hour.ago)
+
+      allow(BlockchainTransaction).to receive(:find_with_partition_pruning).and_wrap_original do |orig, *args, **kwargs|
+        stuck.update_columns(status: BlockchainTransaction.statuses[:sent])
+        orig.call(*args, **kwargs)
+      end
+
+      expect(Rails.logger).to receive(:info).with(/Розглянуто 1 Celo-reward/)
+
+      described_class.new.perform
     end
 
     it "caps escalations at BATCH_LIMIT per run (backlog drains across crons)" do

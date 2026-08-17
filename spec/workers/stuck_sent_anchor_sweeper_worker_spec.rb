@@ -54,6 +54,21 @@ RSpec.describe StuckSentAnchorSweeperWorker, type: :worker do
       create(:ethereum_anchor, :sent) # fresh — not stuck
 
       expect(Rails.logger).not_to receive(:warn).with(/Re-armed/)
+      expect(Rails.logger).not_to receive(:info).with(/Розглянуто/)
+
+      described_class.new.perform
+    end
+
+    # 🔴 [PERF.1] Свідок для НУЛЬОВОГО результату — третій член класу (два сусіди
+    # дістали його раніше). Без нього свіпер німий рівно тоді, коли reload-гард
+    # пропустив УСЮ вибірку: оператор не бачить ані «є N застряглих якорів», ані
+    # «усіх довершив живий поллер», а це доказова база L1-якоря.
+    it "says out loud that it examined anchors even when it re-armed NONE" do
+      stuck = make_stuck(create(:ethereum_anchor, :sent))
+      allow(EthereumAnchor).to receive(:stuck_sent).and_return(EthereumAnchor.where(id: stuck.id))
+      stuck.update_column(:status, EthereumAnchor.statuses[:confirmed])
+
+      expect(Rails.logger).to receive(:info).with(/Розглянуто 1 stuck-:sent anchor/)
 
       described_class.new.perform
     end
