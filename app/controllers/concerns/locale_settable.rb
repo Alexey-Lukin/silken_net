@@ -59,10 +59,16 @@ module LocaleSettable
   # lookup), а `header_preferred_language` парсить заголовок клієнта й на битому
   # вході пише в лог. Тобто ціна невидима саме там, де відповідь уже відома з
   # першого щабля, і зростає з кожним новим щаблем, який хтось допише нижче.
-  def resolve_locale
+  # 🔴 [I18N.3] `account:` — ЯВНИЙ актор, і він існує рівно для межі ЗМІНИ актора.
+  # На `POST /login` (`skip_before_action :authenticate_user!`) акаунт-щабель
+  # порожній за побудовою, тож flash писався мовою браузера, а наступна сторінка
+  # рендерилась мовою акаунта; на `DELETE /logout` те саме дзеркально. Параметр,
+  # а не другий ланцюг: копія щаблів розійшлась би з цією при першій же правці
+  # порядку — а порядок тут ратифікований присудом власника.
+  def resolve_locale(account: locale_account)
     supported_locale(params[:locale]) ||
       supported_locale(cookies[:locale]) ||
-      supported_locale(locale_account&.locale) ||
+      supported_locale(account&.locale) ||
       supported_locale(header_preferred_language) ||
       I18n.default_locale
   end

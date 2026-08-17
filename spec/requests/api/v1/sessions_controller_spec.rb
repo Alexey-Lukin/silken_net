@@ -9,6 +9,39 @@ RSpec.describe Api::V1::SessionsController, type: :request do
   let(:user) { create(:user, organization: organization, password: "password12345") }
 
   describe "POST /login" do
+    # 🔴 [I18N.3] Межа ЗМІНИ АКТОРА — єдине місце, де локаль ЗАПИСУ й локаль
+    # РЕНДЕРУ розходяться. `POST /login` іде під `skip_before_action
+    # :authenticate_user!`, тож на момент запису flash акаунт-щабель резолвера
+    # порожній за побудовою: вітання пишеться мовою браузера, а наступна сторінка
+    # вже рендериться мовою АКАУНТУ. Людина з `users.locale = "lv"` без cookie й
+    # з `Accept-Language: en` діставала латиську сторінку з англійським вітанням.
+    # ⚠️ Пін дивиться на ТЕКСТ у flash, а не на статус: розходження мов — єдина
+    # спостережна відмінність, і на статус воно не впливає ніяк.
+    it "writes the greeting in the locale the NEXT page will render in" do
+      user.update!(locale: "lv")
+
+      post "/login",
+           params: { email: user.email_address, password: "password12345" },
+           headers: { "HTTP_ACCEPT_LANGUAGE" => "en" }
+
+      expect(flash[:success]).to eq(I18n.t("flash.sessions.neural_link_established", locale: :lv))
+      expect(flash[:success]).not_to eq(I18n.t("flash.sessions.neural_link_established", locale: :en))
+    end
+
+    # Дзеркало на ВИХОДІ: там актор ЗНИКАЄ, тож прощання не сміє їхати мовою
+    # акаунта, якого на наступній сторінці вже немає — інакше та сама розбіжність
+    # приїжджає з протилежного боку (сторінка логіну мовою браузера, прощання
+    # мовою щойно знятого акаунта).
+    it "writes the farewell without the account tier the logout has just removed" do
+      user.update!(locale: "lv")
+      post "/login", params: { email: user.email_address, password: "password12345" },
+                     headers: { "HTTP_ACCEPT_LANGUAGE" => "en" }
+
+      delete "/logout", headers: { "HTTP_ACCEPT_LANGUAGE" => "en" }
+
+      expect(flash[:success]).to eq(I18n.t("flash.sessions.neural_link_severed", locale: :en))
+    end
+
     it "authenticates with valid credentials" do
       post "/login", params: { email: user.email_address, password: "password12345" }, as: :json
 

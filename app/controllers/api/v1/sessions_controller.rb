@@ -53,9 +53,16 @@ module Api
         if user&.authenticate(params[:password])
           establish_session(user)
 
-          respond_to do |format|
-            format.json { render_api_login_success(user) }
-            format.html { redirect_to dashboard_index_path, success: I18n.t("flash.sessions.neural_link_established") }
+          # 🔴 [I18N.3] Вітання пишеться в локалі, якою вже РЕНДЕРИТЬСЯ наступна
+          # сторінка. Цей екшен іде під `skip_before_action :authenticate_user!`,
+          # тож на момент `set_locale` акаунт-щабель порожній за побудовою — без
+          # цього людина з `users.locale = "lv"` і браузером `en` діставала
+          # латиський дашборд з англійським вітанням.
+          I18n.with_locale(resolve_locale(account: user)) do
+            respond_to do |format|
+              format.json { render_api_login_success(user) }
+              format.html { redirect_to dashboard_index_path, success: I18n.t("flash.sessions.neural_link_established") }
+            end
           end
         else
           render_login_failure
@@ -112,15 +119,21 @@ module Api
         # проти session-fixation — вихід мусить бути симетричним входу.
         reset_session
 
-        respond_to do |format|
-          format.json { render json: { message: I18n.t("flash.sessions.logout_success") }, status: :ok }
-          # 303, не 302 [UI.7]: logout приходить `button_to`-ом (DELETE), а `fetch`
-          # зберігає метод на 301/302 — тобто браузер перевидавав би DELETE на
-          # `/login`, де зареєстровано лише GET. Сесію на той момент уже знято.
-          format.html do
-            redirect_to login_path,
-                        status: :see_other,
-                        success: I18n.t("flash.sessions.neural_link_severed")
+        # 🔴 [I18N.3] Дзеркало входу: тут актор ЗНИКАЄ, тож прощання не сміє їхати
+        # мовою щойно знятого акаунта — сторінка логіну вже рендериться без нього.
+        # `account: nil` явний, бо `current_user` лишається мемоїзованим і після
+        # `reset_session`, тобто «нічого не передавати» дало б стару відповідь.
+        I18n.with_locale(resolve_locale(account: nil)) do
+          respond_to do |format|
+            format.json { render json: { message: I18n.t("flash.sessions.logout_success") }, status: :ok }
+            # 303, не 302 [UI.7]: logout приходить `button_to`-ом (DELETE), а `fetch`
+            # зберігає метод на 301/302 — тобто браузер перевидавав би DELETE на
+            # `/login`, де зареєстровано лише GET. Сесію на той момент уже знято.
+            format.html do
+              redirect_to login_path,
+                          status: :see_other,
+                          success: I18n.t("flash.sessions.neural_link_severed")
+            end
           end
         end
       end
