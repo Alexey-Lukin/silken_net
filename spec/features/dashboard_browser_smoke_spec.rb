@@ -166,4 +166,50 @@ RSpec.describe "Dashboard in a real browser", :js do
     expect(page).to have_css(".leaflet-pane", visible: :all)
     expect(page).to have_css(".custom-tree-marker", visible: :all)
   end
+
+  # 🔴 [UI.11] Приклад вище стереже ПУСКАЧ (одна форма зі щитом `advance`), цей —
+  # сам МЕХАНІЗМ. Різниця несуча: доти безпека мапи трималась на тому, що на
+  # `/dashboard` рівно одна форма й вона екранована; друга форма зробила б морф
+  # досяжним, і жоден приклад не почервонів би. Тепер полотно непрозоре для морфу
+  # само по собі, тож пускач більше не є частиною доказу.
+  #
+  # ⚠️ Морф тут викликається НАПРЯМУ вставкою справжнього `<turbo-stream
+  # action="refresh">` — це рівно та розмітка, яку шле `broadcast_refresh_to`
+  # (`turbo_stream_refresh_tag` без атрибутів, `action_helper.rb:44`), тож
+  # приклад їде продовим шляхом клієнта, а не вигаданим.
+  # 🔬 Виміряно перед фіксом: панелей було **7**, після морфу — **0**; під
+  # `method: "replace"` — 7 → 7. Тобто мутація тут не теоретична.
+  it "survives a morph refresh — the canvas declares itself opaque to Idiomorph" do
+    create(:tree, cluster: create(:cluster, organization: organization))
+
+    sign_in_as(user, password: password)
+    expect(page).to have_css(".leaflet-pane", visible: :all)
+
+    # Ліхтар на ПЕРЕДУМОВУ: без нього приклад був би зелений і тоді, коли морф
+    # узагалі не налаштований, тобто доводив би відсутність механізму.
+    expect(page.evaluate_script(<<~JS)).to eq("morph")
+      document.querySelector('meta[name="turbo-refresh-method"]').content
+    JS
+
+    panes_before = page.evaluate_script("document.querySelectorAll('.leaflet-pane').length")
+    expect(panes_before).to be_positive
+
+    # 🔴 Ліхтар на ПОДІЮ, а не `sleep`. Перша редакція цього приклада була
+    # ВАКУУМНА і показала це мутацією: без слухача морф-скіпу вона лишалась
+    # зеленою, бо `have_css` встигав прочитати панелі ДО того, як візит доїхав.
+    # Тобто зелене означало «ще не сталось», не «вижило». Turbo шле `turbo:morph`
+    # після рендеру (`turbo.js:4034`) — чекаємо саме на нього.
+    page.execute_script(<<~JS)
+      window.__morphSeen = false;
+      document.addEventListener("turbo:morph", () => { window.__morphSeen = true }, { once: true });
+      document.body.insertAdjacentHTML('beforeend', '<turbo-stream action="refresh"></turbo-stream>');
+    JS
+
+    Timeout.timeout(Capybara.default_max_wait_time) do
+      sleep 0.1 until page.evaluate_script("window.__morphSeen === true")
+    end
+
+    expect(page.evaluate_script("document.querySelectorAll('.leaflet-pane').length")).to eq(panes_before)
+    expect(page).to have_css(".custom-tree-marker", visible: :all)
+  end
 end

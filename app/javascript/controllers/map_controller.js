@@ -9,7 +9,34 @@ export default class extends Controller {
   // I18N.1, і збільшувати його новим станом не можна.
   static values = { unmeasuredLabel: String }
 
+  // 🔴 [UI.11] Полотно оголошує себе НЕПРОЗОРИМ для морфу — і це лік КОРЕНЯ, а не
+  // обхід. Виміряно браузером: під `turbo-refresh-method: morph` (глобальний
+  // метатег `DashboardLayout`) морф лишає САМ вузол на місці, тож Stimulus не
+  // кличе ні `disconnect()`, ні `connect()`, — а idiomorph зносить його дітей,
+  // яких немає в серверній відповіді. Панелі Leaflet: **7 → 0**, `this.map`
+  // лишається вказувати на мертвий DOM. Контроль тим самим приладом:
+  // `method: "replace"` дає 7 → 7.
+  //
+  // Механіка скіпу (`turbo.js` 2.0.23): `beforeNodeMorphed` шле cancelable
+  // `turbo:before-morph-element` (:2344), а `morphNode` на `false` виходить
+  // ДО `morphAttributes`/`morphChildren` (:1893-1899) — тобто одного слухача на
+  // корені досить, усе піддерево лишається недоторканим.
+  //
+  // ⛔ НЕ `data-turbo-permanent`, хоч він дав би той самий скіп (:2343): той
+  // заборонений у цьому дереві з нульовим винятком (`no_turbo_permanent_spec`),
+  // і заслужено — permanent діє ще й на Drive-візитах, тобто заморозив би
+  // серверні дані. Подієвий скіп вужчий: він стосується ВИКЛЮЧНО морфу.
+  //
+  // ⚠️ Стеля названа: морф більше не приносить сюди свіжий серверний список
+  // вузлів. Це не втрата — доставку тримає власний тракт (`Tree#broadcast_map_update`
+  // → `map_node_{id}`), а морф-refresh на цій сторінці й сьогодні не стається
+  // (єдина форма `/dashboard` — перемикач мови — несе `turbo_action: "advance"`).
+  // ⊕ Дім класу: `04_04 §8`. Сусідній won't-do про цей самий хук
+  // (`FlashMessages`) сюди НЕ переноситься: утриманий flash бреше, бо є
+  // ТВЕРДЖЕННЯМ про минулу дію; утримане полотно — лише оболонка рендеру.
   connect() {
+    this.skipMorph = (event) => event.preventDefault()
+    this.element.addEventListener("turbo:before-morph-element", this.skipMorph)
     this.ensureMap()
   }
 
@@ -39,6 +66,12 @@ export default class extends Controller {
   }
 
   disconnect() {
+    // [UI.11] Слухач знімається явно: `disconnect()` тут викликається на Drive-візиті
+    // (де вузол таки пересаджують), і лишений слухач пережив би власний контролер.
+    if (this.skipMorph) {
+      this.element.removeEventListener("turbo:before-morph-element", this.skipMorph)
+      this.skipMorph = null
+    }
     clearTimeout(this.resizeTimeout)
     if (this.map) {
       this.map.off()
