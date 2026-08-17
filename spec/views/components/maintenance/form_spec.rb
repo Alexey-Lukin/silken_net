@@ -85,6 +85,18 @@ RSpec.describe Maintenance::Form do
       expect(html).to include('name="maintenance_record[action_type]"')
     end
 
+    # 🔴 [I18N.1] У `select`ʼі обидва роди вжитку стоять в ОДНОМУ літералі: мітка
+    # для ока ⊥ значення для сабміту. Доти мітка йшла `.humanize`, тобто форма, де
+    # лісівник ОБИРАЄ дію, лишалась англійською в усіх локалях — третій сайт тієї
+    # самої родини після `index` і `show`. Пін тримає обидві половини одразу.
+    it "localizes the action_type option labels while keeping raw values" do
+      uk_html = I18n.with_locale(:uk) { render_component(record: record) }
+
+      expect(uk_html).to include('value="repair"')
+      expect(uk_html).to include(">Ремонт</option>")
+      expect(uk_html).not_to include(">Repair</option>")
+    end
+
     it "renders the performed_at datetime field" do
       expect(html).to include('name="maintenance_record[performed_at]"')
     end

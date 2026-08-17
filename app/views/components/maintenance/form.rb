@@ -51,8 +51,11 @@ module Maintenance
           # --- РЯДОК 2: Action + Timestamp ---
           div(class: "grid grid-cols-2 gap-6") do
             field_container(f, :action_type, t(".action_type")) do |aria|
+              # [I18N.1] Мітка — з дому, ЗНАЧЕННЯ лишається сирим токеном: у select'і
+              # обидва роди вжитку стоять в одному літералі, і сплутати їх коштує
+              # зламаного сабміту, а не англійського слова.
               f.select :action_type,
-                MaintenanceRecord.action_types.keys.map { |k| [ k.humanize, k ] },
+                MaintenanceRecord.action_types.keys.map { |k| [ MaintenanceRecord.action_type_label(k), k ] },
                 { prompt: t(".action_prompt") },
                 class: input_classes, **aria
             end
