@@ -257,4 +257,89 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
       expect(EwsAlert.where(message_key: "queen_ota_stuck")).to be_empty
     end
   end
+
+# 🔴 [ARCH.75] Пʼята нога: наказ, який уже НЕМОЖЛИВО доставити, мусить діставати
+# термінальний стан — і поза poll-трактом.
+#
+# Механізм, чому без неї він лежить вічно. Термінатор у системі СПРОЄКТОВАНИЙ —
+# `ActuatorCommandWorker` несе `sidekiq_retries_exhausted`, який ставить
+# `failed`. Але FW.60 зняв push-тракт, і живих enqueuerʼів того воркера нуль
+# (єдиний `perform_async` у дереві живе всередині коментаря), тож хук у проді
+# не викликається ЖОДНОГО разу; сюїта тримає його зеленим, смикаючи руками.
+# Лишається poll-тракт, а він матеріалізує кінець лише в момент видачі — тобто
+# рівно тоді, коли шлюз ПРИХОДИТЬ. На шлюзі, що не прийде більше ніколи, наказ
+# лишається `pending` назавжди.
+#
+# 🔴 Ціна не бухгалтерська: `live_pending` тримає 409 у контролері, а наказ від
+# людини не має `expires_at` ВЗАГАЛІ (писачів TTL рівно два — протокольний
+# `EmergencyResponseService` і STOP safety-свіпа), тож `scope :expired` його не
+# матчить ніколи. Один клік по мертвому шлюзу назавжди відрізав форестера від
+# цього актуатора.
+#
+# ⚖️ Дискримінатор — ПОДІЯ, не час (присуд founder 2026-08-17): наказ мертвий,
+# коли його шлюз оголошено `faulty`. Сигнал уже ратифікований і рахується;
+# часовий поріг завів би друге непідписане число поруч із відкритим ⚖️ про
+# `relevance`. Свіп по стану (а не гачок на `report_fault!`) обраний тому, що
+# шляхів у `faulty` ДВА — цей воркер і `HeliumSosWorker`, — тож гачок на один
+# був би N−1 із N.
+describe "недоставні накази на мертвому шлюзі [ARCH.75]" do
+  # ⚠️ ФІКСТУРА тут несуча, і дві перші редакції були нереальні — система сама
+  # це показала. (1) Наказ можна подати лише ЖИВІЙ Королеві: `dispatch_to_edge!`
+  # (after_commit on create) валить його одразу, якщо актуатор не готовий, тож
+  # «створити на вже-мертвому» не буває. (2) `faulty` зі СВІЖИМ `last_seen_at`
+  # нога 2 повертає в `idle` ще до цієї ноги — і це правильно. Отже єдиний
+  # чесний порядок: подати наказ живій, і лише потім замовкнути.
+  def command_on(gateway, status: :issued)
+    create(:actuator_command, status: status, actuator: create(:actuator, gateway: gateway))
+  end
+
+  def live_gateway
+    create(:gateway, cluster: cluster, state: :active,
+                     config_sleep_interval_s: 60, last_seen_at: Time.current)
+  end
+
+  # Замовкання ПІСЛЯ видачі наказу; `update_columns` — щоб не смикати колбеки.
+  def go_silent!(gateway)
+    gateway.update_columns(last_seen_at: 10.minutes.ago)
+  end
+
+  it "переводить у failed наказ, який уже неможливо доставити" do
+    gateway = live_gateway
+    command = command_on(gateway)
+    go_silent!(gateway)
+    gateway.report_fault! # уже мертва до початку проходу (напр. шлях HeliumSos)
+
+    expect { sweep }.to change { command.reload.status }.from("issued").to("failed")
+  end
+
+  # 🔴 Половина, без якої гейт нічого не доводить: свіп, що валить УСЕ підряд,
+  # проходить перший приклад так само.
+  it "НЕ чіпає наказ на живому шлюзі" do
+    command = command_on(live_gateway)
+
+    expect { sweep }.not_to(change { command.reload.status })
+  end
+
+  # `pending` = issued+sent; наказ, що вже дійшов, термінувати нема за що.
+  it "НЕ чіпає наказ, який Королева вже підтвердила" do
+    gateway = live_gateway
+    command = command_on(gateway, status: :acknowledged)
+    go_silent!(gateway)
+    gateway.report_fault!
+
+    expect { sweep }.not_to(change { command.reload.status })
+  end
+
+  # 🔴 Порядок ніг несучий: Королева, що вмирає В ЦЬОМУ Ж проході, мусить лишити
+  # по собі термінований наказ тим самим проходом — інакше він живе зайвий цикл
+  # крону. Тут `report_fault!` НЕ кличеться: його робить нога 1.
+  it "прибирає накази Королеви, яка замовкла саме в цьому проході" do
+    gateway = live_gateway
+    command = command_on(gateway)
+    go_silent!(gateway)
+
+    expect { sweep }.to change { command.reload.status }.from("issued").to("failed")
+    expect(gateway.reload).to be_faulty
+  end
+end
 end

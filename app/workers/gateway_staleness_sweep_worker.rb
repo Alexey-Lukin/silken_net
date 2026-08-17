@@ -18,6 +18,8 @@
 #      ходять (online), а підписи зникли > ATTEST_LAPSE_HOURS — можлива
 #      підміна прошивки/деградація L1. Поки лише метрика+лог (алерт-тип
 #      додамо, коли L1 стане mandatory — свідома стеля, 00_07 ARCH.54).
+#   4. [ARCH.59] Королева, залипла в `:updating` → finish_update! + алерт.
+#   5. [ARCH.75] накази до `faulty`-Королеви → `failed` (див. нижче).
 class GatewayStalenessSweepWorker
   include Sidekiq::Job
   # alerts(2): народжує life-safety сигнали EWS — вище за critical(3)-slash
@@ -42,13 +44,17 @@ class GatewayStalenessSweepWorker
     recovered = recover_returned_gateways
     lapsed    = observe_attest_lapse
     released  = release_stuck_ota_gateways
+    # ⚠️ ПІСЛЯ `flag_silent_gateways` навмисно: Королева, що замовкла в цьому ж
+    # проході, мусить лишити по собі термінований наказ ТИМ САМИМ проходом —
+    # інакше він живе зайвий цикл крону. Порядок запінений прикладом.
+    reaped    = reap_undeliverable_commands
 
     SilkenNet::Metrics::GATEWAYS_FAULTY.set(Gateway.faulty.count)
     SilkenNet::Metrics::GATEWAY_ATTEST_LAPSED.set(lapsed)
 
     Rails.logger.info(
       "👑 [ARCH.54] Staleness sweep: flagged=#{flagged} recovered=#{recovered} " \
-      "attest_lapsed=#{lapsed} ota_released=#{released}"
+      "attest_lapsed=#{lapsed} ota_released=#{released} cmd_reaped=#{reaped}"
     )
   end
 
@@ -140,6 +146,51 @@ class GatewayStalenessSweepWorker
   #     виходить ДО hint'а), Королева, що не поллить (CGNAT/мертва), і dangling
   #     `pending_firmware_id` (bigint без FK → `ota_packages` віддає nil).
   #     Якір — той самий `ota_started_at`, який тепер ставить диспетчер.
+  # [ARCH.75] Пʼятий обовʼязок: наказ, який уже НЕМОЖЛИВО доставити, дістає
+  # термінальний стан — і поза poll-трактом.
+  #
+  # 🔴 Чому це взагалі потрібно: термінатор СПРОЄКТОВАНИЙ і МЕРТВИЙ.
+  # `ActuatorCommandWorker` несе `sidekiq_retries_exhausted`, який ставить
+  # `failed` — але FW.60 зняв push-тракт, і живих enqueuerʼів того воркера нуль
+  # (єдиний `perform_async` у дереві живе всередині коментаря). Хук у проді не
+  # викликається жодного разу; зеленим його тримає сюїта, що смикає воркер
+  # руками. Лишається poll-тракт, а він матеріалізує кінець наказу рівно в
+  # момент видачі — тобто тоді, коли Королева ПРИХОДИТЬ. На тій, що не прийде
+  # більше ніколи, наказ лежав би `pending` вічно.
+  #
+  # 🔴 Ціна була не бухгалтерська: контролер тримає 409 на `live_pending`, а
+  # наказ від ЛЮДИНИ не має `expires_at` взагалі (писачів TTL рівно два —
+  # `EmergencyResponseService` і STOP safety-свіпа), тож `scope :expired` його
+  # не матчить ніколи. Один клік по Королеві, що потім померла, назавжди
+  # відрізав форестера від цього актуатора.
+  #
+  # ⚖️ Дискримінатор — ПОДІЯ, не час (присуд founder 2026-08-17): наказ мертвий,
+  # коли його Королева оголошена `faulty`. Часовий поріг завів би друге
+  # непідписане число поруч із відкритим ⚖️ про `relevance`, а цей сигнал уже
+  # ратифікований і рахується сусідніми ногами.
+  #
+  # 🔒 Свіп по СТАНУ, а не гачок на `report_fault!`: шляхів у `faulty` два —
+  # нога (1) вище і `HeliumSosWorker`, — тож гачок на один був би N−1 із N.
+  # ⚠️ Стеля названа: Королева вміє ПОВЕРТАТИСЬ (нога 2), тож наказ, поданий за
+  # хвилину до обриву звʼязку, згорить, хоч пристрій ожив би згодом. Це
+  # свідомий обмін — «висить вічно й блокує канал» гірше за «згорів при обриві»,
+  # а для протокольних наказів чесний строк дає їхній власний `expires_at`.
+  def reap_undeliverable_commands
+    count = 0
+
+    ActuatorCommand.pending.joins(actuator: :gateway).merge(Gateway.faulty).find_each do |command|
+      command.fail!("🛑 [ARCH.75] Королева недосяжна (faulty) — наказ не буде доставлено")
+      ActuatorCommandWorker.broadcast_command_state_static(command)
+      count += 1
+    rescue ActiveRecord::ActiveRecordError, AASM::InvalidTransition => e
+      # Rescue НА ЗАПИС (дзеркало ніг 1 і 4): один проблемний наказ не сміє
+      # обірвати прохід для решти флоту.
+      Rails.logger.error "🛑 [ARCH.75] Наказ ##{command.id} не термінований: #{e.message}"
+    end
+
+    count
+  end
+
   def stuck_ota_scope
     anchored = Gateway.where(state: :updating).where(ota_started_at: ...OTA_STUCK_MARGIN.ago)
     anchorless = Gateway.where(state: :updating, ota_started_at: nil)
