@@ -22,6 +22,17 @@ RSpec.describe Provisioning::New do
   let(:families) { [ build_family ] }
   let(:html)     { render_component(clusters: clusters, families: families) }
 
+  # 🔴 [UI.3] Носій «мітка ⟷ контрол» стояв на ТРЬОХ формах із десяти: решта дістала
+  # код-міграцію без піна, тож зламаний `for=` лишався зеленим (виміряно мутацією на
+  # `maintenance/form`). Ліхтар проти вакууму обовʼязковий — форма без міток зробила
+  # б приклад порожнім, а порожнє «порушень нема» читається як здоровʼя.
+  it "associates every label with a real form control" do
+    doc = Nokogiri::HTML5.fragment(html)
+
+    expect(doc.css("label")).not_to be_empty, "no labels rendered — the pin would be vacuous"
+    expect(LabelAssociation.orphan_labels(doc).map { |l| l.text.strip }).to be_empty
+  end
+
   describe "header section" do
     # [I18N.1-нейминг] Заголовок компонента був підмножиною заголовка сторінки
     # («Hardware Initiation» проти «Hardware Initiation Ritual»).

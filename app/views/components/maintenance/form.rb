@@ -138,10 +138,14 @@ module Maintenance
             div(class: "flex items-center gap-3") do
               f.check_box :hardware_verified,
                 class: "h-4 w-4 border border-gaia-border bg-gaia-input-bg text-gaia-primary focus-visible:ring-0"
-              label(
-                for: "maintenance_record_hardware_verified",
-                class: "text-mini uppercase tracking-widest text-gaia-text-muted cursor-pointer"
-              ) { t(".hardware_verified") }
+              # [UI.3] Через білдер, не голий `label(for: …)`: рукописний id тримався
+              # на тому, що ім'я моделі не змінюється — а перевіряти це не було чим
+              # (мутація «зламати for» лишала сюїту зеленою, бо пін на сироти-мітки
+              # цієї спеки не мав узагалі; він приїхав тим самим ходом).
+              f.label :hardware_verified,
+                class: "text-mini uppercase tracking-widest text-gaia-text-muted cursor-pointer" do
+                t(".hardware_verified")
+              end
             end
           end
 

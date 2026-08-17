@@ -7,6 +7,14 @@ RSpec.describe Passwords::Reset do
   let(:token) { "abc123securetoken" }
   let(:html)  { render_component(token: token, flash_alert: nil) }
 
+  # 🔴 [UI.3] Див. `provisioning/new_spec` — периметр носія був третиною поверхні.
+  it "associates every label with a real form control" do
+    doc = Nokogiri::HTML5.fragment(html)
+
+    expect(doc.css("label")).not_to be_empty, "no labels rendered — the pin would be vacuous"
+    expect(LabelAssociation.orphan_labels(doc).map { |l| l.text.strip }).to be_empty
+  end
+
   describe "header" do
     it "renders New Key heading" do
       expect(html).to include("New Key")

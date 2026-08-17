@@ -6,6 +6,14 @@ require "rails_helper"
 RSpec.describe Passwords::Forgot do
   let(:html) { render_component }
 
+  # 🔴 [UI.3] Див. `provisioning/new_spec` — периметр носія був третиною поверхні.
+  it "associates every label with a real form control" do
+    doc = Nokogiri::HTML5.fragment(html)
+
+    expect(doc.css("label")).not_to be_empty, "no labels rendered — the pin would be vacuous"
+    expect(LabelAssociation.orphan_labels(doc).map { |l| l.text.strip }).to be_empty
+  end
+
   describe "header" do
     it "renders Recovery heading" do
       expect(html).to include("Recovery")

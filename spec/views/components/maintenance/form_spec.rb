@@ -22,6 +22,31 @@ RSpec.describe Maintenance::Form do
 
   # 🔴 [UI.3] Найбільша форма дерева — одинадцять `field_container`, і кожен
   # прокидає ARIA окремо, тож дротування доводиться тут, а не в еталоні.
+  # 🔴 [UI.3] Пін на сироти-мітки цієї спеки НЕ МАЛА ЗОВСІМ — при тому, що це
+  # найбільша форма дерева. Виміряно мутацією: зламаний `for=` на чекбоксі
+  # `hardware_verified` лишав сюїту ЗЕЛЕНОЮ. Клас «мітка без контрола» вважався
+  # закритим міграцією, але носій стояв лише на трьох формах із десяти — тобто
+  # закрито було для файлів, які правили, а не для поверхні.
+  #
+  # ⚠️ Обидва рендери, і це несуче: чекбокс `hardware_verified` існує ЛИШЕ в гілці
+  # редагування, тож пін на формі створення до нього не дотягується за побудовою.
+  describe "label ⟷ control association" do
+    it "associates every label with a real control (new record)" do
+      doc = Nokogiri::HTML5.fragment(render_component(record: build(:maintenance_record)))
+
+      expect(doc.css("label")).not_to be_empty, "no labels rendered — the pin would be vacuous"
+      expect(LabelAssociation.orphan_labels(doc).map { |l| l.text.strip }).to be_empty
+    end
+
+    it "associates every label with a real control (edit record — extra checkbox)" do
+      doc = Nokogiri::HTML5.fragment(render_component(record: create(:maintenance_record)))
+
+      expect(doc.css("input[type=checkbox]")).not_to be_empty,
+        "edit-only checkbox absent — the branch this pin exists for did not render"
+      expect(LabelAssociation.orphan_labels(doc).map { |l| l.text.strip }).to be_empty
+    end
+  end
+
   describe "per-field error indication" do
     let(:invalid_record) do
       record = MaintenanceRecord.new

@@ -43,15 +43,15 @@ RSpec.describe Sessions::New do
     # рендерилась, приклади були зелені, а скрінрідер поля не називав (WCAG 1.3.1).
     # Пін парсить розмітку, а не шукає рядок: перейменування атрибута чи ключа
     # локалі його не обійде.
+    # ⚠️ Предикат — зі СПІЛЬНОГО дому (`spec/support/label_association.rb`), не
+    # інлайн: локальна копія знає лише ЯВНУ асоціацію (`for`⟷`id`) і оголосила б
+    # сиротою законну ВКЛАДЕНУ мітку. Дім має обидві гілки й власного носія на
+    # GREEN-половину; інлайн-копія — це друга реалізація без нього.
     it "associates every label with a real form control" do
       doc = Nokogiri::HTML5.fragment(html)
-      labels = doc.css("label")
-      control_ids = doc.css("input, select, textarea").filter_map { |n| n["id"] }
 
-      expect(labels).not_to be_empty, "no labels rendered — the pin would be vacuous"
-
-      orphans = labels.reject { |l| l["for"].present? && control_ids.include?(l["for"]) }
-      expect(orphans.map { |l| l.text.strip }).to be_empty
+      expect(doc.css("label")).not_to be_empty, "no labels rendered — the pin would be vacuous"
+      expect(LabelAssociation.orphan_labels(doc).map { |l| l.text.strip }).to be_empty
     end
 
     it "renders AUTHENTICATE submit button" do
