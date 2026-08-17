@@ -1709,7 +1709,7 @@ uk:  { one: "1 фото", few: "%{count} фото",                     # 4 фо
 |---|---|---|
 | Flash messages | `flash/{en,uk}.yml` | `flash.sessions.signed_in` |
 | Error JSON | `errors/{en,uk}.yml` | `errors.api.forbidden` |
-| Account Security | `account_security/{en,uk}.yml` | `account_security.mfa.enabled` |
+| Account Security | `account_security/{en,uk}.yml` | `account_security.mfa.disabled` |
 | Passwords | `passwords/{en,uk}.yml` | `passwords.reset.email_sent` |
 | M2M auth | `m2m_auth/<locale>.yml` | `m2m_auth.token.issued` |
 | **Заголовок сторінки** | `<domain>/<locale>.yml` | `wallets.index_title` · `trees.show_title` (інтерполяція — `%{name}`/`%{uid}`/`%{id}`) |

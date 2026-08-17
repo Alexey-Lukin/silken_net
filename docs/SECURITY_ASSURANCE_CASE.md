@@ -213,8 +213,11 @@ An assurance case is credible because it states what is **not** yet fully closed
   Roadmap: SE050-MIGRATION in [`00_07`](00_07_Action_Plan_Tracker).
 - **RDP Level 2** (firmware read-out protection) is **pending** (SEC.2) — physical extraction of a deployed
   MCU is not yet locked out.
-- **MFA is incomplete.** There is an `otp_required_for_login` flag and one-time recovery codes, but **no
-  TOTP/secret implementation yet** — MFA must not be relied on as a control until built (`S6.21`).
+- **MFA does not exist as a control, and the platform can no longer claim otherwise.** There is an
+  `otp_required_for_login` flag and one-time recovery codes, but **no TOTP/secret implementation** and no
+  verification step at login — the codes are never consumed. Since 2026-08-17 the *enable* direction is
+  refused at the API (`501 mfa_not_implemented`) precisely so that no surface can advertise the control;
+  *disable* stays open, since it is the direction that withdraws the claim (`S6.21`).
 - **Pre-mainnet.** No production deployment has run yet; the deploy-time guards (`verify-secrets`, force_ssl,
   HSTS) are configured and CI-verified but not yet exercised live.
 - **External-trust assumptions.** The argument assumes the Chainlink DON behaves per its own fraud-proof
