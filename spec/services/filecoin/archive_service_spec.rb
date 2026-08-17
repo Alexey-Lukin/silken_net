@@ -184,6 +184,41 @@ RSpec.describe Filecoin::ArchiveService do
       end
     end
 
+    # [ARCH.57] Дзеркало сусіда вище, і різниця несуча: там порожній набір при
+    # org-ful лозі (тобто випадковість, а не правило), тут — org-less ланцюг при
+    # ІСНУЮЧОМУ org-less кластері з інсайтом. Без цього прикладу гілка зелена на
+    # старому коді через саму лише популяцію: `IS NULL` нічого не матчить, доки
+    # org-less кластера не існує. Кластер створюється `update_columns` навмисно —
+    # `belongs_to :organization` без `optional:` інакше не дасть його зберегти.
+    context "when the audit log belongs to the GLOBAL system chain (no organization)" do
+      it "omits the telemetry summary instead of scooping org-less clusters" do
+        global_log = create(:audit_log, user: user, organization: nil, action: "system_parameter_changed")
+        orphan_cluster = create(:cluster, organization: user.organization)
+        Cluster.where(id: orphan_cluster.id).update_all(organization_id: nil)
+        create(:ai_insight, :daily_health_summary,
+               analyzable: orphan_cluster,
+               target_date: global_log.created_at.to_date,
+               stress_index: 0.42,
+               total_growth_points: 500,
+               summary: "Orphan cluster summary",
+               fraud_detected: false)
+
+        expected_body = nil
+        allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
+          expected_body = kwargs[:body]
+          Web3::HttpClient::Response.new({ "IpfsHash" => "QmGlobalChain" }.to_json)
+        end
+
+        described_class.new(global_log).archive!
+
+        content = expected_body[:pinataContent]
+        # Ліхтар на ПЕРЕДУМОВУ: без нього приклад був би зелений і на порожній базі.
+        expect(Cluster.where(organization_id: nil).count).to eq(1)
+        expect(content[:organization_id]).to be_nil
+        expect(content[:telemetry_summary]).to be_nil
+      end
+    end
+
     context "when AI insights exist for the date" do
       it "includes cluster telemetry summary data" do
         cluster = create(:cluster, organization: user.organization)

@@ -704,7 +704,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 |---|---|
 | **Файл** | `app/services/filecoin/archive_service.rb` |
 | **Вхід** | `audit_log` (AuditLog AR instance) |
-| **Що робить** | Архівує AuditLog до IPFS/Filecoin через Pinata API. Payload: chain_hash, metadata, добове зведення `AiInsight` кластерів організації. Ідемпотентний: `return if ipfs_cid.present?`. Клас-метод `self.pin_json!(content, name:, keyvalues:)` [E.60] = One-Home Pinata-виклик — юзають audit-шлях (цей сервіс) і `TelemetryArchiveBatchWorker` (телеметрія-батч-пін). |
+| **Що робить** | Архівує AuditLog до IPFS/Filecoin через Pinata API. Payload: chain_hash, metadata, добове зведення `AiInsight` кластерів організації. Ідемпотентний: `return if ipfs_cid.present?`. Клас-метод `self.pin_json!(content, name:, keyvalues:)` [E.60] = One-Home Pinata-виклик — юзають audit-шлях (цей сервіс) і `TelemetryArchiveBatchWorker` (телеметрія-батч-пін). ⚡ **[ARCH.57] Глобальний ланцюг НЕ несе зведення:** `audit_logs.organization_id` легально `nil` («подія платформи», [`04_01 §7`](04_01_Data_Models_and_Entities)), а `where(organization_id: nil)` — це `IS NULL`, тобто ФІЛЬТР, що ЗБІГАЄТЬСЯ з org-less кластерами, не порожня множина; тому `build_telemetry_summary` оголошує стан явно (`return nil`), а не покладається на те, що таких кластерів сьогодні нуль. Правило-дім те саме, що на policy-поверхнях — `ApplicationPolicy#no_acting_organization?` [UI.7]. Ціна саме тут: артефакт іде в IPFS **як доказ**. |
 | **Зовнішні виклики** | `Web3::HttpClient.post` → `FILECOIN_PINNING_API_URL` (Pinata) |
 | **Вихід** | `cid` (String). Оновлює `audit_log.ipfs_cid`. |
 

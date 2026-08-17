@@ -95,7 +95,25 @@ module Filecoin
       target_date = @audit_log.created_at&.to_date
       return nil unless target_date
 
-      org_cluster_ids = Cluster.where(organization_id: @audit_log.organization_id).select(:id)
+      # 🔴 [ARCH.57] Глобальний системний ланцюг легітимно не має організації
+      # (`AuditLog belongs_to :organization, optional: true` — `nil` там ЗНАЧИТЬ
+      # «подія платформи», а не «організація невідома»), і саме тому цей рядок
+      # мусить оголосити стан, а не звузити запит: Rails перекладає
+      # `where(organization_id: nil)` у `IS NULL`, тобто у ФІЛЬТР, ЩО ЗБІГАЄТЬСЯ
+      # з org-less кластерами, а не в порожню множину. Правило вже сформульоване
+      # в цьому дереві двічі (`ApplicationPolicy#no_acting_organization?` [UI.7]
+      # + `WalletPolicy`) — тут лишався єдиний сайт із легітимно-nil джерелом.
+      # ⚠️ Сьогодні набір порожній ВИПАДКОВО, і випадковість трирівнева:
+      # org-less кластерів нуль · `Cluster belongs_to :organization` без
+      # `optional:` не дає створити такий кластер через AR · глобальний ланцюг
+      # до архіву поки не доходить (`archive:` за замовчуванням `false`).
+      # Ціна ненульова саме тут: артефакт іде в IPFS ЯК ДОКАЗ, тож перший
+      # org-less кластер додав би до глобальної події «добове зведення
+      # телеметрії організації», якої в тієї події немає.
+      organization_id = @audit_log.organization_id
+      return nil if organization_id.nil?
+
+      org_cluster_ids = Cluster.where(organization_id: organization_id).select(:id)
 
       summaries = AiInsight
         .daily_health_summary
