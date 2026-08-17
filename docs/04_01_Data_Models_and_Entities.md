@@ -1383,11 +1383,13 @@ active/draft ──cancel──► cancelled
 | `hardware_verified` | boolean | Обов'язкове підтвердження |
 | `system_generated` | boolean | Провенанс: рядок написала платформа, не лісник (default `false`) |
 | `biomass_yield_kg` | decimal | Вимірювання біомаси (для tokenomics) |
-| `labor_hours` | decimal | Витрачений час |
-| `parts_cost` | decimal | Вартість запчастин |
+| `labor_hours` | decimal, **nullable** | Витрачений час. `NULL` = не введено (форма пропонує поле без `required:`), і це НЕ нуль годин |
+| `parts_cost` | decimal, **nullable** | Вартість запчастин. `NULL` = не введено ⊥ введений `0` = вимір «запчастин не було» |
 | `biomass_passport_tx_hash` | string | TX-хеш паспорту біомаси (Puro.earth Biochar) |
 
-**Методи:** `total_cost` (labor + parts), `trigger_ecosystem_healing!`.
+**Методи:** `total_cost`, `trigger_ecosystem_healing!`.
+
+> 🔴 **[ARCH.103] `total_cost` віддає `nil`, коли бодай ОДИН доданок не введено — «Total» стверджує повноту, тож сума з невідомим доданком не є total.** Доти обидва `.to_f` перетворювали «не введено» на нуль, метод не повертав `nil` жодного разу, і три поверхні друкували `$0.00` там, де технік просто не заповнював поле; blueprint віддавав `total_cost: 0.0` поруч із чесними `null` для обох доданків. ⚠️ Ціна була ЗАНИЖЕННЯ (unit-economics Series C), а введений `0` лишається виміром — безкоштовний візит видимий.
 
 **Evidence Protocol** — `repair` і `installation` вимагають фото (`photos_required_for_critical_actions`); решта `action_type` виходить із валідації рано.
 
