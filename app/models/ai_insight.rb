@@ -96,7 +96,26 @@ class AiInsight < ApplicationRecord
   # --- СКОУПИ ---
   scope :highly_probable, -> { where("probability_score > ?", 80.0) }
   scope :upcoming, -> { where("target_date >= ?", Time.current.utc.to_date) }
+  # ⚠️ [ARCH.84] Викликачів нуль (переміряно) — тож поверхня без споживача, а не
+  # без фільтра: якби він зʼявився, `analyzable_type` довелось би вирішувати так
+  # само, як у `stress_training_set` нижче (кластерний рядок — АГРЕГАТ, не дерево).
   scope :critical_stress, -> { daily_health_summary.where("stress_index >= ?", 0.8) }
+
+  # 🔴 [ARCH.84] Навчальний набір моделі стресу — ЛИШЕ дерев'яні рядки, і це не
+  # гігієна. Тренер (`lib/tasks/ai_train.rake`) будує вектор фіч із
+  # `average_temperature` + `reasoning[avg_vcap|avg_z|max_acoustic]`, а КЛАСТЕРНИЙ
+  # рядок жодного з них не має — він агрегат. Виміряно рантаймом: такий рядок
+  # заходив у набір як **`[0.0, 0.0, 0.0, 0.0]`** (0 °C, 0 мВ, z=0, нуль акустики)
+  # з міткою, вирахуваною з кластерного середнього, тобто фізично неможливе дерево
+  # вчило класифікатор, який вигляд має ЗДОРОВʼЯ. Частка не маргінальна — один
+  # рядок на кластер на добу проти N деревних (на зонді з трьох дерев це чверть
+  # набору). ⚠️ Напрямок несучий: на здоровому лісі мітка = 0, тобто модель училась
+  # би, що нульові покази — це норма, і мовчазний сенсор класифікувався б здоровим.
+  # ⊕ Скоуп існує саме як НОСІЙ: тренер — rake-таска без спеки, тож фільтр,
+  # написаний там рядком, ніщо не стерегло б.
+  scope :stress_training_set, lambda {
+    daily_health_summary.where(analyzable_type: "Tree").where.not(stress_index: nil)
+  }
   scope :for_date, ->(date) { where(target_date: date) }
   scope :fraudulent, -> { where(fraud_detected: true) }
 

@@ -4,6 +4,35 @@
 require "rails_helper"
 
 RSpec.describe AiInsight, type: :model do
+  # 🔴 [ARCH.84] Носій навчального набору: тренер — rake-таска без спеки, тож
+  # фільтр, написаний там рядком, не мав би свідка взагалі. Пара обовʼязкова —
+  # без другої половини пін проходив би й на скоупі, що не бере НІЧОГО.
+  describe ".stress_training_set" do
+    let(:cluster) { create(:cluster) }
+    let(:tree) { create(:tree, cluster: cluster) }
+
+    it "excludes the cluster AGGREGATE — it carries no feature vector, only an average" do
+      tree_row = create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+                                     target_date: Date.yesterday, stress_index: 0.2,
+                                     average_temperature: 21.0, reasoning: { "avg_z" => 27.0 })
+      cluster_row = create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+                                        target_date: Date.yesterday, stress_index: 0.2)
+
+      # Ліхтар на передумову: кластерний рядок СТВОРЕНО — інакше «не входить»
+      # доводило б лише те, що його не існує.
+      expect(cluster_row.average_temperature).to be_nil
+      expect(described_class.stress_training_set).to include(tree_row)
+      expect(described_class.stress_training_set).not_to include(cluster_row)
+    end
+
+    it "excludes a tree row whose stress was never measured" do
+      unmeasured = create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+                                       target_date: Date.yesterday - 1, stress_index: nil)
+
+      expect(described_class.stress_training_set).not_to include(unmeasured)
+    end
+  end
+
   describe "#contract_breach?" do
     it "returns true for daily summary with stress_index >= 0.8" do
       insight = described_class.new(

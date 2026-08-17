@@ -12,7 +12,11 @@ namespace :ai do
     Rails.logger.info "🧠 [AI Train] Збір навчальних даних з AiInsight + TelemetryLog..."
 
     # ⚡ [ANTI-N+1]: Завантажуємо всі daily_health_summary інсайти з JSONB reasoning одним запитом.
-    insights = AiInsight.daily_health_summary.where.not(stress_index: nil)
+    # 🔴 [ARCH.84] Множина — з One-Home `AiInsight.stress_training_set`, і фільтр по
+    # `analyzable_type` там несучий: доти набір змішував деревні рядки з КЛАСТЕРНИМИ
+    # агрегатами, у яких жодної фічі немає, тож кожен заходив як `[0,0,0,0]` із
+    # міткою від середнього. Стеля скоупа й вимір — у його коментарі на моделі.
+    insights = AiInsight.stress_training_set
 
     if insights.count < 50
       Rails.logger.warn "⚠️ [AI Train] Недостатньо даних для тренування (#{insights.count} < 50). Скасовано."
