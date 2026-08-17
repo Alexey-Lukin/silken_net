@@ -35,14 +35,25 @@ RSpec.describe Clusters::Show do
     cluster
   end
 
+  # [TEST.12] Реальні незбережені записи замість `OpenStruct`. Компонент читає від
+  # шлюзу рівно колонки (`uid`/`state`/`latitude`/`longitude`/`last_seen_at`), а від
+  # алерту — `severity`/`created_at` плюс `dom_id`, який реальна модель віддає сама:
+  # разом із моком зникають три рукописні `model_name`/`to_key`, що імітували
+  # метадані фреймворку.
   def mock_gateway(uid: "QUEEN-01", state: "active", latitude: 49.4, longitude: 32.1)
-    OpenStruct.new(uid: uid, state: state, latitude: latitude, longitude: longitude, last_seen_at: Time.current)
+    Gateway.new(uid: uid, state: state, latitude: latitude, longitude: longitude,
+                last_seen_at: Time.current)
   end
 
+  # ⚠️ `severity` — enum `{low, medium, critical}`, тож значення поза ним реальний
+  # запис не приймає (`ArgumentError` просто в конструкторі). Гілка «нерозпізнана
+  # тяжкість» досяжна лише стабом РИДЕРА на живому записі — форма, яку це репо вже
+  # вживає для недосяжних станів; конструктор при цьому лишається валідним.
   def mock_alert(id: 1, alert_type: "fire_detected", severity: "critical")
-    alert = OpenStruct.new(id: id, alert_type: alert_type, severity: severity, created_at: Time.current)
-    alert.define_singleton_method(:model_name) { ActiveModel::Name.new(EwsAlert) }
-    alert.define_singleton_method(:to_key) { [ id ] }
+    known = EwsAlert.severities.key?(severity.to_s)
+    alert = EwsAlert.new(id: id, alert_type: alert_type, created_at: Time.current,
+                         severity: known ? severity : :low)
+    alert.define_singleton_method(:severity) { severity } unless known
     alert
   end
 
@@ -276,11 +287,17 @@ RSpec.describe Clusters::Show do
   end
 
   describe "gateway row last_seen_at fallback" do
+    # 🔴 Пін доти читав `include("—")` по ДОКУМЕНТУ, а риска є фолбеком і в
+    # сусідніх поверхнях сторінки — тобто він не відрізняв «шлюз без часу» від
+    # будь-якої іншої порожнечі. Цілимось у РЯДОК цього шлюзу.
     it "renders a dash when a gateway has no last_seen_at timestamp" do
-      gw = OpenStruct.new(uid: "QUEEN-NIL", state: "active", latitude: 0, longitude: 0, last_seen_at: nil)
+      gw = mock_gateway(uid: "QUEEN-NIL", latitude: 0, longitude: 0)
+      gw.last_seen_at = nil
       out = render_component(cluster: cluster, gateways: [ gw ], recent_alerts: [])
-      expect(out).to include("QUEEN-NIL")
-      expect(out).to include("—")
+
+      row = Nokogiri::HTML5.fragment(out).css("*").find { |n| n.text.include?("QUEEN-NIL") && n.text.length < 200 }
+      expect(row).not_to be_nil, "рядок шлюзу не знайдено — пін інакше вакуумний"
+      expect(row.text).to include("—")
     end
   end
 end
