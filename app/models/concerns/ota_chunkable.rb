@@ -6,10 +6,16 @@
 module OtaChunkable
   extend ActiveSupport::Concern
 
-  # Розбиття на сегменти для OtaTransmissionWorker (MTU-friendly).
-  # byteslice без regex: O(n/chunk) memcpy без backtracking. На 256 KB binary
-  # payload (FW.4 max) це ~3× швидше за regex.scan і не виділяє inter-buffer
-  # regex match data.
+  # Розбиття на сегменти (MTU-friendly). byteslice без regex: O(n/chunk) memcpy
+  # без backtracking. На 256 KB binary payload (FW.4 max) це ~3× швидше за
+  # regex.scan і не виділяє inter-buffer regex match data.
+  #
+  # ⚠️ **Споживача СЬОГОДНІ немає, і доти тут стояв мертвий** (переміряно
+  # 2026-08-17): коментар називав `OtaTransmissionWorker`, який із часів [FW.60]
+  # не має жодного enqueuer'а, а власних викликачів `#chunks` у дереві нуль —
+  # живий poll-тракт нарізає чанки сам (`OtaPackagerService`). Метод лишено, не
+  # зрізано: зняття push-ери гейтоване стендом (`00_07` ARCH.59-нитка), і в
+  # передпродовому дереві нуль викликачів вимірює недобудованість, не смерть.
   def chunks(chunk_size = 512)
     size = payload_size
     return [] if size.zero?

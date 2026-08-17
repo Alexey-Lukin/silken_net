@@ -14,8 +14,12 @@ module Api
       # bytecode_payload directly and exhaust RAM/disk.
       MAX_BYTECODE_PAYLOAD_HEX_SIZE = 2 * MAX_FIRMWARE_SIZE
 
-      # Allow-list of canonical target hardware classes — matches both
-      # OtaTransmissionWorker dispatch and the docs (04_03 §5.7).
+      # Allow-list of canonical target hardware classes — matches the docs
+      # (04_03 §5.7). ⚠️ The old wording also claimed it matches
+      # `OtaTransmissionWorker` dispatch; that worker has had ZERO enqueuers
+      # since FW.60 (canon `04_02` states «Тригер — ЖОДНОГО»), so the only live
+      # consumer of this list is `Ota::DeploymentDispatcherService`, reached from
+      # `#deploy` in this controller.
       DEPLOY_TARGET_TYPES = %w[Tree Gateway].freeze
 
       # --- РЕЄСТР ЕВОЛЮЦІЙ (The Evolution Hub) ---

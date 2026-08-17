@@ -61,14 +61,12 @@ module Api
             }
           end
           format.html do
-            @recent_logs = @tree.telemetry_logs.order(created_at: :desc).limit(10)
             @maintenance_records = @tree.maintenance_records.includes(:user).order(performed_at: :desc).limit(20)
             render_dashboard(
               title: I18n.t("trees.show_title", did: @tree.did),
               component: Trees::Show.new(
                 tree: @tree,
                 latest_log: @latest_log,
-                recent_logs: @recent_logs,
                 maintenance_history: @maintenance_records
               )
             )

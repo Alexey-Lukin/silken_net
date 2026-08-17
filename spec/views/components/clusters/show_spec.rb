@@ -222,23 +222,47 @@ RSpec.describe Clusters::Show do
     end
   end
 
+  # 🔴 [TEST.12] Два з трьох пінів цього блоку були ВАКУУМНІ — і найгірше не те,
+  # що вони нічого не доводили, а те, що вони цементували поведінку, від якої код
+  # СВІДОМО відмовився. `low` колись справді був `bg-emerald-500`; фікс перевів
+  # його на `bg-status-info` (підстава — коментар біля `alert_severity_class`), а
+  # піни лишились зелені, бо `include("bg-emerald-500")` живився ІНШИМ вузлом того
+  # ж рендеру: індикатор «Nominal» у шапці малює цей клас безумовно, щойно
+  # `active_threats?` хибний — а це дефолт фікстури по всьому файлу.
+  #
+  # Доведено мутацією, і саме вона називає периметр: зі знесеними гілками
+  # `alert_severity_class` упав РІВНО ОДИН приклад із трьох (`medium`). Питання
+  # тут не «чи червоніє мій пін», а «які з N не почервоніли».
+  #
+  # Лік — цілитись у ВУЗОЛ, а не в документ: клас severity живе на крапці
+  # всередині рядка алерту, тож `css` по ній відрізняє її від шапки.
   describe "alert severity class" do
+    # Крапка severity — єдиний `div.rounded-full` усередині рядка алерту
+    # (`h-2 w-2 rounded-full` + сам клас тяжкості). Саме вона, а не документ:
+    # шапка сторінки несе власний індикатор, і доти піни читали ЙОГО.
+    def severity_dot_classes(alert)
+      rendered = render_component(cluster: cluster, gateways: [], recent_alerts: [ alert ])
+      Nokogiri::HTML5.fragment(rendered)
+                     .css("##{ActionView::RecordIdentifier.dom_id(alert)} div.rounded-full")
+                     .map { |n| n["class"].to_s }.join(" ")
+    end
+
     it "uses warning style for medium severity" do
-      alert = mock_alert(severity: "medium")
-      html = render_component(cluster: cluster, gateways: [], recent_alerts: [ alert ])
-      expect(html).to include("bg-status-warning")
+      expect(severity_dot_classes(mock_alert(severity: "medium"))).to include("bg-status-warning")
     end
 
-    it "uses emerald style for low severity" do
-      alert = mock_alert(severity: "low")
-      html = render_component(cluster: cluster, gateways: [], recent_alerts: [ alert ])
-      expect(html).to include("bg-emerald-500")
+    it "uses the INFO style for low severity — never the nominal-green of the header" do
+      classes = severity_dot_classes(mock_alert(severity: "low"))
+
+      expect(classes).to include("bg-status-info")
+      expect(classes).not_to include("bg-emerald-500")
     end
 
-    it "uses emerald style for unknown severity" do
-      alert = mock_alert(severity: "unknown")
-      html = render_component(cluster: cluster, gateways: [], recent_alerts: [ alert ])
-      expect(html).to include("bg-emerald-500")
+    it "falls back to the neutral style for a severity outside the enum" do
+      classes = severity_dot_classes(mock_alert(severity: "unknown"))
+
+      expect(classes).to include("bg-status-neutral")
+      expect(classes).not_to include("bg-emerald-500")
     end
   end
 

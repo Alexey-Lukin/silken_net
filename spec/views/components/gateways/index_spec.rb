@@ -66,9 +66,15 @@ RSpec.describe Gateways::Index do
       expect(html).to include("Carpathian-Alpha")
     end
 
+    # 🔴 [TEST.12] Пін на ЧИСЛО тут доти був вакуумний: `include("12")` живився
+    # не лічильником, а UID фікстури (`SNET-Q-AAB01234` містить «12» у хвості).
+    # Доведено мутацією — зміна лічильника на 999 лишала приклад ЗЕЛЕНИМ. Тому
+    # цілимось у сам вузол значення (`p.text-xl` у картці), а не в документ.
     it "renders soldiers count" do
       expect(html).to include("Soldiers")
-      expect(html).to include("12")
+
+      values = Nokogiri::HTML5.fragment(html).css("p.text-xl").map { |n| n.text.strip }
+      expect(values).to include("12")
     end
 
     # [ARCH.84] Нуль солдатів — ЗАКОННИЙ вимір (щойно створений порожній кластер),

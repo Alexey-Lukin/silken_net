@@ -12,11 +12,9 @@ RSpec.describe Trees::Show do
 
   let(:tree) { build_tree }
   let(:latest_log) { build_latest_log }
-  let(:recent_logs) { [ mock_recent_log ] }
   let(:maintenance_history) { [ build_maintenance_record ] }
   let(:html) do
-    render_component(tree: tree, latest_log: latest_log,
-                     recent_logs: recent_logs, maintenance_history: maintenance_history)
+    render_component(tree: tree, latest_log: latest_log, maintenance_history: maintenance_history)
   end
 
   def build_tree(did: "SNET-00000042", status: "active", current_stress: 0.35,
@@ -80,10 +78,6 @@ RSpec.describe Trees::Show do
     )
   end
 
-  def mock_recent_log(z_value: 27.5, created_at: 10.minutes.ago)
-    OpenStruct.new(z_value: z_value, created_at: created_at)
-  end
-
   # [TEST.12] Реальний незбережений `MaintenanceRecord`: `action_type` ходить через
   # справжній enum, тож вигаданих `"sensor_replacement"`/`"calibration"` тут більше
   # немає — модель приймає лише `installation`/`inspection`/`cleaning`/`repair`/
@@ -104,8 +98,7 @@ RSpec.describe Trees::Show do
   describe "argument validation" do
     it "raises ArgumentError if tree does not respond to :did" do
       expect {
-        component_class.new(tree: Object.new, latest_log: nil,
-                            recent_logs: [], maintenance_history: [])
+        component_class.new(tree: Object.new, latest_log: nil, maintenance_history: [])
       }.to raise_error(ArgumentError, /did/)
     end
   end
@@ -126,14 +119,12 @@ RSpec.describe Trees::Show do
     it "displays uplink timestamp from latest_log" do
       frozen_time = Time.zone.parse("2025-06-10 14:30:00")
       log = build_latest_log(created_at: frozen_time)
-      rendered = render_component(tree: tree, latest_log: log,
-                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      rendered = render_component(tree: tree, latest_log: log, maintenance_history: maintenance_history)
       expect(rendered).to include("14:30:00 // 10.06.25")
     end
 
     it "shows SILENT when no latest_log" do
-      rendered = render_component(tree: tree, latest_log: nil,
-                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      rendered = render_component(tree: tree, latest_log: nil, maintenance_history: maintenance_history)
       expect(rendered).to include("SILENT")
     end
   end
@@ -149,15 +140,13 @@ RSpec.describe Trees::Show do
 
     it "renders dormant with the warning token" do
       t = build_tree(status: "dormant")
-      rendered = render_component(tree: t, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      rendered = render_component(tree: t, latest_log: latest_log, maintenance_history: maintenance_history)
       expect(rendered).to include("bg-status-warning")
     end
 
     it "renders deceased with the danger token" do
       t = build_tree(status: "deceased")
-      rendered = render_component(tree: t, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      rendered = render_component(tree: t, latest_log: latest_log, maintenance_history: maintenance_history)
       expect(rendered).to include("bg-status-danger")
     end
   end
@@ -166,8 +155,7 @@ RSpec.describe Trees::Show do
     it "displays 'Unknown' when family is nil" do
       t = build_tree(family_name: nil)
       t.tree_family = TreeFamily.new(name: nil)
-      rendered = render_component(tree: t, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      rendered = render_component(tree: t, latest_log: latest_log, maintenance_history: maintenance_history)
       expect(rendered).to include("Unknown")
     end
   end
@@ -178,8 +166,7 @@ RSpec.describe Trees::Show do
     end
 
     it "displays --- when no latest_log z_value" do
-      rendered = render_component(tree: tree, latest_log: nil,
-                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      rendered = render_component(tree: tree, latest_log: nil, maintenance_history: maintenance_history)
       expect(rendered).to include("---")
     end
 
@@ -203,8 +190,7 @@ RSpec.describe Trees::Show do
     # несуча: без неї пін пройшов би і на `|| 0`, бо «0 mV» теж містить «mV».
     it "says NOT MEASURED for an absent sensor reading, never a fabricated zero" do
       rendered = render_component(tree: tree,
-                                  latest_log: build_latest_log(voltage_mv: nil, temperature_c: nil),
-                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+                                  latest_log: build_latest_log(voltage_mv: nil, temperature_c: nil), maintenance_history: maintenance_history)
 
       expect(rendered).to include(I18n.t("ui.measurement.not_measured"))
       expect(rendered).not_to include("0 mV")
@@ -235,8 +221,7 @@ RSpec.describe Trees::Show do
 
     it "uses red pulse stroke when under threat" do
       t = build_tree(under_threat: true)
-      rendered = render_component(tree: t, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      rendered = render_component(tree: t, latest_log: latest_log, maintenance_history: maintenance_history)
       expect(rendered).to include("stroke-red-600")
       expect(rendered).to include("animate-pulse")
     end
@@ -259,22 +244,19 @@ RSpec.describe Trees::Show do
     # НЕ міняє текст у розмітці — оракул береться з реального виводу, не з вигляду.
     it "displays a human action-type label" do
       expect(I18n.with_locale(:uk) do
-        render_component(tree: tree, latest_log: latest_log,
-                         recent_logs: recent_logs, maintenance_history: maintenance_history)
+        render_component(tree: tree, latest_log: latest_log, maintenance_history: maintenance_history)
       end).to include("Ремонт")
     end
 
     it "truncates long notes to 50 characters" do
       long_notes = "A" * 100
       record = build_maintenance_record(notes: long_notes)
-      rendered = render_component(tree: tree, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: [ record ])
+      rendered = render_component(tree: tree, latest_log: latest_log, maintenance_history: [ record ])
       expect(rendered).to include("A" * 47 + "...")
     end
 
     it "shows empty state when no maintenance records" do
-      rendered = render_component(tree: tree, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: [])
+      rendered = render_component(tree: tree, latest_log: latest_log, maintenance_history: [])
       expect(rendered).to include("No physical interventions recorded")
     end
   end
@@ -298,8 +280,7 @@ RSpec.describe Trees::Show do
     it "shows NOT_PROVISIONED when no wallet address" do
       t = build_tree(crypto_address: nil)
       t.wallet.crypto_public_address = nil
-      rendered = render_component(tree: t, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      rendered = render_component(tree: t, latest_log: latest_log, maintenance_history: maintenance_history)
       expect(rendered).to include("NOT_PROVISIONED")
     end
   end
@@ -334,7 +315,7 @@ RSpec.describe Trees::Show do
 
     it "показує ЖИВИМ дерево, яке список теж вважає живим" do
       t = seen_two_hours_ago
-      shown = render_component(tree: t, latest_log: nil, recent_logs: [],
+      shown = render_component(tree: t, latest_log: nil,
                                maintenance_history: maintenance_history)
 
       expect(show_led_green?(shown)).to be(true)
@@ -343,7 +324,7 @@ RSpec.describe Trees::Show do
 
     it "показує МЕРТВИМ дерево, яке список теж вважає мертвим" do
       t = build_tree.tap { |x| x.last_seen_at = 30.hours.ago }
-      shown = render_component(tree: t, latest_log: nil, recent_logs: [],
+      shown = render_component(tree: t, latest_log: nil,
                                maintenance_history: maintenance_history)
 
       expect(show_led_green?(shown)).to be(false)
@@ -355,7 +336,7 @@ RSpec.describe Trees::Show do
     # хоч його власний `last_seen_at` живий.
     it "не називає мертвим дерево, чиї логи зрізав retention" do
       t = seen_two_hours_ago
-      shown = render_component(tree: t, latest_log: nil, recent_logs: [],
+      shown = render_component(tree: t, latest_log: nil,
                                maintenance_history: maintenance_history)
 
       expect(show_led_green?(shown)).to be(true)
@@ -370,8 +351,7 @@ RSpec.describe Trees::Show do
     it "shows NOT_PROVISIONED when hardware key is nil" do
       t = build_tree(device_uid: nil)
       t.hardware_key = nil
-      rendered = render_component(tree: t, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      rendered = render_component(tree: t, latest_log: latest_log, maintenance_history: maintenance_history)
       expect(rendered).to include("NOT_PROVISIONED")
     end
 
@@ -383,8 +363,7 @@ RSpec.describe Trees::Show do
     it "не заявляє шифру й анкера для дерева БЕЗ ключа" do
       t = build_tree(device_uid: nil)
       t.hardware_key = nil
-      rendered = render_component(tree: t, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      rendered = render_component(tree: t, latest_log: latest_log, maintenance_history: maintenance_history)
 
       expect(rendered).to include("NOT_PROVISIONED")
       expect(rendered).not_to include("AES-128-ECB")
@@ -447,32 +426,50 @@ RSpec.describe Trees::Show do
     it "renders 'Unknown' technician when maintenance record has no user" do
       record = MaintenanceRecord.new(user: nil, action_type: :inspection,
                                      notes: "Quick recalibration", performed_at: 1.day.ago)
-      rendered = render_component(tree: tree, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: [ record ])
+      rendered = render_component(tree: tree, latest_log: latest_log, maintenance_history: [ record ])
       expect(rendered).to include("Unknown")
     end
 
+    # 🔴 [TEST.12] Тут доти стояв `OpenStruct` — і сусідній приклад ЦЬОГО Ж блоку
+    # вже будував справжній `MaintenanceRecord`, тобто асиметрія лежала в межах
+    # одного `describe`. Ціна не гігієнічна: компонент друкує
+    # `record.action_type_label` — ПОХІДНИЙ i18n-метод (`I18n.t(scope.action_type)`),
+    # якого `OpenStruct` із самим `action_type:` не обчислює, тож віддавав `nil` і
+    # комірка дії рендерилась ПОРОЖНЬОЮ в обох прикладах. Жоден пін цього не бачив:
+    # обидва пінили `include("—")`, а та риска приходить із СУСІДНЬОЇ комірки.
+    # `notes` тут подається через `attributes=` після `.new`, бо валідація
+    # `length: { minimum: 10 }` на незбереженому записі не спрацьовує.
     it "renders '—' when maintenance notes are nil" do
-      record = OpenStruct.new(user: OpenStruct.new(full_name: "Olha"), action_type: "inspection",
-                              notes: nil, performed_at: 1.day.ago)
-      rendered = render_component(tree: tree, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: [ record ])
+      record = MaintenanceRecord.new(user: User.new(first_name: "Olha", last_name: "K"),
+                                     action_type: :inspection, notes: nil, performed_at: 1.day.ago)
+      rendered = render_component(tree: tree, latest_log: latest_log, maintenance_history: [ record ])
       expect(rendered).to include("—")
     end
 
     it "renders '—' when maintenance performed_at is nil" do
-      record = OpenStruct.new(user: OpenStruct.new(full_name: "Olha"), action_type: "inspection",
-                              notes: "Sane", performed_at: nil)
-      rendered = render_component(tree: tree, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: [ record ])
+      record = MaintenanceRecord.new(user: User.new(first_name: "Olha", last_name: "K"),
+                                     action_type: :inspection, notes: "Sane enough", performed_at: nil)
+      rendered = render_component(tree: tree, latest_log: latest_log, maintenance_history: [ record ])
       expect(rendered).to include("—")
+    end
+
+    # 🔴 Пін, який доти був НЕМОЖЛИВИЙ: доки запис підроблявся `OpenStruct`-ом,
+    # похідна мітка дорівнювала `nil` при будь-якій поведінці компонента, тож
+    # цілий стовпчик «дія» не мав жодного свідка. Цілимось у САМУ комірку, а не
+    # в документ: слово «Inspection» трапляється й в інших вузлах сторінки.
+    it "prints the derived action label in its own cell" do
+      record = MaintenanceRecord.new(user: User.new(first_name: "Olha", last_name: "K"),
+                                     action_type: :inspection, notes: "Sane enough", performed_at: 1.day.ago)
+      rendered = render_component(tree: tree, latest_log: latest_log, maintenance_history: [ record ])
+
+      cells = Nokogiri::HTML5.fragment(rendered).css("td").map { |td| td.text.strip }
+      expect(cells).to include(MaintenanceRecord.action_type_label(:inspection))
     end
 
     it "renders '0.0' SCC when tree has no wallet" do
       t = build_tree
       t.wallet = nil
-      rendered = render_component(tree: t, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      rendered = render_component(tree: t, latest_log: latest_log, maintenance_history: maintenance_history)
       expect(rendered).to include("0.0")
       expect(rendered).to include("NOT_PROVISIONED")
     end
@@ -480,8 +477,7 @@ RSpec.describe Trees::Show do
     it "renders without a cluster when tree.cluster is nil" do
       t = build_tree
       t.cluster = nil
-      rendered = render_component(tree: t, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      rendered = render_component(tree: t, latest_log: latest_log, maintenance_history: maintenance_history)
       # Should still render the metadata panel without crashing
       expect(rendered).to include("Deployment")
     end
@@ -489,8 +485,7 @@ RSpec.describe Trees::Show do
     it "falls back to 'Unknown' family when tree.tree_family is nil entirely" do
       t = build_tree(family_name: "ignored")
       t.tree_family = nil
-      rendered = render_component(tree: t, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      rendered = render_component(tree: t, latest_log: latest_log, maintenance_history: maintenance_history)
       expect(rendered).to include("Unknown")
     end
   end
