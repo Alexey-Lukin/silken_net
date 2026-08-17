@@ -28,11 +28,41 @@ module OracleVisions
     def view_template
       div(class: "space-y-6") do
         header_section
-        @visions.each { |vision| render OracleVisions::ForecastCard.new(insight: vision) }
+
+        if @visions.any?
+          @visions.each { |vision| render OracleVisions::ForecastCard.new(insight: vision) }
+        else
+          render_empty_state
+        end
       end
     end
 
     private
+
+    # 🔴 [ARCH.103] Порожнеча тут СТРУКТУРНА, і доти вона не мала голосу взагалі:
+    # `@visions.each` по порожньому відношенні не рендерить нічого, тож у проді
+    # сторінка показувала самотню шапку й пустоту під нею — читається як «зараз
+    # прогнозів немає», тобто як тимчасовий стан.
+    #
+    # Насправді стан постійний, і роблять його ДВА незалежні механізми:
+    #   · писач штампує `AiInsight.reporting_date` = **вчорашню** UTC-добу, а
+    #     `scope :upcoming` бере `target_date >= сьогодні` — множини диз'юнктні
+    #     за побудовою, тож жоден згенерований рядок сюди не потрапляє НІКОЛИ;
+    #   · `InsightGeneratorService` створює лише `daily_health_summary`; три
+    #     прогнозні члени enum'а (`drought_probability` · `carbon_yield_forecast` ·
+    #     `biodiversity_trend`) не пише ніхто, крім `db/seeds.rb`.
+    # Тобто все, що ця сторінка колись показувала, приходило з сідів.
+    #
+    # ⚖️ Текст свідомо називає ВІДСУТНІСТЬ ВИРОБНИКА, а не «поки порожньо»: доки
+    # продуктове питання (чи прогноз-інсайт узагалі наш продукт) відкрите, чесне
+    # «виробника немає» щоразу піднімає його власнику, а «зачекайте» — ховає.
+    def render_empty_state
+      render Views::Shared::UI::EmptyState.new(
+        title: t(".empty_title"),
+        icon: "◇",
+        description: t(".empty_description")
+      )
+    end
 
     def header_section
       div(class: "p-6 border border-emerald-900 bg-black/40 backdrop-blur-md flex justify-between items-end") do

@@ -7,6 +7,8 @@ lt:
       predicted_window: Prognozuojamas įvykio langas
       probability: "%{value}%"
     index:
+      empty_description: Naktinė analizė rašo tik kasdienes būklės suvestines. Sausros, emisijos ir bioįvairovės prognozių niekas negeneruoja, todėl matrica lieka tuščia.
+      empty_title: Prognozės dar negaminamos.
       expected_yield: Prognozuojama 24h emisija
       title: Strateginių prognozių matrica
       yield_unit: SCC

@@ -7,6 +7,8 @@ lv:
       predicted_window: Prognozētais notikuma logs
       probability: "%{value}%"
     index:
+      empty_description: Nakts analīze raksta tikai ikdienas stāvokļa kopsavilkumus. Sausuma, emisiju un bioloģiskās daudzveidības prognozes neviens neģenerē, tāpēc matrica paliek tukša.
+      empty_title: Prognozes vēl netiek veidotas.
       expected_yield: Prognozētā 24h emisija
       title: Stratēģiskās prognozes matrica
       yield_unit: SCC

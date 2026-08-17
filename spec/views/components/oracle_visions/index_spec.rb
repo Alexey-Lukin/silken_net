@@ -104,10 +104,31 @@ RSpec.describe OracleVisions::Index do
     end
   end
 
+  # 🔴 [ARCH.103] Тут доти стояв ОДИН приклад — «renders without errors when
+  # visions is empty», — і він пінив ЗАГОЛОВОК, тобто вузол, що рендериться
+  # незалежно від списку. Він був зелений увесь час, поки під шапкою не було
+  # НІЧОГО: у проді ця гілка є єдиною досяжною (писач штампує вчорашню добу,
+  # `upcoming` бере сьогоднішню — множини диз'юнктні за побудовою), тож
+  # найважливіший стан сторінки не мав жодного свідка.
+  #
+  # Пара нижче дискримінує: порожньо ⇒ пояснення Є, непорожньо ⇒ його НЕМА.
+  # Без другої половини пін проходив би й на компоненті, що малює порожній стан
+  # ЗАВЖДИ — тобто поверх карток.
   describe "empty visions list" do
-    it "renders without errors when visions is empty" do
-      html = render_component(visions: [], emission_forecast: "0.00")
-      expect(html).to include("Strategic Forecast Matrix")
+    let(:empty_html) { render_component(visions: [], emission_forecast: "0.00") }
+
+    it "explains that no producer exists, rather than staying blank" do
+      expect(empty_html).to include("No forecasts are produced yet.")
+      expect(empty_html).to include("daily health summaries only")
+    end
+
+    it "keeps the header and its forecast figure" do
+      expect(empty_html).to include("Strategic Forecast Matrix")
+      expect(empty_html).to include("0.00")
+    end
+
+    it "does NOT show the explanation once forecasts exist" do
+      expect(html).not_to include("No forecasts are produced yet.")
     end
   end
 end

@@ -7,6 +7,8 @@ en:
       predicted_window: Predicted Event Window
       probability: "%{value}%"
     index:
+      empty_description: Nightly analysis writes daily health summaries only. Drought, emission and biodiversity forecasts have no generator yet, so this matrix stays empty.
+      empty_title: No forecasts are produced yet.
       expected_yield: Projected 24h Emission
       title: Strategic Forecast Matrix
       yield_unit: SCC
