@@ -92,11 +92,17 @@ takes, rather than a blanket ban.
 
 - Add an `Assisted-by: AGENT:MODEL` trailer (for example
   `Assisted-by: Claude Code:claude-opus-5`) next to the usual `Co-Authored-By`.
-- **An AI never signs off.** `Signed-off-by` may only be added by the human
-  contributor who directs and owns the change: the DCO is a legal certification
-  of provenance and licence compatibility, and only a person can make it. Our
-  DCO check enforces this structurally, by matching the sign-off against the
-  commit author.
+- **The sign-off is the contributor's own act.** `Signed-off-by` certifies
+  provenance and licence compatibility. That is a legal statement only a person
+  can make, so it belongs to the human who directs and owns the change — never
+  to the agent.
+- **What the check can and cannot see.** Our DCO check rejects any sign-off
+  whose address is not the commit's own author or committer, so no agent can
+  sign in a name other than the contributor's. It cannot see *who typed the
+  command*: a git object records tree, parents, author, committer and message,
+  and nothing in it distinguishes a person from tooling running under their
+  identity. That half rests on you, not on CI — which is what a certification
+  means.
 
 Why this project permits AI assistance instead of prohibiting it — and what that
 means for copyright in our jurisdiction — is recorded under `UNI.20` in

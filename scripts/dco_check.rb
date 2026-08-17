@@ -36,6 +36,22 @@
 # pushes to `main` never pass through a PR and are not checked — DCO governs
 # INBOUND contribution, which is what UNI.20 is about.
 #
+# Declared ceiling — what a green run does NOT claim. The sentence enforced here
+# is exactly one: "every non-bot commit in range carries a Signed-off-by whose
+# EMAIL equals the commit's own author or committer". Everything else the DCO
+# stands for rests on the contributor, not on this script:
+#   · It cannot see WHO TYPED THE COMMAND. A git object holds tree, parents,
+#     author, committer and message; no field distinguishes a person from
+#     tooling running under their identity. `CONTRIBUTING.md` therefore states
+#     "an AI never signs off" as an obligation on the contributor, not as
+#     something checked here — and it says so in those words. Signatures buy a
+#     different property (key ownership, anti-imposter), not this one.
+#   · The NAME half of the trailer is ignored on purpose — only the address is
+#     compared, so `Signed-off-by: Anyone <owner@example.com>` passes.
+#   · Author OR committer is accepted, which is wider than "the author": a
+#     rebaser's sign-off carries commits they did not write. That is deliberate
+#     (see the rebase case in the spec), but it is wider than the prose reads.
+#
 # Pure Ruby (open3 stdlib, no Rails). Run from repo root:
 #   ruby scripts/dco_check.rb                    # origin/main..HEAD
 #   ruby scripts/dco_check.rb main..my-branch    # explicit range
