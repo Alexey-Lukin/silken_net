@@ -207,6 +207,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 68. A declared ceiling can encode an UNVERIFIED PREMISE about the environment — and because a ceiling reads as rigor, nobody ever re-measures it — **a ceiling that says «we cannot do X because the environment lacks Y» is a claim about the environment — go read the workflow, not the ceiling. Ceilings age exactly like the absence-justifications in #-note «X is impossible», and for the same reason: they are read as reference, never as claim**
 69. A locally-generated artifact can SHADOW the file under test, so the lane grades a snapshot instead of the tree — and unlike the loud form, this one is green — **when a measurement disagrees with a change you just made, ask which ARTIFACT the harness actually loaded before you doubt the change**
 70. A class closed by MIGRATION is closed for the FILES someone edited, never for the SURFACE — the CARRIER's perimeter is a separate measurement from the FIX's
+71. A registry entry can name a SUBJECT THAT DOES NOT EXIST — and every field-shaped check passes, because they interrogate the entry, never the tree — **for every registry keyed on a selector, a class token, a path, a constant or an ID, add the axis «does this subject resolve in the tree» — one grep per entry — and if the registry cannot check it, say so in its ceiling instead of implying it does**
 
 <!-- /GUARD-CRAFT-INDEX -->
 

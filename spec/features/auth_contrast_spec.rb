@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require Rails.root.join("spec/support/contrast_registry")
 
 # [UI.3] Родина `AuthLayout` тримає AA в ОБОХ темах — на сторінках, які бачить
 # кожен вхід і кожне відновлення пароля.
@@ -26,7 +27,9 @@ require "rails_helper"
 # дефект: без них зелений колір тут означав би рівно те, що означав раніше.
 #
 # 🔒 Стелі (чесно й поіменно):
-#   · три сторінки родини, а не «всі публічні» — реєстру сторінок досі немає
+#   · три сторінки родини, а не «всі публічні»; ✅ але перелік більше не
+#     літерал тут — він приходить із `ContrastRegistry::CONTOURS[:auth]`,
+#     а популяцію стереже `spec/quality/contrast_contour_registry_spec.rb`
 #     (`00_07` UI.3);
 #   · один розмір вікна (1440×900) — мобільна розмітка має власну;
 #   · СТАНИ (`:hover`/`:focus-visible`/`::placeholder`) не покриті: статичний
@@ -50,7 +53,7 @@ RSpec.describe "[UI.3] AuthLayout тримає AA в обох темах", :js d
   # зрізає query у ФАКТИЧНОГО шляху й не зрізає в очікуваного. Звідси
   # `expect_path:` у збирачі — тут воно виводиться само.
   def auth_pages
-    [ "/login", "/forgot_password", "/reset_password?token=#{user.generate_token_for(:password_reset)}" ]
+    ContrastRegistry.paths_for(:auth, reset_token: user.generate_token_for(:password_reset))
   end
 
   %i[dark light].each do |theme|

@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require Rails.root.join("spec/support/contrast_registry")
 
 # [UI.3] Два КОРЕНЕВІ текстові токени тримають AA у ОБОХ темах — на кожній
 # поверхні, яку вони реально отримують.
@@ -33,7 +34,10 @@ require "rails_helper"
 # сиру поверхню під `text-subtle` — цей файл почервоніє, і це правильно.
 #
 # 🔒 Стелі (чесно й поіменно; зелений НЕ означає «сторінки доступні»):
-#   · контур — чотири сторінки, а не всі: реєстру сторінок ще немає (`00_07` UI.3);
+#   · контур — чотири сторінки, а не всі; ✅ але перелік більше НЕ літерал тут:
+#     він приходить із `ContrastRegistry::CONTOURS[:root_tokens]`, а сторож
+#     популяції (`spec/quality/contrast_contour_registry_spec.rb`) не дає новому
+#     маршрутові тихо випасти з виміру — доти саме це й було можливо;
 #   · один розмір вікна — мобільна розмітка має власну (card-flip `td::before`);
 #   · СТАНИ (`:hover`/`:focus-visible`/`::placeholder`/`:disabled`) не покриті —
 #     статичний знімок їх не має за побудовою;
@@ -66,7 +70,7 @@ RSpec.describe "[UI.3] Кореневі текстові токени трима
   # `authorize_super_admin!`, тож для цього актора віддала б `Errors::Page` НА
   # ТОМУ Ж ШЛЯХУ — тобто мовчазний нуль пар при зеленому піні на шлях.
   def pages
-    [ "/dashboard", "/clusters/#{cluster.id}/trees", "/trees/#{tree.id}", "/firmwares/new" ]
+    ContrastRegistry.paths_for(:root_tokens, cluster: cluster, tree: tree)
   end
 
   before { sign_in_as(user, password: password) }
