@@ -35,6 +35,10 @@ system_params = [
   # (FW.7 bit-parity з прошитим firmware; zmin/zmax — per-species у TreeFamily).
   # SystemParameter-запис, якого жоден споживач не читає, був би пасткою —
   # ParameterSyncWorker ці ключі теж не синхронізує (лише tripwire-WARN).
+  # ⚡ [ARCH.104] Це правило тепер ГЕЙТОВАНЕ для всього файлу, не лише для Lorenz:
+  # `spec/quality/system_parameter_delivery_spec.rb` червоніє на будь-якому ключі,
+  # якого не читає ні код, ні `PARAMETER_MAP`. Додаєш ручку — додай і того, хто її
+  # крутить, інакше вона не «на майбутнє», а просто не існує.
 
   # --- Tokenomics (05_03) ---
   { key: "emission_threshold", value: "10000", value_type: "integer", category: "tokenomics",
@@ -48,20 +52,6 @@ system_params = [
   { key: "scc_per_tonne_co2", value: "2000", value_type: "integer", category: "tokenomics",
     min_value: 100, max_value: 100_000, description: "SCC tokens equivalent to 1 tonne CO2 absorbed (2000 SCC = 1 tCO2)" },
 
-  # --- Fraud Detection (05_02) ---
-  { key: "fraud_deviation_threshold", value: "0.30", value_type: "float", category: "alerts",
-    min_value: 0.10, max_value: 0.50, description: "Device Z vs Server Z divergence → fraud flag" },
-
-  # --- Alert Thresholds (04_02) ---
-  { key: "default_fire_temp_c", value: "60", value_type: "integer", category: "alerts",
-    min_value: 40, max_value: 100, description: "Temperature threshold for fire alerts (°C)" },
-  { key: "default_seismic_threshold", value: "200", value_type: "integer", category: "alerts",
-    min_value: 100, max_value: 255, description: "Acoustic events threshold for seismic alert" },
-  { key: "fire_frp_threshold_mw", value: "10.0", value_type: "float", category: "alerts",
-    min_value: 1.0, max_value: 50.0, description: "NASA FIRMS FRP threshold (MW) for fire detection" },
-  { key: "fire_confidence_threshold", value: "50", value_type: "integer", category: "alerts",
-    min_value: 20, max_value: 100, description: "Minimum satellite fire detection confidence (%)" },
-
   # --- Slashing (05_05 §3, GOV.1 — DAO-live через ProtocolParameters.sol) ---
   { key: "slash_threshold", value: "0.2", value_type: "float", category: "alerts",
     min_value: 0.05, max_value: 1.0, description: "Cluster degradation fraction that triggers the slashing checkpoint" },
@@ -71,14 +61,6 @@ system_params = [
     min_value: 1.0, max_value: 3.0, description: "Convex slash curve exponent (05_05 §3)" },
   { key: "slash_penalty_factor_max", value: "2.0", value_type: "float", category: "alerts",
     min_value: 1.0, max_value: 5.0, description: "Ceiling on the slash penalty multiplier (not final ratio)" },
-
-  # --- Hardware (02_03) ---
-  { key: "vcap_min_mv", value: "2800", value_type: "integer", category: "hardware",
-    min_value: 2000, max_value: 3500, description: "Minimum supercap voltage (mV)" },
-  { key: "vcap_max_mv", value: "5500", value_type: "integer", category: "hardware",
-    min_value: 4500, max_value: 6000, description: "Maximum supercap voltage (mV)" },
-  { key: "low_power_mv", value: "3300", value_type: "integer", category: "hardware",
-    min_value: 2800, max_value: 4000, description: "Critical low-power threshold (mV)" },
 
   # --- Pricing (04_02, S6.9) ---
   { key: "scc_fallback_price_usd", value: "25.50", value_type: "float", category: "tokenomics",
