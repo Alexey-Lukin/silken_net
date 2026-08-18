@@ -206,6 +206,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 67. A gate that pins two of OUR OWN homes to each other proves AGREEMENT, never correctness — and it is structurally blind to both sides being wrong the same way — **for any cross-artifact gate, name the EXTERNAL anchor — the framework's own output, the server's API, the wire — and if the answer is "there isn't one", that is the finding**
 68. A declared ceiling can encode an UNVERIFIED PREMISE about the environment — and because a ceiling reads as rigor, nobody ever re-measures it — **a ceiling that says «we cannot do X because the environment lacks Y» is a claim about the environment — go read the workflow, not the ceiling. Ceilings age exactly like the absence-justifications in #-note «X is impossible», and for the same reason: they are read as reference, never as claim**
 69. A locally-generated artifact can SHADOW the file under test, so the lane grades a snapshot instead of the tree — and unlike the loud form, this one is green — **when a measurement disagrees with a change you just made, ask which ARTIFACT the harness actually loaded before you doubt the change**
+70. A class closed by MIGRATION is closed for the FILES someone edited, never for the SURFACE — the CARRIER's perimeter is a separate measurement from the FIX's
 
 <!-- /GUARD-CRAFT-INDEX -->
 

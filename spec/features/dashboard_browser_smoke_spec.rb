@@ -105,6 +105,14 @@ RSpec.describe "Dashboard in a real browser", :js do
     expect(page).to have_css("#map_node_#{tree.id}", visible: :all)
     expect(page).to have_css(".leaflet-pane", visible: :all)
     expect(page).to have_css(".custom-tree-marker", visible: :all)
+
+    # 🔴 Атрибуція тайлів — ВИМОГА ЛІЦЕНЗІЇ (OSM ODbL §4.3 + умови CARTO), і доти
+    # її ЗАМІЩАВ наш власний підпис. Пін дивиться на вивід САМОГО Leaflet, а не на
+    # джерело контролера: зовнішній якір тут і є суттю — карта мусить ПОКАЗАТИ
+    # джерело, а не згадати його в коді.
+    attribution = find(".leaflet-control-attribution", visible: :all).text
+    expect(attribution).to include("OpenStreetMap")
+    expect(attribution).to include("CARTO")
   end
 
   # 🔴 [UI.11 крок 3] Половина, недоказовна нижче В ПРИНЦИПІ: Turbo в компонентній

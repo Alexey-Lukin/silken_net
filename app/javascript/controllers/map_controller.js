@@ -54,7 +54,13 @@ export default class extends Controller {
 
     // Використовуємо Dark Matter стиль для кіберпанк-естетики
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: 'Silken Net // Geospatial Oracle',
+      // 🔴 Атрибуція — ВИМОГА ЛІЦЕНЗІЇ, не підпис. Дані OSM ліцензовані ODbL (§4.3
+      // вимагає називати джерело в кожному похідному творі), тайли — за умовами CARTO.
+      // Доти тут стояв самий лише наш рядок, який ЗАМІЩАВ обидва джерела; власний
+      // підпис лишається, але ПОРУЧ, а не замість.
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors ' +
+        '&copy; <a href="https://carto.com/attributions">CARTO</a> // Silken Net Geospatial Oracle',
       maxZoom: 19
     }).addTo(this.map)
 
