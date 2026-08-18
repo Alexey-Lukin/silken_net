@@ -8,10 +8,13 @@ require Rails.root.join("lib/silken_net/contrast")
 # Розподіл праці дзеркалить наявні гейти репо: арифметика — `lib/silken_net/
 # contrast.rb` (pure Ruby, власний unit-спек), тут — рівно збирання.
 #
-# ⚠️ Реєстр сторінок як окремий ДОКУМЕНТ (`spec/support/contrast_registry.rb`,
-# форма `browser_contour_registry`) ще НЕ існує — перелік поки хардкодом у
-# споживачі. Він народиться разом із гейтом, і не раніше: реєстр винятків, що
-# випереджає лік кореневих токенів, був би довшим за реєстр сторінок.
+# ✅ Реєстр сторінок як окремий ДОКУМЕНТ ІСНУЄ з 2026-08-18:
+# `spec/support/contrast_registry.rb` (форма `browser_contour_registry`), сторож —
+# `spec/quality/contrast_contour_registry_spec.rb`. Перелік більше НЕ хардкод у
+# споживачі: популяція деривується з `routes.rb`, кожен маршрут класифікований, а
+# контур-спеки беруть шляхи з реєстру. ⚠️ Тут доти стояло «ще НЕ існує — народиться
+# разом із гейтом»; заяву лишили після того, як гейт народився, і вона прожила
+# рівно один коміт поруч із власним спростуванням чотирма абзацами нижче.
 #
 # 🧱 Чому шар браузерний, хоч коштує на два порядки дорожче (`04_06 §B.1.4`,
 # критерій належності): пара fg/bg майже завжди живе в РІЗНИХ файлах — поверхню
@@ -108,6 +111,8 @@ module ContrastAudit
 
   HARVEST_JS = <<~JS
     (() => {
+      // Дім токенів — `ContrastRegistry::DECORATIONS`; підставляються в місці виклику.
+      const DECORATION_TOKENS = __DECORATION_TOKENS__;
       const buckets = { measured: 0, excluded: {}, unmeasurable: {} };
       const bump = (b, r) => { buckets[b][r] = (buckets[b][r] || 0) + 1; };
       const pairs = new Map();
@@ -186,6 +191,15 @@ module ContrastAudit
         // Нормативний виняток 1.4.3: inactive UI component.
         if (el.closest('[disabled], [aria-disabled="true"], fieldset[disabled]')) {
           return ['excluded', 'disabled'];
+        }
+
+        // 🔴 ОГОЛОШЕНА декорація — єдина форма, якою «pure decoration» узагалі
+        // може потрапити у виняток: `aria-hidden` для 1.4.3 не підстава (критерій
+        // ВІЗУАЛЬНИЙ, а атрибут ховає від скрінрідера, не від ока). Токени
+        // приходять із `ContrastRegistry::DECORATIONS` — прилад власного списку
+        // НЕ тримає, інакше це був би другий реєстр, що гниє окремо.
+        for (const token of DECORATION_TOKENS) {
+          if (el.classList.contains(token)) return ['excluded', 'declared_decoration'];
         }
 
         // SVG красить `fill`, а не `color` — computed style тут описує не те,
@@ -342,6 +356,11 @@ module ContrastAudit
   # з `?token=…` червонив прилад на цілком здоровій сторінці — тобто жодну
   # сторінку, що вимагає параметра, виміряти було неможливо (виміряно на
   # `/reset_password?token=…`, UI.3).
+  # Дім токенів — реєстр; тут лише серіалізація.
+  def decoration_tokens_json
+    ContrastRegistry::DECORATIONS.values.flat_map { |d| Array(d[:class_tokens]) }.uniq.to_json
+  end
+
   def harvest_contrast(path, theme:, expect_path: path.split("?").first)
     emulate_media(theme)
     visit(path)
@@ -365,7 +384,12 @@ module ContrastAudit
     expect(page.status_code).to eq(200),
                                 "сторінка віддала #{page.status_code} — міряємо `Errors::Page`, а не #{path}"
 
-    raw = page.evaluate_script(HARVEST_JS)
+    # Токени підставляються В МІСЦІ ВИКЛИКУ, а не хардкодяться в JS: дім
+    # декларації — `ContrastRegistry::DECORATIONS`, і прилад читає саме його.
+    # Доти реєстр оголошував звільнення, якого НІХТО не застосовував — три
+    # поверхні стверджували механізм, що не існував (§Guard-craft #71 на поверх
+    # вище: предмет декларації був реальний, а споживача не було).
+    raw = page.evaluate_script(HARVEST_JS.sub("__DECORATION_TOKENS__", decoration_tokens_json))
 
     expect(raw["reduced_motion"]).to be(true),
                                      "CDP-емуляція не спрацювала — рух не заморожено, вимір недетермінований"

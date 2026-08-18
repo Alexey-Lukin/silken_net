@@ -31,8 +31,21 @@ require Rails.root.join("spec/support/contrast_registry")
 #   4. Він не знає про ДОСЯЖНІСТЬ маршруту для актора: сторінка за
 #      `authorize_super_admin!` віддасть `Errors::Page` на тому ж шляху, тобто
 #      контур міряв би сторінку помилки, лишаючись зеленим.
-#   5. POST/PATCH/DELETE поза скоупом: контраст міряється на тому, що ВИДНО,
-#      а видно GET-відповідь.
+#   5. 🔴 POST/PATCH/DELETE поза скоупом — і ПІДСТАВА, що тут стояла («видно
+#      GET-відповідь»), ХИБНА: форма, що рендериться на 422, є повною видимою
+#      сторінкою, недосяжною жодним GET (`passwords#update` віддає `AuthLayout`
+#      з `flash_alert`, і `04_04 §9` вимагає від неї `ErrorSummary`). Тобто це
+#      пропуск за ЦІНОЮ (кожен стан помилки треба спровокувати), а не за
+#      природою — і саме там густо стоять `status-danger`-токени.
+#   6. «Спека читає перелік із реєстру» перевіряється ЛЕКСИЧНО — гейт бачить
+#      рядок у джерелі, не його ВИКОНАННЯ. Виклик у коментарі, у `skip`-блоці
+#      або з відкинутим результатом пройде. Поведінкова перевірка вимагала б
+#      запускати feature-спеку зсередини цієї, що зчепило б дві джоби CI.
+#   7. Один ключ ховає різні ЕКРАНИ того самого маршруту: `?window=all` проти
+#      дефолтного вікна, сторінка 2+ фотогалереї (де `editable:` міняє розмітку).
+#   8. Сторінки помилок (`Errors::Page` 403/404/500) маршруту не мають узагалі,
+#      а `harvest_contrast` пінить статус 200 — тобто вони невимірні ЗА
+#      ПОБУДОВОЮ, і це окрема непокрита поверхня, не пропуск реєстру.
 RSpec.describe "[UI.3] Популяція контуру контрастності", type: :model do
   # Популяція деривується з РЕАЛЬНОГО роутера, ніколи з переліку — інакше гейт
   # звірявся б із власною копією світу (§Guard-craft #67: анкор має бути ЗОВНІШНІЙ).
@@ -40,13 +53,24 @@ RSpec.describe "[UI.3] Популяція контуру контрастнос�
   # Фільтр мінімальний і оголошений: GET · має контролер · шлях не всередині
   # фреймворкового `/rails/` (ActiveStorage, Turbo-native, ViewComponent-preview).
   # Усе інше класифікує ЛЮДИНА в реєстрі — гейт наміру не виводить.
+  # 🔴 ДВІ гілки, і друга куплена adversarial-проходом. `mount` створює маршрут
+  # `via: :all` (порожній `verb`) БЕЗ `defaults[:controller]`, тож наївний фільтр
+  # викидав його ДВІЧІ незалежно й мовчки — `Sidekiq::Web` (HTML-панель адміна)
+  # не існувала для приладу взагалі. Різниця між «звільнено» і «невидиме» є всім
+  # предметом цього гейта, тож монтування отримує власний ключ `mount:<шлях>`.
   def live_routes
     Rails.application.routes.routes.filter_map do |r|
-      next unless r.verb.to_s.include?("GET")
+      path = r.path.spec.to_s
+      next if path.start_with?("/rails/")
 
       controller = r.defaults[:controller]
-      next if controller.nil?
-      next if r.path.spec.to_s.start_with?("/rails/")
+      if controller.nil?
+        next unless r.verb.to_s.empty?
+
+        next "mount:#{path.sub(%r{\(/\*.*\)\z}, '')}"
+      end
+
+      next unless r.verb.to_s.include?("GET")
 
       "#{controller}##{r.defaults[:action]}"
     end.uniq
@@ -62,6 +86,13 @@ RSpec.describe "[UI.3] Популяція контуру контрастнос�
   it "деривація популяції жива (порожній скоуп ≠ успіх)" do
     expect(routes.size).to be > 30,
                            "з роутера прийшло #{routes.size} GET-маршрутів — деривація зламана, решта прикладів вакуумна"
+
+    # 🔴 Дзеркальний ліхтар, куплений adversarial-проходом: порожній `paths:` дає
+    # порожній контур, а приклад про білдери на порожньому масиві ПРОХОДИТЬ. Тобто
+    # регресія «виміряна сторінка → назад у чергу» була зеленою й виглядала
+    # точнісінько як законне перенесення між хвилями.
+    expect(ContrastRegistry::MEASURED_KEYS.size).to be >= 7,
+                                                    "контур скоротився до #{ContrastRegistry::MEASURED_KEYS.size} сторінок — виміряне не повертається у чергу мовчки"
   end
 
   it "кожен браузерний маршрут КЛАСИФІКОВАНИЙ — новий не може тихо випасти з виміру" do
@@ -122,8 +153,13 @@ RSpec.describe "[UI.3] Популяція контуру контрастнос�
     # `:none` тут не «я не придумав», а твердження «вимога незастосовна». Для
     # хвиль, заведених через ЧЕРГУ, воно хибне за визначенням: вони й існують
     # тому, що сторінку ЩЕ не виміряли. Дзеркало правила LATENT у взірця.
-    it "постійне звільнення має право лише на те, що не рендерить HTML" do
-      permanent = ContrastRegistry::WAVES.select { |k, w| w[:back] == :none && k != :machine }
+    # ⚠️ ДЗЕРКАЛО, без якого перевірка обходиться прозою: хвиля бере довічне
+    # звільнення, написавши в `back` речення «рядок тут не потрібен» — формально
+    # це не `:none`, фактично саме воно. Тому by-construction кошики оголошують
+    # `:none` ЯВНО, і приклад судить пару, а не словник.
+    it "постійне звільнення має право лише на те, що не рендерить власної сторінки" do
+      by_construction = %i[machine fragment mounted]
+      permanent = ContrastRegistry::WAVES.select { |k, w| w[:back] == :none && !by_construction.include?(k) }
 
       expect(permanent).to be_empty, <<~MSG
         #{permanent.keys.join(', ')} оголошені постійними, хоч сторінки там рендерять HTML.
@@ -167,13 +203,53 @@ RSpec.describe "[UI.3] Популяція контуру контрастнос�
       MSG
     end
 
-    it "кожен вимірюваний маршрут будує шлях без винятку" do
+    # 🔴 ЦЕ БУВ НАЙСЛАБШИЙ приклад файлу, і adversarial назвав чому: він кликав
+    # білдери й перевіряв ЛИШЕ провідний слеш, тобто `"/clusters/1/treez"` і навіть
+    # `"/dashboard"` під ключем `trees#show` проходили зеленими. А `paths_for`
+    # читає `[:paths].values` — ключі не беруть участі взагалі, — тож твердження
+    # «цей маршрут виміряний» спиралось на рядок, якого не звіряв НІХТО.
+    #
+    # Анкор знову ЗОВНІШНІЙ: роутер сам каже, у що резолвиться побудований шлях.
+    it "кожен побудований шлях резолвиться САМЕ в той маршрут, під яким записаний" do
       ctx = { cluster: Struct.new(:id).new(1), tree: Struct.new(:id).new(2), reset_token: "t0ken" }
 
-      ContrastRegistry::CONTOURS.each_key do |slug|
-        paths = ContrastRegistry.paths_for(slug, ctx)
-        expect(paths).to all(start_with("/")), "контур #{slug} побудував шлях без провідного «/»"
+      drifted = ContrastRegistry::CONTOURS.flat_map do |slug, contour|
+        contour[:paths].filter_map do |key, builder|
+          path = builder.call(ctx).split("?").first
+          recognised = Rails.application.routes.recognize_path(path, method: :get)
+          actual = "#{recognised[:controller]}##{recognised[:action]}"
+          "#{slug}: #{key} → #{path} → #{actual}" unless actual == key
+        rescue ActionController::RoutingError
+          "#{slug}: #{key} → #{builder.call(ctx)} (не резолвиться взагалі)"
+        end
       end
+
+      expect(drifted).to be_empty, <<~MSG
+        Шлях не веде туди, під чим записаний:
+          #{drifted.join("\n  ")}
+
+        Це не педантизм: `MEASURED_KEYS` деривується з КЛЮЧІВ, тож реєстр рекламував би
+        сторінку як виміряну, а прилад відкривав би іншу — і всі решта прикладів
+        лишались би зеленими.
+      MSG
+    end
+
+    # 🔴 Власний припис §Guard-craft #71, якого перша редакція НЕ виконала: реєстр є
+    # ДВОМА заявами — «предмет існує» ⊥ «він звільнений», — і гейт майже завжди
+    # успадковує лише другу. Тут предмет лексичний, тож перевіряється грепом.
+    it "кожен токен декорації РЕЗОЛВИТЬСЯ в дереві" do
+      views = Dir.glob(Rails.root.join("app/views/**/*.rb")).map { |f| File.read(f) }.join("\n")
+
+      ghosts = ContrastRegistry::DECORATIONS.flat_map do |name, entry|
+        Array(entry[:class_tokens]).reject { |t| views.include?(t) }.map { |t| "#{name}: #{t}" }
+      end
+
+      expect(ghosts).to be_empty, <<~MSG
+        Токени декорацій без жодного вузла в дереві: #{ghosts.join(', ')}.
+        Аспіраційна декларація гірша за відсутню — вона виглядає як покриття й не
+        покриває нічого (перша редакція цього реєстру оголошувала атрибут, якого в
+        дереві нуль).
+      MSG
     end
   end
 end
