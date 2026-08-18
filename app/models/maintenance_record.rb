@@ -114,14 +114,23 @@ class MaintenanceRecord < ApplicationRecord
   scope :hardware_verified, -> { where(hardware_verified: true) }
   scope :with_gps,          -> { where.not(latitude: nil, longitude: nil) }
 
-  # =========================================================================
-  # КОЛБЕКИ (The Healing Protocol)
-  # =========================================================================
+# =========================================================================
+# КОЛБЕКИ (The Healing Protocol)
+# =========================================================================
 
-  # [ВИПРАВЛЕНО]: Ми відмовилися від heal_ecosystem! всередині моделі.
-  # Замість цього запускаємо асинхронний воркер, що гарантує 100% доставку
-  # змін статусу навіть при тимчасових збоях бази даних.
-  after_create_commit :trigger_ecosystem_healing!
+# [ВИПРАВЛЕНО]: Ми відмовилися від heal_ecosystem! всередині моделі.
+# Замість цього запускаємо асинхронний воркер, що гарантує 100% доставку
+# змін статусу навіть при тимчасових збоях бази даних.
+after_create_commit :trigger_ecosystem_healing!
+
+# [UI.4] Третій продюсер стрічки подій дашборда — дописаний за зразком
+# `EwsAlert#broadcast_org_refresh` і `BlockchainTransaction#broadcast_ledger_signal`,
+# бо саме з цих трьох доменів `fetch_recent_events` збирає стрічку, а два з них
+# сигналили вже, і лише обслуговування мовчало. ОДНА реєстрація на обидві події:
+# `after_create_commit` + `after_update_commit` з тим самим іменем фільтра не дають
+# двох колбеків — ActiveSupport ключує їх ІМЕНЕМ, і друга реєстрація тихо заміщає
+# першу (виміряно на `_commit_callbacks`, `blockchain_transaction.rb`).
+after_commit :broadcast_maintenance_signal, on: %i[create update]
 
   # =========================================================================
   # МЕТОДИ
@@ -169,7 +178,31 @@ class MaintenanceRecord < ApplicationRecord
     actor.admin_or_above? || user_id == actor.id
   end
 
-  private
+private
+
+# СИГНАЛ, а не рядок: стрічка дашборда — похідний міжсутнісний рейтинг, тож
+# `prepend` дав би неправильне ДІЄСЛОВО (кап-3 на тип і зріз-8 не шануються), а
+# заміна контейнера тягла б locale-залежний payload у стрім, спільний для всіх
+# глядачів організації (`04_04 §8.1б`).
+#
+# ⚠️ Організація береться від АВТОРА запису, і це не довільний вибір: стрічка
+# скоупить обслуговування саме так (`where(users: { organization_id: org.id })`).
+# Поліморфний `maintainable` дав би ІНШУ множину — тобто сигнал, що не збігається
+# з тим, що сторінка показує. Береться org-ЗАПИС, бо імʼя несе `stream_epoch`.
+def broadcast_maintenance_signal
+  owner = user&.organization
+  # Fail-closed без тиші: `TurboStreams::Name.org` на `nil` кинув би `ArgumentError`,
+  # який власний `rescue` нижче зʼїв би у WARN — рядок лишився б німим так само,
+  # лише без сліду.
+  return if owner.blank?
+
+  Turbo::StreamsChannel.broadcast_refresh_later_to(TurboStreams::Name.org(:maintenance, owner))
+rescue StandardError => e
+  # `commit_records` має `ensure` без `rescue`, тож виняток UI-декорації пролетів би
+  # нагору з `create!`/`update!` — тут це вбило б подання запису обслуговування
+  # 👤-оператором у полі, заради оновлення чужого екрана.
+  Rails.logger.warn "📡 [UI.4] broadcast_maintenance_signal ##{id}: #{e.message}"
+end
 
   def trigger_ecosystem_healing!
     # Викликаємо "М'яз зцілення" (NAM-ŠID Healing).

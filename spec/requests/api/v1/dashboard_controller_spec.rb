@@ -130,14 +130,37 @@ RSpec.describe Api::V1::DashboardController, type: :request do
       # ⚠️ Двоє юзерів обовʼязкові: `organization` створюється в цьому файлі
       # першою, тож `Organization.first` їй ДОРІВНЮЄ — з одним прикладом
       # мутація на неї лишається зеленою. Ловить лише різниця відповідей.
+      # [UI.4] Очікуваний набір ЦІЛОЇ сторінки, не одного компонента: `Dashboard::Home`
+      # підписується на три домени своєї стрічки, `Dashboard::Map` — на четвертий.
+      # Порядок = порядок рендеру.
+      def expected_streams_for(org)
+        %w[ews_alerts blockchain_ledger maintenance_records geospatial_matrix]
+          .map { |prefix| "#{prefix}_org_#{org.id}_e#{org.stream_epoch}" }
+      end
+
       it "subscribes each viewer to their OWN organization map stream" do
         other_organization = create(:organization)
         stranger = create(:user, organization: other_organization)
 
-        expect(subscribed_streams_for(user))
-          .to eq([ "geospatial_matrix_org_#{organization.id}_e#{organization.stream_epoch}" ])
-        expect(subscribed_streams_for(stranger))
-          .to eq([ "geospatial_matrix_org_#{other_organization.id}_e#{other_organization.stream_epoch}" ])
+        expect(subscribed_streams_for(user)).to eq(expected_streams_for(organization))
+        expect(subscribed_streams_for(stranger)).to eq(expected_streams_for(other_organization))
+      end
+
+      # 🔴 [UI.4] Рівність МНОЖИНИ, а не `include` — бо дефект цього сайту виглядає
+      # як ЗАЙВИЙ стрім, і `include` його не бачить за побудовою. Кожен зайвий домен
+      # у `Dashboard::Home::FEED_DOMAINS` коштує повний GET сторінки кожному глядачеві
+      # на кожну чужу подію; кожен відсутній — мовчазно застарілу стрічку.
+      #
+      # ⚠️ Що цей пін НЕ доводить, і це треба тримати в голові: він стереже
+      # відповідність набору ЦЬОМУ списку, а не складу `fetch_recent_events`. Дрейф
+      # між ними лишається людською відповідальністю — сигнал у домен, якого стрічка
+      # більше не показує, тут зелений. Статичного гейта на цю вісь немає: склад
+      # стрічки — рантайм-масив із трьох ORM-ланцюгів, і жоден екстрактор не виводить
+      # із нього символ домену.
+      it "subscribes to exactly the domains its event feed is built from" do
+        expect(subscribed_streams_for(user)).to eq(expected_streams_for(organization))
+
+        expect(Dashboard::Home::FEED_DOMAINS).to eq(%i[alerts ledger maintenance])
       end
 
       it "renders map nodes only for the viewer's own geolocated trees" do

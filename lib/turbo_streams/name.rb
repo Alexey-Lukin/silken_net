@@ -46,7 +46,8 @@ module TurboStreams
       telemetry: "telemetry_stream",
       alerts: "ews_alerts",
       map: "geospatial_matrix",
-      ledger: "blockchain_ledger"
+      ledger: "blockchain_ledger",
+      maintenance: "maintenance_records"
     }.freeze
 
     class << self

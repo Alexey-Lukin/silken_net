@@ -432,4 +432,63 @@ RSpec.describe MaintenanceRecord, type: :model do
       expect(record.mutable_by?(foreign_admin)).to be(true)
     end
   end
+
+  # [UI.4] Третій продюсер стрічки подій дашборда. Дзеркало
+  # `BlockchainTransaction#broadcast_ledger_signal` — і форма піна та сама, бо
+  # клас дефекту той самий: механізм на місці, пускач наполовину мертвий, мовчить
+  # усе, крім екрана.
+  describe "broadcast_maintenance_signal" do
+    before { allow(Turbo::StreamsChannel).to receive(:broadcast_refresh_later_to) }
+
+    def maintenance_stream_for(organization)
+      "maintenance_records_org_#{organization.id}_e#{organization.stream_epoch}"
+    end
+
+    # ⚠️ Організація АВТОРА, не поліморфного `maintainable`: саме так стрічка
+    # скоупить обслуговування (`where(users: { organization_id: org.id })`). Дерево
+    # тут навмисне з ЧУЖОГО кластера — інакше приклад був би зелений і тоді, коли
+    # сигнал іде хибним шляхом, бо обидві організації збігалися б.
+    it "signals the organization of the record's AUTHOR, not of the maintainable" do
+      author = create(:user)
+      foreign_tree = create(:tree, cluster: create(:cluster, organization: create(:organization)))
+
+      create(:maintenance_record, user: author, maintainable: foreign_tree)
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to)
+        .with(maintenance_stream_for(author.organization))
+    end
+
+    # Поява й зміна — одна реєстрація на дві події (`on: %i[create update]`).
+    # Дві окремі реєстрації з тим самим іменем фільтра дали б ОДИН колбек з
+    # опціями останньої, і половина пускача померла б тихо.
+    it "signals again when the record is edited" do
+      record = create(:maintenance_record)
+
+      record.update!(notes: "Follow-up inspection after the storm.")
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to)
+        .with(maintenance_stream_for(record.user.organization)).at_least(:twice)
+    end
+
+    # `users.organization_id` nullable (платформений адмін створюється без орг.),
+    # тож гілка досяжна. `TurboStreams::Name.org` на `nil` кинув би `ArgumentError`,
+    # який власний `rescue` зʼїв би у WARN — гард робить цю тишу СВІДОМОЮ.
+    it "stays silent, and raises nothing, when the author has no organization" do
+      record = build(:maintenance_record, user: build(:user, organization: nil))
+
+      expect { record.send(:broadcast_maintenance_signal) }.not_to raise_error
+      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_refresh_later_to)
+    end
+
+    # 🔴 Ціна тут не транзакція, а РОБОТА 👤-оператора в полі: `commit_records` має
+    # `ensure` без `rescue`, тож виняток UI-декорації пролетів би нагору з `create!`
+    # і вбив подання запису обслуговування заради оновлення чужого екрана.
+    it "never lets a signal failure kill the field operator's submission" do
+      allow(Turbo::StreamsChannel).to receive(:broadcast_refresh_later_to).and_raise(StandardError, "cable down")
+      allow(Rails.logger).to receive(:warn)
+
+      expect { create(:maintenance_record) }.not_to raise_error
+      expect(Rails.logger).to have_received(:warn).with(/broadcast_maintenance_signal/)
+    end
+  end
 end

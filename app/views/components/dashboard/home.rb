@@ -7,6 +7,25 @@ module Dashboard
     # невідрізнимою від «стеля не досягнута» — `measurement_coverage` мовчить в обох
     # випадках, тож екран читався б як здоровий. Той самий вибір, що
     # `Gateways::Index#latest_logs` (PERF.1) і `Clusters::Show#health_measured` (ARCH.84).
+
+    # [UI.4] Домени, з яких зібрана стрічка подій (`Api::V1::DashboardController#fetch_recent_events`).
+    #
+    # 🔴 Чому підписка на ДОМЕНИ, а не на власний стрім сторінки. Стрічка — похідний
+    # міжсутнісний рейтинг (три запити по 3 → злиття → сорт → зріз 8), тож жоден
+    # фрагмент її не виражає, і єдина легальна форма живості тут — сторінковий
+    # сигнал (`04_04 §8.1б`). Спокуса була зробити `org(:dashboard)` і слати туди з
+    # трьох моделей; це розвернуло б залежність не в той бік — модель почала б
+    # перелічувати СТОРІНКИ, і четвертий екран із тривогами знову вимагав би правити
+    # `EwsAlert`. Двоє з трьох продюсерів УЖЕ шлють org-сигнал свого домену
+    # (`broadcast_org_refresh` · `broadcast_ledger_signal`); третій дописаний за їхнім
+    # зразком. Отже: сигнал — на домен, підписка — на сторінку.
+    #
+    # ⚠️ Набір заморожений СВІДОМО й мусить дорівнювати складу `fetch_recent_events`:
+    # зайвий домен = зайвий повний GET сторінки на кожну чужу подію, відсутній =
+    # мовчазно застаріла стрічка. Пін — рівність множини (`turbo_stream_scope_spec`),
+    # бо тут дефект виглядає як ЗАЙВИЙ стрім, а не як відсутній.
+    FEED_DOMAINS = %i[alerts ledger maintenance].freeze
+
     def initialize(stats:, events:, trees:, organization:, map_total:)
       @stats = stats
       @events = events
@@ -17,6 +36,9 @@ module Dashboard
 
     def view_template
       div(class: "space-y-10") do
+        # Без організації підписки нема (fail-closed) — те саме, що `Dashboard::Map`.
+        FEED_DOMAINS.each { |kind| turbo_stream_from TurboStreams::Name.org(kind, @organization) } if @organization
+
         # Ряд головних метрик (The Four Pillars)
         div(class: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6") do
           # `health_avg` — середнє `health_index`, шкала 0..1 (`04_01 §3`). Доти тут

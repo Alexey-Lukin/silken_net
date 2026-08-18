@@ -78,6 +78,11 @@ RSpec.describe "Turbo stream scope axis" do # rubocop:disable RSpec/DescribeClas
         proof: "spec/requests/api/v1/alerts_controller_spec.rb",
         example: "subscribes each viewer to their OWN organization alert stream"
       },
+      "app/views/components/dashboard/home.rb" => {
+        kind: :derived_org,
+        proof: "spec/requests/api/v1/dashboard_controller_spec.rb",
+        example: "subscribes to exactly the domains its event feed is built from"
+      },
       "app/views/components/dashboard/map.rb" => {
         kind: :derived_org,
         proof: "spec/requests/api/v1/dashboard_controller_spec.rb",
@@ -171,6 +176,7 @@ RSpec.describe "Turbo stream scope axis" do # rubocop:disable RSpec/DescribeClas
     %w[
       app/models/blockchain_transaction.rb
       app/models/ews_alert.rb
+      app/models/maintenance_record.rb
       app/models/organization.rb
       app/models/tree.rb
       app/models/wallet.rb
