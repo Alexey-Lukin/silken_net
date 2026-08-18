@@ -236,7 +236,10 @@ rb_dark() {
 # 2026-08-16: 132 → 133 — `log_verify_gate.md`, the journal twin for
 # `feedback_verify_gate_exit_code`. Raised so the new home is protected too:
 # a floor that lags the corpus stops guarding whatever arrived after it.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-134}
+# 2026-08-18: 134 → 135 — `log_money_path.md`, same shape: the twin
+# `project_money_path_orchestration` had NONE while sitting 306 B from WARN,
+# i.e. the file the skill names as "create the twin BEFORE it is needed".
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-135}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -311,7 +314,15 @@ index_reach_expected() {
 # half the corpus median (321), so trimming it further would be manicure, and
 # nothing else was bloated enough to displace. The eviction it enabled took
 # its home 36876 → 35332 B, i.e. the layer grew by one line and a WARN closed.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43174}
+# 2026-08-18: 43174 → 43268 (+94), and the shape repeats the entry above almost
+# exactly. `log_money_path.md` is a new journal twin; its trigger was drafted at
+# 274 B, trimmed to 131 B to match its sibling `log_local_verify`, and further
+# trimming would be manicure — 131 B is well under the corpus median. Nothing
+# else was bloated enough to displace, and cutting another file's recall trigger
+# to fund a new home is the manufactured-cleanup this practice forbids. What the
+# eviction bought: its home went 35694 → 32408 B, i.e. 306 B of headroom became
+# 3592 and a file the skill had flagged as twinless stopped being one.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43268}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
