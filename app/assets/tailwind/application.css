@@ -55,7 +55,16 @@
   --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code",
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
-  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+  /* 🔴 [UI.3] «Inter» знято 2026-08-19, і це не косметика. Цей токен НЕ має
+     жодного прямого викликача (`font-sans` — нуль вжитків у дереві), і при цьому
+     він живий на КОЖНІЙ сторінці: білд несе `--default-font-family: var(--font-sans)`,
+     тобто Preflight вішає його на `html`. Тобто Inter був інтенційним шрифтом
+     усього застосунку — і не вантажився ніде (нуль `@font-face`, нуль файлів).
+     ⚖️ founder: самохостимо лише МОНО (там 189 сайтів і зсув вирівнювання
+     колонок), а тіло тексту лишається на `system-ui` — це чесний, швидкий і
+     нативний вибір, а не деградація. Називати першим шрифт, якого ми не
+     відвантажуємо, означало б продавати побажання за накреслення. */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
 
   /* ── Gaia Ecosystem: Semantic Color Tokens ── */

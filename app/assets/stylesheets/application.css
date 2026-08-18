@@ -9,3 +9,55 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
+
+/* ── [UI.3] JetBrains Mono — САМОХОСТИНГ, не побажання ─────────────────────────
+ *
+ * 🔴 Підстава ⚖️ founder 2026-08-19, і вона прецедентна, не смакова: тумблер теми
+ * зняли саме тому, що клієнтський стан ламає ВІДТВОРЮВАНІСТЬ — скріншот аудитора
+ * залежав від його `localStorage`. Наявність шрифта в ОС є рівно тією ж
+ * залежністю, лише тихішою: `--font-mono` називав «JetBrains Mono» першим, а
+ * файлу не існувало НІДЕ (нуль `@font-face`, нуль woff2, нуль лінків), тож 189
+ * сайтів `font-mono` діставали наступний зі стеку — на macOS «SF Mono» (схоже на
+ * задумане, тому ніхто й не помітив), на решті ОС різне. На моно-таблицях це не
+ * естетика: різні метрики зсувають вирівнювання колонок хешів і адрес.
+ *
+ * ⚠️ Імʼя родини — рівно те, що вже стоїть у `@theme` (`JetBrains Mono`), а не
+ * fontsource-ове `JetBrains Mono Variable`: так токен лишається недоторканим, і
+ * НАШ файл виграє в локально встановленої копії — тобто рендер детермінований.
+ *
+ * Варіативна вісь `wght 100..800` покриває всі вжиті накреслення (200·300·400·
+ * 500·700 — виміряно грепом). Підмножини — три, і рівно під наші локалі:
+ * latin (en) · latin-ext (lv/lt) · cyrillic (uk). Браузер тягне лише ті, чий
+ * `unicode-range` сторінка справді вжила, тож англомовний глядач платить 39.5 KB.
+ * `unicode-range` узято з `unicode.json` самого пакета, не з памʼяті.
+ *
+ * ⚠️ Стеля названа: курсивних облич НЕ вендоримо. Виміряно — `italic` стоїть на
+ * 22 сайтах, із них на `font-mono` рівно ОДИН, тож +66 KB обслуговували б одне
+ * місце; там браузер синтезує нахил, і це свідомий розмін, а не пропуск.
+ */
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("jetbrains-mono/jetbrains-mono-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("jetbrains-mono/jetbrains-mono-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("jetbrains-mono/jetbrains-mono-cyrillic-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}

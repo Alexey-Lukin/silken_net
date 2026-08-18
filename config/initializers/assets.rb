@@ -13,3 +13,11 @@ Rails.application.config.assets.version = "1.0"
 # ВІДНОСНІ `url(images/*.png)`, і Propshaft переписує їх на дайджест-шляхи лише
 # тоді, коли картинки лежать поруч із самим CSS.
 Rails.application.config.assets.paths << Rails.root.join("vendor/assets/stylesheets")
+
+# [UI.3] Вендоровані бінарники шрифтів. Тут лежать ЛИШЕ файли (третя сторона,
+# SIL OFL 1.1 — текст ліцензії поруч); самі `@font-face` — НАШІ й живуть у
+# `app/assets/stylesheets/application.css`, бо це наше оголошення, не чуже.
+# Propshaft резолвить `url("jetbrains-mono/…woff2")` із того CSS по ВСІХ
+# load-path'ах (`Propshaft::Compiler::CssAssetUrls#resolve_path` — перевірено
+# в джерелі), тож перетинати каталоги через `../` не потрібно.
+Rails.application.config.assets.paths << Rails.root.join("vendor/assets/fonts")
