@@ -137,7 +137,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 
 <!-- GUARD-CRAFT-INDEX:AUTO — generated from guard-craft.md by `ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->
 
-1. Decorative — the gate's INPUT sits outside the workflow's `changes:` filter, so it only ever fires on somebody else's PR
+1. Decorative — the gate's INPUT sits outside the workflow's `changes:` filter, so it only ever fires on somebody else's PR — **, sharpened: when a gate reads from more than one TREE, list the trees and check each against the job's filter separately — a gate whose subject spans trees is the shape where a partial match reads as coverage**
 2. A whole GENRE outside every linter's namespace — «Стаття N» headings; a genre exempt BY DESIGN is where drift is densest, so a green `docs_check` ≠ correctness there
 3. A noisy advisory is functionally OFF — and a semantic gate that does not name its CEILING in the script header turns green into «not checked» — **for every advisory in the registry, ask which of the two it is — measure its live hit-count, then ask whether the design still admits the FP class the label was hedging against**
 4. Blind to its own prose — a gate sees its DATA, never what it SAYS about itself, so its header comment can contradict its own constant indefinitely
