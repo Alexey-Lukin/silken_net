@@ -107,7 +107,14 @@ SELF=${BASH_SOURCE[0]:-$0}
 # (`(5 осей/4 секції)`), which the index preamble's own write-time rule 3 bans
 # outright. ⛔ Nothing was funded by eviction: the only weak candidate is still
 # the tool-trial row, and the note above already records why that is refused.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-24026}
+# 2026-08-18: 24026 → 24173 (+147) — one new class-home, `feedback_adversarial_review`,
+# and the row was paid HUB-INLINE (a `↳` inside the existing subagent row, not a new
+# top-level line), which is why the delta is +147 and not ~300. The class is not a
+# guess: §5 was 41% of `feedback_subagent_discipline` and carried FIFTEEN inbound
+# `§5` citations, all re-pointed at the new slug in the same pass. Its trigger is the
+# one the host file did not serve — "I think I am FINISHED", against that file's
+# "I am delegating work".
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-24173}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
@@ -239,7 +246,9 @@ rb_dark() {
 # 2026-08-18: 134 → 135 — `log_money_path.md`, same shape: the twin
 # `project_money_path_orchestration` had NONE while sitting 306 B from WARN,
 # i.e. the file the skill names as "create the twin BEFORE it is needed".
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-135}
+# 2026-08-18: 135 → 136 — `feedback_adversarial_review.md`, split out of
+# `feedback_subagent_discipline` (35998 → 21607 B, i.e. 3 B of headroom became 14393).
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-136}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -322,7 +331,10 @@ index_reach_expected() {
 # to fund a new home is the manufactured-cleanup this practice forbids. What the
 # eviction bought: its home went 35694 → 32408 B, i.e. 306 B of headroom became
 # 3592 and a file the skill had flagged as twinless stopped being one.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43268}
+# 2026-08-18: 43268 → 43583 (+315) — the new home's own trigger. Same shape as the
+# entry above it: a description is what a class costs to be FINDABLE, and this class
+# was already being cited fifteen times without one.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43583}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
