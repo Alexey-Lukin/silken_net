@@ -11,7 +11,7 @@ module Provisioning
       div(class: "max-w-3xl mx-auto") do
         header_section
 
-        form_with(url: register_provisioning_index_path, scope: :provisioning, class: "space-y-8 p-10 border border-emerald-900 bg-black/60 backdrop-blur-md shadow-2xl") do |f|
+        form_with(url: register_provisioning_index_path, scope: :provisioning, class: "space-y-8 p-10 border border-gaia-border bg-gaia-surface/80 backdrop-blur-md shadow-2xl") do |f|
           # [SEC.25] Заголовок ЛИШАЄТЬСЯ власним, а не спільним «перевірку не
           # пройдено»: більшість причин тут не з валідації моделі, а з guard-клауз
           # контролера (зайнятий UID → 409, чужий кластер → 404), які кладуться в
@@ -48,7 +48,7 @@ module Provisioning
           end
 
           div(class: "pt-10 border-t border-emerald-900/30") do
-            f.submit t(".submit"), class: "w-full py-4 bg-emerald-500/10 border border-emerald-500 text-gaia-primary-strong uppercase text-xs tracking-[0.3em] hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-[0_0_30px_rgba(16,185,129,0.1)]"
+            f.submit t(".submit"), class: "w-full py-4 bg-emerald-500/10 border border-gaia-primary text-gaia-primary-strong uppercase text-xs tracking-[0.3em] hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-[0_0_30px_rgba(16,185,129,0.1)]"
           end
         end
       end
@@ -58,7 +58,7 @@ module Provisioning
 
     def header_section
       div(class: "text-center mb-10 space-y-2") do
-        p(class: "text-tiny font-mono text-emerald-900 uppercase tracking-[0.5em]") { t(".subtitle") }
+        p(class: "text-tiny font-mono text-gaia-text-muted uppercase tracking-[0.5em]") { t(".subtitle") }
       end
     end
 
