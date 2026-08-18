@@ -97,7 +97,7 @@ module Errors
       div(class: "text-center") do
         a(
           href: organizations_path,
-          class: "inline-block px-6 py-3 border border-gaia-primary text-gaia-primary text-tiny uppercase " \
+          class: "inline-block px-6 py-3 border border-gaia-primary text-gaia-primary-strong text-tiny uppercase " \
                  "tracking-[0.3em] hover:bg-emerald-500 hover:text-gaia-surface transition-colors " \
                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary"
         ) { t(".choose_organization") }
