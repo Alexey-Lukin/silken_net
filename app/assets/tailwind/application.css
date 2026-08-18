@@ -365,10 +365,6 @@ dialog[open]::backdrop {
   animation: gaia-fade-in var(--motion-fast, 150ms) var(--ease-out-soft, ease-out);
 }
 
-@utility animate-fade-in {
-  animation: gaia-fade-in var(--motion-base, 220ms) var(--ease-out-soft, ease-out) both;
-}
-
 /* ── Responsive Table Pattern ──
  * "Card-flip" CSS that turns a semantic <table> into a stack of cards on
  * narrow viewports without any JS. Markup contract:
