@@ -248,7 +248,10 @@ rb_dark() {
 # i.e. the file the skill names as "create the twin BEFORE it is needed".
 # 2026-08-18: 135 → 136 — `feedback_adversarial_review.md`, split out of
 # `feedback_subagent_discipline` (35998 → 21607 B, i.e. 3 B of headroom became 14393).
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-136}
+# 2026-08-18: 136 → 137 — `log_dependabot_sweep.md`, the last home that had no
+# journal twin. 34203 → 11626 B, i.e. the whole «Пастки» section (31 bullets)
+# moved VERBATIM and the home kept compressed imperatives + routers.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-137}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -334,7 +337,10 @@ index_reach_expected() {
 # 2026-08-18: 43268 → 43583 (+315) — the new home's own trigger. Same shape as the
 # entry above it: a description is what a class costs to be FINDABLE, and this class
 # was already being cited fifteen times without one.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43583}
+# 2026-08-18: 43583 → 43755 (+172) — the last journal twin's own trigger, same
+# shape as the two entries above. With it the twinless set is EMPTY, so this
+# particular reason for a bump cannot recur.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43755}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
