@@ -81,6 +81,7 @@
   --color-gaia-text-subtle: var(--gaia-text-subtle);
   --color-gaia-primary: var(--gaia-primary);
   --color-gaia-primary-text: var(--gaia-primary-text);
+  --color-gaia-primary-strong: var(--gaia-primary-strong);
   --color-gaia-primary-hover: var(--gaia-primary-hover);
   --color-gaia-primary-soft: var(--gaia-primary-soft);
   --color-gaia-border: var(--gaia-border);
@@ -175,6 +176,15 @@
    * itself is (see the dark block below): the pair must hold in both. 7.04:1 —
    * the inherited body colour gave 1.98:1 in dark, i.e. unreadable. */
   --gaia-primary-text:   #0f172a;
+  /* Бренд-emerald у ролі ТЕКСТУ — партнер `--gaia-primary`, а не його дубль.
+   * Заведений 2026-08-18 (UI.3) за формою, яку приписав присуд 2026-08-07:
+   * «дефект не в значенні, а в РОЛІ — лік не нове значення, а парний токен».
+   * Значення ВИВЕДЕНЕ з бару, не обране: на пастельному фоні кнопки
+   * (`emerald@10%` над карткою) `--gaia-primary` дає 2.28:1, а `--gaia-primary-hover`
+   * (#059669) — 3.40:1, тобто найближчий наявний токен теж провалює AA. #047857 —
+   * найдрібніший крок палітри, що клерить 4.5. Числа живуть у носії
+   * (`spec/features/auth_contrast_spec.rb`), не в цьому рядку. */
+  --gaia-primary-strong: #047857;
   --gaia-primary-hover:  #059669;
   --gaia-primary-soft:   #d1fae5;
 
@@ -249,6 +259,12 @@
 
     --gaia-primary:        #10b981;
     --gaia-primary-text:   #0f172a;  /* same as :root — the brand emerald does not flip */
+    /* ⚠️ Тут значення СВІДОМО дорівнює `--gaia-primary`, і це не «забули
+     * перевизначити»: у темній бренд-emerald на тій самій кнопці дає 6.79:1,
+     * тобто вимога вже виконана, а будь-яка зміна була б чистим 👤-QA на єдиній
+     * уживаній темі без виграшу. Розбіжність між темами тут і є ПРЕДМЕТОМ
+     * токена — світлій потрібен глибший крок, темній ні. */
+    --gaia-primary-strong: #10b981;
     --gaia-primary-hover:  #34d399;
     --gaia-primary-soft:   rgba(16, 185, 129, 0.12);
 

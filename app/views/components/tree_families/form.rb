@@ -51,7 +51,7 @@ module TreeFamilies
     end
 
     def submit_classes
-      "w-full py-4 bg-gaia-primary/10 border border-gaia-primary text-gaia-primary uppercase text-xs tracking-widest " \
+      "w-full py-4 bg-gaia-primary/10 border border-gaia-primary text-gaia-primary-strong uppercase text-xs tracking-widest " \
         "hover:bg-gaia-primary hover:text-black transition-all cursor-pointer " \
         "disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary"
     end

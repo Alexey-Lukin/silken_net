@@ -123,7 +123,13 @@ RSpec.describe Firmwares::Form do
     end
 
     it "uses gaia design tokens for text colors" do
-      expect(html).to include("text-gaia-primary")
+      # 🔴 `include("text-gaia-primary")` тут був НЕДИСКРИМІНУЮЧИМ: підпис кнопки
+      # переїхав на `--gaia-primary-strong` (UI.3, 2026-08-18), а підрядок
+      # проходить і на новому токені — тобто пін лишався зеленим по обидва боки
+      # фіксу. Дефіс не є межею слова; форма з lookahead дзеркалить ту, що вже
+      # вжита для `status-warning` ⊥ `status-warning-accent`.
+      expect(html).to match(/text-gaia-primary-strong\b/)
+      expect(html).not_to match(/text-gaia-primary(?!-)/)
     end
 
     it "uses text-mini for field labels" do

@@ -143,7 +143,14 @@ RSpec.describe TreeFamilies::Form do
 
     it "uses gaia primary color tokens" do
       expect(html).to include("border-gaia-primary")
-      expect(html).to include("text-gaia-primary")
+      # 🔴 Підпис submit-кнопки їде на `--gaia-primary-strong` (UI.3, 2026-08-18):
+      # бренд-emerald у ролі ТЕКСТУ давав 2.28:1 у світлій темі. Пін мусить
+      # РОЗРІЗНЯТИ два токени, а `include("text-gaia-primary")` цього не вміє —
+      # дефіс не є межею слова, тож підрядок проходить і на `-strong`, тобто
+      # був би зелений і до, і після фіксу. Негативний lookahead — та сама форма,
+      # що вже вжита для `status-warning` ⊥ `status-warning-accent`.
+      expect(html).to match(/text-gaia-primary-strong\b/)
+      expect(html).not_to match(/text-gaia-primary(?!-)/)
     end
   end
 end

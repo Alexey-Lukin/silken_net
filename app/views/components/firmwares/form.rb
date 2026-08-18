@@ -41,12 +41,12 @@ module Firmwares
           end
 
           field_container(f, :binary_file, t(".binary_label")) do |aria|
-            f.file_field :binary_file, class: "w-full text-gaia-text-muted text-tiny font-mono file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-gaia-surface-sunken file:text-gaia-primary hover:file:bg-gaia-primary/20 cursor-pointer", required: true, **aria
+            f.file_field :binary_file, class: "w-full text-gaia-text-muted text-tiny font-mono file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-gaia-surface-sunken file:text-gaia-primary-strong hover:file:bg-gaia-primary/20 cursor-pointer", required: true, **aria
           end
         end
 
         div(class: "pt-10 border-t border-gaia-border") do
-          f.submit t(".submit"), class: "w-full py-4 bg-gaia-primary/10 border border-gaia-primary text-gaia-primary uppercase text-xs tracking-[0.3em] hover:bg-gaia-primary hover:text-black transition-all cursor-pointer shadow-sm"
+          f.submit t(".submit"), class: "w-full py-4 bg-gaia-primary/10 border border-gaia-primary text-gaia-primary-strong uppercase text-xs tracking-[0.3em] hover:bg-gaia-primary hover:text-black transition-all cursor-pointer shadow-sm"
         end
       end
     end
