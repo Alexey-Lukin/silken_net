@@ -3,6 +3,63 @@ lv:
   navigation:
     breadcrumb:
       root: Citadele
+      segments:
+        account_security: Konta drošība
+        actuator_commands: Aktuatoru komandas
+        actuators: Aktuatori
+        alerts: Brīdinājumi
+        audit_logs: Audita žurnāls
+        balance: Atlikums
+        blockchain_transactions: Blokķēdes darījumi
+        carbon_absorption: Oglekļa absorbcija
+        chronicle: Hronika
+        clusters: Klasteri
+        contracts: Līgumi
+        dashboard: Panelis
+        deploy: Izvietošana
+        edit: Rediģēšana
+        execute: Izpilde
+        financial_summary: Finanšu kopsavilkums
+        firmwares: Programmaparatūras
+        forgot_password: Paroles atjaunošana
+        gateways: Vārtejas
+        identities: Identitātes
+        inventory: Inventārs
+        live: Tiešraide
+        locale: Valoda
+        lock: Bloķēšana
+        login: Pieteikšanās
+        logout: Atteikšanās
+        maintenance_records: Apkopes ieraksti
+        me: Profils
+        metadata: Metadati
+        mfa: MFA
+        new: Izveide
+        notifications: Paziņojumi
+        on_chain: Blokķēdē
+        oracle_visions: Oracle vīzijas
+        organizations: Organizācijas
+        password: Parole
+        photos: Fotogrāfijas
+        provisioning: Mezgla inicializācija
+        register: Reģistrācija
+        reports: Atskaites
+        reset_password: Paroles atiestatīšana
+        resolve: Atrisināšana
+        settings: Iestatījumi
+        stats: Statistika
+        status: Statuss
+        switch: Pārslēgšana
+        system_audits: Sistēmas auditi
+        system_health: Sistēmas veselība
+        telemetry: Telemetrija
+        transactions: Darījumi
+        tree_families: Koku dzimtas
+        trees: Koki
+        unlock: Atbloķēšana
+        users: Lietotāji
+        verify: Verifikācija
+        wallets: Maki
     footer:
       access: Pilnas piekļuves saite
       role: Arhitekts

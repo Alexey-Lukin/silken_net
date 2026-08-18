@@ -3,6 +3,63 @@ en:
   navigation:
     breadcrumb:
       root: Citadel
+      segments:
+        account_security: Account security
+        actuator_commands: Actuator commands
+        actuators: Actuators
+        alerts: Alerts
+        audit_logs: Audit logs
+        balance: Balance
+        blockchain_transactions: Blockchain transactions
+        carbon_absorption: Carbon absorption
+        chronicle: Chronicle
+        clusters: Clusters
+        contracts: Contracts
+        dashboard: Dashboard
+        deploy: Deploy
+        edit: Edit
+        execute: Execute
+        financial_summary: Financial summary
+        firmwares: Firmwares
+        forgot_password: Forgot password
+        gateways: Gateways
+        identities: Identities
+        inventory: Inventory
+        live: Live
+        locale: Locale
+        lock: Lock
+        login: Login
+        logout: Logout
+        maintenance_records: Maintenance records
+        me: Me
+        metadata: Metadata
+        mfa: MFA
+        new: New
+        notifications: Notifications
+        on_chain: On-chain
+        oracle_visions: Oracle visions
+        organizations: Organizations
+        password: Password
+        photos: Photos
+        provisioning: Provisioning
+        register: Register
+        reports: Reports
+        reset_password: Reset password
+        resolve: Resolve
+        settings: Settings
+        stats: Stats
+        status: Status
+        switch: Switch
+        system_audits: System audits
+        system_health: System health
+        telemetry: Telemetry
+        transactions: Transactions
+        tree_families: Tree families
+        trees: Trees
+        unlock: Unlock
+        users: Users
+        verify: Verify
+        wallets: Wallets
     footer:
       access: Full Access Link
       role: Architect

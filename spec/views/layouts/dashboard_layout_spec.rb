@@ -157,6 +157,29 @@ RSpec.describe DashboardLayout do
       expect(html).to include("Maintenance records")
     end
 
+    # 🔴 [I18N.1] Свідок механізму мусить жити в НЕ-базовій локалі: в `en` мітка
+    # `navigation.breadcrumb.segments.trees` дорівнює `"trees".humanize`
+    # ПОБАЙТОВО, тож приклад вище зелений і з домом мітки, і з сирим `.humanize`
+    # — про сам механізм він не свідчить нічого (`04_06 §B.2` BP #16-клас).
+    # Негативна половина обовʼязкова: без неї регресія на `.humanize` пройшла б
+    # непоміченою, бо українська сторінка й далі містила б слово «Дерева» з
+    # інших вузлів.
+    it "resolves a path segment through the label home, not .humanize (uk)" do
+      html = I18n.with_locale(:uk) { render_layout(current_path: "/trees") }
+
+      expect(html).to include("Дерева")
+      expect(html).not_to include(">Trees<")
+    end
+
+    # Числовий сегмент — це ID, а не слово: він мусить пройти НАСКРІЗЬ, не
+    # шукаючи мітки. Пін живе в не-базовій локалі свідомо — саме там видно, що
+    # гард за типом спрацював, а не фолбек `.humanize`.
+    it "passes a numeric id segment through untranslated (uk)" do
+      html = I18n.with_locale(:uk) { render_layout(current_path: "/trees/42") }
+
+      expect(html).to include('class="text-gaia-text-muted">42<')
+    end
+
     it "only styles the last of several path segments as muted (breadcrumb tail)" do
       html = render_layout(current_path: "/trees/42")
       expect(html).to include("Trees")

@@ -32,6 +32,31 @@ class DashboardLayout < ApplicationComponent
     @content = content
   end
 
+  # [I18N.1] Дім мітки СЕГМЕНТА шляху — одна деривація ключа на застосунок
+  # (`04_04 §12.14`). Форма — class-метод рендерера, бо дім мапи і є цей layout:
+  # крихти більше ніхто не малює.
+  #
+  # 🔴 `navigation.items.*` тут НЕ реюзиться, і це вимір, не смак: ті ключі
+  # називають пункт МЕНЮ семантично (`soldier_fleet` → `/clusters`,
+  # `treasury_matrix` → `/wallets`), а крихта показує імʼя РЕСУРСУ в URL —
+  # збігів 4 з 21, ще й регістр інший (Title Case проти `.humanize`). Джерело
+  # істини для МНОЖИНИ сегментів — `Rails.application.routes`, не модель.
+  BREADCRUMB_SEGMENT_SCOPE = "navigation.breadcrumb.segments"
+
+  # Fail-open (`04_04 §12.14`): невідомий сегмент рендериться `.humanize`, як
+  # доти — нова сторінка зʼявляється, не чекаючи на переклад. Повноту множини
+  # стереже `spec/i18n/breadcrumb_segment_parity_spec.rb`, а не цей `default:`.
+  #
+  # 🔴 Числовий сегмент — це ID, а не слово: він виходить ДО пошуку. Інакше
+  # кожен перегляд картки робив би промах по каталогу заради рядка, що й так
+  # повернеться собою.
+  def self.breadcrumb_segment_label(segment)
+    value = segment.to_s
+    return value if value.match?(/\A\d+\z/)
+
+    I18n.t("#{BREADCRUMB_SEGMENT_SCOPE}.#{value}", default: value.humanize)
+  end
+
   def view_template
     doctype
     html(class: "h-full", lang: I18n.locale.to_s) do
@@ -133,7 +158,9 @@ class DashboardLayout < ApplicationComponent
         path_segments.each_with_index do |segment, index|
           li(class: "flex items-center gap-2") do
             span(aria_hidden: "true") { "//" }
-            span(class: index == path_segments.size - 1 ? "text-gaia-text-muted" : "") { segment.humanize }
+            span(class: index == path_segments.size - 1 ? "text-gaia-text-muted" : "") do
+              self.class.breadcrumb_segment_label(segment)
+            end
           end
         end
       end

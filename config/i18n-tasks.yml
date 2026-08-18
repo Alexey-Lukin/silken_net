@@ -110,6 +110,13 @@ ignore_unused:
   # resolve symbol-keyed iterations, but the keys are exhaustively defined.
   - 'navigation.items.*'
   - 'navigation.sections.*'
+  # [I18N.1] Мітки СЕГМЕНТІВ хлібних крихт — той самий динамічний патерн
+  # (`DashboardLayout.breadcrumb_segment_label` будує ключ із сегмента URL), тож
+  # сканер бачить усі 4×N як «unused». ⚠️ Маска НЕ лишає вісь без нагляду, і це
+  # не риторика: повноту набору тримає `spec/i18n/breadcrumb_segment_parity_spec.rb`,
+  # який деривує популяцію з `Rails.application.routes` і червоніє в ОБИДВА боки —
+  # і на відсутню мітку, і на мітку-сироту після перейменування маршруту.
+  - 'navigation.breadcrumb.segments.*'
   # Alert severity filter chips are built from FILTER_SEVERITIES array
   # (e.g. `t("alerts.index.filter_#{s}")`) — same pattern, fully defined.
   - 'alerts.index.filter_*'

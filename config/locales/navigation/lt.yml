@@ -3,6 +3,63 @@ lt:
   navigation:
     breadcrumb:
       root: Citadelė
+      segments:
+        account_security: Paskyros saugumas
+        actuator_commands: Aktuatorių komandos
+        actuators: Aktuatoriai
+        alerts: Įspėjimai
+        audit_logs: Audito žurnalas
+        balance: Balansas
+        blockchain_transactions: Blokų grandinės sandoriai
+        carbon_absorption: Anglies absorbcija
+        chronicle: Kronika
+        clusters: Klasteriai
+        contracts: Sutartys
+        dashboard: Skydelis
+        deploy: Diegimas
+        edit: Redagavimas
+        execute: Vykdymas
+        financial_summary: Finansinė suvestinė
+        firmwares: Programinė įranga
+        forgot_password: Slaptažodžio atkūrimas
+        gateways: Šliuzai
+        identities: Tapatybės
+        inventory: Inventorius
+        live: Tiesiogiai
+        locale: Kalba
+        lock: Blokavimas
+        login: Prisijungimas
+        logout: Atsijungimas
+        maintenance_records: Priežiūros įrašai
+        me: Profilis
+        metadata: Metaduomenys
+        mfa: MFA
+        new: Kūrimas
+        notifications: Pranešimai
+        on_chain: Blokų grandinėje
+        oracle_visions: Oracle vizijos
+        organizations: Organizacijos
+        password: Slaptažodis
+        photos: Nuotraukos
+        provisioning: Mazgo inicijavimas
+        register: Registracija
+        reports: Ataskaitos
+        reset_password: Slaptažodžio nustatymas
+        resolve: Sprendimas
+        settings: Nustatymai
+        stats: Statistika
+        status: Būsena
+        switch: Perjungimas
+        system_audits: Sistemos auditai
+        system_health: Sistemos sveikata
+        telemetry: Telemetrija
+        transactions: Sandoriai
+        tree_families: Medžių šeimos
+        trees: Medžiai
+        unlock: Atblokavimas
+        users: Naudotojai
+        verify: Patikrinimas
+        wallets: Piniginės
     footer:
       access: Visos prieigos nuoroda
       role: Architektas

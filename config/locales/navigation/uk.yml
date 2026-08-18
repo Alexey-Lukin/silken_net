@@ -3,6 +3,63 @@ uk:
   navigation:
     breadcrumb:
       root: Цитадель
+      segments:
+        account_security: Безпека акаунту
+        actuator_commands: Команди актуаторів
+        actuators: Актуатори
+        alerts: Тривоги
+        audit_logs: Журнал аудиту
+        balance: Баланс
+        blockchain_transactions: Транзакції блокчейну
+        carbon_absorption: Поглинання вуглецю
+        chronicle: Хроніка
+        clusters: Кластери
+        contracts: Контракти
+        dashboard: Панель
+        deploy: Розгортання
+        edit: Редагування
+        execute: Виконання
+        financial_summary: Фінансове зведення
+        firmwares: Прошивки
+        forgot_password: Відновлення пароля
+        gateways: Шлюзи
+        identities: Ідентичності
+        inventory: Інвентар
+        live: Наживо
+        locale: Мова
+        lock: Блокування
+        login: Вхід
+        logout: Вихід
+        maintenance_records: Записи обслуговування
+        me: Профіль
+        metadata: Метадані
+        mfa: MFA
+        new: Створення
+        notifications: Сповіщення
+        on_chain: On-Chain
+        oracle_visions: Видіння Оракула
+        organizations: Організації
+        password: Пароль
+        photos: Фото
+        provisioning: Ініціювання вузла
+        register: Реєстрація
+        reports: Звіти
+        reset_password: Скидання пароля
+        resolve: Локалізація
+        settings: Налаштування
+        stats: Статистика
+        status: Статус
+        switch: Перемикання
+        system_audits: Системні аудити
+        system_health: Стан системи
+        telemetry: Телеметрія
+        transactions: Транзакції
+        tree_families: Родини дерев
+        trees: Дерева
+        unlock: Розблокування
+        users: Користувачі
+        verify: Верифікація
+        wallets: Гаманці
     footer:
       access: Канал повного доступу
       role: Архітектор
