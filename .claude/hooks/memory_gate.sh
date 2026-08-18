@@ -2280,9 +2280,17 @@ puts <<~NOTE
     · That is not an argument to cut. The same corpus measured ~212 carrier
       firings against ~29 relapses — the meta layer is what stops lessons being
       re-bought, and cutting the index specifically ACCELERATES corpus growth.
-    · The open question this prices is the one nowhere in the corpus: whether a
-      two-person practice can indefinitely pay the reading tax of its own law.
-      Tracked as a ⚖️, not as a threshold — see 00_07.
+    · What this prices is the reading tax of the practice's own law. That was
+      once an open ⚖️; it is ANSWERED and archived (the verdict was neither
+      "cut" nor "pay forever" but CHANGE THE STORAGE — the corpus is versioned,
+      which removes the GROUNDS under growth, not the growth). So this number
+      is a standing cost line, not a pending question, and it deliberately
+      PRICES without gating: a number that gated here would invite cutting the
+      very layer that stops lessons being re-bought.
+    · Do not re-route this to 00_07. It said "tracked as a ⚖️ — see 00_07"
+      while both items behind it sat in §🗄️ — a self-location claim that rots
+      from an edit in ANOTHER file, which is exactly the class this gate exists
+      to catch, living inside the gate's own output.
 NOTE
 RUBY
     ;;
