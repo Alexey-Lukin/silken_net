@@ -48,11 +48,11 @@ module Maintenance
 
     def render_header
       div(class: "flex justify-between items-center") do
-        div(class: "text-mini uppercase tracking-widest text-emerald-700") do
+        div(class: "text-mini uppercase tracking-widest text-gaia-text-muted") do
           total = @pagy.count
           "#{t('.evidence_heading')} // #{t('.photo_count', count: total)}"
         end
-        span(class: "text-micro text-gray-600 font-mono") do
+        span(class: "text-micro text-gaia-text-muted font-mono") do
           t(".page_of", page: @pagy.page, total: @pagy.last)
         end
       end
@@ -85,7 +85,7 @@ module Maintenance
         a(
           href: next_url,
           data: { turbo_frame: frame_id },
-          class: "inline-block px-6 py-2 border border-emerald-900 text-emerald-700 " \
+          class: "inline-block px-6 py-2 border border-emerald-900 text-gaia-text-muted " \
                  "hover:border-emerald-500 hover:text-emerald-500 uppercase text-mini " \
                  "tracking-widest transition-all font-mono"
         ) do

@@ -64,7 +64,7 @@ module Maintenance
           div(class: "flex flex-wrap items-center gap-3 mt-2") do
             action_badge(@record.action_type)
             hardware_badge(@record.hardware_verified)
-            span(class: "text-mini text-gray-600 font-mono") do
+            span(class: "text-mini text-gaia-text-muted font-mono") do
               @record.performed_at&.strftime("%d.%m.%Y // %H:%M UTC")
             end
           end
@@ -76,7 +76,7 @@ module Maintenance
               maintainable_type: @record.maintainable_type,
               maintainable_id: @record.maintainable_id
             ),
-            class: "px-4 py-2 border border-emerald-800 text-emerald-800 hover:border-emerald-500 " \
+            class: "px-4 py-2 border border-emerald-800 text-gaia-primary-strong hover:border-emerald-500 " \
                    "hover:text-emerald-500 transition-all uppercase text-mini tracking-widest"
           ) { t(".header.new_record") }
 
@@ -99,7 +99,7 @@ module Maintenance
     # =========================================================================
     def render_evidence_gallery
       div(class: "p-8 border border-emerald-900 bg-zinc-950") do
-        h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-6") { t(".evidence.heading") }
+        h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted mb-6") { t(".evidence.heading") }
 
         if @pagy_photos.count > 0
           # `editable:` — не оформлення: воно вмикає кнопку видалення фотодоказу, дію
@@ -116,7 +116,7 @@ module Maintenance
 
     def render_no_photos_placeholder
       div(class: "border border-dashed border-emerald-900/40 p-10 text-center") do
-        p(class: "text-emerald-900 uppercase tracking-widest text-tiny") { t(".evidence.no_photos") }
+        p(class: "text-gaia-text-muted uppercase tracking-widest text-tiny") { t(".evidence.no_photos") }
         if %w[repair installation].include?(@record.action_type)
           p(class: "text-red-800 text-mini mt-2 font-mono") do
             t(".evidence.trust_protocol", action_type: @record.action_type_label)
@@ -125,7 +125,7 @@ module Maintenance
         if mutable?
           a(
             href: edit_maintenance_record_path(@record),
-            class: "inline-block mt-4 px-4 py-2 border border-emerald-900 text-emerald-900 " \
+            class: "inline-block mt-4 px-4 py-2 border border-emerald-900 text-gaia-primary-strong " \
                    "hover:border-emerald-500 hover:text-emerald-500 uppercase text-mini tracking-widest transition-all"
           ) { t(".evidence.attach") }
         end
@@ -137,8 +137,8 @@ module Maintenance
     # =========================================================================
     def render_notes_panel
       div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".notes.heading") }
-        p(class: "text-sm text-gray-300 font-mono leading-relaxed whitespace-pre-wrap") { @record.notes }
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-4") { t(".notes.heading") }
+        p(class: "text-sm text-gaia-text font-mono leading-relaxed whitespace-pre-wrap") { @record.notes }
       end
     end
 
@@ -147,7 +147,7 @@ module Maintenance
     # =========================================================================
     def render_cost_breakdown
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".cost.heading") }
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".cost.heading") }
 
         # 🔴 [ARCH.103] Асиметрія стояла в ОДНОМУ РЯДКУ, і саме тому пережила всі
         # проходи класу: той самий тернар `@record.labor_hours ?` друкував чесне
@@ -186,9 +186,9 @@ module Maintenance
 
     def cost_card(label, sub, value, highlight: false)
       div(class: "p-4 border border-emerald-900/40 bg-zinc-950") do
-        p(class: "text-mini uppercase tracking-widest text-emerald-800") { label }
-        p(class: "text-micro text-gray-600 mt-1 mb-3") { sub }
-        span(class: tokens("text-2xl font-light", "text-emerald-400": highlight, "text-gray-300": !highlight)) { value }
+        p(class: "text-mini uppercase tracking-widest text-gaia-text-muted") { label }
+        p(class: "text-micro text-gaia-text-subtle mt-1 mb-3") { sub }
+        span(class: tokens("text-2xl font-light", "text-gaia-primary-strong": highlight, "text-gaia-text-strong": !highlight)) { value }
       end
     end
 
@@ -197,7 +197,7 @@ module Maintenance
     # =========================================================================
     def render_metadata_panel
       div(class: "p-6 border border-emerald-900 bg-black space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".metadata.heading") }
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".metadata.heading") }
 
         div(class: "space-y-3 text-tiny font-mono") do
           meta_row(t(".metadata.technician"), "#{@user&.first_name} #{@user&.last_name}")
@@ -217,7 +217,7 @@ module Maintenance
             a(
               href: edit_maintenance_record_path(@record),
               class: "block w-full text-center py-2 border border-emerald-900 text-mini uppercase " \
-                     "text-emerald-700 hover:border-emerald-500 hover:text-emerald-500 transition-all"
+                     "text-gaia-primary-strong hover:border-emerald-500 hover:text-emerald-500 transition-all"
             ) { t(".edit") }
           end
         end
@@ -229,7 +229,7 @@ module Maintenance
     # =========================================================================
     def render_gps_panel
       div(class: "p-6 border border-emerald-900 bg-black space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".gps.heading") }
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".gps.heading") }
 
         if @record.latitude.present? && @record.longitude.present?
           div(class: "space-y-3 text-tiny font-mono") do
@@ -245,8 +245,8 @@ module Maintenance
                    "hover:bg-emerald-900 hover:text-white transition-all uppercase text-mini"
           ) { t(".gps.locate") }
         else
-          p(class: "text-emerald-900 text-mini uppercase tracking-widest") { t(".gps.no_gps") }
-          p(class: "text-gray-600 text-micro mt-1") { t(".gps.no_gps_sub") }
+          p(class: "text-gaia-text-muted text-mini uppercase tracking-widest") { t(".gps.no_gps") }
+          p(class: "text-gaia-text-subtle text-micro mt-1") { t(".gps.no_gps_sub") }
         end
       end
     end
@@ -274,7 +274,7 @@ module Maintenance
       end
 
       div(class: "flex justify-between border-t border-emerald-900/30 pt-2 mt-2") do
-        span(class: "text-gray-600") { t(".gps.drift") }
+        span(class: "text-gaia-text-muted") { t(".gps.drift") }
         span(class: color) { "#{drift_m.round} m" }
       end
     end
@@ -285,7 +285,7 @@ module Maintenance
     def render_hardware_panel
       div(class: "p-6 border border-emerald-900 bg-black space-y-4") do
         div(class: "flex justify-between items-center") do
-          h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".hardware.heading") }
+          h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".hardware.heading") }
           if @record.hardware_verified
             span(class: "h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]")
           else
@@ -329,7 +329,7 @@ module Maintenance
         "decommissioning" => "border-red-800 text-red-800",
         "biomass_extraction" => "border-status-danger text-status-danger-accent"
       }
-      cls = colors[type.to_s] || "border-gray-600 text-gray-600"
+      cls = colors[type.to_s] || "border-gaia-border text-gaia-text-muted"
       span(class: tokens("text-mini px-2 py-0.5 border font-mono uppercase tracking-widest", cls)) do
         MaintenanceRecord.action_type_label(type)
       end
@@ -341,7 +341,7 @@ module Maintenance
           t(".hardware_badge.verified")
         end
       else
-        span(class: "text-mini px-2 py-0.5 border border-status-warning text-status-warning font-mono uppercase") do
+        span(class: "text-mini px-2 py-0.5 border border-status-warning-accent text-status-warning-accent font-mono uppercase") do
           t(".hardware_badge.pending")
         end
       end
@@ -349,7 +349,7 @@ module Maintenance
 
     def meta_row(label, value)
       div(class: "flex justify-between") do
-        span(class: "text-gray-600") { "#{label}:" }
+        span(class: "text-gaia-text-muted") { "#{label}:" }
         span(class: "text-emerald-400 truncate ml-2") { value }
       end
     end

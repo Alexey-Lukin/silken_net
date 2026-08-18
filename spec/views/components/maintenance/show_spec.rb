@@ -379,7 +379,7 @@ RSpec.describe Maintenance::Show do
       rec = build_record
       allow(rec).to receive(:action_type).and_return("calibration")
       html = render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
-      expect(html).to include("border-gray-600 text-gray-600")
+      expect(html).to include("border-gaia-border text-gaia-text-muted")
     end
 
     # 🔴 [I18N.1] ПОЗИТИВНА половина, якої не існувало — і без неї фолбек-пін вище
@@ -391,7 +391,7 @@ RSpec.describe Maintenance::Show do
       html = render_component(record: build_record(action_type: "repair"), photos: [], pagy_photos: mock_pagy_photos)
 
       expect(html).to include("border-status-warning text-status-warning-text")
-      expect(html).not_to include("border-gray-600 text-gray-600")
+      expect(html).not_to include("border-gaia-border text-gaia-text-muted")
     end
 
     # `biomass_extraction` — найнаслідковіший тип (тягне EcosystemHealingWorker →
@@ -402,7 +402,7 @@ RSpec.describe Maintenance::Show do
       biomass = render_component(record: build_record(action_type: "biomass_extraction"), photos: [], pagy_photos: mock_pagy_photos)
       decom   = render_component(record: build_record(action_type: "decommissioning"), photos: [], pagy_photos: mock_pagy_photos)
 
-      expect(biomass).not_to include("border-gray-600 text-gray-600")
+      expect(biomass).not_to include("border-gaia-border text-gaia-text-muted")
       expect(biomass).to include("text-status-danger-accent")
       expect(decom).not_to include("text-status-danger-accent")
     end

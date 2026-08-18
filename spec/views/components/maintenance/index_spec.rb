@@ -176,7 +176,7 @@ RSpec.describe Maintenance::Index do
       allow(rec).to receive(:action_type).and_return("calibration")
 
       html = render_component(records: [ rec ], pagy: mock_pagy)
-      expect(html).to include("text-gray-500")
+      expect(html).to include("text-gaia-text-subtle")
     end
   end
 
