@@ -210,10 +210,77 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
       expect(response.content_type).to include("text/html")
     end
 
+    # [UI.4] Дзеркало піна `alerts_controller_spec`: єдиний рядок, що вирішує ЧИЯ
+    # організація, живе в контролері, і компонентна спека його не бачить — вона
+    # дістає організацію параметром. Підписане імʼя стріму це capability-токен, тож
+    # видача чужого = крос-тенант живого грошового реєстру, якого HTTP-відповідь не
+    # показує: витік їде вебсокетом уже ПІСЛЯ підписки.
+    # ⚠️ Двоє глядачів обовʼязкові: `organization` створюється в цьому файлі першою,
+    # тож підміна на `Organization.first` дорівнює їй, і однокористувацький приклад
+    # лишився б зеленим. Ловить лише РІЗНИЦЯ. `eq` (не `include`) тримає заразом
+    # другу половину — жодного ЗАЙВОГО стріму на сторінці.
+    def subscribed_streams_for(who)
+      get "/blockchain_transactions",
+          headers: { "Authorization" => "Bearer #{who.generate_token_for(:api_access)}", "Accept" => "text/html" }
+      response.body.scan(/signed-stream-name="([^"]+)"/).flatten
+              .map { |name| Turbo::StreamsChannel.verified_stream_name(name) }
+    end
+
+    it "subscribes each viewer to their OWN organization ledger stream" do
+      stranger = create(:user, :forester, organization: other_organization)
+
+      expect(subscribed_streams_for(user))
+        .to eq([ "blockchain_ledger_org_#{organization.id}_e#{organization.stream_epoch}" ])
+      expect(subscribed_streams_for(stranger))
+        .to eq([ "blockchain_ledger_org_#{other_organization.id}_e#{other_organization.stream_epoch}" ])
+    end
+
     it "renders HTML for show" do
       get "/blockchain_transactions/#{own_tx.id}", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
+    end
+  end
+
+  # 🔴 [UI.4] Вікно — ВІДБІР на аудит-поверхні, тож пінимо ОБИДВІ його половини:
+  # що воно справді звужує І що глядач має вихід. Половина без другої — тихий фільтр.
+  # ⚠️ Обидва записи СВОЇ: чужий відсіює тенант-скоуп, а не вікно, тож приклад на
+  # чужому рядку був би зелений і зі знятим вікном (та сама пастка, що вже коштувала
+  # фільтрам token_type/status у цьому ж файлі).
+  describe "ledger window" do
+    # 120 діб назад — поза 90-денним вікном і всередині наявної місячної партиції.
+    let!(:archival_tx) { create(:blockchain_transaction, wallet: own_wallet, created_at: 120.days.ago) }
+
+    it "hides entries older than the default window" do
+      get "/blockchain_transactions", headers: headers, as: :json
+
+      ids = response.parsed_body["data"].map { |t| t["id"] }
+      expect(ids).to include(own_tx.id)
+      expect(ids).not_to include(archival_tx.id)
+    end
+
+    it "returns the full history when the viewer asks for it" do
+      get "/blockchain_transactions", params: { window: "all" }, headers: headers, as: :json
+
+      expect(response.parsed_body["data"].map { |t| t["id"] }).to include(archival_tx.id)
+    end
+
+    # Машинний бік теж мусить ОГОЛОШУВАТИ зріз: без цього поля та сама адреса
+    # віддавала б урізаний набір без жодної ознаки того, що він урізаний.
+    it "declares the active window in the JSON payload" do
+      get "/blockchain_transactions", headers: headers, as: :json
+      expect(response.parsed_body.dig("window", "since")).to be_present
+
+      get "/blockchain_transactions", params: { window: "all" }, headers: headers, as: :json
+      expect(response.parsed_body.dig("window", "since")).to be_nil
+    end
+
+    # Fail-closed: битий/невідомий параметр падає у ВІКНО, а не в повну історію —
+    # інакше описка в букмарку перетворювала б аудит-сторінку на скан усіх партицій.
+    it "falls back to the window on an unknown value" do
+      get "/blockchain_transactions", params: { window: "everything" }, headers: headers, as: :json
+
+      expect(response.parsed_body["data"].map { |t| t["id"] }).not_to include(archival_tx.id)
     end
   end
 

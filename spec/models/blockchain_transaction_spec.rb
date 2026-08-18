@@ -798,7 +798,11 @@ RSpec.describe BlockchainTransaction, type: :model do
     end
 
     context "when the transaction has no wallet (cluster-sourced audit row)" do
-      it "broadcasts nothing at all" do
+      # ⚠️ Назву звужено 2026-08-18: доти вона казала «broadcasts nothing at all», і
+      # це перестало бути правдою — org-сигнал (нижче) такий рядок якраз ЛОВИТЬ, бо
+      # він і є той рід рухів, заради якого сигнал заведено. Приклад стереже рівно
+      # свою половину: у неіснуючий гаманцевий леджер нічого не штовхається.
+      it "pushes no row into a wallet ledger it does not have" do
         tx = build(:blockchain_transaction)
         allow(tx).to receive(:wallet).and_return(nil)
 
@@ -807,6 +811,100 @@ RSpec.describe BlockchainTransaction, type: :model do
         expect(Turbo::StreamsChannel).not_to have_received(:broadcast_prepend_to)
         expect(Turbo::StreamsChannel).not_to have_received(:broadcast_remove_to)
       end
+    end
+  end
+
+  # 🔴 [UI.4] Резолюція власника — дім ОДИН, і він мусить відповідати рівно так, як
+  # `for_organization`: інакше рядок, ВИДИМИЙ в аудит-списку, адресувався б у чужий
+  # стрім або нікуди. Тут доти стояв `delegate :organization, to: :wallet` з обіцянкою
+  # «може бути nil — тоді через cluster», якої делегат не виконував; нуль викликачів
+  # означав, що обіцянку ніколи не перевіряла реальність.
+  describe "#organization" do
+    it "resolves through the wallet's own denormalized column" do
+      tx = create(:blockchain_transaction)
+
+      expect(tx.organization).to eq(tx.wallet.organization)
+    end
+
+    # Друга ланка — та, якої делегат не мав: колонка nullable і без бекфілу, тож
+    # порожня вона не виняток, а звичайний стан для гаманця осиротілого кластера.
+    it "falls back to the tree's cluster when the wallet column is blank" do
+      tx = create(:blockchain_transaction)
+      owner = tx.wallet.tree.cluster.organization
+      tx.wallet.update_column(:organization_id, nil)
+      tx.wallet.reload
+
+      expect(owner).to be_present
+      expect(tx.organization).to eq(owner)
+    end
+
+    # Третя ланка — рядки, заради яких ARCH.98 і розширював скоуп сторінки.
+    it "resolves through its own cluster when there is no wallet at all" do
+      cluster = create(:cluster)
+      tx = create(:blockchain_transaction, wallet: nil, cluster: cluster)
+
+      expect(tx.organization).to eq(cluster.organization)
+    end
+  end
+
+  # 🔴 [UI.4] Org-сигнал ортогональний до гаманцевого тракту, і саме тому окремий:
+  # обидва продюсери гаманцевого починаються з `return unless wallet`, тобто під
+  # спільним гардом німими лишались НАЙМАТЕРІАЛЬНІШІ рухи — ті, що гаманця не мають
+  # за побудовою. Екран, живий на дрібному й німий на великому, гірший за чесно
+  # статичний: це «живість, що бреше».
+  describe "broadcast_ledger_signal" do
+    before { allow(Turbo::StreamsChannel).to receive(:broadcast_refresh_later_to) }
+
+    def ledger_stream_for(organization)
+      "blockchain_ledger_org_#{organization.id}_e#{organization.stream_epoch}"
+    end
+
+    it "signals the owning organization of a cluster-sourced row" do
+      cluster = create(:cluster)
+
+      create(:blockchain_transaction, wallet: nil, cluster: cluster)
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to)
+        .with(ledger_stream_for(cluster.organization))
+    end
+
+    it "signals the owning organization of a wallet-backed row" do
+      tx = create(:blockchain_transaction)
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to)
+        .with(ledger_stream_for(tx.wallet.organization))
+    end
+
+    # Поява й зміна — два різні хуки, і другий потрібен окремо: `after_update_commit`
+    # створення не ловить, а `after_create_commit` не ловить переходу. Один без
+    # одного дає екран, що показує рядок і не показує його долі.
+    it "signals again when the status moves" do
+      tx = create(:blockchain_transaction, status: :pending, tx_hash: nil)
+      tx.process!
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_refresh_later_to)
+        .with(ledger_stream_for(tx.wallet.organization)).at_least(:twice)
+    end
+
+    # Осиротілий кластер (`clusters.organization_id` nullable) — реальний стан, і
+    # `TurboStreams::Name.org` на `nil` кинув би `ArgumentError`. Гард робить цю
+    # тишу СВІДОМОЮ: без нього рядок лишався б німим так само, лише вже без сліду.
+    it "stays silent, and raises nothing, when the owner cannot be resolved" do
+      tx = build(:blockchain_transaction)
+      allow(tx).to receive(:organization).and_return(nil)
+
+      expect { tx.send(:broadcast_ledger_signal) }.not_to raise_error
+      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_refresh_later_to)
+    end
+
+    # Та сама ізоляція, що на гаманцевому тракті: виняток із `after_*_commit`
+    # пролітає нагору з `create!`, а всі пускачі цього хука — money-переходи.
+    it "never lets a signal failure escape into the money path" do
+      allow(Turbo::StreamsChannel).to receive(:broadcast_refresh_later_to).and_raise(StandardError, "cable down")
+      allow(Rails.logger).to receive(:warn)
+
+      expect { create(:blockchain_transaction) }.not_to raise_error
+      expect(Rails.logger).to have_received(:warn).with(/broadcast_ledger_signal/)
     end
   end
 

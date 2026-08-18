@@ -45,7 +45,8 @@ module TurboStreams
     ORG_PREFIXES = {
       telemetry: "telemetry_stream",
       alerts: "ews_alerts",
-      map: "geospatial_matrix"
+      map: "geospatial_matrix",
+      ledger: "blockchain_ledger"
     }.freeze
 
     class << self

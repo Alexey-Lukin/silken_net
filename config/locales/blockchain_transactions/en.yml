@@ -5,17 +5,22 @@ en:
       audit_aria: 'Transaction #%{id} details'
       audit_details: Details
       explorer_aria: View transaction on blockchain explorer
+      heading: Blockchain Ledger — Global Audit
       subtitle: Minting, slashing, and all on-chain events for your Organization.
       table:
         amount: Amount
         audit: Audit
         empty: No blockchain transactions recorded.
         network: Network
+        pending_block: PENDING_BLOCK
         source: Source
         status: Status
         timestamp: Timestamp
         tx_hash: TX Hash
         type: Type
+      window:
+        show_all: Show full history
+        showing: Showing entries since %{since}.
     index_title: Blockchain Ledger
     on_chain_frame:
       explorer:

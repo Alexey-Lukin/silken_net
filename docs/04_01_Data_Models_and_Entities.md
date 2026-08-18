@@ -1071,6 +1071,8 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 - `belongs_to :cluster` (optional)
 - `belongs_to :sourceable, polymorphic: true` (optional) — NaasContract, ParametricInsurance
 
+> ⚡ **Власник — ДЕРИВАЦІЯ, і дім її один: `#organization`** [UI.4, 2026-08-18]. Три ланки, у порядку: денормалізований ярлик гаманця (`wallets.organization_id` — nullable, **без бекфілу**: пишеться лише при народженні дерева) → ланцюг дерево→кластер → власний `cluster` рядка. **Це рівно та пара координат, якою резолвить `for_organization`**, і збіг тут несучий: розходження означало б, що рядок, ВИДИМИЙ в аудит-списку організації, адресується в чужий стрім або нікуди. 🔴 Тут доти стояв `delegate :organization, to: :wallet, allow_nil: true` з коментарем «може бути nil для slashing-аудиту — тоді через cluster» — **фолбеку через cluster делегат не мав**, тобто cluster-sourced рядок віддавав `nil` мовчки; не помічалось, бо викликачів у делегата не було жодного, отже обіцянку ніколи не перевіряла реальність. ⚠️ Вужча форма `wallet&.organization_id || cluster&.organization_id` (вона живе в `record_money_audit_trail` і там доречна) читає ЛИШЕ колонку — для адресації стріму вона завузька.
+
 **Enums:**
 
 | Enum | Значення |

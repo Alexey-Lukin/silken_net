@@ -5,17 +5,22 @@ lt:
       audit_aria: 'Operacijos #%{id} detalės'
       audit_details: Detalės
       explorer_aria: Peržiūrėti operaciją blokų grandinės naršyklėje
+      heading: Blokų grandinės knyga — globalus auditas
       subtitle: Kalimas, baudos ir visi grandinės įvykiai jūsų organizacijai.
       table:
         amount: Suma
         audit: Auditas
         empty: Nėra įrašytų blokų grandinės sandorių.
         network: Tinklas
+        pending_block: LAUKIAMAS_BLOKAS
         source: Šaltinis
         status: Būsena
         timestamp: Laiko žyma
         tx_hash: TX Kodas
         type: Tipas
+      window:
+        show_all: Rodyti visą istoriją
+        showing: Rodomi įrašai nuo %{since}.
     index_title: Blokų grandinės knyga
     on_chain_frame:
       explorer:

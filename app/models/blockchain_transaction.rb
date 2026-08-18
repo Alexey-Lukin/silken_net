@@ -338,9 +338,24 @@ class BlockchainTransaction < ApplicationRecord
       .where("status = ? OR created_at > ?", statuses[:manual_review], window.ago)
   }
 
-  # --- ДЕЛЕГУВАННЯ ---
-  # Навігація через wallet (може бути nil для slashing-аудиту — тоді через cluster)
-  delegate :organization, to: :wallet, allow_nil: true
+  # --- РЕЗОЛЮЦІЯ ВЛАСНИКА ---
+  # Дім ОДИН, і він мусить відповідати рівно так, як `for_organization` (↑): інакше
+  # рядок, ВИДИМИЙ в аудит-списку організації, адресувався б у чужий стрім або нікуди.
+  # Тут доти стояв `delegate :organization, to: :wallet, allow_nil: true` з коментарем
+  # «може бути nil для slashing-аудиту — тоді через cluster», але фолбеку через cluster
+  # делегат не мав: cluster-sourced рядок віддавав `nil` МОВЧКИ. Це не помічалось, бо
+  # викликачів у делегата не було жодного — тобто обіцянка коментаря ніколи не
+  # перевірялась реальністю.
+  #
+  # Три ланки — та сама пара координат, якою `for_organization` резолвить приналежність:
+  # денормалізований ярлик гаманця (nullable, без бекфілу — пишеться лише при народженні
+  # дерева) → ланцюг дерево→кластер → власний кластер рядка (Celo-винагорода кластеру,
+  # слеш «останнього дерева»). ⚠️ НЕ звужувати до `wallet&.organization_id ||
+  # cluster&.organization_id`: та форма читає лише колонку, тобто ВУЖЧА за скоуп
+  # сторінки, і рядок, видимий через ланцюгову гілку, мовчки лишився б без адреси.
+  def organization
+    wallet&.organization || wallet&.tree&.cluster&.organization || cluster&.organization
+  end
 
   # =========================================================================
   # ЖИТТЄВИЙ ЦИКЛ ТРАНЗАКЦІЇ (The Web3 State Machine — AASM)
@@ -458,6 +473,23 @@ class BlockchainTransaction < ApplicationRecord
   # написом «транзакцій не виявлено» до перезавантаження сторінки [UI.4].
   after_create_commit :broadcast_new_transaction
 
+  # ⚡ [UI.4] Сигнал в org-аудит. Окремий хук потрібен, бо обидва продюсери нижче
+  # починаються з `return unless wallet`, а глобальний реєстр організації
+  # (`blockchain_transactions#index`) мусить чути САМЕ ті рухи, у яких гаманця немає
+  # ЗА ПОБУДОВОЮ — Celo-винагороду кластеру й слеш «останнього дерева». Тобто під
+  # спільним гардом німими лишались найматеріальніші рядки, і це «живість, що бреше»:
+  # екран оновлювався б на дрібному й мовчав на великому.
+  #
+  # 🔴 ОДНА реєстрація на обидві події, і це не стиль. `after_create_commit :x` плюс
+  # `after_update_commit :x` НЕ дають двох колбеків: ActiveSupport ключує їх ІМЕНЕМ
+  # фільтра, тож друга реєстрація тихо заміщає першу — лишається один колбек з
+  # опціями ОСТАННЬОЇ. Виміряно на `_commit_callbacks`: у реєстрі стояв рівно один
+  # запис, з `on: :update` і чужою умовою, тобто поява транзакції не сигналилась
+  # ЖОДНОГО разу. Помилки при цьому немає — механізм на місці, пускач наполовину
+  # мертвий, і мовчить усе, крім екрана.
+  after_commit :broadcast_ledger_signal, on: %i[create update],
+                                         if: -> { previously_new_record? || saved_change_to_status? }
+
   private
 
   # [MRV.1] Tamper-evident слід money-переходів у SHA-256 AuditLog-ланцюг організації
@@ -520,6 +552,37 @@ class BlockchainTransaction < ApplicationRecord
     # (tx мусить лишитись :failed навіть якщо wallet тимчасово недоступний). Strand у цьому
     # вузькому вікні — той самий recoverable клас, що ARCH.55, не double-spend.
     Rails.logger.error "🛑 [Web3] release_locked_points_on_fail! ##{id}: #{e.message}"
+  end
+
+  # СИГНАЛ, а не рядок — дзеркало `EwsAlert#broadcast_org_refresh`, і підстава та сама:
+  # сторінка має фільтри (`token_type`/`status`), пагінацію Й дефолтне вікно по
+  # `created_at`, тож сліпий `prepend` вставив би нагору транзакцію, що не відповідає
+  # активному фільтру, а на другій сторінці — не в той зріз. `refresh` переобчислює
+  # сторінку її ж власними параметрами, тобто єдина форма, що поважає всі три.
+  # Ціна виміряна: lazy-фреймів у ланцюгу цієї сторінки НУЛЬ, тож це рівно один GET
+  # на глядача, без додатку «по GET на фрейм» (`04_04 §8.1б`).
+  #
+  # ⚠️ Броадкаст іде в org ВЛАСНИКА рядка, підписка — в acting-org ГЛЯДАЧА (`04_04 §8.1`):
+  # плутанина цих двох кладе рухи одного тенанта в стрім іншого. Береться org-ЗАПИС,
+  # а не `organization_id` — імʼя стріму несе `stream_epoch` [SEC.25 Ф3], а дім імен
+  # лишається чистою функцією й у БД не ходить.
+  #
+  # Літерал стріму тут не пишеться взагалі: адресу дає дім імен, тож обидві сторони
+  # тракту кличуть ОДНУ функцію.
+  def broadcast_ledger_signal
+    owner = organization
+    # Fail-closed без тиші: осиротілий кластер — реальний стан схеми
+    # (`clusters.organization_id` nullable), і `TurboStreams::Name.org` на `nil`
+    # кинув би `ArgumentError`, який власний `rescue` нижче зʼїв би у WARN. Тобто
+    # без цього гарда рядок лишався б німим ТАК САМО, лише вже без жодного сліду.
+    return if owner.blank?
+
+    Turbo::StreamsChannel.broadcast_refresh_later_to(TurboStreams::Name.org(:ledger, owner))
+  rescue StandardError => e
+    # Та сама ізоляція, що у двох продюсерів нижче, і з тієї ж причини: `commit_records`
+    # має `ensure` без `rescue`, тож виняток UI-декорації пролетів би нагору з
+    # `create!`/`update!` — а всі пускачі цього хука лежать на money-шляху.
+    Rails.logger.warn "📡 [UI.4] broadcast_ledger_signal ##{id}: #{e.message}"
   end
 
   # Леджер відсортований `created_at: :desc`, тому `prepend`, не `append`:

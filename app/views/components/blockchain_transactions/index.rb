@@ -18,12 +18,32 @@ module BlockchainTransactions
       [ :timestamp, "text-right" ], [ :audit, "text-right" ]
     ].freeze
 
-    def initialize(transactions:, pagy:)
+    # Дім значення, яким глядач виходить із вікна. Рендерер і є дім — та сама форма,
+    # що `Wallets::Show::LEDGER_TARGET` (його читає модель) і `StatusBadge.label`:
+    # інакше літерал жив би і в лінку, і в предикаті контролера, а розходження було б
+    # ТИХИМ — кнопка «показати всю історію» просто перестала б виходити з вікна.
+    WINDOW_ALL = "all"
+
+    # `organization` і `window_start` — БЕЗ дефолтів свідомо (прецеденти: PERF.1
+    # `latest_logs`, ARCH.84 `health_measured`, UI.4 `map_node_total`). Дефолт `nil`
+    # зробив би забуту проводку невідрізнимою від законних станів: «підписки немає»
+    # виглядало б як «організації немає», а «вікно не звужене» — як «параметр не
+    # доїхав». Тут обидва мовчазні стани правдоподібні, тож гучне падіння дешевше.
+    def initialize(transactions:, pagy:, organization:, window_start:)
       @transactions = transactions
       @pagy = pagy
+      @organization = organization
+      @window_start = window_start
     end
 
     def view_template
+      # ⚡ [UI.4] Підписка на сигнал org-леджера. Продюсер — `BlockchainTransaction#
+      # broadcast_ledger_signal`, і він адресує org ВЛАСНИКА рядка; тут адреса — org
+      # ГЛЯДАЧА (acting-organization). Обидві сторони кличуть ОДИН дім імен.
+      # `refresh`, а не `prepend`: сторінка має фільтри, пагінацію й вікно — сліпа
+      # вставка нагору суперечила б усім трьом (`04_04 §8.1б`).
+      turbo_stream_from TurboStreams::Name.org(:ledger, @organization) if @organization
+
       div(class: "space-y-6") do
         header_section
         transactions_table
@@ -39,8 +59,12 @@ module BlockchainTransactions
     def header_section
       div(class: "flex justify-between items-end mb-4") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "📒 Blockchain Ledger — Global Audit" }
+          # Емодзі лишається в розмітці, а не в YAML: це гліф, а не слово мови —
+          # у чотирьох каталогах він був би чотирма побайтовими копіями, які гейт
+          # парності мусив би тримати в синхроні заради нуля перекладу.
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "📒 #{t('.heading')}" }
           p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
+          render_window_notice
         end
         div(class: "flex gap-2") do
           # Список бере enum, а не рукопис: раніше тут стояло `%w[carbon_coin
@@ -55,6 +79,33 @@ module BlockchainTransactions
             end
           end
         end
+      end
+    end
+
+    # 🔴 Оголошення видошукача — половина, без якої вікно було б тихим фільтром на
+    # аудит-поверхні. Друкується БЕЗУМОВНО, доки вікно чинне, і саме тут воно
+    # розходиться з `measurement_coverage`, який мовчить на повному покритті: там
+    # «повне» обчислюване й безкоштовне, тут «чи є щось поза вікном» коштувало б
+    # окремого запиту на КОЖЕН показ, а мовчання читалось би як «сховано нічого».
+    # ⚠️ Спільний ключ `ui.measurement.coverage` тут НЕ береться: він каже «виміряно
+    # X з Y» — про підмножину ВИМІРУ, не про часовий зріз. Збіг слова тут і був би
+    # дефектом (той самий клас, що `ui.status.maintenance` у хроніці дерева).
+    # ⚠️ Класи сирі, як і решта файлу, СВІДОМО: сторінка ще у фракції SECTOR, і
+    # токен-текст на сирій поверхні дає гібрид, у якого лік протилежний (UI.1).
+    # ⚠️ Межа називається ДАТОЮ, а не тривалістю («останні %{days} днів»), і це не
+    # стиль: число з іменником після нього завело б ВОСЬМИЙ плюральний борг у мовах
+    # із трьома формами (`I18N.1` тримає сім), а на аудит-поверхні межа й так
+    # інформативніша за тривалість — її можна звірити з випискою, тривалість треба
+    # рахувати. `I18n.l` бере формат із `rails-i18n`, тож нових ключів дати нуль.
+    def render_window_notice
+      return if @window_start.nil?
+
+      p(class: "text-mini text-gray-600 mt-1") do
+        plain t(".window.showing", since: I18n.l(@window_start.to_date, format: :long))
+        whitespace
+        a(href: blockchain_transactions_path(window: WINDOW_ALL),
+          class: "underline decoration-emerald-900 text-emerald-600 hover:text-white transition-all " \
+                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500") { t(".window.show_all") }
       end
     end
 
@@ -105,7 +156,13 @@ module BlockchainTransactions
             # обрізаний hex, скрінрідеру він нічого не каже. Тому перекладаємо, а не знімаємо.
             a(href: tx.explorer_url, target: "_blank", rel: "noopener noreferrer", aria_label: t(".explorer_aria"), class: "hover:text-emerald-500 underline decoration-emerald-900") { tx.tx_hash.first(16) + "..." }
           else
-            span(class: "italic text-zinc-800") { "PENDING_BLOCK" }
+            # Прецедент і переклади вже стояли — `contracts/show` резолвить те саме
+            # значення через `t(".ledger.pending_block")` у всіх чотирьох локалях.
+            # Тобто тут була не відсутність дому, а сайт, що повз нього проїхав.
+            # ⊥ Двійник у `wallets/transaction_row` лишається СИРИМ свідомо: він
+            # рендериться всередині броадкасту, тож `t()` там замінив би чесний
+            # англійський токен на локаль ПРОДЮСЕРА (`04_04 §8.1а`).
+            span(class: "italic text-zinc-800") { t(".table.pending_block") }
           end
         end
         td(class: "p-4 text-right text-gray-500") { tx.created_at.strftime("%H:%M:%S // %d.%m.%y") }

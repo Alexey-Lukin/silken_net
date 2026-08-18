@@ -5,17 +5,22 @@ lv:
       audit_aria: 'Darījuma #%{id} detaļas'
       audit_details: Detaļas
       explorer_aria: Skatīt darījumu blokķēdes pārlūkā
+      heading: Blokķēdes virsgrāmata — globālais audits
       subtitle: Kalšana, sodīšana un visi ķēdes notikumi jūsu organizācijai.
       table:
         amount: Summa
         audit: Audits
         empty: Nav reģistrētu blokķēdes darījumu.
         network: Tīkls
+        pending_block: GAIDOŠAIS_BLOKS
         source: Avots
         status: Statuss
         timestamp: Laika zīmogs
         tx_hash: TX Kods
         type: Veids
+      window:
+        show_all: Rādīt visu vēsturi
+        showing: Rādīti ieraksti kopš %{since}.
     index_title: Blokķēdes virsgrāmata
     on_chain_frame:
       explorer:

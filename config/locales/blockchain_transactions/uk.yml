@@ -5,17 +5,22 @@ uk:
       audit_aria: 'Деталі транзакції #%{id}'
       audit_details: Деталі
       explorer_aria: Переглянути транзакцію в оглядачі блокчейну
+      heading: Реєстр блокчейну — глобальний аудит
       subtitle: Minting, slashing та всі on-chain події вашої Організації.
       table:
         amount: Сума
         audit: Аудит
         empty: Жодної блокчейн-транзакції не зафіксовано.
         network: Мережа
+        pending_block: ОЧІКУЄ_БЛОК
         source: Джерело
         status: Статус
         timestamp: Час
         tx_hash: TX Хеш
         type: Тип
+      window:
+        show_all: Показати всю історію
+        showing: Показано записи з %{since}.
     index_title: Реєстр блокчейну
     on_chain_frame:
       explorer:

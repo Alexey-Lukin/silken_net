@@ -6,7 +6,15 @@ require "rails_helper"
 RSpec.describe BlockchainTransactions::Index do
   let(:transactions) { [ mock_transaction ] }
   let(:pagy) { mock_pagy(count: 1, last: 1) }
-  let(:html) { render_component(transactions: transactions, pagy: pagy) }
+  let(:html) { render_index(transactions: transactions, pagy: pagy) }
+
+  # Проводка підписки й вікна підставляється ТУТ, а не в компоненті: у компоненті
+  # дефолт зробив би забуту проводку тихою (див. коментар над його `initialize`),
+  # тоді як спеці потрібні саме нейтральні значення, щоб кожен приклад лишався про
+  # СВІЙ предмет. `organization: nil` — fail-closed бік: підписка не рендериться.
+  def render_index(**kwargs)
+    render_component(organization: nil, window_start: nil, **kwargs)
+  end
 
 
   # Реальний НЕЗБЕРЕЖЕНИЙ запис, а не `OpenStruct` — дзеркало
@@ -41,6 +49,17 @@ RSpec.describe BlockchainTransactions::Index do
   describe "header" do
     it "displays Blockchain Ledger title" do
       expect(html).to include("Blockchain Ledger")
+    end
+
+    # 🔴 [I18N.1] Свідок мусить жити в НЕ-БАЗОВІЙ локалі: en-мітка дорівнює старому
+    # хардкоду побайтово (мінус емодзі), тож англійський пін лишається зеленим і на
+    # сирому рядку — тобто саме там, де дефект і був. Негативна половина несуча з
+    # тієї ж причини: без неї приклад не відрізняє «резолвлено» від «зашито».
+    it "resolves the heading through the locale, not a hardcoded English string" do
+      rendered = I18n.with_locale(:uk) { render_index(transactions: transactions, pagy: pagy) }
+
+      expect(rendered).to include("Реєстр блокчейну — глобальний аудит")
+      expect(rendered).not_to include("Blockchain Ledger — Global Audit")
     end
 
     # Легенда рендерить МІТКИ, і негативна половина тут несуча: доти вона друкувала
@@ -108,7 +127,7 @@ RSpec.describe BlockchainTransactions::Index do
 
     it "renders forest_coin with forest token style" do
       txs = [ mock_transaction(token_type: "forest_coin") ]
-      rendered = render_component(transactions: txs, pagy: pagy)
+      rendered = render_index(transactions: txs, pagy: pagy)
       expect(rendered).to include("text-token-forest")
     end
 
@@ -117,7 +136,7 @@ RSpec.describe BlockchainTransactions::Index do
     # проді, а єдиний вхід, яким він досяжний насправді, — ніяк.
     it "renders cusd — the styleless enum value — with the zinc fallback" do
       txs = [ mock_transaction(token_type: "cusd") ]
-      rendered = render_component(transactions: txs, pagy: pagy)
+      rendered = render_index(transactions: txs, pagy: pagy)
       expect(rendered).to include("text-zinc-400")
     end
   end
@@ -136,26 +155,26 @@ RSpec.describe BlockchainTransactions::Index do
 
     it "renders processing with the warning token and pulse" do
       txs = [ mock_transaction(status: "processing") ]
-      rendered = render_component(transactions: txs, pagy: pagy)
+      rendered = render_index(transactions: txs, pagy: pagy)
       expect(rendered).to include("bg-status-warning")
       expect(rendered).to include("animate-pulse")
     end
 
     it "renders sent with the info token" do
       txs = [ mock_transaction(status: "sent") ]
-      rendered = render_component(transactions: txs, pagy: pagy)
+      rendered = render_index(transactions: txs, pagy: pagy)
       expect(rendered).to include("bg-status-info")
     end
 
     it "renders pending with the warning token" do
       txs = [ mock_transaction(status: "pending") ]
-      rendered = render_component(transactions: txs, pagy: pagy)
+      rendered = render_index(transactions: txs, pagy: pagy)
       expect(rendered).to include("bg-status-warning")
     end
 
     it "renders failed with the danger token" do
       txs = [ mock_transaction(status: "failed") ]
-      rendered = render_component(transactions: txs, pagy: pagy)
+      rendered = render_index(transactions: txs, pagy: pagy)
       expect(rendered).to include("bg-status-danger")
     end
   end
@@ -163,14 +182,26 @@ RSpec.describe BlockchainTransactions::Index do
   describe "PENDING_BLOCK" do
     it "shows PENDING_BLOCK when tx_hash is nil" do
       txs = [ mock_transaction(tx_hash: nil) ]
-      rendered = render_component(transactions: txs, pagy: pagy)
+      rendered = render_index(transactions: txs, pagy: pagy)
       expect(rendered).to include("PENDING_BLOCK")
+    end
+
+    # [I18N.1] Той самий пристрій, що на заголовку: en-значення ключа дорівнює
+    # токену побайтово, тож дискримінує лише не-базова локаль. Дім перекладів не
+    # новий — `contracts/show` резолвить це саме значення в усіх чотирьох каталогах
+    # ще доти; тут була не відсутність дому, а сайт, що проїхав повз нього.
+    it "resolves the pending-block label through the locale" do
+      txs = [ mock_transaction(tx_hash: nil) ]
+      rendered = I18n.with_locale(:uk) { render_index(transactions: txs, pagy: pagy) }
+
+      expect(rendered).to include("ОЧІКУЄ_БЛОК")
+      expect(rendered).not_to include("PENDING_BLOCK")
     end
   end
 
   describe "empty state" do
     it "shows empty message when no transactions" do
-      rendered = render_component(transactions: [], pagy: mock_pagy(count: 0, last: 1))
+      rendered = render_index(transactions: [], pagy: mock_pagy(count: 0, last: 1))
       expect(rendered).to include("No blockchain transactions recorded.")
     end
 
@@ -180,7 +211,7 @@ RSpec.describe BlockchainTransactions::Index do
     # існує лише МІЖ ними, тож жоден однобічний приклад її не бачить.
     # Число дрейфувало двічі незалежно (`source` від ARCH.98, `audit` від UI.8).
     it "порожній стан перекриває РІВНО стільки колонок, скільки їх у шапці" do
-      rendered = render_component(transactions: [], pagy: mock_pagy(count: 0, last: 1))
+      rendered = render_index(transactions: [], pagy: mock_pagy(count: 0, last: 1))
 
       headers = rendered.scan(/<th\b/).size
       colspan = rendered[/colspan="(\d+)"/, 1]&.to_i
@@ -211,13 +242,13 @@ RSpec.describe BlockchainTransactions::Index do
     def provenance_cell(rendered) = rendered[%r{<td class="p-4 text-emerald-500">([^<]*)</td>}, 1]
 
     it "names the tree when the row is wallet-sourced" do
-      rendered = render_component(transactions: [ mock_transaction ], pagy: pagy)
+      rendered = render_index(transactions: [ mock_transaction ], pagy: pagy)
       expect(provenance_cell(rendered)).to eq("SNET-00000042")
     end
 
     it "names the cluster when the row carries no wallet" do
       txs = [ mock_transaction(has_wallet: false, cluster_name: "Карпати-7") ]
-      rendered = render_component(transactions: txs, pagy: pagy)
+      rendered = render_index(transactions: txs, pagy: pagy)
       expect(provenance_cell(rendered)).to eq("Карпати-7")
     end
 
@@ -225,7 +256,7 @@ RSpec.describe BlockchainTransactions::Index do
     # сторінку він не потрапляє — пін стереже форму фолбеку, не живий стан.
     it "falls back to a dash when neither wallet nor cluster is present" do
       txs = [ mock_transaction(has_wallet: false) ]
-      rendered = render_component(transactions: txs, pagy: pagy)
+      rendered = render_index(transactions: txs, pagy: pagy)
       expect(provenance_cell(rendered)).to eq("—")
     end
   end
@@ -236,7 +267,7 @@ RSpec.describe BlockchainTransactions::Index do
         mock_transaction(id: 1, amount: "1.0"),
         mock_transaction(id: 2, amount: "2.0")
       ]
-      rendered = render_component(transactions: txs, pagy: mock_pagy(count: 2, last: 1))
+      rendered = render_index(transactions: txs, pagy: mock_pagy(count: 2, last: 1))
       expect(rendered).to include("1.0 SCC")
       expect(rendered).to include("2.0 SCC")
     end
@@ -247,25 +278,78 @@ RSpec.describe BlockchainTransactions::Index do
   # шляху, і він був тьмянішим за доброякісний `pending`.
   describe "manual_review — double-spend guard" do
     it "renders more prominently than a benign pending transaction" do
-      rendered = render_component(transactions: [ mock_transaction(status: "manual_review") ], pagy: pagy)
+      rendered = render_index(transactions: [ mock_transaction(status: "manual_review") ], pagy: pagy)
 
       expect(rendered).to include("text-status-warning-text")
       expect(rendered).to include("animate-pulse")
     end
   end
 
+  # 🔴 Пін цілить у САМ вузол, і це не охайність: `include("—")` по документу був
+  # ВАКУУМНИЙ рівно так само, як у сусіда `provenance cell` — заголовок сторінки
+  # несе тире («Blockchain Ledger — Global Audit»), тож приклад лишався зеленим і
+  # зі знятою коміркою. Сусідній блок цю вакуумність у себе виправив і НАЗВАВ, а
+  # тут вона лишилась стояти: клас закрили для одного прикладу, не для файлу.
   describe "blockchain_network fallback" do
+    def network_cell(rendered)
+      rendered[%r{<td class="p-4 text-gaia-text-muted text-mini uppercase">([^<]*)</td>}, 1]
+    end
+
     it "shows a dash when blockchain_network is nil" do
       txs = [ mock_transaction(blockchain_network: nil) ]
-      rendered = render_component(transactions: txs, pagy: pagy)
-      expect(rendered).to include("—")
+
+      expect(network_cell(render_index(transactions: txs, pagy: pagy))).to eq("—")
+    end
+
+    # Позитивний контроль: без нього «комірка дорівнює тире» не відрізняється від
+    # «комірка завжди тире» — рівно та пара, якої бракувало бейджу `action_type`.
+    it "names the network when it is present" do
+      expect(network_cell(html)).to eq("EVM")
+    end
+  end
+
+  # 🔴 [UI.4] Вікно — це ВІДБІР записів на аудит-поверхні, тож пін стереже не саме
+  # звуження (воно в контролері), а його ОГОЛОШЕННЯ: підпис плюс вихід. Мовчазне
+  # вікно було б тихим фільтром, тобто «підмножина, подана як вимір цілого».
+  describe "window notice" do
+    let(:window_start) { Time.utc(2026, 5, 20) }
+
+    it "declares the active window and offers the way out of it" do
+      rendered = render_index(transactions: transactions, pagy: pagy, window_start: window_start)
+
+      expect(rendered).to include("May 20, 2026")
+      expect(rendered).to include("window=all")
+    end
+
+    # Друга половина: коли вікна немає, оголошувати нічого — інакше підпис брехав би
+    # про приховане там, де не приховано нічого.
+    it "says nothing when the full history is on screen" do
+      expect(html).not_to include("window=all")
+    end
+
+    # Дім значення один. Без цього піна лінк і предикат контролера могли б розійтися
+    # ТИХО: кнопка лишалась би на місці, а клік не виводив би з вікна.
+    it "builds the escape link from the home of the value" do
+      rendered = render_index(transactions: transactions, pagy: pagy, window_start: window_start)
+
+      expect(rendered).to include("window=#{described_class::WINDOW_ALL}")
+    end
+  end
+
+  # [UI.4] Підписка. Її ЗМІСТ (чи адреса та сама, що в продюсера, і чи вона різна
+  # для двох тенантів) пінить request-приклад — компонентна спека рендерить повз
+  # маршрутизатор і повз викликача, тож тут стережеться лише fail-closed бік:
+  # без організації підписки нема взагалі.
+  describe "live subscription" do
+    it "renders no stream subscription without an organization" do
+      expect(html).not_to include("turbo-cable-stream-source")
     end
   end
 
   describe "pagination url_helper" do
     it "renders pagination links with correct path" do
       multi_pagy = mock_pagy(count: 50, page: 1, last: 3)
-      rendered = render_component(transactions: [ mock_transaction ], pagy: multi_pagy)
+      rendered = render_index(transactions: [ mock_transaction ], pagy: multi_pagy)
       expect(rendered).to include("page=2")
     end
   end
@@ -281,12 +365,12 @@ RSpec.describe BlockchainTransactions::Index do
       # себе замість того, щоб виміряти фолбек.
       bogus = mock_transaction
       bogus.define_singleton_method(:status) { "__not_a_state__" }
-      fallback = render_component(transactions: [ bogus ], pagy: pagy)
+      fallback = render_index(transactions: [ bogus ], pagy: pagy)
       fallback_style = fallback[/bg-status-neutral[^"]*/]
       expect(fallback_style).to be_present
 
       BlockchainTransaction.aasm.states.map(&:name).each do |state|
-        rendered = render_component(transactions: [ mock_transaction(status: state.to_s) ], pagy: pagy)
+        rendered = render_index(transactions: [ mock_transaction(status: state.to_s) ], pagy: pagy)
         expect(rendered).not_to include(fallback_style),
                                 "стан #{state} падає в дефолтну гілку — його не видно як окремий"
       end
@@ -298,7 +382,7 @@ RSpec.describe BlockchainTransactions::Index do
     # тобто промах був би ТИХИЙ і на екрані невидимий.
     it "links each row to its own audit page, carrying the partition key" do
       tx = mock_transaction(id: 77)
-      html = render_component(transactions: [ tx ], pagy: pagy)
+      html = render_index(transactions: [ tx ], pagy: pagy)
 
       expect(html).to include("/blockchain_transactions/77?created_at=")
     end
