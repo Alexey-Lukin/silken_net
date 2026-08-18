@@ -57,6 +57,7 @@ uk:
       transaction_record: Запис транзакції
       tx_id_line: "#%{id} // %{at}"
       wallet:
+        cluster_title: Кластер-джерело
         no_wallet: Гаманець не прив'язано.
         not_available: Н/Д
         title: Прив'язаний гаманець

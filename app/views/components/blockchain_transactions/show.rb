@@ -108,10 +108,29 @@ module BlockchainTransactions
       end
     end
 
+    # 🔴 [ARCH.101] Секція називає ДЖЕРЕЛО грошей, і джерел два — гаманцеве дерево
+    # АБО кластер. Доти вона знала лише перше: cluster-sourced рух (Celo-винагорода
+    # кластеру · слеш «останнього дерева») діставав «Гаманець не прив'язано» і не
+    # називав джерела ВЗАГАЛІ — тобто аудитор, що клікнув «Деталі» з рядка, де
+    # стояло імʼя кластера, потрапляв на сторінку, яка мовчить про походження
+    # найматеріальніших рухів платформи. Заразом розходились дві репрезентації
+    # ОДНОГО ендпоінта: блупринт віддає `cluster_name` в обох в'ю, а HTML — ні.
+    # ⚠️ Заголовок перемикається РАЗОМ із гілкою: «Прив'язаний гаманець» над іменем
+    # кластера був би тим самим «одна мітка, два значення», лише на рівень вище.
+    # Той самий предикат читають ОБИДВА боки секції — заголовок і тіло. Дві копії
+    # умови розійшлися б тихо: заголовок сказав би «гаманець», а під ним стояв би
+    # кластер, і жоден гейт цього не бачить.
+    def cluster_sourced? = @tx.wallet.blank? && @tx.cluster.present?
+
     def render_wallet_info
       div(class: "p-6 border border-emerald-900 bg-black space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".wallet.title") }
-        if @tx.wallet.present?
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") do
+          cluster_sourced? ? t(".wallet.cluster_title") : t(".wallet.title")
+        end
+
+        if cluster_sourced?
+          p(class: "text-compact text-emerald-400 font-mono") { @tx.cluster.name }
+        elsif @tx.wallet.present?
           div do
             p(class: "text-mini text-gray-600 uppercase mb-1") { t(".wallet.tree_did") }
             # `&.` is model-validation-dead, not real: Wallet#tree is a

@@ -57,6 +57,7 @@ en:
       transaction_record: Transaction Record
       tx_id_line: "#%{id} // %{at}"
       wallet:
+        cluster_title: Source Cluster
         no_wallet: No wallet linked.
         not_available: N/A
         title: Linked Wallet

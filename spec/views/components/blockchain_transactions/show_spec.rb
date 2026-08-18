@@ -245,6 +245,43 @@ RSpec.describe BlockchainTransactions::Show do
       rendered = render_component(transaction: tx)
       expect(rendered).to include("No wallet linked.")
     end
+
+    # 🔴 [ARCH.101] Джерел грошей ДВА — гаманцеве дерево АБО кластер, — і доти
+    # сторінка знала лише перше: cluster-sourced рух (Celo-винагорода кластеру ·
+    # слеш «останнього дерева») діставав «No wallet linked.» і не називав джерела
+    # взагалі. ARCH.98 зробив такий рядок ДОСЯЖНИМ прямою адресою й не спитав, що
+    # сторінка тоді ПОКАЖЕ; блупринт при цьому віддає `cluster_name` в обох в'ю,
+    # тобто дві репрезентації одного ендпоінта розходились.
+    context "when the row is cluster-sourced (no wallet by construction)" do
+      let(:cluster_tx) do
+        tx = mock_transaction(has_wallet: false)
+        cluster = Cluster.new(name: "Карпати-7")
+        tx.define_singleton_method(:cluster) { cluster }
+        tx
+      end
+
+      it "names the source cluster instead of reporting an absence" do
+        rendered = render_component(transaction: cluster_tx)
+
+        expect(rendered).to include("Карпати-7")
+        expect(rendered).not_to include("No wallet linked.")
+      end
+
+      # Окремим прикладом, не другим ассертом сусіда: це ІНША вісь, і зведені в
+      # один приклад вони давали б повідомлення про значення там, де зламався
+      # заголовок. Мітка над іменем кластера мусить називати кластер — інакше це
+      # «одна мітка, два значення» на рівень вище за саме поле.
+      it "switches the section heading to the cluster, not just the value" do
+        expect(render_component(transaction: cluster_tx)).to include("Source Cluster")
+      end
+
+      # Позитивний контроль: без нього «називає кластер» не відрізняється від
+      # «називає кластер завжди», а заголовок — від «заголовок завжди кластерний».
+      it "keeps the wallet heading for a wallet-backed row" do
+        expect(html).to include("Linked Wallet")
+        expect(html).not_to include("Source Cluster")
+      end
+    end
   end
 
   # [UI.4] Підписку знято: голий `wallet`-стрім лишився без продюсерів, а цілі на

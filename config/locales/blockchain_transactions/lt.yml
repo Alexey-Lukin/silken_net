@@ -57,6 +57,7 @@ lt:
       transaction_record: Sandorio įrašas
       tx_id_line: "#%{id} // %{at}"
       wallet:
+        cluster_title: Šaltinio klasteris
         no_wallet: Nėra susietos piniginės.
         not_available: Nėra
         title: Susieta piniginė

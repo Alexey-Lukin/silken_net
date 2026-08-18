@@ -57,6 +57,7 @@ lv:
       transaction_record: Darījuma ieraksts
       tx_id_line: "#%{id} // %{at}"
       wallet:
+        cluster_title: Avota klasteris
         no_wallet: Nav saistīta maka.
         not_available: Nav
         title: Saistītais maks
