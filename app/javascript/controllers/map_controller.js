@@ -52,8 +52,13 @@ export default class extends Controller {
     // Ініціалізація карти. Координати за замовчуванням (Черкаси)
     this.map = L.map(this.element).setView([49.4444, 32.0598], 12)
 
-    // Використовуємо Dark Matter стиль для кіберпанк-естетики
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    // [UI.1] Тайл їде за ТЕМОЮ ОС, не хардкодом: раніше dark_all стояв літералом,
+    // і у світлій темі карта лишалась чорною плитою посеред світлої сторінки.
+    // matchMedia тут — НЕ повернення JS-тумблера (⚖️ 08-08: тему обирає ОС, JS у
+    // CSS-ланцюгу немає): Leaflet-тайли — растрові URL, media-query їх не
+    // перемкне за побудовою, тож контролер читає ту САМУ ОС-перевагу, що й CSS.
+    this.themeQuery = window.matchMedia("(prefers-color-scheme: dark)")
+    this.tileLayer = L.tileLayer(this.tileUrl(this.themeQuery.matches), {
       // 🔴 Атрибуція — ВИМОГА ЛІЦЕНЗІЇ, не підпис. Дані OSM ліцензовані ODbL (§4.3
       // вимагає називати джерело в кожному похідному творі), тайли — за умовами CARTO.
       // Доти тут стояв самий лише наш рядок, який ЗАМІЩАВ обидва джерела; власний
@@ -64,11 +69,21 @@ export default class extends Controller {
       maxZoom: 19
     }).addTo(this.map)
 
+    // Живе перемикання разом з ОС (слухач знімається в disconnect())
+    this.onThemeChange = (event) => this.tileLayer.setUrl(this.tileUrl(event.matches))
+    this.themeQuery.addEventListener("change", this.onThemeChange)
+
     this.markerLayer = L.layerGroup().addTo(this.map)
     this.markers = {} // Банк пам'яті: DID -> Marker
 
     // Захист від багів рендерингу в прихованих вкладках
     this.resizeTimeout = setTimeout(() => this.map.invalidateSize(), 200)
+  }
+
+  // Обидві теми — CARTO basemaps (та сама ліцензія/атрибуція, той самий CDN).
+  tileUrl(dark) {
+    const style = dark ? "dark_all" : "light_all"
+    return `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`
   }
 
   disconnect() {
@@ -77,6 +92,11 @@ export default class extends Controller {
     if (this.skipMorph) {
       this.element.removeEventListener("turbo:before-morph-element", this.skipMorph)
       this.skipMorph = null
+    }
+    if (this.themeQuery && this.onThemeChange) {
+      this.themeQuery.removeEventListener("change", this.onThemeChange)
+      this.themeQuery = null
+      this.onThemeChange = null
     }
     clearTimeout(this.resizeTimeout)
     if (this.map) {
