@@ -25,11 +25,21 @@ module Views
           "sent"         => "bg-status-info text-status-info-text",
           "confirmed"    => "bg-status-success text-status-success-text",
           "failed"       => "bg-status-danger text-status-danger-text",
-          # `ring-current`, а не червоне кільце: вимір 2026-08-19 дав
-          # `--status-danger-accent` на фоні бейджа **2.41 у ТЕМНІЙ** темі — тобто
-          # «очевидний» червоний контур був би свіжим порушенням 1.4.11 у єдиній
-          # уживаній темі. Власний текстовий колір бейджа дає 6.37 / 7.28.
-          "manual_review" => "bg-status-warning text-status-warning-text ring-2 ring-current",
+          # `outline`, а НЕ `ring` — і це не стилістика, а вимір, куплений
+          # adversarial-проходом 2026-08-20. `ring-*` у Tailwind реалізовано через
+          # `--tw-ring-shadow`, тобто `box-shadow`, а CSS Color Adjust L1 у режимі
+          # `forced-colors` примусово ставить `box-shadow: none`. Отже для тієї
+          # когорти дискримінатор ЗНИКАВ, і `manual_review` знову зливався з
+          # `pending` — рівно той колапс, проти якого написано сусідній коментар,
+          # і саме на грошовому стані. `outline` у forced-colors зберігається
+          # (перефарбовується в системний колір), як і `font-style`/`text-decoration`,
+          # тобто `italic` і `line-through` вище стійкі, а `ring` був єдиним ні.
+          # ⛔ Не повертати `ring` як носій сенсу: `outline` не впливає на розкладку
+          # (малюється поза боксом), тож ціна заміни нульова.
+          # Колір — власний текстовий колір бейджа (6.37 / 7.28), не червоний:
+          # `--status-danger-accent` на цьому фоні дає 2.41 у темній, тобто
+          # провалив би 1.4.11.
+          "manual_review" => "bg-status-warning text-status-warning-text outline-2 outline-offset-1 outline-current",
           # Спільний «здоровий» стан п'яти доменів (Tree · Gateway · NaasContract ·
           # Actuator · ParametricInsurance) — усі п'ять кажуть цим словом «усе гаразд».
           # Доти запис належав `EwsAlert` і означав ПРОТИЛЕЖНЕ (відкрита тривога =

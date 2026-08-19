@@ -633,7 +633,7 @@ render Views::Shared::UI::StatusBadge.new(status: "confirmed", class: "mt-2")
 |---|---|
 | `pending`, `dormant`, `maintenance_needed` | `bg-status-warning text-status-warning-text` |
 | `processing`, `updating` | `+ italic` — неколірний дискримінатор «у русі» [UI.3] |
-| `manual_review` | `bg-status-warning text-status-warning-text + ring-2 ring-current` — **[DOUBLE-SPEND GUARD]**: tx_hash існує або стан невідомий, потребує ручної звірки. Найсильніший дискримінатор трійки, і кільце свідомо `ring-current`, а не червоне: `--status-danger-accent` на фоні бейджа дає **2.41** у ТЕМНІЙ темі, тобто провалив би 1.4.11 (бар 3:1), а власний текстовий колір бейджа — 6.37 / 7.28 [UI.3] |
+| `manual_review` | `bg-status-warning text-status-warning-text + outline-2 outline-offset-1 outline-current` — **[DOUBLE-SPEND GUARD]**: tx_hash існує або стан невідомий, потребує ручної звірки. Найсильніший дискримінатор трійки. Колір свідомо власний текстовий (6.37 / 7.28), не червоний: `--status-danger-accent` на цьому фоні дає **2.41** у темній, тобто провалив би 1.4.11. 🔴 **І `outline`, а НЕ `ring`** — куплено adversarial-проходом 2026-08-20: `ring-*` це `--tw-ring-shadow`, тобто `box-shadow`, а `forced-colors` примусово ставить `box-shadow: none`, тож маркер зникав саме для тієї когорти, яку [`00_07`](00_07_Action_Plan_Tracker) UI.1 тримає відкритою — і саме на грошовому стані. `outline`/`font-style`/`text-decoration` у тому режимі виживають [UI.3] |
 | **`active`**, `confirmed`, `fulfilled` | `bg-status-success text-status-success-text` |
 | `sent`, `maintenance` | `bg-status-info text-status-info-text` |
 | `failed`, `breached`, `deceased`, `faulty` | `bg-status-danger text-status-danger-text` |
@@ -645,8 +645,16 @@ render Views::Shared::UI::StatusBadge.new(status: "confirmed", class: "mt-2")
 `animation-duration: 0.01ms !important` на все — тобто для цілої когорти глядачів
 анімації НЕ ІСНУЄ, і клас, що на неї спирається, для них порожній. Доти
 `animate-pulse` був **єдиним**, чим `processing`, `manual_review` і `updating`
-відрізнялись від `pending`, тож для reduced-motion усі чотири бейджі були байтово
-однакові — включно з double-spend guard'ом, який виглядав рутинним «в обробці». Це
+відрізнялись від `pending` — включно з double-spend guard'ом.
+
+⚠️ **ТОЧНА рамка, і перша редакція цього блоку її ЗАВИЩУВАЛА** (виправлено 2026-08-20;
+adversarial-прохід успадкував те саме завищення, тобто помилка стояла з ОБОХ боків
+ревʼю). Однаковим ставав **рядок стилю**, не відрендерений бейдж: `StatusBadge` завжди
+друкує власний підпис, і вони різні, тож розрізнюваність не втрачалась і **SC 1.4.1
+(Use of Color) задоволений текстом**. Втрачалась **ПОМІТНІСТЬ** — маркер, яким гучний
+стан ловить око при скануванні таблиці на двадцять рядків. Вердикт не змінюється
+(кожному стану статичний дискримінатор), змінюється ПІДСТАВА: це scannability, не
+1.4.1-порушення. Це
 той самий дефект, що `opacity-50` на `cancelled` (він розрізняв його від `draft`
 ціною 6.87 → 2.25), лише на грошовому шляху й на ЧОТИРЬОХ членах.
 

@@ -108,6 +108,14 @@ RSpec.describe ComponentDocSync do
       #{section_64_compressed}
 
       ### 6.5 Namespacing Convention
+
+      ## 10. Lookbook (Дослідник Компонентів)
+
+      | Превью | Сценарії |
+      |---|---|
+      | `WidgetPreview` | Default |
+
+      ## 11. Що завгодно далі
     MD
   end
 
@@ -126,6 +134,15 @@ RSpec.describe ComponentDocSync do
       # Every shared subdir must exist even when a case removes its only file,
       # otherwise the glob is empty for a reason the case did not intend.
       %w[ui iot web3].each { |d| FileUtils.mkdir_p(File.join(root, described_class::SHARED_REL, d)) }
+
+      # 🔴 [2026-08-20] Каталог превʼю + один файл. Доти його НЕ БУЛО, тож четверта
+      # вісь у кожному прикладі порівнювала ∅ ⟷ ∅ і не могла нічого сказати — рівно
+      # та пастка, від якої застерігає коментар про shared-globи двома рядками вище,
+      # застосована до сусідньої осі. Знайдено adversarial-проходом; закривається
+      # разом із якорем на §10, який без цієї структури просто кидав.
+      previews = File.join(root, described_class::PREVIEWS_REL)
+      FileUtils.mkdir_p(previews)
+      File.write(File.join(previews, "widget_preview.rb"), "class WidgetPreview; end\n")
 
       yield root
     end
@@ -260,6 +277,37 @@ RSpec.describe ComponentDocSync do
   end
 
   # ── the §1 hierarchy tree (namespace granularity) ─────────────────────────
+
+  # ── четверта вісь: превʼю Lookbook ⟷ §10 ──────────────────────────────────
+  describe "row form D (Lookbook previews, §10)" do
+    it "reports a preview whose row outlived its file" do
+      with_root do |root|
+        FileUtils.rm(File.join(root, described_class::PREVIEWS_REL, "widget_preview.rb"))
+        expect(described_class.audit(root))
+          .to include(a_string_including("`WidgetPreview` is in 04_04 §10 but has NO file"))
+      end
+    end
+
+    it "reports a preview file absent from the table" do
+      with_root do |root|
+        File.write(File.join(root, described_class::PREVIEWS_REL, "gadget_preview.rb"), "x\n")
+        expect(described_class.audit(root))
+          .to include(a_string_including("`GadgetPreview` exists in").and(a_string_including("NOT in 04_04 §10")))
+      end
+    end
+
+    # 🔴 ЯКІР: рядок ПОЗА §10 не є реєстром. Без цього приклада вісь читала весь
+    # документ, тож приклад-рядок у туторіальній прозі червонив із хибною адресою,
+    # а винесений із §10 рядок лишав гейт зеленим при порожній секції.
+    it "does not read a preview row that sits outside §10" do
+      doc = build_doc.sub("| `WidgetPreview` | Default |", "") +
+            "\n## Кудись Інде\n\n| Превью | Сценарії |\n|---|---|\n| `WidgetPreview` | Default |\n"
+      with_root(doc_body: doc) do |root|
+        expect(described_class.audit(root))
+          .to include(a_string_including("`WidgetPreview` exists in").and(a_string_including("NOT in 04_04 §10")))
+      end
+    end
+  end
 
   describe "the §1 ASCII tree" do
     context "when a namespace directory is absent from the tree" do

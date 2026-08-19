@@ -48,12 +48,16 @@ RSpec.describe Views::Shared::UI::StatusBadge do
     end
 
     # `manual_review` — найгучніший стан грошового тракту (кошти заблоковані,
-    # потрібна людина), тож його дискримінатор найсильніший із трьох. Кільце —
-    # `ring-current`, а не червоне: `--status-danger-accent` на фоні бейджа дає
-    # 2.41 у ТЕМНІЙ темі, тобто провалив би 1.4.11 (бар 3:1).
-    it "gives manual_review the loudest static discriminator" do
+    # потрібна людина), тож його дискримінатор найсильніший із трьох.
+    # 🔴 `outline`, а не `ring`: `ring-*` це `box-shadow`, який режим
+    # `forced-colors` примусово гасить (`box-shadow: none`), тож дискримінатор
+    # ЗНИКАВ для цілої когорти — і саме на грошовому стані. `outline`,
+    # `font-style` і `text-decoration` у тому режимі виживають.
+    it "gives manual_review a discriminator that survives forced-colors" do
       html = render_component(status: "manual_review")
-      expect(html).to include("ring-2 ring-current")
+      expect(html).to include("outline-2")
+      expect(html).to include("outline-current")
+      expect(html).not_to include("ring-")
       expect(html).not_to include("animate-pulse")
     end
 

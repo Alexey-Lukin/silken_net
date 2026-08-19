@@ -90,7 +90,14 @@ module Trees
     # [ARCH.99] Поріг тиші приходить із моделі (`Tree#fresh_signal?`) — доти тут
     # стояла рукописна копія «24 години», тобто друга відповідь на те саме питання.
     def tree_status_led(tree)
-      return "bg-status-danger animate-pulse shadow-[0_0_8px_red]" if tree.under_threat?
+      # 🔴 [UI.1, 2026-08-20] `bg-status-danger` тут був ПАСТЕЛЬНИМ ФОНОМ БЕЙДЖА
+      # (#fee2e2) у ролі сигнальної крапки: **1.17–1.22 світла / 1.92–2.02 темна**
+      # при барі 1.4.11 = 3:1, тобто найгучніший стан флоту був найблідішою
+      # крапкою в ОБОХ темах. Від цієї самої помилки застерігає сусід
+      # (`clusters/show.rb` — «крапці потрібен насичений колір»), і там її не
+      # зробили. `-accent` дає 4.63–5.39. ⚠️ Сире `red` у тіні лишається
+      # тем-інваріантним акцентом і лінтер його не бачить (`00_07` UI.1).
+      return "bg-status-danger-accent animate-pulse shadow-[0_0_8px_red]" if tree.under_threat?
       return "bg-gaia-text-subtle" unless tree.fresh_signal?
       "bg-emerald-500 shadow-[0_0_5px_#10b981]"
     end

@@ -3,7 +3,15 @@
 
 require "rails_helper"
 
-# [UI.3] 🔴 Один дім для класу «на рядок», бо детектор у нас уже є, а підмету — не було.
+# [UI.3] 🔴 Спільний дім для класу «на рядок», бо детектор у нас уже є, а підмету — не було.
+#
+# ⚠️ **«ОДИН дім» було завищенням, і adversarial-прохід 2026-08-20 довів це прогоном:**
+# два сайти, якими цей файл виправдовували (`Tree#under_threat?` на `trees#index` і
+# `gateways#show`), у ньому були ВІДСУТНІ — повернення дефекту лишало його зеленим
+# (11/0), а червоніли пер-контролерні піни. Тобто клас мав два доми, і той, що
+# називав себе єдиним, не ловив нічого зі свого ж виправдання. Виправлено: обидві
+# сторінки тепер тут, а пер-контролерні піни лишаються ДРУГИМ шаром свідомо —
+# вони пінять ще й вміст сторінки, чого цей файл не робить.
 #
 # Prosopite сканує КОЖЕН request-приклад (`rails_helper`) і ловить N+1 за
 # визначенням — повторений запит. Але щоб повторитись, запитові потрібні ≥2 рядки,
@@ -23,15 +31,17 @@ require "rails_helper"
 #      на одній relation — різні запити) він не бачить, її ловить лише вимір.
 #   3. Це гейт РЕГРЕСІЇ, не інвентар: сторінка, якої тут немає, не перевіряється
 #      ніде, тож новий колекційний екран додає сюди приклад.
-#   4. 🔴 **Детектор дискримінує РІЗНОМАНІТТЯ бінд-значень, а не сам повтор** —
-#      виміряно 2026-08-19 на цьому ж файлі. Дві транзакції, що вказують на ОДИН
-#      контракт, дають два ідентичних `SELECT … WHERE id = 7`, і Prosopite мовчить
-#      (при `min_n_queries = 2`); щойно контракти різні — червоніє. Тобто фікстура
-#      з двох рядків, чия асоціація резолвиться в СПІЛЬНИЙ запис, знезброює гейт
-#      так само надійно, як фікстура з одного рядка. **Пишучи приклад, роби батьків
-#      РІЗНИМИ.** ⚠️ І зворотний бік цієї межі — борг, не примха приладу: цикл, що
-#      N разів тягне ТОЙ САМИЙ рядок, є чистішим марнотратством за класичний N+1,
-#      і його тут не побачить ніхто.
+#   4. 🔴 **Фікстура, чия асоціація резолвиться в СПІЛЬНИЙ запис, знезброює гейт
+#      так само надійно, як фікстура з одного рядка — тож роби батьків РІЗНИМИ.**
+#      ⚠️ **ПІДСТАВА під цим приписом була ХИБНА, і adversarial-прохід 2026-08-20
+#      її замінив.** Тут стояло «детектор дискримінує різноманіття бінд-значень, а
+#      не сам повтор» — неправда: Prosopite групує по `PgQuery.fingerprint`, який
+#      СТИРАЄ літерали, тож однакові бінди падають в ту саму групу й повтору
+#      самого достатньо. Мовчав не детектор, а **AR query cache**: підписка
+#      відкидає події з `data[:cached]`, і N однакових читань у запиті не доїжджають
+#      до БД узагалі. Практичні наслідки різні — ті читання не «чистіше марнотратство
+#      за N+1», а хеш-хіт; і в контексті без кешу (`rails runner`, консоль) детектор
+#      на них СПРАЦЮЄ. Припис вистояв, механізм під ним інший.
 RSpec.describe "[UI.3] Колекційні сторінки: гігієна запитів", type: :request do
   let(:organization) { create(:organization) }
   let(:user) { create(:user, organization: organization, role: :admin) }
@@ -110,7 +120,11 @@ RSpec.describe "[UI.3] Колекційні сторінки: гігієна з�
     expect_rendered(*authors.map(&:first_name))
   end
 
-  it "wallets#index — дерево й організація кожного гаманця" do
+  # 🔴 Імʼя ЗВУЖЕНО, як і в `contracts#index`, і з тієї ж виміряної причини:
+  # `policy_scope(Wallet)` тенант-скоуплений, тож у наборі завжди РІВНО одна
+  # організація — гаманець чужої просто не доїжджає, і фікстура з двома орг.
+  # доводила б скоуп, а не прелоад. Вимірна половина — ДЕРЕВО.
+  it "wallets#index — дерево кожного гаманця (орг. тенант-скоуплена)" do
     trees = seeded { create_list(:tree, 2, cluster: cluster) }
 
     get "/wallets", headers: headers
@@ -118,9 +132,17 @@ RSpec.describe "[UI.3] Колекційні сторінки: гігієна з�
     expect_rendered(*trees.map { |t| t.did.last(6) })
   end
 
-  it "contracts#index — організація й кластер кожного контракту" do
+  # 🔴 Імʼя ЗВУЖЕНО свідомо, і це вимір, не лінь: вісь «організація кожного
+  # контракту» на цій сторінці **невимірна за побудовою** — `policy_scope`
+  # тенант-скоуплений, тож у наборі завжди РІВНО одна організація, і другий
+  # контракт іншої орг. просто не доїжджає до сторінки (перевірено прогоном).
+  # Ставити його у фікстуру означало б доводити тенант-скоуп, а не прелоад
+  # (`04_06 §B.2` п.21: «чужий відсіює скоуп, ним фільтр не доведеш»).
+  # Вимірна половина — КЛАСТЕР, і вона тут різна.
+  it "contracts#index — кластер кожного контракту (орг. тенант-скоуплена)" do
     seeded do
-      2.times { |i| create(:naas_contract, organization: organization, cluster: create(:cluster, organization: organization, name: "Grove-#{i}")) }
+      2.times { |i| create(:naas_contract, organization: organization,
+                                           cluster: create(:cluster, organization: organization, name: "Grove-#{i}")) }
     end
 
     get "/contracts", headers: headers
@@ -142,10 +164,14 @@ RSpec.describe "[UI.3] Колекційні сторінки: гігієна з�
     expect_rendered(*authors.map(&:first_name))
   end
 
+  # Кластери РІЗНІ: спільний `cluster:` робив половину «кластер кожної тривоги»
+  # невимірною — прелоад можна було зняти й лишитись зеленим.
   it "alerts#index — кластер і дерево кожної тривоги" do
     trees = seeded do
-      create_list(:tree, 2, cluster: cluster).each do |tree|
-        create(:ews_alert, tree: tree, cluster: cluster, status: :active)
+      [ cluster, create(:cluster, organization: organization, name: "Sector-B") ].map do |cl|
+        tree = create(:tree, cluster: cl)
+        create(:ews_alert, tree: tree, cluster: cl, status: :active)
+        tree
       end
     end
 
@@ -154,11 +180,21 @@ RSpec.describe "[UI.3] Колекційні сторінки: гігієна з�
     expect_rendered(*trees.map { |t| t.did.last(6) })
   end
 
-  it "blockchain_transactions#index — гаманець, дерево й кластер кожного рядка" do
+  # 🔴 Третій рядок БЕЗ гаманця — і він тут несучий, не повнота. Компонент пише
+  # `tx.wallet&.tree&.did || tx.cluster&.name`, тобто `||` КОРОТКОЗАМКНЕНИЙ: за
+  # наявного гаманця `tx.cluster` не кличеться ЖОДНОГО разу, і прелоад `:cluster`
+  # лишався невимірним (adversarial 2026-08-20 — зняття його не червонило).
+  # Cluster-sourced рядок гаманця не має ЗА ПОБУДОВОЮ (ARCH.98), і саме він
+  # вправляє другу половину пари.
+  it "blockchain_transactions#index — дерево гаманця ⊥ кластер cluster-sourced рядка" do
     trees = seeded do
-      create_list(:tree, 2, cluster: cluster).each do |tree|
-        create(:blockchain_transaction, wallet: tree.wallet)
+      list = create_list(:tree, 2, cluster: cluster)
+      list.each { |tree| create(:blockchain_transaction, wallet: tree.wallet) }
+      [ create(:cluster, organization: organization, name: "Sector-C"),
+        create(:cluster, organization: organization, name: "Sector-D") ].each do |cl|
+        create(:blockchain_transaction, wallet: nil, cluster: cl)
       end
+      list
     end
 
     get "/blockchain_transactions", headers: headers
@@ -178,6 +214,31 @@ RSpec.describe "[UI.3] Колекційні сторінки: гігієна з�
     get "/maintenance_records", headers: headers
 
     expect_rendered(*authors.map(&:first_name))
+  end
+
+  it "trees#index — LED загрози на кожному рядку сітки" do
+    trees = seeded do
+      create_list(:tree, 2, cluster: cluster, status: :active).each do |tree|
+        create(:ews_alert, tree: tree, cluster: cluster, status: :active)
+      end
+    end
+
+    get "/clusters/#{cluster.id}/trees", headers: headers
+
+    expect_rendered(*trees.map { |t| t.did.last(6) })
+  end
+
+  it "gateways#show — сітка флоту, LED на кожному вузлі" do
+    gateway = seeded { create(:gateway, cluster: cluster) }
+    trees = seeded do
+      create_list(:tree, 2, cluster: cluster, status: :active).each do |tree|
+        create(:ews_alert, tree: tree, cluster: cluster, status: :active)
+      end
+    end
+
+    get "/gateways/#{gateway.id}", headers: headers
+
+    expect_rendered(*trees.map(&:did))
   end
 
   it "dashboard#index — стрічка подій трьох різних типів" do

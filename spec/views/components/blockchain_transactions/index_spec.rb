@@ -289,11 +289,12 @@ RSpec.describe BlockchainTransactions::Index do
       benign  = render_index(transactions: [ mock_transaction(status: "pending") ], pagy: pagy)
 
       expect(guarded).to include("text-status-warning-text")
-      # ⚠️ Детектор — `ring-current`, а не `ring-2`: друге ловить ще й
-      # `focus-visible:ring-2` посилання «Details», тобто прилад ПЕРЕбирає й
-      # негативна половина падає на здоровому коді (спіймано першим прогоном).
-      expect(guarded).to include("ring-current")
-      expect(benign).not_to include("ring-current")
+      # ⚠️ Детектор — `outline-current`, а не `outline-2`: широка форма ловила б
+      # ще й `focus-visible:`-утиліти, тобто прилад ПЕРЕбирав би й негативна
+      # половина падала б на здоровому коді. (Носій переїхав із `ring` на
+      # `outline` 2026-08-20: `ring` це `box-shadow`, а `forced-colors` його гасить.)
+      expect(guarded).to include("outline-current")
+      expect(benign).not_to include("outline-current")
       expect(guarded).not_to include("animate-pulse")
     end
   end

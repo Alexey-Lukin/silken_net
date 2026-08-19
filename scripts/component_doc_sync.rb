@@ -78,6 +78,16 @@ module ComponentDocSync
 
   def camelize(snake) = snake.split("_").map(&:capitalize).join
 
+  # Рядки таблиці превʼю СТРОГО між заголовком §10 і наступним `## `.
+  # ⚠️ Патерн допускає ЦИФРУ в імені (`Web3AddressPreview`) — читач із `[A-Za-z]+`
+  # мовчки губить той рядок і звітує його як відсутній у доці.
+  def registry_previews(lines)
+    from = heading_index(lines, "## 10. ")
+    to   = lines[(from + 1)..].index { |l| l.start_with?("## ") }
+    to = to.nil? ? lines.size : from + 1 + to
+    lines[from...to].filter_map { |l| l[/\A\|\s*`([A-Z][A-Za-z0-9]*Preview)`/, 1] }.to_set
+  end
+
   # Index of the first line starting with `prefix`; raises rather than silently
   # scanning an empty range — a gate over an empty set is green forever.
   def heading_index(lines, prefix)
@@ -172,8 +182,13 @@ module ComponentDocSync
     # reader silently drops that row and then reports it as missing from the doc.
     preview_code = Dir.glob(File.join(root, PREVIEWS_REL, "*_preview.rb"))
                       .map { |f| camelize(File.basename(f, ".rb")) }.to_set
-    preview_doc  = File.readlines(File.join(root, DOC_REL), chomp: true)
-                       .filter_map { |l| l[/\A\|\s*`([A-Z][A-Za-z0-9]*Preview)`/, 1] }.to_set
+    # 🔴 ЯКІР, як у трьох інших осей. Доти ця вісь читала файл ЗАНОВО і фільтрувала
+    # всі ~1500 рядків без жодних меж, хоч і шапка, і текст помилки, і рядок успіху
+    # кажуть «§10» (adversarial 2026-08-20). Наслідки були обабіч: рядок, винесений
+    # із §10 куди завгодно, лишав гейт зеленим при ПОРОЖНІЙ §10, а приклад-рядок у
+    # туторіальній частині червонив із ХИБНОЮ адресою в повідомленні.
+    # `heading_index` кидає, а не мовчить, коли заголовок зникає — саме тому він тут.
+    preview_doc  = registry_previews(doc_lines)
     errors += compare("Lookbook preview", preview_code, preview_doc,
                       "#{PREVIEWS_REL}/", "04_04 §10")
 
