@@ -32,7 +32,7 @@ module Views
               }
             ) do
               span(
-                class: "text-compact font-mono text-gaia-primary break-all leading-relaxed",
+                class: "text-compact font-mono text-gaia-primary-strong break-all leading-relaxed",
                 title: @address
               ) { truncated_address }
               button(
@@ -72,7 +72,7 @@ module Views
         end
 
         def copy_button_classes
-          "text-gaia-primary hover:text-gaia-primary-hover " \
+          "text-gaia-primary-strong hover:text-gaia-primary-hover " \
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong " \
             "transition-colors duration-200 cursor-pointer"
         end

@@ -141,7 +141,7 @@ module Telemetry
             span(class: "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75")
             span(class: "relative inline-flex rounded-full h-2 w-2 bg-emerald-500")
           end
-          span(class: "font-mono text-mini text-gaia-primary uppercase tracking-widest") { t(".carrier_label") }
+          span(class: "font-mono text-mini text-gaia-primary-strong uppercase tracking-widest") { t(".carrier_label") }
         end
       end
     end

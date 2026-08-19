@@ -148,7 +148,7 @@ module Trees
                 @maintenance_history.each do |record|
                   tr(class: "hover:bg-gaia-surface-sunken transition-colors") do
                     td(class: "p-4 text-emerald-100") { record.user&.full_name || "Unknown" }
-                    td(class: "p-4 uppercase text-gaia-primary") { record.action_type_label }
+                    td(class: "p-4 uppercase text-gaia-primary-strong") { record.action_type_label }
                     td(class: "p-4 text-gaia-text-muted italic") { record.notes&.truncate(50) || "—" }
                     td(class: "p-4 text-right text-gaia-text-muted") { record.performed_at&.strftime("%d.%m.%y") || "—" }
                   end
@@ -211,7 +211,7 @@ module Trees
               # ✅ [ARCH.88] Підпис виправлено: це БАЛИ росту, не монети — читаємо
               # `balance` напряму, одиниця з локалі.
               span(class: "text-3xl font-light text-gaia-text-strong") { formatted_points(@tree.wallet&.balance || 0) }
-              span(class: "text-xs text-gaia-primary-hover font-mono") { t(".labels.unit") }
+              span(class: "text-xs text-gaia-primary-strong font-mono") { t(".labels.unit") }
             end
           end
           wallet_address = @tree.wallet&.crypto_public_address
@@ -231,7 +231,7 @@ module Trees
           a(
             href: "https://www.google.com/maps?q=#{@tree.latitude},#{@tree.longitude}",
             target: "_blank",
-            class: "block mt-4 text-center p-2 border border-gaia-border-strong text-gaia-primary-hover hover:bg-gaia-surface-sunken hover:text-gaia-text-strong transition-all uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
+            class: "block mt-4 text-center p-2 border border-gaia-border-strong text-gaia-primary-strong hover:bg-gaia-surface-sunken hover:text-gaia-text-strong transition-all uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
             aria_label: t(".locate_aria")
           ) { t(".actions.locate_node") }
         end
@@ -259,7 +259,7 @@ module Trees
     def security_item(label, value, full: nil)
       div do
         p(class: "text-micro text-gaia-text-muted uppercase mb-1") { label }
-        p(class: "text-gaia-primary truncate", title: full) { value }
+        p(class: "text-gaia-primary-strong truncate", title: full) { value }
       end
     end
 

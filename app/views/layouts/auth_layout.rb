@@ -43,7 +43,7 @@ class AuthLayout < ApplicationComponent
         javascript_importmap_tags
       end
 
-      body(class: "h-full font-mono antialiased bg-gaia-surface-base text-gaia-primary") do
+      body(class: "h-full font-mono antialiased bg-gaia-surface-base text-gaia-primary-strong") do
         render Views::Shared::UI::FlashMessages.new(messages: @flash)
         render @content if @content
       end

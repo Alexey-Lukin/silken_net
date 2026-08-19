@@ -42,7 +42,7 @@ module Wallets
         div(class: "text-right font-mono text-tiny text-gaia-text-subtle") do
           plain "#{t('.total_liquidity')} "
           # [ARCH.88] Сума БАЛІВ (`scope.sum(:balance)`), не монет — тікер звідси знято.
-          span(class: "text-gaia-primary") { "#{formatted_points(@total_liquidity)} #{t('.unit')}" }
+          span(class: "text-gaia-primary-strong") { "#{formatted_points(@total_liquidity)} #{t('.unit')}" }
         end
       end
     end
@@ -64,7 +64,7 @@ module Wallets
         div(class: "mb-6") do
           # [ARCH.88] `balance` напряму — аліас `scc_balance` лише перейменовував бали в монету.
           span(class: "text-3xl font-light text-gaia-text-strong") { formatted_points(wallet.balance) }
-          span(class: "ml-2 text-xs text-gaia-primary-hover font-mono") { t(".unit") }
+          span(class: "ml-2 text-xs text-gaia-primary-strong font-mono") { t(".unit") }
           # [ARCH.88] Гард стоїть на ВІДФОРМАТОВАНОМУ значенні, не на сирому:
           # інакше величина, доведено ненульова, могла б надрукуватись як «0.0»
           # (клас «механізм ⟷ його пускач»). Покладатись тут на те, що крок
@@ -88,7 +88,7 @@ module Wallets
           render Views::Shared::Web3::Address.new(address: wallet.crypto_public_address)
           a(
             href: wallet_path(wallet),
-            class: "text-tiny uppercase tracking-widest text-gaia-primary-hover hover:text-gaia-text-strong transition-colors"
+            class: "text-tiny uppercase tracking-widest text-gaia-primary-strong hover:text-gaia-text-strong transition-colors"
           ) { t(".audit_link") }
         end
       end

@@ -47,27 +47,27 @@ module Actuators
       div(class: "space-y-2 mb-6 font-mono text-tiny uppercase tracking-tighter") do
         div(class: "flex justify-between border-b border-gaia-border pb-1") do
           span(class: "text-gaia-text-muted") { t(".physical_state") }
-          span(class: "text-gaia-primary") { Views::Shared::UI::StatusBadge.label(@actuator.state) }
+          span(class: "text-gaia-primary-strong") { Views::Shared::UI::StatusBadge.label(@actuator.state) }
         end
         div(class: "flex justify-between border-b border-gaia-border pb-1") do
           span(class: "text-gaia-text-muted") { t(".endpoint") }
-          span(class: "text-gaia-primary") { @actuator.endpoint }
+          span(class: "text-gaia-primary-strong") { @actuator.endpoint }
         end
         if @actuator.max_active_duration_s
           div(class: "flex justify-between border-b border-gaia-border pb-1") do
             span(class: "text-gaia-text-muted") { t(".max_duration") }
-            span(class: "text-gaia-primary") { t(".max_duration_value", seconds: @actuator.max_active_duration_s) }
+            span(class: "text-gaia-primary-strong") { t(".max_duration_value", seconds: @actuator.max_active_duration_s) }
           end
         end
         if @actuator.estimated_mj_per_action
           div(class: "flex justify-between border-b border-gaia-border pb-1") do
             span(class: "text-gaia-text-muted") { t(".energy_budget") }
-            span(class: "text-gaia-primary") { t(".energy_budget_value", mj: @actuator.estimated_mj_per_action) }
+            span(class: "text-gaia-primary-strong") { t(".energy_budget_value", mj: @actuator.estimated_mj_per_action) }
           end
         end
         div(class: "flex justify-between border-b border-gaia-border pb-1") do
           span(class: "text-gaia-text-muted") { t(".last_activated") }
-          span(class: "text-gaia-primary") { @actuator.last_activated_at&.strftime("%d.%m.%y %H:%M") || t(".never") }
+          span(class: "text-gaia-primary-strong") { @actuator.last_activated_at&.strftime("%d.%m.%y %H:%M") || t(".never") }
         end
         div(class: "flex justify-between items-center") do
           span(class: "text-gaia-text-muted") { t(".last_sync_status") }

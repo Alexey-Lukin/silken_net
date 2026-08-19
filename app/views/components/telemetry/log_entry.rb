@@ -40,7 +40,7 @@ module Telemetry
         ) { @timestamp.strftime("%H:%M:%S.%L") }
 
         td(class: "p-3") do
-          span(class: "text-gaia-primary font-bold") { @gateway&.uid || UNKNOWN_RELAY }
+          span(class: "text-gaia-primary-strong font-bold") { @gateway&.uid || UNKNOWN_RELAY }
           span(class: "ml-2 text-micro text-gaia-text-subtle") do
             "IP: #{@gateway&.ip_address || UNKNOWN_IP}"
           end

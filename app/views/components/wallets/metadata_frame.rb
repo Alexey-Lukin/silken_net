@@ -39,7 +39,7 @@ module Wallets
           end
           div do
             p(class: "text-gaia-text-muted mb-1 uppercase") { t(".available_balance") }
-            p(class: "text-gaia-primary") { "#{formatted_points(@wallet.available_balance)} #{t('.unit')}" }
+            p(class: "text-gaia-primary-strong") { "#{formatted_points(@wallet.available_balance)} #{t('.unit')}" }
           end
           div do
             p(class: "text-gaia-text-muted mb-1 uppercase") { t(".esg_retired") }

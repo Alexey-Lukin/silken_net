@@ -27,6 +27,11 @@ MAPPING = [
   ["bg-emerald-950",           "bg-gaia-surface-sunken"],
   ["hover:bg-emerald-950",     "hover:bg-gaia-surface-sunken"],
   ["bg-gray-900",              "bg-gaia-surface-elevated"],
+  # ⚠️ [UI.1, 2026-08-20] `zinc`-поверхні теж були поза мапою (9 вживань).
+  # Нейтральна шкала `zinc` у Tailwind — сестра `gray`, тож ті самі ролі:
+  # майже-чорне тло → сама поверхня, панель світліша за нього → elevated.
+  ["bg-zinc-900",              "bg-gaia-surface"],
+  ["bg-zinc-800",              "bg-gaia-surface-elevated"],
   ["bg-gray-100",              "bg-gaia-surface-sunken"],
   ["bg-gray-50",               "bg-gaia-surface-base"],
   ["bg-white",                 "bg-gaia-surface"],
@@ -50,10 +55,27 @@ MAPPING = [
   ["text-gray-500",            "text-gaia-text-muted"],
   ["text-gray-400",            "text-gaia-text-subtle"],
   ["text-gray-300",            "text-gaia-text-subtle"],
+  # ⚠️ [UI.1, 2026-08-20] Родина `zinc` була ПРОПУЩЕНА в мапі — 10 вживань у
+  # доменних компонентах, тобто прогін codemod'а лишав їх позаду й звітував
+  # «змігровано». Шкала `zinc` у Tailwind нейтральна так само, як `gray`, тож
+  # ті самі три рівні ієрархії.
+  ["text-zinc-300",            "text-gaia-text-subtle"],
+  ["text-zinc-400",            "text-gaia-text-subtle"],
+  ["text-zinc-700",            "text-gaia-text"],
+  ["text-zinc-800",            "text-gaia-text-strong"],
   ["text-white",               "text-gaia-text-strong"],
   ["text-emerald-400",         "text-gaia-text"],
-  ["text-emerald-500",         "text-gaia-primary"],
-  ["text-emerald-600",         "text-gaia-primary-hover"],
+  # 🔴 [UI.1, 2026-08-20] Обидва рядки ЦІЛИЛИ В ПРОВАЛЬНИЙ ТОКЕН — тобто цей
+  # codemod, приписаний каноном як інструмент міграції, САМ створював дефект,
+  # який кампанія має зняти. Виміряно проти `@theme`: `--gaia-primary` як ТЕКСТ
+  # дає 2.30–2.54 у світлій темі, `--gaia-primary-hover` — 3.42–3.77, при барі
+  # 4.5. `--gaia-primary-strong` дає 4.98–5.48 світла / 7.18–7.99 темна, і в
+  # ТЕМНІЙ темі його значення побайтово те саме, що в `--gaia-primary`
+  # (`#10b981`), тож заміна є чистим фіксом світлої й no-op'ом у темній.
+  # ⛔ Не повертати: `text-gaia-primary` лишається легальним для НЕ-тексту
+  # (кільця, крапки, іконки — бар 3.0) і для `hover:`-станів, але не для тексту.
+  ["text-emerald-500",         "text-gaia-primary-strong"],
+  ["text-emerald-600",         "text-gaia-primary-strong"],
   ["text-emerald-700",         "text-gaia-text-muted"],
   ["text-emerald-800",         "text-gaia-text-subtle"],
   ["text-emerald-900",         "text-gaia-text-subtle"]

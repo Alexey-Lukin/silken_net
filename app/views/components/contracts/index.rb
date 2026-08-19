@@ -85,7 +85,7 @@ module Contracts
           end
         end
         td(class: "p-4 text-gaia-text-muted") { contract.organization&.name || "—" }
-        td(class: "p-4 text-gaia-primary") { contract.cluster&.name || t(".unassigned") }
+        td(class: "p-4 text-gaia-primary-strong") { contract.cluster&.name || t(".unassigned") }
         # `total_value` = alias на `total_funding` (плата за послугу, USD) ⊥ `emitted_tokens`
         # (справжня SCC-емісія). Дві сусідні комірки в РІЗНИХ валютах — це не дрейф.
         td(class: "p-4 text-gaia-text-muted") { "#{contract.total_value} USD" }

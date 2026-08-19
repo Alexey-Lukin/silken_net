@@ -132,7 +132,7 @@ module Clusters
     def env_block(label, value)
       div do
         p(class: "text-gaia-text-muted uppercase") { label }
-        p(class: "text-gaia-primary mt-1") { value }
+        p(class: "text-gaia-primary-strong mt-1") { value }
       end
     end
 

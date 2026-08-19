@@ -137,7 +137,7 @@ module Maintenance
           if @editing
             div(class: "flex items-center gap-3") do
               f.check_box :hardware_verified,
-                class: "h-4 w-4 border border-gaia-border bg-gaia-input-bg text-gaia-primary focus-visible:ring-0"
+                class: "h-4 w-4 border border-gaia-border bg-gaia-input-bg text-gaia-primary-strong focus-visible:ring-0"
               # [UI.3] Через білдер, не голий `label(for: …)`: рукописний id тримався
               # на тому, що ім'я моделі не змінюється — а перевіряти це не було чим
               # (мутація «зламати for» лишала сюїту зеленою, бо пін на сироти-мітки

@@ -26,7 +26,7 @@ module Alerts
         td(class: "p-4 text-mini uppercase text-gaia-text-subtle tracking-widest", data_label: t("alerts.table.alert_type")) do
           TreeChronicle::TextFormatter.alert_title(@alert)
         end
-        td(class: "p-4 text-gaia-primary", data_label: t("alerts.table.source")) do
+        td(class: "p-4 text-gaia-primary-strong", data_label: t("alerts.table.source")) do
           "#{@alert.cluster&.name} // #{@alert.tree&.did || 'System'}"
         end
         td(class: "p-4 text-gaia-text-subtle", data_label: t("alerts.table.message")) do

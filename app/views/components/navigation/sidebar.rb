@@ -76,7 +76,7 @@ module Navigation
 
     def render_logo
       div(class: "px-6 py-8 border-b border-gaia-border transition-colors duration-300") do
-        h1(class: "text-gaia-primary font-extralight tracking-[0.4em] uppercase text-lg leading-tight") { t("navigation.logo.title") }
+        h1(class: "text-gaia-primary-strong font-extralight tracking-[0.4em] uppercase text-lg leading-tight") { t("navigation.logo.title") }
         p(class: "text-micro text-gaia-text-subtle mt-1 uppercase tracking-widest")                   { t("navigation.logo.subtitle") }
       end
     end
@@ -130,7 +130,7 @@ module Navigation
           span(
             class: tokens(
               "w-4 h-4 shrink-0",
-              "text-gaia-primary": active,
+              "text-gaia-primary-strong": active,
               "text-gaia-text-subtle group-hover:text-gaia-primary-strong": !active
             ),
             aria_hidden: "true"
@@ -171,7 +171,7 @@ module Navigation
     end
 
     def nav_item_active_classes
-      "text-gaia-primary bg-gaia-primary-soft border-gaia-primary"
+      "text-gaia-primary-strong bg-gaia-primary-soft border-gaia-primary"
     end
 
     def nav_item_inactive_classes
@@ -182,7 +182,7 @@ module Navigation
     def render_user_footer
       div(class: "p-4 border-t border-gaia-border mt-auto bg-gaia-surface transition-colors duration-300") do
         div(class: "flex items-center gap-3 px-2") do
-          div(class: "h-8 w-8 border border-gaia-primary flex items-center justify-center text-gaia-primary text-tiny") { "A" }
+          div(class: "h-8 w-8 border border-gaia-primary flex items-center justify-center text-gaia-primary-strong text-tiny") { "A" }
           div(class: "flex-1 overflow-hidden") do
             p(class: "text-tiny text-gaia-text-strong truncate")                          { t("navigation.footer.role") }
             p(class: "text-micro text-gaia-text-subtle uppercase tracking-widest")        { t("navigation.footer.access") }

@@ -60,15 +60,15 @@ module Views
 
         def render_file_fallback
           div(class: "w-full h-full flex flex-col items-center justify-center gap-1 p-2 bg-gaia-surface-sunken") do
-            span(class: "text-gaia-primary text-2xl", aria_hidden: "true") { "📎" }
-            span(class: "text-mini text-gaia-primary font-mono truncate text-center") { @photo.filename.to_s }
+            span(class: "text-gaia-primary-strong text-2xl", aria_hidden: "true") { "📎" }
+            span(class: "text-mini text-gaia-primary-strong font-mono truncate text-center") { @photo.filename.to_s }
             span(class: "text-micro text-gaia-text-muted") { number_to_human_size(@photo.byte_size) }
           end
         end
 
         def render_meta_overlay
           div(class: "absolute bottom-0 inset-x-0 bg-gaia-surface-overlay p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200") do
-            p(class: "text-micro font-mono text-gaia-primary truncate") { @photo.filename.to_s }
+            p(class: "text-micro font-mono text-gaia-primary-strong truncate") { @photo.filename.to_s }
             p(class: "text-micro text-gaia-text-muted") { number_to_human_size(@photo.byte_size) }
           end
         end
