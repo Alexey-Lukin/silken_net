@@ -332,6 +332,46 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".bio_potential_as_metric" do
+    it "flags the positive claim that routing picks a relay by bio_potential" do
+      hits = described_class.bio_potential_as_metric(
+        "Маршрутизація обирає реле за `bio_potential` вузла — найздоровіше дерево ретранслює.\n"
+      )
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("ARCH.11")
+    end
+
+    # 🔴 Несучий, не ввічливий: сама відмова МУСИТЬ назвати токен, щоб його
+    # заборонити, тож без цього винятку гейт червонів би на ADR, який його й завів.
+    it "exempts the rejection itself — the ADR must name the token to forbid it" do
+      expect(described_class.bio_potential_as_metric(
+        "`bio_potential` як метрику маршрутизації відхилено (observer-effect)\n"
+      )).to be_empty
+      expect(described_class.bio_potential_as_metric(
+        "bio_potential is the measurand and is NEVER a routing resource\n"
+      )).to be_empty
+    end
+
+    # Owner-less: жоден док не звільнений, бо термін хибний СКРІЗЬ — на відміну
+    # від σ/ρ/β, де власник має право називати значення.
+    it "has no owner exemption — the same positive claim reds in any doc" do
+      expect(described_class.bio_potential_as_metric("relay chosen by bio potential\n").size).to eq(1)
+      expect(described_class.bio_potential_as_metric("BIO-POTENTIAL drives the route\n").size).to eq(1)
+    end
+
+    it "skips a table row even though its content would otherwise match" do
+      expect(described_class.bio_potential_as_metric("| metric | bio_potential | приклад |\n")).to be_empty
+    end
+
+    # Гілка «рядок узагалі не містить токена» — найчастіший шлях у проді (кожен
+    # рядок кожного доку), і без цього прикладу вона не виконувалась жодного разу.
+    it "is silent on prose that does not mention the token at all" do
+      expect(described_class.bio_potential_as_metric(
+        "Маршрутизація обирає реле за `hop_count` і запасом Vcap.\n"
+      )).to be_empty
+    end
+  end
+
   describe ".telemetry_log_chain_hash_drift" do
     it "flags the positive false claim that telemetry_logs has a chain_hash column" do
       hits = described_class.telemetry_log_chain_hash_drift(

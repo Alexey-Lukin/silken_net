@@ -323,6 +323,39 @@ module DocsLinter
     end
   end
 
+  # [ARCH.11] REJECTED VOCABULARY — `bio_potential` as a ROUTING metric (HARD).
+  # The ADR rejected it on a MECHANISM, not on taste: routing traffic through the
+  # healthiest tree loads it with ~90% of relaying → drains its ionistor → it fails to
+  # send its OWN telemetry → its Z-attractor "falls" → the system classifies a HEALTHY
+  # tree as sick. Two distinct faults ride together: an observer-effect (the network
+  # load distorts the very signal being measured — `bio_potential` is the MEASURAND,
+  # never a routing resource) and a positive feedback loop that systematically kills
+  # the best nodes.
+  #
+  # 🔴 Why a guard at all, when the term appears nowhere today: a rejection with no
+  # carrier is exactly the shape that rots. The phrase is INTUITIVE — "route through
+  # the healthiest node" reads as obviously good — so it re-enters by being re-derived,
+  # not by being copied, and no owner doc can be exempt because the term is wrong
+  # EVERYWHERE. Hence owner-less, unlike the σ/ρ/β class.
+  #
+  # ⚠️ NEGATION-EXEMPT is load-bearing, not politeness: the rejection itself must name
+  # the token to forbid it, so a line carrying «відхилено»/«rejected»/«НЕ метрика»
+  # passes. Without it the guard reds on the ADR that created it — the same trap the
+  # neighbouring `chain_hash` rule names.
+  BIO_POTENTIAL_RE = %r{bio[_\s-]?potential}i
+  BIO_POTENTIAL_EXEMPT = %r{відхил|відкинут|rejected|reject|\bНЕ\b|не є|ніколи|never|observer.effect|vocabulary|guard|заборон}i
+
+  def bio_potential_as_metric(text)
+    text.each_line.filter_map do |line|
+      next if line.lstrip.start_with?("|")
+      next unless line.match?(BIO_POTENTIAL_RE)
+      next if line.match?(BIO_POTENTIAL_EXEMPT)
+
+      "`bio_potential` is the MEASURAND, never a routing metric — ADR rejected it on the " \
+        "observer-effect mechanism (00_07 ARCH.11) → #{line.strip[0, 100]}"
+    end
+  end
+
   # [SSOT anti-drift] Retired growth_points formula (HARD). TWO generations are now dead:
   #   (1) pre-FW.29-PACK 6-bit wire clamp `clamp(reward, 10, 63)`;
   #   (2) pre-E.63 chaos-derived reward `(reward / 2).clamp(5, 31)` from `50 - deviation`

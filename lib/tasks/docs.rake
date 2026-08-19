@@ -92,6 +92,7 @@ namespace :docs do
     rtc_phantom = []  # hard: phantom RTC register DR>19 (chip has only DR0..DR19)
     lorenz_drift = [] # hard: Lorenz β formula re-stated outside 03_04 owner
     tl_chain_hash = [] # hard: telemetry_logs has no chain_hash column (Merkle leaf = 05_02 §E.60)
+    bio_potential = [] # hard: rejected vocabulary — bio_potential is the measurand, not a routing metric (ARCH.11)
     gp_clamp     = [] # hard: retired growth_points clamp `(…,10,63)` (pre-FW.29-PACK)
     statusbyte_drift = [] # hard: retired pre-FW.29 StatusByte bit-layout (6-bit `<<6`/`0x3F`/bits 7..6) — DOC-T.43
     deprecated  = []  # hard: retired SSOT term reappeared (DocsLinter::DEPRECATED_TERMS)
@@ -164,6 +165,7 @@ namespace :docs do
       rtc_phantom.concat(DocsLinter.rtc_register_out_of_range(text).map { |h| "#{base}: #{h}" })
       lorenz_drift.concat(DocsLinter.lorenz_formula_drift(base, text).map { |h| "#{base}: #{h}" })
       tl_chain_hash.concat(DocsLinter.telemetry_log_chain_hash_drift(text).map { |h| "#{base}: #{h}" })
+      bio_potential.concat(DocsLinter.bio_potential_as_metric(text).map { |h| "#{base}: #{h}" })
       gp_clamp.concat(DocsLinter.growth_points_clamp_drift(base, text).map { |h| "#{base}: #{h}" })
       statusbyte_drift.concat(DocsLinter.status_byte_layout_drift(base, text).map { |h| "#{base}: #{h}" })
       deprecated.concat(DocsLinter.deprecated_terms(base, text).map { |h| "#{base}: #{h}" })
@@ -295,6 +297,7 @@ namespace :docs do
       rtc_phantom.concat(DocsLinter.rtc_register_out_of_range(text).map { |h| "#{base}: #{h}" })
       lorenz_drift.concat(DocsLinter.lorenz_formula_drift(base, text).map { |h| "#{base}: #{h}" })
       tl_chain_hash.concat(DocsLinter.telemetry_log_chain_hash_drift(text).map { |h| "#{base}: #{h}" })
+      bio_potential.concat(DocsLinter.bio_potential_as_metric(text).map { |h| "#{base}: #{h}" })
       gp_clamp.concat(DocsLinter.growth_points_clamp_drift(base, text).map { |h| "#{base}: #{h}" })
       statusbyte_drift.concat(DocsLinter.status_byte_layout_drift(base, text).map { |h| "#{base}: #{h}" })
       deprecated.concat(DocsLinter.deprecated_terms(base, text).map { |h| "#{base}: #{h}" })
@@ -551,6 +554,12 @@ namespace :docs do
       puts "  TELEMETRY_LOGS.CHAIN_HASH DRIFT (#{tl_chain_hash.size}) — no such column; Merkle leaf is Z-based (05_02 §E.60):"
       tl_chain_hash.sort.each { |d| puts "    ✗ #{d}" }
     end
+    if bio_potential.empty?
+      puts "  bio_potential:  rejected vocabulary absent as a routing metric (ARCH.11) ✓"
+    else
+      puts "  BIO_POTENTIAL AS METRIC (#{bio_potential.size}) — ADR rejected it (observer-effect, 00_07 ARCH.11):"
+      bio_potential.sort.each { |d| puts "    ✗ #{d}" }
+    end
     if gp_clamp.empty?
       puts "  growth_points:  no retired GP formula (`10,63` / `reward / 2` / `50 - deviation`) outside owner (03_04 §4.3) ✓"
     else
@@ -618,6 +627,7 @@ namespace :docs do
     failed << "phantom RTC register DR>19 (STM32WLE5JC has only DR0..DR19)" unless rtc_phantom.empty?
     failed << "Lorenz-formula drift (β re-stated outside 03_04 §1.2)" unless lorenz_drift.empty?
     failed << "telemetry_logs.chain_hash drift (no such column; Merkle leaf = 05_02 §E.60)" unless tl_chain_hash.empty?
+    failed << "rejected vocabulary `bio_potential` used as a routing metric (ARCH.11)" unless bio_potential.empty?
     failed << "retired growth_points clamp `(…,10,63)` (FW.29-PACK → 03_04 §4.3)" unless gp_clamp.empty?
     failed << "retired pre-FW.29 StatusByte bit-layout (6-bit `<<6`/`0x3F`/bits 7..6 outside owner)" unless statusbyte_drift.empty?
     failed << "deprecated SSOT terms present" unless deprecated.empty?

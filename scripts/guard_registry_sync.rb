@@ -76,6 +76,7 @@ DOCS_RAKE_LABELS = {
   "phantom RTC register DR>19 (STM32WLE5JC has only DR0..DR19)"                            => "RTC phantom register",
   "Lorenz-formula drift (β re-stated outside 03_04 §1.2)"                                  => "Lorenz-formula drift",
   "telemetry_logs.chain_hash drift (no such column; Merkle leaf = 05_02 §E.60)"            => "telemetry_logs.chain_hash drift",
+  "rejected vocabulary `bio_potential` used as a routing metric (ARCH.11)"                  => "bio_potential` як МЕТРИКА",
   "retired growth_points clamp `(…,10,63)` (FW.29-PACK → 03_04 §4.3)"                      => "growth_points clamp drift",
   "retired pre-FW.29 StatusByte bit-layout (6-bit `<<6`/`0x3F`/bits 7..6 outside owner)"    => "StatusByte layout",
   "deprecated SSOT terms present"                                                          => "deprecated terms (Ruthless Pruning)",
