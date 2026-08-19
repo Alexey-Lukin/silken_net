@@ -16,16 +16,15 @@ RSpec.describe Contracts::Index do
     c
   end
 
-  # [TEST.12] Реальний незбережений `NaasContract`, і `current_yield_performance` більше
-  # НЕ задається: модель виводить його з `emitted_tokens` та `total_funding` — тобто з
-  # двох полів, які мок задавав поруч і незалежно. Доти спека пінила смугу прогресу
-  # наполовину заповненою, тоді як формула на тих самих числах дає майже порожню.
+  # [TEST.12] Реальний незбережений `NaasContract`. Емісії в контракту НЕМАЄ свідомо
+  # ([ARCH.103]: величина кластерна, компонент бере її з `cluster_emissions:`-хешу за
+  # `cluster_id`), тож фікстура, що клала б її полем контракту, вигадувала б знятий
+  # ⚖️-присудом контракт зі значенням.
   #
-  # 🔴 `total_value` (alias на `total_funding`) і `emitted_tokens` — колонки `numeric`,
-  # тобто BigDecimal: прод друкує десяткову частку, а Integer у фікстурі її ховав.
+  # 🔴 `total_value` (alias на `total_funding`) — колонка `numeric`, тобто BigDecimal:
+  # прод друкує десяткову частку, а Integer у фікстурі її ховав.
   def build_contract(id: 42, status: :active, org_name: "Cherkasy Forest Fund",
                      cluster_id: 77, cluster_name: "Carpathian-Alpha", total_funding: 10_000,
-                     emitted_tokens: 350,
                      start_date: 6.months.ago, end_date: 6.months.from_now)
     NaasContract.new(
       id: id,
@@ -33,7 +32,6 @@ RSpec.describe Contracts::Index do
       organization: Organization.new(name: org_name),
       cluster: Cluster.new(id: cluster_id, name: cluster_name),
       total_funding: total_funding,
-      emitted_tokens: emitted_tokens,
       start_date: start_date,
       end_date: end_date
     )
@@ -117,14 +115,16 @@ RSpec.describe Contracts::Index do
 
     # 🔴 Дві сусідні комірки НАВМИСНО в різних валютах, і плутати їх не можна в жоден бік:
     # `total_value` = alias на `total_funding` — плата клієнта за послугу, деномінована в
-    # USD (07_01 §5 + вся юніт-економіка §11-§20 в $), тоді як `emitted_tokens` — справжня
-    # SCC-емісія. Доти обидві казали «SCC», тобто фіат малювався карбоновим токеном.
+    # USD (07_01 §5 + вся юніт-економіка §11-§20 в $), тоді як кластерна емісія — справжні
+    # SCC. Доти обидві казали «SCC», тобто фіат малювався карбоновим токеном.
     it "renders the contracted service fee in USD, not in the carbon token" do
       expect(html).to include("10000.0 USD")
       expect(html).not_to include("10000.0 SCC")
     end
 
-    it "renders emitted_tokens with SCC" do
+    # [ARCH.103] 350 приходить із `cluster_emissions:`-хешу (ключ 77 = cluster_id
+    # фікстури), НЕ з контракту — колонки емісії в контракту більше немає.
+    it "renders the cluster emission with SCC" do
       expect(html).to include("350.0 SCC")
     end
 

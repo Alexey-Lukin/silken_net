@@ -20,47 +20,60 @@ module Api
         acting_organization!
         scope = policy_scope(NaasContract).includes(:organization, :cluster)
         @pagy, @contracts = pagy(scope)
-
-        # Агрегуємо дані для Phlex-дашборду, використовуючи твою логіку
-        # ✅ [ARCH.103] ⚖️ Присуд founder: контрактну семантику ЗНЯТО на користь
-        # КЛАСТЕРНОЇ. Величина знову вимірювана — і тепер справді виміряна: чиста
-        # емісія кластерів, які покривають ці контракти (Σmints − Σburns через
-        # One-Home `net_minted_supply`, той самий дім, що годує базу слешингу).
-        #
-        # ⚠️ Множина кластерів ДЕДУПЛІКОВАНА, і це несуче: кілька контрактів на одному
-        # кластері співіснують одночасно (overlap не заборонений), тож сума «по
-        # контрактах» порахувала б ту саму емісію N разів — рівно та переоцінка, через
-        # яку контрактна деривація й виявилась невиконуваною.
-        #
-        # 🔴 Нуль ТУТ виміряний, а не фабрикований: агрегат виконався й підтверджених
-        # рухів немає. Це протилежність тому, чим була `emitted_tokens` — колонка без
-        # писача, чий нуль ніколи не був відповіддю на питання.
-        @stats = {
-          total_contracted: scope.sum(:total_value),
-          total_minted: BlockchainTransaction.for_cluster(cluster_ids_for_scope(scope))
-                                             .net_minted_supply(:carbon_coin),
-          # [ОПТИМІЗАЦІЯ]: SQL агрегація замість перебору масиву в Ruby
-          cluster_health: calculate_cluster_health_for_scope(scope)
-        }
+        # [ARCH.103] Емісія потрібна ОБОМ форматам: HTML малює комірку рядка, JSON віддає
+        # `cluster_emission` — той самий розріджений хеш, той самий `fetch(id, 0)`.
+        emissions = cluster_emissions_for(@contracts)
 
         respond_to do |format|
           format.json do
             render json: {
-              data: @contracts.as_json(
-                only: [ :id, :status, :total_value, :emitted_tokens ],
-                include: {
-                  cluster: { only: [ :id, :name ] },
-                  organization: { only: [ :id, :name ] }
-                }
-              ),
+              # [ARCH.103] `emitted_tokens` тут більше НЕМА: колонка мертва ⚖️-присудом
+              # (семантика кластерна), тож рядок несе `cluster_emission` — ту саму
+              # величину, що HTML-комірка. Точність — прецедент `#stats`
+              # (`total_tokens_minted`: `.to_f.round(4)`).
+              # ⚠️ `total_funding` — СХЕМНЕ імʼя: `as_json(only:)` МОВЧКИ ігнорує alias,
+              # тож `:total_value`, що стояв тут роками, не віддавав НІЧОГО (виміряно) —
+              # список без вартості контракту й був фактичною відповіддю.
+              data: @contracts.map { |contract|
+                contract.as_json(
+                  only: [ :id, :status, :total_funding ],
+                  include: {
+                    cluster: { only: [ :id, :name ] },
+                    organization: { only: [ :id, :name ] }
+                  }
+                ).merge("cluster_emission" => emissions.fetch(contract.cluster_id, 0).to_f.round(4))
+              },
               pagy: pagy_metadata(@pagy)
             }
           end
           format.html do
+            # Агрегати — ЛИШЕ для Phlex-дашборду, тож і рахуються лише в HTML-гілці:
+            # JSON-запит не платить за три SQL-агрегати, яких не друкує (клас ARCH.90 —
+            # «хто платить за гілку, яка нічого не показує»).
+            # ✅ [ARCH.103] ⚖️ Присуд founder: контрактну семантику ЗНЯТО на користь
+            # КЛАСТЕРНОЇ. Величина знову вимірювана — і тепер справді виміряна: чиста
+            # емісія кластерів, які покривають ці контракти (Σmints − Σburns через
+            # One-Home `net_minted_supply`, той самий дім, що годує базу слешингу).
+            #
+            # ⚠️ Множина кластерів ДЕДУПЛІКОВАНА, і це несуче: кілька контрактів на одному
+            # кластері співіснують одночасно (overlap не заборонений), тож сума «по
+            # контрактах» порахувала б ту саму емісію N разів — рівно та переоцінка, через
+            # яку контрактна деривація й виявилась невиконуваною.
+            #
+            # 🔴 Нуль ТУТ виміряний, а не фабрикований: агрегат виконався й підтверджених
+            # рухів немає. Це протилежність тому, чим була `emitted_tokens` — колонка без
+            # писача, чий нуль ніколи не був відповіддю на питання.
+            @stats = {
+              total_contracted: scope.sum(:total_value),
+              total_minted: BlockchainTransaction.for_cluster(cluster_ids_for_scope(scope))
+                                                 .net_minted_supply(:carbon_coin),
+              # [ОПТИМІЗАЦІЯ]: SQL агрегація замість перебору масиву в Ruby
+              cluster_health: calculate_cluster_health_for_scope(scope)
+            }
             render_dashboard(
               title: I18n.t("contracts.index_title"),
               component: Contracts::Index.new(contracts: @contracts, stats: @stats, pagy: @pagy,
-                                              cluster_emissions: cluster_emissions_for(@contracts))
+                                              cluster_emissions: emissions)
             )
           end
         end
@@ -80,7 +93,18 @@ module Api
         respond_to do |format|
           format.json do
             render json: {
-              contract: @contract.as_json,
+              # [ARCH.103] `only:` явний — доти тут був ГОЛИЙ `as_json`, тобто кожна
+              # майбутня колонка публікувалась автоматично, а мертва `emitted_tokens`
+              # їхала назовні як факт про гроші. Список = живі колонки схеми; емісія
+              # героя — окремим ключем нижче, бо вона belongs КЛАСТЕРУ, не контракту.
+              contract: @contract.as_json(
+                only: [ :id, :organization_id, :cluster_id, :total_funding, :start_date,
+                        :end_date, :status, :cancellation_terms, :cancelled_at,
+                        :hadron_asset_id, :created_at, :updated_at ]
+              ),
+              # Дзеркало HTML-героя (`Contracts::Show#cluster_emission`); точність —
+              # прецедент `#stats`.
+              cluster_emission: cluster_emission_for(@contract).to_f.round(4),
               emission_history: @emission_history,
               # [ARCH.103] Три голі деференси `@contract.cluster.*` зведено в один дім,
               # спільний із HTML-панеллю застави. ⚠️ Гарда на «немає кластера» тут НЕМА

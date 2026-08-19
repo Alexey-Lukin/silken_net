@@ -33,8 +33,11 @@ RSpec.describe Contracts::Show do
   # розірвання рендерилась із `0` / `no` / `—` — тобто саме там, де спека вважала
   # її заповненою. Слід розщеплення видно в самій спеці: третій контекст
   # («populated values») існував ЛИШЕ щоб дописати те, чого хеш не дав.
+  # [ARCH.103] Емісії в контракту НЕМАЄ свідомо: величина кластерна, компонент дістає
+  # її kwarg'ом `cluster_emission:` — фікстурне поле на контракті вигадувало б
+  # семантику, зняту ⚖️-присудом.
   def build_contract(id: 99, status: :active, org: nil, cluster: nil,
-                     total_funding: 50_000, emitted_tokens: 1234.56,
+                     total_funding: 50_000,
                      start_date: 6.months.ago, end_date: 6.months.from_now,
                      cancellation_terms: nil)
     NaasContract.new(
@@ -43,7 +46,6 @@ RSpec.describe Contracts::Show do
       organization: org || build_org,
       cluster: cluster,
       total_funding: total_funding,
-      emitted_tokens: emitted_tokens,
       start_date: start_date,
       end_date: end_date,
       cancellation_terms: cancellation_terms

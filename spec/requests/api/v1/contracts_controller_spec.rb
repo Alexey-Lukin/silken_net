@@ -80,6 +80,27 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         expect(ids).not_to include(other_contract.id)
       end
 
+      # [ARCH.103] JSON-дзеркало HTML-комірки: рядок несе КЛАСТЕРНУ чисту емісію, а
+      # мертва колонка не їде назовні. Пін на значення несе ОБИДВА плеча (120 − 20),
+      # інакше він зелений і на голій сумі мінтів.
+      it "reports the cluster's net emission per row instead of the dead column" do
+        tree = create(:tree, cluster: own_cluster)
+        wallet = tree.wallet || create(:wallet, tree: tree)
+        create(:blockchain_transaction, wallet: wallet, amount: 120,
+                                        token_type: :carbon_coin, status: :confirmed)
+        create(:blockchain_transaction, wallet: wallet, amount: 20, token_type: :carbon_coin,
+                                        status: :confirmed, sourceable: own_contract)
+
+        get "/contracts", headers: headers, as: :json
+
+        row = response.parsed_body["data"].find { |c| c["id"] == own_contract.id }
+        expect(row["cluster_emission"]).to eq(100.0)
+        expect(row).not_to have_key("emitted_tokens")
+        # `total_funding`, не alias: `as_json(only:)` мовчки ігнорує alias-атрибути,
+        # тож `:total_value` у старому списку не віддавав нічого (виміряно).
+        expect(row).to include("total_funding")
+      end
+
       it "returns empty data when user has no contracts" do
         fresh_org = create(:organization)
         fresh_user = create(:user, organization: fresh_org)
@@ -187,6 +208,25 @@ RSpec.describe Api::V1::ContractsController, type: :request do
       it "denies admin a contract from another org (org-scoped, not platform)" do
         get "/contracts/#{other_contract.id}", headers: admin_headers, as: :json
         expect(response).to have_http_status(:not_found)
+      end
+
+      # [ARCH.103] Дзеркало HTML-героя: `cluster_emission` — окремий ключ верхнього
+      # рівня (величина належить кластеру, не контракту), а `contract` — явний
+      # `only:` замість голого дампу, тож мертва колонка не їде назовні й майбутня
+      # колонка не публікується автоматично. Пін значення = обидва плеча формули.
+      it "reports the hero's cluster emission and stops dumping the dead column" do
+        tree = create(:tree, cluster: own_cluster)
+        wallet = tree.wallet || create(:wallet, tree: tree)
+        create(:blockchain_transaction, wallet: wallet, amount: 120,
+                                        token_type: :carbon_coin, status: :confirmed)
+        create(:blockchain_transaction, wallet: wallet, amount: 20, token_type: :carbon_coin,
+                                        status: :confirmed, sourceable: own_contract)
+
+        get "/contracts/#{own_contract.id}", headers: headers, as: :json
+
+        expect(response.parsed_body["cluster_emission"]).to eq(100.0)
+        expect(response.parsed_body["contract"]).to include("total_funding", "status")
+        expect(response.parsed_body["contract"]).not_to have_key("emitted_tokens")
       end
 
       # [UI.8] Пін на ЗМІСТ, а не на присутність ключа: `backing_asset` є JSON-дзеркалом

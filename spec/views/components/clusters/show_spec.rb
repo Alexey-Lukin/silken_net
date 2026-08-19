@@ -258,17 +258,16 @@ RSpec.describe Clusters::Show do
         # компонент діставав його сам у `initialize`, тобто спека мусила підробляти
         # DB-виклик, щоб описати екран. Стаб на `active_contract` став би тепер
         # мертвим — і мовчки, бо `nil`-гілка теж рендериться.
-        contract = NaasContract.new(status: :active, total_funding: 50_000, emitted_tokens: 1200)
+        contract = NaasContract.new(status: :active, total_funding: 50_000)
         html = render_component(cluster: build_cluster, gateways: [], recent_alerts: [],
                                 active_contract: contract, cluster_emission: 340)
         expect(html).to include("ACTIVE")
         expect(html).to include("50000.0 USD")
-        # 🔴 [ARCH.103] Дискримінатор СЕМАНТИКИ, а не наявності числа: панель друкує
-        # емісію КЛАСТЕРА, тож фікстура навмисно тримає ДВА різні числа — контрактне
-        # `emitted_tokens` (1200) і кластерне (340). Старий пін на 1200 пройшов би й
-        # після присуду, бо не питав, ЧИЯ це величина; новий ловить регрес до колонки.
+        # [ARCH.103] Панель друкує емісію КЛАСТЕРА з kwarg'а. Дискримінатор «контрактне
+        # число ⊥ кластерне», що стояв тут двома значеннями (1200 ⊥ 340), знято РАЗОМ
+        # із колонкою: регрес до неї тепер неможливий структурно (`UnknownAttributeError`
+        # на першому ж `new`), тож негативний пін лишився б вічнозеленим без підмета.
         expect(html).to include("340")
-        expect(html).not_to include("1200")
       end
     end
   end

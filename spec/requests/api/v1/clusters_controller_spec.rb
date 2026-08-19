@@ -42,6 +42,28 @@ RSpec.describe Api::V1::ClustersController, type: :request do
       expect(response.parsed_body["id"]).to eq(own_cluster.id)
     end
 
+    # [ARCH.103] Емісія — поле КЛАСТЕРА (⚖️: контрактної семантики не існує), і пін
+    # стоїть на ЗНАЧЕННІ з обома плечима формули (мінт − спалення), бо `have_key`
+    # зелений на будь-якому вмісті — рівно так `attested_value_usd` роками множив
+    # колонку без писача на живу ціну під зеленим піном.
+    it "reports the cluster's NET emission and keeps the dead column out of contract rows" do
+      tree = create(:tree, cluster: own_cluster)
+      wallet = tree.wallet || create(:wallet, tree: tree)
+      contract = create(:naas_contract, organization: organization, cluster: own_cluster)
+      create(:blockchain_transaction, wallet: wallet, amount: 120,
+                                      token_type: :carbon_coin, status: :confirmed)
+      create(:blockchain_transaction, wallet: wallet, amount: 20, token_type: :carbon_coin,
+                                      status: :confirmed, sourceable: contract)
+
+      get "/clusters/#{own_cluster.id}", headers: headers, as: :json
+
+      expect(response.parsed_body["net_cluster_emission"]).to eq(100.0)
+      contract_row = response.parsed_body["naas_contracts"].find { |c| c["id"] == contract.id }
+      # `total_funding`, не alias: `as_json(only:)` мовчки ігнорує alias-атрибути.
+      expect(contract_row).to include("status", "total_funding")
+      expect(contract_row).not_to have_key("emitted_tokens")
+    end
+
     it "returns 404 for a cluster from another organization" do
       get "/clusters/#{other_cluster.id}", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
