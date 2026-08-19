@@ -39,10 +39,13 @@ RSpec.describe Alerts::Row do
   end
 
   describe "severity badge" do
-    it "renders critical severity with danger styles and pulse" do
+    # [UI.3] Пін на ПУЛЬС знято 2026-08-19 — не як послаблення, а тому що він
+    # цементував дефект: рух на вузлі з текстом робив підпис нечитабельним, а
+    # розрізняв `critical` уже власний фон. Носій ПЕРЕНЕСЕНО на статичну ознаку.
+    it "renders critical severity with its own danger surface, statically" do
       html = render_component(alert: build_alert(severity: :critical))
       expect(html).to include("bg-status-danger")
-      expect(html).to include("animate-pulse")
+      expect(html).not_to include("animate-pulse")
     end
 
     it "renders medium severity with warning styles" do

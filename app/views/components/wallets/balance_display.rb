@@ -18,7 +18,11 @@ module Wallets
           # БАЛИ росту, і аліас лише перейменовував їх у монету. Одиниця — з локалі,
           # бо зашитий літерал «SCC» тут і був завищенням у 10 000×.
           span(class: "text-7xl font-extralight text-white tracking-tighter") { formatted_points(@wallet.balance) }
-          span(class: "text-xl text-emerald-500 font-mono animate-pulse") { t(".unit") }
+          # [UI.3] Пульс знято: він був БЕЗУМОВНИЙ, тобто не ніс жодного сигналу —
+          # чиста декорація на ОДИНИЦІ грошового рядка, найдорожчому токені цього
+          # екрана (`00_07` ARCH.95: одиниця коштує 10 000×). Мигтіння півсекунди
+          # на секунду робило нечитабельним рівно те, що мусить читатись першим.
+          span(class: "text-xl text-emerald-500 font-mono") { t(".unit") }
         end
         div(class: "mt-6 flex gap-8 text-xs font-mono") do
           div do

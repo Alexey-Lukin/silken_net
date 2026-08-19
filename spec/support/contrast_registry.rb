@@ -67,7 +67,17 @@ module ContrastRegistry
         "api/v1/dashboard#index" => ->(_ctx) { "/dashboard" },
         "api/v1/trees#index"     => ->(ctx) { "/clusters/#{ctx.fetch(:cluster).id}/trees" },
         "api/v1/trees#show"      => ->(ctx) { "/trees/#{ctx.fetch(:tree).id}" },
-        "api/v1/firmwares#new"   => ->(_ctx) { "/firmwares/new" }
+        "api/v1/firmwares#new"   => ->(_ctx) { "/firmwares/new" },
+        # 🔴 Переведено з хвилі `fleet` 2026-08-19, і не «дійшла черга», а **підстава
+        # відкладення протухла для ЦЬОГО члена**. `back:` хвилі казав «міряти ДО
+        # міграції теми означало б пінити те, що зміниться»; вимір
+        # (`LINT_SCOPE=…/telemetry/ gaia:lint_tokens`) дає **2** сирі класи проти
+        # 18–49 у сусідів, і обидва — `shadow-[…rgba…]`, тобто ТІНІ. Прилад міряє
+        # пари текст/фон і тіней не бачить за побудовою (саме тому кільце фокуса
+        # потребувало власного гейта), отже жодне з чисел цієї сторінки міграцією
+        # вже не зміниться. Сторінка несе ЧЕТВЕРТУ мігровану поверхню — градієнт на
+        # gaia-стопах — і доти була єдиною заміною, яку не судив жоден пін.
+        "api/v1/telemetry#live"  => ->(_ctx) { "/telemetry/live" }
       }
     },
     auth: {
@@ -173,7 +183,6 @@ module ContrastRegistry
         api/v1/actuators#index
         api/v1/actuators#show
         api/v1/firmwares#index
-        api/v1/telemetry#live
         api/v1/tree_families#index
         api/v1/tree_families#show
         api/v1/tree_families#new

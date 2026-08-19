@@ -564,7 +564,7 @@ end
 # Стилізація на основі статусу
 span(class: tokens(
   "px-2 py-0.5 rounded text-tiny font-bold uppercase tracking-widest",
-  "bg-status-danger text-status-danger-text animate-pulse": alert.severity == "critical",
+  "bg-status-danger text-status-danger-text": alert.severity == "critical",
   "bg-status-warning text-status-warning-text": alert.severity == "medium",
   "bg-zinc-800 text-zinc-300": alert.severity == "low"
 ))
@@ -624,13 +624,36 @@ render Views::Shared::UI::StatusBadge.new(status: "confirmed", class: "mt-2")
 | AASM Стани | Семантичний Стиль |
 |---|---|
 | `pending`, `dormant`, `maintenance_needed` | `bg-status-warning text-status-warning-text` |
-| `processing`, `updating` | `+ animate-pulse` |
-| `manual_review` | `bg-status-warning text-status-warning-text + animate-pulse` — **[DOUBLE-SPEND GUARD]**: tx_hash існує або стан невідомий, потребує ручної звірки |
+| `processing`, `updating` | `+ italic` — неколірний дискримінатор «у русі» [UI.3] |
+| `manual_review` | `bg-status-warning text-status-warning-text + ring-2 ring-current` — **[DOUBLE-SPEND GUARD]**: tx_hash існує або стан невідомий, потребує ручної звірки. Найсильніший дискримінатор трійки, і кільце свідомо `ring-current`, а не червоне: `--status-danger-accent` на фоні бейджа дає **2.41** у ТЕМНІЙ темі, тобто провалив би 1.4.11 (бар 3:1), а власний текстовий колір бейджа — 6.37 / 7.28 [UI.3] |
 | **`active`**, `confirmed`, `fulfilled` | `bg-status-success text-status-success-text` |
 | `sent`, `maintenance` | `bg-status-info text-status-info-text` |
 | `failed`, `breached`, `deceased`, `faulty` | `bg-status-danger text-status-danger-text` |
 | `idle`, `draft`, `offline`, `cancelled`, `removed` | `bg-status-neutral text-status-neutral-text` |
 | `cancelled`, `removed` | `+ line-through` — неколірний дискримінатор завершеного стану [UI.3] |
+
+🔴 **Правило, ширше за таблицю: РУХ не сміє бути носієм сенсу** [UI.3, 2026-08-19].
+Застосунок несе глобальне `@media (prefers-reduced-motion: reduce)`, яке ставить
+`animation-duration: 0.01ms !important` на все — тобто для цілої когорти глядачів
+анімації НЕ ІСНУЄ, і клас, що на неї спирається, для них порожній. Доти
+`animate-pulse` був **єдиним**, чим `processing`, `manual_review` і `updating`
+відрізнялись від `pending`, тож для reduced-motion усі чотири бейджі були байтово
+однакові — включно з double-spend guard'ом, який виглядав рутинним «в обробці». Це
+той самий дефект, що `opacity-50` на `cancelled` (він розрізняв його від `draft`
+ціною 6.87 → 2.25), лише на грошовому шляху й на ЧОТИРЬОХ членах.
+
+⊕ **Друга шкода того ж класу — читабельність:** `animate-pulse` міняє `opacity`
+УСЬОГО вузла, тож на вузлі з текстом підпис половину часу нечитабельний
+(виміряно: 6.37 → 2.26 при барі 4.5). Обидва прилади контрасту цього не бачать за
+побудовою — статичний шукає `opacity-N`, а браузерний свідомо глушить анімації,
+інакше число стало б функцією моменту зчитування.
+
+**Отже:** пульс/ping/spin легітимні лише на **чистій декорації без тексту**
+(LED-крапка, скелетон, SVG-штрих — таких у дереві більшість). Сенс несе статичний
+дискримінатор: `line-through` · `italic` · `ring-2 ring-current`. Носій —
+`spec/quality/motion_discriminator_spec.rb` (дві осі: рух як єдина різниця між
+станами реєстру ⊥ рух в одному класі з колірним токеном тексту; мутація-перевірено
+чотирма ходами, включно з негативним контролем на скелетоні).
 
 > 🔴 **Примітка щодо `active` — і виправлення того, що тут стояло раніше.** `STYLES` ключований **самим рядком-значенням**, тож фізично не може віддати два стилі на одне слово. `"active"` у ньому **явно перелічений** — як danger, бо його вписав `EwsAlert` (нерозвʼязаний сигнал = погано). Отже будь-яка сутність, передана в `StatusBadge` зі станом `active`, дістає **червоне** — включно зі здоровим `Tree`/`Gateway`/`NaasContract`/`Actuator`, для яких те саме слово означає «все гаразд».
 >
@@ -1277,13 +1300,39 @@ Lookbook надає живий попередній перегляд усіх к
 
 **Файли превью:** `spec/components/previews/`
 
+> 🔴 **ДВА реєстри шляхів, і другий довго не був дротований** [UI.3, 2026-08-19].
+> `config.lookbook.preview_paths` відповідає лише за **знаходження класів** превʼю —
+> тому навігація Lookbook завжди була повна. Шаблони (`render_with_template`)
+> резолвляться через **VIEW-шляхи**, окремий дім; його дротує
+> `config/initializers/lookbook_preview_view_path.rb`. Без нього кожен сценарій із
+> шаблоном віддавав `ActionView::MissingTemplate` на файл, що лежить на диску —
+> виміряно на живому сервері: **11 із 59** сценаріїв = HTTP 500, серед них
+> `status_badge/all_states` (єдине місце, де видно всі стани поруч),
+> `status_badge/transaction_states` (життєвий цикл грошової транзакції), уся родина
+> `wallet_transaction_row` і обидва `photo_card`. **Клас — «конфіг повний, шлях
+> мертвий»:** сторінка є в меню, тож дірку бачить лише той, хто КЛІКНУВ, і жоден
+> автотест її не покриває за побудовою (Lookbook монтується тільки в development).
+>
+> ⚠️ **Перелік станів у сценарії ДЕРИВУЄТЬСЯ, не пишеться руками.** Рукописна копія
+> в `all_states` дрейфнула в обидва боки: показувала сім станів, яких у `STYLES`
+> більше немає (вони малювались нейтральним фолбеком, тобто превʼю під назвою «ВСІ
+> варіанти» демонструвало фолбек як варіант), і не показувала `manual_review` —
+> стан double-spend guard'а. Джерела тепер два й обидва канонічні:
+> `StatusBadge::STYLES.keys` та `BlockchainTransaction.aasm.states`.
+>
+> ✅ **Таблиця нижче тепер під HARD-гейтом** — четверта вісь `component_doc_sync`
+> (превʼю на диску ⟷ рядки §10, 1:1). Доти це був єдиний реєстр цієї сторінки без
+> жодного сторожа, і він дрейфнув: рядок `AlertBadgePreview` пережив зняття і
+> компонента, і його превʼю (2026-07-27), тоді як §8.3 ЦІЄЇ Ж сторінки те зняття
+> прямо фіксує — тобто документ сімдесятьма рядками нижче суперечив собі, і обидві
+> половини були зелені.
+
 | Превью | Сценарії |
 |---|---|
 | `StatusBadgePreview` | Всі AASM стани, Transaction lifecycle, Interactive |
 | `StatCardPreview` | Default, Danger, Minimal, Interactive |
 | `ActionBadgePreview` | 2 сценарії: `all_types` (4 типи дій), `interactive` |
 | `EmptyStatePreview` | Grid, Custom icon, Minimal |
-| `AlertBadgePreview` | 2 сценарії: `all_combos` (9 combo matrix severity × status), `interactive` |
 | `DashboardEventRowPreview` | EwsAlert, BlockchainTx (мінт), Blockchain burn (слешинг), Cluster-sourced Celo reward, Maintenance, Unknown |
 | `SidebarPreview` | Default, With alert badge, Telemetry active, Interactive |
 | `Web3AddressPreview` | Valid, Short, Nil fallback, Custom fallback, Interactive |

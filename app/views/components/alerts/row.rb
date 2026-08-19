@@ -46,7 +46,10 @@ module Alerts
 
     def severity_badge
       color = case @alert.severity.to_s
-      when "critical" then "bg-status-danger text-status-danger-text animate-pulse"
+      # [UI.3] Пульс знято: `critical` має ВЛАСНЕ тло серед чотирьох рівнів
+      # (danger ⊥ warning ⊥ info ⊥ neutral), тож він нічого не розрізняв — лише
+      # робив підпис нечитабельним у западині (6.80 → 2.45 світла, виміряно).
+      when "critical" then "bg-status-danger text-status-danger-text"
       when "medium" then "bg-status-warning text-status-warning-text"
       when "low" then "bg-status-info text-status-info-text"
       else "bg-status-neutral text-status-neutral-text"

@@ -245,7 +245,6 @@ RSpec.describe Contracts::Show do
       html = render_component(contract: contract, history: [])
       expect(html).to include(">50%<")
       expect(html).to include("text-red-500")
-      expect(html).to include("animate-pulse")
     end
 
     it "renders a DANGER threat status when the cluster has active threats" do
@@ -279,8 +278,11 @@ RSpec.describe Contracts::Show do
       unmeasured_html = render_component(contract: build_contract(cluster: unmeasured), history: [])
       measured_html   = render_component(contract: build_contract(cluster: measured_bad), history: [])
 
-      expect(unmeasured_html).not_to include("animate-pulse")
-      expect(measured_html).to include("animate-pulse")
+      # [UI.3] Детектор ПЕРЕНЕСЕНО з `animate-pulse` на колір: рух знято з вузла,
+      # що несе текст, а розрізняльну роль ніс і несе колір. Логіка пари
+      # (невиміряний ⊥ виміряний-поганий) лишається та сама.
+      expect(unmeasured_html).not_to include("text-red-500")
+      expect(measured_html).to include("text-red-500")
     end
   end
 

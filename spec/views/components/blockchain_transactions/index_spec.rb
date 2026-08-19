@@ -153,11 +153,12 @@ RSpec.describe BlockchainTransactions::Index do
       expect(html).to include("bg-status-success")
     end
 
-    it "renders processing with the warning token and pulse" do
+    it "renders processing with the warning token and a STATIC discriminator" do
       txs = [ mock_transaction(status: "processing") ]
       rendered = render_index(transactions: txs, pagy: pagy)
       expect(rendered).to include("bg-status-warning")
-      expect(rendered).to include("animate-pulse")
+      expect(rendered).to include("italic")
+      expect(rendered).not_to include("animate-pulse")
     end
 
     it "renders sent with the info token" do
@@ -277,11 +278,23 @@ RSpec.describe BlockchainTransactions::Index do
   # фолбек — тобто фіксував дефект як норму. Це реальний AASM-стан грошового
   # шляху, і він був тьмянішим за доброякісний `pending`.
   describe "manual_review — double-spend guard" do
+    # 🔴 [UI.3, 2026-08-19] ТРЕТЯ редакція цього приклада, і перші дві цементували
+    # дефект: спершу він пінив сірий фолбек, потім `animate-pulse` — а пульс знімає
+    # глобальне правило `prefers-reduced-motion`, тож для цілої когорти
+    # `manual_review` знову виглядав як `pending`. ⊕ Заразом виправлено розходження
+    # імені й твердження: приклад називався «prominently THAN pending», а pending
+    # не рендерив ЖОДНОГО разу — тобто порівняння, за яке він названий, не робилось.
     it "renders more prominently than a benign pending transaction" do
-      rendered = render_index(transactions: [ mock_transaction(status: "manual_review") ], pagy: pagy)
+      guarded = render_index(transactions: [ mock_transaction(status: "manual_review") ], pagy: pagy)
+      benign  = render_index(transactions: [ mock_transaction(status: "pending") ], pagy: pagy)
 
-      expect(rendered).to include("text-status-warning-text")
-      expect(rendered).to include("animate-pulse")
+      expect(guarded).to include("text-status-warning-text")
+      # ⚠️ Детектор — `ring-current`, а не `ring-2`: друге ловить ще й
+      # `focus-visible:ring-2` посилання «Details», тобто прилад ПЕРЕбирає й
+      # негативна половина падає на здоровому коді (спіймано першим прогоном).
+      expect(guarded).to include("ring-current")
+      expect(benign).not_to include("ring-current")
+      expect(guarded).not_to include("animate-pulse")
     end
   end
 

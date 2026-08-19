@@ -97,7 +97,7 @@ module Contracts
       div(class: "flex justify-between border-b border-emerald-900/30 pb-2") do
         span(class: "text-tiny text-gray-600 uppercase") { label }
         span(class: tokens("font-mono text-sm",
-                           "text-red-500 animate-pulse": alert,
+                           "text-red-500": alert,
                            "text-status-warning-text": unmeasured,
                            "text-emerald-100": !alert && !unmeasured)) { value }
       end

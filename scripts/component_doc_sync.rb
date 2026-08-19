@@ -65,6 +65,15 @@ module ComponentDocSync
   # shared subdir → [its section, the section that follows it]
   SHARED_SECTIONS = { "ui" => %w[6.1 6.2], "iot" => %w[6.2 6.3], "web3" => %w[6.3 6.4] }.freeze
 
+  # 🔴 [UI.3] FOURTH axis: the Lookbook preview table in §10. It was the only
+  # registry in this document with NO guard at all, and it had drifted — a row for
+  # `AlertBadgePreview` survived the deletion of both the component AND its preview
+  # (2026-07-27), while §8.3 of the SAME page records that deletion explicitly. So
+  # the page asserted a preview exists and that it was removed, seventy lines apart,
+  # both green. Previews live OUTSIDE `app/views` (`spec/components/previews`), which
+  # is exactly why the existing three axes could not see them.
+  PREVIEWS_REL = "spec/components/previews"
+
   module_function
 
   def camelize(snake) = snake.split("_").map(&:capitalize).join
@@ -158,6 +167,16 @@ module ComponentDocSync
                         "#{SHARED_REL}/#{subdir}/", "04_04 §#{section}")
     end
 
+    # Preview classes on disk ⟷ §10 table rows, 1:1. Names carry a digit
+    # (`Web3AddressPreview`), so the pattern must allow one — a `[A-Za-z]+`-only
+    # reader silently drops that row and then reports it as missing from the doc.
+    preview_code = Dir.glob(File.join(root, PREVIEWS_REL, "*_preview.rb"))
+                      .map { |f| camelize(File.basename(f, ".rb")) }.to_set
+    preview_doc  = File.readlines(File.join(root, DOC_REL), chomp: true)
+                       .filter_map { |l| l[/\A\|\s*`([A-Z][A-Za-z0-9]*Preview)`/, 1] }.to_set
+    errors += compare("Lookbook preview", preview_code, preview_doc,
+                      "#{PREVIEWS_REL}/", "04_04 §10")
+
     dir_namespaces = Dir.children(components_dir)
                         .select { |c| File.directory?(File.join(components_dir, c)) }
                         .to_set
@@ -174,7 +193,8 @@ module ComponentDocSync
     {
       domain: code_classes(File.join(root, COMPONENTS_REL), nested: true,
                            reject: NON_COMPONENT_BASENAMES).size,
-      namespaces: tree_namespaces(doc_lines).size
+      namespaces: tree_namespaces(doc_lines).size,
+      previews: Dir.glob(File.join(root, PREVIEWS_REL, "*_preview.rb")).size
     }
   end
 end
@@ -186,7 +206,8 @@ if __FILE__ == $PROGRAM_NAME
   if errors.empty?
     counts = ComponentDocSync.summary(root)
     puts "component_doc_sync ✓ — 04_04 ⟷ app/views (#{counts[:domain]} domain components in §6.4, " \
-         "#{counts[:namespaces]} namespaces in the §1 tree, shared/ui+iot+web3 registries in sync)"
+         "#{counts[:namespaces]} namespaces in the §1 tree, #{counts[:previews]} Lookbook previews in §10, " \
+         "shared/ui+iot+web3 registries in sync)"
     exit 0
   else
     warn "component_doc_sync ✗ — 04_04 ↔ app/views drift:"

@@ -54,12 +54,15 @@ module Firmwares
 
     private
 
+    # [UI.3] Пульс знято з ДВОХ гілок: він стояв на самому слові статусу, тобто
+    # робив нечитабельним рядок, який єдиний і повідомляє, чи прошивка впала.
+    # Дискримінації він не ніс — усі чотири стани вже мають власний колір.
     def status_color
       case @status
       when "COMPLETE" then "text-emerald-400"
-      when "FAILED"   then "text-red-500 animate-pulse"
+      when "FAILED"   then "text-red-500"
       when "IDLE"     then "text-gray-600"
-      else "text-emerald-600 animate-pulse"
+      else "text-emerald-600"
       end
     end
   end

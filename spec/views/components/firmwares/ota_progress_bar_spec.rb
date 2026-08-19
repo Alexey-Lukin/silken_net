@@ -46,16 +46,19 @@ RSpec.describe Firmwares::OtaProgressBar do
       expect(html).to include("text-emerald-400")
     end
 
-    it "renders red-500 with pulse for FAILED status" do
+    # [UI.3] Пульс знято з обох гілок: він стояв на самому СЛОВІ статусу, тобто
+    # робив нечитабельним єдиний рядок, що повідомляє про падіння прошивки.
+    # Розрізняє чотири стани колір, і завжди розрізняв.
+    it "renders red-500 for FAILED status, without motion on the label" do
       html = render_component(uid: "X", percent: 30, current: 15, total: 50, status: "FAILED")
       expect(html).to include("text-red-500")
-      expect(html).to include("animate-pulse")
+      expect(html).not_to include("animate-pulse")
     end
 
-    it "renders emerald-600 with pulse for in-progress status" do
+    it "renders emerald-600 for in-progress status, without motion on the label" do
       html = render_component(uid: "X", percent: 60, current: 30, total: 50, status: "TRANSMITTING")
       expect(html).to include("text-emerald-600")
-      expect(html).to include("animate-pulse")
+      expect(html).not_to include("animate-pulse")
     end
   end
 

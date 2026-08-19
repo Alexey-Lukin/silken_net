@@ -1,11 +1,24 @@
-<div style="background: #000; padding: 2rem; font-family: monospace;">
-  <h3 style="color: #10b981; margin-bottom: 1rem; font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em;">Blockchain Transaction Lifecycle</h3>
-  <div style="display: flex; gap: 0.5rem; align-items: center;">
-    <% %w[pending processing sent confirmed failed].each do |status| %>
+<%#
+  🔴 [UI.3] Джерело — AASM самої моделі, не рукописний рядок: попередня версія
+  малювала `pending → processing → sent → confirmed → failed` і пропускала
+  `manual_review`, тобто найгучніший стан грошового тракту (кошти заблоковані,
+  потрібна людина) був відсутній у діаграмі власного життєвого циклу.
+  Термінальні стани показані окремим рядком — вони не ланка ланцюга, а розвилка.
+%>
+<% chain = %i[pending processing sent confirmed] %>
+<% terminal = BlockchainTransaction.aasm.states.map(&:name) - chain %>
+<div style="padding: 2rem; font-family: monospace;">
+  <h3 class="text-tiny uppercase tracking-[0.2em] text-gaia-primary-strong mb-4">Blockchain Transaction Lifecycle</h3>
+  <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+    <% chain.each_with_index do |status, i| %>
       <%= render Views::Shared::UI::StatusBadge.new(status: status) %>
-      <% if status != "failed" %>
-        <span style="color: #064e3b;">→</span>
-      <% end %>
+      <span class="text-gaia-text-subtle"><%= "→" unless i == chain.size - 1 %></span>
+    <% end %>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 1rem;">
+    <span class="text-gaia-text-subtle">⤷</span>
+    <% terminal.each do |status| %>
+      <%= render Views::Shared::UI::StatusBadge.new(status: status) %>
     <% end %>
   </div>
 </div>

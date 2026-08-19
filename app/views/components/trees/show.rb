@@ -250,7 +250,7 @@ module Trees
           p(class: "text-micro text-gaia-text-subtle font-mono") { sub } if sub
         end
         span(class: tokens("text-lg font-mono",
-                           "text-red-500 animate-pulse": danger,
+                           "text-red-500": danger,
                            "text-status-warning-text": unmeasured && !danger,
                            "text-emerald-300": !danger && !unmeasured)) { value }
       end

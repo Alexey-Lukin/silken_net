@@ -24,10 +24,37 @@ RSpec.describe Views::Shared::UI::StatusBadge do
       expect(html).to include("bg-status-danger")
     end
 
-    it "maps processing to warning semantic token with animation" do
+    # 🔴 [UI.3, 2026-08-19] Пін ПЕРЕНЕСЕНО з анімації на статичний дискримінатор,
+    # і це не косметика піна: `processing` відрізнявся від `pending` ЛИШЕ пульсом,
+    # а глобальне правило `prefers-reduced-motion` знімає анімації цілком — тобто
+    # для цілої когорти два стани були однакові. Тепер розрізняє `italic`, і саме
+    # цю властивість пін і мусить стерегти. Гейт на клас — `spec/quality/motion_discriminator_spec.rb`.
+    it "maps processing to warning + a STATIC discriminator, not to motion" do
       html = render_component(status: "processing")
       expect(html).to include("bg-status-warning")
-      expect(html).to include("animate-pulse")
+      expect(html).to include("italic")
+      expect(html).not_to include("animate-pulse")
+    end
+
+    # Пара до попереднього: без неї «italic є» не доводить РОЗРІЗНЕННЯ — обидва
+    # стани могли б його мати, і колапс лишився б, просто під іншим класом.
+    it "keeps pending visually distinct from processing without any motion" do
+      pending_html    = render_component(status: "pending")
+      processing_html = render_component(status: "processing")
+
+      expect(pending_html).not_to include("italic")
+      expect(pending_html).not_to include("animate-pulse")
+      expect(processing_html).not_to eq(pending_html)
+    end
+
+    # `manual_review` — найгучніший стан грошового тракту (кошти заблоковані,
+    # потрібна людина), тож його дискримінатор найсильніший із трьох. Кільце —
+    # `ring-current`, а не червоне: `--status-danger-accent` на фоні бейджа дає
+    # 2.41 у ТЕМНІЙ темі, тобто провалив би 1.4.11 (бар 3:1).
+    it "gives manual_review the loudest static discriminator" do
+      html = render_component(status: "manual_review")
+      expect(html).to include("ring-2 ring-current")
+      expect(html).not_to include("animate-pulse")
     end
 
     # 🔴 Несучий пін цієї осі: `active` означає ЗДОРОВʼЯ — так його вживають усі

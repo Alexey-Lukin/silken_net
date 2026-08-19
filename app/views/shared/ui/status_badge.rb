@@ -8,11 +8,28 @@ module Views
         STYLES = {
           # AASM: BlockchainTransaction states
           "pending"      => "bg-status-warning text-status-warning-text",
-          "processing"   => "bg-status-warning text-status-warning-text animate-pulse",
+          # 🔴 [UI.3, 2026-08-19] `animate-pulse` ЗНЯТО з трьох станів — і не через
+          # контраст (він теж падав), а тому, що пульс був ЄДИНИМ, чим ці стани
+          # відрізнялись від `pending`. Глобальне правило `prefers-reduced-motion`
+          # ставить `animation-duration: 0.01ms !important`, тож для цієї когорти
+          # анімації НЕМА — і чотири записи ставали байтово однаковими: `pending`,
+          # `processing`, `manual_review`, `updating`. Три з них — стани грошової
+          # транзакції, і серед них `manual_review`, тобто double-spend guard
+          # (кошти заблоковані, потрібна людина) виглядав як рутинний `pending`.
+          # Це рівно той дефект, який цей файл уже вилікував рядком нижче
+          # (`cancelled` ⊥ `draft`), лише на грошовому шляху й на ЧОТИРЬОХ членах.
+          # ⊕ Друга половина ціни: пульс — це opacity на вузлі З ТЕКСТОМ, тож у
+          # западині підпис ішов з 6.37 до 2.26 при барі 4.5 (виміряно 2026-08-18).
+          # Дискримінатори статичні й безкольорові — родина `line-through` нижче.
+          "processing"   => "bg-status-warning text-status-warning-text italic",
           "sent"         => "bg-status-info text-status-info-text",
           "confirmed"    => "bg-status-success text-status-success-text",
           "failed"       => "bg-status-danger text-status-danger-text",
-          "manual_review" => "bg-status-warning text-status-warning-text animate-pulse",
+          # `ring-current`, а не червоне кільце: вимір 2026-08-19 дав
+          # `--status-danger-accent` на фоні бейджа **2.41 у ТЕМНІЙ** темі — тобто
+          # «очевидний» червоний контур був би свіжим порушенням 1.4.11 у єдиній
+          # уживаній темі. Власний текстовий колір бейджа дає 6.37 / 7.28.
+          "manual_review" => "bg-status-warning text-status-warning-text ring-2 ring-current",
           # Спільний «здоровий» стан п'яти доменів (Tree · Gateway · NaasContract ·
           # Actuator · ParametricInsurance) — усі п'ять кажуть цим словом «усе гаразд».
           # Доти запис належав `EwsAlert` і означав ПРОТИЛЕЖНЕ (відкрита тривога =
@@ -33,7 +50,7 @@ module Views
           "cancelled"    => "bg-status-neutral text-status-neutral-text line-through",
           # AASM: Gateway states
           "idle"         => "bg-status-neutral text-status-neutral-text",
-          "updating"     => "bg-status-warning text-status-warning-text animate-pulse",
+          "updating"     => "bg-status-warning text-status-warning-text italic",
           "maintenance"  => "bg-status-info text-status-info-text",
           "faulty"       => "bg-status-danger text-status-danger-text",
           # AASM: Tree states

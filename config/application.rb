@@ -126,7 +126,14 @@ module SilkenNet
       ENV["PATH"] = "#{pg_bin}:#{ENV["PATH"]}"
     end
 
-    # Lookbook component previews path
-    config.lookbook.preview_paths = [ root.join("spec/components/previews").to_s ] if defined?(Lookbook)
+    # Lookbook component previews path.
+    # ⚠️ Цей реєстр відповідає лише за ЗНАХОДЖЕННЯ класів превʼю. Шаблони
+    # (`render_with_template`) резолвляться через VIEW-шляхи — окремий дім, і його
+    # дротує `config/initializers/lookbook_preview_view_path.rb`; без нього
+    # 11 із 59 сценаріїв віддавали 500 при повній навігації [UI.3].
+    if defined?(Lookbook)
+      preview_root = root.join("spec/components/previews").to_s
+      config.lookbook.preview_paths = [ preview_root ]
+    end
   end
 end
