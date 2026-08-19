@@ -201,7 +201,10 @@ module Maintenance
 
         div(class: "space-y-3 text-tiny font-mono") do
           meta_row(t(".metadata.technician"), "#{@user&.first_name} #{@user&.last_name}")
-          meta_row(t(".metadata.role"), @user&.role.to_s.upcase)
+          # [I18N.1] `role_label`, не сирий enum: мітка поруч ПЕРЕКЛАДЕНА, тож
+          # сире значення давало локалізований підпис із англійським токеном
+          # у кожній із чотирьох мов. Дім деривації — `User::ROLE_LABEL_SCOPE`.
+          meta_row(t(".metadata.role"), @user&.role_label&.upcase)
           meta_row(t(".metadata.target"), "#{@record.maintainable_type} // #{@record.maintainable&.display_identifier || '—'}")
           meta_row(t(".metadata.action"), @record.action_type_label.upcase)
           meta_row(t(".metadata.photos"), @pagy_photos.count.to_s)

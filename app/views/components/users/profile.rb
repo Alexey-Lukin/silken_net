@@ -29,7 +29,7 @@ module Users
 
     def render_hero_profile
       div(class: "p-10 border border-emerald-900 bg-zinc-950 relative overflow-hidden") do
-        div(class: "absolute top-0 right-0 p-4 text-[100px] font-bold text-emerald-900/5 select-none uppercase", aria_hidden: "true") { @user.role }
+        div(class: "absolute top-0 right-0 p-4 text-[100px] font-bold text-emerald-900/5 select-none uppercase", aria_hidden: "true") { @user.role_label }
 
         div(class: "flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-10") do
           # Аватар-плейсхолдер
