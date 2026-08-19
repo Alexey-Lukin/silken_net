@@ -47,10 +47,35 @@
 # `04_04 § 3.5` його забороняє, а гейт лишався зеленим. Ratchet виконано в
 # приписаному цим же файлом порядку — периметр поміряно ПЕРЕД внесенням: у
 # `app/views/shared/**` нуль хітів обох діалектів, тож migrate-to-green не
-# знадобився. ⚠️ Arbitrary-патерн навмисно вимагає КОЛІР усередині дужок
-# (hex / `rgb(` / `hsl(`), а не будь-яке arbitrary-значення: `min-h-[60vh]`,
-# `tracking-[0.3em]`, `[background-size:20px_20px]` — законні не-кольорові
-# утиліти, і гейт, що червонів би на них, зняли б першим.
+# знадобився. ⚠️ Arbitrary-патерн навмисно вимагає КОЛІР усередині дужок,
+# а не будь-яке arbitrary-значення: `min-h-[60vh]`, `tracking-[0.3em]`,
+# `[background-size:20px_20px]` — законні не-кольорові утиліти, і гейт, що
+# червонів би на них, зняли б першим.
+#
+# 🔴 [UI.1, 2026-08-19] ГЕЙТ ПІД-ІМПЛЕМЕНТУВАВ ВЛАСНИЙ КОНТРАКТ, і доводиться це
+# не арифметикою, а мутацією. Він друкує «no raw Tailwind **colour utilities**
+# detected» — заяву про ВСІ сирі кольорові утиліти, — а знав рівно підмножину:
+# `bg-` лише білий/чорний + пʼять НЕЙТРАЛЬНИХ родин (жодної хроматичної);
+# `text-` мав `white` і НЕ мав `black` (асиметрія з `bg-`, де є обидва) та різав
+# emerald по `400…900`; `border-` різав emerald по `700…900`; носіїв `divide-`,
+# `decoration-`, `stroke-`, `fill-`, `ring-` не існувало взагалі. По всьому
+# `app/views/**` це 666 бачених проти **268 пропущених** — заниження на 29 %.
+#
+# Але число тут не вердикт. Мутація ШЕСТИ пропущених родин, вписана в
+# `app/views/shared/ui/empty_state.rb` — тобто в HARD-периметр, де правило
+# звʼязує й де цей гейт є ЄДИНИМ носієм, — давала `✓ … EXIT=0`. Тобто дірка
+# не «теоретично колись», а «перший же сирий `bg-red-500` у `shared/` проходить
+# мовчки». Форма класу — `ssot-maintenance` §Guard-craft, «гейт, що
+# під-імплементує оголошений контракт»: він не бреше про себе, він просто
+# ніколи не звіряв вивіску з реалізацією.
+#
+# ⚠️ І резидуал `00_07` UI.1 приписував цьому розширенню ЦІНУ, якої більше
+# немає: «кожне regex-розширення передує своєю migrate-хвилею, інакше CI
+# червоніє миттєво». Це було правдою, доки дефолтний периметр був
+# `app/views/components/`; 2026-08-07 його розвернули на `shared/`, а там нуль
+# хітів УСІХ пропущених родин — тобто припис пережив власну передумову й
+# коштував пункту чотири місяці відкладання. Ratchet виконано так само, як два
+# попередні розширення: периметр поміряно ПЕРЕД внесенням.
 #
 # 🔴 ЩО ЛИШАЄТЬСЯ ЗА СТЕЛЕЮ (гейт судить КЛАСИ в СИРОМУ ТЕКСТІ файла):
 #   · інлайн `style:` із кольором — класу не має взагалі, тож не існує тут за
@@ -94,28 +119,67 @@ namespace :gaia do
       Pathname.new(p).directory? ? Pathname.glob("#{p}/**/*.rb") : [ Pathname.new(p) ]
     end
 
-    # 🔴 Tailwind має ПʼЯТЬ нейтральних родин, і доти regex знав рівно одну
-    # (`gray`) — тобто `bg-zinc-950` проходив навіть у `shared/`, де сира
-    # Tailwind заборонена HARD. Діра не теоретична: саме `bg-zinc-950` під
-    # токенізованим текстом робив світлу половину `--gaia-text-subtle`
-    # арифметично нездійсненною (`00_07` UI.3). Розширення безпечне для чинного
-    # периметра — виміряно перед внесенням: у `app/views/shared/**` нуль хітів
-    # чотирьох дописаних родин, тож ratchet «migrate-to-green ПЕРЕД гейтом»
-    # виконано без міграції.
-    neutrals = "gray|zinc|neutral|slate|stone"
+    # 🔴 ПОВНА палітра Tailwind, а не її підмножина. Доти перелічувались лише
+    # пʼять НЕЙТРАЛЬНИХ родин, тож `bg-red-500` не існував для гейта — а сира
+    # хроматика саме на сигнальних поверхнях і живе (LED тривоги, severity-рамка).
+    # Дві родини мають синоніми (`gray`/`grey` не є Tailwind-класом, але
+    # `rebeccapurple` тощо ловить іменований перелік нижче).
+    palette = "slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|" \
+              "emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose"
 
-    # Утиліти, що приймають arbitrary-значення й тому можуть пронести колір у дужках.
-    arbitrary_carriers = "bg|text|border|from|via|to|ring|fill|stroke|shadow|outline|decoration"
+    # 🔴 УСІ носії кольору, а не чотири. `divide-`/`decoration-`/`stroke-`/`fill-`
+    # були відсутні цілком, і кожен має живих носіїв у дереві (`divide-emerald-900`
+    # ×21, `stroke-red-600` на severity-дузі `trees/show`). Той самий перелік
+    # обслуговує й arbitrary-гілку — межа була штучна.
+    carriers = "bg|text|border|from|via|to|ring|fill|stroke|shadow|outline|" \
+               "decoration|divide|accent|caret|placeholder"
+
+    # Іменовані CSS-кольори (CSS Color 4) — третій діалект, яким сирий колір
+    # заходить у дужках повз hex-тест. Живі носії: `shadow-[0_0_8px_red]` на
+    # `trees/index` і `actuators/card` — ОБИДВА стани тривоги, і обидва стояли
+    # рядком поруч зі своїм hex-двійником, який гейт бачив. Тобто дискримінувала
+    # не роль і не поверхня, а НОТАЦІЯ.
+    named_colours = %w[
+      aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond
+      blue blueviolet brown burlywood cadetblue chartreuse chocolate coral
+      cornflowerblue cornsilk crimson cyan darkblue darkcyan darkgoldenrod darkgray
+      darkgreen darkgrey darkkhaki darkmagenta darkolivegreen darkorange darkorchid
+      darkred darksalmon darkseagreen darkslateblue darkslategray darkslategrey
+      darkturquoise darkviolet deeppink deepskyblue dimgray dimgrey dodgerblue
+      firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold goldenrod
+      gray green greenyellow grey honeydew hotpink indianred indigo ivory khaki
+      lavender lavenderblush lawngreen lemonchiffon lightblue lightcoral lightcyan
+      lightgoldenrodyellow lightgray lightgreen lightgrey lightpink lightsalmon
+      lightseagreen lightskyblue lightslategray lightslategrey lightsteelblue
+      lightyellow lime limegreen linen magenta maroon mediumaquamarine mediumblue
+      mediumorchid mediumpurple mediumseagreen mediumslateblue mediumspringgreen
+      mediumturquoise mediumvioletred midnightblue mintcream mistyrose moccasin
+      navajowhite navy oldlace olive olivedrab orange orangered orchid palegoldenrod
+      palegreen paleturquoise palevioletred papayawhip peachpuff peru pink plum
+      powderblue purple rebeccapurple red rosybrown royalblue saddlebrown salmon
+      sandybrown seagreen seashell sienna silver skyblue slateblue slategray
+      slategrey snow springgreen steelblue tan teal thistle tomato turquoise violet
+      wheat white whitesmoke yellow yellowgreen transparent currentcolor
+    ].join("|")
+
+    # Колір УСЕРЕДИНІ arbitrary-дужок: hex · функція · іменований.
+    # ⚠️ Іменований мусить бути ЦІЛИМ токеном (`(?<![a-z])…(?![a-z])`), інакше
+    # `transparent` матчиться всередині домену `transparenttextures.com`, а `red`
+    # — у хвості `:clusters_measured`. Виміряно обидва: наївний підрядок дає три
+    # хибні позитиви на живому дереві, цілий токен — нуль.
+    colour_in_brackets =
+      /\#[0-9a-fA-F]{3,8}|(?:rgb|hsl|hwb|lab|lch|oklab|oklch|color-mix)a?\(|
+       (?<![a-z])(?:#{named_colours})(?![a-z])/xi
 
     # Patterns that indicate a class slipped past gaia-token migration.
     raw_patterns = [
-      /\b(bg-(?:white|black|(?:#{neutrals})-\d+))\b/,
-      /\b(text-(?:white|(?:#{neutrals})-\d+|emerald-(?:400|500|600|700|800|900)))\b/,
-      /\b(border-(?:(?:#{neutrals})-\d+|emerald-(?:700|800|900)))\b/,
-      # [UI.3 (б)] Градієнтні стопи — та сама сира палітра, лише під іншим префіксом.
-      /\b((?:from|via|to)-(?:white|black|(?:#{neutrals})-\d+|emerald-\d+))\b/,
+      # Один патерн замість чотирьох: носій × родина × шкала. Шкала — рівно 2–3
+      # цифри (Tailwind має 50…950), тож `stroke-[3]` та `border-2` не зачіпає.
+      /\b((?:#{carriers})-(?:white|black|(?:#{palette})-\d{2,3}))\b/,
       # [UI.3 (б)] Arbitrary-значення, що НЕСЕ колір. Дужка без кольору — законна утиліта.
-      /(\b(?:#{arbitrary_carriers})-\[[^\]]*(?:\#[0-9a-fA-F]{3,8}|(?:rgb|hsl)a?\()[^\]]*\])/
+      # ⚠️ Дужка з `url(` виключена свідомо: там колірне слово є частиною ШЛЯХУ,
+      # а не значенням (`bg-[url('…transparenttextures.com…')]`).
+      /(\b(?:#{carriers})-\[(?![^\]]*url\()[^\]]*(?:#{colour_in_brackets})[^\]]*\])/
     ]
 
     # Decorative / brand allowlist — these are intentional and not migrated.
