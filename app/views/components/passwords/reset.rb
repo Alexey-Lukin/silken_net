@@ -72,7 +72,7 @@ module Passwords
     def submit_classes
       "w-full py-4 bg-emerald-500/10 border border-gaia-primary text-gaia-primary-strong uppercase text-xs tracking-[0.4em] " \
         "hover:bg-emerald-500 hover:text-gaia-surface focus-visible:outline-none focus-visible:ring-2 " \
-        "focus-visible:ring-gaia-primary transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+        "focus-visible:ring-gaia-primary-strong transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.2)]"
     end
 
     # [SEC.25] Плашка помилки ПОТОЧНОГО сабміту — свідомо тут, а не у `FlashMessages`:
@@ -96,7 +96,7 @@ module Passwords
 
     def render_back_link
       div(class: "text-center pt-2") do
-        a(href: login_path, class: "text-tiny text-gaia-text-subtle uppercase tracking-widest hover:text-gaia-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-colors") do
+        a(href: login_path, class: "text-tiny text-gaia-text-subtle uppercase tracking-widest hover:text-gaia-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong transition-colors") do
           t(".back_link")
         end
       end

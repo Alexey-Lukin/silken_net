@@ -52,7 +52,7 @@ module BlockchainTransactions
     def explorer_link_classes
       "w-full block text-center py-2 border border-emerald-500 text-tiny uppercase text-emerald-500 " \
         "hover:bg-emerald-500 hover:text-black transition-all " \
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
     end
   end
 end

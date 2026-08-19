@@ -105,7 +105,7 @@ module BlockchainTransactions
         whitespace
         a(href: blockchain_transactions_path(window: WINDOW_ALL),
           class: "underline decoration-emerald-900 text-emerald-600 hover:text-white transition-all " \
-                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500") { t(".window.show_all") }
+                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".window.show_all") }
       end
     end
 
@@ -176,7 +176,7 @@ module BlockchainTransactions
           a(href: blockchain_transaction_path(tx, created_at: tx.created_at.iso8601),
             aria_label: t(".audit_aria", id: tx.id),
             class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none " \
-                   "focus-visible:ring-2 focus-visible:ring-emerald-500") { t(".audit_details") }
+                   "focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".audit_details") }
         end
       end
     end

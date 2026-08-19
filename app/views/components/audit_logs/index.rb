@@ -36,7 +36,7 @@ module AuditLogs
         a(
           href: audit_logs_path,
           class: "text-mini uppercase tracking-widest text-emerald-500 hover:text-white " \
-                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
         ) { t(".clear_filter") }
       end
     end
@@ -96,7 +96,7 @@ module AuditLogs
           end
         end
         td(class: "p-4 text-right") do
-          a(href: audit_log_path(log), class: "text-emerald-600 hover:text-white transition-all text-mini uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t(".inspect_aria", id: log.id)) { t(".inspect") }
+          a(href: audit_log_path(log), class: "text-emerald-600 hover:text-white transition-all text-mini uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong", aria_label: t(".inspect_aria", id: log.id)) { t(".inspect") }
         end
       end
     end

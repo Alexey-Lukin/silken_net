@@ -106,7 +106,7 @@ module Views
               "border border-gaia-border bg-gaia-surface text-gaia-text",
               "text-tiny font-mono uppercase tracking-widest",
               "hover:text-gaia-primary-strong hover:border-gaia-primary",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
               "transition-colors duration-200"
             ),
             aria: { label: t("locale.switcher_label", default: "Language") },

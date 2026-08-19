@@ -56,7 +56,7 @@ module Organizations
         aria: { label: t(".switch_aria", name: @organization.name) },
         class: "text-mini uppercase tracking-widest border border-emerald-700 text-emerald-400 " \
                "px-3 py-1 hover:bg-emerald-600 hover:text-black transition-colors cursor-pointer " \
-               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
       )
     end
 
@@ -142,7 +142,7 @@ module Organizations
                   td(class: "p-4 text-right") do
                     a(
                       href: cluster_path(cluster),
-                      class: "text-emerald-600 hover:text-white transition-all uppercase text-mini focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+                      class: "text-emerald-600 hover:text-white transition-all uppercase text-mini focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
                       aria_label: t(".clusters.open_aria", name: cluster.name)
                     ) { t(".clusters.open_matrix") }
                   end

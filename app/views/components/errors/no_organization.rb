@@ -99,7 +99,7 @@ module Errors
           href: organizations_path,
           class: "inline-block px-6 py-3 border border-gaia-primary text-gaia-primary-strong text-tiny uppercase " \
                  "tracking-[0.3em] hover:bg-emerald-500 hover:text-gaia-surface transition-colors " \
-                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary"
+                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
         ) { t(".choose_organization") }
       end
     end
@@ -117,7 +117,7 @@ module Errors
           logout_path,
           method: :delete,
           aria: { label: "Sign out" },
-          class: "text-tiny text-gaia-text-subtle uppercase tracking-widest hover:text-gaia-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-colors bg-transparent border-0 cursor-pointer"
+          class: "text-tiny text-gaia-text-subtle uppercase tracking-widest hover:text-gaia-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong transition-colors bg-transparent border-0 cursor-pointer"
         )
       end
     end

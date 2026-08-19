@@ -47,13 +47,13 @@ module TreeFamilies
 
     def input_classes
       "w-full bg-gaia-input-bg border border-gaia-input-border text-gaia-input-text p-3 font-mono text-xs " \
-        "focus-visible:border-gaia-primary focus-visible:ring-2 focus-visible:ring-gaia-primary outline-none transition-all"
+        "focus-visible:border-gaia-primary focus-visible:ring-2 focus-visible:ring-gaia-primary-strong outline-none transition-all"
     end
 
     def submit_classes
       "w-full py-4 bg-gaia-primary/10 border border-gaia-primary text-gaia-primary-strong uppercase text-xs tracking-widest " \
         "hover:bg-gaia-primary hover:text-black transition-all cursor-pointer " \
-        "disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary"
+        "disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
     end
   end
 end

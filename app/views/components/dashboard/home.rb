@@ -117,7 +117,7 @@ module Dashboard
           href: alerts_path,
           class: "mt-8 text-center py-2 border border-gaia-border text-mini uppercase text-gaia-text-muted " \
                  "hover:text-gaia-text hover:border-gaia-border-strong transition-all " \
-                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary"
+                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
         ) { t(".feed.view_all") }
       end
     end

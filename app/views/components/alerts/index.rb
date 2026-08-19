@@ -97,7 +97,7 @@ module Alerts
     def filter_link_classes
       "px-2 py-0.5 border border-gaia-border text-mini uppercase text-gaia-text-muted " \
         "hover:border-gaia-primary hover:text-gaia-primary-strong " \
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-all"
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong transition-all"
     end
   end
 end

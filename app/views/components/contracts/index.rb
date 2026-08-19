@@ -100,7 +100,7 @@ module Contracts
           plain contract.end_date&.strftime("%d.%m.%y")
         end
         td(class: "p-4 text-right") do
-          a(href: contract_path(contract), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t(".audit_aria", id: contract.id)) { t(".audit_details") }
+          a(href: contract_path(contract), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong", aria_label: t(".audit_aria", id: contract.id)) { t(".audit_details") }
         end
       end
     end

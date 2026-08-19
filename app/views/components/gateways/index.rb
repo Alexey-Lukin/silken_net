@@ -93,7 +93,7 @@ module Gateways
           a(
             href: gateway_path(gateway),
             aria_label: t("gateways.item.open_aria", uid: gateway.uid),
-            class: "text-tiny uppercase tracking-widest text-emerald-600 hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors"
+            class: "text-tiny uppercase tracking-widest text-emerald-600 hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong transition-colors"
           ) { t("gateways.item.open") }
         end
       end

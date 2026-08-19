@@ -84,7 +84,7 @@ module Firmwares
           # Кнопка переходу до порталу завантаження
           a(
             href: new_firmware_path,
-            class: "text-tiny border border-emerald-500 px-4 py-1 text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+            class: "text-tiny border border-emerald-500 px-4 py-1 text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
             aria_label: t(".upload_aria")
           ) { t(".upload") }
         end
@@ -128,7 +128,7 @@ module Firmwares
             t("firmwares.row.order_evolution"),
             deploy_firmware_path(firmware),
             method: :post,
-            class: "text-emerald-500 hover:text-white border border-emerald-900 hover:border-emerald-500 px-4 py-1 uppercase text-mini tracking-widest transition-all group-hover:shadow-[0_0_10px_rgba(16,185,129,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+            class: "text-emerald-500 hover:text-white border border-emerald-900 hover:border-emerald-500 px-4 py-1 uppercase text-mini tracking-widest transition-all group-hover:shadow-[0_0_10px_rgba(16,185,129,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
             aria: { label: t(".deploy_aria", version: firmware.version) },
             data: { turbo_confirm: t("firmwares.row.confirm", version: firmware.version) }
           )

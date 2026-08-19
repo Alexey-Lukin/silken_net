@@ -75,7 +75,7 @@ module Users
           # і `AuditLogsController#authorize_admin!` обидва питають `admin_or_above?`.
           a(
             href: audit_logs_path(user_id: user.id),
-            class: "text-emerald-700 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+            class: "text-emerald-700 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
             aria_label: t(".table.view_logs_aria", name: "#{user.first_name} #{user.last_name}")
           ) { t(".table.view_logs") }
         end

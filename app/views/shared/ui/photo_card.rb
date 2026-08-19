@@ -55,7 +55,7 @@ module Views
 
         def preview_link_classes
           "block aspect-square overflow-hidden " \
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary"
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
         end
 
         def render_file_fallback
@@ -74,7 +74,12 @@ module Views
         end
 
         def render_delete_button
-          div(class: "absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200") do
+          # 🔴 [UI.3] `group-focus-within` тут не косметика: `button_to` рендерить
+          # СПРАВЖНЮ `<button>`, тож клавіатура доходить до неї, поки контейнер
+          # лишається `opacity-0` — фокус на невидимому елементі, WCAG 2.4.7.
+          # ⚠️ Сусідній `render_meta_overlay` тієї ж потреби НЕ має: у ньому лише
+          # `<p>`, нічого фокусованого — периметр класу виміряний, не припущений.
+          div(class: "absolute top-1 right-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200") do
             button_to(
               "×",
               maintenance_record_photo_path(@record, @photo),

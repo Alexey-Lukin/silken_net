@@ -73,7 +73,7 @@ module Views
 
         def copy_button_classes
           "text-gaia-primary hover:text-gaia-primary-hover " \
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary " \
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong " \
             "transition-colors duration-200 cursor-pointer"
         end
 

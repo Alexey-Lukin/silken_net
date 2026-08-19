@@ -136,7 +136,7 @@ module Maintenance
           a(
             href: maintenance_record_path(record),
             aria_label: t(".table.open_aria"),
-            class: "text-gaia-primary-strong hover:text-white text-tiny focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors"
+            class: "text-gaia-primary-strong hover:text-white text-tiny focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong transition-colors"
           ) { t(".table.open") }
         end
       end
@@ -165,28 +165,28 @@ module Maintenance
     def register_button_classes
       "px-4 py-2 border border-emerald-500 text-emerald-500 " \
         "hover:bg-emerald-500 hover:text-black " \
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong " \
         "transition-all uppercase text-tiny tracking-widest"
     end
 
     def filter_link_classes
       "px-3 py-1 border border-emerald-900 text-mini uppercase text-gaia-text-muted " \
         "hover:border-emerald-600 hover:text-emerald-600 " \
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong " \
         "transition-all font-mono"
     end
 
     def filter_verified_classes
       "px-3 py-1 border border-emerald-700 text-mini uppercase text-gaia-primary-strong " \
         "hover:bg-emerald-900/20 " \
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong " \
         "transition-all font-mono"
     end
 
     def filter_clear_classes
       "px-3 py-1 border border-gray-800 text-mini uppercase text-gaia-text-muted " \
         "hover:border-gray-600 " \
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong " \
         "transition-all font-mono"
     end
   end

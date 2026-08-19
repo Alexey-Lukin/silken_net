@@ -237,7 +237,7 @@ module Clusters
             a(
               href: "https://www.google.com/maps?q=#{center[:lat]},#{center[:lng]}",
               target: "_blank",
-              class: "block mt-4 text-center p-2 border border-emerald-800 text-emerald-600 hover:bg-emerald-900 hover:text-white transition-all uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+              class: "block mt-4 text-center p-2 border border-emerald-800 text-emerald-600 hover:bg-emerald-900 hover:text-white transition-all uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
               aria_label: t(".map_link_aria")
             ) { t(".geography.view_on_map") }
           end

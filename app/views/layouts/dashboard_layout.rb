@@ -142,7 +142,7 @@ class DashboardLayout < ApplicationComponent
         li do
           a(
             href: dashboard_index_path,
-            class: "hover:text-gaia-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-colors duration-200"
+            class: "hover:text-gaia-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong transition-colors duration-200"
           ) { t("navigation.breadcrumb.root") }
         end
 
@@ -198,7 +198,7 @@ class DashboardLayout < ApplicationComponent
       aria_label: t("navigation.top_bar.context_aria", name: current),
       class: "flex flex-col px-2 md:px-4 py-1.5 border border-gaia-border bg-gaia-surface-sunken " \
              "hover:border-gaia-primary transition-colors duration-300 " \
-             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary"
+             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
     ) do
       # Ховається лише ПІДПИС: сам контекст мусить лишатись видимим і на телефоні,
       # інакше «єдиний канал підтвердження» зникає рівно там, де кнопка
@@ -228,7 +228,7 @@ class DashboardLayout < ApplicationComponent
     a(href: users_me_path,
       aria_label: t("navigation.top_bar.profile_aria", name: @current_user&.full_name),
       class: "flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 " \
-             "focus-visible:ring-gaia-primary focus-visible:ring-offset-2 focus-visible:ring-offset-gaia-surface") do
+             "focus-visible:ring-gaia-primary-strong focus-visible:ring-offset-2 focus-visible:ring-offset-gaia-surface") do
       div(class: "text-right hidden lg:block") do
         p(class: "text-tiny text-gaia-text-strong leading-none") { @current_user&.full_name }
         p(class: "text-micro text-gaia-text-subtle uppercase tracking-widest mt-1") { @current_user&.role_label }

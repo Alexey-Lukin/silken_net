@@ -167,7 +167,7 @@ module Navigation
     def nav_item_base_classes
       "group flex items-center justify-between px-3 py-2 text-compact uppercase tracking-widest " \
         "transition-all duration-200 ease-in-out border-l-2 " \
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gaia-primary"
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gaia-primary-strong"
     end
 
     def nav_item_active_classes

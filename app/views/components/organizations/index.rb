@@ -58,7 +58,7 @@ module Organizations
           render Views::Shared::Web3::Address.new(address: org.crypto_public_address)
         end
         td(class: "p-4 text-right") do
-          a(href: organization_path(org), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t(".view_aria", name: org.name)) { t(".view_profile") }
+          a(href: organization_path(org), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong", aria_label: t(".view_aria", name: org.name)) { t(".view_profile") }
         end
         td(class: "p-4 text-right") { render_context_cell(org) }
       end
@@ -99,7 +99,7 @@ module Organizations
         aria: { label: t(".switch_aria", name: org.name) },
         class: "text-mini uppercase tracking-widest border border-emerald-700 text-emerald-400 " \
                "px-3 py-1 hover:bg-emerald-600 hover:text-black transition-colors cursor-pointer " \
-               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
       )
     end
 

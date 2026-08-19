@@ -106,7 +106,7 @@ module Alerts
     def resolve_button_classes
       "text-mini uppercase tracking-tighter border border-status-danger text-status-danger-text " \
         "hover:bg-status-danger hover:text-gaia-text-strong " \
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger-accent " \
         "px-3 py-1 transition-all"
     end
   end
