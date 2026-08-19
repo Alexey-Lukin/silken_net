@@ -71,8 +71,9 @@ app/views/layouts/dashboard_layout.rb → spec/views/layouts/dashboard_layout_sp
 всіх файлів у `spec/views/`. Він надає:
 - `render_component(**kwargs)` — автоматично обирає `.call` чи `ApplicationController.renderer.render`
 - `component_class` — синонім `described_class`
-- `mock_pagy(count:, page:, last:)` — стандартний Pagy double (uses `previous:` not `prev:` — Pagy 43+)
+- `mock_pagy(count:, page:, last:)` — **СПРАВЖНІЙ `Pagy::Offset`**, не double: `last` тут не поле, а ВХІД, з якого виводиться `limit`, тож суперечити `count` не може ⚠️ слово «double» стояло тут до 2026-08-19 і описувало знятий `OpenStruct` (носій — `spec/quality/pagy_fixture_is_real_spec.rb`)
 - `mock_model(klass, id:, **attrs)` — OpenStruct з model_name/to_key/to_param
+- ⛔ **Жодну з цих `mock_*`-фабрик не затінюй локальним `def`** — див. §A.2 п.7 (гейт `spec/quality/shared_fixture_home_spec.rb`)
 
 ### 3. Рендеринг: renderer vs .call
 - **`.call`** — для компонентів БЕЗ route helpers, turbo tags, form builders
