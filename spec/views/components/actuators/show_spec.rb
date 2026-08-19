@@ -11,9 +11,11 @@ RSpec.describe Actuators::Show do
     Actuator.new(id: id, device_type: device_type, state: state, gateway: Gateway.new(uid: gateway_uid))
   end
 
-  def mock_command(id: 1, status: "confirmed", command_payload: "OPEN_VALVE", executed_at: Time.current, user_first_name: "Ada")
+  def mock_command(id: 1, status: "confirmed", command_payload: "OPEN_VALVE", executed_at: Time.current,
+                   completed_at: nil, user_first_name: "Ada")
     user = OpenStruct.new(first_name: user_first_name)
-    OpenStruct.new(id: id, status: status, command_payload: command_payload, executed_at: executed_at, user: user)
+    OpenStruct.new(id: id, status: status, command_payload: command_payload, executed_at: executed_at,
+                   completed_at: completed_at, user: user)
   end
 
   describe "rendering" do
@@ -123,6 +125,30 @@ RSpec.describe Actuators::Show do
     it "displays --- when executed_at is nil" do
       html = render_component(actuator: build_actuator, commands: [ mock_command(executed_at: nil) ])
       expect(html).to include("---")
+    end
+  end
+
+  # [I18N.1] Кінець дії — окрема колонка: `executed_at` ставиться в `acknowledge`
+  # (старт), тож без `completed_at` «триває» і «завершилось» були нерозрізненні.
+  describe "completed_at column" do
+    it "shows both start and finish for a completed command" do
+      html = render_component(
+        actuator: build_actuator,
+        commands: [ mock_command(executed_at: Time.new(2024, 3, 15, 14, 30, 45),
+                                 completed_at: Time.new(2024, 3, 15, 14, 32, 10)) ]
+      )
+      expect(html).to include("15.03.24 // 14:30:45")
+      expect(html).to include("15.03.24 // 14:32:10")
+    end
+
+    # Свідок мітки — у НЕ-базовій локалі: в англійській заголовок легко сплутати
+    # з сусіднім, а укр. пара «Початок ⊥ Завершення» доводить, що колонки ДВІ.
+    it "labels start and finish as two distinct column headers (uk)" do
+      html = I18n.with_locale(:uk) do
+        render_component(actuator: build_actuator, commands: [ mock_command ])
+      end
+      expect(html).to include("Початок")
+      expect(html).to include("Завершення")
     end
   end
 

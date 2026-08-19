@@ -78,7 +78,8 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
       expect { described_class.new.perform }
         .to change { gateway.reload.state }.from("faulty").to("idle")
       expect(alert.reload.status_resolved?).to be(true)
-      expect(alert.resolution_notes).to include(gateway.uid)
+      expect(alert.resolution_log.last["key"]).to eq("gateway_returned")
+      expect(alert.resolution_texts.join).to include(gateway.uid)
     end
 
     # [ARCH.34] Helium-SOS-алерт не мав резолвера ЖОДНОГО: HeliumSosWorker обіцяв

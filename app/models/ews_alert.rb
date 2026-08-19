@@ -284,15 +284,27 @@ class EwsAlert < ApplicationRecord
   # МЕТОДИ (The Lens of Truth)
   # =========================================================================
 
-  # Протокол завершення інциденту
-  def resolve!(user: nil, notes: "Закрито системою")
+  # [I18N.1] Дім ключів resolution-записів — той самий принцип, що `message_key`:
+  # у БД лежить КЛЮЧ + скалярні параметри, фраза збирається в момент показу
+  # локаллю ГЛЯДАЧА. Людська нотатка резолвера — виняток за родом: це вільний
+  # текст його мовою, він не локалізується жодною схемою і їде як `"text"`.
+  RESOLUTION_SCOPE = "alerts.resolutions"
+
+  # Протокол завершення інциденту.
+  #
+  # [I18N.1] `notes:` = вільний текст ЛЮДИНИ (з форми); машинні викликачі дають
+  # `key:`/`params:`. Без обох — дефолтний ключ, і він деривується від наявності
+  # резолвера: доти "Закрито системою" (укр. проза в БД) діставав і оператор,
+  # що лишив поле порожнім, — тобто дефолт брехав про АГЕНТА закриття.
+  def resolve!(user: nil, notes: nil, key: nil, params: {})
     # [СИНХРОНІЗАЦІЯ З REDIS]: Знімаємо "режим тиші", щоб Оракул знову міг
     # слухати це дерево після його відновлення.
     clear_silence_filter!
 
     self.resolved_at = Time.current
     self.resolver = user
-    self.resolution_notes = notes
+    log_resolution(key: key || (user ? "operator_closed" : "system_closed"),
+                   params: params, text: notes)
 
     # AASM state transition з валідацією (only from :active)
     mark_resolved!
@@ -301,6 +313,31 @@ class EwsAlert < ApplicationRecord
     close_associated_maintenance!
 
     true
+  end
+
+  # Додає запис у `resolution_log` (НЕ зберігає — викликач сам робить save/update!,
+  # як обидва dclimate-appendери, що пишуть його разом із `satellite_status`).
+  # Час — поле САМОГО запису, тож `[iso8601]`-префікси в прозі більше не потрібні.
+  def log_resolution(key: nil, params: {}, text: nil)
+    entry = { "at" => Time.current.utc.iso8601 }
+    if text.present?
+      entry["text"] = text
+    else
+      entry["key"] = key.to_s
+      entry["params"] = params.stringify_keys if params.present?
+    end
+    self.resolution_log = Array(resolution_log) + [ entry ]
+  end
+
+  # Рендер для читачів (хроніка, майбутній UI): text-записи як є, key-записи —
+  # локаллю глядача, fail-open на `humanize` (той самий контракт, що `#message`).
+  def resolution_texts
+    Array(resolution_log).map do |entry|
+      entry["text"].presence ||
+        I18n.t("#{RESOLUTION_SCOPE}.#{entry["key"]}",
+               **(entry["params"] || {}).symbolize_keys,
+               default: entry["key"].to_s.humanize)
+    end
   end
 
   # [ВИПРАВЛЕНО]: Навігація в тумані.

@@ -132,7 +132,7 @@ RSpec.describe Dclimate::VerificationService, type: :service do
           expect { service.perform }.not_to raise_error
 
           expect(alert.reload).to be_satellite_inconclusive
-          expect(alert.resolution_notes).to include("негайний Field Audit")
+          expect(alert.resolution_log.last["key"]).to eq("obscured_critical_fire")
         end
       end
     end
@@ -149,7 +149,11 @@ RSpec.describe Dclimate::VerificationService, type: :service do
         it "escalates to immediate Field Audit (:inconclusive) instead of raising for retry" do
           expect { service.perform }.not_to raise_error
           expect(alert.reload).to be_satellite_inconclusive
-          expect(alert.resolution_notes).to include("негайний Field Audit")
+          expect(alert.resolution_log.last["key"]).to eq("obscured_critical_fire")
+          # Рендер-свідок: фраза збирається локаллю ГЛЯДАЧА в момент показу.
+          I18n.with_locale(:uk) do
+            expect(alert.resolution_texts.join).to include("негайний Field Audit")
+          end
         end
       end
 
@@ -234,9 +238,10 @@ RSpec.describe Dclimate::VerificationService, type: :service do
             expect(InsurancePayoutWorker).not_to have_received(:perform_async)
           end
 
-          it "records a Field-Audit reason in resolution_notes" do
+          it "records a Field-Audit resolution key" do
             service.perform
-            expect(alert.reload.resolution_notes).to include("Field Audit")
+            expect(alert.reload.resolution_log.last["key"]).to eq("non_fire_peril")
+            expect(alert.reload.resolution_texts.join).to include("Field Audit")
           end
         end
       end

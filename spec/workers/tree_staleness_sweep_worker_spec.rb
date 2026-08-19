@@ -137,7 +137,8 @@ RSpec.describe TreeStalenessSweepWorker, type: :worker do
 
       expect(alert.reload.status_resolved?).to be(true)
       expect(alert.resolved_by).to be_nil
-      expect(alert.resolution_notes).to include(tree.did)
+      expect(alert.resolution_log.last["key"]).to eq("tree_returned")
+      expect(alert.resolution_texts.join).to include(tree.did)
     end
 
     it "НЕ резолвить cluster-level field_audit (tree_id nil — не наш сигнал)" do
@@ -169,7 +170,11 @@ RSpec.describe TreeStalenessSweepWorker, type: :worker do
       described_class.new.perform
 
       expect(alert.reload.status_resolved?).to be(true)
-      expect(alert.resolution_notes).to include("покинув active")
+      expect(alert.resolution_log.last["key"]).to eq("tree_left_active")
+      expect(alert.resolution_log.last["params"]["status"]).to eq("removed")
+      I18n.with_locale(:uk) do
+        expect(alert.resolution_texts.join).to include("покинув active")
+      end
       expect(alert.resolved_by).to be_nil
     end
   end

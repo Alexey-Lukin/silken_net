@@ -64,8 +64,11 @@ class EcosystemHealingWorker
       # Тепер використовуємо status_resolved? замість resolved?
       alert = record.ews_alert
       if alert.present? && !alert.status_resolved?
-        resolution_msg = "🔧 Відновлено: #{record.action_type.humanize}. Запис ##{record.id}."
-        alert.resolve!(user: record.user, notes: resolution_msg)
+        # [I18N.1] Ключ замість зашитої укр. прози з `.humanize`-токеном усередині:
+        # тип дії у фразу НЕ інтерпольовано свідомо — його видно з самого запису
+        # за `record_id`, а сирий enum у перекладеному реченні — окремий клас.
+        alert.resolve!(user: record.user, key: "maintenance_restored",
+                       params: { record_id: record.id })
       end
     end
 

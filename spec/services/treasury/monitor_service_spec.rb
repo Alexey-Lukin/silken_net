@@ -213,7 +213,8 @@ RSpec.describe Treasury::MonitorService do
 
           expect(alert.reload.status).to eq("resolved")
           expect(alert.resolved_at).to be_present
-          expect(alert.resolution_notes).to include("polygon/minter")
+          expect(alert.resolution_log.last["key"]).to eq("oracle_balance_recovered")
+          expect(alert.resolution_texts.join).to include("polygon/minter")
         end
 
         it "не чіпає алертів ІНШОГО роду — ключ одужання не ширший за ключ дедупу" do
@@ -280,7 +281,7 @@ RSpec.describe Treasury::MonitorService do
           described_class.call
 
           expect(alert.reload.status).to eq("resolved")
-          expect(alert.resolution_notes).to include("під стелю")
+          expect(alert.resolution_log.last["key"]).to eq("mint_volume_recovered")
         end
 
         it "закриває алерт вимкненого детектора, але нотатка каже ІНШЕ" do
@@ -292,8 +293,11 @@ RSpec.describe Treasury::MonitorService do
           described_class.call
 
           expect(alert.reload.status).to eq("resolved")
-          expect(alert.resolution_notes).to include("безпредметний")
-          expect(alert.resolution_notes).not_to include("під стелю")
+          expect(alert.resolution_log.last["key"]).to eq("mint_volume_detector_disabled")
+          expect(alert.resolution_log.last["key"]).not_to eq("mint_volume_recovered")
+          I18n.with_locale(:uk) do
+            expect(alert.resolution_texts.join).to include("безпредметний")
+          end
         end
       end
     end

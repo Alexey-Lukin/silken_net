@@ -88,7 +88,7 @@ RSpec.describe TreeChronicleService do
                        alert_type: :severe_drought, severity: :medium,
                        message_key: "hydrological_stress")
         alert.update_columns(status: "resolved", resolved_at: Time.current,
-                             resolution_notes: "Rain restored moisture")
+                             resolution_log: [ { "text" => "Rain restored moisture" } ])
 
         result = described_class.call(tree: tree)
         recovery_entry = result[:entries].find { |e| e.event_type == :recovery }

@@ -297,11 +297,10 @@ module Dclimate
     # retry. :inconclusive HOLD-ить InsurancePayoutWorker (людський вердикт), тривога вже
     # пішла окремо (edge panic-TX + backend alert, 04_02 §11), тож life-safety не чекає орбіти.
     def escalate_obscured_critical_fire!
-      note = "[#{Time.current.iso8601}] Критичний fire-алерт затемнений (хмара/кронопокрив) — " \
-             "негайний Field Audit замість 48h orbital retry (life-safety; ForestBounty-дрон deferred E.20)."
-      combined = [ @alert.resolution_notes.presence, note ].compact.join("\n")
-
-      @alert.update!(satellite_status: :inconclusive, resolution_notes: combined)
+      # [I18N.1] Ключ замість укр. прози: у БД їде ідентифікатор події, фраза —
+      # локаллю глядача в момент показу; час — поле самого запису.
+      @alert.log_resolution(key: "obscured_critical_fire")
+      @alert.update!(satellite_status: :inconclusive)
 
       Rails.logger.warn "🛰️ [Cosmic Eye] Алерт ##{@alert.id} — критичний obscured fire → негайний Field Audit " \
                         "(Кат-C, 05_05 §5), без 48h orbital retry."
@@ -314,12 +313,11 @@ module Dclimate
     # HOLD-ить. Фізичний дрон-fallback = ForestBountyService (E.20/E.34) [PLANNED]; реальний
     # drought-оракул = North-Star (S3.2 / ДСНС-API UNI.12). Без FIRMS-запиту (нерелевантний).
     def escalate_non_fire_to_field_audit!
-      note = "[#{Time.current.iso8601}] FIRMS fire-супутник не верифікує не-пожежний перил " \
-             "'#{@alert.alert_type}' → Field Audit (Кат-C, 05_05 §5); реального drought-оракула " \
-             "ще нема (S3.2 North-Star / E.20-E.34 fallback)."
-      combined = [ @alert.resolution_notes.presence, note ].compact.join("\n")
-
-      @alert.update!(satellite_status: :inconclusive, resolution_notes: combined)
+      # [I18N.1] Ключ замість укр. прози. Тип перила у фразу НЕ інтерпольовано
+      # свідомо: він видно з самого алерту, а сирий enum у перекладеному реченні —
+      # окремий оголошений клас (⚖️ у `00_07` I18N.1).
+      @alert.log_resolution(key: "non_fire_peril")
+      @alert.update!(satellite_status: :inconclusive)
 
       Rails.logger.info "🛰️ [Cosmic Eye] Алерт ##{@alert.id} (#{@alert.alert_type}) — не-пожежний перил, " \
                         "fire-супутник не адьюдикує → Field Audit (Кат-C, 05_05 §5)."

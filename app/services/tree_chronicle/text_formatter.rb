@@ -153,7 +153,10 @@ module TreeChronicle
       else
                    ""
       end
-      notes = alert.resolution_notes.present? ? " #{alert.resolution_notes}" : ""
+      # [I18N.1] Рендер записів — локаллю глядача в момент показу (дім —
+      # `EwsAlert#resolution_texts`); людський text-запис їде як є.
+      texts = alert.resolution_texts
+      notes = texts.any? ? " #{texts.join(" ")}" : ""
       "#{template('recovery.description')}#{" " + duration if duration.present?}#{notes}".strip
     end
 

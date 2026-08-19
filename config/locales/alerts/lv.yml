@@ -60,6 +60,19 @@ lv:
       slash_frozen_no_evidence_cluster: 'Slashing bloķēts (klasteris #%{cluster_id}): nav tieša A kategorijas pierādījuma. Nekas nav sadedzināts — nepieciešams Field Audit (C kategorija, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_tree: 'Slashing bloķēts (koks %{tree_did}): nav tieša A kategorijas pierādījuma. Nekas nav sadedzināts — nepieciešams Field Audit (C kategorija, 05_05 §3.2/§5).'
       tree_silent: "🌳 Mezgls %{did} klusē ~%{silent_for_h} h (pēdējā pārraide %{last_seen_at}, slieksnis %{threshold_h} h). Klusa veselība un nāve/zādzība nav atšķiramas līdz heartbeat — jāizbrauc klausīties."
+    resolutions:
+      gateway_returned: Vārteja %{uid} atkal ēterā (%{seen_at}).
+      maintenance_restored: 'Atjaunots ar apkopi (ieraksts #%{record_id}).'
+      mint_volume_detector_disabled: Mint-volume detektors ir izslēgts (`mint_volume_hourly_max_scc` = 0) — brīdinājums slēgts kā bezpriekšmeta, nevis kā novērsts.
+      mint_volume_recovered: "%{token_type} kalšanas apjoms atkal zem griestiem (%{volume} <= %{max} SCC)."
+      non_fire_peril: FIRMS ugunsgrēku satelīts neapstiprina ne-uguns apdraudējumu — Field Audit (C kat.); īsta sausuma orākula vēl nav.
+      obscured_critical_fire: Kritisks ugunsgrēka brīdinājums aizsegts (mākonis/vainags) — tūlītējs Field Audit 48h orbitālās atkārtošanas vietā (dzīvības drošība).
+      operator_closed: Slēdzis operators.
+      oracle_balance_recovered: 'Bilance %{network}/%{signer} atjaunota: %{balance} %{currency} (slieksnis %{threshold} %{currency}).'
+      orbital_exhausted: Orbitālā verifikācija neizdevās ilgstoša vainaga/mākoņu seguma dēļ. Nepieciešams manuāls DAO audits.
+      system_closed: Slēgusi sistēma.
+      tree_left_active: Mezgls %{did} vairs nav aktīvs (%{status}) — gadījumu ved cilvēks/slashing; klusums vairs nav anomālija.
+      tree_returned: Mezgls %{did} atkal ēterā (%{seen_at}).
     row:
       acknowledge: Apstiprināt un atrisināt →
       resolve_aria: 'Atrisināt brīdinājumu #%{id}'

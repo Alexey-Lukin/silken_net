@@ -436,15 +436,29 @@ RSpec.describe EwsAlert, type: :model do
       expect(alert).to be_status_resolved
       expect(alert.resolved_at).not_to be_nil
       expect(alert.resolver).to eq(user)
-      expect(alert.resolution_notes).to eq("Irrigation activated manually")
+      # [I18N.1] Людська нотатка — text-запис як є (мова резолвера, не каталог).
+      expect(alert.resolution_texts).to eq([ "Irrigation activated manually" ])
     end
 
-    it "uses default notes when not specified" do
+    # [I18N.1] У БД лежить КЛЮЧ, не проза; дефолт деривується від агента закриття —
+    # доти «Закрито системою» діставав і оператор, що лишив поле порожнім.
+    it "logs a system_closed key when neither notes nor resolver are given" do
       alert = create(:ews_alert, :drought)
       alert.resolve!
       alert.reload
 
-      expect(alert.resolution_notes).to eq("Закрито системою")
+      expect(alert.resolution_log.last["key"]).to eq("system_closed")
+      I18n.with_locale(:uk) do
+        expect(alert.resolution_texts.join).to include("Закрито системою")
+      end
+    end
+
+    it "logs an operator_closed key when a resolver leaves the note empty" do
+      alert = create(:ews_alert, :drought)
+      alert.resolve!(user: create(:user, :forester))
+      alert.reload
+
+      expect(alert.resolution_log.last["key"]).to eq("operator_closed")
     end
 
     it "returns true on success" do
@@ -612,7 +626,8 @@ RSpec.describe EwsAlert, type: :model do
       signals = []
       allow(Turbo::StreamsChannel).to receive(:broadcast_refresh_later_to) { |*args| signals << args }
 
-      alert.update!(resolution_notes: "супутник підтвердив")
+      alert.log_resolution(text: "супутник підтвердив")
+      alert.save!
       after_first = signals.size
 
       # Ліхтар: без непорожньої першої множини приклад був би зелений на нулі.

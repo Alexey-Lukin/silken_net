@@ -43,6 +43,11 @@ module Actuators
               th(scope: "col", class: "p-4") { t(".columns.payload") }
               th(scope: "col", class: "p-4") { t(".columns.status") }
               th(scope: "col", class: "p-4 text-right") { t(".columns.executed_at") }
+              # [I18N.1] Кінець дії — окрема колонка: `executed_at` ставиться в
+              # `acknowledge` (мітка «Початок» — виправлено 2026-07-27), а без
+              # `completed_at` оператор бачив СТАРТ і не мав де побачити кінець —
+              # «триває» і «завершилось» зливались, як `acknowledged`≡`confirmed`.
+              th(scope: "col", class: "p-4 text-right") { t(".columns.completed_at") }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
@@ -55,6 +60,7 @@ module Actuators
                   render Actuators::CommandStatusFrame.new(command: cmd)
                 end
                 td(class: "p-4 text-right text-gray-600") { cmd.executed_at&.strftime("%d.%m.%y // %H:%M:%S") || t(".not_executed") }
+                td(class: "p-4 text-right text-gray-600") { cmd.completed_at&.strftime("%d.%m.%y // %H:%M:%S") || t(".not_executed") }
               end
             end
           end

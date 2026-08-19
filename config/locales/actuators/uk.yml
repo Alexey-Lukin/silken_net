@@ -37,6 +37,7 @@ uk:
     index_title: 'Актуатори // Сектор: %{name}'
     show:
       columns:
+        completed_at: Завершення
         executed_at: Початок
         id: ID
         operator: Оператор

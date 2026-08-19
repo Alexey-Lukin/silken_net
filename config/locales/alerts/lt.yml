@@ -60,6 +60,19 @@ lt:
       slash_frozen_no_evidence_cluster: 'Slashing užblokuotas (klasteris #%{cluster_id}): nėra tiesioginio A kategorijos įrodymo. Nieko nesudeginta — reikalingas Field Audit (C kategorija, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_tree: 'Slashing užblokuotas (medis %{tree_did}): nėra tiesioginio A kategorijos įrodymo. Nieko nesudeginta — reikalingas Field Audit (C kategorija, 05_05 §3.2/§5).'
       tree_silent: "🌳 Mazgas %{did} tyli ~%{silent_for_h} h (paskutinis siuntimas %{last_seen_at}, slenkstis %{threshold_h} h). Tyli sveikata ir mirtis/vagystė neatskiriamos iki heartbeat — reikia išvykti klausytis."
+    resolutions:
+      gateway_returned: Šliuzas %{uid} vėl eteryje (%{seen_at}).
+      maintenance_restored: 'Atkurta atlikus priežiūrą (įrašas #%{record_id}).'
+      mint_volume_detector_disabled: Mint-volume detektorius išjungtas (`mint_volume_hourly_max_scc` = 0) — įspėjimas uždarytas kaip netekęs pagrindo, o ne kaip pašalintas.
+      mint_volume_recovered: "%{token_type} kalimo apimtis vėl žemiau lubų (%{volume} <= %{max} SCC)."
+      non_fire_peril: FIRMS gaisrų palydovas nevertina ne gaisro pavojaus — Field Audit (C kat.); tikro sausros orakulo dar nėra.
+      obscured_critical_fire: Kritinis gaisro įspėjimas uždengtas (debesys/laja) — neatidėliotinas Field Audit vietoj 48 val. orbitinio bandymo (gyvybės sauga).
+      operator_closed: Uždarė operatorius.
+      oracle_balance_recovered: 'Balansas %{network}/%{signer} atkurtas: %{balance} %{currency} (riba %{threshold} %{currency}).'
+      orbital_exhausted: Orbitinė patikra nepavyko dėl ilgai trukusios lajos/debesų dangos. Reikalingas rankinis DAO auditas.
+      system_closed: Uždarė sistema.
+      tree_left_active: Mazgas %{did} nebe aktyvus (%{status}) — atvejį tvarko žmogus/slashing; tyla nebėra anomalija.
+      tree_returned: Mazgas %{did} vėl eteryje (%{seen_at}).
     row:
       acknowledge: Patvirtinti ir išspręsti →
       resolve_aria: 'Išspręsti įspėjimą #%{id}'

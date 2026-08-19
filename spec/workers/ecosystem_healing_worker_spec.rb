@@ -113,7 +113,13 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
 
         alert.reload
         expect(alert.status).to eq("resolved")
-        expect(alert.resolution_notes).to include("Відновлено")
+        # [I18N.1] Ключ замість зашитої укр. прози; тип дії у фразі відсутній
+        # СВІДОМО (сирий enum у перекладеному реченні — окремий клас).
+        expect(alert.resolution_log.last["key"]).to eq("maintenance_restored")
+        expect(alert.resolution_log.last["params"]["record_id"]).to eq(record.id)
+        I18n.with_locale(:uk) do
+          expect(alert.resolution_texts.join).to include("Відновлено")
+        end
       end
     end
 
@@ -121,13 +127,14 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
       it "does not re-resolve" do
         tree = create(:tree)
         alert = create(:ews_alert, cluster: tree.cluster, tree: tree, status: :resolved,
-                                   resolved_at: 1.hour.ago, resolution_notes: "Already done")
+                                   resolved_at: 1.hour.ago,
+                                   resolution_log: [ { "text" => "Already done" } ])
         record = create(:maintenance_record, maintainable: tree, ews_alert: alert)
 
         described_class.new.perform(record.id)
 
         alert.reload
-        expect(alert.resolution_notes).to eq("Already done")
+        expect(alert.resolution_texts).to eq([ "Already done" ])
       end
     end
 

@@ -226,7 +226,7 @@ RSpec.describe TreeChronicle::TextFormatter do
         OpenStruct.new(
           resolved_at: Time.current,
           created_at: 3.days.ago,
-          resolution_notes: nil
+          resolution_texts: []
         )
       end
 
@@ -237,12 +237,12 @@ RSpec.describe TreeChronicle::TextFormatter do
       end
     end
 
-    context "with resolved_at, created_at, and resolution_notes" do
+    context "with resolved_at, created_at, and resolution entries" do
       let(:alert) do
         OpenStruct.new(
           resolved_at: Time.current,
           created_at: 1.day.ago,
-          resolution_notes: "Root cause identified"
+          resolution_texts: [ "Root cause identified" ]
         )
       end
 
@@ -258,7 +258,7 @@ RSpec.describe TreeChronicle::TextFormatter do
         OpenStruct.new(
           resolved_at: nil,
           created_at: 2.days.ago,
-          resolution_notes: nil
+          resolution_texts: []
         )
       end
 
@@ -269,12 +269,12 @@ RSpec.describe TreeChronicle::TextFormatter do
       end
     end
 
-    context "without resolution_notes" do
+    context "without resolution entries" do
       let(:alert) do
         OpenStruct.new(
           resolved_at: Time.current,
           created_at: 5.days.ago,
-          resolution_notes: nil
+          resolution_texts: []
         )
       end
 

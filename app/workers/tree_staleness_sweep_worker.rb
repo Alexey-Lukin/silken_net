@@ -120,12 +120,17 @@ class TreeStalenessSweepWorker
         .or(base.where.not(trees: { status: :active }))
         .includes(:tree).find_each do |alert|
       tree = alert.tree
-      notes = if tree.active?
-        "Вузол #{tree.did} знову в ефірі (#{tree.last_seen_at.utc.iso8601})."
+      # [I18N.1] Два КЛЮЧІ, не булевий параметр (в іншій мові гілки — різні
+      # речення). `status` у params — сирий enum свідомо: це ops-нотатка, і токен
+      # тут — ідентифікатор стану, той самий оголошений клас, що токен-параметри
+      # алертів (⚖️ у `00_07` I18N.1).
+      if tree.active?
+        alert.resolve!(key: "tree_returned",
+                       params: { did: tree.did, seen_at: tree.last_seen_at.utc.iso8601 })
       else
-        "Вузол #{tree.did} покинув active (#{tree.status}) — кейс веде людина/slashing, тиша більше не аномальна."
+        alert.resolve!(key: "tree_left_active",
+                       params: { did: tree.did, status: tree.status })
       end
-      alert.resolve!(notes: notes)
       count += 1
     end
     count

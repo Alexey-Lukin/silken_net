@@ -261,15 +261,18 @@ module Treasury
                       .first
       return if alert.nil?
 
-      notes = if max_scc.positive?
-                "Обсяг мінтингу #{token_type} повернувся під стелю " \
-                  "(#{volume.round(2)} ≤ #{max_scc.round(2)} SCC за #{MINT_VOLUME_WINDOW.inspect})."
+      # [I18N.1] Дві причини закриття — ДВА ключі (одужання ⊥ детектор вимкнули),
+      # не булевий параметр: в іншій мові це різні речення, і саме ця пара
+      # розрізняє «усунуто» від «безпредметно» в доказовому записі.
+      if max_scc.positive?
+        alert.resolve!(key: "mint_volume_recovered",
+                       params: { token_type: token_type,
+                                 volume: volume.round(2), max: max_scc.round(2) })
       else
-                "Детектор mint-volume вимкнено (`mint_volume_hourly_max_scc` = 0) — " \
-                  "алерт закрито як безпредметний, а не як усунутий."
+        alert.resolve!(key: "mint_volume_detector_disabled")
       end
-      alert.resolve!(notes: notes)
-      Rails.logger.info "✅ [ARCH.82] mint_volume_anomaly (#{token_type}) закрито автоматично: #{notes}"
+      Rails.logger.info "✅ [ARCH.82] mint_volume_anomaly (#{token_type}) закрито автоматично " \
+                        "(#{max_scc.positive? ? 'recovered' : 'detector disabled'})."
     end
 
     # Ставить inert per-token Kredis-прапор, який BlockchainMintingService читає per token-group →
@@ -451,9 +454,10 @@ module Treasury
         next if alert.nil?
 
         alert.resolve!(
-          notes: "Баланс #{result[:network]}/#{result[:signer]} відновлено: " \
-                 "#{result[:balance_human]} #{result[:currency]} (поріг " \
-                 "#{result[:min_threshold_human]} #{result[:currency]})."
+          key: "oracle_balance_recovered",
+          params: { network: result[:network].to_s, signer: result[:signer].to_s,
+                    balance: result[:balance_human], threshold: result[:min_threshold_human],
+                    currency: result[:currency] }
         )
         Rails.logger.info "✅ [ARCH.82] oracle_balance_low (#{result[:network]}/#{result[:signer]}) " \
                           "закрито автоматично — баланс відновлено."

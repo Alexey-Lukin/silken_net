@@ -1306,7 +1306,7 @@ active/draft ──cancel──► cancelled
 
 | Метод | Опис |
 |-------|------|
-| `resolve!(user:, notes:)` | Закрити тривогу + закрити пов'язаний MaintenanceRecord. ⚠️ Нотатка лягає в **`resolution_notes`**, не в `notes` — і читач, що спитає не те поле, дістане `nil` без помилки |
+| `resolve!(user:, notes:, key:, params:)` | Закрити тривогу + закрити пов'язаний MaintenanceRecord. [I18N.1] Слід закриття — запис у **`resolution_log`** (jsonb-масив): машинні викликачі дають `key:`+`params:` (у БД їде ідентифікатор події, фраза збирається локаллю ГЛЯДАЧА через `#resolution_texts`, fail-open `humanize` — той самий контракт, що `message_key`), людина — вільний `notes:` (text-запис, мова резолвера, не локалізується). Без обох — дефолтний ключ деривується від АГЕНТА (`operator_closed` ⊥ `system_closed`). Час — поле `at` самого запису. Ключі — `alerts.resolutions.*` ×4; appendери поза resolve! (dclimate) кличуть `#log_resolution` |
 
 🔴 **Безкластерний алерт закривається САМ, і це не оптимізація, а єдиний можливий шлях** [ARCH.82, ⚖️ founder 2026-08-14]. `Organization has_many :ews_alerts, through: :clusters` — це INNER JOIN, тож рядок без кластера не існує на жодній орг-поверхні; `alerts#resolve` теж іде через `acting_organization!.ews_alerts`, отже людської дії над ним НЕМАЄ ні в кого, включно з super_admin. Три такі писачі (`oracle_balance_low` · `mint_volume_anomaly` — обидва `Treasury::MonitorService`; `insurance_reserve_hold_*` — `InsurancePayoutWorker`), і без резолвера кожен їхній рядок висів би `active` вічно.
 

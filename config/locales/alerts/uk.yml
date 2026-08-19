@@ -60,6 +60,19 @@ uk:
       slash_frozen_no_evidence_cluster: 'Слешинг заблоковано (кластер #%{cluster_id}): немає прямого доказу Категорії A. Нічого не спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_tree: 'Слешинг заблоковано (дерево %{tree_did}): немає прямого доказу Категорії A. Нічого не спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5).'
       tree_silent: "🌳 Вузол %{did} мовчить ~%{silent_for_h} год (останній ефір %{last_seen_at}, поріг %{threshold_h} год). Мовчазне здоров’я і смерть/крадіжка нерозрізнимі до heartbeat — виїхати слухати."
+    resolutions:
+      gateway_returned: Королева %{uid} повернулась в ефір (%{seen_at}).
+      maintenance_restored: 'Відновлено обслуговуванням (запис #%{record_id}).'
+      mint_volume_detector_disabled: Детектор mint-volume вимкнено (`mint_volume_hourly_max_scc` = 0) — алерт закрито як безпредметний, а не як усунутий.
+      mint_volume_recovered: Обсяг мінтингу %{token_type} повернувся під стелю (%{volume} <= %{max} SCC).
+      non_fire_peril: FIRMS fire-супутник не верифікує не-пожежний перил — Field Audit (Кат-C); реального drought-оракула ще немає.
+      obscured_critical_fire: Критичний fire-алерт затемнений (хмара/кронопокрив) — негайний Field Audit замість 48h orbital retry (life-safety).
+      operator_closed: Закрито оператором.
+      oracle_balance_recovered: 'Баланс %{network}/%{signer} відновлено: %{balance} %{currency} (поріг %{threshold} %{currency}).'
+      orbital_exhausted: Орбітальна верифікація не вдалась через тривалий кронопокрив/хмарність. Потрібен ручний DAO-аудит.
+      system_closed: Закрито системою.
+      tree_left_active: Вузол %{did} покинув active (%{status}) — кейс веде людина/slashing, тиша більше не аномальна.
+      tree_returned: Вузол %{did} знову в ефірі (%{seen_at}).
     row:
       acknowledge: Підтвердити та локалізувати →
       resolve_aria: Локалізувати попередження №%{id}

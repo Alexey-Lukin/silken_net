@@ -37,6 +37,7 @@ en:
     index_title: 'Actuators // Sector: %{name}'
     show:
       columns:
+        completed_at: Finished
         executed_at: Started
         id: ID
         operator: Operator

@@ -60,6 +60,19 @@ en:
       slash_frozen_no_evidence_cluster: 'Slashing blocked (cluster #%{cluster_id}): no direct Category A evidence. Nothing burned — Field Audit required (Category C, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_tree: 'Slashing blocked (tree %{tree_did}): no direct Category A evidence. Nothing burned — Field Audit required (Category C, 05_05 §3.2/§5).'
       tree_silent: "🌳 Node %{did} has been silent for ~%{silent_for_h} h (last transmission %{last_seen_at}, threshold %{threshold_h} h). Silent health and death/theft are indistinguishable until a heartbeat — go and listen."
+    resolutions:
+      gateway_returned: Queen %{uid} is back on the air (%{seen_at}).
+      maintenance_restored: 'Restored by maintenance (record #%{record_id}).'
+      mint_volume_detector_disabled: The mint-volume detector is disabled (`mint_volume_hourly_max_scc` = 0) — the alert is closed as moot, not as remedied.
+      mint_volume_recovered: Mint volume of %{token_type} is back under the ceiling (%{volume} <= %{max} SCC).
+      non_fire_peril: The FIRMS fire satellite does not adjudicate a non-fire peril — Field Audit (Cat-C); no real drought oracle exists yet.
+      obscured_critical_fire: Critical fire alert obscured (cloud/canopy) — immediate Field Audit instead of the 48h orbital retry (life-safety).
+      operator_closed: Closed by the operator.
+      oracle_balance_recovered: 'Balance %{network}/%{signer} recovered: %{balance} %{currency} (threshold %{threshold} %{currency}).'
+      orbital_exhausted: Orbital verification failed after prolonged canopy/cloud cover. Manual DAO audit required.
+      system_closed: Closed by the system.
+      tree_left_active: Node %{did} left active (%{status}) — a human/slashing case owns it now; silence is no longer anomalous.
+      tree_returned: Node %{did} is back on the air (%{seen_at}).
     row:
       acknowledge: Acknowledge & Resolve →
       resolve_aria: 'Resolve alert #%{id}'

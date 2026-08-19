@@ -938,11 +938,11 @@ CREATE TABLE public.ews_alerts (
     resolved_at timestamp(6) without time zone,
     status integer,
     resolved_by bigint,
-    resolution_notes text,
     satellite_status integer DEFAULT 0 NOT NULL,
     dclimate_ref character varying,
     message_key character varying,
-    message_params jsonb DEFAULT '{}'::jsonb NOT NULL
+    message_params jsonb DEFAULT '{}'::jsonb NOT NULL,
+    resolution_log jsonb DEFAULT '[]'::jsonb NOT NULL
 );
 
 
@@ -6918,6 +6918,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260819230000'),
 ('20260819210000'),
 ('20260817090000'),
 ('20260816120000'),

@@ -280,8 +280,9 @@ class GatewayStalenessSweepWorker
     EwsAlert.unresolved
             .where(alert_type: [ :queen_offline, :queen_uplink_lost ])
             .where(cluster_id: gateway.cluster_id).find_each do |alert|
-      alert.resolve!(notes: "Королева #{gateway.uid} повернулась в ефір " \
-                            "(#{gateway.last_seen_at.utc.iso8601}).") # online ⇒ present
+      alert.resolve!(key: "gateway_returned",
+                     params: { uid: gateway.uid,
+                               seen_at: gateway.last_seen_at.utc.iso8601 }) # online ⇒ present
     end
   end
 
