@@ -153,9 +153,10 @@ module Contracts
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".legal.title") }
         # [UI.17] Тут безумовно стояло «Verified by Silken Net Oracle. Emission
         # indexed to verified homeostasis.» — заява про ДВІ величини, жодна з
-        # яких її не підтримує: `emitted_tokens` має сім читачів і НУЛЬ писачів
-        # (ARCH.103, тобто структурно завжди 0.0), а `health_index` має власну
-        # гілку «not measured» за двадцять рядків вище. ⚖️ Присуд founder
+        # яких її не підтримує: `emitted_tokens` була колонкою без писача
+        # (ARCH.103, структурно завжди 0.0; нині знята зі схеми), а
+        # `health_index` має власну гілку «not measured» за двадцять рядків
+        # вище. ⚖️ Присуд founder
         # 2026-08-19: зняти зараз, а формулювання юридичної панелі — окремим
         # residual'ом у §07, бо це єдиний сайт класу, де текст може мати
         # ДОГОВІРНУ вагу, і тоді його відсутність безпечніша за перефразування.
