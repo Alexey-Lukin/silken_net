@@ -26,10 +26,13 @@ RSpec.describe Wallets::TransactionRow do
   end
 
   describe "token type styling" do
-    it "renders carbon_coin with emerald style" do
+    # [UI.1] Токен у ролі фон/рамка (дзеркало forest-гілки); негатив — свідок
+    # міграції: регрес до сирого emerald має власне імʼя в падінні.
+    it "renders carbon_coin with the token-carbon chip" do
       html = render_component(tx: mock_tx(token_type: "carbon_coin"))
-      expect(html).to include("bg-emerald-900/20")
-      expect(html).to include("text-emerald-400")
+      expect(html).to include("bg-token-carbon/20")
+      expect(html).to include("border-token-carbon/30")
+      expect(html).not_to include("bg-emerald-900/20")
     end
 
     it "renders forest_coin with token-forest style" do
@@ -44,8 +47,8 @@ RSpec.describe Wallets::TransactionRow do
     # досяжний насправді, не перевірявся ніяк.
     it "renders cusd — the enum value with no dedicated style — with the zinc fallback" do
       html = render_component(tx: mock_tx(token_type: "cusd"))
-      expect(html).to include("bg-zinc-900")
-      expect(html).to include("text-zinc-400")
+      expect(html).to include("bg-gaia-surface")
+      expect(html).to include("text-gaia-text-subtle")
     end
   end
 
@@ -150,7 +153,7 @@ RSpec.describe Wallets::TransactionRow do
     end
 
     it "uses extracted row_classes method" do
-      expect(html).to include("hover:bg-emerald-950/10")
+      expect(html).to include("hover:bg-gaia-surface-sunken")
       expect(html).to include("transition-colors")
     end
   end

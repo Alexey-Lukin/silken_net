@@ -103,8 +103,8 @@ RSpec.describe Wallets::BalanceDisplay do
     end
 
     it "uses extracted container_classes method for the outer div" do
-      expect(html).to include("border-emerald-900")
-      expect(html).to include("bg-zinc-950")
+      expect(html).to include("border-gaia-border")
+      expect(html).to include("bg-gaia-surface-sunken")
       expect(html).to include("shadow-2xl")
     end
 

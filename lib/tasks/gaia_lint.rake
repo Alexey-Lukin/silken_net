@@ -136,7 +136,8 @@ namespace :gaia do
     default_scopes = [
       "app/views/shared/",              # HARD із 2026-08-07 — §3.5 забороняє тут сиру Tailwind
       "app/views/components/alerts/",   # зміряно чистим 2026-08-19 (обома вимірами)
-      "app/views/components/navigation/" # те саме; сайдбар стоїть на КОЖНІЙ сторінці
+      "app/views/components/navigation/", # те саме; сайдбар стоїть на КОЖНІЙ сторінці
+      "app/views/components/wallets/"   # зміряно чистим 2026-08-20 (codemod-хвиля + обидва виміри)
     ]
 
     scopes = ENV["LINT_SCOPE"] ? [ ENV["LINT_SCOPE"] ] : default_scopes
@@ -212,7 +213,13 @@ namespace :gaia do
       "bg-emerald-500/10",  # login submit brand glow
       "bg-emerald-500/20",  # brand glow (parcel of the /10 pair)
       "bg-emerald-500",     # brand pulse / animate-ping accents
-      "border-emerald-500/20" # spinner ring
+      "border-emerald-500/20", # spinner ring
+      # [UI.1] Дві родини, оголошені інваріантними ДО цього рядка, — allowlist їх
+      # лише визнає, не легалізує наново: watermark `/5` (15 сайтів, деліберейт
+      # 1.09:1 — реєстр декорацій `contrast_audit`) і LED-glow пара до
+      # `bg-emerald-500` pulse (§16.4; тінь — не текст, 1.4.3 її не судить).
+      "text-emerald-900/5",      # decorative watermarks (declared, aria-hidden)
+      "shadow-[0_0_8px_#10b981]" # status-LED brand glow (pairs the pulse dot)
     ]
 
     violations = []

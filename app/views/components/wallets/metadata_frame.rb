@@ -16,11 +16,11 @@ module Wallets
     private
 
     def render_wallet_metadata
-      div(class: "p-6 border border-emerald-900 bg-black shadow-xl") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".title") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface shadow-xl") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".title") }
         div(class: "space-y-4 font-mono text-tiny") do
           div do
-            p(class: "text-gray-600 mb-1 uppercase") { t(".polygon_address") }
+            p(class: "text-gaia-text-muted mb-1 uppercase") { t(".polygon_address") }
             if @wallet.crypto_public_address.present?
               render Views::Shared::Web3::Address.new(address: @wallet.crypto_public_address)
             else
@@ -28,12 +28,12 @@ module Wallets
             end
           end
           div do
-            p(class: "text-gray-600 mb-1 uppercase") { t(".network") }
-            p(class: "text-white") { t(".polygon_mainnet") }
+            p(class: "text-gaia-text-muted mb-1 uppercase") { t(".network") }
+            p(class: "text-gaia-text-strong") { t(".polygon_mainnet") }
           end
           # [ARCH.88] Усі три величини нижче — БАЛИ росту (locked/available/esg живуть
           # у тій самій колонковій родині, що й `balance`), тож тікер монети знято.
-          div(class: "pt-3 border-t border-emerald-900/30") do
+          div(class: "pt-3 border-t border-gaia-border") do
             p(class: "text-gaia-text-muted mb-1 uppercase") { t(".locked_balance") }
             p(class: "text-status-warning-text") { "#{formatted_points(@wallet.locked_balance)} #{t('.unit')}" }
           end

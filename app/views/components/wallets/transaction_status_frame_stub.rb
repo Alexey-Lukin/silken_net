@@ -35,7 +35,7 @@ module Wallets
     def view_template
       turbo_frame(id: TransactionStatusFrame.dom_id(@tx_id), src: @src, loading: "eager") do
         span(
-          class: "inline-block w-24 h-4 rounded bg-zinc-800 animate-pulse align-middle",
+          class: "inline-block w-24 h-4 rounded bg-gaia-surface-elevated animate-pulse align-middle",
           aria_hidden: "true"
         )
       end

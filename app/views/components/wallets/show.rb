@@ -65,19 +65,19 @@ module Wallets
     def render_transaction_ledger
       div(class: "space-y-4") do
         div(class: "flex items-center justify-between gap-4") do
-          h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".ledger_title") }
+          h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".ledger_title") }
           # [UI.7] Reports-патерн дослівно: голий лінк на CSV, жодного JS. Панель
           # `render_on_chain_actions`, у якій кнопка жила серед мертвих сусідів,
           # знято 2026-08-06 — повертається рівно та її частина, що має бекенд.
           a(href: ledger_wallet_path(@wallet, format: :csv),
-            class: "text-mini uppercase tracking-widest text-emerald-700 border " \
-                   "border-emerald-900 px-3 py-1.5 hover:bg-emerald-950/30 " \
+            class: "text-mini uppercase tracking-widest text-gaia-text-muted border " \
+                   "border-gaia-border px-3 py-1.5 hover:bg-gaia-surface-sunken " \
                    "focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".export_csv") }
         end
 
-        div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+        div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
           table(class: "w-full text-left font-mono text-compact min-w-[640px]", role: "table") do
-            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
+            thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
               tr do
                 th(scope: "col", class: "p-4") { t(".columns.type") }
                 th(scope: "col", class: "p-4") { t(".columns.amount") }
@@ -87,12 +87,12 @@ module Wallets
               end
             end
             # ⚡ [СИНХРОНІЗАЦІЯ]: ціль для вставки нових транзакцій
-            tbody(id: ledger_target_id, class: "divide-y divide-emerald-900/30") do
+            tbody(id: ledger_target_id, class: "divide-y divide-gaia-border") do
               if @transactions.any?
                 @transactions.each { |tx| render Wallets::TransactionRow.new(tx: tx) }
               else
                 tr(id: EMPTY_PLACEHOLDER_TARGET) do
-                  td(colspan: 5, class: "p-10 text-center text-gray-700 italic") { t(".empty") }
+                  td(colspan: 5, class: "p-10 text-center text-gaia-text italic") { t(".empty") }
                 end
               end
             end
