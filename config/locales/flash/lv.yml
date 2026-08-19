@@ -29,6 +29,7 @@ lv:
       hardware_verified: Aparatūras stāvoklis verificēts. STM32 impulss apstiprināts.
       invalid_date: 'Nederīgs ISO8601 datums: %{value}.'
       photo_deleted: Fotogrāfija noņemta no pierādījumu matricas.
+      photo_evidence_locked: Šī fotogrāfija ir remonta vai uzstādīšanas ieraksta pierādījums, tāpēc to nevar dzēst. Tā vietā pievienojiet labotu kadru.
       photo_not_found: Fotogrāfija nav atrasta.
       record_created: Dziedināšanas ieraksts saglabāts. Ekosistēma atjaunināta.
       record_updated: Ieraksts atjaunināts.

@@ -112,7 +112,7 @@ module Celo
           #   - `:pending` intent ПЕРЕД transact закриває crash-window #1.
           return if reward_already_sent?
 
-          intent = create_reward_intent!(recipient)
+          intent = create_reward_intent!(recipient, insight: insight)
           tx_hash = client.transact(
             contract, "transfer", recipient, amount_in_wei,
             sender_key: oracle_key, legacy: false
@@ -200,7 +200,9 @@ module Celo
 
     # [ARCH.50] Durable `:pending` intent ПЕРЕД broadcast (sourceable: cluster, reward_date:
     # logical day). tx_hash проставить mark_as_sent! ПІСЛЯ broadcast.
-    def create_reward_intent!(recipient)
+    # [ARCH.84] `insight:` — kwarg БЕЗ дефолту свідомо: підпис мусить нести вимір, і
+    # забута проводка має падати гучно, а не друкувати рядок без підстави.
+    def create_reward_intent!(recipient, insight:)
       BlockchainTransaction.create!(
         cluster: @cluster,
         sourceable: @cluster,
@@ -210,8 +212,27 @@ module Celo
         blockchain_network: "celo",
         reward_date: reward_date_value,
         status: :pending,
-        notes: "🌿 Celo ReFi: Винагорода #{REWARD_AMOUNT} cUSD за ідеальне здоров'я кластера #{@cluster.name} (#{@target_date})."
+        # `format` свідомо: колонка `numeric` → BigDecimal, а його `to_s` дав би
+        # інженерний запис (`0.05e0`) просто в підписі грошового рядка.
+        notes: "🌿 Celo ReFi: #{REWARD_AMOUNT} cUSD, кластер #{@cluster.name} (#{@target_date}). " \
+               "stress_index #{format('%.3f', insight.stress_index)}, #{coverage_note(insight)}."
       )
+    end
+
+    # [ARCH.84] ⚖️ Присуд founder: покриття виплату НЕ гейтує — часткове покриття є
+    # НОРМОЮ duty-cycled заліза (гейт на нього дав би перманентний critical майже на
+    # кожному кластері), а тиша окремого дерева вже має власний шлях зі СВОЇМ машинним
+    # resolve. Тому лік тут — зрізати ЗАЯВУ до виміряного: доти рядок звався «за
+    # ідеальне здоров'я кластера», тоді як `stress_index` рахується лише по тих
+    # деревах, що заговорили, — кластер, де з пʼяти озвалось одне, підписувався так
+    # само, як виміряний повністю. ⛔ Порожнє покриття не друкуємо числом: «не
+    # записано» і «виміряно нуль» — різні твердження.
+    def coverage_note(insight)
+      measured = insight.measured_trees
+      total = insight.total_trees
+      return "покриття не записано" if measured.blank? || total.blank?
+
+      "виміряно #{measured}/#{total} дерев"
     end
 
     # [ARCH.50] Розрізняє збій `transact` — критично проти #4 (shared celo_cusd breaker

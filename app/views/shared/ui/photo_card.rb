@@ -20,7 +20,7 @@ module Views
           div(class: card_classes) do
             render_preview
             render_meta_overlay
-            render_delete_button if @editable
+            render_delete_button if deletable?
           end
         end
 
@@ -71,6 +71,15 @@ module Views
             p(class: "text-micro font-mono text-gaia-primary-strong truncate") { @photo.filename.to_s }
             p(class: "text-micro text-gaia-text-muted") { number_to_human_size(@photo.byte_size) }
           end
+        end
+
+        # [SEC.28] Дві НЕЗАЛЕЖНІ осі, і зводити їх в одну не можна: `@editable` каже про
+        # АКТОРА (право мутувати запис), `evidence_backed?` — про сам ЗАПИС (його фото є
+        # доказом і не знищуються нікому). Без другої половини гард у контролері зробив
+        # би кнопку, що веде в нікуди — рівно клас [UI.7]. Умову не дублюємо: дім один,
+        # `MaintenanceRecord#evidence_backed?`, і його ж читають валідація та гард.
+        def deletable?
+          @editable && !@record.evidence_backed?
         end
 
         def render_delete_button

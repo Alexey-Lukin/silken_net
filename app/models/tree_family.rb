@@ -14,6 +14,10 @@ class TreeFamily < ApplicationRecord
   validates :scientific_name, uniqueness: true, allow_nil: true
 
   # [Series C: Tokenomics]: Коефіцієнт секвестрації вуглецю для зваженого нарахування балів
+  # [ARCH.84] `allow_nil` тут НЕ ставити: схемний `DEFAULT 1.0` є авторським значенням
+  # (шкала відносна — дуб 1.5, сосна 0.8, тож 1.0 = «рівно середній вид»), а не
+  # підстановкою на місце невиміряного. Порожнє поле мусить відповідати 422, інакше
+  # дефолт почне спрацьовувати мовчки на грошовому тракті (→ `Wallet#credit!`).
   validates :carbon_sequestration_coefficient,
             numericality: { greater_than: 0 }
 

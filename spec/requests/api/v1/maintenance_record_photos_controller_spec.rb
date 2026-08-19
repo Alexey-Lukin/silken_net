@@ -35,6 +35,52 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
       )
     end
 
+    # [SEC.28] ⚖️ Присуд founder: доказ не має СТРОКУ зберігання — він має ГАРД
+    # (доктрина `Wallet#guard_mrv_evidence!`). Дві половини дефекту, обидві виміряні:
+    # `purge_later` запис не зберігає, тож зняте останнє фото лишало `repair` НАЗАВЖДИ
+    # невалідним (валідація без `on:`), а `critical_unmaintained?` тим часом бачив той
+    # самий запис і далі гасив `PF_NO_MAINTENANCE` — економічний ефект «обслуговування
+    # відбулося» переживав знищення власного доказу.
+    #
+    # ⚠️ GREEN-половину пари СВІДОМО не дублюю: усі решта прикладів цього файлу стоять
+    # на `action_type: :inspection`, тобто над-широкий гард почервонить їх сам. Тут —
+    # рівно червона половина.
+    context "when the record's photos ARE its evidence (repair / installation)" do
+      let(:evidence_record) do
+        MaintenanceRecord.create!(
+          maintainable: own_tree,
+          user: forester,
+          action_type: :repair,
+          performed_at: 1.hour.ago,
+          notes: "Anchor re-seated after a storm; both frames captured on site.",
+          photos: [ { io: StringIO.new("fake-image-data"), filename: "repair.jpg", content_type: "image/jpeg" } ]
+        )
+      end
+
+      it "відмовляє в знищенні, лишає фото на місці й НЕ пише слід про purge" do
+        photo = evidence_record.photos.first
+
+        expect {
+          delete "/maintenance_records/#{evidence_record.id}/photos/#{photo.id}",
+                 headers: headers, as: :json
+        }.not_to change { AuditLog.where(action: "maintenance_photo_purged").count }
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body["error"]).to be_present
+        expect(evidence_record.reload.photos.count).to eq(1), "доказ мусить пережити спробу"
+      end
+
+      it "відмовляє редиректом у HTML, а не JSON-блобом" do
+        photo = evidence_record.photos.first
+
+        delete "/maintenance_records/#{evidence_record.id}/photos/#{photo.id}", headers: headers
+
+        expect(response).to have_http_status(:see_other)
+        expect(response).to redirect_to(maintenance_record_path(evidence_record))
+        expect(evidence_record.reload.photos.count).to eq(1)
+      end
+    end
+
     context "when as JSON" do
       it "purges the photo and returns ok" do
         record.photos.attach(

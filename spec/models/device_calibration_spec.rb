@@ -63,6 +63,26 @@ RSpec.describe DeviceCalibration, type: :model do
     end
   end
 
+  # [ARCH.84] Ліхтар на ІНЕРТНІСТЬ шару, а не на його логіку. Приклади вище самі
+  # ПИШУТЬ колонки, тож доводять, що предикат уміє спрацювати — але не те, що йому є
+  # на чому: писачів немає ніде в `app/`, тож рядок, який створює прод
+  # (`Tree#ensure_calibration`), назавжди лишається на дефолтах. Червоніє в день, коли
+  # зміниться дефолт або зʼявиться писач — тобто рівно на пускачі, названому в `04_01`.
+  describe "рядок у продовій формі (писача не існує)" do
+    let(:calibration) { create(:tree).device_calibration }
+
+    it "не є drift-critical, тож канал апаратної несправності не має чим вистрелити" do
+      expect(calibration.temperature_offset_c).to eq(0.0)
+      expect(calibration.vcap_coefficient).to eq(1.0)
+      expect(calibration.sensor_drift_critical?).to be false
+    end
+
+    it "нормалізує тотожно по обох осях — «нормалізований» вимір дорівнює сирому" do
+      expect(calibration.normalize_temperature(23.5)).to eq(23.5)
+      expect(calibration.normalize_voltage(3300)).to eq(3300)
+    end
+  end
+
   describe ".critical_drift scope" do
     it "returns calibrations with temperature offset exceeding threshold" do
       tree = create(:tree)

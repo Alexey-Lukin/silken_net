@@ -17,6 +17,9 @@ module Api
       # Стоїть ПІСЛЯ `set_record`, бо читає `@record`; без `only:` — екшен тут один.
       before_action :authorize_record_mutation!
       before_action :set_photo
+      # [SEC.28] Стоїть ПІСЛЯ `set_photo` і ПЕРЕД `destroy`: відмова мусить статися до
+      # того, як щось незворотне почалось.
+      before_action :guard_evidence_purge!
 
       def destroy
         # 🔴 [SEC.28] Слід ПЕРЕД знищенням, і він мусить нести ІДЕНТИЧНІСТЬ блоба,
@@ -42,6 +45,31 @@ module Api
       end
 
       private
+
+      # [SEC.28] ⚖️ Присуд founder: доказ не має СТРОКУ зберігання — він має ГАРД
+      # (форма з ратифікованої доктрини гаманця, `Wallet#guard_mrv_evidence!`). Умова
+      # живе на моделі — `MaintenanceRecord#evidence_backed?` — бо її читають ТРИ місця;
+      # тут лише посадка.
+      #
+      # 🔴 Підстава подвійна, і обидві половини виміряні. (1) `purge_later` запис НЕ
+      # зберігає, тож зняте ОСТАННЄ фото лишало `repair`/`installation` назавжди
+      # невалідним: `photos_required_for_critical_actions` оголошено без `on:`, тобто
+      # біжить на кожному наступному `save`, і полагодити запис уже нічим.
+      # (2) `BlockchainBurningService#critical_unmaintained?` тим часом бачив ТОЙ САМИЙ
+      # запис і далі гасив `PF_NO_MAINTENANCE` — тобто економічний ефект «обслуговування
+      # відбулося» переживав знищення власного доказу. Виправлення робиться ДОДАВАННЯМ
+      # кадру, не зняттям — як і на кожній іншій доказовій поверхні платформи.
+      def guard_evidence_purge!
+        return unless @record.evidence_backed?
+
+        message = I18n.t("flash.maintenance.photo_evidence_locked")
+        respond_to do |format|
+          format.json { render json: { error: message }, status: :unprocessable_content }
+          format.html do
+            redirect_to maintenance_record_path(@record), status: :see_other, error: message
+          end
+        end
+      end
 
       # Формула — не тут: дім = `MaintenanceRecord#mutable_by?`, той самий предикат, що
       # читає батьківський гард і що фільтрує кнопку в `PhotoCard`.

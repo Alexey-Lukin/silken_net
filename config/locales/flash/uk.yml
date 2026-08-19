@@ -29,6 +29,7 @@ uk:
       hardware_verified: Стан обладнання верифіковано. Імпульс STM32 підтверджено.
       invalid_date: 'Невірна ISO8601-дата: %{value}.'
       photo_deleted: Фото видалено з Evidence Matrix.
+      photo_evidence_locked: Це фото — доказ запису про ремонт або встановлення, тож знищити його не можна. Додайте виправлений кадр.
       photo_not_found: Фото не знайдено.
       record_created: Запис про зцілення зафіксовано. Екосистема оновлена.
       record_updated: Запис оновлено.

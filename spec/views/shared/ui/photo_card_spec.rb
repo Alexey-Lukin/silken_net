@@ -26,9 +26,17 @@ RSpec.describe Views::Shared::UI::PhotoCard do
     )
   end
 
-  let(:mock_record) do
-    OpenStruct.new(id: 42, to_model: OpenStruct.new(model_name: OpenStruct.new(route_key: "maintenance_records")))
-  end
+  # [TEST.12] Реальний НЕЗБЕРЕЖЕНИЙ запис, не `OpenStruct`. Підстава виміряна на цьому
+  # самому файлі: `OpenStruct` не «мовчки віддає nil» — він ВИГОТОВЛЯЄ будь-який
+  # предикат, тож `record.evidence_backed?` повертав `nil`, кнопка рендерилась, і
+  # приклад був зелений через вигаданий метод. `verify_partial_doubles` до цього сліпий
+  # ЗА ПОБУДОВОЮ (OpenStruct не проходить через RSpec mock-API). `id:` присвоєно явно —
+  # route-хелпер його вимагає, а решту (`to_model`, `model_name.route_key`) реальний
+  # клас віддає сам.
+  let(:mock_record) { MaintenanceRecord.new(id: 42, action_type: :inspection) }
+
+  # [SEC.28] Запис, чиї фото Є доказом — кнопки знищення не отримує нікому.
+  let(:evidence_record) { MaintenanceRecord.new(id: 43, action_type: :repair) }
 
   # PhotoCard requires Rails route helpers and ActiveStorage URL helpers
   # that are not available in unit rendering via .call.
@@ -222,6 +230,17 @@ RSpec.describe Views::Shared::UI::PhotoCard do
     context "with editable false" do
       it "does not render the delete button" do
         html = render_card(editable: false)
+        expect(html).not_to include(I18n.t("ui.photo_card.remove_photo", filename: mock_photo.filename))
+      end
+    end
+
+    # [SEC.28] Осі ДВІ й вони незалежні: `editable` — про актора, `evidence_backed?` —
+    # про сам запис. Без цього піна гард у контролері дав би кнопку, що веде в нікуди
+    # ([UI.7]), і жоден приклад вище цього не побачив би: усі стоять на `:inspection`.
+    context "when the record's photos are its evidence (repair / installation)" do
+      it "не рендерить кнопку знищення навіть повноправному акторові" do
+        html = render_card(editable: true, record: evidence_record)
+
         expect(html).not_to include(I18n.t("ui.photo_card.remove_photo", filename: mock_photo.filename))
       end
     end

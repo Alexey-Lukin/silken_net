@@ -29,6 +29,7 @@ en:
       hardware_verified: Hardware state verified. STM32 pulse acknowledged.
       invalid_date: 'Invalid ISO8601 date: %{value}.'
       photo_deleted: Photo removed from the Evidence Matrix.
+      photo_evidence_locked: This photo is evidence for a repair or installation record and cannot be deleted. Add a corrected frame instead.
       photo_not_found: Photo not found.
       record_created: Healing record committed. Ecosystem updated.
       record_updated: Record updated.

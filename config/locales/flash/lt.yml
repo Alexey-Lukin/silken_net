@@ -29,6 +29,7 @@ lt:
       hardware_verified: Aparatūros būsena patikrinta. STM32 impulsas patvirtintas.
       invalid_date: 'Neteisinga ISO8601 data: %{value}.'
       photo_deleted: Nuotrauka pašalinta iš įrodymų matricos.
+      photo_evidence_locked: Ši nuotrauka yra remonto arba įrengimo įrašo įrodymas, todėl jos ištrinti negalima. Vietoj to pridėkite pataisytą kadrą.
       photo_not_found: Nuotrauka nerasta.
       record_created: Gydymo įrašas išsaugotas. Ekosistema atnaujinta.
       record_updated: Įrašas atnaujintas.

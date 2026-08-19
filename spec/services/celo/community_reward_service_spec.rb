@@ -227,6 +227,34 @@ RSpec.describe Celo::CommunityRewardService do
     end
   end
 
+  # [ARCH.84] Підпис грошового рядка мусить нести ВИМІР, а не присуд: `stress_index`
+  # рахується лише по деревах, що заговорили, тож «за ідеальне здоров'я кластера»
+  # стверджувало про цілий кластер те, що виміряно на його частині. ⚖️ Присуд founder:
+  # покриття виплату НЕ гейтує — зрізається сама заява. Пара обовʼязкова: один бік
+  # доводив би лише наявність рядка, а не те, що він ДИСКРИМІНУЄ записане покриття
+  # від незаписаного.
+  describe "#reward_community! — підпис несе вимір, не присуд (ARCH.84)" do
+    before { stub_healthy_and_eligible }
+
+    it "несе stress_index і покриття, і НЕ стверджує «ідеальне здоров'я»" do
+      AiInsight.last.update!(reasoning: { measured_trees: 1, total_trees: 5 })
+
+      described_class.new(cluster, target_date).reward_community!
+
+      notes = BlockchainTransaction.last.notes
+      expect(notes).to include("stress_index 0.050", "виміряно 1/5 дерев")
+      expect(notes).not_to include("ідеальне здоров")
+    end
+
+    it "каже «покриття не записано» замість друку числа, коли виміру немає" do
+      described_class.new(cluster, target_date).reward_community!
+
+      notes = BlockchainTransaction.last.notes
+      expect(notes).to include("покриття не записано")
+      expect(notes).not_to include("виміряно")
+    end
+  end
+
   describe "#reward_community! — eligibility gates (unchanged)" do
     it "skips without an AiInsight for target_date" do
       expect { described_class.new(cluster, target_date).reward_community! }.not_to change(BlockchainTransaction, :count)

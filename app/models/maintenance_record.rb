@@ -178,6 +178,20 @@ after_commit :broadcast_maintenance_signal, on: %i[create update]
     actor.admin_or_above? || user_id == actor.id
   end
 
+  # [SEC.28] Дім умови «фото цього запису Є ДОКАЗОМ», і читачів у неї ТРИ: валідація,
+  # що вимагає фото; гард, що забороняє їх знищувати; і кнопка, яка через це не
+  # рендериться. Порізно вони розійшлися б ТИХО — запис лишався б валідним, утративши
+  # рівно те, чим доводиться.
+  #
+  # ⚖️ Присуд founder: доказ не має СТРОКУ зберігання — він має ГАРД. Форма взята з
+  # ратифікованої доктрини гаманця (`Wallet#guard_mrv_evidence!` — «грошові докази
+  # незнищенні, off-board = деактивація»), бо питання те саме, лише носій інший.
+  def evidence_backed?
+    return false if system_generated?
+
+    action_type_repair? || action_type_installation?
+  end
+
 private
 
 # СИГНАЛ, а не рядок: стрічка дашборда — похідний міжсутнісний рейтинг, тож
@@ -215,8 +229,7 @@ end
   # `system_generated` не входить у `maintenance_params`: інакше клієнт знімав
   # би з себе Evidence Protocol одним полем форми.
   def photos_required_for_critical_actions
-    return if system_generated?
-    return unless action_type_repair? || action_type_installation?
+    return unless evidence_backed?
     return if photos.any?
 
     errors.add(:photos, :required_for_action_type)
