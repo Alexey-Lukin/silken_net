@@ -31,12 +31,17 @@ module Clusters
     # випадках, тобто екран читався б як здоровий. Явний `nil` від контролера — це
     # рішення («інсайту за добу немає»), пропущений аргумент — недогляд; тільки
     # обовʼязковий kwarg їх розводить, і робить це гучно.
-    def initialize(cluster:, gateways:, recent_alerts:, health_measured:, health_total:, active_contract: nil)
+    # [ARCH.103] `cluster_emission:` без дефолту: величина належить КЛАСТЕРУ сторінки,
+    # тож субʼєкт відомий завжди — «не виміряно» тут не виникає в принципі, а забута
+    # проводка мусить падати, а не малювати нуль.
+    def initialize(cluster:, gateways:, recent_alerts:, health_measured:, health_total:,
+                   cluster_emission:, active_contract: nil)
       raise ArgumentError, "cluster must respond to :name" unless cluster.respond_to?(:name)
 
       @cluster = cluster
       @gateways = gateways
       @active_contract = active_contract
+      @cluster_emission = cluster_emission
       @health_measured = health_measured
       @health_total = health_total
       @recent_alerts = recent_alerts
@@ -208,9 +213,16 @@ module Clusters
             # закрив на семи сайтах; цей був восьмим. Формат — як у `contracts/index`:
             # гроші друкуються з копійками, бо `numeric` через голий `to_s` дає «50000.0».
             contract_row(t(".contract.value"), "#{@active_contract.total_value.to_f.round(2)} USD")
-            # [ARCH.103] `.to_s` на `nil` дає ПОРОЖНІЙ рядок — підпис «Emitted» без
-            # жодного значення поруч, що читається як «нуль» переконливіше за самий нуль.
-            contract_row(t(".contract.emitted"), measured_value(@active_contract.emitted_tokens, "SCC"))
+            # ✅ [ARCH.103] ⚖️ Кластерна семантика: рядок друкує емісію САМОГО кластера
+            # цієї сторінки, а не приписану контрактові. `measured_value` лишається,
+            # але спрацювати на `nil` тут уже не може — субʼєкт відомий завжди, і нуль
+            # є виміром. Мітка називає кластер явно, інакше це була б інша множина під
+            # старим підписом.
+            # ⚠️ Форма ТА САМА, що в USD-рядка вище (`.to_f.round(2)`), і це не стиль:
+            # `measured_value` інтерполює сирий BigDecimal, а `amount` це `numeric(24,6)` —
+            # той самий кластер друкувався б тут із шістьма знаками, а на `contracts/*` із
+            # двома. `measured_value` заразом і зайвий: субʼєкт тут гарантований.
+            contract_row(t(".contract.cluster_emission"), "#{@cluster_emission.to_f.round(2)} SCC")
           end
         else
           p(class: "text-compact text-gray-700 italic") { t(".contract.empty") }

@@ -59,7 +59,8 @@ module Api
           format.html do
             render_dashboard(
               title: I18n.t("contracts.index_title"),
-              component: Contracts::Index.new(contracts: @contracts, stats: @stats, pagy: @pagy)
+              component: Contracts::Index.new(contracts: @contracts, stats: @stats, pagy: @pagy,
+                                              cluster_emissions: cluster_emissions_for(@contracts))
             )
           end
         end
@@ -81,23 +82,22 @@ module Api
             render json: {
               contract: @contract.as_json,
               emission_history: @emission_history,
-              backing_asset: {
-                cluster_health: @contract.cluster.health_index,
-                active_trees: @contract.cluster.active_trees_count,
-                # [UI.8] One-Home предиката, а НЕ інлайн-вираз: доти ця відповідь
-                # несла ДВА пороги на одне питання — тут `unresolved.any?` (будь-яка
-                # severity), а HTML-гілка ТОГО САМОГО екшена малювала вогник за
-                # `Cluster#active_threats?` (лише critical). Ширший поріг ніколи не
-                # обирали свідомо — він приїхав латкою під виклик, заведений тижнем
-                # раніше за сам метод; вужчий канонізований (`04_01 §Cluster`).
-                active_threats: @contract.cluster.active_threats?
-              }
+              # [ARCH.103] Три голі деференси `@contract.cluster.*` зведено в один дім,
+              # спільний із HTML-панеллю застави. ⚠️ Гарда на «немає кластера» тут НЕМА
+              # і не треба: `cluster_id` це `NOT NULL` у схемі ⊕ `belongs_to` без
+              # `optional:` — стан недосяжний на обох шарах.
+              backing_asset: backing_asset_for(@contract)
             }
           end
           format.html do
             render_dashboard(
               title: I18n.t("contracts.show_title", id: @contract.id),
-              component: Contracts::Show.new(contract: @contract, history: @emission_history)
+              # [ARCH.103] Величина завжди є: кластер гарантований схемою, а нуль у ньому
+              # ВИМІРЯНИЙ (агрегат виконався), тож стану «не виміряно» тут не буває.
+              component: Contracts::Show.new(
+                contract: @contract, history: @emission_history,
+                cluster_emission: cluster_emission_for(@contract)
+              )
             )
           end
         end
@@ -175,6 +175,48 @@ module Api
       # тобто тихо порожніє (спіймано прикладом, не ревʼю).
       def cluster_ids_for_scope(contracts)
         contracts.unscope(:includes, :select).select(:cluster_id)
+      end
+
+      # [ARCH.103] Емісія кластерів ПОТОЧНОЇ СТОРІНКИ одним запитом — не всього скоупу:
+      # рядкам потрібні рівно ті кластери, які рендеряться.
+      #
+      # 🔴 Хеш віддається РОЗРІДЖЕНИМ навмисно, і читач мусить це знати: кластер без
+      # підтверджених рухів у ньому ВІДСУТНІЙ, але його емісія — виміряний НУЛЬ, а не
+      # «не виміряно» (агрегат виконався). Тому вʼю робить `fetch(id, 0)`, а стан «не
+      # виміряно» лишається рівно за контрактом БЕЗ кластера — там питання не має
+      # субʼєкта. Плутати ці два стани і є [`ARCH.84`] навиворіт.
+      def cluster_emissions_for(contracts)
+        BlockchainTransaction.net_minted_by_cluster(
+          contracts.filter_map(&:cluster_id).uniq, :carbon_coin
+        )
+      end
+
+      # Одиничний сиблінг того самого питання.
+      #
+      # 🔴 Гарда на «контракт без кластера» тут НЕМА свідомо, і це вимір, а не сміливість:
+      # стан неможливий на ОБОХ шарах — `cluster_id bigint NOT NULL` у схемі ⊕ `belongs_to
+      # :cluster` без `optional:`. Отже «не виміряно» на цій поверхні недосяжне, і гілка
+      # під нього була б мертвим кодом, який ще й обіцяє читачеві неіснуючий стан.
+      def cluster_emission_for(contract)
+        BlockchainTransaction.for_cluster(contract.cluster_id).net_minted_supply(:carbon_coin)
+      end
+
+      # Дзеркало HTML-панелі застави (`Contracts::Show#render_backing_asset_panel` робить
+      # `return unless cluster`): без кластера блоку НЕМАЄ, а не «є з нулями».
+      #
+      # [UI.8] `active_threats?` — One-Home предиката, а НЕ інлайн-вираз: доти ця відповідь
+      # несла ДВА пороги на одне питання — тут `unresolved.any?` (будь-яка severity), а
+      # HTML-гілка ТОГО САМОГО екшена малювала вогник за `Cluster#active_threats?` (лише
+      # critical). Ширший поріг ніколи не обирали свідомо — він приїхав латкою під виклик,
+      # заведений тижнем раніше за сам метод; вужчий канонізований (`04_01 §Cluster`).
+      def backing_asset_for(contract)
+        cluster = contract.cluster
+
+        {
+          cluster_health: cluster.health_index,
+          active_trees: cluster.active_trees_count,
+          active_threats: cluster.active_threats?
+        }
       end
 
       # 🔴 [ARCH.103] Найгостріший сайт класу в дереві: це була ДОЛАРОВА ОЦІНКА

@@ -3,10 +3,15 @@
 
 module Contracts
   class Index < ApplicationComponent
-    def initialize(contracts:, stats:, pagy:)
+    # [ARCH.103] `cluster_emissions:` — kwarg БЕЗ дефолту свідомо: `{}` перетворив би
+    # забуту проводку на «увесь портфель із нульовою емісією», тобто на правдоподібний
+    # екран, якого ніхто не прочитає як поломку. Прецедент форми той самий, що в
+    # `gateways#index` з пульсами шлюзів.
+    def initialize(contracts:, stats:, pagy:, cluster_emissions:)
       @contracts = contracts
       @stats = stats
       @pagy = pagy
+      @cluster_emissions = cluster_emissions
     end
 
     def view_template
@@ -24,7 +29,7 @@ module Contracts
                   th(scope: "col", class: "p-4") { t(".columns.organization") }
                   th(scope: "col", class: "p-4") { t(".columns.target_cluster") }
                   th(scope: "col", class: "p-4") { t(".columns.investment") }
-                  th(scope: "col", class: "p-4") { t(".columns.current_yield") }
+                  th(scope: "col", class: "p-4") { t(".columns.cluster_emission") }
                   th(scope: "col", class: "p-4") { t(".columns.period") }
                   # [UI.10] Колонки «Cluster Health» тут більше немає: датчик під
                   # цим підписом малював `current_yield_performance` — SCC/USD, —
@@ -56,7 +61,7 @@ module Contracts
         # юніт-економіка 07_01 §11-§20 рахує в $. Сусідня картка нижче правомірно в SCC —
         # там справді емісія. Дві різні валюти на одній сітці, тож не «уніфікуй» їх.
         render Views::Shared::UI::StatCard.new(label: t(".stats.portfolio_capital"), value: "#{@stats[:total_contracted].to_f.round(2)} USD", sub: t(".stats.total_injected"))
-        render Views::Shared::UI::StatCard.new(label: t(".stats.biogenic_yield"), value: "#{@stats[:total_minted].to_f.round(2)} SCC", sub: t(".stats.total_minted"))
+        render Views::Shared::UI::StatCard.new(label: t(".stats.net_cluster_emission"), value: "#{@stats[:total_minted].to_f.round(2)} SCC", sub: t(".stats.total_minted"))
         render Views::Shared::UI::StatCard.new(label: t(".stats.network_health"),
                                                value: measured_percent(@stats[:cluster_health].average, precision: 1),
                                                sub: network_health_sub)
@@ -86,13 +91,18 @@ module Contracts
         end
         td(class: "p-4 text-gaia-text-muted") { contract.organization&.name || "—" }
         td(class: "p-4 text-gaia-primary-strong") { contract.cluster&.name || t(".unassigned") }
-        # `total_value` = alias на `total_funding` (плата за послугу, USD) ⊥ `emitted_tokens`
-        # (справжня SCC-емісія). Дві сусідні комірки в РІЗНИХ валютах — це не дрейф.
+        # `total_value` = alias на `total_funding` (плата за послугу, USD) ⊥ сусідня
+        # комірка — чиста емісія КЛАСТЕРА в SCC. Дві сусідні комірки в РІЗНИХ валютах
+        # і про РІЗНІ субʼєкти (контракт ⊥ кластер) — це не дрейф, а наслідок ARCH.103.
         td(class: "p-4 text-gaia-text-muted") { "#{contract.total_value} USD" }
-        # [ARCH.103] `nil` тут — вимір «не виміряно», а не порожнеча даних: без
-        # цієї гілки інтерполяція дала б рядок « SCC» — одиницю без величини.
+        # 🔴 [ARCH.103] Тут ДВА різні стани, і зливати їх не можна. Контракт БЕЗ кластера —
+        # питання без субʼєкта, тобто чесне «не виміряно». Кластер, що Є, завжди дає
+        # число, і нуль у ньому ВИМІРЯНИЙ (агрегат виконався, підтверджених рухів немає) —
+        # тому `fetch(id, 0)`, а не `[id]`: розріджений хеш віддає `nil` саме на таких
+        # кластерах, і намалювати там «не виміряно» означало б [`ARCH.84`] навиворіт —
+        # приховати вимір замість вигадати його.
         td(class: "p-4 text-gaia-text") do
-          contract.emitted_tokens.nil? ? t("ui.measurement.not_measured") : "#{contract.emitted_tokens} SCC"
+          plain "#{@cluster_emissions.fetch(contract.cluster_id, 0).to_f.round(2)} SCC"
         end
         td(class: "p-4 text-tiny text-gaia-text-muted") do
           plain contract.start_date&.strftime("%d.%m.%y")

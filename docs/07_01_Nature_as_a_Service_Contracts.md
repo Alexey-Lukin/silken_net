@@ -350,7 +350,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 |---|---|---|---|
 | `GET` | `/contracts` | Required | Перелік NaaS контрактів клієнта (Pagy) |
 | `GET` | `/contracts/:id` | Required | Деталі контракту |
-| `GET` | `/contracts/stats` | Required | `total_contracted`, `total_tokens_minted` (**`null` з [ARCH.103]** — джерело `emitted_tokens` без писача, семантика відкрита), `cluster_health` (шкала **0..1**, не відсоток — `health_index` = `1.0 - stress_index`; **nullable з [ARCH.84]**: `null` = не виміряно, і це НЕ те саме, що виміряний `0.0`), `clusters_measured` + `clusters_total` (покриття — без них середнє по одному кластеру читалось би як твердження про весь фонд), `attested_value_usd` |
+| `GET` | `/contracts/stats` | Required | `total_contracted`, `total_tokens_minted` (**чиста емісія орендаря**, Σmints − Σburns — ⚖️ [ARCH.103] зняв контрактну семантику; ніколи не `null`), `cluster_health` (шкала **0..1**, не відсоток — `health_index` = `1.0 - stress_index`; **nullable з [ARCH.84]**: `null` = не виміряно, і це НЕ те саме, що виміряний `0.0`), `clusters_measured` + `clusters_total` (покриття — без них середнє по одному кластеру читалось би як твердження про весь фонд), `attested_value_usd` |
 
 ---
 

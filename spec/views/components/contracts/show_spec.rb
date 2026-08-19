@@ -50,9 +50,10 @@ RSpec.describe Contracts::Show do
     )
   end
 
-  def render_component(contract:, history:)
+  def render_component(contract:, history:, cluster_emission: 1234.56)
     ApplicationController.renderer.render(
-      component_class.new(contract: contract, history: history),
+      component_class.new(contract: contract, history: history,
+                          cluster_emission: cluster_emission),
       layout: false
     )
   end
@@ -77,32 +78,15 @@ RSpec.describe Contracts::Show do
       expect(html).to include("ACTIVE")
     end
 
-    it "renders Emission Progress label" do
-      expect(html).to include("Emission Progress")
+    # 🔴 [ARCH.103] Мітка поїхала РАЗОМ зі значенням: «Emission Progress» обіцяла
+    # прогрес ЦЬОГО контракту, а герой-цифра тепер показує емісію КЛАСТЕРА. Пін на
+    # старий текст і був тим, що не дало б перепідписати поверхню.
+    it "renders the Cluster Emission label" do
+      expect(html).to include("Cluster Emission")
     end
 
-    it "renders emitted_tokens value" do
+    it "renders the cluster emission as the hero figure" do
       expect(html).to include("1234.56")
-    end
-
-    # 🔴 [ARCH.103] Негативна половина, якої не було — і саме її відсутність
-    # дозволила фабрикації жити на найпомітнішому місці сторінки. Позитивний
-    # приклад вище подає фікстуру з числом, тобто СВІТ, у якому колонку хтось
-    # пише; у реальній базі писача немає жодного, тож герой-цифра `text-6xl`
-    # друкувала схемний нуль як факт про гроші. Пін тримає ОБИДВІ половини:
-    # значення є → показуємо; значення немає → кажемо, що не виміряно.
-    context "when emitted_tokens was never measured" do
-      let(:contract) { build_contract(emitted_tokens: nil) }
-      let(:html) { render_component(contract: contract, history: []) }
-
-      # ⚠️ Негатив цілиться в САМУ герой-цифру (`text-6xl`), а не в підрядок «0.0»:
-      # той приходить і з `total_funding`, тобто ловив би сусіда. Пін на клас
-      # доводить, що при невиміряному значенні великого числа на сторінці НЕМАЄ
-      # взагалі — а не що воно надруковане дрібнішим.
-      it "says it is not measured instead of printing a hero zero" do
-        expect(html).to include(I18n.t("ui.measurement.not_measured"))
-        expect(html).not_to include("text-6xl")
-      end
     end
   end
 

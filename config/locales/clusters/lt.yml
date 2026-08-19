@@ -15,7 +15,7 @@ lt:
         heading: Aktyvios grėsmės
         nominal: Nėra aktyvių grėsmių. Sektorius normalus.
       contract:
-        emitted: Išleistieji SCC
+        cluster_emission: Klasterio emisija (SCC)
         empty: Nėra aktyvios NaaS sutarties.
         heading: NaaS sutartis
         status: Būsena

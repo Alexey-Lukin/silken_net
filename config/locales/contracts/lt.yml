@@ -5,8 +5,8 @@ lt:
       audit_aria: 'Peržiūrėti sutarties #%{id} detales'
       audit_details: AUDITO_DETALĖS →
       columns:
+        cluster_emission: Klasterio emisija
         command: Komanda
-        current_yield: Emisijos eiga
         id_status: ID / Būsena
         investment: Paslaugos mokestis
         organization: Organizacija
@@ -14,12 +14,12 @@ lt:
         target_cluster: Tikslinis klasteris
       portfolio_title: Stebimi klasteriai
       stats:
-        biogenic_yield: Išleista SCC
+        net_cluster_emission: Klasterių grynoji emisija
         network_health: Tinklo sveikata
         portfolio_avg: Vid. klasterio būklė
         portfolio_capital: Paslaugų mokesčiai iš viso
         total_injected: Iš viso pagal sutartis
-        total_minted: Iš viso nukalinta
+        total_minted: Emisija atėmus sudeginimą
       unassigned: NEPRISKIRTA
     index_title: NaaS sutarčių registras
     show:
@@ -30,7 +30,7 @@ lt:
         threat_status: Grėsmės būsena
         title: Pagrindinio turto sveikata
         vitality: Klasterio gyvybingumas
-      current_yield: Emisijos eiga
+      cluster_emission: Klasterio emisija
       decoration: NaaS
       identity: Sutarties tapatybė
       ledger:

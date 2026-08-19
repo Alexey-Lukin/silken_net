@@ -15,7 +15,7 @@ lv:
         heading: Aktīvie draudi
         nominal: Nav aktīvu draudu. Sektors ir normāls.
       contract:
-        emitted: Emitētie SCC
+        cluster_emission: Klastera emisija (SCC)
         empty: Nav aktīva NaaS līguma.
         heading: NaaS līgums
         status: Statuss

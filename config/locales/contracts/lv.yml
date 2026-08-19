@@ -5,8 +5,8 @@ lv:
       audit_aria: 'Skatīt līguma #%{id} detaļas'
       audit_details: AUDITA_DETAĻAS →
       columns:
+        cluster_emission: Klastera emisija
         command: Komanda
-        current_yield: Emisijas progress
         id_status: ID / Statuss
         investment: Pakalpojuma maksa
         organization: Organizācija
@@ -14,12 +14,12 @@ lv:
         target_cluster: Mērķa klasteris
       portfolio_title: Uzraudzītie klasteri
       stats:
-        biogenic_yield: Izsniegts SCC
+        net_cluster_emission: Klasteru neto emisija
         network_health: Tīkla veselība
         portfolio_avg: Vid. klastera stāvoklis
         portfolio_capital: Pakalpojumu maksas kopā
         total_injected: Kopā līgumos
-        total_minted: Kopā kalts
+        total_minted: Emisija mīnus sadedzināšana
       unassigned: NEPIESAISTĪTS
     index_title: NaaS līgumu reģistrs
     show:
@@ -30,7 +30,7 @@ lv:
         threat_status: Draudu statuss
         title: Nodrošinājuma aktīvu veselība
         vitality: Klastera vitalitāte
-      current_yield: Emisijas progress
+      cluster_emission: Klastera emisija
       decoration: NaaS
       identity: Līguma identitāte
       ledger:

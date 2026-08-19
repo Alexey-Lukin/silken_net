@@ -15,7 +15,7 @@ en:
         heading: Active Threats
         nominal: No active threats. Sector is nominal.
       contract:
-        emitted: Emitted SCC
+        cluster_emission: Cluster Emission (SCC)
         empty: No active NaaS contract.
         heading: NaaS Contract
         status: Status

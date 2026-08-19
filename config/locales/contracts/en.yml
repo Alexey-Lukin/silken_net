@@ -5,8 +5,8 @@ en:
       audit_aria: 'View contract #%{id} details'
       audit_details: AUDIT_DETAILS →
       columns:
+        cluster_emission: Cluster Emission
         command: Command
-        current_yield: Emission Progress
         id_status: ID / Status
         investment: Service Fee
         organization: Organization
@@ -14,12 +14,12 @@ en:
         target_cluster: Target Cluster
       portfolio_title: Monitored Clusters
       stats:
-        biogenic_yield: SCC Issued
+        net_cluster_emission: Net Cluster Emission
         network_health: Network Health
         portfolio_avg: Avg Cluster Health
         portfolio_capital: Total Service Fees
         total_injected: Total Contracted
-        total_minted: Total Minted
+        total_minted: Mints minus burns
       unassigned: UNASSIGNED
     index_title: Nature-as-a-Service Registry
     show:
@@ -30,7 +30,7 @@ en:
         threat_status: Threat Status
         title: Backing Asset Health
         vitality: Cluster Vitality
-      current_yield: Emission Progress
+      cluster_emission: Cluster Emission
       decoration: NaaS
       identity: Contract Identity
       ledger:

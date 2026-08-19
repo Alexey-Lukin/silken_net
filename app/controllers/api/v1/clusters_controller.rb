@@ -74,6 +74,11 @@ module Api
                 gateways: @gateways,
                 recent_alerts: @recent_alerts,
                 active_contract: @active_contract,
+                # [ARCH.103] ⚖️ Кластерна семантика: панель контракту друкує емісію
+                # САМОГО кластера, тож субʼєкт тут відомий завжди й «не виміряно» не
+                # виникає — нуль є виміром, бо агрегат виконався.
+                cluster_emission: BlockchainTransaction.for_cluster(@cluster.id)
+                                                       .net_minted_supply(:carbon_coin),
                 health_measured: @health_insight&.measured_trees,
                 health_total: @health_insight&.total_trees
               )

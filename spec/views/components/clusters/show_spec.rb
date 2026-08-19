@@ -14,8 +14,12 @@ RSpec.describe Clusters::Show do
   # міряють інші осі, а САМУ пару стереже власний `describe` наприкінці файлу.
   # ⚠️ `nil`/`nil` = «інсайту за добу немає», тобто рядок покриття не рендериться —
   # це і є базовий стан решти прикладів.
-  def render_component(health_measured: nil, health_total: nil, **kwargs)
-    super(health_measured: health_measured, health_total: health_total, **kwargs)
+  # [ARCH.103] `cluster_emission` дефолтиться РЕАЛЬНИМ виміром (нуль — це вимір,
+  # бо агрегат виконався), а не `nil`: на сторінці КЛАСТЕРА субʼєкт відомий завжди,
+  # тож `nil`-дефолт оголошував би стан, якого в цьому компоненті не буває.
+  def render_component(health_measured: nil, health_total: nil, cluster_emission: 0, **kwargs)
+    super(health_measured: health_measured, health_total: health_total,
+          cluster_emission: cluster_emission, **kwargs)
   end
 
   def build_cluster(id: 1, name: "Carpathian-Alpha", region: "Cherkasy Oblast",
@@ -256,10 +260,15 @@ RSpec.describe Clusters::Show do
         # мертвим — і мовчки, бо `nil`-гілка теж рендериться.
         contract = NaasContract.new(status: :active, total_funding: 50_000, emitted_tokens: 1200)
         html = render_component(cluster: build_cluster, gateways: [], recent_alerts: [],
-                                active_contract: contract)
+                                active_contract: contract, cluster_emission: 340)
         expect(html).to include("ACTIVE")
         expect(html).to include("50000.0 USD")
-        expect(html).to include("1200")
+        # 🔴 [ARCH.103] Дискримінатор СЕМАНТИКИ, а не наявності числа: панель друкує
+        # емісію КЛАСТЕРА, тож фікстура навмисно тримає ДВА різні числа — контрактне
+        # `emitted_tokens` (1200) і кластерне (340). Старий пін на 1200 пройшов би й
+        # після присуду, бо не питав, ЧИЯ це величина; новий ловить регрес до колонки.
+        expect(html).to include("340")
+        expect(html).not_to include("1200")
       end
     end
   end
@@ -313,7 +322,7 @@ RSpec.describe Clusters::Show do
       bad = Object.new
       expect {
         described_class.new(cluster: bad, gateways: [], recent_alerts: [],
-                            health_measured: nil, health_total: nil)
+                            health_measured: nil, health_total: nil, cluster_emission: 0)
       }.to raise_error(ArgumentError, /cluster must respond to :name/)
     end
 
@@ -324,7 +333,7 @@ RSpec.describe Clusters::Show do
     # `= nil` — і жоден інший приклад не почервоніє.
     it "refuses to render without the coverage pair — a silent default would read as full measurement" do
       expect {
-        described_class.new(cluster: cluster, gateways: [], recent_alerts: [])
+        described_class.new(cluster: cluster, gateways: [], recent_alerts: [], cluster_emission: 0)
       }.to raise_error(ArgumentError, /health_measured/)
     end
   end

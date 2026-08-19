@@ -15,7 +15,7 @@ uk:
         heading: Активні загрози
         nominal: Жодних загроз. Сектор в нормі.
       contract:
-        emitted: Емітовано SCC
+        cluster_emission: Емісія кластера (SCC)
         empty: Активного NaaS-контракту немає.
         heading: NaaS Контракт
         status: Статус

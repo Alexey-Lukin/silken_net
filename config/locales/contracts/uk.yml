@@ -5,8 +5,8 @@ uk:
       audit_aria: 'Переглянути деталі контракту #%{id}'
       audit_details: АУДИТ_ДЕТАЛЕЙ →
       columns:
+        cluster_emission: Емісія кластера
         command: Команда
-        current_yield: Прогрес емісії
         id_status: ID / Статус
         investment: Плата за послугу
         organization: Організація
@@ -14,12 +14,12 @@ uk:
         target_cluster: Цільовий кластер
       portfolio_title: Кластери під моніторингом
       stats:
-        biogenic_yield: Нараховано SCC
+        net_cluster_emission: Чиста емісія кластерів
         network_health: Здоров'я мережі
         portfolio_avg: Середній стан кластерів
         portfolio_capital: Сума плат за послугу
         total_injected: Законтрактовано всього
-        total_minted: Всього створено
+        total_minted: Мінти мінус спалення
       unassigned: НЕ ПРИЗНАЧЕНО
     index_title: Реєстр NaaS-контрактів
     show:
@@ -30,7 +30,7 @@ uk:
         threat_status: Статус загрози
         title: Здоров'я забезпечуючого активу
         vitality: Життєздатність кластера
-      current_yield: Прогрес емісії
+      cluster_emission: Емісія кластера
       decoration: NaaS
       identity: Ідентичність контракту
       ledger:

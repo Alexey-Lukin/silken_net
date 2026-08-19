@@ -24,14 +24,14 @@ RSpec.describe Contracts::Index do
   # 🔴 `total_value` (alias на `total_funding`) і `emitted_tokens` — колонки `numeric`,
   # тобто BigDecimal: прод друкує десяткову частку, а Integer у фікстурі її ховав.
   def build_contract(id: 42, status: :active, org_name: "Cherkasy Forest Fund",
-                     cluster_name: "Carpathian-Alpha", total_funding: 10_000,
+                     cluster_id: 77, cluster_name: "Carpathian-Alpha", total_funding: 10_000,
                      emitted_tokens: 350,
                      start_date: 6.months.ago, end_date: 6.months.from_now)
     NaasContract.new(
       id: id,
       status: status,
       organization: Organization.new(name: org_name),
-      cluster: Cluster.new(name: cluster_name),
+      cluster: Cluster.new(id: cluster_id, name: cluster_name),
       total_funding: total_funding,
       emitted_tokens: emitted_tokens,
       start_date: start_date,
@@ -56,15 +56,19 @@ RSpec.describe Contracts::Index do
     }
   end
 
-  def render_component(contracts:, stats:, pagy:)
+  def render_component(contracts:, stats:, pagy:, cluster_emissions: {})
     ApplicationController.renderer.render(
-      component_class.new(contracts: contracts, stats: stats, pagy: pagy),
+      component_class.new(contracts: contracts, stats: stats, pagy: pagy,
+                          cluster_emissions: cluster_emissions),
       layout: false
     )
   end
 
   let(:contract) { build_contract }
-  let(:html) { render_component(contracts: [ contract ], stats: mock_stats, pagy: mock_pagy(last: 1)) }
+  let(:html) do
+    render_component(contracts: [ contract ], stats: mock_stats, pagy: mock_pagy(last: 1),
+                     cluster_emissions: { 77 => 350 })
+  end
 
   describe "header" do
     it "renders Monitored Clusters heading" do
@@ -77,8 +81,12 @@ RSpec.describe Contracts::Index do
       expect(html).to include("Total Service Fees")
     end
 
-    it "renders SCC Issued stat card" do
-      expect(html).to include("SCC Issued")
+    # 🔴 [ARCH.103] Мітка мусила поїхати РАЗОМ зі значенням: агрегат тепер ЧИСТА
+    # емісія (мінти − спалення) по ДЕДУПЛІКОВАНИХ кластерах, а «SCC Issued»
+    # обіцяла gross-емісію за контрактами. Дві незалежні брехні, і обидві жили
+    # доти, доки цей пін тримав старий текст.
+    it "renders the Net Cluster Emission stat card" do
+      expect(html).to include("Net Cluster Emission")
     end
 
     it "renders Network Health stat card" do

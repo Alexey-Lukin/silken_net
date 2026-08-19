@@ -1060,5 +1060,25 @@ RSpec.describe BlockchainTransaction, type: :model do
     it "віддає порожній хеш на порожньому наборі, не б'ючи в БД" do
       expect(described_class.net_minted_by_cluster([], :carbon_coin)).to eq({})
     end
+
+    # 🔴 Замок на ЛАТЕНТНИЙ розкол двох форм того самого One-Home: `for_cluster` резолвить
+    # координату через **OR** (рядок із ОБОМА координатами порахувався б у двох кластерах),
+    # а `net_minted_by_cluster` — через **COALESCE** (лише в одному). Сьогодні їх тримає
+    # рівними не схема й не гейт, а КОНВЕНЦІЯ ПИСАЧІВ: слеш ставить координати
+    # взаємовиключно, мінт і страховка — лише гаманець, Celo — лише кластер.
+    # Перший писач з обома координатами розвів би список і деталку МОВЧКИ, бо кожна
+    # форма сама по собі лишається «правильною».
+    it "тримає обидві форми One-Home узгодженими на тому самому наборі" do
+      create(:blockchain_transaction, wallet: wallet, cluster: nil, amount: 100,
+                                      token_type: :carbon_coin, status: :confirmed)
+      create(:blockchain_transaction, wallet: nil, cluster: cluster, amount: 30,
+                                      token_type: :carbon_coin, status: :confirmed,
+                                      sourceable: naas_contract)
+
+      batched = described_class.net_minted_by_cluster([ cluster.id ], :carbon_coin)[cluster.id]
+      single  = described_class.for_cluster(cluster.id).net_minted_supply(:carbon_coin)
+
+      expect(batched).to eq(single)
+    end
   end
 end
