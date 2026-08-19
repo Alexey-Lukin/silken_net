@@ -19,10 +19,9 @@ lt:
         cluster: Klasteris
         firmware_version: Programinės įrangos versija
         heading: Tinklo konfigūracija
-        mesh_enabled: Įjungta
-        mesh_mode: Tinklo režimas
         sleep_interval: Miego intervalas
       crypto:
+        aes_not_provisioned: AES-256 neaprūpinta
         aes_provisioned: AES-256 aprūpinta
         heading: Aparatūros kriptografija
         uid_label: 'Aparatūros UID:'

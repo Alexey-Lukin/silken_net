@@ -3,7 +3,7 @@ en:
   notifications:
     settings:
       active_channels:
-        connected: Connected
+        configured: Configured
         email: "📧 Email"
         heading: Active Channels
         not_configured: Not configured

@@ -3,7 +3,7 @@ lt:
   notifications:
     settings:
       active_channels:
-        connected: Prisijungta
+        configured: Sukonfigūruota
         email: "📧 El. paštas"
         heading: Aktyvūs kanalai
         not_configured: Nesukonfigūruota

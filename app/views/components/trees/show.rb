@@ -166,7 +166,16 @@ module Trees
       div(class: "p-6 border border-gaia-border bg-gaia-surface space-y-6") do
         div(class: "flex justify-between items-center") do
           h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".headings.hardware_vault") }
-          span(class: "h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]")
+          # 🔴 [UI.17] Лампа була БЕЗУМОВНА — і це другий екземпляр тієї самої
+          # геометрії, що й у `gateways/show`: прохід ARCH.84 нижче зробив три
+          # внутрішні рядки умовними й не побачив сусіда ЗА ЧОТИРИ РЯДКИ ВИЩЕ,
+          # у тому самому методі. Погляд стояв на діагнозі рядків, не на формі
+          # панелі. Тепер лампа несе ту саму умову, що й вміст, і тими самими
+          # токенами, що крипто-панель шлюзу (сирий `bg-blue-500` заразом пішов:
+          # синій у нашій палітрі ролі не має, а як сигнал він підпадає під 1.4.11).
+          span(class: tokens("h-2 w-2 rounded-full",
+                             "bg-gaia-primary-strong": @hardware_key.present?,
+                             "bg-status-warning-accent": @hardware_key.blank?))
         end
 
         # 🔴 [ARCH.84] Три нижні рядки були БЕЗУМОВНИМИ літералами поруч із

@@ -17,7 +17,6 @@ uk:
     profile:
       access:
         command_execution: Виконання команд
-        encryption: Рівень шифрування
         full: Повний
         limited: Обмежений
         organization: Домашня організація

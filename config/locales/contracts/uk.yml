@@ -51,7 +51,6 @@ uk:
         early_exit_value: "%{value}%"
         min_days: Мін. днів до розірвання
         title: Дані смартконтракту
-        verified: Перевірено Silken Net Oracle. Емісія індексована до верифікованого гомеостазу.
       organization: 'Організація: %{name}'
       period: 'Період: %{start} → %{end}'
       status: 'Статус: %{value}'

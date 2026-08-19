@@ -17,7 +17,6 @@ lv:
     profile:
       access:
         command_execution: Komandu izpilde
-        encryption: Šifrēšanas līmenis
         full: Pilna
         limited: Ierobežota
         organization: Mājas organizācija

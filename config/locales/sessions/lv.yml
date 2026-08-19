@@ -5,7 +5,6 @@ lv:
     new:
       access_code_label: Piekļuves kods (Parole)
       access_code_placeholder: "● ● ● ● ● ● ● ●"
-      footer_status: Sistēmas integritāte verificēta // AES-256 iespējots
       forgot_link: Aizmirsāt piekļuves kodu?
       identity_label: Identitāte (E-pasts)
       identity_placeholder: operators@silken.net

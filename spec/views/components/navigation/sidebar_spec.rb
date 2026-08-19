@@ -41,16 +41,23 @@ RSpec.describe Navigation::Sidebar do
   describe "status pulse" do
     let(:html) { render_en }
 
-    it "renders sync frequency text" do
-      expect(html).to include("Sync: 1.12 THz")
+    # [UI.17] Два приклади тут вимагали вигаданої величини («Sync: 1.12 THz») і
+    # пульсуючої крапки при ній. Інвертовано, а не знято: та сама величина жила
+    # ДВІЧІ — тут і в топбарі (`core_sync_value`), — тож пін на відсутність
+    # мусить стерегти обидва написання, інакше повернення одного сайту виглядає
+    # як чесне відновлення другого.
+    it "не друкує вигаданої частоти синхронізації" do
+      expect(html).not_to include("1.12")
+      expect(html).not_to include("THz")
+      expect(html).not_to include("ТГц")
     end
 
     it "renders version label" do
       expect(html).to include("v8.0.ocean")
     end
 
-    it "includes animate-pulse for the status dot" do
-      expect(html).to include("animate-pulse")
+    it "не носить пульсуючої крапки при знятому написі" do
+      expect(html).not_to include("animate-pulse")
     end
   end
 

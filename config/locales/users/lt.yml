@@ -17,7 +17,6 @@ lt:
     profile:
       access:
         command_execution: Komandų vykdymas
-        encryption: Šifravimo lygis
         full: Pilna
         limited: Ribota
         organization: Namų organizacija

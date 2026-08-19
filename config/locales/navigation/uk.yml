@@ -94,12 +94,9 @@ uk:
       neural_network: Нейронна мережа
       strategic_insight: Стратегічний контур
     status:
-      sync_label: 'Синхр.: 1.12 ТГц'
       version: v8.0.ocean
     top_bar:
       context_aria: 'Робочий контекст: %{name}. Змінити організацію'
       context_label: Контекст
       context_none: НЕ_ОБРАНО
-      core_sync_label: Синхр. ядра
-      core_sync_value: 1.12 ТГц
       profile_aria: 'Відкрити профіль: %{name}'

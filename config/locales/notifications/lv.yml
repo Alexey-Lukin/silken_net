@@ -3,7 +3,7 @@ lv:
   notifications:
     settings:
       active_channels:
-        connected: Pievienots
+        configured: Konfigurēts
         email: "📧 E-pasts"
         heading: Aktīvie kanāli
         not_configured: Nav konfigurēts

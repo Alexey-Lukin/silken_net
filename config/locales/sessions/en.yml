@@ -5,7 +5,6 @@ en:
     new:
       access_code_label: Access Code (Password)
       access_code_placeholder: "● ● ● ● ● ● ● ●"
-      footer_status: System Integrity Verified // AES-256 Enabled
       forgot_link: Forgot Access Code?
       identity_label: Identity (Email)
       identity_placeholder: operator@silken.net

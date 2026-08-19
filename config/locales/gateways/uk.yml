@@ -19,10 +19,9 @@ uk:
         cluster: Кластер
         firmware_version: Версія прошивки
         heading: Конфігурація мережі
-        mesh_enabled: Увімкнено
-        mesh_mode: Mesh-режим
         sleep_interval: Інтервал сну
       crypto:
+        aes_not_provisioned: AES-256 не налаштовано
         aes_provisioned: AES-256 Налаштовано
         heading: Апаратна криптографія
         uid_label: 'Апаратний UID:'

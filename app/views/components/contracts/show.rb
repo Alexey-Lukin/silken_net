@@ -149,9 +149,14 @@ module Contracts
     def render_legal_vault
       div(class: "p-6 border border-emerald-900 bg-emerald-950/10") do
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".legal.title") }
-        p(class: "text-tiny text-gray-500 font-mono break-all leading-relaxed mb-4") do
-          t(".legal.verified")
-        end
+        # [UI.17] Тут безумовно стояло «Verified by Silken Net Oracle. Emission
+        # indexed to verified homeostasis.» — заява про ДВІ величини, жодна з
+        # яких її не підтримує: `emitted_tokens` має сім читачів і НУЛЬ писачів
+        # (ARCH.103, тобто структурно завжди 0.0), а `health_index` має власну
+        # гілку «not measured» за двадцять рядків вище. ⚖️ Присуд founder
+        # 2026-08-19: зняти зараз, а формулювання юридичної панелі — окремим
+        # residual'ом у §07, бо це єдиний сайт класу, де текст може мати
+        # ДОГОВІРНУ вагу, і тоді його відсутність безпечніша за перефразування.
         if @contract.cancellation_terms.present?
           div(class: "space-y-2 pt-3 border-t border-emerald-900/30") do
             h4(class: "text-mini uppercase tracking-widest text-emerald-800 mb-2") { t(".legal.cancellation_title") }

@@ -17,7 +17,6 @@ en:
     profile:
       access:
         command_execution: Command Execution
-        encryption: Encryption Level
         full: Full
         limited: Limited
         organization: Home Organization

@@ -83,10 +83,11 @@ module Navigation
 
     def render_status_pulse
       div(class: "px-6 py-4 bg-gaia-surface-sunken flex items-center justify-between border-b border-gaia-border transition-colors duration-300") do
-        div(class: "flex items-center gap-2") do
-          div(class: "h-1.5 w-1.5 rounded-full bg-gaia-primary animate-pulse", aria_hidden: "true")
-          span(class: "text-mini text-gaia-text-muted uppercase tracking-widest") { t("navigation.status.sync_label") }
-        end
+        # [UI.17] Ліворуч тут стояла пульсуюча крапка + `sync_label`
+        # («Sync: 1.12 THz») — вигадана величина на КОЖНІЙ автентифікованій
+        # сторінці, вже помножена на чотири локалі. Крапка пішла разом із
+        # написом свідомо: сама вона теж частина твердження, і лишити її
+        # означало б закрити клас наполовину. Версія — чесна, лишається.
         span(class: "text-mini text-gaia-text-subtle") { t("navigation.status.version") }
       end
     end

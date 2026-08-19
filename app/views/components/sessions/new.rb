@@ -48,7 +48,6 @@ module Sessions
 
             render_forgot_password_link
             render_social_providers
-            render_footer_seal
           end
         end
       end
@@ -119,10 +118,11 @@ module Sessions
       nil
     end
 
-    def render_footer_seal
-      div(class: "text-center") do
-        p(class: "text-micro text-gaia-text-subtle uppercase tracking-widest") { t(".footer_status") }
-      end
-    end
+    # [UI.17] Тут стояв `render_footer_seal` — «System Integrity Verified //
+    # AES-256 Enabled» безумовним рядком на ПУБЛІЧНІЙ сторінці входу, у
+    # компоненті, що приймає рівно `flash_alert:`. Цілісність системи ми не
+    # обчислюємо ніде, тож джерела не бракувало — його не могло існувати.
+    # ⚖️ Присуд founder 2026-08-19: знімати, а не дописувати джерело — питання
+    # завжди «чи потрібен САМ ПІДПИС», і тут відповідь «ні» (урок UI.10).
   end
 end

@@ -51,7 +51,6 @@ en:
         early_exit_value: "%{value}%"
         min_days: Min Days Before Termination
         title: Smart Contract Data
-        verified: Verified by Silken Net Oracle. Emission indexed to verified homeostasis.
       organization: 'Organization: %{name}'
       period: 'Period: %{start} → %{end}'
       status: 'Status: %{value}'

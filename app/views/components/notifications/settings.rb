@@ -123,9 +123,15 @@ module Notifications
         elsif destination.blank?
           span(class: "text-mini text-gray-700 uppercase") { t(".active_channels.not_configured") }
         else
+          # [UI.17] Напис був «Connected», а гард — `destination.present?`, тобто
+          # людина щось ВПИСАЛА в поле. Доставки ніхто не перевіряє: `phone_number`
+          # має лише формат-валідацію E.164, `telegram_chat_id` і `push_token` —
+          # жодної. Сусідня гілка вище вже каже `not_configured`, тож чесне слово
+          # тут — «configured», і пара стає симетричною без нової механіки.
+          # ⊕ Крапка перейшла на `-strong`: як сигнал вона підпадає під 1.4.11.
           div(class: "flex items-center gap-2") do
-            div(class: "h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981]")
-            span(class: "text-mini text-emerald-500 uppercase") { t(".active_channels.connected") }
+            div(class: "h-1.5 w-1.5 rounded-full bg-gaia-primary-strong")
+            span(class: "text-mini text-gaia-primary-strong uppercase") { t(".active_channels.configured") }
           end
         end
       end

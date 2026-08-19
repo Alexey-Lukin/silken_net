@@ -296,5 +296,17 @@ RSpec.describe DashboardLayout do
       expect(html).to include("Layout Content Rendered")
       expect(html).to include(">A<") # avatar fallback when first_name is unavailable
     end
+
+    # 🔴 [UI.17] `render_system_telemetry` друкував тут «Core Sync: 1.12 THz» із
+    # пульсуючою крапкою — ТУ САМУ вигадану величину, що й сайдбар. Пін на
+    # відсутність стоїть В ОБОХ домах свідомо: сайдбарний приклад бачить лише
+    # свій компонент, тож без цього половина класу лишилась би без носія, а
+    # повернення топбар-сайту читалось би як відновлення симетрії.
+    it "не друкує вигаданої частоти ядра (UI.17)" do
+      expect(html).not_to include("1.12")
+      expect(html).not_to include("THz")
+      expect(html).not_to include("ТГц")
+      expect(html).to include("Layout Content Rendered") # ліхтар: рендер справді відбувся
+    end
   end
 end

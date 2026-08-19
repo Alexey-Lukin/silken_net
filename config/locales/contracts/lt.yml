@@ -51,7 +51,6 @@ lt:
         early_exit_value: "%{value}%"
         min_days: Min. dienos prieš nutraukimą
         title: Išmaniosios sutarties duomenys
-        verified: Patikrinta Silken Net Oracle. Emisija indeksuota pagal patvirtintą homeostazę.
       organization: 'Organizacija: %{name}'
       period: 'Laikotarpis: %{start} → %{end}'
       status: 'Būsena: %{value}'

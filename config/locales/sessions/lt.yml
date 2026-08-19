@@ -5,7 +5,6 @@ lt:
     new:
       access_code_label: Prieigos kodas (Slaptažodis)
       access_code_placeholder: "● ● ● ● ● ● ● ●"
-      footer_status: Sistemos vientisumas patikrintas // AES-256 įjungta
       forgot_link: Pamiršote prieigos kodą?
       identity_label: Tapatybė (El. paštas)
       identity_placeholder: operatorius@silken.net

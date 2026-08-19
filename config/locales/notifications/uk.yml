@@ -3,7 +3,7 @@ uk:
   notifications:
     settings:
       active_channels:
-        connected: Підключено
+        configured: Налаштовано
         email: "📧 Email"
         heading: Активні канали
         not_configured: Не налаштовано

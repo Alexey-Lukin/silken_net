@@ -19,10 +19,9 @@ en:
         cluster: Cluster
         firmware_version: Firmware Version
         heading: Network Configuration
-        mesh_enabled: Enabled
-        mesh_mode: Mesh Mode
         sleep_interval: Sleep Interval
       crypto:
+        aes_not_provisioned: AES-256 Not Provisioned
         aes_provisioned: AES-256 Provisioned
         heading: Hardware Cryptography
         uid_label: 'Hardware UID:'

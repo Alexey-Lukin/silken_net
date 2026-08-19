@@ -57,7 +57,12 @@ module Users
           # Через предикат, а не рядкове порівняння: `role == "admin"` казало
           # super_admin'ові, що його доступ обмежений (`User#admin_or_above?`).
           access_item(t(".access.command_execution"), @user.admin_or_above? ? t(".access.full") : t(".access.limited"))
-          access_item(t(".access.encryption"), "AES-256-GCM")
+          # [UI.17] Тут стояв `access_item(t(".access.encryption"), "AES-256-GCM")`.
+          # Режим названо правильно — це дефолт AR-encryption, — але НЕ ПРО ЦЬОГО
+          # СУБʼЄКТА: `User` не має жодного `encrypts` (шифруються лише `Identity`
+          # і `HardwareKey`), тож у панелі привілеїв акаунта рядок читався як
+          # обіцянка захисту, якої цій таблиці ніхто не давав. Хибною була АДРЕСА
+          # твердження, не термін — і саме тому греп за «чи існує GCM» його виправдовував.
         end
       end
     end

@@ -51,7 +51,6 @@ lv:
         early_exit_value: "%{value}%"
         min_days: Min. dienas pirms izbeigšanas
         title: Viedlīguma dati
-        verified: Verificēts ar Silken Net Oracle. Emisija indeksēta pēc verificētas homeostāzes.
       organization: 'Organizācija: %{name}'
       period: 'Periods: %{start} → %{end}'
       status: 'Statuss: %{value}'

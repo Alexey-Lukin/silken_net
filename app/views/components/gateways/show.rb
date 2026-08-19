@@ -128,7 +128,13 @@ module Gateways
           # версією ВСТАНОВЛЕНОЇ, тобто дві різні прошивки в сусідніх рядках під
           # спільним підписом. Хеш як доказ цілісності належить attestation-осі
           # (QATT), не конфіг-панелі.
-          config_row(t(".config.mesh_mode"), t(".config.mesh_enabled"))
+          # 🔴 [UI.17] А рядок «Mesh Mode: Enabled» стояв ТУТ ЖЕ, за пʼять
+          # рядків нижче, зашитою парою літералів — і причина, записана вище
+          # власноруч, стосувалась його дослівно. Перевірено схемою: `gateways`
+          # має 19 колонок і НУЛЬ mesh-полів (єдиний `mesh_ttl` лежить на
+          # партиціях `telemetry_logs` і тут не читається жодного разу).
+          # **Урок ширший за сайт: закривши напис, перечитай МЕТОД цілком —
+          # погляд на діагнозі конкретного рядка не бачить сусіда тієї ж форми.**
         end
       end
     end
@@ -158,9 +164,24 @@ module Gateways
           p(class: "text-gray-600") { t(".crypto.uid_label") }
           p(class: "text-emerald-500 truncate") { @gateway.hardware_key&.device_uid || "UNDEFINED" }
 
-          div(class: "mt-4 flex items-center gap-2 text-emerald-800") do
-            span(class: "h-2 w-2 bg-emerald-900 rounded-full")
-            span { t(".crypto.aes_provisioned") }
+          # [UI.17] Крапка й напис були БЕЗУМОВНІ, тобто непровізіонований шлюз
+          # рапортував себе захищеним рядком нижче власного «UNDEFINED».
+          # `has_one :hardware_key` не має авто-створення — провізіювання це
+          # окрема дія (`HardwareKeyService.provision`, SEC.3), — тож nil тут
+          # НОРМАЛЬНИЙ стан до провізіювання, а не крайній випадок.
+          # ⊕ Крапка заразом перейшла з `bg-emerald-900` на `-accent`/`-subtle`:
+          # як СИГНАЛ вона підпадає під 1.4.11 (бар 3:1), а пастельний
+          # emerald-900 його не тримав (UI.1, не-текстова половина).
+          if @gateway.hardware_key.present?
+            div(class: "mt-4 flex items-center gap-2 text-emerald-800") do
+              span(class: "h-2 w-2 bg-gaia-primary-strong rounded-full")
+              span { t(".crypto.aes_provisioned") }
+            end
+          else
+            div(class: "mt-4 flex items-center gap-2 text-status-warning-text") do
+              span(class: "h-2 w-2 bg-status-warning-accent rounded-full")
+              span { t(".crypto.aes_not_provisioned") }
+            end
           end
         end
       end

@@ -19,10 +19,9 @@ lv:
         cluster: Klasteris
         firmware_version: Programmaparatūras versija
         heading: Tīkla konfigurācija
-        mesh_enabled: Iespējots
-        mesh_mode: Tīkla režīms
         sleep_interval: Miega intervāls
       crypto:
+        aes_not_provisioned: AES-256 nav nodrošināts
         aes_provisioned: AES-256 nodrošināts
         heading: Aparatūras kriptogrāfija
         uid_label: 'Aparatūras UID:'

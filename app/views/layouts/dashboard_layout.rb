@@ -125,7 +125,6 @@ class DashboardLayout < ApplicationComponent
       div(class: "flex items-center gap-3 md:gap-6") do
         render_acting_context
         render Views::Shared::UI::LocaleSwitcher.new
-        render_system_telemetry
         render_user_avatar
       end
     end
@@ -210,15 +209,13 @@ class DashboardLayout < ApplicationComponent
     end
   end
 
-  def render_system_telemetry
-    div(class: "hidden md:flex items-center gap-4 px-4 py-1.5 border border-gaia-border bg-gaia-surface-sunken transition-colors duration-300") do
-      div(class: "flex flex-col text-right") do
-        span(class: "text-micro text-gaia-text-subtle uppercase tracking-widest") { t("navigation.top_bar.core_sync_label") }
-        span(class: "text-tiny text-gaia-text-strong") { t("navigation.top_bar.core_sync_value") }
-      end
-      div(class: "h-1 w-1 rounded-full bg-gaia-primary animate-pulse", aria_hidden: "true")
-    end
-  end
+  # [UI.17] Тут стояв `render_system_telemetry` — «Core Sync: 1.12 THz» із
+  # пульсуючою крапкою на топбарі КОЖНОЇ дашборд-сторінки. 🔴 Найважливіше не
+  # сам напис, а те, що ТА САМА вигадана величина жила ДВІЧІ — тут і в
+  # сайдбарі (`navigation.status.sync_label`), — тож зняти один сайт означало б
+  # розколоти поверхню навпіл і лишити другий виглядати підтвердженням.
+  # Знайдено рівно тому, що ключ сусіда (`core_sync_label`) сплив під час
+  # видалення першого: ⚖️-присуд про клас питали для трьох сайтів, а їх чотири.
 
   # [UI.8] Аватар — ЄДИНИЙ вхід у власний профіль: `Users::Profile` (168 рядків,
   # 17 i18n-ключів, лічильник обслуговувань і активні ідентичності) був повністю

@@ -92,9 +92,15 @@ RSpec.describe Sessions::New do
     end
   end
 
-  describe "security footer" do
-    it "renders AES-256 Enabled text" do
-      expect(html).to include("AES-256")
+  # [UI.17] Доти тут стояв приклад «renders AES-256 Enabled text», тобто сюїта
+  # ВИМАГАЛА безпекову атестацію на публічній сторінці входу, якої ніщо не
+  # вимірює. Пін інвертовано, а не знято: така печатка виглядає прикрасою, тож
+  # без піна ВІДСУТНОСТІ вона вертається першим редизайном (прецедент —
+  # знятий `matrix_rain`, чиїм носієм теж став пін відсутності).
+  describe "security footer (знято — атестація без джерела)" do
+    it "не стверджує жодної безпекової властивості" do
+      expect(html).not_to include("AES-256")
+      expect(html).not_to include("Integrity")
     end
   end
 
