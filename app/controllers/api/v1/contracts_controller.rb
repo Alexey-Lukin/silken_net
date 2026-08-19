@@ -22,16 +22,23 @@ module Api
         @pagy, @contracts = pagy(scope)
 
         # Агрегуємо дані для Phlex-дашборду, використовуючи твою логіку
-        # 🔴 [ARCH.103] `total_minted` — `nil`, і це ВИМІР, а не збій. Джерело
-        # (`naas_contracts.emitted_tokens`) має схемний `DEFAULT 0.0` і НУЛЬ писачів,
-        # тож сума завжди повертала впевнений `0`, невідрізнимий від чесного «ще не
-        # намінчено». ⛔ Дротувати писача сьогодні НЕМА КУДИ: кластер може нести
-        # кілька контрактів ОДНОЧАСНО (overlap не заборонений), а mint-рядок не має
-        # жодного посилання на контракт — тобто величина не має визначення, а не
-        # лише реалізації. Тригер повернення — присуд про семантику (`00_07` ARCH.103).
+        # ✅ [ARCH.103] ⚖️ Присуд founder: контрактну семантику ЗНЯТО на користь
+        # КЛАСТЕРНОЇ. Величина знову вимірювана — і тепер справді виміряна: чиста
+        # емісія кластерів, які покривають ці контракти (Σmints − Σburns через
+        # One-Home `net_minted_supply`, той самий дім, що годує базу слешингу).
+        #
+        # ⚠️ Множина кластерів ДЕДУПЛІКОВАНА, і це несуче: кілька контрактів на одному
+        # кластері співіснують одночасно (overlap не заборонений), тож сума «по
+        # контрактах» порахувала б ту саму емісію N разів — рівно та переоцінка, через
+        # яку контрактна деривація й виявилась невиконуваною.
+        #
+        # 🔴 Нуль ТУТ виміряний, а не фабрикований: агрегат виконався й підтверджених
+        # рухів немає. Це протилежність тому, чим була `emitted_tokens` — колонка без
+        # писача, чий нуль ніколи не був відповіддю на питання.
         @stats = {
           total_contracted: scope.sum(:total_value),
-          total_minted: nil,
+          total_minted: BlockchainTransaction.for_cluster(cluster_ids_for_scope(scope))
+                                             .net_minted_supply(:carbon_coin),
           # [ОПТИМІЗАЦІЯ]: SQL агрегація замість перебору масиву в Ruby
           cluster_health: calculate_cluster_health_for_scope(scope)
         }
@@ -108,8 +115,12 @@ module Api
 
         render json: {
           total_contracted: organization.naas_contracts.sum(:total_value),
-          # [ARCH.103] `nil` = не виміряно (дім рішення — `#index` вище).
-          total_tokens_minted: nil,
+          # ✅ [ARCH.103] Кластерна семантика (дім присуду — `#index` вище). Тут скоуп
+          # ширший і чесніший за назву: `for_organization` бере ВСІ рухи орендаря, а не
+          # лише кластери під контрактами — на цьому ендпоінті це і є питання, бо решта
+          # його ключів теж орг-рівневі (`total_contracted`, `cluster_health`).
+          total_tokens_minted: BlockchainTransaction.for_organization(organization.id)
+                                                    .net_minted_supply(:carbon_coin).to_f.round(4),
           # [ARCH.84] Скаляр лишається тим, що описує клієнтський контракт (`07_01`,
           # шкала 0..1) — але тепер він **nullable**: `null` = не виміряно, і це не
           # те саме, що виміряний 0.0. Дві ноги покриття додано, бо саме вони не
@@ -155,8 +166,15 @@ module Api
       # стовпець — підзапит тихо порожніє, а картка показує «не виміряно» на
       # виміряному фонді. Спіймано прикладом, не ревʼю.
       def calculate_cluster_health_for_scope(contracts)
-        cluster_ids = contracts.unscope(:includes, :select).select(:cluster_id)
-        Cluster.health_coverage(Cluster.where(id: cluster_ids))
+        Cluster.health_coverage(Cluster.where(id: cluster_ids_for_scope(contracts)))
+      end
+
+      # [ARCH.103] ОДИН дім координати: обидва агрегати сторінки (здоровʼя й емісія)
+      # питають ту саму множину кластерів. `unscope(:includes, :select)` тут не
+      # косметика — без нього підзапит тягне eager-load і власний список стовпців,
+      # тобто тихо порожніє (спіймано прикладом, не ревʼю).
+      def cluster_ids_for_scope(contracts)
+        contracts.unscope(:includes, :select).select(:cluster_id)
       end
 
       # 🔴 [ARCH.103] Найгостріший сайт класу в дереві: це була ДОЛАРОВА ОЦІНКА

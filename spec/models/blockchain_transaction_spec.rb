@@ -1020,4 +1020,45 @@ RSpec.describe BlockchainTransaction, type: :model do
       expect(net_scc).to eq(75)
     end
   end
+
+  # [ARCH.103] Батчева форма того самого агрегату. Пінимо не «сума правильна» (це вже
+  # тримає сусід вище), а рівно те, що поодинока форма НЕ доводить: обидві координати
+  # кластера сходяться в ОДНУ групу, а порожній кластер не вигадує запису.
+  describe ".net_minted_by_cluster (ARCH.103)" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+    let(:other_cluster) { create(:cluster, organization: organization) }
+    let(:naas_contract) { create(:naas_contract, organization: organization, cluster: cluster) }
+    let(:tree) { create(:tree, cluster: cluster) }
+    let(:wallet) { tree.wallet || create(:wallet, tree: tree) }
+
+    # 🔴 Дискримінатор усього методу: мінт приходить ЧЕРЕЗ ГАМАНЕЦЬ (wallet→tree→cluster),
+    # а спалення «останнього дерева» — ПРЯМО через `cluster_id` із `wallet: nil`. Якби
+    # `COALESCE` брав лише одну координату, друга гілка мовчки випала б, і база вийшла
+    # б завищеною рівно на спалення — той самий дефект, що ARCH.96 закрив у `for_cluster`.
+    it "зводить обидві координати кластера в одну групу (гаманцеву й пряму)" do
+      create(:blockchain_transaction, wallet: wallet, cluster: nil, amount: 100,
+                                      token_type: :carbon_coin, status: :confirmed)
+      create(:blockchain_transaction, wallet: nil, cluster: cluster, amount: 30,
+                                      token_type: :carbon_coin, status: :confirmed,
+                                      sourceable: naas_contract)
+
+      expect(described_class.net_minted_by_cluster([ cluster.id ], :carbon_coin))
+        .to eq(cluster.id => 70)
+    end
+
+    it "не вигадує запису кластерові без підтверджених рухів" do
+      create(:blockchain_transaction, wallet: wallet, cluster: nil, amount: 100,
+                                      token_type: :carbon_coin, status: :confirmed)
+
+      result = described_class.net_minted_by_cluster([ cluster.id, other_cluster.id ], :carbon_coin)
+
+      expect(result).to have_key(cluster.id)
+      expect(result).not_to have_key(other_cluster.id), "порожнеча мусить лишитись порожнечею, а не нулем у хеші"
+    end
+
+    it "віддає порожній хеш на порожньому наборі, не б'ючи в БД" do
+      expect(described_class.net_minted_by_cluster([], :carbon_coin)).to eq({})
+    end
+  end
 end

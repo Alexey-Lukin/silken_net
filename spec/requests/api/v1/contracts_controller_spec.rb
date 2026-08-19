@@ -32,6 +32,44 @@ RSpec.describe Api::V1::ContractsController, type: :request do
   # переживає рефакторинг мовчки й робить майбутній дрейф неперевірним.
 
   describe "GET /contracts" do
+    # [ARCH.103] ⚖️ Кластерна семантика. Пін на РІВНІ ЗАПИТУ навмисно: компонентна
+    # спека сторінки подає `total_minted` фікстурою-числом, тож вона рендерила значення,
+    # якого контролер ніколи не виробляв — і саме тому «0.0 SCC» під підписом «Нараховано
+    # SCC» (це `nil.to_f`) прожило непоміченим. Мок вигадав шкалу; побачити це можна лише
+    # ходом крізь маршрутизатор.
+    context "when the page reports cluster emission (ARCH.103)" do
+      let(:tree) { create(:tree, cluster: own_cluster) }
+      let(:wallet) { tree.wallet || create(:wallet, tree: tree) }
+
+      # 🔴 Дискримінатор семантики: ДВА контракти на ОДНОМУ кластері. Сума «по
+      # контрактах» дала б 240 — рівно та переоцінка в N разів, через яку контрактну
+      # деривацію й визнано невиконуваною. Кластерна множина дедуплікована, тож 120.
+      it "рахує емісію кластера ОДИН раз, скільки б контрактів на ньому не висіло" do
+        create(:naas_contract, organization: organization, cluster: own_cluster)
+        create(:blockchain_transaction, wallet: wallet, amount: 120,
+                                        token_type: :carbon_coin, status: :confirmed)
+
+        get "/contracts", headers: headers
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("120.0 SCC")
+        expect(response.body).not_to include("240.0 SCC")
+      end
+
+      # ⊥ Ліхтар на протилежне плече: спалення ВІДНІМАЄТЬСЯ. Без нього пін проходив би
+      # і на голій сумі мінтів, тобто не доводив би, що ми беремо саме ЧИСТУ емісію.
+      it "віднімає спалення, а не сумує його як емісію" do
+        create(:blockchain_transaction, wallet: wallet, amount: 120,
+                                        token_type: :carbon_coin, status: :confirmed)
+        create(:blockchain_transaction, wallet: wallet, amount: 20, token_type: :carbon_coin,
+                                        status: :confirmed, sourceable: own_contract)
+
+        get "/contracts", headers: headers
+
+        expect(response.body).to include("100.0 SCC")
+      end
+    end
+
     context "when as JSON" do
       it "returns only contracts belonging to the user's organization" do
         get "/contracts", headers: headers, as: :json
@@ -211,9 +249,14 @@ RSpec.describe Api::V1::ContractsController, type: :request do
       # сумував колонку без жодного писача, а `attested_value_usd` множив ту суму на
       # живу ціну з оракула, тобто був доларовою оцінкою портфеля, структурно рівною
       # нулю. Єдиний правдивий множник у виразі створював враження обчислення.
-      # ⛔ `nil` тут — ВИМІР «не виміряно», і пін тримає саме його: повернення `0`
-      # (як і будь-якого числа) означало б, що семантику ухвалили без присуду.
-      expect(body["total_tokens_minted"]).to be_nil
+      #
+      # ✅ ⚖️ Присуд founder (кластерна семантика) зняв ПЕРШУ половину: величина знову
+      # вимірювана, тож пін перецілено з «не виміряно» на САМЕ ЗНАЧЕННЯ — інакше він
+      # стеріг би стан, якого вже немає. Дискримінатор до цього нуля (він пройшов би й
+      # на захардкодженому) стоїть у `GET /contracts` вище.
+      # ⛔ `attested_value_usd` лишається `nil` СВІДОМО: він потребує зовнішнього
+      # цінового оракула на списковому ендпоінті, і рішення про той виклик — окреме.
+      expect(body["total_tokens_minted"]).to eq(0.0)
       expect(body["attested_value_usd"]).to be_nil
     end
 

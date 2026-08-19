@@ -271,6 +271,45 @@ class BlockchainTransaction < ApplicationRecord
     mints - burns
   end
 
+  # [ARCH.103] Батчева форма того самого агрегату під СПИСКОВІ поверхні: віддає
+  # `{cluster_id => BigDecimal}` ОДНИМ запитом. Заведено тому, що після переходу на
+  # кластерну семантику кожен рядок списку контрактів питав би власний агрегат — N
+  # запитів на грошовій поверхні, які Prosopite побачив би лише з другого рядка.
+  #
+  # ⚠️ Дискримінатор напрямку тут ТОЙ САМИЙ (`BURN_SOURCEABLE_TYPE`) і в тій самій
+  # ідіомі `IS DISTINCT FROM` — третьої КОПІЇ формули не заводимо, лише третю ФОРМУ її
+  # застосування (агрегат по групах). Наївний `!=` дав би `NULL`, тобто мінти
+  # (`sourceable_type IS NULL`) випали б і лишилось би −Σburns.
+  #
+  # 🔴 Координата кластера резолвиться ДВОМА шляхами, і друга гілка не косметична —
+  # рівно як у `for_cluster` [ARCH.96]: slash-інтент «останнього дерева» чіпляється
+  # прямо до `cluster` з `wallet: nil`, тож `LEFT JOIN` через гаманець його не бачить.
+  # `COALESCE` зводить обидві координати в одну вісь групування.
+  #
+  # 🔴 **Нуль ТУТ виміряний, а не фабрикований — і цю межу треба тримати поруч із
+  # сусідами:** `naas_contracts.emitted_tokens` віддавав нуль, бо писача не існувало;
+  # цей агрегат віддає нуль, бо запит ВИКОНАВСЯ і підтверджених рухів справді немає.
+  # Тому кластер, відсутній у хеші, = `0`, а не «не виміряно».
+  #
+  # ⚠️ Часового вікна НЕМА свідомо: питання звучить «скільки намінтовано за ВЕСЬ час»,
+  # тож будь-яка межа змінила б ВІДПОВІДЬ, а не лише вартість — прецедент `PERF.1` (г).
+  def self.net_minted_by_cluster(cluster_ids, token_type)
+    ids = Array(cluster_ids).compact.uniq
+    return {} if ids.empty?
+
+    coordinate = "COALESCE(trees.cluster_id, blockchain_transactions.cluster_id)"
+    signed_amount = "CASE WHEN blockchain_transactions.sourceable_type IS DISTINCT FROM " \
+                    "#{connection.quote(BURN_SOURCEABLE_TYPE)} " \
+                    "THEN blockchain_transactions.amount ELSE -blockchain_transactions.amount END"
+
+    where(token_type: token_type, status: :confirmed)
+      .joins("LEFT JOIN wallets ON wallets.id = blockchain_transactions.wallet_id")
+      .joins("LEFT JOIN trees ON trees.id = wallets.tree_id")
+      .where("#{coordinate} IN (?)", ids)
+      .group(Arel.sql(coordinate))
+      .sum(Arel.sql(signed_amount))
+  end
+
   # [СИНХРОНІЗОВАНО]: Додано статус :sent для підтримки асинхронного Fire-and-Forget
   enum :status, {
     pending: 0,        # Очікує в черзі на обробку

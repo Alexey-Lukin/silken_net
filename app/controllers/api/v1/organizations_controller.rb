@@ -42,14 +42,15 @@ module Api
 
         @performance = {
           total_trees: @organization.cached_trees_count,
-          # [ARCH.103] `nil` = не виміряно. Джерело — `naas_contracts.emitted_tokens`,
-          # колонка зі схемним `DEFAULT 0.0` і нулем писачів, тож ключ роками
-          # стверджував намінтований вуглець рівно нулем. ⚠️ Жива відповідь на це
-          # питання в дереві Є — `BlockchainTransaction.for_organization(id)
-          # .net_minted_supply(:carbon_coin)`, — але вона про ІНШУ множину (усі
-          # мінти орендаря, не «за контрактами»), тож підставити її мовчки означало б
-          # замінити фабрикацію підміною. Присуд → `00_07` ARCH.103.
-          carbon_minted: nil
+          # ✅ [ARCH.103] ⚖️ Присуд founder: контрактну семантику знято на користь
+          # КЛАСТЕРНОЇ/орендарської, тож «інша множина» перестала бути запереченням —
+          # вона стала ВІДПОВІДДЮ. Ключ віддає чинний monetary supply орендаря
+          # (Σmints − Σburns) через той самий One-Home, що годує дашборд і L1-якір.
+          # ⚠️ Ім'я ключа лишається: воно завжди описувало орг-рівень, тож саме тепер
+          # стало правдивим — міняти його означало б ламати опублікований контракт
+          # заради косметики.
+          carbon_minted: BlockchainTransaction.for_organization(@organization.id)
+                                              .net_minted_supply(:carbon_coin).to_f.round(4)
         }
 
         respond_to do |format|
