@@ -4,17 +4,19 @@
 require "rails_helper"
 
 RSpec.describe Organizations::Show do
+  # 🔴 [TEST.12] Реальний незбережений `Cluster`. Цей мок стояв за два рядки над
+  # надгробком, який описує конверсію `Organization` — тобто напис про ОДИН
+  # обʼєкт прочитався як звіт про файл (`00_07` UI.17).
+  # Що міняє конверсія предметно: `total_active_trees` не колонка, а ридер
+  # `active_trees_count` — фікстура годувала ПОХІДНЕ замість джерела, тож
+  # розходження ридера з колонкою було невидиме за побудовою. Метадані
+  # фреймворку віддає модель (компонент будує `cluster_path`).
+  # ⚠️ `health_index` навмисно лишається Float: колонка `double precision`, тож
+  # тут фікстура типом НЕ брехала — і це варто сказати, щоб наступний прохід не
+  # «полагодив» коректне на BigDecimal за аналогією з грошовими колонками.
   def mock_cluster(id: 1, name: "Carpathian-Alpha", health_index: 0.85, total_active_trees: 24)
-    c = OpenStruct.new(
-      id: id,
-      name: name,
-      health_index: health_index,
-      total_active_trees: total_active_trees
-    )
-    c.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    c.define_singleton_method(:to_key) { [ id ] }
-    c.define_singleton_method(:to_param) { id.to_s }
-    c
+    Cluster.new(id: id, name: name, health_index: health_index,
+                active_trees_count: total_active_trees)
   end
 
   # [TEST.12] Реальний незбережений `Organization`: метадані фреймворку (потрібні

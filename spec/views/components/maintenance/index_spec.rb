@@ -4,14 +4,15 @@
 require "rails_helper"
 
 RSpec.describe Maintenance::Index do
-  def mock_pagy(count: 2, page: 1)
-    pg = OpenStruct.new(
-      count: count, page: page, last: 1, from: 1, to: count,
-      previous: nil, next: nil, vars: { items: 50 }
-    )
-    pg.define_singleton_method(:series) { [ 1 ] }
-    pg
-  end
+  # 🔴 [TEST.12] Тут стояв ЛОКАЛЬНИЙ `def mock_pagy`, що віддавав рівно ту
+  # `OpenStruct`-підробку, яку `spec/quality/pagy_fixture_is_real_spec.rb`
+  # оголошує вимерлою: `vars` (методу з таким іменем `Pagy::Offset` не має),
+  # публічний `series` (у гема `protected`) і `count`/`last` як НЕЗАЛЕЖНІ поля,
+  # тоді як гем виводить `last` із `count`/`limit` — тобто стан, недосяжний за
+  # побудовою. Гейт лишався зеленим, бо міряє СПІЛЬНИЙ хелпер, а локальне
+  # визначення затінює його всередині файлу. Фікстура тепер приходить із дому
+  # (`PhlexComponentHelper#mock_pagy` → справжній `Pagy::Offset`); межу тримає
+  # `spec/quality/shared_fixture_home_spec.rb`.
 
   def build_user(first_name: "Ivan", last_name: "Koval")
     User.new(first_name: first_name, last_name: last_name)
@@ -71,8 +72,15 @@ RSpec.describe Maintenance::Index do
       expect(html).to include("Maintenance Records")
     end
 
-    it "renders the record count from pagy" do
-      expect(html).to include("2 interventions")
+    # 🔴 [TEST.12] Доти пін стояв на «2 interventions», і двійка була ДЕФОЛТОМ
+    # локальної підробки — тобто приклад доводив збіг із фікстурою, а не те, що
+    # компонент читає `pagy.count`. Тепер лічильник задається явно й НЕ дорівнює
+    # `records.size` (7 проти 1), тож пін розрізняє два джерела, які на дефолті
+    # виглядали б однаково.
+    it "renders the record count from pagy, not the rendered slice" do
+      html = render_component(records: [ record ], pagy: mock_pagy(count: 7))
+
+      expect(html).to include("7 interventions")
     end
 
     it "renders Register Intervention link" do

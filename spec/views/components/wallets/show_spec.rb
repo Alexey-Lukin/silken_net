@@ -8,12 +8,17 @@ RSpec.describe Wallets::Show do
   let(:transactions) { [ mock_tx ] }
   let(:html) { render_component(wallet: wallet, transactions: transactions) }
 
+  # 🔴 [TEST.12] Реальний незбережений `Wallet` замість `OpenStruct`. Цей мок
+  # пережив конверсію транзакції в цьому ж файлі — надгробок нижче описує ОДИН
+  # обʼєкт, і читався як звіт про весь файл (`00_07` UI.17: «надгробок на обʼєкт
+  # у багатообʼєктному файлі»).
+  # Дві речі, які підміняв саме він: метадані фреймворку (`model_name`/`to_key`/
+  # `to_param` рукописні — а компонент будує з них і маршрути, і ПІДПИСАНЕ імʼя
+  # стріму `turbo_stream_from @wallet, :transactions`), і **тип балансу**:
+  # `scc_balance` це `alias_attribute` на `balance`, тобто `numeric(24,6)` →
+  # BigDecimal, тоді як фікстура подавала Float.
   def mock_wallet(id: 1, scc_balance: 42.5)
-    wallet = OpenStruct.new(id: id, scc_balance: scc_balance)
-    wallet.define_singleton_method(:model_name) { ActiveModel::Name.new(Wallet) }
-    wallet.define_singleton_method(:to_key) { [ id ] }
-    wallet.define_singleton_method(:to_param) { id.to_s }
-    wallet
+    Wallet.new(id: id, balance: scc_balance)
   end
 
   # [TEST.12] Реальний НЕЗБЕРЕЖЕНИЙ запис замість `OpenStruct`. Мок тут був того

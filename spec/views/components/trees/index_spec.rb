@@ -13,12 +13,13 @@ RSpec.describe Trees::Index do
   let(:html) { render_component(cluster: cluster, trees: trees, pagy: pagy) }
 
 
+  # 🔴 [TEST.12] Реальний незбережений `Cluster` — четвертий сайт того самого
+  # візерунка (`00_07` UI.17): надгробок нижче звітує про конверсію `Tree`, а
+  # сусідній обʼєкт лишався `OpenStruct`-ом за два рядки над ним. ⊕ Він же
+  # спростовував сусідню клаузу: коментар про `under_threat?` називає стаб
+  # «ЄДИНИМ, що тут вимагало б БД», і поки цей мок жив, це було неправдою.
   def mock_cluster(id: 1, name: "Carpathian-Alpha", active_trees_count: 5)
-    c = OpenStruct.new(id: id, name: name, active_trees_count: active_trees_count)
-    c.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    c.define_singleton_method(:to_key) { [ id ] }
-    c.define_singleton_method(:to_param) { id.to_s }
-    c
+    Cluster.new(id: id, name: name, active_trees_count: active_trees_count)
   end
 
   # [TEST.12] Реальний незбережений `Tree`; фікстура годує ДЖЕРЕЛО заряду, не результат.
