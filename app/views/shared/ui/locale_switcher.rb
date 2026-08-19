@@ -105,7 +105,7 @@ module Views
               "appearance-none pr-7 pl-2 py-1 cursor-pointer",
               "border border-gaia-border bg-gaia-surface text-gaia-text",
               "text-tiny font-mono uppercase tracking-widest",
-              "hover:text-gaia-primary hover:border-gaia-primary",
+              "hover:text-gaia-primary-strong hover:border-gaia-primary",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary",
               "transition-colors duration-200"
             ),
@@ -124,7 +124,7 @@ module Views
               class: tokens(
                 "px-2 py-1 border border-gaia-border text-gaia-text-muted",
                 "text-tiny font-mono uppercase tracking-widest",
-                "hover:text-gaia-primary hover:border-gaia-primary"
+                "hover:text-gaia-primary-strong hover:border-gaia-primary"
               )
             ) { t("locale.apply", default: "Apply") }
           end

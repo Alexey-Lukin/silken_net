@@ -31,7 +31,7 @@ module Views
               "md:hidden inline-flex items-center justify-center",
               "h-10 w-10 -ml-2",
               "border border-gaia-border text-gaia-text-muted",
-              "hover:text-gaia-primary hover:border-gaia-primary",
+              "hover:text-gaia-primary-strong hover:border-gaia-primary",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary",
               "transition-colors duration-200"
             )

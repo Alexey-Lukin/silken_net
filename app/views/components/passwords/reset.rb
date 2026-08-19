@@ -96,7 +96,7 @@ module Passwords
 
     def render_back_link
       div(class: "text-center pt-2") do
-        a(href: login_path, class: "text-tiny text-gaia-text-subtle uppercase tracking-widest hover:text-gaia-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-colors") do
+        a(href: login_path, class: "text-tiny text-gaia-text-subtle uppercase tracking-widest hover:text-gaia-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-colors") do
           t(".back_link")
         end
       end

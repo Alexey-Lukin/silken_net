@@ -123,6 +123,42 @@ RSpec.describe "[UI.3] Кореневі текстові токени трима
                                                     "або водяний знак на цій сторінці змінив клас (кошики: #{excluded.inspect})"
   end
 
+  # 🔴 ВІСЬ СТАНІВ. Статичний знімок їх не має за побудовою, а приписаний у пункті
+  # інструмент (`CSS.forcePseudoState`) я одного дня оголосив інертним — і помилявся:
+  # інтерактивні поверхні дерева несуть `transition-*`, тож `getComputedStyle`
+  # одразу після форсу віддає ще СТАРЕ інтерпольоване значення. Пауза міряється зі
+  # сторінки (`settle_transitions!`), а сам форс самосвідчиться (`:hover`-матч).
+  #
+  # Судяться рівно НОВІ пари — ті, яких у спокої не було: базові вже покриті
+  # прикладами вище, і повторне їх судження робило б цей приклад дублем.
+  #
+  # ⚠️ `:focus-visible` тут НЕ судиться: вимір дав нуль нових пар на всьому контурі
+  # (кільце фокуса малюється `ring-*`, тобто тінню, а не парою текст/фон), тож
+  # приклад був би зелений на порожній множині. `:disabled` виведений із-під 1.4.3
+  # нормативно й відсівається самим приладом.
+  %i[dark light].each do |theme|
+    it "тема #{theme}: стан :hover не вводить провальної пари" do
+      fresh = pages.flat_map do |path|
+        calm = harvest_contrast(path, theme: theme)[:pairs].map { |x| [ x.colour, x.backdrop ] }
+        harvest_contrast(path, theme: theme, force_state: :hover)[:pairs]
+          .reject { |x| calm.include?([ x.colour, x.backdrop ]) }
+          .map { |x| [ path, x ] }
+      end
+
+      # Ліхтар: нуль нових пар означає, що форс нічого не змінив — тобто приклад
+      # атестує рівно те, що мав виміряти. Виміряно: контур дає їх кілька в обох
+      # темах, тож порожня множина є ознакою поломки, не здоровʼя.
+      expect(fresh).not_to be_empty,
+                           "жодної нової пари під :hover — форс не подіяв або сторінки втратили інтерактивні поверхні"
+
+      failures = fresh.reject { |_, x| x.passes }.map do |path, x|
+        format("%s → %.2f (бар %.1f) «%s»", path, x.ratio, x.threshold, x.sample_text)
+      end
+
+      expect(failures).to be_empty, "hover провалює AA:\n  #{failures.uniq.join("\n  ")}"
+    end
+  end
+
   %i[dark light].each do |theme|
     it "тема #{theme}: жодна пара обох токенів не провалює свій поріг" do
       found = collect(theme)

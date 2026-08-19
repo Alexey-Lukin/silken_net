@@ -117,7 +117,7 @@ module Errors
           logout_path,
           method: :delete,
           aria: { label: "Sign out" },
-          class: "text-tiny text-gaia-text-subtle uppercase tracking-widest hover:text-gaia-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-colors bg-transparent border-0 cursor-pointer"
+          class: "text-tiny text-gaia-text-subtle uppercase tracking-widest hover:text-gaia-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-colors bg-transparent border-0 cursor-pointer"
         )
       end
     end

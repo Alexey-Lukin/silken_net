@@ -431,7 +431,63 @@ document.querySelectorAll('*').forEach(el => {
     ContrastRegistry::DECORATIONS.values.flat_map { |d| Array(d[:class_tokens]) }.uniq.to_json
   end
 
-  def harvest_contrast(path, theme:, expect_path: path.split("?").first)
+  # [UI.3] Селектор інтерактивних поверхонь — тих, що взагалі МАЮТЬ стани.
+  # Свідомо ширший за «кнопки»: `[tabindex]` ловить кастомні контроли, які
+  # інакше випали б із виміру мовчки.
+  INTERACTIVE = "a, button, input, select, textarea, [role=button], [tabindex]"
+
+  # 🔴 Форс псевдоКЛАСУ через CDP — і головне тут не сама команда, а ПАУЗА.
+  # `CSS.forcePseudoState` працює бездоганно; хибним був МІЙ момент читання:
+  # інтерактивні поверхні дерева несуть `transition-*`, а `getComputedStyle`
+  # під час переходу віддає ПОТОЧНЕ інтерпольоване значення — на t=0 ще старе.
+  # Виміряно: одразу після форсу стиль не змінився ЖОДНОГО разу, через 500 мс
+  # застосувався повністю. Два «незалежні канали» (CDP ⊥ JS) при цьому
+  # погоджувались саме тому, що читали в ОДНУ мить.
+  def force_pseudo_state!(state)
+    cdp = page.driver.browser.page
+    cdp.command("DOM.enable")
+    cdp.command("CSS.enable")
+    root = cdp.command("DOM.getDocument")["root"]["nodeId"]
+    ids = cdp.command("DOM.querySelectorAll", nodeId: root, selector: INTERACTIVE)["nodeIds"].to_a
+
+    # Ліхтар: нуль інтерактивних вузлів означає, що вимір стану вакуумний —
+    # звіт був би зелений на порожній множині.
+    expect(ids).not_to be_empty,
+                       "жодного інтерактивного вузла — форс стану #{state} нічого не накриває, вимір недійсний"
+
+    ids.each { |id| cdp.command("CSS.forcePseudoState", nodeId: id, forcedPseudoClasses: [ state.to_s ]) }
+    settle_transitions!
+
+    # Самосвідчення форсу: без нього «стан не змінив нічого» невідрізнимий від
+    # «стан не застосувався». Питаємо САМ стан, не його наслідок.
+    forced = page.evaluate_script("document.querySelectorAll('#{INTERACTIVE}:#{state}').length")
+    expect(forced).to be_positive,
+                      "жоден вузол не матчить `:#{state}` після форсу — CDP-команда не подіяла, решта виміру недійсна"
+  end
+
+  # Пауза МІРЯЄТЬСЯ зі сторінки, не хардкодиться: фіксоване число тут було б
+  # магічною константою, що гниє від першої зміни `duration-*`. Стеля названа —
+  # 1.5 с, щоб зациклений `animation` не підвісив прогін.
+  def settle_transitions!
+    longest = page.evaluate_script(<<~JS)
+      (() => {
+        let ms = 0;
+        for (const el of document.querySelectorAll('*')) {
+          const cs = getComputedStyle(el);
+          for (const group of [ cs.transitionDuration, cs.transitionDelay, cs.animationDuration ]) {
+            for (const part of (group || '').split(',')) {
+              const v = parseFloat(part) || 0;
+              ms = Math.max(ms, part.includes('ms') ? v : v * 1000);
+            }
+          }
+        }
+        return ms;
+      })()
+    JS
+    sleep([ longest.to_f / 1000.0 + 0.15, 1.5 ].min)
+  end
+
+  def harvest_contrast(path, theme:, expect_path: path.split("?").first, force_state: nil)
     emulate_media(theme)
     visit(path)
     expect(page).to have_css("body", wait: 5)
@@ -459,6 +515,8 @@ document.querySelectorAll('*').forEach(el => {
     # Доти реєстр оголошував звільнення, якого НІХТО не застосовував — три
     # поверхні стверджували механізм, що не існував (§Guard-craft #71 на поверх
     # вище: предмет декларації був реальний, а споживача не було).
+    force_pseudo_state!(force_state) if force_state
+
     raw = page.evaluate_script(HARVEST_JS.sub("__DECORATION_TOKENS__", decoration_tokens_json))
 
     expect(raw["reduced_motion"]).to be(true),

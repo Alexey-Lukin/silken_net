@@ -160,7 +160,7 @@ module Maintenance
             if @editing
               a(
                 href: maintenance_record_path(@record),
-                class: "px-4 py-4 border border-gaia-border text-gaia-text-muted hover:text-gaia-primary " \
+                class: "px-4 py-4 border border-gaia-border text-gaia-text-muted hover:text-gaia-primary-strong " \
                        "uppercase text-mini tracking-widest transition-all"
               ) { t(".cancel") }
             end

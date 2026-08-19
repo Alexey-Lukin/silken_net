@@ -142,7 +142,7 @@ class DashboardLayout < ApplicationComponent
         li do
           a(
             href: dashboard_index_path,
-            class: "hover:text-gaia-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-colors duration-200"
+            class: "hover:text-gaia-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-colors duration-200"
           ) { t("navigation.breadcrumb.root") }
         end
 

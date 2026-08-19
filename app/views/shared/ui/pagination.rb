@@ -86,7 +86,7 @@ module Views
 
         def page_link_classes
           "px-4 py-2 border border-gaia-border text-gaia-text-muted tracking-widest " \
-            "hover:border-gaia-primary hover:text-gaia-primary " \
+            "hover:border-gaia-primary hover:text-gaia-primary-strong " \
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary " \
             "transition-all duration-200 ease-in-out"
         end

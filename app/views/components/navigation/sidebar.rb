@@ -131,7 +131,7 @@ module Navigation
             class: tokens(
               "w-4 h-4 shrink-0",
               "text-gaia-primary": active,
-              "text-gaia-text-subtle group-hover:text-gaia-primary": !active
+              "text-gaia-text-subtle group-hover:text-gaia-primary-strong": !active
             ),
             aria_hidden: "true"
           ) { render_icon(icon) }
@@ -175,7 +175,7 @@ module Navigation
     end
 
     def nav_item_inactive_classes
-      "text-gaia-text-muted border-transparent hover:text-gaia-primary " \
+      "text-gaia-text-muted border-transparent hover:text-gaia-primary-strong " \
         "hover:bg-gaia-surface-sunken hover:border-gaia-border-strong"
     end
 
