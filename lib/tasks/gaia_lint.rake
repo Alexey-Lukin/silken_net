@@ -24,9 +24,16 @@
 # rule means sweeping its CITATIONS, not its section: the section has an owner,
 # the citations do not.
 #
-#   bin/rails gaia:lint_tokens                          # shared/ — the HARD rule
+#   bin/rails gaia:lint_tokens                          # the HARD default — see
+#                                                       # `default_scopes` below
 #   LINT_SCOPE=app/views/components/wallets/ \
 #     bin/rails gaia:lint_tokens                        # any subtree, on demand
+#
+# ⚠️ The default is a LIST since 2026-08-19 (UI.1) and its members live in
+# `default_scopes` — do not enumerate them here. A domain joins that list the
+# moment it measures clean under BOTH instruments (this gate ⊥ an independent
+# grep for palette / bracketed colour / inline `style:`), and thereby loses the
+# right to regress. `LINT_SCOPE=` still takes exactly ONE path.
 #
 # ⚠️ `app/views/layouts/` is deliberately OUT of the default: measured, its one
 # hit is `backdrop:bg-black/60` — the scrim behind the mobile drawer, which must
@@ -92,6 +99,11 @@
 # (`\A\s*#`), ніколи не «все після `#`»: у Ruby `#` живе й усередині
 # `"#{…}"`-інтерполяції, тож наївне обрізання ховало б справжню розмітку —
 # хибний НЕГАТИВ, тобто помилка в тому єдиному напрямку, який тут коштує.
+# ⚠️ Ціна цієї межі — ТРЕЙЛІНГ-коментар: `foo # раніше тут стояв bg-red-500`
+# почервоніє. Живих таких у дереві нуль (перевірено по всіх хітах `components/`
+# 2026-08-19), але після розширення до повної палітри шанс зрости — тож
+# **прозу, що НАЗИВАЄ клас, пиши окремим рядком**. Це свідомий хибний ПОЗИТИВ,
+# дешевий і видимий, обраний замість дешевого й невидимого негативу.
 #
 # 🔴 NO `:environment` PREREQUISITE, and that is load-bearing rather than tidy.
 # The body is pure Ruby (Pathname + ENV), and its docs.yml neighbours —
@@ -112,10 +124,23 @@ namespace :gaia do
     # зелений вердикт про НЕ ТУ множину.
     if ENV["COMPONENTS"]
       abort "✗ gaia:lint_tokens — `COMPONENTS=` перейменовано на `LINT_SCOPE=`. " \
-            "Стара назва брехала: дефолт цієї змінної — `app/views/shared/`, а не `components/`."
+            "Стара назва брехала: дефолт — `shared/` плюс поіменні чисті домени, а не `components/` цілком."
     end
 
-    paths = (ENV["LINT_SCOPE"] || "app/views/shared/").then do |p|
+    # [UI.1] Дефолт — СПИСОК, бо ratchet доменний: каталог заходить сюди в мить,
+    # коли зміряний чистим, і більше не має права зрегресувати. `LINT_SCOPE=`
+    # лишається ОДНИМ шляхом (див. шапку) — міняється дефолт, не контракт змінної.
+    # ⚠️ Кожен запис тут вимагає ДВОХ вимірів, а не одного: гейт зелений ⊥
+    # незалежний греп по палітрі/дужках/інлайн-`style:` теж нульовий. Інакше
+    # «чисто» означало б лише «наш регекс сюди не дотягується».
+    default_scopes = [
+      "app/views/shared/",              # HARD із 2026-08-07 — §3.5 забороняє тут сиру Tailwind
+      "app/views/components/alerts/",   # зміряно чистим 2026-08-19 (обома вимірами)
+      "app/views/components/navigation/" # те саме; сайдбар стоїть на КОЖНІЙ сторінці
+    ]
+
+    scopes = ENV["LINT_SCOPE"] ? [ ENV["LINT_SCOPE"] ] : default_scopes
+    paths = scopes.flat_map do |p|
       Pathname.new(p).directory? ? Pathname.glob("#{p}/**/*.rb") : [ Pathname.new(p) ]
     end
 

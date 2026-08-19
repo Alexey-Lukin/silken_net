@@ -66,11 +66,15 @@ module GaiaLintProbe
 
   def with_scope(scope)
     previous = ENV.fetch("LINT_SCOPE", nil)
-    ENV["LINT_SCOPE"] = scope.to_s
+    scope.nil? ? ENV.delete("LINT_SCOPE") : ENV["LINT_SCOPE"] = scope.to_s
     yield
   ensure
     ENV["LINT_SCOPE"] = previous
   end
+
+  # Дефолт таска — той самий шлях, яким його кличе CI (`docs.yml` не ставить
+  # `LINT_SCOPE`), тож перевіряти треба саме ВІДСУТНІСТЬ змінної, не її значення.
+  def run_default = run(nil)
 
   # Кожен рядок — ОДНА форма, щоб звіт назвав саме її. Так зняття однієї гілки
   # фікса червонить поіменний приклад, а не «щось у наборі».
@@ -166,12 +170,27 @@ RSpec.describe "[UI.1] gaia:lint_tokens розпізнає всі сирі ко�
     end
   end
 
-  describe "HARD-периметр (`app/views/shared/`) лишається зеленим" do
-    # Ratchet: розширення діалекту не сміє почервонити периметр, який CI гейтує.
-    # Виміряно ПЕРЕД внесенням — нуль хітів усіх дописаних родин.
+  describe "HARD-периметр (дефолт таска) лишається зеленим" do
+    # Ratchet: ані розширення діалекту, ані внесення нового домену не сміє
+    # почервонити периметр, який гейтує CI. Виміряно ПЕРЕД кожним внесенням.
+    let(:result) { GaiaLintProbe.run_default }
+
     it "не має жодного сирого колірного класу" do
-      result = GaiaLintProbe.run("app/views/shared/")
       expect(result[:status]).to eq(0), "HARD-периметр почервонів:\n#{result[:out]}"
+    end
+
+    # 🔴 Ліхтар популяції на САМОМУ периметрі, а не лише на фікстурах. Без нього
+    # запис у `default_scopes`, що вказує на неіснуючий чи перейменований каталог,
+    # мовчки зменшує множину, і ✓ починає атестувати менше, ніж учора — а
+    # повідомлення гейта при цьому не змінюється жодним словом.
+    it "читає ВЕСЬ дефолт, а не саму `shared/`" do
+      scanned = result[:out][/\((\d+) files scanned\)/, 1].to_i
+      shared_only = GaiaLintProbe.run("app/views/shared/")[:out][/\((\d+) files scanned\)/, 1].to_i
+
+      expect(shared_only).to be > 0
+      expect(scanned).to be > shared_only,
+        "дефолт прочитав #{scanned} файлів проти #{shared_only} у самій `shared/` — " \
+        "запис у `default_scopes` резолвиться в порожньо"
     end
   end
 end
