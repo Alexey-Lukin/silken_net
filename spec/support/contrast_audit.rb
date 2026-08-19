@@ -72,8 +72,19 @@ require Rails.root.join("lib/silken_net/contrast")
 # щоб їх порахувати, треба їх відвідати. Вони живуть у стелі нижче, як стеля.
 #
 # 🔒 Стеля — чесно й поіменно; зелений НЕ означає «сторінка доступна»:
-#   · `::before`/`::after` (у нас це мобільні мітки таблиць, `td::before`
-#     `content: attr(data-label)`) — `TreeWalker` не бачить їх за побудовою.
+#   · ✅ `::before`/`::after`/`::placeholder` ВИМІРЮЮТЬСЯ з 2026-08-19 (третій
+#     прохід): `TreeWalker` їх справді не бачить, але це стеля TreeWalker'а, а
+#     не платформи — `getComputedStyle(el, pseudo)` віддає колір і РЕЗОЛВЛЕНИЙ
+#     `content` (виміряно: `attr(data-label)` приходить рядком «Severity»).
+#     ⚠️ Три нові стелі замість знятої: площа береться по ГОСПОДАРЮ (власного
+#     бокса псевдоелемент не має), тож винесений за межі нульового батька він
+#     випадає; `::first-line`/`::selection`/`::marker` не покриті; а ефект
+#     проходу видно у ВУЗЛАХ, не в парах — на card-flip таблиці він додав пʼять
+#     вузлів і НУЛЬ нових пар, бо всі злилися з наявними за кольором і шрифтом.
+#   · 🔴 Псевдо-КЛАСИ (`:hover`/`:focus-visible`/`:disabled`) лишаються поза
+#     виміром — це ІНШИЙ механізм (`CSS.forcePseudoState` через CDP), не другий
+#     аргумент `getComputedStyle`. Не читай зелений третій прохід як «стани
+#     покриті»: покрито рівно псевдоЕЛЕМЕНТИ. Черга → `00_07` UI.3.
 #   · Перекриття (z-index): фон береться від ПРЕДКА, тож текст під чужим
 #     оверлеєм дав би правдоподібне й неправильне число. Детектора немає.
 #   · `text-shadow`/`-webkit-text-stroke` можуть і рятувати пару, і вбивати
@@ -242,8 +253,11 @@ module ContrastAudit
         return { reason: 'unresolved_backdrop' };
       };
 
-      const record = (el, colour, text, stack, blurred, suffix) => {
-        const cs = getComputedStyle(el);
+      const record = (el, colour, text, stack, blurred, suffix, csOverride) => {
+        // Псевдоелемент має ВЛАСНІ метрики шрифту, і поріг 1.4.3 залежить саме
+        // від них — тож override не косметика: `td::before` часто дрібніший
+        // за свій `td`, і взятий від батька розмір підняв би бар хибно.
+        const cs = csOverride || getComputedStyle(el);
         const key = [colour, stack.join('|'), cs.fontSize, cs.fontWeight, blurred].join('~');
         const seen = pairs.get(key);
         buckets.measured += 1;
@@ -296,6 +310,62 @@ module ContrastAudit
         if (back.reason) { bump('unmeasurable', back.reason); return; }
         record(el, norm(getComputedStyle(el).color), text, back.stack, back.blurred, '@value');
       });
+
+// ── ТРЕТІЙ прохід: ПСЕВДОЕЛЕМЕНТИ ──
+// Шапка цього файлу роками оголошувала їх стелею — «`TreeWalker` не бачить
+// за побудовою». Це правда про TreeWalker і НЕПРАВДА про платформу:
+// `getComputedStyle(el, '::before')` віддає і колір, і **резолвлений**
+// `content` (виміряно: `attr(data-label)` приходить як `"Severity"`, не як
+// текст функції). Тобто носій лежав поверхом нижче — у другому проході
+// того самого API.
+//
+// Чому це не дрібниця: `td::before` є ЄДИНИМ носієм назви колонки в
+// мобільній розмітці таблиць (card-flip), а `::placeholder` — єдиною
+// підказкою порожнього поля. Обидва — контент, обидва підпадають під 1.4.3,
+// і обидва були невимірні.
+const PSEUDOS = [ '::before', '::after', '::placeholder' ];
+document.querySelectorAll('*').forEach(el => {
+  for (const pseudo of PSEUDOS) {
+    const pcs = getComputedStyle(el, pseudo);
+    if (!pcs) continue;
+
+    let text;
+    if (pseudo === '::placeholder') {
+      // Дискримінатор — АТРИБУТ, не стиль: `getComputedStyle` віддає
+      // успадковані значення для будь-якого елемента, тож без цієї
+      // перевірки прохід рахував би плейсхолдери там, де їх немає.
+      if (!el.placeholder) continue;
+      text = el.placeholder;
+    } else {
+      const c = pcs.content;
+      if (!c || c === 'none' || c === 'normal') continue;
+      if (pcs.display === 'none') continue;
+      text = c.replace(/^["']|["']$/g, '');
+      if (!text.trim()) continue;
+    }
+
+    const reason = elementReason(el);
+    if (reason) { bump(reason[0], reason[1]); continue; }
+
+    // Власного бокса псевдоелемент не віддає (`getBoundingClientRect` до
+    // нього не застосовний), тож площу міряємо по ГОСПОДАРЮ — оголошена
+    // стеля: псевдоелемент, винесений за межі нульового батька, сюди не
+    // потрапить.
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) { bump('excluded', 'zero_area'); continue; }
+
+    const back = backdropOf(el);
+    if (back.reason) { bump('unmeasurable', back.reason); continue; }
+
+    // Псевдоелемент може нести ВЛАСНИЙ фон — тоді він лягає ПЕРШИМ шаром,
+    // між текстом і поверхнею господаря.
+    let stack = back.stack;
+    const own = norm(pcs.backgroundColor);
+    if (own && own !== 'transparent' && !TRANSPARENT.test(own)) stack = [ own ].concat(stack);
+
+    record(el, norm(pcs.color), text, stack, back.blurred, pseudo, pcs);
+  }
+});
 
       return {
         pairs: Array.from(pairs.values()),

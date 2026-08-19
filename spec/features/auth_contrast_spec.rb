@@ -56,6 +56,28 @@ RSpec.describe "[UI.3] AuthLayout тримає AA в обох темах", :js d
     ContrastRegistry.paths_for(:auth, reset_token: user.generate_token_for(:password_reset))
   end
 
+  # 🔴 ЛІХТАР НА ТРЕТІЙ ПРОХІД приладу (псевдоелементи), і він стоїть саме тут, бо
+  # `::placeholder` — єдиний псевдоелемент, що рендериться на цих сторінках.
+  # Шапка `contrast_audit` роками оголошувала псевдоелементи стелею («`TreeWalker`
+  # не бачить за побудовою») — правда про TreeWalker і НЕПРАВДА про платформу:
+  # другий виклик того самого API (`getComputedStyle(el, pseudo)`) віддає і колір,
+  # і резолвлений `content`.
+  #
+  # ⚠️ Без цього приклада механізм лишався б НЕДОКАЗАНИМ: його ефект видно у
+  # ВУЗЛАХ, а не в парах — на сторінці з card-flip таблицею він додав пʼять вузлів
+  # і НУЛЬ нових пар, бо всі пʼять злилися з наявними за кольором і шрифтом.
+  # Тобто природний лічильник (кількість пар) показує «нічого не змінилось».
+  it "третій прохід ЖИВИЙ — підказка порожнього поля виміряна як контент" do
+    harvest = harvest_contrast("/forgot_password", theme: :dark)
+    placeholder = harvest[:pairs].find { |p| p.sample_path.to_s.include?("::placeholder") }
+
+    expect(placeholder).to be_present,
+                           "жодної пари ::placeholder — третій прохід приладу не працює, " \
+                           "або поле втратило підказку (пар усього: #{harvest[:pairs].size})"
+    expect(placeholder.passes).to be(true),
+                                  "підказка провалює свій поріг: #{placeholder.ratio&.round(2)} проти #{placeholder.threshold}"
+  end
+
   %i[dark light].each do |theme|
     it "тема #{theme}: жодна пара auth-родини не провалює свій поріг" do
       harvests = auth_pages.map { |path| harvest_contrast(path, theme: theme) }

@@ -208,6 +208,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 69. A locally-generated artifact can SHADOW the file under test, so the lane grades a snapshot instead of the tree — and unlike the loud form, this one is green — **when a measurement disagrees with a change you just made, ask which ARTIFACT the harness actually loaded before you doubt the change**
 70. A class closed by MIGRATION is closed for the FILES someone edited, never for the SURFACE — the CARRIER's perimeter is a separate measurement from the FIX's
 71. A registry entry can name a SUBJECT THAT DOES NOT EXIST — and every field-shaped check passes, because they interrogate the entry, never the tree — **for every registry keyed on a selector, a class token, a path, a constant or an ID, add the axis «does this subject resolve in the tree» — one grep per entry — and if the registry cannot check it, say so in its ceiling instead of implying it does**
+72. A mechanism's live effect can be INVISIBLE in the counter you would naturally read — so «nothing changed» is a statement about your metric, not about the mechanism — **when a change adds a SOURCE of measurements rather than a kind of verdict, prove it on the counter closest to the source — nodes, calls, rows scanned — never on the aggregated unit, which is deduplicated by construction and therefore designed to hide additions**
 
 <!-- /GUARD-CRAFT-INDEX -->
 
