@@ -34,7 +34,8 @@ uk:
         maintenance_records: Записи обслуговування
         me: Профіль
         metadata: Метадані
-        mfa: MFA
+        mfa: Другий фактор
+        mfa_setup: Підключення автентифікатора
         new: Створення
         notifications: Сповіщення
         on_chain: On-Chain

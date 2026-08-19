@@ -138,6 +138,7 @@ GEM
       rack-test (>= 0.6.3)
       regexp_parser (>= 1.5, < 3.0)
       xpath (~> 3.2)
+    chunky_png (1.4.0)
     concurrent-ruby (1.3.8)
     connection_pool (3.0.2)
     crass (1.0.7)
@@ -522,7 +523,12 @@ GEM
       trailblazer-option (>= 0.1.1, < 0.2.0)
       uber (< 0.2.0)
     retriable (4.2.0)
+    rotp (6.3.0)
     rouge (4.7.0)
+    rqrcode (3.2.0)
+      chunky_png (~> 1.0)
+      rqrcode_core (~> 2.0)
+    rqrcode_core (2.1.0)
     rspec-core (3.13.6)
       rspec-support (~> 3.13.0)
     rspec-expectations (3.13.5)
@@ -819,6 +825,8 @@ DEPENDENCIES
   rack-attack
   rails (~> 8.1.3)
   rails-i18n
+  rotp
+  rqrcode
   rspec-rails
   rubocop-rails-omakase
   rubocop-rspec

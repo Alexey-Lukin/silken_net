@@ -339,6 +339,51 @@ RSpec.describe User, type: :model do
     end
   end
 
+  # [S6.21] TOTP-перевірка з анти-replay: `after:` персиститься на успіху.
+  describe "#verify_totp!" do
+    let(:user) { create(:user, otp_secret: ROTP::Base32.random) }
+
+    it "accepts the current code and stamps otp_last_used_at" do
+      expect(user.verify_totp!(ROTP::TOTP.new(user.otp_secret).now)).to be(true)
+      expect(user.reload.otp_last_used_at).to be_present
+    end
+
+    it "rejects a wrong code" do
+      expect(user.verify_totp!("000000")).to be(false)
+    end
+
+    # Перехоплений код не дає другого входу всередині 30-с вікна.
+    it "rejects the SAME code replayed after a success" do
+      code = ROTP::TOTP.new(user.otp_secret).now
+      expect(user.verify_totp!(code)).to be(true)
+      expect(user.verify_totp!(code)).to be(false)
+    end
+
+    it "tolerates whitespace the authenticator UI encourages" do
+      code = ROTP::TOTP.new(user.otp_secret).now
+      expect(user.verify_totp!("#{code[0, 3]} #{code[3, 3]}")).to be(true)
+    end
+
+    it "fails closed on a blank secret" do
+      bare = create(:user)
+      expect(bare.verify_totp!("123456")).to be(false)
+      # Той самий гард на URI: без секрета немає що кодувати в QR.
+      expect(bare.otp_provisioning_uri).to be_nil
+    end
+  end
+
+  describe "#provision_otp_secret!" do
+    it "rotates the secret on every call — an abandoned setup leaves no stale secret" do
+      user = create(:user)
+      user.provision_otp_secret!
+      first = user.otp_secret
+      user.provision_otp_secret!
+
+      expect(user.otp_secret).to be_present
+      expect(user.otp_secret).not_to eq(first)
+    end
+  end
+
   describe "#generate_recovery_codes!" do
     it "generates 10 recovery codes" do
       user = create(:user)

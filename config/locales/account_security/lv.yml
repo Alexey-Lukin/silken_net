@@ -12,7 +12,16 @@ lv:
       unlocked_json: Identitāte %{provider} atbloķēta.
     mfa:
       disabled: MFA atspējota.
-      not_implemented: Divu faktoru pieteikšanās vēl nav izveidota, tāpēc tās ieslēgšana apgalvotu aizsardzību, kuras nav.
+      enabled: MFA ieslēgta.
+    mfa_setup:
+      activate: Aktivizēt MFA
+      already_enabled: MFA jau ir ieslēgta.
+      confirm_label: Pašreizējais kods no lietotnes
+      invalid_code: Kods nesakrita. Pārbaudiet lietotni un mēģiniet vēlreiz.
+      scan_hint: Noskenējiet QR kodu ar autentifikatora lietotni un ievadiet pašreizējo kodu, lai aktivizētu.
+      secret_label: Noslēpums manuālai ievadei
+      title: Autentifikatora pievienošana
+      use_setup_flow: MFA ieslēgšana notiek caur iestatīšanas plūsmu (noslēpums + koda pārbaude).
     password:
       current_invalid: Pašreizējā parole ir nepareiza.
       mismatch: Paroles nesakrīt.
@@ -42,7 +51,6 @@ lv:
         enabled_with_remaining: "✅ MFA iespējota. Atlikušie atjaunošanas kodi: %{count}"
         heading: Divu faktoru autentifikācija (2FA)
         recovery_warning: Saglabājiet atjaunošanas kodus drošā vietā. Tie nepieciešami, lai pieteiktos, ja pazaudēsiet TOTP ierīci.
-        wip_caveat: "⚠️ Izstrādē: atjaunošanas kodi pieteikšanās brīdī vēl netiek pārbaudīti un neaizsargā kontu. TOTP divu faktoru pieteikšanās drīzumā."
       password:
         change_submit: Mainīt paroli
         confirm_label: Apstiprināt jauno paroli

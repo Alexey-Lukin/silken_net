@@ -25,16 +25,14 @@ RSpec.describe "Account security and password management" do
       expect(json["identities"].first["provider"]).to eq("google_oauth2")
     end
 
-    # [S6.21] Доти цей приклад ВИМАГАВ увімкнення — тобто сюїта цементувала заявку
-    # на другий фактор, якого `sessions#create` не перевіряє. Пін на саму відмову
-    # живе в `spec/requests/api/v1/account_security_controller_spec.rb`; тут —
-    # інша заява: після спроби ПОВЕРХНЯ СТАТУСУ, яку читають три споживачі,
-    # лишається чесною.
+    # [S6.21] Toggle-enable шле в setup-флоу; сам по собі він прапорця не
+    # піднімає, тож ПОВЕРХНЯ СТАТУСУ, яку читають три споживачі, лишається
+    # чесною і після спроби.
     it "PATCH /account_security/mfa cannot enable MFA, and the status surface stays honest" do
       patch "/account_security/mfa",
             headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
-      expect(response).to have_http_status(:not_implemented)
+      expect(response).to have_http_status(:conflict)
 
       get "/account_security",
           headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }

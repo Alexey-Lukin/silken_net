@@ -2,6 +2,15 @@
 en:
   sessions:
     login_title: Login Portal
+    mfa_challenge:
+      code_label: Authenticator code
+      invalid_code: Invalid or expired code.
+      recovery_label: Recovery code
+      required: Second factor required.
+      submit: Verify
+      subtitle: Neural handshake // step 2
+      title: Second Factor
+      use_recovery: Use a recovery code
     new:
       access_code_label: Access Code (Password)
       access_code_placeholder: "● ● ● ● ● ● ● ●"

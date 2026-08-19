@@ -175,8 +175,8 @@ POST /api/v1/auth/m2m_token
 - `spec/requests/api/v1/m2m_auth_controller_spec.rb` — некоректний Ed25519 підпис → 401; nonce replay → 401; Redis unavailable → DB fallback (Solid Cache)
 - `spec/requests/api/v1/oracle_callbacks_controller_spec.rb` — replay callback → 409 Conflict; state machine guard
 - `spec/requests/api/v1/actuators_controller_spec.rb` — відсутній `Idempotency-Key` → 400; ідемпотентний повтор → 202; `command_status` 404 для cross-org команди; forester-guard
-- `spec/requests/api/v1/account_security_controller_spec.rb` — **MFA disable step-up** (wrong password / missing password / OAuth-only bypass); **[S6.21] MFA enable → 501** (прапорець не піднімається, коди не генеруються); **session revocation на password change** (keeps current IP+UA / fallback на newest row); **[SEC.16] salt-bound cookie** (stale cookie після чужого password-change → 401; ініціатор зміни лишається залогіненим)
-- `spec/security/mfa_claim_honesty_spec.rb` — **[S6.21] звʼязок двох незалежних сторін**: поки шлях входу не перевіряє другий фактор, запис прапорця мусить лишатись закритим; щойно verify-on-login приїде — приклад червоніє й вимагає ЗНЯТИ wip-гейт (стеля названа в шапці: читає джерело, не поведінку; поведінковий якір — рядок вище)
+- `spec/requests/api/v1/account_security_controller_spec.rb` — **MFA disable step-up** (wrong password / missing password / OAuth-only bypass); **[S6.21] MFA enable через toggle → 409 у setup-флоу** (прапорець не піднімається, коди не генеруються — сліпого увімкнення не існує); **session revocation на password change** (keeps current IP+UA / fallback на newest row); **[SEC.16] salt-bound cookie** (stale cookie після чужого password-change → 401; ініціатор зміни лишається залогіненим)
+- `spec/requests/api/v1/mfa_flow_spec.rb` — **[S6.21] наскрізний TOTP-контур**: setup (провижн → QR → активація лише свіжим кодом, rotation recovery-набору) ⊥ verify-on-login (пароль сам сесії НЕ дає; валідний TOTP завершує вхід; анти-replay того самого коду; recovery спалюється рівно раз; TTL pending-мітки; JSON-логін → 401 `mfa_required` без токена)
 - `spec/requests/sidekiq_web_spec.rb` — **[ARCH.61]** `/sidekiq` route-constraint (анонім/non-admin/stale-cookie → 404; admin → 200)
 - `spec/requests/api/v1/alerts_controller_spec.rb` — enum allow-list для `status`/`severity` (fail-fast + happy "resolved")
 - `spec/requests/api/v1/blockchain_transactions_controller_spec.rb` — enum allow-list для `status`/`token_type` (fail-fast)
@@ -500,6 +500,8 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | **🔐 Автентифікація** | | | | | |
 | 1 | GET | `/login` | `sessions#new` | 🌐 Public | Форма входу (HTML) |
 | 2 | POST | `/login` | `sessions#create` | 🌐 Public | Вхід (JSON: повертає Bearer token) |
+| 113 | GET | `/login/mfa` | `mfa_challenges#new` | 🔓 Public* | [S6.21] Форма другого фактора; живе лише під pending-міткою (пароль пройдено), без неї → redirect `/login` |
+| 114 | POST | `/login/mfa` | `mfa_challenges#create` | 🔓 Public* | [S6.21] Verify TOTP/recovery → `establish_session`; rate-limit 5/хв (дзеркало пароля); TTL pending 5 хв |
 | 3 | DELETE | `/logout` | `sessions#destroy` | 🔑 Auth | Вихід |
 | 4 | GET | `/forgot_password` | `passwords#new` | 🌐 Public | Форма скидання пароля (HTML) |
 | 5 | POST | `/forgot_password` | `passwords#create` | 🌐 Public | Запит email скидання |
@@ -508,6 +510,9 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | **🛡️ Безпека Акаунту** | | | | | |
 | 9 | GET | `/account_security` | `account_security#show` | 🔑 Auth | MFA-стан, прив'язані identity |
 | 10 | PATCH | `/account_security/mfa` | `account_security#toggle_mfa` | 🔑 Auth | **Асиметричний за [S6.21]:** *вимкнути* — працює, вимагає `current_password` (step-up auth), окрім OAuth-only акаунтів; *увімкнути* — **501 `code: "mfa_not_implemented"`**. Підстава: шлях входу прапорця не перевіряє, тож увімкнення лише ДРУКУВАЛО б «MFA Active» на трьох поверхнях, а закритий disable законсервував би вже підняте значення назавжди. Dashboard-toggle прибрано ще interim'ом; напрямок відкриється РАЗОМ із verify-on-login → [`00_07` S6.21](00_07_Action_Plan_Tracker). |
+| 115 | GET | `/account_security/mfa_setup` | `mfa_setups#show` | 🔑 Auth | [S6.21] QR (інлайн-SVG) + секрет + форма verify; без провижну → redirect назад |
+| 116 | POST | `/account_security/mfa_setup` | `mfa_setups#create` | 🔑 Auth | [S6.21] Провижн/ротація секрета (до активації) → 303 на show; при enabled → 409 |
+| 117 | PATCH | `/account_security/mfa_setup` | `mfa_setups#update` | 🔑 Auth | [S6.21] Активація: verify свіжого коду → прапорець + rotation recovery-набору |
 | 11 | PATCH | `/account_security/password` | `account_security#change_password` | 🔑 Auth | Змінити пароль. **Усі інші Session-row відкликаються**, поточний request session виживає (IP+UA match → fallback на newest). **[SEC.16]** усі інші cookie-сесії гаснуть миттєво (salt-stamp §1); ініціаторова оновлює stamp і живе. |
 | 12 | DELETE | `/account_security/identities/:id` | `account_security#unlink_identity` | 🔑 Auth | Відв'язати OAuth-провайдера |
 | 13 | PATCH | `/account_security/identities/:id/lock` | `account_security#lock_identity` | 🔑 Auth | Заблокувати OAuth-ідентичність |

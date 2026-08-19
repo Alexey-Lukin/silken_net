@@ -34,7 +34,8 @@ lv:
         maintenance_records: Apkopes ieraksti
         me: Profils
         metadata: Metadati
-        mfa: MFA
+        mfa: Otrais faktors
+        mfa_setup: Autentifikatora iestatīšana
         new: Izveide
         notifications: Paziņojumi
         on_chain: Blokķēdē

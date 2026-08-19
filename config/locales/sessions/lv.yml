@@ -2,6 +2,15 @@
 lv:
   sessions:
     login_title: Pieteikšanās portāls
+    mfa_challenge:
+      code_label: Autentifikatora kods
+      invalid_code: Nederīgs vai novecojis kods.
+      recovery_label: Atkopšanas kods
+      required: Nepieciešams otrais faktors.
+      submit: Apstiprināt
+      subtitle: Neirosaite // 2. solis
+      title: Otrais faktors
+      use_recovery: Izmantot atkopšanas kodu
     new:
       access_code_label: Piekļuves kods (Parole)
       access_code_placeholder: "● ● ● ● ● ● ● ●"

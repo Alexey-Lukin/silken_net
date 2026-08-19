@@ -2,6 +2,15 @@
 lt:
   sessions:
     login_title: Prisijungimo portalas
+    mfa_challenge:
+      code_label: Autentifikatoriaus kodas
+      invalid_code: Neteisingas arba pasibaigęs kodas.
+      recovery_label: Atkūrimo kodas
+      required: Reikalingas antrasis veiksnys.
+      submit: Patvirtinti
+      subtitle: Neurojungtis // 2 žingsnis
+      title: Antrasis veiksnys
+      use_recovery: Naudoti atkūrimo kodą
     new:
       access_code_label: Prieigos kodas (Slaptažodis)
       access_code_placeholder: "● ● ● ● ● ● ● ●"

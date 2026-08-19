@@ -12,7 +12,16 @@ lt:
       unlocked_json: Tapatybė %{provider} atblokuota.
     mfa:
       disabled: MFA išjungta.
-      not_implemented: Dviejų veiksnių prisijungimas dar nesukurtas, todėl jo įjungimas skelbtų apsaugą, kurios nėra.
+      enabled: MFA įjungta.
+    mfa_setup:
+      activate: Aktyvuoti MFA
+      already_enabled: MFA jau įjungta.
+      confirm_label: Dabartinis kodas iš programos
+      invalid_code: Kodas nesutapo. Patikrinkite programą ir bandykite dar kartą.
+      scan_hint: Nuskenuokite QR kodą autentifikatoriaus programa ir įveskite dabartinį kodą aktyvavimui.
+      secret_label: Paslaptis rankiniam įvedimui
+      title: Autentifikatoriaus prijungimas
+      use_setup_flow: MFA įjungimas vyksta per sąrankos eigą (paslaptis + kodo patikra).
     password:
       current_invalid: Dabartinis slaptažodis neteisingas.
       mismatch: Slaptažodžiai nesutampa.
@@ -42,7 +51,6 @@ lt:
         enabled_with_remaining: "✅ MFA įjungta. Likusių atkūrimo kodų: %{count}"
         heading: Dviejų veiksnių autentifikacija (2FA)
         recovery_warning: Išsaugokite atkūrimo kodus saugioje vietoje. Jie reikalingi prisijungimui, jei prarasite TOTP įrenginį.
-        wip_caveat: "⚠️ Kuriama: atkūrimo kodai prisijungiant dar netikrinami ir neapsaugo paskyros. TOTP dviejų veiksnių prisijungimas — netrukus."
       password:
         change_submit: Keisti slaptažodį
         confirm_label: Patvirtinti naują slaptažodį

@@ -12,7 +12,16 @@ en:
       unlocked_json: Identity %{provider} unlocked.
     mfa:
       disabled: MFA disabled.
-      not_implemented: Two-factor login is not built yet, so enabling it would claim a protection that does not exist.
+      enabled: MFA enabled.
+    mfa_setup:
+      activate: Activate MFA
+      already_enabled: MFA is already enabled.
+      confirm_label: Current code from the app
+      invalid_code: The code did not match. Check the app and try again.
+      scan_hint: Scan the QR code with your authenticator app, then enter the current code to activate.
+      secret_label: Manual entry secret
+      title: Connect Authenticator
+      use_setup_flow: Enabling MFA goes through the setup flow (secret + code verification).
     password:
       current_invalid: Current password is incorrect.
       mismatch: Passwords do not match.
@@ -42,7 +51,6 @@ en:
         enabled_with_remaining: "✅ MFA enabled. Recovery codes remaining: %{count}"
         heading: Two-Factor Authentication (2FA)
         recovery_warning: Save your recovery codes in a safe place. They are required to log in if you lose your TOTP device.
-        wip_caveat: "⚠️ Under construction: recovery codes are not yet verified at login and do not protect your account. TOTP two-factor login is coming."
       password:
         change_submit: Change Password
         confirm_label: Confirm New Password

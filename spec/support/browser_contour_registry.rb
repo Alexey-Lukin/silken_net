@@ -85,8 +85,9 @@ module BrowserContourRegistry
         why:  "JSON-половина спільного 403; HTML-половину несе Errors::Page",
         back: :none
       },
-      "app/controllers/api/v1/sessions_controller.rb#render_api_login_success" => {
-        why:  "JSON-половина логіну; браузерна гілка редиректить",
+      "app/controllers/api/v1/base_controller.rb#render_api_login_success" => {
+        why:  "JSON-половина логіну (спільна для пароль- і MFA-фіналу — S6.21 переніс " \
+              "хелпер на предка, ключ реєстру їде за домом); браузерна гілка редиректить",
         back: :none
       }
     }.freeze

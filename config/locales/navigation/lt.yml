@@ -34,7 +34,8 @@ lt:
         maintenance_records: Priežiūros įrašai
         me: Profilis
         metadata: Metaduomenys
-        mfa: MFA
+        mfa: Antrasis veiksnys
+        mfa_setup: Autentifikatoriaus sąranka
         new: Kūrimas
         notifications: Pranešimai
         on_chain: Blokų grandinėje

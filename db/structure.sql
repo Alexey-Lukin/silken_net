@@ -2226,7 +2226,9 @@ CREATE TABLE public.users (
     push_token character varying,
     otp_required_for_login boolean DEFAULT false NOT NULL,
     recovery_codes text,
-    locale character varying
+    locale character varying,
+    otp_secret character varying,
+    otp_last_used_at timestamp(6) without time zone
 );
 
 
@@ -6918,6 +6920,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260820010000'),
 ('20260819230000'),
 ('20260819210000'),
 ('20260817090000'),

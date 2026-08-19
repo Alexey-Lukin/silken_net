@@ -59,18 +59,34 @@ RSpec.describe AccountSecurity::Show do
       expect(html).to include("Two-Factor Authentication")
     end
 
-    it "shows the under-construction caveat instead of a working control" do
-      expect(html).to include("Under construction")
+    # ✅ [S6.21] Toggle ПОВЕРНУВСЯ разом із verify-on-login — гейт проти нього
+    # відпрацював свій контракт і знятий. Пара нижче — обидва боки розвилки,
+    # інакше «кнопка є» не відрізнити від «обидві кнопки завжди» (BP 21).
+    it "offers the setup flow to a user without MFA — and no disable form" do
+      expect(html).to include("Enable MFA")
+      expect(html).to include('action="/account_security/mfa_setup"')
+      expect(html).not_to include("Disable MFA")
     end
 
-    # [S6.21] Toggle без login-challenge = security-theatre; гейт проти його
-    # повернення ДО повного TOTP-контуру (verify-on-login).
-    it "does not render an MFA enable/disable toggle" do
-      expect(html).not_to include("Enable MFA")
-      expect(html).not_to include("Disable MFA")
+    it "offers step-up disable to an MFA-enabled user — and no enable button" do
+      enabled = User.new(password_digest: "x", otp_required_for_login: true,
+                         recovery_codes: %w[a b c].to_json)
+      html_enabled = render_component(user: enabled, identities: identities)
 
-      html_enabled = render_component(user: mock_user, identities: identities)
-      expect(html_enabled).not_to include("Disable MFA")
+      expect(html_enabled).to include("Disable MFA")
+      expect(html_enabled).to include('name="current_password"')
+      expect(html_enabled).not_to include("Enable MFA")
+    end
+
+    # Дзеркало контролера: OAuth-only власник не має спільного секрета для
+    # step-up, тож поле пароля в disable-формі для нього НЕ рендериться.
+    it "omits the step-up field for an OAuth-only MFA user" do
+      oauth_only = User.new(password_digest: nil, otp_required_for_login: true,
+                            recovery_codes: %w[a].to_json)
+      html_enabled = render_component(user: oauth_only, identities: identities)
+
+      expect(html_enabled).to include("Disable MFA")
+      expect(html_enabled).not_to include('name="current_password"')
     end
   end
 

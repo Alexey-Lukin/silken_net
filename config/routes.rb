@@ -75,6 +75,10 @@ Rails.application.routes.draw do
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     get    "login",  to: "sessions#new",     as: :login
     post   "login",  to: "sessions#create"
+    # [S6.21] Другий фактор: pending-мітка з sessions#create веде сюди; сесії до
+    # verify не існує, тож шлях живе в auth-зоні (skip authenticate_user!).
+    get    "login/mfa", to: "mfa_challenges#new", as: :mfa_challenge
+    post   "login/mfa", to: "mfa_challenges#create"
     delete "logout", to: "sessions#destroy", as: :logout
 
     # 🌐 LOCALE SWITCHER — persists UI language in a permanent cookie.
@@ -90,6 +94,10 @@ Rails.application.routes.draw do
     # Безпека акаунту (Account Security / Identity Management)
     get   "account_security",              to: "account_security#show",            as: :account_security
     patch "account_security/mfa",          to: "account_security#toggle_mfa",      as: :account_security_mfa
+    # [S6.21] Setup-флоу TOTP: провижн (POST) → QR-сторінка (GET) → активація (PATCH).
+    get   "account_security/mfa_setup",    to: "mfa_setups#show",                  as: :mfa_setup
+    post  "account_security/mfa_setup",    to: "mfa_setups#create"
+    patch "account_security/mfa_setup",    to: "mfa_setups#update"
     patch "account_security/password",     to: "account_security#change_password",  as: :account_security_password
     delete "account_security/identities/:id", to: "account_security#unlink_identity", as: :account_security_identity
     patch  "account_security/identities/:id/lock",   to: "account_security#lock_identity",   as: :lock_account_security_identity

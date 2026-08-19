@@ -7,6 +7,10 @@ class User < ApplicationRecord
   # Інтерфейс сумісний з has_secure_password (password=, authenticate, password_salt).
   include HasArgon2Password
 
+  # [S6.21] TOTP-секрет — at-rest ключ, той самий клас, що `hardware_keys.aes_key_hex`
+  # (AR-encryption з ENV, SEC.22; boot-guard fail-closed без ключів).
+  encrypts :otp_secret
+
   # --- ЗВ'ЯЗКИ (The Neural Links) ---
   has_many :sessions, dependent: :destroy
   has_many :identities, dependent: :destroy
@@ -238,6 +242,38 @@ class User < ApplicationRecord
   # Перевірка чи MFA активовано для цього користувача
   def mfa_enabled?
     otp_required_for_login?
+  end
+
+  # [S6.21] Видає СВІЖИЙ секрет на кожен виклик setup-флоу до активації —
+  # тобто кинутий напівшлях не лишає «мертвого» секрета, який хтось міг
+  # підглянути. На вже активованому MFA не викликається (гард у контролері).
+  def provision_otp_secret!
+    update!(otp_secret: ROTP::Base32.random)
+  end
+
+  # otpauth:// URI для authenticator-застосунку (QR або ручне введення).
+  def otp_provisioning_uri
+    return nil if otp_secret.blank?
+
+    ROTP::TOTP.new(otp_secret, issuer: "SilkenNet").provisioning_uri(email_address)
+  end
+
+  # [S6.21] Перевірка TOTP-коду з анти-replay: `after:` відкидає повтор того
+  # самого (перехопленого) коду всередині 30-с вікна — успіх персистить мітку.
+  # ±1 крок дрейфу (drift 30 с) — годинник телефона не зобовʼязаний збігатись
+  # із серверним до секунди.
+  def verify_totp!(code)
+    return false if otp_secret.blank?
+
+    timestep = ROTP::TOTP.new(otp_secret).verify(
+      code.to_s.gsub(/\s+/, ""),
+      drift_behind: 30, drift_ahead: 30,
+      after: otp_last_used_at&.to_i
+    )
+    return false unless timestep
+
+    update!(otp_last_used_at: Time.zone.at(timestep))
+    true
   end
 
   # Кількість невикористаних recovery codes

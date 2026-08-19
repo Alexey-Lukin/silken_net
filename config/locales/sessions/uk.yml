@@ -2,6 +2,15 @@
 uk:
   sessions:
     login_title: Портал входу
+    mfa_challenge:
+      code_label: Код автентифікатора
+      invalid_code: Невірний або прострочений код.
+      recovery_label: Recovery-код
+      required: Потрібен другий фактор.
+      submit: Підтвердити
+      subtitle: Нейрозв'язок // крок 2
+      title: Другий фактор
+      use_recovery: Використати recovery-код
     new:
       access_code_label: Код доступу (пароль)
       access_code_placeholder: "● ● ● ● ● ● ● ●"

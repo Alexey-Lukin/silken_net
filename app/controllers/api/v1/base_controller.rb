@@ -119,6 +119,33 @@ module Api
 
       private
 
+      # [SEC.16/S6.21] ЄДИНА точка встановлення сесії — тепер на предку, бо шляхів
+      # входу три (пароль · OmniAuth-заготовка · MFA-челендж), а формула одна:
+      # anti-fixation reset → cookie-пара `user_id`+`ps` (salt-stamp гасить крадені
+      # cookie на зміні пароля) → Session-рядок → touch. Друга рукописна копія цієї
+      # формули вже одного разу розширила периметр salt-звіряльників непомітно —
+      # тому дім один, і він тут.
+      def establish_session(user)
+        reset_session
+        session[:user_id] = user.id
+        session[:ps] = user.session_salt_stamp
+
+        user.sessions.create!(
+          ip_address: request.remote_ip,
+          user_agent: request.user_agent.presence || "Unknown"
+        )
+        user.touch_visit!
+      end
+
+      # JSON-успіх входу (Bearer-токен) — спільний для пароль- і MFA-фіналу.
+      def render_api_login_success(user)
+        token = user.generate_token_for(:api_access)
+        render json: {
+          token: token,
+          user: { id: user.id, email: user.email_address, full_name: user.full_name, role: user.role }
+        }, status: :created
+      end
+
       # 0. CSRF BYPASS FOR BEARER TOKEN REQUESTS
       # Bearer-token API requests are immune to CSRF by design: browsers never
       # auto-attach Authorization headers in cross-origin requests (unlike cookies).

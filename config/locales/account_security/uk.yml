@@ -12,7 +12,16 @@ uk:
       unlocked_json: Ідентичність %{provider} розблоковано.
     mfa:
       disabled: MFA вимкнено.
-      not_implemented: Вхід із другим фактором ще не збудовано, тож увімкнення заявляло б захист, якого не існує.
+      enabled: MFA увімкнено.
+    mfa_setup:
+      activate: Активувати MFA
+      already_enabled: MFA вже увімкнено.
+      confirm_label: Поточний код із застосунку
+      invalid_code: Код не зійшовся. Перевірте застосунок і спробуйте ще раз.
+      scan_hint: Відскануйте QR-код застосунком-автентифікатором і введіть поточний код для активації.
+      secret_label: Секрет для ручного введення
+      title: Підключення автентифікатора
+      use_setup_flow: Увімкнення MFA йде через setup-флоу (секрет + перевірка коду).
     password:
       current_invalid: Поточний пароль невірний.
       mismatch: Паролі не співпадають.
@@ -42,7 +51,6 @@ uk:
         enabled_with_remaining: "✅ MFA увімкнено. Recovery codes залишилось: %{count}"
         heading: Двофакторна автентифікація (2FA)
         recovery_warning: Recovery codes збережіть в безпечному місці. Вони потрібні для входу при втраті TOTP.
-        wip_caveat: "⚠️ В розробці: recovery-коди ще не перевіряються при вході й не захищають акаунт. TOTP-вхід із другим фактором — незабаром."
       password:
         change_submit: Змінити пароль
         confirm_label: Підтвердьте новий пароль

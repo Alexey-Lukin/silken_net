@@ -68,22 +68,16 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
   # PATCH /account_security/mfa — Toggle MFA
   # =========================================================================
   describe "PATCH /account_security/mfa" do
-    # 🔴 [S6.21] Напрямок ENABLE закрито, і гейт асиметричний СВІДОМО. Прапорець
-    # читають три поверхні (`users/profile` · `account_security#show` ·
-    # `user_blueprint`), а `sessions#create` його не перевіряє — тобто увімкнення
-    # СТВОРЮЄ заявку на захист, якого немає, тоді як disable нижче її ЗНІМАЄ.
-    # Глухий гейт на весь екшен зробив би вже поставлену заявку невитираною.
-    # Похідна половина (гейт мусить зникнути РАЗОМ із verify-on-login) живе в
-    # `spec/security/mfa_claim_honesty_spec.rb`.
-    it "refuses to enable MFA while login does not verify a second factor" do
+    # ✅ [S6.21] Enable через toggle НЕ піднімає прапорець і після білда: тепер
+    # він шле в setup-флоу (секрет + verify), бо сліпе увімкнення лишилось би
+    # заявкою без доведеного володіння автентифікатором.
+    it "sends the enable direction into the setup flow without raising the flag" do
       patch "/account_security/mfa", headers: headers, as: :json
 
-      expect(response).to have_http_status(:not_implemented)
-      body = response.parsed_body
-      expect(body["code"]).to eq("mfa_not_implemented")
-      expect(body).not_to have_key("recovery_codes")
+      expect(response).to have_http_status(:conflict)
+      expect(response.parsed_body["code"]).to eq("mfa_setup_required")
 
-      # Побічного ефекту теж бути не може: `generate_recovery_codes!` персистить,
+      # Побічного ефекту бути не може: `generate_recovery_codes!` персистить,
       # тож пін на саму лише відповідь пропустив би записані в БД коди.
       expect(user.reload.otp_required_for_login).to be false
       expect(user.recovery_codes).to be_nil

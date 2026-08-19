@@ -33,14 +33,39 @@ module AccountSecurity
     end
 
     # --- MFA СЕКЦІЯ ---
-    # [S6.21] Toggle прибрано (interim): recovery-codes без login-challenge не
-    # захищають акаунт (sessions#create не читає otp_required_for_login) —
-    # контроль був security-theatre. Повертається разом із TOTP → 00_07 S6.21.
+    # ✅ [S6.21] Toggle ПОВЕРНУВСЯ 2026-08-20 разом із verify-on-login — рівно як
+    # interim і обіцяв. Увімкнення веде в setup-флоу (секрет → QR → verify), а не
+    # піднімає прапорець сліпо; вимкнення тримає step-up (current_password).
     def render_mfa_section
       div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".mfa.heading") }
-        div(class: "p-3 border border-status-warning/50 bg-status-warning/10") do
-          p(class: "text-mini text-status-warning-text uppercase tracking-widest") { t(".mfa.wip_caveat") }
+
+        if @user.mfa_enabled?
+          p(class: "text-tiny text-emerald-500") { t(".mfa.enabled_with_remaining", count: @user.recovery_codes_remaining) }
+          p(class: "text-mini text-gray-600") { t(".mfa.recovery_warning") }
+
+          form_with(url: account_security_mfa_path, method: :patch, class: "space-y-4") do |f|
+            if @user.password_digest.present?
+              div(class: "space-y-2") do
+                label(for: f.field_id(:current_password),
+                      class: "text-tiny text-gray-500 uppercase tracking-widest") { t(".password.current_label") }
+                f.password_field :current_password, class: input_classes, required: true
+              end
+            end
+            button(type: "submit", class: "px-6 py-2 border border-status-danger-accent text-tiny " \
+                                          "text-status-danger-text uppercase tracking-widest " \
+                                          "hover:bg-status-danger focus-visible:outline-none " \
+                                          "focus-visible:ring-2 focus-visible:ring-gaia-primary-strong transition-all") do
+              t(".mfa.disable_button")
+            end
+          end
+        else
+          p(class: "text-tiny text-gray-500") { t(".mfa.disabled_hint") }
+          button_to t(".mfa.enable_button"), mfa_setup_path, method: :post,
+                                                            class: "px-6 py-2 border border-emerald-500 text-tiny text-emerald-500 " \
+                                                                   "uppercase tracking-widest hover:bg-emerald-500 hover:text-black " \
+                                                                   "focus-visible:outline-none focus-visible:ring-2 " \
+                                                                   "focus-visible:ring-gaia-primary-strong transition-all"
         end
       end
     end

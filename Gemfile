@@ -33,6 +33,11 @@ gem "rack-attack"
 # Мусить лишатись у ГОЛОВНІЙ групі: транзитивна присутність у Gemfile.lock ≠
 # завантаження — деталь і пастка в `docs/04_04 §12.2`.
 gem "rails-i18n"
+# [S6.21] TOTP другий фактор (RFC 6238): чистий Ruby, нуль залежностей,
+# нуль нативних розширень; 6.3.0 = 2023-08-30, три роки зрілості.
+gem "rotp"
+# [S6.21] QR для provisioning URI (SVG, без ImageMagick); core — той самий реліз-цикл.
+gem "rqrcode"
 # Двигун vips-трансформера (`config.active_storage.variant_processor = :vips`):
 # image_processing тримає ruby-vips опціональним, тож без явного гема трансформера
 # просто не існує. Active Storage требує його при буті, щоб вимкнути unfuzzed-лоадери

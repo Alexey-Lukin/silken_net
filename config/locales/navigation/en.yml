@@ -34,7 +34,8 @@ en:
         maintenance_records: Maintenance records
         me: Me
         metadata: Metadata
-        mfa: MFA
+        mfa: Second factor
+        mfa_setup: Authenticator setup
         new: New
         notifications: Notifications
         on_chain: On-chain

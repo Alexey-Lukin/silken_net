@@ -41,16 +41,19 @@ module Api
 
       # --- КЛАСИЧНИЙ ВХІД (Email/Password) ---
       #
-      # 🔴 [S6.21] Другого фактора тут НЕМА, і це не пропуск опису: `otp_required_for_login`
-      # у шляху входу не читається жодного разу, тож пароль дає повний доступ навіть
-      # акаунту з «увімкненим» MFA. Саме тому напрямок «увімкнути» в
-      # `AccountSecurityController#toggle_mfa` закритий — інакше прапорець друкував би
-      # захист, якого нема. Дротуючи verify-on-login, знімай той гейт ТИМ САМИМ комітом;
-      # `spec/security/mfa_claim_honesty_spec.rb` почервоніє й нагадає.
+      # ✅ [S6.21] Другий фактор ЖИВИЙ: акаунт із `mfa_enabled?` після пароля НЕ
+      # дістає сесії — лише pending-мітку з TTL і редирект на `/login/mfa`
+      # (`MfaChallengesController`), де TOTP/recovery і завершує вхід. Сесія
+      # (`session[:user_id]`) не існує до другого фактора — «наполовину зайшов»
+      # не є станом.
       def create
         user = User.find_by(email_address: params[:email])
 
         if user&.authenticate(params[:password])
+          if user.mfa_enabled?
+            return redirect_to_mfa_challenge(user)
+          end
+
           establish_session(user)
 
           # 🔴 [I18N.3] Вітання пишеться в локалі, якою вже РЕНДЕРИТЬСЯ наступна
@@ -149,33 +152,23 @@ module Api
         current_user.sessions.order(created_at: :desc).first
       end
 
-      # Спільна логіка встановлення зв'язку
-      def establish_session(user)
-        # 1. Захист від Session Fixation: очищуємо стару сесію перед встановленням нової
+      # [S6.21] `establish_session` + `render_api_login_success` живуть на предку
+      # (`BaseController`) — точка входу одна на три шляхи, копій не заводимо.
+
+      # [S6.21] Пароль пройдено, сесії ще НЕМА: pending-мітка + челендж. Мітка
+      # ставиться в ЧИСТУ сесію (reset проти fixation ДО неї — інакше pending
+      # їхав би в cookie, зафіксованому атакером до входу).
+      def redirect_to_mfa_challenge(user)
         reset_session
+        session[:mfa_pending_user_id] = user.id
+        session[:mfa_pending_at] = Time.current.to_i
 
-        # 2. Стандартна Rails сесія (Cookie-based) + salt-прив'язка [SEC.16]:
-        # authenticate_user! звіряє цей stamp — password-change гасить чужі cookie.
-        session[:user_id] = user.id
-        session[:ps] = user.session_salt_stamp
-
-        # 3. Створення запису в таблиці Session (Operational Pulse)
-        # Це тригерне track_user_activity через after_create в моделі Session
-        user.sessions.create!(
-          ip_address: request.remote_ip,
-          user_agent: request.user_agent.presence || "Unknown"
-        )
-
-        # 4. Пряме оновлення User (Touch visit)
-        user.touch_visit!
-      end
-
-      def render_api_login_success(user)
-        token = user.generate_token_for(:api_access)
-        render json: {
-          token: token,
-          user: { id: user.id, email: user.email_address, full_name: user.full_name, role: user.role }
-        }, status: :created
+        respond_to do |format|
+          # Bearer-флоу другого фактора не має (форма — браузерна); машинному
+          # клієнту чесний 401 із кодом, а не половина входу.
+          format.json { render json: { error: I18n.t("sessions.mfa_challenge.required"), code: "mfa_required" }, status: :unauthorized }
+          format.html { redirect_to mfa_challenge_path, status: :see_other }
+        end
       end
 
       def render_login_failure
