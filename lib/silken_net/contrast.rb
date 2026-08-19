@@ -45,9 +45,13 @@ module SilkenNet
     CONTRAST_OFFSET      = 0.05
 
     # SC 1.4.3 (AA). «Large-scale» = ≥18pt, або ≥14pt bold.
-    # CSS-конвенція: 1pt = 4/3 px → 18pt = 24px, 14pt = 18.6667px.
+    # CSS-конвенція: 1pt = 4/3 px → 18pt = 24px, 14pt = 56/3 px.
+    # 🔴 Дріб, а не десяткове: `18.6667` БІЛЬШЕ за справжні 14pt
+    # (18.666666…), тож текст рівно 14pt bold судився барою 4.5 замість
+    # 3.0 — виміряно, не виведено. Через браузер це не спрацьовувало
+    # (Chrome сам віддає «18.6667px»), але прямий Ruby-виклик — так.
     LARGE_TEXT_PX        = 24.0
-    LARGE_BOLD_TEXT_PX   = 18.6667
+    LARGE_BOLD_TEXT_PX   = 56.0 / 3
     BOLD_WEIGHT          = 700
 
     THRESHOLD_NORMAL = 4.5
@@ -77,13 +81,28 @@ module SilkenNet
       raise UnparseableColour, "порожній колір" if raw.empty?
 
       if (m = RGB_FUNCTIONAL.match(raw))
-        return [ m[:r].to_f, m[:g].to_f, m[:b].to_f, parse_alpha(m[:a]) ]
+        return in_gamut!([ m[:r].to_f, m[:g].to_f, m[:b].to_f, parse_alpha(m[:a]) ], raw)
       end
 
       return parse_hex(Regexp.last_match(:hex)) if HEX.match(raw)
 
       raise UnparseableColour, "нерозпізнаний формат кольору: #{raw.inspect}"
     end
+
+# 🔴 Fail-loud і в ДРУГИЙ бік. Парсер був асиметричний: `rgb(-20,0,0)` кидав
+# (регекс не бере мінус), а `rgb(300,0,0)` проходив МОВЧКИ як 300.0 — і далі
+# давав яскравість >1 та безглузде відношення з виглядом обчисленого.
+# Через браузер це недосяжно (`getComputedStyle` клампить), тож клас
+# ЛАТЕНТНИЙ — саме тому й закривається тут, а не гейтом: рукописний виклик у
+# спеці є повноцінним входом цього модуля.
+# ⚠️ Клампити НЕ можна: тихо виправлене значення — це той самий мовчазний
+# дефолт, лише з іншого боку.
+def in_gamut!(rgba, raw)
+  r, g, b = rgba
+  return rgba if [ r, g, b ].all? { |c| c.between?(0, 255) }
+
+  raise UnparseableColour, "канал поза 0..255: #{raw.inspect}"
+end
 
     def parse_alpha(token)
       return 1.0 if token.nil?

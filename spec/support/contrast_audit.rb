@@ -147,6 +147,16 @@ module ContrastAudit
         return (css) => {
           if (!css) return css;
           if (css.startsWith('rgb')) return css;      // вже sRGB — не чіпаємо
+          // 🔴 ВАРТОВИЙ на валідність, і без нього провал ТИХИЙ: `fillStyle`
+          // при невалідному значенні лишається ПОПЕРЕДНІМ, а `copy` малює саме
+          // його — тобто функція віддала б правдоподібний чужий колір. Двома
+          // сентинелами: валідне значення дає однаковий результат від обох,
+          // відкинуте — різний. Клас латентний (браузер невалідного не віддає),
+          // тож і лік гучний: кидаємо, а не підставляємо дефолт.
+          ctx.fillStyle = '#000000'; ctx.fillStyle = css; const probeA = ctx.fillStyle;
+          ctx.fillStyle = '#ffffff'; ctx.fillStyle = css; const probeB = ctx.fillStyle;
+          if (probeA !== probeB) throw new Error('невалідний колір для norm(): ' + css);
+
           ctx.clearRect(0, 0, 1, 1);
           ctx.globalCompositeOperation = 'copy';
           ctx.fillStyle = css;
@@ -535,8 +545,20 @@ document.querySelectorAll('*').forEach(el => {
     expect(raw["body_bg"]).to eq(EXPECTED_BODY_BG.fetch(theme.to_sym)),
                              "фон `<body>` не дорівнює `--gaia-surface-base` теми #{theme} " \
                              "(маємо #{raw['body_bg'].inspect}) — стилі не діють, вимір недійсний"
+    # 🔴 Доти тут стояв самий лише `be_present` — пін, що майже не вміє впасти:
+    # він судив НАЯВНІСТЬ рядка, а не те, чи тіло справді ОТРИМУЄ токен.
+    # Пара нижче міряє дві РІЗНІ речі: літерал вище стереже «ухвалене значення
+    # не змінилось», рівність — «тіло досі бере фон із токена». Порізно кожна
+    # сліпа до половини (§Guard-craft #67: наш-проти-нашого доводить ЗГОДУ, не
+    # правильність — тому обидві, а не одна).
+    # ⚠️ Порівняння КАНАЛАМИ, не рядками: токен віддається як оголошений
+    # (`#050607`), а `body_bg` — як обчислений (`rgb(5, 6, 7)`).
     expect(raw["surface_base_token"]).to be_present,
-                                         "змінна `--gaia-surface-base` не резолвиться — CSS не завантажено"
+                                          "токен `--gaia-surface-base` не оголошений — вимір недійсний"
+    token_rgb = SilkenNet::Contrast.parse(raw["surface_base_token"]).first(3).map(&:round)
+    body_rgb  = SilkenNet::Contrast.parse(raw["body_bg"]).first(3).map(&:round)
+    expect(token_rgb).to eq(body_rgb),
+                         "тіло не бере фон із токена: body=#{body_rgb.inspect} проти токена #{token_rgb.inspect}"
 
     measured = raw["pairs"].map { |p| measure_pair(p) }
 
