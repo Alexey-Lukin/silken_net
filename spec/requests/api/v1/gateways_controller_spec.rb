@@ -113,10 +113,29 @@ RSpec.describe Api::V1::GatewaysController, type: :request do
       expect(response.content_type).to include("text/html")
     end
 
+    # [UI.3] Сітка флоту — найгустіший цикл у дереві (`limit(200)`), і кожен її
+    # вузол кликав `under_threat?`, тобто власний EXISTS. Prosopite стоїть на
+    # цьому прикладі відколи він існує й мовчав: кластер шлюзу не мав ЖОДНОГО
+    # дерева, тож циклу не було взагалі. Два вузли — мінімум, при якому детектор
+    # взагалі здатен побачити повтор; `did` обох у тілі — ліхтар, що вони туди
+    # доїхали (без нього приклад зелений на порожній сітці).
     it "renders HTML for show" do
+      # `Prosopite.pause` — рівно на ПІДГОТОВКУ, ніколи на запит: `Tree` має
+      # `build_default_wallet`/`ensure_calibration` в `after_create`, тож саме
+      # створення двох дерев виглядає для детектора як N+1 (усталений патерн,
+      # прецедент — `spec/integration/insight_aggregation_flow_spec.rb`). Межа
+      # несуча: `resume` мусить стояти ДО `get`, інакше пауза знезброїть рівно ту
+      # перевірку, заради якої фікстуру й розширено.
+      Prosopite.pause
+      soldiers = create_list(:tree, 2, cluster: own_cluster, status: :active)
+      create(:ews_alert, tree: soldiers.first, cluster: own_cluster, status: :active)
+      Prosopite.resume
+
       get "/gateways/#{own_gateway.id}", headers: html_headers
+
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
+      soldiers.each { |tree| expect(response.body).to include(tree.did) }
     end
 
     # Пін на ІМʼЯ стріму, а не на скоуп — і різницю варто тримати в голові.

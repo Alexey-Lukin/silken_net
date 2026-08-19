@@ -1395,11 +1395,27 @@ Tree.includes(:cluster, :tree_family, wallet: :blockchain_transactions)
 # Counter cache (no extra query)
 cluster.active_trees_count  # Uses denormalized column
 
-# Conditional eager loading for N+1 prevention in Ruby-level filtering
-cluster.association(:ews_alerts).loaded?
-  ? cluster.ews_alerts.any?(&:status_active?)
-  : cluster.ews_alerts.unresolved.any?
+# Предикат, що фільтрує асоціацію: СКОУПЛЕНА асоціація, не гілка на `loaded?`
+# (`Tree#under_threat?` — взірець). `includes(:ews_alerts)` тут не рятує:
+# `.unresolved` на завантаженій асоціації будує НОВУ relation і б'є в БД повз
+# прелоад, тож кожен рядок циклу платив власний EXISTS.
+has_many :unresolved_ews_alerts, -> { unresolved }, class_name: "EwsAlert", inverse_of: :tree
+
+def under_threat? = unresolved_ews_alerts.any?
+# без прелоаду `.any?` = той самий `SELECT 1 … LIMIT 1`, що й `.exists?`;
+# з `includes(:unresolved_ews_alerts)` — нуль запитів, і той самий рядок коду.
 ```
+
+🔴 **Чому саме асоціація, а не тернар `association(:x).loaded? ? … : …`.** Тернар
+змушує написати умову ДВІЧІ — в SQL (`unresolved`) і в Ruby (`any?(&:status_active?)`),
+— тож розширення скоупу мовчки розходиться рівно на прелоадженому шляху, тобто там,
+де ніхто не дивиться. Лямбда асоціації **кличе той самий скоуп**, отже правило
+лишається в одному домі. Тернар лишається леґітимним хіба там, де фільтр потребує
+рантайм-аргументу (асоціацію з параметром оголосити не можна).
+
+⚠️ **Ціна дефекту тут не в тому, що запит зайвий, а в тому, що вона ЛІНІЙНА:**
+виміряно 2026-08-19 на `gateways#show` (сітка флоту, стеля 200 вузлів) — було
+`8 + N` запитів, стало `8`; на `trees#index` (Pagy 20) — `9 + N` → `9`.
 
 #### Інтеграція Groupdate
 

@@ -38,7 +38,12 @@ module Api
 
       # --- ДЕТАЛЬНИЙ АУДИТ ВУЗЛА ---
       def show
-        @commands = @actuator.commands.order(created_at: :desc).limit(20)
+        # [UI.3] `includes(:user)` — сторінка друкує автора КОЖНОЇ з двадцяти
+        # команд (`cmd.user&.first_name`), тож без прелоаду це двадцять запитів;
+        # виміряно 2026-08-19: чотири команди давали пʼять `SELECT users`.
+        # `.to_a` — бо компонент читає колекцію ДВІЧІ (`.first` для картки, потім
+        # `.each` для історії), і на relation це два однакових SELECT'и.
+        @commands = @actuator.commands.includes(:user).order(created_at: :desc).limit(20).to_a
 
         respond_to do |format|
           format.json { render json: { actuator: @actuator, history: @commands } }

@@ -30,6 +30,14 @@ class Tree < ApplicationRecord
   # [ВИПРАВЛЕНО: Чорна Діра Пам'яті]: Використовуємо delete_all для масових таблиць,
   # щоб уникнути OOM при видаленні дерева з мільйонами записів.
   has_many :ews_alerts, dependent: :delete_all
+  # [UI.3] Прелоадибельне дзеркало `EwsAlert.unresolved` — існує рівно заради
+  # `#under_threat?`, який їде в циклі на двох сторінках. `includes(:ews_alerts)`
+  # тут НЕ рятує: `.unresolved` на завантаженій асоціації будує НОВУ relation і
+  # б'є в БД повз прелоад, тож без цієї асоціації кожен рядок платив свій EXISTS.
+  # ⛔ Не міняти на дубль умови в Ruby (`any?(&:status_active?)`): лямбда КЛИЧЕ
+  # скоуп, тобто правило лишається в одному домі — `EwsAlert.unresolved`.
+  # `dependent:` свідомо немає — знищення веде батьківська асоціація вище.
+  has_many :unresolved_ews_alerts, -> { unresolved }, class_name: "EwsAlert", inverse_of: :tree
   has_many :maintenance_records, as: :maintainable, dependent: :delete_all
   has_many :ai_insights, as: :analyzable, dependent: :delete_all
 
@@ -189,8 +197,13 @@ class Tree < ApplicationRecord
     latest_stress_index&.to_f
   end
 
+  # [UI.3] Ціна виклику залежить від того, чи прелоаджено асоціацію: без прелоаду
+  # `.any?` вироджується в той самий `SELECT 1 … LIMIT 1`, що й колишній
+  # `.exists?` (одинична сторінка нічого не втратила), а з прелоадом коштує НУЛЬ.
+  # Тобто рядок один, а сторінка-цикл платить рівно стільки, скільки її контролер
+  # попросив (`04_04 §6` — «все, що показує в'ю, вантажить контролер»).
   def under_threat?
-    ews_alerts.unresolved.exists?
+    unresolved_ews_alerts.any?
   end
 
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

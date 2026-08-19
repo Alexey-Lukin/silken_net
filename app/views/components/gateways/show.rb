@@ -101,7 +101,9 @@ module Gateways
       div(class: "p-6 border border-emerald-900 bg-black/20") do
         div(class: "flex justify-between items-center mb-6") do
           h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".fleet.heading") }
-          span(class: "text-tiny font-mono text-emerald-500") { t(".fleet.active_nodes", count: @active_soldiers.count) }
+          # `.size`, не `.count`: наступний рядок ітерує ту саму колекцію, тож на
+          # relation це був COUNT плюс SELECT. `.size` не перепитує БД ніколи.
+          span(class: "text-tiny font-mono text-emerald-500") { t(".fleet.active_nodes", count: @active_soldiers.size) }
         end
 
         # Маленька сітка солдатів у реальному часі

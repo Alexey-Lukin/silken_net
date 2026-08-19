@@ -209,10 +209,36 @@ RSpec.describe Api::V1::TreesController, type: :request do
   end
 
   context "with format.html responses" do
+    # [UI.3] 🔴 Ліхтар на РОЗМІР колекції, а не декорація навколо smoke-піна.
+    # Prosopite сканує КОЖЕН request-приклад (`rails_helper`), але ловить лише
+    # ПОВТОРЕНИЙ запит — тобто йому потрібні щонайменше ДВА рядки. Доти ця
+    # сторінка рендерилась із рівно одним деревом, і детектор мовчав не тому, що
+    # N+1 не було, а тому, що не було другого рядка: `Trees::Index#tree_status_led`
+    # кликав `under_threat?` на кожен рядок, і кожен виклик бив у БД власним
+    # EXISTS. Гейт існував, знезброїла його ФІКСТУРА.
+    # ⛔ Не зводь колекцію назад до одного запису: приклад лишиться зеленим, але
+    # перестане щось міряти — а порожній/одиничний скоуп невідрізнимий від
+    # «дефекту немає» ([`04_06 §B.1`](04_06_Testing_Guide_and_Coverage)).
     it "renders HTML for index" do
+      # `Prosopite.pause` — рівно на ПІДГОТОВКУ, ніколи на запит: `Tree` має
+      # `build_default_wallet`/`ensure_calibration` в `after_create`, тож саме
+      # створення двох дерев виглядає для детектора як N+1 (усталений патерн,
+      # прецедент — `spec/integration/insight_aggregation_flow_spec.rb`). Межа
+      # несуча: `resume` мусить стояти ДО `get`, інакше пауза знезброїть рівно ту
+      # перевірку, заради якої фікстуру й розширено.
+      Prosopite.pause
+      siblings = create_list(:tree, 2, cluster: own_cluster, status: :active)
+      create(:ews_alert, tree: siblings.first, cluster: own_cluster, status: :active)
+      Prosopite.resume
+
       get "/clusters/#{own_cluster.id}/trees", headers: html_headers
+
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
+      # Сітка друкує ХВІСТ ідентифікатора (`did.last(6)`), не весь — ліхтар
+      # мусить питати те, що сторінка справді виводить, інакше він міряє власну
+      # здогадку про розмітку.
+      siblings.each { |tree| expect(response.body).to include(tree.did.last(6)) }
     end
 
     it "renders HTML for show" do

@@ -8,7 +8,7 @@ module Api
       # GET /account_security
       def show
         @user = current_user
-        @identities = @user.identities.order(created_at: :asc)
+        @identities = @user.identities.order(created_at: :asc).to_a
 
         respond_to do |format|
           format.json do

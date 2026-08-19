@@ -50,7 +50,14 @@ module Api
           format.json { render json: GatewayBlueprint.render_as_hash(@gateway) }
           format.html do
             @latest_log = @gateway.latest_gateway_telemetry_log
-            @active_soldiers = @gateway.trees.where(status: :active).limit(200)
+            # [UI.3] Три властивості цього рядка несучі, і жодна не косметична.
+            # `includes` — бо сітка кличе `under_threat?` на КОЖЕН вузол (до 200
+            # EXISTS'ів на рендер). `.to_a` — бо компонент спершу лічить, а потім
+            # ітерує ту саму колекцію: на relation це COUNT + SELECT, на масиві
+            # один SELECT. І саме масив робить правдивим докстрінг компонента,
+            # який роками ЗАЯВЛЯВ `Array<Tree> pre-loaded`, отримуючи relation.
+            @active_soldiers = @gateway.trees.where(status: :active)
+                                       .includes(:unresolved_ews_alerts).limit(200).to_a
             render_dashboard(
               title: I18n.t("gateways.show_title", uid: @gateway.uid),
               component: Gateways::Show.new(

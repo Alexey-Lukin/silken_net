@@ -15,7 +15,7 @@ module Api
         # прогнози для org B. Саме правило належності живе на моделі
         # (`AiInsight.for_organization` — три гілки поліморфного `analyzable`), бо
         # [SEC.26] дало йому другого споживача поза цим контролером.
-        @visions = AiInsight.for_organization(org).upcoming.order(target_date: :asc).limit(10)
+        @visions = AiInsight.for_organization(org).upcoming.order(target_date: :asc).limit(10).to_a
 
         # [FINANCIAL ENGINE]: Розрахунок "Очікуваного врожаю" (SCC Yield)
         # Оракул обчислює потенційну емісію на наступні 24 години на основі живого пульсу лісу.

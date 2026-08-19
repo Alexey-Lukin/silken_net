@@ -47,8 +47,16 @@ module Api
 
           # 2. Dashboard Response
           format.html do
-            @gateways = @cluster.gateways.order(:uid).limit(50)
-            @recent_alerts = @cluster.ews_alerts.unresolved.order(created_at: :desc).limit(5)
+            # [UI.3] `.to_a` — це виконання канон-правила `04_04 §6`, а не мікро-
+            # оптимізація: незавантажена relation НЕ Є «попередньо завантаженою в
+            # контролері», і компонент платить ЗА КОЖНУ ідіому окремо. Виміряно на
+            # цій сторінці: `@gateways` коштували ТРИ запити (`.size` → підзапит
+            # COUNT, `.any?` → SELECT 1, `.each` → сам SELECT), `@recent_alerts` —
+            # два. 🔴 Найпідступніша тут `.size`: її радять як безкоштовну заміну
+            # `.count`, і вона такою Є — але лише на ЗАВАНТАЖЕНІЙ колекції, а цю
+            # умову з місця виклику не видно.
+            @gateways = @cluster.gateways.order(:uid).limit(50).to_a
+            @recent_alerts = @cluster.ews_alerts.unresolved.order(created_at: :desc).limit(5).to_a
             # [UI.3] Контракт вантажить КОНТРОЛЕР — компонент його доти діставав
             # сам, усередині `initialize` (див. коментар там).
             @active_contract = @cluster.active_contract

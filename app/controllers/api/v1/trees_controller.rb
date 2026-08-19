@@ -9,8 +9,11 @@ module Api
       def index
         @cluster = acting_organization!.clusters.find(params[:cluster_id])
         @pagy, @trees = pagy(
+          # [UI.3] `:unresolved_ews_alerts` — під `Trees::Index#tree_status_led`,
+          # який кличе `under_threat?` НА КОЖЕН рядок: без прелоаду це один EXISTS
+          # на дерево, тобто ціла Pagy-сторінка зайвих запитів.
           @cluster.trees
-                  .includes(:wallet, :tree_family, :hardware_key)
+                  .includes(:wallet, :tree_family, :hardware_key, :unresolved_ews_alerts)
                   .order(did: :asc)
         )
 

@@ -28,6 +28,7 @@ module Api
           # друкувала на ГОЛОВНІЙ сторінці «0mV», тобто браунаут-грейд вимір усього
           # флоту, якого ніхто не міряв. Форма зняття та сама, що в `Tree#supply_voltage_mv`.
           avg_voltage = org.trees.active.average(:latest_voltage_mv)
+          growth_points = org.wallets.sum(:balance).to_f.round(4)
 
           {
             trees: {
@@ -45,8 +46,12 @@ module Api
             # `WalletBlueprint`. Один агрегат на 2-хвилинне вікно кешу — та сама ціна,
             # що в сусідніх лічильників цього ж блоку.
             economy: {
-              growth_points: org.wallets.sum(:balance).to_f.round(4),
-              total_scc: org.wallets.sum(:balance).to_f.round(4),
+              # [UI.3] Аліас читає ТУ САМУ обчислену величину, не повторює агрегат:
+              # доти два ключі з однаковим значенням били в БД двома однаковими
+              # `SUM`, тоді як коментар вище стверджував «один агрегат». Дубль був
+              # безкоштовний рівно доти, доки хтось не прочитає це як дозвіл.
+              growth_points: growth_points,
+              total_scc: growth_points,
               minted_scc: BlockchainTransaction.for_organization(org.id)
                                                .net_minted_supply(:carbon_coin).to_f.round(4)
             },
@@ -162,8 +167,15 @@ module Api
           # [ARCH.98] One-Home — стрічка подій пропускала cluster-sourced рухи.
           # `:cluster` — не дубль гаманцевої гілки: cluster-sourced рядок гаманця не
           # має ЗА ПОБУДОВОЮ, і саме звідти `EventRow` бере джерело події.
+          # [UI.3] `:sourceable` — не про приналежність, а про НАПРЯМОК і ГІЛКУ:
+          # `EventRow` читає його, щоб відрізнити Etherisc-виплату, і без прелоаду
+          # платив по запиту на рядок (виміряно: три спалення тягли ОДИН і той
+          # самий контракт трьома запитами). Прелоад поліморфної асоціації бере
+          # їх однією вибіркою на тип. ⚠️ Рядок із `sourceable_type IS NULL`
+          # (звичайний мінт) запиту не робив ніколи — тобто дефект бачив лише той,
+          # у чиїй стрічці є спалення чи страховка.
           BlockchainTransaction.for_organization(org.id)
-                               .includes(:cluster, wallet: { tree: :cluster })
+                               .includes(:cluster, :sourceable, wallet: { tree: :cluster })
                                .order(created_at: :desc).limit(3),
           MaintenanceRecord.joins(:user)
                            .includes(:user)
