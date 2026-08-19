@@ -135,7 +135,7 @@ RSpec.describe ComponentDocSync do
       # otherwise the glob is empty for a reason the case did not intend.
       %w[ui iot web3].each { |d| FileUtils.mkdir_p(File.join(root, described_class::SHARED_REL, d)) }
 
-      # 🔴 [2026-08-20] Каталог превʼю + один файл. Доти його НЕ БУЛО, тож четверта
+      # 🔴 [2026-08-19] Каталог превʼю + один файл. Доти його НЕ БУЛО, тож четверта
       # вісь у кожному прикладі порівнювала ∅ ⟷ ∅ і не могла нічого сказати — рівно
       # та пастка, від якої застерігає коментар про shared-globи двома рядками вище,
       # застосована до сусідньої осі. Знайдено adversarial-проходом; закривається

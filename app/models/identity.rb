@@ -22,7 +22,11 @@ class Identity < ApplicationRecord
   delegate :wallets, to: :organization, allow_nil: true
 
   # --- ВАЛІДАЦІЇ ---
-  # provider: "google_oauth2", "apple", "linkedin", "facebook", "twitter" тощо
+  # provider ∈ `SUPPORTED_PROVIDERS` (нижче) — і перелік тут НЕ переказується
+  # довільно: доти цей рядок називав `"apple"`, якого в константі немає, а
+  # Privacy Policy (`docs/protocols/legal/b2c_tos_privacy.md`) написана за
+  # РЕАЛЬНИМ списком. Тобто коментар обіцяв користувачеві провайдера, якого
+  # застосунок не підтримує, і розходився з юридичним документом [ARCH.69].
   validates :provider, :uid, presence: true
   validates :uid, uniqueness: { scope: :provider, message: "Цей акаунт вже прив'язаний до іншого користувача." }
 

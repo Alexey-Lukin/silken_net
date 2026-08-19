@@ -292,7 +292,7 @@ RSpec.describe BlockchainTransactions::Index do
       # ⚠️ Детектор — `outline-current`, а не `outline-2`: широка форма ловила б
       # ще й `focus-visible:`-утиліти, тобто прилад ПЕРЕбирав би й негативна
       # половина падала б на здоровому коді. (Носій переїхав із `ring` на
-      # `outline` 2026-08-20: `ring` це `box-shadow`, а `forced-colors` його гасить.)
+      # `outline` 2026-08-19: `ring` це `box-shadow`, а `forced-colors` його гасить.)
       expect(guarded).to include("outline-current")
       expect(benign).not_to include("outline-current")
       expect(guarded).not_to include("animate-pulse")

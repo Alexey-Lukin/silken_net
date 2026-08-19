@@ -26,7 +26,7 @@ module Views
           "confirmed"    => "bg-status-success text-status-success-text",
           "failed"       => "bg-status-danger text-status-danger-text",
           # `outline`, а НЕ `ring` — і це не стилістика, а вимір, куплений
-          # adversarial-проходом 2026-08-20. `ring-*` у Tailwind реалізовано через
+          # adversarial-проходом 2026-08-19. `ring-*` у Tailwind реалізовано через
           # `--tw-ring-shadow`, тобто `box-shadow`, а CSS Color Adjust L1 у режимі
           # `forced-colors` примусово ставить `box-shadow: none`. Отже для тієї
           # когорти дискримінатор ЗНИКАВ, і `manual_review` знову зливався з

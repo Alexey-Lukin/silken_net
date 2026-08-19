@@ -276,7 +276,7 @@ class User < ApplicationRecord
   end
 
   # [ВИПРАВЛЕНО]: Тепер ця логіка реально керує валідацією.
-  # Пароль не потрібен, якщо користувач прийшов через Google/Apple і вже має Identity.
+  # Пароль не потрібен, якщо користувач прийшов через OAuth (`Identity::SUPPORTED_PROVIDERS`) і вже має Identity.
   def password_required?
     identities.none?
   end

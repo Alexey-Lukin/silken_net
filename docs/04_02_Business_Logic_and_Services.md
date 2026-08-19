@@ -655,8 +655,9 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | | |
 |---|---|
 | **Файл** | `app/services/klima_dao/retirement_service.rb` |
-| **Вхід** | `wallet` (Wallet AR instance), `amount_to_retire` (Numeric/String) |
-| **Що робить** | ESG carbon retirement через KlimaDAO на Polygon. Двокроковий: `approve(klima_address, amount_wei)` → `retire(amount_wei)`. Атомарна DB-транзакція: `balance -= amount`, `esg_retired_balance += amount`. Raises `InsufficientBalanceError`, `InvalidTokenTypeError`. |
+| **Вхід** | `wallet` (Wallet AR instance), `amount_to_retire` — 🔴 **ОДИНИЦЯ НЕ ВИРІШЕНА** ([`00_07`](00_07_Action_Plan_Tracker) ARCH.95): голий `Numeric/String` без домовленої шкали. Не викликати, не дротувати й не «уточнювати» тип, доки присуд не ухвалено |
+| **Що робить** | ESG carbon retirement через KlimaDAO на Polygon. Двокроковий: `approve(klima_address, amount_wei)` → `retire(amount_wei)`. Атомарна DB-транзакція: `balance -= amount`, `esg_retired_balance += amount`. Raises `InsufficientBalanceError`, `InvalidTokenTypeError`, `UnresolvedSemanticsError`. |
+| **🛑 ЗАБЛОКОВАНО (fail-closed)** | `self.semantics_resolved? == false`, і `validate!` кидає `UnresolvedSemanticsError` **до будь-якої перевірки балансу**. 🔴 Причина в рядку «Що робить» вище, і вона видна лише коли прочитати його ЦІЛКОМ: on-chain половина шле `amount × 10**18`, тобто трактує скаляр як **монети**, а `balance -= amount` списує **бали росту** — за ратифікованим курсом (10 000 балів = 1 SCC, [`05_03`](05_03_Tokenomics_SCC_and_SFC)) половини розходяться на **чотири порядки**, і хиба неминуча в обидва боки. Доти цей рядок описував обидві половини поруч і розходження не називав. ⚠️ Тракт мертвий (нуль enqueue-викликачів `KlimaRetirementWorker`), тож блокування нічого не ламає — це міна на запобіжнику, і **знімати гард можна лише свідомо, разом із присудом**, не як побічний ефект дротування. Три осі присуду (одиниця · напрямок у `net_minted_supply` · gross-семантика `balance`) → [`00_07`](00_07_Action_Plan_Tracker) ARCH.95 |
 | **Зовнішні виклики** | Polygon RPC (2 транзакції: approve + retire) |
 | **Вихід** | `nil`. Side effects: оновлює `wallet.balance`, `wallet.esg_retired_balance`. Створює `BlockchainTransaction`. |
 
