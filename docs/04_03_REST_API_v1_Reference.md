@@ -546,6 +546,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | 41 | GET | `/wallets/:id` | `wallets#show` | 🔑 Auth | Деталі гаманця + транзакції |
 | 42 | GET | `/wallets/:id/balance` | `wallets#balance` | 🔑 Auth | Баланс гаманця (JSON + Turbo Frame) |
 | 43 | GET | `/wallets/:id/metadata` | `wallets#metadata` | 🔑 Auth | Блокчейн-метадані (JSON + Turbo Frame) |
+| 112 | GET | `/wallets/:id/ledger` | `wallets#ledger` | 🔑 Auth | CSV-вивантаження леджера гаманця (UI.7). Напрямок кожного рядка — деривація `#burn?` (знак `amount` напрямку не видає), одиниці стоять у заголовках колонок (`amount` = монети, `locked` = бали); стрімиться `CsvStreamable` |
 | 44 | GET | `/contracts` | `contracts#index` | 🔑 Auth | Список NaaS-контрактів |
 | 45 | GET | `/contracts/:id` | `contracts#show` | 🔑 Auth | Деталі NaaS-контракту |
 | 46 | GET | `/contracts/stats` | `contracts#stats` | 🔑 Auth | Фінансова аналітика |

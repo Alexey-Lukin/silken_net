@@ -329,6 +329,10 @@ module Api
             render json: { error: I18n.t("errors.api.no_organization"), code: "no_organization" },
                    status: :unprocessable_content
           end
+          format.any do
+            render json: { error: I18n.t("errors.api.no_organization"), code: "no_organization" },
+                   status: :unprocessable_content
+          end
           format.html do
             render_auth_page(
               title: I18n.t("errors.api.no_organization_title"),
@@ -365,6 +369,7 @@ module Api
       def render_unauthorized
         respond_to do |format|
           format.json { render json: { error: I18n.t("errors.api.unauthorized") }, status: :unauthorized }
+          format.any { render json: { error: I18n.t("errors.api.unauthorized") }, status: :unauthorized }
           format.html do
             render_auth_page(
               title: I18n.t("sessions.login_title"),
@@ -427,6 +432,14 @@ module Api
       def render_forbidden_pundit(_exception)
         respond_to do |format|
           format.json { render_forbidden_json }
+          # [UI.7] `format.any` — щоб відмова існувала для КОЖНОГО формату: перший
+          # не-json/html маршрут (`wallets#ledger.csv`) показав, що всі рендерери
+          # відмов на такому запиті вироджувались у 406 UnknownFormat — тобто
+          # «формат не підтримується» замість чесного 403/404/401. Хвіст додано
+          # рівно в пʼять рендерерів, досяжних із того шляху; parameter_missing /
+          # validation_error / render_forbidden лишаються двоформатними, доки не
+          # зʼявиться не-json/html маршрут, що їх досягає.
+          format.any { render_forbidden_json }
           format.html do
             render_dashboard(
               title: I18n.t("errors.api.forbidden_title"),
@@ -447,6 +460,7 @@ module Api
       def render_not_found(exception)
         respond_to do |format|
           format.json { render json: { error: I18n.t("errors.api.not_found", model: exception.model) }, status: :not_found }
+          format.any { render json: { error: I18n.t("errors.api.not_found", model: exception.model) }, status: :not_found }
           format.html do
             render_dashboard(
               title: I18n.t("errors.api.not_found_title"),
@@ -514,6 +528,7 @@ module Api
         Rails.logger.fatal "🚨 [API CRITICAL] #{exception.message}\n#{exception.backtrace.first(5).join("\n")}"
         respond_to do |format|
           format.json { render json: { error: I18n.t("errors.api.internal") }, status: :internal_server_error }
+          format.any { render json: { error: I18n.t("errors.api.internal") }, status: :internal_server_error }
           format.html do
             render_auth_page(
               title: I18n.t("errors.api.internal_title"),

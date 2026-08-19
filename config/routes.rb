@@ -150,6 +150,9 @@ Rails.application.routes.draw do
     resources :wallets, only: [ :index, :show ] do
       get :balance, on: :member
       get :metadata, on: :member
+      # [UI.7] CSV-вивантаження леджера; `defaults` тримає формат і на голому GET,
+      # інакше запит без розширення падав би в 406 замість файла.
+      get :ledger, on: :member, defaults: { format: :csv }
     end
 
     # [I18N.2 · клас 2] Комірка статусу транзакції, яку глядач тягне СВОЇМ запитом —

@@ -25,6 +25,7 @@ en:
         gateways: Gateways
         identities: Identities
         inventory: Inventory
+        ledger: Ledger
         live: Live
         locale: Locale
         lock: Lock

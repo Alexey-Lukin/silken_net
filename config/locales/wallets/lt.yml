@@ -39,5 +39,6 @@ lt:
         tx_hash: TX Kodas
         type: Tipas
       empty: Sandorių nerasta.
+      export_csv: Eksportuoti CSV
       ledger_title: Grandinės sandorių knyga
     show_title: Piniginė // %{address}...

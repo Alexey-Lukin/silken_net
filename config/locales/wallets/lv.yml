@@ -39,5 +39,6 @@ lv:
         tx_hash: TX Kods
         type: Veids
       empty: Nav konstatētu darījumu.
+      export_csv: Eksportēt CSV
       ledger_title: Ķēdes darījumu virsgrāmata
     show_title: Maks // %{address}...

@@ -110,7 +110,7 @@ module ContrastRegistry
   # ─────────────────────────────────────────────────────────────────────────────
   WAVES = {
     machine: {
-      why: "JSON-only: екшен не рендерить HTML узагалі (доведено читанням тіла, " \
+      why: "JSON/CSV-only: екшен не рендерить HTML узагалі (доведено читанням тіла, " \
            "не виведено з імені) — критерій 1.4.3 до нього незастосовний за побудовою",
       back: :none,
       routes: %w[
@@ -118,6 +118,7 @@ module ContrastRegistry
         api/v1/firmwares#inventory
         api/v1/telemetry#tree_history
         api/v1/telemetry#gateway_history
+        api/v1/wallets#ledger
         readiness#show
       ]
     },

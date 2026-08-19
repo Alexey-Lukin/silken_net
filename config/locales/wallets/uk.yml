@@ -39,5 +39,6 @@ uk:
         tx_hash: TX Hash
         type: Тип
       empty: Транзакцій не виявлено.
+      export_csv: Експорт CSV
       ledger_title: Реєстр On-Chain транзакцій
     show_title: Гаманець // %{address}...

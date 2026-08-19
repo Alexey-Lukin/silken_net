@@ -25,6 +25,7 @@ lv:
         gateways: Vārtejas
         identities: Identitātes
         inventory: Inventārs
+        ledger: Virsgrāmata
         live: Tiešraide
         locale: Valoda
         lock: Bloķēšana

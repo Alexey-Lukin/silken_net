@@ -1,9 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
+require "csv"
+
 module Api
   module V1
     class WalletsController < BaseController
+      include CsvStreamable
+
       # --- ЗАГАЛЬНИЙ ОГЛЯД СКАРБНИЦІ (The Treasury Matrix) ---
       # GET /wallets
       # [UI.7] Гаманець — тенантний ресурс, тож актор без організації дістає те саме
@@ -110,6 +114,28 @@ module Api
         render Wallets::TransactionStatusFrame.new(tx: transaction), layout: false
       end
 
+      # --- ЛЕДЖЕР ГАМАНЦЯ (CSV-вивантаження) ---
+      # GET /wallets/:id/ledger.csv
+      #
+      # [UI.7] Дротування кнопки «Export CSV» за reports-патерном (`format.csv` +
+      # `stream_csv` зі спільного концерну). Авторизація — та сама пара, що на
+      # сторінці (`acting_organization!` + `WalletPolicy#ledger? = show?`): CSV — та
+      # сама грошова поверхня, лише в іншому форматі, і власного правила
+      # тенантності вона не заводить.
+      def ledger
+        acting_organization!
+        @wallet = Wallet.find(params[:id])
+        authorize @wallet
+
+        respond_to do |format|
+          format.csv do
+            stream_csv("wallet_ledger_#{@wallet.id}_#{Date.current}.csv") do |yielder|
+              generate_ledger_csv_enum(@wallet).each { |row| yielder << row }
+            end
+          end
+        end
+      end
+
       # --- БЛОКЧЕЙН ІДЕНТИЧНІСТЬ (Lazy-Loaded Turbo Frame) ---
       # GET /wallets/:id/metadata
       def metadata
@@ -123,6 +149,39 @@ module Api
           end
           format.html do
             render Wallets::MetadataFrame.new(wallet: @wallet), layout: false
+          end
+        end
+      end
+
+      private
+
+      # [UI.7] Аудиторське вивантаження рухів гаманця. Що в рядку — і чому саме це:
+      #   · Direction — ДЕРИВАЦІЯ `#burn?` (ARCH.101: знак `amount` напрямку не
+      #     видає — slash пишеться додатним), плюс сирий `sourceable_type` як її
+      #     доказ для зовнішнього аудитора;
+      #   · одиниці стоять у ЗАГОЛОВКАХ колонок (CLAUDE §6: із самого імені
+      #     колонки одиниця не видна — `amount` = монети, `locked` = бали);
+      #   · значення сирі, без округлення (аудит-документ — прецедент ARCH.88:
+      #     машинним споживачам віддаємо numeric(24,6) як є).
+      # Обсяг пер-гаманцевий (сотні рядків), тож ORDER без батчингу чесний;
+      # find_each тут не можна — він ігнорує ORDER і йде по PK повз партиційний
+      # індекс wallet_id.
+      def generate_ledger_csv_enum(wallet)
+        Enumerator.new do |yielder|
+          yielder << CSV.generate_line([ "Wallet Ledger" ])
+          yielder << CSV.generate_line([ "Wallet ID", wallet.id ])
+          yielder << CSV.generate_line([ "Address", wallet.crypto_public_address ])
+          yielder << CSV.generate_line([ "Generated At", Time.current.iso8601 ])
+          yielder << CSV.generate_line([])
+          yielder << CSV.generate_line([ "Created At", "Direction", "Token", "Amount (coins)",
+                                         "Locked (growth points)", "Status", "Network",
+                                         "Tx Hash", "To Address", "Source Type" ])
+          wallet.blockchain_transactions.order(created_at: :desc).each do |tx|
+            yielder << CSV.generate_line([
+              tx.created_at.iso8601, tx.burn? ? "burn" : "mint", tx.token_type,
+              tx.amount, tx.locked_points, tx.status, tx.blockchain_network,
+              tx.tx_hash, tx.to_address, tx.sourceable_type
+            ])
           end
         end
       end

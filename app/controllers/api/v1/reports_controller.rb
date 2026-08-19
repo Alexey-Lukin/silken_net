@@ -6,6 +6,10 @@ require "csv"
 module Api
   module V1
     class ReportsController < BaseController
+      # [UI.7] Дім стрімінгу — спільний концерн: другий CSV-споживач (ledger
+      # гаманця) зробив би приватну копію тут другим домом.
+      include CsvStreamable
+
       # GET /reports
       # Список доступних звітів та зведена інформація для інвесторів
       def index
@@ -203,20 +207,6 @@ module Api
       rescue StandardError => e
         Rails.logger.warn("Real yield fetch timeout: #{e.message}")
         NETWORK_EMISSION_DEFAULTS
-      end
-
-      # --- CSV Streaming ---
-      # Використовуємо Enumerator для стрімінгу CSV-рядків до клієнта.
-      # Це дозволяє обробляти мільйони рядків без навантаження на пам'ять.
-      # Для summary-звітів це 4-5 рядків, але при масштабуванні до per-tree exports
-      # (мільярди дерев) стрімінг критичний.
-
-      def stream_csv(filename, &block)
-        headers["Content-Disposition"] = "attachment; filename=\"#{filename}\""
-        headers["Content-Type"] = "text/csv"
-        headers["Cache-Control"] = "no-cache"
-
-        self.response_body = Enumerator.new(&block)
       end
 
       def generate_carbon_csv_enum(org, data)

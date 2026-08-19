@@ -64,7 +64,16 @@ module Wallets
 
     def render_transaction_ledger
       div(class: "space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".ledger_title") }
+        div(class: "flex items-center justify-between gap-4") do
+          h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".ledger_title") }
+          # [UI.7] Reports-патерн дослівно: голий лінк на CSV, жодного JS. Панель
+          # `render_on_chain_actions`, у якій кнопка жила серед мертвих сусідів,
+          # знято 2026-08-06 — повертається рівно та її частина, що має бекенд.
+          a(href: ledger_wallet_path(@wallet, format: :csv),
+            class: "text-mini uppercase tracking-widest text-emerald-700 border " \
+                   "border-emerald-900 px-3 py-1.5 hover:bg-emerald-950/30 " \
+                   "focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".export_csv") }
+        end
 
         div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
           table(class: "w-full text-left font-mono text-compact min-w-[640px]", role: "table") do

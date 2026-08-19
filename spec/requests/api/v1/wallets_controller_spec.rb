@@ -104,6 +104,44 @@ RSpec.describe Api::V1::WalletsController, type: :request do
     end
   end
 
+  # [UI.7] Ledger-CSV. Пін на ЗМІСТ, не на статус: аудит-вивантаження мусить нести
+  # ЯВНИЙ напрямок кожного рядка (ARCH.101: знак amount напрямку не видає), тож
+  # фікстура тримає мінт І слеш-burn — без другого приклад зелений і на голій
+  # виписці без деривації.
+  describe "GET /wallets/:id/ledger" do
+    let(:user) { create(:user, organization: organization) }
+    let(:headers) { { "Authorization" => "Bearer #{user.generate_token_for(:api_access)}" } }
+
+    it "streams the ledger with an explicit direction per row" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster)
+      create(:blockchain_transaction, wallet: wallet, amount: 120,
+                                      token_type: :carbon_coin, status: :confirmed)
+      create(:blockchain_transaction, wallet: wallet, amount: 20, token_type: :carbon_coin,
+                                      status: :confirmed, sourceable: contract)
+
+      get "/wallets/#{wallet.id}/ledger", headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(response.headers["Content-Type"]).to include("text/csv")
+      expect(response.headers["Content-Disposition"]).to include("wallet_ledger_#{wallet.id}")
+      body = response.body
+      expect(body).to include("Created At,Direction,Token,Amount (coins)")
+      # Обидва напрямки, кожен на власному рядку — деривація #burn?, не знак суми.
+      expect(body).to match(/^[^,]+,mint,carbon_coin,120/)
+      expect(body).to match(/^[^,]+,burn,carbon_coin,20/)
+    end
+
+    it "denies the ledger of another organization's wallet" do
+      other_tree = create(:tree, cluster: create(:cluster, organization: create(:organization)))
+      foreign_wallet = other_tree.wallet || create(:wallet, tree: other_tree)
+
+      get "/wallets/#{foreign_wallet.id}/ledger", headers: headers
+
+      expect(response).to have_http_status(:forbidden)
+      expect(response.body).not_to include("Wallet Ledger")
+    end
+  end
+
   context "with format.html responses" do
     let(:admin) { create(:user, :admin, organization: organization) }
     let(:html_headers) do

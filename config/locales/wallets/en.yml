@@ -39,5 +39,6 @@ en:
         tx_hash: TX Hash
         type: Type
       empty: No transactions detected.
+      export_csv: Export CSV
       ledger_title: On-Chain Transaction Ledger
     show_title: Wallet // %{address}...
