@@ -83,6 +83,22 @@ lt:
       critical: kritinis
       low: žemas
       medium: vidutinis
+    show:
+      sop:
+        domain:
+          pending: Partnerio SOP turinio šiam įspėjimo tipui dar nėra — srities vadovai priklauso išorės savininkui.
+          title: Srities taktika (partnerio SOP)
+        steps:
+          acknowledge:
+            body: Patvirtinkite, kad įspėjimas apdorojamas. Išsprendimas įrašo operatorių ir laiką audito žurnale.
+            title: Patvirtinti ir išspręsti
+          field_audit:
+            body: Jei įspėjimas liečia sutartį arba įrodymai dviprasmiški — siųskite lauko auditą; fizinė patikra svarbesnė už bet kokį nuotolinį signalą.
+            title: Lauko auditas
+          verify:
+            body: Prieš fizinį veiksmą palyginkite įvykį su palydovo/klimato duomenimis (dClimate) — jutiklis yra vienas liudininkas, o ne nuosprendis.
+            title: Patikrinti su nepriklausomu liudininku
+        title: Reagavimo protokolas
     show_title: 'Įspėjimas #%{id}'
     table:
       alert_type: Įspėjimo tipas

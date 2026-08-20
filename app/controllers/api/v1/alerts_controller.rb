@@ -80,9 +80,11 @@ module Api
             }
           end
           format.html do
+            # [ARCH.31] Show = рядок у ВАЛІДНІЙ table-обгортці + SOP-панель
+            # (доти рендерився голий <tr> поза table — браузер викидав його з DOM).
             render_dashboard(
               title: I18n.t("alerts.show_title", id: @alert.id),
-              component: Alerts::Row.new(alert: @alert, current_user: current_user)
+              component: Alerts::Show.new(alert: @alert, current_user: current_user)
             )
           end
         end

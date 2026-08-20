@@ -83,6 +83,22 @@ lv:
       critical: kritisks
       low: zems
       medium: vidējs
+    show:
+      sop:
+        domain:
+          pending: Partnera SOP saturs šim brīdinājuma tipam vēl nav pieejams — domēna rokasgrāmatas pieder ārējam īpašniekam.
+          title: Domēna taktika (partnera SOP)
+        steps:
+          acknowledge:
+            body: Apstipriniet, ka brīdinājums tiek apstrādāts. Atrisināšana ieraksta operatoru un laiku audita žurnālā.
+            title: Apstiprināt un atrisināt
+          field_audit:
+            body: Ja brīdinājums skar līgumu vai pierādījumi ir neviennozīmīgi — nosūtiet lauka auditu; fiziska pārbaude ir svarīgāka par jebkuru attālinātu signālu.
+            title: Lauka audits
+          verify:
+            body: Pirms fiziskas rīcības salīdziniet notikumu ar satelīta/klimata datiem (dClimate) — sensors ir viens liecinieks, nevis spriedums.
+            title: Pārbaudīt ar neatkarīgu liecinieku
+        title: Reaģēšanas protokols
     show_title: 'Brīdinājums #%{id}'
     table:
       alert_type: Brīdinājuma veids

@@ -83,6 +83,22 @@ en:
       critical: critical
       low: low
       medium: medium
+    show:
+      sop:
+        domain:
+          pending: Partner SOP content for this alert type is not available yet — domain playbooks are owned externally and arrive via the academic channel.
+          title: Domain tactics (partner SOP)
+        steps:
+          acknowledge:
+            body: Confirm the alert is being handled. Resolving it records the operator and timestamp in the audit trail.
+            title: Acknowledge and resolve
+          field_audit:
+            body: If the alert affects a contract or the evidence is ambiguous, dispatch a field audit — physical inspection outranks any remote signal.
+            title: Field audit
+          verify:
+            body: Cross-check the event against satellite/climate data (dClimate) before physical action — the sensor is one witness, not the verdict.
+            title: Verify with an independent witness
+        title: Response protocol
     show_title: 'Alert #%{id}'
     table:
       alert_type: Alert Type
