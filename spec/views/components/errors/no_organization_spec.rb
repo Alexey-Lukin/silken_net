@@ -76,6 +76,12 @@ RSpec.describe Errors::NoOrganization do
       expect(html).to include('aria-label="Sign out"')
     end
 
+    # [I18N.1] Свідок механізму в НЕ-базовій локалі: en-значення байтово збігається з
+    # колишнім літералом, тож лише uk доводить, що мітка йде через t(".sign_out_aria").
+    it "localizes the sign-out aria label for the viewer (uk)" do
+      expect(I18n.with_locale(:uk) { render_component }).to include('aria-label="Вийти"')
+    end
+
     it "applies focus-visible ring on the sign-out button" do
       expect(html).to include("focus-visible:ring-2")
       expect(html).to include("focus-visible:ring-gaia-primary")

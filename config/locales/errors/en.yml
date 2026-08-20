@@ -67,4 +67,5 @@ en:
       choose_organization: Choose an organization →
       heading: Quarantine
       sign_out: "← Sign Out"
+      sign_out_aria: Sign out
       subtitle: No Organization Assigned

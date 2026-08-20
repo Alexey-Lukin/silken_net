@@ -20,16 +20,20 @@ lt:
         firmware_version: Programinės įrangos versija
         heading: Tinklo konfigūracija
         sleep_interval: Miego intervalas
+        unassigned: NEPRISKIRTA
       crypto:
         aes_not_provisioned: AES-256 neaprūpinta
         aes_provisioned: AES-256 aprūpinta
         heading: Aparatūros kriptografija
         uid_label: 'Aparatūros UID:'
+        uid_undefined: NEAPIBRĖŽTA
       fleet:
         active_nodes: "%{count} aktyvūs mazgai"
         heading: Karių flotilė komandoje
       header:
         heartbeat: Širdies plakimas
+      labels:
+        silent: TYLUS
       soldier_active_aria: 'Karys %{did}: aktyvus'
       soldier_inactive_aria: 'Karys %{did}: neaktyvus'
       telemetry:

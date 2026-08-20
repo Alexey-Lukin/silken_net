@@ -72,9 +72,12 @@ en:
       labels:
         family: 'Family: %{name}'
         family_unknown: Unknown
+        silent: SILENT
         unit: GP
         uplink_state: Uplink State
         verified_balance: Verified Balance
+      ledger:
+        unknown_technician: Unknown
       locate_aria: Locate tree node on Google Maps
       metadata:
         cluster: Cluster

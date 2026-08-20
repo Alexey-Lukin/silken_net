@@ -1,6 +1,8 @@
 ---
 uk:
   ui:
+    action_badge:
+      aria_label: 'Дія: %{action}'
     measurement:
       coverage: виміряно %{measured} з %{total}
       not_measured: Не виміряно

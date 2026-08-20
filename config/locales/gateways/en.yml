@@ -20,16 +20,20 @@ en:
         firmware_version: Firmware Version
         heading: Network Configuration
         sleep_interval: Sleep Interval
+        unassigned: UNASSIGNED
       crypto:
         aes_not_provisioned: AES-256 Not Provisioned
         aes_provisioned: AES-256 Provisioned
         heading: Hardware Cryptography
         uid_label: 'Hardware UID:'
+        uid_undefined: UNDEFINED
       fleet:
         active_nodes: "%{count} Active nodes"
         heading: Soldier Fleet Under Command
       header:
         heartbeat: Heartbeat
+      labels:
+        silent: SILENT
       soldier_active_aria: 'Soldier %{did}: active'
       soldier_inactive_aria: 'Soldier %{did}: inactive'
       telemetry:

@@ -41,7 +41,10 @@ module Gateways
     def render_status_header
       div(class: "flex flex-col md:flex-row justify-between items-start md:items-center p-6 border border-gaia-border bg-gaia-surface shadow-2xl") do
         div do
-          h2(class: "text-3xl font-extralight tracking-tighter text-gaia-text-strong") { "Queen Relay // #{@gateway.uid}" }
+          # [I18N.1] Реюз канонічного show_title (той самий, що контролер кладе в
+          # <title>): доти екран казав «Queen Relay // …», а вкладка «Queen // …» —
+          # слово «Relay» не мала ЖОДНА з чотирьох локалей.
+          h2(class: "text-3xl font-extralight tracking-tighter text-gaia-text-strong") { t("gateways.show_title", uid: @gateway.uid) }
           div(class: "flex items-center mt-2 gap-3") do
             render Views::Shared::UI::StatusBadge.new(status: @gateway.state)
             span(class: "text-tiny text-gaia-text-subtle font-mono") { "IP: #{@gateway.ip_address || '0.0.0.0'}" }
@@ -51,7 +54,7 @@ module Gateways
         div(class: "mt-4 md:mt-0 flex items-center gap-10") do
           div(class: "text-right") do
             p(class: "text-mini text-gaia-text-muted uppercase tracking-widest") { t(".header.heartbeat") }
-            p(class: "text-sm font-mono text-gaia-text-strong") { @gateway.last_seen_at&.strftime("%H:%M:%S // %d.%m.%y") || "SILENT" }
+            p(class: "text-sm font-mono text-gaia-text-strong") { @gateway.last_seen_at&.strftime("%H:%M:%S // %d.%m.%y") || t(".labels.silent") }
           end
           div(class: tokens("h-4 w-4 rounded-sm rotate-45", connection_led_classes))
         end
@@ -115,7 +118,7 @@ module Gateways
       div(class: "p-6 border border-gaia-border bg-gaia-surface-sunken") do
         h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".config.heading") }
         div(class: "space-y-4 font-mono text-compact") do
-          config_row(t(".config.cluster"), @gateway.cluster&.name || "UNASSIGNED")
+          config_row(t(".config.cluster"), @gateway.cluster&.name || t(".config.unassigned"))
           config_row(t(".config.sleep_interval"), "#{@gateway.config_sleep_interval_s || 60}s")
           config_row(t(".config.firmware_version"), @gateway.firmware_version || "—")
           # [UI.10] Рядка «Firmware Hash» тут більше немає, і це присуд, а не
@@ -158,7 +161,7 @@ module Gateways
         h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-4") { t(".crypto.heading") }
         div(class: "space-y-2 text-tiny font-mono") do
           p(class: "text-gaia-text-muted") { t(".crypto.uid_label") }
-          p(class: "text-gaia-primary-strong truncate") { @gateway.hardware_key&.device_uid || "UNDEFINED" }
+          p(class: "text-gaia-primary-strong truncate") { @gateway.hardware_key&.device_uid || t(".crypto.uid_undefined") }
 
           # [UI.17] Крапка й напис були БЕЗУМОВНІ, тобто непровізіонований шлюз
           # рапортував себе захищеним рядком нижче власного «UNDEFINED».

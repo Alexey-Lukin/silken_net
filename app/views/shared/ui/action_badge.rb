@@ -20,7 +20,11 @@ module Views
         def view_template
           span(
             role: "status",
-            aria_label: "Action: #{@action}",
+            # [I18N.1] Повний шлях, не `t(".…")`: автоскоуп дав би
+            # `views.shared.ui.action_badge.*`, а shared/ui живе під `ui.*`
+            # (конвенція StatusBadge). Сама дія (@action) — технічний токен,
+            # локалізується окремим рішенням (AuditLog#action, `04_04 §12.14`).
+            aria_label: t("ui.action_badge.aria_label", action: @action),
             class: tokens(badge_classes, style_for_action, @extra_class)
           ) { @action }
         end

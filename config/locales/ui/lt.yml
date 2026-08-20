@@ -1,6 +1,8 @@
 ---
 lt:
   ui:
+    action_badge:
+      aria_label: 'Veiksmas: %{action}'
     measurement:
       coverage: išmatuota %{measured} iš %{total}
       not_measured: Neišmatuota

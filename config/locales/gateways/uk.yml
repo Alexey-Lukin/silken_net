@@ -20,16 +20,20 @@ uk:
         firmware_version: Версія прошивки
         heading: Конфігурація мережі
         sleep_interval: Інтервал сну
+        unassigned: НЕ ПРИЗНАЧЕНО
       crypto:
         aes_not_provisioned: AES-256 не налаштовано
         aes_provisioned: AES-256 Налаштовано
         heading: Апаратна криптографія
         uid_label: 'Апаратний UID:'
+        uid_undefined: НЕ ВИЗНАЧЕНО
       fleet:
         active_nodes: "%{count} Активних вузлів"
         heading: Флот солдатів під командою
       header:
         heartbeat: Пульс
+      labels:
+        silent: ТИША
       soldier_active_aria: 'Солдат %{did}: активний'
       soldier_inactive_aria: 'Солдат %{did}: неактивний'
       telemetry:

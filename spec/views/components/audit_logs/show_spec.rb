@@ -78,6 +78,36 @@ RSpec.describe AuditLogs::Show do
       html = render_component(log: log_no_meta)
       expect(html).to include("No additional metadata")
     end
+
+    # [I18N.1] `from`/`to` ведуться у свій дім міток: AASM-статуси → `StatusBadge.label`.
+    # Локаль НЕ базова: en-мітка «draft» збігається з сирим enum байтово, тож у en пін
+    # механізму не бачив би.
+    it "renders from/to AASM states through StatusBadge labels" do
+      transition = build_log(action: "naas_contract_cancelled", metadata: { "from" => "draft", "to" => "cancelled" })
+      expect(I18n.with_locale(:uk) { render_component(log: transition) }).to include("чернетка")
+    end
+
+    it "renders from/to of user_role_changed through role labels" do
+      role_change = build_log(action: "user_role_changed", metadata: { "from" => "forester", "to" => "admin" })
+      expect(I18n.with_locale(:uk) { render_component(log: role_change) }).to include("Лісник")
+    end
+
+    it "leaves non-status from/to values raw (fail-open)" do
+      rotation = build_log(action: "stream_epoch_rotated", metadata: { "from" => "7781", "to" => "7782" })
+      expect(render_component(log: rotation)).to include("7781")
+    end
+  end
+
+  # [I18N.1] ActionBadge (shared/ui) — aria-мітка через повний шлях `ui.action_badge.aria_label`;
+  # власної спеки бейдж не має, механізм пінить рендер-хазяїн.
+  describe "action badge aria" do
+    it "labels the badge with the localized aria prefix and raw action" do
+      expect(html).to include('aria-label="Action: update"')
+    end
+
+    it "localizes the aria prefix for the viewer (uk), keeping the action raw" do
+      expect(I18n.with_locale(:uk) { render_component(log: log) }).to include('aria-label="Дія: update"')
+    end
   end
 
   describe "actor info" do

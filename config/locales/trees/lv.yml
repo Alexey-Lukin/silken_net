@@ -73,9 +73,12 @@ lv:
       labels:
         family: 'Dzimta: %{name}'
         family_unknown: Nezināms
+        silent: KLUSS
         unit: GP
         uplink_state: Augšupsaites stāvoklis
         verified_balance: Verificētais atlikums
+      ledger:
+        unknown_technician: Nezināms
       locate_aria: Atrast koka mezglu Google Maps
       metadata:
         cluster: Klasteris

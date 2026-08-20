@@ -1,6 +1,8 @@
 ---
 en:
   ui:
+    action_badge:
+      aria_label: 'Action: %{action}'
     measurement:
       coverage: "%{measured} of %{total} measured"
       not_measured: Not measured

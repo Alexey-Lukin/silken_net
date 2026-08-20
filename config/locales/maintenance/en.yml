@@ -28,6 +28,7 @@ en:
       header:
         edit: 'Edit Intervention Record // #%{id}'
         new: Register Intervention Ritual
+        type_pending: PENDING
       notes: Field Notes (min. 10 chars)
       notes_placeholder: 'Describe the intervention: state of anchor, replaced components, observations...'
       opex:
@@ -40,6 +41,8 @@ en:
         update: Update Record
       target_id: Target ID
       target_type: Target Type
+      type_gateway: Gateway
+      type_tree: Tree
     index:
       filter:
         by_aria: Filter by %{type}

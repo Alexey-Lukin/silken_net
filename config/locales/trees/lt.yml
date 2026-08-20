@@ -73,9 +73,12 @@ lt:
       labels:
         family: 'Šeima: %{name}'
         family_unknown: Nežinoma
+        silent: TYLUS
         unit: GP
         uplink_state: Ryšio aukštyn būsena
         verified_balance: Patikrintas balansas
+      ledger:
+        unknown_technician: Nežinomas
       locate_aria: Rasti medžio mazgą Google Maps
       metadata:
         cluster: Klasteris

@@ -36,7 +36,12 @@ module Maintenance
           # --- РЯДОК 1: Target + EWS ---
           div(class: "grid grid-cols-2 gap-6") do
             field_container(f, :maintainable_type, t(".target_type")) do |aria|
-              f.select :maintainable_type, [ "Tree", "Gateway" ], {}, class: input_classes, **aria
+              # [I18N.1] Пара [мітка, значення]: "Tree"/"Gateway" — імена Ruby-класів
+              # поліморфної асоціації, значення мусить лишатись дослівним (переклад
+              # плоского масиву зламав би сабміт — та сама пастка, що action_type нижче).
+              f.select :maintainable_type,
+                       [ [ t(".type_tree"), "Tree" ], [ t(".type_gateway"), "Gateway" ] ],
+                       {}, class: input_classes, **aria
             end
             field_container(f, :maintainable_id, t(".target_id")) do |aria|
               f.number_field :maintainable_id, class: input_classes, placeholder: "e.g. 42", **aria
@@ -207,7 +212,9 @@ module Maintenance
         h3(class: "text-tiny uppercase tracking-[0.5em] text-gaia-text-muted") do
           @editing ? t(".header.edit", id: @record.id) : t(".header.new")
         end
-        span(class: "text-micro text-gaia-text-muted font-mono") { @record.maintainable_type&.upcase || "PENDING" }
+        # [I18N.1] Власний ключ, НЕ show.hardware.pending: там «очікує апаратної
+        # верифікації», тут «тип запису ще не обрано» — колізія значень.
+        span(class: "text-micro text-gaia-text-muted font-mono") { @record.maintainable_type&.upcase || t(".header.type_pending") }
       end
       hr(class: "border-gaia-border mb-6")
     end

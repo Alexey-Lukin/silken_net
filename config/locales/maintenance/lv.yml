@@ -28,6 +28,7 @@ lv:
       header:
         edit: 'Rediģēt iejaukšanās ierakstu // #%{id}'
         new: Reģistrēt iejaukšanās rituālu
+        type_pending: GAIDA
       notes: Lauka piezīmes (min. 10 rakstzīmes)
       notes_placeholder: 'Aprakstiet iejaukšanos: enkura stāvoklis, nomainītie komponenti, novērojumi...'
       opex:
@@ -40,6 +41,8 @@ lv:
         update: Atjaunināt ierakstu
       target_id: Mērķa ID
       target_type: Mērķa veids
+      type_gateway: Vārteja
+      type_tree: Koks
     index:
       filter:
         by_aria: Filtrēt pēc %{type}

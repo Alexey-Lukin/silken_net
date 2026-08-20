@@ -116,7 +116,9 @@ module Errors
           t(".sign_out"),
           logout_path,
           method: :delete,
-          aria: { label: "Sign out" },
+          # [I18N.1] Окремий aria-ключ, не t(".sign_out"): видимий текст несе
+          # декоративну стрілку («← …»), якій не місце в accessible name.
+          aria: { label: t(".sign_out_aria") },
           class: "text-tiny text-gaia-text-subtle uppercase tracking-widest hover:text-gaia-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong transition-colors bg-transparent border-0 cursor-pointer"
         )
       end

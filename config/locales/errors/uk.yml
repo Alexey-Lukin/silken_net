@@ -67,4 +67,5 @@ uk:
       choose_organization: Обрати організацію →
       heading: Карантин
       sign_out: "← Вийти"
+      sign_out_aria: Вийти
       subtitle: Організація не призначена

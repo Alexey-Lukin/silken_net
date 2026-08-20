@@ -74,4 +74,5 @@ lv:
       choose_organization: Izvēlēties organizāciju →
       heading: Karantīna
       sign_out: "← Iziet"
+      sign_out_aria: Iziet
       subtitle: Nav piesaistītas organizācijas

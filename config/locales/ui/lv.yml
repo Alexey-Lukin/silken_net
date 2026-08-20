@@ -1,6 +1,8 @@
 ---
 lv:
   ui:
+    action_badge:
+      aria_label: 'Darbība: %{action}'
     measurement:
       coverage: izmērīti %{measured} no %{total}
       not_measured: Nav izmērīts

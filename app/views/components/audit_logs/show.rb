@@ -74,7 +74,7 @@ module AuditLogs
             @log.metadata.each do |key, value|
               div(class: "flex justify-between items-center py-1 border-b border-emerald-900/20") do
                 span(class: "text-gray-600 uppercase") { key.to_s }
-                span(class: "text-emerald-400") { value.to_s }
+                span(class: "text-emerald-400") { metadata_value_label(key, value) }
               end
             end
           end
@@ -82,6 +82,19 @@ module AuditLogs
           p(class: "text-compact text-gray-700 italic") { t(".metadata.empty") }
         end
       end
+    end
+
+    # [I18N.1] `from`/`to` в metadata несуть значення, чиї доми міток УЖЕ існують —
+    # ведемо кожне у СВІЙ: ролі user_role_changed → `User.role_label`, AASM-статуси
+    # (naas_contract_to_*, actuator_to_*) → `StatusBadge.label` (обидва fail-open,
+    # тож нестатусне значення — epoch-цілі stream_epoch_rotated — падає на сире).
+    # Перетин ролей із ключами ui.status перевірено: порожній. Решта
+    # metadata-ключів — технічні ідентифікатори, лишаються сирими свідомо.
+    def metadata_value_label(key, value)
+      return value.to_s unless %w[from to].include?(key.to_s)
+      return User.role_label(value) if @log.action == "user_role_changed"
+
+      Views::Shared::UI::StatusBadge.label(value)
     end
 
     def render_actor_info

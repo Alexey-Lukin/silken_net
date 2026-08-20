@@ -28,6 +28,7 @@ uk:
       header:
         edit: 'Редагування запису // #%{id}'
         new: Реєстрація ритуалу втручання
+        type_pending: ОЧІКУЄ
       notes: Польові нотатки (мін. 10 символів)
       notes_placeholder: 'Опишіть втручання: стан анкера, замінені компоненти, спостереження...'
       opex:
@@ -40,6 +41,8 @@ uk:
         update: Оновити запис
       target_id: ID цілі
       target_type: Тип цілі
+      type_gateway: Шлюз
+      type_tree: Дерево
     index:
       filter:
         by_aria: Фільтрувати за %{type}

@@ -62,8 +62,16 @@ RSpec.describe Gateways::Show do
   end
 
   describe "status header" do
-    it "displays Queen Relay // UID" do
-      expect(html).to include("Queen Relay // SNET-Q-AAB01234")
+    # [I18N.1] Заголовок реюзає канонічний `gateways.show_title` (той самий, що
+    # контролер кладе у <title>) — доти екран і вкладка розходились словом «Relay»,
+    # якого не мала жодна локаль.
+    it "displays the canonical show_title with UID" do
+      expect(html).to include("Queen // SNET-Q-AAB01234")
+    end
+
+    it "renders the show_title in the viewer's locale (uk)" do
+      rendered = I18n.with_locale(:uk) { render_component(gateway: gateway, latest_log: latest_log, active_soldiers: active_soldiers) }
+      expect(rendered).to include("Королева // SNET-Q-AAB01234")
     end
 
     it "displays the IP address" do

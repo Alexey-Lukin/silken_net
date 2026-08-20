@@ -20,16 +20,20 @@ lv:
         firmware_version: Programmaparatūras versija
         heading: Tīkla konfigurācija
         sleep_interval: Miega intervāls
+        unassigned: NEPIESAISTĪTS
       crypto:
         aes_not_provisioned: AES-256 nav nodrošināts
         aes_provisioned: AES-256 nodrošināts
         heading: Aparatūras kriptogrāfija
         uid_label: 'Aparatūras UID:'
+        uid_undefined: NAV DEFINĒTS
       fleet:
         active_nodes: "%{count} aktīvie mezgli"
         heading: Karavīru flote komandā
       header:
         heartbeat: Sirdsdarbība
+      labels:
+        silent: KLUSS
       soldier_active_aria: 'Karavīrs %{did}: aktīvs'
       soldier_inactive_aria: 'Karavīrs %{did}: neaktīvs'
       telemetry:

@@ -74,9 +74,12 @@ uk:
       labels:
         family: 'Родина: %{name}'
         family_unknown: Невідома
+        silent: ТИША
         unit: GP
         uplink_state: Стан зв'язку
         verified_balance: Підтверджений баланс
+      ledger:
+        unknown_technician: Невідомий
       locate_aria: Знайти вузол дерева на Google Maps
       metadata:
         cluster: Кластер

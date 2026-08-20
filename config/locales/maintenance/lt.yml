@@ -28,6 +28,7 @@ lt:
       header:
         edit: 'Redaguoti įsikišimo įrašą // #%{id}'
         new: Registruoti įsikišimo ritualą
+        type_pending: LAUKIAMA
       notes: Lauko pastabos (min. 10 simbolių)
       notes_placeholder: 'Apibūdinkite įsikišimą: inkaro būsena, pakeisti komponentai, stebėjimai...'
       opex:
@@ -40,6 +41,8 @@ lt:
         update: Atnaujinti įrašą
       target_id: Taikinio ID
       target_type: Taikinio tipas
+      type_gateway: Šliuzas
+      type_tree: Medis
     index:
       filter:
         by_aria: Filtruoti pagal %{type}

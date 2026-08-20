@@ -76,4 +76,5 @@ lt:
       choose_organization: Pasirinkti organizaciją →
       heading: Karantinas
       sign_out: "← Atsijungti"
+      sign_out_aria: Atsijungti
       subtitle: Nepriskirta organizacija

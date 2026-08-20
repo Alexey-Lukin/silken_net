@@ -70,7 +70,7 @@ module Trees
         div(class: "mt-6 md:mt-0 flex items-center gap-12") do
           div(class: "text-right") do
             p(class: "text-mini text-gaia-text-muted uppercase tracking-widest") { t(".labels.uplink_state") }
-            p(class: "text-sm font-mono text-emerald-100") { @latest_log&.created_at&.strftime("%H:%M:%S // %d.%m.%y") || "SILENT" }
+            p(class: "text-sm font-mono text-emerald-100") { @latest_log&.created_at&.strftime("%H:%M:%S // %d.%m.%y") || t(".labels.silent") }
           end
           div(class: tokens("h-4 w-4 rounded-sm rotate-45", status_led_class))
         end
@@ -147,7 +147,9 @@ module Trees
               if @maintenance_history.any?
                 @maintenance_history.each do |record|
                   tr(class: "hover:bg-gaia-surface-sunken transition-colors") do
-                    td(class: "p-4 text-emerald-100") { record.user&.full_name || "Unknown" }
+                    # [I18N.1] Внутрішній екран — full_name легальний (межа = хто читає
+                    # сторінку); локалізовано лише фолбек безіменного техніка.
+                    td(class: "p-4 text-emerald-100") { record.user&.full_name || t(".ledger.unknown_technician") }
                     td(class: "p-4 uppercase text-gaia-primary-strong") { record.action_type_label }
                     td(class: "p-4 text-gaia-text-muted italic") { record.notes&.truncate(50) || "—" }
                     td(class: "p-4 text-right text-gaia-text-muted") { record.performed_at&.strftime("%d.%m.%y") || "—" }
