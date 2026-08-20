@@ -46,10 +46,14 @@ RSpec.describe Gateways::Show do
     )
   end
 
+  # [TEST.12] Реальний незбережений Tree: `active?` — AASM-предикат над enum-колонкою
+  # `status`, тож фікстура годує ДЖЕРЕЛО (OpenStruct вигадував сам вердикт і лишав
+  # деривацію неперевіреною). `under_threat?` на незбереженому записі чесно false
+  # (порожня асоціація без запиту); загрозна гілка дістається стабом САМОГО ридера —
+  # той самий хід, що UI.4 на недосяжній дефолт-гілці.
   def mock_soldier(did: "SNET-00000001", active: true, under_threat: false)
-    soldier = OpenStruct.new(did: did)
-    soldier.define_singleton_method(:active?) { active }
-    soldier.define_singleton_method(:under_threat?) { under_threat }
+    soldier = Tree.new(did: did, status: active ? :active : :dormant)
+    allow(soldier).to receive(:under_threat?).and_return(true) if under_threat
     soldier
   end
 
@@ -103,8 +107,10 @@ RSpec.describe Gateways::Show do
   describe "state badge" do
     # 🔴 `active` тут НЕСУЧИЙ: доти цей запис у спільній мапі належав `EwsAlert`
     # і був `danger`, тож дротування пофарбувало б живий шлюз у червоне.
+    # [TEST.12] `>active<` — текст МІЖ тегами: голий include("active") був
+    # вакуумний, слово тримає й aria-стрічка флоту («Soldier …: active»).
     it "renders active state with the success token" do
-      expect(html).to include("active")
+      expect(html).to include(">active<")
       expect(html).to include("bg-status-success")
       expect(html).not_to include("bg-status-danger")
     end

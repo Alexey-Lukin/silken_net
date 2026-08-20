@@ -4,18 +4,17 @@
 require "rails_helper"
 
 RSpec.describe Clusters::Item do
+  # [TEST.12] Реальний незбережений Cluster: фікстура годує ДЖЕРЕЛО, не вердикт —
+  # `total_active_trees` є ридером counter-cache `active_trees_count`, тож OpenStruct
+  # із готовим числом лишав деривацію неперевіреною; `model_name`/`to_key`/`to_param`
+  # тепер справжні (саме їхня рукописність дозволяла `dom_id` розійтися з рендереним).
+  # `health_index` — double precision, Float і в проді. Загрозна гілка — стаб САМОГО
+  # ридера `active_threats?` (на незбереженому записі він чесно false).
   def mock_cluster(id: 1, name: "Carpathian-Alpha", active_threats: false,
                    total_active_trees: 42, health_index: 0.91)
-    cluster = OpenStruct.new(
-      id: id,
-      name: name,
-      total_active_trees: total_active_trees,
-      health_index: health_index
-    )
-    cluster.define_singleton_method(:active_threats?) { active_threats }
-    cluster.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    cluster.define_singleton_method(:to_key) { [ id ] }
-    cluster.define_singleton_method(:to_param) { id.to_s }
+    cluster = Cluster.new(id: id, name: name,
+                          active_trees_count: total_active_trees, health_index: health_index)
+    allow(cluster).to receive(:active_threats?).and_return(true) if active_threats
     cluster
   end
 

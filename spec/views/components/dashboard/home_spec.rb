@@ -27,17 +27,11 @@ RSpec.describe Dashboard::Home do
     }
   end
 
+  # [TEST.12] Реальний незбережений запис: enum-сеттер відкидає вигадані значення
+  # (сингłтон приймав будь-що), клас-ідентичність для `case/when` тримає `new`.
   def mock_ews_event
-    cluster = OpenStruct.new(name: "Carpathian-7")
-    alert = EwsAlert.allocate
-    # [TEST.12] Реальне значення enum'а, не display-рядок: із «Thermal Anomaly»
-    # `TextFormatter` їхав fail-open гілкою `humanize`, тобто стрічка подій
-    # перевірялась шляхом, якого в проді не буває (той самий дефект `event_row_spec`
-    # уже виправив — тут був його рецидив).
-    alert.define_singleton_method(:alert_type) { "fire_detected" }
-    alert.define_singleton_method(:cluster) { cluster }
-    alert.define_singleton_method(:created_at) { 1.minute.ago }
-    alert
+    EwsAlert.new(alert_type: "fire_detected", cluster: Cluster.new(name: "Carpathian-7"),
+                 created_at: 1.minute.ago)
   end
 
   # [TEST.12] Реальний незбережений запис: `EventRow` виводить тікер і НАПРЯМОК із
@@ -54,8 +48,11 @@ RSpec.describe Dashboard::Home do
   # `stream_epoch` несе адресу вкладеної мапи [SEC.25 Ф3]: `Dashboard::Home`
   # рендерить `Dashboard::Map`, а той підписується через дім імен, який без
   # епохи падає fail-closed.
+  # [TEST.12] Реальний незбережений Organization: дім імен (`TurboStreams::Name`)
+  # читає `id` і `stream_epoch` з реального запису — OpenStruct відповідав би
+  # й на ключі, яких модель не має, ховаючи одруківку адреси стріму.
   def mock_organization(id: 7, stream_epoch: 7)
-    OpenStruct.new(id: id, stream_epoch: stream_epoch)
+    Organization.new(id: id, stream_epoch: stream_epoch)
   end
 
   # [UI.4] `map_total` — обовʼязковий kwarg (див. `map_spec`); дефолт тут чесний:

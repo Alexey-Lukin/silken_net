@@ -4,9 +4,14 @@
 require "rails_helper"
 
 RSpec.describe TreeFamilies::Index do
+  # [TEST.12] Реальний незбережений TreeFamily: `critical_z_*` — колонки `numeric`,
+  # тобто BigDecimal — у проді діапазон друкується «10.0 - 80.0», а OpenStruct з
+  # Integer дозволяв сюїті вимагати «10 - 80», якого жоден реальний запис не рендерить.
+  # `model_name`/`to_key`/`to_param` тепер справжні (рукописні дозволяли `dom_id`
+  # розійтися з рендереним).
   def mock_family(id: 1, name: "Oak", scientific_name: "Quercus robur",
                   critical_z_min: 10, critical_z_max: 80, trees_count: 120)
-    family = OpenStruct.new(
+    TreeFamily.new(
       id: id,
       name: name,
       scientific_name: scientific_name,
@@ -14,10 +19,6 @@ RSpec.describe TreeFamilies::Index do
       critical_z_max: critical_z_max,
       trees_count: trees_count
     )
-    family.define_singleton_method(:model_name) { ActiveModel::Name.new(TreeFamily) }
-    family.define_singleton_method(:to_key) { [ id ] }
-    family.define_singleton_method(:to_param) { id.to_s }
-    family
   end
 
   let(:family)   { mock_family }
@@ -102,8 +103,10 @@ RSpec.describe TreeFamilies::Index do
       expect(rendered).to include(fam.name)
     end
 
+    # [TEST.12] Очікування з РЕАЛЬНОГО виводу: numeric-колонки віддають BigDecimal,
+    # тож прод друкує «10.0», а не «10» — колишній пін вимагав вивід, якого не буває.
     it "renders safe range" do
-      expect(html).to include("10 - 80")
+      expect(html).to include("10.0 - 80.0")
     end
 
     it "renders tree count as Soldiers" do

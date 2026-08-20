@@ -11,20 +11,17 @@ RSpec.describe Dashboard::EventRow do
   # будь-який зелений прогін.
   around { |ex| I18n.with_locale(:en) { ex.run } }
 
-  # Use allocate to bypass ActiveRecord initialization but keep class identity
-  # so case/when (Module#===) pattern matching works correctly.
+  # [TEST.12] Реальні незбережені записи всюди: клас-ідентичність для `case/when`
+  # незбережений `new` тримає так само добре, як колишній `allocate`, а enum-сеттер
+  # ще й відкидає значення, яких модель не знає (синг触тон приймав будь-що).
 
   describe "with an EwsAlert event" do
     let(:event) do
-      mock_cluster = OpenStruct.new(name: "Carpathian-7")
-      alert = EwsAlert.allocate
       # Реальне значення enum'а, а не вигаданий display-рядок: із «Thermal
       # Anomaly» компонент їхав fail-open гілкою `humanize`, тож спека перевіряла
       # шлях, якого в проді не буває.
-      alert.define_singleton_method(:alert_type) { "fire_detected" }
-      alert.define_singleton_method(:cluster) { mock_cluster }
-      alert.define_singleton_method(:created_at) { 30.seconds.ago }
-      alert
+      EwsAlert.new(alert_type: "fire_detected", cluster: Cluster.new(name: "Carpathian-7"),
+                   created_at: 30.seconds.ago)
     end
     let(:html) { render_component(event: event) }
 
@@ -74,12 +71,8 @@ RSpec.describe Dashboard::EventRow do
 
   describe "with a MaintenanceRecord event" do
     let(:event) do
-      mock_user = OpenStruct.new(first_name: "Taras")
-      record = MaintenanceRecord.allocate
-      record.define_singleton_method(:action_type) { "repair" }
-      record.define_singleton_method(:user) { mock_user }
-      record.define_singleton_method(:created_at) { 5.minutes.ago }
-      record
+      MaintenanceRecord.new(action_type: "repair", user: User.new(first_name: "Taras"),
+                            created_at: 5.minutes.ago)
     end
     let(:html) { render_component(event: event) }
 
