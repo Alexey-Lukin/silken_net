@@ -13,16 +13,36 @@ RSpec.describe Wallets::TransactionRow do
   # типах токена. Голий `.new` замість фабрики свідомо: фабрика тягне
   # `wallet → tree → cluster → organization`, чого рядку таблиці не треба.
   def mock_tx(token_type: "carbon_coin", status: "confirmed", amount: "0.005",
-              tx_hash: "0xabcdef1234567890abcdef")
+              tx_hash: "0xabcdef1234567890abcdef", sourceable_type: nil)
     tx = BlockchainTransaction.new(
       token_type: token_type,
       status: status,
       amount: amount,
       tx_hash: tx_hash,
+      sourceable_type: sourceable_type,
       created_at: Time.current
     )
     tx.id = 42
     tx
+  end
+
+  # [ARCH.101 ⚖️ 08-20] Напрямок входить у число І в колір; пара пінів взаємно
+  # мутаційна: зняти деривацію знака → червоніє burn-приклад, безумовний акцент →
+  # червоніє mint-приклад. «-0.005» унікальний у рядку (хеш і час мінуса не несуть),
+  # тож include не проходить через сусідній вузол.
+  describe "direction sign and loudness [ARCH.101]" do
+    it "prints a burn as a NEGATIVE amount with the danger accent" do
+      html = render_component(tx: mock_tx(sourceable_type: "NaasContract"))
+      expect(html).to include("-0.005")
+      expect(html).to include("text-status-danger-accent")
+    end
+
+    it "keeps a mint positive and quiet" do
+      html = render_component(tx: mock_tx)
+      expect(html).to include("0.005")
+      expect(html).not_to include("-0.005")
+      expect(html).not_to include("text-status-danger-accent")
+    end
   end
 
   describe "token type styling" do

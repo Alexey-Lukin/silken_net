@@ -44,7 +44,9 @@ module BlockchainTransactions
         div(class: "flex justify-between items-start") do
           div do
             p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { t(".transaction_record") }
-            h2(class: "text-3xl font-extralight tracking-tighter text-white") { "#{@tx.amount} #{@tx.ticker}" }
+            # [ARCH.101 ⚖️ 08-20] Знак деривується; колір чекає UI.1-міграції домену
+            # (чорна панель: `-accent` у світлій темі 3.9:1 < 4.5).
+            h2(class: "text-3xl font-extralight tracking-tighter text-white") { "#{@tx.signed_amount} #{@tx.ticker}" }
             p(class: "text-tiny font-mono text-gray-600 mt-2") { t(".tx_id_line", id: @tx.id, at: @tx.created_at.strftime("%d.%m.%Y %H:%M:%S UTC")) }
           end
           div(class: "flex items-center gap-3") do
@@ -65,7 +67,7 @@ module BlockchainTransactions
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
-            detail_row(t(".details.amount"), "#{@tx.amount} #{@tx.ticker}")
+            detail_row(t(".details.amount"), "#{@tx.signed_amount} #{@tx.ticker}")
             detail_row(t(".details.token_type"), @tx.token_type_label)
             detail_row(t(".details.status"), Views::Shared::UI::StatusBadge.label(@tx.status))
             detail_row(t(".details.blockchain_network"), @tx.blockchain_network&.upcase || "—")

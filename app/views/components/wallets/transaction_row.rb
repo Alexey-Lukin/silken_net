@@ -33,7 +33,11 @@ module Wallets
         end
         # Сума лишається голим числом: одиницю несе чіп ліворуч. Доти тут стояло
         # `"#{amount} #{ticker}"`, і саме та пара дублювала деномінацію.
-        td(class: "p-4 text-gaia-text-strong font-bold") { @tx.amount.to_s }
+        # [ARCH.101 ⚖️ 08-20] Напрямок входить у число І в колір: спалення — найгучніша
+        # грошова подія, а нейтральна комірка ховала її серед буденних. Обидві половини
+        # locale-інваріантні (знак і клас — не проза), тож broadcast-carve-out цілий;
+        # `-accent` міряний для текст-ролі на gaia-поверхнях обох тем (≈4.5/4.9).
+        td(class: tokens("p-4 font-bold", @tx.burn? ? "text-status-danger-accent" : "text-gaia-text-strong")) { @tx.signed_amount.to_s }
         td(class: "p-4") do
           # [I18N.2] Єдина локаль-залежна комірка рядка — тому саме вона стала
           # фреймом, а не весь рядок: `<tbody>` приймає лише `<tr>`, зате `<td>`
@@ -49,7 +53,7 @@ module Wallets
         end
         td(class: "p-4 text-gaia-text-muted truncate max-w-[150px] font-mono text-tiny") do
           if @tx.tx_hash.present?
-            a(href: @tx.explorer_url, target: "_blank", class: "hover:text-gaia-primary-strong underline decoration-gaia-border") do
+            a(href: @tx.explorer_url, target: "_blank", class: "hover:text-gaia-primary-strong underline decoration-gaia-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") do
               @tx.tx_hash.length > 16 ? "#{@tx.tx_hash.first(16)}…" : @tx.tx_hash
             end
           else

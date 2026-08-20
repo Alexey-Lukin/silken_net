@@ -244,6 +244,16 @@ class BlockchainTransaction < ApplicationRecord
     sourceable_type == BURN_SOURCEABLE_TYPE
   end
 
+  # [ARCH.101 ⚖️ 2026-08-20] Дисплей-форма суми: напрямок входить у ЧИСЛО (−X для
+  # спалення) — леджерна конвенція, ратифікована разом із «чесним мінусом» агрегатів
+  # [ARCH.103]. Дім ОДИН на чотирьох читачів (обидва леджери, tx-show, стрічка):
+  # рукописні тернари розійшлися б тихо. НЕ для дроту (JSON/CSV віддають сирий
+  # `amount` + деривацію окремим полем — аудиторська форма) і НЕ для агрегатів
+  # (там SQL-CASE `net_minted_by_cluster` з тим самим BURN_SOURCEABLE_TYPE).
+  def signed_amount
+    burn? ? -amount : amount
+  end
+
   # [G4/ARCH.97] One-Home DB-дзеркала on-chain `totalSupply()`: Σ(mints) − Σ(burns).
   #
   # Slash-інтенти теж `carbon_coin` і теж доходять до `:confirmed`

@@ -21,7 +21,7 @@ RSpec.describe BlockchainTransactions::Show do
                        nonce: 42, sent_at: 1.hour.ago, confirmed_at: 30.minutes.ago,
                        notes: nil, error_message: nil,
                        wallet_tree_did: "SNET-00000042", wallet_balance: 12.5,
-                       has_wallet: true)
+                       has_wallet: true, sourceable_type: nil)
     tx = BlockchainTransaction.new(
       amount: amount,
       status: status,
@@ -39,7 +39,8 @@ RSpec.describe BlockchainTransactions::Show do
       created_at: 2.hours.ago,
       updated_at: 30.minutes.ago,
       notes: notes,
-      error_message: error_message
+      error_message: error_message,
+      sourceable_type: sourceable_type
     )
     tx.id = id
 
@@ -51,6 +52,14 @@ RSpec.describe BlockchainTransactions::Show do
   describe "header" do
     it "displays amount with SCC label" do
       expect(html).to include("0.005 SCC")
+      expect(html).not_to include("-0.005")
+    end
+
+    # [ARCH.101 ⚖️ 08-20] Власний свідок САЙТУ: деривацію знака тримає модель, але
+    # без цього піна hero міг би тихо повернутись на сирий `amount`.
+    it "prints a burn hero as a NEGATIVE amount" do
+      rendered = render_component(transaction: mock_transaction(sourceable_type: "NaasContract"))
+      expect(rendered).to include("-0.005 SCC")
     end
 
     it "displays transaction ID" do

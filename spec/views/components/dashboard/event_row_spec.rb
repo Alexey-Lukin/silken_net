@@ -67,6 +67,8 @@ RSpec.describe Dashboard::EventRow do
 
     it "uses the gaia text token for blockchain events" do
       expect(html).to include("text-gaia-text")
+      # [ARCH.101] Друга половина пари: мінт НЕ дістає burn-акцента.
+      expect(html).not_to include("text-status-danger-accent")
     end
   end
 
@@ -148,6 +150,10 @@ RSpec.describe Dashboard::EventRow do
       tx.define_singleton_method(:amount) { "12.50" }
       tx.define_singleton_method(:to_address) { to_address }
       tx.define_singleton_method(:sourceable) { pi }
+      # [ARCH.101] `event_color` тепер читає й деривацію напрямку; `.allocate`
+      # вимагає стабити КОЖНЕ читане поле (04_06 §A.2 10б) — чесна колонка
+      # insurance-рядка, тож `burn?` віддає false.
+      tx.define_singleton_method(:sourceable_type) { "ParametricInsurance" }
       tx.define_singleton_method(:created_at) { 1.minute.ago }
       tx
     end
@@ -188,6 +194,17 @@ RSpec.describe Dashboard::EventRow do
       )
       expect(html).to include("Burned 3.0 SCC ← SNET-0BADCAFE")
       expect(html).not_to include("Minted")
+    end
+
+    # [ARCH.101 ⚖️ 08-20] Колір читається раніше за текст: спалення дістає accent,
+    # мінт лишається на нейтральному токені (дзеркальний пін у mint-блоці вище
+    # тримає протилежний бік — безумовний акцент червонить саме його).
+    it "paints the burn with the danger accent, not the neutral text token" do
+      html = render_component(
+        event: money_row(amount: "3.0", wallet: tree_wallet("SNET-0BADCAFE"),
+                         sourceable_type: "NaasContract")
+      )
+      expect(html).to include("text-status-danger-accent")
     end
 
     it "names the CLUSTER when the last tree is gone and the row carries no wallet" do

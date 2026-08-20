@@ -139,7 +139,10 @@ module BlockchainTransactions
           # навмисним, а власну назву — криком, ще й ламало рядок у вузькій комірці.
           span(class: tokens("px-2 py-0.5 text-mini font-bold border", token_type_styles(tx.token_type))) { tx.token_type_label }
         end
-        td(class: "p-4 text-white font-bold") { "#{tx.amount} #{tx.ticker}" }
+        # [ARCH.101 ⚖️ 08-20] Знак деривується (`signed_amount`), КОЛІР — свідомо ні:
+        # панель theme-інваріантно чорна (домен у черзі UI.1-міграції), а `-accent`
+        # на чорному в СВІТЛІЙ темі = 3.9:1 < 4.5 — колір приїде з міграцією домену.
+        td(class: "p-4 text-white font-bold") { "#{tx.signed_amount} #{tx.ticker}" }
         td(class: "p-4") do
           render Views::Shared::UI::StatusBadge.new(status: tx.status)
         end
