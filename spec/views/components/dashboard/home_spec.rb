@@ -167,13 +167,12 @@ RSpec.describe Dashboard::Home do
   # на його місці стояв вічний спінер. Пін саме на РЕНДЕР підписника, бо
   # пара «продюсер ⟷ підписник» цю вісь не бачить за побудовою.
   describe "geospatial matrix" do
+    # [TEST.12] Реальний незбережений `Tree`: метадані фреймворку (`model_name`/
+    # `to_key`/`to_param`) віддає сам, а стрес годується ПЕРШИМ ярусом деривації
+    # (`latest_stress_index` → `current_stress`), як у `dashboard/map_node_spec`.
     let(:tree) do
-      t = OpenStruct.new(id: 5, did: "SNET-00000005", latitude: 49.44, longitude: 32.06,
-                         status: "active", current_stress: 0.1)
-      t.define_singleton_method(:model_name) { ActiveModel::Name.new(Tree) }
-      t.define_singleton_method(:to_key) { [ 5 ] }
-      t.define_singleton_method(:to_param) { "5" }
-      t
+      Tree.new(id: 5, did: "SNET-00000005", latitude: 49.44, longitude: 32.06,
+               status: "active", latest_stress_index: 0.1)
     end
 
     it "renders the live map instead of a placeholder spinner" do
