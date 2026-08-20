@@ -66,7 +66,12 @@ RSpec.describe "[UI.1] Токен-колір тексту тримає AA (SC 1.
       i = css.index(/^@media[^{]*prefers-color-scheme:\s*dark[^{]*\{/)
       raise "темна шафа не знайдена — гейт міряв би одну тему двічі" if i.nil?
 
-      { light: css[0...i], dark: css[i..] }
+      # [UI.1 п.11] Права межа dark-шафи — початок a11y-перевизначень
+      # (`prefers-contrast` піднімає найтихіші токени до `var(--gaia-text)`).
+      # Без межі `.last` брав би САМЕ їх, і гейт давився var()-посиланням:
+      # a11y-блоки — ТРЕТЯ шафа з власною семантикою, цей файл судить дві базові.
+      j = css.index(/^@media \(prefers-contrast/) || css.length
+      { light: css[0...i], dark: css[i...j] }
     end
   end
 

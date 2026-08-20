@@ -96,6 +96,42 @@ module ContrastRegistry
         "api/v1/passwords#new"  => ->(_ctx) { "/forgot_password" },
         "api/v1/passwords#edit" => ->(ctx) { "/reset_password?token=#{ctx.fetch(:reset_token)}" }
       }
+    },
+
+    # [UI.1 порція 11, 2026-08-20] Хвилі `fleet` + `admin` спорожніли ЦІЛКОМ:
+    # їхній `back:` («щойно міграція теми дійде сюди») настав — кампанію сирої
+    # палітри вичерпано десятьма порціями, периметр гейта = весь view-шар.
+    # Контур заходить ЧИСТИМ РАТЧЕТОМ: нуль провальних пар обома темами, і
+    # регресія будь-якої сторінки червонить поіменно. ⚠️ Дві MFA-сторінки
+    # (`mfa_setups#show`/`#recovery_codes`) сюди НЕ ввійшли — відкриті екшени
+    # показали redirect-гарди на сесійний стан (`otp_secret` розпочатого setup;
+    # одноразовий `session[:mfa_codes_reveal]`), тож їхній дім — `stateful_auth`.
+    dashboard_sweep: {
+      spec: "spec/features/dashboard_contrast_spec.rb",
+      why: "порцелянові сторінки флоту й адмінки — повний AA-зріз обома темами " \
+           "після вичерпання кампанії міграції; чистий ратчет без реєстру винятків",
+      paths: {
+        "api/v1/clusters#index"      => ->(_ctx) { "/clusters" },
+        "api/v1/clusters#show"       => ->(ctx) { "/clusters/#{ctx.fetch(:cluster).id}" },
+        "api/v1/gateways#index"      => ->(_ctx) { "/gateways" },
+        "api/v1/gateways#show"       => ->(ctx) { "/gateways/#{ctx.fetch(:gateway).id}" },
+        "api/v1/actuators#index"     => ->(ctx) { "/clusters/#{ctx.fetch(:cluster).id}/actuators" },
+        "api/v1/actuators#show"      => ->(ctx) { "/actuators/#{ctx.fetch(:actuator).id}" },
+        "api/v1/firmwares#index"     => ->(_ctx) { "/firmwares" },
+        "api/v1/tree_families#index" => ->(_ctx) { "/tree_families" },
+        "api/v1/tree_families#show"  => ->(ctx) { "/tree_families/#{ctx.fetch(:tree_family).id}" },
+        "api/v1/tree_families#new"   => ->(_ctx) { "/tree_families/new" },
+        "api/v1/tree_families#edit"  => ->(ctx) { "/tree_families/#{ctx.fetch(:tree_family).id}/edit" },
+        "api/v1/provisioning#new"    => ->(_ctx) { "/provisioning/new" },
+        "api/v1/users#index"         => ->(_ctx) { "/users" },
+        "api/v1/users#show"          => ->(ctx) { "/users/#{ctx.fetch(:member).id}" },
+        "api/v1/users#me"            => ->(_ctx) { "/users/me" },
+        "api/v1/organizations#index" => ->(_ctx) { "/organizations" },
+        "api/v1/organizations#show"  => ->(ctx) { "/organizations/#{ctx.fetch(:organization).id}" },
+        "api/v1/settings#show"       => ->(_ctx) { "/settings" },
+        "api/v1/account_security#show" => ->(_ctx) { "/account_security" },
+        "api/v1/notifications#settings" => ->(_ctx) { "/notifications/settings" }
+      }
     }
   }.freeze
 
@@ -178,27 +214,6 @@ module ContrastRegistry
         api/v1/trees#chronicle
       ]
     },
-    fleet: {
-      why: "порцелянові сторінки флоту — контур росте ПОРЦІЯМИ по родинах, бо " \
-           "кожна сторінка коштує підйому реального браузера, а корінь токенів " \
-           "уже полічено на чотирьох представниках",
-      back: "коли міграція темної теми (`00_07` UI.1) дійде до цього домену — " \
-            "саме вона змінює числа, тож міряти ДО неї означало б пінити те, що зміниться",
-      routes: %w[
-        api/v1/clusters#index
-        api/v1/clusters#show
-        api/v1/gateways#index
-        api/v1/gateways#show
-        api/v1/actuators#index
-        api/v1/actuators#show
-        api/v1/firmwares#index
-        api/v1/tree_families#index
-        api/v1/tree_families#show
-        api/v1/tree_families#new
-        api/v1/tree_families#edit
-        api/v1/provisioning#new
-      ]
-    },
     money: {
       why: "грошові поверхні — та сама порційність, але з окремим наслідком: " \
            "вони найгустіше вживають `token-*` і `status-*` токени, тож їх вимір " \
@@ -234,27 +249,6 @@ module ContrastRegistry
         api/v1/system_health#show
       ]
     },
-    admin: {
-      why: "адміністративні поверхні — та сама порційність; більшість із них " \
-           "ділить розмітку форм, тож `--gaia-label` на них уже покритий " \
-           "представником (`firmwares#new`) у контурі `root_tokens`",
-      # ⚠️ Тут доти стояла перша гілка «коли `root_tokens` доведе, що представник
-      # форм не покриває якийсь із цих екранів» — НЕФАЛЬСИФІКОВАНА: той контур
-      # відкриває лише `/firmwares/new` і про `users#index` сказати не може нічого.
-      back: "разом із хвилею `fleet` — щойно порційна міграція теми дійде сюди",
-      routes: %w[
-        api/v1/users#index
-        api/v1/users#show
-        api/v1/users#me
-        api/v1/organizations#index
-        api/v1/organizations#show
-        api/v1/settings#show
-        api/v1/account_security#show
-        api/v1/mfa_setups#show
-        api/v1/mfa_setups#recovery_codes
-        api/v1/notifications#settings
-      ]
-    },
     stateful_auth: {
       why: "сторінка другого фактора живе лише ПІД pending-сесією (пароль уже " \
            "пройдено, `session[:mfa_pending_user_id]` живий) — прилад контуру " \
@@ -264,6 +258,8 @@ module ContrastRegistry
             "harvest'ом (крок уже потрібен і для сторінки 422 форми пароля)",
       routes: %w[
         api/v1/mfa_challenges#new
+        api/v1/mfa_setups#show
+        api/v1/mfa_setups#recovery_codes
       ]
     }
   }.freeze

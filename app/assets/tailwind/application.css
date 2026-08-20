@@ -113,6 +113,7 @@
   --color-gaia-input-bg: var(--gaia-input-bg);
   --color-gaia-input-border: var(--gaia-input-border);
   --color-gaia-input-text: var(--gaia-input-text);
+  --color-gaia-input-placeholder: var(--gaia-input-placeholder);
   --color-gaia-label: var(--gaia-label);
 
   /* ── Terminal Typography Scale ──
@@ -242,6 +243,10 @@
   --gaia-input-bg: #ffffff;
   --gaia-input-border: #d1d5db;
   --gaia-input-text: #111827;
+  /* [UI.1 п.11] Пара до input-bg: 4.83 light / 5.46 dark — інпут БЕЗ
+   * placeholder-класу доти діставав UA-дефолт браузера (3.42 на білому),
+   * і жоден токен-інструмент цього не бачив за побудовою. */
+  --gaia-input-placeholder: #6b7280;
   --gaia-label: #6b7280;
 }
 
@@ -316,6 +321,7 @@
 
     /* Form inputs */
     --gaia-input-bg: #09090b;
+    --gaia-input-placeholder: #7d8794;
     --gaia-input-border: rgba(16, 185, 129, 0.3);
     --gaia-input-text: #d1fae5;
     /* Доти цього рядка тут НЕ БУЛО — і саме тому мітка полів у темній читалась
@@ -556,6 +562,78 @@ dialog[open]::backdrop {
     -webkit-backdrop-filter: blur(8px);
     border-top: 1px solid var(--gaia-border);
     z-index: 5;
+  }
+}
+
+/* ── Placeholder: токен замість UA-дефолту [UI.1 п.11] ──
+ * Плейсхолдер без явного класу брав колір БРАУЗЕРА (3.42:1 на світлому
+ * input-bg — провал AA на пʼятьох формах контуру). Глобальне правило віддає
+ * токен-пару кожному полю; явний `placeholder:text-*` на сайті лишається
+ * сильнішим. ⚠️ `@layer base` НЕСУЧИЙ: un-layered правило перемагає
+ * layered-утиліти НЕЗАЛЕЖНО від специфічності (виміряно — глобал без шару
+ * зʼїв явний клас auth-полів і поклав 4.39 на sunken). */
+@layer base {
+  ::placeholder {
+    color: var(--gaia-input-placeholder);
+  }
+}
+
+/* ── Accessibility environments [UI.1] ─────────────────────────────────────
+ * Три середовища, яких доти не існувало в дереві ЗОВСІМ (виміряно 08-08).
+ * Кожен блок несе рівно те, що ламається без нього, — не декорацію. */
+
+/* prefers-contrast: more — континуум між пресетами, який дві теми не покривають
+ * за побудовою. High-contrast легітимно жертвує тональною ієрархією заради
+ * читабельності: три найтихіші текст-токени піднімаються до основного тону,
+ * межі — до strong. Значення НЕ нові — токени тієї ж шафи, тож парність
+ * light/dark успадковується, а не дублюється. */
+@media (prefers-contrast: more) {
+  :root {
+    --gaia-text-muted:  var(--gaia-text);
+    --gaia-text-subtle: var(--gaia-text);
+    --gaia-border:      var(--gaia-border-strong);
+  }
+}
+
+/* forced-colors (Windows High Contrast): браузер сам підміняє палітру
+ * системною — наша робота не зламати те, що він стирає.
+ * (а) Фокус-кільця дерева малюються `ring-*` (box-shadow), а box-shadow у
+ *     forced-colors ЗНИКАЄ — без цього блоку клавіатурний фокус був би
+ *     невидимий узагалі. `outline` без кольору бере системний Highlight.
+ * (б) `.gaia-select` ховає системну стрілку за data-URI background-image,
+ *     який forced-colors теж стирає, — повертаємо нативний вигляд. */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid;
+    outline-offset: 2px;
+  }
+
+  .gaia-select {
+    appearance: auto;
+    background-image: none;
+  }
+}
+
+/* print: темна на папір не потрапляє й так (`screen and` в обох половинах
+ * шафи — див. Dark Mode вище), тож тут лише друкована верстка: інтерактивний
+ * хром (сайдбар, топбар, drawer) не має сенсу на папері, тіні й анімації
+ * лише брудять відбиток, фон — чисто білий (світла шафа і так ~біла,
+ * але принтерам краще істинний white без відтінку). */
+@media print {
+  aside,
+  header[role="banner"],
+  dialog {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+  }
+
+  * {
+    box-shadow: none !important;
+    animation: none !important;
+    transition: none !important;
   }
 }
 

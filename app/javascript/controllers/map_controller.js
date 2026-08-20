@@ -136,9 +136,14 @@ export default class extends Controller {
 
     if (isNaN(lat) || isNaN(lng)) return
 
-    // Емоційна палітра дерева
-    let color = "#10b981" // Emerald (Гомеостаз)
-    let shadow = "rgba(16, 185, 129, 0.5)"
+    // Емоційна палітра дерева. [UI.1] Здорова гілка читає БРЕНД із CSS-дому
+    // (`--gaia-primary` у @theme) — палітра поїде, мапа поїде за нею; тіні
+    // деривуються hex-alpha з того самого значення, щоб не розколоти пару.
+    // Сигнальні червоний/жовтий — НЕ бренд: та сама оголошена сигнальна
+    // hex-пара, що LED-глоу (`shadow-[0_0_8px_#ef4444]` в allowlist gaia_lint).
+    let color = getComputedStyle(document.documentElement)
+      .getPropertyValue("--gaia-primary").trim() || "#10b981"
+    let shadow = color + "80" // 50 % alpha
 
     // [ARCH.99] Жовтий тримає ОДИН операнд — стрес. Другим стояв `charge < 30`,
     // а здорове дерево давало 18 %: умова була істинна завжди, тож смарагдовий
@@ -146,10 +151,10 @@ export default class extends Controller {
     // ⊕ `removed` лишається червоним і БЕЗ виміру: це факт статусу, не здоровʼя.
     if ((measured && stress > 0.8) || data.status === "removed") {
       color = "#ef4444" // Red (Термінальний стрес / Фрод)
-      shadow = "rgba(239, 68, 68, 0.8)"
+      shadow = color + "cc" // 80 % alpha
     } else if (measured && stress > 0.4) {
       color = "#eab308" // Yellow (Аномалія)
-      shadow = "rgba(234, 179, 8, 0.6)"
+      shadow = color + "99" // 60 % alpha
     }
 
     const iconHtml = (!measured && data.status !== "removed")

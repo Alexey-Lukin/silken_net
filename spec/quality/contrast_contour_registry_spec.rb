@@ -211,7 +211,10 @@ RSpec.describe "[UI.3] Популяція контуру контрастнос�
     #
     # Анкор знову ЗОВНІШНІЙ: роутер сам каже, у що резолвиться побудований шлях.
     it "кожен побудований шлях резолвиться САМЕ в той маршрут, під яким записаний" do
-      ctx = { cluster: Struct.new(:id).new(1), tree: Struct.new(:id).new(2), reset_token: "t0ken" }
+      stub = ->(n) { Struct.new(:id).new(n) }
+      ctx = { cluster: stub.(1), tree: stub.(2), gateway: stub.(3), actuator: stub.(4),
+              tree_family: stub.(5), organization: stub.(6), member: stub.(7),
+              reset_token: "t0ken" }
 
       drifted = ContrastRegistry::CONTOURS.flat_map do |slug, contour|
         contour[:paths].filter_map do |key, builder|

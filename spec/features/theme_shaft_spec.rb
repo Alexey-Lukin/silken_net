@@ -161,4 +161,41 @@ RSpec.describe "Theme: одна шафа, і нею є середовище", :j
       #{unguarded.map(&:strip).join("\n")}
     MSG
   end
+
+  # [UI.1 порція 11] Три a11y-середовища, яких доти не існувало в дереві ЗОВСІМ.
+  # Піни статичні по джерелу (той самий якір, що `screen and` вище) і цілять у
+  # НЕСУЧУ частину кожного блоку — те, що ламається без нього, а не в сам факт
+  # наявності @media-рядка.
+  describe "a11y-середовища (prefers-contrast · forced-colors · print)" do
+    let(:css) { Rails.root.join("app/assets/tailwind/application.css").read }
+
+    def block(css, query)
+      start = css.index(query)
+      return nil unless start
+      css[start, 1200]
+    end
+
+    it "prefers-contrast: more піднімає найтихіші токени ТІЄЮ Ж шафою (var, не нові значення)" do
+      b = block(css, "@media (prefers-contrast: more)")
+      expect(b).to be_present, "блоку prefers-contrast немає в джерелі"
+      expect(b).to include("--gaia-text-muted:  var(--gaia-text)")
+      expect(b).to include("--gaia-border:      var(--gaia-border-strong)")
+    end
+
+    it "forced-colors повертає видимий фокус: ring-и (box-shadow) там стираються системою" do
+      b = block(css, "@media (forced-colors: active)")
+      expect(b).to be_present, "блоку forced-colors немає в джерелі"
+      expect(b).to include(":focus-visible")
+      expect(b).to include("outline: 2px solid")
+      expect(b).to include(".gaia-select")
+    end
+
+    it "print ховає інтерактивний хром і чистить відбиток" do
+      b = block(css, "@media print")
+      expect(b).to be_present, "блоку print немає в джерелі"
+      expect(b).to include('header[role="banner"]')
+      expect(b).to include("display: none !important")
+      expect(b).to include("box-shadow: none !important")
+    end
+  end
 end

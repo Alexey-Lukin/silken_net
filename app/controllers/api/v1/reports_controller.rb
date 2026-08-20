@@ -282,7 +282,7 @@ module Api
             cell_style: { size: 10, padding: 8 }
           ) do |t|
             t.row(0).font_style = :bold
-            t.row(0).background_color = "10b981"
+            t.row(0).background_color = SilkenNet::Brand::PRIMARY_PRAWN
             t.row(0).text_color = "ffffff"
           end
         end.render
@@ -313,7 +313,7 @@ module Api
             cell_style: { size: 10, padding: 8 }
           ) do |t|
             t.row(0).font_style = :bold
-            t.row(0).background_color = "10b981"
+            t.row(0).background_color = SilkenNet::Brand::PRIMARY_PRAWN
             t.row(0).text_color = "ffffff"
           end
 
@@ -334,7 +334,7 @@ module Api
             cell_style: { size: 10, padding: 8 }
           ) do |t|
             t.row(0).font_style = :bold
-            t.row(0).background_color = "10b981"
+            t.row(0).background_color = SilkenNet::Brand::PRIMARY_PRAWN
             t.row(0).text_color = "ffffff"
           end
 
@@ -356,7 +356,7 @@ module Api
             cell_style: { size: 10, padding: 8 }
           ) do |t|
             t.row(0).font_style = :bold
-            t.row(0).background_color = "10b981"
+            t.row(0).background_color = SilkenNet::Brand::PRIMARY_PRAWN
             t.row(0).text_color = "ffffff"
           end
         end.render

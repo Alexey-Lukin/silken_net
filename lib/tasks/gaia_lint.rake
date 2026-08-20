@@ -164,7 +164,8 @@ namespace :gaia do
       "app/views/components/dashboard/",         # HUD мапи → surface/80 + primary-strong; event_row EwsAlert → danger-accent
       "app/views/components/telemetry/",         # обидва rgba-глоу зняті
       "app/views/components/trees/",             # гібрид text-emerald-100 на gaia-поверхні закрито; SVG-канавка → stroke-gaia-border; watermark /5 — виняток
-      "app/views/components/application_component.rb" # кореневий файл — поза каталогами, тож поіменно
+      "app/views/components/application_component.rb", # кореневий файл — поза каталогами, тож поіменно
+      "app/views/layouts/"                       # 2026-08-20 порція 11: єдиний хіт — оголошений drawer-scrim (allowlist відбитком варіанта ↑)
     ]
 
     scopes = ENV["LINT_SCOPE"] ? [ ENV["LINT_SCOPE"] ] : default_scopes
@@ -255,6 +256,11 @@ namespace :gaia do
       # Запис несе ПОВНИЙ відбиток форми — голе `bg-[radial-gradient(…)]`
       # з іншим вмістом і далі червонить.
       "bg-[radial-gradient(var(--gaia-primary)_1px,transparent_1px)]",
+      # [UI.1 порція 11, 2026-08-20] Drawer-scrim мобільного сайдбара: затемнення
+      # МУСИТЬ лишатись чорним в обох темах (surface-токен зробив би light-scrim
+      # блідим — шапка цього файла описує це від 08-07). Запис несе ВАРІАНТ
+      # (`backdrop:`), тож голий `bg-black` у розмітці й далі червонить.
+      "backdrop:bg-black/60",
       # watermark `/5` (15 сайтів, деліберейт 1.09:1 — реєстр декорацій `contrast_audit`)
       "text-emerald-900/5",      # decorative watermarks (declared, aria-hidden)
       "shadow-[0_0_8px_#10b981]", # status-LED brand glow (здорова гілка пари)

@@ -1,5 +1,6 @@
 <div style="background: #000; padding: 2rem; font-family: monospace;">
-  <h3 style="color: #10b981; margin-bottom: 1rem; font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em;">Action Badge — real audit actions</h3>
+  <%# [UI.1] Заголовок превʼю — клас із @theme, не inline-hex: бренд має один CSS-дім. %>
+  <h3 class="text-gaia-primary-strong" style="margin-bottom: 1rem; font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em;">Action Badge — real audit actions</h3>
   <%# [TEST.12] Лише РЕАЛЬНІ значення журналу (писачі record_audit_trail!/AuditLog.create!):
       доти превʼю рендерило девʼять вигаданих CRUD-дій (create_user, delete_node…),
       яких жоден писач не пише — превʼю є поверхнею без гейта, і бачить його людина. %>
