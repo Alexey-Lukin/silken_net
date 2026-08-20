@@ -70,7 +70,7 @@ class DashboardLayout < ApplicationComponent
           # ГОЛОВНИЙ ТЕРМІНАЛ
           main(class: "flex-1 flex flex-col min-w-0 bg-gaia-surface-base relative transition-colors duration-300", role: "main") do
             # Фоновий шум (текстура Цитаделі) — лише в dark, тонко.
-            div(class: "absolute inset-0 opacity-5 pointer-events-none dark:bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]", aria_hidden: "true")
+            div(class: "absolute inset-0 opacity-5 pointer-events-none dark:bg-[url('carbon-weave.png')]", aria_hidden: "true")
 
             render_top_bar
 

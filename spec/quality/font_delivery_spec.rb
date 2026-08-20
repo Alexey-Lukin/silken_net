@@ -129,4 +129,23 @@ RSpec.describe "Font delivery", type: :model do # rubocop:disable RSpec/Describe
                           "Propshaft не резолвив #{unresolved.inspect} — він друкує WARN і лишає сирий патерн, " \
                           "тож шрифт мовчки не доїде до браузера"
   end
+
+  # [UI.1, ⚖️ 2026-08-20] Зовнішніх origin'ів у продовому CSS — НУЛЬ, і це
+  # присуд, а не спостереження: carbon-weave текстура самохоститься (чужий хост
+  # уже флейкував браузерну CI-смугу — Ferrum::PendingConnectionsError), а
+  # `importmap_locality_spec` стереже лише JS-імпорти, тож CSS-URL доти не
+  # стеріг ніхто. Судиться ВЕСЬ compiled Tailwind-білд (зовнішній якір #67);
+  # CARTO-тайли сюди не входять за побудовою — їх вантажить JS, не CSS.
+  it "keeps the compiled CSS free of external origins — every url() is local" do
+    css = Rails.application.assets.load_path.find("tailwind.css")
+    expect(css).not_to be_nil, "tailwind.css відсутній у load_path — білд не зібрано"
+
+    compiled = Rails.application.assets.compilers.compile(css)
+    urls = compiled.scan(/url\((["']?)(.+?)\1\)/).map(&:last)
+    expect(urls).not_to be_empty, "у скомпільованому tailwind.css нема жодного url() — ліхтар популяції"
+    external = urls.select { |u| u.match?(%r{\A(?:https?:)?//}) }
+    expect(external).to be_empty,
+                        "зовнішні origin'и в продовому CSS: #{external.inspect} — вендорь асет " \
+                        "(прецедент carbon-weave.png) або визнай origin явним CSP-рядком і носієм тут"
+  end
 end

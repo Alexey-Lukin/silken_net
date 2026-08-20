@@ -109,8 +109,10 @@ module GaiaLintProbe
   ].freeze
 
   # Дужка з `url(`: колірне слово там є частиною ШЛЯХУ. Наївний підрядок ловив
-  # `transparent` усередині домену — виміряний хибний позитив, не гіпотетичний.
-  LEGAL_URL = "bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"
+  # `transparent` усередині колишнього домену (transparenttextures.com — хост
+  # знято 2026-08-20, текстура самохоститься), а `white`/`black` живуть у
+  # назвах файлів так само — приклад тримає обидві форми.
+  LEGAL_URL = "bg-[url('carbon-weave-black-white.png')]"
   # Хвіст ідентифікатора збігається з іменем кольору (`…measu-RED`).
   LEGAL_IDENTIFIER = "@summary[:clusters_measured]"
 

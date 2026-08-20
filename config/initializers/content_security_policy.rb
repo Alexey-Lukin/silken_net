@@ -12,8 +12,10 @@
 #               vendor/assets/stylesheets/leaflet); only the tile images come
 #               from *.basemaps.cartocdn.com (CartoDB Dark Matter, see
 #               app/javascript/controllers/map_controller.js). [TEST.7]
-#   • Decor:    transparenttextures.com (one carbon-fibre PNG used as a
-#               background-image in DashboardLayout).
+#   • Decor:    the carbon-weave texture is SELF-HOSTED since 2026-08-20
+#               (app/assets/images/carbon-weave.png — власна алгоритмічна
+#               генерація, не чужий PNG): зовнішній хост уже флейкував
+#               браузерну CI-смугу (Ferrum::PendingConnectionsError).
 #   • Inline:   Leaflet sets style="" attributes on injected DOM nodes,
 #               so style-src must allow 'unsafe-inline' (CSP nonces do not
 #               cover inline style attributes — only <style> elements do).
@@ -42,8 +44,7 @@ Rails.application.configure do
 
     # Self + Leaflet tiles + decorative texture + inline data: URIs.
     policy.img_src         :self, :data,
-                           "https://*.basemaps.cartocdn.com",
-                           "https://www.transparenttextures.com"
+                           "https://*.basemaps.cartocdn.com"
     policy.media_src       :self, :data
 
     # [TEST.7] Every module is local now — leaflet included (it was the last
