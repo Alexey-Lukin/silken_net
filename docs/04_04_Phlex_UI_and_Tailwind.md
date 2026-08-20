@@ -2216,20 +2216,21 @@ LINT_SCOPE=app/views/components/wallets/ bin/rails gaia:lint_tokens
 
 ### 16.3 Mapping table (codemod)
 
+> 🔴 **SSOT мапи — `MAPPING` у самому `bin/migrate-tailwind-tokens`, не ця таблиця.** Вона вже брехала один раз у найдорожчий бік: до 2026-08-20 тут стояло `text-emerald-500 → text-gaia-primary` і `-600 → -hover` — рівно ті два рядки, які 2026-08-19 прибрали з codemod'а, бо вони **виробляли** дефект «токен, непридатний до ролі» (§3.5): обидва цілі провалюють AA як текст, лік — парний `-strong`. Людина перед ручною заміною читає САМЕ цю таблицю, тож протухлий рядок тут веде назад до дефекту, який §3.5 щойно заборонив. Нижче — ролі-огляд; точні пари звіряй у скрипті.
+
 | Raw Tailwind | Gaia token | Notes |
 |---|---|---|
-| `bg-black`, `bg-white` | `bg-gaia-surface` | Card / panel base |
+| `bg-black`, `bg-white`, `bg-zinc-900` | `bg-gaia-surface` | Card / panel base |
 | `bg-gray-50` | `bg-gaia-surface-base` | Page background |
 | `bg-gray-100`, `bg-emerald-950/{10,20}` | `bg-gaia-surface-sunken` | Inset rows / hover backdrop |
-| `bg-gray-900` | `bg-gaia-surface-elevated` | Modal / popover surface |
+| `bg-gray-900`, `bg-zinc-800` | `bg-gaia-surface-elevated` | Modal / popover surface |
 | `border-gray-200`, `border-emerald-900` | `border-gaia-border` | Default panel border |
 | `border-gray-300`, `border-emerald-{700,800,900}/50` | `border-gaia-border-strong` | Hover/focus border |
-| `text-gray-900`, `text-white` | `text-gaia-text-strong` | Headings, primary copy |
-| `text-gray-700`, `text-emerald-400` | `text-gaia-text` | Body |
+| `text-gray-900`, `text-white`, `text-zinc-800` | `text-gaia-text-strong` | Headings, primary copy |
+| `text-gray-700`, `text-zinc-700`, `text-emerald-400` | `text-gaia-text` | Body |
 | `text-gray-{500,600}`, `text-emerald-700` | `text-gaia-text-muted` | Labels, captions |
-| `text-gray-{300,400}`, `text-emerald-{800,900}` | `text-gaia-text-subtle` | Найтихіший рівень живого контенту (НЕ декорація — §3.1) |
-| `text-emerald-500` | `text-gaia-primary` | Brand accent |
-| `text-emerald-600` | `text-gaia-primary-hover` | Brand hover |
+| `text-gray-{300,400}`, `text-zinc-{300,400}`, `text-emerald-{800,900}` | `text-gaia-text-subtle` | Найтихіший рівень живого контенту (НЕ декорація — §3.1) |
+| `text-emerald-{500,600}` | `text-gaia-primary-strong` | Бренд-emerald у ролі ТЕКСТУ (§3.1) — `text-gaia-primary`/`-hover` ціллю НЕ бувають: обидва провалюють AA як текст |
 
 ### 16.4 Allowlist — what stays raw on purpose
 

@@ -3,10 +3,6 @@
 
 module Gateways
   class Show < ApplicationComponent
-    # Default healthy voltage (mV) when no telemetry is available.
-    # Based on fully charged Li-Po battery typical voltage.
-    DEFAULT_HEALTHY_VOLTAGE_MV = 4200
-
     # All data must be pre-loaded in the controller — no fallback queries.
     # @param gateway [Gateway] must respond to :uid, :state, :last_seen_at
     # @param latest_log [GatewayTelemetryLog, nil] pre-loaded latest telemetry
@@ -230,7 +226,7 @@ module Gateways
 
     def signal_color; "border-emerald-900/50"; end
     # [ARCH.84] 🔴 Найтонша форма класу: ЗНАЧЕННЯ поруч чесне («---»), а КОЛІР брехав —
-    # `|| DEFAULT_HEALTHY_VOLTAGE_MV` підставляв здорову напругу, тож невиміряний шлюз
+    # фолбек підставляв «здорову» напругу (4200 мВ Li-Po), тож невиміряний шлюз
     # діставав зелену рамку. Текст казав «не знаю», рамка казала «все гаразд», і
     # переважає завжди друге. Тепер станів три, як у `metric_row`: тривога · норма ·
     # не виміряно (нейтральний, бо тривога теж є твердженням про вимір).
