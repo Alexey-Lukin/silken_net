@@ -89,22 +89,24 @@ RSpec.describe Wallets::Index do
     end
   end
 
-  describe "organization wallet" do
+  # [TEST.12] Обидві нижні гілки ланцюга власника — ЗАХИСТ, не власники (присуд
+  # 2026-08-20): за схеми `tree_id NOT NULL` + `did NOT NULL` вони недосяжні для
+  # чесного рядка й стережуть лише рядок повз AR (insert_all-клас ARCH.75).
+  # Незбережений `Wallet.new` — єдиний спосіб їх відрендерити, і це не хиба
+  # фікстури, а модель загрози цих прикладів.
+  describe "guard branch: row past AR without a tree" do
     let(:html) { render_component(wallets: [ build_wallet(tree_did: nil, org_name: "BioForest") ], total_liquidity: 0) }
 
-    it "shows Clan Treasury label for org wallets" do
+    it "falls back to the denormalized org label instead of an empty owner" do
       expect(html).to include("Clan Treasury")
-    end
-
-    it "displays the organization name" do
       expect(html).to include("BioForest")
     end
   end
 
-  describe "System Reserve fallback" do
+  describe "guard branch: row past AR with neither tree nor org" do
     let(:html) { render_component(wallets: [ build_wallet(tree_did: nil, org_name: nil) ], total_liquidity: 0) }
 
-    it "shows System Reserve when no tree or org" do
+    it "prints System Reserve as the last guard step" do
       expect(html).to include("System Reserve")
     end
   end

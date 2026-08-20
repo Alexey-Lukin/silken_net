@@ -48,6 +48,10 @@ module Wallets
     end
 
     def render_wallet_card(wallet)
+      # [TEST.12] Нижні дві гілки — ЗАХИСНИЙ фолбек, не режим власності (присуд
+      # 2026-08-20): `tree_id NOT NULL` + `did NOT NULL` роблять їх недосяжними
+      # для чесного рядка, стережуть вони рядок повз AR (insert_all-клас
+      # ARCH.75). Екран тоді показує хоч щось замість порожнього власника.
       owner_name = wallet.tree&.did || wallet.organization&.name || t(".system_reserve")
 
       div(class: "group p-6 border border-gaia-border bg-gaia-surface hover:bg-gaia-surface-sunken transition-all duration-500") do

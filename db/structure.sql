@@ -2166,7 +2166,7 @@ ALTER SEQUENCE public.tree_families_id_seq OWNED BY public.tree_families.id;
 
 CREATE TABLE public.trees (
     id bigint NOT NULL,
-    did character varying,
+    did character varying NOT NULL,
     latitude numeric,
     longitude numeric,
     altitude numeric,
@@ -6920,6 +6920,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260820090000'),
 ('20260820010000'),
 ('20260819230000'),
 ('20260819210000'),
