@@ -172,8 +172,11 @@ export default class extends Controller {
       this.markers[did].setIcon(icon)
       this.markers[did].setPopupContent(this.popupTemplate(did, stress))
     } else {
-      // Нове дерево — розміщуємо його
-      const marker = L.marker([lat, lng], { icon: icon }).bindPopup(this.popupTemplate(did, stress))
+      // Нове дерево — розміщуємо його. `title:` несучий, не декор: Leaflet дає
+      // маркеру role="button", і без імені це [serious] aria-command-name
+      // (перша знахідка axe-lens, 2026-08-20). DID — locale-інваріантний,
+      // тож class-1 контракт мапи (жодної локале-залежної прози) цілий.
+      const marker = L.marker([lat, lng], { icon: icon, title: did }).bindPopup(this.popupTemplate(did, stress))
       marker.addTo(this.markerLayer)
       this.markers[did] = marker
 

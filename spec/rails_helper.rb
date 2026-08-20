@@ -176,6 +176,11 @@ RSpec.configure do |config|
   # Honour :focus tag so that `fit` / `fdescribe` / `fcontext` work here too.
   config.filter_run_when_matching :focus
 
+  # [UI.3, ⚖️ 2026-08-20] Advisory-прогони (axe-lens) — ПОЗА дефолтною сюїтою
+  # й CI за присудом: їхні падіння — звіт для тріажу, не вердикт про дерево.
+  # Запуск руками: `bin/rspec spec/features/axe_audit_spec.rb --tag advisory`.
+  config.filter_run_excluding advisory: true
+
   # Clear Sidekiq queues before each example so jobs don't bleed between tests.
   # Clear Rails cache so rate-limit counters and silence filters don't leak across examples.
   # Flush Kredis Redis (DB 1) to remove nonce keys (M2M replay, distributed locks) between tests.

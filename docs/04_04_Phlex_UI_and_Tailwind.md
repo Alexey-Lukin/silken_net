@@ -2374,7 +2374,7 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 
 ### 18.1 Accessibility — WCAG 2.2 AA + WAI-ARIA 1.2
 
-- **Контрастність:** мінімум 4.5:1 для тексту, 3:1 для UI-елементів та non-text — **вимога, в обох темах.** 🔴 Доти цей рядок казав «**Перевіряємо** обидві теми через Lighthouse / axe DevTools» — заява про практику, якої не існує: ані Lighthouse, ані axe у дереві немає, жодного прогону не було, і саме під цим реченням жили виміряні 1.11–1.13:1 у світлій темі. Чинний стан: вимога є, машинного вимірювача **немає** — статичним сканом він і неможливий (фактичний фон приходить від батьківського компонента або з `<body>`, §9). Доступний шлях — браузерний: cuprite уже підключений, тож пару fg/bg можна читати з `getComputedStyle` у зібраній сторінці. Черга → [`00_07`](00_07_Action_Plan_Tracker) UI.3 (axe-runner) + UI.1 (міграція тем).
+- **Контрастність:** мінімум 4.5:1 для тексту, 3:1 для UI-елементів та non-text — **вимога, в обох темах.** 🔴 Доти цей рядок казав «**Перевіряємо** обидві теми через Lighthouse / axe DevTools» — заява про практику, якої не існує: ані Lighthouse, ані axe у дереві немає, жодного прогону не було, і саме під цим реченням жили виміряні 1.11–1.13:1 у світлій темі. Чинний стан: вимірювачі Є — контраст тримають браузерні контури (§9: `contrast_root_tokens_spec` · `auth_contrast_spec`, обидві теми), решту axe-правил — advisory axe-lens (§18.9, `spec/features/axe_audit_spec.rb`). Кампанія сирої палітри → [`00_07`](00_07_Action_Plan_Tracker) UI.1.
 - **Focus visible:** `focus-visible:ring-2 focus-visible:ring-gaia-primary` на всіх інтерактивних елементах (canon WCAG 2.4.7).
 - **Reduced motion:** глобальний `@media (prefers-reduced-motion: reduce)` у `application.css` — § 14.4.
 - **Semantic landmarks:** `<header role="banner">`, `<nav role="navigation">`, `<main role="main">`, `<aside>`, `<footer role="contentinfo">`.
@@ -2444,7 +2444,7 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 
 Кожен PR із змінами у `app/views/` має у description checklist:
 
-- [ ] WCAG AA contrast verified у обох темах (axe DevTools / Lighthouse), мінімум 4.5:1 для тексту
+- [ ] WCAG AA contrast verified у обох темах (браузерні контури `contrast_*_spec` — двотемні; додатково axe-lens нижче), мінімум 4.5:1 для тексту
 - [ ] Keyboard reachable — Tab + Escape, focus order логічний
 - [ ] `prefers-reduced-motion` поважається (без важких decorative animations при reduce)
 - [ ] `focus-visible:ring-2 focus-visible:ring-gaia-primary` на нових інтерактивних елементах
@@ -2456,7 +2456,7 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 - [ ] `bin/rails gaia:lint_tokens` зелено (§ 16) — дефолт покриває `shared/`, а торкнуті доменні файли ганяй через `LINT_SCOPE=`
 - [ ] `parallel_validation` (Code Review + CodeQL) пройшов або addressed
 
-Sandbox-обмеження: автоматичний прогін axe-core / Lighthouse у CI потребує headless Chromium з мережевим доступом. Поки що це **manual gate** для рев'ювера. Коли `cuprite` тести отримають axe-runner — переведемо у автомат і відмітимо чек-бокс програмно.
+**Axe-lens існує з 2026-08-20** (⚖️ ADVISORY, не HARD — [`00_07`](00_07_Action_Plan_Tracker) UI.3): `COVERAGE=0 bin/rspec spec/features/axe_audit_spec.rb --tag advisory` ганяє axe-core по обох контурах `ContrastRegistry` (дефолтний прогін і CI спеку не бачать — тег вимкнено у `rails_helper`; знахідки тріажаться в трекер). Стелі названі в шапці спеки: одна тема за прогін, `color-contrast` вимкнено (вісь тримають власні двотемні контури), популяція = контури реєстру. ⚠️ Matcher гема `be_axe_clean` на Cuprite мертвий ОБОМА шляхами (selenium `driver.manage` ⊥ `execute_async_script` на сирому Browser — виміряно) — спека кличе axe власним poll-ом, а гем є носієм `axe.min.js` (версія їде атомарно з `bundle update`).
 
 ### 18.10 Authoring micro-conventions (Phlex + Tailwind)
 

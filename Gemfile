@@ -87,6 +87,12 @@ end
 group :test do
   gem "capybara"
   gem "cuprite"
+  # [UI.3, ⚖️ 2026-08-20] Advisory axe-прогін (НЕ HARD): рушій той самий, що в
+  # Lighthouse (Deque, MPL-2.0 — file-level copyleft, наш код не зачіпає).
+  # Runtime-ланцюг виміряно перед внесенням: axe-core-api → dumb_delegator,
+  # selenium ЛИШЕ в development_dependencies самого гема; адаптери duck-typing'ом
+  # беруть Capybara-сесію через evaluate_script — тобто наш Ferrum/CDP-стек.
+  gem "axe-core-rspec"
   # [TEST.8] `parallel_tests` знято 2026-08-03: гем приїхав ботом разом із Cuprite
   # і НІКОЛИ не був задротований (нуль `TEST_ENV_NUMBER` у `database.yml`/CI/bin).
   # Після того, як `rails_helper` зацементував «другий прогін = помилка», його
