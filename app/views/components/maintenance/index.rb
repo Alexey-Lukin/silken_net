@@ -113,7 +113,7 @@ module Maintenance
           if cost.nil?
             span(class: "text-gaia-text-subtle") { t("ui.measurement.not_measured") }
           else
-            span(class: "text-emerald-300") { "$#{cost.round(2)}" }
+            span(class: "text-emerald-300") { "$#{formatted_amount(cost)}" }
           end
         end
         td(class: "p-4 text-center") do

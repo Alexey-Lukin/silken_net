@@ -57,7 +57,7 @@ module Contracts
            # `NOT NULL` ⊕ `belongs_to :cluster` без `optional:`, тож субʼєкт гарантований,
            # а нуль є ВИМІРОМ. Гілка під недосяжний стан обіцяла б читачеві, що такий
            # контракт буває.
-           span(class: "text-6xl font-light text-emerald-400") { @cluster_emission.to_f.round(2) }
+           span(class: "text-6xl font-light text-emerald-400") { formatted_amount(@cluster_emission) }
            span(class: "text-xl text-emerald-600 font-mono ml-2") { t(".yield_unit") }
          end
       end

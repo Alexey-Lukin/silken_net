@@ -184,7 +184,7 @@ module Maintenance
     def money_or_unmeasured(value)
       return t("ui.measurement.not_measured") if value.nil?
 
-      "$#{value.to_f.round(2)}"
+      "$#{formatted_amount(value)}"
     end
 
     def cost_card(label, sub, value, highlight: false)

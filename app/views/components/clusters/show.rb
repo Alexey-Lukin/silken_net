@@ -212,17 +212,17 @@ module Clusters
             # тобто плата клієнта за послугу (`07_01 §5`) — той самий клас, що [I18N.1]
             # закрив на семи сайтах; цей був восьмим. Формат — як у `contracts/index`:
             # гроші друкуються з копійками, бо `numeric` через голий `to_s` дає «50000.0».
-            contract_row(t(".contract.value"), "#{@active_contract.total_value.to_f.round(2)} USD")
+            contract_row(t(".contract.value"), "#{formatted_amount(@active_contract.total_value)} USD")
             # ✅ [ARCH.103] ⚖️ Кластерна семантика: рядок друкує емісію САМОГО кластера
             # цієї сторінки, а не приписану контрактові. `measured_value` лишається,
             # але спрацювати на `nil` тут уже не може — субʼєкт відомий завжди, і нуль
             # є виміром. Мітка називає кластер явно, інакше це була б інша множина під
             # старим підписом.
-            # ⚠️ Форма ТА САМА, що в USD-рядка вище (`.to_f.round(2)`), і це не стиль:
+            # ⚠️ Формат ділить дім із USD-рядком вище (`formatted_amount`), і це не стиль:
             # `measured_value` інтерполює сирий BigDecimal, а `amount` це `numeric(24,6)` —
             # той самий кластер друкувався б тут із шістьма знаками, а на `contracts/*` із
             # двома. `measured_value` заразом і зайвий: субʼєкт тут гарантований.
-            contract_row(t(".contract.cluster_emission"), "#{@cluster_emission.to_f.round(2)} SCC")
+            contract_row(t(".contract.cluster_emission"), "#{formatted_amount(@cluster_emission)} SCC")
           end
         else
           p(class: "text-compact text-gaia-text italic") { t(".contract.empty") }

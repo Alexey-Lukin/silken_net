@@ -60,8 +60,8 @@ module Contracts
         # (alias на `total_funding`) — «сума оплати за послугу (USDC/USD)» за 07_01 §5, і вся
         # юніт-економіка 07_01 §11-§20 рахує в $. Сусідня картка нижче правомірно в SCC —
         # там справді емісія. Дві різні валюти на одній сітці, тож не «уніфікуй» їх.
-        render Views::Shared::UI::StatCard.new(label: t(".stats.portfolio_capital"), value: "#{@stats[:total_contracted].to_f.round(2)} USD", sub: t(".stats.total_injected"))
-        render Views::Shared::UI::StatCard.new(label: t(".stats.net_cluster_emission"), value: "#{@stats[:total_minted].to_f.round(2)} SCC", sub: t(".stats.total_minted"))
+        render Views::Shared::UI::StatCard.new(label: t(".stats.portfolio_capital"), value: "#{formatted_amount(@stats[:total_contracted])} USD", sub: t(".stats.total_injected"))
+        render Views::Shared::UI::StatCard.new(label: t(".stats.net_cluster_emission"), value: "#{formatted_amount(@stats[:total_minted])} SCC", sub: t(".stats.total_minted"))
         render Views::Shared::UI::StatCard.new(label: t(".stats.network_health"),
                                                value: measured_percent(@stats[:cluster_health].average, precision: 1),
                                                sub: network_health_sub)
@@ -102,7 +102,7 @@ module Contracts
         # кластерах, і намалювати там «не виміряно» означало б [`ARCH.84`] навиворіт —
         # приховати вимір замість вигадати його.
         td(class: "p-4 text-gaia-text") do
-          plain "#{@cluster_emissions.fetch(contract.cluster_id, 0).to_f.round(2)} SCC"
+          plain "#{formatted_amount(@cluster_emissions.fetch(contract.cluster_id, 0))} SCC"
         end
         td(class: "p-4 text-tiny text-gaia-text-muted") do
           plain contract.start_date&.strftime("%d.%m.%y")
