@@ -216,13 +216,13 @@ RSpec.describe Trees::Show do
     end
 
     it "uses emerald stroke when not under threat" do
-      expect(html).to include("stroke-emerald-500")
+      expect(html).to include("stroke-gaia-primary-strong")
     end
 
     it "uses red pulse stroke when under threat" do
       t = build_tree(under_threat: true)
       rendered = render_component(tree: t, latest_log: latest_log, maintenance_history: maintenance_history)
-      expect(rendered).to include("stroke-red-600")
+      expect(rendered).to include("stroke-status-danger-accent")
       expect(rendered).to include("animate-pulse")
     end
   end
@@ -294,12 +294,12 @@ RSpec.describe Trees::Show do
   # ⚠️ Пін на ОДНУ сторінку цього не побачив би за побудовою: кожен рендер
   # окремо самоузгоджений, суперечність існує лише між ними.
   describe "живість дерева — та сама відповідь, що в списку [ARCH.84]" do
-    # ⚠️ Цілимось у ВІДБИТОК кожного LED, не в `bg-emerald-500`: на обох
+    # ⚠️ Цілимось у ВІДБИТОК кожного LED, не в `bg-gaia-primary-strong`: на обох
     # сторінках є інші смарагдові вузли, і широкий матч зробив би приклад
     # вакуумним (той самий промах уже коштував у цій сесії). Радіус тіні
     # різний — 12px на сторінці, 5px у списку, — і це надійний дискримінатор.
-    def show_led_green?(markup)  = markup.include?("bg-emerald-500 shadow-[0_0_12px_#10b981]")
-    def index_led_green?(markup) = markup.include?("bg-emerald-500 shadow-[0_0_5px_#10b981]")
+    def show_led_green?(markup)  = markup.include?("bg-gaia-primary-strong shadow-[0_0_8px_#10b981]")
+    def index_led_green?(markup) = markup.include?("bg-gaia-primary-strong shadow-[0_0_8px_#10b981]")
 
     # 2 години: усередині канонного порога тиші (24 год) і ЗА МЕЖАМИ знятих
     # 15 хв — тобто рівно те вікно, де дві сторінки не сходились.

@@ -66,18 +66,18 @@ RSpec.describe Actuators::Card do
   describe "status LED" do
     it "renders emerald glow for active state" do
       html = render_component(actuator: build_actuator(state: "active"))
-      expect(html).to include("bg-emerald-500")
+      expect(html).to include("bg-gaia-primary-strong")
     end
 
     it "renders red pulse for maintenance_needed state" do
       html = render_component(actuator: build_actuator(state: "maintenance_needed"))
-      expect(html).to include("bg-red-600")
+      expect(html).to include("bg-status-danger-accent")
       expect(html).to include("animate-pulse")
     end
 
     it "renders dark red for offline state" do
       html = render_component(actuator: build_actuator(state: "offline"))
-      expect(html).to include("bg-red-900")
+      expect(html).to include("bg-status-danger-accent")
     end
 
     # ⚠️ Вхід досяжний ЛИШЕ стабом ридера: `state` — справжній enum, тож
@@ -88,7 +88,7 @@ RSpec.describe Actuators::Card do
       allow(actuator).to receive(:state).and_return("unknown")
 
       html = render_component(actuator: actuator)
-      expect(html).to include("bg-gray-800")
+      expect(html).to include("bg-status-neutral-accent")
     end
   end
 
@@ -147,7 +147,7 @@ RSpec.describe Actuators::Card do
     it "renders a failed command through the shared status badge" do
       html = render_component(actuator: build_actuator, last_command: build_command(status: "failed"))
 
-      # ⚠️ Пін саме на `text-red-200`, і це не примха: `bg-red-900` картка
+      # ⚠️ Пін саме на `text-red-200`, і це не примха: `bg-status-danger-accent` картка
       # вживає САМА в `status_led_class` для `offline`, тож на ньому приклад
       # був би зелений через сусідній елемент — та сама вада, що в прикладі,
       # який цей замінює. `text-red-200` у картці не існує ніде.

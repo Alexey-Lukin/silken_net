@@ -41,7 +41,7 @@ module SystemHealth
           p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
         end
         div(class: "flex items-center gap-2") do
-          div(class: tokens("h-2 w-2 rounded-full", dot_class(overall_tone, large: true)))
+          div(class: tokens("h-2 w-2 rounded-full", dot_class(overall_tone)))
           span(class: tokens("text-mini uppercase font-bold", text_class(overall_tone))) { overall_headline }
         end
       end
@@ -201,11 +201,12 @@ module SystemHealth
 
     # Класи тіні лишаються ЛІТЕРАЛАМИ: Tailwind v4 шукає їх скануванням джерела,
     # тож зібраний інтерполяцією `shadow-[…]` просто не згенерувався б.
-    def dot_class(tone, large: false)
+    # [UI.1] Радіуси glow зведені до 8px по всьому дереву — kwarg `large:` пішов разом із 6px.
+    def dot_class(tone)
       case tone
-      when :ok      then large ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-emerald-500 shadow-[0_0_6px_#10b981]"
-      when :unknown then "bg-amber-500"
-      else               "bg-red-500 animate-pulse"
+      when :ok      then "bg-gaia-primary-strong shadow-[0_0_8px_#10b981]"
+      when :unknown then "bg-status-warning-accent"
+      else               "bg-status-danger-accent animate-pulse"
       end
     end
 

@@ -62,7 +62,7 @@ module Wallets
             end
             h4(class: "text-lg font-light text-gaia-text-strong mt-1") { owner_name }
           end
-          div(class: "h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]", aria_hidden: "true")
+          div(class: "h-2 w-2 rounded-full bg-gaia-primary-strong shadow-[0_0_8px_#10b981]", aria_hidden: "true")
         end
 
         div(class: "mb-6") do

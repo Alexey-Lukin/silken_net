@@ -83,8 +83,8 @@ module Clusters
           div(class: "flex items-center gap-4") do
             div(class: tokens(
               "h-3 w-3 rounded-full",
-              "bg-red-500 animate-pulse": threats,
-              "bg-emerald-500": !threats
+              "bg-status-danger-accent animate-pulse": threats,
+              "bg-gaia-primary-strong": !threats
             ))
             span(class: "text-tiny font-mono text-gaia-text-subtle uppercase") do
               threats ? t(".header.threat_detected") : t(".header.nominal")
@@ -270,14 +270,15 @@ module Clusters
     # `low` тут був `bg-emerald-500` — зелений «усе гаразд», тоді як у рядку
     # та сама тривога синя; `else` дублював ту саму зелень для значення,
     # якого enum не має, тобто ховав би майбутнє поповнення в «усе гаразд».
-    # ⚠️ `critical`/`medium` лишені як були навмисно: `--status-danger` — це
-    # СВІТЛИЙ фон бейджа (#fee2e2), а крапці потрібен насичений колір, тож
-    # «перевести все на токени» зробило б найгучніший стан найблідішим.
+    # [UI.1 сигнальна хвиля] Крапка — СИГНАЛ (1.4.11 ≥ 3:1), тож кожен рівень іде
+    # насиченим `-accent`-двійником, ніколи пастельним фоном бейджа: `bg-status-warning`
+    # у ролі крапки давав 1.17:1 у світлій. `else` лишається пастельним свідомо —
+    # це гард на значення поза enum'ом, не штатний стан.
     def alert_severity_class(alert)
       case alert.severity.to_s
-      when "critical" then "bg-red-500 animate-pulse"
-      when "medium" then "bg-status-warning"
-      when "low" then "bg-status-info"
+      when "critical" then "bg-status-danger-accent animate-pulse"
+      when "medium" then "bg-status-warning-accent"
+      when "low" then "bg-status-info-accent"
       else "bg-status-neutral"
       end
     end

@@ -206,9 +206,9 @@ module Gateways
         aria_label: tree.active? ? t(".soldier_active_aria", did: tree.did) : t(".soldier_inactive_aria", did: tree.did),
         class: tokens(
           "h-4 w-4 border transition-colors",
-          "border-emerald-500 bg-emerald-950/50": tree.active?,
-          "border-gray-800 bg-gray-900": !tree.active?,
-          "border-red-600 bg-red-950/20 animate-pulse": tree.under_threat?
+          "border-gaia-primary-strong bg-gaia-primary-strong/10": tree.active?,
+          "border-status-neutral-accent bg-gaia-surface-sunken": !tree.active?,
+          "border-status-danger-accent bg-status-danger-accent/10 animate-pulse": tree.under_threat?
         )
       )
     end
@@ -224,21 +224,27 @@ module Gateways
       # `Gateway#online?` — один дім порога (`config_sleep_interval_s * 1.2`);
       # локальні «5 хвилин» суперечили і сторожу, і сусідній сторінці.
       recently_seen = @gateway.online?
-      tokens("bg-emerald-500 shadow-[0_0_10px_#10b981]": recently_seen, "bg-red-900 animate-pulse": !recently_seen)
+      tokens("bg-gaia-primary-strong shadow-[0_0_8px_#10b981]": recently_seen, "bg-status-danger-accent animate-pulse": !recently_seen)
     end
 
-    def signal_color; "border-emerald-900/50"; end
+    # [UI.1 сигнальна хвиля] Кільця signal/temp — КОНСТАНТИ (нічого не міряють), і
+    # «завжди зелена» рамка стверджувала здоровʼя без виміру — та сама хвороба, що
+    # ARCH.84-фолбек нижче. Нейтральна рамка чесно каже «не сигнал»; сигналить лише
+    # battery — єдине кільце, що справді читає метрику.
+    def signal_color; "border-gaia-border"; end
     # [ARCH.84] 🔴 Найтонша форма класу: ЗНАЧЕННЯ поруч чесне («---»), а КОЛІР брехав —
     # фолбек підставляв «здорову» напругу (4200 мВ Li-Po), тож невиміряний шлюз
     # діставав зелену рамку. Текст казав «не знаю», рамка казала «все гаразд», і
     # переважає завжди друге. Тепер станів три, як у `metric_row`: тривога · норма ·
     # не виміряно (нейтральний, бо тривога теж є твердженням про вимір).
+    # [UI.1] Обидві живі гілки — токенні акценти: сирий `border-red-900` давав 1.92
+    # у темній, тобто тривога низької напруги була невидимою рамкою.
     def battery_color
       mv = @latest_log&.voltage_mv
       return "border-gaia-border" if mv.nil?
 
-      tokens("border-red-900": mv.to_i < 3400, "border-emerald-900/50": mv.to_i >= 3400)
+      tokens("border-status-danger-accent": mv.to_i < 3400, "border-gaia-primary-strong": mv.to_i >= 3400)
     end
-    def temp_color; "border-emerald-900/50"; end
+    def temp_color; "border-gaia-border"; end
   end
 end

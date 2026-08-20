@@ -161,6 +161,21 @@ RSpec.describe Users::Profile do
       expect(rendered).to include("Not Set")
     end
 
+    # [UI.1 сигнальна хвиля] Крапки індикаторів — токенна пара, не сира палітра
+    # (сирий `bg-emerald-500` давав 2.43 у світлій, `bg-red-500` — те саме поле).
+    # Ціль — самі ВУЗЛИ по порядку (MFA · пароль · провайдери): include по
+    # документу тут вакуумний, бо при змішаному стані присутні ОБИДВА токени.
+    it "signals each indicator with the token pair — strong when on, danger accent when off" do
+      rendered = render_component(user: mock_user(mfa_enabled: false))
+      dots = Nokogiri::HTML5.fragment(rendered).css("div.h-2.w-2.rounded-full").map { |n| n["class"].to_s }
+
+      expect(dots.length).to eq(3)
+      expect(dots[0]).to include("bg-status-danger-accent")   # MFA вимкнено
+      expect(dots[0]).not_to include("bg-red-500")
+      expect(dots[1]).to include("bg-gaia-primary-strong")    # пароль стоїть
+      expect(dots[1]).not_to include("bg-emerald-500")
+    end
+
     it "renders Manage link to account security" do
       expect(html).to include("Manage →")
     end

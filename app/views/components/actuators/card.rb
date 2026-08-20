@@ -120,12 +120,16 @@ module Actuators
       end
     end
 
+    # [UI.1 сигнальна хвиля] Чотири стани — чотири видимі крапки (1.4.11 ≥ 3:1 обабіч):
+    # сирий `bg-gray-800` робив штатний `idle` невидимим у темній (1.31), а `bg-red-900`
+    # давав offline 1.92. Пульс дискримінує maintenance_needed від offline; поруч завжди
+    # стоїть текстовий StatusBadge.label, тож колір не є єдиним носієм (1.4.1).
     def status_led_class
       case @actuator.state
-      when "active" then "bg-emerald-500 shadow-[0_0_10px_#10b981]"
-      when "maintenance_needed" then "bg-red-600 animate-pulse shadow-[0_0_10px_red]"
-      when "offline" then "bg-red-900"
-      else "bg-gray-800"
+      when "active" then "bg-gaia-primary-strong shadow-[0_0_8px_#10b981]"
+      when "maintenance_needed" then "bg-status-danger-accent animate-pulse shadow-[0_0_8px_#ef4444]"
+      when "offline" then "bg-status-danger-accent"
+      else "bg-status-neutral-accent"
       end
     end
 

@@ -295,8 +295,8 @@ module Trees
           cx: "112", cy: "112", r: "88",
           class: tokens(
             "fill-none stroke-[3] transition-all duration-1000",
-            "stroke-red-600 animate-pulse": @tree.under_threat?,
-            "stroke-emerald-500 shadow-[0_0_15px_#10b981]": !@tree.under_threat?
+            "stroke-status-danger-accent animate-pulse": @tree.under_threat?,
+            "stroke-gaia-primary-strong": !@tree.under_threat?
           ),
           style: "stroke-dasharray: 552; stroke-dashoffset: #{552 * (1 - stress_factor)};"
         )
@@ -320,9 +320,12 @@ module Trees
     # ⊕ Заразом зникла друга розбіжність, тихіша за першу: `@latest_log` це
     # ОСТАННІЙ рядок телеметрії, тобто `nil` для дерева, чиї логи вже зрізав
     # retention — і сторінка називала його мертвим, хоч `last_seen_at` живий.
+    # [UI.1 сигнальна хвиля] Тиша — ТЬМЯНА, не червона: `trees/index` вже так каже
+    # (три стани: загроза/тиша/сигнал), а сирий `bg-red-900` давав 1.92 у темній і
+    # робив тишу схожою на тривогу. Загрозу на цій сторінці несе SVG-дуга нижче.
     def status_led_class
-      tokens("bg-emerald-500 shadow-[0_0_12px_#10b981]": @tree.fresh_signal?,
-             "bg-red-900": !@tree.fresh_signal?)
+      tokens("bg-gaia-primary-strong shadow-[0_0_8px_#10b981]": @tree.fresh_signal?,
+             "bg-gaia-text-subtle": !@tree.fresh_signal?)
     end
   end
 end

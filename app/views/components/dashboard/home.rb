@@ -102,7 +102,7 @@ module Dashboard
       div(class: "p-6 border border-gaia-border bg-gaia-surface-elevated flex flex-col h-full") do
         div(class: "flex justify-between items-center mb-8") do
           h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".feed.title") }
-          div(class: "h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping", aria_hidden: "true")
+          div(class: "h-1.5 w-1.5 rounded-full bg-gaia-primary-strong animate-ping", aria_hidden: "true")
         end
 
         div(class: "flex-1 flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar") do

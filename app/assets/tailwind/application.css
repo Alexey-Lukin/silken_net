@@ -96,12 +96,14 @@
   --color-status-warning-accent: var(--status-warning-accent);
   --color-status-info: var(--status-info);
   --color-status-info-text: var(--status-info-text);
+  --color-status-info-accent: var(--status-info-accent);
   --color-status-success: var(--status-success);
   --color-status-success-text: var(--status-success-text);
   --color-status-active: var(--status-active);
   --color-status-active-text: var(--status-active-text);
   --color-status-neutral: var(--status-neutral);
   --color-status-neutral-text: var(--status-neutral-text);
+  --color-status-neutral-accent: var(--status-neutral-accent);
 
   /* Blockchain token colors (CSS-variable driven for light/dark) */
   --color-token-carbon: var(--token-carbon);
@@ -210,6 +212,11 @@
   /* Status: info — deep blue on soft blue */
   --status-info: #dbeafe;
   --status-info-text: #1e40af;
+  /* Насичений двійник для СИГНАЛУ (severity-крапка low) — третій у родині -accent
+   * (UI.1 сигнальна хвиля 2026-08-20). Значення виведене з бару приладом на всіх
+   * шести поверхнях: 6.09–6.70 світла / 5.24–5.51 темна проти 1.17 у пастельного
+   * `--status-info` в ролі крапки. */
+  --status-info-accent: #1d4ed8;
 
   /* Status: success — deep emerald on soft emerald */
   --status-success: #d1fae5;
@@ -222,6 +229,10 @@
   /* Status: neutral / inactive — gray on light gray */
   --status-neutral: #f3f4f6;
   --status-neutral-text: #4b5563;
+  /* Насичений двійник для СИГНАЛУ (idle-LED актуатора — штатний стан, не фолбек):
+   * сирий `bg-gray-800` давав 1.31–1.38 у темній, тобто «неактивний» був невидимий
+   * у єдиній уживаній темі. 6.87–7.56 світла / 7.60–7.99 темна. */
+  --status-neutral-accent: #4b5563;
 
   /* Blockchain tokens — high-contrast for light surface */
   --token-carbon: #047857;
@@ -284,6 +295,7 @@
     /* Status: info — neon blue on dark blue */
     --status-info: #1e3a5f;
     --status-info-text: #bfdbfe;
+    --status-info-accent: #3b82f6;
 
     /* Status: success — neon green on dark emerald */
     --status-success: #065f46;
@@ -296,6 +308,7 @@
     /* Status: neutral — muted on dark zinc */
     --status-neutral: #27272a;
     --status-neutral-text: #a1a1aa;
+    --status-neutral-accent: #9ca3af;
 
     /* Blockchain tokens — glowing for dark surface */
     --token-carbon: #059669;

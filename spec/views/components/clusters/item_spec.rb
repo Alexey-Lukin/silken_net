@@ -41,23 +41,23 @@ RSpec.describe Clusters::Item do
 
   describe "LED status indicator" do
     it "renders emerald LED when no active threats" do
-      expect(html).to include("bg-emerald-500")
+      expect(html).to include("bg-gaia-primary-strong")
     end
 
     it "does not render red LED when no active threats" do
-      expect(html).not_to include("bg-red-500")
+      expect(html).not_to include("bg-status-danger-accent")
     end
 
     it "renders red pulsing LED when cluster has active threats" do
       threat_cluster = mock_cluster(id: 2, name: "Threat-Node", active_threats: true)
       html = render_component(cluster: threat_cluster)
-      expect(html).to include("bg-red-500")
+      expect(html).to include("bg-status-danger-accent")
     end
 
     it "does not render emerald LED when threats are active" do
       threat_cluster = mock_cluster(id: 2, active_threats: true)
       html = render_component(cluster: threat_cluster)
-      expect(html).not_to include("bg-emerald-500")
+      expect(html).not_to include("bg-gaia-primary-strong")
     end
   end
 

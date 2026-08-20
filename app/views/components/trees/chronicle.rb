@@ -97,11 +97,15 @@ module Trees
 
     # --- Style helpers ---
 
+    # [UI.1 сигнальна хвиля] Рамка тяжкості — СИГНАЛ (1.4.11): пастельні фони бейджів
+    # тут давали 1.08:1 у світлій. Кожен штатний рівень іде `-accent`-двійником;
+    # `else` (:stable) лишається тихим свідомо — його доля під відкритим ⚖️
+    # (фолбек ⊥ живий :stable нерозрізненні, TEST.12/chronicle).
     def severity_border_class(severity)
       case severity
       when :critical then "border-status-danger-accent"
-      when :warning  then "border-status-warning"
-      when :info     then "border-status-info"
+      when :warning  then "border-status-warning-accent"
+      when :info     then "border-status-info-accent"
       else "border-emerald-800"
       end
     end

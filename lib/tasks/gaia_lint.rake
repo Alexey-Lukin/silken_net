@@ -140,7 +140,9 @@ namespace :gaia do
       "app/views/components/wallets/",  # зміряно чистим 2026-08-20 (codemod-хвиля + обидва виміри)
       "app/views/components/settings/",  # зміряно чистим 2026-08-20 (codemod 29 + 9 ручних: gaia-input-* тріада, пара primary/-text)
       "app/views/components/audit_logs/", # зміряно чистим 2026-08-20 (codemod-хвиля + ручні divide/бейдж, обидва виміри)
-      "app/views/components/reports/"     # те саме, 2026-08-20; watermark text-emerald-900/5 — оголошений виняток гейта
+      "app/views/components/reports/",    # те саме, 2026-08-20; watermark text-emerald-900/5 — оголошений виняток гейта
+      "app/views/components/gateways/",   # 2026-08-20 після сигнальної хвилі (LED/кільця → -strong/-accent; обидва виміри)
+      "app/views/components/clusters/"    # те саме; watermark SECTOR — оголошений виняток гейта
     ]
 
     scopes = ENV["LINT_SCOPE"] ? [ ENV["LINT_SCOPE"] ] : default_scopes
@@ -212,17 +214,22 @@ namespace :gaia do
     ]
 
     # Decorative / brand allowlist — these are intentional and not migrated.
+    # ⚠️ Порядок несучий для префікс-пар: довший рядок мусить скрабитись ПЕРШИМ,
+    # інакше `bg-emerald-500` зʼїв би префікс свого `/10`-сусіда й лишив хвіст.
     allowlist = [
       "bg-emerald-500/10",  # login submit brand glow
       "bg-emerald-500/20",  # brand glow (parcel of the /10 pair)
-      "bg-emerald-500",     # brand pulse / animate-ping accents
+      # [UI.1 сигнальна хвиля 2026-08-20] Голий `bg-emerald-500` ЗНЯТО: всі
+      # сигнальні крапки/LED мігровано на `bg-gaia-primary-strong` (у темній
+      # byte-той-самий #10b981, у світлій 4.98+ проти 2.43 у сирого), тож запис
+      # відмивав би лише НОВІ регресії. Тіні-glow лишаються hex-парами акцентів:
+      # тінь — не текст і не сигнал, 1.4.3/1.4.11 її не судять (§16.4), а
+      # радіуси зведено до ЄДИНОГО 8px — саме щоб реєстр не ріс переліком форм.
       "border-emerald-500/20", # spinner ring
-      # [UI.1] Дві родини, оголошені інваріантними ДО цього рядка, — allowlist їх
-      # лише визнає, не легалізує наново: watermark `/5` (15 сайтів, деліберейт
-      # 1.09:1 — реєстр декорацій `contrast_audit`) і LED-glow пара до
-      # `bg-emerald-500` pulse (§16.4; тінь — не текст, 1.4.3 її не судить).
+      # watermark `/5` (15 сайтів, деліберейт 1.09:1 — реєстр декорацій `contrast_audit`)
       "text-emerald-900/5",      # decorative watermarks (declared, aria-hidden)
-      "shadow-[0_0_8px_#10b981]" # status-LED brand glow (pairs the pulse dot)
+      "shadow-[0_0_8px_#10b981]", # status-LED brand glow (здорова гілка пари)
+      "shadow-[0_0_8px_#ef4444]"  # alert-LED glow (тривожна гілка тієї ж пари)
     ]
 
     violations = []

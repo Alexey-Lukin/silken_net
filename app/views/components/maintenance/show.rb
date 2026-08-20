@@ -295,9 +295,10 @@ module Maintenance
         div(class: "flex justify-between items-center") do
           h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".hardware.heading") }
           if @record.hardware_verified
-            span(class: "h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]")
+            span(class: "h-2 w-2 rounded-full bg-gaia-primary-strong shadow-[0_0_8px_#10b981]")
           else
-            span(class: "h-2 w-2 rounded-full bg-status-warning")
+            # [UI.1] `-accent`, не пастель: `bg-status-warning` у ролі крапки давав 1.17:1 у світлій.
+            span(class: "h-2 w-2 rounded-full bg-status-warning-accent")
           end
         end
 

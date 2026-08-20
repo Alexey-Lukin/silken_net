@@ -52,7 +52,7 @@ module Dashboard
         # Неоновий HUD
         div(class: "absolute top-4 left-4 z-[400] bg-black/80 border border-emerald-900 p-3 backdrop-blur-md pointer-events-none") do
           h3(class: "text-tiny uppercase tracking-widest text-emerald-500 mb-1 flex items-center gap-2") do
-            div(class: "w-2 h-2 rounded-full bg-emerald-500 animate-pulse")
+            div(class: "w-2 h-2 rounded-full bg-gaia-primary-strong animate-pulse")
             plain t(".heading")
           end
           # `.size`, а не `.count`: колекція вже завантажена рендером вузлів

@@ -138,8 +138,8 @@ module Telemetry
 
         div(class: "flex items-center gap-3 bg-gaia-surface-sunken px-4 py-2 border border-gaia-border shadow-[inset_0_0_10px_rgba(6,78,59,0.5)]") do
           div(class: "relative flex h-2 w-2", aria_hidden: "true") do
-            span(class: "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75")
-            span(class: "relative inline-flex rounded-full h-2 w-2 bg-emerald-500")
+            span(class: "animate-ping absolute inline-flex h-full w-full rounded-full bg-gaia-primary-strong opacity-75")
+            span(class: "relative inline-flex rounded-full h-2 w-2 bg-gaia-primary-strong")
           end
           span(class: "font-mono text-mini text-gaia-primary-strong uppercase tracking-widest") { t(".carrier_label") }
         end

@@ -297,21 +297,35 @@ RSpec.describe Clusters::Show do
                      .map { |n| n["class"].to_s }.join(" ")
     end
 
-    it "uses warning style for medium severity" do
-      expect(severity_dot_classes(mock_alert(severity: "medium"))).to include("bg-status-warning")
+    # [UI.1 сигнальна хвиля] Піни ТОЧНІ (негативний lookahead): `include("bg-status-warning")`
+    # був зелений і на `-accent` — дефіс не є межею слова, тож підрядковий пін не
+    # розрізняв пастель від акценту. Мутація «пастель назад» червонить поіменно.
+    it "uses the danger ACCENT with pulse for critical severity" do
+      classes = severity_dot_classes(mock_alert(severity: "critical"))
+
+      expect(classes).to include("bg-status-danger-accent")
+      expect(classes).to include("animate-pulse")
     end
 
-    it "uses the INFO style for low severity — never the nominal-green of the header" do
+    it "uses the warning ACCENT for medium severity — never the pale badge background" do
+      classes = severity_dot_classes(mock_alert(severity: "medium"))
+
+      expect(classes).to include('bg-status-warning-accent')
+      expect(classes).not_to match(/bg-status-warning(?!-accent)/)
+    end
+
+    it "uses the INFO accent for low severity — never the nominal-green of the header" do
       classes = severity_dot_classes(mock_alert(severity: "low"))
 
-      expect(classes).to include("bg-status-info")
+      expect(classes).to include('bg-status-info-accent')
+      expect(classes).not_to match(/bg-status-info(?!-accent)/)
       expect(classes).not_to include("bg-emerald-500")
     end
 
-    it "falls back to the neutral style for a severity outside the enum" do
+    it "falls back to the PALE neutral for a severity outside the enum — a guard, not a state" do
       classes = severity_dot_classes(mock_alert(severity: "unknown"))
 
-      expect(classes).to include("bg-status-neutral")
+      expect(classes).to match(/bg-status-neutral(?!-accent)/)
       expect(classes).not_to include("bg-emerald-500")
     end
   end

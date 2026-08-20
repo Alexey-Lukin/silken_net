@@ -55,7 +55,9 @@ module Gateways
     def render_gateway_item(gateway)
       latest_log = @latest_logs[gateway.uid]
       recently_seen = gateway.online?
-      led_class = tokens("bg-emerald-500 shadow-[0_0_8px_#10b981]": recently_seen, "bg-red-900 animate-pulse": !recently_seen)
+      # [UI.1 сигнальна хвиля] Офлайн-LED на сирому `bg-red-900` давав 1.92–2.02 у темній —
+      # найопераційніший сигнал флоту був найтьмянішим. Пара тепер токенна (1.4.11 ≥ 3:1 обабіч).
+      led_class = tokens("bg-gaia-primary-strong shadow-[0_0_8px_#10b981]": recently_seen, "bg-status-danger-accent animate-pulse": !recently_seen)
 
       div(class: "group relative p-6 border border-gaia-border bg-gaia-surface hover:bg-gaia-surface-sunken transition-all duration-500") do
         div(class: "flex justify-between items-start mb-6") do

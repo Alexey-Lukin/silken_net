@@ -34,8 +34,8 @@ module Clusters
         threats = @cluster.active_threats?
         div(class: tokens(
           "h-2 w-2 rounded-full",
-          "bg-red-500 animate-pulse": threats,
-          "bg-emerald-500": !threats
+          "bg-status-danger-accent animate-pulse": threats,
+          "bg-gaia-primary-strong": !threats
         ))
       end
     end

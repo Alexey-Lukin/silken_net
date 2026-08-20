@@ -106,7 +106,7 @@ RSpec.describe Gateways::Index do
         gateways: [ mock_gateway(last_seen_at: 1.minute.ago) ],
         pagy: pagy, online_count: 1
       )
-      expect(rendered).to include("bg-emerald-500")
+      expect(rendered).to include("bg-gaia-primary-strong")
     end
 
     it "shows red pulsing LED for stale gateway" do
@@ -114,7 +114,7 @@ RSpec.describe Gateways::Index do
         gateways: [ mock_gateway(last_seen_at: 10.minutes.ago, config_sleep_interval_s: 300) ],
         pagy: pagy, online_count: 0
       )
-      expect(rendered).to include("bg-red-900")
+      expect(rendered).to include("bg-status-danger-accent")
       expect(rendered).to include("animate-pulse")
     end
 
@@ -127,7 +127,7 @@ RSpec.describe Gateways::Index do
         gateways: [ mock_gateway(last_seen_at: 10.minutes.ago, config_sleep_interval_s: 3600) ],
         pagy: pagy, online_count: 1
       )
-      expect(rendered).to include("bg-emerald-500")
+      expect(rendered).to include("bg-gaia-primary-strong")
       expect(rendered).not_to include("animate-pulse")
     end
   end
@@ -174,7 +174,7 @@ RSpec.describe Gateways::Index do
       expect(rendered).to include("SILENT")     # last_seen_at&.strftime || silent
       expect(rendered).to include(I18n.t("ui.measurement.not_measured"))
       expect(rendered).not_to include("0%")
-      expect(rendered).to include("bg-red-900") # last_seen_at nil → stale LED branch
+      expect(rendered).to include("bg-status-danger-accent") # last_seen_at nil → stale LED branch
     end
   end
 end

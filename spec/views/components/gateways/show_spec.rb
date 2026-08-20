@@ -194,13 +194,13 @@ RSpec.describe Gateways::Show do
     it "shows red border when voltage is below 3400mV" do
       log = build_latest_log(voltage_mv: 3200)
       rendered = render_component(gateway: gateway, latest_log: log, active_soldiers: active_soldiers)
-      expect(rendered).to include("border-red-900")
+      expect(rendered).to include("border-status-danger-accent")
     end
 
     it "shows emerald border when voltage is healthy" do
       log = build_latest_log(voltage_mv: 4100)
       rendered = render_component(gateway: gateway, latest_log: log, active_soldiers: active_soldiers)
-      expect(rendered).not_to include("border-red-900")
+      expect(rendered).not_to include("border-status-danger-accent")
     end
   end
 
@@ -214,19 +214,19 @@ RSpec.describe Gateways::Show do
     end
 
     it "renders emerald indicator for active soldier" do
-      expect(html).to include("border-emerald-500")
+      expect(html).to include("border-gaia-primary-strong")
     end
 
     it "renders gray indicator for inactive soldier" do
       soldiers = [ mock_soldier(did: "SNET-INACTIVE", active: false) ]
       rendered = render_component(gateway: gateway, latest_log: latest_log, active_soldiers: soldiers)
-      expect(rendered).to include("border-gray-800")
+      expect(rendered).to include("border-status-neutral-accent")
     end
 
     it "renders red pulsing indicator for under-threat soldier" do
       soldiers = [ mock_soldier(did: "SNET-THREAT", active: true, under_threat: true) ]
       rendered = render_component(gateway: gateway, latest_log: latest_log, active_soldiers: soldiers)
-      expect(rendered).to include("border-red-600")
+      expect(rendered).to include("border-status-danger-accent")
       expect(rendered).to include("animate-pulse")
     end
 
@@ -308,19 +308,19 @@ RSpec.describe Gateways::Show do
   end
 
   # Піни цілять у САМУ лампу (`rotate-45` не має інших носіїв на цій сторінці):
-  # голий `include("bg-emerald-500")` задовольнявся будь-яким зеленим елементом
+  # голий `include("bg-gaia-primary-strong")` задовольнявся будь-яким зеленим елементом
   # сторінки, тож був зелений при обох поведінках.
   describe "connection LED" do
     it "shows green LED when recently seen" do
       gw = mock_gateway(last_seen_at: 1.minute.ago)
       rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
-      expect(rendered).to include("rotate-45 bg-emerald-500")
+      expect(rendered).to include("rotate-45 bg-gaia-primary-strong")
     end
 
     it "shows red pulsing LED when not recently seen" do
       gw = mock_gateway(last_seen_at: 10.minutes.ago)
       rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
-      expect(rendered).to include("rotate-45 bg-red-900")
+      expect(rendered).to include("rotate-45 bg-status-danger-accent")
       expect(rendered).to include("animate-pulse")
     end
 
@@ -329,7 +329,7 @@ RSpec.describe Gateways::Show do
     it "keeps a long-sleeping gateway green well past five minutes" do
       gw = mock_gateway(last_seen_at: 10.minutes.ago, sleep_interval: 3600)
       rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
-      expect(rendered).to include("rotate-45 bg-emerald-500")
+      expect(rendered).to include("rotate-45 bg-gaia-primary-strong")
     end
   end
 end

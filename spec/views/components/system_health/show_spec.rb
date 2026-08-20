@@ -25,6 +25,31 @@ RSpec.describe SystemHealth::Show do
 
   let(:html) { render_component(health: health) }
 
+  # [UI.1 сигнальна хвиля] Тони крапок — токенні акценти, не сира палітра:
+  # `bg-amber-500` давав 1.95–2.15 у світлій, `bg-red-500` — 2.4; мутація
+  # «сирий колір назад» червонить відповідний приклад поіменно.
+  describe "status dot tones" do
+    it "paints ok with the strong token" do
+      expect(html).to include("bg-gaia-primary-strong")
+      expect(html).not_to include("bg-emerald-500")
+    end
+
+    it "paints unknown with the warning accent — never the raw amber" do
+      rendered = render_component(health: health(coap: { status: "not_configured" }))
+
+      expect(rendered).to include("bg-status-warning-accent")
+      expect(rendered).not_to include("bg-amber-500")
+    end
+
+    it "paints down with the pulsing danger accent" do
+      rendered = render_component(health: health(database: { connected: false }))
+
+      expect(rendered).to include("bg-status-danger-accent")
+      expect(rendered).to include("animate-pulse")
+      expect(rendered).not_to include("bg-red-500")
+    end
+  end
+
   describe "header section" do
     it "renders Pulse Monitor heading" do
       expect(html).to include("Pulse Monitor")

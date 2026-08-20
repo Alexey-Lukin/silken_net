@@ -99,15 +99,15 @@ RSpec.describe Trees::Index do
 
   # 🔴 [ARCH.99] Після зняття смуги заряду ЦЕЙ LED — єдиний енергетичний сигнал
   # картки, тож піни тут стали несучими й переписані двома осями.
-  # (1) Ціль — САМ елемент, не документ: `bg-emerald-500` носять ще hover-overlay
-  #     (`bg-emerald-500/10`) і знята смуга, тож `include("bg-emerald-500")` був
+  # (1) Ціль — САМ елемент, не документ: `bg-gaia-primary-strong` носять ще hover-overlay
+  #     (`bg-emerald-500/10`) і знята смуга, тож `include("bg-gaia-primary-strong")` був
   #     зелений за будь-якої поведінки LED (та сама вакуумність, що вбила три
   #     приклади «charge bar colors» разом зі смугою).
   # (2) Поріг — із моделі (`Tree::SILENCE_THRESHOLD`), а не «25 годин» літералом:
   #     компонент доти ніс рукописну копію правила, і спека цементувала копію.
   describe "LED indicator" do
     it "shows emerald LED for active, recently seen tree" do
-      expect(html).to include("h-1.5 w-1.5 rounded-full bg-emerald-500")
+      expect(html).to include("h-1.5 w-1.5 rounded-full bg-gaia-primary-strong")
     end
 
     it "shows red pulsing LED when under threat" do
@@ -122,7 +122,7 @@ RSpec.describe Trees::Index do
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
 
       expect(rendered).to include("h-1.5 w-1.5 rounded-full bg-gaia-text-subtle")
-      expect(rendered).not_to include("h-1.5 w-1.5 rounded-full bg-emerald-500")
+      expect(rendered).not_to include("h-1.5 w-1.5 rounded-full bg-gaia-primary-strong")
     end
 
     it "shows gray LED when last_seen_at is nil" do

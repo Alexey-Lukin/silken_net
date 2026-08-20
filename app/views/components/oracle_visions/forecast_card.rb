@@ -169,7 +169,7 @@ module OracleVisions
     def confidence_bar_class
       return "bg-gray-500" if unmeasured_impact?
 
-      adverse_forecast? ? "bg-red-500 shadow-[0_0_15px_#ef4444]" : "bg-emerald-500 shadow-[0_0_15px_#10b981]"
+      adverse_forecast? ? "bg-status-danger-accent shadow-[0_0_8px_#ef4444]" : "bg-gaia-primary-strong shadow-[0_0_8px_#10b981]"
     end
   end
 end

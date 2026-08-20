@@ -101,8 +101,11 @@ module GaiaLintProbe
     "ring-gaia-primary-strong", "bg-status-danger-accent", "text-token-forest",
     "min-h-[60vh]", "tracking-[0.3em]", "stroke-[3]", "text-[40px]",
     "border-2", "shadow-lg", "divide-y", "fill-none", "outline-none",
-    # Allowlist — бренд-глоу оголошено сирим свідомо.
-    "bg-emerald-500/10", "border-emerald-500/20", "bg-emerald-500"
+    # Allowlist — бренд-глоу оголошено сирим свідомо. Голий `bg-emerald-500`
+    # ЗНЯТО звідси разом із записом allowlist (UI.1 сигнальна хвиля 2026-08-20):
+    # усі крапки/LED мігрували на `-strong`, тож він знову СИРИЙ діалект.
+    "bg-emerald-500/10", "border-emerald-500/20",
+    "shadow-[0_0_8px_#10b981]", "shadow-[0_0_8px_#ef4444]"
   ].freeze
 
   # Дужка з `url(`: колірне слово там є частиною ШЛЯХУ. Наївний підрядок ловив

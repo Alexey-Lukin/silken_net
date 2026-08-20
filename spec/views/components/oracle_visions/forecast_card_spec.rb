@@ -167,7 +167,7 @@ RSpec.describe OracleVisions::ForecastCard do
       )
 
       expect(html).to include("text-red-500")
-      expect(html).to include("bg-red-500")
+      expect(html).to include("bg-status-danger-accent")
       expect(html).not_to include("text-emerald-500")
     end
 

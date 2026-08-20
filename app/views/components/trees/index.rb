@@ -95,11 +95,11 @@ module Trees
       # при барі 1.4.11 = 3:1, тобто найгучніший стан флоту був найблідішою
       # крапкою в ОБОХ темах. Від цієї самої помилки застерігає сусід
       # (`clusters/show.rb` — «крапці потрібен насичений колір»), і там її не
-      # зробили. `-accent` дає 4.63–5.39. ⚠️ Сире `red` у тіні лишається
-      # тем-інваріантним акцентом і лінтер його не бачить (`00_07` UI.1).
-      return "bg-status-danger-accent animate-pulse shadow-[0_0_8px_red]" if tree.under_threat?
+      # зробили. `-accent` дає 4.63–5.39. Тінь — hex-двійник акценту (лінтер
+      # named-кольори в дужках бачить із 2026-08-19, тож `red` тут пішов).
+      return "bg-status-danger-accent animate-pulse shadow-[0_0_8px_#ef4444]" if tree.under_threat?
       return "bg-gaia-text-subtle" unless tree.fresh_signal?
-      "bg-emerald-500 shadow-[0_0_5px_#10b981]"
+      "bg-gaia-primary-strong shadow-[0_0_8px_#10b981]"
     end
   end
 end

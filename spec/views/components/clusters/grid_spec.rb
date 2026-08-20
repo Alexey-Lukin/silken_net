@@ -52,17 +52,17 @@ RSpec.describe Clusters::Grid do
 
   describe "LED status" do
     it "renders emerald LED when no active threats" do
-      expect(html).to include("bg-emerald-500")
+      expect(html).to include("bg-gaia-primary-strong")
     end
 
     it "renders red LED when cluster has active threats" do
       threat_cluster = build_cluster(id: 3, name: "Threat-Cluster", active_threats: true)
       html = render_component(clusters: [ threat_cluster ], pagy: mock_pagy(count: 63))
 
-      expect(html).to include("bg-red-500")
+      expect(html).to include("bg-status-danger-accent")
       # Другий бік несучий: сама присутність червоного лишається зеленою й тоді,
       # коли гілки рендеряться ОБИДВІ (у сітці з одним кластером інших LED немає).
-      expect(html).not_to include("bg-emerald-500")
+      expect(html).not_to include("bg-gaia-primary-strong")
     end
   end
 
