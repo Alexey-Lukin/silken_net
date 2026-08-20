@@ -20,7 +20,7 @@ RSpec.describe Alerts::Index do
   # enum звузиться, а фільтр лишиться повним.
   let(:html)   { render_component(alerts: alerts, pagy: mock_pagy(count: 63), organization: org) }
   let(:alerts) { [ build_alert(id: 1, severity: "critical"), build_alert(id: 2, severity: "medium") ] }
-  let(:org)    { mock_org }
+  let(:org)    { build_org }
 
   it "не пропонує severity, якої модель не знає" do
     expect(described_class::FILTER_SEVERITIES).to all(satisfy { |s| EwsAlert.severities.key?(s) })
@@ -36,11 +36,14 @@ RSpec.describe Alerts::Index do
     EwsAlert.new(id: id, alert_type: alert_type, severity: severity, status: status, created_at: Time.current)
   end
 
-  # `stream_epoch` несе саму адресу стріму [SEC.25 Ф3] — без нього дім імен
-  # падає fail-closed, і це правильно: `_e` без числа було б одним іменем на всі
-  # покоління.
-  def mock_org(id: 42, name: "ForestCorp", stream_epoch: 7)
-    OpenStruct.new(id: id, name: name, stream_epoch: stream_epoch)
+  # [TEST.12] Реальний незбережений `Organization`. `TurboStreams::Name.org`
+  # (lib/turbo_streams/name.rb) деривує адресу стріму fail-closed із `.id` і
+  # `.stream_epoch` — обидва РЕАЛЬНІ методи моделі (колонка `stream_epoch integer
+  # DEFAULT 1 NOT NULL`), не поля, що фікстура собі призначає. `stream_epoch`
+  # несе саму адресу стріму [SEC.25 Ф3] — без нього дім імен падає fail-closed, і
+  # це правильно: `_e` без числа було б одним іменем на всі покоління.
+  def build_org(id: 42, name: "ForestCorp", stream_epoch: 7)
+    Organization.new(id: id, name: name, stream_epoch: stream_epoch)
   end
 
 
@@ -121,6 +124,29 @@ RSpec.describe Alerts::Index do
   describe "pagination" do
     it "renders pagination links" do
       expect(html).to include("page=")
+    end
+  end
+
+  # 🔴 [UI.6] Докстрінг компонента сам називає це проводкою в ДВА щаблі:
+  # «current_user тут транзитний — сам список його не вживає, але веде далі в
+  # Alerts::Row, де від нього залежить видимість «Acknowledge». Проводка мусить
+  # пройти ОБИДВА щаблі: контролер → Index → Row.» Жоден приклад доти не подавав
+  # `current_user:` узагалі (дефолт компонента — `nil`), тож сам факт передачі
+  # `Index → Alerts::Row.new(current_user:)` не перевірявся тут НІКОЛИ — а
+  # контролер (`alerts_controller#index`) передає його ЗАВЖДИ. `Row`-предикат
+  # (`forest_commander?`) уже доведений мутацією в `row_spec`; тут — лише сам
+  # ЩАБЕЛЬ проводки.
+  describe "current_user проводка в Alerts::Row [UI.6]" do
+    it "forester+, поданий у Index, дістає кнопку Acknowledge в рядку" do
+      out = render_component(alerts: [ build_alert(status: :active) ], pagy: mock_pagy(count: 1),
+                             organization: org, current_user: build_stubbed(:user, :forester))
+      expect(out).to include("Acknowledge")
+    end
+
+    it "investor, поданий у Index, тієї самої кнопки не дістає" do
+      out = render_component(alerts: [ build_alert(status: :active) ], pagy: mock_pagy(count: 1),
+                             organization: org, current_user: build_stubbed(:user, :investor))
+      expect(out).not_to include("Acknowledge")
     end
   end
 end

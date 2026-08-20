@@ -4,18 +4,6 @@
 require "rails_helper"
 
 RSpec.describe Contracts::Index do
-  def mock_org(name: "Cherkasy Forest Fund")
-    OpenStruct.new(name: name)
-  end
-
-  def mock_cluster(name: "Carpathian-Alpha")
-    c = OpenStruct.new(name: name)
-    c.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    c.define_singleton_method(:to_key) { [ 1 ] }
-    c.define_singleton_method(:to_param) { "1" }
-    c
-  end
-
   # [TEST.12] Реальний незбережений `NaasContract`. Емісії в контракту НЕМАЄ свідомо
   # ([ARCH.103]: величина кластерна, компонент бере її з `cluster_emissions:`-хешу за
   # `cluster_id`), тож фікстура, що клала б її полем контракту, вигадувала б знятий

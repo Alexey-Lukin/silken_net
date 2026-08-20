@@ -4,10 +4,15 @@
 require "rails_helper"
 
 RSpec.describe Actuators::Index do
-  def mock_cluster(name: "Amazon-Alpha")
-    OpenStruct.new(id: 1, name: name)
+  # [TEST.12] Реальний незбережений `Cluster`: `header_section` читає `.name`, а
+  # пагінація будує `cluster_actuators_path(@cluster, page: page)` — route helper
+  # вимагає `to_param`. Реальна модель дає обидва сама; `OpenStruct` без
+  # `model_name`/`to_param` фолбечив би на `Object#to_param` (= `to_s`), тобто
+  # щойно сторінок стало б більше однієї, URL пагінації поніс би дамп фікстури
+  # (`wallets/index` — та сама пастка, уже виміряна цим пунктом).
+  def build_cluster(id: 1, name: "Amazon-Alpha")
+    Cluster.new(id: id, name: name)
   end
-
 
   # [TEST.12] Реальний незбережений `Actuator` — `device_type` ходить через справжній
   # enum, тож вигаданого `"valve"` тут більше не буває (модель приймає лише
@@ -18,7 +23,7 @@ RSpec.describe Actuators::Index do
 
   describe "rendering with actuators" do
     let(:actuators) { [ build_actuator(id: 1), build_actuator(id: 2) ] }
-    let(:html) { render_component(cluster: mock_cluster, actuators: actuators, pagy: mock_pagy(count: 2, last: 1)) }
+    let(:html) { render_component(cluster: build_cluster, actuators: actuators, pagy: mock_pagy(count: 2, last: 1)) }
 
 
     it "displays the cluster name in the header" do
@@ -46,13 +51,13 @@ RSpec.describe Actuators::Index do
     end
 
     it "displays active count stat" do
-      html = render_component(cluster: mock_cluster, actuators: [ build_actuator ], pagy: mock_pagy(last: 1), active_count: 5)
+      html = render_component(cluster: build_cluster, actuators: [ build_actuator ], pagy: mock_pagy(last: 1), active_count: 5)
       expect(html).to include("Active Nodes")
     end
   end
 
   describe "empty state" do
-    let(:html) { render_component(cluster: mock_cluster, actuators: [], pagy: mock_pagy(count: 0, last: 1)) }
+    let(:html) { render_component(cluster: build_cluster, actuators: [], pagy: mock_pagy(count: 0, last: 1)) }
 
     it "renders empty state message when no actuators" do
       expect(html).to include("No actuator nodes provisioned in this sector.")
@@ -68,7 +73,7 @@ RSpec.describe Actuators::Index do
   end
 
   describe "best practices compliance" do
-    let(:html) { render_component(cluster: mock_cluster, actuators: [ build_actuator ], pagy: mock_pagy(last: 1)) }
+    let(:html) { render_component(cluster: build_cluster, actuators: [ build_actuator ], pagy: mock_pagy(last: 1)) }
 
     it "uses text-tiny for uppercase microcopy" do
       expect(html).to include("text-tiny")

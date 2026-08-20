@@ -11,15 +11,19 @@ RSpec.describe Actuators::Show do
     Actuator.new(id: id, device_type: device_type, state: state, gateway: Gateway.new(uid: gateway_uid))
   end
 
-  def mock_command(id: 1, status: "confirmed", command_payload: "OPEN_VALVE", executed_at: Time.current,
-                   completed_at: nil, user_first_name: "Ada")
-    user = OpenStruct.new(first_name: user_first_name)
-    OpenStruct.new(id: id, status: status, command_payload: command_payload, executed_at: executed_at,
-                   completed_at: completed_at, user: user)
+  # [TEST.12] Реальний незбережений `ActuatorCommand`, і `user:` — реальний `User.new`,
+  # не рукописний `OpenStruct`. `user: nil` тепер прямий вхід замість другої обгортки
+  # навколо фікстури: доти "SYSTEM operator" будувала ЩЕ ОДИН `OpenStruct`, копіюючи
+  # поля з першого, бо `user_first_name: nil` давав користувача з ПОРОЖНІМ імʼям, а
+  # не `nil` — фікстуру доводилось «домовляти» замість того, щоб просто подати `nil`.
+  def build_command(id: 1, status: "confirmed", command_payload: "OPEN_VALVE", executed_at: Time.current,
+                    completed_at: nil, user: User.new(first_name: "Ada"))
+    ActuatorCommand.new(id: id, status: status, command_payload: command_payload, executed_at: executed_at,
+                        completed_at: completed_at, user: user)
   end
 
   describe "rendering" do
-    let(:commands) { [ mock_command(id: 1), mock_command(id: 2, status: "failed", command_payload: "RESET") ] }
+    let(:commands) { [ build_command(id: 1), build_command(id: 2, status: "failed", command_payload: "RESET") ] }
     let(:html) { render_component(actuator: build_actuator, commands: commands) }
 
 
@@ -62,9 +66,7 @@ RSpec.describe Actuators::Show do
 
   describe "SYSTEM operator fallback" do
     it "displays SYSTEM when user is nil" do
-      cmd = mock_command(user_first_name: nil)
-      cmd_with_nil_user = OpenStruct.new(id: cmd.id, status: cmd.status, command_payload: cmd.command_payload, executed_at: cmd.executed_at, user: nil)
-      html = render_component(actuator: build_actuator, commands: [ cmd_with_nil_user ])
+      html = render_component(actuator: build_actuator, commands: [ build_command(user: nil) ])
       expect(html).to include("SYSTEM")
     end
   end
@@ -77,7 +79,7 @@ RSpec.describe Actuators::Show do
   # це те, що не сміє зламатись, а конкретні класи належать спеці бейджа.
   describe "command status rendering" do
     it "delegates the status cell to the shared CommandStatusBadge" do
-      html = render_component(actuator: build_actuator, commands: [ mock_command(status: "confirmed") ])
+      html = render_component(actuator: build_actuator, commands: [ build_command(status: "confirmed") ])
 
       # DOM-id ставить саме компонент — його ж чекає broadcast-таргет.
       expect(html).to include("command_status_")
@@ -86,7 +88,7 @@ RSpec.describe Actuators::Show do
 
     it "renders the localized label, not the raw enum value" do
       html = I18n.with_locale(:uk) do
-        render_component(actuator: build_actuator, commands: [ mock_command(status: "acknowledged") ])
+        render_component(actuator: build_actuator, commands: [ build_command(status: "acknowledged") ])
       end
 
       expect(html).to include("виконується")
@@ -99,7 +101,7 @@ RSpec.describe Actuators::Show do
       html = I18n.with_locale(:uk) do
         render_component(
           actuator: build_actuator,
-          commands: [ mock_command(status: "acknowledged"), mock_command(status: "confirmed") ]
+          commands: [ build_command(status: "acknowledged"), build_command(status: "confirmed") ]
         )
       end
 
@@ -107,23 +109,37 @@ RSpec.describe Actuators::Show do
       expect(html).to include("завершено")
     end
 
+    # ⚠️ Вхід досяжний ЛИШЕ стабом РИДЕРА: `status` — справжній enum
+    # (issued/sent/acknowledged/failed/confirmed), тож
+    # `ActuatorCommand.new(status: "unknown_status")` кидає `ArgumentError` просто
+    # в конструкторі. Доти цю гілку «перевіряло» значення, якого прод не дає.
     it "falls back to the raw value for a status with no label" do
-      html = render_component(actuator: build_actuator, commands: [ mock_command(status: "unknown_status") ])
+      command = build_command
+      allow(command).to receive(:status).and_return("unknown_status")
 
+      html = render_component(actuator: build_actuator, commands: [ command ])
       expect(html).to include("unknown_status")
       expect(html).to include("bg-zinc-800")
     end
   end
 
   describe "executed_at formatting" do
+    # 🔴 [TEST.12] `Time.new` (без зони) дає ЛОКАЛЬНИЙ час машини; `executed_at` —
+    # реальна `timestamp(6) without time zone`, і Rails кастує значення в
+    # `Time.zone` (UTC тут). Виміряно `bin/rails runner`: та сама секунда, подана
+    # `Time.new(2024, 3, 15, 14, 30, 45)` на машині з UTC+2, доїжджає до колонки як
+    # `12:30:45`, тобто пін на «14:30:45» упав би на реальній моделі. `OpenStruct`
+    # цього не показував — зберігав об'єкт як є, без каста. `Time.zone.local`
+    # фіксує стінний час У ЗОНІ ЗАСТОСУНКУ, тож рядок детермінований незалежно від
+    # TZ машини, що прогнала тест.
     it "formats execution timestamp" do
-      time = Time.new(2024, 3, 15, 14, 30, 45)
-      html = render_component(actuator: build_actuator, commands: [ mock_command(executed_at: time) ])
+      time = Time.zone.local(2024, 3, 15, 14, 30, 45)
+      html = render_component(actuator: build_actuator, commands: [ build_command(executed_at: time) ])
       expect(html).to include("15.03.24 // 14:30:45")
     end
 
     it "displays --- when executed_at is nil" do
-      html = render_component(actuator: build_actuator, commands: [ mock_command(executed_at: nil) ])
+      html = render_component(actuator: build_actuator, commands: [ build_command(executed_at: nil) ])
       expect(html).to include("---")
     end
   end
@@ -134,8 +150,8 @@ RSpec.describe Actuators::Show do
     it "shows both start and finish for a completed command" do
       html = render_component(
         actuator: build_actuator,
-        commands: [ mock_command(executed_at: Time.new(2024, 3, 15, 14, 30, 45),
-                                 completed_at: Time.new(2024, 3, 15, 14, 32, 10)) ]
+        commands: [ build_command(executed_at: Time.zone.local(2024, 3, 15, 14, 30, 45),
+                                  completed_at: Time.zone.local(2024, 3, 15, 14, 32, 10)) ]
       )
       expect(html).to include("15.03.24 // 14:30:45")
       expect(html).to include("15.03.24 // 14:32:10")
@@ -145,7 +161,7 @@ RSpec.describe Actuators::Show do
     # з сусіднім, а укр. пара «Початок ⊥ Завершення» доводить, що колонки ДВІ.
     it "labels start and finish as two distinct column headers (uk)" do
       html = I18n.with_locale(:uk) do
-        render_component(actuator: build_actuator, commands: [ mock_command ])
+        render_component(actuator: build_actuator, commands: [ build_command ])
       end
       expect(html).to include("Початок")
       expect(html).to include("Завершення")
@@ -153,7 +169,7 @@ RSpec.describe Actuators::Show do
   end
 
   describe "best practices compliance" do
-    let(:html) { render_component(actuator: build_actuator, commands: [ mock_command ]) }
+    let(:html) { render_component(actuator: build_actuator, commands: [ build_command ]) }
 
     it "uses text-tiny and text-micro for typography" do
       expect(html).to include("text-tiny")
