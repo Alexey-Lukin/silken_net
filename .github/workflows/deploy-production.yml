@@ -244,6 +244,8 @@ jobs:
           #     Sidekiq job, which is loud now that a transport exists at all. ---
           SMTP_USER_NAME: ${{ secrets.SMTP_USER_NAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          # --- Telegram bot token [ARCH.60] — optional: transport no-ops when unset. ---
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           # --- Web3 oracle keys (dual-key split, B-02) — web3_network_guard fail-closes at boot.
           #     ORACLE_PRIVATE_KEY (legacy shared fallback) is RETIRED (INF.22): no code
           #     reads it and the guard refuses a value under that name. ---

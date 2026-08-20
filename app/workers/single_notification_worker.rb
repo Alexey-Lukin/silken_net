@@ -20,6 +20,8 @@ class SingleNotificationWorker
     case channel.to_sym
     when :sms
       send_sms(user, alert)
+    when :telegram
+      send_telegram(user, alert)
     when :push
       send_push_notification(user, alert)
     else
@@ -48,5 +50,25 @@ class SingleNotificationWorker
     Rails.logger.warn(
       "[Push] Канал не сконфігуровано — користувачу #{user.email_address} НЕ доставлено (алерт ##{alert.id})"
     )
+  end
+
+  # [ARCH.60] Перший живий не-поштовий канал. Без chat_id — тихо (канал
+  # адресований лише тим, хто його дав, як телефон у SMS-гілці); без токена —
+  # гучний warn у формі ARCH.78 (стан КАНАЛУ, не результат). Помилку HTTP
+  # свідомо не ковтаємо: RequestError = Sidekiq-retry (5 спроб цього ж user+channel).
+  # Текст рендериться в локалі ОТРИМУВАЧА — у Sidekiq `I18n.locale` завжди
+  # базова, тож без обгортки україномовний лісник діставав би англійську тривогу.
+  def send_telegram(user, alert)
+    return unless user.telegram_chat_id.present?
+
+    unless Notifications::TelegramTransport.configured?
+      Rails.logger.warn(
+        "[Telegram] Канал не сконфігуровано — користувачу #{user.email_address} НЕ доставлено (алерт ##{alert.id})"
+      )
+      return
+    end
+
+    text = I18n.with_locale(Notifications::RecipientLocale.for(user)) { alert.message }
+    Notifications::TelegramTransport.send_message(chat_id: user.telegram_chat_id, text: text)
   end
 end

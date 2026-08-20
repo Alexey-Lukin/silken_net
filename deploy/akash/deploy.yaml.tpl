@@ -34,6 +34,8 @@ services:
       - SMTP_ADDRESS=${smtp_address}
       - SMTP_USER_NAME=${smtp_user_name}
       - SMTP_PASSWORD=${smtp_password}
+      # Telegram bot token [ARCH.60] — optional: transport no-ops when unset.
+      - TELEGRAM_BOT_TOKEN=${telegram_bot_token}
       # [ARCH.81] CoAP intake address for the admin health probe — the same host
       # a Queen dials; unset means the panel reports "not configured", never "dead".
       - COAP_HOST=api.silkennet.com
@@ -135,6 +137,8 @@ services:
       - SMTP_ADDRESS=${smtp_address}
       - SMTP_USER_NAME=${smtp_user_name}
       - SMTP_PASSWORD=${smtp_password}
+      # Telegram bot token [ARCH.60] — optional: transport no-ops when unset.
+      - TELEGRAM_BOT_TOKEN=${telegram_bot_token}
 %{ if release_version != "" }      - RELEASE_VERSION=${release_version}
 %{ endif ~}
       # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb ---

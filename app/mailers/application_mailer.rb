@@ -22,13 +22,9 @@ class ApplicationMailer < ActionMailer::Base
     I18n.with_locale(supported_locale_for(record), &block)
   end
 
-  # Fail-safe навмисно: значення в колонці могло пережити зняття локалі з
-  # каталогу, а `I18n.with_locale` на невідомій локалі кидає `InvalidLocale`
-  # (`enforce_available_locales` увімкнено). Лист не сміє загинути через мітку
-  # мови — деградуємо до базової.
+  # Резолв виїхав у спільний дім, коли Telegram став другим каналом із тією
+  # самою потребою (fail-safe-семантика — у коментарі модуля).
   def supported_locale_for(record)
-    candidate = record.try(:locale).presence&.to_sym
-
-    I18n.available_locales.include?(candidate) ? candidate : I18n.default_locale
+    Notifications::RecipientLocale.for(record)
   end
 end

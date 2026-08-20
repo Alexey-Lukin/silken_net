@@ -290,6 +290,9 @@ jobs:
           #     SILKENNET_SKIP_MAIL_TRANSPORT_CHECK=1 (web-only, no Sidekiq → no delivery). ---
           SMTP_USER_NAME: ${{ secrets.SMTP_USER_NAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          # --- Telegram bot token [ARCH.60] — optional: transport no-ops when unset
+          #     (an unmapped entry injects "", which the format check reads as "off"). ---
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           # --- Web3 money/signing keys: NOT mapped (INF.22) — the quintet is
           #     servers.job.env.secret-only and canopy is structurally web-only
           #     (array-form servers: in deploy.canopy.yml; an omitted role would be

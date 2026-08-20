@@ -21,12 +21,14 @@ RSpec.describe AlertNotificationWorker, type: :worker do
 
       described_class.new.perform(alert.id)
 
-      # Critical alert: SMS + Push for admin and forester (4 jobs), no jobs for investor
+      # Critical alert: SMS + Push + Telegram for admin and forester, no jobs for investor
       sms_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "sms" }
       push_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "push" }
+      telegram_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "telegram" }
 
       expect(sms_jobs.size).to eq(2)
       expect(push_jobs.size).to eq(2)
+      expect(telegram_jobs.size).to eq(2)
     end
 
     it "uses Sidekiq::Client.push_bulk for batch enqueue (A-4 optimization)" do
@@ -34,15 +36,17 @@ RSpec.describe AlertNotificationWorker, type: :worker do
       create(:user, :forester, organization: organization)
 
       # Verify push_bulk is called with correct args count:
-      # Critical alert → 2 SMS (admin + forester) + 2 Push (admin + forester) = 4 entries
+      # Critical alert → 2 SMS + 2 Push + 2 Telegram (admin + forester) = 6 entries
       expect(Sidekiq::Client).to receive(:push_bulk).with(
         hash_including(
           "class" => SingleNotificationWorker,
           "args" => a_collection_containing_exactly(
             [ anything, alert.id, "sms" ],
             [ anything, alert.id, "push" ],
+            [ anything, alert.id, "telegram" ],
             [ anything, alert.id, "sms" ],
-            [ anything, alert.id, "push" ]
+            [ anything, alert.id, "push" ],
+            [ anything, alert.id, "telegram" ]
           )
         )
       ).and_call_original

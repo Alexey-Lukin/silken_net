@@ -157,6 +157,18 @@ variable "smtp_password" {
   default     = ""
 }
 
+variable "telegram_bot_token" {
+  description = "Telegram bot token (TELEGRAM_BOT_TOKEN) [ARCH.60]. Optional channel: empty means OFF and the transport honestly no-ops. Validation mirrors TelegramTransport::TOKEN_FORMAT so a mispasted value or the placeholder fails at plan, not as a silent dead channel."
+  type        = string
+  sensitive   = true
+  default     = ""
+
+  validation {
+    condition     = var.telegram_bot_token == "" || can(regex("^[0-9]+:[A-Za-z0-9_-]{30,}$", var.telegram_bot_token))
+    error_message = "TELEGRAM_BOT_TOKEN must be empty (channel off) or shaped like a BotFather token (<bot_id>:<secret>) — the REQUIRED_SECRET_NOT_SET placeholder trips this."
+  }
+}
+
 # ActiveRecord Encryption keys [SEC.22] — decrypt hardware_keys + identities columns.
 # From ENV, never credentials.yml.enc. active_record_encryption_keys_check.rb raises at
 # boot without them (>=32 chars each). Generate all three: bin/rails db:encryption:init.

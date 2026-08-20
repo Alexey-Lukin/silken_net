@@ -82,6 +82,8 @@ resource "local_file" "akash_sdl" {
     # Credentials — not boot-critical themselves (an auth-less relay is legitimate).
     smtp_user_name = var.smtp_user_name
     smtp_password  = var.smtp_password
+    # Optional channel [ARCH.60] — empty means OFF, the transport no-ops.
+    telegram_bot_token = var.telegram_bot_token
     # 🛑 BOOT-CRITICAL: active_record_encryption_keys_check.rb (hardware_keys + identities)
     active_record_encryption_primary_key         = var.active_record_encryption_primary_key
     active_record_encryption_deterministic_key   = var.active_record_encryption_deterministic_key

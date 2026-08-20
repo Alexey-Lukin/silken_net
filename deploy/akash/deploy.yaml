@@ -130,6 +130,8 @@ services:
       - SMTP_ADDRESS=REQUIRED_SECRET_NOT_SET
       - SMTP_USER_NAME=REQUIRED_SECRET_NOT_SET
       - SMTP_PASSWORD=REQUIRED_SECRET_NOT_SET
+      # Telegram bot token [ARCH.60] — optional: the format check reads this placeholder as "off".
+      - TELEGRAM_BOT_TOKEN=REQUIRED_SECRET_NOT_SET
       # [ARCH.81] Address the admin health panel probes over UDP — the SAME one a
       # Queen dials (`COAP_SERVER_HOST` in firmware/queen/main.c, A-record to the
       # Ingress Anchor per 06_01 step 1). The PRIMARY daemon does NOT live in this
@@ -324,6 +326,8 @@ services:
       - SMTP_ADDRESS=REQUIRED_SECRET_NOT_SET
       - SMTP_USER_NAME=REQUIRED_SECRET_NOT_SET
       - SMTP_PASSWORD=REQUIRED_SECRET_NOT_SET
+      # Telegram bot token [ARCH.60] — optional: the format check reads this placeholder as "off".
+      - TELEGRAM_BOT_TOKEN=REQUIRED_SECRET_NOT_SET
 
       # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb raises without this ---
       - PROVISIONING_MASTER_KEY=REQUIRED_SECRET_NOT_SET

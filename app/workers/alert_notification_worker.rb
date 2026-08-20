@@ -59,6 +59,10 @@ class AlertNotificationWorker
 
       # Push для всіх рівнів тривог
       bulk_args << [ user.id, alert.id, "push" ]
+
+      # [ARCH.60] Telegram — теж усі рівні: канал opt-in через chat_id, тож
+      # адресну вибірку робить сам SingleNotificationWorker (як push із token).
+      bulk_args << [ user.id, alert.id, "telegram" ]
     end
 
     Sidekiq::Client.push_bulk("class" => SingleNotificationWorker, "args" => bulk_args) if bulk_args.any?

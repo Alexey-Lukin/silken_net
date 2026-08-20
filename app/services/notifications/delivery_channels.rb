@@ -58,8 +58,11 @@ module Notifications
     def available?(channel)
       case channel.to_sym
       when :email then email_transport_configured?
-      # ARCH.60 — адаптерів немає в дереві; тут же їх і оголосять живими.
-      when :sms, :telegram, :push then false
+      # [ARCH.60] Дім телеграмного предиката — сам транспорт (ENV-ім'я, формат
+      # токена й відправка живуть там разом); тут лише диспетчеризація.
+      when :telegram then TelegramTransport.configured?
+      # ARCH.60 — Twilio/FCM-адаптерів немає в дереві; тут же їх і оголосять живими.
+      when :sms, :push then false
       else false
       end
     end

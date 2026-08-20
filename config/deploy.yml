@@ -118,6 +118,9 @@ env:
     #     (Postmark server token; SES access-key id). MAIL_FROM/SMTP_ADDRESS are clear below. ---
     - SMTP_USER_NAME
     - SMTP_PASSWORD
+    # --- Telegram bot token [ARCH.60] — optional channel: transport no-ops when unset,
+    #     and TelegramTransport.configured? rejects the placeholder by token format. ---
+    - TELEGRAM_BOT_TOKEN
     # --- Web3 money/signing keys: JOB-ONLY (servers.job env.secret above) —
     #     deliberately NOT global so web/coap containers never carry them ---
     # --- RPC endpoints (SSOT names expected by Web3::RpcConnectionPool) ---

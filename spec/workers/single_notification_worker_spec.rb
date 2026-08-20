@@ -43,6 +43,57 @@ RSpec.describe SingleNotificationWorker, type: :worker do
       end
     end
 
+    # [ARCH.60] Telegram — перший живий не-поштовий канал. Транспорт стабиться
+    # на юніт-межі (HTTP-половина має власну спеку) — тут пінується диспетчер:
+    # кому, що і в якій мові він передає.
+    context "with telegram channel" do
+      it "delivers through the transport in the recipient's locale" do
+        user = create(:user, :forester, organization: organization,
+                      telegram_chat_id: "123456789", locale: "uk")
+        allow(Notifications::TelegramTransport).to receive(:configured?).and_return(true)
+        delivered = nil
+        allow(Notifications::TelegramTransport).to receive(:send_message) do |chat_id:, text:|
+          delivered = { chat_id: chat_id, text: text }
+        end
+
+        described_class.new.perform(user.id, alert.id, "telegram")
+
+        uk_text = I18n.with_locale(:uk) { alert.message }
+        # Ліхтар: якби uk-рендер збігався з базовим, пін локалі був би вакуумним.
+        expect(uk_text).not_to eq(I18n.with_locale(I18n.default_locale) { alert.message })
+        expect(delivered).to eq({ chat_id: "123456789", text: uk_text })
+      end
+
+      it "stays silent for users who did not opt in with a chat id" do
+        user = create(:user, :forester, organization: organization, telegram_chat_id: nil)
+        expect(Notifications::TelegramTransport).not_to receive(:send_message)
+        expect(Rails.logger).not_to receive(:warn).with(/\[Telegram\]/)
+
+        described_class.new.perform(user.id, alert.id, "telegram")
+      end
+
+      it "reports the channel as unconfigured instead of claiming delivery" do
+        user = create(:user, :forester, organization: organization, telegram_chat_id: "123456789")
+        allow(Notifications::TelegramTransport).to receive(:configured?).and_return(false)
+
+        expect(Notifications::TelegramTransport).not_to receive(:send_message)
+        expect(Rails.logger).to receive(:warn).with(/\[Telegram\].*не сконфігуровано.*НЕ доставлено/)
+
+        described_class.new.perform(user.id, alert.id, "telegram")
+      end
+
+      it "lets transport errors escape so Sidekiq retries the delivery" do
+        user = create(:user, :forester, organization: organization, telegram_chat_id: "123456789")
+        allow(Notifications::TelegramTransport).to receive(:configured?).and_return(true)
+        allow(Notifications::TelegramTransport).to receive(:send_message)
+          .and_raise(Web3::HttpClient::RequestError, "Telegram API returned 502")
+
+        expect {
+          described_class.new.perform(user.id, alert.id, "telegram")
+        }.to raise_error(Web3::HttpClient::RequestError)
+      end
+    end
+
     it "returns nil when user not found" do
       expect(described_class.new.perform(-1, alert.id, "push")).to be_nil
     end

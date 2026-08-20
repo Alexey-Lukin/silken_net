@@ -113,4 +113,24 @@ RSpec.describe Notifications::DeliveryChannels do
       expect(described_class.available?(:push)).to be(false)
     end
   end
+
+  # [ARCH.60] Другий машинно-спостережуваний транспорт. Предикат живе в самому
+  # `TelegramTransport` (там же ENV-ім'я і формат — власна спека); тут пінується
+  # лише диспетчеризація: екран і `available` мусять читати саме його.
+  describe ".available?(:telegram)" do
+    it "оживає рівно тоді, коли транспорт каже «сконфігуровано»" do
+      allow(Notifications::TelegramTransport).to receive(:configured?).and_return(true)
+
+      expect(described_class.available?(:telegram)).to be(true)
+      expect(described_class.available).to include(:telegram)
+    end
+
+    it "мертвий, коли транспорт не сконфігуровано, і не тягне сусідів" do
+      allow(Notifications::TelegramTransport).to receive(:configured?).and_return(false)
+
+      expect(described_class.available?(:telegram)).to be(false)
+      expect(described_class.available?(:sms)).to be(false)
+      expect(described_class.available?(:push)).to be(false)
+    end
+  end
 end
