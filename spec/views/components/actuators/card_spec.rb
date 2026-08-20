@@ -147,11 +147,12 @@ RSpec.describe Actuators::Card do
     it "renders a failed command through the shared status badge" do
       html = render_component(actuator: build_actuator, last_command: build_command(status: "failed"))
 
-      # ⚠️ Пін саме на `text-red-200`, і це не примха: `bg-status-danger-accent` картка
-      # вживає САМА в `status_led_class` для `offline`, тож на ньому приклад
-      # був би зелений через сусідній елемент — та сама вада, що в прикладі,
-      # який цей замінює. `text-red-200` у картці не існує ніде.
-      expect(html).to include("text-red-200")
+      # ⚠️ Пін саме на `text-status-danger-text` (парний текст БЕЙДЖА), і це не
+      # примха: `bg-status-danger-accent` картка вживає САМА в `status_led_class`
+      # для `offline`, тож на ньому приклад був би зелений через сусідній елемент —
+      # та сама вада, що в прикладі, який цей замінює. `-danger-text` у картці
+      # більше ніде не існує (перевірено грепом при перецілюванні).
+      expect(html).to include("text-status-danger-text")
     end
   end
 

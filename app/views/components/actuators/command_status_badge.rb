@@ -3,12 +3,16 @@
 
 module Actuators
   class CommandStatusBadge < ApplicationComponent
+    # [UI.1] Бейдж-роль = пастельний фон + парний текст (`04_04 §3.2`); сирі
+    # `yellow-900/blue-900/emerald-*` пішли з міграцією домену. Фолбек нижче
+    # (`surface-elevated`) свідомо не збігається зі стилем ЖОДНОГО живого стану —
+    # цю розрізнимість пінить власна спека.
     STATUS_STYLES = {
-      "issued"       => "bg-yellow-900 text-yellow-200",
-      "sent"         => "bg-blue-900 text-blue-200",
-      "acknowledged" => "bg-emerald-900 text-emerald-200",
-      "failed"       => "bg-red-900 text-red-200",
-      "confirmed"    => "bg-emerald-800 text-emerald-100"
+      "issued"       => "bg-status-warning text-status-warning-text",
+      "sent"         => "bg-status-info text-status-info-text",
+      "acknowledged" => "bg-status-active text-status-active-text",
+      "failed"       => "bg-status-danger text-status-danger-text",
+      "confirmed"    => "bg-status-success text-status-success-text"
     }.freeze
 
     # [I18N.1] Дім міток станів НАКАЗУ — окремий від спільного `ui.status`
@@ -29,7 +33,7 @@ module Actuators
 
     def view_template
       status = @command.status.to_s
-      style  = STATUS_STYLES.fetch(status, "bg-zinc-800 text-zinc-300")
+      style  = STATUS_STYLES.fetch(status, "bg-gaia-surface-elevated text-gaia-text-subtle")
       label  = self.class.label(status)
 
       # [UI.3] `data-command-state` — сирий enum, locale-інваріантний: SR-анонс

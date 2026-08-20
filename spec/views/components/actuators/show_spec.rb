@@ -113,7 +113,7 @@ RSpec.describe Actuators::Show do
 
       # DOM-id ставить саме компонент — його ж чекає broadcast-таргет.
       expect(html).to include("command_status_")
-      expect(html).to include("bg-emerald-800")
+      expect(html).to include("bg-status-success")
     end
 
     it "renders the localized label, not the raw enum value" do
@@ -149,7 +149,7 @@ RSpec.describe Actuators::Show do
 
       html = render_component(actuator: build_actuator, commands: [ command ])
       expect(html).to include("unknown_status")
-      expect(html).to include("bg-zinc-800")
+      expect(html).to include("bg-gaia-surface-elevated")
     end
   end
 

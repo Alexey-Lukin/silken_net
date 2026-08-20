@@ -83,8 +83,9 @@ RSpec.describe Actuators::Index do
       expect(html).to include("tracking-")
     end
 
-    it "uses emerald color scheme" do
-      expect(html).to include("text-emerald-700")
+    it "uses the token text hierarchy, not the raw emerald scheme" do
+      expect(html).to include("text-gaia-text-muted")
+      expect(html).not_to include("text-emerald-700")
     end
   end
 end

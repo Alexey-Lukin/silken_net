@@ -38,13 +38,13 @@ module Actuators
     private
 
     def header_section
-      div(class: "p-8 border border-emerald-900 bg-black flex flex-col md:flex-row justify-between items-start md:items-center relative overflow-hidden shadow-2xl") do
+      div(class: "p-8 border border-gaia-border bg-gaia-surface flex flex-col md:flex-row justify-between items-start md:items-center relative overflow-hidden shadow-2xl") do
         # Декоративний фон
         div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { t(".decoration") }
 
         div do
-          h3(class: "text-tiny uppercase tracking-[0.5em] text-emerald-700 mb-2") { t(".title") }
-          h2(class: "text-3xl font-extralight text-emerald-400 tracking-tighter") { t(".sector_matrix", name: @cluster.name) }
+          h3(class: "text-tiny uppercase tracking-[0.5em] text-gaia-text-muted mb-2") { t(".title") }
+          h2(class: "text-3xl font-extralight text-gaia-text-strong tracking-tighter") { t(".sector_matrix", name: @cluster.name) }
         end
 
         div(class: "mt-4 md:mt-0 flex gap-6 text-tiny font-mono") do
@@ -56,8 +56,8 @@ module Actuators
 
     def stat_label(label, value)
       div(class: "text-right") do
-        p(class: "text-emerald-900 uppercase") { label }
-        p(class: "text-lg text-emerald-100") { value }
+        p(class: "text-gaia-text-subtle uppercase") { label }
+        p(class: "text-lg text-gaia-text-strong") { value }
       end
     end
 

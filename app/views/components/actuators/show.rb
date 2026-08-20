@@ -24,7 +24,7 @@ module Actuators
 
           # Реєстр команд
           div(class: "lg:col-span-2 space-y-4") do
-            h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".log_title") }
+            h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".log_title") }
             render_command_table
           end
         end
@@ -66,9 +66,9 @@ module Actuators
     end
 
     def render_command_table_inner
-      div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+      div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
         table(class: "w-full text-left font-mono text-tiny min-w-[640px]", role: "table") do
-          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-micro tracking-widest") do
+          thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-micro tracking-widest") do
             tr do
               th(scope: "col", class: "p-4") { t(".columns.id") }
               th(scope: "col", class: "p-4") { t(".columns.operator") }
@@ -82,17 +82,17 @@ module Actuators
               th(scope: "col", class: "p-4 text-right") { t(".columns.completed_at") }
             end
           end
-          tbody(class: "divide-y divide-emerald-900/30") do
+          tbody(class: "divide-y divide-gaia-border") do
             @commands.each do |cmd|
-              tr(class: "hover:bg-emerald-950/10") do
-                td(class: "p-4 text-emerald-900") { "##{cmd.id}" }
-                td(class: "p-4 text-emerald-100") { cmd.user&.first_name || t(".system_operator") }
-                td(class: "p-4 font-bold text-white") { cmd.command_payload }
+              tr(class: "hover:bg-gaia-surface-sunken") do
+                td(class: "p-4 text-gaia-text-subtle") { "##{cmd.id}" }
+                td(class: "p-4 text-gaia-text") { cmd.user&.first_name || t(".system_operator") }
+                td(class: "p-4 font-bold text-gaia-text-strong") { cmd.command_payload }
                 td(class: "p-4") do
                   render Actuators::CommandStatusFrame.new(command: cmd)
                 end
-                td(class: "p-4 text-right text-gray-600") { cmd.executed_at&.strftime("%d.%m.%y // %H:%M:%S") || t(".not_executed") }
-                td(class: "p-4 text-right text-gray-600") { cmd.completed_at&.strftime("%d.%m.%y // %H:%M:%S") || t(".not_executed") }
+                td(class: "p-4 text-right text-gaia-text-muted") { cmd.executed_at&.strftime("%d.%m.%y // %H:%M:%S") || t(".not_executed") }
+                td(class: "p-4 text-right text-gaia-text-muted") { cmd.completed_at&.strftime("%d.%m.%y // %H:%M:%S") || t(".not_executed") }
               end
             end
           end

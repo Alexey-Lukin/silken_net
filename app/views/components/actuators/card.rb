@@ -143,7 +143,7 @@ module Actuators
     def emergency_stop_classes
       "w-full py-2 border border-status-danger-accent text-mini uppercase " \
         "text-status-danger-accent " \
-        "hover:bg-status-danger-accent hover:text-black " \
+        "hover:bg-status-danger-accent hover:text-gaia-surface " \
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger-accent " \
         "transition-all font-bold tracking-widest"
     end

@@ -48,50 +48,52 @@ RSpec.describe Actuators::CommandStatusBadge do
     end
   end
 
+  # [UI.1] Бейдж-роль = пастельний `status-*` + парний `-text` (`04_04 §3.2`);
+  # сирі yellow/blue/emerald/red-класи пішли з міграцією домену.
   describe "status styles" do
-    it "renders issued with yellow background" do
+    it "renders issued with the warning pair" do
       html = render_component(command: build_command(status: "issued"))
-      expect(html).to include("bg-yellow-900")
-      expect(html).to include("text-yellow-200")
+      expect(html).to include("bg-status-warning")
+      expect(html).to include("text-status-warning-text")
     end
 
-    it "renders sent with blue background" do
+    it "renders sent with the info pair" do
       html = render_component(command: build_command(status: "sent"))
-      expect(html).to include("bg-blue-900")
-      expect(html).to include("text-blue-200")
+      expect(html).to include("bg-status-info")
+      expect(html).to include("text-status-info-text")
     end
 
-    it "renders acknowledged with emerald background" do
+    it "renders acknowledged with the active pair" do
       html = render_component(command: build_command(status: "acknowledged"))
-      expect(html).to include("bg-emerald-900")
-      expect(html).to include("text-emerald-200")
+      expect(html).to include("bg-status-active")
+      expect(html).to include("text-status-active-text")
     end
 
-    it "renders failed with red background" do
+    it "renders failed with the danger pair" do
       html = render_component(command: build_command(status: "failed"))
-      expect(html).to include("bg-red-900")
-      expect(html).to include("text-red-200")
+      expect(html).to include("bg-status-danger")
+      expect(html).to include("text-status-danger-text")
     end
 
-    it "renders confirmed with emerald-800 background" do
+    it "renders confirmed with the success pair" do
       html = render_component(command: build_command(status: "confirmed"))
-      expect(html).to include("bg-emerald-800")
-      expect(html).to include("text-emerald-100")
+      expect(html).to include("bg-status-success")
+      expect(html).to include("text-status-success-text")
     end
 
     # ⚠️ Вхід досяжний ЛИШЕ стабом РИДЕРА: `status` — справжній enum, тож
     # `ActuatorCommand.new(status: "something_else")` кидає `ArgumentError` просто в
     # конструкторі. Доти цю гілку «перевіряло» значення, якого прод не дає.
     # ⊕ Фолбек тут ЧЕСНО розрізнимий, на відміну від `trees/chronicle` ([`04_06 §A.4`] BP 20):
-    # `bg-zinc-800` не належить жодному з пʼяти живих статусів, а мітка через
+    # `surface-elevated` не належить жодному з пʼяти живих статусів, а мітка через
     # `t(default: status)` друкує САМЕ значення — тобто ознака в розмітці є.
-    it "falls back to zinc for unknown status" do
+    it "falls back to the elevated-surface style for unknown status" do
       command = build_command
       allow(command).to receive(:status).and_return("something_else")
 
       html = render_component(command: command)
-      expect(html).to include("bg-zinc-800")
-      expect(html).to include("text-zinc-300")
+      expect(html).to include("bg-gaia-surface-elevated")
+      expect(html).to include("text-gaia-text-subtle")
       expect(html).to include("something_else") # фолбек показує сире значення
     end
   end

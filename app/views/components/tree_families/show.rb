@@ -19,20 +19,20 @@ module TreeFamilies
     private
 
     def render_hero
-      div(class: "p-10 border border-emerald-900 bg-zinc-950 relative overflow-hidden") do
+      div(class: "p-10 border border-gaia-border bg-gaia-surface relative overflow-hidden") do
         div(class: "absolute top-0 right-0 p-4 text-[120px] font-bold text-emerald-900/5 select-none uppercase", aria_hidden: "true") { @family.name.first(3) }
 
-        h2(class: "text-5xl font-extralight tracking-tighter text-white") { @family.name }
+        h2(class: "text-5xl font-extralight tracking-tighter text-gaia-text-strong") { @family.name }
         if @family.scientific_name.present?
-          p(class: "text-sm italic text-emerald-500 mt-2") { @family.scientific_name }
+          p(class: "text-sm italic text-gaia-primary-strong mt-2") { @family.scientific_name }
         end
-        p(class: "text-tiny font-mono text-emerald-700 uppercase tracking-[0.4em] mt-4") { t(".carbon_info", coef: @family.carbon_sequestration_coefficient) }
+        p(class: "text-tiny font-mono text-gaia-text-muted uppercase tracking-[0.4em] mt-4") { t(".carbon_info", coef: @family.carbon_sequestration_coefficient) }
       end
     end
 
     def render_biological_props
-      div(class: "p-8 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".props_title") }
+      div(class: "p-8 border border-gaia-border bg-gaia-surface-sunken") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".props_title") }
         div(class: "space-y-4 font-mono text-compact") do
           prop_row(t(".props.co2"), @family.carbon_sequestration_coefficient)
           prop_row(t(".props.bark_thickness"),
@@ -74,9 +74,9 @@ module TreeFamilies
     end
 
     def prop_row(label, value)
-      div(class: "flex justify-between border-b border-emerald-900/30 pb-2") do
-        span(class: "text-gray-600") { label }
-        span(class: "text-emerald-100") { value }
+      div(class: "flex justify-between border-b border-gaia-border pb-2") do
+        span(class: "text-gaia-text-muted") { label }
+        span(class: "text-gaia-text-strong") { value }
       end
     end
   end

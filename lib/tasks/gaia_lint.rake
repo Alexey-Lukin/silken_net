@@ -142,7 +142,9 @@ namespace :gaia do
       "app/views/components/audit_logs/", # зміряно чистим 2026-08-20 (codemod-хвиля + ручні divide/бейдж, обидва виміри)
       "app/views/components/reports/",    # те саме, 2026-08-20; watermark text-emerald-900/5 — оголошений виняток гейта
       "app/views/components/gateways/",   # 2026-08-20 після сигнальної хвилі (LED/кільця → -strong/-accent; обидва виміри)
-      "app/views/components/clusters/"    # те саме; watermark SECTOR — оголошений виняток гейта
+      "app/views/components/clusters/",   # те саме; watermark SECTOR — оголошений виняток гейта
+      "app/views/components/tree_families/", # 2026-08-20 пʼята порція (codemod 23 + ручні; watermark /5 — виняток)
+      "app/views/components/actuators/"   # те саме (STATUS_STYLES бейджа → status-*-пари; LED — сигнальна хвиля)
     ]
 
     scopes = ENV["LINT_SCOPE"] ? [ ENV["LINT_SCOPE"] ] : default_scopes
