@@ -2248,11 +2248,17 @@ LINT_SCOPE=app/views/components/wallets/ bin/rails gaia:lint_tokens
 
 ### 16.4 Allowlist — what stays raw on purpose
 
-Brand-glow / decorative Tailwind utilities never go through the codemod:
+Brand-glow / decorative Tailwind utilities never go through the codemod
+(значення тут — дзеркало SSOT: живий перелік = `allowlist` у `lib/tasks/gaia_lint.rake`, правити там):
 
-- `bg-emerald-500/10`, `bg-emerald-500/20` — login submit
-- `bg-emerald-500` (with `animate-ping` / `animate-pulse`) — pulse accents
+- `bg-emerald-500/10`, `bg-emerald-500/20` — login submit brand glow
 - `border-emerald-500/20` (with `animate-spin`) — spinner ring
+- `text-emerald-900/5` — declared watermarks (`aria-hidden`)
+- `shadow-[0_0_8px_#10b981]` / `shadow-[0_0_8px_#ef4444]` — LED-glow пари (тінь — не текст і не сигнал; радіус ЄДИНИЙ 8px свідомо, щоб реєстр не ріс переліком форм)
+
+⚠️ Голий `bg-emerald-500` ЗНЯТО зі списку сигнальною хвилею UI.1 (2026-08-20): усі
+крапки/LED мігрували на `bg-gaia-primary-strong`, тож відтоді він знову СИРИЙ клас
+і в HARD-периметрі червонить (доведено мутацією).
 
 These encode brand expression, not theme intent — leave them alone.
 
