@@ -146,6 +146,38 @@ if ! printf '%s' "$cmd" | grep -qE 'PIPESTATUS|pipestatus|pipefail'; then
   fi
 fi
 
+# ── D · WARN · `git checkout <file>` while that file carries UNCOMMITTED edits ──
+# Rule home: memory feedback_verify_before_commit («reverse Edit, never checkout»)
+# — written there 2026-08-04 and relapsed TWICE since (2026-08-20: a perl-mutation
+# + checkout revert ate the session's own un-committed fix of the same file; the
+# loss is silent — no prompt, nothing to revert). Measured over the corpus:
+# 40 `git checkout` calls, 22 against file paths, ≥2 destructive — but whether a
+# given one is destructive depends on the file's INDEX/WD state, which no regex
+# sees. This hook CAN see it: it asks git at call time, so the detector fires
+# only when there genuinely are uncommitted lines to lose, and prints how many.
+# No once-per-session marker on purpose: ~0.5 firings/day corpus-wide, and every
+# firing is a real decision point (even a deliberate revert wants the line count).
+# `-b`, branch names, `stash`, and clean files stay silent by construction.
+if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+checkout[[:space:]]' &&
+   ! printf '%s' "$cmd" | grep -qE 'git[[:space:]]+checkout[[:space:]]+-b'; then
+  ckpaths=$(printf '%s' "$cmd" | grep -oE 'git[[:space:]]+checkout[[:space:]]+(--[[:space:]]+)?[^;&|]+' \
+            | sed -E 's/git[[:space:]]+checkout[[:space:]]+(--[[:space:]]+)?//' | tr ' ' '\n' \
+            | grep -E '\.[a-z]{1,4}$' | head -10)
+  if [[ -n "$ckpaths" ]]; then
+    dirty=""
+    while IFS= read -r p; do
+      [[ -n "$p" ]] || continue
+      n=$(git diff --numstat -- "$p" 2>/dev/null | awk '{s+=$1+$2} END {print s+0}')
+      (( n > 0 )) && dirty="${dirty}${p} (${n} uncommitted line(s)); "
+    done <<< "$ckpaths"
+    if [[ -n "$dirty" ]]; then
+      jq -nc --arg ctx "[bash-guard] git checkout will silently DESTROY uncommitted edits: ${dirty}— no prompt, no stash, nothing to revert. If you are undoing a mutation/experiment, restore from a cp-backup or apply a reverse Edit; checkout is only safe when the file's dirty state IS the thing you mean to discard (rule home: feedback_verify_before_commit, relapsed twice before this carrier existed)." \
+        '{hookSpecificOutput:{hookEventName:"PreToolUse",additionalContext:$ctx}}'
+      exit 0
+    fi
+  fi
+fi
+
 # ── C · BLOCK · a loop over an unsplit scalar (18 in 17,524, 18/18 confirmed) ──
 # This is the one place the file's false-negative bias is overridden on purpose,
 # because the failure is a FALSE GREEN and it is silent by construction. Of the
