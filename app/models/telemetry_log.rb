@@ -113,8 +113,8 @@ class TelemetryLog < ApplicationRecord
   # на якій PERF.1 уже спіткнувся з `2.months` у `previous_lorenz_state_for`. Отже
   # виграш тут — у КІЛЬКОСТІ запитів (N → 1), а не в обсязі скану: партиції
   # проходяться всі, як і доти. Дешевший план потребує іншої форми — денормалізованого
-  # вказівника на Дереві (дзеркало `latest_stress_index`), і це окреме рішення з
-  # власною ціною (старіння писача, `00_07` PERF.1 кандидат «а»).
+  # вказівника на Дереві (дзеркало `latest_stress_index`) — окреме рішення з власною
+  # ціною (старіння писача); заводити лише при виміряному болі, не превентивно.
   scope :latest_per_tree, ->(tree_ids) {
     where(tree_id: tree_ids).select("DISTINCT ON (tree_id) *").order(:tree_id, created_at: :desc)
   }
