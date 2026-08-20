@@ -153,8 +153,10 @@ RSpec.describe Contracts::Show do
         expect(html).not_to include("+ 7.50 SCC")
       end
 
-      it "renders the burn in the danger tone, not the neutral one" do
-        expect(html).to include("text-status-danger-text")
+      it "renders the burn in the danger accent, not the neutral one" do
+        # [UI.1 порція 9 · ARCH.101-клас] `-text` поза пастеллю = токен поза
+        # роллю §3.2 — на голій поверхні напрямок несе насичений `-accent`.
+        expect(html).to include("text-status-danger-accent")
       end
     end
 
@@ -226,11 +228,11 @@ RSpec.describe Contracts::Show do
   end
 
   describe "backing asset alert states" do
-    it "flags vitality in red when cluster health is below 70%" do
+    it "flags vitality in the danger accent when cluster health is below 70%" do
       contract = build_contract(cluster: build_cluster(health_index: 0.5))
       html = render_component(contract: contract, history: [])
       expect(html).to include(">50%<")
-      expect(html).to include("text-red-500")
+      expect(html).to include("text-status-danger-accent")
     end
 
     it "renders a DANGER threat status when the cluster has active threats" do
@@ -267,8 +269,8 @@ RSpec.describe Contracts::Show do
       # [UI.3] Детектор ПЕРЕНЕСЕНО з `animate-pulse` на колір: рух знято з вузла,
       # що несе текст, а розрізняльну роль ніс і несе колір. Логіка пари
       # (невиміряний ⊥ виміряний-поганий) лишається та сама.
-      expect(unmeasured_html).not_to include("text-red-500")
-      expect(measured_html).to include("text-red-500")
+      expect(unmeasured_html).not_to include("text-status-danger-accent")
+      expect(measured_html).to include("text-status-danger-accent")
     end
   end
 

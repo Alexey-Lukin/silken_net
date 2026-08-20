@@ -154,7 +154,9 @@ namespace :gaia do
       "app/views/components/provisioning/",      # те саме (gaia-input тріада)
       "app/views/components/system_health/",     # те саме (банери → -accent-контури на /10-пастелі, статус-хелпери → -accent)
       "app/views/components/notifications/",     # те саме (input-тріада + primary-пара кнопки)
-      "app/views/components/system_audits/"      # те саме (дельта-рядок/бейджі → danger/active-пари, alert-банер → -accent-контур)
+      "app/views/components/system_audits/",     # те саме (дельта-рядок/бейджі → danger/active-пари, alert-банер → -accent-контур)
+      "app/views/components/firmwares/",         # 2026-08-20 девʼята порція (codemod + ручні: OTA-бар → сигнальна форма 8px-глоу, статуси → info/danger-accent, кнопки → primary-пара)
+      "app/views/components/contracts/"          # те саме (metric_row → -accent-сигнали, леджер burn → danger-accent, hero → surface; watermark /5 — виняток)
     ]
 
     scopes = ENV["LINT_SCOPE"] ? [ ENV["LINT_SCOPE"] ] : default_scopes

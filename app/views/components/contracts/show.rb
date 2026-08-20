@@ -31,12 +31,12 @@ module Contracts
     private
 
     def render_hero_section
-      div(class: "p-10 border border-emerald-900 bg-zinc-950 flex flex-col md:flex-row justify-between items-center relative overflow-hidden") do
+      div(class: "p-10 border border-gaia-border bg-gaia-surface flex flex-col md:flex-row justify-between items-center relative overflow-hidden") do
          div(class: "absolute top-0 right-0 p-4 text-[100px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { t(".decoration") }
 
          div do
-           p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { t(".identity") }
-           h2(class: "text-5xl font-extralight text-white tracking-tighter") { t(".title", id: @contract.id, sector: @contract.cluster&.name&.upcase) }
+           p(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted mb-2") { t(".identity") }
+           h2(class: "text-5xl font-extralight text-gaia-text-strong tracking-tighter") { t(".title", id: @contract.id, sector: @contract.cluster&.name&.upcase) }
            p(class: "mt-2 text-xs font-mono text-gaia-text-muted") { t(".organization", name: @contract.organization&.name) }
            # Сире значення enum'а, інтерпольоване в ПЕРЕКЛАДЕНЕ речення, — найгірший
            # підвид класу (`04_04 §12.14`): фраза виглядає локалізованою, тож при
@@ -47,7 +47,7 @@ module Contracts
          end
 
          div(class: "mt-8 md:mt-0 text-center md:text-right") do
-           p(class: "text-tiny text-gray-600 uppercase mb-1") { t(".cluster_emission") }
+           p(class: "text-tiny text-gaia-text-muted uppercase mb-1") { t(".cluster_emission") }
            # ✅ [ARCH.103] ⚖️ Присуд founder: контрактну семантику знято на користь
            # КЛАСТЕРНОЇ. Доти тут стояло застереження «підставити кластерну суму
            # означало б замінити фабрикацію підміною — інша множина під тим самим
@@ -57,8 +57,8 @@ module Contracts
            # `NOT NULL` ⊕ `belongs_to :cluster` без `optional:`, тож субʼєкт гарантований,
            # а нуль є ВИМІРОМ. Гілка під недосяжний стан обіцяла б читачеві, що такий
            # контракт буває.
-           span(class: "text-6xl font-light text-emerald-400") { formatted_amount(@cluster_emission) }
-           span(class: "text-xl text-emerald-600 font-mono ml-2") { t(".yield_unit") }
+           span(class: "text-6xl font-light text-gaia-text-strong") { formatted_amount(@cluster_emission) }
+           span(class: "text-xl text-gaia-primary-strong font-mono ml-2") { t(".yield_unit") }
          end
       end
     end
@@ -78,8 +78,8 @@ module Contracts
       # три, і третій — власний: не тривога (її підстава — вимір) і не норма.
       measured = !cluster.health_index.nil?
 
-      div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".backing.title") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".backing.title") }
         div(class: "space-y-4") do
           metric_row(t(".backing.vitality"),
                      measured_percent(cluster.health_index),
@@ -96,32 +96,32 @@ module Contracts
     # не було · решта = виміряно й нормально. Пульсацію свідомо НЕ віддано третьому —
     # вона стверджує деградацію, а її підстава тут відсутня.
     def metric_row(label, value, alert: false, unmeasured: false)
-      div(class: "flex justify-between border-b border-emerald-900/30 pb-2") do
-        span(class: "text-tiny text-gray-600 uppercase") { label }
+      div(class: "flex justify-between border-b border-gaia-border pb-2") do
+        span(class: "text-tiny text-gaia-text-muted uppercase") { label }
         span(class: tokens("font-mono text-sm",
-                           "text-red-500": alert,
-                           "text-status-warning-text": unmeasured,
-                           "text-emerald-100": !alert && !unmeasured)) { value }
+                           "text-status-danger-accent": alert,
+                           "text-status-warning-accent": unmeasured,
+                           "text-gaia-text-strong": !alert && !unmeasured)) { value }
       end
     end
 
     def render_emission_ledger
       div(class: "space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".ledger.title") }
-        div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".ledger.title") }
+        div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
            table(role: "table", class: "w-full text-left font-mono text-tiny") do
-             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
+             thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
                tr do
                  th(scope: "col", class: "p-4") { t(".ledger.tx_hash") }
                  th(scope: "col", class: "p-4") { t(".ledger.amount") }
                  th(scope: "col", class: "p-4 text-right") { t(".ledger.timestamp") }
                end
              end
-             tbody(class: "divide-y divide-emerald-900/30") do
+             tbody(class: "divide-y divide-gaia-border") do
                 if @history.any?
                   @history.each do |tx|
-                    tr(class: "hover:bg-emerald-950/10 transition-colors") do
-                      td(class: "p-4 text-emerald-600") { tx.tx_hash.present? ? "#{tx.tx_hash.first(12)}…" : t(".ledger.pending_block") }
+                    tr(class: "hover:bg-gaia-surface-sunken transition-colors") do
+                      td(class: "p-4 text-gaia-primary-strong") { tx.tx_hash.present? ? "#{tx.tx_hash.first(12)}…" : t(".ledger.pending_block") }
                       # 🔴 [ARCH.101] Знак «плюс» був ЗАШИТИЙ у сам рядок локалі, тож слеш
                       # САМЕ ЦЬОГО контракту (`create_slash_intent!` ставить
                       # `sourceable: @naas_contract`) друкувався в його ж «Emission History»
@@ -131,15 +131,15 @@ module Contracts
                       # ⚠️ Плейсхолдер локалі тут НЕ цитуємо дослівно: `phlex_bigdecimal_render_spec`
                       # сканує однорядкові `{…}`-блоки і виключає лише `#{…}`, тож
                       # процентна форма в КОМЕНТАРІ червонить гейт як «голий decimal».
-                      td(class: tokens("p-4", "text-white": !tx.burn?, "text-status-danger-text": tx.burn?)) do
+                      td(class: tokens("p-4", "text-gaia-text-strong": !tx.burn?, "text-status-danger-accent": tx.burn?)) do
                         t(tx.burn? ? ".ledger.amount_value_burn" : ".ledger.amount_value", amount: tx.amount)
                       end
-                      td(class: "p-4 text-gray-500 text-right") { tx.created_at.strftime("%H:%M // %d.%m.%y") }
+                      td(class: "p-4 text-gaia-text-muted text-right") { tx.created_at.strftime("%H:%M // %d.%m.%y") }
                     end
                   end
                 else
                   tr do
-                    td(colspan: 3, class: "p-10 text-center text-gray-700 italic") { t(".ledger.empty") }
+                    td(colspan: 3, class: "p-10 text-center text-gaia-text-subtle italic") { t(".ledger.empty") }
                   end
                 end
              end
@@ -149,8 +149,8 @@ module Contracts
     end
 
     def render_legal_vault
-      div(class: "p-6 border border-emerald-900 bg-emerald-950/10") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".legal.title") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface-sunken") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-4") { t(".legal.title") }
         # [UI.17] Тут безумовно стояло «Verified by Silken Net Oracle. Emission
         # indexed to verified homeostasis.» — заява про ДВІ величини, жодна з
         # яких її не підтримує: `emitted_tokens` була колонкою без писача
@@ -161,8 +161,8 @@ module Contracts
         # residual'ом у §07, бо це єдиний сайт класу, де текст може мати
         # ДОГОВІРНУ вагу, і тоді його відсутність безпечніша за перефразування.
         if @contract.cancellation_terms.present?
-          div(class: "space-y-2 pt-3 border-t border-emerald-900/30") do
-            h4(class: "text-mini uppercase tracking-widest text-emerald-800 mb-2") { t(".legal.cancellation_title") }
+          div(class: "space-y-2 pt-3 border-t border-gaia-border") do
+            h4(class: "text-mini uppercase tracking-widest text-gaia-text-subtle mb-2") { t(".legal.cancellation_title") }
             # [ARCH.84] «0%» комісії за дострокове розірвання — ЗАКОННА умова
             # договору, тож підстановка робила «умови не задано» невідрізнимим
             # від «розірвання безкоштовне», і саме в панелі LEGAL VAULT. Чесний
@@ -185,8 +185,8 @@ module Contracts
 
     def term_row(label, value)
       div(class: "flex justify-between text-tiny font-mono") do
-        span(class: "text-gray-600") { label }
-        span(class: "text-emerald-400") { value.to_s }
+        span(class: "text-gaia-text-muted") { label }
+        span(class: "text-gaia-text-strong") { value.to_s }
       end
     end
   end

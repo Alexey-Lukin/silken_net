@@ -56,8 +56,8 @@ RSpec.describe Firmwares::New do
       expect(html).to include("tracking-widest")
     end
 
-    it "uses emerald color scheme" do
-      expect(html).to include("text-emerald-400")
+    it "uses the strong token for the page title" do
+      expect(html).to include("text-gaia-text-strong")
     end
   end
 end

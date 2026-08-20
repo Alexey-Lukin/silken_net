@@ -21,7 +21,7 @@ module Firmwares
 
     def header_section
       div(class: "text-center mb-10") do
-        h2(class: "text-2xl font-extralight text-emerald-400 tracking-widest uppercase") { t(".title") }
+        h2(class: "text-2xl font-extralight text-gaia-text-strong tracking-widest uppercase") { t(".title") }
         p(class: "text-tiny text-gaia-text-muted uppercase mt-2 tracking-[0.5em]") { t(".subtitle") }
       end
     end

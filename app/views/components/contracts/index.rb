@@ -19,11 +19,11 @@ module Contracts
         render_stats_hero
 
         div(class: "space-y-4") do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".portfolio_title") }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted") { t(".portfolio_title") }
 
-          div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+          div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
             table(role: "table", class: "w-full text-left font-mono text-compact") do
-              thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
+              thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
                 tr do
                   th(scope: "col", class: "p-4") { t(".columns.id_status") }
                   th(scope: "col", class: "p-4") { t(".columns.organization") }
@@ -38,7 +38,7 @@ module Contracts
                   th(scope: "col", class: "p-4 text-right") { t(".columns.command") }
                 end
               end
-              tbody(class: "divide-y divide-emerald-900/30") do
+              tbody(class: "divide-y divide-gaia-border") do
                 @contracts.each { |contract| render_contract_row(contract) }
               end
             end
@@ -82,10 +82,10 @@ module Contracts
     end
 
     def render_contract_row(contract)
-      tr(class: "hover:bg-emerald-950/10 transition-colors group") do
+      tr(class: "hover:bg-gaia-surface-sunken transition-colors group") do
         td(class: "p-4") do
           div(class: "flex flex-col") do
-            span(class: "text-emerald-100") { "##{contract.id}" }
+            span(class: "text-gaia-text-strong") { "##{contract.id}" }
             div(class: "mt-1") { render Views::Shared::UI::StatusBadge.new(status: contract.status) }
           end
         end
@@ -110,7 +110,7 @@ module Contracts
           plain contract.end_date&.strftime("%d.%m.%y")
         end
         td(class: "p-4 text-right") do
-          a(href: contract_path(contract), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong", aria_label: t(".audit_aria", id: contract.id)) { t(".audit_details") }
+          a(href: contract_path(contract), class: "text-gaia-primary-strong hover:text-gaia-text-strong transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong", aria_label: t(".audit_aria", id: contract.id)) { t(".audit_details") }
         end
       end
     end

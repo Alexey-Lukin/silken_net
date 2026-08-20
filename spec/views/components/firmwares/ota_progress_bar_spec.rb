@@ -35,29 +35,29 @@ RSpec.describe Firmwares::OtaProgressBar do
       expect(html).to include("font-mono")
     end
 
-    it "renders with emerald border" do
-      expect(html).to include("border-emerald-900")
+    it "renders with the token border" do
+      expect(html).to include("border-gaia-border")
     end
   end
 
   describe "status colors" do
-    it "renders emerald-400 for COMPLETE status" do
+    it "renders the healthy primary tone for COMPLETE status" do
       html = render_component(uid: "X", percent: 100, current: 50, total: 50, status: "COMPLETE")
-      expect(html).to include("text-emerald-400")
+      expect(html).to include(%(class="text-mini text-gaia-primary-strong"))
     end
 
     # [UI.3] Пульс знято з обох гілок: він стояв на самому СЛОВІ статусу, тобто
     # робив нечитабельним єдиний рядок, що повідомляє про падіння прошивки.
     # Розрізняє чотири стани колір, і завжди розрізняв.
-    it "renders red-500 for FAILED status, without motion on the label" do
+    it "renders the danger accent for FAILED status, without motion on the label" do
       html = render_component(uid: "X", percent: 30, current: 15, total: 50, status: "FAILED")
-      expect(html).to include("text-red-500")
+      expect(html).to include("text-status-danger-accent")
       expect(html).not_to include("animate-pulse")
     end
 
-    it "renders emerald-600 for in-progress status, without motion on the label" do
+    it "renders the info accent for in-progress status, without motion on the label" do
       html = render_component(uid: "X", percent: 60, current: 30, total: 50, status: "TRANSMITTING")
-      expect(html).to include("text-emerald-600")
+      expect(html).to include("text-status-info-accent")
       expect(html).not_to include("animate-pulse")
     end
   end
@@ -77,9 +77,9 @@ RSpec.describe Firmwares::OtaProgressBar do
   end
 
   describe "initial-render states (SEC.20)" do
-    it "renders IDLE in gray without pulse" do
+    it "renders IDLE in the subtle tone without pulse" do
       html = render_component(uid: "X", percent: 0, current: 0, total: 0, status: "IDLE")
-      expect(html).to include("text-gray-600")
+      expect(html).to include("text-gaia-text-subtle")
       expect(html).not_to include("animate-pulse")
     end
 

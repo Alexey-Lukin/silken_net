@@ -31,20 +31,20 @@ module Firmwares
     def self.dom_id(uid) = "ota_progress_#{uid}"
 
     def view_template
-      div(id: self.class.dom_id(@uid), class: "p-4 border border-emerald-900 bg-black font-mono") do
+      div(id: self.class.dom_id(@uid), class: "p-4 border border-gaia-border bg-gaia-surface font-mono") do
         div(class: "flex justify-between items-center mb-2") do
-          span(class: "text-mini text-emerald-700 uppercase tracking-widest") { "OTA_LINK: #{@uid}" }
+          span(class: "text-mini text-gaia-text-muted uppercase tracking-widest") { "OTA_LINK: #{@uid}" }
           span(class: tokens("text-mini", status_color)) { @status }
         end
 
-        div(class: "w-full h-1 bg-emerald-950 rounded-full overflow-hidden") do
-          div(class: "h-full bg-emerald-500 shadow-[0_0_10px_#10b981] transition-all duration-500", style: "width: #{@percent}%")
+        div(class: "w-full h-1 bg-gaia-surface-sunken rounded-full overflow-hidden") do
+          div(class: "h-full bg-gaia-primary-strong shadow-[0_0_8px_#10b981] transition-all duration-500", style: "width: #{@percent}%")
         end
 
         # total=0 — initial-render без кампанії (IDLE) або COMPLETE-сигнал:
         # чанк-лічильник не має що показувати.
         if @total.positive?
-          div(class: "flex justify-between mt-2 text-micro text-gray-600") do
+          div(class: "flex justify-between mt-2 text-micro text-gaia-text-muted") do
             span { "CHUNK: #{@current} / #{@total}" }
             span { "#{@percent}% COMPLETE" }
           end
@@ -59,10 +59,10 @@ module Firmwares
     # Дискримінації він не ніс — усі чотири стани вже мають власний колір.
     def status_color
       case @status
-      when "COMPLETE" then "text-emerald-400"
-      when "FAILED"   then "text-red-500"
-      when "IDLE"     then "text-gray-600"
-      else "text-emerald-600"
+      when "COMPLETE" then "text-gaia-primary-strong"
+      when "FAILED"   then "text-status-danger-accent"
+      when "IDLE"     then "text-gaia-text-subtle"
+      else "text-status-info-accent"
       end
     end
   end
