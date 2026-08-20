@@ -26,13 +26,13 @@ module AuditLogs
     private
 
     def render_header
-      div(class: "p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
+      div(class: "p-8 border border-gaia-border bg-gaia-surface shadow-2xl relative overflow-hidden") do
         div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { t(".decoration") }
         div(class: "flex justify-between items-start") do
           div do
-            p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { t(".event_record") }
-            h2(class: "text-3xl font-extralight tracking-tighter text-white") { Views::Shared::UI::ActionBadge.label(@log.action, metadata: @log.metadata) }
-            p(class: "text-tiny font-mono text-gray-600 mt-2") { t(".tx_id_line", id: @log.id, at: @log.created_at.strftime("%d.%m.%Y %H:%M:%S UTC")) }
+            p(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted mb-2") { t(".event_record") }
+            h2(class: "text-3xl font-extralight tracking-tighter text-gaia-text-strong") { Views::Shared::UI::ActionBadge.label(@log.action, metadata: @log.metadata) }
+            p(class: "text-tiny font-mono text-gaia-text-muted mt-2") { t(".tx_id_line", id: @log.id, at: @log.created_at.strftime("%d.%m.%Y %H:%M:%S UTC")) }
           end
           render Views::Shared::UI::ActionBadge.new(action: @log.action, metadata: @log.metadata)
         end
@@ -40,15 +40,15 @@ module AuditLogs
     end
 
     def render_details_table
-      div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+      div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
         table(role: "table", class: "w-full text-left font-mono text-compact") do
-          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
+          thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
             tr do
               th(scope: "col", class: "p-4") { t(".details.field") }
               th(scope: "col", class: "p-4") { t(".details.value") }
             end
           end
-          tbody(class: "divide-y divide-emerald-900/30") do
+          tbody(class: "divide-y divide-gaia-border") do
             # [I18N.1] Тут СИРИЙ токен свідомо — пара «людське ⊥ машинне»:
             # заголовок і бейдж угорі несуть локалізовану мітку, а цей рядок
             # деталей лишається технічним ідентифікатором (греп/супорт), як
@@ -64,26 +64,26 @@ module AuditLogs
     end
 
     def detail_row(label, value)
-      tr(class: "hover:bg-emerald-950/10") do
-        td(class: "p-4 text-emerald-500") { label }
-        td(class: "p-4 text-gray-300") { value.to_s }
+      tr(class: "hover:bg-gaia-surface-sunken") do
+        td(class: "p-4 text-gaia-primary-strong") { label }
+        td(class: "p-4 text-gaia-text-subtle") { value.to_s }
       end
     end
 
     def render_metadata_panel
-      div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".metadata.title") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-4") { t(".metadata.title") }
         if @log.metadata.present? && @log.metadata.any?
           div(class: "space-y-2 font-mono text-tiny") do
             @log.metadata.each do |key, value|
-              div(class: "flex justify-between items-center py-1 border-b border-emerald-900/20") do
-                span(class: "text-gray-600 uppercase") { key.to_s }
-                span(class: "text-emerald-400") { metadata_value_label(key, value) }
+              div(class: "flex justify-between items-center py-1 border-b border-gaia-border") do
+                span(class: "text-gaia-text-muted uppercase") { key.to_s }
+                span(class: "text-gaia-text") { metadata_value_label(key, value) }
               end
             end
           end
         else
-          p(class: "text-compact text-gray-700 italic") { t(".metadata.empty") }
+          p(class: "text-compact text-gaia-text italic") { t(".metadata.empty") }
         end
       end
     end
@@ -102,43 +102,43 @@ module AuditLogs
     end
 
     def render_actor_info
-      div(class: "p-6 border border-emerald-900 bg-black space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".actor.title") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface space-y-4") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".actor.title") }
         if @log.user.present?
           div do
-            p(class: "text-mini text-gray-600 uppercase mb-1") { t(".actor.name") }
-            p(class: "text-compact text-emerald-400 font-mono") { @log.user.full_name }
+            p(class: "text-mini text-gaia-text-muted uppercase mb-1") { t(".actor.name") }
+            p(class: "text-compact text-gaia-text font-mono") { @log.user.full_name }
           end
-          div(class: "pt-3 border-t border-emerald-900/30") do
-            p(class: "text-mini text-gray-600 uppercase mb-1") { t(".actor.email") }
-            p(class: "text-compact text-gray-400") { @log.user.email_address }
+          div(class: "pt-3 border-t border-gaia-border") do
+            p(class: "text-mini text-gaia-text-muted uppercase mb-1") { t(".actor.email") }
+            p(class: "text-compact text-gaia-text-subtle") { @log.user.email_address }
           end
-          div(class: "pt-3 border-t border-emerald-900/30") do
-            p(class: "text-mini text-gray-600 uppercase mb-1") { t(".actor.role") }
-            span(class: "px-2 py-0.5 bg-emerald-900 text-emerald-200 text-mini uppercase font-bold") { @log.user.role_label }
+          div(class: "pt-3 border-t border-gaia-border") do
+            p(class: "text-mini text-gaia-text-muted uppercase mb-1") { t(".actor.role") }
+            span(class: "px-2 py-0.5 bg-status-active text-status-active-text text-mini uppercase font-bold") { @log.user.role_label }
           end
         else
-          p(class: "text-compact text-gray-700 italic") { t(".actor.system") }
+          p(class: "text-compact text-gaia-text italic") { t(".actor.system") }
         end
       end
     end
 
     def render_target_info
-      div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".target.title") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface-sunken") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-4") { t(".target.title") }
         if @log.auditable_type.present?
           div(class: "space-y-3 font-mono text-tiny") do
             div(class: "flex justify-between items-center") do
-              span(class: "text-gray-600 uppercase") { t(".target.type") }
-              span(class: "text-emerald-400") { @log.auditable_type }
+              span(class: "text-gaia-text-muted uppercase") { t(".target.type") }
+              span(class: "text-gaia-text") { @log.auditable_type }
             end
             div(class: "flex justify-between items-center") do
-              span(class: "text-gray-600 uppercase") { t(".target.id") }
-              span(class: "text-emerald-400") { @log.auditable_id.to_s }
+              span(class: "text-gaia-text-muted uppercase") { t(".target.id") }
+              span(class: "text-gaia-text") { @log.auditable_id.to_s }
             end
           end
         else
-          p(class: "text-compact text-gray-700 italic") { t(".target.empty") }
+          p(class: "text-compact text-gaia-text italic") { t(".target.empty") }
         end
       end
     end

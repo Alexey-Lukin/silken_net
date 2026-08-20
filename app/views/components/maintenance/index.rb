@@ -79,7 +79,7 @@ module Maintenance
               th(scope: "col", class: "p-4 text-right") { "" }
             end
           end
-          tbody(class: "divide-y divide-emerald-900/30") do
+          tbody(class: "divide-y divide-gaia-border") do
             if @records.any?
               @records.each { |record| render_row(record) }
             else

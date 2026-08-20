@@ -31,11 +31,11 @@ module AuditLogs
     def filter_notice
       return if @filters.empty?
 
-      div(class: "flex items-center gap-3 border border-emerald-900 bg-emerald-950/20 px-4 py-2") do
-        span(class: "text-mini uppercase tracking-widest text-emerald-700") { t(".filtered") }
+      div(class: "flex items-center gap-3 border border-gaia-border bg-gaia-surface-sunken px-4 py-2") do
+        span(class: "text-mini uppercase tracking-widest text-gaia-text-muted") { t(".filtered") }
         a(
           href: audit_logs_path,
-          class: "text-mini uppercase tracking-widest text-emerald-500 hover:text-white " \
+          class: "text-mini uppercase tracking-widest text-gaia-primary-strong hover:text-gaia-text-strong " \
                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
         ) { t(".clear_filter") }
       end
@@ -44,20 +44,20 @@ module AuditLogs
     def header_section
       div(class: "flex justify-between items-end mb-4") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".title") }
-          p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted") { t(".title") }
+          p(class: "text-xs text-gaia-text-muted mt-1") { t(".subtitle") }
         end
-        div(class: "text-right font-mono text-tiny text-emerald-900") do
+        div(class: "text-right font-mono text-tiny text-gaia-text-subtle") do
           plain "#{t('.records')} "
-          span(class: "text-emerald-500") { @pagy.count.to_s }
+          span(class: "text-gaia-primary-strong") { @pagy.count.to_s }
         end
       end
     end
 
     def audit_table
-      div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+      div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
         table(role: "table", class: "w-full text-left font-mono text-compact") do
-          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
+          thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
             tr do
               th(scope: "col", class: "p-4") { t(".columns.timestamp") }
               th(scope: "col", class: "p-4") { t(".columns.user") }
@@ -66,7 +66,7 @@ module AuditLogs
               th(scope: "col", class: "p-4 text-right") { t(".columns.details") }
             end
           end
-          tbody(class: "divide-y divide-emerald-900/30") do
+          tbody(class: "divide-y divide-gaia-border") do
             if @logs.any?
               @logs.each { |log| render_log_row(log) }
             else
@@ -82,21 +82,21 @@ module AuditLogs
     end
 
     def render_log_row(log)
-      tr(class: "hover:bg-emerald-950/10 transition-colors") do
-        td(class: "p-4 text-tiny text-gray-600") { log.created_at.strftime("%H:%M:%S // %d.%m.%y") }
-        td(class: "p-4 text-emerald-400") { log.user&.full_name || t(".system_user") }
+      tr(class: "hover:bg-gaia-surface-sunken transition-colors") do
+        td(class: "p-4 text-tiny text-gaia-text-muted") { log.created_at.strftime("%H:%M:%S // %d.%m.%y") }
+        td(class: "p-4 text-gaia-text") { log.user&.full_name || t(".system_user") }
         td(class: "p-4") do
           render Views::Shared::UI::ActionBadge.new(action: log.action, metadata: log.metadata)
         end
-        td(class: "p-4 text-gray-400") do
+        td(class: "p-4 text-gaia-text-subtle") do
           if log.auditable_type.present?
             plain "#{log.auditable_type} ##{log.auditable_id}"
           else
-            span(class: "text-gray-700 italic") { "—" }
+            span(class: "text-gaia-text italic") { "—" }
           end
         end
         td(class: "p-4 text-right") do
-          a(href: audit_log_path(log), class: "text-emerald-600 hover:text-white transition-all text-mini uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong", aria_label: t(".inspect_aria", id: log.id)) { t(".inspect") }
+          a(href: audit_log_path(log), class: "text-gaia-primary-strong hover:text-gaia-text-strong transition-all text-mini uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong", aria_label: t(".inspect_aria", id: log.id)) { t(".inspect") }
         end
       end
     end

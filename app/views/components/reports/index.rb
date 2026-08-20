@@ -21,12 +21,12 @@ module Reports
     def header_section
       div(class: "flex justify-between items-end mb-4") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".title") }
-          p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted") { t(".title") }
+          p(class: "text-xs text-gaia-text-muted mt-1") { t(".subtitle") }
         end
-        div(class: "text-right font-mono text-tiny text-emerald-900") do
+        div(class: "text-right font-mono text-tiny text-gaia-text-subtle") do
           plain "#{t('.organization')} "
-          span(class: "text-emerald-500") { @organization.name }
+          span(class: "text-gaia-primary-strong") { @organization.name }
         end
       end
     end
@@ -54,7 +54,7 @@ module Reports
 
     def render_available_reports
       div(class: "space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".available") }
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".available") }
         div(class: "grid grid-cols-1 md:grid-cols-2 gap-6") do
           report_card(
             t(".carbon.title"),
@@ -73,16 +73,16 @@ module Reports
     end
 
     def report_card(title, description, path, icon)
-      div(class: "group p-6 border border-emerald-900 bg-black hover:bg-emerald-950 transition-all duration-500") do
+      div(class: "group p-6 border border-gaia-border bg-gaia-surface hover:bg-gaia-surface-sunken transition-all duration-500") do
         div(class: "flex justify-between items-start mb-4") do
           span(class: "text-2xl") { icon }
         end
-        h4(class: "text-sm font-light text-emerald-100 mb-2") { title }
-        p(class: "text-tiny text-gray-600 mb-4") { description }
-        div(class: "flex items-center gap-4 pt-4 border-t border-emerald-900/30") do
-          a(href: path, class: "text-mini text-emerald-500 uppercase tracking-widest hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".actions.view") }
-          a(href: "#{path}.csv", class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".actions.csv") }
-          a(href: "#{path}.pdf", class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".actions.pdf") }
+        h4(class: "text-sm font-light text-gaia-text-strong mb-2") { title }
+        p(class: "text-tiny text-gaia-text-muted mb-4") { description }
+        div(class: "flex items-center gap-4 pt-4 border-t border-gaia-border") do
+          a(href: path, class: "text-mini text-gaia-primary-strong uppercase tracking-widest hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".actions.view") }
+          a(href: "#{path}.csv", class: "text-mini text-gaia-text-muted uppercase tracking-widest hover:text-gaia-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".actions.csv") }
+          a(href: "#{path}.pdf", class: "text-mini text-gaia-text-muted uppercase tracking-widest hover:text-gaia-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".actions.pdf") }
         end
       end
     end

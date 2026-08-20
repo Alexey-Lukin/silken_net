@@ -187,7 +187,7 @@ RSpec.describe AuditLogs::Show do
       # ⚠️ Пін МУСИТЬ цілити у вузол ІМЕНІ: адреса рендериться ще й окремим рядком
       # нижче, тож `include("ranger@…")` по документу зелений незалежно від фолбеку —
       # мутація «прибрати `|| email_address`» його не червонила (перевірено).
-      expect(html).to include(%(<p class="text-compact text-emerald-400 font-mono">ranger@silken.net</p>))
+      expect(html).to include(%(<p class="text-compact text-gaia-text font-mono">ranger@silken.net</p>))
     end
   end
 end

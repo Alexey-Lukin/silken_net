@@ -119,7 +119,7 @@ RSpec.describe Reports::FinancialSummary do
     # підміна `tx[:failed]` на сусідній ключ червонить поіменно.
     it "binds the failed count to its own row" do
       expect(html).to include(
-        %(<td class="p-4 text-red-400">Failed</td><td class="p-4 text-right font-bold text-red-400">5</td>)
+        %(<td class="p-4 text-status-danger-accent">Failed</td><td class="p-4 text-right font-bold text-status-danger-accent">5</td>)
       )
     end
   end

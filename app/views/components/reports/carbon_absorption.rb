@@ -20,12 +20,12 @@ module Reports
     private
 
     def header_section
-      div(class: "p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
+      div(class: "p-8 border border-gaia-border bg-gaia-surface shadow-2xl relative overflow-hidden") do
         div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { t(".decoration") }
         div do
-          p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { t(".title") }
-          h2(class: "text-3xl font-extralight tracking-tighter text-white") { @organization.name }
-          p(class: "text-tiny font-mono text-gray-600 mt-2") { t(".generated", at: Time.current.strftime("%d.%m.%Y %H:%M UTC")) }
+          p(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted mb-2") { t(".title") }
+          h2(class: "text-3xl font-extralight tracking-tighter text-gaia-text-strong") { @organization.name }
+          p(class: "text-tiny font-mono text-gaia-text-muted mt-2") { t(".generated", at: Time.current.strftime("%d.%m.%Y %H:%M UTC")) }
         end
       end
     end
@@ -40,15 +40,15 @@ module Reports
     end
 
     def render_data_table
-      div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+      div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
         table(role: "table", class: "w-full text-left font-mono text-compact") do
-          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
+          thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
             tr do
               th(scope: "col", class: "p-4") { t(".table.metric") }
               th(scope: "col", class: "p-4 text-right") { t(".table.value") }
             end
           end
-          tbody(class: "divide-y divide-emerald-900/30") do
+          tbody(class: "divide-y divide-gaia-border") do
             data_row(t(".table.total_points"), @data[:total_carbon_points])
             data_row(t(".table.active_wallets"), @data[:wallets_count])
             data_row(t(".table.trees_online"), @data[:trees_active])
@@ -59,14 +59,14 @@ module Reports
     end
 
     def data_row(label, value)
-      tr(class: "hover:bg-emerald-950/10") do
-        td(class: "p-4 text-emerald-500") { label }
-        td(class: "p-4 text-right text-gray-300") { value.to_s }
+      tr(class: "hover:bg-gaia-surface-sunken") do
+        td(class: "p-4 text-gaia-primary-strong") { label }
+        td(class: "p-4 text-right text-gaia-text-subtle") { value.to_s }
       end
     end
 
     def render_footer
-      div(class: "text-mini text-gray-600 text-right mt-2 font-mono") do
+      div(class: "text-mini text-gaia-text-muted text-right mt-2 font-mono") do
         t(".footer", at: Time.current.strftime("%Y-%m-%d %H:%M:%S UTC"), org: @organization.name)
       end
     end

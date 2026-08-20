@@ -21,12 +21,12 @@ module Reports
     private
 
     def header_section
-      div(class: "p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
+      div(class: "p-8 border border-gaia-border bg-gaia-surface shadow-2xl relative overflow-hidden") do
         div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { t(".decoration") }
         div do
-          p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { t(".title") }
-          h2(class: "text-3xl font-extralight tracking-tighter text-white") { @organization.name }
-          p(class: "text-tiny font-mono text-gray-600 mt-2") { t(".generated", at: Time.current.strftime("%d.%m.%Y %H:%M UTC")) }
+          p(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted mb-2") { t(".title") }
+          h2(class: "text-3xl font-extralight tracking-tighter text-gaia-text-strong") { @organization.name }
+          p(class: "text-tiny font-mono text-gaia-text-muted mt-2") { t(".generated", at: Time.current.strftime("%d.%m.%Y %H:%M UTC")) }
         end
       end
     end
@@ -54,17 +54,17 @@ module Reports
       return if ne.blank?
 
       div(class: "space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".emission.title") }
-        p(class: "text-mini text-gray-600 font-mono") { t(".emission.disclaimer") }
-        div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".emission.title") }
+        p(class: "text-mini text-gaia-text-muted font-mono") { t(".emission.disclaimer") }
+        div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
           table(role: "table", class: "w-full text-left font-mono text-compact") do
-            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
+            thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
               tr do
                 th(scope: "col", class: "p-4") { t(".breakdown.category") }
                 th(scope: "col", class: "p-4 text-right") { t(".breakdown.count") }
               end
             end
-            tbody(class: "divide-y divide-emerald-900/30") do
+            tbody(class: "divide-y divide-gaia-border") do
               tx_row(t(".emission.total_minted"), ne[:total_minted_scc])
               tx_row(t(".emission.total_burned"), ne[:total_burned_scc])
               tx_row(t(".emission.net_deflation"), ne[:net_deflation])
@@ -78,20 +78,20 @@ module Reports
       tx = @data[:blockchain_transactions]
 
       div(class: "space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".breakdown.title") }
-        div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".breakdown.title") }
+        div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
           table(role: "table", class: "w-full text-left font-mono text-compact") do
-            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
+            thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
               tr do
                 th(scope: "col", class: "p-4") { t(".breakdown.category") }
                 th(scope: "col", class: "p-4 text-right") { t(".breakdown.count") }
               end
             end
-            tbody(class: "divide-y divide-emerald-900/30") do
+            tbody(class: "divide-y divide-gaia-border") do
               tx_row(t(".breakdown.total_transactions"), tx[:total])
-              tx_row(t(".breakdown.confirmed"), tx[:confirmed], "text-emerald-400")
+              tx_row(t(".breakdown.confirmed"), tx[:confirmed], "text-gaia-text")
               tx_row(t(".breakdown.pending"), tx[:pending], "text-status-warning-text")
-              tx_row(t(".breakdown.failed"), tx[:failed], "text-red-400")
+              tx_row(t(".breakdown.failed"), tx[:failed], "text-status-danger-accent")
             end
           end
         end
@@ -99,19 +99,19 @@ module Reports
     end
 
     def tx_row(label, count, color_class = nil)
-      tr(class: "hover:bg-emerald-950/10") do
-        td(class: tokens("p-4", color_class || "text-emerald-500")) { label }
+      tr(class: "hover:bg-gaia-surface-sunken") do
+        td(class: tokens("p-4", color_class || "text-gaia-primary-strong")) { label }
         # [ARCH.103] `.to_s` на `nil` дає ПОРОЖНЮ комірку під підписом «Total Minted» —
         # мовчання, яке читається як нуль. `nil` тут приходить із fallback'у subgraph
         # (`NETWORK_EMISSION_DEFAULTS`) і означає «не виміряно», а не «нуль подій».
-        td(class: tokens("p-4 text-right font-bold", color_class || "text-gray-300")) do
+        td(class: tokens("p-4 text-right font-bold", color_class || "text-gaia-text-subtle")) do
           count.nil? ? t("ui.measurement.not_measured") : count.to_s
         end
       end
     end
 
     def render_footer
-      div(class: "text-mini text-gray-600 text-right mt-2 font-mono") do
+      div(class: "text-mini text-gaia-text-muted text-right mt-2 font-mono") do
         t(".footer", at: Time.current.strftime("%Y-%m-%d %H:%M:%S UTC"), org: @organization.name)
       end
     end

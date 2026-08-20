@@ -64,7 +64,7 @@ RSpec.describe Reports::CarbonAbsorption do
     # картки, куди воно приходить інтерполяцією (а та кличе `to_s` завжди), тож
     # пін по документу лишався б зеленим і після зняття `to_s` із комірки.
     it "prints the BigDecimal aggregate in the value cell" do
-      expect(html).to include(%(<td class="p-4 text-right text-gray-300">9800.0</td>))
+      expect(html).to include(%(<td class="p-4 text-right text-gaia-text-subtle">9800.0</td>))
     end
 
     it "renders wallets count" do
