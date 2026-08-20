@@ -9,7 +9,7 @@ RSpec.describe AuditLogBlueprint, type: :model do
   let(:cluster) { create(:cluster, organization: organization) }
   let(:audit_log) do
     create(:audit_log, :with_auditable, user: user, organization: organization,
-                                        action: "update_settings",
+                                        action: "system_parameter_changed",
                                         ip_address: "192.168.1.42",
                                         user_agent: "Mozilla/5.0 (X11; Linux)")
   end
@@ -22,7 +22,7 @@ RSpec.describe AuditLogBlueprint, type: :model do
     end
 
     it "includes action and auditable info" do
-      expect(parsed["action"]).to eq("update_settings")
+      expect(parsed["action"]).to eq("system_parameter_changed")
       expect(parsed["auditable_type"]).to be_present
       expect(parsed["auditable_id"]).to be_present
     end
@@ -59,7 +59,7 @@ RSpec.describe AuditLogBlueprint, type: :model do
     end
 
     it "includes action and auditable info" do
-      expect(parsed["action"]).to eq("update_settings")
+      expect(parsed["action"]).to eq("system_parameter_changed")
       expect(parsed["auditable_type"]).to be_present
       expect(parsed["auditable_id"]).to be_present
     end

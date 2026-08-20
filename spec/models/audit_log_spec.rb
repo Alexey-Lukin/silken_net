@@ -468,7 +468,7 @@ RSpec.describe AuditLog, type: :model do
     it "detects tampering when metadata is modified after creation" do
       user = create(:user)
       log = create(:audit_log, user: user, organization: user.organization,
-                   action: "create", metadata: { "status" => "active" })
+                   action: "system_parameter_changed", metadata: { "status" => "active" })
 
       # Verify chain is valid before tampering
       result = described_class.verify_chain_integrity(user.organization_id)

@@ -23,7 +23,7 @@ RSpec.describe "Audit log chain integrity and reporting" do
       log2 = AuditLog.create!(
         user: user,
         organization: organization,
-        action: "update_settings",
+        action: "system_parameter_changed",
         metadata: { field: "name" }
       )
       expect(log2.chain_hash).to be_present
@@ -115,7 +115,7 @@ RSpec.describe "Audit log chain integrity and reporting" do
     before do
       create(:audit_log, user: user, organization: organization, action: "login",
              ip_address: "192.168.1.1", created_at: 2.days.ago)
-      create(:audit_log, user: user, organization: organization, action: "update_settings",
+      create(:audit_log, user: user, organization: organization, action: "system_parameter_changed",
              ip_address: "10.0.0.1", created_at: 1.day.ago)
     end
 
