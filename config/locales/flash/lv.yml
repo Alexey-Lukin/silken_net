@@ -26,6 +26,7 @@ lv:
       target_type_mismatch: target_type neatbilst programmaparatūras aparatūras tipam (%{expected}).
       uploaded: Jaunā evolūcija v%{version} augšupielādēta Okeānā.
     maintenance:
+      hardware_pulse_missing: Mezgls pēc šīs apkopes vēl nav ziņojis — verifikācijai vispirms nepieciešams impulss no aparatūras.
       hardware_verified: Aparatūras stāvoklis verificēts. STM32 impulss apstiprināts.
       invalid_date: 'Nederīgs ISO8601 datums: %{value}.'
       photo_deleted: Fotogrāfija noņemta no pierādījumu matricas.

@@ -230,6 +230,9 @@ RSpec.describe "Controller coverage — uncovered paths" do
 
     describe "PATCH /maintenance_records/:id/verify" do
       it "verifies hardware state successfully" do
+        # [UI.7] verify тепер звіряє пульс заліза: вузол мусив вийти в ефір
+        # ПІСЛЯ performed_at, інакше guard віддає 422 ще до update.
+        tree.update!(last_seen_at: 10.minutes.ago)
         patch "/maintenance_records/#{maintenance_record.id}/verify",
               headers: forester_headers
 
@@ -240,6 +243,11 @@ RSpec.describe "Controller coverage — uncovered paths" do
       end
 
       it "returns error when verify update fails" do
+        # [UI.7] Пульс обовʼязковий і тут: без нього guard віддає 422 РАНІШЕ за
+        # update, мок не стріляє, а гілка «update fails» лишається невідвіданою
+        # при зеленому статус-піні. Тому пін несе ПРЕДМЕТ: guard-гілка відповідає
+        # `error:`-рядком, цільова — `errors:`-масивом.
+        tree.update!(last_seen_at: 10.minutes.ago)
         allow_any_instance_of(MaintenanceRecord).to receive(:update).and_return(false)
         allow_any_instance_of(MaintenanceRecord).to receive(:errors).and_return(
           double(full_messages: [ "Hardware verification failed" ])
@@ -249,6 +257,7 @@ RSpec.describe "Controller coverage — uncovered paths" do
               headers: forester_headers
 
         expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body["errors"]).to eq([ "Hardware verification failed" ])
       end
     end
 

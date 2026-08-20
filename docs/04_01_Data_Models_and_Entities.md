@@ -1402,7 +1402,7 @@ active/draft ──cancel──► cancelled
 | `performed_at` | datetime | Час виконання (≤ now) |
 | `notes` | text | Опис (≥ 10 символів) |
 | `latitude` / `longitude` | decimal | GPS координати патрульного |
-| `hardware_verified` | boolean | Обов'язкове підтвердження |
+| `hardware_verified` | boolean | Залізне підтвердження обслуговування. ⚖️ [UI.7, 2026-08-20] Ставиться ЛИШЕ через `verify`-екшен за предикатом **`#hardware_pulse_confirmed?`** — вузол вийшов в ефір (`maintainable.last_seen_at`) ПІСЛЯ `performed_at`; єдиний канал, якого технік не контролює (пульс заліза, не телефон і не поле форми). Доти екшен ставив `true` безумовно — «залізне підтвердження» було самоатестацією другого кліку |
 | `system_generated` | boolean | Провенанс: рядок написала платформа, не лісник (default `false`) |
 | `biomass_yield_kg` | decimal | Вимірювання біомаси (для tokenomics) |
 | `labor_hours` | decimal, **nullable** | Витрачений час. `NULL` = не введено (форма пропонує поле без `required:`), і це НЕ нуль годин |

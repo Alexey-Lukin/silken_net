@@ -26,6 +26,7 @@ uk:
       target_type_mismatch: target_type не відповідає типу обладнання прошивки (%{expected}).
       uploaded: Нову еволюцію v%{version} завантажено в Океан.
     maintenance:
+      hardware_pulse_missing: Вузол ще не виходив в ефір після цього обслуговування — верифікація потребує спершу пульсу від заліза.
       hardware_verified: Стан обладнання верифіковано. Імпульс STM32 підтверджено.
       invalid_date: 'Невірна ISO8601-дата: %{value}.'
       photo_deleted: Фото видалено з Evidence Matrix.

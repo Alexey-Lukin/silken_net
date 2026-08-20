@@ -491,4 +491,37 @@ RSpec.describe MaintenanceRecord, type: :model do
       expect(Rails.logger).to have_received(:warn).with(/broadcast_maintenance_signal/)
     end
   end
+
+  # [UI.7, ⚖️ 2026-08-20] Дім критерію «залізо підтвердило обслуговування»:
+  # пульс вузла ПІСЛЯ performed_at — єдиний канал, якого технік не контролює.
+  # Межа несуча в ОБИДВА боки: пульс ДО не рахується (ефір міг бути до втручання),
+  # відсутній пульс — тим паче.
+  describe "#hardware_pulse_confirmed?" do
+    let(:record) { create(:maintenance_record, performed_at: 1.hour.ago) }
+
+    it "confirms when the unit pulsed after the maintenance" do
+      record.maintainable.update!(last_seen_at: 10.minutes.ago)
+      expect(record.hardware_pulse_confirmed?).to be true
+    end
+
+    it "refuses when the last pulse predates the maintenance" do
+      record.maintainable.update!(last_seen_at: 2.hours.ago)
+      expect(record.hardware_pulse_confirmed?).to be false
+    end
+
+    it "refuses when the unit never pulsed at all" do
+      record.maintainable.update!(last_seen_at: nil)
+      expect(record.hardware_pulse_confirmed?).to be false
+    end
+
+    it "refuses when the maintainable is gone (nullified FK on a deleted unit)" do
+      record.update_columns(maintainable_id: nil, maintainable_type: nil)
+      expect(record.reload.hardware_pulse_confirmed?).to be false
+    end
+
+    it "refuses on a record without performed_at (unsaved / insert_all path)" do
+      # Гард на blank існує саме тому, що предикат питають і до валідацій.
+      expect(described_class.new.hardware_pulse_confirmed?).to be false
+    end
+  end
 end

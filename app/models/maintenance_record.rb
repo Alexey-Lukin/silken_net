@@ -199,6 +199,22 @@ after_commit :broadcast_maintenance_signal, on: %i[create update]
     action_type_repair? || action_type_installation?
   end
 
+  # [UI.7, ⚖️ 2026-08-20] Дім питання «чи залізо ПІДТВЕРДИЛО обслуговування» —
+  # єдиний канал, якого технік НЕ контролює: пульс самого вузла, не телефон і не
+  # поле форми. Доти `verify` ставив `hardware_verified: true` БЕЗУМОВНО під
+  # коментарем «STM32 відповів новим пульсом» — тобто прапорець був
+  # самоатестацією другого кліку, а коментар описував механізм, якого не було.
+  # Критерій: вузол вийшов в ефір ПІСЛЯ performed_at (обидва maintainable-типи
+  # несуть `last_seen_at`). Предикат на моделі, не в контролері — `insert_all`
+  # валідацій не питає, тож писач мусить мати змогу спитати ТЕ САМЕ до запису
+  # (та сама підстава, що `Actuator#can_sustain?`).
+  def hardware_pulse_confirmed?
+    return false if performed_at.blank?
+
+    pulse = maintainable&.last_seen_at
+    pulse.present? && pulse > performed_at
+  end
+
 private
 
 # СИГНАЛ, а не рядок: стрічка дашборда — похідний міжсутнісний рейтинг, тож

@@ -26,6 +26,7 @@ lt:
       target_type_mismatch: target_type neatitinka programinės įrangos aparatūros tipo (%{expected}).
       uploaded: Nauja evoliucija v%{version} įkelta į Vandenyną.
     maintenance:
+      hardware_pulse_missing: Mazgas po šios priežiūros dar nepranešė — patikrinimui pirmiausia reikia impulso iš aparatūros.
       hardware_verified: Aparatūros būsena patikrinta. STM32 impulsas patvirtintas.
       invalid_date: 'Neteisinga ISO8601 data: %{value}.'
       photo_deleted: Nuotrauka pašalinta iš įrodymų matricos.

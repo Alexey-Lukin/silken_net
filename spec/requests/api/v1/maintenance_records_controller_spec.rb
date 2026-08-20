@@ -236,12 +236,37 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       )
     end
 
-    it "marks the record as hardware_verified" do
+    it "marks the record as hardware_verified when the unit pulsed AFTER the maintenance" do
+      # [UI.7] Пульс ПІСЛЯ performed_at — єдиний канал, якого технік не контролює.
+      own_tree.update!(last_seen_at: 10.minutes.ago)
       patch "/maintenance_records/#{record.id}/verify",
             headers: headers, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["hardware_verified"]).to be true
       expect(record.reload.hardware_verified).to be true
+    end
+
+    # [UI.7, ⚖️ 2026-08-20] Доти verify був БЕЗУМОВНИЙ — самоатестація другим
+    # кліком того самого актора, що вписує GPS руками. Пара нижче — обидві
+    # половини guard-гілки; пін на НАСЛІДОК (прапорець не мутував), не лише на
+    # статус, і на ТОЧНИЙ ключ `error` (контракт §25a: рядок = guard-гілка).
+    it "refuses verification when the unit never pulsed after the maintenance" do
+      own_tree.update!(last_seen_at: 2.hours.ago)
+      patch "/maintenance_records/#{record.id}/verify",
+            headers: headers, as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body).to have_key("error")
+      expect(response.parsed_body).not_to have_key("errors")
+      expect(record.reload.hardware_verified).to be false
+    end
+
+    it "refuses verification over HTML with the reason in the error flash" do
+      own_tree.update!(last_seen_at: nil)
+      patch "/maintenance_records/#{record.id}/verify",
+            headers: headers.except("Accept").merge("Accept" => "text/html")
+      expect(response).to redirect_to(maintenance_record_path(record))
+      expect(flash[:error]).to eq(I18n.t("flash.maintenance.hardware_pulse_missing"))
+      expect(record.reload.hardware_verified).to be false
     end
 
     it "returns 404 for a record outside the user's organization" do
@@ -314,6 +339,10 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       admin = create(:user, :admin, organization: organization)
       admin_headers = { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" }
 
+      # [UI.7] Admin-override минає лише гард АВТОРСТВА — пульс-звірку не минає
+      # ніхто: без ефіру після обслуговування «залізне підтвердження» лишилось
+      # би самоатестацією, тільки вищої ролі.
+      own_tree.update!(last_seen_at: 5.minutes.ago)
       patch "/maintenance_records/#{other_record.id}/verify",
             headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)

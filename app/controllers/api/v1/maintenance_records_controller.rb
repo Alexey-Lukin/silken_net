@@ -188,8 +188,23 @@ module Api
       end
 
       # --- HARDWARE VERIFY (STM32 підтвердження) ---
-      # Патрульний натискає "Verify" у додатку — STM32 відповів новим пульсом.
+      # [UI.7, ⚖️ 2026-08-20] Verify — це ЗВІРКА, не кнопка: прапорець ставиться
+      # лише коли вузол справді вийшов в ефір ПІСЛЯ обслуговування
+      # (`#hardware_pulse_confirmed?` — дім критерію на моделі). Доти update був
+      # безумовний, тобто «залізне підтвердження» атестував той самий актор,
+      # що вписує GPS руками, — другим кліком.
+      # Guard-гілка контролера → `{ error: }` РЯДОК (не `errors:` масив —
+      # контракт §25a: ключ відповіді сам називає гілку).
       def verify
+        unless @record.hardware_pulse_confirmed?
+          message = I18n.t("flash.maintenance.hardware_pulse_missing")
+          respond_to do |format|
+            format.json { render json: { error: message }, status: :unprocessable_content }
+            format.html { redirect_to maintenance_record_path(@record), error: message }
+          end
+          return
+        end
+
         if @record.update(hardware_verified: true)
           respond_to do |format|
             format.json do
