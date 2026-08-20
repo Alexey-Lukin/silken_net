@@ -49,7 +49,6 @@ module Gdpr
         email_address: @user.email_address,
         first_name: @user.first_name,
         last_name: @user.last_name,
-        phone_number: @user.phone_number,
         telegram_chat_id: @user.telegram_chat_id,
         push_token: @user.push_token,
         locale: @user.locale,

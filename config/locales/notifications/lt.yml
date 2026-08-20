@@ -8,13 +8,11 @@ lt:
         heading: Aktyvūs kanalai
         not_configured: Nesukonfigūruota
         push: "🔔 Push"
-        sms: "📱 SMS / Telefonas"
         telegram: "✈️ Telegram"
         unavailable: Kanalas nepasiekiamas
       channels:
         email_address: El. pašto adresas
         heading: Kanalų konfigūracija
-        phone_number: Telefono numeris (E.164)
         push_placeholder: FCM arba APNs žetonas
         push_token: Push žetonas
         save: Išsaugoti kanalus →

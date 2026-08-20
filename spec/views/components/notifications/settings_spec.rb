@@ -11,11 +11,10 @@ RSpec.describe Notifications::Settings do
   # вирішувала, що поверне ActiveModel. Заразом зникли рукописні
   # `model_name`/`to_key`/`to_param`: компонент їх не читає ЖОДНОГО разу —
   # форма тут рукописна й адресується `notifications_settings_path`.
-  def account(email_address: "ada@silken.net", phone_number: "+380501234567",
+  def account(email_address: "ada@silken.net",
               telegram_chat_id: "123456789", push_token: nil)
     User.new(
       email_address: email_address,
-      phone_number: phone_number,
       telegram_chat_id: telegram_chat_id,
       push_token: push_token
     )
@@ -24,9 +23,9 @@ RSpec.describe Notifications::Settings do
   let(:user) { account }
   # [UI.10] Транспорт — факт про ПЛАТФОРМУ, тож він приходить кwargʼом (дім —
   # `Notifications::DeliveryChannels`). Тут його оголошено живим для всіх
-  # чотирьох, бо решта прикладів файлу говорить про адреси користувача; окремі
+  # трьох, бо решта прикладів файлу говорить про адреси користувача; окремі
   # контексти нижче міряють саме вісь транспорту.
-  let(:available_channels) { %i[email sms telegram push] }
+  let(:available_channels) { %i[email telegram push] }
   let(:html) { render_component(user: user, available_channels: available_channels) }
 
   describe "header section" do
@@ -66,9 +65,10 @@ RSpec.describe Notifications::Settings do
       expect(html).to include("disabled")
     end
 
-    it "renders phone number field" do
-      expect(html).to include("phone_number")
-      expect(html).to include("+380501234567")
+    # [ARCH.78, присуд 2026-08-20] SMS відкинуто разом із phone_number — форма
+    # не сміє пропонувати поле каналу, якого не існує.
+    it "does not render the retired phone field" do
+      expect(html).not_to include("phone_number")
     end
 
     it "renders telegram_chat_id field" do
@@ -90,8 +90,8 @@ RSpec.describe Notifications::Settings do
       expect(html).to include("Email")
     end
 
-    it "renders SMS / Phone channel status" do
-      expect(html).to include("SMS")
+    it "does not render a status row for the retired SMS channel" do
+      expect(html).not_to include("SMS")
     end
 
     it "renders Telegram channel status" do
@@ -122,10 +122,10 @@ RSpec.describe Notifications::Settings do
   # (`error_messages:`), але жоден приклад їх не подавав, тож єдиний шлях, яким
   # людина бачить причину 422, у сюїті не проходився ніколи.
   describe "validation errors from a rejected update" do
-    let(:user) { account.tap { |u| u.errors.add(:phone_number, :invalid) } }
+    let(:user) { account.tap { |u| u.errors.add(:telegram_chat_id, :invalid) } }
 
     it "renders the reason the update was refused" do
-      expect(html).to include("Phone number is invalid")
+      expect(html).to include("Telegram chat is invalid")
     end
   end
 

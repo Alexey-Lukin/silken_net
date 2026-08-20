@@ -42,18 +42,17 @@ module Notifications
         h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".channels.heading") }
 
         # [UI.7] `form_with` БЕЗ скоупу — і це найнебезпечніший сайт конверсії:
-        # поля (`phone_number`/`telegram_chat_id`/`push_token`) є колонками `User`,
+        # поля (`telegram_chat_id`/`push_token`) є колонками `User`,
         # тож `model: current_user` виглядав би природно — а контролер читає їх
-        # ПЛОСКО (`params.permit(:phone_number…)`). Під `user[...]` permit віддав би
+        # ПЛОСКО (`params.permit(:telegram_chat_id…)`). Під `user[...]` permit віддав би
         # `{}`, `update({})` повернув би **true**, і людина побачила б «збережено»
         # при нулі збережень. Компонентні піни цього не бачать (голий `include`).
         form_with(url: notifications_settings_path, method: :patch, class: "space-y-6") do
-          # [SEC.25] Дзеркало `settings#update`: телефон не в E.164 дає 422, і доти
-          # сторінка просто перемальовувалась із тим самим значенням у полі.
+          # [SEC.25] Дзеркало `settings#update`: chat_id не в формі Bot API дає
+          # 422, і доти сторінка просто перемальовувалась із тим самим значенням.
           render Views::Shared::UI::ErrorSummary.new(messages: @user.errors.full_messages)
 
           render_field(t(".channels.email_address"), "email", @user.email_address, disabled: true, hint: t(".email_hint"))
-          render_field(t(".channels.phone_number"), "phone_number", @user.phone_number, placeholder: "+380501234567")
           render_field(t(".channels.telegram_chat_id"), "telegram_chat_id", @user.telegram_chat_id, placeholder: "123456789")
           render_field(t(".channels.push_token"), "push_token", @user.push_token, placeholder: t(".channels.push_placeholder"))
 
@@ -104,7 +103,6 @@ module Notifications
         h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".active_channels.heading") }
         div(class: "space-y-4") do
           channel_status(t(".active_channels.email"), :email, @user.email_address)
-          channel_status(t(".active_channels.sms"), :sms, @user.phone_number)
           channel_status(t(".active_channels.telegram"), :telegram, @user.telegram_chat_id)
           channel_status(t(".active_channels.push"), :push, @user.push_token)
         end
@@ -124,8 +122,8 @@ module Notifications
           span(class: "text-mini text-gaia-text-subtle uppercase") { t(".active_channels.not_configured") }
         else
           # [UI.17] Напис був «Connected», а гард — `destination.present?`, тобто
-          # людина щось ВПИСАЛА в поле. Доставки ніхто не перевіряє: `phone_number`
-          # має лише формат-валідацію E.164, `telegram_chat_id` і `push_token` —
+          # людина щось ВПИСАЛА в поле. Доставки ніхто не перевіряє:
+          # `telegram_chat_id` має лише формат-валідацію Bot API, `push_token` —
           # жодної. Сусідня гілка вище вже каже `not_configured`, тож чесне слово
           # тут — «configured», і пара стає симетричною без нової механіки.
           # ⊕ Крапка перейшла на `-strong`: як сигнал вона підпадає під 1.4.11.

@@ -73,7 +73,6 @@ module Gdpr
         email_address: "erased-#{@user.id}@#{TOMBSTONE_DOMAIN}",
         first_name: nil,
         last_name: nil,
-        phone_number: nil,
         telegram_chat_id: nil,
         push_token: nil,
         locale: nil,

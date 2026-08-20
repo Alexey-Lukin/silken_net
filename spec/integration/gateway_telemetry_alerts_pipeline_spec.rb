@@ -90,7 +90,7 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
   describe "AlertNotificationWorker" do
     let!(:tree) { create(:tree, cluster: cluster, latitude: 49.4285, longitude: 32.062) }
     let!(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
-    let!(:admin) { create(:user, :admin, organization: organization, phone_number: "+380501234567") }
+    let!(:admin) { create(:user, :admin, organization: organization) }
     let!(:forester) { create(:user, :forester, organization: organization) }
 
     before do
@@ -114,16 +114,19 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
       AlertNotificationWorker.new.perform(alert.id)
     end
 
-    it "sends SMS notifications for critical alerts to admin/forester" do
+    it "enqueues push and telegram notifications for critical alerts to admin/forester" do
       AlertNotificationWorker.new.perform(alert.id)
 
       # [A-4]: push_bulk enqueues jobs via Sidekiq::Client, verified through .jobs in fake mode
       jobs = SingleNotificationWorker.jobs
       sms_args = jobs.select { |j| j["args"][2] == "sms" }.map { |j| j["args"][0] }
       push_args = jobs.select { |j| j["args"][2] == "push" }.map { |j| j["args"][0] }
+      telegram_args = jobs.select { |j| j["args"][2] == "telegram" }.map { |j| j["args"][0] }
 
-      expect(sms_args).to contain_exactly(admin.id, forester.id)
+      # [ARCH.78] SMS відкинуто присудом 2026-08-20 — джоб немає навіть для critical.
+      expect(sms_args).to be_empty
       expect(push_args).to contain_exactly(admin.id, forester.id)
+      expect(telegram_args).to contain_exactly(admin.id, forester.id)
     end
 
     it "does not crash for non-existent alert" do
@@ -141,9 +144,11 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
   # ---------------------------------------------------------------------------
   describe "SingleNotificationWorker" do
     let!(:alert) { create(:ews_alert, :fire, cluster: cluster) }
-    let!(:user) { create(:user, :forester, organization: organization, phone_number: "+380501234567") }
+    let!(:user) { create(:user, :forester, organization: organization) }
 
-    it "handles SMS channel" do
+    # [ARCH.78] SMS відкинуто — застарілий продюсер потрапляє в гучну
+    # unknown-гілку, але воркер не падає (5 ретраїв тут нічого не полікують).
+    it "survives a retired sms job without raising" do
       expect { SingleNotificationWorker.new.perform(user.id, alert.id, "sms") }.not_to raise_error
     end
 
@@ -152,16 +157,11 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
     end
 
     it "skips when user not found" do
-      expect { SingleNotificationWorker.new.perform(-1, alert.id, "sms") }.not_to raise_error
+      expect { SingleNotificationWorker.new.perform(-1, alert.id, "push") }.not_to raise_error
     end
 
     it "skips when alert not found" do
       expect { SingleNotificationWorker.new.perform(user.id, -1, "push") }.not_to raise_error
-    end
-
-    it "skips SMS when user has no phone number" do
-      user.update!(phone_number: nil)
-      expect { SingleNotificationWorker.new.perform(user.id, alert.id, "sms") }.not_to raise_error
     end
   end
 

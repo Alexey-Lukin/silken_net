@@ -54,10 +54,8 @@ class AlertNotificationWorker
     stakeholders = organization.users.where(role: [ :admin, :forester ])
 
     stakeholders.find_each(batch_size: 500) do |user|
-      # SMS лише для критичних ситуацій (Пожежа / Вандалізм)
-      bulk_args << [ user.id, alert.id, "sms" ] if alert.severity_critical?
-
-      # Push для всіх рівнів тривог
+      # Push для всіх рівнів тривог. SMS-каналу немає: відкинуто присудом
+      # [ARCH.78, 2026-08-20] — email (critical ↑) + Telegram покривають сценарій.
       bulk_args << [ user.id, alert.id, "push" ]
 
       # [ARCH.60] Telegram — теж усі рівні: канал opt-in через chat_id, тож

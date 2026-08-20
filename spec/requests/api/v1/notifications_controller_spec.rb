@@ -5,7 +5,7 @@ require "rails_helper"
 
 RSpec.describe Api::V1::NotificationsController, type: :request do
   let(:organization) { create(:organization) }
-  let(:user) { create(:user, organization: organization, phone_number: "+380501234567", telegram_chat_id: "12345") }
+  let(:user) { create(:user, organization: organization, telegram_chat_id: "12345") }
   let(:api_token) { user.generate_token_for(:api_access) }
   let(:headers) { { "Authorization" => "Bearer #{api_token}" } }
 
@@ -16,9 +16,10 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
 
       body = response.parsed_body
       expect(body["channels"]["email"]).to eq(user.email_address)
-      expect(body["channels"]["phone"]).to eq("+380501234567")
       expect(body["channels"]["telegram_chat_id"]).to eq("12345")
       expect(body["channels"]).to have_key("push_token")
+      # [ARCH.78] SMS відкинуто присудом — API не сміє рекламувати канал.
+      expect(body["channels"]).not_to have_key("phone")
     end
   end
 
@@ -26,12 +27,11 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
     it "updates notification channel settings" do
       patch "/notifications/settings",
             headers: headers,
-            params: { phone_number: "+380509876543", telegram_chat_id: "99999" },
+            params: { telegram_chat_id: "99999" },
             as: :json
 
       expect(response).to have_http_status(:ok)
       user.reload
-      expect(user.phone_number).to eq("+380509876543")
       expect(user.telegram_chat_id).to eq("99999")
     end
 
@@ -50,7 +50,7 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
     it "returns unprocessable_content when update fails with invalid params" do
       patch "/notifications/settings",
             headers: headers,
-            params: { phone_number: "0123" },
+            params: { telegram_chat_id: "not-a-chat" },
             as: :json
 
       expect(response).to have_http_status(:unprocessable_content)
@@ -72,10 +72,10 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
     it "renders HTML for update_settings error" do
       patch "/notifications/settings",
             headers: html_headers,
-            params: { phone_number: "0123" }
+            params: { telegram_chat_id: "not-a-chat" }
 
       # [SEC.25] 422 — дзеркало JSON-гілки; на 200 Turbo відповідь викидає, тож
-      # невалідний номер телефону не показував користувачеві нічого.
+      # невалідний chat_id не показував користувачеві нічого.
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.content_type).to include("text/html")
 
@@ -83,7 +83,7 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
       # фіксу статусу сторінка все одно мовчала — компонент не мав куди покласти
       # причину. Пін на статус цього не бачив за побудовою.
       expect(response.body).to include(I18n.t("errors.api.validation_failed_title"))
-      expect(response.body).to include("Phone number is invalid")
+      expect(response.body).to include("Telegram chat is invalid")
     end
   end
 end

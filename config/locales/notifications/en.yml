@@ -8,13 +8,11 @@ en:
         heading: Active Channels
         not_configured: Not configured
         push: "🔔 Push"
-        sms: "📱 SMS / Phone"
         telegram: "✈️ Telegram"
         unavailable: Channel unavailable
       channels:
         email_address: Email Address
         heading: Channel Configuration
-        phone_number: Phone Number (E.164)
         push_placeholder: FCM or APNs token
         push_token: Push Token
         save: Save Channels →

@@ -8,13 +8,11 @@ lv:
         heading: Aktīvie kanāli
         not_configured: Nav konfigurēts
         push: "🔔 Push"
-        sms: "📱 SMS / Tālrunis"
         telegram: "✈️ Telegram"
         unavailable: Kanāls nav pieejams
       channels:
         email_address: E-pasta adrese
         heading: Kanālu konfigurācija
-        phone_number: Tālruņa numurs (E.164)
         push_placeholder: FCM vai APNs žetons
         push_token: Push žetons
         save: Saglabāt kanālus →

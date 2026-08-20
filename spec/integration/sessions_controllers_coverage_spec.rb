@@ -555,12 +555,11 @@ RSpec.describe "Controller coverage — uncovered paths" do
   # ==========================================================================
   describe "NotificationsController" do
     describe "PATCH /notifications/settings — validation error" do
-      it "returns errors when phone_number is invalid" do
-        # Normalization strips non-numeric/non-plus chars, so use a value that
-        # survives normalization but fails the regex /\A\+?[1-9]\d{1,14}\z/
-        # +0 prefix fails because first digit after + must be 1-9
+      it "returns errors when telegram_chat_id is invalid" do
+        # Bot API chat_id — ціле (регекс /\A-?\d{1,20}\z/); нецифровий рядок
+        # переживає strip-нормалізацію і падає на форматі.
         patch "/notifications/settings",
-              params: { phone_number: "+0123456789" },
+              params: { telegram_chat_id: "not-a-chat" },
               headers: auth_headers
 
         expect(response).to have_http_status(:unprocessable_content)
@@ -578,7 +577,7 @@ RSpec.describe "Controller coverage — uncovered paths" do
         expect(response).to have_http_status(:ok)
         json = response.parsed_body
         expect(json["user_id"]).to eq(user.id)
-        expect(json["channels"]).to include("email", "phone", "telegram_chat_id", "push_token")
+        expect(json["channels"]).to include("email", "telegram_chat_id", "push_token")
       end
     end
   end

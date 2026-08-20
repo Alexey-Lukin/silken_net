@@ -35,9 +35,11 @@ class User < ApplicationRecord
   validates :password, presence: true, confirmation: true, on: :create, if: :password_required?
   validates :password, length: { minimum: 12 }, allow_blank: true
 
-  # Строгий E.164 для SMS-шлюзів (напр. Twilio)
-  normalizes :phone_number, with: ->(p) { p.to_s.gsub(/[^0-9+]/, "") }
-  validates :phone_number, format: { with: /\A\+?[1-9]\d{1,14}\z/ }, allow_blank: true
+  # Telegram Bot API приймає chat_id як ціле (відʼємне для груп/каналів).
+  # Сміттєвий ідентифікатор коштував би RequestError × 5 Sidekiq-ретраїв на
+  # кожну тривогу — межа довіри валідується тут, а не в транспорті.
+  normalizes :telegram_chat_id, with: ->(c) { c.to_s.strip }
+  validates :telegram_chat_id, format: { with: /\A-?\d{1,20}\z/ }, allow_blank: true
 
   # Валідація: роль обов'язкова для коректної роботи RBAC
   validates :role, presence: true

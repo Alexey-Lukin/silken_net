@@ -8,13 +8,11 @@ uk:
         heading: Активні канали
         not_configured: Не налаштовано
         push: "🔔 Push"
-        sms: "📱 SMS / Телефон"
         telegram: "✈️ Telegram"
         unavailable: Канал недоступний
       channels:
         email_address: Email адреса
         heading: Конфігурація каналів
-        phone_number: Номер телефону (E.164)
         push_placeholder: FCM або APNs токен
         push_token: Push-токен
         save: Зберегти канали →

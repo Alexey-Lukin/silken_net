@@ -8,18 +8,18 @@ class SingleNotificationWorker
   include Sidekiq::Job
   # [SIDEKIQ PRO EXPIRES_IN]: Індивідуальні повідомлення мають більший TTL (10 хвилин),
   # ніж батьківський AlertNotificationWorker (5 хв), оскільки вони вже in-flight.
-  # Якщо конкретний SMS/Push застряг у черзі довше — краще пропустити,
+  # Якщо конкретне повідомлення застрягло в черзі довше — краще пропустити,
   # ніж відправити застаріле сповіщення (патрульний вже бачив новіше).
   sidekiq_options queue: "alerts", retry: 5, expires_in: 10.minutes
 
+  # [ARCH.78, присуд 2026-08-20] SMS-гілки більше немає: канал відкинуто разом
+  # із `users.phone_number` (email покриває сценарій, Telegram — другий живий).
   def perform(user_id, ews_alert_id, channel)
     user = User.find_by(id: user_id)
     alert = EwsAlert.find_by(id: ews_alert_id)
     return unless user && alert
 
     case channel.to_sym
-    when :sms
-      send_sms(user, alert)
     when :telegram
       send_telegram(user, alert)
     when :push
@@ -35,17 +35,10 @@ class SingleNotificationWorker
 
   private
 
-  # [ARCH.78] Транспорт не задротований (див. 00_07 ARCH.78 — Twilio/FCM креденшели).
-  # Рядок називає СТАН КАНАЛУ, а не результат: журнал, що стверджує дію, якої не
-  # сталося, ховає мертвий канал доти, доки його не спитають у розборі пожежі.
-  def send_sms(user, alert)
-    return unless user.respond_to?(:phone_number) && user.phone_number.present?
-
-    Rails.logger.warn(
-      "[SMS] Канал не сконфігуровано — патрульному #{user.full_name} НЕ надіслано (алерт ##{alert.id})"
-    )
-  end
-
+  # [ARCH.78] Транспорт не задротований (FCM-адаптер — за ⚖️-присудом про push,
+  # gated E.20). Рядок називає СТАН КАНАЛУ, а не результат: журнал, що стверджує
+  # дію, якої не сталося, ховає мертвий канал доти, доки його не спитають у
+  # розборі пожежі.
   def send_push_notification(user, alert)
     Rails.logger.warn(
       "[Push] Канал не сконфігуровано — користувачу #{user.email_address} НЕ доставлено (алерт ##{alert.id})"
@@ -53,7 +46,7 @@ class SingleNotificationWorker
   end
 
   # [ARCH.60] Перший живий не-поштовий канал. Без chat_id — тихо (канал
-  # адресований лише тим, хто його дав, як телефон у SMS-гілці); без токена —
+  # адресований лише тим, хто його дав, як push із token); без токена —
   # гучний warn у формі ARCH.78 (стан КАНАЛУ, не результат). Помилку HTTP
   # свідомо не ковтаємо: RequestError = Sidekiq-retry (5 спроб цього ж user+channel).
   # Текст рендериться в локалі ОТРИМУВАЧА — у Sidekiq `I18n.locale` завжди

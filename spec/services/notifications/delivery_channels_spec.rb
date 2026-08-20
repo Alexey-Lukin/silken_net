@@ -10,7 +10,8 @@ RSpec.describe Notifications::DeliveryChannels do
   describe ".available?" do
     it "сьогодні не має ЖОДНОГО живого каналу" do
       # Ліхтар: без нього приклад був би зелений і на порожньому переліку.
-      expect(described_class::ALL).to contain_exactly(:email, :sms, :telegram, :push)
+      # [ARCH.78] :sms у переліку немає — канал відкинуто присудом 2026-08-20.
+      expect(described_class::ALL).to contain_exactly(:email, :telegram, :push)
 
       described_class::ALL.each do |channel|
         expect(described_class.available?(channel)).to be(false), "#{channel} оголошено живим"
@@ -108,7 +109,6 @@ RSpec.describe Notifications::DeliveryChannels do
     it "не тягне за собою решту каналів — у них власне оголошення" do
       configure(from: "alerts@silkennet.com", smtp_address: "smtp.postmarkapp.com")
 
-      expect(described_class.available?(:sms)).to be(false)
       expect(described_class.available?(:telegram)).to be(false)
       expect(described_class.available?(:push)).to be(false)
     end
@@ -129,7 +129,6 @@ RSpec.describe Notifications::DeliveryChannels do
       allow(Notifications::TelegramTransport).to receive(:configured?).and_return(false)
 
       expect(described_class.available?(:telegram)).to be(false)
-      expect(described_class.available?(:sms)).to be(false)
       expect(described_class.available?(:push)).to be(false)
     end
   end

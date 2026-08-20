@@ -911,10 +911,9 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 >
 > 🔴 **Незаданий транспорт більше не деплоїться: `config/initializers/mail_transport_check.rb` ВІДМОВЛЯЄ продові в старті.** До нього незконфігурований деплой падав найтихішим із можливих способів — `deliver_later` енкʼюївся, контролер віддавав 200, а джоба билась об `localhost:25`, перемелювала 25 ретраїв за ~три тижні й помирала в dead-set: password-reset був мертвий end-to-end, а критична тривога не доходила ні до кого, без сигналу на жодній поверхні. **`Rails.logger.warn` тут був би ЧЕТВЕРТИМ самосвідченням у цьому ж тракті** — [`ARCH.78`](00_07_Action_Plan_Tracker) щойно зняв три; лог, якого ніхто не читає, і створив цей клас дефекту. Гард питає **той самий предикат**, що малює екран (`DeliveryChannels.available?(:email)`) — дві відповіді на «чи жива пошта» були б рівно тим дрейфом, що дозволив би платформі стартувати, вважаючи канал живим. Обхід — `SILKENNET_SKIP_MAIL_TRANSPORT_CHECK=1` (гучний WARN); `SECRET_KEY_BASE_DUMMY` (Dockerfile `assets:precompile`) пропускається, як у [SEC.22]. ⚠️ Гард стоїть у ланцюзі boot-гардів **перед** `master_key_strength_check` (за алфавітом файлів), тож на порожньому деплої оператор побачить поштову стіну першою — кожен гард піднімається окремо, лік одного відкриває наступний.
 
-> **⚠️ Rate Limiting (Post-TRL 8):** При кластерах з 5000+ стейкхолдерів `push_bulk` створить 5000 `SingleNotificationWorker` джобів, кожен з яких робить HTTP-запит до Twilio/FCM. Це гарантовано призведе до HTTP 429 (Too Many Requests) від провайдерів. **Рішення:** Замість тисяч окремих воркерів, використовувати нативні Bulk API:
+> **⚠️ Rate Limiting (Post-TRL 8):** При кластерах з 5000+ стейкхолдерів `push_bulk` створить 5000 `SingleNotificationWorker` джобів, кожен з яких робить HTTP-запит до FCM / Telegram Bot API. Це гарантовано призведе до HTTP 429 (Too Many Requests) від провайдерів. **Рішення:** Замість тисяч окремих воркерів, використовувати нативні Bulk API (SMS відкинуто ⚖️ [`ARCH.78`](00_07_Action_Plan_Tracker) 2026-08-20 — Twilio-ноги в цьому плані більше немає):
 > - **FCM:** Multicast-повідомлення — до 500 device tokens за 1 HTTP-запит (`send_multicast` — ⚠️ legacy, вимкнено Google ~2024; будувати одразу на HTTP v1 `sendEachForMulticast`, [`00_07` ARCH.60](00_07_Action_Plan_Tracker))
-> - **Twilio:** Notify Service — до 10,000 номерів за 1 API виклик (`create_notification`)
-> - **Батчинг:** `AlertNotificationWorker` має групувати recipients по каналу (`:sms` / `:push`) та відправляти батчами по 500 (FCM) або 10,000 (Twilio), а не делегувати кожне повідомлення окремому воркеру.
+> - **Батчинг:** `AlertNotificationWorker` має групувати recipients по каналу (`:push` / `:telegram`) та відправляти батчами по 500 (FCM), а не делегувати кожне повідомлення окремому воркеру; Telegram Bot API bulk-ендпоінта не має — там межа ~30 msg/s, тобто ліміт бере на себе черга (E.33).
 
 #### `SingleNotificationWorker`
 
@@ -923,9 +922,9 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | **Черга** | `alerts` |
 | **Retry** | 5, expires_in: 10 хвилин |
 | **Тригер** | `AlertNotificationWorker` |
-| **Вхід** | `user_id`, `ews_alert_id`, `channel` (`:sms` · `:telegram` · `:push`) |
-| **Сервіси** | `Notifications::TelegramTransport` (єдиний живий не-поштовий — [`ARCH.60`](00_07_Action_Plan_Tracker)); Twilio/FCM не задротовані |
-| **Side Effects** | **[ARCH.78]** Доки транспорту немає, SMS/Push-гілки пишуть `Rails.logger.warn` про **СТАН КАНАЛУ** («Канал не сконфігуровано — … НЕ надіслано/НЕ доставлено»), а не про результат. Попередня редакція логувала «Надіслано»/«Доставлено» біля закоментованого клієнта — журнал, що стверджує дію, якої не сталося, на тракті пожежної та вандалізм-сирени; під час розбору інциденту він читався б як доказ доставки. `case channel` має гучний `else` (невідомий канал → `logger.error`): тиша тут невідрізненна від доставки. Носій класу — `spec/quality/no_self_attesting_logs_spec.rb` (пара «закоментований транспорт + лог із дієсловом-результатом» у `app/**`; форма-агрегатор і статус-у-БД поза його стелею — вона задекларована в шапці). 📨 **Telegram-гілка [ARCH.60]:** без `telegram_chat_id` — тихо (канал opt-in, як телефон у SMS); без токена — той самий чесний warn; інакше текст рендериться в **локалі отримувача** (`Notifications::RecipientLocale` — у Sidekiq `I18n.locale` завжди базова) і їде в `TelegramTransport.send_message`. Помилка HTTP свідомо НЕ ковтається: `RequestError` = Sidekiq-retry цієї ж атомарної доставки. |
+| **Вхід** | `user_id`, `ews_alert_id`, `channel` (`:telegram` · `:push`) |
+| **Сервіси** | `Notifications::TelegramTransport` (єдиний живий не-поштовий — [`ARCH.60`](00_07_Action_Plan_Tracker)); FCM не задротований; SMS відкинуто ⚖️ [`ARCH.78`](00_07_Action_Plan_Tracker) 2026-08-20 (гілку знято разом із `users.phone_number` — застарілий `"sms"`-джоб гучно падає в unknown-гілку) |
+| **Side Effects** | **[ARCH.78]** Доки транспорту немає, Push-гілка пише `Rails.logger.warn` про **СТАН КАНАЛУ** («Канал не сконфігуровано — … НЕ доставлено»), а не про результат. Попередня редакція логувала «Надіслано»/«Доставлено» біля закоментованого клієнта — журнал, що стверджує дію, якої не сталося, на тракті пожежної та вандалізм-сирени; під час розбору інциденту він читався б як доказ доставки. `case channel` має гучний `else` (невідомий канал → `logger.error`): тиша тут невідрізненна від доставки. Носій класу — `spec/quality/no_self_attesting_logs_spec.rb` (пара «закоментований транспорт + лог із дієсловом-результатом» у `app/**`; форма-агрегатор і статус-у-БД поза його стелею — вона задекларована в шапці). 📨 **Telegram-гілка [ARCH.60]:** без `telegram_chat_id` — тихо (канал opt-in, як push із token); без токена — той самий чесний warn; інакше текст рендериться в **локалі отримувача** (`Notifications::RecipientLocale` — у Sidekiq `I18n.locale` завжди базова) і їде в `TelegramTransport.send_message`. Помилка HTTP свідомо НЕ ковтається: `RequestError` = Sidekiq-retry цієї ж атомарної доставки. |
 
 #### `Notifications::DeliveryChannels` [UI.10]
 
@@ -934,11 +933,11 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | Параметр | Значення |
 |----------|----------|
 | **Тип** | Модуль-оголошення (`module_function`), без стану й без І/О |
-| **API** | `available?(channel)` → Boolean · `available` → Array\<Symbol\> · `configured_sender(env)` → String · `ALL` = `%i[email sms telegram push]` |
+| **API** | `available?(channel)` → Boolean · `available` → Array\<Symbol\> · `configured_sender(env)` → String · `ALL` = `%i[email telegram push]` |
 | **Пошта** | ДЕРИВУЄТЬСЯ з двох спостережуваних: відправник ≠ `from@example.com` (незмінений скаффолд) **і** `smtp_settings[:address]` ≠ `localhost` (дефолт `ActionMailer`, коли налаштувань не задавали). ✅ Обидва задротовані до ENV 2026-08-14 першою ногою [`ARCH.60`](00_07_Action_Plan_Tracker) — екран сказав правду без правки цього модуля, рівно як тут і обіцяно. ⚠️ Присвоєння `smtp_settings` замінює дефолтний хеш цілком, тож незаданий `SMTP_ADDRESS` дає `nil`, а не `localhost` (зміряно) — предикат ловить обидві форми |
 | **Відправник** | `configured_sender` — дім резолву `MAIL_FROM`, бо тут же сентинел і предикат, що його читає; `ApplicationMailer.default from:` лише **читає** це. 🔴 Порожній ENV падає назад у сентинел, а НЕ в правдоподібну адресу: правдоподібний дефолт оголосив би канал живим при мертвому транспорті. ⚠️ Значення мусить лишатись **рядком** — `default from:` приймає й `Proc`, але тоді `sender_configured?` порівнював би `#<Proc…>` зі сентинелом і завжди казав би «налаштовано» |
 | **Telegram** | ✅ ДЕРИВУЄТЬСЯ (друга нога [`ARCH.60`](00_07_Action_Plan_Tracker), 2026-08-20): `available?(:telegram)` — чиста диспетчеризація в `TelegramTransport.configured?`; сам предикат живе В ТРАНСПОРТІ, поруч з ENV-імʼям і форматом токена (картка нижче) |
-| **SMS / Push** | **Оголошені** мертвими: адаптерів у дереві немає, і конфіг-поверхні теж — імена ENV назве `ARCH.60`, тож вигадувати їх наперед означало б завести другий дім чужого рішення |
+| **Push** | **Оголошений** мертвим: адаптера в дереві немає, і конфіг-поверхні теж — імена ENV назве `ARCH.60` (FCM за ⚖️-присудом про push, gated E.20). SMS у `ALL` більше не існує — канал відкинуто ⚖️ [`ARCH.78`](00_07_Action_Plan_Tracker) 2026-08-20 |
 | **Чому оголошення, а не дерівація** | Дефолтний `smtp_settings` Rails за ФОРМОЮ не відрізняється від справжнього ESP-конфіга (`localhost:25` — адреса заповнена), тож предикат «схоже, налаштовано» повертав би `true` на незайманому скаффолді — той самий напис без джерела, лише виведений |
 | **Носій** | `spec/services/notifications/delivery_channels_spec.rb` — стереже обидва напрямки дрейфу: канал, оголошений живим при мертвому транспорті, і транспорт, який задротували, а екран далі мовчить |
 
@@ -1753,7 +1752,7 @@ EwsAlert (critical/high severity)
 ForestBountyService.create_bounty!(ews_alert)
         │ on-chain: SmartContract Bounty (USDC на Polygon)
         ▼
-LocalRanger receives SingleNotificationWorker (SMS/Telegram)
+LocalRanger receives SingleNotificationWorker (Push/Telegram)
         │
         │ Ranger виїжджає → виконує роботу → GPS-позначка
         ▼
@@ -1891,7 +1890,7 @@ ForestBountyService.assign_and_notify!(bounty):
 |-------|-----|
 | Top-1 critical не ack'нув за 10 хв | Розблокувати exclusive lock, escalate radius, повторно запустити assignment |
 | Top-N standard ніхто не claim'ив за 30 хв | Escalate radius, повторно notify (з fresh top-N) |
-| Bounty досягло `expires_at` | Залежно від severity: critical → SMS-fallback на регіонального координатора + emergency dispatcher webhook (E.34); інші → fail з notification до `EwsAlert.user` |
+| Bounty досягло `expires_at` | Залежно від severity: critical → Telegram/email-fallback на регіонального координатора + emergency dispatcher webhook (E.34); інші → fail з notification до `EwsAlert.user` |
 
 #### Етап 5 — Conflict Resolution (race condition при concurrent claim)
 

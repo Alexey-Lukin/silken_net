@@ -9,29 +9,23 @@ RSpec.describe SingleNotificationWorker, type: :worker do
   let(:alert) { create(:ews_alert, :fire, cluster: cluster) }
 
   describe "#perform" do
-    # [ARCH.78] Транспорт не задротований, тож приклади пінять СТАН КАНАЛУ.
-    # Попередня редакція вимагала info-рядка «Надіслано»/«Доставлено» — тобто
-    # цементувала твердження про доставку, якої не буває, і не могла впасти на
-    # мертвому каналі. Пін на заперечення падає, щойно брехливий рядок повернуть.
-    context "with SMS channel" do
-      it "reports the SMS channel as unconfigured instead of claiming delivery" do
-        user = create(:user, :forester, organization: organization, phone_number: "+380501234567")
+    # [ARCH.78, присуд 2026-08-20] SMS відкинуто: гілки немає, канал знято разом
+    # із `users.phone_number`. Ліхтар присуду — колишній канал НЕ мовчить, а
+    # падає в гучну unknown-гілку (застарілий продюсер стане видимим одразу).
+    context "with the retired sms channel" do
+      it "routes into the loud unknown-channel branch instead of a silent stub" do
+        user = create(:user, :forester, organization: organization)
 
-        expect(Rails.logger).to receive(:warn).with(/\[SMS\].*не сконфігуровано.*НЕ надіслано/)
-        expect(Rails.logger).not_to receive(:info)
-
-        described_class.new.perform(user.id, alert.id, "sms")
-      end
-
-      it "skips SMS when user has no phone number" do
-        user = create(:user, :forester, organization: organization, phone_number: nil)
-
-        expect(Rails.logger).not_to receive(:warn).with(/\[SMS\]/)
+        expect(Rails.logger).to receive(:error).with(/Невідомий канал.*"sms".*доставки НЕ буде/)
 
         described_class.new.perform(user.id, alert.id, "sms")
       end
     end
 
+    # [ARCH.78] Транспорт не задротований, тож приклади пінять СТАН КАНАЛУ.
+    # Попередня редакція вимагала info-рядка «Надіслано»/«Доставлено» — тобто
+    # цементувала твердження про доставку, якої не буває, і не могла впасти на
+    # мертвому каналі. Пін на заперечення падає, щойно брехливий рядок повернуть.
     context "with push channel" do
       it "reports the push channel as unconfigured instead of claiming delivery" do
         user = create(:user, :admin, organization: organization)
@@ -105,7 +99,7 @@ RSpec.describe SingleNotificationWorker, type: :worker do
     end
 
     it "returns nil when both not found" do
-      expect(described_class.new.perform(-1, -1, "sms")).to be_nil
+      expect(described_class.new.perform(-1, -1, "push")).to be_nil
     end
 
     # [ARCH.78] Раніше цей приклад пінив ТИШУ як бажану поведінку («does nothing»),

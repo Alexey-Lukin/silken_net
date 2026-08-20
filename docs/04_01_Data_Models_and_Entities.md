@@ -943,13 +943,12 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `email_address` | string | Нормалізований (lowercase + strip) |
 | `password_digest` | string | Argon2id хеш |
 | `role` | enum | investor/forester/admin/super_admin |
-| `phone_number` | string | E.164 формат |
 | `first_name` / `last_name` | string | ПІБ — PII. **[SEC.18]** Обидва (+ `recovery_codes`) скрабляться з логів через `filter_parameters` (`config/initializers/filter_parameter_logging.rb`; Sentry реюзить той самий список); schema-parity гейт `spec/initializers/filter_parameter_logging_spec.rb` — кожна нова string/text-колонка `users`/`organizations` мусить бути класифікована: filtered-PII або явний allow-list |
 | `otp_required_for_login` | boolean | ✅ **[S6.21] МЕХАНІЗМ з 2026-08-20:** шлях входу ЧИТАЄ прапорець — `sessions#create` на `mfa_enabled?` кладе pending-мітку (TTL 5 хв) і шле на `/login/mfa` (`MfaChallengesController`), сесія не існує до TOTP/recovery. Піднімається ЛИШЕ setup-флоу (`MfaSetupsController`: провижн → QR → verify свіжого коду + rotation recovery-набору); toggle-enable шле туди (409 `mfa_setup_required`), disable тримає step-up. Наскрізний носій — `spec/requests/api/v1/mfa_flow_spec.rb` (анти-replay · одноразовість recovery · TTL) |
 | `otp_secret` | string | **[S6.21]** TOTP-секрет (RFC 6238) — AR-encrypted (прецедент `hardware_keys`, SEC.22); ротується кожним стартом setup-флоу до активації |
 | `otp_last_used_at` | datetime | **[S6.21]** Мітка останнього успішного TOTP — ROTP `after:` відкидає replay того самого коду всередині 30-с вікна |
 | `recovery_codes` | text | JSON масив 10 одноразових кодів |
-| `telegram_chat_id` | string | Для Telegram сповіщень |
+| `telegram_chat_id` | string | Для Telegram сповіщень — формат Bot API (`/\A-?\d{1,20}\z/`, strip-нормалізація): сміттєвий chat_id коштував би RequestError × 5 Sidekiq-ретраїв на кожну тривогу. `phone_number` знято разом зі SMS-каналом (⚖️ ARCH.78 2026-08-20: email покриває сценарій — телефон був PII без цілі processing) |
 | `locale` | string | [I18N.1/I18N.3] Persisted мовна вподоба — джерело для ОБОХ контурів: **веб** (третій щабель резолву, [`04_04 §12.4`](04_04_Phlex_UI_and_Tailwind) — те, що переживає зміну пристрою й чистку cookie) та **пошта** (Sidekiq, куди cookie не доїжджає). ⚠️ Рядок доти казав «для НЕ-веб-контекстів», і то було не описом, а МЕЖЕЮ: колонку читала сама лише пошта, тож людина з обраною мовою бачила англійський сайт і діставала лист своєю. Пишеться при явному виборі в перемикачі (`LocalesController`, guard дзеркалить [SEC.16]); `nil` = «не обрано» → наступний щабель |
 | `last_seen_at` | datetime | Оновлюється через Session |
 
@@ -1319,7 +1318,7 @@ active/draft ──cancel──► cancelled
 | `coordinates` | `[lat, lng]` через `tree` або `cluster.geo_center` — інакше **`nil`** [ARCH.82]. 🔴 Доти віддавав `[0.0, 0.0]` «щоб не ламати Leaflet.js», але це не відсутність, а **вигадана географія** (Гвінейська затока), і стан досяжний: `trees.latitude/longitude` nullable (тому й існує скоуп `geolocated`), а `geo_center` деривується з опційного полігона. Ціна була доказова, не косметична — єдиний споживач (`Dclimate::VerificationService`) годує координати в запит про пожежу, і його вердикт лягає на алерт як `satellite_status`. ⚠️ Споживач мусить розрізняти ЗАТРИМКУ і ВИРОК: `nil` дає **термінальний** `inconclusive` (без orbital-ретраю, бо координати чеканням не зʼявляться), для критичних — той самий негайний Field Audit, що при затемненні |
 | `actionable?` | Чи можна автоматично відреагувати |
 | `requires_satellite_consensus?` | fire або drought → IoTeX ZK-верифікація |
-| `dispatch_notifications!` | Надіслати SMS/Telegram/Push |
+| `dispatch_notifications!` | Надіслати Telegram/Push (email — critical) |
 | `schedule_satellite_verification!` | Поставити в чергу Worker |
 | `broadcast_new_alert` | Turbo Stream |
 
@@ -1721,7 +1720,7 @@ Polymorphic:
 
 | Таблиця · колонки | Клас | Підстава й наслідок |
 |---|---|---|
-| `users` — `email_address` · `first_name` · `last_name` · `phone_number` · `telegram_chat_id` · `push_token` | **PII (ядро)** | Прямі ідентифікатори живої людини. Усі скрабляться з логів (`filter_parameters`); `recovery_codes` і `password_digest` — креденшели, не PII, але видаляються тим самим ходом |
+| `users` — `email_address` · `first_name` · `last_name` · `telegram_chat_id` · `push_token` | **PII (ядро)** | Прямі ідентифікатори живої людини. Усі скрабляться з логів (`filter_parameters`); `recovery_codes` і `password_digest` — креденшели, не PII, але видаляються тим самим ходом |
 | `sessions` — `ip_address` · `user_agent` | **PII (слід входу)** | Обидва `validates presence`, тобто заповнені ЗАВЖДИ. Стирання сесій — найдешевша половина erasure: таблиця не append-only |
 | `audit_logs` — `ip_address` · `user_agent` · `user_id` | 🔴 **PII в APPEND-ONLY** | Ядро напруги з [`ARCH.57`](00_07_Action_Plan_Tracker): ланцюг tamper-evident, тож рядок не видаляють — erasure тут можлива лише ПСЕВДОНІМІЗАЦІЄЮ поля при збереженні хеш-ланцюга. Це ⚖️-половина erasure ([`00_07`](00_07_Action_Plan_Tracker) SEC.18): `Gdpr::AnonymizeUserService` (безсуперечна половина — users-tombstone + sessions/identities destroy, слід у ланцюг ДО мутацій) ці рядки свідомо НЕ чіпає, і його спека пінить, що ланцюг переживає анонімізацію цілим |
 | `organizations` — `billing_email` | **PII (умовно)** | Для ФОП/одноосібного власника платіжна адреса Є персональними даними; для ТОВ — ні. Клас залежить від контрагента, тож поле трактується як PII за замовчуванням |

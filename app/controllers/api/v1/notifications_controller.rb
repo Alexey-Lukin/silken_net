@@ -13,7 +13,6 @@ module Api
               user_id: current_user.id,
               channels: {
                 email: current_user.email_address,
-                phone: current_user.phone_number,
                 telegram_chat_id: current_user.telegram_chat_id,
                 push_token: current_user.push_token
               }
@@ -32,7 +31,7 @@ module Api
       end
 
       # PATCH /notifications/settings
-      # Оновлення каналів зв'язку (Telegram, SMS, Push, Email)
+      # Оновлення каналів зв'язку (Telegram, Push, Email)
       def update_settings
         if current_user.update(notification_params)
           respond_to do |format|
@@ -41,7 +40,6 @@ module Api
                 message: I18n.t("flash.notifications.updated"),
                 channels: {
                   email: current_user.email_address,
-                  phone: current_user.phone_number,
                   telegram_chat_id: current_user.telegram_chat_id,
                   push_token: current_user.push_token
                 }
@@ -75,7 +73,7 @@ module Api
       private
 
       def notification_params
-        params.permit(:phone_number, :telegram_chat_id, :push_token)
+        params.permit(:telegram_chat_id, :push_token)
       end
     end
   end

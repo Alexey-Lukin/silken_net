@@ -49,19 +49,20 @@ RSpec.describe User, type: :model do
       expect(user.errors[:role]).to be_present
     end
 
-    it "validates phone_number format when present" do
-      user = build(:user, phone_number: "+0123")
+    # [ARCH.78] Telegram Bot API chat_id — ціле, відʼємне для груп/каналів.
+    it "validates telegram_chat_id format when present" do
+      user = build(:user, telegram_chat_id: "not-a-chat")
       expect(user).not_to be_valid
-      expect(user.errors[:phone_number]).to be_present
+      expect(user.errors[:telegram_chat_id]).to be_present
     end
 
-    it "allows valid E.164 phone_number" do
-      user = build(:user, phone_number: "+380501234567")
-      expect(user).to be_valid
+    it "allows a numeric telegram_chat_id, including negative group ids" do
+      expect(build(:user, telegram_chat_id: "123456789")).to be_valid
+      expect(build(:user, telegram_chat_id: "-1001234567890")).to be_valid
     end
 
-    it "allows blank phone_number" do
-      user = build(:user, phone_number: "")
+    it "allows blank telegram_chat_id" do
+      user = build(:user, telegram_chat_id: "")
       expect(user).to be_valid
     end
   end
@@ -76,11 +77,11 @@ RSpec.describe User, type: :model do
     end
   end
 
-  describe "phone normalization" do
-    it "strips non-numeric characters except +" do
-      user = build(:user, phone_number: "+38 (050) 123-45-67")
+  describe "telegram_chat_id normalization" do
+    it "strips surrounding whitespace before validating" do
+      user = build(:user, telegram_chat_id: "  123456789  ")
       user.valid?
-      expect(user.phone_number).to eq("+380501234567")
+      expect(user.telegram_chat_id).to eq("123456789")
     end
   end
 

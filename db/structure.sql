@@ -2219,7 +2219,6 @@ CREATE TABLE public.users (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     organization_id bigint,
-    phone_number character varying,
     last_seen_at timestamp(6) without time zone,
     first_name character varying,
     last_name character varying,
@@ -6921,6 +6920,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260820150000'),
 ('20260820120000'),
 ('20260820090000'),
 ('20260820010000'),
