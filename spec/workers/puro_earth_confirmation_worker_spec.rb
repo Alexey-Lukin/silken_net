@@ -70,6 +70,44 @@ RSpec.describe PuroEarthConfirmationWorker, type: :worker do
     expect { described_class.new.perform(-1) }.not_to raise_error
   end
 
+  # Гонкові else-гілки: програвший поллер (перехід повернув false) не робить
+  # side-effects — ані Phase-3 enqueue, ані error-лог, ані warn.
+  describe "race losers stay silent" do
+    it "does not enqueue the orchestrator when a concurrent poller already confirmed" do
+      allow(mock_client).to receive(:eth_get_transaction_receipt).and_return(envelope("0x1"))
+      allow(record).to receive(:confirm_biomass_passport!).and_return(false)
+      allow(MaintenanceRecord).to receive(:find_by).and_return(record)
+
+      described_class.new.resolve!(record, final: false)
+
+      expect(PuroEarthPassportWorker).not_to have_received(:perform_async)
+    end
+
+    it "does not log the terminal error when fail! loses the race" do
+      allow(mock_client).to receive(:eth_get_transaction_receipt).and_return(envelope("0x0"))
+      allow(record).to receive(:fail_biomass_passport!).and_return(false)
+
+      expect(Rails.logger).not_to receive(:error)
+      described_class.new.resolve!(record, final: false)
+    end
+
+    it "does not warn when escalate loses the race on the final re-check" do
+      allow(mock_client).to receive(:eth_get_transaction_receipt).and_return({ "result" => nil })
+      allow(record).to receive(:escalate_biomass_passport!).and_return(false)
+
+      expect(Rails.logger).not_to receive(:warn)
+      described_class.new.resolve!(record, final: true)
+    end
+  end
+
+  it "skips the exhausted hook for a record already resolved elsewhere" do
+    record.update!(biomass_passport_status: :confirmed)
+
+    described_class.sidekiq_retries_exhausted_block.call({ "args" => [ record.id ] }, nil)
+
+    expect(record.reload).to be_biomass_passport_confirmed
+  end
+
   describe "retries_exhausted → final receipt re-check (ARCH.66 precedent)" do
     let(:msg) { { "args" => [ record.id ] } }
 

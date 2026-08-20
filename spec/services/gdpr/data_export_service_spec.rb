@@ -92,6 +92,30 @@ RSpec.describe Gdpr::DataExportService do
       expect(JSON.generate(records)).not_to include("fake-jpeg-bytes")
     end
 
+    # Гілкові хвости nullable-полів: org відсутня (анонімізований сусід/безорговий
+    # актор) · locked identity · performed_at=nil (колонка nullable БЕЗ NOT NULL —
+    # рядок повз валідації можливий, тож `&.` живий, не декоративний).
+    it "serializes a user without an organization and a locked identity" do
+      orgless = create(:user, organization: nil)
+      orgless.identities.create!(provider: "github", uid: "g-1", locked_at: Time.zone.local(2026, 8, 1, 12, 0))
+
+      export = described_class.call(orgless)
+
+      expect(export[:user][:organization_name]).to be_nil
+      expect(export[:identities].first[:locked_at]).to eq(Time.zone.local(2026, 8, 1, 12, 0).iso8601)
+    end
+
+    it "serializes a maintenance record whose performed_at bypassed validations" do
+      cluster = create(:cluster, organization: organization)
+      tree = create(:tree, cluster: cluster)
+      record = build(:maintenance_record, maintainable: tree, user: user,
+                                          action_type: :inspection, performed_at: nil,
+                                          notes: "Рядок повз валідації — nullable без backstop.")
+      record.save!(validate: false)
+
+      expect(described_class.call(user)[:maintenance_records].first[:performed_at]).to be_nil
+    end
+
     it "does not leak another subject's data" do
       stranger = create(:user, organization: organization, email_address: "stranger@example.com")
       stranger.sessions.create!(ip_address: "192.0.2.99", user_agent: "OtherBrowser")
