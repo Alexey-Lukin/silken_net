@@ -119,6 +119,7 @@ module ContrastRegistry
         api/v1/telemetry#tree_history
         api/v1/telemetry#gateway_history
         api/v1/wallets#ledger
+        api/v1/account_security#data_export
         readiness#show
       ]
     },

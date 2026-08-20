@@ -16,6 +16,7 @@ uk:
         clusters: Кластери
         contracts: Контракти
         dashboard: Панель
+        data_export: Експорт даних
         deploy: Розгортання
         edit: Редагування
         execute: Виконання

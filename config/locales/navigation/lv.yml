@@ -16,6 +16,7 @@ lv:
         clusters: Klasteri
         contracts: Līgumi
         dashboard: Panelis
+        data_export: Datu eksports
         deploy: Izvietošana
         edit: Rediģēšana
         execute: Izpilde

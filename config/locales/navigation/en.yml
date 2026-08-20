@@ -16,6 +16,7 @@ en:
         clusters: Clusters
         contracts: Contracts
         dashboard: Dashboard
+        data_export: Data export
         deploy: Deploy
         edit: Edit
         execute: Execute
