@@ -20,9 +20,13 @@ module Actuators
       style  = STATUS_STYLES.fetch(status, "bg-zinc-800 text-zinc-300")
       label  = t(".#{status}", default: status)
 
+      # [UI.3] `data-command-state` — сирий enum, locale-інваріантний: SR-анонс
+      # на Show дискримінує термінальність машинно, не парсячи локалізований
+      # текст. Їде з відповіді ендпоінта (class-2 pull), не з броадкасту.
       span(
         id: "command_status_#{@command.id}",
-        class: tokens("px-2 py-0.5 rounded text-tiny font-bold uppercase", style)
+        class: tokens("px-2 py-0.5 rounded text-tiny font-bold uppercase", style),
+        data: { command_state: status }
       ) { label }
     end
   end

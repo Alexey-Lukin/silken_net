@@ -19,6 +19,11 @@ class ActuatorCommand < ApplicationRecord
     confirmed: 4
   }, prefix: true
 
+  # [UI.3] Стани, після яких команда вже не рухається. Дім ОДИН: SR-анонс на
+  # `Actuators::Show` озвучує рівно їх (присуд 2026-08-20 — проміжні мовчать,
+  # інакше батч на 20 рядків дає шквал), і його спека деривує перелік звідси.
+  TERMINAL_STATUSES = %w[confirmed failed].freeze
+
   # 🚦 Ієрархія Виживання: сирена має витіснити полив
   enum :priority, {
     low: 0,      # плановий полив

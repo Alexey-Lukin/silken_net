@@ -36,6 +36,7 @@ en:
       total_units: Total Units
     index_title: 'Actuators // Sector: %{name}'
     show:
+      announcer_template: 'Command #%{id}: %{status}'
       columns:
         completed_at: Finished
         executed_at: Started

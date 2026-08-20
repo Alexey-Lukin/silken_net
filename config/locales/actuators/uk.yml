@@ -36,6 +36,7 @@ uk:
       total_units: Всього юнітів
     index_title: 'Актуатори // Сектор: %{name}'
     show:
+      announcer_template: 'Команда #%{id}: %{status}'
       columns:
         completed_at: Завершення
         executed_at: Початок

@@ -22,6 +22,36 @@ RSpec.describe Actuators::Show do
                         completed_at: completed_at, user: user)
   end
 
+  # [UI.3] SR-анонс термінальних станів (присуд 2026-08-20). Живу поведінку
+  # (Stimulus + turbo:frame-load) сюїта свідомо не ганяє (04_06 §B.1.4) — тут
+  # пінується КОНТРАКТ розмітки, без якого JS-половина глуха: регіон існує до
+  # першої зміни, values деривуються з моделі, шаблон є для КОЖНОГО
+  # термінального стану.
+  describe "terminal-state announcer contract" do
+    let(:html) { render_component(actuator: build_actuator, commands: [ build_command(id: 7) ]) }
+    let(:region) { Capybara.string(html).find('[data-command-announcer-target="region"]') }
+
+    it "renders a polite sr-only region that exists before any change" do
+      expect(region[:role]).to eq("status")
+      expect(region["aria-live"]).to eq("polite")
+      expect(region[:class]).to include("sr-only")
+    end
+
+    it "derives the terminal set from the model, not a local copy" do
+      wrapper = Capybara.string(html).find("[data-controller='command-announcer']")
+      expect(JSON.parse(wrapper["data-command-announcer-terminal-value"]))
+        .to match_array(ActuatorCommand::TERMINAL_STATUSES)
+    end
+
+    it "carries a viewer-locale message for EVERY terminal state" do
+      wrapper  = Capybara.string(html).find("[data-controller='command-announcer']")
+      messages = JSON.parse(wrapper["data-command-announcer-messages-value"])
+      ActuatorCommand::TERMINAL_STATUSES.each do |status|
+        expect(messages.fetch(status)).to include("%{id}")
+      end
+    end
+  end
+
   describe "rendering" do
     let(:commands) { [ build_command(id: 1), build_command(id: 2, status: "failed", command_payload: "RESET") ] }
     let(:html) { render_component(actuator: build_actuator, commands: commands) }

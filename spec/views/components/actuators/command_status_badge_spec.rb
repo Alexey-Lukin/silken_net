@@ -28,6 +28,13 @@ RSpec.describe Actuators::CommandStatusBadge do
       expect(html).to include("uppercase")
     end
 
+    # [UI.3] Сирий enum у data-атрибуті — машинний дискримінатор термінальності
+    # для SR-анонсера; без нього JS-половина глуха при зеленій розмітці.
+    it "exposes the raw state for the announcer" do
+      badge = Capybara.string(html).find("#command_status_1")
+      expect(badge["data-command-state"]).to eq("confirmed")
+    end
+
     it "applies rounded styling" do
       expect(html).to include("rounded")
     end

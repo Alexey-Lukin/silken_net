@@ -36,6 +36,7 @@ lv:
       total_units: Kopā vienību
     index_title: 'Aktuatori // Sektors: %{name}'
     show:
+      announcer_template: 'Komanda #%{id}: %{status}'
       columns:
         completed_at: Pabeigšana
         executed_at: Sākums

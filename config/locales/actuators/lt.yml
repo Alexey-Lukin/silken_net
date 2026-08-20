@@ -36,6 +36,7 @@ lt:
       total_units: Iš viso vienetų
     index_title: 'Aktuatoriai // Sektorius: %{name}'
     show:
+      announcer_template: 'Komanda #%{id}: %{status}'
       columns:
         completed_at: Pabaiga
         executed_at: Pradžia

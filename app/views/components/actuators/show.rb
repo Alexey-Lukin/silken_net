@@ -34,6 +34,38 @@ module Actuators
     private
 
     def render_command_table
+      # [UI.3] SR-анонс термінальних станів (присуд 2026-08-20: confirmed/failed,
+      # polite). Broadcast замінює САМ фрейм — aria-live на ньому гинув би разом
+      # із вузлом, тож регіон живе ПОЗА фреймами й існує в DOM до першої зміни.
+      # Тексти зібрані сторінкою в локалі ГЛЯДАЧА (Show рендериться в запиті);
+      # заглушка броадкасту лишається locale-вільною, подія — turbo:frame-load.
+      div(
+        data: {
+          controller: "command-announcer",
+          command_announcer_terminal_value: ActuatorCommand::TERMINAL_STATUSES.to_json,
+          command_announcer_messages_value: announcer_messages.to_json,
+          action: "turbo:frame-load->command-announcer#announce"
+        }
+      ) do
+        div(
+          role: "status", aria_live: "polite", class: "sr-only",
+          data: { command_announcer_target: "region" }
+        )
+        render_command_table_inner
+      end
+    end
+
+    # Слово статусу — з ГОТОВОГО дому міток бейджа (нового авторингу нуль);
+    # `id: "%{id}"` повертає плейсхолдер у рядок — його підставляє JS у момент
+    # анонсу, бо в мить рендера сторінки id команди ще невідомий.
+    def announcer_messages
+      ActuatorCommand::TERMINAL_STATUSES.index_with do |status|
+        t(".announcer_template", id: "%{id}",
+                                 status: t("actuators.command_status_badge.#{status}"))
+      end
+    end
+
+    def render_command_table_inner
       div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
         table(class: "w-full text-left font-mono text-tiny min-w-[640px]", role: "table") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-micro tracking-widest") do
