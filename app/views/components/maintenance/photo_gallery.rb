@@ -85,8 +85,8 @@ module Maintenance
         a(
           href: next_url,
           data: { turbo_frame: frame_id },
-          class: "inline-block px-6 py-2 border border-emerald-900 text-gaia-text-muted " \
-                 "hover:border-emerald-500 hover:text-emerald-500 uppercase text-mini " \
+          class: "inline-block px-6 py-2 border border-gaia-border text-gaia-text-muted " \
+                 "hover:border-gaia-primary hover:text-gaia-primary-strong uppercase text-mini " \
                  "tracking-widest transition-all font-mono"
         ) do
           t(".load_more", remaining: [ remaining, 0 ].max)

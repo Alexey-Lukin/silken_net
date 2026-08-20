@@ -131,8 +131,9 @@ RSpec.describe BlockchainTransactions::Index do
   end
 
   describe "token type badge styles" do
-    it "renders carbon_coin with emerald style" do
-      expect(html).to include("text-emerald-400")
+    it "renders carbon_coin with the token-carbon surface/border pair" do
+      # [UI.1] Токен у ролі ФОН/РАМКА при нейтральному тексті — форма wallets.
+      expect(html).to include("bg-token-carbon/20")
     end
 
     it "renders forest_coin with forest token style" do
@@ -144,10 +145,10 @@ RSpec.describe BlockchainTransactions::Index do
     # `cusd` — третє РЕАЛЬНЕ значення enum'а, якому стилю не заведено. Доти тут
     # стояв вигаданий `"other_token"`: фолбек перевірявся входом, неможливим у
     # проді, а єдиний вхід, яким він досяжний насправді, — ніяк.
-    it "renders cusd — the styleless enum value — with the zinc fallback" do
+    it "renders cusd — the styleless enum value — with the surface fallback" do
       txs = [ mock_transaction(token_type: "cusd") ]
       rendered = render_index(transactions: txs, pagy: pagy)
-      expect(rendered).to include("text-zinc-400")
+      expect(rendered).to include("bg-gaia-surface text-gaia-text-subtle")
     end
   end
 
@@ -250,7 +251,7 @@ RSpec.describe BlockchainTransactions::Index do
   # був ВАКУУМНИЙ — заголовок сторінки містить «Blockchain Ledger — Global Audit»,
   # тож приклад лишався зеленим і зі знятою коміркою.
   describe "provenance cell" do
-    def provenance_cell(rendered) = rendered[%r{<td class="p-4 text-emerald-500">([^<]*)</td>}, 1]
+    def provenance_cell(rendered) = rendered[%r{<td class="p-4 text-gaia-primary-strong">([^<]*)</td>}, 1]
 
     it "names the tree when the row is wallet-sourced" do
       rendered = render_index(transactions: [ mock_transaction ], pagy: pagy)

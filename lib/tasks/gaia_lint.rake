@@ -144,7 +144,9 @@ namespace :gaia do
       "app/views/components/gateways/",   # 2026-08-20 після сигнальної хвилі (LED/кільця → -strong/-accent; обидва виміри)
       "app/views/components/clusters/",   # те саме; watermark SECTOR — оголошений виняток гейта
       "app/views/components/tree_families/", # 2026-08-20 пʼята порція (codemod 23 + ручні; watermark /5 — виняток)
-      "app/views/components/actuators/"   # те саме (STATUS_STYLES бейджа → status-*-пари; LED — сигнальна хвиля)
+      "app/views/components/actuators/",  # те саме (STATUS_STYLES бейджа → status-*-пари; LED — сигнальна хвиля)
+      "app/views/components/maintenance/", # 2026-08-20 шоста порція (codemod 114-на-два-домени + ручні: action_badge → -accent-родина, кнопки → -strong-пара; watermark /5 — виняток)
+      "app/views/components/blockchain_transactions/" # те саме (carbon-чіп → token-carbon фон/рамка, error-панель → danger-пастель+text, ARCH.101 колір напрямку)
     ]
 
     scopes = ENV["LINT_SCOPE"] ? [ ENV["LINT_SCOPE"] ] : default_scopes

@@ -39,15 +39,16 @@ module BlockchainTransactions
     private
 
     def render_header
-      div(class: "p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
+      div(class: "p-8 border border-gaia-border bg-gaia-surface shadow-2xl relative overflow-hidden") do
         div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { t(".decoration") }
         div(class: "flex justify-between items-start") do
           div do
-            p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { t(".transaction_record") }
-            # [ARCH.101 ⚖️ 08-20] Знак деривується; колір чекає UI.1-міграції домену
-            # (чорна панель: `-accent` у світлій темі 3.9:1 < 4.5).
-            h2(class: "text-3xl font-extralight tracking-tighter text-white") { "#{@tx.signed_amount} #{@tx.ticker}" }
-            p(class: "text-tiny font-mono text-gray-600 mt-2") { t(".tx_id_line", id: @tx.id, at: @tx.created_at.strftime("%d.%m.%Y %H:%M:%S UTC")) }
+            p(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted mb-2") { t(".transaction_record") }
+            # [ARCH.101 ⚖️ 08-20] Знак деривується; колір напрямку приїхав разом із
+            # міграцією панелі (дзеркало рядка списку — той самий `#burn?`).
+            h2(class: tokens("text-3xl font-extralight tracking-tighter",
+                             @tx.burn? ? "text-status-danger-accent" : "text-gaia-text-strong")) { "#{@tx.signed_amount} #{@tx.ticker}" }
+            p(class: "text-tiny font-mono text-gaia-text-muted mt-2") { t(".tx_id_line", id: @tx.id, at: @tx.created_at.strftime("%d.%m.%Y %H:%M:%S UTC")) }
           end
           div(class: "flex items-center gap-3") do
             render Views::Shared::UI::StatusBadge.new(status: @tx.status)
@@ -58,15 +59,15 @@ module BlockchainTransactions
     end
 
     def render_transaction_details
-      div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+      div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
         table(role: "table", class: "w-full text-left font-mono text-compact") do
-          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
+          thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
             tr do
               th(scope: "col", class: "p-4") { t(".details.field") }
               th(scope: "col", class: "p-4") { t(".details.value") }
             end
           end
-          tbody(class: "divide-y divide-emerald-900/30") do
+          tbody(class: "divide-y divide-gaia-border") do
             detail_row(t(".details.amount"), "#{@tx.signed_amount} #{@tx.ticker}")
             detail_row(t(".details.token_type"), @tx.token_type_label)
             detail_row(t(".details.status"), Views::Shared::UI::StatusBadge.label(@tx.status))
@@ -87,24 +88,28 @@ module BlockchainTransactions
     end
 
     def detail_row(label, value)
-      tr(class: "hover:bg-emerald-950/10") do
-        td(class: "p-4 text-emerald-500") { label }
-        td(class: "p-4 text-gray-300") { value.to_s }
+      # Роль-корекція поверх codemod-мапи: мітка ТИХІША за значення (форма
+      # `meta_row` у maintenance/show) — мапа віддала б навпаки.
+      tr(class: "hover:bg-gaia-surface-sunken") do
+        td(class: "p-4 text-gaia-text-muted") { label }
+        td(class: "p-4 text-gaia-text") { value.to_s }
       end
     end
 
     def render_notes_panel
-      div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".notes.title") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-4") { t(".notes.title") }
         if @tx.notes.present?
-          p(class: "text-compact text-gray-400 font-mono leading-relaxed") { @tx.notes }
+          p(class: "text-compact text-gaia-text-subtle font-mono leading-relaxed") { @tx.notes }
         else
-          p(class: "text-compact text-gray-700 italic") { t(".notes.empty") }
+          p(class: "text-compact text-gaia-text italic") { t(".notes.empty") }
         end
         if @tx.error_message.present?
-          div(class: "mt-4 p-3 border border-red-900 bg-red-950/20") do
-            p(class: "text-mini uppercase text-red-500 tracking-widest mb-1") { t(".notes.error_message") }
-            p(class: "text-compact text-red-400 font-mono") { @tx.error_message }
+          # Пастельна danger-пара за роллю (`04_04 §3.2`: панель = пастель + `-text`);
+          # рамка — `-accent`, бо пастельна рамка на світлій поверхні невидима (1.1:1).
+          div(class: "mt-4 p-3 border border-status-danger-accent/50 bg-status-danger") do
+            p(class: "text-mini uppercase text-status-danger-text tracking-widest mb-1") { t(".notes.error_message") }
+            p(class: "text-compact text-status-danger-text font-mono") { @tx.error_message }
           end
         end
       end
@@ -125,44 +130,48 @@ module BlockchainTransactions
     def cluster_sourced? = @tx.wallet.blank? && @tx.cluster.present?
 
     def render_wallet_info
-      div(class: "p-6 border border-emerald-900 bg-black space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") do
+      div(class: "p-6 border border-gaia-border bg-gaia-surface space-y-4") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") do
           cluster_sourced? ? t(".wallet.cluster_title") : t(".wallet.title")
         end
 
         if cluster_sourced?
-          p(class: "text-compact text-emerald-400 font-mono") { @tx.cluster.name }
+          p(class: "text-compact text-gaia-text font-mono") { @tx.cluster.name }
         elsif @tx.wallet.present?
           div do
-            p(class: "text-mini text-gray-600 uppercase mb-1") { t(".wallet.tree_did") }
+            p(class: "text-mini text-gaia-text-muted uppercase mb-1") { t(".wallet.tree_did") }
             # `&.` is model-validation-dead, not real: Wallet#tree is a
             # required belongs_to (no `optional: true`) and Tree has
             # `has_one :wallet, dependent: :destroy` — a wallet can never
             # outlive its tree, so `.tree` is always present here.
-            p(class: "text-compact text-emerald-400 font-mono") { @tx.wallet.tree&.did || t(".wallet.not_available") }
+            p(class: "text-compact text-gaia-text font-mono") { @tx.wallet.tree&.did || t(".wallet.not_available") }
           end
-          div(class: "pt-3 border-t border-emerald-900/30") do
-            p(class: "text-mini text-gray-600 uppercase mb-1") { t(".wallet.wallet_balance") }
-            p(class: "text-lg text-white font-light") do
+          div(class: "pt-3 border-t border-gaia-border") do
+            p(class: "text-mini text-gaia-text-muted uppercase mb-1") { t(".wallet.wallet_balance") }
+            p(class: "text-lg text-gaia-text-strong font-light") do
               # [ARCH.88] Це БАЛАНС ГАМАНЦЯ, тобто бали росту — на відміну від
               # `@tx.amount` вище, який справді в монетах і носить `@tx.ticker`.
               # Дві сусідні величини на одній сторінці, дві різні одиниці.
               plain formatted_points(@tx.wallet.balance).to_s
-              span(class: "text-xs text-emerald-600 ml-2") { t(".wallet.unit") }
+              span(class: "text-xs text-gaia-primary-strong ml-2") { t(".wallet.unit") }
             end
           end
         else
-          p(class: "text-compact text-gray-700 italic") { t(".wallet.no_wallet") }
+          p(class: "text-compact text-gaia-text italic") { t(".wallet.no_wallet") }
         end
       end
     end
 
     def token_badge_styles
       case @tx.token_type
-      when "carbon_coin" then "bg-emerald-900/20 text-emerald-400 border-emerald-500/30"
+      # [UI.1] `token-carbon` у ролі ФОН/РАМКА (текст — нейтральний gaia-text):
+      # непридатність токена виміряна для ТЕКСТ-ролі; форма — дзеркало
+      # `Wallets::TransactionRow#tx_type_styles`.
+      when "carbon_coin" then "bg-token-carbon/20 text-gaia-text border-token-carbon/30"
       when "forest_coin" then "bg-token-forest/20 text-token-forest border-token-forest/30"
-      when "cusd" then "bg-zinc-900 text-zinc-400 border-zinc-700"
-      else "bg-zinc-900 text-zinc-400 border-zinc-700"
+      # `cusd` СВІДОМО падає в else (зовнішній Celo-долар без власного токена
+      # дизайн-системи) — окрема гілка робила б else недосяжним.
+      else "bg-gaia-surface text-gaia-text-subtle border-gaia-border-strong"
       end
     end
   end

@@ -16,12 +16,12 @@ module BlockchainTransactions
     private
 
     def render_on_chain_panel
-      div(class: "p-6 border border-emerald-900 bg-emerald-950/5 space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".heading") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface-sunken space-y-4") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".heading") }
         if @tx.tx_hash.present?
           div do
-            p(class: "text-mini text-gray-600 uppercase mb-1") { t(".tx_hash_label") }
-            p(class: "text-tiny font-mono text-emerald-500 break-all leading-relaxed") { @tx.tx_hash }
+            p(class: "text-mini text-gaia-text-muted uppercase mb-1") { t(".tx_hash_label") }
+            p(class: "text-tiny font-mono text-gaia-primary-strong break-all leading-relaxed") { @tx.tx_hash }
           end
           div(class: "mt-4") do
             # Без aria_label свідомо: видимий текст («View on Polygonscan →») сам
@@ -34,7 +34,7 @@ module BlockchainTransactions
             ) { t(".view_on", explorer: explorer_name) }
           end
         else
-          p(class: "text-compact text-gray-700 italic") { t(".not_submitted") }
+          p(class: "text-compact text-gaia-text italic") { t(".not_submitted") }
         end
       end
     end
@@ -50,8 +50,8 @@ module BlockchainTransactions
     end
 
     def explorer_link_classes
-      "w-full block text-center py-2 border border-emerald-500 text-tiny uppercase text-emerald-500 " \
-        "hover:bg-emerald-500 hover:text-black transition-all " \
+      "w-full block text-center py-2 border border-gaia-primary-strong text-tiny uppercase text-gaia-primary-strong " \
+        "hover:bg-gaia-primary hover:text-gaia-primary-text transition-all " \
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
     end
   end

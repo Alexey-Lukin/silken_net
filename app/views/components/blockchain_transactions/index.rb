@@ -62,8 +62,8 @@ module BlockchainTransactions
           # Емодзі лишається в розмітці, а не в YAML: це гліф, а не слово мови —
           # у чотирьох каталогах він був би чотирма побайтовими копіями, які гейт
           # парності мусив би тримати в синхроні заради нуля перекладу.
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "📒 #{t('.heading')}" }
-          p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted") { "📒 #{t('.heading')}" }
+          p(class: "text-xs text-gaia-text-muted mt-1") { t(".subtitle") }
           render_window_notice
         end
         div(class: "flex gap-2") do
@@ -100,24 +100,24 @@ module BlockchainTransactions
     def render_window_notice
       return if @window_start.nil?
 
-      p(class: "text-mini text-gray-600 mt-1") do
+      p(class: "text-mini text-gaia-text-muted mt-1") do
         plain t(".window.showing", since: I18n.l(@window_start.to_date, format: :long))
         whitespace
         a(href: blockchain_transactions_path(window: WINDOW_ALL),
-          class: "underline decoration-emerald-900 text-emerald-600 hover:text-white transition-all " \
+          class: "underline decoration-gaia-border-strong text-gaia-primary-strong hover:text-gaia-text-strong transition-all " \
                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".window.show_all") }
       end
     end
 
     def transactions_table
-      div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+      div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
         table(class: "w-full text-left font-mono text-compact min-w-[640px]", role: "table") do
-          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
+          thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
             tr do
               COLUMNS.each { |key, extra| th(scope: "col", class: "p-4 #{extra}".rstrip) { t(".table.#{key}") } }
             end
           end
-          tbody(class: "divide-y divide-emerald-900/30") do
+          tbody(class: "divide-y divide-gaia-border") do
             if @transactions.any?
               @transactions.each { |tx| render_transaction_row(tx) }
             else
@@ -133,16 +133,17 @@ module BlockchainTransactions
     end
 
     def render_transaction_row(tx)
-      tr(class: "hover:bg-emerald-950/10 transition-colors") do
+      tr(class: "hover:bg-gaia-surface-sunken transition-colors") do
         td(class: "p-4") do
           # `uppercase` знято разом із сирим значенням: воно робило машинний токен
           # навмисним, а власну назву — криком, ще й ламало рядок у вузькій комірці.
           span(class: tokens("px-2 py-0.5 text-mini font-bold border", token_type_styles(tx.token_type))) { tx.token_type_label }
         end
-        # [ARCH.101 ⚖️ 08-20] Знак деривується (`signed_amount`), КОЛІР — свідомо ні:
-        # панель theme-інваріантно чорна (домен у черзі UI.1-міграції), а `-accent`
-        # на чорному в СВІТЛІЙ темі = 3.9:1 < 4.5 — колір приїде з міграцією домену.
-        td(class: "p-4 text-white font-bold") { "#{tx.signed_amount} #{tx.ticker}" }
+        # [ARCH.101 ⚖️ 08-20] Знак деривується (`signed_amount`); колір напрямку
+        # приїхав РАЗОМ із міграцією панелі на токени, як присуд і приписав:
+        # на `gaia-surface` `-accent` міряє 4.83 світла / 5.12 темна (≥4.5).
+        # Дискримінатор — той самий `#burn?`, що годує `net_minted_supply`.
+        td(class: tokens("p-4 font-bold", tx.burn? ? "text-status-danger-accent" : "text-gaia-text-strong")) { "#{tx.signed_amount} #{tx.ticker}" }
         td(class: "p-4") do
           render Views::Shared::UI::StatusBadge.new(status: tx.status)
         end
@@ -152,12 +153,12 @@ module BlockchainTransactions
         # «Дерево» вони показували тире — тобто мітка обіцяла координату, якої в
         # цього роду рядків не буває. Пара та сама, якою `for_organization`
         # резолвить приналежність; прецедент форми — `Alerts::Row`.
-        td(class: "p-4 text-emerald-500") { tx.wallet&.tree&.did || tx.cluster&.name || "—" }
-        td(class: "p-4 text-gray-600 truncate max-w-[150px] font-mono text-tiny") do
+        td(class: "p-4 text-gaia-primary-strong") { tx.wallet&.tree&.did || tx.cluster&.name || "—" }
+        td(class: "p-4 text-gaia-text-muted truncate max-w-[150px] font-mono text-tiny") do
           if tx.tx_hash.present?
             # Тут aria_label НЕСУЧИЙ (на відміну від OnChainFrame): видимий текст —
             # обрізаний hex, скрінрідеру він нічого не каже. Тому перекладаємо, а не знімаємо.
-            a(href: tx.explorer_url, target: "_blank", rel: "noopener noreferrer", aria_label: t(".explorer_aria"), class: "hover:text-emerald-500 underline decoration-emerald-900") { tx.tx_hash.first(16) + "..." }
+            a(href: tx.explorer_url, target: "_blank", rel: "noopener noreferrer", aria_label: t(".explorer_aria"), class: "hover:text-gaia-primary-strong underline decoration-gaia-border-strong") { tx.tx_hash.first(16) + "..." }
           else
             # Прецедент і переклади вже стояли — `contracts/show` резолвить те саме
             # значення через `t(".ledger.pending_block")` у всіх чотирьох локалях.
@@ -165,10 +166,12 @@ module BlockchainTransactions
             # ⊥ Двійник у `wallets/transaction_row` лишається СИРИМ свідомо: він
             # рендериться всередині броадкасту, тож `t()` там замінив би чесний
             # англійський токен на локаль ПРОДЮСЕРА (`04_04 §8.1а`).
-            span(class: "italic text-zinc-800") { t(".table.pending_block") }
+            # Плейсхолдер «очікує блок» СВІДОМО тихіший за значення поруч —
+            # мапа codemod'а віддала б strong, а роль тут протилежна.
+            span(class: "italic text-gaia-text-subtle") { t(".table.pending_block") }
           end
         end
-        td(class: "p-4 text-right text-gray-500") { tx.created_at.strftime("%H:%M:%S // %d.%m.%y") }
+        td(class: "p-4 text-right text-gaia-text-muted") { tx.created_at.strftime("%H:%M:%S // %d.%m.%y") }
         # [UI.8] Двері в deep-audit: `BlockchainTransactions::Show` був повністю
         # побудований, а зі списку на нього не вело НІЧОГО — єдиний лінк рядка йшов
         # у зовнішній експлорер. 🔴 `created_at` у параметрі НЕСУЧИЙ, не косметика:
@@ -178,7 +181,7 @@ module BlockchainTransactions
         td(class: "p-4 text-right") do
           a(href: blockchain_transaction_path(tx, created_at: tx.created_at.iso8601),
             aria_label: t(".audit_aria", id: tx.id),
-            class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none " \
+            class: "text-gaia-primary-strong hover:text-gaia-text-strong transition-all focus-visible:outline-none " \
                    "focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".audit_details") }
         end
       end
@@ -191,10 +194,15 @@ module BlockchainTransactions
     # `token_ticker_parity_spec`, тож німою вона не буде).
     def token_type_styles(type)
       case type
-      when "carbon_coin" then "bg-emerald-900/20 text-emerald-400 border-emerald-500/30"
+      # [UI.1] `token-carbon` у ролі ФОН/РАМКА (текст — нейтральний gaia-text):
+      # непридатність токена виміряна для ТЕКСТ-ролі; форма — дзеркало
+      # `Wallets::TransactionRow#tx_type_styles`.
+      when "carbon_coin" then "bg-token-carbon/20 text-gaia-text border-token-carbon/30"
       when "forest_coin" then "bg-token-forest/20 text-token-forest border-token-forest/30"
-      when "cusd" then "bg-zinc-900 text-zinc-400 border-zinc-700"
-      else "bg-zinc-900 text-zinc-400 border-zinc-700"
+      # `cusd` СВІДОМО падає в else: власного токена дизайн-системи в нього нема
+      # (зовнішній Celo-долар), а окрема гілка з тим самим рядком робила б el else
+      # недосяжним (прецедент — wallets-копія цієї ж мапи).
+      else "bg-gaia-surface text-gaia-text-subtle border-gaia-border-strong"
       end
     end
   end

@@ -159,7 +159,7 @@ module Maintenance
             f.submit(
               @editing ? t(".submit.update") : t(".submit.create"),
               class: "flex-1 py-4 bg-gaia-primary/10 border border-gaia-primary-strong text-gaia-primary-strong " \
-                     "uppercase text-xs tracking-widest hover:bg-gaia-primary hover:text-black " \
+                     "uppercase text-xs tracking-widest hover:bg-gaia-primary hover:text-gaia-primary-text " \
                      "transition-all cursor-pointer shadow-sm"
             )
             if @editing

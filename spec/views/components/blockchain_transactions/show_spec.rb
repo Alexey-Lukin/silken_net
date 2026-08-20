@@ -111,9 +111,10 @@ RSpec.describe BlockchainTransactions::Show do
   describe "token badge" do
     # Негативна половина несуча: бейдж доти друкував сире значення, тож пін лише на
     # стиль лишався б зеленим і після повернення сирого enum'а.
-    it "renders carbon_coin as its label with the emerald style" do
+    it "renders carbon_coin as its label with the token-carbon pair" do
       expect(html).to include("Silken Carbon Coin")
-      expect(html).to include("text-emerald-400")
+      # [UI.1] Токен у ролі ФОН/РАМКА при нейтральному тексті — форма wallets.
+      expect(html).to include("bg-token-carbon/20")
       expect(html).not_to include("carbon_coin")
     end
 
@@ -124,10 +125,10 @@ RSpec.describe BlockchainTransactions::Show do
     end
 
     # Реальне `cusd` замість вигаданого `"unknown_coin"` — див. сусідній `index_spec`.
-    it "renders cusd as its label with the zinc style" do
+    it "renders cusd as its label with the surface fallback" do
       rendered = render_component(transaction: mock_transaction(token_type: "cusd"))
       expect(rendered).to include("Celo Dollar")
-      expect(rendered).to include("text-zinc-400")
+      expect(rendered).to include("bg-gaia-surface text-gaia-text-subtle")
     end
   end
 
@@ -318,12 +319,16 @@ RSpec.describe BlockchainTransactions::Show do
   # заблоковані, стан невідомий), і він малювався тьмянішим за доброякісний
   # `pending`. Приклад мусить пінити ВИДИМІСТЬ, а не факт існування гілки.
   describe "manual_review — double-spend guard" do
+    # 🔴 Пін на `animate-pulse` був ВАКУУМНИЙ через СУСІДА (§Guard-craft #17):
+    # клас жив у Skeleton lazy-фрейма цієї ж сторінки, а зі StatusBadge його
+    # зняла motion-хвиля UI.3 (2026-08-19) — приклад лишався зеленим, вимагаючи
+    # знятого. Дискримінатор guard-стану тепер СТАТИЧНИЙ — outline-guard.
     it "renders more prominently than a benign pending transaction" do
       rendered = render_component(transaction: mock_transaction(status: "manual_review"))
 
       expect(rendered).to include("bg-status-warning")
-      expect(rendered).to include("animate-pulse")
-      expect(rendered).not_to include("bg-zinc-900")
+      expect(rendered).to include("outline-2 outline-offset-1 outline-current")
+      expect(rendered).not_to include("bg-gaia-surface text-gaia-text-subtle")
     end
   end
 

@@ -65,9 +65,9 @@ module Maintenance
     end
 
     def records_table
-      div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+      div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
         table(class: "w-full text-left font-mono text-compact min-w-[900px]", role: "table") do
-          thead(class: "bg-emerald-950/20 text-gaia-text-subtle uppercase text-mini tracking-widest") do
+          thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
             tr do
               th(scope: "col", class: "p-4") { t(".table.technician") }
               th(scope: "col", class: "p-4") { t(".table.unit") }
@@ -95,9 +95,9 @@ module Maintenance
     end
 
     def render_row(record)
-      tr(class: "hover:bg-emerald-950/10 transition-colors group") do
-        td(class: "p-4 text-emerald-100") { "#{record.user&.first_name} #{record.user&.last_name}" }
-        td(class: "p-4 text-emerald-500 text-tiny") do
+      tr(class: "hover:bg-gaia-surface-sunken transition-colors group") do
+        td(class: "p-4 text-gaia-text-strong") { "#{record.user&.first_name} #{record.user&.last_name}" }
+        td(class: "p-4 text-gaia-primary-strong text-tiny") do
           "#{record.maintainable_type} // #{record.maintainable&.display_identifier || '—'}"
         end
         td(class: "p-4") { action_badge(record.action_type) }
@@ -113,20 +113,20 @@ module Maintenance
           if cost.nil?
             span(class: "text-gaia-text-subtle") { t("ui.measurement.not_measured") }
           else
-            span(class: "text-emerald-300") { "$#{formatted_amount(cost)}" }
+            span(class: "text-gaia-text-strong") { "$#{formatted_amount(cost)}" }
           end
         end
         td(class: "p-4 text-center") do
           count = record.photos_attachments.size
           if count > 0
-            span(class: "text-mini text-emerald-600 font-mono") { "📷 #{count}" }
+            span(class: "text-mini text-gaia-primary-strong font-mono") { "📷 #{count}" }
           else
             span(class: "text-gaia-text-subtle") { "—" }
           end
         end
         td(class: "p-4 text-center") do
           if record.hardware_verified
-            span(class: "text-emerald-500 text-compact", title: t(".hw_verified_title")) { "✓" }
+            span(class: "text-gaia-primary-strong text-compact", title: t(".hw_verified_title")) { "✓" }
           else
             span(class: "text-status-warning-accent text-compact", title: t(".hw_pending_title")) { "◌" }
           end
@@ -136,7 +136,7 @@ module Maintenance
           a(
             href: maintenance_record_path(record),
             aria_label: t(".table.open_aria"),
-            class: "text-gaia-primary-strong hover:text-white text-tiny focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong transition-colors"
+            class: "text-gaia-primary-strong hover:text-gaia-text-strong text-tiny focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong transition-colors"
           ) { t(".table.open") }
         end
       end
@@ -148,13 +148,19 @@ module Maintenance
     # у `Maintenance::Show` був протилежний (мітка подавалась У мапу й гасила колір).
     # `biomass_extraction` має ВЛАСНИЙ колір, не спільний із `decommissioning`:
     # то дія над залізом, а це над деревом (тягне declare_deceased! → слешинг).
+    # [UI.1] Кольори — `-accent`-родина + `-strong`: `-text`-токени поза пастеллю =
+    # токен поза роллю (§3.2). Колір тут кодує ВАГУ дії, не ідентичність (її несе
+    # мітка): biomass (слешинг) > repair (несправність) > installation (нова
+    # установка) > inspection/cleaning (планова рутина — свідомо ОДИН тон) >
+    # decommissioning (адмін-виведення заліза — сірий, щоб не кричав гучніше за
+    # biomass, як робив старий red-700). Не «уніфікуй» рутинну пару вроздріб.
     def action_badge(type)
       colors = {
-        "repair"             => "text-status-warning-text",
-        "installation"       => "text-blue-500",
-        "inspection"         => "text-emerald-500",
-        "cleaning"           => "text-cyan-600",
-        "decommissioning"    => "text-red-700",
+        "repair"             => "text-status-warning-accent",
+        "installation"       => "text-status-info-accent",
+        "inspection"         => "text-gaia-primary-strong",
+        "cleaning"           => "text-gaia-primary-strong",
+        "decommissioning"    => "text-status-neutral-accent",
         "biomass_extraction" => "text-status-danger-accent"
       }
       span(class: tokens("uppercase", colors[type.to_s] || "text-gaia-text-subtle")) do
@@ -163,29 +169,29 @@ module Maintenance
     end
 
     def register_button_classes
-      "px-4 py-2 border border-emerald-500 text-emerald-500 " \
-        "hover:bg-emerald-500 hover:text-black " \
+      "px-4 py-2 border border-gaia-primary-strong text-gaia-primary-strong " \
+        "hover:bg-gaia-primary hover:text-gaia-primary-text " \
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong " \
         "transition-all uppercase text-tiny tracking-widest"
     end
 
     def filter_link_classes
-      "px-3 py-1 border border-emerald-900 text-mini uppercase text-gaia-text-muted " \
-        "hover:border-emerald-600 hover:text-emerald-600 " \
+      "px-3 py-1 border border-gaia-border text-mini uppercase text-gaia-text-muted " \
+        "hover:border-gaia-primary-strong hover:text-gaia-primary-strong " \
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong " \
         "transition-all font-mono"
     end
 
     def filter_verified_classes
-      "px-3 py-1 border border-emerald-700 text-mini uppercase text-gaia-primary-strong " \
-        "hover:bg-emerald-900/20 " \
+      "px-3 py-1 border border-gaia-border-strong text-mini uppercase text-gaia-primary-strong " \
+        "hover:bg-gaia-primary/10 " \
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong " \
         "transition-all font-mono"
     end
 
     def filter_clear_classes
-      "px-3 py-1 border border-gray-800 text-mini uppercase text-gaia-text-muted " \
-        "hover:border-gray-600 " \
+      "px-3 py-1 border border-gaia-border text-mini uppercase text-gaia-text-muted " \
+        "hover:border-gaia-border-strong " \
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong " \
         "transition-all font-mono"
     end

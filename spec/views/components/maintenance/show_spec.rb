@@ -310,7 +310,7 @@ RSpec.describe Maintenance::Show do
       it "renders warning color for moderate drift" do
         record_with_gps = build_record(latitude: 49.43, longitude: 32.07, maintainable: tree_with_coords)
         html = render_component(record: record_with_gps, photos: [], pagy_photos: mock_pagy_photos)
-        expect(html).to include("text-status-warning-text")
+        expect(html).to include("text-status-warning-accent")
       end
     end
 
@@ -320,7 +320,7 @@ RSpec.describe Maintenance::Show do
       it "renders danger color for large drift" do
         record_with_gps = build_record(latitude: 49.50, longitude: 32.20, maintainable: tree_with_coords)
         html = render_component(record: record_with_gps, photos: [], pagy_photos: mock_pagy_photos)
-        expect(html).to include("text-red-400")
+        expect(html).to include("text-status-danger-accent")
       end
     end
   end
@@ -390,7 +390,9 @@ RSpec.describe Maintenance::Show do
     it "carries the family colour for a known action_type (not the gray fallback)" do
       html = render_component(record: build_record(action_type: "repair"), photos: [], pagy_photos: mock_pagy_photos)
 
-      expect(html).to include("border-status-warning text-status-warning-text")
+      # [UI.1] Родина repair = -accent-контур (шоста порція: -text поза пастеллю
+      # = токен поза роллю, а пастельна рамка на світлій поверхні невидима).
+      expect(html).to include("border-status-warning-accent text-status-warning-accent")
       expect(html).not_to include("border-gaia-border text-gaia-text-muted")
     end
 
