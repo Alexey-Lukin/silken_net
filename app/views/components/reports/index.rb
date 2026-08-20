@@ -80,9 +80,9 @@ module Reports
         h4(class: "text-sm font-light text-emerald-100 mb-2") { title }
         p(class: "text-tiny text-gray-600 mb-4") { description }
         div(class: "flex items-center gap-4 pt-4 border-t border-emerald-900/30") do
-          a(href: path, class: "text-mini text-emerald-500 uppercase tracking-widest hover:underline") { t(".actions.view") }
-          a(href: "#{path}.csv", class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-500") { t(".actions.csv") }
-          a(href: "#{path}.pdf", class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-500") { t(".actions.pdf") }
+          a(href: path, class: "text-mini text-emerald-500 uppercase tracking-widest hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".actions.view") }
+          a(href: "#{path}.csv", class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".actions.csv") }
+          a(href: "#{path}.pdf", class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".actions.pdf") }
         end
       end
     end

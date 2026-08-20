@@ -81,7 +81,7 @@ module Users
       div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
         div(class: "flex justify-between items-center") do
           h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".sections.security") }
-          a(href: account_security_path, class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-400 transition-colors border border-emerald-900 px-3 py-1") { t(".security.manage") }
+          a(href: account_security_path, class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-400 transition-colors border border-emerald-900 px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".security.manage") }
         end
 
         div(class: "grid grid-cols-3 gap-4 font-mono text-compact") do

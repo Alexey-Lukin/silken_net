@@ -222,7 +222,9 @@ class Cluster < ApplicationRecord
   # Чи є критичні загрози в секторі?
   def active_threats?
     # [СИНХРОНІЗОВАНО]: Тепер назва скоупу збігається з логікою EwsAlert
-    ews_alerts.unresolved.critical.exists?
+    # [UI.3 08-20] `.critical` уже містить `.unresolved` (дім скоупа) — дубль умови
+    # давав `status = 0 AND status = 0` у SQL.
+    ews_alerts.critical.exists?
   end
 
   # [ВИПРАВЛЕНО]: Глибина GeoJSON (Resilient Centroid).

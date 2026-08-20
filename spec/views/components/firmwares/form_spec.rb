@@ -141,7 +141,9 @@ RSpec.describe Firmwares::Form do
     end
 
     it "uses focus-visible for input focus states" do
-      expect(html).to include("focus-visible:border-gaia-primary")
+      # [UI.3 ⚖️ 08-20] Фокус-індикатор мігрував на -strong (2.3:1 → бар 3:1 у світлій);
+      # пін точний, бо старий рядок — substring нового.
+      expect(html).to include("focus-visible:border-gaia-primary-strong")
     end
   end
 end

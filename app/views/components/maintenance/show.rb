@@ -77,7 +77,8 @@ module Maintenance
               maintainable_id: @record.maintainable_id
             ),
             class: "px-4 py-2 border border-emerald-800 text-gaia-primary-strong hover:border-emerald-500 " \
-                   "hover:text-emerald-500 transition-all uppercase text-mini tracking-widest"
+                   "hover:text-emerald-500 transition-all uppercase text-mini tracking-widest " \
+                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
           ) { t(".header.new_record") }
 
           if !@record.hardware_verified && mutable?
@@ -86,7 +87,8 @@ module Maintenance
               verify_maintenance_record_path(@record),
               method: :patch,
               class: "px-4 py-2 border border-status-warning text-status-warning-text hover:bg-status-warning " \
-                     "hover:text-black transition-all uppercase text-mini tracking-widest",
+                     "hover:text-black transition-all uppercase text-mini tracking-widest " \
+                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
               data: { turbo_confirm: t(".header.verify_confirm", id: @record.id) }
             )
           end
@@ -126,7 +128,8 @@ module Maintenance
           a(
             href: edit_maintenance_record_path(@record),
             class: "inline-block mt-4 px-4 py-2 border border-emerald-900 text-gaia-primary-strong " \
-                   "hover:border-emerald-500 hover:text-emerald-500 uppercase text-mini tracking-widest transition-all"
+                   "hover:border-emerald-500 hover:text-emerald-500 uppercase text-mini tracking-widest transition-all " \
+                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
           ) { t(".evidence.attach") }
         end
       end
@@ -220,7 +223,8 @@ module Maintenance
             a(
               href: edit_maintenance_record_path(@record),
               class: "block w-full text-center py-2 border border-emerald-900 text-mini uppercase " \
-                     "text-gaia-primary-strong hover:border-emerald-500 hover:text-emerald-500 transition-all"
+                     "text-gaia-primary-strong hover:border-emerald-500 hover:text-emerald-500 transition-all " \
+                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
             ) { t(".edit") }
           end
         end
@@ -245,7 +249,8 @@ module Maintenance
             href: "https://www.google.com/maps?q=#{@record.latitude},#{@record.longitude}",
             target: "_blank",
             class: "block mt-4 text-center p-2 border border-emerald-800 text-emerald-600 " \
-                   "hover:bg-emerald-900 hover:text-white transition-all uppercase text-mini"
+                   "hover:bg-emerald-900 hover:text-white transition-all uppercase text-mini " \
+                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
           ) { t(".gps.locate") }
         else
           p(class: "text-gaia-text-muted text-mini uppercase tracking-widest") { t(".gps.no_gps") }

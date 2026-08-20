@@ -22,6 +22,14 @@ RSpec.describe Clusters::Item do
   let(:cluster) { mock_cluster }
   let(:html)    { render_component(cluster: cluster) }
 
+  # [UI.3 08-20] Деталь-лінк несе видимий фокус-індикатор (WCAG 2.4.7): доти файл
+  # мав нуль focus-visible при структурному близнюку в gateways/index із трійкою.
+  describe "focus indicator" do
+    it "gives the details link a visible focus ring" do
+      expect(html).to include("focus-visible:ring-gaia-primary-strong")
+    end
+  end
+
   describe "header section" do
     it "renders cluster name" do
       expect(html).to include("Carpathian-Alpha")

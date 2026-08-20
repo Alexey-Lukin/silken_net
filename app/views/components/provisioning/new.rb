@@ -48,7 +48,7 @@ module Provisioning
           end
 
           div(class: "pt-10 border-t border-emerald-900/30") do
-            f.submit t(".submit"), class: "w-full py-4 bg-emerald-500/10 border border-gaia-primary text-gaia-primary-strong uppercase text-xs tracking-[0.3em] hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-[0_0_30px_rgba(16,185,129,0.1)]"
+            f.submit t(".submit"), class: "w-full py-4 bg-emerald-500/10 border border-gaia-primary-strong text-gaia-primary-strong uppercase text-xs tracking-[0.3em] hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-[0_0_30px_rgba(16,185,129,0.1)]"
           end
         end
       end

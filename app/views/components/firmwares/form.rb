@@ -46,7 +46,7 @@ module Firmwares
         end
 
         div(class: "pt-10 border-t border-gaia-border") do
-          f.submit t(".submit"), class: "w-full py-4 bg-gaia-primary/10 border border-gaia-primary text-gaia-primary-strong uppercase text-xs tracking-[0.3em] hover:bg-gaia-primary hover:text-black transition-all cursor-pointer shadow-sm"
+          f.submit t(".submit"), class: "w-full py-4 bg-gaia-primary/10 border border-gaia-primary-strong text-gaia-primary-strong uppercase text-xs tracking-[0.3em] hover:bg-gaia-primary hover:text-black transition-all cursor-pointer shadow-sm"
         end
       end
     end
@@ -69,7 +69,7 @@ module Firmwares
     end
 
     def input_classes
-      "w-full bg-gaia-input-bg border border-gaia-input-border text-gaia-input-text p-3 font-mono text-xs focus-visible:border-gaia-primary outline-none transition-all"
+      "w-full bg-gaia-input-bg border border-gaia-input-border text-gaia-input-text p-3 font-mono text-xs focus-visible:border-gaia-primary-strong outline-none transition-all"
     end
   end
 end

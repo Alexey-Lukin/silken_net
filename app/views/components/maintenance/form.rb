@@ -127,7 +127,7 @@ module Maintenance
                 class: "w-full bg-gaia-input-bg border border-gaia-input-border text-gaia-input-text p-3 font-mono text-xs " \
                        "file:mr-3 file:border file:border-gaia-border file:bg-gaia-surface-sunken " \
                        "file:text-gaia-primary-strong file:text-mini file:uppercase file:px-3 file:py-1 " \
-                       "focus-visible:border-gaia-primary outline-none transition-all", **aria
+                       "focus-visible:border-gaia-primary-strong outline-none transition-all", **aria
             end
           end
 
@@ -153,7 +153,7 @@ module Maintenance
           div(class: "pt-6 flex items-center gap-4") do
             f.submit(
               @editing ? t(".submit.update") : t(".submit.create"),
-              class: "flex-1 py-4 bg-gaia-primary/10 border border-gaia-primary text-gaia-primary-strong " \
+              class: "flex-1 py-4 bg-gaia-primary/10 border border-gaia-primary-strong text-gaia-primary-strong " \
                      "uppercase text-xs tracking-widest hover:bg-gaia-primary hover:text-black " \
                      "transition-all cursor-pointer shadow-sm"
             )
@@ -232,7 +232,7 @@ module Maintenance
 
     def input_classes
       "w-full bg-gaia-input-bg border border-gaia-input-border text-gaia-input-text p-3 font-mono text-xs " \
-      "focus-visible:border-gaia-primary focus-visible:ring-0 outline-none transition-all"
+      "focus-visible:border-gaia-primary-strong focus-visible:ring-0 outline-none transition-all"
     end
   end
 end

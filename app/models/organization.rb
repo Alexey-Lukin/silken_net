@@ -231,7 +231,8 @@ class Organization < ApplicationRecord
 
   # Перевірка наявності активних загроз через скоуп EwsAlert
   def under_threat?
-    ews_alerts.unresolved.critical.exists?
+    # [UI.3 08-20] `.critical` уже містить `.unresolved` — див. дім скоупа в EwsAlert.
+    ews_alerts.critical.exists?
   end
 
   # [ОПТИМІЗАЦІЯ: N+1 Kill]: Агрегований показник здоров'я всього фонду організації

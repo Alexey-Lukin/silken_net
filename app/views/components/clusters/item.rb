@@ -59,7 +59,8 @@ module Clusters
         # Кнопка переходу через Turbo (без рефрешу сторінки)
         a(
           href: cluster_path(@cluster),
-          class: "text-tiny uppercase tracking-widest text-gaia-primary-strong hover:text-gaia-text-strong transition-colors"
+          class: "text-tiny uppercase tracking-widest text-gaia-primary-strong hover:text-gaia-text-strong transition-colors " \
+                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
         ) { t(".open_matrix") }
       end
     end
