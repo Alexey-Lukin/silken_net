@@ -29,6 +29,89 @@
 # anchor. It is not a regex, and the reason why lives in zsh_split_scan.rb.
 set -uo pipefail
 
+# ── --selftest · the guard's own battery (wired as a docs.yml step) ──────────
+# This hook DENIES real work, so a rotten detector here is either blocked work
+# (false positives) or a dark carrier whose silence reads as safety (false
+# negatives) — the same reason zsh_split_scan.rb carries a battery. Cases pin
+# BOTH arms of rule E (laundered forms must deny; the clean-`&&` house idiom,
+# gate names inside heredoc bodies / -m strings, and each half alone must stay
+# silent) plus smoke over the standing deny/warn rules, so a refactor cannot
+# silently disable a neighbour. Each case runs with a fresh session id: the
+# warn() markers are per-session, and a shared id would let case N suppress
+# case N+1's expected warning.
+if [[ "${1:-}" == "--selftest" ]]; then
+  self="$0"; fails=0; n=0
+  t() {
+    local name=$1 expect=$2 cmdstr=$3 out got
+    n=$((n + 1))
+    out=$(jq -nc --arg c "$cmdstr" --arg s "selftest-$$-$n" \
+            '{tool_input:{command:$c},session_id:$s}' | bash "$self")
+    got="silent"
+    if [[ "$out" == *'"permissionDecision":"deny"'* ]]; then
+      got="deny"
+      [[ "$out" == *"OPS.31"* ]] && got="deny-e"
+    elif [[ "$out" == *"additionalContext"* ]]; then
+      got="warn"
+    fi
+    if [[ "$got" == "$expect" ]]; then
+      printf '  ✓ %-36s %s\n' "$name" "$got"
+    else
+      printf '  ✗ %-36s expected %s, got %s\n    out: %s\n' "$name" "$expect" "$got" "$out"
+      fails=$((fails + 1))
+    fi
+  }
+
+  # E-positives — the three measured laundered forms + the newline joiner
+  t "E: ;-laundered (08-20 incident)" deny-e \
+    $'ruby scripts/docs_band.rb > /tmp/band.log 2>&1; echo "BAND_EXIT=$?"; git add -A && git commit -s -F - <<\'EOF\'\nmsg\nEOF'
+  t "E: piped gate (band|tail && commit)" deny-e \
+    $'git add -A && ruby scripts/docs_band.rb 2>&1 | tail -2 && git commit -s -F - <<\'MSG\'\nx\nMSG'
+  t "E: inverted grep -c gate before push" deny-e \
+    'ruby scripts/docs_check.rb 2>&1 | grep -cE "✗|FAIL" && git push origin main'
+  t "E: gated commit BUT push after ;" deny-e \
+    'ruby scripts/docs_check.rb >/dev/null && git commit -s -m MSG; git push'
+  t "E: newline as the joiner" deny-e \
+    $'ruby scripts/docs_check.rb >/dev/null 2>&1\ngit push origin main'
+  # E-negatives — the exempt idiom and every half alone
+  t "E: clean && chain stays silent" silent \
+    $'source ~/.rvm/scripts/rvm && rvm use ruby-4.0.6@silken_net >/dev/null && ruby scripts/docs_band.rb >/dev/null && git add docs/ && git commit -s -F - <<\'MSG\'\nx\nMSG'
+  # Both anti-false-positive cases are MUTATION-CALIBRATED: with the strips
+  # disabled these exact texts flip to a false deny (a heredoc line STARTING
+  # with a gate call + a git push after the heredoc; a `-m` string whose `;`
+  # puts a gate call at a statement start). Weaker texts — a gate merely
+  # mentioned mid-sentence — stayed green even without the strips, because the
+  # link-anchoring alone covers them: the first two drafts of these cases were
+  # exactly that, i.e. vacuous, and the mutants exposed them.
+  t "E: gate named in heredoc body only" silent \
+    $'git add -A && git commit -s -F - <<\'EOF\'\nfeat: новий крок\n\nruby scripts/docs_band.rb тепер ловить цей клас\nEOF\ngit push origin main'
+  t "E: gate named inside -m string" silent \
+    'git commit -s -m "план: спершу гейти; ruby scripts/docs_band.rb обовʼязково; потім пуш" && git push origin main'
+  t "E: verify alone (no git)" silent \
+    'ruby scripts/docs_band.rb > /tmp/b.log 2>&1; echo "EXIT=$?"'
+  t "E: git alone (no gate)" silent \
+    'git add -A && git commit -s -m "chore: bump" && git push'
+  # smoke over the standing rules — a refactor must not disable a neighbour
+  t "smoke: backtick in commit -m" deny \
+    'git commit -m "чи `gates` пройшли"'
+  t "smoke: rg -rn clustered replace" deny \
+    'rg -rn "pattern" app/'
+  t "smoke: rg -n stays silent" silent \
+    'rg -n "pattern" app/'
+  t "smoke: unsplit scalar loop (rule C)" deny \
+    $'pair="a b"\nfor x in $pair; do echo "$x"; done'
+  t "smoke: gate into tail warns (rule A)" warn \
+    'bin/rspec spec/foo_spec.rb 2>&1 | tail -5'
+  t "smoke: \$? after pipe warns (rule B)" warn \
+    'ruby x.rb | tail -1; echo "EXIT=$?"'
+
+  if (( fails > 0 )); then
+    echo "bash_verify_guard --selftest: ${fails}/${n} FAILED"
+    exit 1
+  fi
+  echo "bash_verify_guard --selftest: OK (${n} cases — rule E both arms + smoke over A/B/C/backtick/rg)"
+  exit 0
+fi
+
 input=$(cat)
 cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)
 session=$(printf '%s' "$input" | jq -r '.session_id // "nosession"' 2>/dev/null)
@@ -95,6 +178,14 @@ warn() {
   exit 0
 }
 
+# The verdict-emitting gate vocabulary — shared by rule A (a gate truncated
+# into head/tail) and rule E (a gate laundered past git commit/push), so it is
+# defined OUTSIDE the PIPESTATUS conditional below: a command that merely
+# mentions `pipefail` skips A/B, and rule E must still see the list.
+# Report generators are deliberately absent: stan_audit.rb and mem_find.rb have
+# no `exit 1` path at all, so slicing them is querying, not truncating a verdict.
+gate='(bin/rspec|bundle exec rspec|bin/rubocop|bundle exec rubocop|bin/brakeman|bin/bundler-audit|bin/ci|make -C firmware/test|forge (test|build|coverage)|ruff check|pytest|bin/rails (docs:|tracker:|gaia:|zeitwerk:|spec)|rake (docs:|tracker:))'
+
 # Already reading the pipeline's real status → silent. 222 calls do this, and
 # three of the first five false positives measured were exactly this case.
 if ! printf '%s' "$cmd" | grep -qE 'PIPESTATUS|pipestatus|pipefail'; then
@@ -105,10 +196,6 @@ if ! printf '%s' "$cmd" | grep -qE 'PIPESTATUS|pipestatus|pipefail'; then
   # be an actual verdict-emitting gate AND stand at the START of its statement;
   # that anchor is what kills the measured false-positive class, where the word
   # matched a FILENAME (`grep -n … config/brakeman.ignore | head`).
-  # Report generators are deliberately absent from this list: stan_audit.rb and
-  # mem_find.rb have no `exit 1` path at all, so slicing them is querying, not
-  # truncating a verdict.
-  gate='(bin/rspec|bundle exec rspec|bin/rubocop|bundle exec rubocop|bin/brakeman|bin/bundler-audit|bin/ci|make -C firmware/test|forge (test|build|coverage)|ruff check|pytest|bin/rails (docs:|tracker:|gaia:|zeitwerk:|spec)|rake (docs:|tracker:))'
   if printf '%s' "$cmd" | grep -qE "(^|[;&]|&&|\|\||^[[:space:]]*)[[:space:]]*(env [^|;]* )?${gate}" &&
      printf '%s' "$cmd" | grep -qE '\|[[:space:]]*(head|tail)([[:space:]]|$)' &&
      ! printf '%s' "$cmd" | grep -qE 'tail[[:space:]]+-[fF]|--dry-run|--help|--version|--tasks|--list' ; then
@@ -212,6 +299,59 @@ if printf '%s' "$cmd" | grep -qE '\bfor[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:spac
     fi
   else
     warn scanner-dark '[bash-guard] zsh_split_scan.rb could not be run (no ruby, or the file is unreadable), so the word-splitting detector is DARK for this session — its silence means nothing. (Fires once per session.)'
+  fi
+fi
+
+# ── E · BLOCK · a gate LAUNDERED past `git commit`/`git push` in the same call ──
+# [OPS.31] Measured 2026-08-20 over 31,464 recorded Bash calls with THIS block's
+# own classifier: 220 calls combine a verdict-emitting gate with git commit/push.
+# 203 are laundered — the verdict does not gate the git step: 193 join them with
+# `;`/newline (the gate's exit is echoed, then commit runs REGARDLESS of it), and
+# 10 pipe the gate itself (`band 2>&1 | tail -2 && commit` — tail's exit replaces
+# the verdict; one was `| grep -cE "✗|FAIL" && push`, INVERTED: finding failures
+# returns 0). Both incidents that motivated the rule — 2026-08-16 and 2026-08-20,
+# each pushing a red docs band to main — sit in that population, and prose had
+# already relapsed twice in four days with the rule written down. The remaining
+# 17 combos join gate→git with a clean unpiped `&&`: mechanically honest (a red
+# gate STOPS the chain), the house campaign idiom — ⚖️ founder 2026-08-20: they
+# stay SILENT; deny the laundered forms only.
+# Heredoc bodies and `-m "…"` payloads are stripped FIRST: commit messages here
+# routinely NAME gates («повна сюїта bin/rspec 8403/0»), and without the strip
+# every such message would read as a gate invocation.
+# Declared ceilings (bias to false negatives, per this file's stance): a
+# statement carrying its own clean gate exempts its git step even when an
+# EARLIER gate in the call was laundered (half-gated, 1 measured); a gate that
+# runs AFTER the git step in the same && chain is a post-hoc check, not this
+# class (2 measured); text following the first heredoc opener is dropped, so a
+# laundered combo living entirely BELOW a heredoc is invisible (0 measured).
+if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+(commit|push)\b'; then
+  hd=$(printf '%s\n' "$cmd" | grep -nE "<<-?~?[[:space:]]*['\"]?[A-Za-z_]" | head -1 | cut -d: -f1)
+  if [[ -n "$hd" ]]; then ecmd=$(printf '%s\n' "$cmd" | head -n "$hd"); else ecmd=$cmd; fi
+  ecmd=$(printf '%s' "$ecmd" | sed -E "s/-m[[:space:]]+\"[^\"]*\"/-m MSG/g; s/-m[[:space:]]+'[^']*'/-m MSG/g")
+  egate="((env[[:space:]]+[^[:space:]]+[[:space:]]+)?([A-Z_]+=[^[:space:]]+[[:space:]]+)*)?(${gate}|ruby[[:space:]]+scripts/(docs_band|docs_check|model_doc_sync)\.rb)"
+  if printf '%s' "$ecmd" | grep -qE "$egate"; then
+    verdict=""
+    gate_seen=""
+    while IFS= read -r st; do
+      links=${st//&&/$'\n'}
+      links=${links//||/$'\n'}
+      st_gate=""; st_git=""; st_piped=""
+      while IFS= read -r lk; do
+        if printf '%s' "$lk" | grep -qE "^[[:space:]]*${egate}"; then
+          st_gate=1
+          printf '%s' "$lk" | grep -q '|' && st_piped=1
+        fi
+        printf '%s' "$lk" | grep -qE '^[[:space:]]*git[[:space:]]+(commit|push)\b' && st_git=1
+      done <<< "$links"
+      if [[ -n "$st_git" && -z "$st_gate" && -n "$gate_seen" && "$verdict" != "piped" ]]; then verdict="semicolon"; fi
+      if [[ -n "$st_gate" && -n "$st_git" && -n "$st_piped" ]]; then verdict="piped"; fi
+      [[ -n "$st_gate" ]] && gate_seen=1
+    done < <(printf '%s\n' "$ecmd" | tr ';' '\n')
+    if [[ -n "$verdict" ]]; then
+      jq -nc --arg r "A verdict-emitting gate and git commit/push share this call, but the verdict does NOT gate the git step (${verdict} form): they are joined by \`;\`/newline, or the gate is piped so tail/grep's exit replaces its own. The verdict arrives only AFTER the whole call has run — reading it then is a report about a consequence, not verification, and this exact shape pushed a red docs band to main twice (2026-08-16, 2026-08-20). Run the gate in its OWN call and read the verdict first; or use the sanctioned single-call form — every step joined by a clean unpiped \`&&\`, so a red gate mechanically STOPS the chain. [OPS.31]" \
+        '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
+      exit 0
+    fi
   fi
 fi
 

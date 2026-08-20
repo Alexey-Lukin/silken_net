@@ -287,6 +287,20 @@ jobs:
         # fires unconditionally would block ordinary shell work.
         run: ruby .claude/hooks/zsh_split_scan.rb --selftest
 
+      - name: Docs · bash-guard hook self-test
+        # The PreToolUse hook DENIES real shell work (backtick-in-commit, rg -rn,
+        # unsplit scalars, and rule E: a verify-gate laundered past git commit/push
+        # with `;` or a pipe — the shape that pushed a red docs band to main twice,
+        # 2026-08-16/2026-08-20). A rotten detector is therefore either blocked work
+        # or a dark carrier whose silence reads as safety. The battery pins BOTH
+        # arms of rule E (5 laundered forms must deny; the clean-&& house idiom and
+        # gate names inside heredoc/-m message text must stay silent) plus smoke
+        # over the standing deny/warn rules. The two anti-false-positive cases are
+        # mutation-calibrated: with the heredoc/-m strips disabled they flip to a
+        # false deny — their first drafts did not, i.e. were vacuous, and only the
+        # mutants exposed that.
+        run: bash .claude/hooks/bash_verify_guard.sh --selftest
+
       - name: Docs · Guard-craft index ⇄ source
         # The 42 blindness shapes live in `ssot-maintenance/guard-craft.md`; SKILL.md
         # carries a GENERATED one-line index of them, because that skill auto-invokes
