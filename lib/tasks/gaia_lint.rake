@@ -146,7 +146,9 @@ namespace :gaia do
       "app/views/components/tree_families/", # 2026-08-20 пʼята порція (codemod 23 + ручні; watermark /5 — виняток)
       "app/views/components/actuators/",  # те саме (STATUS_STYLES бейджа → status-*-пари; LED — сигнальна хвиля)
       "app/views/components/maintenance/", # 2026-08-20 шоста порція (codemod 114-на-два-домени + ручні: action_badge → -accent-родина, кнопки → -strong-пара; watermark /5 — виняток)
-      "app/views/components/blockchain_transactions/" # те саме (carbon-чіп → token-carbon фон/рамка, error-панель → danger-пастель+text, ARCH.101 колір напрямку)
+      "app/views/components/blockchain_transactions/", # те саме (carbon-чіп → token-carbon фон/рамка, error-панель → danger-пастель+text, ARCH.101 колір напрямку)
+      "app/views/components/users/",             # 2026-08-20 сьома порція (codemod + role_color → status-пари; закрив і "0%-домен")
+      "app/views/components/account_security/"   # те саме (gaia-input тріада, кнопки → primary-пара; QR bg-white — оголошений виняток ↓)
     ]
 
     scopes = ENV["LINT_SCOPE"] ? [ ENV["LINT_SCOPE"] ] : default_scopes
@@ -233,7 +235,13 @@ namespace :gaia do
       # watermark `/5` (15 сайтів, деліберейт 1.09:1 — реєстр декорацій `contrast_audit`)
       "text-emerald-900/5",      # decorative watermarks (declared, aria-hidden)
       "shadow-[0_0_8px_#10b981]", # status-LED brand glow (здорова гілка пари)
-      "shadow-[0_0_8px_#ef4444]"  # alert-LED glow (тривожна гілка тієї ж пари)
+      "shadow-[0_0_8px_#ef4444]", # alert-LED glow (тривожна гілка тієї ж пари)
+      # [UI.1 порція 7, 2026-08-20] QR-поле MFA-setup: сканер потребує темних
+      # модулів на СВІТЛОМУ полі незалежно від теми — токен поверхні зробив би
+      # код нечитним для камери в темній. Запис свідомо несе ВІДБИТОК вузла, не
+      # голий клас: голий `bg-white` відмивав би нові регресії по всьому
+      # периметру. Парний коментар — у самому компоненті.
+      "justify-center p-6 bg-white w-fit" # mfa_setup QR quiet-zone (functional, theme-invariant)
     ]
 
     violations = []

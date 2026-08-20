@@ -28,18 +28,18 @@ module Users
     private
 
     def render_hero_profile
-      div(class: "p-10 border border-emerald-900 bg-zinc-950 relative overflow-hidden") do
+      div(class: "p-10 border border-gaia-border bg-gaia-surface relative overflow-hidden") do
         div(class: "absolute top-0 right-0 p-4 text-[100px] font-bold text-emerald-900/5 select-none uppercase", aria_hidden: "true") { @user.role_label }
 
         div(class: "flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-10") do
           # Аватар-плейсхолдер
-          div(class: "h-32 w-32 rounded-none border-2 border-emerald-500 bg-emerald-950 flex items-center justify-center") do
-            span(class: "text-5xl font-extralight text-emerald-400") { @user.first_name&.first || @user.email_address.first }
+          div(class: "h-32 w-32 rounded-none border-2 border-gaia-primary bg-gaia-surface-sunken flex items-center justify-center") do
+            span(class: "text-5xl font-extralight text-gaia-primary-strong") { @user.first_name&.first || @user.email_address.first }
           end
 
           div(class: "text-center md:text-left") do
-            h2(class: "text-4xl font-extralight text-white tracking-tighter") { "#{@user.first_name} #{@user.last_name}" }
-            p(class: "text-emerald-800 font-mono text-xs uppercase tracking-widest mt-2") { @user.email_address }
+            h2(class: "text-4xl font-extralight text-gaia-text-strong tracking-tighter") { "#{@user.first_name} #{@user.last_name}" }
+            p(class: "text-gaia-text-subtle font-mono text-xs uppercase tracking-widest mt-2") { @user.email_address }
             div(class: "mt-6 flex justify-center md:justify-start gap-4") do
               badge(t(".role", role: @user.role_label.upcase))
               badge(t(".id", id: @user.id))
@@ -50,8 +50,8 @@ module Users
     end
 
     def render_access_privileges
-      div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".sections.access_privileges") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface space-y-6") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".sections.access_privileges") }
         div(class: "space-y-4 font-mono text-compact") do
           access_item(t(".access.organization"), @user.organization&.name || t(".none"))
           # Через предикат, а не рядкове порівняння: `role == "admin"` казало
@@ -68,8 +68,8 @@ module Users
     end
 
     def render_activity_stats
-      div(class: "p-6 border border-emerald-900 bg-emerald-950/5 space-y-6") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".sections.activity") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface-sunken space-y-6") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".sections.activity") }
         div(class: "grid grid-cols-2 gap-4 text-center") do
           stat_box(t(".activity.records"), @maintenance_count)
           stat_box_last_seen
@@ -78,10 +78,10 @@ module Users
     end
 
     def render_security_status
-      div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
+      div(class: "p-6 border border-gaia-border bg-gaia-surface space-y-6") do
         div(class: "flex justify-between items-center") do
-          h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".sections.security") }
-          a(href: account_security_path, class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-400 transition-colors border border-emerald-900 px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".security.manage") }
+          h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".sections.security") }
+          a(href: account_security_path, class: "text-mini text-gaia-primary-strong uppercase tracking-widest hover:text-gaia-text-strong transition-colors border border-gaia-border-strong px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".security.manage") }
         end
 
         div(class: "grid grid-cols-3 gap-4 font-mono text-compact") do
@@ -95,8 +95,8 @@ module Users
     def render_linked_providers
       return if @active_identities.empty?
 
-      div(class: "p-6 border border-emerald-900 bg-emerald-950/5 space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".sections.linked_providers") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface-sunken space-y-4") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".sections.linked_providers") }
         div(class: "flex flex-wrap gap-3") do
           @active_identities.each do |identity|
             provider_badge(identity)
@@ -106,10 +106,10 @@ module Users
     end
 
     def security_indicator(label, is_active, value)
-      div(class: "p-3 border border-emerald-900/30 text-center") do
+      div(class: "p-3 border border-gaia-border text-center") do
         div(class: "flex items-center justify-center gap-2 mb-2") do
           div(class: tokens("h-2 w-2 rounded-full", "bg-gaia-primary-strong": is_active, "bg-status-danger-accent": !is_active)) { }
-          span(class: "text-mini text-gray-600 uppercase") { label }
+          span(class: "text-mini text-gaia-text-muted uppercase") { label }
         end
         p(class: tokens("text-compact", "text-gaia-primary-strong": is_active, "text-status-danger-accent": !is_active)) { value }
       end
@@ -124,26 +124,26 @@ module Users
       else "🔗"
       end
 
-      div(class: "flex items-center gap-2 px-3 py-2 border border-emerald-900/50 bg-zinc-950") do
+      div(class: "flex items-center gap-2 px-3 py-2 border border-gaia-border-strong bg-gaia-surface-sunken") do
         span { icon }
-        span(class: "text-tiny text-emerald-500 font-mono") { identity.provider_name }
+        span(class: "text-tiny text-gaia-primary-strong font-mono") { identity.provider_name }
         if identity.primary?
-          span(class: "text-micro px-1 bg-emerald-900/30 text-emerald-600 uppercase") { t(".provider.primary") }
+          span(class: "text-micro px-1 bg-gaia-primary/10 text-gaia-primary-strong uppercase") { t(".provider.primary") }
         end
       end
     end
 
     def access_item(label, value)
-      div(class: "flex justify-between border-b border-emerald-900/30 pb-2") do
-        span(class: "text-gray-600") { label }
-        span(class: "text-emerald-500") { value }
+      div(class: "flex justify-between border-b border-gaia-border pb-2") do
+        span(class: "text-gaia-text-muted") { label }
+        span(class: "text-gaia-primary-strong") { value }
       end
     end
 
     def stat_box(label, value = nil)
       div do
-        p(class: "text-mini uppercase text-gray-600") { label }
-        p(class: "text-xl text-emerald-100 font-light mt-1") { block_given? ? yield : value }
+        p(class: "text-mini uppercase text-gaia-text-muted") { label }
+        p(class: "text-xl text-gaia-text-strong font-light mt-1") { block_given? ? yield : value }
       end
     end
 
@@ -158,7 +158,7 @@ module Users
         if @user.last_seen_at
           render Views::Shared::UI::RelativeTime.new(
             datetime: @user.last_seen_at,
-            css_class: "text-xl text-emerald-100 font-light"
+            css_class: "text-xl text-gaia-text-strong font-light"
           )
         else
           plain t(".activity.never_seen")
@@ -167,7 +167,7 @@ module Users
     end
 
     def badge(text)
-      span(class: "px-3 py-1 border border-emerald-900 text-mini text-emerald-600 uppercase tracking-tighter") { text }
+      span(class: "px-3 py-1 border border-gaia-border text-mini text-gaia-primary-strong uppercase tracking-tighter") { text }
     end
   end
 end

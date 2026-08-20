@@ -86,16 +86,22 @@ RSpec.describe Users::Index do
       expect(html).to include("Ada Lovelace")
     end
 
-    it "renders admin role with red badge colors" do
-      expect(html).to include("bg-red-900/50")
+    # [UI.1] Бейдж ролі = пастель + `-text`-пара (§3.2); піни за СЕМАНТИКОЮ пари,
+    # не за сирим кольором — негативна половина на негативному lookahead, бо
+    # `include("bg-status-danger")` зелений і на `-accent` (дефіс не є межею слова).
+    it "renders admin role with the danger badge pair" do
+      expect(html).to match(/bg-status-danger(?!-)/)
+      expect(html).to include("text-status-danger-text")
     end
 
-    it "renders forester role with emerald badge colors" do
-      expect(html).to include("bg-emerald-900/50")
+    it "renders forester role with the active badge pair" do
+      expect(html).to match(/bg-status-active(?!-)/)
+      expect(html).to include("text-status-active-text")
     end
 
-    it "renders investor role with blue badge colors" do
-      expect(html).to include("bg-blue-900/50")
+    it "renders investor role with the info badge pair" do
+      expect(html).to match(/bg-status-info(?!-)/)
+      expect(html).to include("text-status-info-text")
     end
 
     # 🔴 [I18N.1] Мітки ролей — у НЕ-базовій локалі: в англійській «admin» є підрядком
@@ -122,20 +128,21 @@ RSpec.describe Users::Index do
     it "gives super_admin its own badge, distinct from the corrupted-value fallback" do
       html = render_component(users: [ build_user(id: 4, role: :super_admin) ])
 
-      expect(html).to include("bg-amber-900/50")
-      expect(html).not_to include("bg-zinc-800")
+      expect(html).to match(/bg-status-warning(?!-)/)
+      expect(html).to include("text-status-warning-text")
+      expect(html).not_to include("bg-gaia-surface-elevated")
     end
 
     # ⚠️ Фолбек досяжний ЛИШЕ стабом ридера: на реальному записі enum кидає
     # `ArgumentError` просто в конструкторі, тож доти цю гілку «перевіряв» вхід
     # (`role: "guest"`), якого в проді не буває — той самий хід, яким [`UI.4`]
     # діставав інакше недосяжну гілку статусу.
-    it "renders an unrecognized role with the zinc fallback" do
+    it "renders an unrecognized role with the neutral surface fallback" do
       broken = build_user(id: 5, first_name: "Gus", last_name: "Guest")
       allow(broken).to receive(:role).and_return("__not_a_role__")
 
       html = render_component(users: [ broken ])
-      expect(html).to include("bg-zinc-800")
+      expect(html).to include("bg-gaia-surface-elevated")
       expect(html).to include("__not_a_role__")
     end
 

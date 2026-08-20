@@ -26,9 +26,9 @@ module AccountSecurity
     private
 
     def render_header
-      div(class: "p-6 border border-emerald-900 bg-zinc-950") do
-        h2(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".heading") }
-        p(class: "text-xs text-gray-600 mt-2") { t(".subtitle") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface") do
+        h2(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted") { t(".heading") }
+        p(class: "text-xs text-gaia-text-muted mt-2") { t(".subtitle") }
       end
     end
 
@@ -37,12 +37,12 @@ module AccountSecurity
     # interim і обіцяв. Увімкнення веде в setup-флоу (секрет → QR → verify), а не
     # піднімає прапорець сліпо; вимкнення тримає step-up (current_password).
     def render_mfa_section
-      div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".mfa.heading") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface space-y-6") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".mfa.heading") }
 
         if @user.mfa_enabled?
-          p(class: "text-tiny text-emerald-500") { t(".mfa.enabled_with_remaining", count: @user.recovery_codes_remaining) }
-          p(class: "text-mini text-gray-600") { t(".mfa.recovery_warning") }
+          p(class: "text-tiny text-gaia-primary-strong") { t(".mfa.enabled_with_remaining", count: @user.recovery_codes_remaining) }
+          p(class: "text-mini text-gaia-text-muted") { t(".mfa.recovery_warning") }
 
           render_rotate_codes_form
 
@@ -50,22 +50,22 @@ module AccountSecurity
             if @user.password_digest.present?
               div(class: "space-y-2") do
                 label(for: f.field_id(:current_password),
-                      class: "text-tiny text-gray-500 uppercase tracking-widest") { t(".password.current_label") }
+                      class: "text-tiny text-gaia-text-muted uppercase tracking-widest") { t(".password.current_label") }
                 f.password_field :current_password, class: input_classes, required: true
               end
             end
             button(type: "submit", class: "px-6 py-2 border border-status-danger-accent text-tiny " \
-                                          "text-status-danger-text uppercase tracking-widest " \
-                                          "hover:bg-status-danger focus-visible:outline-none " \
+                                          "text-status-danger-accent uppercase tracking-widest " \
+                                          "hover:bg-status-danger hover:text-status-danger-text focus-visible:outline-none " \
                                           "focus-visible:ring-2 focus-visible:ring-gaia-primary-strong transition-all") do
               t(".mfa.disable_button")
             end
           end
         else
-          p(class: "text-tiny text-gray-500") { t(".mfa.disabled_hint") }
+          p(class: "text-tiny text-gaia-text-muted") { t(".mfa.disabled_hint") }
           button_to t(".mfa.enable_button"), mfa_setup_path, method: :post,
-                                                            class: "px-6 py-2 border border-emerald-500 text-tiny text-emerald-500 " \
-                                                                   "uppercase tracking-widest hover:bg-emerald-500 hover:text-black " \
+                                                            class: "px-6 py-2 bg-gaia-primary/10 border border-gaia-primary-strong text-tiny text-gaia-primary-strong " \
+                                                                   "uppercase tracking-widest hover:bg-gaia-primary hover:text-gaia-primary-text " \
                                                                    "focus-visible:outline-none focus-visible:ring-2 " \
                                                                    "focus-visible:ring-gaia-primary-strong transition-all"
         end
@@ -81,7 +81,7 @@ module AccountSecurity
         if @user.password_digest.present?
           div(class: "space-y-2") do
             label(for: f.field_id(:current_password),
-                  class: "text-tiny text-gray-500 uppercase tracking-widest") { t(".password.current_label") }
+                  class: "text-tiny text-gaia-text-muted uppercase tracking-widest") { t(".password.current_label") }
             f.password_field :current_password, class: input_classes, required: true
           end
         end
@@ -97,13 +97,13 @@ module AccountSecurity
 
     # --- ПАРОЛЬ СЕКЦІЯ ---
     def render_password_section
-      div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".password.heading") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface space-y-6") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-4") { t(".password.heading") }
 
         if @user.password_digest.present?
-          p(class: "text-tiny text-emerald-500 mb-4") { t(".password.set_ok") }
+          p(class: "text-tiny text-gaia-primary-strong mb-4") { t(".password.set_ok") }
         else
-          p(class: "text-tiny text-status-warning-text mb-4") { t(".password.not_set") }
+          p(class: "text-tiny text-status-warning-accent mb-4") { t(".password.not_set") }
         end
 
         # [UI.7] `form_with` без скоупу: контролер читає `params[:current_password]`
@@ -125,7 +125,7 @@ module AccountSecurity
             input(id: id, type: "password", name: "new_password_confirmation", class: input_classes, required: true, minlength: "12")
           end
 
-          button(type: "submit", class: "px-6 py-2 border border-emerald-500 text-tiny text-emerald-500 uppercase tracking-widest hover:bg-emerald-500 hover:text-black transition-all") do
+          button(type: "submit", class: "px-6 py-2 bg-gaia-primary/10 border border-gaia-primary-strong text-tiny text-gaia-primary-strong uppercase tracking-widest hover:bg-gaia-primary hover:text-gaia-primary-text transition-all") do
             @user.password_digest.present? ? t(".password.change_submit") : t(".password.set_submit")
           end
         end
@@ -148,15 +148,15 @@ module AccountSecurity
 
     # --- ПРОВАЙДЕРИ СЕКЦІЯ ---
     def render_identities_section
-      div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".identities.heading") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface space-y-6") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-4") { t(".identities.heading") }
 
         if @identities.any?
           div(class: "space-y-3") do
             @identities.each { |identity| render_identity_row(identity) }
           end
         else
-          p(class: "text-tiny text-gray-600") { t(".identities.none_linked") }
+          p(class: "text-tiny text-gaia-text-muted") { t(".identities.none_linked") }
         end
 
         render_available_providers
@@ -164,20 +164,20 @@ module AccountSecurity
     end
 
     def render_identity_row(identity)
-      div(class: "flex items-center justify-between p-4 border border-emerald-900/30 bg-zinc-950") do
+      div(class: "flex items-center justify-between p-4 border border-gaia-border bg-gaia-surface-sunken") do
         div(class: "flex items-center gap-4") do
           span(class: "text-lg") { provider_icon(identity.provider) }
           div do
             div(class: "flex items-center gap-2") do
-              span(class: "text-compact text-white font-mono") { identity.provider_name }
+              span(class: "text-compact text-gaia-text-strong font-mono") { identity.provider_name }
               if identity.primary?
-                span(class: "text-micro px-2 py-0.5 bg-emerald-900/30 text-emerald-500 uppercase") { t(".identities.primary") }
+                span(class: "text-micro px-2 py-0.5 bg-gaia-primary/10 text-gaia-primary-strong uppercase") { t(".identities.primary") }
               end
               if identity.locked?
-                span(class: "text-micro px-2 py-0.5 bg-red-900/30 text-red-500 uppercase") { t(".identities.locked") }
+                span(class: "text-micro px-2 py-0.5 bg-status-danger text-status-danger-text uppercase") { t(".identities.locked") }
               end
             end
-            span(class: "text-mini text-gray-600 font-mono") { t(".identities.uid_line", prefix: identity.uid[0..12]) }
+            span(class: "text-mini text-gaia-text-muted font-mono") { t(".identities.uid_line", prefix: identity.uid[0..12]) }
           end
         end
 
@@ -199,7 +199,7 @@ module AccountSecurity
           unlock_account_security_identity_path(identity),
           method: :patch,
           form_class: "inline",
-          class: "px-3 py-1 border border-emerald-900 text-micro text-emerald-700 uppercase hover:text-emerald-400 transition-all"
+          class: "px-3 py-1 border border-gaia-border-strong text-micro text-gaia-primary-strong uppercase hover:text-gaia-text-strong transition-all"
         )
       else
         button_to(
@@ -207,7 +207,7 @@ module AccountSecurity
           lock_account_security_identity_path(identity),
           method: :patch,
           form_class: "inline",
-          class: "px-3 py-1 border border-status-warning text-micro text-status-warning-text uppercase hover:text-status-warning-text transition-all"
+          class: "px-3 py-1 border border-status-warning-accent text-micro text-status-warning-accent uppercase hover:bg-status-warning hover:text-status-warning-text transition-all"
         )
       end
     end
@@ -229,11 +229,11 @@ module AccountSecurity
           account_security_identity_path(identity),
           method: :delete,
           form_class: "inline",
-          class: "px-3 py-1 border border-red-900 text-micro text-red-700 uppercase hover:text-red-400 transition-all",
+          class: "px-3 py-1 border border-status-danger-accent text-micro text-status-danger-accent uppercase hover:bg-status-danger hover:text-status-danger-text transition-all",
           data: { turbo_confirm: t(".identities.unlink_confirm", provider: identity.provider_name) }
         )
       else
-        span(class: "px-3 py-1 border border-gray-800 text-micro text-gray-700 uppercase cursor-not-allowed", title: t(".identities.unlink_disabled_title")) { t(".identities.unlink") }
+        span(class: "px-3 py-1 border border-gaia-border text-micro text-gaia-text-subtle uppercase cursor-not-allowed", title: t(".identities.unlink_disabled_title")) { t(".identities.unlink") }
       end
     end
 
@@ -254,13 +254,13 @@ module AccountSecurity
       field_id = field_id_for(name)
 
       div(class: "space-y-2") do
-        label(for: field_id, class: "text-mini text-gray-600 uppercase tracking-widest block") { label_text }
+        label(for: field_id, class: "text-mini text-gaia-text-muted uppercase tracking-widest block") { label_text }
         yield(field_id)
       end
     end
 
     def input_classes
-      "w-full bg-zinc-950 border border-emerald-900/50 text-compact font-mono text-emerald-400 px-4 py-3 focus-visible:border-emerald-500 focus-visible:outline-none transition-colors"
+      "w-full bg-gaia-input-bg border border-gaia-input-border text-compact font-mono text-gaia-input-text px-4 py-3 focus-visible:border-gaia-primary-strong focus-visible:outline-none transition-colors"
     end
 
     def provider_icon(provider)
