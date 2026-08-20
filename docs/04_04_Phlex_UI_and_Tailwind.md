@@ -622,7 +622,7 @@ render Views::Shared::UI::StatusBadge.new(status: "confirmed", class: "mt-2")
 | **StatCard** | `stat_card.rb` | `label:`, `value:`, `sub:`, `danger:`, `class:` | Картка метрики дашборду з опціональним danger-виділенням |
 | **Pagination** | `pagination.rb` | `pagy:`, `url_helper:` | Pagy-навігація prev/next |
 | **EmptyState** | `empty_state.rb` | `title:`, `description:`, `icon:`, `colspan:` | Плейсхолдер порожніх даних (grid або `<tr><td>` режим) |
-| **ActionBadge** | `action_badge.rb` | `action:`, `class:` | Бейдж типу дії журналу аудиту (regex pattern matching) |
+| **ActionBadge** | `action_badge.rb` | `action:`, `metadata:`, `class:` | Бейдж дії журналу аудиту; дім міток `ActionBadge.label` — 3 transition-родини через дім стану СВОЄЇ родини + літерали з fail-open (§12.14) |
 | **PhotoCard** | `photo_card.rb` | `photo:`, `record:`, `editable:` | Картка ActiveStorage blob з hover-оверлеєм |
 | **RelativeTime** | `relative_time.rb` | `datetime:`, `css_class:`, `prefix:` | "5 хвилин тому" з повною міткою часу у `title`-підказці |
 | **Skeleton** | `skeleton.rb` | `variant:`, `lines:`, `class:` | Скелетон завантаження (6 варіантів: `:balance`, `:card`, `:stats`, `:table`, `:map`, `:text`) |
@@ -1355,7 +1355,7 @@ Lookbook надає живий попередній перегляд усіх к
 |---|---|
 | `StatusBadgePreview` | Всі AASM стани, Transaction lifecycle, Interactive |
 | `StatCardPreview` | Default, Danger, Minimal, Interactive |
-| `ActionBadgePreview` | 2 сценарії: `all_types` (4 типи дій), `interactive` |
+| `ActionBadgePreview` | 2 сценарії: `all_types` (реальні дії журналу — літерали + transition-родини), `interactive` |
 | `EmptyStatePreview` | Grid, Custom icon, Minimal |
 | `DashboardEventRowPreview` | EwsAlert, BlockchainTx (мінт), Blockchain burn (слешинг), Cluster-sourced Celo reward, Maintenance, Unknown |
 | `SidebarPreview` | Default, With alert badge, Telemetry active, Interactive |
@@ -1986,6 +1986,8 @@ end
 ✅ Носій — `spec/quality/enum_label_call_site_spec.rb`: перелік атрибутів деривується з самих моделей (`*_LABEL_SCOPE`-константи), тож новий дім потрапляє під нагляд без правки гейта. Судяться дві форми — атрибут із текстовим форматуванням (`.to_s`/`.upcase`) і голий вміст Phlex-блоку; **аргумент хелпера, що деривує сам** (`action_badge(record.action_type)`), свідомо НЕ судиться, інакше гейт заборонив би ратифіковану форму. ⚠️ Перша редакція гейта ловила три хіти, з яких **два були i18n-КЛЮЧАМИ** (`t(".actor.role")`), а головного дефекту не бачила зовсім — рядкові літерали знімаються перед матчем саме тому.
 
 > ⚠️ **Сире значення enum'а, інтерпольоване в ПЕРЕКЛАДЕНЕ речення, — гірший різновид промаху, ніж просто сирий текст.** Фраза виглядає локалізованою, тож при вичитці її пропускають: `t(".threat", type: @event.alert_type)` давало «⚠ Загроза: fire_detected у Карпати-7». Той самий підвид — англійський `aria_label`, зібраний із перекладеного шаблону й сирого значення: скрін-рідер читає англійський токен усередині української фрази, а очима це не видно взагалі. Обидва випадки шукаються не по `.humanize`, а по інтерполяції атрибута моделі в `t(...)`.
+
+🔴 **`AuditLog#action` — НЕ enum, а вільний varchar із трьома інтерпольованими родинами, і його дім міток — РЕНДЕРЕР** [I18N.1, 2026-08-20]: `Views::Shared::UI::ActionBadge.label(action, metadata:)` (прецедент breadcrumb — рендерер і є дім мапи; `ACTION_SCOPE`/`TRANSITION_SCOPE` там само). Форма «дієслово + окремо резолвлений стан»: `<subj>_to_<state>`-родини друкують «Субʼєкт → стан», де стан резолвиться домом СВОЄЇ родини — naas/blockchain через `StatusBadge.label` (перетин з `ui.status` повний), а НАКАЗИ через `CommandStatusBadge.label` (перетин 3/5, і мітки свідомо РОЗХОДЯТЬСЯ: `confirmed` = «завершено» ⊥ «підтверджено» — частковий резолв через спільний bag був би пасткою §12.14 вище); event-форма `blockchain_tx_{event}` бере стан із `metadata["to"]` (писач кладе завжди), без нього — сирий суфікс. Літерали — ключі `ui.action_badge.actions.*` ×4 локалі з fail-open на `humanize` (нова дія видима одразу). ⚠️ `enum_label_parity_spec` цю родину НЕ накриє за побудовою (множини не дає `Model.enum.keys`) — носій = власна спека бейджа (mutation ×4) + uk-свідки в рендер-хазяїв; техрядок `details.action` на `audit_logs/show` лишається сирим СВІДОМО (пара «людське ⊥ машинне», як ключі metadata-дампа).
 
 **Locale-інваріантні значення (емодзі, гліфи) у YAML НЕ кладуться.** `i18n-tasks missing` — HARD-гейт парності, тож один емодзі перетворився б на по копії в **кожній** локалі каталогу, які перекладач може «виправити». Аргумент масштабується в гірший бік: чим більше локалей, тим дорожча помилка. Їхній дім — заморожена Ruby-мапа поруч зі scope-константою.
 

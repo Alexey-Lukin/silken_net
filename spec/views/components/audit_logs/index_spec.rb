@@ -14,7 +14,9 @@ RSpec.describe AuditLogs::Index do
     User.new(first_name: first, last_name: last)
   end
 
-  def build_log(id: 1, action: "create", auditable_type: "Tree", auditable_id: 99,
+  # [TEST.12] `action:` — лише РЕАЛЬНІ значення писачів: доти дефолти
+  # «create»/«update»/«destroy» були CRUD-стилем, якого домен не пише ніде.
+  def build_log(id: 1, action: "system_parameter_changed", auditable_type: "Tree", auditable_id: 99,
                user: nil, created_at: Time.current)
     log = AuditLog.new(
       id: id,
@@ -27,8 +29,8 @@ RSpec.describe AuditLogs::Index do
     log
   end
 
-  let(:log_with_user)    { build_log(id: 1, action: "update", auditable_type: "Tree", auditable_id: 7, user: build_user) }
-  let(:log_without_user) { build_log(id: 2, action: "destroy", auditable_type: nil, auditable_id: nil, user: nil) }
+  let(:log_with_user)    { build_log(id: 1, action: "user_role_changed", auditable_type: "Tree", auditable_id: 7, user: build_user) }
+  let(:log_without_user) { build_log(id: 2, action: "stream_epoch_rotated", auditable_type: nil, auditable_id: nil, user: nil) }
   let(:logs)             { [ log_with_user, log_without_user ] }
   let(:html)             { render_component(logs: logs, pagy: mock_pagy(count: 63)) }
 
@@ -84,6 +86,13 @@ RSpec.describe AuditLogs::Index do
 
     it "renders aria-label with log id" do
       expect(html).to include("Inspect audit log #1")
+    end
+
+    # [I18N.1] Свідок дротування бейджа в НЕ-базовій локалі: en-мітка дорівнює
+    # humanize побайтово, тож механізм видимий лише тут.
+    it "renders the localized action label in the row (uk)" do
+      expect(I18n.with_locale(:uk) { render_component(logs: logs, pagy: mock_pagy(count: 63)) })
+        .to include("Роль користувача змінено")
     end
   end
 

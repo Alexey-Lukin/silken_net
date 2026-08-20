@@ -1,20 +1,28 @@
 <div style="background: #000; padding: 2rem; font-family: monospace;">
-  <h3 style="color: #10b981; margin-bottom: 1rem; font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em;">Action Badge — Pattern Matching</h3>
+  <h3 style="color: #10b981; margin-bottom: 1rem; font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em;">Action Badge — real audit actions</h3>
+  <%# [TEST.12] Лише РЕАЛЬНІ значення журналу (писачі record_audit_trail!/AuditLog.create!):
+      доти превʼю рендерило девʼять вигаданих CRUD-дій (create_user, delete_node…),
+      яких жоден писач не пише — превʼю є поверхнею без гейта, і бачить його людина. %>
   <table style="border-collapse: collapse;">
     <% [
-      ["create_user", "creative"],
-      ["add_tree", "creative"],
-      ["update_firmware", "mutative"],
-      ["modify_settings", "mutative"],
-      ["delete_node", "destructive"],
-      ["destroy_record", "destructive"],
-      ["remove_photo", "destructive"],
-      ["login", "neutral"],
-      ["export_report", "neutral"]
-    ].each do |action, type| %>
+      ["factory_flash", nil],
+      ["user_role_changed", nil],
+      ["system_parameter_changed", nil],
+      ["hardware_key_rotated", nil],
+      ["stream_epoch_rotated", nil],
+      ["acting_organization_switched", nil],
+      ["actuator_bulk_cancelled", nil],
+      ["maintenance_photo_purged", nil],
+      ["slash_verdict_burn", nil],
+      ["slash_verdict_frozen", nil],
+      ["naas_contract_to_active", { "from" => "draft", "to" => "active" }],
+      ["actuator_to_confirmed", { "from" => "acknowledged", "to" => "confirmed" }],
+      ["blockchain_tx_to_failed", { "from" => "sent", "to" => "failed" }],
+      ["blockchain_tx_confirm", { "from" => "sent", "to" => "confirmed" }]
+    ].each do |action, metadata| %>
       <tr>
-        <td style="padding: 0.25rem 1rem; color: #065f46; font-size: 10px;"><%= type %></td>
-        <td style="padding: 0.25rem;"><%= render Views::Shared::UI::ActionBadge.new(action: action) %></td>
+        <td style="padding: 0.25rem 1rem; color: #065f46; font-size: 10px;"><%= action %></td>
+        <td style="padding: 0.25rem;"><%= render Views::Shared::UI::ActionBadge.new(action: action, metadata: metadata) %></td>
       </tr>
     <% end %>
   </table>

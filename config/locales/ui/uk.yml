@@ -2,7 +2,22 @@
 uk:
   ui:
     action_badge:
-      aria_label: 'Дія: %{action}'
+      actions:
+        acting_organization_switched: Перемкнуто контекст організації
+        actuator_bulk_cancelled: Чергу наказів скасовано
+        factory_flash: Фабрична прошивка
+        hardware_key_rotated: Апаратний ключ ротовано
+        maintenance_photo_purged: Фотодоказ знищено
+        slash_verdict_burn: 'Вердикт слешингу: спалення'
+        slash_verdict_evasion: 'Вердикт слешингу: ухилення'
+        slash_verdict_frozen: 'Вердикт слешингу: заморожено'
+        stream_epoch_rotated: Епоху стрімів ротовано
+        system_parameter_changed: Системний параметр змінено
+        user_role_changed: Роль користувача змінено
+      transitions:
+        actuator_command: Наказ → %{state}
+        blockchain_tx: Транзакція → %{state}
+        naas_contract: Контракт → %{state}
     measurement:
       coverage: виміряно %{measured} з %{total}
       not_measured: Не виміряно

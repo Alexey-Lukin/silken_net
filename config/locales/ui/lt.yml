@@ -2,7 +2,22 @@
 lt:
   ui:
     action_badge:
-      aria_label: 'Veiksmas: %{action}'
+      actions:
+        acting_organization_switched: Perjungtas organizacijos kontekstas
+        actuator_bulk_cancelled: Komandų eilė atšaukta
+        factory_flash: Gamyklinis programavimas
+        hardware_key_rotated: Aparatūros raktas rotuotas
+        maintenance_photo_purged: Įrodymo nuotrauka ištrinta
+        slash_verdict_burn: 'Slash verdiktas: sudeginimas'
+        slash_verdict_evasion: 'Slash verdiktas: vengimas'
+        slash_verdict_frozen: 'Slash verdiktas: įšaldyta'
+        stream_epoch_rotated: Srauto epochos rotacija
+        system_parameter_changed: Sistemos parametras pakeistas
+        user_role_changed: Naudotojo vaidmuo pakeistas
+      transitions:
+        actuator_command: Komanda → %{state}
+        blockchain_tx: Sandoris → %{state}
+        naas_contract: Sutartis → %{state}
     measurement:
       coverage: išmatuota %{measured} iš %{total}
       not_measured: Neišmatuota

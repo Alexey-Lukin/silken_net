@@ -14,7 +14,10 @@ RSpec.describe AuditLogs::Show do
     User.new(first_name: first, last_name: last, email_address: email_address, role: role)
   end
 
-  def build_log(id: 1, action: "update", auditable_type: "Tree", auditable_id: 42,
+  # [TEST.12] `action:` — лише РЕАЛЬНІ значення (12 літералів + 3 `<subj>_to_<state>`-родини
+  # + `blockchain_tx_{event}`): доти дефолт «update» був CRUD-стилем, якого цей домен не
+  # пише ЖОДНИМ писачем, тож бейдж/заголовок перевірялись входом, недосяжним у проді.
+  def build_log(id: 1, action: "system_parameter_changed", auditable_type: "Tree", auditable_id: 42,
                user: nil, metadata: {}, created_at: Time.current)
     AuditLog.new(
       id: id,
@@ -28,7 +31,7 @@ RSpec.describe AuditLogs::Show do
   end
 
   let(:user) { build_user }
-  let(:log)  { build_log(id: 5, action: "update", user: user, metadata: { "reason" => "correction" }) }
+  let(:log)  { build_log(id: 5, user: user, metadata: { "reason" => "correction" }) }
   let(:html) { render_component(log: log) }
 
   describe "header section" do
@@ -36,8 +39,12 @@ RSpec.describe AuditLogs::Show do
       expect(html).to include("Audit Event Record")
     end
 
-    it "renders log action as heading" do
-      expect(html).to include("update")
+    # [I18N.1] Свідок у НЕ-базовій локалі: en-мітка `System parameter changed`
+    # ПОБАЙТОВО дорівнює humanize, тож англійський пін механізму не бачить —
+    # мутація «label → humanize» червонить рівно український приклад.
+    it "renders the localized action label as heading (uk)" do
+      expect(I18n.with_locale(:uk) { render_component(log: log) })
+        .to include("Системний параметр змінено")
     end
 
     it "renders log id and timestamp" do
@@ -83,7 +90,9 @@ RSpec.describe AuditLogs::Show do
     # Локаль НЕ базова: en-мітка «draft» збігається з сирим enum байтово, тож у en пін
     # механізму не бачив би.
     it "renders from/to AASM states through StatusBadge labels" do
-      transition = build_log(action: "naas_contract_cancelled", metadata: { "from" => "draft", "to" => "cancelled" })
+      # [TEST.12] Реальна форма писача — `naas_contract_to_<state>` (`naas_contract.rb`);
+      # доти фікстура вигадувала `naas_contract_cancelled` без `_to_`.
+      transition = build_log(action: "naas_contract_to_cancelled", metadata: { "from" => "draft", "to" => "cancelled" })
       expect(I18n.with_locale(:uk) { render_component(log: transition) }).to include("чернетка")
     end
 
@@ -98,15 +107,24 @@ RSpec.describe AuditLogs::Show do
     end
   end
 
-  # [I18N.1] ActionBadge (shared/ui) — aria-мітка через повний шлях `ui.action_badge.aria_label`;
-  # власної спеки бейдж не має, механізм пінить рендер-хазяїн.
-  describe "action badge aria" do
-    it "labels the badge with the localized aria prefix and raw action" do
-      expect(html).to include('aria-label="Action: update"')
+  # [I18N.1] Мітки дії — дім `ActionBadge.label` (деривація має власну спеку
+  # в `spec/views/shared/ui/action_badge_spec.rb`); тут пінимо ПРОВОДКУ:
+  # обидва хазяї (h2 + бейдж) кличуть дім і передають metadata. aria-label
+  # знято свідомо — над локалізованим видимим текстом він перекривав би
+  # accessible name (ратифіковане правило I18N.1).
+  describe "action label wiring" do
+    it "renders the transition family through its state home (uk)" do
+      transition = build_log(action: "naas_contract_to_cancelled", metadata: { "from" => "draft", "to" => "cancelled" })
+      expect(I18n.with_locale(:uk) { render_component(log: transition) }).to include("Контракт → скасовано")
     end
 
-    it "localizes the aria prefix for the viewer (uk), keeping the action raw" do
-      expect(I18n.with_locale(:uk) { render_component(log: log) }).to include('aria-label="Дія: update"')
+    it "resolves the event form via metadata to-state (uk)" do
+      event = build_log(action: "blockchain_tx_confirm", metadata: { "from" => "sent", "to" => "confirmed" })
+      expect(I18n.with_locale(:uk) { render_component(log: event) }).to include("Транзакція → підтверджено")
+    end
+
+    it "keeps the raw token in the details row (людське ⊥ машинне)" do
+      expect(html).to include(">system_parameter_changed<")
     end
   end
 

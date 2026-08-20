@@ -86,7 +86,7 @@ module AuditLogs
         td(class: "p-4 text-tiny text-gray-600") { log.created_at.strftime("%H:%M:%S // %d.%m.%y") }
         td(class: "p-4 text-emerald-400") { log.user&.full_name || t(".system_user") }
         td(class: "p-4") do
-          render Views::Shared::UI::ActionBadge.new(action: log.action)
+          render Views::Shared::UI::ActionBadge.new(action: log.action, metadata: log.metadata)
         end
         td(class: "p-4 text-gray-400") do
           if log.auditable_type.present?

@@ -2,7 +2,22 @@
 lv:
   ui:
     action_badge:
-      aria_label: 'Darbība: %{action}'
+      actions:
+        acting_organization_switched: Pārslēgts organizācijas konteksts
+        actuator_bulk_cancelled: Komandu rinda atcelta
+        factory_flash: Rūpnīcas programmēšana
+        hardware_key_rotated: Aparatūras atslēga rotēta
+        maintenance_photo_purged: Pierādījuma fotogrāfija dzēsta
+        slash_verdict_burn: 'Slash verdikts: sadedzināšana'
+        slash_verdict_evasion: 'Slash verdikts: izvairīšanās'
+        slash_verdict_frozen: 'Slash verdikts: iesaldēts'
+        stream_epoch_rotated: Straumes epohas rotācija
+        system_parameter_changed: Sistēmas parametrs mainīts
+        user_role_changed: Lietotāja loma mainīta
+      transitions:
+        actuator_command: Komanda → %{state}
+        blockchain_tx: Darījums → %{state}
+        naas_contract: Līgums → %{state}
     measurement:
       coverage: izmērīti %{measured} no %{total}
       not_measured: Nav izmērīts

@@ -10,8 +10,8 @@ class ActionBadgePreview < Lookbook::Preview
   end
 
   # @label Interactive
-  # @param action text "Action name (e.g. create_user, delete_tree, update_firmware, login)"
-  def interactive(action: "create_node")
+  # @param action text "Action token (e.g. user_role_changed, naas_contract_to_active, slash_verdict_burn)"
+  def interactive(action: "user_role_changed")
     render Views::Shared::UI::ActionBadge.new(action: action)
   end
 end

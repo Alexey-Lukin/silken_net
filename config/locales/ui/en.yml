@@ -2,7 +2,22 @@
 en:
   ui:
     action_badge:
-      aria_label: 'Action: %{action}'
+      actions:
+        acting_organization_switched: Organization context switched
+        actuator_bulk_cancelled: Actuator queue cancelled
+        factory_flash: Factory flash
+        hardware_key_rotated: Hardware key rotated
+        maintenance_photo_purged: Evidence photo purged
+        slash_verdict_burn: 'Slash verdict: burn'
+        slash_verdict_evasion: 'Slash verdict: evasion'
+        slash_verdict_frozen: 'Slash verdict: frozen'
+        stream_epoch_rotated: Stream epoch rotated
+        system_parameter_changed: System parameter changed
+        user_role_changed: User role changed
+      transitions:
+        actuator_command: Command → %{state}
+        blockchain_tx: Transaction → %{state}
+        naas_contract: Contract → %{state}
     measurement:
       coverage: "%{measured} of %{total} measured"
       not_measured: Not measured

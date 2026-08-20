@@ -31,10 +31,10 @@ module AuditLogs
         div(class: "flex justify-between items-start") do
           div do
             p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { t(".event_record") }
-            h2(class: "text-3xl font-extralight tracking-tighter text-white") { @log.action }
+            h2(class: "text-3xl font-extralight tracking-tighter text-white") { Views::Shared::UI::ActionBadge.label(@log.action, metadata: @log.metadata) }
             p(class: "text-tiny font-mono text-gray-600 mt-2") { t(".tx_id_line", id: @log.id, at: @log.created_at.strftime("%d.%m.%Y %H:%M:%S UTC")) }
           end
-          render Views::Shared::UI::ActionBadge.new(action: @log.action)
+          render Views::Shared::UI::ActionBadge.new(action: @log.action, metadata: @log.metadata)
         end
       end
     end
@@ -49,6 +49,10 @@ module AuditLogs
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
+            # [I18N.1] Тут СИРИЙ токен свідомо — пара «людське ⊥ машинне»:
+            # заголовок і бейдж угорі несуть локалізовану мітку, а цей рядок
+            # деталей лишається технічним ідентифікатором (греп/супорт), як
+            # ключі metadata-дампа нижче.
             detail_row(t(".details.action"), @log.action)
             detail_row(t(".details.performed_by"), @log.user&.full_name || t(".system_user"))
             detail_row(t(".details.target_type"), @log.auditable_type || "—")

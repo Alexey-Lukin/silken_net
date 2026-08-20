@@ -639,26 +639,29 @@ ActuatorCommand.create!(
 # 12. АУДИТ-ЛОГИ (AuditLog)
 # =========================================================================
 puts "📋 Запис аудит-логів..."
+# [I18N.1] `action:` — лише значення РЕАЛЬНИХ писачів (`record_audit_trail!`-сайти):
+# доти сіди несли dot-конвенцію (`cluster.create`…), якої не пише жоден код, тож
+# dev-БД брехала про можливі значення журналу.
 AuditLog.create!(
   user: alexey,
   organization: active_bridge,
-  action: "cluster.create",
-  auditable: cherkasy_forest,
-  metadata: { ip: "192.168.1.1", user_agent: "SilkenNetAdmin/1.0" }
+  action: "user_role_changed",
+  auditable: alexey,
+  metadata: { "from" => "forester", "to" => "admin", ip: "192.168.1.1", user_agent: "SilkenNetAdmin/1.0" }
 )
 
 AuditLog.create!(
   user: investor,
   organization: eco_future_fund,
-  action: "naas_contract.sign",
+  action: "naas_contract_to_active",
   auditable: naas_contract,
-  metadata: { ip: "10.0.0.1", user_agent: "Chrome/120.0" }
+  metadata: { "from" => "draft", "to" => "active", ip: "10.0.0.1", user_agent: "Chrome/120.0" }
 )
 
 AuditLog.create!(
   user: oracle,
   organization: active_bridge,
-  action: "slashing.evaluate",
+  action: "slash_verdict_frozen",
   auditable: naas_contract,
   metadata: { source: "DailyAggregationWorker", trees_evaluated: 100 }
 )

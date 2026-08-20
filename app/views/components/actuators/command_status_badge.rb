@@ -11,6 +11,18 @@ module Actuators
       "confirmed"    => "bg-emerald-800 text-emerald-100"
     }.freeze
 
+    # [I18N.1] Дім міток станів НАКАЗУ — окремий від спільного `ui.status`
+    # свідомо: перетин 3/5 (`issued`/`acknowledged` там немає), а частковий
+    # резолв через спільний bag виглядав би повним. Класовий label — щоб
+    # `ActionBadge` резолвив стан transition-дії тим САМИМ домом, що й цей
+    # бейдж (дзеркало `StatusBadge.label`).
+    SCOPE = "actuators.command_status_badge"
+
+    def self.label(status)
+      value = status.to_s
+      I18n.t("#{SCOPE}.#{value}", default: value)
+    end
+
     def initialize(command:)
       @command = command
     end
@@ -18,7 +30,7 @@ module Actuators
     def view_template
       status = @command.status.to_s
       style  = STATUS_STYLES.fetch(status, "bg-zinc-800 text-zinc-300")
-      label  = t(".#{status}", default: status)
+      label  = self.class.label(status)
 
       # [UI.3] `data-command-state` — сирий enum, locale-інваріантний: SR-анонс
       # на Show дискримінує термінальність машинно, не парсячи локалізований
