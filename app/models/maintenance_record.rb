@@ -35,8 +35,15 @@ class MaintenanceRecord < ApplicationRecord
   # Evidence Protocol (Trust Protocol) — фото до/після для аудиту Series C.
   # Variant :thumb генерується VIPS у фоні (queued job), не блокуючи запит.
   # При десятках мільйонів записів: зберігання на S3 + GCS mirror, роздача через CDN.
+  #
+  # ⚖️ [SEC.18, 2026-08-20] EXIF: стрип із ПОКАЗУ, оригінал ТРИМАЄМО. Мініатюра —
+  # єдина поверхня показу глядачам — іде без метаданих (`strip: true`: смартфонний
+  # кадр везе GPS+timestamp техніка, тобто PII повз оголошені колонки); оригінал
+  # лишається НЕзачепленим свідомо — EXIF-геотег є потенційним незалежним доказом
+  # «технік був на місці» (Anti-Sofa-Repair, ⚖️ UI.7), і його знищення було б
+  # незворотним. Обидві половини присуду пінить власна спека (photos_exif_spec).
   has_many_attached :photos do |attachable|
-    attachable.variant :thumb, resize_to_limit: [ 200, 200 ]
+    attachable.variant :thumb, resize_to_limit: [ 200, 200 ], saver: { strip: true }
   end
 
   # --- ТИПИ РОБІТ (The Intervention) ---
