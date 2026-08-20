@@ -393,7 +393,7 @@ GEM
     numo-narray-alt (0.11.0)
     numo-optimize (0.4.0)
       numo-narray-alt (>= 0.9.9, < 0.12.0)
-    oj (3.17.5)
+    oj (3.17.6)
       bigdecimal (>= 3.0)
       ostruct (>= 0.2)
     openssl (3.3.3)
