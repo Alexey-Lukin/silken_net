@@ -95,12 +95,12 @@ RSpec.describe SystemAudits::Index do
 
     it "highlights delta row red when critical" do
       html = render_component(audit: critical_audit)
-      expect(html).to include("bg-red-950/20")
+      expect(html).to include("bg-status-danger/10")
     end
 
     it "highlights delta row emerald when ok" do
       html = render_component(audit: ok_audit)
-      expect(html).to include("bg-emerald-950/10")
+      expect(html).to include("bg-gaia-surface-sunken")
     end
   end
 

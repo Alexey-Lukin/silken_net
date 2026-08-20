@@ -44,7 +44,7 @@ module Organizations
       if @acting_organization&.id == @organization.id
         span(
           aria_current: "true",
-          class: "text-mini uppercase tracking-widest text-emerald-500 border border-emerald-800 px-3 py-1"
+          class: "text-mini uppercase tracking-widest text-gaia-primary-strong border border-gaia-border-strong px-3 py-1"
         ) { t(".current_context") }
         return
       end
@@ -54,20 +54,20 @@ module Organizations
         switch_organization_path(@organization),
         method: :post,
         aria: { label: t(".switch_aria", name: @organization.name) },
-        class: "text-mini uppercase tracking-widest border border-emerald-700 text-emerald-400 " \
-               "px-3 py-1 hover:bg-emerald-600 hover:text-black transition-colors cursor-pointer " \
+        class: "text-mini uppercase tracking-widest border border-gaia-border-strong text-gaia-text " \
+               "px-3 py-1 hover:bg-gaia-primary hover:text-gaia-primary-text transition-colors cursor-pointer " \
                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
       )
     end
 
     def render_header
-      div(class: "flex flex-col md:flex-row justify-between items-start md:items-center p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
+      div(class: "flex flex-col md:flex-row justify-between items-start md:items-center p-8 border border-gaia-border bg-gaia-surface shadow-2xl relative overflow-hidden") do
         # Декоративний фон для ідентифікації
         div(class: "absolute top-0 right-0 p-4 text-[80px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { t(".hero_decoration") }
 
         div do
-          h2(class: "text-4xl font-extralight tracking-tighter text-emerald-400") { @organization.name }
-          p(class: "text-tiny font-mono text-emerald-800 uppercase mt-2 tracking-[0.3em]") do
+          h2(class: "text-4xl font-extralight tracking-tighter text-gaia-text") { @organization.name }
+          p(class: "text-tiny font-mono text-gaia-text-subtle uppercase mt-2 tracking-[0.3em]") do
             t(".member_since", date: @organization.created_at.strftime("%d.%m.%Y"))
           end
         end
@@ -104,11 +104,11 @@ module Organizations
 
     def render_clusters_registry
       div(class: "space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".clusters.title") }
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".clusters.title") }
 
-        div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+        div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
           table(role: "table", class: "w-full text-left font-mono text-compact") do
-            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
+            thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
               tr do
                 th(scope: "col", class: "p-4") { t(".clusters.sector_name") }
                 th(scope: "col", class: "p-4") { t(".clusters.vitality") }
@@ -116,10 +116,10 @@ module Organizations
                 th(scope: "col", class: "p-4 text-right") { t(".clusters.matrix") }
               end
             end
-            tbody(class: "divide-y divide-emerald-900/30") do
+            tbody(class: "divide-y divide-gaia-border") do
               @clusters.each do |cluster|
-                tr(class: "hover:bg-emerald-950/10 transition-colors group") do
-                  td(class: "p-4 text-emerald-100") { cluster.name }
+                tr(class: "hover:bg-gaia-surface-sunken transition-colors group") do
+                  td(class: "p-4 text-gaia-text-strong") { cluster.name }
                   td(class: "p-4") do
                     div(class: "flex items-center gap-2") do
                       # [ARCH.84] Невиміряний кластер НЕ отримує смуги взагалі. Тире сюди
@@ -127,22 +127,22 @@ module Organizations
                       # як виміряні 0%, тобто як мертвий ліс. Відсутність смуги = відсутність
                       # твердження про величину; саме твердження несе підпис поруч.
                       if !cluster.health_index.nil?
-                        div(class: "w-16 h-1 bg-emerald-950 rounded-full overflow-hidden") do
-                          div(class: "h-full bg-emerald-500", style: "width: #{(cluster.health_index * 100).round}%")
+                        div(class: "w-16 h-1 bg-gaia-surface-sunken rounded-full overflow-hidden") do
+                          div(class: "h-full bg-gaia-primary", style: "width: #{(cluster.health_index * 100).round}%")
                         end
                       end
                       span(class: tokens("text-tiny",
-                                         "text-emerald-500": !cluster.health_index.nil?,
+                                         "text-gaia-primary-strong": !cluster.health_index.nil?,
                                          "text-status-neutral-text": !!cluster.health_index.nil?)) do
                         measured_percent(cluster.health_index)
                       end
                     end
                   end
-                  td(class: "p-4 text-gray-400") { t(".clusters.soldiers_count", count: cluster.total_active_trees) }
+                  td(class: "p-4 text-gaia-text-subtle") { t(".clusters.soldiers_count", count: cluster.total_active_trees) }
                   td(class: "p-4 text-right") do
                     a(
                       href: cluster_path(cluster),
-                      class: "text-emerald-600 hover:text-white transition-all uppercase text-mini focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
+                      class: "text-gaia-primary-strong hover:text-gaia-text-strong transition-all uppercase text-mini focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
                       aria_label: t(".clusters.open_aria", name: cluster.name)
                     ) { t(".clusters.open_matrix") }
                   end
@@ -155,24 +155,24 @@ module Organizations
     end
 
     def render_identity_vault
-      div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".identity_vault.title") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface space-y-6") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".identity_vault.title") }
 
         div do
-          p(class: "text-mini text-gray-600 uppercase mb-2") { t(".identity_vault.public_address") }
+          p(class: "text-mini text-gaia-text-muted uppercase mb-2") { t(".identity_vault.public_address") }
           render Views::Shared::Web3::Address.new(address: @organization.crypto_public_address)
         end
 
-        div(class: "pt-4 border-t border-emerald-900/30") do
-          p(class: "text-mini text-gray-600 uppercase mb-2") { t(".identity_vault.billing_contact") }
-          p(class: "text-compact text-gray-400") { @organization.billing_email || t(".identity_vault.not_available") }
+        div(class: "pt-4 border-t border-gaia-border") do
+          p(class: "text-mini text-gaia-text-muted uppercase mb-2") { t(".identity_vault.billing_contact") }
+          p(class: "text-compact text-gaia-text-subtle") { @organization.billing_email || t(".identity_vault.not_available") }
         end
       end
     end
 
     def render_recent_activity_placeholder
-      div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".activity.title") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface-sunken") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-4") { t(".activity.title") }
         div(class: "space-y-3") do
           [
             t(".activity.contract_renewal"),
@@ -180,8 +180,8 @@ module Organizations
             t(".activity.carbon_audit")
           ].each do |event|
             div(class: "flex justify-between items-center") do
-              span(class: "text-tiny text-gray-500 uppercase font-mono") { event }
-              span(class: "text-mini text-emerald-900") { t(".activity.pending") }
+              span(class: "text-tiny text-gaia-text-muted uppercase font-mono") { event }
+              span(class: "text-mini text-gaia-text-subtle") { t(".activity.pending") }
             end
           end
         end

@@ -148,7 +148,13 @@ namespace :gaia do
       "app/views/components/maintenance/", # 2026-08-20 шоста порція (codemod 114-на-два-домени + ручні: action_badge → -accent-родина, кнопки → -strong-пара; watermark /5 — виняток)
       "app/views/components/blockchain_transactions/", # те саме (carbon-чіп → token-carbon фон/рамка, error-панель → danger-пастель+text, ARCH.101 колір напрямку)
       "app/views/components/users/",             # 2026-08-20 сьома порція (codemod + role_color → status-пари; закрив і "0%-домен")
-      "app/views/components/account_security/"   # те саме (gaia-input тріада, кнопки → primary-пара; QR bg-white — оголошений виняток ↓)
+      "app/views/components/account_security/",  # те саме (gaia-input тріада, кнопки → primary-пара; QR bg-white — оголошений виняток ↓)
+      "app/views/components/organizations/",     # 2026-08-20 восьма порція (codemod 46 + ручні: таблиці divide/thead, кнопки → primary-пара; watermark /5 — виняток)
+      "app/views/components/oracle_visions/",    # те саме (hero → surface/80, картка → surface, impact-хелпери → -accent/neutral-accent LED)
+      "app/views/components/provisioning/",      # те саме (gaia-input тріада)
+      "app/views/components/system_health/",     # те саме (банери → -accent-контури на /10-пастелі, статус-хелпери → -accent)
+      "app/views/components/notifications/",     # те саме (input-тріада + primary-пара кнопки)
+      "app/views/components/system_audits/"      # те саме (дельта-рядок/бейджі → danger/active-пари, alert-банер → -accent-контур)
     ]
 
     scopes = ENV["LINT_SCOPE"] ? [ ENV["LINT_SCOPE"] ] : default_scopes

@@ -22,9 +22,9 @@ module Organizations
       div(class: "space-y-8") do
         header_section
 
-        div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+        div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
           table(role: "table", class: "w-full text-left font-mono text-compact") do
-            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
+            thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
               tr do
                 th(scope: "col", class: "p-4") { t(".columns.name") }
                 th(scope: "col", class: "p-4") { t(".columns.sectors") }
@@ -34,7 +34,7 @@ module Organizations
                 th(scope: "col", class: "p-4 text-right") { t(".columns.context") }
               end
             end
-            tbody(class: "divide-y divide-emerald-900/30") do
+            tbody(class: "divide-y divide-gaia-border") do
               @organizations.each { |org| render_org_row(org) }
             end
           end
@@ -50,15 +50,15 @@ module Organizations
     private
 
     def render_org_row(org)
-      tr(class: "hover:bg-emerald-950/10 transition-colors group") do
-        td(class: "p-4 text-emerald-400 font-bold") { org.name }
-        td(class: "p-4 text-gray-400") { org.total_clusters }
-        td(class: "p-4 text-emerald-100") { t(".investment_value", amount: org.total_contracted) }
-        td(class: "p-4 text-tiny text-gray-600 font-mono") do
+      tr(class: "hover:bg-gaia-surface-sunken transition-colors group") do
+        td(class: "p-4 text-gaia-text font-bold") { org.name }
+        td(class: "p-4 text-gaia-text-subtle") { org.total_clusters }
+        td(class: "p-4 text-gaia-text-strong") { t(".investment_value", amount: org.total_contracted) }
+        td(class: "p-4 text-tiny text-gaia-text-muted font-mono") do
           render Views::Shared::Web3::Address.new(address: org.crypto_public_address)
         end
         td(class: "p-4 text-right") do
-          a(href: organization_path(org), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong", aria_label: t(".view_aria", name: org.name)) { t(".view_profile") }
+          a(href: organization_path(org), class: "text-gaia-primary-strong hover:text-gaia-text-strong transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong", aria_label: t(".view_aria", name: org.name)) { t(".view_profile") }
         end
         td(class: "p-4 text-right") { render_context_cell(org) }
       end
@@ -74,7 +74,7 @@ module Organizations
       if @acting_organization&.id == org.id
         span(
           aria_current: "true",
-          class: "text-mini uppercase tracking-widest text-emerald-500 border border-emerald-800 px-3 py-1"
+          class: "text-mini uppercase tracking-widest text-gaia-primary-strong border border-gaia-border-strong px-3 py-1"
         ) { t(".current_context") }
         return
       end
@@ -97,8 +97,8 @@ module Organizations
         switch_organization_path(org),
         method: :post,
         aria: { label: t(".switch_aria", name: org.name) },
-        class: "text-mini uppercase tracking-widest border border-emerald-700 text-emerald-400 " \
-               "px-3 py-1 hover:bg-emerald-600 hover:text-black transition-colors cursor-pointer " \
+        class: "text-mini uppercase tracking-widest border border-gaia-border-strong text-gaia-text " \
+               "px-3 py-1 hover:bg-gaia-primary hover:text-gaia-primary-text transition-colors cursor-pointer " \
                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
       )
     end
@@ -106,8 +106,8 @@ module Organizations
     def header_section
       div(class: "flex justify-between items-end") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".title") }
-          p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted") { t(".title") }
+          p(class: "text-xs text-gaia-text-muted mt-1") { t(".subtitle") }
         end
       end
     end

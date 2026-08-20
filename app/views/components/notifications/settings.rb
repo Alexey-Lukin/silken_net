@@ -31,15 +31,15 @@ module Notifications
     def header_section
       div(class: "flex justify-between items-end mb-4") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".heading") }
-          p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted") { t(".heading") }
+          p(class: "text-xs text-gaia-text-muted mt-1") { t(".subtitle") }
         end
       end
     end
 
     def render_channels_form
-      div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".channels.heading") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".channels.heading") }
 
         # [UI.7] `form_with` БЕЗ скоупу — і це найнебезпечніший сайт конверсії:
         # поля (`phone_number`/`telegram_chat_id`/`push_token`) є колонками `User`,
@@ -57,8 +57,8 @@ module Notifications
           render_field(t(".channels.telegram_chat_id"), "telegram_chat_id", @user.telegram_chat_id, placeholder: "123456789")
           render_field(t(".channels.push_token"), "push_token", @user.push_token, placeholder: t(".channels.push_placeholder"))
 
-          div(class: "pt-4 border-t border-emerald-900/30") do
-            button(type: "submit", class: "px-6 py-2 border border-emerald-500 text-tiny uppercase tracking-widest text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all") { t(".channels.save") }
+          div(class: "pt-4 border-t border-gaia-border") do
+            button(type: "submit", class: "px-6 py-2 border border-gaia-primary-strong text-tiny uppercase tracking-widest text-gaia-primary-strong hover:bg-gaia-primary hover:text-gaia-primary-text transition-all") { t(".channels.save") }
           end
         end
       end
@@ -74,7 +74,7 @@ module Notifications
       hint_id  = hint ? "#{field_id}_hint" : nil
 
       div(class: "space-y-2") do
-        label(for: field_id, class: "text-mini text-gray-600 uppercase tracking-widest block") { label_text }
+        label(for: field_id, class: "text-mini text-gaia-text-muted uppercase tracking-widest block") { label_text }
         input(
           id: field_id,
           type: "text",
@@ -84,12 +84,12 @@ module Notifications
           disabled: disabled,
           aria_describedby: hint_id,
           class: tokens(
-            "w-full bg-zinc-950 border border-emerald-900/50 text-compact font-mono text-emerald-400 px-4 py-3 focus-visible:border-emerald-500 focus-visible:outline-none transition-colors",
+            "w-full bg-gaia-input-bg border border-gaia-input-border text-compact font-mono text-gaia-input-text px-4 py-3 focus-visible:border-gaia-primary-strong focus-visible:outline-none transition-colors",
             "opacity-50 cursor-not-allowed": disabled
           )
         )
         if hint
-          p(id: hint_id, class: "text-mini text-gray-700 italic") { hint }
+          p(id: hint_id, class: "text-mini text-gaia-text italic") { hint }
         end
       end
     end
@@ -100,8 +100,8 @@ module Notifications
     # Перемикач, якого не можна перемкнути, — не налаштування, а декорація, і
     # повернеться він разом із `NotificationPreference`, не раніше.
     def render_channels_status
-      div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".active_channels.heading") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".active_channels.heading") }
         div(class: "space-y-4") do
           channel_status(t(".active_channels.email"), :email, @user.email_address)
           channel_status(t(".active_channels.sms"), :sms, @user.phone_number)
@@ -115,13 +115,13 @@ module Notifications
     # обидва згорталися в `not_configured`, тобто платформа приписувала людині
     # власну недоробку — вона вписала телефон, а екран казав «не налаштовано».
     def channel_status(label, channel, destination)
-      div(class: "flex justify-between items-center py-2 border-b border-emerald-900/20") do
-        span(class: "text-tiny text-gray-400 font-mono") { label }
+      div(class: "flex justify-between items-center py-2 border-b border-gaia-border") do
+        span(class: "text-tiny text-gaia-text-subtle font-mono") { label }
 
         if !@available_channels.include?(channel)
-          span(class: "text-mini text-gray-700 uppercase") { t(".active_channels.unavailable") }
+          span(class: "text-mini text-gaia-text-subtle uppercase") { t(".active_channels.unavailable") }
         elsif destination.blank?
-          span(class: "text-mini text-gray-700 uppercase") { t(".active_channels.not_configured") }
+          span(class: "text-mini text-gaia-text-subtle uppercase") { t(".active_channels.not_configured") }
         else
           # [UI.17] Напис був «Connected», а гард — `destination.present?`, тобто
           # людина щось ВПИСАЛА в поле. Доставки ніхто не перевіряє: `phone_number`

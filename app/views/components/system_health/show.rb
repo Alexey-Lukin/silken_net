@@ -37,8 +37,8 @@ module SystemHealth
     def header_section
       div(class: "flex justify-between items-end mb-4") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".title") }
-          p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted") { t(".title") }
+          p(class: "text-xs text-gaia-text-muted mt-1") { t(".subtitle") }
         end
         div(class: "flex items-center gap-2") do
           div(class: tokens("h-2 w-2 rounded-full", dot_class(overall_tone)))
@@ -52,11 +52,11 @@ module SystemHealth
     def overall_status_banner
       case overall_tone
       when :ok
-        banner("border-emerald-900 bg-emerald-950/20", "text-emerald-500") { t(".all_operational", at: @health[:checked_at]) }
+        banner("border-gaia-border bg-gaia-surface-sunken", "text-gaia-primary-strong") { t(".all_operational", at: @health[:checked_at]) }
       when :unknown
-        banner("border-amber-800 bg-amber-950/20", "text-amber-400") { t(".system_incomplete") }
+        banner("border-status-warning-accent bg-status-warning/10", "text-status-warning-accent") { t(".system_incomplete") }
       else
-        banner("border-red-700 bg-red-950/30", "text-red-400") { t(".system_degraded") }
+        banner("border-status-danger-accent bg-status-danger/10", "text-status-danger-accent") { t(".system_degraded") }
       end
     end
 
@@ -94,8 +94,8 @@ module SystemHealth
           meta_row(t(".sidekiq.failed"), sidekiq[:failed] || "—")
           meta_row(t(".sidekiq.active_workers"), sidekiq[:workers_size] || "—")
           if sidekiq[:error]
-            div(class: "mt-2 p-2 border border-red-900/30 bg-red-950/10") do
-              p(class: "text-mini text-red-400") { sidekiq[:error] }
+            div(class: "mt-2 p-2 border border-status-danger-accent/30 bg-status-danger/10") do
+              p(class: "text-mini text-status-danger-accent") { sidekiq[:error] }
             end
           end
         end
@@ -114,9 +114,9 @@ module SystemHealth
     end
 
     def service_card(name, tone, &block)
-      div(class: "p-6 border border-emerald-900 bg-black") do
+      div(class: "p-6 border border-gaia-border bg-gaia-surface") do
         div(class: "flex justify-between items-start mb-6") do
-          h4(class: "text-sm font-light text-emerald-100") { name }
+          h4(class: "text-sm font-light text-gaia-text-strong") { name }
           div(class: "flex items-center gap-2") do
             div(class: tokens("h-1.5 w-1.5 rounded-full", dot_class(tone)))
             span(class: tokens("text-mini uppercase font-bold", text_class(tone))) { t(".status.#{tone}") }
@@ -130,20 +130,20 @@ module SystemHealth
       queues = @health[:sidekiq][:queues]
 
       div(class: "space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".sidekiq.queues_title") }
-        div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".sidekiq.queues_title") }
+        div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
           table(role: "table", class: "w-full text-left font-mono text-compact") do
-            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
+            thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
               tr do
                 th(scope: "col", class: "p-4") { t(".sidekiq.queue_name") }
                 th(scope: "col", class: "p-4 text-right") { t(".sidekiq.jobs_enqueued") }
               end
             end
-            tbody(class: "divide-y divide-emerald-900/30") do
+            tbody(class: "divide-y divide-gaia-border") do
               queues.each do |queue_name, count|
-                tr(class: "hover:bg-emerald-950/10") do
-                  td(class: "p-4 text-emerald-500") { queue_name.to_s }
-                  td(class: "p-4 text-right text-gray-300") { count.to_s }
+                tr(class: "hover:bg-gaia-surface-sunken") do
+                  td(class: "p-4 text-gaia-primary-strong") { queue_name.to_s }
+                  td(class: "p-4 text-right text-gaia-text-subtle") { count.to_s }
                 end
               end
             end
@@ -154,13 +154,13 @@ module SystemHealth
 
     def meta_row(label, value)
       div(class: "flex justify-between items-center") do
-        span(class: "text-gray-600 uppercase") { label }
-        span(class: "text-emerald-400") { value.to_s }
+        span(class: "text-gaia-text-muted uppercase") { label }
+        span(class: "text-gaia-text") { value.to_s }
       end
     end
 
     def render_footer
-      div(class: "text-mini text-gray-600 text-right mt-2 font-mono") do
+      div(class: "text-mini text-gaia-text-muted text-right mt-2 font-mono") do
         t(".last_checked", at: @health[:checked_at])
       end
     end
@@ -212,9 +212,9 @@ module SystemHealth
 
     def text_class(tone)
       case tone
-      when :ok      then "text-emerald-500"
-      when :unknown then "text-amber-500"
-      else               "text-red-500"
+      when :ok      then "text-gaia-primary-strong"
+      when :unknown then "text-status-warning-accent"
+      else               "text-status-danger-accent"
       end
     end
   end

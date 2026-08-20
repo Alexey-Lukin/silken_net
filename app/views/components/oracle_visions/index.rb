@@ -65,9 +65,9 @@ module OracleVisions
     end
 
     def header_section
-      div(class: "p-6 border border-emerald-900 bg-black/40 backdrop-blur-md flex justify-between items-end") do
+      div(class: "p-6 border border-gaia-border bg-gaia-surface/80 backdrop-blur-md flex justify-between items-end") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.5em] text-emerald-700") { t(".title") }
+          h3(class: "text-tiny uppercase tracking-[0.5em] text-gaia-text-muted") { t(".title") }
           # [ARCH.84] ⚖️ Заголовну «впевненість ШІ» знято 2026-08-16: значення було
           # ЛІТЕРАЛОМ в аргументі `t(...)` — перший сайт класу, де вигадане число стоїть
           # не в колонці, тож обидва доменні зонди (колонка без писача · одиниця без
@@ -80,12 +80,12 @@ module OracleVisions
 
         # [FINANCIAL ENGINE VISUALIZATION]: Очікуваний врожай
         div(class: "text-right") do
-          h4(class: "text-tiny uppercase tracking-widest text-emerald-800 mb-1") { t(".expected_yield") }
+          h4(class: "text-tiny uppercase tracking-widest text-gaia-text-subtle mb-1") { t(".expected_yield") }
           div(class: "flex items-baseline justify-end gap-2") do
-            span(class: "text-3xl font-mono text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]") do
+            span(class: "text-3xl font-mono text-gaia-text") do
               @emission_forecast
             end
-            span(class: "text-xs text-emerald-600 font-light italic") { t(".yield_unit") }
+            span(class: "text-xs text-gaia-primary-strong font-light italic") { t(".yield_unit") }
           end
 
           # [ARCH.84] Підпис покриття зʼявляється ЛИШЕ при частковому вимірі —

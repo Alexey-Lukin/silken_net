@@ -113,7 +113,7 @@ RSpec.describe Notifications::Settings do
 
     it "binds the empty push_token to its own Not-configured marker" do
       expect(html).to include(
-        %(<span class="text-tiny text-gray-400 font-mono">🔔 Push</span><span class="text-mini text-gray-700 uppercase">Not configured</span>)
+        %(<span class="text-tiny text-gaia-text-subtle font-mono">🔔 Push</span><span class="text-mini text-gaia-text-subtle uppercase">Not configured</span>)
       )
     end
   end
@@ -140,7 +140,7 @@ RSpec.describe Notifications::Settings do
         # Telegram у фікстурі заповнений — тобто «не налаштовано» тут було б
         # звинуваченням людини в тому, що зробила платформа.
         expect(html).to include(
-          %(<span class="text-tiny text-gray-400 font-mono">✈️ Telegram</span><span class="text-mini text-gray-700 uppercase">Channel unavailable</span>)
+          %(<span class="text-tiny text-gaia-text-subtle font-mono">✈️ Telegram</span><span class="text-mini text-gaia-text-subtle uppercase">Channel unavailable</span>)
         )
         expect(html).not_to include("Connected")
       end
@@ -160,10 +160,10 @@ RSpec.describe Notifications::Settings do
       partial = render_component(user: user, available_channels: %i[email push])
 
       expect(partial).to include(
-        %(<span class="text-tiny text-gray-400 font-mono">🔔 Push</span><span class="text-mini text-gray-700 uppercase">Not configured</span>)
+        %(<span class="text-tiny text-gaia-text-subtle font-mono">🔔 Push</span><span class="text-mini text-gaia-text-subtle uppercase">Not configured</span>)
       )
       expect(partial).to include(
-        %(<span class="text-tiny text-gray-400 font-mono">✈️ Telegram</span><span class="text-mini text-gray-700 uppercase">Channel unavailable</span>)
+        %(<span class="text-tiny text-gaia-text-subtle font-mono">✈️ Telegram</span><span class="text-mini text-gaia-text-subtle uppercase">Channel unavailable</span>)
       )
     end
   end

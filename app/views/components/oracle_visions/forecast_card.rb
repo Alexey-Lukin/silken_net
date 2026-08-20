@@ -8,7 +8,7 @@ module OracleVisions
     end
 
     def view_template
-      div(class: "p-6 border border-emerald-900 bg-zinc-950 group relative overflow-hidden transition-all hover:border-emerald-500") do
+      div(class: "p-6 border border-gaia-border bg-gaia-surface group relative overflow-hidden transition-all hover:border-gaia-primary") do
         # Неоновий індикатор впевненості Оракула.
         #
         # 🔴 [UI.3] Прозорості тут БУТИ НЕ МОЖЕ, і це не «занизьке значення», а
@@ -35,9 +35,9 @@ module OracleVisions
 
     def header_section
       div(class: "mb-4") do
-        span(class: "text-mini px-2 py-0.5 border border-emerald-800 text-emerald-600 uppercase tracking-tighter") { @insight.insight_type_label }
-        h4(class: "text-lg font-light text-emerald-100 mt-2") { t(".predicted_window") }
-        p(class: "text-tiny text-gray-500 font-mono flex items-center gap-2") do
+        span(class: "text-mini px-2 py-0.5 border border-gaia-border-strong text-gaia-primary-strong uppercase tracking-tighter") { @insight.insight_type_label }
+        h4(class: "text-lg font-light text-gaia-text-strong mt-2") { t(".predicted_window") }
+        p(class: "text-tiny text-gaia-text-muted font-mono flex items-center gap-2") do
           # [TEST.12] `ai_insights.target_date` — колонка `date`, без часу, тож
           # «// %H:%M UTC» друкував вічне «00:00» як справжню годину прогнозу.
           # Спека це ховала, подаючи `Time.utc(...)`, якого модель не віддає.
@@ -63,12 +63,12 @@ module OracleVisions
     # а нульова читається як виміряний нуль — тобто гірше за відсутність.
     def render_mini_trend
       if probability_score
-        div(class: "h-1 w-full bg-emerald-950 my-4") do
+        div(class: "h-1 w-full bg-gaia-surface-sunken my-4") do
           div(class: tokens("h-full transition-all duration-1000", confidence_bar_class),
               style: "width: #{formatted_probability}%")
         end
       end
-      p(class: "text-compact text-gray-400 italic leading-relaxed") { @insight.summary }
+      p(class: "text-compact text-gaia-text-subtle italic leading-relaxed") { @insight.summary }
     end
 
     def probability_score = @insight.probability_score
@@ -106,8 +106,8 @@ module OracleVisions
     # колір протилежне. Тепер «не виміряно» має ІМʼЯ й власний нейтральний
     # стан: станів ТРИ, і третій не є ні добрим, ні поганим.
     def impact_assessment
-      div(class: "mt-4 pt-4 border-t border-emerald-900/50 flex justify-between items-center") do
-        span(class: "text-mini uppercase text-gray-600") { t(".economic_impact") }
+      div(class: "mt-4 pt-4 border-t border-gaia-border-strong flex justify-between items-center") do
+        span(class: "text-mini uppercase text-gaia-text-muted") { t(".economic_impact") }
         span(class: tokens("text-xs font-mono", confidence_text_class)) do
           plain impact_reading
         end
@@ -156,9 +156,9 @@ module OracleVisions
     # зеленим індикатором — стан, у якому два вузли однієї картки
     # суперечать одне одному.
     def confidence_text_class
-      return "text-gray-400" if unmeasured_impact?
+      return "text-gaia-text-subtle" if unmeasured_impact?
 
-      adverse_forecast? ? "text-red-500" : "text-emerald-500"
+      adverse_forecast? ? "text-status-danger-accent" : "text-gaia-primary-strong"
     end
 
     # [UI.1] Смуга й індикатор доти малювались інлайн-`style:` із зашитим
@@ -167,7 +167,7 @@ module OracleVisions
     # колір без класу для них не існує. Це були ОБИДВА відомі сайти класу.
     # Ширина лишається інлайн свідомо — вона рантайм-значення, класу не має.
     def confidence_bar_class
-      return "bg-gray-500" if unmeasured_impact?
+      return "bg-status-neutral-accent" if unmeasured_impact?
 
       adverse_forecast? ? "bg-status-danger-accent shadow-[0_0_8px_#ef4444]" : "bg-gaia-primary-strong shadow-[0_0_8px_#10b981]"
     end

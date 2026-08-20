@@ -111,13 +111,13 @@ RSpec.describe OracleVisions::ForecastCard do
   describe "yield_impact display" do
     it "shows negative yield_impact with red color" do
       html = render_component(insight: mock_insight(yield_impact: "-0.04%"))
-      expect(html).to include("text-red-500")
+      expect(html).to include("text-status-danger-accent")
       expect(html).to include("-0.04%")
     end
 
     it "shows positive yield_impact with emerald color" do
       html = render_component(insight: mock_insight(yield_impact: "+0.08%"))
-      expect(html).to include("text-emerald-500")
+      expect(html).to include("text-gaia-primary-strong")
       expect(html).to include("+0.08%")
     end
 
@@ -151,13 +151,13 @@ RSpec.describe OracleVisions::ForecastCard do
     # Ключове: сигналом є ЗНАК впливу, а НЕ тип інсайту й не ймовірність —
     # тому перебір типів лишається, але доводить тепер протилежне: жоден тип
     # сам по собі кольору не змінює.
-    it "лишається смарагдовим для будь-якого типу з невідʼємним впливом" do
+    it "лишається primary-strong для будь-якого типу з невідʼємним впливом" do
       AiInsight.insight_types.each_key do |type|
         html = render_component(
           insight: mock_insight(insight_type: type, probability_score: 95, yield_impact: "+12.5%")
         )
-        expect(html).to include("text-emerald-500"), "#{type} мав лишитись смарагдовим"
-        expect(html).not_to include("text-red-500")
+        expect(html).to include("text-gaia-primary-strong"), "#{type} мав лишитись primary-strong"
+        expect(html).not_to include("text-status-danger-accent")
       end
     end
 
@@ -166,9 +166,9 @@ RSpec.describe OracleVisions::ForecastCard do
         insight: mock_insight(insight_type: "carbon_yield_forecast", probability_score: 12, yield_impact: "-3.0%")
       )
 
-      expect(html).to include("text-red-500")
+      expect(html).to include("text-status-danger-accent")
       expect(html).to include("bg-status-danger-accent")
-      expect(html).not_to include("text-emerald-500")
+      expect(html).not_to include("text-xs font-mono text-gaia-primary-strong")
     end
 
     # 🔴 Дім сигналу ОДИН, і саме цю властивість пін і стереже: доти деривація
@@ -179,8 +179,8 @@ RSpec.describe OracleVisions::ForecastCard do
         insight: mock_insight(probability_score: 88, yield_impact: "-1.0%")
       )
 
-      expect(html.scan("text-red-500").size).to be >= 2
-      expect(html).not_to include("text-emerald-500")
+      expect(html.scan("text-status-danger-accent").size).to be >= 2
+      expect(html).not_to include("text-xs font-mono text-gaia-primary-strong")
     end
 
     # [UI.1] Інлайн-`style:` із кольором — виміряна сліпа зона обох
@@ -217,17 +217,17 @@ RSpec.describe OracleVisions::ForecastCard do
     it "тримає НЕЙТРАЛЬНИЙ стан — невиміряне не є ні добрим, ні поганим" do
       html = render_component(insight: unmeasured)
 
-      expect(html).to include("text-gray-400")
-      expect(html).not_to include("text-emerald-500")
-      expect(html).not_to include("text-red-500")
+      expect(html).to include("text-gaia-text-subtle")
+      expect(html).not_to include("text-xs font-mono text-gaia-primary-strong")
+      expect(html).not_to include("text-status-danger-accent")
     end
 
     # Порожній рядок — той самий стан, що nil: `presence` зводить обидва, бо
-    # інакше `"".to_f` дало б 0.0 і картка вітала б порожнечу смарагдовим.
+    # інакше `"".to_f` дало б 0.0 і картка вітала б порожнечу primary-strong.
     it "рахує порожній рядок відсутністю виміру, а не нулем" do
       insight = mock_insight(yield_impact: "")
 
-      expect(render_component(insight: insight)).to include("text-gray-400")
+      expect(render_component(insight: insight)).to include("text-gaia-text-subtle")
     end
   end
 end

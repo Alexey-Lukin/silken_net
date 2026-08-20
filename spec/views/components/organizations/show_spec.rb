@@ -180,8 +180,8 @@ RSpec.describe Organizations::Show do
       # ⚠️ Цілимось у САМ вузол смуги (`w-16 h-1 …`), не в колір: `bg-emerald-500`
       # живе на сторінці й поза смугою, тож матчер по всьому документу проходив би
       # через сусідній зелений вузол і нічого не доводив (`04_04` · Guard-craft #17).
-      expect(unmeasured).not_to include("w-16 h-1 bg-emerald-950")
-      expect(html).to include("w-16 h-1 bg-emerald-950")
+      expect(unmeasured).not_to include("w-16 h-1 bg-gaia-surface-sunken")
+      expect(html).to include("w-16 h-1 bg-gaia-surface-sunken")
     end
 
     it "renders the Open Matrix link" do
