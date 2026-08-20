@@ -14,10 +14,11 @@ require Rails.root.join("spec/support/contrast_registry")
 # контур заходить БЕЗ реєстру винятків: нуль провальних пар, і регресія
 # будь-якої сторінки червонить поіменно з парою «токен × поверхня».
 #
-# 🔒 Стелі — ті самі, що в сусідніх контурів (`root_tokens` шапка): один розмір
-# вікна (мобільний контур — окремий прохід, `00_07` UI.3) · статичний знімок
-# без `:hover`-станів · маршрут ≠ усі його ЕКРАНИ (порожні стани фікстура
-# наповнює мінімально, не вичерпно).
+# 🔒 Стелі — ті самі, що в сусідніх контурів (`root_tokens` шапка): статичний
+# знімок без `:hover`-станів · маршрут ≠ усі його ЕКРАНИ (порожні стани
+# фікстура наповнює мінімально, не вичерпно). Розмірів вікна ДВА — десктоп і
+# мобільний 390×844 (закрив residual `UI.3`; card-flip дає власну популяцію
+# вузлів через `td::before`).
 #
 # ⚠️ Актор — super_admin НЕ з примхи: `tree_families#*` і `organizations#*`
 # гейтовані `authorize_super_admin!`, а для слабшого актора той самий шлях
@@ -48,34 +49,59 @@ RSpec.describe "[UI.1] Дашборд-сторінки тримають AA в о
   # Один приклад на тему, не на сторінку: кожен `it` платить повний sign_in +
   # підйом браузера, а падіння тут і так називає КОЖНУ провальну пару поіменно
   # разом зі сторінкою — поіменні приклади не додали б діагностики, лише час.
-  %i[light dark].each do |theme|
-    it "нуль провальних AA-пар у #{theme}-темі на всіх сторінках контуру" do
-      failures = []
-      starved  = []
+  def sweep(theme)
+    failures = []
+    starved  = []
 
-      pages.each do |path|
-        harvest = harvest_contrast(path, theme: theme)
+    pages.each do |path|
+      harvest = harvest_contrast(path, theme: theme)
 
-        # Ліхтар вакууму: сторінка без ЖОДНОЇ пари — це не «чисто», це «прилад
-        # нічого не побачив» (редирект, порожній рендер, зламаний збирач).
-        starved << path if harvest[:pairs].empty?
+      # Ліхтар вакууму: сторінка без ЖОДНОЇ пари — це не «чисто», це «прилад
+      # нічого не побачив» (редирект, порожній рендер, зламаний збирач).
+      starved << path if harvest[:pairs].empty?
 
-        harvest[:pairs].reject(&:passes).each do |pair|
-          failures << format(
-            "%-38s %5.2f < %.1f  %s",
-            path, pair.ratio || 0, pair.threshold, pair.sample_path
-          )
-        end
+      harvest[:pairs].reject(&:passes).each do |pair|
+        failures << format(
+          "%-38s %5.2f < %.1f  %s",
+          path, pair.ratio || 0, pair.threshold, pair.sample_path
+        )
       end
+    end
 
-      expect(starved).to be_empty,
-                         "сторінки без жодної виміряної пари (вимір недійсний): #{starved.join(', ')}"
+    expect(starved).to be_empty,
+                       "сторінки без жодної виміряної пари (вимір недійсний): #{starved.join(', ')}"
 
-      expect(failures).to be_empty, <<~MSG
-        Провальні AA-пари в #{theme}-темі:
+    expect(failures).to be_empty, <<~MSG
+      Провальні AA-пари (#{theme}):
 
-        #{failures.join("\n")}
-      MSG
+      #{failures.join("\n")}
+    MSG
+  end
+
+  %i[light dark].each do |theme|
+    # rubocop:disable RSpec/NoExpectationExample — обидва expect живуть у
+    # `sweep` (спільні для чотирьох прикладів); статичний коп у хелпер не ходить.
+    it "нуль провальних AA-пар у #{theme}-темі на всіх сторінках контуру" do
+      sweep(theme)
+    end
+    # rubocop:enable RSpec/NoExpectationExample
+
+    # [UI.3 → закрито тут] Мобільний контур — ⚖️ 08-20 відкладав його «до
+    # закриття кампанії UI.1»; тригер настав того ж дня. Той самий цикл на
+    # вʼюпорті телефона: card-flip таблиці міняють РОЗМІТКУ (td::before стає
+    # єдиним носієм назви колонки — третій прохід приладу його міряє), тож це
+    # не повтор десктопного зрізу, а власна популяція вузлів.
+    it "нуль провальних AA-пар у #{theme}-темі на мобільному вʼюпорті (390×844)" do
+      page.driver.resize(390, 844)
+      # Ліхтар на САМ resize: якби виклик мовчки не спрацював, сторінки дали б
+      # ті самі десктопні пари, і «мобільний зріз» атестував би десктоп під
+      # чужим іменем («я налаштував у before» — заява про код, не про систему).
+      visit "/dashboard"
+      expect(page.evaluate_script("window.innerWidth")).to eq(390)
+
+      sweep(theme)
+    ensure
+      page.driver.resize(1440, 900)
     end
   end
 end
