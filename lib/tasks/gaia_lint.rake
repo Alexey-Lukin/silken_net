@@ -137,7 +137,8 @@ namespace :gaia do
       "app/views/shared/",              # HARD із 2026-08-07 — §3.5 забороняє тут сиру Tailwind
       "app/views/components/alerts/",   # зміряно чистим 2026-08-19 (обома вимірами)
       "app/views/components/navigation/", # те саме; сайдбар стоїть на КОЖНІЙ сторінці
-      "app/views/components/wallets/"   # зміряно чистим 2026-08-20 (codemod-хвиля + обидва виміри)
+      "app/views/components/wallets/",  # зміряно чистим 2026-08-20 (codemod-хвиля + обидва виміри)
+      "app/views/components/settings/"  # зміряно чистим 2026-08-20 (codemod 29 + 9 ручних: gaia-input-* тріада, пара primary/-text)
     ]
 
     scopes = ENV["LINT_SCOPE"] ? [ ENV["LINT_SCOPE"] ] : default_scopes

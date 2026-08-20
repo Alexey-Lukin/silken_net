@@ -27,15 +27,15 @@ module Settings
     def header_section
       div(class: "flex justify-between items-end mb-4") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".heading") }
-          p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted") { t(".heading") }
+          p(class: "text-xs text-gaia-text-muted mt-1") { t(".subtitle") }
         end
       end
     end
 
     def render_settings_form
-      div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".config.heading") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".config.heading") }
 
         # [UI.7] `form_with`: токен і `_method=patch` приходять самі.
         # ⚠️ `multipart: true` ЯВНО, і це не перестраховка: авто-детект `form_with`
@@ -60,8 +60,8 @@ module Settings
           render_locale_field
           render_logo_field
 
-          div(class: "pt-4 border-t border-emerald-900/30") do
-            button(type: "submit", class: "px-6 py-2 border border-emerald-500 text-tiny uppercase tracking-widest text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all") { t(".submit") }
+          div(class: "pt-4 border-t border-gaia-border") do
+            button(type: "submit", class: "px-6 py-2 bg-gaia-primary/10 border border-gaia-primary-strong text-tiny uppercase tracking-widest text-gaia-primary-strong hover:bg-gaia-primary hover:text-gaia-primary-text transition-all") { t(".submit") }
           end
         end
       end
@@ -73,14 +73,14 @@ module Settings
       field_id = field_id_for(name)
 
       div(class: "space-y-2") do
-        label(for: field_id, class: "text-mini text-gray-600 uppercase tracking-widest block") { label_text }
+        label(for: field_id, class: "text-mini text-gaia-text-muted uppercase tracking-widest block") { label_text }
         input(
           id: field_id,
           type: "text",
           name: name,
           value: value&.to_s,
           placeholder: placeholder,
-          class: "w-full bg-zinc-950 border border-emerald-900/50 text-compact font-mono text-emerald-400 px-4 py-3 focus-visible:border-emerald-500 focus-visible:outline-none transition-colors"
+          class: "w-full bg-gaia-input-bg border border-gaia-input-border text-compact font-mono text-gaia-input-text px-4 py-3 focus-visible:border-gaia-primary-strong focus-visible:outline-none transition-colors"
         )
       end
     end
@@ -94,11 +94,11 @@ module Settings
     # дім, `04_04 §12.2`) і однакові в будь-якому UI за визначенням.
     def render_locale_field
       div(class: "space-y-2") do
-        label(class: "text-mini text-gray-600 uppercase tracking-widest block", for: "organization_locale") { t(".fields.locale") }
+        label(class: "text-mini text-gaia-text-muted uppercase tracking-widest block", for: "organization_locale") { t(".fields.locale") }
         select(
           id: "organization_locale",
           name: "organization[locale]",
-          class: "w-full bg-zinc-950 border border-emerald-900/50 text-compact font-mono text-emerald-400 px-4 py-3 focus-visible:border-emerald-500 focus-visible:outline-none transition-colors"
+          class: "w-full bg-gaia-input-bg border border-gaia-input-border text-compact font-mono text-gaia-input-text px-4 py-3 focus-visible:border-gaia-primary-strong focus-visible:outline-none transition-colors"
         ) do
           # Порожнє значення — «не обрано»: пошта піде базовою локаллю. Це не те
           # саме, що явно обрана англійська, і колонка тримає цю різницю.
@@ -115,10 +115,10 @@ module Settings
 
     def render_logo_field
       div(class: "space-y-2") do
-        label(for: "organization_logo", class: "text-mini text-gray-600 uppercase tracking-widest block") { t(".fields.logo") }
+        label(for: "organization_logo", class: "text-mini text-gaia-text-muted uppercase tracking-widest block") { t(".fields.logo") }
         if @organization.logo.attached?
           div(class: "flex items-center gap-4 mb-2") do
-            span(class: "text-tiny text-emerald-500 font-mono") { t(".fields.current_logo", filename: @organization.logo.filename) }
+            span(class: "text-tiny text-gaia-primary-strong font-mono") { t(".fields.current_logo", filename: @organization.logo.filename) }
           end
         end
         input(
@@ -126,30 +126,30 @@ module Settings
           type: "file",
           name: "organization[logo]",
           accept: "image/png,image/jpeg,image/svg+xml",
-          class: "w-full bg-zinc-950 border border-emerald-900/50 text-compact font-mono text-emerald-400 px-4 py-3 file:mr-4 file:border-0 file:bg-emerald-900/30 file:text-emerald-400 file:text-tiny file:px-4 file:py-2"
+          class: "w-full bg-gaia-input-bg border border-gaia-input-border text-compact font-mono text-gaia-input-text px-4 py-3 file:mr-4 file:border-0 file:bg-gaia-primary/10 file:text-gaia-primary-strong file:text-tiny file:px-4 file:py-2"
         )
       end
     end
 
     def render_identity_vault
-      div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".vault.heading") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface space-y-6") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".vault.heading") }
 
         div do
-          p(class: "text-mini text-gray-600 uppercase mb-2") { t(".vault.address") }
+          p(class: "text-mini text-gaia-text-muted uppercase mb-2") { t(".vault.address") }
           render Views::Shared::Web3::Address.new(address: @organization.crypto_public_address)
         end
 
-        div(class: "pt-4 border-t border-emerald-900/30") do
-          p(class: "text-mini text-gray-600 uppercase mb-2") { t(".vault.billing") }
-          p(class: "text-compact text-gray-400") { @organization.billing_email || "N/A" }
+        div(class: "pt-4 border-t border-gaia-border") do
+          p(class: "text-mini text-gaia-text-muted uppercase mb-2") { t(".vault.billing") }
+          p(class: "text-compact text-gaia-text-subtle") { @organization.billing_email || "N/A" }
         end
       end
     end
 
     def render_metadata
-      div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".metadata.heading") }
+      div(class: "p-6 border border-gaia-border bg-gaia-primary/5") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-4") { t(".metadata.heading") }
         div(class: "space-y-3 font-mono text-tiny") do
           meta_row(t(".metadata.org_id"), @organization.id)
           meta_row(t(".metadata.created"), @organization.created_at.strftime("%d.%m.%Y"))
@@ -160,8 +160,8 @@ module Settings
 
     def meta_row(label, value)
       div(class: "flex justify-between items-center") do
-        span(class: "text-gray-600 uppercase") { label }
-        span(class: "text-emerald-400") { value.to_s }
+        span(class: "text-gaia-text-muted uppercase") { label }
+        span(class: "text-gaia-text") { value.to_s }
       end
     end
   end

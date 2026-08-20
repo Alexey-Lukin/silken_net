@@ -124,7 +124,8 @@ RSpec.describe Settings::Show do
     # Доти цей приклад був вакуумний: ту саму адресу друкує поле форми вище,
     # тож він лишався зеленим і зі знесеним сховищем. Цілимо у ВУЗОЛ під міткою.
     it "renders billing contact in the vault" do
-      expect(html).to include(%(<p class="text-compact text-gray-400">billing@org.org</p>))
+      # [UI.1 08-20] Пін їде за міграцією домену: сирий gray-400 → токен.
+      expect(html).to include(%(<p class="text-compact text-gaia-text-subtle">billing@org.org</p>))
     end
 
     # Сховище показує адресу СКОРОЧЕНОЮ, форма — повною. Доти розрізнити ці
