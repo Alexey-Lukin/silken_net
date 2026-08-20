@@ -35,6 +35,7 @@ uk:
         me: Профіль
         metadata: Метадані
         mfa: Другий фактор
+        mfa_recovery_codes: Recovery codes
         mfa_setup: Підключення автентифікатора
         new: Створення
         notifications: Сповіщення

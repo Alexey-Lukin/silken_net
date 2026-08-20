@@ -203,4 +203,98 @@ RSpec.describe "MFA flow", type: :request do
       expect(user.reload.mfa_enabled?).to be(false)
     end
   end
+
+  # [S6.21] Одноразовий reveal recovery-набору + ротація. Піни — на НАСЛІДКАХ і
+  # на ВМІСТІ (кожен код із БД у тілі): redirect-ціль однакова для успіху reveal
+  # і для відмови без маркера, тож сам статус тут не дискримінує нічого.
+  describe "recovery-code reveal and rotation" do
+    before { sign_in! }
+
+    def activate_mfa!
+      post "/account_security/mfa_setup"
+      patch "/account_security/mfa_setup", params: { otp_code: ROTP::TOTP.new(user.reload.otp_secret).now }
+    end
+
+    it "shows the full set exactly once after activation, then never again" do
+      activate_mfa!
+      expect(response).to redirect_to("/account_security/mfa_recovery_codes")
+
+      follow_redirect!
+      expect(response).to have_http_status(:ok)
+      codes = user.reload.parsed_recovery_codes
+      # Ліхтар на популяцію: пін «кожен код у тілі» вакуумний на порожньому наборі.
+      expect(codes.size).to eq(10)
+      codes.each { |code| expect(response.body).to include(code) }
+
+      # Показ РІВНО РАЗ: маркер знято першим рендером — закладка/Back мовчить.
+      get "/account_security/mfa_recovery_codes"
+      expect(response).to redirect_to("/account_security")
+    end
+
+    it "refuses a bare GET without the one-time marker and leaks no codes" do
+      activate_mfa!
+      # Свіжа сесія того ж користувача (маркер живе в cookie активаційної сесії).
+      # travel: анти-replay не пускає код активаційного 30-с слота на вхід.
+      travel 31.seconds do
+        delete "/logout"
+        sign_in!
+        post "/login/mfa", params: { otp_code: ROTP::TOTP.new(user.reload.otp_secret).now }
+        expect(response).to redirect_to("/dashboard")
+
+        get "/account_security/mfa_recovery_codes"
+        expect(response).to redirect_to("/account_security")
+      end
+    end
+
+    it "sends a non-MFA account away without generating anything" do
+      get "/account_security/mfa_recovery_codes"
+      expect(response).to redirect_to("/account_security")
+      expect(user.reload.recovery_codes).to be_nil
+
+      post "/account_security/mfa_recovery_codes", params: { current_password: password }
+      expect(response).to redirect_to("/account_security")
+      expect(user.reload.recovery_codes).to be_nil
+    end
+
+    it "rotates the set behind a step-up and reveals the NEW codes once" do
+      activate_mfa!
+      old_codes = user.reload.parsed_recovery_codes
+
+      post "/account_security/mfa_recovery_codes", params: { current_password: password }
+      expect(response).to redirect_to("/account_security/mfa_recovery_codes")
+
+      new_codes = user.reload.parsed_recovery_codes
+      expect(new_codes.size).to eq(10)
+      # Старий набір знецінено ЦІЛКОМ, не поповнено.
+      expect(new_codes & old_codes).to be_empty
+
+      follow_redirect!
+      new_codes.each { |code| expect(response.body).to include(code) }
+    end
+
+    it "does NOT rotate on a wrong current password" do
+      activate_mfa!
+      before_codes = user.reload.parsed_recovery_codes
+
+      post "/account_security/mfa_recovery_codes", params: { current_password: "wrong-password" }
+
+      # Пін на НАСЛІДОК: набір недоторканий (redirect їде і в успіху, і у відмові).
+      expect(user.reload.parsed_recovery_codes).to eq(before_codes)
+    end
+
+    it "hands the JSON client its set inside the activation and rotation responses" do
+      post "/account_security/mfa_setup"
+      patch "/account_security/mfa_setup",
+            params: { otp_code: ROTP::TOTP.new(user.reload.otp_secret).now }, as: :json
+
+      activation_codes = response.parsed_body["recovery_codes"]
+      expect(activation_codes).to match_array(user.reload.parsed_recovery_codes)
+
+      post "/account_security/mfa_recovery_codes", params: { current_password: password }, as: :json
+      expect(response).to have_http_status(:ok)
+      rotated = response.parsed_body["recovery_codes"]
+      expect(rotated).to match_array(user.reload.parsed_recovery_codes)
+      expect(rotated & activation_codes).to be_empty
+    end
+  end
 end

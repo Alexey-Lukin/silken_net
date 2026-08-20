@@ -98,6 +98,11 @@ Rails.application.routes.draw do
     get   "account_security/mfa_setup",    to: "mfa_setups#show",                  as: :mfa_setup
     post  "account_security/mfa_setup",    to: "mfa_setups#create"
     patch "account_security/mfa_setup",    to: "mfa_setups#update"
+    # [S6.21] Одноразовий показ recovery-набору (GET, session-маркер) + ротація
+    # набору (POST на ТОЙ САМИЙ шлях — create-семантика нового набору, без
+    # окремого breadcrumb-сегмента).
+    get  "account_security/mfa_recovery_codes", to: "mfa_setups#recovery_codes", as: :mfa_recovery_codes
+    post "account_security/mfa_recovery_codes", to: "mfa_setups#rotate_recovery_codes"
     patch "account_security/password",     to: "account_security#change_password",  as: :account_security_password
     delete "account_security/identities/:id", to: "account_security#unlink_identity", as: :account_security_identity
     patch  "account_security/identities/:id/lock",   to: "account_security#lock_identity",   as: :lock_account_security_identity

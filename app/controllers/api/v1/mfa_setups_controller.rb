@@ -40,16 +40,71 @@ module Api
           current_user.update!(otp_required_for_login: true)
           # Rotation при активації: старий набір (від попередньої спроби чи
           # знятого MFA) не сміє переживати нову заявку.
-          current_user.generate_recovery_codes!
+          codes = current_user.generate_recovery_codes!
 
           respond_to do |format|
-            format.json { render json: { message: t("account_security.mfa.enabled"), mfa_enabled: true }, status: :ok }
-            format.html { redirect_to account_security_path, status: :see_other, security: t("account_security.mfa.enabled") }
+            # JSON-клієнт дістає набір РАЗОМ із підтвердженням — це його єдиний
+            # показ (наступний GET reveal-сторінки без маркера редиректить).
+            format.json { render json: { message: t("account_security.mfa.enabled"), mfa_enabled: true, recovery_codes: codes }, status: :ok }
+            # [S6.21] PRG на reveal-сторінку: КОДИ в cookie не їдуть (маркер
+            # булевий), сам набір читається з БД під автентифікацією рівно раз.
+            format.html do
+              session[:mfa_codes_reveal] = true
+              redirect_to mfa_recovery_codes_path, status: :see_other, security: t("account_security.mfa.enabled")
+            end
           end
         else
           respond_to do |format|
             format.json { render json: { error: t("account_security.mfa_setup.invalid_code") }, status: :unprocessable_content }
             format.html { render_setup_page(error: t("account_security.mfa_setup.invalid_code"), status: :unprocessable_content) }
+          end
+        end
+      end
+
+      # --- ОДНОРАЗОВИЙ ПОКАЗ RECOVERY-НАБОРУ ---
+      # GET /account_security/mfa_recovery_codes
+      #
+      # [S6.21] Показ РІВНО РАЗ: `session.delete` читає і знімає маркер одним
+      # рухом, тож повторний GET (закладка, Back, чуже плече) редиректить на
+      # екран безпеки. Не flash (сесійний cookie — не місце секретам) і не
+      # постійна секція show (набір у БД plaintext — постійний показ розширює
+      # вікно плеча); повторний показ існує лише як ротація НОВОГО набору (POST).
+      def recovery_codes
+        return redirect_to account_security_path, status: :see_other unless current_user.mfa_enabled?
+        return redirect_to account_security_path, status: :see_other unless session.delete(:mfa_codes_reveal)
+
+        render_dashboard(
+          title: t("account_security.recovery_codes.title"),
+          component: AccountSecurity::RecoveryCodes.new(codes: current_user.parsed_recovery_codes)
+        )
+      end
+
+      # --- РОТАЦІЯ RECOVERY-НАБОРУ ---
+      # POST /account_security/mfa_recovery_codes
+      #
+      # [S6.21] «Загубив аркуш, телефон живий»: ротація лишає TOTP-секрет
+      # недоторканим (disable→enable змусив би пересканувати QR). Step-up —
+      # дзеркало disable-гілки `toggle_mfa`: ротація ЗНЕЦІНЮЄ збережені коди,
+      # тобто вкрадена сесія не сміє робити це мовчки; OAuth-only акаунт без
+      # пароля step-up не має — спільного секрета не існує.
+      def rotate_recovery_codes
+        return redirect_to account_security_path, status: :see_other unless current_user.mfa_enabled?
+
+        if current_user.password_digest.present? &&
+           !current_user.authenticate(params[:current_password].to_s)
+          return respond_to do |format|
+            format.json { render json: { error: t("account_security.password.current_invalid") }, status: :unprocessable_content }
+            format.html { redirect_to account_security_path, status: :see_other, error: t("account_security.password.current_invalid") }
+          end
+        end
+
+        codes = current_user.generate_recovery_codes!
+
+        respond_to do |format|
+          format.json { render json: { message: t("account_security.recovery_codes.rotated"), recovery_codes: codes }, status: :ok }
+          format.html do
+            session[:mfa_codes_reveal] = true
+            redirect_to mfa_recovery_codes_path, status: :see_other, security: t("account_security.recovery_codes.rotated")
           end
         end
       end

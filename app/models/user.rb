@@ -298,6 +298,18 @@ class User < ApplicationRecord
     codes
   end
 
+  # Парсимо recovery_codes з JSON тексту. Публічний СВІДОМО [S6.21]: одноразовий
+  # reveal-екран читає набір із БД (PRG — return-значення generate_recovery_codes!
+  # не переживає redirect), і це не розширює поверхню — сирий атрибут
+  # `recovery_codes` і так читається будь-ким, хто має інстанс.
+  def parsed_recovery_codes
+    return [] if recovery_codes.blank?
+    JSON.parse(recovery_codes)
+  rescue JSON::ParserError => e
+    Rails.logger.warn "⚠️ [User##{id}] Malformed recovery_codes JSON: #{e.message}"
+    []
+  end
+
   private
 
   # [ARCH.57] Актор = система (oracle_executioner): ІНІЦІАТОРА на model-рівні не
@@ -320,14 +332,5 @@ class User < ApplicationRecord
   # Пароль не потрібен, якщо користувач прийшов через OAuth (`Identity::SUPPORTED_PROVIDERS`) і вже має Identity.
   def password_required?
     identities.none?
-  end
-
-  # Парсимо recovery_codes з JSON тексту
-  def parsed_recovery_codes
-    return [] if recovery_codes.blank?
-    JSON.parse(recovery_codes)
-  rescue JSON::ParserError => e
-    Rails.logger.warn "⚠️ [User##{id}] Malformed recovery_codes JSON: #{e.message}"
-    []
   end
 end

@@ -35,6 +35,7 @@ lt:
         me: Profilis
         metadata: Metaduomenys
         mfa: Antrasis veiksnys
+        mfa_recovery_codes: Atkūrimo kodai
         mfa_setup: Autentifikatoriaus sąranka
         new: Kūrimas
         notifications: Pranešimai

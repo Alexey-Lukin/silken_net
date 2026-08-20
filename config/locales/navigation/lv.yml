@@ -35,6 +35,7 @@ lv:
         me: Profils
         metadata: Metadati
         mfa: Otrais faktors
+        mfa_recovery_codes: Atjaunošanas kodi
         mfa_setup: Autentifikatora iestatīšana
         new: Izveide
         notifications: Paziņojumi

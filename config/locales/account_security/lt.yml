@@ -29,6 +29,14 @@ lt:
       too_short_json: Naujas slaptažodis turi būti bent 12 simbolių ilgio.
       updated_flash: Slaptažodis atnaujintas. Visos kitos jūsų sesijos baigtos.
       updated_json: Slaptažodis atnaujintas.
+    recovery_codes:
+      done: Kodus išsaugojau
+      heading: Atkūrimo kodai
+      one_time_warning: Šie kodai rodomi tik vieną kartą.
+      rotated: Sugeneruoti nauji atkūrimo kodai. Senasis rinkinys nebegalioja.
+      store_hint: Išsaugokite juos saugioje vietoje dabar. Kiekvienas kodas veikia vieną kartą ir leidžia prisijungti praradus TOTP įrenginį.
+      subtitle: Jūsų vienkartiniai prisijungimo kodai, jei autentifikatorius nepasiekiamas.
+      title: Atkūrimo kodai
     show:
       heading: "🔐 Paskyros saugumas"
       identities:
@@ -51,6 +59,7 @@ lt:
         enabled_with_remaining: "✅ MFA įjungta. Likusių atkūrimo kodų: %{count}"
         heading: Dviejų veiksnių autentifikacija (2FA)
         recovery_warning: Išsaugokite atkūrimo kodus saugioje vietoje. Jie reikalingi prisijungimui, jei prarasite TOTP įrenginį.
+        rotate_codes_button: Sugeneruoti naujus atkūrimo kodus
       password:
         change_submit: Keisti slaptažodį
         confirm_label: Patvirtinti naują slaptažodį

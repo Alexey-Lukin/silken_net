@@ -29,6 +29,14 @@ lv:
       too_short_json: Jaunajai parolei jābūt vismaz 12 rakstzīmes garai.
       updated_flash: Parole atjaunināta. Visas pārējās jūsu sesijas ir izbeigtas.
       updated_json: Parole atjaunināta.
+    recovery_codes:
+      done: Es saglabāju kodus
+      heading: Atjaunošanas kodi
+      one_time_warning: Šie kodi tiek parādīti tikai vienu reizi.
+      rotated: Izveidoti jauni atjaunošanas kodi. Vecais komplekts vairs nedarbojas.
+      store_hint: Saglabājiet tos drošā vietā tagad. Katrs kods darbojas vienu reizi un ļauj pieteikties, ja pazaudēsiet TOTP ierīci.
+      subtitle: Jūsu vienreizējie pieteikšanās kodi gadījumam, ja autentifikators nav pieejams.
+      title: Atjaunošanas kodi
     show:
       heading: "🔐 Konta drošība"
       identities:
@@ -51,6 +59,7 @@ lv:
         enabled_with_remaining: "✅ MFA iespējota. Atlikušie atjaunošanas kodi: %{count}"
         heading: Divu faktoru autentifikācija (2FA)
         recovery_warning: Saglabājiet atjaunošanas kodus drošā vietā. Tie nepieciešami, lai pieteiktos, ja pazaudēsiet TOTP ierīci.
+        rotate_codes_button: Izveidot jaunus atjaunošanas kodus
       password:
         change_submit: Mainīt paroli
         confirm_label: Apstiprināt jauno paroli

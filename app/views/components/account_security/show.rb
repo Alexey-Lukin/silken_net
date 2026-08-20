@@ -44,6 +44,8 @@ module AccountSecurity
           p(class: "text-tiny text-emerald-500") { t(".mfa.enabled_with_remaining", count: @user.recovery_codes_remaining) }
           p(class: "text-mini text-gray-600") { t(".mfa.recovery_warning") }
 
+          render_rotate_codes_form
+
           form_with(url: account_security_mfa_path, method: :patch, class: "space-y-4") do |f|
             if @user.password_digest.present?
               div(class: "space-y-2") do
@@ -66,6 +68,29 @@ module AccountSecurity
                                                                    "uppercase tracking-widest hover:bg-emerald-500 hover:text-black " \
                                                                    "focus-visible:outline-none focus-visible:ring-2 " \
                                                                    "focus-visible:ring-gaia-primary-strong transition-all"
+        end
+      end
+    end
+
+    # [S6.21] Ротація recovery-набору: «загубив аркуш, телефон живий» — новий
+    # набір без пересканування QR. Step-up дзеркалить disable-форму (ротація
+    # знецінює збережені коди, вкрадена сесія не сміє робити це мовчки);
+    # OAuth-only акаунт поля не має — спільного секрета не існує.
+    def render_rotate_codes_form
+      form_with(url: mfa_recovery_codes_path, method: :post, class: "space-y-4") do |f|
+        if @user.password_digest.present?
+          div(class: "space-y-2") do
+            label(for: f.field_id(:current_password),
+                  class: "text-tiny text-gray-500 uppercase tracking-widest") { t(".password.current_label") }
+            f.password_field :current_password, class: input_classes, required: true
+          end
+        end
+        button(type: "submit", class: "px-6 py-2 border border-gaia-primary-strong text-tiny " \
+                                      "text-gaia-primary-strong uppercase tracking-widest " \
+                                      "hover:bg-gaia-primary hover:text-gaia-primary-text " \
+                                      "focus-visible:outline-none focus-visible:ring-2 " \
+                                      "focus-visible:ring-gaia-primary-strong transition-all") do
+          t(".mfa.rotate_codes_button")
         end
       end
     end

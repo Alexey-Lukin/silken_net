@@ -250,6 +250,7 @@ module ContrastRegistry
         api/v1/settings#show
         api/v1/account_security#show
         api/v1/mfa_setups#show
+        api/v1/mfa_setups#recovery_codes
         api/v1/notifications#settings
       ]
     },

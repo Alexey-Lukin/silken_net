@@ -29,6 +29,14 @@ en:
       too_short_json: New password must be at least 12 characters long.
       updated_flash: Password updated. All your other sessions have been signed out.
       updated_json: Password updated.
+    recovery_codes:
+      done: I saved the codes
+      heading: Recovery Codes
+      one_time_warning: This is the only time these codes are shown.
+      rotated: New recovery codes generated. The old set no longer works.
+      store_hint: Save them in a safe place now. Each code works once and lets you sign in if you lose your TOTP device.
+      subtitle: Your one-time sign-in codes for when the authenticator is unavailable.
+      title: Recovery Codes
     show:
       heading: "🔐 Account Security"
       identities:
@@ -51,6 +59,7 @@ en:
         enabled_with_remaining: "✅ MFA enabled. Recovery codes remaining: %{count}"
         heading: Two-Factor Authentication (2FA)
         recovery_warning: Save your recovery codes in a safe place. They are required to log in if you lose your TOTP device.
+        rotate_codes_button: Generate new recovery codes
       password:
         change_submit: Change Password
         confirm_label: Confirm New Password

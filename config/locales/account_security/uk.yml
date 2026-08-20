@@ -29,6 +29,14 @@ uk:
       too_short_json: Новий пароль повинен містити мінімум 12 символів.
       updated_flash: Пароль оновлено. Усі інші ваші сесії завершено.
       updated_json: Пароль оновлено.
+    recovery_codes:
+      done: Я зберіг коди
+      heading: Recovery codes
+      one_time_warning: Ці коди показуються лише один раз.
+      rotated: Згенеровано нові recovery codes. Старий набір більше не діє.
+      store_hint: Збережіть їх у безпечному місці зараз. Кожен код працює один раз і дає увійти при втраті TOTP-пристрою.
+      subtitle: Ваші одноразові коди входу на випадок недоступності автентифікатора.
+      title: Recovery codes
     show:
       heading: "🔐 Безпека акаунту"
       identities:
@@ -51,6 +59,7 @@ uk:
         enabled_with_remaining: "✅ MFA увімкнено. Recovery codes залишилось: %{count}"
         heading: Двофакторна автентифікація (2FA)
         recovery_warning: Recovery codes збережіть в безпечному місці. Вони потрібні для входу при втраті TOTP.
+        rotate_codes_button: Згенерувати нові recovery codes
       password:
         change_submit: Змінити пароль
         confirm_label: Підтвердьте новий пароль

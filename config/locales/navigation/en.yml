@@ -35,6 +35,7 @@ en:
         me: Me
         metadata: Metadata
         mfa: Second factor
+        mfa_recovery_codes: Recovery codes
         mfa_setup: Authenticator setup
         new: New
         notifications: Notifications
