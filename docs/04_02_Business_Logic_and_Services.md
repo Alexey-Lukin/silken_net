@@ -1342,8 +1342,19 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | **Retry** | 5 |
 | **Тригер** | `EcosystemHealingWorker` при `biomass_extraction` |
 | **Вхід** | `maintenance_record_id` (Integer) |
-| **Сервіси** | Phase 1: `PuroEarth::PassportService.new(payload).anchor!` (on-chain anchoring → Polygon D-MRV Registry). Phase 2: `PuroEarth::RegistryApiService.new(payload, tx_hash:).submit!` (REST API → Puro.earth CORC) |
-| **Side Effects** | `record.update!(biomass_passport_tx_hash: tx_hash)`. `record.update!(puro_earth_corc_ref: corc_ref)` (якщо REST API успішний). `BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)`. Phase 2 non-blocking: REST API failure не скасовує on-chain anchoring. |
+| **Сервіси** | Phase 1: `PuroEarth::PassportService.new(payload).anchor!` (on-chain anchoring → Polygon D-MRV Registry, стан `:sent`). Phase 2: `PuroEarthConfirmationWorker` (receipt-полл). Phase 3 — ЛИШЕ після `:confirmed`: `PuroEarth::RegistryApiService.new(payload, tx_hash:).submit!` (REST API → Puro.earth CORC) |
+| **Side Effects** | `record.update!(biomass_passport_tx_hash:, biomass_passport_status: :sent)`. `PuroEarthConfirmationWorker.perform_in(30.seconds, record.id)` при `:sent`. `record.update!(puro_earth_corc_ref:)` при `:confirmed` (Phase 3 non-blocking: REST-збій не скасовує on-chain anchoring). `:failed`/`:manual_review` — термінальні для оркестратора. ⚠️ Позначена стеля: stuck-`:sent` sweep відкладено до активації шляху ([`00_07`](00_07_Action_Plan_Tracker) PERF.1) |
+
+#### `PuroEarthConfirmationWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `web3_low` (не money-path — кошти не заблоковані) |
+| **Retry** | 10 (≈15-20 хв горизонт, дзеркало `BlockchainConfirmationWorker`; `unique_for: 10.minutes`) |
+| **Тригер** | `PuroEarthPassportWorker` (Phase 2) — [PERF.1(д), 2026-08-20]: доти конфірмейшн-нога вела в `blockchain_transactions`, куди паспортний хеш не потрапляє ніколи |
+| **Вхід** | `maintenance_record_id` (Integer) |
+| **Сервіси** | `Web3::EvmReceiptClassifier.classify(receipt)` по `ALCHEMY_POLYGON_RPC_URL` (без reorg-depth gate — Polygon, не L1) |
+| **Side Effects** | `:confirmed` → `confirm_biomass_passport!` + re-enqueue оркестратора (відкриває Phase 3). `:reverted` → `fail_biomass_passport!` (термінал; re-anchor = console). Pending → raise (retry). `retries_exhausted` → ФІНАЛЬНИЙ receipt re-check (прецедент ARCH.66: сліпий escalate записав би підтверджений анкер у `:manual_review`), лише все-ще-не-готовий/RPC-збій → `escalate_biomass_passport!` |
 
 #### `MintBatchCollectorWorker`
 

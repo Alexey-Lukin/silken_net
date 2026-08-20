@@ -16,9 +16,10 @@
 # (which now releases locked_points, M2) exactly as the original poll would have.
 #
 # Covers the rails that actually persist a `BlockchainTransaction` row: mint /
-# burn / insurance. ⚠️ NOT puro — this line used to claim it and could not have:
-# `PuroEarthPassportWorker` writes its hash to `MaintenanceRecord`, never to
-# `blockchain_transactions`, so nothing here can ever select it (00_07 PERF.1).
+# burn / insurance. ⚠️ NOT puro — its hash lives on `MaintenanceRecord`, never in
+# `blockchain_transactions`, and since PERF.1(д) (2026-08-20) it has its OWN
+# lifecycle+poller (PuroEarthConfirmationWorker); its stuck-:sent sweep is
+# deliberately deferred until path activation (00_07 PERF.1).
 # Celo has its own CeloConfirmationWorker; Solana/anchor reconcile via their own
 # crons — out of scope here (see 00_07 ARCH.55).
 #

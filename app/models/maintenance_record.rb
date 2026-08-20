@@ -79,6 +79,49 @@ class MaintenanceRecord < ApplicationRecord
     self.class.action_type_label(action_type)
   end
 
+  # [PERF.1(д)] Lifecycle Puro-анкера — «третя форма» (присуд founder 2026-08-20):
+  # власні стани на носії хеша за прецедентом EthereumAnchor, БЕЗ грошової таблиці
+  # (`blockchain_transactions` — про рух коштів; втискати туди анкер означало б
+  # або отруїти `net_minted_supply`, або завести 4-й token_type на 4 доми).
+  # nil = анкер не broadcast'ився. Phase 2 (REST у Puro) гейтована на :confirmed —
+  # on_chain_proof не віддається в зовнішній реєстр, доки receipt не доведено.
+  enum :biomass_passport_status, {
+    sent: "sent",                  # broadcast пішов, receipt ще не доведено
+    confirmed: "confirmed",        # receipt success — доказ справжній, Phase 2 відкрито
+    failed: "failed",              # EVM revert — термінал; re-anchor = console-рішення
+    manual_review: "manual_review" # poll вичерпано, доля невідома — людина на polygonscan
+  }, prefix: :biomass_passport
+
+  # Гардовані переходи (прецедент EthereumAnchor ARCH.66): with_lock + status-гард =
+  # перехід рівно-раз проти гонки двох поллерів (retry-after-redeploy). confirm/fail
+  # приймають і :manual_review — гардований людський вихід після console-звірки;
+  # escalate лише з :sent (не ре-ескалює вже-ескальоване). block/gas НЕ зберігаємо
+  # свідомо: споживача немає, доказ живе в реєстрі Puro (⊥ EthereumAnchor, де
+  # компоненти читає зовнішній аудитор L1-якоря).
+  def confirm_biomass_passport!
+    with_lock do
+      return false unless biomass_passport_sent? || biomass_passport_manual_review?
+
+      update!(biomass_passport_status: :confirmed)
+    end
+  end
+
+  def fail_biomass_passport!
+    with_lock do
+      return false unless biomass_passport_sent? || biomass_passport_manual_review?
+
+      update!(biomass_passport_status: :failed)
+    end
+  end
+
+  def escalate_biomass_passport!
+    with_lock do
+      return false unless biomass_passport_sent?
+
+      update!(biomass_passport_status: :manual_review)
+    end
+  end
+
   # --- ВАЛІДАЦІЇ ---
   validates :action_type, :performed_at, presence: true
   validates :notes, presence: true, length: { minimum: 10 }

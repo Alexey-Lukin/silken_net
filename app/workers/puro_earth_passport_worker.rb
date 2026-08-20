@@ -12,18 +12,20 @@
 # The passport anchors: tree DID, GPS coordinates, biomass yield, extraction
 # date, and a SHA-256 hash of lifetime telemetry for tamper-proof provenance.
 #
-# Two-phase submission:
-# 1. On-chain anchoring via PuroEarth::PassportService → Polygon D-MRV Registry
-# 2. REST API submission via PuroEarth::RegistryApiService → Puro.earth CORC
+# Three-phase orchestration [PERF.1(д), присуд founder 2026-08-20 — «третя форма»]:
+# 1. On-chain anchoring via PuroEarth::PassportService → Polygon D-MRV Registry (:sent)
+# 2. Receipt confirmation via PuroEarthConfirmationWorker → власний lifecycle на
+#    `MaintenanceRecord#biomass_passport_status` (прецедент EthereumAnchor; поллер
+#    після :confirmed re-enqueue'ить ЦЕЙ воркер — оркестратор один, фази ідемпотентні)
+# 3. REST API submission via PuroEarth::RegistryApiService → Puro.earth CORC,
+#    гейтована на :confirmed — on_chain_proof не віддається в зовнішній реєстр,
+#    доки receipt не доведено (доти нога вела в `blockchain_transactions`, куди
+#    паспортний хеш не потрапляє ніколи, і «доказ» їхав без перевірки revert)
 #
-# ⚠️ Confirmation is NOT tracked today, despite the enqueue below. `PassportService#anchor!`
-# broadcasts on-chain and returns a hash, but creates NO `BlockchainTransaction` row — the
-# hash lives only on `MaintenanceRecord#biomass_passport_tx_hash`. `BlockchainConfirmationWorker`
-# looks the hash up in `blockchain_transactions`, which never receives it, so the poll always
-# finds nothing: a never-fed pipe, not a slow query. Costless right now only because the
-# passport path is not activated (`ORACLE_PURO_PRIVATE_KEY` is injected at activation), which
-# is also exactly when it starts to matter. Verdict — build an intent-marker like every other
-# on-chain path, or drop the leg — is open in `00_07` PERF.1.
+# ⚠️ Позначена стеля: sent-limbo після crash ОБОХ воркерів (persist :sent + втрачений
+# enqueue + вичерпані ретраї цього воркера) не має sweeper-крона — власний stuck-sweep
+# відкладено до активації шляху (`ORACLE_PURO_PRIVATE_KEY`); recovery = console
+# re-enqueue. Дім residual'а → `00_07` PERF.1.
 # =============================================================================
 class PuroEarthPassportWorker
   include ApplicationWeb3Worker
@@ -49,22 +51,26 @@ class PuroEarthPassportWorker
       tx_hash = with_web3_error_handling("Polygon", "Puro.earth Passport for Tree #{tree.did}") do
         PuroEarth::PassportService.new(payload).anchor!
       end
-      record.update!(biomass_passport_tx_hash: tx_hash)
+      record.update!(biomass_passport_tx_hash: tx_hash, biomass_passport_status: :sent)
     end
 
-    # [ARCH.53/B5] Confirmation-планування ПОЗА anchor-guard → краш між persist і enqueue
-    # відновлюється на retry (BlockchainConfirmationWorker `unique_for` дедуплікує повторне).
-    BlockchainConfirmationWorker.perform_in(30.seconds, record.biomass_passport_tx_hash)
+    # Phase 2: receipt-полл. Планування ПОЗА anchor-guard [ARCH.53/B5] → краш між persist
+    # і enqueue відновлюється на retry цього воркера (`unique_for` поллера дедуплікує).
+    if record.biomass_passport_sent?
+      PuroEarthConfirmationWorker.perform_in(30.seconds, record.id)
 
-    # Phase 2: REST API submission to Puro.earth for CORC issuance (idempotent — skip if issued).
-    if record.puro_earth_corc_ref.blank?
+    # Phase 3: REST API submission — ЛИШЕ після on-chain confirmed (idempotent — skip if issued).
+    elsif record.biomass_passport_confirmed? && record.puro_earth_corc_ref.blank?
       corc_ref = submit_to_puro_earth_api(payload, record.biomass_passport_tx_hash)
       record.update!(puro_earth_corc_ref: corc_ref) if corc_ref
     end
+    # :failed / :manual_review — термінальні для оркестратора: поллер уже лишив
+    # error-лог із console-рецептом, ре-ганяти фази немає по чому.
 
-    Rails.logger.info "🌿 [Puro.earth] Biomass Passport generated. " \
+    Rails.logger.info "🌿 [Puro.earth] Biomass Passport pass complete. " \
                       "Tree #{tree.did}, yield: #{record.biomass_yield_kg} kg, " \
-                      "tx: #{record.biomass_passport_tx_hash}, CORC: #{record.puro_earth_corc_ref || "pending"}"
+                      "tx: #{record.biomass_passport_tx_hash} (#{record.biomass_passport_status}), " \
+                      "CORC: #{record.puro_earth_corc_ref || "pending"}"
 
     payload
   end

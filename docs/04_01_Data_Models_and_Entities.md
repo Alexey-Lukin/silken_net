@@ -1408,6 +1408,7 @@ active/draft ──cancel──► cancelled
 | `labor_hours` | decimal, **nullable** | Витрачений час. `NULL` = не введено (форма пропонує поле без `required:`), і це НЕ нуль годин |
 | `parts_cost` | decimal, **nullable** | Вартість запчастин. `NULL` = не введено ⊥ введений `0` = вимір «запчастин не було» |
 | `biomass_passport_tx_hash` | string | TX-хеш паспорту біомаси (Puro.earth Biochar) |
+| `biomass_passport_status` | string enum, **nullable** | [PERF.1(д), 2026-08-20] Lifecycle Puro-анкера — «третя форма» (прецедент `EthereumAnchor`, БЕЗ грошової таблиці): `sent` → `confirmed`/`failed`/`manual_review`; `NULL` = анкер не broadcast'ився. Переходи гардовані `with_lock` (`confirm_biomass_passport!`/`fail_biomass_passport!`/`escalate_biomass_passport!`; confirm/fail приймають і `manual_review` — гардований console-вихід оператора). Phase 3 (REST у Puro) гейтована на `confirmed` |
 
 **Методи:** `total_cost`, `trigger_ecosystem_healing!`.
 

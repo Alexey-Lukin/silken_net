@@ -879,9 +879,11 @@ PuroEarthPassportWorker → генерація D-MRV "Паспорт Біома�
          ↓
 Payload: { tree_did, biomass_yield_kg, extraction_date, gps_coordinates, lifetime_telemetry_hash }
          ↓
-Phase 1: blockchain anchoring → biomass_passport_tx_hash збережено в MaintenanceRecord
+Phase 1: blockchain anchoring → biomass_passport_tx_hash + status :sent у MaintenanceRecord
          ↓
-Phase 2: REST API submission → Puro.earth → puro_earth_corc_ref збережено в MaintenanceRecord
+Phase 2: PuroEarthConfirmationWorker → receipt-полл → :confirmed / :failed / :manual_review
+         ↓
+Phase 3 (лише після :confirmed): REST API submission → Puro.earth → puro_earth_corc_ref
          ↓
 Реєстр Puro.earth → видача Biochar CORC (автоматична інтеграція через RegistryApiService)
 ```
@@ -906,4 +908,4 @@ D-MRV (Digital Measurement, Reporting and Verification) паспорт забе�
 - Lifetime telemetry hash гарантує, що біомаса походить з моніторованого, верифікованого дерева
 - GPS-координати запобігають подвійному підрахунку між лісовими ділянками
 
-> **Статус:** `PuroEarthPassportWorker` — у черзі `web3` (пріоритет 7). ✅ Повна інтеграція: on-chain anchoring (`PassportService`) + REST API submission (`RegistryApiService`). Двофазний pipeline: Phase 1 зберігає `biomass_passport_tx_hash`, Phase 2 зберігає `puro_earth_corc_ref`.
+> **Статус:** `PuroEarthPassportWorker` — у черзі `web3` (пріоритет 7). ✅ Трифазний pipeline [PERF.1(д), 2026-08-20]: Phase 1 зберігає `biomass_passport_tx_hash` + `:sent`; Phase 2 — власний receipt-полл (`PuroEarthConfirmationWorker`, `web3_low`) з lifecycle на `biomass_passport_status` (прецедент `EthereumAnchor`); Phase 3 зберігає `puro_earth_corc_ref` — гейтована на `:confirmed`, тож on_chain_proof не віддається в зовнішній реєстр, доки receipt не доведено. Доти конфірмейшн-нога вела в `blockchain_transactions`, куди паспортний хеш не потрапляє ніколи.

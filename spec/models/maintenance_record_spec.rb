@@ -49,6 +49,42 @@ RSpec.describe MaintenanceRecord, type: :model do
     end
   end
 
+  # [PERF.1(д)] Гардовані переходи Puro-анкера (прецедент EthereumAnchor):
+  # with_lock + status-гард = перехід рівно-раз; false = програна гонка, не помилка.
+  describe "biomass passport lifecycle transitions" do
+    let(:record) do
+      create(:maintenance_record, :biomass_extraction,
+             maintainable: create(:tree, status: :deceased),
+             biomass_passport_tx_hash: "0x#{"ab" * 32}", biomass_passport_status: :sent)
+    end
+
+    it "confirms from :sent and refuses a second confirm (race loser gets false)" do
+      expect(record.confirm_biomass_passport!).to be(true)
+      expect(record.reload).to be_biomass_passport_confirmed
+      expect(record.confirm_biomass_passport!).to be(false)
+    end
+
+    it "allows confirm/fail from :manual_review (guarded operator exit after console-звірки)" do
+      record.update!(biomass_passport_status: :manual_review)
+
+      expect(record.confirm_biomass_passport!).to be(true)
+    end
+
+    it "escalates only from :sent — a terminal :failed anchor is not re-escalated" do
+      record.update!(biomass_passport_status: :failed)
+
+      expect(record.escalate_biomass_passport!).to be(false)
+      expect(record.reload).to be_biomass_passport_failed
+    end
+
+    it "never resurrects a terminal :confirmed anchor via fail!" do
+      record.update!(biomass_passport_status: :confirmed)
+
+      expect(record.fail_biomass_passport!).to be(false)
+      expect(record.reload).to be_biomass_passport_confirmed
+    end
+  end
+
   # =========================================================================
   # VALIDATIONS — базові
   # =========================================================================
