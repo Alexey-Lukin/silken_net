@@ -511,6 +511,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | 7 | PATCH | `/reset_password` | `passwords#update` | 🌐 Public | Встановити новий пароль |
 | **🛡️ Безпека Акаунту** | | | | | |
 | 9 | GET | `/account_security` | `account_security#show` | 🔑 Auth | MFA-стан, прив'язані identity |
+| 9а | GET | `/account_security/data_export` | `account_security#data_export` | 🔑 Auth | [SEC.18] DSAR self-service (Art.15/20): JSON-attachment із User-owned даними за PII-реєстром [`04_01 §11`](04_01_Data_Models_and_Entities); креденшели свідомо поза віддачею — `Gdpr::DataExportService` |
 | 10 | PATCH | `/account_security/mfa` | `account_security#toggle_mfa` | 🔑 Auth | **Асиметричний за [S6.21], і асиметрія пережила білд:** *вимкнути* — працює, вимагає `current_password` (step-up auth), окрім OAuth-only акаунтів; *увімкнути* — **409 `code: "mfa_setup_required"`** з редиректом у setup-флоу (row 115-117): сліпого підняття прапорця не існує — увімкнення вимагає доведеного володіння автентифікатором (verify свіжого коду). Історія: до 2026-08-20 напрямок тримав 501-гейт `mfa_not_implemented` (verify-on-login ще не існувало) — знявся рівно за власним контрактом |
 | 115 | GET | `/account_security/mfa_setup` | `mfa_setups#show` | 🔑 Auth | [S6.21] QR (інлайн-SVG) + секрет + форма verify; без провижну → redirect назад |
 | 116 | POST | `/account_security/mfa_setup` | `mfa_setups#create` | 🔑 Auth | [S6.21] Провижн/ротація секрета (до активації) → 303 на show; при enabled → 409 |

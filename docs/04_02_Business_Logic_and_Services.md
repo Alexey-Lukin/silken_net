@@ -282,6 +282,26 @@
 
 ## 🛡️ 5. Домен: Верифікація та Ідентичність (Verification & Identity)
 
+### `Gdpr::DataExportService` [SEC.18 — DSAR Art.15/20]
+
+| | |
+|---|---|
+| **Файл** | `app/services/gdpr/data_export_service.rb` |
+| **Вхід** | `user` (User AR instance — субʼєкт запиту) |
+| **Що робить** | Збирає структурований машиночитний зліпок User-owned персональних даних за PII-реєстром ([`04_01 §11`](04_01_Data_Models_and_Entities)): рядок users · sessions (слід входу) · identities (OAuth-профіль `auth_data` БЕЗ токенів) · audit_logs де субʼєкт є актором · maintenance_records авторства з МЕТАДАНИМИ фото (байти блобів не вбудовуються — оригінали доступні штатним авторизованим шляхом). Креденшели (password_digest · otp_secret · recovery_codes · access/refresh_token) свідомо поза віддачею — DSAR віддає дані ПРО особу, не секрети автентифікації. Schema-parity приклад у власній спеці червонить нову PII-колонку users, доки вона не дістане рішення про експорт |
+| **Виклик** | `GET /account_security/data_export` (self-service, JSON-attachment) |
+| **Вихід** | `Hash` (format_version + секції); контролер віддає `send_data` файлом |
+
+### `Gdpr::AnonymizeUserService` [SEC.18 — erasure Art.17, безсуперечна половина]
+
+| | |
+|---|---|
+| **Файл** | `app/services/gdpr/anonymize_user_service.rb` |
+| **Вхід** | `user` (субʼєкт) · `actor:` (ініціатор; дефолт — сам субʼєкт) |
+| **Що робить** | Атомарно: синхронний `AuditLog.create!` ПЕРЕД мутаціями (слід незворотного акту без жодного PII в metadata) → `sessions.destroy_all` → `identities.destroy_all` → tombstone users-рядка (email → `erased-{id}@anonymized.invalid`, решта PII → nil, digest/OTP зняті). Після цього вхід неможливий за побудовою — анонімізація Є ефективним offboarding-ом без окремого механізму деактивації. 🔒 Стелі оголошені в докблоці й у [`04_01 §11`](04_01_Data_Models_and_Entities): audit_logs (ip/user_agent у chain_payload — псевдонімізація вимагає ⚖️ про форму) і maintenance_records (Evidence Protocol) свідомо НЕ чіпаються; спека пінить, що ланцюг переживає анонімізацію цілим |
+| **Виклик** | оператор (консоль) або майбутній workflow — UI-кнопки свідомо немає |
+| **Вихід** | `user` (анонімізований) |
+
 ### `Iotex::W3bstreamVerificationService`
 
 | | |

@@ -37,6 +37,19 @@ module Api
         end
       end
 
+      # --- DSAR-ЕКСПОРТ [SEC.18] ---
+      # GET /account_security/data_export — self-service право доступу (Art.15)
+      # у портованій формі (Art.20): файл-attachment, не сторінка. Периметр і
+      # межі (що НЕ віддається і чому) — докблок `Gdpr::DataExportService`.
+      def data_export
+        payload = Gdpr::DataExportService.call(current_user)
+
+        send_data JSON.pretty_generate(payload),
+                  filename: "silkennet-data-export-#{Date.current.iso8601}.json",
+                  type: "application/json",
+                  disposition: "attachment"
+      end
+
       # --- ВВІМКНЕННЯ/ВИМКНЕННЯ MFA ---
       # PATCH /account_security/mfa
       def toggle_mfa

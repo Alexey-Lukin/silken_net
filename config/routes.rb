@@ -93,6 +93,8 @@ Rails.application.routes.draw do
 
     # Безпека акаунту (Account Security / Identity Management)
     get   "account_security",              to: "account_security#show",            as: :account_security
+    # [SEC.18] DSAR self-service: субʼєкт качає ВЛАСНІ дані (Art.15/20)
+    get   "account_security/data_export",  to: "account_security#data_export",     as: :account_security_data_export
     patch "account_security/mfa",          to: "account_security#toggle_mfa",      as: :account_security_mfa
     # [S6.21] Setup-флоу TOTP: провижн (POST) → QR-сторінка (GET) → активація (PATCH).
     get   "account_security/mfa_setup",    to: "mfa_setups#show",                  as: :mfa_setup
