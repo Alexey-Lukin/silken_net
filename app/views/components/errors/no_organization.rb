@@ -47,14 +47,14 @@ module Errors
         role: "main"
       ) do
         div(
-          class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]",
+          class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(var(--gaia-primary)_1px,transparent_1px)] [background-size:20px_20px]",
           aria_hidden: "true"
         )
 
         div(class: "w-full max-w-md relative z-10") do
           render_header
 
-          div(class: "p-8 border border-gaia-border bg-gaia-surface/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do
+          div(class: "p-8 border border-gaia-border bg-gaia-surface/80 backdrop-blur-xl space-y-8") do
             render_message
             render_choose_organization
             render_logout_link
@@ -98,7 +98,7 @@ module Errors
         a(
           href: organizations_path,
           class: "inline-block px-6 py-3 border border-gaia-primary-strong text-gaia-primary-strong text-tiny uppercase " \
-                 "tracking-[0.3em] hover:bg-emerald-500 hover:text-gaia-surface transition-colors " \
+                 "tracking-[0.3em] hover:bg-gaia-primary hover:text-gaia-surface transition-colors " \
                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
         ) { t(".choose_organization") }
       end

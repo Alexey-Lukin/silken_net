@@ -56,7 +56,9 @@ RSpec.describe Errors::Page do
     it "фарбує 404 стриманіше — це не аварія" do
       html = render_component(heading: "H", message: "M", tone: :info)
 
-      expect(html).to include("emerald-700")
+      # [UI.1 порція 10] Умова відкладення настала: info-тон бере власний
+      # accent-токен (сигнальна хвиля завела його 08-20), сирий emerald знято.
+      expect(html).to include("status-info-accent")
       expect(html).not_to include("status-danger-accent")
     end
 

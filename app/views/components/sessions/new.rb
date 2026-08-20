@@ -24,12 +24,12 @@ module Sessions
         # Уточнення коштує рядок, бо слово «Матриця» в цьому дереві означає ТРИ різні
         # речі — брендову метафору системи (`Treasury Matrix`, «схема Матриці»), знятий
         # ефект і оцей градієнт, — і сплутати їх легко саме тут.
-        div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]", aria_hidden: "true")
+        div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(var(--gaia-primary)_1px,transparent_1px)] [background-size:20px_20px]", aria_hidden: "true")
 
         div(class: "w-full max-w-md relative z-10") do
           render_portal_header
 
-          form_with(url: login_path, method: :post, class: "p-8 border border-gaia-border bg-gaia-surface/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do |f|
+          form_with(url: login_path, method: :post, class: "p-8 border border-gaia-border bg-gaia-surface/80 backdrop-blur-xl space-y-8") do |f|
             render_flash_messages
 
             div(class: "space-y-6") do
@@ -61,7 +61,7 @@ module Sessions
     def render_portal_header
       div(class: "text-center mb-10 space-y-2") do
         div(class: "inline-block h-12 w-12 border border-gaia-primary rotate-45 mb-4 relative", aria_hidden: "true") do
-          div(class: "absolute inset-1 bg-emerald-500 animate-pulse")
+          div(class: "absolute inset-1 bg-gaia-primary animate-pulse")
         end
         h1(class: "text-3xl font-extralight text-gaia-text-strong tracking-[0.3em] uppercase") { t(".title") }
         p(class: "text-tiny text-gaia-text-muted uppercase tracking-[0.5em]") { t(".subtitle") }
@@ -84,9 +84,9 @@ module Sessions
     end
 
     def submit_classes
-      "w-full py-4 bg-emerald-500/10 border border-gaia-primary-strong text-gaia-primary-strong uppercase text-xs tracking-[0.4em] " \
-        "hover:bg-emerald-500 hover:text-gaia-surface focus-visible:outline-none focus-visible:ring-2 " \
-        "focus-visible:ring-gaia-primary-strong transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+      "w-full py-4 bg-gaia-primary/10 border border-gaia-primary-strong text-gaia-primary-strong uppercase text-xs tracking-[0.4em] " \
+        "hover:bg-gaia-primary hover:text-gaia-surface focus-visible:outline-none focus-visible:ring-2 " \
+        "focus-visible:ring-gaia-primary-strong transition-all cursor-pointer"
     end
 
     def render_flash_messages

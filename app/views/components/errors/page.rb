@@ -36,17 +36,16 @@ module Errors
     # інший відтінок, а ПАРНИЙ токен `--status-warning-accent` (форма, яку danger має
     # від початку); дім значень і їхнє обґрунтування — `application.css`.
     #
-    # ⚠️ `:info` лишається СИРИМ emerald СВІДОМО, і це оголошення за `04_04 §3.5`, не
-    # недогляд: значення тем-інваріантне за задумом (бренд-акцент 404 однаковий обабіч)
-    # і виміряне — **5.14** світла / **3.78** темна, тобто єдиний неакцентний тон, який
-    # узагалі видно. ⛔ Не «уніфікувати» його на `status-info`: той теж пастельний ФОН
-    # (`#dbeafe`) і дав би **1.17:1**, тобто заміна зробила б видиме невидимим заради
-    # симетрії імен. Родину закриє `--status-info-accent`, коли він знадобиться комусь
-    # іще — заводити токен на один сайт означало б платити за симетрію, а не за сигнал.
+    # `:info` → `--status-info-accent` [UI.1 порція 10]: токен, на який попередня
+    # редакція відкладала цей тон («родину закриє …-accent, коли знадобиться комусь
+    # іще»), існує з 2026-08-20 — сигнальна хвиля завела його для low-severity, тож
+    # умова відкладення настала. ⛔ Заборона на пастельний `status-info` чинна досі:
+    # той — ФОН бейджа (`#dbeafe`, 1.17:1 на тлі сторінки), сигнал бере лише
+    # насичений парний токен (1.4.11 = 3:1; info-accent міряє ≥5.24 обома темами).
     TONES = {
       danger: "border-status-danger-accent bg-status-danger-accent",
       warning: "border-status-warning-accent bg-status-warning-accent",
-      info: "border-emerald-700 bg-emerald-700"
+      info: "border-status-info-accent bg-status-info-accent"
     }.freeze
 
     # @param heading [String] заголовок, уже локалізований викликачем
@@ -65,7 +64,7 @@ module Errors
       ) do
         div(
           class: "absolute inset-0 opacity-10 pointer-events-none " \
-                 "bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]",
+                 "bg-[radial-gradient(var(--gaia-primary)_1px,transparent_1px)] [background-size:20px_20px]",
           aria_hidden: "true"
         )
 

@@ -21,7 +21,7 @@ module Dashboard
       # невідтворюваним (два прогони того самого коду давали 7 і 0 pane'ів).
       link(rel: "stylesheet", href: asset_path("leaflet/leaflet.css"))
 
-      div(class: "w-full h-[500px] border border-gaia-border bg-gaia-surface relative z-0 overflow-hidden shadow-[0_0_30px_rgba(6,78,59,0.2)]") do
+      div(class: "w-full h-[500px] border border-gaia-border bg-gaia-surface relative z-0 overflow-hidden") do
         # Підписка скоуплена організацією глядача: ім'я стріму детерміноване,
         # тож голий рядок посадив би весь застосунок в ОДИН канал і роздав
         # координати чужого флоту. Без організації підписки нема (fail-closed).
@@ -50,15 +50,15 @@ module Dashboard
         end
 
         # Неоновий HUD
-        div(class: "absolute top-4 left-4 z-[400] bg-black/80 border border-emerald-900 p-3 backdrop-blur-md pointer-events-none") do
-          h3(class: "text-tiny uppercase tracking-widest text-emerald-500 mb-1 flex items-center gap-2") do
+        div(class: "absolute top-4 left-4 z-[400] bg-gaia-surface/80 border border-gaia-border p-3 backdrop-blur-md pointer-events-none") do
+          h3(class: "text-tiny uppercase tracking-widest text-gaia-primary-strong mb-1 flex items-center gap-2") do
             div(class: "w-2 h-2 rounded-full bg-gaia-primary-strong animate-pulse")
             plain t(".heading")
           end
           # `.size`, а не `.count`: колекція вже завантажена рендером вузлів
           # вище, тож `.count` слав би ДРУГИЙ SQL (обгорнутий COUNT) на кожен
           # показ дашборду.
-          p(class: "text-mini text-gray-400 font-mono") { t(".live_nodes", count: @trees.size) }
+          p(class: "text-mini text-gaia-text-subtle font-mono") { t(".live_nodes", count: @trees.size) }
           # 🔴 [UI.4] Стеля `MAP_NODE_LIMIT` доти була видима ЛИШЕ тому, хто читав
           # контролер: екран друкував зрізане число як факт про флот, тобто підмножина
           # подавалась виміром цілого. `measurement_coverage` мовчить на повному

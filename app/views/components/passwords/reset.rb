@@ -10,7 +10,7 @@ module Passwords
 
     def view_template
       main(class: "min-h-screen bg-gaia-surface-base flex items-center justify-center p-4 font-mono relative overflow-hidden") do
-        div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]")
+        div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(var(--gaia-primary)_1px,transparent_1px)] [background-size:20px_20px]")
 
         div(class: "w-full max-w-md relative z-10") do
           render_header
@@ -18,7 +18,7 @@ module Passwords
           # [UI.7] `form_with`: токен і `_method=patch` приходять самі.
           # Скоупу НЕМА — контролер читає `params[:token]`/`[:password]` плоско,
           # ба більше: `token` узагалі не є атрибутом `User`.
-          form_with(url: reset_password_path, method: :patch, class: "p-8 border border-gaia-border bg-gaia-surface/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do |f|
+          form_with(url: reset_password_path, method: :patch, class: "p-8 border border-gaia-border bg-gaia-surface/80 backdrop-blur-xl space-y-8") do |f|
             input(type: "hidden", name: "token", value: @token)
 
             render_flash_messages
@@ -48,7 +48,7 @@ module Passwords
     def render_header
       div(class: "text-center mb-10 space-y-2") do
         div(class: "inline-block h-12 w-12 border border-gaia-primary rotate-45 mb-4 relative", aria_hidden: "true") do
-          div(class: "absolute inset-1 bg-emerald-500 animate-pulse")
+          div(class: "absolute inset-1 bg-gaia-primary animate-pulse")
         end
         h1(class: "text-3xl font-extralight text-gaia-text-strong tracking-[0.3em] uppercase") { t(".heading") }
         p(class: "text-tiny text-gaia-text-muted uppercase tracking-[0.5em]") { t(".subtitle") }
@@ -70,9 +70,9 @@ module Passwords
     end
 
     def submit_classes
-      "w-full py-4 bg-emerald-500/10 border border-gaia-primary-strong text-gaia-primary-strong uppercase text-xs tracking-[0.4em] " \
-        "hover:bg-emerald-500 hover:text-gaia-surface focus-visible:outline-none focus-visible:ring-2 " \
-        "focus-visible:ring-gaia-primary-strong transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+      "w-full py-4 bg-gaia-primary/10 border border-gaia-primary-strong text-gaia-primary-strong uppercase text-xs tracking-[0.4em] " \
+        "hover:bg-gaia-primary hover:text-gaia-surface focus-visible:outline-none focus-visible:ring-2 " \
+        "focus-visible:ring-gaia-primary-strong transition-all cursor-pointer"
     end
 
     # [SEC.25] Плашка помилки ПОТОЧНОГО сабміту — свідомо тут, а не у `FlashMessages`:

@@ -32,7 +32,7 @@ module Dashboard
 
     def event_color
       case @event
-      when EwsAlert then "text-red-400"
+      when EwsAlert then "text-status-danger-accent"
       # [ARCH.101 ⚖️ 08-20] Спалення гучне й КОЛЬОРОМ: дієслово «Burned» уже чесне,
       # але колір читається раніше за текст, і нейтральний тон ховав найгучнішу
       # грошову подію серед буденних. `-accent` міряний для текст-ролі на

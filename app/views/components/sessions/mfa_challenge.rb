@@ -76,8 +76,8 @@ module Sessions
     end
 
     def submit_classes
-      "w-full py-4 bg-emerald-500/10 border border-gaia-primary-strong text-gaia-primary-strong uppercase text-xs tracking-[0.4em] " \
-        "hover:bg-emerald-500 hover:text-gaia-surface focus-visible:outline-none focus-visible:ring-2 " \
+      "w-full py-4 bg-gaia-primary/10 border border-gaia-primary-strong text-gaia-primary-strong uppercase text-xs tracking-[0.4em] " \
+        "hover:bg-gaia-primary hover:text-gaia-surface focus-visible:outline-none focus-visible:ring-2 " \
         "focus-visible:ring-gaia-primary-strong transition-all cursor-pointer"
     end
 

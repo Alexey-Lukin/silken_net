@@ -156,7 +156,15 @@ namespace :gaia do
       "app/views/components/notifications/",     # те саме (input-тріада + primary-пара кнопки)
       "app/views/components/system_audits/",     # те саме (дельта-рядок/бейджі → danger/active-пари, alert-банер → -accent-контур)
       "app/views/components/firmwares/",         # 2026-08-20 девʼята порція (codemod + ручні: OTA-бар → сигнальна форма 8px-глоу, статуси → info/danger-accent, кнопки → primary-пара)
-      "app/views/components/contracts/"          # те саме (metric_row → -accent-сигнали, леджер burn → danger-accent, hero → surface; watermark /5 — виняток)
+      "app/views/components/contracts/",         # те саме (metric_row → -accent-сигнали, леджер burn → danger-accent, hero → surface; watermark /5 — виняток)
+      # [UI.1 порція 10, 2026-08-20 — КАМПАНІЮ ВИЧЕРПАНО: периметр = ВЕСЬ components/ + shared/]
+      "app/views/components/passwords/",         # auth-екрани: дот-грід → var(--gaia-primary) (allowlist-відбиток), глоу зняті, submit → primary-пара
+      "app/views/components/sessions/",          # те саме (+ mfa_challenge)
+      "app/views/components/errors/",            # те саме; TONES info → status-info-accent (умова відкладення настала — токен існує з 08-20)
+      "app/views/components/dashboard/",         # HUD мапи → surface/80 + primary-strong; event_row EwsAlert → danger-accent
+      "app/views/components/telemetry/",         # обидва rgba-глоу зняті
+      "app/views/components/trees/",             # гібрид text-emerald-100 на gaia-поверхні закрито; SVG-канавка → stroke-gaia-border; watermark /5 — виняток
+      "app/views/components/application_component.rb" # кореневий файл — поза каталогами, тож поіменно
     ]
 
     scopes = ENV["LINT_SCOPE"] ? [ ENV["LINT_SCOPE"] ] : default_scopes
@@ -231,15 +239,22 @@ namespace :gaia do
     # ⚠️ Порядок несучий для префікс-пар: довший рядок мусить скрабитись ПЕРШИМ,
     # інакше `bg-emerald-500` зʼїв би префікс свого `/10`-сусіда й лишив хвіст.
     allowlist = [
-      "bg-emerald-500/10",  # login submit brand glow
-      "bg-emerald-500/20",  # brand glow (parcel of the /10 pair)
       # [UI.1 сигнальна хвиля 2026-08-20] Голий `bg-emerald-500` ЗНЯТО: всі
       # сигнальні крапки/LED мігровано на `bg-gaia-primary-strong` (у темній
       # byte-той-самий #10b981, у світлій 4.98+ проти 2.43 у сирого), тож запис
       # відмивав би лише НОВІ регресії. Тіні-glow лишаються hex-парами акцентів:
       # тінь — не текст і не сигнал, 1.4.3/1.4.11 її не судять (§16.4), а
       # радіуси зведено до ЄДИНОГО 8px — саме щоб реєстр не ріс переліком форм.
-      "border-emerald-500/20", # spinner ring
+      # [UI.1 порція 10, 2026-08-20] Пару `bg-emerald-500/10`/`/20` і
+      # `border-emerald-500/20` (spinner) ЗНЯТО тим самим правилом: останній
+      # носій (hover-оверлей trees/index) мігровано на `bg-gaia-primary/10`,
+      # тож записи відмивали б лише нові регресії.
+      # [UI.1 порція 10] Дот-грід auth/error-екранів: значення вже ТОКЕН
+      # (var(--gaia-primary) — бренд, byte-однаковий обома темами), але
+      # `transparent`-стоп у дужках матчить colour_in_brackets за побудовою.
+      # Запис несе ПОВНИЙ відбиток форми — голе `bg-[radial-gradient(…)]`
+      # з іншим вмістом і далі червонить.
+      "bg-[radial-gradient(var(--gaia-primary)_1px,transparent_1px)]",
       # watermark `/5` (15 сайтів, деліберейт 1.09:1 — реєстр декорацій `contrast_audit`)
       "text-emerald-900/5",      # decorative watermarks (declared, aria-hidden)
       "shadow-[0_0_8px_#10b981]", # status-LED brand glow (здорова гілка пари)

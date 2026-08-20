@@ -31,8 +31,8 @@ RSpec.describe Dashboard::EventRow do
       expect(html).to include("Carpathian-7")
     end
 
-    it "uses red color for alert events" do
-      expect(html).to include("text-red-400")
+    it "uses the danger accent for alert events" do
+      expect(html).to include("text-status-danger-accent")
     end
   end
 

@@ -45,7 +45,7 @@ module Telemetry
         # ~16 fps безперервного перемальовування коштували глядачеві 100–300 мВт —
         # більше, ніж уся різниця світлої й темної теми (~30 мВт). Це і є та форма,
         # у якій енергетичний аргумент про UI має право звучати в цьому проєкті.
-        div(class: "relative border border-gaia-border bg-gaia-surface min-h-[400px] md:min-h-[600px] overflow-hidden rounded-sm shadow-[0_0_40px_rgba(6,78,59,0.2)]") do
+        div(class: "relative border border-gaia-border bg-gaia-surface min-h-[400px] md:min-h-[600px] overflow-hidden rounded-sm") do
           # ⛔ [UI.3] Радіальну віньєтку ЗНЯТО 2026-08-19, і не з естетики — вона
           # НЕ МАЛЮВАЛАСЬ. `bg-[radial-gradient(…var(--tw-gradient-stops))]` без
           # утиліти `bg-radial`/`bg-linear-*` лишає `--tw-gradient-position`
@@ -136,7 +136,7 @@ module Telemetry
           h2(class: "text-2xl font-light text-gaia-text mt-2") { t(".header_title") }
         end
 
-        div(class: "flex items-center gap-3 bg-gaia-surface-sunken px-4 py-2 border border-gaia-border shadow-[inset_0_0_10px_rgba(6,78,59,0.5)]") do
+        div(class: "flex items-center gap-3 bg-gaia-surface-sunken px-4 py-2 border border-gaia-border") do
           div(class: "relative flex h-2 w-2", aria_hidden: "true") do
             span(class: "animate-ping absolute inline-flex h-full w-full rounded-full bg-gaia-primary-strong opacity-75")
             span(class: "relative inline-flex rounded-full h-2 w-2 bg-gaia-primary-strong")

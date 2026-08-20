@@ -144,10 +144,10 @@ RSpec.describe Trees::Chronicle do
     # зробити фолбек помітним — це візуальне рішення, і воно не наше. ⊕ Ціна вже
     # платилась: `ALERT_SEVERITY_TO_CHRONICLE` існує саме тому, що чужі `:medium`/
     # `:low` колись падали в цю ж дефолтну зелень і читались як «усе гаразд».
-    it "renders unknown severity with default emerald border" do
+    it "renders unknown severity with the neutral strong border" do
       entry = build_entry(severity: :unknown, title: "Unknown Severity")
       html = render_component(tree: tree, entries: [ entry ], pagy: pagy)
-      expect(html).to include("border-emerald-800")
+      expect(html).to include("border-gaia-border-strong")
     end
   end
 

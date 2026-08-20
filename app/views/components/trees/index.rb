@@ -83,7 +83,7 @@ module Trees
         end
 
         # Hover overlay зі стресом
-        div(class: "absolute inset-0 bg-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none")
+        div(class: "absolute inset-0 bg-gaia-primary/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none")
       end
     end
 

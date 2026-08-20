@@ -59,7 +59,7 @@ module Trees
     end
 
     def render_entry(entry)
-      div(class: tokens("flex gap-4 p-4 border-l-2 transition-colors hover:bg-emerald-950/5", severity_border_class(entry.severity))) do
+      div(class: tokens("flex gap-4 p-4 border-l-2 transition-colors hover:bg-gaia-surface-sunken", severity_border_class(entry.severity))) do
         # Іконка та дата (ліва частина)
         div(class: "flex-shrink-0 w-16 text-center") do
           div(class: "text-lg") { entry.icon }
@@ -106,7 +106,7 @@ module Trees
       when :critical then "border-status-danger-accent"
       when :warning  then "border-status-warning-accent"
       when :info     then "border-status-info-accent"
-      else "border-emerald-800"
+      else "border-gaia-border-strong"
       end
     end
 

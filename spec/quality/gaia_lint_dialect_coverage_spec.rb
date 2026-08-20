@@ -101,10 +101,12 @@ module GaiaLintProbe
     "ring-gaia-primary-strong", "bg-status-danger-accent", "text-token-forest",
     "min-h-[60vh]", "tracking-[0.3em]", "stroke-[3]", "text-[40px]",
     "border-2", "shadow-lg", "divide-y", "fill-none", "outline-none",
-    # Allowlist — бренд-глоу оголошено сирим свідомо. Голий `bg-emerald-500`
-    # ЗНЯТО звідси разом із записом allowlist (UI.1 сигнальна хвиля 2026-08-20):
-    # усі крапки/LED мігрували на `-strong`, тож він знову СИРИЙ діалект.
-    "bg-emerald-500/10", "border-emerald-500/20",
+    # Allowlist — лише те, що досі оголошене. Голий `bg-emerald-500` знято ще
+    # сигнальною хвилею; пару `/10`+`/20` і `border-emerald-500/20` — порцією 10
+    # (2026-08-20): останні носії мігрували на `bg-gaia-primary/10`, тож і вони
+    # знову СИРИЙ діалект. Дот-грід auth-екранів — токен у arbitrary: сирим його
+    # робив би лише `transparent`-стоп, і саме тому запис несе повний відбиток.
+    "bg-[radial-gradient(var(--gaia-primary)_1px,transparent_1px)]",
     "shadow-[0_0_8px_#10b981]", "shadow-[0_0_8px_#ef4444]"
   ].freeze
 
