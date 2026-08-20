@@ -83,9 +83,12 @@ module Api
       # GET /contracts/:id
       def show
         @contract = find_contract(params[:id])
+        # [ARCH.103 ⚖️ 08-20] Той САМИЙ дім, що герой (`for_cluster`): доти леджер був
+        # org-скоуплений INNER JOIN'ом по wallets — не бачив slash-інтентів «останнього
+        # дерева» (wallet: nil), рівно тих, які герой ВІДНІМАЄ, і домішував чужі
+        # кластери організації. Тепер множина під заголовком = множина героя.
         @emission_history = BlockchainTransaction
-          .joins(:wallet)
-          .where(wallets: { organization_id: @contract.organization_id })
+          .for_cluster(@contract.cluster_id)
           .where(status: :confirmed)
           .order(created_at: :desc)
           .limit(10)

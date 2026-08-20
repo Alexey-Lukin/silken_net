@@ -58,10 +58,28 @@ RSpec.describe Api::V1::ClustersController, type: :request do
       get "/clusters/#{own_cluster.id}", headers: headers, as: :json
 
       expect(response.parsed_body["net_cluster_emission"]).to eq(100.0)
+      # [ARCH.103 ⚖️ 08-20] Ліхтар знака: додатна база не друкує мінуса.
+      expect(response.body).not_to include("-100.0")
       contract_row = response.parsed_body["naas_contracts"].find { |c| c["id"] == contract.id }
       # `total_funding`, не alias: `as_json(only:)` мовчки ігнорує alias-атрибути.
       expect(contract_row).to include("status", "total_funding")
       expect(contract_row).not_to have_key("emitted_tokens")
+    end
+
+    # [ARCH.103 ⚖️ 08-20 «чесний мінус»] Третя поверхня тієї самої величини: відʼємна
+    # чиста емісія їде на дріт зі знаком, не клампиться й не ховається за станом.
+    it "reports a NEGATIVE net emission honestly when burns exceed mints" do
+      tree = create(:tree, cluster: own_cluster)
+      wallet = tree.wallet || create(:wallet, tree: tree)
+      contract = create(:naas_contract, organization: organization, cluster: own_cluster)
+      create(:blockchain_transaction, wallet: wallet, amount: 20,
+                                      token_type: :carbon_coin, status: :confirmed)
+      create(:blockchain_transaction, wallet: wallet, amount: 120, token_type: :carbon_coin,
+                                      status: :confirmed, sourceable: contract)
+
+      get "/clusters/#{own_cluster.id}", headers: headers, as: :json
+
+      expect(response.parsed_body["net_cluster_emission"]).to eq(-100.0)
     end
 
     it "returns 404 for a cluster from another organization" do

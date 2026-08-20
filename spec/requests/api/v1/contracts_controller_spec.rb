@@ -68,6 +68,27 @@ RSpec.describe Api::V1::ContractsController, type: :request do
 
         expect(response.body).to include("100.0 SCC")
       end
+
+      # [ARCH.103 ⚖️ 08-20] Відʼємна чиста емісія друкується ЗІ ЗНАКОМ, не клампиться.
+      # 🔴 Числа картки й рядка СВІДОМО різні (-70 ⊥ -100): перша редакція тримала
+      # одне значення в обох вузлах, і клампнута картка ховалась за здоровою коміркою
+      # рядка — мутація clamp'а лишалась зеленою (пін через сусідній вузол).
+      it "друкує відʼємну чисту емісію зі знаком у КАРТЦІ й у РЯДКУ, не клампить" do
+        create(:blockchain_transaction, wallet: wallet, amount: 20,
+                                        token_type: :carbon_coin, status: :confirmed)
+        create(:blockchain_transaction, wallet: wallet, amount: 120, token_type: :carbon_coin,
+                                        status: :confirmed, sourceable: own_contract)
+        second_cluster = create(:cluster, organization: organization)
+        second_tree = create(:tree, cluster: second_cluster)
+        create(:naas_contract, organization: organization, cluster: second_cluster)
+        create(:blockchain_transaction, wallet: second_tree.wallet, amount: 30,
+                                        token_type: :carbon_coin, status: :confirmed)
+
+        get "/contracts", headers: headers
+
+        expect(response.body).to include("-70.0 SCC")   # картка: (-100) + 30
+        expect(response.body).to include("-100.0 SCC")  # комірка рядка own_cluster
+      end
     end
 
     context "when as JSON" do
@@ -227,6 +248,42 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         expect(response.parsed_body["cluster_emission"]).to eq(100.0)
         expect(response.parsed_body["contract"]).to include("total_funding", "status")
         expect(response.parsed_body["contract"]).not_to have_key("emitted_tokens")
+      end
+
+      # [ARCH.103 ⚖️ 08-20 «чесний мінус»] Чиста емісія буває відʼємною (спалення >
+      # мінт); знак їде на дріт і на екран ЯК Є — клампи в цьому репо вже двічі
+      # маскували симптоми (`calculate_damage_ratio`, `slashUpTo`).
+      it "reports a NEGATIVE cluster emission honestly when burns exceed mints" do
+        tree = create(:tree, cluster: own_cluster)
+        wallet = tree.wallet || create(:wallet, tree: tree)
+        create(:blockchain_transaction, wallet: wallet, amount: 20,
+                                        token_type: :carbon_coin, status: :confirmed)
+        create(:blockchain_transaction, wallet: wallet, amount: 120, token_type: :carbon_coin,
+                                        status: :confirmed, sourceable: own_contract)
+
+        get "/contracts/#{own_contract.id}", headers: headers, as: :json
+
+        expect(response.parsed_body["cluster_emission"]).to eq(-100.0)
+      end
+
+      # [ARCH.103 ⚖️ 08-20] Леджер героя = ТОЙ САМИЙ дім, що герой (`for_cluster`):
+      # слеш «останнього дерева» (wallet: nil, cluster) ВИДИМИЙ, чужий кластер тієї
+      # самої організації — ні. Обидва боки СВОЇ: чужу організацію відсіює
+      # тенант-скоуп find_contract, не рескоуп (BP 21).
+      it "scopes the emission ledger to the hero's cluster, orphan slash rows included" do
+        orphan_slash = create(:blockchain_transaction, wallet: nil, cluster: own_cluster,
+                                                       amount: 5, token_type: :carbon_coin,
+                                                       status: :confirmed, sourceable: own_contract)
+        other_cluster = create(:cluster, organization: organization)
+        other_tree = create(:tree, cluster: other_cluster)
+        foreign_row = create(:blockchain_transaction, wallet: other_tree.wallet, amount: 7,
+                                                      token_type: :carbon_coin, status: :confirmed)
+
+        get "/contracts/#{own_contract.id}", headers: headers, as: :json
+
+        ids = response.parsed_body["emission_history"].map { |row| row["id"] }
+        expect(ids).to include(orphan_slash.id)
+        expect(ids).not_to include(foreign_row.id)
       end
 
       # [UI.8] Пін на ЗМІСТ, а не на присутність ключа: `backing_asset` є JSON-дзеркалом

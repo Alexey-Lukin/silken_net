@@ -60,6 +60,25 @@ RSpec.describe BlockchainBurningService do
       end
     end
 
+    # [ARCH.103 ⚖️ 08-20] Чиста база буває ВІДʼЄМНОЮ (спалення > мінт — легально,
+    # відколи кластер несе кілька контрактів одночасно). Гард `<= 0` мовчить, як на
+    # нулі: відʼємний інтент падав би об `validates greater_than: 0` у вічний
+    # :manual_review. Мутація `<= 0` → `.zero?` червонить рівно цей приклад.
+    context "when burns exceed mints (negative net base)" do
+      it "returns early without slashing and without freezing" do
+        tree = create(:tree, cluster: cluster)
+        tree.wallet.blockchain_transactions.create!(
+          amount: 25, token_type: :carbon_coin, status: :confirmed,
+          sourceable: naas_contract,
+          to_address: organization.crypto_public_address, tx_hash: "0x#{'e' * 64}"
+        )
+
+        expect { described_class.call(organization.id, naas_contract.id) }
+          .not_to change { [ BlockchainTransaction.count, EwsAlert.count ] }
+        expect(Eth::Client).not_to have_received(:create)
+      end
+    end
+
     context "when confirmed minted tokens exist" do
       let!(:tree) { create(:tree, cluster: cluster) }
 

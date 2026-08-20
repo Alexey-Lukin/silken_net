@@ -107,7 +107,10 @@ class BlockchainBurningService < ApplicationService
     total_minted_amount = BlockchainTransaction.for_cluster(@cluster.id)
                                                .net_minted_supply(:carbon_coin)
 
-    return if total_minted_amount.zero?
+    # [ARCH.103 ⚖️ 08-20] `<= 0`, не `.zero?`: чиста база буває ВІДʼЄМНОЮ (спалення >
+    # мінт — легально, відколи кластер несе кілька контрактів одночасно), а відʼємний
+    # інтент падав би об `validates greater_than: 0` у вічний :manual_review.
+    return if total_minted_amount <= 0
 
     # [SLASH-1 §3.2] Positive-A-evidence gate — на чокпоінті, накриває всі тригери burn.
     # Необоротний slash() лише за прямого доказу Кат-A (tamper); інакше freeze (Field Audit,
