@@ -9,7 +9,7 @@ module Clusters
     end
 
     def view_template
-      div(class: "group relative p-6 border border-emerald-900 bg-black hover:bg-emerald-950 transition-all duration-500") do
+      div(class: "group relative p-6 border border-gaia-border bg-gaia-surface hover:bg-gaia-surface-sunken transition-all duration-500") do
         header_section
         stats_section
         footer_section
@@ -21,8 +21,8 @@ module Clusters
     def header_section
       div(class: "flex justify-between items-start mb-6") do
         div do
-          h3(class: "text-lg font-light tracking-widest text-emerald-400 uppercase") { @cluster.name }
-          p(class: "text-tiny font-mono text-emerald-800") { t(".id", id: @cluster.id) }
+          h3(class: "text-lg font-light tracking-widest text-gaia-text-strong uppercase") { @cluster.name }
+          p(class: "text-tiny font-mono text-gaia-text-subtle") { t(".id", id: @cluster.id) }
         end
 
         # Статус кластера (на основі AI інсайтів або алертів).
@@ -49,17 +49,17 @@ module Clusters
 
     def stat_block(label, value)
       div do
-        p(class: "text-mini uppercase tracking-tighter text-gray-600") { label }
-        p(class: "text-xl font-light text-emerald-100") { value }
+        p(class: "text-mini uppercase tracking-tighter text-gaia-text-muted") { label }
+        p(class: "text-xl font-light text-gaia-text-strong") { value }
       end
     end
 
     def footer_section
-      div(class: "flex justify-between items-center mt-4 pt-4 border-t border-emerald-900/50") do
+      div(class: "flex justify-between items-center mt-4 pt-4 border-t border-gaia-border-strong") do
         # Кнопка переходу через Turbo (без рефрешу сторінки)
         a(
           href: cluster_path(@cluster),
-          class: "text-tiny uppercase tracking-widest text-emerald-600 hover:text-emerald-300 transition-colors"
+          class: "text-tiny uppercase tracking-widest text-gaia-primary-strong hover:text-gaia-text-strong transition-colors"
         ) { t(".open_matrix") }
       end
     end

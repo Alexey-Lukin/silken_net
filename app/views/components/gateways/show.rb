@@ -43,19 +43,19 @@ module Gateways
     private
 
     def render_status_header
-      div(class: "flex flex-col md:flex-row justify-between items-start md:items-center p-6 border border-emerald-900 bg-black shadow-2xl") do
+      div(class: "flex flex-col md:flex-row justify-between items-start md:items-center p-6 border border-gaia-border bg-gaia-surface shadow-2xl") do
         div do
-          h2(class: "text-3xl font-extralight tracking-tighter text-emerald-400") { "Queen Relay // #{@gateway.uid}" }
+          h2(class: "text-3xl font-extralight tracking-tighter text-gaia-text-strong") { "Queen Relay // #{@gateway.uid}" }
           div(class: "flex items-center mt-2 gap-3") do
             render Views::Shared::UI::StatusBadge.new(status: @gateway.state)
-            span(class: "text-tiny text-emerald-900 font-mono") { "IP: #{@gateway.ip_address || '0.0.0.0'}" }
+            span(class: "text-tiny text-gaia-text-subtle font-mono") { "IP: #{@gateway.ip_address || '0.0.0.0'}" }
           end
         end
 
         div(class: "mt-4 md:mt-0 flex items-center gap-10") do
           div(class: "text-right") do
-            p(class: "text-mini text-gray-600 uppercase tracking-widest") { t(".header.heartbeat") }
-            p(class: "text-sm font-mono text-emerald-100") { @gateway.last_seen_at&.strftime("%H:%M:%S // %d.%m.%y") || "SILENT" }
+            p(class: "text-mini text-gaia-text-muted uppercase tracking-widest") { t(".header.heartbeat") }
+            p(class: "text-sm font-mono text-gaia-text-strong") { @gateway.last_seen_at&.strftime("%H:%M:%S // %d.%m.%y") || "SILENT" }
           end
           div(class: tokens("h-4 w-4 rounded-sm rotate-45", connection_led_classes))
         end
@@ -63,8 +63,8 @@ module Gateways
     end
 
     def render_technical_matrix
-      div(class: "p-8 border border-emerald-900 bg-zinc-950") do
-        h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-10") { t(".telemetry.heading") }
+      div(class: "p-8 border border-gaia-border bg-gaia-surface-sunken") do
+        h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted mb-10") { t(".telemetry.heading") }
 
         div(class: "grid grid-cols-1 md:grid-cols-3 gap-12") do
           # Cellular Signal (CSQ)
@@ -98,12 +98,12 @@ module Gateways
     end
 
     def render_soldier_fleet_overview
-      div(class: "p-6 border border-emerald-900 bg-black/20") do
+      div(class: "p-6 border border-gaia-border bg-gaia-surface-sunken") do
         div(class: "flex justify-between items-center mb-6") do
-          h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".fleet.heading") }
+          h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".fleet.heading") }
           # `.size`, не `.count`: наступний рядок ітерує ту саму колекцію, тож на
           # relation це був COUNT плюс SELECT. `.size` не перепитує БД ніколи.
-          span(class: "text-tiny font-mono text-emerald-500") { t(".fleet.active_nodes", count: @active_soldiers.size) }
+          span(class: "text-tiny font-mono text-gaia-primary-strong") { t(".fleet.active_nodes", count: @active_soldiers.size) }
         end
 
         # Маленька сітка солдатів у реальному часі
@@ -116,8 +116,8 @@ module Gateways
     end
 
     def render_network_config
-      div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".config.heading") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface-sunken") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".config.heading") }
         div(class: "space-y-4 font-mono text-compact") do
           config_row(t(".config.cluster"), @gateway.cluster&.name || "UNASSIGNED")
           config_row(t(".config.sleep_interval"), "#{@gateway.config_sleep_interval_s || 60}s")
@@ -158,11 +158,11 @@ module Gateways
     end
 
     def render_hardware_vault
-      div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".crypto.heading") }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-4") { t(".crypto.heading") }
         div(class: "space-y-2 text-tiny font-mono") do
-          p(class: "text-gray-600") { t(".crypto.uid_label") }
-          p(class: "text-emerald-500 truncate") { @gateway.hardware_key&.device_uid || "UNDEFINED" }
+          p(class: "text-gaia-text-muted") { t(".crypto.uid_label") }
+          p(class: "text-gaia-primary-strong truncate") { @gateway.hardware_key&.device_uid || "UNDEFINED" }
 
           # [UI.17] Крапка й напис були БЕЗУМОВНІ, тобто непровізіонований шлюз
           # рапортував себе захищеним рядком нижче власного «UNDEFINED».
@@ -173,7 +173,7 @@ module Gateways
           # як СИГНАЛ вона підпадає під 1.4.11 (бар 3:1), а пастельний
           # emerald-900 його не тримав (UI.1, не-текстова половина).
           if @gateway.hardware_key.present?
-            div(class: "mt-4 flex items-center gap-2 text-emerald-800") do
+            div(class: "mt-4 flex items-center gap-2 text-gaia-primary-strong") do
               span(class: "h-2 w-2 bg-gaia-primary-strong rounded-full")
               span { t(".crypto.aes_provisioned") }
             end
@@ -192,10 +192,10 @@ module Gateways
     def render_circular_metric(label:, value:, subtext:, color:)
       div(class: "flex flex-col items-center") do
         div(class: tokens("h-24 w-24 rounded-full border-2 flex flex-col items-center justify-center mb-4", color)) do
-          span(class: "text-xl font-light text-white") { value }
+          span(class: "text-xl font-light text-gaia-text-strong") { value }
         end
-        p(class: "text-mini uppercase text-gray-600 tracking-tighter") { label }
-        p(class: "text-tiny font-mono text-emerald-900") { subtext }
+        p(class: "text-mini uppercase text-gaia-text-muted tracking-tighter") { label }
+        p(class: "text-tiny font-mono text-gaia-text-subtle") { subtext }
       end
     end
 
@@ -215,9 +215,9 @@ module Gateways
     end
 
     def config_row(label, value)
-      div(class: "flex justify-between border-b border-emerald-900/30 pb-2") do
-        span(class: "text-gray-600") { "#{label}:" }
-        span(class: "text-emerald-300") { value }
+      div(class: "flex justify-between border-b border-gaia-border pb-2") do
+        span(class: "text-gaia-text-muted") { "#{label}:" }
+        span(class: "text-gaia-text") { value }
       end
     end
 
