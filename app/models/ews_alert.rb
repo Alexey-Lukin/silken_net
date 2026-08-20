@@ -160,6 +160,14 @@ class EwsAlert < ApplicationRecord
   # (`message_params`), а фраза збирається щоразу під того, хто дивиться.
   MESSAGE_SCOPE = "alerts.messages"
 
+  # [I18N.1] Сирий enum усередині перекладеної фрази лікується не міткою в БД
+  # (заморозила б локаль продюсера), а конверсією на межі показу: параметр несе
+  # ВИМІР, мітку збирає читач у локалі глядача (присуд 2026-08-20). Новий
+  # named-параметр із label-домом додається сюди рядком.
+  PARAM_LABEL_RESOLVERS = {
+    token_type: ->(value) { BlockchainTransaction.token_type_label(value) }
+  }.freeze
+
   # Перевизначення читача, а не окремий метод — щоб УСІ наявні читачі
   # (`Alerts::Row`, мейлер, `TextFormatter`, API) дістали локалізацію без
   # правок, і щоб `validates :message, presence: true` вище працювала для
@@ -169,7 +177,7 @@ class EwsAlert < ApplicationRecord
 
     I18n.t(
       "#{MESSAGE_SCOPE}.#{message_key}",
-      **message_params.to_h.symbolize_keys,
+      **resolve_param_labels(message_params.to_h.symbolize_keys),
       default: message_key.to_s.humanize
     )
   end
@@ -335,7 +343,7 @@ class EwsAlert < ApplicationRecord
     Array(resolution_log).map do |entry|
       entry["text"].presence ||
         I18n.t("#{RESOLUTION_SCOPE}.#{entry["key"]}",
-               **(entry["params"] || {}).symbolize_keys,
+               **resolve_param_labels((entry["params"] || {}).symbolize_keys),
                default: entry["key"].to_s.humanize)
     end
   end
@@ -378,6 +386,15 @@ class EwsAlert < ApplicationRecord
   end
 
   private
+
+  # Обидва читачі прози (`#message`, `#resolution_texts`) конвертують named-
+  # параметри в мітки ТУТ — на межі, де видно і сирий вимір, і локаль глядача.
+  def resolve_param_labels(params)
+    PARAM_LABEL_RESOLVERS.each do |key, resolver|
+      params[key] = resolver.call(params[key]) if params.key?(key)
+    end
+    params
+  end
 
   # [INF.26] Єдиний дім лічильника створених тривог. Свідомо БЕЗ гарда: рахуємо кожну
   # тривогу, що осіла в БД, незалежно від типу, кластера й подальшої долі — інакше

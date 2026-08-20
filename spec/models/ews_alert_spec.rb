@@ -489,6 +489,53 @@ RSpec.describe EwsAlert, type: :model do
     end
   end
 
+  describe "#message (param-label resolve)" do
+    # [I18N.1] Свідок механізму живе в НЕ-базовій локалі навмисно: в en мітка
+    # і сирий enum надто схожі, щоб приклад міг упасти на знятому резолві.
+    it "резолвить token_type у мітку локалі глядача, а не сирий enum" do
+      alert = build_stubbed(:ews_alert,
+                            message_key: "mint_volume_anomaly",
+                            message_params: { "token_type" => "forest_coin",
+                                              "volume" => 12.5, "window" => "24h", "ceiling" => 10 })
+
+      I18n.with_locale(:uk) do
+        expect(alert.message).to include("Лісова монета Silken")
+        expect(alert.message).not_to include("forest_coin")
+      end
+    end
+
+    it "у базовій локалі мітка дорівнює ERC20-імені токена" do
+      alert = build_stubbed(:ews_alert,
+                            message_key: "mint_volume_anomaly",
+                            message_params: { "token_type" => "carbon_coin",
+                                              "volume" => 1, "window" => "24h", "ceiling" => 10 })
+
+      expect(alert.message).to include("Silken Carbon Coin")
+    end
+
+    it "параметри без резолвера проходять у фразу як є" do
+      alert = build_stubbed(:ews_alert,
+                            message_key: "mint_volume_anomaly",
+                            message_params: { "token_type" => "forest_coin",
+                                              "volume" => 42.75, "window" => "24h", "ceiling" => 10 })
+
+      expect(alert.message).to include("42.75")
+    end
+
+    it "resolution_texts резолвить той самий параметр тим самим домом" do
+      alert = build_stubbed(:ews_alert, resolution_log: [
+                              { "at" => "2026-08-20T06:00:00Z", "key" => "mint_volume_recovered",
+                                "params" => { "token_type" => "forest_coin", "volume" => 5, "max" => 10 } }
+                            ])
+
+      I18n.with_locale(:uk) do
+        text = alert.resolution_texts.join
+        expect(text).to include("Лісова монета Silken")
+        expect(text).not_to include("forest_coin")
+      end
+    end
+  end
+
   describe "#coordinates" do
     it "returns tree coordinates when tree is present" do
       alert = create(:ews_alert, :drought)
