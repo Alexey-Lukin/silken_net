@@ -9,7 +9,6 @@ uk:
       co2_placeholder: '1.0'
       critical_z_max: Критичний Z Макс
       critical_z_min: Критичний Z Мін
-      sap_flow: Індекс потоку соку
       scientific_name: Наукова назва (латиною)
       scientific_placeholder: напр. Quercus robur
       species_identity: Ідентичність виду
@@ -43,7 +42,6 @@ uk:
         fire_rating_value: "%{value} °C"
         foliage_density: Густина листя
         foliage_density_value: "%{value} %"
-        sap_flow: Індекс потоку соку
       props_title: Біологічні характеристики TinyML
     show_title: Архітектура генома // %{name}
     update_error_title: Помилка рекалібрування

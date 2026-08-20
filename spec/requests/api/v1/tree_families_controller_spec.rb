@@ -147,7 +147,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
     # завести породу відповідав 422 на цілком легальному вводі.
     it "accepts the form's blank optional biological fields" do
       params = valid_params.deep_dup
-      params[:tree_family][:sap_flow_index] = ""
+      params[:tree_family][:foliage_density] = ""
       params[:tree_family][:bark_thickness] = ""
 
       expect {
@@ -157,10 +157,10 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
       expect(response).to have_http_status(:created)
 
       # Друга половина: порожнеча мусить осісти саме `nil`, а не `""` — рядок
-      # у JSONB truthy, тож `AlertDispatchService` помножив би на нього поріг
-      # шкідників і впав би `String can't be coerced into Integer`.
+      # у JSONB truthy, і живий fire-поріг (`fire_resistance_rating`) ним
+      # арифметичить у `AlertDispatchService`.
       created = TreeFamily.find_by(name: "Silver Birch")
-      expect(created.sap_flow_index).to be_nil
+      expect(created.foliage_density).to be_nil
       expect(created.bark_thickness).to be_nil
     end
 

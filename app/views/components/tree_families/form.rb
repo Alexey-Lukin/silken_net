@@ -21,7 +21,6 @@ module TreeFamilies
             field_container(f, :critical_z_min, t(".critical_z_min")) { |aria| f.number_field :critical_z_min, step: 0.1, class: input_classes, **aria }
             field_container(f, :critical_z_max, t(".critical_z_max")) { |aria| f.number_field :critical_z_max, step: 0.1, class: input_classes, **aria }
             field_container(f, :carbon_sequestration_coefficient, t(".co2_coefficient")) { |aria| f.number_field :carbon_sequestration_coefficient, step: 0.01, class: input_classes, placeholder: t(".co2_placeholder"), **aria }
-            field_container(f, :sap_flow_index, t(".sap_flow")) { |aria| f.number_field :sap_flow_index, step: 0.01, class: input_classes, **aria }
             field_container(f, :bark_thickness, t(".bark_thickness")) { |aria| f.number_field :bark_thickness, class: input_classes, **aria }
           end
 
@@ -47,11 +46,11 @@ module TreeFamilies
 
     def input_classes
       "w-full bg-gaia-input-bg border border-gaia-input-border text-gaia-input-text p-3 font-mono text-xs " \
-        "focus-visible:border-gaia-primary focus-visible:ring-2 focus-visible:ring-gaia-primary-strong outline-none transition-all"
+        "focus-visible:border-gaia-primary-strong focus-visible:ring-2 focus-visible:ring-gaia-primary-strong outline-none transition-all"
     end
 
     def submit_classes
-      "w-full py-4 bg-gaia-primary/10 border border-gaia-primary text-gaia-primary-strong uppercase text-xs tracking-widest " \
+      "w-full py-4 bg-gaia-primary/10 border border-gaia-primary-strong text-gaia-primary-strong uppercase text-xs tracking-widest " \
         "hover:bg-gaia-primary hover:text-black transition-all cursor-pointer " \
         "disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
     end

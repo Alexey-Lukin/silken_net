@@ -9,7 +9,6 @@ lv:
       co2_placeholder: '1.0'
       critical_z_max: Kritiskais Z maks.
       critical_z_min: Kritiskais Z min.
-      sap_flow: Sulas plūsmas indekss
       scientific_name: Zinātniskais nosaukums (latīņu)
       scientific_placeholder: piem. Quercus robur
       species_identity: Sugas identitāte
@@ -43,7 +42,6 @@ lv:
         fire_rating_value: "%{value} °C"
         foliage_density: Lapotnes blīvums
         foliage_density_value: "%{value} %"
-        sap_flow: Sulas plūsmas indekss
       props_title: TinyML bioloģiskās pazīmes
     show_title: Genoma arhitektūra // %{name}
     update_error_title: Rekalibrēšanas kļūda

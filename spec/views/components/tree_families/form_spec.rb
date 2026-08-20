@@ -52,7 +52,6 @@ RSpec.describe TreeFamilies::Form do
       expect(html).to include("Critical Z Min")
       expect(html).to include("Critical Z Max")
       expect(html).to include("Sequestration Coefficient")
-      expect(html).to include("Sap Flow Index")
       expect(html).to include("Bark Thickness")
     end
   end
@@ -142,7 +141,9 @@ RSpec.describe TreeFamilies::Form do
     end
 
     it "uses gaia primary color tokens" do
-      expect(html).to include("border-gaia-primary")
+      # [UI.3 ⚖️ 08-20] Пін на -strong ТОЧНО: `include("border-gaia-primary")` зелений
+      # і на -strong (дефіс не є межею слова), тобто після міграції став би німим.
+      expect(html).to include("border-gaia-primary-strong")
       # 🔴 Підпис submit-кнопки їде на `--gaia-primary-strong` (UI.3, 2026-08-18):
       # бренд-emerald у ролі ТЕКСТУ давав 2.28:1 у світлій темі. Пін мусить
       # РОЗРІЗНЯТИ два токени, а `include("text-gaia-primary")` цього не вміє —

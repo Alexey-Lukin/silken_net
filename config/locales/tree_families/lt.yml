@@ -9,7 +9,6 @@ lt:
       co2_placeholder: '1.0'
       critical_z_max: Kritinis Z maks.
       critical_z_min: Kritinis Z min.
-      sap_flow: Sulų srauto indeksas
       scientific_name: Mokslinis pavadinimas (lotynų k.)
       scientific_placeholder: pvz. Quercus robur
       species_identity: Rūšies tapatybė
@@ -43,7 +42,6 @@ lt:
         fire_rating_value: "%{value} °C"
         foliage_density: Lapijos tankis
         foliage_density_value: "%{value} %"
-        sap_flow: Sulų srauto indeksas
       props_title: TinyML biologiniai požymiai
     show_title: Genomo architektūra // %{name}
     update_error_title: Perkalibravimo klaida

@@ -35,7 +35,6 @@ module TreeFamilies
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".props_title") }
         div(class: "space-y-4 font-mono text-compact") do
           prop_row(t(".props.co2"), @family.carbon_sequestration_coefficient)
-          prop_row(t(".props.sap_flow"), measured_prop(@family.sap_flow_index))
           prop_row(t(".props.bark_thickness"),
                    measured_prop(@family.bark_thickness) { |v| t(".props.bark_thickness_value", value: v) })
           prop_row(t(".props.foliage_density"),

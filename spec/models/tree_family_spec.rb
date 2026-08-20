@@ -139,13 +139,10 @@ RSpec.describe TreeFamily, type: :model do
     end
 
     describe "JSONB biological_properties" do
-      it "allows nil for sap_flow_index" do
-        family = build(:tree_family, sap_flow_index: nil)
-        expect(family).to be_valid
-      end
-
-      it "validates sap_flow_index numericality when present" do
-        family = build(:tree_family, sap_flow_index: "abc")
+      # [ARCH.102 ⚖️ 08-20] `sap_flow_index` знято разом зі своїм останнім
+      # споживачем; проби механізмів нижче перецілені на вцілілі поля.
+      it "validates numericality of a present property" do
+        family = build(:tree_family, bark_thickness: "abc")
         expect(family).not_to be_valid
       end
 
@@ -181,7 +178,6 @@ RSpec.describe TreeFamily, type: :model do
 
       it "accepts valid numeric values for all JSONB properties" do
         family = build(:tree_family,
-                       sap_flow_index: 0.75,
                        bark_thickness: 12.5,
                        foliage_density: 85.0,
                        fire_resistance_rating: 3)
@@ -197,31 +193,31 @@ RSpec.describe TreeFamily, type: :model do
       # ТИП того, що осіло.
       describe "the shape an HTML form actually writes" do
         it "stores a numeric string as a number" do
-          family = create(:tree_family, sap_flow_index: "0.7", bark_thickness: "12")
+          family = create(:tree_family, foliage_density: "0.7", bark_thickness: "12")
           family.reload
 
-          expect(family.sap_flow_index).to be_a(Numeric)
-          expect(family.sap_flow_index.to_f).to eq(0.7)
+          expect(family.foliage_density).to be_a(Numeric)
+          expect(family.foliage_density.to_f).to eq(0.7)
           expect(family.bark_thickness).to be_a(Numeric)
           expect(family.bark_thickness.to_i).to eq(12)
         end
 
         it "drops a blank string so an optional property stays optional" do
-          family = build(:tree_family, sap_flow_index: "", fire_resistance_rating: "")
+          family = build(:tree_family, bark_thickness: "", fire_resistance_rating: "")
 
           expect(family).to be_valid
-          expect(family.sap_flow_index).to be_nil
+          expect(family.bark_thickness).to be_nil
           expect(family.fire_resistance_rating).to be_nil
         end
 
         # ⊥ Ліхтар до обох: нечисловий рядок мусить ЛИШИТИСЬ рядком. `to_f` тут
         # був би найгіршим можливим ліком — «abc» стало б `0.0`, тобто невалідне
-        # зробилось би валідним, а поріг шкідників — нулем.
+        # зробилось би валідним, а fire-поріг — нулем.
         it "leaves a non-numeric string alone so numericality still reports it" do
-          family = build(:tree_family, sap_flow_index: "abc")
+          family = build(:tree_family, bark_thickness: "abc")
 
           expect(family).not_to be_valid
-          expect(family.sap_flow_index).to eq("abc")
+          expect(family.bark_thickness).to eq("abc")
         end
       end
     end
@@ -352,11 +348,6 @@ RSpec.describe TreeFamily, type: :model do
   # STORE ACCESSORS
   # =========================================================================
   describe "store_accessor :biological_properties" do
-    it "stores and retrieves sap_flow_index" do
-      family = create(:tree_family, sap_flow_index: 0.75)
-      expect(family.reload.sap_flow_index).to eq(0.75)
-    end
-
     it "stores and retrieves bark_thickness" do
       family = create(:tree_family, bark_thickness: 12.5)
       expect(family.reload.bark_thickness).to eq(12.5)
@@ -374,13 +365,11 @@ RSpec.describe TreeFamily, type: :model do
 
     it "stores all properties in the biological_properties JSON column" do
       family = create(:tree_family,
-                      sap_flow_index: 0.75,
                       bark_thickness: 12.5,
                       foliage_density: 85.0,
                       fire_resistance_rating: 3)
       family.reload
       expect(family.biological_properties).to include(
-        "sap_flow_index" => 0.75,
         "bark_thickness" => 12.5,
         "foliage_density" => 85.0,
         "fire_resistance_rating" => 3

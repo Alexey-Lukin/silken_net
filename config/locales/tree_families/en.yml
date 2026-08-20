@@ -9,7 +9,6 @@ en:
       co2_placeholder: '1.0'
       critical_z_max: Critical Z Max
       critical_z_min: Critical Z Min
-      sap_flow: Sap Flow Index
       scientific_name: Scientific Name (Latin)
       scientific_placeholder: e.g. Quercus robur
       species_identity: Species Identity
@@ -43,7 +42,6 @@ en:
         fire_rating_value: "%{value} °C"
         foliage_density: Foliage Density
         foliage_density_value: "%{value} %"
-        sap_flow: Sap Flow Index
       props_title: TinyML Biological Features
     show_title: Genome Architecture // %{name}
     update_error_title: Recalibration Error

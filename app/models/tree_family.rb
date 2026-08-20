@@ -30,8 +30,12 @@ class TreeFamily < ApplicationRecord
 
   # --- JSONB PROPERTIES (The TinyML Support) ---
   # Гнучкі властивості для специфічного аналізу кожної породи
+  # [ARCH.102 ⚖️ 08-20] `sap_flow_index` ЗНЯТО: єдиний алгоритмічний споживач
+  # (pest-множник) демонтовано 08-16 разом із вердиктами, і поле лишалось
+  # фікцією без одиниць та літературного якоря, яку адмін мусив вигадувати.
+  # Історичні значення в jsonb нешкідливі; повернеться разом із реальним
+  # вимірювачем, якщо буде треба.
   store_accessor :biological_properties,
-                 :sap_flow_index,
                  :bark_thickness,
                  :foliage_density,
                  :fire_resistance_rating,
@@ -39,7 +43,7 @@ class TreeFamily < ApplicationRecord
 
   # [ВИПРАВЛЕНО: Типізація JSONB-полів]:
   # Виганяємо "Data Type Phantom" — гарантуємо, що параметри для TinyML є числами
-  validates :sap_flow_index, :bark_thickness, :foliage_density, :fire_resistance_rating,
+  validates :bark_thickness, :foliage_density, :fire_resistance_rating,
             numericality: true,
             allow_nil: true
 
