@@ -69,7 +69,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
         get "/oracle_visions", headers: forester_headers
 
         expect(response).to have_http_status(:ok)
-        yield_node = response.body[/drop-shadow-\[0_0_8px_rgba\(52,211,153,0\.5\)\]"[^>]*>\s*([^<]*)</, 1]
+        yield_node = response.body[/text-3xl font-mono text-gaia-text"[^>]*>\s*([^<]*)</, 1]
         expect(yield_node.to_s.strip).to match(/\A\d+(\.\d+)?\z/)
       end
     end
