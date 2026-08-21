@@ -272,6 +272,14 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       )
     end
 
+    # 🔒 [ARCH.69] СТЕЛЯ ЦЬОГО ХАРНЕСУ ОГОЛОШЕНА, і читати його як покриття не можна.
+    # Він будує контролер РУКАМИ й підміняє `request` на `double`, тобто приклади
+    # нижче не проходять ані роутером, ані Rack, ані CSRF, ані реальним
+    # `establish_session`. Причина не лінь: маршруту до `omniauth_create` не існує
+    # (і не існувало жодного дня історії репо), тож request-спеку тут написати
+    # НЕМОЖЛИВО — вона зʼявиться разом із дротуванням, і тоді цей блок має бути
+    # знесений, а не доповнений. Що харнес усе-таки доводить чесно: порядок кроків
+    # усередині екшена й те, з якими аргументами він кличе свої співпраці.
     def build_controller_with_auth(auth_hash)
       controller = Api::V1::SessionsController.new
       mock_request = double("request",
@@ -290,7 +298,12 @@ RSpec.describe Api::V1::SessionsController, type: :request do
         session: {},
         redirect_to: nil,
         login_path: "/login",
-        dashboard_index_path: "/dashboard"
+        dashboard_index_path: "/dashboard",
+        mfa_challenge_path: "/login/mfa",
+        # Ланцюг резолву читає `params`/`cookies`/`headers` реального запиту, яких
+        # у double немає. Пінимо не ЛАНЦЮГ (його дім — `locale_settable`), а те,
+        # що екшен передає в нього АКТОРА — саме це і є вісь I18N.3.
+        resolve_locale: :en
       )
       controller
     end
@@ -364,6 +377,94 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       controller.send(:omniauth_create)
 
       expect(controller).to have_received(:redirect_to).with("/dashboard", hash_including(:success))
+    end
+
+    # 🔴 [ARCH.69] НАЙВАЖЛИВІША вісь цього блоку: провайдер засвідчує лише ПЕРШИЙ
+    # фактор. Без гейта акаунт із увімкненим TOTP діставав би повну сесію з самого
+    # провайдерського твердження, тобто OAuth був би обхідним шляхом навколо MFA —
+    # рівно проти інваріанта, який `create` оголошує словами («сесія не існує до
+    # другого фактора»). Сьогодні недосяжно, бо маршруту немає; пін існує саме
+    # тому, що дротування зробить це досяжним, і зробить мовчки.
+    it "does NOT establish a session when the account has MFA enabled" do
+      mfa_user = create(:user, organization: organization, password: "password12345")
+      mfa_user.update!(otp_required_for_login: true, otp_secret: ROTP::Base32.random)
+      uid = "mfa_uid_#{SecureRandom.hex(4)}"
+      auth_hash = build_auth_hash(email: mfa_user.email_address, uid: uid)
+
+      controller = build_controller_with_auth(auth_hash)
+      # `redirect_to_mfa_challenge` містить `respond_to`, який поза request-циклом
+      # недосяжний — стабимо САМ перехід, бо вісь тут «куди пішов екшен», а не
+      # «як челендж рендериться» (це дім `MfaChallengesController`).
+      allow(controller).to receive_messages(establish_session: nil, redirect_to_mfa_challenge: nil)
+      controller.send(:omniauth_create)
+
+      expect(controller).not_to have_received(:establish_session)
+      expect(controller).to have_received(:redirect_to_mfa_challenge).with(mfa_user)
+    end
+
+    # Дзеркальна половина: без неї «сесії не було» не відрізнити від «екшен взагалі
+    # нічого не робить». Той самий шлях на акаунті БЕЗ MFA мусить дати сесію.
+    it "does establish a session when the account has no MFA" do
+      plain_user = create(:user, organization: organization, password: "password12345")
+      uid = "plain_uid_#{SecureRandom.hex(4)}"
+      auth_hash = build_auth_hash(email: plain_user.email_address, uid: uid)
+
+      controller = build_controller_with_auth(auth_hash)
+      allow(controller).to receive(:establish_session)
+      controller.send(:omniauth_create)
+
+      expect(controller).to have_received(:establish_session)
+    end
+
+    # 🔴 [ARCH.69] Salt-стемп: акаунт без `password_digest` (реальний шлях —
+    # `Gdpr::AnonymizeUserService`) діставав `session[:ps] = nil`, тобто сесію,
+    # яку наступний запит відкидає — вхід перетворювався на нескінченний редирект.
+    it "restores a session salt for an account that arrived without a password" do
+      passwordless = create(:user, organization: organization, password: "password12345")
+      # `password_salt` — не колонка, а дериват `password_digest`
+      # (`HasArgon2Password#password_salt`), тож занулюємо джерело, не похідну.
+      passwordless.update_columns(password_digest: nil)
+      uid = "pwless_uid_#{SecureRandom.hex(4)}"
+      auth_hash = build_auth_hash(email: passwordless.reload.email_address, uid: uid)
+
+      expect(passwordless.session_salt_stamp).to be_blank
+
+      controller = build_controller_with_auth(auth_hash)
+      controller.send(:omniauth_create)
+
+      expect(passwordless.reload.session_salt_stamp).to be_present
+    end
+
+    # [ARCH.69] Вісь I18N.3 — екшен мусить передавати АКТОРА в резолвер, інакше
+    # вітання їде мовою браузера, а дашборд рендериться мовою акаунта.
+    it "resolves the greeting locale from the account, not the browser" do
+      account = create(:user, organization: organization, password: "password12345", locale: "lv")
+      uid = "loc_uid_#{SecureRandom.hex(4)}"
+      auth_hash = build_auth_hash(email: account.email_address, uid: uid)
+
+      controller = build_controller_with_auth(auth_hash)
+      controller.send(:omniauth_create)
+
+      expect(controller).to have_received(:resolve_locale).with(account: account)
+    end
+
+    # [ARCH.69] `titleize` давав «Google Oauth2»; мапа `PROVIDER_NAMES` існує саме
+    # для цього, і сусідній пін на сторінці безпеки вже стереже ту саму форму.
+    it "names the provider through PROVIDER_NAMES, not titleize" do
+      account = create(:user, organization: organization, password: "password12345")
+      uid = "name_uid_#{SecureRandom.hex(4)}"
+      auth_hash = build_auth_hash(email: account.email_address, uid: uid)
+
+      controller = build_controller_with_auth(auth_hash)
+      controller.send(:omniauth_create)
+
+      expect(controller).to have_received(:redirect_to) do |path, opts|
+        expect(path).to eq("/dashboard")
+        expect(opts[:success]).to include("Google")
+        # Негативна половина має базлайн: доти тут стояв `auth.provider.titleize`,
+        # який на `google_oauth2` друкує саме «Google Oauth2».
+        expect(opts[:success]).not_to include("Oauth2")
+      end
     end
   end
 
