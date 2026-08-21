@@ -34,8 +34,12 @@ class InsuranceOracleWorker
       Rails.logger.error "🛑 [Insurance Oracle] Кластер ##{cluster_id} / страховка ##{insurance.id}: #{e.message}"
       next
     end
-  rescue Date::Error
-    Rails.logger.error "🛑 [Insurance Oracle] Невірний формат дати: #{date_string}"
+  rescue Date::Error => e
+    # Той самий клас, що в `DailyAggregationWorker` (OPS.19, знайдено сиблінг-свіпом):
+    # виняток не біндився, а провина приписувалась `date_string`, який за
+    # замовчуванням `nil` — тоді дата приходить із `AiInsight.reporting_date`,
+    # і вказувати на аргумент означає слати читача не туди.
+    Rails.logger.error "🛑 [Insurance Oracle] Невірний формат дати (аргумент: #{date_string.inspect}): #{e.message}"
   end
 
   private

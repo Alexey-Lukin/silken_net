@@ -122,6 +122,20 @@ RSpec.describe DailyAggregationWorker, type: :worker do
         expect { described_class.new.perform("not-a-date") }.not_to raise_error
       end
 
+      # [OPS.19] Пін на ДЕТАЛЬ, а не на факт логування: сусідній приклад вище
+      # зелений і тоді, коли виняток не біндиться взагалі (`rescue Date::Error`
+      # без `=> e`) — саме так дефект і прожив. Тут дві незалежні вимоги:
+      # повідомлення винятку доїхало, і аргумент названо ЯВНО (`nil` на cron-шляху
+      # мусить читатись як «аргументу не було», а не як порожній рядок).
+      it "carries the exception detail AND names the argument explicitly" do
+        allow(Rails.logger).to receive(:error)
+
+        described_class.new.perform("not-a-date")
+
+        expect(Rails.logger).to have_received(:error).with(/invalid date/)
+        expect(Rails.logger).to have_received(:error).with(/"not-a-date"/)
+      end
+
       it "re-raises StandardError for Sidekiq retry" do
         allow(TelemetryLog).to receive(:where).and_raise(StandardError, "DB connection lost")
 
