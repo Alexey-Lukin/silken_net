@@ -38,9 +38,7 @@ en:
         not_available: N/A
         recovery:
           description: Incident closed.
-          duration:
-            one: 'Duration: %{count} day.'
-            other: 'Duration: %{count} days.'
+          duration: 'Duration: %{duration}.'
           title: Incident Resolved
         stress:
           description: 'Stress index: %{stress}. Max temperature: %{max_temp}°C. Recommendation: monitoring'

@@ -40,11 +40,7 @@ uk:
         not_available: н/д
         recovery:
           description: Інцидент закрито.
-          duration:
-            few: 'Тривалість: %{count} дні.'
-            many: 'Тривалість: %{count} днів.'
-            one: 'Тривалість: %{count} день.'
-            other: 'Тривалість: %{count} дня.'
+          duration: 'Тривалість: %{duration}.'
           title: Інцидент вичерпано
         stress:
           description: 'Індекс стресу: %{stress}. Максимальна температура: %{max_temp}°C. Рекомендація: спостереження'

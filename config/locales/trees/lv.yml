@@ -38,10 +38,7 @@ lv:
         not_available: N/P
         recovery:
           description: Incidents slēgts.
-          duration:
-            one: 'Ilgums: %{count} diena.'
-            other: 'Ilgums: %{count} dienas.'
-            zero: 'Ilgums: %{count} dienu.'
+          duration: 'Ilgums: %{duration}.'
           title: Incidents atrisināts
         stress:
           description: 'Stresa indekss: %{stress}. Maksimālā temperatūra: %{max_temp}°C. Ieteikums: novērošana'

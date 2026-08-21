@@ -14,7 +14,6 @@ lv:
       expiry:
         one: Saite ir derīga %{count} minūti.
         other: Saite ir derīga %{count} minūtes.
-        zero: Saite ir derīga %{count} minūšu.
       greeting: Sveiki, %{name}!
       ignore: Ja jūs to nepieprasījāt, vienkārši ignorējiet šo vēstuli.
       intro: Jūs saņēmāt šo vēstuli, jo jūsu kontam tika pieprasīta paroles atiestatīšana.

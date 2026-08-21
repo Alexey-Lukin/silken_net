@@ -144,12 +144,18 @@ module TreeChronicle
       template("recovery.title")
     end
 
-    # Тривалість — plural-БЛОК (`count:`), а не `"day".pluralize(n)`: англійське
-    # `-s` ховає клас, у якому uk/lv/lt мають різні форми на 1/2/5.
+    # Тривалість іде через `distance_of_time_in_words`, а не власний plural-блок:
+    # інцидент здебільшого коротший за добу, тож ОДИНИЦЮ мусить обирати шкала, а
+    # не ми («близько 3 годин», не «0 днів» — округлення до діб дає нуль на всьому,
+    # що вирішили того ж дня). Форми для всіх наших мов уже несе `rails-i18n`
+    # ([`04_04 §12.2`](../../../docs/04_04_Phlex_UI_and_Tailwind.md)), тож наш ключ
+    # лишається рамкою з простою інтерполяцією й plural-осі не має взагалі.
     def recovery_description(alert)
       duration = if alert.resolved_at && alert.created_at
-                   days = ((alert.resolved_at - alert.created_at) / 1.day).round
-                   template("recovery.duration", count: days)
+                   template("recovery.duration",
+                            duration: ActionController::Base.helpers.distance_of_time_in_words(
+                              alert.created_at, alert.resolved_at
+                            ))
       else
                    ""
       end

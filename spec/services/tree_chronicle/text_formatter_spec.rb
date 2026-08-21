@@ -30,8 +30,11 @@ RSpec.describe TreeChronicle::TextFormatter do
       expect(uk_burn).not_to eq(uk_mint)
     end
 
-    # `"day".pluralize(n)` давав «3 days» у кожній мові. Українська розрізняє
-    # три форми, і саме тому тривалість мусить бути plural-БЛОКОМ.
+    # Українська розрізняє три форми на 1/3/7, тож англійське `-s` тут ховає
+    # цілий клас. Форми дає `rails-i18n` через `distance_of_time_in_words` —
+    # власного plural-блоку в ключі немає. ⊕ Цей приклад є ДРУГИМ свідком тієї
+    # самої осі, що «sub-day» нижче: мутація на добову шкалу червонить обидва,
+    # і це подвійне покриття, а не колізія.
     it "agrees the duration noun with the number (three Ukrainian forms)" do
       alert = ->(days) {
         EwsAlert.new(created_at: Time.zone.now - days.days, resolved_at: Time.zone.now)
@@ -234,6 +237,28 @@ RSpec.describe TreeChronicle::TextFormatter do
         result = described_class.recovery_description(alert)
         expect(result).to include("Incident closed.")
         expect(result).to include("Duration: 3 days.")
+      end
+    end
+
+    # 🔴 Носій ОДИНИЦІ, а не форми слова. Доти тривалість рахувалась як
+    # `((resolved_at - created_at) / 1.day).round`, тож усе, вирішене того ж дня,
+    # друкувалось «Duration: 0 days.» — величина, яку читач не може відрізнити
+    # від «щойно закрито» й від «даних немає». Негативна половина тут несуча:
+    # позитив («about 3 hours») зелений і на будь-якій іншій справній шкалі,
+    # а червоніє на поверненні до діб саме `0 days`.
+    context "with a sub-day incident (the unit itself must not round away)" do
+      let(:alert) do
+        OpenStruct.new(
+          resolved_at: Time.current,
+          created_at: 3.hours.ago,
+          resolution_texts: []
+        )
+      end
+
+      it "renders the honest unit instead of a zero-day duration" do
+        result = described_class.recovery_description(alert)
+        expect(result).to include("about 3 hours")
+        expect(result).not_to match(/\b0 days?\b/)
       end
     end
 

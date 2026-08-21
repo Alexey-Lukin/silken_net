@@ -39,10 +39,7 @@ lt:
         not_available: N/D
         recovery:
           description: Incidentas uždarytas.
-          duration:
-            few: 'Trukmė: %{count} dienos.'
-            one: 'Trukmė: %{count} diena.'
-            other: 'Trukmė: %{count} dienų.'
+          duration: 'Trukmė: %{duration}.'
           title: Incidentas išspręstas
         stress:
           description: 'Streso indeksas: %{stress}. Maksimali temperatūra: %{max_temp}°C. Rekomendacija: stebėjimas'
