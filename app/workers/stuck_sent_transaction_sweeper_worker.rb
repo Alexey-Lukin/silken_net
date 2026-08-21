@@ -17,9 +17,10 @@
 #
 # Covers the rails that actually persist a `BlockchainTransaction` row: mint /
 # burn / insurance. ⚠️ NOT puro — its hash lives on `MaintenanceRecord`, never in
-# `blockchain_transactions`, and since PERF.1(д) (2026-08-20) it has its OWN
-# lifecycle+poller (PuroEarthConfirmationWorker); its stuck-:sent sweep is
-# deliberately deferred until path activation (00_07 PERF.1).
+# `blockchain_transactions`, and it has its OWN lifecycle+poller
+# (PuroEarthConfirmationWorker) — the THIRD form of that lifecycle; its
+# stuck-:sent sweep is deliberately deferred until path activation
+# (`ORACLE_PURO_PRIVATE_KEY`) and lives at `00_07` ARCH.66.
 # Celo has its own CeloConfirmationWorker; Solana/anchor reconcile via their own
 # crons — out of scope here (see 00_07 ARCH.55).
 #

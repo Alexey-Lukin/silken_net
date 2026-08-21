@@ -25,7 +25,8 @@
 # ⚠️ Позначена стеля: sent-limbo після crash ОБОХ воркерів (persist :sent + втрачений
 # enqueue + вичерпані ретраї цього воркера) не має sweeper-крона — власний stuck-sweep
 # відкладено до активації шляху (`ORACLE_PURO_PRIVATE_KEY`); recovery = console
-# re-enqueue. Дім residual'а → `00_07` PERF.1.
+# re-enqueue. Дім residual'а → `00_07` ARCH.66 (там же дві сестринські форми
+# того самого lifecycle — грошова й Ethereum-анкерна).
 # =============================================================================
 class PuroEarthPassportWorker
   include ApplicationWeb3Worker
