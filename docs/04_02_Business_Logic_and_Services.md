@@ -809,8 +809,8 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 > 🔴 **Конвенція reconcile/sweeper-воркерів: НУЛЬ дій ≠ нічого не сталося** [PERF.1, 2026-08-18]. Воркер, що ітерує кандидатів і рахує ФАКТИЧНІ дії (`escalated`/`re_armed`), мусить розрізняти ДВА різні світи: «дивитись не було на що» (порожня вибірка → `return`, тиша) ⊥ «дивились на N і жоден не подіяв» (reload-гард пропустив усю вибірку → `Rails.logger.info "Розглянуто N…"`). Друге — саме той стан, який оператор мусить бачити: він настає, коли підозрілих рядків НАЙБІЛЬШЕ, а форма `return unless <лічильник>.positive?` робить воркер повністю німим саме там. Рівень `info`, не `warn` — це спостереження про здоровий тракт, не інцидент. **Дискримінатор перед тим, як застосовувати правило до чергового воркера: чи має цей мовчун ІНШИЙ спостережний канал** — `HadronKycReverifyWorker` свідомо лишається без ліхтаря, бо безумовно б'є `HADRON_KYC_PENDING_DEPTH.set(depth)`, тож його тиша не є сліпотою. Носії — по два приклади на воркер (голос на нульовій дії ⊥ тиша на порожній вибірці).
 
 > ⚠️ **DOC-R.10 — Sidekiq Pro shims active (Phase 7 deferred upgrade):** Кодова база викликає `Sidekiq::Batch`, `Sidekiq::Limiter`, `expires_in:`, але ліцензований гем `sidekiq-pro` поки що **не в Gemfile**. `config/initializers/sidekiq_pro.rb` надає no-op shim-и щоб тести й dev-середовище не падали — у production це означає що `on(:success)` колбеки **не спрацьовують**, rate-limiter `web3_rpc 50/sec` **не діє**, а `expires_in: 5.minutes` на uplink-задачах **не TTL-ить** stale jobs. Перед billion-tree запуском треба:
-> 1. Додати `gem "sidekiq-pro", "~> 8.1"` (потребує license token у `BUNDLE_GEMS__CONTRIBSYS__COM`).
-> 2. Видалити shim і замість нього у `sidekiq_pro.rb` зробити `raise "sidekiq-pro required" unless defined?(Sidekiq::Pro)`.
+> 1. Додати `gem "sidekiq-pro", "~> 8.1"` (потребує license token у `BUNDLE_GEMS__CONTRIBSYS__COM`). 🔴 **Цей крок НЕ нейтральний — він озброює `expires_in`, і на uplink це ТИХА ВТРАТА БАЛІВ** [ARCH.59, виміряно 2026-08-21]. `UnpackTelemetryWorker` веде до `TelemetryUnpackerService` → `tree.wallet.credit!(weighted_points)`, тобто відкинутий пакет — це незараховані `growth_points`, а не «зекономлений CPU», як стверджує коментар над самою опцією. Гірше того, [Pro-документація](https://github.com/sidekiq/sidekiq/wiki/Pro-Expiring-Jobs) прямо каже, що протухла джоба **відкидається без виконання**, а в межах батчу **рахується як success** — тож ані retry, ані DeadSet, ані батч-колбек сліду не лишать (self-masking). **Перед покупкою ліцензії ухвали долю `expires_in` на обох uplink-воркерах окремим присудом**; на alerts-парі вісь уже знято семантичним гардом `status_active?` (картки нижче), тож там опція лишається декоративною, а не несучою.
+> 2. Видалити shim і замість нього у `sidekiq_pro.rb` зробити `raise "sidekiq-pro required" unless defined?(Sidekiq::Pro)`. ⚠️ **Форма кроку покриває не все, що обіцяє:** шимляться лише `Sidekiq::Batch` і `Sidekiq::Limiter` (класи), а `expires_in` — **опція `sidekiq_options`**, тож шима для неї не існує й `raise ... unless defined?` її не бачить за побудовою. Шапка `sidekiq_pro.rb` перелічує її поруч із `Batch`, і саме це читається як «покрито».
 > 3. Розщепити Sidekiq на 4 процеси з queue-pinning (uplink окремо, web3_* окремо, critical/alerts/downlink окремо, default/low окремо) — single-process × 15 threads не витягне peak ~ N_trees / 3600 jobs/sec.
 > 4. Увімкнути `super_fetch` (zero job-loss на SIGKILL/OOM) для `uplink`, `web3_critical`, `critical`.
 > 5. Увімкнути `reliable_push` у клієнті (захист enqueue-у від Redis failover).
@@ -827,7 +827,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | Параметр | Значення |
 |----------|----------|
 | **Черга** | `uplink` |
-| **Retry** | 3; `expires_in: 5.minutes` інертний на Sidekiq OSS (активується лише з Pro) |
+| **Retry** | 3; 🔴 **`expires_in` СВІДОМО відсутній** [ARCH.59, ⚖️ 2026-08-21] — цей воркер веде до `Wallet#credit!`, тож дроп протухлої джоби = незараховані `growth_points`, а Pro рахує такий дроп як success (сліду не лишається). Запобіжником була відсутність гема, і крок 1 DOC-R.10 зняв би її мовчки. Пін на відсутність — `spec/workers/unpack_telemetry_worker_spec.rb` |
 | **Тригер** | CoAP daemon (`lib/daemons/`) при отриманні UDP-пакета |
 | **Вхід** | `encoded_payload` (Base64), `sender_ip` (String), `gateway_uid` (String, опціонально) |
 | **Сервіси** | `TelemetryUnpackerService.call` (+ `gateway_attested:` kwarg) |
@@ -838,7 +838,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | Параметр | Значення |
 |----------|----------|
 | **Черга** | `uplink` |
-| **Retry** | 2, expires_in: 5 хвилин |
+| **Retry** | 2, `expires_in: 5.minutes` — інертний на Sidekiq OSS (активується лише з Pro). ⚠️ Тут опція лишається СВІДОМО, на відміну від `UnpackTelemetryWorker` [ARCH.59, ⚖️ 2026-08-21]: `mark_seen!` штампує `last_seen_at = Time.current`, тобто затримана джоба «оживляє» шлюз заднім числом і сліпить dead-man switch — дроп тут ЛІКУЄ брехню, а не створює втрату |
 | **Тригер** | **[ARCH.54]** `UnpackTelemetryWorker#enqueue_envelope_health` — пульс з ПІДПИСАНОГО health-блоку QATT-v2 (лише `:attested`-гілка; DID=0-sentinel retired — [`03_02 §7`](03_02_Queen_Gateway_Firmware)) |
 | **Вхід** | `queen_uid` (String), `stats` (Hash: uptime_min, cifo_fill, lora_rx_drops, coap_fail_count, cellular_signal_csq — nil = «модем не відповів», flags) |
 | **Сервіси** | Немає — пряма робота з `Gateway`, `GatewayTelemetryLog` |

@@ -128,5 +128,34 @@ RSpec.describe AlertNotificationWorker, type: :worker do
     it "returns nil when alert not found" do
       expect(described_class.new.perform(-1)).to be_nil
     end
+
+    # 🔴 [ARCH.59] Вісь «стан судиться в момент ДОСТАВКИ, не постановки». Доти її
+    # тримав лише `expires_in`, який на Sidekiq OSS не робить нічого — тобто
+    # покриття не було взагалі, а не було слабким. Фікстура будує рівно той стан,
+    # що виникає при затримці черги: алерт створено, стейкхолдери є, а до моменту
+    # виконання його вже закрили.
+    context "when the alert was resolved while the job sat in the queue" do
+      it "does not enqueue any delivery" do
+        create(:user, :admin, organization: organization)
+        create(:user, :forester, organization: organization)
+        alert.update!(status: :resolved)
+
+        described_class.new.perform(alert.id)
+
+        expect(SingleNotificationWorker.jobs).to be_empty
+      end
+
+      # Дзеркальна половина: без неї «нуль джоб» не відрізнити від «фікстура не
+      # має кому слати». Той самий набір стейкхолдерів на АКТИВНОМУ алерті мусить
+      # дати доставку — інакше приклад вище зелений вакуумно.
+      it "still enqueues while the alert is active" do
+        create(:user, :admin, organization: organization)
+        create(:user, :forester, organization: organization)
+
+        described_class.new.perform(alert.id)
+
+        expect(SingleNotificationWorker.jobs).not_to be_empty
+      end
+    end
   end
 end

@@ -395,6 +395,17 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
     it "retries 3 times" do
       expect(described_class.get_sidekiq_options["retry"]).to eq(3)
     end
+
+    # 🔴 [ARCH.59, ⚖️ 2026-08-21] Пін на ВІДСУТНІСТЬ, і він несучий: без нього
+    # присуд оборотний одним рядком, який виглядатиме як відновлення забутої
+    # опції. Цей воркер веде до `Wallet#credit!`, тож дроп протухлої джоби —
+    # незараховані growth_points; а Sidekiq Pro відкидає таку джобу без виконання
+    # й у батчі рахує її SUCCESS, тобто втрата не лишає сліду ні в retry, ні в
+    # DeadSet. Сьогодні опція інертна (гема немає) — саме тому пін дивиться на
+    # ОГОЛОШЕННЯ, а не на поведінку: озброїть її крок 1 DOC-R.10, і мовчки.
+    it "declares no expires_in — a stale telemetry job must never be dropped silently" do
+      expect(described_class.get_sidekiq_options).not_to have_key("expires_in")
+    end
   end
 
   # -----------------------------------------------------------------------

@@ -5,6 +5,9 @@ class AlertNotificationWorker
   include Sidekiq::Job
   # [SIDEKIQ PRO EXPIRES_IN]: При flood черги alerts, сповіщення старші
   # за 5 хвилин втрачають актуальність — патрульні вже побачили новіші.
+  # ⚠️ У OSS-редакції (поточній) опція **інертна** — активується лише з Sidekiq Pro
+  # (DOC-R.10, `04_02 §11`). Актуальність тут тримає НЕ вона, а семантичний гард
+  # `status_active?` у `perform` — див. коментар там.
   sidekiq_options queue: "alerts", retry: 5, expires_in: 5.minutes
 
   # [E.33] Канали, що доставляються ЧЕРЕЗ `SingleNotificationWorker`. Пошта сюди
@@ -15,6 +18,20 @@ class AlertNotificationWorker
   def perform(ews_alert_id)
     alert = EwsAlert.find_by(id: ews_alert_id)
     return unless alert
+
+    # 🔴 [ARCH.59] Стан алерту перевіряється В МОМЕНТ ДОСТАВКИ, а не постановки.
+    # `EwsAlert` при резолві не видаляється (`status` = active/resolved/ignored),
+    # тож `find_by(id:)` віддає ВИРІШЕНИЙ алерт так само охоче, як живий — і без
+    # цього рядка людина отримувала б сповіщення про тривогу, яку вже закрили.
+    # Доти вісь трималась на `expires_in: 5.minutes` ↑, який на Sidekiq OSS не
+    # робить НІЧОГО (опція Pro; у гемі 8.1.6 рядок `expires_in` не зустрічається
+    # взагалі) — тобто захисту не існувало, лише його оголошення. Гард семантичний,
+    # а не часовий, СВІДОМО: «застаріле» тут означає «вже не потребує реакції»,
+    # і це властивість запису, а не його віку в черзі.
+    unless alert.status_active?
+      Rails.logger.info "📢 [Notification] Алерт ##{alert.id} уже #{alert.status} — сповіщення не розсилаю."
+      return
+    end
 
     # 🔴 `cluster` у EwsAlert — `optional: true`, а цей воркер енкʼюїться БЕЗУМОВНО
     # (`after_create_commit :dispatch_notifications!`), і безкластерні алерти реально

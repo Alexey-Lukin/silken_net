@@ -6,11 +6,18 @@ require "openssl"
 
 class UnpackTelemetryWorker
   include Sidekiq::Job
-  # [SIDEKIQ PRO EXPIRES_IN]: Якщо база даних впала або черга переповнена,
-  # телеметрія старша за 5 хвилин стає «застарілою» і лише витрачає CPU.
-  # Sidekiq Pro автоматично відкидає такі джоби при dequeue.
-  # У OSS-редакції (поточній) опція інертна — активується лише з Sidekiq Pro.
-  sidekiq_options queue: "uplink", retry: 3, expires_in: 5.minutes
+  # 🔴 [ARCH.59, ⚖️ 2026-08-21] Тут СВІДОМО немає `expires_in`, і це не пропуск.
+  # Доти стояло `expires_in: 5.minutes` з обґрунтуванням «застаріла телеметрія
+  # лише витрачає CPU». Обґрунтування хибне: цей воркер веде до
+  # `TelemetryUnpackerService` → `tree.wallet.credit!(weighted_points)`, тобто
+  # відкинутий пакет — це НЕЗАРАХОВАНІ growth_points, які далі стають SCC.
+  # Опція інертна лише тому, що `sidekiq-pro` не в Gemfile; крок 1 DOC-R.10
+  # (купити гем) озброїв би її мовчки, а за Pro-семантикою протухла джоба
+  # відкидається без виконання й У БАТЧІ РАХУЄТЬСЯ ЯК SUCCESS — тобто втрата не
+  # лишає сліду ні в retry, ні в DeadSet. Запобіжником була відсутність гема,
+  # і планова покупка його знімала. Backpressure на цій черзі вирішуємо
+  # ємністю та пріоритетом, ніколи тихим дропом даних. Канон — `04_02 §11`.
+  sidekiq_options queue: "uplink", retry: 3
 
   # Розмір IV для AES-256-CBC (один AES-блок = 16 байт)
   AES_IV_SIZE = 16

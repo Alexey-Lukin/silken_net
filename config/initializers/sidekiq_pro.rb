@@ -13,6 +13,15 @@
 #
 # Sidekiq Pro:  Batch (orchestration), expires_in (stale job TTL)
 # Sidekiq Ent:  Limiter (rate limiting), unique_for (deduplication)
+#
+# 🔴 УВАГА, і це не деталь: шимляться лише те, що є КЛАСОМ — `Batch` і `Limiter`.
+# `expires_in` та `unique_for` — це КЛЮЧІ `sidekiq_options`, тож шима для них не
+# існує й існувати не може: OSS-Sidekiq кладе їх у job-hash і ніколи не читає
+# (у 8.1.6 рядок `expires_in` не зустрічається в `lib/` ЖОДНОГО разу — виміряно
+# 2026-08-21). Перелік вище описує API ГЕМА, а не покриття цього файлу, і читався
+# як друге — саме тому три з чотирьох воркерів роками пояснювали свій TTL у
+# теперішньому часі, ніби він діє. Наслідки й порядок активації — `04_02 §11`
+# DOC-R.10 (крок 1 озброює `expires_in`, і на uplink це втрата growth_points).
 
 # --- Sidekiq Pro: Batch API ---
 # Оркестрація груп воркерів з колбеками (on_success, on_complete, on_death).

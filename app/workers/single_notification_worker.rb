@@ -10,6 +10,8 @@ class SingleNotificationWorker
   # ніж батьківський AlertNotificationWorker (5 хв), оскільки вони вже in-flight.
   # Якщо конкретне повідомлення застрягло в черзі довше — краще пропустити,
   # ніж відправити застаріле сповіщення (патрульний вже бачив новіше).
+  # ⚠️ У OSS-редакції (поточній) опція **інертна** — активується лише з Sidekiq Pro
+  # (DOC-R.10, `04_02 §11`). Намір вище виконує семантичний гард у `perform`, не вона.
   sidekiq_options queue: "alerts", retry: 5, expires_in: 10.minutes
 
   # [ARCH.78, присуд 2026-08-20] SMS-гілки більше немає: канал відкинуто разом
@@ -18,6 +20,18 @@ class SingleNotificationWorker
     user = User.find_by(id: user_id)
     alert = EwsAlert.find_by(id: ews_alert_id)
     return unless user && alert
+
+    # 🔴 [ARCH.59] Той самий семантичний гард, що в батьківському воркері, і тут
+    # він НЕ дубль, а backstop із власною підставою: батько судить стан один раз
+    # на весь фан-аут, а ця джоба лежить у черзі ВДВІЧІ довше (пор. `expires_in`
+    # вище) і виконується вже після нього — тобто резолв міг статися між ними.
+    # Періметр класу = батько ⊥ дитина, як для `DeliveryChannels.available?`.
+    unless alert.status_active?
+      Rails.logger.info(
+        "[Notification] Алерт ##{alert.id} уже #{alert.status} — канал #{channel} не задіюю."
+      )
+      return
+    end
 
     case channel.to_sym
     when :telegram

@@ -116,5 +116,32 @@ RSpec.describe SingleNotificationWorker, type: :worker do
         }.not_to raise_error
       end
     end
+
+    # 🔴 [ARCH.59] Backstop-вісь: батько судить стан ОДИН раз на весь фан-аут, а ця
+    # джоба виконується пізніше й лежить у черзі вдвічі довше, тож резолв між ними
+    # реальний. Пін цілиться в ТРАНСПОРТ, а не в лог — інакше він був би зелений і
+    # тоді, коли доставка сталася, а рядок просто не надрукувався.
+    context "when the alert was resolved before this job ran" do
+      it "does not touch the transport" do
+        user = create(:user, :admin, organization: organization, telegram_chat_id: "123")
+        allow(Notifications::TelegramTransport).to receive(:configured?).and_return(true)
+        allow(Notifications::TelegramTransport).to receive(:send_message)
+        alert.update!(status: :resolved)
+
+        described_class.new.perform(user.id, alert.id, "telegram")
+
+        expect(Notifications::TelegramTransport).not_to have_received(:send_message)
+      end
+
+      it "does touch the transport while the alert is active" do
+        user = create(:user, :admin, organization: organization, telegram_chat_id: "123")
+        allow(Notifications::TelegramTransport).to receive(:configured?).and_return(true)
+        allow(Notifications::TelegramTransport).to receive(:send_message)
+
+        described_class.new.perform(user.id, alert.id, "telegram")
+
+        expect(Notifications::TelegramTransport).to have_received(:send_message)
+      end
+    end
   end
 end
