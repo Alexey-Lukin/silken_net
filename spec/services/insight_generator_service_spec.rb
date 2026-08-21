@@ -374,43 +374,6 @@ RSpec.describe InsightGeneratorService, type: :service do
       expect(cluster_insight.total_trees).to eq(1)
     end
 
-    it "cleans up telemetry logs older than 7 days" do
-      old_log = create(:telemetry_log, tree: tree,
-        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-        acoustic_events: 2, growth_points: 10,
-        bio_status: :homeostasis, metabolism_s: 1000,
-        created_at: 8.days.ago)
-
-      create(:telemetry_log, tree: tree,
-        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-        acoustic_events: 2, growth_points: 10,
-        bio_status: :homeostasis, metabolism_s: 1000,
-        created_at: date.beginning_of_day + 12.hours)
-
-      described_class.call(date)
-
-      expect(TelemetryLog.where(id: old_log.id)).not_to exist
-    end
-
-    it "preserves old telemetry logs with oracle_status dispatched" do
-      dispatched_log = create(:telemetry_log, tree: tree,
-        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-        acoustic_events: 2, growth_points: 10,
-        bio_status: :homeostasis, metabolism_s: 1000,
-        oracle_status: "dispatched",
-        created_at: 8.days.ago)
-
-      create(:telemetry_log, tree: tree,
-        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-        acoustic_events: 2, growth_points: 10,
-        bio_status: :homeostasis, metabolism_s: 1000,
-        created_at: date.beginning_of_day + 12.hours)
-
-      described_class.call(date)
-
-      expect(TelemetryLog.where(id: dispatched_log.id)).to exist
-    end
-
     it "returns processed count and date" do
       create(:telemetry_log, tree: tree,
         temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
@@ -925,45 +888,6 @@ RSpec.describe InsightGeneratorService, type: :service do
         target_date: date
       )
       expect(cluster_insight.summary).to include("фрод")
-    end
-  end
-
-  describe ".cleanup_old_logs!" do
-    it "deletes telemetry logs older than 7 days when called as class method" do
-      old_log = create(:telemetry_log, tree: tree,
-        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-        acoustic_events: 2, growth_points: 10,
-        bio_status: :homeostasis, metabolism_s: 1000,
-        created_at: 8.days.ago)
-
-      described_class.cleanup_old_logs!
-
-      expect(TelemetryLog.where(id: old_log.id)).not_to exist
-    end
-
-    it "preserves dispatched logs when called as class method" do
-      dispatched_log = create(:telemetry_log, tree: tree,
-        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-        acoustic_events: 2, growth_points: 10,
-        bio_status: :homeostasis, metabolism_s: 1000,
-        oracle_status: "dispatched",
-        created_at: 8.days.ago)
-
-      described_class.cleanup_old_logs!
-
-      expect(TelemetryLog.where(id: dispatched_log.id)).to exist
-    end
-
-    it "preserves recent logs (less than 7 days old)" do
-      recent_log = create(:telemetry_log, tree: tree,
-        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-        acoustic_events: 2, growth_points: 10,
-        bio_status: :homeostasis, metabolism_s: 1000,
-        created_at: 3.days.ago)
-
-      described_class.cleanup_old_logs!
-
-      expect(TelemetryLog.where(id: recent_log.id)).to exist
     end
   end
 

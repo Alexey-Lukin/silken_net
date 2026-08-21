@@ -34,10 +34,6 @@ class InsightBatchCallbacks
     # прапором :parametric_insurance_oracle_enabled (kill-switch, default off → інертно).
     # Settlement окремо за НЕЗАЛЕЖНИМ підтвердженням (dClimate / Field-Audit), 05_05 §6.
     enqueue_insurance_oracle(date_string)
-
-    # 2. КЕНОЗИС: Очищення сирих логів старше 7 днів
-    # Ідемпотентна операція на іншому діапазоні дат.
-    InsightGeneratorService.cleanup_old_logs!
   end
 
   private

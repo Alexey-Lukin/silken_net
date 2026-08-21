@@ -15,20 +15,10 @@ RSpec.describe InsightBatchCallbacks do
       expect(ClusterHealthCheckWorker.jobs.first["args"]).to eq([ "2026-03-06" ])
     end
 
-    it "calls InsightGeneratorService.cleanup_old_logs!" do
-      status = Sidekiq::Batch::Status.new("test-bid")
-      options = { "date" => "2026-03-06" }
-
-      expect(InsightGeneratorService).to receive(:cleanup_old_logs!)
-
-      described_class.new.on_success(status, options)
-    end
-
     it "logs batch completion with date" do
       status = Sidekiq::Batch::Status.new("abc123")
       options = { "date" => "2026-03-06" }
 
-      allow(InsightGeneratorService).to receive(:cleanup_old_logs!)
       expect(Rails.logger).to receive(:info).with(/Батч abc123 завершено.*2026-03-06/)
 
       described_class.new.on_success(status, options)
@@ -41,8 +31,6 @@ RSpec.describe InsightBatchCallbacks do
       let!(:insurance) { create(:parametric_insurance, organization: org, cluster: cluster, status: :active) }
       let(:status)     { Sidekiq::Batch::Status.new("test-bid") }
       let(:options)    { { "date" => "2026-03-06" } }
-
-      before { allow(InsightGeneratorService).to receive(:cleanup_old_logs!) }
 
       it "enqueues InsuranceOracleWorker per active-insurance cluster when the flag is on" do
         allow(SystemParameter).to receive(:current).and_call_original

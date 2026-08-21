@@ -88,10 +88,6 @@ class InsightGeneratorService < ApplicationService
       end
     end
 
-    # 4. КЕНОЗИС: Очищення сирих логів (поза транзакцією — ідемпотентна операція
-    # на іншому діапазоні дат, не потребує атомарності з інсайтами)
-    cleanup_old_logs!
-
     Rails.logger.info "✅ [Insight Generator] Цикл завершено. Оброблено вузлів: #{@processed_count}"
     { processed_count: @processed_count, date: @date }
   end
@@ -133,19 +129,22 @@ class InsightGeneratorService < ApplicationService
     @processed_count
   end
 
-  # Очищення сирих логів старше 7 днів (публічний для виклику з InsightBatchCallbacks).
-  # [БЕЗПЕКА]: Не видаляємо логи з oracle_status = 'dispatched' — вони очікують
-  # Chainlink callback для завершення Proof of Growth pipeline.
-  # Видалення таких логів призведе до втрати мінтингу SCC (RecordNotFound
-  # в OracleCallbacksController при зворотному виклику оракула).
-  def self.cleanup_old_logs!
-    threshold = 7.days.ago.end_of_day
-    # [Batch Delete]: delete_all на мільйонах рядків може заблокувати таблицю.
-    # in_batches видаляє по 10 000 записів за раз, знижуючи навантаження на Lock Manager.
-    TelemetryLog.where("created_at <= ?", threshold)
-                .where.not(oracle_status: "dispatched")
-                .in_batches(of: 10_000, &:delete_all)
-  end
+  # ⛔ [ARCH.59, ⚖️ 2026-08-21] DELETE-шляху над `telemetry_logs` тут БІЛЬШЕ НЕМАЄ, і це
+  # присуд, а не прибирання мертвого коду. Стояв `cleanup_old_logs!` — `delete_all`
+  # батчами по рядках, старших 7 днів, з єдиним гардом на `oracle_status`.
+  #
+  # Ретеншн сирої телеметрії робить ВИКЛЮЧНО дроп місячних партицій, і причина не
+  # смакова: тракт архіву вже ОЧІКУЄ саме цієї події й має для неї чесний стан
+  # (`TelemetryArchiveBatch.retention_expired` = «листя менше, бо партиції дропнуто —
+  # НЕ tamper»). Другий механізм зникнення рядків зробив би той статус неоднозначним,
+  # тобто зіпсував би єдиний прилад, яким ми відрізняємо ретеншн від підміни.
+  #
+  # ⚠️ Дві ціни семиденного вікна, виміряні окремо й обидві поза цим файлом:
+  # `Mrv::LineageReportService` гілки «джерельні рядки застаріли» не має взагалі й
+  # видав би зовнішньому аудитору `unprovable_regrouped` («дерево змінило кластер»);
+  # а пін архівного батча їде чергою `low`, тож видалення встигало б випередити його —
+  # і `archiveRoot`, уже записаний on-chain, лишався б без офчейн-свідка.
+  # Механізм дропу — `00_07` ARCH.70; носій цієї заборони — `spec/quality/telemetry_retention_home_spec.rb`.
 
   private
 
@@ -475,10 +474,6 @@ class InsightGeneratorService < ApplicationService
       summary: summary,
       reasoning: { measured_trees: measured_trees, total_trees: total_trees }
     )
-  end
-
-  def cleanup_old_logs!
-    self.class.cleanup_old_logs!
   end
 
   def generate_summary(status, temp)

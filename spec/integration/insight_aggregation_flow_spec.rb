@@ -90,7 +90,13 @@ RSpec.describe "Insight generation and daily aggregation flow" do
       expect(tree1_insight.total_growth_points).to eq(20) # 10 (before) + 10 — ріст не обнулено
     end
 
-    it "cleans up old telemetry logs older than 7 days" do
+    # ⛔ [ARCH.59, ⚖️ 2026-08-21] Денний цикл сирої телеметрії НЕ видаляє — ретеншн
+    # робить виключно дроп місячних партицій. Пін НЕГАТИВНИЙ саме тому, що позитив
+    # («старий рядок зник») тут стояв роками й був би відновлений першим, хто
+    # вирішить «повернути очищення»; носій самої заборони — окремий
+    # `spec/quality/telemetry_retention_home_spec.rb`, а цей приклад стереже
+    # ПОВЕДІНКУ тракту, тобто другу половину того самого твердження.
+    it "leaves old telemetry rows untouched (retention is partition-drop only)" do
       old_log = nil
       travel_to 10.days.ago do
         old_log = create(:telemetry_log, tree: tree1)
@@ -98,7 +104,7 @@ RSpec.describe "Insight generation and daily aggregation flow" do
 
       InsightGeneratorService.call(yesterday)
 
-      expect(TelemetryLog.where(id: old_log.id).exists?).to be false
+      expect(TelemetryLog.where(id: old_log.id).exists?).to be true
     end
   end
 
